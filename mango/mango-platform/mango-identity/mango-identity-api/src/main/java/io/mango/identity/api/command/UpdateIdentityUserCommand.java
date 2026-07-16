@@ -3,6 +3,9 @@ package io.mango.identity.api.command;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Max;
 import lombok.Data;
 
 /**
@@ -25,6 +28,7 @@ public class UpdateIdentityUserCommand {
     private String partyType;
 
     @Schema(description = "归属主体ID")
+    @Positive(message = "归属主体ID必须大于0")
     private Long partyId;
 
     @Schema(description = "邮箱")
@@ -40,6 +44,8 @@ public class UpdateIdentityUserCommand {
     private String avatar;
 
     @Schema(description = "成员状态：0-禁用，1-启用")
+    @Min(value = 0, message = "成员状态只能为0或1")
+    @Max(value = 1, message = "成员状态只能为0或1")
     private Integer status;
 
     @Schema(description = "备注")

@@ -1,8 +1,8 @@
 package io.mango.identity.starter;
 
 import io.mango.identity.api.AuthUserProvider;
-import io.mango.identity.api.vo.AuthUserInfo;
-import io.mango.identity.core.entity.IdentityUser;
+import io.mango.identity.api.vo.AuthUserVO;
+import io.mango.identity.core.entity.IdentityUserEntity;
 import io.mango.identity.core.service.IIdentityUserService;
 
 /**
@@ -17,25 +17,25 @@ public class IdentityAuthUserProvider implements AuthUserProvider {
     }
 
     @Override
-    public AuthUserInfo getByUsernameForAuth(String username) {
-        return toAuthUserInfo(identityUserService.getByUsername(username));
+    public AuthUserVO getByUsernameForAuth(String username) {
+        return toAuthUserVO(identityUserService.getByUsername(username));
     }
 
     @Override
-    public AuthUserInfo getByUsernameForAuth(String username, String realm) {
-        return toAuthUserInfo(identityUserService.getByUsername(username, realm));
+    public AuthUserVO getByUsernameForAuth(String username, String realm) {
+        return toAuthUserVO(identityUserService.getByUsername(username, realm));
     }
 
     @Override
-    public AuthUserInfo getByIdForAuth(Long userId) {
-        return toAuthUserInfo(identityUserService.getById(userId));
+    public AuthUserVO getByIdForAuth(Long userId) {
+        return toAuthUserVO(identityUserService.getById(userId));
     }
 
-    private AuthUserInfo toAuthUserInfo(IdentityUser entity) {
+    private AuthUserVO toAuthUserVO(IdentityUserEntity entity) {
         if (entity == null) {
             return null;
         }
-        AuthUserInfo authUser = new AuthUserInfo();
+        AuthUserVO authUser = new AuthUserVO();
         authUser.setUserId(entity.getUserId());
         authUser.setUsername(entity.getUsername());
         authUser.setPassword(entity.getPassword());

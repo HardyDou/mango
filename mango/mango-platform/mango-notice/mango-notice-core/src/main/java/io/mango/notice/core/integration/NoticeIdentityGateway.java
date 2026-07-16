@@ -7,7 +7,7 @@ import io.mango.identity.api.command.CreateIdentityUserCommand;
 import io.mango.identity.api.command.UpdateIdentityUserCommand;
 import io.mango.identity.api.query.IdentityUserPageQuery;
 import io.mango.identity.api.vo.ExternalIdentityBindingVO;
-import io.mango.identity.api.vo.IdentityUserInfo;
+import io.mango.identity.api.vo.IdentityUserInfoVO;
 import io.mango.identity.api.vo.IdentityUserVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -35,7 +35,7 @@ public class NoticeIdentityGateway {
         return NoticeRemoteResult.from(identityUserApi.update(command));
     }
 
-    public NoticeRemoteResult<IdentityUserInfo> getUserInfoById(Long userId) {
+    public NoticeRemoteResult<IdentityUserInfoVO> getUserInfoById(Long userId) {
         return NoticeRemoteResult.from(identityUserApi.getUserInfoById(userId));
     }
 

@@ -1,0 +1,31 @@
+mango:
+  resource:
+    schema-version: 1
+    module-code: identity
+    module-name: 身份
+    declarations:
+      IDENTITY_USER:
+        - id: "2026071609000000001"
+          version: 1
+          biz-key: identity.user.admin
+          name: 平台管理员
+          target-module: identity
+          sync-mode: INIT_ONLY
+          fields:
+            targetId: { type: LONG, value: 1 }
+            memberId: { type: LONG, value: 1001 }
+            tenantId: { type: LONG, value: 1 }
+            username: { type: STRING, value: admin }
+            password: { type: STRING, value: admin123 }
+            nickname: { type: STRING, value: Administrator }
+            displayName: { type: STRING, value: 芒果集团管理员 }
+            memberNo: { type: STRING, value: ADMIN-default }
+            memberType: { type: STRING, value: INSTITUTION_ADMIN }
+            realm: { type: STRING, value: INTERNAL }
+            actorType: { type: STRING, value: INTERNAL_USER }
+            partyType: { type: STRING, value: INTERNAL_ORG }
+            partyId: { type: LONG, value: 1 }
+            email: { type: STRING, value: 1012404303@qq.com }
+            phone: { type: STRING, value: "18701445644" }
+            status: { type: INT, value: 1 }
+            remark: { type: STRING, value: 芒果集团初始化管理员成员 }

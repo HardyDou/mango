@@ -7,7 +7,7 @@ import io.mango.identity.api.command.BindExternalIdentityCommand;
 import io.mango.identity.api.command.CreateIdentityUserCommand;
 import io.mango.identity.api.command.UpdateIdentityUserCommand;
 import io.mango.identity.api.query.IdentityUserPageQuery;
-import io.mango.identity.api.vo.IdentityUserInfo;
+import io.mango.identity.api.vo.IdentityUserInfoVO;
 import io.mango.identity.api.vo.IdentityUserVO;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.notice.api.command.SyncWecomUsersCommand;
@@ -534,11 +534,11 @@ public class NoticeWecomSyncService implements INoticeWecomSyncService {
  if (detailResponse != null && detailResponse.isSuccess() && detailResponse.getData() != null) {
  return detailResponse.getData();
  }
- NoticeRemoteResult<IdentityUserInfo> response = identityGateway.getUserInfoById(userId);
+ NoticeRemoteResult<IdentityUserInfoVO> response = identityGateway.getUserInfoById(userId);
  if (response == null || !response.isSuccess() || response.getData() == null) {
  return null;
  }
- IdentityUserInfo info = response.getData();
+ IdentityUserInfoVO info = response.getData();
  IdentityUserVO user = new IdentityUserVO();
  user.setUserId(info.getUserId());
  user.setUsername(info.getUsername());

@@ -1,12 +1,16 @@
 package io.mango.identity.core.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
-import io.mango.common.exception.BizException;
+import io.mango.common.result.Require;
 import io.mango.identity.api.AuthIdentitySecurityProvider;
 import io.mango.identity.api.command.ChangeRequiredPasswordCommand;
-import io.mango.identity.api.vo.AuthUserInfo;
-import io.mango.identity.core.entity.IdentityUser;
+import io.mango.identity.api.enums.IdentityCode;
+import io.mango.identity.api.vo.AuthUserVO;
+import io.mango.identity.core.entity.IdentityUserEntity;
 import io.mango.identity.core.mapper.IdentityUserMapper;
+import io.mango.identity.core.service.IIdentityPasswordPolicyService;
+import io.mango.identity.core.service.IIdentitySecurityPolicyService;
+import io.mango.identity.core.service.IIdentityUserSecurityService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -22,24 +26,22 @@ import java.util.Objects;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class IdentityUserSecurityService implements AuthIdentitySecurityProvider {
+public class IdentityUserSecurityService implements AuthIdentitySecurityProvider, IIdentityUserSecurityService {
 
     private static final String LOCK_REASON_TOO_MANY_FAILURES = "TOO_MANY_FAILED_LOGIN_ATTEMPTS";
-    private static final int LOGIN_ATTEMPT_LOCKED_CODE = 1429;
-
     private final IdentityUserMapper identityUserMapper;
-    private final IdentitySecurityPolicyService policyService;
-    private final IdentityPasswordPolicyService passwordPolicyService;
+    private final IIdentitySecurityPolicyService policyService;
+    private final IIdentityPasswordPolicyService passwordPolicyService;
     private final PasswordEncoder passwordEncoder;
 
     @Override
-    public void assertLoginAllowed(AuthUserInfo user) {
+    public void assertLoginAllowed(AuthUserVO user) {
         if (user == null || user.getUserId() == null) {
             return;
         }
         LocalDateTime lockedUntil = user.getLockedUntil();
         if (lockedUntil != null && lockedUntil.isAfter(LocalDateTime.now())) {
-            throw new BizException(LOGIN_ATTEMPT_LOCKED_CODE, "账号已被临时锁定，请稍后再试或联系管理员");
+            Require.isTrue(false, IdentityCode.LOGIN_LOCKED, "账号已被临时锁定，请稍后再试或联系管理员");
         }
     }
 
@@ -49,7 +51,7 @@ public class IdentityUserSecurityService implements AuthIdentitySecurityProvider
         if (!policyService.loginFailureLockEnabled()) {
             return;
         }
-        IdentityUser user = identityUserMapper.selectById(userId);
+        IdentityUserEntity user = identityUserMapper.selectById(userId);
         if (user == null) {
             return;
         }
@@ -72,86 +74,85 @@ public class IdentityUserSecurityService implements AuthIdentitySecurityProvider
             user.setLockedReason(LOCK_REASON_TOO_MANY_FAILURES);
             log.warn("Identity user locked after failed logins: userId={}, failedCount={}", userId, nextFailures);
         }
-        identityUserMapper.update(null, new LambdaUpdateWrapper<IdentityUser>()
-                .eq(IdentityUser::getUserId, userId)
-                .set(IdentityUser::getFailedLoginCount, nextFailures)
-                .set(IdentityUser::getLastFailedLoginAt, now)
-                .set(IdentityUser::getLockedUntil, user.getLockedUntil())
-                .set(IdentityUser::getLockedReason, user.getLockedReason())
-                .set(IdentityUser::getUpdateTime, now));
+        identityUserMapper.update(null, new LambdaUpdateWrapper<IdentityUserEntity>()
+                .eq(IdentityUserEntity::getId, userId)
+                .set(IdentityUserEntity::getFailedLoginCount, nextFailures)
+                .set(IdentityUserEntity::getLastFailedLoginAt, now)
+                .set(IdentityUserEntity::getLockedUntil, user.getLockedUntil())
+                .set(IdentityUserEntity::getLockedReason, user.getLockedReason())
+                .set(IdentityUserEntity::getUpdateTime, now));
     }
 
     @Override
     @Transactional
     public void recordLoginSuccess(Long userId) {
-        IdentityUser user = identityUserMapper.selectById(userId);
+        IdentityUserEntity user = identityUserMapper.selectById(userId);
         if (user == null) {
             return;
         }
         LocalDateTime now = LocalDateTime.now();
-        identityUserMapper.update(null, new LambdaUpdateWrapper<IdentityUser>()
-                .eq(IdentityUser::getUserId, userId)
-                .set(IdentityUser::getFailedLoginCount, 0)
-                .set(IdentityUser::getLastFailedLoginAt, null)
-                .set(IdentityUser::getLockedUntil, null)
-                .set(IdentityUser::getLockedReason, null)
-                .set(IdentityUser::getLastLoginTime, now)
-                .set(IdentityUser::getUpdateTime, now));
+        identityUserMapper.update(null, new LambdaUpdateWrapper<IdentityUserEntity>()
+                .eq(IdentityUserEntity::getId, userId)
+                .set(IdentityUserEntity::getFailedLoginCount, 0)
+                .set(IdentityUserEntity::getLastFailedLoginAt, null)
+                .set(IdentityUserEntity::getLockedUntil, null)
+                .set(IdentityUserEntity::getLockedReason, null)
+                .set(IdentityUserEntity::getLastLoginTime, now)
+                .set(IdentityUserEntity::getUpdateTime, now));
     }
 
     @Override
     @Transactional
     public void changeRequiredPassword(ChangeRequiredPasswordCommand command) {
-        if (!Objects.equals(command.getNewPassword(), command.getConfirmPassword())) {
-            throw new IllegalArgumentException("两次输入的新密码不一致");
-        }
+        Require.notNull(command, IdentityCode.VALIDATION_ERROR, "修改密码命令不能为空");
+        Require.isTrue(Objects.equals(command.getNewPassword(), command.getConfirmPassword()),
+                IdentityCode.VALIDATION_ERROR, "两次输入的新密码不一致");
         passwordPolicyService.validatePlainPassword(command.getNewPassword());
-        IdentityUser user = identityUserMapper.selectById(command.getUserId());
-        if (user == null) {
-            throw new IllegalArgumentException("用户不存在");
-        }
+        IdentityUserEntity user = identityUserMapper.selectById(command.getUserId());
+        Require.notNull(user, IdentityCode.NOT_FOUND, "用户不存在");
         LocalDateTime now = LocalDateTime.now();
-        identityUserMapper.update(null, new LambdaUpdateWrapper<IdentityUser>()
-                .eq(IdentityUser::getUserId, command.getUserId())
-                .set(IdentityUser::getPassword, passwordEncoder.encode(command.getNewPassword()))
-                .set(IdentityUser::getPasswordResetRequired, false)
-                .set(IdentityUser::getPasswordUpdatedAt, now)
-                .set(IdentityUser::getFailedLoginCount, 0)
-                .set(IdentityUser::getLastFailedLoginAt, null)
-                .set(IdentityUser::getLockedUntil, null)
-                .set(IdentityUser::getLockedReason, null)
-                .set(IdentityUser::getUpdateTime, now));
+        identityUserMapper.update(null, new LambdaUpdateWrapper<IdentityUserEntity>()
+                .eq(IdentityUserEntity::getId, command.getUserId())
+                .set(IdentityUserEntity::getPassword, passwordEncoder.encode(command.getNewPassword()))
+                .set(IdentityUserEntity::getPasswordResetRequired, false)
+                .set(IdentityUserEntity::getPasswordUpdatedAt, now)
+                .set(IdentityUserEntity::getFailedLoginCount, 0)
+                .set(IdentityUserEntity::getLastFailedLoginAt, null)
+                .set(IdentityUserEntity::getLockedUntil, null)
+                .set(IdentityUserEntity::getLockedReason, null)
+                .set(IdentityUserEntity::getUpdateTime, now));
     }
 
     @Transactional
     public boolean unlock(Long userId) {
-        IdentityUser user = identityUserMapper.selectById(userId);
+        IdentityUserEntity user = identityUserMapper.selectById(userId);
         if (user == null) {
             return false;
         }
         LocalDateTime now = LocalDateTime.now();
-        return identityUserMapper.update(null, new LambdaUpdateWrapper<IdentityUser>()
-                .eq(IdentityUser::getUserId, userId)
-                .set(IdentityUser::getFailedLoginCount, 0)
-                .set(IdentityUser::getLastFailedLoginAt, null)
-                .set(IdentityUser::getLockedUntil, null)
-                .set(IdentityUser::getLockedReason, null)
-                .set(IdentityUser::getUpdateTime, now)) > 0;
+        return identityUserMapper.update(null, new LambdaUpdateWrapper<IdentityUserEntity>()
+                .eq(IdentityUserEntity::getId, userId)
+                .set(IdentityUserEntity::getFailedLoginCount, 0)
+                .set(IdentityUserEntity::getLastFailedLoginAt, null)
+                .set(IdentityUserEntity::getLockedUntil, null)
+                .set(IdentityUserEntity::getLockedReason, null)
+                .set(IdentityUserEntity::getUpdateTime, now)) > 0;
     }
 
     @Transactional
     public boolean requirePasswordReset(Long userId) {
-        IdentityUser user = identityUserMapper.selectById(userId);
+        IdentityUserEntity user = identityUserMapper.selectById(userId);
         if (user == null) {
             return false;
         }
-        return identityUserMapper.update(null, new LambdaUpdateWrapper<IdentityUser>()
-                .eq(IdentityUser::getUserId, userId)
-                .set(IdentityUser::getPasswordResetRequired, true)
-                .set(IdentityUser::getUpdateTime, LocalDateTime.now())) > 0;
+        return identityUserMapper.update(null, new LambdaUpdateWrapper<IdentityUserEntity>()
+                .eq(IdentityUserEntity::getId, userId)
+                .set(IdentityUserEntity::getPasswordResetRequired, true)
+                .set(IdentityUserEntity::getUpdateTime, LocalDateTime.now())) > 0;
     }
 
-    boolean isLocked(IdentityUser user) {
+    @Override
+    public boolean isLocked(IdentityUserEntity user) {
         return user != null && user.getLockedUntil() != null && user.getLockedUntil().isAfter(LocalDateTime.now());
     }
 }

@@ -1,5 +1,7 @@
 package io.mango.identity.core.service.impl;
 
+import io.mango.common.exception.BizException;
+import io.mango.identity.core.adapter.SysConfigValueAdapter;
 import io.mango.system.api.SysConfigApi;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.ObjectProvider;
@@ -12,21 +14,22 @@ class IdentityPasswordPolicyServiceTest {
 
     private final IdentitySecurityProperties properties = new IdentitySecurityProperties();
     private final IdentityPasswordPolicyService service =
-            new IdentityPasswordPolicyService(new IdentitySecurityPolicyService(properties, emptyProvider()));
+            new IdentityPasswordPolicyService(new IdentitySecurityPolicyService(
+                    properties, new SysConfigValueAdapter(emptyProvider())));
 
     @Test
     void validatePlainPasswordRejectsWeakPasswords() {
         assertThatThrownBy(() -> service.validatePlainPassword("short1"))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(BizException.class)
                 .hasMessageContaining("至少");
         assertThatThrownBy(() -> service.validatePlainPassword("Password"))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(BizException.class)
                 .hasMessageContaining("数字");
         assertThatThrownBy(() -> service.validatePlainPassword("12345678"))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(BizException.class)
                 .hasMessageContaining("字母");
         assertThatThrownBy(() -> service.validatePlainPassword("Pass 1234"))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(BizException.class)
                 .hasMessageContaining("空白");
     }
 
@@ -41,7 +44,7 @@ class IdentityPasswordPolicyServiceTest {
         properties.getPassword().setRequireSpecialChar(true);
 
         assertThatThrownBy(() -> service.validatePlainPassword("Mango12345"))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(BizException.class)
                 .hasMessageContaining("特殊字符");
     }
 
@@ -50,7 +53,7 @@ class IdentityPasswordPolicyServiceTest {
         properties.getPassword().setPattern("(?=.*[A-Z]).{8,}");
 
         assertThatThrownBy(() -> service.validatePlainPassword("mango1234"))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(BizException.class)
                 .hasMessageContaining("自定义规则");
         assertThatCode(() -> service.validatePlainPassword("Mango1234"))
                 .doesNotThrowAnyException();

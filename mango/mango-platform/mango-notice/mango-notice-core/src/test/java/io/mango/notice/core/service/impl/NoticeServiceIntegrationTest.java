@@ -9,13 +9,17 @@ import io.mango.identity.api.IdentityUserApi;
 import io.mango.identity.api.command.BatchDeleteIdentityUserCommand;
 import io.mango.identity.api.command.BindExternalIdentityCommand;
 import io.mango.identity.api.command.CreateIdentityUserCommand;
+import io.mango.identity.api.command.RequireIdentityUserPasswordResetCommand;
+import io.mango.identity.api.command.ResetIdentityUserPasswordCommand;
 import io.mango.identity.api.command.UnbindExternalIdentityCommand;
 import io.mango.identity.api.command.UpdateIdentityUserCommand;
+import io.mango.identity.api.command.UpdateIdentityUserStatusCommand;
+import io.mango.identity.api.command.UnlockIdentityUserCommand;
 import io.mango.identity.api.query.ExternalIdentityQuery;
 import io.mango.identity.api.query.IdentityUserPageQuery;
 import io.mango.identity.api.query.IdentityUserTargetQuery;
 import io.mango.identity.api.vo.ExternalIdentityBindingVO;
-import io.mango.identity.api.vo.IdentityUserInfo;
+import io.mango.identity.api.vo.IdentityUserInfoVO;
 import io.mango.identity.api.vo.IdentityUserVO;
 import io.mango.infra.kv.api.IOutboxStore;
 import io.mango.infra.kv.api.OutboxMessage;
@@ -1064,10 +1068,10 @@ class NoticeServiceIntegrationTest {
 
     static class TestIdentityUserApi implements IdentityUserApi {
 
-        private final Map<Long, IdentityUserInfo> users = new HashMap<>();
+        private final Map<Long, IdentityUserInfoVO> users = new HashMap<>();
 
         void addUser(Long id, String nickname, String email, String phone) {
-            IdentityUserInfo info = new IdentityUserInfo();
+            IdentityUserInfoVO info = new IdentityUserInfoVO();
             info.setUserId(id);
             info.setUsername("user" + id);
             info.setNickname(nickname);
@@ -1112,17 +1116,37 @@ class NoticeServiceIntegrationTest {
         }
 
         @Override
-        public R<IdentityUserInfo> getUserInfo(String username) {
+        public R<Boolean> updateStatus(UpdateIdentityUserStatusCommand command) {
+            return R.ok(true);
+        }
+
+        @Override
+        public R<Boolean> resetPassword(ResetIdentityUserPasswordCommand command) {
+            return R.ok(true);
+        }
+
+        @Override
+        public R<Boolean> unlock(UnlockIdentityUserCommand command) {
+            return R.ok(true);
+        }
+
+        @Override
+        public R<Boolean> requirePasswordReset(RequireIdentityUserPasswordResetCommand command) {
+            return R.ok(true);
+        }
+
+        @Override
+        public R<IdentityUserInfoVO> getUserInfo(String username) {
             return R.ok(null);
         }
 
         @Override
-        public R<IdentityUserInfo> getUserInfoById(Long userId) {
+        public R<IdentityUserInfoVO> getUserInfoById(Long userId) {
             return R.ok(users.get(userId));
         }
 
         @Override
-        public R<List<IdentityUserInfo>> listUserInfosByTarget(IdentityUserTargetQuery query) {
+        public R<List<IdentityUserInfoVO>> listUserInfosByTarget(IdentityUserTargetQuery query) {
             return R.ok(List.of());
         }
 

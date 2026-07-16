@@ -1,9 +1,8 @@
 package io.mango.identity.core.service.impl;
 
-import io.mango.common.result.R;
-import io.mango.system.api.SysConfigApi;
+import io.mango.identity.core.adapter.SysConfigValueAdapter;
+import io.mango.identity.core.service.IIdentitySecurityPolicyService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 
 /**
@@ -11,7 +10,7 @@ import org.springframework.stereotype.Service;
  */
 @Service
 @RequiredArgsConstructor
-public class IdentitySecurityPolicyService {
+public class IdentitySecurityPolicyService implements IIdentitySecurityPolicyService {
 
     private static final String PASSWORD_COMPLEXITY_ENABLED = "identity.security.password-complexity.enabled";
     private static final String PASSWORD_MIN_LENGTH = "identity.security.password.min-length";
@@ -28,7 +27,7 @@ public class IdentitySecurityPolicyService {
     private static final String LOGIN_LOCK_DURATION_MINUTES = "identity.security.login.lock-duration-minutes";
 
     private final IdentitySecurityProperties properties;
-    private final ObjectProvider<SysConfigApi> sysConfigApiProvider;
+    private final SysConfigValueAdapter configAdapter;
 
     public boolean passwordComplexityEnabled() {
         return booleanConfig(PASSWORD_COMPLEXITY_ENABLED, properties.getPassword().isComplexityEnabled());
@@ -83,41 +82,14 @@ public class IdentitySecurityPolicyService {
     }
 
     private boolean booleanConfig(String key, boolean defaultValue) {
-        SysConfigApi api = sysConfigApiProvider.getIfAvailable();
-        if (api == null) {
-            return defaultValue;
-        }
-        try {
-            R<Boolean> result = api.getBooleanValue(key, defaultValue);
-            return result.isSuccess() && result.getData() != null ? result.getData() : defaultValue;
-        } catch (RuntimeException ex) {
-            return defaultValue;
-        }
+        return configAdapter.booleanValue(key, defaultValue);
     }
 
     private int integerConfig(String key, int defaultValue) {
-        SysConfigApi api = sysConfigApiProvider.getIfAvailable();
-        if (api == null) {
-            return defaultValue;
-        }
-        try {
-            R<Integer> result = api.getIntegerValue(key, defaultValue);
-            return result.isSuccess() && result.getData() != null ? result.getData() : defaultValue;
-        } catch (RuntimeException ex) {
-            return defaultValue;
-        }
+        return configAdapter.integerValue(key, defaultValue);
     }
 
     private String stringConfig(String key, String defaultValue) {
-        SysConfigApi api = sysConfigApiProvider.getIfAvailable();
-        if (api == null) {
-            return defaultValue;
-        }
-        try {
-            R<String> result = api.getValue(key);
-            return result.isSuccess() && result.getData() != null ? result.getData() : defaultValue;
-        } catch (RuntimeException ex) {
-            return defaultValue;
-        }
+        return configAdapter.stringValue(key, defaultValue);
     }
 }

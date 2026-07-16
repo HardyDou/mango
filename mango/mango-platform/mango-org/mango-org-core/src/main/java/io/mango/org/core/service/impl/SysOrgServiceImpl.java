@@ -5,8 +5,8 @@ import io.mango.common.result.Require;
 import io.mango.identity.api.TenantMemberProvider;
 import io.mango.identity.api.command.AddTenantMemberOrgCommand;
 import io.mango.identity.api.command.UpdateTenantMemberOrgCommand;
-import io.mango.identity.api.vo.TenantMemberInfo;
-import io.mango.identity.api.vo.TenantMemberOrgRelationInfo;
+import io.mango.identity.api.vo.TenantMemberVO;
+import io.mango.identity.api.vo.TenantMemberOrgRelationVO;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.org.api.command.AddOrgMemberCommand;
 import io.mango.org.api.command.CreateOrgCommand;
@@ -157,7 +157,7 @@ public class SysOrgServiceImpl implements ISysOrgService {
     public List<OrgMemberVO> members(Long orgId) {
         SysOrg org = getById(orgId);
         Long tenantId = org.getTenantId();
-        List<TenantMemberOrgRelationInfo> relations = tenantMemberProvider.listOrgRelations(tenantId, orgId);
+        List<TenantMemberOrgRelationVO> relations = tenantMemberProvider.listOrgRelations(tenantId, orgId);
         if (relations == null || relations.isEmpty()) {
             return List.of();
         }
@@ -168,7 +168,7 @@ public class SysOrgServiceImpl implements ISysOrgService {
     @Transactional
     public void addMember(Long orgId, AddOrgMemberCommand command) {
         SysOrg org = getById(orgId);
-        TenantMemberInfo member = tenantMemberProvider.getMember(command.getMemberId());
+        TenantMemberVO member = tenantMemberProvider.getMember(command.getMemberId());
         Require.notNull(member, PostCode.ORG_MEMBER_NOT_FOUND);
         Require.isTrue(org.getTenantId().equals(member.getTenantId()), PostCode.ORG_MEMBER_NOT_FOUND);
         if (command.getPostId() != null) {
@@ -192,12 +192,12 @@ public class SysOrgServiceImpl implements ISysOrgService {
     @Override
     @Transactional
     public void updateMember(UpdateOrgMemberCommand command) {
-        TenantMemberOrgRelationInfo relation = tenantMemberProvider.getOrgRelation(command.getRelationId());
+        TenantMemberOrgRelationVO relation = tenantMemberProvider.getOrgRelation(command.getRelationId());
         Require.notNull(relation, PostCode.ORG_MEMBER_RELATION_NOT_FOUND);
         if (command.getPostId() != null) {
             validatePost(relation.getTenantId(), command.getPostId());
         }
-        TenantMemberInfo member = tenantMemberProvider.getMember(relation.getMemberId());
+        TenantMemberVO member = tenantMemberProvider.getMember(relation.getMemberId());
         Require.notNull(member, PostCode.ORG_MEMBER_NOT_FOUND);
 
         boolean primary = Boolean.TRUE.equals(command.getPrimaryFlag());
@@ -217,7 +217,7 @@ public class SysOrgServiceImpl implements ISysOrgService {
     @Override
     @Transactional
     public void removeMember(Long relationId) {
-        TenantMemberOrgRelationInfo relation = tenantMemberProvider.getOrgRelation(relationId);
+        TenantMemberOrgRelationVO relation = tenantMemberProvider.getOrgRelation(relationId);
         Require.notNull(relation, PostCode.ORG_MEMBER_RELATION_NOT_FOUND);
         if (isPrimaryRelation(relation)) {
             Require.isTrue(hasOtherPrimaryCandidate(relation), PostCode.ORG_MEMBER_PRIMARY_REQUIRED);
@@ -229,14 +229,14 @@ public class SysOrgServiceImpl implements ISysOrgService {
     public List<Long> leaderUserIds(Long orgId) {
         SysOrg org = getById(orgId);
         List<Long> leaderPostIds = leaderPostIds(org.getTenantId());
-        List<TenantMemberOrgRelationInfo> relations = tenantMemberProvider.listOrgRelations(org.getTenantId(), orgId);
+        List<TenantMemberOrgRelationVO> relations = tenantMemberProvider.listOrgRelations(org.getTenantId(), orgId);
         if (relations == null || relations.isEmpty()) {
             return List.of();
         }
         List<Long> memberIds = relations.stream()
                 .filter(relation -> Integer.valueOf(1).equals(relation.getLeaderFlag())
                         || (relation.getPostId() != null && leaderPostIds.contains(relation.getPostId())))
-                .map(TenantMemberOrgRelationInfo::getMemberId)
+                .map(TenantMemberOrgRelationVO::getMemberId)
                 .distinct()
                 .toList();
         if (memberIds.isEmpty()) {
@@ -244,7 +244,7 @@ public class SysOrgServiceImpl implements ISysOrgService {
         }
         return tenantMemberProvider.listMembers(memberIds).stream()
                 .filter(member -> member != null && Integer.valueOf(1).equals(member.getStatus()))
-                .map(TenantMemberInfo::getUserId)
+                .map(TenantMemberVO::getUserId)
                 .distinct()
                 .toList();
     }
@@ -299,7 +299,7 @@ public class SysOrgServiceImpl implements ISysOrgService {
         Require.isFalse("0".equals(post.getPostStatus()), PostCode.POST_NOT_FOUND);
     }
 
-    private OrgMemberVO toMemberVO(TenantMemberOrgRelationInfo relation) {
+    private OrgMemberVO toMemberVO(TenantMemberOrgRelationVO relation) {
         OrgMemberVO vo = new OrgMemberVO();
         vo.setRelationId(relation.getRelationId());
         vo.setMemberId(relation.getMemberId());
@@ -323,11 +323,11 @@ public class SysOrgServiceImpl implements ISysOrgService {
         return vo;
     }
 
-    private boolean isPrimaryRelation(TenantMemberOrgRelationInfo relation) {
+    private boolean isPrimaryRelation(TenantMemberOrgRelationVO relation) {
         return Boolean.TRUE.equals(relation.getPrimaryFlag());
     }
 
-    private boolean hasOtherPrimaryCandidate(TenantMemberOrgRelationInfo relation) {
+    private boolean hasOtherPrimaryCandidate(TenantMemberOrgRelationVO relation) {
         return tenantMemberProvider.countOtherOrgRelations(
                 relation.getTenantId(), relation.getMemberId(), relation.getRelationId()) > 0;
     }
@@ -359,7 +359,7 @@ public class SysOrgServiceImpl implements ISysOrgService {
                 || code.endsWith("_" + TEAM_LEADER_POST_CODE);
     }
 
-    private boolean isLeaderRelation(TenantMemberOrgRelationInfo relation, PostEntity post) {
+    private boolean isLeaderRelation(TenantMemberOrgRelationVO relation, PostEntity post) {
         if (relation != null && Boolean.TRUE.equals(relation.getLeaderFlag())) {
             return true;
         }

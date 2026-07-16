@@ -3,7 +3,7 @@ package io.mango.link.core.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import io.mango.common.result.Require;
 import io.mango.identity.api.TenantMemberProvider;
-import io.mango.identity.api.vo.TenantMemberInfo;
+import io.mango.identity.api.vo.TenantMemberVO;
 import io.mango.link.api.command.LinkVisibilityTargetCommand;
 import io.mango.link.api.enums.LinkNavigationSource;
 import io.mango.link.api.enums.LinkVisibilityScope;
@@ -132,7 +132,7 @@ abstract class LinkBaseService {
         if (provider == null) {
             return false;
         }
-        TenantMemberInfo member = provider.getEnabledMember(userId, tenantId);
+        TenantMemberVO member = provider.getEnabledMember(userId, tenantId);
         if (member == null) {
             return false;
         }
@@ -304,7 +304,7 @@ abstract class LinkBaseService {
         if (provider == null) {
             return String.valueOf(ownerUserId);
         }
-        TenantMemberInfo member = provider.getEnabledMember(ownerUserId, tenantId);
+        TenantMemberVO member = provider.getEnabledMember(ownerUserId, tenantId);
         return member == null || !StringUtils.hasText(member.getDisplayName())
                 ? String.valueOf(ownerUserId)
                 : member.getDisplayName();

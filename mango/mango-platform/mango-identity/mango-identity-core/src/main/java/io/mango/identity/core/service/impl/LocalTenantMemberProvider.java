@@ -4,16 +4,16 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import io.mango.identity.api.TenantMemberProvider;
 import io.mango.identity.api.command.AddTenantMemberOrgCommand;
 import io.mango.identity.api.command.UpdateTenantMemberOrgCommand;
-import io.mango.identity.api.vo.TenantMemberOrgRelationInfo;
-import io.mango.identity.api.vo.TenantMemberInfo;
-import io.mango.identity.core.entity.IdentityUser;
-import io.mango.identity.core.entity.TenantMember;
+import io.mango.identity.api.vo.TenantMemberOrgRelationVO;
+import io.mango.identity.api.vo.TenantMemberVO;
+import io.mango.identity.core.entity.IdentityUserEntity;
+import io.mango.identity.core.entity.TenantMemberEntity;
 import io.mango.identity.core.entity.TenantMemberOrgEntity;
 import io.mango.identity.core.mapper.IdentityUserMapper;
 import io.mango.identity.core.mapper.TenantMemberMapper;
 import io.mango.identity.core.mapper.TenantMemberOrgMapper;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collection;
@@ -22,9 +22,9 @@ import java.util.List;
 /**
  * 基于本地租户成员表的成员事实 Provider。
  */
-@Service
+@Component
 @RequiredArgsConstructor
-public class TenantMemberProviderImpl implements TenantMemberProvider {
+public class LocalTenantMemberProvider implements TenantMemberProvider {
 
     private static final int STATUS_ENABLED = 1;
 
@@ -33,34 +33,34 @@ public class TenantMemberProviderImpl implements TenantMemberProvider {
     private final IdentityUserMapper identityUserMapper;
 
     @Override
-    public TenantMemberInfo getEnabledMember(Long userId, Long tenantId) {
+    public TenantMemberVO getEnabledMember(Long userId, Long tenantId) {
         if (userId == null || tenantId == null) {
             return null;
         }
-        TenantMember member = tenantMemberMapper.selectOne(new LambdaQueryWrapper<TenantMember>()
-                .eq(TenantMember::getUserId, userId)
-                .eq(TenantMember::getTenantId, tenantId)
-                .eq(TenantMember::getStatus, STATUS_ENABLED)
+        TenantMemberEntity member = tenantMemberMapper.selectOne(new LambdaQueryWrapper<TenantMemberEntity>()
+                .eq(TenantMemberEntity::getUserId, userId)
+                .eq(TenantMemberEntity::getTenantId, tenantId)
+                .eq(TenantMemberEntity::getStatus, STATUS_ENABLED)
                 .last("LIMIT 1"));
         return toInfo(member);
     }
 
     @Override
-    public List<TenantMemberInfo> listEnabledMembers(Long userId) {
+    public List<TenantMemberVO> listEnabledMembers(Long userId) {
         if (userId == null) {
             return List.of();
         }
-        return tenantMemberMapper.selectList(new LambdaQueryWrapper<TenantMember>()
-                        .eq(TenantMember::getUserId, userId)
-                        .eq(TenantMember::getStatus, STATUS_ENABLED)
-                        .orderByAsc(TenantMember::getTenantId))
+        return tenantMemberMapper.selectList(new LambdaQueryWrapper<TenantMemberEntity>()
+                        .eq(TenantMemberEntity::getUserId, userId)
+                        .eq(TenantMemberEntity::getStatus, STATUS_ENABLED)
+                        .orderByAsc(TenantMemberEntity::getTenantId))
                 .stream()
                 .map(this::toInfo)
                 .toList();
     }
 
     @Override
-    public TenantMemberInfo getMember(Long memberId) {
+    public TenantMemberVO getMember(Long memberId) {
         if (memberId == null) {
             return null;
         }
@@ -68,7 +68,7 @@ public class TenantMemberProviderImpl implements TenantMemberProvider {
     }
 
     @Override
-    public List<TenantMemberOrgRelationInfo> listOrgRelations(Long tenantId, Long orgId) {
+    public List<TenantMemberOrgRelationVO> listOrgRelations(Long tenantId, Long orgId) {
         if (tenantId == null || orgId == null) {
             return List.of();
         }
@@ -84,7 +84,7 @@ public class TenantMemberProviderImpl implements TenantMemberProvider {
     }
 
     @Override
-    public TenantMemberOrgRelationInfo getOrgRelation(Long relationId) {
+    public TenantMemberOrgRelationVO getOrgRelation(Long relationId) {
         if (relationId == null) {
             return null;
         }
@@ -106,7 +106,7 @@ public class TenantMemberProviderImpl implements TenantMemberProvider {
     @Override
     @Transactional
     public void addOrgRelation(AddTenantMemberOrgCommand command) {
-        TenantMember member = tenantMemberMapper.selectById(command.getMemberId());
+        TenantMemberEntity member = tenantMemberMapper.selectById(command.getMemberId());
         boolean primary = Boolean.TRUE.equals(command.getPrimaryFlag())
                 || member != null && member.getPrimaryOrgId() == null;
         if (primary) {
@@ -118,7 +118,7 @@ public class TenantMemberProviderImpl implements TenantMemberProvider {
             }
         }
         TenantMemberOrgEntity relation = new TenantMemberOrgEntity();
-        relation.setTenantId(command.getTenantId());
+        relation.setTenantId(String.valueOf(command.getTenantId()));
         relation.setMemberId(command.getMemberId());
         relation.setOrgId(command.getOrgId());
         relation.setPostId(command.getPostId());
@@ -138,10 +138,10 @@ public class TenantMemberProviderImpl implements TenantMemberProvider {
         if (relation == null) {
             return;
         }
-        TenantMember member = tenantMemberMapper.selectById(relation.getMemberId());
+        TenantMemberEntity member = tenantMemberMapper.selectById(relation.getMemberId());
         boolean primary = Boolean.TRUE.equals(command.getPrimaryFlag());
         if (primary) {
-            clearPrimaryOrg(relation.getTenantId(), relation.getMemberId());
+            clearPrimaryOrg(Long.valueOf(relation.getTenantId()), relation.getMemberId());
             if (member != null) {
                 member.setPrimaryOrgId(relation.getOrgId());
                 member.setPrimaryPostId(command.getPostId());
@@ -167,7 +167,7 @@ public class TenantMemberProviderImpl implements TenantMemberProvider {
             return;
         }
         tenantMemberOrgMapper.deleteById(relationId);
-        TenantMember member = tenantMemberMapper.selectById(relation.getMemberId());
+        TenantMemberEntity member = tenantMemberMapper.selectById(relation.getMemberId());
         if (member == null || !relation.getOrgId().equals(member.getPrimaryOrgId())) {
             return;
         }
@@ -200,7 +200,7 @@ public class TenantMemberProviderImpl implements TenantMemberProvider {
     }
 
     @Override
-    public List<TenantMemberInfo> listMembers(Collection<Long> memberIds) {
+    public List<TenantMemberVO> listMembers(Collection<Long> memberIds) {
         if (memberIds == null || memberIds.isEmpty()) {
             return List.of();
         }
@@ -210,13 +210,13 @@ public class TenantMemberProviderImpl implements TenantMemberProvider {
                 .toList();
     }
 
-    private TenantMemberInfo toInfo(TenantMember member) {
+    private TenantMemberVO toInfo(TenantMemberEntity member) {
         if (member == null) {
             return null;
         }
-        TenantMemberInfo info = new TenantMemberInfo();
+        TenantMemberVO info = new TenantMemberVO();
         info.setMemberId(member.getMemberId());
-        info.setTenantId(member.getTenantId());
+        info.setTenantId(Long.valueOf(member.getTenantId()));
         info.setUserId(member.getUserId());
         info.setMemberNo(member.getMemberNo());
         info.setDisplayName(member.getDisplayName());
@@ -239,25 +239,25 @@ public class TenantMemberProviderImpl implements TenantMemberProvider {
         });
     }
 
-    private TenantMemberOrgRelationInfo toRelationInfo(TenantMemberOrgEntity relation) {
+    private TenantMemberOrgRelationVO toRelationInfo(TenantMemberOrgEntity relation) {
         if (relation == null) {
             return null;
         }
-        TenantMemberOrgRelationInfo info = new TenantMemberOrgRelationInfo();
+        TenantMemberOrgRelationVO info = new TenantMemberOrgRelationVO();
         info.setRelationId(relation.getId());
-        info.setTenantId(relation.getTenantId());
+        info.setTenantId(Long.valueOf(relation.getTenantId()));
         info.setMemberId(relation.getMemberId());
         info.setOrgId(relation.getOrgId());
         info.setPostId(relation.getPostId());
         info.setPrimaryFlag(Integer.valueOf(1).equals(relation.getPrimaryFlag()));
         info.setLeaderFlag(Integer.valueOf(1).equals(relation.getLeaderFlag()));
-        TenantMember member = tenantMemberMapper.selectById(relation.getMemberId());
+        TenantMemberEntity member = tenantMemberMapper.selectById(relation.getMemberId());
         if (member != null) {
             info.setUserId(member.getUserId());
             info.setDisplayName(member.getDisplayName());
             info.setMemberType(member.getMemberType());
             info.setStatus(member.getStatus());
-            IdentityUser user = identityUserMapper.selectById(member.getUserId());
+            IdentityUserEntity user = identityUserMapper.selectById(member.getUserId());
             if (user != null) {
                 info.setUsername(user.getUsername());
                 info.setNickname(user.getNickname());

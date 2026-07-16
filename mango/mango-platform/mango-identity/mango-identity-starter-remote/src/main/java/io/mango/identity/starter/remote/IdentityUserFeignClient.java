@@ -6,13 +6,17 @@ import io.mango.identity.api.IdentityUserApi;
 import io.mango.identity.api.command.BatchDeleteIdentityUserCommand;
 import io.mango.identity.api.command.BindExternalIdentityCommand;
 import io.mango.identity.api.command.CreateIdentityUserCommand;
+import io.mango.identity.api.command.RequireIdentityUserPasswordResetCommand;
+import io.mango.identity.api.command.ResetIdentityUserPasswordCommand;
 import io.mango.identity.api.command.UnbindExternalIdentityCommand;
 import io.mango.identity.api.command.UpdateIdentityUserCommand;
+import io.mango.identity.api.command.UpdateIdentityUserStatusCommand;
+import io.mango.identity.api.command.UnlockIdentityUserCommand;
 import io.mango.identity.api.query.ExternalIdentityQuery;
 import io.mango.identity.api.query.IdentityUserPageQuery;
 import io.mango.identity.api.query.IdentityUserTargetQuery;
 import io.mango.identity.api.vo.ExternalIdentityBindingVO;
-import io.mango.identity.api.vo.IdentityUserInfo;
+import io.mango.identity.api.vo.IdentityUserInfoVO;
 import io.mango.identity.api.vo.IdentityUserVO;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.cloud.openfeign.SpringQueryMap;
@@ -56,16 +60,32 @@ public interface IdentityUserFeignClient extends IdentityUserApi {
     R<Integer> deleteBatch(@RequestBody BatchDeleteIdentityUserCommand command);
 
     @Override
+    @PutMapping("/users/status")
+    R<Boolean> updateStatus(@RequestBody UpdateIdentityUserStatusCommand command);
+
+    @Override
+    @PutMapping("/users/password/reset")
+    R<Boolean> resetPassword(@RequestBody ResetIdentityUserPasswordCommand command);
+
+    @Override
+    @PutMapping("/users/unlock")
+    R<Boolean> unlock(@RequestBody UnlockIdentityUserCommand command);
+
+    @Override
+    @PutMapping("/users/password/reset-required")
+    R<Boolean> requirePasswordReset(@RequestBody RequireIdentityUserPasswordResetCommand command);
+
+    @Override
     @GetMapping("/user/info/username")
-    R<IdentityUserInfo> getUserInfo(@RequestParam("username") String username);
+    R<IdentityUserInfoVO> getUserInfo(@RequestParam("username") String username);
 
     @Override
     @GetMapping("/user/info/id")
-    R<IdentityUserInfo> getUserInfoById(@RequestParam("userId") Long userId);
+    R<IdentityUserInfoVO> getUserInfoById(@RequestParam("userId") Long userId);
 
     @Override
     @GetMapping("/user/info/targets")
-    R<List<IdentityUserInfo>> listUserInfosByTarget(@SpringQueryMap IdentityUserTargetQuery query);
+    R<List<IdentityUserInfoVO>> listUserInfosByTarget(@SpringQueryMap IdentityUserTargetQuery query);
 
     @Override
     @PostMapping("/users/external-identities")

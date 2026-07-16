@@ -2,12 +2,11 @@ package io.mango.identity.core.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import io.mango.authorization.api.AuthorizationQuery;
-import io.mango.authorization.api.RoleBindingApi;
 import io.mango.authorization.api.command.SubjectRoleBindingCommand;
 import io.mango.authorization.api.query.RoleLookupQuery;
-import io.mango.common.result.R;
-import io.mango.identity.core.entity.IdentityUser;
-import io.mango.identity.core.entity.TenantMember;
+import io.mango.identity.core.adapter.AuthorizationRoleBindingAdapter;
+import io.mango.identity.core.entity.IdentityUserEntity;
+import io.mango.identity.core.entity.TenantMemberEntity;
 import io.mango.identity.core.mapper.IdentityUserMapper;
 import io.mango.identity.core.mapper.TenantMemberMapper;
 import io.mango.infra.context.api.MangoContextHolder;
@@ -37,7 +36,7 @@ public class IdentityTenantProvisioner implements TenantProvisioner, TenantDepen
 
     private final IdentityUserMapper identityUserMapper;
     private final TenantMemberMapper tenantMemberMapper;
-    private final RoleBindingApi roleBindingApi;
+    private final AuthorizationRoleBindingAdapter roleBindingAdapter;
 
     @Override
     public void provision(TenantProvisionContext context) {
@@ -45,11 +44,11 @@ public class IdentityTenantProvisioner implements TenantProvisioner, TenantDepen
         if (creatorUserId == null) {
             return;
         }
-        IdentityUser creator = identityUserMapper.selectById(creatorUserId);
+        IdentityUserEntity creator = identityUserMapper.selectById(creatorUserId);
         if (creator == null) {
             return;
         }
-        TenantMember member = ensureTenantAdminMember(context, creator);
+        TenantMemberEntity member = ensureTenantAdminMember(context, creator);
         Long roleId = findAdminRoleId(context.tenantId());
         if (roleId != null) {
             ensureRoleBinding(context, member.getMemberId(), roleId);
@@ -58,24 +57,24 @@ public class IdentityTenantProvisioner implements TenantProvisioner, TenantDepen
 
     @Override
     public Optional<String> check(Long tenantId) {
-        Long memberCount = tenantMemberMapper.selectCount(new LambdaQueryWrapper<TenantMember>()
-                .eq(TenantMember::getTenantId, tenantId));
+        Long memberCount = tenantMemberMapper.selectCount(new LambdaQueryWrapper<TenantMemberEntity>()
+                .eq(TenantMemberEntity::getTenantId, tenantId));
         if (memberCount != null && memberCount > 0) {
             return Optional.of("机构已有成员数据，不能直接删除");
         }
         return Optional.empty();
     }
 
-    private TenantMember ensureTenantAdminMember(TenantProvisionContext context, IdentityUser user) {
-        TenantMember member = tenantMemberMapper.selectOne(new LambdaQueryWrapper<TenantMember>()
-                .eq(TenantMember::getTenantId, context.tenantId())
-                .eq(TenantMember::getUserId, user.getUserId())
+    private TenantMemberEntity ensureTenantAdminMember(TenantProvisionContext context, IdentityUserEntity user) {
+        TenantMemberEntity member = tenantMemberMapper.selectOne(new LambdaQueryWrapper<TenantMemberEntity>()
+                .eq(TenantMemberEntity::getTenantId, context.tenantId())
+                .eq(TenantMemberEntity::getUserId, user.getUserId())
                 .last("LIMIT 1"));
         if (member != null) {
             return member;
         }
-        member = new TenantMember();
-        member.setTenantId(context.tenantId());
+        member = new TenantMemberEntity();
+        member.setTenantId(String.valueOf(context.tenantId()));
         member.setUserId(user.getUserId());
         member.setMemberNo("ADMIN-" + context.tenantId() + "-" + user.getUserId());
         member.setDisplayName(firstText(user.getNickname(), user.getUsername()));
@@ -92,8 +91,7 @@ public class IdentityTenantProvisioner implements TenantProvisioner, TenantDepen
         query.setTenantId(tenantId);
         query.setAppCode(DEFAULT_APP_CODE);
         query.setRoleCode(TENANT_ADMIN_ROLE);
-        R<Long> response = roleBindingApi.findRoleId(query);
-        return response != null && response.isSuccess() ? response.getData() : null;
+        return roleBindingAdapter.findRoleId(query);
     }
 
     private void ensureRoleBinding(TenantProvisionContext context, Long memberId, Long roleId) {
@@ -107,7 +105,7 @@ public class IdentityTenantProvisioner implements TenantProvisioner, TenantDepen
         command.setActorType(DEFAULT_ACTOR_TYPE);
         command.setPartyType(DEFAULT_PARTY_TYPE);
         command.setPartyId(context.tenantId());
-        roleBindingApi.ensureSubjectRoleBinding(command);
+        roleBindingAdapter.ensureSubjectRoleBinding(command);
     }
 
     private String firstText(String preferred, String fallback) {

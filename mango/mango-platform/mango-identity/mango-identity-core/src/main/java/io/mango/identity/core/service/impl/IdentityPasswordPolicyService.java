@@ -1,5 +1,9 @@
 package io.mango.identity.core.service.impl;
 
+import io.mango.common.result.Require;
+import io.mango.identity.api.enums.IdentityCode;
+import io.mango.identity.core.service.IIdentityPasswordPolicyService;
+import io.mango.identity.core.service.IIdentitySecurityPolicyService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.util.StringUtils;
 import org.springframework.stereotype.Service;
@@ -12,38 +16,33 @@ import java.util.regex.PatternSyntaxException;
  */
 @Service
 @RequiredArgsConstructor
-public class IdentityPasswordPolicyService {
+public class IdentityPasswordPolicyService implements IIdentityPasswordPolicyService {
 
-    private final IdentitySecurityPolicyService policyService;
+    private final IIdentitySecurityPolicyService policyService;
 
     /**
      * 校验明文密码是否满足安全基线。
      */
+    @Override
     public void validatePlainPassword(String password) {
         if (!policyService.passwordComplexityEnabled()) {
             return;
         }
-        if (password == null || password.isBlank()) {
-            throw new IllegalArgumentException("密码不能为空");
-        }
-        if (password.length() < policyService.passwordMinLength()) {
-            throw new IllegalArgumentException("密码长度至少" + policyService.passwordMinLength() + "位");
-        }
-        if (!policyService.passwordAllowWhitespace() && password.chars().anyMatch(Character::isWhitespace)) {
-            throw new IllegalArgumentException("密码不能包含空白字符");
-        }
-        if (policyService.passwordRequireLetter() && password.chars().noneMatch(Character::isLetter)) {
-            throw new IllegalArgumentException("密码必须包含字母");
-        }
-        if (policyService.passwordRequireDigit() && password.chars().noneMatch(Character::isDigit)) {
-            throw new IllegalArgumentException("密码必须包含数字");
-        }
-        if (policyService.passwordRequireSpecialChar() && password.chars().noneMatch(this::isSpecialChar)) {
-            throw new IllegalArgumentException("密码必须包含特殊字符");
-        }
+        Require.notBlank(password, IdentityCode.VALIDATION_ERROR, "密码不能为空");
+        Require.isTrue(password.length() >= policyService.passwordMinLength(), IdentityCode.VALIDATION_ERROR,
+                "密码长度至少" + policyService.passwordMinLength() + "位");
+        Require.isTrue(policyService.passwordAllowWhitespace()
+                        || password.chars().noneMatch(Character::isWhitespace),
+                IdentityCode.VALIDATION_ERROR, "密码不能包含空白字符");
+        Require.isTrue(!policyService.passwordRequireLetter() || password.chars().anyMatch(Character::isLetter),
+                IdentityCode.VALIDATION_ERROR, "密码必须包含字母");
+        Require.isTrue(!policyService.passwordRequireDigit() || password.chars().anyMatch(Character::isDigit),
+                IdentityCode.VALIDATION_ERROR, "密码必须包含数字");
+        Require.isTrue(!policyService.passwordRequireSpecialChar() || password.chars().anyMatch(this::isSpecialChar),
+                IdentityCode.VALIDATION_ERROR, "密码必须包含特殊字符");
         String pattern = policyService.passwordPattern();
         if (StringUtils.hasText(pattern) && !matchesCustomPattern(pattern, password)) {
-            throw new IllegalArgumentException("密码不符合自定义规则");
+            Require.isTrue(false, IdentityCode.VALIDATION_ERROR, "密码不符合自定义规则");
         }
     }
 
@@ -55,7 +54,8 @@ public class IdentityPasswordPolicyService {
         try {
             return Pattern.compile(pattern).matcher(password).matches();
         } catch (PatternSyntaxException ex) {
-            throw new IllegalArgumentException("密码自定义正则配置错误");
+            Require.isTrue(false, IdentityCode.CONFIG_ERROR, "密码自定义正则配置错误");
+            return false;
         }
     }
 }

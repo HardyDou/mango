@@ -1,8 +1,8 @@
 package io.mango.identity.starter.resource;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import io.mango.identity.core.entity.IdentityUser;
-import io.mango.identity.core.entity.TenantMember;
+import io.mango.identity.core.entity.IdentityUserEntity;
+import io.mango.identity.core.entity.TenantMemberEntity;
 import io.mango.identity.core.mapper.IdentityUserMapper;
 import io.mango.identity.core.mapper.TenantMemberMapper;
 import io.mango.resource.api.ResourceHandler;
@@ -48,16 +48,17 @@ public class IdentityUserResourceHandler implements ResourceHandler {
                 .requiredField("tenantId")
                 .requiredField("username")
                 .fieldDescription("password", "明文初始密码，仅用于 demo/bootstrap；handler 会加密保存。")
+                .fieldDescription("memberId", "固定租户成员 ID；用于被授权等资源稳定引用。")
                 .fieldDescription("memberNo", "租户成员编号；未配置时使用 USER-{userId}。")
                 .build();
     }
 
     @Override
     public ResourceSyncResult upsert(ResourceDeclaration resource) {
-        IdentityUser user = findUser(resource);
+        IdentityUserEntity user = findUser(resource);
         LocalDateTime now = LocalDateTime.now();
         if (user == null) {
-            user = new IdentityUser();
+            user = new IdentityUserEntity();
             user.setUsername(fields.requiredString(resource, "username"));
             user.setRealm(fields.stringField(resource, "realm", DEFAULT_REALM));
             user.setActorType(fields.stringField(resource, "actorType", DEFAULT_ACTOR_TYPE));
@@ -69,21 +70,21 @@ public class IdentityUserResourceHandler implements ResourceHandler {
         } else {
             userMapper.updateById(user);
         }
-        TenantMember member = upsertMember(resource, user, now);
+        TenantMemberEntity member = upsertMember(resource, user, now);
         return ResourceSyncResult.of(user.getUserId(), TARGET_TABLE,
                 "Identity user synced: " + user.getUsername() + ", memberId=" + member.getMemberId());
     }
 
     @Override
     public ResourceSyncResult disable(ResourceDeclaration resource) {
-        IdentityUser user = findByTargetOrBusinessKey(resource);
+        IdentityUserEntity user = findByTargetOrBusinessKey(resource);
         boolean changed = false;
         if (user != null && !Integer.valueOf(0).equals(user.getStatus())) {
             user.setStatus(0);
             user.setUpdateTime(LocalDateTime.now());
             changed = userMapper.updateById(user) > 0;
         }
-        TenantMember member = user == null ? null : findMember(fields.requiredLong(resource, "tenantId"), user.getUserId());
+        TenantMemberEntity member = user == null ? null : findMember(fields.requiredLong(resource, "tenantId"), user.getUserId());
         if (member != null && !Integer.valueOf(0).equals(member.getStatus())) {
             member.setStatus(0);
             changed = memberMapper.updateById(member) > 0 || changed;
@@ -92,7 +93,7 @@ public class IdentityUserResourceHandler implements ResourceHandler {
                 "Identity user disabled: changed=" + changed);
     }
 
-    private void applyUserFields(ResourceDeclaration resource, IdentityUser user, LocalDateTime now) {
+    private void applyUserFields(ResourceDeclaration resource, IdentityUserEntity user, LocalDateTime now) {
         String password = fields.stringField(resource, "password");
         if (StringUtils.hasText(password)) {
             user.setPassword(passwordEncoder.encode(password.trim()));
@@ -104,17 +105,21 @@ public class IdentityUserResourceHandler implements ResourceHandler {
         user.setPhone(fields.stringField(resource, "phone"));
         user.setAvatar(fields.stringField(resource, "avatar"));
         user.setStatus(statusValue(resource));
-        user.setTenantId(String.valueOf(fields.requiredLong(resource, "tenantId")));
+        if (user.getTenantId() == null) {
+            user.setTenantId(String.valueOf(fields.requiredLong(resource, "tenantId")));
+        }
         user.setRemark(fields.stringField(resource, "remark"));
         user.setUpdateTime(now);
     }
 
-    private TenantMember upsertMember(ResourceDeclaration resource, IdentityUser user, LocalDateTime now) {
+    private TenantMemberEntity upsertMember(ResourceDeclaration resource, IdentityUserEntity user, LocalDateTime now) {
         Long tenantId = fields.requiredLong(resource, "tenantId");
-        TenantMember member = findMember(tenantId, user.getUserId());
-        if (member == null) {
-            member = new TenantMember();
-            member.setTenantId(tenantId);
+        TenantMemberEntity member = findMember(tenantId, user.getUserId());
+        boolean newMember = member == null;
+        if (newMember) {
+            member = new TenantMemberEntity();
+            member.setMemberId(fields.longField(resource, "memberId"));
+            member.setTenantId(String.valueOf(tenantId));
             member.setUserId(user.getUserId());
             member.setMemberNo(fields.stringField(resource, "memberNo", "USER-" + user.getUserId()));
             member.setJoinedAt(now);
@@ -124,7 +129,7 @@ public class IdentityUserResourceHandler implements ResourceHandler {
         member.setMemberType(fields.stringField(resource, "memberType", DEFAULT_MEMBER_TYPE));
         member.setStatus(statusValue(resource));
         member.setRemark(fields.stringField(resource, "remark"));
-        if (member.getMemberId() == null) {
+        if (newMember) {
             memberMapper.insert(member);
         } else {
             memberMapper.updateById(member);
@@ -132,10 +137,10 @@ public class IdentityUserResourceHandler implements ResourceHandler {
         return member;
     }
 
-    private IdentityUser findUser(ResourceDeclaration resource) {
+    private IdentityUserEntity findUser(ResourceDeclaration resource) {
         Long targetId = fields.longField(resource, "targetId");
         if (targetId != null) {
-            IdentityUser user = userMapper.selectById(targetId);
+            IdentityUserEntity user = userMapper.selectById(targetId);
             if (user != null) {
                 return user;
             }
@@ -143,23 +148,23 @@ public class IdentityUserResourceHandler implements ResourceHandler {
         return findByBusinessKey(resource);
     }
 
-    private IdentityUser findByTargetOrBusinessKey(ResourceDeclaration resource) {
+    private IdentityUserEntity findByTargetOrBusinessKey(ResourceDeclaration resource) {
         return findUser(resource);
     }
 
-    private IdentityUser findByBusinessKey(ResourceDeclaration resource) {
-        return userMapper.selectOne(new LambdaQueryWrapper<IdentityUser>()
-                .eq(IdentityUser::getUsername, fields.requiredString(resource, "username"))
-                .eq(IdentityUser::getRealm, fields.stringField(resource, "realm", DEFAULT_REALM))
-                .eq(IdentityUser::getActorType, fields.stringField(resource, "actorType", DEFAULT_ACTOR_TYPE))
+    private IdentityUserEntity findByBusinessKey(ResourceDeclaration resource) {
+        return userMapper.selectOne(new LambdaQueryWrapper<IdentityUserEntity>()
+                .eq(IdentityUserEntity::getUsername, fields.requiredString(resource, "username"))
+                .eq(IdentityUserEntity::getRealm, fields.stringField(resource, "realm", DEFAULT_REALM))
+                .eq(IdentityUserEntity::getActorType, fields.stringField(resource, "actorType", DEFAULT_ACTOR_TYPE))
                 .last("LIMIT 1"));
     }
 
-    private TenantMember findMember(Long tenantId, Long userId) {
-        return memberMapper.selectOne(new LambdaQueryWrapper<TenantMember>()
-                .eq(TenantMember::getTenantId, tenantId)
-                .eq(TenantMember::getUserId, userId)
-                .isNull(TenantMember::getLeftAt)
+    private TenantMemberEntity findMember(Long tenantId, Long userId) {
+        return memberMapper.selectOne(new LambdaQueryWrapper<TenantMemberEntity>()
+                .eq(TenantMemberEntity::getTenantId, tenantId)
+                .eq(TenantMemberEntity::getUserId, userId)
+                .isNull(TenantMemberEntity::getLeftAt)
                 .last("LIMIT 1"));
     }
 

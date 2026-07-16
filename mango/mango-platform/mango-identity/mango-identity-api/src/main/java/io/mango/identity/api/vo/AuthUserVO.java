@@ -3,14 +3,14 @@ package io.mango.identity.api.vo;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
+import java.time.LocalDateTime;
+
 /**
- * 身份用户资料。
+ * 内部认证用户事实。
  */
 @Data
-@Schema(description = "身份用户资料")
-public class IdentityUserInfo {
-
-    private static final long serialVersionUID = 1L;
+@Schema(description = "内部认证用户事实")
+public class AuthUserVO {
 
     /** 用户 ID。 */
     @Schema(description = "用户 ID")
@@ -40,20 +40,31 @@ public class IdentityUserInfo {
     @Schema(description = "归属主体 ID")
     private Long partyId;
 
-    /** 邮箱。 */
-    @Schema(description = "邮箱")
-    private String email;
+    /**
+     * 密码哈希，只允许内部认证链路使用。
+     */
+    @Schema(description = "密码哈希，只允许内部认证链路使用")
+    private String password;
 
-    /** 手机号。 */
-    @Schema(description = "手机号")
-    private String phone;
+    @Schema(description = "是否要求下次登录修改密码")
+    private Boolean passwordResetRequired;
 
-    /** 头像地址。 */
-    @Schema(description = "头像地址")
-    private String avatar;
+    @Schema(description = "最近密码更新时间")
+    private LocalDateTime passwordUpdatedAt;
+
+    @Schema(description = "连续登录失败次数")
+    private Integer failedLoginCount;
+
+    @Schema(description = "最近登录失败时间")
+    private LocalDateTime lastFailedLoginAt;
+
+    @Schema(description = "账号锁定截止时间")
+    private LocalDateTime lockedUntil;
+
+    @Schema(description = "账号锁定原因")
+    private String lockedReason;
 
     /** 状态：0-禁用，1-启用。 */
     @Schema(description = "状态：0-禁用，1-启用")
-    private Integer status;
-
+    private int status;
 }

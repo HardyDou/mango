@@ -33,8 +33,8 @@ import io.mango.common.exception.BizException;
 import io.mango.identity.api.AuthIdentitySecurityProvider;
 import io.mango.identity.api.AuthUserProvider;
 import io.mango.identity.api.IdentityUserApi;
-import io.mango.identity.api.vo.AuthUserInfo;
-import io.mango.identity.api.vo.IdentityUserInfo;
+import io.mango.identity.api.vo.AuthUserVO;
+import io.mango.identity.api.vo.IdentityUserInfoVO;
 import io.mango.notice.api.NoticeApi;
 import io.mango.notice.api.enums.NoticeSiteMessageTargetType;
 import io.mango.notice.api.command.NoticeSendEventCommand;
@@ -514,12 +514,12 @@ class AuthSecurityFlowTest {
         AuthUserProvider authUserProvider(TestUserStore userStore) {
             return new AuthUserProvider() {
                 @Override
-                public AuthUserInfo getByUsernameForAuth(String username) {
+                public AuthUserVO getByUsernameForAuth(String username) {
                     return userStore.byUsername(username);
                 }
 
                 @Override
-                public AuthUserInfo getByIdForAuth(Long userId) {
+                public AuthUserVO getByIdForAuth(Long userId) {
                     return userStore.byId(userId);
                 }
             };
@@ -572,17 +572,38 @@ class AuthSecurityFlowTest {
                 }
 
                 @Override
-                public R<IdentityUserInfo> getUserInfo(String username) {
+                public R<Boolean> updateStatus(io.mango.identity.api.command.UpdateIdentityUserStatusCommand command) {
+                    return R.ok(true);
+                }
+
+                @Override
+                public R<Boolean> resetPassword(io.mango.identity.api.command.ResetIdentityUserPasswordCommand command) {
+                    return R.ok(true);
+                }
+
+                @Override
+                public R<Boolean> unlock(io.mango.identity.api.command.UnlockIdentityUserCommand command) {
+                    return R.ok(true);
+                }
+
+                @Override
+                public R<Boolean> requirePasswordReset(
+                        io.mango.identity.api.command.RequireIdentityUserPasswordResetCommand command) {
+                    return R.ok(true);
+                }
+
+                @Override
+                public R<IdentityUserInfoVO> getUserInfo(String username) {
                     return R.ok("admin".equals(username) ? identityUser() : null);
                 }
 
                 @Override
-                public R<IdentityUserInfo> getUserInfoById(Long userId) {
+                public R<IdentityUserInfoVO> getUserInfoById(Long userId) {
                     return R.ok(Long.valueOf(1L).equals(userId) ? identityUser() : null);
                 }
 
                 @Override
-                public R<List<IdentityUserInfo>> listUserInfosByTarget(io.mango.identity.api.query.IdentityUserTargetQuery query) {
+                public R<List<IdentityUserInfoVO>> listUserInfosByTarget(io.mango.identity.api.query.IdentityUserTargetQuery query) {
                     return R.ok(query != null && Long.valueOf(1L).equals(query.getTargetId())
                             ? List.of(identityUser()) : List.of());
                 }
@@ -622,8 +643,8 @@ class AuthSecurityFlowTest {
                     return R.ok(List.of());
                 }
 
-                private IdentityUserInfo identityUser() {
-                    IdentityUserInfo user = new IdentityUserInfo();
+                private IdentityUserInfoVO identityUser() {
+                    IdentityUserInfoVO user = new IdentityUserInfoVO();
                     user.setUserId(1L);
                     user.setUsername("admin");
                     user.setNickname("Administrator");
@@ -791,17 +812,17 @@ class AuthSecurityFlowTest {
             add(new StoredUser(3L, "lock-user", "Lock@123456", false));
         }
 
-        AuthUserInfo byUsername(String username) {
+        AuthUserVO byUsername(String username) {
             Long userId = userIdsByUsername.get(username);
             return userId == null ? null : byId(userId);
         }
 
-        AuthUserInfo byId(Long userId) {
+        AuthUserVO byId(Long userId) {
             StoredUser stored = users.get(userId);
             if (stored == null) {
                 return null;
             }
-            AuthUserInfo user = new AuthUserInfo();
+            AuthUserVO user = new AuthUserVO();
             user.setUserId(stored.userId);
             user.setUsername(stored.username);
             user.setNickname(stored.username);
@@ -818,7 +839,7 @@ class AuthSecurityFlowTest {
         }
 
         @Override
-        public void assertLoginAllowed(AuthUserInfo user) {
+        public void assertLoginAllowed(AuthUserVO user) {
             StoredUser stored = users.get(user.getUserId());
             if (stored != null && stored.locked) {
                 throw new BizException(AuthCode.LOGIN_ATTEMPT_LOCKED.getCode(), AuthCode.LOGIN_ATTEMPT_LOCKED.getMessage());

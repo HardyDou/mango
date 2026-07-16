@@ -2,8 +2,8 @@ package io.mango.identity.api;
 
 import io.mango.identity.api.command.AddTenantMemberOrgCommand;
 import io.mango.identity.api.command.UpdateTenantMemberOrgCommand;
-import io.mango.identity.api.vo.TenantMemberOrgRelationInfo;
-import io.mango.identity.api.vo.TenantMemberInfo;
+import io.mango.identity.api.vo.TenantMemberOrgRelationVO;
+import io.mango.identity.api.vo.TenantMemberVO;
 
 import java.util.Collection;
 import java.util.List;
@@ -20,7 +20,7 @@ public interface TenantMemberProvider {
      * @param tenantId 机构 ID
      * @return 启用成员身份，不存在时返回 null
      */
-    TenantMemberInfo getEnabledMember(Long userId, Long tenantId);
+    TenantMemberVO getEnabledMember(Long userId, Long tenantId);
 
     /**
      * 查询账号已加入且启用的机构成员身份。
@@ -28,7 +28,7 @@ public interface TenantMemberProvider {
      * @param userId 全局账号 ID
      * @return 成员身份列表
      */
-    List<TenantMemberInfo> listEnabledMembers(Long userId);
+    List<TenantMemberVO> listEnabledMembers(Long userId);
 
     /**
      * 按成员 ID 查询成员身份。
@@ -36,7 +36,7 @@ public interface TenantMemberProvider {
      * @param memberId 成员 ID
      * @return 成员身份
      */
-    TenantMemberInfo getMember(Long memberId);
+    TenantMemberVO getMember(Long memberId);
 
     /**
      * 查询组织成员关系。
@@ -45,7 +45,7 @@ public interface TenantMemberProvider {
      * @param orgId 组织 ID
      * @return 成员组织关系列表
      */
-    List<TenantMemberOrgRelationInfo> listOrgRelations(Long tenantId, Long orgId);
+    List<TenantMemberOrgRelationVO> listOrgRelations(Long tenantId, Long orgId);
 
     /**
      * 查询成员组织关系。
@@ -53,7 +53,7 @@ public interface TenantMemberProvider {
      * @param relationId 关系 ID
      * @return 成员组织关系
      */
-    TenantMemberOrgRelationInfo getOrgRelation(Long relationId);
+    TenantMemberOrgRelationVO getOrgRelation(Long relationId);
 
     /**
      * 判断成员组织关系是否存在。
@@ -102,5 +102,5 @@ public interface TenantMemberProvider {
      * @param memberIds 成员 ID 集合
      * @return 成员身份列表
      */
-    List<TenantMemberInfo> listMembers(Collection<Long> memberIds);
+    List<TenantMemberVO> listMembers(Collection<Long> memberIds);
 }

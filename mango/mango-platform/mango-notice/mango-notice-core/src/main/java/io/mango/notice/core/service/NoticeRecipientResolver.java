@@ -6,7 +6,7 @@ import io.mango.identity.api.IdentityUserApi;
 import io.mango.identity.api.enums.IdentityUserTargetType;
 import io.mango.identity.api.query.IdentityUserPageQuery;
 import io.mango.identity.api.query.IdentityUserTargetQuery;
-import io.mango.identity.api.vo.IdentityUserInfo;
+import io.mango.identity.api.vo.IdentityUserInfoVO;
 import io.mango.identity.api.vo.IdentityUserVO;
 import io.mango.notice.api.command.NoticeRecipientCommand;
 import io.mango.notice.api.command.NoticeRecipientTargetCommand;
@@ -102,11 +102,11 @@ public class NoticeRecipientResolver {
         if (recipient.getUserId() == null || identityUserApi == null) {
             return;
         }
-        R<IdentityUserInfo> response = identityUserApi.getUserInfoById(recipient.getUserId());
+        R<IdentityUserInfoVO> response = identityUserApi.getUserInfoById(recipient.getUserId());
         if (response == null || !response.isSuccess() || response.getData() == null) {
             return;
         }
-        IdentityUserInfo user = response.getData();
+        IdentityUserInfoVO user = response.getData();
         if (!StringUtils.hasText(recipient.getRecipientName())) {
             recipient.setRecipientName(firstText(user.getNickname(), user.getUsername()));
         }
@@ -134,12 +134,12 @@ public class NoticeRecipientResolver {
         query.setTargetType(IdentityUserTargetType.valueOf(target.getTargetType().name()));
         query.setTargetId(target.getTargetId());
         query.setStatus(1);
-        R<List<IdentityUserInfo>> response = identityUserApi.listUserInfosByTarget(query);
+        R<List<IdentityUserInfoVO>> response = identityUserApi.listUserInfosByTarget(query);
         if (response == null || !response.isSuccess() || response.getData() == null) {
             return List.of();
         }
         List<NoticeRecipientCommand> recipients = new ArrayList<>();
-        for (IdentityUserInfo user : response.getData()) {
+        for (IdentityUserInfoVO user : response.getData()) {
             if (user.getUserId() != null) {
                 recipients.add(toRecipient(user));
             }
@@ -147,7 +147,7 @@ public class NoticeRecipientResolver {
         return recipients;
     }
 
-    private NoticeRecipientCommand toRecipient(IdentityUserInfo user) {
+    private NoticeRecipientCommand toRecipient(IdentityUserInfoVO user) {
         NoticeRecipientCommand recipient = new NoticeRecipientCommand();
         recipient.setUserId(user.getUserId());
         recipient.setRecipientName(firstText(user.getNickname(), user.getUsername()));

@@ -1,15 +1,17 @@
 package io.mango.identity.core.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.mango.authorization.api.AuthorizationQuery;
-import io.mango.authorization.api.RoleBindingApi;
 import io.mango.authorization.api.command.DeleteSubjectRoleBindingsCommand;
 import io.mango.authorization.api.query.SubjectRoleBindingQuery;
-import io.mango.common.result.R;
+import io.mango.identity.core.adapter.AuthorizationRoleBindingAdapter;
 import io.mango.common.vo.PageResult;
+import io.mango.common.result.Require;
 import io.mango.identity.api.command.BindExternalIdentityCommand;
+import io.mango.identity.api.command.BatchDeleteIdentityUserCommand;
 import io.mango.identity.api.command.CreateIdentityUserCommand;
 import io.mango.identity.api.command.ResetIdentityUserPasswordCommand;
 import io.mango.identity.api.command.RequireIdentityUserPasswordResetCommand;
@@ -17,22 +19,29 @@ import io.mango.identity.api.command.UnbindExternalIdentityCommand;
 import io.mango.identity.api.command.UpdateIdentityUserCommand;
 import io.mango.identity.api.command.UpdateIdentityUserStatusCommand;
 import io.mango.identity.api.command.UnlockIdentityUserCommand;
+import io.mango.identity.api.enums.IdentityCode;
 import io.mango.identity.api.query.ExternalIdentityQuery;
 import io.mango.identity.api.query.IdentityUserPageQuery;
 import io.mango.identity.api.query.IdentityUserTargetQuery;
 import io.mango.identity.api.vo.ExternalIdentityBindingVO;
-import io.mango.identity.api.vo.IdentityUserInfo;
+import io.mango.identity.api.vo.IdentityUserInfoVO;
 import io.mango.identity.api.vo.IdentityUserVO;
 import io.mango.identity.core.entity.ExternalIdentityBindingEntity;
-import io.mango.identity.core.entity.IdentityUser;
-import io.mango.identity.core.entity.TenantMember;
+import io.mango.identity.core.entity.IdentityUserEntity;
+import io.mango.identity.core.entity.TenantMemberEntity;
 import io.mango.identity.core.entity.TenantMemberOrgEntity;
 import io.mango.identity.core.mapper.ExternalIdentityBindingMapper;
 import io.mango.identity.core.mapper.IdentityUserMapper;
 import io.mango.identity.core.mapper.TenantMemberMapper;
 import io.mango.identity.core.mapper.TenantMemberOrgMapper;
 import io.mango.identity.core.service.IIdentityUserService;
+import io.mango.identity.core.service.IIdentityPasswordPolicyService;
+import io.mango.identity.core.service.IIdentitySecurityPolicyService;
+import io.mango.identity.core.service.IIdentityUserSecurityService;
 import io.mango.infra.context.api.MangoContextHolder;
+import io.mango.infra.persistence.api.crud.DeleteCommand;
+import io.mango.infra.persistence.api.crud.MangoCrudServiceImpl;
+import io.mango.infra.persistence.api.query.PersistencePageResult;
 import io.mango.notice.api.command.NoticeSiteMessageActionCommand;
 import io.mango.notice.api.command.NoticeSiteMessageSubjectCommand;
 import io.mango.notice.api.command.NoticeSiteMessageTargetCommand;
@@ -65,7 +74,9 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class IdentityUserServiceImpl implements IIdentityUserService {
+@SuppressWarnings("PMD.ServiceOrDaoClassShouldEndWithImplRule")
+public class IdentityUserService extends MangoCrudServiceImpl<IdentityUserMapper, IdentityUserEntity>
+        implements IIdentityUserService {
 
     private static final String DEFAULT_REALM = "INTERNAL";
     private static final String DEFAULT_ACTOR_TYPE = "INTERNAL_USER";
@@ -76,18 +87,18 @@ public class IdentityUserServiceImpl implements IIdentityUserService {
     private final IdentityUserMapper identityUserMapper;
     private final TenantMemberMapper tenantMemberMapper;
     private final TenantMemberOrgMapper tenantMemberOrgMapper;
-    private final RoleBindingApi roleBindingApi;
+    private final AuthorizationRoleBindingAdapter roleBindingAdapter;
     private final ExternalIdentityBindingMapper externalIdentityBindingMapper;
     private final PasswordEncoder passwordEncoder;
     private final ApplicationEventPublisher eventPublisher;
-    private final IdentityPasswordPolicyService passwordPolicyService;
-    private final IdentitySecurityPolicyService securityPolicyService;
-    private final IdentityUserSecurityService identityUserSecurityService;
+    private final IIdentityPasswordPolicyService passwordPolicyService;
+    private final IIdentitySecurityPolicyService securityPolicyService;
+    private final IIdentityUserSecurityService identityUserSecurityService;
 
     @Override
-    public PageResult<IdentityUserVO> page(IdentityUserPageQuery query) {
-        LambdaQueryWrapper<IdentityUser> wrapper = buildManageableUserWrapper(query);
-        IPage<IdentityUser> page = identityUserMapper.selectPage(
+    public PageResult<IdentityUserVO> pageResult(IdentityUserPageQuery query) {
+        LambdaQueryWrapper<IdentityUserEntity> wrapper = buildManageableUserWrapper(query);
+        IPage<IdentityUserEntity> page = identityUserMapper.selectPage(
                 new Page<>(query.getPage(), query.getSize()), wrapper);
         List<IdentityUserVO> list = page.getRecords().stream()
                 .map(user -> toVO(user, query.getOrgId()))
@@ -96,20 +107,25 @@ public class IdentityUserServiceImpl implements IIdentityUserService {
     }
 
     @Override
+    public PersistencePageResult<IdentityUserVO> page(IdentityUserPageQuery query) {
+        PageResult<IdentityUserVO> result = pageResult(query);
+        return PersistencePageResult.of(result.getList(), result.getTotal(), result.getPage(), result.getSize());
+    }
+
+    @Override
     public IdentityUserVO detail(Long userId) {
-        IdentityUser user = getManageableUser(userId);
+        IdentityUserEntity user = getManageableUser(userId);
         return user == null ? null : toVO(user, null);
     }
 
     @Override
     @Transactional
     public Long create(CreateIdentityUserCommand command) {
+        Require.notNull(command, IdentityCode.VALIDATION_ERROR, "身份用户创建命令不能为空");
         String realm = firstText(command.getRealm(), DEFAULT_REALM);
-        IdentityUser existing = getByUsername(command.getUsername(), realm);
-        if (existing != null) {
-            throw new IllegalArgumentException("用户名已存在");
-        }
-        IdentityUser user = new IdentityUser();
+        IdentityUserEntity existing = getByUsername(command.getUsername(), realm);
+        Require.isTrue(existing == null, IdentityCode.CONFLICT, "用户名已存在");
+        IdentityUserEntity user = new IdentityUserEntity();
         String plainPassword = firstText(command.getPassword(), DEFAULT_INITIAL_PASSWORD);
         passwordPolicyService.validatePlainPassword(plainPassword);
         LocalDateTime now = LocalDateTime.now();
@@ -140,8 +156,9 @@ public class IdentityUserServiceImpl implements IIdentityUserService {
 
     @Override
     @Transactional
-    public Boolean update(UpdateIdentityUserCommand command) {
-        IdentityUser user = getManageableUser(command.getUserId());
+    public boolean update(UpdateIdentityUserCommand command) {
+        Require.notNull(command, IdentityCode.VALIDATION_ERROR, "身份用户修改命令不能为空");
+        IdentityUserEntity user = getManageableUser(command.getUserId());
         if (user == null) {
             return false;
         }
@@ -153,7 +170,7 @@ public class IdentityUserServiceImpl implements IIdentityUserService {
         user.setAvatar(command.getAvatar());
         user.setRemark(command.getRemark());
         user.setUpdateTime(LocalDateTime.now());
-        TenantMember member = currentTenantMember(command.getUserId());
+        TenantMemberEntity member = currentTenantMember(command.getUserId());
         if (member != null) {
             member.setDisplayName(firstText(command.getNickname(), user.getUsername()));
             member.setStatus(command.getStatus() == null ? member.getStatus() : command.getStatus());
@@ -165,16 +182,24 @@ public class IdentityUserServiceImpl implements IIdentityUserService {
 
     @Override
     @Transactional
-    public Boolean delete(Long userId) {
-        if (userId == null) {
-            return false;
-        }
-        return deleteBatch(List.of(userId)) > 0;
+    public Boolean deleteUser(Long userId) {
+        Require.notNull(userId, IdentityCode.VALIDATION_ERROR, "身份用户ID不能为空");
+        BatchDeleteIdentityUserCommand command = new BatchDeleteIdentityUserCommand();
+        command.setUserIds(List.of(userId));
+        return deleteBatch(command) > 0;
+    }
+
+    @Override
+    public boolean delete(DeleteCommand command) {
+        Require.notNull(command, IdentityCode.VALIDATION_ERROR, "身份用户删除命令不能为空");
+        return deleteUser(command.getId());
     }
 
     @Override
     @Transactional
-    public Integer deleteBatch(List<Long> userIds) {
+    public Integer deleteBatch(BatchDeleteIdentityUserCommand command) {
+        Require.notNull(command, IdentityCode.VALIDATION_ERROR, "身份用户批量删除命令不能为空");
+        List<Long> userIds = command.getUserIds();
         Long tenantId = currentTenantIdLong();
         if (tenantId == null || userIds == null || userIds.isEmpty()) {
             return 0;
@@ -187,33 +212,34 @@ public class IdentityUserServiceImpl implements IIdentityUserService {
             return 0;
         }
 
-        List<TenantMember> members = tenantMemberMapper.selectList(new LambdaQueryWrapper<TenantMember>()
-                .eq(TenantMember::getTenantId, tenantId)
-                .in(TenantMember::getUserId, targetUserIds)
-                .isNull(TenantMember::getLeftAt));
+        List<TenantMemberEntity> members = tenantMemberMapper.selectList(new LambdaQueryWrapper<TenantMemberEntity>()
+                .eq(TenantMemberEntity::getTenantId, tenantId)
+                .in(TenantMemberEntity::getUserId, targetUserIds)
+                .isNull(TenantMemberEntity::getLeftAt));
         if (members == null || members.isEmpty()) {
             return 0;
         }
         Set<Long> memberIds = members.stream()
-                .map(TenantMember::getMemberId)
+                .map(TenantMemberEntity::getId)
                 .collect(Collectors.toSet());
-        roleBindingApi.deleteSubjectRoleBindings(currentTenantSubjectRoleDeleteCommand(memberIds));
+        roleBindingAdapter.deleteSubjectRoleBindings(currentTenantSubjectRoleDeleteCommand(memberIds));
         tenantMemberOrgMapper.delete(new LambdaQueryWrapper<TenantMemberOrgEntity>()
                 .eq(TenantMemberOrgEntity::getTenantId, tenantId)
                 .in(TenantMemberOrgEntity::getMemberId, memberIds));
-        return tenantMemberMapper.delete(new LambdaQueryWrapper<TenantMember>()
-                .eq(TenantMember::getTenantId, tenantId)
-                .in(TenantMember::getMemberId, memberIds));
+        return tenantMemberMapper.delete(new LambdaQueryWrapper<TenantMemberEntity>()
+                .eq(TenantMemberEntity::getTenantId, tenantId)
+                .in(TenantMemberEntity::getId, memberIds));
     }
 
     @Override
     @Transactional
     public Boolean updateStatus(UpdateIdentityUserStatusCommand command) {
-        IdentityUser user = getManageableUser(command.getUserId());
+        Require.notNull(command, IdentityCode.VALIDATION_ERROR, "身份用户状态命令不能为空");
+        IdentityUserEntity user = getManageableUser(command.getUserId());
         if (user == null || command.getUserId().equals(MangoContextHolder.userId())) {
             return false;
         }
-        TenantMember member = currentTenantMember(command.getUserId());
+        TenantMemberEntity member = currentTenantMember(command.getUserId());
         if (member == null) {
             return false;
         }
@@ -224,7 +250,8 @@ public class IdentityUserServiceImpl implements IIdentityUserService {
     @Override
     @Transactional
     public Boolean resetPassword(ResetIdentityUserPasswordCommand command) {
-        IdentityUser user = getManageableUser(command.getUserId());
+        Require.notNull(command, IdentityCode.VALIDATION_ERROR, "重置密码命令不能为空");
+        IdentityUserEntity user = getManageableUser(command.getUserId());
         if (user == null) {
             return false;
         }
@@ -248,7 +275,8 @@ public class IdentityUserServiceImpl implements IIdentityUserService {
     @Override
     @Transactional
     public Boolean unlock(UnlockIdentityUserCommand command) {
-        IdentityUser user = getManageableUser(command.getUserId());
+        Require.notNull(command, IdentityCode.VALIDATION_ERROR, "解锁命令不能为空");
+        IdentityUserEntity user = getManageableUser(command.getUserId());
         if (user == null) {
             return false;
         }
@@ -258,7 +286,8 @@ public class IdentityUserServiceImpl implements IIdentityUserService {
     @Override
     @Transactional
     public Boolean requirePasswordReset(RequireIdentityUserPasswordResetCommand command) {
-        IdentityUser user = getManageableUser(command.getUserId());
+        Require.notNull(command, IdentityCode.VALIDATION_ERROR, "强制修改密码命令不能为空");
+        IdentityUserEntity user = getManageableUser(command.getUserId());
         if (user == null) {
             return false;
         }
@@ -266,27 +295,27 @@ public class IdentityUserServiceImpl implements IIdentityUserService {
     }
 
     @Override
-    public IdentityUserInfo getUserInfo(String username) {
-        IdentityUser user = getByUsername(username);
+    public IdentityUserInfoVO getUserInfo(String username) {
+        IdentityUserEntity user = getByUsername(username);
         if (user == null) {
             log.warn("Identity user not found: {}", username);
             return null;
         }
-        return buildIdentityUserInfo(user);
+        return buildIdentityUserInfoVO(user);
     }
 
     @Override
-    public IdentityUserInfo getUserInfoById(Long userId) {
-        IdentityUser user = getById(userId);
+    public IdentityUserInfoVO getUserInfoById(Long userId) {
+        IdentityUserEntity user = getById(userId);
         if (user == null) {
             log.warn("Identity user not found by id: {}", userId);
             return null;
         }
-        return buildIdentityUserInfo(user);
+        return buildIdentityUserInfoVO(user);
     }
 
     @Override
-    public List<IdentityUserInfo> listUserInfosByTarget(IdentityUserTargetQuery query) {
+    public List<IdentityUserInfoVO> listUserInfosByTarget(IdentityUserTargetQuery query) {
         if (query == null || query.getTargetType() == null || query.getTargetId() == null) {
             return List.of();
         }
@@ -297,42 +326,40 @@ public class IdentityUserServiceImpl implements IIdentityUserService {
             case POST -> currentTenantPostUserIds(query.getTargetId(), query.getStatus());
             case ROLE -> currentTenantRoleUserIds(query.getTargetId(), query.getStatus());
         };
-        return listIdentityUserInfos(userIds);
+        return listIdentityUserInfoVOs(userIds);
     }
 
     @Override
-    public IdentityUser getByUsername(String username) {
+    public IdentityUserEntity getByUsername(String username) {
         return getByUsername(username, DEFAULT_REALM);
     }
 
     @Override
-    public IdentityUser getByUsername(String username, String realm) {
-        LambdaQueryWrapper<IdentityUser> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(IdentityUser::getUsername, username)
-                .eq(IdentityUser::getRealm, normalizeRealm(realm));
+    public IdentityUserEntity getByUsername(String username, String realm) {
+        LambdaQueryWrapper<IdentityUserEntity> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(IdentityUserEntity::getUsername, username)
+                .eq(IdentityUserEntity::getRealm, normalizeRealm(realm));
         return identityUserMapper.selectOne(wrapper);
     }
 
     @Override
-    public IdentityUser getById(Long userId) {
+    public IdentityUserEntity getById(Long userId) {
         return identityUserMapper.selectById(userId);
     }
 
     @Override
     @Transactional
     public ExternalIdentityBindingVO bindExternalIdentity(BindExternalIdentityCommand command) {
-        IdentityUser user = getManageableUser(command.getUserId());
-        if (user == null) {
-            throw new IllegalArgumentException("成员不存在或不可管理");
-        }
+        Require.notNull(command, IdentityCode.VALIDATION_ERROR, "外部身份绑定命令不能为空");
+        IdentityUserEntity user = getManageableUser(command.getUserId());
+        Require.notNull(user, IdentityCode.NOT_FOUND, "成员不存在或不可管理");
         Long tenantId = currentTenantIdLong();
         ExternalIdentityBindingEntity existing = findExternalBinding(command.getProvider(), command.getCorpId(),
                 command.getExternalUserId(), tenantId);
-        if (existing != null && !Objects.equals(existing.getUserId(), command.getUserId())) {
-            throw new IllegalArgumentException("该企业微信用户已绑定其他成员");
-        }
+        Require.isTrue(existing == null || Objects.equals(existing.getUserId(), command.getUserId()),
+                IdentityCode.CONFLICT, "该企业微信用户已绑定其他成员");
         ExternalIdentityBindingEntity entity = existing == null ? new ExternalIdentityBindingEntity() : existing;
-        entity.setTenantId(tenantId);
+        entity.setTenantId(String.valueOf(tenantId));
         entity.setUserId(command.getUserId());
         entity.setProvider(normalizeProvider(command.getProvider()));
         entity.setCorpId(command.getCorpId().trim());
@@ -355,6 +382,7 @@ public class IdentityUserServiceImpl implements IIdentityUserService {
     @Override
     @Transactional
     public Boolean unbindExternalIdentity(UnbindExternalIdentityCommand command) {
+        Require.notNull(command, IdentityCode.VALIDATION_ERROR, "外部身份解绑命令不能为空");
         Long tenantId = currentTenantIdLong();
         ExternalIdentityBindingEntity existing = findExternalBinding(command.getProvider(), command.getCorpId(),
                 command.getExternalUserId(), tenantId);
@@ -363,7 +391,7 @@ public class IdentityUserServiceImpl implements IIdentityUserService {
         }
         boolean deleted = externalIdentityBindingMapper.deleteById(existing.getId()) > 0;
         if (deleted) {
-            IdentityUser user = getManageableUser(command.getUserId());
+            IdentityUserEntity user = getManageableUser(command.getUserId());
             if (user != null) {
                 publishExternalIdentityNotice(user, existing, "auth.wecom.login.unbound", "unbindTime");
             }
@@ -404,11 +432,47 @@ public class IdentityUserServiceImpl implements IIdentityUserService {
                 .toList();
     }
 
+    @Override
+    protected Class<IdentityUserEntity> entityType() {
+        return IdentityUserEntity.class;
+    }
+
+    @Override
+    protected QueryWrapper<IdentityUserEntity> buildQueryWrapper(Object queryObject) {
+        IdentityUserPageQuery query = queryObject instanceof IdentityUserPageQuery pageQuery
+                ? pageQuery : new IdentityUserPageQuery();
+        QueryWrapper<IdentityUserEntity> wrapper = new QueryWrapper<>();
+        LambdaQueryWrapper<IdentityUserEntity> lambda = wrapper.lambda();
+        Long tenantId = currentTenantIdLong();
+        Set<Long> subjectIds = currentTenantSubjectIds(query.getStatus());
+        lambda.eq(tenantId != null, IdentityUserEntity::getTenantId, tenantId);
+        if (subjectIds.isEmpty()) {
+            lambda.eq(IdentityUserEntity::getId, -1L);
+        } else {
+            lambda.in(IdentityUserEntity::getId, subjectIds);
+        }
+        lambda.like(StringUtils.hasText(query.getUsername()), IdentityUserEntity::getUsername, query.getUsername())
+                .like(StringUtils.hasText(query.getNickname()), IdentityUserEntity::getNickname, query.getNickname())
+                .like(StringUtils.hasText(query.getPhone()), IdentityUserEntity::getPhone, query.getPhone())
+                .like(StringUtils.hasText(query.getEmail()), IdentityUserEntity::getEmail, query.getEmail())
+                .eq(StringUtils.hasText(query.getRealm()), IdentityUserEntity::getRealm, query.getRealm())
+                .eq(StringUtils.hasText(query.getActorType()), IdentityUserEntity::getActorType, query.getActorType())
+                .eq(StringUtils.hasText(query.getPartyType()), IdentityUserEntity::getPartyType, query.getPartyType())
+                .eq(query.getPartyId() != null, IdentityUserEntity::getPartyId, query.getPartyId())
+                .orderByDesc(IdentityUserEntity::getCreateTime);
+        return wrapper;
+    }
+
+    @Override
+    protected IdentityUserVO toVO(IdentityUserEntity entity) {
+        return toVO(entity, null);
+    }
+
     /**
      * 从账号资料构造身份资料 VO。
      */
-    private IdentityUserInfo buildIdentityUserInfo(IdentityUser user) {
-        IdentityUserInfo userInfo = new IdentityUserInfo();
+    private IdentityUserInfoVO buildIdentityUserInfoVO(IdentityUserEntity user) {
+        IdentityUserInfoVO userInfo = new IdentityUserInfoVO();
         userInfo.setUserId(user.getUserId());
         userInfo.setUsername(user.getUsername());
         userInfo.setNickname(user.getNickname());
@@ -424,7 +488,7 @@ public class IdentityUserServiceImpl implements IIdentityUserService {
         return userInfo;
     }
 
-    private void publishUserCreatedNotice(IdentityUser user) {
+    private void publishUserCreatedNotice(IdentityUserEntity user) {
         Map<String, Object> params = baseUserParams(user);
         params.put("createdAt", user.getCreateTime() == null ? null : user.getCreateTime().toString());
         NoticeSiteMessageTargetCommand target = routeTarget("account:profile", params);
@@ -444,7 +508,7 @@ public class IdentityUserServiceImpl implements IIdentityUserService {
         eventPublisher.publishEvent(event);
     }
 
-    private void publishPasswordResetNotice(IdentityUser user) {
+    private void publishPasswordResetNotice(IdentityUserEntity user) {
         Map<String, Object> params = baseUserParams(user);
         params.put("resetAt", LocalDateTime.now().toString());
         NoticeSiteMessageTargetCommand target = routeTarget("account:password", params);
@@ -464,7 +528,7 @@ public class IdentityUserServiceImpl implements IIdentityUserService {
         eventPublisher.publishEvent(event);
     }
 
-    private void publishExternalIdentityNotice(IdentityUser user, ExternalIdentityBindingEntity binding,
+    private void publishExternalIdentityNotice(IdentityUserEntity user, ExternalIdentityBindingEntity binding,
                                                String bizType, String timeParam) {
         Map<String, Object> params = baseUserParams(user);
         params.put("corpId", binding.getCorpId());
@@ -487,7 +551,7 @@ public class IdentityUserServiceImpl implements IIdentityUserService {
         eventPublisher.publishEvent(event);
     }
 
-    private Map<String, Object> baseUserParams(IdentityUser user) {
+    private Map<String, Object> baseUserParams(IdentityUserEntity user) {
         Map<String, Object> params = new LinkedHashMap<>();
         params.put("userId", String.valueOf(user.getUserId()));
         params.put("username", user.getUsername());
@@ -496,7 +560,7 @@ public class IdentityUserServiceImpl implements IIdentityUserService {
         return params;
     }
 
-    private NoticeSiteMessageSubjectCommand userSubject(IdentityUser user) {
+    private NoticeSiteMessageSubjectCommand userSubject(IdentityUserEntity user) {
         NoticeSiteMessageSubjectCommand subject = new NoticeSiteMessageSubjectCommand();
         subject.setSubjectType("IDENTITY_USER");
         subject.setSubjectId(String.valueOf(user.getUserId()));
@@ -521,8 +585,8 @@ public class IdentityUserServiceImpl implements IIdentityUserService {
         return action;
     }
 
-    private LambdaQueryWrapper<IdentityUser> buildManageableUserWrapper(IdentityUserPageQuery query) {
-        LambdaQueryWrapper<IdentityUser> wrapper = new LambdaQueryWrapper<>();
+    private LambdaQueryWrapper<IdentityUserEntity> buildManageableUserWrapper(IdentityUserPageQuery query) {
+        LambdaQueryWrapper<IdentityUserEntity> wrapper = new LambdaQueryWrapper<>();
         Set<Long> subjectIds = currentTenantSubjectIds(query.getStatus());
         if (query.getOrgId() != null) {
             Set<Long> orgUserIds = currentTenantOrgUserIds(query.getOrgId(), query.getStatus());
@@ -531,35 +595,35 @@ public class IdentityUserServiceImpl implements IIdentityUserService {
                     .collect(Collectors.toSet());
         }
         if (subjectIds.isEmpty()) {
-            wrapper.eq(IdentityUser::getUserId, -1L);
+            wrapper.eq(IdentityUserEntity::getId, -1L);
         } else {
-            wrapper.in(IdentityUser::getUserId, subjectIds);
+            wrapper.in(IdentityUserEntity::getId, subjectIds);
         }
-        wrapper.like(StringUtils.hasText(query.getUsername()), IdentityUser::getUsername, query.getUsername())
-                .like(StringUtils.hasText(query.getNickname()), IdentityUser::getNickname, query.getNickname())
-                .like(StringUtils.hasText(query.getPhone()), IdentityUser::getPhone, query.getPhone())
-                .like(StringUtils.hasText(query.getEmail()), IdentityUser::getEmail, query.getEmail())
+        wrapper.like(StringUtils.hasText(query.getUsername()), IdentityUserEntity::getUsername, query.getUsername())
+                .like(StringUtils.hasText(query.getNickname()), IdentityUserEntity::getNickname, query.getNickname())
+                .like(StringUtils.hasText(query.getPhone()), IdentityUserEntity::getPhone, query.getPhone())
+                .like(StringUtils.hasText(query.getEmail()), IdentityUserEntity::getEmail, query.getEmail())
                 .and(StringUtils.hasText(query.getKeyword()), keyword -> keyword
-                        .like(IdentityUser::getUsername, query.getKeyword())
+                        .like(IdentityUserEntity::getUsername, query.getKeyword())
                         .or()
-                        .like(IdentityUser::getNickname, query.getKeyword())
+                        .like(IdentityUserEntity::getNickname, query.getKeyword())
                         .or()
-                        .like(IdentityUser::getPhone, query.getKeyword())
+                        .like(IdentityUserEntity::getPhone, query.getKeyword())
                         .or()
-                        .like(IdentityUser::getEmail, query.getKeyword()))
-                .eq(StringUtils.hasText(query.getRealm()), IdentityUser::getRealm, query.getRealm())
-                .eq(StringUtils.hasText(query.getActorType()), IdentityUser::getActorType, query.getActorType())
-                .eq(StringUtils.hasText(query.getPartyType()), IdentityUser::getPartyType, query.getPartyType())
-                .eq(query.getPartyId() != null, IdentityUser::getPartyId, query.getPartyId())
-                .orderByDesc(IdentityUser::getCreateTime);
+                        .like(IdentityUserEntity::getEmail, query.getKeyword()))
+                .eq(StringUtils.hasText(query.getRealm()), IdentityUserEntity::getRealm, query.getRealm())
+                .eq(StringUtils.hasText(query.getActorType()), IdentityUserEntity::getActorType, query.getActorType())
+                .eq(StringUtils.hasText(query.getPartyType()), IdentityUserEntity::getPartyType, query.getPartyType())
+                .eq(query.getPartyId() != null, IdentityUserEntity::getPartyId, query.getPartyId())
+                .orderByDesc(IdentityUserEntity::getCreateTime);
         return wrapper;
     }
 
-    private IdentityUser getManageableUser(Long userId) {
+    private IdentityUserEntity getManageableUser(Long userId) {
         if (userId == null) {
             return null;
         }
-        IdentityUser user = identityUserMapper.selectById(userId);
+        IdentityUserEntity user = identityUserMapper.selectById(userId);
         if (user == null) {
             return null;
         }
@@ -575,7 +639,7 @@ public class IdentityUserServiceImpl implements IIdentityUserService {
         return null;
     }
 
-    private boolean belongsToCurrentTenant(IdentityUser user) {
+    private boolean belongsToCurrentTenant(IdentityUserEntity user) {
         return user != null
                 && StringUtils.hasText(user.getTenantId())
                 && Objects.equals(user.getTenantId(), currentTenantId());
@@ -586,13 +650,13 @@ public class IdentityUserServiceImpl implements IIdentityUserService {
         if (tenantId == null) {
             return Set.of();
         }
-        LambdaQueryWrapper<TenantMember> wrapper = new LambdaQueryWrapper<TenantMember>()
-                .eq(TenantMember::getTenantId, tenantId)
-                .isNull(TenantMember::getLeftAt);
-        wrapper.eq(memberStatus != null, TenantMember::getStatus, memberStatus);
+        LambdaQueryWrapper<TenantMemberEntity> wrapper = new LambdaQueryWrapper<TenantMemberEntity>()
+                .eq(TenantMemberEntity::getTenantId, tenantId)
+                .isNull(TenantMemberEntity::getLeftAt);
+        wrapper.eq(memberStatus != null, TenantMemberEntity::getStatus, memberStatus);
         return tenantMemberMapper.selectList(wrapper)
                 .stream()
-                .map(TenantMember::getUserId)
+                .map(TenantMemberEntity::getUserId)
                 .collect(Collectors.toSet());
     }
 
@@ -614,13 +678,13 @@ public class IdentityUserServiceImpl implements IIdentityUserService {
         if (memberIds.isEmpty()) {
             return Set.of();
         }
-        LambdaQueryWrapper<TenantMember> wrapper = new LambdaQueryWrapper<TenantMember>()
-                .eq(TenantMember::getTenantId, tenantId)
-                .in(TenantMember::getMemberId, memberIds)
-                .isNull(TenantMember::getLeftAt);
-        wrapper.eq(memberStatus != null, TenantMember::getStatus, memberStatus);
+        LambdaQueryWrapper<TenantMemberEntity> wrapper = new LambdaQueryWrapper<TenantMemberEntity>()
+                .eq(TenantMemberEntity::getTenantId, tenantId)
+                .in(TenantMemberEntity::getId, memberIds)
+                .isNull(TenantMemberEntity::getLeftAt);
+        wrapper.eq(memberStatus != null, TenantMemberEntity::getStatus, memberStatus);
         return tenantMemberMapper.selectList(wrapper).stream()
-                .map(TenantMember::getUserId)
+                .map(TenantMemberEntity::getUserId)
                 .collect(Collectors.toSet());
     }
 
@@ -645,11 +709,11 @@ public class IdentityUserServiceImpl implements IIdentityUserService {
         query.setTenantId(tenantId);
         query.setSubjectType(AuthorizationQuery.SUBJECT_TYPE_TENANT_MEMBER);
         query.setRoleId(roleId);
-        R<List<Long>> response = roleBindingApi.listSubjectIdsByRole(query);
-        if (response == null || !response.isSuccess() || response.getData() == null || response.getData().isEmpty()) {
+        List<Long> subjectIds = roleBindingAdapter.listSubjectIdsByRole(query);
+        if (subjectIds.isEmpty()) {
             return Set.of();
         }
-        Set<Long> memberIds = new LinkedHashSet<>(response.getData());
+        Set<Long> memberIds = new LinkedHashSet<>(subjectIds);
         return currentTenantMemberUserIds(memberIds, memberStatus);
     }
 
@@ -668,25 +732,25 @@ public class IdentityUserServiceImpl implements IIdentityUserService {
         if (tenantId == null || memberIds == null || memberIds.isEmpty()) {
             return Set.of();
         }
-        LambdaQueryWrapper<TenantMember> wrapper = new LambdaQueryWrapper<TenantMember>()
-                .eq(TenantMember::getTenantId, tenantId)
-                .in(TenantMember::getMemberId, memberIds)
-                .isNull(TenantMember::getLeftAt);
-        wrapper.eq(memberStatus != null, TenantMember::getStatus, memberStatus);
+        LambdaQueryWrapper<TenantMemberEntity> wrapper = new LambdaQueryWrapper<TenantMemberEntity>()
+                .eq(TenantMemberEntity::getTenantId, tenantId)
+                .in(TenantMemberEntity::getId, memberIds)
+                .isNull(TenantMemberEntity::getLeftAt);
+        wrapper.eq(memberStatus != null, TenantMemberEntity::getStatus, memberStatus);
         return tenantMemberMapper.selectList(wrapper).stream()
-                .map(TenantMember::getUserId)
+                .map(TenantMemberEntity::getUserId)
                 .collect(Collectors.toSet());
     }
 
-    private List<IdentityUserInfo> listIdentityUserInfos(Set<Long> userIds) {
+    private List<IdentityUserInfoVO> listIdentityUserInfoVOs(Set<Long> userIds) {
         if (userIds == null || userIds.isEmpty()) {
             return List.of();
         }
-        return identityUserMapper.selectList(new LambdaQueryWrapper<IdentityUser>()
-                        .in(IdentityUser::getUserId, userIds)
-                        .eq(IdentityUser::getStatus, 1))
+        return identityUserMapper.selectList(new LambdaQueryWrapper<IdentityUserEntity>()
+                        .in(IdentityUserEntity::getId, userIds)
+                        .eq(IdentityUserEntity::getStatus, 1))
                 .stream()
-                .map(this::buildIdentityUserInfo)
+                .map(this::buildIdentityUserInfoVO)
                 .toList();
     }
 
@@ -698,9 +762,9 @@ public class IdentityUserServiceImpl implements IIdentityUserService {
         return command;
     }
 
-    private IdentityUserVO toVO(IdentityUser user, Long queryOrgId) {
+    private IdentityUserVO toVO(IdentityUserEntity user, Long queryOrgId) {
         IdentityUserVO vo = new IdentityUserVO();
-        TenantMember member = currentTenantMember(user.getUserId());
+        TenantMemberEntity member = currentTenantMember(user.getUserId());
         vo.setUserId(user.getUserId());
         if (member != null) {
             vo.setMemberId(member.getMemberId());
@@ -735,7 +799,7 @@ public class IdentityUserServiceImpl implements IIdentityUserService {
         return vo;
     }
 
-    private void fillOrgRelation(IdentityUserVO vo, TenantMember member, Long queryOrgId) {
+    private void fillOrgRelation(IdentityUserVO vo, TenantMemberEntity member, Long queryOrgId) {
         if (queryOrgId == null) {
             return;
         }
@@ -757,13 +821,11 @@ public class IdentityUserServiceImpl implements IIdentityUserService {
         vo.setOrgLeaderFlag(Integer.valueOf(1).equals(relation.getLeaderFlag()));
     }
 
-    private void createTenantMember(IdentityUser user, String displayName) {
+    private void createTenantMember(IdentityUserEntity user, String displayName) {
         Long tenantId = currentTenantIdLong();
-        if (tenantId == null) {
-            throw new IllegalStateException("当前机构上下文无效");
-        }
-        TenantMember member = new TenantMember();
-        member.setTenantId(tenantId);
+        Require.notNull(tenantId, IdentityCode.VALIDATION_ERROR, "当前机构上下文无效");
+        TenantMemberEntity member = new TenantMemberEntity();
+        member.setTenantId(String.valueOf(tenantId));
         member.setUserId(user.getUserId());
         member.setMemberNo("USER-" + user.getUserId());
         member.setDisplayName(firstText(displayName, user.getUsername()));
@@ -806,15 +868,15 @@ public class IdentityUserServiceImpl implements IIdentityUserService {
         return vo;
     }
 
-    private TenantMember currentTenantMember(Long userId) {
+    private TenantMemberEntity currentTenantMember(Long userId) {
         Long tenantId = currentTenantIdLong();
         if (tenantId == null || userId == null) {
             return null;
         }
-        return tenantMemberMapper.selectOne(new LambdaQueryWrapper<TenantMember>()
-                .eq(TenantMember::getTenantId, tenantId)
-                .eq(TenantMember::getUserId, userId)
-                .isNull(TenantMember::getLeftAt)
+        return tenantMemberMapper.selectOne(new LambdaQueryWrapper<TenantMemberEntity>()
+                .eq(TenantMemberEntity::getTenantId, tenantId)
+                .eq(TenantMemberEntity::getUserId, userId)
+                .isNull(TenantMemberEntity::getLeftAt)
                 .last("LIMIT 1"));
     }
 

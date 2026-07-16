@@ -1,27 +1,19 @@
 package io.mango.identity.core.entity;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import io.mango.infra.persistence.api.entity.TenantEntity;
 import lombok.Data;
-
-import java.time.LocalDateTime;
+import lombok.EqualsAndHashCode;
 
 /**
  * 租户成员组织岗位关系。
  */
 @Data
+@EqualsAndHashCode(callSuper = true)
 @TableName("tenant_member_org")
-public class TenantMemberOrgEntity {
-
-    @TableId(type = IdType.ASSIGN_ID)
-    private Long id;
-
-    private Long tenantId;
+public class TenantMemberOrgEntity extends TenantEntity {
 
     private Long memberId;
-
-    private Long orgId;
 
     private Long postId;
 
@@ -29,11 +21,4 @@ public class TenantMemberOrgEntity {
 
     private Integer leaderFlag;
 
-    private Long createdBy;
-
-    private LocalDateTime createdAt;
-
-    private Long updatedBy;
-
-    private LocalDateTime updatedAt;
 }

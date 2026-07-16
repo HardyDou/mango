@@ -5,14 +5,21 @@ import io.mango.common.vo.PageResult;
 import io.mango.identity.api.command.BatchDeleteIdentityUserCommand;
 import io.mango.identity.api.command.BindExternalIdentityCommand;
 import io.mango.identity.api.command.CreateIdentityUserCommand;
+import io.mango.identity.api.command.RequireIdentityUserPasswordResetCommand;
+import io.mango.identity.api.command.ResetIdentityUserPasswordCommand;
 import io.mango.identity.api.command.UnbindExternalIdentityCommand;
 import io.mango.identity.api.command.UpdateIdentityUserCommand;
+import io.mango.identity.api.command.UpdateIdentityUserStatusCommand;
+import io.mango.identity.api.command.UnlockIdentityUserCommand;
 import io.mango.identity.api.query.ExternalIdentityQuery;
 import io.mango.identity.api.query.IdentityUserPageQuery;
 import io.mango.identity.api.query.IdentityUserTargetQuery;
 import io.mango.identity.api.vo.ExternalIdentityBindingVO;
-import io.mango.identity.api.vo.IdentityUserInfo;
+import io.mango.identity.api.vo.IdentityUserInfoVO;
 import io.mango.identity.api.vo.IdentityUserVO;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
 import java.util.List;
 
@@ -24,66 +31,74 @@ public interface IdentityUserApi {
     /**
      * 分页查询当前租户成员。
      */
-    R<PageResult<IdentityUserVO>> page(IdentityUserPageQuery query);
+    R<PageResult<IdentityUserVO>> page(@Valid IdentityUserPageQuery query);
 
     /**
      * Query current tenant member detail by user ID.
      */
-    R<IdentityUserVO> detail(Long userId);
+    R<IdentityUserVO> detail(@NotNull Long userId);
 
     /**
      * 创建当前租户成员。
      */
-    R<Long> create(CreateIdentityUserCommand command);
+    R<Long> create(@Valid CreateIdentityUserCommand command);
 
     /**
      * 更新当前租户成员。
      */
-    R<Boolean> update(UpdateIdentityUserCommand command);
+    R<Boolean> update(@Valid UpdateIdentityUserCommand command);
 
     /**
      * 移除当前租户成员。
      */
-    R<Boolean> delete(Long userId);
+    R<Boolean> delete(@NotNull Long userId);
 
     /**
      * 批量移除当前租户成员。
      */
-    R<Integer> deleteBatch(BatchDeleteIdentityUserCommand command);
+    R<Integer> deleteBatch(@Valid BatchDeleteIdentityUserCommand command);
+
+    R<Boolean> updateStatus(@Valid UpdateIdentityUserStatusCommand command);
+
+    R<Boolean> resetPassword(@Valid ResetIdentityUserPasswordCommand command);
+
+    R<Boolean> unlock(@Valid UnlockIdentityUserCommand command);
+
+    R<Boolean> requirePasswordReset(@Valid RequireIdentityUserPasswordResetCommand command);
 
     /**
      * 按用户名查询身份资料。
      */
-    R<IdentityUserInfo> getUserInfo(String username);
+    R<IdentityUserInfoVO> getUserInfo(@NotBlank String username);
 
     /**
      * 按用户 ID 查询身份资料。
      */
-    R<IdentityUserInfo> getUserInfoById(Long userId);
+    R<IdentityUserInfoVO> getUserInfoById(@NotNull Long userId);
 
     /**
      * 按接收目标解析身份用户资料。
      */
-    R<List<IdentityUserInfo>> listUserInfosByTarget(IdentityUserTargetQuery query);
+    R<List<IdentityUserInfoVO>> listUserInfosByTarget(@Valid IdentityUserTargetQuery query);
 
     /**
      * 绑定第三方登录身份。
      */
-    R<ExternalIdentityBindingVO> bindExternalIdentity(BindExternalIdentityCommand command);
+    R<ExternalIdentityBindingVO> bindExternalIdentity(@Valid BindExternalIdentityCommand command);
 
     /**
      * 解绑第三方登录身份。
      */
-    R<Boolean> unbindExternalIdentity(UnbindExternalIdentityCommand command);
+    R<Boolean> unbindExternalIdentity(@Valid UnbindExternalIdentityCommand command);
 
     /**
      * 查询第三方登录身份绑定。
      */
-    R<ExternalIdentityBindingVO> findExternalIdentity(ExternalIdentityQuery query);
+    R<ExternalIdentityBindingVO> findExternalIdentity(@Valid ExternalIdentityQuery query);
 
     /**
      * 查询成员的第三方登录身份绑定。
      */
-    R<List<ExternalIdentityBindingVO>> listExternalIdentities(Long userId);
+    R<List<ExternalIdentityBindingVO>> listExternalIdentities(@NotNull Long userId);
 
 }

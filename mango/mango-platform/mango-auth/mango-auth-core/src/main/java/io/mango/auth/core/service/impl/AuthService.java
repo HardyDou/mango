@@ -25,7 +25,7 @@ import io.mango.identity.api.AuthUserProvider;
 import io.mango.identity.api.IdentityUserApi;
 import io.mango.identity.api.query.ExternalIdentityQuery;
 import io.mango.identity.api.vo.ExternalIdentityBindingVO;
-import io.mango.identity.api.vo.AuthUserInfo;
+import io.mango.identity.api.vo.AuthUserVO;
 import io.mango.authorization.api.ITokenProvider;
 import io.mango.authorization.api.vo.TokenPairVO;
 import io.mango.infra.context.api.MangoContextHolder;
@@ -44,7 +44,7 @@ import io.mango.auth.core.support.AuthApiResponseAdapter;
 import io.mango.captcha.api.CaptchaApi;
 import io.mango.captcha.api.constant.CaptchaType;
 import io.mango.captcha.api.dto.CaptchaSendRequest;
-import io.mango.identity.api.vo.IdentityUserInfo;
+import io.mango.identity.api.vo.IdentityUserInfoVO;
 import io.mango.infra.iplocation.api.IpLocation;
 import io.mango.infra.iplocation.api.IpLocationResolver;
 import io.mango.system.api.SysLoginLogApi;
@@ -129,7 +129,7 @@ public class AuthService implements IAuthService {
         Require.isFalse(loginAttemptTracker.isLockedOut(loginAttemptKey), AuthCode.LOGIN_ATTEMPT_LOCKED);
 
         // 1. 校验账号。
-        AuthUserInfo user = authUserProvider.getByUsernameForAuth(username, command.getRealm());
+        AuthUserVO user = authUserProvider.getByUsernameForAuth(username, command.getRealm());
         if (user == null) {
             loginAttemptTracker.recordFailedAttempt(loginAttemptKey);
             return Require.fail(AuthCode.LOGIN_ACCOUNT_OR_PASSWORD_INVALID);
@@ -172,7 +172,7 @@ public class AuthService implements IAuthService {
     public LoginVO changeRequiredPassword(ChangeRequiredPasswordCommand command) {
         try {
             PasswordResetTicketStore.TicketPayload ticket = passwordResetTicketStore.peek(command.getPasswordResetTicket());
-            AuthUserInfo user = authUserProvider.getByIdForAuth(ticket.userId());
+            AuthUserVO user = authUserProvider.getByIdForAuth(ticket.userId());
             Require.notNull(user, AuthCode.CURRENT_USER_NOT_FOUND);
             io.mango.identity.api.command.ChangeRequiredPasswordCommand identityCommand =
                     new io.mango.identity.api.command.ChangeRequiredPasswordCommand();
@@ -181,7 +181,7 @@ public class AuthService implements IAuthService {
             identityCommand.setConfirmPassword(command.getConfirmPassword());
             authIdentitySecurityProvider.changeRequiredPassword(identityCommand);
             passwordResetTicketStore.revoke(command.getPasswordResetTicket());
-            AuthUserInfo updatedUser = authUserProvider.getByIdForAuth(ticket.userId());
+            AuthUserVO updatedUser = authUserProvider.getByIdForAuth(ticket.userId());
             LoginCommand loginContext = new LoginCommand();
             loginContext.setTenantId(ticket.tenantId());
             loginContext.setTenantCode(ticket.tenantCode());
@@ -220,7 +220,7 @@ public class AuthService implements IAuthService {
                     identityUserApi.findExternalIdentity(query));
             Require.notNull(binding, AuthCode.WECOM_ACCOUNT_UNBOUND);
             Require.notNull(binding.getUserId(), AuthCode.WECOM_ACCOUNT_UNBOUND);
-            AuthUserInfo user = authUserProvider.getByIdForAuth(binding.getUserId());
+            AuthUserVO user = authUserProvider.getByIdForAuth(binding.getUserId());
             Require.notNull(user, AuthCode.CURRENT_USER_NOT_FOUND);
             authIdentitySecurityProvider.assertLoginAllowed(user);
             Require.isTrue(user.getStatus() == 1, AuthCode.ACCOUNT_DISABLED);
@@ -269,7 +269,7 @@ public class AuthService implements IAuthService {
 
     @Override
     public List<LoginTenantVO> listLoginTenants(LoginTenantOptionsCommand command) {
-        AuthUserInfo user = authUserProvider.getByUsernameForAuth(command.getUsername(), command.getRealm());
+        AuthUserVO user = authUserProvider.getByUsernameForAuth(command.getUsername(), command.getRealm());
         Require.notNull(user, AuthCode.LOGIN_ACCOUNT_OR_PASSWORD_INVALID);
         authIdentitySecurityProvider.assertLoginAllowed(user);
         Require.isTrue(user.getStatus() == 1, AuthCode.ACCOUNT_DISABLED);
@@ -305,7 +305,7 @@ public class AuthService implements IAuthService {
         Require.notNull(userId, AuthCode.REFRESH_TOKEN_INVALID);
 
         // 3. 加载用户。
-        AuthUserInfo user = authUserProvider.getByIdForAuth(userId);
+        AuthUserVO user = authUserProvider.getByIdForAuth(userId);
         Require.notNull(user, AuthCode.REFRESH_TOKEN_INVALID);
         Require.isTrue(user.getStatus() == 1, AuthCode.ACCOUNT_DISABLED);
 
@@ -347,7 +347,7 @@ public class AuthService implements IAuthService {
         String token = stripBearer(authorization);
         Long userId = tokenService.getUserId(token);
         Require.notNull(userId, AuthCode.ACCESS_TOKEN_INVALID);
-        IdentityUserInfo userInfo = AuthApiResponseAdapter.requireIdentityData(
+        IdentityUserInfoVO userInfo = AuthApiResponseAdapter.requireIdentityData(
                 identityUserApi.getUserInfoById(userId));
         LoginVO response = new LoginVO();
         response.setUserId(userInfo.getUserId());
@@ -583,7 +583,7 @@ public class AuthService implements IAuthService {
         return value.substring(0, maxLength);
     }
 
-    private LoginVO buildLoginVO(AuthUserInfo user, IdentityContext identityContext,
+    private LoginVO buildLoginVO(AuthUserVO user, IdentityContext identityContext,
                                  String accessToken, String refreshToken) {
         LoginVO response = new LoginVO();
         response.setAccessToken(accessToken);
@@ -606,7 +606,7 @@ public class AuthService implements IAuthService {
         return response;
     }
 
-    private LoginVO buildPasswordResetRequiredLoginVO(AuthUserInfo user, LoginCommand command) {
+    private LoginVO buildPasswordResetRequiredLoginVO(AuthUserVO user, LoginCommand command) {
         LoginVO response = new LoginVO();
         response.setUserId(user.getUserId());
         response.setUsername(user.getUsername());
@@ -635,7 +635,7 @@ public class AuthService implements IAuthService {
         return response;
     }
 
-    private IdentityContext resolveIdentityContext(AuthUserInfo user, LoginCommand command) {
+    private IdentityContext resolveIdentityContext(AuthUserVO user, LoginCommand command) {
         LoginTenantVO tenant = resolveTenant(user.getUserId(), command.getTenantId(), command.getTenantCode());
         String partyType = firstText(command.getPartyType(), user.getPartyType());
         Long partyId = resolvePartyId(command.getPartyId(), user.getPartyId(), partyType, tenant.getTenantId());
@@ -651,7 +651,7 @@ public class AuthService implements IAuthService {
                 firstText(command.getAppCode(), DEFAULT_APP_CODE));
     }
 
-    private IdentityContext resolveIdentityContext(AuthUserInfo user, String refreshToken) {
+    private IdentityContext resolveIdentityContext(AuthUserVO user, String refreshToken) {
         Long partyId = resolveLong(tokenService.getClaim(refreshToken, "partyId"), user.getPartyId());
         Long memberId = resolveLong(tokenService.getClaim(refreshToken, "memberId"), null);
         String tenantId = normalize(tokenService.getClaim(refreshToken, "tenantId"));
