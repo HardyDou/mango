@@ -56,7 +56,10 @@ public class LinkAdminService extends BaseLinkService implements ILinkAdminServi
 
     @Override
     public PageResult<LinkCategoryVO> pageCategories(LinkCategoryPageQuery query) {
-        LinkCategoryPageQuery resolved = query == null ? new LinkCategoryPageQuery() : query;
+        LinkCategoryPageQuery resolved = query;
+        if (resolved == null) {
+            resolved = new LinkCategoryPageQuery();
+        }
         IPage<LinkCategoryEntity> page = categoryMapper.selectPage(new Page<>(resolved.getPage(), resolved.getSize()),
                 categoryWrapper(LinkContextSupport.currentTenantId(), resolved.getKeyword(), resolved.getStatus()));
         return PageResult.of(page.getRecords().stream().map(this::toCategoryVO).toList(),
@@ -65,7 +68,10 @@ public class LinkAdminService extends BaseLinkService implements ILinkAdminServi
 
     @Override
     public List<LinkCategoryVO> listCategories(LinkCategoryQuery query) {
-        LinkCategoryQuery resolved = query == null ? new LinkCategoryQuery() : query;
+        LinkCategoryQuery resolved = query;
+        if (resolved == null) {
+            resolved = new LinkCategoryQuery();
+        }
         LambdaQueryWrapper<LinkCategoryEntity> wrapper = categoryWrapper(LinkContextSupport.currentTenantId(),
                 resolved.getKeyword(), null);
         if (!Boolean.TRUE.equals(resolved.getIncludeDisabled())) {
@@ -87,7 +93,11 @@ public class LinkAdminService extends BaseLinkService implements ILinkAdminServi
         entity.setScope(LinkSupport.companyCategory());
         entity.setOwnerUserId(0L);
         entity.setName(name);
-        entity.setSortNo(command.getSortNo() == null ? 0 : command.getSortNo());
+        Integer sortNo = command.getSortNo();
+        if (sortNo == null) {
+            sortNo = 0;
+        }
+        entity.setSortNo(sortNo);
         entity.setStatus(LinkSupport.enabled());
         entity.setRemark(LinkContextSupport.trimToNull(command.getRemark()));
         entity.setCreatedBy(LinkContextSupport.currentUserIdOrNull());
@@ -108,7 +118,11 @@ public class LinkAdminService extends BaseLinkService implements ILinkAdminServi
                 entity.getScope(), entity.getOwnerUserId(), name);
         Require.isTrue(exists == null || exists.getId().equals(entity.getId()), "分类名称已存在");
         entity.setName(name);
-        entity.setSortNo(command.getSortNo() == null ? 0 : command.getSortNo());
+        Integer sortNo = command.getSortNo();
+        if (sortNo == null) {
+            sortNo = 0;
+        }
+        entity.setSortNo(sortNo);
         entity.setRemark(LinkContextSupport.trimToNull(command.getRemark()));
         entity.setUpdatedBy(LinkContextSupport.currentUserIdOrNull());
         entity.setUpdatedAt(LocalDateTime.now());
@@ -140,7 +154,10 @@ public class LinkAdminService extends BaseLinkService implements ILinkAdminServi
 
     @Override
     public PageResult<LinkItemVO> pageItems(LinkItemPageQuery query) {
-        LinkItemPageQuery resolved = query == null ? new LinkItemPageQuery() : query;
+        LinkItemPageQuery resolved = query;
+        if (resolved == null) {
+            resolved = new LinkItemPageQuery();
+        }
         Long tenantId = LinkContextSupport.currentTenantId();
         IPage<LinkItemEntity> page = itemMapper.selectPage(new Page<>(resolved.getPage(), resolved.getSize()),
                 itemWrapper(tenantId, resolved));
@@ -272,7 +289,11 @@ public class LinkAdminService extends BaseLinkService implements ILinkAdminServi
         entity.setTags(LinkSupport.joinTags(command.getTags()));
         entity.setVisibilityScope(LinkSupport.scope(command.getVisibilityScope()));
         entity.setRecommended(Boolean.TRUE.equals(command.getRecommended()));
-        entity.setSortNo(command.getSortNo() == null ? 0 : command.getSortNo());
+        Integer sortNo = command.getSortNo();
+        if (sortNo == null) {
+            sortNo = 0;
+        }
+        entity.setSortNo(sortNo);
         entity.setRemark(LinkContextSupport.trimToNull(command.getRemark()));
     }
 

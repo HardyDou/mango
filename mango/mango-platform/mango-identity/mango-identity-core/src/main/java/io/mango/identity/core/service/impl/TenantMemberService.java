@@ -1,6 +1,5 @@
 package io.mango.identity.core.service.impl;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.common.result.Require;
 import io.mango.identity.api.TenantMemberProvider;
 import io.mango.identity.api.command.AddTenantMemberOrgCommand;
@@ -19,8 +18,6 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-@SuppressFBWarnings(value = "EI_EXPOSE_REP2",
-        justification = "The provider is an intentionally shared Spring collaborator")
 public class TenantMemberService implements ITenantMemberService {
 
     private final TenantMemberProvider tenantMemberProvider;

@@ -1,6 +1,5 @@
 package io.mango.system.core.service.impl;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import io.mango.auth.api.spi.LoginTenantProvider;
 import io.mango.auth.api.vo.LoginTenantVO;
@@ -31,8 +30,6 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-@SuppressFBWarnings(value = "EI_EXPOSE_REP2",
-        justification = "Injected providers are intentionally shared Spring collaborators")
 public class SysTenantServiceImpl implements ISysTenantService, LoginTenantProvider, TenantPackageBindingProvider {
 
     private final SysTenantMapper sysTenantMapper;

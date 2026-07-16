@@ -1,6 +1,5 @@
 package io.mango.notice.core.service;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.common.result.R;
 import io.mango.common.vo.PageResult;
 import io.mango.identity.api.IdentityUserApi;
@@ -23,8 +22,6 @@ import java.util.Map;
 
 @Component
 @RequiredArgsConstructor
-@SuppressFBWarnings(value = "EI_EXPOSE_REP2",
-        justification = "The API client is an intentionally shared Spring collaborator")
 public class NoticeRecipientResolver {
 
     private static final int ALL_USER_PAGE_SIZE = 200;

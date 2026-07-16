@@ -1,6 +1,5 @@
 package io.mango.identity.core.service.impl;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -75,9 +74,6 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@SuppressWarnings("PMD.ServiceOrDaoClassShouldEndWithImplRule")
-@SuppressFBWarnings(value = "EI_EXPOSE_REP2",
-        justification = "Injected domain collaborators are intentionally shared Spring beans")
 public class IdentityUserService extends MangoCrudServiceImpl<IdentityUserMapper, IdentityUserEntity>
         implements IIdentityUserService {
 

@@ -1,6 +1,5 @@
 package io.mango.notice.core.integration;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.common.vo.PageResult;
 import io.mango.identity.api.IdentityUserApi;
 import io.mango.identity.api.command.BindExternalIdentityCommand;
@@ -17,8 +16,6 @@ import org.springframework.stereotype.Component;
 /** Isolates the Notice domain from the remote {@code R<T>} transport envelope. */
 @Component
 @RequiredArgsConstructor
-@SuppressFBWarnings(value = "EI_EXPOSE_REP2",
-        justification = "The API client is an intentionally shared Spring collaborator")
 public class NoticeIdentityGateway {
 
     private final IdentityUserApi identityUserApi;
