@@ -22,12 +22,35 @@ public class TenantMemberService implements ITenantMemberService {
 
     private final TenantMemberProvider tenantMemberProvider;
 
-    @Override public TenantMemberVO getEnabledMember(Long userId, Long tenantId) { return tenantMemberProvider.getEnabledMember(userId, tenantId); }
-    @Override public List<TenantMemberVO> listEnabledMembers(Long userId) { return tenantMemberProvider.listEnabledMembers(userId); }
-    @Override public TenantMemberVO getMember(Long memberId) { return tenantMemberProvider.getMember(memberId); }
-    @Override public List<TenantMemberOrgRelationVO> listOrgRelations(Long tenantId, Long orgId) { return tenantMemberProvider.listOrgRelations(tenantId, orgId); }
-    @Override public TenantMemberOrgRelationVO getOrgRelation(Long relationId) { return tenantMemberProvider.getOrgRelation(relationId); }
-    @Override public boolean existsOrgRelation(TenantMemberOrgExistsQuery query) { return tenantMemberProvider.existsOrgRelation(query.getTenantId(), query.getMemberId(), query.getOrgId()); }
+    @Override
+    public TenantMemberVO getEnabledMember(Long userId, Long tenantId) {
+        return tenantMemberProvider.getEnabledMember(userId, tenantId);
+    }
+
+    @Override
+    public List<TenantMemberVO> listEnabledMembers(Long userId) {
+        return tenantMemberProvider.listEnabledMembers(userId);
+    }
+
+    @Override
+    public TenantMemberVO getMember(Long memberId) {
+        return tenantMemberProvider.getMember(memberId);
+    }
+
+    @Override
+    public List<TenantMemberOrgRelationVO> listOrgRelations(Long tenantId, Long orgId) {
+        return tenantMemberProvider.listOrgRelations(tenantId, orgId);
+    }
+
+    @Override
+    public TenantMemberOrgRelationVO getOrgRelation(Long relationId) {
+        return tenantMemberProvider.getOrgRelation(relationId);
+    }
+
+    @Override
+    public boolean existsOrgRelation(TenantMemberOrgExistsQuery query) {
+        return tenantMemberProvider.existsOrgRelation(query.getTenantId(), query.getMemberId(), query.getOrgId());
+    }
     @Override
     public boolean addOrgRelation(AddTenantMemberOrgCommand command) {
         Require.notNull(command, IdentityCode.VALIDATION_ERROR, "成员组织新增命令不能为空");
@@ -48,7 +71,11 @@ public class TenantMemberService implements ITenantMemberService {
         tenantMemberProvider.removeOrgRelation(relationId);
         return true;
     }
-    @Override public long countOtherOrgRelations(TenantMemberOrgOtherCountQuery query) { return tenantMemberProvider.countOtherOrgRelations(query.getTenantId(), query.getMemberId(), query.getExcludedRelationId()); }
+    @Override
+    public long countOtherOrgRelations(TenantMemberOrgOtherCountQuery query) {
+        return tenantMemberProvider.countOtherOrgRelations(
+                query.getTenantId(), query.getMemberId(), query.getExcludedRelationId());
+    }
     @Override
     public List<TenantMemberVO> listMembers(ListTenantMembersRequest request) {
         Require.notNull(request, IdentityCode.VALIDATION_ERROR, "成员列表请求不能为空");
