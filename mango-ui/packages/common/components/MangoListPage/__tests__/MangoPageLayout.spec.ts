@@ -282,6 +282,39 @@ describe('Mango admin page layout components', () => {
     expect(wrapper.find('.mango-search-panel__more-button').attributes('aria-label')).toBe('Less');
   });
 
+  it('keeps the bottom expand row placeholder when fields do not overflow', async () => {
+    const wrapper = mount(MangoSearchPanel, {
+      props: {
+        model: { keyword: '' },
+        collapsible: true,
+        columns: 4,
+        collapsedRows: 2,
+        morePlacement: 'bottom',
+        searchText: 'Search',
+        resetText: 'Reset',
+      },
+      slots: {
+        default: `
+          <el-form-item label="Keyword"><input /></el-form-item>
+          <el-form-item label="Status"><input /></el-form-item>
+        `,
+      },
+      global,
+    });
+
+    await wrapper.vm.$nextTick();
+    await wrapper.vm.$nextTick();
+
+    const items = wrapper.findAll('.mango-search-panel__fields > .el-form-item');
+    expect(items).toHaveLength(2);
+    expect(wrapper.find('.mango-search-panel__more').exists()).toBe(true);
+    expect(wrapper.find('.mango-search-panel__more-button').exists()).toBe(false);
+    expect(wrapper.findAll('button').map(button => button.text())).toEqual(['Search', 'Reset']);
+    items.forEach((item) => {
+      expect(item.attributes('data-mango-search-hidden')).toBeUndefined();
+    });
+  });
+
   it('renders list toolbar, table content and pagination slots', () => {
     const wrapper = mount(MangoListPanel, {
       slots: {

@@ -10,6 +10,16 @@ import { normalizeTagsStyle } from '@mango/admin-shell';
 import { Local } from '@mango/common';
 
 const STORAGE_KEY = 'themeConfig';
+const themeColorVars: Array<[string, string]> = [
+  ['--mango-color-primary', 'primary'],
+  ['--mango-bg-top-bar', 'topBar'],
+  ['--mango-color-top-bar', 'topBarColor'],
+  ['--mango-bg-menu-bar', 'menuBar'],
+  ['--mango-color-menu-bar', 'menuBarColor'],
+  ['--mango-color-menu-active-bg', 'menuBarActiveColor'],
+  ['--mango-bg-columns-menu-bar', 'columnsMenuBar'],
+  ['--mango-color-columns-menu-bar', 'columnsMenuBarColor'],
+];
 
 /**
  * 验证是否为有效的 CSS 颜色值
@@ -48,25 +58,18 @@ function applyDarkMode(data: Record<string, unknown>) {
 
   if (isDark) {
     document.documentElement.setAttribute('data-theme', 'dark');
-    document.documentElement.style.removeProperty('--mango-color-primary');
-    document.documentElement.style.removeProperty('--mango-bg-top-bar');
-    document.documentElement.style.removeProperty('--mango-bg-menu-bar');
-    document.documentElement.style.removeProperty('--mango-bg-columns-menu-bar');
+    themeColorVars.forEach(([name]) => {
+      document.documentElement.style.removeProperty(name);
+    });
   } else {
     document.documentElement.setAttribute('data-theme', 'light');
     // 只应用有效颜色值
-    if (isValidColor(data.primary)) {
-      document.documentElement.style.setProperty('--mango-color-primary', data.primary as string);
-    }
-    if (isValidColor(data.topBar)) {
-      document.documentElement.style.setProperty('--mango-bg-top-bar', data.topBar as string);
-    }
-    if (isValidColor(data.menuBar)) {
-      document.documentElement.style.setProperty('--mango-bg-menu-bar', data.menuBar as string);
-    }
-    if (isValidColor(data.columnsMenuBar)) {
-      document.documentElement.style.setProperty('--mango-bg-columns-menu-bar', data.columnsMenuBar as string);
-    }
+    themeColorVars.forEach(([name, key]) => {
+      const value = data[key];
+      if (isValidColor(value)) {
+        document.documentElement.style.setProperty(name, value);
+      }
+    });
   }
 
   // 验证 filter 值

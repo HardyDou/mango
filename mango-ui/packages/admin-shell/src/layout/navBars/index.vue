@@ -259,13 +259,15 @@ watch(
 
       .el-breadcrumb__inner,
       .el-breadcrumb__separator {
-        color: rgba(255, 255, 255, 0.92);
+        color: var(--mango-color-top-bar);
         font-size: 15px;
         font-weight: 500;
+        opacity: 0.92;
       }
 
       .el-breadcrumb__inner.is-link:hover {
-        color: #ffffff;
+        color: var(--mango-color-top-bar);
+        opacity: 1;
       }
     }
   }

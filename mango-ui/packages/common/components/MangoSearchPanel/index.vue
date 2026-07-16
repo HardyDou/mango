@@ -41,8 +41,9 @@
         </el-form-item>
       </div>
     </el-form>
-    <div v-if="showBottomMoreButton" class="mango-search-panel__more">
+    <div v-if="showBottomMoreRow" class="mango-search-panel__more">
       <button
+        v-if="showBottomMoreButton"
         class="mango-search-panel__more-button"
         type="button"
         :aria-label="expanded ? collapseText : expandText"
@@ -147,6 +148,7 @@ const fieldsStyle = computed(() => ({
 }));
 
 const showActionMoreButton = computed(() => props.collapsible && hasOverflow.value && props.morePlacement === 'actions');
+const showBottomMoreRow = computed(() => props.collapsible && props.morePlacement === 'bottom');
 const showBottomMoreButton = computed(() => props.collapsible && hasOverflow.value && props.morePlacement === 'bottom');
 
 const getFieldItems = () => {
@@ -324,8 +326,10 @@ onBeforeUnmount(() => {
 
 .mango-search-panel__more {
   display: flex;
+  align-items: center;
   justify-content: center;
-  padding-top: 2px;
+  height: 28px;
+  min-height: 28px;
 }
 
 .mango-search-panel__more-button {
