@@ -8,6 +8,10 @@
 
 Org 的 `V1__init_org.sql` 只创建 `sys_org`、`org_post` 及索引约束。运行所需的默认根组织和岗位由 `META-INF/mango/resources/org-required-bootstrap.yml` 默认登记；A/B/C 公司、演示组织树和演示岗位位于 `META-INF/mango/demo/org-demo-structure.yml`，仅在 `mango.resource.registry.demo-enabled=true` 时加载。资源声明提供固定 `targetId` 时，首次同步仍执行插入。空库验收覆盖 Flyway、目标表行数和 Resource Registry 三项状态，单独的注册成功记录不足以证明数据已经形成。
 
+### 2026-07-16 System 初始化边界
+
+System 新库只执行纯 DDL `V1__init_system.sql`。平台默认租户、524 条行政区划和 20 条国际化文案由 `META-INF/mango/resources/system-common-*.yml` 默认登记；A/B/C 公司租户位于 `META-INF/mango/demo/system-demo-tenant.yml`，只在 demo 开关启用时加载。System 资源写入使用运行时租户主键，不使用租户编码代替 `tenant_id`；排查空数据时同时核对资源同步顺序和目标表行数。
+
 ## 2. 阅读顺序
 
 | 顺序 | 文档 | 关注点 |
