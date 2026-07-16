@@ -22,12 +22,18 @@ final class ResourceFieldReader {
 
     String stringField(ResourceDeclaration resource, String fieldName) {
         Object value = fieldValue(resource, fieldName);
-        return value == null ? null : String.valueOf(value);
+        if (value == null) {
+            return null;
+        }
+        return String.valueOf(value);
     }
 
     String stringField(ResourceDeclaration resource, String fieldName, String defaultValue) {
         String value = stringField(resource, fieldName);
-        return StringUtils.hasText(value) ? value.trim() : defaultValue;
+        if (StringUtils.hasText(value)) {
+            return value.trim();
+        }
+        return defaultValue;
     }
 
     Long requiredLong(ResourceDeclaration resource, String fieldName) {
@@ -47,7 +53,10 @@ final class ResourceFieldReader {
             return number.longValue();
         }
         String text = String.valueOf(value);
-        return StringUtils.hasText(text) ? Long.valueOf(text.trim()) : null;
+        if (StringUtils.hasText(text)) {
+            return Long.valueOf(text.trim());
+        }
+        return null;
     }
 
     Integer intField(ResourceDeclaration resource, String fieldName, Integer defaultValue) {
@@ -59,7 +68,10 @@ final class ResourceFieldReader {
             return number.intValue();
         }
         String text = String.valueOf(value);
-        return StringUtils.hasText(text) ? Integer.valueOf(text.trim()) : defaultValue;
+        if (StringUtils.hasText(text)) {
+            return Integer.valueOf(text.trim());
+        }
+        return defaultValue;
     }
 
     Object fieldValue(ResourceDeclaration resource, String fieldName) {
@@ -67,6 +79,9 @@ final class ResourceFieldReader {
             return null;
         }
         ResourceField field = resource.getFields().get(fieldName);
-        return field == null ? null : field.getValue();
+        if (field == null) {
+            return null;
+        }
+        return field.getValue();
     }
 }

@@ -10,7 +10,7 @@ import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.infra.persistence.api.scope.DataScopeRule;
 import io.mango.org.api.SysOrgApi;
-import io.mango.org.api.entity.SysOrg;
+import io.mango.org.api.vo.SysOrgVO;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -100,8 +100,8 @@ class AuthorizationDataScopeProviderTest {
         return member;
     }
 
-    private SysOrg org(Long id) {
-        SysOrg org = new SysOrg();
+    private SysOrgVO org(Long id) {
+        SysOrgVO org = new SysOrgVO();
         org.setId(id);
         return org;
     }

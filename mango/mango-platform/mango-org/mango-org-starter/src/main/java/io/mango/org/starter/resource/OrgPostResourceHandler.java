@@ -45,22 +45,22 @@ public class OrgPostResourceHandler implements ResourceHandler {
 
     @Override
     public ResourceSyncResult upsert(ResourceDeclaration resource) {
-        PostEntity post = findByBusinessKey(resource);
+        PostEntity post = findByTargetOrBusinessKey(resource);
+        boolean creating = post == null;
         LocalDateTime now = LocalDateTime.now();
-        if (post == null) {
+        if (creating) {
             post = new PostEntity();
+            post.setId(fields.longField(resource, "targetId"));
             post.setTenantId(fields.requiredLong(resource, "tenantId"));
             post.setPostCode(fields.requiredString(resource, "postCode"));
             post.setCreateTime(now);
-            post.setCreatedAt(now);
         }
         post.setPostName(fields.requiredString(resource, "postName"));
         post.setPostSort(fields.intField(resource, "sort", 0));
         post.setPostStatus(statusValue(resource));
         post.setRemark(fields.stringField(resource, "remark"));
         post.setUpdateTime(now);
-        post.setUpdatedAt(now);
-        if (post.getId() == null) {
+        if (creating) {
             postMapper.insert(post);
         } else {
             postMapper.updateById(post);
@@ -78,7 +78,11 @@ public class OrgPostResourceHandler implements ResourceHandler {
             post.setUpdatedAt(LocalDateTime.now());
             changed = postMapper.updateById(post) > 0;
         }
-        return ResourceSyncResult.of(post == null ? null : post.getId(), TARGET_TABLE,
+        Long targetId = null;
+        if (post != null) {
+            targetId = post.getId();
+        }
+        return ResourceSyncResult.of(targetId, TARGET_TABLE,
                 "Org post disabled: changed=" + changed);
     }
 
@@ -105,6 +109,9 @@ public class OrgPostResourceHandler implements ResourceHandler {
         if (StringUtils.hasText(status)) {
             return status.trim();
         }
-        return resource.getStatus() == ResourceStatus.DISABLED ? "0" : "1";
+        if (resource.getStatus() == ResourceStatus.DISABLED) {
+            return "0";
+        }
+        return "1";
     }
 }

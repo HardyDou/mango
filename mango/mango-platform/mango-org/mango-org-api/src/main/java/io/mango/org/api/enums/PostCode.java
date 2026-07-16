@@ -30,7 +30,8 @@ public enum PostCode implements BizCode {
     ORG_MEMBER_RELATION_NOT_FOUND(404, "组织成员关系不存在"),
     ORG_MEMBER_PRIMARY_REQUIRED(400, "成员至少需要保留一个主组织"),
     POST_NOT_FOUND(404, "岗位不存在"),
-    POST_ID_REQUIRED(400, "岗位ID不能为空");
+    POST_ID_REQUIRED(400, "岗位ID不能为空"),
+    POST_CODE_EXISTS(400, "岗位编码已存在");
 
     private final int code;
     private final String message;

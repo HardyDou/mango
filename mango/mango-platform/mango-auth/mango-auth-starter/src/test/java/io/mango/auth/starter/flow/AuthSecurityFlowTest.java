@@ -160,6 +160,34 @@ class AuthSecurityFlowTest {
     }
 
     @Test
+    @DisplayName("auth info should preserve party context carried by the access token")
+    void authInfoShouldPreserveTokenPartyContext() throws Exception {
+        MvcResult loginResult = mockMvc.perform(post("/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "username": "admin",
+                                  "password": "admin123",
+                                  "tenantId": "1",
+                                  "partyType": "INTERNAL_ORG",
+                                  "partyId": 42
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.partyId").value("42"))
+                .andReturn();
+
+        String accessToken = objectMapper.readTree(loginResult.getResponse().getContentAsString())
+                .path("data").path("accessToken").asText();
+
+        mockMvc.perform(get("/auth/info")
+                        .header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.partyType").value("INTERNAL_ORG"))
+                .andExpect(jsonPath("$.data.partyId").value("42"));
+    }
+
+    @Test
     @DisplayName("public captcha send should preserve the captcha unified response")
     void publicCaptchaSendShouldPreserveCaptchaUnifiedResponse() throws Exception {
         mockMvc.perform(post("/auth/captcha/send")

@@ -46,9 +46,9 @@ export const postApi = {
       .then((data) => toPageResult(data, params));
   },
   detail: (id: ApiId) => get<PostVO>('/post/detail', { params: { id } }),
-  create: (data: PostVO) => post<void>('/post', toBackendPost(data)),
-  update: (data: PostVO) => put<void>('/post', toBackendPost(data)),
-  delete: (id: ApiId) => del<void>('/post', { params: { id } }),
+  create: (data: PostVO) => post<ApiId>('/post', toBackendPost(data)),
+  update: (data: PostVO) => put<boolean>('/post', toBackendPost(data)),
+  delete: (id: ApiId) => del<boolean>('/post', { params: { id } }),
 };
 
 function toBackendQuery(params?: PostQuery) {

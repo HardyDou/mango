@@ -82,9 +82,11 @@ import io.mango.notice.support.channel.ChannelSendResult;
 import io.mango.notice.support.channel.NoticeChannelSender;
 import io.mango.org.api.SysOrgApi;
 import io.mango.org.api.command.AddOrgMemberCommand;
-import io.mango.org.api.command.CreateOrgCommand;
-import io.mango.org.api.command.UpdateOrgCommand;
-import io.mango.org.api.entity.SysOrg;
+import io.mango.org.api.command.CreateSysOrgCommand;
+import io.mango.org.api.command.UpdateOrgMemberCommand;
+import io.mango.org.api.command.UpdateSysOrgCommand;
+import io.mango.org.api.vo.OrgMemberVO;
+import io.mango.org.api.vo.SysOrgVO;
 import io.mango.org.api.query.SysOrgTreeQuery;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.AfterEach;
@@ -1174,33 +1176,58 @@ class NoticeServiceIntegrationTest {
     static class NoopSysOrgApi implements SysOrgApi {
 
         @Override
-        public R<List<SysOrg>> tree(SysOrgTreeQuery query) {
+        public R<List<SysOrgVO>> tree(SysOrgTreeQuery query) {
             return R.ok(List.of());
         }
 
         @Override
-        public R<List<SysOrg>> children(Long parentId) {
+        public R<List<SysOrgVO>> children(Long parentId) {
             return R.ok(List.of());
         }
 
         @Override
-        public R<SysOrg> getById(Long id) {
+        public R<SysOrgVO> getById(Long id) {
             return R.ok(null);
         }
 
         @Override
-        public R<Long> create(CreateOrgCommand command) {
+        public R<Long> create(CreateSysOrgCommand command) {
             return R.ok(1L);
         }
 
         @Override
-        public R<Void> update(UpdateOrgCommand command) {
-            return R.ok();
+        public R<Boolean> update(UpdateSysOrgCommand command) {
+            return R.ok(true);
         }
 
         @Override
-        public R<Void> addMember(Long orgId, AddOrgMemberCommand command) {
-            return R.ok();
+        public R<Boolean> delete(Long id) {
+            return R.ok(true);
+        }
+
+        @Override
+        public R<List<OrgMemberVO>> members(Long orgId) {
+            return R.ok(List.of());
+        }
+
+        @Override
+        public R<Boolean> addMember(AddOrgMemberCommand command) {
+            return R.ok(true);
+        }
+
+        @Override
+        public R<Boolean> updateMember(UpdateOrgMemberCommand command) {
+            return R.ok(true);
+        }
+
+        @Override
+        public R<Boolean> removeMember(Long relationId) {
+            return R.ok(true);
+        }
+
+        @Override
+        public R<List<Long>> leaderUserIds(Long orgId) {
+            return R.ok(List.of());
         }
     }
 

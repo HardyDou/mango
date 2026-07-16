@@ -1,7 +1,7 @@
 package io.mango.org.starter.resource;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import io.mango.org.api.entity.SysOrg;
+import io.mango.org.core.entity.SysOrgEntity;
 import io.mango.org.core.mapper.SysOrgMapper;
 import io.mango.resource.api.ResourceHandler;
 import io.mango.resource.api.ResourceTypes;
@@ -39,11 +39,6 @@ public class OrgUnitResourceHandler implements ResourceHandler {
     }
 
     @Override
-    public boolean requiresCompleteBatch() {
-        return true;
-    }
-
-    @Override
     public ResourceHandlerSpec spec() {
         return ResourceHandlerSpec.builder()
                 .resourceType(resourceType())
@@ -57,9 +52,11 @@ public class OrgUnitResourceHandler implements ResourceHandler {
 
     @Override
     public ResourceSyncResult upsert(ResourceDeclaration resource) {
-        SysOrg org = findByBusinessKey(resource);
-        if (org == null) {
-            org = new SysOrg();
+        SysOrgEntity org = findByTargetOrBusinessKey(resource);
+        boolean creating = org == null;
+        if (creating) {
+            org = new SysOrgEntity();
+            org.setId(fields.longField(resource, "targetId"));
             org.setTenantId(fields.requiredLong(resource, "tenantId"));
             org.setOrgCode(fields.requiredString(resource, "orgCode"));
         }
@@ -68,7 +65,7 @@ public class OrgUnitResourceHandler implements ResourceHandler {
         org.setOrgType(fields.intField(resource, "orgType", null));
         org.setOrgSort(fields.intField(resource, "sort", 0));
         org.setOrgStatus(statusValue(resource));
-        if (org.getId() == null) {
+        if (creating) {
             orgMapper.insert(org);
         } else {
             orgMapper.updateById(org);
@@ -79,7 +76,7 @@ public class OrgUnitResourceHandler implements ResourceHandler {
     @Override
     public Map<String, ResourceSyncResult> upsertBatch(List<ResourceDeclaration> resources) {
         List<ResourceDeclaration> pending = resources.stream()
-                .filter(this::isAutoSync)
+                .filter(this::isManagedSync)
                 .collect(java.util.stream.Collectors.toCollection(ArrayList::new));
         Map<String, ResourceSyncResult> results = new LinkedHashMap<>();
         Set<String> syncedOrgCodes = new HashSet<>();
@@ -106,18 +103,24 @@ public class OrgUnitResourceHandler implements ResourceHandler {
 
     @Override
     public ResourceSyncResult disable(ResourceDeclaration resource) {
-        SysOrg org = findByTargetOrBusinessKey(resource);
+        SysOrgEntity org = findByTargetOrBusinessKey(resource);
         boolean changed = false;
         if (org != null && !"0".equals(org.getOrgStatus())) {
             org.setOrgStatus("0");
             changed = orgMapper.updateById(org) > 0;
         }
-        return ResourceSyncResult.of(org == null ? null : org.getId(), TARGET_TABLE,
+        Long targetId = null;
+        if (org != null) {
+            targetId = org.getId();
+        }
+        return ResourceSyncResult.of(targetId, TARGET_TABLE,
                 "Org unit disabled: changed=" + changed);
     }
 
-    private boolean isAutoSync(ResourceDeclaration resource) {
-        return resource.getSyncMode() == null || resource.getSyncMode() == ResourceSyncMode.AUTO;
+    private boolean isManagedSync(ResourceDeclaration resource) {
+        return resource.getSyncMode() == null
+                || resource.getSyncMode() == ResourceSyncMode.AUTO
+                || resource.getSyncMode() == ResourceSyncMode.INIT_ONLY;
     }
 
     private Set<String> collectDeclaredOrgCodes(List<ResourceDeclaration> resources) {
@@ -130,7 +133,7 @@ public class OrgUnitResourceHandler implements ResourceHandler {
 
     private void collectProtectedOrgCodes(List<ResourceDeclaration> resources, Set<String> orgCodes) {
         for (ResourceDeclaration resource : resources) {
-            if (!isAutoSync(resource)) {
+            if (!isManagedSync(resource)) {
                 orgCodes.add(orgCode(resource));
             }
         }
@@ -161,9 +164,9 @@ public class OrgUnitResourceHandler implements ResourceHandler {
         if (!StringUtils.hasText(parentCode)) {
             return 0L;
         }
-        SysOrg parent = orgMapper.selectOne(new LambdaQueryWrapper<SysOrg>()
-                .eq(SysOrg::getTenantId, fields.requiredLong(resource, "tenantId"))
-                .eq(SysOrg::getOrgCode, parentCode.trim())
+        SysOrgEntity parent = orgMapper.selectOne(new LambdaQueryWrapper<SysOrgEntity>()
+                .eq(SysOrgEntity::getTenantId, fields.requiredLong(resource, "tenantId"))
+                .eq(SysOrgEntity::getOrgCode, parentCode.trim())
                 .last("LIMIT 1"));
         if (parent == null) {
             throw new IllegalStateException("ORG_UNIT parent org does not exist: " + parentCode);
@@ -171,10 +174,10 @@ public class OrgUnitResourceHandler implements ResourceHandler {
         return parent.getId();
     }
 
-    private SysOrg findByTargetOrBusinessKey(ResourceDeclaration resource) {
+    private SysOrgEntity findByTargetOrBusinessKey(ResourceDeclaration resource) {
         Long targetId = fields.longField(resource, "targetId");
         if (targetId != null) {
-            SysOrg org = orgMapper.selectById(targetId);
+            SysOrgEntity org = orgMapper.selectById(targetId);
             if (org != null) {
                 return org;
             }
@@ -182,10 +185,10 @@ public class OrgUnitResourceHandler implements ResourceHandler {
         return findByBusinessKey(resource);
     }
 
-    private SysOrg findByBusinessKey(ResourceDeclaration resource) {
-        return orgMapper.selectOne(new LambdaQueryWrapper<SysOrg>()
-                .eq(SysOrg::getTenantId, fields.requiredLong(resource, "tenantId"))
-                .eq(SysOrg::getOrgCode, fields.requiredString(resource, "orgCode"))
+    private SysOrgEntity findByBusinessKey(ResourceDeclaration resource) {
+        return orgMapper.selectOne(new LambdaQueryWrapper<SysOrgEntity>()
+                .eq(SysOrgEntity::getTenantId, fields.requiredLong(resource, "tenantId"))
+                .eq(SysOrgEntity::getOrgCode, fields.requiredString(resource, "orgCode"))
                 .last("LIMIT 1"));
     }
 
@@ -194,6 +197,9 @@ public class OrgUnitResourceHandler implements ResourceHandler {
         if (StringUtils.hasText(status)) {
             return status.trim();
         }
-        return resource.getStatus() == ResourceStatus.DISABLED ? "0" : "1";
+        if (resource.getStatus() == ResourceStatus.DISABLED) {
+            return "0";
+        }
+        return "1";
     }
 }

@@ -9,6 +9,7 @@
         <Bug pattern="EI_EXPOSE_REP2"/>
         <Or>
             <Class name="io.mango.authorization.starter.AuthorizationDataScopeProvider"/>
+            <Class name="io.mango.access.starter.web.config.AccessWebAutoConfiguration"/>
             <Class name="io.mango.identity.core.adapter.AuthorizationRoleBindingAdapter"/>
             <Class name="io.mango.identity.core.service.impl.IdentitySecurityPolicyService"/>
             <Class name="io.mango.identity.core.service.impl.IdentityTenantProvisioner"/>
@@ -18,8 +19,11 @@
             <Class name="io.mango.identity.starter.controller.TenantMemberController"/>
             <Class name="io.mango.link.core.integration.LinkConfigGateway"/>
             <Class name="io.mango.notice.core.integration.NoticeIdentityGateway"/>
+            <Class name="io.mango.notice.core.integration.NoticeOrgGateway"/>
             <Class name="io.mango.notice.core.service.NoticeRecipientResolver"/>
-            <Class name="io.mango.org.core.service.impl.SysOrgServiceImpl"/>
+            <Class name="io.mango.notice.core.service.impl.NoticeWecomSyncService"/>
+            <Class name="io.mango.org.core.service.impl.SysOrgService"/>
+            <Class name="io.mango.org.starter.controller.SysOrgController"/>
             <Class name="io.mango.system.core.service.impl.SysTenantServiceImpl"/>
         </Or>
     </Match>

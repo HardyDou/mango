@@ -1,0 +1,64 @@
+mango:
+  resource:
+    schema-version: 1
+    module-code: org
+    module-name: 组织
+    declarations:
+      ORG_UNIT:
+        - id: "2026071608000000001"
+          version: 1
+          biz-key: org.unit.default-root
+          name: 芒果集团
+          target-module: org
+          sync-mode: INIT_ONLY
+          fields:
+            targetId: { type: LONG, value: 1 }
+            tenantId: { type: LONG, value: 1 }
+            orgCode: { type: STRING, value: MANGO_GROUP }
+            orgName: { type: STRING, value: 芒果集团 }
+            orgType: { type: INT, value: 1 }
+            sort: { type: INT, value: 0 }
+            status: { type: STRING, value: "1" }
+      ORG_POST:
+        - id: "2026071608000000011"
+          version: 1
+          biz-key: org.post.default-group-admin
+          name: 集团管理员
+          target-module: org
+          sync-mode: INIT_ONLY
+          fields:
+            targetId: { type: LONG, value: 1 }
+            tenantId: { type: LONG, value: 1 }
+            postCode: { type: STRING, value: GROUP_ADMIN }
+            postName: { type: STRING, value: 集团管理员 }
+            sort: { type: INT, value: 1 }
+            status: { type: STRING, value: "1" }
+            remark: { type: STRING, value: 系统默认岗位 }
+        - id: "2026071608000000012"
+          version: 1
+          biz-key: org.post.default-dept-manager
+          name: 部门负责人
+          target-module: org
+          sync-mode: INIT_ONLY
+          fields:
+            targetId: { type: LONG, value: 2 }
+            tenantId: { type: LONG, value: 1 }
+            postCode: { type: STRING, value: DEPT_MANAGER }
+            postName: { type: STRING, value: 部门负责人 }
+            sort: { type: INT, value: 2 }
+            status: { type: STRING, value: "1" }
+            remark: { type: STRING, value: 部门管理岗位 }
+        - id: "2026071608000000013"
+          version: 1
+          biz-key: org.post.default-rd-engineer
+          name: 研发工程师
+          target-module: org
+          sync-mode: INIT_ONLY
+          fields:
+            targetId: { type: LONG, value: 3 }
+            tenantId: { type: LONG, value: 1 }
+            postCode: { type: STRING, value: RD_ENGINEER }
+            postName: { type: STRING, value: 研发工程师 }
+            sort: { type: INT, value: 3 }
+            status: { type: STRING, value: "1" }
+            remark: { type: STRING, value: 研发岗位 }

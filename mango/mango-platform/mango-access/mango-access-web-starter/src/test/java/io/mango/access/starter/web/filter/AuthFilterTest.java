@@ -28,6 +28,7 @@ import org.springframework.mock.web.MockHttpServletResponse;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -130,7 +131,7 @@ class AuthFilterTest {
         request.addHeader("Authorization", "Bearer valid-token");
         MockHttpServletResponse response = new MockHttpServletResponse();
 
-        new AuthFilter(evaluator).doFilter(request, response, new MockFilterChain());
+        new AuthFilter(evaluator, tokenProvider).doFilter(request, response, new MockFilterChain());
 
         assertEquals(401, response.getStatus());
         assertEquals("{\"code\":401,\"message\":\"invalid \\\"tenant\\\"\\ncontext\"}",
@@ -153,7 +154,7 @@ class AuthFilterTest {
         request.setRemoteAddr("127.0.0.1");
         MockHttpServletResponse response = new MockHttpServletResponse();
 
-        new AuthFilter(accessEvaluator).doFilter(request, response, new MockFilterChain());
+        new AuthFilter(accessEvaluator, tokenProvider).doFilter(request, response, new MockFilterChain());
 
         assertEquals(200, response.getStatus());
         assertEquals(0, apiResourceApi.resolveCount);
@@ -178,6 +179,30 @@ class AuthFilterTest {
         assertEquals("admin", MangoContextHolder.principalName());
         assertEquals("tenant-a", MangoContextHolder.tenantId());
         assertEquals("internal-admin", MangoContextHolder.appCode());
+    }
+
+    @Test
+    @DisplayName("PERMISSION 资源应在租户上下文建立后执行上下文校验与权限查询")
+    void doFilter_shouldEstablishTenantContextBeforePermissionEvaluation() throws Exception {
+        apiResourceApi.accessMode = ApiResourceAccessMode.PERMISSION;
+        apiResourceApi.permissionCode = "system:org:list";
+        authorizationProvider.permissions = List.of("system:org:list");
+        AtomicReference<String> observedTenantId = new AtomicReference<>();
+        AccessEvaluator evaluator = new AccessEvaluator(
+                new AccessProperties(), tokenProvider, apiResourceApi, authorizationProvider,
+                List.of(principal -> {
+                    observedTenantId.set(MangoContextHolder.tenantId());
+                    return AccessContextValidationResultVO.allow();
+                }));
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/org/tree");
+        request.addHeader("Authorization", "Bearer valid-token");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        new AuthFilter(evaluator, tokenProvider).doFilter(request, response, new MockFilterChain());
+
+        assertEquals(200, response.getStatus());
+        assertEquals("tenant-a", observedTenantId.get());
+        assertEquals("tenant-a", MangoContextHolder.tenantId());
     }
 
     @Test
@@ -233,7 +258,7 @@ class AuthFilterTest {
     private AuthFilter newFilter() {
         AccessProperties properties = new AccessProperties();
         AccessEvaluator accessEvaluator = new AccessEvaluator(properties, tokenProvider, apiResourceApi, authorizationProvider);
-        return new AuthFilter(accessEvaluator);
+        return new AuthFilter(accessEvaluator, tokenProvider);
     }
 
     private static class TestApiResourceApi implements ApiResourceApi {
@@ -271,6 +296,7 @@ class AuthFilterTest {
     private static class TestTokenProvider implements ITokenProvider {
 
         private final Map<String, String> claims = Map.of(
+                "memberId", "1002",
                 "tenantId", "tenant-a",
                 "realm", "INTERNAL",
                 "actorType", "INTERNAL_USER",

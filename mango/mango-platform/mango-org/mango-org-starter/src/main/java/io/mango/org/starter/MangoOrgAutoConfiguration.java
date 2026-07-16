@@ -12,9 +12,9 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @MapperScan("io.mango.org.core.mapper")
 @ComponentScan({
-        "io.mango.org.core.controller",
-        "io.mango.org.core.service",
-        "io.mango.org.starter.controller"
+    "io.mango.org.core.service",
+    "io.mango.org.starter.controller",
+    "io.mango.org.starter.resource"
 })
 public class MangoOrgAutoConfiguration {
 }

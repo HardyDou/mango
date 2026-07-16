@@ -11,8 +11,9 @@ import org.springframework.context.annotation.Configuration;
 @ConditionalOnProperty(prefix = "mango.link", name = "enabled", havingValue = "true", matchIfMissing = true)
 @MapperScan(basePackages = "io.mango.link.core.mapper", annotationClass = Mapper.class)
 @ComponentScan({
-        "io.mango.link.core.service",
-        "io.mango.link.starter.controller"
+    "io.mango.link.core.service",
+    "io.mango.link.core.integration",
+    "io.mango.link.starter.controller"
 })
 public class LinkAutoConfiguration {
 
