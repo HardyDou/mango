@@ -1,9 +1,10 @@
 {
   "contractSchema": 2,
   "contractId": "delivery-assurance",
-  "schemaRevision": 3,
+  "schemaRevision": 4,
   "ruleSource": "mango-pmo/rules/11-delivery-assurance.md",
   "selectionAuthority": "policy-with-human-exceptions",
+  "legacyBaselinePrefixes": ["CONFIRMED"],
   "releaseIncluded": false,
   "workspacePolicy": {
     "readOnly": "NO_WORKTREE",

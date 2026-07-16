@@ -98,6 +98,10 @@ function namesAiAsConfirmer(value) {
   return /(?:\bai\b|agent|codex|claude|gpt|模型|机器人)/iu.test(value);
 }
 
+function hasHumanActor(value) {
+  return /(?:owner|maintainer|human|user|负责人|维护者|用户)/iu.test(value);
+}
+
 export function validateRiskVerification(markdown) {
   const failures = [];
   const section = sectionText(markdown, 'Risk / Verification');
@@ -158,8 +162,12 @@ export function validateRiskVerification(markdown) {
   }
 
   if (!releaseOnly) {
-    if (!/^RESOLVED\s*[-:：]\s*.+/u.test(baseline)) {
-      failures.push('"Assurance baseline" must use "RESOLVED - policy facts and exception evidence"');
+    const resolvedBaseline = /^RESOLVED\s*[-:：]\s*.+/u.test(baseline);
+    const legacyConfirmedBaseline = DELIVERY_ASSURANCE_CONTRACT.legacyBaselinePrefixes.some(prefix =>
+      new RegExp(`^${escapeRegExp(prefix)}\\s*[-:：]\\s*.+`, 'u').test(baseline),
+    ) && hasHumanActor(baseline) && !namesAiAsConfirmer(baseline);
+    if (!resolvedBaseline && !legacyConfirmedBaseline) {
+      failures.push('"Assurance baseline" must use "RESOLVED - policy facts and exception evidence" or a human-confirmed legacy baseline');
     }
     if (!selections || selections.size === 0) {
       failures.push('"Assurance selections" must list exact resolved M01-M16 values, for example M01=CREATE; M09=ENABLE');

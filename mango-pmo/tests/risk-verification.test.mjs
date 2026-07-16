@@ -65,11 +65,21 @@ test('enabled measures need evidence but unselected catalog measures need no ski
 
 test('invalid values and unresolved baseline fail', () => {
   const result = validateRiskVerification(body({
-    baseline: 'CONFIRMED - automatic choice',
+    baseline: 'PENDING - automatic choice',
     selections: 'M01=CREATE; M02=KEEP_DATABASE; M17=ENABLE',
   }));
   assert.match(result.failures.join('\n'), /Assurance baseline/);
   assert.match(result.failures.join('\n'), /Assurance selections/);
+});
+
+test('a human CONFIRMED baseline remains valid during the trusted-base contract migration', () => {
+  const result = validateRiskVerification(body({
+    workspaceDecision: 'CREATE',
+    baseline: 'CONFIRMED - repository owner approved the recorded assurance set',
+    selections: 'M01=CREATE; M09=ENABLE; M10=ENABLE',
+    evidence: 'M01 - isolated task worktree; M09 - static checks passed; M10 - contract tests passed',
+  }));
+  assert.deepEqual(result.failures, []);
 });
 
 test('release-only PR bypasses the delivery catalog and stays in the release workflow', () => {

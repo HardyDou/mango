@@ -3,8 +3,8 @@
   "packageVersion": "1.2.6",
   "schemaVersion": 2,
   "source": "mango-pmo",
-  "sourceCommit": "f666fc5407a6c9f9d9cbccf739270c0a79cd9eaf",
-  "bundleSha256": "927ffc25506e0705a990fb8f9853294532715768a4ea0defff961f206a38573b",
+  "sourceCommit": "a180aae569cee69eedd916d81b7c80593803718b",
+  "bundleSha256": "46c2538d44e46cfdd14b4a5f3423259b5b7f1659d7a539eba931b069836d3231",
   "contracts": [
     {
       "contractId": "business-requirements",
@@ -13,7 +13,7 @@
     },
     {
       "contractId": "delivery-assurance",
-      "schemaRevision": 3,
+      "schemaRevision": 4,
       "path": "contracts/delivery-assurance.json"
     },
     {
@@ -350,8 +350,8 @@
     },
     {
       "path": "contracts/delivery-assurance.json",
-      "sha256": "c68c35680590c0fb6b16c9b4201686e88a5948fb1d5f8eca09e3e410510737da",
-      "size": 6166,
+      "sha256": "f2b7ca5da871e6e4dc99ca36fe5699457a09f34e310343a0ad4d8a93bdcb78d7",
+      "size": 6209,
       "kind": "contract",
       "mode": "0644"
     },
@@ -476,8 +476,8 @@
     },
     {
       "path": "rules/11-delivery-assurance.md",
-      "sha256": "d7c79773a3ccd4d36dbd1ff0ad0f2f7126ba1101cc472825713cca1d67b007bb",
-      "size": 7562,
+      "sha256": "a77913aa1b3cf6f6d3dda4c79711566377f1cb86ab0458fac06b7d7328e859f4",
+      "size": 7782,
       "kind": "rule",
       "mode": "0644"
     },
@@ -1190,8 +1190,8 @@
     },
     {
       "path": "tools/risk-verification.mjs",
-      "sha256": "ef1373081063fccf9207a6dae8146972939ae275379801f58d855bc3cc1230d2",
-      "size": 10964,
+      "sha256": "806c6a2d7044b3f1e5e88de301747811a34924431c33cb3c7f959f857e04aa89",
+      "size": 11448,
       "kind": "tool",
       "mode": "0644"
     },
