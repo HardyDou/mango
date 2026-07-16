@@ -80,8 +80,12 @@ export function applyMangoRuntimeTheme(theme?: MangoRuntimeTheme) {
   applyCssVar('--mango-color-primary', theme.primary);
   applyCssVar('--el-color-primary', theme.primary);
   applyCssVar('--mango-bg-top-bar', theme.topBar);
+  applyCssVar('--mango-color-top-bar', theme.topBarColor);
   applyCssVar('--mango-bg-menu-bar', theme.menuBar);
+  applyCssVar('--mango-color-menu-bar', theme.menuBarColor);
+  applyCssVar('--mango-color-menu-active-bg', theme.menuBarActiveColor);
   applyCssVar('--mango-bg-columns-menu-bar', theme.columnsMenuBar);
+  applyCssVar('--mango-color-columns-menu-bar', theme.columnsMenuBarColor);
   Object.entries(theme.tokens || {}).forEach(([name, value]) => {
     applyCssVar(name, value);
   });

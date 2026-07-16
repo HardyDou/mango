@@ -205,11 +205,11 @@ watch(
     margin: 0;
 
     .layout-columns-active {
-      color: #fff;
+      color: var(--mango-color-columns-menu-bar);
       transition: 0.3s ease-in-out;
     }
     li {
-      color: #fff;
+      color: var(--mango-color-columns-menu-bar);
       width: 100%;
       height: 50px;
       text-align: center;
@@ -219,7 +219,7 @@ watch(
       z-index: 1;
 
       &:hover {
-        color: #fff;
+        color: var(--mango-color-columns-menu-bar);
       }
 
       .columns-vertical {
@@ -253,7 +253,7 @@ watch(
 
       a {
         text-decoration: none;
-        color: var(--mango-color-menu-bar);
+        color: var(--mango-color-columns-menu-bar);
         display: flex;
         align-items: center;
         width: 100%;

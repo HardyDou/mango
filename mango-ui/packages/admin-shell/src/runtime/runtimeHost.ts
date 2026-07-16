@@ -520,8 +520,12 @@ export function createShellRuntimeTheme(): MangoRuntimeTheme {
       '--mango-color-primary': themeStore.primary,
       '--el-color-primary': themeStore.primary,
       '--mango-bg-top-bar': themeStore.topBar,
+      '--mango-color-top-bar': themeStore.topBarColor,
       '--mango-bg-menu-bar': themeStore.menuBar,
+      '--mango-color-menu-bar': themeStore.menuBarColor,
+      '--mango-color-menu-active-bg': themeStore.menuBarActiveColor,
       '--mango-bg-columns-menu-bar': themeStore.columnsMenuBar,
+      '--mango-color-columns-menu-bar': themeStore.columnsMenuBarColor,
     },
   };
 }

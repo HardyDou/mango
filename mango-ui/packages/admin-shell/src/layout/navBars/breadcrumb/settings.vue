@@ -522,6 +522,24 @@ const isValidColor = (color: string): boolean => {
   return /^#[0-9A-Fa-f]{6}$/.test(color);
 };
 
+const isValidCssColor = (color: unknown): color is string => {
+  if (typeof color !== 'string') return false;
+  return /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$/.test(color)
+    || /^rgba?\(/.test(color)
+    || /^hsla?\(/.test(color);
+};
+
+const themeColorVars: Array<[string, BgColorProperty | 'primary']> = [
+  ['--mango-color-primary', 'primary'],
+  ['--mango-bg-top-bar', 'topBar'],
+  ['--mango-color-top-bar', 'topBarColor'],
+  ['--mango-bg-menu-bar', 'menuBar'],
+  ['--mango-color-menu-bar', 'menuBarColor'],
+  ['--mango-color-menu-active-bg', 'menuBarActiveColor'],
+  ['--mango-bg-columns-menu-bar', 'columnsMenuBar'],
+  ['--mango-color-columns-menu-bar', 'columnsMenuBarColor'],
+];
+
 // 颜色选择器变化 - 全局主题
 const onColorPickerChange = () => {
   if (!themeStore.primary) return;
@@ -535,7 +553,7 @@ type BgColorProperty = 'topBar' | 'topBarColor' | 'menuBar' | 'menuBarColor' | '
 
 const onBgColorPickerChange = (bg: BgColorProperty) => {
   const colorValue = themeStore[bg as keyof typeof themeStore];
-  if (!isValidColor(colorValue)) return;
+  if (!isValidCssColor(colorValue)) return;
 
   // 颜色变化现在由 layout/index.vue 的 watcher 处理
   // 只触发相关的 gradient 函数
@@ -614,17 +632,18 @@ const onAddDarkChange = () => {
   if (themeStore.isDark) {
     document.documentElement.setAttribute('data-theme', 'dark');
     // Clear inline color styles so dark CSS variables take precedence
-    document.documentElement.style.removeProperty('--mango-color-primary');
-    document.documentElement.style.removeProperty('--mango-bg-top-bar');
-    document.documentElement.style.removeProperty('--mango-bg-menu-bar');
-    document.documentElement.style.removeProperty('--mango-bg-columns-menu-bar');
+    themeColorVars.forEach(([name]) => {
+      document.documentElement.style.removeProperty(name);
+    });
   } else {
     document.documentElement.setAttribute('data-theme', 'light');
     // Re-apply light mode colors as inline styles
-    document.documentElement.style.setProperty('--mango-color-primary', themeStore.primary);
-    document.documentElement.style.setProperty('--mango-bg-top-bar', themeStore.topBar);
-    document.documentElement.style.setProperty('--mango-bg-menu-bar', themeStore.menuBar);
-    document.documentElement.style.setProperty('--mango-bg-columns-menu-bar', themeStore.columnsMenuBar);
+    themeColorVars.forEach(([name, key]) => {
+      const colorValue = themeStore[key];
+      if (isValidCssColor(colorValue)) {
+        document.documentElement.style.setProperty(name, colorValue);
+      }
+    });
   }
   setLocalThemeConfig();
 };

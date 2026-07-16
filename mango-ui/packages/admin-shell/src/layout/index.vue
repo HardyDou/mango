@@ -30,6 +30,13 @@ const isValidColor = (color: string): boolean => {
   return /^#[0-9A-Fa-f]{6}$/.test(color);
 };
 
+const isValidCssColor = (color?: string): color is string => {
+  if (!color) return false;
+  return /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$/.test(color)
+    || /^rgba?\(/.test(color)
+    || /^hsla?\(/.test(color);
+};
+
 // 应用 primary 主题色
 const applyPrimaryColor = (primary: string) => {
   if (!isValidColor(primary)) return;
@@ -47,12 +54,21 @@ const applyBgColor = (bg: string, variable: string) => {
   document.documentElement.style.setProperty(variable, bg);
 };
 
+const applyCssColor = (color: string, variable: string) => {
+  if (!isValidCssColor(color)) return;
+  document.documentElement.style.setProperty(variable, color);
+};
+
 // 初始化主题颜色
 const initTheme = () => {
   applyPrimaryColor(themeStore.primary);
   applyBgColor(themeStore.topBar, '--mango-bg-top-bar');
+  applyCssColor(themeStore.topBarColor, '--mango-color-top-bar');
   applyBgColor(themeStore.menuBar, '--mango-bg-menu-bar');
+  applyCssColor(themeStore.menuBarColor, '--mango-color-menu-bar');
+  applyCssColor(themeStore.menuBarActiveColor, '--mango-color-menu-active-bg');
   applyBgColor(themeStore.columnsMenuBar, '--mango-bg-columns-menu-bar');
+  applyCssColor(themeStore.columnsMenuBarColor, '--mango-color-columns-menu-bar');
 };
 
 // 监听主题颜色变化
@@ -71,6 +87,13 @@ watch(
 );
 
 watch(
+  () => themeStore.topBarColor,
+  (newTopBarColor) => {
+    applyCssColor(newTopBarColor, '--mango-color-top-bar');
+  }
+);
+
+watch(
   () => themeStore.menuBar,
   (newMenuBar) => {
     applyBgColor(newMenuBar, '--mango-bg-menu-bar');
@@ -79,9 +102,30 @@ watch(
 );
 
 watch(
+  () => themeStore.menuBarColor,
+  (newMenuBarColor) => {
+    applyCssColor(newMenuBarColor, '--mango-color-menu-bar');
+  }
+);
+
+watch(
+  () => themeStore.menuBarActiveColor,
+  (newMenuBarActiveColor) => {
+    applyCssColor(newMenuBarActiveColor, '--mango-color-menu-active-bg');
+  }
+);
+
+watch(
   () => themeStore.columnsMenuBar,
   (newColumnsMenuBar) => {
     applyBgColor(newColumnsMenuBar, '--mango-bg-columns-menu-bar');
+  }
+);
+
+watch(
+  () => themeStore.columnsMenuBarColor,
+  (newColumnsMenuBarColor) => {
+    applyCssColor(newColumnsMenuBarColor, '--mango-color-columns-menu-bar');
   }
 );
 
