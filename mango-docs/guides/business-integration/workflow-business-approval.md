@@ -185,3 +185,5 @@ pnpm -F @mango/workflow-business-example build
 - v2026.07.07-maven-1.0.13-menu-api-codes-release 仅发布 menuCode/apiCodes 权限模型的 Maven、npm 和 CLI 版本批次；不改变业务审批发起、审批回调、状态回写、流程页面 key、后端公开 API、配置、菜单、权限、租户隔离、启动方式和运行时行为。业务菜单仍应在自身 `apiCodes` 中声明需要复用的 workflow 接口权限，避免因接口权限带出 workflow 或风控菜单。
 
 - v2026.07.11-npm-lock-sync-release 仅同步 `@mango/*` npm 发布批次、CLI/starter 版本锁和包消费者验证；不改变业务审批发起、审批回调、状态回写、流程页面 key、后端公开 API、配置、菜单、权限、租户隔离、启动方式和运行时行为。业务项目应将相关前端包与 `@mango/cli` 成组升级。
+
+- Resource 历史债务治理仅迁移 Workflow Resource Handler/Provider 的本地 SPI 依赖，资源依赖排序和声明内容不变；不改变审批发起、任务处理、回调、状态回写、页面 key、API、菜单、权限、租户隔离和本场景排障步骤。

@@ -207,3 +207,5 @@ pnpm -F @mango/admin-shell build
 - v2026.07.09-common-search-panel-form-layout-release 仅调整 `MangoSearchPanel` 的表单尺寸、label 展示、默认列数、折叠行数和展开控件布局；不新增或修改租户字典、组织、用户或系统配置数据，不改变公开查询 API、权限、租户隔离、页面入口、启动方式和运行时数据行为。
 
 - v2026.07.11-npm-lock-sync-release 仅同步 `@mango/*` npm 发布批次、CLI/starter 版本锁和包消费者验证；不新增或修改租户字典、组织、用户或系统配置数据，不改变公开查询 API、权限、租户隔离、页面入口、启动方式和运行时数据行为。业务项目应将相关前端包与 `@mango/cli` 成组升级。
+
+- Resource 历史债务治理保留正式/demo/`INIT_ONLY` 语义与声明字段，只调整 HTTP API、本地 SPI 和目标适配器的模块边界；不新增或修改租户字典、组织、用户、系统配置数据，也不改变查询 API、权限、租户隔离和本场景排障步骤。
