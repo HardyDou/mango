@@ -1996,6 +1996,33 @@ class CheckMojoTest {
     }
 
     @Test
+    void checkDependency_withNonResourceModuleDependingOnResourceSupport_passes() throws Exception {
+        Path projectDir = tempDir.resolve("mango-platform/mango-domain/mango-domain-core");
+        Files.createDirectories(projectDir);
+        Files.writeString(projectDir.resolve("pom.xml"), """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <project>
+                    <groupId>io.mango.platform.domain</groupId>
+                    <artifactId>mango-domain-core</artifactId>
+                    <version>1.0.0</version>
+                    <dependencies>
+                        <dependency>
+                            <groupId>io.mango.platform.resource</groupId>
+                            <artifactId>mango-resource-support</artifactId>
+                        </dependency>
+                    </dependencies>
+                </project>
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "dependency");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertDoesNotThrow(() -> mojo.execute());
+    }
+
+    @Test
     void checkDependency_withResourceStarterExceptionAndReason_passes() throws Exception {
         Path projectDir = tempDir.resolve("mango-platform/mango-domain/mango-domain-core");
         Files.createDirectories(projectDir);
@@ -3058,6 +3085,47 @@ class CheckMojoTest {
                     public DemoController(IDemoService demoService) { this.demoService = demoService; }
                     @PostMapping("/demo")
                     public R<DemoVO> create(@RequestBody @Valid CreateDemoCommand command) {
+                        return R.ok(demoService.create(command));
+                    }
+                }
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "api-contract");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertDoesNotThrow(() -> mojo.execute());
+    }
+
+    @Test
+    void checkApiContract_withApiOwnedValidation_doesNotRequireControllerToRepeatValid() throws Exception {
+        Path apiDir = tempDir.resolve("mango-demo-api/src/main/java/io/mango/demo/api");
+        Path starterDir = tempDir.resolve("mango-demo-starter/src/main/java/io/mango/demo/starter");
+        Files.createDirectories(apiDir);
+        Files.createDirectories(starterDir);
+        Files.writeString(apiDir.resolve("DemoApi.java"), """
+                package io.mango.demo.api;
+                import io.mango.common.result.R;
+                import jakarta.validation.Valid;
+                public interface DemoApi {
+                    R<DemoVO> create(@Valid CreateDemoCommand command);
+                }
+                """);
+        Files.writeString(starterDir.resolve("DemoController.java"), """
+                package io.mango.demo.starter;
+                import io.mango.common.result.R;
+                import org.springframework.validation.annotation.Validated;
+                import org.springframework.web.bind.annotation.PostMapping;
+                import org.springframework.web.bind.annotation.RequestBody;
+                import org.springframework.web.bind.annotation.RestController;
+                @RestController
+                @Validated
+                public class DemoController implements DemoApi {
+                    private final IDemoService demoService;
+                    public DemoController(IDemoService demoService) { this.demoService = demoService; }
+                    @PostMapping("/demo")
+                    public R<DemoVO> create(@RequestBody CreateDemoCommand command) {
                         return R.ok(demoService.create(command));
                     }
                 }

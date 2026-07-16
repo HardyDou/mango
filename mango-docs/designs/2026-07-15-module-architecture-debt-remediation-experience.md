@@ -36,7 +36,12 @@
 | 开发启动安装阶段扩大为全仓门禁 | `mango dev start` 的安装阶段在目标模块均已构建后，被全仓存量架构债务阻断 | 启动、构件安装和正式质量门禁共用一个全 Reactor 生命周期，范围边界没有分离 | 质量结论使用已审计的目标 Reactor；启动失败先核对失败模块和阶段，不把其它模块存量债务冒充当前模块失败，也不重复跑无关全仓检查 |
 | CLI 就绪早于资源派生关系完成 | 端口已响应时 demo 租户已出现，但行政区划、国际化和角色菜单仍在继续同步 | 就绪探测只证明 HTTP 进程可响应，不能证明 Resource Registry 完成 | 新库验收等待健康检查 UP 和预期资源计数/派生关系稳定，再运行 API/E2E；不能在首个 HTTP 响应后立即取数下结论 |
 | HTTP API 与本地动态 SPI 混放 | Resource API 同时暴露 HTTP Command/VO 和 Provider、Handler、Builder、可变声明模型，任何本地扩展都被迫依赖公开协议层 | 只看“其它模块能 import”，没有区分跨进程稳定契约和进程内协作接口 | API 只放稳定 HTTP 契约；动态 Provider/Handler/Dispatcher 与声明构造能力放 support；删除旧协议并一次迁移全部直接消费者 |
-| Remote Starter 同时充当客户端和服务端 | `starter-remote` 既发起远程调用又注册目标 Controller，能力应用依赖方向含混，部署拓扑无法从 POM 判断 | 单体组装同时拥有两端，测试无法暴露职责倒置 | 服务端拆到 `target-core/target-starter`；remote 只保留客户端；分别测试客户端 URI/失败语义与服务端 API/Service |
+| 为追求分层新增空壳 target 模块 | `target-core/target-starter` 的 Java 包命中 `.gitignore` 的 `target/`，最终 Git 只有 POM 和失效自动配置；发布物增加但没有能力 | 只看工作区和 Maven 成功，没有核对 Git 跟踪文件、JAR 与自动配置类 | 删除空模块；纯执行端口留在 support，目标 Controller 由 sync-starter 装配，remote 只保留客户端；用 `git ls-files`、JAR 清单和自动配置类加载测试验证 |
+| 动态服务地址改写丢失上下文路径 | Feign 或 HTTP 客户端把服务名改成实例地址后，只保留 host/port，真实接口 404 | 单元测试只使用根路径 URL，未覆盖服务 base path | 地址改写只替换 authority，保留 path/query；测试服务名、显式 host:port 和带 base path 三种输入 |
+| 内部 Header 被安全链直接信任 | 外部请求伪造内部调用 Header 即可绕过认证，或 HMAC 已验证但安全链看不到结果 | 验签 Filter 与 SecurityFilterChain 使用不同信任语义 | 验签成功后写入服务端 request attribute，安全链只信任该属性；原始 Header 必须有“不放行”回归测试 |
+| 跨服务资源乱序启动导致声明永久缺失 | Authorization 先于 System 启动，父资源不存在；一次同步失败后应用退出或不再上报 | 把启动同步当一次性动作，没有建模跨服务最终一致性 | 远程失败/未完成时重试，完整成功后停止；真实乱序启动并核对最终 registry 与父子关系 |
+| 分布式锁竞争被包装成同步成功 | 注册中心未取得锁而跳过批次，却向来源服务返回成功，来源服务停止重试 | 锁只被当作服务端实现细节，没有进入完成语义 | 未取得锁返回 `data=false`，来源继续重试；真实多节点断言 registry 数量、重复数和 SKIP 日志 |
+| 后端能力被虚构为有产品页面 | Resource 没有独立菜单/页面，证据却写“Resource 页面 E2E 通过” | 把通用浏览器 shell/API 用例扩大解释 | 明确记录 UI 不适用；以真实 API、数据库和单/多节点拓扑 E2E 作为主证据 |
 | 删除 migration 后旧构件仍残留 | 源码已删除 V2，普通 `mvn test` 后 `target/classes` 仍保留旧 V2，后续打包可能继续携带 | 只检查 `src/main/resources`，没有 clean 或检查最终构件清单 | migration 契约测试同时检查源码边界；最终验证必须 clean；检查 `target/classes` 和 JAR 中 migration 清单 |
 | 消费者测试 schema 跟不上公共实体契约 | Resource 实体改为 `TenantEntity` 后，Authorization 集成 fixture 仍缺租户/审计列，消费者测试编译或运行失败 | 只跑生产者测试，消费者使用自建简化 H2 表 | 公共持久化契约变化后枚举直接消费者；同步更新消费者自有 fixture，并保留至少一个真实公共 Service 入口集成测试 |
 | 资源 Handler 在调用者租户下处理声明租户 | 强制同步 Notice 的 `default` 渠道时，租户拦截器又附加当前租户 `1`，查询不到既有行后重复插入固定主键 | Handler H2 测试关闭租户插件，且只执行一轮同步 | 测试启用真实租户插件并从不同调用者租户连续重放；Handler 在声明租户上下文执行并 finally 恢复，禁止使用忽略租户检查注解 |
@@ -64,6 +69,11 @@
 16. 删除或合并 migration 后必须 clean 并检查最终构件清单，普通增量测试不能证明发布物不再携带旧资源。
 17. 资源 Handler 的租户测试必须启用真实拦截器、使用不同调用者租户并至少重复执行两轮；上下文切换必须可恢复，不能靠忽略检查注解通过。
 18. Resource E2E 不能只读列表，至少覆盖一个非法请求和一次真实强制同步，并对目标表数量、租户边界和运行时错误做断言。
+19. 新增或迁移模块时核对 `git ls-files`、clean JAR 和自动配置导入类，防止 `.gitignore` 把合法包名吞掉。
+20. 分布式同步必须区分 HTTP 成功与业务批次完成；锁竞争或依赖未就绪时来源节点继续重试，直到完整成功。
+21. 内部调用只信任服务端验签产生的属性，不能把客户端可伪造 Header 直接作为放行依据。
+22. 多节点 E2E 至少断言服务发现健康实例、registry 稳定数量、两类重复数、CREATE/SKIP 日志和一个节点失效后的继续同步。
+23. 没有独立产品页面的后端能力明确标记 UI/E2E 不适用，不得把通用 shell/API 测试描述成该模块页面验收。
 
 ## 4. 后续模块处理节奏
 

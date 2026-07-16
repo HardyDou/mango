@@ -49,7 +49,9 @@ public class ModuleTargetFeignInterceptor implements RequestInterceptor, Ordered
         }
 
         ModuleInfo info = moduleInfo.get();
-        String originalPath = extractPath(template.path());
+        String targetBasePath = extractPath(template.feignTarget().url());
+        String methodPath = extractPath(template.path());
+        String originalPath = joinPath(targetBasePath, methodPath);
         template.target("http://" + info.serviceName());
         template.uri(joinPath(info.contextPath(), originalPath), false);
     }
@@ -76,6 +78,11 @@ public class ModuleTargetFeignInterceptor implements RequestInterceptor, Ordered
     private String joinPath(String contextPath, String path) {
         String normalizedContextPath = normalize(contextPath);
         String normalizedPath = normalize(path);
+        if (!normalizedContextPath.isEmpty()
+                && (normalizedPath.equals(normalizedContextPath)
+                        || normalizedPath.startsWith(normalizedContextPath + "/"))) {
+            return normalizedPath;
+        }
         if (normalizedContextPath.isEmpty()) {
             if (normalizedPath.isEmpty()) {
                 return "/";

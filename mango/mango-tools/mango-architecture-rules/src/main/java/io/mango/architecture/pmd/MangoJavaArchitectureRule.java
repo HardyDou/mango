@@ -1361,9 +1361,7 @@ public final class MangoJavaArchitectureRule extends AbstractJavaRule {
 
     private boolean isServicePortCall(ASTMethodCall call) {
         ASTExpression qualifier = call.getQualifier();
-        if (qualifier != null
-                && simpleName(canonicalName(qualifier.getTypeMirror()))
-                        .matches("I[A-Z].*Service")) {
+        if (qualifier != null && isAllowedControllerServicePort(qualifier.getTypeMirror())) {
             return true;
         }
         if (call.getOverloadSelectionInfo().isFailed()) {
@@ -1371,14 +1369,24 @@ public final class MangoJavaArchitectureRule extends AbstractJavaRule {
         }
         String declaringType =
                 canonicalName(call.getOverloadSelectionInfo().getMethodType().getDeclaringType());
-        return simpleName(declaringType).matches("I[A-Z].*Service")
+        return isAllowedControllerServicePort(declaringType)
                 || MANGO_CRUD_SERVICE.equals(declaringType)
                 || MANGO_TYPED_CRUD_SERVICE.equals(declaringType);
     }
 
     private boolean isAllowedControllerServicePort(JTypeMirror type) {
+        if (!isAllowedControllerServicePort(canonicalName(type))) {
+            return false;
+        }
         String simpleName = simpleName(canonicalName(type));
-        return simpleName.matches("I[A-Z].*Service");
+        return !simpleName.endsWith("Executor")
+                || (type instanceof JClassType classType && classType.getSymbol().isInterface());
+    }
+
+    private boolean isAllowedControllerServicePort(String canonicalTypeName) {
+        String simpleName = simpleName(canonicalTypeName);
+        return simpleName.matches("I[A-Z].*Service")
+                || (canonicalTypeName.contains(".support.") && simpleName.endsWith("Executor"));
     }
 
     private boolean isCallOn(ASTMethodCall call, String canonicalTypeName) {

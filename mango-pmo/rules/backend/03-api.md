@@ -85,7 +85,9 @@
 - `api` 如需声明内部访问边界，允许依赖 `mango-infra-web-api` 并在 `XxxApi` 类或方法上使用 `@Inner`。
 - `api` 禁止依赖 `mango-infra-web-starter`。
 - Controller 只做协议适配。
-- Controller 必须实现对应 `XxxApi`，内部只能依赖 `IXxxService` 或等效服务接口。
+- Controller 必须实现对应 `XxxApi`，内部只能依赖 `IXxxService` 或等效服务接口。同域 `support`
+  中不访问数据库、不承载 HTTP/Feign 语义的纯 Java `XxxExecutor` 接口可作为框架适配器的等效服务端口；
+  其实现仍不得放入 Controller，也不得借此绕过业务 Service 分层。
 - Controller 禁止持有 `XxxApi` 字段进行自调用。
 - Controller 不直接操作 `Mapper`。
 - Controller 不直接返回持久化对象。

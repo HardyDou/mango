@@ -568,7 +568,9 @@ public final class MangoArchUnitChecker {
             boolean allowedServicePort =
                     !field.getModifiers().contains(JavaModifier.STATIC)
                             && isInterfaceOrExternalStub(type)
-                            && name.matches("I[A-Z].*Service");
+                            && (name.matches("I[A-Z].*Service")
+                                    || (type.getName().contains(".support.")
+                                            && name.endsWith("Executor")));
             if (!allowedServicePort) {
                 issues.add(
                         new ArchitectureIssue(

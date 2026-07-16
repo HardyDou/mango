@@ -1,12 +1,16 @@
 package io.mango.resource.sync.starter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.mango.resource.sync.starter.controller.ResourceTargetController;
+import io.mango.resource.support.ResourceHandler;
 import io.mango.resource.support.ResourceProvider;
-import io.mango.resource.api.ResourceRegistryApi;
+import io.mango.resource.api.ResourceDeclarationApi;
 import io.mango.resource.support.config.ResourceRegistryProperties;
 import io.mango.resource.support.declaration.FileResourceProvider;
 import io.mango.resource.support.declaration.ResourceDeclarationCollector;
 import io.mango.resource.support.declaration.ResourceDeclarationLoader;
+import io.mango.resource.support.execution.DefaultResourceTargetExecutor;
+import io.mango.resource.support.execution.ResourceTargetExecutor;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -14,13 +18,25 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Import;
+
+import java.util.List;
 
 /**
  * 资源声明扫描同步自动配置。
  */
 @AutoConfiguration
 @EnableConfigurationProperties(ResourceRegistryProperties.class)
+@Import(ResourceTargetController.class)
 public class ResourceSyncAutoConfiguration {
+
+    @Bean
+    @ConditionalOnMissingBean
+    public ResourceTargetExecutor resourceTargetExecutor(ObjectMapper objectMapper,
+                                                         ObjectProvider<ResourceHandler> handlers) {
+        List<ResourceHandler> orderedHandlers = handlers.orderedStream().toList();
+        return new DefaultResourceTargetExecutor(objectMapper, orderedHandlers);
+    }
 
     @Bean
     @ConditionalOnMissingBean
@@ -42,13 +58,13 @@ public class ResourceSyncAutoConfiguration {
     }
 
     @Bean
-    @ConditionalOnBean(ResourceRegistryApi.class)
+    @ConditionalOnBean(ResourceDeclarationApi.class)
     @ConditionalOnMissingBean
     public ResourceSyncRunner resourceSyncRunner(ResourceRegistryProperties properties,
                                                  ResourceDeclarationCollector collector,
-                                                 ResourceRegistryApi resourceRegistryApi,
+                                                 ResourceDeclarationApi resourceDeclarationApi,
                                                  ObjectMapper objectMapper,
                                                  @Value("${spring.application.name:}") String applicationName) {
-        return new ResourceSyncRunner(properties, collector, resourceRegistryApi, objectMapper, applicationName);
+        return new ResourceSyncRunner(properties, collector, resourceDeclarationApi, objectMapper, applicationName);
     }
 }

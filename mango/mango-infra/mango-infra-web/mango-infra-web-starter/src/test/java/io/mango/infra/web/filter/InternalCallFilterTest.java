@@ -2,9 +2,11 @@ package io.mango.infra.web.filter;
 
 import io.mango.infra.kv.api.IKvStore;
 import io.mango.infra.web.api.IInternalPathProvider;
+import io.mango.infra.web.api.InternalCallAttributes;
 import io.mango.infra.web.starter.MangoWebProperties;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.core.Ordered;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 
@@ -77,7 +79,7 @@ class InternalCallFilterTest {
         };
         InternalCallFilter filter = new InternalCallFilter(
                 failingProvider, new InMemoryKvStore(), new MangoWebProperties());
-        filter.onApplicationReady();
+        filter.onApplicationStarted();
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/public/health");
         MockHttpServletResponse response = new MockHttpServletResponse();
         AtomicBoolean invoked = new AtomicBoolean(false);
@@ -148,6 +150,26 @@ class InternalCallFilterTest {
     }
 
     @Test
+    void validSignedInternalCall_marksRequestAsServerVerified() throws Exception {
+        MangoWebProperties properties = new MangoWebProperties();
+        properties.getInner().setSecret("test-secret");
+        InternalCallFilter filter = newFilter(List.of("/private/**"), properties, new InMemoryKvStore());
+        long timestamp = System.currentTimeMillis();
+        String nonce = "nonce-verified-attribute";
+        String signature = hmacSha256(
+                timestamp + ":" + nonce + ":POST:/private/config:a=1&b=2", "test-secret");
+        MockHttpServletRequest request = signedRequest(timestamp, nonce, signature);
+        AtomicBoolean verifiedInChain = new AtomicBoolean(false);
+
+        filter.doFilter(request, new MockHttpServletResponse(), (servletRequest, servletResponse) ->
+                verifiedInChain.set(Boolean.TRUE.equals(
+                        servletRequest.getAttribute(InternalCallAttributes.VERIFIED))));
+
+        assertTrue(verifiedInChain.get());
+        assertEquals(Ordered.HIGHEST_PRECEDENCE + 20, filter.getOrder());
+    }
+
+    @Test
     void doFilter_atomicNonceClaimFailure_rejectsRequest() throws Exception {
         MangoWebProperties properties = new MangoWebProperties();
         properties.getInner().setSecret("test-secret");
@@ -199,7 +221,7 @@ class InternalCallFilterTest {
     private InternalCallFilter newFilter(List<String> internalPaths, MangoWebProperties properties, IKvStore kvStore) {
         IInternalPathProvider provider = () -> internalPaths;
         InternalCallFilter filter = new InternalCallFilter(provider, kvStore, properties);
-        filter.onApplicationReady();
+        filter.onApplicationStarted();
         return filter;
     }
 

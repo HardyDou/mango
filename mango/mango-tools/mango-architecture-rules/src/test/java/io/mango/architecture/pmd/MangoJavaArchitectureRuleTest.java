@@ -1103,6 +1103,72 @@ class MangoJavaArchitectureRuleTest {
     }
 
     @Test
+    void controllerMayDependOnPureSupportExecutorPort() {
+        Report report = analyze(
+                "example/support/ResourceTargetController.java", """
+                package example.support;
+                import io.swagger.v3.oas.annotations.tags.Tag;
+                import org.springframework.validation.annotation.Validated;
+                import org.springframework.web.bind.annotation.RestController;
+                interface ResourceTargetApi {}
+                interface ResourceTargetExecutor {}
+                @Tag(name = "资源目标", description = "执行资源目标命令")
+                @Validated @RestController
+                final class ResourceTargetController implements ResourceTargetApi {
+                    private ResourceTargetExecutor executor;
+                }
+                """,
+                "io/swagger/v3/oas/annotations/tags/Tag.java", """
+                package io.swagger.v3.oas.annotations.tags;
+                public @interface Tag { String name(); String description(); }
+                """,
+                "org/springframework/validation/annotation/Validated.java", """
+                package org.springframework.validation.annotation;
+                public @interface Validated {}
+                """,
+                "org/springframework/web/bind/annotation/RestController.java", """
+                package org.springframework.web.bind.annotation;
+                public @interface RestController {}
+                """);
+
+        assertThat(messages(report)).isEmpty();
+    }
+
+    @Test
+    void controllerMustNotDependOnConcreteSupportExecutor() {
+        Report report = analyze(
+                "example/support/ResourceTargetController.java", """
+                package example.support;
+                import io.swagger.v3.oas.annotations.tags.Tag;
+                import org.springframework.validation.annotation.Validated;
+                import org.springframework.web.bind.annotation.RestController;
+                interface ResourceTargetApi {}
+                final class ResourceTargetExecutor {}
+                @Tag(name = "资源目标", description = "执行资源目标命令")
+                @Validated @RestController
+                final class ResourceTargetController implements ResourceTargetApi {
+                    private ResourceTargetExecutor executor;
+                }
+                """,
+                "io/swagger/v3/oas/annotations/tags/Tag.java", """
+                package io.swagger.v3.oas.annotations.tags;
+                public @interface Tag { String name(); String description(); }
+                """,
+                "org/springframework/validation/annotation/Validated.java", """
+                package org.springframework.validation.annotation;
+                public @interface Validated {}
+                """,
+                "org/springframework/web/bind/annotation/RestController.java", """
+                package org.springframework.web.bind.annotation;
+                public @interface RestController {}
+                """);
+
+        assertThat(messages(report))
+                .contains("MANGO-ARCH-CTRL-002 Controller must depend on a service interface: "
+                        + "example.support.ResourceTargetExecutor");
+    }
+
+    @Test
     void controllerOpenApiAnnotationsAreRequired() {
         Report report = analyze(
                 "example/OrderController.java", """

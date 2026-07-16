@@ -7,10 +7,10 @@ import jakarta.validation.Valid;
 import org.springframework.validation.annotation.Validated;
 
 /**
- * 资源注册中心 API 契约。
+ * 资源声明注册 API 契约。
  */
 @Validated
-public interface ResourceRegistryApi {
+public interface ResourceDeclarationApi {
 
     /**
      * 注册远程服务上报的资源声明。

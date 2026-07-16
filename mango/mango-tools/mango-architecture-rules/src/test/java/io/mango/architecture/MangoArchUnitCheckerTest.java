@@ -63,6 +63,24 @@ class MangoArchUnitCheckerTest {
     }
 
     @Test
+    void controllerMayDependOnPureSupportExecutorPort() {
+        JavaClasses classes = importClasses(
+                io.mango.resource.sync.starter.fixture.ResourceTargetController.class,
+                io.mango.resource.api.fixture.ResourceTargetApi.class,
+                io.mango.resource.support.fixture.ResourceTargetExecutor.class);
+
+        assertThat(checker.check(classes, javaClass -> {
+            if (javaClass.getPackageName().contains(".api.")) {
+                return ModuleRole.API;
+            }
+            if (javaClass.getPackageName().contains(".support.")) {
+                return ModuleRole.SUPPORT;
+            }
+            return ModuleRole.STARTER;
+        })).isEmpty();
+    }
+
+    @Test
     void restControllerAdviceIsNotTreatedAsController() {
         JavaClasses classes = importClasses(GlobalExceptionHandler.class);
 

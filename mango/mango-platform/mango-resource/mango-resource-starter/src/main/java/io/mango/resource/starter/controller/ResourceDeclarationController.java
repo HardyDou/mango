@@ -1,7 +1,7 @@
 package io.mango.resource.starter.controller;
 
 import io.mango.common.result.R;
-import io.mango.resource.api.ResourceRegistryApi;
+import io.mango.resource.api.ResourceDeclarationApi;
 import io.mango.resource.api.command.RegisterResourceDeclarationsCommand;
 import io.mango.resource.core.service.IResourceRegistryService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 @Validated
 @Tag(name = "资源声明注册", description = "内部服务上报资源声明的注册接口")
-public class ResourceRegistryController implements ResourceRegistryApi {
+public class ResourceDeclarationController implements ResourceDeclarationApi {
 
     private final IResourceRegistryService resourceRegistryService;
 

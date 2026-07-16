@@ -175,7 +175,6 @@ public class CheckMojo extends AbstractMojo {
     private static final Set<String> RESOURCE_RUNTIME_ARTIFACTS =
             Set.of(
                     "mango-resource-core",
-                    "mango-resource-support",
                     "mango-resource-starter",
                     "mango-resource-sync-starter",
                     "mango-resource-starter-remote");
@@ -1748,9 +1747,9 @@ public class CheckMojo extends AbstractMojo {
      * *-core cannot depend on *-core, *-starter, or any *-starter-*. 6. *-starter-remote can only
      * depend on its own *-api, *-support and mango-infra-feign-starter inside io.mango modules. 7.
      * *-starter-remote must not directly depend on spring-cloud-starter-openfeign. 8. Non-resource
-     * non-app modules can only depend on mango-resource-api unless explicitly excepted with a
-     * reason. *-app modules are runtime assembly boundaries and may depend on resource runtime
-     * starters.
+     * libraries may depend on mango-resource-api and the pure Java mango-resource-support SPI;
+     * resource core/starters require an explicit exception with a reason. *-app modules are
+     * runtime assembly boundaries and may depend on resource runtime starters.
      */
     private void checkDependency() {
         getLog().info("Checking module dependencies...");
@@ -1937,7 +1936,7 @@ public class CheckMojo extends AbstractMojo {
         }
         return new DependencyIssue(
                 "CRITICAL",
-                "非 mango-resource 模块默认只能依赖 mango-resource-api；依赖 "
+                "非 mango-resource 库模块只能依赖 mango-resource-api 或 mango-resource-support；依赖 "
                         + depArtifact
                         + " 需要人工明确确认并通过 -Dmango.check.resourceStarterDependencyExceptions="
                         + consumerArtifact
@@ -3257,7 +3256,8 @@ public class CheckMojo extends AbstractMojo {
 
     private void inspectControllerContract(
             Path file, String code, String typeName, List<ApiContractIssue> issues) {
-        if (!CONTROLLER_IMPLEMENTS_API_PATTERN.matcher(code).find()) {
+        boolean implementsApi = CONTROLLER_IMPLEMENTS_API_PATTERN.matcher(code).find();
+        if (!implementsApi) {
             issues.add(
                     new ApiContractIssue(
                             "CRITICAL",
@@ -3274,7 +3274,7 @@ public class CheckMojo extends AbstractMojo {
         inspectControllerApiFields(file, code, issues);
         inspectControllerFields(file, code, issues);
         inspectControllerMethods(file, code, issues);
-        inspectControllerParameters(file, code, issues);
+        inspectControllerParameters(file, code, !implementsApi, issues);
         if (code.contains(RESULT_FAIL_CALL)) {
             issues.add(
                     new ApiContractIssue(
@@ -3344,19 +3344,26 @@ public class CheckMojo extends AbstractMojo {
     }
 
     private void inspectControllerParameters(
-            Path file, String code, List<ApiContractIssue> issues) {
+            Path file, String code, boolean requiresLocalValidation, List<ApiContractIssue> issues) {
         Matcher matcher = JAVA_METHOD_PATTERN.matcher(code);
         while (matcher.find()) {
             for (String parameter :
                     splitTopLevelParameters(matcher.group(METHOD_PARAMETERS_GROUP))) {
-                inspectControllerParameter(file, matcher.group(1), parameter, issues);
+                inspectControllerParameter(
+                        file, matcher.group(1), parameter, requiresLocalValidation, issues);
             }
         }
     }
 
     private void inspectControllerParameter(
-            Path file, String methodName, String parameter, List<ApiContractIssue> issues) {
-        if (parameter.contains(REQUEST_BODY_ANNOTATION) && !parameter.contains(VALID_ANNOTATION)) {
+            Path file,
+            String methodName,
+            String parameter,
+            boolean requiresLocalValidation,
+            List<ApiContractIssue> issues) {
+        if (requiresLocalValidation
+                && parameter.contains(REQUEST_BODY_ANNOTATION)
+                && !parameter.contains(VALID_ANNOTATION)) {
             issues.add(
                     new ApiContractIssue(
                             "CRITICAL",

@@ -3,7 +3,7 @@ package io.mango.infra.web.support;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.infra.web.api.Inner;
 import org.springframework.aop.support.AopUtils;
-import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.boot.context.event.ApplicationStartedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.core.annotation.Order;
@@ -31,7 +31,7 @@ public class InnerMappingScanner {
         this.provider = provider;
     }
 
-    @EventListener(ApplicationReadyEvent.class)
+    @EventListener(ApplicationStartedEvent.class)
     @Order(Ordered.HIGHEST_PRECEDENCE)
     public void scan() {
         Set<String> paths = new LinkedHashSet<>();

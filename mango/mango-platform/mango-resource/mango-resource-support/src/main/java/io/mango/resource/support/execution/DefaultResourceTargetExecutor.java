@@ -1,0 +1,136 @@
+package io.mango.resource.support.execution;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.mango.common.result.Require;
+import io.mango.resource.api.command.ExecuteResourceTargetCommand;
+import io.mango.resource.api.enums.ResourceCode;
+import io.mango.resource.api.vo.ResourceBatchEntryVO;
+import io.mango.resource.api.vo.ResourceBatchResultVO;
+import io.mango.resource.api.vo.ResourceSyncResultVO;
+import io.mango.resource.support.ResourceHandler;
+import io.mango.resource.support.model.ResourceDeclaration;
+import io.mango.resource.support.model.ResourceSyncResult;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * 资源目标执行端口的纯 Java 默认实现。
+ */
+public class DefaultResourceTargetExecutor implements ResourceTargetExecutor {
+
+    private static final TypeReference<List<ResourceDeclaration>> DECLARATION_LIST_TYPE = new TypeReference<>() { };
+
+    private final ObjectMapper objectMapper;
+    private final List<ResourceHandler> handlers;
+
+    public DefaultResourceTargetExecutor(ObjectMapper objectMapper, Collection<ResourceHandler> handlers) {
+        this.objectMapper = objectMapper;
+        this.handlers = List.copyOf(handlers);
+    }
+
+    @Override
+    public ResourceBatchResultVO upsertBatch(ExecuteResourceTargetCommand command) {
+        Require.notNull(command, ResourceCode.RESOURCE_INVALID, "资源目标端执行命令不能为空");
+        List<ResourceDeclaration> declarations = parse(command.getDeclarations());
+        List<ResourceDeclaration> completeBatch = parse(command.getCompleteBatch());
+        Map<String, List<ResourceDeclaration>> declarationsByType = groupByResourceType(declarations);
+        List<ResourceBatchEntryVO> entries = new ArrayList<>();
+        declarationsByType.forEach((resourceType, typedDeclarations) -> {
+            ResourceHandler handler = findHandler(resourceType);
+            List<ResourceDeclaration> handlerDeclarations = declarationsForHandler(
+                    handler, typedDeclarations, completeBatch, resourceType);
+            Map<String, ResourceSyncResult> handlerResults = handler.upsertBatch(handlerDeclarations);
+            Require.notNull(handlerResults, ResourceCode.RESOURCE_SYNC_FAILED,
+                    "资源处理器未返回批量同步结果: " + resourceType);
+            handlerResults.forEach((resourceId, result) -> entries.add(toBatchEntry(resourceId, result)));
+        });
+        ResourceBatchResultVO result = new ResourceBatchResultVO();
+        result.setEntries(entries);
+        return result;
+    }
+
+    @Override
+    public ResourceSyncResultVO disable(ExecuteResourceTargetCommand command) {
+        Require.notNull(command, ResourceCode.RESOURCE_INVALID, "资源目标端执行命令不能为空");
+        ResourceDeclaration declaration = singleDeclaration(command);
+        return toResultVO(findHandler(declaration.getResourceType()).disable(declaration));
+    }
+
+    @Override
+    public ResourceSyncResultVO delete(ExecuteResourceTargetCommand command) {
+        Require.notNull(command, ResourceCode.RESOURCE_INVALID, "资源目标端执行命令不能为空");
+        ResourceDeclaration declaration = singleDeclaration(command);
+        return toResultVO(findHandler(declaration.getResourceType()).delete(declaration));
+    }
+
+    private Map<String, List<ResourceDeclaration>> groupByResourceType(List<ResourceDeclaration> declarations) {
+        Map<String, List<ResourceDeclaration>> grouped = new LinkedHashMap<>();
+        declarations.forEach(declaration -> grouped
+                .computeIfAbsent(declaration.getResourceType(), ignored -> new ArrayList<>())
+                .add(declaration));
+        return grouped;
+    }
+
+    private List<ResourceDeclaration> declarationsForHandler(ResourceHandler handler,
+                                                              List<ResourceDeclaration> typedDeclarations,
+                                                              List<ResourceDeclaration> completeBatch,
+                                                              String resourceType) {
+        if (handler.requiresCompleteBatch()) {
+            return completeBatch.stream()
+                    .filter(declaration -> resourceType.equals(declaration.getResourceType()))
+                    .toList();
+        }
+        return typedDeclarations;
+    }
+
+    private ResourceHandler findHandler(String resourceType) {
+        ResourceHandler handler = handlers.stream()
+                .filter(candidate -> candidate.resourceType().equals(resourceType))
+                .findFirst()
+                .orElse(null);
+        Require.notNull(handler, ResourceCode.RESOURCE_NOT_FOUND,
+                "未找到资源处理器: " + resourceType);
+        return handler;
+    }
+
+    private ResourceDeclaration singleDeclaration(ExecuteResourceTargetCommand command) {
+        List<ResourceDeclaration> declarations = parse(command.getDeclarations());
+        Require.isTrue(declarations.size() == 1, ResourceCode.RESOURCE_INVALID,
+                "单资源操作必须且只能提交一条资源声明");
+        return declarations.getFirst();
+    }
+
+    private List<ResourceDeclaration> parse(String json) {
+        Require.notBlank(json, ResourceCode.RESOURCE_INVALID, "资源声明JSON不能为空");
+        try {
+            List<ResourceDeclaration> declarations = objectMapper.readValue(json, DECLARATION_LIST_TYPE);
+            Require.notNull(declarations, ResourceCode.RESOURCE_INVALID, "资源声明JSON必须是数组");
+            return declarations;
+        } catch (JsonProcessingException exception) {
+            Require.isTrue(false, ResourceCode.RESOURCE_INVALID, "资源声明JSON格式不正确");
+            return List.of();
+        }
+    }
+
+    private ResourceBatchEntryVO toBatchEntry(String resourceId, ResourceSyncResult result) {
+        ResourceBatchEntryVO entry = new ResourceBatchEntryVO();
+        entry.setResourceId(resourceId);
+        entry.setResult(toResultVO(result));
+        return entry;
+    }
+
+    private ResourceSyncResultVO toResultVO(ResourceSyncResult result) {
+        Require.notNull(result, ResourceCode.RESOURCE_SYNC_FAILED, "资源处理器未返回同步结果");
+        ResourceSyncResultVO vo = new ResourceSyncResultVO();
+        vo.setTargetId(result.getTargetId());
+        vo.setTargetTable(result.getTargetTable());
+        vo.setMessage(result.getMessage());
+        return vo;
+    }
+}

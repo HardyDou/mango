@@ -7,6 +7,7 @@ import io.mango.authorization.support.autoconfigure.sensitive.AuthorizationSensi
 import io.mango.authorization.support.autoconfigure.web.JsonAccessDeniedHandler;
 import io.mango.authorization.support.autoconfigure.web.JsonAuthenticationEntryPoint;
 import io.mango.infra.sensitive.api.ISensitiveRawAccessProvider;
+import io.mango.infra.web.api.InternalCallAttributes;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -86,6 +87,8 @@ public class SecurityAutoConfiguration {
                     if (permitPathMatchers.length > 0) {
                         authorize.requestMatchers(permitPathMatchers).permitAll();
                     }
+                    authorize.requestMatchers(request -> Boolean.TRUE.equals(
+                            request.getAttribute(InternalCallAttributes.VERIFIED))).permitAll();
                     authorize.anyRequest().authenticated();
                 });
         return http.build();

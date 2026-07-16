@@ -627,7 +627,7 @@ GET /authorization/menus/user?fmt=tree&appCode=internal-admin
 Controller / @ApiAccess / YAML resources / Gateway route
     -> ApiAccessResourceProvider
     -> ResourceDeclaration(API_RESOURCE)
-    -> ResourceRegistryApi
+    -> ResourceDeclarationApi
     -> ApiResourceHandler
     -> authorization_api_resource
 ```

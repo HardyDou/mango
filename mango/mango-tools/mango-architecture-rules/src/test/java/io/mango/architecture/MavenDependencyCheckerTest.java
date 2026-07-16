@@ -23,6 +23,12 @@ class MavenDependencyCheckerTest {
     }
 
     @Test
+    void nonResourceModuleMayUsePureResourceSupportSpi() {
+        assertThat(checker.check("mango-order-core", List.of(
+                dependency("mango-resource-support")))).isEmpty();
+    }
+
+    @Test
     void apiDependingOnCoreIsRejected() {
         assertThat(checker.check("mango-order-api", List.of(dependency("mango-order-core"))))
                 .extracting(ArchitectureIssue::ruleId)
