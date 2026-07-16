@@ -199,7 +199,7 @@ test('configured backend paths fail closed when their root POM is absent', t => 
   );
 });
 
-test('CI reruns when human assurance selections change and keeps explicit architecture prerequisites', () => {
+test('CI reruns when policy-resolved assurance selections change and keeps explicit architecture prerequisites', () => {
   const workflow = fs.readFileSync(
     new URL('../../.github/workflows/pmo-doc-check.yml', import.meta.url),
     'utf8',
@@ -223,8 +223,8 @@ test('CI reruns when human assurance selections change and keeps explicit archit
   assert.match(workflow, /generated_backend: \$\{\{ steps\.scope\.outputs\.generated_backend \}\}/);
   assert.match(workflow, /m09: \$\{\{ steps\.assurance\.outputs\.m09 \}\}/);
   assert.match(workflow, /assurance-ci-scope\.mjs --body \.pr-body\.md >> "\$GITHUB_OUTPUT"/);
-  assert.match(workflow, /outputs\.m09 == 'true'/);
-  assert.match(workflow, /outputs\.m10 == 'true'/);
+  assert.match(workflow, /Test document contracts, lifecycle routing, and Skills\n\s+if: needs\.preflight_scope\.outputs\.pmo == 'true'/);
+  assert.match(workflow, /Run selected static PMO checks\n\s+if: needs\.preflight_scope\.outputs\.pmo == 'true'/);
   assert.match(workflow, /outputs\.m11 == 'true'/);
   assert.match(workflow, /outputs\.m08 == 'true'/);
   assert.match(

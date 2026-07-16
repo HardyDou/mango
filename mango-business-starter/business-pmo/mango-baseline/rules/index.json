@@ -1,5 +1,5 @@
 {
-  "version": 7,
+  "version": 8,
   "always": [
     {
       "path": "rules/00-dev-flow.md",
@@ -89,7 +89,7 @@
     },
     "process.deliveryAssurance": {
       "path": "rules/11-delivery-assurance.md",
-      "reason": "基于任务事实推荐固定交付保障措施、原生 Ask User 分批确认和确认基线治理"
+      "reason": "SIMPLE、STANDARD、FULL 三档交付模式、默认 worktree 隔离、单文件标准记录和事实驱动验证治理"
     },
     "backend.code": {
       "path": "rules/backend/01-code.md",

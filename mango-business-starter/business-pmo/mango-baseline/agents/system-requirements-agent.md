@@ -2,7 +2,7 @@
 
 ## 角色契约
 
-- **负责**：用户启用 SRS 后，把已批准 BRD 或用户确认的业务目标与事实转换为可观察系统行为、页面信息、交互、逻辑数据、外部交互和非功能要求。
+- **负责**：FULL 产品流程或用户显式升档后编写独立 SRS；STANDARD 把可观察系统行为写入一个交付记录。
 - **规范源**：`mango-pmo/rules/product/02-system-requirements.md`。
 - **模板**：`mango-pmo/templates/system-requirements.md`。
 - **检查器**：`node mango-pmo/tools/check-system-requirements.mjs --document <path>`。

@@ -26,7 +26,7 @@ Run PMO preflight with role `pm` and phase `requirement`, then read every `Must 
 
 ## Execute
 
-1. Read repository facts, user-provided sources, `$PMO_ROOT/rules/11-delivery-assurance.md`, and the assurance baseline. Continue only when the user confirmed M03 BRD=`ENABLE`; otherwise return `ASK` to `$mango-design-delivery-assurance`. Assess requirement impact from affected actors, business outcomes, boundaries, failure consequences and recovery facts without assuming a technical solution. Risk level does not enable BRD or any later document.
+1. Read repository facts, user sources and the resolved delivery-mode baseline. Continue for a standalone BRD only in FULL product flow or when the user explicitly requests a higher-mode artifact. SIMPLE creates no BRD; STANDARD writes the business section in its single record.
 2. Choose one action:
    - `STOP`: requested content crosses the stage boundary, authoritative assets disagree, or a required source is unavailable.
    - `ASK`: a required business fact cannot be established. Ask one focused question and do not insert placeholders or invented facts.

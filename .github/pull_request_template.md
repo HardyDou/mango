@@ -24,11 +24,14 @@
 - Requirement impact: L0-L3 - concrete affected users, contracts, data, security, or workflow facts
 - Solution risk: L0-L3 - concrete implementation scope, coupling, recovery, and uncertainty facts
 - Final risk: L0-L3
-- Assurance baseline: CONFIRMED / NOT_APPLICABLE - human confirmation evidence; NOT_APPLICABLE is only for release-only PRs
+- Delivery mode: SIMPLE / STANDARD / FULL / NOT_APPLICABLE (release-only)
+- Workspace decision: CREATE / REUSE / MAIN_EXCEPTION
+- Non-downgradable facts: None / SECURITY, TENANT, AUTHORIZATION, FUNDS, DESTRUCTIVE_DATA, IRREVERSIBLE_RELEASE
+- Assurance baseline: RESOLVED / NOT_APPLICABLE - policy facts and any human `MODE_DOWNGRADE_CONFIRMED` or `MAIN_EXCEPTION_CONFIRMED` evidence; NOT_APPLICABLE is only for release-only PRs
 - Assurance selections: M01=CREATE; M09=ENABLE
 - Assurance reasoning:
 - Assurance evidence: M01 - task branch/worktree evidence; M09 - command or report evidence
-- Residual risks: None / list each confirmed DISABLE, DO_NOT_CREATE or DO_NOT_REBUILD decision and its residual risk
+- Residual risks: None / list MAIN_EXCEPTION, downward mode override, DISABLE or DO_NOT_REBUILD decisions and their residual risks
 
 ## Validation
 

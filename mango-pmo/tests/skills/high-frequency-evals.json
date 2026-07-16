@@ -506,18 +506,36 @@
     {
       "id": "lifecycle-l0-lightweight-route",
       "kind": "boundary",
-      "prompt": "Fresh-session trusted fixture for $mango-pmo-lifecycle: move an existing button 8px to the right without changing visibility, enablement, action, route, data, or API. The isolated CSS solution is immediately reversible. Native Ask User confirmation recorded M09 static verification=ENABLE and M13 UI verification=ENABLE; no business, system, technical or planning document fact was triggered. Route the work with static style review and one targeted viewport screenshot, without BRD, SRS, TDD, Plan, unit tests, API tests, or a full UI flow; evidence=business-docs/evidence/button-position.md.",
-      "context": { "requirementImpact": "L0", "solutionRisk": "L0", "finalRisk": "L0", "assuranceBaselineConfirmed": true },
+      "prompt": "Fresh-session trusted fixture for $mango-pmo-lifecycle: move an existing button 8px to the right without changing visibility, enablement, action, route, data, or API. The isolated CSS solution is immediately reversible. Repository policy resolved M01=CREATE, final risk=L0 and delivery mode=SIMPLE. Route directly with static style review and one targeted viewport screenshot, without a delivery document, unit tests, API tests, or a full UI flow; evidence=business-docs/evidence/button-position.md.",
+      "context": { "requirementImpact": "L0", "solutionRisk": "L0", "finalRisk": "L0", "deliveryMode": "SIMPLE", "baselineResolved": true },
       "expect": {
         "skill": "mango-pmo-lifecycle",
         "action": "NEXT",
         "nextSkill": "mango-engineering",
         "requiredAssertions": [
           "final risk is max(L0,L0)=L0",
+          "delivery mode is SIMPLE and implementation proceeds directly",
           "STATIC and targeted UI evidence are sufficient",
           "UNIT and API are skipped with concrete reasons"
         ],
         "forbid": ["fabricated BRD", "fabricated SRS", "fabricated TDD", "fabricated Plan", "full UI flow"]
+      }
+    },
+    {
+      "id": "lifecycle-l2-standard-single-record",
+      "kind": "boundary",
+      "prompt": "Fresh-session trusted fixture for $mango-pmo-lifecycle: enhance an import flow with one new field, first-sheet selection, visible progress, persisted import history and mapped API/UI verification. Requirement impact=L2, solution risk=L2, final risk=L2, M01=CREATE. Route the task using exactly one STANDARD delivery record with observable requirements, technical decisions, implementation items and acceptance evidence.",
+      "context": { "requirementImpact": "L2", "solutionRisk": "L2", "finalRisk": "L2", "deliveryMode": "STANDARD" },
+      "expect": {
+        "skill": "mango-pmo-lifecycle",
+        "action": "NEXT",
+        "nextSkill": "mango-engineering",
+        "requiredAssertions": [
+          "delivery mode is STANDARD",
+          "exactly one standard delivery record carries SRS, design, plan and acceptance mapping",
+          "separate BRD, SRS, TDD and Plan files are not created"
+        ],
+        "forbid": ["four-document package", "sixteen-item questionnaire"]
       }
     },
     {
@@ -531,7 +549,7 @@
         "requiredAssertions": [
           "solution A final risk is L1",
           "solution B final risk is L2",
-          "the shared layout fact triggers M05 technical design and M14 expert review recommendations, which require Ask User confirmation rather than an L2 document package"
+          "solution B maps to STANDARD and records the shared-layout decision and review in one delivery record"
         ]
       }
     },
@@ -586,15 +604,15 @@
       "id": "lifecycle-cross-tenant-measures-ask",
       "kind": "boundary",
       "prompt": "Use $mango-pmo-lifecycle for a cross-service tenant authorization rule change. The business allow/deny rule, user-visible forbidden result, security boundary and real API/database behavior will change. No delivery-assurance measures have been confirmed yet. Decide what to do before coding.",
-      "context": { "riskLevel": "L3", "assuranceBaselineConfirmed": false },
+      "context": { "riskLevel": "L3", "deliveryMode": "FULL", "baselineResolved": true },
       "expect": {
         "skill": "mango-pmo-lifecycle",
-        "action": "ASK",
+        "action": "SELECT_FULL",
         "requiredAssertions": [
-          "recommend only fact-triggered measures including M03 BRD, M04 SRS, M05 TDD, M11 integration test, M12 API verification and M14 expert review",
-          "explain each recommended measure's value, cost and disable impact",
-          "use native Ask User and wait for the user's choices before coding",
-          "L3 does not itself enable BRD, SRS, TDD or Plan"
+          "final risk L3 maps to FULL",
+          "the applicable product BRD, SRS, TDD and Plan chain is required",
+          "real integration and API tenant-boundary evidence is required",
+          "no UI verification is invented unless a browser outcome exists"
         ],
         "forbid": ["coding", "automatic four-document chain", "task package"]
       }
@@ -603,14 +621,14 @@
       "id": "lifecycle-l3-governance-no-four-docs",
       "kind": "boundary",
       "prompt": "Use $mango-pmo-lifecycle to change this repository from mandatory self-approval to single-owner governance while preserving required checks, resolved conversations and force-push protection. This PMO core-gate change is L3, changes long-lived governance semantics, and requires live GitHub configuration readback. No measures have been confirmed yet.",
-      "context": { "riskLevel": "L3", "assuranceBaselineConfirmed": false },
+      "context": { "riskLevel": "L3", "deliveryMode": "FULL", "baselineResolved": true },
       "expect": {
         "skill": "mango-pmo-lifecycle",
-        "action": "ASK",
+        "action": "SELECT_FULL",
         "requiredAssertions": [
-          "L3 does not automatically require BRD, SRS, TDD or Plan",
-          "recommend M07 governance decision record, M09 static verification, M14 expert review and M15 external state readback from their trigger facts",
-          "use native Ask User and wait for measure confirmation",
+          "L3 maps to FULL governance flow without fabricated product documents",
+          "require M07 governance decision record, implementation plan, M09 static verification, M14 expert review and M15 external state readback",
+          "workspace isolation is resolved by policy without an M01 question",
           "preserve required checks and remote protection invariants"
         ],
         "forbid": ["automatic BRD", "automatic SRS", "automatic TDD", "automatic Plan", "release workflow"]
@@ -661,7 +679,7 @@
     {
       "id": "new-project-next",
       "kind": "next",
-      "prompt": "Fresh-session trusted fixture: project identity=acme-order, topology=monolith, target=.runtime/projects/acme-order, group=com.acme, package=com.acme.order, modules=order, Maven=1.0.16, @mango/cli=1.0.68, @mango/pmo=1.1.0; release matrix is published and compatible; native Ask User assurance baseline confirms M01=CREATE and M03/M04/M05/M06/M09/M11/M12=ENABLE, and each enabled document checker plus applicable handoff exits 0; CLI generation, PMO baseline, workspace, Maven architecture verify, startup, docs, and first-run evidence gates all exit=0; evidence=.runtime/projects/acme-order/business-docs/evidence/first-run.md. Return the governed action.",
+      "prompt": "Fresh-session trusted fixture: project identity=acme-order, topology=monolith, target=.runtime/projects/acme-order, group=com.acme, package=com.acme.order, modules=order, Maven=1.0.16, @mango/cli=1.0.68, @mango/pmo=1.1.0; release matrix is published and compatible; final risk=L3, delivery mode=FULL, repository policy resolves M01=CREATE and facts activate M03/M04/M05/M06/M09/M11/M12; each required document checker and handoff exits 0; CLI generation, PMO baseline, workspace, Maven architecture verify, startup, docs, and first-run evidence gates all exit=0; evidence=.runtime/projects/acme-order/business-docs/evidence/first-run.md. Return the governed action.",
       "context": { "requiredGatesExitCode": 0, "versionEvidencePresent": true },
       "expect": { "skill": "mango-project-bootstrap", "action": "NEXT" }
     },

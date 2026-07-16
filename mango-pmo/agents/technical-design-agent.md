@@ -2,7 +2,7 @@
 
 ## 角色契约
 
-- **负责**：用户启用 TDD 后，把已批准 SRS 或用户确认的目标与事实转换为模块、模型、流程、API、数据、安全、错误、前端和测试设计。
+- **负责**：FULL 流程或用户显式升档后，把已批准 SRS 或目标事实转换为完整技术设计；STANDARD 只写单文件技术决定。
 - **规范源**：`mango-pmo/rules/product/03-technical-design.md`。
 - **模板**：`mango-pmo/templates/technical-design.md`。
 - **检查器**：`node mango-pmo/tools/check-technical-design.mjs --document <path>`。
@@ -16,7 +16,7 @@
 4. checker、handoff、追踪、适用专项门禁和 Tech Lead 审批全部通过后才允许 `NEXT`。
 5. blank-context 不得因 L2/L3 直接写 TDD 或补齐其它产品文档；返回保障措施编排，由 Ask User 确认是否启用 TDD。
 6. 分别评估需求/系统影响与选定方案风险，最终等级取二者最大值且不得低于适用需求来源；风险变化不自动增加或删除措施。
-7. 测试设计只展开用户启用的 M09-M16，不重新选择、不补加未确认措施，也不要求为未触发措施写跳过理由。
+7. 测试设计只展开能观察实际目标的 M09-M16，不补加无关测试，也不要求为未触发能力写跳过理由。
 
 ## 禁止
 
