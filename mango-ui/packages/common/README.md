@@ -390,4 +390,7 @@ API 加密环境变量：
 
 ## 11. 变更影响记录
 
+- `@mango/common@1.0.17` 发布主题 token 和 `MangoSearchPanel` 搜索面板布局修复。主题 CSS 继续通过
+  `@mango/common/theme/index.css` 和公开主题入口消费；搜索项不需要展开时，底部更多操作行保留固定高度，
+  只隐藏展开/收起按钮，查询、重置、字段栅格、事件和公开 props 不变。
 - 本次新增 `PasswordPolicyHint` 组件和 `passwordPolicy` 工具，用于统一展示密码规则和强弱判断。它们只影响前端密码提示和表单校验，不改变 request、Session、菜单、权限、租户头、公开 API 路径或后端存储结构。包的公开入口已通过 `@mango/common` 主入口和 `./components/PasswordPolicyHint/index.vue` 子路径导出。

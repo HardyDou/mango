@@ -310,6 +310,8 @@ Shell 会注册 unauthorized handler 并清理 session 后跳转 `/login`。检�
 
 ## 11. 变更影响记录
 
+- `@mango/admin-shell@1.0.43` 发布主题设置面板颜色 token 修复，顶部栏文案颜色和 Shell 布局相关 CSS
+  变量会按当前主题配置生效；菜单加载、页面注册、登录态、权限、租户和运行时路由语义不变。
 - `@mango/admin-shell@1.0.41` 对齐 `@mango/notice@1.0.23`，用于发布 Payment、CMS、Workflow、Notice 历史债务修复后的兼容批次；Shell 公共 API、菜单加载、页面注册、登录态和运行时路由语义不变。
 
 - `@mango/admin-shell@1.0.40` 向前发布当前 Shell 实现和完整 README，不回退自定义登录组件或开发中心搜索
