@@ -44,7 +44,9 @@ import java.util.Map;
 import java.util.Set;
 
 @Service
-public class LinkUserService extends LinkBaseService implements ILinkUserService {
+public class LinkUserService extends BaseLinkService implements ILinkUserService {
+
+    private static final int NAVIGATION_WIDGET_PAGE_SIZE = 200;
 
     public LinkUserService(LinkCategoryMapper categoryMapper,
                            LinkItemMapper itemMapper,
@@ -56,7 +58,11 @@ public class LinkUserService extends LinkBaseService implements ILinkUserService
 
     @Override
     public List<LinkNavigationItemVO> listCompanyItems(LinkCompanyItemQuery query) {
-        LinkCompanyItemQuery resolved = query == null ? new LinkCompanyItemQuery() : query;
+        LinkCompanyItemQuery resolved = query;
+        if (resolved == null) {
+            resolved = new LinkCompanyItemQuery();
+        }
+        LinkCompanyItemQuery resolvedQuery = resolved;
         Long tenantId = LinkContextSupport.currentTenantId();
         Long userId = LinkContextSupport.currentUserIdOrNull();
         List<LinkItemEntity> items = itemMapper.selectList(companyWrapper(tenantId, resolved.getCategoryId()));
@@ -65,7 +71,7 @@ public class LinkUserService extends LinkBaseService implements ILinkUserService
         Set<Long> favorites = favoriteLinkIds(tenantId, userId, items.stream().map(LinkItemEntity::getId).toList());
         return items.stream()
                 .filter(item -> enabledCategory(categories.get(item.getCategoryId())))
-                .filter(item -> keywordMatched(item, resolved.getKeyword()))
+                .filter(item -> keywordMatched(item, resolvedQuery.getKeyword()))
                 .filter(item -> isVisibleToUser(tenantId, userId, item, targets.get(item.getId())))
                 .sorted(navigationComparator())
                 .map(item -> toNavigationVO(item, categories.get(item.getCategoryId()), favorites.contains(item.getId())))
@@ -76,7 +82,7 @@ public class LinkUserService extends LinkBaseService implements ILinkUserService
     public LinkNavigationWidgetDataVO getNavigationWidgetData() {
         LinkPersonalItemPageQuery personalQuery = new LinkPersonalItemPageQuery();
         personalQuery.setPage(1);
-        personalQuery.setSize(200);
+        personalQuery.setSize(NAVIGATION_WIDGET_PAGE_SIZE);
         LinkNavigationWidgetDataVO data = new LinkNavigationWidgetDataVO();
         data.setCompanyItems(listCompanyItems(new LinkCompanyItemQuery()));
         data.setPersonalItems(pagePersonalItems(personalQuery).getList());
@@ -115,7 +121,11 @@ public class LinkUserService extends LinkBaseService implements ILinkUserService
         entity.setScope(LinkSupport.personalCategory());
         entity.setOwnerUserId(userId);
         entity.setName(name);
-        entity.setSortNo(command.getSortNo() == null ? 0 : command.getSortNo());
+        Integer sortNo = command.getSortNo();
+        if (sortNo == null) {
+            sortNo = 0;
+        }
+        entity.setSortNo(sortNo);
         entity.setStatus(LinkSupport.enabled());
         entity.setCreatedBy(userId);
         entity.setUpdatedBy(userId);
@@ -136,7 +146,11 @@ public class LinkUserService extends LinkBaseService implements ILinkUserService
                 LinkSupport.personalCategory(), userId, name);
         Require.isTrue(exists == null || category.getId().equals(exists.getId()), "分组名称已存在");
         category.setName(name);
-        category.setSortNo(command.getSortNo() == null ? category.getSortNo() : command.getSortNo());
+        Integer sortNo = command.getSortNo();
+        if (sortNo == null) {
+            sortNo = category.getSortNo();
+        }
+        category.setSortNo(sortNo);
         category.setUpdatedBy(userId);
         category.setUpdatedAt(LocalDateTime.now());
         return categoryMapper.updateById(category) > 0;
@@ -163,9 +177,10 @@ public class LinkUserService extends LinkBaseService implements ILinkUserService
         Long tenantId = LinkContextSupport.currentTenantId();
         Long userId = LinkContextSupport.currentUserId();
         LinkItemEntity item = selectItemRequired(tenantId, command.getLinkId());
-        LinkCategoryEntity category = item.getCategoryId() == null
-                ? null
-                : categoryMapper.selectByTenantAndId(tenantId, item.getCategoryId());
+        LinkCategoryEntity category = null;
+        if (item.getCategoryId() != null) {
+            category = categoryMapper.selectByTenantAndId(tenantId, item.getCategoryId());
+        }
         Require.isTrue(visibleCategoryForItem(userId, item, category), "网址不可见");
         List<LinkVisibilityTargetEntity> targets = targetMapper.selectList(new LambdaQueryWrapper<LinkVisibilityTargetEntity>()
                 .eq(LinkVisibilityTargetEntity::getTenantId, tenantId)
@@ -202,7 +217,11 @@ public class LinkUserService extends LinkBaseService implements ILinkUserService
 
     @Override
     public List<LinkFavoriteVO> listFavorites(LinkFavoriteQuery query) {
-        LinkFavoriteQuery resolved = query == null ? new LinkFavoriteQuery() : query;
+        LinkFavoriteQuery resolved = query;
+        if (resolved == null) {
+            resolved = new LinkFavoriteQuery();
+        }
+        LinkFavoriteQuery resolvedQuery = resolved;
         Long tenantId = LinkContextSupport.currentTenantId();
         Long userId = LinkContextSupport.currentUserId();
         List<LinkFavoriteEntity> favorites = favoriteMapper.selectList(new LambdaQueryWrapper<LinkFavoriteEntity>()
@@ -224,14 +243,17 @@ public class LinkUserService extends LinkBaseService implements ILinkUserService
         return favorites.stream()
                 .filter(favorite -> items.containsKey(favorite.getLinkId()))
                 .map(favorite -> toVisibleFavorite(tenantId, userId, favorite, items.get(favorite.getLinkId()),
-                        categories, targets, resolved))
+                        categories, targets, resolvedQuery))
                 .filter(vo -> vo != null)
                 .toList();
     }
 
     @Override
     public PageResult<LinkPersonalItemVO> pagePersonalItems(LinkPersonalItemPageQuery query) {
-        LinkPersonalItemPageQuery resolved = query == null ? new LinkPersonalItemPageQuery() : query;
+        LinkPersonalItemPageQuery resolved = query;
+        if (resolved == null) {
+            resolved = new LinkPersonalItemPageQuery();
+        }
         Long tenantId = LinkContextSupport.currentTenantId();
         Long userId = LinkContextSupport.currentUserId();
         IPage<LinkItemEntity> page = itemMapper.selectPage(new Page<>(resolved.getPage(), resolved.getSize()),
@@ -350,10 +372,16 @@ public class LinkUserService extends LinkBaseService implements ILinkUserService
                                              Map<Long, List<LinkVisibilityTargetEntity>> targets,
                                              LinkFavoriteQuery query) {
         LinkCategoryEntity category = categories.get(item.getCategoryId());
-        if (!visibleCategoryForItem(userId, item, category)
-                || !keywordMatched(item, query.getKeyword())
-                || (query.getCategoryId() != null && !query.getCategoryId().equals(item.getCategoryId()))
-                || !isVisibleToUser(tenantId, userId, item, targets.get(item.getId()))) {
+        if (!visibleCategoryForItem(userId, item, category)) {
+            return null;
+        }
+        if (!keywordMatched(item, query.getKeyword())) {
+            return null;
+        }
+        if (query.getCategoryId() != null && !query.getCategoryId().equals(item.getCategoryId())) {
+            return null;
+        }
+        if (!isVisibleToUser(tenantId, userId, item, targets.get(item.getId()))) {
             return null;
         }
         return toFavoriteVO(favorite, item, category);

@@ -1,6 +1,7 @@
 package io.mango.identity.core.service.impl;
 
 import io.mango.common.result.R;
+import io.mango.identity.core.adapter.SysConfigValueAdapter;
 import io.mango.system.api.SysConfigApi;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.ObjectProvider;
@@ -67,6 +68,6 @@ class IdentitySecurityPolicyServiceTest {
     private static IdentitySecurityPolicyService newService(IdentitySecurityProperties properties, SysConfigApi api) {
         ObjectProvider<SysConfigApi> provider = mock(ObjectProvider.class);
         when(provider.getIfAvailable()).thenReturn(api);
-        return new IdentitySecurityPolicyService(properties, provider);
+        return new IdentitySecurityPolicyService(properties, new SysConfigValueAdapter(provider));
     }
 }

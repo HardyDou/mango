@@ -2,8 +2,8 @@ package io.mango.identity.starter;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import io.mango.authorization.api.AuthorizationSubjectReferenceProvider;
-import io.mango.identity.core.entity.IdentityUser;
-import io.mango.identity.core.entity.TenantMember;
+import io.mango.identity.core.entity.IdentityUserEntity;
+import io.mango.identity.core.entity.TenantMemberEntity;
 import io.mango.identity.core.mapper.IdentityUserMapper;
 import io.mango.identity.core.mapper.TenantMemberMapper;
 import lombok.RequiredArgsConstructor;
@@ -20,35 +20,38 @@ public class IdentityAuthorizationSubjectReferenceProvider implements Authorizat
 
     @Override
     public Long resolveMemberId(Long tenantId, String memberNo, String username) {
-        TenantMember member = memberByNo(tenantId, memberNo);
+        TenantMemberEntity member = memberByNo(tenantId, memberNo);
         if (member != null) {
             return member.getMemberId();
         }
         if (!StringUtils.hasText(username)) {
             return null;
         }
-        IdentityUser user = userMapper.selectOne(new LambdaQueryWrapper<IdentityUser>()
-                .eq(IdentityUser::getUsername, username.trim())
+        IdentityUserEntity user = userMapper.selectOne(new LambdaQueryWrapper<IdentityUserEntity>()
+                .eq(IdentityUserEntity::getUsername, username.trim())
                 .last("LIMIT 1"));
         if (user == null) {
             return null;
         }
-        member = memberMapper.selectOne(new LambdaQueryWrapper<TenantMember>()
-                .eq(TenantMember::getTenantId, tenantId)
-                .eq(TenantMember::getUserId, user.getUserId())
-                .isNull(TenantMember::getLeftAt)
+        member = memberMapper.selectOne(new LambdaQueryWrapper<TenantMemberEntity>()
+                .eq(TenantMemberEntity::getTenantId, tenantId)
+                .eq(TenantMemberEntity::getUserId, user.getUserId())
+                .isNull(TenantMemberEntity::getLeftAt)
                 .last("LIMIT 1"));
-        return member == null ? null : member.getMemberId();
+        if (member == null) {
+            return null;
+        }
+        return member.getMemberId();
     }
 
-    private TenantMember memberByNo(Long tenantId, String memberNo) {
+    private TenantMemberEntity memberByNo(Long tenantId, String memberNo) {
         if (!StringUtils.hasText(memberNo)) {
             return null;
         }
-        return memberMapper.selectOne(new LambdaQueryWrapper<TenantMember>()
-                .eq(TenantMember::getTenantId, tenantId)
-                .eq(TenantMember::getMemberNo, memberNo.trim())
-                .isNull(TenantMember::getLeftAt)
+        return memberMapper.selectOne(new LambdaQueryWrapper<TenantMemberEntity>()
+                .eq(TenantMemberEntity::getTenantId, tenantId)
+                .eq(TenantMemberEntity::getMemberNo, memberNo.trim())
+                .isNull(TenantMemberEntity::getLeftAt)
                 .last("LIMIT 1"));
     }
 }

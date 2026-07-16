@@ -6,7 +6,7 @@ import io.mango.authorization.api.vo.EffectiveDataScopeVO;
 import io.mango.authorization.core.service.IRoleDataScopeService;
 import io.mango.common.result.R;
 import io.mango.identity.api.TenantMemberProvider;
-import io.mango.identity.api.vo.TenantMemberInfo;
+import io.mango.identity.api.vo.TenantMemberVO;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.infra.persistence.api.scope.DataScopeProvider;
@@ -80,7 +80,7 @@ public class AuthorizationDataScopeProvider implements DataScopeProvider {
 
     private Long resolvePrimaryOrgId(MangoContextSnapshot context) {
         Long tenantId = parseTenantId(context.tenantId());
-        TenantMemberInfo member = tenantMemberProvider.getEnabledMember(context.userId(), tenantId);
+        TenantMemberVO member = tenantMemberProvider.getEnabledMember(context.userId(), tenantId);
         if (member == null || member.getPrimaryOrgId() == null) {
             return null;
         }

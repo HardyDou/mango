@@ -15,6 +15,8 @@ CREATE TABLE IF NOT EXISTS `identity_user` (
   `id` bigint NOT NULL COMMENT '主键',
   `username` varchar(100) NOT NULL COMMENT '用户名',
   `password` varchar(200) NOT NULL COMMENT '密码哈希',
+  `password_reset_required` tinyint NOT NULL DEFAULT '0' COMMENT '是否要求下次登录修改密码',
+  `password_updated_at` datetime DEFAULT NULL COMMENT '最近密码更新时间',
   `nickname` varchar(100) DEFAULT NULL COMMENT '昵称',
   `realm` varchar(32) NOT NULL DEFAULT 'INTERNAL' COMMENT '登录域',
   `actor_type` varchar(32) NOT NULL DEFAULT 'INTERNAL_USER' COMMENT '操作者类型',
@@ -27,30 +29,33 @@ CREATE TABLE IF NOT EXISTS `identity_user` (
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `last_login_time` datetime DEFAULT NULL COMMENT '最近登录时间',
+  `failed_login_count` int NOT NULL DEFAULT '0' COMMENT '连续登录失败次数',
+  `last_failed_login_at` datetime DEFAULT NULL COMMENT '最近登录失败时间',
+  `locked_until` datetime DEFAULT NULL COMMENT '账号锁定截止时间',
+  `locked_reason` varchar(200) DEFAULT NULL COMMENT '账号锁定原因',
   `remark` varchar(500) DEFAULT NULL COMMENT '备注',
   `created_by` bigint DEFAULT NULL COMMENT '创建人 ID',
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `updated_by` bigint DEFAULT NULL COMMENT '更新人 ID',
   `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `tenant_id` varchar(64) NOT NULL DEFAULT 'default' COMMENT '租户标识',
+  `org_id` bigint DEFAULT NULL COMMENT '组织标识',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_identity_user_realm_username` (`realm`,`username`),
   KEY `idx_identity_user_username` (`username`),
   KEY `idx_identity_user_party` (`party_type`,`party_id`),
-  KEY `idx_identity_user_status` (`status`)
+  KEY `idx_identity_user_status` (`status`),
+  KEY `idx_identity_user_locked_until` (`locked_until`),
+  KEY `idx_identity_user_last_failed_login_at` (`last_failed_login_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='身份用户表';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
-LOCK TABLES `identity_user` WRITE;
-/*!40000 ALTER TABLE `identity_user` DISABLE KEYS */;
-INSERT INTO `identity_user` (`id`, `username`, `password`, `nickname`, `realm`, `actor_type`, `party_type`, `party_id`, `email`, `phone`, `avatar`, `status`, `create_time`, `update_time`, `last_login_time`, `remark`, `created_by`, `created_at`, `updated_by`, `updated_at`, `tenant_id`) VALUES (1,'admin','$2a$10$Hxg9OlCM4Y9kj31WEea/tuiYXtJABkOIlXf/u/b95OQrq8Uj7qbZK','Administrator','INTERNAL','INTERNAL_USER','INTERNAL_ORG',1,'admin@mango.io','13800000001',NULL,1,'2026-05-10 00:04:23','2026-05-10 00:04:23',NULL,NULL,NULL,'2026-05-10 00:04:23',NULL,'2026-05-10 00:04:23','default');
-/*!40000 ALTER TABLE `identity_user` ENABLE KEYS */;
-UNLOCK TABLES;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE IF NOT EXISTS `tenant_member` (
   `id` bigint NOT NULL COMMENT '成员ID',
   `tenant_id` bigint NOT NULL COMMENT '租户ID',
+  `org_id` bigint DEFAULT NULL COMMENT '组织标识',
   `user_id` bigint NOT NULL COMMENT '全局账号ID',
   `member_no` varchar(64) DEFAULT NULL COMMENT '成员编号',
   `display_name` varchar(100) NOT NULL COMMENT '成员显示名称',
@@ -73,11 +78,6 @@ CREATE TABLE IF NOT EXISTS `tenant_member` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='租户成员表';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
-LOCK TABLES `tenant_member` WRITE;
-/*!40000 ALTER TABLE `tenant_member` DISABLE KEYS */;
-INSERT INTO `tenant_member` (`id`, `tenant_id`, `user_id`, `member_no`, `display_name`, `member_type`, `status`, `primary_org_id`, `primary_post_id`, `joined_at`, `left_at`, `remark`, `created_by`, `created_at`, `updated_by`, `updated_at`) VALUES (1001,1,1,'ADMIN-default','芒果集团管理员','INSTITUTION_ADMIN',1,NULL,NULL,'2026-05-10 00:04:23',NULL,'芒果集团初始化管理员成员',NULL,'2026-05-10 00:04:23',NULL,'2026-05-10 00:04:23'),(1002,2,1,'ADMIN-company_a','A公司管理员','INSTITUTION_ADMIN',1,1042247245104011501,NULL,'2026-05-10 00:04:23',NULL,'A公司初始化管理员成员',NULL,'2026-05-10 00:04:23',NULL,'2026-05-10 00:04:24'),(1003,3,1,'ADMIN-company_b','B公司管理员','INSTITUTION_ADMIN',1,521674743970009382,NULL,'2026-05-10 00:04:23',NULL,'B公司初始化管理员成员',NULL,'2026-05-10 00:04:23',NULL,'2026-05-10 00:04:24'),(1004,4,1,'ADMIN-company_c','C公司管理员','INSTITUTION_ADMIN',1,687573683748704095,NULL,'2026-05-10 00:04:23',NULL,'C公司初始化管理员成员',NULL,'2026-05-10 00:04:23',NULL,'2026-05-10 00:04:24');
-/*!40000 ALTER TABLE `tenant_member` ENABLE KEYS */;
-UNLOCK TABLES;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE IF NOT EXISTS `tenant_member_org` (
@@ -100,10 +100,28 @@ CREATE TABLE IF NOT EXISTS `tenant_member_org` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='租户成员组织岗位关系表';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
-LOCK TABLES `tenant_member_org` WRITE;
-/*!40000 ALTER TABLE `tenant_member_org` DISABLE KEYS */;
-/*!40000 ALTER TABLE `tenant_member_org` ENABLE KEYS */;
-UNLOCK TABLES;
+CREATE TABLE IF NOT EXISTS `identity_external_binding` (
+  `id` bigint NOT NULL COMMENT '主键',
+  `tenant_id` bigint NOT NULL COMMENT '租户ID',
+  `org_id` bigint DEFAULT NULL COMMENT '组织标识',
+  `user_id` bigint NOT NULL COMMENT 'Mango用户ID',
+  `provider` varchar(32) NOT NULL COMMENT '身份提供方',
+  `corp_id` varchar(128) NOT NULL COMMENT '企业ID',
+  `external_user_id` varchar(128) NOT NULL COMMENT '外部用户ID',
+  `display_name` varchar(128) DEFAULT NULL COMMENT '显示名称快照',
+  `bind_source` varchar(32) NOT NULL DEFAULT 'SYNC' COMMENT '绑定来源',
+  `bind_status` varchar(32) NOT NULL DEFAULT 'BOUND' COMMENT '绑定状态',
+  `bind_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '绑定时间',
+  `last_login_time` datetime DEFAULT NULL COMMENT '最近第三方登录时间',
+  `created_by` bigint DEFAULT NULL COMMENT '创建人ID',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_by` bigint DEFAULT NULL COMMENT '更新人ID',
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_external_binding_external` (`tenant_id`, `provider`, `corp_id`, `external_user_id`),
+  KEY `idx_external_binding_user` (`tenant_id`, `user_id`),
+  KEY `idx_external_binding_provider` (`provider`, `corp_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='第三方登录身份绑定表';
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;

@@ -21,8 +21,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 @EnableConfigurationProperties(IdentitySecurityProperties.class)
 @MapperScan("io.mango.identity.core.mapper")
 @ComponentScan({
-        "io.mango.identity.core.service",
-        "io.mango.identity.starter"
+    "io.mango.identity.core.adapter",
+    "io.mango.identity.core.service",
+    "io.mango.identity.starter"
 })
 public class IdentityAutoConfiguration {
 

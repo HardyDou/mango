@@ -1,25 +1,21 @@
 package io.mango.identity.core.entity;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import io.mango.infra.persistence.api.entity.TenantEntity;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
-import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
  * 身份用户实体。
  */
 @Data
+@EqualsAndHashCode(callSuper = true)
 @TableName("identity_user")
-public class IdentityUser implements Serializable {
+public class IdentityUserEntity extends TenantEntity {
 
     private static final long serialVersionUID = 1L;
-
-    /** 用户 ID。 */
-    @TableId(value = "id", type = IdType.ASSIGN_ID)
-    private Long userId;
 
     /** 用户名，唯一。 */
     private String username;
@@ -84,6 +80,11 @@ public class IdentityUser implements Serializable {
     /** 备注。 */
     private String remark;
 
-    /** 租户标识。 */
-    private String tenantId;
+    public Long getUserId() {
+        return getId();
+    }
+
+    public void setUserId(Long userId) {
+        setId(userId);
+    }
 }

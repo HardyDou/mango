@@ -1,7 +1,7 @@
 package io.mango.identity.starter;
 
-import io.mango.identity.api.vo.AuthUserInfo;
-import io.mango.identity.core.entity.IdentityUser;
+import io.mango.identity.api.vo.AuthUserVO;
+import io.mango.identity.core.entity.IdentityUserEntity;
 import io.mango.identity.core.service.IIdentityUserService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -17,7 +17,7 @@ class IdentityAuthUserProviderTest {
     @DisplayName("认证用户事实应包含密码哈希与身份上下文")
     void getByUsernameForAuthShouldMapPasswordAndIdentityContext() {
         IIdentityUserService identityUserService = mock(IIdentityUserService.class);
-        IdentityUser user = new IdentityUser();
+        IdentityUserEntity user = new IdentityUserEntity();
         user.setUserId(1001L);
         user.setUsername("admin");
         user.setPassword("{bcrypt}hash");
@@ -30,7 +30,7 @@ class IdentityAuthUserProviderTest {
         when(identityUserService.getByUsername("admin", "INTERNAL")).thenReturn(user);
 
         IdentityAuthUserProvider provider = new IdentityAuthUserProvider(identityUserService);
-        AuthUserInfo authUser = provider.getByUsernameForAuth("admin", "INTERNAL");
+        AuthUserVO authUser = provider.getByUsernameForAuth("admin", "INTERNAL");
 
         assertEquals(1001L, authUser.getUserId());
         assertEquals("admin", authUser.getUsername());

@@ -5,7 +5,7 @@ import io.mango.authorization.api.vo.EffectiveDataScopeVO;
 import io.mango.authorization.core.service.IRoleDataScopeService;
 import io.mango.common.result.R;
 import io.mango.identity.api.TenantMemberProvider;
-import io.mango.identity.api.vo.TenantMemberInfo;
+import io.mango.identity.api.vo.TenantMemberVO;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.infra.persistence.api.scope.DataScopeRule;
@@ -91,8 +91,8 @@ class AuthorizationDataScopeProviderTest {
         return scope;
     }
 
-    private TenantMemberInfo member(Long primaryOrgId) {
-        TenantMemberInfo member = new TenantMemberInfo();
+    private TenantMemberVO member(Long primaryOrgId) {
+        TenantMemberVO member = new TenantMemberVO();
         member.setUserId(1L);
         member.setTenantId(2L);
         member.setMemberId(1001L);

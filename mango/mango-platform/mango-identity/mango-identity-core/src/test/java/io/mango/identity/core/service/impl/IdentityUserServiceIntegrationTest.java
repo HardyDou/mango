@@ -9,12 +9,15 @@ import io.mango.authorization.api.query.RoleLookupQuery;
 import io.mango.authorization.api.query.SubjectRoleBindingQuery;
 import io.mango.common.result.R;
 import io.mango.identity.api.command.BindExternalIdentityCommand;
+import io.mango.identity.api.command.BatchDeleteIdentityUserCommand;
 import io.mango.identity.api.enums.IdentityUserTargetType;
 import io.mango.identity.api.query.IdentityUserTargetQuery;
 import io.mango.identity.core.entity.ExternalIdentityBindingEntity;
-import io.mango.identity.core.entity.IdentityUser;
-import io.mango.identity.core.entity.TenantMember;
+import io.mango.identity.core.entity.IdentityUserEntity;
+import io.mango.identity.core.entity.TenantMemberEntity;
 import io.mango.identity.core.entity.TenantMemberOrgEntity;
+import io.mango.identity.core.adapter.AuthorizationRoleBindingAdapter;
+import io.mango.identity.core.adapter.SysConfigValueAdapter;
 import io.mango.identity.core.mapper.ExternalIdentityBindingMapper;
 import io.mango.identity.core.mapper.IdentityUserMapper;
 import io.mango.identity.core.mapper.TenantMemberMapper;
@@ -59,7 +62,7 @@ import static org.assertj.core.api.Assertions.assertThat;
         TransactionAutoConfiguration.class,
         MybatisPlusAutoConfiguration.class,
         PersistenceMybatisPlusAutoConfiguration.class,
-        IdentityUserServiceImplIntegrationTest.TestConfig.class
+        IdentityUserServiceIntegrationTest.TestConfig.class
 })
 @TestPropertySource(properties = {
         "spring.datasource.url=jdbc:h2:mem:identity_user_service;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE",
@@ -71,7 +74,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 })
 @RecordApplicationEvents
 @DisplayName("身份用户服务集成测试")
-class IdentityUserServiceImplIntegrationTest {
+class IdentityUserServiceIntegrationTest {
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
@@ -92,7 +95,7 @@ class IdentityUserServiceImplIntegrationTest {
     private TestRoleBindingApi roleBindingApi;
 
     @Autowired
-    private IdentityUserServiceImpl service;
+    private IdentityUserService service;
 
     @Autowired
     private ApplicationEvents applicationEvents;
@@ -198,7 +201,7 @@ class IdentityUserServiceImplIntegrationTest {
         seedMemberOrg(101L, 1L, 11L, 200L, null);
         seedMemberOrg(102L, 1L, 12L, 201L, null);
 
-        Integer count = service.deleteBatch(List.of(1001L, 1002L, 1003L));
+        Integer count = service.deleteBatch(deleteCommand(1001L, 1002L, 1003L));
 
         assertThat(count).isEqualTo(2);
         assertThat(countMembers()).isEqualTo(1L);
@@ -219,7 +222,7 @@ class IdentityUserServiceImplIntegrationTest {
         seedUser(1001L, "current", "当前用户", "1", 1);
         seedMember(10L, 1L, 1001L, 1, null);
 
-        Integer count = service.deleteBatch(List.of(1001L));
+        Integer count = service.deleteBatch(deleteCommand(1001L));
 
         assertThat(count).isZero();
         assertThat(countMembers()).isEqualTo(1L);
@@ -242,9 +245,9 @@ class IdentityUserServiceImplIntegrationTest {
         var result = service.bindExternalIdentity(command);
 
         assertThat(result.getUserId()).isEqualTo(1002L);
-        List<TenantMember> members = memberMapper.selectList(null);
+        List<TenantMemberEntity> members = memberMapper.selectList(null);
         assertThat(members).hasSize(1);
-        assertThat(members.get(0).getTenantId()).isEqualTo(1L);
+        assertThat(members.get(0).getTenantId()).isEqualTo("1");
         assertThat(members.get(0).getUserId()).isEqualTo(1002L);
         assertThat(members.get(0).getDisplayName()).isEqualTo("企微用户");
         List<ExternalIdentityBindingEntity> bindings = externalBindingMapper.selectList(null);
@@ -297,7 +300,12 @@ class IdentityUserServiceImplIntegrationTest {
                     locked_until timestamp,
                     locked_reason varchar(100),
                     remark varchar(500),
-                    tenant_id varchar(64)
+                    tenant_id varchar(64),
+                    org_id bigint,
+                    created_by bigint,
+                    created_at timestamp,
+                    updated_by bigint,
+                    updated_at timestamp
                 )
                 """);
         jdbcTemplate.execute("""
@@ -313,7 +321,12 @@ class IdentityUserServiceImplIntegrationTest {
                     primary_post_id bigint,
                     joined_at timestamp,
                     left_at timestamp,
-                    remark varchar(500)
+                    remark varchar(500),
+                    org_id bigint,
+                    created_by bigint,
+                    created_at timestamp,
+                    updated_by bigint,
+                    updated_at timestamp
                 )
                 """);
         jdbcTemplate.execute("""
@@ -344,6 +357,7 @@ class IdentityUserServiceImplIntegrationTest {
                     bind_status varchar(32),
                     bind_time timestamp,
                     last_login_time timestamp,
+                    org_id bigint,
                     created_by bigint,
                     created_at timestamp,
                     updated_by bigint,
@@ -390,13 +404,21 @@ class IdentityUserServiceImplIntegrationTest {
         return jdbcTemplate.queryForObject("select count(*) from tenant_member_org", Long.class);
     }
 
+    private BatchDeleteIdentityUserCommand deleteCommand(Long... userIds) {
+        BatchDeleteIdentityUserCommand command = new BatchDeleteIdentityUserCommand();
+        command.setUserIds(List.of(userIds));
+        return command;
+    }
+
     @Configuration
     @MapperScan(basePackageClasses = IdentityUserMapper.class)
     @Import({
-            IdentityUserServiceImpl.class,
+            IdentityUserService.class,
             IdentityUserSecurityService.class,
             IdentitySecurityPolicyService.class,
-            IdentityPasswordPolicyService.class
+            IdentityPasswordPolicyService.class,
+            AuthorizationRoleBindingAdapter.class,
+            SysConfigValueAdapter.class
     })
     static class TestConfig {
 

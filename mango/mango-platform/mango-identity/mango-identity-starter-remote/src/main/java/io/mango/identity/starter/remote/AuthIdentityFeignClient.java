@@ -4,7 +4,7 @@ import io.mango.common.result.R;
 import io.mango.identity.api.AuthIdentityApi;
 import io.mango.identity.api.command.ChangeRequiredPasswordCommand;
 import io.mango.identity.api.query.AuthUsernameQuery;
-import io.mango.identity.api.vo.AuthUserInfo;
+import io.mango.identity.api.vo.AuthUserVO;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.cloud.openfeign.SpringQueryMap;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,11 +20,11 @@ public interface AuthIdentityFeignClient extends AuthIdentityApi {
 
     @Override
     @GetMapping("/auth/username")
-    R<AuthUserInfo> getByUsernameForAuth(@SpringQueryMap AuthUsernameQuery query);
+    R<AuthUserVO> getByUsernameForAuth(@SpringQueryMap AuthUsernameQuery query);
 
     @Override
     @GetMapping("/auth/id")
-    R<AuthUserInfo> getByIdForAuth(@RequestParam("userId") Long userId);
+    R<AuthUserVO> getByIdForAuth(@RequestParam("userId") Long userId);
 
     @Override
     @PostMapping("/auth/login-failure")

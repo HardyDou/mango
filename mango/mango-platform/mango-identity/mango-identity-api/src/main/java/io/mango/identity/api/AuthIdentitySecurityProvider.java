@@ -1,7 +1,7 @@
 package io.mango.identity.api;
 
 import io.mango.identity.api.command.ChangeRequiredPasswordCommand;
-import io.mango.identity.api.vo.AuthUserInfo;
+import io.mango.identity.api.vo.AuthUserVO;
 
 /**
  * 认证链路身份安全状态 Provider。
@@ -11,7 +11,7 @@ public interface AuthIdentitySecurityProvider {
     /**
      * 登录前检查账号安全状态。
      */
-    void assertLoginAllowed(AuthUserInfo user);
+    void assertLoginAllowed(AuthUserVO user);
 
     /**
      * 记录密码校验失败。

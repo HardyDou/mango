@@ -3,8 +3,9 @@ package io.mango.identity.core.service.impl;
 import com.baomidou.mybatisplus.autoconfigure.MybatisPlusAutoConfiguration;
 import io.mango.common.exception.BizException;
 import io.mango.identity.api.command.ChangeRequiredPasswordCommand;
-import io.mango.identity.api.vo.AuthUserInfo;
-import io.mango.identity.core.entity.IdentityUser;
+import io.mango.identity.api.vo.AuthUserVO;
+import io.mango.identity.core.entity.IdentityUserEntity;
+import io.mango.identity.core.adapter.SysConfigValueAdapter;
 import io.mango.identity.core.mapper.IdentityUserMapper;
 import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguration;
 import io.mango.system.api.SysConfigApi;
@@ -73,17 +74,17 @@ class IdentityUserSecurityServiceIntegrationTest {
         service.recordLoginFailure(1001L);
         service.recordLoginFailure(1001L);
         service.recordLoginFailure(1001L);
-        IdentityUser beforeThreshold = userMapper.selectById(1001L);
+        IdentityUserEntity beforeThreshold = userMapper.selectById(1001L);
         assertThat(beforeThreshold.getFailedLoginCount()).isEqualTo(4);
         assertThat(beforeThreshold.getLockedUntil()).isNull();
 
         service.recordLoginFailure(1001L);
-        IdentityUser locked = userMapper.selectById(1001L);
+        IdentityUserEntity locked = userMapper.selectById(1001L);
         assertThat(locked.getFailedLoginCount()).isEqualTo(5);
         assertThat(locked.getLockedUntil()).isAfter(LocalDateTime.now());
         assertThat(locked.getLockedReason()).isEqualTo("TOO_MANY_FAILED_LOGIN_ATTEMPTS");
 
-        AuthUserInfo authUser = new AuthUserInfo();
+        AuthUserVO authUser = new AuthUserVO();
         authUser.setUserId(1001L);
         authUser.setLockedUntil(locked.getLockedUntil());
         assertThatThrownBy(() -> service.assertLoginAllowed(authUser))
@@ -91,7 +92,7 @@ class IdentityUserSecurityServiceIntegrationTest {
                 .hasMessageContaining("账号已被临时锁定");
 
         service.recordLoginSuccess(1001L);
-        IdentityUser cleared = userMapper.selectById(1001L);
+        IdentityUserEntity cleared = userMapper.selectById(1001L);
         assertThat(cleared.getFailedLoginCount()).isZero();
         assertThat(cleared.getLastFailedLoginAt()).isNull();
         assertThat(cleared.getLockedUntil()).isNull();
@@ -109,7 +110,7 @@ class IdentityUserSecurityServiceIntegrationTest {
 
         service.changeRequiredPassword(command);
 
-        IdentityUser persisted = userMapper.selectById(1002L);
+        IdentityUserEntity persisted = userMapper.selectById(1002L);
         assertThat(passwordEncoder.matches("Mango@654321", persisted.getPassword())).isTrue();
         assertThat(persisted.getPasswordResetRequired()).isFalse();
         assertThat(persisted.getPasswordUpdatedAt()).isNotNull();
@@ -133,7 +134,7 @@ class IdentityUserSecurityServiceIntegrationTest {
 
         service.recordLoginFailure(1004L);
 
-        IdentityUser persisted = userMapper.selectById(1004L);
+        IdentityUserEntity persisted = userMapper.selectById(1004L);
         assertThat(persisted.getFailedLoginCount()).isEqualTo(1);
         assertThat(persisted.getLastFailedLoginAt()).isNotNull();
         assertThat(persisted.getLockedUntil()).isNull();
@@ -145,7 +146,7 @@ class IdentityUserSecurityServiceIntegrationTest {
 
         boolean unlocked = service.unlock(1005L);
 
-        IdentityUser persisted = userMapper.selectById(1005L);
+        IdentityUserEntity persisted = userMapper.selectById(1005L);
         assertThat(unlocked).isTrue();
         assertThat(persisted.getFailedLoginCount()).isZero();
         assertThat(persisted.getLastFailedLoginAt()).isNull();
@@ -159,7 +160,7 @@ class IdentityUserSecurityServiceIntegrationTest {
 
         boolean updated = service.requirePasswordReset(1006L);
 
-        IdentityUser persisted = userMapper.selectById(1006L);
+        IdentityUserEntity persisted = userMapper.selectById(1006L);
         assertThat(updated).isTrue();
         assertThat(persisted.getPasswordResetRequired()).isTrue();
     }
@@ -190,7 +191,12 @@ class IdentityUserSecurityServiceIntegrationTest {
                     locked_until timestamp,
                     locked_reason varchar(100),
                     remark varchar(500),
-                    tenant_id varchar(64)
+                    tenant_id varchar(64),
+                    org_id bigint,
+                    created_by bigint,
+                    created_at timestamp,
+                    updated_by bigint,
+                    updated_at timestamp
                 )
                 """);
     }
@@ -224,7 +230,8 @@ class IdentityUserSecurityServiceIntegrationTest {
     @Import({
             IdentityUserSecurityService.class,
             IdentitySecurityPolicyService.class,
-            IdentityPasswordPolicyService.class
+            IdentityPasswordPolicyService.class,
+            SysConfigValueAdapter.class
     })
     static class TestConfig {
 

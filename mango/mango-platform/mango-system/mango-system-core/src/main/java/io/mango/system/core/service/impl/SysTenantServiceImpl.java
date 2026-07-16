@@ -6,7 +6,7 @@ import io.mango.auth.api.vo.LoginTenantVO;
 import io.mango.common.result.Require;
 import io.mango.common.result.R;
 import io.mango.identity.api.TenantMemberProvider;
-import io.mango.identity.api.vo.TenantMemberInfo;
+import io.mango.identity.api.vo.TenantMemberVO;
 import io.mango.system.api.SystemCode;
 import io.mango.system.api.enums.InstitutionStatus;
 import io.mango.system.api.tenant.TenantDependencyChecker;
@@ -246,7 +246,7 @@ public class SysTenantServiceImpl implements ISysTenantService, LoginTenantProvi
 
     private LoginTenantVO attachMember(Long userId, LoginTenantVO tenant) {
         Long tenantId = parseTenantId(tenant.getTenantId());
-        TenantMemberInfo member = tenantMemberProvider.getEnabledMember(userId, tenantId);
+        TenantMemberVO member = tenantMemberProvider.getEnabledMember(userId, tenantId);
         if (member == null) {
             return null;
         }
@@ -256,7 +256,7 @@ public class SysTenantServiceImpl implements ISysTenantService, LoginTenantProvi
         return tenant;
     }
 
-    private LoginTenantVO convertMemberToLoginTenantVO(TenantMemberInfo member) {
+    private LoginTenantVO convertMemberToLoginTenantVO(TenantMemberVO member) {
         SysTenant tenant = sysTenantMapper.selectOne(new LambdaQueryWrapper<SysTenant>()
                 .eq(SysTenant::getId, member.getTenantId())
                 .eq(SysTenant::getStatus, InstitutionStatus.ENABLED.value())

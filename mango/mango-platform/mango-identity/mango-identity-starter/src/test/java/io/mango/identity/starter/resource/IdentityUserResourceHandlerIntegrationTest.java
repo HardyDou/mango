@@ -1,8 +1,8 @@
 package io.mango.identity.starter.resource;
 
 import com.baomidou.mybatisplus.autoconfigure.MybatisPlusAutoConfiguration;
-import io.mango.identity.core.entity.IdentityUser;
-import io.mango.identity.core.entity.TenantMember;
+import io.mango.identity.core.entity.IdentityUserEntity;
+import io.mango.identity.core.entity.TenantMemberEntity;
 import io.mango.identity.core.mapper.IdentityUserMapper;
 import io.mango.identity.core.mapper.TenantMemberMapper;
 import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguration;
@@ -80,7 +80,7 @@ class IdentityUserResourceHandlerIntegrationTest {
         assertThat(result.getTargetTable()).isEqualTo("identity_user");
         assertThat(result.getTargetId()).isNotNull();
 
-        IdentityUser user = userMapper.selectById(result.getTargetId());
+        IdentityUserEntity user = userMapper.selectById(result.getTargetId());
         assertThat(user.getUsername()).isEqualTo("demo.admin");
         assertThat(passwordEncoder.matches("demo123", user.getPassword())).isTrue();
         assertThat(user.getTenantId()).isEqualTo("1");
@@ -89,8 +89,9 @@ class IdentityUserResourceHandlerIntegrationTest {
         assertThat(user.getPartyType()).isEqualTo("INTERNAL_ORG");
         assertThat(user.getStatus()).isEqualTo(1);
 
-        TenantMember member = memberMapper.selectList(null).get(0);
-        assertThat(member.getTenantId()).isEqualTo(1L);
+        TenantMemberEntity member = memberMapper.selectList(null).get(0);
+        assertThat(member.getTenantId()).isEqualTo("1");
+        assertThat(member.getMemberId()).isEqualTo(1001L);
         assertThat(member.getUserId()).isEqualTo(user.getUserId());
         assertThat(member.getMemberNo()).isEqualTo("DEMO-ADMIN");
         assertThat(member.getDisplayName()).isEqualTo("Demo Admin");
@@ -112,11 +113,11 @@ class IdentityUserResourceHandlerIntegrationTest {
         ResourceSyncResult updated = handler.upsert(update);
 
         assertThat(updated.getTargetId()).isEqualTo(created.getTargetId());
-        IdentityUser user = userMapper.selectById(created.getTargetId());
+        IdentityUserEntity user = userMapper.selectById(created.getTargetId());
         assertThat(user.getNickname()).isEqualTo("Updated Nickname");
         assertThat(user.getStatus()).isZero();
         assertThat(user.getRemark()).isEqualTo("updated by resource sync");
-        TenantMember member = memberMapper.selectList(null).get(0);
+        TenantMemberEntity member = memberMapper.selectList(null).get(0);
         assertThat(member.getDisplayName()).isEqualTo("Updated Admin");
         assertThat(member.getStatus()).isZero();
         assertThat(member.getRemark()).isEqualTo("updated by resource sync");
@@ -146,6 +147,24 @@ class IdentityUserResourceHandlerIntegrationTest {
         assertThat(memberMapper.selectList(null).get(0).getStatus()).isZero();
     }
 
+    @Test
+    void upsertAdditionalTenantMemberKeepsGlobalUserTenantAndStableMemberIds() {
+        ResourceSyncResult created = handler.upsert(resource());
+        ResourceDeclaration additionalTenant = resource();
+        put(additionalTenant, "tenantId", ResourceFieldType.LONG, 2L);
+        put(additionalTenant, "memberId", ResourceFieldType.LONG, 1002L);
+        put(additionalTenant, "memberNo", ResourceFieldType.STRING, "ADMIN-company_a");
+        put(additionalTenant, "displayName", ResourceFieldType.STRING, "A公司管理员");
+
+        ResourceSyncResult updated = handler.upsert(additionalTenant);
+
+        assertThat(updated.getTargetId()).isEqualTo(created.getTargetId());
+        assertThat(userMapper.selectById(created.getTargetId()).getTenantId()).isEqualTo("1");
+        assertThat(memberMapper.selectList(null))
+                .extracting(TenantMemberEntity::getMemberId)
+                .containsExactlyInAnyOrder(1001L, 1002L);
+    }
+
     private void resetSchema() {
         jdbcTemplate.execute("drop table if exists tenant_member");
         jdbcTemplate.execute("drop table if exists identity_user");
@@ -173,7 +192,12 @@ class IdentityUserResourceHandlerIntegrationTest {
                     locked_until timestamp,
                     locked_reason varchar(100),
                     remark varchar(500),
-                    tenant_id varchar(64)
+                    tenant_id varchar(64),
+                    org_id bigint,
+                    created_by bigint,
+                    created_at timestamp,
+                    updated_by bigint,
+                    updated_at timestamp
                 )
                 """);
         jdbcTemplate.execute("""
@@ -189,7 +213,12 @@ class IdentityUserResourceHandlerIntegrationTest {
                     primary_post_id bigint,
                     joined_at timestamp,
                     left_at timestamp,
-                    remark varchar(500)
+                    remark varchar(500),
+                    org_id bigint,
+                    created_by bigint,
+                    created_at timestamp,
+                    updated_by bigint,
+                    updated_at timestamp
                 )
                 """);
     }
@@ -199,6 +228,7 @@ class IdentityUserResourceHandlerIntegrationTest {
         resource.setResourceType(ResourceTypes.IDENTITY_USER);
         resource.setFields(new LinkedHashMap<>());
         put(resource, "tenantId", ResourceFieldType.LONG, 1L);
+        put(resource, "memberId", ResourceFieldType.LONG, 1001L);
         put(resource, "username", ResourceFieldType.STRING, "demo.admin");
         put(resource, "password", ResourceFieldType.STRING, "demo123");
         put(resource, "memberNo", ResourceFieldType.STRING, "DEMO-ADMIN");

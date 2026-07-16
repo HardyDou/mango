@@ -2,6 +2,7 @@ package io.mango.identity.core.service;
 
 import io.mango.common.vo.PageResult;
 import io.mango.identity.api.command.BindExternalIdentityCommand;
+import io.mango.identity.api.command.BatchDeleteIdentityUserCommand;
 import io.mango.identity.api.command.CreateIdentityUserCommand;
 import io.mango.identity.api.command.ResetIdentityUserPasswordCommand;
 import io.mango.identity.api.command.RequireIdentityUserPasswordResetCommand;
@@ -13,21 +14,24 @@ import io.mango.identity.api.query.ExternalIdentityQuery;
 import io.mango.identity.api.query.IdentityUserPageQuery;
 import io.mango.identity.api.query.IdentityUserTargetQuery;
 import io.mango.identity.api.vo.ExternalIdentityBindingVO;
-import io.mango.identity.core.entity.IdentityUser;
-import io.mango.identity.api.vo.IdentityUserInfo;
+import io.mango.identity.core.entity.IdentityUserEntity;
+import io.mango.identity.api.vo.IdentityUserInfoVO;
 import io.mango.identity.api.vo.IdentityUserVO;
+import io.mango.infra.persistence.api.crud.MangoTypedCrudService;
 
 import java.util.List;
 
 /**
  * 身份用户服务接口。
  */
-public interface IIdentityUserService {
+public interface IIdentityUserService extends MangoTypedCrudService<
+        IdentityUserEntity, CreateIdentityUserCommand, UpdateIdentityUserCommand,
+        IdentityUserPageQuery, IdentityUserVO, Long> {
 
     /**
      * 分页查询当前租户可管理的身份用户。
      */
-    PageResult<IdentityUserVO> page(IdentityUserPageQuery query);
+    PageResult<IdentityUserVO> pageResult(IdentityUserPageQuery query);
 
     /**
      * 查询当前租户可管理的身份用户详情。
@@ -37,22 +41,15 @@ public interface IIdentityUserService {
     /**
      * 创建当前租户下的身份用户。
      */
-    Long create(CreateIdentityUserCommand command);
-
-    /**
-     * 更新当前租户可管理的身份用户。
-     */
-    Boolean update(UpdateIdentityUserCommand command);
-
     /**
      * 删除当前租户可管理的身份用户。
      */
-    Boolean delete(Long userId);
+    Boolean deleteUser(Long userId);
 
     /**
      * 批量删除当前租户可管理的身份用户。
      */
-    Integer deleteBatch(List<Long> userIds);
+    Integer deleteBatch(BatchDeleteIdentityUserCommand command);
 
     /**
      * 修改当前租户可管理的身份用户状态。
@@ -77,32 +74,32 @@ public interface IIdentityUserService {
     /**
      * 按用户名查询身份资料。
      */
-    IdentityUserInfo getUserInfo(String username);
+    IdentityUserInfoVO getUserInfo(String username);
 
     /**
      * 按用户 ID 查询身份资料。
      */
-    IdentityUserInfo getUserInfoById(Long userId);
+    IdentityUserInfoVO getUserInfoById(Long userId);
 
     /**
      * 按接收目标解析身份资料列表。
      */
-    List<IdentityUserInfo> listUserInfosByTarget(IdentityUserTargetQuery query);
+    List<IdentityUserInfoVO> listUserInfosByTarget(IdentityUserTargetQuery query);
 
     /**
      * 按用户名查询用户实体。
      */
-    IdentityUser getByUsername(String username);
+    IdentityUserEntity getByUsername(String username);
 
     /**
      * 按登录域和用户名查询用户实体。
      */
-    IdentityUser getByUsername(String username, String realm);
+    IdentityUserEntity getByUsername(String username, String realm);
 
     /**
      * 按用户 ID 查询用户实体。
      */
-    IdentityUser getById(Long userId);
+    IdentityUserEntity getById(Long userId);
 
     ExternalIdentityBindingVO bindExternalIdentity(BindExternalIdentityCommand command);
 

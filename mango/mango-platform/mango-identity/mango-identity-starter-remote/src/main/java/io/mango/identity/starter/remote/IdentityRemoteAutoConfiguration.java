@@ -8,9 +8,12 @@ import io.mango.identity.api.command.AddTenantMemberOrgCommand;
 import io.mango.identity.api.command.ChangeRequiredPasswordCommand;
 import io.mango.identity.api.command.UpdateTenantMemberOrgCommand;
 import io.mango.identity.api.query.AuthUsernameQuery;
-import io.mango.identity.api.vo.AuthUserInfo;
-import io.mango.identity.api.vo.TenantMemberInfo;
-import io.mango.identity.api.vo.TenantMemberOrgRelationInfo;
+import io.mango.identity.api.query.TenantMemberOrgExistsQuery;
+import io.mango.identity.api.query.TenantMemberOrgOtherCountQuery;
+import io.mango.identity.api.request.ListTenantMembersRequest;
+import io.mango.identity.api.vo.AuthUserVO;
+import io.mango.identity.api.vo.TenantMemberVO;
+import io.mango.identity.api.vo.TenantMemberOrgRelationVO;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.beans.factory.ObjectProvider;
@@ -55,7 +58,7 @@ public class IdentityRemoteAutoConfiguration {
         }
 
         @Override
-        public void assertLoginAllowed(AuthUserInfo user) {
+        public void assertLoginAllowed(AuthUserVO user) {
             if (user == null || user.getLockedUntil() == null
                     || !user.getLockedUntil().isAfter(java.time.LocalDateTime.now())) {
                 return;
@@ -95,14 +98,14 @@ public class IdentityRemoteAutoConfiguration {
         }
 
         @Override
-        public AuthUserInfo getByUsernameForAuth(String username) {
+        public AuthUserVO getByUsernameForAuth(String username) {
             AuthUsernameQuery query = new AuthUsernameQuery();
             query.setUsername(username);
             return unwrap(authIdentityFeignClient.getObject().getByUsernameForAuth(query));
         }
 
         @Override
-        public AuthUserInfo getByUsernameForAuth(String username, String realm) {
+        public AuthUserVO getByUsernameForAuth(String username, String realm) {
             AuthUsernameQuery query = new AuthUsernameQuery();
             query.setUsername(username);
             query.setRealm(realm);
@@ -110,11 +113,11 @@ public class IdentityRemoteAutoConfiguration {
         }
 
         @Override
-        public AuthUserInfo getByIdForAuth(Long userId) {
+        public AuthUserVO getByIdForAuth(Long userId) {
             return unwrap(authIdentityFeignClient.getObject().getByIdForAuth(userId));
         }
 
-        private AuthUserInfo unwrap(R<AuthUserInfo> response) {
+        private AuthUserVO unwrap(R<AuthUserVO> response) {
             return response != null && response.isSuccess() ? response.getData() : null;
         }
     }
@@ -128,33 +131,37 @@ public class IdentityRemoteAutoConfiguration {
         }
 
         @Override
-        public TenantMemberInfo getEnabledMember(Long userId, Long tenantId) {
+        public TenantMemberVO getEnabledMember(Long userId, Long tenantId) {
             return unwrap(tenantMemberFeignClient.getObject().getEnabledMember(userId, tenantId));
         }
 
         @Override
-        public List<TenantMemberInfo> listEnabledMembers(Long userId) {
+        public List<TenantMemberVO> listEnabledMembers(Long userId) {
             return unwrapList(tenantMemberFeignClient.getObject().listEnabledMembers(userId));
         }
 
         @Override
-        public TenantMemberInfo getMember(Long memberId) {
+        public TenantMemberVO getMember(Long memberId) {
             return unwrap(tenantMemberFeignClient.getObject().getMember(memberId));
         }
 
         @Override
-        public List<TenantMemberOrgRelationInfo> listOrgRelations(Long tenantId, Long orgId) {
+        public List<TenantMemberOrgRelationVO> listOrgRelations(Long tenantId, Long orgId) {
             return unwrapList(tenantMemberFeignClient.getObject().listOrgRelations(tenantId, orgId));
         }
 
         @Override
-        public TenantMemberOrgRelationInfo getOrgRelation(Long relationId) {
+        public TenantMemberOrgRelationVO getOrgRelation(Long relationId) {
             return unwrap(tenantMemberFeignClient.getObject().getOrgRelation(relationId));
         }
 
         @Override
         public boolean existsOrgRelation(Long tenantId, Long memberId, Long orgId) {
-            Boolean result = unwrap(tenantMemberFeignClient.getObject().existsOrgRelation(tenantId, memberId, orgId));
+            TenantMemberOrgExistsQuery query = new TenantMemberOrgExistsQuery();
+            query.setTenantId(tenantId);
+            query.setMemberId(memberId);
+            query.setOrgId(orgId);
+            Boolean result = unwrap(tenantMemberFeignClient.getObject().existsOrgRelation(query));
             return Boolean.TRUE.equals(result);
         }
 
@@ -175,15 +182,20 @@ public class IdentityRemoteAutoConfiguration {
 
         @Override
         public long countOtherOrgRelations(Long tenantId, Long memberId, Long excludedRelationId) {
-            Long count = unwrap(tenantMemberFeignClient.getObject()
-                    .countOtherOrgRelations(tenantId, memberId, excludedRelationId));
+            TenantMemberOrgOtherCountQuery query = new TenantMemberOrgOtherCountQuery();
+            query.setTenantId(tenantId);
+            query.setMemberId(memberId);
+            query.setExcludedRelationId(excludedRelationId);
+            Long count = unwrap(tenantMemberFeignClient.getObject().countOtherOrgRelations(query));
             return count == null ? 0L : count;
         }
 
         @Override
-        public List<TenantMemberInfo> listMembers(Collection<Long> memberIds) {
+        public List<TenantMemberVO> listMembers(Collection<Long> memberIds) {
             List<Long> ids = memberIds == null ? List.of() : List.copyOf(memberIds);
-            return unwrapList(tenantMemberFeignClient.getObject().listMembers(ids));
+            ListTenantMembersRequest request = new ListTenantMembersRequest();
+            request.setMemberIds(ids);
+            return unwrapList(tenantMemberFeignClient.getObject().listMembers(request));
         }
 
         private <T> T unwrap(R<T> response) {

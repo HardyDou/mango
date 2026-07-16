@@ -2,7 +2,6 @@ package io.mango.link.core.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import io.mango.common.result.Require;
-import io.mango.common.result.R;
 import io.mango.identity.api.TenantMemberProvider;
 import io.mango.link.api.enums.LinkNavigationSource;
 import io.mango.link.api.enums.LinkVisibilityScope;
@@ -12,6 +11,7 @@ import io.mango.link.core.entity.LinkAccessRecordEntity;
 import io.mango.link.core.entity.LinkCategoryEntity;
 import io.mango.link.core.entity.LinkItemEntity;
 import io.mango.link.core.entity.LinkVisibilityTargetEntity;
+import io.mango.link.core.integration.LinkConfigGateway;
 import io.mango.link.core.mapper.LinkAccessRecordMapper;
 import io.mango.link.core.mapper.LinkCategoryMapper;
 import io.mango.link.core.mapper.LinkFavoriteMapper;
@@ -20,7 +20,6 @@ import io.mango.link.core.mapper.LinkVisibilityTargetMapper;
 import io.mango.link.core.service.ILinkOpenService;
 import io.mango.link.core.support.LinkContextSupport;
 import io.mango.link.core.support.LinkSupport;
-import io.mango.system.api.SysConfigApi;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,7 +35,7 @@ import java.util.Map;
 import java.util.Set;
 
 @Service
-public class LinkOpenService extends LinkBaseService implements ILinkOpenService {
+public class LinkOpenService extends BaseLinkService implements ILinkOpenService {
 
     private static final String JUMP_ENABLED_CONFIG_KEY = "mango.link.open.jump.enabled";
     private static final String LEGACY_JUMP_ENABLED_CONFIG_KEY = "link.open.jump.enabled";
@@ -47,7 +46,7 @@ public class LinkOpenService extends LinkBaseService implements ILinkOpenService
     private static final long ANONYMOUS_TENANT_ID = 0L;
 
     private final LinkAccessRecordMapper accessRecordMapper;
-    private final ObjectProvider<SysConfigApi> sysConfigApi;
+    private final LinkConfigGateway configGateway;
 
     public LinkOpenService(LinkCategoryMapper categoryMapper,
                            LinkItemMapper itemMapper,
@@ -55,15 +54,18 @@ public class LinkOpenService extends LinkBaseService implements ILinkOpenService
                            LinkFavoriteMapper favoriteMapper,
                            ObjectProvider<TenantMemberProvider> tenantMemberProvider,
                            LinkAccessRecordMapper accessRecordMapper,
-                           ObjectProvider<SysConfigApi> sysConfigApi) {
+                           LinkConfigGateway configGateway) {
         super(categoryMapper, itemMapper, targetMapper, favoriteMapper, tenantMemberProvider);
         this.accessRecordMapper = accessRecordMapper;
-        this.sysConfigApi = sysConfigApi;
+        this.configGateway = configGateway;
     }
 
     @Override
     public List<LinkPublicItemVO> listPublicItems(LinkPublicItemQuery query) {
-        LinkPublicItemQuery resolved = query == null ? new LinkPublicItemQuery() : query;
+        LinkPublicItemQuery resolved = query;
+        if (resolved == null) {
+            resolved = new LinkPublicItemQuery();
+        }
         Long tenantId = LinkContextSupport.resolveTenantId(resolved.getTenantId());
         Long userId = LinkContextSupport.currentUserIdOrNull();
         if (userId != null) {
@@ -86,9 +88,10 @@ public class LinkOpenService extends LinkBaseService implements ILinkOpenService
         Require.notNull(id, "网址 ID 不能为空");
         LinkItemEntity item = itemMapper.selectById(id);
         Require.notNull(item, "网址不存在");
-        LinkCategoryEntity category = item.getCategoryId() == null
-                ? null
-                : categoryMapper.selectByTenantAndId(item.getTenantId(), item.getCategoryId());
+        LinkCategoryEntity category = null;
+        if (item.getCategoryId() != null) {
+            category = categoryMapper.selectByTenantAndId(item.getTenantId(), item.getCategoryId());
+        }
         Require.isTrue(categoryVisible(item, category), "网址不可见");
         Long userId = LinkContextSupport.currentUserIdOrNull();
         List<LinkVisibilityTargetEntity> targets = targetMapper.selectList(new LambdaQueryWrapper<LinkVisibilityTargetEntity>()
@@ -111,8 +114,13 @@ public class LinkOpenService extends LinkBaseService implements ILinkOpenService
         String targetUrl = LinkSupport.normalizeUrl(url);
         Long tenantId = LinkContextSupport.currentTenantIdOrNull();
         Long userId = LinkContextSupport.currentUserIdOrNull();
-        LinkItemEntity item = tenantId == null ? null : itemMapper.selectEnabledByTenantAndUrl(tenantId, targetUrl);
-        recordAccess(tenantId == null ? ANONYMOUS_TENANT_ID : tenantId, item, targetUrl, userId,
+        LinkItemEntity item = null;
+        Long accessTenantId = ANONYMOUS_TENANT_ID;
+        if (tenantId != null) {
+            item = itemMapper.selectEnabledByTenantAndUrl(tenantId, targetUrl);
+            accessTenantId = tenantId;
+        }
+        recordAccess(accessTenantId, item, targetUrl, userId,
                 visitorId, source, extraParams, clientIp, userAgent, referer);
         return targetUrl;
     }
@@ -195,26 +203,16 @@ public class LinkOpenService extends LinkBaseService implements ILinkOpenService
         LinkPublicItemVO vo = toPublicVO(item, category);
         vo.setSource(source);
         vo.setFavorited(favorited);
-        vo.setRedirectUrl(jumpEnabled() ? redirectUrl(item, source) : null);
+        String resolvedRedirectUrl = null;
+        if (jumpEnabled()) {
+            resolvedRedirectUrl = redirectUrl(item, source);
+        }
+        vo.setRedirectUrl(resolvedRedirectUrl);
         return vo;
     }
 
     private boolean jumpEnabled() {
-        SysConfigApi api = sysConfigApi.getIfAvailable();
-        if (api == null) {
-            return false;
-        }
-        R<String> current = api.getValue(JUMP_ENABLED_CONFIG_KEY);
-        if (current != null && current.isSuccess()) {
-            return Boolean.parseBoolean(current.getData());
-        }
-        return configEnabled(api, LEGACY_JUMP_ENABLED_CONFIG_KEY);
-    }
-
-    private boolean configEnabled(SysConfigApi api, String configKey) {
-        R<Boolean> result = api.getBooleanValue(configKey, false);
-        Boolean enabled = result == null ? null : result.getData();
-        return Boolean.TRUE.equals(enabled);
+        return configGateway.booleanValue(JUMP_ENABLED_CONFIG_KEY, LEGACY_JUMP_ENABLED_CONFIG_KEY);
     }
 
     private String redirectUrl(LinkItemEntity item, LinkNavigationSource source) {
@@ -243,7 +241,11 @@ public class LinkOpenService extends LinkBaseService implements ILinkOpenService
                               String referer) {
         LinkAccessRecordEntity record = new LinkAccessRecordEntity();
         record.setTenantId(tenantId);
-        record.setLinkId(item == null ? null : item.getId());
+        Long linkId = null;
+        if (item != null) {
+            linkId = item.getId();
+        }
+        record.setLinkId(linkId);
         record.setUrl(limit(url, REFERER_LIMIT));
         record.setUserId(userId);
         record.setVisitorId(limit(visitorId, VISITOR_ID_LIMIT));

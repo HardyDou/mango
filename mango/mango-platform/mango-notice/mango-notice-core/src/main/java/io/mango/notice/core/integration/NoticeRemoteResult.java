@@ -2,6 +2,8 @@ package io.mango.notice.core.integration;
 
 import io.mango.common.result.R;
 
+import java.util.function.Function;
+
 /** Transport-neutral snapshot of a remote Mango API result. */
 public final class NoticeRemoteResult<T> {
 
@@ -20,6 +22,14 @@ public final class NoticeRemoteResult<T> {
             return new NoticeRemoteResult<>(false, null, null);
         }
         return new NoticeRemoteResult<>(result.isSuccess(), result.getData(), result.getMsg());
+    }
+
+    public <R> NoticeRemoteResult<R> map(Function<? super T, ? extends R> mapper) {
+        R mappedData = null;
+        if (data != null) {
+            mappedData = mapper.apply(data);
+        }
+        return new NoticeRemoteResult<>(success, mappedData, message);
     }
 
     public boolean isSuccess() {

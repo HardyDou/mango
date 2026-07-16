@@ -8,7 +8,7 @@ import lombok.Data;
  */
 @Data
 @Schema(description = "机构成员事实")
-public class TenantMemberInfo {
+public class TenantMemberVO {
 
     @Schema(description = "成员ID")
     private Long memberId;
