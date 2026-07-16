@@ -205,9 +205,9 @@ mango-identity-core/src/main/resources/db/migration/identity
 
 | 入口 | 内容 |
 |------|------|
-| `V1__init_identity.sql` | 创建 `admin` 全局账号和初始化机构成员 |
-| `V2__update_admin_contact.sql` | 更新 admin 联系方式 |
-| `V3__external_identity_org_change_handover.sql` | 创建外部身份绑定表 |
+| `V1__init_identity.sql` | 一次性创建 identity 最终态表、索引和约束，只包含 DDL |
+| `META-INF/mango/resources/identity-common-bootstrap.yml` | 默认加载必需的 `admin` 全局账号和租户 1 成员 |
+| `META-INF/mango/demo/identity-demo-members.yml` | 开启 demo 资源后加载租户 2、3、4 的演示成员和组织关系 |
 | `IdentityTenantProvisioner` | 新建租户时，如果当前上下文有创建者用户，则补建成员号 `ADMIN-<tenantId>-<userId>` 的机构管理员成员 |
 
 `IdentityTenantProvisioner` 还会查找当前租户 `internal-admin + ROLE_ADMIN` 角色。角色存在时，会把创建者成员绑定到该角色，授权上下文为 `INTERNAL / INTERNAL_USER / INTERNAL_ORG / partyId=tenantId`。
@@ -216,9 +216,11 @@ mango-identity-core/src/main/resources/db/migration/identity
 
 | 资源类型 | 目标模块 | 声明入口 | 内容 |
 |----------|----------|----------|------|
+| `IDENTITY_USER` | `identity` | `identity-common-bootstrap.yml`、`identity-demo-members.yml` | 必需管理员账号与演示租户成员 |
+| `ORG_MEMBER_BINDING` | `identity` | `identity-demo-members.yml` | 演示成员与所属租户组织的绑定 |
 | `MESSAGE_TEMPLATE` | `notice` | `IdentityMessageTemplateResourceProvider` | `identity.user.created`、`identity.password.reset`、`auth.wecom.login.bound`、`auth.wecom.login.unbound` |
 
-通知模板通过 Java `ResourceProvider` 声明，字段契约以 `mango-notice` 的 `MESSAGE_TEMPLATE` 说明为准。创建账号、重置密码和企业微信绑定变更只发布 `NoticeSendEvent`，由 notice 本地或远程 starter 在事务提交后发送，通知失败只记录日志，不阻断 identity 主流程。
+`META-INF/mango/resources/` 默认加载必需资源，`META-INF/mango/demo/` 仅在 `mango.resource.registry.demo-enabled=true` 时加载演示资源。通知模板通过 Java `ResourceProvider` 声明，字段契约以 `mango-notice` 的 `MESSAGE_TEMPLATE` 说明为准。创建账号、重置密码和企业微信绑定变更只发布 `NoticeSendEvent`，由 notice 本地或远程 starter 在事务提交后发送，通知失败只记录日志，不阻断 identity 主流程。
 
 ## 11. 租户边界
 
