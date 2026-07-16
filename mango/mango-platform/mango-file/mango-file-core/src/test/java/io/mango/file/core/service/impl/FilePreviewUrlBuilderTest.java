@@ -1,6 +1,6 @@
 package io.mango.file.core.service.impl;
 
-import io.mango.file.core.entity.FileRecord;
+import io.mango.file.core.entity.FileRecordEntity;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -9,7 +9,7 @@ class FilePreviewUrlBuilderTest {
 
     @Test
     void build_相对地址无占位符_自动追加基础参数() {
-        FileRecord record = record();
+        FileRecordEntity record = record();
 
         String url = FilePreviewUrlBuilder.build("/file-preview/files/preview", record,
                 "/file/files/download?id=100", 600L);
@@ -20,7 +20,7 @@ class FilePreviewUrlBuilderTest {
 
     @Test
     void build_绝对地址无占位符_自动追加基础参数() {
-        FileRecord record = record();
+        FileRecordEntity record = record();
 
         String url = FilePreviewUrlBuilder.build("https://preview.example.com/onlinePreview", record,
                 "https://file.example.com/download?id=100", 900L);
@@ -31,7 +31,7 @@ class FilePreviewUrlBuilderTest {
 
     @Test
     void build_模板使用fileUrl_保留外部基准地址() {
-        FileRecord record = record();
+        FileRecordEntity record = record();
 
         String url = FilePreviewUrlBuilder.build("https://preview.example.com/onlinePreview?source={fileUrl}", record,
                 "https://files.example.com/api/file/files/download?id=100", 900L);
@@ -42,7 +42,7 @@ class FilePreviewUrlBuilderTest {
 
     @Test
     void build_地址模板含占位符_替换占位符() {
-        FileRecord record = record();
+        FileRecordEntity record = record();
 
         String url = FilePreviewUrlBuilder.build("/preview/{fileId}/{fileName}?source={fileUrl}", record,
                 "/file/files/download?id=100", 600L);
@@ -53,7 +53,7 @@ class FilePreviewUrlBuilderTest {
 
     @Test
     void build_无文件ID_自动使用fileUrl参数() {
-        FileRecord record = record();
+        FileRecordEntity record = record();
         record.setId(null);
 
         String url = FilePreviewUrlBuilder.build("https://preview.example.com/onlinePreview", record,
@@ -63,8 +63,8 @@ class FilePreviewUrlBuilderTest {
                 + "&fileName=%E5%90%88%E5%90%8C%201.docx&expireSeconds=900");
     }
 
-    private FileRecord record() {
-        FileRecord record = new FileRecord();
+    private FileRecordEntity record() {
+        FileRecordEntity record = new FileRecordEntity();
         record.setId(100L);
         record.setFileName("合同 1.docx");
         return record;

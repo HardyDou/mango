@@ -1,13 +1,12 @@
 package io.mango.file.core.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import io.mango.common.result.R;
 import io.mango.common.result.Require;
 import io.mango.file.api.enums.FileCode;
 import io.mango.file.api.command.SaveFileDirectoryCommand;
 import io.mango.file.api.vo.FileDirectoryVO;
-import io.mango.file.core.entity.FileDirectory;
-import io.mango.file.core.entity.FileRecord;
+import io.mango.file.core.entity.FileDirectoryEntity;
+import io.mango.file.core.entity.FileRecordEntity;
 import io.mango.file.core.mapper.FileDirectoryMapper;
 import io.mango.file.core.mapper.FileRecordMapper;
 import io.mango.file.core.service.IFileDirectoryService;
@@ -29,7 +28,7 @@ import java.util.Map;
  */
 @Service
 @RequiredArgsConstructor
-public class FileDirectoryServiceImpl implements IFileDirectoryService {
+public class FileDirectoryService implements IFileDirectoryService {
 
     private static final long ROOT_ID = 0L;
 
@@ -37,14 +36,14 @@ public class FileDirectoryServiceImpl implements IFileDirectoryService {
     private final FileRecordMapper fileRecordMapper;
 
     @Override
-    public R<List<FileDirectoryVO>> tree() {
-        List<FileDirectory> directories = directoryMapper.selectList(new LambdaQueryWrapper<FileDirectory>()
-                .eq(FileDirectory::getTenantId, requireTenantId())
-                .orderByAsc(FileDirectory::getParentId)
-                .orderByAsc(FileDirectory::getSort)
-                .orderByDesc(FileDirectory::getCreatedTime));
+    public List<FileDirectoryVO> tree() {
+        List<FileDirectoryEntity> directories = directoryMapper.selectList(new LambdaQueryWrapper<FileDirectoryEntity>()
+                .eq(FileDirectoryEntity::getTenantId, requireTenantId())
+                .orderByAsc(FileDirectoryEntity::getParentId)
+                .orderByAsc(FileDirectoryEntity::getSort)
+                .orderByDesc(FileDirectoryEntity::getCreatedTime));
         Map<Long, FileDirectoryVO> byId = new LinkedHashMap<>();
-        for (FileDirectory item : directories) {
+        for (FileDirectoryEntity item : directories) {
             byId.put(item.getId(), toVO(item));
         }
         List<FileDirectoryVO> roots = new ArrayList<>();
@@ -57,21 +56,21 @@ public class FileDirectoryServiceImpl implements IFileDirectoryService {
             }
         }
         sortTree(roots);
-        return R.ok(roots);
+        return roots;
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public R<Long> create(SaveFileDirectoryCommand command) {
+    public Long create(SaveFileDirectoryCommand command) {
         Require.notNull(command, FileCode.FILE_DIRECTORY_INVALID);
         Long tenantId = requireTenantId();
         Long parentId = normalizeParentId(command.getParentId());
-        FileDirectory parent = parentId > ROOT_ID ? selectVisible(parentId) : null;
+        FileDirectoryEntity parent = parentId > ROOT_ID ? selectVisible(parentId) : null;
         validateName(command.getDirectoryName());
         requireUniqueName(tenantId, parentId, command.getDirectoryName(), null);
 
         LocalDateTime now = LocalDateTime.now();
-        FileDirectory entity = new FileDirectory();
+        FileDirectoryEntity entity = new FileDirectoryEntity();
         entity.setTenantId(tenantId);
         entity.setParentId(parentId);
         entity.setDirectoryName(command.getDirectoryName().trim());
@@ -85,52 +84,52 @@ public class FileDirectoryServiceImpl implements IFileDirectoryService {
         entity.setDirectoryPath(buildPath(parent, entity.getId()));
         entity.setUpdatedTime(now);
         directoryMapper.updateById(entity);
-        return R.ok(entity.getId());
+        return entity.getId();
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public R<Boolean> update(SaveFileDirectoryCommand command) {
+    public Boolean update(SaveFileDirectoryCommand command) {
         Require.notNull(command, FileCode.FILE_DIRECTORY_INVALID);
         Require.notNull(command.getId(), FileCode.FILE_DIRECTORY_INVALID);
-        FileDirectory entity = selectVisible(command.getId());
+        FileDirectoryEntity entity = selectVisible(command.getId());
         validateName(command.getDirectoryName());
-        requireUniqueName(entity.getTenantId(), entity.getParentId(), command.getDirectoryName(), entity.getId());
+        requireUniqueName(entity.getTenantIdAsLong(), entity.getParentId(), command.getDirectoryName(), entity.getId());
         entity.setDirectoryName(command.getDirectoryName().trim());
         entity.setSort(command.getSort() == null ? entity.getSort() : command.getSort());
         entity.setStatus(command.getStatus() == null ? entity.getStatus() : command.getStatus());
         entity.setUpdatedBy(MangoContextHolder.userId());
         entity.setUpdatedTime(LocalDateTime.now());
-        return R.ok(directoryMapper.updateById(entity) > 0);
+        return directoryMapper.updateById(entity) > 0;
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public R<Boolean> delete(Long id) {
+    public Boolean delete(Long id) {
         Require.notNull(id, FileCode.FILE_DIRECTORY_INVALID);
         Require.isTrue(id > ROOT_ID, FileCode.FILE_ROOT_DIRECTORY_DELETE_FORBIDDEN);
-        FileDirectory entity = selectVisible(id);
-        Long childCount = directoryMapper.selectCount(new LambdaQueryWrapper<FileDirectory>()
-                .eq(FileDirectory::getTenantId, entity.getTenantId())
-                .eq(FileDirectory::getParentId, id));
-        Long fileCount = fileRecordMapper.selectCount(new LambdaQueryWrapper<FileRecord>()
-                .eq(FileRecord::getTenantId, entity.getTenantId())
-                .eq(FileRecord::getDirectoryId, id)
-                .eq(FileRecord::getArchived, 0));
+        FileDirectoryEntity entity = selectVisible(id);
+        Long childCount = directoryMapper.selectCount(new LambdaQueryWrapper<FileDirectoryEntity>()
+                .eq(FileDirectoryEntity::getTenantId, entity.getTenantId())
+                .eq(FileDirectoryEntity::getParentId, id));
+        Long fileCount = fileRecordMapper.selectCount(new LambdaQueryWrapper<FileRecordEntity>()
+                .eq(FileRecordEntity::getTenantId, entity.getTenantId())
+                .eq(FileRecordEntity::getDirectoryId, id)
+                .eq(FileRecordEntity::getArchived, 0));
         Require.isTrue(childCount == 0 && fileCount == 0, FileCode.FILE_DIRECTORY_NOT_EMPTY);
-        return R.ok(directoryMapper.deleteById(id) > 0);
+        return directoryMapper.deleteById(id) > 0;
     }
 
     @Override
-    public FileDirectory selectVisible(Long directoryId) {
+    public FileDirectoryEntity selectVisible(Long directoryId) {
         Long resolved = normalizeParentId(directoryId);
         if (resolved == ROOT_ID) {
             return null;
         }
-        FileDirectory directory = directoryMapper.selectOne(new LambdaQueryWrapper<FileDirectory>()
-                .eq(FileDirectory::getTenantId, requireTenantId())
-                .eq(FileDirectory::getId, resolved)
-                .eq(FileDirectory::getStatus, 1)
+        FileDirectoryEntity directory = directoryMapper.selectOne(new LambdaQueryWrapper<FileDirectoryEntity>()
+                .eq(FileDirectoryEntity::getTenantId, requireTenantId())
+                .eq(FileDirectoryEntity::getId, resolved)
+                .eq(FileDirectoryEntity::getStatus, 1)
                 .last("LIMIT 1"));
         Require.notNull(directory, FileCode.FILE_DIRECTORY_NOT_FOUND);
         return directory;
@@ -144,15 +143,15 @@ public class FileDirectoryServiceImpl implements IFileDirectoryService {
     }
 
     private void requireUniqueName(Long tenantId, Long parentId, String directoryName, Long excludeId) {
-        LambdaQueryWrapper<FileDirectory> wrapper = new LambdaQueryWrapper<FileDirectory>()
-                .eq(FileDirectory::getTenantId, tenantId)
-                .eq(FileDirectory::getParentId, parentId)
-                .eq(FileDirectory::getDirectoryName, directoryName.trim());
-        wrapper.ne(excludeId != null, FileDirectory::getId, excludeId);
+        LambdaQueryWrapper<FileDirectoryEntity> wrapper = new LambdaQueryWrapper<FileDirectoryEntity>()
+                .eq(FileDirectoryEntity::getTenantId, tenantId)
+                .eq(FileDirectoryEntity::getParentId, parentId)
+                .eq(FileDirectoryEntity::getDirectoryName, directoryName.trim());
+        wrapper.ne(excludeId != null, FileDirectoryEntity::getId, excludeId);
         Require.isTrue(directoryMapper.selectCount(wrapper) == 0, FileCode.FILE_DIRECTORY_NAME_DUPLICATED);
     }
 
-    private String buildPath(FileDirectory parent, Long id) {
+    private String buildPath(FileDirectoryEntity parent, Long id) {
         String parentPath = parent == null || !StringUtils.hasText(parent.getDirectoryPath()) ? "/" : parent.getDirectoryPath();
         return parentPath.endsWith("/") ? parentPath + id + "/" : parentPath + "/" + id + "/";
     }
@@ -187,10 +186,10 @@ public class FileDirectoryServiceImpl implements IFileDirectoryService {
         }
     }
 
-    private FileDirectoryVO toVO(FileDirectory entity) {
+    private FileDirectoryVO toVO(FileDirectoryEntity entity) {
         FileDirectoryVO vo = new FileDirectoryVO();
         vo.setId(entity.getId());
-        vo.setTenantId(entity.getTenantId());
+        vo.setTenantId(entity.getTenantIdAsLong());
         vo.setParentId(entity.getParentId());
         vo.setDirectoryName(entity.getDirectoryName());
         vo.setDirectoryPath(entity.getDirectoryPath());

@@ -1,12 +1,7 @@
 package io.mango.file.api;
 
-import io.mango.common.result.R;
-import io.mango.common.vo.PageResult;
-import io.mango.file.api.command.FileArchiveCommand;
 import io.mango.file.api.command.SaveFileCommand;
-import io.mango.file.api.query.FileRecordPageQuery;
 import io.mango.file.api.vo.FileDownloadVO;
-import io.mango.file.api.vo.FilePreviewVO;
 import io.mango.file.api.vo.FileRecordVO;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -27,7 +22,7 @@ class FileApiTest {
 
     @Test
     void downloadTo_单文件下载到指定目录_返回落盘路径() throws Exception {
-        FileApi fileApi = new StubFileApi();
+        IFileContentProvider fileApi = new StubFileContentProvider();
 
         Path target = fileApi.downloadTo(1L, tempDir);
 
@@ -38,7 +33,7 @@ class FileApiTest {
 
     @Test
     void downloadTo_批量下载到指定目录_返回文件路径映射() throws Exception {
-        FileApi fileApi = new StubFileApi();
+        IFileContentProvider fileApi = new StubFileContentProvider();
 
         Map<Long, Path> targets = fileApi.downloadTo(List.of(1L, 2L), tempDir);
 
@@ -47,25 +42,10 @@ class FileApiTest {
         assertThat(Files.readString(targets.get(2L))).isEqualTo("file-2");
     }
 
-    private static class StubFileApi implements FileApi {
+    private static class StubFileContentProvider implements IFileContentProvider {
 
         @Override
-        public R<FileRecordVO> save(SaveFileCommand command) {
-            throw unsupported();
-        }
-
-        @Override
-        public R<PageResult<FileRecordVO>> page(FileRecordPageQuery query) {
-            throw unsupported();
-        }
-
-        @Override
-        public R<FileRecordVO> get(Long id) {
-            throw unsupported();
-        }
-
-        @Override
-        public R<FilePreviewVO> preview(Long id) {
+        public FileRecordVO save(SaveFileCommand command) {
             throw unsupported();
         }
 
@@ -80,13 +60,8 @@ class FileApiTest {
             return new FileDownloadVO(new ByteArrayInputStream(content), "../demo.txt", "text/plain", content.length);
         }
 
-        @Override
-        public R<Boolean> archive(FileArchiveCommand command) {
-            throw unsupported();
-        }
-
         private UnsupportedOperationException unsupported() {
-            return new UnsupportedOperationException("Not used by FileApi download tests");
+            return new UnsupportedOperationException("Not used by file content provider download tests");
         }
     }
 }

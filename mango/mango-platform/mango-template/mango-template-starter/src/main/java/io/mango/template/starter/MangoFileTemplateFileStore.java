@@ -1,7 +1,6 @@
 package io.mango.template.starter;
 
-import io.mango.common.result.R;
-import io.mango.file.api.FileApi;
+import io.mango.file.api.IFileContentProvider;
 import io.mango.file.api.command.SaveFileCommand;
 import io.mango.file.api.vo.FileDownloadVO;
 import io.mango.file.api.vo.FileRecordVO;
@@ -20,7 +19,7 @@ import java.io.ByteArrayInputStream;
 @RequiredArgsConstructor
 public class MangoFileTemplateFileStore implements ITemplateFileStore {
 
-    private final FileApi fileApi;
+    private final IFileContentProvider fileContentProvider;
 
     @Override
     public Long save(byte[] content, String fileName, String contentType, String purpose, String bizType, String bizId) {
@@ -35,18 +34,18 @@ public class MangoFileTemplateFileStore implements ITemplateFileStore {
         command.setBizType(bizType);
         command.setBizId(bizId);
         command.setDirectoryId(0L);
-        R<FileRecordVO> result = fileApi.save(command);
-        if (!result.isSuccess() || result.getData() == null) {
+        FileRecordVO result = fileContentProvider.save(command);
+        if (result == null) {
             throw new io.mango.common.exception.BizException(
                     TemplateCode.TEMPLATE_RENDER_FAILED.getCode(),
-                    result.getMsg());
+                    TemplateCode.TEMPLATE_RENDER_FAILED.getMessage());
         }
-        return result.getData().getId();
+        return result.getId();
     }
 
     @Override
     public TemplateStoredFile read(Long fileId) {
-        FileDownloadVO download = fileApi.download(fileId);
+        FileDownloadVO download = fileContentProvider.download(fileId);
         return new TemplateStoredFile(download.inputStream(), download.fileName(), download.contentType(), download.contentLength());
     }
 }

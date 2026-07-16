@@ -5,7 +5,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.common.result.R;
 import io.mango.common.vo.PageResult;
 import io.mango.file.api.FileApi;
-import io.mango.file.api.command.FileArchiveCommand;
+import io.mango.file.api.IFileContentProvider;
+import io.mango.file.api.command.FileDeleteCommand;
+import io.mango.file.api.command.FileMergePdfCommand;
+import io.mango.file.api.command.FilePackageCommand;
+import io.mango.file.api.command.SaveFileCommand;
 import io.mango.file.api.query.FileRecordPageQuery;
 import io.mango.file.api.vo.FileDownloadVO;
 import io.mango.file.api.vo.FilePreviewVO;
@@ -26,6 +30,7 @@ import org.springframework.http.ResponseEntity;
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -38,6 +43,8 @@ import static org.assertj.core.api.Assertions.assertThat;
                 "mango.authorization.resource-access.enabled=false",
                 "office.plugin.enabled=false",
                 "trust.host=127.0.0.1,localhost",
+                "spring.cloud.discovery.enabled=false",
+                "spring.cloud.nacos.discovery.enabled=false",
             "spring.flyway.enabled=false",
             "spring.autoconfigure.exclude="
                         + "org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration,"
@@ -98,9 +105,15 @@ class MangoFilePreviewAppE2ETest {
         FileApi fileApi() {
             return new StubFileApi();
         }
+
+        @Bean
+        @Primary
+        IFileContentProvider fileContentProvider() {
+            return new StubFileContentProvider();
+        }
     }
 
-    private static class StubFileApi implements FileApi {
+    public static class StubFileApi implements FileApi {
 
         @Override
         public R<FileRecordVO> get(Long id) {
@@ -117,28 +130,58 @@ class MangoFilePreviewAppE2ETest {
         }
 
         @Override
-        public FileDownloadVO download(Long id) {
-            byte[] content = FILE_CONTENT.getBytes(StandardCharsets.UTF_8);
-            return new FileDownloadVO(new ByteArrayInputStream(content), FILE_NAME, "text/plain;charset=UTF-8", content.length);
-        }
-
-        @Override
         public R<PageResult<FileRecordVO>> page(FileRecordPageQuery query) {
-            throw unsupported();
+            return R.ok(PageResult.of(List.of(), 0, 1, 10));
         }
 
         @Override
         public R<FilePreviewVO> preview(Long id) {
-            throw unsupported();
+            return R.fail("文件不存在");
         }
 
         @Override
-        public R<Boolean> archive(FileArchiveCommand command) {
-            throw unsupported();
+        public R<FileRecordVO> packageFiles(FilePackageCommand command) {
+            return R.fail("文件不存在");
         }
 
-        private UnsupportedOperationException unsupported() {
-            return new UnsupportedOperationException("Not used by file preview E2E");
+        @Override
+        public R<FileRecordVO> mergeToPdf(FileMergePdfCommand command) {
+            return R.fail("文件不存在");
+        }
+
+        @Override
+        public R<Boolean> archive(Long id, String reason) {
+            return R.ok(false);
+        }
+
+        @Override
+        public R<Boolean> delete(FileDeleteCommand command) {
+            return R.ok(false);
+        }
+    }
+
+    public static class StubFileContentProvider implements IFileContentProvider {
+
+        @Override
+        public FileRecordVO save(SaveFileCommand command) {
+            FileRecordVO vo = new FileRecordVO();
+            vo.setId(FILE_ID);
+            vo.setFileName(command.getFileName());
+            vo.setFileSize(command.getFileSize());
+            vo.setContentType(command.getContentType());
+            return vo;
+        }
+
+        @Override
+        public FileDownloadVO download(Long id) {
+            return downloadForService(id);
+        }
+
+        @Override
+        public FileDownloadVO downloadForService(Long id) {
+            byte[] content = FILE_CONTENT.getBytes(StandardCharsets.UTF_8);
+            return new FileDownloadVO(new ByteArrayInputStream(content), FILE_NAME,
+                    "text/plain;charset=UTF-8", content.length);
         }
     }
 }

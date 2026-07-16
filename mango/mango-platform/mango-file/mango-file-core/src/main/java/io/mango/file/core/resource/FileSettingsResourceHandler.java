@@ -1,7 +1,7 @@
 package io.mango.file.core.resource;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import io.mango.file.core.entity.FileSettings;
+import io.mango.file.core.entity.FileSettingsEntity;
 import io.mango.file.core.mapper.FileSettingsMapper;
 import io.mango.resource.api.ResourceHandler;
 import io.mango.resource.api.ResourceTypes;
@@ -71,9 +71,9 @@ public class FileSettingsResourceHandler implements ResourceHandler {
     @Override
     public ResourceSyncResult upsert(ResourceDeclaration resource) {
         SettingsPayload payload = SettingsPayload.from(resource);
-        FileSettings entity = find(payload.tenantId());
+        FileSettingsEntity entity = find(payload.tenantId());
         if (entity == null) {
-            entity = new FileSettings();
+            entity = new FileSettingsEntity();
             entity.setId(payload.settingsId());
             entity.setTenantId(payload.tenantId());
             apply(entity, payload);
@@ -88,7 +88,7 @@ public class FileSettingsResourceHandler implements ResourceHandler {
 
     @Override
     public ResourceSyncResult disable(ResourceDeclaration resource) {
-        FileSettings entity = resolve(resource);
+        FileSettingsEntity entity = resolve(resource);
         if (entity == null) {
             return ResourceSyncResult.of(null, TARGET_TABLE, "File settings not found");
         }
@@ -107,7 +107,7 @@ public class FileSettingsResourceHandler implements ResourceHandler {
 
     @Override
     public ResourceSyncResult delete(ResourceDeclaration resource) {
-        FileSettings entity = resolve(resource);
+        FileSettingsEntity entity = resolve(resource);
         if (entity == null) {
             return ResourceSyncResult.of(null, TARGET_TABLE, "File settings not found");
         }
@@ -116,7 +116,7 @@ public class FileSettingsResourceHandler implements ResourceHandler {
                 "File settings deleted: " + entity.getTenantId());
     }
 
-    private void apply(FileSettings entity, SettingsPayload payload) {
+    private void apply(FileSettingsEntity entity, SettingsPayload payload) {
         LocalDateTime now = LocalDateTime.now();
         entity.setMaxSize(payload.maxSize());
         entity.setAllowedExtensions(payload.allowedExtensions());
@@ -153,9 +153,9 @@ public class FileSettingsResourceHandler implements ResourceHandler {
         entity.setUpdatedAt(now);
     }
 
-    private FileSettings resolve(ResourceDeclaration resource) {
+    private FileSettingsEntity resolve(ResourceDeclaration resource) {
         Long tenantId = fieldLong(resource, "tenantId", false, DEFAULT_TENANT_ID);
-        FileSettings entity = find(tenantId);
+        FileSettingsEntity entity = find(tenantId);
         if (entity != null) {
             return entity;
         }
@@ -167,9 +167,9 @@ public class FileSettingsResourceHandler implements ResourceHandler {
         return settingsId == null ? null : settingsMapper.selectById(settingsId);
     }
 
-    private FileSettings find(Long tenantId) {
-        return settingsMapper.selectOne(new LambdaQueryWrapper<FileSettings>()
-                .eq(FileSettings::getTenantId, tenantId)
+    private FileSettingsEntity find(Long tenantId) {
+        return settingsMapper.selectOne(new LambdaQueryWrapper<FileSettingsEntity>()
+                .eq(FileSettingsEntity::getTenantId, tenantId)
                 .last("limit 1"));
     }
 

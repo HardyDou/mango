@@ -10,7 +10,7 @@ import com.qiniu.storage.UploadManager;
 import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.Auth;
 import io.mango.file.api.enums.FileCode;
-import io.mango.file.core.entity.FileStorageConfig;
+import io.mango.file.core.entity.FileStorageConfigEntity;
 import io.mango.common.result.Require;
 import org.springframework.util.StringUtils;
 
@@ -32,7 +32,7 @@ public class QiniuKodoFileStorage extends AbstractCloudFileStorage {
     }
 
     @Override
-    public void putObject(FileStorageConfig config, String objectName, InputStream inputStream, long contentLength, String contentType) {
+    public void putObject(FileStorageConfigEntity config, String objectName, InputStream inputStream, long contentLength, String contentType) {
         requireConfig(config);
         try {
             UploadManager uploadManager = new UploadManager(configuration(config));
@@ -44,7 +44,7 @@ public class QiniuKodoFileStorage extends AbstractCloudFileStorage {
     }
 
     @Override
-    public FileObject getObject(FileStorageConfig config, String objectName) {
+    public FileObject getObject(FileStorageConfigEntity config, String objectName) {
         requireConfig(config);
         Require.notBlank(config.getPublicEndpoint(), FileCode.STORAGE_CONFIG_INVALID);
         try {
@@ -59,7 +59,7 @@ public class QiniuKodoFileStorage extends AbstractCloudFileStorage {
     }
 
     @Override
-    public void removeObject(FileStorageConfig config, String objectName) {
+    public void removeObject(FileStorageConfigEntity config, String objectName) {
         requireConfig(config);
         try {
             bucketManager(config).delete(config.getBucketName(), objectName);
@@ -69,7 +69,7 @@ public class QiniuKodoFileStorage extends AbstractCloudFileStorage {
     }
 
     @Override
-    public void test(FileStorageConfig config) throws Exception {
+    public void test(FileStorageConfigEntity config) throws Exception {
         requireConfig(config);
         String objectName = ".mango-storage-test";
         UploadManager uploadManager = new UploadManager(configuration(config));
@@ -80,26 +80,26 @@ public class QiniuKodoFileStorage extends AbstractCloudFileStorage {
     }
 
     @Override
-    public Optional<String> presignedGetUrl(FileStorageConfig config, String objectName, String fileName, Duration expires) {
+    public Optional<String> presignedGetUrl(FileStorageConfigEntity config, String objectName, String fileName, Duration expires) {
         return privateDownloadUrl(config, objectName, expires);
     }
 
     @Override
-    public Optional<String> presignedDownloadUrl(FileStorageConfig config, String objectName, String fileName, Duration expires) {
+    public Optional<String> presignedDownloadUrl(FileStorageConfigEntity config, String objectName, String fileName, Duration expires) {
         return privateDownloadUrl(config, objectName, expires);
     }
 
     @Override
-    public Optional<String> publicGetUrl(FileStorageConfig config, String objectName, String fileName) {
+    public Optional<String> publicGetUrl(FileStorageConfigEntity config, String objectName, String fileName) {
         return publicObjectUrl(config, objectName);
     }
 
-    private void requireConfig(FileStorageConfig config) {
+    private void requireConfig(FileStorageConfigEntity config) {
         requireBucket(config);
         requireAccessSecret(config);
     }
 
-    private Optional<String> privateDownloadUrl(FileStorageConfig config, String objectName, Duration expires) {
+    private Optional<String> privateDownloadUrl(FileStorageConfigEntity config, String objectName, Duration expires) {
         requireConfig(config);
         Require.notBlank(config.getPublicEndpoint(), FileCode.STORAGE_CONFIG_INVALID);
         if (!StringUtils.hasText(objectName) || expires == null || expires.isNegative() || expires.isZero()) {
@@ -109,15 +109,15 @@ public class QiniuKodoFileStorage extends AbstractCloudFileStorage {
         return Optional.of(auth(config).privateDownloadUrl(url, expires.getSeconds()));
     }
 
-    private Auth auth(FileStorageConfig config) {
+    private Auth auth(FileStorageConfigEntity config) {
         return Auth.create(config.getAccessKey(), config.getSecretKey());
     }
 
-    private BucketManager bucketManager(FileStorageConfig config) {
+    private BucketManager bucketManager(FileStorageConfigEntity config) {
         return new BucketManager(auth(config), configuration(config));
     }
 
-    private Configuration configuration(FileStorageConfig config) {
+    private Configuration configuration(FileStorageConfigEntity config) {
         String region = regionOrDefault(config, "auto");
         if ("huadong".equalsIgnoreCase(region) || "z0".equalsIgnoreCase(region)) {
             return new Configuration(Region.huadong());

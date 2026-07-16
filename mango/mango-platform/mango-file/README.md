@@ -292,7 +292,7 @@ const attachmentIds = ref<string[]>([]);
 |--------------|--------|----------|
 | `id` | 文件记录 ID | 业务表保存附件关系，最常用。 |
 | `token` | `mango-file:<id>` | 一个字段需要区分文件来源时使用。 |
-| `record` | `FileRecord` | 上传后立刻展示文件名、大小、URL 等信息。 |
+| `record` | `FileRecordEntity` | 上传后立刻展示文件名、大小、URL 等信息。 |
 
 `fmt`、`size`、`sizes` 是前端提前拦截。最终限制以 `GET /file/settings` 返回的 `maxSize`、扩展名和 MIME 配置为准。
 

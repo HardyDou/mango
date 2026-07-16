@@ -1,23 +1,17 @@
 package io.mango.file.core.entity;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
-
-import java.time.LocalDateTime;
+import lombok.EqualsAndHashCode;
 
 /**
  * 文件记录实体。
  */
 @Data
+@EqualsAndHashCode(callSuper = true)
 @TableName("file_record")
-public class FileRecord {
+public class FileRecordEntity extends FileTenantEntity {
 
-    @TableId(type = IdType.ASSIGN_ID)
-    private Long id;
-
-    private Long tenantId;
     private String bizType;
     private String bizId;
     private String purpose;
@@ -36,10 +30,4 @@ public class FileRecord {
     private String fileHash;
     private Integer status;
     private Integer archived;
-    private Long createdBy;
-    private LocalDateTime createdTime;
-    private LocalDateTime createdAt;
-    private Long updatedBy;
-    private LocalDateTime updatedTime;
-    private LocalDateTime updatedAt;
 }

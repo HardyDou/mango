@@ -1,7 +1,7 @@
 package io.mango.file.core.storage;
 
 import io.mango.file.core.config.FileProperties;
-import io.mango.file.core.entity.FileStorageConfig;
+import io.mango.file.core.entity.FileStorageConfigEntity;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
@@ -13,7 +13,7 @@ class LocalFileStorageTest {
     @Test
     void publicGetUrl_withoutPublicEndpoint_returnsLocalObjectAccessPath() {
         LocalFileStorage storage = new LocalFileStorage(properties());
-        FileStorageConfig config = localConfig();
+        FileStorageConfigEntity config = localConfig();
 
         String url = storage.publicGetUrl(config, "2026/05/test file.txt", "test file.txt").orElseThrow();
 
@@ -24,7 +24,7 @@ class LocalFileStorageTest {
     @Test
     void presignedGetUrl_withoutPublicEndpoint_usesLocalObjectAccessPath() {
         LocalFileStorage storage = new LocalFileStorage(properties());
-        FileStorageConfig config = localConfig();
+        FileStorageConfigEntity config = localConfig();
 
         String url = storage.presignedGetUrl(config, "2026/05/test.txt", "test.txt", Duration.ofMinutes(10))
                 .orElseThrow();
@@ -36,7 +36,7 @@ class LocalFileStorageTest {
     @Test
     void publicDownloadUrl_withoutPublicEndpoint_usesLocalObjectDownloadPath() {
         LocalFileStorage storage = new LocalFileStorage(properties());
-        FileStorageConfig config = localConfig();
+        FileStorageConfigEntity config = localConfig();
 
         String url = storage.publicDownloadUrl(config, "2026/05/test.txt", "test.txt").orElseThrow();
 
@@ -47,7 +47,7 @@ class LocalFileStorageTest {
     @Test
     void publicGetUrl_withPublicEndpoint_usesConfiguredLocalAccessEndpoint() {
         LocalFileStorage storage = new LocalFileStorage(properties());
-        FileStorageConfig config = localConfig();
+        FileStorageConfigEntity config = localConfig();
         config.setPublicEndpoint("local-files.example.com/static");
         config.setSslEnabled(1);
 
@@ -59,7 +59,7 @@ class LocalFileStorageTest {
     @Test
     void publicDownloadUrl_withPublicEndpoint_keepsConfiguredLocalAccessEndpointAndDownloadFlag() {
         LocalFileStorage storage = new LocalFileStorage(properties());
-        FileStorageConfig config = localConfig();
+        FileStorageConfigEntity config = localConfig();
         config.setPublicEndpoint("local-files.example.com/static");
         config.setSslEnabled(1);
 
@@ -74,8 +74,8 @@ class LocalFileStorageTest {
         return properties;
     }
 
-    private FileStorageConfig localConfig() {
-        FileStorageConfig config = new FileStorageConfig();
+    private FileStorageConfigEntity localConfig() {
+        FileStorageConfigEntity config = new FileStorageConfigEntity();
         config.setStorageType("LOCAL");
         config.setBucketName("local");
         return config;

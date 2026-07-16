@@ -51,6 +51,8 @@ public final class MangoArchUnitChecker {
     private static final String FEIGN_CLIENT = "org.springframework.cloud.openfeign.FeignClient";
     private static final String LOCAL_CAPABILITY_CONTRACT =
             "io.mango.common.contract.LocalCapabilityContract";
+    private static final String BINARY_HTTP_ADAPTER =
+            "io.mango.common.contract.BinaryHttpAdapter";
     private static final String MANGO_INFRA_PACKAGE_PREFIX = "io.mango.infra.";
     private static final String REQUEST_MAPPING =
             "org.springframework.web.bind.annotation.RequestMapping";
@@ -445,7 +447,9 @@ public final class MangoArchUnitChecker {
         checkControllerRole(javaClass, role, issues);
         checkControllerRootMapping(javaClass, issues);
         checkControllerInheritance(javaClass, issues);
-        checkControllerApi(javaClass, issues);
+        if (!isBinaryHttpAdapter(javaClass)) {
+            checkControllerApi(javaClass, issues);
+        }
         if (requireContract && !hasValidControllerRoot(javaClass, contract)) {
             add(
                     issues,
@@ -582,16 +586,18 @@ public final class MangoArchUnitChecker {
             boolean requireContract,
             Map<String, JavaClass> contexts,
             List<ArchitectureIssue> issues) {
-        checkFeignStructure(javaClass, issues);
-        directApi(javaClass)
-                .ifPresent(
-                        api ->
-                                checkAdapterMethods(
-                                        javaClass,
-                                        api,
-                                        "MANGO-ARCH-FEIGN-008",
-                                        FEIGN_KIND,
-                                        issues));
+        if (!isBinaryHttpAdapter(javaClass)) {
+            checkFeignStructure(javaClass, issues);
+            directApi(javaClass)
+                    .ifPresent(
+                            api ->
+                                    checkAdapterMethods(
+                                            javaClass,
+                                            api,
+                                            "MANGO-ARCH-FEIGN-008",
+                                            FEIGN_KIND,
+                                            issues));
+        }
         JavaAnnotation<JavaClass> annotation = javaClass.getAnnotationOfType(FEIGN_CLIENT);
         FeignMetadata metadata =
                 new FeignMetadata(
@@ -1932,6 +1938,10 @@ public final class MangoArchUnitChecker {
     private boolean isLocalCapabilityContract(JavaClass javaClass) {
         return javaClass.getName().startsWith(MANGO_INFRA_PACKAGE_PREFIX)
                 && javaClass.isAnnotatedWith(LOCAL_CAPABILITY_CONTRACT);
+    }
+
+    private boolean isBinaryHttpAdapter(JavaClass javaClass) {
+        return javaClass.isAnnotatedWith(BINARY_HTTP_ADAPTER);
     }
 
     private boolean isInterfaceOrExternalStub(JavaClass javaClass) {

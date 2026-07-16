@@ -3,7 +3,6 @@ package io.mango.file.core.service.impl;
 import com.baomidou.mybatisplus.core.MybatisConfiguration;
 import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
 import io.mango.common.exception.BizException;
-import io.mango.common.result.R;
 import io.mango.file.api.enums.FileCode;
 import io.mango.file.api.command.FilePackageCommand;
 import io.mango.file.api.command.FilePackageEntryCommand;
@@ -14,8 +13,8 @@ import io.mango.file.api.vo.FileRecordVO;
 import io.mango.file.api.vo.FileSettingsVO;
 import io.mango.file.core.config.FileProperties;
 import io.mango.file.core.entity.FileObjectEntity;
-import io.mango.file.core.entity.FileRecord;
-import io.mango.file.core.entity.FileStorageConfig;
+import io.mango.file.core.entity.FileRecordEntity;
+import io.mango.file.core.entity.FileStorageConfigEntity;
 import io.mango.file.core.mapper.FileDirectoryMapper;
 import io.mango.file.core.mapper.FileHashMappingMapper;
 import io.mango.file.core.mapper.FileObjectMapper;
@@ -60,14 +59,14 @@ class FileServicePackageFilesTest {
     private static final Long TENANT_ID = 1001L;
     private static final Long USER_ID = 2001L;
 
-    private final Map<Long, FileRecord> records = new HashMap<>();
+    private final Map<Long, FileRecordEntity> records = new HashMap<>();
     private final Map<Long, FileObjectEntity> objects = new HashMap<>();
     private final Map<String, byte[]> storage = new HashMap<>();
     private final Deque<Long> sourceLookupIds = new ArrayDeque<>();
 
     private FileRecordMapper fileRecordMapper;
     private FileObjectMapper fileObjectMapper;
-    private FileServiceImpl fileService;
+    private FileService fileService;
     private long recordId;
     private long objectId;
 
@@ -87,15 +86,15 @@ class FileServicePackageFilesTest {
         FileUploadPartMapper fileUploadPartMapper = mock(FileUploadPartMapper.class);
         FileDirectoryMapper fileDirectoryMapper = mock(FileDirectoryMapper.class);
         FileAccessUrlAssembler accessUrlAssembler = new FileAccessUrlAssembler(new FileProperties());
-        FileStorageConfig storageConfig = storageConfig();
+        FileStorageConfigEntity storageConfig = storageConfig();
 
         when(storageConfigService.activeConfig()).thenReturn(storageConfig);
-        when(storageConfigService.getEnabledConfig(any(), any(), any())).thenReturn(storageConfig);
+        when(storageConfigService.getEnabledConfig(any())).thenReturn(storageConfig);
         when(settingsService.current()).thenReturn(settings());
         when(fileRecordMapper.selectOne(any())).thenAnswer(invocation -> records.get(sourceLookupIds.removeFirst()));
         when(fileRecordMapper.selectCount(any())).thenReturn(0L);
-        when(fileRecordMapper.insert(any(FileRecord.class))).thenAnswer(invocation -> {
-            FileRecord record = invocation.getArgument(0);
+        when(fileRecordMapper.insert(any(FileRecordEntity.class))).thenAnswer(invocation -> {
+            FileRecordEntity record = invocation.getArgument(0);
             record.setId(++recordId);
             records.put(record.getId(), record);
             return 1;
@@ -124,7 +123,7 @@ class FileServicePackageFilesTest {
             throw new IllegalStateException(e);
         }
 
-        fileService = new FileServiceImpl(fileStorageRouter,
+        fileService = new FileService(fileStorageRouter,
                 storageConfigService,
                 settingsService,
                 directoryService,
@@ -155,10 +154,9 @@ class FileServicePackageFilesTest {
                 entry(12L, "企业基础资料/营业执照.pdf"));
         sourceLookupIds.addAll(List.of(11L, 12L));
 
-        R<FileRecordVO> result = fileService.packageFiles(command);
+        FileRecordVO result = fileService.packageFiles(command);
 
-        assertThat(result.isSuccess()).isTrue();
-        FileRecordVO vo = result.getData();
+        FileRecordVO vo = result;
         assertThat(vo.getId()).isGreaterThan(12L);
         assertThat(vo.getFileName()).isEqualTo("签约资料包-GO20260628000011.zip");
         assertThat(vo.getContentType()).isEqualTo("application/zip");
@@ -167,7 +165,7 @@ class FileServicePackageFilesTest {
         assertThat(vo.getAccessLevel()).isEqualTo(FileAccessLevel.PRIVATE.name());
         assertThat(vo.getStatus()).isEqualTo(FileRecordStatus.COMPLETED.value());
         assertThat(vo.getFileSize()).isPositive();
-        FileRecord savedRecord = records.get(vo.getId());
+        FileRecordEntity savedRecord = records.get(vo.getId());
         byte[] zipContent = storage.get(objects.get(savedRecord.getObjectId()).getObjectName());
         assertThat(unzip(zipContent)).containsEntry("签约资料/合同正文.pdf", "合同正文")
                 .containsEntry("企业基础资料/营业执照.pdf", "营业执照");
@@ -180,10 +178,9 @@ class FileServicePackageFilesTest {
                 entry(12L, "01_签约资料/企业资料/${fileName}"));
         sourceLookupIds.addAll(List.of(11L, 12L));
 
-        R<FileRecordVO> result = fileService.packageFiles(command);
+        FileRecordVO result = fileService.packageFiles(command);
 
-        assertThat(result.isSuccess()).isTrue();
-        FileRecord savedRecord = records.get(result.getData().getId());
+        FileRecordEntity savedRecord = records.get(result.getId());
         byte[] zipContent = storage.get(objects.get(savedRecord.getObjectId()).getObjectName());
         assertThat(unzip(zipContent)).containsEntry("01_签约资料/contract.pdf", "合同正文")
                 .containsEntry("01_签约资料/企业资料/license.pdf", "营业执照");
@@ -199,10 +196,9 @@ class FileServicePackageFilesTest {
         command.getEntries().get(1).setCompression("NONE");
         sourceLookupIds.addAll(List.of(11L, 12L));
 
-        R<FileRecordVO> result = fileService.packageFiles(command);
+        FileRecordVO result = fileService.packageFiles(command);
 
-        assertThat(result.isSuccess()).isTrue();
-        FileRecord savedRecord = records.get(result.getData().getId());
+        FileRecordEntity savedRecord = records.get(result.getId());
         byte[] zipContent = storage.get(objects.get(savedRecord.getObjectId()).getObjectName());
         assertThat(unzip(zipContent)).containsEntry("资料/contract.pdf", "compressed:合同正文:MEDIUM:10")
                 .containsEntry("资料/license.pdf", "营业执照");
@@ -290,7 +286,7 @@ class FileServicePackageFilesTest {
         object.setStatus(FileObjectStatus.COMPLETED.value());
         objects.put(objectIdValue, object);
 
-        FileRecord record = new FileRecord();
+        FileRecordEntity record = new FileRecordEntity();
         record.setId(recordIdValue);
         record.setTenantId(TENANT_ID);
         record.setObjectId(objectIdValue);
@@ -309,8 +305,8 @@ class FileServicePackageFilesTest {
         records.put(recordIdValue, record);
     }
 
-    private FileStorageConfig storageConfig() {
-        FileStorageConfig config = new FileStorageConfig();
+    private FileStorageConfigEntity storageConfig() {
+        FileStorageConfigEntity config = new FileStorageConfigEntity();
         config.setId(1L);
         config.setTenantId(TENANT_ID);
         config.setStorageType("LOCAL");
@@ -334,7 +330,7 @@ class FileServicePackageFilesTest {
     }
 
     private String contentType(String objectName) {
-        FileRecord record = records.values().stream()
+        FileRecordEntity record = records.values().stream()
                 .filter(item -> objectName.equals(item.getObjectName()))
                 .findFirst()
                 .orElse(null);

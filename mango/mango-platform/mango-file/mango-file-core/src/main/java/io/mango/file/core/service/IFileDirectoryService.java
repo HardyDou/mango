@@ -1,9 +1,8 @@
 package io.mango.file.core.service;
 
-import io.mango.common.result.R;
 import io.mango.file.api.command.SaveFileDirectoryCommand;
 import io.mango.file.api.vo.FileDirectoryVO;
-import io.mango.file.core.entity.FileDirectory;
+import io.mango.file.core.entity.FileDirectoryEntity;
 
 import java.util.List;
 
@@ -12,13 +11,13 @@ import java.util.List;
  */
 public interface IFileDirectoryService {
 
-    R<List<FileDirectoryVO>> tree();
+    List<FileDirectoryVO> tree();
 
-    R<Long> create(SaveFileDirectoryCommand command);
+    Long create(SaveFileDirectoryCommand command);
 
-    R<Boolean> update(SaveFileDirectoryCommand command);
+    Boolean update(SaveFileDirectoryCommand command);
 
-    R<Boolean> delete(Long id);
+    Boolean delete(Long id);
 
-    FileDirectory selectVisible(Long directoryId);
+    FileDirectoryEntity selectVisible(Long directoryId);
 }

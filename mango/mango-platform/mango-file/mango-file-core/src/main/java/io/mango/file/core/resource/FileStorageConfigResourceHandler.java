@@ -1,7 +1,7 @@
 package io.mango.file.core.resource;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import io.mango.file.core.entity.FileStorageConfig;
+import io.mango.file.core.entity.FileStorageConfigEntity;
 import io.mango.file.core.mapper.FileStorageConfigMapper;
 import io.mango.resource.api.ResourceHandler;
 import io.mango.resource.api.ResourceTypes;
@@ -63,9 +63,9 @@ public class FileStorageConfigResourceHandler implements ResourceHandler {
     @Override
     public ResourceSyncResult upsert(ResourceDeclaration resource) {
         StoragePayload payload = StoragePayload.from(resource);
-        FileStorageConfig entity = find(payload.configName());
+        FileStorageConfigEntity entity = find(payload.configName());
         if (entity == null) {
-            entity = new FileStorageConfig();
+            entity = new FileStorageConfigEntity();
             entity.setId(payload.storageConfigId());
             entity.setTenantId(payload.tenantId());
             entity.setConfigName(payload.configName());
@@ -81,7 +81,7 @@ public class FileStorageConfigResourceHandler implements ResourceHandler {
 
     @Override
     public ResourceSyncResult disable(ResourceDeclaration resource) {
-        FileStorageConfig entity = resolve(resource);
+        FileStorageConfigEntity entity = resolve(resource);
         if (entity == null) {
             return ResourceSyncResult.of(null, TARGET_TABLE, "File storage config not found");
         }
@@ -96,7 +96,7 @@ public class FileStorageConfigResourceHandler implements ResourceHandler {
 
     @Override
     public ResourceSyncResult delete(ResourceDeclaration resource) {
-        FileStorageConfig entity = resolve(resource);
+        FileStorageConfigEntity entity = resolve(resource);
         if (entity == null) {
             return ResourceSyncResult.of(null, TARGET_TABLE, "File storage config not found");
         }
@@ -105,7 +105,7 @@ public class FileStorageConfigResourceHandler implements ResourceHandler {
                 "File storage config deleted: " + entity.getConfigName());
     }
 
-    private void apply(FileStorageConfig entity, StoragePayload payload) {
+    private void apply(FileStorageConfigEntity entity, StoragePayload payload) {
         LocalDateTime now = LocalDateTime.now();
         entity.setTenantId(payload.tenantId());
         entity.setConfigName(payload.configName());
@@ -132,10 +132,10 @@ public class FileStorageConfigResourceHandler implements ResourceHandler {
         entity.setUpdatedAt(now);
     }
 
-    private FileStorageConfig resolve(ResourceDeclaration resource) {
+    private FileStorageConfigEntity resolve(ResourceDeclaration resource) {
         String configName = fieldText(resource, "configName", false);
         if (StringUtils.hasText(configName)) {
-            FileStorageConfig entity = find(configName.trim());
+            FileStorageConfigEntity entity = find(configName.trim());
             if (entity != null) {
                 return entity;
             }
@@ -148,9 +148,9 @@ public class FileStorageConfigResourceHandler implements ResourceHandler {
         return storageConfigId == null ? null : storageConfigMapper.selectById(storageConfigId);
     }
 
-    private FileStorageConfig find(String configName) {
-        return storageConfigMapper.selectOne(new LambdaQueryWrapper<FileStorageConfig>()
-                .eq(FileStorageConfig::getConfigName, configName)
+    private FileStorageConfigEntity find(String configName) {
+        return storageConfigMapper.selectOne(new LambdaQueryWrapper<FileStorageConfigEntity>()
+                .eq(FileStorageConfigEntity::getConfigName, configName)
                 .last("limit 1"));
     }
 

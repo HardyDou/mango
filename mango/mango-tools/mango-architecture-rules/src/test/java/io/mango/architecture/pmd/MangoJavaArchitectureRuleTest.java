@@ -1017,6 +1017,58 @@ class MangoJavaArchitectureRuleTest {
     }
 
     @Test
+    void explicitlyMarkedBinaryControllerKeepsStreamingWireContract() {
+        Report report = analyze(
+                "example/BinaryObjectController.java", """
+                package example;
+                import io.mango.common.contract.BinaryHttpAdapter;
+                import io.swagger.v3.oas.annotations.Operation;
+                import io.swagger.v3.oas.annotations.tags.Tag;
+                import org.springframework.validation.annotation.Validated;
+                import org.springframework.web.bind.annotation.GetMapping;
+                import org.springframework.web.bind.annotation.PathVariable;
+                import org.springframework.web.bind.annotation.RestController;
+                @BinaryHttpAdapter @Validated @RestController
+                @Tag(name = "文件对象", description = "文件对象下载")
+                public final class BinaryObjectController {
+                    @GetMapping("/{objectName}")
+                    @Operation(summary = "下载文件", description = "流式下载文件对象")
+                    public byte[] download(@PathVariable String objectName) { return new byte[0]; }
+                }
+                """,
+                "io/mango/common/contract/BinaryHttpAdapter.java", """
+                package io.mango.common.contract;
+                public @interface BinaryHttpAdapter {}
+                """,
+                "org/springframework/web/bind/annotation/RestController.java", """
+                package org.springframework.web.bind.annotation;
+                public @interface RestController {}
+                """,
+                "org/springframework/web/bind/annotation/GetMapping.java", """
+                package org.springframework.web.bind.annotation;
+                public @interface GetMapping { String[] value() default {}; }
+                """,
+                "org/springframework/web/bind/annotation/PathVariable.java", """
+                package org.springframework.web.bind.annotation;
+                public @interface PathVariable {}
+                """,
+                "org/springframework/validation/annotation/Validated.java", """
+                package org.springframework.validation.annotation;
+                public @interface Validated {}
+                """,
+                "io/swagger/v3/oas/annotations/tags/Tag.java", """
+                package io.swagger.v3.oas.annotations.tags;
+                public @interface Tag { String name(); String description(); }
+                """,
+                "io/swagger/v3/oas/annotations/Operation.java", """
+                package io.swagger.v3.oas.annotations;
+                public @interface Operation { String summary(); String description(); }
+                """);
+
+        assertThat(messages(report)).isEmpty();
+    }
+
+    @Test
     void controllerConcreteServiceAndApiFieldsAreRejected() {
         Report report = analyze(
                 "example/OrderController.java", """

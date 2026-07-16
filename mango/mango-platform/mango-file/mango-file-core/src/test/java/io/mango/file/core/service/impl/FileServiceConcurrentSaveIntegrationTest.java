@@ -2,12 +2,13 @@ package io.mango.file.core.service.impl;
 
 import com.baomidou.mybatisplus.autoconfigure.MybatisPlusAutoConfiguration;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.mango.common.result.R;
 import io.mango.file.api.enums.FileAccessLevel;
 import io.mango.file.api.vo.FileRecordVO;
+import io.mango.file.api.command.SaveFileCommand;
+import io.mango.file.core.service.model.EnabledFileStorageKey;
 import io.mango.file.api.vo.FileSettingsVO;
 import io.mango.file.core.config.FileProperties;
-import io.mango.file.core.entity.FileStorageConfig;
+import io.mango.file.core.entity.FileStorageConfigEntity;
 import io.mango.file.core.mapper.FileDirectoryMapper;
 import io.mango.file.core.mapper.FileHashMappingMapper;
 import io.mango.file.core.mapper.FileObjectMapper;
@@ -53,6 +54,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -83,7 +85,7 @@ class FileServiceConcurrentSaveIntegrationTest {
     private JdbcTemplate jdbcTemplate;
 
     @Autowired
-    private FileServiceImpl fileService;
+    private FileService fileService;
 
     @Autowired
     private ConcurrentFileStorage fileStorage;
@@ -93,7 +95,7 @@ class FileServiceConcurrentSaveIntegrationTest {
     @BeforeEach
     void setUp() {
         String databaseName = jdbcTemplate.queryForObject("select database()", String.class);
-        assertThat(databaseName).startsWith("mango_dev_");
+        assertThat(databaseName).endsWith("_concurrency");
         rebuildTables();
         fileStorage.reset(CONCURRENCY);
         executor = Executors.newFixedThreadPool(CONCURRENCY);
@@ -101,7 +103,9 @@ class FileServiceConcurrentSaveIntegrationTest {
 
     @AfterEach
     void tearDown() {
-        executor.shutdownNow();
+        if (executor != null) {
+            executor.shutdownNow();
+        }
         MangoContextHolder.clear();
     }
 
@@ -109,7 +113,7 @@ class FileServiceConcurrentSaveIntegrationTest {
     void saveGenerated_五线程并发保存相同内容_复用一个物理对象并全部成功() throws Exception {
         byte[] content = "IT_453_same_content".getBytes(StandardCharsets.UTF_8);
         CountDownLatch start = new CountDownLatch(1);
-        List<Future<R<FileRecordVO>>> futures = new ArrayList<>();
+        List<Future<FileRecordVO>> futures = new ArrayList<>();
 
         for (int index = 0; index < CONCURRENCY; index++) {
             int fileIndex = index;
@@ -117,16 +121,13 @@ class FileServiceConcurrentSaveIntegrationTest {
         }
         start.countDown();
 
-        List<R<FileRecordVO>> results = new ArrayList<>();
-        for (Future<R<FileRecordVO>> future : futures) {
+        List<FileRecordVO> results = new ArrayList<>();
+        for (Future<FileRecordVO> future : futures) {
             results.add(future.get(15, TimeUnit.SECONDS));
         }
 
-        assertThat(results).allSatisfy(result -> {
-            assertThat(result.isSuccess()).isTrue();
-            assertThat(result.getData()).isNotNull();
-        });
-        assertThat(results).extracting(result -> result.getData().getId()).doesNotHaveDuplicates();
+        assertThat(results).doesNotContainNull();
+        assertThat(results).extracting(FileRecordVO::getId).doesNotHaveDuplicates();
         assertThat(count("file_object")).isOne();
         assertThat(count("file_hash_mapping")).isOne();
         assertThat(count("file_record")).isEqualTo(CONCURRENCY);
@@ -137,19 +138,19 @@ class FileServiceConcurrentSaveIntegrationTest {
         assertThat(fileStorage.objectCount()).isOne();
     }
 
-    private R<FileRecordVO> saveGenerated(CountDownLatch start, byte[] content, int fileIndex) throws Exception {
+    private FileRecordVO saveGenerated(CountDownLatch start, byte[] content, int fileIndex) throws Exception {
         start.await(10, TimeUnit.SECONDS);
         MangoContextHolder.set(MangoContextSnapshot.empty()
                 .withSecurity(USER_ID, String.valueOf(TENANT_ID), "IT_453", "admin",
                         "USER", "USER", USER_ID, "IT_453"));
         try {
-            return fileService.saveGenerated(
-                    content,
-                    "IT_453_" + fileIndex + ".zip",
-                    "application/zip",
-                    "IT_453",
-                    "IT_453",
-                    String.valueOf(fileIndex));
+            SaveFileCommand command = new SaveFileCommand();
+            command.setFileName("IT_453_" + fileIndex + ".zip");
+            command.setContentType("application/zip");
+            command.setPurpose("IT_453");
+            command.setBizType("IT_453");
+            command.setBizId(String.valueOf(fileIndex));
+            return fileService.saveGenerated(content, command);
         } finally {
             MangoContextHolder.clear();
         }
@@ -163,6 +164,7 @@ class FileServiceConcurrentSaveIntegrationTest {
                 create table file_object (
                     id bigint not null,
                     tenant_id bigint not null,
+                    org_id bigint,
                     storage_config_id bigint,
                     storage_type varchar(32) not null,
                     bucket_name varchar(128) not null,
@@ -188,6 +190,7 @@ class FileServiceConcurrentSaveIntegrationTest {
                     id bigint not null,
                     scope_type varchar(32) not null,
                     tenant_id bigint not null,
+                    org_id bigint,
                     storage_config_id bigint,
                     file_hash varchar(128) not null,
                     file_size bigint not null,
@@ -208,6 +211,7 @@ class FileServiceConcurrentSaveIntegrationTest {
                 create table file_record (
                     id bigint not null,
                     tenant_id bigint not null,
+                    org_id bigint,
                     biz_type varchar(64),
                     biz_id varchar(128),
                     purpose varchar(64),
@@ -253,8 +257,8 @@ class FileServiceConcurrentSaveIntegrationTest {
                 Long.class);
     }
 
-    private static FileStorageConfig storageConfig() {
-        FileStorageConfig config = new FileStorageConfig();
+    private static FileStorageConfigEntity storageConfig() {
+        FileStorageConfigEntity config = new FileStorageConfigEntity();
         config.setId(1L);
         config.setTenantId(TENANT_ID);
         config.setStorageType("LOCAL");
@@ -293,21 +297,22 @@ class FileServiceConcurrentSaveIntegrationTest {
         }
 
         @Bean
-        FileServiceImpl fileService(FileStorageRouter fileStorageRouter,
+        FileService fileService(FileStorageRouter fileStorageRouter,
                                     FileRecordMapper fileRecordMapper,
                                     FileObjectMapper fileObjectMapper,
                                     FileHashMappingMapper fileHashMappingMapper,
                                     FileUploadSessionMapper fileUploadSessionMapper,
                                     FileUploadPartMapper fileUploadPartMapper,
                                     FileDirectoryMapper fileDirectoryMapper) {
-            FileStorageConfig config = storageConfig();
+            FileStorageConfigEntity config = storageConfig();
             IFileStorageConfigService storageConfigService = mock(IFileStorageConfigService.class);
             IFileSettingsService settingsService = mock(IFileSettingsService.class);
             IFileDirectoryService directoryService = mock(IFileDirectoryService.class);
             when(storageConfigService.activeConfig()).thenReturn(config);
-            when(storageConfigService.getEnabledConfig(1L, "LOCAL", "IT_453_BUCKET")).thenReturn(config);
+            when(storageConfigService.getEnabledConfig(any(EnabledFileStorageKey.class)))
+                    .thenReturn(config);
             when(settingsService.current()).thenReturn(settings());
-            return new FileServiceImpl(
+            return new FileService(
                     fileStorageRouter,
                     storageConfigService,
                     settingsService,
@@ -346,7 +351,7 @@ class FileServiceConcurrentSaveIntegrationTest {
         }
 
         @Override
-        public void putObject(FileStorageConfig config,
+        public void putObject(FileStorageConfigEntity config,
                               String objectName,
                               InputStream inputStream,
                               long contentLength,
@@ -356,18 +361,18 @@ class FileServiceConcurrentSaveIntegrationTest {
         }
 
         @Override
-        public FileObject getObject(FileStorageConfig config, String objectName) {
+        public FileObject getObject(FileStorageConfigEntity config, String objectName) {
             byte[] content = objects.get(objectName);
             return new FileObject(new ByteArrayInputStream(content), content.length, "application/zip");
         }
 
         @Override
-        public void removeObject(FileStorageConfig config, String objectName) {
+        public void removeObject(FileStorageConfigEntity config, String objectName) {
             objects.remove(objectName);
         }
 
         @Override
-        public void test(FileStorageConfig config) {
+        public void test(FileStorageConfigEntity config) {
             Objects.requireNonNull(config, "config");
         }
     }

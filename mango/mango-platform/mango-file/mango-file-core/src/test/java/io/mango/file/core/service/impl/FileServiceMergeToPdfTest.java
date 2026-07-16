@@ -3,7 +3,6 @@ package io.mango.file.core.service.impl;
 import com.baomidou.mybatisplus.core.MybatisConfiguration;
 import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
 import io.mango.common.exception.BizException;
-import io.mango.common.result.R;
 import io.mango.file.api.enums.FileCode;
 import io.mango.file.api.command.FileMergePdfCommand;
 import io.mango.file.api.command.FileMergePdfEntryCommand;
@@ -14,8 +13,8 @@ import io.mango.file.api.vo.FileRecordVO;
 import io.mango.file.api.vo.FileSettingsVO;
 import io.mango.file.core.config.FileProperties;
 import io.mango.file.core.entity.FileObjectEntity;
-import io.mango.file.core.entity.FileRecord;
-import io.mango.file.core.entity.FileStorageConfig;
+import io.mango.file.core.entity.FileRecordEntity;
+import io.mango.file.core.entity.FileStorageConfigEntity;
 import io.mango.file.core.mapper.FileDirectoryMapper;
 import io.mango.file.core.mapper.FileHashMappingMapper;
 import io.mango.file.core.mapper.FileObjectMapper;
@@ -85,7 +84,7 @@ class FileServiceMergeToPdfTest {
     private static final Long TENANT_ID = 1001L;
     private static final Long USER_ID = 2001L;
 
-    private final Map<Long, FileRecord> records = new HashMap<>();
+    private final Map<Long, FileRecordEntity> records = new HashMap<>();
     private final Map<Long, FileObjectEntity> objects = new HashMap<>();
     private final Map<String, byte[]> storage = new HashMap<>();
     private final Deque<Long> sourceLookupIds = new ArrayDeque<>();
@@ -101,7 +100,7 @@ class FileServiceMergeToPdfTest {
     private FileUploadPartMapper fileUploadPartMapper;
     private FileDirectoryMapper fileDirectoryMapper;
     private FileAccessUrlAssembler accessUrlAssembler;
-    private FileServiceImpl fileService;
+    private FileService fileService;
     private long recordId;
     private long objectId;
 
@@ -121,15 +120,15 @@ class FileServiceMergeToPdfTest {
         fileUploadPartMapper = mock(FileUploadPartMapper.class);
         fileDirectoryMapper = mock(FileDirectoryMapper.class);
         accessUrlAssembler = new FileAccessUrlAssembler(new FileProperties());
-        FileStorageConfig storageConfig = storageConfig();
+        FileStorageConfigEntity storageConfig = storageConfig();
 
         when(storageConfigService.activeConfig()).thenReturn(storageConfig);
-        when(storageConfigService.getEnabledConfig(any(), any(), any())).thenReturn(storageConfig);
+        when(storageConfigService.getEnabledConfig(any())).thenReturn(storageConfig);
         when(settingsService.current()).thenReturn(settings());
         when(fileRecordMapper.selectOne(any())).thenAnswer(invocation -> records.get(sourceLookupIds.removeFirst()));
         when(fileRecordMapper.selectCount(any())).thenReturn(0L);
-        when(fileRecordMapper.insert(any(FileRecord.class))).thenAnswer(invocation -> {
-            FileRecord record = invocation.getArgument(0);
+        when(fileRecordMapper.insert(any(FileRecordEntity.class))).thenAnswer(invocation -> {
+            FileRecordEntity record = invocation.getArgument(0);
             record.setId(++recordId);
             records.put(record.getId(), record);
             return 1;
@@ -167,8 +166,8 @@ class FileServiceMergeToPdfTest {
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "xlsx");
     }
 
-    private FileServiceImpl newFileService(List<ConvertApi> convertApis, List<RenderApi> renderApis) {
-        return new FileServiceImpl(fileStorageRouter,
+    private FileService newFileService(List<ConvertApi> convertApis, List<RenderApi> renderApis) {
+        return new FileService(fileStorageRouter,
                 storageConfigService,
                 settingsService,
                 directoryService,
@@ -196,10 +195,9 @@ class FileServiceMergeToPdfTest {
         FileMergePdfCommand command = command("材料归档", entry(11L), entry(15L));
         sourceLookupIds.addAll(List.of(11L, 15L));
 
-        R<FileRecordVO> result = fileService.mergeToPdf(command);
+        FileRecordVO result = fileService.mergeToPdf(command);
 
-        assertThat(result.isSuccess()).isTrue();
-        FileRecordVO vo = result.getData();
+        FileRecordVO vo = result;
         assertThat(vo.getFileName()).isEqualTo("材料归档.pdf");
         assertThat(vo.getContentType()).isEqualTo("application/pdf");
         assertThat(vo.getBizType()).isEqualTo("GUARANTEE_ORDER_MATERIAL_PDF");
@@ -217,10 +215,9 @@ class FileServiceMergeToPdfTest {
         FileMergePdfCommand command = command("混合材料.pdf", entry(12L), entry(13L));
         sourceLookupIds.addAll(List.of(12L, 13L));
 
-        R<FileRecordVO> result = fileService.mergeToPdf(command);
+        FileRecordVO result = fileService.mergeToPdf(command);
 
-        assertThat(result.isSuccess()).isTrue();
-        byte[] content = savedContent(result.getData().getId());
+        byte[] content = savedContent(result.getId());
         assertThat(new String(content, StandardCharsets.UTF_8))
                 .isEqualTo("merged:converted:JPEG:照片|converted:DOCX:Word资料");
     }
@@ -253,10 +250,9 @@ class FileServiceMergeToPdfTest {
             FileMergePdfCommand command = command("真实格式材料", entry(21L), entry(22L), entry(23L), entry(24L));
             sourceLookupIds.addAll(List.of(21L, 22L, 23L, 24L));
 
-            R<FileRecordVO> result = fileService.mergeToPdf(command);
+            FileRecordVO result = fileService.mergeToPdf(command);
 
-            assertThat(result.isSuccess()).isTrue();
-            byte[] content = savedContent(result.getData().getId());
+            byte[] content = savedContent(result.getId());
             assertThat(content).startsWith("%PDF".getBytes(StandardCharsets.US_ASCII));
             com.aspose.pdf.Document document = new com.aspose.pdf.Document(new ByteArrayInputStream(content));
             try {
@@ -299,7 +295,7 @@ class FileServiceMergeToPdfTest {
 
     @Test
     void mergeToPdf_源文件未完成_拒绝生成文件记录() {
-        FileRecord record = records.get(11L);
+        FileRecordEntity record = records.get(11L);
         record.setStatus(FileRecordStatus.UPLOADING.value());
         FileMergePdfCommand command = command("bad.pdf", entry(11L));
         long beforeRecordCount = records.size();
@@ -351,7 +347,7 @@ class FileServiceMergeToPdfTest {
     }
 
     private byte[] savedContent(Long fileId) {
-        FileRecord savedRecord = records.get(fileId);
+        FileRecordEntity savedRecord = records.get(fileId);
         return storage.get(objects.get(savedRecord.getObjectId()).getObjectName());
     }
 
@@ -430,7 +426,7 @@ class FileServiceMergeToPdfTest {
         object.setStatus(FileObjectStatus.COMPLETED.value());
         objects.put(objectIdValue, object);
 
-        FileRecord record = new FileRecord();
+        FileRecordEntity record = new FileRecordEntity();
         record.setId(recordIdValue);
         record.setTenantId(TENANT_ID);
         record.setObjectId(objectIdValue);
@@ -449,8 +445,8 @@ class FileServiceMergeToPdfTest {
         records.put(recordIdValue, record);
     }
 
-    private FileStorageConfig storageConfig() {
-        FileStorageConfig config = new FileStorageConfig();
+    private FileStorageConfigEntity storageConfig() {
+        FileStorageConfigEntity config = new FileStorageConfigEntity();
         config.setId(1L);
         config.setTenantId(TENANT_ID);
         config.setStorageType("LOCAL");
@@ -473,7 +469,7 @@ class FileServiceMergeToPdfTest {
     }
 
     private String contentType(String objectName) {
-        FileRecord record = records.values().stream()
+        FileRecordEntity record = records.values().stream()
                 .filter(item -> objectName.equals(item.getObjectName()))
                 .findFirst()
                 .orElse(null);

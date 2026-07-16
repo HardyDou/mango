@@ -4,7 +4,6 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import io.mango.common.result.R;
 import io.mango.common.result.Require;
 import io.mango.common.vo.PageResult;
 import io.mango.file.api.enums.FileCode;
@@ -15,9 +14,10 @@ import io.mango.file.api.query.FileStorageConfigPageQuery;
 import io.mango.file.api.vo.FileStorageConfigTestVO;
 import io.mango.file.api.vo.FileStorageConfigVO;
 import io.mango.file.core.config.FileProperties;
-import io.mango.file.core.entity.FileStorageConfig;
+import io.mango.file.core.entity.FileStorageConfigEntity;
 import io.mango.file.core.mapper.FileStorageConfigMapper;
 import io.mango.file.core.service.IFileStorageConfigService;
+import io.mango.file.core.service.model.EnabledFileStorageKey;
 import io.mango.file.core.storage.FileStorageRouter;
 import io.mango.infra.context.api.MangoContextHolder;
 import lombok.RequiredArgsConstructor;
@@ -37,35 +37,35 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
         justification = "Constructor arguments are Spring-managed configuration and routing collaborators")
-public class FileStorageConfigServiceImpl implements IFileStorageConfigService {
+public class FileStorageConfigService implements IFileStorageConfigService {
 
     private final FileStorageConfigMapper mapper;
     private final FileProperties properties;
     private final FileStorageRouter storageRouter;
 
     @Override
-    public R<PageResult<FileStorageConfigVO>> page(FileStorageConfigPageQuery query) {
+    public PageResult<FileStorageConfigVO> page(FileStorageConfigPageQuery query) {
         FileStorageConfigPageQuery resolved = query == null ? new FileStorageConfigPageQuery() : query;
-        IPage<FileStorageConfig> page = mapper.selectPage(
+        IPage<FileStorageConfigEntity> page = mapper.selectPage(
                 new Page<>(resolved.getPage(), resolved.getSize()),
                 wrapper(resolved));
         List<FileStorageConfigVO> records = page.getRecords().stream()
                 .map(this::toVO)
                 .collect(Collectors.toList());
-        return R.ok(PageResult.of(records, page.getTotal(), page.getCurrent(), page.getSize()));
+        return PageResult.of(records, page.getTotal(), page.getCurrent(), page.getSize());
     }
 
     @Override
-    public R<FileStorageConfigVO> get(Long id) {
-        return R.ok(toVO(selectRequired(id)));
+    public FileStorageConfigVO get(Long id) {
+        return toVO(selectRequired(id));
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public R<Long> create(SaveFileStorageConfigCommand command) {
+    public Long create(SaveFileStorageConfigCommand command) {
         Require.notNull(command, FileCode.STORAGE_CONFIG_INVALID);
         validate(command, false);
-        FileStorageConfig entity = new FileStorageConfig();
+        FileStorageConfigEntity entity = new FileStorageConfigEntity();
         copy(command, entity, false);
         LocalDateTime now = LocalDateTime.now();
         entity.setCreatedTime(now);
@@ -76,55 +76,55 @@ public class FileStorageConfigServiceImpl implements IFileStorageConfigService {
             clearActive(null);
         }
         mapper.insert(entity);
-        return R.ok(entity.getId());
+        return entity.getId();
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public R<Boolean> update(SaveFileStorageConfigCommand command) {
+    public Boolean update(SaveFileStorageConfigCommand command) {
         Require.notNull(command, FileCode.STORAGE_CONFIG_INVALID);
         Require.notNull(command.getId(), FileCode.STORAGE_CONFIG_INVALID);
         validate(command, true);
-        FileStorageConfig entity = selectRequired(command.getId());
+        FileStorageConfigEntity entity = selectRequired(command.getId());
         copy(command, entity, true);
         entity.setUpdatedBy(MangoContextHolder.userId());
         entity.setUpdatedTime(LocalDateTime.now());
         if (Integer.valueOf(1).equals(entity.getActive())) {
             clearActive(entity.getId());
         }
-        return R.ok(mapper.updateById(entity) > 0);
+        return mapper.updateById(entity) > 0;
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public R<Boolean> delete(Long id) {
-        FileStorageConfig entity = selectRequired(id);
+    public Boolean delete(Long id) {
+        FileStorageConfigEntity entity = selectRequired(id);
         Require.isFalse(Integer.valueOf(1).equals(entity.getActive()), FileCode.STORAGE_CONFIG_ACTIVE_DELETE_FORBIDDEN);
-        return R.ok(mapper.deleteById(id) > 0);
+        return mapper.deleteById(id) > 0;
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public R<Boolean> activate(Long id) {
-        FileStorageConfig entity = selectRequired(id);
+    public Boolean activate(Long id) {
+        FileStorageConfigEntity entity = selectRequired(id);
         Require.isTrue(Integer.valueOf(1).equals(entity.getStatus()), FileCode.STORAGE_CONFIG_DISABLED);
         clearActive(id);
         entity.setActive(1);
         entity.setUpdatedBy(MangoContextHolder.userId());
         entity.setUpdatedTime(LocalDateTime.now());
-        return R.ok(mapper.updateById(entity) > 0);
+        return mapper.updateById(entity) > 0;
     }
 
     @Override
-    public R<FileStorageConfigTestVO> test(TestFileStorageConfigCommand command) {
+    public FileStorageConfigTestVO test(TestFileStorageConfigCommand command) {
         Require.notNull(command, FileCode.STORAGE_CONFIG_INVALID);
-        FileStorageConfig config;
+        FileStorageConfigEntity config;
         if (command.getId() != null) {
             config = selectRequired(command.getId());
         } else {
             Require.notNull(command.getConfig(), FileCode.STORAGE_CONFIG_INVALID);
             validate(command.getConfig(), false);
-            config = new FileStorageConfig();
+            config = new FileStorageConfigEntity();
             copy(command.getConfig(), config, false);
         }
         try {
@@ -132,22 +132,22 @@ public class FileStorageConfigServiceImpl implements IFileStorageConfigService {
             FileStorageConfigTestVO vo = new FileStorageConfigTestVO();
             vo.setSuccess(true);
             vo.setMessage("连接测试通过");
-            return R.ok(vo);
+            return vo;
         } catch (Exception e) {
-            return Require.fail(FileCode.STORAGE_CONFIG_TEST_FAILED.getCode(), "连接测试失败：" + e.getMessage());
+            return Require.fail(FileCode.STORAGE_CONFIG_TEST_FAILED, "连接测试失败：" + e.getMessage(), e);
         }
     }
 
     @Override
-    public FileStorageConfig activeConfig() {
-        FileStorageConfig entity = mapper.selectOne(new LambdaQueryWrapper<FileStorageConfig>()
-                .eq(FileStorageConfig::getActive, 1)
-                .eq(FileStorageConfig::getStatus, 1)
+    public FileStorageConfigEntity activeConfig() {
+        FileStorageConfigEntity entity = mapper.selectOne(new LambdaQueryWrapper<FileStorageConfigEntity>()
+                .eq(FileStorageConfigEntity::getActive, 1)
+                .eq(FileStorageConfigEntity::getStatus, 1)
                 .last("LIMIT 1"));
         if (entity != null) {
             return entity;
         }
-        FileStorageConfig fallback = new FileStorageConfig();
+        FileStorageConfigEntity fallback = new FileStorageConfigEntity();
         fallback.setId(0L);
         fallback.setConfigName("配置文件默认存储");
         fallback.setStorageType(properties.getStorageType().name());
@@ -161,16 +161,20 @@ public class FileStorageConfigServiceImpl implements IFileStorageConfigService {
     }
 
     @Override
-    public FileStorageConfig getEnabledConfig(Long id, String storageType, String bucketName) {
-        FileStorageConfig entity = null;
+    public FileStorageConfigEntity getEnabledConfig(EnabledFileStorageKey key) {
+        Require.notNull(key, FileCode.STORAGE_CONFIG_NOT_FOUND);
+        Long id = key.getId();
+        String storageType = key.getStorageType();
+        String bucketName = key.getBucketName();
+        FileStorageConfigEntity entity = null;
         if (id != null && id > 0) {
             entity = mapper.selectById(id);
         }
         if (entity == null && StringUtils.hasText(storageType) && StringUtils.hasText(bucketName)) {
-            entity = mapper.selectOne(new LambdaQueryWrapper<FileStorageConfig>()
-                    .eq(FileStorageConfig::getStorageType, storageType)
-                    .eq(FileStorageConfig::getBucketName, bucketName)
-                    .eq(FileStorageConfig::getStatus, 1)
+            entity = mapper.selectOne(new LambdaQueryWrapper<FileStorageConfigEntity>()
+                    .eq(FileStorageConfigEntity::getStorageType, storageType)
+                    .eq(FileStorageConfigEntity::getBucketName, bucketName)
+                    .eq(FileStorageConfigEntity::getStatus, 1)
                     .last("LIMIT 1"));
         }
         if (entity == null && (id == null || id <= 0) && StringUtils.hasText(storageType)
@@ -182,25 +186,25 @@ public class FileStorageConfigServiceImpl implements IFileStorageConfigService {
         return entity;
     }
 
-    private LambdaQueryWrapper<FileStorageConfig> wrapper(FileStorageConfigPageQuery query) {
-        LambdaQueryWrapper<FileStorageConfig> wrapper = new LambdaQueryWrapper<>();
+    private LambdaQueryWrapper<FileStorageConfigEntity> wrapper(FileStorageConfigPageQuery query) {
+        LambdaQueryWrapper<FileStorageConfigEntity> wrapper = new LambdaQueryWrapper<>();
         String keyword = trimToNull(query.getKeyword());
         wrapper.and(StringUtils.hasText(keyword), nested -> nested
-                .like(FileStorageConfig::getConfigName, keyword)
+                .like(FileStorageConfigEntity::getConfigName, keyword)
                 .or()
-                .like(FileStorageConfig::getBucketName, keyword)
+                .like(FileStorageConfigEntity::getBucketName, keyword)
                 .or()
-                .like(FileStorageConfig::getEndpoint, keyword));
-        wrapper.eq(query.getStorageType() != null, FileStorageConfig::getStorageType, query.getStorageType() == null ? null : query.getStorageType().name());
-        wrapper.eq(query.getActive() != null, FileStorageConfig::getActive, Boolean.TRUE.equals(query.getActive()) ? 1 : 0);
-        wrapper.eq(query.getStatus() != null, FileStorageConfig::getStatus, query.getStatus());
-        wrapper.orderByDesc(FileStorageConfig::getActive).orderByDesc(FileStorageConfig::getUpdatedTime);
+                .like(FileStorageConfigEntity::getEndpoint, keyword));
+        wrapper.eq(query.getStorageType() != null, FileStorageConfigEntity::getStorageType, query.getStorageType() == null ? null : query.getStorageType().name());
+        wrapper.eq(query.getActive() != null, FileStorageConfigEntity::getActive, Boolean.TRUE.equals(query.getActive()) ? 1 : 0);
+        wrapper.eq(query.getStatus() != null, FileStorageConfigEntity::getStatus, query.getStatus());
+        wrapper.orderByDesc(FileStorageConfigEntity::getActive).orderByDesc(FileStorageConfigEntity::getUpdatedTime);
         return wrapper;
     }
 
-    private FileStorageConfig selectRequired(Long id) {
+    private FileStorageConfigEntity selectRequired(Long id) {
         Require.notNull(id, FileCode.STORAGE_CONFIG_INVALID);
-        FileStorageConfig entity = mapper.selectById(id);
+        FileStorageConfigEntity entity = mapper.selectById(id);
         Require.notNull(entity, FileCode.STORAGE_CONFIG_NOT_FOUND);
         return entity;
     }
@@ -223,7 +227,7 @@ public class FileStorageConfigServiceImpl implements IFileStorageConfigService {
         }
     }
 
-    private void copy(SaveFileStorageConfigCommand command, FileStorageConfig entity, boolean keepSecretWhenBlank) {
+    private void copy(SaveFileStorageConfigCommand command, FileStorageConfigEntity entity, boolean keepSecretWhenBlank) {
         entity.setConfigName(command.getConfigName().trim());
         entity.setStorageType(command.getStorageType().name());
         entity.setEndpoint(trimToNull(command.getEndpoint()));
@@ -243,9 +247,9 @@ public class FileStorageConfigServiceImpl implements IFileStorageConfigService {
     }
 
     private void clearActive(Long excludeId) {
-        List<FileStorageConfig> activeList = mapper.selectList(new LambdaQueryWrapper<FileStorageConfig>()
-                .eq(FileStorageConfig::getActive, 1));
-        for (FileStorageConfig item : activeList) {
+        List<FileStorageConfigEntity> activeList = mapper.selectList(new LambdaQueryWrapper<FileStorageConfigEntity>()
+                .eq(FileStorageConfigEntity::getActive, 1));
+        for (FileStorageConfigEntity item : activeList) {
             if (excludeId != null && excludeId.equals(item.getId())) {
                 continue;
             }
@@ -255,7 +259,7 @@ public class FileStorageConfigServiceImpl implements IFileStorageConfigService {
         }
     }
 
-    private FileStorageConfigVO toVO(FileStorageConfig entity) {
+    private FileStorageConfigVO toVO(FileStorageConfigEntity entity) {
         FileStorageConfigVO vo = new FileStorageConfigVO();
         vo.setId(entity.getId());
         vo.setConfigName(entity.getConfigName());

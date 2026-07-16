@@ -1,7 +1,7 @@
 package io.mango.file.core.storage;
 
 import io.mango.file.api.enums.FileCode;
-import io.mango.file.core.entity.FileStorageConfig;
+import io.mango.file.core.entity.FileStorageConfigEntity;
 import io.mango.common.result.Require;
 import org.springframework.util.StringUtils;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
@@ -55,7 +55,7 @@ public class S3CompatibleFileStorage extends AbstractCloudFileStorage {
     }
 
     @Override
-    public void putObject(FileStorageConfig config, String objectName, InputStream inputStream, long contentLength, String contentType) {
+    public void putObject(FileStorageConfigEntity config, String objectName, InputStream inputStream, long contentLength, String contentType) {
         requireConfig(config);
         try (S3Client client = client(config)) {
             PutObjectRequest.Builder builder = PutObjectRequest.builder()
@@ -71,7 +71,7 @@ public class S3CompatibleFileStorage extends AbstractCloudFileStorage {
     }
 
     @Override
-    public FileObject getObject(FileStorageConfig config, String objectName) {
+    public FileObject getObject(FileStorageConfigEntity config, String objectName) {
         requireConfig(config);
         S3Client client = null;
         try {
@@ -91,7 +91,7 @@ public class S3CompatibleFileStorage extends AbstractCloudFileStorage {
     }
 
     @Override
-    public void removeObject(FileStorageConfig config, String objectName) {
+    public void removeObject(FileStorageConfigEntity config, String objectName) {
         requireConfig(config);
         try (S3Client client = client(config)) {
             client.deleteObject(DeleteObjectRequest.builder()
@@ -104,7 +104,7 @@ public class S3CompatibleFileStorage extends AbstractCloudFileStorage {
     }
 
     @Override
-    public void test(FileStorageConfig config) {
+    public void test(FileStorageConfigEntity config) {
         requireConfig(config);
         try (S3Client client = client(config)) {
             client.headBucket(HeadBucketRequest.builder().bucket(config.getBucketName()).build());
@@ -112,27 +112,27 @@ public class S3CompatibleFileStorage extends AbstractCloudFileStorage {
     }
 
     @Override
-    public Optional<String> presignedGetUrl(FileStorageConfig config, String objectName, String fileName, Duration expires) {
+    public Optional<String> presignedGetUrl(FileStorageConfigEntity config, String objectName, String fileName, Duration expires) {
         return presignedUrl(config, objectName, fileName, expires, false);
     }
 
     @Override
-    public Optional<String> presignedDownloadUrl(FileStorageConfig config, String objectName, String fileName, Duration expires) {
+    public Optional<String> presignedDownloadUrl(FileStorageConfigEntity config, String objectName, String fileName, Duration expires) {
         return presignedUrl(config, objectName, fileName, expires, true);
     }
 
     @Override
-    public Optional<String> publicGetUrl(FileStorageConfig config, String objectName, String fileName) {
+    public Optional<String> publicGetUrl(FileStorageConfigEntity config, String objectName, String fileName) {
         return publicObjectUrl(config, objectName);
     }
 
     @Override
-    public boolean supportsMultipartUpload(FileStorageConfig config) {
+    public boolean supportsMultipartUpload(FileStorageConfigEntity config) {
         return supports(config.getStorageType());
     }
 
     @Override
-    public MultipartUpload initiateMultipartUpload(FileStorageConfig config, String objectName, String contentType) {
+    public MultipartUpload initiateMultipartUpload(FileStorageConfigEntity config, String objectName, String contentType) {
         requireConfig(config);
         Require.notBlank(objectName, FileCode.FILE_NOT_FOUND);
         try (S3Client client = client(config)) {
@@ -150,7 +150,7 @@ public class S3CompatibleFileStorage extends AbstractCloudFileStorage {
     }
 
     @Override
-    public UploadPartSign presignedUploadPartUrl(FileStorageConfig config,
+    public UploadPartSign presignedUploadPartUrl(FileStorageConfigEntity config,
                                                  String objectName,
                                                  String uploadId,
                                                  int partNumber,
@@ -180,7 +180,7 @@ public class S3CompatibleFileStorage extends AbstractCloudFileStorage {
     }
 
     @Override
-    public void completeMultipartUpload(FileStorageConfig config,
+    public void completeMultipartUpload(FileStorageConfigEntity config,
                                         String objectName,
                                         String uploadId,
                                         List<CompletedUploadPart> parts) {
@@ -208,7 +208,7 @@ public class S3CompatibleFileStorage extends AbstractCloudFileStorage {
     }
 
     @Override
-    public void abortMultipartUpload(FileStorageConfig config, String objectName, String uploadId) {
+    public void abortMultipartUpload(FileStorageConfigEntity config, String objectName, String uploadId) {
         requireConfig(config);
         Require.notBlank(objectName, FileCode.FILE_NOT_FOUND);
         Require.notBlank(uploadId, FileCode.FILE_UPLOAD_SESSION_INVALID);
@@ -223,7 +223,7 @@ public class S3CompatibleFileStorage extends AbstractCloudFileStorage {
         }
     }
 
-    private Optional<String> presignedUrl(FileStorageConfig config,
+    private Optional<String> presignedUrl(FileStorageConfigEntity config,
                                           String objectName,
                                           String fileName,
                                           Duration expires,
@@ -250,7 +250,7 @@ public class S3CompatibleFileStorage extends AbstractCloudFileStorage {
         }
     }
 
-    private void requireConfig(FileStorageConfig config) {
+    private void requireConfig(FileStorageConfigEntity config) {
         requireBucket(config);
         requireAccessSecret(config);
         if (!"AWS_S3".equalsIgnoreCase(config.getStorageType())) {
@@ -258,7 +258,7 @@ public class S3CompatibleFileStorage extends AbstractCloudFileStorage {
         }
     }
 
-    private S3Client client(FileStorageConfig config) {
+    private S3Client client(FileStorageConfigEntity config) {
         S3Configuration serviceConfig = S3Configuration.builder()
                 .pathStyleAccessEnabled(enabled(config.getPathStyleAccess()))
                 .build();
@@ -273,7 +273,7 @@ public class S3CompatibleFileStorage extends AbstractCloudFileStorage {
         return builder.build();
     }
 
-    private S3Presigner presigner(FileStorageConfig config) {
+    private S3Presigner presigner(FileStorageConfigEntity config) {
         S3Configuration serviceConfig = S3Configuration.builder()
                 .pathStyleAccessEnabled(enabled(config.getPathStyleAccess()))
                 .build();
@@ -289,7 +289,7 @@ public class S3CompatibleFileStorage extends AbstractCloudFileStorage {
         return builder.build();
     }
 
-    private String endpointWithScheme(String endpoint, FileStorageConfig config) {
+    private String endpointWithScheme(String endpoint, FileStorageConfigEntity config) {
         String normalized = StringUtils.trimTrailingCharacter(endpoint.trim(), '/');
         if (normalized.startsWith("http://") || normalized.startsWith("https://")) {
             return normalized;

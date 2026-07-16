@@ -1,0 +1,30 @@
+mango:
+  resource:
+    schema-version: 1
+    module-code: file
+    module-name: 文件演示
+    declarations:
+      FILE_STORAGE_CONFIG:
+        - id: "2026061801000000002"
+          version: 1
+          biz-key: file.storage.minio-local-dev
+          name: MinIO 本地联调
+          target-module: file
+          sync-mode: INIT_ONLY
+          fields:
+            storageConfigId: { type: LONG, value: 2 }
+            tenantId: { type: LONG, value: 1 }
+            configName: { type: STRING, value: MinIO 本地联调 }
+            storageType: { type: STRING, value: MINIO }
+            endpoint: { type: STRING, value: "http://127.0.0.1:9000" }
+            publicEndpoint: { type: STRING, value: "http://file.mango.io:9000" }
+            region: { type: STRING, value: us-east-1 }
+            bucketName: { type: STRING, value: mango-file }
+            storagePath: { type: STRING, value: mango-file }
+            accessKey: { type: STRING, value: minioadmin }
+            secretKey: { type: STRING, value: minioadmin }
+            pathStyleAccess: { type: INT, value: 1 }
+            sslEnabled: { type: INT, value: 0 }
+            active: { type: INT, value: 0 }
+            status: { type: INT, value: 1 }
+            remark: { type: STRING, value: 本地 Docker Compose MinIO 示例配置 }

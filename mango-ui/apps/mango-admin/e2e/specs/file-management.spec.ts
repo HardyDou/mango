@@ -17,15 +17,33 @@ async function login(page: import('@playwright/test').Page) {
   await page.goto('/#/login');
   await page.fill('input[placeholder="用户名"]', 'admin');
   await page.fill('input[placeholder="密码"]', 'admin123');
-  const accountTenantsResponsePromise = page.waitForResponse((response) =>
-    response.url().includes('/api/auth/login-institutions') && response.status() === 200
-  );
   await page.locator('input[placeholder="密码"]').blur();
-  await accountTenantsResponsePromise;
+  await expect(page.locator('.tenant-select')).toContainText('芒果集团');
   await page.locator('.tenant-select').click();
   await page.getByRole('option', { name: /芒果集团/ }).click();
+  const loginResponsePromise = page.waitForResponse((response) =>
+    response.url().includes('/api/auth/login')
+    && !response.url().includes('/login-institutions')
+    && response.request().method() === 'POST'
+  );
   await page.locator('.login-btn').click();
+  const loginResponse = await loginResponsePromise;
+  expect(loginResponse.status()).toBe(200);
+  const loginBody = await loginResponse.json();
+  expect(loginBody.success || loginBody.code === 200, JSON.stringify(loginBody)).toBeTruthy();
   await page.waitForURL('**/#/home', { timeout: 10000 });
+}
+
+async function openFileManagementFromCurrentMenu(page: import('@playwright/test').Page) {
+  await page.getByRole('button', { name: '平台能力' })
+    .evaluate((button: HTMLButtonElement) => button.click());
+  const fileGroup = page.locator('.el-sub-menu__title', { hasText: '文件管理' }).first();
+  await expect(fileGroup).toBeVisible({ timeout: 10000 });
+  if (await fileGroup.getAttribute('aria-expanded') !== 'true') {
+    await fileGroup.click();
+  }
+  await page.locator('.el-menu-item', { hasText: '文件管理' }).first().click();
+  await page.waitForURL('**/#/file/files', { timeout: 10000 });
 }
 
 async function routeMinioDirectAccess(
@@ -133,7 +151,7 @@ test.describe('文件管理联调', () => {
     await routeMinioDirectAccess(page, request);
     await login(page);
 
-    await page.goto('/#/file/files');
+    await openFileManagementFromCurrentMenu(page);
     await expect(page.getByText('文件管理').first()).toBeVisible({ timeout: 10000 });
 
     const directoryName = `mango-file-e2e-dir-${Date.now()}`;

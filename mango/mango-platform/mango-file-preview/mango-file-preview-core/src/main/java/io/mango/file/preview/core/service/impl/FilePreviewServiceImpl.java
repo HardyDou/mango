@@ -6,6 +6,7 @@ import io.mango.common.exception.BizException;
 import io.mango.common.result.Require;
 import io.mango.common.result.R;
 import io.mango.file.api.FileApi;
+import io.mango.file.api.IFileContentProvider;
 import io.mango.file.api.vo.FileDownloadVO;
 import io.mango.file.api.vo.FileRecordVO;
 import io.mango.file.preview.api.FilePreviewCode;
@@ -42,6 +43,7 @@ public class FilePreviewServiceImpl implements IFilePreviewService {
     private static final String SOURCE_TOKEN_PREFIX = "file-preview:source:";
 
     private final FileApi fileApi;
+    private final IFileContentProvider fileContentProvider;
     private final FilePreviewProperties properties;
     private final ITokenStore tokenStore;
     private final ObjectMapper objectMapper;
@@ -90,7 +92,7 @@ public class FilePreviewServiceImpl implements IFilePreviewService {
         MangoContextSnapshot previous = MangoContextHolder.get();
         try {
             MangoContextHolder.set(sourceToken.context());
-            FileDownloadVO download = fileApi.downloadForService(sourceToken.fileId());
+            FileDownloadVO download = fileContentProvider.downloadForService(sourceToken.fileId());
             return new FilePreviewSource(download.inputStream(), download.fileName(), download.contentType(), download.contentLength());
         } finally {
             MangoContextHolder.set(previous);
