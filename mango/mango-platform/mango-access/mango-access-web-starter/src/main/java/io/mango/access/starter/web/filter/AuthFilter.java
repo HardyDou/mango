@@ -114,8 +114,7 @@ public class AuthFilter implements Filter {
         }
         String queryToken = request.getParameter("token");
         if (queryToken != null && !queryToken.isBlank()) {
-            String trimmed = queryToken.trim();
-            return trimmed.startsWith("Bearer ") ? trimmed : "Bearer " + trimmed;
+            return bearerCredential(queryToken);
         }
         Cookie[] cookies = request.getCookies();
         if (cookies == null) {
@@ -127,11 +126,18 @@ public class AuthFilter implements Filter {
                 if (value == null || value.isBlank()) {
                     return null;
                 }
-                String trimmed = value.trim();
-                return trimmed.startsWith("Bearer ") ? trimmed : "Bearer " + trimmed;
+                return bearerCredential(value);
             }
         }
         return null;
+    }
+
+    private String bearerCredential(String credential) {
+        String trimmed = credential.trim();
+        if (trimmed.startsWith("Bearer ")) {
+            return trimmed;
+        }
+        return "Bearer " + trimmed;
     }
 
     private boolean isRealtimeTicketPath(String path) {
@@ -189,30 +195,32 @@ public class AuthFilter implements Filter {
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         response.setCharacterEncoding(StandardCharsets.UTF_8.name());
         response.setContentType("application/json;charset=UTF-8");
-        response.getWriter().write(errorBody(401, message));
+        response.getWriter().write(errorBody(HttpServletResponse.SC_UNAUTHORIZED, message));
     }
 
     private void forbidden(HttpServletResponse response, String message) throws IOException {
         response.setStatus(HttpServletResponse.SC_FORBIDDEN);
         response.setCharacterEncoding(StandardCharsets.UTF_8.name());
         response.setContentType("application/json;charset=UTF-8");
-        response.getWriter().write(errorBody(403, message));
+        response.getWriter().write(errorBody(HttpServletResponse.SC_FORBIDDEN, message));
     }
 
     private void serviceUnavailable(HttpServletResponse response, String message) throws IOException {
         response.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
         response.setCharacterEncoding(StandardCharsets.UTF_8.name());
         response.setContentType("application/json;charset=UTF-8");
-        response.getWriter().write(errorBody(503, message));
+        response.getWriter().write(errorBody(HttpServletResponse.SC_SERVICE_UNAVAILABLE, message));
     }
 
     private String errorBody(int code, String message) {
-        String safe = message == null ? "" : message
-                .replace("\\", "\\\\")
-                .replace("\"", "\\\"")
-                .replace("\n", "\\n")
-                .replace("\r", "\\r")
-                .replace("\t", "\\t");
+        String safe = "";
+        if (message != null) {
+            safe = message.replace("\\", "\\\\")
+                    .replace("\"", "\\\"")
+                    .replace("\n", "\\n")
+                    .replace("\r", "\\r")
+                    .replace("\t", "\\t");
+        }
         return "{\"code\":" + code + ",\"message\":\"" + safe + "\"}";
     }
 }

@@ -55,7 +55,10 @@ public class PostService extends MangoCrudServiceImpl<PostMapper, PostEntity>
 
     @Override
     public PersistencePageResult<PostVO> page(PostPageQuery query) {
-        PostPageQuery resolved = query == null ? new PostPageQuery() : query;
+        PostPageQuery resolved = query;
+        if (resolved == null) {
+            resolved = new PostPageQuery();
+        }
         PersistencePageResult<?> source = pageByQuery(resolved);
         List<PostVO> records = source.getRecords().stream().map(PostVO.class::cast).toList();
         return PersistencePageResult.of(records, source.getTotal(), source.getPage(), source.getSize());
@@ -101,8 +104,8 @@ public class PostService extends MangoCrudServiceImpl<PostMapper, PostEntity>
         Require.isTrue(findByCode(command.getPostCode(), null) == null, PostCode.POST_CODE_EXISTS);
         entity.setPostName(command.getPostName().trim());
         entity.setPostCode(command.getPostCode().trim());
-        entity.setPostSort(command.getPostSort() == null ? 0 : command.getPostSort());
-        entity.setPostStatus(StringUtils.hasText(command.getPostStatus()) ? command.getPostStatus() : "1");
+        entity.setPostSort(defaultSort(command.getPostSort()));
+        entity.setPostStatus(defaultStatus(command.getPostStatus()));
         entity.setRemark(command.getRemark());
     }
 
@@ -116,8 +119,8 @@ public class PostService extends MangoCrudServiceImpl<PostMapper, PostEntity>
         Require.isTrue(findByCode(command.getPostCode(), command.getId()) == null, PostCode.POST_CODE_EXISTS);
         entity.setPostName(command.getPostName().trim());
         entity.setPostCode(command.getPostCode().trim());
-        entity.setPostSort(command.getPostSort() == null ? 0 : command.getPostSort());
-        entity.setPostStatus(StringUtils.hasText(command.getPostStatus()) ? command.getPostStatus() : "1");
+        entity.setPostSort(defaultSort(command.getPostSort()));
+        entity.setPostStatus(defaultStatus(command.getPostStatus()));
         entity.setRemark(command.getRemark());
     }
 
@@ -142,6 +145,20 @@ public class PostService extends MangoCrudServiceImpl<PostMapper, PostEntity>
         vo.setCreateTime(entity.getCreatedAt());
         vo.setUpdateTime(entity.getUpdatedAt());
         return vo;
+    }
+
+    private Integer defaultSort(Integer sort) {
+        if (sort == null) {
+            return Integer.valueOf(0);
+        }
+        return sort;
+    }
+
+    private String defaultStatus(String status) {
+        if (StringUtils.hasText(status)) {
+            return status;
+        }
+        return "1";
     }
 
     private void validateCreate(CreatePostCommand command) {

@@ -109,7 +109,11 @@ public class OrgUnitResourceHandler implements ResourceHandler {
             org.setOrgStatus("0");
             changed = orgMapper.updateById(org) > 0;
         }
-        return ResourceSyncResult.of(org == null ? null : org.getId(), TARGET_TABLE,
+        Long targetId = null;
+        if (org != null) {
+            targetId = org.getId();
+        }
+        return ResourceSyncResult.of(targetId, TARGET_TABLE,
                 "Org unit disabled: changed=" + changed);
     }
 
@@ -193,6 +197,9 @@ public class OrgUnitResourceHandler implements ResourceHandler {
         if (StringUtils.hasText(status)) {
             return status.trim();
         }
-        return resource.getStatus() == ResourceStatus.DISABLED ? "0" : "1";
+        if (resource.getStatus() == ResourceStatus.DISABLED) {
+            return "0";
+        }
+        return "1";
     }
 }

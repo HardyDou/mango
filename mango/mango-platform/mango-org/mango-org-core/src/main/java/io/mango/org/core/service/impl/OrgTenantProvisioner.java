@@ -22,6 +22,8 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class OrgTenantProvisioner implements TenantProvisioner, TenantDependencyChecker {
 
+    private static final int EMPLOYEE_POST_SORT = 3;
+
     private final SysOrgMapper sysOrgMapper;
     private final PostMapper postMapper;
 
@@ -30,7 +32,7 @@ public class OrgTenantProvisioner implements TenantProvisioner, TenantDependency
         ensureRootOrg(context);
         ensureDefaultPost(context, "INSTITUTION_ADMIN", "机构管理员", 1, "机构默认管理员岗位");
         ensureDefaultPost(context, "DEPT_MANAGER", "部门负责人", 2, "工作流部门主管审批默认岗位");
-        ensureDefaultPost(context, "EMPLOYEE", "普通员工", 3, "机构默认员工岗位");
+        ensureDefaultPost(context, "EMPLOYEE", "普通员工", EMPLOYEE_POST_SORT, "机构默认员工岗位");
     }
 
     @Override

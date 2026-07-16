@@ -34,6 +34,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -46,18 +47,20 @@ public class SysOrgService extends MangoCrudServiceImpl<SysOrgMapper, SysOrgEnti
     private static final String DEPT_MANAGER_POST_CODE = "DEPT_MANAGER";
     private static final String ORG_MANAGER_POST_CODE = "ORG_MANAGER";
     private static final String TEAM_LEADER_POST_CODE = "TEAM_LEADER";
+    private static final int MIN_ORG_TYPE = 1;
+    private static final int MAX_ORG_TYPE = 4;
 
     private final PostMapper postMapper;
-    private final TenantMemberProvider tenantMemberProvider;
+    private final Supplier<TenantMemberProvider> tenantMemberProvider;
 
     public SysOrgService(PostMapper postMapper, TenantMemberProvider tenantMemberProvider) {
         this.postMapper = postMapper;
-        this.tenantMemberProvider = tenantMemberProvider;
+        this.tenantMemberProvider = () -> tenantMemberProvider;
     }
 
     @Override
     public List<SysOrgVO> tree(SysOrgTreeQuery query) {
-        SysOrgTreeQuery resolved = query == null ? new SysOrgTreeQuery() : query;
+        SysOrgTreeQuery resolved = resolveQuery(query);
         LambdaQueryWrapper<SysOrgEntity> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(!Boolean.TRUE.equals(resolved.getIncludeDisabled()), SysOrgEntity::getOrgStatus, "1")
                 .orderByAsc(SysOrgEntity::getOrgSort)
@@ -69,8 +72,8 @@ public class SysOrgService extends MangoCrudServiceImpl<SysOrgMapper, SysOrgEnti
         }
 
         Map<Long, List<SysOrgEntity>> childrenByParentId = orgs.stream()
-                .collect(Collectors.groupingBy(org -> org.getPid() == null ? 0L : org.getPid()));
-        Long rootParentId = resolved.getParentId() == null ? 0L : resolved.getParentId();
+                .collect(Collectors.groupingBy(org -> defaultParentId(org.getPid())));
+        Long rootParentId = defaultParentId(resolved.getParentId());
         return childrenByParentId.getOrDefault(rootParentId, List.of()).stream()
                 .map(org -> buildTreeNode(org, childrenByParentId, resolved.getType()))
                 .filter(Objects::nonNull)
@@ -111,7 +114,7 @@ public class SysOrgService extends MangoCrudServiceImpl<SysOrgMapper, SysOrgEnti
 
     @Override
     public PersistencePageResult<SysOrgVO> page(SysOrgTreeQuery query) {
-        SysOrgTreeQuery resolved = query == null ? new SysOrgTreeQuery() : query;
+        SysOrgTreeQuery resolved = resolveQuery(query);
         PersistencePageResult<?> source = pageByQuery(resolved);
         List<SysOrgVO> records = source.getRecords().stream().map(SysOrgVO.class::cast).toList();
         return PersistencePageResult.of(records, source.getTotal(), source.getPage(), source.getSize());
@@ -126,7 +129,7 @@ public class SysOrgService extends MangoCrudServiceImpl<SysOrgMapper, SysOrgEnti
     public List<OrgMemberVO> members(Long orgId) {
         SysOrgEntity org = requireOrg(orgId);
         Long tenantId = org.getTenantIdAsLong();
-        List<TenantMemberOrgRelationVO> relations = tenantMemberProvider.listOrgRelations(tenantId, orgId);
+        List<TenantMemberOrgRelationVO> relations = tenantMemberProvider().listOrgRelations(tenantId, orgId);
         if (relations == null || relations.isEmpty()) {
             return List.of();
         }
@@ -139,13 +142,13 @@ public class SysOrgService extends MangoCrudServiceImpl<SysOrgMapper, SysOrgEnti
         Require.notNull(command, PostCode.VALIDATION_ERROR, "组织成员新增命令不能为空");
         SysOrgEntity org = requireOrg(command.getOrgId());
         Long tenantId = org.getTenantIdAsLong();
-        TenantMemberVO member = tenantMemberProvider.getMember(command.getMemberId());
+        TenantMemberVO member = tenantMemberProvider().getMember(command.getMemberId());
         Require.notNull(member, PostCode.ORG_MEMBER_NOT_FOUND);
         Require.isTrue(tenantId.equals(member.getTenantId()), PostCode.ORG_MEMBER_NOT_FOUND);
         if (command.getPostId() != null) {
             validatePost(tenantId, command.getPostId());
         }
-        Require.isFalse(tenantMemberProvider.existsOrgRelation(
+        Require.isFalse(tenantMemberProvider().existsOrgRelation(
                 tenantId, command.getMemberId(), command.getOrgId()), PostCode.ORG_MEMBER_EXISTS);
 
         AddTenantMemberOrgCommand addCommand = new AddTenantMemberOrgCommand();
@@ -156,7 +159,7 @@ public class SysOrgService extends MangoCrudServiceImpl<SysOrgMapper, SysOrgEnti
         addCommand.setPrimaryFlag(command.getPrimaryFlag());
         addCommand.setLeaderFlag(command.getLeaderFlag());
         addCommand.setOperatorUserId(MangoContextHolder.userId());
-        tenantMemberProvider.addOrgRelation(addCommand);
+        tenantMemberProvider().addOrgRelation(addCommand);
         return true;
     }
 
@@ -164,12 +167,12 @@ public class SysOrgService extends MangoCrudServiceImpl<SysOrgMapper, SysOrgEnti
     @Transactional(rollbackFor = Exception.class)
     public boolean updateMember(UpdateOrgMemberCommand command) {
         Require.notNull(command, PostCode.VALIDATION_ERROR, "组织成员修改命令不能为空");
-        TenantMemberOrgRelationVO relation = tenantMemberProvider.getOrgRelation(command.getRelationId());
+        TenantMemberOrgRelationVO relation = tenantMemberProvider().getOrgRelation(command.getRelationId());
         Require.notNull(relation, PostCode.ORG_MEMBER_RELATION_NOT_FOUND);
         if (command.getPostId() != null) {
             validatePost(relation.getTenantId(), command.getPostId());
         }
-        Require.notNull(tenantMemberProvider.getMember(relation.getMemberId()), PostCode.ORG_MEMBER_NOT_FOUND);
+        Require.notNull(tenantMemberProvider().getMember(relation.getMemberId()), PostCode.ORG_MEMBER_NOT_FOUND);
         boolean primary = Boolean.TRUE.equals(command.getPrimaryFlag());
         if (!primary && isPrimaryRelation(relation)) {
             Require.isTrue(hasOtherPrimaryCandidate(relation), PostCode.ORG_MEMBER_PRIMARY_REQUIRED);
@@ -181,19 +184,19 @@ public class SysOrgService extends MangoCrudServiceImpl<SysOrgMapper, SysOrgEnti
         updateCommand.setPrimaryFlag(command.getPrimaryFlag());
         updateCommand.setLeaderFlag(command.getLeaderFlag());
         updateCommand.setOperatorUserId(MangoContextHolder.userId());
-        tenantMemberProvider.updateOrgRelation(updateCommand);
+        tenantMemberProvider().updateOrgRelation(updateCommand);
         return true;
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean removeMember(Long relationId) {
-        TenantMemberOrgRelationVO relation = tenantMemberProvider.getOrgRelation(relationId);
+        TenantMemberOrgRelationVO relation = tenantMemberProvider().getOrgRelation(relationId);
         Require.notNull(relation, PostCode.ORG_MEMBER_RELATION_NOT_FOUND);
         if (isPrimaryRelation(relation)) {
             Require.isTrue(hasOtherPrimaryCandidate(relation), PostCode.ORG_MEMBER_PRIMARY_REQUIRED);
         }
-        tenantMemberProvider.removeOrgRelation(relationId);
+        tenantMemberProvider().removeOrgRelation(relationId);
         return true;
     }
 
@@ -202,7 +205,7 @@ public class SysOrgService extends MangoCrudServiceImpl<SysOrgMapper, SysOrgEnti
         SysOrgEntity org = requireOrg(orgId);
         Long tenantId = org.getTenantIdAsLong();
         List<Long> leaderPostIds = leaderPostIds(tenantId);
-        List<TenantMemberOrgRelationVO> relations = tenantMemberProvider.listOrgRelations(tenantId, orgId);
+        List<TenantMemberOrgRelationVO> relations = tenantMemberProvider().listOrgRelations(tenantId, orgId);
         if (relations == null || relations.isEmpty()) {
             return List.of();
         }
@@ -215,7 +218,7 @@ public class SysOrgService extends MangoCrudServiceImpl<SysOrgMapper, SysOrgEnti
         if (memberIds.isEmpty()) {
             return List.of();
         }
-        List<TenantMemberVO> members = tenantMemberProvider.listMembers(memberIds);
+        List<TenantMemberVO> members = tenantMemberProvider().listMembers(memberIds);
         if (members == null || members.isEmpty()) {
             return List.of();
         }
@@ -252,8 +255,8 @@ public class SysOrgService extends MangoCrudServiceImpl<SysOrgMapper, SysOrgEnti
         entity.setOrgName(command.getOrgName().trim());
         entity.setOrgCode(command.getOrgCode().trim());
         entity.setOrgType(command.getOrgType());
-        entity.setOrgSort(command.getOrgSort() == null ? 0 : command.getOrgSort());
-        entity.setOrgStatus(StringUtils.hasText(command.getOrgStatus()) ? command.getOrgStatus() : "1");
+        entity.setOrgSort(defaultSort(command.getOrgSort()));
+        entity.setOrgStatus(defaultStatus(command.getOrgStatus()));
     }
 
     @Override
@@ -261,13 +264,13 @@ public class SysOrgService extends MangoCrudServiceImpl<SysOrgMapper, SysOrgEnti
         UpdateSysOrgCommand command = (UpdateSysOrgCommand) commandObject;
         SysOrgEntity existing = requireOrg(command.getId());
         validateOrg(command.getPid(), command.getOrgType(), command.getOrgCode(), command.getId());
-        String orgStatus = StringUtils.hasText(command.getOrgStatus()) ? command.getOrgStatus() : "1";
+        String orgStatus = defaultStatus(command.getOrgStatus());
         validateMove(existing, command.getPid(), orgStatus);
         entity.setPid(command.getPid());
         entity.setOrgName(command.getOrgName().trim());
         entity.setOrgCode(command.getOrgCode().trim());
         entity.setOrgType(command.getOrgType());
-        entity.setOrgSort(command.getOrgSort() == null ? 0 : command.getOrgSort());
+        entity.setOrgSort(defaultSort(command.getOrgSort()));
         entity.setOrgStatus(orgStatus);
     }
 
@@ -322,7 +325,7 @@ public class SysOrgService extends MangoCrudServiceImpl<SysOrgMapper, SysOrgEnti
     private void validateOrg(Long pid, Integer orgType, String orgCode, Long currentId) {
         Require.notNull(pid, PostCode.ORG_PARENT_REQUIRED);
         Require.notNull(orgType, PostCode.ORG_TYPE_REQUIRED);
-        Require.isTrue(orgType >= 1 && orgType <= 4, PostCode.ORG_TYPE_INVALID);
+        Require.isTrue(orgType >= MIN_ORG_TYPE && orgType <= MAX_ORG_TYPE, PostCode.ORG_TYPE_INVALID);
         Require.notBlank(orgCode, PostCode.ORG_CODE_REQUIRED);
         Require.isFalse(currentId == null && Long.valueOf(0L).equals(pid),
                 PostCode.ORG_ROOT_MANUAL_CREATE_FORBIDDEN);
@@ -375,7 +378,10 @@ public class SysOrgService extends MangoCrudServiceImpl<SysOrgMapper, SysOrgEnti
         vo.setStatus(relation.getStatus());
         vo.setUsername(relation.getUsername());
         vo.setNickname(relation.getNickname());
-        PostEntity post = relation.getPostId() == null ? null : postMapper.selectById(relation.getPostId());
+        PostEntity post = null;
+        if (relation.getPostId() != null) {
+            post = postMapper.selectById(relation.getPostId());
+        }
         if (post != null) {
             vo.setPostName(post.getPostName());
             vo.setPostCode(post.getPostCode());
@@ -389,7 +395,7 @@ public class SysOrgService extends MangoCrudServiceImpl<SysOrgMapper, SysOrgEnti
     }
 
     private boolean hasOtherPrimaryCandidate(TenantMemberOrgRelationVO relation) {
-        return tenantMemberProvider.countOtherOrgRelations(
+        return tenantMemberProvider().countOtherOrgRelations(
                 relation.getTenantId(), relation.getMemberId(), relation.getRelationId()) > 0;
     }
 
@@ -408,15 +414,49 @@ public class SysOrgService extends MangoCrudServiceImpl<SysOrgMapper, SysOrgEnti
             return false;
         }
         String code = post.getPostCode().trim().toUpperCase();
-        return code.equals(DEPT_MANAGER_POST_CODE)
+        if (code.equals(DEPT_MANAGER_POST_CODE)
                 || code.equals(ORG_MANAGER_POST_CODE)
-                || code.equals(TEAM_LEADER_POST_CODE)
-                || code.endsWith("_" + DEPT_MANAGER_POST_CODE)
+                || code.equals(TEAM_LEADER_POST_CODE)) {
+            return true;
+        }
+        return code.endsWith("_" + DEPT_MANAGER_POST_CODE)
                 || code.endsWith("_" + ORG_MANAGER_POST_CODE)
                 || code.endsWith("_" + TEAM_LEADER_POST_CODE);
     }
 
+    private Long defaultParentId(Long parentId) {
+        if (parentId == null) {
+            return Long.valueOf(0L);
+        }
+        return parentId;
+    }
+
+    private SysOrgTreeQuery resolveQuery(SysOrgTreeQuery query) {
+        if (query == null) {
+            return new SysOrgTreeQuery();
+        }
+        return query;
+    }
+
+    private Integer defaultSort(Integer sort) {
+        if (sort == null) {
+            return Integer.valueOf(0);
+        }
+        return sort;
+    }
+
+    private String defaultStatus(String status) {
+        if (StringUtils.hasText(status)) {
+            return status;
+        }
+        return "1";
+    }
+
     private boolean isLeaderRelation(TenantMemberOrgRelationVO relation, PostEntity post) {
         return relation != null && Boolean.TRUE.equals(relation.getLeaderFlag()) || isLeaderPost(post);
+    }
+
+    private TenantMemberProvider tenantMemberProvider() {
+        return tenantMemberProvider.get();
     }
 }

@@ -57,13 +57,7 @@ public class AuthorizationDataScopeProvider implements DataScopeProvider {
             case SELF_ORG, SELF_ORG_AND_CHILDREN -> DataScopeRule.Mode.ORG;
             case SELF -> DataScopeRule.Mode.SELF;
         };
-        LinkedHashSet<String> values = new LinkedHashSet<>();
-        if (scope.getScopeValues() != null) {
-            scope.getScopeValues().stream()
-                    .filter(StringUtils::hasText)
-                    .map(String::trim)
-                    .forEach(values::add);
-        }
+        LinkedHashSet<String> values = collectScopeValues(scope);
         if (scope.getScopeMode() == DataScopeMode.SELF_ORG
                 || scope.getScopeMode() == DataScopeMode.SELF_ORG_AND_CHILDREN) {
             Long primaryOrgId = resolvePrimaryOrgId(context);
@@ -76,6 +70,17 @@ public class AuthorizationDataScopeProvider implements DataScopeProvider {
         }
         boolean selfIncluded = scope.getScopeMode() == DataScopeMode.SELF || Boolean.TRUE.equals(scope.getSelfIncluded());
         return new DataScopeRule(mode, values, selfIncluded);
+    }
+
+    private LinkedHashSet<String> collectScopeValues(EffectiveDataScopeVO scope) {
+        LinkedHashSet<String> values = new LinkedHashSet<>();
+        if (scope.getScopeValues() != null) {
+            scope.getScopeValues().stream()
+                    .filter(StringUtils::hasText)
+                    .map(String::trim)
+                    .forEach(values::add);
+        }
+        return values;
     }
 
     private Long resolvePrimaryOrgId(MangoContextSnapshot context) {

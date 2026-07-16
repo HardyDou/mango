@@ -78,7 +78,11 @@ public class OrgPostResourceHandler implements ResourceHandler {
             post.setUpdatedAt(LocalDateTime.now());
             changed = postMapper.updateById(post) > 0;
         }
-        return ResourceSyncResult.of(post == null ? null : post.getId(), TARGET_TABLE,
+        Long targetId = null;
+        if (post != null) {
+            targetId = post.getId();
+        }
+        return ResourceSyncResult.of(targetId, TARGET_TABLE,
                 "Org post disabled: changed=" + changed);
     }
 
@@ -105,6 +109,9 @@ public class OrgPostResourceHandler implements ResourceHandler {
         if (StringUtils.hasText(status)) {
             return status.trim();
         }
-        return resource.getStatus() == ResourceStatus.DISABLED ? "0" : "1";
+        if (resource.getStatus() == ResourceStatus.DISABLED) {
+            return "0";
+        }
+        return "1";
     }
 }

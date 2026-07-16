@@ -17,7 +17,11 @@ public abstract class OrgBaseEntity extends TenantEntity {
      * @param tenantId 数字租户标识
      */
     public void setTenantId(Long tenantId) {
-        super.setTenantId(tenantId == null ? null : tenantId.toString());
+        if (tenantId == null) {
+            super.setTenantId(null);
+            return;
+        }
+        super.setTenantId(tenantId.toString());
     }
 
     /**
@@ -27,7 +31,10 @@ public abstract class OrgBaseEntity extends TenantEntity {
      */
     public Long getTenantIdAsLong() {
         String tenantId = getTenantId();
-        return tenantId == null || tenantId.isBlank() ? null : Long.valueOf(tenantId);
+        if (tenantId == null || tenantId.isBlank()) {
+            return null;
+        }
+        return Long.valueOf(tenantId);
     }
 
     /**

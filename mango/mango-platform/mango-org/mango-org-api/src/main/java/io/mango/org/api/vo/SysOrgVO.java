@@ -2,6 +2,7 @@ package io.mango.org.api.vo;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -38,5 +39,21 @@ public class SysOrgVO {
     private Long tenantId;
 
     @Schema(description = "子组织列表")
-    private List<SysOrgVO> children = new ArrayList<>();
+    @EqualsAndHashCode.Exclude
+    private List<SysOrgVO> children;
+
+    public List<SysOrgVO> getChildren() {
+        if (children == null) {
+            return new ArrayList<>();
+        }
+        return new ArrayList<>(children);
+    }
+
+    public void setChildren(List<SysOrgVO> children) {
+        if (children == null) {
+            this.children = new ArrayList<>();
+            return;
+        }
+        this.children = new ArrayList<>(children);
+    }
 }

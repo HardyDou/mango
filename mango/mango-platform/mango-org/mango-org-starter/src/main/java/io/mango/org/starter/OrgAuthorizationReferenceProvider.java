@@ -23,6 +23,9 @@ public class OrgAuthorizationReferenceProvider implements AuthorizationOrgRefere
                 .eq(SysOrgEntity::getTenantId, tenantId)
                 .eq(SysOrgEntity::getOrgCode, orgCode.trim())
                 .last("LIMIT 1"));
-        return org == null ? null : org.getId();
+        if (org == null) {
+            return null;
+        }
+        return org.getId();
     }
 }
