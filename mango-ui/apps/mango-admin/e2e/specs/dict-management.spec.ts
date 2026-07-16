@@ -132,7 +132,7 @@ test.describe('T10 字典管理页面真实接口闭环', () => {
       const createDataDialog = page.getByRole('dialog', { name: '新增数据' });
       await expect(createDataDialog).toBeVisible();
       await createDataDialog.getByLabel('标签').fill(optionLabel);
-      await createDataDialog.getByLabel('值').fill(optionValue);
+      await createDataDialog.getByRole('textbox', { name: '值' }).fill(optionValue);
 
       const createDataResponsePromise = page.waitForResponse((response) =>
         response.url().includes('/api/system/dict/data') &&

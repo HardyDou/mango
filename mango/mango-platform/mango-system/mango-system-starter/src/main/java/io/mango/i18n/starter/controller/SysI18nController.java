@@ -1,120 +1,70 @@
 package io.mango.i18n.starter.controller;
 
-import io.mango.common.result.R;
 import io.mango.authorization.api.annotation.PublicAccess;
+import io.mango.common.result.R;
 import io.mango.i18n.api.SysI18nApi;
-import io.mango.i18n.api.entity.SysI18n;
+import io.mango.i18n.api.vo.SysI18nMessageVO;
+import io.mango.i18n.api.vo.I18nEntryVO;
+import io.mango.i18n.api.vo.I18nLanguagePackVO;
 import io.mango.i18n.core.service.ISysI18nService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
-import java.util.Map;
 
-/**
- * i18n controller - implements SysI18nApi
- *
- * @author Mango
- */
+@Validated
 @RestController
 @RequestMapping("/system/i18n")
 @RequiredArgsConstructor
 @Tag(name = "国际化", description = "国际化语言包与语言列表接口")
 public class SysI18nController implements SysI18nApi {
 
-    private final ISysI18nService sysI18nService;
+    private final ISysI18nService i18nService;
 
     @Override
-    public Map<String, List<Map<String, String>>> listMap() {
-        return sysI18nService.listMap();
-    }
-
-    @Override
-    public List<Map<String, String>> listByLang(String lang) {
-        return sysI18nService.listByLang(lang);
-    }
-
-    @Override
-    public List<String> getSupportedLanguages() {
-        return sysI18nService.getSupportedLanguages();
-    }
-
-    @Override
-    public SysI18n getByName(String name) {
-        return sysI18nService.getByName(name);
-    }
-
-    /**
-     * Public endpoint: Get all i18n entries grouped by language
-     * No authentication required
-     */
     @GetMapping("/public")
     @PublicAccess(desc = "获取公开国际化语言包")
-    @Operation(summary = "获取公开国际化语言包", description = "公开接口。获取所有语言的公开国际化语言包")
-    public R<Map<String, List<Map<String, String>>>> publicInfo() {
-        return R.ok(listMap());
+    @Operation(summary = "获取公开国际化语言包", description = "获取公开国际化语言包并返回处理结果")
+    public R<I18nLanguagePackVO> publicInfo() {
+        return R.ok(i18nService.listMap());
     }
 
-    /**
-     * Public endpoint: Get i18n entries for a specific language
-     * No authentication required
-     */
+    @Override
     @GetMapping("/public/lang")
     @PublicAccess(desc = "按语言获取公开国际化语言包")
-    @Operation(summary = "按语言获取公开国际化语言包", description = "公开接口。按语言编码获取公开国际化语言包")
-    public R<List<Map<String, String>>> publicInfoByLang(
-            @Parameter(description = "语言编码，例如 zh_CN、en")
-            @RequestParam(value = "lang") String lang) {
-        return R.ok(listByLang(lang));
+    @Operation(summary = "按语言获取公开国际化语言包", description = "按语言获取公开国际化语言包并返回处理结果")
+    public R<List<I18nEntryVO>> publicInfoByLang(@Parameter(description = "语言编码", required = true) @RequestParam("lang") String lang) {
+        return R.ok(i18nService.listByLang(lang));
     }
 
-    /**
-     * Public endpoint: Get supported languages
-     * No authentication required
-     */
+    @Override
     @GetMapping("/languages")
     @PublicAccess(desc = "获取公开支持语言列表")
-    @Operation(summary = "获取支持语言列表", description = "公开接口。获取当前支持的语言编码列表")
+    @Operation(summary = "获取支持语言列表", description = "获取支持语言列表并返回处理结果")
     public R<List<String>> languages() {
-        return R.ok(getSupportedLanguages());
+        return R.ok(i18nService.getSupportedLanguages());
     }
 
-    /**
-     * Public endpoint: Get i18n entry by key
-     * No authentication required
-     */
+    @Override
     @GetMapping("/public/name")
     @PublicAccess(desc = "按键名获取公开国际化条目")
-    @Operation(summary = "按键名获取国际化条目", description = "公开接口。按国际化键名查询国际化条目")
-    public R<SysI18n> getByNameEndpoint(
-            @Parameter(description = "国际化键名")
-            @RequestParam(value = "name") String name) {
-        SysI18n result = getByName(name);
-        if (result == null) {
-            return R.fail(404, "I18n entry not found");
-        }
-        return R.ok(result);
+    @Operation(summary = "按键名获取国际化条目", description = "按键名获取国际化条目并返回处理结果")
+    public R<SysI18nMessageVO> getByName(@Parameter(description = "国际化键名", required = true) @RequestParam("name") String name) {
+        return R.ok(i18nService.getByName(name));
     }
 
-    /**
-     * Frontend-compatible endpoint: Get i18n entries for a specific language
-     * Returns {lang: [...]} format to match frontend fetchI18n(false) usage
-     * No authentication required
-     */
+    @Override
     @GetMapping
     @PublicAccess(desc = "按语言获取前端国际化语言包")
-    @Operation(summary = "获取前端国际化语言包", description = "公开接口。按语言编码获取前端兼容格式的国际化语言包")
-    public R<Map<String, List<Map<String, String>>>> i18n(
-            @Parameter(description = "语言编码，例如 zh_CN、en")
-            @RequestParam(value = "lang") String lang) {
-        // 返回 {lang: [...]} 格式，匹配前端 fetchI18n(false) 的 res.data[lang] 访问方式
-        Map<String, List<Map<String, String>>> result = Map.of(lang, sysI18nService.listByLang(lang));
-        return R.ok(result);
+    @Operation(summary = "获取前端国际化语言包", description = "获取前端国际化语言包并返回处理结果")
+    public R<I18nLanguagePackVO> i18n(@Parameter(description = "语言编码", required = true) @RequestParam("lang") String lang) {
+        return R.ok(i18nService.languagePack(lang));
     }
 }

@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import io.mango.common.result.Require;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.system.api.command.SavePersonalConfigCommand;
+import io.mango.system.api.enums.SystemCode;
 import io.mango.system.api.query.PersonalConfigQuery;
 import io.mango.system.api.vo.PersonalConfigVO;
 import io.mango.system.core.entity.SysPersonalConfigEntity;
@@ -41,10 +42,10 @@ public class PersonalConfigService implements IPersonalConfigService {
 
     @Override
     public PersonalConfigVO getCurrentUserValue(PersonalConfigQuery query) {
-        Require.notNull(query, "查询条件不能为空");
-        Require.notBlank(query.getGroupCode(), "groupCode不能为空");
-        Require.notBlank(query.getBizType(), "bizType不能为空");
-        Require.notBlank(query.getConfigKey(), "configKey不能为空");
+        Require.notNull(query, SystemCode.SYSTEM_INVALID, "查询条件不能为空");
+        Require.notBlank(query.getGroupCode(), SystemCode.SYSTEM_INVALID, "groupCode不能为空");
+        Require.notBlank(query.getBizType(), SystemCode.SYSTEM_INVALID, "bizType不能为空");
+        Require.notBlank(query.getConfigKey(), SystemCode.SYSTEM_INVALID, "configKey不能为空");
         SysPersonalConfigEntity entity = personalConfigMapper.selectOne(configWrapper(
                 currentTenantId(), currentUserId(), query.getGroupCode(), query.getBizType(), query.getConfigKey()));
         return entity == null ? null : toVO(entity);
@@ -53,11 +54,11 @@ public class PersonalConfigService implements IPersonalConfigService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public PersonalConfigVO saveCurrentUser(SavePersonalConfigCommand command) {
-        Require.notNull(command, "保存命令不能为空");
-        Require.notBlank(command.getGroupCode(), "groupCode不能为空");
-        Require.notBlank(command.getBizType(), "bizType不能为空");
-        Require.notBlank(command.getConfigKey(), "configKey不能为空");
-        Require.notBlank(command.getConfigValue(), "configValue不能为空");
+        Require.notNull(command, SystemCode.SYSTEM_INVALID, "保存命令不能为空");
+        Require.notBlank(command.getGroupCode(), SystemCode.SYSTEM_INVALID, "groupCode不能为空");
+        Require.notBlank(command.getBizType(), SystemCode.SYSTEM_INVALID, "bizType不能为空");
+        Require.notBlank(command.getConfigKey(), SystemCode.SYSTEM_INVALID, "configKey不能为空");
+        Require.notBlank(command.getConfigValue(), SystemCode.SYSTEM_INVALID, "configValue不能为空");
         Long userId = currentUserId();
         String tenantId = currentTenantId();
         SysPersonalConfigEntity entity = personalConfigMapper.selectOne(configWrapper(
@@ -81,10 +82,10 @@ public class PersonalConfigService implements IPersonalConfigService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean deleteCurrentUser(PersonalConfigQuery query) {
-        Require.notNull(query, "删除条件不能为空");
-        Require.notBlank(query.getGroupCode(), "groupCode不能为空");
-        Require.notBlank(query.getBizType(), "bizType不能为空");
-        Require.notBlank(query.getConfigKey(), "configKey不能为空");
+        Require.notNull(query, SystemCode.SYSTEM_INVALID, "删除条件不能为空");
+        Require.notBlank(query.getGroupCode(), SystemCode.SYSTEM_INVALID, "groupCode不能为空");
+        Require.notBlank(query.getBizType(), SystemCode.SYSTEM_INVALID, "bizType不能为空");
+        Require.notBlank(query.getConfigKey(), SystemCode.SYSTEM_INVALID, "configKey不能为空");
         return personalConfigMapper.delete(configWrapper(
                 currentTenantId(), currentUserId(), query.getGroupCode(), query.getBizType(), query.getConfigKey())) > 0;
     }
@@ -130,13 +131,13 @@ public class PersonalConfigService implements IPersonalConfigService {
 
     private Long currentUserId() {
         Long userId = MangoContextHolder.userId();
-        Require.notNull(userId, "缺少当前用户上下文");
+        Require.notNull(userId, SystemCode.SYSTEM_INVALID, "缺少当前用户上下文");
         return userId;
     }
 
     private String currentTenantId() {
         String tenantId = MangoContextHolder.tenantId();
-        Require.notBlank(tenantId, "缺少当前租户上下文");
+        Require.notBlank(tenantId, SystemCode.SYSTEM_INVALID, "缺少当前租户上下文");
         return tenantId;
     }
 

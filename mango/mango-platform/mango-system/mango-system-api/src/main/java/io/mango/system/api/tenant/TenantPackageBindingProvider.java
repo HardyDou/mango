@@ -8,6 +8,13 @@ import java.util.List;
 public interface TenantPackageBindingProvider {
 
     /**
+     * 查询机构当前绑定的套餐 ID。
+     */
+    default Long findPackageIdByTenantId(Long tenantId) {
+        return null;
+    }
+
+    /**
      * 查询绑定了指定套餐的机构 ID。
      */
     List<Long> listTenantIdsByPackage(Long packageId);

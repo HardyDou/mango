@@ -6,7 +6,7 @@ import io.mango.org.core.entity.SysOrgEntity;
 import io.mango.org.core.mapper.PostMapper;
 import io.mango.org.core.mapper.SysOrgMapper;
 import io.mango.system.api.tenant.TenantDependencyChecker;
-import io.mango.system.api.tenant.TenantProvisionContext;
+import io.mango.system.api.tenant.TenantProvisionCommand;
 import io.mango.system.api.tenant.TenantProvisioner;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.annotation.Order;
@@ -28,7 +28,7 @@ public class OrgTenantProvisioner implements TenantProvisioner, TenantDependency
     private final PostMapper postMapper;
 
     @Override
-    public void provision(TenantProvisionContext context) {
+    public void provision(TenantProvisionCommand context) {
         ensureRootOrg(context);
         ensureDefaultPost(context, "INSTITUTION_ADMIN", "机构管理员", 1, "机构默认管理员岗位");
         ensureDefaultPost(context, "DEPT_MANAGER", "部门负责人", 2, "工作流部门主管审批默认岗位");
@@ -50,38 +50,38 @@ public class OrgTenantProvisioner implements TenantProvisioner, TenantDependency
         return Optional.empty();
     }
 
-    private void ensureRootOrg(TenantProvisionContext context) {
+    private void ensureRootOrg(TenantProvisionCommand context) {
         Long count = sysOrgMapper.selectCount(new LambdaQueryWrapper<SysOrgEntity>()
-                .eq(SysOrgEntity::getTenantId, context.tenantId())
+                .eq(SysOrgEntity::getTenantId, context.getTenantId())
                 .eq(SysOrgEntity::getPid, 0L));
         if (count != null && count > 0) {
             return;
         }
         SysOrgEntity root = new SysOrgEntity();
-        root.setTenantId(context.tenantId());
+        root.setTenantId(context.getTenantId());
         root.setPid(0L);
-        root.setOrgName(context.tenantName());
-        root.setOrgCode(context.tenantCode().toUpperCase() + "_ROOT");
+        root.setOrgName(context.getTenantName());
+        root.setOrgCode(context.getTenantCode().toUpperCase() + "_ROOT");
         root.setOrgType(2);
         root.setOrgSort(0);
         root.setOrgStatus("1");
         sysOrgMapper.insert(root);
     }
 
-    private void ensureDefaultPost(TenantProvisionContext context,
+    private void ensureDefaultPost(TenantProvisionCommand context,
                                    String code,
                                    String name,
                                    int sort,
                                    String remark) {
         Long count = postMapper.selectCount(new LambdaQueryWrapper<PostEntity>()
-                .eq(PostEntity::getTenantId, context.tenantId())
-                .eq(PostEntity::getPostCode, context.tenantCode().toUpperCase() + "_" + code));
+                .eq(PostEntity::getTenantId, context.getTenantId())
+                .eq(PostEntity::getPostCode, context.getTenantCode().toUpperCase() + "_" + code));
         if (count != null && count > 0) {
             return;
         }
         PostEntity post = new PostEntity();
-        post.setTenantId(context.tenantId());
-        post.setPostCode(context.tenantCode().toUpperCase() + "_" + code);
+        post.setTenantId(context.getTenantId());
+        post.setPostCode(context.getTenantCode().toUpperCase() + "_" + code);
         post.setPostName(name);
         post.setPostSort(sort);
         post.setPostStatus("1");

@@ -10,7 +10,7 @@ import io.mango.resource.api.model.ResourceSyncResult;
 import io.mango.system.api.enums.ConfigOptionSourceEnum;
 import io.mango.system.api.enums.ConfigTypeEnum;
 import io.mango.system.api.enums.ConfigValueTypeEnum;
-import io.mango.system.core.entity.SysConfig;
+import io.mango.system.core.entity.SysConfigEntity;
 import io.mango.system.core.mapper.SysConfigMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -27,6 +27,7 @@ public class SystemConfigResourceHandler implements ResourceHandler {
 
     private static final String TARGET_TABLE = "sys_config";
     private static final String DEFAULT_DOMAIN_CODE = "COMMON";
+    private static final String DEFAULT_TENANT_ID = "1";
     private static final int ENABLED = 1;
     private static final int DISABLED = 0;
 
@@ -68,9 +69,9 @@ public class SystemConfigResourceHandler implements ResourceHandler {
     @Override
     public ResourceSyncResult upsert(ResourceDeclaration resource) {
         ConfigPayload payload = ConfigPayload.from(resource);
-        SysConfig config = findByConfigKey(payload.configKey());
+        SysConfigEntity config = findByConfigKey(payload.configKey());
         if (config == null) {
-            config = new SysConfig();
+            config = new SysConfigEntity();
             config.setId(payload.configId());
             config.setConfigKey(payload.configKey());
             applyConfig(config, payload);
@@ -84,19 +85,19 @@ public class SystemConfigResourceHandler implements ResourceHandler {
 
     @Override
     public ResourceSyncResult disable(ResourceDeclaration resource) {
-        SysConfig config = resolveConfig(resource);
+        SysConfigEntity config = resolveConfig(resource);
         if (config == null) {
             return ResourceSyncResult.of(null, TARGET_TABLE, "System config not found");
         }
         config.setStatus(DISABLED);
-        config.setUpdateTime(LocalDateTime.now());
+        config.setUpdatedAt(LocalDateTime.now());
         sysConfigMapper.updateById(config);
         return ResourceSyncResult.of(config.getId(), TARGET_TABLE, "System config disabled: " + config.getConfigKey());
     }
 
     @Override
     public ResourceSyncResult delete(ResourceDeclaration resource) {
-        SysConfig config = resolveConfig(resource);
+        SysConfigEntity config = resolveConfig(resource);
         if (config == null) {
             return ResourceSyncResult.of(null, TARGET_TABLE, "System config not found");
         }
@@ -104,7 +105,7 @@ public class SystemConfigResourceHandler implements ResourceHandler {
         return ResourceSyncResult.of(config.getId(), TARGET_TABLE, "System config deleted: " + config.getConfigKey());
     }
 
-    private void applyConfig(SysConfig config, ConfigPayload payload) {
+    private void applyConfig(SysConfigEntity config, ConfigPayload payload) {
         LocalDateTime now = LocalDateTime.now();
         config.setConfigKey(payload.configKey());
         config.setConfigValue(payload.configValue());
@@ -123,16 +124,19 @@ public class SystemConfigResourceHandler implements ResourceHandler {
         config.setSort(payload.sort());
         config.setStatus(payload.status());
         config.setRemark(payload.remark());
-        if (config.getCreateTime() == null) {
-            config.setCreateTime(now);
+        if (!StringUtils.hasText(config.getTenantId())) {
+            config.setTenantId(DEFAULT_TENANT_ID);
         }
-        config.setUpdateTime(now);
+        if (config.getCreatedAt() == null) {
+            config.setCreatedAt(now);
+        }
+        config.setUpdatedAt(now);
     }
 
-    private SysConfig resolveConfig(ResourceDeclaration resource) {
+    private SysConfigEntity resolveConfig(ResourceDeclaration resource) {
         String configKey = fieldText(resource, "configKey", false);
         if (StringUtils.hasText(configKey)) {
-            SysConfig config = findByConfigKey(configKey.trim());
+            SysConfigEntity config = findByConfigKey(configKey.trim());
             if (config != null) {
                 return config;
             }
@@ -145,9 +149,9 @@ public class SystemConfigResourceHandler implements ResourceHandler {
         return configId == null ? null : sysConfigMapper.selectById(configId);
     }
 
-    private SysConfig findByConfigKey(String configKey) {
-        return sysConfigMapper.selectOne(new LambdaQueryWrapper<SysConfig>()
-                .eq(SysConfig::getConfigKey, configKey)
+    private SysConfigEntity findByConfigKey(String configKey) {
+        return sysConfigMapper.selectOne(new LambdaQueryWrapper<SysConfigEntity>()
+                .eq(SysConfigEntity::getConfigKey, configKey)
                 .last("limit 1"));
     }
 

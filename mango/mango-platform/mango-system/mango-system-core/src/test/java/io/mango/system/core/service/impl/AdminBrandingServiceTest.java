@@ -4,7 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import io.mango.common.exception.BizException;
 import io.mango.system.api.command.SaveAdminBrandingCommand;
 import io.mango.system.api.vo.AdminBrandingVO;
-import io.mango.system.core.entity.SysConfig;
+import io.mango.system.core.entity.SysConfigEntity;
 import io.mango.system.core.mapper.SysConfigMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -44,7 +44,7 @@ class AdminBrandingServiceTest {
     void get_missingConfig_returnsDefaults() {
         when(sysConfigMapper.selectList(any(Wrapper.class))).thenReturn(List.of());
 
-        AdminBrandingVO result = adminBrandingService.get().getData();
+        AdminBrandingVO result = adminBrandingService.get();
 
         assertEquals("Mango Admin", result.getTitle());
         assertTrue(result.getEnabled());
@@ -57,16 +57,16 @@ class AdminBrandingServiceTest {
     @DisplayName("save should insert normalized file id")
     void save_newConfig_insertsFileId() {
         when(sysConfigMapper.selectList(any(Wrapper.class))).thenReturn(List.of());
-        when(sysConfigMapper.insert(any(SysConfig.class))).thenReturn(1);
+        when(sysConfigMapper.insert(any(SysConfigEntity.class))).thenReturn(1);
 
         SaveAdminBrandingCommand command = createCommand();
         command.setLogoFile(" 1888888888888888888 ");
 
-        assertTrue(adminBrandingService.save(command).isSuccess());
+        assertTrue(adminBrandingService.save(command));
 
-        ArgumentCaptor<SysConfig> captor = ArgumentCaptor.forClass(SysConfig.class);
+        ArgumentCaptor<SysConfigEntity> captor = ArgumentCaptor.forClass(SysConfigEntity.class);
         verify(sysConfigMapper, times(12)).insert(captor.capture());
-        SysConfig firstInserted = captor.getAllValues().get(0);
+        SysConfigEntity firstInserted = captor.getAllValues().get(0);
         assertEquals("admin.branding.enabled", firstInserted.getConfigKey());
         assertEquals("true", firstInserted.getConfigValue());
         assertEquals("后台品牌配置", firstInserted.getGroupName());
@@ -80,14 +80,14 @@ class AdminBrandingServiceTest {
     @DisplayName("save should normalize legacy file token to file id")
     void save_legacyFileToken_normalizesToFileId() {
         when(sysConfigMapper.selectList(any(Wrapper.class))).thenReturn(List.of());
-        when(sysConfigMapper.insert(any(SysConfig.class))).thenReturn(1);
+        when(sysConfigMapper.insert(any(SysConfigEntity.class))).thenReturn(1);
 
         SaveAdminBrandingCommand command = createCommand();
         command.setLogoFile(" mango-file:1888888888888888888 ");
 
-        assertTrue(adminBrandingService.save(command).isSuccess());
+        assertTrue(adminBrandingService.save(command));
 
-        ArgumentCaptor<SysConfig> captor = ArgumentCaptor.forClass(SysConfig.class);
+        ArgumentCaptor<SysConfigEntity> captor = ArgumentCaptor.forClass(SysConfigEntity.class);
         verify(sysConfigMapper, times(12)).insert(captor.capture());
         assertTrue(captor.getAllValues().stream()
                 .anyMatch(config -> "admin.branding.logoFile".equals(config.getConfigKey())
@@ -97,17 +97,17 @@ class AdminBrandingServiceTest {
     @Test
     @DisplayName("save should update existing config")
     void save_existingConfig_updatesValue() {
-        SysConfig existing = new SysConfig();
+        SysConfigEntity existing = new SysConfigEntity();
         existing.setId(1L);
         existing.setConfigKey("admin.branding.title");
         existing.setConfigValue("旧后台");
         when(sysConfigMapper.selectList(any(Wrapper.class))).thenReturn(List.of(existing));
-        when(sysConfigMapper.insert(any(SysConfig.class))).thenReturn(1);
-        when(sysConfigMapper.updateById(any(SysConfig.class))).thenReturn(1);
+        when(sysConfigMapper.insert(any(SysConfigEntity.class))).thenReturn(1);
+        when(sysConfigMapper.updateById(any(SysConfigEntity.class))).thenReturn(1);
 
         adminBrandingService.save(createCommand());
 
-        ArgumentCaptor<SysConfig> captor = ArgumentCaptor.forClass(SysConfig.class);
+        ArgumentCaptor<SysConfigEntity> captor = ArgumentCaptor.forClass(SysConfigEntity.class);
         verify(sysConfigMapper).updateById(captor.capture());
         assertEquals(1L, captor.getValue().getId());
         assertEquals("新后台", captor.getValue().getConfigValue());
@@ -120,8 +120,8 @@ class AdminBrandingServiceTest {
         command.setLogoFile("https://example.com/logo.png");
 
         assertThrows(BizException.class, () -> adminBrandingService.save(command));
-        verify(sysConfigMapper, never()).insert(any(SysConfig.class));
-        verify(sysConfigMapper, never()).updateById(any(SysConfig.class));
+        verify(sysConfigMapper, never()).insert(any(SysConfigEntity.class));
+        verify(sysConfigMapper, never()).updateById(any(SysConfigEntity.class));
     }
 
     private SaveAdminBrandingCommand createCommand() {

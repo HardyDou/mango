@@ -2,23 +2,18 @@ package io.mango.system.api;
 
 import io.mango.common.result.R;
 import io.mango.common.vo.PageResult;
-import io.mango.system.api.po.SysLoginLogPo;
 import io.mango.system.api.query.LoginLogPageQuery;
+import io.mango.system.api.vo.LoginStatisticsVO;
+import io.mango.system.api.vo.SysLoginLogVO;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.NotNull;
+import org.springframework.validation.annotation.Validated;
 
-import java.util.List;
-import java.util.Map;
-
+@Validated
 public interface SysLoginLogApi {
-
-    R<List<SysLoginLogPo>> list();
-
-    R<PageResult<SysLoginLogPo>> page(LoginLogPageQuery query);
-
-    R<SysLoginLogPo> get(Long id);
-
-    R<Boolean> record(SysLoginLogPo log);
-
-    R<Boolean> clean(Integer retentionDays);
-
-    R<Map<String, Object>> statistics();
+    R<PageResult<SysLoginLogVO>> page(@Valid LoginLogPageQuery query);
+    R<SysLoginLogVO> get(@NotNull Long id);
+    R<Boolean> clean(@Max(Integer.MAX_VALUE) Integer retentionDays);
+    R<LoginStatisticsVO> statistics();
 }

@@ -164,14 +164,18 @@ import '@mango/system/style.css';
 
 ## 7. 资源注入
 
-系统默认字典、系统默认配置和默认国际化文案通过 `mango-resource` 注入，不在 Flyway 中写业务配置数据。字典和配置支持资源文件，国际化默认文案由 `SystemI18nMessageResourceProvider` 声明。
+系统默认租户、行政区划、字典、配置和国际化文案通过 `mango-resource` 注入，不在 Flyway 中写业务数据。正式必需数据放在 `META-INF/mango/resources/`，演示租户放在 `META-INF/mango/demo/`；demo 默认不加载。
 
 资源文件放在：
 
 ```text
 mango-system-starter/src/main/resources/META-INF/mango/resources/system-common-dict.yml
 mango-system-starter/src/main/resources/META-INF/mango/resources/system-common-config.yml
+mango-system-starter/src/main/resources/META-INF/mango/resources/system-common-tenant.yml
+mango-system-starter/src/main/resources/META-INF/mango/resources/system-common-area.yml
+mango-system-starter/src/main/resources/META-INF/mango/resources/system-common-i18n.yml
 mango-system-starter/src/main/resources/META-INF/mango/resources/system-common-menu.json
+mango-system-starter/src/main/resources/META-INF/mango/demo/system-demo-tenant.yml
 ```
 
 `system-common-menu.json` 声明系统管理菜单、行政区划菜单和 `system:area:*` 等按钮权限。按钮权限未显式配置 `packageCodes` 时会继承父菜单套餐；显式空数组表示不加入任何套餐。
@@ -225,7 +229,7 @@ mango-system-starter/src/main/resources/META-INF/mango/resources/system-common-m
 
 ### 7.3 I18N_MESSAGE
 
-`I18N_MESSAGE` 落库到 `sys_i18n`，按 `name` 合并更新。业务模块需要注入国际化文案时，只依赖 `mango-system-api` 和 `mango-resource-api`，使用 `I18nMessageResourceDeclarations.message(...)` 在本模块 starter 中实现 `ResourceProvider`。
+`I18N_MESSAGE` 落库到 `sys_i18n`，按 `name` 合并更新。业务模块需要注入国际化文案时，在本模块 starter 的 `META-INF/mango/resources/` 中登记 `I18N_MESSAGE` 声明。
 
 | 字段 | 类型 | 必填 | 含义 |
 |------|------|------|------|
@@ -241,6 +245,18 @@ mango-system-starter/src/main/resources/META-INF/mango/resources/system-common-m
 | `description` | `STRING` | 否 | 文案说明。 |
 
 `sys_i18n` 当前没有 `status` 字段，资源禁用时会退化为物理删除；如果后续需要后台人工禁用，应先给 `sys_i18n` 增加状态字段。
+
+### 7.4 SYSTEM_TENANT
+
+`SYSTEM_TENANT` 落库到 `sys_tenant`。正式资源只登记平台默认租户；A/B/C 公司等演示租户登记在 `META-INF/mango/demo/`，并使用 `INIT_ONLY`，避免覆盖运行期人工修改。
+
+关键字段包括 `tenantId`、`tenantCode`、`tenantName`、`institutionType`、`packageId`、`status` 和联系人信息。资源处理器写入的 `tenant_id` 使用运行时租户主键 `1`，不能使用租户编码 `default`。
+
+### 7.5 SYSTEM_AREA
+
+`SYSTEM_AREA` 落库到 `sys_area`，按稳定 `areaId` 合并，用于新库恢复平台必需的行政区划参考数据。关键字段包括 `areaId`、`areaCode`、`areaName`、`parentId`、`level`、`sort` 和 `status`。
+
+所有系统资源 ID 必须在最终组装应用的 `META-INF/mango/resources/` 与 `META-INF/mango/demo/` 中全局唯一，不能只检查当前模块目录。
 
 ## 8. API 与扩展
 

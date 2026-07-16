@@ -1,150 +1,105 @@
 package io.mango.area.core.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import io.mango.area.api.entity.SysArea;
+import io.mango.area.api.command.SaveAreaCommand;
+import io.mango.area.api.vo.SysAreaVO;
+import io.mango.area.core.entity.SysAreaEntity;
 import io.mango.area.core.mapper.SysAreaMapper;
 import io.mango.area.core.service.ISysAreaService;
+import io.mango.common.exception.BizException;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
-/**
- * Unit tests for SysAreaServiceImpl
- *
- * @author Mango
- */
 @ExtendWith(MockitoExtension.class)
-@DisplayName("SysAreaServiceImpl Tests")
 class SysAreaServiceImplTest {
 
     @Mock
     private SysAreaMapper areaMapper;
 
-    private SysAreaServiceImpl sysAreaService;
+    private SysAreaService areaService;
 
     @BeforeEach
     void setUp() {
-        sysAreaService = new SysAreaServiceImpl(areaMapper);
+        areaService = new SysAreaService(areaMapper);
     }
 
     @Test
-    @DisplayName("listByPid should return areas for parent")
-    void listByPid_existingParent_returnsAreas() {
-        SysArea area1 = createSysArea(1L, "Area 1", 0L, "1");
-        SysArea area2 = createSysArea(2L, "Area 2", 0L, "1");
-        when(areaMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(Arrays.asList(area1, area2));
+    void listByPidReturnsMappedAreas() {
+        when(areaMapper.selectList(any(LambdaQueryWrapper.class)))
+                .thenReturn(List.of(area(1L, "Area 1", 0L, "1"), area(2L, "Area 2", 0L, "1")));
 
-        List<SysArea> result = sysAreaService.listByPid(0L);
+        List<SysAreaVO> result = areaService.listByPid(0L);
 
-        assertEquals(2, result.size());
+        assertThat(result).extracting(SysAreaVO::getName).containsExactly("Area 1", "Area 2");
     }
 
     @Test
-    @DisplayName("listByPid should return empty list when no areas")
-    void listByPid_noAreas_returnsEmptyList() {
-        when(areaMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(Collections.emptyList());
+    void getByIdReturnsMappedArea() {
+        when(areaMapper.selectById(1L)).thenReturn(area(1L, "Test Area", 0L, "1"));
 
-        List<SysArea> result = sysAreaService.listByPid(999L);
-
-        assertTrue(result.isEmpty());
+        assertThat(areaService.getById(1L).getId()).isEqualTo(1L);
     }
 
     @Test
-    @DisplayName("getById should return area when exists")
-    void getById_existingArea_returnsArea() {
-        SysArea area = createSysArea(1L, "Test Area", 0L, "1");
-        when(areaMapper.selectById(1L)).thenReturn(area);
-
-        SysArea result = sysAreaService.getById(1L);
-
-        assertNotNull(result);
-        assertEquals(1L, result.getId());
-    }
-
-    @Test
-    @DisplayName("getById should return null when area not found")
-    void getById_nonExistingArea_returnsNull() {
+    void getByIdRejectsMissingAreaWithModuleCode() {
         when(areaMapper.selectById(999L)).thenReturn(null);
 
-        SysArea result = sysAreaService.getById(999L);
-
-        assertNull(result);
+        assertThatThrownBy(() -> areaService.getById(999L))
+                .isInstanceOf(BizException.class)
+                .extracting("code").isEqualTo(404);
     }
 
     @Test
-    @DisplayName("getByAdcode should return area when exists")
-    void getByAdcode_existingAdcode_returnsArea() {
-        SysArea area = createSysArea(1L, "Test Area", 0L, "1");
-        when(areaMapper.selectOne(any(LambdaQueryWrapper.class))).thenReturn(area);
+    void createMapsCommandAndInsertsEntity() {
+        when(areaMapper.insert(any(SysAreaEntity.class))).thenReturn(1);
 
-        SysArea result = sysAreaService.getByAdcode(110000L);
+        areaService.create(command(null, "Custom Area", 0L, "5", 990001L));
 
-        assertNotNull(result);
+        verify(areaMapper).insert(any(SysAreaEntity.class));
     }
 
     @Test
-    @DisplayName("save should return true when area is saved")
-    void save_validArea_returnsTrue() {
-        SysArea area = createSysArea(1L, "Test Area", 0L, "1");
-        when(areaMapper.insert(area)).thenReturn(1);
-
-        boolean result = sysAreaService.save(area);
-
-        assertTrue(result);
-    }
-
-    @Test
-    @DisplayName("update should throw exception when modifying standard area adcode")
-    void update_standardAreaAdcodeChange_throwsException() {
-        SysArea existing = createSysArea(1L, "Beijing", 0L, "1");
+    void updateRejectsStandardAreaAdcodeChange() {
+        SysAreaEntity existing = area(1L, "Beijing", 0L, "1");
         existing.setAdcode(110000L);
         when(areaMapper.selectById(1L)).thenReturn(existing);
 
-        SysArea updated = createSysArea(1L, "Beijing", 0L, "1");
-        updated.setAdcode(110001L);
-
-        assertThrows(UnsupportedOperationException.class, () -> sysAreaService.update(updated));
+        assertThatThrownBy(() -> areaService.update(command(1L, "Beijing", 0L, "1", 110001L)))
+                .isInstanceOf(BizException.class)
+                .hasMessageContaining("Standard administrative area adcode cannot be modified");
     }
 
     @Test
-    @DisplayName("delete should throw exception when deleting standard area")
-    void delete_standardArea_throwsException() {
-        SysArea existing = createSysArea(1L, "Beijing", 0L, "1");
-        when(areaMapper.selectById(1L)).thenReturn(existing);
+    void deleteRejectsStandardArea() {
+        when(areaMapper.selectById(1L)).thenReturn(area(1L, "Beijing", 0L, "1"));
 
-        assertThrows(UnsupportedOperationException.class, () -> sysAreaService.delete(1L));
+        assertThatThrownBy(() -> areaService.delete(1L))
+                .isInstanceOf(BizException.class)
+                .hasMessageContaining("Standard administrative area cannot be deleted");
     }
 
     @Test
-    @DisplayName("listActive should return all active areas")
-    void listActive_returnsActiveAreas() {
-        SysArea area = createSysArea(1L, "Active Area", 0L, "1");
-        when(areaMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(List.of(area));
+    void listActiveReturnsMappedAreas() {
+        when(areaMapper.selectList(any(LambdaQueryWrapper.class)))
+                .thenReturn(List.of(area(1L, "Active Area", 0L, "1")));
 
-        List<SysArea> result = sysAreaService.listActive();
-
-        assertEquals(1, result.size());
+        assertThat(areaService.listActive()).extracting(SysAreaVO::getName).containsExactly("Active Area");
+        assertThat(areaService).isInstanceOf(ISysAreaService.class);
     }
 
-    @Test
-    @DisplayName("SysAreaServiceImpl implements ISysAreaService")
-    void implementsISysAreaService() {
-        assertTrue(sysAreaService instanceof ISysAreaService);
-    }
-
-    private SysArea createSysArea(Long id, String name, Long pid, String areaType) {
-        SysArea area = new SysArea();
+    private SysAreaEntity area(Long id, String name, Long pid, String areaType) {
+        SysAreaEntity area = new SysAreaEntity();
         area.setId(id);
         area.setName(name);
         area.setPid(pid);
@@ -153,5 +108,17 @@ class SysAreaServiceImplTest {
         area.setAreaStatus("1");
         area.setAreaSort(1);
         return area;
+    }
+
+    private SaveAreaCommand command(Long id, String name, Long pid, String areaType, Long adcode) {
+        SaveAreaCommand command = new SaveAreaCommand();
+        command.setId(id);
+        command.setName(name);
+        command.setPid(pid);
+        command.setAreaType(areaType);
+        command.setAdcode(adcode);
+        command.setAreaStatus("1");
+        command.setAreaSort(1);
+        return command;
     }
 }

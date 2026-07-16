@@ -7,7 +7,7 @@ import io.mango.infra.iplocation.api.IpLocation;
 import io.mango.infra.iplocation.api.IpLocationResolver;
 import io.mango.infra.log.annotation.Log;
 import io.mango.infra.web.util.JacksonUtils;
-import io.mango.system.api.po.SysOperationLogPo;
+import io.mango.system.api.command.RecordOperationLogCommand;
 import io.mango.system.core.service.ISysLogService;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.servlet.ServletRequest;
@@ -77,8 +77,8 @@ public class OperationLogAspect {
             Operation operationAnnotation = method.getAnnotation(Operation.class);
             String operationName = resolveOperationName(logAnnotation, operationAnnotation, signature);
 
-            SysOperationLogPo opLog = new SysOperationLogPo();
-            opLog.setTenantId(parseLong(MangoContextHolder.tenantId()));
+            RecordOperationLogCommand opLog = new RecordOperationLogCommand();
+            opLog.setTenantId(MangoContextHolder.tenantId());
             opLog.setUserId(MangoContextHolder.userId());
             opLog.setUsername(MangoContextHolder.principalName());
             opLog.setModule(resolveModuleName(logAnnotation, signature));
@@ -186,17 +186,6 @@ public class OperationLogAspect {
             return ip.substring(0, ip.indexOf(',')).trim();
         }
         return firstText(ip, request.getRemoteAddr());
-    }
-
-    private Long parseLong(String value) {
-        if (value == null || value.isBlank()) {
-            return null;
-        }
-        try {
-            return Long.valueOf(value);
-        } catch (NumberFormatException e) {
-            return null;
-        }
     }
 
     private String resolveModuleName(Log logAnnotation, MethodSignature signature) {

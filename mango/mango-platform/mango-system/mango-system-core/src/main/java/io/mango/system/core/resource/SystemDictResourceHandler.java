@@ -7,8 +7,8 @@ import io.mango.resource.api.model.ResourceDeclaration;
 import io.mango.resource.api.model.ResourceField;
 import io.mango.resource.api.model.ResourceHandlerSpec;
 import io.mango.resource.api.model.ResourceSyncResult;
-import io.mango.system.core.entity.DictData;
-import io.mango.system.core.entity.DictType;
+import io.mango.system.core.entity.DictDataEntity;
+import io.mango.system.core.entity.DictTypeEntity;
 import io.mango.system.core.mapper.DictDataMapper;
 import io.mango.system.core.mapper.DictTypeMapper;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +29,7 @@ import java.util.Set;
 public class SystemDictResourceHandler implements ResourceHandler {
 
     private static final String TARGET_TABLE = "sys_dict_type";
+    private static final String DEFAULT_TENANT_ID = "1";
     private static final int ENABLED = 1;
     private static final int DISABLED = 0;
 
@@ -60,9 +61,9 @@ public class SystemDictResourceHandler implements ResourceHandler {
     @Override
     public ResourceSyncResult upsert(ResourceDeclaration resource) {
         DictPayload payload = DictPayload.from(resource);
-        DictType type = findType(payload.dictType());
+        DictTypeEntity type = findType(payload.dictType());
         if (type == null) {
-            type = new DictType();
+            type = new DictTypeEntity();
             type.setId(payload.typeId());
             type.setDictType(payload.dictType());
             applyType(type, payload);
@@ -75,9 +76,9 @@ public class SystemDictResourceHandler implements ResourceHandler {
         Set<Long> activeItemIds = new HashSet<>();
         Set<String> activeItemValues = new HashSet<>();
         for (DictItemPayload item : payload.items()) {
-            DictData data = findData(payload.dictType(), item);
+            DictDataEntity data = findData(payload.dictType(), item);
             if (data == null) {
-                data = new DictData();
+                data = new DictDataEntity();
                 data.setId(item.id());
                 data.setDictType(payload.dictType());
                 applyData(data, item);
@@ -99,7 +100,7 @@ public class SystemDictResourceHandler implements ResourceHandler {
     @Override
     public ResourceSyncResult disable(ResourceDeclaration resource) {
         String dictType = fieldText(resource, "dictType", false);
-        DictType type = StringUtils.hasText(dictType) ? findType(dictType) : findTypeByTargetId(resource);
+        DictTypeEntity type = StringUtils.hasText(dictType) ? findType(dictType) : findTypeByTargetId(resource);
         if (type == null) {
             return ResourceSyncResult.of(null, TARGET_TABLE, "System dict not found: " + dictType);
         }
@@ -107,55 +108,61 @@ public class SystemDictResourceHandler implements ResourceHandler {
         type.setStatus(DISABLED);
         dictTypeMapper.updateById(type);
 
-        DictData data = new DictData();
+        DictDataEntity data = new DictDataEntity();
         data.setStatus(DISABLED);
-        data.setUpdateTime(LocalDateTime.now());
-        dictDataMapper.update(data, new LambdaQueryWrapper<DictData>().eq(DictData::getDictType, dictType));
+        data.setUpdatedAt(LocalDateTime.now());
+        dictDataMapper.update(data, new LambdaQueryWrapper<DictDataEntity>().eq(DictDataEntity::getDictType, dictType));
         return ResourceSyncResult.of(type.getId(), TARGET_TABLE, "System dict disabled: " + dictType);
     }
 
     @Override
     public ResourceSyncResult delete(ResourceDeclaration resource) {
         String dictType = fieldText(resource, "dictType", false);
-        DictType type = StringUtils.hasText(dictType) ? findType(dictType) : findTypeByTargetId(resource);
+        DictTypeEntity type = StringUtils.hasText(dictType) ? findType(dictType) : findTypeByTargetId(resource);
         if (type == null) {
             return ResourceSyncResult.of(null, TARGET_TABLE, "System dict not found: " + dictType);
         }
         dictType = type.getDictType();
-        dictDataMapper.delete(new LambdaQueryWrapper<DictData>().eq(DictData::getDictType, dictType));
+        dictDataMapper.delete(new LambdaQueryWrapper<DictDataEntity>().eq(DictDataEntity::getDictType, dictType));
         dictTypeMapper.deleteById(type.getId());
         return ResourceSyncResult.of(type.getId(), TARGET_TABLE, "System dict deleted: " + dictType);
     }
 
-    private void applyType(DictType type, DictPayload payload) {
+    private void applyType(DictTypeEntity type, DictPayload payload) {
         LocalDateTime now = LocalDateTime.now();
         type.setDictName(payload.dictName());
         type.setDomainCode(payload.domainCode());
         type.setStatus(payload.status());
         type.setRemark(payload.remark());
-        if (type.getCreateTime() == null) {
-            type.setCreateTime(now);
+        if (!StringUtils.hasText(type.getTenantId())) {
+            type.setTenantId(DEFAULT_TENANT_ID);
         }
-        type.setUpdateTime(now);
+        if (type.getCreatedAt() == null) {
+            type.setCreatedAt(now);
+        }
+        type.setUpdatedAt(now);
     }
 
-    private void applyData(DictData data, DictItemPayload item) {
+    private void applyData(DictDataEntity data, DictItemPayload item) {
         LocalDateTime now = LocalDateTime.now();
         data.setDictLabel(item.label());
         data.setDictValue(item.value());
         data.setSort(item.sort());
         data.setStatus(item.status());
         data.setRemark(item.remark());
-        if (data.getCreateTime() == null) {
-            data.setCreateTime(now);
+        if (!StringUtils.hasText(data.getTenantId())) {
+            data.setTenantId(DEFAULT_TENANT_ID);
         }
-        data.setUpdateTime(now);
+        if (data.getCreatedAt() == null) {
+            data.setCreatedAt(now);
+        }
+        data.setUpdatedAt(now);
     }
 
     private void disableRemovedItems(String dictType, Set<Long> activeItemIds, Set<String> activeItemValues) {
-        List<DictData> existing = dictDataMapper.selectList(
-                new LambdaQueryWrapper<DictData>().eq(DictData::getDictType, dictType));
-        for (DictData data : existing) {
+        List<DictDataEntity> existing = dictDataMapper.selectList(
+                new LambdaQueryWrapper<DictDataEntity>().eq(DictDataEntity::getDictType, dictType));
+        for (DictDataEntity data : existing) {
             boolean declaredById = data.getId() != null && activeItemIds.contains(data.getId());
             boolean declaredByValue = activeItemValues.contains(data.getDictValue());
             if (!declaredById && !declaredByValue && !Integer.valueOf(DISABLED).equals(data.getStatus())) {
@@ -165,27 +172,27 @@ public class SystemDictResourceHandler implements ResourceHandler {
         }
     }
 
-    private DictType findType(String dictType) {
-        return dictTypeMapper.selectOne(new LambdaQueryWrapper<DictType>()
-                .eq(DictType::getDictType, dictType)
+    private DictTypeEntity findType(String dictType) {
+        return dictTypeMapper.selectOne(new LambdaQueryWrapper<DictTypeEntity>()
+                .eq(DictTypeEntity::getDictType, dictType)
                 .last("limit 1"));
     }
 
-    private DictType findTypeByTargetId(ResourceDeclaration resource) {
+    private DictTypeEntity findTypeByTargetId(ResourceDeclaration resource) {
         Long targetId = fieldLong(resource, "targetId", false, null);
         return targetId == null ? null : dictTypeMapper.selectById(targetId);
     }
 
-    private DictData findData(String dictType, DictItemPayload item) {
+    private DictDataEntity findData(String dictType, DictItemPayload item) {
         if (item.id() != null) {
-            DictData byId = dictDataMapper.selectById(item.id());
+            DictDataEntity byId = dictDataMapper.selectById(item.id());
             if (byId != null) {
                 return byId;
             }
         }
-        return dictDataMapper.selectOne(new LambdaQueryWrapper<DictData>()
-                .eq(DictData::getDictType, dictType)
-                .eq(DictData::getDictValue, item.value())
+        return dictDataMapper.selectOne(new LambdaQueryWrapper<DictDataEntity>()
+                .eq(DictDataEntity::getDictType, dictType)
+                .eq(DictDataEntity::getDictValue, item.value())
                 .last("limit 1"));
     }
 

@@ -9,7 +9,7 @@ import io.mango.authorization.core.mapper.RoleMapper;
 import io.mango.authorization.core.mapper.RoleMenuMapper;
 import io.mango.authorization.core.service.ITenantAppBindingService;
 import io.mango.system.api.tenant.TenantDependencyChecker;
-import io.mango.system.api.tenant.TenantProvisionContext;
+import io.mango.system.api.tenant.TenantProvisionCommand;
 import io.mango.system.api.tenant.TenantProvisioner;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.annotation.Order;
@@ -46,10 +46,10 @@ public class AuthorizationTenantProvisioner implements TenantProvisioner, Tenant
     private final ITenantAppBindingService tenantAppBindingService;
 
     @Override
-    public void provision(TenantProvisionContext context) {
-        tenantAppBindingService.ensureEnabled(context.tenantId(), DEFAULT_APP_CODE);
+    public void provision(TenantProvisionCommand context) {
+        tenantAppBindingService.ensureEnabled(context.getTenantId(), DEFAULT_APP_CODE);
         RoleEntity role = ensureAdminRole(context);
-        grantTenantAdminDefaultMenus(context.tenantId(), role.getRoleId());
+        grantTenantAdminDefaultMenus(context.getTenantId(), role.getRoleId());
     }
 
     @Override
@@ -67,9 +67,9 @@ public class AuthorizationTenantProvisioner implements TenantProvisioner, Tenant
         return Optional.empty();
     }
 
-    private RoleEntity ensureAdminRole(TenantProvisionContext context) {
+    private RoleEntity ensureAdminRole(TenantProvisionCommand context) {
         RoleEntity role = roleMapper.selectOne(new LambdaQueryWrapper<RoleEntity>()
-                .eq(RoleEntity::getTenantId, context.tenantId())
+                .eq(RoleEntity::getTenantId, context.getTenantId())
                 .eq(RoleEntity::getAppCode, DEFAULT_APP_CODE)
                 .eq(RoleEntity::getRoleCode, TENANT_ADMIN_ROLE)
                 .last("LIMIT 1"));
@@ -77,7 +77,7 @@ public class AuthorizationTenantProvisioner implements TenantProvisioner, Tenant
             return role;
         }
         role = new RoleEntity();
-        role.setTenantId(context.tenantId());
+        role.setTenantId(context.getTenantId());
         role.setAppCode(DEFAULT_APP_CODE);
         role.setRealm(DEFAULT_REALM);
         role.setActorType(DEFAULT_ACTOR_TYPE);
@@ -86,7 +86,7 @@ public class AuthorizationTenantProvisioner implements TenantProvisioner, Tenant
         role.setRoleType(1);
         role.setStatus(1);
         role.setSort(1);
-        role.setRemark(context.tenantName() + " 默认机构管理员角色");
+        role.setRemark(context.getTenantName() + " 默认机构管理员角色");
         role.setCreateTime(LocalDateTime.now());
         role.setUpdateTime(LocalDateTime.now());
         roleMapper.insert(role);

@@ -28,13 +28,12 @@ import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguratio
 import io.mango.notice.api.enums.NoticeSiteMessageActionInteractionType;
 import io.mango.notice.api.enums.NoticeSiteMessageTargetType;
 import io.mango.notice.api.command.NoticeSendEventCommand;
-import io.mango.system.api.SysConfigApi;
+import io.mango.system.api.tenant.TenantProvisionCommand;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mybatis.spring.annotation.MapperScan;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.autoconfigure.jdbc.JdbcTemplateAutoConfiguration;
@@ -98,6 +97,9 @@ class IdentityUserServiceIntegrationTest {
     private IdentityUserService service;
 
     @Autowired
+    private IdentityTenantProvisioner tenantProvisioner;
+
+    @Autowired
     private ApplicationEvents applicationEvents;
 
     @BeforeEach
@@ -135,6 +137,28 @@ class IdentityUserServiceIntegrationTest {
     @DisplayName("账号不存在时返回空")
     void getUserInfoShouldReturnNullWhenNotFoundThroughRealMapper() {
         assertThat(service.getUserInfo("missing")).isNull();
+    }
+
+    @Test
+    @DisplayName("初始化机构管理员时使用完整角色查询契约")
+    void tenantProvisionUsesCompleteRoleLookupContract() {
+        seedUser(1L, "admin", "Administrator", "1", 1);
+        MangoContextHolder.set(MangoContextSnapshot.empty().withSecurity(
+                1L, "1", "admin", "INTERNAL", "INTERNAL_USER", "INTERNAL_ORG", 1L, "internal-admin"));
+
+        tenantProvisioner.provision(new TenantProvisionCommand(2L, "company_a", "A公司"));
+
+        assertThat(roleBindingApi.lastLookupQuery).isNotNull();
+        assertThat(roleBindingApi.lastLookupQuery.getTenantId()).isEqualTo(2L);
+        assertThat(roleBindingApi.lastLookupQuery.getAppCode()).isEqualTo("internal-admin");
+        assertThat(roleBindingApi.lastLookupQuery.getRealm()).isEqualTo("INTERNAL");
+        assertThat(roleBindingApi.lastLookupQuery.getActorType()).isEqualTo("INTERNAL_USER");
+        assertThat(roleBindingApi.lastLookupQuery.getRoleCode()).isEqualTo("ROLE_ADMIN");
+        assertThat(roleBindingApi.lastBindingCommand).isNotNull();
+        assertThat(roleBindingApi.lastBindingCommand.getTenantId()).isEqualTo(2L);
+        assertThat(jdbcTemplate.queryForObject(
+                "select count(*) from tenant_member where tenant_id = 2 and user_id = 1",
+                Long.class)).isEqualTo(1L);
     }
 
     @Test
@@ -417,6 +441,7 @@ class IdentityUserServiceIntegrationTest {
             IdentityUserSecurityService.class,
             IdentitySecurityPolicyService.class,
             IdentityPasswordPolicyService.class,
+            IdentityTenantProvisioner.class,
             AuthorizationRoleBindingAdapter.class,
             SysConfigValueAdapter.class
     })
@@ -437,30 +462,6 @@ class IdentityUserServiceIntegrationTest {
             return new TestRoleBindingApi();
         }
 
-        @Bean
-        ObjectProvider<SysConfigApi> sysConfigApiProvider() {
-            return new ObjectProvider<>() {
-                @Override
-                public SysConfigApi getObject(Object... args) {
-                    return null;
-                }
-
-                @Override
-                public SysConfigApi getIfAvailable() {
-                    return null;
-                }
-
-                @Override
-                public SysConfigApi getIfUnique() {
-                    return null;
-                }
-
-                @Override
-                public SysConfigApi getObject() {
-                    return null;
-                }
-            };
-        }
     }
 
     static class TestRoleBindingApi implements RoleBindingApi {
@@ -471,14 +472,20 @@ class IdentityUserServiceIntegrationTest {
 
         private SubjectRoleBindingQuery lastRoleQuery;
 
+        private RoleLookupQuery lastLookupQuery;
+
+        private SubjectRoleBindingCommand lastBindingCommand;
+
         @Override
         public R<Long> findRoleId(RoleLookupQuery query) {
-            return R.ok(null);
+            lastLookupQuery = query;
+            return R.ok(88L);
         }
 
         @Override
         public R<Boolean> ensureSubjectRoleBinding(SubjectRoleBindingCommand command) {
-            return R.ok(false);
+            lastBindingCommand = command;
+            return R.ok(true);
         }
 
         @Override
@@ -497,6 +504,8 @@ class IdentityUserServiceIntegrationTest {
             subjectIdsByRole = List.of();
             deleteCommands.clear();
             lastRoleQuery = null;
+            lastLookupQuery = null;
+            lastBindingCommand = null;
         }
     }
 }

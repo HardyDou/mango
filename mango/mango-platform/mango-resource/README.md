@@ -200,7 +200,7 @@ Resource Registry 能否同步某个资源类型，以运行时是否装配对�
 
 | 目标模块 | 已开放资源类型 |
 |----------|----------------|
-| `mango-system` | `SYSTEM_DICT`、`SYSTEM_CONFIG`、`I18N_MESSAGE` |
+| `mango-system` | `SYSTEM_DICT`、`SYSTEM_CONFIG`、`SYSTEM_TENANT`、`SYSTEM_AREA`、`I18N_MESSAGE` |
 | `mango-domain` | `BUSINESS_DOMAIN` |
 | `mango-authorization` | `AUTH_MENU`、`AUTH_ROLE`、`AUTH_ROLE_DATA_SCOPE`、`AUTH_SUBJECT_ROLE`、`API_RESOURCE`、`FRONTEND_APP_REGISTRY`、`FRONTEND_MODULE_RUNTIME_STRATEGY` |
 | `mango-org` | `ORG_UNIT`、`ORG_POST` |

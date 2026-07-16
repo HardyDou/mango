@@ -1,7 +1,6 @@
 package io.mango.link.core.integration;
 
-import io.mango.common.result.R;
-import io.mango.system.api.SysConfigApi;
+import io.mango.system.api.spi.SystemConfigProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Component;
@@ -13,18 +12,17 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class LinkConfigGateway {
 
-    private final ObjectProvider<SysConfigApi> sysConfigApi;
+    private final ObjectProvider<SystemConfigProvider> configProvider;
 
     public boolean booleanValue(String configKey, String legacyConfigKey) {
-        SysConfigApi api = sysConfigApi.getIfAvailable();
-        if (api == null) {
+        SystemConfigProvider config = configProvider.getIfAvailable();
+        if (config == null) {
             return false;
         }
-        R<String> current = api.getValue(configKey);
-        if (current != null && current.isSuccess()) {
-            return Boolean.parseBoolean(current.getData());
+        String current = config.getValue(configKey);
+        if (current != null) {
+            return Boolean.parseBoolean(current);
         }
-        R<Boolean> legacy = api.getBooleanValue(legacyConfigKey, false);
-        return legacy != null && Boolean.TRUE.equals(legacy.getData());
+        return Boolean.TRUE.equals(config.getBooleanValue(legacyConfigKey, false));
     }
 }

@@ -1,7 +1,7 @@
 package io.mango.i18n.core.resource;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import io.mango.i18n.api.entity.SysI18n;
+import io.mango.i18n.core.entity.SysI18nEntity;
 import io.mango.i18n.core.mapper.SysI18nMapper;
 import io.mango.resource.api.ResourceHandler;
 import io.mango.resource.api.ResourceTypes;
@@ -13,6 +13,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
+import java.time.LocalDateTime;
+
 /**
  * 国际化文案资源处理器。
  */
@@ -21,6 +23,7 @@ import org.springframework.util.StringUtils;
 public class I18nMessageResourceHandler implements ResourceHandler {
 
     private static final String TARGET_TABLE = "sys_i18n";
+    private static final String DEFAULT_TENANT_ID = "1";
 
     private final SysI18nMapper sysI18nMapper;
 
@@ -48,9 +51,9 @@ public class I18nMessageResourceHandler implements ResourceHandler {
     @Override
     public ResourceSyncResult upsert(ResourceDeclaration resource) {
         I18nPayload payload = I18nPayload.from(resource);
-        SysI18n entity = findByName(payload.name());
+        SysI18nEntity entity = findByName(payload.name());
         if (entity == null) {
-            entity = new SysI18n();
+            entity = new SysI18nEntity();
             entity.setId(payload.i18nId());
             entity.setName(payload.name());
             applyI18n(entity, payload);
@@ -69,7 +72,7 @@ public class I18nMessageResourceHandler implements ResourceHandler {
 
     @Override
     public ResourceSyncResult delete(ResourceDeclaration resource) {
-        SysI18n entity = resolveI18n(resource);
+        SysI18nEntity entity = resolveI18n(resource);
         if (entity == null) {
             return ResourceSyncResult.of(null, TARGET_TABLE, "I18n message not found");
         }
@@ -77,17 +80,25 @@ public class I18nMessageResourceHandler implements ResourceHandler {
         return ResourceSyncResult.of(entity.getId(), TARGET_TABLE, "I18n message deleted: " + entity.getName());
     }
 
-    private void applyI18n(SysI18n entity, I18nPayload payload) {
+    private void applyI18n(SysI18nEntity entity, I18nPayload payload) {
+        LocalDateTime now = LocalDateTime.now();
         entity.setName(payload.name());
         entity.setZhCn(payload.zhCn());
         entity.setEn(payload.en());
         entity.setDescription(payload.description());
+        if (!StringUtils.hasText(entity.getTenantId())) {
+            entity.setTenantId(DEFAULT_TENANT_ID);
+        }
+        if (entity.getCreatedAt() == null) {
+            entity.setCreatedAt(now);
+        }
+        entity.setUpdatedAt(now);
     }
 
-    private SysI18n resolveI18n(ResourceDeclaration resource) {
+    private SysI18nEntity resolveI18n(ResourceDeclaration resource) {
         String name = fieldText(resource, "name", false);
         if (StringUtils.hasText(name)) {
-            SysI18n entity = findByName(name.trim());
+            SysI18nEntity entity = findByName(name.trim());
             if (entity != null) {
                 return entity;
             }
@@ -100,9 +111,9 @@ public class I18nMessageResourceHandler implements ResourceHandler {
         return i18nId == null ? null : sysI18nMapper.selectById(i18nId);
     }
 
-    private SysI18n findByName(String name) {
-        return sysI18nMapper.selectOne(new LambdaQueryWrapper<SysI18n>()
-                .eq(SysI18n::getName, name)
+    private SysI18nEntity findByName(String name) {
+        return sysI18nMapper.selectOne(new LambdaQueryWrapper<SysI18nEntity>()
+                .eq(SysI18nEntity::getName, name)
                 .last("limit 1"));
     }
 

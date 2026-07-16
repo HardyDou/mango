@@ -9,6 +9,8 @@ import io.mango.resource.api.enums.ResourceFieldType;
 import io.mango.resource.api.model.ResourceDeclaration;
 import io.mango.resource.api.model.ResourceField;
 import io.mango.resource.api.model.ResourceSyncResult;
+import io.mango.system.api.tenant.TenantPackageBindingHandler;
+import io.mango.system.api.tenant.TenantPackageBindingProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mybatis.spring.annotation.MapperScan;
@@ -18,11 +20,13 @@ import org.springframework.boot.autoconfigure.jdbc.JdbcTemplateAutoConfiguration
 import org.springframework.boot.autoconfigure.transaction.TransactionAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.TestPropertySource;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -54,6 +58,9 @@ class AuthRoleResourceHandlerIntegrationTest {
     @Autowired
     private AuthRoleResourceHandler handler;
 
+    @Autowired
+    private RecordingTenantPackageBindingHandler packageBindingHandler;
+
     @BeforeEach
     void setUp() {
         jdbcTemplate.execute("drop table if exists authorization_role");
@@ -84,6 +91,7 @@ class AuthRoleResourceHandlerIntegrationTest {
                 on authorization_role(tenant_id, app_code, role_code)
                 """);
         AuthorizationStarterTestSchema.ensureCanonicalColumns(jdbcTemplate);
+        packageBindingHandler.calls.clear();
     }
 
     @Test
@@ -93,6 +101,8 @@ class AuthRoleResourceHandlerIntegrationTest {
         ResourceSyncResult result = handler.upsert(resource);
 
         assertThat(handler.resourceType()).isEqualTo(ResourceTypes.AUTH_ROLE);
+        assertThat(handler.dependsOnResourceTypes())
+                .containsExactly(ResourceTypes.AUTH_APP, ResourceTypes.SYSTEM_TENANT);
         assertThat(result.getTargetTable()).isEqualTo("authorization_role");
         assertThat(result.getTargetId()).isNotNull();
 
@@ -150,6 +160,17 @@ class AuthRoleResourceHandlerIntegrationTest {
                 Long.class)).isEqualTo(1L);
     }
 
+    @Test
+    void upsertAdminRoleRefreshesPackageBindingCreatedBeforeRole() {
+        ResourceDeclaration resource = resource();
+        put(resource, "tenantId", ResourceFieldType.LONG, 2L);
+        put(resource, "roleCode", ResourceFieldType.STRING, "ROLE_ADMIN");
+
+        handler.upsert(resource);
+
+        assertThat(packageBindingHandler.calls).containsExactly("2:22");
+    }
+
     private ResourceDeclaration resource() {
         ResourceDeclaration resource = new ResourceDeclaration();
         resource.setResourceType(ResourceTypes.AUTH_ROLE);
@@ -179,5 +200,35 @@ class AuthRoleResourceHandlerIntegrationTest {
     @MapperScan(basePackageClasses = RoleMapper.class)
     @Import(AuthRoleResourceHandler.class)
     static class TestConfig {
+
+        @Bean
+        TenantPackageBindingProvider tenantPackageBindingProvider() {
+            return new TenantPackageBindingProvider() {
+                @Override
+                public Long findPackageIdByTenantId(Long tenantId) {
+                    return Long.valueOf(2L).equals(tenantId) ? 22L : null;
+                }
+
+                @Override
+                public List<Long> listTenantIdsByPackage(Long packageId) {
+                    return List.of();
+                }
+            };
+        }
+
+        @Bean
+        RecordingTenantPackageBindingHandler recordingTenantPackageBindingHandler() {
+            return new RecordingTenantPackageBindingHandler();
+        }
+    }
+
+    static class RecordingTenantPackageBindingHandler implements TenantPackageBindingHandler {
+
+        private final List<String> calls = new java.util.ArrayList<>();
+
+        @Override
+        public void bindPackage(Long tenantId, Long packageId) {
+            calls.add(tenantId + ":" + packageId);
+        }
     }
 }
