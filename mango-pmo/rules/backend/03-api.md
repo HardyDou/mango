@@ -208,8 +208,6 @@
 
 - `MANGO-ARCH-FEIGN-001`：Feign 只位于 starter-remote；`MANGO-ARCH-FEIGN-002`：直接且只继承一个 Api；`MANGO-ARCH-FEIGN-003`：name/contextId 非空；`MANGO-ARCH-FEIGN-004`：path 为绝对路径；`MANGO-ARCH-FEIGN-005`：contextId 唯一；`MANGO-ARCH-FEIGN-006`：contextId 等于接口名 lowerCamelCase；`MANGO-ARCH-FEIGN-007`：name/path 匹配 module.properties；`MANGO-ARCH-FEIGN-008`：逐项重声明 Api mapping、保留泛型且禁止 Api 外方法；`MANGO-ARCH-FEIGN-009`：禁止字段/常量，方法保持 abstract。
 - `MANGO-ARCH-ADAPTER-001`：Controller/Feign 的 verb、完整 path、参数绑定一致；`MANGO-ARCH-ADAPTER-002`：每个参数恰有一个显式 binding，query/header 显式命名；`MANGO-ARCH-ADAPTER-003`：恰有一个 verb、最多一个 path；`MANGO-ARCH-ADAPTER-004`：方法使用具体 verb annotation，禁止方法级 RequestMapping；`MANGO-ARCH-ADAPTER-005`：Command/Request body 必填；`MANGO-ARCH-ADAPTER-006`：禁止 mapping 条件；`MANGO-ARCH-ADAPTER-007`：verb/model/binding 兼容，Controller Query 用 ParameterObject/ModelAttribute，Feign Query 用 SpringQueryMap。
-
-二进制上传、下载和对象流端点无法使用 JSON `R<T>` 信封且必须保留 multipart、流式响应或对象路径语义时，Controller/Feign 必须使用 `@BinaryHttpAdapter` 显式标记并与普通 `XxxApi` 适配器分离。该标记只豁免 JSON 返回、普通 API 方法对齐、传输参数和 URI 模板限制；starter 位置、根路径、`@Validated`、OpenAPI、Controller 只依赖 `I*Service`、Feign 元数据和禁止业务异常等规则仍然生效。禁止把普通 JSON 端点放入二进制适配器规避契约。
 - `MANGO-ARCH-DEP-001`：api 禁止依赖 core/support/starter；`MANGO-ARCH-DEP-002`：core 禁止依赖 core/starter；`MANGO-ARCH-DEP-003`：starter-remote 只依赖本域 api/support 和 infra-feign；`MANGO-ARCH-DEP-004`：starter-remote 禁止直依赖 OpenFeign starter；`MANGO-ARCH-DEP-005`：非 resource 模块禁止 resource runtime；`MANGO-ARCH-DEP-006`：support 禁止依赖 core/starter；`MANGO-ARCH-DEP-007`：starter 只依赖本域实现和明确 infra starter；`MANGO-ARCH-DEP-008`：app 只依赖 Mango starter 与 mango-common。
 
 ### 8.5 引擎 Fail-Closed 与执行边界
