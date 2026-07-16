@@ -45,22 +45,22 @@ public class OrgPostResourceHandler implements ResourceHandler {
 
     @Override
     public ResourceSyncResult upsert(ResourceDeclaration resource) {
-        PostEntity post = findByBusinessKey(resource);
+        PostEntity post = findByTargetOrBusinessKey(resource);
+        boolean creating = post == null;
         LocalDateTime now = LocalDateTime.now();
-        if (post == null) {
+        if (creating) {
             post = new PostEntity();
+            post.setId(fields.longField(resource, "targetId"));
             post.setTenantId(fields.requiredLong(resource, "tenantId"));
             post.setPostCode(fields.requiredString(resource, "postCode"));
             post.setCreateTime(now);
-            post.setCreatedAt(now);
         }
         post.setPostName(fields.requiredString(resource, "postName"));
         post.setPostSort(fields.intField(resource, "sort", 0));
         post.setPostStatus(statusValue(resource));
         post.setRemark(fields.stringField(resource, "remark"));
         post.setUpdateTime(now);
-        post.setUpdatedAt(now);
-        if (post.getId() == null) {
+        if (creating) {
             postMapper.insert(post);
         } else {
             postMapper.updateById(post);

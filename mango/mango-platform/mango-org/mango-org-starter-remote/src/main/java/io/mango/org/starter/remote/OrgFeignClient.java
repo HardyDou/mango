@@ -3,14 +3,16 @@ package io.mango.org.starter.remote;
 import io.mango.common.result.R;
 import io.mango.org.api.SysOrgApi;
 import io.mango.org.api.command.AddOrgMemberCommand;
-import io.mango.org.api.command.CreateOrgCommand;
-import io.mango.org.api.command.UpdateOrgCommand;
-import io.mango.org.api.entity.SysOrg;
+import io.mango.org.api.command.CreateSysOrgCommand;
+import io.mango.org.api.command.UpdateSysOrgCommand;
+import io.mango.org.api.command.UpdateOrgMemberCommand;
 import io.mango.org.api.query.SysOrgTreeQuery;
+import io.mango.org.api.vo.OrgMemberVO;
+import io.mango.org.api.vo.SysOrgVO;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.cloud.openfeign.SpringQueryMap;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -19,52 +21,52 @@ import org.springframework.web.bind.annotation.RequestParam;
 import java.util.List;
 
 /**
- * Org FeignClient for remote calls
- *
- * @author Mango
+ * 组织管理远程适配器。
  */
 @FeignClient(name = "mango-org", contextId = "orgFeignClient", path = "/org")
 public interface OrgFeignClient extends SysOrgApi {
 
-    /**
-     * Get organization tree
-     *
-     * @param parentId parent organization ID (0 for root)
-     * @param type organization type filter (optional)
-     * @return tree structure
-     */
+    @Override
     @GetMapping("/tree")
-    R<List<SysOrg>> tree(@SpringQueryMap SysOrgTreeQuery query);
+    R<List<SysOrgVO>> tree(@SpringQueryMap SysOrgTreeQuery query);
 
-    /**
-     * Get organization children
-     *
-     * @param parentId parent organization ID
-     * @return children list
-     */
+    @Override
     @GetMapping("/children")
-    @Override
-    R<List<SysOrg>> children(@RequestParam Long parentId);
+    R<List<SysOrgVO>> children(@RequestParam("parentId") Long parentId);
 
-    /**
-     * Get organization by ID
-     *
-     * @param id organization ID
-     * @return organization
-     */
+    @Override
     @GetMapping("/detail")
-    @Override
-    R<SysOrg> getById(@RequestParam Long id);
+    R<SysOrgVO> getById(@RequestParam("id") Long id);
 
+    @Override
     @PostMapping
-    @Override
-    R<Long> create(@RequestBody CreateOrgCommand command);
+    R<Long> create(@RequestBody CreateSysOrgCommand command);
 
+    @Override
     @PutMapping
-    @Override
-    R<Void> update(@RequestBody UpdateOrgCommand command);
+    R<Boolean> update(@RequestBody UpdateSysOrgCommand command);
 
-    @PostMapping("/{orgId}/members")
     @Override
-    R<Void> addMember(@PathVariable Long orgId, @RequestBody AddOrgMemberCommand command);
+    @DeleteMapping
+    R<Boolean> delete(@RequestParam("id") Long id);
+
+    @Override
+    @GetMapping("/members")
+    R<List<OrgMemberVO>> members(@RequestParam("orgId") Long orgId);
+
+    @Override
+    @PostMapping("/members")
+    R<Boolean> addMember(@RequestBody AddOrgMemberCommand command);
+
+    @Override
+    @PutMapping("/members")
+    R<Boolean> updateMember(@RequestBody UpdateOrgMemberCommand command);
+
+    @Override
+    @DeleteMapping("/members")
+    R<Boolean> removeMember(@RequestParam("relationId") Long relationId);
+
+    @Override
+    @GetMapping("/leader")
+    R<List<Long>> leaderUserIds(@RequestParam("orgId") Long orgId);
 }

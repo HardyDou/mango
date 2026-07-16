@@ -1,8 +1,8 @@
 package io.mango.org.core.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import io.mango.org.api.entity.SysOrg;
 import io.mango.org.core.entity.PostEntity;
+import io.mango.org.core.entity.SysOrgEntity;
 import io.mango.org.core.mapper.PostMapper;
 import io.mango.org.core.mapper.SysOrgMapper;
 import io.mango.system.api.tenant.TenantDependencyChecker;
@@ -35,8 +35,8 @@ public class OrgTenantProvisioner implements TenantProvisioner, TenantDependency
 
     @Override
     public Optional<String> check(Long tenantId) {
-        Long orgCount = sysOrgMapper.selectCount(new LambdaQueryWrapper<SysOrg>()
-                .eq(SysOrg::getTenantId, tenantId));
+        Long orgCount = sysOrgMapper.selectCount(new LambdaQueryWrapper<SysOrgEntity>()
+                .eq(SysOrgEntity::getTenantId, tenantId));
         if (orgCount != null && orgCount > 0) {
             return Optional.of("机构已有组织架构数据，不能直接删除");
         }
@@ -49,13 +49,13 @@ public class OrgTenantProvisioner implements TenantProvisioner, TenantDependency
     }
 
     private void ensureRootOrg(TenantProvisionContext context) {
-        Long count = sysOrgMapper.selectCount(new LambdaQueryWrapper<SysOrg>()
-                .eq(SysOrg::getTenantId, context.tenantId())
-                .eq(SysOrg::getPid, 0L));
+        Long count = sysOrgMapper.selectCount(new LambdaQueryWrapper<SysOrgEntity>()
+                .eq(SysOrgEntity::getTenantId, context.tenantId())
+                .eq(SysOrgEntity::getPid, 0L));
         if (count != null && count > 0) {
             return;
         }
-        SysOrg root = new SysOrg();
+        SysOrgEntity root = new SysOrgEntity();
         root.setTenantId(context.tenantId());
         root.setPid(0L);
         root.setOrgName(context.tenantName());

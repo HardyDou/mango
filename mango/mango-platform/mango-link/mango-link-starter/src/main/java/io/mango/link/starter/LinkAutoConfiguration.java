@@ -12,6 +12,7 @@ import org.springframework.context.annotation.Configuration;
 @MapperScan(basePackages = "io.mango.link.core.mapper", annotationClass = Mapper.class)
 @ComponentScan({
         "io.mango.link.core.service",
+        "io.mango.link.core.integration",
         "io.mango.link.starter.controller"
 })
 public class LinkAutoConfiguration {

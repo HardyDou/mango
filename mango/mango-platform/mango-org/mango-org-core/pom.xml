@@ -37,12 +37,6 @@
             <version>${project.version}</version>
         </dependency>
 
-        <!-- API 访问权限声明注解 -->
-        <dependency>
-            <groupId>io.mango.platform.authorization</groupId>
-            <artifactId>mango-authorization-api</artifactId>
-        </dependency>
-
         <dependency>
             <groupId>io.mango.platform.system</groupId>
             <artifactId>mango-system-api</artifactId>
@@ -53,16 +47,6 @@
             <groupId>io.mango.platform.identity</groupId>
             <artifactId>mango-identity-api</artifactId>
             <version>${project.version}</version>
-        </dependency>
-
-        <!-- OpenAPI 注解仅用于 controller 文档展示 -->
-        <dependency>
-            <groupId>io.swagger.core.v3</groupId>
-            <artifactId>swagger-annotations</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springdoc</groupId>
-            <artifactId>springdoc-openapi-starter-webmvc-api</artifactId>
         </dependency>
 
         <!-- Lombok -->

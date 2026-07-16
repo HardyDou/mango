@@ -33,9 +33,9 @@ import io.mango.notice.core.mapper.NoticeRecipientAccountMapper;
 import io.mango.notice.core.mapper.NoticeWecomSyncMappingMapper;
 import io.mango.notice.core.service.INoticeWecomSyncService;
 import io.mango.org.api.command.AddOrgMemberCommand;
-import io.mango.org.api.command.CreateOrgCommand;
-import io.mango.org.api.command.UpdateOrgCommand;
-import io.mango.org.api.entity.SysOrg;
+import io.mango.org.api.command.CreateSysOrgCommand;
+import io.mango.org.api.command.UpdateSysOrgCommand;
+import io.mango.org.api.vo.SysOrgVO;
 import io.mango.org.api.query.SysOrgTreeQuery;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -226,7 +226,7 @@ public class NoticeWecomSyncService implements INoticeWecomSyncService {
 
  private Long resolveTargetRootOrgId(SyncWecomUsersCommand command) {
  if (command.getTargetOrgId() != null) {
- SysOrg targetOrg = getOrg(command.getTargetOrgId());
+ SysOrgVO targetOrg = getOrg(command.getTargetOrgId());
  if (targetOrg == null) {
  return Require.fail(NoticeCode.NOTICE_BUSINESS_ERROR, "同步目标组织不存在");
  }
@@ -256,7 +256,7 @@ public class NoticeWecomSyncService implements INoticeWecomSyncService {
  return null;
  }
  String hash = hashValues(department.name(), department.parentId(), department.order(), parentLocalId);
- SysOrg existing = mapping == null ? null : getOrg(mapping.getLocalId());
+ SysOrgVO existing = mapping == null ? null : getOrg(mapping.getLocalId());
  if (mapping != null && existing != null
  && Boolean.TRUE.equals(command.getSkipUnchanged()) && Objects.equals(mapping.getDataHash(), hash)) {
  result.setDepartmentSkippedCount(result.getDepartmentSkippedCount() + 1);
@@ -292,7 +292,7 @@ public class NoticeWecomSyncService implements INoticeWecomSyncService {
  SysOrgTreeQuery query = new SysOrgTreeQuery();
  query.setParentId(0L);
  query.setIncludeDisabled(true);
- NoticeRemoteResult<List<SysOrg>> response = orgGateway.tree(query);
+ NoticeRemoteResult<List<SysOrgVO>> response = orgGateway.tree(query);
  if (response == null || !response.isSuccess() || response.getData() == null || response.getData().isEmpty()) {
  return Require.fail(NoticeCode.NOTICE_BUSINESS_ERROR,
  response == null ? "未找到Mango根组织" : response.getMsg());
@@ -301,7 +301,7 @@ public class NoticeWecomSyncService implements INoticeWecomSyncService {
  }
 
  private Long createWecomOrg(WecomDepartment department, Long parentLocalId) {
- CreateOrgCommand create = new CreateOrgCommand();
+ CreateSysOrgCommand create = new CreateSysOrgCommand();
  create.setPid(parentLocalId);
  create.setOrgName(firstText(department.name(), "企业微信部门" + department.id()));
  create.setOrgCode(wecomDepartmentOrgCode(department.id()));
@@ -334,11 +334,12 @@ public class NoticeWecomSyncService implements INoticeWecomSyncService {
  return;
  }
  AddOrgMemberCommand addMember = new AddOrgMemberCommand();
+ addMember.setOrgId(orgId);
  addMember.setMemberId(detail.getMemberId());
  addMember.setPrimaryFlag(true);
  addMember.setLeaderFlag(false);
  try {
- NoticeRemoteResult<Void> response = orgGateway.addMember(orgId, addMember);
+ NoticeRemoteResult<Boolean> response = orgGateway.addMember(addMember);
  if (response == null || !response.isSuccess()) {
  String message = response == null ? "加入组织失败" : response.getMsg();
  if (!alreadyExistsMessage(message)) {
@@ -356,8 +357,8 @@ public class NoticeWecomSyncService implements INoticeWecomSyncService {
  return StringUtils.hasText(message) && (message.contains("已") || message.contains("exist"));
  }
 
- private void updateWecomOrg(SysOrg existing, WecomDepartment department, Long parentLocalId) {
- UpdateOrgCommand update = new UpdateOrgCommand();
+ private void updateWecomOrg(SysOrgVO existing, WecomDepartment department, Long parentLocalId) {
+ UpdateSysOrgCommand update = new UpdateSysOrgCommand();
  update.setId(existing.getId());
  update.setPid(parentLocalId);
  update.setOrgName(firstText(department.name(), existing.getOrgName()));
@@ -373,19 +374,19 @@ public class NoticeWecomSyncService implements INoticeWecomSyncService {
  update.setOrgType(orgType);
  update.setOrgSort(orgSort);
  update.setOrgStatus(firstText(existing.getOrgStatus(), "1"));
- NoticeRemoteResult<Void> response = orgGateway.update(update);
+ NoticeRemoteResult<Boolean> response = orgGateway.update(update);
  if (response == null || !response.isSuccess()) {
  Require.fail(NoticeCode.NOTICE_BUSINESS_ERROR,
  response == null ? "更新组织失败" : response.getMsg());
  }
  }
 
- private SysOrg getOrg(Long orgId) {
+ private SysOrgVO getOrg(Long orgId) {
  if (orgId == null) {
  return null;
  }
  try {
- NoticeRemoteResult<SysOrg> response = orgGateway.getById(orgId);
+ NoticeRemoteResult<SysOrgVO> response = orgGateway.getById(orgId);
  if (response == null || !response.isSuccess()) {
  return null;
  }

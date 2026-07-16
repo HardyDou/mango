@@ -354,10 +354,10 @@ public class AuthService implements IAuthService {
         response.setMemberId(resolveLong(tokenService.getClaim(token, "memberId"), null));
         response.setUsername(userInfo.getUsername());
         response.setNickname(userInfo.getNickname());
-        response.setRealm(userInfo.getRealm());
-        response.setActorType(userInfo.getActorType());
-        response.setPartyType(userInfo.getPartyType());
-        response.setPartyId(userInfo.getPartyId());
+        response.setRealm(firstText(tokenService.getClaim(token, "realm"), userInfo.getRealm()));
+        response.setActorType(firstText(tokenService.getClaim(token, "actorType"), userInfo.getActorType()));
+        response.setPartyType(firstText(tokenService.getClaim(token, "partyType"), userInfo.getPartyType()));
+        response.setPartyId(resolveLong(tokenService.getClaim(token, "partyId"), userInfo.getPartyId()));
         String appCode = tokenService.getClaim(token, "appCode");
         String tenantId = tokenService.getClaim(token, "tenantId");
         response.setTenantId(tenantId);

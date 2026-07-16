@@ -2,7 +2,7 @@ package io.mango.org.starter;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import io.mango.authorization.api.AuthorizationOrgReferenceProvider;
-import io.mango.org.api.entity.SysOrg;
+import io.mango.org.core.entity.SysOrgEntity;
 import io.mango.org.core.mapper.SysOrgMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -19,9 +19,9 @@ public class OrgAuthorizationReferenceProvider implements AuthorizationOrgRefere
         if (tenantId == null || orgCode == null || orgCode.isBlank()) {
             return null;
         }
-        SysOrg org = orgMapper.selectOne(new LambdaQueryWrapper<SysOrg>()
-                .eq(SysOrg::getTenantId, tenantId)
-                .eq(SysOrg::getOrgCode, orgCode.trim())
+        SysOrgEntity org = orgMapper.selectOne(new LambdaQueryWrapper<SysOrgEntity>()
+                .eq(SysOrgEntity::getTenantId, tenantId)
+                .eq(SysOrgEntity::getOrgCode, orgCode.trim())
                 .last("LIMIT 1"));
         return org == null ? null : org.getId();
     }

@@ -2,7 +2,7 @@ package io.mango.org.core.mapper;
 
 import com.baomidou.mybatisplus.annotation.InterceptorIgnore;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import io.mango.org.api.entity.SysOrg;
+import io.mango.org.core.entity.SysOrgEntity;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -12,7 +12,7 @@ import org.apache.ibatis.annotations.Param;
  * @author Mango
  */
 @Mapper
-public interface SysOrgMapper extends BaseMapper<SysOrg> {
+public interface SysOrgMapper extends BaseMapper<SysOrgEntity> {
 
     @InterceptorIgnore(tenantLine = "true")
     Long selectIdByTenantAndCode(@Param("tenantId") Long tenantId, @Param("orgCode") String orgCode);

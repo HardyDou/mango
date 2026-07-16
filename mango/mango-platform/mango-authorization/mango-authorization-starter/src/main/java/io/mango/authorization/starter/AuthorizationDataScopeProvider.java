@@ -12,7 +12,7 @@ import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.infra.persistence.api.scope.DataScopeProvider;
 import io.mango.infra.persistence.api.scope.DataScopeRule;
 import io.mango.org.api.SysOrgApi;
-import io.mango.org.api.entity.SysOrg;
+import io.mango.org.api.vo.SysOrgVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.util.StringUtils;
@@ -92,11 +92,11 @@ public class AuthorizationDataScopeProvider implements DataScopeProvider {
         if (sysOrgApi == null) {
             throw new IllegalStateException("SysOrgApi is required for SELF_ORG_AND_CHILDREN data scope.");
         }
-        R<List<SysOrg>> response = sysOrgApi.children(parentId);
+        R<List<SysOrgVO>> response = sysOrgApi.children(parentId);
         if (response == null || !response.isSuccess() || response.getData() == null) {
             return;
         }
-        for (SysOrg child : response.getData()) {
+        for (SysOrgVO child : response.getData()) {
             if (child == null || child.getId() == null) {
                 continue;
             }
