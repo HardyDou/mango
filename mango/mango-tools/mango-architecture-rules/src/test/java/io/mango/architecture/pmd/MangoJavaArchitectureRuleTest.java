@@ -1199,7 +1199,7 @@ class MangoJavaArchitectureRuleTest {
     }
 
     @Test
-    void serviceImplNamingAndDirectThrowAreRejected() {
+    void serviceImplDirectThrowAndRequireAreRejected() {
         Report report = analyze("example/OrderServiceImpl.java", """
                 package example;
                 final class OrderServiceImpl {
@@ -1208,9 +1208,19 @@ class MangoJavaArchitectureRuleTest {
                 """);
 
         assertThat(messages(report)).containsExactlyInAnyOrder(
-                "MANGO-ARCH-SVC-005 Service implementation must be named XxxService, not XxxServiceImpl",
                 "MANGO-ARCH-SVC-004 business action requires a Require precondition",
                 "MANGO-ARCH-SVC-006 Service business failures must use Require, not throw directly");
+    }
+
+    @Test
+    void serviceImplNameIsAllowedWhenNoOtherServiceViolations() {
+        Report report = analyze("example/OrderServiceImpl.java", """
+                package example;
+                final class OrderServiceImpl {}
+                """);
+
+        assertThat(messages(report)).isEmpty();
+        assertThat(report.getProcessingErrors()).isEmpty();
     }
 
     @Test

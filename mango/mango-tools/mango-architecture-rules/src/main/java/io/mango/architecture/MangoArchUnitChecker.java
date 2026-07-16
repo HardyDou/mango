@@ -1515,19 +1515,15 @@ public final class MangoArchUnitChecker {
     private void checkServiceNaming(JavaClass javaClass, List<ArchitectureIssue> issues) {
         boolean implementsServiceContract =
                 javaClass.getAllRawInterfaces().stream().anyMatch(this::isServiceContract);
-        if (javaClass.getSimpleName().endsWith(SERVICE_IMPL_SUFFIX)) {
+        if (implementsServiceContract
+                && !javaClass.getSimpleName().endsWith(SERVICE_SUFFIX)
+                && !javaClass.getSimpleName().endsWith(SERVICE_IMPL_SUFFIX)) {
             add(
                     issues,
                     "MANGO-ARCH-SVC-005",
                     javaClass,
-                    "Service implementation must be named XxxService, not XxxServiceImpl");
-        } else if (implementsServiceContract
-                && !javaClass.getSimpleName().endsWith(SERVICE_SUFFIX)) {
-            add(
-                    issues,
-                    "MANGO-ARCH-SVC-005",
-                    javaClass,
-                    "IXxxService implementation must be named XxxService");
+                    "IXxxService implementation should be named XxxService; XxxServiceImpl is"
+                            + " acceptable");
         }
         if (hasServiceClassName(javaClass) && !implementsNamedService(javaClass)) {
             add(issues, "MANGO-ARCH-TYPE-005", javaClass, "XxxService must implement IXxxService");
