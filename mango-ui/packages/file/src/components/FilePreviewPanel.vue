@@ -10,7 +10,12 @@
         <el-button link type="primary" @click="openDownload">
           下载
         </el-button>
-        <el-button v-if="canOpenInNewWindow" link type="primary" @click="openPreviewInNewWindow">
+        <el-button
+          link
+          type="primary"
+          :disabled="!canOpenInNewWindow"
+          @click="openPreviewInNewWindow"
+        >
           新窗口预览
         </el-button>
       </div>
@@ -254,11 +259,13 @@ defineExpose({
   gap: 12px;
   height: var(--mango-file-preview-panel-height, auto);
   min-height: var(--mango-file-preview-panel-min-height, 0);
+  overflow: hidden;
 }
 
 .preview-stage {
   flex: 1 1 auto;
   min-height: var(--mango-file-preview-stage-min-height, 220px);
+  height: var(--mango-file-preview-stage-height, auto);
   border: 1px solid var(--el-border-color-light);
   border-radius: 8px;
   background: var(--el-fill-color-lighter);
@@ -295,8 +302,10 @@ defineExpose({
 
 .preview-frame {
   width: 100%;
-  height: var(--mango-file-preview-content-height, 420px);
+  height: var(--mango-file-preview-content-height, 100%);
+  min-height: var(--mango-file-preview-content-min-height, 420px);
   flex: 1 1 auto;
+  align-self: stretch;
   border: 0;
   display: block;
   background: #fff;

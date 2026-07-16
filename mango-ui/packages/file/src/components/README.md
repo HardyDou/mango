@@ -36,8 +36,8 @@ Issue #411 的布局优化目标是 `FilePreviewPanel` 及文件管理页承载�
 
 - 外层弹框负责业务标题、文件名、版本、确认/取消等业务动作。
 - `FilePreviewPanel` 负责文件展示、下载和新窗口预览。
-- 外层弹框如果隐藏 `FilePreviewPanel` 自带操作区，需接管并透传下载、新窗口预览能力，避免只保留部分按钮。
-- 弹框宽高、小屏适配和内容区高度与 `FilePreviewPanel` 的 CSS 变量配合，例如设置 `--mango-file-preview-panel-height`、`--mango-file-preview-content-height`。
+- 外层弹框如果隐藏 `FilePreviewPanel` 自带操作区，需接管并透传下载、新窗口预览能力，避免只保留部分按钮；没有可用预览地址时，新窗口预览按钮保持渲染但处于禁用态。
+- 弹框宽高、小屏适配和内容区高度与 `FilePreviewPanel` 的 CSS 变量配合，例如设置 `--mango-file-preview-panel-height`、`--mango-file-preview-content-height` 和 `--mango-file-preview-content-min-height`。
 - 业务页面把可展示预览地址传入预览内容区；`/file/files/download` 用于下载动作。
 
 ## 3. 接入方式
@@ -242,5 +242,6 @@ const fileIds = ref<string[]>([]);
   下载按钮不再由前端角色权限码决定是否显示，组件只在存在可下载文件时显示操作，后端继续校验登录态、文件状态、
   访问级别、租户和业务归属。
 - `FilePreviewPanel` 可通过 `--mango-file-preview-panel-height`、
-  `--mango-file-preview-stage-min-height` 和 `--mango-file-preview-content-height` 适配外层弹框高度。文件管理页
+  `--mango-file-preview-stage-min-height`、`--mango-file-preview-content-height` 和
+  `--mango-file-preview-content-min-height` 适配外层弹框高度。文件管理页
   使用响应式预览弹框；业务详情页仍可直接按原有方式使用 `<FilePreviewPanel :file-id="fileId" />`。
