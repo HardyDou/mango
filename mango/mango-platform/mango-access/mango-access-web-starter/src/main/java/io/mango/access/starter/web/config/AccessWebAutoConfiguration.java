@@ -7,6 +7,7 @@ import io.mango.access.core.auth.AccessEvaluator;
 import io.mango.access.core.config.AccessProperties;
 import io.mango.access.starter.web.filter.AuthFilter;
 import io.mango.authorization.api.ITokenProvider;
+import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
@@ -14,22 +15,17 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import java.util.function.Supplier;
-
 /**
  * 边界入口单体模式配置。
  *
  * @author Mango
  */
 @Configuration
+@RequiredArgsConstructor
 @EnableConfigurationProperties(AccessProperties.class)
 public class AccessWebAutoConfiguration {
 
-    private final Supplier<AccessProperties> properties;
-
-    public AccessWebAutoConfiguration(AccessProperties properties) {
-        this.properties = () -> properties;
-    }
+    private final AccessProperties properties;
 
     @Bean
     @ConditionalOnMissingBean
@@ -38,7 +34,7 @@ public class AccessWebAutoConfiguration {
             ApiResourceApi apiResourceApi,
             IAuthorizationProvider authorizationProvider,
             ObjectProvider<AccessContextValidator> contextValidators) {
-        return new AccessEvaluator(properties.get(), tokenService, apiResourceApi, authorizationProvider,
+        return new AccessEvaluator(properties, tokenService, apiResourceApi, authorizationProvider,
                 contextValidators.orderedStream().toList());
     }
 

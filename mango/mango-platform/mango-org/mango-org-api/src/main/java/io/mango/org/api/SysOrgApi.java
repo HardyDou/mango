@@ -5,7 +5,6 @@ import io.mango.org.api.command.AddOrgMemberCommand;
 import io.mango.org.api.command.CreateSysOrgCommand;
 import io.mango.org.api.command.UpdateSysOrgCommand;
 import io.mango.org.api.command.UpdateOrgMemberCommand;
-import io.mango.org.api.entity.SysOrg;
 import io.mango.org.api.query.SysOrgTreeQuery;
 import io.mango.org.api.vo.OrgMemberVO;
 import io.mango.org.api.vo.SysOrgVO;
@@ -27,7 +26,7 @@ public interface SysOrgApi {
     R<List<SysOrgVO>> children(
             @NotNull(message = "父级组织ID不能为空") Long parentId);
 
-    R<SysOrg> getById(
+    R<SysOrgVO> getById(
             @NotNull(message = "组织ID不能为空")
             @Positive(message = "组织ID必须大于0") Long id);
 

@@ -8,7 +8,6 @@ import io.mango.org.api.SysOrgApi;
 import io.mango.org.api.command.AddOrgMemberCommand;
 import io.mango.org.api.command.CreateSysOrgCommand;
 import io.mango.org.api.command.UpdateSysOrgCommand;
-import io.mango.org.api.entity.SysOrg;
 import io.mango.org.api.command.UpdateOrgMemberCommand;
 import io.mango.org.api.query.SysOrgTreeQuery;
 import io.mango.org.api.vo.OrgMemberVO;
@@ -17,6 +16,7 @@ import io.mango.org.core.service.ISysOrgService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -29,29 +29,25 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
-import java.util.function.Supplier;
 
 /**
  * 组织管理 HTTP 适配器。
  */
 @RestController
 @RequestMapping("/org")
+@RequiredArgsConstructor
 @Validated
 @Tag(name = "组织管理", description = "组织树、组织维护、成员关系与负责人查询接口")
 public class SysOrgController implements SysOrgApi {
 
-    private final Supplier<ISysOrgService> orgService;
-
-    public SysOrgController(ISysOrgService orgService) {
-        this.orgService = () -> orgService;
-    }
+    private final ISysOrgService orgService;
 
     @Override
     @GetMapping("/tree")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:org:list")
     @Operation(summary = "获取组织树", description = "按父级、组织类型和启用状态查询组织树")
     public R<List<SysOrgVO>> tree(@ParameterObject SysOrgTreeQuery query) {
-        return R.ok(orgService().tree(query));
+        return R.ok(orgService.tree(query));
     }
 
     @Override
@@ -61,17 +57,17 @@ public class SysOrgController implements SysOrgApi {
     public R<List<SysOrgVO>> children(
             @Parameter(description = "父级组织ID", required = true)
             @RequestParam("parentId") Long parentId) {
-        return R.ok(orgService().children(parentId));
+        return R.ok(orgService.children(parentId));
     }
 
     @Override
     @GetMapping("/detail")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:org:query")
     @Operation(summary = "获取组织详情", description = "按组织ID查询组织详情")
-    public R<SysOrg> getById(
+    public R<SysOrgVO> getById(
             @Parameter(description = "组织ID", required = true)
             @RequestParam("id") Long id) {
-        return R.ok(SysOrg.from(orgService().detail(id)));
+        return R.ok(orgService.detail(id));
     }
 
     @Override
@@ -79,7 +75,7 @@ public class SysOrgController implements SysOrgApi {
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:org:add")
     @Operation(summary = "新增组织", description = "在当前租户内创建组织")
     public R<Long> create(@RequestBody CreateSysOrgCommand command) {
-        return R.ok(orgService().create(command));
+        return R.ok(orgService.create(command));
     }
 
     @Override
@@ -87,7 +83,7 @@ public class SysOrgController implements SysOrgApi {
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:org:edit")
     @Operation(summary = "修改组织", description = "更新当前租户内的组织")
     public R<Boolean> update(@RequestBody UpdateSysOrgCommand command) {
-        return R.ok(orgService().update(command));
+        return R.ok(orgService.update(command));
     }
 
     @Override
@@ -99,7 +95,7 @@ public class SysOrgController implements SysOrgApi {
             @RequestParam("id") Long id) {
         DeleteCommand command = new DeleteCommand();
         command.setId(id);
-        return R.ok(orgService().delete(command));
+        return R.ok(orgService.delete(command));
     }
 
     @Override
@@ -109,7 +105,7 @@ public class SysOrgController implements SysOrgApi {
     public R<List<OrgMemberVO>> members(
             @Parameter(description = "组织ID", required = true)
             @RequestParam("orgId") Long orgId) {
-        return R.ok(orgService().members(orgId));
+        return R.ok(orgService.members(orgId));
     }
 
     @Override
@@ -117,7 +113,7 @@ public class SysOrgController implements SysOrgApi {
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:org:edit")
     @Operation(summary = "添加组织成员", description = "将机构成员加入组织并设置岗位")
     public R<Boolean> addMember(@RequestBody AddOrgMemberCommand command) {
-        return R.ok(orgService().addMember(command));
+        return R.ok(orgService.addMember(command));
     }
 
     @Override
@@ -125,7 +121,7 @@ public class SysOrgController implements SysOrgApi {
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:org:edit")
     @Operation(summary = "修改组织成员关系", description = "调整组织成员岗位、主组织或负责人标志")
     public R<Boolean> updateMember(@RequestBody UpdateOrgMemberCommand command) {
-        return R.ok(orgService().updateMember(command));
+        return R.ok(orgService.updateMember(command));
     }
 
     @Override
@@ -135,7 +131,7 @@ public class SysOrgController implements SysOrgApi {
     public R<Boolean> removeMember(
             @Parameter(description = "组织成员关系ID", required = true)
             @RequestParam("relationId") Long relationId) {
-        return R.ok(orgService().removeMember(relationId));
+        return R.ok(orgService.removeMember(relationId));
     }
 
     @Override
@@ -145,10 +141,6 @@ public class SysOrgController implements SysOrgApi {
     public R<List<Long>> leaderUserIds(
             @Parameter(description = "组织ID", required = true)
             @RequestParam("orgId") Long orgId) {
-        return R.ok(orgService().leaderUserIds(orgId));
-    }
-
-    private ISysOrgService orgService() {
-        return orgService.get();
+        return R.ok(orgService.leaderUserIds(orgId));
     }
 }
