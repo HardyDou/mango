@@ -26,12 +26,14 @@ Resource 不执行 SQL 文件，不做 Data Package/task 编排，不负责在�
 
 | 模块 | 职责 |
 |------|------|
-| `mango-resource-api` | 对外契约，包含 `ResourceProvider`、`ResourceHandler`、`ResourceDeclaration`、`ResourceRegistryApi`、资源类型和字段模型。 |
-| `mango-resource-support` | 声明文件加载、声明采集和配置绑定。 |
+| `mango-resource-api` | 严格 HTTP 契约，包含注册、管理、目标执行 API 及 Command/Query/VO/错误码；不承载本地动态 SPI。 |
+| `mango-resource-support` | 本地 Java SPI 和声明模型，包含 `ResourceProvider`、`ResourceHandler`、声明文件加载、采集和配置绑定。 |
 | `mango-resource-core` | 本地注册中心核心逻辑，负责同步编排、hash 比对、锁、注册表、同步日志和变更日志。 |
 | `mango-resource-starter` | 本地资源注册中心 starter，装配 core、Mapper 和 `/resource/**` 管理接口。 |
+| `mango-resource-target-core` | 目标资源本地执行核心，按资源类型调度本应用的 `ResourceHandler`。 |
+| `mango-resource-target-starter` | 目标端 HTTP 入口，提供 `/resource/targets/**` 内部接口。 |
 | `mango-resource-sync-starter` | 资源声明扫描和上报 runner，汇总文件声明和 Java Provider 后调用 `ResourceRegistryApi`。 |
-| `mango-resource-starter-remote` | 微服务远程适配 starter，提供 `ResourceRegistryApi` Feign 实现。 |
+| `mango-resource-starter-remote` | 微服务远程客户端适配，提供注册上报 Feign 实现和动态目标地址客户端；不承载服务端 Controller。 |
 
 ## 3. 功能清单
 
@@ -45,14 +47,16 @@ Resource 不执行 SQL 文件，不做 Data Package/task 编排，不负责在�
 
 ## 4. 接入方式
 
-开发期只依赖 API：
+实现本地 `ResourceProvider`、`ResourceHandler` 或构造资源声明的模块依赖 support：
 
 ```xml
 <dependency>
     <groupId>io.mango.platform.resource</groupId>
-    <artifactId>mango-resource-api</artifactId>
+    <artifactId>mango-resource-support</artifactId>
 </dependency>
 ```
+
+只有调用严格 HTTP 契约或使用 Command/Query/VO 的模块才直接依赖 `mango-resource-api`。
 
 本地提供资源注册中心的应用依赖：
 
@@ -80,9 +84,13 @@ Resource 不执行 SQL 文件，不做 Data Package/task 编排，不负责在�
     <groupId>io.mango.platform.resource</groupId>
     <artifactId>mango-resource-sync-starter</artifactId>
 </dependency>
+<dependency>
+    <groupId>io.mango.platform.resource</groupId>
+    <artifactId>mango-resource-target-starter</artifactId>
+</dependency>
 ```
 
-普通业务模块和公共能力模块不得依赖 `mango-resource-core`、`mango-resource-starter`、`mango-resource-sync-starter` 或 `mango-resource-starter-remote`；部署应用按拓扑选择 starter。
+普通业务模块和公共能力模块不得依赖 `mango-resource-core`、`mango-resource-target-core` 或部署 starter；它们通过 `mango-resource-support` 声明 Provider/Handler，最终应用按拓扑选择 starter。
 
 ### 4.1 业务部署拓扑
 
@@ -90,9 +98,9 @@ Resource 不执行 SQL 文件，不做 Data Package/task 编排，不负责在�
 |----------|----------|------|
 | 官方单体 | `mango-admin-starter` | 已包含本地 Resource Registry runtime 和声明同步入口。 |
 | 自定义单体 | `mango-resource-starter` + `mango-resource-sync-starter` | 同一 JVM 内采集声明、写 registry、调用本地 handler。 |
-| Resource 能力服务 | `mango-resource-starter` | 作为远程注册中心和 target dispatch 入口。 |
-| 普通微服务或能力 app | `mango-resource-starter-remote` + `mango-resource-sync-starter` | 只采集本服务声明并远程上报。 |
-| 目标资源服务 | 本模块 starter + 远程 target controller | 消费跨服务分发过来的目标资源批次。 |
+| Resource 能力服务 | `mango-resource-starter` + `mango-resource-starter-remote` | 作为远程注册中心，并通过动态目标客户端向其它能力服务分发。 |
+| 普通微服务或能力 app | `mango-resource-starter-remote` + `mango-resource-sync-starter` + `mango-resource-target-starter` | 采集本服务声明并远程上报，同时为本服务 Handler 提供目标执行入口。 |
+| 仅目标资源服务 | 本模块业务 starter + `mango-resource-target-starter` | 消费跨服务分发的目标资源批次，不承担注册上报。 |
 
 业务 `core`、`support`、普通 starter 模块只声明资源或实现 handler，不直接选择部署拓扑。是否本地同步或远程上报由最终 app 决定。
 

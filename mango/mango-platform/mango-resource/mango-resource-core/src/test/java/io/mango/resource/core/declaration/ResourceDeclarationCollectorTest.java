@@ -1,7 +1,7 @@
 package io.mango.resource.core.declaration;
 
-import io.mango.resource.api.ResourceProvider;
-import io.mango.resource.api.model.ResourceDeclaration;
+import io.mango.resource.support.ResourceProvider;
+import io.mango.resource.support.model.ResourceDeclaration;
 import io.mango.resource.support.declaration.ResourceDeclarationCollector;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.ObjectProvider;

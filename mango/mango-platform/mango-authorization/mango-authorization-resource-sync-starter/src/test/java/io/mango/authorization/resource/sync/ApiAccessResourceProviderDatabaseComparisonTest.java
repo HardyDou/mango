@@ -19,7 +19,7 @@ import io.mango.authorization.core.service.impl.ApiResourceService;
 import io.mango.authorization.starter.resource.ApiResourceHandler;
 import io.mango.common.result.R;
 import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguration;
-import io.mango.resource.api.ResourceProvider;
+import io.mango.resource.support.ResourceProvider;
 import io.mango.resource.api.enums.ResourceSyncMode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

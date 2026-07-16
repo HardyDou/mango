@@ -1,22 +1,25 @@
 package io.mango.notice.core.resource;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import io.mango.infra.context.api.MangoContextHolder;
+import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.notice.api.enums.NoticeChannelConfigStatus;
 import io.mango.notice.api.enums.NoticeChannelSendHealthStatus;
 import io.mango.notice.api.enums.NoticeChannelType;
 import io.mango.notice.core.entity.NoticeChannelConfigEntity;
 import io.mango.notice.core.mapper.NoticeChannelConfigMapper;
-import io.mango.resource.api.ResourceHandler;
-import io.mango.resource.api.ResourceTypes;
-import io.mango.resource.api.model.ResourceDeclaration;
-import io.mango.resource.api.model.ResourceField;
-import io.mango.resource.api.model.ResourceHandlerSpec;
-import io.mango.resource.api.model.ResourceSyncResult;
+import io.mango.resource.support.ResourceHandler;
+import io.mango.resource.support.ResourceTypes;
+import io.mango.resource.support.model.ResourceDeclaration;
+import io.mango.resource.support.model.ResourceField;
+import io.mango.resource.support.model.ResourceHandlerSpec;
+import io.mango.resource.support.model.ResourceSyncResult;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
+import java.util.function.Supplier;
 
 /**
  * 通知渠道资源处理器。
@@ -60,6 +63,10 @@ public class NoticeChannelResourceHandler implements ResourceHandler {
     @Override
     public ResourceSyncResult upsert(ResourceDeclaration resource) {
         ChannelPayload payload = ChannelPayload.from(resource);
+        return withTenant(payload.tenantId(), () -> upsertInTenant(payload));
+    }
+
+    private ResourceSyncResult upsertInTenant(ChannelPayload payload) {
         NoticeChannelConfigEntity entity = find(payload.tenantId(), payload.channelType(), payload.providerCode());
         if (entity == null) {
             entity = new NoticeChannelConfigEntity();
@@ -79,6 +86,11 @@ public class NoticeChannelResourceHandler implements ResourceHandler {
 
     @Override
     public ResourceSyncResult disable(ResourceDeclaration resource) {
+        String tenantId = defaultText(fieldText(resource, "tenantId", false), DEFAULT_TENANT_ID);
+        return withTenant(tenantId, () -> disableInTenant(resource));
+    }
+
+    private ResourceSyncResult disableInTenant(ResourceDeclaration resource) {
         NoticeChannelConfigEntity entity = resolve(resource);
         if (entity == null) {
             return ResourceSyncResult.of(null, TARGET_TABLE, "Notice channel not found");
@@ -92,6 +104,11 @@ public class NoticeChannelResourceHandler implements ResourceHandler {
 
     @Override
     public ResourceSyncResult delete(ResourceDeclaration resource) {
+        String tenantId = defaultText(fieldText(resource, "tenantId", false), DEFAULT_TENANT_ID);
+        return withTenant(tenantId, () -> deleteInTenant(resource));
+    }
+
+    private ResourceSyncResult deleteInTenant(ResourceDeclaration resource) {
         NoticeChannelConfigEntity entity = resolve(resource);
         if (entity == null) {
             return ResourceSyncResult.of(null, TARGET_TABLE, "Notice channel not found");
@@ -143,6 +160,16 @@ public class NoticeChannelResourceHandler implements ResourceHandler {
                 .eq(NoticeChannelConfigEntity::getChannelType, channelType)
                 .eq(NoticeChannelConfigEntity::getProviderCode, providerCode)
                 .last("limit 1"));
+    }
+
+    private <T> T withTenant(String tenantId, Supplier<T> action) {
+        MangoContextSnapshot previous = MangoContextHolder.get();
+        try {
+            MangoContextHolder.set(previous.withTenantId(tenantId));
+            return action.get();
+        } finally {
+            MangoContextHolder.set(previous);
+        }
     }
 
     private record ChannelPayload(Long channelConfigId, String tenantId, NoticeChannelType channelType,

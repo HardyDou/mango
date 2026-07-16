@@ -15,11 +15,15 @@ CREATE TABLE IF NOT EXISTS `resource_registry` (
   `sync_mode` varchar(32) NOT NULL DEFAULT 'AUTO' COMMENT '同步模式',
   `status` varchar(32) NOT NULL DEFAULT 'ACTIVE' COMMENT '资源状态',
   `last_sync_time` datetime DEFAULT NULL COMMENT '最后同步时间',
+  `tenant_id` varchar(64) DEFAULT NULL COMMENT '租户标识',
+  `org_id` bigint DEFAULT NULL COMMENT '组织标识',
+  `created_by` bigint DEFAULT NULL COMMENT '创建人ID',
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_by` bigint DEFAULT NULL COMMENT '更新人ID',
   `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_resource_registry_resource_id` (`resource_id`),
-  UNIQUE KEY `uk_resource_registry_type_biz_key` (`resource_type`, `biz_key`),
+  UNIQUE KEY `uk_resource_registry_resource_id` (`tenant_id`, `resource_id`),
+  UNIQUE KEY `uk_resource_registry_type_biz_key` (`tenant_id`, `resource_type`, `biz_key`),
   KEY `idx_resource_registry_module` (`module_code`),
   KEY `idx_resource_registry_source_module` (`app_code`, `service_code`, `module_code`),
   KEY `idx_resource_registry_target` (`target_module`, `target_table`, `target_id`)
@@ -31,7 +35,12 @@ CREATE TABLE IF NOT EXISTS `resource_sync_log` (
   `sync_type` varchar(32) NOT NULL COMMENT '同步类型',
   `result` varchar(32) NOT NULL COMMENT '同步结果',
   `message` text DEFAULT NULL COMMENT '结果说明',
+  `tenant_id` varchar(64) DEFAULT NULL COMMENT '租户标识',
+  `org_id` bigint DEFAULT NULL COMMENT '组织标识',
+  `created_by` bigint DEFAULT NULL COMMENT '创建人ID',
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_by` bigint DEFAULT NULL COMMENT '更新人ID',
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`),
   KEY `idx_resource_sync_log_resource` (`resource_id`, `created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='资源同步日志';
@@ -43,7 +52,12 @@ CREATE TABLE IF NOT EXISTS `resource_change_log` (
   `operator_id` bigint DEFAULT NULL COMMENT '操作人ID，启动同步为0',
   `before_content` json DEFAULT NULL COMMENT '变更前内容',
   `after_content` json DEFAULT NULL COMMENT '变更后内容',
+  `tenant_id` varchar(64) DEFAULT NULL COMMENT '租户标识',
+  `org_id` bigint DEFAULT NULL COMMENT '组织标识',
+  `created_by` bigint DEFAULT NULL COMMENT '创建人ID',
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_by` bigint DEFAULT NULL COMMENT '更新人ID',
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`),
   KEY `idx_resource_change_log_resource` (`resource_id`, `created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='资源变更日志';

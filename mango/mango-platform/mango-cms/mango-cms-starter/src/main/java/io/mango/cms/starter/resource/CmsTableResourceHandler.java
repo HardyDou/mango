@@ -5,11 +5,11 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.cms.core.entity.CmsBaseTenantEntity;
-import io.mango.resource.api.ResourceHandler;
-import io.mango.resource.api.model.ResourceDeclaration;
-import io.mango.resource.api.model.ResourceField;
-import io.mango.resource.api.model.ResourceHandlerSpec;
-import io.mango.resource.api.model.ResourceSyncResult;
+import io.mango.resource.support.ResourceHandler;
+import io.mango.resource.support.model.ResourceDeclaration;
+import io.mango.resource.support.model.ResourceField;
+import io.mango.resource.support.model.ResourceHandlerSpec;
+import io.mango.resource.support.model.ResourceSyncResult;
 import org.springframework.util.StringUtils;
 
 import java.util.LinkedHashMap;

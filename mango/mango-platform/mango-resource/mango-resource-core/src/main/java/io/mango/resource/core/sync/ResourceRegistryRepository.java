@@ -2,7 +2,7 @@ package io.mango.resource.core.sync;
 
 import com.baomidou.mybatisplus.core.toolkit.IdWorker;
 import io.mango.resource.api.enums.ResourceSyncMode;
-import io.mango.resource.api.model.ResourceDeclaration;
+import io.mango.resource.support.model.ResourceDeclaration;
 import io.mango.resource.core.entity.ResourceChangeLogEntity;
 import io.mango.resource.core.entity.ResourceRegistryEntity;
 import io.mango.resource.core.entity.ResourceSyncLogEntity;

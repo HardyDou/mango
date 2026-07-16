@@ -3,8 +3,8 @@ package io.mango.job.starter.resource;
 import io.mango.notice.api.enums.NoticePriority;
 import io.mango.notice.support.resource.NoticeMessageTemplateResourceDeclarations;
 import io.mango.notice.support.resource.NoticeMessageTemplateResourceDeclarations.MessageTemplateSpec;
-import io.mango.resource.api.ResourceProvider;
-import io.mango.resource.api.model.ResourceDeclaration;
+import io.mango.resource.support.ResourceProvider;
+import io.mango.resource.support.model.ResourceDeclaration;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;

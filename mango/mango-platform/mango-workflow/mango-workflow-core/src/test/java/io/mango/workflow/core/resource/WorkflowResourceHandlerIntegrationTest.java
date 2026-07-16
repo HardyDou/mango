@@ -8,11 +8,11 @@ import io.mango.common.vo.PageResult;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguration;
-import io.mango.resource.api.ResourceTypes;
+import io.mango.resource.support.ResourceTypes;
 import io.mango.resource.api.enums.ResourceFieldType;
-import io.mango.resource.api.model.ResourceDeclaration;
-import io.mango.resource.api.model.ResourceField;
-import io.mango.resource.api.model.ResourceSyncResult;
+import io.mango.resource.support.model.ResourceDeclaration;
+import io.mango.resource.support.model.ResourceField;
+import io.mango.resource.support.model.ResourceSyncResult;
 import io.mango.workflow.api.command.EnsureWorkflowDefinitionCommand;
 import io.mango.workflow.api.command.SaveWorkflowDefinitionCommand;
 import io.mango.workflow.api.command.UpdateWorkflowDefinitionStatusCommand;
@@ -290,7 +290,7 @@ class WorkflowResourceHandlerIntegrationTest {
         ResourceField field = new ResourceField();
         field.setType(type);
         field.setValue(value);
-        declaration.getFields().put(name, field);
+        declaration.putField(name, field);
     }
 
     private void fileField(ResourceDeclaration declaration, String name, String location) {
@@ -299,7 +299,7 @@ class WorkflowResourceHandlerIntegrationTest {
         field.setLocation(location);
         field.setEncoding("UTF-8");
         field.setMediaType("application/json");
-        declaration.getFields().put(name, field);
+        declaration.putField(name, field);
     }
 
     private void rebuildTables() throws Exception {

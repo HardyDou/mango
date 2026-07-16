@@ -1,13 +1,11 @@
 package io.mango.resource.starter.remote;
 
 import io.mango.infra.feign.starter.ModuleTargetResolver;
-import io.mango.resource.api.ResourceHandler;
-import io.mango.resource.api.ResourceTargetDispatcher;
-import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import io.mango.resource.support.ResourceTargetDispatcher;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.client.RestClient;
 
 /**
  * 资源注册中心远程自动配置。
@@ -18,14 +16,14 @@ public class ResourceRemoteAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public ResourceTargetDispatcher resourceTargetDispatcher(ModuleTargetResolver moduleTargetResolver,
-                                                             ResourceTargetFeignClient targetFeignClient) {
-        return new RemoteResourceTargetDispatcher(moduleTargetResolver, targetFeignClient);
+                                                             ResourceTargetClient targetClient,
+                                                             com.fasterxml.jackson.databind.ObjectMapper objectMapper) {
+        return new RemoteResourceTargetDispatcher(moduleTargetResolver, targetClient, objectMapper);
     }
 
     @Bean
-    @ConditionalOnBean(ResourceHandler.class)
     @ConditionalOnMissingBean
-    public ResourceTargetController resourceTargetController(ObjectProvider<ResourceHandler> handlers) {
-        return new ResourceTargetController(handlers);
+    public ResourceTargetClient resourceTargetHttpClient(RestClient.Builder restClientBuilder) {
+        return new ResourceTargetHttpClient(restClientBuilder.build());
     }
 }

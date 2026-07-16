@@ -4,10 +4,10 @@ import io.mango.authorization.api.command.MenuPackageCommand;
 import io.mango.authorization.api.query.MenuPackageQuery;
 import io.mango.authorization.api.vo.MenuPackageVO;
 import io.mango.authorization.core.service.IMenuPackageService;
-import io.mango.resource.api.ResourceTypes;
+import io.mango.resource.support.ResourceTypes;
 import io.mango.resource.api.enums.ResourceFieldType;
-import io.mango.resource.api.model.ResourceDeclaration;
-import io.mango.resource.api.model.ResourceField;
+import io.mango.resource.support.model.ResourceDeclaration;
+import io.mango.resource.support.model.ResourceField;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
@@ -78,6 +78,6 @@ class AuthMenuPackageResourceHandlerTest {
         ResourceField field = new ResourceField();
         field.setType(type);
         field.setValue(value);
-        resource.getFields().put(name, field);
+        resource.putField(name, field);
     }
 }

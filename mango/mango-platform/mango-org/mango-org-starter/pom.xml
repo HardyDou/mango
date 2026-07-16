@@ -17,6 +17,11 @@
     <description>Mango Org Module - Starter with auto configuration</description>
 
     <dependencies>
+        <dependency>
+            <groupId>io.mango.platform.resource</groupId>
+            <artifactId>mango-resource-support</artifactId>
+            <version>${project.version}</version>
+        </dependency>
         <!-- Mango Org Core -->
         <dependency>
             <groupId>io.mango.platform.org</groupId>

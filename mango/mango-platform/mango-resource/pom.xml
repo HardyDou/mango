@@ -22,7 +22,21 @@
         <module>mango-resource-support</module>
         <module>mango-resource-core</module>
         <module>mango-resource-starter</module>
+        <module>mango-resource-target-core</module>
+        <module>mango-resource-target-starter</module>
         <module>mango-resource-sync-starter</module>
         <module>mango-resource-starter-remote</module>
     </modules>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>com.github.spotbugs</groupId>
+                <artifactId>spotbugs-maven-plugin</artifactId>
+                <configuration>
+                    <excludeFilterFile>${project.basedir}/../spotbugs-exclude.xml</excludeFilterFile>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>

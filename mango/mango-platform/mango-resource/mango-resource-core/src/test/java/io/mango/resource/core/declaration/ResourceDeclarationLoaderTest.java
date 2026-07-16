@@ -1,10 +1,10 @@
 package io.mango.resource.support.declaration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.mango.resource.api.ResourceTypes;
+import io.mango.resource.support.ResourceTypes;
 import io.mango.resource.api.enums.ResourceFieldType;
 import io.mango.resource.api.enums.ResourceSyncMode;
-import io.mango.resource.api.model.ResourceDeclaration;
+import io.mango.resource.support.model.ResourceDeclaration;
 import io.mango.resource.support.config.ResourceRegistryProperties;
 import org.junit.jupiter.api.Test;
 

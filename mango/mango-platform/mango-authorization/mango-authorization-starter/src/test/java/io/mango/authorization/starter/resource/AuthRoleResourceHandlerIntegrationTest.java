@@ -4,11 +4,11 @@ import com.baomidou.mybatisplus.autoconfigure.MybatisPlusAutoConfiguration;
 import io.mango.authorization.core.entity.RoleEntity;
 import io.mango.authorization.core.mapper.RoleMapper;
 import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguration;
-import io.mango.resource.api.ResourceTypes;
+import io.mango.resource.support.ResourceTypes;
 import io.mango.resource.api.enums.ResourceFieldType;
-import io.mango.resource.api.model.ResourceDeclaration;
-import io.mango.resource.api.model.ResourceField;
-import io.mango.resource.api.model.ResourceSyncResult;
+import io.mango.resource.support.model.ResourceDeclaration;
+import io.mango.resource.support.model.ResourceField;
+import io.mango.resource.support.model.ResourceSyncResult;
 import io.mango.system.api.tenant.TenantPackageBindingHandler;
 import io.mango.system.api.tenant.TenantPackageBindingProvider;
 import org.junit.jupiter.api.BeforeEach;
@@ -122,9 +122,9 @@ class AuthRoleResourceHandlerIntegrationTest {
     void upsertUpdatesExistingRoleByBusinessKeyThroughRealMapper() {
         ResourceSyncResult created = handler.upsert(resource());
         ResourceDeclaration update = resource();
-        update.getFields().put("roleName", field(ResourceFieldType.STRING, "Updated Demo RoleEntity"));
-        update.getFields().put("status", field(ResourceFieldType.INT, 0));
-        update.getFields().put("remark", field(ResourceFieldType.STRING, "updated by resource sync"));
+        update.putField("roleName", field(ResourceFieldType.STRING, "Updated Demo RoleEntity"));
+        update.putField("status", field(ResourceFieldType.INT, 0));
+        update.putField("remark", field(ResourceFieldType.STRING, "updated by resource sync"));
 
         ResourceSyncResult updated = handler.upsert(update);
 
@@ -182,7 +182,7 @@ class AuthRoleResourceHandlerIntegrationTest {
     }
 
     private void put(ResourceDeclaration resource, String name, ResourceFieldType type, Object value) {
-        resource.getFields().put(name, field(type, value));
+        resource.putField(name, field(type, value));
     }
 
     private ResourceField field(ResourceFieldType type, Object value) {

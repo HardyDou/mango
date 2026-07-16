@@ -1,7 +1,7 @@
 package io.mango.resource.core.entity;
 
 import com.baomidou.mybatisplus.annotation.TableName;
-import io.mango.infra.persistence.api.entity.AuditableEntity;
+import io.mango.infra.persistence.api.entity.TenantEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 @Data
 @EqualsAndHashCode(callSuper = true)
 @TableName("resource_registry")
-public class ResourceRegistryEntity extends AuditableEntity {
+public class ResourceRegistryEntity extends TenantEntity {
 
     private String resourceId;
     private Integer resourceVersion;

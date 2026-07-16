@@ -1,9 +1,9 @@
 package io.mango.payment.starter.resource;
 
-import io.mango.resource.api.ResourceProvider;
-import io.mango.resource.api.ResourceTypes;
-import io.mango.resource.api.builder.ResourceDeclarationBuilder;
-import io.mango.resource.api.model.ResourceDeclaration;
+import io.mango.resource.support.ResourceProvider;
+import io.mango.resource.support.ResourceTypes;
+import io.mango.resource.support.builder.ResourceDeclarationBuilder;
+import io.mango.resource.support.model.ResourceDeclaration;
 import org.springframework.stereotype.Component;
 
 import java.util.List;

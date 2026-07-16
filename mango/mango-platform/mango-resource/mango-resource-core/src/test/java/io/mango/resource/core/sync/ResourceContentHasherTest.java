@@ -3,8 +3,8 @@ package io.mango.resource.core.sync;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.resource.api.enums.ResourceFieldType;
 import io.mango.resource.api.enums.ResourceSyncMode;
-import io.mango.resource.api.model.ResourceDeclaration;
-import io.mango.resource.api.model.ResourceField;
+import io.mango.resource.support.model.ResourceDeclaration;
+import io.mango.resource.support.model.ResourceField;
 import org.junit.jupiter.api.Test;
 
 import java.util.LinkedHashMap;
@@ -37,19 +37,19 @@ class ResourceContentHasherTest {
     void hashIgnoresFieldDeclarationOrder() {
         ResourceDeclaration first = declaration(1);
         ResourceDeclaration second = declaration(1);
-        second.getFields().clear();
+        second.clearFields();
         ResourceField body = new ResourceField();
         body.setType(ResourceFieldType.STRING);
         body.setValue("正文");
-        second.getFields().put("body", body);
+        second.putField("body", body);
         ResourceField title = new ResourceField();
         title.setType(ResourceFieldType.STRING);
         title.setValue("提交申请");
-        second.getFields().put("title", title);
+        second.putField("title", title);
         ResourceField firstBody = new ResourceField();
         firstBody.setType(ResourceFieldType.STRING);
         firstBody.setValue("正文");
-        first.getFields().put("body", firstBody);
+        first.putField("body", firstBody);
 
         assertThat(hasher.hash(first)).isEqualTo(hasher.hash(second));
     }
@@ -60,7 +60,7 @@ class ResourceContentHasherTest {
         ResourceField body = new ResourceField();
         body.setType(ResourceFieldType.FILE);
         body.setLocation("classpath:templates/guarantee-submit.txt");
-        declaration.getFields().put("body", body);
+        declaration.putField("body", body);
 
         String hash = hasher.hash(declaration);
 
@@ -73,7 +73,7 @@ class ResourceContentHasherTest {
         ResourceField body = new ResourceField();
         body.setType(ResourceFieldType.FILE);
         body.setLocation("file:/tmp/body.txt");
-        declaration.getFields().put("body", body);
+        declaration.putField("body", body);
 
         assertThatThrownBy(() -> hasher.hash(declaration))
                 .isInstanceOf(IllegalStateException.class)
@@ -93,7 +93,7 @@ class ResourceContentHasherTest {
         ResourceField title = new ResourceField();
         title.setType(ResourceFieldType.STRING);
         title.setValue("提交申请");
-        declaration.getFields().put("title", title);
+        declaration.putField("title", title);
         return declaration;
     }
 }

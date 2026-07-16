@@ -7,7 +7,7 @@ import lombok.Data;
  * resource_registry 行数据。
  */
 @Data
-class ResourceRegistryRow {
+public class ResourceRegistryRow {
 
     private Long id;
     private String resourceId;

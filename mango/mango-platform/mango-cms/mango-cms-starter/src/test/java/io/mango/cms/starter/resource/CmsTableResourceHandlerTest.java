@@ -5,8 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.cms.core.entity.CmsSiteEntity;
 import io.mango.cms.core.mapper.CmsSiteMapper;
 import io.mango.resource.api.enums.ResourceFieldType;
-import io.mango.resource.api.model.ResourceDeclaration;
-import io.mango.resource.api.model.ResourceField;
+import io.mango.resource.support.model.ResourceDeclaration;
+import io.mango.resource.support.model.ResourceField;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 

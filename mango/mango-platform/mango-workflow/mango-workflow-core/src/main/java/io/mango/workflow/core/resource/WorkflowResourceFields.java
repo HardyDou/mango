@@ -1,7 +1,7 @@
 package io.mango.workflow.core.resource;
 
-import io.mango.resource.api.model.ResourceDeclaration;
-import io.mango.resource.api.model.ResourceField;
+import io.mango.resource.support.model.ResourceDeclaration;
+import io.mango.resource.support.model.ResourceField;
 import org.springframework.util.StringUtils;
 
 /**

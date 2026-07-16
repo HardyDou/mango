@@ -2,12 +2,12 @@ package io.mango.domain.core.resource;
 
 import io.mango.domain.core.entity.DomainEntity;
 import io.mango.domain.core.mapper.DomainMapper;
-import io.mango.resource.api.ResourceHandler;
-import io.mango.resource.api.ResourceTypes;
-import io.mango.resource.api.model.ResourceDeclaration;
-import io.mango.resource.api.model.ResourceField;
-import io.mango.resource.api.model.ResourceHandlerSpec;
-import io.mango.resource.api.model.ResourceSyncResult;
+import io.mango.resource.support.ResourceHandler;
+import io.mango.resource.support.ResourceTypes;
+import io.mango.resource.support.model.ResourceDeclaration;
+import io.mango.resource.support.model.ResourceField;
+import io.mango.resource.support.model.ResourceHandlerSpec;
+import io.mango.resource.support.model.ResourceSyncResult;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;

@@ -12,8 +12,8 @@ import org.springframework.context.annotation.Import;
 @AutoConfiguration
 @MapperScan("io.mango.resource.core.mapper")
 @ComponentScan({
-        "io.mango.resource.starter.controller",
-        "io.mango.resource.starter.service"
+    "io.mango.resource.starter.controller",
+    "io.mango.resource.core.service.impl"
 })
 @Import(ResourceRegistryCoreConfiguration.class)
 public class ResourceRegistryAutoConfiguration {

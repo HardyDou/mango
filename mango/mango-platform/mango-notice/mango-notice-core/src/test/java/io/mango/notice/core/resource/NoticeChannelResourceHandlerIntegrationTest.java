@@ -1,12 +1,15 @@
 package io.mango.notice.core.resource;
 
 import com.baomidou.mybatisplus.autoconfigure.MybatisPlusAutoConfiguration;
+import io.mango.infra.context.api.MangoContextHolder;
+import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguration;
 import io.mango.notice.core.mapper.NoticeChannelConfigMapper;
-import io.mango.resource.api.ResourceTypes;
+import io.mango.resource.support.ResourceTypes;
 import io.mango.resource.api.enums.ResourceFieldType;
-import io.mango.resource.api.model.ResourceDeclaration;
-import io.mango.resource.api.model.ResourceField;
+import io.mango.resource.support.model.ResourceDeclaration;
+import io.mango.resource.support.model.ResourceField;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mybatis.spring.annotation.MapperScan;
@@ -40,7 +43,7 @@ import static org.assertj.core.api.Assertions.assertThat;
         "spring.datasource.password=",
         "spring.datasource.driver-class-name=org.h2.Driver",
         "spring.flyway.enabled=false",
-        "mango.persistence.mybatis-plus.tenant.enabled=false"
+        "mango.persistence.mybatis-plus.tenant.enabled=true"
 })
 class NoticeChannelResourceHandlerIntegrationTest {
 
@@ -53,6 +56,12 @@ class NoticeChannelResourceHandlerIntegrationTest {
     @BeforeEach
     void setUp() throws Exception {
         rebuildTables();
+        MangoContextHolder.set(MangoContextSnapshot.empty().withTenantId("caller-tenant"));
+    }
+
+    @AfterEach
+    void tearDown() {
+        MangoContextHolder.clear();
     }
 
     @Test
@@ -109,6 +118,23 @@ class NoticeChannelResourceHandlerIntegrationTest {
                 .contains("\"soundText\":\"您有新的系统消息，请及时查看\"");
         assertThat(stringValue("notice_channel_config", "config_json", "id = 270502"))
                 .contains("\"soundText\":\"您有新的系统消息，请及时查看\"");
+        assertThat(MangoContextHolder.tenantId()).isEqualTo("caller-tenant");
+    }
+
+    @Test
+    void forceStyleReplayUpdatesBothTenantsWithoutDuplicatePrimaryKey() throws Exception {
+        for (ResourceDeclaration declaration : commonNoticeChannelDeclarations()) {
+            handler.upsert(declaration);
+        }
+
+        for (ResourceDeclaration declaration : commonNoticeChannelDeclarations()) {
+            handler.upsert(declaration);
+        }
+
+        assertThat(count("notice_channel_config")).isEqualTo(2);
+        assertThat(stringValue("notice_channel_config", "tenant_id", "id = 270501")).isEqualTo("default");
+        assertThat(stringValue("notice_channel_config", "tenant_id", "id = 270502")).isEqualTo("1");
+        assertThat(MangoContextHolder.tenantId()).isEqualTo("caller-tenant");
     }
 
     private List<ResourceDeclaration> commonNoticeChannelDeclarations() {
@@ -149,7 +175,7 @@ class NoticeChannelResourceHandlerIntegrationTest {
         ResourceField field = new ResourceField();
         field.setType(type);
         field.setValue(value);
-        declaration.getFields().put(name, field);
+        declaration.putField(name, field);
     }
 
     private void rebuildTables() throws Exception {
