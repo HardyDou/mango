@@ -12,5 +12,5 @@ public interface TenantProvisioner {
      *
      * @param context 租户初始化上下文
      */
-    void provision(TenantProvisionContext context);
+    void provision(TenantProvisionCommand command);
 }

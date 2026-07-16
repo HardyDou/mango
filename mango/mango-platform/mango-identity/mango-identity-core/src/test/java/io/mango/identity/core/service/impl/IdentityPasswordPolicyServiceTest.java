@@ -2,13 +2,13 @@ package io.mango.identity.core.service.impl;
 
 import io.mango.common.exception.BizException;
 import io.mango.identity.core.adapter.SysConfigValueAdapter;
-import io.mango.system.api.SysConfigApi;
+import io.mango.system.api.spi.SystemConfigProvider;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.support.StaticListableBeanFactory;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.mock;
 
 class IdentityPasswordPolicyServiceTest {
 
@@ -67,8 +67,7 @@ class IdentityPasswordPolicyServiceTest {
                 .doesNotThrowAnyException();
     }
 
-    @SuppressWarnings("unchecked")
-    private static ObjectProvider<SysConfigApi> emptyProvider() {
-        return mock(ObjectProvider.class);
+    private static ObjectProvider<SystemConfigProvider> emptyProvider() {
+        return new StaticListableBeanFactory().getBeanProvider(SystemConfigProvider.class);
     }
 }

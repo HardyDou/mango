@@ -9,7 +9,10 @@ import io.mango.resource.api.enums.ResourceStatus;
 import io.mango.resource.api.model.ResourceDeclaration;
 import io.mango.resource.api.model.ResourceHandlerSpec;
 import io.mango.resource.api.model.ResourceSyncResult;
+import io.mango.system.api.tenant.TenantPackageBindingHandler;
+import io.mango.system.api.tenant.TenantPackageBindingProvider;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
@@ -28,6 +31,8 @@ public class AuthRoleResourceHandler implements ResourceHandler {
     private static final String DEFAULT_ACTOR_TYPE = "INTERNAL_USER";
 
     private final RoleMapper roleMapper;
+    private final ObjectProvider<TenantPackageBindingProvider> tenantPackageBindingProviders;
+    private final ObjectProvider<TenantPackageBindingHandler> tenantPackageBindingHandlers;
     private final ResourceFieldReader fields = new ResourceFieldReader(ResourceTypes.AUTH_ROLE);
 
     @Override
@@ -37,7 +42,7 @@ public class AuthRoleResourceHandler implements ResourceHandler {
 
     @Override
     public List<String> dependsOnResourceTypes() {
-        return List.of(ResourceTypes.AUTH_APP);
+        return List.of(ResourceTypes.AUTH_APP, ResourceTypes.SYSTEM_TENANT);
     }
 
     @Override
@@ -87,8 +92,25 @@ public class AuthRoleResourceHandler implements ResourceHandler {
         } else {
             roleMapper.updateById(role);
         }
+        refreshTenantAdminPackageBinding(role, tenantId);
         return ResourceSyncResult.of(role.getRoleId(), TARGET_TABLE,
                 "Auth role synced: " + role.getAppCode() + "/" + role.getRoleCode());
+    }
+
+    private void refreshTenantAdminPackageBinding(RoleEntity role, Long tenantId) {
+        if (!"ROLE_ADMIN".equals(role.getRoleCode()) || !Integer.valueOf(1).equals(role.getStatus())) {
+            return;
+        }
+        Long packageId = tenantPackageBindingProviders.orderedStream()
+                .map(provider -> provider.findPackageIdByTenantId(tenantId))
+                .filter(java.util.Objects::nonNull)
+                .findFirst()
+                .orElse(null);
+        if (packageId == null) {
+            return;
+        }
+        tenantPackageBindingHandlers.orderedStream()
+                .forEach(handler -> handler.bindPackage(tenantId, packageId));
     }
 
     @Override
@@ -105,7 +127,11 @@ public class AuthRoleResourceHandler implements ResourceHandler {
             role.setUpdateTime(LocalDateTime.now());
             changed = roleMapper.updateById(role) > 0;
         }
-        return ResourceSyncResult.of(role == null ? null : role.getRoleId(), TARGET_TABLE,
+        Long roleId = null;
+        if (role != null) {
+            roleId = role.getRoleId();
+        }
+        return ResourceSyncResult.of(roleId, TARGET_TABLE,
                 "Auth role disabled: changed=" + changed);
     }
 
@@ -147,6 +173,9 @@ public class AuthRoleResourceHandler implements ResourceHandler {
         if (status != null) {
             return status;
         }
-        return resource.getStatus() == ResourceStatus.DISABLED ? 0 : 1;
+        if (resource.getStatus() == ResourceStatus.DISABLED) {
+            return 0;
+        }
+        return 1;
     }
 }

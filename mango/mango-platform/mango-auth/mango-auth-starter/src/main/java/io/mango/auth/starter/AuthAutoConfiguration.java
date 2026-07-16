@@ -11,7 +11,7 @@ import io.mango.auth.starter.web.anti.ConfiguredAppSecretProvider;
 import io.mango.auth.starter.web.interceptor.CaptchaInterceptor;
 import io.mango.auth.starter.web.interceptor.WebMvcConfig;
 import io.mango.infra.kv.api.IKvStore;
-import io.mango.system.api.SysConfigApi;
+import io.mango.system.api.spi.SystemConfigProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -48,6 +48,10 @@ import java.util.concurrent.Executors;
 @Import(AuthSecurityConfig.class)
 public class AuthAutoConfiguration {
 
+    private static final int DEFAULT_MAX_LOGIN_ATTEMPTS = 5;
+    private static final int DEFAULT_FAILURE_WINDOW_MINUTES = 60;
+    private static final int DEFAULT_LOCK_DURATION_MINUTES = 15;
+
     @Bean
     @ConditionalOnMissingBean(PasswordEncoder.class)
     public PasswordEncoder passwordEncoder() {
@@ -68,11 +72,13 @@ public class AuthAutoConfiguration {
 
     @Bean(destroyMethod = "shutdown")
     @ConditionalOnMissingBean
-    public LoginAttemptTracker loginAttemptTracker(IKvStore kvStore, ObjectProvider<SysConfigApi> sysConfigApiProvider) {
-        SysConfigApi sysConfigApi = sysConfigApiProvider.getIfAvailable();
-        int maxAttempts = integerConfig(sysConfigApi, "sys.login.lockCount", 5);
-        long failureWindowMinutes = integerConfig(sysConfigApi, "identity.security.login.failure-window-minutes", 60);
-        long lockDurationMinutes = integerConfig(sysConfigApi, "identity.security.login.lock-duration-minutes", 15);
+    public LoginAttemptTracker loginAttemptTracker(IKvStore kvStore, ObjectProvider<SystemConfigProvider> configProvider) {
+        SystemConfigProvider config = configProvider.getIfAvailable();
+        int maxAttempts = integerConfig(config, "sys.login.lockCount", DEFAULT_MAX_LOGIN_ATTEMPTS);
+        long failureWindowMinutes = integerConfig(config, "identity.security.login.failure-window-minutes",
+                DEFAULT_FAILURE_WINDOW_MINUTES);
+        long lockDurationMinutes = integerConfig(config, "identity.security.login.lock-duration-minutes",
+                DEFAULT_LOCK_DURATION_MINUTES);
         return new LoginAttemptTracker(kvStore, Executors.newSingleThreadScheduledExecutor(r -> {
             Thread thread = new Thread(r, "auth-login-attempt-cleanup");
             thread.setDaemon(true);
@@ -80,13 +86,16 @@ public class AuthAutoConfiguration {
         }), maxAttempts, failureWindowMinutes, lockDurationMinutes);
     }
 
-    private int integerConfig(SysConfigApi sysConfigApi, String key, int defaultValue) {
-        if (sysConfigApi == null) {
+    private int integerConfig(SystemConfigProvider config, String key, int defaultValue) {
+        if (config == null) {
             return defaultValue;
         }
         try {
-            var result = sysConfigApi.getIntegerValue(key, defaultValue);
-            return result.isSuccess() && result.getData() != null ? result.getData() : defaultValue;
+            Integer result = config.getIntegerValue(key, defaultValue);
+            if (result == null) {
+                return defaultValue;
+            }
+            return result;
         } catch (RuntimeException ex) {
             return defaultValue;
         }

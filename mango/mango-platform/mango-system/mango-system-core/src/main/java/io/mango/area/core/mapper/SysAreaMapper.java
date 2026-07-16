@@ -1,7 +1,7 @@
 package io.mango.area.core.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import io.mango.area.api.entity.SysArea;
+import io.mango.area.core.entity.SysAreaEntity;
 import org.apache.ibatis.annotations.Mapper;
 
 /**
@@ -10,5 +10,5 @@ import org.apache.ibatis.annotations.Mapper;
  * @author Mango
  */
 @Mapper
-public interface SysAreaMapper extends BaseMapper<SysArea> {
+public interface SysAreaMapper extends BaseMapper<SysAreaEntity> {
 }

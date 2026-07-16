@@ -7,7 +7,7 @@ import io.mango.infra.iplocation.api.IpLocation;
 import io.mango.infra.iplocation.api.IpLocationResolver;
 import io.mango.infra.log.annotation.Log;
 import io.mango.infra.web.util.JacksonUtils;
-import io.mango.system.api.po.SysOperationLogPo;
+import io.mango.system.api.command.RecordOperationLogCommand;
 import io.mango.system.core.service.ISysLogService;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.servlet.ServletRequest;
@@ -77,8 +77,8 @@ public class OperationLogAspect {
             Operation operationAnnotation = method.getAnnotation(Operation.class);
             String operationName = resolveOperationName(logAnnotation, operationAnnotation, signature);
 
-            SysOperationLogPo opLog = new SysOperationLogPo();
-            opLog.setTenantId(parseLong(MangoContextHolder.tenantId()));
+            RecordOperationLogCommand opLog = new RecordOperationLogCommand();
+            opLog.setTenantId(MangoContextHolder.tenantId());
             opLog.setUserId(MangoContextHolder.userId());
             opLog.setUsername(MangoContextHolder.principalName());
             opLog.setModule(resolveModuleName(logAnnotation, signature));
@@ -87,9 +87,15 @@ public class OperationLogAspect {
             opLog.setHandlerMethod(signature.getDeclaringTypeName() + "." + signature.getName());
             opLog.setUrl(request.getRequestURI());
             opLog.setParams(truncate(resolveParams(request, point)));
-            opLog.setResult(error == null ? truncate(resolveResult(result)) : null);
-            opLog.setStatus(error == null ? 1 : 0);
-            opLog.setErrorMsg(error == null ? null : truncate(error.getMessage()));
+            if (error == null) {
+                opLog.setResult(truncate(resolveResult(result)));
+                opLog.setStatus(1);
+                opLog.setErrorMsg(null);
+            } else {
+                opLog.setResult(null);
+                opLog.setStatus(0);
+                opLog.setErrorMsg(truncate(error.getMessage()));
+            }
             opLog.setDuration(duration);
             String clientIp = getClientIp(request);
             opLog.setIp(clientIp);
@@ -117,7 +123,10 @@ public class OperationLogAspect {
             return "未知";
         }
         IpLocation location = ipLocationResolver.resolve(clientIp);
-        return location == null ? "未知" : location.displayText();
+        if (location == null) {
+            return "未知";
+        }
+        return location.displayText();
     }
 
     private String resolveParams(HttpServletRequest request, ProceedingJoinPoint point) {
@@ -188,17 +197,6 @@ public class OperationLogAspect {
         return firstText(ip, request.getRemoteAddr());
     }
 
-    private Long parseLong(String value) {
-        if (value == null || value.isBlank()) {
-            return null;
-        }
-        try {
-            return Long.valueOf(value);
-        } catch (NumberFormatException e) {
-            return null;
-        }
-    }
-
     private String resolveModuleName(Log logAnnotation, MethodSignature signature) {
         if (logAnnotation != null && logAnnotation.value() != null && !logAnnotation.value().isBlank()) {
             return logAnnotation.value();
@@ -227,6 +225,9 @@ public class OperationLogAspect {
         if (first != null && !first.isBlank()) {
             return first.trim();
         }
-        return second != null && !second.isBlank() ? second.trim() : null;
+        if (second != null && !second.isBlank()) {
+            return second.trim();
+        }
+        return null;
     }
 }

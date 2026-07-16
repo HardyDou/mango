@@ -11,7 +11,6 @@ import io.mango.system.api.vo.PersonalConfigVO;
 import io.mango.system.core.service.IPersonalConfigService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.validation.annotation.Validated;
@@ -37,7 +36,7 @@ public class PersonalConfigController implements PersonalConfigApi {
     @GetMapping
     @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "查询个人参数配置列表")
     @Operation(summary = "查询个人参数配置列表", description = "登录接口。按分组、业务类型和配置键查询当前用户个人配置")
-    public R<List<PersonalConfigVO>> list(@Valid @ParameterObject PersonalConfigQuery query) {
+    public R<List<PersonalConfigVO>> list(@ParameterObject PersonalConfigQuery query) {
         return R.ok(personalConfigService.listCurrentUser(query));
     }
 
@@ -45,7 +44,7 @@ public class PersonalConfigController implements PersonalConfigApi {
     @GetMapping("/value")
     @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "查询个人参数配置")
     @Operation(summary = "查询个人参数配置", description = "登录接口。查询当前用户单个个人参数配置")
-    public R<PersonalConfigVO> getValue(@Valid @ParameterObject PersonalConfigQuery query) {
+    public R<PersonalConfigVO> getValue(@ParameterObject PersonalConfigQuery query) {
         return R.ok(personalConfigService.getCurrentUserValue(query));
     }
 
@@ -54,7 +53,7 @@ public class PersonalConfigController implements PersonalConfigApi {
     @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "保存个人参数配置")
     @Operation(summary = "保存个人参数配置", description = "登录接口。按当前租户和当前用户保存个人参数配置")
     @Log("保存个人参数配置")
-    public R<PersonalConfigVO> save(@RequestBody @Valid SavePersonalConfigCommand command) {
+    public R<PersonalConfigVO> save(@RequestBody SavePersonalConfigCommand command) {
         return R.ok(personalConfigService.saveCurrentUser(command));
     }
 
@@ -63,7 +62,7 @@ public class PersonalConfigController implements PersonalConfigApi {
     @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "删除个人参数配置")
     @Operation(summary = "删除个人参数配置", description = "登录接口。删除当前用户单个个人参数配置")
     @Log("删除个人参数配置")
-    public R<Boolean> delete(@Valid @ParameterObject PersonalConfigQuery query) {
+    public R<Boolean> delete(@ParameterObject PersonalConfigQuery query) {
         return R.ok(personalConfigService.deleteCurrentUser(query));
     }
 }

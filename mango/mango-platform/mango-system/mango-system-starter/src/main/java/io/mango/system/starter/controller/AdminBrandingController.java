@@ -4,46 +4,51 @@ import io.mango.authorization.api.annotation.ApiAccess;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.common.result.R;
 import io.mango.infra.log.annotation.Log;
+import io.mango.system.api.AdminBrandingApi;
 import io.mango.system.api.command.SaveAdminBrandingCommand;
 import io.mango.system.api.vo.AdminBrandingVO;
 import io.mango.system.core.service.IAdminBrandingService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+@Validated
 @RestController
 @RequestMapping("/system/admin-branding")
 @RequiredArgsConstructor
-@Tag(name = "后台品牌配置", description = "Admin 后台自身品牌配置接口")
-public class AdminBrandingController {
+@Tag(name = "后台品牌配置", description = "后台品牌配置管理接口")
+public class AdminBrandingController implements AdminBrandingApi {
 
-    private final IAdminBrandingService adminBrandingService;
+    private final IAdminBrandingService brandingService;
 
+    @Override
     @GetMapping
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:admin-branding:query")
-    @Operation(summary = "获取后台品牌配置", description = "权限接口。后台配置页读取 Admin 品牌配置")
+    @Operation(summary = "获取后台品牌配置", description = "获取后台品牌配置并返回处理结果")
     public R<AdminBrandingVO> get() {
-        return adminBrandingService.get();
+        return R.ok(brandingService.get());
     }
 
+    @Override
     @GetMapping("/public")
     @ApiAccess(mode = ApiResourceAccessMode.PUBLIC, desc = "后台品牌公共配置")
-    @Operation(summary = "获取后台品牌公共配置", description = "公共接口。登录页和后台框架读取 Admin 品牌配置")
+    @Operation(summary = "获取后台品牌公共配置", description = "获取后台品牌公共配置并返回处理结果")
     public R<AdminBrandingVO> publicConfig() {
-        return adminBrandingService.get();
+        return R.ok(brandingService.get());
     }
 
+    @Override
     @PutMapping
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:admin-branding:edit")
-    @Operation(summary = "保存后台品牌配置", description = "权限接口。保存 Admin 品牌配置")
+    @Operation(summary = "保存后台品牌配置", description = "保存后台品牌配置并返回处理结果")
     @Log("保存后台品牌配置")
-    public R<Boolean> save(@RequestBody @Valid SaveAdminBrandingCommand command) {
-        return adminBrandingService.save(command);
+    public R<Boolean> save(@RequestBody SaveAdminBrandingCommand command) {
+        return R.ok(brandingService.save(command));
     }
 }

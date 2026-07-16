@@ -1,24 +1,17 @@
 package io.mango.system.core.service;
 
-import io.mango.auth.api.vo.LoginTenantVO;
-import io.mango.common.result.R;
-import io.mango.system.api.po.SysTenantPo;
+import io.mango.system.api.command.SaveSysTenantCommand;
+import io.mango.system.api.vo.LoginTenantOptionVO;
+import io.mango.system.api.vo.SysTenantVO;
 
 import java.util.List;
 
 public interface ISysTenantService {
-
-    R<List<SysTenantPo>> list();
-
-    R<SysTenantPo> get(Long id);
-
-    R<Long> create(SysTenantPo po);
-
-    R<Boolean> update(SysTenantPo po);
-
-    R<Boolean> delete(Long id);
-
-    R<Boolean> updateStatus(Long id, Integer status);
-
-    R<List<LoginTenantVO>> listLoginOptions();
+    List<SysTenantVO> list();
+    List<LoginTenantOptionVO> listLoginOptions();
+    SysTenantVO get(Long id);
+    Long create(SaveSysTenantCommand command);
+    Boolean update(SaveSysTenantCommand command);
+    Boolean delete(Long id);
+    Boolean updateStatus(Long id, Integer status);
 }

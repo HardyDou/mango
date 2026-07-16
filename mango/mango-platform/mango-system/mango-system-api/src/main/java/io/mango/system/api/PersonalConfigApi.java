@@ -5,12 +5,14 @@ import io.mango.system.api.command.SavePersonalConfigCommand;
 import io.mango.system.api.query.PersonalConfigQuery;
 import io.mango.system.api.vo.PersonalConfigVO;
 import jakarta.validation.Valid;
+import org.springframework.validation.annotation.Validated;
 
 import java.util.List;
 
 /**
  * 个人参数配置 API。
  */
+@Validated
 public interface PersonalConfigApi {
 
     /**

@@ -1,0 +1,25 @@
+mango:
+  resource:
+    schema-version: 1
+    module-code: system
+    module-name: 系统
+    declarations:
+      SYSTEM_TENANT:
+        - id: "2026071609000000005"
+          version: 1
+          biz-key: system.tenant.default
+          name: 芒果集团
+          target-module: system
+          sync-mode: INIT_ONLY
+          fields:
+            targetId: { type: LONG, value: 1 }
+            tenantName: { type: STRING, value: 芒果集团 }
+            tenantCode: { type: STRING, value: default }
+            institutionType: { type: STRING, value: PLATFORM }
+            capabilityCodes: { type: STRING, value: "PLATFORM_ADMIN,SYSTEM_ADMIN,AUTH_ADMIN,ORG_ADMIN,WORKFLOW" }
+            packageId: { type: LONG, value: 1 }
+            status: { type: INT, value: 1 }
+            contact: { type: STRING, value: 平台管理员 }
+            mobile: { type: STRING, value: "13800000000" }
+            email: { type: STRING, value: admin@mango.com }
+            remark: { type: STRING, value: 平台默认租户 }

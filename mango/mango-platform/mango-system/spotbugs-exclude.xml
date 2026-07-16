@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FindBugsFilter>
+    <!-- Spring-managed collaborators are container references, not mutable state owned by these components. -->
+    <Match>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+        <Or>
+            <Class name="io.mango.system.core.service.impl.SysTenantService"/>
+            <Class name="io.mango.system.starter.controller.PersonalConfigController"/>
+            <Class name="io.mango.system.starter.controller.SysAreaController"/>
+            <Class name="io.mango.system.starter.controller.SysConfigController"/>
+            <Class name="io.mango.system.starter.controller.SysDictController"/>
+            <Class name="io.mango.system.starter.controller.SysTenantController"/>
+        </Or>
+    </Match>
+</FindBugsFilter>

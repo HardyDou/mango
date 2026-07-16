@@ -61,6 +61,7 @@ class SystemConfigResourceHandlerIntegrationTest {
         assertThat(stringValue("sys_config", "config_value", "id = 1")).isEqualTo("skin-blue");
         assertThat(stringValue("sys_config", "type", "id = 1")).isEqualTo("SYSTEM");
         assertThat(stringValue("sys_config", "domain_code", "id = 1")).isEqualTo("COMMON");
+        assertThat(stringValue("sys_config", "tenant_id", "id = 1")).isEqualTo("1");
         assertThat(stringValue("sys_config", "value_type", "id = 1")).isEqualTo("SELECT");
         assertThat(stringValue("sys_config", "group_code", "id = 1")).isEqualTo("appearance");
         assertThat(stringValue("sys_config", "group_name", "id = 1")).isEqualTo("外观配置");
@@ -160,10 +161,12 @@ class SystemConfigResourceHandlerIntegrationTest {
                     sort int not null default 0,
                     status tinyint not null default 1,
                     remark varchar(500),
-                    create_by varchar(64),
-                    update_by varchar(64),
-                    create_time timestamp not null default current_timestamp,
-                    update_time timestamp not null default current_timestamp,
+                    tenant_id varchar(64) not null,
+                    org_id bigint,
+                    created_by bigint,
+                    created_at timestamp not null default current_timestamp,
+                    updated_by bigint,
+                    updated_at timestamp not null default current_timestamp,
                     primary key (id),
                     unique key config_key (config_key)
                 )

@@ -5,7 +5,7 @@ import io.mango.access.api.auth.AccessContextValidator;
 import io.mango.access.api.vo.AccessContextValidationResultVO;
 import io.mango.access.api.vo.AccessPrincipalVO;
 import io.mango.system.api.enums.InstitutionStatus;
-import io.mango.system.core.entity.SysTenant;
+import io.mango.system.core.entity.SysTenantEntity;
 import io.mango.system.core.mapper.SysTenantMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -28,8 +28,8 @@ public class InstitutionAccessContextValidator implements AccessContextValidator
         if (tenantId == null) {
             return AccessContextValidationResultVO.deny("机构上下文非法，请重新登录");
         }
-        SysTenant tenant = sysTenantMapper.selectOne(new LambdaQueryWrapper<SysTenant>()
-                .eq(SysTenant::getId, tenantId)
+        SysTenantEntity tenant = sysTenantMapper.selectOne(new LambdaQueryWrapper<SysTenantEntity>()
+                .eq(SysTenantEntity::getId, tenantId)
                 .last("LIMIT 1"));
         if (tenant == null) {
             return AccessContextValidationResultVO.deny("机构不存在，请重新登录");
@@ -50,6 +50,9 @@ public class InstitutionAccessContextValidator implements AccessContextValidator
     }
 
     private String statusLabel(InstitutionStatus status) {
-        return status == null ? "不可用" : status.label();
+        if (status == null) {
+            return "不可用";
+        }
+        return status.label();
     }
 }

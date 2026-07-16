@@ -47,8 +47,8 @@ import io.mango.captcha.api.dto.CaptchaSendRequest;
 import io.mango.identity.api.vo.IdentityUserInfoVO;
 import io.mango.infra.iplocation.api.IpLocation;
 import io.mango.infra.iplocation.api.IpLocationResolver;
-import io.mango.system.api.SysLoginLogApi;
-import io.mango.system.api.po.SysLoginLogPo;
+import io.mango.system.api.command.RecordLoginLogCommand;
+import io.mango.system.api.spi.LoginLogRecorder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
@@ -94,7 +94,7 @@ public class AuthService implements IAuthService {
     private final WecomLoginClient wecomLoginClient;
     private final NoticeApi noticeApi;
     private final ObjectProvider<CaptchaApi> captchaApiProvider;
-    private final ObjectProvider<SysLoginLogApi> sysLoginLogApiProvider;
+    private final ObjectProvider<LoginLogRecorder> loginLogRecorderProvider;
     private final ObjectProvider<IpLocationResolver> ipLocationResolverProvider;
     private final ApplicationEventPublisher eventPublisher;
 
@@ -524,12 +524,12 @@ public class AuthService implements IAuthService {
 
     private void recordLoginLog(
             LoginCommand command, LoginVO response, boolean success, String failureMessage) {
-        SysLoginLogApi logApi = sysLoginLogApiProvider.getIfAvailable();
-        if (logApi == null) {
+        LoginLogRecorder recorder = loginLogRecorderProvider.getIfAvailable();
+        if (recorder == null) {
             return;
         }
         try {
-            SysLoginLogPo loginLog = new SysLoginLogPo();
+            RecordLoginLogCommand loginLog = new RecordLoginLogCommand();
             String tenantId = command.getTenantId();
             Long userId = null;
             String loginType = "PASSWORD";
@@ -538,7 +538,7 @@ public class AuthService implements IAuthService {
                 userId = response.getUserId();
                 loginType = response.getRealm();
             }
-            loginLog.setTenantId(resolveLong(tenantId, null));
+            loginLog.setTenantId(tenantId);
             loginLog.setUserId(userId);
             loginLog.setUsername(command.getUsername());
             loginLog.setLoginType(firstText(command.getRealm(), loginType));
@@ -548,13 +548,13 @@ public class AuthService implements IAuthService {
             loginLog.setOs("未知");
             populateLoginResult(loginLog, success, failureMessage);
             loginLog.setLoginTime(LocalDateTime.now());
-            logApi.record(loginLog);
+            recorder.record(loginLog);
         } catch (RuntimeException exception) {
             log.warn("Failed to record login log for {}", command.getUsername(), exception);
         }
     }
 
-    private void populateLoginResult(SysLoginLogPo loginLog, boolean success, String failureMessage) {
+    private void populateLoginResult(RecordLoginLogCommand loginLog, boolean success, String failureMessage) {
         if (success) {
             loginLog.setStatus(1);
             loginLog.setMsg(CommonCode.SUCCESS.getMessage());

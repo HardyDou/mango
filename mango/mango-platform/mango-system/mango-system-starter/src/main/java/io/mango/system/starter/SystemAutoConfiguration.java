@@ -47,8 +47,8 @@ public class SystemAutoConfiguration {
     @ConditionalOnMissingBean(ExcelDictionaryProvider.class)
     public ExcelDictionaryProvider systemExcelDictionaryProvider(IDictService dictService) {
         return (dictType, label, metadata, context) -> {
-            var result = dictService.getOptions(dictType);
-            if (result == null || !result.isSuccess() || result.getData() == null) {
+            var options = dictService.getOptions(dictType);
+            if (options == null) {
                 throw new IllegalStateException("无法读取 Excel 字典: " + dictType);
             }
             String normalizedLabel = "";
@@ -56,9 +56,9 @@ public class SystemAutoConfiguration {
                 normalizedLabel = label.trim();
             }
             String expectedLabel = normalizedLabel;
-            var matches = result.getData().stream().
-                    filter(option -> option.getLabel() != null && option.getLabel().trim().equals(expectedLabel)).
-                    toList();
+            var matches = options.stream()
+                    .filter(option -> option.getLabel() != null && option.getLabel().trim().equals(expectedLabel))
+                    .toList();
             if (matches.size() > 1) {
                 throw new IllegalArgumentException("Excel 字典存在重复 label: " + dictType + "/" + normalizedLabel);
             }

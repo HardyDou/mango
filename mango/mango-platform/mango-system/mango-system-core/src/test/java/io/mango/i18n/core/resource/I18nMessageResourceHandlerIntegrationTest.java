@@ -61,6 +61,7 @@ class I18nMessageResourceHandlerIntegrationTest {
         assertThat(stringValue("name", "id = 2026061900900010008")).isEqualTo("common.submit");
         assertThat(stringValue("zh_cn", "name = 'common.submit'")).isEqualTo("提交");
         assertThat(stringValue("en", "name = 'common.submit'")).isEqualTo("Submit");
+        assertThat(stringValue("tenant_id", "name = 'common.submit'")).isEqualTo("1");
     }
 
     @Test
@@ -118,6 +119,12 @@ class I18nMessageResourceHandlerIntegrationTest {
                     zh_cn varchar(1000) not null,
                     en varchar(1000) not null,
                     description varchar(1000),
+                    tenant_id varchar(64) not null,
+                    org_id bigint,
+                    created_by bigint,
+                    created_at timestamp not null default current_timestamp,
+                    updated_by bigint,
+                    updated_at timestamp not null default current_timestamp,
                     unique key uk_sys_i18n_name (name)
                 )
                 """);

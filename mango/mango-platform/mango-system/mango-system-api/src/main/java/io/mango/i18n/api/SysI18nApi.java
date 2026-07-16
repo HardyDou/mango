@@ -1,44 +1,25 @@
 package io.mango.i18n.api;
 
-import io.mango.i18n.api.entity.SysI18n;
+import io.mango.common.result.R;
+import io.mango.i18n.api.vo.I18nEntryVO;
+import io.mango.i18n.api.vo.I18nLanguagePackVO;
+import io.mango.i18n.api.vo.SysI18nMessageVO;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+import org.springframework.validation.annotation.Validated;
 
 import java.util.List;
-import java.util.Map;
 
-/**
- * i18n API interface
- *
- * @author Mango
- */
+@Validated
 public interface SysI18nApi {
 
-    /**
-     * Get all i18n entries as a map grouped by language
-     *
-     * @return map of language -> list of key-value pairs
-     */
-    Map<String, List<Map<String, String>>> listMap();
+    R<I18nLanguagePackVO> publicInfo();
 
-    /**
-     * Get i18n entries for a specific language
-     *
-     * @param lang language code (e.g., "zh-cn", "en")
-     * @return list of key-value pairs
-     */
-    List<Map<String, String>> listByLang(String lang);
+    R<List<I18nEntryVO>> publicInfoByLang(@NotBlank @Size(max = 16) String lang);
 
-    /**
-     * Get all supported languages
-     *
-     * @return list of language codes
-     */
-    List<String> getSupportedLanguages();
+    R<List<String>> languages();
 
-    /**
-     * Get i18n entry by key
-     *
-     * @param name i18n key
-     * @return sys i18n entity
-     */
-    SysI18n getByName(String name);
+    R<SysI18nMessageVO> getByName(@NotBlank @Size(max = 100) String name);
+
+    R<I18nLanguagePackVO> i18n(@NotBlank @Size(max = 16) String lang);
 }

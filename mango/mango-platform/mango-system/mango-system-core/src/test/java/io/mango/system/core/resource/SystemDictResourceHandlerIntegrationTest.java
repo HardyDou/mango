@@ -68,6 +68,8 @@ class SystemDictResourceHandlerIntegrationTest {
                 .isEqualTo("授权角色类型");
         assertThat(stringValue("sys_dict_type", "domain_code", "dict_type = 'authorization_role_type'"))
                 .isEqualTo("AUTHORIZATION");
+        assertThat(stringValue("sys_dict_type", "tenant_id", "dict_type = 'authorization_role_type'"))
+                .isEqualTo("1");
         assertThat(stringValue("sys_dict_data", "dict_label", "id = 100")).isEqualTo("系统角色");
         assertThat(count("sys_dict_data")).isEqualTo(2);
     }
@@ -161,10 +163,12 @@ class SystemDictResourceHandlerIntegrationTest {
                     domain_code varchar(64) not null default 'COMMON',
                     status tinyint not null default 1,
                     remark varchar(500),
-                    create_by varchar(64),
-                    update_by varchar(64),
-                    create_time datetime not null default current_timestamp,
-                    update_time datetime not null default current_timestamp,
+                    tenant_id varchar(64) not null,
+                    org_id bigint,
+                    created_by bigint,
+                    created_at datetime not null default current_timestamp,
+                    updated_by bigint,
+                    updated_at datetime not null default current_timestamp,
                     unique key uk_sys_dict_type (dict_type)
                 )
                 """);
@@ -177,10 +181,12 @@ class SystemDictResourceHandlerIntegrationTest {
                     sort int not null default 0,
                     status tinyint not null default 1,
                     remark varchar(500),
-                    create_by varchar(64),
-                    update_by varchar(64),
-                    create_time datetime not null default current_timestamp,
-                    update_time datetime not null default current_timestamp
+                    tenant_id varchar(64) not null,
+                    org_id bigint,
+                    created_by bigint,
+                    created_at datetime not null default current_timestamp,
+                    updated_by bigint,
+                    updated_at datetime not null default current_timestamp
                 )
                 """);
     }

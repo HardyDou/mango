@@ -1,36 +1,22 @@
 package io.mango.system.core.service;
 
-import io.mango.common.result.R;
 import io.mango.common.vo.PageResult;
-import io.mango.system.api.po.SysLoginLogPo;
-import io.mango.system.api.po.SysOperationLogPo;
+import io.mango.system.api.command.RecordOperationLogCommand;
+import io.mango.system.api.command.RecordLoginLogCommand;
 import io.mango.system.api.query.LoginLogPageQuery;
 import io.mango.system.api.query.OperationLogPageQuery;
-
-import java.util.List;
-import java.util.Map;
+import io.mango.system.api.vo.LoginStatisticsVO;
+import io.mango.system.api.vo.SysLoginLogVO;
+import io.mango.system.api.vo.SysOperationLogVO;
 
 public interface ISysLogService {
-
-    R<List<SysLoginLogPo>> listLoginLogs();
-
-    R<PageResult<SysLoginLogPo>> pageLoginLogs(LoginLogPageQuery query);
-
-    R<SysLoginLogPo> getLoginLog(Long id);
-
-    R<Boolean> recordLoginLog(SysLoginLogPo log);
-
-    R<Boolean> cleanLoginLogs(Integer retentionDays);
-
-    R<Map<String, Object>> loginStatistics();
-
-    R<List<SysOperationLogPo>> listOperationLogs();
-
-    R<PageResult<SysOperationLogPo>> pageOperationLogs(OperationLogPageQuery query);
-
-    R<SysOperationLogPo> getOperationLog(Long id);
-
-    R<Boolean> recordOperationLog(SysOperationLogPo log);
-
-    R<Boolean> cleanOperationLogs(Integer retentionDays);
+    boolean record(RecordLoginLogCommand command);
+    PageResult<SysLoginLogVO> pageLoginLogs(LoginLogPageQuery query);
+    SysLoginLogVO getLoginLog(Long id);
+    Boolean cleanLoginLogs(Integer retentionDays);
+    LoginStatisticsVO loginStatistics();
+    PageResult<SysOperationLogVO> pageOperationLogs(OperationLogPageQuery query);
+    SysOperationLogVO getOperationLog(Long id);
+    boolean recordOperationLog(RecordOperationLogCommand command);
+    Boolean cleanOperationLogs(Integer retentionDays);
 }

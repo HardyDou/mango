@@ -25,4 +25,15 @@
         <module>mango-system-core</module>
         <module>mango-system-starter</module>
     </modules>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>com.github.spotbugs</groupId>
+                <artifactId>spotbugs-maven-plugin</artifactId>
+                <configuration>
+                    <excludeFilterFile>${maven.multiModuleProjectDirectory}/mango-platform/mango-system/spotbugs-exclude.xml</excludeFilterFile>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>

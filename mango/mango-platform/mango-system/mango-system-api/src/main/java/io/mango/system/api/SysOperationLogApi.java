@@ -2,20 +2,16 @@ package io.mango.system.api;
 
 import io.mango.common.result.R;
 import io.mango.common.vo.PageResult;
-import io.mango.system.api.po.SysOperationLogPo;
 import io.mango.system.api.query.OperationLogPageQuery;
+import io.mango.system.api.vo.SysOperationLogVO;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
+import org.springframework.validation.annotation.Validated;
 
-import java.util.List;
-
+@Validated
 public interface SysOperationLogApi {
-
-    R<List<SysOperationLogPo>> list();
-
-    R<PageResult<SysOperationLogPo>> page(OperationLogPageQuery query);
-
-    R<SysOperationLogPo> get(Long id);
-
-    R<Boolean> record(SysOperationLogPo log);
-
-    R<Boolean> clean(Integer retentionDays);
+    R<PageResult<SysOperationLogVO>> page(@Valid OperationLogPageQuery query);
+    R<SysOperationLogVO> get(@NotNull Long id);
+    R<Boolean> clean(@Min(1) Integer retentionDays);
 }

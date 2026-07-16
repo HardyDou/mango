@@ -1,10 +1,9 @@
 package io.mango.identity.core.service.impl;
 
-import io.mango.common.result.R;
 import io.mango.identity.core.adapter.SysConfigValueAdapter;
-import io.mango.system.api.SysConfigApi;
+import io.mango.system.api.spi.SystemConfigProvider;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.support.StaticListableBeanFactory;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -14,9 +13,9 @@ class IdentitySecurityPolicyServiceTest {
 
     @Test
     void booleanSystemConfigOverridesSpringDefault() {
-        SysConfigApi api = mock(SysConfigApi.class);
+        SystemConfigProvider api = mock(SystemConfigProvider.class);
         when(api.getBooleanValue("identity.security.password-reset-after-create.enabled", true))
-                .thenReturn(R.ok(false));
+                .thenReturn(false);
         IdentitySecurityPolicyService service = newService(new IdentitySecurityProperties(), api);
 
         assertThat(service.resetRequiredAfterCreate()).isFalse();
@@ -24,9 +23,9 @@ class IdentitySecurityPolicyServiceTest {
 
     @Test
     void integerSystemConfigOverridesSpringDefault() {
-        SysConfigApi api = mock(SysConfigApi.class);
+        SystemConfigProvider api = mock(SystemConfigProvider.class);
         when(api.getIntegerValue("sys.login.lockCount", 5))
-                .thenReturn(R.ok(3));
+                .thenReturn(3);
         IdentitySecurityPolicyService service = newService(new IdentitySecurityProperties(), api);
 
         assertThat(service.maxFailedAttempts()).isEqualTo(3);
@@ -34,9 +33,9 @@ class IdentitySecurityPolicyServiceTest {
 
     @Test
     void failureWindowSystemConfigOverridesSpringDefault() {
-        SysConfigApi api = mock(SysConfigApi.class);
+        SystemConfigProvider api = mock(SystemConfigProvider.class);
         when(api.getIntegerValue("identity.security.login.failure-window-minutes", 60))
-                .thenReturn(R.ok(30));
+                .thenReturn(30);
         IdentitySecurityPolicyService service = newService(new IdentitySecurityProperties(), api);
 
         assertThat(service.failureWindowMinutes()).isEqualTo(30);
@@ -44,9 +43,9 @@ class IdentitySecurityPolicyServiceTest {
 
     @Test
     void stringSystemConfigOverridesSpringDefault() {
-        SysConfigApi api = mock(SysConfigApi.class);
+        SystemConfigProvider api = mock(SystemConfigProvider.class);
         when(api.getValue("identity.security.password.pattern"))
-                .thenReturn(R.ok("(?=.*[A-Z]).{8,}"));
+                .thenReturn("(?=.*[A-Z]).{8,}");
         IdentitySecurityPolicyService service = newService(new IdentitySecurityProperties(), api);
 
         assertThat(service.passwordPattern()).isEqualTo("(?=.*[A-Z]).{8,}");
@@ -54,7 +53,7 @@ class IdentitySecurityPolicyServiceTest {
 
     @Test
     void fallsBackToSpringDefaultWhenSystemConfigUnavailable() {
-        SysConfigApi api = mock(SysConfigApi.class);
+        SystemConfigProvider api = mock(SystemConfigProvider.class);
         when(api.getBooleanValue("identity.security.login-failure-lock.enabled", true))
                 .thenThrow(new IllegalStateException("config unavailable"));
         IdentitySecurityProperties properties = new IdentitySecurityProperties();
@@ -64,10 +63,11 @@ class IdentitySecurityPolicyServiceTest {
         assertThat(service.loginFailureLockEnabled()).isTrue();
     }
 
-    @SuppressWarnings("unchecked")
-    private static IdentitySecurityPolicyService newService(IdentitySecurityProperties properties, SysConfigApi api) {
-        ObjectProvider<SysConfigApi> provider = mock(ObjectProvider.class);
-        when(provider.getIfAvailable()).thenReturn(api);
-        return new IdentitySecurityPolicyService(properties, new SysConfigValueAdapter(provider));
+    private static IdentitySecurityPolicyService newService(
+            IdentitySecurityProperties properties, SystemConfigProvider api) {
+        StaticListableBeanFactory beanFactory = new StaticListableBeanFactory();
+        beanFactory.addBean("systemConfigProvider", api);
+        return new IdentitySecurityPolicyService(properties,
+                new SysConfigValueAdapter(beanFactory.getBeanProvider(SystemConfigProvider.class)));
     }
 }

@@ -1,99 +1,98 @@
 package io.mango.system.starter.controller;
 
-import io.mango.auth.api.vo.LoginTenantVO;
 import io.mango.authorization.api.annotation.ApiAccess;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.common.result.R;
 import io.mango.infra.log.annotation.Log;
 import io.mango.system.api.SysTenantApi;
-import io.mango.system.api.command.UpdateTenantStatusCommand;
-import io.mango.system.api.po.SysTenantPo;
+import io.mango.system.api.command.SaveSysTenantCommand;
+import io.mango.system.api.vo.LoginTenantOptionVO;
+import io.mango.system.api.vo.SysTenantVO;
 import io.mango.system.core.service.ISysTenantService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+@Validated
 @RestController
 @RequestMapping("/system/tenant")
 @RequiredArgsConstructor
-@Tag(name = "机构管理", description = "机构列表、详情、新增、修改、删除与状态管理接口")
+@Tag(name = "机构管理", description = "机构管理与登录机构选项接口")
 public class SysTenantController implements SysTenantApi {
 
     private final ISysTenantService tenantService;
 
+    @Override
     @GetMapping("/list")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:tenant:list")
-    @Operation(summary = "获取机构列表", description = "权限接口。查询全部机构列表")
-    @Override
-    public R<List<SysTenantPo>> list() {
-        return tenantService.list();
+    @Operation(summary = "获取机构列表", description = "获取机构列表并返回处理结果")
+    public R<List<SysTenantVO>> list() {
+        return R.ok(tenantService.list());
     }
 
+    @Override
     @GetMapping("/login-options")
     @ApiAccess(mode = ApiResourceAccessMode.PUBLIC, desc = "登录机构选项")
-    @Operation(summary = "获取登录机构选项", description = "公开接口。查询启用机构的轻量列表，用于登录页选择机构")
-    public R<List<LoginTenantVO>> listLoginOptions() {
-        return tenantService.listLoginOptions();
+    @Operation(summary = "获取登录机构选项", description = "获取登录机构选项并返回处理结果")
+    public R<List<LoginTenantOptionVO>> listLoginOptions() {
+        return R.ok(tenantService.listLoginOptions());
     }
 
+    @Override
     @GetMapping("/detail")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:tenant:query")
-    @Operation(summary = "获取机构详情", description = "权限接口。按机构ID查询机构详情")
-    @Override
-    public R<SysTenantPo> get(
-            @Parameter(description = "机构ID。底层对应 tenantId")
-            @RequestParam Long id) {
-        return tenantService.get(id);
+    @Operation(summary = "获取机构详情", description = "获取机构详情并返回处理结果")
+    public R<SysTenantVO> get(@Parameter(description = "主键 ID", required = true) @RequestParam("id") Long id) {
+        return R.ok(tenantService.get(id));
     }
 
+    @Override
     @PostMapping
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:tenant:add")
-    @Operation(summary = "新增机构", description = "权限接口。创建机构空间")
+    @Operation(summary = "新增机构", description = "新增机构并返回处理结果")
     @Log("新增机构")
-    @Override
-    public R<Long> create(@RequestBody @Valid SysTenantPo po) {
-        return tenantService.create(po);
+    public R<Long> create(@RequestBody SaveSysTenantCommand command) {
+        return R.ok(tenantService.create(command));
     }
 
+    @Override
     @PutMapping
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:tenant:edit")
-    @Operation(summary = "修改机构", description = "权限接口。更新机构信息")
+    @Operation(summary = "修改机构", description = "修改机构并返回处理结果")
     @Log("修改机构")
-    @Override
-    public R<Boolean> update(@RequestBody @Valid SysTenantPo po) {
-        return tenantService.update(po);
+    public R<Boolean> update(@RequestBody SaveSysTenantCommand command) {
+        return R.ok(tenantService.update(command));
     }
 
+    @Override
     @DeleteMapping
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:tenant:delete")
-    @Operation(summary = "删除机构", description = "权限接口。仅允许删除未初始化且无关联数据的机构；已使用机构请改为归档")
+    @Operation(summary = "删除机构", description = "删除机构并返回处理结果")
     @Log("删除机构")
-    @Override
-    public R<Boolean> delete(
-            @Parameter(description = "机构ID。底层对应 tenantId")
-            @RequestParam Long id) {
-        return tenantService.delete(id);
+    public R<Boolean> delete(@Parameter(description = "主键 ID", required = true) @RequestParam("id") Long id) {
+        return R.ok(tenantService.delete(id));
     }
 
     @Override
-    public R<Boolean> updateStatus(UpdateTenantStatusCommand command) {
-        return tenantService.updateStatus(command.getId(), command.getStatus());
-    }
-
     @PutMapping("/status")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:tenant:edit")
-    @Operation(summary = "修改机构状态", description = "权限接口。按机构ID调整生命周期状态；非启用状态不允许登录与继续访问")
+    @Operation(summary = "修改机构状态", description = "修改机构状态并返回处理结果")
     @Log("修改机构状态")
     public R<Boolean> updateStatus(
-            @Parameter(description = "机构ID。底层对应 tenantId")
-            @RequestParam Long id,
-            @Parameter(description = "机构生命周期状态。字典 institution_status：0-禁用，1-启用，2-冻结，9-归档")
-            @RequestParam Integer status) {
-        return tenantService.updateStatus(id, status);
+            @Parameter(description = "主键 ID", required = true) @RequestParam("id") Long id,
+            @Parameter(description = "机构状态", required = true) @RequestParam("status") Integer status) {
+        return R.ok(tenantService.updateStatus(id, status));
     }
 }

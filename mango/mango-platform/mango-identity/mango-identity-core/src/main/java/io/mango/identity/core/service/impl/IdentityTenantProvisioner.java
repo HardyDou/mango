@@ -11,7 +11,7 @@ import io.mango.identity.core.mapper.IdentityUserMapper;
 import io.mango.identity.core.mapper.TenantMemberMapper;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.system.api.tenant.TenantDependencyChecker;
-import io.mango.system.api.tenant.TenantProvisionContext;
+import io.mango.system.api.tenant.TenantProvisionCommand;
 import io.mango.system.api.tenant.TenantProvisioner;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.annotation.Order;
@@ -39,7 +39,7 @@ public class IdentityTenantProvisioner implements TenantProvisioner, TenantDepen
     private final AuthorizationRoleBindingAdapter roleBindingAdapter;
 
     @Override
-    public void provision(TenantProvisionContext context) {
+    public void provision(TenantProvisionCommand context) {
         Long creatorUserId = MangoContextHolder.userId();
         if (creatorUserId == null) {
             return;
@@ -49,7 +49,7 @@ public class IdentityTenantProvisioner implements TenantProvisioner, TenantDepen
             return;
         }
         TenantMemberEntity member = ensureTenantAdminMember(context, creator);
-        Long roleId = findAdminRoleId(context.tenantId());
+        Long roleId = findAdminRoleId(context.getTenantId());
         if (roleId != null) {
             ensureRoleBinding(context, member.getMemberId(), roleId);
         }
@@ -65,23 +65,23 @@ public class IdentityTenantProvisioner implements TenantProvisioner, TenantDepen
         return Optional.empty();
     }
 
-    private TenantMemberEntity ensureTenantAdminMember(TenantProvisionContext context, IdentityUserEntity user) {
+    private TenantMemberEntity ensureTenantAdminMember(TenantProvisionCommand context, IdentityUserEntity user) {
         TenantMemberEntity member = tenantMemberMapper.selectOne(new LambdaQueryWrapper<TenantMemberEntity>()
-                .eq(TenantMemberEntity::getTenantId, context.tenantId())
+                .eq(TenantMemberEntity::getTenantId, context.getTenantId())
                 .eq(TenantMemberEntity::getUserId, user.getUserId())
                 .last("LIMIT 1"));
         if (member != null) {
             return member;
         }
         member = new TenantMemberEntity();
-        member.setTenantId(String.valueOf(context.tenantId()));
+        member.setTenantId(String.valueOf(context.getTenantId()));
         member.setUserId(user.getUserId());
-        member.setMemberNo("ADMIN-" + context.tenantId() + "-" + user.getUserId());
+        member.setMemberNo("ADMIN-" + context.getTenantId() + "-" + user.getUserId());
         member.setDisplayName(firstText(user.getNickname(), user.getUsername()));
         member.setMemberType("INSTITUTION_ADMIN");
         member.setStatus(1);
         member.setJoinedAt(LocalDateTime.now());
-        member.setRemark(context.tenantName() + " 机构创建者");
+        member.setRemark(context.getTenantName() + " 机构创建者");
         tenantMemberMapper.insert(member);
         return member;
     }
@@ -90,13 +90,15 @@ public class IdentityTenantProvisioner implements TenantProvisioner, TenantDepen
         RoleLookupQuery query = new RoleLookupQuery();
         query.setTenantId(tenantId);
         query.setAppCode(DEFAULT_APP_CODE);
+        query.setRealm(DEFAULT_REALM);
+        query.setActorType(DEFAULT_ACTOR_TYPE);
         query.setRoleCode(TENANT_ADMIN_ROLE);
         return roleBindingAdapter.findRoleId(query);
     }
 
-    private void ensureRoleBinding(TenantProvisionContext context, Long memberId, Long roleId) {
+    private void ensureRoleBinding(TenantProvisionCommand context, Long memberId, Long roleId) {
         SubjectRoleBindingCommand command = new SubjectRoleBindingCommand();
-        command.setTenantId(context.tenantId());
+        command.setTenantId(context.getTenantId());
         command.setSubjectType(AuthorizationQuery.SUBJECT_TYPE_TENANT_MEMBER);
         command.setSubjectId(memberId);
         command.setRoleId(roleId);
@@ -104,11 +106,14 @@ public class IdentityTenantProvisioner implements TenantProvisioner, TenantDepen
         command.setRealm(DEFAULT_REALM);
         command.setActorType(DEFAULT_ACTOR_TYPE);
         command.setPartyType(DEFAULT_PARTY_TYPE);
-        command.setPartyId(context.tenantId());
+        command.setPartyId(context.getTenantId());
         roleBindingAdapter.ensureSubjectRoleBinding(command);
     }
 
     private String firstText(String preferred, String fallback) {
-        return preferred != null && !preferred.isBlank() ? preferred.trim() : fallback;
+        if (preferred != null && !preferred.isBlank()) {
+            return preferred.trim();
+        }
+        return fallback;
     }
 }

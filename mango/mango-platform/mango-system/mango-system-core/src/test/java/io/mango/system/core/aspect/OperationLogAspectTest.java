@@ -5,7 +5,7 @@ import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.infra.log.annotation.Log;
-import io.mango.system.api.po.SysOperationLogPo;
+import io.mango.system.api.command.RecordOperationLogCommand;
 import io.mango.system.core.service.ISysLogService;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.reflect.MethodSignature;
@@ -58,10 +58,10 @@ class OperationLogAspectTest {
 
         aspect.around(point);
 
-        ArgumentCaptor<SysOperationLogPo> captor = ArgumentCaptor.forClass(SysOperationLogPo.class);
+        ArgumentCaptor<RecordOperationLogCommand> captor = ArgumentCaptor.forClass(RecordOperationLogCommand.class);
         verify(logService).recordOperationLog(captor.capture());
-        SysOperationLogPo log = captor.getValue();
-        assertThat(log.getTenantId()).isEqualTo(1L);
+        RecordOperationLogCommand log = captor.getValue();
+        assertThat(log.getTenantId()).isEqualTo("1");
         assertThat(log.getOperation()).isEqualTo("修改配置");
         assertThat(log.getParams())
                 .contains("[ServletRequest]")
