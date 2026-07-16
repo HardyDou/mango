@@ -4,6 +4,10 @@
 
 业务页面中的字典、下拉、组织、用户、岗位、系统配置或初始化数据为空，且问题只在部分租户或部分账号出现。
 
+### 2026-07-16 组织初始化边界
+
+Org 的 `V1__init_org.sql` 只创建 `sys_org`、`org_post` 及索引约束。运行必需的默认根组织和岗位由 `META-INF/mango/resources/org-required-bootstrap.yml` 默认登记；A/B/C 公司、演示组织树和演示岗位位于 `META-INF/mango/demo/org-demo-structure.yml`，仅在 `mango.resource.registry.demo-enabled=true` 时加载。资源声明即使提供固定 `targetId`，首次同步也必须执行插入；空库验收应同时核对 Flyway、目标表行数和 Resource Registry 状态，不能只看注册记录显示成功。
+
 ## 2. 阅读顺序
 
 | 顺序 | 文档 | 关注点 |

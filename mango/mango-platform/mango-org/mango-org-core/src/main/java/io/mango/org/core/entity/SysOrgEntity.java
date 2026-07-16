@@ -1,11 +1,8 @@
-package io.mango.org.api.entity;
+package io.mango.org.core.entity;
 
-import com.baomidou.mybatisplus.annotation.*;
+import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
-
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
+import lombok.EqualsAndHashCode;
 
 /**
  * Organization entity
@@ -13,16 +10,9 @@ import java.util.List;
  * @author Mango
  */
 @Data
+@EqualsAndHashCode(callSuper = true)
 @TableName("sys_org")
-public class SysOrg implements Serializable {
-
-    private static final long serialVersionUID = 1L;
-
-    /**
-     * Primary key
-     */
-    @TableId(type = IdType.ASSIGN_ID)
-    private Long id;
+public class SysOrgEntity extends OrgBaseEntity {
 
     /**
      * Organization name
@@ -54,14 +44,4 @@ public class SysOrg implements Serializable {
      */
     private String orgStatus;
 
-    /**
-     * Tenant ID for multi-tenancy
-     */
-    private Long tenantId;
-
-    /**
-     * Children (not stored in DB, populated by service)
-     */
-    @TableField(exist = false)
-    private List<SysOrg> children = new ArrayList<>();
 }

@@ -43,4 +43,11 @@ public final class NoticeRemoteResult<T> {
     public String getMsg() {
         return message;
     }
+
+    public String messageOr(String fallback) {
+        if (message == null || message.isBlank()) {
+            return fallback;
+        }
+        return message;
+    }
 }

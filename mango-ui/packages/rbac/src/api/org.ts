@@ -40,6 +40,7 @@ export interface OrgMemberVO {
 }
 
 export interface AddOrgMemberCommand {
+  orgId: ApiId;
   memberId: ApiId;
   postId?: ApiId;
   primaryFlag?: boolean;
@@ -64,13 +65,14 @@ export const orgApi = {
   children: (parentId: ApiId) => get<SysOrg[]>('/org/children', { params: { parentId } }),
   detail: (id: ApiId) => get<SysOrg>('/org/detail', { params: { id } }),
   create: (data: Partial<SysOrg>) => post<ApiId>('/org', toBackendOrg(data)),
-  update: (data: Partial<SysOrg>) => put<void>('/org', toBackendOrg(data)),
-  delete: (id: ApiId) => del<void>('/org', { params: { id } }),
-  members: (orgId: ApiId) => get<OrgMemberVO[]>(`/org/${orgId}/members`),
-  addMember: (orgId: ApiId, data: AddOrgMemberCommand) => post<void>(`/org/${orgId}/members`, data),
-  updateMember: (data: UpdateOrgMemberCommand) => put<void>('/org/members', data),
-  removeMember: (relationId: ApiId) => del<void>('/org/members', { params: { relationId } }),
-  leaders: (orgId: ApiId) => get<ApiId[]>(`/org/leader/${orgId}`),
+  update: (data: Partial<SysOrg>) => put<boolean>('/org', toBackendOrg(data)),
+  delete: (id: ApiId) => del<boolean>('/org', { params: { id } }),
+  members: (orgId: ApiId) => get<OrgMemberVO[]>('/org/members', { params: { orgId } }),
+  addMember: (orgId: ApiId, data: Omit<AddOrgMemberCommand, 'orgId'>) =>
+    post<boolean>('/org/members', { ...data, orgId }),
+  updateMember: (data: UpdateOrgMemberCommand) => put<boolean>('/org/members', data),
+  removeMember: (relationId: ApiId) => del<boolean>('/org/members', { params: { relationId } }),
+  leaders: (orgId: ApiId) => get<ApiId[]>('/org/leader', { params: { orgId } }),
 };
 
 export function getOrgTree(params?: OrgTreeParams): Promise<SysOrg[]> {

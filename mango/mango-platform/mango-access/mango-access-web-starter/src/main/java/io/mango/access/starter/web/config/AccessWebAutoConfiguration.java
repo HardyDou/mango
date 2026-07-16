@@ -41,8 +41,9 @@ public class AccessWebAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public FilterRegistrationBean<AuthFilter> authFilterRegistration(
-            AccessEvaluator accessEvaluator) {
-        AuthFilter authFilter = new AuthFilter(accessEvaluator);
+            AccessEvaluator accessEvaluator,
+            ITokenProvider tokenProvider) {
+        AuthFilter authFilter = new AuthFilter(accessEvaluator, tokenProvider);
         FilterRegistrationBean<AuthFilter> registration = new FilterRegistrationBean<>();
         registration.setFilter(authFilter);
         registration.addUrlPatterns("/*");

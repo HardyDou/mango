@@ -6,16 +6,28 @@ import io.mango.org.api.command.CreatePostCommand;
 import io.mango.org.api.command.UpdatePostCommand;
 import io.mango.org.api.query.PostPageQuery;
 import io.mango.org.api.vo.PostVO;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+import org.springframework.validation.annotation.Validated;
 
+/**
+ * 岗位管理 API 契约。
+ */
+@Validated
 public interface PostApi {
 
-    R<PageResult<PostVO>> page(PostPageQuery query);
+    R<PageResult<PostVO>> page(@Valid PostPageQuery query);
 
-    R<PostVO> get(Long id);
+    R<PostVO> get(
+            @NotNull(message = "岗位ID不能为空")
+            @Positive(message = "岗位ID必须大于0") Long id);
 
-    R<Void> save(CreatePostCommand command);
+    R<Long> save(@Valid CreatePostCommand command);
 
-    R<Void> update(UpdatePostCommand command);
+    R<Boolean> update(@Valid UpdatePostCommand command);
 
-    R<Void> delete(Long id);
+    R<Boolean> delete(
+            @NotNull(message = "岗位ID不能为空")
+            @Positive(message = "岗位ID必须大于0") Long id);
 }

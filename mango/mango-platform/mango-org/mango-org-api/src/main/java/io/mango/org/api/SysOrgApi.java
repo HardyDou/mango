@@ -2,67 +2,55 @@ package io.mango.org.api;
 
 import io.mango.common.result.R;
 import io.mango.org.api.command.AddOrgMemberCommand;
-import io.mango.org.api.command.CreateOrgCommand;
-import io.mango.org.api.command.UpdateOrgCommand;
-import io.mango.org.api.entity.SysOrg;
+import io.mango.org.api.command.CreateSysOrgCommand;
+import io.mango.org.api.command.UpdateSysOrgCommand;
+import io.mango.org.api.command.UpdateOrgMemberCommand;
 import io.mango.org.api.query.SysOrgTreeQuery;
+import io.mango.org.api.vo.OrgMemberVO;
+import io.mango.org.api.vo.SysOrgVO;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+import org.springframework.validation.annotation.Validated;
 
 import java.util.List;
 
 /**
- * Organization API interface
- *
- * @author Mango
+ * 组织管理 API 契约。
  */
+@Validated
 public interface SysOrgApi {
 
-    /**
-     * Get organization tree with lazy loading
-     *
-     * @param parentId parent organization ID (0 for root)
-     * @param type organization type filter (null for all)
-     * @return tree structure
-     */
-    R<List<SysOrg>> tree(SysOrgTreeQuery query);
+    R<List<SysOrgVO>> tree(@Valid SysOrgTreeQuery query);
 
-    /**
-     * Get children by parent ID
-     *
-     * @param parentId parent organization ID
-     * @return children list
-     */
-    R<List<SysOrg>> children(Long parentId);
+    R<List<SysOrgVO>> children(
+            @NotNull(message = "父级组织ID不能为空") Long parentId);
 
-    /**
-     * Get organization by ID
-     *
-     * @param id organization ID
-     * @return organization
-     */
-    R<SysOrg> getById(Long id);
+    R<SysOrgVO> getById(
+            @NotNull(message = "组织ID不能为空")
+            @Positive(message = "组织ID必须大于0") Long id);
 
-    /**
-     * Create organization.
-     *
-     * @param command create command
-     * @return created organization ID
-     */
-    R<Long> create(CreateOrgCommand command);
+    R<Long> create(@Valid CreateSysOrgCommand command);
 
-    /**
-     * Update organization.
-     *
-     * @param command update command
-     * @return empty result
-     */
-    R<Void> update(UpdateOrgCommand command);
+    R<Boolean> update(@Valid UpdateSysOrgCommand command);
 
-    /**
-     * Add member to organization.
-     *
-     * @param orgId organization ID
-     * @param command add member command
-     * @return empty result
-     */
-    R<Void> addMember(Long orgId, AddOrgMemberCommand command);
+    R<Boolean> delete(
+            @NotNull(message = "组织ID不能为空")
+            @Positive(message = "组织ID必须大于0") Long id);
+
+    R<List<OrgMemberVO>> members(
+            @NotNull(message = "组织ID不能为空")
+            @Positive(message = "组织ID必须大于0") Long orgId);
+
+    R<Boolean> addMember(@Valid AddOrgMemberCommand command);
+
+    R<Boolean> updateMember(@Valid UpdateOrgMemberCommand command);
+
+    R<Boolean> removeMember(
+            @NotNull(message = "组织成员关系ID不能为空")
+            @Positive(message = "组织成员关系ID必须大于0") Long relationId);
+
+    R<List<Long>> leaderUserIds(
+            @NotNull(message = "组织ID不能为空")
+            @Positive(message = "组织ID必须大于0") Long orgId);
 }

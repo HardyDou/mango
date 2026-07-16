@@ -72,9 +72,9 @@
 1. 确认当前租户存在根组织。新租户创建时 `OrgTenantProvisioner` 会自动创建。
 2. 调用 `POST /org` 创建组织，填写 `pid`、`orgName`、`orgCode`、`orgType`。
 3. 调用 `POST /post` 创建岗位，填写 `postName`、`postCode`。
-4. 调用 `POST /org/{orgId}/members`，传入 identity 的 `memberId` 和岗位 `postId`。
+4. 调用 `POST /org/members`，在请求体中传入 `orgId`、identity 的 `memberId` 和岗位 `postId`。
 5. 需要部门负责人时，把 `leaderFlag` 设为 `true`。
-6. 审批或选人场景通过 `GET /org/leader/{orgId}` 查询负责人。
+6. 审批或选人场景通过 `GET /org/leader?orgId=...` 查询负责人。
 
 也可以用 Resource Registry 做基线注入：
 
@@ -108,11 +108,11 @@ module-path=/org,/post
 | POST | `/org` | `system:org:add` | 新增组织 |
 | PUT | `/org` | `system:org:edit` | 修改组织 |
 | DELETE | `/org` | `system:org:delete` | 删除组织 |
-| GET | `/org/{orgId}/members` | `system:org:list` | 查询组织成员 |
-| POST | `/org/{orgId}/members` | `system:org:edit` | 增加组织成员 |
+| GET | `/org/members?orgId=...` | `system:org:list` | 查询组织成员 |
+| POST | `/org/members` | `system:org:edit` | 增加组织成员 |
 | PUT | `/org/members` | `system:org:edit` | 修改组织成员关系 |
 | DELETE | `/org/members` | `system:org:edit` | 删除组织成员关系 |
-| GET | `/org/leader/{orgId}` | LOGIN | 查询组织负责人 |
+| GET | `/org/leader?orgId=...` | LOGIN | 查询组织负责人 |
 
 岗位接口前缀是 `/post`。
 
@@ -128,10 +128,10 @@ module-path=/org,/post
 
 | 对象 | 关键字段 |
 |------|----------|
-| `CreateOrgCommand` | `pid`、`orgName`、`orgCode`、`orgType` 必填；可传 `orgSort`、`orgStatus` |
-| `UpdateOrgCommand` | `id`、`pid`、`orgName`、`orgCode`、`orgType` 必填 |
+| `CreateSysOrgCommand` | `pid`、`orgName`、`orgCode`、`orgType` 必填；可传 `orgSort`、`orgStatus` |
+| `UpdateSysOrgCommand` | `id`、`pid`、`orgName`、`orgCode`、`orgType` 必填 |
 | `SysOrgTreeQuery` | `parentId`、`type`、`includeDisabled` |
-| `AddOrgMemberCommand` | `memberId` 必填；可传 `postId`、`primaryFlag`、`leaderFlag` |
+| `AddOrgMemberCommand` | `orgId`、`memberId` 必填；可传 `postId`、`primaryFlag`、`leaderFlag` |
 | `UpdateOrgMemberCommand` | `relationId` 必填；可改岗位、主组织和负责人标记 |
 | `CreatePostCommand` | `postName`、`postCode` 必填；可传 `postSort`、`postStatus`、`remark` |
 | `UpdatePostCommand` | `id`、`postName`、`postCode` 必填 |
@@ -148,7 +148,7 @@ module-path=/org,/post
 
 | 对象 | 关键字段 |
 |------|----------|
-| `SysOrg` | `id`、`pid`、`orgName`、`orgCode`、`orgType`、`orgSort`、`orgStatus`、`tenantId`、`children` |
+| `SysOrgVO` | `id`、`pid`、`orgName`、`orgCode`、`orgType`、`orgSort`、`orgStatus`、`tenantId`、`children` |
 | `OrgMemberVO` | `relationId`、`memberId`、`userId`、`username`、`nickname`、`memberName`、`memberType`、`status`、`orgId`、`postId`、`postName`、`postCode`、`primaryFlag`、`leaderFlag` |
 | `PostVO` | `id`、`postName`、`postCode`、`postSort`、`postStatus`、`remark`、`tenantId`、`createTime`、`updateTime` |
 
@@ -167,11 +167,12 @@ mango-org-core/src/main/resources/db/migration/org
 | `sys_org` | 组织树 | `uk_sys_org_tenant_code(tenant_id, org_code)` |
 | `org_post` | 岗位 | `uk_org_post_tenant_code(tenant_id, post_code)` |
 
-初始化数据：
+Flyway 只维护表、字段、索引和约束，不写业务数据。初始化数据按用途分开登记：
 
 | 来源 | 内容 |
 |------|------|
-| `V1__init_org.sql` | 租户 `1` 的芒果集团组织树、租户 `2/3/4` 的公司根组织、默认岗位 |
+| `mango-org-starter/src/main/resources/META-INF/mango/resources/org-required-bootstrap.yml` | 系统运行必需的默认根组织和岗位，默认加载 |
+| `mango-org-starter/src/main/resources/META-INF/mango/demo/org-demo-structure.yml` | 演示组织树、演示租户根组织和演示岗位，仅启用 `mango.resource.registry.demo-enabled=true` 时加载 |
 | `OrgTenantProvisioner` | 新租户创建时生成根组织和默认岗位 |
 
 新租户默认编码规则：

@@ -1,9 +1,10 @@
 package io.mango.org.starter.resource;
 
-import io.mango.org.api.entity.SysOrg;
+import io.mango.org.core.entity.SysOrgEntity;
 import io.mango.org.core.mapper.SysOrgMapper;
 import io.mango.resource.api.ResourceTypes;
 import io.mango.resource.api.enums.ResourceFieldType;
+import io.mango.resource.api.enums.ResourceSyncMode;
 import io.mango.resource.api.model.ResourceDeclaration;
 import io.mango.resource.api.model.ResourceField;
 import io.mango.resource.api.model.ResourceSyncResult;
@@ -30,21 +31,42 @@ class OrgUnitResourceHandlerTest {
     void upsertBatchOrdersChildAfterDeclaredParent() {
         ResourceDeclaration child = orgUnit("2951300000000009102", "org.child", "DEPT", "部门", "ROOT");
         ResourceDeclaration parent = orgUnit("2951300000000009101", "org.parent", "ROOT", "总部", null);
-        SysOrg parentEntity = new SysOrg();
+        child.setSyncMode(ResourceSyncMode.INIT_ONLY);
+        parent.setSyncMode(ResourceSyncMode.INIT_ONLY);
+        SysOrgEntity parentEntity = new SysOrgEntity();
         parentEntity.setId(100L);
         parentEntity.setTenantId(1L);
         parentEntity.setOrgCode("ROOT");
         when(orgMapper.selectOne(any())).thenReturn(null, null, parentEntity);
-        when(orgMapper.insert(any(SysOrg.class))).thenReturn(1);
+        when(orgMapper.insert(any(SysOrgEntity.class))).thenReturn(1);
 
         Map<String, ResourceSyncResult> results = handler.upsertBatch(List.of(child, parent));
 
         assertThat(results.keySet()).containsExactly(parent.getId(), child.getId());
-        ArgumentCaptor<SysOrg> captor = ArgumentCaptor.forClass(SysOrg.class);
+        assertThat(handler.requiresCompleteBatch()).isFalse();
+        ArgumentCaptor<SysOrgEntity> captor = ArgumentCaptor.forClass(SysOrgEntity.class);
         verify(orgMapper, times(2)).insert(captor.capture());
         assertThat(captor.getAllValues().get(0).getOrgCode()).isEqualTo("ROOT");
         assertThat(captor.getAllValues().get(1).getOrgCode()).isEqualTo("DEPT");
         assertThat(captor.getAllValues().get(1).getPid()).isEqualTo(100L);
+    }
+
+    @Test
+    void upsertInsertsNewOrgWhenDeclarationProvidesTargetId() {
+        ResourceDeclaration declaration = orgUnit(
+                "2951300000000009201", "org.fixed", "FIXED", "固定组织", null);
+        put(declaration, "targetId", ResourceFieldType.LONG, 9001L);
+        when(orgMapper.selectById(9001L)).thenReturn(null);
+        when(orgMapper.selectOne(any())).thenReturn(null);
+        when(orgMapper.insert(any(SysOrgEntity.class))).thenReturn(1);
+
+        ResourceSyncResult result = handler.upsert(declaration);
+
+        ArgumentCaptor<SysOrgEntity> captor = ArgumentCaptor.forClass(SysOrgEntity.class);
+        verify(orgMapper).insert(captor.capture());
+        assertThat(captor.getValue().getId()).isEqualTo(9001L);
+        assertThat(captor.getValue().getOrgCode()).isEqualTo("FIXED");
+        assertThat(result.getTargetId()).isEqualTo(9001L);
     }
 
     private ResourceDeclaration orgUnit(String id, String bizKey, String orgCode, String orgName, String parentOrgCode) {

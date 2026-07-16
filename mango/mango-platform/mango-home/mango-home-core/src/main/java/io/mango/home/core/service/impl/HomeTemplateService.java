@@ -6,7 +6,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.authorization.api.AuthorizationQuery;
 import io.mango.authorization.api.vo.AuthorizationSnapshotVO;
 import io.mango.authorization.api.IAuthorizationProvider;
-import io.mango.common.result.R;
 import io.mango.common.result.Require;
 import io.mango.home.api.command.CreateHomeTemplateCommand;
 import io.mango.home.api.command.SaveHomeTemplateAuthorizationsCommand;
@@ -27,6 +26,7 @@ import io.mango.home.core.entity.HomeTemplateEntity;
 import io.mango.home.core.entity.HomeTemplateVersionEntity;
 import io.mango.home.core.entity.UserHomePageEntity;
 import io.mango.home.core.entity.UserHomePreferenceEntity;
+import io.mango.home.core.integration.HomeOrgGateway;
 import io.mango.home.core.mapper.HomeTemplateAuthorizationMapper;
 import io.mango.home.core.mapper.HomeTemplateMapper;
 import io.mango.home.core.mapper.HomeTemplateVersionMapper;
@@ -34,8 +34,7 @@ import io.mango.home.core.mapper.UserHomePageMapper;
 import io.mango.home.core.mapper.UserHomePreferenceMapper;
 import io.mango.home.core.service.IHomeTemplateService;
 import io.mango.infra.context.api.MangoContextHolder;
-import io.mango.org.api.SysOrgApi;
-import io.mango.org.api.entity.SysOrg;
+import io.mango.org.api.vo.SysOrgVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
@@ -57,6 +56,9 @@ public class HomeTemplateService implements IHomeTemplateService {
 
     private static final int DEFAULT_SORT_STEP = 10;
     private static final int FIRST_DRAFT_VERSION = 0;
+    private static final String PERSONAL_AUTH_LABEL = "个人授权";
+    private static final String ORG_AUTH_LABEL = "部门授权";
+    private static final String ROLE_AUTH_LABEL = "角色授权";
 
     private final HomeTemplateMapper templateMapper;
     private final HomeTemplateVersionMapper versionMapper;
@@ -65,11 +67,14 @@ public class HomeTemplateService implements IHomeTemplateService {
     private final UserHomePreferenceMapper preferenceMapper;
     private final ObjectMapper objectMapper;
     private final ObjectProvider<IAuthorizationProvider> authorizationProvider;
-    private final ObjectProvider<SysOrgApi> sysOrgApiProvider;
+    private final HomeOrgGateway homeOrgGateway;
 
     @Override
     public List<HomeTemplateVO> list(HomeTemplateQuery query) {
-        HomeTemplateQuery resolved = query == null ? new HomeTemplateQuery() : query;
+        HomeTemplateQuery resolved = query;
+        if (resolved == null) {
+            resolved = new HomeTemplateQuery();
+        }
         List<HomeTemplateEntity> templates = templateMapper.selectList(new LambdaQueryWrapper<HomeTemplateEntity>()
                 .eq(HomeTemplateEntity::getTenantId, HomeContextSupport.currentTenantId())
                 .like(StringUtils.hasText(resolved.getKeyword()), HomeTemplateEntity::getName, resolved.getKeyword())
@@ -161,7 +166,7 @@ public class HomeTemplateService implements IHomeTemplateService {
                 .eq(HomeTemplateVersionEntity::getTemplateId, template.getId())
                 .eq(HomeTemplateVersionEntity::getStatus, HomeTemplateVersionStatus.ACTIVE.name())
                 .set(HomeTemplateVersionEntity::getStatus, HomeTemplateVersionStatus.HISTORY.name()));
-        int nextVersionNo = template.getActiveVersionNo() == null ? 1 : template.getActiveVersionNo() + 1;
+        int nextVersionNo = nextActiveVersionNo(template);
         draft.setVersionNo(nextVersionNo);
         draft.setStatus(HomeTemplateVersionStatus.ACTIVE.name());
         draft.setPublishedBy(MangoContextHolder.userId());
@@ -232,11 +237,11 @@ public class HomeTemplateService implements IHomeTemplateService {
             entity.setTenantId(HomeContextSupport.currentTenantId());
             entity.setTemplateId(command.getTemplateId());
             entity.setSubjectType(item.getSubjectType().name());
-            entity.setSubjectId(item.getSubjectId() == null ? 0L : item.getSubjectId());
+            entity.setSubjectId(defaultSubjectId(item.getSubjectId()));
             entity.setSubjectCode(defaultString(item.getSubjectCode()));
             entity.setSubjectName(trimToNull(item.getSubjectName()));
             entity.setDefaultFlag(Boolean.TRUE.equals(item.getDefaultFlag()));
-            entity.setSort(item.getSort() == null ? sort : item.getSort());
+            entity.setSort(defaultSort(item.getSort(), sort));
             entity.setEnabled(true);
             authorizationMapper.insert(entity);
             sort += DEFAULT_SORT_STEP;
@@ -360,9 +365,11 @@ public class HomeTemplateService implements IHomeTemplateService {
                                          List<HomeTemplateAuthorizationEntity> authorizations) {
         for (HomeTemplateAuthorizationEntity authorization : authorizations) {
             matches.compute(authorization.getTemplateId(), (templateId, existing) -> {
-                AuthorizedTemplateMatch match = existing == null
-                        ? new AuthorizedTemplateMatch(templateId, authorization.getDefaultFlag(), new ArrayList<>())
-                        : existing;
+                AuthorizedTemplateMatch match = existing;
+                if (match == null) {
+                    match = new AuthorizedTemplateMatch(
+                            templateId, authorization.getDefaultFlag(), new ArrayList<>());
+                }
                 match.sourceLabels().add(sourceLabel(authorization));
                 if (Boolean.TRUE.equals(authorization.getDefaultFlag())) {
                     match = new AuthorizedTemplateMatch(templateId, true, match.sourceLabels());
@@ -378,14 +385,9 @@ public class HomeTemplateService implements IHomeTemplateService {
             return orgIds;
         }
         orgIds.add(orgId);
-        SysOrgApi sysOrgApi = sysOrgApiProvider.getIfAvailable();
-        if (sysOrgApi == null) {
-            return orgIds;
-        }
         Long cursor = orgId;
         while (cursor != null && cursor > 0) {
-            R<SysOrg> response = sysOrgApi.getById(cursor);
-            SysOrg org = response == null ? null : response.getData();
+            SysOrgVO org = homeOrgGateway.findById(cursor);
             if (org == null || org.getPid() == null || org.getPid() <= 0 || orgIds.contains(org.getPid())) {
                 break;
             }
@@ -407,7 +409,10 @@ public class HomeTemplateService implements IHomeTemplateService {
                 .withActorType(MangoContextHolder.get().actorType())
                 .withParty(MangoContextHolder.get().partyType(), query.getOrgId());
         AuthorizationSnapshotVO snapshot = provider.load(authorizationQuery);
-        return snapshot == null ? Set.of() : snapshot.roleCodes();
+        if (snapshot == null) {
+            return Set.of();
+        }
+        return snapshot.roleCodes();
     }
 
     private HomeTemplateEntity requiredTemplate(Long id) {
@@ -447,7 +452,10 @@ public class HomeTemplateService implements IHomeTemplateService {
     }
 
     private int nextDraftVersionNo(HomeTemplateEntity template) {
-        return template.getActiveVersionNo() == null ? FIRST_DRAFT_VERSION : template.getActiveVersionNo() + 1;
+        if (template.getActiveVersionNo() == null) {
+            return FIRST_DRAFT_VERSION;
+        }
+        return template.getActiveVersionNo() + 1;
     }
 
     private int nextSort() {
@@ -469,15 +477,23 @@ public class HomeTemplateService implements IHomeTemplateService {
         vo.setActiveVersionId(entity.getActiveVersionId());
         vo.setActiveVersionNo(entity.getActiveVersionNo());
         HomeTemplateVersionEntity active = activeVersion(entity);
-        vo.setActiveLayoutJson(active == null ? null : active.getLayoutJson());
+        if (active != null) {
+            vo.setActiveLayoutJson(active.getLayoutJson());
+        }
         HomeTemplateVersionEntity draft = draftVersion(entity.getId());
-        vo.setDraftVersionId(draft == null ? null : draft.getId());
-        vo.setDraftLayoutJson(draft == null ? null : draft.getLayoutJson());
+        if (draft != null) {
+            vo.setDraftVersionId(draft.getId());
+            vo.setDraftLayoutJson(draft.getLayoutJson());
+        }
         Long authCount = authorizationMapper.selectCount(new LambdaQueryWrapper<HomeTemplateAuthorizationEntity>()
                 .eq(HomeTemplateAuthorizationEntity::getTenantId, entity.getTenantId())
                 .eq(HomeTemplateAuthorizationEntity::getTemplateId, entity.getId())
                 .eq(HomeTemplateAuthorizationEntity::getEnabled, true));
-        vo.setAuthorizationCount(authCount == null ? 0 : authCount.intValue());
+        if (authCount == null) {
+            vo.setAuthorizationCount(0);
+        } else {
+            vo.setAuthorizationCount(authCount.intValue());
+        }
         vo.setCreatedAt(entity.getCreatedAt());
         vo.setUpdatedAt(entity.getUpdatedAt());
         return vo;
@@ -571,19 +587,10 @@ public class HomeTemplateService implements IHomeTemplateService {
                 .map(HomePageVO::getRouteKey)
                 .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new));
         pages.forEach(page -> page.setDefaultPage(false));
-        if (preference != null && preference.getDefaultHomeRef() != null) {
-            HomePageVO preferred = findByRoute(pages, preference.getDefaultHomeRef());
-            if (preferred != null) {
-                preferred.setDefaultPage(true);
-                return;
-            }
-        }
-        if (preference != null && preference.getDefaultHomePageId() != null) {
-            HomePageVO preferred = findByRoute(pages, HomeRouteKeys.user(preference.getDefaultHomePageId()));
-            if (preferred != null) {
-                preferred.setDefaultPage(true);
-                return;
-            }
+        HomePageVO preferred = preferredPage(pages, preference);
+        if (preferred != null) {
+            preferred.setDefaultPage(true);
+            return;
         }
         HomePageVO selected = firstAuthorizationDefault(pages, authorizationDefaultRoutes, HomePageSourceType.PERSONAL_AUTH);
         if (selected == null) {
@@ -596,6 +603,22 @@ public class HomeTemplateService implements IHomeTemplateService {
             selected = pages.get(0);
         }
         selected.setDefaultPage(true);
+    }
+
+    private HomePageVO preferredPage(List<HomePageVO> pages, UserHomePreferenceEntity preference) {
+        if (preference == null) {
+            return null;
+        }
+        if (preference.getDefaultHomeRef() != null) {
+            HomePageVO preferred = findByRoute(pages, preference.getDefaultHomeRef());
+            if (preferred != null) {
+                return preferred;
+            }
+        }
+        if (preference.getDefaultHomePageId() != null) {
+            return findByRoute(pages, HomeRouteKeys.user(preference.getDefaultHomePageId()));
+        }
+        return null;
     }
 
     private HomePageVO firstAuthorizationDefault(List<HomePageVO> pages, Set<String> defaultRoutes, HomePageSourceType sourceType) {
@@ -626,9 +649,11 @@ public class HomeTemplateService implements IHomeTemplateService {
     private String sourceLabel(HomeTemplateAuthorizationEntity authorization) {
         String name = authorization.getSubjectName();
         if (!StringUtils.hasText(name)) {
-            name = StringUtils.hasText(authorization.getSubjectCode())
-                    ? authorization.getSubjectCode()
-                    : String.valueOf(authorization.getSubjectId());
+            if (StringUtils.hasText(authorization.getSubjectCode())) {
+                name = authorization.getSubjectCode();
+            } else {
+                name = String.valueOf(authorization.getSubjectId());
+            }
         }
         return switch (HomeTemplateAuthorizationSubjectType.valueOf(authorization.getSubjectType())) {
             case USER -> "个人授权：" + name;
@@ -638,13 +663,13 @@ public class HomeTemplateService implements IHomeTemplateService {
     }
 
     private String resolveSourceType(List<String> labels) {
-        if (labels.stream().anyMatch(label -> label.startsWith("个人授权"))) {
+        if (labels.stream().anyMatch(label -> label.startsWith(PERSONAL_AUTH_LABEL))) {
             return HomePageSourceType.PERSONAL_AUTH.name();
         }
-        if (labels.stream().anyMatch(label -> label.startsWith("部门授权"))) {
+        if (labels.stream().anyMatch(label -> label.startsWith(ORG_AUTH_LABEL))) {
             return HomePageSourceType.ORG_AUTH.name();
         }
-        if (labels.stream().anyMatch(label -> label.startsWith("角色授权"))) {
+        if (labels.stream().anyMatch(label -> label.startsWith(ROLE_AUTH_LABEL))) {
             return HomePageSourceType.ROLE_AUTH.name();
         }
         return HomePageSourceType.SYSTEM.name();
@@ -655,6 +680,27 @@ public class HomeTemplateService implements IHomeTemplateService {
             return "";
         }
         return value.trim();
+    }
+
+    private int nextActiveVersionNo(HomeTemplateEntity template) {
+        if (template.getActiveVersionNo() == null) {
+            return 1;
+        }
+        return template.getActiveVersionNo() + 1;
+    }
+
+    private Long defaultSubjectId(Long subjectId) {
+        if (subjectId == null) {
+            return Long.valueOf(0L);
+        }
+        return subjectId;
+    }
+
+    private Integer defaultSort(Integer configuredSort, int fallbackSort) {
+        if (configuredSort == null) {
+            return Integer.valueOf(fallbackSort);
+        }
+        return configuredSort;
     }
 
     private String trimToNull(String value) {
