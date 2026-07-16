@@ -20,7 +20,7 @@
 | 自动配置条件不完整 | resource-sync 测试因 classpath 存在 Gateway 类就装配 Bean，但缺少 `RouteDefinitionLocator`，Spring 上下文失败 | 只测配置类存在或单类逻辑，未启动组合 classpath | 自动配置测试覆盖依赖存在、依赖缺失、Bean 存在和 Bean 缺失组合 |
 | 兼容壳形成第二套协议 | Org API 同时保留旧 Entity、旧 Command 与新 VO/Command，Home、Notice 等内部消费者继续依赖旧协议，表面兼容实际扩大了分层债务 | 只检查 Org 自身编译，没有枚举直接消费者，也没有区分 Java 协议兼容和 HTTP 行为兼容 | 删除内部兼容壳前先搜索全部直接消费者；统一迁移到 VO、Command 和 Gateway；分别冻结 Java/HTTP 可观察契约 |
 | 适配器失败语义丢失 | Gateway 把空远程结果包装为非空失败对象后，下游原有 `result == null` 回退分支失效，最终错误信息可能为空 | 测试只覆盖成功数据或只断言失败，没有断言失败消息和空响应边界 | 在适配器统一提供带 fallback 的失败消息；测试空响应、远程失败和业务失败三类结果 |
-| 正确依赖注入被静态工具误报 | Spring 构造器注入被 SpotBugs `EI_EXPOSE_REP2` 误判，存在为消除告警而改成非标准注入或添加抑制注解的诱惑 | 质量工具不了解 Spring Bean 生命周期，单看告警数量无法判断真实缺陷 | 保留 `@RequiredArgsConstructor` 和 `private final`；只对已复核的精确类/规则配置工具过滤，不通过业务代码变形或抑制注解逃避真实问题 |
+| 正确依赖注入被静态工具误报 | Spring 构造器注入被 SpotBugs `EI_EXPOSE_REP2` 误判，改成 `ObjectProvider` 后又触发 Controller 必须直接依赖 Service 接口的架构红线 | 质量工具不了解 Spring Bean 生命周期，单看告警数量无法判断真实缺陷 | 保留 `@RequiredArgsConstructor` 和 `private final I*Service`；在所属模块对已复核的精确类/规则配置 SpotBugs 过滤，不通过业务代码变形或抑制注解逃避真实问题 |
 | Changed-only 路径口径不一致 | Git 变更路径带仓库根 `mango/`，Maven issue 路径从 `mango-platform/` 开始，报告把真实改动标成 `inChangedFiles=false` | 只看门禁绿灯，没有抽查报告里的 changed file 映射和 issue identity | 抽查 `inChangedFiles`、模块归属和路径归一化；在检查器修复前，用目标模块完整静态报告与改动文件交叉核验 |
 | 定向检查被实现缺陷扩大或崩溃 | 模块级 `rule=all` 意外扫描仓库其它数字版本并触发 `NumberFormatException`，既慢又不能形成可靠结论 | 把命令名称里的“模块级”当成真实扫描边界，没有核对 report scope | 质量、架构和消费者编译分开执行；核对报告 scope；检查器异常不得当作业务失败或绿灯，需保留可复现证据 |
 | 前端清单、锁文件和已发布版本漂移 | Org E2E 启动时源码要求 `@mango/admin-shell@1.0.42`，锁文件仍记录 `1.0.41`，内网仓库也只有 `1.0.41` | 后端测试不消费前端 workspace，旧机器已有 `node_modules` 时还会掩盖锁漂移 | E2E 前从干净依赖状态检查 manifest、lock 和 registry；主仓源码联调可显式链接同版本 workspace 包，发布验收仍必须等待锁文件与仓库版本一致 |

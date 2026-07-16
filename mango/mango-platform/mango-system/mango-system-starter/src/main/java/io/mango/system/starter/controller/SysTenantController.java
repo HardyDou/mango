@@ -12,9 +12,7 @@ import io.mango.system.core.service.ISysTenantService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -34,19 +32,14 @@ import java.util.List;
 @Tag(name = "机构管理", description = "机构管理与登录机构选项接口")
 public class SysTenantController implements SysTenantApi {
 
-    private final ObjectProvider<ISysTenantService> tenantServices;
-
-    @PostConstruct
-    void validateRequiredDependencies() {
-        tenantService();
-    }
+    private final ISysTenantService tenantService;
 
     @Override
     @GetMapping("/list")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:tenant:list")
     @Operation(summary = "获取机构列表", description = "获取机构列表并返回处理结果")
     public R<List<SysTenantVO>> list() {
-        return R.ok(tenantService().list());
+        return R.ok(tenantService.list());
     }
 
     @Override
@@ -54,7 +47,7 @@ public class SysTenantController implements SysTenantApi {
     @ApiAccess(mode = ApiResourceAccessMode.PUBLIC, desc = "登录机构选项")
     @Operation(summary = "获取登录机构选项", description = "获取登录机构选项并返回处理结果")
     public R<List<LoginTenantOptionVO>> listLoginOptions() {
-        return R.ok(tenantService().listLoginOptions());
+        return R.ok(tenantService.listLoginOptions());
     }
 
     @Override
@@ -62,7 +55,7 @@ public class SysTenantController implements SysTenantApi {
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:tenant:query")
     @Operation(summary = "获取机构详情", description = "获取机构详情并返回处理结果")
     public R<SysTenantVO> get(@Parameter(description = "主键 ID", required = true) @RequestParam("id") Long id) {
-        return R.ok(tenantService().get(id));
+        return R.ok(tenantService.get(id));
     }
 
     @Override
@@ -71,7 +64,7 @@ public class SysTenantController implements SysTenantApi {
     @Operation(summary = "新增机构", description = "新增机构并返回处理结果")
     @Log("新增机构")
     public R<Long> create(@RequestBody SaveSysTenantCommand command) {
-        return R.ok(tenantService().create(command));
+        return R.ok(tenantService.create(command));
     }
 
     @Override
@@ -80,7 +73,7 @@ public class SysTenantController implements SysTenantApi {
     @Operation(summary = "修改机构", description = "修改机构并返回处理结果")
     @Log("修改机构")
     public R<Boolean> update(@RequestBody SaveSysTenantCommand command) {
-        return R.ok(tenantService().update(command));
+        return R.ok(tenantService.update(command));
     }
 
     @Override
@@ -89,7 +82,7 @@ public class SysTenantController implements SysTenantApi {
     @Operation(summary = "删除机构", description = "删除机构并返回处理结果")
     @Log("删除机构")
     public R<Boolean> delete(@Parameter(description = "主键 ID", required = true) @RequestParam("id") Long id) {
-        return R.ok(tenantService().delete(id));
+        return R.ok(tenantService.delete(id));
     }
 
     @Override
@@ -100,10 +93,6 @@ public class SysTenantController implements SysTenantApi {
     public R<Boolean> updateStatus(
             @Parameter(description = "主键 ID", required = true) @RequestParam("id") Long id,
             @Parameter(description = "机构状态", required = true) @RequestParam("status") Integer status) {
-        return R.ok(tenantService().updateStatus(id, status));
-    }
-
-    private ISysTenantService tenantService() {
-        return tenantServices.getObject();
+        return R.ok(tenantService.updateStatus(id, status));
     }
 }

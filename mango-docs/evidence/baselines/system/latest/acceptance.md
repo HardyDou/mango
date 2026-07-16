@@ -44,7 +44,7 @@
 - 改前基线：System 60 条单元/接口测试，0 失败。
 - 改后同层测试：System 62 条（core 57、starter 5），0 failures、0 errors、0 skipped；resource-api 2 条同样通过。
 - 跨模块回归：`AuthRoleResourceHandlerIntegrationTest` 通过；Identity 用户、密码策略、安全策略三组定向测试通过。
-- 定向架构门禁：使用 PMO 规定的 partial Reactor 模式扫描 `mango-system-api/core/starter`，0 条违规；三个模块 SpotBugs 的 `EI_EXPOSE_REP*` 为 0；未执行全仓扫描。
+- 定向架构门禁：使用 PMO 规定的 partial Reactor 模式扫描 `mango-system-api/core/starter`，System 违规 0、blocking 0；新增静态问题 0、工具失败 0。Spring 构造器注入保留 `private final I*Service`，仅通过 System 模块精确 SpotBugs 类过滤消除 `EI_EXPOSE_REP2` 误报，未使用抑制注解；未执行全仓扫描。
 - 测试质量门禁：扫描 18 个变更测试文件，无恒真/同值断言，未 mock/spy 被测对象。
 - E2E 命令：`pnpm exec playwright test area-management.spec.ts config-management.spec.ts dict-management.spec.ts tenant-management.spec.ts --project=chromium --reporter=list --workers=1`。
 - E2E 结果：10 passed，47.3s。
