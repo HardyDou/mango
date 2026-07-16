@@ -8,7 +8,7 @@
         "AUTH_MENU": [
           {
             "id": "2951300000000009201",
-            "version": 1,
+            "version": 2,
             "bizKey": "domain.menu.internal-admin",
             "name": "业务域菜单",
             "targetModule": "authorization",
@@ -43,12 +43,12 @@
                   {
                     "menuType": 2,
                     "menuName": "业务域",
-                    "menuCode": "domain",
-                    "parentCode": "system",
-                    "path": "/system/domain",
+                    "menuCode": "data:domain",
+                    "parentCode": "data",
+                    "path": "/data/domain",
                     "icon": "Grid",
                     "component": "system/domain/index",
-                    "sort": 8,
+                    "sort": 7,
                     "remark": "业务域编码、前缀、层级和状态管理",
                     "packageCodes": [
                       "platform_admin",
