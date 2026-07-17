@@ -25,6 +25,7 @@
 | 类型 | 典型表现 | 根因 | 主要证明手段 |
 |---|---|---|---|
 | API 契约债务 | API 无校验，Controller 重复 `@Valid`，Feign 与 Controller 绑定不一致，方法校验失败被误报为 HTTP 500 | 契约分散在多个适配器，统一异常处理遗漏 `ConstraintViolationException` | API 契约测试、非法请求 API 测试、Controller/Feign parity；断言 HTTP 400 和校验消息 |
+| 过度校验改变语义 | 合法的空列表“清空全部授权”被 `@NotEmpty` 拒绝；可选 Boolean 为了过门禁伪造校验组 | 把字段非空率当成业务约束，没有先锁定清空、缺省和兼容语义 | 用例覆盖 null、空列表、缺省值和非法值；只有业务禁止空集合时才使用 `@NotEmpty` |
 | Controller 分层债务 | Controller 转换 Entity、组装查询、处理业务分支，一个 Controller 实现多个 API | 业务用例未收敛到 Service | 结构检查、MockMvc/真实 API、Service 规则测试 |
 | Service 债务 | `XxxServiceImpl`、Service 散落在非 `impl` 目录、直接继承 MyBatis `ServiceImpl`、直接抛通用异常 | 模块自建了第二套 CRUD/异常语义 | 定向架构检查、Service 单元/集成测试 |
 | Entity/Mapper 债务 | Entity 未以 `Entity` 结尾，重复 ID/租户/审计字段，Mapper 聚合名不一致 | 持久化模型没有继承 Mango canonical Entity | 编译、Mapper 真实读写、Entity/schema 对照 |
@@ -49,6 +50,9 @@
 | 任意 JSON 使用裸 Map | 为支持动态变量在 API/Core 多层传递 `Map<String, Object>`，产生 unchecked cast 和模糊边界 | 把 wire format 的灵活性等同于 Java 类型无约束 | 使用具名 JSON 值对象，序列化仍保持普通 object；覆盖嵌套对象、数组和反序列化兼容测试 |
 | 远程响应包装泄漏 Core | Core 直接依赖 Feign `R<T>` 并自行判断远程失败 | HTTP 适配与业务规则没有边界 | Core 定义 Provider/本域值对象，starter/adapter 负责 Feign、`R<T>` 解包及失败语义 |
 | Demo 开关验收混淆 | demo 关闭的新库没有演示角色/菜单，就误判正式资源缺失 | 没有分别定义生产初始化和演示验收目标 | demo 关闭验证 DDL/正式资源纯净；demo 开启验证演示角色、菜单与页面，并记录实际配置前缀 |
+| 前端 ID 精度债务 | E2E 从登录响应取得雪花 ID 后又执行 `Number(id)`，授权和查询命中错误对象 | 沿用旧库小整数 ID 假设 | 前端和测试统一使用字符串 `ApiId`；对真实雪花 ID 执行授权、查询和回显 |
+| E2E 共享状态串扰 | 并行用例共用同一账号、默认首页和授权集合，排序或默认值被另一用例改变 | 用例没有独立数据或错误启用并行 | 唯一数据前缀、精确清理；共享账号状态用例串行或分配独立账号，禁止用重试掩盖串扰 |
+| Partial 质量检查作用域泄漏 | Maven `-pl` 已限定模块，但聚合检查中的部分自有规则仍扫描全仓，目标模块被范围外存量拖失败 | 把 Reactor 选择范围误认为所有规则的文件扫描范围 | 检查报告中的实际文件路径和 `inChangedFiles`；目标模块分别核对 PMD、Checkstyle、SpotBugs 和 architecture 报告，不重复运行已确认会越界的命令 |
 | 直连微服务缺上下文 | 绕过网关只传浏览器租户头，下游租户 SQL 因缺上下文失败 | 忽略网关到内部上下文协议的转换职责 | 优先经真实网关；直连时传 Mango 内部上下文头并验证 Feign 传播，禁止默认租户或关闭隔离绕过 |
 | 增量质量门禁掩盖存量 | changed-only/no-new 通过，但目标模块问题被归入 baseline | 把“无新增”等同于“债务已清零” | 审计报告四类列表和目标模块总量；历史债务验收要求目标范围静态问题为 0 |
 | 可变状态泄漏 | DTO、VO、record 直接保存/返回集合、Map、JSON wrapper 或 `byte[]` | 只测序列化和值相等，没有测试外部修改 | 输入和输出双向防御复制；集合不可变，数组逐次复制；兼容测试覆盖嵌套 JSON/二进制 |
@@ -128,10 +132,12 @@ node mango-pmo/tools/pmo-preflight.mjs \
 
 - 业务实现使用 `XxxService implements IXxxService`，放在 `service/impl`。
 - 基础 CRUD 复用 Mango canonical CRUD contract/实现，不再包一层自建 MyBatis `ServiceImpl`。
+- 多表聚合、模板版本、授权解析等领域用例不应为了形式统一强行继承 CRUD Service；只有单表 CRUD 语义与 canonical contract 一致时才复用。
 - 用稳定的业务条件和错误码表达失败，不要在各 Service 临时抛不同通用异常。
 - 持久化类使用 `XxxEntity`，继承 Mango canonical `TenantEntity`；不在子类重复声明 ID、tenantId 和审计字段。
 - Mapper 只访问本域表，直接继承 `BaseMapper<XxxEntity>`，Mapper/Entity 聚合名一致。
 - Entity 重构后的 migration 对照范围包括继承的 `tenant_id`/`org_id`/`created_by`/`created_at`/`updated_by`/`updated_at`；字段与 schema 的正式约束参见 [持久化与 CRUD 规范](../../../mango-pmo/rules/backend/07-persistence.md)。
+- Core 只定义最小 `I*Provider` 和本域值对象；starter/adapter 调用外域 API 并解包 `R<T>`，Provider 仍应放入规范允许的 core 包和命名体系，不能因为依赖方向正确就新造 `port` 杂项包。
 
 #### Flyway 与资源数据
 
@@ -253,6 +259,8 @@ shasum -a 256 <artifact.jar>
 
 E2E 优先使用 `data-page`、`data-surface`、`data-action`、`data-field`、`data-record-key` 和 `data-state` 等业务语义锚点。不要在 spec 中依赖 DOM 层级、`nth()`、`waitForTimeout()` 或 `force: true` 掩盖真实交互问题。
 
+共享账号会改变默认项、排序或授权集合时，相关用例必须串行，或给每个 worker 分配独立账号与租户。测试步骤不能用瞬时 `isEnabled()` 决定是否跳过关键动作；应等待稳定前置状态、关键接口响应和最终业务结果。
+
 ## 8. 失败归因决策树
 
 ```text
@@ -294,6 +302,9 @@ E2E 优先使用 `data-page`、`data-surface`、`data-action`、`data-field`、`
 - 为了让旧 E2E 变绿，放宽权限断言或回退已经确认的新菜单结构。
 - 聚合静态报告的生成时间早于当前 class，却仍将其中旧行号和旧构造器当成当前提交问题。
 - CLI 返回端口 ready 后立即读取初始化表，没有等待 Resource Registry 完成就宣布缺数据或通过。
+- E2E 把登录返回的雪花 ID 转成 JavaScript `number`，然后把“不存在/无权限”误判为后端缺陷。
+- 多个 worker 共用同一账号的默认首页和授权集合，却把排序失败当成随机 flaky 重试。
+- `mvn -pl ... mango:check` 失败后只看总数，不按报告路径区分目标模块问题和扫描越界产生的范围外存量。
 
 ## 10. 交付前检查表
 

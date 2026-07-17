@@ -1,6 +1,7 @@
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
 import { mkdirSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { collectBrowserDiagnostics } from '../support/browser-diagnostics';
 
 type ApiBody<T> = {
   code?: number | string;
@@ -73,7 +74,7 @@ type AuthorizationItem = {
 
 const EVIDENCE_DIR = resolve(
   __dirname,
-  '../../../../../mango-docs/evidence/2026-07-03-issue-372-home-management/e2e',
+  '../../../../../mango-docs/evidence/baselines/home/latest/e2e',
 );
 
 function layoutJson(title: string): string {
@@ -280,13 +281,24 @@ function defaultPageOf(pages: HomePage[]): HomePage | undefined {
 test.describe('首页管理 E2E', () => {
   test.describe.configure({ mode: 'serial' });
   test.setTimeout(90 * 1000);
+  const browserDiagnostics = new WeakMap<Page, string[]>();
 
-  test('平台模板发布、授权、默认首页解析和页面管理可用', async ({ page }, testInfo) => {
+  test.beforeEach(async ({ page }) => {
+    browserDiagnostics.set(page, collectBrowserDiagnostics(page));
+  });
+
+  test.afterEach(async ({ page }) => {
+    expect(browserDiagnostics.get(page)).toEqual([]);
+  });
+
+  test('@p0 @home 平台模板发布、授权、默认首页解析和页面管理可用', async ({ page }, testInfo) => {
     const prefix = `E2E首页管理${Date.now()}`;
     const originalName = `${prefix}-模板`;
     const copyName = `${prefix}-模板副本`;
-    const token = (await login(page)).accessToken;
-    const userId = '1';
+    const loginData = await login(page);
+    const token = loginData.accessToken;
+    expect(loginData.userId).toBeTruthy();
+    const userId = String(loginData.userId);
     const memberId = '1001';
     const orgId = '1';
 
@@ -355,14 +367,14 @@ test.describe('首页管理 E2E', () => {
         authorizations: [
           {
             subjectType: 'USER',
-            subjectId: Number(userId),
+            subjectId: userId,
             subjectName: 'admin',
             defaultFlag: true,
             sort: 10,
           },
           {
             subjectType: 'ORG',
-            subjectId: Number(orgId),
+            subjectId: orgId,
             subjectName: '芒果集团',
             defaultFlag: false,
             sort: 20,
@@ -430,7 +442,7 @@ test.describe('首页管理 E2E', () => {
     await expect(page.locator('.el-message--error')).toHaveCount(0);
   });
 
-  test('授权来源覆盖个人、部门继承、角色和默认优先级', async ({ page }) => {
+  test('@p1 @home 授权来源覆盖个人、部门继承、角色和默认优先级', async ({ page }) => {
     const prefix = `E2E首页授权矩阵${Date.now()}`;
     const token = (await login(page)).accessToken;
     const syntheticUserId = `900${Date.now()}`.slice(0, 12);
@@ -453,7 +465,7 @@ test.describe('首页管理 E2E', () => {
     ]);
 
     const roleOnlyPages = await resolveUserPages(page, token, {
-      userId: Number(syntheticUserId) + 2,
+      userId: String(BigInt(syntheticUserId) + 2n),
       memberId,
       orgId: rootOrgId,
     });
@@ -464,7 +476,7 @@ test.describe('首页管理 E2E', () => {
     await saveTemplateAuthorizations(page, token, orgTemplate.id, [
       {
         subjectType: 'ORG',
-        subjectId: Number(rootOrgId),
+        subjectId: rootOrgId,
         subjectName: '芒果集团',
         defaultFlag: true,
         sort: 20,
@@ -475,7 +487,7 @@ test.describe('首页管理 E2E', () => {
     await saveTemplateAuthorizations(page, token, userTemplate.id, [
       {
         subjectType: 'USER',
-        subjectId: Number(syntheticUserId),
+        subjectId: syntheticUserId,
         subjectName: `用户${syntheticUserId}`,
         defaultFlag: true,
         sort: 10,
@@ -496,7 +508,7 @@ test.describe('首页管理 E2E', () => {
     expect(pages.find(item => item.routeKey === routeOf(roleTemplate))?.sourceType).toBe('ROLE_AUTH');
 
     const inheritedPages = await resolveUserPages(page, token, {
-      userId: Number(syntheticUserId) + 1,
+      userId: String(BigInt(syntheticUserId) + 1n),
       orgId: childOrgId,
     });
     const inheritedOrg = inheritedPages.find(item => item.routeKey === routeOf(orgTemplate));
@@ -519,10 +531,12 @@ test.describe('首页管理 E2E', () => {
     expect(resolvedManual.layoutJson).toContain('manual-default');
   });
 
-  test('模板停用后不可见，已授权模板禁止删除，清空授权后可删除', async ({ page }) => {
+  test('@p1 @home 模板停用后不可见，已授权模板禁止删除，清空授权后可删除', async ({ page }) => {
     const prefix = `E2E首页状态删除${Date.now()}`;
-    const token = (await login(page)).accessToken;
-    const userId = '1';
+    const loginData = await login(page);
+    const token = loginData.accessToken;
+    expect(loginData.userId).toBeTruthy();
+    const userId = String(loginData.userId);
 
     await cleanupTemplates(page, token, 'E2E首页状态删除');
     await cleanupTemplates(page, token, prefix);
@@ -531,7 +545,7 @@ test.describe('首页管理 E2E', () => {
     await saveTemplateAuthorizations(page, token, template.id, [
       {
         subjectType: 'USER',
-        subjectId: Number(userId),
+        subjectId: userId,
         subjectName: 'admin',
         defaultFlag: true,
         sort: 10,
@@ -572,7 +586,7 @@ test.describe('首页管理 E2E', () => {
     expect(list.find(item => item.id === template.id)).toBeFalsy();
   });
 
-  test('后台页面支持新建模板、复制、授权和独立用户首页查询', async ({ page }, testInfo) => {
+  test('@p1 @home 后台页面支持新建模板、复制、授权和独立用户首页查询', async ({ page }, testInfo) => {
     const prefix = `E2E首页UI${Date.now()}`;
     const uiTemplateName = `${prefix}-页面新建`;
     const copiedTemplateName = `${uiTemplateName} 副本`;
@@ -663,7 +677,7 @@ test.describe('首页管理 E2E', () => {
     await expect(page.locator('.el-message--error')).toHaveCount(0);
   });
 
-  test('首页列表支持用户选择、操作列和批量删除', async ({ page }, testInfo) => {
+  test('@p1 @home 首页列表支持用户选择、操作列和批量删除', async ({ page }, testInfo) => {
     const prefix = `E2E首页列表${Date.now()}`;
     const loginData = await login(page);
     const token = loginData.accessToken;

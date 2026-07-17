@@ -10,7 +10,7 @@ import org.springframework.context.annotation.Configuration;
 @MapperScan("io.mango.home.core.mapper")
 @ComponentScan({
     "io.mango.home.core.service",
-    "io.mango.home.core.integration",
+    "io.mango.home.starter.adapter",
     "io.mango.home.starter.controller"
 })
 public class HomeAutoConfiguration {

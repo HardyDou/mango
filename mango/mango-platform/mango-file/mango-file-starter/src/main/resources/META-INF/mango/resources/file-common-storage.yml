@@ -46,10 +46,11 @@ mango:
               value: 系统默认本地文件存储
       FILE_SETTINGS:
         - id: "2026061801000000101"
-          version: 3
+          version: 4
           biz-key: file.settings.default
           name: 文件中心默认配置
           target-module: file
+          sync-mode: INIT_ONLY
           fields:
             settingsId:
               type: LONG
@@ -101,7 +102,7 @@ mango:
               value: 1
             accessMode:
               type: STRING
-              value: DIRECT
+              value: PROXY
             accessTokenExpireSeconds:
               type: LONG
               value: 86400

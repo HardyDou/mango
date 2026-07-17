@@ -467,7 +467,7 @@ mango:
     enabled: true
     storage-type: LOCAL
     default-bucket: local
-    public-base-url: https://example.com/api
+    public-base-url:
     local:
       root-path: ./data/files
       public-path: /file/local-objects
@@ -502,12 +502,50 @@ mango:
 | `upload.instant-upload-enabled` | `true` | 是否默认开启秒传。 |
 | `upload.direct-upload-enabled` | `false` | 是否默认允许浏览器直传对象存储。 |
 | `upload.direct-upload-expire-seconds` | `900` | 直传分片签名有效期，单位秒。 |
-| `access.mode` | `PROXY` | `PROXY` 由 Java 服务转发，`DIRECT` 返回存储公开访问地址。 |
+| `access.mode` | `DIRECT` | YAML/代码兼容默认值；多前端部署推荐显式使用 `PROXY`。新平台资源会将首次运行时配置初始化为 `PROXY`。 |
 | `access.token-enabled` | `false` | 是否默认启用访问令牌。 |
 | `access.token-expire-seconds` | `86400` | 下载/访问签名有效期，默认 24 小时。 |
 | `preview.provider-url` | `/file-preview/files/preview` | 文档预览服务地址，支持相对地址、绝对地址和占位符。 |
 | `preview.expire-seconds` | `86400` | 预览地址有效期，默认 24 小时。 |
 | `preview.external-extensions` | 文档和压缩包扩展名 | 交给预览服务处理的扩展名。 |
+
+### 7.1 多前端文件访问
+
+三套独立前端共用一个后端时，推荐使用 `PROXY` 模式，并让每个前端都通过自身同源的 `/api/` 反向代理访问后端。可直接参考：
+
+```text
+mango-ui/deploy/nginx/mango-independent-apps.conf
+```
+
+Nginx 的 `proxy_pass` 末尾保留 `/`，用于把浏览器请求中的 `/api/` 去掉后再转发；同时需要覆盖传递 `Host`、`X-Forwarded-Host`、`X-Forwarded-Port`、`X-Forwarded-Proto` 和 `X-Forwarded-Prefix: /api`。后端据此为 8081、8082、8083 分别返回当前应用同源的地址，例如：
+
+```text
+http://192.168.5.114:8082/api/file/files/preview-content?id=2078005986303193089
+```
+
+多前端场景不要把 `mango.file.public-base-url` 固定成某一个前端地址，应保持为空。已经保存到 `file_settings` 的租户运行时配置优先于 YAML；升级后如需使用同源代理，应在“文件配置”中把 `accessMode` 设置为 `PROXY`。
+
+`DIRECT` 模式用于浏览器直接访问 MinIO/S3。此时必须给存储配置一个浏览器可达且稳定的 `publicEndpoint`，预签名 URL 的 host、port、path 和 query 必须原样使用，不能再添加 `/api` 或改写到另一个前端端口。MinIO bucket CORS 至少允许三个前端 origin 的 `GET`、`HEAD`；启用浏览器直传时还需允许 `PUT` 及实际上传流程使用的方法。示例策略：
+
+```json
+{
+  "CORSRules": [
+    {
+      "AllowedOrigins": [
+        "http://192.168.5.114:8081",
+        "http://192.168.5.114:8082",
+        "http://192.168.5.114:8083"
+      ],
+      "AllowedMethods": ["GET", "HEAD", "PUT"],
+      "AllowedHeaders": ["*"],
+      "ExposeHeaders": ["ETag", "Content-Length", "Content-Type", "Content-Disposition"],
+      "MaxAgeSeconds": 3600
+    }
+  ]
+}
+```
+
+只使用 PROXY 模式时，浏览器不直连 MinIO，不需要为文件预览和下载配置 MinIO CORS。
 
 ## 8. 资源注入
 
@@ -546,7 +584,7 @@ mango-file-starter/src/main/resources/META-INF/mango/resources/file-common-stora
 
 ### 8.2 FILE_SETTINGS
 
-`FILE_SETTINGS` 落库到 `file_settings`，按 `tenantId` 合并更新。
+`FILE_SETTINGS` 首次落库到 `file_settings`，按 `tenantId` 初始化。资源使用 `INIT_ONLY`，升级默认配置时不会覆盖租户已保存的 PROXY/DIRECT 选择。
 
 | 字段 | 类型 | 必填 | 含义 |
 |------|------|------|------|
@@ -568,7 +606,7 @@ mango-file-starter/src/main/resources/META-INF/mango/resources/file-common-stora
 | `directUploadExpireSeconds` | `LONG` | 否 | 直传签名有效期，默认 `900`。 |
 | `accessTokenEnabled` | `INT` | 否 | 是否启用限时访问令牌，默认 `1`。 |
 | `publicReadRequiresToken` | `INT` | 否 | 公开读取是否仍要求签名访问，默认 `1`。 |
-| `accessMode` | `STRING` | 否 | 文件访问模式，默认 `DIRECT`。 |
+| `accessMode` | `STRING` | 否 | 文件访问模式，默认 `PROXY`。 |
 | `accessTokenExpireSeconds` | `LONG` | 否 | 访问签名有效期，默认 `86400`（24 小时）。 |
 | `previewProviderUrl` | `STRING` | 否 | 外部预览服务地址。 |
 | `previewExpireSeconds` | `LONG` | 否 | 预览访问有效期，默认 `86400`（24 小时）。 |
