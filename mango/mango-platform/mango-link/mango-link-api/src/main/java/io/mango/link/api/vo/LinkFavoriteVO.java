@@ -14,6 +14,8 @@ import java.time.LocalDateTime;
 @Schema(description = "收藏网址返回对象")
 public class LinkFavoriteVO extends LinkNavigationItemVO {
 
+    @Schema(description = "收藏记录 ID")
     private Long favoriteId;
+    @Schema(description = "收藏时间")
     private LocalDateTime favoriteTime;
 }

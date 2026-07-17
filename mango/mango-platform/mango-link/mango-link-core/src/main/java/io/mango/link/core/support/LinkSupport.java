@@ -2,6 +2,7 @@ package io.mango.link.core.support;
 
 import io.mango.common.result.Require;
 import io.mango.link.api.enums.LinkCategoryScope;
+import io.mango.link.api.enums.LinkCode;
 import io.mango.link.api.enums.LinkOpenMode;
 import io.mango.link.api.enums.LinkStatus;
 import io.mango.link.api.enums.LinkVisibilityScope;
@@ -42,7 +43,7 @@ public final class LinkSupport {
     }
 
     public static String scope(LinkVisibilityScope scope) {
-        Require.notNull(scope, "可见范围不能为空");
+        Require.notNull(scope, LinkCode.LINK_BUSINESS_ERROR, "可见范围不能为空");
         return scope.name();
     }
 
@@ -73,7 +74,8 @@ public final class LinkSupport {
         List<String> normalized = tags.stream()
                 .map(LinkContextSupport::trimToNull)
                 .filter(tag -> tag != null)
-                .peek(tag -> Require.isTrue(!tag.contains(","), "标签不能包含英文逗号"))
+                .peek(tag -> Require.isTrue(!tag.contains(","),
+                        LinkCode.LINK_BUSINESS_ERROR, "标签不能包含英文逗号"))
                 .distinct()
                 .toList();
         return normalized.isEmpty() ? null : String.join(",", normalized);
@@ -95,10 +97,10 @@ public final class LinkSupport {
             URI uri = new URI(normalized);
             String scheme = uri.getScheme();
             Require.isTrue(("http".equalsIgnoreCase(scheme) || "https".equalsIgnoreCase(scheme))
-                    && uri.getHost() != null, "请输入正确的网址地址");
+                    && uri.getHost() != null, LinkCode.LINK_BUSINESS_ERROR, "请输入正确的网址地址");
             return normalized;
         } catch (URISyntaxException e) {
-            return Require.fail(400, "请输入正确的网址地址");
+            return Require.fail(LinkCode.LINK_BUSINESS_ERROR.getCode(), "请输入正确的网址地址");
         }
     }
 }

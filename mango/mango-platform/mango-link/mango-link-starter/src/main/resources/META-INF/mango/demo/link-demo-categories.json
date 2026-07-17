@@ -1,0 +1,97 @@
+{
+  "mango": {
+    "resource": {
+      "schemaVersion": 1,
+      "moduleCode": "link",
+      "moduleName": "网址导航",
+      "declarations": {
+        "LINK_CATEGORY": [
+          {
+            "id": "2026070103060100001",
+            "version": 1,
+            "bizKey": "link.category.enterprise-navigation",
+            "name": "企业导航演示分类",
+            "targetModule": "link",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {"type": "LONG", "value": "2026070103060100001"},
+              "tenantId": {"type": "STRING", "value": "1"},
+              "orgId": {"type": "LONG", "value": "1"},
+              "scope": {"type": "STRING", "value": "COMPANY"},
+              "ownerUserId": {"type": "LONG", "value": "0"},
+              "name": {"type": "STRING", "value": "企业导航"},
+              "sortNo": {"type": "INT", "value": 0},
+              "status": {"type": "STRING", "value": "ENABLED"},
+              "remark": {"type": "STRING", "value": "系统演示企业导航分组"},
+              "createdBy": {"type": "LONG", "value": "1"},
+              "updatedBy": {"type": "LONG", "value": "1"}
+            }
+          },
+          {
+            "id": "202607100101000001",
+            "version": 1,
+            "bizKey": "link.category.guarantee-business",
+            "name": "保函业务演示分类",
+            "targetModule": "link",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {"type": "LONG", "value": "202607100101000001"},
+              "tenantId": {"type": "STRING", "value": "1"},
+              "orgId": {"type": "LONG", "value": "1"},
+              "scope": {"type": "STRING", "value": "COMPANY"},
+              "ownerUserId": {"type": "LONG", "value": "0"},
+              "name": {"type": "STRING", "value": "业务相关"},
+              "sortNo": {"type": "INT", "value": 10},
+              "status": {"type": "STRING", "value": "ENABLED"},
+              "remark": {"type": "STRING", "value": "保函业务人员常用查询与核验入口"},
+              "createdBy": {"type": "LONG", "value": "1"},
+              "updatedBy": {"type": "LONG", "value": "1"}
+            }
+          },
+          {
+            "id": "202607100101000002",
+            "version": 1,
+            "bizKey": "link.category.guarantee-tools",
+            "name": "保函工具演示分类",
+            "targetModule": "link",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {"type": "LONG", "value": "202607100101000002"},
+              "tenantId": {"type": "STRING", "value": "1"},
+              "orgId": {"type": "LONG", "value": "1"},
+              "scope": {"type": "STRING", "value": "COMPANY"},
+              "ownerUserId": {"type": "LONG", "value": "0"},
+              "name": {"type": "STRING", "value": "工具相关"},
+              "sortNo": {"type": "INT", "value": 20},
+              "status": {"type": "STRING", "value": "ENABLED"},
+              "remark": {"type": "STRING", "value": "保函业务人员常用工具入口"},
+              "createdBy": {"type": "LONG", "value": "1"},
+              "updatedBy": {"type": "LONG", "value": "1"}
+            }
+          },
+          {
+            "id": "202607100101000003",
+            "version": 1,
+            "bizKey": "link.category.guarantee-other",
+            "name": "保函辅助演示分类",
+            "targetModule": "link",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {"type": "LONG", "value": "202607100101000003"},
+              "tenantId": {"type": "STRING", "value": "1"},
+              "orgId": {"type": "LONG", "value": "1"},
+              "scope": {"type": "STRING", "value": "COMPANY"},
+              "ownerUserId": {"type": "LONG", "value": "0"},
+              "name": {"type": "STRING", "value": "其他"},
+              "sortNo": {"type": "INT", "value": 30},
+              "status": {"type": "STRING", "value": "ENABLED"},
+              "remark": {"type": "STRING", "value": "保函业务辅助知识入口"},
+              "createdBy": {"type": "LONG", "value": "1"},
+              "updatedBy": {"type": "LONG", "value": "1"}
+            }
+          }
+        ]
+      }
+    }
+  }
+}

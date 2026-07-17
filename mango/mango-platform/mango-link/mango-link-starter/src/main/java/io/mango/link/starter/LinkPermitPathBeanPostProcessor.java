@@ -23,11 +23,10 @@ public class LinkPermitPathBeanPostProcessor implements BeanPostProcessor {
             Method getter = bean.getClass().getMethod("getPermitPaths");
             Object value = getter.invoke(bean);
             if (value instanceof List<?> list) {
-                @SuppressWarnings("unchecked")
-                List<String> permitPaths = (List<String>) list;
                 for (String path : PERMIT_PATHS) {
-                    if (!permitPaths.contains(path)) {
-                        permitPaths.add(path);
+                    if (!list.contains(path)) {
+                        Method add = List.class.getMethod("add", Object.class);
+                        add.invoke(value, path);
                     }
                 }
             }

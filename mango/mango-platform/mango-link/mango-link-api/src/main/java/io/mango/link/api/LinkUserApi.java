@@ -11,11 +11,13 @@ import io.mango.link.api.command.UpdateLinkPersonalItemCommand;
 import io.mango.link.api.query.LinkCompanyItemQuery;
 import io.mango.link.api.query.LinkFavoriteQuery;
 import io.mango.link.api.query.LinkPersonalItemPageQuery;
+import io.mango.link.api.query.LinkPublicItemQuery;
 import io.mango.link.api.vo.LinkFavoriteVO;
 import io.mango.link.api.vo.LinkCategoryVO;
 import io.mango.link.api.vo.LinkNavigationItemVO;
 import io.mango.link.api.vo.LinkNavigationWidgetDataVO;
 import io.mango.link.api.vo.LinkPersonalItemVO;
+import io.mango.link.api.vo.LinkPublicItemVO;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.validation.annotation.Validated;
@@ -29,6 +31,8 @@ import java.util.List;
 public interface LinkUserApi {
 
     R<List<LinkNavigationItemVO>> listCompanyItems(@Valid LinkCompanyItemQuery query);
+
+    R<List<LinkPublicItemVO>> listVisibleItems(@Valid LinkPublicItemQuery query);
 
     R<LinkNavigationWidgetDataVO> getNavigationWidgetData();
 

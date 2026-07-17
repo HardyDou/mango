@@ -2,6 +2,8 @@ package io.mango.link.api.query;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.NotNull;
+import io.mango.link.api.validation.LinkStrictValidation;
 import lombok.Data;
 
 /**
@@ -15,6 +17,7 @@ public class LinkCategoryQuery {
     @Schema(description = "关键词")
     private String keyword;
 
+    @NotNull(groups = LinkStrictValidation.class, message = "严格查询时停用分类标记不能为空")
     @Schema(description = "是否包含停用分类")
     private Boolean includeDisabled;
 }

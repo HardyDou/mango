@@ -61,7 +61,7 @@ import '@mango/link-page/style.css';
 | `headline` | `string` | `保函业务快捷入口` | 搜索框上方主文案，可由宿主配置。 |
 | `subtitle` | `string` | - | 主文案下方辅助说明。 |
 | `searchPlaceholder` | `string` | `搜索网站、工具或关键词` | 搜索框占位文案。 |
-| `jumpEnabled` | `boolean` | - | 组件侧跳转开关。未传时尊重后端 `redirectUrl`；`false` 强制直连原始 `url`；`true` 在后端未返回 `redirectUrl` 时补 `/link/open/jump?url=...`。 |
+| `jumpEnabled` | `boolean` | - | 组件侧跳转开关。未传时尊重后端 `redirectUrl`；`false` 强制直连原始 `url`；`true` 按 `source` 补公开或登录跳转地址。 |
 
 `LinkPageProps` 中保留了部分历史字段用于类型兼容，例如登录、用户信息、搜索引擎配置等；本版本页面不会展示或使用这些交互。
 
@@ -69,9 +69,10 @@ import '@mango/link-page/style.css';
 
 | 能力 | 后端路径 | 说明 |
 |------|----------|------|
-| 查询导航数据 | `GET /link/open/public-links/list` | 初始化页面时调用。 |
-| 关键词筛选 | `GET /link/open/public-links/list?keyword=...` | 搜索时调用，后端按名称、地址、简介、标签匹配。 |
-| 系统跳转与访问统计 | `GET /link/open/jump?url=...` | 后端开启 jump 时可返回 `redirectUrl`。 |
+| 匿名查询导航数据 | `GET /link/open/public-links/list` | `authenticated=false` 时调用。 |
+| 登录查询导航数据 | `GET /link/visible-links/list` | `authenticated=true` 时调用，包含公司、收藏和个人网址。 |
+| 关键词筛选 | 对应查询接口追加 `?keyword=...` | 搜索时调用，后端按名称、地址、简介、标签匹配。 |
+| 系统跳转与访问统计 | `GET /link/open/jump?url=...`、`GET /link/visible-links/jump?url=...` | 匿名和登录数据使用不同安全模式。 |
 
 页面打开地址优先级为 `redirectUrl || url`。当前版本点击后统一使用新标签页打开。
 
@@ -101,11 +102,11 @@ import '@mango/link-page/style.css';
 | `sortNo` | 同组排序兜底。 |
 | `redirectUrl` | 存在时优先作为打开地址。 |
 
-本期预置数据通过 `mango-link` Flyway migration 初始化到 `link_category` 和 `link_item`，统一使用公共可见数据，不做公私区分。
+演示分类、网址和收藏由 `mango-link-starter` 的 `META-INF/mango/demo` 资源登记；Flyway 只负责最终态 DDL。
 
 ## 8. 管理入口
 
-`@mango/link-page` 本身不提供管理页面，也不注册菜单。卡片数据维护复用后端 `mango-link` 的 `link_category` 和 `link_item` 能力；本期先通过 Flyway migration 内置数据，后续如开放后台维护，可接入 `@mango/link` 已有的网址分类和网址列表管理入口。
+`@mango/link-page` 本身不提供管理页面，也不注册菜单。卡片数据维护复用后端 `mango-link` 的 `link_category` 和 `link_item` 能力，管理入口由 `@mango/link` 提供。
 
 ## 9. 事件
 

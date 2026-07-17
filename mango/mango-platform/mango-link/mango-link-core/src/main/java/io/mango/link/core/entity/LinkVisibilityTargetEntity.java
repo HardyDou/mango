@@ -1,20 +1,14 @@
 package io.mango.link.core.entity;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
-import lombok.Data;
+import io.mango.infra.persistence.api.entity.TenantEntity;
+import lombok.Getter;
+import lombok.Setter;
 
-import java.time.LocalDateTime;
-
-@Data
+@Getter
+@Setter
 @TableName("link_visibility_target")
-public class LinkVisibilityTargetEntity {
-
-    @TableId(value = "id", type = IdType.ASSIGN_ID)
-    private Long id;
-
-    private Long tenantId;
+public class LinkVisibilityTargetEntity extends TenantEntity {
 
     private Long linkId;
 
@@ -24,11 +18,4 @@ public class LinkVisibilityTargetEntity {
 
     private String targetName;
 
-    private Long createdBy;
-
-    private LocalDateTime createdAt;
-
-    private Long updatedBy;
-
-    private LocalDateTime updatedAt;
 }

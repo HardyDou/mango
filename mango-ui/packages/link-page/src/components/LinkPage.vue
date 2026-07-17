@@ -154,6 +154,7 @@ import { RefreshRight, Search } from '@element-plus/icons-vue';
 import {
   isLinkOpenApiNotFoundError,
   listPublicLinks,
+  listVisibleLinks,
   type LinkOpenApiClientOptions,
   type LinkPublicItem,
 } from '@mango/link-openapi';
@@ -215,7 +216,7 @@ async function loadLinks() {
   loading.value = true;
   errorMessage.value = '';
   try {
-    links.value = await listPublicLinks({}, requestOptions.value);
+    links.value = await listLinks({});
   } catch (error) {
     links.value = [];
     errorMessage.value = readableError(error, '导航加载失败，请稍后重试');
@@ -245,13 +246,18 @@ async function searchByKeyword(term: string) {
   errorMessage.value = '';
   searchQuery.value = term;
   try {
-    searchItems.value = await listPublicLinks({ keyword: term }, requestOptions.value);
+    searchItems.value = await listLinks({ keyword: term });
   } catch (error) {
     searchItems.value = [];
     errorMessage.value = readableError(error, '搜索失败，请稍后重试');
   } finally {
     searching.value = false;
   }
+}
+
+function listLinks(query: { keyword?: string }) {
+  const loader = props.authenticated ? listVisibleLinks : listPublicLinks;
+  return loader(query, requestOptions.value);
 }
 
 function clearSearch() {
@@ -315,7 +321,9 @@ function systemRedirectUrl(item: LinkPublicItem) {
   if (props.jumpEnabled === undefined || !item.url) {
     return '';
   }
-  return `/link/open/jump?url=${encodeURIComponent(item.url)}&source=${encodeURIComponent(item.source || 'PUBLIC')}`;
+  const source = item.source || 'PUBLIC';
+  const path = source === 'PUBLIC' ? '/link/open/jump' : '/link/visible-links/jump';
+  return `${path}?url=${encodeURIComponent(item.url)}&source=${encodeURIComponent(source)}`;
 }
 
 function resolveTargetUrl(target: string) {

@@ -6,6 +6,7 @@ import io.mango.identity.api.TenantMemberProvider;
 import io.mango.identity.api.vo.TenantMemberVO;
 import io.mango.link.api.command.LinkVisibilityTargetCommand;
 import io.mango.link.api.enums.LinkNavigationSource;
+import io.mango.link.api.enums.LinkCode;
 import io.mango.link.api.enums.LinkVisibilityScope;
 import io.mango.link.api.enums.LinkVisibilityTargetType;
 import io.mango.link.api.vo.LinkCategoryVO;
@@ -27,6 +28,7 @@ import io.mango.link.core.support.LinkContextSupport;
 import io.mango.link.core.support.LinkSupport;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
@@ -39,32 +41,40 @@ import java.util.Map;
 import java.util.Set;
 
 @RequiredArgsConstructor
-abstract class BaseLinkService {
+@Component
+public class LinkServiceSupport {
 
-    protected final LinkCategoryMapper categoryMapper;
-    protected final LinkItemMapper itemMapper;
-    protected final LinkVisibilityTargetMapper targetMapper;
-    protected final LinkFavoriteMapper favoriteMapper;
-    protected final ObjectProvider<TenantMemberProvider> tenantMemberProvider;
+    private final LinkCategoryMapper categoryMapper;
+    private final LinkItemMapper itemMapper;
+    private final LinkVisibilityTargetMapper targetMapper;
+    private final LinkFavoriteMapper favoriteMapper;
+    private final ObjectProvider<TenantMemberProvider> tenantMemberProvider;
 
-    protected LinkCategoryEntity selectCategoryRequired(Long tenantId, Long categoryId) {
-        LinkCategoryEntity category = categoryMapper.selectByTenantAndId(tenantId, categoryId);
-        Require.notNull(category, "网址分类不存在");
+    public LinkCategoryEntity selectCategoryRequired(String tenantId, Long categoryId) {
+        LinkCategoryEntity category = categoryMapper.selectOne(new LambdaQueryWrapper<LinkCategoryEntity>()
+                .eq(LinkCategoryEntity::getTenantId, tenantId)
+                .eq(LinkCategoryEntity::getId, categoryId)
+                .last("LIMIT 1"));
+        Require.notNull(category, LinkCode.LINK_BUSINESS_ERROR, "网址分类不存在");
         return category;
     }
 
-    protected LinkItemEntity selectItemRequired(Long tenantId, Long id) {
-        LinkItemEntity item = itemMapper.selectByTenantAndId(tenantId, id);
-        Require.notNull(item, "网址不存在");
+    public LinkItemEntity selectItemRequired(String tenantId, Long id) {
+        LinkItemEntity item = itemMapper.selectOne(new LambdaQueryWrapper<LinkItemEntity>()
+                .eq(LinkItemEntity::getTenantId, tenantId)
+                .eq(LinkItemEntity::getId, id)
+                .last("LIMIT 1"));
+        Require.notNull(item, LinkCode.LINK_BUSINESS_ERROR, "网址不存在");
         return item;
     }
 
-    protected void requireEnabledCategory(Long tenantId, Long categoryId) {
+    public void requireEnabledCategory(String tenantId, Long categoryId) {
         LinkCategoryEntity category = selectCategoryRequired(tenantId, categoryId);
-        Require.isTrue(LinkSupport.enabled().equals(category.getStatus()), "网址分类已停用");
+        Require.isTrue(LinkSupport.enabled().equals(category.getStatus()),
+                LinkCode.LINK_BUSINESS_ERROR, "网址分类已停用");
     }
 
-    protected Map<Long, LinkCategoryEntity> categoriesById(Long tenantId, Collection<Long> categoryIds) {
+    public Map<Long, LinkCategoryEntity> categoriesById(String tenantId, Collection<Long> categoryIds) {
         if (categoryIds == null || categoryIds.isEmpty()) {
             return Collections.emptyMap();
         }
@@ -85,7 +95,7 @@ abstract class BaseLinkService {
         return result;
     }
 
-    protected Map<Long, List<LinkVisibilityTargetEntity>> targetsByLinkId(Long tenantId, Collection<Long> linkIds) {
+    public Map<Long, List<LinkVisibilityTargetEntity>> targetsByLinkId(String tenantId, Collection<Long> linkIds) {
         if (linkIds == null || linkIds.isEmpty()) {
             return Map.of();
         }
@@ -96,7 +106,7 @@ abstract class BaseLinkService {
                 .collect(java.util.stream.Collectors.groupingBy(LinkVisibilityTargetEntity::getLinkId));
     }
 
-    protected Set<Long> favoriteLinkIds(Long tenantId, Long userId, Collection<Long> linkIds) {
+    public Set<Long> favoriteLinkIds(String tenantId, Long userId, Collection<Long> linkIds) {
         if (userId == null || linkIds == null || linkIds.isEmpty()) {
             return Set.of();
         }
@@ -111,7 +121,7 @@ abstract class BaseLinkService {
         return result;
     }
 
-    protected boolean isVisibleToUser(Long tenantId,
+    public boolean isVisibleToUser(String tenantId,
                                       Long userId,
                                       LinkItemEntity item,
                                       List<LinkVisibilityTargetEntity> targets) {
@@ -122,7 +132,7 @@ abstract class BaseLinkService {
         return visibleForScope(tenantId, userId, item, targets, scope);
     }
 
-    private boolean visibleForScope(Long tenantId,
+    private boolean visibleForScope(String tenantId,
                                     Long userId,
                                     LinkItemEntity item,
                                     List<LinkVisibilityTargetEntity> targets,
@@ -139,7 +149,7 @@ abstract class BaseLinkService {
         return visibleForMemberScope(tenantId, userId, targets, scope);
     }
 
-    private boolean visibleForMemberScope(Long tenantId,
+    private boolean visibleForMemberScope(String tenantId,
                                           Long userId,
                                           List<LinkVisibilityTargetEntity> targets,
                                           LinkVisibilityScope scope) {
@@ -147,7 +157,8 @@ abstract class BaseLinkService {
         if (provider == null) {
             return false;
         }
-        TenantMemberVO member = provider.getEnabledMember(userId, tenantId);
+        Long numericTenantId = numericTenantId(tenantId);
+        TenantMemberVO member = provider.getEnabledMember(userId, numericTenantId);
         if (member == null) {
             return false;
         }
@@ -156,12 +167,12 @@ abstract class BaseLinkService {
         }
         return switch (scope) {
             case USER -> visibleToUserTarget(userId, targets);
-            case DEPARTMENT -> visibleToDepartmentTarget(tenantId, member.getMemberId(), targets, provider);
+            case DEPARTMENT -> visibleToDepartmentTarget(numericTenantId, member.getMemberId(), targets, provider);
             default -> false;
         };
     }
 
-    protected boolean keywordMatched(LinkItemEntity item, String keyword) {
+    public boolean keywordMatched(LinkItemEntity item, String keyword) {
         String normalized = LinkContextSupport.trimToNull(keyword);
         if (!StringUtils.hasText(normalized)) {
             return true;
@@ -173,11 +184,11 @@ abstract class BaseLinkService {
                 || contains(item.getTags(), lowered);
     }
 
-    protected boolean enabledCategory(LinkCategoryEntity category) {
+    public boolean enabledCategory(LinkCategoryEntity category) {
         return category != null && LinkSupport.enabled().equals(category.getStatus());
     }
 
-    protected LinkCategoryVO toCategoryVO(LinkCategoryEntity entity) {
+    public LinkCategoryVO toCategoryVO(LinkCategoryEntity entity) {
         LinkCategoryVO vo = new LinkCategoryVO();
         vo.setId(entity.getId());
         vo.setName(entity.getName());
@@ -192,7 +203,7 @@ abstract class BaseLinkService {
         return vo;
     }
 
-    protected LinkItemVO toItemVO(LinkItemEntity item,
+    public LinkItemVO toItemVO(LinkItemEntity item,
                                   LinkCategoryEntity category,
                                   List<LinkVisibilityTargetEntity> targets) {
         LinkItemVO vo = new LinkItemVO();
@@ -208,7 +219,7 @@ abstract class BaseLinkService {
         return vo;
     }
 
-    protected LinkNavigationItemVO toNavigationVO(LinkItemEntity item,
+    public LinkNavigationItemVO toNavigationVO(LinkItemEntity item,
                                                  LinkCategoryEntity category,
                                                  boolean favorited) {
         LinkNavigationItemVO vo = new LinkNavigationItemVO();
@@ -217,7 +228,7 @@ abstract class BaseLinkService {
         return vo;
     }
 
-    protected LinkFavoriteVO toFavoriteVO(LinkFavoriteEntity favorite,
+    public LinkFavoriteVO toFavoriteVO(LinkFavoriteEntity favorite,
                                           LinkItemEntity item,
                                           LinkCategoryEntity category) {
         LinkFavoriteVO vo = new LinkFavoriteVO();
@@ -228,7 +239,7 @@ abstract class BaseLinkService {
         return vo;
     }
 
-    protected LinkPersonalItemVO toPersonalVO(LinkItemEntity item,
+    public LinkPersonalItemVO toPersonalVO(LinkItemEntity item,
                                              LinkCategoryEntity category,
                                              boolean favorited) {
         LinkPersonalItemVO vo = new LinkPersonalItemVO();
@@ -248,7 +259,7 @@ abstract class BaseLinkService {
         return vo;
     }
 
-    protected LinkPublicItemVO toPublicVO(LinkItemEntity item, LinkCategoryEntity category) {
+    public LinkPublicItemVO toPublicVO(LinkItemEntity item, LinkCategoryEntity category) {
         LinkPublicItemVO vo = new LinkPublicItemVO();
         vo.setId(item.getId());
         vo.setCategoryId(item.getCategoryId());
@@ -266,7 +277,7 @@ abstract class BaseLinkService {
         return vo;
     }
 
-    protected List<LinkVisibilityTargetVO> toTargetVos(List<LinkVisibilityTargetEntity> targets) {
+    public List<LinkVisibilityTargetVO> toTargetVos(List<LinkVisibilityTargetEntity> targets) {
         if (targets == null || targets.isEmpty()) {
             return List.of();
         }
@@ -280,7 +291,7 @@ abstract class BaseLinkService {
         }).toList();
     }
 
-    protected LinkVisibilityTargetEntity toTargetEntity(Long tenantId, Long linkId, LinkVisibilityTargetCommand command) {
+    public LinkVisibilityTargetEntity toTargetEntity(String tenantId, Long linkId, LinkVisibilityTargetCommand command) {
         LinkVisibilityTargetEntity target = new LinkVisibilityTargetEntity();
         target.setTenantId(tenantId);
         target.setLinkId(linkId);
@@ -291,7 +302,7 @@ abstract class BaseLinkService {
         return target;
     }
 
-    protected void fillNavigationFields(LinkNavigationItemVO vo, LinkItemEntity item, LinkCategoryEntity category) {
+    public void fillNavigationFields(LinkNavigationItemVO vo, LinkItemEntity item, LinkCategoryEntity category) {
         vo.setId(item.getId());
         vo.setCategoryId(item.getCategoryId());
         vo.setCategoryName(categoryName(category));
@@ -305,7 +316,7 @@ abstract class BaseLinkService {
         vo.setSortNo(item.getSortNo());
     }
 
-    protected String ownerDisplayName(Long tenantId, Long ownerUserId) {
+    public String ownerDisplayName(String tenantId, Long ownerUserId) {
         if (ownerUserId == null || ownerUserId == 0L) {
             return "企业";
         }
@@ -313,7 +324,7 @@ abstract class BaseLinkService {
         if (provider == null) {
             return String.valueOf(ownerUserId);
         }
-        TenantMemberVO member = provider.getEnabledMember(ownerUserId, tenantId);
+        TenantMemberVO member = provider.getEnabledMember(ownerUserId, numericTenantId(tenantId));
         if (member == null || !StringUtils.hasText(member.getDisplayName())) {
             return String.valueOf(ownerUserId);
         }
@@ -344,5 +355,13 @@ abstract class BaseLinkService {
 
     private boolean contains(String value, String keyword) {
         return value != null && value.toLowerCase().contains(keyword);
+    }
+
+    private Long numericTenantId(String tenantId) {
+        try {
+            return Long.valueOf(tenantId);
+        } catch (NumberFormatException exception) {
+            return Require.fail(LinkCode.LINK_BUSINESS_ERROR.getCode(), "当前机构上下文不是有效数字: " + tenantId);
+        }
     }
 }

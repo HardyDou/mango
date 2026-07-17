@@ -1,22 +1,26 @@
 CREATE TABLE IF NOT EXISTS link_category (
     id BIGINT NOT NULL,
-    tenant_id BIGINT NOT NULL,
+    tenant_id VARCHAR(64) NOT NULL,
+    org_id BIGINT NULL,
+    scope VARCHAR(32) NOT NULL DEFAULT 'COMPANY',
+    owner_user_id BIGINT NOT NULL DEFAULT 0,
     name VARCHAR(64) NOT NULL,
     sort_no INT NOT NULL DEFAULT 0,
     status VARCHAR(32) NOT NULL,
     remark VARCHAR(256) NULL,
     created_by BIGINT NULL,
+    created_at DATETIME NULL,
     updated_by BIGINT NULL,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at DATETIME NULL,
     PRIMARY KEY (id),
-    UNIQUE KEY uk_link_category_tenant_name (tenant_id, name),
-    KEY idx_link_category_status_sort (tenant_id, status, sort_no)
+    UNIQUE KEY uk_link_category_owner_name (tenant_id, scope, owner_user_id, name),
+    KEY idx_link_category_owner_status_sort (tenant_id, scope, owner_user_id, status, sort_no)
 );
 
 CREATE TABLE IF NOT EXISTS link_item (
     id BIGINT NOT NULL,
-    tenant_id BIGINT NOT NULL,
+    tenant_id VARCHAR(64) NOT NULL,
+    org_id BIGINT NULL,
     category_id BIGINT NULL,
     name VARCHAR(128) NOT NULL,
     url VARCHAR(1024) NOT NULL,
@@ -31,9 +35,9 @@ CREATE TABLE IF NOT EXISTS link_item (
     status VARCHAR(32) NOT NULL,
     remark VARCHAR(256) NULL,
     created_by BIGINT NULL,
+    created_at DATETIME NULL,
     updated_by BIGINT NULL,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at DATETIME NULL,
     PRIMARY KEY (id),
     KEY idx_link_item_category_status_sort (tenant_id, category_id, status, sort_no),
     KEY idx_link_item_scope_status (tenant_id, visibility_scope, status),
@@ -43,15 +47,16 @@ CREATE TABLE IF NOT EXISTS link_item (
 
 CREATE TABLE IF NOT EXISTS link_visibility_target (
     id BIGINT NOT NULL,
-    tenant_id BIGINT NOT NULL,
+    tenant_id VARCHAR(64) NOT NULL,
+    org_id BIGINT NULL,
     link_id BIGINT NOT NULL,
     target_type VARCHAR(32) NOT NULL,
     target_id BIGINT NOT NULL,
     target_name VARCHAR(128) NULL,
     created_by BIGINT NULL,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_at DATETIME NULL,
     updated_by BIGINT NULL,
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at DATETIME NULL,
     PRIMARY KEY (id),
     KEY idx_link_visibility_link (tenant_id, link_id),
     KEY idx_link_visibility_target (tenant_id, target_type, target_id)
@@ -59,14 +64,39 @@ CREATE TABLE IF NOT EXISTS link_visibility_target (
 
 CREATE TABLE IF NOT EXISTS link_favorite (
     id BIGINT NOT NULL,
-    tenant_id BIGINT NOT NULL,
+    tenant_id VARCHAR(64) NOT NULL,
+    org_id BIGINT NULL,
     user_id BIGINT NOT NULL,
     link_id BIGINT NOT NULL,
     created_by BIGINT NULL,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_at DATETIME NULL,
     updated_by BIGINT NULL,
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at DATETIME NULL,
     PRIMARY KEY (id),
     UNIQUE KEY uk_link_favorite_user_link (tenant_id, user_id, link_id),
     KEY idx_link_favorite_user_time (tenant_id, user_id, created_at)
+);
+
+CREATE TABLE IF NOT EXISTS link_access_record (
+    id BIGINT NOT NULL,
+    tenant_id VARCHAR(64) NOT NULL,
+    org_id BIGINT NULL,
+    link_id BIGINT NULL,
+    url VARCHAR(1024) NULL,
+    user_id BIGINT NULL,
+    visitor_id VARCHAR(128) NULL,
+    source VARCHAR(32) NULL,
+    extra_params VARCHAR(1024) NULL,
+    client_ip VARCHAR(64) NULL,
+    user_agent VARCHAR(512) NULL,
+    referer VARCHAR(1024) NULL,
+    access_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by BIGINT NULL,
+    created_at DATETIME NULL,
+    updated_by BIGINT NULL,
+    updated_at DATETIME NULL,
+    PRIMARY KEY (id),
+    KEY idx_link_access_link_time (tenant_id, link_id, access_time),
+    KEY idx_link_access_user_time (tenant_id, user_id, access_time),
+    KEY idx_link_access_time (tenant_id, access_time)
 );

@@ -11,6 +11,7 @@
 | 能力 | 方法 | 后端路径 |
 |------|------|----------|
 | 查询公开导航数据 | `listPublicLinks` | `GET /link/open/public-links/list` |
+| 查询登录用户可见导航 | `listVisibleLinks` | `GET /link/visible-links/list` |
 | 查询个人分组 | `listPersonalCategories` | `GET /link/personal-categories/list` |
 | 新增个人分组 | `createPersonalCategory` | `POST /link/personal-categories/create` |
 | 新增个人网址 | `createPersonalLink` | `POST /link/personal-links/create` |
@@ -51,13 +52,14 @@ const linkClient = createLinkOpenApiClient({
 const links = await linkClient.listPublicLinks({ keyword: '办公' });
 ```
 
-未登录时 `listPublicLinks` 只返回公开网址。已登录并带上登录态时，返回当前用户可见的公司网址、我的收藏和我的网址。
+`listPublicLinks` 无论请求是否携带登录信息都只返回公开网址；登录用户应显式调用 `listVisibleLinks` 获取公司网址、我的收藏和我的网址。
 
 ## 6. API 与扩展
 
 | 方法 | 后端路径 | 登录态 | 说明 |
 |------|----------|--------|------|
 | `listPublicLinks(query)` | `GET /link/open/public-links/list` | 可选 | 查询导航数据。 |
+| `listVisibleLinks(query)` | `GET /link/visible-links/list` | 是 | 查询当前用户可见的公司、收藏和个人导航。 |
 | `listPersonalCategories()` | `GET /link/personal-categories/list` | 需要 | 查询我的网址分组。 |
 | `createPersonalCategory(input)` | `POST /link/personal-categories/create` | 需要 | 新增我的网址分组。 |
 | `createPersonalLink(input)` | `POST /link/personal-links/create` | 需要 | 新增我的网址。 |
@@ -93,7 +95,7 @@ interface LinkPublicItem {
 }
 ```
 
-`redirectUrl` 是系统跳转地址，格式为 `/link/open/jump?url=...`。当后端配置 `mango.link.open.jump.enabled=true` 时返回它，打开网址应优先使用它并记录访问；配置关闭或字段为空时，调用方直接打开 `url`。
+`redirectUrl` 是系统跳转地址。公开数据使用 `/link/open/jump?url=...`，登录可见数据使用 `/link/visible-links/jump?url=...`；调用方应优先使用接口返回值，不应把两种安全模式合并为一个路径。
 
 ## 10. Client Options
 
