@@ -730,8 +730,13 @@ public class CheckMojo extends AbstractMojo {
             throw new MojoExecutionException("Static analysis baseDir has no pom.xml: " + rootPath);
         }
 
+        List<String> reactorProjects = resolveStaticAnalysisProjects(rootPath);
+        if (reactorProjects.isEmpty() && !sessionContainsJavaCompileSource()) {
+            getLog().info("Aggregated static analysis: no Reactor Java compile sources");
+            return;
+        }
         cleanStaticReports(rootPath);
-        invokeMavenGoals(rootPath, staticAnalysisReportGoals());
+        invokeMavenGoals(rootPath, staticAnalysisReportGoals(), reactorProjects);
         collectPmdIssues(rootPath);
         collectCheckstyleIssues(rootPath);
         collectSpotbugsIssues(rootPath);
@@ -771,13 +776,14 @@ public class CheckMojo extends AbstractMojo {
         }
     }
 
-    private void invokeMavenGoals(Path rootPath, List<String> goals) throws MojoExecutionException {
+    private void invokeMavenGoals(
+            Path rootPath, List<String> goals, List<String> reactorProjects)
+            throws MojoExecutionException {
         File mavenExecutable = findMavenExecutable();
         if (mavenExecutable == null) {
             throw new MojoExecutionException("Static analysis requires a Maven executable on PATH");
         }
 
-        List<String> reactorProjects = resolveStaticAnalysisProjects(rootPath);
         if (reactorProjects.isEmpty()) {
             getLog().info("Aggregated static analysis scope: execution root project");
         } else {
@@ -921,9 +927,10 @@ public class CheckMojo extends AbstractMojo {
 
     private List<String> resolveStaticAnalysisProjects(Path rootPath)
             throws MojoExecutionException {
-        List<String> sessionProjects = resolveSessionReactorProjects(rootPath);
-        if (!sessionProjects.isEmpty()) {
-            return filterStaticAnalysisProjects(sessionProjects);
+        if (session != null
+                && session.getProjects() != null
+                && !session.getProjects().isEmpty()) {
+            return filterStaticAnalysisProjects(resolveSessionReactorProjects(rootPath));
         }
         return filterStaticAnalysisProjects(discoverReactorProjects(rootPath));
     }
@@ -943,7 +950,8 @@ public class CheckMojo extends AbstractMojo {
         return filteredProjects;
     }
 
-    private List<String> resolveSessionReactorProjects(Path rootPath) {
+    private List<String> resolveSessionReactorProjects(Path rootPath)
+            throws MojoExecutionException {
         if (session == null || session.getProjects() == null || session.getProjects().isEmpty()) {
             return List.of();
         }
@@ -960,12 +968,30 @@ public class CheckMojo extends AbstractMojo {
             if (!projectPath.startsWith(normalizedRoot)) {
                 continue;
             }
+            if (!hasJavaCompileSource(project)) {
+                getLog().info(
+                        "Excluded Reactor project without Java compile sources: "
+                                + project.getArtifactId());
+                continue;
+            }
             String relativePath = normalizedRoot.relativize(projectPath).toString();
             if (!relativePath.isBlank()) {
                 projects.add(relativePath);
             }
         }
         return projects;
+    }
+
+    private boolean sessionContainsJavaCompileSource() throws MojoExecutionException {
+        if (session == null || session.getProjects() == null || session.getProjects().isEmpty()) {
+            return true;
+        }
+        for (MavenProject project : session.getProjects()) {
+            if (project != null && hasJavaCompileSource(project)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private String readProcessOutput(InputStream inputStream) throws IOException {
@@ -2021,72 +2047,62 @@ public class CheckMojo extends AbstractMojo {
                     @Override
                     public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
                             throws IOException {
-                        String normalized = file.toString().replace('\\', '/');
-                        if (normalized.contains("/db/migration/")) {
-                            issues.add(
-                                    supportContentIssue(
-                                            file, artifactId, "support 模块禁止包含 db/migration"));
-                            return FileVisitResult.CONTINUE;
-                        }
-                        if (normalized.endsWith("/META-INF/mango/module.properties")) {
-                            issues.add(
-                                    supportContentIssue(
-                                            file,
-                                            artifactId,
-                                            "support 模块禁止声明 module.properties，只有本地 starter"
-                                                    + " 可以声明模块信息"));
-                            return FileVisitResult.CONTINUE;
-                        }
-                        if (normalized.endsWith("AutoConfiguration.imports")) {
-                            issues.add(
-                                    supportContentIssue(
-                                            file,
-                                            artifactId,
-                                            "support 模块禁止声明 Spring Boot"
-                                                    + " AutoConfiguration.imports"));
-                            return FileVisitResult.CONTINUE;
-                        }
-                        if (!normalized.endsWith(".java")) {
-                            return FileVisitResult.CONTINUE;
-                        }
-                        String code = Files.readString(file);
-                        if (code.contains("@RestController") || code.contains("@Controller")) {
-                            issues.add(
-                                    supportContentIssue(
-                                            file,
-                                            artifactId,
-                                            "support 模块禁止包含 Controller，HTTP 入口必须放在 starter"));
-                            return FileVisitResult.CONTINUE;
-                        }
-                        if (code.contains("@FeignClient")) {
-                            issues.add(
-                                    supportContentIssue(
-                                            file,
-                                            artifactId,
-                                            "support 模块禁止包含 Feign adapter，远程适配必须放在"
-                                                    + " starter-remote"));
-                            return FileVisitResult.CONTINUE;
-                        }
-                        if (SUPPORT_PERSISTENCE_CONTENT_PATTERN.matcher(code).find()
-                                || containsPersistenceTypeDeclaration(code)) {
-                            issues.add(
-                                    supportContentIssue(
-                                            file,
-                                            artifactId,
-                                            "support 模块禁止包含持久化内容，持久化能力必须放在 api/core/starter"
-                                                    + " 的对应边界内"));
-                            return FileVisitResult.CONTINUE;
-                        }
-                        if (SUPPORT_AUTO_CONFIGURATION_PATTERN.matcher(code).find()) {
-                            issues.add(
-                                    supportContentIssue(
-                                            file,
-                                            artifactId,
-                                            "support 模块禁止包含 Spring Boot 自动配置或配置属性装配"));
-                        }
+                        analyzeSupportContentFile(file, artifactId, issues);
                         return FileVisitResult.CONTINUE;
                     }
                 });
+    }
+
+    private void analyzeSupportContentFile(
+            Path file, String artifactId, List<DependencyIssue> issues) throws IOException {
+        String normalized = file.toString().replace('\\', '/');
+        String resourceViolation = supportResourceViolation(normalized);
+        if (resourceViolation != null) {
+            issues.add(supportContentIssue(file, artifactId, resourceViolation));
+            return;
+        }
+        if (normalized.endsWith(".java")) {
+            analyzeSupportJavaFile(file, artifactId, issues);
+        }
+    }
+
+    private String supportResourceViolation(String normalized) {
+        if (normalized.contains("/db/migration/")) {
+            return "support 模块禁止包含 db/migration";
+        }
+        if (normalized.endsWith("/META-INF/mango/module.properties")) {
+            return "support 模块禁止声明 module.properties，只有本地 starter 可以声明模块信息";
+        }
+        if (normalized.endsWith("AutoConfiguration.imports")) {
+            return "support 模块禁止声明 Spring Boot AutoConfiguration.imports";
+        }
+        return null;
+    }
+
+    private void analyzeSupportJavaFile(
+            Path file, String artifactId, List<DependencyIssue> issues) throws IOException {
+        String code = Files.readString(file);
+        String javaViolation = supportJavaViolation(code);
+        if (javaViolation != null) {
+            issues.add(supportContentIssue(file, artifactId, javaViolation));
+        }
+    }
+
+    private String supportJavaViolation(String code) {
+        if (code.contains("@RestController") || code.contains("@Controller")) {
+            return "support 模块禁止包含 Controller，HTTP 入口必须放在 starter";
+        }
+        if (code.contains("@FeignClient")) {
+            return "support 模块禁止包含 Feign adapter，远程适配必须放在 starter-remote";
+        }
+        if (SUPPORT_PERSISTENCE_CONTENT_PATTERN.matcher(code).find()
+                || containsPersistenceTypeDeclaration(code)) {
+            return "support 模块禁止包含持久化内容，持久化能力必须放在 api/core/starter 的对应边界内";
+        }
+        if (SUPPORT_AUTO_CONFIGURATION_PATTERN.matcher(code).find()) {
+            return "support 模块禁止包含 Spring Boot 自动配置或配置属性装配";
+        }
+        return null;
     }
 
     private boolean containsPersistenceTypeDeclaration(String code) {

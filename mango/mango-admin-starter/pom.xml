@@ -19,10 +19,6 @@
 
     <dependencies>
         <dependency>
-            <groupId>io.mango.common</groupId>
-            <artifactId>mango-common</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.mango.infra.module</groupId>
             <artifactId>mango-infra-module-starter</artifactId>
         </dependency>
