@@ -205,7 +205,7 @@ const summary = await calendarApi.monthSummary({
 | 权限 | authorization 迁移和角色授权 | 页面按钮按 `v-auth` 显示或隐藏。 |
 | 日历定义 | `mango-calendar` | 日历列表和下拉。 |
 | 年度日期 | `mango-calendar` | 年度列表、日期列表、工作日计算。 |
-| 默认 `CN_STANDARD` | `mango-calendar` 迁移 | 可以直接查询 2025-2026 年。 |
+| 默认 `CN_STANDARD` | `mango-calendar` 必需资源 | 不依赖 demo 开关，可以直接查询 2025-2026 年。 |
 
 页面使用的权限码：
 

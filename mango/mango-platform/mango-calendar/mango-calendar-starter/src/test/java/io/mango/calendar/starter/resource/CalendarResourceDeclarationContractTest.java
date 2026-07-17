@@ -27,20 +27,23 @@ class CalendarResourceDeclarationContractTest {
     }
 
     @Test
-    void requiredAndDemoDeclarations_areSeparatedAndComplete() throws IOException {
+    void requiredDeclarations_includeDefinitionAndBaselineYears() throws IOException {
         JsonNode required = readJson("META-INF/mango/resources/calendar-common-definition.json");
-        JsonNode demo = readJson("META-INF/mango/demo/calendar-demo-cn-standard-years.json");
+        JsonNode baselineYears = readJson("META-INF/mango/resources/calendar-common-cn-standard-years.json");
 
         JsonNode definitions = required.at("/mango/resource/declarations/CALENDAR_DEFINITION");
-        JsonNode years = demo.at("/mango/resource/declarations/CALENDAR_YEAR");
+        JsonNode years = baselineYears.at("/mango/resource/declarations/CALENDAR_YEAR");
         assertThat(definitions).hasSize(1);
         assertThat(definitions.get(0).path("syncMode").asText()).isEqualTo("INIT_ONLY");
         assertThat(definitions.get(0).at("/fields/calendarCode/value").asText()).isEqualTo("CN_STANDARD");
         assertThat(years).hasSize(2);
+        assertThat(years).allSatisfy(year -> assertThat(year.path("syncMode").asText()).isEqualTo("INIT_ONLY"));
         assertThat(years.get(0).at("/fields/year/value").asInt()).isEqualTo(2025);
         assertThat(years.get(0).at("/fields/items/value")).hasSize(33);
         assertThat(years.get(1).at("/fields/year/value").asInt()).isEqualTo(2026);
         assertThat(years.get(1).at("/fields/items/value")).hasSize(38);
+        assertThat(getClass().getClassLoader().getResource("META-INF/mango/demo/calendar-demo-cn-standard-years.json"))
+                .isNull();
     }
 
     private JsonNode readJson(String path) throws IOException {
