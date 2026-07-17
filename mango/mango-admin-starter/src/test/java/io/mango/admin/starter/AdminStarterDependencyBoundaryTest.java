@@ -6,84 +6,108 @@ import org.w3c.dom.NodeList;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class AdminStarterDependencyBoundaryTest {
 
     @Test
-    void pom_directDependencies_doNotReferenceCoreModules() throws Exception {
+    void pomProductionDependenciesUseLocalRuntimeStartersOnly() throws Exception {
         NodeList dependencies = DocumentBuilderFactory.newInstance()
                 .newDocumentBuilder()
                 .parse(Path.of("pom.xml").toFile())
                 .getElementsByTagName("dependency");
 
-        List<String> coreDependencies = new ArrayList<>();
+        List<String> productionDependencies = new ArrayList<>();
         for (int i = 0; i < dependencies.getLength(); i++) {
             Element dependency = (Element) dependencies.item(i);
+            if ("test".equals(childText(dependency, "scope"))) {
+                continue;
+            }
             String groupId = childText(dependency, "groupId");
             String artifactId = childText(dependency, "artifactId");
-            if (groupId.startsWith("io.mango") && artifactId.endsWith("-core")) {
-                coreDependencies.add(groupId + ":" + artifactId);
-            }
+            assertTrue(groupId.startsWith("io.mango"), groupId + ":" + artifactId);
+            assertTrue(artifactId.endsWith("-starter"), groupId + ":" + artifactId);
+            assertFalse(artifactId.endsWith("-starter-remote"), groupId + ":" + artifactId);
+            productionDependencies.add(artifactId);
         }
 
-        assertTrue(coreDependencies.isEmpty(), coreDependencies.toString());
+        assertFalse(productionDependencies.isEmpty());
+        assertEquals(
+                productionDependencies.size(),
+                productionDependencies.stream().distinct().count(),
+                productionDependencies.toString());
     }
 
     @Test
-    void resources_doNotProvideApplicationConfiguration() throws IOException {
+    void readmeDependencyInventoryMatchesPom() throws Exception {
+        String readme = Files.readString(Path.of("README.md"));
+        Pattern dependencyLine = Pattern.compile("(?m)^- `(?<artifact>mango-[a-z0-9-]+-starter)`$");
+        List<String> documented = dependencyLine.matcher(readme).results()
+                .map(result -> result.group("artifact"))
+                .toList();
+
+        assertEquals(productionArtifactIds(), documented);
+    }
+
+    @Test
+    void resourcesOnlyProvideModuleMetadata() throws IOException {
         Path resources = Path.of("src/main/resources");
-        if (!Files.exists(resources)) {
+        try (Stream<Path> paths = Files.walk(resources)) {
+            List<String> resourceFiles = paths
+                    .filter(Files::isRegularFile)
+                    .map(resources::relativize)
+                    .map(Path::toString)
+                    .toList();
+            assertEquals(List.of("META-INF/mango/module.properties"), resourceFiles);
+        }
+    }
+
+    @Test
+    void moduleMetadataIdentifiesAdminAggregation() throws IOException {
+        Properties properties = new Properties();
+        try (var input = Files.newInputStream(
+                Path.of("src/main/resources/META-INF/mango/module.properties"))) {
+            properties.load(input);
+        }
+
+        assertEquals("mango-admin", properties.getProperty("module-name"));
+        assertEquals("/admin", properties.getProperty("module-path"));
+    }
+
+    @Test
+    void productionJavaSourcesRemainEmpty() throws IOException {
+        Path sourceRoot = Path.of("src/main/java");
+        if (!Files.isDirectory(sourceRoot)) {
             return;
         }
-
-        try (Stream<Path> paths = Files.walk(resources)) {
-            List<Path> applicationConfigs = paths
-                    .filter(Files::isRegularFile)
-                    .filter(AdminStarterDependencyBoundaryTest::isApplicationConfig)
-                    .toList();
-
-            assertTrue(applicationConfigs.isEmpty(), applicationConfigs.toString());
+        try (Stream<Path> paths = Files.walk(sourceRoot)) {
+            assertTrue(paths.noneMatch(path -> path.toString().endsWith(".java")));
         }
     }
 
-    @Test
-    void classpathApplicationConfigs_doNotSetServerProperties() throws IOException {
-        List<String> configNames = List.of("application.yml", "application.yaml", "application.properties");
-        List<String> serverPropertyResources = new ArrayList<>();
-
-        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-        for (String configName : configNames) {
-            try (InputStream inputStream = classLoader.getResourceAsStream(configName)) {
-                if (inputStream == null) {
-                    continue;
-                }
-                String content = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
-                if (content.lines().anyMatch(AdminStarterDependencyBoundaryTest::isServerPropertyLine)) {
-                    serverPropertyResources.add(configName);
-                }
+    private static List<String> productionArtifactIds() throws Exception {
+        NodeList dependencies = DocumentBuilderFactory.newInstance()
+                .newDocumentBuilder()
+                .parse(Path.of("pom.xml").toFile())
+                .getElementsByTagName("dependency");
+        List<String> artifactIds = new ArrayList<>();
+        for (int i = 0; i < dependencies.getLength(); i++) {
+            Element dependency = (Element) dependencies.item(i);
+            if (!"test".equals(childText(dependency, "scope"))) {
+                artifactIds.add(childText(dependency, "artifactId"));
             }
         }
-
-        assertTrue(serverPropertyResources.isEmpty(), serverPropertyResources.toString());
-    }
-
-    private static boolean isApplicationConfig(Path path) {
-        String filename = path.getFileName().toString();
-        return List.of("application.yml", "application.yaml", "application.properties").contains(filename);
-    }
-
-    private static boolean isServerPropertyLine(String line) {
-        String trimmed = line.trim();
-        return trimmed.startsWith("server.") || trimmed.startsWith("server:");
+        return List.copyOf(artifactIds);
     }
 
     private static String childText(Element element, String tagName) {

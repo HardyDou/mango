@@ -114,6 +114,7 @@ npm --prefix mango-docs run docs:build
 - [Authorization 授权](../mango/mango-platform/mango-authorization/README.md)
 - [Calendar 日历](../mango/mango-platform/mango-calendar/README.md)
 - [Captcha 验证码](../mango/mango-platform/mango-captcha/README.md)
+- [CMS 内容管理](../mango/mango-platform/mango-cms/README.md)
 - [Domain 业务域](../mango/mango-platform/mango-domain/README.md)
 - [File 文件](../mango/mango-platform/mango-file/README.md)
 - [File Preview 文件预览](../mango/mango-platform/mango-file-preview/README.md)

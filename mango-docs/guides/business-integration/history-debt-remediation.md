@@ -61,6 +61,8 @@
 | 校验注解存在但运行时无实现 | Command 有 Jakarta Validation 注解，空值请求仍进入 Service 并返回 200 | starter 只有 `validation-api`，未引入 Bean Validation provider | starter 独立启动后发送非法 HTTP 请求并断言 400；不得用测试专属 validator 掩盖生产依赖缺失 |
 | Reactor 用 `map` 返回 null | 第三方 `[DONE]` 分支返回 null，流式链路运行时抛 `NullPointerException` | 把同步集合的过滤习惯套到 Reactive Streams | 使用 `handle`/`filterWhen` 等显式丢弃元素；本地 HTTP 假服务回放完整 SSE，包括 `[DONE]`、非法 JSON 和超时 |
 | 无限 SSE 包装成阻塞 `Resource` | connected 事件已写入管道，但 HTTP 客户端收不到首帧，服务停机仍等待活动请求 | 为满足静态规则选择了不适合无限流的二进制响应模型 | 修正规则以识别框架原生异步 `SseEmitter`；真实随机端口客户端必须验证首帧、主动断开和进程正常退出 |
+| 零源码聚合模块绕过依赖门禁 | partial Reactor 没有 Java 文件，架构插件以 ENGINE-005 退出，非法 Maven 依赖也未检查 | 把 Java 分析输入为空误认为模块没有架构事实 | dependency 检查、模块归属和 schema v2 报告始终执行；bytecode/PMD/命名空间引擎以空输入完成；用非法依赖反例证明 fail-closed |
+| CLI 缓存完整构建输出 | 大型 Reactor 安装实际成功，但日志超过 `spawnSync` 默认缓冲上限后 CLI 报安装失败 | 前置命令 stdout/stderr 先收集到内存再写日志 | 前置安装输出直接流入 app 日志；自动化生成超过缓冲阈值的输出并证明后端启动命令仍会执行 |
 
 ## 4. 标准修复流程
 

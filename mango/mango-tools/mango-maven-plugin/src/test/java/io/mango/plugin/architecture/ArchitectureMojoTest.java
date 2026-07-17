@@ -20,6 +20,7 @@ import java.util.Set;
 import io.mango.architecture.ArchitectureIssue;
 import io.mango.architecture.ModuleRole;
 import org.apache.maven.execution.MavenSession;
+import org.apache.maven.model.Dependency;
 import org.apache.maven.model.Build;
 import org.apache.maven.project.MavenProject;
 import org.junit.jupiter.api.Test;
@@ -156,6 +157,50 @@ class ArchitectureMojoTest {
                 Set.copyOf(sourceDirectories));
         assertEquals(Set.of(classes.toAbsolutePath().normalize()), classDirectories.keySet());
         assertEquals(Map.of(classes.toAbsolutePath().normalize(), "."), classDirectoryModules);
+    }
+
+    @Test
+    void dependencyOnlyReactorKeepsDependencyArchitectureWithoutJavaSources(
+            @TempDir Path root) throws Exception {
+        MavenProject project = project(root, "mango-admin-starter", "mango-admin-starter");
+        project.setGroupId("io.mango");
+        Build build = new Build();
+        build.setSourceDirectory(
+                root.resolve("mango-admin-starter/src/main/java").toString());
+        build.setOutputDirectory(
+                root.resolve("mango-admin-starter/target/classes").toString());
+        project.setBuild(build);
+        Dependency forbidden = new Dependency();
+        forbidden.setGroupId("io.mango.platform.order");
+        forbidden.setArtifactId("mango-order-core");
+        forbidden.setVersion("1.0.0-SNAPSHOT");
+        project.setDependencies(List.of(forbidden));
+
+        MavenSession session = mock(MavenSession.class);
+        when(session.getProjects()).thenReturn(List.of(project));
+        when(session.getAllProjects()).thenReturn(List.of(project));
+
+        ArchitectureMojo mojo = new ArchitectureMojo();
+        setField(mojo, "session", session);
+        setField(mojo, "rootDirectory", root.toFile());
+        setField(mojo, "excludedModules", List.of());
+        setField(mojo, "businessGroupPrefixes", List.of());
+        setField(mojo, "requireFullReactor", false);
+
+        Method collect = ArchitectureMojo.class.getDeclaredMethod("collectReactorInputs");
+        collect.setAccessible(true);
+        Object inputs = collect.invoke(mojo);
+        Method sourceDirectories = inputs.getClass().getDeclaredMethod("sourceDirectories");
+        sourceDirectories.setAccessible(true);
+        Method dependencyIssues = inputs.getClass().getDeclaredMethod("dependencyIssues");
+        dependencyIssues.setAccessible(true);
+
+        assertTrue(((List<?>) sourceDirectories.invoke(inputs)).isEmpty());
+        @SuppressWarnings("unchecked")
+        List<ArchitectureIssue> issues =
+                (List<ArchitectureIssue>) dependencyIssues.invoke(inputs);
+        assertEquals(List.of("MANGO-ARCH-DEP-007"),
+                issues.stream().map(ArchitectureIssue::ruleId).toList());
     }
 
     @Test

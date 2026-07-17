@@ -241,6 +241,8 @@ CLI 从当前目录向上查找 `mango.dev.json`。本地工作区分配事实�
 | `.mango` 下的 `run`、`logs`、`<app>.log` | 安装和启动输出 | `mango dev start` | `mango dev logs <app>` 和失败诊断 |
 | `.mango/run/state.json` | 预留状态文件路径 | context 初始化 | 后续状态扩展 |
 
+`mango dev start` 执行前置安装命令时会把 stdout/stderr 直接追加到对应 app 日志，不在 CLI 进程内缓存完整输出。大型 Maven Reactor 即使产生超过 Node.js `spawnSync` 默认缓冲上限的日志，也不会因此被误判为安装失败；诊断仍统一使用 `mango dev logs <app>` 或对应 app 日志文件。
+
 ### 6.5 可审计发布状态机
 
 `mango release` 固定维护 `source`、`versions`、`changelog`、`readmes`、`tests`、`pr`、`tag`、`github-release`、`maven`、`npm`、`cli-lock`、`private-registry-publish`、`private-registry-consume-verify`、`docs-latest`、`docs-snapshot`、`post-verify`、`cleanup`。每个状态只能是 `passed`、`failed`、`pending` 或 `not_applicable`，并必须有非空原因。适用且已执行的状态还必须逐次记录命令、工作目录、开始/完成时间、退出码和非空脱敏输出；`not_applicable` 因没有执行命令，只记录不适用原因和时间。

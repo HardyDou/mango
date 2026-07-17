@@ -20,7 +20,7 @@
 - 不承载业务私有模块，业务 starter 应由业务 app 自己引入。
 
 ## 4. 模块入口
-`mango-admin-starter` 聚合公开 starter，不直接依赖 `*-core` 模块。真正的 Bean、Controller、migration、Runner、Initializer、配置属性都来自被聚合的 starter。
+`mango-admin-starter` 聚合公开的本地运行时 starter，不直接依赖 common、API、core、support 或 `starter-remote` 模块。真正的 Bean、Controller、migration、Runner、Initializer、配置属性都来自被聚合的 starter。
 
 宿主应用仍负责：
 
@@ -72,7 +72,7 @@ Maven 依赖：
 具体字段看各模块 README 和宿主 app 的 `application.yml`。
 
 ## 7. API 与扩展
-聚合的基础设施 starter：
+以下清单与 POM 的直接生产依赖保持相同顺序。聚合的基础设施 starter：
 
 - `mango-infra-module-starter`
 - `mango-infra-kv-starter`
@@ -90,6 +90,8 @@ Maven 依赖：
 - `mango-authorization-starter`
 - `mango-authorization-resource-sync-starter`
 - `mango-authorization-resource-access-starter`
+- `mango-resource-starter`
+- `mango-resource-sync-starter`
 - `mango-access-web-starter`
 - `mango-org-starter`
 - `mango-captcha-starter`
@@ -101,9 +103,13 @@ Maven 依赖：
 - `mango-template-starter`
 - `mango-workflow-starter`
 - `mango-job-starter`
+- `mango-cms-starter`
 - `mango-calendar-starter`
+- `mango-grid-layout-starter`
+- `mango-home-starter`
 - `mango-numgen-starter`
 - `mango-payment-starter`
+- `mango-link-starter`
 
 ## 8. 数据与初始化
 本 starter 不提供独立数据库对象。表结构、菜单、权限、字典、租户、任务、模板、流程、支付、文件等初始化来自被聚合模块的 migration、Runner 或 Initializer。

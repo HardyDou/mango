@@ -60,11 +60,40 @@ class MavenDependencyCheckerTest {
     }
 
     @Test
-    void starterDependingOnForeignStarterIsRejected() {
-        assertThat(checker.check("mango-admin-starter", List.of(
+    void regularStarterDependingOnForeignStarterIsRejected() {
+        assertThat(checker.check("mango-order-starter", List.of(
                 dependency("mango-resource-starter"))))
                 .extracting(ArchitectureIssue::ruleId)
                 .containsExactly("MANGO-ARCH-DEP-007", "MANGO-ARCH-DEP-005");
+    }
+
+    @Test
+    void adminAggregateMayUseLocalRuntimeStarters() {
+        Dependency webStarter = dependency("mango-infra-web-starter");
+        webStarter.setGroupId("io.mango.infra.web");
+
+        assertThat(checker.check("mango-admin-starter", List.of(
+                webStarter,
+                dependency("mango-resource-starter"),
+                dependency("mango-order-starter"))))
+                .isEmpty();
+    }
+
+    @Test
+    void adminAggregateRejectsNonStarterAndRemoteLayers() {
+        assertThat(checker.check("mango-admin-starter", List.of(
+                dependency("mango-common"),
+                dependency("mango-order-api"),
+                dependency("mango-order-core"),
+                dependency("mango-order-support"),
+                dependency("mango-order-starter-remote"))))
+                .extracting(ArchitectureIssue::ruleId)
+                .containsExactly(
+                        "MANGO-ARCH-DEP-007",
+                        "MANGO-ARCH-DEP-007",
+                        "MANGO-ARCH-DEP-007",
+                        "MANGO-ARCH-DEP-007",
+                        "MANGO-ARCH-DEP-007");
     }
 
     @Test

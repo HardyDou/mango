@@ -443,6 +443,7 @@ try {
   assertGeneratedDevWorkspaceCreatesLocalSecretKey(projectRoot);
   assertGeneratedDevWorkspaceBackfillsLocalSecretKey(projectRoot);
   assertDevWorkspaceAutoCreatesDatabase(projectRoot);
+  assertDevWorkspaceStreamsLargeInstallOutput(projectRoot);
   assertCommandDevWorkspaceAutoCreatesDatabase(projectRoot);
   assertDevWorkspaceReportsMissingMysql(projectRoot);
   assertDevWorkspaceRestartUsesStopThenStart(projectRoot);
@@ -1508,6 +1509,58 @@ function assertDevWorkspaceAutoCreatesDatabase(projectRoot) {
     || !createCall.includes('-u root')
     || !mavenCall) {
     throw new Error(`mango dev start must create workspace database before Maven install:\n${calls.join('\n')}`);
+  }
+}
+
+function assertDevWorkspaceStreamsLargeInstallOutput(projectRoot) {
+  const fakeBinDir = join(projectRoot, '.runtime/large-install-bin');
+  const callLog = join(projectRoot, '.runtime/large-install-calls.log');
+  mkdirSync(fakeBinDir, { recursive: true });
+  writeFileSync(join(fakeBinDir, 'mysql'), [
+    '#!/usr/bin/env sh',
+    `echo "mysql:$*" >> "${callLog}"`,
+    'exit 0',
+    '',
+  ].join('\n'));
+  writeFileSync(join(fakeBinDir, 'mvn'), [
+    '#!/usr/bin/env sh',
+    `echo "mvn:$*" >> "${callLog}"`,
+    'case "$*" in',
+    '  *"-DskipTests install"*)',
+    "    dd if=/dev/zero bs=1024 count=1280 2>/dev/null | tr '\\000' x",
+    '    exit 0',
+    '    ;;',
+    'esac',
+    'exit 17',
+    '',
+  ].join('\n'));
+  chmodExecutable(join(fakeBinDir, 'mysql'));
+  chmodExecutable(join(fakeBinDir, 'mvn'));
+  rmSync(callLog, { force: true });
+  rmSync(join(projectRoot, '.mango'), { recursive: true, force: true });
+  const result = spawnSync('env', [
+    `MANGO_WORKSPACE_REGISTRY=${join(projectRoot, '.runtime/large-install-workspaces.json')}`,
+    `PATH=${fakeBinDir}:/usr/bin:/bin:/usr/sbin:/sbin`,
+    process.execPath,
+    cli,
+    'dev',
+    'start',
+    'mango-full-acceptance-service',
+  ], {
+    cwd: projectRoot,
+    encoding: 'utf8',
+  });
+  const output = `${result.stdout}\n${result.stderr}`;
+  if (result.status === 0
+    || output.includes('install command failed')
+    || !output.includes('exited before becoming healthy')) {
+    throw new Error(`large install output must stream to the app log before backend startup:\n${output}`);
+  }
+  const calls = waitForCallLogLines(callLog, 4);
+  const mavenCalls = calls.filter(line => line.startsWith('mvn:'));
+  if (!mavenCalls.some(line => line.includes('-DskipTests install'))
+    || !mavenCalls.some(line => line.includes('spring-boot-maven-plugin'))) {
+    throw new Error(`large install output scenario must reach backend startup:\n${calls.join('\n')}`);
   }
 }
 
