@@ -5,8 +5,6 @@ import io.mango.job.api.command.MangoJobWorkerExecuteCommand;
 import io.mango.job.api.vo.MangoJobWorkerExecuteResultVO;
 import jakarta.validation.Valid;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 
 /**
  * Mango Job Worker internal API contract.
@@ -20,6 +18,5 @@ public interface MangoJobWorkerApi {
      * @param command Worker 执行命令
      * @return Worker 执行结果和捕获日志
      */
-    @PostMapping("/internal/workers/execute")
-    R<MangoJobWorkerExecuteResultVO> execute(@Valid @RequestBody MangoJobWorkerExecuteCommand command);
+    R<MangoJobWorkerExecuteResultVO> execute(@Valid MangoJobWorkerExecuteCommand command);
 }

@@ -20,7 +20,7 @@ public interface IMangoJobEngine {
      * @param request 同步请求
      * @return 同步结果
      */
-    MangoJobEngineResult syncDefinition(MangoJobEngineRequest request);
+    MangoJobEngineResult syncDefinition(MangoJobEngineDefinitionContext request);
 
     /**
      * 删除引擎侧任务。
@@ -28,7 +28,7 @@ public interface IMangoJobEngine {
      * @param request 删除请求
      * @return 删除结果
      */
-    MangoJobEngineResult deleteDefinition(MangoJobEngineRequest request);
+    MangoJobEngineResult deleteDefinition(MangoJobEngineDefinitionContext request);
 
     /**
      * 手动触发引擎侧任务。
@@ -36,7 +36,7 @@ public interface IMangoJobEngine {
      * @param request 触发请求
      * @return 触发结果
      */
-    MangoJobEngineResult trigger(MangoJobTriggerRequest request);
+    MangoJobEngineResult trigger(MangoJobEngineTriggerContext request);
 
     /**
      * 刷新引擎侧实例运行状态。
@@ -44,7 +44,7 @@ public interface IMangoJobEngine {
      * @param request 实例请求
      * @return 实例状态结果
      */
-    default MangoJobEngineResult refreshInstance(MangoJobTriggerRequest request) {
+    default MangoJobEngineResult refreshInstance(MangoJobEngineTriggerContext request) {
         return MangoJobEngineResult.success();
     }
 
@@ -54,7 +54,7 @@ public interface IMangoJobEngine {
      * @param request 实例导入请求
      * @return 引擎实例快照
      */
-    default List<MangoJobEngineInstanceSnapshot> importInstances(MangoJobInstanceImportRequest request) {
+    default List<MangoJobEngineInstanceSnapshot> importInstances(MangoJobInstanceImportCriteria request) {
         return List.of();
     }
 
@@ -64,7 +64,7 @@ public interface IMangoJobEngine {
      * @param request 日志请求
      * @return 日志结果
      */
-    default MangoJobLogResult fetchLog(MangoJobLogRequest request) {
+    default MangoJobLogResult fetchLog(MangoJobEngineLogContext request) {
         return MangoJobLogResult.failed(engineType(), "当前调度引擎不支持日志详情查询");
     }
 

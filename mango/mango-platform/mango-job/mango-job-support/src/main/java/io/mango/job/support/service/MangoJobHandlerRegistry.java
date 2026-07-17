@@ -1,15 +1,13 @@
 package io.mango.job.support.service;
 
 import io.mango.common.result.Require;
+import io.mango.job.api.enums.JobCode;
 import io.mango.job.api.enums.JobType;
-import io.mango.job.api.handler.MangoJobHandler;
+import io.mango.job.support.handler.MangoJobHandler;
 import io.mango.job.api.vo.MangoJobHandlerVO;
 import io.mango.job.support.nativeengine.MangoNativeJobProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
 
 import java.util.Comparator;
 import java.util.LinkedHashSet;
@@ -22,8 +20,7 @@ import java.util.Set;
 /**
  * 当前应用内 Job 处理器注册表。
  */
-@Service
-public class MangoJobHandlerRegistry implements IMangoJobHandlerRegistry {
+public class MangoJobHandlerRegistry {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MangoJobHandlerRegistry.class);
 
@@ -35,17 +32,16 @@ public class MangoJobHandlerRegistry implements IMangoJobHandlerRegistry {
 
     private final String springApplicationName;
 
-    public MangoJobHandlerRegistry(ObjectProvider<MangoJobHandler> provider,
+    public MangoJobHandlerRegistry(List<MangoJobHandler> handlerList,
                                    MangoNativeJobProperties properties,
-                                   @Value("${spring.application.name:}") String springApplicationName) {
+                                   String springApplicationName) {
         this.properties = properties;
         this.springApplicationName = springApplicationName;
-        provider.orderedStream().forEach(this::register);
+        handlerList.forEach(this::register);
     }
 
-    @Override
     public synchronized void register(MangoJobHandler handler) {
-        Require.notNull(handler, "Job 处理器不能为空");
+        Require.notNull(handler, JobCode.JOB_INVALID, "Job 处理器不能为空");
         String handlerName = MangoJobHandlerSupport.normalizeRequired(handler.handlerName(), "Job 处理器名称不能为空");
         String appCode = MangoJobHandlerSupport.trimToNull(handler.appCode());
         if (appCode == null) {
@@ -73,7 +69,7 @@ public class MangoJobHandlerRegistry implements IMangoJobHandlerRegistry {
         }
         Set<String> supportedJobCodes = normalizedJobCodes(handler.supportedJobCodes());
         String key = key(appCode, serviceCode, workerGroup, handlerName);
-        Require.isTrue(!handlers.containsKey(key), "Job 处理器名称重复：" + handlerName);
+        Require.isTrue(!handlers.containsKey(key), JobCode.JOB_INVALID, "Job 处理器名称重复：" + handlerName);
 
         MangoJobHandlerVO vo = new MangoJobHandlerVO();
         vo.setAppCode(appCode);
@@ -89,7 +85,6 @@ public class MangoJobHandlerRegistry implements IMangoJobHandlerRegistry {
                 appCode, serviceCode, workerGroup, handlerName, supportedJobCodes);
     }
 
-    @Override
     public synchronized List<MangoJobHandlerVO> listHandlers() {
         return handlers.values().stream()
                 .sorted(Comparator.comparing(MangoJobHandlerVO::getAppCode)
@@ -99,12 +94,10 @@ public class MangoJobHandlerRegistry implements IMangoJobHandlerRegistry {
                 .toList();
     }
 
-    @Override
     public synchronized Optional<MangoJobHandler> findHandler(String handlerName) {
         return findHandler(null, handlerName);
     }
 
-    @Override
     public synchronized Optional<MangoJobHandler> findHandler(String appCode, String handlerName) {
         String normalized = MangoJobHandlerSupport.trimToNull(handlerName);
         if (normalized == null) {
@@ -124,7 +117,6 @@ public class MangoJobHandlerRegistry implements IMangoJobHandlerRegistry {
         return Optional.empty();
     }
 
-    @Override
     public synchronized Optional<MangoJobHandler> findHandler(String appCode,
                                                               String serviceCode,
                                                               String workerGroup,

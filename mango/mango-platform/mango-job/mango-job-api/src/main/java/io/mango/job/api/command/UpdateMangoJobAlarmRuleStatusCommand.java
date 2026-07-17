@@ -2,6 +2,7 @@ package io.mango.job.api.command;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -16,6 +17,7 @@ public class UpdateMangoJobAlarmRuleStatusCommand implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @NotNull(message = "告警规则 ID 不能为空")
+    @Positive(message = "告警规则 ID 必须大于0")
     @Schema(description = "告警规则 ID", requiredMode = Schema.RequiredMode.REQUIRED)
     private Long id;
 

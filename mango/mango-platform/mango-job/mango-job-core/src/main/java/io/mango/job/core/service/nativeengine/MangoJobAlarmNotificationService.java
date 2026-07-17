@@ -3,13 +3,13 @@ package io.mango.job.core.service.nativeengine;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.mango.common.result.R;
-import io.mango.job.api.constant.MangoJobNoticeBizTypes;
+import io.mango.common.result.Require;
+import io.mango.job.api.enums.JobCode;
+import io.mango.job.core.constant.MangoJobNoticeBizTypes;
 import io.mango.job.core.entity.MangoJobAlarmRuleEntity;
 import io.mango.job.core.entity.MangoJobDefinitionEntity;
 import io.mango.job.core.entity.MangoJobInstanceEntity;
 import io.mango.job.core.mapper.MangoJobAlarmRuleMapper;
-import io.mango.notice.api.NoticeApi;
 import io.mango.notice.api.command.NoticeJsonRequest;
 import io.mango.notice.api.command.NoticeSiteMessageActionCommand;
 import io.mango.notice.api.command.NoticeSiteMessageSubjectCommand;
@@ -18,10 +18,8 @@ import io.mango.notice.api.command.SendNoticeCommand;
 import io.mango.notice.api.enums.NoticePriority;
 import io.mango.notice.api.enums.NoticeSiteMessageActionInteractionType;
 import io.mango.notice.api.enums.NoticeSiteMessageTargetType;
-import io.mango.notice.api.vo.NoticeSendResultVO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -34,7 +32,7 @@ import java.util.Map;
  * Sends Mango Job alarm events through mango-notice.
  */
 @Service
-public class MangoJobAlarmNotificationService {
+public class MangoJobAlarmNotificationService implements IMangoJobAlarmNotificationService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MangoJobAlarmNotificationService.class);
 
@@ -42,23 +40,26 @@ public class MangoJobAlarmNotificationService {
 
     private final MangoJobAlarmRuleMapper alarmRuleMapper;
 
-    private final ObjectProvider<NoticeApi> noticeApiProvider;
+    private final MangoJobNoticeGateway noticeGateway;
 
     private final ObjectMapper objectMapper;
 
     public MangoJobAlarmNotificationService(MangoJobAlarmRuleMapper alarmRuleMapper,
-                                            ObjectProvider<NoticeApi> noticeApiProvider,
+                                            MangoJobNoticeGateway noticeGateway,
                                             ObjectMapper objectMapper) {
         this.alarmRuleMapper = alarmRuleMapper;
-        this.noticeApiProvider = noticeApiProvider;
+        this.noticeGateway = noticeGateway;
         this.objectMapper = objectMapper;
     }
 
-    public String notifyInstanceFailed(MangoJobDefinitionEntity definition,
-                                       MangoJobInstanceEntity instance,
-                                       String errorSummary) {
-        NoticeApi noticeApi = noticeApiProvider.getIfAvailable();
-        if (noticeApi == null) {
+    @Override
+    public String notifyInstanceFailed(MangoJobAlarmContext context) {
+        Require.notNull(context, JobCode.JOB_INVALID, "Job 失败告警上下文不能为空");
+        Require.notNull(context.definition(), JobCode.JOB_INVALID, "任务定义不能为空");
+        Require.notNull(context.instance(), JobCode.JOB_INVALID, "任务实例不能为空");
+        MangoJobDefinitionEntity definition = context.definition();
+        MangoJobInstanceEntity instance = context.instance();
+        if (!noticeGateway.isAvailable()) {
             return "mango-notice 未启用，跳过 Job 失败告警发送";
         }
         List<MangoJobAlarmRuleEntity> rules = enabledRules(definition);
@@ -67,7 +68,7 @@ public class MangoJobAlarmNotificationService {
         }
         String lastResult = null;
         for (MangoJobAlarmRuleEntity rule : rules) {
-            lastResult = sendRule(noticeApi, rule, definition, instance, errorSummary);
+            lastResult = sendRule(rule, definition, instance, context.errorSummary());
         }
         return lastResult;
     }
@@ -84,8 +85,7 @@ public class MangoJobAlarmNotificationService {
                         .isNull(MangoJobAlarmRuleEntity::getJobId)));
     }
 
-    private String sendRule(NoticeApi noticeApi,
-                            MangoJobAlarmRuleEntity rule,
+    private String sendRule(MangoJobAlarmRuleEntity rule,
                             MangoJobDefinitionEntity definition,
                             MangoJobInstanceEntity instance,
                             String errorSummary) {
@@ -107,9 +107,9 @@ public class MangoJobAlarmNotificationService {
         applyRecipientRule(rule, command);
         command.setIdempotentKey("mango-job:alarm:" + rule.getId() + ":" + instance.getId());
         try {
-            R<NoticeSendResultVO> response = noticeApi.send(command);
-            if (response == null || !response.isSuccess()) {
-                String message = response == null ? "通知接口无响应" : response.getMsg();
+            MangoJobNoticeGateway.MangoJobNoticeDelivery delivery = noticeGateway.send(command);
+            if (!delivery.success()) {
+                String message = delivery.message();
                 LOGGER.warn("Mango Job alarm notice failed, ruleId={}, instanceId={}, message={}",
                         rule.getId(), instance.getId(), message);
                 return "Job 失败告警发送失败：" + message;
@@ -171,7 +171,6 @@ public class MangoJobAlarmNotificationService {
         return action;
     }
 
-    @SuppressWarnings("unchecked")
     private void applyRecipientRule(MangoJobAlarmRuleEntity rule, SendNoticeCommand command) {
         if (!StringUtils.hasText(rule.getNoticeParams())) {
             return;

@@ -17,6 +17,11 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <groupId>io.mango.platform.job</groupId>
+            <artifactId>mango-job-starter-remote</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>io.mango.platform.authorization</groupId>
             <artifactId>mango-authorization-api</artifactId>
         </dependency>

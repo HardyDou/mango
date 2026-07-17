@@ -229,14 +229,16 @@ async function login(page: Page) {
   await page.goto('/#/login');
   await page.fill('input[placeholder="用户名"]', 'admin');
   await page.fill('input[placeholder="密码"]', 'admin123');
-  const accountTenantsResponsePromise = page.waitForResponse((response) =>
-    response.url().includes('/api/auth/login-institutions') && response.status() === 200
-  );
   await page.locator('input[placeholder="密码"]').blur();
-  await accountTenantsResponsePromise;
+  await expect(page.locator('.tenant-select')).toContainText('芒果集团', { timeout: 10000 });
   await page.locator('.tenant-select').click();
   await page.getByRole('option', { name: /芒果集团/ }).click();
+  const loginResponsePromise = page.waitForResponse((response) =>
+    response.url().endsWith('/auth/login') && response.request().method() === 'POST'
+  );
   await page.locator('.login-btn').click();
+  const loginResponse = await loginResponsePromise;
+  expect(loginResponse.status()).toBe(200);
   await page.waitForURL('**/#/home', { timeout: 10000 });
 }
 
@@ -279,8 +281,9 @@ async function listInstances(page: Page, headers: LoginHeaders, jobId: ApiId): P
 }
 
 async function detailInstanceLog(page: Page, headers: LoginHeaders, instanceId: ApiId): Promise<JobLogDetail> {
-  const response = await page.request.get(`/api/job/instances/${instanceId}/logs`, {
+  const response = await page.request.get('/api/job/instances/logs/detail', {
     headers,
+    params: { instanceId: String(instanceId) },
   });
   return expectBusinessOk<JobLogDetail>(response);
 }
@@ -763,12 +766,12 @@ test.describe('Job 管理 E2E', () => {
     const manualRow = definitionRow(page, manualCode);
     await expect(manualRow).toContainText('已启用');
     await manualRow.getByRole('button', { name: '暂停' }).click();
-    await page.locator('.el-message-box', { hasText: '调整状态' }).getByRole('button', { name: /^(OK|确认)$/ }).click();
+    await page.locator('.el-message-box', { hasText: '调整状态' }).getByRole('button', { name: /^(OK|确认|确定)$/ }).click();
     await expect(page.locator('.el-message__content', { hasText: '状态已更新' }).last()).toBeVisible({ timeout: 10000 });
     await expect(definitionRow(page, manualCode)).toContainText('已暂停');
 
     await definitionRow(page, manualCode).getByRole('button', { name: '启用' }).click();
-    await page.locator('.el-message-box', { hasText: '调整状态' }).getByRole('button', { name: /^(OK|确认)$/ }).click();
+    await page.locator('.el-message-box', { hasText: '调整状态' }).getByRole('button', { name: /^(OK|确认|确定)$/ }).click();
     await expect(page.locator('.el-message__content', { hasText: '状态已更新' }).last()).toBeVisible({ timeout: 10000 });
     await expect(definitionRow(page, manualCode)).toContainText('已启用');
     await saveEvidenceScreenshot(page, '05-definition-status-enabled.png');
@@ -837,7 +840,7 @@ test.describe('Job 管理 E2E', () => {
     await saveEvidenceScreenshot(page, '08-execution-instance-log-entry.png', instanceRow);
 
     const detailResponsePromise = page.waitForResponse((response) =>
-      response.url().includes(`/api/job/instances/${triggeredInstance.id}/logs`) && response.status() === 200
+      response.url().includes('/api/job/instances/logs/detail') && response.status() === 200
     );
     await instanceRow.getByRole('button', { name: '日志' }).click();
     const detailResponse = await detailResponsePromise;
@@ -879,7 +882,7 @@ test.describe('Job 管理 E2E', () => {
     await saveEvidenceScreenshot(page, '08c-scheduled-every-minute-instance.png');
 
     const scheduledDetailResponsePromise = page.waitForResponse((response) =>
-      response.url().includes(`/api/job/instances/${scheduledInstance.id}/logs`) && response.status() === 200
+      response.url().includes('/api/job/instances/logs/detail') && response.status() === 200
     );
     await scheduledRow.getByRole('button', { name: '日志' }).click();
     const scheduledDetailResponse = await scheduledDetailResponsePromise;
@@ -918,7 +921,7 @@ test.describe('Job 管理 E2E', () => {
     await definitionRow(page, draftCode).getByRole('button', { name: '删除' }).click();
     await expect(page.locator('.el-message-box', { hasText: '删除任务' })).toBeVisible();
     await saveEvidenceScreenshot(page, '09-definition-delete-confirm.png', page.locator('.el-message-box', { hasText: '删除任务' }));
-    await page.locator('.el-message-box', { hasText: '删除任务' }).getByRole('button', { name: /^(OK|确认)$/ }).click();
+    await page.locator('.el-message-box', { hasText: '删除任务' }).getByRole('button', { name: /^(OK|确认|确定)$/ }).click();
     await expect(page.locator('.el-message__content', { hasText: '任务已删除' }).last()).toBeVisible({ timeout: 10000 });
     await expect(definitionRow(page, draftCode)).toHaveCount(0);
 
@@ -1069,7 +1072,7 @@ test.describe('Job 管理 E2E', () => {
       response.status() === 200
     );
     await alarmRuleRow(page, alarmRuleName).getByRole('button', { name: '停用' }).click();
-    await page.locator('.el-message-box', { hasText: '更新告警规则状态' }).getByRole('button', { name: /^(OK|确认)$/ }).click();
+    await page.locator('.el-message-box', { hasText: '更新告警规则状态' }).getByRole('button', { name: /^(OK|确认|确定)$/ }).click();
     await disableAlarmResponsePromise;
     await expect(page.locator('.el-message__content', { hasText: '告警规则已停用' }).last()).toBeVisible({ timeout: 10000 });
     await searchAlarmRule(page, alarmRuleName);
@@ -1084,7 +1087,7 @@ test.describe('Job 管理 E2E', () => {
       response.status() === 200
     );
     await alarmRuleRow(page, alarmRuleName).getByRole('button', { name: '启用' }).click();
-    await page.locator('.el-message-box', { hasText: '更新告警规则状态' }).getByRole('button', { name: /^(OK|确认)$/ }).click();
+    await page.locator('.el-message-box', { hasText: '更新告警规则状态' }).getByRole('button', { name: /^(OK|确认|确定)$/ }).click();
     await enableAlarmResponsePromise;
     await expect(page.locator('.el-message__content', { hasText: '告警规则已启用' }).last()).toBeVisible({ timeout: 10000 });
     await searchAlarmRule(page, alarmRuleName);
@@ -1097,7 +1100,7 @@ test.describe('Job 管理 E2E', () => {
       response.status() === 200
     );
     await alarmRuleRow(page, alarmRuleName).getByRole('button', { name: '删除' }).click();
-    await page.locator('.el-message-box', { hasText: '删除告警规则' }).getByRole('button', { name: /^(OK|确认)$/ }).click();
+    await page.locator('.el-message-box', { hasText: '删除告警规则' }).getByRole('button', { name: /^(OK|确认|确定)$/ }).click();
     await deleteAlarmResponsePromise;
     await expect(page.locator('.el-message__content', { hasText: '告警规则已删除' }).last()).toBeVisible({ timeout: 10000 });
     await searchAlarmRule(page, alarmRuleName);
@@ -1176,7 +1179,7 @@ test.describe('Job 管理 E2E', () => {
       response.status() === 200
     );
     await createdRow.getByRole('button', { name: '禁用' }).click();
-    await page.locator('.el-message-box', { hasText: '调整 Worker 状态' }).getByRole('button', { name: /^(OK|确认)$/ }).click();
+    await page.locator('.el-message-box', { hasText: '调整 Worker 状态' }).getByRole('button', { name: /^(OK|确认|确定)$/ }).click();
     await disableResponsePromise;
     await expect(page.locator('.el-message__content', { hasText: 'Worker 状态已更新' }).last()).toBeVisible({ timeout: 10000 });
     await searchWorker(page, workerKey);
@@ -1192,7 +1195,7 @@ test.describe('Job 管理 E2E', () => {
       response.status() === 200
     );
     await workerRow(page, workerKey).getByRole('button', { name: '恢复' }).click();
-    await page.locator('.el-message-box', { hasText: '调整 Worker 状态' }).getByRole('button', { name: /^(OK|确认)$/ }).click();
+    await page.locator('.el-message-box', { hasText: '调整 Worker 状态' }).getByRole('button', { name: /^(OK|确认|确定)$/ }).click();
     await restoreResponsePromise;
     await expect(page.locator('.el-message__content', { hasText: 'Worker 状态已更新' }).last()).toBeVisible({ timeout: 10000 });
     await searchWorker(page, workerKey);

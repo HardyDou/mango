@@ -1,9 +1,10 @@
 package io.mango.job.starter.remote;
 
-import io.mango.job.api.handler.MangoJobHandler;
-import io.mango.job.support.service.IMangoJobHandlerRegistry;
+import io.mango.job.support.handler.MangoJobHandler;
 import io.mango.job.support.service.MangoJobHandlerRegistry;
 import io.mango.job.support.nativeengine.MangoNativeJobProperties;
+import io.mango.job.support.nativeengine.MangoJobWorkerExecutor;
+import io.mango.job.support.nativeengine.IMangoJobWorkerExecutor;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -12,6 +13,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.cloud.openfeign.EnableFeignClients;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.web.client.RestClient;
 
 /**
  * Mango Job 远程调用自动配置。
@@ -24,25 +26,48 @@ public class JobRemoteAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    IMangoJobHandlerRegistry mangoJobHandlerRegistry(ObjectProvider<MangoJobHandler> handlers,
+    MangoJobHandlerRegistry mangoJobHandlerRegistry(ObjectProvider<MangoJobHandler> handlers,
                                                      MangoNativeJobProperties properties,
                                                      @Value("${spring.application.name:}") String applicationName) {
-        return new MangoJobHandlerRegistry(handlers, properties, applicationName);
+        return new MangoJobHandlerRegistry(handlers.orderedStream().toList(), properties, applicationName);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    MangoJobWorkerExecutor mangoJobWorkerExecutor(MangoJobHandlerRegistry handlerRegistry,
+                                                  MangoNativeJobProperties properties) {
+        return new MangoJobWorkerExecutor(handlerRegistry, properties);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    MangoJobWorkerInternalController mangoJobWorkerInternalController(
+            IMangoJobWorkerExecutor workerExecutor) {
+        return new MangoJobWorkerInternalController(workerExecutor);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    MangoJobDynamicHttpClient mangoJobDynamicHttpClient(
+            RestClient.Builder restClientBuilder,
+            @Value("${mango.internal-call.secret:}") String sharedSecret,
+            @Value("${mango.internal-call.secret-version:1}") int secretVersion) {
+        return new MangoJobDynamicHttpClient(restClientBuilder.build(), sharedSecret, secretVersion);
     }
 
     @Bean
     @ConditionalOnMissingBean
     HttpInternalMangoJobWorkerTransport httpInternalMangoJobWorkerTransport(
-            MangoJobWorkerFeignClient workerFeignClient) {
-        return new HttpInternalMangoJobWorkerTransport(workerFeignClient);
+            MangoJobDynamicHttpClient dynamicHttpClient) {
+        return new HttpInternalMangoJobWorkerTransport(dynamicHttpClient);
     }
 
     @Bean
     @ConditionalOnMissingBean
-    MangoJobRemoteWorkerRegistrar mangoJobRemoteWorkerRegistrar(MangoJobFeignClient jobFeignClient,
-                                                                IMangoJobHandlerRegistry handlerRegistry,
+    MangoJobRemoteWorkerRegistrar mangoJobRemoteWorkerRegistrar(MangoJobDynamicHttpClient dynamicHttpClient,
+                                                                MangoJobHandlerRegistry handlerRegistry,
                                                                 MangoNativeJobProperties properties) {
-        return new MangoJobRemoteWorkerRegistrar(jobFeignClient, handlerRegistry, properties);
+        return new MangoJobRemoteWorkerRegistrar(dynamicHttpClient, handlerRegistry, properties);
     }
 
 }

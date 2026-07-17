@@ -2,9 +2,8 @@ package io.mango.job.core.service.nativeengine;
 
 import io.mango.job.api.vo.MangoJobLogDetailVO;
 import io.mango.job.core.entity.MangoJobDefinitionEntity;
-import io.mango.job.core.entity.MangoJobInstanceEntity;
-
-import java.time.LocalDateTime;
+import io.mango.job.core.service.engine.MangoJobEngineTriggerContext;
+import io.mango.job.core.service.engine.MangoJobInstanceImportCriteria;
 
 /**
  * Mango 原生 Job 运行时。
@@ -28,12 +27,9 @@ public interface IMangoNativeJobRuntime {
     /**
      * 触发原生任务执行。
      *
-     * @param definition 任务定义实体
-     * @param instance 执行实例实体
-     * @param batchNo 触发批次号
-     * @param paramValue 本次执行参数 JSON
+     * @param context 任务触发上下文
      */
-    void trigger(MangoJobDefinitionEntity definition, MangoJobInstanceEntity instance, String batchNo, String paramValue);
+    void trigger(MangoJobEngineTriggerContext context);
 
     /**
      * 扫描并派发到期调度任务。
@@ -50,15 +46,9 @@ public interface IMangoNativeJobRuntime {
     /**
      * 导入指定时间范围内的调度实例。
      *
-     * @param definition 任务定义实体
-     * @param triggerTimeStart 触发开始时间
-     * @param triggerTimeEnd 触发结束时间
-     * @param limit 单次导入上限
+     * @param criteria 实例导入条件
      */
-    void importScheduledInstances(MangoJobDefinitionEntity definition,
-                                  LocalDateTime triggerTimeStart,
-                                  LocalDateTime triggerTimeEnd,
-                                  int limit);
+    void importScheduledInstances(MangoJobInstanceImportCriteria criteria);
 
     /**
      * 查询执行实例日志详情。

@@ -3,8 +3,10 @@ package io.mango.job.api;
 import io.mango.common.result.R;
 import io.mango.common.vo.PageResult;
 import io.mango.job.api.command.CreateMangoJobWorkerCommand;
-import io.mango.job.api.command.SaveMangoJobDefinitionCommand;
-import io.mango.job.api.command.SaveMangoJobAlarmRuleCommand;
+import io.mango.job.api.command.CreateMangoJobDefinitionCommand;
+import io.mango.job.api.command.CreateMangoJobAlarmRuleCommand;
+import io.mango.job.api.command.UpdateMangoJobAlarmRuleCommand;
+import io.mango.job.api.command.UpdateMangoJobDefinitionCommand;
 import io.mango.job.api.command.RegisterMangoJobWorkerCommand;
 import io.mango.job.api.command.SyncMangoJobInstanceCommand;
 import io.mango.job.api.command.TriggerMangoJobCommand;
@@ -58,7 +60,7 @@ public interface MangoJobApi {
      * @param command 保存命令
      * @return 新任务定义 ID
      */
-    R<Long> createDefinition(@Valid SaveMangoJobDefinitionCommand command);
+    R<Long> createDefinition(@Valid CreateMangoJobDefinitionCommand command);
 
     /**
      * 更新任务定义。
@@ -66,7 +68,7 @@ public interface MangoJobApi {
      * @param command 保存命令
      * @return true 表示更新成功
      */
-    R<Boolean> updateDefinition(@Valid SaveMangoJobDefinitionCommand command);
+    R<Boolean> updateDefinition(@Valid UpdateMangoJobDefinitionCommand command);
 
     /**
      * 更新任务启停状态。
@@ -193,7 +195,7 @@ public interface MangoJobApi {
      * @param command 保存命令
      * @return 新告警规则 ID
      */
-    R<Long> createAlarmRule(@Valid SaveMangoJobAlarmRuleCommand command);
+    R<Long> createAlarmRule(@Valid CreateMangoJobAlarmRuleCommand command);
 
     /**
      * 更新告警规则。
@@ -201,7 +203,7 @@ public interface MangoJobApi {
      * @param command 保存命令
      * @return true 表示更新成功
      */
-    R<Boolean> updateAlarmRule(@Valid SaveMangoJobAlarmRuleCommand command);
+    R<Boolean> updateAlarmRule(@Valid UpdateMangoJobAlarmRuleCommand command);
 
     /**
      * 更新告警规则启停状态。

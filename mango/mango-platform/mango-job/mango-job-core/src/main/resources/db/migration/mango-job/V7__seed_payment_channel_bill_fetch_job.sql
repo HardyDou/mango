@@ -1,3 +1,0 @@
--- Payment channel bill fetch job definition is injected by mango-resource.
--- Resource file:
--- mango-payment-starter/src/main/resources/META-INF/mango/resources/payment-common-job.yml

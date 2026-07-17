@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
@@ -20,6 +21,7 @@ public class UpdateMangoJobDefinitionStatusCommand implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @NotNull(message = "任务 ID 不能为空")
+    @Positive(message = "任务 ID 必须大于0")
     @Schema(description = "任务 ID", requiredMode = Schema.RequiredMode.REQUIRED)
     private Long id;
 

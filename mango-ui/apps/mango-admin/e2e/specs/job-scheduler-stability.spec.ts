@@ -186,8 +186,9 @@ async function listInstances(request: APIRequestContext, token: string, jobId: A
 }
 
 async function detailInstanceLog(request: APIRequestContext, token: string, instanceId: ApiId): Promise<JobLogDetail> {
-  return expectBusinessOk<JobLogDetail>(await request.get(api(`/job/instances/${instanceId}/logs`), {
+  return expectBusinessOk<JobLogDetail>(await request.get(api('/job/instances/logs/detail'), {
     headers: headers(token),
+    params: { instanceId: String(instanceId) },
   }), '查询每分钟任务执行日志');
 }
 

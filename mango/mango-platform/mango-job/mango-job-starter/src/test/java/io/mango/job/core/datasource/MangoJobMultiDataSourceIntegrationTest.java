@@ -9,14 +9,15 @@ import io.mango.infra.persistence.api.datasource.PersistenceModuleDataSourceReso
 import io.mango.common.result.R;
 import io.mango.job.api.command.CreateMangoJobWorkerCommand;
 import io.mango.job.api.command.RegisterMangoJobWorkerCommand;
-import io.mango.job.api.command.SaveMangoJobAlarmRuleCommand;
-import io.mango.job.api.command.SaveMangoJobDefinitionCommand;
+import io.mango.job.api.command.CreateMangoJobAlarmRuleCommand;
+import io.mango.job.api.command.CreateMangoJobDefinitionCommand;
+import io.mango.job.api.command.UpdateMangoJobAlarmRuleCommand;
 import io.mango.job.api.command.SyncMangoJobInstanceCommand;
 import io.mango.job.api.command.TriggerMangoJobCommand;
 import io.mango.job.api.command.UpdateMangoJobAlarmRuleStatusCommand;
 import io.mango.job.api.command.UpdateMangoJobDefinitionStatusCommand;
 import io.mango.job.api.command.UpdateMangoJobWorkerStatusCommand;
-import io.mango.job.api.constant.MangoJobNoticeBizTypes;
+import io.mango.job.core.constant.MangoJobNoticeBizTypes;
 import io.mango.job.api.enums.JobDefinitionStatus;
 import io.mango.job.api.enums.JobEngineType;
 import io.mango.job.api.enums.JobScheduleType;
@@ -24,9 +25,9 @@ import io.mango.job.api.enums.JobType;
 import io.mango.job.api.enums.JobTransportType;
 import io.mango.job.api.enums.JobWorkerRegisterSource;
 import io.mango.job.api.enums.JobWorkerStatus;
-import io.mango.job.api.handler.MangoJobHandleContext;
-import io.mango.job.api.handler.MangoJobHandleResult;
-import io.mango.job.api.handler.MangoJobHandler;
+import io.mango.job.support.handler.MangoJobHandleContext;
+import io.mango.job.support.handler.MangoJobHandleResult;
+import io.mango.job.support.handler.MangoJobHandler;
 import io.mango.job.api.query.MangoJobAlarmRulePageQuery;
 import io.mango.job.api.query.MangoJobDefinitionPageQuery;
 import io.mango.job.api.query.MangoJobInstancePageQuery;
@@ -34,7 +35,7 @@ import io.mango.job.api.query.MangoJobLogPageQuery;
 import io.mango.job.api.query.MangoJobWorkerPageQuery;
 import io.mango.job.api.vo.MangoJobAlarmRuleVO;
 import io.mango.job.api.vo.MangoJobEngineStatusVO;
-import io.mango.job.api.vo.MangoJobHandlerVO;
+import io.mango.job.api.command.MangoJobHandlerCommand;
 import io.mango.job.api.vo.MangoJobInstanceVO;
 import io.mango.job.api.vo.MangoJobLogDetailVO;
 import io.mango.job.api.vo.MangoJobWorkerExecuteResultVO;
@@ -63,7 +64,7 @@ import io.mango.job.core.service.IMangoJobWorkerRegistryService;
 import io.mango.job.core.service.nativeengine.IMangoNativeJobRuntime;
 import io.mango.job.support.nativeengine.IMangoJobWorkerTransport;
 import io.mango.job.support.nativeengine.MangoJobTransportAddresses;
-import io.mango.job.support.nativeengine.MangoJobWorkerDispatchRequest;
+import io.mango.job.support.nativeengine.MangoJobWorkerDispatchContext;
 import io.mango.job.support.nativeengine.MangoNativeJobProperties;
 import io.mango.job.starter.MangoEmbeddedWorkerRegistrar;
 import io.mango.notice.api.NoticeApi;
@@ -256,7 +257,7 @@ class MangoJobMultiDataSourceIntegrationTest {
         MangoContextHolder.set(MangoContextSnapshot.request("req-1", "trace-1", "tenant-b", "internal-admin", "127.0.0.1")
                 .withSecurity(200L, "tenant-b", "job-admin", "test", "user", "tenant", 200L, "internal-admin"));
 
-        SaveMangoJobDefinitionCommand command = new SaveMangoJobDefinitionCommand();
+        CreateMangoJobDefinitionCommand command = new CreateMangoJobDefinitionCommand();
         command.setAppCode("internal-admin");
         command.setOwnerService("internal-admin");
         command.setWorkerGroup("internal-admin");
@@ -356,7 +357,7 @@ class MangoJobMultiDataSourceIntegrationTest {
         MangoContextHolder.set(MangoContextSnapshot.request("req-6", "trace-6", "tenant-b", "internal-admin", "127.0.0.1")
                 .withSecurity(205L, "tenant-b", "job-admin", "test", "user", "tenant", 205L, "internal-admin"));
 
-        SaveMangoJobDefinitionCommand command = definitionCommand("sync-scheduled");
+        CreateMangoJobDefinitionCommand command = definitionCommand("sync-scheduled");
         command.setScheduleType(JobScheduleType.CRON.name());
         command.setScheduleExpression("0 */1 * * * ?");
         Long jobId = jobDefinitionService.createDefinition(command);
@@ -412,7 +413,7 @@ class MangoJobMultiDataSourceIntegrationTest {
                         "internal-admin", "127.0.0.1")
                 .withSecurity(208L, "tenant-b", "job-admin", "test", "user", "tenant", 208L, "internal-admin"));
 
-        SaveMangoJobDefinitionCommand command = definitionCommand("native-probe");
+        CreateMangoJobDefinitionCommand command = definitionCommand("native-probe");
         command.setEngineType(JobEngineType.MANGO_NATIVE.name());
         command.setParamValue("{\"scene\":\"native-manual\"}");
         Long jobId = jobDefinitionService.createDefinition(command);
@@ -474,7 +475,7 @@ class MangoJobMultiDataSourceIntegrationTest {
                         "tenant-b", "internal-admin", "127.0.0.1")
                 .withSecurity(209L, "tenant-b", "job-admin", "test", "user", "tenant", 209L, "internal-admin"));
 
-        SaveMangoJobDefinitionCommand command = definitionCommand("native-every-minute");
+        CreateMangoJobDefinitionCommand command = definitionCommand("native-every-minute");
         command.setEngineType(JobEngineType.MANGO_NATIVE.name());
         command.setScheduleType(JobScheduleType.FIXED_RATE.name());
         command.setScheduleExpression("60000");
@@ -518,7 +519,7 @@ class MangoJobMultiDataSourceIntegrationTest {
                         "tenant-b", "internal-admin", "127.0.0.1")
                 .withSecurity(214L, "tenant-b", "job-admin", "test", "user", "tenant", 214L, "internal-admin"));
 
-        SaveMangoJobDefinitionCommand command = definitionCommand("native-restart-recovery");
+        CreateMangoJobDefinitionCommand command = definitionCommand("native-restart-recovery");
         command.setEngineType(JobEngineType.MANGO_NATIVE.name());
         command.setScheduleType(JobScheduleType.FIXED_RATE.name());
         command.setScheduleExpression("60000");
@@ -581,7 +582,7 @@ class MangoJobMultiDataSourceIntegrationTest {
                         "tenant-b", "internal-admin", "127.0.0.1")
                 .withSecurity(215L, "tenant-b", "job-admin", "test", "user", "tenant", 215L, "internal-admin"));
 
-        SaveMangoJobDefinitionCommand command = definitionCommand("native-cron-stability");
+        CreateMangoJobDefinitionCommand command = definitionCommand("native-cron-stability");
         command.setEngineType(JobEngineType.MANGO_NATIVE.name());
         command.setScheduleType(JobScheduleType.CRON.name());
         command.setScheduleExpression("0 */1 * * * ?");
@@ -647,7 +648,7 @@ class MangoJobMultiDataSourceIntegrationTest {
                 .withSecurity(211L, "tenant-b", "job-admin", "test", "user", "tenant", 211L, "internal-admin");
         MangoContextHolder.set(snapshot);
 
-        SaveMangoJobDefinitionCommand command = definitionCommand("native-race-every-minute");
+        CreateMangoJobDefinitionCommand command = definitionCommand("native-race-every-minute");
         command.setEngineType(JobEngineType.MANGO_NATIVE.name());
         command.setScheduleType(JobScheduleType.FIXED_RATE.name());
         command.setScheduleExpression("60000");
@@ -716,7 +717,7 @@ class MangoJobMultiDataSourceIntegrationTest {
                         .orderByAsc(MangoJobWorkerSnapshotEntity::getServiceCode)
                         .orderByAsc(MangoJobWorkerSnapshotEntity::getWorkerAddress)));
         assertThat(embeddedWorkers)
-                .hasSize(5)
+                .hasSize(4)
                 .allSatisfy(worker -> {
                     assertThat(worker.getStatus()).isEqualTo(JobWorkerStatus.ONLINE.name());
                     assertThat(worker.getWorkerAddress()).startsWith("embedded://");
@@ -729,7 +730,7 @@ class MangoJobMultiDataSourceIntegrationTest {
                 .singleElement()
                 .satisfies(worker -> assertThat(worker.getWorkerGroup()).isEqualTo("service-b"));
 
-        SaveMangoJobDefinitionCommand command = definitionCommand("embedded-multi-owner-job");
+        CreateMangoJobDefinitionCommand command = definitionCommand("embedded-multi-owner-job");
         command.setParamValue("{\"scene\":\"embedded-multi\"}");
         Long jobId = jobDefinitionService.createDefinition(command);
         UpdateMangoJobDefinitionStatusCommand statusCommand = new UpdateMangoJobDefinitionStatusCommand();
@@ -765,7 +766,7 @@ class MangoJobMultiDataSourceIntegrationTest {
                         "tenant-b", "internal-admin", "127.0.0.1")
                 .withSecurity(210L, "tenant-b", "job-admin", "test", "user", "tenant", 210L, "internal-admin"));
 
-        SaveMangoJobDefinitionCommand command = definitionCommand("native-http-worker");
+        CreateMangoJobDefinitionCommand command = definitionCommand("native-http-worker");
         command.setEngineType(JobEngineType.MANGO_NATIVE.name());
         command.setParamValue("{\"scene\":\"http-internal\"}");
         httpInternalTransport.lastWorkerAddress = null;
@@ -906,7 +907,7 @@ class MangoJobMultiDataSourceIntegrationTest {
 
         nativeProperties.setEmbeddedWorkerEnabled(false);
         try {
-            SaveMangoJobDefinitionCommand command = definitionCommand("service-a-same-address-job");
+            CreateMangoJobDefinitionCommand command = definitionCommand("service-a-same-address-job");
             command.setOwnerService("service-a");
             command.setWorkerGroup("service-a");
             Long jobId = jobDefinitionService.createDefinition(command);
@@ -972,7 +973,7 @@ class MangoJobMultiDataSourceIntegrationTest {
         createCommand.setWorkerAddress("http://worker-manual:8080");
         createCommand.setTransportType(JobTransportType.HTTP_INTERNAL);
         createCommand.setWorkerInstanceId("worker-manual-1");
-        MangoJobHandlerVO handler = new MangoJobHandlerVO();
+        MangoJobHandlerCommand handler = new MangoJobHandlerCommand();
         handler.setAppCode("internal-admin");
         handler.setHandlerName("syncOrderHandler");
         createCommand.getHandlers().add(handler);
@@ -1049,7 +1050,7 @@ class MangoJobMultiDataSourceIntegrationTest {
 
         nativeProperties.setEmbeddedWorkerEnabled(false);
         try {
-            SaveMangoJobDefinitionCommand command = definitionCommand("service-a-owned-job");
+            CreateMangoJobDefinitionCommand command = definitionCommand("service-a-owned-job");
             command.setOwnerService("service-a");
             command.setWorkerGroup("service-a");
             command.setHandlerName("syncOrderHandler");
@@ -1180,7 +1181,7 @@ class MangoJobMultiDataSourceIntegrationTest {
                 .withSecurity(216L, "tenant-b", "job-admin", "test", "user", "tenant", 216L, "internal-admin"));
         noticeApiCapture.lastCommand = null;
 
-        SaveMangoJobDefinitionCommand command = definitionCommand("native-failed-alarm");
+        CreateMangoJobDefinitionCommand command = definitionCommand("native-failed-alarm");
         command.setHandlerName("failedOrderHandler");
         Long jobId = jobDefinitionService.createDefinition(command);
         query("job", () -> {
@@ -1248,7 +1249,7 @@ class MangoJobMultiDataSourceIntegrationTest {
                 .withSecurity(217L, "tenant-b", "job-admin", "test", "user", "tenant", 217L, "internal-admin"));
 
         Long jobId = jobDefinitionService.createDefinition(definitionCommand("alarm-crud-job"));
-        SaveMangoJobAlarmRuleCommand createCommand = alarmRuleCommand("失败告警规则", jobId);
+        UpdateMangoJobAlarmRuleCommand createCommand = alarmRuleCommand("失败告警规则", jobId);
 
         Long alarmRuleId = alarmRuleService.createAlarmRule(createCommand);
 
@@ -1314,13 +1315,13 @@ class MangoJobMultiDataSourceIntegrationTest {
                 .withSecurity(219L, "tenant-b", "job-admin", "test", "user", "tenant", 219L, "internal-admin"));
 
         Long jobId = jobDefinitionService.createDefinition(definitionCommand("alarm-invalid-job"));
-        SaveMangoJobAlarmRuleCommand invalidJsonCommand = alarmRuleCommand("非法 JSON 告警", jobId);
+        CreateMangoJobAlarmRuleCommand invalidJsonCommand = alarmRuleCommand("非法 JSON 告警", jobId);
         invalidJsonCommand.setNoticeParams("{bad-json");
 
         assertThatThrownBy(() -> alarmRuleService.createAlarmRule(invalidJsonCommand))
                 .hasMessageContaining("通知参数 JSON 不合法");
 
-        SaveMangoJobAlarmRuleCommand mismatchCommand = alarmRuleCommand("应用不匹配告警", jobId);
+        CreateMangoJobAlarmRuleCommand mismatchCommand = alarmRuleCommand("应用不匹配告警", jobId);
         mismatchCommand.setAppCode("other-admin");
         assertThatThrownBy(() -> alarmRuleService.createAlarmRule(mismatchCommand))
                 .hasMessageContaining("告警规则所属应用必须与任务所属应用一致");
@@ -1328,7 +1329,7 @@ class MangoJobMultiDataSourceIntegrationTest {
         MangoContextHolder.set(MangoContextSnapshot.request("req-alarm-invalid-other", "trace-alarm-invalid-other",
                         "tenant-c", "internal-admin", "127.0.0.1")
                 .withSecurity(220L, "tenant-c", "job-admin", "test", "user", "tenant", 220L, "internal-admin"));
-        SaveMangoJobAlarmRuleCommand crossTenantCommand = alarmRuleCommand("跨租户任务告警", jobId);
+        CreateMangoJobAlarmRuleCommand crossTenantCommand = alarmRuleCommand("跨租户任务告警", jobId);
         assertThatThrownBy(() -> alarmRuleService.createAlarmRule(crossTenantCommand))
                 .hasMessageContaining("任务不存在");
     }
@@ -1338,7 +1339,7 @@ class MangoJobMultiDataSourceIntegrationTest {
         MangoContextHolder.set(MangoContextSnapshot.request("req-4", "trace-4", "tenant-b", "internal-admin", "127.0.0.1")
                 .withSecurity(203L, "tenant-b", "job-admin", "test", "user", "tenant", 203L, "internal-admin"));
 
-        SaveMangoJobDefinitionCommand command = definitionCommand("sync-fixed-rate");
+        CreateMangoJobDefinitionCommand command = definitionCommand("sync-fixed-rate");
         command.setScheduleType(JobScheduleType.FIXED_RATE.name());
         command.setScheduleExpression("300");
 
@@ -1352,7 +1353,7 @@ class MangoJobMultiDataSourceIntegrationTest {
         MangoContextHolder.set(MangoContextSnapshot.request("req-5", "trace-5", "tenant-b", "internal-admin", "127.0.0.1")
                 .withSecurity(204L, "tenant-b", "job-admin", "test", "user", "tenant", 204L, "internal-admin"));
 
-        SaveMangoJobDefinitionCommand command = definitionCommand("sync-fixed-rate-large");
+        CreateMangoJobDefinitionCommand command = definitionCommand("sync-fixed-rate-large");
         command.setScheduleType(JobScheduleType.FIXED_RATE.name());
         command.setScheduleExpression("120000");
 
@@ -1454,8 +1455,8 @@ class MangoJobMultiDataSourceIntegrationTest {
         }
     }
 
-    private SaveMangoJobDefinitionCommand definitionCommand(String jobCode) {
-        SaveMangoJobDefinitionCommand command = new SaveMangoJobDefinitionCommand();
+    private CreateMangoJobDefinitionCommand definitionCommand(String jobCode) {
+        CreateMangoJobDefinitionCommand command = new CreateMangoJobDefinitionCommand();
         command.setAppCode("internal-admin");
         command.setOwnerService("internal-admin");
         command.setWorkerGroup("internal-admin");
@@ -1468,8 +1469,8 @@ class MangoJobMultiDataSourceIntegrationTest {
         return command;
     }
 
-    private SaveMangoJobAlarmRuleCommand alarmRuleCommand(String ruleName, Long jobId) {
-        SaveMangoJobAlarmRuleCommand command = new SaveMangoJobAlarmRuleCommand();
+    private UpdateMangoJobAlarmRuleCommand alarmRuleCommand(String ruleName, Long jobId) {
+        UpdateMangoJobAlarmRuleCommand command = new UpdateMangoJobAlarmRuleCommand();
         command.setAppCode("internal-admin");
         command.setJobId(jobId);
         command.setRuleName(ruleName);
@@ -1522,7 +1523,7 @@ class MangoJobMultiDataSourceIntegrationTest {
         command.setTransportType(JobTransportType.HTTP_INTERNAL);
         command.setRegisterSource(JobWorkerRegisterSource.REMOTE_AUTO);
         command.setWorkerInstanceId("worker-a");
-        MangoJobHandlerVO handler = new MangoJobHandlerVO();
+        MangoJobHandlerCommand handler = new MangoJobHandlerCommand();
         handler.setAppCode("internal-admin");
         handler.setServiceCode(serviceCode);
         handler.setWorkerGroup(workerGroup);
@@ -1546,7 +1547,7 @@ class MangoJobMultiDataSourceIntegrationTest {
         command.setTransportType(JobTransportType.IN_MEMORY);
         command.setRegisterSource(JobWorkerRegisterSource.EMBEDDED_AUTO);
         command.setWorkerInstanceId(instanceId);
-        MangoJobHandlerVO handler = new MangoJobHandlerVO();
+        MangoJobHandlerCommand handler = new MangoJobHandlerCommand();
         handler.setAppCode("internal-admin");
         handler.setServiceCode(serviceCode);
         handler.setWorkerGroup(workerGroup);
@@ -1658,7 +1659,7 @@ class MangoJobMultiDataSourceIntegrationTest {
         }
 
         @Override
-        public MangoJobWorkerExecuteResultVO execute(MangoJobWorkerDispatchRequest request) {
+        public MangoJobWorkerExecuteResultVO execute(MangoJobWorkerDispatchContext request) {
             lastWorkerAddress = request.getWorkerAddress();
             lastParameter = request.getCommand().getParameter();
             MangoJobWorkerExecuteResultVO result = new MangoJobWorkerExecuteResultVO();

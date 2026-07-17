@@ -1,7 +1,6 @@
 package io.mango.job.api.command;
 
 import io.mango.job.api.enums.JobTransportType;
-import io.mango.job.api.vo.MangoJobHandlerVO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -56,5 +55,5 @@ public class CreateMangoJobWorkerCommand implements Serializable {
     @NotEmpty(message = "Worker 处理器清单不能为空")
     @Valid
     @Schema(description = "Worker 支持的处理器清单", requiredMode = Schema.RequiredMode.REQUIRED)
-    private List<MangoJobHandlerVO> handlers = new ArrayList<>();
+    private List<MangoJobHandlerCommand> handlers = new ArrayList<>();
 }
