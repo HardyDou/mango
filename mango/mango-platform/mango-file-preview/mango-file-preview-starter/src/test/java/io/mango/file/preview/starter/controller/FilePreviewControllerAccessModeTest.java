@@ -2,6 +2,7 @@ package io.mango.file.preview.starter.controller;
 
 import io.mango.authorization.api.annotation.ApiAccess;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
+import io.mango.common.contract.BinaryHttpAdapter;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Method;
@@ -9,6 +10,11 @@ import java.lang.reflect.Method;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class FilePreviewControllerAccessModeTest {
+
+    @Test
+    void sourceControllerDeclaresBinaryHttpAdapterContract() {
+        assertThat(FilePreviewSourceController.class).hasAnnotation(BinaryHttpAdapter.class);
+    }
 
     @Test
     void fileIdPreviewEndpointsUseDefaultRoleDownloadPermission() throws NoSuchMethodException {

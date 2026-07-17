@@ -47,7 +47,18 @@
 
 <script type="text/javascript">
     var sourceUrl = '${pdfUrl?js_string}';
-    var previewToken = '${(previewToken!'')?js_string}';
+    function sourceToken() {
+        var encodedSourceUrl = new URLSearchParams(window.location.search).get('url');
+        if (!encodedSourceUrl) {
+            return '';
+        }
+        try {
+            return new URL(Base64.decode(encodedSourceUrl)).searchParams.get('token') || '';
+        } catch (error) {
+            return '';
+        }
+    }
+    var previewToken = sourceToken();
     var url = '${finalUrl?js_string}';
     var kkagent = '${kkagent}';
     var serverBaseUrl = '${baseUrl}'.endsWith('/') ? '${baseUrl}' : '${baseUrl}' + '/';

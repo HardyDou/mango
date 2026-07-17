@@ -3,6 +3,7 @@ package io.mango.file.preview.starter.controller;
 import cn.keking.config.ConfigConstants;
 import io.mango.authorization.api.annotation.ApiAccess;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
+import io.mango.common.contract.BinaryHttpAdapter;
 import io.mango.file.preview.core.service.IFilePreviewService;
 import io.mango.file.preview.core.service.model.FilePreviewSource;
 import io.swagger.v3.oas.annotations.Operation;
@@ -15,7 +16,6 @@ import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.CacheControl;
 import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -23,7 +23,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.util.UriUtils;
 
 import java.nio.charset.StandardCharsets;
@@ -35,6 +34,7 @@ import java.nio.file.Path;
  */
 @Validated
 @RestController
+@BinaryHttpAdapter
 @RequestMapping("/file-preview")
 @RequiredArgsConstructor
 @Tag(name = "文件预览源文件", description = "预览引擎短期源文件读取接口")
@@ -74,7 +74,7 @@ public class FilePreviewSourceController {
         Path fileDir = Path.of(ConfigConstants.getFileDir()).toAbsolutePath().normalize();
         Path generatedFile = fileDir.resolve(fileName).normalize();
         if (!generatedFile.startsWith(fileDir) || !Files.isRegularFile(generatedFile)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+            return ResponseEntity.notFound().build();
         }
         FileSystemResource resource = new FileSystemResource(generatedFile);
         return ResponseEntity.ok()

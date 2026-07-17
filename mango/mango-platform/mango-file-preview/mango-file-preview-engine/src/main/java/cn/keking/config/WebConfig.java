@@ -21,7 +21,10 @@ import java.util.Set;
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
-    private final static Logger LOGGER = LoggerFactory.getLogger(WebConfig.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(WebConfig.class);
+    private static final int CHINESE_PATH_FILTER_ORDER = 10;
+    private static final int BASE_URL_FILTER_ORDER = 20;
+    private static final int URL_CHECK_FILTER_ORDER = 30;
     /**
      * 访问外部文件配置
      */
@@ -30,12 +33,17 @@ public class WebConfig implements WebMvcConfigurer {
         String filePath = ConfigConstants.getFileDir();
         String resourceLocation = fileResourceLocation(filePath);
         LOGGER.info("Add resource locations: {}", resourceLocation);
-        registry.addResourceHandler("/**").addResourceLocations("classpath:/META-INF/resources/","classpath:/resources/","classpath:/static/","classpath:/public/", resourceLocation);
+        registry.addResourceHandler("/**").addResourceLocations(
+                "classpath:/META-INF/resources/", "classpath:/resources/", "classpath:/static/",
+                "classpath:/public/", resourceLocation);
     }
 
     static String fileResourceLocation(String filePath) {
         String resourceLocation = Path.of(filePath).toAbsolutePath().normalize().toUri().toString();
-        return resourceLocation.endsWith("/") ? resourceLocation : resourceLocation + "/";
+        if (resourceLocation.endsWith("/")) {
+            return resourceLocation;
+        }
+        return resourceLocation + "/";
     }
 
 
@@ -44,7 +52,7 @@ public class WebConfig implements WebMvcConfigurer {
         ChinesePathFilter filter = new ChinesePathFilter();
         FilterRegistrationBean<ChinesePathFilter> registrationBean = new FilterRegistrationBean<>();
         registrationBean.setFilter(filter);
-        registrationBean.setOrder(10);
+        registrationBean.setOrder(CHINESE_PATH_FILTER_ORDER);
         return registrationBean;
     }
 
@@ -81,7 +89,7 @@ public class WebConfig implements WebMvcConfigurer {
         FilterRegistrationBean<BaseUrlFilter> registrationBean = new FilterRegistrationBean<>();
         registrationBean.setFilter(filter);
         registrationBean.setUrlPatterns(filterUri);
-        registrationBean.setOrder(20);
+        registrationBean.setOrder(BASE_URL_FILTER_ORDER);
         return registrationBean;
     }
 
@@ -90,7 +98,7 @@ public class WebConfig implements WebMvcConfigurer {
         UrlCheckFilter filter = new UrlCheckFilter();
         FilterRegistrationBean<UrlCheckFilter> registrationBean = new FilterRegistrationBean<>();
         registrationBean.setFilter(filter);
-        registrationBean.setOrder(30);
+        registrationBean.setOrder(URL_CHECK_FILTER_ORDER);
         return registrationBean;
     }
 

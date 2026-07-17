@@ -7,7 +7,7 @@ public class UrlEncoderUtils {
     private static final BitSet DONT_NEED_ENCODING;
 
     static {
-        DONT_NEED_ENCODING = new BitSet(256);
+        DONT_NEED_ENCODING = new BitSet();
         int i;
         for (i = 'a'; i <= 'z'; i++) {
             DONT_NEED_ENCODING.set(i);
@@ -75,8 +75,10 @@ public class UrlEncoderUtils {
      * 判断c是否是16进制的字符
      */
     private static boolean isDigit16Char(char c) {
-        return (c >= '0' && c <= '9')
-                || (c >= 'A' && c <= 'F')
-                || (c >= 'a' && c <= 'f');
+        return isBetween(c, '0', '9') || isBetween(c, 'A', 'F') || isBetween(c, 'a', 'f');
+    }
+
+    private static boolean isBetween(char value, char start, char end) {
+        return value >= start && value <= end;
     }
 }
