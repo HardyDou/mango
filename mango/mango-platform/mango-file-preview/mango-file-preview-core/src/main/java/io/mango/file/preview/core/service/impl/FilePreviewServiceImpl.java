@@ -26,6 +26,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Base64;
+import java.util.Locale;
 import java.util.UUID;
 
 /**
@@ -38,6 +39,8 @@ public class FilePreviewServiceImpl implements IFilePreviewService {
     private static final String FULL_FILENAME_PARAM = "fullfilename";
     private static final String ENTRY_TOKEN_PREFIX = "file-preview:entry:";
     private static final String SOURCE_TOKEN_PREFIX = "file-preview:source:";
+    private static final String ENGINE_FILE_PREFIX = "file-";
+    private static final int MAX_EXTENSION_LENGTH = 20;
 
     private final FilePreviewFileGateway fileGateway;
     private final FilePreviewProperties properties;
@@ -66,7 +69,7 @@ public class FilePreviewServiceImpl implements IFilePreviewService {
         FileRecordVO fileRecord = fileRecord(fileId);
         String token = token();
         storeToken(SOURCE_TOKEN_PREFIX + token, new PreviewToken(fileId, MangoContextHolder.get(), expiresAt()));
-        String sourceUrl = sourceUrl(token, fileRecord.getFileName());
+        String sourceUrl = sourceUrl(token, engineFileName(fileId, fileRecord.getFileName()));
         String encodedSourceUrl = Base64.getEncoder().encodeToString(sourceUrl.getBytes(StandardCharsets.UTF_8));
         FilePreviewLinkVO vo = new FilePreviewLinkVO();
         vo.setFileId(fileId);
@@ -119,13 +122,48 @@ public class FilePreviewServiceImpl implements IFilePreviewService {
     }
 
     private String sourceUrl(String token, String fileName) {
-        String url = currentBaseUrl() + normalize(properties.getSourcePath());
+        String url = sourceBaseUrl() + normalize(properties.getSourcePath());
         return UriComponentsBuilder.fromHttpUrl(url)
                 .queryParam("token", token)
                 .queryParam(FULL_FILENAME_PARAM, fileName)
                 .build()
                 .encode(StandardCharsets.UTF_8)
                 .toUriString();
+    }
+
+    private String sourceBaseUrl() {
+        if (StringUtils.hasText(properties.getSourceBaseUrl())) {
+            return StringUtils.trimTrailingCharacter(properties.getSourceBaseUrl().trim(), '/');
+        }
+        return currentBaseUrl();
+    }
+
+    private String engineFileName(Long fileId, String originalFileName) {
+        String baseName = ENGINE_FILE_PREFIX + fileId;
+        String extension = StringUtils.getFilenameExtension(originalFileName);
+        if (!isSafeExtension(extension)) {
+            return baseName;
+        }
+        return baseName + "." + extension.toLowerCase(Locale.ROOT);
+    }
+
+    private boolean isSafeExtension(String extension) {
+        if (!StringUtils.hasText(extension) || extension.length() > MAX_EXTENSION_LENGTH) {
+            return false;
+        }
+        for (int index = 0; index < extension.length(); index++) {
+            char current = extension.charAt(index);
+            if (!isAsciiLetterOrDigit(current)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean isAsciiLetterOrDigit(char value) {
+        return value >= 'a' && value <= 'z'
+                || value >= 'A' && value <= 'Z'
+                || value >= '0' && value <= '9';
     }
 
     private String engineUrl(String encodedSourceUrl) {

@@ -1,4 +1,6 @@
-# Issue #563 文件预览源地址交付记录
+# 标准交付记录
+
+任务：Issue #563 文件预览源地址修复。
 
 ## 1. 元数据
 
@@ -53,11 +55,12 @@
 
 | 要求 ID | 验证方式 | 命令或步骤 | 结果 | 证据 |
 |---|---|---|---|---|
-| SR-001 | M10 单元测试 | `FilePreviewServiceImplTest` 解码引擎 URL 并断言安全名 | PENDING | 测试报告 |
-| SR-002 | M10 单元测试 | 分别验证配置值与兼容回退 | PENDING | 测试报告 |
-| SR-003 | M10 单元测试 | `UrlEncoderUtilsTest` 覆盖混合、完整、小写、原始和非法输入 | PENDING | 测试报告 |
-| SR-004 | M10 回归测试 | `FilePreviewServiceImplTest` 的 source token、上下文和流读取用例 | PENDING | 测试报告 |
-| 全部 | M09 静态验证 | 直接修改模块的 Maven `verify` 与测试质量检查 | PENDING | 命令输出 |
+| SR-001 | M10 单元测试 | `mvn -f mango/mango-platform/mango-file-preview/mango-file-preview-core/pom.xml -Dtest=io.mango.file.preview.core.service.impl.FilePreviewServiceImplTest test` | PASS（9/9） | `mango-file-preview-core/target/surefire-reports` |
+| SR-002 | M10 单元测试 | `FilePreviewServiceImplTest` 验证配置的内部 base URL 优先并规范化尾部斜杠 | PASS | 同上 |
+| SR-003 | M10 单元测试 | `mvn -f mango/mango-platform/mango-file-preview/mango-file-preview-engine/pom.xml -Dtest=cn.keking.utils.UrlEncoderUtilsTest test` | PASS（6/6） | `mango-file-preview-engine/target/surefire-reports` |
+| SR-004 | M10 回归测试 | `FilePreviewServiceImplTest` 的 source token、上下文和流读取用例 | PASS | `mango-file-preview-core/target/surefire-reports` |
+| 全部 | M09 静态验证 | 合并最新 `origin/main` 后，两个直接修改模块分别执行 `mvn verify` | PASS（core 9/9；engine 39/39） | Maven 输出与各模块 `target/surefire-reports` |
+| 全部 | 测试质量检查 | `node mango-pmo/tools/test-quality-check.mjs --base origin/main`；`node mango-pmo/tools/audit-backend-test-mocks.mjs --report-only --changed-only --base origin/main` | PASS（2 个变更测试文件；block/warn 0） | 命令输出 |
 
 ## 7. 例外与剩余风险
 

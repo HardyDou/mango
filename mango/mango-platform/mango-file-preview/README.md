@@ -99,6 +99,7 @@ mango:
     enabled: true
     engine-path: /onlinePreview
     source-path: /file-preview/sources
+    source-base-url: http://mango-app:8080
     source-token-expire-seconds: 86400
     standalone-ui-enabled: false
 ```
@@ -110,6 +111,7 @@ mango:
 | `mango.file-preview.enabled` | `true` | 是否启用文件预览自动配置 |
 | `mango.file-preview.engine-path` | `/onlinePreview` | 预览引擎入口路径 |
 | `mango.file-preview.source-path` | `/file-preview/sources` | 预览引擎读取源文件的短期 URL 前缀 |
+| `mango.file-preview.source-base-url` | 当前请求地址 | 预览引擎读取源文件时使用的内部服务地址；部署在网关后时建议配置为集群内部地址，避免流量经外部入口绕回 |
 | `mango.file-preview.source-token-expire-seconds` | `86400` | 入口 token 和源文件 token 有效期，单位秒 |
 | `mango.file-preview.standalone-ui-enabled` | `false` | 是否允许访问 kkFileView 独立首页和演示文件管理入口 |
 

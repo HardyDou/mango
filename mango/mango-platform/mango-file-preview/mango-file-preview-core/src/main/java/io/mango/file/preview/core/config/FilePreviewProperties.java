@@ -19,6 +19,9 @@ public class FilePreviewProperties {
     /** 源文件临时访问路径。 */
     private String sourcePath = "/file-preview/sources";
 
+    /** 预览引擎访问源文件时使用的内部服务地址；为空时使用当前请求地址。 */
+    private String sourceBaseUrl;
+
     /** 源文件临时访问令牌有效期，单位秒。 */
     private long sourceTokenExpireSeconds = 86_400L;
 
