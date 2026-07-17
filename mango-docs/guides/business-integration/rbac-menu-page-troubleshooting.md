@@ -225,3 +225,5 @@ pnpm -F @mango/admin-shell build
 - v2026.07.11-npm-lock-sync-release 仅同步 `@mango/*` npm 发布批次、CLI/starter 版本锁和包消费者验证；不改变菜单 `component` key、菜单树接口、页面注册方式、角色授权关系、按钮权限关系、租户绑定、页面路由和本场景排障步骤。业务项目应将相关前端包与 `@mango/cli` 成组升级。
 
 - Resource 历史债务治理仅将进程内 Provider/Handler/Dispatcher 从 `mango-resource-api` 迁到 `mango-resource-support`，不改变菜单资源类型、`component` key、角色菜单关系、权限聚合、租户绑定、HTTP 接口和本场景排障步骤。
+
+- File Preview 历史债务治理补齐文件下载权限资源和 Resource sync 独立制品元数据；不改变菜单 `component` key、菜单树接口、角色菜单关系、权限聚合、租户绑定、页面路由和本场景排障步骤。
