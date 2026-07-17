@@ -4,7 +4,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.auth.core.constant.AuthConstant;
 import io.mango.auth.core.store.TokenRevocationStore;
 import io.mango.infra.context.api.MangoContextHolder;
-import io.mango.infra.web.api.InternalCallAttributes;
+import io.mango.infra.web.support.InternalCallAttributes;
 import io.mango.authorization.api.ITokenProvider;
 import io.mango.authorization.api.vo.SecurityPrincipalVO;
 import jakarta.servlet.DispatcherType;

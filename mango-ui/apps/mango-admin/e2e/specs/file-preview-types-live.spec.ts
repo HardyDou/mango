@@ -10,6 +10,7 @@ const uiRoot = resolve(__dirname, '../../../..');
 const apiBaseURL = resolveE2EApiBaseURL({ uiRoot, defaultURL: 'http://127.0.0.1:5555' });
 const frontendBaseURL = resolveE2EBaseURL({ uiRoot, defaultURL: 'http://127.0.0.1:7777' });
 const resultFile = join(process.cwd(), 'e2e', '.tmp', 'file-preview-types-live-results.json');
+const screenshotFile = join(process.cwd(), 'e2e', '.tmp', 'file-preview-types-live-zip.png');
 
 type PreviewCase = {
   key: string;
@@ -361,6 +362,7 @@ async function runPreviewCase(page: Page, request: APIRequestContext, token: str
         result.previewPageOk = false;
         result.pageText = `${result.pageText || ''}\nzipInnerText: ${zipInnerText.reason}`;
       }
+      await page.screenshot({ path: screenshotFile, fullPage: true });
     }
 
     const downloadResponse = await request.get(api(`/file/files/download?id=${encodeURIComponent(uploaded.fileId)}`), {
@@ -388,7 +390,7 @@ async function runPreviewCase(page: Page, request: APIRequestContext, token: str
 }
 
 test.describe.serial('文件预览多类型真实联调', () => {
-  test('txt、png、pdf、zip、xlsx 预览入口和下载链路', async ({ page, request }) => {
+  test('@p0 @file-preview txt、png、pdf、zip、xlsx 预览入口和下载链路', async ({ page, request }) => {
     await page.setViewportSize({ width: 960, height: 720 });
     const token = await loginToken(request);
     const results: CaseResult[] = [];

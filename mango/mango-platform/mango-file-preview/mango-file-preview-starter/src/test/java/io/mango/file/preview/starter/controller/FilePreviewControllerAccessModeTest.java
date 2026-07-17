@@ -13,20 +13,31 @@ class FilePreviewControllerAccessModeTest {
     @Test
     void fileIdPreviewEndpointsUseDefaultRoleDownloadPermission() throws NoSuchMethodException {
         assertAccessMode("preview", ApiResourceAccessMode.PERMISSION, "file:files:download", Long.class);
-        assertAccessMode("redirectPreview", ApiResourceAccessMode.PERMISSION, "file:files:download", Long.class);
+        assertAccessMode(FilePreviewPageController.class, "redirectPreview",
+                ApiResourceAccessMode.PERMISSION, "file:files:download", Long.class);
     }
 
     @Test
     void tokenPreviewEndpointsRemainPublicBecauseTheyRequireShortLivedTokens() throws NoSuchMethodException {
-        assertAccessMode("redirectPreviewEntry", ApiResourceAccessMode.PUBLIC, "", String.class);
-        assertAccessMode("source", ApiResourceAccessMode.PUBLIC, "", String.class);
+        assertAccessMode(FilePreviewPageController.class, "redirectPreviewEntry",
+                ApiResourceAccessMode.PUBLIC, "", String.class);
+        assertAccessMode(FilePreviewSourceController.class, "source",
+                ApiResourceAccessMode.PUBLIC, "", String.class);
     }
 
     private void assertAccessMode(String methodName,
                                   ApiResourceAccessMode mode,
                                   String permission,
                                   Class<?>... parameterTypes) throws NoSuchMethodException {
-        Method method = FilePreviewController.class.getMethod(methodName, parameterTypes);
+        assertAccessMode(FilePreviewController.class, methodName, mode, permission, parameterTypes);
+    }
+
+    private void assertAccessMode(Class<?> controllerType,
+                                  String methodName,
+                                  ApiResourceAccessMode mode,
+                                  String permission,
+                                  Class<?>... parameterTypes) throws NoSuchMethodException {
+        Method method = controllerType.getMethod(methodName, parameterTypes);
         ApiAccess apiAccess = method.getAnnotation(ApiAccess.class);
         assertThat(apiAccess).isNotNull();
         assertThat(apiAccess.mode()).isEqualTo(mode);

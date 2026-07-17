@@ -1,0 +1,17 @@
+{
+  "apiBaseURL": "http://127.0.0.1:18005",
+  "frontendBaseURL": "http://127.0.0.1:30005",
+  "generatedAt": "2026-07-17T01:47:24.958Z",
+  "database": "mango_dev_mango_file_preview_debt_005",
+  "tenant": "1",
+  "browser": "chromium",
+  "durationSeconds": 17.2,
+  "officePluginEnabled": false,
+  "results": [
+    { "key": "text", "status": "PASS", "uploadOk": true, "previewLinkOk": true, "previewPageOk": true, "downloadOk": true },
+    { "key": "image", "status": "PASS", "uploadOk": true, "previewLinkOk": true, "previewPageOk": true, "downloadOk": true },
+    { "key": "pdf", "status": "PASS", "uploadOk": true, "previewLinkOk": true, "previewPageOk": true, "downloadOk": true },
+    { "key": "zip", "status": "PASS", "uploadOk": true, "previewLinkOk": true, "previewPageOk": true, "downloadOk": true, "zipLayoutOk": true, "zipInnerPdfOk": true },
+    { "key": "xlsx", "status": "EXCEPTION", "uploadOk": true, "previewLinkOk": true, "previewPageOk": true, "downloadOk": true, "reason": "当前验证环境未安装 LibreOffice，页面按既有语义显示 Office 转换能力不可用" }
+  ]
+}

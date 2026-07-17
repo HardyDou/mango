@@ -1,4 +1,4 @@
-package io.mango.infra.web.api;
+package io.mango.infra.web.support;
 
 /**
  * Servlet request attributes produced after an internal call has been verified.

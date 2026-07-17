@@ -13,7 +13,7 @@
 | 创建预览链接 | `GET /file-preview/files/preview-link?fileId=...` 返回预览 URL、token 和有效期 |
 | 直接跳转预览页 | `GET /file-preview/files/preview?fileId=...` 生成 source token 后 forward 到预览引擎 |
 | 短期公开入口 | `GET /file-preview/files/preview-entry?token=...` 使用已签发入口 token 进入预览 |
-| 源文件读取 | `GET /file-preview/sources/{token}` 供预览引擎读取源文件流 |
+| 源文件读取 | `GET /file-preview/sources?token=...` 供预览引擎读取源文件流 |
 | 上下文保存 | token 中保存签发时的 `MangoContextSnapshot`，读取源文件时恢复上下文 |
 | 引擎资源注册 | 启动时注册 `/onlinePreview`、`/pdfjs/**`、`/xlsx/**` 等公开资源 |
 | 独立 UI 阻断 | 默认拦截 kkFileView 首页和演示文件管理入口 |
@@ -55,7 +55,8 @@
 
 | 依赖 | 用途 |
 |------|------|
-| `FileApi` | 查询文件元数据，读取源文件流 |
+| `FileApi` | 查询文件元数据 |
+| `IFileContentProvider` | 以文件中心服务契约读取源文件流 |
 | `ITokenStore` | 保存 `file-preview:entry:*` 和 `file-preview:source:*` 短期 token |
 | `ApiResourceApi` | 启动时注册预览引擎公开资源 |
 | `mango-file-preview-engine` | 内置 kkFileView 预览引擎和静态资源 |
@@ -85,8 +86,8 @@
 2. 如果需要 Office 转换能力，按环境接入 `mango-infra-fileproc-starter` 和对应转换依赖。
 3. 业务上传文件后只保存 `fileId`。
 4. 详情页用 `FilePreviewPanel` 或调用 `/file-preview/files/preview-link` 创建预览链接。
-5. 当前用户必须已登录；创建预览链接属于登录用户基础能力，不需要给每个角色或用户单独配置 `file:files:query`。
-6. 预览引擎通过短期 source token 调 `/file-preview/sources/{token}` 读取源文件。
+5. 当前用户必须拥有 `file:files:download` 权限；文件管理菜单的正式资源声明会给对应角色登记该权限。
+6. 预览引擎通过短期 source token 调 `/file-preview/sources?token=...` 读取源文件。
 
 ## 6. 配置说明
 
@@ -126,10 +127,10 @@ HTTP 接口前缀是 `/file-preview`。
 
 | 方法 | 路径 | 访问模式 | 用途 |
 |------|------|----------|------|
-| GET | `/file-preview/files/preview-link?fileId=...` | LOGIN | 创建短期预览入口 |
-| GET | `/file-preview/files/preview?fileId=...` | LOGIN | 按文件 ID forward 到预览页 |
+| GET | `/file-preview/files/preview-link?fileId=...` | PERMISSION (`file:files:download`) | 创建短期预览入口 |
+| GET | `/file-preview/files/preview?fileId=...` | PERMISSION (`file:files:download`) | 按文件 ID forward 到预览页 |
 | GET | `/file-preview/files/preview-entry?token=...` | PUBLIC | 使用已签发入口 token 进入预览 |
-| GET | `/file-preview/sources/{token}` | PUBLIC | 预览引擎读取源文件流 |
+| GET | `/file-preview/sources?token=...` | PUBLIC | 预览引擎读取源文件流 |
 
 Java API：
 
@@ -172,13 +173,13 @@ token 行为：
 
 | 入口 | 边界 |
 |------|------|
-| 创建预览链接 | 要求当前用户已登录，不需要每个角色或用户单独配置文件查询权限 |
+| 创建预览链接 | 要求当前用户拥有 `file:files:download` 权限，并通过文件中心可见性校验 |
 | 公开预览入口 | 只接受短期入口 token，不接受任意 `fileId` |
 | 源文件读取 | 只接受短期 source token |
-| 源文件权限 | 读取时恢复 token 中的上下文，再调用 `FileApi.downloadForService(fileId)` |
+| 源文件权限 | 读取时恢复 token 中的上下文，再通过 `IFileContentProvider.downloadForService(fileId)` 读取 |
 | kkFileView 独立 UI | 默认由 `standalone-ui-enabled=false` 阻断 |
 
-`LOGIN` 只表示登录用户可以签发预览入口，不表示可以预览任意文件。签发 token 前会调用 `FileApi.get(fileId)`，源文件读取时会恢复签发时的 `MangoContextSnapshot` 并再次调用文件中心读取文件流。文件是否属于当前租户、是否归档或删除，仍由 `mango-file` 判定。
+`file:files:download` 只允许进入签发流程，不表示可以预览任意文件。签发 token 前会调用 `FileApi.get(fileId)`，源文件读取时会恢复签发时的 `MangoContextSnapshot` 并通过文件中心服务契约读取文件流。文件是否属于当前租户、是否归档或删除，仍由 `mango-file` 判定。
 
 ## 11. 数据与初始化
 
@@ -190,8 +191,9 @@ token 行为：
 |------|------|
 | `FilePreviewEngineResourceRegistrar` | 调用 `ApiResourceApi.registerApiResources()` 注册预览引擎公开资源 |
 | `FilePreviewPermitPathBeanPostProcessor` | 给 Web 安全放行预览公开入口和 source 路径 |
-| `FilePreviewSecurityCustomizer` | 配置预览相关安全放行 |
 | `FilePreviewStandaloneUiBlockFilter` | 默认阻断 kkFileView 首页和演示文件管理入口 |
+
+公开入口使用安全链中的 `permitAll`/PUBLIC 资源语义，不通过 `WebSecurityCustomizer.web.ignoring()` 绕过安全过滤器。
 
 自动注册为 PUBLIC 的资源只服务预览引擎页面和短期 token 访问，不接受任意 `fileId`。包括：
 
@@ -202,6 +204,7 @@ token 行为：
 /directory
 /compressed-file
 /file-preview/files/preview-entry
+/file-preview/sources
 /pdfjs/**
 /js/**
 /css/**
@@ -217,14 +220,28 @@ token 行为：
 
 | 现象 | 排查点 |
 |------|--------|
-| 创建预览链接失败 | 检查当前账号是否已登录、文件是否存在、租户上下文和文件可见性是否正确 |
-| 预览页能打开但文件加载失败 | 检查 `/file-preview/sources/{token}` 是否被网关放行，token 是否过期 |
+| 创建预览链接失败 | 检查当前账号是否拥有 `file:files:download`、文件是否存在、租户上下文和文件可见性是否正确 |
+| 预览页能打开但文件加载失败 | 检查 `/file-preview/sources?token=...` 是否被网关放行，token 是否过期 |
 | Office 预览失败 | 检查预览引擎、LibreOffice、Aspose license 和 `mango-infra-fileproc` |
 | 不希望暴露 kkFileView 首页 | 保持 `mango.file-preview.standalone-ui-enabled=false` |
 | 反向代理下源文件 URL 不对 | 检查请求 scheme、host、port、context path，以及代理头是否正确传递 |
 | 预览 token 过快失效 | 调整 `mango.file-preview.source-token-expire-seconds` |
 
-## 13. 相关文档
+## 13. 验证方式
+
+```bash
+mvn -f mango/pom.xml \
+  -pl :mango-file-preview-api,:mango-file-preview-core,:mango-file-preview-engine,:mango-file-preview-starter \
+  test
+
+mvn -f mango/pom.xml -pl :mango-file-preview-app -am \
+  -Dtest=MangoFilePreviewAppFlowTest \
+  -Dsurefire.failIfNoSpecifiedTests=false test
+```
+
+正式验收还必须使用全新 MySQL 启动单体，并在浏览器执行真实上传、创建预览链接、打开预览页和下载；微服务形态应分别启动文件能力与预览能力，确认 Feign 服务路由保留 `/file/files` 基础路径、上下文透传和源文件正文。
+
+## 14. 相关文档
 
 - [Mango File](../mango-file/README.md)
 - [Fileproc](../../mango-infra/mango-infra-fileproc/README.md)

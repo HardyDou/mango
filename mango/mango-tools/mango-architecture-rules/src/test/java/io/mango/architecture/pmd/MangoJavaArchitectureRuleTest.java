@@ -1069,6 +1069,104 @@ class MangoJavaArchitectureRuleTest {
     }
 
     @Test
+    void vendoredFilePreviewEngineTypesAreOutsideMangoCodeConventions() {
+        Report report = analyze(
+                "cn/keking/web/controller/PreviewController.java", """
+                package cn.keking.web.controller;
+                import org.springframework.web.bind.annotation.RestController;
+                @RestController
+                public class PreviewController {
+                    public String preview() { throw new IllegalStateException(); }
+                }
+                """,
+                "org/springframework/web/bind/annotation/RestController.java", """
+                package org.springframework.web.bind.annotation;
+                public @interface RestController {}
+                """);
+
+        assertThat(messages(report)).isEmpty();
+    }
+
+    @Test
+    void nativePageControllerIsCheckedWithoutForcingJsonResultContract() {
+        Report report = analyze(
+                "io/mango/preview/starter/controller/PreviewPageController.java", """
+                package io.mango.preview.starter.controller;
+                import io.swagger.v3.oas.annotations.Operation;
+                import io.swagger.v3.oas.annotations.tags.Tag;
+                import org.springframework.validation.annotation.Validated;
+                import org.springframework.web.bind.annotation.GetMapping;
+                import org.springframework.web.bind.annotation.RestController;
+                import org.springframework.web.servlet.ModelAndView;
+                @Validated @RestController
+                @Tag(name = "预览页面", description = "文件预览页面")
+                public final class PreviewPageController {
+                    @GetMapping
+                    @Operation(summary = "打开预览", description = "打开文件预览页面")
+                    public ModelAndView preview() { return new ModelAndView("preview"); }
+                }
+                """,
+                "org/springframework/web/bind/annotation/RestController.java", """
+                package org.springframework.web.bind.annotation;
+                public @interface RestController {}
+                """,
+                "org/springframework/web/bind/annotation/GetMapping.java", """
+                package org.springframework.web.bind.annotation;
+                public @interface GetMapping { String[] value() default {}; }
+                """,
+                "org/springframework/validation/annotation/Validated.java", """
+                package org.springframework.validation.annotation;
+                public @interface Validated {}
+                """,
+                "io/swagger/v3/oas/annotations/tags/Tag.java", """
+                package io.swagger.v3.oas.annotations.tags;
+                public @interface Tag { String name(); String description(); }
+                """,
+                "io/swagger/v3/oas/annotations/Operation.java", """
+                package io.swagger.v3.oas.annotations;
+                public @interface Operation { String summary(); String description(); }
+                """,
+                "org/springframework/web/servlet/ModelAndView.java", """
+                package org.springframework.web.servlet;
+                public class ModelAndView { public ModelAndView(String view) {} }
+                """);
+
+        assertThat(messages(report)).isEmpty();
+    }
+
+    @Test
+    void jsonResponseEntityCannotBypassJsonResultContract() {
+        Report report = analyze(
+                "io/mango/preview/starter/controller/PreviewController.java", """
+                package io.mango.preview.starter.controller;
+                import org.springframework.http.ResponseEntity;
+                import org.springframework.web.bind.annotation.GetMapping;
+                import org.springframework.web.bind.annotation.RestController;
+                @RestController
+                public final class PreviewController {
+                    @GetMapping
+                    public ResponseEntity<String> preview() { return ResponseEntity.ok("preview"); }
+                }
+                """,
+                "org/springframework/web/bind/annotation/RestController.java", """
+                package org.springframework.web.bind.annotation;
+                public @interface RestController {}
+                """,
+                "org/springframework/web/bind/annotation/GetMapping.java", """
+                package org.springframework.web.bind.annotation;
+                public @interface GetMapping { String[] value() default {}; }
+                """,
+                "org/springframework/http/ResponseEntity.java", """
+                package org.springframework.http;
+                public class ResponseEntity<T> {
+                    public static <T> ResponseEntity<T> ok(T value) { return null; }
+                }
+                """);
+
+        assertThat(messages(report)).contains("MANGO-ARCH-HTTP-001 HTTP method must return R<T>");
+    }
+
+    @Test
     void controllerConcreteServiceAndApiFieldsAreRejected() {
         Report report = analyze(
                 "example/OrderController.java", """

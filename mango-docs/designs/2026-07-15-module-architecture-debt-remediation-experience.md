@@ -2,7 +2,7 @@
 
 ## 1. 背景
 
-本文记录 Payment、CMS、Workflow、Notice、Org、System 治理以及 Authorization 开工基线暴露的真实失败模式，作为后续模块排序、方案设计和验收的经验输入。长期开发、数据库、测试和交付约束仍以 `mango-pmo` 为唯一规范源，本文不替代规范。
+本文记录 Payment、CMS、Workflow、Notice、Org、System、Authorization、Resource 和 File Preview 治理暴露的真实失败模式，作为后续模块排序、方案设计和验收的经验输入。长期开发、数据库、测试和交付约束仍以 `mango-pmo` 为唯一规范源，本文不替代规范。
 
 ## 2. 已发生的问题类型
 
@@ -13,6 +13,9 @@
 | DDL、必需数据和 Demo 混杂 | Flyway 同时建表、写基础角色、演示租户、菜单和运行态数据；跨模块 migration 修改其它模块菜单 | SQL 文件存在不等于数据所有权和启动结果正确 | Flyway 只保留 DDL；必需资源与 Demo 资源分开；资源由所属模块登记，Demo 默认关闭 |
 | 数据结构与实体漂移 | 实体继承的审计字段未出现在 SQL，运行时插入/更新才报缺列 | Mock Mapper、简化 H2 schema 和只读接口绕开真实写入 | migration、Entity、Mapper、真实写入和更新必须一起验证 |
 | API 与 Controller 校验冲突 | API 参数已有 Bean Validation，Controller 覆盖方法再次声明 `@Valid`，Spring 启动或调用时报继承约束异常 | 只调用 Service 或直接 new Controller，没有真实 Spring 方法校验代理 | API 声明约束；Controller 只继承；真实 Spring 上下文和非法请求接口测试 |
+| 方法校验异常误报系统错误 | 独立 Controller 的 `@NotBlank` 已生效，但 `ConstraintViolationException` 未被统一异常处理识别，非法请求返回 HTTP 500 | 单元测试只断言注解存在或 Service 拒绝，没有从 HTTP 入口断言状态与消息 | 在统一异常处理映射为 HTTP 400；同时用 infra-web 集成测试和业务 Flow 空值请求回归 |
+| 部分 Reactor 丢失模块路径事实 | `ResourceTargetController` 已使用正确 `/resource/targets`，但定向架构命令只选 sync-starter，未选同域本地 starter，导致 `MANGO-ARCH-CTRL-008` 无法取得 `/resource` | 为让局部扫描变绿，错误地给 sync-starter 重复增加 `module.properties`，又违反“只有本地 starter 声明模块信息” | 保留 Controller 显式根路径及接口测试；定向 Reactor 同时纳入同域本地 starter，让架构门禁读取唯一合法元数据；禁止在 sync/support/remote 重复声明 |
+| 进程内共享常量误放 API | 内部调用验签后的 request attribute key 放在 `mango-infra-web-api` 普通实现类 | 把“多个模块使用”误等同于 HTTP API 契约 | 无 HTTP 语义、无数据库的纯 JVM 共享类型放 support；消费者声明直接依赖并编译回归 |
 | 分层边界失效 | Controller 转换 Entity、一个 Controller 实现多个 API、Controller 未实现 API；Service 使用 `Impl`、直接继承 MyBatis `ServiceImpl` | 测试只验证返回值，未验证结构和真实适配链 | API、Controller、Service、Mapper、Entity、Feign 按根因整体迁移，不保留第二套实现 |
 | Mock 证明范围被夸大 | Mock Mapper/数据库的测试被用于证明 SQL、字段、事务或资源落库正确 | 测试数量和覆盖率替代了测试目标审计 | Mock 只隔离外部协作者；数据库、Mapper、权限、资源同步和事务使用真实集成物料 |
 | 部分绿灯冒充模块绿灯 | 聚合 POM `mvn test` 0.7 秒成功但实际执行 0 条测试；只跑 core 后宣称整个模块通过 | 没核对 Reactor 模块、Surefire 报告和测试数量 | 显式选择实际子模块；记录每个模块的 tests/failures/errors/skipped；零测试不得作为基线 |
@@ -46,6 +49,11 @@
 | 消费者测试 schema 跟不上公共实体契约 | Resource 实体改为 `TenantEntity` 后，Authorization 集成 fixture 仍缺租户/审计列，消费者测试编译或运行失败 | 只跑生产者测试，消费者使用自建简化 H2 表 | 公共持久化契约变化后枚举直接消费者；同步更新消费者自有 fixture，并保留至少一个真实公共 Service 入口集成测试 |
 | 资源 Handler 在调用者租户下处理声明租户 | 强制同步 Notice 的 `default` 渠道时，租户拦截器又附加当前租户 `1`，查询不到既有行后重复插入固定主键 | Handler H2 测试关闭租户插件，且只执行一轮同步 | 测试启用真实租户插件并从不同调用者租户连续重放；Handler 在声明租户上下文执行并 finally 恢复，禁止使用忽略租户检查注解 |
 | 只验证启动同步、不验证管理操作 | 初始同步成功，但 `/resource/sync/force` 重放全部 AUTO 资源时才触发跨租户主键冲突 | E2E 只打开列表页，没有执行写操作和失败路径 | Resource 验收同时调用缺参接口和强制同步；断言 400 业务错误、200 成功以及目标表数量/租户数据不变 |
+| 上游 vendored 代码被当作 Mango 业务代码 | File Preview 内置 `cn.keking` 上游引擎触发 211 个 Mango Controller/Service 约定问题 | 架构门禁没有建模供应商源码所有权，对所有 classpath 包名套同一规则 | 仅对已审计的精确供应商 namespace 划定所有权边界；`io.mango.*` 仍全部受控；用反例测试证明本地 Controller 无法借此逃逸 |
+| 本地页面/流传输适配器被强迫返回 JSON | `ModelAndView` 和 `ResponseEntity<InputStreamResource>` 被要求实现 `XxxApi` 并返回 `R<T>` | 规则只建模 JSON API，没有区分原生 HTTP 页面/二进制响应 | 建立严格原生适配器白名单，仅允许 `ModelAndView` 和 `ResponseEntity<Resource>`；参数绑定、OpenAPI、Service 依赖和安全规则继续生效；`ResponseEntity<String>` 反例必须失败 |
+| Controller 有权限注解但正式资源未声明 | File Preview 上传正常，但新库管理员调用预览链接返回 403 | 单元/Mock Flow 关闭授权，老库可能已有手工权限绑定 | 每个 `@ApiAccess(PERMISSION)` 都必须在所属模块正式菜单/Api Resource 中存在；新库以真实角色调用成功和无权限拒绝双向证明 |
+| 源码新但本地 Maven 运行物仍旧 | 工作区已修复 Feign base path 和删除 Security Customizer，双进程却仍 404 并输出 22 条旧警告 | 普通增量 `install` 复用了旧 classes/JAR，只看源码无法确认实际 classpath | 删除类、migration 或资源后必须 `clean install/package`；对比 target 与 `~/.m2` SHA-256、`jar tf`、`javap`/class 清单；重启真实消费者 |
+| 单进程 Mock 链路代替微服务验收 | File Preview 旧“E2E” Mock `FileApi` 和内容 Provider，无法发现 Feign 服务名改写丢失 `/file/files` | 测试运行了 HTTP，但核心跨进程边界被替身掉 | 正确命名为 Flow 测试；最终微服务 E2E 分别启动产生者/消费者，通过服务发现真实上传、元数据、二进制流和页面正文闭环验证 |
 
 ## 3. 改前与改后不变性的证明方式
 
@@ -74,6 +82,14 @@
 21. 内部调用只信任服务端验签产生的属性，不能把客户端可伪造 Header 直接作为放行依据。
 22. 多节点 E2E 至少断言服务发现健康实例、registry 稳定数量、两类重复数、CREATE/SKIP 日志和一个节点失效后的继续同步。
 23. 没有独立产品页面的后端能力明确标记 UI/E2E 不适用，不得把通用 shell/API 测试描述成该模块页面验收。
+24. 对内置上游源码按精确 namespace 建模代码所有权，不通过模块排除或抑制注解让 Mango 自有代码逃逸。
+25. 原生 HTTP 页面/流适配器只能返回受限原生类型；JSON `ResponseEntity` 仍必须遵守 `XxxApi + R<T>` 契约，且 PMD 与 ArchUnit 需有对称反例。
+26. 权限注解与正式资源声明是一个契约；必须在 demo 关闭的新库检查资源落库，再用真实角色执行业务请求。
+27. 涉及删除或资源清单变化的运行验收，必须在 `clean install` 后核对 target、本地 Maven 仓库与运行 classpath，否则旧 JAR 会让源码分析结论失效。
+28. 微服务验收要使用真实的两个 JVM 和服务路由，并比对最终正文/数据副作用；单进程 Mock HTTP 测试只能标记为 Flow。
+29. Bean Validation 验收不能停在注解或异常类型；必须从真实 HTTP 入口断言非法参数返回 400 和稳定消息，避免 `ConstraintViolationException` 落入系统异常 500。
+30. 一个业务域只能由本地 starter 提供唯一 module metadata；sync/support/remote 不得重复声明。定向架构 Reactor 若检查同域适配器，必须同时纳入本地 starter，不能用新增元数据修补扫描范围缺失。
+31. 跨模块共享不自动等于 API；request attribute key 等纯 JVM 契约应放无数据库、无 HTTP 的 support，并通过真实消费者编译证明迁移完整。
 
 ## 4. 后续模块处理节奏
 

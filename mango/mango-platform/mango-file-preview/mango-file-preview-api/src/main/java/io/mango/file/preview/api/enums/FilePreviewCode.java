@@ -1,4 +1,4 @@
-package io.mango.file.preview.api;
+package io.mango.file.preview.api.enums;
 
 import io.mango.common.result.BizCode;
 

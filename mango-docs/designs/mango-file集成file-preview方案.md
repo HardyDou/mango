@@ -1,6 +1,6 @@
 # mango-file 集成 file-preview 方案
 
-更新时间：2026-05-24
+更新时间：2026-07-17
 
 ## 1. 目标
 
@@ -47,12 +47,12 @@
 `mango-file-preview` 已是独立平台模块：
 
 - `mango-file-preview-api` 提供 `FilePreviewApi.preview(Long fileId)`。
-- `mango-file-preview-core` 依赖 `mango-file-api`，通过 `FileApi.get(fileId)` 校验文件可见性，通过 `FileApi.download(fileId)` 读取源文件。
+- `mango-file-preview-core` 依赖 `mango-file-api`，通过 `FilePreviewFileGateway` 隔离 `FileApi`/`R` 运输契约与源文件读取契约。
 - `mango-file-preview-starter` 暴露：
   - `GET /file-preview/files/preview-link?fileId=...`
   - `GET /file-preview/files/preview?fileId=...`
-  - `GET /file-preview/sources/{token}`
-- 预览源文件令牌保存在当前进程内存，令牌携带创建时的 `MangoContextSnapshot`，预览引擎回读源文件时恢复上下文后再调用 `FileApi.download`。
+  - `GET /file-preview/sources?token=...`
+- 预览入口和源文件令牌保存在 `ITokenStore`，令牌携带创建时的 `MangoContextSnapshot`，预览引擎回读源文件时恢复上下文并在读取后恢复调用方上下文。
 - 单体应用已同时装配 `mango-file-starter` 与 `mango-file-preview-starter`；微服务 `mango-file-preview-app` 已通过 `mango-file-starter-remote` 调用文件服务。
 
 ## 4. 核心决策
@@ -87,7 +87,7 @@ mango-file-preview -> mango-file-api
 ```text
 GET /file-preview/files/preview?fileId={fileId}
   -> 生成 source token
-  -> 拼 /file-preview/sources/{token}?fullfilename=...
+  -> 拼 /file-preview/sources?token=...&fullfilename=...
   -> base64 后交给 /onlinePreview
 ```
 
@@ -126,12 +126,12 @@ GET /file-preview/files/preview?fileId={fileId}
 - 调用 `FileApi.get` 校验文件可见性并获取文件名、类型、大小。
 - 生成源文件临时访问令牌。
 - 调用预览引擎并返回预览页面。
-- 通过 `FileApi.download` 读取源文件流。
+- 通过 `IFileContentProvider.downloadForService` 读取源文件流，传输细节由 Gateway 隔离。
 
 需要增强：
 
-- `FilePreviewProperties` 增加外部访问基准地址配置，例如 `publicBaseUrl`，用于微服务或网关场景下生成预览引擎可回调的源文件绝对地址。
-- 源文件 token 使用 `mango-infra-kv` 存储，支持多实例部署和重启后令牌失效语义可控。
+- 源文件绝对地址由当前 HTTP request 的 scheme、host、port 和 context path 构建；反向代理必须正确传递这些语义。
+- 源文件 token 使用 `mango-infra-kv` 的 `ITokenStore` 存储，支持多实例部署。
 - `preview-link` 与 `preview` 两个接口保持：
   - `preview-link` 返回给 API 调用方。
   - `preview` 用于 iframe 或新窗口直接打开。
@@ -161,8 +161,8 @@ Browser
   -> mango-file-preview 本地调用 FileApi.get
   -> 生成 source token
   -> forward /onlinePreview?url=base64(sourceUrl)
-  -> 预览引擎 GET /file-preview/sources/{token}
-  -> mango-file-preview 本地调用 FileApi.download
+  -> 预览引擎 GET /file-preview/sources?token=...
+  -> mango-file-preview 本地调用 IFileContentProvider.downloadForService
 ```
 
 ### 6.2 微服务部署
@@ -173,10 +173,10 @@ Browser
   -> mango-file-app 返回 previewUrl=/file-preview/files/preview?fileId=100
   -> Browser/Gateway 访问 mango-file-preview-app
   -> mango-file-preview-app 通过 mango-file-starter-remote 调 FileApi.get/download
-  -> 预览引擎回调 publicBaseUrl + /file-preview/sources/{token}
+  -> 预览引擎回调预览服务的 /file-preview/sources?token=...
 ```
 
-微服务部署必须保证预览引擎能访问 `sourceUrl`。如果预览引擎与服务端同进程，`publicBaseUrl` 可以走本服务外部地址；如果预览引擎独立进程，必须配置它可访问的网关或服务地址。
+微服务部署必须保证预览引擎能访问 `sourceUrl`，并保证 Feign 的模块服务名改写不丢失 `/file/files` 基础路径。引擎独立进程时，需确保 request host 对该进程可达。
 
 ## 7. 接口变化
 
@@ -186,7 +186,7 @@ Browser
 GET /file/files/preview?id={id}
 GET /file-preview/files/preview-link?fileId={id}
 GET /file-preview/files/preview?fileId={id}
-GET /file-preview/sources/{token}
+GET /file-preview/sources?token={token}
 ```
 
 ### 7.2 FilePreviewVO 字段语义
@@ -231,8 +231,9 @@ preview_external_extensions=doc,docx,xls,xlsx,xlsm,ppt,pptx,odt,ods,odp,ofd,wps,
 ## 9. 安全与生命周期
 
 - 所有业务文件仍由 `mango-file` 校验机构、归档状态和访问权限。
-- `mango-file-preview` 的 `preview`、`preview-link` 使用 `file:files:query` 权限。
-- `sources/{token}` 是临时令牌接口，只供预览引擎读取源文件；令牌过期后必须拒绝访问。
+- `mango-file-preview` 的 `preview`、`preview-link` 使用 `file:files:download` 权限，权限码由 `mango-file` 正式菜单资源声明。
+- `sources?token=...` 是临时令牌接口，只供预览引擎读取源文件；令牌过期后必须拒绝访问。
+- 公开 token 和引擎资源通过安全链 PUBLIC/permitAll 语义放行，不使用 `web.ignoring()` 跳过安全过滤器。
 - 源文件 token 不允许出现在业务表、业务扩展字段或长期缓存中。
 - `FilePreviewVO.previewUrl` 是运行时派生地址，业务模块不能持久化。
 - iframe 预览路径需要允许同源嵌入；当前 `FilePreviewFrameOptionsFilter` 保持对 `/file-preview/` 和 `/onlinePreview` 设置 `SAMEORIGIN`。
@@ -244,7 +245,7 @@ preview_external_extensions=doc,docx,xls,xlsx,xlsm,ppt,pptx,odt,ods,odp,ofd,wps,
 |---|---|
 | 文件不存在、跨机构、已归档 | `mango-file` 或 `mango-file-preview` 返回业务失败 |
 | 未配置 `preview_provider_url` | 复杂格式回退为下载查看 |
-| 预览源 token 过期 | `sources/{token}` 返回令牌无效 |
+| 预览源 token 过期 | `sources?token=...` 返回令牌无效 |
 | 预览引擎转换失败 | 保持引擎错误页或错误响应，前端提供下载 |
 | `mango-file-preview` 服务不可用 | `previewUrl` 可生成但打开失败，前端保留下载动作 |
 | 多实例 token 丢失 | source token 必须使用 KV 存储并设置 TTL，不能继续依赖进程内 Map |
@@ -262,8 +263,8 @@ preview_external_extensions=doc,docx,xls,xlsx,xlsm,ppt,pptx,odt,ods,odp,ofd,wps,
 
 ### 11.2 完成部署稳态
 
-- `mango-file-preview` 增加 `publicBaseUrl`。
-- 将 source token 存储从本地 Map 切换到 `mango-infra-kv`，过期时间使用 TTL。
+- 确认反向代理对 scheme、host、port 和 context path 的传递符合预览引擎回调要求。
+- source token 使用 `ITokenStore` TTL，并在多节点共享 KV 下验证任意实例回读。
 - 增加多实例部署说明和配置样例。
 
 ### 11.3 接入派生产物能力
@@ -299,7 +300,6 @@ preview_external_extensions=doc,docx,xls,xlsx,xlsm,ppt,pptx,odt,ods,odp,ofd,wps,
 
 ## 14. 风险
 
-- 当前 source token 是进程内存，微服务多实例下预览引擎回调如果落到不同实例会失败。
 - `FileFeignClient.downloadResponse` 当前以 `byte[]` 接收远程下载，大文件预览会占用内存；微服务预览链路需要改为流式 Feign 或优先使用对象存储后端读取能力。
 - `mango-file` README 中存在由 render/convert 负责复杂转换的描述，需要在实现时区分“在线预览入口”和“派生产物转换”。
 - 预览引擎依赖 LibreOffice/字体/系统库，不同部署环境的格式支持范围可能不同。

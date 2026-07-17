@@ -219,3 +219,5 @@ pnpm -F @mango/admin-shell build
 - v2026.07.11-npm-readme-forward-release 以 `@mango/file@1.0.21` 向前发布上述权限边界和完整 README，不回退任何运行时代码。业务项目如使用 `FilePreviewPanel` 需同时移除已删除的 `downloadPermission` prop；这不代表取消后端文件状态、访问级别、租户和业务归属校验。
 
 - Resource 历史债务治理仅迁移进程内资源 SPI 的包和依赖边界，不改变 `permissionCode`、API 资源扫描、角色按钮授权、接口鉴权、租户隔离、按钮展示逻辑和本场景排障步骤。
+
+- File Preview 历史债务治理在文件菜单资源中登记既有 `file:files:download` 权限码，并保持文件管理页既定的登录态与后端访问校验策略；不改变角色按钮授权关系、权限聚合、接口鉴权、租户隔离、按钮展示逻辑和本场景排障步骤。

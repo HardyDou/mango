@@ -38,7 +38,7 @@ public class FilePreviewFrameOptionsFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
         boolean previewPath = isPreviewPath(request.getRequestURI(), request.getContextPath());
-        HttpServletResponse actualResponse = previewPath ? new SameOriginFrameOptionsResponse(response) : response;
+        HttpServletResponse actualResponse = previewPath ? new SameOriginHeaderWrapper(response) : response;
         if (previewPath) {
             actualResponse.setHeader(FRAME_OPTIONS, SAMEORIGIN);
         }
@@ -61,9 +61,9 @@ public class FilePreviewFrameOptionsFilter extends OncePerRequestFilter {
         return false;
     }
 
-    private static final class SameOriginFrameOptionsResponse extends HttpServletResponseWrapper {
+    private static final class SameOriginHeaderWrapper extends HttpServletResponseWrapper {
 
-        private SameOriginFrameOptionsResponse(HttpServletResponse response) {
+        private SameOriginHeaderWrapper(HttpServletResponse response) {
             super(response);
         }
 

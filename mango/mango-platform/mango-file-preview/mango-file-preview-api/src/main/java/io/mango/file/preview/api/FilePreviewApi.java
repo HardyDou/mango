@@ -2,6 +2,7 @@ package io.mango.file.preview.api;
 
 import io.mango.common.result.R;
 import io.mango.file.preview.api.vo.FilePreviewLinkVO;
+import jakarta.validation.constraints.NotNull;
 
 /**
  * 文件预览本地接口契约。
@@ -14,5 +15,5 @@ public interface FilePreviewApi {
      * @param fileId 文件 ID。
      * @return 预览入口信息。
      */
-    R<FilePreviewLinkVO> preview(Long fileId);
+    R<FilePreviewLinkVO> preview(@NotNull(message = "文件ID不能为空") Long fileId);
 }

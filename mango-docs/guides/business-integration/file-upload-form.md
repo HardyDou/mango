@@ -254,3 +254,5 @@ pnpm -F @mango/file test
   启动方式不变。
 
 - Resource 历史债务治理仅迁移 File 资源 Handler 的本地 SPI 依赖，不改变上传、下载、预览 API、文件 ID 持久化、访问权限、租户边界、页面入口、启动方式和本场景验收步骤。
+
+- File Preview 历史债务治理将预览页读取源文件的内部地址调整为 `/file-preview/sources?token=...`，并分离页面与二进制流适配器；业务表单仍只保存文件 ID，上传、详情回显、预览入口、下载、租户边界和本场景验收步骤不变。

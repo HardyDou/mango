@@ -7,7 +7,7 @@ import io.mango.authorization.support.autoconfigure.sensitive.AuthorizationSensi
 import io.mango.authorization.support.autoconfigure.web.JsonAccessDeniedHandler;
 import io.mango.authorization.support.autoconfigure.web.JsonAuthenticationEntryPoint;
 import io.mango.infra.sensitive.api.ISensitiveRawAccessProvider;
-import io.mango.infra.web.api.InternalCallAttributes;
+import io.mango.infra.web.support.InternalCallAttributes;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;

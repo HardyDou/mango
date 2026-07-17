@@ -15,6 +15,7 @@ import io.mango.file.api.vo.FileDownloadVO;
 import io.mango.file.api.vo.FilePreviewVO;
 import io.mango.file.api.vo.FileRecordVO;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -35,7 +36,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(
-        classes = MangoFilePreviewAppE2ETest.TestApp.class,
+        classes = MangoFilePreviewAppFlowTest.TestApp.class,
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         properties = {
                 "mango.file.enabled=false",
@@ -45,8 +46,8 @@ import static org.assertj.core.api.Assertions.assertThat;
                 "trust.host=127.0.0.1,localhost",
                 "spring.cloud.discovery.enabled=false",
                 "spring.cloud.nacos.discovery.enabled=false",
-            "spring.flyway.enabled=false",
-            "spring.autoconfigure.exclude="
+                "spring.flyway.enabled=false",
+                "spring.autoconfigure.exclude="
                         + "org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration,"
                         + "org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration,"
                         + "org.springframework.boot.autoconfigure.jdbc.JdbcTemplateAutoConfiguration,"
@@ -57,8 +58,10 @@ import static org.assertj.core.api.Assertions.assertThat;
                         + "com.alibaba.druid.spring.boot3.autoconfigure.DruidDataSourceAutoConfigure,"
                         + "org.redisson.spring.starter.RedissonAutoConfigurationV2"
         })
-@DisplayName("Mango file preview app E2E tests")
-class MangoFilePreviewAppE2ETest {
+@Tag("flow")
+@Tag("file-preview")
+@DisplayName("Mango file preview app flow tests")
+class MangoFilePreviewAppFlowTest {
 
     private static final Long FILE_ID = 10001L;
     private static final String FILE_NAME = "readme.txt";
@@ -87,6 +90,28 @@ class MangoFilePreviewAppE2ETest {
         assertThat(previewResponse.getBody()).contains(FILE_NAME);
         assertThat(previewResponse.getBody()).contains(Base64.getEncoder()
                 .encodeToString((FILE_CONTENT + "\r\n").getBytes(StandardCharsets.UTF_8)));
+    }
+
+    @Test
+    @DisplayName("missing fileId should be rejected by API validation")
+    void missingFileIdShouldBeRejectedByApiValidation() {
+        ResponseEntity<String> response = restTemplate.getForEntity(
+                baseUrl() + "/file-preview/files/preview-link", String.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(response.getBody()).contains("fileId");
+    }
+
+    @Test
+    @DisplayName("blank preview tokens should be rejected by controller validation")
+    void blankPreviewTokensShouldBeRejectedByControllerValidation() {
+        ResponseEntity<String> entryResponse = restTemplate.getForEntity(
+                baseUrl() + "/file-preview/files/preview-entry?token=", String.class);
+        ResponseEntity<String> sourceResponse = restTemplate.getForEntity(
+                baseUrl() + "/file-preview/sources?token=", String.class);
+
+        assertThat(entryResponse.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(sourceResponse.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
     }
 
     private String baseUrl() {

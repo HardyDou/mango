@@ -35,6 +35,12 @@ class FilePreviewEngineResourceRegistrarTest {
                     assertThat(resource.getPathPattern()).isEqualTo("/compressed-file");
                     assertThat(resource.getResourceCode()).isEqualTo("GET:/compressed-file");
                     assertThat(resource.getAccessMode()).isEqualTo(ApiResourceAccessMode.PUBLIC);
+                })
+                .anySatisfy(resource -> {
+                    assertThat(resource.getHttpMethod()).isEqualTo("GET");
+                    assertThat(resource.getPathPattern()).isEqualTo("/file-preview/sources");
+                    assertThat(resource.getResourceCode()).isEqualTo("GET:/file-preview/sources");
+                    assertThat(resource.getAccessMode()).isEqualTo(ApiResourceAccessMode.PUBLIC);
                 });
     }
 
