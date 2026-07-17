@@ -29,6 +29,11 @@
             <artifactId>jakarta.validation-api</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-annotations</artifactId>
+        </dependency>
+
         <!-- OpenAPI annotations used by API DTOs -->
         <dependency>
             <groupId>io.swagger.core.v3</groupId>

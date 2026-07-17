@@ -24,11 +24,12 @@
 
 | 模块 | 职责 |
 |------|------|
-| `mango-ai-api` | AI DTO 和 API 契约，包含 `ChatRequest`。 |
-| `mango-ai-core` | AI Controller、Service、DeepSeek provider。 |
-| `mango-ai-starter` | 自动扫描 AI controller/service/provider。 |
+| `mango-ai-api` | AI 请求模型和业务错误码。 |
+| `mango-ai-core` | 对话、推送服务及可替换的 AI provider 端口。 |
+| `mango-ai-starter` | HTTP/SSE 适配、DeepSeek 默认实现和自动配置。 |
 
-AI 模块依赖 `mango-infra-context-starter` 的 TTL executor 装饰器，用于异步对话时保留上下文。
+AI 的 HTTP Controller 只在 starter 暴露；core 不依赖 Servlet/SSE 类型。流式响应由
+starter 的异步 `SseEmitter` 适配器输出，保持标准 `text/event-stream` 协议。
 
 ## 5. 接入方式
 Maven 依赖：
@@ -53,6 +54,8 @@ mango:
       read-timeout: 60000
     session:
       ttl: 1800000
+    sse:
+      heartbeat-interval: 25000
 ```
 
 流式对话请求：
@@ -60,7 +63,7 @@ mango:
 ```http
 POST /ai/chat
 Authorization: Bearer <accessToken>
-TENANT-ID: 1
+X-Mango-Tenant-Id: 1
 Content-Type: application/json
 
 {
@@ -86,6 +89,7 @@ Authorization: Bearer <accessToken>
 | `mango.ai.deepseek.connect-timeout` | `10000` | 连接超时，毫秒。 |
 | `mango.ai.deepseek.read-timeout` | `60000` | 读取超时，毫秒。 |
 | `mango.ai.session.ttl` | `1800000` | 会话上下文 TTL，毫秒。 |
+| `mango.ai.sse.heartbeat-interval` | `25000` | SSE 心跳间隔，毫秒。 |
 
 请求体 `ChatRequest`：
 
@@ -98,7 +102,7 @@ Authorization: Bearer <accessToken>
 ## 7. API 与扩展
 HTTP 接口：
 
-- `POST /ai/chat`：受保护接口，返回 `text/event-stream`。
+- `POST /ai/chat`：受保护接口，返回标准 `text/event-stream`；兼容历史 `TENANT-ID` 请求头。
 - `GET /ai/sse`：建立 AI 模块 SSE 连接。
 
 主要类：
@@ -106,14 +110,17 @@ HTTP 接口：
 - `ChatRequest`
 - `ChatController`
 - `SseController`
-- `ChatService`
+- `IChatService` / `ChatService`
+- `IAiPushService` / `AiPushService`
+- `IAiProvider`
 - `DeepSeekProvider`
 - `MangoAiAutoConfiguration`
 
-当前 provider 是 `DeepSeekProvider`。如果要接入其他 provider，应新增 provider 和配置，并保持 `ChatService` 的调用边界清晰。
+starter 默认注册 `DeepSeekProvider`，并使用 `@ConditionalOnMissingBean` 允许业务项目提供
+`IAiProvider` 替换实现。第三方 provider 只返回 JSON 事件，不直接拼接 SSE 的 `data:` 前缀。
 
 ## 8. 数据与初始化
-当前 AI 扩展不包含数据库 migration。会话上下文保存在内存 `ConcurrentHashMap` 中，按租户和 session 组合 key 管理，并由定时任务清理过期会话。
+当前 AI 扩展不包含数据库 migration。会话上下文保存在内存 `ConcurrentHashMap` 中，按租户和 session 组合 key 管理；每次对话进入时会清理已过期会话。
 
 因此：
 
@@ -122,7 +129,8 @@ HTTP 接口：
 - 需要生产级会话时，应新增持久化或 KV 存储设计。
 
 ## 9. 管理入口
-`POST /ai/chat` 要求 `Authorization` 请求头以 `Bearer ` 开头；租户优先读取 `TENANT-ID`，为空时读取 Mango 上下文，仍为空时使用 `default`。
+`POST /ai/chat` 要求 `Authorization` 请求头以 `Bearer ` 开头；租户优先读取
+`X-Mango-Tenant-Id`，兼容读取 `TENANT-ID`，为空时读取 Mango 上下文，仍为空时使用 `default`。
 
 当前扩展不初始化菜单和权限。业务接入时应：
 
