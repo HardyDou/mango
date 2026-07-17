@@ -4,9 +4,10 @@ import io.mango.file.api.IFileContentProvider;
 import io.mango.file.api.command.SaveFileCommand;
 import io.mango.file.api.vo.FileDownloadVO;
 import io.mango.file.api.vo.FileRecordVO;
-import io.mango.template.api.TemplateCode;
+import io.mango.template.api.enums.TemplateCode;
 import io.mango.template.core.service.ITemplateFileStore;
 import io.mango.template.core.service.TemplateStoredFile;
+import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -16,7 +17,7 @@ import java.io.ByteArrayInputStream;
  * 基于 mango-file 本地能力的模板文件适配器。
  */
 @Component
-@RequiredArgsConstructor
+@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 public class MangoFileTemplateFileStore implements ITemplateFileStore {
 
     private final IFileContentProvider fileContentProvider;

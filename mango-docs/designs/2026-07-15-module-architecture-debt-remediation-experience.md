@@ -2,7 +2,7 @@
 
 ## 1. 背景
 
-本文记录 Payment、CMS、Workflow、Notice、Org、System、Authorization、Resource 和 File Preview 治理暴露的真实失败模式，作为后续模块排序、方案设计和验收的经验输入。长期开发、数据库、测试和交付约束仍以 `mango-pmo` 为唯一规范源，本文不替代规范。
+本文记录 Payment、CMS、Workflow、Notice、Org、System、Authorization、Resource、File Preview 和 Template 治理暴露的真实失败模式，作为后续模块排序、方案设计和验收的经验输入。长期开发、数据库、测试和交付约束仍以 `mango-pmo` 为唯一规范源，本文不替代规范。
 
 ## 2. 已发生的问题类型
 
@@ -23,7 +23,7 @@
 | 自动配置条件不完整 | resource-sync 测试因 classpath 存在 Gateway 类就装配 Bean，但缺少 `RouteDefinitionLocator`，Spring 上下文失败 | 只测配置类存在或单类逻辑，未启动组合 classpath | 自动配置测试覆盖依赖存在、依赖缺失、Bean 存在和 Bean 缺失组合 |
 | 兼容壳形成第二套协议 | Org API 同时保留旧 Entity、旧 Command 与新 VO/Command，Home、Notice 等内部消费者继续依赖旧协议，表面兼容实际扩大了分层债务 | 只检查 Org 自身编译，没有枚举直接消费者，也没有区分 Java 协议兼容和 HTTP 行为兼容 | 删除内部兼容壳前先搜索全部直接消费者；统一迁移到 VO、Command 和 Gateway；分别冻结 Java/HTTP 可观察契约 |
 | 适配器失败语义丢失 | Gateway 把空远程结果包装为非空失败对象后，下游原有 `result == null` 回退分支失效，最终错误信息可能为空 | 测试只覆盖成功数据或只断言失败，没有断言失败消息和空响应边界 | 在适配器统一提供带 fallback 的失败消息；测试空响应、远程失败和业务失败三类结果 |
-| 正确依赖注入被静态工具误报 | Spring 构造器注入被 SpotBugs `EI_EXPOSE_REP2` 误判，改成 `ObjectProvider` 后又触发 Controller 必须直接依赖 Service 接口的架构红线 | 质量工具不了解 Spring Bean 生命周期，单看告警数量无法判断真实缺陷 | 保留 `@RequiredArgsConstructor` 和 `private final I*Service`；在所属模块对已复核的精确类/规则配置 SpotBugs 过滤，不通过业务代码变形或抑制注解逃避真实问题 |
+| 正确依赖注入被静态工具误报 | Spring 构造器注入被 SpotBugs `EI_EXPOSE_REP2` 误判，改成 `ObjectProvider` 后又触发 Controller 必须直接依赖 Service 接口的架构红线 | 质量工具不了解 Spring Bean 生命周期，单看告警数量无法判断真实缺陷 | 保留 `@RequiredArgsConstructor` 和 `private final I*Service`；优先用包级构造器限制非 Spring 调用面，并移除不必要的可变工具依赖；禁止用抑制注解、改成非 final 字段或包装 Service 来逃避检查 |
 | Changed-only 路径口径不一致 | Git 变更路径带仓库根 `mango/`，Maven issue 路径从 `mango-platform/` 开始，报告把真实改动标成 `inChangedFiles=false` | 只看门禁绿灯，没有抽查报告里的 changed file 映射和 issue identity | 抽查 `inChangedFiles`、模块归属和路径归一化；在检查器修复前，用目标模块完整静态报告与改动文件交叉核验 |
 | 定向检查被实现缺陷扩大或崩溃 | 模块级 `rule=all` 意外扫描仓库其它数字版本并触发 `NumberFormatException`，既慢又不能形成可靠结论 | 把命令名称里的“模块级”当成真实扫描边界，没有核对 report scope | 质量、架构和消费者编译分开执行；核对报告 scope；检查器异常不得当作业务失败或绿灯，需保留可复现证据 |
 | 前端清单、锁文件和已发布版本漂移 | Org E2E 启动时源码要求 `@mango/admin-shell@1.0.42`，锁文件仍记录 `1.0.41`，内网仓库也只有 `1.0.41` | 后端测试不消费前端 workspace，旧机器已有 `node_modules` 时还会掩盖锁漂移 | E2E 前从干净依赖状态检查 manifest、lock 和 registry；主仓源码联调可显式链接同版本 workspace 包，发布验收仍必须等待锁文件与仓库版本一致 |
@@ -54,6 +54,15 @@
 | Controller 有权限注解但正式资源未声明 | File Preview 上传正常，但新库管理员调用预览链接返回 403 | 单元/Mock Flow 关闭授权，老库可能已有手工权限绑定 | 每个 `@ApiAccess(PERMISSION)` 都必须在所属模块正式菜单/Api Resource 中存在；新库以真实角色调用成功和无权限拒绝双向证明 |
 | 源码新但本地 Maven 运行物仍旧 | 工作区已修复 Feign base path 和删除 Security Customizer，双进程却仍 404 并输出 22 条旧警告 | 普通增量 `install` 复用了旧 classes/JAR，只看源码无法确认实际 classpath | 删除类、migration 或资源后必须 `clean install/package`；对比 target 与 `~/.m2` SHA-256、`jar tf`、`javap`/class 清单；重启真实消费者 |
 | 单进程 Mock 链路代替微服务验收 | File Preview 旧“E2E” Mock `FileApi` 和内容 Provider，无法发现 Feign 服务名改写丢失 `/file/files` | 测试运行了 HTTP，但核心跨进程边界被替身掉 | 正确命名为 Flow 测试；最终微服务 E2E 分别启动产生者/消费者，通过服务发现真实上传、元数据、二进制流和页面正文闭环验证 |
+| 任意 JSON 为逃避强转使用裸 Map | Template 渲染变量直接在多层传递 `Map<String, Object>` 并依赖 unchecked cast | 只验证简单标量 JSON，没有冻结嵌套对象的线格式与类型边界 | API 用具名 JSON 值对象封装并保持 wire object 不变；兼容测试覆盖标量、嵌套对象、数组和反序列化回放 |
+| 远程 `R<T>` 泄漏进 Core | Template Core 为校验业务域直接依赖远程响应包装，进程内业务层被 HTTP 成功/失败语义污染 | 单体装配时远程实现与本地实现位于同一进程，分层问题不影响功能测试 | Core 只依赖本域 Provider/值对象；starter 适配 Feign 并统一解包 `R<T>`、空响应和失败消息 |
+| Demo 未显式开启导致菜单验收假失败 | Fresh DB DDL 和正式资源均成功，但演示管理员角色为零，页面菜单为空 | 把“新库启动成功”误当成“演示验收数据已加载” | 分别验证 demo 关闭的生产初始化和 demo 开启的验收初始化；启动命令显式设置正确资源注册前缀并核对角色/菜单计数 |
+| 登录 E2E 在响应结束后才等待响应 | 自动填充/失焦已触发前置请求，测试随后 `waitForResponse` 永久错过事件 | 用网络等待代替页面稳定状态，且没有围绕真正登录 POST 建立等待 | 前置状态用可见内容判断；在点击登录前注册对登录 POST 的等待，并断言 HTTP 与业务响应双成功 |
+| 直连能力服务混用浏览器租户头和内部上下文头 | 绕过网关直调 Template 服务只传 `X-Tenant-Id`，下游 Domain 收不到租户上下文，租户 SQL 被拒绝 | 单体共享线程上下文，无法暴露跨 JVM 传播协议差异 | 微服务 E2E 经网关时验证网关转换；确需直连时按内部协议传 `X-Mango-Tenant-Id`，并由 Feign 继续传播，禁止配置默认租户绕过 |
+| Changed-only 绿灯掩盖模块存量质量债务 | Template 的 no-new-violations 报告最初把历史问题放入 baseline，PR 表面可只要求“没有新增” | 只看门禁退出码，没有审计 `issues/newIssues/baselineIssues` 和目标模块总量 | 历史债务任务不能停在 no-new；对目标模块逐项消除并确认四类报告列表都为空，最终静态问题为 0 |
+| DTO/值对象暴露可变内部状态 | Command、VO、record 直接保存或返回 List、Map、JSON wrapper、`byte[]`，调用者可在校验后篡改对象 | 测试只比较初始值，没有覆盖构造后和 getter 后的外部修改 | 构造/Setter 输入和 Getter/accessor 输出都做防御复制；集合使用不可变副本，数组逐次复制；补嵌套 JSON 与二进制回归 |
+| 能力应用误连默认 H2 | 单体使用 MySQL 环境别名，但独立 capability app 未读取同一别名，双 JVM启动时落到 H2 并拒绝 MySQL DDL | 只验证单体，未核对每个独立进程实际 JDBC URL | 微服务 E2E 为每个 JVM 显式绑定 `SPRING_DATASOURCE_URL/USERNAME/PASSWORD`，启动后核对连接库和 Flyway history |
+| Feign 直连配置未命中实际客户端 | 只配置服务名 URL 后，按 `contextId` 创建的 Feign 客户端仍尝试负载均衡，或把带协议 URL 填进仅接受服务名的入口 | 单体本地 Provider 不经过 Feign，单进程测试无法暴露配置键差异 | 无注册中心的双 JVM测试同时设置服务名 `host:port` 与实际 `contextId` 的绝对 URL；保留真实 base path、租户头和 HTTP 断言 |
 
 ## 3. 改前与改后不变性的证明方式
 
@@ -90,6 +99,16 @@
 29. Bean Validation 验收不能停在注解或异常类型；必须从真实 HTTP 入口断言非法参数返回 400 和稳定消息，避免 `ConstraintViolationException` 落入系统异常 500。
 30. 一个业务域只能由本地 starter 提供唯一 module metadata；sync/support/remote 不得重复声明。定向架构 Reactor 若检查同域适配器，必须同时纳入本地 starter，不能用新增元数据修补扫描范围缺失。
 31. 跨模块共享不自动等于 API；request attribute key 等纯 JVM 契约应放无数据库、无 HTTP 的 support，并通过真实消费者编译证明迁移完整。
+32. 任意 JSON 输入应使用具名值对象固定 Java 边界，同时用序列化兼容测试证明外部仍是普通 JSON object，不能以裸 Map 和 unchecked cast 换取表面灵活。
+33. Core 不处理远程 `R<T>`；Feign 响应解包、空响应和失败消息归 starter/adapter，Core 只消费本域 Provider。
+34. Fresh DB 需分两套验收：demo 关闭证明生产初始化纯净，demo 开启证明演示角色、菜单和页面可用；两者不能互相替代。
+35. 跨 JVM 直连测试必须使用 Mango 内部上下文头或真实网关，不能设置默认租户、关闭租户拦截器来伪造通过。
+36. E2E 网络等待必须在触发动作前注册；对已由自动填充触发的前置请求应断言最终页面状态，避免响应竞态。
+37. 历史债务任务即使使用 changed-only/no-new 门禁，也必须审计目标模块总问题数；baseline 不是验收通过，目标范围内的 `issues/newIssues/baselineIssues/toolFailures` 应全部清空。
+38. API/领域对象持有 List、Map、JSON wrapper 或数组时，输入端和输出端都要防御复制；只复制一侧仍会暴露可变状态，`byte[]` 尤其不能直接返回。
+39. 静态工具误报 Spring 构造器注入时，禁止加抑制注解或破坏 `private final I*Service` 规范；应缩小构造器可见性、移除不必要的可变依赖，并用 Spring 装配测试证明行为。
+40. 独立能力应用 E2E 必须逐进程确认真实数据源；不能假设单体使用的环境别名会被所有 capability app 读取。
+41. 无注册中心的 Feign 直连必须按实际客户端 `contextId` 配置 URL，并保留服务 base path 与内部租户传播；单体本地 Provider 通过不能替代这项验证。
 
 ## 4. 后续模块处理节奏
 

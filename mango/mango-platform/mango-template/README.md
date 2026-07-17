@@ -45,12 +45,15 @@
 ```java
 import io.mango.template.api.TemplateApi;
 import io.mango.template.api.command.TemplateRenderCommand;
+import io.mango.template.api.command.TemplateJsonRequest;
 import io.mango.template.api.enums.TemplateOutputFormat;
+
+import java.util.Map;
 
 TemplateRenderCommand command = new TemplateRenderCommand();
 command.setTemplateCode("CONTRACT_NOTICE");
 command.setOutputFormat(TemplateOutputFormat.PDF);
-command.getVariables().put("contractNo", "CT202606160001");
+command.setVariables(TemplateJsonRequest.of(Map.of("contractNo", "CT202606160001")));
 command.setBizType("CONTRACT");
 command.setBizId("10001");
 
@@ -299,8 +302,7 @@ Flyway 路径：`mango-template-core/src/main/resources/db/migration/template`�
 
 | 脚本 | 内容 |
 |------|------|
-| `V1__init_template.sql` | 创建 `template`、`template_category`、`template_version`、`template_render_record`，并包含历史结构变更的 squashed 内容。 |
-| `V2__template_domain.sql` | 给模板增加 `domain_code`，默认 `TEMPLATE`，并创建 `tenant_id + domain_code` 索引。 |
+| `V1__init_template.sql` | 面向全新数据库直接创建最终结构的 `template`、`template_category`、`template_version`、`template_render_record`；Flyway 仅负责 DDL。 |
 
 核心表：
 

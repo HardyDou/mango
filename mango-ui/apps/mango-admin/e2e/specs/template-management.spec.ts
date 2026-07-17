@@ -31,14 +31,17 @@ async function login(page: Page) {
   await page.goto('/#/login');
   await page.fill('input[placeholder="用户名"]', 'admin');
   await page.fill('input[placeholder="密码"]', 'admin123');
-  const accountTenantsResponsePromise = page.waitForResponse((response) =>
-    response.url().includes('/api/auth/login-institutions') && response.status() === 200
-  );
   await page.locator('input[placeholder="密码"]').blur();
-  await accountTenantsResponsePromise;
+  await expect(page.locator('.tenant-select')).toContainText('芒果集团', { timeout: 10000 });
   await page.locator('.tenant-select').click();
   await page.getByRole('option', { name: /芒果集团/ }).click();
+  const loginResponsePromise = page.waitForResponse((response) =>
+    response.url().endsWith('/auth/login') && response.request().method() === 'POST'
+  );
   await page.locator('.login-btn').click();
+  const loginResponse = await loginResponsePromise;
+  expect(loginResponse.status()).toBe(200);
+  expectApiSuccess(await loginResponse.json(), '页面登录失败');
   await page.waitForURL('**/#/home', { timeout: 10000 });
 }
 
@@ -81,7 +84,7 @@ async function setCodeMirrorValue(page: Page, root: ReturnType<Page['locator']>,
 }
 
 test.describe('模板管理 E2E', () => {
-  test('分类、模板列表、版本发布/设为生效和渲染记录流程可用', async ({ page, request }) => {
+  test('@p0 @template 分类、模板列表、版本发布/设为生效和渲染记录流程可用', async ({ page, request }) => {
     const unique = Date.now();
     const keyword = `E2E_TPL_${unique}`;
     const categoryName = `E2E 分类 ${unique}`;

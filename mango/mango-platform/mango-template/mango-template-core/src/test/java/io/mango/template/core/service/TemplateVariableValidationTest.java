@@ -2,8 +2,8 @@ package io.mango.template.core.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.common.exception.BizException;
-import io.mango.template.api.command.TemplateVariableDefinition;
-import io.mango.template.core.entity.TemplateVersion;
+import io.mango.template.api.command.TemplateVariableCommand;
+import io.mango.template.core.entity.TemplateVersionEntity;
 import io.mango.template.core.service.impl.TemplateServiceImpl;
 import org.junit.jupiter.api.Test;
 
@@ -20,10 +20,10 @@ class TemplateVariableValidationTest {
     @Test
     void validateRequiredVariablesSupportsNestedDefinitions() throws Exception {
         TemplateServiceImpl service = newService();
-        TemplateVersion version = new TemplateVersion();
+        TemplateVersionEntity version = new TemplateVersionEntity();
         version.setVariableSchema(objectMapper.writeValueAsString(List.of(objectVariable())));
 
-        Method method = TemplateServiceImpl.class.getDeclaredMethod("validateRequiredVariables", TemplateVersion.class, Map.class);
+        Method method = TemplateServiceImpl.class.getDeclaredMethod("validateRequiredVariables", TemplateVersionEntity.class, Map.class);
         method.setAccessible(true);
         method.invoke(service, version, Map.of("customer", Map.of("name", "张三")));
     }
@@ -31,10 +31,10 @@ class TemplateVariableValidationTest {
     @Test
     void validateRequiredVariablesFailsWhenNestedRequiredVariableMissing() throws Exception {
         TemplateServiceImpl service = newService();
-        TemplateVersion version = new TemplateVersion();
+        TemplateVersionEntity version = new TemplateVersionEntity();
         version.setVariableSchema(objectMapper.writeValueAsString(List.of(objectVariable())));
 
-        Method method = TemplateServiceImpl.class.getDeclaredMethod("validateRequiredVariables", TemplateVersion.class, Map.class);
+        Method method = TemplateServiceImpl.class.getDeclaredMethod("validateRequiredVariables", TemplateVersionEntity.class, Map.class);
         method.setAccessible(true);
 
         assertThatThrownBy(() -> method.invoke(service, version, Map.of("customer", Map.of())))
@@ -45,14 +45,14 @@ class TemplateVariableValidationTest {
     @Test
     void validateRequiredVariablesFailsWhenTypeMismatch() throws Exception {
         TemplateServiceImpl service = newService();
-        TemplateVersion version = new TemplateVersion();
-        TemplateVariableDefinition amount = new TemplateVariableDefinition();
+        TemplateVersionEntity version = new TemplateVersionEntity();
+        TemplateVariableCommand amount = new TemplateVariableCommand();
         amount.setName("amount");
         amount.setType("NUMBER");
         amount.setRequired(true);
         version.setVariableSchema(objectMapper.writeValueAsString(List.of(amount)));
 
-        Method method = TemplateServiceImpl.class.getDeclaredMethod("validateRequiredVariables", TemplateVersion.class, Map.class);
+        Method method = TemplateServiceImpl.class.getDeclaredMethod("validateRequiredVariables", TemplateVersionEntity.class, Map.class);
         method.setAccessible(true);
 
         assertThatThrownBy(() -> method.invoke(service, version, Map.of("amount", "abc")))
@@ -63,10 +63,10 @@ class TemplateVariableValidationTest {
     @Test
     void validateRequiredVariablesSupportsArrayObjectChildren() throws Exception {
         TemplateServiceImpl service = newService();
-        TemplateVersion version = new TemplateVersion();
+        TemplateVersionEntity version = new TemplateVersionEntity();
         version.setVariableSchema(objectMapper.writeValueAsString(List.of(arrayVariable())));
 
-        Method method = TemplateServiceImpl.class.getDeclaredMethod("validateRequiredVariables", TemplateVersion.class, Map.class);
+        Method method = TemplateServiceImpl.class.getDeclaredMethod("validateRequiredVariables", TemplateVersionEntity.class, Map.class);
         method.setAccessible(true);
         method.invoke(service, version, Map.of("items", List.of(
                 Map.of("name", "身份证", "qty", 1),
@@ -77,10 +77,10 @@ class TemplateVariableValidationTest {
     @Test
     void validateRequiredVariablesFailsWhenArrayChildMissing() throws Exception {
         TemplateServiceImpl service = newService();
-        TemplateVersion version = new TemplateVersion();
+        TemplateVersionEntity version = new TemplateVersionEntity();
         version.setVariableSchema(objectMapper.writeValueAsString(List.of(arrayVariable())));
 
-        Method method = TemplateServiceImpl.class.getDeclaredMethod("validateRequiredVariables", TemplateVersion.class, Map.class);
+        Method method = TemplateServiceImpl.class.getDeclaredMethod("validateRequiredVariables", TemplateVersionEntity.class, Map.class);
         method.setAccessible(true);
 
         assertThatThrownBy(() -> method.invoke(service, version, Map.of("items", List.of(Map.of("qty", 1)))))
@@ -89,16 +89,16 @@ class TemplateVariableValidationTest {
     }
 
     private TemplateServiceImpl newService() {
-        return new TemplateServiceImpl(null, null, null, null, null, objectMapper, null, null);
+        return new TemplateServiceImpl(null, null, null, null, null, null, null);
     }
 
-    private TemplateVariableDefinition objectVariable() {
-        TemplateVariableDefinition customer = new TemplateVariableDefinition();
+    private TemplateVariableCommand objectVariable() {
+        TemplateVariableCommand customer = new TemplateVariableCommand();
         customer.setName("customer");
         customer.setType("OBJECT");
         customer.setRequired(true);
 
-        TemplateVariableDefinition name = new TemplateVariableDefinition();
+        TemplateVariableCommand name = new TemplateVariableCommand();
         name.setName("name");
         name.setType("STRING");
         name.setRequired(true);
@@ -106,18 +106,18 @@ class TemplateVariableValidationTest {
         return customer;
     }
 
-    private TemplateVariableDefinition arrayVariable() {
-        TemplateVariableDefinition items = new TemplateVariableDefinition();
+    private TemplateVariableCommand arrayVariable() {
+        TemplateVariableCommand items = new TemplateVariableCommand();
         items.setName("items");
         items.setType("ARRAY");
         items.setRequired(true);
 
-        TemplateVariableDefinition name = new TemplateVariableDefinition();
+        TemplateVariableCommand name = new TemplateVariableCommand();
         name.setName("name");
         name.setType("STRING");
         name.setRequired(true);
 
-        TemplateVariableDefinition qty = new TemplateVariableDefinition();
+        TemplateVariableCommand qty = new TemplateVariableCommand();
         qty.setName("qty");
         qty.setType("NUMBER");
         qty.setRequired(true);

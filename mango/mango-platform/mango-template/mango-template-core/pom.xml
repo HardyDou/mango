@@ -17,11 +17,6 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>io.mango.platform.domain</groupId>
-            <artifactId>mango-domain-api</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
             <groupId>io.mango.platform.resource</groupId>
             <artifactId>mango-resource-api</artifactId>
             <version>${project.version}</version>
@@ -34,6 +29,11 @@
         <dependency>
             <groupId>io.mango.infra.context</groupId>
             <artifactId>mango-infra-context-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.mango.infra.persistence</groupId>
+            <artifactId>mango-infra-persistence-api</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
@@ -68,6 +68,12 @@
         <dependency>
             <groupId>io.mango.infra.persistence</groupId>
             <artifactId>mango-infra-persistence-starter</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.mango.infra.fileproc</groupId>
+            <artifactId>mango-infra-fileproc-core</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
         </dependency>

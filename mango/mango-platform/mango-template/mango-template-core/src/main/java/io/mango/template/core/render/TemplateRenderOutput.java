@@ -9,4 +9,18 @@ package io.mango.template.core.render;
  * @param contentType 内容类型
  */
 public record TemplateRenderOutput(String content, byte[] fileBytes, String fileName, String contentType) {
+
+    public TemplateRenderOutput {
+        if (fileBytes != null) {
+            fileBytes = fileBytes.clone();
+        }
+    }
+
+    @Override
+    public byte[] fileBytes() {
+        if (fileBytes == null) {
+            return null;
+        }
+        return fileBytes.clone();
+    }
 }

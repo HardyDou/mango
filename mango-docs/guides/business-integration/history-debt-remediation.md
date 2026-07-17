@@ -45,6 +45,13 @@
 | 微服务假 E2E | 单进程 HTTP 测试 Mock 了内部 API/Provider，未发现 Feign 服务路由丢失 base path | 把“走了 HTTP”等同于跨进程 | 此类测试命名为 `*FlowTest`；最终 E2E 启动真实生产者/消费者 JVM，经服务发现验证请求、二进制流和副作用 |
 | 部分 Reactor 丢失模块路径事实 | sync-starter 的 Controller 路径正确，但定向架构命令没有纳入同域本地 starter，无法读取唯一合法 module-path | 为局部扫描补第二份 `module.properties`，破坏模块信息唯一归属 | 只有本地 starter 声明 `module.properties`；Controller 显式根路径并做接口测试；定向架构 Reactor 必须同时纳入同域本地 starter |
 | 纯 JVM 共享类型误入 API | request attribute key、codec 或本地协作值因跨模块使用被放进 API | 混淆 HTTP 契约和进程内复用 | 无 HTTP/Feign、无数据库的类型放 support；消费者声明直接依赖并执行编译/行为回归 |
+| 任意 JSON 使用裸 Map | 为支持动态变量在 API/Core 多层传递 `Map<String, Object>`，产生 unchecked cast 和模糊边界 | 把 wire format 的灵活性等同于 Java 类型无约束 | 使用具名 JSON 值对象，序列化仍保持普通 object；覆盖嵌套对象、数组和反序列化兼容测试 |
+| 远程响应包装泄漏 Core | Core 直接依赖 Feign `R<T>` 并自行判断远程失败 | HTTP 适配与业务规则没有边界 | Core 定义 Provider/本域值对象，starter/adapter 负责 Feign、`R<T>` 解包及失败语义 |
+| Demo 开关验收混淆 | demo 关闭的新库没有演示角色/菜单，就误判正式资源缺失 | 没有分别定义生产初始化和演示验收目标 | demo 关闭验证 DDL/正式资源纯净；demo 开启验证演示角色、菜单与页面，并记录实际配置前缀 |
+| 直连微服务缺上下文 | 绕过网关只传浏览器租户头，下游租户 SQL 因缺上下文失败 | 忽略网关到内部上下文协议的转换职责 | 优先经真实网关；直连时传 Mango 内部上下文头并验证 Feign 传播，禁止默认租户或关闭隔离绕过 |
+| 增量质量门禁掩盖存量 | changed-only/no-new 通过，但目标模块问题被归入 baseline | 把“无新增”等同于“债务已清零” | 审计报告四类列表和目标模块总量；历史债务验收要求目标范围静态问题为 0 |
+| 可变状态泄漏 | DTO、VO、record 直接保存/返回集合、Map、JSON wrapper 或 `byte[]` | 只测序列化和值相等，没有测试外部修改 | 输入和输出双向防御复制；集合不可变，数组逐次复制；兼容测试覆盖嵌套 JSON/二进制 |
+| 独立能力应用环境漂移 | 单体连 MySQL，capability app 却默认落到 H2；Feign URL 配置未命中实际 `contextId` | 单体测试没有经过独立数据源和真实远程客户端 | 每个 JVM 显式核对 JDBC URL；无注册中心直连按实际 `contextId` 配置绝对 URL并保留 base path/租户传播 |
 
 ## 4. 标准修复流程
 
@@ -158,6 +165,8 @@ node mango-pmo/tools/pmo-preflight.mjs \
 | UI/E2E | 用户入口、登录、菜单、路由、页面、按钮、业务操作和浏览器异常 | 所有内部边界分支 |
 | 发布物检查 | 真正交付的 JAR/包内容和仓库可消费性 | 业务语义 |
 
+静态质量报告也属于证据本身。历史债务任务不能只满足 changed-only/no-new：需要核对目标模块的 `issues`、`newIssues`、`baselineIssues`、`toolFailures`，确认存量问题没有被 baseline 隐藏。Spring 构造器注入被工具误报时，保留 `@RequiredArgsConstructor` 与 `private final I*Service`，通过缩小构造器可见性或移除不必要的可变依赖解决；禁止抑制注解、非 final 注入或包装 Service 规避规则。
+
 ### 5.2 Mock 边界
 
 Mock 只用于隔离被测目标之外的协作者，不能替换本次要证明的核心链路。
@@ -195,6 +204,9 @@ Mock 只用于隔离被测目标之外的协作者，不能替换本次要证明
 5. demo 关闭时没有演示数据，demo 开启时才导入且可重复执行。
 6. 至少一条关键新增、查询、修改链路真实读写成功。
 7. 健康探测和端口可访问只证明进程入口可响应；API/UI 验收安排在正式资源、demo 资源和角色菜单等派生关系达到预期稳定值之后，等待与断言范围见[后端测试规范](../../../mango-pmo/rules/backend/08-test.md)。
+8. demo 关闭与开启必须使用独立、可追溯的启动配置：前者证明生产初始化边界，后者证明演示角色和菜单可验收，不能用一套结果替代另一套。
+9. 多 JVM 验收逐进程核对实际 JDBC URL；必要时显式设置 `SPRING_DATASOURCE_URL/USERNAME/PASSWORD`，不能假设单体环境别名会被能力应用继承。
+10. 无注册中心直连 Feign 时，按实际客户端 `contextId` 配置绝对 URL，同时保留服务 base path 和 Mango 内部租户上下文传播；只让端口可达不算链路通过。
 
 ### 6.2 最终 JAR
 
@@ -273,6 +285,8 @@ E2E 优先使用 `data-page`、`data-surface`、`data-action`、`data-field`、`
 - 源码已修复，但运行时仍从 `~/.m2` 加载旧 JAR，没有用 `clean install` + SHA/JAR 清单确认实际 classpath。
 - Controller 单元测试绕过授权，没有检查 permission 是否真实出现在新库角色权限集。
 - 单进程 Flow 测试 Mock 了内部远程调用，却宣称微服务 E2E 通过。
+- 绕过网关直连能力服务时只传浏览器租户头，随后用默认租户或关闭租户拦截器掩盖上下文传播缺失。
+- 动态 JSON 仍以裸 Map 和 unchecked cast 贯穿 API/Core，却只用一个标量样例声称兼容。
 - 发布成功后没有从目标 Maven/npm 仓库重新拉取验证。
 - 为了让旧 E2E 变绿，放宽权限断言或回退已经确认的新菜单结构。
 - 聚合静态报告的生成时间早于当前 class，却仍将其中旧行号和旧构造器当成当前提交问题。

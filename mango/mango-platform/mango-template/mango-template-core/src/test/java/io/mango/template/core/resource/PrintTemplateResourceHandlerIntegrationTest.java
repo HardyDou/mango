@@ -2,14 +2,33 @@ package io.mango.template.core.resource;
 
 import com.baomidou.mybatisplus.autoconfigure.MybatisPlusAutoConfiguration;
 import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguration;
+import io.mango.infra.context.api.MangoContextHolder;
+import io.mango.infra.context.api.MangoContextSnapshot;
+import io.mango.infra.fileproc.render.service.DefaultRenderApi;
+import io.mango.infra.fileproc.render.service.FreemarkerRenderEngine;
+import io.mango.infra.fileproc.render.service.RenderRegistry;
+import io.mango.infra.fileproc.render.service.TextRenderProvider;
 import io.mango.resource.support.ResourceTypes;
 import io.mango.resource.api.enums.ResourceFieldType;
 import io.mango.resource.support.model.ResourceDeclaration;
 import io.mango.resource.support.model.ResourceField;
+import io.mango.template.api.command.CreateTemplateCommand;
+import io.mango.template.api.command.PublishTemplateVersionCommand;
+import io.mango.template.api.command.TemplateJsonRequest;
+import io.mango.template.api.command.TemplateRenderCommand;
+import io.mango.template.api.command.TemplateVariableCommand;
+import io.mango.template.api.enums.TemplateOutputFormat;
+import io.mango.template.api.enums.TemplateSourceFormat;
+import io.mango.template.api.vo.TemplateRenderResultVO;
 import io.mango.template.core.mapper.TemplateCategoryMapper;
 import io.mango.template.core.mapper.TemplateMapper;
 import io.mango.template.core.mapper.TemplateRenderRecordMapper;
 import io.mango.template.core.mapper.TemplateVersionMapper;
+import io.mango.template.core.render.TemplateRenderManager;
+import io.mango.template.core.service.ITemplateFileStore;
+import io.mango.template.core.service.TemplateDomainInfo;
+import io.mango.template.core.service.TemplateStoredFile;
+import io.mango.template.core.service.impl.TemplateServiceImpl;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,6 +44,7 @@ import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
+import java.util.List;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -56,6 +76,7 @@ class PrintTemplateResourceHandlerIntegrationTest {
 
     @AfterEach
     void tearDown() {
+        MangoContextHolder.clear();
         if (context != null) {
             context.close();
         }
@@ -127,6 +148,70 @@ class PrintTemplateResourceHandlerIntegrationTest {
         assertThat(count("template_category")).isOne();
     }
 
+    @Test
+    void serviceCreatesPublishesAndRendersAgainstRealPersistenceAndRenderEngine() throws Exception {
+        MangoContextHolder.set(MangoContextSnapshot.request("request-1", "trace-1", "1", "internal-admin", "127.0.0.1")
+                .withSecurity(1001L, "1", "tester", "internal", "USER", "TENANT", 1L, "internal-admin"));
+        DefaultRenderApi renderApi = new DefaultRenderApi(
+                new RenderRegistry(List.of(new TextRenderProvider(new FreemarkerRenderEngine()))), null);
+        TemplateServiceImpl service = new TemplateServiceImpl(
+                context.getBean(TemplateMapper.class),
+                context.getBean(TemplateVersionMapper.class),
+                context.getBean(TemplateRenderRecordMapper.class),
+                TemplateRenderManager.create(renderApi, null),
+                unsupportedFileStore(),
+                Runnable::run,
+                domainCode -> new TemplateDomainInfo(domainCode, "合同域", 1));
+
+        CreateTemplateCommand create = new CreateTemplateCommand();
+        create.setTemplateCode("contract.notice.integration");
+        create.setTemplateName("合同通知集成模板");
+        create.setDomainCode("CONTRACT");
+        Long templateId = service.create(create);
+
+        TemplateVariableCommand variable = new TemplateVariableCommand();
+        variable.setName("contractNo");
+        variable.setType("STRING");
+        variable.setRequired(true);
+        PublishTemplateVersionCommand publish = new PublishTemplateVersionCommand();
+        publish.setTemplateId(templateId);
+        publish.setSourceFormat(TemplateSourceFormat.TEXT);
+        publish.setContent("合同编号：${contractNo}");
+        publish.setVariables(List.of(variable));
+        Long versionId = service.publishVersion(publish);
+
+        TemplateRenderCommand render = new TemplateRenderCommand();
+        render.setTemplateCode("contract.notice.integration");
+        render.setOutputFormat(TemplateOutputFormat.TEXT);
+        render.setVariables(TemplateJsonRequest.of(Map.of("contractNo", "M-2026-001")));
+        TemplateRenderResultVO result = service.render(render);
+
+        assertThat(templateId).isPositive();
+        assertThat(versionId).isPositive();
+        assertThat(result.getStatus()).isEqualTo("SUCCESS");
+        assertThat(result.getContent()).isEqualTo("合同编号：M-2026-001");
+        assertThat(service.detail(templateId).getCurrentVersionNo()).isOne();
+        assertThat(stringValue("template_render_record", "status", "template_id = " + templateId))
+                .isEqualTo("SUCCESS");
+        assertThat(stringValue("template_render_record", "output_content", "template_id = " + templateId))
+                .isEqualTo("合同编号：M-2026-001");
+    }
+
+    private ITemplateFileStore unsupportedFileStore() {
+        return new ITemplateFileStore() {
+            @Override
+            public Long save(byte[] content, String fileName, String contentType,
+                             String purpose, String bizType, String bizId) {
+                throw new UnsupportedOperationException("文本渲染不应保存文件");
+            }
+
+            @Override
+            public TemplateStoredFile read(Long fileId) {
+                throw new UnsupportedOperationException("文本渲染不应读取文件");
+            }
+        };
+    }
+
     private ResourceDeclaration declaration() {
         ResourceDeclaration declaration = new ResourceDeclaration();
         declaration.setId("3000100000000000001");
@@ -171,17 +256,16 @@ class PrintTemplateResourceHandlerIntegrationTest {
         execute("""
                 create table template_category (
                     id bigint not null,
-                    tenant_id bigint not null,
+                    tenant_id varchar(64) not null,
+                    org_id bigint,
                     category_code varchar(64) not null,
                     category_name varchar(128) not null,
                     sort int not null default 0,
                     status tinyint not null default 1,
                     remark varchar(255),
                     created_by bigint,
-                    created_time timestamp not null default current_timestamp,
                     created_at timestamp not null default current_timestamp,
                     updated_by bigint,
-                    updated_time timestamp not null default current_timestamp,
                     updated_at timestamp not null default current_timestamp,
                     primary key (id),
                     unique key uk_template_category_tenant_code (tenant_id, category_code)
@@ -190,7 +274,8 @@ class PrintTemplateResourceHandlerIntegrationTest {
         execute("""
                 create table template (
                     id bigint not null,
-                    tenant_id bigint not null,
+                    tenant_id varchar(64) not null,
+                    org_id bigint,
                     template_code varchar(128) not null,
                     template_name varchar(128) not null,
                     category_code varchar(64),
@@ -209,10 +294,8 @@ class PrintTemplateResourceHandlerIntegrationTest {
                     has_unpublished_changes tinyint not null default 0,
                     remark varchar(255),
                     created_by bigint,
-                    created_time timestamp not null default current_timestamp,
                     created_at timestamp not null default current_timestamp,
                     updated_by bigint,
-                    updated_time timestamp not null default current_timestamp,
                     updated_at timestamp not null default current_timestamp,
                     primary key (id),
                     unique key uk_template_tenant_code (tenant_id, template_code),
@@ -222,7 +305,8 @@ class PrintTemplateResourceHandlerIntegrationTest {
         execute("""
                 create table template_version (
                     id bigint not null,
-                    tenant_id bigint not null,
+                    tenant_id varchar(64) not null,
+                    org_id bigint,
                     template_id bigint not null,
                     version_no int not null,
                     source_format varchar(32) not null,
@@ -232,10 +316,8 @@ class PrintTemplateResourceHandlerIntegrationTest {
                     current_published tinyint not null default 0,
                     version_remark varchar(255),
                     created_by bigint,
-                    created_time timestamp not null default current_timestamp,
                     created_at timestamp not null default current_timestamp,
                     updated_by bigint,
-                    updated_time timestamp not null default current_timestamp,
                     updated_at timestamp not null default current_timestamp,
                     primary key (id),
                     unique key uk_template_version_no (template_id, version_no)
@@ -244,7 +326,8 @@ class PrintTemplateResourceHandlerIntegrationTest {
         execute("""
                 create table template_render_record (
                     id bigint not null,
-                    tenant_id bigint not null,
+                    tenant_id varchar(64) not null,
+                    org_id bigint,
                     template_id bigint not null,
                     template_code varchar(128) not null,
                     version_id bigint not null,
@@ -258,10 +341,8 @@ class PrintTemplateResourceHandlerIntegrationTest {
                     biz_type varchar(64),
                     biz_id varchar(128),
                     created_by bigint,
-                    created_time timestamp not null default current_timestamp,
                     created_at timestamp not null default current_timestamp,
                     updated_by bigint,
-                    updated_time timestamp not null default current_timestamp,
                     updated_at timestamp not null default current_timestamp,
                     primary key (id)
                 )
