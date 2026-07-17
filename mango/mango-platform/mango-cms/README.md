@@ -74,6 +74,25 @@ SiteResolveVO site = cmsSiteApi.resolveSite(query).getData();
 </dependency>
 ```
 
+`mango-cms-starter-remote` 通过 `CmsRemoteAutoConfiguration` 自动注册以下 Feign 适配器，无需业务应用手工添加 `@EnableFeignClients`：
+
+| 能力 API | FeignClient | HTTP 根路径 |
+|----------|-------------|---------------|
+| `CmsContentCategoryApi` | `CmsContentCategoryFeignClient` | `/cms` |
+| `CmsContentTagApi` | `CmsContentTagFeignClient` | `/cms` |
+| `CmsSiteAdminApi` | `CmsSiteAdminFeignClient` | `/cms` |
+| `CmsSiteCategoryApi` | `CmsSiteCategoryFeignClient` | `/cms` |
+| `CmsContentApi` | `CmsContentFeignClient` | `/cms` |
+| `CmsContentPublishApi` | `CmsContentPublishFeignClient` | `/cms` |
+| `CmsNavigationApi` | `CmsNavigationFeignClient` | `/cms` |
+| `CmsBannerApi` | `CmsBannerFeignClient` | `/cms` |
+| `CmsAdvertisementApi` | `CmsAdvertisementFeignClient` | `/cms` |
+| `CmsAdDeliveryApi` | `CmsAdDeliveryFeignClient` | `/cms` |
+| `CmsSiteSettingApi` | `CmsSiteSettingFeignClient` | `/cms` |
+| `CmsSiteApi` | `CmsSiteFeignClient` | `/cms/open` |
+
+`CmsAdminApi` 已删除，不保留聚合兼容门面。原消费者应按职责改为注入上表对应的管理 API；HTTP 路径、请求字段、返回泛型和权限码没有变化。
+
 `mango-cms-starter` 默认随应用启用；需要关闭时配置：
 
 ```yaml
@@ -189,6 +208,8 @@ CMS 管理页面通过 `@mango/cms` 注册，菜单由 `cms-common-menu.json` �
 
 ## 13. 变更影响记录
 
+- 后台 66 个管理方法由 `CmsAdminApi` 拆分到 11 个能力 API，每个 API 具有唯一 Controller 和 FeignClient；`CmsSiteApi` 继续作为公开站点只读聚合模型。
+- `mango-cms-starter-remote` 不再是空制品，现通过 Spring Boot 自动配置注册 12 个 `mango-cms` FeignClient。
 - CMS 演示数据按站点、配置、栏目、导航、Banner、广告、投放、内容和发布关系分别登记在
   `META-INF/mango/demo/`；仅在 `demo-enabled=true` 时按 `INIT_ONLY` 同步。
 - Flyway 继续只负责 DDL，`META-INF/mango/resources/` 只承载默认同步的菜单和未来必须初始化的数据。
