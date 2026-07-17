@@ -2,7 +2,7 @@
 
 ## 1. 背景
 
-本文记录 Payment、CMS、Workflow、Notice、Org、System、Authorization、Resource 和 File Preview 治理暴露的真实失败模式，作为后续模块排序、方案设计和验收的经验输入。长期开发、数据库、测试和交付约束仍以 `mango-pmo` 为唯一规范源，本文不替代规范。
+本文记录 Payment、CMS、Workflow、Notice、Org、System、Authorization、Resource、File Preview 和 Template 治理暴露的真实失败模式，作为后续模块排序、方案设计和验收的经验输入。长期开发、数据库、测试和交付约束仍以 `mango-pmo` 为唯一规范源，本文不替代规范。
 
 ## 2. 已发生的问题类型
 
@@ -54,6 +54,11 @@
 | Controller 有权限注解但正式资源未声明 | File Preview 上传正常，但新库管理员调用预览链接返回 403 | 单元/Mock Flow 关闭授权，老库可能已有手工权限绑定 | 每个 `@ApiAccess(PERMISSION)` 都必须在所属模块正式菜单/Api Resource 中存在；新库以真实角色调用成功和无权限拒绝双向证明 |
 | 源码新但本地 Maven 运行物仍旧 | 工作区已修复 Feign base path 和删除 Security Customizer，双进程却仍 404 并输出 22 条旧警告 | 普通增量 `install` 复用了旧 classes/JAR，只看源码无法确认实际 classpath | 删除类、migration 或资源后必须 `clean install/package`；对比 target 与 `~/.m2` SHA-256、`jar tf`、`javap`/class 清单；重启真实消费者 |
 | 单进程 Mock 链路代替微服务验收 | File Preview 旧“E2E” Mock `FileApi` 和内容 Provider，无法发现 Feign 服务名改写丢失 `/file/files` | 测试运行了 HTTP，但核心跨进程边界被替身掉 | 正确命名为 Flow 测试；最终微服务 E2E 分别启动产生者/消费者，通过服务发现真实上传、元数据、二进制流和页面正文闭环验证 |
+| 任意 JSON 为逃避强转使用裸 Map | Template 渲染变量直接在多层传递 `Map<String, Object>` 并依赖 unchecked cast | 只验证简单标量 JSON，没有冻结嵌套对象的线格式与类型边界 | API 用具名 JSON 值对象封装并保持 wire object 不变；兼容测试覆盖标量、嵌套对象、数组和反序列化回放 |
+| 远程 `R<T>` 泄漏进 Core | Template Core 为校验业务域直接依赖远程响应包装，进程内业务层被 HTTP 成功/失败语义污染 | 单体装配时远程实现与本地实现位于同一进程，分层问题不影响功能测试 | Core 只依赖本域 Provider/值对象；starter 适配 Feign 并统一解包 `R<T>`、空响应和失败消息 |
+| Demo 未显式开启导致菜单验收假失败 | Fresh DB DDL 和正式资源均成功，但演示管理员角色为零，页面菜单为空 | 把“新库启动成功”误当成“演示验收数据已加载” | 分别验证 demo 关闭的生产初始化和 demo 开启的验收初始化；启动命令显式设置正确资源注册前缀并核对角色/菜单计数 |
+| 登录 E2E 在响应结束后才等待响应 | 自动填充/失焦已触发前置请求，测试随后 `waitForResponse` 永久错过事件 | 用网络等待代替页面稳定状态，且没有围绕真正登录 POST 建立等待 | 前置状态用可见内容判断；在点击登录前注册对登录 POST 的等待，并断言 HTTP 与业务响应双成功 |
+| 直连能力服务混用浏览器租户头和内部上下文头 | 绕过网关直调 Template 服务只传 `X-Tenant-Id`，下游 Domain 收不到租户上下文，租户 SQL 被拒绝 | 单体共享线程上下文，无法暴露跨 JVM 传播协议差异 | 微服务 E2E 经网关时验证网关转换；确需直连时按内部协议传 `X-Mango-Tenant-Id`，并由 Feign 继续传播，禁止配置默认租户绕过 |
 
 ## 3. 改前与改后不变性的证明方式
 
@@ -90,6 +95,11 @@
 29. Bean Validation 验收不能停在注解或异常类型；必须从真实 HTTP 入口断言非法参数返回 400 和稳定消息，避免 `ConstraintViolationException` 落入系统异常 500。
 30. 一个业务域只能由本地 starter 提供唯一 module metadata；sync/support/remote 不得重复声明。定向架构 Reactor 若检查同域适配器，必须同时纳入本地 starter，不能用新增元数据修补扫描范围缺失。
 31. 跨模块共享不自动等于 API；request attribute key 等纯 JVM 契约应放无数据库、无 HTTP 的 support，并通过真实消费者编译证明迁移完整。
+32. 任意 JSON 输入应使用具名值对象固定 Java 边界，同时用序列化兼容测试证明外部仍是普通 JSON object，不能以裸 Map 和 unchecked cast 换取表面灵活。
+33. Core 不处理远程 `R<T>`；Feign 响应解包、空响应和失败消息归 starter/adapter，Core 只消费本域 Provider。
+34. Fresh DB 需分两套验收：demo 关闭证明生产初始化纯净，demo 开启证明演示角色、菜单和页面可用；两者不能互相替代。
+35. 跨 JVM 直连测试必须使用 Mango 内部上下文头或真实网关，不能设置默认租户、关闭租户拦截器来伪造通过。
+36. E2E 网络等待必须在触发动作前注册；对已由自动填充触发的前置请求应断言最终页面状态，避免响应竞态。
 
 ## 4. 后续模块处理节奏
 

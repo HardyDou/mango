@@ -1,4 +1,4 @@
-package io.mango.template.api;
+package io.mango.template.api.enums;
 
 import io.mango.common.result.BizCode;
 import lombok.AllArgsConstructor;
@@ -10,6 +10,9 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public enum TemplateCode implements BizCode {
+
+    /** 模板请求参数或上下文非法。 */
+    TEMPLATE_VALIDATION_ERROR(3601, "模板请求参数非法"),
 
     /** 模板不存在。 */
     TEMPLATE_NOT_FOUND(3604, "模板不存在"),

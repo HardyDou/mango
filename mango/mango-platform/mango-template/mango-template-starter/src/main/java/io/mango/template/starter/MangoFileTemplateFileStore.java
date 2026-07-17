@@ -4,7 +4,7 @@ import io.mango.file.api.IFileContentProvider;
 import io.mango.file.api.command.SaveFileCommand;
 import io.mango.file.api.vo.FileDownloadVO;
 import io.mango.file.api.vo.FileRecordVO;
-import io.mango.template.api.TemplateCode;
+import io.mango.template.api.enums.TemplateCode;
 import io.mango.template.core.service.ITemplateFileStore;
 import io.mango.template.core.service.TemplateStoredFile;
 import lombok.RequiredArgsConstructor;

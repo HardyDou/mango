@@ -1,6 +1,5 @@
 package io.mango.template.api.vo;
 
-import io.mango.template.api.command.TemplateVariableDefinition;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -28,5 +27,5 @@ public class TemplateDetailVO extends TemplateVO {
     private Long draftSourceFileId;
 
     @Schema(description = "结构化未发布草稿变量定义")
-    private List<TemplateVariableDefinition> draftVariables = new ArrayList<>();
+    private List<TemplateVariableVO> draftVariables = new ArrayList<>();
 }

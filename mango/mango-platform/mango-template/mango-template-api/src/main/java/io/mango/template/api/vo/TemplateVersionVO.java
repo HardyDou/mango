@@ -1,6 +1,5 @@
 package io.mango.template.api.vo;
 
-import io.mango.template.api.command.TemplateVariableDefinition;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
@@ -33,7 +32,7 @@ public class TemplateVersionVO implements Serializable {
     @Schema(description = "变量定义JSON")
     private String variableSchema;
     @Schema(description = "结构化变量定义")
-    private List<TemplateVariableDefinition> variables = new ArrayList<>();
+    private List<TemplateVariableVO> variables = new ArrayList<>();
     @Schema(description = "是否当前发布版本：0否，1是")
     private Integer currentPublished;
     @Schema(description = "版本说明")

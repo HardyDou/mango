@@ -1,6 +1,6 @@
 package io.mango.template.core.render;
 
-import io.mango.template.api.command.TemplateVariableDefinition;
+import io.mango.template.api.command.TemplateVariableCommand;
 import io.mango.template.api.enums.TemplateOutputFormat;
 import io.mango.template.api.enums.TemplateSourceFormat;
 
@@ -19,7 +19,7 @@ public record TemplateRenderPayload(
         byte[] sourceBytes,
         String sourceFileName,
         Map<String, Object> variables,
-        List<TemplateVariableDefinition> variableDefinitions) {
+        List<TemplateVariableCommand> variableDefinitions) {
 
     public TemplateRenderPayload {
         variables = variables == null ? new LinkedHashMap<>() : new LinkedHashMap<>(variables);

@@ -1,22 +1,18 @@
 package io.mango.template.core.entity;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import io.mango.infra.persistence.api.entity.TenantEntity;
 import lombok.Data;
-
-import java.time.LocalDateTime;
+import lombok.EqualsAndHashCode;
 
 /**
  * 模板主表实体。
  */
 @Data
+@EqualsAndHashCode(callSuper = true)
 @TableName("template")
-public class Template {
+public class TemplateEntity extends TenantEntity {
 
-    @TableId(type = IdType.ASSIGN_ID)
-    private Long id;
-    private Long tenantId;
     private String templateCode;
     private String templateName;
     private String categoryCode;
@@ -34,10 +30,4 @@ public class Template {
     private String draftVariableSchema;
     private Integer hasUnpublishedChanges;
     private String remark;
-    private Long createdBy;
-    private LocalDateTime createdTime;
-    private LocalDateTime createdAt;
-    private Long updatedBy;
-    private LocalDateTime updatedTime;
-    private LocalDateTime updatedAt;
 }
