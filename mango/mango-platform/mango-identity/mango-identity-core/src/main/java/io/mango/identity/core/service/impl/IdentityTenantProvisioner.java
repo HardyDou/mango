@@ -41,18 +41,22 @@ public class IdentityTenantProvisioner implements TenantProvisioner, TenantDepen
     @Override
     public void provision(TenantProvisionCommand context) {
         Long creatorUserId = MangoContextHolder.userId();
-        if (creatorUserId == null) {
-            return;
+        if (creatorUserId != null) {
+            IdentityUserEntity creator = identityUserMapper.selectById(creatorUserId);
+            if (creator != null) {
+                ensureTenantAdminMember(context, creator);
+            }
         }
-        IdentityUserEntity creator = identityUserMapper.selectById(creatorUserId);
-        if (creator == null) {
-            return;
-        }
-        TenantMemberEntity member = ensureTenantAdminMember(context, creator);
         Long roleId = findAdminRoleId(context.getTenantId());
-        if (roleId != null) {
-            ensureRoleBinding(context, member.getMemberId(), roleId);
+        if (roleId == null) {
+            return;
         }
+        tenantMemberMapper.selectList(new LambdaQueryWrapper<TenantMemberEntity>()
+                        .eq(TenantMemberEntity::getTenantId, context.getTenantId())
+                        .eq(TenantMemberEntity::getMemberType, "INSTITUTION_ADMIN")
+                        .eq(TenantMemberEntity::getStatus, 1)
+                        .isNull(TenantMemberEntity::getLeftAt))
+                .forEach(member -> ensureRoleBinding(context, member.getMemberId(), roleId));
     }
 
     @Override

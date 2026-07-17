@@ -37,16 +37,25 @@ async function handleInteraction(payload: {
 }
 
 async function openNamedTarget(targetKey: string, params?: Record<string, unknown>) {
+  const path = NOTICE_TARGET_PATHS[targetKey];
+  if (!path && !router.hasRoute(targetKey)) {
+    ElMessage.warning('目标未注册或当前无权访问');
+    return;
+  }
   try {
-    await router.push({
-      name: targetKey,
-      query: normalizeQuery(params),
-    });
+    await router.push(path
+      ? { path, query: normalizeQuery(params) }
+      : { name: targetKey, query: normalizeQuery(params) });
   } catch (error) {
     console.warn('Notice target navigation failed', targetKey, error);
     ElMessage.warning('目标未注册或当前无权访问');
   }
 }
+
+const NOTICE_TARGET_PATHS: Record<string, string> = {
+  'notice:receive-setting': '/notice/receive-setting',
+  'notice:announcement-user': '/message-center/announcement',
+};
 
 function normalizeQuery(params?: Record<string, unknown>) {
   return Object.fromEntries(Object.entries(params || {})

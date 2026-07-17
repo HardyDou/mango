@@ -5,7 +5,8 @@
  */
 import type { RouteRecordRaw } from 'vue-router';
 import menuJson from './menu.json';
-import { MangoAdminLayout } from '@mango/admin-shell';
+import { ensureFeatureRegistrars, MangoAdminLayout } from '@mango/admin-shell';
+import { getRegisteredPageRoutes } from '@mango/admin-pages';
 import { menuApi, type SysMenuVO } from '@/api/admin/menu';
 import { componentsMap } from './componentsMap';
 import { DEV_COMPONENT_DEMO_PAGES, DEV_COMPONENT_DEMO_REDIRECT } from '@mango/admin-pages/dev-component-pages';
@@ -289,6 +290,7 @@ export class MenuLoader {
    * 合并策略：前端配置（组件库、示例页面）在前，后端配置（系统管理）在后
    */
   async loadFromBackend(): Promise<MenuItem[]> {
+    await ensureFeatureRegistrars();
     const response = await menuApi.getUserMenus({ fmt: 'tree' });
     const backendMenus = filterMenuForRoute(response.menus || []);
     if (!backendMenus || backendMenus.length === 0) {
@@ -448,10 +450,27 @@ export class MenuLoader {
   }
 
   getHiddenRuntimeRoutes(): RouteRecordRaw[] {
-    return [
+    const builtInRoutes: RouteRecordRaw[] = [
       this.homeDetailRoute(),
       this.paymentCashierRoute(),
     ];
+    const registeredRoutes = getRegisteredPageRoutes()
+      .filter(route => route.visible === 0)
+      .map(route => ({
+        path: route.path,
+        name: route.menuCode || `registered-hidden:${route.moduleCode}:${route.path}`,
+        component: componentsMap[route.component],
+        meta: {
+          title: route.menuName || route.path,
+          icon: route.icon,
+          isHide: true,
+          keepAlive: route.keepAlive === 1,
+        },
+      } satisfies RouteRecordRaw))
+      .filter(route => Boolean(route.component));
+    return Array.from(new Map(
+      [...builtInRoutes, ...registeredRoutes].map(route => [route.path, route]),
+    ).values());
   }
 
   private homeDetailRoute(): RouteRecordRaw {

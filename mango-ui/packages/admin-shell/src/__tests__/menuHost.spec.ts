@@ -5,6 +5,7 @@ import {
   findUnexpectedTopLevelMenus,
   isRunnableMenu,
   resolveAccessibleMenuPath,
+  resolveMenuPathByCode,
   resolveDirectoryRouteRedirect,
   shouldShowDevCenter,
   MenuTypeEnum,
@@ -153,6 +154,61 @@ describe('admin-shell menu contract', () => {
 
     expect(resolveAccessibleMenuPath(menu)).toBe('');
     expect(resolveDirectoryRouteRedirect(menu, '/guarantee')).toBe('');
+  });
+
+  it('resolves a nested backend menu path by menu code', () => {
+    const menu = createRouteMenu({
+      menuType: MenuTypeEnum.DIRECTORY,
+      path: '/message-center',
+      children: [
+        createRouteMenu({
+          menuCode: 'notice:site-message',
+          menuType: MenuTypeEnum.MENU,
+          path: '/message-center/site-message',
+          component: 'notice/site-message/index',
+        }),
+      ],
+    });
+
+    expect(resolveMenuPathByCode([menu], 'notice:site-message')).toBe('/message-center/site-message');
+  });
+
+  it('resolves an explicitly registered hidden page by menu code', () => {
+    registerModulePages({
+      moduleCode: 'mango-notice-route-test',
+      pages: {
+        'notice/receive-setting/index': async () => ({}),
+      },
+      routes: [{
+        menuCode: 'notice:receive-setting',
+        path: '/notice/receive-setting',
+        component: 'notice/receive-setting/index',
+        visible: 0,
+      }],
+    });
+
+    expect(resolveMenuPathByCode([], 'notice:receive-setting')).toBe('/notice/receive-setting');
+  });
+
+  it('resolves legacy mango-admin route names that preserve backend menu codes', () => {
+    const menu = {
+      path: '/message-center/site-message',
+      name: 'notice:site-message',
+      meta: { title: '我的消息' },
+    } as ShellRouteMenu;
+
+    expect(resolveMenuPathByCode([menu], 'notice:site-message')).toBe('/message-center/site-message');
+  });
+
+  it('returns an empty path when a menu code is missing or not navigable', () => {
+    const menu = createRouteMenu({
+      menuCode: 'notice:broken',
+      menuType: MenuTypeEnum.MENU,
+      path: '/notice/broken',
+    });
+
+    expect(resolveMenuPathByCode([menu], 'notice:missing')).toBe('');
+    expect(resolveMenuPathByCode([menu], 'notice:broken')).toBe('');
   });
 
   it('does not redirect runnable menu routes so missing component errors remain visible', () => {
@@ -327,7 +383,7 @@ describe('admin-shell menu contract', () => {
   });
 });
 
-function createRouteMenu(overrides: Partial<ShellRouteMenu>): ShellRouteMenu {
+function createRouteMenu(overrides: Partial<ShellRouteMenu> & { menuCode?: string; visible?: number }): ShellRouteMenu {
   const path = overrides.path || '/test';
   return {
     path,
@@ -340,14 +396,14 @@ function createRouteMenu(overrides: Partial<ShellRouteMenu>): ShellRouteMenu {
     sourceMenu: {
       menuId: path,
       menuName: String(overrides.name || path),
-      menuCode: String(overrides.name || path),
+      menuCode: overrides.menuCode || String(overrides.name || path),
       parentId: 0,
       menuType: overrides.menuType || MenuTypeEnum.MENU,
       path,
       component: overrides.component,
       sort: 1,
       status: 1,
-      visible: 1,
+      visible: overrides.visible ?? 1,
       children: [],
     },
     component: overrides.component,

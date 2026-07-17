@@ -8,7 +8,7 @@
         "AUTH_MENU": [
           {
             "id": "2951300000000009301",
-            "version": 1,
+            "version": 2,
             "bizKey": "notice.menu.internal-admin",
             "name": "通知中心菜单",
             "targetModule": "authorization",
@@ -108,7 +108,9 @@
                         ],
                         "apiCodes": [
                           "notice:task:view",
-                          "notice:task:create"
+                          "notice:task:create",
+                          "notice:site:create",
+                          "notice:site:delete"
                         ]
                       },
                       {
@@ -232,6 +234,7 @@
                         "apiCodes": [
                           "notice:site:view",
                           "notice:site:edit",
+                          "notice:business:view",
                           "notice:receive-setting:view",
                           "notice:receive-setting:edit"
                         ]
@@ -245,11 +248,12 @@
                         "component": "notice/site-message/index",
                         "sort": 1,
                         "remark": "当前用户系统消息列表和接收设置入口",
+                        "roleCodes": [
+                          "ROLE_LOGIN"
+                        ],
                         "apiCodes": [
                           "notice:site:view",
-                          "notice:site:create",
-                          "notice:site:edit",
-                          "notice:site:delete"
+                          "notice:site:edit"
                         ]
                       },
                       {
@@ -261,6 +265,9 @@
                         "component": "notice/announcement-user/index",
                         "sort": 2,
                         "remark": "当前用户公告列表、阅读和确认入口",
+                        "roleCodes": [
+                          "ROLE_LOGIN"
+                        ],
                         "apiCodes": [
                           "notice:site:view",
                           "notice:site:edit"

@@ -205,6 +205,8 @@ Shell 首页默认布局会接入 `@mango/grid-widgets` 的系统预制小组件
 
 Shell 顶部通知铃铛只负责展示站内消息入口和跳转，不定义通知业务菜单。公告类消息的详情跳转目标为用户端 `消息中心 / 公告`，路由是 `/message-center/announcement?id=公告ID`；普通站内消息列表入口是 `/message-center/site-message`。管理端公告维护入口由 `@mango/notice` 的后端菜单资源声明提供，不应写在 Shell 内部。
 
+铃铛的“查看全部”和“接收设置”会从 Shell 当前菜单树按 `menuCode` 解析真实路径，再交给通配 `ShellMenu` 路由挂载页面；动态菜单编码不是 Vue Router 命名路由。接收设置由 Notice 页面注册表声明为隐藏页面。目标菜单或页面不存在时，Shell 显示不可访问提示，不向 Vue 错误处理器抛出未匹配命名路由异常。
+
 ### Menu Contract
 
 Shell 只消费后端授权菜单。菜单 `component` 会归一化后匹配 `@mango/admin-pages` 注册的页面 key；匹配失败时显示 404，不会自动推断业务包路径。后端菜单、前端注册 key、能力开关必须保持一致。

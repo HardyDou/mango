@@ -20,6 +20,7 @@
 | 菜单管理 | 保存目录、菜单、按钮权限、页面 key、路由、运行类型和可见状态 |
 | 菜单资源 | 消费 Resource Registry 的 `AUTH_MENU` 声明，批量注册模块菜单、按钮权限、页面 key、套餐绑定和默认角色授权 |
 | 角色授权 | 管理角色、成员角色绑定、角色菜单授权 |
+| 内置默认角色 | 正式资源初始化 `ROLE_LOGIN`、`ROLE_ANONYMOUS`；机构初始化时自动创建并继承平台默认菜单授权 |
 | 数据权限 | 按角色配置资源级数据范围，解析当前成员生效范围 |
 | 用户菜单 | 按当前成员授权快照返回可见菜单树 |
 | 授权快照 | 为 `mango-auth` 返回 roles 和 permissions，为 `mango-access` 做权限码匹配 |
@@ -109,12 +110,14 @@
 3. 部署应用启用 `mango-resource-sync-starter`，并按拓扑选择本地 `mango-resource-starter` 或远程 `mango-resource-starter-remote`。
 4. 在模块资源目录放 `META-INF/mango/resources/{module}-common-menu.{json,yml,yaml}`，用 `AUTH_MENU` 登记模块、菜单、页面 key 和 `apiCodes`。菜单量大时优先使用 JSON。
 5. 启动服务后确认 `authorization_api_resource` 有接口资源，`authorization_menu` 有菜单和 `api_codes`。
-6. 给租户绑定菜单套餐，由租户套餐同步角色菜单；`roleCodes` 只用于已明确确认的默认角色场景。
+6. 给租户绑定菜单套餐，由租户套餐同步管理员角色菜单；`roleCodes` 用于 `ROLE_LOGIN`、`ROLE_ANONYMOUS` 等已明确确认的默认角色场景。
 7. 给成员绑定角色。
 8. 登录后检查 `/auth/info` 的 `permissions` 和 `/authorization/menus/user?fmt=tree&appCode=internal-admin` 的菜单树。
 9. 访问受保护接口，确认无权限返回 403、授权后通过。
 
 基础接口不用给每个角色或用户单独配置权限。所有登录用户都应具备的 `PERMISSION` 接口，挂到隐藏菜单并授权给 `ROLE_LOGIN`；匿名可用接口挂到隐藏菜单并授权给 `ROLE_ANONYMOUS`。管理员只需要分配业务菜单，系统会自动授予该菜单的 `apiCodes`。
+
+`authorization-common-bootstrap.yml` 会为平台租户初始化 `ROLE_LOGIN` 和 `ROLE_ANONYMOUS`。机构创建或启动基线对账时，`AuthorizationTenantProvisioner` 会为每个启用机构补齐这两个系统角色，并复制平台角色的默认菜单授权；业务代码不应给普通成员逐个绑定这两个角色。
 
 登录态权限集合只读取当前角色已授权菜单的 `apiCodes` 字段，不读取 `menuCode`。因此 `menuCode` 可以稳定表达菜单可见性，`apiCodes` 才表达真实接口/动作权限。隐藏菜单 `visible=0` 可以只授予基础权限，不会把父级菜单带入用户菜单树。
 

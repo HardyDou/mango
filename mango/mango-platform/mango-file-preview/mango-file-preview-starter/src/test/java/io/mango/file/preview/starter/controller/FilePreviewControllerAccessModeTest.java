@@ -17,10 +17,10 @@ class FilePreviewControllerAccessModeTest {
     }
 
     @Test
-    void fileIdPreviewEndpointsUseDefaultRoleDownloadPermission() throws NoSuchMethodException {
-        assertAccessMode("preview", ApiResourceAccessMode.PERMISSION, "file:files:download", Long.class);
+    void fileIdPreviewEndpointsAllowEveryLoggedInUser() throws NoSuchMethodException {
+        assertAccessMode("preview", ApiResourceAccessMode.LOGIN, "", Long.class);
         assertAccessMode(FilePreviewPageController.class, "redirectPreview",
-                ApiResourceAccessMode.PERMISSION, "file:files:download", Long.class);
+                ApiResourceAccessMode.LOGIN, "", Long.class);
     }
 
     @Test

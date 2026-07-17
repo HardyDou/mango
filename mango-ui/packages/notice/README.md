@@ -74,7 +74,7 @@ stop();
 1. 后端启用 `mango-notice`、站内信渠道、authorization、system、identity、org 和 realtime 相关能力。
 2. 管理后台安装并注册 `@mango/notice/admin-pages`。
 3. Shell 注册 `@mango/notice/admin-shell`。
-4. 给角色授予通知业务配置、渠道、任务、记录、站内信和接收设置权限。
+4. 个人站内信、公告阅读和接收设置由内置 `ROLE_LOGIN` 自动授权；只需按需给管理角色授予业务配置、渠道、任务、记录和后台发送权限。
 5. 创建业务类型，保存并发布配置版本和渠道模板。
 6. 保存渠道配置；短信渠道按 provider 选择阿里云或腾讯云并填写密钥、签名和接入地址。
 7. 发送站内信，确认任务记录、未读数、铃铛和消息中心都正常。
@@ -180,6 +180,10 @@ stop();
 | 站内信 | `getMySiteMessages`、`getMySiteMessageDetail`、`getMyUnreadCount`、`markMySiteMessageRead`、`deleteMySiteMessage` |
 | 接收设置 | `getRecipientAccounts`、`saveRecipientAccount`、`getReceivePreferences`、`saveReceivePreference` |
 | 个人提醒 | `getNoticeReminderSetting`、`saveNoticeReminderSetting` |
+
+个人消息和接收设置接口使用权限码完成资源校验；接收设置展示业务类型还依赖只读权限 `notice:business:view`。这些最小权限由后端 Notice 菜单资源绑定到内置 `ROLE_LOGIN`，所有已登录用户无需额外业务角色即可使用；`ROLE_ANONYMOUS` 不包含个人消息或 Realtime 建连权限。
+
+消息中心内部的接收设置和公告入口使用 Notice 自有稳定路径；业务消息携带的其它 `targetKey` 只有在宿主真实注册同名 Vue 路由时才执行跳转，未注册时显示“目标未注册或当前无权访问”。
 
 ### 7.4 站内信动作接入
 
@@ -348,10 +352,10 @@ executeMySiteMessageAction(messageId, actionCode, input)
 | 通知任务 | `notice/task/index` | `notice:task:view` |
 | 发送记录 | `notice/record/index` | `notice:record:view` |
 | 重试管理 | `notice/retry/index` | `notice:retry:edit` |
-| 站内信 | `notice/site-message/index` | `notice:site:*` |
+| 站内信 | `notice/site-message/index` | `ROLE_LOGIN` 默认提供 `notice:site:view/edit` |
 | 全局设置 | `notice/setting/index` | `notice:setting:*` |
-| 接收设置 | `notice/receive-setting/index` | `notice:receive-setting:*` |
-| 顶部铃铛 | Shell provider | 登录态和站内信接口权限 |
+| 接收设置 | `notice/receive-setting/index` | `ROLE_LOGIN` 默认提供 `notice:receive-setting:view/edit` 和只读的 `notice:business:view` |
+| 顶部铃铛 | Shell provider | 登录态和 `ROLE_LOGIN` 个人消息权限 |
 
 页面可见但打不开时，先检查 `registerMangoNoticeAdminPages()` 是否执行；铃铛不显示时，检查 `registerMangoNoticeAdminShell()` 是否执行。
 
