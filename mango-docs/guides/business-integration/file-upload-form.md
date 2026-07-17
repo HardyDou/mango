@@ -192,6 +192,8 @@ pnpm -F @mango/file test
 
 ## 12. 变更影响记录
 
+- Issue #563 修复 Office 文件名同时包含 URL 编码字节和括号等原始字符时的 PDF 预览失败。File Preview 内部改用基于 `fileId` 的 ASCII 转换名，并通过与源文件 token 绑定的同源接口读取转换 PDF。业务表单仍只保存 `fileId`/`fileIds`，上传、回显、预览入口、下载、权限、租户和本指南的验收步骤不变；涉及中文、空格或括号的 Word 附件时，确认 PDF.js 能渲染实际页面且网络请求不出现 `%25` 二次编码。
+
 - PR #565 补充多个独立前端共用同一后端时的文件访问约定：推荐将运行时文件访问模式设为 `PROXY`，各前端只消费当前 Origin 下带 `/api` 的 `previewUrl`、`downloadUrl`，由各自 Nginx 去掉 `/api` 后转发到后端，避免 8081、8082、8083 之间跨域访问。确需 `DIRECT` 时，MinIO 配置稳定的 `publicEndpoint`，签名地址中的 host、port、path 和 query 保持原样，并为实际前端 Origin 配置 bucket CORS。业务表仍只保存 fileId/fileIds；已有租户配置不会被默认资源覆盖。
 
 - PR #454 将后端错误码类型的 Java 导入路径从 `io.mango.file.api.FileCode` 调整为

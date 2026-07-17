@@ -19,6 +19,7 @@ import java.io.ByteArrayInputStream;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.util.Base64;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -47,19 +48,44 @@ class FilePreviewServiceImplTest {
     }
 
     @Test
+    void createEnginePreview_原始中文文件名使用FileId安全名() {
+        FilePreviewProperties properties = new FilePreviewProperties();
+        FilePreviewServiceImpl service = service(properties, new StubFileApi("中文 (1).DOCX"));
+
+        String sourceUrl = sourceUrl(service.createEnginePreview(100L).getPreviewUrl());
+
+        assertThat(sourceUrl).doesNotContain("中文");
+        assertThat(queryParameter(sourceUrl, "fullfilename")).isEqualTo("file-100.docx");
+    }
+
+    @Test
+    void createEnginePreview_配置内部源地址时不使用入口请求地址() {
+        FilePreviewProperties properties = new FilePreviewProperties();
+        properties.setSourceBaseUrl("http://mango-app:8080/internal/");
+        FilePreviewServiceImpl service = service(properties, new StubFileApi());
+
+        String sourceUrl = sourceUrl(service.createEnginePreview(100L).getPreviewUrl());
+
+        assertThat(sourceUrl).startsWith("http://mango-app:8080/internal/file-preview/sources?");
+    }
+
+    @Test
+    void createEnginePreview_未配置内部源地址时保持兼容回退() {
+        FilePreviewServiceImpl service = service();
+
+        String sourceUrl = sourceUrl(service.createEnginePreview(100L).getPreviewUrl());
+
+        assertThat(sourceUrl).startsWith("http://127.0.0.1/file-preview/sources?");
+    }
+
+    @Test
     void openSource_使用服务内下载读取源文件() {
         FilePreviewServiceImpl service = service();
         MangoContextHolder.set(MangoContextSnapshot.empty().withTenantId("1"));
 
         var preview = service.createPreview(100L);
         var enginePreview = service.createEnginePreviewByToken(preview.getPreviewToken());
-        String token = enginePreview.getPreviewUrl().substring(enginePreview.getPreviewUrl().indexOf("url=") + 4);
-        token = java.net.URLDecoder.decode(token, java.nio.charset.StandardCharsets.UTF_8);
-        String sourceUrl = new String(java.util.Base64.getDecoder().decode(token), java.nio.charset.StandardCharsets.UTF_8);
-        String sourceToken = org.springframework.web.util.UriComponentsBuilder.fromUriString(sourceUrl)
-                .build()
-                .getQueryParams()
-                .getFirst("token");
+        String sourceToken = queryParameter(sourceUrl(enginePreview.getPreviewUrl()), "token");
 
         var source = service.openSource(sourceToken);
 
@@ -86,15 +112,7 @@ class FilePreviewServiceImplTest {
         MangoContextHolder.set(issuer);
         var preview = service.createPreview(100L);
         var enginePreview = service.createEnginePreviewByToken(preview.getPreviewToken());
-        String encodedSourceUrl = enginePreview.getPreviewUrl()
-                .substring(enginePreview.getPreviewUrl().indexOf("url=") + 4);
-        String sourceUrl = new String(java.util.Base64.getDecoder().decode(
-                java.net.URLDecoder.decode(encodedSourceUrl, java.nio.charset.StandardCharsets.UTF_8)),
-                java.nio.charset.StandardCharsets.UTF_8);
-        String sourceToken = org.springframework.web.util.UriComponentsBuilder.fromUriString(sourceUrl)
-                .build()
-                .getQueryParams()
-                .getFirst("token");
+        String sourceToken = queryParameter(sourceUrl(enginePreview.getPreviewUrl()), "token");
         MangoContextSnapshot caller = MangoContextSnapshot.empty().withTenantId("caller");
         MangoContextHolder.set(caller);
 
@@ -102,6 +120,20 @@ class FilePreviewServiceImplTest {
 
         assertThat(contentProvider.observedContext.tenantId()).isEqualTo("issuer");
         assertThat(MangoContextHolder.get()).isEqualTo(caller);
+    }
+
+    @Test
+    void validateGeneratedAccess_只允许令牌对应文件的转换结果() {
+        FilePreviewServiceImpl service = service();
+        var enginePreview = service.createEnginePreview(100L);
+        String sourceToken = queryParameter(sourceUrl(enginePreview.getPreviewUrl()), "token");
+
+        service.validateGeneratedAccess(sourceToken, "file-100pptx.pdf");
+
+        assertThatThrownBy(() -> service.validateGeneratedAccess(sourceToken, "file-101pptx.pdf"))
+                .hasMessageContaining("预览令牌无效或已过期");
+        assertThatThrownBy(() -> service.validateGeneratedAccess(sourceToken, "../file-100pptx.pdf"))
+                .hasMessageContaining("预览令牌无效或已过期");
     }
 
     @Test
@@ -138,9 +170,33 @@ class FilePreviewServiceImplTest {
     private FilePreviewServiceImpl service(StubTokenStore tokenStore,
                                            Clock clock,
                                            StubFileContentProvider contentProvider) {
-        FilePreviewProperties properties = new FilePreviewProperties();
-        FilePreviewFileGateway gateway = new FilePreviewFileGateway(new StubFileApi(), contentProvider);
+        return service(new FilePreviewProperties(), new StubFileApi(), tokenStore, clock, contentProvider);
+    }
+
+    private FilePreviewServiceImpl service(FilePreviewProperties properties, FileApi fileApi) {
+        return service(properties, fileApi, new StubTokenStore(), Clock.systemUTC(), new StubFileContentProvider());
+    }
+
+    private FilePreviewServiceImpl service(FilePreviewProperties properties,
+                                           FileApi fileApi,
+                                           StubTokenStore tokenStore,
+                                           Clock clock,
+                                           StubFileContentProvider contentProvider) {
+        FilePreviewFileGateway gateway = new FilePreviewFileGateway(fileApi, contentProvider);
         return new FilePreviewServiceImpl(gateway, properties, tokenStore, new ObjectMapper(), clock);
+    }
+
+    private String sourceUrl(String enginePreviewUrl) {
+        String encodedSourceUrl = enginePreviewUrl.substring(enginePreviewUrl.indexOf("url=") + 4);
+        String base64SourceUrl = java.net.URLDecoder.decode(encodedSourceUrl, java.nio.charset.StandardCharsets.UTF_8);
+        return new String(Base64.getDecoder().decode(base64SourceUrl), java.nio.charset.StandardCharsets.UTF_8);
+    }
+
+    private String queryParameter(String url, String name) {
+        return org.springframework.web.util.UriComponentsBuilder.fromUriString(url)
+                .build()
+                .getQueryParams()
+                .getFirst(name);
     }
 
     private static class MutableClock extends Clock {
@@ -193,6 +249,16 @@ class FilePreviewServiceImplTest {
 
     private static class StubFileApi implements FileApi {
 
+        private final String fileName;
+
+        private StubFileApi() {
+            this("demo.pptx");
+        }
+
+        private StubFileApi(String fileName) {
+            this.fileName = fileName;
+        }
+
         @Override
         public R<io.mango.common.vo.PageResult<FileRecordVO>> page(io.mango.file.api.query.FileRecordPageQuery query) {
             throw new UnsupportedOperationException();
@@ -202,7 +268,7 @@ class FilePreviewServiceImplTest {
         public R<FileRecordVO> get(Long id) {
             FileRecordVO vo = new FileRecordVO();
             vo.setId(id);
-            vo.setFileName("demo.pptx");
+            vo.setFileName(fileName);
             return R.ok(vo);
         }
 

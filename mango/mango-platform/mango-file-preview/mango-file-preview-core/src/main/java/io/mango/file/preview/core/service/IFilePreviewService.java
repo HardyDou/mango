@@ -39,4 +39,12 @@ public interface IFilePreviewService {
      * @return 源文件。
      */
     FilePreviewSource openSource(String token);
+
+    /**
+     * 校验转换后 PDF 的临时访问权限。
+     *
+     * @param token 源文件访问令牌。
+     * @param fileName 转换后 PDF 文件名。
+     */
+    void validateGeneratedAccess(String token, String fileName);
 }

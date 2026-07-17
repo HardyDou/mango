@@ -41,7 +41,28 @@ class FilePreviewEngineResourceRegistrarTest {
                     assertThat(resource.getPathPattern()).isEqualTo("/file-preview/sources");
                     assertThat(resource.getResourceCode()).isEqualTo("GET:/file-preview/sources");
                     assertThat(resource.getAccessMode()).isEqualTo(ApiResourceAccessMode.PUBLIC);
+                })
+                .anySatisfy(resource -> {
+                    assertThat(resource.getHttpMethod()).isEqualTo("GET");
+                    assertThat(resource.getPathPattern()).isEqualTo("/file-preview/generated");
+                    assertThat(resource.getResourceCode()).isEqualTo("GET:/file-preview/generated");
+                    assertThat(resource.getAccessMode()).isEqualTo(ApiResourceAccessMode.PUBLIC);
                 });
+
+        assertThat(api.resources)
+                .noneMatch(resource -> "/file-*.pdf".equals(resource.getPathPattern()));
+    }
+
+    @Test
+    void permitPaths_reuseExistingStaticNamespaceInsteadOfRootWildcard() {
+        assertThat(FilePreviewPermitPathBeanPostProcessor.permitPaths())
+                .contains("/static/**", "/file-preview/generated")
+                .doesNotContain("/file-*.pdf")
+                .doesNotContain("/**");
+        assertThat(FilePreviewPermitPathBeanPostProcessor.supportsSecurityPropertiesType(
+                "io.mango.auth.starter.config.AuthSecurityProperties")).isTrue();
+        assertThat(FilePreviewPermitPathBeanPostProcessor.supportsSecurityPropertiesType(
+                "io.mango.authorization.starter.autoconfigure.SecurityProperties")).isTrue();
     }
 
     private static class CapturingApiResourceApi implements ApiResourceApi {
