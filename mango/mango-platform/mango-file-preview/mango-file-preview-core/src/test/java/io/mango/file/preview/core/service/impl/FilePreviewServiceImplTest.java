@@ -123,6 +123,20 @@ class FilePreviewServiceImplTest {
     }
 
     @Test
+    void validateGeneratedAccess_只允许令牌对应文件的转换结果() {
+        FilePreviewServiceImpl service = service();
+        var enginePreview = service.createEnginePreview(100L);
+        String sourceToken = queryParameter(sourceUrl(enginePreview.getPreviewUrl()), "token");
+
+        service.validateGeneratedAccess(sourceToken, "file-100pptx.pdf");
+
+        assertThatThrownBy(() -> service.validateGeneratedAccess(sourceToken, "file-101pptx.pdf"))
+                .hasMessageContaining("预览令牌无效或已过期");
+        assertThatThrownBy(() -> service.validateGeneratedAccess(sourceToken, "../file-100pptx.pdf"))
+                .hasMessageContaining("预览令牌无效或已过期");
+    }
+
+    @Test
     void createEnginePreviewByToken_令牌内容损坏时返回稳定业务错误() {
         StubTokenStore tokenStore = new StubTokenStore();
         tokenStore.values.put("file-preview:entry:broken", "not-json");

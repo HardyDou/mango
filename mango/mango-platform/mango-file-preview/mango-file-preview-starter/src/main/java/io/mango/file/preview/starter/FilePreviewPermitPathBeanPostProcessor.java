@@ -29,6 +29,7 @@ public class FilePreviewPermitPathBeanPostProcessor implements BeanPostProcessor
             "/compressed-file/**",
             "/file-preview/files/preview-entry",
             "/file-preview/sources",
+            "/file-preview/generated",
             "/pdfjs/**",
             "/js/**",
             "/css/**",

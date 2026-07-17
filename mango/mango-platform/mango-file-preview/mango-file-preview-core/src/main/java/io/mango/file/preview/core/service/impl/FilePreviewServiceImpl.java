@@ -81,19 +81,28 @@ public class FilePreviewServiceImpl implements IFilePreviewService {
 
     @Override
     public FilePreviewSource openSource(String token) {
-        Require.notBlank(token, FilePreviewCode.PREVIEW_TOKEN_INVALID);
-        String tokenKey = SOURCE_TOKEN_PREFIX + token;
-        PreviewToken sourceToken = readToken(tokenKey);
-        if (isExpired(sourceToken)) {
-            tokenStore.remove(tokenKey);
-            Require.fail(FilePreviewCode.PREVIEW_TOKEN_INVALID);
-        }
+        PreviewToken sourceToken = readSourceToken(token);
         MangoContextSnapshot previous = MangoContextHolder.get();
         try {
             MangoContextHolder.set(sourceToken.context());
             FileDownloadVO download = fileGateway.download(sourceToken.fileId());
             Require.notNull(download, FilePreviewCode.FILE_NOT_FOUND);
             return new FilePreviewSource(download.inputStream(), download.fileName(), download.contentType(), download.contentLength());
+        } finally {
+            MangoContextHolder.set(previous);
+        }
+    }
+
+    @Override
+    public void validateGeneratedAccess(String token, String fileName) {
+        Require.notBlank(fileName, FilePreviewCode.PREVIEW_TOKEN_INVALID);
+        PreviewToken sourceToken = readSourceToken(token);
+        MangoContextSnapshot previous = MangoContextHolder.get();
+        try {
+            MangoContextHolder.set(sourceToken.context());
+            FileRecordVO fileRecord = fileRecord(sourceToken.fileId());
+            Require.isTrue(fileName.equals(generatedPdfFileName(sourceToken.fileId(), fileRecord.getFileName())),
+                    FilePreviewCode.PREVIEW_TOKEN_INVALID);
         } finally {
             MangoContextHolder.set(previous);
         }
@@ -147,6 +156,14 @@ public class FilePreviewServiceImpl implements IFilePreviewService {
         return baseName + "." + extension.toLowerCase(Locale.ROOT);
     }
 
+    private String generatedPdfFileName(Long fileId, String originalFileName) {
+        String engineFileName = engineFileName(fileId, originalFileName);
+        String extension = StringUtils.getFilenameExtension(engineFileName);
+        Require.notBlank(extension, FilePreviewCode.PREVIEW_TOKEN_INVALID);
+        String baseName = engineFileName.substring(0, engineFileName.length() - extension.length() - 1);
+        return baseName + extension + ".pdf";
+    }
+
     private boolean isSafeExtension(String extension) {
         if (!StringUtils.hasText(extension) || extension.length() > MAX_EXTENSION_LENGTH) {
             return false;
@@ -191,6 +208,17 @@ public class FilePreviewServiceImpl implements IFilePreviewService {
             Require.fail(FilePreviewCode.PREVIEW_TOKEN_INVALID);
         }
         return previewToken;
+    }
+
+    private PreviewToken readSourceToken(String token) {
+        Require.notBlank(token, FilePreviewCode.PREVIEW_TOKEN_INVALID);
+        String tokenKey = SOURCE_TOKEN_PREFIX + token;
+        PreviewToken sourceToken = readToken(tokenKey);
+        if (isExpired(sourceToken)) {
+            tokenStore.remove(tokenKey);
+            Require.fail(FilePreviewCode.PREVIEW_TOKEN_INVALID);
+        }
+        return sourceToken;
     }
 
     private void storeToken(String tokenKey, PreviewToken token) {

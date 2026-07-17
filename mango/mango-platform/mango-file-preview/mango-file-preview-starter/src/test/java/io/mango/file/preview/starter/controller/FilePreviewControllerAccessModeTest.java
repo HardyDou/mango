@@ -23,6 +23,8 @@ class FilePreviewControllerAccessModeTest {
                 ApiResourceAccessMode.PUBLIC, "", String.class);
         assertAccessMode(FilePreviewSourceController.class, "source",
                 ApiResourceAccessMode.PUBLIC, "", String.class);
+        assertAccessMode(FilePreviewSourceController.class, "generated",
+                ApiResourceAccessMode.PUBLIC, "", String.class, String.class);
     }
 
     private void assertAccessMode(String methodName,

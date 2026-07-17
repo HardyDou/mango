@@ -36,6 +36,7 @@ class PdfTemplateTest {
         model.put("pdfBookmarkDisable", "true");
         model.put("pdfDisableEditing", "false");
         model.put("pdfSidebarOpen", "false");
+        model.put("previewToken", "source-token");
 
         StringWriter output = new StringWriter();
         template.process(model, output);
@@ -50,7 +51,8 @@ class PdfTemplateTest {
 
         assertThat(localPdfOutput.toString())
                 .contains("var sourceUrl = 'file-100docx.pdf'")
-                .contains("url = baseUrl + 'static/file-preview/' + sourceUrl.replace(/^\\/+/, '');");
+                .contains("url = baseUrl + 'file-preview/generated?token=' + encodeURIComponent(previewToken)")
+                .contains("&fileName=' + encodeURIComponent(sourceUrl.replace(/^\\/+/, ''))");
     }
 
     @Test

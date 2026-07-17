@@ -71,6 +71,7 @@ public class OfficeFilePreviewImpl implements FilePreview {
         boolean isHtmlView = fileAttribute.isHtmlView();  //xlsx  转换成html
         String cacheName = fileAttribute.getCacheName();  //转换后的文件名
         String outFilePath = fileAttribute.getOutFilePath();  //转换后生成文件的路径
+        model.addAttribute("previewToken", WebUtils.getUrlParameterReg(fileAttribute.getUrl(), "token"));
 
         // 查询转换状态
         String convertStatusResult = checkAndHandleConvertStatus(model, fileName, cacheName, fileAttribute);

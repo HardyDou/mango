@@ -41,6 +41,12 @@ class FilePreviewEngineResourceRegistrarTest {
                     assertThat(resource.getPathPattern()).isEqualTo("/file-preview/sources");
                     assertThat(resource.getResourceCode()).isEqualTo("GET:/file-preview/sources");
                     assertThat(resource.getAccessMode()).isEqualTo(ApiResourceAccessMode.PUBLIC);
+                })
+                .anySatisfy(resource -> {
+                    assertThat(resource.getHttpMethod()).isEqualTo("GET");
+                    assertThat(resource.getPathPattern()).isEqualTo("/file-preview/generated");
+                    assertThat(resource.getResourceCode()).isEqualTo("GET:/file-preview/generated");
+                    assertThat(resource.getAccessMode()).isEqualTo(ApiResourceAccessMode.PUBLIC);
                 });
 
         assertThat(api.resources)
@@ -50,7 +56,7 @@ class FilePreviewEngineResourceRegistrarTest {
     @Test
     void permitPaths_reuseExistingStaticNamespaceInsteadOfRootWildcard() {
         assertThat(FilePreviewPermitPathBeanPostProcessor.permitPaths())
-                .contains("/static/**")
+                .contains("/static/**", "/file-preview/generated")
                 .doesNotContain("/file-*.pdf")
                 .doesNotContain("/**");
         assertThat(FilePreviewPermitPathBeanPostProcessor.supportsSecurityPropertiesType(

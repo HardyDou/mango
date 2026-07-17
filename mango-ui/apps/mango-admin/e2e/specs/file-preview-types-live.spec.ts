@@ -318,7 +318,7 @@ async function inspectOfficePdf(
   expect(pageCount, 'PDF.js 未渲染任何页').toBeGreaterThan(0);
   expect(canvasSize.width, 'PDF.js 首页 canvas 宽度为 0').toBeGreaterThan(0);
   expect(canvasSize.height, 'PDF.js 首页 canvas 高度为 0').toBeGreaterThan(0);
-  expect(pdfBackingUrl).toContain('/static/file-preview/');
+  expect(pdfBackingUrl).toContain('/file-preview/generated');
   expect(pdfBackingUrl).toContain(`file-${fileId}`);
   expect(pdfResponse?.status, `PDF 资源请求失败: ${JSON.stringify(pdfResponse)}`).toBe(200);
   expect(pdfResponse?.contentType).toContain('application/pdf');

@@ -47,6 +47,7 @@
 
 <script type="text/javascript">
     var sourceUrl = '${pdfUrl?js_string}';
+    var previewToken = '${(previewToken!'')?js_string}';
     var url = '${finalUrl?js_string}';
     var kkagent = '${kkagent}';
     var serverBaseUrl = '${baseUrl}'.endsWith('/') ? '${baseUrl}' : '${baseUrl}' + '/';
@@ -59,8 +60,9 @@
     }
     var baseUrl = gatewayBaseUrl();
     var localPdfUrl = !sourceUrl.startsWith('http://') && !sourceUrl.startsWith('https://');
-    if (kkagent !== 'true' && localPdfUrl) {
-        url = baseUrl + 'static/file-preview/' + sourceUrl.replace(/^\/+/, '');
+    if (kkagent !== 'true' && localPdfUrl && previewToken) {
+        url = baseUrl + 'file-preview/generated?token=' + encodeURIComponent(previewToken)
+            + '&fileName=' + encodeURIComponent(sourceUrl.replace(/^\/+/, ''));
     } else if (kkagent === 'true' || !url.startsWith(baseUrl)) {
         url = baseUrl + 'getCorsFile?urlPath=' + encodeURIComponent(Base64.encode(url)) + "&key=${kkkey}";
     }
