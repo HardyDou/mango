@@ -3,6 +3,9 @@ package io.mango.file.core.storage;
 import io.mango.file.core.entity.FileStorageConfigEntity;
 import org.junit.jupiter.api.Test;
 
+import java.net.URI;
+import java.time.Duration;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 class S3CompatibleFileStorageTest {
@@ -42,6 +45,29 @@ class S3CompatibleFileStorageTest {
         String url = storage.publicGetUrl(config, "tenant-1/2026/06/test.txt", "test.txt").orElseThrow();
 
         assertThat(url).isEqualTo("https://cdn.example.com/tenant-1/2026/06/test.txt");
+    }
+
+    @Test
+    void presignedGetUrl_withPublicEndpoint_signsAndReturnsConfiguredHostAndPort() {
+        S3CompatibleFileStorage storage = new S3CompatibleFileStorage();
+        FileStorageConfigEntity config = minioConfig();
+        config.setPublicEndpoint("http://file.mango.io:9000");
+        config.setPathStyleAccess(1);
+
+        URI url = URI.create(storage.presignedGetUrl(
+                config,
+                "tenant-1/2026/06/test.txt",
+                "test.txt",
+                Duration.ofMinutes(10)
+        ).orElseThrow());
+
+        assertThat(url.getScheme()).isEqualTo("http");
+        assertThat(url.getHost()).isEqualTo("file.mango.io");
+        assertThat(url.getPort()).isEqualTo(9000);
+        assertThat(url.getPath()).isEqualTo("/mango-file/tenant-1/2026/06/test.txt");
+        assertThat(url.getRawQuery())
+                .contains("X-Amz-Signature=")
+                .contains("X-Amz-Expires=600");
     }
 
     private FileStorageConfigEntity minioConfig() {

@@ -77,14 +77,15 @@ class FileResourceHandlerIntegrationTest {
 
         assertThat(storageConfigs).hasSize(1);
         assertThat(settings).hasSize(1);
-        assertThat(settings.getFirst().getVersion()).isEqualTo(3);
+        assertThat(settings.getFirst().getVersion()).isEqualTo(4);
+        assertThat(settings.getFirst().getSyncMode()).isEqualTo(ResourceSyncMode.INIT_ONLY);
         assertThat(count("file_storage_config")).isOne();
         assertThat(count("file_settings")).isOne();
         assertThat(stringValue("file_storage_config", "storage_type", "id = 1")).isEqualTo("LOCAL");
         assertThat(stringValue("file_storage_config", "storage_path", "id = 1")).isEqualTo("mango-file");
         assertThat(stringValue("file_settings", "default_access_level", "id = 1")).isEqualTo("PRIVATE");
         assertThat(stringValue("file_settings", "duplicate_name_strategy", "id = 1")).isEqualTo("AUTO_RENAME");
-        assertThat(stringValue("file_settings", "access_mode", "id = 1")).isEqualTo("DIRECT");
+        assertThat(stringValue("file_settings", "access_mode", "id = 1")).isEqualTo("PROXY");
         assertThat(intValue("file_settings", "access_token_enabled", "id = 1")).isOne();
         assertThat(intValue("file_settings", "public_read_requires_token", "id = 1")).isOne();
         assertThat(intValue("file_settings", "access_token_expire_seconds", "id = 1")).isEqualTo(86400);
@@ -115,7 +116,7 @@ class FileResourceHandlerIntegrationTest {
     }
 
     @Test
-    void settingsDefaultsAccessBaselineToDirectSignedUrls() throws Exception {
+    void settingsDefaultsAccessBaselineToDirectSignedUrlsWhenFieldIsMissing() throws Exception {
         ResourceDeclaration settings = declarations(loadFileStorageResource(), ResourceTypes.FILE_SETTINGS).getFirst();
         settings.removeField("accessTokenEnabled");
         settings.removeField("publicReadRequiresToken");
