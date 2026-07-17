@@ -55,6 +55,8 @@ public final class MangoArchUnitChecker {
             "io.mango.common.contract.BinaryHttpAdapter";
     private static final String FILE_PREVIEW_VENDOR_PACKAGE_PREFIX = "cn.keking.";
     private static final String MODEL_AND_VIEW = "org.springframework.web.servlet.ModelAndView";
+    private static final String SSE_EMITTER =
+            "org.springframework.web.servlet.mvc.method.annotation.SseEmitter";
     private static final String RESPONSE_ENTITY = "org.springframework.http.ResponseEntity";
     private static final Set<String> NATIVE_HTTP_BODY_TYPES =
             Set.of(
@@ -1965,7 +1967,8 @@ public final class MangoArchUnitChecker {
 
     private boolean isNativeHttpReturn(JavaMethod method) {
         JavaType returnType = method.getReturnType();
-        if (MODEL_AND_VIEW.equals(returnType.toErasure().getName())) {
+        if (MODEL_AND_VIEW.equals(returnType.toErasure().getName())
+                || SSE_EMITTER.equals(returnType.toErasure().getName())) {
             return true;
         }
         if (!RESPONSE_ENTITY.equals(returnType.toErasure().getName())

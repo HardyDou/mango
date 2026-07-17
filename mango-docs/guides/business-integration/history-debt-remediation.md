@@ -41,7 +41,7 @@
 | 分布式同步假成功 | 锁竞争时服务端跳过处理却返回成功，来源停止重试并永久缺声明 | 未区分“请求成功”和“批次完成” | 返回明确完成状态；未完成/远程失败重试；多节点核对 registry、重复数和日志 |
 | 内部调用信任边界 | 直接信任客户端内部 Header，或验签结果未传给安全链 | Filter 和 Security 配置各自定义内部调用语义 | HMAC 成功后写服务端属性，安全链只信任该属性，并将伪造 Header 的拒绝路径纳入回归证据；边界见[后端安全规范](../../../mango-pmo/rules/backend/06-security.md) |
 | 供应商源码与本地规则 | 内置上游项目被 Mango Controller/Service 规则大量误报 | 没有建模代码所有权 | 只对已审计的精确 vendored namespace 设边界；Mango 自有包继续全量受控；正反例规则测试 |
-| 原生 HTTP 适配器 | 页面 `ModelAndView` 或文件流被强迫返回 JSON `R<T>` | 规则未区分 JSON API 和原生传输 | 仅允许受限 `ModelAndView`/`ResponseEntity<Resource>`；其余 Controller 规则继续生效；`ResponseEntity<String>` 不得绕过 API 契约 |
+| 原生 HTTP 适配器 | 页面、文件流或异步 SSE 被强迫返回 JSON `R<T>` | 规则未区分 JSON API 和原生传输 | 仅允许受限 `ModelAndView`、`ResponseEntity<Resource>`、`SseEmitter`；其余 Controller 规则继续生效；`ResponseEntity<String>` 不得绕过 API 契约 |
 | 权限注解与资源脱节 | Controller 声明了 permission，新库角色却永远没有该权限，实际请求 403 | Mock 关闭授权，老库存在手工绑定 | 对照正式菜单/API 资源 `apiCodes`；demo 关闭新库同步；真实角色成功/拒绝 API 与菜单验收 |
 | 微服务假 E2E | 单进程 HTTP 测试 Mock 了内部 API/Provider，未发现 Feign 服务路由丢失 base path | 把“走了 HTTP”等同于跨进程 | 此类测试命名为 `*FlowTest`；最终 E2E 启动真实生产者/消费者 JVM，经服务发现验证请求、二进制流和副作用 |
 | 手工装配掩盖发布物缺 Bean | 测试显式 `@Import` Controller/Executor 后通过，但生产 starter 根本没有导出可执行端点 | 测试上下文比真实自动配置多装了生产不存在的 Bean | Flow 测试不得手工补齐被测 starter 应负责的 Bean；starter 独立上下文验证自动配置，并用两个独立 JVM 证明真实反向调用 |
@@ -57,6 +57,10 @@
 | 增量质量门禁掩盖存量 | changed-only/no-new 通过，但目标模块问题被归入 baseline | 把“无新增”等同于“债务已清零” | 审计报告四类列表和目标模块总量；历史债务验收要求目标范围静态问题为 0 |
 | 可变状态泄漏 | DTO、VO、record 直接保存/返回集合、Map、JSON wrapper 或 `byte[]` | 只测序列化和值相等，没有测试外部修改 | 输入和输出双向防御复制；集合不可变，数组逐次复制；兼容测试覆盖嵌套 JSON/二进制 |
 | 独立能力应用环境漂移 | 单体连 MySQL，capability app 却默认落到 H2；Feign URL 配置未命中实际 `contextId` | 单体测试没有经过独立数据源和真实远程客户端 | 每个 JVM 显式核对 JDBC URL；无注册中心直连按实际 `contextId` 配置绝对 URL并保留 base path/租户传播 |
+| SSE 双重协议封装 | Provider 已返回 `data:`，Controller 又调用 `SseEmitter.data()`，浏览器收到 `data:data:` 后 JSON 解析失败 | Core 事件语义与 HTTP 帧格式混在一起 | Core 只返回 JSON 事件；starter 统一添加一次 SSE 帧前缀；真实 HTTP 测试用 SSE decoder 验证事件可解析 |
+| 校验注解存在但运行时无实现 | Command 有 Jakarta Validation 注解，空值请求仍进入 Service 并返回 200 | starter 只有 `validation-api`，未引入 Bean Validation provider | starter 独立启动后发送非法 HTTP 请求并断言 400；不得用测试专属 validator 掩盖生产依赖缺失 |
+| Reactor 用 `map` 返回 null | 第三方 `[DONE]` 分支返回 null，流式链路运行时抛 `NullPointerException` | 把同步集合的过滤习惯套到 Reactive Streams | 使用 `handle`/`filterWhen` 等显式丢弃元素；本地 HTTP 假服务回放完整 SSE，包括 `[DONE]`、非法 JSON 和超时 |
+| 无限 SSE 包装成阻塞 `Resource` | connected 事件已写入管道，但 HTTP 客户端收不到首帧，服务停机仍等待活动请求 | 为满足静态规则选择了不适合无限流的二进制响应模型 | 修正规则以识别框架原生异步 `SseEmitter`；真实随机端口客户端必须验证首帧、主动断开和进程正常退出 |
 
 ## 4. 标准修复流程
 
