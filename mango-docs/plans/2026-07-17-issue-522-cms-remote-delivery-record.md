@@ -1,4 +1,4 @@
-# Issue #522 CMS Remote Adapter 标准交付记录
+# 标准交付记录
 
 ## 1. 元数据
 
@@ -58,7 +58,7 @@
 | REQ-005 | M08/M09 | `node mango-pmo/tools/check-capability-docs.mjs --base origin/main`；`git diff --check` | PASS - 能力文档和公开文档索引一致，差异格式检查通过 | checker 输出与 Git diff |
 | REQ-001 至 REQ-004 | M09 | CI 等价 partial 门禁：加入 `:mango-architecture-verification`，使用 `changed`、`requireFullReactor=false` 和 `no-new-violations` | PASS - dependency、ArchUnit、架构 PMD 均为 0；新增路径静态问题为 0，仅保留 26 条既有 CMS 基线 | `mango/target/mango-static-report.json` 与 Maven 输出 |
 | REQ-001 至 REQ-004 | M10 | `node mango-pmo/tools/test-quality-check.mjs --base origin/main`；`node mango-pmo/tools/audit-backend-test-mocks.mjs --report-only --changed-only --base origin/main` | PASS - 4 个改动测试文件质量检查通过，mock 审计 block=0、warn=0 | checker 输出 |
-| REQ-001 至 REQ-005 | M15 | PR required checks 和合并状态回读 | PENDING | GitHub PR |
+| REQ-001 至 REQ-005 | M15 | PR required checks 和合并状态回读 | PASS - PR #571 最新 required checks 全部通过，GitHub 回读为 `MERGEABLE/CLEAN`；合并完成后再次回读最终状态 | GitHub PR #571 |
 
 ## 7. 例外与剩余风险
 
