@@ -5,13 +5,13 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.mango.common.result.Require;
 import io.mango.common.vo.PageResult;
-import io.mango.identity.api.TenantMemberProvider;
 import io.mango.link.api.command.CreateLinkPersonalCategoryCommand;
 import io.mango.link.api.command.CreateLinkFavoriteCommand;
 import io.mango.link.api.command.CreateLinkPersonalItemCommand;
 import io.mango.link.api.command.DeleteLinkFavoriteCommand;
 import io.mango.link.api.command.UpdateLinkPersonalCategoryCommand;
 import io.mango.link.api.command.UpdateLinkPersonalItemCommand;
+import io.mango.link.api.enums.LinkCode;
 import io.mango.link.api.enums.LinkVisibilityScope;
 import io.mango.link.api.query.LinkCompanyItemQuery;
 import io.mango.link.api.query.LinkFavoriteQuery;
@@ -32,7 +32,7 @@ import io.mango.link.core.mapper.LinkVisibilityTargetMapper;
 import io.mango.link.core.service.ILinkUserService;
 import io.mango.link.core.support.LinkContextSupport;
 import io.mango.link.core.support.LinkSupport;
-import org.springframework.beans.factory.ObjectProvider;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -44,17 +44,16 @@ import java.util.Map;
 import java.util.Set;
 
 @Service
-public class LinkUserService extends BaseLinkService implements ILinkUserService {
+@RequiredArgsConstructor
+public class LinkUserService implements ILinkUserService {
 
     private static final int NAVIGATION_WIDGET_PAGE_SIZE = 200;
 
-    public LinkUserService(LinkCategoryMapper categoryMapper,
-                           LinkItemMapper itemMapper,
-                           LinkVisibilityTargetMapper targetMapper,
-                           LinkFavoriteMapper favoriteMapper,
-                           ObjectProvider<TenantMemberProvider> tenantMemberProvider) {
-        super(categoryMapper, itemMapper, targetMapper, favoriteMapper, tenantMemberProvider);
-    }
+    private final LinkCategoryMapper categoryMapper;
+    private final LinkItemMapper itemMapper;
+    private final LinkVisibilityTargetMapper targetMapper;
+    private final LinkFavoriteMapper favoriteMapper;
+    private final LinkServiceSupport support;
 
     @Override
     public List<LinkNavigationItemVO> listCompanyItems(LinkCompanyItemQuery query) {
@@ -63,18 +62,22 @@ public class LinkUserService extends BaseLinkService implements ILinkUserService
             resolved = new LinkCompanyItemQuery();
         }
         LinkCompanyItemQuery resolvedQuery = resolved;
-        Long tenantId = LinkContextSupport.currentTenantId();
+        String tenantId = LinkContextSupport.currentTenantId();
         Long userId = LinkContextSupport.currentUserIdOrNull();
         List<LinkItemEntity> items = itemMapper.selectList(companyWrapper(tenantId, resolved.getCategoryId()));
-        Map<Long, LinkCategoryEntity> categories = categoriesById(tenantId, items.stream().map(LinkItemEntity::getCategoryId).toList());
-        Map<Long, List<LinkVisibilityTargetEntity>> targets = targetsByLinkId(tenantId, items.stream().map(LinkItemEntity::getId).toList());
-        Set<Long> favorites = favoriteLinkIds(tenantId, userId, items.stream().map(LinkItemEntity::getId).toList());
+        Map<Long, LinkCategoryEntity> categories = support.categoriesById(tenantId,
+                items.stream().map(LinkItemEntity::getCategoryId).toList());
+        Map<Long, List<LinkVisibilityTargetEntity>> targets = support.targetsByLinkId(tenantId,
+                items.stream().map(LinkItemEntity::getId).toList());
+        Set<Long> favorites = support.favoriteLinkIds(tenantId, userId,
+                items.stream().map(LinkItemEntity::getId).toList());
         return items.stream()
-                .filter(item -> enabledCategory(categories.get(item.getCategoryId())))
-                .filter(item -> keywordMatched(item, resolvedQuery.getKeyword()))
-                .filter(item -> isVisibleToUser(tenantId, userId, item, targets.get(item.getId())))
+                .filter(item -> support.enabledCategory(categories.get(item.getCategoryId())))
+                .filter(item -> support.keywordMatched(item, resolvedQuery.getKeyword()))
+                .filter(item -> support.isVisibleToUser(tenantId, userId, item, targets.get(item.getId())))
                 .sorted(navigationComparator())
-                .map(item -> toNavigationVO(item, categories.get(item.getCategoryId()), favorites.contains(item.getId())))
+                .map(item -> support.toNavigationVO(item, categories.get(item.getCategoryId()),
+                        favorites.contains(item.getId())))
                 .toList();
     }
 
@@ -93,7 +96,7 @@ public class LinkUserService extends BaseLinkService implements ILinkUserService
 
     @Override
     public List<LinkCategoryVO> listPersonalCategories() {
-        Long tenantId = LinkContextSupport.currentTenantId();
+        String tenantId = LinkContextSupport.currentTenantId();
         Long userId = LinkContextSupport.currentUserId();
         return categoryMapper.selectList(new LambdaQueryWrapper<LinkCategoryEntity>()
                         .eq(LinkCategoryEntity::getTenantId, tenantId)
@@ -103,18 +106,19 @@ public class LinkUserService extends BaseLinkService implements ILinkUserService
                         .orderByAsc(LinkCategoryEntity::getSortNo)
                         .orderByDesc(LinkCategoryEntity::getUpdatedAt))
                 .stream()
-                .map(this::toCategoryVO)
+                .map(support::toCategoryVO)
                 .toList();
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Long createPersonalCategory(CreateLinkPersonalCategoryCommand command) {
-        Long tenantId = LinkContextSupport.currentTenantId();
+        Require.notNull(command, LinkCode.LINK_BUSINESS_ERROR, "新增个人分组命令不能为空");
+        String tenantId = LinkContextSupport.currentTenantId();
         Long userId = LinkContextSupport.currentUserId();
         String name = LinkContextSupport.trimRequired(command.getName(), "分组名称不能为空");
-        Require.isNull(categoryMapper.selectByScopeOwnerAndName(tenantId, LinkSupport.personalCategory(), userId, name),
-                "分组名称已存在");
+        Require.isTrue(selectCategoryByOwnerAndName(tenantId, userId, name) == null,
+                LinkCode.LINK_BUSINESS_ERROR, "分组名称已存在");
         LocalDateTime now = LocalDateTime.now();
         LinkCategoryEntity entity = new LinkCategoryEntity();
         entity.setTenantId(tenantId);
@@ -138,13 +142,14 @@ public class LinkUserService extends BaseLinkService implements ILinkUserService
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean updatePersonalCategory(UpdateLinkPersonalCategoryCommand command) {
-        Long tenantId = LinkContextSupport.currentTenantId();
+        Require.notNull(command, LinkCode.LINK_BUSINESS_ERROR, "更新个人分组命令不能为空");
+        String tenantId = LinkContextSupport.currentTenantId();
         Long userId = LinkContextSupport.currentUserId();
         LinkCategoryEntity category = requireOwnedPersonalCategory(tenantId, userId, command.getId());
         String name = LinkContextSupport.trimRequired(command.getName(), "分组名称不能为空");
-        LinkCategoryEntity exists = categoryMapper.selectByScopeOwnerAndName(tenantId,
-                LinkSupport.personalCategory(), userId, name);
-        Require.isTrue(exists == null || category.getId().equals(exists.getId()), "分组名称已存在");
+        LinkCategoryEntity exists = selectCategoryByOwnerAndName(tenantId, userId, name);
+        Require.isTrue(exists == null || category.getId().equals(exists.getId()),
+                LinkCode.LINK_BUSINESS_ERROR, "分组名称已存在");
         category.setName(name);
         Integer sortNo = command.getSortNo();
         if (sortNo == null) {
@@ -159,7 +164,8 @@ public class LinkUserService extends BaseLinkService implements ILinkUserService
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean deletePersonalCategory(Long id) {
-        Long tenantId = LinkContextSupport.currentTenantId();
+        Require.notNull(id, LinkCode.LINK_BUSINESS_ERROR, "个人分组 ID 不能为空");
+        String tenantId = LinkContextSupport.currentTenantId();
         Long userId = LinkContextSupport.currentUserId();
         LinkCategoryEntity category = requireOwnedPersonalCategory(tenantId, userId, id);
         Long itemCount = itemMapper.selectCount(new LambdaQueryWrapper<LinkItemEntity>()
@@ -167,25 +173,28 @@ public class LinkUserService extends BaseLinkService implements ILinkUserService
                 .eq(LinkItemEntity::getCategoryId, category.getId())
                 .eq(LinkItemEntity::getVisibilityScope, LinkVisibilityScope.PERSONAL.name())
                 .eq(LinkItemEntity::getOwnerUserId, userId));
-        Require.isTrue(itemCount == null || itemCount.longValue() == 0L, "分组下存在网址，请先删除或移动网址");
+        Require.isTrue(itemCount == null || itemCount.longValue() == 0L,
+                LinkCode.LINK_BUSINESS_ERROR, "分组下存在网址，请先删除或移动网址");
         return categoryMapper.deleteById(category.getId()) > 0;
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean createFavorite(CreateLinkFavoriteCommand command) {
-        Long tenantId = LinkContextSupport.currentTenantId();
+        Require.notNull(command, LinkCode.LINK_BUSINESS_ERROR, "新增收藏命令不能为空");
+        String tenantId = LinkContextSupport.currentTenantId();
         Long userId = LinkContextSupport.currentUserId();
-        LinkItemEntity item = selectItemRequired(tenantId, command.getLinkId());
+        LinkItemEntity item = support.selectItemRequired(tenantId, command.getLinkId());
         LinkCategoryEntity category = null;
         if (item.getCategoryId() != null) {
-            category = categoryMapper.selectByTenantAndId(tenantId, item.getCategoryId());
+            category = support.categoriesById(tenantId, List.of(item.getCategoryId())).get(item.getCategoryId());
         }
-        Require.isTrue(visibleCategoryForItem(userId, item, category), "网址不可见");
+        Require.isTrue(visibleCategoryForItem(userId, item, category), LinkCode.LINK_BUSINESS_ERROR, "网址不可见");
         List<LinkVisibilityTargetEntity> targets = targetMapper.selectList(new LambdaQueryWrapper<LinkVisibilityTargetEntity>()
                 .eq(LinkVisibilityTargetEntity::getTenantId, tenantId)
                 .eq(LinkVisibilityTargetEntity::getLinkId, item.getId()));
-        Require.isTrue(isVisibleToUser(tenantId, userId, item, targets), "网址不可见，不能收藏");
+        Require.isTrue(support.isVisibleToUser(tenantId, userId, item, targets),
+                LinkCode.LINK_BUSINESS_ERROR, "网址不可见，不能收藏");
         LinkFavoriteEntity exists = favoriteMapper.selectOne(new LambdaQueryWrapper<LinkFavoriteEntity>()
                 .eq(LinkFavoriteEntity::getTenantId, tenantId)
                 .eq(LinkFavoriteEntity::getUserId, userId)
@@ -206,7 +215,8 @@ public class LinkUserService extends BaseLinkService implements ILinkUserService
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean deleteFavorite(DeleteLinkFavoriteCommand command) {
-        Long tenantId = LinkContextSupport.currentTenantId();
+        Require.notNull(command, LinkCode.LINK_BUSINESS_ERROR, "删除收藏命令不能为空");
+        String tenantId = LinkContextSupport.currentTenantId();
         Long userId = LinkContextSupport.currentUserId();
         favoriteMapper.delete(new LambdaQueryWrapper<LinkFavoriteEntity>()
                 .eq(LinkFavoriteEntity::getTenantId, tenantId)
@@ -222,7 +232,7 @@ public class LinkUserService extends BaseLinkService implements ILinkUserService
             resolved = new LinkFavoriteQuery();
         }
         LinkFavoriteQuery resolvedQuery = resolved;
-        Long tenantId = LinkContextSupport.currentTenantId();
+        String tenantId = LinkContextSupport.currentTenantId();
         Long userId = LinkContextSupport.currentUserId();
         List<LinkFavoriteEntity> favorites = favoriteMapper.selectList(new LambdaQueryWrapper<LinkFavoriteEntity>()
                 .eq(LinkFavoriteEntity::getTenantId, tenantId)
@@ -237,9 +247,9 @@ public class LinkUserService extends BaseLinkService implements ILinkUserService
                         .in(LinkItemEntity::getId, linkIds))
                 .stream()
                 .collect(java.util.stream.Collectors.toMap(LinkItemEntity::getId, item -> item));
-        Map<Long, LinkCategoryEntity> categories = categoriesById(tenantId,
+        Map<Long, LinkCategoryEntity> categories = support.categoriesById(tenantId,
                 items.values().stream().map(LinkItemEntity::getCategoryId).toList());
-        Map<Long, List<LinkVisibilityTargetEntity>> targets = targetsByLinkId(tenantId, linkIds);
+        Map<Long, List<LinkVisibilityTargetEntity>> targets = support.targetsByLinkId(tenantId, linkIds);
         return favorites.stream()
                 .filter(favorite -> items.containsKey(favorite.getLinkId()))
                 .map(favorite -> toVisibleFavorite(tenantId, userId, favorite, items.get(favorite.getLinkId()),
@@ -254,15 +264,17 @@ public class LinkUserService extends BaseLinkService implements ILinkUserService
         if (resolved == null) {
             resolved = new LinkPersonalItemPageQuery();
         }
-        Long tenantId = LinkContextSupport.currentTenantId();
+        String tenantId = LinkContextSupport.currentTenantId();
         Long userId = LinkContextSupport.currentUserId();
         IPage<LinkItemEntity> page = itemMapper.selectPage(new Page<>(resolved.getPage(), resolved.getSize()),
                 personalWrapper(tenantId, userId, resolved));
-        Map<Long, LinkCategoryEntity> categories = categoriesById(tenantId,
+        Map<Long, LinkCategoryEntity> categories = support.categoriesById(tenantId,
                 page.getRecords().stream().map(LinkItemEntity::getCategoryId).toList());
-        Set<Long> favorites = favoriteLinkIds(tenantId, userId, page.getRecords().stream().map(LinkItemEntity::getId).toList());
+        Set<Long> favorites = support.favoriteLinkIds(tenantId, userId,
+                page.getRecords().stream().map(LinkItemEntity::getId).toList());
         return PageResult.of(page.getRecords().stream()
-                        .map(item -> toPersonalVO(item, categories.get(item.getCategoryId()), favorites.contains(item.getId())))
+                        .map(item -> support.toPersonalVO(item, categories.get(item.getCategoryId()),
+                                favorites.contains(item.getId())))
                         .toList(),
                 page.getTotal(), page.getCurrent(), page.getSize());
     }
@@ -270,7 +282,8 @@ public class LinkUserService extends BaseLinkService implements ILinkUserService
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Long createPersonalItem(CreateLinkPersonalItemCommand command) {
-        Long tenantId = LinkContextSupport.currentTenantId();
+        Require.notNull(command, LinkCode.LINK_BUSINESS_ERROR, "新增个人网址命令不能为空");
+        String tenantId = LinkContextSupport.currentTenantId();
         Long userId = LinkContextSupport.currentUserId();
         validatePersonalCategory(tenantId, command.getCategoryId());
         LocalDateTime now = LocalDateTime.now();
@@ -300,11 +313,12 @@ public class LinkUserService extends BaseLinkService implements ILinkUserService
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean updatePersonalItem(UpdateLinkPersonalItemCommand command) {
-        Long tenantId = LinkContextSupport.currentTenantId();
+        Require.notNull(command, LinkCode.LINK_BUSINESS_ERROR, "更新个人网址命令不能为空");
+        String tenantId = LinkContextSupport.currentTenantId();
         Long userId = LinkContextSupport.currentUserId();
-        LinkItemEntity item = selectItemRequired(tenantId, command.getId());
+        LinkItemEntity item = support.selectItemRequired(tenantId, command.getId());
         Require.isTrue(LinkVisibilityScope.PERSONAL.name().equals(item.getVisibilityScope())
-                && userId.equals(item.getOwnerUserId()), "个人网址不存在");
+                && userId.equals(item.getOwnerUserId()), LinkCode.LINK_BUSINESS_ERROR, "个人网址不存在");
         validatePersonalCategory(tenantId, command.getCategoryId());
         item.setCategoryId(command.getCategoryId());
         item.setName(LinkContextSupport.trimRequired(command.getName(), "网址名称不能为空"));
@@ -321,18 +335,19 @@ public class LinkUserService extends BaseLinkService implements ILinkUserService
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean deletePersonalItem(Long id) {
-        Long tenantId = LinkContextSupport.currentTenantId();
+        Require.notNull(id, LinkCode.LINK_BUSINESS_ERROR, "个人网址 ID 不能为空");
+        String tenantId = LinkContextSupport.currentTenantId();
         Long userId = LinkContextSupport.currentUserId();
-        LinkItemEntity item = selectItemRequired(tenantId, id);
+        LinkItemEntity item = support.selectItemRequired(tenantId, id);
         Require.isTrue(LinkVisibilityScope.PERSONAL.name().equals(item.getVisibilityScope())
-                && userId.equals(item.getOwnerUserId()), "个人网址不存在");
+                && userId.equals(item.getOwnerUserId()), LinkCode.LINK_BUSINESS_ERROR, "个人网址不存在");
         favoriteMapper.delete(new LambdaQueryWrapper<LinkFavoriteEntity>()
                 .eq(LinkFavoriteEntity::getTenantId, tenantId)
                 .eq(LinkFavoriteEntity::getLinkId, item.getId()));
         return itemMapper.deleteById(item.getId()) > 0;
     }
 
-    private LambdaQueryWrapper<LinkItemEntity> companyWrapper(Long tenantId, Long categoryId) {
+    private LambdaQueryWrapper<LinkItemEntity> companyWrapper(String tenantId, Long categoryId) {
         LambdaQueryWrapper<LinkItemEntity> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(LinkItemEntity::getTenantId, tenantId)
                 .eq(LinkItemEntity::getStatus, LinkSupport.enabled())
@@ -343,7 +358,7 @@ public class LinkUserService extends BaseLinkService implements ILinkUserService
         return wrapper;
     }
 
-    private LambdaQueryWrapper<LinkItemEntity> personalWrapper(Long tenantId,
+    private LambdaQueryWrapper<LinkItemEntity> personalWrapper(String tenantId,
                                                               Long userId,
                                                               LinkPersonalItemPageQuery query) {
         LambdaQueryWrapper<LinkItemEntity> wrapper = new LambdaQueryWrapper<>();
@@ -364,7 +379,7 @@ public class LinkUserService extends BaseLinkService implements ILinkUserService
         return wrapper;
     }
 
-    private LinkFavoriteVO toVisibleFavorite(Long tenantId,
+    private LinkFavoriteVO toVisibleFavorite(String tenantId,
                                              Long userId,
                                              LinkFavoriteEntity favorite,
                                              LinkItemEntity item,
@@ -375,38 +390,49 @@ public class LinkUserService extends BaseLinkService implements ILinkUserService
         if (!visibleCategoryForItem(userId, item, category)) {
             return null;
         }
-        if (!keywordMatched(item, query.getKeyword())) {
+        if (!support.keywordMatched(item, query.getKeyword())) {
             return null;
         }
         if (query.getCategoryId() != null && !query.getCategoryId().equals(item.getCategoryId())) {
             return null;
         }
-        if (!isVisibleToUser(tenantId, userId, item, targets.get(item.getId()))) {
+        if (!support.isVisibleToUser(tenantId, userId, item, targets.get(item.getId()))) {
             return null;
         }
-        return toFavoriteVO(favorite, item, category);
+        return support.toFavoriteVO(favorite, item, category);
     }
 
-    private void validatePersonalCategory(Long tenantId, Long categoryId) {
+    private void validatePersonalCategory(String tenantId, Long categoryId) {
         if (categoryId != null) {
-            LinkCategoryEntity category = selectCategoryRequired(tenantId, categoryId);
+            LinkCategoryEntity category = support.selectCategoryRequired(tenantId, categoryId);
             Long userId = LinkContextSupport.currentUserId();
             boolean personalCategory = LinkSupport.personalCategory().equals(category.getScope())
                     && userId.equals(category.getOwnerUserId());
-            Require.isTrue(enabledCategory(category) && personalCategory, "网址分组不存在或已停用");
+            Require.isTrue(support.enabledCategory(category) && personalCategory,
+                    LinkCode.LINK_BUSINESS_ERROR, "网址分组不存在或已停用");
         }
     }
 
-    private LinkCategoryEntity requireOwnedPersonalCategory(Long tenantId, Long userId, Long categoryId) {
-        LinkCategoryEntity category = selectCategoryRequired(tenantId, categoryId);
+    private LinkCategoryEntity requireOwnedPersonalCategory(String tenantId, Long userId, Long categoryId) {
+        LinkCategoryEntity category = support.selectCategoryRequired(tenantId, categoryId);
         Require.isTrue(LinkSupport.personalCategory().equals(category.getScope())
                 && userId.equals(category.getOwnerUserId())
-                && LinkSupport.enabled().equals(category.getStatus()), "个人分组不存在或已停用");
+                && LinkSupport.enabled().equals(category.getStatus()),
+                LinkCode.LINK_BUSINESS_ERROR, "个人分组不存在或已停用");
         return category;
     }
 
     private boolean visibleCategoryForItem(Long userId, LinkItemEntity item, LinkCategoryEntity category) {
-        return enabledCategory(category) || personalUngroupedItemVisibleToOwner(userId, item);
+        return support.enabledCategory(category) || personalUngroupedItemVisibleToOwner(userId, item);
+    }
+
+    private LinkCategoryEntity selectCategoryByOwnerAndName(String tenantId, Long userId, String name) {
+        return categoryMapper.selectOne(new LambdaQueryWrapper<LinkCategoryEntity>()
+                .eq(LinkCategoryEntity::getTenantId, tenantId)
+                .eq(LinkCategoryEntity::getScope, LinkSupport.personalCategory())
+                .eq(LinkCategoryEntity::getOwnerUserId, userId)
+                .eq(LinkCategoryEntity::getName, name)
+                .last("LIMIT 1"));
     }
 
     private boolean personalUngroupedItemVisibleToOwner(Long userId, LinkItemEntity item) {

@@ -3,6 +3,7 @@ package io.mango.link.api.command;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.Positive;
 import lombok.Data;
 
 import java.util.List;
@@ -24,6 +25,7 @@ public class CreateLinkPersonalItemCommand {
     @Schema(description = "网址地址")
     private String url;
 
+    @Positive(message = "分类 ID 必须大于0")
     @Schema(description = "分类 ID")
     private Long categoryId;
 
@@ -35,6 +37,7 @@ public class CreateLinkPersonalItemCommand {
     @Schema(description = "图标地址")
     private String iconUrl;
 
+    @Size(max = 20, message = "标签最多20个")
     @Schema(description = "标签")
     private List<@Size(max = 32, message = "单个标签最多32个字符") String> tags;
 

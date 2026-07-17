@@ -5,7 +5,6 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.mango.common.result.Require;
 import io.mango.common.vo.PageResult;
-import io.mango.identity.api.TenantMemberProvider;
 import io.mango.link.api.command.CreateLinkCategoryCommand;
 import io.mango.link.api.command.CreateLinkItemCommand;
 import io.mango.link.api.command.LinkVisibilityTargetCommand;
@@ -15,6 +14,7 @@ import io.mango.link.api.command.UpdateLinkItemCommand;
 import io.mango.link.api.command.UpdateLinkItemStatusCommand;
 import io.mango.link.api.enums.LinkStatus;
 import io.mango.link.api.enums.LinkCategoryScope;
+import io.mango.link.api.enums.LinkCode;
 import io.mango.link.api.enums.LinkVisibilityScope;
 import io.mango.link.api.enums.LinkVisibilityTargetType;
 import io.mango.link.api.query.LinkCategoryPageQuery;
@@ -33,7 +33,7 @@ import io.mango.link.core.mapper.LinkVisibilityTargetMapper;
 import io.mango.link.core.service.ILinkAdminService;
 import io.mango.link.core.support.LinkContextSupport;
 import io.mango.link.core.support.LinkSupport;
-import org.springframework.beans.factory.ObjectProvider;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -44,15 +44,14 @@ import java.util.List;
 import java.util.Map;
 
 @Service
-public class LinkAdminService extends BaseLinkService implements ILinkAdminService {
+@RequiredArgsConstructor
+public class LinkAdminService implements ILinkAdminService {
 
-    public LinkAdminService(LinkCategoryMapper categoryMapper,
-                            LinkItemMapper itemMapper,
-                            LinkVisibilityTargetMapper targetMapper,
-                            LinkFavoriteMapper favoriteMapper,
-                            ObjectProvider<TenantMemberProvider> tenantMemberProvider) {
-        super(categoryMapper, itemMapper, targetMapper, favoriteMapper, tenantMemberProvider);
-    }
+    private final LinkCategoryMapper categoryMapper;
+    private final LinkItemMapper itemMapper;
+    private final LinkVisibilityTargetMapper targetMapper;
+    private final LinkFavoriteMapper favoriteMapper;
+    private final LinkServiceSupport support;
 
     @Override
     public PageResult<LinkCategoryVO> pageCategories(LinkCategoryPageQuery query) {
@@ -62,7 +61,7 @@ public class LinkAdminService extends BaseLinkService implements ILinkAdminServi
         }
         IPage<LinkCategoryEntity> page = categoryMapper.selectPage(new Page<>(resolved.getPage(), resolved.getSize()),
                 categoryWrapper(LinkContextSupport.currentTenantId(), resolved.getKeyword(), resolved.getStatus()));
-        return PageResult.of(page.getRecords().stream().map(this::toCategoryVO).toList(),
+        return PageResult.of(page.getRecords().stream().map(support::toCategoryVO).toList(),
                 page.getTotal(), page.getCurrent(), page.getSize());
     }
 
@@ -77,16 +76,17 @@ public class LinkAdminService extends BaseLinkService implements ILinkAdminServi
         if (!Boolean.TRUE.equals(resolved.getIncludeDisabled())) {
             wrapper.eq(LinkCategoryEntity::getStatus, LinkSupport.enabled());
         }
-        return categoryMapper.selectList(wrapper).stream().map(this::toCategoryVO).toList();
+        return categoryMapper.selectList(wrapper).stream().map(support::toCategoryVO).toList();
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Long createCategory(CreateLinkCategoryCommand command) {
-        Long tenantId = LinkContextSupport.currentTenantId();
+        Require.notNull(command, LinkCode.LINK_BUSINESS_ERROR, "新增分类命令不能为空");
+        String tenantId = LinkContextSupport.currentTenantId();
         String name = LinkContextSupport.trimRequired(command.getName(), "分类名称不能为空");
-        Require.isNull(categoryMapper.selectByScopeOwnerAndName(tenantId, LinkSupport.companyCategory(), 0L, name),
-                "分类名称已存在");
+        Require.isTrue(selectCategoryByOwnerAndName(tenantId, LinkSupport.companyCategory(), 0L, name) == null,
+                LinkCode.LINK_BUSINESS_ERROR, "分类名称已存在");
         LocalDateTime now = LocalDateTime.now();
         LinkCategoryEntity entity = new LinkCategoryEntity();
         entity.setTenantId(tenantId);
@@ -111,12 +111,14 @@ public class LinkAdminService extends BaseLinkService implements ILinkAdminServi
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean updateCategory(UpdateLinkCategoryCommand command) {
-        Long tenantId = LinkContextSupport.currentTenantId();
-        LinkCategoryEntity entity = selectCategoryRequired(tenantId, command.getId());
+        Require.notNull(command, LinkCode.LINK_BUSINESS_ERROR, "更新分类命令不能为空");
+        String tenantId = LinkContextSupport.currentTenantId();
+        LinkCategoryEntity entity = support.selectCategoryRequired(tenantId, command.getId());
         String name = LinkContextSupport.trimRequired(command.getName(), "分类名称不能为空");
-        LinkCategoryEntity exists = categoryMapper.selectByScopeOwnerAndName(tenantId,
+        LinkCategoryEntity exists = selectCategoryByOwnerAndName(tenantId,
                 entity.getScope(), entity.getOwnerUserId(), name);
-        Require.isTrue(exists == null || exists.getId().equals(entity.getId()), "分类名称已存在");
+        Require.isTrue(exists == null || exists.getId().equals(entity.getId()),
+                LinkCode.LINK_BUSINESS_ERROR, "分类名称已存在");
         entity.setName(name);
         Integer sortNo = command.getSortNo();
         if (sortNo == null) {
@@ -132,7 +134,8 @@ public class LinkAdminService extends BaseLinkService implements ILinkAdminServi
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean updateCategoryStatus(UpdateLinkCategoryStatusCommand command) {
-        LinkCategoryEntity entity = selectCategoryRequired(LinkContextSupport.currentTenantId(), command.getId());
+        Require.notNull(command, LinkCode.LINK_BUSINESS_ERROR, "更新分类状态命令不能为空");
+        LinkCategoryEntity entity = support.selectCategoryRequired(LinkContextSupport.currentTenantId(), command.getId());
         entity.setStatus(LinkSupport.status(command.getStatus()));
         entity.setUpdatedBy(LinkContextSupport.currentUserIdOrNull());
         entity.setUpdatedAt(LocalDateTime.now());
@@ -140,15 +143,28 @@ public class LinkAdminService extends BaseLinkService implements ILinkAdminServi
     }
 
     @Override
+    public boolean enableCategory(Long id) {
+        Require.notNull(id, LinkCode.LINK_BUSINESS_ERROR, "分类 ID 不能为空");
+        return updateCategoryStatus(categoryStatusCommand(id, LinkStatus.ENABLED));
+    }
+
+    @Override
+    public boolean disableCategory(Long id) {
+        Require.notNull(id, LinkCode.LINK_BUSINESS_ERROR, "分类 ID 不能为空");
+        return updateCategoryStatus(categoryStatusCommand(id, LinkStatus.DISABLED));
+    }
+
+    @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean deleteCategory(Long id) {
-        Long tenantId = LinkContextSupport.currentTenantId();
-        LinkCategoryEntity entity = selectCategoryRequired(tenantId, id);
+        Require.notNull(id, LinkCode.LINK_BUSINESS_ERROR, "分类 ID 不能为空");
+        String tenantId = LinkContextSupport.currentTenantId();
+        LinkCategoryEntity entity = support.selectCategoryRequired(tenantId, id);
         Long activeCount = itemMapper.selectCount(new LambdaQueryWrapper<LinkItemEntity>()
                 .eq(LinkItemEntity::getTenantId, tenantId)
                 .eq(LinkItemEntity::getCategoryId, entity.getId())
                 .eq(LinkItemEntity::getStatus, LinkSupport.enabled()));
-        Require.isTrue(activeCount == 0, "分类下存在启用网址，请先停用或迁移网址");
+        Require.isTrue(activeCount == 0, LinkCode.LINK_BUSINESS_ERROR, "分类下存在启用网址，请先停用或迁移网址");
         return categoryMapper.deleteById(entity.getId()) > 0;
     }
 
@@ -158,15 +174,15 @@ public class LinkAdminService extends BaseLinkService implements ILinkAdminServi
         if (resolved == null) {
             resolved = new LinkItemPageQuery();
         }
-        Long tenantId = LinkContextSupport.currentTenantId();
+        String tenantId = LinkContextSupport.currentTenantId();
         IPage<LinkItemEntity> page = itemMapper.selectPage(new Page<>(resolved.getPage(), resolved.getSize()),
                 itemWrapper(tenantId, resolved));
-        Map<Long, LinkCategoryEntity> categories = categoriesById(tenantId,
+        Map<Long, LinkCategoryEntity> categories = support.categoriesById(tenantId,
                 page.getRecords().stream().map(LinkItemEntity::getCategoryId).toList());
-        Map<Long, List<LinkVisibilityTargetEntity>> targets = targetsByLinkId(tenantId,
+        Map<Long, List<LinkVisibilityTargetEntity>> targets = support.targetsByLinkId(tenantId,
                 page.getRecords().stream().map(LinkItemEntity::getId).toList());
         return PageResult.of(page.getRecords().stream()
-                        .map(item -> toItemVO(item, categories.get(item.getCategoryId()), targets.get(item.getId())))
+                        .map(item -> support.toItemVO(item, categories.get(item.getCategoryId()), targets.get(item.getId())))
                         .toList(),
                 page.getTotal(), page.getCurrent(), page.getSize());
     }
@@ -174,7 +190,8 @@ public class LinkAdminService extends BaseLinkService implements ILinkAdminServi
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Long createItem(CreateLinkItemCommand command) {
-        Long tenantId = LinkContextSupport.currentTenantId();
+        Require.notNull(command, LinkCode.LINK_BUSINESS_ERROR, "新增网址命令不能为空");
+        String tenantId = LinkContextSupport.currentTenantId();
         validateAdminItem(tenantId, command.getCategoryId(), command.getVisibilityScope(), command.getVisibilityTargets());
         LocalDateTime now = LocalDateTime.now();
         LinkItemEntity entity = new LinkItemEntity();
@@ -195,8 +212,9 @@ public class LinkAdminService extends BaseLinkService implements ILinkAdminServi
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean updateItem(UpdateLinkItemCommand command) {
-        Long tenantId = LinkContextSupport.currentTenantId();
-        LinkItemEntity entity = selectItemRequired(tenantId, command.getId());
+        Require.notNull(command, LinkCode.LINK_BUSINESS_ERROR, "更新网址命令不能为空");
+        String tenantId = LinkContextSupport.currentTenantId();
+        LinkItemEntity entity = support.selectItemRequired(tenantId, command.getId());
         if (LinkVisibilityScope.PERSONAL.name().equals(entity.getVisibilityScope())) {
             validateAdminPersonalItem(tenantId, entity.getOwnerUserId(), command.getCategoryId(),
                     command.getVisibilityScope(), command.getVisibilityTargets());
@@ -214,7 +232,8 @@ public class LinkAdminService extends BaseLinkService implements ILinkAdminServi
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean updateItemStatus(UpdateLinkItemStatusCommand command) {
-        LinkItemEntity entity = selectItemRequired(LinkContextSupport.currentTenantId(), command.getId());
+        Require.notNull(command, LinkCode.LINK_BUSINESS_ERROR, "更新网址状态命令不能为空");
+        LinkItemEntity entity = support.selectItemRequired(LinkContextSupport.currentTenantId(), command.getId());
         entity.setStatus(LinkSupport.status(command.getStatus()));
         entity.setUpdatedBy(LinkContextSupport.currentUserIdOrNull());
         entity.setUpdatedAt(LocalDateTime.now());
@@ -222,10 +241,23 @@ public class LinkAdminService extends BaseLinkService implements ILinkAdminServi
     }
 
     @Override
+    public boolean enableItem(Long id) {
+        Require.notNull(id, LinkCode.LINK_BUSINESS_ERROR, "网址 ID 不能为空");
+        return updateItemStatus(itemStatusCommand(id, LinkStatus.ENABLED));
+    }
+
+    @Override
+    public boolean disableItem(Long id) {
+        Require.notNull(id, LinkCode.LINK_BUSINESS_ERROR, "网址 ID 不能为空");
+        return updateItemStatus(itemStatusCommand(id, LinkStatus.DISABLED));
+    }
+
+    @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean deleteItem(Long id) {
-        Long tenantId = LinkContextSupport.currentTenantId();
-        LinkItemEntity item = selectItemRequired(tenantId, id);
+        Require.notNull(id, LinkCode.LINK_BUSINESS_ERROR, "网址 ID 不能为空");
+        String tenantId = LinkContextSupport.currentTenantId();
+        LinkItemEntity item = support.selectItemRequired(tenantId, id);
         targetMapper.delete(new LambdaQueryWrapper<LinkVisibilityTargetEntity>()
                 .eq(LinkVisibilityTargetEntity::getTenantId, tenantId)
                 .eq(LinkVisibilityTargetEntity::getLinkId, item.getId()));
@@ -235,7 +267,7 @@ public class LinkAdminService extends BaseLinkService implements ILinkAdminServi
         return itemMapper.deleteById(item.getId()) > 0;
     }
 
-    private LambdaQueryWrapper<LinkCategoryEntity> categoryWrapper(Long tenantId, String keyword, LinkStatus status) {
+    private LambdaQueryWrapper<LinkCategoryEntity> categoryWrapper(String tenantId, String keyword, LinkStatus status) {
         LambdaQueryWrapper<LinkCategoryEntity> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(LinkCategoryEntity::getTenantId, tenantId);
         String normalized = LinkContextSupport.trimToNull(keyword);
@@ -250,7 +282,21 @@ public class LinkAdminService extends BaseLinkService implements ILinkAdminServi
         return wrapper;
     }
 
-    private LambdaQueryWrapper<LinkItemEntity> itemWrapper(Long tenantId, LinkItemPageQuery query) {
+    private UpdateLinkCategoryStatusCommand categoryStatusCommand(Long id, LinkStatus status) {
+        UpdateLinkCategoryStatusCommand command = new UpdateLinkCategoryStatusCommand();
+        command.setId(id);
+        command.setStatus(status);
+        return command;
+    }
+
+    private UpdateLinkItemStatusCommand itemStatusCommand(Long id, LinkStatus status) {
+        UpdateLinkItemStatusCommand command = new UpdateLinkItemStatusCommand();
+        command.setId(id);
+        command.setStatus(status);
+        return command;
+    }
+
+    private LambdaQueryWrapper<LinkItemEntity> itemWrapper(String tenantId, LinkItemPageQuery query) {
         LambdaQueryWrapper<LinkItemEntity> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(LinkItemEntity::getTenantId, tenantId);
         if (query.getCategoryId() != null) {
@@ -297,14 +343,15 @@ public class LinkAdminService extends BaseLinkService implements ILinkAdminServi
         entity.setRemark(LinkContextSupport.trimToNull(command.getRemark()));
     }
 
-    private void validateAdminItem(Long tenantId,
+    private void validateAdminItem(String tenantId,
                                    Long categoryId,
                                    LinkVisibilityScope scope,
                                    List<LinkVisibilityTargetCommand> targets) {
-        LinkCategoryEntity category = selectCategoryRequired(tenantId, categoryId);
-        Require.isTrue(enabledCategory(category) && LinkSupport.companyCategory().equals(category.getScope()),
-                "网址分类不存在或已停用");
-        Require.isTrue(scope != LinkVisibilityScope.PERSONAL, "后台网址列表不允许创建个人网址");
+        LinkCategoryEntity category = support.selectCategoryRequired(tenantId, categoryId);
+        Require.isTrue(support.enabledCategory(category) && LinkSupport.companyCategory().equals(category.getScope()),
+                LinkCode.LINK_BUSINESS_ERROR, "网址分类不存在或已停用");
+        Require.isTrue(scope != LinkVisibilityScope.PERSONAL,
+                LinkCode.LINK_BUSINESS_ERROR, "后台网址列表不允许创建个人网址");
         if (scope == LinkVisibilityScope.DEPARTMENT) {
             requireTargets(targets, LinkVisibilityTargetType.DEPARTMENT, "可见范围为指定部门时必须选择部门");
             return;
@@ -313,32 +360,36 @@ public class LinkAdminService extends BaseLinkService implements ILinkAdminServi
             requireTargets(targets, LinkVisibilityTargetType.USER, "可见范围为指定用户时必须选择用户");
             return;
         }
-        Require.isTrue(targets == null || targets.isEmpty(), "公开和公司内网址不允许配置指定目标");
+        Require.isTrue(targets == null || targets.isEmpty(),
+                LinkCode.LINK_BUSINESS_ERROR, "公开和公司内网址不允许配置指定目标");
     }
 
-    private void validateAdminPersonalItem(Long tenantId,
+    private void validateAdminPersonalItem(String tenantId,
                                            Long ownerUserId,
                                            Long categoryId,
                                            LinkVisibilityScope scope,
                                            List<LinkVisibilityTargetCommand> targets) {
-        LinkCategoryEntity category = selectCategoryRequired(tenantId, categoryId);
-        Require.isTrue(enabledCategory(category)
+        LinkCategoryEntity category = support.selectCategoryRequired(tenantId, categoryId);
+        Require.isTrue(support.enabledCategory(category)
                         && LinkCategoryScope.PERSONAL.name().equals(category.getScope())
                         && ownerUserId != null
                         && ownerUserId.equals(category.getOwnerUserId()),
-                "个人网址分类不存在或已停用");
-        Require.isTrue(scope == LinkVisibilityScope.PERSONAL, "个人网址不允许修改可见范围");
-        Require.isTrue(targets == null || targets.isEmpty(), "个人网址不允许配置指定目标");
+                LinkCode.LINK_BUSINESS_ERROR, "个人网址分类不存在或已停用");
+        Require.isTrue(scope == LinkVisibilityScope.PERSONAL,
+                LinkCode.LINK_BUSINESS_ERROR, "个人网址不允许修改可见范围");
+        Require.isTrue(targets == null || targets.isEmpty(),
+                LinkCode.LINK_BUSINESS_ERROR, "个人网址不允许配置指定目标");
     }
 
     private void requireTargets(List<LinkVisibilityTargetCommand> targets,
                                 LinkVisibilityTargetType targetType,
                                 String message) {
-        Require.isTrue(targets != null && !targets.isEmpty(), message);
-        Require.isTrue(targets.stream().allMatch(target -> targetType == target.getTargetType()), "可见目标类型不正确");
+        Require.isTrue(targets != null && !targets.isEmpty(), LinkCode.LINK_BUSINESS_ERROR, message);
+        Require.isTrue(targets.stream().allMatch(target -> targetType == target.getTargetType()),
+                LinkCode.LINK_BUSINESS_ERROR, "可见目标类型不正确");
     }
 
-    private void replaceTargets(Long tenantId,
+    private void replaceTargets(String tenantId,
                                 Long linkId,
                                 LinkVisibilityScope scope,
                                 List<LinkVisibilityTargetCommand> targets) {
@@ -347,8 +398,18 @@ public class LinkAdminService extends BaseLinkService implements ILinkAdminServi
                 .eq(LinkVisibilityTargetEntity::getLinkId, linkId));
         if (scope == LinkVisibilityScope.DEPARTMENT || scope == LinkVisibilityScope.USER) {
             for (LinkVisibilityTargetCommand target : targets) {
-                targetMapper.insert(toTargetEntity(tenantId, linkId, target));
+                targetMapper.insert(support.toTargetEntity(tenantId, linkId, target));
             }
         }
+    }
+
+    private LinkCategoryEntity selectCategoryByOwnerAndName(
+            String tenantId, String scope, Long ownerUserId, String name) {
+        return categoryMapper.selectOne(new LambdaQueryWrapper<LinkCategoryEntity>()
+                .eq(LinkCategoryEntity::getTenantId, tenantId)
+                .eq(LinkCategoryEntity::getScope, scope)
+                .eq(LinkCategoryEntity::getOwnerUserId, ownerUserId)
+                .eq(LinkCategoryEntity::getName, name)
+                .last("LIMIT 1"));
     }
 }

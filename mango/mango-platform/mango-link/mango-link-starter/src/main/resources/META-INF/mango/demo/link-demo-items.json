@@ -1,0 +1,213 @@
+{
+  "mango": {
+    "resource": {
+      "schemaVersion": 1,
+      "moduleCode": "link",
+      "moduleName": "网址导航",
+      "declarations": {
+        "LINK_ITEM": [
+          {
+            "id": "2026070103060200001", "version": 1, "bizKey": "link.item.demo-admin",
+            "name": "Mango 管理后台演示网址", "targetModule": "link", "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {"type": "LONG", "value": "2026070103060200001"}, "tenantId": {"type": "STRING", "value": "1"}, "orgId": {"type": "LONG", "value": "1"},
+              "categoryId": {"type": "LONG", "value": "2026070103060100001"}, "name": {"type": "STRING", "value": "Mango 管理后台"}, "url": {"type": "STRING", "value": "http://127.0.0.1:30002"},
+              "summary": {"type": "STRING", "value": "Mango 内部管理后台"}, "tags": {"type": "STRING", "value": "mango,管理后台"}, "visibilityScope": {"type": "STRING", "value": "COMPANY"},
+              "ownerUserId": {"type": "LONG", "value": "0"}, "openMode": {"type": "STRING", "value": "NEW_WINDOW"}, "recommended": {"type": "BOOLEAN", "value": true}, "sortNo": {"type": "INT", "value": 0},
+              "status": {"type": "STRING", "value": "ENABLED"}, "remark": {"type": "STRING", "value": "系统演示企业导航网址"}, "createdBy": {"type": "LONG", "value": "1"}, "updatedBy": {"type": "LONG", "value": "1"}
+            }
+          },
+          {
+            "id": "2026070103060200002", "version": 1, "bizKey": "link.item.demo-baidu",
+            "name": "百度演示网址", "targetModule": "link", "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {"type": "LONG", "value": "2026070103060200002"}, "tenantId": {"type": "STRING", "value": "1"}, "orgId": {"type": "LONG", "value": "1"}, "categoryId": {"type": "LONG", "value": "2026070103060100001"},
+              "name": {"type": "STRING", "value": "百度"}, "url": {"type": "STRING", "value": "https://www.baidu.com"}, "summary": {"type": "STRING", "value": "百度搜索"}, "tags": {"type": "STRING", "value": "搜索,常用"},
+              "visibilityScope": {"type": "STRING", "value": "PUBLIC"}, "ownerUserId": {"type": "LONG", "value": "0"}, "openMode": {"type": "STRING", "value": "NEW_WINDOW"}, "recommended": {"type": "BOOLEAN", "value": false}, "sortNo": {"type": "INT", "value": 10},
+              "status": {"type": "STRING", "value": "ENABLED"}, "remark": {"type": "STRING", "value": "系统演示公开网址"}, "createdBy": {"type": "LONG", "value": "1"}, "updatedBy": {"type": "LONG", "value": "1"}
+            }
+          },
+          {
+            "id": "2026070103060200003", "version": 1, "bizKey": "link.item.demo-github",
+            "name": "GitHub 演示网址", "targetModule": "link", "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {"type": "LONG", "value": "2026070103060200003"}, "tenantId": {"type": "STRING", "value": "1"}, "orgId": {"type": "LONG", "value": "1"}, "categoryId": {"type": "LONG", "value": "2026070103060100001"},
+              "name": {"type": "STRING", "value": "GitHub"}, "url": {"type": "STRING", "value": "https://github.com"}, "summary": {"type": "STRING", "value": "代码托管与开源协作平台"}, "tags": {"type": "STRING", "value": "研发,常用"},
+              "visibilityScope": {"type": "STRING", "value": "PUBLIC"}, "ownerUserId": {"type": "LONG", "value": "0"}, "openMode": {"type": "STRING", "value": "NEW_WINDOW"}, "recommended": {"type": "BOOLEAN", "value": false}, "sortNo": {"type": "INT", "value": 20},
+              "status": {"type": "STRING", "value": "ENABLED"}, "remark": {"type": "STRING", "value": "系统演示公开网址"}, "createdBy": {"type": "LONG", "value": "1"}, "updatedBy": {"type": "LONG", "value": "1"}
+            }
+          },
+          {
+            "id": "2026070103060200004", "version": 1, "bizKey": "link.item.demo-maven-central",
+            "name": "Maven Central 演示网址", "targetModule": "link", "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {"type": "LONG", "value": "2026070103060200004"}, "tenantId": {"type": "STRING", "value": "1"}, "orgId": {"type": "LONG", "value": "1"}, "categoryId": {"type": "LONG", "value": "2026070103060100001"},
+              "name": {"type": "STRING", "value": "Maven Central"}, "url": {"type": "STRING", "value": "https://central.sonatype.com"}, "summary": {"type": "STRING", "value": "Maven 依赖检索"}, "tags": {"type": "STRING", "value": "研发,常用"},
+              "visibilityScope": {"type": "STRING", "value": "PUBLIC"}, "ownerUserId": {"type": "LONG", "value": "0"}, "openMode": {"type": "STRING", "value": "NEW_WINDOW"}, "recommended": {"type": "BOOLEAN", "value": false}, "sortNo": {"type": "INT", "value": 30},
+              "status": {"type": "STRING", "value": "ENABLED"}, "remark": {"type": "STRING", "value": "系统演示公开网址"}, "createdBy": {"type": "LONG", "value": "1"}, "updatedBy": {"type": "LONG", "value": "1"}
+            }
+          },
+          {
+            "id": "202607100102000001", "version": 1, "bizKey": "link.item.guarantee.ccb",
+            "name": "建设银行保函查询", "targetModule": "link", "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {"type": "LONG", "value": "202607100102000001"}, "tenantId": {"type": "STRING", "value": "1"}, "orgId": {"type": "LONG", "value": "1"}, "categoryId": {"type": "LONG", "value": "202607100101000001"},
+              "name": {"type": "STRING", "value": "建设银行保函查询"}, "url": {"type": "STRING", "value": "https://www2.ccb.com/tran/WCCMainPlatV5?CCB_IBSVersion=V5&SERVLET_NAME=WCCMainPlatV5&TXCODE=NBH001"}, "summary": {"type": "STRING", "value": "用于查询建设银行保函相关业务信息。"}, "tags": {"type": "STRING", "value": "建行,建设银行,保函,保函查询"},
+              "visibilityScope": {"type": "STRING", "value": "PUBLIC"}, "ownerUserId": {"type": "LONG", "value": "0"}, "openMode": {"type": "STRING", "value": "NEW_WINDOW"}, "recommended": {"type": "BOOLEAN", "value": true}, "sortNo": {"type": "INT", "value": 10},
+              "status": {"type": "STRING", "value": "ENABLED"}, "remark": {"type": "STRING", "value": "系统演示保函业务导航"}, "createdBy": {"type": "LONG", "value": "1"}, "updatedBy": {"type": "LONG", "value": "1"}
+            }
+          },
+          {
+            "id": "202607100102000002", "version": 1, "bizKey": "link.item.guarantee.citic",
+            "name": "中信银行保函查询", "targetModule": "link", "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {"type": "LONG", "value": "202607100102000002"}, "tenantId": {"type": "STRING", "value": "1"}, "orgId": {"type": "LONG", "value": "1"}, "categoryId": {"type": "LONG", "value": "202607100101000001"},
+              "name": {"type": "STRING", "value": "中信银行保函查询"}, "url": {"type": "STRING", "value": "https://corp.bank.ecitic.com/cotb/onLineLOGVerify_new.html"}, "summary": {"type": "STRING", "value": "用于查询中信银行保函真伪和业务信息。"}, "tags": {"type": "STRING", "value": "中信,中信银行,保函,保函查询"},
+              "visibilityScope": {"type": "STRING", "value": "PUBLIC"}, "ownerUserId": {"type": "LONG", "value": "0"}, "openMode": {"type": "STRING", "value": "NEW_WINDOW"}, "recommended": {"type": "BOOLEAN", "value": true}, "sortNo": {"type": "INT", "value": 20}, "status": {"type": "STRING", "value": "ENABLED"},
+              "remark": {"type": "STRING", "value": "系统演示保函业务导航"}, "createdBy": {"type": "LONG", "value": "1"}, "updatedBy": {"type": "LONG", "value": "1"}
+            }
+          },
+          {
+            "id": "202607100102000003", "version": 1, "bizKey": "link.item.guarantee.psbc",
+            "name": "邮储银行 U 函通", "targetModule": "link", "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {"type": "LONG", "value": "202607100102000003"}, "tenantId": {"type": "STRING", "value": "1"}, "orgId": {"type": "LONG", "value": "1"}, "categoryId": {"type": "LONG", "value": "202607100101000001"},
+              "name": {"type": "STRING", "value": "邮储银行 U 函通"}, "url": {"type": "STRING", "value": "https://elgs.psbc.com/"}, "summary": {"type": "STRING", "value": "邮储银行电子保函业务查询入口。"}, "tags": {"type": "STRING", "value": "邮储,邮储银行,U函通,保函"},
+              "visibilityScope": {"type": "STRING", "value": "PUBLIC"}, "ownerUserId": {"type": "LONG", "value": "0"}, "openMode": {"type": "STRING", "value": "NEW_WINDOW"}, "recommended": {"type": "BOOLEAN", "value": true}, "sortNo": {"type": "INT", "value": 30}, "status": {"type": "STRING", "value": "ENABLED"},
+              "remark": {"type": "STRING", "value": "系统演示保函业务导航"}, "createdBy": {"type": "LONG", "value": "1"}, "updatedBy": {"type": "LONG", "value": "1"}
+            }
+          },
+          {
+            "id": "202607100102000004", "version": 1, "bizKey": "link.item.guarantee.cangzhou-bank",
+            "name": "沧州银行保函查询", "targetModule": "link", "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {"type": "LONG", "value": "202607100102000004"}, "tenantId": {"type": "STRING", "value": "1"}, "orgId": {"type": "LONG", "value": "1"}, "categoryId": {"type": "LONG", "value": "202607100101000001"},
+              "name": {"type": "STRING", "value": "沧州银行保函查询"}, "url": {"type": "STRING", "value": "https://bankczbhcx.com/"}, "summary": {"type": "STRING", "value": "沧州银行保函业务查询入口，地址待业务最终确认。"}, "tags": {"type": "STRING", "value": "沧州银行,保函,保函查询"},
+              "visibilityScope": {"type": "STRING", "value": "PUBLIC"}, "ownerUserId": {"type": "LONG", "value": "0"}, "openMode": {"type": "STRING", "value": "NEW_WINDOW"}, "recommended": {"type": "BOOLEAN", "value": false}, "sortNo": {"type": "INT", "value": 40}, "status": {"type": "STRING", "value": "ENABLED"},
+              "remark": {"type": "STRING", "value": "系统演示保函业务导航，地址待业务确认"}, "createdBy": {"type": "LONG", "value": "1"}, "updatedBy": {"type": "LONG", "value": "1"}
+            }
+          },
+          {
+            "id": "202607100102000005", "version": 1, "bizKey": "link.item.guarantee.court",
+            "name": "中国执行信息公开网", "targetModule": "link", "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {"type": "LONG", "value": "202607100102000005"}, "tenantId": {"type": "STRING", "value": "1"}, "orgId": {"type": "LONG", "value": "1"}, "categoryId": {"type": "LONG", "value": "202607100101000001"},
+              "name": {"type": "STRING", "value": "中国执行信息公开网"}, "url": {"type": "STRING", "value": "https://zxgk.court.gov.cn/"}, "summary": {"type": "STRING", "value": "查询被执行人、失信被执行人等公开信息。"}, "tags": {"type": "STRING", "value": "执行信息,法院,失信,风险核验"},
+              "visibilityScope": {"type": "STRING", "value": "PUBLIC"}, "ownerUserId": {"type": "LONG", "value": "0"}, "openMode": {"type": "STRING", "value": "NEW_WINDOW"}, "recommended": {"type": "BOOLEAN", "value": false}, "sortNo": {"type": "INT", "value": 50}, "status": {"type": "STRING", "value": "ENABLED"}, "createdBy": {"type": "LONG", "value": "1"}, "updatedBy": {"type": "LONG", "value": "1"}
+            }
+          },
+          {
+            "id": "202607100102000006", "version": 1, "bizKey": "link.item.guarantee.construction-market",
+            "name": "全国建筑市场监管公共服务平台", "targetModule": "link", "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {"type": "LONG", "value": "202607100102000006"}, "tenantId": {"type": "STRING", "value": "1"}, "orgId": {"type": "LONG", "value": "1"}, "categoryId": {"type": "LONG", "value": "202607100101000001"},
+              "name": {"type": "STRING", "value": "全国建筑市场监管公共服务平台"}, "url": {"type": "STRING", "value": "https://jzsc.mohurd.gov.cn/home"}, "summary": {"type": "STRING", "value": "查询建筑企业、人员、项目和诚信信息。"}, "tags": {"type": "STRING", "value": "建筑市场,住建部,企业资质,项目核验"},
+              "visibilityScope": {"type": "STRING", "value": "PUBLIC"}, "ownerUserId": {"type": "LONG", "value": "0"}, "openMode": {"type": "STRING", "value": "NEW_WINDOW"}, "recommended": {"type": "BOOLEAN", "value": false}, "sortNo": {"type": "INT", "value": 60}, "status": {"type": "STRING", "value": "ENABLED"}, "createdBy": {"type": "LONG", "value": "1"}, "updatedBy": {"type": "LONG", "value": "1"}
+            }
+          },
+          {
+            "id": "202607100102000007", "version": 1, "bizKey": "link.item.guarantee.enterprise-credit",
+            "name": "国家企业信用信息公示系统", "targetModule": "link", "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {"type": "LONG", "value": "202607100102000007"}, "tenantId": {"type": "STRING", "value": "1"}, "orgId": {"type": "LONG", "value": "1"}, "categoryId": {"type": "LONG", "value": "202607100101000001"},
+              "name": {"type": "STRING", "value": "国家企业信用信息公示系统"}, "url": {"type": "STRING", "value": "https://www.gsxt.gov.cn/"}, "summary": {"type": "STRING", "value": "查询企业登记、公示和经营异常等信息。"}, "tags": {"type": "STRING", "value": "企业信用,工商,企业核验"},
+              "visibilityScope": {"type": "STRING", "value": "PUBLIC"}, "ownerUserId": {"type": "LONG", "value": "0"}, "openMode": {"type": "STRING", "value": "NEW_WINDOW"}, "recommended": {"type": "BOOLEAN", "value": false}, "sortNo": {"type": "INT", "value": 70}, "status": {"type": "STRING", "value": "ENABLED"}, "createdBy": {"type": "LONG", "value": "1"}, "updatedBy": {"type": "LONG", "value": "1"}
+            }
+          },
+          {
+            "id": "202607100102000008", "version": 1, "bizKey": "link.item.guarantee.credit-china",
+            "name": "信用中国", "targetModule": "link", "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {"type": "LONG", "value": "202607100102000008"}, "tenantId": {"type": "STRING", "value": "1"}, "orgId": {"type": "LONG", "value": "1"}, "categoryId": {"type": "LONG", "value": "202607100101000001"},
+              "name": {"type": "STRING", "value": "信用中国"}, "url": {"type": "STRING", "value": "https://www.creditchina.gov.cn/"}, "summary": {"type": "STRING", "value": "查询信用信息、行政处罚和联合惩戒信息。"}, "tags": {"type": "STRING", "value": "信用中国,信用,风险核验"},
+              "visibilityScope": {"type": "STRING", "value": "PUBLIC"}, "ownerUserId": {"type": "LONG", "value": "0"}, "openMode": {"type": "STRING", "value": "NEW_WINDOW"}, "recommended": {"type": "BOOLEAN", "value": false}, "sortNo": {"type": "INT", "value": 80}, "status": {"type": "STRING", "value": "ENABLED"}, "createdBy": {"type": "LONG", "value": "1"}, "updatedBy": {"type": "LONG", "value": "1"}
+            }
+          },
+          {
+            "id": "202607100102000009", "version": 1, "bizKey": "link.item.guarantee.public-resource",
+            "name": "全国公共资源交易平台", "targetModule": "link", "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {"type": "LONG", "value": "202607100102000009"}, "tenantId": {"type": "STRING", "value": "1"}, "orgId": {"type": "LONG", "value": "1"}, "categoryId": {"type": "LONG", "value": "202607100101000001"},
+              "name": {"type": "STRING", "value": "全国公共资源交易平台"}, "url": {"type": "STRING", "value": "https://www.ggzy.gov.cn/"}, "summary": {"type": "STRING", "value": "查询公共资源交易公告和项目信息。"}, "tags": {"type": "STRING", "value": "公共资源,招投标,交易平台"},
+              "visibilityScope": {"type": "STRING", "value": "PUBLIC"}, "ownerUserId": {"type": "LONG", "value": "0"}, "openMode": {"type": "STRING", "value": "NEW_WINDOW"}, "recommended": {"type": "BOOLEAN", "value": false}, "sortNo": {"type": "INT", "value": 90}, "status": {"type": "STRING", "value": "ENABLED"}, "createdBy": {"type": "LONG", "value": "1"}, "updatedBy": {"type": "LONG", "value": "1"}
+            }
+          },
+          {
+            "id": "202607100102000010", "version": 1, "bizKey": "link.item.guarantee.government-procurement",
+            "name": "中国政府采购网", "targetModule": "link", "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {"type": "LONG", "value": "202607100102000010"}, "tenantId": {"type": "STRING", "value": "1"}, "orgId": {"type": "LONG", "value": "1"}, "categoryId": {"type": "LONG", "value": "202607100101000001"},
+              "name": {"type": "STRING", "value": "中国政府采购网"}, "url": {"type": "STRING", "value": "https://www.ccgp.gov.cn/"}, "summary": {"type": "STRING", "value": "查询政府采购公告、中标和成交信息。"}, "tags": {"type": "STRING", "value": "政府采购,采购公告,中标"},
+              "visibilityScope": {"type": "STRING", "value": "PUBLIC"}, "ownerUserId": {"type": "LONG", "value": "0"}, "openMode": {"type": "STRING", "value": "NEW_WINDOW"}, "recommended": {"type": "BOOLEAN", "value": false}, "sortNo": {"type": "INT", "value": 100}, "status": {"type": "STRING", "value": "ENABLED"}, "createdBy": {"type": "LONG", "value": "1"}, "updatedBy": {"type": "LONG", "value": "1"}
+            }
+          },
+          {
+            "id": "202607100102000011", "version": 1, "bizKey": "link.item.guarantee.premium-calculator",
+            "name": "保费测算", "targetModule": "link", "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {"type": "LONG", "value": "202607100102000011"}, "tenantId": {"type": "STRING", "value": "1"}, "orgId": {"type": "LONG", "value": "1"}, "categoryId": {"type": "LONG", "value": "202607100101000002"},
+              "name": {"type": "STRING", "value": "保费测算"}, "url": {"type": "STRING", "value": "/tools/premium-calculator"}, "summary": {"type": "STRING", "value": "系统内置保函保费测算工具入口。"}, "tags": {"type": "STRING", "value": "保费,测算,内置工具"},
+              "visibilityScope": {"type": "STRING", "value": "PUBLIC"}, "ownerUserId": {"type": "LONG", "value": "0"}, "openMode": {"type": "STRING", "value": "NEW_WINDOW"}, "recommended": {"type": "BOOLEAN", "value": true}, "sortNo": {"type": "INT", "value": 10}, "status": {"type": "STRING", "value": "ENABLED"},
+              "remark": {"type": "STRING", "value": "系统演示工具导航，路由待宿主确认"}, "createdBy": {"type": "LONG", "value": "1"}, "updatedBy": {"type": "LONG", "value": "1"}
+            }
+          },
+          {
+            "id": "202607100102000012", "version": 1, "bizKey": "link.item.guarantee.express-h5",
+            "name": "快递 H5", "targetModule": "link", "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {"type": "LONG", "value": "202607100102000012"}, "tenantId": {"type": "STRING", "value": "1"}, "orgId": {"type": "LONG", "value": "1"}, "categoryId": {"type": "LONG", "value": "202607100101000002"},
+              "name": {"type": "STRING", "value": "快递 H5"}, "url": {"type": "STRING", "value": "/tools/express-h5"}, "summary": {"type": "STRING", "value": "系统内置快递 H5 工具入口。"}, "tags": {"type": "STRING", "value": "快递,H5,内置工具"},
+              "visibilityScope": {"type": "STRING", "value": "PUBLIC"}, "ownerUserId": {"type": "LONG", "value": "0"}, "openMode": {"type": "STRING", "value": "NEW_WINDOW"}, "recommended": {"type": "BOOLEAN", "value": true}, "sortNo": {"type": "INT", "value": 20}, "status": {"type": "STRING", "value": "ENABLED"},
+              "remark": {"type": "STRING", "value": "系统演示工具导航，路由待宿主确认"}, "createdBy": {"type": "LONG", "value": "1"}, "updatedBy": {"type": "LONG", "value": "1"}
+            }
+          },
+          {
+            "id": "202607100102000013", "version": 1, "bizKey": "link.item.guarantee.esign",
+            "name": "e签宝", "targetModule": "link", "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {"type": "LONG", "value": "202607100102000013"}, "tenantId": {"type": "STRING", "value": "1"}, "orgId": {"type": "LONG", "value": "1"}, "categoryId": {"type": "LONG", "value": "202607100101000002"},
+              "name": {"type": "STRING", "value": "e签宝"}, "url": {"type": "STRING", "value": "https://h5.esign.cn/usercenterFront/login/web"}, "summary": {"type": "STRING", "value": "电子签署和合同签章服务入口。"}, "tags": {"type": "STRING", "value": "e签宝,电子签章,签署"},
+              "visibilityScope": {"type": "STRING", "value": "PUBLIC"}, "ownerUserId": {"type": "LONG", "value": "0"}, "openMode": {"type": "STRING", "value": "NEW_WINDOW"}, "recommended": {"type": "BOOLEAN", "value": false}, "sortNo": {"type": "INT", "value": 30}, "status": {"type": "STRING", "value": "ENABLED"}, "createdBy": {"type": "LONG", "value": "1"}, "updatedBy": {"type": "LONG", "value": "1"}
+            }
+          },
+          {
+            "id": "202607100102000014", "version": 1, "bizKey": "link.item.guarantee.doubao",
+            "name": "豆包", "targetModule": "link", "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {"type": "LONG", "value": "202607100102000014"}, "tenantId": {"type": "STRING", "value": "1"}, "orgId": {"type": "LONG", "value": "1"}, "categoryId": {"type": "LONG", "value": "202607100101000002"},
+              "name": {"type": "STRING", "value": "豆包"}, "url": {"type": "STRING", "value": "https://www.doubao.com/chat/"}, "summary": {"type": "STRING", "value": "AI 问答和内容辅助工具。"}, "tags": {"type": "STRING", "value": "豆包,AI,工具"},
+              "visibilityScope": {"type": "STRING", "value": "PUBLIC"}, "ownerUserId": {"type": "LONG", "value": "0"}, "openMode": {"type": "STRING", "value": "NEW_WINDOW"}, "recommended": {"type": "BOOLEAN", "value": false}, "sortNo": {"type": "INT", "value": 40}, "status": {"type": "STRING", "value": "ENABLED"}, "createdBy": {"type": "LONG", "value": "1"}, "updatedBy": {"type": "LONG", "value": "1"}
+            }
+          },
+          {
+            "id": "202607100102000015", "version": 1, "bizKey": "link.item.guarantee.baidu",
+            "name": "百度工具入口", "targetModule": "link", "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {"type": "LONG", "value": "202607100102000015"}, "tenantId": {"type": "STRING", "value": "1"}, "orgId": {"type": "LONG", "value": "1"}, "categoryId": {"type": "LONG", "value": "202607100101000002"},
+              "name": {"type": "STRING", "value": "百度"}, "url": {"type": "STRING", "value": "https://www.baidu.com/"}, "summary": {"type": "STRING", "value": "常用中文搜索引擎。"}, "tags": {"type": "STRING", "value": "百度,搜索"},
+              "visibilityScope": {"type": "STRING", "value": "PUBLIC"}, "ownerUserId": {"type": "LONG", "value": "0"}, "openMode": {"type": "STRING", "value": "NEW_WINDOW"}, "recommended": {"type": "BOOLEAN", "value": false}, "sortNo": {"type": "INT", "value": 50}, "status": {"type": "STRING", "value": "ENABLED"}, "createdBy": {"type": "LONG", "value": "1"}, "updatedBy": {"type": "LONG", "value": "1"}
+            }
+          },
+          {
+            "id": "202607100102000016", "version": 1, "bizKey": "link.item.guarantee.legal-service",
+            "name": "中国法律服务网", "targetModule": "link", "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {"type": "LONG", "value": "202607100102000016"}, "tenantId": {"type": "STRING", "value": "1"}, "orgId": {"type": "LONG", "value": "1"}, "categoryId": {"type": "LONG", "value": "202607100101000003"},
+              "name": {"type": "STRING", "value": "中国法律服务网"}, "url": {"type": "STRING", "value": "https://www.12348.gov.cn/"}, "summary": {"type": "STRING", "value": "法律服务、法规和咨询辅助入口。"}, "tags": {"type": "STRING", "value": "法律,法规,法律服务"},
+              "visibilityScope": {"type": "STRING", "value": "PUBLIC"}, "ownerUserId": {"type": "LONG", "value": "0"}, "openMode": {"type": "STRING", "value": "NEW_WINDOW"}, "recommended": {"type": "BOOLEAN", "value": false}, "sortNo": {"type": "INT", "value": 10}, "status": {"type": "STRING", "value": "ENABLED"}, "createdBy": {"type": "LONG", "value": "1"}, "updatedBy": {"type": "LONG", "value": "1"}
+            }
+          },
+          {
+            "id": "202607100102000017", "version": 1, "bizKey": "link.item.guarantee.zhihu",
+            "name": "知乎", "targetModule": "link", "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {"type": "LONG", "value": "202607100102000017"}, "tenantId": {"type": "STRING", "value": "1"}, "orgId": {"type": "LONG", "value": "1"}, "categoryId": {"type": "LONG", "value": "202607100101000003"},
+              "name": {"type": "STRING", "value": "知乎"}, "url": {"type": "STRING", "value": "https://www.zhihu.com/"}, "summary": {"type": "STRING", "value": "知识问答和行业信息检索入口。"}, "tags": {"type": "STRING", "value": "知乎,知识,问答"},
+              "visibilityScope": {"type": "STRING", "value": "PUBLIC"}, "ownerUserId": {"type": "LONG", "value": "0"}, "openMode": {"type": "STRING", "value": "NEW_WINDOW"}, "recommended": {"type": "BOOLEAN", "value": false}, "sortNo": {"type": "INT", "value": 20}, "status": {"type": "STRING", "value": "ENABLED"}, "createdBy": {"type": "LONG", "value": "1"}, "updatedBy": {"type": "LONG", "value": "1"}
+            }
+          }
+        ]
+      }
+    }
+  }
+}

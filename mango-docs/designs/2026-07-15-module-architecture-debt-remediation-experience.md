@@ -2,7 +2,7 @@
 
 ## 1. 背景
 
-本文记录 Payment、CMS、Workflow、Notice、Org、System、Authorization、Resource、File Preview 和 Template 治理暴露的真实失败模式，作为后续模块排序、方案设计和验收的经验输入。长期开发、数据库、测试和交付约束仍以 `mango-pmo` 为唯一规范源，本文不替代规范。
+本文记录 Payment、CMS、Workflow、Notice、Org、System、Authorization、Resource、File Preview、Template 和 Link 治理暴露的真实失败模式，作为后续模块排序、方案设计和验收的经验输入。长期开发、数据库、测试和交付约束仍以 `mango-pmo` 为唯一规范源，本文不替代规范。
 
 ## 2. 已发生的问题类型
 
@@ -63,6 +63,17 @@
 | DTO/值对象暴露可变内部状态 | Command、VO、record 直接保存或返回 List、Map、JSON wrapper、`byte[]`，调用者可在校验后篡改对象 | 测试只比较初始值，没有覆盖构造后和 getter 后的外部修改 | 构造/Setter 输入和 Getter/accessor 输出都做防御复制；集合使用不可变副本，数组逐次复制；补嵌套 JSON 与二进制回归 |
 | 能力应用误连默认 H2 | 单体使用 MySQL 环境别名，但独立 capability app 未读取同一别名，双 JVM启动时落到 H2 并拒绝 MySQL DDL | 只验证单体，未核对每个独立进程实际 JDBC URL | 微服务 E2E 为每个 JVM 显式绑定 `SPRING_DATASOURCE_URL/USERNAME/PASSWORD`，启动后核对连接库和 Flyway history |
 | Feign 直连配置未命中实际客户端 | 只配置服务名 URL 后，按 `contextId` 创建的 Feign 客户端仍尝试负载均衡，或把带协议 URL 填进仅接受服务名的入口 | 单体本地 Provider 不经过 Feign，单进程测试无法暴露配置键差异 | 无注册中心的双 JVM测试同时设置服务名 `host:port` 与实际 `contextId` 的绝对 URL；保留真实 base path、租户头和 HTTP 断言 |
+| 公开接口同时承担匿名与登录语义 | Link 的 PUBLIC 接口试图在登录后返回公司、收藏和个人网址，但 PUBLIC 安全链不建立用户上下文 | 单元测试直接设置 ThreadLocal，绕过了真实安全链的上下文建立规则 | 匿名公开接口只返回 PUBLIC 数据；新增 LOGIN 接口承载当前用户完整可见导航；前端按 `authenticated` 明确选路 |
+| 公共 Service 基类造成伪继承 | Admin、User、Open Service 为复用 Mapper 和转换逻辑共同继承 `BaseLinkService`，形成与业务类型无关的继承层次 | 功能测试只看返回值，无法发现继承扩大 protected 状态和构造依赖 | 保留具体 Service 实现，以 `private final LinkServiceSupport` 组合复用查询、可见性和转换逻辑 |
+| 空 remote starter 被当成标准结构保留 | Link remote starter 只有 POM、没有 Feign client、自动配置或消费者，仍进入 Reactor 和依赖管理 | 只检查“模块齐全”和 Maven 成功，没有检查发布物是否提供实际能力 | 搜索消费者、Java 源码、资源和自动配置；全部为空且无需求时删除模块，未来出现真实跨进程契约再新增 |
+| E2E 把聚合分组误当全部公司数据 | 首页小组件点击“企业导航”后，测试断言所有公司分类的前 3 条都在当前分组 | 测试按接口扁平顺序断言，没有按页面真实 categoryId 分组模型取数 | E2E 使用接口返回的 categoryId 切换对应分组，再断言该分组记录；测试必须匹配产品信息架构 |
+| 数据库索引绑定单一方言且没有查询依据 | `url(191)` MySQL 前缀索引在 H2 合约测试无法执行，而业务没有按 URL 查询访问记录 | 旧测试使用自建简化 schema，没有执行真实 V1 | 测试直接执行生产 V1；索引按真实查询改为租户+访问时间，不建立无消费方的方言专属索引 |
+| `-am test` 把目标模块验证扩大到上游测试 | 为补齐编译依赖使用 `-am test`，实际先运行工具和基础设施的大量测试，既慢又模糊目标用例数 | 把“构建依赖”和“执行目标测试”混成一个 Maven 生命周期 | 先定向 install/compile 必要依赖并跳过测试，再对目标 api/core/starter 不带 `-am` 执行测试；分别登记目标测试数 |
+| 函数式路由未登记 API 访问模式 | RouterFunction 能返回 302，但不会被 Controller API 扫描发现，新库访问被默认拒绝为 401 | Endpoint MockMvc 只验证处理器响应，没有经过真实授权资源链 | 函数式 HTTP 路由必须通过 ResourceProvider 声明 API_RESOURCE，并在新库核对 `authorization_api_resource` 后直连接口 |
+| PUBLIC 跳转路由承载登录链接 | 登录请求携带 token，但 PUBLIC 安全链会按设计清除上下文，公司链接最终返回业务失败而非 302 | Service 测试直接设置 ThreadLocal，绕过访问模式清理上下文 | 匿名 `/open/*` 与登录 `/visible-links/*` 分路；PUBLIC 只处理公开链接，LOGIN 保留公司、收藏和个人可见性 |
+| 健康检查早于模块 Demo 同步完成 | `/actuator/health` 已 UP 时 Link 表仍为 0，数秒后 Resource Registry 才完成 4/21/3 条数据 | 把进程就绪误当成模块资源就绪 | E2E 前轮询模块声明数和目标表计数稳定，不能在首个健康响应后立即断言缺数据 |
+| 并行 E2E 消费其它用例临时数据 | 首页用例读取到另一个用例刚创建的个人分类，点击前该分类被对方清理，导致定位器超时 | 测试读取全局动态列表，没有区分稳定基线和用例私有数据 | 每个写用例只消费和清理自己的 ID；基线用例只断言稳定资源，不跨用例借用临时记录 |
+| 拆分架构检查解析到旧 API SNAPSHOT | Core 已使用新 `LinkCode`，单模块检查却从本地仓库读取旧 API，连带误报 21 条 Service 规则 | 直接执行子模块 POM，没有先更新其同域 API 依赖 | 先安装当前 API 或使用能正确覆盖源码依赖的 Reactor，再分别检查 API/Core/Starter；核对实际执行模块 |
 
 ## 3. 改前与改后不变性的证明方式
 
@@ -109,6 +120,16 @@
 39. 静态工具误报 Spring 构造器注入时，禁止加抑制注解或破坏 `private final I*Service` 规范；应缩小构造器可见性、移除不必要的可变依赖，并用 Spring 装配测试证明行为。
 40. 独立能力应用 E2E 必须逐进程确认真实数据源；不能假设单体使用的环境别名会被所有 capability app 读取。
 41. 无注册中心的 Feign 直连必须按实际客户端 `contextId` 配置 URL，并保留服务 base path 与内部租户传播；单体本地 Provider 通过不能替代这项验证。
+42. PUBLIC 接口不得依赖“可能存在”的登录上下文扩展返回范围；匿名与登录可见性必须由不同安全模式和明确接口表达，前端不得靠同一路径猜测。
+43. 复用 Mapper、转换和可见性逻辑优先使用无状态组合支持类，不用与业务类型无关的 Service 基类；具体 Service 保持 `@RequiredArgsConstructor + private final` 注入。
+44. 结构模板不是保留空发布物的理由；remote/support/target 模块必须有真实消费者和能力，删除前后用 Reactor、依赖管理、JAR 和消费者搜索证明边界。
+45. 数据库集成测试应直接执行生产 V1，以发现字段、方言和索引问题；不能用更宽松的测试专用建表脚本替代发布物契约。
+46. Maven 的依赖构建与目标测试分两段执行；目标测试统计只计算目标模块 Surefire 报告，避免 `-am test` 产生大量无关用例并掩盖零测试模块。
+47. 函数式原生 HTTP 路由必须同时验证处理器响应和真实授权资源登记；MockMvc 的 302 不能证明匿名或登录请求能穿过安全链。
+48. PUBLIC 安全模式会清除外部携带的登录上下文；匿名与登录可见跳转必须分路，不能依赖“可选登录态”。
+49. Fresh DB 启动后等待模块 Resource Registry 声明和目标表数量稳定，再执行接口与浏览器 E2E。
+50. 并行 E2E 不得读取、断言或清理其它用例创建的临时数据；关键写链路在默认并行通过后再串行重复验证。
+51. 子模块架构检查前先保证同域 API SNAPSHOT 与当前源码一致，并核对 Maven 实际执行了哪些 Reactor 项目。
 
 ## 4. 后续模块处理节奏
 

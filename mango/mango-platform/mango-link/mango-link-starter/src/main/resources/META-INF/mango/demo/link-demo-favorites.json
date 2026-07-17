@@ -1,0 +1,64 @@
+{
+  "mango": {
+    "resource": {
+      "schemaVersion": 1,
+      "moduleCode": "link",
+      "moduleName": "网址导航",
+      "declarations": {
+        "LINK_FAVORITE": [
+          {
+            "id": "2026070103060300001",
+            "version": 1,
+            "bizKey": "link.favorite.demo-baidu",
+            "name": "演示用户收藏百度",
+            "targetModule": "link",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {"type": "LONG", "value": "2026070103060300001"},
+              "tenantId": {"type": "STRING", "value": "1"},
+              "orgId": {"type": "LONG", "value": "1"},
+              "userId": {"type": "LONG", "value": "1"},
+              "linkId": {"type": "LONG", "value": "2026070103060200002"},
+              "createdBy": {"type": "LONG", "value": "1"},
+              "updatedBy": {"type": "LONG", "value": "1"}
+            }
+          },
+          {
+            "id": "2026070103060300002",
+            "version": 1,
+            "bizKey": "link.favorite.demo-github",
+            "name": "演示用户收藏 GitHub",
+            "targetModule": "link",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {"type": "LONG", "value": "2026070103060300002"},
+              "tenantId": {"type": "STRING", "value": "1"},
+              "orgId": {"type": "LONG", "value": "1"},
+              "userId": {"type": "LONG", "value": "1"},
+              "linkId": {"type": "LONG", "value": "2026070103060200003"},
+              "createdBy": {"type": "LONG", "value": "1"},
+              "updatedBy": {"type": "LONG", "value": "1"}
+            }
+          },
+          {
+            "id": "2026070103060300003",
+            "version": 1,
+            "bizKey": "link.favorite.demo-maven-central",
+            "name": "演示用户收藏 Maven Central",
+            "targetModule": "link",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {"type": "LONG", "value": "2026070103060300003"},
+              "tenantId": {"type": "STRING", "value": "1"},
+              "orgId": {"type": "LONG", "value": "1"},
+              "userId": {"type": "LONG", "value": "1"},
+              "linkId": {"type": "LONG", "value": "2026070103060200004"},
+              "createdBy": {"type": "LONG", "value": "1"},
+              "updatedBy": {"type": "LONG", "value": "1"}
+            }
+          }
+        ]
+      }
+    }
+  }
+}

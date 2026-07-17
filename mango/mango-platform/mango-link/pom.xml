@@ -19,6 +19,5 @@
         <module>mango-link-api</module>
         <module>mango-link-core</module>
         <module>mango-link-starter</module>
-        <module>mango-link-starter-remote</module>
     </modules>
 </project>

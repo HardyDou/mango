@@ -209,7 +209,7 @@ test.describe('网址导航菜单 E2E', () => {
     expect(adminResponse.status()).toBe(401);
   });
 
-  test('@p0 @mango-link 公开接口登录后返回当前用户完整导航数据', async ({ request, baseURL }, testInfo) => {
+  test('@p0 @mango-link 登录接口返回当前用户完整导航数据', async ({ request, baseURL }, testInfo) => {
     const token = await loginByApi(request);
     const authHeaders = { Authorization: `Bearer ${token}` };
     await waitForLinkAuthorizationReady(request, authHeaders);
@@ -286,7 +286,7 @@ test.describe('网址导航菜单 E2E', () => {
         redirectUrl?: string;
         url?: string;
       }>>(
-        await request.get(`/api/link/open/public-links/list?keyword=${encodeURIComponent(unique)}`, {
+        await request.get(`/api/link/visible-links/list?keyword=${encodeURIComponent(unique)}`, {
           headers: authHeaders,
         }),
       );
@@ -301,7 +301,7 @@ test.describe('网址导航菜单 E2E', () => {
       const beforeAccessCount = Number(mysqlScalar(
         `SELECT COUNT(*) FROM link_access_record WHERE link_id = ${companyLinkId} AND source = 'COMPANY'`,
       ));
-      const redirectResponse = await request.get(`/api/link/open/redirect/${companyLinkId}?source=COMPANY`, {
+      const redirectResponse = await request.get(`/api/link/visible-links/redirect?id=${companyLinkId}&source=COMPANY`, {
         headers: authHeaders,
         maxRedirects: 0,
       });

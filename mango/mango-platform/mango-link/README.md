@@ -10,9 +10,10 @@
 |------|--------|------|
 | 后台管理 | 管理员 | 维护网址分类、网址列表、可见范围和状态。 |
 | 用户侧导航 | 登录用户 | 查看公司网址、我的收藏、我的网址。 |
-| Open API | 匿名或登录用户 | 未登录返回公开网址；已登录返回当前用户可见的公司网址、收藏和个人网址。 |
+| Open API | 匿名用户 | 仅返回指定租户已启用的公开网址。 |
+| 登录导航 API | 登录用户 | 返回当前用户可见的公司网址、收藏和个人网址。 |
 
-访问网址默认直接打开原始 URL。需要访问统计时，在系统配置中开启 `mango.link.open.jump.enabled=true`，Open API 才返回系统跳转地址 `/link/open/jump?url=...`，后端会校验 URL 格式并写入 `link_access_record` 访问记录。
+访问网址默认直接打开原始 URL。需要访问统计时，在系统配置中开启 `mango.link.open.jump.enabled=true`。匿名公开数据返回 `/link/open/jump?url=...`，登录用户数据返回 `/link/visible-links/jump?url=...`；两类入口都会校验 URL 并写入 `link_access_record`。
 
 ## 2. 功能清单
 
@@ -25,7 +26,8 @@
 | 我的网址 | `/link/personal-links/**`，用户页面 `/link/my-links` |
 | 我的分组 | `/link/personal-categories/**`，供独立面板创建个人分组 |
 | 公开导航数据 | `/link/open/public-links/list` |
-| 系统跳转与访问统计 | `/link/open/jump?url=...`，访问记录表 `link_access_record` |
+| 登录用户完整导航 | `/link/visible-links/list` |
+| 系统跳转与访问统计 | 匿名 `/link/open/**`，登录 `/link/visible-links/**`，访问记录表 `link_access_record` |
 
 ## 3. 后端接入
 
@@ -47,14 +49,7 @@
 </dependency>
 ```
 
-微服务远程消费时引入 remote starter：
-
-```xml
-<dependency>
-    <groupId>io.mango.platform.link</groupId>
-    <artifactId>mango-link-starter-remote</artifactId>
-</dependency>
-```
+当前模块没有远程调用适配器，也没有实际消费者，因此不发布空的 remote starter。未来出现跨进程消费需求时，应先定义真实 Feign 契约和调用方测试，再新增适配模块。
 
 ## 4. 前端接入
 
@@ -84,8 +79,8 @@ registerMangoLinkAdminPages();
 
 | 配置入口 | 字段 / Key | 默认值 | 含义 | 影响行为 |
 |----------|------------|--------|------|----------|
-| Resource Registry 系统配置 | `mango.link.open.jump.enabled` | `false` | 网址跳转统计开关 | `true` 时 Open API 返回 `redirectUrl`，点击网址经过 `/link/open/jump` 并记录访问；`false` 时前端直连原始 `url`。 |
-| 前端 `@mango/link-page` | `jumpEnabled` | - | 组件侧跳转开关 | 未传时尊重后端 `redirectUrl`；`false` 强制直连；`true` 在后端未返回时补出 `/link/open/jump` 地址。 |
+| Resource Registry 系统配置 | `mango.link.open.jump.enabled` | `false` | 网址跳转统计开关 | `true` 时返回与匿名/登录安全模式匹配的 `redirectUrl` 并记录访问；`false` 时前端直连原始 `url`。 |
+| 前端 `@mango/link-page` | `jumpEnabled` | - | 组件侧跳转开关 | 未传时尊重后端 `redirectUrl`；`false` 强制直连；`true` 按 `source` 补出公开或登录跳转地址。 |
 
 系统配置声明位于 `mango-link-starter/src/main/resources/META-INF/mango/resources/link-common-config.yml`，由 Resource Registry 同步为可编辑配置。
 
@@ -93,8 +88,8 @@ registerMangoLinkAdminPages();
 
 | 数据 | 初始化来源 | 说明 |
 |------|------------|------|
-| 表结构 | `mango-link-core/src/main/resources/db/migration/link` | 创建 `link_category`、`link_item`、`link_visibility_target`、`link_favorite`、`link_access_record`。 |
-| 默认导航数据 | `mango-link-core/src/main/resources/db/migration/link/V4__seed_default_navigation.sql` | 固化 `企业导航` 分组，以及 Mango 管理后台、百度、GitHub、Maven Central 默认网址。 |
+| 表结构 | `mango-link-core/src/main/resources/db/migration/link/V1__init_link.sql` | 仅以 DDL 创建最终态的 5 张 Link 业务表。 |
+| 演示导航数据 | `mango-link-starter/src/main/resources/META-INF/mango/demo/link-demo-*.json` | Demo 开启时登记分类、网址和收藏，不进入 Flyway。 |
 | 菜单与权限资源清单 | `mango-link-starter/src/main/resources/META-INF/mango/resources/link-common-menu.json` | 通过 Resource Registry resource 声明注入到授权模块，`moduleCode` 为 `mango-link`。 |
 | 业务域资源清单 | `mango-link-starter/src/main/resources/META-INF/mango/resources/link-common-domain.yml` | 注入 `LINK / 导航域`，前端首页小组件按该业务域注册和分组展示。 |
 | 前端页面 | `@mango/link/admin-pages` | 菜单 `component` 通过 admin-pages 映射到 Vue 页面。 |
@@ -144,22 +139,26 @@ registerMangoLinkAdminPages();
 
 | 方法 | 路径 | 登录态 | 说明 |
 |------|------|--------|------|
-| GET | `/link/open/public-links/list` | 可选 | 未登录只返回公开网址；已登录返回当前用户可见的公司网址、收藏和个人网址。 |
-| GET | `/link/open/jump?url=https%3A%2F%2Fexample.com&uid=user-001&source=COMPANY` | 可选 | 按 URL 跳转到真实网址，写入访问记录；只允许 `http/https`。 |
+| GET | `/link/open/public-links/list` | 否 | 只返回指定租户已启用的公开网址。 |
+| GET | `/link/open/jump?url=https%3A%2F%2Fexample.com&source=PUBLIC` | 否 | 按公开 URL 跳转并写入匿名访问记录；只允许 `http/https`。 |
+| GET | `/link/open/redirect?id=123&source=PUBLIC` | 否 | 按公开网址 ID 校验可见性、记录访问并返回原生 HTTP 302。 |
+| GET | `/link/visible-links/jump?url=https%3A%2F%2Fexample.com&source=COMPANY` | 是 | 保留登录上下文，按 URL 跳转并记录当前用户。 |
+| GET | `/link/visible-links/redirect?id=123&source=COMPANY` | 是 | 按当前用户可见网址 ID 校验、记录访问并返回原生 HTTP 302。 |
 
-`/link/open/public-links/list` 返回项包含 `source`。当系统配置 `mango.link.open.jump.enabled=true` 时，返回项还包含 `redirectUrl`，形式为 `/link/open/jump?url=...`；前端打开网址优先使用 `redirectUrl`。配置关闭时不返回 `redirectUrl`，前端直接打开原始 `url`。
+公开接口不读取登录上下文。登录页面应调用 `/link/visible-links/list`；两类接口返回项都包含 `source`。当系统配置开启时，公开项使用 `/link/open/jump`，登录可见项使用 `/link/visible-links/jump`，不能用 PUBLIC 路由承载公司、收藏或个人网址。
 
 ### 8.2 系统配置
 
 | 配置 key | 默认值 | 说明 |
 |----------|--------|------|
-| `mango.link.open.jump.enabled` | `false` | `true`：Open API 返回 `redirectUrl`，点击网址经过 `/link/open/jump` 并写访问记录；`false`：Open API 不返回 `redirectUrl`，前端直连原始网址，不记录跳转访问。 |
+| `mango.link.open.jump.enabled` | `false` | `true`：返回与访问模式匹配的公开或登录跳转地址并写访问记录；`false`：前端直连原始网址。 |
 
 ### 8.3 用户侧接口
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
 | GET | `/link/company-links/list` | 查询当前用户可见的公司网址。 |
+| GET | `/link/visible-links/list` | 查询当前用户完整可见导航，按公司、收藏、个人顺序返回。 |
 | GET | `/link/favorites/list` | 查询我的收藏。 |
 | POST | `/link/favorites/create` | 收藏网址。 |
 | DELETE | `/link/favorites/delete` | 取消收藏。 |
@@ -221,7 +220,7 @@ pnpm --dir mango-ui --filter mango-admin test:e2e -- e2e/specs/link-navigation.s
 pnpm --dir mango-ui --filter @mango/link-openapi build
 pnpm --dir mango-ui --filter @mango/link-page build
 pnpm --dir mango-ui --filter @mango/link build
-mvn -q -pl :mango-link-api,:mango-link-core,:mango-link-starter,:mango-link-starter-remote -am test -DskipTests=false
+mvn -q -pl :mango-link-api,:mango-link-core,:mango-link-starter test -DskipTests=false
 ```
 
 模块规则检查：

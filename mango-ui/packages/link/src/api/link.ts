@@ -189,7 +189,8 @@ function toAdminItemPayload(data: LinkItem) {
 }
 
 export function linkRedirectUrl(linkId: ApiId, source: LinkNavigationSource = 'COMPANY') {
-  return `/api/link/open/redirect/${encodeURIComponent(linkId)}?source=${encodeURIComponent(source)}`;
+  const path = source === 'PUBLIC' ? '/api/link/open/redirect' : '/api/link/visible-links/redirect';
+  return `${path}?id=${encodeURIComponent(linkId)}&source=${encodeURIComponent(source)}`;
 }
 
 export function openLinkWithRedirect(item: Pick<LinkPublicItem, 'id' | 'url'>, source: LinkNavigationSource = 'COMPANY') {

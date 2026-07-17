@@ -4,6 +4,8 @@ import io.mango.common.po.PageQuery;
 import io.mango.link.api.enums.LinkStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.NotNull;
+import io.mango.link.api.validation.LinkStrictValidation;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -19,6 +21,7 @@ public class LinkCategoryPageQuery extends PageQuery {
     @Schema(description = "关键词")
     private String keyword;
 
+    @NotNull(groups = LinkStrictValidation.class, message = "严格查询时状态不能为空")
     @Schema(description = "状态")
     private LinkStatus status;
 }
