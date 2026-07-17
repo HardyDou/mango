@@ -33,6 +33,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import org.springframework.transaction.annotation.Transactional;
 import org.apache.ibatis.annotations.Mapper;
 import com.baomidou.mybatisplus.annotation.TableName;
@@ -75,6 +76,13 @@ class MangoArchUnitCheckerTest {
     @Test
     void nativeStreamControllerKeepsStrictControllerBoundaryWithoutJsonApiContract() {
         JavaClasses classes = importClasses(NativeStreamController.class, IOrderService.class);
+
+        assertThat(checker.check(classes, javaClass -> role(javaClass, ModuleRole.STARTER))).isEmpty();
+    }
+
+    @Test
+    void nativeSseControllerKeepsStrictControllerBoundaryWithoutJsonApiContract() {
+        JavaClasses classes = importClasses(NativeSseController.class, IOrderService.class);
 
         assertThat(checker.check(classes, javaClass -> role(javaClass, ModuleRole.STARTER))).isEmpty();
     }
@@ -1081,6 +1089,16 @@ class MangoArchUnitCheckerTest {
         @GetMapping
         public ResponseEntity<InputStreamResource> source() {
             throw new UnsupportedOperationException();
+        }
+    }
+
+    @RestController
+    static final class NativeSseController {
+        private final IOrderService orderService = null;
+
+        @GetMapping
+        public SseEmitter connect() {
+            return new SseEmitter();
         }
     }
 

@@ -36,13 +36,22 @@ class PdfTemplateTest {
         model.put("pdfBookmarkDisable", "true");
         model.put("pdfDisableEditing", "false");
         model.put("pdfSidebarOpen", "false");
-
         StringWriter output = new StringWriter();
         template.process(model, output);
 
         assertThat(output.toString())
                 .contains("window.location.origin + \"/api/\"")
                 .contains("var viewerUrl = baseUrl + \"pdfjs/web/viewer.html?file=\"");
+
+        model.put("pdfUrl", "file-100docx.pdf");
+        StringWriter localPdfOutput = new StringWriter();
+        template.process(model, localPdfOutput);
+
+        assertThat(localPdfOutput.toString())
+                .contains("var sourceUrl = 'file-100docx.pdf'")
+                .contains("new URL(Base64.decode(encodedSourceUrl)).searchParams.get('token')")
+                .contains("url = baseUrl + 'file-preview/generated?token=' + encodeURIComponent(previewToken)")
+                .contains("&fileName=' + encodeURIComponent(sourceUrl.replace(/^\\/+/, ''))");
     }
 
     @Test

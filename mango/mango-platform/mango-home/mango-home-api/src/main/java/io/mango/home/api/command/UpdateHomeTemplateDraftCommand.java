@@ -22,6 +22,7 @@ public class UpdateHomeTemplateDraftCommand implements Serializable {
     private String name;
 
     @NotBlank(message = "草稿布局不能为空")
+    @Size(max = 200000, message = "草稿布局JSON长度不能超过200000")
     @Schema(description = "草稿布局JSON")
     private String layoutJson;
 }

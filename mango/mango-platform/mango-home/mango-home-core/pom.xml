@@ -34,11 +34,6 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>io.mango.platform.org</groupId>
-            <artifactId>mango-org-api</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
             <groupId>io.mango.common</groupId>
             <artifactId>mango-common</artifactId>
             <version>${project.version}</version>

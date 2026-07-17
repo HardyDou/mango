@@ -3,6 +3,7 @@ package io.mango.job.core.service.nativeengine;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import io.mango.common.result.Require;
+import io.mango.job.api.enums.JobCode;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.job.api.enums.JobAttemptStatus;
@@ -17,6 +18,7 @@ import io.mango.job.api.enums.JobTriggerType;
 import io.mango.job.api.enums.JobWorkerRegisterSource;
 import io.mango.job.api.enums.JobWorkerStatus;
 import io.mango.job.api.command.MangoJobWorkerExecuteCommand;
+import io.mango.job.api.command.MangoJobHandlerCommand;
 import io.mango.job.api.command.RegisterMangoJobWorkerCommand;
 import io.mango.job.api.vo.MangoJobLogDetailVO;
 import io.mango.job.api.vo.MangoJobHandlerVO;
@@ -39,12 +41,13 @@ import io.mango.job.core.mapper.MangoJobScheduleCursorMapper;
 import io.mango.job.core.mapper.MangoJobWorkerCapabilityMapper;
 import io.mango.job.core.mapper.MangoJobWorkerSnapshotMapper;
 import io.mango.job.core.service.impl.MangoJobDataSourceRouter;
+import io.mango.job.core.service.engine.MangoJobEngineTriggerContext;
+import io.mango.job.core.service.engine.MangoJobInstanceImportCriteria;
 import io.mango.job.core.service.IMangoJobWorkerRegistryService;
 import io.mango.job.support.nativeengine.MangoJobTransportAddresses;
-import io.mango.job.support.nativeengine.MangoJobWorkerDispatchRequest;
-import io.mango.job.support.nativeengine.MangoJobWorkerTransportRegistry;
+import io.mango.job.support.nativeengine.MangoJobWorkerDispatchContext;
 import io.mango.job.support.nativeengine.MangoNativeJobProperties;
-import io.mango.job.support.service.IMangoJobHandlerRegistry;
+import io.mango.job.support.service.MangoJobHandlerRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.env.Environment;
@@ -93,19 +96,19 @@ public class MangoNativeJobRuntime implements IMangoNativeJobRuntime {
 
     private final MangoJobScheduleCalculator scheduleCalculator;
 
-    private final MangoJobIdempotencyKeyService idempotencyKeyService;
+    private final MangoJobIdempotencyKeys idempotencyKeyService;
 
-    private final MangoJobLeaseService leaseService;
+    private final MangoJobLeaseManager leaseService;
 
     private final MangoNativeJobProperties properties;
 
     private final MangoJobWorkerTransportRegistry transportRegistry;
 
-    private final IMangoJobHandlerRegistry handlerRegistry;
+    private final MangoJobHandlerRegistry handlerRegistry;
 
     private final IMangoJobWorkerRegistryService workerRegistryService;
 
-    private final MangoJobAlarmNotificationService alarmNotificationService;
+    private final IMangoJobAlarmNotificationService alarmNotificationService;
 
     private final String workerAddress;
 
@@ -121,14 +124,14 @@ public class MangoNativeJobRuntime implements IMangoNativeJobRuntime {
                                  MangoJobWorkerCapabilityMapper workerCapabilityMapper,
                                  MangoJobDataSourceRouter dataSourceRouter,
                                  MangoJobScheduleCalculator scheduleCalculator,
-                                 MangoJobIdempotencyKeyService idempotencyKeyService,
-                                 MangoJobLeaseService leaseService,
+                                 MangoJobIdempotencyKeys idempotencyKeyService,
+                                 MangoJobLeaseManager leaseService,
                                  MangoNativeJobProperties properties,
                                  Environment environment,
                                  MangoJobWorkerTransportRegistry transportRegistry,
-                                 IMangoJobHandlerRegistry handlerRegistry,
+                                 MangoJobHandlerRegistry handlerRegistry,
                                  IMangoJobWorkerRegistryService workerRegistryService,
-                                 MangoJobAlarmNotificationService alarmNotificationService) {
+                                 IMangoJobAlarmNotificationService alarmNotificationService) {
         this.definitionMapper = definitionMapper;
         this.instanceMapper = instanceMapper;
         this.cursorMapper = cursorMapper;
@@ -152,6 +155,7 @@ public class MangoNativeJobRuntime implements IMangoNativeJobRuntime {
 
     @Override
     public void syncDefinition(MangoJobDefinitionEntity definition) {
+        Require.notNull(definition, JobCode.JOB_INVALID, "任务定义不能为空");
         dataSourceRouter.route(() -> {
             definition.setEngineType(JobEngineType.MANGO_NATIVE.name());
             definition.setEngineAppId(definition.getAppCode());
@@ -169,6 +173,7 @@ public class MangoNativeJobRuntime implements IMangoNativeJobRuntime {
 
     @Override
     public void deleteDefinition(MangoJobDefinitionEntity definition) {
+        Require.notNull(definition, JobCode.JOB_INVALID, "任务定义不能为空");
         dataSourceRouter.route(() -> {
             cursorMapper.delete(new LambdaQueryWrapper<MangoJobScheduleCursorEntity>()
                     .eq(MangoJobScheduleCursorEntity::getJobId, definition.getId()));
@@ -177,15 +182,18 @@ public class MangoNativeJobRuntime implements IMangoNativeJobRuntime {
     }
 
     @Override
-    public void trigger(MangoJobDefinitionEntity definition,
-                        MangoJobInstanceEntity instance,
-                        String batchNo,
-                        String paramValue) {
+    public void trigger(MangoJobEngineTriggerContext context) {
+        Require.notNull(context, JobCode.JOB_INVALID, "任务触发上下文不能为空");
+        Require.notNull(context.getDefinition(), JobCode.JOB_INVALID, "任务定义不能为空");
+        Require.notNull(context.getInstance(), JobCode.JOB_INVALID, "任务实例不能为空");
+        Require.notBlank(context.getBatchNo(), JobCode.JOB_INVALID, "触发批次号不能为空");
+        MangoJobDefinitionEntity definition = context.getDefinition();
+        MangoJobInstanceEntity instance = context.getInstance();
         dataSourceRouter.route(() -> {
             fillInstanceSnapshot(definition, instance, JobTriggerType.MANUAL, LocalDateTime.now(),
-                    idempotencyKeyService.manual(definition.getId(), batchNo));
+                    idempotencyKeyService.manual(definition.getId(), context.getBatchNo()));
             instanceMapper.updateById(instance);
-            executeInstance(definition, instance, resolveParam(definition, paramValue));
+            executeInstance(definition, instance, resolveParam(definition, context.getParamValue()));
             return Boolean.TRUE;
         });
     }
@@ -217,7 +225,7 @@ public class MangoNativeJobRuntime implements IMangoNativeJobRuntime {
 
     @Override
     public void registerEmbeddedWorkers(String tenantId) {
-        Require.notBlank(tenantId, "内嵌 Worker 注册租户不能为空");
+        Require.notBlank(tenantId, JobCode.JOB_INVALID, "内嵌 Worker 注册租户不能为空");
         dataSourceRouter.route(() -> {
             upsertEmbeddedWorkers(tenantId.trim());
             return Boolean.TRUE;
@@ -225,10 +233,8 @@ public class MangoNativeJobRuntime implements IMangoNativeJobRuntime {
     }
 
     @Override
-    public void importScheduledInstances(MangoJobDefinitionEntity definition,
-                                         LocalDateTime triggerTimeStart,
-                                         LocalDateTime triggerTimeEnd,
-                                         int limit) {
+    public void importScheduledInstances(MangoJobInstanceImportCriteria criteria) {
+        Require.notNull(criteria, JobCode.JOB_INVALID, "实例导入条件不能为空");
         // Native scheduled instances are produced by the JobCenter scheduler.
         // Import is only meaningful for external engines whose instances live outside Mango.
     }
@@ -236,11 +242,11 @@ public class MangoNativeJobRuntime implements IMangoNativeJobRuntime {
     @Override
     public MangoJobLogDetailVO detailInstanceLog(Long instanceId) {
         return dataSourceRouter.route(() -> {
-            Require.notNull(instanceId, "实例 ID 不能为空");
+            Require.notNull(instanceId, JobCode.JOB_INVALID, "实例 ID 不能为空");
             String tenantId = currentTenantId();
             MangoJobInstanceEntity instance = instanceMapper.selectById(instanceId);
-            Require.notNull(instance, 404, "执行实例不存在");
-            Require.isTrue(tenantId.equals(instance.getTenantId()), 404, "执行实例不存在");
+            Require.notNull(instance, JobCode.JOB_NOT_FOUND, "执行实例不存在");
+            Require.isTrue(tenantId.equals(instance.getTenantId()), JobCode.JOB_NOT_FOUND, "执行实例不存在");
             MangoJobDefinitionEntity definition = definitionMapper.selectById(instance.getJobId());
             MangoJobLogDetailVO detail = new MangoJobLogDetailVO();
             detail.setTenantId(tenantId);
@@ -316,8 +322,8 @@ public class MangoNativeJobRuntime implements IMangoNativeJobRuntime {
     private Optional<MangoJobInstanceEntity> createScheduledInstance(MangoJobDefinitionEntity definition,
                                                                     LocalDateTime scheduledFireTime,
                                                                     LocalDateTime now) {
-        String idempotencyKey = idempotencyKeyService.scheduled(definition.getId(),
-                definition.getVersion() == null ? 0 : definition.getVersion(), scheduledFireTime);
+        String idempotencyKey = idempotencyKeyService.scheduled(new MangoJobScheduleIdentity(
+                definition.getId(), definition.getVersion() == null ? 0 : definition.getVersion(), scheduledFireTime));
         MangoJobInstanceEntity existing = instanceMapper.selectOne(new LambdaQueryWrapper<MangoJobInstanceEntity>()
                 .eq(MangoJobInstanceEntity::getTenantId, definition.getTenantId())
                 .eq(MangoJobInstanceEntity::getJobId, definition.getId())
@@ -344,14 +350,15 @@ public class MangoNativeJobRuntime implements IMangoNativeJobRuntime {
                                  MangoJobInstanceEntity instance,
                                  String paramValue) {
         MangoJobAttemptEntity attempt = null;
-        MangoJobWorkerSnapshotEntity worker;
+        MangoJobWorkerSnapshotEntity worker = null;
         try {
             worker = selectWorker(definition);
             attempt = createAttempt(definition, instance, worker);
         } catch (RuntimeException ex) {
             failInstanceBeforeDispatch(definition, instance, ex.getMessage());
-            throw ex;
+            Require.rethrow(ex);
         }
+        Require.notNull(worker, JobCode.JOB_INTERNAL_ERROR, "Worker 选择结果不能为空");
         appendLog(instance, attempt, "INFO", "mango-job-runtime",
                 "Job attempt leased by " + worker.getWorkerAddress());
         LocalDateTime start = LocalDateTime.now();
@@ -359,13 +366,13 @@ public class MangoNativeJobRuntime implements IMangoNativeJobRuntime {
             transitionToRunning(instance, attempt, start);
             JobTransportType transportType = resolveTransportType(worker);
             MangoJobWorkerExecuteResultVO result = transportRegistry.requireTransport(transportType)
-                    .execute(new MangoJobWorkerDispatchRequest(worker.getWorkerAddress(),
+                    .execute(new MangoJobWorkerDispatchContext(worker.getWorkerAddress(),
                             toWorkerCommand(definition, instance, paramValue)));
             writeWorkerLogs(instance, attempt, result);
             finishAttempt(definition, instance, attempt, result);
         } catch (RuntimeException ex) {
             failAttempt(definition, instance, attempt, ex.getMessage());
-            throw ex;
+            Require.rethrow(ex);
         }
     }
 
@@ -384,7 +391,8 @@ public class MangoNativeJobRuntime implements IMangoNativeJobRuntime {
         attempt.setStatus(JobAttemptStatus.LEASED.name());
         attempt.setDispatchTime(LocalDateTime.now());
         attempt.setLastHeartbeatAt(LocalDateTime.now());
-        leaseService.grant(attempt, worker.getWorkerAddress(), properties.getLeaseSeconds());
+        leaseService.grant(new MangoJobLeaseGrant(
+                attempt, worker.getWorkerAddress(), properties.getLeaseSeconds()));
         attemptMapper.insert(attempt);
         instance.setAttemptCount(attempt.getAttemptNo());
         instance.setStatus(JobInstanceStatus.DISPATCHED.name());
@@ -478,7 +486,8 @@ public class MangoNativeJobRuntime implements IMangoNativeJobRuntime {
     private void notifyInstanceFailed(MangoJobDefinitionEntity definition,
                                       MangoJobInstanceEntity instance,
                                       String message) {
-        String result = alarmNotificationService.notifyInstanceFailed(definition, instance, message);
+        String result = alarmNotificationService.notifyInstanceFailed(
+                new MangoJobAlarmContext(definition, instance, message));
         if (StringUtils.hasText(result)) {
             appendLog(instance, null, result.contains("失败") || result.contains("异常") ? "WARN" : "INFO",
                     "mango-job-alarm", result);
@@ -592,7 +601,7 @@ public class MangoNativeJobRuntime implements IMangoNativeJobRuntime {
         command.setTransportType(JobTransportType.IN_MEMORY);
         command.setRegisterSource(JobWorkerRegisterSource.EMBEDDED_AUTO);
         command.setWorkerInstanceId(workerInstanceId);
-        command.getHandlers().addAll(handlers);
+        command.setHandlers(handlers.stream().map(this::toHandlerCommand).toList());
         Long workerId = workerRegistryService.registerWorker(command);
         LOGGER.info("Mango embedded job worker upserted, workerId={}, appCode={}, serviceCode={}, workerGroup={}, handlerCount={}, workerAddress={}",
                 workerId, first.getAppCode(), first.getServiceCode(), first.getWorkerGroup(), handlers.size(), workerAddress);
@@ -619,7 +628,7 @@ public class MangoNativeJobRuntime implements IMangoNativeJobRuntime {
                 .stream()
                 .map(MangoJobWorkerCapabilityEntity::getWorkerId)
                 .collect(Collectors.toSet());
-        Require.isTrue(!workerIds.isEmpty(), "未找到可执行任务的 Worker 能力："
+        Require.isTrue(!workerIds.isEmpty(), JobCode.JOB_INVALID, "未找到可执行任务的 Worker 能力："
                 + ownerService(definition) + "/" + workerGroup(definition) + "/"
                 + definition.getAppCode() + "/" + definition.getHandlerName() + "/" + definition.getJobCode());
         List<MangoJobWorkerSnapshotEntity> workers = workerSnapshotMapper.selectList(
@@ -635,7 +644,7 @@ public class MangoNativeJobRuntime implements IMangoNativeJobRuntime {
                 .filter(this::canDispatchFromCurrentRuntime)
                 .findFirst()
                 .orElse(null);
-        Require.notNull(worker, "未找到可执行任务的在线 Worker："
+        Require.notNull(worker, JobCode.JOB_INVALID, "未找到可执行任务的在线 Worker："
                 + ownerService(definition) + "/" + workerGroup(definition) + "/"
                 + definition.getAppCode() + "/" + definition.getHandlerName());
         return worker;
@@ -651,7 +660,7 @@ public class MangoNativeJobRuntime implements IMangoNativeJobRuntime {
             return JobTransportType.valueOf(worker.getTransportType());
         }
         String address = worker.getWorkerAddress();
-        Require.notBlank(address, "Worker 地址不能为空");
+        Require.notBlank(address, JobCode.JOB_INVALID, "Worker 地址不能为空");
         if (MangoJobTransportAddresses.isEmbedded(address)) {
             return JobTransportType.IN_MEMORY;
         }
@@ -780,9 +789,24 @@ public class MangoNativeJobRuntime implements IMangoNativeJobRuntime {
         return handler.getAppCode() + ":" + handler.getServiceCode() + ":" + handler.getWorkerGroup();
     }
 
+    private MangoJobHandlerCommand toHandlerCommand(MangoJobHandlerVO handler) {
+        MangoJobHandlerCommand command = new MangoJobHandlerCommand();
+        command.setAppCode(handler.getAppCode());
+        command.setServiceCode(handler.getServiceCode());
+        command.setWorkerGroup(handler.getWorkerGroup());
+        command.setHandlerName(handler.getHandlerName());
+        command.setSupportedJobCodes(handler.getSupportedJobCodes());
+        command.setJobType(handler.getJobType());
+        command.setParamSchema(handler.getParamSchema());
+        command.setConcurrent(handler.getConcurrent());
+        command.setTimeoutSeconds(handler.getTimeoutSeconds());
+        command.setRetryPolicy(handler.getRetryPolicy());
+        return command;
+    }
+
     private String currentTenantId() {
         String tenantId = MangoContextHolder.tenantId();
-        Require.notBlank(tenantId, "缺少当前租户上下文");
+        Require.notBlank(tenantId, JobCode.JOB_INVALID, "缺少当前租户上下文");
         return tenantId;
     }
 

@@ -9,8 +9,9 @@ public interface ILinkOpenService {
 
     List<LinkPublicItemVO> listPublicItems(LinkPublicItemQuery query);
 
-    String resolveRedirectUrl(Long id, String source, String clientIp, String userAgent, String referer);
+    List<LinkPublicItemVO> listVisibleItems(LinkPublicItemQuery query);
 
-    String resolveJumpUrl(String url, String visitorId, String source, String extraParams,
-                          String clientIp, String userAgent, String referer);
+    String resolveRedirectUrl(LinkRedirectContext context);
+
+    String resolveJumpUrl(LinkJumpContext context);
 }

@@ -22,4 +22,19 @@
         <module>mango-job-starter</module>
         <module>mango-job-starter-remote</module>
     </modules>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>io.mango.tools.maven.plugin</groupId>
+                <artifactId>mango-maven-plugin</artifactId>
+                <version>${project.version}</version>
+                <configuration>
+                    <allowedReverseControllers>
+                        <allowedReverseController>io.mango.job.starter.remote.MangoJobWorkerInternalController</allowedReverseController>
+                    </allowedReverseControllers>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>

@@ -171,8 +171,26 @@ function toPersonalItemPayload(data: LinkPersonalItem) {
   };
 }
 
+function toAdminItemPayload(data: LinkItem) {
+  return {
+    id: data.id,
+    name: data.name,
+    url: data.url,
+    categoryId: data.categoryId,
+    summary: data.summary,
+    iconUrl: data.iconUrl,
+    tags: data.tags,
+    visibilityScope: data.visibilityScope,
+    visibilityTargets: data.visibilityTargets,
+    recommended: data.recommended,
+    sortNo: data.sortNo,
+    remark: data.remark,
+  };
+}
+
 export function linkRedirectUrl(linkId: ApiId, source: LinkNavigationSource = 'COMPANY') {
-  return `/api/link/open/redirect/${encodeURIComponent(linkId)}?source=${encodeURIComponent(source)}`;
+  const path = source === 'PUBLIC' ? '/api/link/open/redirect' : '/api/link/visible-links/redirect';
+  return `${path}?id=${encodeURIComponent(linkId)}&source=${encodeURIComponent(source)}`;
 }
 
 export function openLinkWithRedirect(item: Pick<LinkPublicItem, 'id' | 'url'>, source: LinkNavigationSource = 'COMPANY') {
@@ -204,8 +222,8 @@ export const linkApi = {
   deleteCategory: (id: ApiId) => del<boolean>('/link/categories/delete', { params: { id } }),
 
   pageItems: (params: LinkPageQuery) => pageGet<LinkItem>('/link/items/page', params),
-  createItem: (data: LinkItem) => post<ApiId>('/link/items/create', data),
-  updateItem: (data: LinkItem) => put<boolean>('/link/items/update', data),
+  createItem: (data: LinkItem) => post<ApiId>('/link/items/create', toAdminItemPayload(data)),
+  updateItem: (data: LinkItem) => put<boolean>('/link/items/update', toAdminItemPayload(data)),
   enableItem: (id: ApiId) => post<boolean>('/link/items/enable', undefined, { params: { id } }),
   disableItem: (id: ApiId) => post<boolean>('/link/items/disable', undefined, { params: { id } }),
   deleteItem: (id: ApiId) => del<boolean>('/link/items/delete', { params: { id } }),

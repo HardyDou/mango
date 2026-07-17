@@ -83,6 +83,10 @@ mvn -f mango/pom.xml mango:gen-permission
 - `core` 可以依赖其它模块 `api` 或 `support`，禁止依赖其它模块 `core`、`starter` 或 `starter-*`。
 - `starter-remote` 在 `io.mango` 依赖中只允许本模块 `api`、本模块 `support` 和 `mango-infra-feign-starter`，禁止直接依赖 `spring-cloud-starter-openfeign`。
 
+反向内部 Controller（例如独立 Worker 接收平台派发）必须在所属聚合模块显式登记精确类名和
+反向路径，并同步到 `mango-architecture-verification` 的完整 Reactor 验证配置。该登记只建模
+已审计的反向适配器，不会关闭 Controller/API、参数绑定、返回包装或内部调用安全规则。
+
 Resource Registry 依赖边界作为 #186 的专项守护继续保留：非 `mango-resource` 模块默认只能依赖 `mango-resource-api`，不能直接依赖 `mango-resource-core`、`mango-resource-support`、`mango-resource-starter`、`mango-resource-sync-starter` 或 `mango-resource-starter-remote`。确需例外时，必须在命令行显式传入 `artifactId=reason`；缺少 reason 的例外不会生效。
 
 PR 架构检查推荐命令：
@@ -99,9 +103,11 @@ POM 的现有 XML 配置和 `-Dmango.architecture.debtBaselineFile=<path>` 命�
 
 标准 partial PR 门禁把依赖准备和质量扫描分成两个阶段。干净 Runner 先对直接受影响模块执行带 `-am` 的跳过测试安装，把尚未发布的上游 SNAPSHOT 放入本地 Maven 仓库；随后质量阶段仍只选择直接受影响模块和外层架构验证模块，不带 `-am` 或 `-amd`。`mango:check` 委托 PMD、Checkstyle、SpotBugs 时只传入包含代码的 Reactor 模块，不把 `architecture-verification` 或 `mango-architecture-verification` 再次带入嵌套 Maven。PMD 和 Checkstyle 使用报告 goal 收集完整发现，再由 Mango 按 `all` 或 `no-new-violations` 统一判定；工具执行错误仍按 `mango.check.staticFailurePolicy` 处理，历史发现不会在新增问题分类前直接终止嵌套 Maven。外层 `mvn verify` 的架构检查不受影响。
 
+当 partial Reactor 中所有业务模块都没有 Java 源码时，`mango:architecture` 仍执行 Maven 依赖检查、模块归属和 schema v2 报告生成；bytecode、PMD 与 Java 命名空间检查以空输入记录为 0。非法依赖仍进入 blocking issues，不能通过零源码状态绕过门禁。
+
 partial Reactor 未包含 API 或 Service 接口模块时，ArchUnit 只能导入外部类型存根。架构检查器按命名和依赖位置继续校验 Controller 的直接 API 契约及 Service 端口，不对缺少方法元数据的存根执行 Controller/API 方法一致性检查；完整 Reactor 导入接口字节码后仍执行全部接口类型和方法一致性校验。
 
-架构报告固定写入 `mango/target/mango-architecture-report.json`。schema v2 报告包含完整 Reactor `modules` 目录，并为 dependency、ArchUnit、PMD 和 blocking 问题写入唯一 `moduleKey`；无法归属、坐标冲突或 Reactor 数量不完整时 fail-closed。默认 `changed` 模式先定位变更影响的问题，再只从 Git base SHA 的 `mango-pmo/baselines/architecture/debt-budget.json` 扣除已批准 stable identities，剩余身份才阻断；PR head 自己修改的预算不能豁免当前新增。报告仍包含全量存量：删除文件会被识别，父 POM 变化传播到全部子 Reactor，`module.properties` 变化传播到同领域类，外置全局 Entity 清单变化传播到 Entity 规则。`-Dmango.architecture.mode=full` 用于专项全量治理。Git base 无法解析、baseline schema/identity 非法、PMD 解析失败、ArchUnit 未导入到字节码或预期 Java 输入为零时均 fail-closed。
+架构报告固定写入 `mango/target/mango-architecture-report.json`。schema v2 报告包含完整 Reactor `modules` 目录，并为 dependency、ArchUnit、PMD 和 blocking 问题写入唯一 `moduleKey`；无法归属、坐标冲突或 Reactor 数量不完整时 fail-closed。默认 `changed` 模式先定位变更影响的问题，再只从 Git base SHA 的 `mango-pmo/baselines/architecture/debt-budget.json` 扣除已批准 stable identities，剩余身份才阻断；PR head 自己修改的预算不能豁免当前新增。报告仍包含全量存量：删除文件会被识别，父 POM 变化传播到全部子 Reactor，`module.properties` 变化传播到同领域类，外置全局 Entity 清单变化传播到 Entity 规则。`-Dmango.architecture.mode=full` 用于专项全量治理。Git base 无法解析、baseline schema/identity 非法、PMD 解析失败、包含 Java 源码却未导入到字节码或预期 Java 输入为零时均 fail-closed；整个 Reactor 本身没有 Java 源码时按前述 dependency-only 语义执行。
 
 一次完整 Reactor 扫描后，可复用同一报告查询或递减模块债务；目录 selector 覆盖其全部 Maven 子模块，唯一 artifactId 定位单模块：
 

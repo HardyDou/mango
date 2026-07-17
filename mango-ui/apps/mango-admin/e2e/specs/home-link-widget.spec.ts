@@ -91,7 +91,7 @@ async function fetchWidgetSourceData(page: Page) {
       favoriteItems,
       categories,
     } as {
-      companyItems: Array<{ id: string | number; name?: string }>;
+      companyItems: Array<{ id: string | number; name?: string; categoryId?: string | number }>;
       personalItems: Array<{ id: string | number; name?: string; categoryId?: string | number }>;
       favoriteItems: Array<{ id: string | number; name?: string }>;
       categories: Array<{ id: string | number; name?: string }>;
@@ -205,16 +205,13 @@ test.describe('首页小组件-网址导航', () => {
       await expect(linkWidget.locator(`[data-record-key="${item.id}"]`)).toContainText(item.name || '', { timeout: 10000 });
     }
 
-    await linkWidget.locator('[data-record-key="enterprise"]').click();
     for (const item of data.companyItems.slice(0, 3)) {
-      await expect(linkWidget.locator(`[data-record-key="${item.id}"]`)).toContainText(item.name || '', { timeout: 10000 });
-    }
-
-    for (const item of data.personalItems.slice(0, 3)) {
-      const groupKey = item.categoryId ? String(item.categoryId) : 'personal-ungrouped';
+      const groupKey = String(item.categoryId || 'enterprise');
       await linkWidget.locator(`[data-record-key="${groupKey}"]`).click();
       await expect(linkWidget.locator(`[data-record-key="${item.id}"]`)).toContainText(item.name || '', { timeout: 10000 });
     }
+
+    // 个人网址由独立用例创建并验证；这里不消费其它并行用例的临时数据。
   });
 
   test('管理员首页可看到网址导航小组件并可执行基础交互', async ({ page }) => {
@@ -394,6 +391,15 @@ test.describe('首页小组件-网址导航', () => {
     await expect(createLinkDialog).toBeHidden({ timeout: 10000 });
     const ungroupedItem = linkWidget.locator(`[data-record-key="${ungroupedLinkId}"]`);
     await expect(ungroupedItem).toContainText(ungroupedLinkTitle, { timeout: 10000 });
+    await page.evaluate(async (id) => {
+      const response = await fetch(`/api/link/personal-links/delete?id=${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+      });
+      const result = await response.json();
+      if (!response.ok || !(result.success || result.code === 200)) {
+        throw new Error(`清理未分组测试网址失败：${response.status} ${JSON.stringify(result)}`);
+      }
+    }, ungroupedLinkId);
 
     expect(categoryId).toBeTruthy();
 

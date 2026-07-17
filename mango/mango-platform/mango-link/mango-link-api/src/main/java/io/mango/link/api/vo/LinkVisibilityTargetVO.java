@@ -11,8 +11,12 @@ import lombok.Data;
 @Schema(description = "网址可见目标返回对象")
 public class LinkVisibilityTargetVO {
 
+    @Schema(description = "可见目标记录 ID")
     private Long id;
+    @Schema(description = "目标类型")
     private LinkVisibilityTargetType targetType;
+    @Schema(description = "目标 ID")
     private Long targetId;
+    @Schema(description = "目标名称")
     private String targetName;
 }

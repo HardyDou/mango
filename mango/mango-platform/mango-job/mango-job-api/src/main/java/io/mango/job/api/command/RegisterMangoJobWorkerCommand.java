@@ -2,7 +2,6 @@ package io.mango.job.api.command;
 
 import io.mango.job.api.enums.JobTransportType;
 import io.mango.job.api.enums.JobWorkerRegisterSource;
-import io.mango.job.api.vo.MangoJobHandlerVO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -55,7 +54,8 @@ public class RegisterMangoJobWorkerCommand implements Serializable {
     @Schema(description = "Worker 通信方式", requiredMode = Schema.RequiredMode.REQUIRED)
     private JobTransportType transportType;
 
-    @Schema(description = "Worker 注册来源")
+    @NotNull(message = "Worker 注册来源不能为空")
+    @Schema(description = "Worker 注册来源", requiredMode = Schema.RequiredMode.REQUIRED)
     private JobWorkerRegisterSource registerSource;
 
     @Size(max = 128, message = "Worker 实例标识不能超过128个字符")
@@ -65,5 +65,5 @@ public class RegisterMangoJobWorkerCommand implements Serializable {
     @NotEmpty(message = "Worker 处理器清单不能为空")
     @Valid
     @Schema(description = "Worker 支持的处理器清单", requiredMode = Schema.RequiredMode.REQUIRED)
-    private List<MangoJobHandlerVO> handlers = new ArrayList<>();
+    private List<MangoJobHandlerCommand> handlers = new ArrayList<>();
 }

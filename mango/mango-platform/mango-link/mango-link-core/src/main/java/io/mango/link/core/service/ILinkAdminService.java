@@ -27,6 +27,10 @@ public interface ILinkAdminService {
 
     boolean updateCategoryStatus(UpdateLinkCategoryStatusCommand command);
 
+    boolean enableCategory(Long id);
+
+    boolean disableCategory(Long id);
+
     boolean deleteCategory(Long id);
 
     PageResult<LinkItemVO> pageItems(LinkItemPageQuery query);
@@ -36,6 +40,10 @@ public interface ILinkAdminService {
     boolean updateItem(UpdateLinkItemCommand command);
 
     boolean updateItemStatus(UpdateLinkItemStatusCommand command);
+
+    boolean enableItem(Long id);
+
+    boolean disableItem(Long id);
 
     boolean deleteItem(Long id);
 }

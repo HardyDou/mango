@@ -49,6 +49,10 @@
 </dependency>
 ```
 
+支付账单拉取任务的 `PaymentChannelBillFetchJobHandler` 使用 `mango-job-support` 的进程内
+Handler SPI。`mango-payment-starter` 同时带入 `mango-job-starter-remote`，因此支付中心作为
+独立 Worker 部署时会真实装配 Worker 注册和反向执行端点；业务模块不需要依赖 Job Core。
+
 微服务调用方只需要远程调用装配时依赖 remote starter：
 
 ```xml

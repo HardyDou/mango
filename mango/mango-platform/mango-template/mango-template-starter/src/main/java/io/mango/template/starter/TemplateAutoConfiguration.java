@@ -39,7 +39,7 @@ public class TemplateAutoConfiguration {
     @Bean
     public TemplateRenderManager templateRenderManager(RenderApi renderApi,
                                                        ConvertApi convertApi) {
-        return new TemplateRenderManager(renderApi, convertApi);
+        return TemplateRenderManager.create(renderApi, convertApi);
     }
 
     @Bean

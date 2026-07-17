@@ -8,8 +8,10 @@ import io.mango.infra.web.api.Inner;
 import io.mango.job.api.MangoJobApi;
 import io.mango.job.api.command.CreateMangoJobWorkerCommand;
 import io.mango.job.api.command.RegisterMangoJobWorkerCommand;
-import io.mango.job.api.command.SaveMangoJobAlarmRuleCommand;
-import io.mango.job.api.command.SaveMangoJobDefinitionCommand;
+import io.mango.job.api.command.CreateMangoJobAlarmRuleCommand;
+import io.mango.job.api.command.CreateMangoJobDefinitionCommand;
+import io.mango.job.api.command.UpdateMangoJobAlarmRuleCommand;
+import io.mango.job.api.command.UpdateMangoJobDefinitionCommand;
 import io.mango.job.api.command.SyncMangoJobInstanceCommand;
 import io.mango.job.api.command.TriggerMangoJobCommand;
 import io.mango.job.api.command.UpdateMangoJobAlarmRuleStatusCommand;
@@ -35,8 +37,6 @@ import io.mango.job.core.service.IMangoJobWorkerRegistryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.validation.annotation.Validated;
@@ -48,7 +48,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.bind.annotation.PathVariable;
 
 import java.util.List;
 
@@ -75,7 +74,7 @@ public class MangoJobController implements MangoJobApi {
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "job:definition:list")
     @Operation(summary = "分页查询任务定义", description = "分页查询当前租户下的 Mango Job 任务定义")
     public R<PageResult<MangoJobDefinitionVO>> pageDefinitions(
-            @Valid @ParameterObject MangoJobDefinitionPageQuery query) {
+            @ParameterObject MangoJobDefinitionPageQuery query) {
         return R.ok(definitionService.pageDefinitions(query));
     }
 
@@ -85,8 +84,7 @@ public class MangoJobController implements MangoJobApi {
     @Operation(summary = "查询任务定义详情", description = "按任务定义 ID 查询详情")
     public R<MangoJobDefinitionVO> detailDefinition(
             @Parameter(description = "任务定义 ID", required = true)
-            @NotNull(message = "任务 ID 不能为空")
-            @RequestParam Long id) {
+            @RequestParam("id") Long id) {
         return R.ok(definitionService.detailDefinition(id));
     }
 
@@ -94,7 +92,7 @@ public class MangoJobController implements MangoJobApi {
     @PostMapping("/definitions")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "job:definition:add")
     @Operation(summary = "新增任务定义", description = "创建 Mango Job 任务定义")
-    public R<Long> createDefinition(@Valid @RequestBody SaveMangoJobDefinitionCommand command) {
+    public R<Long> createDefinition(@RequestBody CreateMangoJobDefinitionCommand command) {
         return R.ok(definitionService.createDefinition(command));
     }
 
@@ -102,7 +100,7 @@ public class MangoJobController implements MangoJobApi {
     @PutMapping("/definitions")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "job:definition:edit")
     @Operation(summary = "修改任务定义", description = "更新草稿状态的 Mango Job 任务定义")
-    public R<Boolean> updateDefinition(@Valid @RequestBody SaveMangoJobDefinitionCommand command) {
+    public R<Boolean> updateDefinition(@RequestBody UpdateMangoJobDefinitionCommand command) {
         return R.ok(definitionService.updateDefinition(command));
     }
 
@@ -110,7 +108,7 @@ public class MangoJobController implements MangoJobApi {
     @PutMapping("/definitions/status")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "job:definition:status")
     @Operation(summary = "更新任务状态", description = "启用、暂停、禁用或退回草稿任务定义")
-    public R<Boolean> updateDefinitionStatus(@Valid @RequestBody UpdateMangoJobDefinitionStatusCommand command) {
+    public R<Boolean> updateDefinitionStatus(@RequestBody UpdateMangoJobDefinitionStatusCommand command) {
         return R.ok(definitionService.updateDefinitionStatus(command));
     }
 
@@ -120,8 +118,7 @@ public class MangoJobController implements MangoJobApi {
     @Operation(summary = "删除任务定义", description = "删除草稿状态的任务定义")
     public R<Boolean> deleteDefinition(
             @Parameter(description = "任务定义 ID", required = true)
-            @NotNull(message = "任务 ID 不能为空")
-            @RequestParam Long id) {
+            @RequestParam("id") Long id) {
         return R.ok(definitionService.deleteDefinition(id));
     }
 
@@ -129,7 +126,7 @@ public class MangoJobController implements MangoJobApi {
     @PostMapping("/definitions/trigger")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "job:definition:trigger")
     @Operation(summary = "手动触发任务", description = "手动触发非草稿、非禁用状态的任务定义")
-    public R<Long> triggerDefinition(@Valid @RequestBody TriggerMangoJobCommand command) {
+    public R<Long> triggerDefinition(@RequestBody TriggerMangoJobCommand command) {
         return R.ok(definitionService.triggerDefinition(command));
     }
 
@@ -138,7 +135,7 @@ public class MangoJobController implements MangoJobApi {
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "job:instance:list")
     @Operation(summary = "分页查询任务实例", description = "分页查询任务执行实例摘要")
     public R<PageResult<MangoJobInstanceVO>> pageInstances(
-            @Valid @ParameterObject MangoJobInstancePageQuery query) {
+            @ParameterObject MangoJobInstancePageQuery query) {
         return R.ok(queryService.pageInstances(query));
     }
 
@@ -146,7 +143,7 @@ public class MangoJobController implements MangoJobApi {
     @PostMapping("/instances/sync")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "job:instance:sync")
     @Operation(summary = "同步任务实例", description = "从调度引擎同步已产生的实例并刷新运行中实例状态")
-    public R<Boolean> syncInstances(@Valid @RequestBody SyncMangoJobInstanceCommand command) {
+    public R<Boolean> syncInstances(@RequestBody SyncMangoJobInstanceCommand command) {
         return R.ok(queryService.syncInstances(command));
     }
 
@@ -154,7 +151,7 @@ public class MangoJobController implements MangoJobApi {
     @GetMapping("/logs/page")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "job:log:list")
     @Operation(summary = "分页查询任务日志索引", description = "分页查询任务执行日志索引")
-    public R<PageResult<MangoJobLogIndexVO>> pageLogs(@Valid @ParameterObject MangoJobLogPageQuery query) {
+    public R<PageResult<MangoJobLogIndexVO>> pageLogs(@ParameterObject MangoJobLogPageQuery query) {
         return R.ok(queryService.pageLogs(query));
     }
 
@@ -164,19 +161,17 @@ public class MangoJobController implements MangoJobApi {
     @Operation(summary = "查询任务日志详情", description = "按日志索引 ID 查询任务输出和引擎实例日志详情")
     public R<MangoJobLogDetailVO> detailLog(
             @Parameter(description = "日志索引 ID", required = true)
-            @NotNull(message = "日志 ID 不能为空")
-            @RequestParam Long id) {
+            @RequestParam("id") Long id) {
         return R.ok(queryService.detailLog(id));
     }
 
     @Override
-    @GetMapping("/instances/{instanceId}/logs")
+    @GetMapping("/instances/logs/detail")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "job:instance:list")
     @Operation(summary = "查询实例执行日志", description = "按执行实例 ID 查询 Mango 原生日志")
     public R<MangoJobLogDetailVO> detailInstanceLog(
             @Parameter(description = "执行实例 ID", required = true)
-            @NotNull(message = "实例 ID 不能为空")
-            @PathVariable Long instanceId) {
+            @RequestParam("instanceId") Long instanceId) {
         return R.ok(queryService.detailInstanceLog(instanceId));
     }
 
@@ -185,7 +180,7 @@ public class MangoJobController implements MangoJobApi {
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "job:worker:list")
     @Operation(summary = "分页查询 Worker 快照", description = "分页查询任务执行 Worker 快照")
     public R<PageResult<MangoJobWorkerSnapshotVO>> pageWorkers(
-            @Valid @ParameterObject MangoJobWorkerPageQuery query) {
+            @ParameterObject MangoJobWorkerPageQuery query) {
         return R.ok(queryService.pageWorkers(query));
     }
 
@@ -193,7 +188,7 @@ public class MangoJobController implements MangoJobApi {
     @PostMapping("/workers")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "job:worker:add")
     @Operation(summary = "手动登记 Worker", description = "手动登记远程 Mango Job Worker 地址和处理器能力")
-    public R<Long> createWorker(@Valid @RequestBody CreateMangoJobWorkerCommand command) {
+    public R<Long> createWorker(@RequestBody CreateMangoJobWorkerCommand command) {
         return R.ok(workerRegistryService.createWorker(command));
     }
 
@@ -201,7 +196,7 @@ public class MangoJobController implements MangoJobApi {
     @PutMapping("/workers/status")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "job:worker:status")
     @Operation(summary = "更新 Worker 状态", description = "禁用、排空、下线或恢复 Worker")
-    public R<Boolean> updateWorkerStatus(@Valid @RequestBody UpdateMangoJobWorkerStatusCommand command) {
+    public R<Boolean> updateWorkerStatus(@RequestBody UpdateMangoJobWorkerStatusCommand command) {
         return R.ok(workerRegistryService.updateWorkerStatus(command));
     }
 
@@ -210,7 +205,7 @@ public class MangoJobController implements MangoJobApi {
     @Inner
     @ApiAccess(mode = ApiResourceAccessMode.INTERNAL)
     @Operation(summary = "注册 Worker", description = "Worker 启动或心跳时向 JobCenter 注册地址和处理器能力")
-    public R<Long> registerWorker(@Valid @RequestBody RegisterMangoJobWorkerCommand command) {
+    public R<Long> registerWorker(@RequestBody RegisterMangoJobWorkerCommand command) {
         return R.ok(workerRegistryService.registerWorker(command));
     }
 
@@ -227,7 +222,7 @@ public class MangoJobController implements MangoJobApi {
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "job:alarm:list")
     @Operation(summary = "分页查询告警规则", description = "分页查询当前租户下的 Mango Job 告警规则")
     public R<PageResult<MangoJobAlarmRuleVO>> pageAlarmRules(
-            @Valid @ParameterObject MangoJobAlarmRulePageQuery query) {
+            @ParameterObject MangoJobAlarmRulePageQuery query) {
         return R.ok(alarmRuleService.pageAlarmRules(query));
     }
 
@@ -237,8 +232,7 @@ public class MangoJobController implements MangoJobApi {
     @Operation(summary = "查询告警规则详情", description = "按告警规则 ID 查询详情")
     public R<MangoJobAlarmRuleVO> detailAlarmRule(
             @Parameter(description = "告警规则 ID", required = true)
-            @NotNull(message = "告警规则 ID 不能为空")
-            @RequestParam Long id) {
+            @RequestParam("id") Long id) {
         return R.ok(alarmRuleService.detailAlarmRule(id));
     }
 
@@ -246,7 +240,7 @@ public class MangoJobController implements MangoJobApi {
     @PostMapping("/alarm-rules")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "job:alarm:add")
     @Operation(summary = "新增告警规则", description = "创建 Mango Job 失败实例告警规则")
-    public R<Long> createAlarmRule(@Valid @RequestBody SaveMangoJobAlarmRuleCommand command) {
+    public R<Long> createAlarmRule(@RequestBody CreateMangoJobAlarmRuleCommand command) {
         return R.ok(alarmRuleService.createAlarmRule(command));
     }
 
@@ -254,7 +248,7 @@ public class MangoJobController implements MangoJobApi {
     @PutMapping("/alarm-rules")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "job:alarm:edit")
     @Operation(summary = "修改告警规则", description = "修改 Mango Job 失败实例告警规则")
-    public R<Boolean> updateAlarmRule(@Valid @RequestBody SaveMangoJobAlarmRuleCommand command) {
+    public R<Boolean> updateAlarmRule(@RequestBody UpdateMangoJobAlarmRuleCommand command) {
         return R.ok(alarmRuleService.updateAlarmRule(command));
     }
 
@@ -262,7 +256,7 @@ public class MangoJobController implements MangoJobApi {
     @PutMapping("/alarm-rules/status")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "job:alarm:status")
     @Operation(summary = "更新告警规则状态", description = "启用或停用 Mango Job 告警规则")
-    public R<Boolean> updateAlarmRuleStatus(@Valid @RequestBody UpdateMangoJobAlarmRuleStatusCommand command) {
+    public R<Boolean> updateAlarmRuleStatus(@RequestBody UpdateMangoJobAlarmRuleStatusCommand command) {
         return R.ok(alarmRuleService.updateAlarmRuleStatus(command));
     }
 
@@ -272,8 +266,7 @@ public class MangoJobController implements MangoJobApi {
     @Operation(summary = "删除告警规则", description = "删除 Mango Job 告警规则")
     public R<Boolean> deleteAlarmRule(
             @Parameter(description = "告警规则 ID", required = true)
-            @NotNull(message = "告警规则 ID 不能为空")
-            @RequestParam Long id) {
+            @RequestParam("id") Long id) {
         return R.ok(alarmRuleService.deleteAlarmRule(id));
     }
 

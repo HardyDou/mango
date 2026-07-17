@@ -29,12 +29,22 @@
 
 ## 3. 后端接入
 
-业务模块只实现任务处理器、引用命令对象或调用 Job API 时，依赖 API 包：
+业务模块引用 Job 命令对象或调用 Job API 时，依赖 API 包：
 
 ```xml
 <dependency>
     <groupId>io.mango.platform.job</groupId>
     <artifactId>mango-job-api</artifactId>
+</dependency>
+```
+
+业务模块实现本 JVM 内执行的任务处理器时，依赖 support 包。Handler 是进程内扩展点，
+不是 HTTP/Feign 契约，因此不放在 API 包：
+
+```xml
+<dependency>
+    <groupId>io.mango.platform.job</groupId>
+    <artifactId>mango-job-support</artifactId>
 </dependency>
 ```
 
@@ -60,7 +70,7 @@
 
 | 形态 | 依赖 | 用法 |
 |------|------|------|
-| 只写 handler 契约 | `mango-job-api` | 编译期实现 `MangoJobHandler`，不启用调度能力 |
+| 只写 handler 契约 | `mango-job-support` | 编译期实现 `MangoJobHandler`，不启用调度能力 |
 | 单体后台 | `mango-job-starter` | 同一个应用提供管理接口、调度扫描和内嵌 Worker |
 | 独立 JobCenter | `mango-job-starter` | 只负责管理接口和调度扫描，通常关闭内嵌 Worker |
 | 远程 Worker | `mango-job-starter-remote` | 业务服务实现 handler，向 JobCenter 注册并接收内部执行请求 |
@@ -104,14 +114,14 @@ registerMangoJobAdminPages();
 
 ### 5.1 实现任务处理器
 
-业务服务实现 `io.mango.job.api.handler.MangoJobHandler` 并注册为 Spring Bean：
+业务服务实现 `io.mango.job.support.handler.MangoJobHandler` 并注册为 Spring Bean：
 
 ```java
 package com.example.order.job;
 
-import io.mango.job.api.handler.MangoJobHandleContext;
-import io.mango.job.api.handler.MangoJobHandleResult;
-import io.mango.job.api.handler.MangoJobHandler;
+import io.mango.job.support.handler.MangoJobHandleContext;
+import io.mango.job.support.handler.MangoJobHandleResult;
+import io.mango.job.support.handler.MangoJobHandler;
 import org.springframework.stereotype.Component;
 
 import java.util.Set;
@@ -231,10 +241,11 @@ mango:
       job-center-address: http://mango-job-center.internal:8080
       worker-heartbeat-interval-millis: 15000
       job-center-feign-url: http://mango-job-center.internal:8080
-      worker-feign-url: http://127.0.0.1
 ```
 
-远程 Worker 会向 JobCenter 的 `/job/internal/workers/register` 注册心跳；JobCenter 派发任务时会调用 Worker 的 `/job/internal/workers/execute`。
+远程 Worker 会向 JobCenter 的 `/job/internal/workers/register` 注册心跳；JobCenter 派发任务时，
+按 Worker 运行时登记的地址调用反向内部端点 `POST /_job/workers/execute`。该端点由 remote starter
+真实装配，使用 Mango 内部调用 HMAC 保护，不能作为公网接口暴露。
 
 ## 6. 配置说明
 
@@ -266,20 +277,20 @@ mango:
 | `job-center-address` | 空 | 远程 Worker 注册目标 JobCenter 地址；为空时不自动注册 |
 | `worker-heartbeat-interval-millis` | `15000` | Worker 注册/心跳间隔，单位毫秒 |
 
-Feign 客户端还读取这两个占位配置：
+JobCenter 注册 Feign 客户端读取以下占位配置：
 
 | 配置 | 默认值 | 用途 |
 |------|--------|------|
 | `mango.job.native.job-center-feign-url` | `http://127.0.0.1` | JobCenter Feign 默认 URL |
-| `mango.job.native.worker-feign-url` | `http://127.0.0.1` | Worker Feign 默认 URL |
 
 ## 7. 任务定义怎么填
 
-任务定义保存命令是 `SaveMangoJobDefinitionCommand`。
+任务定义新增、修改分别使用 `CreateMangoJobDefinitionCommand`、
+`UpdateMangoJobDefinitionCommand`，避免用可空 ID 混合两类用例。
 
 | 字段 | 是否必填 | 说明 |
 |------|----------|------|
-| `id` | 修改必填 | 新增为空；只有草稿任务允许修改 |
+| `id` | 修改必填 | 仅修改命令包含；只有草稿任务允许修改 |
 | `appCode` | 是 | 所属逻辑应用，最长 128 |
 | `ownerService` | 否 | 执行服务编码；为空默认 `appCode` |
 | `workerGroup` | 否 | Worker 分组；为空默认 `ownerService` |
@@ -310,11 +321,12 @@ Feign 客户端还读取这两个占位配置：
 
 ## 8. 告警规则怎么填
 
-告警规则保存命令是 `SaveMangoJobAlarmRuleCommand`。
+告警规则新增、修改分别使用 `CreateMangoJobAlarmRuleCommand`、
+`UpdateMangoJobAlarmRuleCommand`。
 
 | 字段 | 是否必填 | 说明 |
 |------|----------|------|
-| `id` | 修改必填 | 新增为空 |
+| `id` | 修改必填 | 仅修改命令包含 |
 | `jobId` | 否 | 为空表示应用级规则；不为空只匹配指定任务 |
 | `appCode` | 是 | 所属逻辑应用 |
 | `ruleName` | 是 | 规则名称 |
@@ -335,13 +347,13 @@ HTTP 前缀是 `/job`。管理页面和前端 `jobApi` 使用这些接口：
 |------|----------|------|
 | 任务定义 | `GET /job/definitions/page`、`GET /job/definitions/detail`、`POST /job/definitions`、`PUT /job/definitions`、`DELETE /job/definitions` | `job:definition:*` |
 | 任务状态和触发 | `PUT /job/definitions/status`、`POST /job/definitions/trigger` | `job:definition:status`、`job:definition:trigger` |
-| 执行实例 | `GET /job/instances/page`、`POST /job/instances/sync`、`GET /job/instances/{instanceId}/logs` | `job:instance:*` |
+| 执行实例 | `GET /job/instances/page`、`POST /job/instances/sync`、`GET /job/instances/logs/detail?instanceId=...` | `job:instance:*` |
 | 执行日志 | `GET /job/logs/page`、`GET /job/logs/detail` | `job:log:list` |
 | Worker | `GET /job/workers/page`、`POST /job/workers`、`PUT /job/workers/status` | `job:worker:*` |
 | handler 清单 | `GET /job/handlers` | `job:handler:list` |
 | 告警规则 | `GET /job/alarm-rules/page`、`GET /job/alarm-rules/detail`、`POST /job/alarm-rules`、`PUT /job/alarm-rules`、`PUT /job/alarm-rules/status`、`DELETE /job/alarm-rules` | `job:alarm:*` |
 | 引擎状态 | `GET /job/engines/status` | `job:engine:list` |
-| Worker 内部调用 | `POST /job/internal/workers/register`、`POST /job/internal/workers/execute` | INTERNAL |
+| Worker 内部调用 | JobCenter：`POST /job/internal/workers/register`；Worker 反向端点：`POST /_job/workers/execute` | INTERNAL |
 
 常用返回对象：
 
@@ -394,17 +406,11 @@ Flyway 路径：
 mango-job-core/src/main/resources/db/migration/mango-job
 ```
 
-迁移脚本：
+当前模块每次使用全新数据库，历史初始化链已重整为单一最终态 V1。Flyway 只负责 DDL：
 
 | 脚本 | 内容 |
 |------|------|
-| `V1__init_mango_job.sql` | 创建任务定义、实例、日志索引、Worker 快照、告警规则、引擎映射和操作日志表 |
-| `V2__fix_worker_snapshot_unique_key.sql` | 修正 Worker 快照唯一键 |
-| `V3__cleanup_invalid_worker_snapshot.sql` | 清理占位 Worker 地址 |
-| `V4__native_job_engine_foundation.sql` | 增加 native 调度游标、执行尝试、Worker 能力、日志分片和事件表 |
-| `V5__job_worker_ownership.sql` | 增加 owner service、worker group、transport、register source 等字段 |
-| `V6__seed_default_sample_jobs.sql` | 已迁移到 `JOB_DEFINITION` 资源注入 |
-| `V7__seed_payment_channel_bill_fetch_job.sql` | 已迁移到 `JOB_DEFINITION` 资源注入 |
+| `V1__init_mango_job.sql` | 创建 12 张 Job 最终态表、索引和约束，不写入正式或演示数据 |
 
 核心表：
 
@@ -441,8 +447,13 @@ persistence-datasource=job
 
 ```text
 mango-job-starter/src/main/resources/META-INF/mango/resources/job-common-domain.yml
-mango-job-starter/src/main/resources/META-INF/mango/resources/job-common-definition.yml
+mango-job-starter/src/main/resources/META-INF/mango/resources/job-common-menu.json
+mango-job-starter/src/main/resources/META-INF/mango/demo/job-demo-definition.yml
 ```
+
+`META-INF/mango/resources/` 是默认加载的正式必需资源；`META-INF/mango/demo/` 仅在
+`mango.resource.registry.demo-enabled=true` 时加载演示任务。支付账单拉取演示任务由 Payment
+模块自己的 demo 资源声明，Job 不跨模块持有它。
 
 任务通知模板不再使用 YAML 文件，改由 `JobMessageTemplateResourceProvider` 通过 Java Provider 注入。
 
@@ -492,7 +503,7 @@ mango-job-starter/src/main/resources/META-INF/mango/resources/job-common-definit
 | 任务数据 | 任务定义、实例、Worker、告警规则都带 `tenant_id` |
 | 管理接口 | 按当前 `MangoContextHolder.tenantId()` 查询当前租户数据 |
 | 调度线程 | 使用 `mango.job.native.scheduler-tenant-id` 构造系统上下文 |
-| 内部接口 | `/job/internal/workers/register` 和 `/job/internal/workers/execute` 标记为 INTERNAL，只应暴露给 Mango 内部调用链路或内网 |
+| 内部接口 | `/job/internal/workers/register` 和 `/_job/workers/execute` 标记为 INTERNAL，只应暴露给 Mango 内部调用链路或内网，并由内部调用 HMAC 验签 |
 | handler 执行 | 执行时会设置租户、触发人或系统用户上下文 |
 
 ## 14. 问题排查

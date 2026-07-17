@@ -8,17 +8,19 @@ import io.mango.authorization.api.vo.AuthorizationSnapshotVO;
 import io.mango.authorization.api.IAuthorizationProvider;
 import io.mango.common.result.Require;
 import io.mango.home.api.command.CreateHomeTemplateCommand;
+import io.mango.home.api.command.HomeTemplateAuthorizationCommand;
+import io.mango.home.api.command.HomeTemplateIdCommand;
 import io.mango.home.api.command.SaveHomeTemplateAuthorizationsCommand;
 import io.mango.home.api.command.UpdateHomeTemplateDraftCommand;
 import io.mango.home.api.command.UpdateHomeTemplateStatusCommand;
 import io.mango.home.api.enums.HomePageSourceType;
+import io.mango.home.api.enums.HomeCode;
 import io.mango.home.api.enums.HomeTemplateAuthorizationSubjectType;
 import io.mango.home.api.enums.HomeTemplateVersionStatus;
 import io.mango.home.api.query.HomeTemplateAuthorizationQuery;
 import io.mango.home.api.query.HomeTemplateQuery;
 import io.mango.home.api.query.UserHomeViewQuery;
 import io.mango.home.api.vo.HomePageVO;
-import io.mango.home.api.vo.HomeTemplateAuthorizationItem;
 import io.mango.home.api.vo.HomeTemplateAuthorizationVO;
 import io.mango.home.api.vo.HomeTemplateVO;
 import io.mango.home.core.entity.HomeTemplateAuthorizationEntity;
@@ -26,15 +28,14 @@ import io.mango.home.core.entity.HomeTemplateEntity;
 import io.mango.home.core.entity.HomeTemplateVersionEntity;
 import io.mango.home.core.entity.UserHomePageEntity;
 import io.mango.home.core.entity.UserHomePreferenceEntity;
-import io.mango.home.core.integration.HomeOrgGateway;
 import io.mango.home.core.mapper.HomeTemplateAuthorizationMapper;
 import io.mango.home.core.mapper.HomeTemplateMapper;
 import io.mango.home.core.mapper.HomeTemplateVersionMapper;
 import io.mango.home.core.mapper.UserHomePageMapper;
 import io.mango.home.core.mapper.UserHomePreferenceMapper;
+import io.mango.home.core.service.IHomeOrgProvider;
 import io.mango.home.core.service.IHomeTemplateService;
 import io.mango.infra.context.api.MangoContextHolder;
-import io.mango.org.api.vo.SysOrgVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
@@ -67,7 +68,7 @@ public class HomeTemplateService implements IHomeTemplateService {
     private final UserHomePreferenceMapper preferenceMapper;
     private final ObjectMapper objectMapper;
     private final ObjectProvider<IAuthorizationProvider> authorizationProvider;
-    private final HomeOrgGateway homeOrgGateway;
+    private final IHomeOrgProvider homeOrgProvider;
 
     @Override
     public List<HomeTemplateVO> list(HomeTemplateQuery query) {
@@ -75,10 +76,11 @@ public class HomeTemplateService implements IHomeTemplateService {
         if (resolved == null) {
             resolved = new HomeTemplateQuery();
         }
+        Boolean enabled = booleanFilter(resolved.getEnabled());
         List<HomeTemplateEntity> templates = templateMapper.selectList(new LambdaQueryWrapper<HomeTemplateEntity>()
                 .eq(HomeTemplateEntity::getTenantId, HomeContextSupport.currentTenantId())
                 .like(StringUtils.hasText(resolved.getKeyword()), HomeTemplateEntity::getName, resolved.getKeyword())
-                .eq(resolved.getEnabled() != null, HomeTemplateEntity::getEnabled, resolved.getEnabled())
+                .eq(enabled != null, HomeTemplateEntity::getEnabled, enabled)
                 .orderByAsc(HomeTemplateEntity::getSort)
                 .orderByDesc(HomeTemplateEntity::getUpdatedAt));
         return templates.stream().map(this::toVO).toList();
@@ -92,8 +94,8 @@ public class HomeTemplateService implements IHomeTemplateService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public HomeTemplateVO create(CreateHomeTemplateCommand command) {
-        Require.notNull(command, "模板创建命令不能为空");
-        Require.notBlank(command.getName(), "模板名称不能为空");
+        Require.notNull(command, HomeCode.HOME_BUSINESS_ERROR, "模板创建命令不能为空");
+        Require.notBlank(command.getName(), HomeCode.HOME_BUSINESS_ERROR, "模板名称不能为空");
         String layoutJson = HomeLayoutSupport.normalize(objectMapper, command.getLayoutJson());
         HomeTemplateEntity template = new HomeTemplateEntity();
         template.setTenantId(HomeContextSupport.currentTenantId());
@@ -110,9 +112,9 @@ public class HomeTemplateService implements IHomeTemplateService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public HomeTemplateVO updateDraft(UpdateHomeTemplateDraftCommand command) {
-        Require.notNull(command, "模板草稿命令不能为空");
-        Require.notBlank(command.getName(), "模板名称不能为空");
-        Require.notBlank(command.getLayoutJson(), "模板布局不能为空");
+        Require.notNull(command, HomeCode.HOME_BUSINESS_ERROR, "模板草稿命令不能为空");
+        Require.notBlank(command.getName(), HomeCode.HOME_BUSINESS_ERROR, "模板名称不能为空");
+        Require.notBlank(command.getLayoutJson(), HomeCode.HOME_BUSINESS_ERROR, "模板布局不能为空");
         HomeLayoutSupport.validate(objectMapper, command.getLayoutJson());
         HomeTemplateEntity template = requiredTemplate(command.getId());
         HomeTemplateVersionEntity draft = draftVersion(template.getId());
@@ -121,7 +123,7 @@ public class HomeTemplateService implements IHomeTemplateService {
         templateMapper.updateById(template);
         if (draft == null) {
             HomeTemplateVersionEntity active = activeVersion(template);
-            Require.notNull(active, "模板没有可编辑版本");
+            Require.notNull(active, HomeCode.HOME_BUSINESS_ERROR, "模板没有可编辑版本");
             draft = newDraftVersion(template.getId(), nextDraftVersionNo(template), command.getLayoutJson(), active.getId());
             draft.setCreatedBy(MangoContextHolder.userId());
             draft.setUpdatedBy(MangoContextHolder.userId());
@@ -136,13 +138,14 @@ public class HomeTemplateService implements IHomeTemplateService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public HomeTemplateVO copy(Long id) {
-        HomeTemplateEntity source = requiredTemplate(id);
+    public HomeTemplateVO copy(HomeTemplateIdCommand command) {
+        Require.notNull(command, HomeCode.HOME_BUSINESS_ERROR, "模板复制命令不能为空");
+        HomeTemplateEntity source = requiredTemplate(command.getId());
         HomeTemplateVersionEntity sourceVersion = activeVersion(source);
         if (sourceVersion == null) {
             sourceVersion = draftVersion(source.getId());
         }
-        Require.notNull(sourceVersion, "模板没有可复制版本");
+        Require.notNull(sourceVersion, HomeCode.HOME_BUSINESS_ERROR, "模板没有可复制版本");
         HomeTemplateEntity copy = new HomeTemplateEntity();
         copy.setTenantId(HomeContextSupport.currentTenantId());
         copy.setName(source.getName() + " 副本");
@@ -158,10 +161,11 @@ public class HomeTemplateService implements IHomeTemplateService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public HomeTemplateVO publish(Long id) {
-        HomeTemplateEntity template = requiredTemplate(id);
+    public HomeTemplateVO publish(HomeTemplateIdCommand command) {
+        Require.notNull(command, HomeCode.HOME_BUSINESS_ERROR, "模板发布命令不能为空");
+        HomeTemplateEntity template = requiredTemplate(command.getId());
         HomeTemplateVersionEntity draft = draftVersion(template.getId());
-        Require.notNull(draft, "模板没有可发布草稿");
+        Require.notNull(draft, HomeCode.HOME_BUSINESS_ERROR, "模板没有可发布草稿");
         versionMapper.update(null, new LambdaUpdateWrapper<HomeTemplateVersionEntity>()
                 .eq(HomeTemplateVersionEntity::getTemplateId, template.getId())
                 .eq(HomeTemplateVersionEntity::getStatus, HomeTemplateVersionStatus.ACTIVE.name())
@@ -183,8 +187,8 @@ public class HomeTemplateService implements IHomeTemplateService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public HomeTemplateVO updateStatus(UpdateHomeTemplateStatusCommand command) {
-        Require.notNull(command, "模板状态命令不能为空");
-        Require.notNull(command.getEnabled(), "模板状态不能为空");
+        Require.notNull(command, HomeCode.HOME_BUSINESS_ERROR, "模板状态命令不能为空");
+        Require.notNull(command.getEnabled(), HomeCode.HOME_BUSINESS_ERROR, "模板状态不能为空");
         HomeTemplateEntity template = requiredTemplate(command.getId());
         template.setEnabled(command.getEnabled());
         template.setUpdatedBy(MangoContextHolder.userId());
@@ -194,13 +198,15 @@ public class HomeTemplateService implements IHomeTemplateService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void delete(Long id) {
-        HomeTemplateEntity template = requiredTemplate(id);
+    public void delete(HomeTemplateIdCommand command) {
+        Require.notNull(command, HomeCode.HOME_BUSINESS_ERROR, "模板删除命令不能为空");
+        HomeTemplateEntity template = requiredTemplate(command.getId());
         Long authCount = authorizationMapper.selectCount(new LambdaQueryWrapper<HomeTemplateAuthorizationEntity>()
                 .eq(HomeTemplateAuthorizationEntity::getTenantId, HomeContextSupport.currentTenantId())
                 .eq(HomeTemplateAuthorizationEntity::getTemplateId, template.getId())
                 .eq(HomeTemplateAuthorizationEntity::getEnabled, true));
-        Require.isTrue(authCount == null || authCount == 0, "已授权模板不能删除，请先撤销授权或停用模板");
+        Require.isTrue(authCount == null || authCount == 0, HomeCode.HOME_BUSINESS_ERROR,
+                "已授权模板不能删除，请先撤销授权或停用模板");
         versionMapper.delete(new LambdaQueryWrapper<HomeTemplateVersionEntity>()
                 .eq(HomeTemplateVersionEntity::getTemplateId, template.getId()));
         templateMapper.deleteById(template.getId());
@@ -208,7 +214,7 @@ public class HomeTemplateService implements IHomeTemplateService {
 
     @Override
     public List<HomeTemplateAuthorizationVO> listAuthorizations(HomeTemplateAuthorizationQuery query) {
-        Require.notNull(query, "授权查询不能为空");
+        Require.notNull(query, HomeCode.HOME_BUSINESS_ERROR, "授权查询不能为空");
         requiredTemplate(query.getTemplateId());
         return authorizationMapper.selectList(new LambdaQueryWrapper<HomeTemplateAuthorizationEntity>()
                         .eq(HomeTemplateAuthorizationEntity::getTenantId, HomeContextSupport.currentTenantId())
@@ -222,17 +228,17 @@ public class HomeTemplateService implements IHomeTemplateService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public List<HomeTemplateAuthorizationVO> saveAuthorizations(SaveHomeTemplateAuthorizationsCommand command) {
-        Require.notNull(command, "授权保存命令不能为空");
+        Require.notNull(command, HomeCode.HOME_BUSINESS_ERROR, "授权保存命令不能为空");
         requiredTemplate(command.getTemplateId());
         authorizationMapper.delete(new LambdaQueryWrapper<HomeTemplateAuthorizationEntity>()
                 .eq(HomeTemplateAuthorizationEntity::getTenantId, HomeContextSupport.currentTenantId())
                 .eq(HomeTemplateAuthorizationEntity::getTemplateId, command.getTemplateId()));
         int sort = DEFAULT_SORT_STEP;
         Set<String> subjects = new LinkedHashSet<>();
-        for (HomeTemplateAuthorizationItem item : command.getAuthorizations()) {
+        for (HomeTemplateAuthorizationCommand item : command.getAuthorizations()) {
             validateAuthorizationItem(item);
             String subjectKey = authorizationSubjectKey(item);
-            Require.isTrue(subjects.add(subjectKey), "授权对象不能重复");
+            Require.isTrue(subjects.add(subjectKey), HomeCode.HOME_BUSINESS_ERROR, "授权对象不能重复");
             HomeTemplateAuthorizationEntity entity = new HomeTemplateAuthorizationEntity();
             entity.setTenantId(HomeContextSupport.currentTenantId());
             entity.setTemplateId(command.getTemplateId());
@@ -253,8 +259,8 @@ public class HomeTemplateService implements IHomeTemplateService {
 
     @Override
     public List<HomePageVO> resolveUserPages(UserHomeViewQuery query) {
-        Require.notNull(query, "用户首页查询不能为空");
-        Require.notNull(query.getUserId(), "用户ID不能为空");
+        Require.notNull(query, HomeCode.HOME_BUSINESS_ERROR, "用户首页查询不能为空");
+        Require.notNull(query.getUserId(), HomeCode.HOME_BUSINESS_ERROR, "用户ID不能为空");
         UserHomePreferenceEntity preference = preferenceMapper.selectOne(new LambdaQueryWrapper<UserHomePreferenceEntity>()
                 .eq(UserHomePreferenceEntity::getTenantId, HomeContextSupport.currentTenantId())
                 .eq(UserHomePreferenceEntity::getUserId, query.getUserId()));
@@ -270,17 +276,17 @@ public class HomeTemplateService implements IHomeTemplateService {
         return result;
     }
 
-    private void validateAuthorizationItem(HomeTemplateAuthorizationItem item) {
-        Require.notNull(item, "授权项不能为空");
-        Require.notNull(item.getSubjectType(), "授权对象类型不能为空");
+    private void validateAuthorizationItem(HomeTemplateAuthorizationCommand item) {
+        Require.notNull(item, HomeCode.HOME_BUSINESS_ERROR, "授权项不能为空");
+        Require.notNull(item.getSubjectType(), HomeCode.HOME_BUSINESS_ERROR, "授权对象类型不能为空");
         if (item.getSubjectType() == HomeTemplateAuthorizationSubjectType.ROLE) {
-            Require.notBlank(item.getSubjectCode(), "角色授权必须填写角色编码");
+            Require.notBlank(item.getSubjectCode(), HomeCode.HOME_BUSINESS_ERROR, "角色授权必须填写角色编码");
             return;
         }
-        Require.notNull(item.getSubjectId(), "个人或部门授权必须填写对象ID");
+        Require.notNull(item.getSubjectId(), HomeCode.HOME_BUSINESS_ERROR, "个人或部门授权必须填写对象ID");
     }
 
-    private String authorizationSubjectKey(HomeTemplateAuthorizationItem item) {
+    private String authorizationSubjectKey(HomeTemplateAuthorizationCommand item) {
         if (item.getSubjectType() == HomeTemplateAuthorizationSubjectType.ROLE) {
             return item.getSubjectType().name() + ":" + item.getSubjectCode().trim();
         }
@@ -387,12 +393,12 @@ public class HomeTemplateService implements IHomeTemplateService {
         orgIds.add(orgId);
         Long cursor = orgId;
         while (cursor != null && cursor > 0) {
-            SysOrgVO org = homeOrgGateway.findById(cursor);
-            if (org == null || org.getPid() == null || org.getPid() <= 0 || orgIds.contains(org.getPid())) {
+            Long parentId = homeOrgProvider.findParentId(cursor);
+            if (parentId == null || parentId <= 0 || orgIds.contains(parentId)) {
                 break;
             }
-            orgIds.add(org.getPid());
-            cursor = org.getPid();
+            orgIds.add(parentId);
+            cursor = parentId;
         }
         return orgIds;
     }
@@ -416,11 +422,11 @@ public class HomeTemplateService implements IHomeTemplateService {
     }
 
     private HomeTemplateEntity requiredTemplate(Long id) {
-        Require.notNull(id, "模板ID不能为空");
+        Require.notNull(id, HomeCode.HOME_BUSINESS_ERROR, "模板ID不能为空");
         HomeTemplateEntity template = templateMapper.selectOne(new LambdaQueryWrapper<HomeTemplateEntity>()
                 .eq(HomeTemplateEntity::getTenantId, HomeContextSupport.currentTenantId())
                 .eq(HomeTemplateEntity::getId, id));
-        Require.notNull(template, "首页模板不存在");
+        Require.notNull(template, HomeCode.HOME_NOT_FOUND, "首页模板不存在");
         return template;
     }
 
@@ -708,6 +714,13 @@ public class HomeTemplateService implements IHomeTemplateService {
             return null;
         }
         return value.trim();
+    }
+
+    private Boolean booleanFilter(String value) {
+        if (!StringUtils.hasText(value)) {
+            return null;
+        }
+        return Boolean.valueOf(value);
     }
 
     private record AuthorizedTemplateMatch(Long templateId, Boolean defaultFlag, List<String> sourceLabels) {

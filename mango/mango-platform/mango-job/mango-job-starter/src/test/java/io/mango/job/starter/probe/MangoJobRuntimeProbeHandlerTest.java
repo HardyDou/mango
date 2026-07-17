@@ -1,8 +1,8 @@
 package io.mango.job.starter.probe;
 
 import io.mango.job.api.enums.JobHandleStatus;
-import io.mango.job.api.handler.MangoJobHandleContext;
-import io.mango.job.api.handler.MangoJobHandleResult;
+import io.mango.job.support.handler.MangoJobHandleContext;
+import io.mango.job.support.handler.MangoJobHandleResult;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;

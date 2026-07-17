@@ -3,6 +3,7 @@ package io.mango.job.core.service.engine;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.IdWorker;
 import io.mango.common.result.Require;
+import io.mango.job.api.enums.JobCode;
 import io.mango.job.api.enums.JobEngineType;
 import io.mango.job.api.enums.JobTriggerType;
 import io.mango.job.api.enums.JobWorkerStatus;
@@ -46,15 +47,6 @@ public class MangoJobEngineSyncService implements IMangoJobEngineSyncService {
 
     private final IMangoNativeJobRuntime nativeJobRuntime;
 
-    public MangoJobEngineSyncService(IMangoJobEngineRegistry engineRegistry,
-                                     MangoJobDefinitionMapper definitionMapper,
-                                     MangoJobInstanceMapper instanceMapper,
-                                     MangoJobEngineMappingMapper mappingMapper,
-                                     MangoJobLogIndexMapper logIndexMapper,
-                                     MangoJobWorkerSnapshotMapper workerSnapshotMapper) {
-        this(engineRegistry, definitionMapper, instanceMapper, mappingMapper, logIndexMapper, workerSnapshotMapper, null);
-    }
-
     @Autowired
     public MangoJobEngineSyncService(IMangoJobEngineRegistry engineRegistry,
                                      MangoJobDefinitionMapper definitionMapper,
@@ -73,76 +65,64 @@ public class MangoJobEngineSyncService implements IMangoJobEngineSyncService {
     }
 
     @Override
-    public void syncDefinition(MangoJobDefinitionEntity definition, String action) {
+    public void syncDefinition(MangoJobEngineDefinitionContext context) {
+        Require.notNull(context, JobCode.JOB_INVALID, "任务定义同步上下文不能为空");
+        Require.notNull(context.getDefinition(), JobCode.JOB_INVALID, "任务定义不能为空");
+        Require.notBlank(context.getAction(), JobCode.JOB_INVALID, "任务定义同步动作不能为空");
+        MangoJobDefinitionEntity definition = context.getDefinition();
         if (isNative(definition)) {
             nativeJobRuntime.syncDefinition(definition);
             upsertJobMapping(definition, JobSyncStatus.SYNCED.name(), null);
             return;
         }
         engineRegistry.findEngine(definition.getEngineType()).ifPresentOrElse(engine -> {
-            MangoJobEngineRequest request = new MangoJobEngineRequest();
-            request.setDefinition(definition);
-            request.setAction(action);
-            MangoJobEngineResult result = engine.syncDefinition(request);
+            MangoJobEngineResult result = engine.syncDefinition(context);
             applyDefinitionSyncResult(definition, result);
         }, () -> markDefinitionPending(definition));
     }
 
     @Override
     public void deleteDefinition(MangoJobDefinitionEntity definition) {
+        Require.notNull(definition, JobCode.JOB_INVALID, "任务定义不能为空");
         if (isNative(definition)) {
             nativeJobRuntime.deleteDefinition(definition);
             return;
         }
         engineRegistry.findEngine(definition.getEngineType()).ifPresent(engine -> {
-            MangoJobEngineRequest request = new MangoJobEngineRequest();
+            MangoJobEngineDefinitionContext request = new MangoJobEngineDefinitionContext();
             request.setDefinition(definition);
             request.setAction("DELETE");
             MangoJobEngineResult result = engine.deleteDefinition(request);
-            Require.isTrue(result.isSuccess(), "删除引擎任务失败：" + result.getErrorSummary());
+            Require.isTrue(result.isSuccess(), JobCode.JOB_INVALID, "删除引擎任务失败：" + result.getErrorSummary());
         });
     }
 
     @Override
-    public void trigger(MangoJobDefinitionEntity definition, MangoJobInstanceEntity instance, String batchNo) {
+    public void trigger(MangoJobEngineTriggerContext context) {
+        Require.notNull(context, JobCode.JOB_INVALID, "任务触发上下文不能为空");
+        Require.notNull(context.getDefinition(), JobCode.JOB_INVALID, "任务定义不能为空");
+        Require.notNull(context.getInstance(), JobCode.JOB_INVALID, "任务实例不能为空");
+        Require.notBlank(context.getBatchNo(), JobCode.JOB_INVALID, "触发批次号不能为空");
+        MangoJobDefinitionEntity definition = context.getDefinition();
+        MangoJobInstanceEntity instance = context.getInstance();
         if (isNative(definition)) {
-            nativeJobRuntime.trigger(definition, instance, batchNo, null);
+            nativeJobRuntime.trigger(context);
             insertInstanceMapping(definition, instance, JobSyncStatus.SYNCED.name(), null);
             return;
         }
         engineRegistry.findEngine(definition.getEngineType()).ifPresent(engine -> {
-            MangoJobTriggerRequest request = new MangoJobTriggerRequest();
-            request.setDefinition(definition);
-            request.setInstance(instance);
-            request.setBatchNo(batchNo);
-            MangoJobEngineResult result = engine.trigger(request);
+            MangoJobEngineResult result = engine.trigger(context);
             applyTriggerResult(definition, instance, result);
         });
     }
 
     @Override
-    public void trigger(MangoJobDefinitionEntity definition,
-                        MangoJobInstanceEntity instance,
-                        String batchNo,
-                        String paramValue) {
-        if (isNative(definition)) {
-            nativeJobRuntime.trigger(definition, instance, batchNo, paramValue);
-            insertInstanceMapping(definition, instance, JobSyncStatus.SYNCED.name(), null);
-            return;
-        }
-        engineRegistry.findEngine(definition.getEngineType()).ifPresent(engine -> {
-            MangoJobTriggerRequest request = new MangoJobTriggerRequest();
-            request.setDefinition(definition);
-            request.setInstance(instance);
-            request.setBatchNo(batchNo);
-            request.setParamValue(paramValue);
-            MangoJobEngineResult result = engine.trigger(request);
-            applyTriggerResult(definition, instance, result);
-        });
-    }
-
-    @Override
-    public void refreshInstance(MangoJobDefinitionEntity definition, MangoJobInstanceEntity instance) {
+    public void refreshInstance(MangoJobEngineTriggerContext context) {
+        Require.notNull(context, JobCode.JOB_INVALID, "实例刷新上下文不能为空");
+        Require.notNull(context.getDefinition(), JobCode.JOB_INVALID, "任务定义不能为空");
+        Require.notNull(context.getInstance(), JobCode.JOB_INVALID, "任务实例不能为空");
+        MangoJobDefinitionEntity definition = context.getDefinition();
+        MangoJobInstanceEntity instance = context.getInstance();
         if (isNative(definition)) {
             return;
         }
@@ -150,11 +130,7 @@ public class MangoJobEngineSyncService implements IMangoJobEngineSyncService {
             return;
         }
         engineRegistry.findEngine(definition.getEngineType()).ifPresent(engine -> {
-            MangoJobTriggerRequest request = new MangoJobTriggerRequest();
-            request.setDefinition(definition);
-            request.setInstance(instance);
-            request.setBatchNo(instance.getTriggerBatchNo());
-            MangoJobEngineResult result = engine.refreshInstance(request);
+            MangoJobEngineResult result = engine.refreshInstance(context);
             if (result.isSuccess()) {
                 applyInstanceRefreshResult(instance, result);
                 upsertWorkerSnapshot(definition, result);
@@ -163,24 +139,20 @@ public class MangoJobEngineSyncService implements IMangoJobEngineSyncService {
     }
 
     @Override
-    public void importScheduledInstances(MangoJobDefinitionEntity definition,
-                                         LocalDateTime triggerTimeStart,
-                                         LocalDateTime triggerTimeEnd,
-                                         int limit) {
+    public void importScheduledInstances(MangoJobInstanceImportCriteria criteria) {
+        Require.notNull(criteria, JobCode.JOB_INVALID, "实例导入条件不能为空");
+        Require.notNull(criteria.getDefinition(), JobCode.JOB_INVALID, "任务定义不能为空");
+        Require.isTrue(criteria.getLimit() > 0, JobCode.JOB_INVALID, "实例导入数量必须大于0");
+        MangoJobDefinitionEntity definition = criteria.getDefinition();
         if (isNative(definition)) {
-            nativeJobRuntime.importScheduledInstances(definition, triggerTimeStart, triggerTimeEnd, limit);
+            nativeJobRuntime.importScheduledInstances(criteria);
             return;
         }
         if (!StringUtils.hasText(definition.getEngineJobId())) {
             return;
         }
         engineRegistry.findEngine(definition.getEngineType()).ifPresent(engine -> {
-            MangoJobInstanceImportRequest request = new MangoJobInstanceImportRequest();
-            request.setDefinition(definition);
-            request.setTriggerTimeStart(triggerTimeStart);
-            request.setTriggerTimeEnd(triggerTimeEnd);
-            request.setLimit(limit);
-            engine.importInstances(request).stream()
+            engine.importInstances(criteria).stream()
                     .filter(MangoJobEngineInstanceSnapshot::hasEngineInstanceId)
                     .forEach(snapshot -> importScheduledInstance(definition, snapshot));
         });
@@ -268,7 +240,8 @@ public class MangoJobEngineSyncService implements IMangoJobEngineSyncService {
             instance.setEngineInstanceId(result.getEngineInstanceId());
             instanceMapper.updateById(instance);
             insertInstanceMapping(definition, instance, JobSyncStatus.SYNCED.name(), null);
-            refreshInstance(definition, instance);
+            refreshInstance(MangoJobEngineTriggerContext.of(
+                    definition, instance, instance.getTriggerBatchNo(), null));
             return;
         }
         instance.setErrorSummary(result.getErrorSummary());
@@ -277,7 +250,7 @@ public class MangoJobEngineSyncService implements IMangoJobEngineSyncService {
         instanceMapper.updateById(instance);
         upsertLogIndex(definition, instance);
         insertInstanceMapping(definition, instance, JobSyncStatus.FAILED.name(), result.getErrorSummary());
-        Require.fail(500, "触发引擎任务失败：" + result.getErrorSummary());
+        Require.fail(JobCode.JOB_INTERNAL_ERROR, "触发引擎任务失败：" + result.getErrorSummary());
     }
 
     private void applyInstanceRefreshResult(MangoJobInstanceEntity instance, MangoJobEngineResult result) {

@@ -46,7 +46,20 @@
 </#if>
 
 <script type="text/javascript">
-    var url = '${finalUrl}';
+    var sourceUrl = '${pdfUrl?js_string}';
+    function sourceToken() {
+        var encodedSourceUrl = new URLSearchParams(window.location.search).get('url');
+        if (!encodedSourceUrl) {
+            return '';
+        }
+        try {
+            return new URL(Base64.decode(encodedSourceUrl)).searchParams.get('token') || '';
+        } catch (error) {
+            return '';
+        }
+    }
+    var previewToken = sourceToken();
+    var url = '${finalUrl?js_string}';
     var kkagent = '${kkagent}';
     var serverBaseUrl = '${baseUrl}'.endsWith('/') ? '${baseUrl}' : '${baseUrl}' + '/';
     function gatewayBaseUrl() {
@@ -57,7 +70,11 @@
         return serverBaseUrl;
     }
     var baseUrl = gatewayBaseUrl();
-    if (kkagent === 'true' || !url.startsWith(baseUrl)) {
+    var localPdfUrl = !sourceUrl.startsWith('http://') && !sourceUrl.startsWith('https://');
+    if (kkagent !== 'true' && localPdfUrl && previewToken) {
+        url = baseUrl + 'file-preview/generated?token=' + encodeURIComponent(previewToken)
+            + '&fileName=' + encodeURIComponent(sourceUrl.replace(/^\/+/, ''));
+    } else if (kkagent === 'true' || !url.startsWith(baseUrl)) {
         url = baseUrl + 'getCorsFile?urlPath=' + encodeURIComponent(Base64.encode(url)) + "&key=${kkkey}";
     }
     var viewerUrl = baseUrl + "pdfjs/web/viewer.html?file=" + encodeURIComponent(url);

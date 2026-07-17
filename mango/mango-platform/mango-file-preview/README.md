@@ -99,6 +99,7 @@ mango:
     enabled: true
     engine-path: /onlinePreview
     source-path: /file-preview/sources
+    source-base-url: http://mango-app:8080
     source-token-expire-seconds: 86400
     standalone-ui-enabled: false
 ```
@@ -110,8 +111,11 @@ mango:
 | `mango.file-preview.enabled` | `true` | 是否启用文件预览自动配置 |
 | `mango.file-preview.engine-path` | `/onlinePreview` | 预览引擎入口路径 |
 | `mango.file-preview.source-path` | `/file-preview/sources` | 预览引擎读取源文件的短期 URL 前缀 |
+| `mango.file-preview.source-base-url` | 当前请求地址 | 预览引擎读取源文件时使用的内部服务地址；部署在网关后时建议配置为集群内部地址，避免流量经外部入口绕回 |
 | `mango.file-preview.source-token-expire-seconds` | `86400` | 入口 token 和源文件 token 有效期，单位秒 |
 | `mango.file-preview.standalone-ui-enabled` | `false` | 是否允许访问 kkFileView 独立首页和演示文件管理入口 |
+
+Office 转换后的 PDF 由 PDF.js 通过同源 `/file-preview/generated?token=...&fileName=...` 读取，不再经 `/getCorsFile` 回源。该接口虽然属于 PUBLIC 路由，但必须携带有效 source token，并校验 token 对应的 `fileId` 与转换文件名；token 过期后不能继续读取转换结果。原始文件仍只由引擎使用同一 source token 从内部 `source-base-url` 下载。
 
 `mango-file-preview-engine` 也支持独立引擎端口配置：
 
@@ -131,6 +135,7 @@ HTTP 接口前缀是 `/file-preview`。
 | GET | `/file-preview/files/preview?fileId=...` | PERMISSION (`file:files:download`) | 按文件 ID forward 到预览页 |
 | GET | `/file-preview/files/preview-entry?token=...` | PUBLIC | 使用已签发入口 token 进入预览 |
 | GET | `/file-preview/sources?token=...` | PUBLIC | 预览引擎读取源文件流 |
+| GET | `/file-preview/generated?token=...&fileName=...` | PUBLIC | 在 source token 有效期内读取对应的转换 PDF |
 
 Java API：
 
@@ -176,6 +181,7 @@ token 行为：
 | 创建预览链接 | 要求当前用户拥有 `file:files:download` 权限，并通过文件中心可见性校验 |
 | 公开预览入口 | 只接受短期入口 token，不接受任意 `fileId` |
 | 源文件读取 | 只接受短期 source token |
+| 转换 PDF 读取 | 只接受短期 source token，且生成文件名必须与 token 中的 `fileId` 和文件扩展名匹配 |
 | 源文件权限 | 读取时恢复 token 中的上下文，再通过 `IFileContentProvider.downloadForService(fileId)` 读取 |
 | kkFileView 独立 UI | 默认由 `standalone-ui-enabled=false` 阻断 |
 
@@ -207,6 +213,7 @@ token 行为：
 /compressed-file
 /file-preview/files/preview-entry
 /file-preview/sources
+/file-preview/generated
 /pdfjs/**
 /js/**
 /css/**
@@ -223,7 +230,7 @@ token 行为：
 | 现象 | 排查点 |
 |------|--------|
 | 创建预览链接失败 | 检查当前账号是否拥有 `file:files:download`、文件是否存在、租户上下文和文件可见性是否正确 |
-| 预览页能打开但文件加载失败 | 检查 `/file-preview/sources?token=...` 是否被网关放行，token 是否过期 |
+| 预览页能打开但文件加载失败 | 检查 `/file-preview/sources` 和 `/file-preview/generated` 是否被网关放行，token 是否过期，转换 PDF 是否已生成 |
 | Office 预览失败 | 检查预览引擎、LibreOffice、Aspose license 和 `mango-infra-fileproc` |
 | 不希望暴露 kkFileView 首页 | 保持 `mango.file-preview.standalone-ui-enabled=false` |
 | 反向代理下源文件 URL 不对 | 检查请求 scheme、host、port、context path，以及代理头是否正确传递 |

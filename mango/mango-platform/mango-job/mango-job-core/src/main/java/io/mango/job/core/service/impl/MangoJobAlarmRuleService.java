@@ -6,10 +6,12 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.common.result.Require;
+import io.mango.job.api.enums.JobCode;
 import io.mango.common.vo.PageResult;
-import io.mango.job.api.command.SaveMangoJobAlarmRuleCommand;
+import io.mango.job.api.command.CreateMangoJobAlarmRuleCommand;
+import io.mango.job.api.command.UpdateMangoJobAlarmRuleCommand;
 import io.mango.job.api.command.UpdateMangoJobAlarmRuleStatusCommand;
-import io.mango.job.api.constant.MangoJobNoticeBizTypes;
+import io.mango.job.core.constant.MangoJobNoticeBizTypes;
 import io.mango.job.api.query.MangoJobAlarmRulePageQuery;
 import io.mango.job.api.vo.MangoJobAlarmRuleVO;
 import io.mango.job.core.entity.MangoJobAlarmRuleEntity;
@@ -77,10 +79,10 @@ public class MangoJobAlarmRuleService implements IMangoJobAlarmRuleService {
     }
 
     @Override
-    public Long createAlarmRule(SaveMangoJobAlarmRuleCommand command) {
+    public Long createAlarmRule(CreateMangoJobAlarmRuleCommand command) {
+        Require.notNull(command, JobCode.JOB_INVALID, "告警规则不能为空");
         return dataSourceRouter.route(() -> {
-            Require.notNull(command, "告警规则不能为空");
-            validateAlarmRule(command, false);
+            validateAlarmRule(command);
             String tenantId = MangoJobSupport.currentTenantId();
             MangoJobDefinitionEntity definition = selectDefinition(command.getJobId(), tenantId);
             validateJobScope(command, definition);
@@ -94,11 +96,11 @@ public class MangoJobAlarmRuleService implements IMangoJobAlarmRuleService {
     }
 
     @Override
-    public Boolean updateAlarmRule(SaveMangoJobAlarmRuleCommand command) {
+    public Boolean updateAlarmRule(UpdateMangoJobAlarmRuleCommand command) {
+        Require.notNull(command, JobCode.JOB_INVALID, "告警规则不能为空");
+        Require.notNull(command.getId(), JobCode.JOB_INVALID, "告警规则 ID 不能为空");
         return dataSourceRouter.route(() -> {
-            Require.notNull(command, "告警规则不能为空");
-            Require.notNull(command.getId(), "告警规则 ID 不能为空");
-            validateAlarmRule(command, true);
+            validateAlarmRule(command);
             MangoJobAlarmRuleEntity entity = selectAlarmRuleRequired(command.getId());
             MangoJobDefinitionEntity definition = selectDefinition(command.getJobId(), entity.getTenantId());
             validateJobScope(command, definition);
@@ -109,10 +111,10 @@ public class MangoJobAlarmRuleService implements IMangoJobAlarmRuleService {
 
     @Override
     public Boolean updateAlarmRuleStatus(UpdateMangoJobAlarmRuleStatusCommand command) {
+        Require.notNull(command, JobCode.JOB_INVALID, "告警规则状态不能为空");
+        Require.notNull(command.getId(), JobCode.JOB_INVALID, "告警规则 ID 不能为空");
+        Require.notNull(command.getEnabled(), JobCode.JOB_INVALID, "启用状态不能为空");
         return dataSourceRouter.route(() -> {
-            Require.notNull(command, "告警规则状态不能为空");
-            Require.notNull(command.getId(), "告警规则 ID 不能为空");
-            Require.notNull(command.getEnabled(), "启用状态不能为空");
             MangoJobAlarmRuleEntity entity = selectAlarmRuleRequired(command.getId());
             entity.setEnabled(Boolean.TRUE.equals(command.getEnabled()) ? 1 : 0);
             return alarmRuleMapper.updateById(entity) > 0;
@@ -121,6 +123,7 @@ public class MangoJobAlarmRuleService implements IMangoJobAlarmRuleService {
 
     @Override
     public Boolean deleteAlarmRule(Long id) {
+        Require.notNull(id, JobCode.JOB_INVALID, "告警规则 ID 不能为空");
         return dataSourceRouter.route(() -> {
             selectAlarmRuleRequired(id);
             return alarmRuleMapper.deleteById(id) > 0;
@@ -135,8 +138,8 @@ public class MangoJobAlarmRuleService implements IMangoJobAlarmRuleService {
                 .eq(StringUtils.hasText(query.getAppCode()), MangoJobAlarmRuleEntity::getAppCode, query.getAppCode())
                 .eq(query.getJobId() != null, MangoJobAlarmRuleEntity::getJobId, query.getJobId())
                 .eq(StringUtils.hasText(query.getAlarmType()), MangoJobAlarmRuleEntity::getAlarmType, query.getAlarmType())
-                .eq(query.getEnabled() != null, MangoJobAlarmRuleEntity::getEnabled,
-                        Boolean.TRUE.equals(query.getEnabled()) ? 1 : 0)
+                .eq(StringUtils.hasText(query.getEnabled()), MangoJobAlarmRuleEntity::getEnabled,
+                        Boolean.parseBoolean(query.getEnabled()) ? 1 : 0)
                 .and(StringUtils.hasText(keyword), nested -> nested
                         .like(MangoJobAlarmRuleEntity::getRuleName, keyword)
                         .or()
@@ -146,19 +149,17 @@ public class MangoJobAlarmRuleService implements IMangoJobAlarmRuleService {
                 .orderByDesc(MangoJobAlarmRuleEntity::getUpdatedAt);
     }
 
-    private void validateAlarmRule(SaveMangoJobAlarmRuleCommand command, boolean update) {
-        if (update) {
-            Require.notNull(command.getId(), "告警规则 ID 不能为空");
-        }
-        Require.notBlank(command.getAppCode(), "所属应用不能为空");
-        Require.notBlank(command.getRuleName(), "规则名称不能为空");
-        Require.notBlank(command.getAlarmType(), "告警类型不能为空");
-        Require.isTrue(ALARM_TYPE_INSTANCE_FAILED.equals(command.getAlarmType().trim()),
+    private void validateAlarmRule(CreateMangoJobAlarmRuleCommand command) {
+        Require.notBlank(command.getAppCode(), JobCode.JOB_INVALID, "所属应用不能为空");
+        Require.notBlank(command.getRuleName(), JobCode.JOB_INVALID, "规则名称不能为空");
+        Require.notBlank(command.getAlarmType(), JobCode.JOB_INVALID, "告警类型不能为空");
+        Require.isTrue(ALARM_TYPE_INSTANCE_FAILED.equals(command.getAlarmType().trim()), JobCode.JOB_INVALID,
                 "当前版本仅支持 INSTANCE_FAILED 告警");
-        Require.notBlank(command.getNoticeSceneCode(), "通知场景编码不能为空");
+        Require.notBlank(command.getNoticeSceneCode(), JobCode.JOB_INVALID, "通知场景编码不能为空");
         Require.isTrue(MangoJobNoticeBizTypes.JOB_INSTANCE_FAILED.equals(command.getNoticeSceneCode().trim()),
+                JobCode.JOB_INVALID,
                 "失败实例告警通知场景编码必须为 job.instance.failed");
-        Require.notBlank(command.getNoticeTemplateCode(), "通知模板编码不能为空");
+        Require.notBlank(command.getNoticeTemplateCode(), JobCode.JOB_INVALID, "通知模板编码不能为空");
         validateJson(command.getTriggerCondition(), "触发条件 JSON 不合法");
         validateJson(command.getNoticeParams(), "通知参数 JSON 不合法");
     }
@@ -170,19 +171,19 @@ public class MangoJobAlarmRuleService implements IMangoJobAlarmRuleService {
         try {
             objectMapper.readTree(json);
         } catch (JsonProcessingException ex) {
-            Require.fail(400, message);
+            Require.fail(JobCode.JOB_INVALID, message);
         }
     }
 
-    private void validateJobScope(SaveMangoJobAlarmRuleCommand command, MangoJobDefinitionEntity definition) {
+    private void validateJobScope(CreateMangoJobAlarmRuleCommand command, MangoJobDefinitionEntity definition) {
         if (definition == null) {
             return;
         }
-        Require.isTrue(definition.getAppCode().equals(command.getAppCode().trim()),
+        Require.isTrue(definition.getAppCode().equals(command.getAppCode().trim()), JobCode.JOB_INVALID,
                 "告警规则所属应用必须与任务所属应用一致");
     }
 
-    private void copyAlarmRule(SaveMangoJobAlarmRuleCommand command,
+    private void copyAlarmRule(CreateMangoJobAlarmRuleCommand command,
                                MangoJobAlarmRuleEntity entity,
                                MangoJobDefinitionEntity definition) {
         entity.setJobId(definition == null ? null : definition.getId());
@@ -199,10 +200,10 @@ public class MangoJobAlarmRuleService implements IMangoJobAlarmRuleService {
     }
 
     private MangoJobAlarmRuleEntity selectAlarmRuleRequired(Long id) {
-        Require.notNull(id, "告警规则 ID 不能为空");
+        Require.notNull(id, JobCode.JOB_INVALID, "告警规则 ID 不能为空");
         MangoJobAlarmRuleEntity entity = alarmRuleMapper.selectById(id);
-        Require.notNull(entity, 404, "告警规则不存在");
-        Require.isTrue(MangoJobSupport.currentTenantId().equals(entity.getTenantId()), 404, "告警规则不存在");
+        Require.notNull(entity, JobCode.JOB_NOT_FOUND, "告警规则不存在");
+        Require.isTrue(MangoJobSupport.currentTenantId().equals(entity.getTenantId()), JobCode.JOB_NOT_FOUND, "告警规则不存在");
         return entity;
     }
 
@@ -211,8 +212,8 @@ public class MangoJobAlarmRuleService implements IMangoJobAlarmRuleService {
             return null;
         }
         MangoJobDefinitionEntity definition = definitionMapper.selectById(jobId);
-        Require.notNull(definition, 404, "任务不存在");
-        Require.isTrue(tenantId.equals(definition.getTenantId()), 404, "任务不存在");
+        Require.notNull(definition, JobCode.JOB_NOT_FOUND, "任务不存在");
+        Require.isTrue(tenantId.equals(definition.getTenantId()), JobCode.JOB_NOT_FOUND, "任务不存在");
         return definition;
     }
 

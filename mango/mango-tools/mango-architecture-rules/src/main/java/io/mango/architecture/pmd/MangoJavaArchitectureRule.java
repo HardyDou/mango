@@ -43,6 +43,8 @@ public final class MangoJavaArchitectureRule extends AbstractJavaRule {
             "io.mango.common.contract.BinaryHttpAdapter";
     private static final String FILE_PREVIEW_VENDOR_PACKAGE_PREFIX = "cn.keking.";
     private static final String MODEL_AND_VIEW = "org.springframework.web.servlet.ModelAndView";
+    private static final String SSE_EMITTER =
+            "org.springframework.web.servlet.mvc.method.annotation.SseEmitter";
     private static final String RESPONSE_ENTITY = "org.springframework.http.ResponseEntity";
     private static final Set<String> NATIVE_HTTP_BODY_TYPES =
             Set.of(
@@ -1445,7 +1447,7 @@ public final class MangoJavaArchitectureRule extends AbstractJavaRule {
             return false;
         }
         JTypeMirror returnType = method.getResultTypeNode().getTypeMirror();
-        if (isType(returnType, MODEL_AND_VIEW)) {
+        if (isType(returnType, MODEL_AND_VIEW) || isType(returnType, SSE_EMITTER)) {
             return true;
         }
         if (!isType(returnType, RESPONSE_ENTITY)

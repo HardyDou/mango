@@ -3,6 +3,7 @@ package io.mango.link.api.query;
 import io.mango.common.po.PageQuery;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.Positive;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -18,6 +19,7 @@ public class LinkPersonalItemPageQuery extends PageQuery {
     @Schema(description = "关键词")
     private String keyword;
 
+    @Positive(message = "分类 ID 必须大于0")
     @Schema(description = "分类 ID")
     private Long categoryId;
 }

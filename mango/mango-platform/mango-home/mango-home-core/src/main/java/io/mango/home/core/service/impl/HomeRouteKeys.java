@@ -8,11 +8,17 @@ final class HomeRouteKeys {
     }
 
     static String user(Long id) {
-        return id == null ? null : String.valueOf(id);
+        if (id == null) {
+            return null;
+        }
+        return String.valueOf(id);
     }
 
     static String template(Long id) {
-        return id == null ? null : TEMPLATE_PREFIX + id;
+        if (id == null) {
+            return null;
+        }
+        return TEMPLATE_PREFIX + id;
     }
 
     static boolean isTemplate(String routeKey) {

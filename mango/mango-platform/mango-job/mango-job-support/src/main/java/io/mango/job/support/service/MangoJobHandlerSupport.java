@@ -1,6 +1,7 @@
 package io.mango.job.support.service;
 
 import io.mango.common.result.Require;
+import io.mango.job.api.enums.JobCode;
 import org.springframework.util.StringUtils;
 
 /**
@@ -19,7 +20,7 @@ final class MangoJobHandlerSupport {
     }
 
     static String normalizeRequired(String value, String message) {
-        Require.notBlank(value, message);
+        Require.notBlank(value, JobCode.JOB_INVALID, message);
         return value.trim();
     }
 }

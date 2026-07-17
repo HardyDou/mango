@@ -11,6 +11,7 @@ import io.mango.template.api.vo.TemplateRenderRecordVO;
 import io.mango.template.api.vo.TemplateRenderResultVO;
 import io.mango.template.api.vo.TemplateVO;
 import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.cloud.openfeign.SpringQueryMap;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -29,7 +30,7 @@ public interface TemplateFeignClient extends TemplateApi {
      */
     @Override
     @GetMapping("/page")
-    R<PageResult<TemplateVO>> page(TemplatePageQuery query);
+    R<PageResult<TemplateVO>> page(@SpringQueryMap TemplatePageQuery query);
 
     /**
      * 查询模板详情。
@@ -49,7 +50,7 @@ public interface TemplateFeignClient extends TemplateApi {
      */
     @Override
     @PostMapping
-    R<Long> create(@RequestBody SaveTemplateCommand command);
+    R<Long> create(@RequestBody CreateTemplateCommand command);
 
     /**
      * 更新模板。
@@ -59,7 +60,7 @@ public interface TemplateFeignClient extends TemplateApi {
      */
     @Override
     @PutMapping
-    R<Boolean> update(@RequestBody SaveTemplateCommand command);
+    R<Boolean> update(@RequestBody UpdateTemplateCommand command);
 
     /**
      * 删除模板。
@@ -149,5 +150,5 @@ public interface TemplateFeignClient extends TemplateApi {
      */
     @Override
     @GetMapping("/render-records/page")
-    R<PageResult<TemplateRenderRecordVO>> renderRecordPage(TemplateRenderRecordPageQuery query);
+    R<PageResult<TemplateRenderRecordVO>> renderRecordPage(@SpringQueryMap TemplateRenderRecordPageQuery query);
 }

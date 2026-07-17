@@ -29,6 +29,16 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <groupId>io.mango.platform.resource</groupId>
+            <artifactId>mango-resource-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.mango.platform.resource</groupId>
+            <artifactId>mango-resource-support</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-api</artifactId>
         </dependency>
@@ -49,6 +59,11 @@
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 </project>

@@ -1,30 +1,17 @@
 package io.mango.link.core.entity;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
-import lombok.Data;
+import io.mango.infra.persistence.api.entity.TenantEntity;
+import lombok.Getter;
+import lombok.Setter;
 
-import java.time.LocalDateTime;
-
-@Data
+@Getter
+@Setter
 @TableName("link_favorite")
-public class LinkFavoriteEntity {
-
-    @TableId(value = "id", type = IdType.ASSIGN_ID)
-    private Long id;
-
-    private Long tenantId;
+public class LinkFavoriteEntity extends TenantEntity {
 
     private Long userId;
 
     private Long linkId;
 
-    private Long createdBy;
-
-    private LocalDateTime createdAt;
-
-    private Long updatedBy;
-
-    private LocalDateTime updatedAt;
 }

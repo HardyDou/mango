@@ -66,6 +66,7 @@ interface MangoResult<T> {
 }
 
 const publicLinksPath = '/link/open/public-links/list';
+const visibleLinksPath = '/link/visible-links/list';
 const personalCategoriesPath = '/link/personal-categories';
 const personalLinksPath = '/link/personal-links';
 const favoritesPath = '/link/favorites';
@@ -149,6 +150,13 @@ export async function listPublicLinks(query: LinkPublicItemQuery = {}, options: 
   return requestJson<LinkPublicItem[]>(`${url.pathname}${url.search}`, { method: 'GET' }, options).then((data) => data || []);
 }
 
+export async function listVisibleLinks(query: LinkPublicItemQuery = {}, options: LinkOpenApiClientOptions = {}) {
+  const url = new URL(visibleLinksPath, 'http://mango.local');
+  appendQuery(url, query);
+  return requestJson<LinkPublicItem[]>(`${url.pathname}${url.search}`, { method: 'GET' }, options)
+    .then((data) => data || []);
+}
+
 export async function listPersonalCategories(options: LinkOpenApiClientOptions = {}) {
   return requestJson<LinkCategory[]>(`${personalCategoriesPath}/list`, { method: 'GET' }, options).then((data) => data || []);
 }
@@ -188,6 +196,7 @@ export async function deleteFavorite(linkId: string, options: LinkOpenApiClientO
 export function createLinkOpenApiClient(options: LinkOpenApiClientOptions = {}) {
   return {
     listPublicLinks: (query: LinkPublicItemQuery = {}) => listPublicLinks(query, options),
+    listVisibleLinks: (query: LinkPublicItemQuery = {}) => listVisibleLinks(query, options),
     listPersonalCategories: () => listPersonalCategories(options),
     createPersonalCategory: (input: CreateLinkPersonalCategoryInput) => createPersonalCategory(input, options),
     createPersonalLink: (input: CreateLinkPersonalItemInput) => createPersonalLink(input, options),

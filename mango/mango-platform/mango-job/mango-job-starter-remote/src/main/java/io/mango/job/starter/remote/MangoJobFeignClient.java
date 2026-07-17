@@ -5,8 +5,10 @@ import io.mango.common.vo.PageResult;
 import io.mango.job.api.MangoJobApi;
 import io.mango.job.api.command.CreateMangoJobWorkerCommand;
 import io.mango.job.api.command.RegisterMangoJobWorkerCommand;
-import io.mango.job.api.command.SaveMangoJobAlarmRuleCommand;
-import io.mango.job.api.command.SaveMangoJobDefinitionCommand;
+import io.mango.job.api.command.CreateMangoJobAlarmRuleCommand;
+import io.mango.job.api.command.CreateMangoJobDefinitionCommand;
+import io.mango.job.api.command.UpdateMangoJobAlarmRuleCommand;
+import io.mango.job.api.command.UpdateMangoJobDefinitionCommand;
 import io.mango.job.api.command.SyncMangoJobInstanceCommand;
 import io.mango.job.api.command.TriggerMangoJobCommand;
 import io.mango.job.api.command.UpdateMangoJobAlarmRuleStatusCommand;
@@ -32,10 +34,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import java.net.URI;
 import java.util.List;
 
 /**
@@ -63,7 +63,7 @@ public interface MangoJobFeignClient extends MangoJobApi {
      * @return 任务定义详情
      */
     @GetMapping("/definitions/detail")
-    R<MangoJobDefinitionVO> detailDefinition(@RequestParam Long id);
+    R<MangoJobDefinitionVO> detailDefinition(@RequestParam("id") Long id);
 
     @Override
     /**
@@ -73,7 +73,7 @@ public interface MangoJobFeignClient extends MangoJobApi {
      * @return 新任务定义 ID
      */
     @PostMapping("/definitions")
-    R<Long> createDefinition(@RequestBody SaveMangoJobDefinitionCommand command);
+    R<Long> createDefinition(@RequestBody CreateMangoJobDefinitionCommand command);
 
     @Override
     /**
@@ -83,7 +83,7 @@ public interface MangoJobFeignClient extends MangoJobApi {
      * @return true 表示更新成功
      */
     @PutMapping("/definitions")
-    R<Boolean> updateDefinition(@RequestBody SaveMangoJobDefinitionCommand command);
+    R<Boolean> updateDefinition(@RequestBody UpdateMangoJobDefinitionCommand command);
 
     @Override
     /**
@@ -103,7 +103,7 @@ public interface MangoJobFeignClient extends MangoJobApi {
      * @return true 表示删除成功
      */
     @DeleteMapping("/definitions")
-    R<Boolean> deleteDefinition(@RequestParam Long id);
+    R<Boolean> deleteDefinition(@RequestParam("id") Long id);
 
     @Override
     /**
@@ -153,7 +153,7 @@ public interface MangoJobFeignClient extends MangoJobApi {
      * @return 日志详情
      */
     @GetMapping("/logs/detail")
-    R<MangoJobLogDetailVO> detailLog(@RequestParam Long id);
+    R<MangoJobLogDetailVO> detailLog(@RequestParam("id") Long id);
 
     @Override
     /**
@@ -162,8 +162,8 @@ public interface MangoJobFeignClient extends MangoJobApi {
      * @param instanceId 执行实例 ID
      * @return 日志详情
      */
-    @GetMapping("/instances/{instanceId}/logs")
-    R<MangoJobLogDetailVO> detailInstanceLog(@PathVariable Long instanceId);
+    @GetMapping("/instances/logs/detail")
+    R<MangoJobLogDetailVO> detailInstanceLog(@RequestParam("instanceId") Long instanceId);
 
     @Override
     /**
@@ -205,16 +205,6 @@ public interface MangoJobFeignClient extends MangoJobApi {
     @PostMapping("/internal/workers/register")
     R<Long> registerWorker(@RequestBody RegisterMangoJobWorkerCommand command);
 
-    /**
-     * 向指定 JobCenter 注册远程 Worker。
-     *
-     * @param jobCenterBaseUri JobCenter 基础地址
-     * @param command Worker 注册命令
-     * @return Worker 快照 ID
-     */
-    @PostMapping("/job/internal/workers/register")
-    R<Long> registerWorker(URI jobCenterBaseUri, @RequestBody RegisterMangoJobWorkerCommand command);
-
     @Override
     /**
      * 查询当前已注册处理器。
@@ -242,7 +232,7 @@ public interface MangoJobFeignClient extends MangoJobApi {
      * @return 告警规则详情
      */
     @GetMapping("/alarm-rules/detail")
-    R<MangoJobAlarmRuleVO> detailAlarmRule(@RequestParam Long id);
+    R<MangoJobAlarmRuleVO> detailAlarmRule(@RequestParam("id") Long id);
 
     @Override
     /**
@@ -252,7 +242,7 @@ public interface MangoJobFeignClient extends MangoJobApi {
      * @return 新告警规则 ID
      */
     @PostMapping("/alarm-rules")
-    R<Long> createAlarmRule(@RequestBody SaveMangoJobAlarmRuleCommand command);
+    R<Long> createAlarmRule(@RequestBody CreateMangoJobAlarmRuleCommand command);
 
     @Override
     /**
@@ -262,7 +252,7 @@ public interface MangoJobFeignClient extends MangoJobApi {
      * @return true 表示更新成功
      */
     @PutMapping("/alarm-rules")
-    R<Boolean> updateAlarmRule(@RequestBody SaveMangoJobAlarmRuleCommand command);
+    R<Boolean> updateAlarmRule(@RequestBody UpdateMangoJobAlarmRuleCommand command);
 
     @Override
     /**
@@ -282,7 +272,7 @@ public interface MangoJobFeignClient extends MangoJobApi {
      * @return true 表示删除成功
      */
     @DeleteMapping("/alarm-rules")
-    R<Boolean> deleteAlarmRule(@RequestParam Long id);
+    R<Boolean> deleteAlarmRule(@RequestParam("id") Long id);
 
     @Override
     /**

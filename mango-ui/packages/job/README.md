@@ -60,7 +60,7 @@ registerMangoJobAdminPages();
 
 ## 4. 快速开始
 
-1. 后端服务接入 `mango-job-starter` 或 `mango-job-starter-remote`，并实现业务 `MangoJobHandler`。
+1. 后端服务接入 `mango-job-starter` 或 `mango-job-starter-remote`，并通过 `mango-job-support` 实现业务 `MangoJobHandler`。
 2. Admin 宿主依赖 `@mango/job`，调用 `registerMangoJobAdminPages()`，并引入 `@mango/job/style.css`。
 3. 后端 `mango-authorization` 同步 `mango-job` 的资源 manifest。
 4. 给当前用户角色绑定任务管理菜单和按钮权限。
@@ -89,7 +89,9 @@ registerMangoJobAdminPages();
 | `job/alarm/index` | `JobAlarmView` | 告警规则 |
 | `job/engine/index` | `JobEngineView` | 运行状态 |
 
-后端 `mango-job-starter/src/main/resources/META-INF/mango/resource-manifest.json` 会把这些 key 写入菜单 `component` 字段。前端只负责注册页面 key，菜单入库和角色授权由 `mango-authorization` 处理。
+后端 `mango-job-starter/src/main/resources/META-INF/mango/resources/job-common-menu.json`
+会把这些 key 写入菜单 `component` 字段。前端只负责注册页面 key，菜单入库和角色授权由
+`mango-authorization` 处理。
 
 ## 7. API 与扩展
 
@@ -177,7 +179,7 @@ await jobApi.createAlarmRule({
 | `triggerDefinition(data)` | `POST /job/definitions/trigger` | 手动触发 |
 | `pageInstances(params)` | `GET /job/instances/page` | 执行实例分页 |
 | `syncInstances(params)` | `POST /job/instances/sync` | 同步实例 |
-| `detailInstanceLog(instanceId)` | `GET /job/instances/{id}/logs` | 实例 native 日志 |
+| `detailInstanceLog(instanceId)` | `GET /job/instances/logs/detail?instanceId=...` | 实例 native 日志 |
 | `pageLogs(params)` | `GET /job/logs/page` | 日志索引分页 |
 | `detailLog(id)` | `GET /job/logs/detail` | 日志详情 |
 | `pageWorkers(params)` | `GET /job/workers/page` | Worker 分页 |

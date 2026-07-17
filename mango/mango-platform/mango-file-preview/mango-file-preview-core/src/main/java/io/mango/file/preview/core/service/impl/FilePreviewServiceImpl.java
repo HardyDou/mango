@@ -2,6 +2,7 @@ package io.mango.file.preview.core.service.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.common.result.Require;
 import io.mango.file.api.vo.FileDownloadVO;
 import io.mango.file.api.vo.FileRecordVO;
@@ -26,18 +27,24 @@ import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Base64;
+import java.util.Locale;
 import java.util.UUID;
 
 /**
  * 文件预览服务实现。
  */
 @Service
-@RequiredArgsConstructor
+@RequiredArgsConstructor(onConstructor_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+        justification = "Spring collaborators are intentionally retained for the service lifetime"))
 public class FilePreviewServiceImpl implements IFilePreviewService {
 
     private static final String FULL_FILENAME_PARAM = "fullfilename";
     private static final String ENTRY_TOKEN_PREFIX = "file-preview:entry:";
     private static final String SOURCE_TOKEN_PREFIX = "file-preview:source:";
+    private static final String ENGINE_FILE_PREFIX = "file-";
+    private static final int MAX_EXTENSION_LENGTH = 20;
+    private static final int HTTP_PORT = 80;
+    private static final int HTTPS_PORT = 443;
 
     private final FilePreviewFileGateway fileGateway;
     private final FilePreviewProperties properties;
@@ -66,7 +73,7 @@ public class FilePreviewServiceImpl implements IFilePreviewService {
         FileRecordVO fileRecord = fileRecord(fileId);
         String token = token();
         storeToken(SOURCE_TOKEN_PREFIX + token, new PreviewToken(fileId, MangoContextHolder.get(), expiresAt()));
-        String sourceUrl = sourceUrl(token, fileRecord.getFileName());
+        String sourceUrl = sourceUrl(token, engineFileName(fileId, fileRecord.getFileName()));
         String encodedSourceUrl = Base64.getEncoder().encodeToString(sourceUrl.getBytes(StandardCharsets.UTF_8));
         FilePreviewLinkVO vo = new FilePreviewLinkVO();
         vo.setFileId(fileId);
@@ -78,19 +85,28 @@ public class FilePreviewServiceImpl implements IFilePreviewService {
 
     @Override
     public FilePreviewSource openSource(String token) {
-        Require.notBlank(token, FilePreviewCode.PREVIEW_TOKEN_INVALID);
-        String tokenKey = SOURCE_TOKEN_PREFIX + token;
-        PreviewToken sourceToken = readToken(tokenKey);
-        if (isExpired(sourceToken)) {
-            tokenStore.remove(tokenKey);
-            Require.fail(FilePreviewCode.PREVIEW_TOKEN_INVALID);
-        }
+        PreviewToken sourceToken = readSourceToken(token);
         MangoContextSnapshot previous = MangoContextHolder.get();
         try {
             MangoContextHolder.set(sourceToken.context());
             FileDownloadVO download = fileGateway.download(sourceToken.fileId());
             Require.notNull(download, FilePreviewCode.FILE_NOT_FOUND);
             return new FilePreviewSource(download.inputStream(), download.fileName(), download.contentType(), download.contentLength());
+        } finally {
+            MangoContextHolder.set(previous);
+        }
+    }
+
+    @Override
+    public void validateGeneratedAccess(String token, String fileName) {
+        Require.notBlank(fileName, FilePreviewCode.PREVIEW_TOKEN_INVALID);
+        PreviewToken sourceToken = readSourceToken(token);
+        MangoContextSnapshot previous = MangoContextHolder.get();
+        try {
+            MangoContextHolder.set(sourceToken.context());
+            FileRecordVO fileRecord = fileRecord(sourceToken.fileId());
+            Require.isTrue(fileName.equals(generatedPdfFileName(sourceToken.fileId(), fileRecord.getFileName())),
+                    FilePreviewCode.PREVIEW_TOKEN_INVALID);
         } finally {
             MangoContextHolder.set(previous);
         }
@@ -119,13 +135,59 @@ public class FilePreviewServiceImpl implements IFilePreviewService {
     }
 
     private String sourceUrl(String token, String fileName) {
-        String url = currentBaseUrl() + normalize(properties.getSourcePath());
+        String url = sourceBaseUrl() + normalize(properties.getSourcePath());
         return UriComponentsBuilder.fromHttpUrl(url)
                 .queryParam("token", token)
                 .queryParam(FULL_FILENAME_PARAM, fileName)
                 .build()
                 .encode(StandardCharsets.UTF_8)
                 .toUriString();
+    }
+
+    private String sourceBaseUrl() {
+        if (StringUtils.hasText(properties.getSourceBaseUrl())) {
+            return StringUtils.trimTrailingCharacter(properties.getSourceBaseUrl().trim(), '/');
+        }
+        return currentBaseUrl();
+    }
+
+    private String engineFileName(Long fileId, String originalFileName) {
+        String baseName = ENGINE_FILE_PREFIX + fileId;
+        String extension = StringUtils.getFilenameExtension(originalFileName);
+        if (!isSafeExtension(extension)) {
+            return baseName;
+        }
+        return baseName + "." + extension.toLowerCase(Locale.ROOT);
+    }
+
+    private String generatedPdfFileName(Long fileId, String originalFileName) {
+        String engineFileName = engineFileName(fileId, originalFileName);
+        int extensionSeparator = engineFileName.lastIndexOf('.');
+        Require.isTrue(extensionSeparator > 0, FilePreviewCode.PREVIEW_TOKEN_INVALID);
+        String baseName = engineFileName.substring(0, extensionSeparator);
+        String extension = engineFileName.substring(extensionSeparator + 1);
+        return baseName + extension + ".pdf";
+    }
+
+    private boolean isSafeExtension(String extension) {
+        if (!StringUtils.hasText(extension) || extension.length() > MAX_EXTENSION_LENGTH) {
+            return false;
+        }
+        for (int index = 0; index < extension.length(); index++) {
+            char current = extension.charAt(index);
+            if (!isAsciiLetterOrDigit(current)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean isAsciiLetterOrDigit(char value) {
+        return isBetween(value, 'a', 'z') || isBetween(value, 'A', 'Z') || isBetween(value, '0', '9');
+    }
+
+    private boolean isBetween(char value, char start, char end) {
+        return value >= start && value <= end;
     }
 
     private String engineUrl(String encodedSourceUrl) {
@@ -153,6 +215,17 @@ public class FilePreviewServiceImpl implements IFilePreviewService {
             Require.fail(FilePreviewCode.PREVIEW_TOKEN_INVALID);
         }
         return previewToken;
+    }
+
+    private PreviewToken readSourceToken(String token) {
+        Require.notBlank(token, FilePreviewCode.PREVIEW_TOKEN_INVALID);
+        String tokenKey = SOURCE_TOKEN_PREFIX + token;
+        PreviewToken sourceToken = readToken(tokenKey);
+        if (isExpired(sourceToken)) {
+            tokenStore.remove(tokenKey);
+            Require.fail(FilePreviewCode.PREVIEW_TOKEN_INVALID);
+        }
+        return sourceToken;
     }
 
     private void storeToken(String tokenKey, PreviewToken token) {
@@ -198,7 +271,7 @@ public class FilePreviewServiceImpl implements IFilePreviewService {
         StringBuilder builder = new StringBuilder();
         builder.append(request.getScheme()).append("://").append(request.getServerName());
         int port = request.getServerPort();
-        if (port > 0 && port != 80 && port != 443) {
+        if (isNonDefaultPort(port)) {
             builder.append(':').append(port);
         }
         if (StringUtils.hasText(request.getContextPath())) {
@@ -211,7 +284,14 @@ public class FilePreviewServiceImpl implements IFilePreviewService {
         if (!StringUtils.hasText(path)) {
             return "/";
         }
-        return path.startsWith("/") ? path : "/" + path;
+        if (path.startsWith("/")) {
+            return path;
+        }
+        return "/" + path;
+    }
+
+    private boolean isNonDefaultPort(int port) {
+        return port > 0 && port != HTTP_PORT && port != HTTPS_PORT;
     }
 
     private record PreviewToken(Long fileId, MangoContextSnapshot context, Instant expiresAt) {
@@ -236,7 +316,10 @@ public class FilePreviewServiceImpl implements IFilePreviewService {
     ) {
 
         static StoredMangoContext from(MangoContextSnapshot context) {
-            MangoContextSnapshot snapshot = context == null ? MangoContextSnapshot.empty() : context;
+            MangoContextSnapshot snapshot = context;
+            if (snapshot == null) {
+                snapshot = MangoContextSnapshot.empty();
+            }
             return new StoredMangoContext(snapshot.requestId(),
                     snapshot.traceId(),
                     snapshot.tenantId(),

@@ -35,7 +35,7 @@
 </dependency>
 ```
 
-`mango-admin-starter` 已引入该 starter。独立能力验证可启动 `mango-home-capability-app`。
+`mango-admin-starter` 已引入该 starter。当前仓库没有独立的 Home capability app 或 remote starter；Home 以本地 starter 方式装配到宿主应用，不应把不存在的微服务部署形态写入接入或验收结论。
 
 前端管理端引入：
 
@@ -120,12 +120,12 @@ Java API：
 
 ## 6. 数据与初始化
 
-本模块使用 Flyway migration 初始化数据表。
+本模块使用 Flyway migration 初始化数据表。Flyway 只负责 DDL；菜单和权限属于正式资源，由 Resource Registry 从 `META-INF/mango/resources/` 同步。本模块没有必须预置的业务数据和 demo 数据；没有个人首页时由运行时返回内置系统工作台，不向数据库写入伪造首页。
 
 | 类型 | 位置 | 初始化内容 | 幂等键 / 唯一键 | 生效时机 |
 |------|------|------------|-----------------|----------|
-| Flyway migration | `mango-home-core/src/main/resources/db/migration/home/V1__init_home.sql` | 创建 `sys_user_home_page`、`sys_user_home_preference` | `tenant_id + user_id` 偏好唯一 | 应用启动时由 Flyway 执行 |
-| Flyway migration | `mango-home-core/src/main/resources/db/migration/home/V2__home_template_management.sql` | 创建模板、模板版本、模板授权表，并增加 `default_home_ref` | 模板授权对象唯一 | 应用启动时由 Flyway 执行 |
+| Flyway migration | `mango-home-core/src/main/resources/db/migration/home/V1__init_home.sql` | 创建五张 Home 表和完整租户、组织、审计字段 | `tenant_id + user_id` 偏好唯一，模板授权对象唯一 | 应用启动时由 Flyway 执行 |
+| 正式资源 | `mango-home-starter/src/main/resources/META-INF/mango/resources/home-common-menu.json` | 首页管理菜单、页面与 API 权限码 | `home.menu.internal-admin` | Resource Registry 启动同步 |
 
 数据表：
 
@@ -165,6 +165,7 @@ Java API：
 - 授权支持个人、部门、角色；部门授权继承到下级部门。
 - 默认优先级为：用户手动默认 > 个人授权默认 > 部门授权默认 > 角色授权默认 > 系统默认 > 首个可见首页。
 - 用户复制授权首页后会生成个人首页副本，不再跟随模板后续发布。
+- 个人首页排序只提交当前用户可管理的个人首页；只读授权首页和内置首页不参与排序。
 
 权限码：
 
@@ -183,14 +184,14 @@ Java API：
 | `home:list:delete` | 单条或批量删除用户自定义首页 |
 | `home:user:view` | 查看并渲染指定用户最终首页 |
 
-接口使用登录访问模式，租户和用户来自 `MangoContextHolder`。前端不传 `tenantId`、`orgId` 和 `userId`。指定 `homeId` 时，后端只允许访问当前用户拥有且启用的首页。
+个人首页接口使用登录访问模式，后台模板和用户首页治理接口使用上表权限码。租户和当前用户来自 `MangoContextHolder`；后台查看指定用户时才通过契约传入目标用户 ID。指定 `homeId` 时，后端只允许访问当前用户拥有且启用的首页。
 
 ## 8. 快速开始
 
 业务接入最小闭环：
 
 1. 后端应用引入 `mango-home-starter`。
-2. 数据库执行 `home` Flyway migration。
+2. 数据库执行 `home` Flyway migration，并等待正式资源同步完成。
 3. 前端使用 `@mango/home` 或直接使用 `@mango/admin-shell` 的 `/home` 宿主。
 4. 业务模块通过 grid widget 注册机制提供小组件。
 5. 首页加载时调用 `resolve`，没有个人首页时使用内置系统工作台。
@@ -199,13 +200,13 @@ Java API：
 后端核心测试：
 
 ```bash
-mvn -f mango/pom.xml -pl mango-platform/mango-home/mango-home-core -am test
+mvn -f mango/pom.xml -pl :mango-home-core test
 ```
 
 后端 starter 测试：
 
 ```bash
-mvn -f mango/pom.xml -pl mango-platform/mango-home/mango-home-starter -am test
+mvn -f mango/pom.xml -pl :mango-home-starter test
 ```
 
 前端包构建：
@@ -215,15 +216,27 @@ pnpm -F @mango/home build
 pnpm -F @mango/admin-shell build
 ```
 
+浏览器回归使用启用 demo 资源的隔离数据库，以获得演示管理员角色；健康检查返回后仍需等待角色、菜单和权限资源同步完成：
+
+```bash
+PLAYWRIGHT_USE_EXTERNAL_WEBSERVER=true \
+PLAYWRIGHT_BASE_URL=http://127.0.0.1:30010 \
+PLAYWRIGHT_API_BASE_URL=http://127.0.0.1:18010 \
+pnpm -F mango-admin exec playwright test \
+  e2e/specs/home-management.spec.ts e2e/specs/home-pages.spec.ts \
+  --project=chromium --workers=1
+```
+
 ## 9. 问题排查
 
 | 现象 | 排查项 |
 |------|--------|
 | 首页列表为空 | 确认当前用户是否已创建个人首页；未创建时前端首页宿主使用内置系统工作台 |
-| 默认首页未生效 | 确认 `sys_user_home_preference.default_home_page_id` 指向当前用户拥有且启用的首页 |
+| 默认首页未生效 | 确认 `sys_user_home_preference.default_home_ref` 指向当前用户拥有且启用的个人首页或 `template:{id}` 授权模板 |
 | 保存布局失败 | 检查 `layoutJson` 是否包含 `schemaVersion` 和 `items`，并满足组件数量、组件 ID 和 12 栅格坐标校验 |
 | 指定首页无法打开 | 确认请求中的 `homeId` 属于当前登录租户和用户 |
 | 接口返回未登录或无上下文 | 确认请求经过后台登录态、租户上下文和 `MangoContextHolder` 初始化链路 |
+| 管理接口返回 403 | 确认正式菜单/API 资源已同步；演示验收还需启用 `mango.resource.registry.demo-enabled=true` 并等待演示角色绑定完成 |
 
 ## 10. 相关文档
 

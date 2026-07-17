@@ -1,6 +1,7 @@
 package io.mango.link.api.command;
 
 import io.mango.link.api.enums.LinkVisibilityScope;
+import io.mango.link.api.validation.LinkStrictValidation;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
@@ -41,6 +42,7 @@ public class CreateLinkItemCommand {
     @Schema(description = "图标地址")
     private String iconUrl;
 
+    @Size(max = 20, message = "标签最多20个")
     @Schema(description = "标签")
     private List<@Size(max = 32, message = "单个标签最多32个字符") String> tags;
 
@@ -49,9 +51,11 @@ public class CreateLinkItemCommand {
     private LinkVisibilityScope visibilityScope;
 
     @Valid
+    @Size(max = 200, message = "可见目标最多200个")
     @Schema(description = "指定部门或指定用户目标")
     private List<LinkVisibilityTargetCommand> visibilityTargets;
 
+    @NotNull(groups = LinkStrictValidation.class, message = "严格校验时推荐标记不能为空")
     @Schema(description = "是否推荐")
     private Boolean recommended;
 

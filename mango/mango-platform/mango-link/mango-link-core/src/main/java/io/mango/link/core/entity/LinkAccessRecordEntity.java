@@ -1,20 +1,16 @@
 package io.mango.link.core.entity;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
-import lombok.Data;
+import io.mango.infra.persistence.api.entity.TenantEntity;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.time.LocalDateTime;
 
-@Data
+@Getter
+@Setter
 @TableName("link_access_record")
-public class LinkAccessRecordEntity {
-
-    @TableId(value = "id", type = IdType.ASSIGN_ID)
-    private Long id;
-
-    private Long tenantId;
+public class LinkAccessRecordEntity extends TenantEntity {
 
     private Long linkId;
 
@@ -36,11 +32,4 @@ public class LinkAccessRecordEntity {
 
     private LocalDateTime accessTime;
 
-    private Long createdBy;
-
-    private LocalDateTime createdAt;
-
-    private Long updatedBy;
-
-    private LocalDateTime updatedAt;
 }

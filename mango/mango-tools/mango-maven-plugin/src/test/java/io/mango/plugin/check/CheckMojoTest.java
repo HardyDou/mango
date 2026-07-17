@@ -1244,7 +1244,8 @@ class CheckMojoTest {
     }
 
     @Test
-    void resolveStaticAnalysisProjects_withSessionReactor_excludesGovernanceAggregators() throws Exception {
+    void resolveStaticAnalysisProjects_withSessionReactor_excludesNonJavaProjectsAndGovernanceAggregators()
+            throws Exception {
         // given
         Path rootPom = tempDir.resolve("pom.xml");
         Files.writeString(rootPom, """
@@ -1260,36 +1261,51 @@ class CheckMojoTest {
         Path jobCore = jobRoot.resolve("mango-job-core");
         Path architectureVerification = tempDir.resolve("architecture-verification");
         Path mangoArchitectureVerification = tempDir.resolve("mango-architecture-verification");
+        Path adminStarter = tempDir.resolve("mango-admin-starter");
         Path infraKv = tempDir.resolve("mango-infra/mango-infra-kv");
         Files.createDirectories(jobSupport);
         Files.createDirectories(jobCore);
         Files.createDirectories(architectureVerification);
         Files.createDirectories(mangoArchitectureVerification);
+        Files.createDirectories(adminStarter);
         Files.createDirectories(infraKv);
         Files.writeString(jobSupport.resolve("pom.xml"), "<project/>");
         Files.writeString(jobCore.resolve("pom.xml"), "<project/>");
         Files.writeString(architectureVerification.resolve("pom.xml"), "<project/>");
         Files.writeString(mangoArchitectureVerification.resolve("pom.xml"), "<project/>");
+        Files.writeString(adminStarter.resolve("pom.xml"), "<project/>");
         Files.writeString(infraKv.resolve("pom.xml"), "<project/>");
+        Path supportSource = jobSupport.resolve("src/main/java/io/mango/job/Support.java");
+        Path coreSource = jobCore.resolve("src/main/java/io/mango/job/Core.java");
+        Files.createDirectories(supportSource.getParent());
+        Files.createDirectories(coreSource.getParent());
+        Files.writeString(supportSource, "package io.mango.job; final class Support {}\n");
+        Files.writeString(coreSource, "package io.mango.job; final class Core {}\n");
 
         MavenSession session = mock(MavenSession.class);
         MavenProject rootProject = new MavenProject();
         rootProject.setFile(rootPom.toFile());
         MavenProject supportProject = new MavenProject();
         supportProject.setFile(jobSupport.resolve("pom.xml").toFile());
+        supportProject.addCompileSourceRoot(jobSupport.resolve("src/main/java").toString());
         MavenProject coreProject = new MavenProject();
         coreProject.setFile(jobCore.resolve("pom.xml").toFile());
+        coreProject.addCompileSourceRoot(jobCore.resolve("src/main/java").toString());
         MavenProject architectureProject = new MavenProject();
         architectureProject.setFile(architectureVerification.resolve("pom.xml").toFile());
         MavenProject mangoArchitectureProject = new MavenProject();
         mangoArchitectureProject.setFile(mangoArchitectureVerification.resolve("pom.xml").toFile());
+        MavenProject adminStarterProject = new MavenProject();
+        adminStarterProject.setFile(adminStarter.resolve("pom.xml").toFile());
+        adminStarterProject.setArtifactId("mango-admin-starter");
         when(session.getProjects()).thenReturn(
                 List.of(
                         rootProject,
                         supportProject,
                         coreProject,
                         architectureProject,
-                        mangoArchitectureProject));
+                        mangoArchitectureProject,
+                        adminStarterProject));
 
         CheckMojo mojo = new CheckMojo();
         setField(mojo, "baseDir", tempDir.toString());
@@ -1307,6 +1323,30 @@ class CheckMojoTest {
                 "mango-platform/mango-job/mango-job-support",
                 "mango-platform/mango-job/mango-job-core"
         ), projects);
+    }
+
+    @Test
+    void sessionContainsJavaCompileSource_withDependencyOnlyReactor_returnsFalse() throws Exception {
+        Path adminStarter = tempDir.resolve("mango-admin-starter");
+        Files.createDirectories(adminStarter);
+        Files.writeString(adminStarter.resolve("pom.xml"), "<project/>");
+        MavenProject adminProject = new MavenProject();
+        adminProject.setFile(adminStarter.resolve("pom.xml").toFile());
+        adminProject.setArtifactId("mango-admin-starter");
+        MavenSession session = mock(MavenSession.class);
+        when(session.getProjects()).thenReturn(List.of(adminProject));
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "session", session);
+        Method containsSource =
+                CheckMojo.class.getDeclaredMethod("sessionContainsJavaCompileSource");
+        containsSource.setAccessible(true);
+        Method resolveProjects =
+                CheckMojo.class.getDeclaredMethod("resolveStaticAnalysisProjects", Path.class);
+        resolveProjects.setAccessible(true);
+
+        assertFalse((boolean) containsSource.invoke(mojo));
+        assertEquals(List.of(), resolveProjects.invoke(mojo, tempDir));
     }
 
     @Test

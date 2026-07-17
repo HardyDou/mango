@@ -100,7 +100,7 @@ registerMangoLinkAdminPages();
 | 网址分类 | 关键字、状态 | 分类名称、说明、排序、状态、更新时间 | 新增、编辑、启停、删除 |
 | 网址列表 | 关键字、分类、可见范围、状态 | 名称、URL、分类、可见范围、标签、状态、更新时间 | 新增、编辑、启停、删除、打开 |
 
-页面里的“打开”会使用 `/api/link/open/redirect/{id}`，由后端统一跳转并记录访问。后台网址列表里如果当前账号不满足该网址的可见范围，跳转接口会返回不可见。
+页面里的“打开”按来源选路：公开网址使用 `/api/link/open/redirect?id={id}`，公司、收藏和个人网址使用 `/api/link/visible-links/redirect?id={id}`。后端统一校验可见性、返回 302 并记录访问。
 
 首页网址导航小组件默认复用菜单页同一组用户侧接口读取数据：企业网址来自 `/link/company-links/list`，我的网址来自 `/link/personal-links/page`，我的收藏来自 `/link/favorites/list`，个人分类来自 `/link/personal-categories/list`。不要为小组件单独维护另一套数据口径。
 
@@ -136,7 +136,7 @@ registerMangoLinkAdminPages();
 
 | 方法 | 说明 |
 |------|------|
-| `linkRedirectUrl(id, source)` | 生成 `/api/link/open/redirect/{id}?source=...`。 |
+| `linkRedirectUrl(id, source)` | 按 `source` 生成公开或登录跳转地址。 |
 | `openLinkWithRedirect(item, source)` | 新窗口打开系统跳转地址。 |
 | `navigationSourceOf(scope)` | 根据可见范围推导跳转来源。 |
 
@@ -158,7 +158,7 @@ registerMangoLinkAdminPages();
 | 页面请求 404 | 后端是否启用 `mango-link-starter`，网关是否代理 `/link/**`。 |
 | 首页网址导航显示不可用 | 当前账号缺少 link 菜单/权限，或当前环境没有启用 `mango-link-starter`。 |
 | 页面请求 401/403 | 登录态、角色权限、网址可见范围是否满足。 |
-| 打开网址没有访问记录 | 页面是否走 `openLinkWithRedirect`，请求路径是否为 `/api/link/open/redirect/{id}`。 |
+| 打开网址没有访问记录 | 页面是否走 `openLinkWithRedirect`，公开项是否使用 `/api/link/open/redirect`，登录可见项是否使用 `/api/link/visible-links/redirect`。 |
 
 ## 12. 相关文档
 

@@ -12,7 +12,7 @@
 - 工作日计算：判断某天是否工作日、计算前后工作日、统计区间工作日、查询月份工作日汇总。
 - 农历与节气：按公历查农历、农历转公历、查询年度二十四节气。
 
-默认日历编码是 `CN_STANDARD`。该日历定义由必需资源声明初始化；开启 demo 资源时会额外初始化 2025-2026 年完整日期、法定节假日和调休数据。其他年度需要在管理端初始化，或调用管理接口初始化。
+默认日历编码是 `CN_STANDARD`。日历定义及 2025-2026 年完整日期、法定节假日和调休数据均由必需资源声明初始化，不依赖 demo 开关。其他年度需要在管理端初始化，或调用管理接口初始化。
 
 ## 2. 功能清单
 
@@ -322,11 +322,11 @@ mango:
 | `calendar` | `db/migration/calendar/V1__init_calendar.sql` | 日历定义表。 |
 | `calendar_day` | `db/migration/calendar/V1__init_calendar.sql` | 年度日期明细表。 |
 | `CN_STANDARD` | `META-INF/mango/resources/calendar-common-definition.json` | 必需资源；默认中国标准工作日历定义，`INIT_ONLY`，不会覆盖用户后续修改。 |
-| 2025-2026 年日期 | `META-INF/mango/demo/calendar-demo-cn-standard-years.json` | 演示资源；仅 demo 开启时生成完整年度日期并应用 71 条法定节假日和调休数据。 |
+| 2025-2026 年日期 | `META-INF/mango/resources/calendar-common-cn-standard-years.json` | 必需资源；默认生成完整年度日期并应用 71 条法定节假日和调休数据，`INIT_ONLY`，不覆盖用户后续修改。 |
 | 菜单 | `META-INF/mango/resources/calendar-common-menu.json` | Calendar 自己登记管理菜单和权限映射，目标模块为 authorization。 |
 | 领域 | `META-INF/mango/resources/calendar-common-domain.yml` | Calendar 自己登记领域资源。 |
 
-关闭 demo 资源时，新库只会得到两张业务表、`CN_STANDARD` 定义及正式菜单/领域资源，不会预置年度日期。生产环境应通过管理接口初始化目标年度，再导入权威节假日数据。
+无论是否开启 demo 资源，新库都会得到两张业务表、`CN_STANDARD` 定义、2025-2026 年完整年度日期及正式菜单/领域资源。2027 年及后续年度应通过管理接口初始化，再按国务院正式安排导入权威节假日和调休数据。
 
 如果页面看不到日历菜单，先确认 Resource Registry 已扫描 calendar 正式资源，再确认角色已授权对应权限码。
 

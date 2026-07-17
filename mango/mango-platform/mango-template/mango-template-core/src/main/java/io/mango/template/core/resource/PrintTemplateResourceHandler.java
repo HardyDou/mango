@@ -9,10 +9,10 @@ import io.mango.resource.support.model.ResourceHandlerSpec;
 import io.mango.resource.support.model.ResourceSyncResult;
 import io.mango.template.api.enums.TemplateSourceFormat;
 import io.mango.template.api.enums.TemplateStatus;
-import io.mango.template.core.entity.Template;
-import io.mango.template.core.entity.TemplateCategory;
-import io.mango.template.core.entity.TemplateRenderRecord;
-import io.mango.template.core.entity.TemplateVersion;
+import io.mango.template.core.entity.TemplateEntity;
+import io.mango.template.core.entity.TemplateCategoryEntity;
+import io.mango.template.core.entity.TemplateRenderRecordEntity;
+import io.mango.template.core.entity.TemplateVersionEntity;
 import io.mango.template.core.mapper.TemplateCategoryMapper;
 import io.mango.template.core.mapper.TemplateMapper;
 import io.mango.template.core.mapper.TemplateRenderRecordMapper;
@@ -80,11 +80,11 @@ public class PrintTemplateResourceHandler implements ResourceHandler {
     public ResourceSyncResult upsert(ResourceDeclaration resource) {
         PrintTemplatePayload payload = PrintTemplatePayload.from(resource);
         ensureCategory(payload);
-        Template template = findTemplate(payload.tenantId(), payload.templateCode());
+        TemplateEntity template = findTemplate(payload.tenantId(), payload.templateCode());
         if (template == null) {
-            template = new Template();
+            template = new TemplateEntity();
             template.setId(payload.templateId());
-            template.setTenantId(payload.tenantId());
+            template.setTenantId(String.valueOf(payload.tenantId()));
             template.setTemplateCode(payload.templateCode());
             applyTemplate(template, payload);
             templateMapper.insert(template);
@@ -99,12 +99,12 @@ public class PrintTemplateResourceHandler implements ResourceHandler {
 
     @Override
     public ResourceSyncResult disable(ResourceDeclaration resource) {
-        Template template = resolveTemplate(resource);
+        TemplateEntity template = resolveTemplate(resource);
         if (template == null) {
             return ResourceSyncResult.of(null, TARGET_TABLE, "Print template not found");
         }
         template.setStatus(DISABLED);
-        template.setUpdatedTime(LocalDateTime.now());
+        template.setUpdatedAt(LocalDateTime.now());
         template.setUpdatedAt(LocalDateTime.now());
         templateMapper.updateById(template);
         return ResourceSyncResult.of(template.getId(), TARGET_TABLE,
@@ -114,22 +114,22 @@ public class PrintTemplateResourceHandler implements ResourceHandler {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public ResourceSyncResult delete(ResourceDeclaration resource) {
-        Template template = resolveTemplate(resource);
+        TemplateEntity template = resolveTemplate(resource);
         if (template == null) {
             return ResourceSyncResult.of(null, TARGET_TABLE, "Print template not found");
         }
-        renderRecordMapper.delete(new LambdaQueryWrapper<TemplateRenderRecord>()
-                .eq(TemplateRenderRecord::getTemplateId, template.getId()));
-        versionMapper.delete(new LambdaQueryWrapper<TemplateVersion>()
-                .eq(TemplateVersion::getTemplateId, template.getId()));
+        renderRecordMapper.delete(new LambdaQueryWrapper<TemplateRenderRecordEntity>()
+                .eq(TemplateRenderRecordEntity::getTemplateId, template.getId()));
+        versionMapper.delete(new LambdaQueryWrapper<TemplateVersionEntity>()
+                .eq(TemplateVersionEntity::getTemplateId, template.getId()));
         templateMapper.deleteById(template.getId());
         return ResourceSyncResult.of(template.getId(), TARGET_TABLE,
                 "Print template deleted: " + template.getTemplateCode());
     }
 
-    private void applyTemplate(Template template, PrintTemplatePayload payload) {
+    private void applyTemplate(TemplateEntity template, PrintTemplatePayload payload) {
         LocalDateTime now = LocalDateTime.now();
-        template.setTenantId(payload.tenantId());
+        template.setTenantId(String.valueOf(payload.tenantId()));
         template.setTemplateCode(payload.templateCode());
         template.setTemplateName(payload.templateName());
         template.setCategoryCode(payload.categoryCode());
@@ -147,13 +147,9 @@ public class PrintTemplateResourceHandler implements ResourceHandler {
         template.setDraftVariableSchema(payload.variableSchema());
         template.setHasUnpublishedChanges(0);
         template.setRemark(payload.remark());
-        if (template.getCreatedTime() == null) {
-            template.setCreatedTime(now);
-        }
         if (template.getCreatedAt() == null) {
             template.setCreatedAt(now);
         }
-        template.setUpdatedTime(now);
         template.setUpdatedAt(now);
     }
 
@@ -161,23 +157,21 @@ public class PrintTemplateResourceHandler implements ResourceHandler {
         if (!StringUtils.hasText(payload.categoryCode())) {
             return;
         }
-        TemplateCategory category = categoryMapper.selectOne(new LambdaQueryWrapper<TemplateCategory>()
-                .eq(TemplateCategory::getTenantId, payload.tenantId())
-                .eq(TemplateCategory::getCategoryCode, payload.categoryCode())
+        TemplateCategoryEntity category = categoryMapper.selectOne(new LambdaQueryWrapper<TemplateCategoryEntity>()
+                .eq(TemplateCategoryEntity::getTenantId, payload.tenantId())
+                .eq(TemplateCategoryEntity::getCategoryCode, payload.categoryCode())
                 .last("limit 1"));
         if (category == null) {
-            category = new TemplateCategory();
+            category = new TemplateCategoryEntity();
             category.setId(payload.categoryId());
-            category.setTenantId(payload.tenantId());
+            category.setTenantId(String.valueOf(payload.tenantId()));
             category.setCategoryCode(payload.categoryCode());
             category.setCategoryName(defaultText(payload.categoryName(), payload.categoryCode()));
             category.setSort(payload.categorySort());
             category.setStatus(DEFAULT_STATUS);
             category.setRemark(payload.categoryRemark());
             LocalDateTime now = LocalDateTime.now();
-            category.setCreatedTime(now);
             category.setCreatedAt(now);
-            category.setUpdatedTime(now);
             category.setUpdatedAt(now);
             categoryMapper.insert(category);
             return;
@@ -185,16 +179,16 @@ public class PrintTemplateResourceHandler implements ResourceHandler {
         category.setCategoryName(defaultText(payload.categoryName(), category.getCategoryName()));
         category.setSort(payload.categorySort());
         category.setRemark(payload.categoryRemark());
-        category.setUpdatedTime(LocalDateTime.now());
+        category.setUpdatedAt(LocalDateTime.now());
         category.setUpdatedAt(LocalDateTime.now());
         categoryMapper.updateById(category);
     }
 
-    private void upsertVersion(Template template, PrintTemplatePayload payload) {
-        versionMapper.update(null, new com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper<TemplateVersion>()
-                .eq(TemplateVersion::getTemplateId, template.getId())
-                .set(TemplateVersion::getCurrentPublished, 0));
-        TemplateVersion version = null;
+    private void upsertVersion(TemplateEntity template, PrintTemplatePayload payload) {
+        versionMapper.update(null, new com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper<TemplateVersionEntity>()
+                .eq(TemplateVersionEntity::getTemplateId, template.getId())
+                .set(TemplateVersionEntity::getCurrentPublished, 0));
+        TemplateVersionEntity version = null;
         if (payload.versionId() != null) {
             version = versionMapper.selectById(payload.versionId());
             if (version != null && !template.getId().equals(version.getTemplateId())) {
@@ -202,15 +196,15 @@ public class PrintTemplateResourceHandler implements ResourceHandler {
             }
         }
         if (version == null) {
-            version = versionMapper.selectOne(new LambdaQueryWrapper<TemplateVersion>()
-                    .eq(TemplateVersion::getTemplateId, template.getId())
-                    .eq(TemplateVersion::getVersionNo, payload.versionNo())
+            version = versionMapper.selectOne(new LambdaQueryWrapper<TemplateVersionEntity>()
+                    .eq(TemplateVersionEntity::getTemplateId, template.getId())
+                    .eq(TemplateVersionEntity::getVersionNo, payload.versionNo())
                     .last("limit 1"));
         }
         if (version == null) {
-            version = new TemplateVersion();
+            version = new TemplateVersionEntity();
             version.setId(payload.versionId());
-            version.setTenantId(payload.tenantId());
+            version.setTenantId(String.valueOf(payload.tenantId()));
             version.setTemplateId(template.getId());
             version.setVersionNo(payload.versionNo());
             applyVersion(version, payload);
@@ -221,9 +215,9 @@ public class PrintTemplateResourceHandler implements ResourceHandler {
         versionMapper.updateById(version);
     }
 
-    private void applyVersion(TemplateVersion version, PrintTemplatePayload payload) {
+    private void applyVersion(TemplateVersionEntity version, PrintTemplatePayload payload) {
         LocalDateTime now = LocalDateTime.now();
-        version.setTenantId(payload.tenantId());
+        version.setTenantId(String.valueOf(payload.tenantId()));
         version.setVersionNo(payload.versionNo());
         version.setSourceFormat(payload.sourceFormat());
         version.setContent(payload.content());
@@ -231,21 +225,17 @@ public class PrintTemplateResourceHandler implements ResourceHandler {
         version.setVariableSchema(payload.variableSchema());
         version.setCurrentPublished(1);
         version.setVersionRemark(payload.versionRemark());
-        if (version.getCreatedTime() == null) {
-            version.setCreatedTime(now);
-        }
         if (version.getCreatedAt() == null) {
             version.setCreatedAt(now);
         }
-        version.setUpdatedTime(now);
         version.setUpdatedAt(now);
     }
 
-    private Template resolveTemplate(ResourceDeclaration resource) {
+    private TemplateEntity resolveTemplate(ResourceDeclaration resource) {
         Long tenantId = fieldLong(resource, "tenantId", false, DEFAULT_TENANT_ID);
         String templateCode = fieldText(resource, "templateCode", false);
         if (StringUtils.hasText(templateCode)) {
-            Template template = findTemplate(tenantId, templateCode.trim());
+            TemplateEntity template = findTemplate(tenantId, templateCode.trim());
             if (template != null) {
                 return template;
             }
@@ -255,13 +245,16 @@ public class PrintTemplateResourceHandler implements ResourceHandler {
             return templateMapper.selectById(targetId);
         }
         Long templateId = fieldLong(resource, "templateId", false, null);
-        return templateId == null ? null : templateMapper.selectById(templateId);
+        if (templateId == null) {
+            return null;
+        }
+        return templateMapper.selectById(templateId);
     }
 
-    private Template findTemplate(Long tenantId, String templateCode) {
-        return templateMapper.selectOne(new LambdaQueryWrapper<Template>()
-                .eq(Template::getTenantId, tenantId)
-                .eq(Template::getTemplateCode, templateCode)
+    private TemplateEntity findTemplate(Long tenantId, String templateCode) {
+        return templateMapper.selectOne(new LambdaQueryWrapper<TemplateEntity>()
+                .eq(TemplateEntity::getTenantId, tenantId)
+                .eq(TemplateEntity::getTemplateCode, templateCode)
                 .last("limit 1"));
     }
 
@@ -298,11 +291,18 @@ public class PrintTemplateResourceHandler implements ResourceHandler {
                     fieldText(resource, "content", false),
                     fieldLong(resource, "sourceFileId", false, null),
                     fieldText(resource, "variableSchema", false),
-                    fieldInt(resource, "versionNo", false, resource.getVersion() == null ? 1 : resource.getVersion()),
+                    fieldInt(resource, "versionNo", false, defaultVersion(resource)),
                     normalizeStatus(fieldInt(resource, "status", false, TemplateStatus.ENABLED.value())),
                     fieldText(resource, "remark", false),
                     fieldText(resource, "versionRemark", false)
             );
+        }
+
+        private static Integer defaultVersion(ResourceDeclaration resource) {
+            if (resource.getVersion() == null) {
+                return 1;
+            }
+            return resource.getVersion();
         }
     }
 
@@ -322,7 +322,10 @@ public class PrintTemplateResourceHandler implements ResourceHandler {
 
     private static Object fieldValue(ResourceDeclaration resource, String name, boolean required) {
         ResourceField field = resource.getFields().get(name);
-        Object value = field == null ? null : field.getValue();
+        Object value = null;
+        if (field != null) {
+            value = field.getValue();
+        }
         if (required && value == null) {
             throw new IllegalStateException("PRINT_TEMPLATE field is required: " + name);
         }
@@ -351,11 +354,17 @@ public class PrintTemplateResourceHandler implements ResourceHandler {
     }
 
     private static String defaultText(String value, String defaultValue) {
-        return StringUtils.hasText(value) ? value.trim() : defaultValue;
+        if (StringUtils.hasText(value)) {
+            return value.trim();
+        }
+        return defaultValue;
     }
 
     private static String toText(Object value) {
-        return value == null ? null : String.valueOf(value);
+        if (value == null) {
+            return null;
+        }
+        return String.valueOf(value);
     }
 
     private static Long toLong(Object value, boolean required, Long defaultValue) {

@@ -503,7 +503,9 @@ async function openItem(item: LinkNavigationItem): Promise<void> {
     return;
   }
   if (item.id && (item.source === 'FAVORITE' || !item.path)) {
-    openExternalUrl(`/api/link/open/redirect/${encodeURIComponent(item.id)}?source=${encodeURIComponent(openSourceOf(item))}`);
+    const source = openSourceOf(item);
+    const path = source === 'PUBLIC' ? '/api/link/open/redirect' : '/api/link/visible-links/redirect';
+    openExternalUrl(`${path}?id=${encodeURIComponent(item.id)}&source=${encodeURIComponent(source)}`);
     return;
   }
   if (item.pageType === 'EXTERNAL_LINK' && item.url) {

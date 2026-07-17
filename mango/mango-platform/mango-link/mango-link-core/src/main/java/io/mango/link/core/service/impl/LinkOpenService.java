@@ -2,7 +2,7 @@ package io.mango.link.core.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import io.mango.common.result.Require;
-import io.mango.identity.api.TenantMemberProvider;
+import io.mango.link.api.enums.LinkCode;
 import io.mango.link.api.enums.LinkNavigationSource;
 import io.mango.link.api.enums.LinkVisibilityScope;
 import io.mango.link.api.query.LinkPublicItemQuery;
@@ -14,20 +14,21 @@ import io.mango.link.core.entity.LinkVisibilityTargetEntity;
 import io.mango.link.core.integration.LinkConfigGateway;
 import io.mango.link.core.mapper.LinkAccessRecordMapper;
 import io.mango.link.core.mapper.LinkCategoryMapper;
-import io.mango.link.core.mapper.LinkFavoriteMapper;
 import io.mango.link.core.mapper.LinkItemMapper;
 import io.mango.link.core.mapper.LinkVisibilityTargetMapper;
 import io.mango.link.core.service.ILinkOpenService;
+import io.mango.link.core.service.LinkJumpContext;
+import io.mango.link.core.service.LinkRedirectContext;
 import io.mango.link.core.support.LinkContextSupport;
 import io.mango.link.core.support.LinkSupport;
-import org.springframework.beans.factory.ObjectProvider;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
-import java.time.LocalDateTime;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -35,7 +36,8 @@ import java.util.Map;
 import java.util.Set;
 
 @Service
-public class LinkOpenService extends BaseLinkService implements ILinkOpenService {
+@RequiredArgsConstructor
+public class LinkOpenService implements ILinkOpenService {
 
     private static final String JUMP_ENABLED_CONFIG_KEY = "mango.link.open.jump.enabled";
     private static final String LEGACY_JUMP_ENABLED_CONFIG_KEY = "link.open.jump.enabled";
@@ -43,22 +45,14 @@ public class LinkOpenService extends BaseLinkService implements ILinkOpenService
     private static final int REFERER_LIMIT = 1024;
     private static final int VISITOR_ID_LIMIT = 128;
     private static final int EXTRA_PARAMS_LIMIT = 1024;
-    private static final long ANONYMOUS_TENANT_ID = 0L;
+    private static final String ANONYMOUS_TENANT_ID = "0";
 
+    private final LinkCategoryMapper categoryMapper;
+    private final LinkItemMapper itemMapper;
+    private final LinkVisibilityTargetMapper targetMapper;
     private final LinkAccessRecordMapper accessRecordMapper;
     private final LinkConfigGateway configGateway;
-
-    public LinkOpenService(LinkCategoryMapper categoryMapper,
-                           LinkItemMapper itemMapper,
-                           LinkVisibilityTargetMapper targetMapper,
-                           LinkFavoriteMapper favoriteMapper,
-                           ObjectProvider<TenantMemberProvider> tenantMemberProvider,
-                           LinkAccessRecordMapper accessRecordMapper,
-                           LinkConfigGateway configGateway) {
-        super(categoryMapper, itemMapper, targetMapper, favoriteMapper, tenantMemberProvider);
-        this.accessRecordMapper = accessRecordMapper;
-        this.configGateway = configGateway;
-    }
+    private final LinkServiceSupport support;
 
     @Override
     public List<LinkPublicItemVO> listPublicItems(LinkPublicItemQuery query) {
@@ -66,15 +60,12 @@ public class LinkOpenService extends BaseLinkService implements ILinkOpenService
         if (resolved == null) {
             resolved = new LinkPublicItemQuery();
         }
-        Long tenantId = LinkContextSupport.resolveTenantId(resolved.getTenantId());
-        Long userId = LinkContextSupport.currentUserIdOrNull();
-        if (userId != null) {
-            return listVisibleItems(tenantId, userId, resolved);
-        }
+        String tenantId = LinkContextSupport.resolveTenantId(resolved.getTenantId());
         List<LinkItemEntity> items = itemMapper.selectList(publicWrapper(tenantId, resolved));
-        Map<Long, LinkCategoryEntity> categories = categoriesById(tenantId, items.stream().map(LinkItemEntity::getCategoryId).toList());
+        Map<Long, LinkCategoryEntity> categories = support.categoriesById(tenantId,
+                items.stream().map(LinkItemEntity::getCategoryId).toList());
         return items.stream()
-                .filter(item -> enabledCategory(categories.get(item.getCategoryId())))
+                .filter(item -> support.enabledCategory(categories.get(item.getCategoryId())))
                 .sorted(Comparator.comparing(LinkItemEntity::getCategoryId, Comparator.nullsLast(Long::compareTo))
                         .thenComparing(LinkItemEntity::getRecommended, Comparator.nullsLast(Comparator.reverseOrder()))
                         .thenComparing(LinkItemEntity::getSortNo, Comparator.nullsLast(Integer::compareTo)))
@@ -83,57 +74,79 @@ public class LinkOpenService extends BaseLinkService implements ILinkOpenService
     }
 
     @Override
+    public List<LinkPublicItemVO> listVisibleItems(LinkPublicItemQuery query) {
+        LinkPublicItemQuery resolved = query;
+        if (resolved == null) {
+            resolved = new LinkPublicItemQuery();
+        }
+        return listVisibleItems(LinkContextSupport.currentTenantId(),
+                LinkContextSupport.currentUserId(), resolved);
+    }
+
+    @Override
     @Transactional(rollbackFor = Exception.class)
-    public String resolveRedirectUrl(Long id, String source, String clientIp, String userAgent, String referer) {
-        Require.notNull(id, "网址 ID 不能为空");
-        LinkItemEntity item = itemMapper.selectById(id);
-        Require.notNull(item, "网址不存在");
+    public String resolveRedirectUrl(LinkRedirectContext context) {
+        Require.notNull(context, LinkCode.LINK_BUSINESS_ERROR, "跳转上下文不能为空");
+        Require.notNull(context.getId(), LinkCode.LINK_BUSINESS_ERROR, "网址 ID 不能为空");
+        LinkItemEntity item = itemMapper.selectById(context.getId());
+        Require.notNull(item, LinkCode.LINK_BUSINESS_ERROR, "网址不存在");
+        String tenantId = LinkContextSupport.currentTenantIdOrNull();
+        Require.isTrue(tenantId == null || tenantId.equals(item.getTenantId()),
+                LinkCode.LINK_BUSINESS_ERROR, "网址不存在");
         LinkCategoryEntity category = null;
         if (item.getCategoryId() != null) {
-            category = categoryMapper.selectByTenantAndId(item.getTenantId(), item.getCategoryId());
+            category = categoryMapper.selectOne(new LambdaQueryWrapper<LinkCategoryEntity>()
+                    .eq(LinkCategoryEntity::getTenantId, item.getTenantId())
+                    .eq(LinkCategoryEntity::getId, item.getCategoryId())
+                    .last("LIMIT 1"));
         }
-        Require.isTrue(categoryVisible(item, category), "网址不可见");
+        Require.isTrue(categoryVisible(item, category), LinkCode.LINK_BUSINESS_ERROR, "网址不可见");
         Long userId = LinkContextSupport.currentUserIdOrNull();
         List<LinkVisibilityTargetEntity> targets = targetMapper.selectList(new LambdaQueryWrapper<LinkVisibilityTargetEntity>()
                 .eq(LinkVisibilityTargetEntity::getTenantId, item.getTenantId())
                 .eq(LinkVisibilityTargetEntity::getLinkId, item.getId()));
-        Require.isTrue(isVisibleToUser(item.getTenantId(), userId, item, targets), "网址不可见");
-        recordAccess(item, userId, source, clientIp, userAgent, referer);
+        Require.isTrue(support.isVisibleToUser(item.getTenantId(), userId, item, targets),
+                LinkCode.LINK_BUSINESS_ERROR, "网址不可见");
+        recordAccess(item, userId, context.getSource(), context.getClientIp(),
+                context.getUserAgent(), context.getReferer());
         return item.getUrl();
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public String resolveJumpUrl(String url,
-                                 String visitorId,
-                                 String source,
-                                 String extraParams,
-                                 String clientIp,
-                                 String userAgent,
-                                 String referer) {
-        String targetUrl = LinkSupport.normalizeUrl(url);
-        Long tenantId = LinkContextSupport.currentTenantIdOrNull();
+    public String resolveJumpUrl(LinkJumpContext context) {
+        Require.notNull(context, LinkCode.LINK_BUSINESS_ERROR, "跳转上下文不能为空");
+        String targetUrl = LinkSupport.normalizeUrl(context.getUrl());
+        String tenantId = LinkContextSupport.currentTenantIdOrNull();
         Long userId = LinkContextSupport.currentUserIdOrNull();
         LinkItemEntity item = null;
-        Long accessTenantId = ANONYMOUS_TENANT_ID;
+        String accessTenantId = ANONYMOUS_TENANT_ID;
         if (tenantId != null) {
-            item = itemMapper.selectEnabledByTenantAndUrl(tenantId, targetUrl);
+            item = itemMapper.selectOne(new LambdaQueryWrapper<LinkItemEntity>()
+                    .eq(LinkItemEntity::getTenantId, tenantId)
+                    .eq(LinkItemEntity::getUrl, targetUrl)
+                    .eq(LinkItemEntity::getStatus, LinkSupport.enabled())
+                    .last("LIMIT 1"));
             accessTenantId = tenantId;
         }
         recordAccess(accessTenantId, item, targetUrl, userId,
-                visitorId, source, extraParams, clientIp, userAgent, referer);
+                context.getVisitorId(), context.getSource(), context.getExtraParams(), context.getClientIp(),
+                context.getUserAgent(), context.getReferer());
         return targetUrl;
     }
 
-    private List<LinkPublicItemVO> listVisibleItems(Long tenantId, Long userId, LinkPublicItemQuery query) {
+    private List<LinkPublicItemVO> listVisibleItems(String tenantId, Long userId, LinkPublicItemQuery query) {
         List<LinkItemEntity> items = itemMapper.selectList(visibleWrapper(tenantId, query));
-        Map<Long, LinkCategoryEntity> categories = categoriesById(tenantId, items.stream().map(LinkItemEntity::getCategoryId).toList());
-        Map<Long, List<LinkVisibilityTargetEntity>> targets = targetsByLinkId(tenantId, items.stream().map(LinkItemEntity::getId).toList());
-        Set<Long> favorites = favoriteLinkIds(tenantId, userId, items.stream().map(LinkItemEntity::getId).toList());
+        Map<Long, LinkCategoryEntity> categories = support.categoriesById(tenantId,
+                items.stream().map(LinkItemEntity::getCategoryId).toList());
+        Map<Long, List<LinkVisibilityTargetEntity>> targets = support.targetsByLinkId(tenantId,
+                items.stream().map(LinkItemEntity::getId).toList());
+        Set<Long> favorites = support.favoriteLinkIds(tenantId, userId,
+                items.stream().map(LinkItemEntity::getId).toList());
         List<LinkItemEntity> visibleItems = items.stream()
                 .filter(item -> categoryVisible(item, categories.get(item.getCategoryId())))
-                .filter(item -> keywordMatched(item, query.getKeyword()))
-                .filter(item -> isVisibleToUser(tenantId, userId, item, targets.get(item.getId())))
+                .filter(item -> support.keywordMatched(item, query.getKeyword()))
+                .filter(item -> support.isVisibleToUser(tenantId, userId, item, targets.get(item.getId())))
                 .sorted(navigationComparator())
                 .toList();
 
@@ -159,7 +172,7 @@ public class LinkOpenService extends BaseLinkService implements ILinkOpenService
         return result;
     }
 
-    private LambdaQueryWrapper<LinkItemEntity> publicWrapper(Long tenantId, LinkPublicItemQuery query) {
+    private LambdaQueryWrapper<LinkItemEntity> publicWrapper(String tenantId, LinkPublicItemQuery query) {
         LambdaQueryWrapper<LinkItemEntity> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(LinkItemEntity::getTenantId, tenantId)
                 .eq(LinkItemEntity::getStatus, LinkSupport.enabled())
@@ -179,7 +192,7 @@ public class LinkOpenService extends BaseLinkService implements ILinkOpenService
         return wrapper;
     }
 
-    private LambdaQueryWrapper<LinkItemEntity> visibleWrapper(Long tenantId, LinkPublicItemQuery query) {
+    private LambdaQueryWrapper<LinkItemEntity> visibleWrapper(String tenantId, LinkPublicItemQuery query) {
         LambdaQueryWrapper<LinkItemEntity> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(LinkItemEntity::getTenantId, tenantId)
                 .eq(LinkItemEntity::getStatus, LinkSupport.enabled());
@@ -193,14 +206,14 @@ public class LinkOpenService extends BaseLinkService implements ILinkOpenService
         if (LinkVisibilityScope.PERSONAL.name().equals(item.getVisibilityScope()) && item.getCategoryId() == null) {
             return true;
         }
-        return enabledCategory(category);
+        return support.enabledCategory(category);
     }
 
     private LinkPublicItemVO toPublicVO(LinkItemEntity item,
                                         LinkCategoryEntity category,
                                         LinkNavigationSource source,
                                         boolean favorited) {
-        LinkPublicItemVO vo = toPublicVO(item, category);
+        LinkPublicItemVO vo = support.toPublicVO(item, category);
         vo.setSource(source);
         vo.setFavorited(favorited);
         String resolvedRedirectUrl = null;
@@ -216,7 +229,8 @@ public class LinkOpenService extends BaseLinkService implements ILinkOpenService
     }
 
     private String redirectUrl(LinkItemEntity item, LinkNavigationSource source) {
-        return "/link/open/jump?url=" + URLEncoder.encode(item.getUrl(), StandardCharsets.UTF_8)
+        String path = source == LinkNavigationSource.PUBLIC ? "/link/open/jump" : "/link/visible-links/jump";
+        return path + "?url=" + URLEncoder.encode(item.getUrl(), StandardCharsets.UTF_8)
                 + "&source=" + source.name();
     }
 
@@ -229,7 +243,7 @@ public class LinkOpenService extends BaseLinkService implements ILinkOpenService
         recordAccess(item.getTenantId(), item, item.getUrl(), userId, null, source, null, clientIp, userAgent, referer);
     }
 
-    private void recordAccess(Long tenantId,
+    private void recordAccess(String tenantId,
                               LinkItemEntity item,
                               String url,
                               Long userId,

@@ -60,4 +60,19 @@ public class TemplateVO implements Serializable {
     private LocalDateTime createdTime;
     @Schema(description = "更新时间")
     private LocalDateTime updatedTime;
+
+    public List<String> getUnpublishedChangeReasons() {
+        if (unpublishedChangeReasons == null) {
+            return null;
+        }
+        return new ArrayList<>(unpublishedChangeReasons);
+    }
+
+    public void setUnpublishedChangeReasons(List<String> unpublishedChangeReasons) {
+        if (unpublishedChangeReasons == null) {
+            this.unpublishedChangeReasons = null;
+            return;
+        }
+        this.unpublishedChangeReasons = new ArrayList<>(unpublishedChangeReasons);
+    }
 }

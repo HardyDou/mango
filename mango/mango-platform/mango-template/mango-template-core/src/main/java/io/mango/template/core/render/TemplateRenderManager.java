@@ -10,10 +10,11 @@ import io.mango.infra.fileproc.render.command.RenderCommand;
 import io.mango.infra.fileproc.render.command.RenderVariableDefinition;
 import io.mango.infra.fileproc.render.enums.RenderFormat;
 import io.mango.infra.fileproc.render.vo.RenderResultVO;
-import io.mango.template.api.TemplateCode;
-import io.mango.template.api.command.TemplateVariableDefinition;
+import io.mango.template.api.enums.TemplateCode;
+import io.mango.template.api.command.TemplateVariableCommand;
 import io.mango.template.api.enums.TemplateOutputFormat;
 import io.mango.template.api.enums.TemplateSourceFormat;
+import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 
 import java.io.ByteArrayInputStream;
@@ -24,11 +25,15 @@ import java.util.Map;
 /**
  * 模板渲染调度器。
  */
-@RequiredArgsConstructor
+@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 public class TemplateRenderManager {
 
     private final RenderApi renderApi;
     private final ConvertApi convertApi;
+
+    public static TemplateRenderManager create(RenderApi renderApi, ConvertApi convertApi) {
+        return new TemplateRenderManager(renderApi, convertApi);
+    }
 
     public TemplateRenderOutput render(TemplateRenderPayload payload) {
         RenderFormat sourceRenderFormat = renderFormat(payload.sourceFormat());
@@ -154,7 +159,7 @@ public class TemplateRenderManager {
         };
     }
 
-    private List<RenderVariableDefinition> renderVariableDefinitions(List<TemplateVariableDefinition> definitions) {
+    private List<RenderVariableDefinition> renderVariableDefinitions(List<TemplateVariableCommand> definitions) {
         if (definitions == null || definitions.isEmpty()) {
             return List.of();
         }
@@ -163,7 +168,7 @@ public class TemplateRenderManager {
                 .toList();
     }
 
-    private RenderVariableDefinition renderVariableDefinition(TemplateVariableDefinition definition) {
+    private RenderVariableDefinition renderVariableDefinition(TemplateVariableCommand definition) {
         return new RenderVariableDefinition(
                 definition.getName(),
                 definition.getType(),

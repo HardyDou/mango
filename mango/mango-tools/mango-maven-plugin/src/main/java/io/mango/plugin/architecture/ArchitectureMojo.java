@@ -238,8 +238,8 @@ public final class ArchitectureMojo extends AbstractMojo {
                     sourceDirectories);
         }
         if (sourceDirectories.isEmpty()) {
-            throw new MojoExecutionException(
-                    "MANGO-ARCH-ENGINE-005 Reactor contains no Java source directories");
+            getLog().info(
+                    "Reactor contains no Java sources; dependency architecture remains enforced");
         }
         return new ReactorInputs(
                 dependencyIssues,
@@ -273,6 +273,10 @@ public final class ArchitectureMojo extends AbstractMojo {
     private List<ArchitectureIssue> checkBytecode(
             ReactorInputs inputs, Map<Path, MangoArchUnitChecker.ModuleContract> moduleContracts)
             throws MojoExecutionException {
+        if (inputs.classDirectories().isEmpty()) {
+            getLog().info("ArchUnit: no Reactor bytecode inputs");
+            return List.of();
+        }
         MangoArchUnitChecker checker =
                 new MangoArchUnitChecker(
                         Set.copyOf(allowedReverseControllers),
@@ -283,6 +287,10 @@ public final class ArchitectureMojo extends AbstractMojo {
 
     private List<ArchitectureIssue> checkSources(ReactorInputs inputs)
             throws MojoExecutionException {
+        if (inputs.sourceDirectories().isEmpty()) {
+            getLog().info("PMD architecture: no Reactor Java source inputs");
+            return List.of();
+        }
         String javaVersion = resolveJavaVersion(session.getAllProjects());
         getLog().info("PMD Java language version: " + javaVersion);
         Set<Path> auxiliaryClasspath =
@@ -1581,7 +1589,10 @@ public final class ArchitectureMojo extends AbstractMojo {
     }
 
     private static Path toPath(File file) {
-        return file == null ? null : file.toPath();
+        if (file == null) {
+            return null;
+        }
+        return file.toPath();
     }
 
     public record ArchitectureReport(
