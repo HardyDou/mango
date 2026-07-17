@@ -49,6 +49,23 @@ class FileAccessUrlAssemblerTest {
     }
 
     @Test
+    void downloadUrl_eachFrontendOrigin_usesCurrentRequestOriginAndApiPrefix() {
+        FileAccessUrlAssembler assembler = new FileAccessUrlAssembler(new FileProperties());
+
+        for (int port : new int[]{8081, 8082, 8083}) {
+            TestHttpServletRequest request = new TestHttpServletRequest();
+            request.header("X-Forwarded-Proto", "http");
+            request.header("X-Forwarded-Host", "192.168.5.114:" + port);
+            request.header("X-Forwarded-Port", String.valueOf(port));
+            request.header("X-Forwarded-Prefix", "/api");
+            RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
+
+            assertThat(assembler.downloadUrl(101L))
+                    .isEqualTo("http://192.168.5.114:" + port + "/api/file/files/download?id=101");
+        }
+    }
+
+    @Test
     void downloadUrl_noRequestAndNoPublicBaseUrl_fallsBackToRelativePath() {
         FileAccessUrlAssembler assembler = new FileAccessUrlAssembler(new FileProperties());
 
