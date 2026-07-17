@@ -1,4 +1,4 @@
-import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
+import { expect, test, type APIRequestContext, type Page, type Response } from '@playwright/test';
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -11,6 +11,7 @@ const apiBaseURL = resolveE2EApiBaseURL({ uiRoot, defaultURL: 'http://127.0.0.1:
 const frontendBaseURL = resolveE2EBaseURL({ uiRoot, defaultURL: 'http://127.0.0.1:7777' });
 const resultFile = join(process.cwd(), 'e2e', '.tmp', 'file-preview-types-live-results.json');
 const screenshotFile = join(process.cwd(), 'e2e', '.tmp', 'file-preview-types-live-zip.png');
+const officeScreenshotFile = join(process.cwd(), 'e2e', '.tmp', 'file-preview-issue-563-docx.png');
 
 type PreviewCase = {
   key: string;
@@ -18,6 +19,7 @@ type PreviewCase = {
   mimeType: string;
   expected: 'preview' | 'unsupported-or-preview' | 'environment-blocked';
   create: () => Buffer | string;
+  fileName?: string;
 };
 
 type CaseResult = {
@@ -38,6 +40,18 @@ type CaseResult = {
   zipLayoutReason?: string;
   zipInnerPdfOk?: boolean;
   zipInnerPdfReason?: string;
+  pdfPageCount?: number;
+  pdfResourceUrl?: string;
+  pdfBackingUrl?: string;
+  pdfResponseStatus?: number;
+  pdfResponseContentType?: string;
+  doubleEncodedRequestCount?: number;
+};
+
+type BrowserResponse = {
+  url: string;
+  status: number;
+  contentType: string;
 };
 
 type ApiResponseBody = {
@@ -96,6 +110,14 @@ const cases: PreviewCase[] = [
     mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     expected: 'environment-blocked',
     create: () => createXlsxFixture(),
+  },
+  {
+    key: 'docx-mixed-name',
+    extension: 'docx',
+    mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    expected: process.env.MANGO_E2E_OFFICE_ENABLED === 'true' ? 'preview' : 'environment-blocked',
+    create: () => createDocxFixture(),
+    fileName: '中文 (1).docx',
   },
 ];
 
@@ -184,6 +206,36 @@ function createXlsxFixture() {
   return XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' }) as Buffer;
 }
 
+function createDocxFixture() {
+  const dir = join(tmpdir(), `mango-preview-docx-${Date.now()}`);
+  const relsDir = join(dir, '_rels');
+  const wordDir = join(dir, 'word');
+  mkdirSync(relsDir, { recursive: true });
+  mkdirSync(wordDir, { recursive: true });
+  writeFileSync(join(dir, '[Content_Types].xml'), `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+  <Default Extension="xml" ContentType="application/xml"/>
+  <Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>
+</Types>`, 'utf-8');
+  writeFileSync(join(relsDir, '.rels'), `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>
+</Relationships>`, 'utf-8');
+  writeFileSync(join(wordDir, 'document.xml'), `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:body>
+    <w:p><w:r><w:t>Mango Issue 563 mixed encoded filename preview</w:t></w:r></w:p>
+    <w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440"/></w:sectPr>
+  </w:body>
+</w:document>`, 'utf-8');
+  const docxPath = join(dir, 'fixture.docx');
+  execFileSync('zip', ['-q', '-r', docxPath, '[Content_Types].xml', '_rels', 'word'], { cwd: dir });
+  const content = Buffer.from(readFileSync(docxPath));
+  rmSync(dir, { recursive: true, force: true });
+  return content;
+}
+
 function previewEntryUrl(previewUrl: string) {
   const url = previewUrl.startsWith('http')
     ? new URL(previewUrl)
@@ -225,6 +277,74 @@ async function inspectPreviewPage(page: Page, url: string) {
     text: text.slice(0, 1000),
     ok: Boolean(response && response.status() < 500 && pageLooksLikePreview(text, title)),
   };
+}
+
+async function inspectOfficePdf(
+  page: Page,
+  fileId: string,
+  requestUrls: string[],
+  responses: BrowserResponse[],
+) {
+  const frame = page.frameLocator('#pdfFrame');
+  const iframeSrc = await page.locator('#pdfFrame').getAttribute('src');
+  expect(iframeSrc, 'PDF.js iframe 缺少资源地址').toBeTruthy();
+  const pdfResourceUrl = new URL(iframeSrc || '', frontendBaseURL).searchParams.get('file') || '';
+  const decodedPdfResourceUrl = decodeURIComponent(pdfResourceUrl);
+  const pdfBackingUrl = unwrapCorsResourceUrl(decodedPdfResourceUrl);
+  const findPdfResponse = () => responses.find(
+    response => unwrapCorsResourceUrl(response.url) === pdfBackingUrl,
+  );
+  await expect.poll(
+    findPdfResponse,
+    {
+      message: `未捕获 PDF 资源响应: ${decodedPdfResourceUrl}`,
+      timeout: 30000,
+    },
+  ).toBeTruthy();
+  const pdfResponse = findPdfResponse();
+  await expect(frame.locator('#viewer .page').first(), JSON.stringify({
+    decodedPdfResourceUrl,
+    pdfBackingUrl,
+    pdfResponse,
+  })).toBeVisible({ timeout: 30000 });
+  const pageCount = await frame.locator('#viewer .page').count();
+  const canvasSize = await frame.locator('#viewer .page canvas').first().evaluate((canvas) => ({
+    width: (canvas as HTMLCanvasElement).width,
+    height: (canvas as HTMLCanvasElement).height,
+  }));
+  const inspectedUrls = requestUrls.flatMap(url => [url, unwrapCorsResourceUrl(url)]);
+  const doubleEncodedRequests = inspectedUrls.filter(url => /%25(?:e4|e5|e6|e7|e8|e9)/i.test(url));
+
+  expect(pageCount, 'PDF.js 未渲染任何页').toBeGreaterThan(0);
+  expect(canvasSize.width, 'PDF.js 首页 canvas 宽度为 0').toBeGreaterThan(0);
+  expect(canvasSize.height, 'PDF.js 首页 canvas 高度为 0').toBeGreaterThan(0);
+  expect(pdfBackingUrl).toContain('/static/file-preview/');
+  expect(pdfBackingUrl).toContain(`file-${fileId}`);
+  expect(pdfResponse?.status, `PDF 资源请求失败: ${JSON.stringify(pdfResponse)}`).toBe(200);
+  expect(pdfResponse?.contentType).toContain('application/pdf');
+  expect(doubleEncodedRequests, '出现中文文件名双重 URL 编码请求').toEqual([]);
+
+  return {
+    pageCount,
+    pdfResourceUrl,
+    pdfBackingUrl,
+    pdfResponseStatus: pdfResponse?.status,
+    pdfResponseContentType: pdfResponse?.contentType,
+    doubleEncodedRequestCount: doubleEncodedRequests.length,
+  };
+}
+
+function unwrapCorsResourceUrl(resourceUrl: string) {
+  try {
+    const parsedUrl = new URL(resourceUrl, frontendBaseURL);
+    if (!parsedUrl.pathname.endsWith('/getCorsFile')) {
+      return resourceUrl;
+    }
+    const urlPath = parsedUrl.searchParams.get('urlPath');
+    return urlPath ? Buffer.from(urlPath, 'base64').toString('utf-8') : resourceUrl;
+  } catch {
+    return resourceUrl;
+  }
 }
 
 async function inspectZipInnerPdfPreview(page: Page) {
@@ -290,7 +410,7 @@ async function inspectZipPreviewLayout(page: Page) {
 }
 
 async function uploadFixture(request: APIRequestContext, token: string, item: PreviewCase) {
-  const fileName = `mango-preview-live-${item.key}-${Date.now()}.${item.extension}`;
+  const fileName = item.fileName || `mango-preview-live-${item.key}-${Date.now()}.${item.extension}`;
   const response = await request.post(api('/file/files'), {
     headers: authHeaders(token),
     multipart: {
@@ -322,6 +442,16 @@ async function runPreviewCase(page: Page, request: APIRequestContext, token: str
     status: 'FAIL',
     reason: '',
   };
+  const requestUrls: string[] = [];
+  const responses: BrowserResponse[] = [];
+  const requestListener = (browserRequest: { url: () => string }) => requestUrls.push(browserRequest.url());
+  const responseListener = (response: Response) => responses.push({
+    url: response.url(),
+    status: response.status(),
+    contentType: response.headers()['content-type'] || '',
+  });
+  page.on('request', requestListener);
+  page.on('response', responseListener);
   try {
     const uploaded = await uploadFixture(request, token, item);
     result.fileName = uploaded.fileName;
@@ -342,6 +472,16 @@ async function runPreviewCase(page: Page, request: APIRequestContext, token: str
     result.previewPageOk = pageInspection.ok;
     result.pageTitle = pageInspection.title;
     result.pageText = pageInspection.text;
+    if (item.key === 'docx-mixed-name' && process.env.MANGO_E2E_OFFICE_ENABLED === 'true') {
+      const pdfInspection = await inspectOfficePdf(page, uploaded.fileId, requestUrls, responses);
+      result.pdfPageCount = pdfInspection.pageCount;
+      result.pdfResourceUrl = pdfInspection.pdfResourceUrl;
+      result.pdfBackingUrl = pdfInspection.pdfBackingUrl;
+      result.pdfResponseStatus = pdfInspection.pdfResponseStatus;
+      result.pdfResponseContentType = pdfInspection.pdfResponseContentType;
+      result.doubleEncodedRequestCount = pdfInspection.doubleEncodedRequestCount;
+      await page.screenshot({ path: officeScreenshotFile, fullPage: true });
+    }
     if (item.key === 'zip') {
       const zipLayout = await inspectZipPreviewLayout(page);
       result.zipLayoutOk = zipLayout.ok;
@@ -380,6 +520,8 @@ async function runPreviewCase(page: Page, request: APIRequestContext, token: str
     result.status = item.expected === 'environment-blocked' ? 'BLOCKED' : 'FAIL';
     result.reason = error instanceof Error ? error.message : String(error);
   } finally {
+    page.off('request', requestListener);
+    page.off('response', responseListener);
     if (result.fileId) {
       await request.delete(api(`/file/files?id=${encodeURIComponent(result.fileId)}&reason=e2e-cleanup`), {
         headers: authHeaders(token),
@@ -390,11 +532,15 @@ async function runPreviewCase(page: Page, request: APIRequestContext, token: str
 }
 
 test.describe.serial('文件预览多类型真实联调', () => {
-  test('@p0 @file-preview txt、png、pdf、zip、xlsx 预览入口和下载链路', async ({ page, request }) => {
+  test('@p0 @file-preview txt、png、pdf、zip、xlsx、混合编码 docx 预览入口和下载链路', async ({ page, request }) => {
+    test.setTimeout(120000);
     await page.setViewportSize({ width: 960, height: 720 });
     const token = await loginToken(request);
     const results: CaseResult[] = [];
-    for (const item of cases) {
+    const selectedCase = process.env.MANGO_E2E_PREVIEW_CASE;
+    const selectedCases = selectedCase ? cases.filter(item => item.key === selectedCase) : cases;
+    expect(selectedCases, `未知预览用例: ${selectedCase}`).not.toHaveLength(0);
+    for (const item of selectedCases) {
       results.push(await runPreviewCase(page, request, token, item));
     }
 
@@ -403,7 +549,8 @@ test.describe.serial('文件预览多类型真实联调', () => {
       apiBaseURL,
       frontendBaseURL,
       generatedAt: new Date().toISOString(),
-      officePluginEnabled: false,
+      officePluginEnabled: process.env.MANGO_E2E_OFFICE_ENABLED === 'true',
+      selectedCase: selectedCase || 'all',
       results,
     }, null, 2)}\n`, 'utf-8');
 

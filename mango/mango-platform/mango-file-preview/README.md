@@ -115,6 +115,8 @@ mango:
 | `mango.file-preview.source-token-expire-seconds` | `86400` | 入口 token 和源文件 token 有效期，单位秒 |
 | `mango.file-preview.standalone-ui-enabled` | `false` | 是否允许访问 kkFileView 独立首页和演示文件管理入口 |
 
+Office 转换后的 PDF 通过同源 `/static/file-preview/**` 子路径直接交给 PDF.js，复用既有的预览静态资源 PUBLIC 策略，不再经 `/getCorsFile` 回源。原始文件仍只由引擎使用 source token 从内部 `source-base-url` 下载。
+
 `mango-file-preview-engine` 也支持独立引擎端口配置：
 
 | 配置 | 默认值 | 说明 |

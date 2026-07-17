@@ -46,7 +46,8 @@
 </#if>
 
 <script type="text/javascript">
-    var url = '${finalUrl}';
+    var sourceUrl = '${pdfUrl?js_string}';
+    var url = '${finalUrl?js_string}';
     var kkagent = '${kkagent}';
     var serverBaseUrl = '${baseUrl}'.endsWith('/') ? '${baseUrl}' : '${baseUrl}' + '/';
     function gatewayBaseUrl() {
@@ -57,7 +58,10 @@
         return serverBaseUrl;
     }
     var baseUrl = gatewayBaseUrl();
-    if (kkagent === 'true' || !url.startsWith(baseUrl)) {
+    var localPdfUrl = !sourceUrl.startsWith('http://') && !sourceUrl.startsWith('https://');
+    if (kkagent !== 'true' && localPdfUrl) {
+        url = baseUrl + 'static/file-preview/' + sourceUrl.replace(/^\/+/, '');
+    } else if (kkagent === 'true' || !url.startsWith(baseUrl)) {
         url = baseUrl + 'getCorsFile?urlPath=' + encodeURIComponent(Base64.encode(url)) + "&key=${kkkey}";
     }
     var viewerUrl = baseUrl + "pdfjs/web/viewer.html?file=" + encodeURIComponent(url);

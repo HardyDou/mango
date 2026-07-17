@@ -42,6 +42,21 @@ class FilePreviewEngineResourceRegistrarTest {
                     assertThat(resource.getResourceCode()).isEqualTo("GET:/file-preview/sources");
                     assertThat(resource.getAccessMode()).isEqualTo(ApiResourceAccessMode.PUBLIC);
                 });
+
+        assertThat(api.resources)
+                .noneMatch(resource -> "/file-*.pdf".equals(resource.getPathPattern()));
+    }
+
+    @Test
+    void permitPaths_reuseExistingStaticNamespaceInsteadOfRootWildcard() {
+        assertThat(FilePreviewPermitPathBeanPostProcessor.permitPaths())
+                .contains("/static/**")
+                .doesNotContain("/file-*.pdf")
+                .doesNotContain("/**");
+        assertThat(FilePreviewPermitPathBeanPostProcessor.supportsSecurityPropertiesType(
+                "io.mango.auth.starter.config.AuthSecurityProperties")).isTrue();
+        assertThat(FilePreviewPermitPathBeanPostProcessor.supportsSecurityPropertiesType(
+                "io.mango.authorization.starter.autoconfigure.SecurityProperties")).isTrue();
     }
 
     private static class CapturingApiResourceApi implements ApiResourceApi {

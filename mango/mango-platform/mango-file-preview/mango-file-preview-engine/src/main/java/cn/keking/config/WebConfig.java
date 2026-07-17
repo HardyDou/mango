@@ -10,6 +10,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -21,14 +22,23 @@ import java.util.Set;
 public class WebConfig implements WebMvcConfigurer {
 
     private final static Logger LOGGER = LoggerFactory.getLogger(WebConfig.class);
+    static final String GENERATED_PREVIEW_PATH = "/static/file-preview/";
     /**
      * 访问外部文件配置
      */
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         String filePath = ConfigConstants.getFileDir();
-        LOGGER.info("Add resource locations: {}", filePath);
-        registry.addResourceHandler("/**").addResourceLocations("classpath:/META-INF/resources/","classpath:/resources/","classpath:/static/","classpath:/public/","file:" + filePath);
+        String resourceLocation = fileResourceLocation(filePath);
+        LOGGER.info("Add resource locations: {}", resourceLocation);
+        registry.addResourceHandler(GENERATED_PREVIEW_PATH + "**")
+                .addResourceLocations(resourceLocation);
+        registry.addResourceHandler("/**").addResourceLocations("classpath:/META-INF/resources/","classpath:/resources/","classpath:/static/","classpath:/public/", resourceLocation);
+    }
+
+    static String fileResourceLocation(String filePath) {
+        String resourceLocation = Path.of(filePath).toAbsolutePath().normalize().toUri().toString();
+        return resourceLocation.endsWith("/") ? resourceLocation : resourceLocation + "/";
     }
 
 
