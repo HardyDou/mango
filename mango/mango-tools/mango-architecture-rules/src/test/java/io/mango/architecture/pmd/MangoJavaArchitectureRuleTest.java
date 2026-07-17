@@ -1135,6 +1135,53 @@ class MangoJavaArchitectureRuleTest {
     }
 
     @Test
+    void nativeSseControllerIsCheckedWithoutForcingJsonResultContract() {
+        Report report = analyze(
+                "io/mango/ai/starter/controller/AiSseController.java", """
+                package io.mango.ai.starter.controller;
+                import io.swagger.v3.oas.annotations.Operation;
+                import io.swagger.v3.oas.annotations.tags.Tag;
+                import org.springframework.validation.annotation.Validated;
+                import org.springframework.web.bind.annotation.GetMapping;
+                import org.springframework.web.bind.annotation.RestController;
+                import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+                @Validated @RestController
+                @Tag(name = "AI推送", description = "AI事件推送")
+                public final class AiSseController {
+                    @GetMapping
+                    @Operation(summary = "建立连接", description = "建立异步事件连接")
+                    public SseEmitter connect() { return new SseEmitter(); }
+                }
+                """,
+                "org/springframework/web/bind/annotation/RestController.java", """
+                package org.springframework.web.bind.annotation;
+                public @interface RestController {}
+                """,
+                "org/springframework/web/bind/annotation/GetMapping.java", """
+                package org.springframework.web.bind.annotation;
+                public @interface GetMapping { String[] value() default {}; }
+                """,
+                "org/springframework/validation/annotation/Validated.java", """
+                package org.springframework.validation.annotation;
+                public @interface Validated {}
+                """,
+                "io/swagger/v3/oas/annotations/tags/Tag.java", """
+                package io.swagger.v3.oas.annotations.tags;
+                public @interface Tag { String name(); String description(); }
+                """,
+                "io/swagger/v3/oas/annotations/Operation.java", """
+                package io.swagger.v3.oas.annotations;
+                public @interface Operation { String summary(); String description(); }
+                """,
+                "org/springframework/web/servlet/mvc/method/annotation/SseEmitter.java", """
+                package org.springframework.web.servlet.mvc.method.annotation;
+                public class SseEmitter {}
+                """);
+
+        assertThat(messages(report)).isEmpty();
+    }
+
+    @Test
     void jsonResponseEntityCannotBypassJsonResultContract() {
         Report report = analyze(
                 "io/mango/preview/starter/controller/PreviewController.java", """

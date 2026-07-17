@@ -17,21 +17,16 @@
     <description>Mango AI Module - Core implementation</description>
 
     <dependencies>
+        <dependency>
+            <groupId>io.mango.common</groupId>
+            <artifactId>mango-common</artifactId>
+        </dependency>
+
         <!-- Mango AI API -->
         <dependency>
             <groupId>io.mango.extension.ai</groupId>
             <artifactId>mango-ai-api</artifactId>
             <version>${project.version}</version>
-        </dependency>
-
-        <!-- Spring Web -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.swagger.core.v3</groupId>
-            <artifactId>swagger-annotations</artifactId>
         </dependency>
 
         <!-- HTTP Client for DeepSeek API -->
@@ -44,20 +39,6 @@
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
-        </dependency>
-
-        <!-- Mango Infra Context Starter (TtlExecutorDecorator for context propagation) -->
-        <dependency>
-            <groupId>io.mango.infra.context</groupId>
-            <artifactId>mango-infra-context-support</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
-        <!-- Lombok -->
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <scope>provided</scope>
         </dependency>
 
         <!-- Test -->
