@@ -66,7 +66,7 @@
 | SR-005 | M10 单元测试 | `WebConfigTest`、`PdfTemplateTest`、`FilePreviewFrameOptionsFilterTest`、`FilePreviewEngineResourceRegistrarTest` | PASS | 文件 URI 无 authority；本地 PDF 使用 `/static/file-preview/**`；未注册新的根路径资源规则 |
 | SR-001/SR-002/SR-004/SR-005 | M07 真实集成 + M11 E2E | Docker 启动 Java 21 + LibreOffice 24.2.7.2；Playwright 上传 `中文 (1).docx` 并实际打开 PDF.js | PASS（首次 1/1；单 worker 并发复跑 2/2） | `mango-ui/apps/mango-admin/e2e/.tmp/file-preview-types-live-results.json`、`file-preview-issue-563-docx.png` |
 | 全部 | M09/M10 回归 | `mvn -f mango/pom.xml -pl :mango-file-preview-core,:mango-file-preview-engine,:mango-file-preview-starter test` | PASS（core 9；engine 40；starter 10；合计 59） | Maven 输出与各模块 `target/surefire-reports` |
-| 全部 | 测试质量检查 | `node mango-pmo/tools/test-quality-check.mjs --base origin/main`；`node mango-pmo/tools/audit-backend-test-mocks.mjs --report-only --changed-only --base origin/main` | PASS（9 个测试文件；block/warn 0） | 命令输出 |
+| 全部 | 测试质量检查 | `node mango-pmo/tools/test-quality-check.mjs --base origin/main`；`node mango-pmo/tools/audit-backend-test-mocks.mjs --report-only --changed-only --base origin/main` | PASS（7 个测试文件；block/warn 0） | 命令输出 |
 
 ## 7. 例外与剩余风险
 
