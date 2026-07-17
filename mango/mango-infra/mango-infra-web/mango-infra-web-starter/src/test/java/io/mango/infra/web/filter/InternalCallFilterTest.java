@@ -2,7 +2,7 @@ package io.mango.infra.web.filter;
 
 import io.mango.infra.kv.api.IKvStore;
 import io.mango.infra.web.api.IInternalPathProvider;
-import io.mango.infra.web.api.InternalCallAttributes;
+import io.mango.infra.web.support.InternalCallAttributes;
 import io.mango.infra.web.starter.MangoWebProperties;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

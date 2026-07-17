@@ -8,7 +8,7 @@
         "AUTH_MENU": [
           {
             "id": "2951300000000008501",
-            "version": 1,
+            "version": 2,
             "bizKey": "file.menu.internal-admin",
             "name": "文件管理菜单",
             "targetModule": "authorization",
@@ -63,6 +63,7 @@
                         "remark": "文件记录、上传下载、预览和归档管理",
                         "apiCodes": [
                           "file:files:list",
+                          "file:files:download",
                           "file:files:archive",
                           "file:directories:list",
                           "file:directories:add",

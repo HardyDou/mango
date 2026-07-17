@@ -8,6 +8,7 @@ import io.mango.file.api.command.SaveFileCommand;
 import io.mango.file.api.vo.FileDownloadVO;
 import io.mango.file.api.vo.FileRecordVO;
 import io.mango.file.preview.core.config.FilePreviewProperties;
+import io.mango.file.preview.core.gateway.FilePreviewFileGateway;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.infra.kv.api.ITokenStore;
@@ -16,10 +17,13 @@ import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
 import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class FilePreviewServiceImplTest {
 
@@ -52,7 +56,10 @@ class FilePreviewServiceImplTest {
         String token = enginePreview.getPreviewUrl().substring(enginePreview.getPreviewUrl().indexOf("url=") + 4);
         token = java.net.URLDecoder.decode(token, java.nio.charset.StandardCharsets.UTF_8);
         String sourceUrl = new String(java.util.Base64.getDecoder().decode(token), java.nio.charset.StandardCharsets.UTF_8);
-        String sourceToken = sourceUrl.substring(sourceUrl.lastIndexOf('/') + 1, sourceUrl.indexOf('?'));
+        String sourceToken = org.springframework.web.util.UriComponentsBuilder.fromUriString(sourceUrl)
+                .build()
+                .getQueryParams()
+                .getFirst("token");
 
         var source = service.openSource(sourceToken);
 
@@ -60,10 +67,108 @@ class FilePreviewServiceImplTest {
         assertThat(source.contentLength()).isEqualTo(1L);
     }
 
+    @Test
+    void openSource_无效令牌失败且不改变调用方上下文() {
+        FilePreviewServiceImpl service = service();
+        MangoContextSnapshot caller = MangoContextSnapshot.empty().withTenantId("caller");
+        MangoContextHolder.set(caller);
+
+        assertThatThrownBy(() -> service.openSource("missing"))
+                .hasMessageContaining("预览令牌无效或已过期");
+        assertThat(MangoContextHolder.get()).isEqualTo(caller);
+    }
+
+    @Test
+    void openSource_有效令牌使用签发上下文并恢复调用方上下文() {
+        StubFileContentProvider contentProvider = new StubFileContentProvider();
+        FilePreviewServiceImpl service = service(new StubTokenStore(), Clock.systemUTC(), contentProvider);
+        MangoContextSnapshot issuer = MangoContextSnapshot.empty().withTenantId("issuer");
+        MangoContextHolder.set(issuer);
+        var preview = service.createPreview(100L);
+        var enginePreview = service.createEnginePreviewByToken(preview.getPreviewToken());
+        String encodedSourceUrl = enginePreview.getPreviewUrl()
+                .substring(enginePreview.getPreviewUrl().indexOf("url=") + 4);
+        String sourceUrl = new String(java.util.Base64.getDecoder().decode(
+                java.net.URLDecoder.decode(encodedSourceUrl, java.nio.charset.StandardCharsets.UTF_8)),
+                java.nio.charset.StandardCharsets.UTF_8);
+        String sourceToken = org.springframework.web.util.UriComponentsBuilder.fromUriString(sourceUrl)
+                .build()
+                .getQueryParams()
+                .getFirst("token");
+        MangoContextSnapshot caller = MangoContextSnapshot.empty().withTenantId("caller");
+        MangoContextHolder.set(caller);
+
+        service.openSource(sourceToken);
+
+        assertThat(contentProvider.observedContext.tenantId()).isEqualTo("issuer");
+        assertThat(MangoContextHolder.get()).isEqualTo(caller);
+    }
+
+    @Test
+    void createEnginePreviewByToken_令牌内容损坏时返回稳定业务错误() {
+        StubTokenStore tokenStore = new StubTokenStore();
+        tokenStore.values.put("file-preview:entry:broken", "not-json");
+        FilePreviewServiceImpl service = service(tokenStore, Clock.systemUTC());
+
+        assertThatThrownBy(() -> service.createEnginePreviewByToken("broken"))
+                .hasMessageContaining("预览令牌无效或已过期");
+    }
+
+    @Test
+    void createEnginePreviewByToken_过期后删除令牌() {
+        MutableClock clock = new MutableClock(Instant.parse("2026-07-17T00:00:00Z"));
+        StubTokenStore tokenStore = new StubTokenStore();
+        FilePreviewServiceImpl service = service(tokenStore, clock);
+        String token = service.createPreview(100L).getPreviewToken();
+        clock.advanceSeconds(86_401);
+
+        assertThatThrownBy(() -> service.createEnginePreviewByToken(token))
+                .hasMessageContaining("预览令牌无效或已过期");
+        assertThat(tokenStore.values).doesNotContainKey("file-preview:entry:" + token);
+    }
+
     private FilePreviewServiceImpl service() {
+        return service(new StubTokenStore(), Clock.systemUTC());
+    }
+
+    private FilePreviewServiceImpl service(StubTokenStore tokenStore, Clock clock) {
+        return service(tokenStore, clock, new StubFileContentProvider());
+    }
+
+    private FilePreviewServiceImpl service(StubTokenStore tokenStore,
+                                           Clock clock,
+                                           StubFileContentProvider contentProvider) {
         FilePreviewProperties properties = new FilePreviewProperties();
-        return new FilePreviewServiceImpl(new StubFileApi(), new StubFileContentProvider(), properties, new StubTokenStore(),
-                new ObjectMapper(), Clock.systemUTC());
+        FilePreviewFileGateway gateway = new FilePreviewFileGateway(new StubFileApi(), contentProvider);
+        return new FilePreviewServiceImpl(gateway, properties, tokenStore, new ObjectMapper(), clock);
+    }
+
+    private static class MutableClock extends Clock {
+
+        private Instant instant;
+
+        private MutableClock(Instant instant) {
+            this.instant = instant;
+        }
+
+        void advanceSeconds(long seconds) {
+            instant = instant.plusSeconds(seconds);
+        }
+
+        @Override
+        public ZoneId getZone() {
+            return ZoneId.of("UTC");
+        }
+
+        @Override
+        public Clock withZone(ZoneId zone) {
+            return this;
+        }
+
+        @Override
+        public Instant instant() {
+            return instant;
+        }
     }
 
     private static class StubTokenStore implements ITokenStore {
@@ -129,6 +234,8 @@ class FilePreviewServiceImplTest {
 
     private static class StubFileContentProvider implements IFileContentProvider {
 
+        private MangoContextSnapshot observedContext;
+
         @Override
         public FileRecordVO save(SaveFileCommand command) {
             throw new UnsupportedOperationException();
@@ -141,6 +248,7 @@ class FilePreviewServiceImplTest {
 
         @Override
         public FileDownloadVO downloadForService(Long id) {
+            observedContext = MangoContextHolder.get();
             return new FileDownloadVO(new ByteArrayInputStream(new byte[]{1}), "demo.pptx",
                     "application/vnd.openxmlformats-officedocument.presentationml.presentation", 1L);
         }

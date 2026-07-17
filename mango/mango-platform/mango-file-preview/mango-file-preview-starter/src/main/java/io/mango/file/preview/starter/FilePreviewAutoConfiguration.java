@@ -18,7 +18,6 @@ import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
@@ -64,12 +63,6 @@ public class FilePreviewAutoConfiguration {
     @ConditionalOnMissingBean
     public static FilePreviewPermitPathBeanPostProcessor filePreviewPermitPathBeanPostProcessor() {
         return new FilePreviewPermitPathBeanPostProcessor();
-    }
-
-    @Bean
-    @ConditionalOnMissingBean(name = "filePreviewSecurityCustomizer")
-    public WebSecurityCustomizer filePreviewSecurityCustomizer() {
-        return new FilePreviewSecurityCustomizer();
     }
 
     @Bean

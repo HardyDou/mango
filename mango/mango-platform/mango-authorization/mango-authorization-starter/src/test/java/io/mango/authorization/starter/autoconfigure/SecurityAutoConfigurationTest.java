@@ -1,6 +1,6 @@
 package io.mango.authorization.starter.autoconfigure;
 
-import io.mango.infra.web.api.InternalCallAttributes;
+import io.mango.infra.web.support.InternalCallAttributes;
 import jakarta.annotation.Resource;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

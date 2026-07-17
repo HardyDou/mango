@@ -41,6 +41,13 @@ public final class MangoJavaArchitectureRule extends AbstractJavaRule {
             "io.mango.common.contract.LocalCapabilityContract";
     private static final String BINARY_HTTP_ADAPTER =
             "io.mango.common.contract.BinaryHttpAdapter";
+    private static final String FILE_PREVIEW_VENDOR_PACKAGE_PREFIX = "cn.keking.";
+    private static final String MODEL_AND_VIEW = "org.springframework.web.servlet.ModelAndView";
+    private static final String RESPONSE_ENTITY = "org.springframework.http.ResponseEntity";
+    private static final Set<String> NATIVE_HTTP_BODY_TYPES =
+            Set.of(
+                    "org.springframework.core.io.InputStreamResource",
+                    "org.springframework.core.io.Resource");
     private static final String MANGO_INFRA_PACKAGE_PREFIX = "io.mango.infra.";
     private static final String MANGO_CRUD_SERVICE =
             "io.mango.infra.persistence.api.crud.MangoCrudService";
@@ -214,6 +221,9 @@ public final class MangoJavaArchitectureRule extends AbstractJavaRule {
     public Object visit(ASTCompilationUnit node, Object data) {
         RuleContext context = asCtx(data);
         for (ASTTypeDeclaration type : node.descendants(ASTTypeDeclaration.class)) {
+            if (!isMangoOwnedType(type)) {
+                continue;
+            }
             if (!isBinaryHttpAdapter(type)) {
                 inspectPathRules(type, context);
             }
@@ -240,12 +250,14 @@ public final class MangoJavaArchitectureRule extends AbstractJavaRule {
     }
 
     private void inspectController(ASTTypeDeclaration type, RuleContext context) {
+        boolean binaryAdapter = isBinaryHttpAdapter(type);
+        boolean nativeHttpAdapter = isNativeHttpAdapter(type);
         inspectControllerAnnotations(type, context);
         inspectControllerFields(type, context);
         for (ASTMethodDeclaration method : type.getDeclarations(ASTMethodDeclaration.class)) {
-            inspectControllerMethod(type, method, isBinaryHttpAdapter(type), context);
+            inspectControllerMethod(type, method, binaryAdapter, nativeHttpAdapter, context);
         }
-        if (!isBinaryHttpAdapter(type)) {
+        if (!binaryAdapter && !nativeHttpAdapter) {
             inspectControllerResultFactories(type, context);
         }
     }
@@ -282,8 +294,9 @@ public final class MangoJavaArchitectureRule extends AbstractJavaRule {
             ASTTypeDeclaration type,
             ASTMethodDeclaration method,
             boolean binaryAdapter,
+            boolean nativeHttpAdapter,
             RuleContext context) {
-        if (!binaryAdapter) {
+        if (!binaryAdapter && !nativeHttpAdapter) {
             inspectHttpReturn(method, context);
         }
         if (hasAnnotation(method, REQUEST_MAPPING)) {
@@ -295,7 +308,7 @@ public final class MangoJavaArchitectureRule extends AbstractJavaRule {
         }
         inspectControllerOperation(method, context);
         if (isHttpMethod(method)) {
-            inspectControllerHttpBehavior(type, method, binaryAdapter, context);
+            inspectControllerHttpBehavior(type, method, binaryAdapter || nativeHttpAdapter, context);
         }
         if (!binaryAdapter) {
             for (ASTFormalParameter parameter : method.descendants(ASTFormalParameter.class)) {
@@ -1414,6 +1427,34 @@ public final class MangoJavaArchitectureRule extends AbstractJavaRule {
 
     private boolean isBinaryHttpAdapter(ASTTypeDeclaration type) {
         return hasAnnotation(type, BINARY_HTTP_ADAPTER);
+    }
+
+    private boolean isMangoOwnedType(ASTTypeDeclaration type) {
+        return !canonicalName(type.getTypeMirror()).startsWith(FILE_PREVIEW_VENDOR_PACKAGE_PREFIX);
+    }
+
+    private boolean isNativeHttpAdapter(ASTTypeDeclaration type) {
+        var httpMethods = type.getDeclarations(ASTMethodDeclaration.class)
+                .filter(this::isHttpMethod)
+                .toList();
+        return !httpMethods.isEmpty() && httpMethods.stream().allMatch(this::isNativeHttpReturn);
+    }
+
+    private boolean isNativeHttpReturn(ASTMethodDeclaration method) {
+        if (method.isVoid()) {
+            return false;
+        }
+        JTypeMirror returnType = method.getResultTypeNode().getTypeMirror();
+        if (isType(returnType, MODEL_AND_VIEW)) {
+            return true;
+        }
+        if (!isType(returnType, RESPONSE_ENTITY)
+                || !(returnType instanceof JClassType classType)
+                || classType.isRaw()
+                || classType.getTypeArgs().size() != 1) {
+            return false;
+        }
+        return NATIVE_HTTP_BODY_TYPES.contains(canonicalName(classType.getTypeArgs().get(0)));
     }
 
     private boolean hasChineseAttribute(

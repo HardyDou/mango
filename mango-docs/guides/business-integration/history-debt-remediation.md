@@ -24,7 +24,7 @@
 
 | 类型 | 典型表现 | 根因 | 主要证明手段 |
 |---|---|---|---|
-| API 契约债务 | API 无校验，Controller 重复 `@Valid`，Feign 与 Controller 绑定不一致 | 契约分散在多个适配器 | API 契约测试、非法请求 API 测试、Controller/Feign parity |
+| API 契约债务 | API 无校验，Controller 重复 `@Valid`，Feign 与 Controller 绑定不一致，方法校验失败被误报为 HTTP 500 | 契约分散在多个适配器，统一异常处理遗漏 `ConstraintViolationException` | API 契约测试、非法请求 API 测试、Controller/Feign parity；断言 HTTP 400 和校验消息 |
 | Controller 分层债务 | Controller 转换 Entity、组装查询、处理业务分支，一个 Controller 实现多个 API | 业务用例未收敛到 Service | 结构检查、MockMvc/真实 API、Service 规则测试 |
 | Service 债务 | `XxxServiceImpl`、Service 散落在非 `impl` 目录、直接继承 MyBatis `ServiceImpl`、直接抛通用异常 | 模块自建了第二套 CRUD/异常语义 | 定向架构检查、Service 单元/集成测试 |
 | Entity/Mapper 债务 | Entity 未以 `Entity` 结尾，重复 ID/租户/审计字段，Mapper 聚合名不一致 | 持久化模型没有继承 Mango canonical Entity | 编译、Mapper 真实读写、Entity/schema 对照 |
@@ -39,6 +39,12 @@
 | Git/发布物缺失 | 源码目录名被 `.gitignore` 命中，工作区能编译但提交或 JAR 缺少实现 | 只看本地文件，不核对跟踪状态与构件 | `git ls-files`、clean JAR 清单、自动配置类加载测试三方核对 |
 | 分布式同步假成功 | 锁竞争时服务端跳过处理却返回成功，来源停止重试并永久缺声明 | 未区分“请求成功”和“批次完成” | 返回明确完成状态；未完成/远程失败重试；多节点核对 registry、重复数和日志 |
 | 内部调用信任边界 | 直接信任客户端内部 Header，或验签结果未传给安全链 | Filter 和 Security 配置各自定义内部调用语义 | HMAC 成功后写服务端属性，安全链只信任该属性，并将伪造 Header 的拒绝路径纳入回归证据；边界见[后端安全规范](../../../mango-pmo/rules/backend/06-security.md) |
+| 供应商源码与本地规则 | 内置上游项目被 Mango Controller/Service 规则大量误报 | 没有建模代码所有权 | 只对已审计的精确 vendored namespace 设边界；Mango 自有包继续全量受控；正反例规则测试 |
+| 原生 HTTP 适配器 | 页面 `ModelAndView` 或文件流被强迫返回 JSON `R<T>` | 规则未区分 JSON API 和原生传输 | 仅允许受限 `ModelAndView`/`ResponseEntity<Resource>`；其余 Controller 规则继续生效；`ResponseEntity<String>` 不得绕过 API 契约 |
+| 权限注解与资源脱节 | Controller 声明了 permission，新库角色却永远没有该权限，实际请求 403 | Mock 关闭授权，老库存在手工绑定 | 对照正式菜单/API 资源 `apiCodes`；demo 关闭新库同步；真实角色成功/拒绝 API 与菜单验收 |
+| 微服务假 E2E | 单进程 HTTP 测试 Mock 了内部 API/Provider，未发现 Feign 服务路由丢失 base path | 把“走了 HTTP”等同于跨进程 | 此类测试命名为 `*FlowTest`；最终 E2E 启动真实生产者/消费者 JVM，经服务发现验证请求、二进制流和副作用 |
+| 模块元数据与代码漂移 | Controller 路径正确，但当前 starter JAR 没有自己的 module-name/module-path | 误以为同域其它 starter 的 metadata 会跨 artifact 生效 | 检查当前 JAR 的 `META-INF/mango/module.properties`，对照 Controller 根路径并加资源测试 |
+| 纯 JVM 共享类型误入 API | request attribute key、codec 或本地协作值因跨模块使用被放进 API | 混淆 HTTP 契约和进程内复用 | 无 HTTP/Feign、无数据库的类型放 support；消费者声明直接依赖并执行编译/行为回归 |
 
 ## 4. 标准修复流程
 
@@ -158,6 +164,7 @@ Mock 只用于隔离被测目标之外的协作者，不能替换本次要证明
 
 - Mock 了 Mapper/数据库，就只能证明 Service 在指定输入下的分支，不能证明 SQL、列名、租户过滤或事务正确。
 - 直接 `new Controller` 不能证明 Spring 方法校验、安全过滤器和参数绑定正确。
+- 参数上存在 `@NotBlank/@NotNull` 也不能证明失败语义正确；必须从真实 HTTP 入口提交空值，确认统一异常处理返回 HTTP 400，而不是落入系统异常 500。
 - Mock 了权限结果，不能证明菜单、按钮、角色授权和数据权限链路正确。
 - 支付、短信、对象存储等第三方可以使用沙箱或可控测试替身，但 Mango 内部主链路应真实参与。
 
@@ -263,6 +270,9 @@ E2E 优先使用 `data-page`、`data-surface`、`data-action`、`data-field`、`
 - 页面可以打开，但列表请求是 403/500，或 console 已有错误。
 - E2E 直接输入路由，跳过了菜单、权限和租户上下文。
 - 只检查 `src/main/resources`，没有检查真正发布的 JAR。
+- 源码已修复，但运行时仍从 `~/.m2` 加载旧 JAR，没有用 `clean install` + SHA/JAR 清单确认实际 classpath。
+- Controller 单元测试绕过授权，没有检查 permission 是否真实出现在新库角色权限集。
+- 单进程 Flow 测试 Mock 了内部远程调用，却宣称微服务 E2E 通过。
 - 发布成功后没有从目标 Maven/npm 仓库重新拉取验证。
 - 为了让旧 E2E 变绿，放宽权限断言或回退已经确认的新菜单结构。
 - 聚合静态报告的生成时间早于当前 class，却仍将其中旧行号和旧构造器当成当前提交问题。
@@ -280,7 +290,9 @@ E2E 优先使用 `data-page`、`data-surface`、`data-action`、`data-field`、`
 ### 代码与数据
 
 - [ ] API/Controller/Feign 契约一致，非法请求可验证。
+- [ ] 每个 `@ApiAccess(PERMISSION)` 都有所属模块的正式资源声明，并以新库真实角色验证。
 - [ ] Controller 只做 HTTP 适配，Service 承担业务用例。
+- [ ] vendored 边界只匹配精确上游 namespace；原生 HTTP 适配器白名单不允许 JSON Controller 逃逸。
 - [ ] Service、Entity、Mapper 使用 Mango canonical 结构。
 - [ ] Entity 字段与最终 schema 一致，真实写入已验证。
 - [ ] Flyway 只承担当前模块 DDL，无菜单/demo/跨模块数据 DML。
@@ -294,9 +306,11 @@ E2E 优先使用 `data-page`、`data-surface`、`data-action`、`data-field`、`
 - [ ] 不同角色和不同租户的浏览器 UI/E2E 通过。
 - [ ] console/network 无未解释错误。
 - [ ] clean 构建后的 JAR 内容、migration 和资源清单正确。
+- [ ] target JAR、`~/.m2`/目标仓库 JAR 和实际运行 classpath 已核对清单与 SHA-256。
 - [ ] 新增/迁移实现已由 `git ls-files` 跟踪，自动配置导入的类在 clean JAR 中真实存在。
 - [ ] 分布式能力已区分请求成功与业务完成；锁竞争、依赖未就绪和节点失效不会静默丢数据。
 - [ ] 多节点 E2E 已核对服务发现实例、稳定数据量、重复数、处理日志及单节点失效后的继续处理。
+- [ ] 跨服务业务链已用真实的生产者/消费者 JVM 验证，未用 Mock API/Provider 替代需要证明的边界。
 - [ ] 没有独立产品页面的后端能力已明确标记 UI/E2E 不适用，没有把通用 API 用例描述成页面验收。
 - [ ] 如果发布，已从目标仓库回查版本并重新下载验证。
 

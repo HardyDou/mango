@@ -5,6 +5,7 @@ import io.mango.common.result.R;
 import io.mango.infra.kv.api.IKvStore;
 import io.mango.infra.web.api.Inner;
 import io.mango.infra.web.util.InternalCallSignature;
+import jakarta.validation.constraints.NotBlank;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +20,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -74,6 +76,8 @@ class WebBoundaryIntegrationTest {
                 HttpStatus.INTERNAL_SERVER_ERROR, 500, "系统异常");
         assertFailure("/test/web/body", HttpMethod.POST, new HttpEntity<>("{broken", jsonHeaders()),
                 HttpStatus.BAD_REQUEST, 400, "请求体格式错误，请检查 JSON 字段类型和日期时间格式");
+        assertFailure("/test/web/constraint?value=", HttpMethod.GET, null,
+                HttpStatus.BAD_REQUEST, 400, "测试参数不能为空");
         assertFailure("/test/web/value", HttpMethod.POST, null,
                 HttpStatus.METHOD_NOT_ALLOWED, 405, "不支持的请求方法: POST");
         assertFailure("/test/web/missing", HttpMethod.GET, null,
@@ -143,6 +147,7 @@ class WebBoundaryIntegrationTest {
 
     @RestController
     @RequestMapping("/test/web")
+    @Validated
     static class WebBoundaryController {
 
         @GetMapping("/value")
@@ -168,6 +173,11 @@ class WebBoundaryIntegrationTest {
         @PostMapping("/body")
         void body(@RequestBody Map<String, Object> body) {
             // Parsing the request body is the boundary contract under test.
+        }
+
+        @GetMapping("/constraint")
+        void constraint(@RequestParam("value") @NotBlank(message = "测试参数不能为空") String value) {
+            // Method validation is the boundary contract under test.
         }
 
         @Inner

@@ -2,16 +2,13 @@ package io.mango.file.preview.core.service.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.mango.common.exception.BizException;
 import io.mango.common.result.Require;
-import io.mango.common.result.R;
-import io.mango.file.api.FileApi;
-import io.mango.file.api.IFileContentProvider;
 import io.mango.file.api.vo.FileDownloadVO;
 import io.mango.file.api.vo.FileRecordVO;
-import io.mango.file.preview.api.FilePreviewCode;
+import io.mango.file.preview.api.enums.FilePreviewCode;
 import io.mango.file.preview.api.vo.FilePreviewLinkVO;
 import io.mango.file.preview.core.config.FilePreviewProperties;
+import io.mango.file.preview.core.gateway.FilePreviewFileGateway;
 import io.mango.file.preview.core.service.IFilePreviewService;
 import io.mango.file.preview.core.service.model.FilePreviewSource;
 import io.mango.infra.context.api.MangoContextHolder;
@@ -42,8 +39,7 @@ public class FilePreviewServiceImpl implements IFilePreviewService {
     private static final String ENTRY_TOKEN_PREFIX = "file-preview:entry:";
     private static final String SOURCE_TOKEN_PREFIX = "file-preview:source:";
 
-    private final FileApi fileApi;
-    private final IFileContentProvider fileContentProvider;
+    private final FilePreviewFileGateway fileGateway;
     private final FilePreviewProperties properties;
     private final ITokenStore tokenStore;
     private final ObjectMapper objectMapper;
@@ -87,12 +83,13 @@ public class FilePreviewServiceImpl implements IFilePreviewService {
         PreviewToken sourceToken = readToken(tokenKey);
         if (isExpired(sourceToken)) {
             tokenStore.remove(tokenKey);
-            throw tokenInvalid();
+            Require.fail(FilePreviewCode.PREVIEW_TOKEN_INVALID);
         }
         MangoContextSnapshot previous = MangoContextHolder.get();
         try {
             MangoContextHolder.set(sourceToken.context());
-            FileDownloadVO download = fileContentProvider.downloadForService(sourceToken.fileId());
+            FileDownloadVO download = fileGateway.download(sourceToken.fileId());
+            Require.notNull(download, FilePreviewCode.FILE_NOT_FOUND);
             return new FilePreviewSource(download.inputStream(), download.fileName(), download.contentType(), download.contentLength());
         } finally {
             MangoContextHolder.set(previous);
@@ -100,6 +97,7 @@ public class FilePreviewServiceImpl implements IFilePreviewService {
     }
 
     public FilePreviewLinkVO createEnginePreviewByToken(String token) {
+        Require.notBlank(token, FilePreviewCode.PREVIEW_TOKEN_INVALID);
         PreviewToken previewToken = readPreviewToken(token);
         MangoContextSnapshot previous = MangoContextHolder.get();
         try {
@@ -115,15 +113,15 @@ public class FilePreviewServiceImpl implements IFilePreviewService {
     }
 
     private FileRecordVO fileRecord(Long fileId) {
-        R<FileRecordVO> result = fileApi.get(fileId);
-        Require.isTrue(result != null && result.isSuccess() && result.getData() != null,
-                FilePreviewCode.FILE_NOT_FOUND);
-        return result.getData();
+        FileRecordVO fileRecord = fileGateway.find(fileId);
+        Require.notNull(fileRecord, FilePreviewCode.FILE_NOT_FOUND);
+        return fileRecord;
     }
 
     private String sourceUrl(String token, String fileName) {
-        String url = currentBaseUrl() + normalize(properties.getSourcePath()) + "/" + token;
+        String url = currentBaseUrl() + normalize(properties.getSourcePath());
         return UriComponentsBuilder.fromHttpUrl(url)
+                .queryParam("token", token)
                 .queryParam(FULL_FILENAME_PARAM, fileName)
                 .build()
                 .encode(StandardCharsets.UTF_8)
@@ -152,7 +150,7 @@ public class FilePreviewServiceImpl implements IFilePreviewService {
         PreviewToken previewToken = readToken(tokenKey);
         if (isExpired(previewToken)) {
             tokenStore.remove(tokenKey);
-            throw tokenInvalid();
+            Require.fail(FilePreviewCode.PREVIEW_TOKEN_INVALID);
         }
         return previewToken;
     }
@@ -163,7 +161,8 @@ public class FilePreviewServiceImpl implements IFilePreviewService {
                     token.expiresAt().toEpochMilli());
             tokenStore.store(tokenKey, objectMapper.writeValueAsString(storedToken), properties.getSourceTokenExpireSeconds());
         } catch (JsonProcessingException e) {
-            throw tokenInvalid(e);
+            Require.fail(FilePreviewCode.PREVIEW_TOKEN_INVALID,
+                    FilePreviewCode.PREVIEW_TOKEN_INVALID.getMessage(), e);
         }
     }
 
@@ -177,22 +176,13 @@ public class FilePreviewServiceImpl implements IFilePreviewService {
             return new PreviewToken(storedToken.fileId(), storedToken.context().toSnapshot(),
                     Instant.ofEpochMilli(storedToken.expiresAtEpochMilli()));
         } catch (JsonProcessingException e) {
-            throw tokenInvalid(e);
+            return Require.fail(FilePreviewCode.PREVIEW_TOKEN_INVALID,
+                    FilePreviewCode.PREVIEW_TOKEN_INVALID.getMessage(), e);
         }
     }
 
     private boolean isExpired(PreviewToken token) {
         return token == null || token.expiresAt() == null || token.expiresAt().isBefore(Instant.now(clock));
-    }
-
-    private BizException tokenInvalid() {
-        return new BizException(FilePreviewCode.PREVIEW_TOKEN_INVALID.getCode(),
-                FilePreviewCode.PREVIEW_TOKEN_INVALID.getMessage());
-    }
-
-    private BizException tokenInvalid(Throwable cause) {
-        return new BizException(FilePreviewCode.PREVIEW_TOKEN_INVALID.getCode(),
-                FilePreviewCode.PREVIEW_TOKEN_INVALID.getMessage(), cause);
     }
 
     private String token() {

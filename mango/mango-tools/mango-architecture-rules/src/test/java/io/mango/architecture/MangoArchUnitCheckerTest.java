@@ -30,6 +30,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.servlet.ModelAndView;
 import org.springframework.transaction.annotation.Transactional;
 import org.apache.ibatis.annotations.Mapper;
 import com.baomidou.mybatisplus.annotation.TableName;
@@ -60,6 +63,35 @@ class MangoArchUnitCheckerTest {
         JavaClasses classes = importClasses(OrderController.class, OrderApi.class, IOrderService.class);
 
         assertThat(checker.check(classes, javaClass -> role(javaClass, ModuleRole.STARTER))).isEmpty();
+    }
+
+    @Test
+    void nativePageControllerKeepsStrictControllerBoundaryWithoutJsonApiContract() {
+        JavaClasses classes = importClasses(NativePageController.class, IOrderService.class);
+
+        assertThat(checker.check(classes, javaClass -> role(javaClass, ModuleRole.STARTER))).isEmpty();
+    }
+
+    @Test
+    void nativeStreamControllerKeepsStrictControllerBoundaryWithoutJsonApiContract() {
+        JavaClasses classes = importClasses(NativeStreamController.class, IOrderService.class);
+
+        assertThat(checker.check(classes, javaClass -> role(javaClass, ModuleRole.STARTER))).isEmpty();
+    }
+
+    @Test
+    void jsonResponseEntityCannotBypassDomainApiContract() {
+        JavaClasses classes = importClasses(JsonResponseEntityController.class, IOrderService.class);
+
+        assertThat(checker.check(classes, javaClass -> role(javaClass, ModuleRole.STARTER)))
+                .anySatisfy(issue -> assertThat(issue.ruleId()).isEqualTo("MANGO-ARCH-TYPE-002"));
+    }
+
+    @Test
+    void vendoredFilePreviewEngineIsOutsideMangoCodeConventions() {
+        JavaClasses classes = importClasses(cn.keking.fixture.VendoredPreviewController.class);
+
+        assertThat(checker.check(classes, ignored -> ModuleRole.OTHER)).isEmpty();
     }
 
     @Test
@@ -1030,6 +1062,36 @@ class MangoArchUnitCheckerTest {
     @RestController
     static final class OrderController implements OrderApi {
         private final IOrderService orderService = null;
+    }
+
+    @RestController
+    static final class NativePageController {
+        private final IOrderService orderService = null;
+
+        @GetMapping
+        public ModelAndView preview() {
+            return new ModelAndView("preview");
+        }
+    }
+
+    @RestController
+    static final class NativeStreamController {
+        private final IOrderService orderService = null;
+
+        @GetMapping
+        public ResponseEntity<InputStreamResource> source() {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    @RestController
+    static final class JsonResponseEntityController {
+        private final IOrderService orderService = null;
+
+        @GetMapping
+        public ResponseEntity<String> detail() {
+            return ResponseEntity.ok("detail");
+        }
     }
 
     @RestController

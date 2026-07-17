@@ -53,6 +53,13 @@ public final class MangoArchUnitChecker {
             "io.mango.common.contract.LocalCapabilityContract";
     private static final String BINARY_HTTP_ADAPTER =
             "io.mango.common.contract.BinaryHttpAdapter";
+    private static final String FILE_PREVIEW_VENDOR_PACKAGE_PREFIX = "cn.keking.";
+    private static final String MODEL_AND_VIEW = "org.springframework.web.servlet.ModelAndView";
+    private static final String RESPONSE_ENTITY = "org.springframework.http.ResponseEntity";
+    private static final Set<String> NATIVE_HTTP_BODY_TYPES =
+            Set.of(
+                    "org.springframework.core.io.InputStreamResource",
+                    "org.springframework.core.io.Resource");
     private static final String MANGO_INFRA_PACKAGE_PREFIX = "io.mango.infra.";
     private static final String REQUEST_MAPPING =
             "org.springframework.web.bind.annotation.RequestMapping";
@@ -210,7 +217,9 @@ public final class MangoArchUnitChecker {
             boolean requireFeignContract) {
         List<ArchitectureIssue> issues = new ArrayList<>();
         Map<String, JavaClass> feignContexts = new LinkedHashMap<>();
-        List<JavaClass> orderedClasses = orderedClasses(classes);
+        List<JavaClass> orderedClasses = orderedClasses(classes).stream()
+                .filter(this::isMangoOwnedType)
+                .toList();
         Map<String, BeanRegistration> beanRegistrations = beanRegistrations(orderedClasses);
         for (JavaClass javaClass : orderedClasses) {
             ModuleRole role = roleResolver.apply(javaClass);
@@ -447,7 +456,7 @@ public final class MangoArchUnitChecker {
         checkControllerRole(javaClass, role, issues);
         checkControllerRootMapping(javaClass, issues);
         checkControllerInheritance(javaClass, issues);
-        if (!isBinaryHttpAdapter(javaClass)) {
+        if (!isBinaryHttpAdapter(javaClass) && !isNativeHttpAdapter(javaClass)) {
             checkControllerApi(javaClass, issues);
         }
         if (requireContract && !hasValidControllerRoot(javaClass, contract)) {
@@ -1940,6 +1949,36 @@ public final class MangoArchUnitChecker {
 
     private boolean isBinaryHttpAdapter(JavaClass javaClass) {
         return javaClass.isAnnotatedWith(BINARY_HTTP_ADAPTER);
+    }
+
+    private boolean isMangoOwnedType(JavaClass javaClass) {
+        return !javaClass.getName().startsWith(FILE_PREVIEW_VENDOR_PACKAGE_PREFIX);
+    }
+
+    private boolean isNativeHttpAdapter(JavaClass javaClass) {
+        List<JavaMethod> httpMethods = javaClass.getMethods().stream()
+                .filter(this::isHttpMethod)
+                .toList();
+        return !httpMethods.isEmpty()
+                && httpMethods.stream().allMatch(this::isNativeHttpReturn);
+    }
+
+    private boolean isNativeHttpReturn(JavaMethod method) {
+        JavaType returnType = method.getReturnType();
+        if (MODEL_AND_VIEW.equals(returnType.toErasure().getName())) {
+            return true;
+        }
+        if (!RESPONSE_ENTITY.equals(returnType.toErasure().getName())
+                || !(returnType instanceof JavaParameterizedType parameterized)
+                || parameterized.getActualTypeArguments().size() != 1) {
+            return false;
+        }
+        return NATIVE_HTTP_BODY_TYPES.contains(
+                parameterized.getActualTypeArguments().get(0).toErasure().getName());
+    }
+
+    private boolean isHttpMethod(JavaMethod method) {
+        return HTTP_MAPPINGS.stream().anyMatch(method::isAnnotatedWith);
     }
 
     private boolean isInterfaceOrExternalStub(JavaClass javaClass) {

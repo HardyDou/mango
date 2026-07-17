@@ -30,6 +30,11 @@
             <artifactId>mango-infra-web-starter</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>io.mango.infra.web</groupId>
+            <artifactId>mango-infra-web-support</artifactId>
+            <version>${project.version}</version>
+        </dependency>
 
         <!-- Mango 通用能力 -->
         <dependency>
