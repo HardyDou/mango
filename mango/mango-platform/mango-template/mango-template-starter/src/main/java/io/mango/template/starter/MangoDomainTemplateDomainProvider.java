@@ -5,6 +5,7 @@ import io.mango.domain.api.DomainApi;
 import io.mango.domain.api.vo.DomainVO;
 import io.mango.template.core.service.ITemplateDomainProvider;
 import io.mango.template.core.service.TemplateDomainInfo;
+import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -12,7 +13,7 @@ import org.springframework.stereotype.Component;
  * 通过 Mango Domain API 为模板核心提供本地业务域视图。
  */
 @Component
-@RequiredArgsConstructor
+@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 public class MangoDomainTemplateDomainProvider implements ITemplateDomainProvider {
 
     private final DomainApi domainApi;

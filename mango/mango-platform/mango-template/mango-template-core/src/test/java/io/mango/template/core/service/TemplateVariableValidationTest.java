@@ -89,7 +89,7 @@ class TemplateVariableValidationTest {
     }
 
     private TemplateServiceImpl newService() {
-        return new TemplateServiceImpl(null, null, null, null, null, objectMapper, null, null);
+        return new TemplateServiceImpl(null, null, null, null, null, null, null);
     }
 
     private TemplateVariableCommand objectVariable() {

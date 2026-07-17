@@ -9,10 +9,10 @@
 
 ## 2. 执行环境
 
-- 前端地址：`http://127.0.0.1:30006`
-- 单体后端：`http://127.0.0.1:18006`
+- 前端地址：`http://127.0.0.1:30007`
+- 单体后端：`http://127.0.0.1:18007`
 - 微服务后端：Template `http://127.0.0.1:18626`，Domain `http://127.0.0.1:18619`
-- 数据库：`mango_dev_mango_template_debt_006`
+- 数据库：`mango_dev_mango_template_debt_007`
 - 测试租户/账号：租户 `1`（芒果集团），`admin`；不记录密码与 token
 - 浏览器：Chromium
 
@@ -20,10 +20,10 @@
 
 | 台账 ID | 用例 ID | 页面/接口 | 功能点 | 测试数据 | 关键断言 | UI/交互检查 | console/network 结果 | 截图/trace/日志 | 结论 |
 |---|---|---|---|---|---|---|---|---|---|
-| TASK-TPL-001 | TC-001 | 平台能力 / 模板管理 | 分类、模板、版本、渲染与记录闭环 | `E2E_TPL_<timestamp>`，租户 1 | 创建分类和模板成功；V1/V2 发布；历史版本生效；正文与记录一致；清理成功 | 菜单位置、表格、编辑页、历史版本页、预览页、记录抽屉均按真实数据回显 | 无未解释 console error；关键业务 network 无未解释 4xx/5xx | Playwright Chromium 命令结果：13.2 秒，1/1 PASS；长期脚本见 `mango-ui/apps/mango-admin/e2e/specs/template-management.spec.ts` | PASS |
+| TASK-TPL-001 | TC-001 | 平台能力 / 模板管理 | 分类、模板、版本、渲染与记录闭环 | `E2E_TPL_<timestamp>`，租户 1 | 创建分类和模板成功；V1/V2 发布；历史版本生效；正文与记录一致；清理成功 | 菜单位置、表格、编辑页、历史版本页、预览页、记录抽屉均按真实数据回显 | 无未解释 console error；关键业务 network 无未解释 4xx/5xx | Playwright Chromium 命令结果：11.3 秒，1/1 PASS；长期脚本见 `mango-ui/apps/mango-admin/e2e/specs/template-management.spec.ts` | PASS |
 | TASK-TPL-002 | TC-002 | `/template/templates` | 真实 HTTP 校验 | 缺少 `domainCode` 的创建请求 | HTTP 400；消息为“业务域编码不能为空”；无写库副作用 | 非 UI 场景 | 请求按预期返回 400，无系统异常 500 | Spring HTTP 测试与双 JVM HTTP 响应摘要见本文件第 5、7 节 | PASS |
 | TASK-TPL-003 | TC-003 | Template→Domain 双 JVM | 创建、发布、FreeMarker 渲染、详情、删除 | `MICRO_E2E_<timestamp>`，合同号 `HT-2026-001` | Feign 调用真实 Domain；渲染正文为“微服务合同：HT-2026-001”；删除成功 | 非 UI 场景 | 两服务健康 UP；业务请求无未解释 4xx/5xx | 两进程日志摘要及 HTTP 响应见本文件第 7 节 | PASS |
-| TASK-TPL-004 | TC-004 | Fresh DB / 最终 JAR | DDL、canonical 字段和 migration 清单 | 新库 `mango_dev_mango_template_debt_006` | 四张表字段完整；Flyway 只有成功 V1；JAR 不含 V2 | demo 开启后菜单位于“平台能力” | 启动健康 UP；无 Template migration/schema 错误 | SQL 查询摘要与 `jar tf` 结果见本文件第 6、8 节 | PASS |
+| TASK-TPL-004 | TC-004 | Fresh DB / 最终 JAR | DDL、canonical 字段和 migration 清单 | 新库 `mango_dev_mango_template_debt_007` | 四张表字段完整；Flyway 只有成功 V1；JAR 不含 V2 | demo 开启后菜单位于“平台能力” | 启动健康 UP；无 Template migration/schema 错误 | SQL 查询摘要与 `jar tf` 结果见本文件第 6、8 节 | PASS |
 
 ## 4. 改前基线
 
@@ -44,16 +44,17 @@
 | HTTP 契约 | Spring HTTP 创建、修改、查询及非法参数 | 通过；缺少 `domainCode` 返回 HTTP 400 和稳定消息 |
 | JSON 兼容 | 动态变量标量、嵌套对象、数组序列化/反序列化 | wire format 保持普通 JSON object |
 | 架构 | 目标 Reactor `mango:architecture` full mode | dependency=0、archunit=0、pmd=0、blocking=0 |
+| 静态质量 | 与 PR CI 相同的目标 Reactor changed-only/no-new-violations 命令 | Checkstyle、SpotBugs 及聚合报告均为 0；`issues/newIssues/baselineIssues/toolFailures` 均为空，不以 baseline 隐藏存量问题 |
 | 前端构建 | `@mango/template` 与 `mango-admin-template-app` | 均通过 |
 
 ## 6. Fresh DB 与单体 E2E
 
-- 数据库：一次性 MySQL `mango_dev_mango_template_debt_006`。
+- 数据库：一次性 MySQL `mango_dev_mango_template_debt_007`。
 - demo 关闭启动：DDL 和正式资源成功，演示角色为 0，符合生产初始化边界。
 - demo 开启启动：显式 `MANGO_RESOURCE_REGISTRY_DEMO_ENABLED=true`，演示管理员角色与菜单完成同步。
 - Flyway：`flyway_schema_history_template` 只有 baseline 记录和成功的 `V1 init template`；无 V2。
 - Schema：`template`、`template_category`、`template_version`、`template_render_record` 均包含 canonical tenant/org/audit 字段，无 `create_time/update_time` 遗留。
-- 浏览器 E2E：Chromium 1/1 通过（13.2 秒）。从“平台能力 → 模板管理”进入，完成分类创建、模板创建/编辑、变量提取、V1/V2 发布、历史版本生效、真实渲染、渲染记录详情和清理。
+- 浏览器 E2E：Chromium 1/1 通过（11.3 秒）。从“平台能力 → 模板管理”进入，完成分类创建、模板创建/编辑、变量提取、V1/V2 发布、历史版本生效、真实渲染、渲染记录详情和清理。
 
 ## 7. 微服务双进程 E2E
 
@@ -63,6 +64,8 @@
 - `mango-template-capability-app`：18626
 
 Template 通过真实 Feign 调用 Domain，完成创建→发布 TEXT/FreeMarker 版本→渲染 `${contractNo}`→详情→删除，最终正文为 `微服务合同：HT-2026-001`。非法创建请求返回 HTTP 400。测试没有 Mock Domain、Feign、Mapper 或数据库。
+
+能力应用默认数据源与单体环境别名不同，最终启动显式绑定同一个 Fresh MySQL 的 `SPRING_DATASOURCE_*`。本地无注册中心直连同时按服务名设置 `host:port`，并按 Feign 的实际 `contextId` 设置绝对 URL；这只替代本地服务发现，不改变请求路径、租户传播或业务实现。
 
 本地直连绕过网关，因此按内部传播协议传递 `X-Mango-Tenant-Id`；仅传浏览器 `X-Tenant-Id` 时，下游租户隔离器会按设计拒绝缺失上下文的 SQL，未通过默认租户或关闭检查绕过。
 
@@ -87,4 +90,4 @@ Template 通过真实 Feign 调用 Domain，完成创建→发布 TEXT/FreeMarke
 
 ## 11. 结论
 
-改前冻结的公开路径、JSON、权限、菜单与渲染行为保持不变；历史债务由 260 个 blocking issue 收敛为 0。单元/集成、真实 HTTP、Fresh DB、浏览器 E2E、双 JVM 微服务链路及最终 JAR 均已验证。
+改前冻结的公开路径、JSON、权限、菜单与渲染行为保持不变；历史债务由 260 个 blocking issue 收敛为 0，目标模块静态质量问题也收敛为 0。单元/集成、真实 HTTP、Fresh DB、浏览器 E2E、双 JVM 微服务链路及最终 JAR 均已验证。

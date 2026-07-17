@@ -22,8 +22,19 @@ public record TemplateRenderPayload(
         List<TemplateVariableCommand> variableDefinitions) {
 
     public TemplateRenderPayload {
-        variables = variables == null ? new LinkedHashMap<>() : new LinkedHashMap<>(variables);
-        variableDefinitions = variableDefinitions == null ? new ArrayList<>() : new ArrayList<>(variableDefinitions);
+        if (sourceBytes != null) {
+            sourceBytes = sourceBytes.clone();
+        }
+        if (variables == null) {
+            variables = new LinkedHashMap<>();
+        } else {
+            variables = new LinkedHashMap<>(variables);
+        }
+        if (variableDefinitions == null) {
+            variableDefinitions = new ArrayList<>();
+        } else {
+            variableDefinitions = new ArrayList<>(variableDefinitions);
+        }
     }
 
     public TemplateRenderPayload(TemplateSourceFormat sourceFormat,
@@ -33,5 +44,23 @@ public record TemplateRenderPayload(
                                  String sourceFileName,
                                  Map<String, Object> variables) {
         this(sourceFormat, outputFormat, content, sourceBytes, sourceFileName, variables, List.of());
+    }
+
+    @Override
+    public byte[] sourceBytes() {
+        if (sourceBytes == null) {
+            return null;
+        }
+        return sourceBytes.clone();
+    }
+
+    @Override
+    public Map<String, Object> variables() {
+        return new LinkedHashMap<>(variables);
+    }
+
+    @Override
+    public List<TemplateVariableCommand> variableDefinitions() {
+        return new ArrayList<>(variableDefinitions);
     }
 }

@@ -29,7 +29,6 @@ import io.mango.template.core.service.ITemplateFileStore;
 import io.mango.template.core.service.TemplateDomainInfo;
 import io.mango.template.core.service.TemplateStoredFile;
 import io.mango.template.core.service.impl.TemplateServiceImpl;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -159,9 +158,8 @@ class PrintTemplateResourceHandlerIntegrationTest {
                 context.getBean(TemplateMapper.class),
                 context.getBean(TemplateVersionMapper.class),
                 context.getBean(TemplateRenderRecordMapper.class),
-                new TemplateRenderManager(renderApi, null),
+                TemplateRenderManager.create(renderApi, null),
                 unsupportedFileStore(),
-                new ObjectMapper().findAndRegisterModules(),
                 Runnable::run,
                 domainCode -> new TemplateDomainInfo(domainCode, "合同域", 1));
 

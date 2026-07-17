@@ -52,4 +52,19 @@ public class TemplateRenderCommand implements Serializable {
     @Size(max = 128, message = "业务ID不能超过128个字符")
     @Schema(description = "业务ID")
     private String bizId;
+
+    public TemplateJsonRequest getVariables() {
+        if (variables == null) {
+            return null;
+        }
+        return variables.copy();
+    }
+
+    public void setVariables(TemplateJsonRequest variables) {
+        if (variables == null) {
+            this.variables = null;
+            return;
+        }
+        this.variables = variables.copy();
+    }
 }

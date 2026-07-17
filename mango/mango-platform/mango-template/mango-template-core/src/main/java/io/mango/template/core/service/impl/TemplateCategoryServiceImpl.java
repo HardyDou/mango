@@ -43,7 +43,10 @@ public class TemplateCategoryServiceImpl extends MangoCrudServiceImpl<TemplateCa
 
     @Override
     public PageResult<TemplateCategoryVO> pageResult(TemplateCategoryPageQuery query) {
-        TemplateCategoryPageQuery resolved = query == null ? new TemplateCategoryPageQuery() : query;
+        TemplateCategoryPageQuery resolved = query;
+        if (resolved == null) {
+            resolved = new TemplateCategoryPageQuery();
+        }
         IPage<TemplateCategoryEntity> page = categoryMapper.selectPage(
                 new Page<>(resolved.getPage(), resolved.getSize()),
                 wrapper(resolved));
@@ -59,7 +62,10 @@ public class TemplateCategoryServiceImpl extends MangoCrudServiceImpl<TemplateCa
 
     @Override
     public List<TemplateCategoryVO> list(TemplateCategoryPageQuery query) {
-        TemplateCategoryPageQuery resolved = query == null ? new TemplateCategoryPageQuery() : query;
+        TemplateCategoryPageQuery resolved = query;
+        if (resolved == null) {
+            resolved = new TemplateCategoryPageQuery();
+        }
         if (resolved.getStatus() == null) {
             resolved.setStatus(TemplateStatus.ENABLED.value());
         }
@@ -83,7 +89,11 @@ public class TemplateCategoryServiceImpl extends MangoCrudServiceImpl<TemplateCa
         TemplateCategoryEntity entity = new TemplateCategoryEntity();
         entity.setTenantId(tenantId);
         apply(entity, command);
-        entity.setStatus(command.getStatus() == null ? TemplateStatus.ENABLED.value() : command.getStatus());
+        if (command.getStatus() == null) {
+            entity.setStatus(TemplateStatus.ENABLED.value());
+        } else {
+            entity.setStatus(command.getStatus());
+        }
         entity.setCreatedBy(MangoContextHolder.userId());
         entity.setUpdatedBy(MangoContextHolder.userId());
         LocalDateTime now = LocalDateTime.now();
@@ -149,7 +159,11 @@ public class TemplateCategoryServiceImpl extends MangoCrudServiceImpl<TemplateCa
     private void apply(TemplateCategoryEntity entity, SaveTemplateCategoryCommand command) {
         entity.setCategoryCode(command.getCategoryCode().trim());
         entity.setCategoryName(command.getCategoryName().trim());
-        entity.setSort(command.getSort() == null ? 0 : command.getSort());
+        if (command.getSort() == null) {
+            entity.setSort(0);
+        } else {
+            entity.setSort(command.getSort());
+        }
         if (command.getStatus() != null) {
             entity.setStatus(command.getStatus());
         }

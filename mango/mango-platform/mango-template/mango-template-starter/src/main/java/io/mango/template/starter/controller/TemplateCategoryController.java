@@ -14,6 +14,7 @@ import io.mango.template.core.service.ITemplateCategoryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.validation.annotation.Validated;
@@ -26,7 +27,7 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/template/categories")
-@RequiredArgsConstructor
+@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 @Validated
 @Tag(name = "模板分类管理", description = "模板分类维护接口")
 public class TemplateCategoryController implements TemplateCategoryApi {

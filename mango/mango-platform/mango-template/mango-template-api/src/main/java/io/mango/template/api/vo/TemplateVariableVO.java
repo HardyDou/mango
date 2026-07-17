@@ -30,4 +30,19 @@ public class TemplateVariableVO implements Serializable {
     private String description;
     @Schema(description = "嵌套变量")
     private List<TemplateVariableVO> children = new ArrayList<>();
+
+    public List<TemplateVariableVO> getChildren() {
+        if (children == null) {
+            return null;
+        }
+        return new ArrayList<>(children);
+    }
+
+    public void setChildren(List<TemplateVariableVO> children) {
+        if (children == null) {
+            this.children = null;
+            return;
+        }
+        this.children = new ArrayList<>(children);
+    }
 }

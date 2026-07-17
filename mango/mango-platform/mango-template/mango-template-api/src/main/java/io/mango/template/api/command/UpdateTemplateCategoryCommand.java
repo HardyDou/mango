@@ -3,6 +3,7 @@ package io.mango.template.api.command;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -11,6 +12,7 @@ import lombok.Setter;
  */
 @Getter
 @Setter
+@EqualsAndHashCode(callSuper = true)
 @Schema(description = "修改模板分类命令")
 public class UpdateTemplateCategoryCommand extends SaveTemplateCategoryCommand {
 

@@ -16,6 +16,7 @@ import io.mango.template.core.service.ITemplateService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.validation.annotation.Validated;
@@ -28,7 +29,7 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/template/templates")
-@RequiredArgsConstructor
+@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 @Validated
 @Tag(name = "模板管理", description = "模板库、变量提取、同步渲染和异步渲染接口")
 public class TemplateController implements TemplateApi {

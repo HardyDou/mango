@@ -45,4 +45,19 @@ public class PublishTemplateVersionCommand implements Serializable {
     @Size(max = 200, message = "模板变量不能超过200项")
     @Schema(description = "模板变量定义，支持嵌套结构")
     private List<TemplateVariableCommand> variables = new ArrayList<>();
+
+    public List<TemplateVariableCommand> getVariables() {
+        if (variables == null) {
+            return null;
+        }
+        return new ArrayList<>(variables);
+    }
+
+    public void setVariables(List<TemplateVariableCommand> variables) {
+        if (variables == null) {
+            this.variables = null;
+            return;
+        }
+        this.variables = new ArrayList<>(variables);
+    }
 }

@@ -4,7 +4,6 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.common.result.Require;
 import io.mango.common.vo.PageResult;
 import io.mango.infra.context.api.MangoContextHolder;
@@ -31,6 +30,7 @@ import io.mango.template.core.service.ITemplateFileStore;
 import io.mango.template.core.service.ITemplateDomainProvider;
 import io.mango.template.core.service.ITemplateService;
 import io.mango.template.core.service.TemplateDomainInfo;
+import io.mango.template.core.service.TemplateJsonCodec;
 import io.mango.template.core.service.TemplateStoredFile;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Async;
@@ -39,6 +39,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -63,13 +64,15 @@ public class TemplateServiceImpl extends MangoCrudServiceImpl<TemplateMapper, Te
     private final TemplateRenderRecordMapper renderRecordMapper;
     private final TemplateRenderManager renderManager;
     private final ITemplateFileStore fileStore;
-    private final ObjectMapper objectMapper;
     private final Executor templateRenderExecutor;
     private final ITemplateDomainProvider domainProvider;
 
     @Override
     public PageResult<TemplateVO> pageResult(TemplatePageQuery query) {
-        TemplatePageQuery resolved = query == null ? new TemplatePageQuery() : query;
+        TemplatePageQuery resolved = query;
+        if (resolved == null) {
+            resolved = new TemplatePageQuery();
+        }
         IPage<TemplateEntity> page = templateMapper.selectPage(
                 new Page<>(resolved.getPage(), resolved.getSize()),
                 templateWrapper(resolved));
@@ -291,7 +294,7 @@ public class TemplateServiceImpl extends MangoCrudServiceImpl<TemplateMapper, Te
             renderRecordMapper.updateById(record);
             TemplateEntity template = templateMapper.selectById(record.getTemplateId());
             TemplateVersionEntity version = versionMapper.selectById(record.getVersionId());
-            Map<String, Object> variables = objectMapper.readValue(record.getVariablePayload(), new TypeReference<>() {
+            Map<String, Object> variables = TemplateJsonCodec.read(record.getVariablePayload(), new TypeReference<>() {
             });
             TemplateRenderCommand command = new TemplateRenderCommand();
             command.setTemplateCode(record.getTemplateCode());
@@ -317,7 +320,10 @@ public class TemplateServiceImpl extends MangoCrudServiceImpl<TemplateMapper, Te
 
     @Override
     public PageResult<TemplateRenderRecordVO> renderRecordPage(TemplateRenderRecordPageQuery query) {
-        TemplateRenderRecordPageQuery resolved = query == null ? new TemplateRenderRecordPageQuery() : query;
+        TemplateRenderRecordPageQuery resolved = query;
+        if (resolved == null) {
+            resolved = new TemplateRenderRecordPageQuery();
+        }
         IPage<TemplateRenderRecordEntity> page = renderRecordMapper.selectPage(
                 new Page<>(resolved.getPage(), resolved.getSize()),
                 recordWrapper(resolved));
@@ -402,7 +408,7 @@ public class TemplateServiceImpl extends MangoCrudServiceImpl<TemplateMapper, Te
         try (InputStream input = file.inputStream(); ByteArrayOutputStream output = new ByteArrayOutputStream()) {
             input.transferTo(output);
             return output.toByteArray();
-        } catch (Exception e) {
+        } catch (IOException e) {
             Require.isTrue(false, TemplateCode.TEMPLATE_FILE_NOT_FOUND, "读取模板文件失败");
             return new byte[0];
         }
@@ -443,7 +449,11 @@ public class TemplateServiceImpl extends MangoCrudServiceImpl<TemplateMapper, Te
     }
 
     private void validateRequiredVariables(TemplateVersionEntity version, Map<String, Object> variables) {
-        validateVariables(parseVariables(version.getVariableSchema()), variables == null ? Map.of() : variables, "");
+        Map<String, Object> resolved = variables;
+        if (resolved == null) {
+            resolved = Map.of();
+        }
+        validateVariables(parseVariables(version.getVariableSchema()), resolved, "");
     }
 
     private void validateVariables(List<TemplateVariableCommand> definitions,
@@ -519,19 +529,31 @@ public class TemplateServiceImpl extends MangoCrudServiceImpl<TemplateMapper, Te
             return;
         }
         String type = Optional.ofNullable(definition.getType()).orElse("STRING").trim().toUpperCase(Locale.ROOT);
-        boolean valid = switch (type) {
-            case "NUMBER" -> value instanceof Number || parseableNumber(value);
-            case "BOOLEAN" -> value instanceof Boolean || "true".equalsIgnoreCase(String.valueOf(value))
-                    || "false".equalsIgnoreCase(String.valueOf(value));
+        boolean valid = isValidVariableType(type, value);
+        if (!valid) {
+            Require.isTrue(false, TemplateCode.TEMPLATE_VARIABLE_MISSING,
+                    "模板变量类型不匹配：" + path + "，期望 " + type);
+        }
+    }
+
+    private boolean isValidVariableType(String type, Object value) {
+        return switch (type) {
+            case "NUMBER" -> isValidNumber(value);
+            case "BOOLEAN" -> isValidBoolean(value);
             case "OBJECT" -> value instanceof Map<?, ?>;
             case "ARRAY" -> value instanceof Collection<?> || value.getClass().isArray();
             case "DATE", "STRING" -> true;
             default -> true;
         };
-        if (!valid) {
-            Require.isTrue(false, TemplateCode.TEMPLATE_VARIABLE_MISSING,
-                    "模板变量类型不匹配：" + path + "，期望 " + type);
-        }
+    }
+
+    private boolean isValidNumber(Object value) {
+        return value instanceof Number || parseableNumber(value);
+    }
+
+    private boolean isValidBoolean(Object value) {
+        return value instanceof Boolean || "true".equalsIgnoreCase(String.valueOf(value))
+                || "false".equalsIgnoreCase(String.valueOf(value));
     }
 
     private boolean parseableNumber(Object value) {
@@ -582,7 +604,10 @@ public class TemplateServiceImpl extends MangoCrudServiceImpl<TemplateMapper, Te
                 .eq(TemplateVersionEntity::getTemplateId, templateId)
                 .orderByDesc(TemplateVersionEntity::getVersionNo)
                 .last("LIMIT 1"));
-        return latest == null ? 1 : latest.getVersionNo() + 1;
+        if (latest == null) {
+            return 1;
+        }
+        return latest.getVersionNo() + 1;
     }
 
     private TemplateEntity selectTemplate(Long id) {
@@ -696,7 +721,11 @@ public class TemplateServiceImpl extends MangoCrudServiceImpl<TemplateMapper, Te
         entity.setDraftContent(trimToNull(command.getDraftContent()));
         entity.setDraftSourceFileId(command.getDraftSourceFileId());
         entity.setDraftVariableSchema(toJson(command.getDraftVariables()));
-        entity.setHasUnpublishedChanges(hasDraftDifference(entity) ? 1 : 0);
+        if (hasDraftDifference(entity)) {
+            entity.setHasUnpublishedChanges(1);
+        } else {
+            entity.setHasUnpublishedChanges(0);
+        }
     }
 
     private boolean hasDraftDifference(TemplateEntity entity) {
@@ -724,7 +753,7 @@ public class TemplateServiceImpl extends MangoCrudServiceImpl<TemplateMapper, Te
             return "[]";
         }
         try {
-            return objectMapper.writeValueAsString(objectMapper.readTree(json));
+            return TemplateJsonCodec.write(TemplateJsonCodec.readTree(json));
         } catch (Exception e) {
             return json;
         }
@@ -732,7 +761,10 @@ public class TemplateServiceImpl extends MangoCrudServiceImpl<TemplateMapper, Te
 
     private String resolveBusinessKey(SaveTemplateCommand command) {
         String businessKey = trimToNull(command.getBusinessKey());
-        return StringUtils.hasText(businessKey) ? businessKey : command.getTemplateCode().trim();
+        if (StringUtils.hasText(businessKey)) {
+            return businessKey;
+        }
+        return command.getTemplateCode().trim();
     }
 
     private String requireTenantId() {
@@ -774,7 +806,11 @@ public class TemplateServiceImpl extends MangoCrudServiceImpl<TemplateMapper, Te
         vo.setPublishedVersionNo(entity.getCurrentVersionNo());
         vo.setHasUnpublishedChanges(Objects.equals(entity.getHasUnpublishedChanges(), 1));
         vo.setDraftSourceFormat(entity.getDraftSourceFormat());
-        vo.setUnpublishedChangeReasons(Objects.equals(entity.getHasUnpublishedChanges(), 1) ? List.of("模板内容") : List.of());
+        if (Objects.equals(entity.getHasUnpublishedChanges(), 1)) {
+            vo.setUnpublishedChangeReasons(List.of("模板内容"));
+        } else {
+            vo.setUnpublishedChangeReasons(List.of());
+        }
         vo.setRemark(entity.getRemark());
         vo.setCreatedTime(entity.getCreatedAt());
         vo.setUpdatedTime(entity.getUpdatedAt());
@@ -821,7 +857,7 @@ public class TemplateServiceImpl extends MangoCrudServiceImpl<TemplateMapper, Te
             return List.of();
         }
         try {
-            return objectMapper.readValue(json, VARIABLE_LIST_TYPE);
+            return TemplateJsonCodec.read(json, VARIABLE_LIST_TYPE);
         } catch (Exception e) {
             return List.of();
         }
@@ -840,7 +876,11 @@ public class TemplateServiceImpl extends MangoCrudServiceImpl<TemplateMapper, Te
     }
 
     private Map<String, Object> renderVariables(TemplateRenderCommand command) {
-        return command.getVariables() == null ? Map.of() : command.getVariables().toMap();
+        TemplateJsonRequest variables = command.getVariables();
+        if (variables == null) {
+            return Map.of();
+        }
+        return variables.toMap();
     }
 
     private TemplateSourceFormat parseSourceFormat(String sourceFormat) {
@@ -857,7 +897,11 @@ public class TemplateServiceImpl extends MangoCrudServiceImpl<TemplateMapper, Te
 
     private String toJson(Object value) {
         try {
-            return objectMapper.writeValueAsString(value == null ? List.of() : value);
+            Object resolved = value;
+            if (resolved == null) {
+                resolved = List.of();
+            }
+            return TemplateJsonCodec.write(resolved);
         } catch (Exception e) {
             Require.isTrue(false, TemplateCode.TEMPLATE_VALIDATION_ERROR, "模板数据序列化失败");
             return "[]";
@@ -866,7 +910,11 @@ public class TemplateServiceImpl extends MangoCrudServiceImpl<TemplateMapper, Te
 
     private String toVariableJson(Map<String, Object> variables) {
         try {
-            return objectMapper.writeValueAsString(variables == null ? Map.of() : variables);
+            Map<String, Object> resolved = variables;
+            if (resolved == null) {
+                resolved = Map.of();
+            }
+            return TemplateJsonCodec.write(resolved);
         } catch (Exception e) {
             Require.isTrue(false, TemplateCode.TEMPLATE_VALIDATION_ERROR, "模板变量序列化失败");
             return "{}";
@@ -874,7 +922,10 @@ public class TemplateServiceImpl extends MangoCrudServiceImpl<TemplateMapper, Te
     }
 
     private String trimToNull(String value) {
-        return StringUtils.hasText(value) ? value.trim() : null;
+        if (StringUtils.hasText(value)) {
+            return value.trim();
+        }
+        return null;
     }
 
     private TemplateDomainInfo validateDomain(String domainCode) {

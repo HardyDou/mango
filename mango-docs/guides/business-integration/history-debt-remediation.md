@@ -49,6 +49,9 @@
 | 远程响应包装泄漏 Core | Core 直接依赖 Feign `R<T>` 并自行判断远程失败 | HTTP 适配与业务规则没有边界 | Core 定义 Provider/本域值对象，starter/adapter 负责 Feign、`R<T>` 解包及失败语义 |
 | Demo 开关验收混淆 | demo 关闭的新库没有演示角色/菜单，就误判正式资源缺失 | 没有分别定义生产初始化和演示验收目标 | demo 关闭验证 DDL/正式资源纯净；demo 开启验证演示角色、菜单与页面，并记录实际配置前缀 |
 | 直连微服务缺上下文 | 绕过网关只传浏览器租户头，下游租户 SQL 因缺上下文失败 | 忽略网关到内部上下文协议的转换职责 | 优先经真实网关；直连时传 Mango 内部上下文头并验证 Feign 传播，禁止默认租户或关闭隔离绕过 |
+| 增量质量门禁掩盖存量 | changed-only/no-new 通过，但目标模块问题被归入 baseline | 把“无新增”等同于“债务已清零” | 审计报告四类列表和目标模块总量；历史债务验收要求目标范围静态问题为 0 |
+| 可变状态泄漏 | DTO、VO、record 直接保存/返回集合、Map、JSON wrapper 或 `byte[]` | 只测序列化和值相等，没有测试外部修改 | 输入和输出双向防御复制；集合不可变，数组逐次复制；兼容测试覆盖嵌套 JSON/二进制 |
+| 独立能力应用环境漂移 | 单体连 MySQL，capability app 却默认落到 H2；Feign URL 配置未命中实际 `contextId` | 单体测试没有经过独立数据源和真实远程客户端 | 每个 JVM 显式核对 JDBC URL；无注册中心直连按实际 `contextId` 配置绝对 URL并保留 base path/租户传播 |
 
 ## 4. 标准修复流程
 
@@ -162,6 +165,8 @@ node mango-pmo/tools/pmo-preflight.mjs \
 | UI/E2E | 用户入口、登录、菜单、路由、页面、按钮、业务操作和浏览器异常 | 所有内部边界分支 |
 | 发布物检查 | 真正交付的 JAR/包内容和仓库可消费性 | 业务语义 |
 
+静态质量报告也属于证据本身。历史债务任务不能只满足 changed-only/no-new：需要核对目标模块的 `issues`、`newIssues`、`baselineIssues`、`toolFailures`，确认存量问题没有被 baseline 隐藏。Spring 构造器注入被工具误报时，保留 `@RequiredArgsConstructor` 与 `private final I*Service`，通过缩小构造器可见性或移除不必要的可变依赖解决；禁止抑制注解、非 final 注入或包装 Service 规避规则。
+
 ### 5.2 Mock 边界
 
 Mock 只用于隔离被测目标之外的协作者，不能替换本次要证明的核心链路。
@@ -200,6 +205,8 @@ Mock 只用于隔离被测目标之外的协作者，不能替换本次要证明
 6. 至少一条关键新增、查询、修改链路真实读写成功。
 7. 健康探测和端口可访问只证明进程入口可响应；API/UI 验收安排在正式资源、demo 资源和角色菜单等派生关系达到预期稳定值之后，等待与断言范围见[后端测试规范](../../../mango-pmo/rules/backend/08-test.md)。
 8. demo 关闭与开启必须使用独立、可追溯的启动配置：前者证明生产初始化边界，后者证明演示角色和菜单可验收，不能用一套结果替代另一套。
+9. 多 JVM 验收逐进程核对实际 JDBC URL；必要时显式设置 `SPRING_DATASOURCE_URL/USERNAME/PASSWORD`，不能假设单体环境别名会被能力应用继承。
+10. 无注册中心直连 Feign 时，按实际客户端 `contextId` 配置绝对 URL，同时保留服务 base path 和 Mango 内部租户上下文传播；只让端口可达不算链路通过。
 
 ### 6.2 最终 JAR
 

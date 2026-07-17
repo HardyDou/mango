@@ -78,4 +78,19 @@ public class SaveTemplateCommand implements Serializable {
     @Size(max = 255, message = "备注不能超过255个字符")
     @Schema(description = "备注")
     private String remark;
+
+    public List<TemplateVariableCommand> getDraftVariables() {
+        if (draftVariables == null) {
+            return null;
+        }
+        return new ArrayList<>(draftVariables);
+    }
+
+    public void setDraftVariables(List<TemplateVariableCommand> draftVariables) {
+        if (draftVariables == null) {
+            this.draftVariables = null;
+            return;
+        }
+        this.draftVariables = new ArrayList<>(draftVariables);
+    }
 }

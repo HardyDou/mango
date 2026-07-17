@@ -245,7 +245,10 @@ public class PrintTemplateResourceHandler implements ResourceHandler {
             return templateMapper.selectById(targetId);
         }
         Long templateId = fieldLong(resource, "templateId", false, null);
-        return templateId == null ? null : templateMapper.selectById(templateId);
+        if (templateId == null) {
+            return null;
+        }
+        return templateMapper.selectById(templateId);
     }
 
     private TemplateEntity findTemplate(Long tenantId, String templateCode) {
@@ -288,11 +291,18 @@ public class PrintTemplateResourceHandler implements ResourceHandler {
                     fieldText(resource, "content", false),
                     fieldLong(resource, "sourceFileId", false, null),
                     fieldText(resource, "variableSchema", false),
-                    fieldInt(resource, "versionNo", false, resource.getVersion() == null ? 1 : resource.getVersion()),
+                    fieldInt(resource, "versionNo", false, defaultVersion(resource)),
                     normalizeStatus(fieldInt(resource, "status", false, TemplateStatus.ENABLED.value())),
                     fieldText(resource, "remark", false),
                     fieldText(resource, "versionRemark", false)
             );
+        }
+
+        private static Integer defaultVersion(ResourceDeclaration resource) {
+            if (resource.getVersion() == null) {
+                return 1;
+            }
+            return resource.getVersion();
         }
     }
 
@@ -312,7 +322,10 @@ public class PrintTemplateResourceHandler implements ResourceHandler {
 
     private static Object fieldValue(ResourceDeclaration resource, String name, boolean required) {
         ResourceField field = resource.getFields().get(name);
-        Object value = field == null ? null : field.getValue();
+        Object value = null;
+        if (field != null) {
+            value = field.getValue();
+        }
         if (required && value == null) {
             throw new IllegalStateException("PRINT_TEMPLATE field is required: " + name);
         }
@@ -341,11 +354,17 @@ public class PrintTemplateResourceHandler implements ResourceHandler {
     }
 
     private static String defaultText(String value, String defaultValue) {
-        return StringUtils.hasText(value) ? value.trim() : defaultValue;
+        if (StringUtils.hasText(value)) {
+            return value.trim();
+        }
+        return defaultValue;
     }
 
     private static String toText(Object value) {
-        return value == null ? null : String.valueOf(value);
+        if (value == null) {
+            return null;
+        }
+        return String.valueOf(value);
     }
 
     private static Long toLong(Object value, boolean required, Long defaultValue) {

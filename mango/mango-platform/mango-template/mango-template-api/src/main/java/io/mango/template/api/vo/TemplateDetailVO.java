@@ -28,4 +28,34 @@ public class TemplateDetailVO extends TemplateVO {
 
     @Schema(description = "结构化未发布草稿变量定义")
     private List<TemplateVariableVO> draftVariables = new ArrayList<>();
+
+    public List<TemplateVersionVO> getVersions() {
+        if (versions == null) {
+            return null;
+        }
+        return new ArrayList<>(versions);
+    }
+
+    public void setVersions(List<TemplateVersionVO> versions) {
+        if (versions == null) {
+            this.versions = null;
+            return;
+        }
+        this.versions = new ArrayList<>(versions);
+    }
+
+    public List<TemplateVariableVO> getDraftVariables() {
+        if (draftVariables == null) {
+            return null;
+        }
+        return new ArrayList<>(draftVariables);
+    }
+
+    public void setDraftVariables(List<TemplateVariableVO> draftVariables) {
+        if (draftVariables == null) {
+            this.draftVariables = null;
+            return;
+        }
+        this.draftVariables = new ArrayList<>(draftVariables);
+    }
 }

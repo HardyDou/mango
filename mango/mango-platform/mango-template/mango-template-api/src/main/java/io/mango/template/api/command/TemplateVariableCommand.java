@@ -50,4 +50,19 @@ public class TemplateVariableCommand implements Serializable {
     @Size(max = 200, message = "嵌套变量不能超过200项")
     @Schema(description = "嵌套变量定义")
     private List<TemplateVariableCommand> children = new ArrayList<>();
+
+    public List<TemplateVariableCommand> getChildren() {
+        if (children == null) {
+            return null;
+        }
+        return new ArrayList<>(children);
+    }
+
+    public void setChildren(List<TemplateVariableCommand> children) {
+        if (children == null) {
+            this.children = null;
+            return;
+        }
+        this.children = new ArrayList<>(children);
+    }
 }

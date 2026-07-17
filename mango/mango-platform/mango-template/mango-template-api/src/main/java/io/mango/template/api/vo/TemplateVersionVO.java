@@ -39,4 +39,19 @@ public class TemplateVersionVO implements Serializable {
     private String versionRemark;
     @Schema(description = "创建时间")
     private LocalDateTime createdTime;
+
+    public List<TemplateVariableVO> getVariables() {
+        if (variables == null) {
+            return null;
+        }
+        return new ArrayList<>(variables);
+    }
+
+    public void setVariables(List<TemplateVariableVO> variables) {
+        if (variables == null) {
+            this.variables = null;
+            return;
+        }
+        this.variables = new ArrayList<>(variables);
+    }
 }

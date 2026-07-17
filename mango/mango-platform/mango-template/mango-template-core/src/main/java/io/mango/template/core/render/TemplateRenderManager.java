@@ -14,6 +14,7 @@ import io.mango.template.api.enums.TemplateCode;
 import io.mango.template.api.command.TemplateVariableCommand;
 import io.mango.template.api.enums.TemplateOutputFormat;
 import io.mango.template.api.enums.TemplateSourceFormat;
+import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 
 import java.io.ByteArrayInputStream;
@@ -24,11 +25,15 @@ import java.util.Map;
 /**
  * 模板渲染调度器。
  */
-@RequiredArgsConstructor
+@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 public class TemplateRenderManager {
 
     private final RenderApi renderApi;
     private final ConvertApi convertApi;
+
+    public static TemplateRenderManager create(RenderApi renderApi, ConvertApi convertApi) {
+        return new TemplateRenderManager(renderApi, convertApi);
+    }
 
     public TemplateRenderOutput render(TemplateRenderPayload payload) {
         RenderFormat sourceRenderFormat = renderFormat(payload.sourceFormat());
