@@ -1,7 +1,8 @@
 package io.mango.job.core.service;
 
 import io.mango.common.vo.PageResult;
-import io.mango.job.api.command.SaveMangoJobDefinitionCommand;
+import io.mango.job.api.command.CreateMangoJobDefinitionCommand;
+import io.mango.job.api.command.UpdateMangoJobDefinitionCommand;
 import io.mango.job.api.command.TriggerMangoJobCommand;
 import io.mango.job.api.command.UpdateMangoJobDefinitionStatusCommand;
 import io.mango.job.api.query.MangoJobDefinitionPageQuery;
@@ -35,7 +36,7 @@ public interface IMangoJobDefinitionService {
      * @param command 保存命令
      * @return 新任务定义 ID
      */
-    Long createDefinition(SaveMangoJobDefinitionCommand command);
+    Long createDefinition(CreateMangoJobDefinitionCommand command);
 
     /**
      * 更新任务定义。
@@ -43,7 +44,7 @@ public interface IMangoJobDefinitionService {
      * @param command 保存命令
      * @return true 表示更新成功
      */
-    Boolean updateDefinition(SaveMangoJobDefinitionCommand command);
+    Boolean updateDefinition(UpdateMangoJobDefinitionCommand command);
 
     /**
      * 更新任务启停状态。

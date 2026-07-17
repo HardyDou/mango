@@ -1,8 +1,8 @@
 package io.mango.job.starter.probe;
 
-import io.mango.job.api.handler.MangoJobHandleContext;
-import io.mango.job.api.handler.MangoJobHandleResult;
-import io.mango.job.api.handler.MangoJobHandler;
+import io.mango.job.support.handler.MangoJobHandleContext;
+import io.mango.job.support.handler.MangoJobHandleResult;
+import io.mango.job.support.handler.MangoJobHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.StringUtils;

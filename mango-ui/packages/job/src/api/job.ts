@@ -343,7 +343,9 @@ export const jobApi = {
     get<BackendPageResult<JobInstance>>('/job/instances/page', { params: normalizeParams(params) })
       .then(data => fromBackendPageResult<JobInstance>(data, params)),
   syncInstances: (params?: SyncJobInstancePayload) => post<boolean>('/job/instances/sync', normalizeParams(params)),
-  detailInstanceLog: (instanceId: ApiId) => get<JobLogDetail>(`/job/instances/${instanceId}/logs`),
+  detailInstanceLog: (instanceId: ApiId) => get<JobLogDetail>('/job/instances/logs/detail', {
+    params: { instanceId },
+  }),
   pageLogs: (params?: JobLogQuery) =>
     get<BackendPageResult<JobLogIndex>>('/job/logs/page', { params: normalizeParams(params) })
       .then(data => fromBackendPageResult<JobLogIndex>(data, params)),

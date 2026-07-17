@@ -1,6 +1,7 @@
 package io.mango.job.core.service.nativeengine;
 
 import io.mango.common.result.Require;
+import io.mango.job.api.enums.JobCode;
 import io.mango.job.api.enums.JobAttemptStatus;
 import io.mango.job.api.enums.JobDefinitionStatus;
 import io.mango.job.api.enums.JobInstanceStatus;
@@ -89,14 +90,14 @@ public class MangoJobStateMachine {
                                                              E from,
                                                              E to,
                                                              String message) {
-        Require.notNull(from, message + "：原状态不能为空");
-        Require.notNull(to, message + "：目标状态不能为空");
+        Require.notNull(from, JobCode.JOB_INVALID, message + "：原状态不能为空");
+        Require.notNull(to, JobCode.JOB_INVALID, message + "：目标状态不能为空");
         if (from == to) {
             return;
         }
         Set<E> allowedTargets = transitions.get(from);
         if (allowedTargets == null || !allowedTargets.contains(to)) {
-            Require.fail(400, message + "：" + from.name() + " -> " + to.name());
+            Require.fail(JobCode.JOB_INVALID, message + "：" + from.name() + " -> " + to.name());
         }
     }
 }

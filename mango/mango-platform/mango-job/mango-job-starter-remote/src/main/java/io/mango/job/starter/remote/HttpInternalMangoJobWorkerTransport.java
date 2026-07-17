@@ -2,11 +2,11 @@ package io.mango.job.starter.remote;
 
 import io.mango.common.result.R;
 import io.mango.common.result.Require;
+import io.mango.job.api.enums.JobCode;
 import io.mango.job.api.enums.JobTransportType;
 import io.mango.job.api.vo.MangoJobWorkerExecuteResultVO;
 import io.mango.job.support.nativeengine.IMangoJobWorkerTransport;
-import io.mango.job.support.nativeengine.MangoJobWorkerDispatchRequest;
-import org.springframework.stereotype.Service;
+import io.mango.job.support.nativeengine.MangoJobWorkerDispatchContext;
 import org.springframework.util.StringUtils;
 
 import java.net.URI;
@@ -14,13 +14,12 @@ import java.net.URI;
 /**
  * Mango 内部 HTTP Worker 分发通道。
  */
-@Service
 public class HttpInternalMangoJobWorkerTransport implements IMangoJobWorkerTransport {
 
-    private final MangoJobWorkerFeignClient workerFeignClient;
+    private final MangoJobDynamicHttpClient dynamicHttpClient;
 
-    public HttpInternalMangoJobWorkerTransport(MangoJobWorkerFeignClient workerFeignClient) {
-        this.workerFeignClient = workerFeignClient;
+    public HttpInternalMangoJobWorkerTransport(MangoJobDynamicHttpClient dynamicHttpClient) {
+        this.dynamicHttpClient = dynamicHttpClient;
     }
 
     @Override
@@ -29,13 +28,13 @@ public class HttpInternalMangoJobWorkerTransport implements IMangoJobWorkerTrans
     }
 
     @Override
-    public MangoJobWorkerExecuteResultVO execute(MangoJobWorkerDispatchRequest request) {
+    public MangoJobWorkerExecuteResultVO execute(MangoJobWorkerDispatchContext request) {
         URI workerBaseUri = URI.create(request.getWorkerAddress());
-        R<MangoJobWorkerExecuteResultVO> response = workerFeignClient.execute(workerBaseUri, request.getCommand());
-        Require.notNull(response, "Worker HTTP_INTERNAL 调用无响应");
-        Require.isTrue(response.isSuccess(), response.getMsg());
+        R<MangoJobWorkerExecuteResultVO> response = dynamicHttpClient.executeWorker(workerBaseUri, request.getCommand());
+        Require.notNull(response, JobCode.JOB_INVALID, "Worker HTTP_INTERNAL 调用无响应");
+        Require.isTrue(response.isSuccess(), JobCode.JOB_INVALID, response.getMsg());
         MangoJobWorkerExecuteResultVO data = response.getData();
-        Require.notNull(data, "Worker HTTP_INTERNAL 执行结果为空");
+        Require.notNull(data, JobCode.JOB_INVALID, "Worker HTTP_INTERNAL 执行结果为空");
         if (!StringUtils.hasText(data.getWorkerAddress())) {
             data.setWorkerAddress(request.getWorkerAddress());
         }

@@ -4,14 +4,15 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.common.result.Require;
+import io.mango.job.api.enums.JobCode;
 import io.mango.job.api.command.CreateMangoJobWorkerCommand;
+import io.mango.job.api.command.MangoJobHandlerCommand;
 import io.mango.job.api.command.RegisterMangoJobWorkerCommand;
 import io.mango.job.api.command.UpdateMangoJobWorkerStatusCommand;
 import io.mango.job.api.enums.JobEngineType;
 import io.mango.job.api.enums.JobTransportType;
 import io.mango.job.api.enums.JobWorkerRegisterSource;
 import io.mango.job.api.enums.JobWorkerStatus;
-import io.mango.job.api.vo.MangoJobHandlerVO;
 import io.mango.job.core.entity.MangoJobWorkerCapabilityEntity;
 import io.mango.job.core.entity.MangoJobWorkerSnapshotEntity;
 import io.mango.job.core.mapper.MangoJobWorkerCapabilityMapper;
@@ -58,7 +59,7 @@ public class MangoJobWorkerRegistryService implements IMangoJobWorkerRegistrySer
 
     @Override
     public Long registerWorker(RegisterMangoJobWorkerCommand command) {
-        Require.notNull(command, "Worker 注册命令不能为空");
+        Require.notNull(command, JobCode.JOB_INVALID, "Worker 注册命令不能为空");
         return dataSourceRouter.route(() -> {
             validate(command);
             MangoJobWorkerSnapshotEntity worker = upsertWorker(command, false);
@@ -73,7 +74,7 @@ public class MangoJobWorkerRegistryService implements IMangoJobWorkerRegistrySer
 
     @Override
     public Long createWorker(CreateMangoJobWorkerCommand command) {
-        Require.notNull(command, "Worker 登记命令不能为空");
+        Require.notNull(command, JobCode.JOB_INVALID, "Worker 登记命令不能为空");
         RegisterMangoJobWorkerCommand registerCommand = new RegisterMangoJobWorkerCommand();
         registerCommand.setTenantId(currentTenantId());
         registerCommand.setAppCode(command.getAppCode());
@@ -87,7 +88,7 @@ public class MangoJobWorkerRegistryService implements IMangoJobWorkerRegistrySer
         registerCommand.setHandlers(command.getHandlers());
         return dataSourceRouter.route(() -> {
             validate(registerCommand);
-            Require.isTrue(command.getTransportType() == JobTransportType.HTTP_INTERNAL,
+            Require.isTrue(command.getTransportType() == JobTransportType.HTTP_INTERNAL, JobCode.JOB_INVALID,
                     "手动登记 Worker 仅支持 HTTP_INTERNAL，内嵌 Worker 由系统自动注册");
             MangoJobWorkerSnapshotEntity worker = upsertWorker(registerCommand, true);
             upsertCapabilities(registerCommand, worker);
@@ -98,15 +99,15 @@ public class MangoJobWorkerRegistryService implements IMangoJobWorkerRegistrySer
 
     @Override
     public Boolean updateWorkerStatus(UpdateMangoJobWorkerStatusCommand command) {
-        Require.notNull(command, "Worker 状态命令不能为空");
-        Require.notNull(command.getId(), "Worker ID 不能为空");
-        Require.notNull(command.getStatus(), "Worker 状态不能为空");
-        Require.isTrue(manualStatuses().contains(command.getStatus()), "不支持的 Worker 治理状态：" + command.getStatus());
+        Require.notNull(command, JobCode.JOB_INVALID, "Worker 状态命令不能为空");
+        Require.notNull(command.getId(), JobCode.JOB_INVALID, "Worker ID 不能为空");
+        Require.notNull(command.getStatus(), JobCode.JOB_INVALID, "Worker 状态不能为空");
+        Require.isTrue(manualStatuses().contains(command.getStatus()), JobCode.JOB_INVALID, "不支持的 Worker 治理状态：" + command.getStatus());
         return dataSourceRouter.route(() -> {
             String tenantId = currentTenantId();
             MangoJobWorkerSnapshotEntity worker = workerSnapshotMapper.selectById(command.getId());
-            Require.notNull(worker, 404, "Worker 不存在");
-            Require.isTrue(tenantId.equals(worker.getTenantId()), 404, "Worker 不存在");
+            Require.notNull(worker, JobCode.JOB_NOT_FOUND, "Worker 不存在");
+            Require.isTrue(tenantId.equals(worker.getTenantId()), JobCode.JOB_NOT_FOUND, "Worker 不存在");
             int updated = workerSnapshotMapper.update(null, new LambdaUpdateWrapper<MangoJobWorkerSnapshotEntity>()
                     .eq(MangoJobWorkerSnapshotEntity::getId, command.getId())
                     .eq(MangoJobWorkerSnapshotEntity::getTenantId, tenantId)
@@ -116,30 +117,30 @@ public class MangoJobWorkerRegistryService implements IMangoJobWorkerRegistrySer
     }
 
     private void validate(RegisterMangoJobWorkerCommand command) {
-        Require.notBlank(command.getTenantId(), "租户 ID 不能为空");
-        Require.notBlank(command.getAppCode(), "所属应用不能为空");
+        Require.notBlank(command.getTenantId(), JobCode.JOB_INVALID, "租户 ID 不能为空");
+        Require.notBlank(command.getAppCode(), JobCode.JOB_INVALID, "所属应用不能为空");
         resolveServiceCode(command);
         resolveWorkerGroup(command);
-        Require.notBlank(command.getWorkerAddress(), "Worker 地址不能为空");
-        Require.notNull(command.getTransportType(), "通信方式不能为空");
-        Require.notNull(resolveRegisterSource(command), "注册来源不能为空");
-        Require.isTrue(MangoJobSupport.hasValidWorkerAddress(command.getWorkerAddress()), "Worker 地址无效");
+        Require.notBlank(command.getWorkerAddress(), JobCode.JOB_INVALID, "Worker 地址不能为空");
+        Require.notNull(command.getTransportType(), JobCode.JOB_INVALID, "通信方式不能为空");
+        Require.notNull(resolveRegisterSource(command), JobCode.JOB_INVALID, "注册来源不能为空");
+        Require.isTrue(MangoJobSupport.hasValidWorkerAddress(command.getWorkerAddress()), JobCode.JOB_INVALID, "Worker 地址无效");
         if (command.getTransportType() == JobTransportType.IN_MEMORY) {
-            Require.isTrue(command.getRegisterSource() == JobWorkerRegisterSource.EMBEDDED_AUTO,
+            Require.isTrue(command.getRegisterSource() == JobWorkerRegisterSource.EMBEDDED_AUTO, JobCode.JOB_INVALID,
                     "IN_MEMORY Worker 只能由系统自动注册");
-            Require.isTrue(MangoJobTransportAddresses.isEmbedded(command.getWorkerAddress()),
+            Require.isTrue(MangoJobTransportAddresses.isEmbedded(command.getWorkerAddress()), JobCode.JOB_INVALID,
                     "IN_MEMORY Worker 地址必须使用 " + MangoJobTransportAddresses.EMBEDDED_PREFIX
                             + " 或兼容旧地址 " + MangoJobTransportAddresses.IN_MEMORY_PREFIX);
         }
         if (command.getTransportType() == JobTransportType.HTTP_INTERNAL) {
-            Require.isTrue(MangoJobTransportAddresses.isHttpInternal(command.getWorkerAddress()),
+            Require.isTrue(MangoJobTransportAddresses.isHttpInternal(command.getWorkerAddress()), JobCode.JOB_INVALID,
                     "HTTP_INTERNAL Worker 地址必须使用 http(s)://");
         }
-        Require.isTrue(command.getHandlers() != null && !command.getHandlers().isEmpty(), "Worker 处理器清单不能为空");
-        for (MangoJobHandlerVO handler : command.getHandlers()) {
-            Require.notNull(handler, "Worker 处理器不能为空");
-            Require.notBlank(handler.getHandlerName(), "Worker 处理器名称不能为空");
-            Require.isTrue(handler.getHandlerName().trim().length() <= MAX_HANDLER_NAME_LENGTH,
+        Require.isTrue(command.getHandlers() != null && !command.getHandlers().isEmpty(), JobCode.JOB_INVALID, "Worker 处理器清单不能为空");
+        for (MangoJobHandlerCommand handler : command.getHandlers()) {
+            Require.notNull(handler, JobCode.JOB_INVALID, "Worker 处理器不能为空");
+            Require.notBlank(handler.getHandlerName(), JobCode.JOB_INVALID, "Worker 处理器名称不能为空");
+            Require.isTrue(handler.getHandlerName().trim().length() <= MAX_HANDLER_NAME_LENGTH, JobCode.JOB_INVALID,
                     "Worker 处理器名称不能超过128个字符");
         }
     }
@@ -225,7 +226,7 @@ public class MangoJobWorkerRegistryService implements IMangoJobWorkerRegistrySer
     }
 
     private void upsertCapabilities(RegisterMangoJobWorkerCommand command, MangoJobWorkerSnapshotEntity worker) {
-        for (MangoJobHandlerVO handler : command.getHandlers()) {
+        for (MangoJobHandlerCommand handler : command.getHandlers()) {
             String handlerName = handler.getHandlerName().trim();
             String appCode = resolveCapabilityAppCode(handler, command);
             String serviceCode = resolveCapabilityServiceCode(handler, command);
@@ -243,7 +244,7 @@ public class MangoJobWorkerRegistryService implements IMangoJobWorkerRegistrySer
 
     private void upsertCapability(RegisterMangoJobWorkerCommand command,
                                   MangoJobWorkerSnapshotEntity worker,
-                                  MangoJobHandlerVO handler,
+                                  MangoJobHandlerCommand handler,
                                   String handlerName,
                                   String appCode,
                                   String serviceCode,
@@ -269,7 +270,7 @@ public class MangoJobWorkerRegistryService implements IMangoJobWorkerRegistrySer
             } catch (DuplicateKeyException ex) {
                 capability = selectCapability(worker.getId(), serviceCode, workerGroup, appCode,
                         handlerName, normalizedJobCode);
-                Require.notNull(capability, "Worker 能力并发注册失败");
+                Require.notNull(capability, JobCode.JOB_INVALID, "Worker 能力并发注册失败");
                 capability.setEnabled(1);
                 capability.setParamSchemaHash(schemaHash(handler.getParamSchema()));
                 workerCapabilityMapper.updateById(capability);
@@ -337,7 +338,7 @@ public class MangoJobWorkerRegistryService implements IMangoJobWorkerRegistrySer
         return DigestUtils.md5DigestAsHex(schema.getBytes(StandardCharsets.UTF_8));
     }
 
-    private String resolveCapabilityAppCode(MangoJobHandlerVO handler, RegisterMangoJobWorkerCommand command) {
+    private String resolveCapabilityAppCode(MangoJobHandlerCommand handler, RegisterMangoJobWorkerCommand command) {
         if (StringUtils.hasText(handler.getAppCode())) {
             return handler.getAppCode().trim();
         }
@@ -358,21 +359,21 @@ public class MangoJobWorkerRegistryService implements IMangoJobWorkerRegistrySer
         return resolveServiceCode(command);
     }
 
-    private String resolveCapabilityServiceCode(MangoJobHandlerVO handler, RegisterMangoJobWorkerCommand command) {
+    private String resolveCapabilityServiceCode(MangoJobHandlerCommand handler, RegisterMangoJobWorkerCommand command) {
         if (StringUtils.hasText(handler.getServiceCode())) {
             return handler.getServiceCode().trim();
         }
         return resolveServiceCode(command);
     }
 
-    private String resolveCapabilityWorkerGroup(MangoJobHandlerVO handler, RegisterMangoJobWorkerCommand command) {
+    private String resolveCapabilityWorkerGroup(MangoJobHandlerCommand handler, RegisterMangoJobWorkerCommand command) {
         if (StringUtils.hasText(handler.getWorkerGroup())) {
             return handler.getWorkerGroup().trim();
         }
         return resolveCapabilityServiceCode(handler, command);
     }
 
-    private Set<String> resolveCapabilityJobCodes(MangoJobHandlerVO handler) {
+    private Set<String> resolveCapabilityJobCodes(MangoJobHandlerCommand handler) {
         if (handler.getSupportedJobCodes() == null || handler.getSupportedJobCodes().isEmpty()) {
             return Set.of();
         }
@@ -428,7 +429,7 @@ public class MangoJobWorkerRegistryService implements IMangoJobWorkerRegistrySer
 
     private String currentTenantId() {
         String tenantId = MangoContextHolder.tenantId();
-        Require.notBlank(tenantId, "缺少当前租户上下文");
+        Require.notBlank(tenantId, JobCode.JOB_INVALID, "缺少当前租户上下文");
         return tenantId;
     }
 }

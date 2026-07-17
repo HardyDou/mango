@@ -2,13 +2,15 @@ package io.mango.job.starter.remote;
 
 import io.mango.common.result.R;
 import io.mango.common.result.Require;
+import io.mango.job.api.enums.JobCode;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.job.api.command.RegisterMangoJobWorkerCommand;
+import io.mango.job.api.command.MangoJobHandlerCommand;
 import io.mango.job.api.enums.JobTransportType;
 import io.mango.job.api.enums.JobWorkerRegisterSource;
 import io.mango.job.api.vo.MangoJobHandlerVO;
-import io.mango.job.support.service.IMangoJobHandlerRegistry;
+import io.mango.job.support.service.MangoJobHandlerRegistry;
 import io.mango.job.support.nativeengine.MangoNativeJobProperties;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -33,9 +35,9 @@ public class MangoJobRemoteWorkerRegistrar {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MangoJobRemoteWorkerRegistrar.class);
 
-    private final MangoJobFeignClient jobFeignClient;
+    private final MangoJobDynamicHttpClient dynamicHttpClient;
 
-    private final IMangoJobHandlerRegistry handlerRegistry;
+    private final MangoJobHandlerRegistry handlerRegistry;
 
     private final MangoNativeJobProperties properties;
 
@@ -71,10 +73,10 @@ public class MangoJobRemoteWorkerRegistrar {
                                 command.getAppCode(), command.getWorkerAddress())
                         .withSecurity(null, command.getTenantId(), "job-worker", "SYSTEM",
                                 "JOB", "SYSTEM", null, command.getAppCode()));
-                R<Long> response = jobFeignClient.registerWorker(URI.create(properties.getJobCenterAddress().trim()),
+                R<Long> response = dynamicHttpClient.registerWorker(URI.create(properties.getJobCenterAddress().trim()),
                         command);
-                Require.notNull(response, "Worker 注册 JobCenter 无响应");
-                Require.isTrue(response.isSuccess(), response.getMsg());
+                Require.notNull(response, JobCode.JOB_INVALID, "Worker 注册 JobCenter 无响应");
+                Require.isTrue(response.isSuccess(), JobCode.JOB_INVALID, response.getMsg());
             }
         } catch (RuntimeException ex) {
             LOGGER.warn("Mango Job remote worker registration failed, jobCenter={}, workerAddress={}",
@@ -105,7 +107,22 @@ public class MangoJobRemoteWorkerRegistrar {
         command.setTransportType(JobTransportType.HTTP_INTERNAL);
         command.setRegisterSource(JobWorkerRegisterSource.REMOTE_AUTO);
         command.setWorkerInstanceId(ManagementFactory.getRuntimeMXBean().getName());
-        command.getHandlers().addAll(handlers);
+        command.setHandlers(handlers.stream().map(this::toHandlerCommand).toList());
+        return command;
+    }
+
+    private MangoJobHandlerCommand toHandlerCommand(MangoJobHandlerVO handler) {
+        MangoJobHandlerCommand command = new MangoJobHandlerCommand();
+        command.setAppCode(handler.getAppCode());
+        command.setServiceCode(handler.getServiceCode());
+        command.setWorkerGroup(handler.getWorkerGroup());
+        command.setHandlerName(handler.getHandlerName());
+        command.setSupportedJobCodes(handler.getSupportedJobCodes());
+        command.setJobType(handler.getJobType());
+        command.setParamSchema(handler.getParamSchema());
+        command.setConcurrent(handler.getConcurrent());
+        command.setTimeoutSeconds(handler.getTimeoutSeconds());
+        command.setRetryPolicy(handler.getRetryPolicy());
         return command;
     }
 

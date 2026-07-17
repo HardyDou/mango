@@ -1,3 +1,0 @@
--- Default Mango Job sample definitions are injected by mango-resource.
--- Resource file:
--- mango-job-starter/src/main/resources/META-INF/mango/resources/job-common-definition.yml

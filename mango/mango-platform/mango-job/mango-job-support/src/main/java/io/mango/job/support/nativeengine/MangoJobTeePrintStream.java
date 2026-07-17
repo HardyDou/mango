@@ -3,13 +3,9 @@ package io.mango.job.support.nativeengine;
 import java.io.OutputStream;
 import java.io.PrintStream;
 
-/**
- * 同时写原始控制台和 Job 日志缓冲的输出流。
- */
 final class MangoJobTeePrintStream extends PrintStream {
 
     private final PrintStream delegate;
-
     private final PrintStream capture;
 
     MangoJobTeePrintStream(PrintStream delegate, PrintStream capture) {

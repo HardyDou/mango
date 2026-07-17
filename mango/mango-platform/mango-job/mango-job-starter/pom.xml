@@ -65,7 +65,6 @@
             <groupId>io.mango.platform.job</groupId>
             <artifactId>mango-job-starter-remote</artifactId>
             <version>${project.version}</version>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>

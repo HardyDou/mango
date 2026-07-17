@@ -21,5 +21,5 @@ public interface IMangoJobWorkerTransport {
      * @param request Worker 分发请求
      * @return Worker 执行结果
      */
-    MangoJobWorkerExecuteResultVO execute(MangoJobWorkerDispatchRequest request);
+    MangoJobWorkerExecuteResultVO execute(MangoJobWorkerDispatchContext request);
 }

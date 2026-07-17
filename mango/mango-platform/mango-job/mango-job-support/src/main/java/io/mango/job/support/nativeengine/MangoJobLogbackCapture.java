@@ -10,13 +10,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-/**
- * Captures Logback events emitted by the current job thread.
- */
 final class MangoJobLogbackCapture implements AutoCloseable {
 
     private final Logger rootLogger;
-
     private final JobAppender appender;
 
     private MangoJobLogbackCapture(Logger rootLogger, JobAppender appender) {
@@ -38,10 +34,7 @@ final class MangoJobLogbackCapture implements AutoCloseable {
     }
 
     List<CapturedEvent> events() {
-        if (appender == null) {
-            return List.of();
-        }
-        return appender.events();
+        return appender == null ? List.of() : appender.events();
     }
 
     @Override
@@ -59,7 +52,6 @@ final class MangoJobLogbackCapture implements AutoCloseable {
     private static final class JobAppender extends AppenderBase<ILoggingEvent> {
 
         private final String threadName;
-
         private final List<CapturedEvent> events = new ArrayList<>();
 
         private JobAppender(String threadName) {

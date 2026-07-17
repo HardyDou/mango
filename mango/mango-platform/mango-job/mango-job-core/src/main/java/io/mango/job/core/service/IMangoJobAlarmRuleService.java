@@ -1,7 +1,8 @@
 package io.mango.job.core.service;
 
 import io.mango.common.vo.PageResult;
-import io.mango.job.api.command.SaveMangoJobAlarmRuleCommand;
+import io.mango.job.api.command.CreateMangoJobAlarmRuleCommand;
+import io.mango.job.api.command.UpdateMangoJobAlarmRuleCommand;
 import io.mango.job.api.command.UpdateMangoJobAlarmRuleStatusCommand;
 import io.mango.job.api.query.MangoJobAlarmRulePageQuery;
 import io.mango.job.api.vo.MangoJobAlarmRuleVO;
@@ -33,7 +34,7 @@ public interface IMangoJobAlarmRuleService {
      * @param command 保存命令
      * @return 告警规则 ID
      */
-    Long createAlarmRule(SaveMangoJobAlarmRuleCommand command);
+    Long createAlarmRule(CreateMangoJobAlarmRuleCommand command);
 
     /**
      * 更新告警规则。
@@ -41,7 +42,7 @@ public interface IMangoJobAlarmRuleService {
      * @param command 保存命令
      * @return true 表示更新成功
      */
-    Boolean updateAlarmRule(SaveMangoJobAlarmRuleCommand command);
+    Boolean updateAlarmRule(UpdateMangoJobAlarmRuleCommand command);
 
     /**
      * 更新告警规则启停状态。

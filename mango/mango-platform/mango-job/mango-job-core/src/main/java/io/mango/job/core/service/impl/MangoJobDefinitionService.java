@@ -4,10 +4,12 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.mango.common.result.Require;
+import io.mango.job.api.enums.JobCode;
 import io.mango.common.vo.PageResult;
 import io.mango.infra.context.api.MangoContextHolder;
-import io.mango.job.api.command.SaveMangoJobDefinitionCommand;
+import io.mango.job.api.command.CreateMangoJobDefinitionCommand;
 import io.mango.job.api.command.TriggerMangoJobCommand;
+import io.mango.job.api.command.UpdateMangoJobDefinitionCommand;
 import io.mango.job.api.command.UpdateMangoJobDefinitionStatusCommand;
 import io.mango.job.api.enums.JobDefinitionStatus;
 import io.mango.job.api.enums.JobInstanceStatus;
@@ -27,6 +29,8 @@ import io.mango.job.core.mapper.MangoJobLogIndexMapper;
 import io.mango.job.core.mapper.MangoJobOperationLogMapper;
 import io.mango.job.core.service.IMangoJobDefinitionService;
 import io.mango.job.core.service.engine.IMangoJobEngineSyncService;
+import io.mango.job.core.service.engine.MangoJobEngineDefinitionContext;
+import io.mango.job.core.service.engine.MangoJobEngineTriggerContext;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -90,12 +94,13 @@ public class MangoJobDefinitionService implements IMangoJobDefinitionService {
     }
 
     @Override
-    public Long createDefinition(SaveMangoJobDefinitionCommand command) {
+    public Long createDefinition(CreateMangoJobDefinitionCommand command) {
+        Require.notNull(command, JobCode.JOB_INVALID, "任务定义不能为空");
         return dataSourceRouter.route(() -> {
-            Require.notNull(command, "任务定义不能为空");
-            validateDefinition(command, false);
+            validateDefinition(command);
             String tenantId = MangoJobSupport.currentTenantId();
-            Require.isNull(selectByCode(tenantId, command.getAppCode(), command.getJobCode()), "任务编码已存在");
+            Require.isTrue(selectByCode(tenantId, command.getAppCode(), command.getJobCode()) == null,
+                    JobCode.JOB_INVALID, "任务编码已存在");
 
             MangoJobDefinitionEntity entity = new MangoJobDefinitionEntity();
             copyDefinition(command, entity);
@@ -103,27 +108,27 @@ public class MangoJobDefinitionService implements IMangoJobDefinitionService {
             entity.setStatus(JobDefinitionStatus.DRAFT.name());
             entity.setSyncStatus(MangoJobSupport.syncStatus(JobSyncStatus.PENDING));
             mapper.insert(entity);
-            engineSyncService.syncDefinition(entity, "CREATE");
+            engineSyncService.syncDefinition(MangoJobEngineDefinitionContext.of(entity, "CREATE"));
             writeOperationLog(entity, null, "CREATE_DEFINITION", "SUCCESS", command.getJobCode(), null);
             return entity.getId();
         });
     }
 
     @Override
-    public Boolean updateDefinition(SaveMangoJobDefinitionCommand command) {
+    public Boolean updateDefinition(UpdateMangoJobDefinitionCommand command) {
+        Require.notNull(command, JobCode.JOB_INVALID, "任务定义不能为空");
+        Require.notNull(command.getId(), JobCode.JOB_INVALID, "任务 ID 不能为空");
         return dataSourceRouter.route(() -> {
-            Require.notNull(command, "任务定义不能为空");
-            Require.notNull(command.getId(), "任务 ID 不能为空");
-            validateDefinition(command, true);
+            validateDefinition(command);
             MangoJobDefinitionEntity entity = selectDefinitionRequired(command.getId());
-            Require.isTrue(JobDefinitionStatus.DRAFT.name().equals(entity.getStatus()), "只有草稿任务可以编辑");
+            Require.isTrue(JobDefinitionStatus.DRAFT.name().equals(entity.getStatus()), JobCode.JOB_INVALID, "只有草稿任务可以编辑");
             MangoJobDefinitionEntity exists = selectByCode(entity.getTenantId(), command.getAppCode(), command.getJobCode());
-            Require.isTrue(exists == null || exists.getId().equals(entity.getId()), "任务编码已存在");
+            Require.isTrue(exists == null || exists.getId().equals(entity.getId()), JobCode.JOB_INVALID, "任务编码已存在");
 
             copyDefinition(command, entity);
             entity.setSyncStatus(MangoJobSupport.syncStatus(JobSyncStatus.PENDING));
             boolean updated = mapper.updateById(entity) > 0;
-            engineSyncService.syncDefinition(entity, "UPDATE");
+            engineSyncService.syncDefinition(MangoJobEngineDefinitionContext.of(entity, "UPDATE"));
             writeOperationLog(entity, null, "UPDATE_DEFINITION", "SUCCESS", command.getJobCode(), null);
             return updated;
         });
@@ -131,16 +136,16 @@ public class MangoJobDefinitionService implements IMangoJobDefinitionService {
 
     @Override
     public Boolean updateDefinitionStatus(UpdateMangoJobDefinitionStatusCommand command) {
+        Require.notNull(command, JobCode.JOB_INVALID, "状态命令不能为空");
+        Require.notNull(command.getId(), JobCode.JOB_INVALID, "任务 ID 不能为空");
         return dataSourceRouter.route(() -> {
-            Require.notNull(command, "状态命令不能为空");
-            Require.notNull(command.getId(), "任务 ID 不能为空");
             JobDefinitionStatus target = MangoJobSupport.definitionStatus(command.getStatus());
             MangoJobDefinitionEntity entity = selectDefinitionRequired(command.getId());
             validateStatusTransition(entity.getStatus(), target);
             entity.setStatus(target.name());
             entity.setSyncStatus(MangoJobSupport.syncStatus(JobSyncStatus.PENDING));
             boolean updated = mapper.updateById(entity) > 0;
-            engineSyncService.syncDefinition(entity, "UPDATE_STATUS");
+            engineSyncService.syncDefinition(MangoJobEngineDefinitionContext.of(entity, "UPDATE_STATUS"));
             writeOperationLog(entity, null, "UPDATE_STATUS", "SUCCESS", target.name(), null);
             return updated;
         });
@@ -148,9 +153,10 @@ public class MangoJobDefinitionService implements IMangoJobDefinitionService {
 
     @Override
     public Boolean deleteDefinition(Long id) {
+        Require.notNull(id, JobCode.JOB_INVALID, "任务 ID 不能为空");
         return dataSourceRouter.route(() -> {
             MangoJobDefinitionEntity entity = selectDefinitionRequired(id);
-            Require.isTrue(JobDefinitionStatus.DRAFT.name().equals(entity.getStatus()), "只有草稿任务可以删除");
+            Require.isTrue(JobDefinitionStatus.DRAFT.name().equals(entity.getStatus()), JobCode.JOB_INVALID, "只有草稿任务可以删除");
             engineSyncService.deleteDefinition(entity);
             boolean deleted = mapper.deleteById(id) > 0;
             writeOperationLog(entity, null, "DELETE_DEFINITION", "SUCCESS", entity.getJobCode(), null);
@@ -160,12 +166,12 @@ public class MangoJobDefinitionService implements IMangoJobDefinitionService {
 
     @Override
     public Long triggerDefinition(TriggerMangoJobCommand command) {
+        Require.notNull(command, JobCode.JOB_INVALID, "触发命令不能为空");
+        Require.notNull(command.getJobId(), JobCode.JOB_INVALID, "任务 ID 不能为空");
         return dataSourceRouter.route(() -> {
-            Require.notNull(command, "触发命令不能为空");
-            Require.notNull(command.getJobId(), "任务 ID 不能为空");
             MangoJobDefinitionEntity definition = selectDefinitionRequired(command.getJobId());
-            Require.isTrue(!JobDefinitionStatus.DRAFT.name().equals(definition.getStatus()), "草稿任务不能触发");
-            Require.isTrue(!JobDefinitionStatus.DISABLED.name().equals(definition.getStatus()), "已禁用任务不能触发");
+            Require.isTrue(!JobDefinitionStatus.DRAFT.name().equals(definition.getStatus()), JobCode.JOB_INVALID, "草稿任务不能触发");
+            Require.isTrue(!JobDefinitionStatus.DISABLED.name().equals(definition.getStatus()), JobCode.JOB_INVALID, "已禁用任务不能触发");
 
             String batchNo = StringUtils.hasText(command.getTriggerBatchNo())
                     ? command.getTriggerBatchNo().trim()
@@ -183,7 +189,8 @@ public class MangoJobDefinitionService implements IMangoJobDefinitionService {
             instance.setTriggerBatchNo(batchNo);
             instanceMapper.insert(instance);
 
-            engineSyncService.trigger(definition, instance, batchNo, command.getParamValue());
+            engineSyncService.trigger(MangoJobEngineTriggerContext.of(
+                    definition, instance, batchNo, command.getParamValue()));
             writeExecutionLogIndex(definition, instance);
             writeOperationLog(definition, instance.getId(), "TRIGGER_DEFINITION", "SUCCESS", batchNo, null);
             return instance.getId();
@@ -192,6 +199,7 @@ public class MangoJobDefinitionService implements IMangoJobDefinitionService {
 
     @Override
     public MangoJobDefinitionEntity saveDefinition(MangoJobDefinitionEntity entity) {
+        Require.notNull(entity, JobCode.JOB_INVALID, "任务定义不能为空");
         return dataSourceRouter.route(() -> {
             mapper.insert(entity);
             return entity;
@@ -224,21 +232,18 @@ public class MangoJobDefinitionService implements IMangoJobDefinitionService {
                 .orderByDesc(MangoJobDefinitionEntity::getUpdatedAt);
     }
 
-    private void validateDefinition(SaveMangoJobDefinitionCommand command, boolean update) {
-        if (update) {
-            Require.notNull(command.getId(), "任务 ID 不能为空");
-        }
+    private void validateDefinition(CreateMangoJobDefinitionCommand command) {
         JobType jobType = MangoJobSupport.jobType(command.getJobType());
         JobScheduleType scheduleType = MangoJobSupport.scheduleType(command.getScheduleType());
         MangoJobSupport.engineType(command.getEngineType());
-        Require.isTrue(jobType == JobType.BUILTIN, "当前版本仅支持内置处理器任务");
-        Require.notBlank(command.getHandlerName(), "处理器名称不能为空");
+        Require.isTrue(jobType == JobType.BUILTIN, JobCode.JOB_INVALID, "当前版本仅支持内置处理器任务");
+        Require.notBlank(command.getHandlerName(), JobCode.JOB_INVALID, "处理器名称不能为空");
         if (scheduleType != JobScheduleType.MANUAL) {
-            Require.notBlank(command.getScheduleExpression(), "调度表达式不能为空");
+            Require.notBlank(command.getScheduleExpression(), JobCode.JOB_INVALID, "调度表达式不能为空");
         }
         validateScheduleExpression(scheduleType, command.getScheduleExpression());
         if (command.getTimeoutSeconds() != null) {
-            Require.isTrue(command.getTimeoutSeconds() > 0, "执行超时必须大于0");
+            Require.isTrue(command.getTimeoutSeconds() > 0, JobCode.JOB_INVALID, "执行超时必须大于0");
         }
     }
 
@@ -247,45 +252,49 @@ public class MangoJobDefinitionService implements IMangoJobDefinitionService {
             return;
         }
         String expression = MangoJobSupport.trimToNull(scheduleExpression);
-        Require.notBlank(expression, "固定频率调度表达式不能为空");
+        Require.notBlank(expression, JobCode.JOB_INVALID, "固定频率调度表达式不能为空");
         try {
             long intervalMillis = Long.parseLong(expression);
-            Require.isTrue(intervalMillis >= MIN_FIXED_RATE_INTERVAL_MILLIS,
+            Require.isTrue(intervalMillis >= MIN_FIXED_RATE_INTERVAL_MILLIS, JobCode.JOB_INVALID,
                     "固定频率调度表达式单位为毫秒，最小值为1000");
-            Require.isTrue(intervalMillis < MAX_FIXED_RATE_INTERVAL_MILLIS,
+            Require.isTrue(intervalMillis < MAX_FIXED_RATE_INTERVAL_MILLIS, JobCode.JOB_INVALID,
                     "固定频率调度表达式单位为毫秒，必须小于120000");
         } catch (NumberFormatException ex) {
-            Require.fail(400, "固定频率调度表达式必须为毫秒数");
+            Require.fail(JobCode.JOB_INVALID, "固定频率调度表达式必须为毫秒数");
         }
     }
 
     private void validateStatusTransition(String currentStatus, JobDefinitionStatus target) {
         JobDefinitionStatus current = MangoJobSupport.definitionStatus(currentStatus);
-        Require.isTrue(current != target, "任务已经是目标状态");
+        Require.isTrue(current != target, JobCode.JOB_INVALID, "任务已经是目标状态");
         if (current == JobDefinitionStatus.DRAFT) {
             Require.isTrue(target == JobDefinitionStatus.ENABLED || target == JobDefinitionStatus.DISABLED,
+                    JobCode.JOB_INVALID,
                     "草稿任务只能启用或禁用");
             return;
         }
         if (current == JobDefinitionStatus.DISABLED) {
             Require.isTrue(target == JobDefinitionStatus.ENABLED || target == JobDefinitionStatus.DRAFT,
+                    JobCode.JOB_INVALID,
                     "禁用任务只能启用或退回草稿");
             return;
         }
         if (current == JobDefinitionStatus.ENABLED) {
             Require.isTrue(target == JobDefinitionStatus.PAUSED || target == JobDefinitionStatus.DISABLED,
+                    JobCode.JOB_INVALID,
                     "启用任务只能暂停或禁用");
             return;
         }
         Require.isTrue(target == JobDefinitionStatus.ENABLED || target == JobDefinitionStatus.DISABLED,
+                JobCode.JOB_INVALID,
                 "暂停任务只能启用或禁用");
     }
 
     private MangoJobDefinitionEntity selectDefinitionRequired(Long id) {
-        Require.notNull(id, "任务 ID 不能为空");
+        Require.notNull(id, JobCode.JOB_INVALID, "任务 ID 不能为空");
         MangoJobDefinitionEntity entity = mapper.selectById(id);
-        Require.notNull(entity, "任务不存在");
-        Require.isTrue(MangoJobSupport.currentTenantId().equals(entity.getTenantId()), "任务不存在");
+        Require.notNull(entity, JobCode.JOB_INVALID, "任务不存在");
+        Require.isTrue(MangoJobSupport.currentTenantId().equals(entity.getTenantId()), JobCode.JOB_INVALID, "任务不存在");
         return entity;
     }
 
@@ -296,7 +305,7 @@ public class MangoJobDefinitionService implements IMangoJobDefinitionService {
                 .eq(MangoJobDefinitionEntity::getJobCode, jobCode.trim()));
     }
 
-    private void copyDefinition(SaveMangoJobDefinitionCommand command, MangoJobDefinitionEntity entity) {
+    private void copyDefinition(CreateMangoJobDefinitionCommand command, MangoJobDefinitionEntity entity) {
         String appCode = MangoJobSupport.normalizeRequired(command.getAppCode(), "所属应用不能为空");
         String ownerService = MangoJobSupport.trimToNull(command.getOwnerService());
         if (ownerService == null) {

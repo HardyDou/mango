@@ -43,6 +43,7 @@
 | 原生 HTTP 适配器 | 页面 `ModelAndView` 或文件流被强迫返回 JSON `R<T>` | 规则未区分 JSON API 和原生传输 | 仅允许受限 `ModelAndView`/`ResponseEntity<Resource>`；其余 Controller 规则继续生效；`ResponseEntity<String>` 不得绕过 API 契约 |
 | 权限注解与资源脱节 | Controller 声明了 permission，新库角色却永远没有该权限，实际请求 403 | Mock 关闭授权，老库存在手工绑定 | 对照正式菜单/API 资源 `apiCodes`；demo 关闭新库同步；真实角色成功/拒绝 API 与菜单验收 |
 | 微服务假 E2E | 单进程 HTTP 测试 Mock 了内部 API/Provider，未发现 Feign 服务路由丢失 base path | 把“走了 HTTP”等同于跨进程 | 此类测试命名为 `*FlowTest`；最终 E2E 启动真实生产者/消费者 JVM，经服务发现验证请求、二进制流和副作用 |
+| 手工装配掩盖发布物缺 Bean | 测试显式 `@Import` Controller/Executor 后通过，但生产 starter 根本没有导出可执行端点 | 测试上下文比真实自动配置多装了生产不存在的 Bean | Flow 测试不得手工补齐被测 starter 应负责的 Bean；starter 独立上下文验证自动配置，并用两个独立 JVM 证明真实反向调用 |
 | 部分 Reactor 丢失模块路径事实 | sync-starter 的 Controller 路径正确，但定向架构命令没有纳入同域本地 starter，无法读取唯一合法 module-path | 为局部扫描补第二份 `module.properties`，破坏模块信息唯一归属 | 只有本地 starter 声明 `module.properties`；Controller 显式根路径并做接口测试；定向架构 Reactor 必须同时纳入同域本地 starter |
 | 纯 JVM 共享类型误入 API | request attribute key、codec 或本地协作值因跨模块使用被放进 API | 混淆 HTTP 契约和进程内复用 | 无 HTTP/Feign、无数据库的类型放 support；消费者声明直接依赖并执行编译/行为回归 |
 | 任意 JSON 使用裸 Map | 为支持动态变量在 API/Core 多层传递 `Map<String, Object>`，产生 unchecked cast 和模糊边界 | 把 wire format 的灵活性等同于 Java 类型无约束 | 使用具名 JSON 值对象，序列化仍保持普通 object；覆盖嵌套对象、数组和反序列化兼容测试 |
@@ -207,6 +208,7 @@ Mock 只用于隔离被测目标之外的协作者，不能替换本次要证明
 8. demo 关闭与开启必须使用独立、可追溯的启动配置：前者证明生产初始化边界，后者证明演示角色和菜单可验收，不能用一套结果替代另一套。
 9. 多 JVM 验收逐进程核对实际 JDBC URL；必要时显式设置 `SPRING_DATASOURCE_URL/USERNAME/PASSWORD`，不能假设单体环境别名会被能力应用继承。
 10. 无注册中心直连 Feign 时，按实际客户端 `contextId` 配置绝对 URL，同时保留服务 base path 和 Mango 内部租户上下文传播；只让端口可达不算链路通过。
+11. 能力应用必须显式选择真实环境所需的 KV/缓存实现；关闭通用 discovery 开关后，还要核对供应商 discovery/config/health 自动配置是否真的全部关闭，不能把启动失败误判为业务模块回归。
 
 ### 6.2 最终 JAR
 
@@ -285,6 +287,7 @@ E2E 优先使用 `data-page`、`data-surface`、`data-action`、`data-field`、`
 - 源码已修复，但运行时仍从 `~/.m2` 加载旧 JAR，没有用 `clean install` + SHA/JAR 清单确认实际 classpath。
 - Controller 单元测试绕过授权，没有检查 permission 是否真实出现在新库角色权限集。
 - 单进程 Flow 测试 Mock 了内部远程调用，却宣称微服务 E2E 通过。
+- 测试手工 `@Import` 了生产 starter 未装配的 Controller/Executor，导致发布物缺 Bean 仍然假绿。
 - 绕过网关直连能力服务时只传浏览器租户头，随后用默认租户或关闭租户拦截器掩盖上下文传播缺失。
 - 动态 JSON 仍以裸 Map 和 unchecked cast 贯穿 API/Core，却只用一个标量样例声称兼容。
 - 发布成功后没有从目标 Maven/npm 仓库重新拉取验证。
@@ -325,6 +328,7 @@ E2E 优先使用 `data-page`、`data-surface`、`data-action`、`data-field`、`
 - [ ] 分布式能力已区分请求成功与业务完成；锁竞争、依赖未就绪和节点失效不会静默丢数据。
 - [ ] 多节点 E2E 已核对服务发现实例、稳定数据量、重复数、处理日志及单节点失效后的继续处理。
 - [ ] 跨服务业务链已用真实的生产者/消费者 JVM 验证，未用 Mock API/Provider 替代需要证明的边界。
+- [ ] starter 独立装配测试没有手工补齐其生产自动配置缺失的 Bean，真实发布物能自行暴露并调用所需端点。
 - [ ] 没有独立产品页面的后端能力已明确标记 UI/E2E 不适用，没有把通用 API 用例描述成页面验收。
 - [ ] 如果发布，已从目标仓库回查版本并重新下载验证。
 

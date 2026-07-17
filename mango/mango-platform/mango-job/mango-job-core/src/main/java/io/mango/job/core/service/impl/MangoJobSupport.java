@@ -1,6 +1,7 @@
 package io.mango.job.core.service.impl;
 
 import io.mango.common.result.Require;
+import io.mango.job.api.enums.JobCode;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.job.api.enums.JobDefinitionStatus;
 import io.mango.job.api.enums.JobEngineType;
@@ -34,7 +35,7 @@ final class MangoJobSupport {
 
     static String currentTenantId() {
         String tenantId = MangoContextHolder.tenantId();
-        Require.notBlank(tenantId, "缺少当前租户上下文");
+        Require.notBlank(tenantId, JobCode.JOB_INVALID, "缺少当前租户上下文");
         return tenantId;
     }
 
@@ -58,7 +59,7 @@ final class MangoJobSupport {
     }
 
     static String normalizeRequired(String value, String message) {
-        Require.notBlank(value, message);
+        Require.notBlank(value, JobCode.JOB_INVALID, message);
         return value.trim();
     }
 
@@ -95,11 +96,11 @@ final class MangoJobSupport {
     }
 
     private static <E extends Enum<E>> E enumValue(Class<E> enumType, String value, String message) {
-        Require.notBlank(value, message);
+        Require.notBlank(value, JobCode.JOB_INVALID, message);
         try {
             return Enum.valueOf(enumType, value.trim());
         } catch (IllegalArgumentException ex) {
-            return Require.fail(400, message + "，可选值：" + Arrays.toString(enumType.getEnumConstants()));
+            return Require.fail(JobCode.JOB_INVALID, message + "，可选值：" + Arrays.toString(enumType.getEnumConstants()));
         }
     }
 

@@ -43,7 +43,7 @@
         </dependency>
         <dependency>
             <groupId>io.mango.platform.job</groupId>
-            <artifactId>mango-job-api</artifactId>
+            <artifactId>mango-job-support</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

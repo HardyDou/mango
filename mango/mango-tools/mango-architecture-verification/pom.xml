@@ -54,6 +54,7 @@
                     <allowedReverseControllers>
                         <allowedReverseController>io.mango.infra.realtime.starter.remote.RealtimeInboundRemoteController</allowedReverseController>
                         <allowedReverseController>io.mango.resource.starter.remote.ResourceTargetController</allowedReverseController>
+                        <allowedReverseController>io.mango.job.starter.remote.MangoJobWorkerInternalController</allowedReverseController>
                     </allowedReverseControllers>
                 </configuration>
                 <executions>
