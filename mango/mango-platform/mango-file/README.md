@@ -511,21 +511,48 @@ mango:
 
 ### 7.1 多前端文件访问
 
-三套独立前端共用一个后端时，推荐使用 `PROXY` 模式，并让每个前端都通过自身同源的 `/api/` 反向代理访问后端。可直接参考：
+本节说明以下部署方案中的文件访问问题和解决办法，不作为其它网络拓扑的部署要求：8081、8082、8083 是三个独立访问的前端应用，共用一个后端；每个前端通过自身同源的 `/api/` 反向代理访问后端，Nginx 转发时去掉 `/api`。
+
+在这套方案下，前端直接使用文件接口返回的 `previewUrl` 和 `downloadUrl`，不自行拼接或删除 `/api`。
+
+#### 问题一：返回地址缺少 `/api`
+
+如果后端返回如下地址，浏览器会把请求发送到前端静态服务，无法经过 `/api` 代理访问文件接口：
 
 ```text
-mango-ui/deploy/nginx/mango-independent-apps.conf
+http://192.168.5.114/file/files/preview-content?id=2078005986303193089
 ```
 
-Nginx 的 `proxy_pass` 末尾保留 `/`，用于把浏览器请求中的 `/api/` 去掉后再转发；同时需要覆盖传递 `Host`、`X-Forwarded-Host`、`X-Forwarded-Port`、`X-Forwarded-Proto` 和 `X-Forwarded-Prefix: /api`。后端据此为 8081、8082、8083 分别返回当前应用同源的地址，例如：
+这通常是因为后端没有收到浏览器实际访问的 Host、Port 和代理前缀。该部署方案的处理方式是：
+
+- `mango.file.public-base-url` 保持为空，避免把文件地址固定到某一个前端。
+- 租户运行时文件配置使用 `accessMode=PROXY`。
+- Nginx 转发当前请求的 `Host`、`X-Forwarded-Host`、`X-Forwarded-Port`、`X-Forwarded-Proto`，并设置 `X-Forwarded-Prefix: /api`。
+- `/api/` 对应的 `proxy_pass` 末尾保留 `/`，使 Nginx 去掉 `/api/` 后再转发后端。
+
+后端据此返回当前应用同源且包含 `/api` 的地址，例如从 8082 访问时返回：
 
 ```text
 http://192.168.5.114:8082/api/file/files/preview-content?id=2078005986303193089
 ```
 
-多前端场景不要把 `mango.file.public-base-url` 固定成某一个前端地址，应保持为空。已经保存到 `file_settings` 的租户运行时配置优先于 YAML；升级后如需使用同源代理，应在“文件配置”中把 `accessMode` 设置为 `PROXY`。
+完整 Nginx 配置可参考：
 
-`DIRECT` 模式用于浏览器直接访问 MinIO/S3。此时必须给存储配置一个浏览器可达且稳定的 `publicEndpoint`，预签名 URL 的 host、port、path 和 query 必须原样使用，不能再添加 `/api` 或改写到另一个前端端口。MinIO bucket CORS 至少允许三个前端 origin 的 `GET`、`HEAD`；启用浏览器直传时还需允许 `PUT` 及实际上传流程使用的方法。示例策略：
+```text
+mango-ui/deploy/nginx/mango-independent-apps.conf
+```
+
+#### 问题二：文件地址指向另一个前端端口
+
+如果把 `mango.file.public-base-url` 固定为某个前端地址，或者 Nginx 没有转发当前 Host 和 Port，8081 应用可能拿到 8082 的文件地址，从而触发浏览器跨域。
+
+解决办法与问题一相同：保持 `public-base-url` 为空并转发当前请求信息，让后端根据每次请求动态生成同源地址。8081、8082、8083 分别使用自身端口下的 `/api/file/**`，不需要在三个前端之间互相访问。
+
+#### MinIO DIRECT 地址和跨域
+
+如果该部署使用 `DIRECT` 模式，后端返回的是 MinIO/S3 预签名 URL。URL 的 host、port、path 和 query 参与签名，添加 `/api` 或改写成某个前端端口会导致签名失效。
+
+处理方式是为存储配置填写浏览器可达且稳定的 `publicEndpoint`，前端原样使用返回的签名 URL，并为实际访问文件的前端 Origin 配置 MinIO bucket CORS。预览和下载通常需要允许 `GET`、`HEAD`；启用浏览器直传时还需允许 `PUT` 及实际上传流程使用的方法。示例策略：
 
 ```json
 {
@@ -545,7 +572,9 @@ http://192.168.5.114:8082/api/file/files/preview-content?id=2078005986303193089
 }
 ```
 
-只使用 PROXY 模式时，浏览器不直连 MinIO，不需要为文件预览和下载配置 MinIO CORS。
+如果该部署使用 `PROXY` 模式，浏览器只访问自身同源 `/api`，不直连 MinIO，因此文件预览和下载不需要配置 MinIO CORS。
+
+已经保存到 `file_settings` 的租户运行时配置优先于 YAML。`FILE_SETTINGS` 使用 `INIT_ONLY`，升级不会覆盖已有租户的 PROXY/DIRECT 选择。
 
 ## 8. 资源注入
 
