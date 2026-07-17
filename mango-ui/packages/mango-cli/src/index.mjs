@@ -2023,18 +2023,16 @@ function requireCommand(command, appName) {
 }
 
 function runForegroundCommand(cwd, command, args, env, logPath) {
-  const result = spawnSync(command, args, {
-    cwd,
-    env: { ...process.env, ...env },
-    encoding: 'utf8',
-  });
-  if (result.stdout) {
-    appendFileSync(logPath, result.stdout);
+  const logFd = openSync(logPath, 'a');
+  try {
+    return spawnSync(command, args, {
+      cwd,
+      env: { ...process.env, ...env },
+      stdio: ['ignore', logFd, logFd],
+    });
+  } finally {
+    closeSync(logFd);
   }
-  if (result.stderr) {
-    appendFileSync(logPath, result.stderr);
-  }
-  return result;
 }
 
 async function waitForDevApp(context, name, app) {

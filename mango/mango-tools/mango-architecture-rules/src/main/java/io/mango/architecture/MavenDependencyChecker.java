@@ -13,6 +13,7 @@ public final class MavenDependencyChecker {
     private static final String FEIGN_INFRA = "mango-infra-feign-starter";
     private static final String OPENFEIGN_STARTER = "spring-cloud-starter-openfeign";
     private static final String SECURITY_REMOTE = "mango-security-starter-remote";
+    private static final String ADMIN_STARTER = "mango-admin-starter";
     private static final String MANGO_COMMON = "mango-common";
     private static final Set<ModuleRole> IMPLEMENTATION_ROLES =
             Set.of(ModuleRole.CORE, ModuleRole.STARTER, ModuleRole.STARTER_REMOTE);
@@ -147,8 +148,14 @@ public final class MavenDependencyChecker {
     }
 
     private void checkStarterDependency(DependencyContext context, List<ArchitectureIssue> issues) {
-        if (context.sourceRole() != ModuleRole.STARTER
-                || belongsToSameDomain(context)) {
+        if (context.sourceRole() != ModuleRole.STARTER) {
+            return;
+        }
+        if (ADMIN_STARTER.equals(context.sourceArtifactId())) {
+            checkAdminAggregateDependency(context, issues);
+            return;
+        }
+        if (belongsToSameDomain(context)) {
             return;
         }
         if (!isForbiddenStarterTarget(context)) {
@@ -161,6 +168,19 @@ public final class MavenDependencyChecker {
                         context.targetArtifactId(),
                         "starter may only depend on its domain api/core and explicit infra"
                                 + " starters"));
+    }
+
+    private void checkAdminAggregateDependency(
+            DependencyContext context, List<ArchitectureIssue> issues) {
+        if (context.targetRole() == ModuleRole.STARTER) {
+            return;
+        }
+        issues.add(
+                issue(
+                        "MANGO-ARCH-DEP-007",
+                        context.sourceArtifactId(),
+                        context.targetArtifactId(),
+                        "admin aggregate may only depend on local runtime starters"));
     }
 
     private boolean belongsToSameDomain(DependencyContext context) {
@@ -245,10 +265,15 @@ public final class MavenDependencyChecker {
 
     private boolean isForbiddenResourceRuntimeDependency(
             String sourceArtifactId, Dependency dependency) {
-        return RESOURCE_GROUP.equals(dependency.getGroupId())
-                && RESOURCE_RUNTIME.contains(dependency.getArtifactId())
-                && !sourceArtifactId.startsWith("mango-resource-")
-                && !sourceArtifactId.endsWith("-app");
+        if (!RESOURCE_GROUP.equals(dependency.getGroupId())
+                || !RESOURCE_RUNTIME.contains(dependency.getArtifactId())) {
+            return false;
+        }
+        if (ADMIN_STARTER.equals(sourceArtifactId)
+                || sourceArtifactId.startsWith("mango-resource-")) {
+            return false;
+        }
+        return !sourceArtifactId.endsWith("-app");
     }
 
     private boolean isMango(Dependency dependency) {
