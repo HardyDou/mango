@@ -11,11 +11,13 @@ import io.mango.common.result.Require;
 import io.mango.common.vo.PageResult;
 import io.mango.home.api.command.BatchDeleteHomePagesCommand;
 import io.mango.home.api.command.CreateHomePageCommand;
+import io.mango.home.api.command.HomePageIdCommand;
 import io.mango.home.api.command.RenameHomePageCommand;
 import io.mango.home.api.command.SaveHomePageLayoutCommand;
 import io.mango.home.api.command.SetDefaultHomePageCommand;
 import io.mango.home.api.command.SortHomePagesCommand;
 import io.mango.home.api.enums.HomePageSourceType;
+import io.mango.home.api.enums.HomeCode;
 import io.mango.home.api.enums.HomeTemplateAuthorizationSubjectType;
 import io.mango.home.api.enums.HomeTemplateVersionStatus;
 import io.mango.home.api.query.ResolveHomePageQuery;
@@ -26,15 +28,14 @@ import io.mango.home.core.entity.HomeTemplateEntity;
 import io.mango.home.core.entity.HomeTemplateVersionEntity;
 import io.mango.home.core.entity.UserHomePageEntity;
 import io.mango.home.core.entity.UserHomePreferenceEntity;
-import io.mango.home.core.integration.HomeOrgGateway;
 import io.mango.home.core.mapper.HomeTemplateAuthorizationMapper;
 import io.mango.home.core.mapper.HomeTemplateMapper;
 import io.mango.home.core.mapper.HomeTemplateVersionMapper;
 import io.mango.home.core.mapper.UserHomePageMapper;
 import io.mango.home.core.mapper.UserHomePreferenceMapper;
+import io.mango.home.core.service.IHomeOrgProvider;
 import io.mango.home.core.service.IHomePageService;
 import io.mango.infra.context.api.MangoContextHolder;
-import io.mango.org.api.vo.SysOrgVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
@@ -68,7 +69,7 @@ public class HomePageService implements IHomePageService {
     private final HomeTemplateAuthorizationMapper templateAuthorizationMapper;
     private final ObjectMapper objectMapper;
     private final ObjectProvider<IAuthorizationProvider> authorizationProvider;
-    private final HomeOrgGateway homeOrgGateway;
+    private final IHomeOrgProvider homeOrgProvider;
 
     @Override
     public List<HomePageVO> listMyPages() {
@@ -100,7 +101,7 @@ public class HomePageService implements IHomePageService {
                     .filter(page -> routeKey.equals(page.getRouteKey()) || routeKey.equals(String.valueOf(page.getId())))
                     .findFirst()
                     .orElse(null);
-            Require.notNull(specified, "首页不存在或无权访问");
+            Require.notNull(specified, HomeCode.HOME_NOT_FOUND, "首页不存在或无权访问");
             return specified;
         }
         HomePageVO resolved = resolveDefaultPage(pages, preference);
@@ -120,8 +121,8 @@ public class HomePageService implements IHomePageService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public HomePageVO create(CreateHomePageCommand command) {
-        Require.notNull(command, "创建命令不能为空");
-        Require.notBlank(command.getName(), "首页名称不能为空");
+        Require.notNull(command, HomeCode.HOME_BUSINESS_ERROR, "创建命令不能为空");
+        Require.notBlank(command.getName(), HomeCode.HOME_BUSINESS_ERROR, "首页名称不能为空");
         String layoutJson = HomeLayoutSupport.normalize(objectMapper, command.getLayoutJson());
         int nextSort = nextSort();
         UserHomePageEntity entity = new UserHomePageEntity();
@@ -142,10 +143,10 @@ public class HomePageService implements IHomePageService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public HomePageVO rename(Long id, RenameHomePageCommand command) {
-        Require.notNull(command, "重命名命令不能为空");
-        Require.notBlank(command.getName(), "首页名称不能为空");
-        UserHomePageEntity entity = requiredOwnedEnabled(id);
+    public HomePageVO rename(RenameHomePageCommand command) {
+        Require.notNull(command, HomeCode.HOME_BUSINESS_ERROR, "重命名命令不能为空");
+        Require.notBlank(command.getName(), HomeCode.HOME_BUSINESS_ERROR, "首页名称不能为空");
+        UserHomePageEntity entity = requiredOwnedEnabled(command.getId());
         entity.setName(command.getName().trim());
         entity.setUpdatedBy(MangoContextHolder.userId());
         homePageMapper.updateById(entity);
@@ -154,8 +155,9 @@ public class HomePageService implements IHomePageService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public HomePageVO duplicate(Long id) {
-        UserHomePageEntity source = requiredOwnedEnabled(id);
+    public HomePageVO duplicate(HomePageIdCommand command) {
+        Require.notNull(command, HomeCode.HOME_BUSINESS_ERROR, "复制首页命令不能为空");
+        UserHomePageEntity source = requiredOwnedEnabled(command.getId());
         UserHomePageEntity entity = new UserHomePageEntity();
         entity.setTenantId(HomeContextSupport.currentTenantId());
         entity.setOrgId(HomeContextSupport.currentOrgId());
@@ -170,11 +172,11 @@ public class HomePageService implements IHomePageService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public HomePageVO saveLayout(Long id, SaveHomePageLayoutCommand command) {
-        Require.notNull(command, "布局保存命令不能为空");
-        Require.notBlank(command.getLayoutJson(), "layoutJson不能为空");
+    public HomePageVO saveLayout(SaveHomePageLayoutCommand command) {
+        Require.notNull(command, HomeCode.HOME_BUSINESS_ERROR, "布局保存命令不能为空");
+        Require.notBlank(command.getLayoutJson(), HomeCode.HOME_BUSINESS_ERROR, "layoutJson不能为空");
         HomeLayoutSupport.validate(objectMapper, command.getLayoutJson());
-        UserHomePageEntity entity = requiredOwnedEnabled(id);
+        UserHomePageEntity entity = requiredOwnedEnabled(command.getId());
         entity.setLayoutJson(command.getLayoutJson());
         entity.setUpdatedBy(MangoContextHolder.userId());
         homePageMapper.updateById(entity);
@@ -184,8 +186,8 @@ public class HomePageService implements IHomePageService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public List<HomePageVO> sort(SortHomePagesCommand command) {
-        Require.notNull(command, "排序命令不能为空");
-        Require.notEmpty(command.getIds(), "首页排序不能为空");
+        Require.notNull(command, HomeCode.HOME_BUSINESS_ERROR, "排序命令不能为空");
+        Require.notEmpty(command.getIds(), HomeCode.HOME_BUSINESS_ERROR, "首页排序不能为空");
         List<UserHomePageEntity> pages = listEnabledEntities();
         Set<Long> ownedIds = new LinkedHashSet<>();
         for (UserHomePageEntity page : pages) {
@@ -193,7 +195,7 @@ public class HomePageService implements IHomePageService {
         }
         int sort = DEFAULT_SORT_STEP;
         for (Long id : command.getIds()) {
-            Require.isTrue(ownedIds.contains(id), "首页排序包含无权访问的数据");
+            Require.isTrue(ownedIds.contains(id), HomeCode.HOME_BUSINESS_ERROR, "首页排序包含无权访问的数据");
             UserHomePageEntity entity = requiredOwnedEnabled(id);
             entity.setSort(sort);
             entity.setUpdatedBy(MangoContextHolder.userId());
@@ -206,14 +208,14 @@ public class HomePageService implements IHomePageService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public HomePageVO setDefault(SetDefaultHomePageCommand command) {
-        Require.notNull(command, "默认首页命令不能为空");
-        Require.notBlank(command.getHomeId(), "首页标识不能为空");
+        Require.notNull(command, HomeCode.HOME_BUSINESS_ERROR, "默认首页命令不能为空");
+        Require.notBlank(command.getHomeId(), HomeCode.HOME_BUSINESS_ERROR, "首页标识不能为空");
         List<HomePageVO> pages = visiblePages(currentPreference());
         HomePageVO page = pages.stream()
                 .filter(item -> command.getHomeId().equals(item.getRouteKey()))
                 .findFirst()
                 .orElse(null);
-        Require.notNull(page, "首页不存在或无权访问");
+        Require.notNull(page, HomeCode.HOME_NOT_FOUND, "首页不存在或无权访问");
         Long personalId = HomeRouteKeys.parseUserPageId(page.getRouteKey());
         saveDefaultHomeRef(page.getRouteKey(), personalId);
         page.setDefaultPage(true);
@@ -222,7 +224,9 @@ public class HomePageService implements IHomePageService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public HomePageVO delete(Long id) {
+    public HomePageVO delete(HomePageIdCommand command) {
+        Require.notNull(command, HomeCode.HOME_BUSINESS_ERROR, "删除首页命令不能为空");
+        Long id = command.getId();
         UserHomePageEntity entity = requiredOwnedEnabled(id);
         entity.setEnabled(false);
         entity.setUpdatedBy(MangoContextHolder.userId());
@@ -243,10 +247,10 @@ public class HomePageService implements IHomePageService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public HomePageVO adminRename(Long id, RenameHomePageCommand command) {
-        Require.notNull(command, "重命名命令不能为空");
-        Require.notBlank(command.getName(), "首页名称不能为空");
-        UserHomePageEntity entity = requiredTenantEnabled(id);
+    public HomePageVO adminRename(RenameHomePageCommand command) {
+        Require.notNull(command, HomeCode.HOME_BUSINESS_ERROR, "重命名命令不能为空");
+        Require.notBlank(command.getName(), HomeCode.HOME_BUSINESS_ERROR, "首页名称不能为空");
+        UserHomePageEntity entity = requiredTenantEnabled(command.getId());
         entity.setName(command.getName().trim());
         entity.setUpdatedBy(MangoContextHolder.userId());
         homePageMapper.updateById(entity);
@@ -255,11 +259,11 @@ public class HomePageService implements IHomePageService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public HomePageVO adminSaveLayout(Long id, SaveHomePageLayoutCommand command) {
-        Require.notNull(command, "布局保存命令不能为空");
-        Require.notBlank(command.getLayoutJson(), "layoutJson不能为空");
+    public HomePageVO adminSaveLayout(SaveHomePageLayoutCommand command) {
+        Require.notNull(command, HomeCode.HOME_BUSINESS_ERROR, "布局保存命令不能为空");
+        Require.notBlank(command.getLayoutJson(), HomeCode.HOME_BUSINESS_ERROR, "layoutJson不能为空");
         HomeLayoutSupport.validate(objectMapper, command.getLayoutJson());
-        UserHomePageEntity entity = requiredTenantEnabled(id);
+        UserHomePageEntity entity = requiredTenantEnabled(command.getId());
         entity.setLayoutJson(command.getLayoutJson());
         entity.setUpdatedBy(MangoContextHolder.userId());
         homePageMapper.updateById(entity);
@@ -268,15 +272,16 @@ public class HomePageService implements IHomePageService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void adminDelete(Long id) {
-        deleteAdminPage(requiredTenantPage(id));
+    public void adminDelete(HomePageIdCommand command) {
+        Require.notNull(command, HomeCode.HOME_BUSINESS_ERROR, "后台删除首页命令不能为空");
+        deleteAdminPage(requiredTenantPage(command.getId()));
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void adminBatchDelete(BatchDeleteHomePagesCommand command) {
-        Require.notNull(command, "批量删除命令不能为空");
-        Require.notEmpty(command.getIds(), "首页ID不能为空");
+        Require.notNull(command, HomeCode.HOME_BUSINESS_ERROR, "批量删除命令不能为空");
+        Require.notEmpty(command.getIds(), HomeCode.HOME_BUSINESS_ERROR, "首页ID不能为空");
         for (Long id : new LinkedHashSet<>(command.getIds())) {
             deleteAdminPage(requiredTenantPage(id));
         }
@@ -401,12 +406,12 @@ public class HomePageService implements IHomePageService {
         orgIds.add(currentOrgId);
         Long cursor = currentOrgId;
         while (cursor != null && cursor > 0) {
-            SysOrgVO org = homeOrgGateway.findById(cursor);
-            if (org == null || org.getPid() == null || org.getPid() <= 0 || orgIds.contains(org.getPid())) {
+            Long parentId = homeOrgProvider.findParentId(cursor);
+            if (parentId == null || parentId <= 0 || orgIds.contains(parentId)) {
                 break;
             }
-            orgIds.add(org.getPid());
-            cursor = org.getPid();
+            orgIds.add(parentId);
+            cursor = parentId;
         }
         return orgIds;
     }
@@ -511,26 +516,26 @@ public class HomePageService implements IHomePageService {
     }
 
     private UserHomePageEntity requiredOwnedEnabled(Long id) {
-        Require.notNull(id, "首页ID不能为空");
+        Require.notNull(id, HomeCode.HOME_BUSINESS_ERROR, "首页ID不能为空");
         UserHomePageEntity entity = selectOwnedEnabled(id);
-        Require.notNull(entity, "首页不存在或无权访问");
+        Require.notNull(entity, HomeCode.HOME_NOT_FOUND, "首页不存在或无权访问");
         return entity;
     }
 
     private UserHomePageEntity requiredTenantEnabled(Long id) {
-        Require.notNull(id, "首页ID不能为空");
+        Require.notNull(id, HomeCode.HOME_BUSINESS_ERROR, "首页ID不能为空");
         UserHomePageEntity entity = homePageMapper.selectOne(tenantWrapper()
                 .eq(UserHomePageEntity::getId, id)
                 .eq(UserHomePageEntity::getEnabled, true));
-        Require.notNull(entity, "首页不存在或无权访问");
+        Require.notNull(entity, HomeCode.HOME_NOT_FOUND, "首页不存在或无权访问");
         return entity;
     }
 
     private UserHomePageEntity requiredTenantPage(Long id) {
-        Require.notNull(id, "首页ID不能为空");
+        Require.notNull(id, HomeCode.HOME_BUSINESS_ERROR, "首页ID不能为空");
         UserHomePageEntity entity = homePageMapper.selectOne(tenantWrapper()
                 .eq(UserHomePageEntity::getId, id));
-        Require.notNull(entity, "首页不存在或无权访问");
+        Require.notNull(entity, HomeCode.HOME_NOT_FOUND, "首页不存在或无权访问");
         return entity;
     }
 
@@ -586,10 +591,11 @@ public class HomePageService implements IHomePageService {
     private LambdaQueryWrapper<UserHomePageEntity> userHomePageWrapper(UserHomePageQuery query) {
         String keyword = trimToNull(query.getKeyword());
         String routeKeyword = routeKeyword(keyword);
+        Boolean enabled = booleanFilter(query.getEnabled());
         LambdaQueryWrapper<UserHomePageEntity> wrapper = new LambdaQueryWrapper<UserHomePageEntity>()
                 .eq(UserHomePageEntity::getTenantId, HomeContextSupport.currentTenantId())
                 .eq(query.getUserId() != null, UserHomePageEntity::getUserId, query.getUserId())
-                .eq(query.getEnabled() != null, UserHomePageEntity::getEnabled, query.getEnabled());
+                .eq(enabled != null, UserHomePageEntity::getEnabled, enabled);
         wrapper.and(StringUtils.hasText(keyword), nested -> nested
                 .like(UserHomePageEntity::getName, keyword)
                 .or(StringUtils.hasText(routeKeyword))
@@ -608,6 +614,13 @@ public class HomePageService implements IHomePageService {
             return keyword.substring(USER_ROUTE_PREFIX.length());
         }
         return keyword;
+    }
+
+    private Boolean booleanFilter(String value) {
+        if (!StringUtils.hasText(value)) {
+            return null;
+        }
+        return Boolean.valueOf(value);
     }
 
     private UserHomePreferenceEntity currentPreference() {

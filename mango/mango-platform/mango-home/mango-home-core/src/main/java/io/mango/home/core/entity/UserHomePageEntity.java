@@ -1,24 +1,14 @@
 package io.mango.home.core.entity;
 
-import com.baomidou.mybatisplus.annotation.FieldFill;
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
-import lombok.Data;
+import io.mango.infra.persistence.api.entity.TenantEntity;
+import lombok.Getter;
+import lombok.Setter;
 
-import java.time.LocalDateTime;
-
-@Data
+@Getter
+@Setter
 @TableName("sys_user_home_page")
-public class UserHomePageEntity {
-
-    @TableId(type = IdType.ASSIGN_ID)
-    private Long id;
-
-    private String tenantId;
-
-    private Long orgId;
+public class UserHomePageEntity extends TenantEntity {
 
     private Long userId;
 
@@ -30,15 +20,4 @@ public class UserHomePageEntity {
 
     private Boolean enabled;
 
-    @TableField(fill = FieldFill.INSERT)
-    private Long createdBy;
-
-    @TableField(fill = FieldFill.INSERT)
-    private LocalDateTime createdAt;
-
-    @TableField(fill = FieldFill.INSERT_UPDATE)
-    private Long updatedBy;
-
-    @TableField(fill = FieldFill.INSERT_UPDATE)
-    private LocalDateTime updatedAt;
 }

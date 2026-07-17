@@ -1,36 +1,30 @@
-package io.mango.home.core.integration;
+package io.mango.home.starter.adapter;
 
 import io.mango.common.result.R;
+import io.mango.home.core.service.IHomeOrgProvider;
 import io.mango.org.api.SysOrgApi;
 import io.mango.org.api.vo.SysOrgVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Component;
 
-/**
- * 隔离首页领域与组织 API 的远程结果信封。
- */
+/** 将组织 API 适配为首页领域所需的纯组织层级能力。 */
 @Component
 @RequiredArgsConstructor
-public class HomeOrgGateway {
+public class HomeOrgProviderAdapter implements IHomeOrgProvider {
 
     private final ObjectProvider<SysOrgApi> sysOrgApiProvider;
 
-    /**
-     * 查询组织；未装配组织能力或接口无数据时返回 {@code null}。
-     *
-     * @param orgId 组织 ID
-     * @return 组织信息
-     */
-    public SysOrgVO findById(Long orgId) {
+    @Override
+    public Long findParentId(Long orgId) {
         SysOrgApi sysOrgApi = sysOrgApiProvider.getIfAvailable();
         if (sysOrgApi == null) {
             return null;
         }
         R<SysOrgVO> response = sysOrgApi.getById(orgId);
-        if (response == null) {
+        if (response == null || response.getData() == null) {
             return null;
         }
-        return response.getData();
+        return response.getData().getPid();
     }
 }
