@@ -83,6 +83,10 @@ mvn -f mango/pom.xml mango:gen-permission
 - `core` 可以依赖其它模块 `api` 或 `support`，禁止依赖其它模块 `core`、`starter` 或 `starter-*`。
 - `starter-remote` 在 `io.mango` 依赖中只允许本模块 `api`、本模块 `support` 和 `mango-infra-feign-starter`，禁止直接依赖 `spring-cloud-starter-openfeign`。
 
+反向内部 Controller（例如独立 Worker 接收平台派发）必须在所属聚合模块显式登记精确类名和
+反向路径，并同步到 `mango-architecture-verification` 的完整 Reactor 验证配置。该登记只建模
+已审计的反向适配器，不会关闭 Controller/API、参数绑定、返回包装或内部调用安全规则。
+
 Resource Registry 依赖边界作为 #186 的专项守护继续保留：非 `mango-resource` 模块默认只能依赖 `mango-resource-api`，不能直接依赖 `mango-resource-core`、`mango-resource-support`、`mango-resource-starter`、`mango-resource-sync-starter` 或 `mango-resource-starter-remote`。确需例外时，必须在命令行显式传入 `artifactId=reason`；缺少 reason 的例外不会生效。
 
 PR 架构检查推荐命令：
