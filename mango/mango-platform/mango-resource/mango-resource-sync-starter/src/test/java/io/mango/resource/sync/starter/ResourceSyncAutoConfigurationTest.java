@@ -16,7 +16,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.Properties;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -46,16 +45,6 @@ class ResourceSyncAutoConfigurationTest {
         assertPostPath("upsertBatch", "/upsert-batch");
         assertPostPath("disable", "/disable");
         assertPostPath("delete", "/delete");
-    }
-
-    @Test
-    void moduleMetadata_matchesTargetControllerRoot() throws Exception {
-        Properties properties = new Properties();
-        properties.load(ResourceSyncAutoConfigurationTest.class.getResourceAsStream(
-                "/META-INF/mango/module.properties"));
-
-        assertThat(properties.getProperty("module-name")).isEqualTo("mango-resource");
-        assertThat(properties.getProperty("module-path")).isEqualTo("/resource");
     }
 
     @Test

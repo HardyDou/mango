@@ -4,7 +4,7 @@
 
 - 基准 commit：`8de88b890ee7ae2038987fedfb0c67cd09fe2765`
 - 目标模块：`mango-file-preview-api/core/engine/starter`
-- 直接协作范围：`mango-file-starter` 权限资源、`mango-file-preview-app` Flow 回归、`mango-infra-web-starter` 参数校验异常映射、Mango 架构规则对本地 HTTP 适配器与上游 vendored 代码的边界；规则完整检查暴露的两个 main 阻断按根因收口到 web support 和 resource sync metadata。
+- 直接协作范围：`mango-file-starter` 权限资源、`mango-file-preview-app` Flow 回归、`mango-infra-web-starter` 参数校验异常映射、Mango 架构规则对本地 HTTP 适配器与上游 vendored 代码的边界；规则完整检查暴露的共享常量阻断按根因收口到 web support，Resource target 的局部扫描则改为纳入同域本地 starter 的唯一合法模块元数据。
 - 不变契约：文件 ID 入口、`FilePreviewLinkVO` 结构、业务码 `180001~180003`、文件中心可见性和租户语义、短期 token 语义、kkFileView 预览行为保持不变。
 - 明确缺陷修复：源文件 token 改为 query 参数以符合 Mango 无 PathVariable 契约；预览入口正式声明 `file:files:download` 权限；公开预览路径不再通过 `web.ignoring()` 绕过安全链。
 
@@ -25,7 +25,7 @@
 | 文件权限资源 | `mvn -f mango/pom.xml -pl :mango-file-starter test` | 6/6 PASS |
 | 微服务 Flow | `MangoFilePreviewAppFlowTest` | 3/3 PASS：主链路、缺少 `fileId` 与空 token HTTP 400 |
 | Web 异常边界 | `WebBoundaryIntegrationTest` | 4/4 PASS：方法校验 `ConstraintViolationException` 返回 HTTP 400 和稳定消息 |
-| 完整规则阻断定向回归 | `InternalCallFilterTest`、Auth/Authorization 安全配置、Resource Sync 自动配置 | 23/23 PASS：10 + 5 + 4 + 4；共享常量移动后消费者正常，module metadata 与 Controller 根路径一致 |
+| 完整规则阻断定向回归 | `InternalCallFilterTest`、Auth/Authorization 安全配置、Resource Sync 自动配置 | 22/22 PASS：10 + 5 + 4 + 3；共享常量移动后消费者正常，Resource target Controller 根路径保持 `/resource/targets`，sync-starter 不重复声明模块元数据 |
 | 架构规则 | `mvn -f mango/pom.xml -pl :mango-architecture-rules test` | 161/161 PASS；包含 vendored 边界、页面/流适配器和 JSON `ResponseEntity` 不得绕过 API 契约的反例 |
 | 定向架构门禁 | file-preview 四个子模块 | dependency=0、ArchUnit=0、PMD=0、blocking=0 |
 

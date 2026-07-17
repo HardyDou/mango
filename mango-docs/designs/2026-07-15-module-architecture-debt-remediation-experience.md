@@ -14,7 +14,7 @@
 | 数据结构与实体漂移 | 实体继承的审计字段未出现在 SQL，运行时插入/更新才报缺列 | Mock Mapper、简化 H2 schema 和只读接口绕开真实写入 | migration、Entity、Mapper、真实写入和更新必须一起验证 |
 | API 与 Controller 校验冲突 | API 参数已有 Bean Validation，Controller 覆盖方法再次声明 `@Valid`，Spring 启动或调用时报继承约束异常 | 只调用 Service 或直接 new Controller，没有真实 Spring 方法校验代理 | API 声明约束；Controller 只继承；真实 Spring 上下文和非法请求接口测试 |
 | 方法校验异常误报系统错误 | 独立 Controller 的 `@NotBlank` 已生效，但 `ConstraintViolationException` 未被统一异常处理识别，非法请求返回 HTTP 500 | 单元测试只断言注解存在或 Service 拒绝，没有从 HTTP 入口断言状态与消息 | 在统一异常处理映射为 HTTP 400；同时用 infra-web 集成测试和业务 Flow 空值请求回归 |
-| Controller 路径正确但模块元数据缺失 | `ResourceTargetController` 使用正确 `/resource/targets`，所属 sync starter 没有 `module.properties`，完整架构门禁无法证明路径归属 | 只在另一个同域 starter 声明 module-path，假设元数据会跨 artifact 继承 | 每个承载 Controller 的 starter 在自身 JAR 声明 module-name/module-path，并用资源测试锁定 |
+| 部分 Reactor 丢失模块路径事实 | `ResourceTargetController` 已使用正确 `/resource/targets`，但定向架构命令只选 sync-starter，未选同域本地 starter，导致 `MANGO-ARCH-CTRL-008` 无法取得 `/resource` | 为让局部扫描变绿，错误地给 sync-starter 重复增加 `module.properties`，又违反“只有本地 starter 声明模块信息” | 保留 Controller 显式根路径及接口测试；定向 Reactor 同时纳入同域本地 starter，让架构门禁读取唯一合法元数据；禁止在 sync/support/remote 重复声明 |
 | 进程内共享常量误放 API | 内部调用验签后的 request attribute key 放在 `mango-infra-web-api` 普通实现类 | 把“多个模块使用”误等同于 HTTP API 契约 | 无 HTTP 语义、无数据库的纯 JVM 共享类型放 support；消费者声明直接依赖并编译回归 |
 | 分层边界失效 | Controller 转换 Entity、一个 Controller 实现多个 API、Controller 未实现 API；Service 使用 `Impl`、直接继承 MyBatis `ServiceImpl` | 测试只验证返回值，未验证结构和真实适配链 | API、Controller、Service、Mapper、Entity、Feign 按根因整体迁移，不保留第二套实现 |
 | Mock 证明范围被夸大 | Mock Mapper/数据库的测试被用于证明 SQL、字段、事务或资源落库正确 | 测试数量和覆盖率替代了测试目标审计 | Mock 只隔离外部协作者；数据库、Mapper、权限、资源同步和事务使用真实集成物料 |
@@ -88,7 +88,7 @@
 27. 涉及删除或资源清单变化的运行验收，必须在 `clean install` 后核对 target、本地 Maven 仓库与运行 classpath，否则旧 JAR 会让源码分析结论失效。
 28. 微服务验收要使用真实的两个 JVM 和服务路由，并比对最终正文/数据副作用；单进程 Mock HTTP 测试只能标记为 Flow。
 29. Bean Validation 验收不能停在注解或异常类型；必须从真实 HTTP 入口断言非法参数返回 400 和稳定消息，避免 `ConstraintViolationException` 落入系统异常 500。
-30. Controller 的实际路径正确还不够，承载它的具体 starter JAR 必须携带自己的 module metadata，不能依赖同域其它 artifact 的声明。
+30. 一个业务域只能由本地 starter 提供唯一 module metadata；sync/support/remote 不得重复声明。定向架构 Reactor 若检查同域适配器，必须同时纳入本地 starter，不能用新增元数据修补扫描范围缺失。
 31. 跨模块共享不自动等于 API；request attribute key 等纯 JVM 契约应放无数据库、无 HTTP 的 support，并通过真实消费者编译证明迁移完整。
 
 ## 4. 后续模块处理节奏

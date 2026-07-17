@@ -43,7 +43,7 @@
 | 原生 HTTP 适配器 | 页面 `ModelAndView` 或文件流被强迫返回 JSON `R<T>` | 规则未区分 JSON API 和原生传输 | 仅允许受限 `ModelAndView`/`ResponseEntity<Resource>`；其余 Controller 规则继续生效；`ResponseEntity<String>` 不得绕过 API 契约 |
 | 权限注解与资源脱节 | Controller 声明了 permission，新库角色却永远没有该权限，实际请求 403 | Mock 关闭授权，老库存在手工绑定 | 对照正式菜单/API 资源 `apiCodes`；demo 关闭新库同步；真实角色成功/拒绝 API 与菜单验收 |
 | 微服务假 E2E | 单进程 HTTP 测试 Mock 了内部 API/Provider，未发现 Feign 服务路由丢失 base path | 把“走了 HTTP”等同于跨进程 | 此类测试命名为 `*FlowTest`；最终 E2E 启动真实生产者/消费者 JVM，经服务发现验证请求、二进制流和副作用 |
-| 模块元数据与代码漂移 | Controller 路径正确，但当前 starter JAR 没有自己的 module-name/module-path | 误以为同域其它 starter 的 metadata 会跨 artifact 生效 | 检查当前 JAR 的 `META-INF/mango/module.properties`，对照 Controller 根路径并加资源测试 |
+| 部分 Reactor 丢失模块路径事实 | sync-starter 的 Controller 路径正确，但定向架构命令没有纳入同域本地 starter，无法读取唯一合法 module-path | 为局部扫描补第二份 `module.properties`，破坏模块信息唯一归属 | 只有本地 starter 声明 `module.properties`；Controller 显式根路径并做接口测试；定向架构 Reactor 必须同时纳入同域本地 starter |
 | 纯 JVM 共享类型误入 API | request attribute key、codec 或本地协作值因跨模块使用被放进 API | 混淆 HTTP 契约和进程内复用 | 无 HTTP/Feign、无数据库的类型放 support；消费者声明直接依赖并执行编译/行为回归 |
 
 ## 4. 标准修复流程
