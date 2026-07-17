@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.authorization.api.IAuthorizationProvider;
 import io.mango.common.exception.BizException;
 import io.mango.home.api.command.CreateHomePageCommand;
+import io.mango.home.api.command.HomePageIdCommand;
 import io.mango.home.api.command.SaveHomePageLayoutCommand;
 import io.mango.home.api.command.SortHomePagesCommand;
 import io.mango.home.api.query.ResolveHomePageQuery;
@@ -14,9 +15,9 @@ import io.mango.home.core.mapper.HomeTemplateMapper;
 import io.mango.home.core.mapper.HomeTemplateVersionMapper;
 import io.mango.home.core.entity.UserHomePageEntity;
 import io.mango.home.core.entity.UserHomePreferenceEntity;
-import io.mango.home.core.integration.HomeOrgGateway;
 import io.mango.home.core.mapper.UserHomePageMapper;
 import io.mango.home.core.mapper.UserHomePreferenceMapper;
+import io.mango.home.core.service.IHomeOrgProvider;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
 import org.junit.jupiter.api.AfterEach;
@@ -66,14 +67,14 @@ class HomePageServiceTest {
     @Mock
     private ObjectProvider<IAuthorizationProvider> authorizationProvider;
 
-    private final HomeOrgGateway homeOrgGateway = mock(HomeOrgGateway.class);
+    private final IHomeOrgProvider homeOrgProvider = mock(IHomeOrgProvider.class);
 
     private HomePageService homePageService;
 
     @BeforeEach
     void setUp() {
         homePageService = new HomePageService(homePageMapper, preferenceMapper, templateMapper, templateVersionMapper,
-                templateAuthorizationMapper, new ObjectMapper(), authorizationProvider, homeOrgGateway);
+                templateAuthorizationMapper, new ObjectMapper(), authorizationProvider, homeOrgProvider);
         lenient().when(templateAuthorizationMapper.selectList(any(Wrapper.class))).thenReturn(List.of());
         MangoContextHolder.set(MangoContextSnapshot.empty().withSecurity(
                 1001L, "1", "admin", "INTERNAL", "INTERNAL_USER", "INTERNAL_ORG", 1L, "internal-admin"));
@@ -166,7 +167,7 @@ class HomePageServiceTest {
         when(homePageMapper.updateById(any(UserHomePageEntity.class))).thenReturn(1);
         when(preferenceMapper.updateById(any(UserHomePreferenceEntity.class))).thenReturn(1);
 
-        HomePageVO result = homePageService.delete(20L);
+        HomePageVO result = homePageService.delete(idCommand(20L));
 
         assertEquals(30L, result.getId());
         assertTrue(result.getDefaultPage());
@@ -193,7 +194,8 @@ class HomePageServiceTest {
                 {"schemaVersion":1,"items":[{"id":"a","widgetType":"todo","layout":{"x":10,"y":0,"w":3,"h":3}}]}
                 """);
 
-        assertThrows(BizException.class, () -> homePageService.saveLayout(20L, command));
+        command.setId(20L);
+        assertThrows(BizException.class, () -> homePageService.saveLayout(command));
     }
 
     @Test
@@ -208,7 +210,7 @@ class HomePageServiceTest {
             return 1;
         });
 
-        HomePageVO result = homePageService.duplicate(20L);
+        HomePageVO result = homePageService.duplicate(idCommand(20L));
 
         assertEquals(21L, result.getId());
         assertEquals("流程工作台 副本", result.getName());
@@ -221,6 +223,12 @@ class HomePageServiceTest {
         command.setLayoutJson("""
                 {"schemaVersion":1,"items":[{"id":"a","widgetType":"todo","layout":{"x":0,"y":0,"w":3,"h":3}}]}
                 """);
+        return command;
+    }
+
+    private HomePageIdCommand idCommand(Long id) {
+        HomePageIdCommand command = new HomePageIdCommand();
+        command.setId(id);
         return command;
     }
 

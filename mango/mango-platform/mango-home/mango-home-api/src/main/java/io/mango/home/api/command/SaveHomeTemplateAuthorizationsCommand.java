@@ -1,6 +1,5 @@
 package io.mango.home.api.command;
 
-import io.mango.home.api.vo.HomeTemplateAuthorizationItem;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
@@ -19,6 +18,7 @@ public class SaveHomeTemplateAuthorizationsCommand implements Serializable {
     private Long templateId;
 
     @Valid
+    @NotNull(message = "授权项列表不能为空")
     @Schema(description = "授权项列表")
-    private List<HomeTemplateAuthorizationItem> authorizations = new ArrayList<>();
+    private List<HomeTemplateAuthorizationCommand> authorizations = new ArrayList<>();
 }

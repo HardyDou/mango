@@ -20,7 +20,6 @@ import io.mango.infra.log.annotation.Log;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.validation.annotation.Validated;
@@ -48,7 +47,7 @@ public class HomeTemplateController implements HomeTemplateApi {
     @GetMapping
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "home:templates:list")
     @Operation(summary = "查询首页模板", description = "权限接口。查询当前租户首页模板列表")
-    public R<List<HomeTemplateVO>> list(@Valid @ParameterObject HomeTemplateQuery query) {
+    public R<List<HomeTemplateVO>> list(@ParameterObject HomeTemplateQuery query) {
         return R.ok(homeTemplateService.list(query));
     }
 
@@ -65,7 +64,7 @@ public class HomeTemplateController implements HomeTemplateApi {
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "home:templates:add")
     @Operation(summary = "创建首页模板", description = "权限接口。创建首页模板草稿")
     @Log("创建首页模板")
-    public R<HomeTemplateVO> create(@RequestBody @Valid CreateHomeTemplateCommand command) {
+    public R<HomeTemplateVO> create(@RequestBody CreateHomeTemplateCommand command) {
         return R.ok(homeTemplateService.create(command));
     }
 
@@ -74,7 +73,7 @@ public class HomeTemplateController implements HomeTemplateApi {
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "home:templates:edit")
     @Operation(summary = "编辑首页模板草稿", description = "权限接口。只能编辑草稿版本")
     @Log("编辑首页模板草稿")
-    public R<HomeTemplateVO> updateDraft(@RequestBody @Valid UpdateHomeTemplateDraftCommand command) {
+    public R<HomeTemplateVO> updateDraft(@RequestBody UpdateHomeTemplateDraftCommand command) {
         return R.ok(homeTemplateService.updateDraft(command));
     }
 
@@ -83,8 +82,8 @@ public class HomeTemplateController implements HomeTemplateApi {
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "home:templates:add")
     @Operation(summary = "复制首页模板", description = "权限接口。复制模板生成新的草稿模板")
     @Log("复制首页模板")
-    public R<HomeTemplateVO> copy(@RequestBody @Valid HomeTemplateIdCommand command) {
-        return R.ok(homeTemplateService.copy(command.getId()));
+    public R<HomeTemplateVO> copy(@RequestBody HomeTemplateIdCommand command) {
+        return R.ok(homeTemplateService.copy(command));
     }
 
     @Override
@@ -92,8 +91,8 @@ public class HomeTemplateController implements HomeTemplateApi {
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "home:templates:publish")
     @Operation(summary = "发布首页模板", description = "权限接口。发布草稿后授权用户看到最新发布版本")
     @Log("发布首页模板")
-    public R<HomeTemplateVO> publish(@RequestBody @Valid HomeTemplateIdCommand command) {
-        return R.ok(homeTemplateService.publish(command.getId()));
+    public R<HomeTemplateVO> publish(@RequestBody HomeTemplateIdCommand command) {
+        return R.ok(homeTemplateService.publish(command));
     }
 
     @Override
@@ -101,7 +100,7 @@ public class HomeTemplateController implements HomeTemplateApi {
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "home:templates:status")
     @Operation(summary = "启停首页模板", description = "权限接口。停用后用户不再看到该授权首页")
     @Log("启停首页模板")
-    public R<HomeTemplateVO> updateStatus(@RequestBody @Valid UpdateHomeTemplateStatusCommand command) {
+    public R<HomeTemplateVO> updateStatus(@RequestBody UpdateHomeTemplateStatusCommand command) {
         return R.ok(homeTemplateService.updateStatus(command));
     }
 
@@ -110,8 +109,8 @@ public class HomeTemplateController implements HomeTemplateApi {
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "home:templates:delete")
     @Operation(summary = "删除首页模板", description = "权限接口。仅允许删除未授权模板")
     @Log("删除首页模板")
-    public R<Void> delete(@RequestBody @Valid HomeTemplateIdCommand command) {
-        homeTemplateService.delete(command.getId());
+    public R<Void> delete(@RequestBody HomeTemplateIdCommand command) {
+        homeTemplateService.delete(command);
         return R.ok();
     }
 
@@ -120,7 +119,7 @@ public class HomeTemplateController implements HomeTemplateApi {
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "home:templates:auth")
     @Operation(summary = "查询首页模板授权", description = "权限接口。查询模板授权对象")
     public R<List<HomeTemplateAuthorizationVO>> listAuthorizations(
-            @Valid @ParameterObject HomeTemplateAuthorizationQuery query) {
+            @ParameterObject HomeTemplateAuthorizationQuery query) {
         return R.ok(homeTemplateService.listAuthorizations(query));
     }
 
@@ -130,7 +129,7 @@ public class HomeTemplateController implements HomeTemplateApi {
     @Operation(summary = "保存首页模板授权", description = "权限接口。按个人、部门、角色保存模板授权")
     @Log("保存首页模板授权")
     public R<List<HomeTemplateAuthorizationVO>> saveAuthorizations(
-            @RequestBody @Valid SaveHomeTemplateAuthorizationsCommand command) {
+            @RequestBody SaveHomeTemplateAuthorizationsCommand command) {
         return R.ok(homeTemplateService.saveAuthorizations(command));
     }
 
@@ -138,7 +137,7 @@ public class HomeTemplateController implements HomeTemplateApi {
     @GetMapping("/user-pages")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "home:user:view")
     @Operation(summary = "查询用户最终首页集合", description = "权限接口。查询用户自建和授权首页集合")
-    public R<List<HomePageVO>> resolveUserPages(@Valid @ParameterObject UserHomeViewQuery query) {
+    public R<List<HomePageVO>> resolveUserPages(@ParameterObject UserHomeViewQuery query) {
         return R.ok(homeTemplateService.resolveUserPages(query));
     }
 }

@@ -223,6 +223,7 @@ import { useUserInfo } from '../../stores/userInfo';
 import { useRoutesList } from '../../stores/routesList';
 import { ensureFeatureRegistrars } from '../../runtime/featureRegistrars';
 import { useMangoAdminHomeWidgets } from '../../runtime/homeWidgets';
+import { moveSortableHomePage, sortableHomePages } from './pageOrder';
 import {
   MangoGridDesigner,
   MangoGridLayout,
@@ -280,12 +281,13 @@ const canManageCurrentPage = computed(() => Boolean(currentPage.value?.id && !cu
 const canCopyCurrentPage = computed(() => Boolean(currentPage.value && !currentPage.value.builtIn && currentPage.value.canCopy !== false));
 const canSetDefault = computed(() => Boolean(currentRouteKey.value && currentRouteKey.value !== BUILT_IN_HOME_ID && !currentPage.value?.defaultPage));
 const canEditCurrentLayout = computed(() => Boolean(!currentPage.value?.readOnly || currentPage.value?.builtIn));
+const personalPages = computed(() => sortableHomePages(pages.value));
 const currentPageIndex = computed(() => {
   const id = currentPage.value?.id;
-  return id ? pages.value.findIndex(pageItem => String(pageItem.id) === String(id)) : -1;
+  return id ? personalPages.value.findIndex(pageItem => String(pageItem.id) === String(id)) : -1;
 });
 const canMoveCurrentPageUp = computed(() => currentPageIndex.value > 0);
-const canMoveCurrentPageDown = computed(() => currentPageIndex.value >= 0 && currentPageIndex.value < pages.value.length - 1);
+const canMoveCurrentPageDown = computed(() => currentPageIndex.value >= 0 && currentPageIndex.value < personalPages.value.length - 1);
 const pageTabs = computed(() => {
   const tabMap = new Map<string, {
     id: string;
@@ -540,12 +542,10 @@ async function moveCurrentPage(offset: -1 | 1): Promise<void> {
     return;
   }
   const targetIndex = index + offset;
-  if (targetIndex < 0 || targetIndex >= pages.value.length) {
+  if (targetIndex < 0 || targetIndex >= personalPages.value.length) {
     return;
   }
-  const sortedPages = [...pages.value];
-  const [moving] = sortedPages.splice(index, 1);
-  sortedPages.splice(targetIndex, 0, moving);
+  const sortedPages = moveSortableHomePage(pages.value, String(currentPage.value?.id), offset);
   saving.value = true;
   errorMessage.value = '';
   try {

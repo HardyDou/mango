@@ -3,6 +3,7 @@ package io.mango.home.core.service;
 import io.mango.common.vo.PageResult;
 import io.mango.home.api.command.BatchDeleteHomePagesCommand;
 import io.mango.home.api.command.CreateHomePageCommand;
+import io.mango.home.api.command.HomePageIdCommand;
 import io.mango.home.api.command.RenameHomePageCommand;
 import io.mango.home.api.command.SaveHomePageLayoutCommand;
 import io.mango.home.api.command.SetDefaultHomePageCommand;
@@ -49,28 +50,26 @@ public interface IHomePageService {
     /**
      * 重命名首页。
      *
-     * @param id 首页ID
      * @param command 重命名命令
      * @return 首页信息
      */
-    HomePageVO rename(Long id, RenameHomePageCommand command);
+    HomePageVO rename(RenameHomePageCommand command);
 
     /**
      * 复制首页。
      *
-     * @param id 首页ID
+     * @param command 首页ID命令
      * @return 复制后的首页信息
      */
-    HomePageVO duplicate(Long id);
+    HomePageVO duplicate(HomePageIdCommand command);
 
     /**
      * 保存首页布局。
      *
-     * @param id 首页ID
      * @param command 布局保存命令
      * @return 首页信息
      */
-    HomePageVO saveLayout(Long id, SaveHomePageLayoutCommand command);
+    HomePageVO saveLayout(SaveHomePageLayoutCommand command);
 
     /**
      * 保存首页排序。
@@ -83,7 +82,7 @@ public interface IHomePageService {
     /**
      * 设置默认首页。
      *
-     * @param id 首页ID
+     * @param command 首页ID命令
      * @return 首页信息
      */
     HomePageVO setDefault(SetDefaultHomePageCommand command);
@@ -91,35 +90,33 @@ public interface IHomePageService {
     /**
      * 删除首页。
      *
-     * @param id 首页ID
+     * @param command 首页ID命令
      * @return 删除后解析出的首页信息
      */
-    HomePageVO delete(Long id);
+    HomePageVO delete(HomePageIdCommand command);
 
     /**
      * 后台重命名租户内用户首页。
      *
-     * @param id 首页ID
      * @param command 重命名命令
      * @return 首页信息
      */
-    HomePageVO adminRename(Long id, RenameHomePageCommand command);
+    HomePageVO adminRename(RenameHomePageCommand command);
 
     /**
      * 后台保存租户内用户首页布局。
      *
-     * @param id 首页ID
      * @param command 布局保存命令
      * @return 首页信息
      */
-    HomePageVO adminSaveLayout(Long id, SaveHomePageLayoutCommand command);
+    HomePageVO adminSaveLayout(SaveHomePageLayoutCommand command);
 
     /**
      * 后台删除租户内用户首页。
      *
-     * @param id 首页ID
+     * @param command 首页ID命令
      */
-    void adminDelete(Long id);
+    void adminDelete(HomePageIdCommand command);
 
     /**
      * 后台批量删除租户内用户首页。

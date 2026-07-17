@@ -19,7 +19,6 @@ import io.mango.common.vo.PageResult;
 import io.mango.infra.log.annotation.Log;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.validation.annotation.Validated;
@@ -54,7 +53,7 @@ public class HomePageController implements HomePageApi {
     @GetMapping("/user-pages")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "home:list:view")
     @Operation(summary = "分页查询用户自定义首页", description = "后台接口。分页查询当前租户下所有用户自定义首页")
-    public R<PageResult<HomePageVO>> pageUserPages(@Valid @ParameterObject UserHomePageQuery query) {
+    public R<PageResult<HomePageVO>> pageUserPages(@ParameterObject UserHomePageQuery query) {
         return R.ok(homePageService.pageUserPages(query));
     }
 
@@ -62,7 +61,7 @@ public class HomePageController implements HomePageApi {
     @GetMapping("/resolve")
     @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "解析默认首页")
     @Operation(summary = "解析默认首页", description = "登录接口。解析当前用户默认首页或指定首页")
-    public R<HomePageVO> resolve(@Valid @ParameterObject ResolveHomePageQuery query) {
+    public R<HomePageVO> resolve(@ParameterObject ResolveHomePageQuery query) {
         return R.ok(homePageService.resolve(query));
     }
 
@@ -71,7 +70,7 @@ public class HomePageController implements HomePageApi {
     @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "创建首页")
     @Operation(summary = "创建首页", description = "登录接口。为当前用户创建一个首页")
     @Log("创建首页")
-    public R<HomePageVO> create(@RequestBody @Valid CreateHomePageCommand command) {
+    public R<HomePageVO> create(@RequestBody CreateHomePageCommand command) {
         return R.ok(homePageService.create(command));
     }
 
@@ -80,8 +79,8 @@ public class HomePageController implements HomePageApi {
     @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "重命名首页")
     @Operation(summary = "重命名首页", description = "登录接口。重命名当前用户拥有的首页")
     @Log("重命名首页")
-    public R<HomePageVO> rename(@RequestBody @Valid RenameHomePageCommand command) {
-        return R.ok(homePageService.rename(command.getId(), command));
+    public R<HomePageVO> rename(@RequestBody RenameHomePageCommand command) {
+        return R.ok(homePageService.rename(command));
     }
 
     @Override
@@ -89,8 +88,8 @@ public class HomePageController implements HomePageApi {
     @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "复制首页")
     @Operation(summary = "复制首页", description = "登录接口。复制当前用户拥有的首页")
     @Log("复制首页")
-    public R<HomePageVO> duplicate(@RequestBody @Valid HomePageIdCommand command) {
-        return R.ok(homePageService.duplicate(command.getId()));
+    public R<HomePageVO> duplicate(@RequestBody HomePageIdCommand command) {
+        return R.ok(homePageService.duplicate(command));
     }
 
     @Override
@@ -98,8 +97,8 @@ public class HomePageController implements HomePageApi {
     @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "保存首页布局")
     @Operation(summary = "保存首页布局", description = "登录接口。保存当前用户指定首页的布局")
     @Log("保存首页布局")
-    public R<HomePageVO> saveLayout(@RequestBody @Valid SaveHomePageLayoutCommand command) {
-        return R.ok(homePageService.saveLayout(command.getId(), command));
+    public R<HomePageVO> saveLayout(@RequestBody SaveHomePageLayoutCommand command) {
+        return R.ok(homePageService.saveLayout(command));
     }
 
     @Override
@@ -107,7 +106,7 @@ public class HomePageController implements HomePageApi {
     @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "首页排序")
     @Operation(summary = "首页排序", description = "登录接口。按当前用户提交的 ID 顺序更新首页排序")
     @Log("首页排序")
-    public R<List<HomePageVO>> sort(@RequestBody @Valid SortHomePagesCommand command) {
+    public R<List<HomePageVO>> sort(@RequestBody SortHomePagesCommand command) {
         return R.ok(homePageService.sort(command));
     }
 
@@ -116,7 +115,7 @@ public class HomePageController implements HomePageApi {
     @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "设置默认首页")
     @Operation(summary = "设置默认首页", description = "登录接口。设置当前用户默认首页")
     @Log("设置默认首页")
-    public R<HomePageVO> setDefault(@RequestBody @Valid SetDefaultHomePageCommand command) {
+    public R<HomePageVO> setDefault(@RequestBody SetDefaultHomePageCommand command) {
         return R.ok(homePageService.setDefault(command));
     }
 
@@ -125,8 +124,8 @@ public class HomePageController implements HomePageApi {
     @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "删除首页")
     @Operation(summary = "删除首页", description = "登录接口。删除当前用户拥有的首页")
     @Log("删除首页")
-    public R<HomePageVO> delete(@RequestBody @Valid HomePageIdCommand command) {
-        return R.ok(homePageService.delete(command.getId()));
+    public R<HomePageVO> delete(@RequestBody HomePageIdCommand command) {
+        return R.ok(homePageService.delete(command));
     }
 
     @Override
@@ -134,8 +133,8 @@ public class HomePageController implements HomePageApi {
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "home:list:edit")
     @Operation(summary = "后台重命名用户首页", description = "后台接口。重命名当前租户下指定用户首页")
     @Log("后台重命名用户首页")
-    public R<HomePageVO> adminRename(@RequestBody @Valid RenameHomePageCommand command) {
-        return R.ok(homePageService.adminRename(command.getId(), command));
+    public R<HomePageVO> adminRename(@RequestBody RenameHomePageCommand command) {
+        return R.ok(homePageService.adminRename(command));
     }
 
     @Override
@@ -143,8 +142,8 @@ public class HomePageController implements HomePageApi {
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "home:list:edit")
     @Operation(summary = "后台保存用户首页布局", description = "后台接口。保存当前租户下指定用户首页布局")
     @Log("后台保存用户首页布局")
-    public R<HomePageVO> adminSaveLayout(@RequestBody @Valid SaveHomePageLayoutCommand command) {
-        return R.ok(homePageService.adminSaveLayout(command.getId(), command));
+    public R<HomePageVO> adminSaveLayout(@RequestBody SaveHomePageLayoutCommand command) {
+        return R.ok(homePageService.adminSaveLayout(command));
     }
 
     @Override
@@ -152,8 +151,8 @@ public class HomePageController implements HomePageApi {
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "home:list:delete")
     @Operation(summary = "后台删除用户首页", description = "后台接口。删除当前租户下指定用户首页")
     @Log("后台删除用户首页")
-    public R<Void> adminDelete(@RequestBody @Valid HomePageIdCommand command) {
-        homePageService.adminDelete(command.getId());
+    public R<Void> adminDelete(@RequestBody HomePageIdCommand command) {
+        homePageService.adminDelete(command);
         return R.ok();
     }
 
@@ -162,7 +161,7 @@ public class HomePageController implements HomePageApi {
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "home:list:delete")
     @Operation(summary = "后台批量删除用户首页", description = "后台接口。批量删除当前租户下指定用户首页")
     @Log("后台批量删除用户首页")
-    public R<Void> adminBatchDelete(@RequestBody @Valid BatchDeleteHomePagesCommand command) {
+    public R<Void> adminBatchDelete(@RequestBody BatchDeleteHomePagesCommand command) {
         homePageService.adminBatchDelete(command);
         return R.ok();
     }

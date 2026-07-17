@@ -1,6 +1,7 @@
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
 import { mkdirSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { collectBrowserDiagnostics } from '../support/browser-diagnostics';
 
 type HomePage = {
   id?: string | number;
@@ -11,7 +12,7 @@ type HomePage = {
 
 const EVIDENCE_DIR = resolve(
   __dirname,
-  '../../../../../mango-docs/evidence/2026-07-02-issue-368-user-home-pages/e2e',
+  '../../../../../mango-docs/evidence/baselines/home/latest/e2e',
 );
 
 async function login(page: Page): Promise<string> {
@@ -120,8 +121,17 @@ async function expectActiveHomeTab(page: Page, name: string) {
 
 test.describe('用户多首页工作台', () => {
   test.setTimeout(90 * 1000);
+  const browserDiagnostics = new WeakMap<Page, string[]>();
 
-  test('支持创建、重命名、复制、排序、默认首页和指定首页路由', async ({ page }, testInfo) => {
+  test.beforeEach(async ({ page }) => {
+    browserDiagnostics.set(page, collectBrowserDiagnostics(page));
+  });
+
+  test.afterEach(async ({ page }) => {
+    expect(browserDiagnostics.get(page)).toEqual([]);
+  });
+
+  test('@p0 @home 支持创建、重命名、复制、排序、默认首页和指定首页路由', async ({ page }, testInfo) => {
     const prefix = `E2E首页${Date.now()}`;
     const token = await login(page);
     await cleanupHomePages(page, token, prefix);
@@ -134,10 +144,19 @@ test.describe('用户多首页工作台', () => {
     const salesHome = `${prefix}-销售`;
     await createHomePage(page, salesHome);
     const firstSetDefault = page.locator('[data-action="home.set-default"]');
-    if (await firstSetDefault.isEnabled()) {
-      await firstSetDefault.click();
+    const defaultIndicator = page.locator(
+      '[data-field="home.current-page"] [data-state="active"] [data-field="home.default-indicator"]',
+    );
+    if (!(await defaultIndicator.isVisible())) {
+      await expect(firstSetDefault).toBeEnabled();
+      await Promise.all([
+        page.waitForResponse(response =>
+          response.url().includes('/api/home/pages/default') && response.request().method() === 'PUT'
+        ),
+        firstSetDefault.click(),
+      ]);
     }
-    await expect(page.locator('[data-field="home.current-page"] [data-state="active"] [data-field="home.default-indicator"]')).toBeVisible();
+    await expect(defaultIndicator).toBeVisible();
     const afterSalesDefault = await api<HomePage>(page, token, '/home/pages/resolve');
     expect(afterSalesDefault.name).toBe(salesHome);
     await capture(page, testInfo, '02-home-created-default.png');

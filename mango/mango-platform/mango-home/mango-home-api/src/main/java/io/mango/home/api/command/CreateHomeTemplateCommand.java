@@ -16,6 +16,7 @@ public class CreateHomeTemplateCommand implements Serializable {
     @Schema(description = "模板名称")
     private String name;
 
+    @Size(max = 200000, message = "草稿布局JSON长度不能超过200000")
     @Schema(description = "草稿布局JSON")
     private String layoutJson;
 }
