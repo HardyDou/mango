@@ -48,11 +48,13 @@ async function mockRealtimeApi(page: Page) {
 
   await page.route('**/api/realtime/transports/polling**', async (route) => {
     pollingCount += 1;
+    const clientId = new URL(route.request().url()).searchParams.get('clientId') || '';
+    const isDemoClient = clientId.startsWith('browser-');
     const deadline = Date.now() + 5000;
-    while (!pendingServerMessage && Date.now() < deadline) {
+    while (!(pendingServerMessage && isDemoClient) && Date.now() < deadline) {
       await sleep(100);
     }
-    const messages = pendingServerMessage ? [
+    const messages = pendingServerMessage && isDemoClient ? [
       {
         id: `server-${pollingCount}`,
         version: '1.0',
@@ -64,7 +66,7 @@ async function mockRealtimeApi(page: Page) {
         timestamp: '2026-05-20T00:00:00Z',
       },
     ] : [];
-    pendingServerMessage = false;
+    if (messages.length) pendingServerMessage = false;
     await route.fulfill({
       status: 200,
       contentType: 'application/json',

@@ -6,6 +6,7 @@ import {
   assertMangoPackageModeDist,
   createMangoWorkspaceAliases,
 } from '../../build-config/mangoAliases';
+import { createMangoApiProxy } from '../../build-config/apiProxy';
 
 const ALLOWED_PROXY_HOSTS = ['127.0.0.1', 'localhost'];
 const DEV_ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'a.mango.io', 'b.mango.io', 'c.mango.io', 'd.mango.io', 'e.mango.io'];
@@ -37,11 +38,7 @@ export default defineConfig((mode: ConfigEnv) => {
       port: Number(env.VITE_PORT || 5176),
       allowedHosts: DEV_ALLOWED_HOSTS,
       proxy: {
-        '/api': {
-          target: proxyTarget,
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/api/, ''),
-        },
+        '/api': createMangoApiProxy(proxyTarget),
       },
     },
     build: {

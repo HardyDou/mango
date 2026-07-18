@@ -66,7 +66,7 @@ test.describe('系统管理首批页面联调', () => {
     });
   }
 
-  test('参数配置加载配置数据并显示字典标签', async ({ page }) => {
+  test('参数配置加载配置数据并显示业务域和展示类型', async ({ page }) => {
     const configResponsePromise = page.waitForResponse((response) =>
       response.url().includes('/api/system/config/list') && response.status() === 200
     );
@@ -78,7 +78,11 @@ test.describe('系统管理首批页面联调', () => {
 
     const configRow = page
       .locator('.el-table__body-wrapper:visible')
-      .getByRole('row', { name: /sys\.index\.skinName.*系统.*启用/ });
+      .getByRole('row')
+      .filter({ hasText: 'sys.index.skinName' });
     await expect(configRow).toBeVisible({ timeout: 10000 });
+    await expect(configRow).toContainText('皮肤名称');
+    await expect(configRow).toContainText('通用域');
+    await expect(configRow).toContainText('文本');
   });
 });

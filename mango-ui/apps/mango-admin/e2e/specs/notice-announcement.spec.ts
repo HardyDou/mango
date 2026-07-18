@@ -646,11 +646,10 @@ test.describe('通知中心公告 E2E', () => {
   test('覆盖公告管理、发布对象、用户公告确认和消息中心跳转', async ({ page }) => {
     const state = createState();
     mkdirSync(evidenceDir, { recursive: true });
+    await login(page);
     await setupRoutes(page, state);
 
     await assertNoRuntimeErrors(page, async () => {
-      await login(page);
-
       await page.goto('/#/notice/announcement');
       await expect(page.getByRole('heading', { name: '公告管理' })).toBeVisible();
       await expect(page.locator('tr', { hasText: '端午值班安排' })).toContainText('已发布');

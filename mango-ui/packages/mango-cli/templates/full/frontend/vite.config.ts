@@ -1,5 +1,5 @@
 import vue from '@vitejs/plugin-vue';
-import { defineConfig, loadEnv, type ConfigEnv } from 'vite';
+import { defineConfig, loadEnv, type ConfigEnv, type ProxyOptions } from 'vite';
 
 const ALLOWED_PROXY_HOSTS = ['127.0.0.1', 'localhost'];
 const DEV_ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'a.mango.io', 'b.mango.io', 'c.mango.io', 'd.mango.io', 'e.mango.io'];
@@ -100,6 +100,24 @@ function validateProxyTarget(target: string): string {
   return target;
 }
 
+function createMangoApiProxy(target: string): ProxyOptions {
+  return {
+    target,
+    ws: true,
+    changeOrigin: true,
+    xfwd: true,
+    rewrite: path => path.replace(/^\/api/, ''),
+    configure(proxy) {
+      proxy.on('proxyReq', (proxyRequest, request) => {
+        if (request.headers.host) {
+          proxyRequest.setHeader('X-Forwarded-Host', request.headers.host);
+        }
+        proxyRequest.setHeader('X-Forwarded-Prefix', '/api');
+      });
+    },
+  };
+}
+
 export default defineConfig((mode: ConfigEnv) => {
   const env = loadEnv(mode.mode, process.cwd());
   const proxyTarget = validateProxyTarget(env.VITE_ADMIN_PROXY_PATH || 'http://127.0.0.1:5555');
@@ -117,11 +135,7 @@ export default defineConfig((mode: ConfigEnv) => {
       port: Number(env.VITE_PORT || 5176),
       allowedHosts: DEV_ALLOWED_HOSTS,
       proxy: {
-        '/api': {
-          target: proxyTarget,
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/api/, ''),
-        },
+        '/api': createMangoApiProxy(proxyTarget),
       },
     },
     build: {

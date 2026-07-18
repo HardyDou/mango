@@ -14,6 +14,15 @@ export function isPreviewDisplayUrl(value?: string): boolean {
   return !isFileDownloadEndpointUrl(value);
 }
 
+export function isBackendFileContentUrl(value?: string): boolean {
+  if (!value) return false;
+  const normalizedPath = urlPathname(value).replace(/\/+$/, '');
+  return normalizedPath === '/api/file/files/preview-content'
+    || normalizedPath === '/file/files/preview-content'
+    || normalizedPath.startsWith('/api/file/local-objects/')
+    || normalizedPath.startsWith('/file/local-objects/');
+}
+
 function urlPathname(value: string): string {
   try {
     return new URL(value, window.location.origin).pathname;

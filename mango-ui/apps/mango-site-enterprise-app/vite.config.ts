@@ -3,6 +3,7 @@ import { resolve } from 'path';
 import { readFileSync } from 'node:fs';
 import { defineConfig, loadEnv, type ConfigEnv } from 'vite';
 import { createMangoWorkspaceAliases } from '../../build-config/mangoAliases';
+import { createMangoApiProxy } from '../../build-config/apiProxy';
 
 export default defineConfig((mode: ConfigEnv) => {
   const env = loadEnv(mode.mode, process.cwd());
@@ -21,11 +22,7 @@ export default defineConfig((mode: ConfigEnv) => {
       host: env.VITE_HOST || '0.0.0.0',
       port: Number(env.VITE_PORT || 5191),
       proxy: {
-        '/api': {
-          target: proxyTarget,
-          changeOrigin: true,
-          rewrite: path => path.replace(/^\/api/, ''),
-        },
+        '/api': createMangoApiProxy(proxyTarget),
       },
     },
   };
