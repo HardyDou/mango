@@ -26,5 +26,13 @@
     "@vitejs/plugin-vue": "^4.0.0",
     "typescript": "^5.9.3",
     "vite": "^4.3.3"
+  },
+  "mangoArchitecture": {
+    "architectureLayer": "FE4",
+    "role": "app",
+    "domain": "admin-workflow",
+    "ownerRole": "Frontend Standards Owner",
+    "sourceExports": {},
+    "nonCodeExports": {}
   }
 }

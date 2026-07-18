@@ -16,5 +16,13 @@
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^4.0.0"
+  },
+  "mangoArchitecture": {
+    "architectureLayer": "FE4",
+    "role": "app",
+    "domain": "site-demo",
+    "ownerRole": "Frontend Standards Owner",
+    "sourceExports": {},
+    "nonCodeExports": {}
   }
 }

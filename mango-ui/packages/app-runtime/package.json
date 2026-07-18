@@ -37,5 +37,22 @@
   "devDependencies": {
     "typescript": "^5.9.3",
     "vite": "^4.3.3"
+  },
+  "mangoArchitecture": {
+    "architectureLayer": "FE1",
+    "role": "foundation",
+    "domain": "platform",
+    "ownerRole": "Frontend Standards Owner",
+    "sourceExports": {
+      ".": {
+        "source": "./src/index.ts",
+        "kind": "code"
+      },
+      "./vue-micro": {
+        "source": "./src/vue-micro.ts",
+        "kind": "code"
+      }
+    },
+    "nonCodeExports": {}
   }
 }

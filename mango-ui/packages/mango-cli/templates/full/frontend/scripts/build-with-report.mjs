@@ -3,9 +3,10 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const reportDir = resolve(process.cwd(), 'build-reports');
+const packageManagerCommand = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm';
 const commands = [
   { name: 'typecheck', args: ['run', 'typecheck'] },
-  { name: 'vite-build', args: ['exec', 'vite', '--', 'build'] },
+  { name: 'vite-build', args: ['exec', 'vite', 'build'] },
 ];
 
 mkdirSync(reportDir, { recursive: true });
@@ -14,7 +15,7 @@ const outputs = [];
 let exitCode = 0;
 
 for (const command of commands) {
-  const result = spawnSync('npm', command.args, {
+  const result = spawnSync(packageManagerCommand, command.args, {
     cwd: process.cwd(),
     encoding: 'utf8',
     env: { ...process.env, FORCE_COLOR: '0' },

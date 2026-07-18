@@ -84,6 +84,7 @@
     "@mango/grid-layout": "1.0.8",
     "@mango/grid-widgets": "1.0.14",
     "@mango/home": "1.0.6",
+    "@mango/job": "1.0.14",
     "@mango/rbac": "1.0.14",
     "element-plus": "2.14.1",
     "@mango/file": "1.0.22",
@@ -127,5 +128,76 @@
   "publishConfig": {
     "registry": "http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/"
   },
-  "types": "./dist/index.d.ts"
+  "types": "./dist/index.d.ts",
+  "mangoArchitecture": {
+    "architectureLayer": "FE3",
+    "role": "composition",
+    "domain": "platform-admin",
+    "ownerRole": "Frontend Standards Owner",
+    "sourceExports": {
+      ".": {
+        "source": "./src/index.ts",
+        "kind": "code"
+      },
+      "./runtime": {
+        "source": "./src/runtime/runtimeHost.ts",
+        "kind": "code"
+      },
+      "./menu": {
+        "source": "./src/runtime/menuHost.ts",
+        "kind": "code"
+      },
+      "./stores": {
+        "source": "./src/stores/index.ts",
+        "kind": "code"
+      },
+      "./router": {
+        "source": "./src/router.ts",
+        "kind": "code"
+      },
+      "./home": {
+        "source": "./src/views/home/index.vue",
+        "kind": "code"
+      },
+      "./home-management": {
+        "source": "./src/views/home/management/index.vue",
+        "kind": "code"
+      },
+      "./home-templates": {
+        "source": "./src/views/home/templates/index.vue",
+        "kind": "code"
+      },
+      "./home-list": {
+        "source": "./src/views/home/list/index.vue",
+        "kind": "code"
+      },
+      "./home-user": {
+        "source": "./src/views/home/user/index.vue",
+        "kind": "code"
+      },
+      "./dev-pages": {
+        "source": "./src/views/demo/registerDevPages.ts",
+        "kind": "code"
+      },
+      "./dev-base-pages": {
+        "source": "./src/views/demo/registerBaseDevPages.ts",
+        "kind": "code"
+      },
+      "./dev-upload-page": {
+        "source": "./src/views/demo/components/UploadView.vue",
+        "kind": "code"
+      },
+      "./dev-workflow-page": {
+        "source": "./src/views/demo/components/WorkflowComponentsView.vue",
+        "kind": "code"
+      }
+    },
+    "nonCodeExports": {
+      "./style.css": {
+        "source": "./style.css",
+        "dist": "./style.css",
+        "generation": "static"
+      }
+    }
+  }
 }

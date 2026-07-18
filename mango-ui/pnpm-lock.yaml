@@ -847,6 +847,9 @@ importers:
       '@mango/home':
         specifier: 1.0.6
         version: 1.0.6(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+      '@mango/job':
+        specifier: 1.0.14
+        version: 1.0.14(@mango/file@1.0.22(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3)))(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
       '@mango/notice':
         specifier: 1.0.24
         version: 1.0.24(@mango/file@1.0.22(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3)))(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
@@ -1108,6 +1111,9 @@ importers:
       '@mango/admin-pages':
         specifier: 1.0.21
         version: 1.0.21(@mango/file@1.0.22(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3)))(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+      '@mango/api-schema':
+        specifier: 1.0.2
+        version: 1.0.2
       '@mango/common':
         specifier: 1.0.17
         version: 1.0.17(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))

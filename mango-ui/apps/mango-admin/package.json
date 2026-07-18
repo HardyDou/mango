@@ -116,5 +116,14 @@
     "workerDirectory": [
       "public"
     ]
+  },
+  "private": true,
+  "mangoArchitecture": {
+    "architectureLayer": "FE4",
+    "role": "app",
+    "domain": "admin-monolith",
+    "ownerRole": "Frontend Standards Owner",
+    "sourceExports": {},
+    "nonCodeExports": {}
   }
 }

@@ -98,5 +98,33 @@
   },
   "publishConfig": {
     "registry": "http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/"
+  },
+  "mangoArchitecture": {
+    "architectureLayer": "FE3",
+    "role": "composition",
+    "domain": "platform-admin",
+    "ownerRole": "Frontend Standards Owner",
+    "sourceExports": {
+      ".": {
+        "source": "./src/index.ts",
+        "kind": "code"
+      },
+      "./full": {
+        "source": "./src/full.ts",
+        "kind": "code"
+      }
+    },
+    "nonCodeExports": {
+      "./style.css": {
+        "source": "./style.css",
+        "dist": "./style.css",
+        "generation": "static"
+      },
+      "./style-full.css": {
+        "source": "./style-full.css",
+        "dist": "./style-full.css",
+        "generation": "static"
+      }
+    }
   }
 }

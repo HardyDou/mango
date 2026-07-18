@@ -25,5 +25,18 @@
   },
   "scripts": {
     "build": "node ../../scripts/generate-package-types.mjs"
+  },
+  "mangoArchitecture": {
+    "architectureLayer": "FE0",
+    "role": "contract",
+    "domain": "platform",
+    "ownerRole": "Frontend Standards Owner",
+    "sourceExports": {
+      ".": {
+        "source": "./src/index.ts",
+        "kind": "code"
+      }
+    },
+    "nonCodeExports": {}
   }
 }

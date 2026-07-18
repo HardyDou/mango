@@ -165,8 +165,10 @@ try {
   const frontendBuildScript = readFileSync(join(projectRoot, 'frontend/scripts/build-with-report.mjs'), 'utf8');
   if (!frontendPackage.scripts.build.includes('build-with-report.mjs')
     || !frontendBuildScript.includes('frontend-build-warnings.log')
-    || !frontendBuildScript.includes('warningCount')) {
-    throw new Error('generated frontend build must capture build warnings');
+    || !frontendBuildScript.includes('warningCount')
+    || !frontendBuildScript.includes("process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm'")
+    || !frontendBuildScript.includes("args: ['exec', 'vite', 'build']")) {
+    throw new Error('generated frontend build must use pnpm production build and capture warnings');
   }
   const frontendViteConfig = readFileSync(join(projectRoot, 'frontend/vite.config.ts'), 'utf8');
   if (!frontendViteConfig.includes('manualChunks: mangoManualChunks')
@@ -1658,6 +1660,9 @@ function assertDevWorkspaceReportsMissingMysql(projectRoot) {
 function assertDevWorkspaceRestartUsesStopThenStart(projectRoot) {
   const manifestPath = join(projectRoot, 'mango.dev.json');
   const originalManifest = readFileSync(manifestPath, 'utf8');
+  const noPsBinDir = join(projectRoot, '.runtime/no-ps-bin');
+  mkdirSync(noPsBinDir, { recursive: true });
+  const noPsEnv = { ...process.env, PATH: noPsBinDir };
   const manifest = JSON.parse(originalManifest);
   manifest.groups.restart = ['restart-worker'];
   manifest.apps['restart-worker'] = {
@@ -1677,6 +1682,7 @@ function assertDevWorkspaceRestartUsesStopThenStart(projectRoot) {
     ], {
       cwd: projectRoot,
       encoding: 'utf8',
+      env: noPsEnv,
     });
     if (start.status !== 0 || !start.stdout.includes('restart-worker: started pid=')) {
       throw new Error(`restart fixture start should create a running process:\n${start.stdout}\n${start.stderr}`);
@@ -1690,6 +1696,7 @@ function assertDevWorkspaceRestartUsesStopThenStart(projectRoot) {
     ], {
       cwd: projectRoot,
       encoding: 'utf8',
+      env: noPsEnv,
     });
     if (restart.status !== 0
       || !restart.stdout.includes(`restart-worker: stopped pid=${firstPid}`)
@@ -1708,6 +1715,7 @@ function assertDevWorkspaceRestartUsesStopThenStart(projectRoot) {
     ], {
       cwd: projectRoot,
       encoding: 'utf8',
+      env: noPsEnv,
     });
     if (stop.status !== 0 || !stop.stdout.includes(`restart-worker: stopped pid=${secondPid}`)) {
       throw new Error(`restart fixture cleanup should stop the restarted process:\n${stop.stdout}\n${stop.stderr}`);
@@ -1722,6 +1730,7 @@ function assertDevWorkspaceRestartUsesStopThenStart(projectRoot) {
       ], {
         cwd: projectRoot,
         encoding: 'utf8',
+        env: noPsEnv,
       });
     }
     writeFileSync(manifestPath, originalManifest);

@@ -1,5 +1,17 @@
 # @mango/cli Changelog
 
+## Unreleased
+
+### Fixed
+
+- Keep `mango dev status`, `stop`, and `restart` usable in minimal containers that do not install `ps`: a successful kernel PID probe is now accepted when the optional zombie-state probe is unavailable.
+- Add a generated-project regression that starts, restarts, and stops a real child process with a `PATH` that intentionally contains no `ps` command.
+
+### Verification
+
+- `node mango-ui/packages/mango-cli/scripts/check-cli.mjs`
+- `pnpm --filter @mango/cli test`
+
 ## 1.0.78 - 2026-07-14
 
 ### Fixed

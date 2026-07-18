@@ -84,5 +84,56 @@
   "publishConfig": {
     "registry": "http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/"
   },
-  "types": "./dist/index.d.ts"
+  "types": "./dist/index.d.ts",
+  "mangoArchitecture": {
+    "architectureLayer": "FE2",
+    "role": "domain",
+    "domain": "notice",
+    "ownerRole": "Frontend Standards Owner",
+    "sourceExports": {
+      ".": {
+        "source": "./src/index.ts",
+        "kind": "code"
+      },
+      "./admin": {
+        "source": "./src/admin.ts",
+        "kind": "code"
+      },
+      "./admin-pages": {
+        "source": "./src/admin-pages.ts",
+        "kind": "code"
+      },
+      "./admin-shell": {
+        "source": "./src/admin-shell.ts",
+        "kind": "code"
+      },
+      "./client": {
+        "source": "./src/client.ts",
+        "kind": "code"
+      },
+      "./realtime": {
+        "source": "./src/realtime.ts",
+        "kind": "code"
+      },
+      "./api": {
+        "source": "./src/api/notice.ts",
+        "kind": "code"
+      },
+      "./types": {
+        "source": "./src/types/notice.ts",
+        "kind": "code"
+      },
+      "./widgets/message-center": {
+        "source": "./src/widgets/message-center/message-center.ts",
+        "kind": "code"
+      }
+    },
+    "nonCodeExports": {
+      "./style.css": {
+        "source": "./src/style.css",
+        "dist": "./dist/style.css",
+        "generation": "build"
+      }
+    }
+  }
 }

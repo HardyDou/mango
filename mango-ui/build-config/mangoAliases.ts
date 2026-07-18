@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import type { AliasOptions } from 'vite';
 
@@ -24,75 +24,16 @@ type PackageEntry = {
   entries: Record<string, string>;
 };
 
-type AdminModuleRegistrar = {
-  import?: string;
-};
-
 type AdminModuleEntry = {
   packageName?: string;
   name?: string;
   style?: string;
-  registrars?: AdminModuleRegistrar[];
 };
 
 type AdminModulesManifest = {
   defaultPackages?: AdminModuleEntry[];
   fullPackages?: AdminModuleEntry[];
 };
-
-const BASE_PACKAGE_ENTRIES: PackageEntry[] = [
-  {
-    name: 'admin',
-    entries: {
-      '.': 'src/index.ts',
-      full: 'src/full.ts',
-    },
-  },
-  {
-    name: 'admin-shell',
-    entries: {
-      '.': 'src/index.ts',
-      runtime: 'src/runtime/runtimeHost.ts',
-      menu: 'src/runtime/menuHost.ts',
-      stores: 'src/stores/index.ts',
-      router: 'src/router.ts',
-      home: 'src/views/home/index.vue',
-      'home-management': 'src/views/home/management/index.vue',
-      'home-templates': 'src/views/home/templates/index.vue',
-      'home-list': 'src/views/home/list/index.vue',
-      'home-user': 'src/views/home/user/index.vue',
-      'dev-pages': 'src/views/demo/registerDevPages.ts',
-      'dev-base-pages': 'src/views/demo/registerBaseDevPages.ts',
-      'dev-upload-page': 'src/views/demo/components/UploadView.vue',
-      'dev-workflow-page': 'src/views/demo/components/WorkflowComponentsView.vue',
-    },
-  },
-  {
-    name: 'admin-pages',
-    entries: {
-      '.': 'src/index.ts',
-      core: 'src/core.ts',
-      defaults: 'src/defaults.ts',
-      'dev-pages': 'src/dev-pages.ts',
-      'dev-component-pages': 'src/devComponentPages.ts',
-      features: 'src/features.ts',
-      notice: 'src/notice.ts',
-    },
-  },
-  {
-    name: 'site-shell',
-    entries: {
-      '.': 'src/index.ts',
-    },
-  },
-  {
-    name: 'app-runtime',
-    entries: {
-      '.': 'src/index.ts',
-      'vue-micro': 'src/vue-micro.ts',
-    },
-  },
-];
 
 export function resolveMangoFrontendMode(value = process.env.MANGO_FRONTEND_MODE): MangoFrontendMode {
   if (!value || value === 'source') {
@@ -165,19 +106,19 @@ export function assertMangoPackageModeDist(appDir: string, options: MangoPackage
   const repoRoot = resolve(appDir, '../..');
   const stylePackages = getConfiguredStylePackages(repoRoot);
   const distPackages = getSourcePackageEntries(repoRoot)
-    .map(packageEntry => packageEntry.name)
-    .filter(packageName => packageName !== 'app-runtime');
+    .map((packageEntry) => packageEntry.name)
+    .filter((packageName) => packageName !== 'app-runtime');
   const missing = [
-    ...distPackages.map(packageName => resolve(repoRoot, 'packages', packageName, 'dist/index.js')),
-    ...stylePackages.map(packageName => resolve(repoRoot, 'packages', packageName, 'dist/style.css')),
-  ].filter(path => !existsSync(path));
+    ...distPackages.map((packageName) => resolve(repoRoot, 'packages', packageName, 'dist/index.js')),
+    ...stylePackages.map((packageName) => resolve(repoRoot, 'packages', packageName, 'dist/style.css')),
+  ].filter((path) => !existsSync(path));
 
   if (missing.length > 0) {
     throw new Error(
       [
         'MANGO_FRONTEND_MODE=package requires built package artifacts.',
         'Run package builds before package-mode validation.',
-        ...missing.map(path => `Missing: ${path}`),
+        ...missing.map((path) => `Missing: ${path}`),
       ].join('\n'),
     );
   }
@@ -237,52 +178,30 @@ function getConfiguredStylePackages(repoRoot: string): string[] {
 }
 
 function getSourcePackageEntries(repoRoot: string): PackageEntry[] {
-  const entries = new Map<string, Record<string, string>>();
-
-  for (const packageEntry of BASE_PACKAGE_ENTRIES) {
-    entries.set(packageEntry.name, { ...packageEntry.entries });
-  }
-
-  for (const module of getConfiguredAdminModules(repoRoot)) {
-    const packageName = module.packageName || module.name;
-    if (!packageName?.startsWith('@mango/')) {
-      continue;
-    }
-    const packageFolder = packageName.slice('@mango/'.length);
-    if (packageFolder === 'common' || entries.has(packageFolder)) {
-      continue;
-    }
-
-    const moduleEntries: Record<string, string> = {};
-    const packageRoot = resolve(repoRoot, 'packages', packageFolder);
-    if (existsSync(resolve(packageRoot, 'src/index.ts'))) {
-      moduleEntries['.'] = 'src/index.ts';
-    }
-
-    for (const registrar of module.registrars || []) {
-      const importPath = registrar.import || '';
-      const subpathPrefix = `${packageName}/`;
-      if (!importPath.startsWith(subpathPrefix)) {
-        continue;
-      }
-      const subpath = importPath.slice(subpathPrefix.length);
-      const sourcePath = `src/${subpath}.ts`;
-      if (existsSync(resolve(packageRoot, sourcePath))) {
-        moduleEntries[subpath] = sourcePath;
-      }
-    }
-
-    if (Object.keys(moduleEntries).length > 0) {
-      entries.set(packageFolder, moduleEntries);
-    }
-  }
-
-  return Array.from(entries, ([name, packageEntries]) => ({ name, entries: packageEntries }));
-}
-
-function getConfiguredAdminModules(repoRoot: string): AdminModuleEntry[] {
-  const manifest = readAdminModulesManifest(repoRoot);
-  return [...(manifest.defaultPackages || []), ...(manifest.fullPackages || [])];
+  const packagesRoot = resolve(repoRoot, 'packages');
+  return readdirSync(packagesRoot, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .flatMap((entry) => {
+      const manifestPath = resolve(packagesRoot, entry.name, 'package.json');
+      if (!existsSync(manifestPath)) return [];
+      const manifest = JSON.parse(readFileSync(manifestPath, 'utf8')) as {
+        name?: string;
+        mangoArchitecture?: {
+          sourceExports?: Record<string, { source?: string; sourcePattern?: string; kind?: string }>;
+        };
+      };
+      if (!manifest.name?.startsWith('@mango/') || manifest.name === '@mango/common') return [];
+      const entries = Object.fromEntries(
+        Object.entries(manifest.mangoArchitecture?.sourceExports || {})
+          .filter(([, config]) => config.kind === 'code' && config.source && !config.source.includes('*'))
+          .map(([subpath, config]) => [
+            subpath === '.' ? '.' : subpath.replace(/^\.\//u, ''),
+            config.source!.replace(/^\.\//u, ''),
+          ]),
+      );
+      return Object.keys(entries).length > 0 ? [{ name: manifest.name.slice('@mango/'.length), entries }] : [];
+    })
+    .sort((left, right) => left.name.localeCompare(right.name));
 }
 
 function readAdminModulesManifest(repoRoot: string): AdminModulesManifest {

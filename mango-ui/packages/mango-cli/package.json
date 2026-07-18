@@ -27,5 +27,13 @@
   },
   "dependencies": {
     "@mango/pmo": "1.2.6"
+  },
+  "mangoArchitecture": {
+    "architectureLayer": "TOOLING",
+    "role": "tooling",
+    "domain": "platform-tooling",
+    "ownerRole": "Frontend Standards Owner",
+    "sourceExports": {},
+    "nonCodeExports": {}
   }
 }

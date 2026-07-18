@@ -3,6 +3,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
+import { assertPackedPackageBoundary as assertPackedPackageFiles } from './quality/packed-package-boundary.mjs';
 
 const currentFile = fileURLToPath(import.meta.url);
 const uiRoot = resolve(dirname(currentFile), '..');
@@ -65,50 +66,10 @@ function listTarballFiles(tarballPath) {
   return result.stdout.split(/\r?\n/).filter(Boolean);
 }
 
-function exportedTypePaths(packageJson) {
-  const paths = [];
-  if (packageJson.types) {
-    paths.push(packageJson.types);
-  }
-  for (const exportConfig of Object.values(packageJson.exports || {})) {
-    if (typeof exportConfig !== 'string' && exportConfig?.types) {
-      paths.push(exportConfig.types);
-    }
-  }
-  return paths.map((entry) => `package/${entry.replace(/^\.\//, '')}`);
-}
-
-function wildcardToRegExp(pattern) {
-  const escaped = pattern.replace(/[.+?^${}()|[\]\\]/g, '\\$&');
-  return new RegExp(`^${escaped.replaceAll('*', '[^/]+')}$`);
-}
-
 function assertPackedPackageBoundary(tarballPath) {
   const packageJson = readPackedPackageJson(tarballPath);
-  if (!packageJson.name?.startsWith('@mango/') || packageJson.name === '@mango/cli') {
-    return;
-  }
   const files = listTarballFiles(tarballPath);
-  const sourceFile = files.find((file) =>
-    /^package\/src\//.test(file)
-    || /^package\/(?:api|components|hooks|types|utils|views)\//.test(file)
-    || /^package\/index\.ts$/.test(file),
-  );
-  if (sourceFile) {
-    throw new Error(`${packageJson.name} tarball must not publish source file: ${sourceFile}`);
-  }
-  for (const typePath of exportedTypePaths(packageJson)) {
-    if (typePath.includes('*')) {
-      const pattern = wildcardToRegExp(typePath);
-      if (!files.some((file) => pattern.test(file))) {
-        throw new Error(`${packageJson.name} tarball is missing exported declaration pattern: ${typePath}`);
-      }
-      continue;
-    }
-    if (!files.includes(typePath)) {
-      throw new Error(`${packageJson.name} tarball is missing exported declaration: ${typePath}`);
-    }
-  }
+  assertPackedPackageFiles(packageJson, files);
 }
 
 function listPackableMangoPackages() {
@@ -141,6 +102,33 @@ function mapPackedMangoTarballs(frontendRoot) {
   return mappings;
 }
 
+function hasPublishedTypes(value) {
+  if (typeof value === 'string' || value == null) {
+    return false;
+  }
+  if (Array.isArray(value)) {
+    return value.some(hasPublishedTypes);
+  }
+  if (typeof value === 'object') {
+    return typeof value.types === 'string' || Object.values(value).some(hasPublishedTypes);
+  }
+  return false;
+}
+
+function listTypedPackedPackages() {
+  const packageNames = [];
+  for (const file of readdirSync(packageStore)) {
+    if (!file.endsWith('.tgz')) {
+      continue;
+    }
+    const packageJson = readPackedPackageJson(join(packageStore, file));
+    if (packageJson.name?.startsWith('@mango/') && (packageJson.types || hasPublishedTypes(packageJson.exports))) {
+      packageNames.push(packageJson.name);
+    }
+  }
+  return packageNames.sort();
+}
+
 function toPackageRelativePath(fromRoot, targetPath) {
   return relative(fromRoot, targetPath).split('\\').join('/');
 }
@@ -157,6 +145,17 @@ function applyTarballMappings(frontendRoot, mappings) {
       if (mappings.has(dependency)) {
         packageJson[section][dependency] = mappings.get(dependency);
       }
+    }
+  }
+  packageJson.devDependencies ||= {};
+  const declaredDependencies = new Set(
+    ['dependencies', 'devDependencies', 'peerDependencies'].flatMap((section) =>
+      Object.keys(packageJson[section] || {}),
+    ),
+  );
+  for (const [dependency, tarball] of mappings) {
+    if (!declaredDependencies.has(dependency)) {
+      packageJson.devDependencies[dependency] = tarball;
     }
   }
   delete packageJson.pnpm;
@@ -180,6 +179,17 @@ function applyTarballMappings(frontendRoot, mappings) {
   writeFileSync(join(frontendRoot, '.npmrc'), `registry=${registry}\n`);
 }
 
+function writePackageTypeSmoke(frontendRoot, packageNames) {
+  const declarations = packageNames.map(
+    (packageName, index) => `type MangoPackage${index + 1} = typeof import('${packageName}');`,
+  );
+  const tuple = packageNames.map((_, index) => `MangoPackage${index + 1}`).join(', ');
+  writeFileSync(
+    join(frontendRoot, 'src/mango-package-contract-smoke.ts'),
+    [...declarations, '', `export type MangoPublishedPackageContracts = [${tuple}];`, ''].join('\n'),
+  );
+}
+
 function cleanup() {
   if (!keepTemp) {
     rmSync(runtimeRoot, { recursive: true, force: true, maxRetries: 3, retryDelay: 200 });
@@ -201,7 +211,17 @@ try {
     run(pnpmCommand, ['--filter', '@mango/admin', 'run', 'build']);
 
     console.log('Building Mango frontend packages before consumer typecheck');
-    run(pnpmCommand, ['-r', '--workspace-concurrency=1', '--filter', './packages/*', '--filter', '!@mango/cli', '--if-present', 'run', 'build']);
+    run(pnpmCommand, [
+      '-r',
+      '--workspace-concurrency=1',
+      '--filter',
+      './packages/*',
+      '--filter',
+      '!@mango/cli',
+      '--if-present',
+      'run',
+      'build',
+    ]);
   } else {
     console.log('Reusing existing package build outputs for consumer typecheck');
   }
@@ -219,18 +239,22 @@ try {
   }
 
   console.log('Generating temporary Mango business frontend consumer');
-  run(process.execPath, [
-    cli,
-    'init',
-    consumerName,
-    '--preset',
-    'custom',
-    '--modules',
-    'notice,workflow,workflow-example',
-    '--npm-registry',
-    registry,
-    '--force',
-  ], { cwd: projectRoot });
+  run(
+    process.execPath,
+    [
+      cli,
+      'init',
+      consumerName,
+      '--preset',
+      'custom',
+      '--modules',
+      'notice,workflow,workflow-example',
+      '--npm-registry',
+      registry,
+      '--force',
+    ],
+    { cwd: projectRoot },
+  );
 
   const frontendRoot = join(projectRoot, consumerName, 'frontend');
   if (!existsSync(join(frontendRoot, 'package.json'))) {
@@ -241,25 +265,37 @@ try {
     throw new Error(`No packed @mango/* tarballs found in ${packageStore}`);
   }
   applyTarballMappings(frontendRoot, mappings);
+  const typedPackages = listTypedPackedPackages();
+  writePackageTypeSmoke(frontendRoot, typedPackages);
 
-  console.log(`Installing generated consumer dependencies with ${mappings.size} local Mango tarballs`);
-  run(pnpmCommand, [
-    'install',
-    ...(offline ? ['--offline'] : []),
-    ...(consumerStoreDir ? [`--store-dir=${consumerStoreDir}`] : []),
-    `--registry=${registry}`,
-  ], {
-    cwd: frontendRoot,
-    env: {
-      npm_config_registry: registry,
-      NPM_CONFIG_REGISTRY: registry,
+  console.log(
+    `Installing generated consumer dependencies with ${mappings.size} local Mango tarballs; ` +
+      `${typedPackages.length} public type contracts are included in vue-tsc`,
+  );
+  run(
+    pnpmCommand,
+    [
+      'install',
+      ...(offline ? ['--offline'] : []),
+      ...(consumerStoreDir ? [`--store-dir=${consumerStoreDir}`] : []),
+      `--registry=${registry}`,
+    ],
+    {
+      cwd: frontendRoot,
+      env: {
+        npm_config_registry: registry,
+        NPM_CONFIG_REGISTRY: registry,
+      },
     },
-  });
+  );
 
   console.log('Running generated consumer vue-tsc type gate');
   run(pnpmCommand, ['run', 'typecheck'], { cwd: frontendRoot });
 
-  console.log('Generated consumer vue-tsc type gate passed.');
+  console.log('Running generated consumer production build');
+  run(pnpmCommand, ['run', 'build'], { cwd: frontendRoot });
+
+  console.log('Generated consumer typecheck and production build passed.');
   cleanup();
 } catch (error) {
   console.error(error instanceof Error ? error.message : error);
@@ -268,7 +304,9 @@ try {
     console.error(`Temporary package store: ${packageStore}`);
   } else {
     cleanup();
-    console.error('Temporary consumer project and package store were removed. Re-run with --keep-temp to inspect them.');
+    console.error(
+      'Temporary consumer project and package store were removed. Re-run with --keep-temp to inspect them.',
+    );
   }
   process.exit(1);
 }

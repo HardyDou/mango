@@ -2423,11 +2423,14 @@ function isProcessAlive(pid) {
   }
   try {
     process.kill(Number(pid), 0);
-    const stat = spawnSync('ps', ['-o', 'stat=', '-p', String(pid)], { encoding: 'utf8' });
-    return stat.status === 0 && !stat.stdout.trim().startsWith('Z');
   } catch {
     return false;
   }
+  const stat = spawnSync('ps', ['-o', 'stat=', '-p', String(pid)], { encoding: 'utf8' });
+  if (stat.error?.code === 'ENOENT') {
+    return true;
+  }
+  return stat.status === 0 && !stat.stdout.trim().startsWith('Z');
 }
 
 async function stopProcessGroup(pid) {

@@ -270,7 +270,7 @@ import { ensureFeatureRegistrars } from '../../../runtime/featureRegistrars';
 import { useMangoAdminHomeWidgets } from '../../../runtime/homeWidgets';
 import { useRoutesList } from '../../../stores/routesList';
 import { useUserInfo } from '../../../stores/userInfo';
-import '../../../../../job/src/views/job-admin.css';
+import '@mango/job/style.css';
 
 type UserHomePageResponse = UserHomePageResult | { data?: UserHomePageResult | { data?: UserHomePageResult } };
 
