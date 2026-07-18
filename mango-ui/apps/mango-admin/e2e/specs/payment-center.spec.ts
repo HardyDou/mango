@@ -2604,9 +2604,8 @@ test.describe('支付中心 E2E', () => {
     expect(runtimeErrors).toEqual([]);
   });
 
-  test('开放接口签名、防重放、创建查询和收银台入口真实可用', async ({ page }) => {
+  test('@p0 @payment 开放接口签名、防重放、创建查询和收银台入口真实可用', async ({ page, request }) => {
     await login(page);
-    const adminHeaders = await apiHeaders(page);
     const suffix = `${Date.now()}`;
     const appId = 'app_openapi_e2e';
     const appSecret = `openapi-e2e-secret-${suffix}`;
@@ -2757,8 +2756,7 @@ test.describe('支付中心 E2E', () => {
     expect(payResult.data?.material?.qrContent).toContain(String(payResult.data?.payOrderNo || ''));
     expect(payResult.data?.material?.qrContent).toContain('PERSONAL_WECHAT_QR');
 
-    const virtualPayResponse = await page.request.post('/api/payment/mango-pay/virtual/pay', {
-      headers: adminHeaders,
+    const virtualPayResponse = await request.post('/api/payment/mango-pay/virtual/pay', {
       data: {
         cashierConfigId,
         payOrderNo: payResult.data?.payOrderNo,

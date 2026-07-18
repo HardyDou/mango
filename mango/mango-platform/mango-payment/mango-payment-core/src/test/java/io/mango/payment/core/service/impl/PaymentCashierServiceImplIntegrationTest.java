@@ -136,6 +136,15 @@ class PaymentCashierServiceIntegrationTest {
     }
 
     @Test
+    void detailSessionWithoutBusinessOrderAlwaysReturnsPreview() {
+        var result = service.detailSession(350001L, null);
+
+        assertThat(result.getOrder().getBusinessOrderId()).isNull();
+        assertThat(result.getOrder().getBizOrderNo()).isNull();
+        assertThat(result.getOrder().getStatus()).isEqualTo("PREVIEW");
+    }
+
+    @Test
     void payPersistsPaymentOrderUpdatesApplyResultAndAdvancesBusinessOrderThroughRealMappers() {
         PaymentCashierPayResultVO result = service.pay(payCommand("PERSONAL_WECHAT_QR"));
 

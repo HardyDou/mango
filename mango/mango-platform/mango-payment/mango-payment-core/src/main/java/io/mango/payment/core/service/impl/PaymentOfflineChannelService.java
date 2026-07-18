@@ -14,6 +14,8 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.IdWorker;
 import io.mango.common.result.Require;
 import io.mango.common.vo.PageResult;
+import io.mango.infra.context.api.MangoContextHolder;
+import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.payment.api.enums.PaymentCode;
 import io.mango.payment.api.command.ConfirmOfflineBankStatementMatchCommand;
 import io.mango.payment.api.command.ConfirmOfflineCollectionCommand;
@@ -47,6 +49,7 @@ import io.mango.payment.core.entity.PaymentOfflineCollectionEntity;
 import io.mango.payment.core.entity.PaymentOfflineCollectionMatchEntity;
 import io.mango.payment.core.entity.PaymentOfflineCollectionVoucherEntity;
 import io.mango.payment.core.entity.PaymentOfflineRefundEntity;
+import io.mango.payment.core.entity.PaymentOrderEntity;
 import io.mango.payment.core.entity.PaymentRefundOrderEntity;
 import io.mango.payment.core.entity.PaymentTransactionFlowEntity;
 import io.mango.payment.core.mapper.PaymentApplicationMapper;
@@ -93,6 +96,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -156,8 +160,19 @@ public class PaymentOfflineChannelService implements IPaymentOfflineChannelServi
     @Transactional(rollbackFor = Exception.class)
     public PaymentOfflineCollectionVO submitTransferVoucher(SubmitOfflineTransferVoucherCommand command) {
         Require.notNull(command, PaymentCode.PAYMENT_OFFLINE_COLLECTION_INVALID, "提交转账凭证命令不能为空");
+        String payOrderNo = PaymentContextSupport.trimToNull(command.getPayOrderNo());
+        Require.notBlank(payOrderNo, PaymentCode.PAYMENT_ORDER_NOT_FOUND, "支付订单号不能为空");
+        PaymentOrderEntity order = paymentOrderMapper.selectByPayOrderNo(payOrderNo);
+        Require.notNull(order, PaymentCode.PAYMENT_ORDER_NOT_FOUND);
+        Require.notBlank(order.getTenantId(), PaymentCode.PAYMENT_ORDER_NOT_FOUND, "支付订单租户上下文不存在");
+        return withTenantContext(order.getTenantId(), () -> submitTransferVoucherInContext(command, payOrderNo));
+    }
+
+    private PaymentOfflineCollectionVO submitTransferVoucherInContext(
+            SubmitOfflineTransferVoucherCommand command,
+            String payOrderNo) {
         String tenantId = PaymentContextSupport.currentTenantId();
-        PaymentOfflineCollectionEntity collection = offlineCollectionMapper.selectByPayOrderNoForUpdate(tenantId, command.getPayOrderNo());
+        PaymentOfflineCollectionEntity collection = offlineCollectionMapper.selectByPayOrderNoForUpdate(tenantId, payOrderNo);
         Require.notNull(collection, PaymentCode.PAYMENT_OFFLINE_COLLECTION_NOT_FOUND);
         Require.isTrue(CHANNEL_CODE.equals(collection.getChannelCode()), PaymentCode.PAYMENT_OFFLINE_COLLECTION_INVALID);
         Require.isTrue(isWaitingTransfer(collection.getCollectionStatus()) || isPendingConfirm(collection.getCollectionStatus()),
@@ -181,6 +196,16 @@ public class PaymentOfflineChannelService implements IPaymentOfflineChannelServi
                 String.valueOf(collection.getId()),
                 PaymentOperationAuditService.RESULT_SUCCESS));
         return detailOfflineCollection(collection.getId());
+    }
+
+    private <T> T withTenantContext(String tenantId, Supplier<T> supplier) {
+        MangoContextSnapshot previous = MangoContextHolder.get();
+        try {
+            MangoContextHolder.set(previous.withTenantId(tenantId));
+            return supplier.get();
+        } finally {
+            MangoContextHolder.set(previous);
+        }
     }
 
     @Transactional(rollbackFor = Exception.class)

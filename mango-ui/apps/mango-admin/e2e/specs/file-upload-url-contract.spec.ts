@@ -51,11 +51,11 @@ function expectRuntimeUrls(record: Pick<FileRecord, 'url' | 'previewUrl' | 'down
     if (!value) {
       continue;
     }
-    expect(value).toMatch(/^https:\/\/files\.example\.com\/api\/(file\/(files\/download|local-objects)\b|file-preview\/files\/preview\b)/);
+    expect(value).toMatch(/^https:\/\/files\.example\.com\/api\/(file\/(files\/(download|preview-content)|local-objects)\b|file-preview\/files\/preview\b)/);
   }
 }
 
-test('file upload/detail/preview responses return runtime access urls from storage config', async ({ request }) => {
+test('@p0 @file file upload/detail/preview responses return current proxy or storage runtime urls', async ({ request }) => {
   const token = await loginToken(request);
   const suffix = `${Date.now()}-${test.info().workerIndex}`;
   const formData = {

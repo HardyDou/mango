@@ -1,0 +1,85 @@
+{
+  "baselineId": "admin-regression-2026-07-18",
+  "status": "PASS",
+  "source": {
+    "branch": "test/full-e2e-baseline",
+    "testedBaseCommit": "1e078cb1fab07d1194e4102c0725e8ee1c1945c7",
+    "syncedBaseCommit": "6b222187a59caa1626329befe7929f94c5fd1e6b",
+    "syncedDeltaHasRuntimeCode": false,
+    "worktreeChangesIncluded": true
+  },
+  "environment": {
+    "frontend": "http://127.0.0.1:30003",
+    "backend": "http://127.0.0.1:18003",
+    "database": "mango_dev_mango_full_e2e_baseline_003",
+    "databaseRecreatedBeforeRun": true,
+    "demoResourcesEnabled": true,
+    "browser": "chromium",
+    "playwrightVersion": "1.59.1",
+    "workers": 1,
+    "retries": 0
+  },
+  "suite": {
+    "specFiles": 58,
+    "tests": 189,
+    "passed": 189,
+    "failed": 0,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0,
+    "didNotRun": 0,
+    "durationMs": 1400003.694
+  },
+  "quality": {
+    "javaGate": "PASS",
+    "testQuality": "PASS",
+    "newStaticIssues": 0,
+    "toolFailures": 0,
+    "paymentCoreVerify": {
+      "tests": 262,
+      "passed": 262,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "cashierTargetedAfterStyleRefactor": {
+      "tests": 6,
+      "passed": 6,
+      "skipped": 0
+    },
+    "cashierBrowserAfterFinalRestart": {
+      "tests": 1,
+      "passed": 1,
+      "skipped": 0,
+      "retries": 0
+    },
+    "checkstyle": "BUILD_SUCCESS; no finding on newly added production lines",
+    "spotbugs": "BUILD_SUCCESS; no finding in newly added methods",
+    "mockAudit": {
+      "block": 0,
+      "warn": 15,
+      "boundary": "Mapper test doubles isolate service context restoration; real persistence is covered by integration and 36 payment E2E tests"
+    }
+  },
+  "knownQualityToolDebt": [
+    "Standalone PMD 6.42 reports 216 processing errors on the current Java source level",
+    "Standalone child-module mango:check misclassifies 717 out-of-module historical findings as new; use the controlled CLI aggregate gate"
+  ],
+  "previousDiagnosticRun": {
+    "passed": 151,
+    "failed": 4,
+    "didNotRun": 34,
+    "skipped": 0
+  },
+  "delta": {
+    "passed": 38,
+    "failed": -4,
+    "didNotRun": -34,
+    "skipped": 0
+  },
+  "artifacts": [
+    "acceptance.md",
+    "mango-ui/apps/mango-admin/playwright-report/index.html",
+    "mango/target/mango-static-report.json"
+  ]
+}
