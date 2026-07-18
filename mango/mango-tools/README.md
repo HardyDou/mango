@@ -103,6 +103,22 @@ POM 的现有 XML 配置和 `-Dmango.architecture.debtBaselineFile=<path>` 命�
 
 标准 partial PR 门禁把依赖准备和质量扫描分成两个阶段。干净 Runner 先对直接受影响模块执行带 `-am` 的跳过测试安装，把尚未发布的上游 SNAPSHOT 放入本地 Maven 仓库；随后质量阶段仍只选择直接受影响模块和外层架构验证模块，不带 `-am` 或 `-amd`。`mango:check` 委托 PMD、Checkstyle、SpotBugs 时只传入包含代码的 Reactor 模块，不把 `architecture-verification` 或 `mango-architecture-verification` 再次带入嵌套 Maven。PMD 和 Checkstyle 使用报告 goal 收集完整发现，再由 Mango 按 `all` 或 `no-new-violations` 统一判定；工具执行错误仍按 `mango.check.staticFailurePolicy` 处理，历史发现不会在新增问题分类前直接终止嵌套 Maven。外层 `mvn verify` 的架构检查不受影响。
 
+`mango:check` 委托 Checkstyle 时始终显式选择规则文件，不使用 Maven Checkstyle 插件的 Sun 默认规则。规则选择优先级如下：
+
+1. `-Dmango.check.checkstyleConfigLocation=<path>` 指定的业务规则。
+2. `-Dcheckstyle.config.location=<path>` 指定的标准 Checkstyle 规则。
+3. 项目根目录的 `config/quality/checkstyle.xml`，业务项目可以直接维护该文件。
+4. Mango Maven 插件内置的 Mango Checkstyle 规范。
+
+例如使用企业自定义规则：
+
+```bash
+mvn mango:check \
+  -Dmango.check.checkstyleConfigLocation=config/quality/company-checkstyle.xml
+```
+
+配置路径不存在或规则文件无效时，Checkstyle 会按现有静态工具失败策略报错；不会静默切换到 Sun 规则。JSON 报告的 `gateMessages` 会标识本次使用的是自定义、项目还是 Mango 内置规则。
+
 当 partial Reactor 中所有业务模块都没有 Java 源码时，`mango:architecture` 仍执行 Maven 依赖检查、模块归属和 schema v2 报告生成；bytecode、PMD 与 Java 命名空间检查以空输入记录为 0。非法依赖仍进入 blocking issues，不能通过零源码状态绕过门禁。
 
 partial Reactor 未包含 API 或 Service 接口模块时，ArchUnit 只能导入外部类型存根。架构检查器按命名和依赖位置继续校验 Controller 的直接 API 契约及 Service 端口，不对缺少方法元数据的存根执行 Controller/API 方法一致性检查；完整 Reactor 导入接口字节码后仍执行全部接口类型和方法一致性校验。
