@@ -1419,6 +1419,42 @@ class CheckMojoTest {
     }
 
     @Test
+    void invokeSingleGoal_withoutCheckstyleConfig_passesBundledMangoRules() throws Exception {
+        // given
+        Files.writeString(tempDir.resolve("pom.xml"), "<project/>\n");
+        Path fakeMaven = tempDir.resolve("fake-mvn.sh");
+        Path commandFile = tempDir.resolve("command.txt");
+        Files.writeString(fakeMaven, """
+                #!/bin/sh
+                printf '%%s\n' "$@" > "%s"
+                """.formatted(commandFile));
+        assertTrue(fakeMaven.toFile().setExecutable(true));
+
+        CheckMojo mojo = new CheckMojo();
+        CheckResult checkResult = new CheckResult();
+        setField(mojo, "staticTimeoutSeconds", 5L);
+        setField(mojo, "result", checkResult);
+
+        Method method = CheckMojo.class.getDeclaredMethod(
+                "invokeSingleGoal", File.class, Path.class, String.class, List.class);
+        method.setAccessible(true);
+
+        // when
+        method.invoke(mojo, fakeMaven.toFile(), tempDir, "checkstyle:checkstyle", List.of());
+
+        // then
+        List<String> command = Files.readAllLines(commandFile);
+        String property = command.stream()
+                .filter(argument -> argument.startsWith("-Dcheckstyle.config.location="))
+                .findFirst()
+                .orElseThrow();
+        Path configFile = Path.of(property.substring(property.indexOf('=') + 1));
+        assertTrue(Files.isRegularFile(configFile));
+        assertFalse(Files.readString(configFile).contains("DesignForExtension"));
+        assertTrue(checkResult.gateMessages.contains("Checkstyle rules: default:mango-bundled"));
+    }
+
+    @Test
     void staticAnalysisReportGoals_deferViolationEnforcementToMangoGate() {
         // given
         CheckMojo mojo = new CheckMojo();
