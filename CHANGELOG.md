@@ -16,17 +16,17 @@
 
 ### Published Packages
 
-| Order | Target | Version / destination | Pre-release status |
+| Order | Target | Version / destination | Release status |
 |---|---|---|---|
-| 1 | npm PMO bundle and Skills | `@mango/pmo@1.3.1` -> Nexus npm hosted | `PENDING` |
-| 2 | npm CLI | `@mango/cli@1.0.82` -> Nexus npm hosted | `PENDING` |
-| 3 | GitHub Release | `v2026.07.18-pmo-1.3.1-cli-1.0.82-release-governance` | `PENDING` |
+| 1 | npm PMO bundle and Skills | `@mango/pmo@1.3.1` -> Nexus npm hosted | `PUBLISHED_AND_VERIFIED` |
+| 2 | npm CLI | `@mango/cli@1.0.82` -> Nexus npm hosted | `PUBLISHED_AND_VERIFIED` |
+| 3 | GitHub Release | `v2026.07.18-pmo-1.3.1-cli-1.0.82-release-governance` | `CREATED_AND_VERIFIED` |
 
 ### Verification
 
 - Validate the Skill with the skill-creator quick validator and Mango Skill eval suite, including local-only routing, missing Release headings, immutable pre-write recovery, post-publish verification recovery, and closeout requirements.
 - Build and check `@mango/pmo@1.3.1`, mechanically synchronize the business PMO baseline, and run CLI PMO install/upgrade/rollback/package contracts.
-- After publication, verify exact versions and tarball integrity through Nexus hosted/group and upgrade a clean consumer to PMO 1.3.1 with project-local CLI 1.0.82.
+- Release state `pmo-1.3.1-cli-1.0.82` completed every required state. Nexus hosted/group resolve both exact packages with matching integrity; a clean consumer installed CLI 1.0.82, generated a full project, verified PMO lock 1.3.1 and the repository-local exclusive `mango-release` Skill, passed locked PMO check, and passed frontend typecheck.
 
 ## v2026.07.18-cli-1.0.81-pnpm11-generated-install-hotfix - 2026-07-18
 
