@@ -1,0 +1,322 @@
+{
+  "schemaVersion": 1,
+  "packageName": "@mango/common",
+  "components": [],
+  "legacyComponentExports": [
+    {
+      "exportKey": ".",
+      "exportName": "ArithmeticCaptcha",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2E",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": ".",
+      "exportName": "BehaviorCaptcha",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2E",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": ".",
+      "exportName": "BlockPuzzleCaptcha",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2E",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": ".",
+      "exportName": "CanvasSliderCaptcha",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2E",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": ".",
+      "exportName": "CaptchaSelector",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2E",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": ".",
+      "exportName": "Chat",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2E",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": ".",
+      "exportName": "ChinaArea",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2E",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": ".",
+      "exportName": "ClickWordCaptcha",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2E",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": ".",
+      "exportName": "CodeEditor",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2E",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": ".",
+      "exportName": "DictSelect",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2E",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": ".",
+      "exportName": "DictTag",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2E",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": ".",
+      "exportName": "ECharts",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2E",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": ".",
+      "exportName": "Editor",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2E",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": ".",
+      "exportName": "EmailCaptcha",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2E",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": ".",
+      "exportName": "FormCreate",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2E",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": ".",
+      "exportName": "IconSelector",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2E",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": ".",
+      "exportName": "MangoDetailPage",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2E",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": ".",
+      "exportName": "MangoDialog",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2E",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": ".",
+      "exportName": "MangoFormPage",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2E",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": ".",
+      "exportName": "MangoListPage",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2E",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": ".",
+      "exportName": "MangoListPanel",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2E",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": ".",
+      "exportName": "MangoPageSection",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2E",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": ".",
+      "exportName": "MangoSearchPanel",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2E",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": ".",
+      "exportName": "OrgSelector",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2E",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": ".",
+      "exportName": "Pagination",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2E",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": ".",
+      "exportName": "PasswordPolicyHint",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2E",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": ".",
+      "exportName": "RightToolbar",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2E",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": ".",
+      "exportName": "Sign",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2E",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": ".",
+      "exportName": "SmsCaptcha",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2E",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": ".",
+      "exportName": "SSE",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2E",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": ".",
+      "exportName": "TreeSelect",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2E",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": ".",
+      "exportName": "UserSelector",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2E",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": ".",
+      "exportName": "Websocket",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2E",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": "./components/DictSelect/index.vue",
+      "exportName": "default",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2E",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": "./components/DictTag/index.vue",
+      "exportName": "default",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2E",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": "./components/IconSelector/index.vue",
+      "exportName": "default",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2E",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": "./components/MangoDetailPage/index.vue",
+      "exportName": "default",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2E",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": "./components/MangoDialog/index.vue",
+      "exportName": "default",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2E",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": "./components/MangoFormPage/index.vue",
+      "exportName": "default",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2E",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": "./components/MangoListPage/index.vue",
+      "exportName": "default",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2E",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": "./components/MangoListPanel/index.vue",
+      "exportName": "default",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2E",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": "./components/MangoPageSection/index.vue",
+      "exportName": "default",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2E",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": "./components/MangoSearchPanel/index.vue",
+      "exportName": "default",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2E",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": "./components/Pagination/index.vue",
+      "exportName": "default",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2E",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": "./components/PasswordPolicyHint/index.vue",
+      "exportName": "default",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2E",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    }
+  ]
+}

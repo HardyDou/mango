@@ -1,0 +1,84 @@
+{
+  "schemaVersion": 1,
+  "packageName": "@mango/admin-shell",
+  "components": [],
+  "legacyComponentExports": [
+    {
+      "exportKey": ".",
+      "exportName": "MangoAdminLayout",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2Z",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": ".",
+      "exportName": "MangoAdminParentView",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2Z",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": ".",
+      "exportName": "MangoAdminShellApp",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2Z",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": ".",
+      "exportName": "MangoAdminShellView",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2Z",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": "./dev-upload-page",
+      "exportName": "default",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2Z",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": "./dev-workflow-page",
+      "exportName": "default",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2Z",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": "./home-list",
+      "exportName": "default",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2Z",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": "./home-management",
+      "exportName": "default",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2Z",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": "./home-templates",
+      "exportName": "default",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2Z",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": "./home-user",
+      "exportName": "default",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2Z",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": "./home",
+      "exportName": "default",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2Z",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    }
+  ]
+}
