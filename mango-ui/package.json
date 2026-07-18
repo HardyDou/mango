@@ -13,6 +13,8 @@
     "admin:module-styles:check": "node ./scripts/check-admin-module-style-governance.mjs",
     "package-exports:check": "node ./scripts/check-package-exports.mjs",
     "package-consumer:typecheck": "node ./scripts/check-package-consumer-typecheck.mjs",
+    "quality:inventory": "node ./scripts/quality/frontend-inventory.mjs",
+    "quality:inventory:test": "node --test ./scripts/quality/frontend-inventory.test.mjs",
     "test:micro": "node_modules/.pnpm/node_modules/.bin/playwright test --config apps/mango-admin-shell/playwright.config.ts",
     "lint": "pnpm -r lint",
     "publish:pkg": "node ./scripts/publish-package.mjs",
