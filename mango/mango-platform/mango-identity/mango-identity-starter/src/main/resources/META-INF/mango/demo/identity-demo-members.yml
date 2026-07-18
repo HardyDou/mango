@@ -69,7 +69,7 @@ mango:
             status: { type: INT, value: 1 }
             remark: { type: STRING, value: C公司初始化管理员成员 }
       ORG_MEMBER_BINDING:
-        - id: "2026071609000000021"
+        - id: "2026071609000001021"
           version: 1
           biz-key: identity.member-org.tenant-2.admin
           name: A公司管理员主组织
@@ -80,7 +80,7 @@ mango:
             memberId: { type: LONG, value: 1002 }
             orgCode: { type: STRING, value: COMPANY_A_ROOT }
             primaryOrg: { type: BOOLEAN, value: true }
-        - id: "2026071609000000022"
+        - id: "2026071609000001022"
           version: 1
           biz-key: identity.member-org.tenant-3.admin
           name: B公司管理员主组织

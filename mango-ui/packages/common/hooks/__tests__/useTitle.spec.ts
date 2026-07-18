@@ -1,22 +1,24 @@
 import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
-import { nextTick } from 'vue';
+import { defineComponent, h } from 'vue';
+import { mount } from '@vue/test-utils';
 import { useTitle, setTitle } from '../useTitle';
 
 // Mock vue-i18n
-vi.mock('vue-i18n', () => ({
-  useI18n: () => ({
-    t: (key: string) => {
-      const translations: Record<string, string> = {
-        'menu.home': '首页',
-        'menu.user': '用户管理',
-      };
-      return translations[key] || key;
-    },
-    locale: {
-      value: 'zh-cn',
-    },
-  }),
-}));
+vi.mock('vue-i18n', async () => {
+  const { ref } = await import('vue');
+  return {
+    useI18n: () => ({
+      t: (key: string) => {
+        const translations: Record<string, string> = {
+          'menu.home': '首页',
+          'menu.user': '用户管理',
+        };
+        return translations[key] || key;
+      },
+      locale: ref('zh-cn'),
+    }),
+  };
+});
 
 describe('useTitle Hook', () => {
   const originalTitle = document.title;
@@ -57,10 +59,18 @@ describe('useTitle Hook', () => {
     });
 
     it('should return updateTitle and appName', () => {
-      const result = useTitle();
+      let result: ReturnType<typeof useTitle> | undefined;
+      const wrapper = mount(defineComponent({
+        setup() {
+          result = useTitle();
+          return () => h('div');
+        },
+      }));
+
       expect(result).toHaveProperty('updateTitle');
       expect(result).toHaveProperty('appName');
-      expect(result.appName).toBe('Mango Admin');
+      expect(result?.appName).toBe('Mango Admin');
+      wrapper.unmount();
     });
   });
 

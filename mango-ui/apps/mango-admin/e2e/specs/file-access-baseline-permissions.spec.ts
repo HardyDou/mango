@@ -29,10 +29,10 @@ type FilePreview = {
   previewUrl?: string;
   downloadUrl?: string;
   directAccess?: boolean;
-  directPreviewUrl?: string;
-  directDownloadUrl?: string;
-  directPreviewExpireSeconds?: number;
-  directDownloadExpireSeconds?: number;
+  directPreviewUrl?: string | null;
+  directDownloadUrl?: string | null;
+  directPreviewExpireSeconds?: number | null;
+  directDownloadExpireSeconds?: number | null;
 };
 
 type FilePreviewLink = {
@@ -62,7 +62,7 @@ type IdentityUser = {
 const ordinaryPassword = 'E2E@123456';
 
 test.describe('文件访问基线权限矩阵 @p0 @file @permission', () => {
-  test('匿名、普通登录用户和管理员的文件基础能力边界符合基线', async ({ request, playwright }) => {
+  test('匿名、普通登录用户和管理员的文件基础能力边界符合基线', async ({ request, playwright, baseURL }) => {
     test.setTimeout(90_000);
 
     const unique = `${Date.now()}-${test.info().workerIndex}`;
@@ -95,7 +95,7 @@ test.describe('文件访问基线权限矩阵 @p0 @file @permission', () => {
         headers: authHeaders(ordinaryToken),
       });
       const settings = await expectBusinessOk<FileSettings>(settingsResponse, '普通登录用户读取文件设置失败');
-      expect(settings.accessMode).toBe('DIRECT');
+      expect(settings.accessMode).toBe('PROXY');
       expect(settings.accessTokenEnabled).toBe(true);
       expect(settings.publicReadRequiresToken).toBe(true);
       expect(Number(settings.accessTokenExpireSeconds)).toBe(86400);
@@ -138,13 +138,13 @@ test.describe('文件访问基线权限矩阵 @p0 @file @permission', () => {
         '普通登录用户读取文件预览元数据失败',
       );
       expect(String(preview.id)).toBe(String(uploaded.id));
-      expect(preview.directAccess).toBe(true);
-      expect(Number(preview.directPreviewExpireSeconds)).toBe(86400);
-      expect(Number(preview.directDownloadExpireSeconds)).toBe(86400);
+      expect(preview.directAccess).toBe(false);
       expectRuntimeUrl(preview.previewUrl, '预览响应 previewUrl');
       expectRuntimeUrl(preview.downloadUrl, '预览响应 downloadUrl');
-      expectRuntimeUrl(preview.directPreviewUrl, '预览响应 directPreviewUrl');
-      expectRuntimeUrl(preview.directDownloadUrl, '预览响应 directDownloadUrl');
+      expect(preview.directPreviewUrl).toBeNull();
+      expect(preview.directDownloadUrl).toBeNull();
+      expect(preview.directPreviewExpireSeconds).toBeNull();
+      expect(preview.directDownloadExpireSeconds).toBeNull();
 
       const previewContentResponse = await request.get(
         api(`/file/files/preview-content?id=${encodeURIComponent(String(uploaded.id))}`),
@@ -165,7 +165,7 @@ test.describe('文件访问基线权限矩阵 @p0 @file @permission', () => {
       expect(Number(previewLink.expireSeconds)).toBeGreaterThan(0);
 
       const previewPageResponse = await request.get(
-        new URL(previewLink.previewUrl, 'http://127.0.0.1:30003').toString(),
+        new URL(previewLink.previewUrl, baseURL!).toString(),
       );
       expect(previewPageResponse.status()).toBe(200);
       expect(previewPageResponse.headers()['content-type']).toContain('text/html');

@@ -15,6 +15,7 @@ type StepResult = {
 const results: StepResult[] = [];
 const unique = Date.now();
 const keyword = `BTN${unique}`;
+let originalFileSettings: Record<string, unknown> | undefined;
 
 type UploadAsset = {
   name: string;
@@ -24,6 +25,64 @@ type UploadAsset = {
 
 function record(page: string, action: string, status: 'PASS' | 'FAIL', detail?: string) {
   results.push({ page, action, status, detail });
+}
+
+async function apiHeaders(page: Page) {
+  return page.evaluate(() => {
+    const token = sessionStorage.getItem('MANGO_TOKEN') || '';
+    const userInfo = JSON.parse(sessionStorage.getItem('userInfo') || '{}');
+    const tenantId = String(userInfo?.tenantId || '1');
+    return {
+      Authorization: token ? `Bearer ${token}` : '',
+      'TENANT-ID': tenantId,
+      'X-Mango-Tenant-Id': tenantId,
+    };
+  });
+}
+
+function editableFileSettings(settings: Record<string, unknown>) {
+  const payload = { ...settings };
+  delete payload.id;
+  delete payload.tenantId;
+  delete payload.defaultConfig;
+  delete payload.updatedTime;
+  return payload;
+}
+
+async function allowCmsVideoUploads(page: Page) {
+  const headers = await apiHeaders(page);
+  const response = await page.request.get('/api/file/settings', { headers });
+  const body = await response.json();
+  expect(body.success || body.code === 200, JSON.stringify(body)).toBeTruthy();
+  originalFileSettings = editableFileSettings(body.data);
+  const allowedExtensions = Array.isArray(body.data.allowedExtensions)
+    ? body.data.allowedExtensions
+    : [];
+  if (allowedExtensions.length === 0 || allowedExtensions.includes('mp4')) {
+    return;
+  }
+  const saveResponse = await page.request.put('/api/file/settings', {
+    headers,
+    data: {
+      ...originalFileSettings,
+      allowedExtensions: [...allowedExtensions, 'mp4'],
+    },
+  });
+  const saveBody = await saveResponse.json();
+  expect(saveBody.success || saveBody.code === 200, JSON.stringify(saveBody)).toBeTruthy();
+}
+
+async function restoreFileSettings(page: Page) {
+  if (!originalFileSettings) {
+    return;
+  }
+  const response = await page.request.put('/api/file/settings', {
+    headers: await apiHeaders(page),
+    data: originalFileSettings,
+  });
+  const body = await response.json();
+  expect(body.success || body.code === 200, JSON.stringify(body)).toBeTruthy();
+  originalFileSettings = undefined;
 }
 
 function formItem(scope: Locator, label: string) {
@@ -296,12 +355,14 @@ async function toggleStatus(page: Page, pageName: string, rowText: string | RegE
   if (await row.getByRole('button', { name: '禁用' }).count()) {
     await row.getByRole('button', { name: '禁用' }).click();
     await expectToast(page, '状态已更新');
+    await expect(rowByText(page, rowText).first().getByRole('button', { name: '启用' })).toBeVisible({ timeout: 10000 });
     record(pageName, '禁用', 'PASS');
   }
   const nextRow = rowByText(page, rowText).first();
   if (await nextRow.getByRole('button', { name: '启用' }).count()) {
     await nextRow.getByRole('button', { name: '启用' }).click();
     await expectToast(page, '状态已更新');
+    await expect(rowByText(page, rowText).first().getByRole('button', { name: '禁用' })).toBeVisible({ timeout: 10000 });
     record(pageName, '启用', 'PASS');
   }
 }
@@ -461,6 +522,10 @@ function createDemoVideoBuffer() {
 test.describe('内容运营页面按钮浏览器验收', () => {
   test.setTimeout(1200000);
 
+  test.afterEach(async ({ page }) => {
+    await restoreFileSettings(page);
+  });
+
   test('逐页操作内容运营下所有主要按钮', async ({ page }) => {
     const consoleErrors: string[] = [];
     const failedResponses: string[] = [];
@@ -502,6 +567,7 @@ test.describe('内容运营页面按钮浏览器验收', () => {
     const videoAsset: UploadAsset = { name: 'cms-buttons-video.mp4', mimeType: 'video/mp4', buffer: createDemoVideoBuffer() };
 
     await login(page);
+    await allowCmsVideoUploads(page);
 
     await openCmsPage(page, '/cms/sites', '站点管理');
     await queryAndReset(page, '站点列表', keyword);

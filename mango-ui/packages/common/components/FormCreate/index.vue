@@ -379,7 +379,7 @@ function initFormData() {
     if (field.type === 'divider') return;
     data[field.key] = field.defaultValue ?? null;
   });
-  formData.value = data;
+  formData.value = { ...data, ...(props.modelValue || {}) };
 }
 
 // 初始化验证规则

@@ -2,11 +2,10 @@ import { expect, test } from '@playwright/test';
 import { api as e2eApi } from '../support/api';
 
 test.describe('登录机构选择 E2E', () => {
-  test('账号密码校验后返回当前账号可进入机构，登录页下拉随账号权限收敛', async ({ page, request }) => {
+  test('账号校验后返回当前账号可进入机构，登录页下拉随账号权限收敛', async ({ page, request }) => {
     const optionsResponse = await request.post(e2eApi('/auth/login-institutions'), {
       data: {
         username: 'admin',
-        password: 'admin123',
         realm: 'INTERNAL',
         appCode: 'internal-admin',
       },
@@ -20,8 +19,7 @@ test.describe('登录机构选择 E2E', () => {
 
     const invalidResponse = await request.post(e2eApi('/auth/login-institutions'), {
       data: {
-        username: 'admin',
-        password: 'bad-password',
+        username: 'missing-user',
         realm: 'INTERNAL',
         appCode: 'internal-admin',
       },

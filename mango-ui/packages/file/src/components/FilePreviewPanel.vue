@@ -66,7 +66,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { Document } from '@element-plus/icons-vue';
 import { downloadFileRecord, fileApi, normalizeFileId, type FilePreview, type FileReference } from '../api/file';
-import { isPreviewDisplayUrl } from '../utils/previewUrl';
+import { isBackendFileContentUrl, isPreviewDisplayUrl } from '../utils/previewUrl';
 import type { ApiId } from '@mango/api-schema';
 
 type PreviewActionsState = {
@@ -229,7 +229,9 @@ async function resolveExternalPreviewUrl(item: FilePreview) {
 }
 
 function resolveInlinePreviewUrl(item: FilePreview) {
-  if (isPreviewDisplayUrl(item.directPreviewUrl)) return item.directPreviewUrl;
+  if (isPreviewDisplayUrl(item.directPreviewUrl) && !isBackendFileContentUrl(item.directPreviewUrl)) {
+    return item.directPreviewUrl;
+  }
   return '';
 }
 

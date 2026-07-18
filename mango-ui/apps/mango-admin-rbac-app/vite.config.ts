@@ -7,6 +7,7 @@ import {
   assertMangoPackageModeDist,
   createMangoWorkspaceAliases,
 } from '../../build-config/mangoAliases';
+import { createMangoApiProxy } from '../../build-config/apiProxy';
 
 export default defineConfig((mode: ConfigEnv) => {
   assertMangoPackageModeDist(__dirname, { command: mode.command });
@@ -37,11 +38,7 @@ export default defineConfig((mode: ConfigEnv) => {
         credentials: true,
       },
       proxy: {
-        '/api': {
-          target: proxyTarget,
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/api/, ''),
-        },
+        '/api': createMangoApiProxy(proxyTarget),
       },
     },
     preview: {

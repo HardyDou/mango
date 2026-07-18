@@ -160,6 +160,24 @@ describe('FilePreviewPanel', () => {
     expect(revokeObjectUrl).toHaveBeenCalledWith(objectUrl);
   });
 
+  it('loads a local backend direct URL as an authenticated blob', async () => {
+    const objectUrl = 'blob:local-pdf';
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue(objectUrl);
+    const previewContent = vi.spyOn(fileApi, 'previewContent').mockResolvedValue({
+      data: new Blob(['preview-content'], { type: 'application/pdf' }),
+      headers: { 'content-type': 'application/pdf' },
+    });
+
+    const host = await mountPanel(createPreview({
+      directPreviewUrl: 'http://127.0.0.1:18002/file/local-objects/local/report.pdf',
+    }));
+
+    await vi.waitFor(() => {
+      expect(previewContent).toHaveBeenCalledWith('file-1');
+      expect(host.querySelector('iframe')?.getAttribute('src')).toBe(objectUrl);
+    });
+  });
+
   it('loads a complex document through the tokenized preview service link', async () => {
     const previewLink = vi.spyOn(fileApi, 'previewLink').mockResolvedValue({
       fileId: 'file-1',

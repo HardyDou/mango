@@ -32,7 +32,7 @@ test.describe('布局系统 E2E 测试', () => {
     const homeTag = page.locator('.tags-view-item.active', { hasText: '首页' });
     await expect(homeTag).toBeVisible();
     await expect(homeTag.locator('.close-icon')).toHaveCount(0);
-    await expect(page.getByRole('button', { name: '首页' })).toBeVisible();
+    await expect(page.locator('.layout-top-system-item', { hasText: /^首页$/ })).toBeVisible();
   });
 
   test('横向布局 (transverse)', async ({ page }) => {

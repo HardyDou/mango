@@ -1,3 +1,4 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Session } from '../storage';
 import { resolveHttpErrorMessage } from '../request';
 import { mangoMessage } from '../message';
@@ -24,11 +25,16 @@ const mocks = vi.hoisted(() => ({
   warning: vi.fn(),
 }));
 
-vi.mock('axios', () => ({
-  default: {
-    create: vi.fn(() => mocks.service),
-  },
-}));
+vi.mock('axios', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('axios')>();
+  return {
+    ...actual,
+    default: {
+      ...actual.default,
+      create: vi.fn(() => mocks.service),
+    },
+  };
+});
 
 vi.mock('../message', () => ({
   mangoMessage: {

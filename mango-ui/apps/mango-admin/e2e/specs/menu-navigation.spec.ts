@@ -70,7 +70,7 @@ test.describe('用户菜单导航 E2E', () => {
 
     const menuResponse = await menuResponsePromise;
     const menuBody = await menuResponse.json();
-    expect(menuBody.data).toHaveLength(4);
+    expect(menuBody.data).toHaveLength(6);
     expect(menuBody.data[0]).toMatchObject({
       menuName: '系统管理',
       path: '/system',
@@ -80,6 +80,7 @@ test.describe('用户菜单导航 E2E', () => {
       '应用管理',
       '字典管理',
       '参数配置',
+      '后台品牌配置',
       '行政区划',
       '日志管理',
       '系统维护',
@@ -98,21 +99,42 @@ test.describe('用户菜单导航 E2E', () => {
       '编号规则',
       '文件管理',
       '模板管理',
+      '网址管理',
+      '支付管理',
       '任务管理',
+      '内容运营',
+      '首页管理',
     ]);
     expect(menuBody.data[3]).toMatchObject({
+      menuName: '网址导航',
+      path: '/link',
+    });
+    expect(menuBody.data[3].children.map((item: { menuName: string }) => item.menuName)).toEqual([
+      '我的收藏',
+      '我的分类',
+      '我的网址',
+    ]);
+    expect(menuBody.data[4]).toMatchObject({
       menuName: '通知中心',
       path: '/notice',
     });
-    expect(menuBody.data[3].children
+    expect(menuBody.data[4].children
       .filter((item: { visible: number }) => item.visible !== 0)
       .map((item: { menuName: string }) => item.menuName)).toEqual([
-      '我的消息',
+      '公告管理',
       '消息配置',
       '发送任务',
       '渠道配置',
       '发送记录',
       '失败重试',
+    ]);
+    expect(menuBody.data[5]).toMatchObject({
+      menuName: '消息中心',
+      path: '/message-center',
+    });
+    expect(menuBody.data[5].children.map((item: { menuName: string }) => item.menuName)).toEqual([
+      '我的消息',
+      '公告',
     ]);
     for (const menu of collectVisibleMenus(menuBody.data)) {
       expect(menu.icon, `${menu.menuName} 必须配置菜单图标`).toBeTruthy();
@@ -123,6 +145,7 @@ test.describe('用户菜单导航 E2E', () => {
     await expectMenuIcon(page, '应用管理');
     await expectMenuIcon(page, '字典管理');
     await expectMenuIcon(page, '参数配置');
+    await expectMenuIcon(page, '后台品牌配置');
     await expectMenuIcon(page, '行政区划');
     await expectMenuIcon(page, '日志管理');
     await expectMenuIcon(page, '系统维护');
@@ -168,8 +191,13 @@ test.describe('用户菜单导航 E2E', () => {
     await expectMenuIcon(page, '告警规则');
     await expectMenuIcon(page, '运行状态');
 
+    await openTopMenu(page, '网址导航');
+    await expectMenuIcon(page, '我的收藏');
+    await expectMenuIcon(page, '我的分类');
+    await expectMenuIcon(page, '我的网址');
+
     await openTopMenu(page, '通知中心');
-    await expectMenuIcon(page, '我的消息');
+    await expectMenuIcon(page, '公告管理');
     const noticeTasksResponsePromise = page.waitForResponse((response) => {
       return response.url().includes('/api/notice/tasks')
         && response.request().method() === 'GET';
@@ -183,6 +211,10 @@ test.describe('用户菜单导航 E2E', () => {
     await expectMenuIcon(page, '渠道配置');
     await expectMenuIcon(page, '发送记录');
     await expectMenuIcon(page, '失败重试');
+
+    await openTopMenu(page, '消息中心');
+    await expectMenuIcon(page, '我的消息');
+    await expectMenuIcon(page, '公告');
   });
 
   test('A 公司登录后只渲染机构授权范围内的系统管理、审批中心与平台能力导航', async ({ page }) => {
@@ -198,7 +230,7 @@ test.describe('用户菜单导航 E2E', () => {
 
     const menuResponse = await menuResponsePromise;
     const menuBody = await menuResponse.json();
-    expect(menuBody.data).toHaveLength(4);
+    expect(menuBody.data).toHaveLength(6);
     expect(menuBody.data[0]).toMatchObject({
       menuName: '系统管理',
       path: '/system',
@@ -212,8 +244,16 @@ test.describe('用户菜单导航 E2E', () => {
       path: '/data',
     });
     expect(menuBody.data[3]).toMatchObject({
+      menuName: '网址导航',
+      path: '/link',
+    });
+    expect(menuBody.data[4]).toMatchObject({
       menuName: '通知中心',
       path: '/notice',
+    });
+    expect(menuBody.data[5]).toMatchObject({
+      menuName: '消息中心',
+      path: '/message-center',
     });
     expect(menuBody.data[0].children.map((item: { menuName: string }) => item.menuName)).toEqual([
       '权限管理',
@@ -228,17 +268,28 @@ test.describe('用户菜单导航 E2E', () => {
     expect(menuBody.data[2].children.map((item: { menuName: string }) => item.menuName)).toEqual([
       '日历管理',
       '编号规则',
+      '网址管理',
       '任务管理',
+      '内容运营',
     ]);
-    expect(menuBody.data[3].children
+    expect(menuBody.data[3].children.map((item: { menuName: string }) => item.menuName)).toEqual([
+      '我的收藏',
+      '我的分类',
+      '我的网址',
+    ]);
+    expect(menuBody.data[4].children
       .filter((item: { visible: number }) => item.visible !== 0)
       .map((item: { menuName: string }) => item.menuName)).toEqual([
-      '我的消息',
+      '公告管理',
       '消息配置',
       '发送任务',
       '渠道配置',
       '发送记录',
       '失败重试',
+    ]);
+    expect(menuBody.data[5].children.map((item: { menuName: string }) => item.menuName)).toEqual([
+      '我的消息',
+      '公告',
     ]);
     for (const menu of collectVisibleMenus(menuBody.data)) {
       expect(menu.icon, `${menu.menuName} 必须配置菜单图标`).toBeTruthy();
@@ -265,8 +316,13 @@ test.describe('用户菜单导航 E2E', () => {
     await expectMenuIcon(page, '告警规则');
     await expectMenuIcon(page, '运行状态');
 
+    await openTopMenu(page, '网址导航');
+    await expectMenuIcon(page, '我的收藏');
+    await expectMenuIcon(page, '我的分类');
+    await expectMenuIcon(page, '我的网址');
+
     await openTopMenu(page, '通知中心');
-    await expectMenuIcon(page, '我的消息');
+    await expectMenuIcon(page, '公告管理');
     await expectMenuIcon(page, '消息配置');
     const noticeTasksResponsePromise = page.waitForResponse((response) => {
       return response.url().includes('/api/notice/tasks')
@@ -280,6 +336,10 @@ test.describe('用户菜单导航 E2E', () => {
     await expectMenuIcon(page, '渠道配置');
     await expectMenuIcon(page, '发送记录');
     await expectMenuIcon(page, '失败重试');
+
+    await openTopMenu(page, '消息中心');
+    await expectMenuIcon(page, '我的消息');
+    await expectMenuIcon(page, '公告');
 
     await expect(page.getByText('应用管理')).toHaveCount(0);
     await expect(page.getByText('文件管理')).toHaveCount(0);

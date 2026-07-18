@@ -11,6 +11,7 @@ import {
   createMangoWorkspaceAliases,
   resolveMangoFrontendMode,
 } from '../../build-config/mangoAliases';
+import { createMangoApiProxy } from '../../build-config/apiProxy';
 
 const ALLOWED_PROXY_HOSTS = ['127.0.0.1', 'localhost'];
 
@@ -134,12 +135,7 @@ const viteConfig = defineConfig((mode: ConfigEnv) => {
       proxy: {
         // Mock 模式下跳过 /api/* 路径，由 MSW 处理
         ...(env.VITE_USE_MOCK !== 'true' ? {
-          '/api': {
-            target: proxyTarget,
-            ws: true,
-            changeOrigin: true,
-            rewrite: (path) => path.replace(/^\/api/, ''),
-          },
+          '/api': createMangoApiProxy(proxyTarget),
           '/mango-message': {
             target: proxyTarget,
             ws: true,

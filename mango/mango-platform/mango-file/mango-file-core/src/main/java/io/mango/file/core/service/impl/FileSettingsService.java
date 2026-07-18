@@ -39,6 +39,8 @@ import java.util.stream.Collectors;
         justification = "FileProperties is a Spring-managed configuration collaborator")
 public class FileSettingsService implements IFileSettingsService {
 
+    private static final int DEFAULT_ARCHIVE_RETAIN_DAYS = 180;
+
     private final FileSettingsMapper mapper;
     private final FileProperties properties;
     private final Map<Long, FileSettingsVO> settingsCache = new ConcurrentHashMap<>();
@@ -127,31 +129,30 @@ public class FileSettingsService implements IFileSettingsService {
         entity.setBlockedExtensions(joinExtensions(command.getBlockedExtensions()));
         entity.setDefaultAccessLevel(FileAccessLevel.of(command.getDefaultAccessLevel()).name());
         entity.setDuplicateNameStrategy(FileDuplicateNameStrategy.of(command.getDuplicateNameStrategy()).name());
-        entity.setDuplicateCheckDirectoryScoped(Boolean.FALSE.equals(command.getDuplicateCheckDirectoryScoped()) ? 0 : 1);
+        entity.setDuplicateCheckDirectoryScoped(enabledByDefault(command.getDuplicateCheckDirectoryScoped()));
         entity.setObjectNameStrategy(FileObjectNameStrategy.of(command.getObjectNameStrategy()).name());
-        entity.setInstantUploadEnabled(Boolean.FALSE.equals(command.getInstantUploadEnabled()) ? 0 : 1);
+        entity.setInstantUploadEnabled(enabledByDefault(command.getInstantUploadEnabled()));
         entity.setInstantUploadScope(FileInstantUploadScope.of(command.getInstantUploadScope()).name());
-        entity.setContentTypeCheckEnabled(Boolean.FALSE.equals(command.getContentTypeCheckEnabled()) ? 0 : 1);
+        entity.setContentTypeCheckEnabled(enabledByDefault(command.getContentTypeCheckEnabled()));
         entity.setAllowedContentTypes(joinTextValues(command.getAllowedContentTypes()));
         entity.setBlockedContentTypes(joinTextValues(command.getBlockedContentTypes()));
-        entity.setDirectUploadEnabled(Boolean.TRUE.equals(command.getDirectUploadEnabled()) ? 1 : 0);
-        entity.setDirectUploadExpireSeconds(command.getDirectUploadExpireSeconds() == null
-                ? defaults.getDirectUploadExpireSeconds() : command.getDirectUploadExpireSeconds());
-        entity.setAccessTokenEnabled(Boolean.TRUE.equals(command.getAccessTokenEnabled()) ? 1 : 0);
-        entity.setPublicReadRequiresToken(Boolean.TRUE.equals(command.getPublicReadRequiresToken()) ? 1 : 0);
+        entity.setDirectUploadEnabled(disabledByDefault(command.getDirectUploadEnabled()));
+        entity.setDirectUploadExpireSeconds(resolveDefault(command.getDirectUploadExpireSeconds(),
+                defaults.getDirectUploadExpireSeconds()));
+        entity.setAccessTokenEnabled(disabledByDefault(command.getAccessTokenEnabled()));
+        entity.setPublicReadRequiresToken(disabledByDefault(command.getPublicReadRequiresToken()));
         entity.setAccessMode(FileAccessMode.of(command.getAccessMode()).name());
-        entity.setAccessTokenExpireSeconds(command.getAccessTokenExpireSeconds() == null
-                ? defaults.getAccessTokenExpireSeconds() : command.getAccessTokenExpireSeconds());
-        entity.setPreviewProviderUrl(StringUtils.hasText(command.getPreviewProviderUrl())
-                ? command.getPreviewProviderUrl().trim() : defaults.getPreviewProviderUrl());
-        entity.setPreviewExpireSeconds(command.getPreviewExpireSeconds() == null
-                ? defaults.getPreviewExpireSeconds() : command.getPreviewExpireSeconds());
+        entity.setAccessTokenExpireSeconds(resolveDefault(command.getAccessTokenExpireSeconds(),
+                defaults.getAccessTokenExpireSeconds()));
+        entity.setPreviewProviderUrl(resolveTrimmedText(command.getPreviewProviderUrl(),
+                defaults.getPreviewProviderUrl()));
+        entity.setPreviewExpireSeconds(resolveDefault(command.getPreviewExpireSeconds(),
+                defaults.getPreviewExpireSeconds()));
         entity.setPreviewExternalExtensions(joinExtensions(command.getPreviewExternalExtensions()));
-        entity.setArchiveRetainEnabled(Boolean.FALSE.equals(command.getArchiveRetainEnabled()) ? 0 : 1);
-        entity.setArchiveRetainDays(command.getArchiveRetainDays() == null
-                ? defaults.getArchiveRetainDays() : command.getArchiveRetainDays());
-        entity.setArchiveRestoreEnabled(Boolean.TRUE.equals(command.getArchiveRestoreEnabled()) ? 1 : 0);
-        entity.setPhysicalDeleteEnabled(Boolean.TRUE.equals(command.getPhysicalDeleteEnabled()) ? 1 : 0);
+        entity.setArchiveRetainEnabled(enabledByDefault(command.getArchiveRetainEnabled()));
+        entity.setArchiveRetainDays(resolveDefault(command.getArchiveRetainDays(), defaults.getArchiveRetainDays()));
+        entity.setArchiveRestoreEnabled(disabledByDefault(command.getArchiveRestoreEnabled()));
+        entity.setPhysicalDeleteEnabled(disabledByDefault(command.getPhysicalDeleteEnabled()));
     }
 
     private FileSettingsVO toVO(FileSettingsEntity entity) {
@@ -176,8 +177,8 @@ public class FileSettingsService implements IFileSettingsService {
         vo.setPublicReadRequiresToken(Integer.valueOf(1).equals(entity.getPublicReadRequiresToken()));
         vo.setAccessMode(FileAccessMode.of(entity.getAccessMode()).name());
         vo.setAccessTokenExpireSeconds(entity.getAccessTokenExpireSeconds());
-        vo.setPreviewProviderUrl(StringUtils.hasText(entity.getPreviewProviderUrl())
-                ? entity.getPreviewProviderUrl() : defaultVO(entity.getTenantIdAsLong()).getPreviewProviderUrl());
+        vo.setPreviewProviderUrl(resolveText(entity.getPreviewProviderUrl(),
+                defaultVO(entity.getTenantIdAsLong()).getPreviewProviderUrl()));
         vo.setPreviewExpireSeconds(entity.getPreviewExpireSeconds());
         vo.setPreviewExternalExtensions(splitExtensions(entity.getPreviewExternalExtensions()));
         vo.setArchiveRetainEnabled(!Integer.valueOf(0).equals(entity.getArchiveRetainEnabled()));
@@ -217,7 +218,7 @@ public class FileSettingsService implements IFileSettingsService {
         vo.setPreviewExpireSeconds(properties.getPreview().getExpireSeconds());
         vo.setPreviewExternalExtensions(normalizeExtensions(properties.getPreview().getExternalExtensions()));
         vo.setArchiveRetainEnabled(true);
-        vo.setArchiveRetainDays(180);
+        vo.setArchiveRetainDays(DEFAULT_ARCHIVE_RETAIN_DAYS);
         vo.setArchiveRestoreEnabled(false);
         vo.setPhysicalDeleteEnabled(false);
         vo.setDefaultConfig(true);
@@ -228,6 +229,48 @@ public class FileSettingsService implements IFileSettingsService {
         if (value != null) {
             Require.isTrue(value > 0, FileCode.STORAGE_SETTINGS_INVALID);
         }
+    }
+
+    private int enabledByDefault(Boolean value) {
+        if (Boolean.FALSE.equals(value)) {
+            return 0;
+        }
+        return 1;
+    }
+
+    private int disabledByDefault(Boolean value) {
+        if (Boolean.TRUE.equals(value)) {
+            return 1;
+        }
+        return 0;
+    }
+
+    private Long resolveDefault(Long value, Long defaultValue) {
+        if (value == null) {
+            return defaultValue;
+        }
+        return value;
+    }
+
+    private Integer resolveDefault(Integer value, Integer defaultValue) {
+        if (value == null) {
+            return defaultValue;
+        }
+        return value;
+    }
+
+    private String resolveTrimmedText(String value, String defaultValue) {
+        if (!StringUtils.hasText(value)) {
+            return defaultValue;
+        }
+        return value.trim();
+    }
+
+    private String resolveText(String value, String defaultValue) {
+        if (!StringUtils.hasText(value)) {
+            return defaultValue;
+        }
+        return value;
     }
 
     private Long currentTenantId() {
@@ -244,12 +287,12 @@ public class FileSettingsService implements IFileSettingsService {
 
     private String joinExtensions(List<String> values) {
         List<String> normalized = normalizeExtensions(values);
-        return normalized.isEmpty() ? null : String.join(",", normalized);
+        return String.join(",", normalized);
     }
 
     private String joinTextValues(List<String> values) {
         List<String> normalized = normalizeTextValues(values);
-        return normalized.isEmpty() ? null : String.join(",", normalized);
+        return String.join(",", normalized);
     }
 
     private List<String> splitExtensions(String value) {
@@ -291,6 +334,9 @@ public class FileSettingsService implements IFileSettingsService {
     }
 
     private String trimToNull(String value) {
-        return StringUtils.hasText(value) ? value.trim() : null;
+        if (!StringUtils.hasText(value)) {
+            return null;
+        }
+        return value.trim();
     }
 }

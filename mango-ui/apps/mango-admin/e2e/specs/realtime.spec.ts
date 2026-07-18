@@ -48,11 +48,13 @@ async function mockRealtimeApi(page: Page) {
 
   await page.route('**/api/realtime/transports/polling**', async (route) => {
     pollingCount += 1;
+    const clientId = new URL(route.request().url()).searchParams.get('clientId') || '';
+    const isDemoClient = /^browser-[\da-f]{6}$/.test(clientId);
     const deadline = Date.now() + 5000;
-    while (!pendingServerMessage && Date.now() < deadline) {
+    while (!(pendingServerMessage && isDemoClient) && Date.now() < deadline) {
       await sleep(100);
     }
-    const messages = pendingServerMessage ? [
+    const messages = pendingServerMessage && isDemoClient ? [
       {
         id: `server-${pollingCount}`,
         version: '1.0',
@@ -64,7 +66,7 @@ async function mockRealtimeApi(page: Page) {
         timestamp: '2026-05-20T00:00:00Z',
       },
     ] : [];
-    pendingServerMessage = false;
+    if (messages.length) pendingServerMessage = false;
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -163,10 +165,13 @@ test.describe('Realtime 实时消息 E2E', () => {
 
     await expect(page.getByTestId('realtime-message-list').getByText('hello inbound polling')).toBeVisible();
     await expect(page.getByTestId('realtime-message-list').getByText('inbound accepted')).toBeVisible();
+    const sessionUserId = await page.evaluate(() =>
+      String(JSON.parse(sessionStorage.getItem('userInfo') || '{}').userId)
+    );
     expect(realtimeMock.getLastInboundPayload()).toMatchObject({
       event: { domain: 'chat', name: 'message.send' },
       payload: { type: 'text', text: 'hello inbound polling' },
-      context: { tenantId: '1', userId: 1 },
+      context: { tenantId: '1', userId: sessionUserId },
       metadata: { senderName: 'Administrator', department: '产品研发部' },
     });
 

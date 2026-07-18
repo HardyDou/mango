@@ -14,12 +14,13 @@ const workspaceEnv = readWorkspaceEnv();
 const backendPort = process.env.MANGO_BACKEND_PORT || workspaceEnv.MANGO_BACKEND_PORT || '18081';
 const adminProxyPath = process.env.VITE_ADMIN_PROXY_PATH || `http://127.0.0.1:${backendPort}`;
 
-const children = apps.map(([name]) => {
+const children = apps.map(([name, url]) => {
   const child = spawn('pnpm', ['--filter', name, 'dev'], {
     cwd: new URL('..', import.meta.url),
     env: {
       ...process.env,
       VITE_ADMIN_PROXY_PATH: adminProxyPath,
+      VITE_PORT: new URL(url).port,
       VITE_MANGO_DEPLOY_ENV: process.env.VITE_MANGO_DEPLOY_ENV || 'dev',
       VITE_MANGO_ALLOWED_REMOTE_ORIGINS: process.env.VITE_MANGO_ALLOWED_REMOTE_ORIGINS || microAllowedOrigins,
       FORCE_COLOR: process.env.FORCE_COLOR || '1',

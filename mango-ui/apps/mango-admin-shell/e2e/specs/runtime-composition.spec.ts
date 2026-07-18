@@ -315,7 +315,7 @@ test.describe.serial('Shell runtime composition', () => {
       (window as any).__MANGO_RUNTIME_EVENT_BUS__.emit('unauthorized');
     });
 
-    await page.waitForURL('**/#/login', { timeout: 10000 });
+    await page.waitForURL('**/#/login**', { timeout: 10000 });
     await expect(page.getByPlaceholder('用户名')).toBeVisible();
     const token = await page.evaluate(() => sessionStorage.getItem('MANGO_TOKEN'));
     expect(token).toBeNull();
