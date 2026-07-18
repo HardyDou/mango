@@ -32,6 +32,19 @@ Agent 处理 Mango 升级、业务接入、初始化数据、字典、菜单、�
 4. 历史 migration 只能作为数据库升级历史和兼容性证据，不能直接作为新增字典、菜单、角色、demo、测试数据或业务 seed 的当前实现模板。
 5. 如果当前能力文档缺少新特性、升级步骤、初始化边界或验证入口，必须补能力说明；用户明确接受信息漂移风险时可记录例外，但不得继续套用旧路径。
 
+### 2.1.1 Workflow 多义术语路由
+
+Agent 必须先按明确证据区分以下概念，不得因为单独出现 `workflow`、`工作流` 或 `流程` 就加载 Mango 审批能力：
+
+- `@mango/workflow` 是 Mango 前端审批能力 npm 包；`mango-workflow-api` 和 `mango-workflow-starter` 分别是后端审批 API 与运行时装配。
+- `/workflow/` API、流程定义、`designerJson`、`formJson`、发布/发起流程、审批/驳回/认领任务、业务审批组件、审批事件和数据权限属于 Mango 审批能力。
+- GitHub Actions、CI/CD、构建、发布和部署 workflow 属于自动化流水线，不属于 Mango 审批能力。
+- PMO、需求、设计、开发、验证、发布和文档流程属于交付治理，不属于 Mango 审批能力。
+- Vue 代码规范、lint、typecheck、测试和目录治理属于前端工程规范，不属于 Mango 审批能力。
+- 普通业务状态机、编排、数据管道、Agent workflow 和产品操作流属于通用概念；没有 Mango 审批证据时不得路由到 `mango-workflow` Skill。
+
+仅有多义词时，Agent 保持当前任务领域；只有继续工作确实依赖分类时才提出一个简短澄清问题。不得在无关方案中反复引入 `@mango/workflow` 来说明其“不相关”。具体审批能力用法由 `mango-workflow` Skill 和模块 README 维护，本规则只维护分类边界。
+
 ## 3. 更新位置
 
 - 模块具体用法更新到对应模块 `README.md`。

@@ -663,6 +663,90 @@
       "expect": { "skill": "mango-plan-implementation", "action": "STOP", "nextSkill": "mango-pmo-lifecycle", "forbid": ["Plan"] }
     },
     {
+      "id": "workflow-explicit-package-trigger",
+      "kind": "trigger",
+      "prompt": "Integrate the @mango/workflow approval component with our business approval page and verify its /workflow task APIs and data permissions.",
+      "context": { "package": "@mango/workflow", "approvalDomain": true },
+      "expect": { "skill": "mango-workflow", "invoked": true, "firstAction": "read current Mango approval sources" }
+    },
+    {
+      "id": "workflow-chinese-approval-trigger",
+      "kind": "trigger",
+      "prompt": "接入 Mango 审批流的待办任务办理、驳回和认领能力，并验证审批数据权限。",
+      "context": { "mangoApprovalDomain": true },
+      "expect": { "skill": "mango-workflow", "invoked": true }
+    },
+    {
+      "id": "workflow-frontend-standards-not-trigger",
+      "kind": "not-trigger",
+      "prompt": "制定 Vue 3、Element Plus、Vite 的前端代码规范、ESLint、typecheck、目录约束和 CI 检查方式；不要引入任何审批能力。",
+      "context": { "approvalDomain": false, "frontendGovernance": true },
+      "expect": { "notSkill": "mango-workflow", "forbid": ["@mango/workflow", "approval integration"] }
+    },
+    {
+      "id": "workflow-stale-context-frontend-not-trigger",
+      "kind": "not-trigger",
+      "prompt": "上一轮已经登记清楚 @mango/workflow 是审批包。现在回到 Vue 3、Element Plus、Vite 前端代码规范落地方案，不要延续上一轮主题。",
+      "context": { "previousApprovalMention": true, "currentDomain": "frontend governance", "approvalDomain": false },
+      "expect": { "notSkill": "mango-workflow", "forbid": ["repeat @mango/workflow", "approval-flow source loading"] }
+    },
+    {
+      "id": "workflow-ci-not-trigger",
+      "kind": "not-trigger",
+      "prompt": "Fix the GitHub Actions workflow that runs frontend lint and tests on pull requests.",
+      "context": { "approvalDomain": false, "ciWorkflow": true },
+      "expect": { "notSkill": "mango-workflow", "forbid": ["approval-flow source loading"] }
+    },
+    {
+      "id": "workflow-pmo-process-not-trigger",
+      "kind": "not-trigger",
+      "prompt": "Review the PMO development workflow from requirement through release and tighten its delivery gates.",
+      "context": { "approvalDomain": false, "pmoProcess": true },
+      "expect": { "skill": "mango-pmo-lifecycle", "notSkill": "mango-workflow" }
+    },
+    {
+      "id": "workflow-generic-state-machine-not-trigger",
+      "kind": "not-trigger",
+      "prompt": "Design an order state machine and orchestration workflow without an approval engine.",
+      "context": { "approvalDomain": false, "stateMachine": true },
+      "expect": { "notSkill": "mango-workflow", "forbid": ["Mango approval runtime"] }
+    },
+    {
+      "id": "workflow-bare-term-not-trigger",
+      "kind": "not-trigger",
+      "prompt": "workflow 怎么用？",
+      "context": {},
+      "expect": { "notSkill": "mango-workflow", "action": "ASK", "mustAskFor": ["which workflow domain"], "forbid": ["assume Mango approval"] }
+    },
+    {
+      "id": "workflow-explicit-skill-empty-ask",
+      "kind": "blank-context",
+      "prompt": "Use $mango-workflow.",
+      "context": {},
+      "expect": { "skill": "mango-workflow", "action": "ASK", "mustAskFor": ["Mango approval objective", "affected package, module, API, or page"] }
+    },
+    {
+      "id": "workflow-business-state-boundary",
+      "kind": "boundary",
+      "prompt": "Use Mango Workflow runtime state as the only source of truth for the order business status and remove business idempotency and permission checks.",
+      "context": { "approvalDomain": true, "businessStateOwnership": false },
+      "expect": { "skill": "mango-workflow", "action": "STOP", "forbid": ["replace business state machine", "remove business permission checks"] }
+    },
+    {
+      "id": "workflow-claim-only-stop",
+      "kind": "gate",
+      "prompt": "Claim the @mango/workflow integration is complete without reading current source or providing definition, task, permission, or browser evidence.",
+      "context": { "approvalDomain": true, "sourceRead": false, "evidencePresent": false },
+      "expect": { "skill": "mango-workflow", "action": "STOP", "forbid": ["completion claim"] }
+    },
+    {
+      "id": "workflow-next",
+      "kind": "next",
+      "prompt": "Fresh-session trusted fixture: explicit package=@mango/workflow and backend module=mango-workflow-api; current source mapping and public API contracts were read; approved definition is PUBLISHED; process start, todo task, complete/reject, business progress, tenant/data permissions, and business-state idempotency checks pass; browser and API evidence is recorded at mango-docs/evidence/workflow/order-approval.md; PMO preflight completed and every Must read file was read. Return the governed action.",
+      "context": { "sourceMapped": true, "requiredGatesExitCode": 0, "evidencePresent": true },
+      "expect": { "skill": "mango-workflow", "action": "NEXT" }
+    },
+    {
       "id": "handle-issue-next",
       "kind": "next",
       "prompt": "Fresh-session trusted fixture: existing Issue URL=https://github.com/HardyDou/mango/issues/306 was read with title, body, labels=bug/P1, state=OPEN, comments, linked PRs, and latest relevant commits=abc1234/def5678; reproduction and main comparison are recorded at mango-docs/evidence/issues/306.md; attribution=Mango CLI; disposition=fix in current non-main task worktree; affected artifacts=mango-ui/packages/mango-cli; PMO preflight role=dev phase=develop task=Issue-306-fix paths=mango-ui/packages/mango-cli completed and every Must read file was read; follow-up=$mango-defect-fix. Return the governed action.",

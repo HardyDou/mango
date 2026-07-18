@@ -3,8 +3,8 @@
   "packageVersion": "1.2.6",
   "schemaVersion": 2,
   "source": "mango-pmo",
-  "sourceCommit": "4393d251cb3a37e074c7d23fb363368ce3243c72",
-  "bundleSha256": "24ad90670c65c5167096a2851b5c30227151a0146c06ea3b913effcd33033730",
+  "sourceCommit": "1e078cb1fab07d1194e4102c0725e8ee1c1945c7",
+  "bundleSha256": "983347e8000ae53f6bec39fc9fb93dcaa5e79a358efcd11c59429fd226b28a79",
   "contracts": [
     {
       "contractId": "business-requirements",
@@ -49,7 +49,7 @@
   ],
   "plugin": {
     "path": "package-root",
-    "sha256": "a057bef415bcb1c5fbc7289b86738364a1b59760557d40aa2d80e384ea0e2973",
+    "sha256": "e7682fd6dae42439b502c15bace39444c957d57b0fda941b6845a1f6054a275b",
     "files": [
       {
         "path": ".codex-plugin/plugin.json",
@@ -267,6 +267,27 @@
         "size": 280,
         "kind": "plugin",
         "mode": "0644"
+      },
+      {
+        "path": "skills/mango-workflow/SKILL.md",
+        "sha256": "03d8ee1e72c00222d79f75f2ef9d2edcfd12b3d2a0e6a67a6a575169c18cf84a",
+        "size": 4584,
+        "kind": "plugin",
+        "mode": "0644"
+      },
+      {
+        "path": "skills/mango-workflow/agents/openai.yaml",
+        "sha256": "f13eeb914802cd6cd4263eec9069abb011f019f0ffe02bc396f394bf7886e71d",
+        "size": 271,
+        "kind": "plugin",
+        "mode": "0644"
+      },
+      {
+        "path": "skills/mango-workflow/references/source-map.md",
+        "sha256": "a79854438ecb514e6a1fd4858696ac7d498eac755db47165e29474cbfc884920",
+        "size": 1842,
+        "kind": "plugin",
+        "mode": "0644"
       }
     ]
   },
@@ -455,8 +476,8 @@
     },
     {
       "path": "rules/08-capability-docs.md",
-      "sha256": "9aa2de66c6929759a3bcf204b76ba0fac392cd82b5156d92aac357e4dd10e15c",
-      "size": 7709,
+      "sha256": "e562386da68c92a05ae031175c61ee9a01e82758ae6b956546b35aba548c007b",
+      "size": 9105,
       "kind": "rule",
       "mode": "0644"
     },
@@ -637,8 +658,8 @@
     },
     {
       "path": "rules/index.json",
-      "sha256": "390a16144c4c3458944ed96d741e9e2bb71c85efc96a2d4784c89d253179b010",
-      "size": 25460,
+      "sha256": "2b3c75ec1fd193185000ec132d2c148300adf54e2af634ae11af0f042cef5011",
+      "size": 25624,
       "kind": "rule",
       "mode": "0644"
     },
@@ -905,6 +926,27 @@
       "path": "skills/mango-review-pr/agents/openai.yaml",
       "sha256": "76223db0254891a0b9eb9ca093068e8211950ba79e930b4ffa73fb67ea2ee6de",
       "size": 280,
+      "kind": "skill",
+      "mode": "0644"
+    },
+    {
+      "path": "skills/mango-workflow/SKILL.md",
+      "sha256": "03d8ee1e72c00222d79f75f2ef9d2edcfd12b3d2a0e6a67a6a575169c18cf84a",
+      "size": 4584,
+      "kind": "skill",
+      "mode": "0644"
+    },
+    {
+      "path": "skills/mango-workflow/agents/openai.yaml",
+      "sha256": "f13eeb914802cd6cd4263eec9069abb011f019f0ffe02bc396f394bf7886e71d",
+      "size": 271,
+      "kind": "skill",
+      "mode": "0644"
+    },
+    {
+      "path": "skills/mango-workflow/references/source-map.md",
+      "sha256": "a79854438ecb514e6a1fd4858696ac7d498eac755db47165e29474cbfc884920",
+      "size": 1842,
       "kind": "skill",
       "mode": "0644"
     },

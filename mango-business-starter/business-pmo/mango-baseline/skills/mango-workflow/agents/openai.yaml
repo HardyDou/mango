@@ -1,0 +1,6 @@
+interface:
+  display_name: "Mango Approval Workflow"
+  short_description: "Integrate and validate Mango approval-flow capabilities"
+  default_prompt: "Use $mango-workflow for this explicitly identified Mango approval-flow task."
+policy:
+  allow_implicit_invocation: true
