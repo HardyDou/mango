@@ -93,6 +93,7 @@
               prefix-icon="Lock"
               show-password
               clearable
+              @blur="loginFlow.loadAccountLoginTenants()"
             />
           </el-form-item>
           <el-form-item>

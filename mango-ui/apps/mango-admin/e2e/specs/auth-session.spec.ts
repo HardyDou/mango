@@ -25,7 +25,7 @@ test.describe('认证会话 E2E @p0 @mango-auth', () => {
     await page.getByPlaceholder('密码').fill(process.env.MANGO_E2E_ADMIN_PASSWORD || 'admin123');
 
     const loginResponsePromise = page.waitForResponse((response) =>
-      response.url().includes('/api/auth/login') && response.request().method() === 'POST'
+      new URL(response.url()).pathname === '/api/auth/login' && response.request().method() === 'POST'
     );
     await page.getByRole('button', { name: '登 录' }).click();
     const loginResponse = await loginResponsePromise;

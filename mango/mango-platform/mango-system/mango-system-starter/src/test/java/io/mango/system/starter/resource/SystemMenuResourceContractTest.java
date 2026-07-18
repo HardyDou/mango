@@ -13,21 +13,30 @@ class SystemMenuResourceContractTest {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Test
-    void wildcardPermissionBelongsOnlyToPlatformPackage() throws Exception {
+    void menuResourcesUseExplicitPermissions() throws Exception {
         try (InputStream input = getClass().getResourceAsStream(
                 "/META-INF/mango/resources/system-common-menu.json")) {
             assertThat(input).isNotNull();
             JsonNode declarations = objectMapper.readTree(input)
                     .path("mango").path("resource").path("declarations").path("AUTH_MENU");
 
-            JsonNode systemRoot = findMenu(declarations, "system");
-            JsonNode wildcard = findMenu(declarations, "system:all-permissions");
+            JsonNode memberMenu = findMenu(declarations, "system:user");
 
-            assertThat(stringValues(systemRoot.path("apiCodes"))).doesNotContain("*:*");
-            assertThat(wildcard.path("menuType").asInt()).isEqualTo(3);
-            assertThat(stringValues(wildcard.path("packageCodes"))).containsExactly("platform_admin");
-            assertThat(stringValues(wildcard.path("apiCodes"))).containsExactly("*:*");
+            assertThat(stringValues(memberMenu.path("apiCodes"))).contains("system:user:list");
+            assertThat(containsApiCode(declarations, "*:*")).isFalse();
         }
+    }
+
+    private boolean containsApiCode(JsonNode node, String apiCode) {
+        if (node.isObject() && stringValues(node.path("apiCodes")).contains(apiCode)) {
+            return true;
+        }
+        for (JsonNode child : node) {
+            if (containsApiCode(child, apiCode)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private JsonNode findMenu(JsonNode declarations, String menuCode) {

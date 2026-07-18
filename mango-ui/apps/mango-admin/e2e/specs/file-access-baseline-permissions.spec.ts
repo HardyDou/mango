@@ -95,7 +95,7 @@ test.describe('文件访问基线权限矩阵 @p0 @file @permission', () => {
         headers: authHeaders(ordinaryToken),
       });
       const settings = await expectBusinessOk<FileSettings>(settingsResponse, '普通登录用户读取文件设置失败');
-      expect(settings.accessMode).toBe('DIRECT');
+      expect(settings.accessMode).toBe('PROXY');
       expect(settings.accessTokenEnabled).toBe(true);
       expect(settings.publicReadRequiresToken).toBe(true);
       expect(Number(settings.accessTokenExpireSeconds)).toBe(86400);
@@ -138,13 +138,13 @@ test.describe('文件访问基线权限矩阵 @p0 @file @permission', () => {
         '普通登录用户读取文件预览元数据失败',
       );
       expect(String(preview.id)).toBe(String(uploaded.id));
-      expect(preview.directAccess).toBe(true);
-      expect(Number(preview.directPreviewExpireSeconds)).toBe(86400);
-      expect(Number(preview.directDownloadExpireSeconds)).toBe(86400);
+      expect(preview.directAccess).toBe(false);
       expectRuntimeUrl(preview.previewUrl, '预览响应 previewUrl');
       expectRuntimeUrl(preview.downloadUrl, '预览响应 downloadUrl');
-      expectRuntimeUrl(preview.directPreviewUrl, '预览响应 directPreviewUrl');
-      expectRuntimeUrl(preview.directDownloadUrl, '预览响应 directDownloadUrl');
+      expect(preview.directPreviewUrl).toBeUndefined();
+      expect(preview.directDownloadUrl).toBeUndefined();
+      expect(preview.directPreviewExpireSeconds).toBeUndefined();
+      expect(preview.directDownloadExpireSeconds).toBeUndefined();
 
       const previewContentResponse = await request.get(
         api(`/file/files/preview-content?id=${encodeURIComponent(String(uploaded.id))}`),

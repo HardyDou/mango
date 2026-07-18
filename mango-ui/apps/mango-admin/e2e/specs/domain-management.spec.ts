@@ -60,7 +60,7 @@ async function loginPage(page: Page, tenant: LoginTenant, diagnostics: string[])
   await page.fill('input[placeholder="用户名"]', 'admin');
   await page.fill('input[placeholder="密码"]', 'admin123');
   const loginResponsePromise = page.waitForResponse((response) =>
-    response.url().includes('/api/auth/login') &&
+    new URL(response.url()).pathname === '/api/auth/login' &&
     response.request().method() === 'POST'
   );
   await page.click('button:has-text("登 录")');
@@ -154,7 +154,7 @@ test.describe('业务域管理页面真实接口闭环 @p0 @domain', () => {
         response.url().includes('/api/domain/domains/tree') &&
         response.status() === 200
       );
-      await page.goto('/#/data/domain');
+      await page.goto('/#/system/domain');
       await treeResponsePromise;
       await expect(page.getByRole('columnheader', { name: '业务域' })).toBeVisible({ timeout: 10000 });
       await expect(page.getByRole('button', { name: '新增业务域' })).toBeVisible();

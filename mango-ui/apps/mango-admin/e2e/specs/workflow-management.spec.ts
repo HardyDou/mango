@@ -1203,6 +1203,18 @@ async function assignSubjectRoles(
   expectApiSuccess(body, `分配角色失败: ${subjectId}`);
 }
 
+async function findRoleId(request: APIRequestContext, token: string, roleCode: string) {
+  const response = await request.get(api('/authorization/roles'), {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  expect(response.status()).toBe(200);
+  const body = await response.json();
+  expectApiSuccess(body, `查询角色失败: ${roleCode}`);
+  const role = (body.data || []).find((item: any) => item.roleCode === roleCode);
+  expect(role, `未找到角色: ${roleCode}`).toBeTruthy();
+  return String(role.roleId);
+}
+
 async function readCopiedList(request: APIRequestContext, token: string, businessKey: string) {
   const response = await request.get(api(`/workflow/tasks/copied`), {
     headers: { Authorization: `Bearer ${token}` },
@@ -2675,8 +2687,8 @@ test.describe('工作流配置真实接口闭环', () => {
       await cleanupUser(request, token, transferUserName);
 
       const transferUser = await createTempUser(request, token, transferUserName);
-      await assignSubjectRoles(request, token, transferUser.memberId, [1]);
-      const roleId = '1';
+      const roleId = await findRoleId(request, token, 'ROLE_ADMIN');
+      await assignSubjectRoles(request, token, transferUser.memberId, [roleId]);
       const workflow = await prepareActionCapabilityWorkflow(request, token, unique, keyword, roleId);
       await startLeaveProcess(request, token, workflow.definitionId, businessKey, 2, 'E2E 动作初始原因');
 
@@ -2832,8 +2844,9 @@ test.describe('工作流配置真实接口闭环', () => {
 
       const firstUser = await createTempUser(request, token, firstUserName);
       const addedUser = await createTempUser(request, token, addedUserName);
-      await assignSubjectRoles(request, token, firstUser.memberId, [1]);
-      await assignSubjectRoles(request, token, addedUser.memberId, [1]);
+      const roleId = await findRoleId(request, token, 'ROLE_ADMIN');
+      await assignSubjectRoles(request, token, firstUser.memberId, [roleId]);
+      await assignSubjectRoles(request, token, addedUser.memberId, [roleId]);
       const workflow = await prepareActionAddSignWorkflow(request, token, unique, keyword, ['admin', firstUserName]);
       await startLeaveProcess(request, token, workflow.definitionId, businessKey, 1, 'E2E 加签初始原因');
 

@@ -63,7 +63,7 @@
                         <el-input v-model="profile.name" placeholder="用户姓名" :disabled="connected" />
                       </el-form-item>
                       <el-form-item label="用户 ID">
-                        <el-input-number v-model="profile.userId" :min="1" :disabled="connected" controls-position="right" />
+                        <el-input v-model="profile.userId" placeholder="用户 ID" :disabled="connected" />
                       </el-form-item>
                     </div>
                     <div v-if="profile.deliveryMode === 'GROUP'" class="profile-grid">
@@ -76,7 +76,7 @@
                     </div>
                     <div v-else-if="profile.deliveryMode === 'USER'" class="profile-grid">
                       <el-form-item label="目标用户 ID">
-                        <el-input-number v-model="profile.targetUserId" :min="1" :disabled="connected" controls-position="right" />
+                        <el-input v-model="profile.targetUserId" placeholder="目标用户 ID" :disabled="connected" />
                       </el-form-item>
                       <el-form-item label="目标用户">
                         <el-input v-model="profile.targetUserName" placeholder="目标用户姓名" :disabled="connected" />
@@ -397,13 +397,13 @@ const runtimeConfig = reactive({
 });
 const profile = reactive({
   tenantId: 'default',
-  userId: 1001,
+  userId: '1001',
   name: '张三',
   department: '产品研发部',
   clientId: `browser-${Math.random().toString(16).slice(2, 8)}`,
   groupId: 'room-001',
   groupName: '订单协作群',
-  targetUserId: 1001,
+  targetUserId: '1001',
   targetUserName: '张三',
   targetClientId: '',
   deliveryMode: 'GROUP' as DeliveryMode,
@@ -905,7 +905,7 @@ function syncProfileFromSession() {
   const sessionTenantId = userInfo.tenantId || Session.get('tenantId');
   const sessionUserId = userInfo.userId || userInfo.id;
   if (sessionTenantId) profile.tenantId = String(sessionTenantId);
-  if (sessionUserId != null) profile.userId = Number(sessionUserId);
+  if (sessionUserId != null) profile.userId = String(sessionUserId);
   if (userInfo.nickname || userInfo.username) profile.name = String(userInfo.nickname || userInfo.username);
   profile.targetUserId = profile.userId;
   profile.targetUserName = profile.name;

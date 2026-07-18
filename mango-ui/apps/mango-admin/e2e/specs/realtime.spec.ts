@@ -163,10 +163,13 @@ test.describe('Realtime 实时消息 E2E', () => {
 
     await expect(page.getByTestId('realtime-message-list').getByText('hello inbound polling')).toBeVisible();
     await expect(page.getByTestId('realtime-message-list').getByText('inbound accepted')).toBeVisible();
+    const sessionUserId = await page.evaluate(() =>
+      String(JSON.parse(sessionStorage.getItem('userInfo') || '{}').userId)
+    );
     expect(realtimeMock.getLastInboundPayload()).toMatchObject({
       event: { domain: 'chat', name: 'message.send' },
       payload: { type: 'text', text: 'hello inbound polling' },
-      context: { tenantId: '1', userId: 1 },
+      context: { tenantId: '1', userId: sessionUserId },
       metadata: { senderName: 'Administrator', department: '产品研发部' },
     });
 

@@ -30,10 +30,10 @@ test.describe('当前用户信息 E2E', () => {
 
     const infoBody = await infoResponse.json();
     expect(infoBody?.data).toMatchObject({
-      userId: '1',
       username: 'admin',
       nickname: 'Administrator',
     });
+    expect(infoBody.data.userId).toMatch(/^\d+$/);
     expect(infoBody.data.roles).toContain('ROLE_ADMIN');
     expect(infoBody.data.permissions).toContain('authorization:role:list');
     expect(infoBody.data.permissions).not.toContain('*:*');
@@ -49,7 +49,7 @@ test.describe('当前用户信息 E2E', () => {
       return raw ? JSON.parse(raw) : null;
     });
     expect(sessionUserInfo).toMatchObject({
-      userId: '1',
+      userId: infoBody.data.userId,
       username: 'admin',
       nickname: 'Administrator',
     });

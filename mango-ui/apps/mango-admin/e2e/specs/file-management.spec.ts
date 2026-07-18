@@ -22,8 +22,7 @@ async function login(page: import('@playwright/test').Page) {
   await page.locator('.tenant-select').click();
   await page.getByRole('option', { name: /芒果集团/ }).click();
   const loginResponsePromise = page.waitForResponse((response) =>
-    response.url().includes('/api/auth/login')
-    && !response.url().includes('/login-institutions')
+    new URL(response.url()).pathname === '/api/auth/login'
     && response.request().method() === 'POST'
   );
   await page.locator('.login-btn').click();
@@ -42,7 +41,7 @@ async function openFileManagementFromCurrentMenu(page: import('@playwright/test'
   if (await fileGroup.getAttribute('aria-expanded') !== 'true') {
     await fileGroup.click();
   }
-  await page.locator('.el-menu-item', { hasText: '文件管理' }).first().click();
+  await page.locator('.el-menu-item:visible').filter({ hasText: /^文件管理$/ }).click();
   await page.waitForURL('**/#/file/files', { timeout: 10000 });
 }
 

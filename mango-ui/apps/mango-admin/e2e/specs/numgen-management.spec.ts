@@ -14,7 +14,7 @@ async function login(page: Page) {
   await page.getByRole('option', { name: /芒果集团/ }).click();
 
   const loginResponsePromise = page.waitForResponse((response) =>
-    response.url().includes('/api/auth/login') && response.request().method() === 'POST'
+    new URL(response.url()).pathname === '/api/auth/login' && response.request().method() === 'POST'
   );
   await page.locator('.login-btn').click();
   const loginResponse = await loginResponsePromise;

@@ -69,50 +69,20 @@ async function fulfillJson(route: Route, data: unknown) {
 
 async function login(page: Page) {
   await page.goto('/#/login');
-  const loginData = await page.evaluate(async () => {
-    const response = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        username: 'admin',
-        password: 'admin123',
-        tenantId: '1',
-        tenantCode: 'default',
-        realm: 'INTERNAL',
-        actorType: 'INTERNAL_USER',
-        partyType: 'INTERNAL_ORG',
-        appCode: 'internal-admin',
-      }),
-    });
-    const body = await response.json();
-    if (!response.ok || !(body.success || body.code === 200) || !body.data?.accessToken) {
-      throw new Error(`登录失败：${JSON.stringify(body)}`);
-    }
-    return body.data;
-  });
-  await page.evaluate((data) => {
-    const userInfo = {
-      ...data,
-      tenantId: data.tenantId || '1',
-      tenantCode: data.tenantCode || 'default',
-      tenantName: data.tenantName || '芒果集团',
-      realm: data.realm || 'INTERNAL',
-      actorType: data.actorType || 'INTERNAL_USER',
-      partyType: data.partyType || 'INTERNAL_ORG',
-      partyId: data.partyId || '1',
-      appCode: data.appCode || 'internal-admin',
-    };
-    sessionStorage.setItem('MANGO_TOKEN', data.accessToken);
-    sessionStorage.setItem('MANGO_REFRESH_TOKEN', data.refreshToken || '');
-    sessionStorage.setItem('MANGO_TOKEN_EXPIRES_AT', String(Date.now() + Number(data.expiresIn || 7200) * 1000));
-    sessionStorage.setItem('userInfo', JSON.stringify(userInfo));
-    sessionStorage.setItem('tenantId', String(userInfo.tenantId));
-    document.cookie = `MANGO_TOKEN=${encodeURIComponent(data.accessToken)}; path=/; SameSite=Lax`;
-  }, loginData);
+  await page.getByPlaceholder('用户名').fill('admin');
+  await page.getByPlaceholder('密码').fill('admin123');
+  const tenantsResponsePromise = page.waitForResponse(response =>
+    response.url().includes('/api/auth/login-institutions') && response.status() === 200
+  );
+  await page.getByPlaceholder('密码').blur();
+  await tenantsResponsePromise;
+  await page.locator('.tenant-select').click();
+  await page.getByRole('option', { name: /芒果集团/ }).click();
   const menuResponsePromise = page.waitForResponse(response =>
     response.url().includes('/api/authorization/menus/user') && response.status() === 200
   );
-  await page.goto('/#/home');
+  await page.getByRole('button', { name: '登 录' }).click();
+  await page.waitForURL('**/#/home', { timeout: 10000 });
   await menuResponsePromise;
   await expect(page.getByRole('button', { name: '通知中心' })).toBeVisible({ timeout: 10000 });
 }
