@@ -148,6 +148,15 @@ export const fileApi = {
     previewUrl: normalizeApiUrl(item.previewUrl),
     expireSeconds: Number(item.expireSeconds ?? 0),
   })),
+  previewContent: async (id: FileId) => {
+    const response = await request.get('/file/files/preview-content', {
+      params: { id },
+      responseType: 'blob',
+      rawResponse: true,
+    } as any);
+    await assertBinaryResponse(response as any, '文件预览失败');
+    return response as any;
+  },
   upload: (file: File, params?: FileUploadParams, options?: FileUploadOptions) => uploadSmart(file, params, options),
   uploadBatch: (files: File[], params?: FileUploadParams, options?: FileUploadOptions) => {
     const formData = new FormData();
@@ -189,7 +198,7 @@ export const fileApi = {
       responseType: 'blob',
       rawResponse: true,
     } as any);
-    await assertBinaryDownloadResponse(response as any);
+    await assertBinaryResponse(response as any, '文件下载失败');
     return response as any;
   },
 };
@@ -450,17 +459,17 @@ function parseBizMeta(value: any): FileBizMeta | undefined {
   }
 }
 
-async function assertBinaryDownloadResponse(response: any) {
+async function assertBinaryResponse(response: any, fallbackMessage: string) {
   const contentType = String(response.headers?.['content-type'] || '').toLowerCase();
   if (!contentType.includes('application/json')) return;
   const data = response.data;
   const text = data instanceof Blob ? await data.text() : String(data || '');
   try {
     const body = JSON.parse(text);
-    throw new Error(body?.msg || body?.message || '文件下载失败');
+    throw new Error(body?.msg || body?.message || fallbackMessage);
   } catch (error) {
     if (error instanceof SyntaxError) {
-      throw new Error('文件下载失败');
+      throw new Error(fallbackMessage);
     }
     throw error;
   }
