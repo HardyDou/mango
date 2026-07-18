@@ -93,6 +93,8 @@ const loading = ref(false);
 const loadedPreview = ref<FilePreview | null>(null);
 const inlinePreviewUrl = ref('');
 const externalPreviewUrl = ref('');
+const inlinePreviewObjectUrl = ref('');
+let previewLoadSequence = 0;
 
 const preview = computed(() => props.preview || loadedPreview.value);
 const resolvedFileId = computed(() => normalizeFileId(props.file || props.fileId));
@@ -123,8 +125,9 @@ const isAudio = computed(() => {
 const extension = computed(() => preview.value?.fileExt?.toLowerCase() || fileExtension(preview.value?.fileName));
 const documentPreviewUrl = computed(() => {
   const item = preview.value;
-  if (!item || isImage.value || isPdf.value || isVideo.value || isAudio.value) return '';
+  if (!item) return '';
   if (externalPreviewUrl.value) return externalPreviewUrl.value;
+  if (isImage.value || isPdf.value || isVideo.value || isAudio.value) return '';
   if (isDefaultPreviewProviderUrl(item.documentPreviewUrl)) return '';
   if (isPreviewDisplayUrl(item.documentPreviewUrl)) return item.documentPreviewUrl;
   const providerUrl = props.previewProviderUrl || import.meta.env.VITE_FILE_PREVIEW_PROVIDER_URL;
@@ -163,17 +166,33 @@ async function loadPreview() {
 }
 
 async function loadInlinePreview() {
+  const loadSequence = ++previewLoadSequence;
+  revokeInlinePreviewObjectUrl();
   inlinePreviewUrl.value = '';
   externalPreviewUrl.value = '';
   const item = preview.value;
   if (!item) {
     return;
   }
-  if (!isImage.value && !isPdf.value && !isVideo.value && !isAudio.value) {
-    externalPreviewUrl.value = await resolveExternalPreviewUrl(item);
+  if (isImage.value || isPdf.value || isVideo.value || isAudio.value) {
+    const directUrl = resolveInlinePreviewUrl(item);
+    if (directUrl) {
+      inlinePreviewUrl.value = directUrl;
+      return;
+    }
+    const objectUrl = await resolveInlinePreviewObjectUrl(item);
+    if (loadSequence !== previewLoadSequence) {
+      URL.revokeObjectURL(objectUrl);
+      return;
+    }
+    inlinePreviewObjectUrl.value = objectUrl;
+    inlinePreviewUrl.value = objectUrl;
     return;
   }
-  inlinePreviewUrl.value = resolveInlinePreviewUrl(item);
+  const previewUrl = await resolveExternalPreviewUrl(item);
+  if (loadSequence === previewLoadSequence) {
+    externalPreviewUrl.value = previewUrl;
+  }
 }
 
 async function openDownload() {
@@ -211,8 +230,22 @@ async function resolveExternalPreviewUrl(item: FilePreview) {
 
 function resolveInlinePreviewUrl(item: FilePreview) {
   if (isPreviewDisplayUrl(item.directPreviewUrl)) return item.directPreviewUrl;
-  if (isPreviewDisplayUrl(item.previewUrl)) return item.previewUrl;
   return '';
+}
+
+async function resolveInlinePreviewObjectUrl(item: FilePreview) {
+  const response = await fileApi.previewContent(item.id);
+  const contentType = item.contentType || response.headers?.['content-type'] || 'application/octet-stream';
+  const blob = response.data instanceof Blob
+    ? response.data
+    : new Blob([response.data], { type: contentType });
+  return URL.createObjectURL(blob);
+}
+
+function revokeInlinePreviewObjectUrl() {
+  if (!inlinePreviewObjectUrl.value) return;
+  URL.revokeObjectURL(inlinePreviewObjectUrl.value);
+  inlinePreviewObjectUrl.value = '';
 }
 
 function isDefaultPreviewProviderUrl(value?: string) {
@@ -243,6 +276,8 @@ watch(() => [canDownload.value, canOpenInNewWindow.value], () => {
 }, { immediate: true });
 onMounted(loadPreview);
 onBeforeUnmount(() => {
+  previewLoadSequence += 1;
+  revokeInlinePreviewObjectUrl();
   inlinePreviewUrl.value = '';
 });
 
