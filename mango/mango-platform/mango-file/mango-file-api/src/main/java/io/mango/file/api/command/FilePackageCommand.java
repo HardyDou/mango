@@ -4,6 +4,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
@@ -45,6 +47,7 @@ public class FilePackageCommand implements Serializable {
     private String bizMeta;
 
     @Schema(description = "逻辑目录ID。根目录为0")
+    @PositiveOrZero(message = "逻辑目录ID不能小于0")
     private Long directoryId;
 
     @Schema(description = "打包内文件默认压缩档位：NONE、LOW、MEDIUM、HIGH。默认 NONE")
@@ -52,6 +55,7 @@ public class FilePackageCommand implements Serializable {
     private String compression;
 
     @Schema(description = "打包内每个可压缩文件的默认目标大小，单位字节；不表示 ZIP 总大小")
+    @Positive(message = "单文件目标大小必须大于0")
     private Long perFileTargetSizeBytes;
 
     @Valid

@@ -1,5 +1,6 @@
 package io.mango.infra.realtime.core.outbound;
 
+import io.mango.common.contract.LocalCapabilityContract;
 import io.mango.infra.realtime.api.dto.RealtimeOutboundMessage;
 import io.mango.infra.realtime.api.dto.RealtimeTarget;
 import io.mango.infra.realtime.api.dto.RealtimeTargetType;
@@ -15,6 +16,7 @@ import java.util.List;
  * Publishes one logical message through every enabled protocol adapter.
  */
 @Slf4j
+@LocalCapabilityContract
 public class RealtimePublishService implements IRealtimePublishService {
 
     private final List<RealtimeProtocolSender> senders;

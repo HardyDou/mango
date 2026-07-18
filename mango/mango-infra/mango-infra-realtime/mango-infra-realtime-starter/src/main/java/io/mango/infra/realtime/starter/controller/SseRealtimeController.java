@@ -2,6 +2,7 @@ package io.mango.infra.realtime.starter.controller;
 
 import io.mango.authorization.api.annotation.ApiAccess;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
+import io.mango.common.contract.NativeHttpAdapter;
 import io.mango.infra.realtime.api.dto.RealtimeHeaders;
 import io.mango.infra.realtime.api.dto.RealtimeInboundMessage;
 import io.mango.infra.realtime.api.dto.RealtimeContext;
@@ -30,12 +31,15 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+import org.springframework.validation.annotation.Validated;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import java.util.Map;
 
 @Slf4j
+@Validated
+@NativeHttpAdapter
 @RestController
 @RequiredArgsConstructor
 @Tag(name = "实时 SSE", description = "实时消息 SSE 连接与上行接口")
@@ -95,7 +99,9 @@ public class SseRealtimeController {
     @GetMapping(value = "/realtime/transports/probe/sse", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "探测 SSE 链路")
     @Operation(summary = "探测 SSE 链路", description = "使用短期实时 ticket 检查 SSE 链路，不注册业务订阅")
-    public SseEmitter probe(@RequestParam(value = "rtTicket", required = false) String rtTicket) {
+    public SseEmitter probe(
+            @Parameter(description = "实时连接短期票据")
+            @RequestParam(value = "rtTicket", required = false) String rtTicket) {
         ticketService.resolve(rtTicket)
                 .orElseThrow(() -> new IllegalArgumentException("Missing or expired realtime ticket"));
         SseEmitter emitter = new SseEmitter(3000L);
@@ -116,12 +122,19 @@ public class SseRealtimeController {
     public RealtimeOutboundMessage inbound(
             @Parameter(description = "租户ID请求头")
             @RequestHeader(value = RealtimeHeaders.TENANT_ID, required = false) String tenantIdHeader,
+            @Parameter(description = "兼容旧客户端的租户ID请求头")
             @RequestHeader(value = "TENANT-ID", required = false) String legacyTenantIdHeader,
+            @Parameter(description = "用户ID请求头")
             @RequestHeader(value = RealtimeHeaders.USER_ID, required = false) Long userIdHeader,
+            @Parameter(description = "客户端ID请求头")
             @RequestHeader(value = RealtimeHeaders.CLIENT_ID, required = false) String clientIdHeader,
+            @Parameter(description = "租户ID")
             @RequestParam(value = "tenantId", required = false) String tenantIdParam,
+            @Parameter(description = "用户ID")
             @RequestParam(value = "userId", required = false) Long userIdParam,
+            @Parameter(description = "客户端ID")
             @RequestParam(value = "clientId", required = false) String clientIdParam,
+            @Parameter(description = "实时会话ID")
             @RequestParam(value = "sessionId", required = false) String sessionIdParam,
             @Valid @RequestBody RealtimeInboundMessage message) {
         RealtimeInboundMessage enrichedMessage = enrichInboundMessage(

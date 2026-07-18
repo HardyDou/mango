@@ -3,6 +3,7 @@ package io.mango.file.api.command;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -36,5 +37,6 @@ public class FilePackageEntryCommand implements Serializable {
     private String compression;
 
     @Schema(description = "当前文件目标大小，单位字节；覆盖打包命令 perFileTargetSizeBytes")
+    @Positive(message = "文件目标大小必须大于0")
     private Long targetSizeBytes;
 }

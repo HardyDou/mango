@@ -1,10 +1,12 @@
 package io.mango.infra.realtime.api;
 
+import io.mango.common.contract.LocalCapabilityContract;
 import io.mango.infra.realtime.api.dto.RealtimeOutboundMessage;
 
 /**
  * Realtime publishing contract used by business modules.
  */
+@LocalCapabilityContract
 public interface RealtimeApi {
 
     void publish(RealtimeOutboundMessage realtimeOutboundMessage);

@@ -1,10 +1,12 @@
 package io.mango.infra.realtime.core.inbound.receiver;
 
+import io.mango.common.contract.LocalCapabilityContract;
 import io.mango.infra.realtime.api.dto.RealtimeInboundReceiverRegistration;
 
 import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
 
+@LocalCapabilityContract
 public class InMemoryRealtimeInboundReceiverService implements IRealtimeInboundReceiverService {
 
     private final ConcurrentHashMap<String, RealtimeInboundReceiverRegistration> registrations = new ConcurrentHashMap<>();

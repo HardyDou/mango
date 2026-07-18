@@ -2,6 +2,7 @@ package io.mango.infra.realtime.starter.controller;
 
 import io.mango.authorization.api.annotation.ApiAccess;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
+import io.mango.common.contract.NativeHttpAdapter;
 import io.mango.infra.realtime.api.dto.RealtimeHeaders;
 import io.mango.infra.realtime.core.negotiate.RealtimeConnectionTicket;
 import io.mango.infra.realtime.core.negotiate.RealtimeConnectionTicketService;
@@ -15,6 +16,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.validation.annotation.Validated;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -23,6 +25,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+@Validated
+@NativeHttpAdapter
 @RestController
 @Tag(name = "实时传输协商", description = "实时通信传输能力协商接口")
 public class RealtimeNegotiationController {
@@ -44,12 +48,19 @@ public class RealtimeNegotiationController {
     public RealtimeNegotiationResponse negotiate(
             @Parameter(description = "客户端偏好的传输协议，多个值用英文逗号分隔，例如 websocket,sse,polling")
             @RequestParam(value = "prefer", required = false) String prefer,
+            @Parameter(description = "客户端是否支持 WebSocket")
             @RequestParam(value = "clientWebSocket", required = false, defaultValue = "true") boolean clientWebSocket,
+            @Parameter(description = "客户端是否支持 SSE")
             @RequestParam(value = "clientSse", required = false, defaultValue = "true") boolean clientSse,
+            @Parameter(description = "客户端是否支持长轮询")
             @RequestParam(value = "clientPolling", required = false, defaultValue = "true") boolean clientPolling,
+            @Parameter(description = "WebSocket 是否可携带认证票据")
             @RequestParam(value = "wsTokenAvailable", required = false, defaultValue = "false") boolean wsTokenAvailable,
+            @Parameter(description = "SSE 是否可携带认证票据")
             @RequestParam(value = "sseTokenAvailable", required = false, defaultValue = "false") boolean sseTokenAvailable,
+            @Parameter(description = "客户端是否允许使用 Cookie")
             @RequestParam(value = "cookieAvailable", required = false, defaultValue = "false") boolean cookieAvailable,
+            @Parameter(description = "当前页面协议，例如 https")
             @RequestParam(value = "pageProtocol", required = false) String pageProtocol,
             HttpServletRequest request) {
         List<String> preference = parsePreference(prefer);

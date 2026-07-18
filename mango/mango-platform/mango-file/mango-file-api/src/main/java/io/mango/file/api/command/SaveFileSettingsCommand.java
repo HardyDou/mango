@@ -3,6 +3,7 @@ package io.mango.file.api.command;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -23,52 +24,67 @@ public class SaveFileSettingsCommand implements Serializable {
     private Long maxSize;
 
     @Schema(description = "允许上传的扩展名。为空表示不限制")
-    private List<String> allowedExtensions;
+    @NotNull(message = "允许上传的扩展名不能为空")
+    private List<String> allowedExtensions = List.of();
 
     @Schema(description = "禁止上传的扩展名")
-    private List<String> blockedExtensions;
+    @NotNull(message = "禁止上传的扩展名不能为空")
+    private List<String> blockedExtensions = List.of();
 
     @Schema(description = "默认访问级别：PRIVATE、PUBLIC_READ、INTERNAL")
+    @Size(max = 32, message = "默认访问级别长度不能超过32")
     private String defaultAccessLevel;
 
     @Schema(description = "文件重名处理策略：REJECT-拒绝、AUTO_RENAME-自动重命名、ALLOW-允许重复")
+    @Size(max = 32, message = "文件重名处理策略长度不能超过32")
     private String duplicateNameStrategy;
 
     @Schema(description = "是否按逻辑目录隔离重名")
-    private Boolean duplicateCheckDirectoryScoped;
+    @NotNull(message = "是否按逻辑目录隔离重名不能为空")
+    private Boolean duplicateCheckDirectoryScoped = true;
 
     @Schema(description = "对象命名策略：DATE_UUID、HASH、ORIGINAL")
+    @Size(max = 32, message = "对象命名策略长度不能超过32")
     private String objectNameStrategy;
 
     @Schema(description = "是否启用秒传")
-    private Boolean instantUploadEnabled;
+    @NotNull(message = "是否启用秒传不能为空")
+    private Boolean instantUploadEnabled = true;
 
     @Schema(description = "秒传匹配范围：TENANT-机构内、GLOBAL-全局")
+    @Size(max = 32, message = "秒传匹配范围长度不能超过32")
     private String instantUploadScope;
 
     @Schema(description = "是否校验内容类型")
-    private Boolean contentTypeCheckEnabled;
+    @NotNull(message = "是否校验内容类型不能为空")
+    private Boolean contentTypeCheckEnabled = true;
 
     @Schema(description = "允许上传的内容类型。为空表示不限制")
-    private List<String> allowedContentTypes;
+    @NotNull(message = "允许上传的内容类型不能为空")
+    private List<String> allowedContentTypes = List.of();
 
     @Schema(description = "禁止上传的内容类型")
-    private List<String> blockedContentTypes;
+    @NotNull(message = "禁止上传的内容类型不能为空")
+    private List<String> blockedContentTypes = List.of();
 
     @Schema(description = "是否启用浏览器直传对象存储")
-    private Boolean directUploadEnabled;
+    @NotNull(message = "是否启用浏览器直传对象存储不能为空")
+    private Boolean directUploadEnabled = false;
 
     @Min(value = 1, message = "直传有效期必须大于0")
     @Schema(description = "直传 URL 有效期，单位秒")
     private Long directUploadExpireSeconds;
 
     @Schema(description = "是否启用限时访问令牌")
-    private Boolean accessTokenEnabled;
+    @NotNull(message = "是否启用限时访问令牌不能为空")
+    private Boolean accessTokenEnabled = false;
 
     @Schema(description = "公开读取文件是否仍强制签名访问")
-    private Boolean publicReadRequiresToken;
+    @NotNull(message = "公开读取文件是否强制签名访问不能为空")
+    private Boolean publicReadRequiresToken = false;
 
     @Schema(description = "文件访问模式：PROXY-通过Java服务转发，DIRECT-使用存储公开访问地址")
+    @Size(max = 32, message = "文件访问模式长度不能超过32")
     private String accessMode;
 
     @Min(value = 1, message = "访问有效期必须大于0")
@@ -76,6 +92,7 @@ public class SaveFileSettingsCommand implements Serializable {
     private Long accessTokenExpireSeconds;
 
     @Schema(description = "文档预览服务地址")
+    @Size(max = 500, message = "文档预览服务地址不能超过500个字符")
     private String previewProviderUrl;
 
     @Min(value = 1, message = "预览有效期必须大于0")
@@ -83,18 +100,22 @@ public class SaveFileSettingsCommand implements Serializable {
     private Long previewExpireSeconds;
 
     @Schema(description = "可交由文档预览服务处理的扩展名")
-    private List<String> previewExternalExtensions;
+    @NotNull(message = "文档预览扩展名不能为空")
+    private List<String> previewExternalExtensions = List.of();
 
     @Schema(description = "是否保留归档记录")
-    private Boolean archiveRetainEnabled;
+    @NotNull(message = "是否保留归档记录不能为空")
+    private Boolean archiveRetainEnabled = true;
 
     @Min(value = 1, message = "归档保留天数必须大于0")
     @Schema(description = "归档记录保留天数")
     private Integer archiveRetainDays;
 
     @Schema(description = "是否允许恢复归档")
-    private Boolean archiveRestoreEnabled;
+    @NotNull(message = "是否允许恢复归档不能为空")
+    private Boolean archiveRestoreEnabled = false;
 
     @Schema(description = "是否删除物理对象。默认否，仅归档记录")
-    private Boolean physicalDeleteEnabled;
+    @NotNull(message = "是否删除物理对象不能为空")
+    private Boolean physicalDeleteEnabled = false;
 }

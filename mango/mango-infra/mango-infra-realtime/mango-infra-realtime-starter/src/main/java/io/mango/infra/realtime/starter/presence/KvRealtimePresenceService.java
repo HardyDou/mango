@@ -3,6 +3,7 @@ package io.mango.infra.realtime.starter.presence;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import io.mango.common.contract.LocalCapabilityContract;
 import io.mango.infra.kv.api.IKvSortedSet;
 import io.mango.infra.kv.api.IKvStore;
 import io.mango.infra.realtime.core.presence.IRealtimePresenceService;
@@ -22,6 +23,7 @@ import java.util.concurrent.TimeUnit;
  * KV-backed presence route store for multi-instance realtime nodes.
  */
 @Slf4j
+@LocalCapabilityContract
 public class KvRealtimePresenceService implements IRealtimePresenceService, AutoCloseable {
 
     private static final String DEFAULT_PREFIX = "mango:infra:realtime:presence";

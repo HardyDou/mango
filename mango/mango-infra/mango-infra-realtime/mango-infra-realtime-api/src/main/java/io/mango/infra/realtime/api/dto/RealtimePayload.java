@@ -1,10 +1,12 @@
 package io.mango.infra.realtime.api.dto;
 
+import io.mango.common.contract.LocalCapabilityContract;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+@LocalCapabilityContract
 @Schema(description = "实时消息业务载荷")
 public final class RealtimePayload extends LinkedHashMap<String, Object> {
 

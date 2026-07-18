@@ -1,6 +1,7 @@
 package io.mango.infra.realtime.api.dto;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import io.mango.common.contract.LocalCapabilityContract;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.Instant;
@@ -10,6 +11,7 @@ import java.util.UUID;
 /**
  * Unified Realtime Envelope Protocol v1.
  */
+@LocalCapabilityContract
 @Schema(description = "实时下行消息 Envelope")
 @SuppressFBWarnings(value = "EI_EXPOSE_REP",
         justification = "Metadata is defensively copied to an immutable map by the compact constructor")

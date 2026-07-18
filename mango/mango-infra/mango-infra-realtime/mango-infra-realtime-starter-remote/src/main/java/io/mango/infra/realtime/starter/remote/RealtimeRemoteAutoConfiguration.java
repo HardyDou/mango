@@ -1,5 +1,9 @@
 package io.mango.infra.realtime.starter.remote;
 
+import io.mango.infra.realtime.api.RealtimeApi;
+import io.mango.infra.realtime.api.RealtimeInboundApi;
+import io.mango.infra.realtime.api.RealtimeInboundReceiverApi;
+import io.mango.infra.realtime.api.dto.RealtimeInboundReceiverRegistration;
 import io.mango.infra.realtime.support.inbound.IRealtimeInboundService;
 import io.mango.infra.realtime.support.inbound.RealtimeInboundService;
 import io.mango.infra.realtime.support.inbound.RealtimeInboundUnknownTypePolicy;
@@ -25,12 +29,42 @@ public class RealtimeRemoteAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
+    public RealtimeApi realtimeApi(RealtimeFeignClient realtimeFeignClient) {
+        return realtimeFeignClient::publish;
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public RealtimeInboundReceiverApi realtimeInboundReceiverApi(
+            RealtimeInboundReceiverFeignClient realtimeInboundReceiverFeignClient) {
+        return new RealtimeInboundReceiverApi() {
+            @Override
+            public void register(RealtimeInboundReceiverRegistration registration) {
+                realtimeInboundReceiverFeignClient.register(registration);
+            }
+
+            @Override
+            public void unregister(RealtimeInboundReceiverRegistration registration) {
+                realtimeInboundReceiverFeignClient.unregister(registration);
+            }
+        };
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
     public IRealtimeInboundService realtimeInboundService(ListableBeanFactory beanFactory,
                                                           RealtimeRemoteProperties properties) {
         return new RealtimeInboundService(
                 beanFactory,
                 properties.getInbound().isFailFast(),
                 unknownTypePolicy(properties.getInbound().getUnknownTypePolicy()));
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public RealtimeInboundApi realtimeInboundApi(
+            IRealtimeInboundService realtimeInboundService) {
+        return realtimeInboundService::dispatch;
     }
 
     @Bean

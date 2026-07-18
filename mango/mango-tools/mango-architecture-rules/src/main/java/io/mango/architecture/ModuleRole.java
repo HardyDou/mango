@@ -21,6 +21,7 @@ public enum ModuleRole {
     OTHER;
 
     private static final String STARTER_REMOTE_SUFFIX = "-starter-remote";
+    private static final String SYNC_STARTER_SUFFIX = "-sync-starter";
     private static final String STARTER_SUFFIX = "-starter";
     private static final String SUPPORT_SUFFIX = "-support";
     private static final String CORE_SUFFIX = "-core";
@@ -29,6 +30,7 @@ public enum ModuleRole {
     private static final List<String> DOMAIN_SUFFIXES =
             List.of(
                     STARTER_REMOTE_SUFFIX,
+                    SYNC_STARTER_SUFFIX,
                     STARTER_SUFFIX,
                     SUPPORT_SUFFIX,
                     CORE_SUFFIX,

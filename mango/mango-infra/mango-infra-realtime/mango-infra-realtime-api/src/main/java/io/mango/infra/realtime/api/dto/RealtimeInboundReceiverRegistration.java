@@ -1,10 +1,12 @@
 package io.mango.infra.realtime.api.dto;
 
+import io.mango.common.contract.LocalCapabilityContract;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
  * One service that can receive client-to-server realtime messages.
  */
+@LocalCapabilityContract
 @Schema(description = "实时入站接收器注册信息")
 public record RealtimeInboundReceiverRegistration(
         @Schema(description = "服务名称")

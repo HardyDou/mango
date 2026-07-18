@@ -1,7 +1,9 @@
 package io.mango.infra.realtime.api.dto;
 
+import io.mango.common.contract.LocalCapabilityContract;
 import io.swagger.v3.oas.annotations.media.Schema;
 
+@LocalCapabilityContract
 @Schema(description = "实时消息处理状态")
 public record RealtimeStatus(
         @Schema(description = "状态码")

@@ -1,7 +1,9 @@
 package io.mango.infra.realtime.api.dto;
 
+import io.mango.common.contract.LocalCapabilityContract;
 import io.swagger.v3.oas.annotations.media.Schema;
 
+@LocalCapabilityContract
 @Schema(description = "实时消息投递目标")
 public record RealtimeTarget(
         @Schema(description = "目标类型")
