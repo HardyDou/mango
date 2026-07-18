@@ -1,14 +1,8 @@
 // mango-cli:imports:start
 {{frontendEntryImports}}
 import type { MangoAdminFeatureRegistrar } from '@mango/admin';
+import { splitEnvList } from './environment';
 // mango-cli:imports:end
-
-function splitEnvList(value?: string) {
-  return (value || '')
-    .split(',')
-    .map((item) => item.trim())
-    .filter(Boolean);
-}
 
 // mango-cli:features:start
 const mangoFeatures = {{frontendFeaturesExpression}};
@@ -16,8 +10,7 @@ const mangoFeatureRegistrars: MangoAdminFeatureRegistrar[] = {{frontendFeatureRe
 // mango-cli:features:end
 
 // mango-cli:business-feature-registrars:start
-const mangoBusinessFeatureRegistrars: MangoAdminFeatureRegistrar[] = [
-];
+const mangoBusinessFeatureRegistrars: MangoAdminFeatureRegistrar[] = [];
 // mango-cli:business-feature-registrars:end
 
 const mangoAllFeatureRegistrars: MangoAdminFeatureRegistrar[] = [

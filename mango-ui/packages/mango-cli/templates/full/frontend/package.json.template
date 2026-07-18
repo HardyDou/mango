@@ -9,8 +9,14 @@
   ],
   "scripts": {
     "dev": "vite --host 0.0.0.0",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "eslint . --max-warnings 0",
+    "stylelint": "stylelint \"src/**/*.{css,scss,vue}\" --allow-empty-input --max-warnings 0",
     "typecheck": "vue-tsc -p tsconfig.app.json --noEmit",
+    "test:unit": "vitest run",
     "build": "node scripts/build-with-report.mjs",
+    "check": "pnpm format:check && pnpm lint && pnpm stylelint && pnpm typecheck && pnpm test:unit && pnpm build",
     "preview": "vite preview --host 0.0.0.0",
     "test:e2e": "playwright test"
   },
@@ -24,12 +30,25 @@
     "vue-router": "{{vueRouterVersion}}"
   },
   "devDependencies": {
+    "@eslint/js": "{{eslintJsVersion}}",
     "@mango/cli": "{{mangoCliVersion}}",
     "@playwright/test": "{{playwrightVersion}}",
     "@types/node": "{{nodeTypesVersion}}",
     "@vitejs/plugin-vue": "{{viteVueVersion}}",
+    "eslint": "{{eslintVersion}}",
+    "eslint-config-prettier": "{{eslintConfigPrettierVersion}}",
+    "eslint-plugin-vue": "{{eslintPluginVueVersion}}",
+    "globals": "{{globalsVersion}}",
+    "postcss-html": "{{postcssHtmlVersion}}",
+    "prettier": "{{prettierVersion}}",
+    "stylelint": "{{stylelintVersion}}",
+    "stylelint-config-recommended-vue": "{{stylelintConfigRecommendedVueVersion}}",
+    "stylelint-config-standard": "{{stylelintConfigStandardVersion}}",
+    "stylelint-config-standard-scss": "{{stylelintConfigStandardScssVersion}}",
     "typescript": "{{typescriptVersion}}",
+    "typescript-eslint": "{{typescriptEslintVersion}}",
     "vite": "{{viteVersion}}",
+    "vitest": "{{vitestVersion}}",
     "vue-tsc": "{{vueTscVersion}}"
   }
 }

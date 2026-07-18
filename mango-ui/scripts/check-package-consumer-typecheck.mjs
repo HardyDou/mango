@@ -1,18 +1,18 @@
 #!/usr/bin/env node
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
+import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { assertPackedPackageBoundary as assertPackedPackageFiles } from './quality/packed-package-boundary.mjs';
 
 const currentFile = fileURLToPath(import.meta.url);
 const uiRoot = resolve(dirname(currentFile), '..');
-const repoRoot = resolve(uiRoot, '..');
 const cli = join(uiRoot, 'packages/mango-cli/src/index.mjs');
 const runId = Date.now().toString(36);
 const runtimeBase = process.env.MANGO_PACKAGE_CONSUMER_RUNTIME_BASE
   ? resolve(process.env.MANGO_PACKAGE_CONSUMER_RUNTIME_BASE)
-  : join(repoRoot, '.runtime/pct');
+  : join(tmpdir(), 'mango-package-consumer');
 const runtimeRoot = join(runtimeBase, runId);
 const projectRoot = join(runtimeRoot, 'p');
 const packageStore = join(runtimeRoot, 's');

@@ -18,6 +18,7 @@
     "admin:module-styles:check": "node ./scripts/check-admin-module-style-governance.mjs",
     "package-exports:check": "node ./scripts/check-package-exports.mjs",
     "package-consumer:typecheck": "node ./scripts/check-package-consumer-typecheck.mjs",
+    "test:business-lab": "node ./scripts/run-business-lab.mjs",
     "quality:inventory": "node ./scripts/quality/frontend-inventory.mjs",
     "quality:inventory:test": "node --test ./scripts/quality/frontend-inventory.test.mjs",
     "architecture:check": "node ./scripts/quality/check-architecture.mjs",

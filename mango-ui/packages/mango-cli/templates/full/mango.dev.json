@@ -48,7 +48,7 @@
       "dependsOn": [
         "{{projectKebab}}-service"
       ],
-      "packageManager": "npm",
+      "packageManager": "pnpm",
       "portEnv": "MANGO_FRONTEND_PORT",
       "port": 5176,
       "hostEnv": "MANGO_FRONTEND_HOST",

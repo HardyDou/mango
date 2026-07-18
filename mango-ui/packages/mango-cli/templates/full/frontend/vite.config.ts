@@ -2,7 +2,15 @@ import vue from '@vitejs/plugin-vue';
 import { defineConfig, loadEnv, type ConfigEnv, type ProxyOptions } from 'vite';
 
 const ALLOWED_PROXY_HOSTS = ['127.0.0.1', 'localhost'];
-const DEV_ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'a.mango.io', 'b.mango.io', 'c.mango.io', 'd.mango.io', 'e.mango.io'];
+const DEV_ALLOWED_HOSTS = [
+  'localhost',
+  '127.0.0.1',
+  'a.mango.io',
+  'b.mango.io',
+  'c.mango.io',
+  'd.mango.io',
+  'e.mango.io',
+];
 
 function mangoManualChunks(id: string): string | undefined {
   const normalized = id.replace(/\\/g, '/');
@@ -58,10 +66,10 @@ function mangoManualChunks(id: string): string | undefined {
     return 'richtext-vendor';
   }
   if (
-    normalized.includes('/node_modules/xlsx')
-    || normalized.includes('/node_modules/codepage')
-    || normalized.includes('/node_modules/cfb')
-    || normalized.includes('/node_modules/ssf')
+    normalized.includes('/node_modules/xlsx') ||
+    normalized.includes('/node_modules/codepage') ||
+    normalized.includes('/node_modules/cfb') ||
+    normalized.includes('/node_modules/ssf')
   ) {
     return 'spreadsheet-vendor';
   }
@@ -81,11 +89,11 @@ function mangoManualChunks(id: string): string | undefined {
     return 'date-vendor';
   }
   if (
-    normalized.includes('/node_modules/vue')
-    || normalized.includes('/node_modules/@vue/')
-    || normalized.includes('/node_modules/vue-router')
-    || normalized.includes('/node_modules/vue-i18n')
-    || normalized.includes('/node_modules/pinia')
+    normalized.includes('/node_modules/vue') ||
+    normalized.includes('/node_modules/@vue/') ||
+    normalized.includes('/node_modules/vue-router') ||
+    normalized.includes('/node_modules/vue-i18n') ||
+    normalized.includes('/node_modules/pinia')
   ) {
     return 'vue-vendor';
   }
@@ -106,7 +114,7 @@ function createMangoApiProxy(target: string): ProxyOptions {
     ws: true,
     changeOrigin: true,
     xfwd: true,
-    rewrite: path => path.replace(/^\/api/, ''),
+    rewrite: (path) => path.replace(/^\/api/, ''),
     configure(proxy) {
       proxy.on('proxyReq', (proxyRequest, request) => {
         if (request.headers.host) {
