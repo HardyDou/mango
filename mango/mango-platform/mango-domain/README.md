@@ -190,7 +190,7 @@ mango-domain-starter/src/main/resources/META-INF/mango/resources/domain-common-m
 
 | 菜单 | 路径 | 页面 key | 父菜单 |
 |------|------|----------|--------|
-| 业务域 | `/data/domain` | `system/domain/index` | `data`（平台能力） |
+| 业务域 | /data/domain | `system/domain/index` | `data`（平台能力） |
 
 后端接口绑定权限码：
 
