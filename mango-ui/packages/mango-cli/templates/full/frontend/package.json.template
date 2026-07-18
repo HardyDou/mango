@@ -3,6 +3,7 @@
   "version": "{{projectVersion}}",
   "private": true,
   "type": "module",
+  "packageManager": "pnpm@11.14.0",
   "workspaces": [
     "packages/*"
   ],

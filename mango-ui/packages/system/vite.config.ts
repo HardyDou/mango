@@ -12,6 +12,7 @@ export default defineConfig({
         'widgets/user-profile': 'src/widgets/user-profile/user-profile.ts',
       },
       formats: ['es'],
+      cssFileName: 'style',
     },
     rollupOptions: {
       external: [

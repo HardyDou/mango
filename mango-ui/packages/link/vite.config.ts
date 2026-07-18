@@ -11,6 +11,7 @@ export default defineConfig({
         'widgets/link-navigation': 'src/widgets/link-navigation/link-navigation.ts',
       },
       formats: ['es'],
+      cssFileName: 'style',
     },
     rollupOptions: {
       external: [

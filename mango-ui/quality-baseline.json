@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "policy": "Existing debt may decrease but must not increase. Strict commands remain the zero-debt target.",
+  "tools": {
+    "eslint": { "fatal": 0, "errors": 232, "warnings": 904 },
+    "prettier": { "files": 589 },
+    "stylelint": { "parseErrors": 0, "errors": 935, "warnings": 0 },
+    "typecheck": { "failedWorkspaces": 25, "diagnostics": 789 }
+  }
+}

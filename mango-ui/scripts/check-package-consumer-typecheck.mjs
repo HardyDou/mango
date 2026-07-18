@@ -9,14 +9,21 @@ const uiRoot = resolve(dirname(currentFile), '..');
 const repoRoot = resolve(uiRoot, '..');
 const cli = join(uiRoot, 'packages/mango-cli/src/index.mjs');
 const runId = Date.now().toString(36);
-const runtimeRoot = join(repoRoot, '.runtime/pct', runId);
+const runtimeBase = process.env.MANGO_PACKAGE_CONSUMER_RUNTIME_BASE
+  ? resolve(process.env.MANGO_PACKAGE_CONSUMER_RUNTIME_BASE)
+  : join(repoRoot, '.runtime/pct');
+const runtimeRoot = join(runtimeBase, runId);
 const projectRoot = join(runtimeRoot, 'p');
 const packageStore = join(runtimeRoot, 's');
 const consumerName = 'mango-package-consumer-typecheck';
 const registryArg = process.argv.find((arg) => arg.startsWith('--registry='));
 const registry = registryArg?.slice('--registry='.length) || 'https://registry.npmjs.org/';
 const keepTemp = process.argv.includes('--keep-temp');
+const offline = process.argv.includes('--offline') || process.env.MANGO_PACKAGE_CONSUMER_OFFLINE === '1';
+const reuseBuild = process.argv.includes('--reuse-build');
+const consumerStoreDir = process.env.MANGO_PACKAGE_CONSUMER_STORE_DIR;
 const pnpmCommand = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm';
+const governedPackageManager = readJson(join(uiRoot, 'package.json')).packageManager;
 
 function run(command, args, options = {}) {
   const result = spawnSync(command, args, {
@@ -141,6 +148,7 @@ function toPackageRelativePath(fromRoot, targetPath) {
 function applyTarballMappings(frontendRoot, mappings) {
   const packageJsonPath = join(frontendRoot, 'package.json');
   const packageJson = readJson(packageJsonPath);
+  packageJson.packageManager = governedPackageManager;
   for (const section of ['dependencies', 'devDependencies', 'peerDependencies']) {
     if (!packageJson[section]) {
       continue;
@@ -151,11 +159,7 @@ function applyTarballMappings(frontendRoot, mappings) {
       }
     }
   }
-  packageJson.pnpm = packageJson.pnpm || {};
-  packageJson.pnpm.overrides = { ...(packageJson.pnpm.overrides || {}) };
-  for (const [dependency, tarball] of mappings) {
-    packageJson.pnpm.overrides[dependency] = tarball;
-  }
+  delete packageJson.pnpm;
   writeJson(packageJsonPath, packageJson);
   writeFileSync(
     join(frontendRoot, 'pnpm-workspace.yaml'),
@@ -189,21 +193,29 @@ try {
   mkdirSync(projectRoot, { recursive: true });
   mkdirSync(packageStore, { recursive: true });
 
-  console.log('Generating package styles before packing');
-  run(pnpmCommand, ['admin:styles']);
+  if (!reuseBuild) {
+    console.log('Generating package styles before packing');
+    run(pnpmCommand, ['admin:styles']);
 
-  console.log('Prebuilding Mango admin dependency chain before recursive package build');
-  run(pnpmCommand, ['--filter', '@mango/admin', 'run', 'build']);
+    console.log('Prebuilding Mango admin dependency chain before recursive package build');
+    run(pnpmCommand, ['--filter', '@mango/admin', 'run', 'build']);
 
-  console.log('Building Mango frontend packages before consumer typecheck');
-  run(pnpmCommand, ['-r', '--filter', './packages/*', '--filter', '!@mango/cli', '--if-present', 'run', 'build']);
+    console.log('Building Mango frontend packages before consumer typecheck');
+    run(pnpmCommand, ['-r', '--workspace-concurrency=1', '--filter', './packages/*', '--filter', '!@mango/cli', '--if-present', 'run', 'build']);
+  } else {
+    console.log('Reusing existing package build outputs for consumer typecheck');
+  }
 
   console.log('Checking Mango package exports before packing');
   run(pnpmCommand, ['package-exports:check']);
 
   console.log('Packing Mango frontend packages for consumer typecheck');
   for (const packageRoot of listPackableMangoPackages()) {
-    run(pnpmCommand, ['pack', '--pack-destination', packageStore], { cwd: packageRoot });
+    // Every package was built and its exports were checked immediately above.
+    // Avoid re-running lifecycle builds once per tarball during this publication-boundary check.
+    run(pnpmCommand, ['--config.ignore-scripts=true', 'pack', '--pack-destination', packageStore], {
+      cwd: packageRoot,
+    });
   }
 
   console.log('Generating temporary Mango business frontend consumer');
@@ -231,7 +243,12 @@ try {
   applyTarballMappings(frontendRoot, mappings);
 
   console.log(`Installing generated consumer dependencies with ${mappings.size} local Mango tarballs`);
-  run(pnpmCommand, ['install', `--registry=${registry}`], {
+  run(pnpmCommand, [
+    'install',
+    ...(offline ? ['--offline'] : []),
+    ...(consumerStoreDir ? [`--store-dir=${consumerStoreDir}`] : []),
+    `--registry=${registry}`,
+  ], {
     cwd: frontendRoot,
     env: {
       npm_config_registry: registry,

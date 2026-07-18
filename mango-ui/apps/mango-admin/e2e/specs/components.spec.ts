@@ -30,8 +30,7 @@ test.describe('前端组件库 E2E 测试', () => {
 
     // 测试应该根据实际路由配置通过或跳过
     if (!hasContent && !is404) {
-      // 可能是路由未配置，标记为通过但记录
-      expect(true).toBeTruthy();
+      throw new Error(`组件演示页既未呈现目标内容，也未进入 404：${currentUrl}`);
     } else if (is404) {
       // 路由不存在，跳过
       test.skip();
@@ -57,8 +56,7 @@ test.describe('前端组件库 E2E 测试', () => {
     const is404 = (await page.locator('text=404, text=页面不存在').count()) > 0;
 
     if (!hasEcharts && !is404) {
-      // 可能是路由未配置
-      expect(true).toBeTruthy();
+      throw new Error(`图表演示页既未呈现图表容器，也未进入 404：${page.url()}`);
     } else if (is404) {
       test.skip();
     } else {

@@ -10,6 +10,7 @@ export default defineConfig({
         'admin-pages': 'src/admin-pages.ts',
       },
       formats: ['es'],
+      cssFileName: 'style',
     },
     rollupOptions: {
       external: [
