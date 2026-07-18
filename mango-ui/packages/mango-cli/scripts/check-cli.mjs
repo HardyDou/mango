@@ -54,6 +54,7 @@ try {
     'AGENTS.md',
     '.gitignore',
     'frontend/package.json',
+    'frontend/pnpm-workspace.yaml',
     'frontend/scripts/build-with-report.mjs',
     'frontend/src/main.ts',
     'frontend/src/mango-admin-modular.d.ts',
@@ -133,6 +134,7 @@ try {
 
   const frontendPackage = JSON.parse(readFileSync(join(projectRoot, 'frontend/package.json'), 'utf8'));
   assertEqual(frontendPackage.devDependencies['@mango/cli'], cliPackage.version, '@mango/cli');
+  assertGeneratedPnpmWorkspace(join(projectRoot, 'frontend/pnpm-workspace.yaml'));
   for (const dependency of ['@mango/admin', '@mango/grid-widgets', '@mango/file', '@mango/workflow', '@mango/template', '@mango/notice', '@mango/payment']) {
     if (!frontendPackage.dependencies[dependency]) {
       throw new Error(`frontend package missing dependency: ${dependency}`);
@@ -1098,6 +1100,25 @@ try {
 function assertEqual(actual, expected, field) {
   if (actual !== expected) {
     throw new Error(`${field} expected ${expected}, got ${actual}`);
+  }
+}
+
+function assertGeneratedPnpmWorkspace(workspacePath) {
+  const workspace = readFileSync(workspacePath, 'utf8');
+  const requiredLines = [
+    "  - 'packages/*'",
+    'allowBuilds:',
+    "  '@swc/core': true",
+    '  core-js-pure: true',
+    '  es5-ext: true',
+    '  esbuild: true',
+    '  msw: true',
+    '  vue-demi: true',
+  ];
+  for (const line of requiredLines) {
+    if (!workspace.split(/\r?\n/u).includes(line)) {
+      throw new Error(`generated pnpm workspace missing required install policy: ${line}`);
+    }
   }
 }
 

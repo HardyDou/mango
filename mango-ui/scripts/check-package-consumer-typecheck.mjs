@@ -151,29 +151,39 @@ function applyTarballMappings(frontendRoot, mappings) {
       }
     }
   }
-  packageJson.pnpm = packageJson.pnpm || {};
-  packageJson.pnpm.overrides = { ...(packageJson.pnpm.overrides || {}) };
-  for (const [dependency, tarball] of mappings) {
-    packageJson.pnpm.overrides[dependency] = tarball;
-  }
   writeJson(packageJsonPath, packageJson);
-  writeFileSync(
-    join(frontendRoot, 'pnpm-workspace.yaml'),
-    [
-      'packages: []',
-      'allowBuilds:',
-      "  '@swc/core': true",
-      '  core-js-pure: true',
-      '  es5-ext: true',
-      '  esbuild: true',
-      '  msw: true',
-      '  vue-demi: true',
-      'overrides:',
-      ...[...mappings].map(([dependency, tarball]) => `  "${dependency}": "${tarball}"`),
-      '',
-    ].join('\n'),
-  );
+  const workspacePath = join(frontendRoot, 'pnpm-workspace.yaml');
+  const workspace = readFileSync(workspacePath, 'utf8').trimEnd();
+  assertGeneratedInstallPolicy(workspace);
+  if (/^overrides:/mu.test(workspace)) {
+    throw new Error('Generated pnpm workspace unexpectedly contains overrides before consumer mapping');
+  }
+  writeFileSync(workspacePath, [
+    workspace,
+    'overrides:',
+    ...[...mappings].map(([dependency, tarball]) => `  "${dependency}": "${tarball}"`),
+    '',
+  ].join('\n'));
   writeFileSync(join(frontendRoot, '.npmrc'), `registry=${registry}\n`);
+}
+
+function assertGeneratedInstallPolicy(workspace) {
+  const requiredLines = [
+    "  - 'packages/*'",
+    'allowBuilds:',
+    "  '@swc/core': true",
+    '  core-js-pure: true',
+    '  es5-ext: true',
+    '  esbuild: true',
+    '  msw: true',
+    '  vue-demi: true',
+  ];
+  const lines = workspace.split(/\r?\n/u);
+  for (const line of requiredLines) {
+    if (!lines.includes(line)) {
+      throw new Error(`Generated pnpm workspace missing required install policy: ${line}`);
+    }
+  }
 }
 
 function cleanup() {
