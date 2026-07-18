@@ -241,6 +241,7 @@ Controller 使用 `BaseCrudController`，类级路径由 module 和 aggregate �
 
 ## 13. 补充资料
 
+- v2026.07.18 将业务锁对齐到 `@mango/admin@1.0.49`、`@mango/cli@1.0.80`、`@mango/pmo@1.3.0` 和 Mango Maven `1.0.22`。Maven `1.0.22` 不兼容地以 `ResourceDeclarationApi` 替换 `ResourceRegistryApi`，业务代码需自行迁移，并使用 `mango-resource-sync-starter` 承接资源同步。
 - v2026.07.14 将管理端锁对齐到 `@mango/admin@1.0.46`，并配套 `@mango/cli@1.0.78`、`@mango/pmo@1.2.6` 和 Mango Maven `1.0.21`；模板结构、模块生成协议、菜单权限初始化方式和运行时业务逻辑不变。
 - [业务 PMO 说明](./business-pmo/README.md)
 - [业务 baseline](./business-pmo/mango-baseline/README.md)

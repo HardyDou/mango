@@ -1,5 +1,76 @@
 # Mango Changelog
 
+## v2026.07.18-maven-1.0.22-pmo-1.3.0-cli-1.0.80-regression-release - 2026-07-18
+
+### Breaking Changes
+
+- Mango Maven `1.0.22` removes `io.mango.resource.api.ResourceRegistryApi` and replaces the resource declaration contract with `ResourceDeclarationApi`. Business code that imports, injects, implements or references the old API (including Feign declarations) must migrate to `ResourceDeclarationApi`; this release intentionally does not retain a compatibility alias.
+- Resource synchronization now uses `mango-resource-sync-starter`. Business applications with source-level references to the former resource target topology must switch to the sync starter and its current declaration contract before upgrading.
+
+### Added
+
+- Add PMO `1.3.0` risk-based delivery modes (`SIMPLE`, `STANDARD` and `FULL`) and synchronize the same governed baseline into the business starter and CLI templates.
+- Establish the post-refactor full-regression baseline: 189/189 browser scenarios passed with zero skips after rebuilding a clean database and loading required/demo data.
+
+### Fixed
+
+- Complete the cross-module technical-debt refactor while preserving menu ownership, permissions, routes, tenant boundaries and business behavior verified by the full browser regression.
+- Fix file preview URL selection consistently across file types: directly preview browser-supported files and route complex formats through the preview service, while preserving the requesting frontend host through the proxy path.
+- Restore required file storage configuration during clean-database initialization and change the default file access mode to proxy delivery.
+- Correct Notice login/message-center flows, Payment public cross-tenant and cashier-preview flows, CMS remote adapter behavior, and the remaining admin regression gaps.
+
+### Upgrade Notes
+
+1. Publish and verify Mango Maven `1.0.22` first. Before a business application upgrades, migrate every `ResourceRegistryApi` reference to `ResourceDeclarationApi` and replace former resource-target dependencies with `mango-resource-sync-starter` where applicable.
+2. Upgrade the PMO bundle with `mango pmo upgrade --project-dir . --to 1.3.0`; this synchronizes the new delivery-mode contracts and governed baseline.
+3. Upgrade frontend consumers to the package versions below. Aggregate admin consumers should use `@mango/admin@1.0.49`.
+4. Upgrade the project-local CLI to `@mango/cli@1.0.80` last so generated and upgraded projects receive the exact Maven, PMO and frontend locks from this batch.
+5. Existing databases run `V2__default_file_access_mode_to_proxy.sql`, changing the default file access mode to proxy delivery. Review deployments that intentionally require direct-access URLs and keep an explicit configuration for that behavior.
+
+### Published Packages
+
+| Order | Target | Version / destination | Pre-release status |
+|---|---|---|---|
+| 1 | Maven non-app backend and docs bundle | `io.mango:*:1.0.22` -> Nexus Maven hosted | `PENDING` |
+| 2 | npm common | `@mango/common@1.0.18` -> Nexus npm hosted | `PENDING` |
+| 3 | npm grid layout | `@mango/grid-layout@1.0.9` -> Nexus npm hosted | `PENDING` |
+| 4 | npm grid widgets | `@mango/grid-widgets@1.0.15` -> Nexus npm hosted | `PENDING` |
+| 5 | npm home | `@mango/home@1.0.7` -> Nexus npm hosted | `PENDING` |
+| 6 | npm link OpenAPI | `@mango/link-openapi@1.0.3` -> Nexus npm hosted | `PENDING` |
+| 7 | npm link page | `@mango/link-page@1.0.6` -> Nexus npm hosted | `PENDING` |
+| 8 | npm PMO bundle | `@mango/pmo@1.3.0` -> Nexus npm hosted | `PENDING` |
+| 9 | npm RBAC | `@mango/rbac@1.0.15` -> Nexus npm hosted | `PENDING` |
+| 10 | npm site shell | `@mango/site-shell@1.0.5` -> Nexus npm hosted | `PENDING` |
+| 11 | npm system | `@mango/system@1.0.21` -> Nexus npm hosted | `PENDING` |
+| 12 | npm auth | `@mango/auth@1.0.17` -> Nexus npm hosted | `PENDING` |
+| 13 | npm admin pages | `@mango/admin-pages@1.0.22` -> Nexus npm hosted | `PENDING` |
+| 14 | npm calendar | `@mango/calendar@1.0.23` -> Nexus npm hosted | `PENDING` |
+| 15 | npm file | `@mango/file@1.0.23` -> Nexus npm hosted | `PENDING` |
+| 16 | npm job | `@mango/job@1.0.15` -> Nexus npm hosted | `PENDING` |
+| 17 | npm link | `@mango/link@1.0.9` -> Nexus npm hosted | `PENDING` |
+| 18 | npm notice | `@mango/notice@1.0.25` -> Nexus npm hosted | `PENDING` |
+| 19 | npm numgen | `@mango/numgen@1.0.23` -> Nexus npm hosted | `PENDING` |
+| 20 | npm payment | `@mango/payment@1.0.15` -> Nexus npm hosted | `PENDING` |
+| 21 | npm template | `@mango/template@1.0.23` -> Nexus npm hosted | `PENDING` |
+| 22 | npm workflow | `@mango/workflow@1.0.29` -> Nexus npm hosted | `PENDING` |
+| 23 | npm workflow example | `@mango/workflow-business-example@1.0.28` -> Nexus npm hosted | `PENDING` |
+| 24 | npm admin shell | `@mango/admin-shell@1.0.44` -> Nexus npm hosted | `PENDING` |
+| 25 | npm CMS | `@mango/cms@1.0.12` -> Nexus npm hosted | `PENDING` |
+| 26 | npm admin aggregate | `@mango/admin@1.0.49` -> Nexus npm hosted | `PENDING` |
+| 27 | npm CLI | `@mango/cli@1.0.80` -> Nexus npm hosted | `PENDING` |
+| 28 | GitHub Release | `v2026.07.18-maven-1.0.22-pmo-1.3.0-cli-1.0.80-regression-release` | `PENDING` |
+
+### Verification
+
+- PR #581 required checks passed on the merged refactor, including the Java quality gate, frontend contract checks and targeted module suites.
+- Clean-database browser regression: 189/189 passed, zero failed and zero skipped; Payment core regression: 262/262 passed.
+- `node mango-pmo/tools/workspace-layout-check.mjs --root .`
+- `node mango-business-starter/scripts/sync-pmo-baseline.mjs --check`
+- `pnpm -C mango-ui release:impact --base=v2026.07.16-theme-search-file-npm-release --head=HEAD`
+- `pnpm -C mango-ui --filter @mango/cli run check:release-versions`
+- `MANGO_BACKEND_GATE_VERSION=1.0.22 node mango-ui/packages/mango-cli/scripts/check-generated-backend-gate.mjs`
+- After publication, verify every exact Maven/npm version through Nexus public/group repositories and repeat generated-project consumer verification from clean caches.
+
 ## v2026.07.16-theme-search-file-npm-release - 2026-07-16
 
 ### Fixed

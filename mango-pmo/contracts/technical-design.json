@@ -11,7 +11,7 @@
   "metadata": {
     "ruleId": "TDD-META-001",
     "required": ["documentId", "documentType", "pmoVersion", "schemaRevision", "riskLevel", "riskAssessmentEvidence", "status", "action", "owner", "approver", "approvalEvidence", "upstreamDocumentId", "upstreamDocumentHash"],
-    "fixed": {"documentType": "technical-design", "pmoVersion": "1.2.6", "schemaRevision": "1"}
+    "fixed": {"documentType": "technical-design", "pmoVersion": "1.3.0", "schemaRevision": "1"}
   },
   "localPrefixes": ["DEC", "MOD", "DM", "FLOW", "API", "DB", "SEC", "ERR", "UI", "TC", "IMP"],
   "upstreamPrefixes": ["SC", "SA", "FR", "UC", "PG", "BT", "DR", "IR", "NFR", "SAC"],
