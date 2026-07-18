@@ -1,5 +1,33 @@
 # Mango Changelog
 
+## v2026.07.18-pmo-1.3.1-cli-1.0.82-release-governance - 2026-07-18
+
+### Changed
+
+- Make the repository-local `mango-pmo/skills/mango-release` the exclusive Mango release workflow; user-level, plugin-level, bundled, and generic external release skills must not supplement or replace it.
+- Add release readiness checks for GitHub Release headings and semantic adapter assertions, auditable recovery for failures before remote mutation, read-only verification recovery after a published artifact, mandatory CHANGELOG status backfill, and service/worktree/branch/database cleanup.
+- Route Mango release tasks from the repository `AGENTS.md` directly to the governed local Skill and synchronize the same Skill into PMO and business baseline projections.
+
+### Upgrade Notes
+
+1. Publish `@mango/pmo@1.3.1` first, then publish `@mango/cli@1.0.82`, which locks the new PMO bundle.
+2. Business projects run `mango pmo upgrade --project-dir . --to 1.3.1`, then update their project-local CLI to `@mango/cli@1.0.82`.
+3. This governance-only release does not change Mango Maven `1.0.22`, runtime frontend packages, backend APIs, databases, menus, permissions, tenants, routes, or business behavior.
+
+### Published Packages
+
+| Order | Target | Version / destination | Pre-release status |
+|---|---|---|---|
+| 1 | npm PMO bundle and Skills | `@mango/pmo@1.3.1` -> Nexus npm hosted | `PENDING` |
+| 2 | npm CLI | `@mango/cli@1.0.82` -> Nexus npm hosted | `PENDING` |
+| 3 | GitHub Release | `v2026.07.18-pmo-1.3.1-cli-1.0.82-release-governance` | `PENDING` |
+
+### Verification
+
+- Validate the Skill with the skill-creator quick validator and Mango Skill eval suite, including local-only routing, missing Release headings, immutable pre-write recovery, post-publish verification recovery, and closeout requirements.
+- Build and check `@mango/pmo@1.3.1`, mechanically synchronize the business PMO baseline, and run CLI PMO install/upgrade/rollback/package contracts.
+- After publication, verify exact versions and tarball integrity through Nexus hosted/group and upgrade a clean consumer to PMO 1.3.1 with project-local CLI 1.0.82.
+
 ## v2026.07.18-cli-1.0.81-pnpm11-generated-install-hotfix - 2026-07-18
 
 ### Fixed
@@ -15,17 +43,17 @@
 
 ### Published Packages
 
-| Order | Target | Version / destination | Pre-release status |
+| Order | Target | Version / destination | Release status |
 |---|---|---|---|
-| 1 | npm CLI | `@mango/cli@1.0.81` -> Nexus npm hosted | `PENDING` |
-| 2 | GitHub Release | `v2026.07.18-cli-1.0.81-pnpm11-generated-install-hotfix` | `PENDING` |
+| 1 | npm CLI | `@mango/cli@1.0.81` -> Nexus npm hosted | `PUBLISHED_AND_VERIFIED` |
+| 2 | GitHub Release | `v2026.07.18-cli-1.0.81-pnpm11-generated-install-hotfix` | `CREATED_AND_VERIFIED` |
 
 ### Verification
 
 - `pnpm -C mango-ui --filter @mango/cli test`
 - `pnpm -C mango-ui package-consumer:typecheck -- --registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`
 - Fresh generated-project install with pnpm 11, without a verification-harness workspace-policy injection, followed by `pnpm run typecheck`.
-- After publication, verify the exact CLI version and tarball through both Nexus npm hosted and npm group, then repeat the fresh generated-project install from the published package.
+- Nexus npm hosted and npm group resolve `@mango/cli@1.0.81` with matching integrity; read-only release manifest `cli-1.0.81-verified` completed every required state after installing the published package, generating a full project, completing pnpm 11 install, and passing frontend typecheck.
 
 ## v2026.07.18-maven-1.0.22-pmo-1.3.0-cli-1.0.80-regression-release - 2026-07-18
 
