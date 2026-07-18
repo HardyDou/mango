@@ -186,6 +186,59 @@ assert(
 );
 
 const ruleIndex = JSON.parse(readFileSync(join(pmoRoot, 'rules/index.json'), 'utf8'));
+const capabilityDocsBundle = ruleIndex.bundles?.capabilityDocs;
+for (const keyword of ['@mango/workflow', 'mango-workflow-api', 'mango-workflow-starter', 'designerJson', 'formJson', '/workflow/']) {
+  assert(
+    capabilityDocsBundle?.keywords?.includes(keyword),
+    `capability docs routing is missing precise Mango approval keyword ${keyword}`,
+  );
+}
+for (const ambiguousKeyword of ['workflow', '工作流', '流程']) {
+  assert(
+    !capabilityDocsBundle?.keywords?.includes(ambiguousKeyword),
+    `capability docs routing must not use ambiguous bare keyword ${ambiguousKeyword}`,
+  );
+}
+assert(
+  cases.some(item => item.id === 'workflow-explicit-package-trigger'
+    && item.expect.skill === 'mango-workflow'
+    && item.expect.invoked === true),
+  'missing explicit @mango/workflow trigger eval',
+);
+assert(
+  cases.some(item => item.id === 'workflow-frontend-standards-not-trigger'
+    && item.expect.notSkill === 'mango-workflow'
+    && item.expect.forbid?.includes('@mango/workflow')),
+  'missing frontend standards versus Mango approval boundary eval',
+);
+assert(
+  cases.some(item => item.id === 'workflow-stale-context-frontend-not-trigger'
+    && item.expect.notSkill === 'mango-workflow'
+    && item.expect.forbid?.includes('repeat @mango/workflow')),
+  'missing stale approval context versus current frontend standards boundary eval',
+);
+assert(
+  cases.some(item => item.id === 'workflow-ci-not-trigger'
+    && item.expect.notSkill === 'mango-workflow'),
+  'missing CI workflow versus Mango approval boundary eval',
+);
+assert(
+  cases.some(item => item.id === 'workflow-pmo-process-not-trigger'
+    && item.expect.notSkill === 'mango-workflow'),
+  'missing PMO process versus Mango approval boundary eval',
+);
+assert(
+  cases.some(item => item.id === 'workflow-generic-state-machine-not-trigger'
+    && item.expect.notSkill === 'mango-workflow'),
+  'missing generic state machine versus Mango approval boundary eval',
+);
+assert(
+  cases.some(item => item.id === 'workflow-bare-term-not-trigger'
+    && item.expect.notSkill === 'mango-workflow'
+    && item.expect.action === 'ASK'
+    && item.expect.forbid?.includes('assume Mango approval')),
+  'missing ambiguous bare workflow classification eval',
+);
 const releaseBundle = ruleIndex.bundles?.releaseArtifacts;
 assert(releaseBundle?.include?.includes('process.releaseArtifacts'), 'release artifact routing bundle is missing');
 for (const keyword of ['CLI', 'starter', '模板', 'PMO', 'Skill']) {
