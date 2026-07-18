@@ -45,11 +45,11 @@
 
 ## 7. 统一发布状态机
 
-- **正向要求**：正式批次统一使用 `mango release publish/status/verify/repair --version <version>` 和 `mango release registry doctor`；状态固定为 `source`、`versions`、`changelog`、`readmes`、`tests`、`pr`、`tag`、`github-release`、`maven`、`npm`、`cli-lock`、`private-registry-publish`、`private-registry-consume-verify`、`docs-latest`、`docs-snapshot`、`post-verify`、`cleanup`。每项只能是 `passed/failed/pending/not_applicable`，必须记录非空原因；适用且已执行的状态必须逐次记录命令、工作目录、退出码、开始/完成时间和非空脱敏输出。`not_applicable` 因未执行命令，只记录明确原因和判定时间。
+- **正向要求**：Mango 发布只使用仓库内 `mango-pmo/skills/mango-release`，禁止用外部通用 release skill 补充或替代。正式批次统一使用 `mango release publish/status/verify/repair --version <version>` 和 `mango release registry doctor`；状态固定为 `source`、`versions`、`changelog`、`readmes`、`tests`、`pr`、`tag`、`github-release`、`maven`、`npm`、`cli-lock`、`private-registry-publish`、`private-registry-consume-verify`、`docs-latest`、`docs-snapshot`、`post-verify`、`cleanup`。每项只能是 `passed/failed/pending/not_applicable`，必须记录非空原因；适用且已执行的状态必须逐次记录命令、工作目录、退出码、开始/完成时间和非空脱敏输出。`not_applicable` 因未执行命令，只记录明确原因和判定时间。
 - **禁止项**：禁止绕过状态机直接声明整批发布完成；禁止把未执行状态写成 passed；禁止 `repair` 重发已经成功的不可变 Maven/npm/tag/Release/文档快照；禁止在项目或用户配置中持久化发布授权、token、password 或 URL userinfo。
 - **正例**：npm 发布成功但消费仓库回查失败，manifest 保留 npm passed 和 consume-verify failed；修复缓存后 `repair` 只运行 consume verify 和后续状态，不重新执行 npm publish。
 - **反例**：第二次执行整套脚本试图覆盖发布。错误原因：不可变版本可能已经存在，且无法区分发布失败与回查失败。
-- **机器判定**：`publish/repair` 只接受本次 `--authorize` 或 `MANGO_RELEASE_AUTHORIZED=1`；配置优先级为 CLI > 环境变量 > 用户配置 > 项目配置；Maven/npm 分别显式选择 `private-registry/public-registry/artifact-only/disabled`，disabled 必须有原因，缺模式或 registry 时 doctor 和 publish 失败。completed 必须同时满足所有状态关闭、状态 applicability 与配置一致和全部适用状态 evidence 结构完整；必需状态禁止篡改为 `not_applicable`。`repair` 遇到从未尝试的 pending 不可变状态时必须执行该状态的首次 publish；只有已经尝试过的不可变状态才允许使用精确的 `{kind: verify-existing}` 引用同状态 verify adapter，禁止把未发布制品直接标成验证通过。独立 repair 命令、空数组或额外字段均失败。
+- **机器判定**：`publish/repair` 只接受本次 `--authorize` 或 `MANGO_RELEASE_AUTHORIZED=1`；配置优先级为 CLI > 环境变量 > 用户配置 > 项目配置；Maven/npm 分别显式选择 `private-registry/public-registry/artifact-only/disabled`，disabled 必须有原因，缺模式或 registry 时 doctor 和 publish 失败。completed 必须同时满足所有状态关闭、状态 applicability 与配置一致和全部适用状态 evidence 结构完整；必需状态禁止篡改为 `not_applicable`。`repair` 遇到从未尝试的 pending 不可变状态时必须执行该状态的首次 publish；只有已经尝试过且可能形成远端对象的不可变状态才使用精确的 `{kind: verify-existing}` 引用同状态 verify adapter。若失败证据明确发生在远端写入前，publish/consume 双侧均证明精确坐标不存在，可由同一状态机保留原失败证据后重试一次精确 publish adapter；禁止 raw publisher、整批重发、独立 repair 命令、空数组或额外字段。
 
 ### 7.1 Registry 抽象与文档策略
 
@@ -57,3 +57,9 @@
 - **禁止项**：禁止在发布实现中硬编码 Nexus、Artifactory、GitHub Packages 或其它地址；禁止用本地缓存代替 consume registry；禁止 npm-only 版本占用 Maven 文档版本列表。
 - **正例**：同一 adapter 可通过环境变量切换 Nexus 和 Artifactory，manifest 记录 registry URL、坐标和 checksum，但不记录凭据值。
 - **反例**：脚本内置内网 Nexus 为默认地址。错误原因：环境不可移植，且未配置时可能误发到错误仓库。
+
+### 7.2 发布说明与收尾
+
+- **正向要求**：不可变动作前，平台 CHANGELOG 和 GitHub Release 预稿必须覆盖版本、发布制品、升级步骤和验证；GitHub Release 正文至少包含适用的 `Versions`、`Published Packages`、`Upgrade Notes`、`Verification`，并在发布适配器执行前通过同一 release-notes checker。结构化验证应解析 YAML/JSON/manifest 语义，禁止把引号、缩进等非契约格式写成发布成败条件。
+- **正向要求**：发布完成后必须通过 PR 把平台 CHANGELOG 的 `PENDING` 回填为真实发布状态和完整 manifest 证据，再停止服务、释放任务 workspace/数据库、清理已合并 worktree 与分支、同步 `main` 并证明 `HEAD == origin/main`。发布 tag 保持指向制品源码提交，不移动到仅含收尾文档的提交。
+- **禁止项**：禁止 GitHub Release 正文缺发布制品章节时进入 npm/Maven publish；禁止制品已发布后因验证脚本格式误判而重发；禁止保留 `PENDING`、未清理发布 worktree 或未同步 main 却声明整批收尾完成。

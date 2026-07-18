@@ -1,6 +1,6 @@
 interface:
   display_name: "Mango Release"
   short_description: "Publish and verify a governed Mango release batch"
-  default_prompt: "Use $mango-release to plan, publish, and verify this Mango release batch."
+  default_prompt: "Use the repository-local $mango-release as the exclusive workflow to plan, publish, recover, verify, and close this Mango release batch; do not invoke an external generic release skill."
 policy:
   allow_implicit_invocation: true

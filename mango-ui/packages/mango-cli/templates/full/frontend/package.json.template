@@ -23,7 +23,7 @@
     "vue-router": "{{vueRouterVersion}}"
   },
   "devDependencies": {
-    "@mango/cli": "1.0.81",
+    "@mango/cli": "1.0.82",
     "@playwright/test": "{{playwrightVersion}}",
     "@types/node": "{{nodeTypesVersion}}",
     "@vitejs/plugin-vue": "{{viteVueVersion}}",
