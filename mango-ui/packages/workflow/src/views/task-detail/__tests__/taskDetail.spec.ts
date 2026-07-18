@@ -508,6 +508,29 @@ async function mountTaskDetail() {
 }
 
 function registerElementStubs(app: ReturnType<typeof createApp>) {
+  const passthroughStub = { template: '<div><slot /></div>' };
+  [
+    'ElCascader',
+    'ElCheckbox',
+    'ElCheckboxGroup',
+    'ElCollapse',
+    'ElCollapseItem',
+    'ElColorPicker',
+    'ElDatePicker',
+    'ElDivider',
+    'ElImage',
+    'ElInputNumber',
+    'ElOption',
+    'ElRadio',
+    'ElRadioGroup',
+    'ElRate',
+    'ElSelect',
+    'ElSlider',
+    'ElSwitch',
+    'ElTimePicker',
+    'ElTransfer',
+    'ElTreeSelect',
+  ].forEach(name => app.component(name, passthroughStub));
   app.component('ElCard', { template: '<div><slot name="header" /><slot /></div>' });
   app.directive('loading', {});
   app.component('ElEmpty', { template: '<div />' });

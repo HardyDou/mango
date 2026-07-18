@@ -253,16 +253,22 @@ export function isFileAccessUrl(value?: string): boolean {
 }
 
 export async function downloadFileRecord(row: Pick<FileRecord, 'id' | 'fileName'> & Partial<Pick<FilePreview, 'directDownloadUrl'>>) {
-  if (row.directDownloadUrl) {
+  if (row.directDownloadUrl && !isProtectedApiUrl(row.directDownloadUrl)) {
     openDirectDownload(row.directDownloadUrl, row.fileName || `file-${row.id}`);
     return;
   }
-  const preview = await fileApi.preview(row.id);
-  if (preview.directDownloadUrl) {
+  const preview = row.directDownloadUrl ? undefined : await fileApi.preview(row.id);
+  if (preview?.directDownloadUrl && !isProtectedApiUrl(preview.directDownloadUrl)) {
     openDirectDownload(preview.directDownloadUrl, preview.fileName || row.fileName || `file-${row.id}`);
     return;
   }
-  openDirectDownload(fileApi.downloadUrl(row.id), row.fileName || `file-${row.id}`);
+  const response = await fileApi.download(row.id);
+  const blob = response.data instanceof Blob
+    ? response.data
+    : new Blob([response.data], { type: response.headers?.['content-type'] || 'application/octet-stream' });
+  const objectUrl = URL.createObjectURL(blob);
+  openDirectDownload(objectUrl, preview?.fileName || row.fileName || `file-${row.id}`);
+  setTimeout(() => URL.revokeObjectURL(objectUrl), 0);
 }
 
 export const DEFAULT_MULTIPART_THRESHOLD = 20 * 1024 * 1024;

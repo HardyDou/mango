@@ -258,11 +258,10 @@ describe('OrgSelector Component', () => {
 
     it('should remove single tag', () => {
       let modelValue = ['1', '2', '5'];
-      const nameToRemove = '技术部';
-      const idToRemove = 2;
+      const idToRemove = '2';
       modelValue = modelValue.filter((id) => id !== idToRemove);
 
-      expect(modelValue).toEqual([1, 5]);
+      expect(modelValue).toEqual(['1', '5']);
     });
   });
 });

@@ -49,11 +49,11 @@ describe('validate 工具函数', () => {
     it('应该正确验证有效 URL', () => {
       expect(validateUrl('https://example.com')).toBe(true);
       expect(validateUrl('http://example.com')).toBe(true);
-      expect(validateUrl('example.com')).toBe(true);
     });
 
     it('应该拒绝无效 URL', () => {
       expect(validateUrl('')).toBe(false);
+      expect(validateUrl('example.com')).toBe(false);
     });
   });
 
@@ -73,13 +73,12 @@ describe('validate 工具函数', () => {
 
   describe('validateIdCard', () => {
     it('应该正确验证有效身份证', () => {
-      expect(validateIdCard('123456789012345')).toBe(true); // 15位
-      expect(validateIdCard('123456789012345678')).toBe(true); // 18位
-      expect(validateIdCard('12345678901234567X')).toBe(true); // 18位含X
+      expect(validateIdCard('11010519491231002X')).toBe(true); // 18位含X
     });
 
     it('应该拒绝无效身份证', () => {
       expect(validateIdCard('123')).toBe(false); // 太短
+      expect(validateIdCard('130503670401001')).toBe(false); // 当前契约不接受15位旧格式
       expect(validateIdCard('1234567890123456789')).toBe(false); // 太长
     });
   });

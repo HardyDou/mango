@@ -84,12 +84,13 @@ test.describe('文件预览下载地址分离 @p1 @file', () => {
 
       const previewDialog = page.locator('.file-preview-dialog').filter({ hasText: fileName }).first();
       await expect(previewDialog).toBeVisible({ timeout: 10000 });
-      await expect(previewDialog.locator('.preview-placeholder')).toBeVisible();
+      await expect(previewDialog.locator('img[src^="blob:"]')).toBeVisible({ timeout: 10000 });
+      await expect(previewDialog.locator('.preview-placeholder')).toHaveCount(0);
       await expect(previewDialog.locator('img[src*="/file/files/download"]')).toHaveCount(0);
       await expect(previewDialog.locator('iframe[src*="/file/files/download"]')).toHaveCount(0);
       await expect(previewDialog.locator('video[src*="/file/files/download"]')).toHaveCount(0);
       await expect(previewDialog.locator('audio[src*="/file/files/download"]')).toHaveCount(0);
-      await expect(previewDialog.locator('.preview-dialog-actions button').first()).toBeDisabled();
+      await expect(previewDialog.locator('.preview-dialog-actions button').first()).toBeEnabled();
       expect(await unexpectedDownloadPromise, '点击预览不应该触发浏览器下载事件').toBe(false);
 
       const downloadPromise = page.waitForEvent('download');
@@ -152,7 +153,7 @@ async function login(page: Page) {
 }
 
 async function routePreviewAsDownloadEndpoint(page: Page, fileId: string) {
-  await page.route('**/api/file/files/preview**', async (route: Route) => {
+  await page.route(/\/api\/file\/files\/preview(?:\?.*)?$/, async (route: Route) => {
     const url = new URL(route.request().url());
     if (url.searchParams.get('id') !== fileId) {
       await route.continue();

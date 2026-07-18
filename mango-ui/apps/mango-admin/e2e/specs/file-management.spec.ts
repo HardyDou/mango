@@ -92,58 +92,77 @@ test.describe('文件管理联调', () => {
   test('文件配置支持维护上传访问和预览策略', async ({ page }) => {
     await login(page);
 
-    await page.goto('/#/file/settings');
-    await expect(page.getByText('文件配置').first()).toBeVisible({ timeout: 10000 });
+    const headers = await apiHeaders(page);
+    const originalResponse = await page.request.get('/api/file/settings', { headers });
+    const originalBody = await originalResponse.json();
+    expect(originalBody.success || originalBody.code === 200).toBeTruthy();
+    const originalSettings = { ...originalBody.data };
+    delete originalSettings.id;
+    delete originalSettings.tenantId;
+    delete originalSettings.defaultConfig;
+    delete originalSettings.updatedTime;
 
-    const settingsResponsePromise = page.waitForResponse((response) =>
-      response.url().includes('/api/file/settings')
-      && response.request().method() === 'GET'
-      && response.status() === 200
-    );
-    await page.reload();
-    await settingsResponsePromise;
+    try {
+      await page.goto('/#/file/settings');
+      await expect(page.getByText('文件配置').first()).toBeVisible({ timeout: 10000 });
 
-    await page.getByRole('spinbutton', { name: /单文件大小/ }).fill('100');
-    await page.getByLabel('允许扩展名').fill('');
-    await page.getByLabel('允许扩展名').pressSequentially(realisticAllowedExtensions);
-    await expect(page.getByLabel('允许扩展名')).toHaveValue(realisticAllowedExtensions);
-    await page.getByLabel('禁止扩展名').fill('');
-    await page.getByLabel('禁止扩展名').pressSequentially('exe, bat, cmd, sh, jar');
-    await expect(page.getByLabel('禁止扩展名')).toHaveValue('exe, bat, cmd, sh, jar');
-    await page.getByLabel('允许 Content-Type').fill('');
-    await page.getByLabel('禁止 Content-Type').fill('');
-    await page.getByLabel('禁止 Content-Type').pressSequentially('application/x-msdownload, application/x-sh');
-    await expect(page.getByLabel('禁止 Content-Type')).toHaveValue('application/x-msdownload, application/x-sh');
-    await page.getByRole('spinbutton', { name: /直传有效期/ }).fill('900');
-    await page.getByRole('spinbutton', { name: /访问有效期/ }).fill('600');
-    await page.locator('.el-radio-button__inner', { hasText: '存储直连' }).click();
-    await page.getByLabel('文档预览服务').fill('');
-    await page.getByRole('spinbutton', { name: /预览有效期/ }).fill('600');
-    await page.getByLabel('外部预览类型').fill('');
-    await page.getByLabel('外部预览类型').pressSequentially(realisticAllowedExtensions);
-    await expect(page.getByLabel('外部预览类型')).toHaveValue(realisticAllowedExtensions);
-    const saveResponsePromise = page.waitForResponse((response) =>
-      response.url().includes('/api/file/settings')
-      && response.request().method() === 'PUT'
-    );
-    await page.getByRole('button', { name: '保存配置' }).click();
-    const saveResponse = await saveResponsePromise;
-    expect(saveResponse.status()).toBe(200);
-    const saveBody = await saveResponse.json();
-    expect(saveBody.success || saveBody.code === 200).toBeTruthy();
-    await expect(page.getByText('保存成功')).toBeVisible({ timeout: 10000 });
+      const settingsResponsePromise = page.waitForResponse((response) =>
+        response.url().includes('/api/file/settings')
+        && response.request().method() === 'GET'
+        && response.status() === 200
+      );
+      await page.reload();
+      await settingsResponsePromise;
 
-    const persisted = await page.request.get('/api/file/settings', { headers: await apiHeaders(page) });
-    const persistedBody = await persisted.json();
-    expect(persistedBody.success || persistedBody.code === 200).toBeTruthy();
-    expect(persistedBody.data.allowedExtensions).toEqual(realisticAllowedExtensions.split(', '));
-    expect(persistedBody.data.blockedExtensions).toEqual(['exe', 'bat', 'cmd', 'sh', 'jar']);
-    expect(persistedBody.data.blockedContentTypes).toEqual(['application/x-msdownload', 'application/x-sh']);
-    expect(persistedBody.data.previewExternalExtensions).toEqual(realisticAllowedExtensions.split(', '));
-    expect(persistedBody.data.accessMode).toBe('DIRECT');
+      await page.getByRole('spinbutton', { name: /单文件大小/ }).fill('100');
+      await page.getByLabel('允许扩展名').fill('');
+      await page.getByLabel('允许扩展名').pressSequentially(realisticAllowedExtensions);
+      await expect(page.getByLabel('允许扩展名')).toHaveValue(realisticAllowedExtensions);
+      await page.getByLabel('禁止扩展名').fill('');
+      await page.getByLabel('禁止扩展名').pressSequentially('exe, bat, cmd, sh, jar');
+      await expect(page.getByLabel('禁止扩展名')).toHaveValue('exe, bat, cmd, sh, jar');
+      await page.getByLabel('允许 Content-Type').fill('');
+      await page.getByLabel('禁止 Content-Type').fill('');
+      await page.getByLabel('禁止 Content-Type').pressSequentially('application/x-msdownload, application/x-sh');
+      await expect(page.getByLabel('禁止 Content-Type')).toHaveValue('application/x-msdownload, application/x-sh');
+      await page.getByRole('spinbutton', { name: /直传有效期/ }).fill('900');
+      await page.getByRole('spinbutton', { name: /访问有效期/ }).fill('600');
+      await page.locator('.el-radio-button__inner', { hasText: '存储直连' }).click();
+      await page.getByLabel('文档预览服务').fill('');
+      await page.getByRole('spinbutton', { name: /预览有效期/ }).fill('600');
+      await page.getByLabel('外部预览类型').fill('');
+      await page.getByLabel('外部预览类型').pressSequentially(realisticAllowedExtensions);
+      await expect(page.getByLabel('外部预览类型')).toHaveValue(realisticAllowedExtensions);
+      const saveResponsePromise = page.waitForResponse((response) =>
+        response.url().includes('/api/file/settings')
+        && response.request().method() === 'PUT'
+      );
+      await page.getByRole('button', { name: '保存配置' }).click();
+      const saveResponse = await saveResponsePromise;
+      expect(saveResponse.status()).toBe(200);
+      const saveBody = await saveResponse.json();
+      expect(saveBody.success || saveBody.code === 200).toBeTruthy();
+      await expect(page.getByText('保存成功')).toBeVisible({ timeout: 10000 });
 
-    await expect(page.locator('.el-message--error')).toHaveCount(0);
-    await expect(page.locator('text=/401|403|未授权|拒绝访问|登录已过期|请重新登录/')).toHaveCount(0);
+      const persisted = await page.request.get('/api/file/settings', { headers: await apiHeaders(page) });
+      const persistedBody = await persisted.json();
+      expect(persistedBody.success || persistedBody.code === 200).toBeTruthy();
+      expect(persistedBody.data.allowedExtensions).toEqual(realisticAllowedExtensions.split(', '));
+      expect(persistedBody.data.blockedExtensions).toEqual(['exe', 'bat', 'cmd', 'sh', 'jar']);
+      expect(persistedBody.data.blockedContentTypes).toEqual(['application/x-msdownload', 'application/x-sh']);
+      expect(persistedBody.data.previewExternalExtensions).toEqual(realisticAllowedExtensions.split(', '));
+      expect(persistedBody.data.accessMode).toBe('DIRECT');
+
+      await expect(page.locator('.el-message--error')).toHaveCount(0);
+      await expect(page.locator('text=/401|403|未授权|拒绝访问|登录已过期|请重新登录/')).toHaveCount(0);
+    } finally {
+      const restoreResponse = await page.request.put('/api/file/settings', {
+        headers,
+        data: originalSettings,
+      });
+      const restoreBody = await restoreResponse.json();
+      expect(restoreBody.success || restoreBody.code === 200).toBeTruthy();
+    }
   });
 
   test('目录、上传、分页、详情、下载、归档使用真实文件接口', async ({ page, request }) => {
@@ -354,18 +373,22 @@ test.describe('文件管理联调', () => {
     const previewResponse = await previewResponsePromise;
     const previewBody = await previewResponse.json();
     expect(previewBody.success || previewBody.code === 200).toBeTruthy();
-    expect(previewBody.data?.directPreviewUrl).toBeTruthy();
-    expect(previewBody.data?.directDownloadUrl).toBeTruthy();
-    expect(String(previewBody.data.directPreviewUrl)).toMatch(
-      /^(http:\/\/file\.mango\.io:9000\/|https?:\/\/127\.0\.0\.1:\d+\/file\/local-objects\/|\/(?:api\/)?file\/local-objects\/)/,
-    );
-    expect(String(previewBody.data.directDownloadUrl)).toMatch(
-      /^(http:\/\/file\.mango\.io:9000\/|https?:\/\/127\.0\.0\.1:\d+\/file\/local-objects\/|\/(?:api\/)?file\/local-objects\/)/,
-    );
-    expect(previewBody.data?.directAccess).toBeTruthy();
+    expect(previewBody.data?.directPreviewUrl).toBeNull();
+    expect(previewBody.data?.directDownloadUrl).toBeNull();
+    expect(previewBody.data?.directAccess).toBe(false);
+    const frontendOrigin = await page.evaluate(() => window.location.origin);
+    const previewUrl = new URL(previewBody.data.previewUrl, frontendOrigin);
+    const downloadUrl = new URL(previewBody.data.downloadUrl, frontendOrigin);
+    expect(previewUrl.origin).toBe(frontendOrigin);
+    expect(previewUrl.pathname).toBe('/api/file/files/preview-content');
+    expect(previewUrl.searchParams.get('id')).toBe(String(uploadBody.data.id));
+    expect(downloadUrl.origin).toBe(frontendOrigin);
+    expect(downloadUrl.pathname).toBe('/api/file/files/download');
+    expect(downloadUrl.searchParams.get('id')).toBe(String(uploadBody.data.id));
 
     const previewImage = page.locator('.preview-image .el-image__inner').first();
     await expect(previewImage).toBeVisible({ timeout: 10000 });
+    await expect(previewImage).toHaveAttribute('src', /^blob:/);
     await expect(previewImage).toHaveJSProperty('naturalWidth', 12);
     await expect(previewImage).toHaveJSProperty('naturalHeight', 10);
 

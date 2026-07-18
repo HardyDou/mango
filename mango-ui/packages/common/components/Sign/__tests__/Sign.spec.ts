@@ -1,6 +1,5 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { mount } from '@vue/test-utils';
-import { ref } from 'vue';
+import { describe, it, expect, vi } from 'vitest';
+import { config, mount } from '@vue/test-utils';
 import Sign from '../index.vue';
 
 // Mock Element Plus icons
@@ -8,11 +7,17 @@ vi.mock('@element-plus/icons-vue', () => ({
   WarnTriangleFilled: {
     template: '<span class="mock-warn-icon"></span>',
   },
+}));
+
+config.global.stubs = {
   ElButton: {
     template: '<button class="el-button"><slot /></button>',
     props: ['size', 'disabled'],
   },
-}));
+  ElIcon: {
+    template: '<span class="el-icon"><slot /></span>',
+  },
+};
 
 // Mock vue-i18n
 vi.mock('vue-i18n', () => ({

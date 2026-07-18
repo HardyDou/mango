@@ -2,98 +2,37 @@
  * FormCreate 组件单元测试
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { mount } from '@vue/test-utils';
-import { ref } from 'vue';
+import { describe, it, expect } from 'vitest';
+import { config, mount } from '@vue/test-utils';
 
-// Mock Element Plus
-vi.mock('element-plus', () => ({
+const passthroughStub = { template: '<div><slot /></div>' };
+config.global.stubs = {
   ElForm: {
-    name: 'el-form',
-    props: {
-      model: Object,
-      rules: Object,
-      labelWidth: [String, Number],
-      inline: Boolean,
-      labelPosition: String,
-      size: String,
-      disabled: Boolean,
+    template: '<form><slot /></form>',
+    methods: {
+      validate: () => Promise.resolve(true),
+      resetFields: () => undefined,
     },
-    setup: (props: any, { slots }: any) => slots.default?.(),
   },
   ElFormItem: {
-    name: 'el-form-item',
-    props: {
-      label: String,
-      prop: String,
-      rules: Array,
-    },
-    setup: (props: any, { slots }: any) => slots.default?.(),
+    props: ['label'],
+    template: '<label><span>{{ label }}</span><slot /></label>',
   },
-  ElInput: {
-    name: 'el-input',
-    props: {
-      modelValue: [String, Number],
-      type: String,
-      placeholder: String,
-      disabled: Boolean,
-      readonly: Boolean,
-    },
-    setup: (props: any, { slots }: any) => ({
-      value: props.modelValue,
-    }),
-  },
-  ElSelect: {
-    name: 'el-select',
-    props: {
-      modelValue: [String, Number, Array],
-      placeholder: String,
-      disabled: Boolean,
-    },
-  },
-  ElOption: {
-    name: 'el-option',
-    props: {
-      label: String,
-      value: [String, Number],
-      disabled: Boolean,
-    },
-  },
-  ElSwitch: {
-    name: 'el-switch',
-    props: {
-      modelValue: Boolean,
-      disabled: Boolean,
-    },
-  },
-  ElDatePicker: {
-    name: 'el-date-picker',
-    props: {
-      modelValue: [String, Array],
-      type: String,
-      placeholder: String,
-      disabled: Boolean,
-      readonly: Boolean,
-    },
-  },
-  ElButton: {
-    name: 'el-button',
-    props: {
-      type: String,
-      disabled: Boolean,
-    },
-  },
-  ElDivider: {
-    name: 'el-divider',
-  },
-}));
-
-// Mock vue-i18n
-vi.mock('vue-i18n', () => ({
-  useI18n: () => ({
-    t: (key: string) => key,
-  }),
-}));
+  ElInput: passthroughStub,
+  ElInputNumber: passthroughStub,
+  ElSelect: passthroughStub,
+  ElOption: passthroughStub,
+  ElRadio: passthroughStub,
+  ElRadioGroup: passthroughStub,
+  ElCheckbox: passthroughStub,
+  ElCheckboxGroup: passthroughStub,
+  ElSwitch: passthroughStub,
+  ElDatePicker: passthroughStub,
+  ElCascader: passthroughStub,
+  ElTreeSelect: passthroughStub,
+  ElButton: passthroughStub,
+  ElDivider: passthroughStub,
+};
 
 // 导入被测组件
 import FormCreate from '../index.vue';

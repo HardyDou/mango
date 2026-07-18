@@ -3,6 +3,8 @@
  * This file should be imported in vitest.config.ts as setupFiles
  */
 
+import { vi } from 'vitest';
+
 // Mock canvas 2d context for happy-dom
 class MockCanvasRenderingContext2D {
   strokeStyle = '';

@@ -244,12 +244,12 @@ public class FileSettingsService implements IFileSettingsService {
 
     private String joinExtensions(List<String> values) {
         List<String> normalized = normalizeExtensions(values);
-        return normalized.isEmpty() ? null : String.join(",", normalized);
+        return String.join(",", normalized);
     }
 
     private String joinTextValues(List<String> values) {
         List<String> normalized = normalizeTextValues(values);
-        return normalized.isEmpty() ? null : String.join(",", normalized);
+        return String.join(",", normalized);
     }
 
     private List<String> splitExtensions(String value) {

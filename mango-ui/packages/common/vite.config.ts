@@ -41,5 +41,6 @@ export default defineConfig({
   },
   test: {
     environment: 'happy-dom',
+    setupFiles: ['./utils/__tests__/setupCanvasMock.ts'],
   },
 });
