@@ -15,7 +15,7 @@
 
 - 目的：消除 “workflow/工作流” 多义词导致的 Agent 误路由，确保只有明确的 Mango 审批流证据才进入 `mango-workflow` 能力处理。
 - 成功条件：`@mango/workflow`、流程定义、审批任务等明确场景能触发；前端规范、GitHub Actions、PMO 研发流程、普通状态机和仅有多义词的场景不触发或只澄清；官方包、业务基线和本机 Skill 口径一致。
-- 处理范围：`mango-workflow` 官方 Skill、能力说明规则、规则索引、Skill 正反例、`@mango/pmo` Skill 投影、业务 starter 基线和当前用户级 Skill。
+- 处理范围：`mango-workflow` 官方 Skill、能力说明规则、规则索引、Skill 正反例、`@mango/pmo` Skill 投影、业务 starter 基线与 README 和当前用户级 Skill。
 - 不处理范围：Mango Workflow 运行时能力、后端 API、前端包实现、流程定义数据、CI workflow 文件命名和普通业务状态机设计。
 
 ## 3. 术语决定
@@ -70,7 +70,7 @@
 | WF-TASK-001 | 1 | `mango-pmo/skills/mango-workflow/**` | 官方 Skill 明确正向证据、非触发边界和事实源 |
 | WF-TASK-002 | 2 | `rules/08-capability-docs.md`、`rules/index.json` | 规范与索引只登记精确 Mango 审批关键词 |
 | WF-TASK-003 | 3 | `tests/skills/**` | 正例、反例、空上下文、边界、gate、next 齐全且关键用例被硬校验 |
-| WF-TASK-004 | 4 | `@mango/pmo` 与 business starter 投影 | 构建、包检查和 baseline 检查通过 |
+| WF-TASK-004 | 4 | `@mango/pmo`、business starter 投影与 README | 构建、包检查、baseline 检查和消费者说明通过 |
 | WF-TASK-005 | 5 | `~/.agents/skills/mango-workflow/**` | 当前安装副本同步并验证 |
 | WF-TASK-006 | 6 | 治理记录与全量定向门禁 | 结果、证据和剩余风险如实登记 |
 

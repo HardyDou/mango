@@ -49,6 +49,8 @@ node mango-business-starter/scripts/check-template.mjs
 
 当前 PMO baseline 按风险事实选择三档交付模式：L0/L1 使用 SIMPLE 并直接实现，L2 使用 STANDARD 单文件记录，L3 使用 FULL 适用流程。M01 默认自动创建或复用隔离 worktree，只有 main 例外、模式降级、破坏性数据库动作和外部写入等事实需要人工确认；M09-M16 仍按真实观察面选择。发布、版本和发布恢复继续使用独立发布流程。
 
+当前 PMO baseline 内置 `mango-workflow` Skill，只用于有明确 Mango 审批证据的接入、诊断和验收，例如精确包/模块坐标、`/workflow/` API、流程定义模型、审批任务动作或业务审批组件。Vue 工程规范、CI/GitHub Actions、PMO 交付流程、普通状态机和单独出现的 `workflow/工作流/流程` 不触发该 Skill；仅有多义词时保持当前任务领域，必要时先澄清，不得自行假定为 Mango 审批能力。
+
 当前 scope classifier 会为 partial 后端 PR 同时输出质量模块 `maven_projects` 和依赖准备模块 `maven_dependency_projects`。标准 workflow 先用后者执行带 `-am` 的跳过测试安装，再用前者执行不带 `-am`、`-amd` 的直接模块质量门禁。这样新 Runner 不依赖历史 Maven 缓存，也不会把上游模块的存量质量问题扩大到当前 PR。
 
 PMO 合同启用前形成、尚未迁移的生命周期文档可以在业务文档根目录的 `.mango-pmo-legacy-documents.json` 中逐文件登记相对路径、SHA-256 和迁移原因。该基线只锁定完全相同的存量内容：文件变化、删除、越界、重复或已经迁移为正式 `documentType` 时都会失败；新生命周期文档不能通过该文件绕过合同。
