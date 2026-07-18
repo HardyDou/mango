@@ -160,6 +160,7 @@ public class CheckMojo extends AbstractMojo {
     private static final String SOURCE_PMD = "pmd";
     private static final String SOURCE_CHECKSTYLE = "checkstyle";
     private static final String SOURCE_SPOTBUGS = "spotbugs";
+    private static final String CHECKSTYLE_GOAL = "checkstyle:checkstyle";
     private static final Set<String> CODE_LEVEL_SOURCES =
             Set.of(SOURCE_PMD, SOURCE_CHECKSTYLE, SOURCE_SPOTBUGS);
     private static final String DOC_AUTO_CHECK_MAPPING = "auto-check-mapping.md";
@@ -414,6 +415,14 @@ public class CheckMojo extends AbstractMojo {
     /** Timeout in seconds for each delegated PMD/Checkstyle/SpotBugs Maven command. */
     @Parameter(property = "mango.check.staticTimeoutSeconds", defaultValue = "600")
     private long staticTimeoutSeconds;
+
+    /** Optional Checkstyle rules file. Defaults to the project file or bundled Mango rules. */
+    @Parameter(property = "mango.check.checkstyleConfigLocation")
+    private String checkstyleConfigLocation;
+
+    /** Standard Maven Checkstyle configuration property, retained for consumer compatibility. */
+    @Parameter(property = "checkstyle.config.location")
+    private String standardCheckstyleConfigLocation;
 
     /** Gate mode: all, no-new-violations. */
     @Parameter(property = "mango.check.gate", defaultValue = "all")
@@ -822,6 +831,23 @@ public class CheckMojo extends AbstractMojo {
         if (!reactorProjects.isEmpty()) {
             command.add("-pl");
             command.add(String.join(",", reactorProjects));
+        }
+        if (CHECKSTYLE_GOAL.equals(goal)) {
+            CheckstyleConfigResolver.ResolvedConfig checkstyleConfig =
+                    new CheckstyleConfigResolver(CheckMojo.class.getClassLoader())
+                            .resolve(
+                                    rootPath,
+                                    checkstyleConfigLocation,
+                                    standardCheckstyleConfigLocation);
+            command.add("-Dcheckstyle.config.location=" + checkstyleConfig.location());
+            getLog().info(
+                    "Delegated Checkstyle configuration: "
+                            + checkstyleConfig.source()
+                            + " -> "
+                            + checkstyleConfig.location());
+            if (result != null) {
+                result.addGateMessage("Checkstyle rules: " + checkstyleConfig.source());
+            }
         }
         command.add("compile");
         command.add(goal);
