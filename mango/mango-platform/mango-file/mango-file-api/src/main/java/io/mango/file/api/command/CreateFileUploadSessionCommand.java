@@ -67,5 +67,6 @@ public class CreateFileUploadSessionCommand implements Serializable {
     private String bizMeta;
 
     @Schema(description = "逻辑目录ID。根目录为0")
+    @Min(value = 0, message = "逻辑目录ID不能小于0")
     private Long directoryId;
 }

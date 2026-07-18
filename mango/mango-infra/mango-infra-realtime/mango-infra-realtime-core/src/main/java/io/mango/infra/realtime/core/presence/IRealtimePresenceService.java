@@ -1,7 +1,10 @@
 package io.mango.infra.realtime.core.presence;
 
+import io.mango.common.contract.LocalCapabilityContract;
+
 import java.util.Collection;
 
+@LocalCapabilityContract
 public interface IRealtimePresenceService {
 
     void online(RealtimePresence presence);

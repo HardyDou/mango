@@ -1369,7 +1369,7 @@ class MangoJavaArchitectureRuleTest {
                 import io.swagger.v3.oas.annotations.tags.Tag;
                 import org.springframework.validation.annotation.Validated;
                 import org.springframework.web.bind.annotation.GetMapping;
-                import org.springframework.web.bind.annotation.PostMapping;
+                import org.springframework.web.bind.annotation.GetMapping;
                 import org.springframework.web.bind.annotation.RestController;
                 import io.mango.common.result.R;
                 @Tag(name = "订单", description = "订单管理") @Validated @RestController
@@ -1458,6 +1458,186 @@ class MangoJavaArchitectureRuleTest {
         assertThat(messages(report)).containsExactlyInAnyOrder(
                 "MANGO-ARCH-MODEL-001 API model field requires @Schema(description)",
                 "MANGO-ARCH-MODEL-002 Command/Query/Request field requires a jakarta.validation constraint");
+    }
+
+    @Test
+    void booleanAndEnumInputFieldsAreIntrinsicallyConstrained() {
+        Report report = analyze(
+                "example/StorageQuery.java", """
+                package example;
+                import io.swagger.v3.oas.annotations.media.Schema;
+                enum StorageType { LOCAL, REMOTE }
+                final class StorageQuery {
+                    @Schema(description = "存储类型") private StorageType type;
+                    @Schema(description = "是否启用") private Boolean active;
+                    @Schema(description = "是否默认") private boolean primary;
+                }
+                """,
+                "io/swagger/v3/oas/annotations/media/Schema.java", """
+                package io.swagger.v3.oas.annotations.media;
+                public @interface Schema { String description(); }
+                """);
+
+        assertThat(messages(report)).isEmpty();
+    }
+
+    @Test
+    void markedBinaryTransferModelsSkipJsonProtocolShapeRules() {
+        Report report = analyze(
+                "example/SaveFileCommand.java", """
+                package example;
+                import io.mango.common.contract.BinaryTransferContract;
+                import java.io.InputStream;
+                @BinaryTransferContract
+                public final class SaveFileCommand {
+                    private InputStream inputStream;
+                }
+                """,
+                "example/FileDownloadVO.java", """
+                package example;
+                import io.mango.common.contract.BinaryTransferContract;
+                import java.io.InputStream;
+                @BinaryTransferContract
+                public record FileDownloadVO(InputStream inputStream) {}
+                """,
+                "io/mango/common/contract/BinaryTransferContract.java", """
+                package io.mango.common.contract;
+                public @interface BinaryTransferContract {}
+                """);
+
+        assertThat(messages(report)).isEmpty();
+    }
+
+    @Test
+    void explicitlyMarkedNativeControllerKeepsOpenApiButMayComposeProtocolComponents() {
+        Report report = analyze(
+                "example/RealtimeRelayController.java", """
+                package example;
+                import io.mango.common.contract.NativeHttpAdapter;
+                import io.swagger.v3.oas.annotations.Operation;
+                import io.swagger.v3.oas.annotations.tags.Tag;
+                import org.springframework.validation.annotation.Validated;
+                import org.springframework.web.bind.annotation.PostMapping;
+                import org.springframework.web.bind.annotation.RestController;
+                final class ProtocolAdapter {}
+                @NativeHttpAdapter @Validated @RestController
+                @Tag(name = "实时中继", description = "实时消息中继接口")
+                public final class RealtimeRelayController {
+                    private static final int DEFAULT_BATCH_SIZE = 20;
+                    private final ProtocolAdapter adapter = new ProtocolAdapter();
+                    @PostMapping
+                    @Operation(summary = "中继消息", description = "中继原生实时消息")
+                    public void relay() {}
+                }
+                """,
+                "io/mango/common/contract/NativeHttpAdapter.java", """
+                package io.mango.common.contract;
+                public @interface NativeHttpAdapter {}
+                """,
+                "org/springframework/web/bind/annotation/RestController.java", """
+                package org.springframework.web.bind.annotation;
+                public @interface RestController {}
+                """,
+                "org/springframework/web/bind/annotation/PostMapping.java", """
+                package org.springframework.web.bind.annotation;
+                public @interface PostMapping { String[] value() default {}; }
+                """,
+                "org/springframework/validation/annotation/Validated.java", """
+                package org.springframework.validation.annotation;
+                public @interface Validated {}
+                """,
+                "io/swagger/v3/oas/annotations/tags/Tag.java", """
+                package io.swagger.v3.oas.annotations.tags;
+                public @interface Tag { String name(); String description(); }
+                """,
+                "io/swagger/v3/oas/annotations/Operation.java", """
+                package io.swagger.v3.oas.annotations;
+                public @interface Operation { String summary(); String description(); }
+                """);
+
+        assertThat(messages(report)).isEmpty();
+    }
+
+    @Test
+    void explicitlyMarkedNativeControllerMayUseConfigurableProtocolEndpoint() {
+        Report report = analyze(
+                "example/RealtimeRelayController.java", """
+                package example;
+                import io.mango.common.contract.NativeHttpAdapter;
+                import io.swagger.v3.oas.annotations.Operation;
+                import io.swagger.v3.oas.annotations.tags.Tag;
+                import org.springframework.validation.annotation.Validated;
+                import org.springframework.web.bind.annotation.PostMapping;
+                import org.springframework.web.bind.annotation.RestController;
+                @NativeHttpAdapter @Validated @RestController
+                @Tag(name = "实时中继", description = "实时消息中继接口")
+                public final class RealtimeRelayController {
+                    @GetMapping(value = "${mango.realtime.endpoint:/realtime/messages}",
+                            produces = "text/event-stream")
+                    @Operation(summary = "中继消息", description = "中继原生实时消息")
+                    public void relay() {}
+                }
+                """,
+                "io/mango/common/contract/NativeHttpAdapter.java", """
+                package io.mango.common.contract;
+                public @interface NativeHttpAdapter {}
+                """,
+                "org/springframework/web/bind/annotation/RestController.java", """
+                package org.springframework.web.bind.annotation;
+                public @interface RestController {}
+                """,
+                "org/springframework/web/bind/annotation/GetMapping.java", """
+                package org.springframework.web.bind.annotation;
+                public @interface GetMapping {
+                    String[] value() default {};
+                    String[] produces() default {};
+                }
+                """,
+                "org/springframework/validation/annotation/Validated.java", """
+                package org.springframework.validation.annotation;
+                public @interface Validated {}
+                """,
+                "io/swagger/v3/oas/annotations/tags/Tag.java", """
+                package io.swagger.v3.oas.annotations.tags;
+                public @interface Tag { String name(); String description(); }
+                """,
+                "io/swagger/v3/oas/annotations/Operation.java", """
+                package io.swagger.v3.oas.annotations;
+                public @interface Operation { String summary(); String description(); }
+                """);
+
+        assertThat(messages(report)).isEmpty();
+    }
+
+    @Test
+    void explicitlyMarkedNativeControllerStillRequiresAConcreteDefaultEndpoint() {
+        Report report = analyze(
+                "example/RealtimeRelayController.java", """
+                package example;
+                import io.mango.common.contract.NativeHttpAdapter;
+                import org.springframework.web.bind.annotation.PostMapping;
+                import org.springframework.web.bind.annotation.RestController;
+                @NativeHttpAdapter @RestController
+                public final class RealtimeRelayController {
+                    @PostMapping("${mango.realtime.endpoint}")
+                    public void relay() {}
+                }
+                """,
+                "io/mango/common/contract/NativeHttpAdapter.java", """
+                package io.mango.common.contract;
+                public @interface NativeHttpAdapter {}
+                """,
+                "org/springframework/web/bind/annotation/RestController.java", """
+                package org.springframework.web.bind.annotation;
+                public @interface RestController {}
+                """,
+                "org/springframework/web/bind/annotation/PostMapping.java", """
+                package org.springframework.web.bind.annotation;
+                public @interface PostMapping { String[] value() default {}; }
+                """);
+
+        assertThat(messages(report)).contains(
+                "MANGO-ARCH-PATH-003 runtime path placeholders are forbidden in HTTP adapters");
     }
 
     @Test

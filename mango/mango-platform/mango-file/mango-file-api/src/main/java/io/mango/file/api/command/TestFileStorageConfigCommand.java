@@ -2,6 +2,7 @@ package io.mango.file.api.command;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Positive;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -16,6 +17,7 @@ public class TestFileStorageConfigCommand implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Schema(description = "配置ID。测试已保存配置时填写")
+    @Positive(message = "配置ID必须大于0")
     private Long id;
 
     @Valid

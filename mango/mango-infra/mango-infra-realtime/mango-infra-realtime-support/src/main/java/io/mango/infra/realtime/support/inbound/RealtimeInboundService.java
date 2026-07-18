@@ -1,5 +1,6 @@
 package io.mango.infra.realtime.support.inbound;
 
+import io.mango.common.contract.LocalCapabilityContract;
 import io.mango.common.result.Require;
 import io.mango.infra.realtime.api.dto.RealtimeInboundMessage;
 import org.springframework.beans.factory.ListableBeanFactory;
@@ -10,6 +11,7 @@ import java.util.stream.Stream;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+@LocalCapabilityContract
 public class RealtimeInboundService implements IRealtimeInboundService {
 
     private static final Logger LOG = Logger.getLogger(RealtimeInboundService.class.getName());

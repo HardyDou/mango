@@ -53,6 +53,8 @@ public final class MangoArchUnitChecker {
             "io.mango.common.contract.LocalCapabilityContract";
     private static final String BINARY_HTTP_ADAPTER =
             "io.mango.common.contract.BinaryHttpAdapter";
+    private static final String NATIVE_HTTP_ADAPTER =
+            "io.mango.common.contract.NativeHttpAdapter";
     private static final String FILE_PREVIEW_VENDOR_PACKAGE_PREFIX = "cn.keking.";
     private static final String MODEL_AND_VIEW = "org.springframework.web.servlet.ModelAndView";
     private static final String SSE_EMITTER =
@@ -454,14 +456,15 @@ public final class MangoArchUnitChecker {
             ModuleContract contract,
             boolean requireContract,
             List<ArchitectureIssue> issues) {
+        boolean nativeHttpAdapter = isNativeHttpAdapter(javaClass);
         checkControllerAnnotation(javaClass, issues);
         checkControllerRole(javaClass, role, issues);
         checkControllerRootMapping(javaClass, issues);
         checkControllerInheritance(javaClass, issues);
-        if (!isBinaryHttpAdapter(javaClass) && !isNativeHttpAdapter(javaClass)) {
+        if (!isBinaryHttpAdapter(javaClass) && !nativeHttpAdapter) {
             checkControllerApi(javaClass, issues);
         }
-        if (requireContract && !hasValidControllerRoot(javaClass, contract)) {
+        if (requireContract && !nativeHttpAdapter && !hasValidControllerRoot(javaClass, contract)) {
             add(
                     issues,
                     "MANGO-ARCH-CTRL-008",
@@ -478,7 +481,9 @@ public final class MangoArchUnitChecker {
                                         "MANGO-ARCH-CTRL-005",
                                         CONTROLLER_KIND,
                                         issues));
-        checkControllerFields(javaClass, issues);
+        if (!nativeHttpAdapter) {
+            checkControllerFields(javaClass, issues);
+        }
     }
 
     private void checkControllerAnnotation(JavaClass javaClass, List<ArchitectureIssue> issues) {
@@ -599,7 +604,7 @@ public final class MangoArchUnitChecker {
             boolean requireContract,
             Map<String, JavaClass> contexts,
             List<ArchitectureIssue> issues) {
-        if (!isBinaryHttpAdapter(javaClass)) {
+        if (!isBinaryHttpAdapter(javaClass) && !isNativeHttpAdapter(javaClass)) {
             checkFeignStructure(javaClass, issues);
             directApi(javaClass)
                     .ifPresent(
@@ -1958,6 +1963,9 @@ public final class MangoArchUnitChecker {
     }
 
     private boolean isNativeHttpAdapter(JavaClass javaClass) {
+        if (javaClass.isAnnotatedWith(NATIVE_HTTP_ADAPTER)) {
+            return true;
+        }
         List<JavaMethod> httpMethods = javaClass.getMethods().stream()
                 .filter(this::isHttpMethod)
                 .toList();

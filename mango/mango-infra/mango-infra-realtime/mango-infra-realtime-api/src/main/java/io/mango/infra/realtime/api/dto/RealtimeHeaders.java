@@ -1,8 +1,11 @@
 package io.mango.infra.realtime.api.dto;
 
+import io.mango.common.contract.LocalCapabilityContract;
+
 /**
  * 实时协议端点请求头名称。
  */
+@LocalCapabilityContract
 public final class RealtimeHeaders {
 
     public static final String AUTHORIZATION = "Authorization";

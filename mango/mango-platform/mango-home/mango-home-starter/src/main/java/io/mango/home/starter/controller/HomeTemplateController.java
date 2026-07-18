@@ -55,7 +55,8 @@ public class HomeTemplateController implements HomeTemplateApi {
     @GetMapping("/detail")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "home:templates:query")
     @Operation(summary = "查询首页模板详情", description = "权限接口。查询首页模板草稿和发布版本信息")
-    public R<HomeTemplateVO> detail(@Parameter(description = "模板ID") @RequestParam Long id) {
+    public R<HomeTemplateVO> detail(
+            @Parameter(description = "模板ID") @RequestParam("id") Long id) {
         return R.ok(homeTemplateService.detail(id));
     }
 

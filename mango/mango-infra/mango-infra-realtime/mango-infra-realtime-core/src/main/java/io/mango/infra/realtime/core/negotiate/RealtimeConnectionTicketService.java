@@ -1,5 +1,7 @@
 package io.mango.infra.realtime.core.negotiate;
 
+import io.mango.common.contract.LocalCapabilityContract;
+
 import java.security.SecureRandom;
 import java.time.Clock;
 import java.util.Base64;
@@ -7,6 +9,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
+@LocalCapabilityContract
 public class RealtimeConnectionTicketService implements IRealtimeConnectionTicketResolverService {
 
     private static final long DEFAULT_TTL_MILLIS = 60_000L;

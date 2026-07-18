@@ -1,7 +1,9 @@
 package io.mango.infra.realtime.api.dto;
 
+import io.mango.common.contract.LocalCapabilityContract;
 import io.swagger.v3.oas.annotations.media.Schema;
 
+@LocalCapabilityContract
 @Schema(description = "实时消息事件定义")
 public record RealtimeEvent(
         @Schema(description = "事件域，如 chat/system/workflow/notification/agent")

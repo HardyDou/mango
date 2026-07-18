@@ -39,8 +39,12 @@ public final class MangoJavaArchitectureRule extends AbstractJavaRule {
     private static final String BIZ_CODE = "io.mango.common.result.BizCode";
     private static final String LOCAL_CAPABILITY_CONTRACT =
             "io.mango.common.contract.LocalCapabilityContract";
+    private static final String BINARY_TRANSFER_CONTRACT =
+            "io.mango.common.contract.BinaryTransferContract";
     private static final String BINARY_HTTP_ADAPTER =
             "io.mango.common.contract.BinaryHttpAdapter";
+    private static final String NATIVE_HTTP_ADAPTER =
+            "io.mango.common.contract.NativeHttpAdapter";
     private static final String FILE_PREVIEW_VENDOR_PACKAGE_PREFIX = "cn.keking.";
     private static final String MODEL_AND_VIEW = "org.springframework.web.servlet.ModelAndView";
     private static final String SSE_EMITTER =
@@ -227,7 +231,7 @@ public final class MangoJavaArchitectureRule extends AbstractJavaRule {
                 continue;
             }
             if (!isBinaryHttpAdapter(type)) {
-                inspectPathRules(type, context);
+                inspectPathRules(type, isNativeHttpAdapter(type), context);
             }
             inspectProtocolModel(type, context);
             if (hasAnnotation(type, REST_CONTROLLER)) {
@@ -255,7 +259,9 @@ public final class MangoJavaArchitectureRule extends AbstractJavaRule {
         boolean binaryAdapter = isBinaryHttpAdapter(type);
         boolean nativeHttpAdapter = isNativeHttpAdapter(type);
         inspectControllerAnnotations(type, context);
-        inspectControllerFields(type, context);
+        if (!nativeHttpAdapter) {
+            inspectControllerFields(type, context);
+        }
         for (ASTMethodDeclaration method : type.getDeclarations(ASTMethodDeclaration.class)) {
             inspectControllerMethod(type, method, binaryAdapter, nativeHttpAdapter, context);
         }
@@ -883,7 +889,8 @@ public final class MangoJavaArchitectureRule extends AbstractJavaRule {
         }
     }
 
-    private void inspectPathRules(ASTTypeDeclaration type, RuleContext context) {
+    private void inspectPathRules(
+            ASTTypeDeclaration type, boolean allowRuntimePathPlaceholder, RuleContext context) {
         type.descendants(ASTFormalParameter.class)
                 .filter(parameter -> hasAnnotation(parameter, PATH_VARIABLE))
                 .forEach(
@@ -898,19 +905,23 @@ public final class MangoJavaArchitectureRule extends AbstractJavaRule {
                         annotation ->
                                 HTTP_ANNOTATIONS.contains(
                                         canonicalName(annotation.getTypeMirror())))
-                .forEach(annotation -> inspectPathAnnotation(annotation, context));
+                .forEach(
+                        annotation ->
+                                inspectPathAnnotation(
+                                        annotation, allowRuntimePathPlaceholder, context));
         ASTAnnotation feignClient = type.getAnnotation(FEIGN_CLIENT);
         if (feignClient != null) {
             Object path = feignClient.getAttribute("path");
             if (path instanceof ASTExpression expression
                     && expression.getConstValue() instanceof String text) {
-                if (containsRuntimePathPlaceholder(text)) {
+                if (containsRuntimePathPlaceholder(text)
+                        && !isAllowedNativeRuntimePath(text, allowRuntimePathPlaceholder)) {
                     violation(
                             context,
                             feignClient,
                             "MANGO-ARCH-PATH-003 runtime path placeholders are forbidden in HTTP"
                                     + " adapters");
-                } else if (containsUriTemplate(text)) {
+                } else if (!containsRuntimePathPlaceholder(text) && containsUriTemplate(text)) {
                     violation(
                             context,
                             feignClient,
@@ -920,19 +931,32 @@ public final class MangoJavaArchitectureRule extends AbstractJavaRule {
         }
     }
 
-    private void inspectPathAnnotation(ASTAnnotation annotation, RuleContext context) {
+    private void inspectPathAnnotation(
+            ASTAnnotation annotation,
+            boolean allowRuntimePathPlaceholder,
+            RuleContext context) {
         List<String> paths =
                 annotation.getFlatValues().toList().stream()
                         .map(this::constantAnnotationValue)
                         .filter(String.class::isInstance)
                         .map(String.class::cast)
                         .toList();
-        if (paths.stream().anyMatch(this::containsRuntimePathPlaceholder)) {
+        boolean containsRuntimePlaceholder =
+                paths.stream().anyMatch(this::containsRuntimePathPlaceholder);
+        if (containsRuntimePlaceholder
+                && paths.stream()
+                        .anyMatch(
+                                path ->
+                                        containsRuntimePathPlaceholder(path)
+                                                && !isAllowedNativeRuntimePath(
+                                                        path,
+                                                        allowRuntimePathPlaceholder))) {
             violation(
                     context,
                     annotation,
                     "MANGO-ARCH-PATH-003 runtime path placeholders are forbidden in HTTP adapters");
-        } else if (paths.stream().anyMatch(this::containsUriTemplate)) {
+        } else if (!containsRuntimePlaceholder
+                && paths.stream().anyMatch(this::containsUriTemplate)) {
             violation(
                     context,
                     annotation,
@@ -955,6 +979,19 @@ public final class MangoJavaArchitectureRule extends AbstractJavaRule {
         return path.contains("${") || path.contains("#{");
     }
 
+    private boolean isAllowedNativeRuntimePath(
+            String path, boolean allowRuntimePathPlaceholder) {
+        if (!allowRuntimePathPlaceholder || !path.startsWith("${") || !path.endsWith("}")) {
+            return false;
+        }
+        int defaultSeparator = path.indexOf(':', 2);
+        if (defaultSeparator < 0 || defaultSeparator + 1 >= path.length() - 1) {
+            return false;
+        }
+        String defaultPath = path.substring(defaultSeparator + 1, path.length() - 1);
+        return defaultPath.startsWith("/") && !containsUriTemplate(defaultPath);
+    }
+
     private boolean requestBodyIsOptional(ASTFormalParameter parameter) {
         ASTAnnotation requestBody = parameter.getAnnotation(REQUEST_BODY);
         if (requestBody == null) {
@@ -966,7 +1003,7 @@ public final class MangoJavaArchitectureRule extends AbstractJavaRule {
     }
 
     private void inspectProtocolModel(ASTTypeDeclaration type, RuleContext context) {
-        if (isLocalCapabilityContract(type)) {
+        if (isLocalCapabilityContract(type) || isBinaryTransferContract(type)) {
             return;
         }
         String name = type.getSimpleName();
@@ -1182,7 +1219,13 @@ public final class MangoJavaArchitectureRule extends AbstractJavaRule {
         if (hasJakartaConstraint(field)) {
             return true;
         }
-        return containsCompositeApiInput(field.getTypeNode().getTypeMirror())
+        JTypeMirror fieldType = field.getTypeNode().getTypeMirror();
+        if ("boolean".equals(canonicalName(fieldType))
+                || "java.lang.Boolean".equals(canonicalName(fieldType))
+                || fieldType.getSymbol() instanceof JClassSymbol symbol && symbol.isEnum()) {
+            return true;
+        }
+        return containsCompositeApiInput(fieldType)
                 && hasValidAnnotation(field);
     }
 
@@ -1427,6 +1470,10 @@ public final class MangoJavaArchitectureRule extends AbstractJavaRule {
                 && hasAnnotation(type, LOCAL_CAPABILITY_CONTRACT);
     }
 
+    private boolean isBinaryTransferContract(ASTTypeDeclaration type) {
+        return hasAnnotation(type, BINARY_TRANSFER_CONTRACT);
+    }
+
     private boolean isBinaryHttpAdapter(ASTTypeDeclaration type) {
         return hasAnnotation(type, BINARY_HTTP_ADAPTER);
     }
@@ -1436,6 +1483,9 @@ public final class MangoJavaArchitectureRule extends AbstractJavaRule {
     }
 
     private boolean isNativeHttpAdapter(ASTTypeDeclaration type) {
+        if (hasAnnotation(type, NATIVE_HTTP_ADAPTER)) {
+            return true;
+        }
         var httpMethods = type.getDeclarations(ASTMethodDeclaration.class)
                 .filter(this::isHttpMethod)
                 .toList();

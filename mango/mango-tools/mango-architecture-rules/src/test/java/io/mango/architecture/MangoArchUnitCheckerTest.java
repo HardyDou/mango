@@ -46,6 +46,7 @@ import io.mango.infra.persistence.api.entity.TenantEntity;
 import io.mango.common.result.R;
 import io.mango.common.contract.LocalCapabilityContract;
 import io.mango.common.contract.BinaryHttpAdapter;
+import io.mango.common.contract.NativeHttpAdapter;
 import io.mango.infra.fileproc.fixture.LocalFileProcessCommand;
 import io.mango.infra.fileproc.fixture.LocalFileProcessorApi;
 import io.mango.infra.fileproc.fixture.LocalFileProcessorController;
@@ -85,6 +86,27 @@ class MangoArchUnitCheckerTest {
         JavaClasses classes = importClasses(NativeSseController.class, IOrderService.class);
 
         assertThat(checker.check(classes, javaClass -> role(javaClass, ModuleRole.STARTER))).isEmpty();
+    }
+
+    @Test
+    void explicitlyMarkedNativeControllerMayComposeProtocolComponents() {
+        JavaClasses classes = importClasses(MarkedNativeController.class, RealtimeProtocolAdapter.class);
+
+        assertThat(checker.check(classes, javaClass -> role(javaClass, ModuleRole.STARTER))).isEmpty();
+    }
+
+    @Test
+    void explicitlyMarkedNativeControllerMayOwnItsConfiguredFullEndpoint() {
+        JavaClasses classes = importClasses(MarkedConfiguredNativeController.class);
+
+        assertThat(checker.check(classes, javaClass -> role(javaClass, ModuleRole.STARTER))).isEmpty();
+    }
+
+    @Test
+    void explicitlyMarkedNativeFeignMayDeclareRelayMethodsWithoutDomainApi() {
+        JavaClasses classes = importClasses(MarkedNativeFeignClient.class);
+
+        assertThat(checker.check(classes, javaClass -> role(javaClass, ModuleRole.STARTER_REMOTE))).isEmpty();
     }
 
     @Test
@@ -1100,6 +1122,35 @@ class MangoArchUnitCheckerTest {
         public SseEmitter connect() {
             return new SseEmitter();
         }
+    }
+
+    static final class RealtimeProtocolAdapter {
+    }
+
+    @NativeHttpAdapter
+    @RestController
+    static final class MarkedNativeController {
+        private static final int DEFAULT_BATCH_SIZE = 20;
+        private final RealtimeProtocolAdapter protocolAdapter = null;
+
+        @PostMapping
+        public void relay() {
+        }
+    }
+
+    @NativeHttpAdapter
+    @RestController
+    static final class MarkedConfiguredNativeController {
+        @PostMapping("${mango.native.endpoint:/native/messages}")
+        public void relay() {
+        }
+    }
+
+    @NativeHttpAdapter
+    @FeignClient(name = "realtime", contextId = "markedNativeFeignClient", path = "/_realtime")
+    interface MarkedNativeFeignClient {
+        @PostMapping("/messages")
+        void relay();
     }
 
     @RestController

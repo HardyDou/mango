@@ -1,11 +1,13 @@
 package io.mango.infra.realtime.api.dto;
 
+import io.mango.common.contract.LocalCapabilityContract;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
  * 实时消息轮询查询条件。
  */
+@LocalCapabilityContract
 @Data
 @Schema(description = "实时消息轮询查询条件")
 public class RealtimePollingQuery {

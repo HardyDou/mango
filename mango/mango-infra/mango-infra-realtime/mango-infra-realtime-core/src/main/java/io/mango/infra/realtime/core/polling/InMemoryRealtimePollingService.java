@@ -1,5 +1,6 @@
 package io.mango.infra.realtime.core.polling;
 
+import io.mango.common.contract.LocalCapabilityContract;
 import io.mango.infra.realtime.api.dto.RealtimeOutboundMessage;
 import org.springframework.web.context.request.async.DeferredResult;
 
@@ -14,6 +15,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 /**
  * Lightweight in-memory polling queue for local deployments.
  */
+@LocalCapabilityContract
 public class InMemoryRealtimePollingService implements RealtimePollingService {
 
     private static final int FALLBACK_DEFAULT_MAX_SIZE = 20;

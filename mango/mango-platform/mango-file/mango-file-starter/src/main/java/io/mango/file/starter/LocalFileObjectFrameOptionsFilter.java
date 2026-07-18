@@ -22,7 +22,7 @@ public class LocalFileObjectFrameOptionsFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
         boolean localObjectPath = isLocalObjectPath(request.getRequestURI(), request.getContextPath());
-        HttpServletResponse actualResponse = localObjectPath ? new SameOriginFrameOptionsResponse(response) : response;
+        HttpServletResponse actualResponse = localObjectPath ? new SameOriginFrameOptionsWrapper(response) : response;
         if (localObjectPath) {
             actualResponse.setHeader(FRAME_OPTIONS, SAMEORIGIN);
         }
@@ -40,9 +40,9 @@ public class LocalFileObjectFrameOptionsFilter extends OncePerRequestFilter {
         return path.startsWith(LOCAL_OBJECT_PREFIX);
     }
 
-    private static final class SameOriginFrameOptionsResponse extends HttpServletResponseWrapper {
+    private static final class SameOriginFrameOptionsWrapper extends HttpServletResponseWrapper {
 
-        private SameOriginFrameOptionsResponse(HttpServletResponse response) {
+        private SameOriginFrameOptionsWrapper(HttpServletResponse response) {
             super(response);
         }
 

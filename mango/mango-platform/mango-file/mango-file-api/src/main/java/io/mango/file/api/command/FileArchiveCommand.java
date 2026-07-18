@@ -2,6 +2,7 @@ package io.mango.file.api.command;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 /**
@@ -16,5 +17,6 @@ public class FileArchiveCommand {
     private Long id;
 
     @Schema(description = "归档原因")
+    @Size(max = 500, message = "归档原因不能超过500个字符")
     private String reason;
 }

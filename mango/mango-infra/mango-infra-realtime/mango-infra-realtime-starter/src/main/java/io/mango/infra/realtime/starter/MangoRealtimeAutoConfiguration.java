@@ -8,6 +8,9 @@ import io.mango.infra.kv.api.IKvStore;
 import io.mango.infra.kv.api.IOutboxPublisher;
 import io.mango.infra.kv.api.IOutboxStore;
 import io.mango.infra.realtime.api.RealtimeApi;
+import io.mango.infra.realtime.api.RealtimeInboundReceiverApi;
+import io.mango.infra.realtime.api.RealtimeOutboundApi;
+import io.mango.infra.realtime.api.dto.RealtimeInboundReceiverRegistration;
 import io.mango.infra.realtime.core.inbound.forward.IRealtimeInboundForwardService;
 import io.mango.infra.realtime.core.inbound.forward.ProtocolRealtimeInboundForwarder;
 import io.mango.infra.realtime.core.inbound.forward.DefaultRealtimeInboundTargetAuthorizer;
@@ -104,9 +107,16 @@ public class MangoRealtimeAutoConfiguration {
     }
 
     @Bean
+    @ConditionalOnMissingBean
+    @ConditionalOnBean(IRealtimePublishService.class)
+    public RealtimeApi realtimeApi(IRealtimeReliablePublishService reliablePublishService) {
+        return reliablePublishService::publish;
+    }
+
+    @Bean
     @ConditionalOnBean(IRealtimePublishService.class)
     @Conditional(RealtimeConditions.RemoteEndpointEnabled.class)
-    public RealtimeApi realtimeApi(IRealtimeReliablePublishService reliablePublishService) {
+    public RealtimeApiController realtimeApiController(IRealtimeReliablePublishService reliablePublishService) {
         return new RealtimeApiController(reliablePublishService);
     }
 
@@ -115,6 +125,14 @@ public class MangoRealtimeAutoConfiguration {
     @Conditional(RealtimeConditions.OutboundEndpointEnabled.class)
     public RealtimeOutboundController realtimeOutboundController(IRealtimePublishService realtimePublishService) {
         return new RealtimeOutboundController(realtimePublishService);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    @ConditionalOnBean(IRealtimePublishService.class)
+    public RealtimeOutboundApi realtimeOutboundApi(
+            IRealtimePublishService realtimePublishService) {
+        return realtimePublishService::publishLocal;
     }
 
     @Bean
@@ -140,6 +158,23 @@ public class MangoRealtimeAutoConfiguration {
     @ConditionalOnMissingBean
     public IRealtimeInboundReceiverService realtimeInboundReceiverService() {
         return new InMemoryRealtimeInboundReceiverService();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public RealtimeInboundReceiverApi realtimeInboundReceiverApi(
+            IRealtimeInboundReceiverService realtimeInboundReceiverService) {
+        return new RealtimeInboundReceiverApi() {
+            @Override
+            public void register(RealtimeInboundReceiverRegistration registration) {
+                realtimeInboundReceiverService.register(registration);
+            }
+
+            @Override
+            public void unregister(RealtimeInboundReceiverRegistration registration) {
+                realtimeInboundReceiverService.unregister(registration);
+            }
+        };
     }
 
     @Bean

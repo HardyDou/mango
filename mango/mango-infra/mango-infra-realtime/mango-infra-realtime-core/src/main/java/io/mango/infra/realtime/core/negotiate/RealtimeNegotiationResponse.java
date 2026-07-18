@@ -1,6 +1,7 @@
 package io.mango.infra.realtime.core.negotiate;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import io.mango.common.contract.LocalCapabilityContract;
 
 import java.util.List;
 
@@ -9,6 +10,7 @@ import java.util.List;
  */
 @SuppressFBWarnings(value = "EI_EXPOSE_REP",
         justification = "List components are defensively copied by the compact constructor")
+@LocalCapabilityContract
 public record RealtimeNegotiationResponse(
         String recommended,
         List<RealtimeTransportCapability> transports,

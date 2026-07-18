@@ -1,5 +1,7 @@
 package io.mango.file.api.vo;
 
+import io.mango.common.contract.BinaryTransferContract;
+
 import java.io.InputStream;
 
 /**
@@ -10,5 +12,7 @@ import java.io.InputStream;
  * @param contentType 内容类型
  * @param contentLength 文件大小
  */
-public record FileDownloadVO(InputStream inputStream, String fileName, String contentType, long contentLength) {
+@BinaryTransferContract
+public record FileDownloadVO(
+        InputStream inputStream, String fileName, String contentType, long contentLength) {
 }

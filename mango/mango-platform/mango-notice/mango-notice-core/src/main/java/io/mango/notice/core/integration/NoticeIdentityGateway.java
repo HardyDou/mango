@@ -7,7 +7,6 @@ import io.mango.identity.api.command.CreateIdentityUserCommand;
 import io.mango.identity.api.command.UpdateIdentityUserCommand;
 import io.mango.identity.api.query.IdentityUserPageQuery;
 import io.mango.identity.api.vo.ExternalIdentityBindingVO;
-import io.mango.identity.api.vo.IdentityUserInfo;
 import io.mango.identity.api.vo.IdentityUserInfoVO;
 import io.mango.identity.api.vo.IdentityUserVO;
 import lombok.RequiredArgsConstructor;
@@ -36,9 +35,8 @@ public class NoticeIdentityGateway {
         return NoticeRemoteResult.from(identityUserApi.update(command));
     }
 
-    public NoticeRemoteResult<IdentityUserInfo> getUserInfoById(Long userId) {
-        return NoticeRemoteResult.from(identityUserApi.getUserInfoById(userId))
-                .map(NoticeIdentityGateway::asLegacyUserInfo);
+    public NoticeRemoteResult<IdentityUserInfoVO> getUserInfoById(Long userId) {
+        return NoticeRemoteResult.from(identityUserApi.getUserInfoById(userId));
     }
 
     public NoticeRemoteResult<ExternalIdentityBindingVO> bindExternalIdentity(
@@ -46,19 +44,4 @@ public class NoticeIdentityGateway {
         return NoticeRemoteResult.from(identityUserApi.bindExternalIdentity(command));
     }
 
-    private static IdentityUserInfo asLegacyUserInfo(IdentityUserInfoVO userInfo) {
-        IdentityUserInfo legacy = new IdentityUserInfo();
-        legacy.setUserId(userInfo.getUserId());
-        legacy.setUsername(userInfo.getUsername());
-        legacy.setNickname(userInfo.getNickname());
-        legacy.setRealm(userInfo.getRealm());
-        legacy.setActorType(userInfo.getActorType());
-        legacy.setPartyType(userInfo.getPartyType());
-        legacy.setPartyId(userInfo.getPartyId());
-        legacy.setEmail(userInfo.getEmail());
-        legacy.setPhone(userInfo.getPhone());
-        legacy.setAvatar(userInfo.getAvatar());
-        legacy.setStatus(userInfo.getStatus());
-        return legacy;
-    }
 }

@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -31,5 +32,6 @@ public class CompleteFileUploadPartCommand implements Serializable {
     private Long partSize;
 
     @Schema(description = "分片哈希")
+    @Size(max = 128, message = "分片哈希长度不能超过128")
     private String partHash;
 }

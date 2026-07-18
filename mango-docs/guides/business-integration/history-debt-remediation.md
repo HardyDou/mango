@@ -25,7 +25,7 @@
 | 类型 | 典型表现 | 根因 | 主要证明手段 |
 |---|---|---|---|
 | API 契约债务 | API 无校验，Controller 重复 `@Valid`，Feign 与 Controller 绑定不一致，方法校验失败被误报为 HTTP 500 | 契约分散在多个适配器，统一异常处理遗漏 `ConstraintViolationException` | API 契约测试、非法请求 API 测试、Controller/Feign parity；断言 HTTP 400 和校验消息 |
-| 过度校验改变语义 | 合法的空列表“清空全部授权”被 `@NotEmpty` 拒绝；可选 Boolean 为了过门禁伪造校验组 | 把字段非空率当成业务约束，没有先锁定清空、缺省和兼容语义 | 用例覆盖 null、空列表、缺省值和非法值；只有业务禁止空集合时才使用 `@NotEmpty` |
+| 过度校验改变语义 | 合法的空列表“清空全部授权”被 `@NotEmpty` 拒绝；可选 Boolean 为了过门禁伪造校验组 | 把字段非空率当成业务约束，没有先锁定清空、缺省和兼容语义 | 用例覆盖 null、空列表、缺省值和非法值；仅在空集合不属于合法业务输入时使用 `@NotEmpty` |
 | Controller 分层债务 | Controller 转换 Entity、组装查询、处理业务分支，一个 Controller 实现多个 API | 业务用例未收敛到 Service | 结构检查、MockMvc/真实 API、Service 规则测试 |
 | Service 债务 | `XxxServiceImpl`、Service 散落在非 `impl` 目录、直接继承 MyBatis `ServiceImpl`、直接抛通用异常 | 模块自建了第二套 CRUD/异常语义 | 定向架构检查、Service 单元/集成测试 |
 | Entity/Mapper 债务 | Entity 未以 `Entity` 结尾，重复 ID/租户/审计字段，Mapper 聚合名不一致 | 持久化模型没有继承 Mango canonical Entity | 编译、Mapper 真实读写、Entity/schema 对照 |
@@ -41,26 +41,26 @@
 | 分布式同步假成功 | 锁竞争时服务端跳过处理却返回成功，来源停止重试并永久缺声明 | 未区分“请求成功”和“批次完成” | 返回明确完成状态；未完成/远程失败重试；多节点核对 registry、重复数和日志 |
 | 内部调用信任边界 | 直接信任客户端内部 Header，或验签结果未传给安全链 | Filter 和 Security 配置各自定义内部调用语义 | HMAC 成功后写服务端属性，安全链只信任该属性，并将伪造 Header 的拒绝路径纳入回归证据；边界见[后端安全规范](../../../mango-pmo/rules/backend/06-security.md) |
 | 供应商源码与本地规则 | 内置上游项目被 Mango Controller/Service 规则大量误报 | 没有建模代码所有权 | 只对已审计的精确 vendored namespace 设边界；Mango 自有包继续全量受控；正反例规则测试 |
-| 原生 HTTP 适配器 | 页面、文件流或异步 SSE 被强迫返回 JSON `R<T>` | 规则未区分 JSON API 和原生传输 | 仅允许受限 `ModelAndView`、`ResponseEntity<Resource>`、`SseEmitter`；其余 Controller 规则继续生效；`ResponseEntity<String>` 不得绕过 API 契约 |
+| 原生 HTTP 适配器 | 页面、文件流或异步 SSE 被强迫返回 JSON `R<T>` | 规则未区分 JSON API 和原生传输 | 原生传输范围限定为 `ModelAndView`、`ResponseEntity<Resource>`、`SseEmitter`；其余 Controller 规则继续生效，`ResponseEntity<String>` 仍属于普通 API 契约 |
 | 权限注解与资源脱节 | Controller 声明了 permission，新库角色却永远没有该权限，实际请求 403 | Mock 关闭授权，老库存在手工绑定 | 对照正式菜单/API 资源 `apiCodes`；demo 关闭新库同步；真实角色成功/拒绝 API 与菜单验收 |
 | 微服务假 E2E | 单进程 HTTP 测试 Mock 了内部 API/Provider，未发现 Feign 服务路由丢失 base path | 把“走了 HTTP”等同于跨进程 | 此类测试命名为 `*FlowTest`；最终 E2E 启动真实生产者/消费者 JVM，经服务发现验证请求、二进制流和副作用 |
-| 手工装配掩盖发布物缺 Bean | 测试显式 `@Import` Controller/Executor 后通过，但生产 starter 根本没有导出可执行端点 | 测试上下文比真实自动配置多装了生产不存在的 Bean | Flow 测试不得手工补齐被测 starter 应负责的 Bean；starter 独立上下文验证自动配置，并用两个独立 JVM 证明真实反向调用 |
-| 部分 Reactor 丢失模块路径事实 | sync-starter 的 Controller 路径正确，但定向架构命令没有纳入同域本地 starter，无法读取唯一合法 module-path | 为局部扫描补第二份 `module.properties`，破坏模块信息唯一归属 | 只有本地 starter 声明 `module.properties`；Controller 显式根路径并做接口测试；定向架构 Reactor 必须同时纳入同域本地 starter |
+| 手工装配掩盖发布物缺 Bean | 测试显式 `@Import` Controller/Executor 后通过，但生产 starter 根本没有导出可执行端点 | 测试上下文比真实自动配置多装了生产不存在的 Bean | Flow 测试保持与被测 starter 的实际装配一致；starter 独立上下文验证自动配置，并用两个独立 JVM 证明真实反向调用 |
+| 部分 Reactor 丢失模块路径事实 | sync-starter 的 Controller 路径正确，但定向架构命令没有纳入同域本地 starter，无法读取唯一合法 module-path | 为局部扫描补第二份 `module.properties`，破坏模块信息唯一归属 | module-path 由本地 starter 的 `module.properties` 提供；Controller 显式根路径并做接口测试；定向架构 Reactor 同时纳入同域本地 starter |
 | 纯 JVM 共享类型误入 API | request attribute key、codec 或本地协作值因跨模块使用被放进 API | 混淆 HTTP 契约和进程内复用 | 无 HTTP/Feign、无数据库的类型放 support；消费者声明直接依赖并执行编译/行为回归 |
 | 任意 JSON 使用裸 Map | 为支持动态变量在 API/Core 多层传递 `Map<String, Object>`，产生 unchecked cast 和模糊边界 | 把 wire format 的灵活性等同于 Java 类型无约束 | 使用具名 JSON 值对象，序列化仍保持普通 object；覆盖嵌套对象、数组和反序列化兼容测试 |
 | 远程响应包装泄漏 Core | Core 直接依赖 Feign `R<T>` 并自行判断远程失败 | HTTP 适配与业务规则没有边界 | Core 定义 Provider/本域值对象，starter/adapter 负责 Feign、`R<T>` 解包及失败语义 |
 | Demo 开关验收混淆 | demo 关闭的新库没有演示角色/菜单，就误判正式资源缺失 | 没有分别定义生产初始化和演示验收目标 | demo 关闭验证 DDL/正式资源纯净；demo 开启验证演示角色、菜单与页面，并记录实际配置前缀 |
 | 前端 ID 精度债务 | E2E 从登录响应取得雪花 ID 后又执行 `Number(id)`，授权和查询命中错误对象 | 沿用旧库小整数 ID 假设 | 前端和测试统一使用字符串 `ApiId`；对真实雪花 ID 执行授权、查询和回显 |
-| E2E 共享状态串扰 | 并行用例共用同一账号、默认首页和授权集合，排序或默认值被另一用例改变 | 用例没有独立数据或错误启用并行 | 唯一数据前缀、精确清理；共享账号状态用例串行或分配独立账号，禁止用重试掩盖串扰 |
+| E2E 共享状态串扰 | 并行用例共用同一账号、默认首页和授权集合，排序或默认值被另一用例改变 | 用例没有独立数据或错误启用并行 | 唯一数据前缀、精确清理；共享账号状态用例串行或分配独立账号，重试无法消除状态串扰 |
 | Partial 质量检查作用域泄漏 | Maven `-pl` 已限定模块，但聚合检查中的部分自有规则仍扫描全仓，目标模块被范围外存量拖失败 | 把 Reactor 选择范围误认为所有规则的文件扫描范围 | 检查报告中的实际文件路径和 `inChangedFiles`；目标模块分别核对 PMD、Checkstyle、SpotBugs 和 architecture 报告，不重复运行已确认会越界的命令 |
-| 直连微服务缺上下文 | 绕过网关只传浏览器租户头，下游租户 SQL 因缺上下文失败 | 忽略网关到内部上下文协议的转换职责 | 优先经真实网关；直连时传 Mango 内部上下文头并验证 Feign 传播，禁止默认租户或关闭隔离绕过 |
+| 直连微服务缺上下文 | 绕过网关只传浏览器租户头，下游租户 SQL 因缺上下文失败 | 忽略网关到内部上下文协议的转换职责 | 优先经真实网关；直连时传 Mango 内部上下文头并验证 Feign 传播，默认租户或关闭隔离会掩盖传播缺陷 |
 | 增量质量门禁掩盖存量 | changed-only/no-new 通过，但目标模块问题被归入 baseline | 把“无新增”等同于“债务已清零” | 审计报告四类列表和目标模块总量；历史债务验收要求目标范围静态问题为 0 |
 | 可变状态泄漏 | DTO、VO、record 直接保存/返回集合、Map、JSON wrapper 或 `byte[]` | 只测序列化和值相等，没有测试外部修改 | 输入和输出双向防御复制；集合不可变，数组逐次复制；兼容测试覆盖嵌套 JSON/二进制 |
 | 独立能力应用环境漂移 | 单体连 MySQL，capability app 却默认落到 H2；Feign URL 配置未命中实际 `contextId` | 单体测试没有经过独立数据源和真实远程客户端 | 每个 JVM 显式核对 JDBC URL；无注册中心直连按实际 `contextId` 配置绝对 URL并保留 base path/租户传播 |
 | SSE 双重协议封装 | Provider 已返回 `data:`，Controller 又调用 `SseEmitter.data()`，浏览器收到 `data:data:` 后 JSON 解析失败 | Core 事件语义与 HTTP 帧格式混在一起 | Core 只返回 JSON 事件；starter 统一添加一次 SSE 帧前缀；真实 HTTP 测试用 SSE decoder 验证事件可解析 |
-| 校验注解存在但运行时无实现 | Command 有 Jakarta Validation 注解，空值请求仍进入 Service 并返回 200 | starter 只有 `validation-api`，未引入 Bean Validation provider | starter 独立启动后发送非法 HTTP 请求并断言 400；不得用测试专属 validator 掩盖生产依赖缺失 |
+| 校验注解存在但运行时无实现 | Command 有 Jakarta Validation 注解，空值请求仍进入 Service 并返回 200 | starter 只有 `validation-api`，未引入 Bean Validation provider | starter 独立启动后发送非法 HTTP 请求并断言 400；测试专属 validator 会掩盖生产依赖缺失 |
 | Reactor 用 `map` 返回 null | 第三方 `[DONE]` 分支返回 null，流式链路运行时抛 `NullPointerException` | 把同步集合的过滤习惯套到 Reactive Streams | 使用 `handle`/`filterWhen` 等显式丢弃元素；本地 HTTP 假服务回放完整 SSE，包括 `[DONE]`、非法 JSON 和超时 |
-| 无限 SSE 包装成阻塞 `Resource` | connected 事件已写入管道，但 HTTP 客户端收不到首帧，服务停机仍等待活动请求 | 为满足静态规则选择了不适合无限流的二进制响应模型 | 修正规则以识别框架原生异步 `SseEmitter`；真实随机端口客户端必须验证首帧、主动断开和进程正常退出 |
+| 无限 SSE 包装成阻塞 `Resource` | connected 事件已写入管道，但 HTTP 客户端收不到首帧，服务停机仍等待活动请求 | 为满足静态规则选择了不适合无限流的二进制响应模型 | 修正规则以识别框架原生异步 `SseEmitter`；真实随机端口客户端覆盖首帧、主动断开和进程正常退出 |
 | 零源码聚合模块绕过依赖门禁 | partial Reactor 没有 Java 文件，架构插件以 ENGINE-005 退出，非法 Maven 依赖也未检查 | 把 Java 分析输入为空误认为模块没有架构事实 | dependency 检查、模块归属和 schema v2 报告始终执行；bytecode/PMD/命名空间引擎以空输入完成；用非法依赖反例证明 fail-closed |
 | CLI 缓存完整构建输出 | 大型 Reactor 安装实际成功，但日志超过 `spawnSync` 默认缓冲上限后 CLI 报安装失败 | 前置命令 stdout/stderr 先收集到内存再写日志 | 前置安装输出直接流入 app 日志；自动化生成超过缓冲阈值的输出并证明后端启动命令仍会执行 |
 
@@ -138,7 +138,7 @@ node mango-pmo/tools/pmo-preflight.mjs \
 
 - 业务实现使用 `XxxService implements IXxxService`，放在 `service/impl`。
 - 基础 CRUD 复用 Mango canonical CRUD contract/实现，不再包一层自建 MyBatis `ServiceImpl`。
-- 多表聚合、模板版本、授权解析等领域用例不应为了形式统一强行继承 CRUD Service；只有单表 CRUD 语义与 canonical contract 一致时才复用。
+- 多表聚合、模板版本、授权解析等领域用例保持独立 Service；单表 CRUD 语义与 canonical contract 一致时再复用。
 - 用稳定的业务条件和错误码表达失败，不要在各 Service 临时抛不同通用异常。
 - 持久化类使用 `XxxEntity`，继承 Mango canonical `TenantEntity`；不在子类重复声明 ID、tenantId 和审计字段。
 - Mapper 只访问本域表，直接继承 `BaseMapper<XxxEntity>`，Mapper/Entity 聚合名一致。
@@ -178,7 +178,7 @@ node mango-pmo/tools/pmo-preflight.mjs \
 | UI/E2E | 用户入口、登录、菜单、路由、页面、按钮、业务操作和浏览器异常 | 所有内部边界分支 |
 | 发布物检查 | 真正交付的 JAR/包内容和仓库可消费性 | 业务语义 |
 
-静态质量报告也属于证据本身。历史债务任务不能只满足 changed-only/no-new：需要核对目标模块的 `issues`、`newIssues`、`baselineIssues`、`toolFailures`，确认存量问题没有被 baseline 隐藏。Spring 构造器注入被工具误报时，保留 `@RequiredArgsConstructor` 与 `private final I*Service`，通过缩小构造器可见性或移除不必要的可变依赖解决；禁止抑制注解、非 final 注入或包装 Service 规避规则。
+静态质量报告也属于证据本身。历史债务任务不能只满足 changed-only/no-new：需要核对目标模块的 `issues`、`newIssues`、`baselineIssues`、`toolFailures`，确认存量问题没有被 baseline 隐藏。Spring 构造器注入被工具误报时，保留 `@RequiredArgsConstructor` 与 `private final I*Service`，通过缩小构造器可见性或移除不必要的可变依赖解决；抑制注解、非 final 注入或包装 Service 只会隐藏违规。
 
 ### 5.2 Mock 边界
 
@@ -186,7 +186,7 @@ Mock 只用于隔离被测目标之外的协作者，不能替换本次要证明
 
 - Mock 了 Mapper/数据库，就只能证明 Service 在指定输入下的分支，不能证明 SQL、列名、租户过滤或事务正确。
 - 直接 `new Controller` 不能证明 Spring 方法校验、安全过滤器和参数绑定正确。
-- 参数上存在 `@NotBlank/@NotNull` 也不能证明失败语义正确；必须从真实 HTTP 入口提交空值，确认统一异常处理返回 HTTP 400，而不是落入系统异常 500。
+- 参数上存在 `@NotBlank/@NotNull` 也不能证明失败语义正确；从真实 HTTP 入口提交空值可以确认统一异常处理返回 HTTP 400，而不是落入系统异常 500。
 - Mock 了权限结果，不能证明菜单、按钮、角色授权和数据权限链路正确。
 - 支付、短信、对象存储等第三方可以使用沙箱或可控测试替身，但 Mango 内部主链路应真实参与。
 
@@ -217,10 +217,10 @@ Mock 只用于隔离被测目标之外的协作者，不能替换本次要证明
 5. demo 关闭时没有演示数据，demo 开启时才导入且可重复执行。
 6. 至少一条关键新增、查询、修改链路真实读写成功。
 7. 健康探测和端口可访问只证明进程入口可响应；API/UI 验收安排在正式资源、demo 资源和角色菜单等派生关系达到预期稳定值之后，等待与断言范围见[后端测试规范](../../../mango-pmo/rules/backend/08-test.md)。
-8. demo 关闭与开启必须使用独立、可追溯的启动配置：前者证明生产初始化边界，后者证明演示角色和菜单可验收，不能用一套结果替代另一套。
+8. demo 关闭与开启分别使用独立、可追溯的启动配置：前者证明生产初始化边界，后者证明演示角色和菜单可验收，两套结果承载不同结论。
 9. 多 JVM 验收逐进程核对实际 JDBC URL；必要时显式设置 `SPRING_DATASOURCE_URL/USERNAME/PASSWORD`，不能假设单体环境别名会被能力应用继承。
 10. 无注册中心直连 Feign 时，按实际客户端 `contextId` 配置绝对 URL，同时保留服务 base path 和 Mango 内部租户上下文传播；只让端口可达不算链路通过。
-11. 能力应用必须显式选择真实环境所需的 KV/缓存实现；关闭通用 discovery 开关后，还要核对供应商 discovery/config/health 自动配置是否真的全部关闭，不能把启动失败误判为业务模块回归。
+11. 能力应用显式选择真实环境所需的 KV/缓存实现；关闭通用 discovery 开关后，再核对供应商 discovery/config/health 自动配置是否真的全部关闭，避免把启动失败误判为业务模块回归。
 
 ### 6.2 最终 JAR
 
@@ -265,7 +265,7 @@ shasum -a 256 <artifact.jar>
 
 E2E 优先使用 `data-page`、`data-surface`、`data-action`、`data-field`、`data-record-key` 和 `data-state` 等业务语义锚点。不要在 spec 中依赖 DOM 层级、`nth()`、`waitForTimeout()` 或 `force: true` 掩盖真实交互问题。
 
-共享账号会改变默认项、排序或授权集合时，相关用例必须串行，或给每个 worker 分配独立账号与租户。测试步骤不能用瞬时 `isEnabled()` 决定是否跳过关键动作；应等待稳定前置状态、关键接口响应和最终业务结果。
+共享账号会改变默认项、排序或授权集合时，相关用例保持串行，或给每个 worker 分配独立账号与租户。测试步骤避免用瞬时 `isEnabled()` 决定是否跳过关键动作；等待稳定前置状态、关键接口响应和最终业务结果。
 
 ## 8. 失败归因决策树
 
@@ -326,7 +326,7 @@ E2E 优先使用 `data-page`、`data-surface`、`data-action`、`data-field`、`
 - [ ] API/Controller/Feign 契约一致，非法请求可验证。
 - [ ] 每个 `@ApiAccess(PERMISSION)` 都有所属模块的正式资源声明，并以新库真实角色验证。
 - [ ] Controller 只做 HTTP 适配，Service 承担业务用例。
-- [ ] vendored 边界只匹配精确上游 namespace；原生 HTTP 适配器白名单不允许 JSON Controller 逃逸。
+- [ ] vendored 边界只匹配精确上游 namespace；原生 HTTP 适配器白名单仅覆盖原生响应，不成为 JSON Controller 的逃逸入口。
 - [ ] Service、Entity、Mapper 使用 Mango canonical 结构。
 - [ ] Entity 字段与最终 schema 一致，真实写入已验证。
 - [ ] Flyway 只承担当前模块 DDL，无菜单/demo/跨模块数据 DML。

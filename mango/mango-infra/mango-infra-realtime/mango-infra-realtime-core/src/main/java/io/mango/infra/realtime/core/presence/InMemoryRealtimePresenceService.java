@@ -1,9 +1,12 @@
 package io.mango.infra.realtime.core.presence;
 
+import io.mango.common.contract.LocalCapabilityContract;
+
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
+@LocalCapabilityContract
 public class InMemoryRealtimePresenceService implements IRealtimePresenceService {
 
     private final ConcurrentHashMap<String, RealtimePresence> presences = new ConcurrentHashMap<>();
