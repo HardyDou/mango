@@ -1,5 +1,24 @@
 # @mango/cli Changelog
 
+## 1.0.81 - 2026-07-18
+
+### Fixed
+
+- Generate `frontend/pnpm-workspace.yaml` with the pnpm 11 `allowBuilds` policy required by the generated Mango frontend dependency set.
+- Require the real generated workspace policy in CLI and packed-package consumer regressions instead of injecting an independent allowlist during verification.
+
+### Upgrade Notes
+
+- Install `@mango/cli@1.0.81` before generating new projects that use pnpm 11.
+- Existing generated projects can copy the `allowBuilds` map from the current full template into their business-owned `frontend/pnpm-workspace.yaml`; the CLI does not overwrite existing workspace policy.
+- Mango Maven remains `1.0.22`, PMO remains `1.3.0`, and runtime frontend package versions remain unchanged.
+
+### Verification
+
+- `pnpm --filter @mango/cli test`
+- `pnpm package-consumer:typecheck -- --registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`
+- Clean pnpm 11 install and `pnpm run typecheck` from a newly generated project.
+
 ## 1.0.80 - 2026-07-18
 
 ### Changed
