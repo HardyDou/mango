@@ -110,7 +110,7 @@ POM 的现有 XML 配置和 `-Dmango.architecture.debtBaselineFile=<path>` 命�
 3. 项目根目录的 `config/quality/checkstyle.xml`，业务项目可以直接维护该文件。
 4. Mango Maven 插件内置的 Mango Checkstyle 规范。
 
-Mango 内置规则及 CLI 业务模板允许使用三元表达式，也不对单行字符数设置硬限制；业务项目如需更严格的排版约束，可以通过上述自定义规则入口覆盖。
+Mango 内置规则及 CLI 业务模板允许使用三元表达式，也不对单行字符数设置硬限制；复杂度默认只检查圈复杂度，最大值为 15，不启用 NPath 和布尔表达式复杂度检查。业务项目如需更严格规则，可以通过上述自定义规则入口覆盖。
 
 例如使用企业自定义规则：
 
