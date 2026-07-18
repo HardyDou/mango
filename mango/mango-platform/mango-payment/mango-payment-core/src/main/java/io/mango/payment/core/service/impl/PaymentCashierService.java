@@ -92,7 +92,10 @@ public class PaymentCashierService implements IPaymentCashierService {
     private PaymentCashierSessionVO detailSessionInContext(Long cashierConfigId, Long businessOrderId) {
         PaymentCashierConfigEntity config = selectCashierConfig(cashierConfigId);
         PaymentApplicationEntity application = selectApplication(config.getApplicationId());
-        BusinessOrderRow order = businessOrderId == null ? selectLatestPayableOrder(application, config) : selectBusinessOrder(businessOrderId);
+        BusinessOrderRow order = null;
+        if (businessOrderId != null) {
+            order = selectBusinessOrder(businessOrderId);
+        }
         PaymentEnterpriseSubjectEntity subject = selectSubject(config, order);
         List<PaymentCashierMethodVO> methods = availableMethods(config, application, subject, order == null ? null : order.amount());
         return toSession(config, application, subject, order, methods);

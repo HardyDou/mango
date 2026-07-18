@@ -15,12 +15,11 @@ function namedDialog(page: import('@playwright/test').Page, title: string) {
 }
 
 test.describe('应用管理保存联调', () => {
-  test('编辑应用保存使用真实接口并保持登录态', async ({ page }) => {
-    await login(page);
-
+  test('@p0 @authorization 编辑应用保存使用真实接口并保持登录态', async ({ page }) => {
     const appListResponsePromise = page.waitForResponse((response) =>
       response.url().includes('/api/authorization/apps') && response.request().method() === 'GET' && response.status() === 200
     );
+    await login(page);
     await page.goto('/#/system/app');
     const appListResponse = await appListResponsePromise;
     const appListBody = await appListResponse.json();
