@@ -37,6 +37,21 @@ class FileSettingsServiceTest {
         assertThat(existing.getAllowedContentTypes()).isEmpty();
         assertThat(existing.getBlockedContentTypes()).isEmpty();
         assertThat(existing.getPreviewExternalExtensions()).isEmpty();
+        assertThat(existing.getDuplicateCheckDirectoryScoped()).isOne();
+        assertThat(existing.getInstantUploadEnabled()).isOne();
+        assertThat(existing.getContentTypeCheckEnabled()).isOne();
+        assertThat(existing.getDirectUploadEnabled()).isZero();
+        assertThat(existing.getDirectUploadExpireSeconds()).isEqualTo(900L);
+        assertThat(existing.getAccessTokenEnabled()).isOne();
+        assertThat(existing.getPublicReadRequiresToken()).isOne();
+        assertThat(existing.getAccessMode()).isEqualTo(FileAccessMode.PROXY.name());
+        assertThat(existing.getAccessTokenExpireSeconds()).isEqualTo(86400L);
+        assertThat(existing.getPreviewProviderUrl()).isEqualTo("/file-preview/files/preview");
+        assertThat(existing.getPreviewExpireSeconds()).isEqualTo(86400L);
+        assertThat(existing.getArchiveRetainEnabled()).isOne();
+        assertThat(existing.getArchiveRetainDays()).isEqualTo(180);
+        assertThat(existing.getArchiveRestoreEnabled()).isZero();
+        assertThat(existing.getPhysicalDeleteEnabled()).isZero();
 
         FileSettingsVO current = service.current();
         assertThat(current.getAllowedExtensions()).isEmpty();
