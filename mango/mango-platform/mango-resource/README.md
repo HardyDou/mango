@@ -27,7 +27,7 @@ Resource 不执行 SQL 文件，不做 Data Package/task 编排，不负责在�
 | 模块 | 职责 |
 |------|------|
 | `mango-resource-api` | 严格 HTTP 契约，包含注册、管理、目标执行 API 及 Command/Query/VO/错误码；不承载本地动态 SPI。 |
-| `mango-resource-support` | Resource 专属 common，包含 `ResourceProvider`、`ResourceHandler`、声明文件加载、采集、配置绑定和纯 Java 目标执行器；不访问数据库、不暴露 HTTP。 |
+| `mango-resource-support` | Resource 专属 common，包含 `ResourceProvider`、`ResourceHandler`、声明文件加载、采集、配置绑定、同步状态契约和纯 Java 目标执行器；不访问数据库、不暴露 HTTP。 |
 | `mango-resource-core` | 本地注册中心核心逻辑，负责同步编排、hash 比对、锁、注册表、同步日志和变更日志。 |
 | `mango-resource-starter` | 本地资源注册中心 starter，装配 core、Mapper 和 `/resource/**` 管理接口。 |
 | `mango-resource-sync-starter` | 资源声明扫描和上报 runner，并提供 `/resource/targets/**` 目标执行入口；汇总文件声明和 Java Provider 后调用 `ResourceDeclarationApi`。 |
@@ -120,6 +120,8 @@ Resource 不执行 SQL 文件，不做 Data Package/task 编排，不负责在�
 
 微服务允许来源服务、Resource 注册中心和被依赖资源所属服务乱序启动。远程失败、父资源尚未注册或注册中心锁竞争时，本次同步返回未完成并由来源服务重试；注册中心不得在未取得锁、实际未处理声明时返回成功。该机制只保证启动阶段最终收敛，不吞掉声明校验或 Handler 业务错误。
 
+`ResourceSyncRunner` 实现 `ResourceSynchronizationStatus`。初次同步失败时状态保持未完成，依赖完整资源结果的启动任务必须延后；如果声明依赖尚未创建的内置机构角色，System 会先重放一次不标记最终完成的幂等前置基线，并发布 `ResourceSynchronizationPrerequisitesReadyEvent` 触发 Resource 立即重试。重试首次成功后只发布一次 `ResourceSynchronizationCompletedEvent`，供同一 JVM 内的最终幂等对账继续执行。同步被显式关闭或当前应用没有声明时视为已完成，不阻断无资源依赖的启动任务。
+
 ## 6. API 与扩展
 
 核心扩展点：
@@ -131,6 +133,9 @@ Resource 不执行 SQL 文件，不做 Data Package/task 编排，不负责在�
 | `ResourceTargetExecutor` | 在当前 JVM 中按资源类型调度 `ResourceHandler`；自身不访问数据库。 |
 | `ResourceDeclarationApi` | 本地或远程注册资源声明。 |
 | `ResourceHandlerSpec` | 暴露资源处理器字段契约，供后台和文档查看。 |
+| `ResourceSynchronizationStatus` | 暴露当前应用启动资源同步是否已经完成。 |
+| `ResourceSynchronizationPrerequisitesReadyEvent` | System 已创建内置角色等声明前置数据后发布，触发 Resource 立即重试。 |
+| `ResourceSynchronizationCompletedEvent` | 初次失败后的重试首次成功时发布，驱动同 JVM 下游幂等对账。 |
 
 `ResourceHandler` 可以通过 `dependsOnResourceTypes()` 声明当前资源类型在同一同步批次内依赖的其它资源类型。
 Resource Registry 会在批量同步 active 声明前做资源类型拓扑排序，保证例如 `IDENTITY_USER`

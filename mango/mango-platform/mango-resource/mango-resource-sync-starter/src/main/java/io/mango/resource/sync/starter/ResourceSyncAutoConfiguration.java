@@ -17,6 +17,7 @@ import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 
@@ -64,7 +65,9 @@ public class ResourceSyncAutoConfiguration {
                                                  ResourceDeclarationCollector collector,
                                                  ResourceDeclarationApi resourceDeclarationApi,
                                                  ObjectMapper objectMapper,
-                                                 @Value("${spring.application.name:}") String applicationName) {
-        return new ResourceSyncRunner(properties, collector, resourceDeclarationApi, objectMapper, applicationName);
+                                                 @Value("${spring.application.name:}") String applicationName,
+                                                 ApplicationEventPublisher eventPublisher) {
+        return new ResourceSyncRunner(
+                properties, collector, resourceDeclarationApi, objectMapper, applicationName, eventPublisher);
     }
 }
