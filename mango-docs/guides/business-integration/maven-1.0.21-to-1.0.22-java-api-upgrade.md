@@ -62,7 +62,7 @@ R<List<IdentityUserInfoVO>> recipients =
         identityUserApi.listUserInfosByTarget(query);
 ```
 
-3. 如果业务实现了 `IdentityUserApi`、Feign 适配器或测试桩，三个覆盖方法的返回泛型也必须一起改为 `IdentityUserInfoVO`。1.0.22 在 API 接口上补齐了 `@Valid`、`@NotNull` 和 `@NotBlank`；实现类不要重复或改变这些参数约束。
+3. 如果业务实现了 `IdentityUserApi`、Feign 适配器或测试桩，三个覆盖方法的返回泛型也要一起改为 `IdentityUserInfoVO`。1.0.22 在 API 接口上补齐了 `@Valid`、`@NotNull` 和 `@NotBlank`；实现类保持这些参数约束一致。
 
 `IdentityUserInfo` 到 `IdentityUserInfoVO` 的字段一一对应：`userId`、`username`、`nickname`、`realm`、`actorType`、`partyType`、`partyId`、`email`、`phone`、`avatar`、`status`。不需要字段转换器或数据库迁移。
 
@@ -214,7 +214,7 @@ rg -n \
 mvn -f backend/pom.xml verify
 ```
 
-如果业务仓启用了 `no-new-violations`，基线报告应来自同一仓库提交，并使用仓库相对路径或稳定 fingerprint。已发布的 `mango-maven-plugin:1.0.22` 对跨 worktree 绝对路径基线存在已知误报，见 [Issue #588](https://github.com/HardyDou/mango/issues/588)。仓库 `main` 已修复该问题，修复会进入后续 Maven 版本；使用 1.0.22 验证时，只能在业务仓忽略的 `.runtime/` 中临时归一化基线文件路径后复跑，不得提交临时基线、修改 issue fingerprint 或放宽规则。
+如果业务仓启用了 `no-new-violations`，基线报告应来自同一仓库提交，并使用仓库相对路径或稳定 fingerprint。已发布的 `mango-maven-plugin:1.0.22` 对跨 worktree 绝对路径基线存在已知误报，见 [Issue #588](https://github.com/HardyDou/mango/issues/588)。仓库 `main` 已修复该问题，修复会进入后续 Maven 版本；使用 1.0.22 验证时，可以在业务仓忽略的 `.runtime/` 中临时归一化基线文件路径后复跑。临时基线、issue fingerprint 和规则配置保持在业务仓当前受控版本。
 
 ## 7. 数据库和部署
 
@@ -229,4 +229,4 @@ mvn -f backend/pom.xml verify
 
 - Java 编译迁移提交可以整体回滚到升级前业务提交并恢复 `mango.version=1.0.21`。
 - 如果 1.0.22 migration 已执行，不直接删除 Flyway history 或手工回退表结构；先恢复应用版本并按模块 migration 影响制定数据库恢复动作。
-- 不允许通过复制已删除的 `io.mango.*` 类、依赖 `*-core` 或关闭质量门禁来完成回滚。
+- 回滚仍使用已发布的公共 API 和既有质量门禁，不复制已删除的 `io.mango.*` 类，也不改为依赖 `*-core`。

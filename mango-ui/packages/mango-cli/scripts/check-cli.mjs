@@ -1323,7 +1323,7 @@ function assertEqual(actual, expected, field) {
 }
 
 function assertGeneratedFrontendFormatting(projectRoot) {
-  const prettierCommand = join(
+  const localPrettierCommand = join(
     packageRoot,
     '..',
     '..',
@@ -1331,19 +1331,40 @@ function assertGeneratedFrontendFormatting(projectRoot) {
     '.bin',
     process.platform === 'win32' ? 'prettier.cmd' : 'prettier',
   );
-  const result = spawnSync(prettierCommand, ['--check', '.'], {
-    cwd: join(projectRoot, 'frontend'),
-    encoding: 'utf8',
-  });
-  if (result.status !== 0) {
-    const reportedFile = result.stdout.match(/^\[warn\] (.+)$/mu)?.[1] ?? 'src/main.ts';
-    const reportedPath = join(projectRoot, 'frontend', reportedFile);
-    const actual = readFileSync(reportedPath, 'utf8');
-    const formatted = spawnSync(prettierCommand, ['--stdin-filepath', reportedFile], {
-      cwd: join(projectRoot, 'frontend'),
+  const frontendRoot = join(projectRoot, 'frontend');
+  const frontendPackage = JSON.parse(readFileSync(join(frontendRoot, 'package.json'), 'utf8'));
+  const prettierVersion = frontendPackage.devDependencies?.prettier;
+  if (!/^\d+\.\d+\.\d+$/u.test(prettierVersion ?? '')) {
+    throw new Error(`generated frontend must lock an exact Prettier version, got ${prettierVersion ?? 'missing'}`);
+  }
+
+  const useLocalPrettier = existsSync(localPrettierCommand);
+  const prettierCommand = useLocalPrettier ? localPrettierCommand : process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm';
+  const prettierArgs = (args) => (useLocalPrettier ? args : ['dlx', `prettier@${prettierVersion}`, ...args]);
+  const runPrettier = (args, options = {}) =>
+    spawnSync(prettierCommand, prettierArgs(args), {
+      cwd: frontendRoot,
       encoding: 'utf8',
-      input: actual,
+      ...options,
     });
+
+  const result = runPrettier(['--check', '.']);
+  if (result.error) {
+    throw new Error(`generated frontend formatting could not start Prettier: ${result.error.message}`);
+  }
+  if (result.status !== 0) {
+    const stdout = result.stdout ?? '';
+    const stderr = result.stderr ?? '';
+    const reportedFile = stdout.match(/^\[warn\] (.+)$/mu)?.[1] ?? 'src/main.ts';
+    const reportedPath = join(frontendRoot, reportedFile);
+    const actual = readFileSync(reportedPath, 'utf8');
+    const formatted = runPrettier(['--stdin-filepath', reportedFile], { input: actual });
+    if (formatted.error || formatted.status !== 0 || typeof formatted.stdout !== 'string') {
+      const diagnostic = formatted.error?.message ?? `${formatted.stdout ?? ''}\n${formatted.stderr ?? ''}`;
+      throw new Error(
+        `generated frontend formatting failed and Prettier diagnostics failed:\n${stdout}\n${stderr}\n${diagnostic}`,
+      );
+    }
     const actualLines = actual.split(/\r?\n/u);
     const expectedLines = formatted.stdout.split(/\r?\n/u);
     const differenceIndex = actualLines.findIndex((line, index) => line !== expectedLines[index]);
@@ -1351,9 +1372,7 @@ function assertGeneratedFrontendFormatting(projectRoot) {
       differenceIndex < 0
         ? 'unable to locate line difference'
         : `line ${differenceIndex + 1}: actual=${JSON.stringify(actualLines[differenceIndex])}, expected=${JSON.stringify(expectedLines[differenceIndex])}`;
-    throw new Error(
-      `generated frontend formatting failed:\n${result.stdout}\n${result.stderr}\nfirst difference: ${difference}`,
-    );
+    throw new Error(`generated frontend formatting failed:\n${stdout}\n${stderr}\nfirst difference: ${difference}`);
   }
 }
 
