@@ -17,6 +17,7 @@
 
 | 场景 | 适合问题 | 主要能力 |
 |------|----------|----------|
+| [Maven 1.0.21 到 1.0.22 Java API 升级](./maven-1.0.21-to-1.0.22-java-api-upgrade.md) | 升级后出现 `IdentityUserInfo`、`CmsAdminApi`、Resource/Job 等旧 Java 类型无法编译 | Identity、Access、Authorization、CMS、Job、Resource、Org、System |
 | [文件上传表单](./file-upload-form.md) | 业务表单上传附件、回显、预览、删除失败 | File、Fileproc、File Preview、Frontend File |
 | [业务审批接入](./workflow-business-approval.md) | 业务单据发起审批、处理审批结果、查看流程记录 | Workflow、Workflow Frontend、Workflow Example |
 | [菜单页面打不开排障](./rbac-menu-page-troubleshooting.md) | 登录后菜单空白、404、页面组件找不到 | Authorization、RBAC、Admin Shell |
