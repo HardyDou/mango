@@ -3,11 +3,11 @@ import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { validateRolloutContract } from './frontend-rollout-lib.mjs';
+import { validateAdoptionContract } from './frontend-adoption-lib.mjs';
 
 const uiRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const repoRoot = path.resolve(uiRoot, '..');
-const contractPath = path.join(uiRoot, 'frontend-release-rollout.json');
+const contractPath = path.join(uiRoot, 'frontend-standards-adoption.json');
 const contract = readJson(contractPath);
 const candidateLock = readJson(path.join(uiRoot, contract.candidateLock));
 const packageIndex = indexPackages();
@@ -22,12 +22,12 @@ for (const [name, entry] of packageIndex) {
   if (result.status === 0) baseVersions[name] = JSON.parse(result.stdout).version;
 }
 
-const report = validateRolloutContract(contract, {
+const report = validateAdoptionContract(contract, {
   candidateVersions: candidateLock.npm ?? {},
   baseVersions,
   localVersions,
 });
-const outputPath = path.resolve(uiRoot, '../.runtime/frontend-quality/frontend-release-rollout.json');
+const outputPath = path.resolve(uiRoot, '../.runtime/frontend-quality/frontend-standards-adoption.json');
 fs.mkdirSync(path.dirname(outputPath), { recursive: true });
 fs.writeFileSync(
   outputPath,
@@ -35,11 +35,11 @@ fs.writeFileSync(
 );
 
 if (report.failures.length > 0) {
-  process.stderr.write(`frontend rollout FAIL\n${report.failures.map((failure) => `- ${failure}`).join('\n')}\n`);
+  process.stderr.write(`frontend standards adoption FAIL\n${report.failures.map((failure) => `- ${failure}`).join('\n')}\n`);
   process.exit(1);
 }
 process.stdout.write(
-  `frontend rollout PASS mode=${report.mode} packages=${report.packageCount} healthy=promote breach=rollback\n`,
+  `frontend standards adoption PASS mode=${report.mode} packages=${report.packageCount} stages=${report.stageCount}\n`,
 );
 
 function indexPackages() {

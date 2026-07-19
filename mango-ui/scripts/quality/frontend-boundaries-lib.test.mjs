@@ -80,6 +80,44 @@ test('finds API, presentation, CSS and vendor boundary violations', () => {
     assert.ok(rules.has(expected), `missing ${expected}`);
 });
 
+test('enforces the HttpClient factory contract across an entire business API package', () => {
+  const root = fixture({
+    'packages/orders-api/package.json': JSON.stringify({
+      name: '@example/orders-api',
+      dependencies: { axios: '1.0.0', vue: '3.0.0' },
+    }),
+    'packages/orders-api/src/client.ts': "import axios from 'axios'\nexport const load = () => axios.get('/orders')",
+  });
+  const rules = new Set(analyzeFrontendBoundaries(root).violations.map((item) => item.rule));
+  for (const expected of [
+    'api/no-direct-transport',
+    'api/package-must-use-http-client',
+    'api/package-must-export-factory',
+    'api/package-no-ui-transport-dependency',
+  ]) {
+    assert.ok(rules.has(expected), `missing ${expected}`);
+  }
+});
+
+test('accepts a vendor-neutral business API package factory outside an api source directory', () => {
+  const root = fixture({
+    'packages/orders-api/package.json': JSON.stringify({
+      name: '@example/orders-api',
+      dependencies: { '@mango/api-schema': '1.0.0' },
+    }),
+    'packages/orders-api/src/client.ts': [
+      "import type { HttpClient } from '@mango/api-schema'",
+      'export function createOrdersApi(client: HttpClient) {',
+      "  return { page: (signal?: AbortSignal) => client.request({ method: 'GET', url: '/orders', signal }) }",
+      '}',
+    ].join('\n'),
+  });
+  const violations = analyzeFrontendBoundaries(root).violations.filter((item) =>
+    item.file.startsWith('packages/orders-api/'),
+  );
+  assert.deepEqual(violations, []);
+});
+
 test('uses exact identities and only permits baseline debt to shrink', () => {
   const root = fixture({
     'packages/domain/src/views/Bad.vue': '<script setup>window.$wujie?.bus</script>',

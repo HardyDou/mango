@@ -1,5 +1,6 @@
 import { defineConfig, devices } from '@playwright/test';
-import { resolve } from 'node:path';
+import { copyFileSync, mkdirSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
 import { resolveE2EApiBaseURL } from '../../playwright.workspace';
 
 const baseURL = process.env.PLAYWRIGHT_BASE_URL || 'http://a.mango.io:5176';
@@ -8,6 +9,12 @@ const apiBaseURL = resolveE2EApiBaseURL({ uiRoot, defaultURL: 'http://127.0.0.1:
 const frontendURL = new URL(baseURL);
 const useExternalWebServer = process.env.PLAYWRIGHT_USE_EXTERNAL_WEBSERVER === 'true';
 const reuseExistingServer = process.env.PLAYWRIGHT_REUSE_EXISTING_SERVER === 'true';
+const runtimeConfigPath =
+  process.env.PLAYWRIGHT_RUNTIME_CONFIG_PATH ||
+  resolve(uiRoot, '../.runtime/playwright/mango-admin-shell/runtime-config.json');
+mkdirSync(dirname(runtimeConfigPath), { recursive: true });
+copyFileSync(resolve(__dirname, './runtime-config.dev.json'), runtimeConfigPath);
+process.env.PLAYWRIGHT_RUNTIME_CONFIG_PATH = runtimeConfigPath;
 
 export default defineConfig({
   testDir: './e2e',
@@ -41,6 +48,7 @@ export default defineConfig({
           env: {
             VITE_ADMIN_PROXY_PATH: apiBaseURL,
             VITE_PORT: frontendURL.port,
+            VITE_MANGO_RUNTIME_CONFIG_FILE: runtimeConfigPath,
           },
           reuseExistingServer,
           timeout: 120 * 1000,

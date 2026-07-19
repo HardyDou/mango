@@ -284,34 +284,37 @@ export function createCmsApi(httpClient: HttpClient) {
     updateSiteStatus: (id: ApiId, status: CmsStatus) => put<boolean>('/cms/sites/status', { id, status }),
     deleteSite: (id: ApiId) => del<boolean>('/cms/sites', { params: { id } }),
 
-    pageContentCategories: (params: CmsPageQuery) =>
-      pageGet<CmsContentCategory>('/cms/content-categories/page', params),
-    listContentCategories: (params: CmsPageQuery) =>
-      get<CmsContentCategory[]>('/cms/content-categories/list', { params }),
-    treeContentCategories: (params: CmsPageQuery) =>
-      get<CmsContentCategory[]>('/cms/content-categories/tree', { params }),
+    pageContentCategories: (params: CmsPageQuery, options?: CmsRequestOptions) =>
+      pageGet<CmsContentCategory>('/cms/content-categories/page', params, options),
+    listContentCategories: (params: CmsPageQuery, options: CmsRequestOptions = {}) =>
+      get<CmsContentCategory[]>('/cms/content-categories/list', { params, signal: options.signal }),
+    treeContentCategories: (params: CmsPageQuery, options: CmsRequestOptions = {}) =>
+      get<CmsContentCategory[]>('/cms/content-categories/tree', { params, signal: options.signal }),
     createContentCategory: (data: CmsContentCategory) => post<ApiId>('/cms/content-categories', data),
     updateContentCategory: (data: CmsContentCategory) => put<boolean>('/cms/content-categories', data),
     updateContentCategoryStatus: (id: ApiId, status: CmsStatus) =>
       put<boolean>('/cms/content-categories/status', { id, status }),
     deleteContentCategory: (id: ApiId) => del<boolean>('/cms/content-categories', { params: { id } }),
 
-    pageContentTags: (params: CmsPageQuery) => pageGet<CmsContentTag>('/cms/content-tags/page', params),
-    listContentTags: (params: CmsPageQuery) => get<CmsContentTag[]>('/cms/content-tags/list', { params }),
+    pageContentTags: (params: CmsPageQuery, options?: CmsRequestOptions) =>
+      pageGet<CmsContentTag>('/cms/content-tags/page', params, options),
+    listContentTags: (params: CmsPageQuery, options: CmsRequestOptions = {}) =>
+      get<CmsContentTag[]>('/cms/content-tags/list', { params, signal: options.signal }),
     createContentTag: (data: CmsContentTag) => post<ApiId>('/cms/content-tags', data),
     updateContentTag: (data: CmsContentTag) => put<boolean>('/cms/content-tags', data),
     updateContentTagStatus: (id: ApiId, status: CmsStatus) => put<boolean>('/cms/content-tags/status', { id, status }),
     deleteContentTag: (id: ApiId) => del<boolean>('/cms/content-tags', { params: { id } }),
 
-    treeSiteCategories: (params: { siteId?: ApiId | ''; status?: string }) =>
-      get<CmsSiteCategory[]>('/cms/site-categories/tree', { params }),
+    treeSiteCategories: (params: { siteId?: ApiId | ''; status?: string }, options: CmsRequestOptions = {}) =>
+      get<CmsSiteCategory[]>('/cms/site-categories/tree', { params, signal: options.signal }),
     createSiteCategory: (data: CmsSiteCategory) => post<ApiId>('/cms/site-categories', data),
     updateSiteCategory: (data: CmsSiteCategory) => put<boolean>('/cms/site-categories', data),
     updateSiteCategoryStatus: (id: ApiId, status: CmsStatus) =>
       put<boolean>('/cms/site-categories/status', { id, status }),
     deleteSiteCategory: (id: ApiId) => del<boolean>('/cms/site-categories', { params: { id } }),
 
-    pageContents: (params: CmsPageQuery) => pageGet<CmsContent>('/cms/contents/page', params),
+    pageContents: (params: CmsPageQuery, options?: CmsRequestOptions) =>
+      pageGet<CmsContent>('/cms/contents/page', params, options),
     detailContent: (id: ApiId) => get<CmsContent>('/cms/contents/detail', { params: { id } }),
     createContent: (data: CmsContent) => post<ApiId>('/cms/contents', data),
     updateContent: (data: CmsContent) => put<boolean>('/cms/contents', data),
@@ -322,7 +325,8 @@ export function createCmsApi(httpClient: HttpClient) {
     offlineContent: (id: ApiId) => post<boolean>('/cms/contents/offline', { id }),
     deleteContent: (id: ApiId) => del<boolean>('/cms/contents', { params: { id } }),
 
-    pagePublishes: (params: CmsPageQuery) => pageGet<CmsContentPublish>('/cms/content-publishes/page', params),
+    pagePublishes: (params: CmsPageQuery, options?: CmsRequestOptions) =>
+      pageGet<CmsContentPublish>('/cms/content-publishes/page', params, options),
     publishContents: (data: {
       contentIds: ApiId[];
       siteId: ApiId;
@@ -339,20 +343,23 @@ export function createCmsApi(httpClient: HttpClient) {
     offlinePublish: (id: ApiId) => post<boolean>('/cms/content-publishes/offline', { id }),
     deletePublish: (id: ApiId) => del<boolean>('/cms/content-publishes', { params: { id } }),
 
-    pageNavigations: (params: CmsPageQuery) => pageGet<CmsNavigation>('/cms/navigations/page', params),
+    pageNavigations: (params: CmsPageQuery, options?: CmsRequestOptions) =>
+      pageGet<CmsNavigation>('/cms/navigations/page', params, options),
     createNavigation: (data: CmsNavigation) => post<ApiId>('/cms/navigations', data),
     updateNavigation: (data: CmsNavigation) => put<boolean>('/cms/navigations', data),
     updateNavigationStatus: (id: ApiId, status: CmsStatus) => put<boolean>('/cms/navigations/status', { id, status }),
     deleteNavigation: (id: ApiId) => del<boolean>('/cms/navigations', { params: { id } }),
 
-    pageAdvertisements: (params: CmsPageQuery) => pageGet<CmsAdvertisement>('/cms/advertisements/page', params),
+    pageAdvertisements: (params: CmsPageQuery, options?: CmsRequestOptions) =>
+      pageGet<CmsAdvertisement>('/cms/advertisements/page', params, options),
     createAdvertisement: (data: CmsAdvertisement) => post<ApiId>('/cms/advertisements', data),
     updateAdvertisement: (data: CmsAdvertisement) => put<boolean>('/cms/advertisements', data),
     updateAdvertisementStatus: (id: ApiId, status: CmsStatus) =>
       put<boolean>('/cms/advertisements/status', { id, status }),
     deleteAdvertisement: (id: ApiId) => del<boolean>('/cms/advertisements', { params: { id } }),
 
-    pageAdDeliveries: (params: CmsPageQuery) => pageGet<CmsAdDelivery>('/cms/ad-deliveries/page', params),
+    pageAdDeliveries: (params: CmsPageQuery, options?: CmsRequestOptions) =>
+      pageGet<CmsAdDelivery>('/cms/ad-deliveries/page', params, options),
     createAdDelivery: (data: CmsAdDelivery) => post<ApiId>('/cms/ad-deliveries', data),
     updateAdDelivery: (data: CmsAdDelivery) => put<boolean>('/cms/ad-deliveries', data),
     updateAdDeliveryStatus: (id: ApiId, status: CmsStatus) => put<boolean>('/cms/ad-deliveries/status', { id, status }),

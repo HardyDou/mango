@@ -11,7 +11,9 @@ const keepVolume = process.argv.includes('--keep-volume');
 const suffix = `${Date.now()}-${process.pid}`;
 const runtimeVolume = `mango-frontend-candidate-${suffix}`;
 const modulesVolume = `mango-frontend-candidate-modules-${suffix}`;
+const workspaceVolume = `mango-frontend-candidate-workspace-${suffix}`;
 const gitSha = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: repoRoot, encoding: 'utf8' }).trim();
+const gitTree = execFileSync('git', ['rev-parse', 'HEAD^{tree}'], { cwd: repoRoot, encoding: 'utf8' }).trim();
 const gitCommonDir = resolve(
   repoRoot,
   execFileSync('git', ['rev-parse', '--git-common-dir'], { cwd: repoRoot, encoding: 'utf8' }).trim(),
@@ -51,6 +53,21 @@ try {
   run('docker', ['image', 'inspect', image]);
   run('docker', ['volume', 'create', runtimeVolume]);
   run('docker', ['volume', 'create', modulesVolume]);
+  run('docker', ['volume', 'create', workspaceVolume]);
+  run('docker', [
+    'run',
+    '--rm',
+    '-v',
+    `${repoRoot}:/source:ro`,
+    '-v',
+    `${gitCommonDir}:${gitCommonDir}:ro`,
+    '-v',
+    `${workspaceVolume}:/workspace`,
+    image,
+    'sh',
+    '-lc',
+    `git -C /source archive --format=tar ${gitSha} | tar -xf - -C /workspace`,
+  ]);
   run('docker', [
     'run',
     '--rm',
@@ -58,8 +75,12 @@ try {
     `MANGO_BUSINESS_LAB_GIT_COMMIT=${gitSha}`,
     '-e',
     `MANGO_PMO_SOURCE_COMMIT=${gitSha}`,
+    '-e',
+    `MANGO_BUSINESS_LAB_GIT_TREE=${gitTree}`,
     '-v',
-    `${repoRoot}:/workspace`,
+    `${workspaceVolume}:/workspace`,
+    '-v',
+    `${join(repoRoot, '.git')}:/workspace/.git:ro`,
     '-v',
     `${gitCommonDir}:${gitCommonDir}:ro`,
     '-v',
@@ -71,7 +92,7 @@ try {
     image,
     'sh',
     '-lc',
-    'pnpm install --frozen-lockfile && pnpm check:full && node scripts/run-business-lab.mjs --prepare-only --runtime-root=/runtime --runtime-mount=/runtime',
+    `test "$(git -C /workspace rev-parse ${gitSha}^{tree})" = "${gitTree}" && git -C /workspace diff --no-ext-diff --exit-code ${gitSha} -- . && pnpm install --frozen-lockfile && pnpm check:full && node scripts/run-business-lab.mjs --prepare-only --runtime-root=/runtime --runtime-mount=/runtime`,
   ]);
   run(
     process.execPath,
@@ -98,6 +119,7 @@ try {
   process.exitCode = 1;
 } finally {
   removeVolume(modulesVolume);
+  removeVolume(workspaceVolume);
   if (passed && !keepVolume) removeVolume(runtimeVolume);
   else if (passed) console.log(`Business Lab runtime volume retained: ${runtimeVolume}`);
 }

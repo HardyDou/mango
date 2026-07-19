@@ -74,60 +74,6 @@
       "rule": "layer/presentation-no-transport",
       "file": "packages/workflow/src/views/workflow-definition/index.vue",
       "evidence": "import { UserSelector, get } from '@mango/common';"
-    },
-    {
-      "identity": "microfrontend/vendor-symbol-outside-adapter|apps/mango-admin-cms-app/src/main.ts|$wujie?: {|1",
-      "rule": "microfrontend/vendor-symbol-outside-adapter",
-      "file": "apps/mango-admin-cms-app/src/main.ts",
-      "evidence": "$wujie?: {"
-    },
-    {
-      "identity": "microfrontend/vendor-symbol-outside-adapter|apps/mango-admin-cms-app/src/main.ts|window.$wujie?.props?.mangoRuntime?.eventBus.emit('unauthorized');|1",
-      "rule": "microfrontend/vendor-symbol-outside-adapter",
-      "file": "apps/mango-admin-cms-app/src/main.ts",
-      "evidence": "window.$wujie?.props?.mangoRuntime?.eventBus.emit('unauthorized');"
-    },
-    {
-      "identity": "microfrontend/vendor-symbol-outside-adapter|apps/mango-admin-rbac-app/src/main.ts|$wujie?: {|1",
-      "rule": "microfrontend/vendor-symbol-outside-adapter",
-      "file": "apps/mango-admin-rbac-app/src/main.ts",
-      "evidence": "$wujie?: {"
-    },
-    {
-      "identity": "microfrontend/vendor-symbol-outside-adapter|apps/mango-admin-rbac-app/src/main.ts|window.$wujie?.props?.mangoRuntime?.eventBus.emit('unauthorized');|1",
-      "rule": "microfrontend/vendor-symbol-outside-adapter",
-      "file": "apps/mango-admin-rbac-app/src/main.ts",
-      "evidence": "window.$wujie?.props?.mangoRuntime?.eventBus.emit('unauthorized');"
-    },
-    {
-      "identity": "microfrontend/vendor-symbol-outside-adapter|apps/mango-admin-template-app/src/main.ts|$wujie?: {|1",
-      "rule": "microfrontend/vendor-symbol-outside-adapter",
-      "file": "apps/mango-admin-template-app/src/main.ts",
-      "evidence": "$wujie?: {"
-    },
-    {
-      "identity": "microfrontend/vendor-symbol-outside-adapter|apps/mango-admin-template-app/src/main.ts|window.$wujie?.props?.mangoRuntime?.eventBus.emit('unauthorized');|1",
-      "rule": "microfrontend/vendor-symbol-outside-adapter",
-      "file": "apps/mango-admin-template-app/src/main.ts",
-      "evidence": "window.$wujie?.props?.mangoRuntime?.eventBus.emit('unauthorized');"
-    },
-    {
-      "identity": "microfrontend/vendor-symbol-outside-adapter|apps/mango-admin-workflow-app/src/main.ts|$wujie?: {|1",
-      "rule": "microfrontend/vendor-symbol-outside-adapter",
-      "file": "apps/mango-admin-workflow-app/src/main.ts",
-      "evidence": "$wujie?: {"
-    },
-    {
-      "identity": "microfrontend/vendor-symbol-outside-adapter|apps/mango-admin-workflow-app/src/main.ts|window.$wujie?.props?.mangoRuntime?.eventBus.emit('unauthorized');|1",
-      "rule": "microfrontend/vendor-symbol-outside-adapter",
-      "file": "apps/mango-admin-workflow-app/src/main.ts",
-      "evidence": "window.$wujie?.props?.mangoRuntime?.eventBus.emit('unauthorized');"
-    },
-    {
-      "identity": "microfrontend/vendor-symbol-outside-adapter|packages/common/utils/request.ts|? (window as any).$wujie?.props?.mangoRuntime|1",
-      "rule": "microfrontend/vendor-symbol-outside-adapter",
-      "file": "packages/common/utils/request.ts",
-      "evidence": "? (window as any).$wujie?.props?.mangoRuntime"
     }
   ]
 }

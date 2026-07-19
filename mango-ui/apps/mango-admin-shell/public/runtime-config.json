@@ -1,29 +1,21 @@
 {
-  "profile": "hybrid",
+  "profile": "monolith",
   "modules": {
     "mango-authorization": {
-      "mode": "micro",
-      "runtimeCode": "mango-admin-rbac-app",
-      "entry": "http://b.mango.io:5181/"
+      "mode": "local",
+      "runtimeCode": "mango-admin-rbac-local"
     },
     "mango-system": {
       "mode": "local",
       "runtimeCode": "mango-admin-system-local"
     },
     "mango-workflow": {
-      "mode": "micro",
-      "runtimeCode": "mango-admin-workflow-app",
-      "entry": "http://c.mango.io:5182/"
-    },
-    "mango-template": {
-      "mode": "micro",
-      "runtimeCode": "mango-admin-template-app",
-      "entry": "http://d.mango.io:5183/"
+      "mode": "local",
+      "runtimeCode": "mango-admin-workflow-local"
     },
     "mango-cms": {
-      "mode": "micro",
-      "runtimeCode": "mango-admin-cms-app",
-      "entry": "http://e.mango.io:5184/"
+      "mode": "local",
+      "runtimeCode": "mango-admin-cms-local"
     }
   }
 }

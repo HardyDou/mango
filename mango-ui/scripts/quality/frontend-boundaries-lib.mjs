@@ -55,8 +55,8 @@ function addViolation(violations, occurrences, rule, file, line, evidence) {
   });
 }
 
-function scanApiAndVendor(source, relative, violations, occurrences) {
-  const inApi = /\/(?:api|apis)\//u.test(`/${relative}`);
+function scanApiAndVendor(source, relative, violations, occurrences, isApiPackage = false) {
+  const inApi = isApiPackage || /\/(?:api|apis)\//u.test(`/${relative}`);
   const inPresentation = /\/(?:components|pages|views)\//u.test(`/${relative}`);
   const ownsVendor = relative.startsWith('packages/app-runtime/');
   const lines = source.split('\n');
@@ -103,6 +103,50 @@ function scanApiAndVendor(source, relative, violations, occurrences) {
       addViolation(violations, occurrences, 'css/no-package-source-style-import', relative, number, line);
     }
   });
+}
+
+function scanBusinessApiPackageContracts(uiRoot, records, sourceByFile, violations, occurrences) {
+  for (const record of records.filter(({ manifest }) => manifest.name?.endsWith('-api'))) {
+    const packageRoot = posix(path.relative(uiRoot, record.directory));
+    const combinedSource = [...sourceByFile.entries()]
+      .filter(([file]) => file.startsWith(`${packageRoot}/`))
+      .map(([, source]) => source)
+      .join('\n');
+    const relativeManifest = `${packageRoot}/package.json`;
+    if (!/\bHttpClient\b/u.test(combinedSource)) {
+      addViolation(
+        violations,
+        occurrences,
+        'api/package-must-use-http-client',
+        relativeManifest,
+        1,
+        `${record.manifest.name} must accept the vendor-neutral HttpClient contract`,
+      );
+    }
+    if (!/export\s+function\s+create[A-Z][A-Za-z0-9]*Api\s*\([^)]*\bHttpClient\b/u.test(combinedSource)) {
+      addViolation(
+        violations,
+        occurrences,
+        'api/package-must-export-factory',
+        relativeManifest,
+        1,
+        `${record.manifest.name} must export createXxxApi(client: HttpClient)`,
+      );
+    }
+    const forbiddenDependencies = ['axios', 'element-plus', 'pinia', 'vue', 'vue-router'].filter(
+      (dependency) => record.manifest.dependencies?.[dependency] || record.manifest.peerDependencies?.[dependency],
+    );
+    if (forbiddenDependencies.length > 0) {
+      addViolation(
+        violations,
+        occurrences,
+        'api/package-no-ui-transport-dependency',
+        relativeManifest,
+        1,
+        `${record.manifest.name} declares forbidden dependencies: ${forbiddenDependencies.join(', ')}`,
+      );
+    }
+  }
 }
 
 function scanVueStyles(source, relative, violations, occurrences) {
@@ -195,6 +239,11 @@ export function analyzeFrontendBoundaries(uiRoot) {
   const roots = ['apps', 'packages'].map((item) => path.join(uiRoot, item));
   const files = roots.flatMap(listFiles).sort();
   if (files.length === 0) throw new Error('frontend boundary scan input is empty');
+  const records = readWorkspaceManifests(uiRoot);
+  if (records.length === 0) throw new Error('frontend workspace manifest input is empty');
+  const apiPackageRoots = records
+    .filter(({ manifest }) => manifest.name?.endsWith('-api'))
+    .map(({ directory }) => posix(path.relative(uiRoot, directory)));
   const violations = [];
   const occurrences = new Map();
   const sourceByFile = new Map();
@@ -209,11 +258,16 @@ export function analyzeFrontendBoundaries(uiRoot) {
     ) {
       vendorAdapterReferenceCount += 1;
     }
-    scanApiAndVendor(source, relative, violations, occurrences);
+    scanApiAndVendor(
+      source,
+      relative,
+      violations,
+      occurrences,
+      apiPackageRoots.some((root) => relative.startsWith(`${root}/`)),
+    );
     scanVueStyles(source, relative, violations, occurrences);
   }
-  const records = readWorkspaceManifests(uiRoot);
-  if (records.length === 0) throw new Error('frontend workspace manifest input is empty');
+  scanBusinessApiPackageContracts(uiRoot, records, sourceByFile, violations, occurrences);
   scanMicroStyleContracts(uiRoot, records, sourceByFile, violations, occurrences);
   if (vendorAdapterReferenceCount === 0)
     throw new Error('microfrontend vendor adapter owner is missing or has no implementation');

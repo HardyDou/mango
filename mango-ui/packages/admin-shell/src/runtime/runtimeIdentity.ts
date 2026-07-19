@@ -22,5 +22,9 @@ export function toRuntimeApps(config: MangoRuntimeConfig): MangoRuntimeAppConfig
 }
 
 export function resolveRuntimeAppConfig(apps: MangoRuntimeAppConfig[], runtimeCode: string, instanceId?: string) {
-  return apps.find((app) => app.appCode === runtimeCode && (!instanceId || app.instanceId === instanceId));
+  if (instanceId) {
+    return apps.find((app) => app.appCode === runtimeCode && app.instanceId === instanceId);
+  }
+  const matches = apps.filter((app) => app.appCode === runtimeCode);
+  return matches.length === 1 ? matches[0] : undefined;
 }

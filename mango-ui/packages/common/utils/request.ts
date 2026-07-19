@@ -42,7 +42,7 @@ type JsonRecord = Record<string, unknown>;
 
 // 创建 axios 实例
 const service: AxiosInstance = axios.create({
-  baseURL: resolveApiBaseUrl(),
+  baseURL: '/api',
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json;charset=UTF-8',
@@ -58,13 +58,6 @@ let unauthorizedHandler: UnauthorizedHandler | null = null;
 let refreshPromise: Promise<string | null> | null = null;
 const REFRESH_BEFORE_EXPIRE_MS = 5 * 60 * 1000;
 const AUTH_EXPIRED_CODES = new Set([401, 1410, 1411]);
-
-function resolveApiBaseUrl(): string {
-  const wujieRuntime = typeof window !== 'undefined'
-    ? (window as any).$wujie?.props?.mangoRuntime
-    : undefined;
-  return wujieRuntime?.apiBaseUrl || '/api';
-}
 
 export function registerUnauthorizedHandler(handler: UnauthorizedHandler): void {
   unauthorizedHandler = handler;

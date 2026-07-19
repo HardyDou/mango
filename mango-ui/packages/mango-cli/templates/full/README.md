@@ -157,8 +157,8 @@ npm --prefix frontend run build
 | `frontend/pnpm-workspace.yaml` | `allowBuilds` | Mango 依赖所需构建脚本白名单 | pnpm 11 安装依赖时允许受控构建 | `pnpm install` | `frontend/pnpm-workspace.yaml` |
 | `frontend/src/main.ts` | `apiBaseUrl` | `/api` | API base URL | Vite dev proxy 转发到后端 | `frontend/src/main.ts` |
 | `frontend/src/main.ts` | `title` | `{{projectPascal}}` | 页面标题 | 管理后台标题 | `frontend/src/main.ts` |
-| `frontend` 下的 `public`、`runtime-config.json` | `profile` | `monolith` | runtime profile | runtime module 加载策略 | `runtime-config.json` |
-| `frontend` 下的 `public`、`runtime-config.microservice.json` | `modules` | 微服务 entry 配置 | 微前端模块入口 | `runtime-config.microservice.json` |
+| `frontend/public/runtime-config.json` | `profile` | `monolith` | 部署时读取的 runtime profile | runtime module 加载策略 | `runtime-config.json` |
+| `frontend/runtime-config.microservice.example.json` | `modules` | 微服务 entry 示例 | 由部署平台生成外部 `runtime-config.json` 时参考，不进入构建产物 | `runtime-config.microservice.example.json` |
 | `frontend/vite.config.ts` | `ALLOWED_PROXY_HOSTS` | `127.0.0.1`、`localhost` | dev proxy 白名单 | 防止代理到任意主机 | `vite.config.ts` |
 | `frontend/vite.config.ts` | `DEV_ALLOWED_HOSTS` | `localhost`、`127.0.0.1`、`a.mango.io` 等 | dev server host 白名单 | 本地微前端域名访问 | `vite.config.ts` |
 

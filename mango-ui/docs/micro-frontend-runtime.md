@@ -160,9 +160,9 @@ Shell 会对 `runtime-config.json` 做运行时校验：
 开发态可在浏览器控制台查看：
 
 ```js
-window.__MANGO_RUNTIME_CONFIG_DIAGNOSTICS__
-window.__MANGO_RUNTIME_DEBUG__
-window.__MANGO_MICRO_APP_EVENTS__
+window.__MANGO_RUNTIME_CONFIG_DIAGNOSTICS__;
+window.__MANGO_RUNTIME_DEBUG__;
+window.__MANGO_MICRO_APP_EVENTS__;
 ```
 
 这些诊断只用于排障，不参与业务权限判断。
@@ -222,14 +222,11 @@ location = /runtime-config.json {
 }
 ```
 
-切换部署形态时只替换 `admin.mango.io/runtime-config.json`：
+开发环境由 `pnpm dev:micro` 从 `apps/mango-admin-shell/runtime-config.dev.json` 提供配置，该文件不进入 `dist`。部署环境在构建完成后由配置平台或静态资源发布步骤单独写入 `admin.mango.io/runtime-config.json`，可以参考 `runtime-config.production.example.json`，不得把开发配置复制到 `public`：
 
 ```bash
-# 单体组合，所有模块本地渲染
-cp runtime-config.monolith.json runtime-config.json
-
-# 混合组合，RBAC/Workflow 远程，System 本地
-cp runtime-config.hybrid.json runtime-config.json
+# 示例：部署系统在 dist 之外生成环境配置，再作为独立静态文件挂载
+install -m 0644 runtime-config.production.json /srv/mango-admin/runtime-config.json
 ```
 
 生产子应用 CORS 使用明确白名单：
@@ -343,7 +340,7 @@ Shell 会把当前主题快照注入 Wujie 子应用，并在主题、布局、�
 运行期日志默认保留最近 200 条到：
 
 ```js
-window.__MANGO_RUNTIME_LOGS__
+window.__MANGO_RUNTIME_LOGS__;
 ```
 
 生产错误会输出到 `console.error`，可用 `setMangoRuntimeLogger()` 对接 Sentry、日志网关或自建埋点服务。建议至少上报：

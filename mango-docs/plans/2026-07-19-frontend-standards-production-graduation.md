@@ -59,7 +59,7 @@ npm 依赖回退只验证候选包可以精确 pin 到 `origin/main` 的稳定�
 | 运行时   | 测试环境单体/Wujie、请求取消、刷新、卸载与样式                              | 标记阻塞或修复后重测       |
 | 采用     | pilot/affected/repository 覆盖、精确版本恢复矩阵                            | 停止扩大采用范围           |
 
-本地生产候选使用单一入口 `pnpm -C mango-ui check:production-candidate`。该入口先执行完整源码与 tarball 消费门禁，再在固定 Linux 镜像中准备 Business Lab，并通过独立 `--network none` 容器执行封闭安装、检查、构建、启动和停止；最终报告统一回写到 `.runtime/frontend-quality/business-lab`。
+本地规范候选使用单一入口 `pnpm -C mango-ui check:standards-candidate`。该入口先执行完整源码与 tarball 消费门禁，再在固定 Linux 镜像中准备 Business Lab，并通过独立 `--network none` 容器执行封闭安装、检查、构建、启动和停止；最终报告统一回写到 `.runtime/frontend-quality/business-lab`。
 
 ## 6. 完成定义
 

@@ -2,7 +2,8 @@ import { expect, test, type Page } from '@playwright/test';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-const runtimeConfigPath = resolve(__dirname, '../../public/runtime-config.json');
+const runtimeConfigPath =
+  process.env.PLAYWRIGHT_RUNTIME_CONFIG_PATH || resolve(__dirname, '../../runtime-config.dev.json');
 const distRuntimeConfigPath = resolve(__dirname, '../../dist/runtime-config.json');
 const shellOrigin = new URL(process.env.PLAYWRIGHT_BASE_URL || 'http://a.mango.io:5176').origin;
 const rbacEntry = process.env.PLAYWRIGHT_RBAC_ENTRY || resolvePeerEntry('b.mango.io', 5181, 4181);

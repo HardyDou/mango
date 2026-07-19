@@ -63,18 +63,29 @@ describe('CMS API HttpClient boundary', () => {
     );
   });
 
-  it('passes the page lifecycle AbortSignal to the real CMS request', async () => {
+  it('passes the page lifecycle AbortSignal to every CMS resource request', async () => {
     const abortController = new AbortController();
     const pending = abortingClient();
-    const request = createCmsApi(pending.client).pageSites(
-      { pageNum: 1, pageSize: 10 },
-      { signal: abortController.signal },
-    );
+    const cmsApi = createCmsApi(pending.client);
+    const options = { signal: abortController.signal };
+    const query = { pageNum: 1, pageSize: 10 };
+    const requests = [
+      cmsApi.pageSites(query, options),
+      cmsApi.treeContentCategories(query, options),
+      cmsApi.pageContentTags(query, options),
+      cmsApi.treeSiteCategories({}, options),
+      cmsApi.pageContents(query, options),
+      cmsApi.pagePublishes(query, options),
+      cmsApi.pageNavigations(query, options),
+      cmsApi.pageAdvertisements(query, options),
+      cmsApi.pageAdDeliveries(query, options),
+    ];
 
     abortController.abort();
 
-    await expect(request).rejects.toMatchObject({ name: 'AbortError' });
-    expect(pending.requests[0].signal?.aborted).toBe(true);
+    await Promise.all(requests.map((request) => expect(request).rejects.toMatchObject({ name: 'AbortError' })));
+    expect(pending.requests).toHaveLength(requests.length);
+    expect(pending.requests.every((request) => request.signal?.aborted)).toBe(true);
   });
 });
 

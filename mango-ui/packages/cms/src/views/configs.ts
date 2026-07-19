@@ -104,8 +104,8 @@ export function createCmsResourceConfigs(cmsApi: CmsApi) {
       { prop: 'status', label: '状态', type: 'status', width: 100 },
       { prop: 'remark', label: '备注', minWidth: 180 },
     ],
-    page: async (query) => {
-      const list = await cmsApi.treeContentCategories(query);
+    page: async (query, options) => {
+      const list = await cmsApi.treeContentCategories(query, options);
       return { list, total: list.length, pageNum: 1, pageSize: list.length || 10 };
     },
     create: (data) => cmsApi.createContentCategory(data),
@@ -137,7 +137,7 @@ export function createCmsResourceConfigs(cmsApi: CmsApi) {
       { prop: 'status', label: '状态', type: 'status', width: 100 },
       { prop: 'remark', label: '备注', minWidth: 180 },
     ],
-    page: (query) => cmsApi.pageContentTags(query) as Promise<CmsPageData>,
+    page: (query, options) => cmsApi.pageContentTags(query, options) as Promise<CmsPageData>,
     create: (data) => cmsApi.createContentTag(data),
     update: (data) => cmsApi.updateContentTag(data),
     updateStatus: cmsApi.updateContentTagStatus,
@@ -172,8 +172,8 @@ export function createCmsResourceConfigs(cmsApi: CmsApi) {
       { prop: 'visibleStatus', label: '显示状态', type: 'status', width: 110 },
       { prop: 'sort', label: '排序', width: 90 },
     ],
-    page: async (query: CmsPageQuery) => {
-      const list = await cmsApi.treeSiteCategories({ siteId: query.siteId, status: query.status });
+    page: async (query: CmsPageQuery, options) => {
+      const list = await cmsApi.treeSiteCategories({ siteId: query.siteId, status: query.status }, options);
       return { list, total: list.length, pageNum: query.pageNum || 1, pageSize: query.pageSize || 10 };
     },
     create: (data) => cmsApi.createSiteCategory(data),
@@ -222,7 +222,7 @@ export function createCmsResourceConfigs(cmsApi: CmsApi) {
       { prop: 'status', label: '状态', type: 'contentStatus', width: 110 },
       { prop: 'author', label: '作者', width: 120 },
     ],
-    page: (query) => cmsApi.pageContents(query) as Promise<CmsPageData>,
+    page: (query, options) => cmsApi.pageContents(query, options) as Promise<CmsPageData>,
     create: (data) => cmsApi.createContent(data),
     update: (data) => cmsApi.updateContent(data),
     remove: cmsApi.deleteContent,
@@ -292,7 +292,7 @@ export function createCmsResourceConfigs(cmsApi: CmsApi) {
       { prop: 'scheduledPublishTime', label: '定时发布时间', minWidth: 170 },
       { prop: 'offlineTime', label: '下线时间', minWidth: 170 },
     ],
-    page: (query) => cmsApi.pagePublishes(query) as Promise<CmsPageData>,
+    page: (query, options) => cmsApi.pagePublishes(query, options) as Promise<CmsPageData>,
     create: (data) =>
       cmsApi.publishContents({
         contentIds: (data.contentIds as string[]) || [],
@@ -367,7 +367,7 @@ export function createCmsResourceConfigs(cmsApi: CmsApi) {
       { prop: 'openTarget', label: '打开方式', optionKey: 'openTarget', width: 110 },
       { prop: 'status', label: '状态', type: 'status', width: 100 },
     ],
-    page: (query) => cmsApi.pageNavigations(query) as Promise<CmsPageData>,
+    page: (query, options) => cmsApi.pageNavigations(query, options) as Promise<CmsPageData>,
     create: (data) => cmsApi.createNavigation(data),
     update: (data) => cmsApi.updateNavigation(data),
     updateStatus: cmsApi.updateNavigationStatus,
@@ -440,7 +440,7 @@ export function createCmsResourceConfigs(cmsApi: CmsApi) {
       { prop: 'supportedMaterialTypes', label: '支持物料', optionKey: 'materialType', minWidth: 180 },
       { prop: 'status', label: '状态', type: 'status', width: 100 },
     ],
-    page: (query) => cmsApi.pageAdvertisements(query) as Promise<CmsPageData>,
+    page: (query, options) => cmsApi.pageAdvertisements(query, options) as Promise<CmsPageData>,
     create: (data) => cmsApi.createAdvertisement(data),
     update: (data) => cmsApi.updateAdvertisement(data),
     updateStatus: cmsApi.updateAdvertisementStatus,
@@ -499,7 +499,7 @@ export function createCmsResourceConfigs(cmsApi: CmsApi) {
       { prop: 'startTime', label: '开始时间', minWidth: 170 },
       { prop: 'status', label: '状态', type: 'status', width: 100 },
     ],
-    page: (query) => cmsApi.pageAdDeliveries(query) as Promise<CmsPageData>,
+    page: (query, options) => cmsApi.pageAdDeliveries(query, options) as Promise<CmsPageData>,
     create: (data) => cmsApi.createAdDelivery(data),
     update: (data) => cmsApi.updateAdDelivery(data),
     updateStatus: cmsApi.updateAdDeliveryStatus,

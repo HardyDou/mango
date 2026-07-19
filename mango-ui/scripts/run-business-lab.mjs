@@ -47,6 +47,17 @@ function resolveGitSha() {
   return run('git', ['rev-parse', 'HEAD'], { capture: true, cwd: repoRoot }).stdout.trim();
 }
 
+function resolveGitTree() {
+  const providedGitTree = process.env.MANGO_BUSINESS_LAB_GIT_TREE?.trim();
+  if (providedGitTree) {
+    if (!/^(?:[a-f\d]{40}|[a-f\d]{64})$/iu.test(providedGitTree)) {
+      throw new Error('MANGO_BUSINESS_LAB_GIT_TREE must be a full 40- or 64-character Git tree SHA');
+    }
+    return providedGitTree.toLowerCase();
+  }
+  return run('git', ['rev-parse', 'HEAD^{tree}'], { capture: true, cwd: repoRoot }).stdout.trim();
+}
+
 function run(command, args, options = {}) {
   const startedAt = Date.now();
   const result = spawnSync(command, args, {
@@ -319,6 +330,7 @@ try {
   generateProject(cliPath);
   const mappings = prepareOfflineInstall(tarballsByName);
   const gitSha = resolveGitSha();
+  const gitTree = resolveGitTree();
   const tarballs = [...tarballsByName]
     .map(([name, path]) => ({
       name,
@@ -331,6 +343,8 @@ try {
     status: 'prepared',
     generatedAt: new Date().toISOString(),
     gitSha,
+    gitTree,
+    sourceMode: 'git-archive-exact-commit',
     node: process.version,
     platform: process.platform,
     arch: process.arch,

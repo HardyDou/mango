@@ -26,6 +26,18 @@ describe('admin shell runtime identity', () => {
 
     expect(resolveRuntimeAppConfig(apps, 'mango-admin-cms-app', 'cms-missing')).toBeUndefined();
   });
+
+  it('fails closed when a shared appCode is routed without an instance identity', () => {
+    const apps = [runtimeApp('cms-a'), runtimeApp('cms-b')];
+
+    expect(resolveRuntimeAppConfig(apps, 'mango-admin-cms-app')).toBeUndefined();
+  });
+
+  it('keeps the legacy appCode fallback only when the match is unique', () => {
+    const apps = [runtimeApp('cms-a')];
+
+    expect(resolveRuntimeAppConfig(apps, 'mango-admin-cms-app')).toBe(apps[0]);
+  });
 });
 
 function microModule(entry: string) {

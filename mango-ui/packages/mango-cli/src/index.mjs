@@ -4419,8 +4419,8 @@ function ensureFrontendTypeImport(importsBlock) {
 function updateRuntimeConfigFiles(targetDir, variables) {
   const configFiles = [
     ['frontend/public/runtime-config.json', variables.runtimeModulesJson],
-    ['frontend/public/runtime-config.monolith.json', variables.runtimeModulesJson],
-    ['frontend/public/runtime-config.microservice.json', variables.runtimeModulesMicroserviceJson],
+    ['frontend/runtime-config.monolith.example.json', variables.runtimeModulesJson],
+    ['frontend/runtime-config.microservice.example.json', variables.runtimeModulesMicroserviceJson],
   ];
   for (const [relativePath, modulesJson] of configFiles) {
     const configPath = join(targetDir, relativePath);

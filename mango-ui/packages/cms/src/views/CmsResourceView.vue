@@ -700,6 +700,9 @@ async function loadRows() {
   try {
     ensureRequiredSiteQuery();
     const page = await props.config.page({ ...query }, { signal: request.signal });
+    if (pageRequest !== request || request.signal.aborted) {
+      return;
+    }
     rows.value = page.list || [];
     total.value = Number(page.total || 0);
   } catch (error) {
