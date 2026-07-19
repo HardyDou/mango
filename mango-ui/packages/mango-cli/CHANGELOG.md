@@ -1,5 +1,25 @@
 # @mango/cli Changelog
 
+## 1.0.84 - 2026-07-19
+
+### Changed
+
+- Lock the frontend matrix that routes real CMS admin requests through the host-provided instance `HttpClient`.
+- Carry stable Wujie route-slot `instanceId` values so one app can be mounted more than once without sharing request or destroy identity.
+- Lock `@mango/pmo@1.3.3` and the exact reverse-dependency patch batch.
+
+### Upgrade Notes
+
+- Upgrade the complete locked npm batch together; do not mix runtime 1.0.84 locks with the preceding local candidate.
+- Custom runtime configs may set `instanceId`; duplicate explicit values fail validation.
+- Existing `@mango/cms` consumers can keep using deprecated `cmsApi` temporarily, while new code uses `createCmsApi(httpClient)`.
+
+### Verification
+
+- CMS real Axios token/tenant isolation and AbortSignal tests.
+- App-runtime identity validation and Admin Shell exact-instance selection tests.
+- Fixed Node 22/pnpm 11 production-candidate container and sealed business consumer.
+
 ## 1.0.83 - 2026-07-19
 
 ### Changed

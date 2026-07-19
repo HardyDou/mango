@@ -251,7 +251,7 @@ Controller 使用 `BaseCrudController`，类级路径由 module 和 aggregate �
 
 ## 13. 补充资料
 
-- v2026.07.19 本地候选将业务 API 改为 `createXxxApi(HttpClient)`，host 使用 `@mango/http-client@1.0.0` 注入，页面传递取消信号且不再引用 Axios/全局 request；候选锁为 `@mango/pmo@1.3.2`、`@mango/cli@1.0.83` 和同批前端包。当前未发布，业务项目只能在本地 tarball/candidate 验证后试用。
+- v2026.07.19 本地候选将业务 API 改为 `createXxxApi(HttpClient)`，host 使用 `@mango/http-client@1.0.0` 注入，页面传递取消信号且不再引用 Axios/全局 request；真实 CMS 页面和 Wujie 多实例宿主链路已纳入验证，候选锁为 `@mango/pmo@1.3.3`、`@mango/cli@1.0.84` 和同批前端包。当前未发布，业务项目只能在本地 tarball/candidate 验证后试用。
 - v2026.07.18 将项目治理锁更新到 `@mango/pmo@1.3.1` 和 `@mango/cli@1.0.82`；Mango 发布只路由到项目内 `mango-release` Skill，并补齐发布说明预检、不可变制品恢复、CHANGELOG 回填和环境清理。Mango Maven、运行时前端包、菜单、权限、租户和业务逻辑不变。
 - v2026.07.18 CLI 热修将项目生成版本更新到 `@mango/cli@1.0.81`，为新项目补齐 pnpm 11 所需的前端 workspace 构建白名单；Mango Maven `1.0.22`、`@mango/pmo@1.3.0`、菜单、权限、租户和运行时业务逻辑不变。
 - v2026.07.18 将业务锁对齐到 `@mango/admin@1.0.49`、`@mango/cli@1.0.80`、`@mango/pmo@1.3.0` 和 Mango Maven `1.0.22`。Maven `1.0.22` 不兼容地以 `ResourceDeclarationApi` 替换 `ResourceRegistryApi`，业务代码需自行迁移，并使用 `mango-resource-sync-starter` 承接资源同步。

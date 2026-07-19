@@ -1,6 +1,6 @@
 {
   "name": "@mango/rbac",
-  "version": "1.0.16",
+  "version": "1.0.17",
   "private": false,
   "type": "module",
   "main": "./dist/index.js",
@@ -22,7 +22,7 @@
   ],
   "dependencies": {
     "@element-plus/icons-vue": "2.3.2",
-    "@mango/app-runtime": "workspace:1.0.5",
+    "@mango/app-runtime": "workspace:1.0.6",
     "@mango/common": "workspace:1.0.19",
     "@mango/api-schema": "workspace:1.0.3"
   },
