@@ -6,7 +6,7 @@
 
 - Lock the frontend matrix that routes real CMS admin requests through the host-provided instance `HttpClient`.
 - Carry stable Wujie route-slot `instanceId` values so one app can be mounted more than once without sharing request or destroy identity.
-- Lock `@mango/pmo@1.3.3` and the exact reverse-dependency patch batch.
+- Keep `@mango/pmo@1.3.2` and lock the exact reverse-dependency patch batch.
 
 ### Upgrade Notes
 
