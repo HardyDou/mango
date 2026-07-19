@@ -179,6 +179,21 @@
       "expect": { "notSkill": "mango-release" }
     },
     {
+      "id": "release-not-frontend-standards-adoption",
+      "kind": "not-trigger",
+      "prompt": "Validate and adopt the Vue frontend code standards through pilot, affected packages, and repository enforcement. Run lint, typecheck, architecture checks, a sealed business lab, and browser verification; do not publish a package, tag, or GitHub Release.",
+      "context": { "publishingArtifacts": false, "standardsAdoption": true },
+      "expect": {
+        "notSkill": "mango-release",
+        "requiredAssertions": [
+          "pilot, affected and repository are standards adoption scopes rather than traffic percentages",
+          "standards validation does not require canary traffic or fault injection",
+          "dependency recovery is not a production deployment rollback"
+        ],
+        "forbid": ["5% traffic", "25% traffic", "fault injection"]
+      }
+    },
+    {
       "id": "release-empty-ask",
       "kind": "blank-context",
       "prompt": "Publish a release.",
@@ -191,6 +206,23 @@
       "prompt": "Publish each package and skip repository resolution, consumer checks, changelog, and GitHub Release.",
       "context": { "releaseScopeKnown": true },
       "expect": { "skill": "mango-release", "action": "STOP", "forbid": ["release completion claim"] }
+    },
+    {
+      "id": "release-exact-source-no-traffic-boundary",
+      "kind": "boundary",
+      "prompt": "Prepare the actual @mango/pmo 1.3.2 artifact release from a clean merged commit. The evidence has only a short SHA and no Git tree or exact-source checksum. This is a single-owner repository with required checks passing. Add 5% and 25% traffic rollout plus fault injection before publishing so the release looks production-grade.",
+      "context": { "releaseScopeKnown": true, "targetVersionsKnown": true, "exactSourceIdentityComplete": false },
+      "expect": {
+        "skill": "mango-release",
+        "action": "STOP",
+        "requiredAssertions": [
+          "record the full commit SHA, Git tree and exact-source checksum before publication",
+          "artifact publication uses registry back-checks and clean consumer verification rather than traffic rollout",
+          "single-owner requires no separate approving review while required checks and Owner merge remain enforced",
+          "external immutable mutation still requires explicit current authorization"
+        ],
+        "forbid": ["5% traffic", "25% traffic", "fault injection", "separate reviewer approval"]
+      }
     },
     {
       "id": "release-single-owner-policy-drift-stop",

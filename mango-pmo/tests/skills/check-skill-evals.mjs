@@ -303,6 +303,19 @@ assert(
   'missing single-owner release policy drift eval',
 );
 assert(
+  cases.some(item => item.id === 'release-not-frontend-standards-adoption'
+    && item.expect.notSkill === 'mango-release'
+    && item.expect.requiredAssertions?.length >= 3),
+  'missing frontend standards adoption non-release eval',
+);
+assert(
+  cases.some(item => item.id === 'release-exact-source-no-traffic-boundary'
+    && item.expect.skill === 'mango-release'
+    && item.expect.action === 'STOP'
+    && item.expect.requiredAssertions?.length >= 4),
+  'missing exact-source and no-traffic artifact release boundary eval',
+);
+assert(
   cases.some(item => item.id === 'pr-review-single-owner-policy'
     && item.expect.action === 'USE_SINGLE_OWNER_POLICY'
     && item.expect.requiredAssertions?.length >= 3),
