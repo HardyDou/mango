@@ -3,6 +3,7 @@
   "releaseState": "frontend-standards-npm-2026.07.19",
   "tag": "v2026.07.19-frontend-standards-npm-release",
   "sourceCommit": "13166d9910836c59e9eb9a4b635828bd58a0a931",
+  "closeoutPullRequest": 596,
   "completedAt": "2026-07-19T14:20:55.597Z",
   "registryDisclosure": "Private npm hosted/group addresses and credentials are intentionally omitted from GitHub evidence.",
   "packages": {
