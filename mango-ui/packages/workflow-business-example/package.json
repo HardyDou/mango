@@ -1,6 +1,6 @@
 {
   "name": "@mango/workflow-business-example",
-  "version": "1.0.28",
+  "version": "1.0.30",
   "private": false,
   "type": "module",
   "main": "./dist/index.js",
@@ -26,8 +26,8 @@
     "package.json"
   ],
   "dependencies": {
-    "@mango/admin-pages": "1.0.22",
-    "@mango/workflow": "1.0.29"
+    "@mango/admin-pages": "workspace:1.0.24",
+    "@mango/workflow": "workspace:1.0.31"
   },
   "peerDependencies": {
     "element-plus": ">=2.14.1 <3",
@@ -44,5 +44,28 @@
   "publishConfig": {
     "registry": "http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/"
   },
-  "types": "./dist/index.d.ts"
+  "types": "./dist/index.d.ts",
+  "mangoArchitecture": {
+    "architectureLayer": "FE2",
+    "role": "domain",
+    "domain": "workflow",
+    "ownerRole": "Frontend Standards Owner",
+    "sourceExports": {
+      ".": {
+        "source": "./src/index.ts",
+        "kind": "code"
+      },
+      "./admin-pages": {
+        "source": "./src/admin-pages.ts",
+        "kind": "code"
+      }
+    },
+    "nonCodeExports": {
+      "./style.css": {
+        "source": "./src/index.ts",
+        "dist": "./dist/style.css",
+        "generation": "build"
+      }
+    }
+  }
 }

@@ -82,7 +82,8 @@ createMangoWujieVueApp({
     },
     "custom-order": {
       "mode": "micro",
-      "runtimeCode": "custom-order"
+      "runtimeCode": "custom-order",
+      "instanceId": "custom-order:primary"
     }
   }
 }
@@ -113,6 +114,7 @@ createMangoWujieVueApp({
 | 字段 | 含义 |
 |------|------|
 | `mode` | 模块模式，支持 `local`、`micro`。 |
+| `instanceId` | 路由槽位的稳定实例标识；同一 `runtimeCode` 被多个模块使用时默认按 `runtimeCode:moduleCode` 生成，显式重复会校验失败。 |
 | `entry` | 微前端入口地址。 |
 | `style` | 样式地址。 |
 | `runtimeCode` | 对应运行时应用编码。 |
@@ -145,6 +147,7 @@ createMangoWujieVueApp({
 | 字段 | 含义 |
 |------|------|
 | `token` | 当前登录 token。 |
+| `instanceId` | 当前挂载实例标识，用于 Wujie、请求和销毁隔离。 |
 | `tenantId` | 当前租户 ID。 |
 | `appCode` | 当前应用编码。 |
 | `apiBaseUrl` | API 基础地址。 |
@@ -153,6 +156,7 @@ createMangoWujieVueApp({
 | `permissions` | 当前权限码。 |
 | `theme` | 当前主题。 |
 | `request` | `get`、`post`、`put`、`delete` 请求能力。 |
+| `httpClient` | 当前实例的中立 `HttpClient`；业务 API 工厂应使用此字段，不读取全局 Axios。 |
 | `eventBus` | `unauthorized`、`theme-change`、`runtime-error` 事件总线。 |
 
 适配器：
@@ -187,7 +191,7 @@ createMangoWujieVueApp({
 2. 本地模块用 `registerLocalApp()` 或 `@mango/admin-pages` 注册本地页面。
 3. 微前端模块在 runtime config 中配置 `mode: "micro"` 和 `runtimeCode`。
 4. Vue 子应用用 `createMangoWujieVueApp()` 同时支持独立运行和 wujie 运行。
-5. 子应用通过 `mangoRuntime` 获取请求、主题、用户和权限。
+5. 子应用通过 `mangoRuntime` 获取实例级 `httpClient`、主题、用户和权限。
 
 ## 9. 问题排查
 

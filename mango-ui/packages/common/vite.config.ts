@@ -9,12 +9,14 @@ export default defineConfig({
     lib: {
       entry: 'index.ts',
       formats: ['es'],
+      cssFileName: 'style',
       fileName: () => 'index.js',
     },
     rollupOptions: {
       external: [
         '@element-plus/icons-vue',
         '@mango/api-schema',
+        '@mango/http-client',
         '@microsoft/fetch-event-source',
         '@vueuse/core',
         '@wangeditor/editor',

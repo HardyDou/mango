@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "packageName": "@mango/rbac",
+  "components": [],
+  "legacyComponentExports": [
+    {
+      "exportKey": ".",
+      "exportName": "AppView",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2H-N",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": ".",
+      "exportName": "MenuPackageView",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2H-N",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": ".",
+      "exportName": "MenuView",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2H-N",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": ".",
+      "exportName": "OrgView",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2H-N",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": ".",
+      "exportName": "PermissionView",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2H-N",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": ".",
+      "exportName": "PostView",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2H-N",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": ".",
+      "exportName": "RoleView",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2H-N",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": ".",
+      "exportName": "UserView",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2H-N",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    }
+  ]
+}

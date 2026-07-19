@@ -1,0 +1,50 @@
+{
+  "name": "@mango/http-client",
+  "version": "1.0.0",
+  "private": false,
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "package.json"
+  ],
+  "scripts": {
+    "build": "vite build && node ../../scripts/generate-package-types.mjs",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@mango/api-schema": "workspace:1.0.3",
+    "axios": "1.18.1"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3",
+    "vite": "7.3.6",
+    "vitest": "4.1.10"
+  },
+  "publishConfig": {
+    "registry": "http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/"
+  },
+  "mangoArchitecture": {
+    "architectureLayer": "FE1",
+    "role": "foundation",
+    "domain": "platform",
+    "ownerRole": "Frontend Standards Owner",
+    "sourceExports": {
+      ".": {
+        "source": "./src/index.ts",
+        "kind": "code"
+      }
+    },
+    "nonCodeExports": {}
+  }
+}

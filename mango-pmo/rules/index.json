@@ -159,6 +159,10 @@
       "path": "rules/frontend/06-monorepo-architecture.md",
       "reason": "前端 Monorepo 架构规范"
     },
+    "frontend.businessApi": {
+      "path": "rules/frontend/12-business-api.md",
+      "reason": "业务 API 包、实例级 HttpClient、AbortSignal 与页面请求生命周期规范"
+    },
     "product.businessRequirements": {
       "path": "rules/product/01-business-requirements.md",
       "reason": "业务需求说明书章节、边界与移交规范"
@@ -285,7 +289,7 @@
       "roles": ["tech-lead", "dev", "qa"],
       "paths": ["mango-ui/**", "frontend", "frontend/**", "apps/**", "packages/**"],
       "keywords": ["前端", "Vue", "TypeScript", "路由", "页面"],
-      "include": ["frontend.devFlow", "frontend.vue", "frontend.test"]
+      "include": ["frontend.devFlow", "frontend.vue", "frontend.test", "frontend.businessApi"]
     },
     "frontendUi": {
       "roles": ["tech-lead", "dev", "qa"],
@@ -297,7 +301,7 @@
       "roles": ["tech-lead", "dev", "qa"],
       "paths": ["mango-ui/packages/**", "frontend/packages/**", "packages/**"],
       "keywords": ["组件开发", "公共组件", "业务组件", "选择组件", "npm", "独立消费", "私有仓库", "公开仓库", "微前端", "单体", "组件发布", "官方模块", "admin full", "@mango/admin/full", "样式聚合", "CLI 模块", "模块样式"],
-      "include": ["frontend.componentDevelopment", "frontend.monorepo"]
+      "include": ["frontend.componentDevelopment", "frontend.monorepo", "frontend.businessApi"]
     },
     "frontendTest": {
       "roles": ["dev", "qa"],

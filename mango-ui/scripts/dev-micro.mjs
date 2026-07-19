@@ -13,6 +13,9 @@ const microAllowedOrigins = apps.map(([, url]) => new URL(url).origin).join(',')
 const workspaceEnv = readWorkspaceEnv();
 const backendPort = process.env.MANGO_BACKEND_PORT || workspaceEnv.MANGO_BACKEND_PORT || '18081';
 const adminProxyPath = process.env.VITE_ADMIN_PROXY_PATH || `http://127.0.0.1:${backendPort}`;
+const runtimeConfigFile =
+  process.env.VITE_MANGO_RUNTIME_CONFIG_FILE ||
+  new URL('../apps/mango-admin-shell/runtime-config.dev.json', import.meta.url).pathname;
 
 const children = apps.map(([name, url]) => {
   const child = spawn('pnpm', ['--filter', name, 'dev'], {
@@ -23,6 +26,7 @@ const children = apps.map(([name, url]) => {
       VITE_PORT: new URL(url).port,
       VITE_MANGO_DEPLOY_ENV: process.env.VITE_MANGO_DEPLOY_ENV || 'dev',
       VITE_MANGO_ALLOWED_REMOTE_ORIGINS: process.env.VITE_MANGO_ALLOWED_REMOTE_ORIGINS || microAllowedOrigins,
+      VITE_MANGO_RUNTIME_CONFIG_FILE: runtimeConfigFile,
       FORCE_COLOR: process.env.FORCE_COLOR || '1',
     },
     stdio: 'inherit',
@@ -40,6 +44,7 @@ for (const [name, url] of apps) {
   console.log(`- ${name}: ${url}`);
 }
 console.log(`\nProxy target: ${adminProxyPath}`);
+console.log(`Runtime config: ${runtimeConfigFile}`);
 console.log('\nRequired hosts: a.mango.io b.mango.io c.mango.io d.mango.io e.mango.io -> 127.0.0.1\n');
 
 function readWorkspaceEnv() {

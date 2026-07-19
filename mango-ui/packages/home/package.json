@@ -1,6 +1,6 @@
 {
   "name": "@mango/home",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "private": false,
   "type": "module",
   "main": "./dist/index.js",
@@ -20,8 +20,8 @@
     "README.md"
   ],
   "dependencies": {
-    "@mango/api-schema": "1.0.2",
-    "@mango/common": "1.0.18"
+    "@mango/api-schema": "workspace:1.0.3",
+    "@mango/common": "workspace:1.0.19"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^4.0.0",
@@ -31,5 +31,18 @@
   "publishConfig": {
     "registry": "http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/"
   },
-  "types": "./dist/index.d.ts"
+  "types": "./dist/index.d.ts",
+  "mangoArchitecture": {
+    "architectureLayer": "FE2",
+    "role": "domain",
+    "domain": "home",
+    "ownerRole": "Frontend Standards Owner",
+    "sourceExports": {
+      ".": {
+        "source": "./src/index.ts",
+        "kind": "code"
+      }
+    },
+    "nonCodeExports": {}
+  }
 }

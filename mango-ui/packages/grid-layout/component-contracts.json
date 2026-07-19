@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "packageName": "@mango/grid-layout",
+  "components": [],
+  "legacyComponentExports": [
+    {
+      "exportKey": ".",
+      "exportName": "MangoGridDesigner",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2G",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": ".",
+      "exportName": "MangoGridLayout",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2G",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 {
   "name": "@mango/admin-pages",
-  "version": "1.0.22",
+  "version": "1.0.24",
   "private": false,
   "type": "module",
   "main": "./dist/index.js",
@@ -44,10 +44,10 @@
     "package.json"
   ],
   "dependencies": {
-    "@mango/auth": "1.0.17",
-    "@mango/common": "1.0.18",
-    "@mango/rbac": "1.0.15",
-    "@mango/system": "1.0.21"
+    "@mango/auth": "workspace:1.0.18",
+    "@mango/common": "workspace:1.0.19",
+    "@mango/rbac": "workspace:1.0.17",
+    "@mango/system": "workspace:1.0.23"
   },
   "peerDependencies": {
     "vue": ">=3.5.13 <4"
@@ -59,5 +59,42 @@
   "publishConfig": {
     "registry": "http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/"
   },
-  "types": "./dist/index.d.ts"
+  "types": "./dist/index.d.ts",
+  "mangoArchitecture": {
+    "architectureLayer": "FE3",
+    "role": "composition",
+    "domain": "platform-admin",
+    "ownerRole": "Frontend Standards Owner",
+    "sourceExports": {
+      ".": {
+        "source": "./src/index.ts",
+        "kind": "code"
+      },
+      "./core": {
+        "source": "./src/core.ts",
+        "kind": "code"
+      },
+      "./defaults": {
+        "source": "./src/defaults.ts",
+        "kind": "code"
+      },
+      "./features": {
+        "source": "./src/features.ts",
+        "kind": "code"
+      },
+      "./notice": {
+        "source": "./src/notice.ts",
+        "kind": "code"
+      },
+      "./dev-pages": {
+        "source": "./src/dev-pages.ts",
+        "kind": "code"
+      },
+      "./dev-component-pages": {
+        "source": "./src/devComponentPages.ts",
+        "kind": "code"
+      }
+    },
+    "nonCodeExports": {}
+  }
 }

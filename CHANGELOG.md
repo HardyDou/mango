@@ -1,5 +1,62 @@
 # Mango Changelog
 
+## v2026.07.19-frontend-standards-npm-release - 2026-07-19
+
+Status: `PENDING_RELEASE`. Exact-source fixed-container, sealed Business Lab, clean tarball consumer, and current runtime/browser revalidation passed. This npm-only batch will publish the complete frontend standards matrix after its source PR is merged; Mango Maven remains unchanged at `1.0.22`.
+
+### Published Packages
+
+| Order | Target                        | Version                                      | Pre-release status |
+| ----- | ----------------------------- | -------------------------------------------- | ------------------ |
+| 1     | npm API schema                | `@mango/api-schema@1.0.3`                    | `PENDING`          |
+| 2     | npm Link OpenAPI              | `@mango/link-openapi@1.0.4`                  | `PENDING`          |
+| 3     | npm PMO bundle and Skills     | `@mango/pmo@1.3.2`                           | `PENDING`          |
+| 4     | npm application runtime       | `@mango/app-runtime@1.0.6`                   | `PENDING`          |
+| 5     | npm HTTP client Axios adapter | `@mango/http-client@1.0.0`                   | `PENDING`          |
+| 6     | npm Link page                 | `@mango/link-page@1.0.7`                     | `PENDING`          |
+| 7     | npm common                    | `@mango/common@1.0.19`                       | `PENDING`          |
+| 8     | npm auth                      | `@mango/auth@1.0.18`                         | `PENDING`          |
+| 9     | npm grid layout               | `@mango/grid-layout@1.0.10`                  | `PENDING`          |
+| 10    | npm home                      | `@mango/home@1.0.8`                          | `PENDING`          |
+| 11    | npm RBAC                      | `@mango/rbac@1.0.17`                         | `PENDING`          |
+| 12    | npm site shell                | `@mango/site-shell@1.0.6`                    | `PENDING`          |
+| 13    | npm grid widgets              | `@mango/grid-widgets@1.0.16`                 | `PENDING`          |
+| 14    | npm system                    | `@mango/system@1.0.23`                       | `PENDING`          |
+| 15    | npm admin pages               | `@mango/admin-pages@1.0.24`                  | `PENDING`          |
+| 16    | npm calendar                  | `@mango/calendar@1.0.25`                     | `PENDING`          |
+| 17    | npm file                      | `@mango/file@1.0.25`                         | `PENDING`          |
+| 18    | npm job                       | `@mango/job@1.0.17`                          | `PENDING`          |
+| 19    | npm link                      | `@mango/link@1.0.11`                         | `PENDING`          |
+| 20    | npm notice                    | `@mango/notice@1.0.27`                       | `PENDING`          |
+| 21    | npm numgen                    | `@mango/numgen@1.0.25`                       | `PENDING`          |
+| 22    | npm CMS                       | `@mango/cms@1.0.14`                          | `PENDING`          |
+| 23    | npm payment                   | `@mango/payment@1.0.17`                      | `PENDING`          |
+| 24    | npm template                  | `@mango/template@1.0.25`                     | `PENDING`          |
+| 25    | npm workflow                  | `@mango/workflow@1.0.31`                     | `PENDING`          |
+| 26    | npm admin shell               | `@mango/admin-shell@1.0.46`                  | `PENDING`          |
+| 27    | npm workflow business example | `@mango/workflow-business-example@1.0.30`    | `PENDING`          |
+| 28    | npm admin aggregate           | `@mango/admin@1.0.51`                        | `PENDING`          |
+| 29    | npm CLI                       | `@mango/cli@1.0.84`                          | `PENDING`          |
+| 30    | GitHub Release                | `v2026.07.19-frontend-standards-npm-release` | `PENDING`          |
+
+### Upgrade Notes
+
+1. Upgrade the complete npm matrix together; do not mix this release with older fixed Mango package versions.
+2. New business APIs belong in `frontend/packages/<module>-api` and accept the vendor-neutral `HttpClient`. The host creates and provides one `@mango/http-client` instance per runtime context before mount; page registration remains client-free. Vue pages do not import Axios, create transports, or own base URLs.
+3. Mango CMS pages now consume that injected client in both Shell local and Wujie modes. Custom runtime configs may set a stable `instanceId`; duplicate explicit identities fail validation. The historical `cmsApi` export remains deprecated compatibility only.
+4. Business package CSS remains in its package style entry; page-private styles stay scoped in the page. Hosts import package style exports explicitly.
+5. Existing `@mango/pmo@1.3.2` remains the governance baseline; publish the affected runtime packages before `@mango/cli@1.0.84`, which carries their exact locks.
+6. Standards adoption uses `pilot`, `affected`, and `repository` stages. `mango-ui/frontend-standards-adoption.json` keeps the exact stable package matrix; the new HTTP client is removed when restoring a pre-client dependency batch.
+7. The repository-local `mango-release` Skill now triggers only for actual immutable artifact/tag/GitHub Release work. Frontend standards adoption, static quality governance, and application traffic rollout remain separate; single-owner governance does not add a separate approving-review ceremony.
+8. Playwright business specs use semantic locators through a centralized Element Plus adapter. Direct `.el-*`, positional `nth()`, fixed `waitForTimeout()`, and `force: true` usage is blocked; static-debt baselines cannot be raised by later commits on the task branch.
+
+### Verification
+
+- Vendor-neutral HTTP contracts, Axios adapter lifecycle/refresh/retry/abort behavior, generated business API factories, CLI module generation, release-version impact, and standards adoption coverage are machine checked.
+- `frontend-standards-adoption.json` binds every one of the 29 release npm packages to its exact `origin/main` dependency recovery target; it does not represent a production traffic rollout.
+- The release manifest will bind the merged source commit, tag, exact commands, timestamps and private-registry verification results before this record is closed.
+- Full fixed-toolchain, sealed Business Lab, clean tarball consumer, browser/runtime, and final quality results are recorded in `mango-docs/evidence/2026-07-19-frontend-production-candidate-evidence.md`; unavailable external Nexus/production facts remain explicitly pending.
+
 ## v2026.07.18-pmo-1.3.1-cli-1.0.82-release-governance - 2026-07-18
 
 ### Changed
@@ -16,11 +73,11 @@
 
 ### Published Packages
 
-| Order | Target | Version / destination | Release status |
-|---|---|---|---|
-| 1 | npm PMO bundle and Skills | `@mango/pmo@1.3.1` -> Nexus npm hosted | `PUBLISHED_AND_VERIFIED` |
-| 2 | npm CLI | `@mango/cli@1.0.82` -> Nexus npm hosted | `PUBLISHED_AND_VERIFIED` |
-| 3 | GitHub Release | `v2026.07.18-pmo-1.3.1-cli-1.0.82-release-governance` | `CREATED_AND_VERIFIED` |
+| Order | Target                    | Version / destination                                 | Release status           |
+| ----- | ------------------------- | ----------------------------------------------------- | ------------------------ |
+| 1     | npm PMO bundle and Skills | `@mango/pmo@1.3.1` -> Nexus npm hosted                | `PUBLISHED_AND_VERIFIED` |
+| 2     | npm CLI                   | `@mango/cli@1.0.82` -> Nexus npm hosted               | `PUBLISHED_AND_VERIFIED` |
+| 3     | GitHub Release            | `v2026.07.18-pmo-1.3.1-cli-1.0.82-release-governance` | `CREATED_AND_VERIFIED`   |
 
 ### Verification
 
@@ -43,10 +100,10 @@
 
 ### Published Packages
 
-| Order | Target | Version / destination | Release status |
-|---|---|---|---|
-| 1 | npm CLI | `@mango/cli@1.0.81` -> Nexus npm hosted | `PUBLISHED_AND_VERIFIED` |
-| 2 | GitHub Release | `v2026.07.18-cli-1.0.81-pnpm11-generated-install-hotfix` | `CREATED_AND_VERIFIED` |
+| Order | Target         | Version / destination                                    | Release status           |
+| ----- | -------------- | -------------------------------------------------------- | ------------------------ |
+| 1     | npm CLI        | `@mango/cli@1.0.81` -> Nexus npm hosted                  | `PUBLISHED_AND_VERIFIED` |
+| 2     | GitHub Release | `v2026.07.18-cli-1.0.81-pnpm11-generated-install-hotfix` | `CREATED_AND_VERIFIED`   |
 
 ### Verification
 
@@ -89,36 +146,36 @@
 
 ### Published Packages
 
-| Order | Target | Version / destination | Release status |
-|---|---|---|---|
-| 1 | Maven non-app backend and docs bundle | `io.mango:*:1.0.22` -> Nexus Maven hosted | `PUBLISHED_AND_VERIFIED` |
-| 2 | npm common | `@mango/common@1.0.18` -> Nexus npm hosted | `PUBLISHED_AND_VERIFIED` |
-| 3 | npm grid layout | `@mango/grid-layout@1.0.9` -> Nexus npm hosted | `PUBLISHED_AND_VERIFIED` |
-| 4 | npm grid widgets | `@mango/grid-widgets@1.0.15` -> Nexus npm hosted | `PUBLISHED_AND_VERIFIED` |
-| 5 | npm home | `@mango/home@1.0.7` -> Nexus npm hosted | `PUBLISHED_AND_VERIFIED` |
-| 6 | npm link OpenAPI | `@mango/link-openapi@1.0.3` -> Nexus npm hosted | `PUBLISHED_AND_VERIFIED` |
-| 7 | npm link page | `@mango/link-page@1.0.6` -> Nexus npm hosted | `PUBLISHED_AND_VERIFIED` |
-| 8 | npm PMO bundle | `@mango/pmo@1.3.0` -> Nexus npm hosted | `PUBLISHED_AND_VERIFIED` |
-| 9 | npm RBAC | `@mango/rbac@1.0.15` -> Nexus npm hosted | `PUBLISHED_AND_VERIFIED` |
-| 10 | npm site shell | `@mango/site-shell@1.0.5` -> Nexus npm hosted | `PUBLISHED_AND_VERIFIED` |
-| 11 | npm system | `@mango/system@1.0.21` -> Nexus npm hosted | `PUBLISHED_AND_VERIFIED` |
-| 12 | npm auth | `@mango/auth@1.0.17` -> Nexus npm hosted | `PUBLISHED_AND_VERIFIED` |
-| 13 | npm admin pages | `@mango/admin-pages@1.0.22` -> Nexus npm hosted | `PUBLISHED_AND_VERIFIED` |
-| 14 | npm calendar | `@mango/calendar@1.0.23` -> Nexus npm hosted | `PUBLISHED_AND_VERIFIED` |
-| 15 | npm file | `@mango/file@1.0.23` -> Nexus npm hosted | `PUBLISHED_AND_VERIFIED` |
-| 16 | npm job | `@mango/job@1.0.15` -> Nexus npm hosted | `PUBLISHED_AND_VERIFIED` |
-| 17 | npm link | `@mango/link@1.0.9` -> Nexus npm hosted | `PUBLISHED_AND_VERIFIED` |
-| 18 | npm notice | `@mango/notice@1.0.25` -> Nexus npm hosted | `PUBLISHED_AND_VERIFIED` |
-| 19 | npm numgen | `@mango/numgen@1.0.23` -> Nexus npm hosted | `PUBLISHED_AND_VERIFIED` |
-| 20 | npm payment | `@mango/payment@1.0.15` -> Nexus npm hosted | `PUBLISHED_AND_VERIFIED` |
-| 21 | npm template | `@mango/template@1.0.23` -> Nexus npm hosted | `PUBLISHED_AND_VERIFIED` |
-| 22 | npm workflow | `@mango/workflow@1.0.29` -> Nexus npm hosted | `PUBLISHED_AND_VERIFIED` |
-| 23 | npm workflow example | `@mango/workflow-business-example@1.0.28` -> Nexus npm hosted | `PUBLISHED_AND_VERIFIED` |
-| 24 | npm admin shell | `@mango/admin-shell@1.0.44` -> Nexus npm hosted | `PUBLISHED_AND_VERIFIED` |
-| 25 | npm CMS | `@mango/cms@1.0.12` -> Nexus npm hosted | `PUBLISHED_AND_VERIFIED` |
-| 26 | npm admin aggregate | `@mango/admin@1.0.49` -> Nexus npm hosted | `PUBLISHED_AND_VERIFIED` |
-| 27 | npm CLI | `@mango/cli@1.0.80` -> Nexus npm hosted | `PUBLISHED_AND_VERIFIED` |
-| 28 | GitHub Release | `v2026.07.18-maven-1.0.22-pmo-1.3.0-cli-1.0.80-regression-release` | `CREATED_AND_VERIFIED` |
+| Order | Target                                | Version / destination                                              | Release status           |
+| ----- | ------------------------------------- | ------------------------------------------------------------------ | ------------------------ |
+| 1     | Maven non-app backend and docs bundle | `io.mango:*:1.0.22` -> Nexus Maven hosted                          | `PUBLISHED_AND_VERIFIED` |
+| 2     | npm common                            | `@mango/common@1.0.18` -> Nexus npm hosted                         | `PUBLISHED_AND_VERIFIED` |
+| 3     | npm grid layout                       | `@mango/grid-layout@1.0.9` -> Nexus npm hosted                     | `PUBLISHED_AND_VERIFIED` |
+| 4     | npm grid widgets                      | `@mango/grid-widgets@1.0.15` -> Nexus npm hosted                   | `PUBLISHED_AND_VERIFIED` |
+| 5     | npm home                              | `@mango/home@1.0.7` -> Nexus npm hosted                            | `PUBLISHED_AND_VERIFIED` |
+| 6     | npm link OpenAPI                      | `@mango/link-openapi@1.0.3` -> Nexus npm hosted                    | `PUBLISHED_AND_VERIFIED` |
+| 7     | npm link page                         | `@mango/link-page@1.0.6` -> Nexus npm hosted                       | `PUBLISHED_AND_VERIFIED` |
+| 8     | npm PMO bundle                        | `@mango/pmo@1.3.0` -> Nexus npm hosted                             | `PUBLISHED_AND_VERIFIED` |
+| 9     | npm RBAC                              | `@mango/rbac@1.0.15` -> Nexus npm hosted                           | `PUBLISHED_AND_VERIFIED` |
+| 10    | npm site shell                        | `@mango/site-shell@1.0.5` -> Nexus npm hosted                      | `PUBLISHED_AND_VERIFIED` |
+| 11    | npm system                            | `@mango/system@1.0.21` -> Nexus npm hosted                         | `PUBLISHED_AND_VERIFIED` |
+| 12    | npm auth                              | `@mango/auth@1.0.17` -> Nexus npm hosted                           | `PUBLISHED_AND_VERIFIED` |
+| 13    | npm admin pages                       | `@mango/admin-pages@1.0.22` -> Nexus npm hosted                    | `PUBLISHED_AND_VERIFIED` |
+| 14    | npm calendar                          | `@mango/calendar@1.0.23` -> Nexus npm hosted                       | `PUBLISHED_AND_VERIFIED` |
+| 15    | npm file                              | `@mango/file@1.0.23` -> Nexus npm hosted                           | `PUBLISHED_AND_VERIFIED` |
+| 16    | npm job                               | `@mango/job@1.0.15` -> Nexus npm hosted                            | `PUBLISHED_AND_VERIFIED` |
+| 17    | npm link                              | `@mango/link@1.0.9` -> Nexus npm hosted                            | `PUBLISHED_AND_VERIFIED` |
+| 18    | npm notice                            | `@mango/notice@1.0.25` -> Nexus npm hosted                         | `PUBLISHED_AND_VERIFIED` |
+| 19    | npm numgen                            | `@mango/numgen@1.0.23` -> Nexus npm hosted                         | `PUBLISHED_AND_VERIFIED` |
+| 20    | npm payment                           | `@mango/payment@1.0.15` -> Nexus npm hosted                        | `PUBLISHED_AND_VERIFIED` |
+| 21    | npm template                          | `@mango/template@1.0.23` -> Nexus npm hosted                       | `PUBLISHED_AND_VERIFIED` |
+| 22    | npm workflow                          | `@mango/workflow@1.0.29` -> Nexus npm hosted                       | `PUBLISHED_AND_VERIFIED` |
+| 23    | npm workflow example                  | `@mango/workflow-business-example@1.0.28` -> Nexus npm hosted      | `PUBLISHED_AND_VERIFIED` |
+| 24    | npm admin shell                       | `@mango/admin-shell@1.0.44` -> Nexus npm hosted                    | `PUBLISHED_AND_VERIFIED` |
+| 25    | npm CMS                               | `@mango/cms@1.0.12` -> Nexus npm hosted                            | `PUBLISHED_AND_VERIFIED` |
+| 26    | npm admin aggregate                   | `@mango/admin@1.0.49` -> Nexus npm hosted                          | `PUBLISHED_AND_VERIFIED` |
+| 27    | npm CLI                               | `@mango/cli@1.0.80` -> Nexus npm hosted                            | `PUBLISHED_AND_VERIFIED` |
+| 28    | GitHub Release                        | `v2026.07.18-maven-1.0.22-pmo-1.3.0-cli-1.0.80-regression-release` | `CREATED_AND_VERIFIED`   |
 
 ### Verification
 
@@ -149,33 +206,33 @@
 
 ### Published Packages
 
-| Order | Target | Version / destination | Pre-release status |
-|---|---|---|---|
-| 1 | npm common | `@mango/common@1.0.17` -> Nexus npm hosted | `PENDING` |
-| 2 | npm app runtime | `@mango/app-runtime@1.0.4` -> Nexus npm hosted | `PENDING` |
-| 3 | npm admin pages | `@mango/admin-pages@1.0.21` -> Nexus npm hosted | `PENDING` |
-| 4 | npm auth | `@mango/auth@1.0.16` -> Nexus npm hosted | `PENDING` |
-| 5 | npm grid layout | `@mango/grid-layout@1.0.8` -> Nexus npm hosted | `PENDING` |
-| 6 | npm grid widgets | `@mango/grid-widgets@1.0.14` -> Nexus npm hosted | `PENDING` |
-| 7 | npm home | `@mango/home@1.0.6` -> Nexus npm hosted | `PENDING` |
-| 8 | npm rbac | `@mango/rbac@1.0.14` -> Nexus npm hosted | `PENDING` |
-| 9 | npm system | `@mango/system@1.0.20` -> Nexus npm hosted | `PENDING` |
-| 10 | npm file | `@mango/file@1.0.22` -> Nexus npm hosted | `PENDING` |
-| 11 | npm job | `@mango/job@1.0.14` -> Nexus npm hosted | `PENDING` |
-| 12 | npm link | `@mango/link@1.0.8` -> Nexus npm hosted | `PENDING` |
-| 13 | npm cms | `@mango/cms@1.0.11` -> Nexus npm hosted | `PENDING` |
-| 14 | npm calendar | `@mango/calendar@1.0.22` -> Nexus npm hosted | `PENDING` |
-| 15 | npm notice | `@mango/notice@1.0.24` -> Nexus npm hosted | `PENDING` |
-| 16 | npm numgen | `@mango/numgen@1.0.22` -> Nexus npm hosted | `PENDING` |
-| 17 | npm payment | `@mango/payment@1.0.14` -> Nexus npm hosted | `PENDING` |
-| 18 | npm template | `@mango/template@1.0.22` -> Nexus npm hosted | `PENDING` |
-| 19 | npm workflow | `@mango/workflow@1.0.28` -> Nexus npm hosted | `PENDING` |
-| 20 | npm workflow example | `@mango/workflow-business-example@1.0.27` -> Nexus npm hosted | `PENDING` |
-| 21 | npm site shell | `@mango/site-shell@1.0.4` -> Nexus npm hosted | `PENDING` |
-| 22 | npm admin shell | `@mango/admin-shell@1.0.43` -> Nexus npm hosted | `PENDING` |
-| 23 | npm admin aggregate | `@mango/admin@1.0.48` -> Nexus npm hosted | `PENDING` |
-| 24 | npm CLI | `@mango/cli@1.0.79` -> Nexus npm hosted | `PENDING` |
-| 25 | GitHub Release | `v2026.07.16-theme-search-file-npm-release` | `PENDING` |
+| Order | Target               | Version / destination                                         | Pre-release status |
+| ----- | -------------------- | ------------------------------------------------------------- | ------------------ |
+| 1     | npm common           | `@mango/common@1.0.17` -> Nexus npm hosted                    | `PENDING`          |
+| 2     | npm app runtime      | `@mango/app-runtime@1.0.4` -> Nexus npm hosted                | `PENDING`          |
+| 3     | npm admin pages      | `@mango/admin-pages@1.0.21` -> Nexus npm hosted               | `PENDING`          |
+| 4     | npm auth             | `@mango/auth@1.0.16` -> Nexus npm hosted                      | `PENDING`          |
+| 5     | npm grid layout      | `@mango/grid-layout@1.0.8` -> Nexus npm hosted                | `PENDING`          |
+| 6     | npm grid widgets     | `@mango/grid-widgets@1.0.14` -> Nexus npm hosted              | `PENDING`          |
+| 7     | npm home             | `@mango/home@1.0.6` -> Nexus npm hosted                       | `PENDING`          |
+| 8     | npm rbac             | `@mango/rbac@1.0.14` -> Nexus npm hosted                      | `PENDING`          |
+| 9     | npm system           | `@mango/system@1.0.20` -> Nexus npm hosted                    | `PENDING`          |
+| 10    | npm file             | `@mango/file@1.0.22` -> Nexus npm hosted                      | `PENDING`          |
+| 11    | npm job              | `@mango/job@1.0.14` -> Nexus npm hosted                       | `PENDING`          |
+| 12    | npm link             | `@mango/link@1.0.8` -> Nexus npm hosted                       | `PENDING`          |
+| 13    | npm cms              | `@mango/cms@1.0.11` -> Nexus npm hosted                       | `PENDING`          |
+| 14    | npm calendar         | `@mango/calendar@1.0.22` -> Nexus npm hosted                  | `PENDING`          |
+| 15    | npm notice           | `@mango/notice@1.0.24` -> Nexus npm hosted                    | `PENDING`          |
+| 16    | npm numgen           | `@mango/numgen@1.0.22` -> Nexus npm hosted                    | `PENDING`          |
+| 17    | npm payment          | `@mango/payment@1.0.14` -> Nexus npm hosted                   | `PENDING`          |
+| 18    | npm template         | `@mango/template@1.0.22` -> Nexus npm hosted                  | `PENDING`          |
+| 19    | npm workflow         | `@mango/workflow@1.0.28` -> Nexus npm hosted                  | `PENDING`          |
+| 20    | npm workflow example | `@mango/workflow-business-example@1.0.27` -> Nexus npm hosted | `PENDING`          |
+| 21    | npm site shell       | `@mango/site-shell@1.0.4` -> Nexus npm hosted                 | `PENDING`          |
+| 22    | npm admin shell      | `@mango/admin-shell@1.0.43` -> Nexus npm hosted               | `PENDING`          |
+| 23    | npm admin aggregate  | `@mango/admin@1.0.48` -> Nexus npm hosted                     | `PENDING`          |
+| 24    | npm CLI              | `@mango/cli@1.0.79` -> Nexus npm hosted                       | `PENDING`          |
+| 25    | GitHub Release       | `v2026.07.16-theme-search-file-npm-release`                   | `PENDING`          |
 
 ### Verification
 
@@ -211,16 +268,16 @@
 
 ### Published Packages
 
-| Order | Target | Version / destination | Pre-release status |
-|---|---|---|---|
-| 1 | Maven non-app backend and docs bundle | `io.mango:*:1.0.21` -> Nexus Maven hosted | `PENDING` |
-| 2 | npm PMO bundle | `@mango/pmo@1.2.6` -> Nexus npm hosted | `PENDING` |
-| 3 | npm Notice | `@mango/notice@1.0.23` -> Nexus npm hosted | `PENDING` |
-| 4 | npm Payment | `@mango/payment@1.0.13` -> Nexus npm hosted | `PENDING` |
-| 5 | npm Admin Shell | `@mango/admin-shell@1.0.41` -> Nexus npm hosted | `PENDING` |
-| 6 | npm Admin | `@mango/admin@1.0.46` -> Nexus npm hosted | `PENDING` |
-| 7 | npm CLI | `@mango/cli@1.0.78` -> Nexus npm hosted | `PENDING` |
-| 8 | GitHub Release | `v2026.07.14-maven-1.0.21-platform-debt-release` | `PENDING` |
+| Order | Target                                | Version / destination                            | Pre-release status |
+| ----- | ------------------------------------- | ------------------------------------------------ | ------------------ |
+| 1     | Maven non-app backend and docs bundle | `io.mango:*:1.0.21` -> Nexus Maven hosted        | `PENDING`          |
+| 2     | npm PMO bundle                        | `@mango/pmo@1.2.6` -> Nexus npm hosted           | `PENDING`          |
+| 3     | npm Notice                            | `@mango/notice@1.0.23` -> Nexus npm hosted       | `PENDING`          |
+| 4     | npm Payment                           | `@mango/payment@1.0.13` -> Nexus npm hosted      | `PENDING`          |
+| 5     | npm Admin Shell                       | `@mango/admin-shell@1.0.41` -> Nexus npm hosted  | `PENDING`          |
+| 6     | npm Admin                             | `@mango/admin@1.0.46` -> Nexus npm hosted        | `PENDING`          |
+| 7     | npm CLI                               | `@mango/cli@1.0.78` -> Nexus npm hosted          | `PENDING`          |
+| 8     | GitHub Release                        | `v2026.07.14-maven-1.0.21-platform-debt-release` | `PENDING`          |
 
 ### Verification
 
@@ -280,11 +337,11 @@
 
 ### Published Packages
 
-| Order | Target | Version / destination | Status |
-|---|---|---|---|
-| 1 | npm link page package | `@mango/link-page@1.0.5` -> Nexus npm hosted | `PUBLISHED_AND_VERIFIED` |
-| 2 | npm CLI package | `@mango/cli@1.0.76` -> Nexus npm hosted | `PUBLISHED_AND_VERIFIED` |
-| 3 | GitHub Release | `v2026.07.14-link-page-1.0.5-cli-1.0.76-release` | `PUBLISHED` |
+| Order | Target                | Version / destination                            | Status                   |
+| ----- | --------------------- | ------------------------------------------------ | ------------------------ |
+| 1     | npm link page package | `@mango/link-page@1.0.5` -> Nexus npm hosted     | `PUBLISHED_AND_VERIFIED` |
+| 2     | npm CLI package       | `@mango/cli@1.0.76` -> Nexus npm hosted          | `PUBLISHED_AND_VERIFIED` |
+| 3     | GitHub Release        | `v2026.07.14-link-page-1.0.5-cli-1.0.76-release` | `PUBLISHED`              |
 
 ### Verification
 
@@ -314,12 +371,12 @@
 
 ### Published Packages
 
-| Order | Target | Version / destination | Pre-release status |
-|---|---|---|---|
-| 1 | Maven non-app backend and docs bundle | `io.mango:*:1.0.19` -> Nexus Maven hosted | `PENDING` |
-| 2 | npm PMO bundle | `@mango/pmo@1.2.5` -> Nexus npm hosted | `PENDING` |
-| 3 | npm CLI | `@mango/cli@1.0.75` -> Nexus npm hosted | `PENDING` |
-| 4 | GitHub Release | `v2026.07.14-maven-1.0.19-pmo-1.2.5-cli-1.0.75-gate-baseline-release` | `PENDING` |
+| Order | Target                                | Version / destination                                                 | Pre-release status |
+| ----- | ------------------------------------- | --------------------------------------------------------------------- | ------------------ |
+| 1     | Maven non-app backend and docs bundle | `io.mango:*:1.0.19` -> Nexus Maven hosted                             | `PENDING`          |
+| 2     | npm PMO bundle                        | `@mango/pmo@1.2.5` -> Nexus npm hosted                                | `PENDING`          |
+| 3     | npm CLI                               | `@mango/cli@1.0.75` -> Nexus npm hosted                               | `PENDING`          |
+| 4     | GitHub Release                        | `v2026.07.14-maven-1.0.19-pmo-1.2.5-cli-1.0.75-gate-baseline-release` | `PENDING`          |
 
 ### Verification
 
@@ -347,11 +404,11 @@
 
 ### Published Packages
 
-| Order | Target | Version / destination | Pre-release status |
-|---|---|---|---|
-| 1 | npm PMO bundle | `@mango/pmo@1.2.4` -> Nexus npm hosted | `PUBLISHED_AND_VERIFIED` |
-| 2 | npm CLI | `@mango/cli@1.0.74` -> Nexus npm hosted | `PUBLISHED_AND_VERIFIED` |
-| 3 | GitHub Release | `v2026.07.14-pmo-1.2.4-cli-1.0.74-ci-fast-gates-release` | `PUBLISHED` |
+| Order | Target         | Version / destination                                    | Pre-release status       |
+| ----- | -------------- | -------------------------------------------------------- | ------------------------ |
+| 1     | npm PMO bundle | `@mango/pmo@1.2.4` -> Nexus npm hosted                   | `PUBLISHED_AND_VERIFIED` |
+| 2     | npm CLI        | `@mango/cli@1.0.74` -> Nexus npm hosted                  | `PUBLISHED_AND_VERIFIED` |
+| 3     | GitHub Release | `v2026.07.14-pmo-1.2.4-cli-1.0.74-ci-fast-gates-release` | `PUBLISHED`              |
 
 ### Verification
 
@@ -380,12 +437,12 @@
 
 ### Published Packages
 
-| Order | Target | Version / destination | Pre-release status |
-|---|---|---|---|
-| 1 | Maven non-app backend and docs bundle | `io.mango:*:1.0.18` -> Nexus Maven hosted | `PUBLISHED_AND_VERIFIED` |
-| 2 | npm PMO bundle | `@mango/pmo@1.2.3` -> Nexus npm hosted | `PUBLISHED_AND_VERIFIED` |
-| 3 | npm CLI | `@mango/cli@1.0.73` -> Nexus npm hosted | `PUBLISHED_AND_VERIFIED` |
-| 4 | GitHub Release | `v2026.07.14-maven-1.0.18-pmo-1.2.3-cli-1.0.73-release` | `PUBLISHED` |
+| Order | Target                                | Version / destination                                   | Pre-release status       |
+| ----- | ------------------------------------- | ------------------------------------------------------- | ------------------------ |
+| 1     | Maven non-app backend and docs bundle | `io.mango:*:1.0.18` -> Nexus Maven hosted               | `PUBLISHED_AND_VERIFIED` |
+| 2     | npm PMO bundle                        | `@mango/pmo@1.2.3` -> Nexus npm hosted                  | `PUBLISHED_AND_VERIFIED` |
+| 3     | npm CLI                               | `@mango/cli@1.0.73` -> Nexus npm hosted                 | `PUBLISHED_AND_VERIFIED` |
+| 4     | GitHub Release                        | `v2026.07.14-maven-1.0.18-pmo-1.2.3-cli-1.0.73-release` | `PUBLISHED`              |
 
 ### Verification
 
@@ -415,11 +472,11 @@
 
 ### Published Packages
 
-| Order | Target | Version / destination | Status |
-|---|---|---|---|
-| 1 | npm PMO bundle | `@mango/pmo@1.2.2` -> `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/` | `PUBLISHED_AND_VERIFIED` |
-| 2 | npm CLI | `@mango/cli@1.0.72` -> `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/` | `PUBLISHED_AND_VERIFIED` |
-| 3 | GitHub Release | `v2026.07.14-pmo-1.2.2-cli-1.0.72-release` | `PUBLISHED` |
+| Order | Target         | Version / destination                                                                | Status                   |
+| ----- | -------------- | ------------------------------------------------------------------------------------ | ------------------------ |
+| 1     | npm PMO bundle | `@mango/pmo@1.2.2` -> `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`  | `PUBLISHED_AND_VERIFIED` |
+| 2     | npm CLI        | `@mango/cli@1.0.72` -> `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/` | `PUBLISHED_AND_VERIFIED` |
+| 3     | GitHub Release | `v2026.07.14-pmo-1.2.2-cli-1.0.72-release`                                           | `PUBLISHED`              |
 
 ### Verification
 
@@ -451,11 +508,11 @@
 
 ### Published Packages
 
-| Order | Target | Version / destination | Status |
-|---|---|---|---|
-| 1 | npm PMO bundle | `@mango/pmo@1.2.1` -> `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/` | `PUBLISHED_AND_VERIFIED` |
-| 2 | npm CLI | `@mango/cli@1.0.71` -> `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/` | `PUBLISHED_AND_VERIFIED` |
-| 3 | GitHub Release | `v2026.07.14-pmo-1.2.1-cli-1.0.71-release` | `PUBLISHED` |
+| Order | Target         | Version / destination                                                                | Status                   |
+| ----- | -------------- | ------------------------------------------------------------------------------------ | ------------------------ |
+| 1     | npm PMO bundle | `@mango/pmo@1.2.1` -> `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`  | `PUBLISHED_AND_VERIFIED` |
+| 2     | npm CLI        | `@mango/cli@1.0.71` -> `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/` | `PUBLISHED_AND_VERIFIED` |
+| 3     | GitHub Release | `v2026.07.14-pmo-1.2.1-cli-1.0.71-release`                                           | `PUBLISHED`              |
 
 ### Verification
 
@@ -494,12 +551,12 @@
 
 The release state machine completed the following target batch. Its 2026-07-13 verifier checked content hashes and sizes but omitted file modes; Issue #464 later invalidated the PMO/CLI upgrade pair, which is superseded by `@mango/pmo@1.2.1` / `@mango/cli@1.0.71`.
 
-| Order | Target | Version / destination | Status |
-|---|---|---|---|
-| 1 | Maven non-app backend batch | `io.mango:*:1.0.17` -> Nexus Maven hosted | `PUBLISHED_AND_VERIFIED` |
-| 2 | npm PMO bundle | `@mango/pmo@1.2.0` -> `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/` | `PUBLISHED; SUPERSEDED_BY_1.2.1` |
-| 3 | npm CLI | `@mango/cli@1.0.70` -> `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/` | `PUBLISHED; SUPERSEDED_BY_1.0.71` |
-| 4 | GitHub Release | `v2026.07.13-maven-1.0.17-pmo-1.2.0-cli-1.0.70-release` | `PUBLISHED` |
+| Order | Target                      | Version / destination                                                                | Status                            |
+| ----- | --------------------------- | ------------------------------------------------------------------------------------ | --------------------------------- |
+| 1     | Maven non-app backend batch | `io.mango:*:1.0.17` -> Nexus Maven hosted                                            | `PUBLISHED_AND_VERIFIED`          |
+| 2     | npm PMO bundle              | `@mango/pmo@1.2.0` -> `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`  | `PUBLISHED; SUPERSEDED_BY_1.2.1`  |
+| 3     | npm CLI                     | `@mango/cli@1.0.70` -> `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/` | `PUBLISHED; SUPERSEDED_BY_1.0.71` |
+| 4     | GitHub Release              | `v2026.07.13-maven-1.0.17-pmo-1.2.0-cli-1.0.70-release`                              | `PUBLISHED`                       |
 
 ### Verification
 
@@ -538,11 +595,11 @@ The release state machine completed the following target batch. Its 2026-07-13 v
 
 The following repair batch was published once and re-resolved through the consume repository by the completed release manifest.
 
-| Order | Target | Version / destination | Status |
-|---|---|---|---|
-| 1 | npm PMO bundle | `@mango/pmo@1.1.1` -> `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/` | `PUBLISHED` |
-| 2 | npm CLI | `@mango/cli@1.0.69` -> `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/` | `PUBLISHED` |
-| 3 | GitHub Release | `v2026.07.13-pmo-1.1.1-cli-1.0.69-release` | `PUBLISHED` |
+| Order | Target         | Version / destination                                                                | Status      |
+| ----- | -------------- | ------------------------------------------------------------------------------------ | ----------- |
+| 1     | npm PMO bundle | `@mango/pmo@1.1.1` -> `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`  | `PUBLISHED` |
+| 2     | npm CLI        | `@mango/cli@1.0.69` -> `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/` | `PUBLISHED` |
+| 3     | GitHub Release | `v2026.07.13-pmo-1.1.1-cli-1.0.69-release`                                           | `PUBLISHED` |
 
 ### Verification
 
@@ -586,13 +643,13 @@ The following repair batch was published once and re-resolved through the consum
 
 The following targets were published and re-resolved through their consume repositories by the completed release manifest.
 
-| Order | Target | Version / destination | Status |
-|---|---|---|---|
-| 1 | Complete Mango backend non-app Maven reactor | `1.0.16` -> `http://nexus.inner.yunxinbaokeji.com/repository/maven-releases/` | `PUBLISHED` |
-| 2 | npm PMO bundle | `@mango/pmo@1.1.0` -> `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/` | `PUBLISHED` |
-| 3 | npm CLI | `@mango/cli@1.0.68` -> `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/` | `PUBLISHED` |
-| 4 | Versioned Mango Docs snapshot | `v2026.07.13-maven-1.0.16-pmo-cli-release` -> GitHub Pages | `PUBLISHED` |
-| 5 | GitHub Release | release notes containing this dependency order and upgrade procedure | `PUBLISHED` |
+| Order | Target                                       | Version / destination                                                                | Status      |
+| ----- | -------------------------------------------- | ------------------------------------------------------------------------------------ | ----------- |
+| 1     | Complete Mango backend non-app Maven reactor | `1.0.16` -> `http://nexus.inner.yunxinbaokeji.com/repository/maven-releases/`        | `PUBLISHED` |
+| 2     | npm PMO bundle                               | `@mango/pmo@1.1.0` -> `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`  | `PUBLISHED` |
+| 3     | npm CLI                                      | `@mango/cli@1.0.68` -> `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/` | `PUBLISHED` |
+| 4     | Versioned Mango Docs snapshot                | `v2026.07.13-maven-1.0.16-pmo-cli-release` -> GitHub Pages                           | `PUBLISHED` |
+| 5     | GitHub Release                               | release notes containing this dependency order and upgrade procedure                 | `PUBLISHED` |
 
 ### Verification
 

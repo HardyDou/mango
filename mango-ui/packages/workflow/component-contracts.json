@@ -1,0 +1,175 @@
+{
+  "schemaVersion": 1,
+  "packageName": "@mango/workflow",
+  "components": [],
+  "legacyComponentExports": [
+    {
+      "exportKey": ".",
+      "exportName": "MyProcessWidget",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2H-N",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": ".",
+      "exportName": "MyTaskWidget",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2H-N",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": ".",
+      "exportName": "MyTodoWidget",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2H-N",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": ".",
+      "exportName": "RuntimeFormRenderer",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2H-N",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": ".",
+      "exportName": "WorkflowApprovalTimeline",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2H-N",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": ".",
+      "exportName": "WorkflowCustomApplyView",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2H-N",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": ".",
+      "exportName": "WorkflowDefinitionGraph",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2H-N",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": ".",
+      "exportName": "WorkflowDefinitionGraphDialog",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2H-N",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": ".",
+      "exportName": "WorkflowDefinitionView",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2H-N",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": ".",
+      "exportName": "WorkflowInstanceHistory",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2H-N",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": ".",
+      "exportName": "WorkflowInstanceHistoryDialog",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2H-N",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": ".",
+      "exportName": "WorkflowInstanceProgress",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2H-N",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": ".",
+      "exportName": "WorkflowInstanceSummary",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2H-N",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": ".",
+      "exportName": "WorkflowLayout",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2H-N",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": ".",
+      "exportName": "WorkflowNodeTimeline",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2H-N",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": ".",
+      "exportName": "WorkflowProgressTree",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2H-N",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": ".",
+      "exportName": "WorkflowSidebar",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2H-N",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": ".",
+      "exportName": "WorkflowStartProcessView",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2H-N",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": ".",
+      "exportName": "WorkflowTaskDetailView",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2H-N",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": ".",
+      "exportName": "WorkflowTaskListView",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2H-N",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": ".",
+      "exportName": "WorkflowTemplateView",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2H-N",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": "./widgets/my-process",
+      "exportName": "MyProcessWidget",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2H-N",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": "./widgets/my-task",
+      "exportName": "MyTaskWidget",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2H-N",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": "./widgets/my-todo",
+      "exportName": "MyTodoWidget",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2H-N",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    }
+  ]
+}

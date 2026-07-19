@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "packageName": "@mango/template",
+  "components": [],
+  "legacyComponentExports": [
+    {
+      "exportKey": ".",
+      "exportName": "TemplateCategoryView",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2H-N",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": ".",
+      "exportName": "TemplateListView",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2H-N",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": ".",
+      "exportName": "TemplateRenderRecordsView",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2H-N",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": ".",
+      "exportName": "TemplateServiceGuideView",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2H-N",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    }
+  ]
+}

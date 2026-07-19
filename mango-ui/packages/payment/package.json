@@ -1,6 +1,6 @@
 {
   "name": "@mango/payment",
-  "version": "1.0.15",
+  "version": "1.0.17",
   "private": false,
   "type": "module",
   "main": "./dist/index.js",
@@ -26,10 +26,10 @@
   ],
   "dependencies": {
     "@element-plus/icons-vue": "2.3.2",
-    "@mango/admin-pages": "1.0.22",
-    "@mango/api-schema": "1.0.2",
-    "@mango/common": "1.0.18",
-    "@mango/file": "1.0.23",
+    "@mango/admin-pages": "workspace:1.0.24",
+    "@mango/api-schema": "workspace:1.0.3",
+    "@mango/common": "workspace:1.0.19",
+    "@mango/file": "workspace:1.0.25",
     "qrcode": "1.5.4"
   },
   "peerDependencies": {
@@ -46,5 +46,28 @@
   "publishConfig": {
     "registry": "http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/"
   },
-  "types": "./dist/index.d.ts"
+  "types": "./dist/index.d.ts",
+  "mangoArchitecture": {
+    "architectureLayer": "FE2",
+    "role": "domain",
+    "domain": "payment",
+    "ownerRole": "Frontend Standards Owner",
+    "sourceExports": {
+      ".": {
+        "source": "./src/index.ts",
+        "kind": "code"
+      },
+      "./admin-pages": {
+        "source": "./src/admin-pages.ts",
+        "kind": "code"
+      }
+    },
+    "nonCodeExports": {
+      "./style.css": {
+        "source": "./style.css",
+        "dist": "./dist/style.css",
+        "generation": "build"
+      }
+    }
+  }
 }

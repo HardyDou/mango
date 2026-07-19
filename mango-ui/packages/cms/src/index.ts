@@ -13,3 +13,5 @@ export { default as CmsSiteCategoriesView } from './views/SiteCategoriesView.vue
 export { default as CmsSitesView } from './views/SitesView.vue';
 
 export * from './api/cms';
+export * from './composables/useCmsApi';
+export { cmsApi } from './api/legacy';

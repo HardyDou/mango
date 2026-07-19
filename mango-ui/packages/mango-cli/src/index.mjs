@@ -1,5 +1,22 @@
 #!/usr/bin/env node
-import { appendFileSync, chmodSync, closeSync, copyFileSync, existsSync, lstatSync, mkdirSync, openSync, readdirSync, readFileSync, realpathSync, renameSync, rmSync, statSync, symlinkSync, writeFileSync } from 'node:fs';
+import {
+  appendFileSync,
+  chmodSync,
+  closeSync,
+  copyFileSync,
+  existsSync,
+  lstatSync,
+  mkdirSync,
+  openSync,
+  readdirSync,
+  readFileSync,
+  realpathSync,
+  renameSync,
+  rmSync,
+  statSync,
+  symlinkSync,
+  writeFileSync,
+} from 'node:fs';
 import { spawn, spawnSync } from 'node:child_process';
 import { createHash, randomBytes } from 'node:crypto';
 import http from 'node:http';
@@ -36,6 +53,7 @@ const defaultVersions = {
   mangoCalendar: readReleasedMangoPackageVersion('calendar', '1.0.6'),
   mangoCms: readReleasedMangoPackageVersion('cms', '1.0.0'),
   mangoCommon: readReleasedMangoPackageVersion('common', '1.0.7'),
+  mangoHttpClient: readReleasedMangoPackageVersion('http-client', '1.0.0'),
   mangoFile: readReleasedMangoPackageVersion('file', '1.0.6'),
   mangoGridLayout: readReleasedMangoPackageVersion('grid-layout', '1.0.0'),
   mangoGridWidgets: readReleasedMangoPackageVersion('grid-widgets', '1.0.0'),
@@ -50,17 +68,30 @@ const defaultVersions = {
   mangoWorkflow: readReleasedMangoPackageVersion('workflow', '1.0.6'),
   mangoWorkflowBusinessExample: readReleasedMangoPackageVersion('workflow-business-example', '1.0.6'),
   vue: '3.5.13',
-  vueRouter: '^4.1.6',
+  vueRouter: '4.6.4',
   vueI18n: '9.2.2',
   pinia: '2.0.32',
   elementPlus: '2.14.1',
   iconsVue: '2.3.2',
-  vite: '^4.3.3',
-  viteVue: '^4.0.0',
-  typescript: '^5.9.3',
-  vueTsc: '^2.1.10',
-  playwright: '^1.59.1',
-  nodeTypes: '^20.19.0',
+  vite: '7.3.6',
+  viteVue: '6.0.8',
+  typescript: '5.9.3',
+  vueTsc: '3.3.7',
+  playwright: '1.61.1',
+  nodeTypes: '22.20.1',
+  eslintJs: '10.0.1',
+  eslint: '10.7.0',
+  eslintConfigPrettier: '10.1.8',
+  eslintPluginVue: '10.9.2',
+  globals: '17.7.0',
+  postcssHtml: '1.8.1',
+  prettier: '3.9.5',
+  stylelint: '17.14.0',
+  stylelintConfigRecommendedVue: '1.6.1',
+  stylelintConfigStandard: '40.0.0',
+  stylelintConfigStandardScss: '17.0.0',
+  typescriptEslint: '8.64.0',
+  vitest: '4.1.10',
   mavenCompilerPlugin: '3.15.0',
   springBoot: '3.5.14',
   springCloud: '2025.0.1',
@@ -71,12 +102,16 @@ const defaultVersions = {
 const ADMIN_DEFAULT_MODULES = normalizeAdminModules(adminModulesManifest.defaultPackages);
 const ADMIN_FULL_MODULES = normalizeAdminModules(adminModulesManifest.fullPackages);
 
-const CORE_FRONTEND_PACKAGES = uniqueBy([
-  { name: '@mango/admin', versionKey: 'mangoAdmin' },
-  { name: '@mango/admin-pages', versionKey: 'mangoAdminPages' },
-  { name: '@mango/app-runtime', versionKey: 'mangoAppRuntime' },
-  ...ADMIN_DEFAULT_MODULES.map(toFrontendDependency),
-], dependency => dependency.name);
+const CORE_FRONTEND_PACKAGES = uniqueBy(
+  [
+    { name: '@mango/admin', versionKey: 'mangoAdmin' },
+    { name: '@mango/admin-pages', versionKey: 'mangoAdminPages' },
+    { name: '@mango/app-runtime', versionKey: 'mangoAppRuntime' },
+    { name: '@mango/http-client', versionKey: 'mangoHttpClient' },
+    ...ADMIN_DEFAULT_MODULES.map(toFrontendDependency),
+  ],
+  (dependency) => dependency.name,
+);
 
 const ADMIN_OPTIONAL_PEER_PACKAGES = ADMIN_FULL_MODULES.map(toFrontendDependency);
 
@@ -173,9 +208,7 @@ const OPTIONAL_MODULE_OVERLAYS = [
       local: { mode: 'local', runtimeCode: 'mango-admin-template-local' },
       micro: { mode: 'micro', runtimeCode: 'mango-admin-template-app', entry: 'http://d.mango.io:5183/' },
     },
-    backend: [
-      { groupId: 'io.mango.platform.template', artifactId: 'mango-template-starter' },
-    ],
+    backend: [{ groupId: 'io.mango.platform.template', artifactId: 'mango-template-starter' }],
   },
   {
     code: 'cms',
@@ -186,41 +219,31 @@ const OPTIONAL_MODULE_OVERLAYS = [
       local: { mode: 'local', runtimeCode: 'mango-admin-cms-local' },
       micro: { mode: 'micro', runtimeCode: 'mango-admin-cms-app', entry: 'http://e.mango.io:5184/' },
     },
-    backend: [
-      { groupId: 'io.mango.platform.cms', artifactId: 'mango-cms-starter' },
-    ],
+    backend: [{ groupId: 'io.mango.platform.cms', artifactId: 'mango-cms-starter' }],
   },
   {
     code: 'notice',
     label: '通知中心',
     feature: 'notice',
-    backend: [
-      { groupId: 'io.mango.platform.notice', artifactId: 'mango-notice-starter' },
-    ],
+    backend: [{ groupId: 'io.mango.platform.notice', artifactId: 'mango-notice-starter' }],
   },
   {
     code: 'numgen',
     label: '编号规则',
     feature: 'numgen',
-    backend: [
-      { groupId: 'io.mango.platform.numgen', artifactId: 'mango-numgen-starter' },
-    ],
+    backend: [{ groupId: 'io.mango.platform.numgen', artifactId: 'mango-numgen-starter' }],
   },
   {
     code: 'calendar',
     label: '工作日历',
     feature: 'calendar',
-    backend: [
-      { groupId: 'io.mango.platform.calendar', artifactId: 'mango-calendar-starter' },
-    ],
+    backend: [{ groupId: 'io.mango.platform.calendar', artifactId: 'mango-calendar-starter' }],
   },
   {
     code: 'payment',
     label: '支付中心',
     feature: 'payment',
-    backend: [
-      { groupId: 'io.mango.platform.payment', artifactId: 'mango-payment-starter' },
-    ],
+    backend: [{ groupId: 'io.mango.platform.payment', artifactId: 'mango-payment-starter' }],
   },
   {
     code: 'workflow',
@@ -231,9 +254,7 @@ const OPTIONAL_MODULE_OVERLAYS = [
       local: { mode: 'local', runtimeCode: 'mango-admin-workflow-local' },
       micro: { mode: 'micro', runtimeCode: 'mango-admin-workflow-app', entry: 'http://c.mango.io:5182/' },
     },
-    backend: [
-      { groupId: 'io.mango.platform.workflow', artifactId: 'mango-workflow-starter' },
-    ],
+    backend: [{ groupId: 'io.mango.platform.workflow', artifactId: 'mango-workflow-starter' }],
   },
   {
     code: 'workflow-example',
@@ -243,8 +264,8 @@ const OPTIONAL_MODULE_OVERLAYS = [
 ];
 
 const OPTIONAL_MODULES = buildOptionalModules(ADMIN_FULL_MODULES, OPTIONAL_MODULE_OVERLAYS);
-const MODULE_BY_CODE = new Map(OPTIONAL_MODULES.map(module => [module.code, module]));
-const FULL_MODULE_CODES = OPTIONAL_MODULES.map(module => module.code);
+const MODULE_BY_CODE = new Map(OPTIONAL_MODULES.map((module) => [module.code, module]));
+const FULL_MODULE_CODES = OPTIONAL_MODULES.map((module) => module.code);
 
 const usage = `
 Mango CLI
@@ -315,7 +336,7 @@ Upgrade:
   Run "mango changelog" after upgrading to review new features, upgrade notes, and verification steps.
 
 Modules:
-  ${OPTIONAL_MODULES.map(module => `${module.code.padEnd(16)} ${module.label}`).join('\n  ')}
+  ${OPTIONAL_MODULES.map((module) => `${module.code.padEnd(16)} ${module.label}`).join('\n  ')}
 `;
 
 async function main(argv = process.argv.slice(2)) {
@@ -499,7 +520,7 @@ function buildVariables(options) {
   const basePackagePath = options.packageName.replaceAll('.', '/');
   const selectedModules = resolveSelectedModules(options);
   const frontendVersions = Object.fromEntries(
-    [...CORE_FRONTEND_PACKAGES, ...ADMIN_OPTIONAL_PEER_PACKAGES].map(dependency => [
+    [...CORE_FRONTEND_PACKAGES, ...ADMIN_OPTIONAL_PEER_PACKAGES].map((dependency) => [
       dependency.name,
       defaultVersions[dependency.versionKey],
     ]),
@@ -516,7 +537,7 @@ function buildVariables(options) {
     preset: options.preset,
     presetLabel: toPascalCase(options.preset),
     selectedModules,
-    selectedModuleCodes: selectedModules.map(module => module.code),
+    selectedModuleCodes: selectedModules.map((module) => module.code),
     frontendVersions,
     mangoBackendVersion: options.mangoVersion,
     mangoAdminVersion: defaultVersions.mangoAdmin,
@@ -526,6 +547,7 @@ function buildVariables(options) {
     mangoAuthVersion: defaultVersions.mangoAuth,
     mangoCalendarVersion: defaultVersions.mangoCalendar,
     mangoCommonVersion: defaultVersions.mangoCommon,
+    mangoHttpClientVersion: defaultVersions.mangoHttpClient,
     mangoFileVersion: defaultVersions.mangoFile,
     mangoGridLayoutVersion: defaultVersions.mangoGridLayout,
     mangoGridWidgetsVersion: defaultVersions.mangoGridWidgets,
@@ -549,6 +571,19 @@ function buildVariables(options) {
     vueTscVersion: defaultVersions.vueTsc,
     playwrightVersion: defaultVersions.playwright,
     nodeTypesVersion: defaultVersions.nodeTypes,
+    eslintJsVersion: defaultVersions.eslintJs,
+    eslintVersion: defaultVersions.eslint,
+    eslintConfigPrettierVersion: defaultVersions.eslintConfigPrettier,
+    eslintPluginVueVersion: defaultVersions.eslintPluginVue,
+    globalsVersion: defaultVersions.globals,
+    postcssHtmlVersion: defaultVersions.postcssHtml,
+    prettierVersion: defaultVersions.prettier,
+    stylelintVersion: defaultVersions.stylelint,
+    stylelintConfigRecommendedVueVersion: defaultVersions.stylelintConfigRecommendedVue,
+    stylelintConfigStandardVersion: defaultVersions.stylelintConfigStandard,
+    stylelintConfigStandardScssVersion: defaultVersions.stylelintConfigStandardScss,
+    typescriptEslintVersion: defaultVersions.typescriptEslint,
+    vitestVersion: defaultVersions.vitest,
     mavenCompilerPluginVersion: defaultVersions.mavenCompilerPlugin,
     springBootVersion: defaultVersions.springBoot,
     springCloudVersion: defaultVersions.springCloud,
@@ -692,8 +727,16 @@ function addBusinessModule(argv) {
     backendBusinessFlywayModules: '',
   };
   copyTemplate(join(businessStarterRoot, 'backend/modules/{{moduleKebab}}'), moduleTarget, variables);
-  copyTemplate(join(businessStarterRoot, 'frontend/packages/{{moduleKebab}}-api'), join(targetDir, 'frontend/packages', `${moduleKebab}-api`), variables);
-  copyTemplate(join(businessStarterRoot, 'frontend/packages/{{moduleKebab}}'), join(targetDir, 'frontend/packages', moduleKebab), variables);
+  copyTemplate(
+    join(businessStarterRoot, 'frontend/packages/{{moduleKebab}}-api'),
+    join(targetDir, 'frontend/packages', `${moduleKebab}-api`),
+    variables,
+  );
+  copyTemplate(
+    join(businessStarterRoot, 'frontend/packages/{{moduleKebab}}'),
+    join(targetDir, 'frontend/packages', moduleKebab),
+    variables,
+  );
   assertNoUnrenderedPlaceholders(targetDir, [
     `backend/modules/${moduleKebab}`,
     `frontend/packages/${moduleKebab}-api`,
@@ -705,7 +748,18 @@ function addBusinessModule(argv) {
   process.stdout.write(`Added business module: ${moduleKebab} (${aggregateKebab})\n`);
 }
 
-const DEV_WORKSPACE_COMMANDS = new Set(['print', 'validate', 'doctor', 'plan', 'start', 'stop', 'status', 'logs', 'backend', 'frontend']);
+const DEV_WORKSPACE_COMMANDS = new Set([
+  'print',
+  'validate',
+  'doctor',
+  'plan',
+  'start',
+  'stop',
+  'status',
+  'logs',
+  'backend',
+  'frontend',
+]);
 const DEFAULT_SPRING_BOOT_PLUGIN = `org.springframework.boot:spring-boot-maven-plugin:${defaultVersions.springBoot}:run`;
 const WORKSPACE_SLOT_COUNT = 200;
 const BACKEND_PORT_BASE = 18000;
@@ -734,9 +788,10 @@ async function runWorkspaceCommand(command = 'status', argv = []) {
   if (!['init', 'status', 'print', 'doctor', 'release'].includes(normalized)) {
     fail(`unknown workspace command: ${command || ''}`);
   }
-  const context = normalized === 'init'
-    ? loadDevWorkspaceContext({ allowMissingManifest: true })
-    : loadDevWorkspaceContext({ allowMissingManifest: false });
+  const context =
+    normalized === 'init'
+      ? loadDevWorkspaceContext({ allowMissingManifest: true })
+      : loadDevWorkspaceContext({ allowMissingManifest: false });
 
   if (normalized === 'init') {
     initDevWorkspace(context);
@@ -1014,7 +1069,9 @@ function initDevWorkspace(context) {
     ensureDevWorkspaceEnv(context);
     process.stdout.write(`Workspace env already exists: ${relativeOrAbsolute(process.cwd(), envPath)}\n`);
   }
-  process.stdout.write(`Workspace slot ${workspace.slot}: ${relativeOrAbsolute(process.cwd(), join(context.root, '.mango/workspace.json'))}\n`);
+  process.stdout.write(
+    `Workspace slot ${workspace.slot}: ${relativeOrAbsolute(process.cwd(), join(context.root, '.mango/workspace.json'))}\n`,
+  );
 
   if (!existsSync(context.manifestPath)) {
     const { manifest, warnings } = createBusinessDevManifest(context.root, basename(context.root));
@@ -1042,17 +1099,22 @@ function ensureWorkspaceMavenRepository(root) {
   }
 
   if (workspaceRepositoryStat) {
-    if (workspaceRepositoryStat.isSymbolicLink()
-      && haveSameRealPath(workspaceRepository, sharedRepository)) {
-      process.stdout.write(`Shared Maven repository already initialized: ${relativeOrAbsolute(process.cwd(), workspaceRepository)}\n`);
+    if (workspaceRepositoryStat.isSymbolicLink() && haveSameRealPath(workspaceRepository, sharedRepository)) {
+      process.stdout.write(
+        `Shared Maven repository already initialized: ${relativeOrAbsolute(process.cwd(), workspaceRepository)}\n`,
+      );
       return;
     }
-    process.stdout.write(`warn    preserving existing Maven repository: ${relativeOrAbsolute(process.cwd(), workspaceRepository)}\n`);
+    process.stdout.write(
+      `warn    preserving existing Maven repository: ${relativeOrAbsolute(process.cwd(), workspaceRepository)}\n`,
+    );
     return;
   }
 
   symlinkSync(sharedRepository, workspaceRepository, process.platform === 'win32' ? 'junction' : 'dir');
-  process.stdout.write(`Created shared Maven repository: ${relativeOrAbsolute(process.cwd(), workspaceRepository)} -> ${sharedRepository}\n`);
+  process.stdout.write(
+    `Created shared Maven repository: ${relativeOrAbsolute(process.cwd(), workspaceRepository)} -> ${sharedRepository}\n`,
+  );
 }
 
 function haveSameRealPath(firstPath, secondPath) {
@@ -1107,25 +1169,29 @@ function ensureWorkspaceConfig(root) {
 function allocateDevWorkspace(root) {
   const normalizedRoot = resolve(root);
   const registry = readWorkspaceRegistry(normalizedRoot);
-  const existing = registry.find(entry => entry.root === normalizedRoot);
+  const existing = registry.find((entry) => entry.root === normalizedRoot);
   if (existing) {
     return existing;
   }
-  const usedSlots = new Set(registry.map(entry => Number(entry.slot)).filter(Number.isFinite));
-  const usedPorts = new Set(registry.flatMap(entry => workspacePorts(entry)));
-  const usedDbNames = new Set(registry.map(entry => entry.dbName));
+  const usedSlots = new Set(registry.map((entry) => Number(entry.slot)).filter(Number.isFinite));
+  const usedPorts = new Set(registry.flatMap((entry) => workspacePorts(entry)));
+  const usedDbNames = new Set(registry.map((entry) => entry.dbName));
   for (let slot = 1; slot <= WORKSPACE_SLOT_COUNT; slot += 1) {
     const candidate = buildWorkspaceConfig(normalizedRoot, slot);
-    if (usedSlots.has(slot)
-      || workspacePorts(candidate).some(port => usedPorts.has(port) || isPortInUse(port))
-      || usedDbNames.has(candidate.dbName)
-      || workspaceDatabaseExists(candidate.dbName, readEnvFile(join(normalizedRoot, '.mango/dev-workspace.env')))) {
+    if (
+      usedSlots.has(slot) ||
+      workspacePorts(candidate).some((port) => usedPorts.has(port) || isPortInUse(port)) ||
+      usedDbNames.has(candidate.dbName) ||
+      workspaceDatabaseExists(candidate.dbName, readEnvFile(join(normalizedRoot, '.mango/dev-workspace.env')))
+    ) {
       continue;
     }
     writeWorkspaceRegistry(normalizedRoot, [...registry, candidate]);
     return candidate;
   }
-  fail('unable to allocate free Mango workspace slot. Run mango workspace list, stop conflicting services, or set MANGO_WORKSPACE_REGISTRY.');
+  fail(
+    'unable to allocate free Mango workspace slot. Run mango workspace list, stop conflicting services, or set MANGO_WORKSPACE_REGISTRY.',
+  );
 }
 
 function buildWorkspaceConfig(root, slot) {
@@ -1154,8 +1220,7 @@ function workspaceProjectSlug(root) {
 
 function buildFrontendAppPorts(frontendPort) {
   return Object.fromEntries(
-    Object.entries(DEFAULT_FRONTEND_APP_PORT_OFFSETS)
-      .map(([key, offset]) => [key, frontendPort + offset]),
+    Object.entries(DEFAULT_FRONTEND_APP_PORT_OFFSETS).map(([key, offset]) => [key, frontendPort + offset]),
   );
 }
 
@@ -1169,7 +1234,7 @@ function workspacePorts(workspace) {
 
 function registerWorkspace(root, workspace) {
   const normalizedRoot = resolve(root);
-  const registry = readWorkspaceRegistry(normalizedRoot).filter(entry => entry.root !== normalizedRoot);
+  const registry = readWorkspaceRegistry(normalizedRoot).filter((entry) => entry.root !== normalizedRoot);
   writeWorkspaceRegistry(normalizedRoot, [
     ...registry,
     {
@@ -1203,7 +1268,7 @@ function readWorkspaceRegistry(root) {
   return content
     .split(/\r?\n/)
     .filter(Boolean)
-    .map(line => {
+    .map((line) => {
       const [entryRoot, workspaceId, backendPort, frontendPort, dbName] = line.split('\t');
       const slot = Number(String(workspaceId || '').replace(/\D/g, ''));
       const migrated = buildWorkspaceConfig(entryRoot, Number.isFinite(slot) && slot > 0 ? slot : 1);
@@ -1219,7 +1284,9 @@ function readWorkspaceRegistry(root) {
 }
 
 function isValidWorkspaceRegistryEntry(entry) {
-  return Boolean(entry?.root && entry.workspaceId && entry.slot && entry.backendPort && entry.frontendPort && entry.dbName);
+  return Boolean(
+    entry?.root && entry.workspaceId && entry.slot && entry.backendPort && entry.frontendPort && entry.dbName,
+  );
 }
 
 function writeWorkspaceRegistry(root, entries) {
@@ -1235,14 +1302,16 @@ function listWorkspaceRegistry(root) {
     return;
   }
   for (const entry of registry.sort((left, right) => Number(left.slot) - Number(right.slot))) {
-    process.stdout.write([
-      `slot=${entry.slot}`,
-      `id=${entry.workspaceId}`,
-      `backend=${entry.backendPort}`,
-      `frontend=${entry.frontendPort}`,
-      `db=${entry.dbName}`,
-      entry.root,
-    ].join(' ') + '\n');
+    process.stdout.write(
+      [
+        `slot=${entry.slot}`,
+        `id=${entry.workspaceId}`,
+        `backend=${entry.backendPort}`,
+        `frontend=${entry.frontendPort}`,
+        `db=${entry.dbName}`,
+        entry.root,
+      ].join(' ') + '\n',
+    );
   }
 }
 
@@ -1254,7 +1323,7 @@ function releaseWorkspaceCommand(context, argv) {
   if (!argv.includes('--keep-db')) {
     dropWorkspaceDatabase(targetRoot, workspace);
   }
-  const next = registry.filter(entry => resolve(entry.root) !== targetRoot);
+  const next = registry.filter((entry) => resolve(entry.root) !== targetRoot);
   writeWorkspaceRegistry(context.root, next);
   process.stdout.write(`Released Mango workspace registration: ${targetRoot}\n`);
 }
@@ -1264,7 +1333,7 @@ function readReleaseWorkspace(targetRoot, registry) {
   if (existsSync(workspacePath)) {
     return readJsonFile(workspacePath);
   }
-  return registry.find(entry => resolve(entry.root) === targetRoot) || null;
+  return registry.find((entry) => resolve(entry.root) === targetRoot) || null;
 }
 
 function dropWorkspaceDatabase(targetRoot, workspace) {
@@ -1364,9 +1433,9 @@ function createBusinessDevManifest(targetDir, projectName) {
       ],
     };
   }
-  const apps = Object.fromEntries(discovery.apps.map(app => [app.name, app.config]));
-  const backendNames = discovery.apps.filter(app => app.kind === 'backend').map(app => app.name);
-  const frontendNames = discovery.apps.filter(app => app.kind === 'frontend').map(app => app.name);
+  const apps = Object.fromEntries(discovery.apps.map((app) => [app.name, app.config]));
+  const backendNames = discovery.apps.filter((app) => app.kind === 'backend').map((app) => app.name);
+  const frontendNames = discovery.apps.filter((app) => app.kind === 'frontend').map((app) => app.name);
   const defaultGroup = [
     ...(backendNames.length > 0 ? [backendNames[0]] : []),
     ...(frontendNames.length > 0 ? [frontendNames[0]] : []),
@@ -1389,7 +1458,9 @@ function createBusinessDevManifest(targetDir, projectName) {
     warnings.push('no Vite frontend app detected; add frontend app manually if needed');
   }
   if (backendNames.length > 1 || frontendNames.length > 1) {
-    warnings.push(`detected ${backendNames.length} backend app(s) and ${frontendNames.length} frontend app(s); confirm groups before starting`);
+    warnings.push(
+      `detected ${backendNames.length} backend app(s) and ${frontendNames.length} frontend app(s); confirm groups before starting`,
+    );
   }
   for (const warning of discovery.warnings) {
     warnings.push(warning);
@@ -1413,8 +1484,8 @@ function discoverBusinessDevApps(root) {
     fileNames: new Set(['pom.xml', 'package.json']),
     maxDepth: 6,
   });
-  const pomFiles = files.filter(file => basename(file) === 'pom.xml');
-  const packageFiles = files.filter(file => basename(file) === 'package.json');
+  const pomFiles = files.filter((file) => basename(file) === 'pom.xml');
+  const packageFiles = files.filter((file) => basename(file) === 'package.json');
   const backendApps = discoverSpringBootApps(root, pomFiles);
   const frontendApps = discoverViteApps(root, packageFiles);
   const apps = [];
@@ -1427,7 +1498,7 @@ function discoverBusinessDevApps(root) {
       config: buildSpringBootDevApp(app.relativeDir, index),
     });
   });
-  const firstBackend = apps.find(app => app.kind === 'backend')?.name || '';
+  const firstBackend = apps.find((app) => app.kind === 'backend')?.name || '';
   frontendApps.forEach((app, index) => {
     const name = uniqueAppName(toAppName(app.relativeDir, 'frontend'), usedNames);
     apps.push({
@@ -1444,7 +1515,7 @@ function discoverBusinessDevApps(root) {
 
 function discoverSpringBootApps(root, pomFiles) {
   return pomFiles
-    .map(file => {
+    .map((file) => {
       const content = readFileSync(file, 'utf8');
       return {
         file,
@@ -1452,7 +1523,7 @@ function discoverSpringBootApps(root, pomFiles) {
         content,
       };
     })
-    .filter(item => isSpringBootAppPom(item.content))
+    .filter((item) => isSpringBootAppPom(item.content))
     .sort((left, right) => left.relativeDir.localeCompare(right.relativeDir));
 }
 
@@ -1460,11 +1531,13 @@ function isSpringBootAppPom(content) {
   if (isAggregatorPom(content)) {
     return false;
   }
-  return content.includes('<artifactId>spring-boot-maven-plugin</artifactId>')
-    || content.includes('<artifactId>spring-boot-starter-web</artifactId>')
-    || content.includes('<artifactId>spring-boot-starter-webflux</artifactId>')
-    || content.includes('<artifactId>mango-admin-starter</artifactId>')
-    || content.includes('<artifactId>mango-monolith-starter</artifactId>');
+  return (
+    content.includes('<artifactId>spring-boot-maven-plugin</artifactId>') ||
+    content.includes('<artifactId>spring-boot-starter-web</artifactId>') ||
+    content.includes('<artifactId>spring-boot-starter-webflux</artifactId>') ||
+    content.includes('<artifactId>mango-admin-starter</artifactId>') ||
+    content.includes('<artifactId>mango-monolith-starter</artifactId>')
+  );
 }
 
 function isAggregatorPom(content) {
@@ -1473,7 +1546,7 @@ function isAggregatorPom(content) {
 
 function discoverViteApps(root, packageFiles) {
   return packageFiles
-    .map(file => {
+    .map((file) => {
       const directory = dirname(file);
       const packageJson = readJsonFile(file);
       return {
@@ -1483,7 +1556,7 @@ function discoverViteApps(root, packageFiles) {
         hasViteConfig: hasViteConfig(directory),
       };
     })
-    .filter(item => isVitePackage(item.packageJson, item.hasViteConfig))
+    .filter((item) => isVitePackage(item.packageJson, item.hasViteConfig))
     .sort((left, right) => left.relativeDir.localeCompare(right.relativeDir));
 }
 
@@ -1497,8 +1570,9 @@ function isVitePackage(packageJson, hasViteConfigFile) {
 }
 
 function hasViteConfig(directory) {
-  return ['vite.config.ts', 'vite.config.js', 'vite.config.mjs', 'vite.config.mts']
-    .some(file => existsSync(join(directory, file)));
+  return ['vite.config.ts', 'vite.config.js', 'vite.config.mjs', 'vite.config.mts'].some((file) =>
+    existsSync(join(directory, file)),
+  );
 }
 
 function buildSpringBootDevApp(cwd, index) {
@@ -1554,11 +1628,11 @@ function buildViteDevApp(root, cwd, index, backendName) {
 
 function buildDiscoveryWarnings(root, pomFiles, backendApps, packageFiles, frontendApps) {
   const warnings = [];
-  const springAppPaths = new Set(backendApps.map(app => app.file));
+  const springAppPaths = new Set(backendApps.map((app) => app.file));
   const skippedAggregatorPoms = pomFiles
-    .filter(file => !springAppPaths.has(file))
-    .filter(file => isAggregatorPom(readFileSync(file, 'utf8')))
-    .map(file => toPosix(relative(root, file)));
+    .filter((file) => !springAppPaths.has(file))
+    .filter((file) => isAggregatorPom(readFileSync(file, 'utf8')))
+    .map((file) => toPosix(relative(root, file)));
   if (skippedAggregatorPoms.length > 0) {
     warnings.push(`skipped aggregator POM(s): ${skippedAggregatorPoms.join(', ')}`);
   }
@@ -1707,7 +1781,9 @@ function validateDevWorkspace(context, { verbose }) {
     fail('development workspace validation failed');
   }
   if (verbose) {
-    process.stdout.write(`Development workspace manifest is valid: ${relativeOrAbsolute(process.cwd(), context.manifestPath)}\n`);
+    process.stdout.write(
+      `Development workspace manifest is valid: ${relativeOrAbsolute(process.cwd(), context.manifestPath)}\n`,
+    );
   }
 }
 
@@ -1752,7 +1828,9 @@ function doctorDevWorkspace(context) {
       }
     }
     if (resolved.port && isPortInUse(resolved.port)) {
-      process.stdout.write(`warn    ${name} port ${resolved.port} is already in use${formatPortOccupants(resolved.port)}${formatPortOwnerHint(context.root, resolved.port)}\n`);
+      process.stdout.write(
+        `warn    ${name} port ${resolved.port} is already in use${formatPortOccupants(resolved.port)}${formatPortOwnerHint(context.root, resolved.port)}\n`,
+      );
     } else if (resolved.port) {
       process.stdout.write(`ok      ${name} port ${resolved.port} is free\n`);
     }
@@ -1781,7 +1859,10 @@ function printDevWorkspacePlan(context, targets) {
 async function startDevWorkspace(context, targets) {
   validateDevWorkspace(context, { verbose: false });
   ensureDevWorkspaceEnv(context);
-  context.env = { ...parseEnvText(defaultDevWorkspaceEnv(context.root)), ...readEnvFile(join(context.root, '.mango/dev-workspace.env')) };
+  context.env = {
+    ...parseEnvText(defaultDevWorkspaceEnv(context.root)),
+    ...readEnvFile(join(context.root, '.mango/dev-workspace.env')),
+  };
   ensureRunDirs(context);
   const appNames = resolveDevWorkspaceTargets(context, targets.length > 0 ? targets : ['default']);
   for (const name of appNames) {
@@ -1792,7 +1873,9 @@ async function startDevWorkspace(context, targets) {
       continue;
     }
     if (resolved.port && isPortInUse(resolved.port)) {
-      fail(`${name} port ${resolved.port} is already in use${formatPortOccupants(resolved.port)}${formatPortOwnerHint(context.root, resolved.port)}.`);
+      fail(
+        `${name} port ${resolved.port} is already in use${formatPortOccupants(resolved.port)}${formatPortOwnerHint(context.root, resolved.port)}.`,
+      );
     }
     if (resolved.type === 'vite') {
       prepareFrontendWorkspace(context, { checkOnly: false });
@@ -1814,7 +1897,9 @@ function ensureDevWorkspaceEnv(context) {
   const workspace = ensureWorkspaceConfig(context.root);
   if (!env.MANGO_CRYPTO_SM4_SECRET_KEY) {
     appendFileSync(envPath, `\nMANGO_CRYPTO_SM4_SECRET_KEY=${randomBytes(16).toString('hex')}\n`);
-    process.stdout.write(`Added MANGO_CRYPTO_SM4_SECRET_KEY to local workspace env: ${relativeOrAbsolute(process.cwd(), envPath)}\n`);
+    process.stdout.write(
+      `Added MANGO_CRYPTO_SM4_SECRET_KEY to local workspace env: ${relativeOrAbsolute(process.cwd(), envPath)}\n`,
+    );
   }
   const requiredValues = {
     MANGO_WORKSPACE_ID: workspace.workspaceId,
@@ -1838,7 +1923,7 @@ function syncEnvFileValues(envPath, requiredValues) {
   const lines = original.split(/\r?\n/);
   const seen = new Set();
   const updated = [];
-  const nextLines = lines.map(line => {
+  const nextLines = lines.map((line) => {
     const match = line.match(/^(\s*([A-Za-z_][A-Za-z0-9_]*)\s*=)(.*)$/);
     if (!match) {
       return line;
@@ -1890,13 +1975,16 @@ function startDevApp(context, name, app) {
     detached: true,
     stdio: ['ignore', logFd, logFd],
   });
-  child.on('error', error => {
+  child.on('error', (error) => {
     appendFileSync(logPath, `\n--- ${new Date().toISOString()} failed ${name}: ${error.message} ---\n`);
     closeSync(logFd);
     rmSync(pidFilePath(context, name), { force: true });
   });
   child.on('exit', (code, signal) => {
-    appendFileSync(logPath, `\n--- ${new Date().toISOString()} exit ${name} code=${code ?? ''} signal=${signal ?? ''} ---\n`);
+    appendFileSync(
+      logPath,
+      `\n--- ${new Date().toISOString()} exit ${name} code=${code ?? ''} signal=${signal ?? ''} ---\n`,
+    );
     closeSync(logFd);
   });
   child.unref();
@@ -1928,7 +2016,7 @@ function shouldEnsureWorkspaceDatabase(context, app) {
     app.install?.command,
     ...(app.install?.args || []),
   ].filter(Boolean);
-  return values.some(value => {
+  return values.some((value) => {
     const text = String(value);
     return text.includes('MANGO_DB_NAME') || (dbName && text.includes(dbName));
   });
@@ -1973,10 +2061,14 @@ function workspaceDatabaseExists(dbName, env = {}) {
 function runMysqlStatement(dbEnv = {}, statement, options = {}) {
   const mysqlArgs = [
     '--protocol=TCP',
-    '-h', dbEnv.MANGO_DB_HOST || '127.0.0.1',
-    '-P', String(dbEnv.MANGO_DB_PORT || '3306'),
-    '-u', dbEnv.MANGO_DB_USERNAME || 'root',
-    '-e', statement,
+    '-h',
+    dbEnv.MANGO_DB_HOST || '127.0.0.1',
+    '-P',
+    String(dbEnv.MANGO_DB_PORT || '3306'),
+    '-u',
+    dbEnv.MANGO_DB_USERNAME || 'root',
+    '-e',
+    statement,
   ];
   const env = { ...process.env };
   if (dbEnv.MANGO_DB_PASSWORD) {
@@ -2006,7 +2098,11 @@ function runMysqlStatement(dbEnv = {}, statement, options = {}) {
 }
 
 function isTruthy(value) {
-  return ['1', 'true', 'yes', 'on'].includes(String(value || '').trim().toLowerCase());
+  return ['1', 'true', 'yes', 'on'].includes(
+    String(value || '')
+      .trim()
+      .toLowerCase(),
+  );
 }
 
 function requireCommand(command, appName) {
@@ -2039,7 +2135,7 @@ async function waitForDevApp(context, name, app) {
   const timeoutMs = Number(app.waitTimeoutMs || 120000);
   const startedAt = Date.now();
   process.stdout.write(`${name}: waiting for ${app.healthUrl}\n`);
-  const tick = () => new Promise(resolvePromise => setTimeout(resolvePromise, 2000));
+  const tick = () => new Promise((resolvePromise) => setTimeout(resolvePromise, 2000));
   while (Date.now() - startedAt < timeoutMs) {
     const pidInfo = readPidFile(context, name);
     if (!pidInfo || !isProcessAlive(pidInfo.pid)) {
@@ -2065,7 +2161,10 @@ function failWithDevAppLog(context, name, message) {
 function printDevWorkspaceStatus(context) {
   validateDevWorkspace(context, { verbose: false });
   ensureDevWorkspaceEnv(context);
-  context.env = { ...parseEnvText(defaultDevWorkspaceEnv(context.root)), ...readEnvFile(join(context.root, '.mango/dev-workspace.env')) };
+  context.env = {
+    ...parseEnvText(defaultDevWorkspaceEnv(context.root)),
+    ...readEnvFile(join(context.root, '.mango/dev-workspace.env')),
+  };
   for (const [name, app] of Object.entries(context.manifest.apps || {})) {
     const resolved = resolveDevApp(context, name, app);
     const pidInfo = readPidFile(context, name);
@@ -2074,8 +2173,11 @@ function printDevWorkspaceStatus(context) {
     const status = alive ? 'running' : occupied ? 'occupied' : 'stopped';
     const pidText = alive ? ` pid=${pidInfo.pid}` : '';
     const urlText = resolved.url ? ` ${resolved.url}` : '';
-    const ownerText = alive && pidInfo.workspaceRoot ? ` owner=${relativeOrAbsolute(process.cwd(), pidInfo.workspaceRoot)}` : '';
-    const occupantText = occupied ? `${formatPortOccupants(resolved.port)}${formatPortOwnerHint(context.root, resolved.port)}` : '';
+    const ownerText =
+      alive && pidInfo.workspaceRoot ? ` owner=${relativeOrAbsolute(process.cwd(), pidInfo.workspaceRoot)}` : '';
+    const occupantText = occupied
+      ? `${formatPortOccupants(resolved.port)}${formatPortOwnerHint(context.root, resolved.port)}`
+      : '';
     process.stdout.write(`${status.padEnd(8)} ${name}${pidText}${urlText}${ownerText}${occupantText}\n`);
   }
 }
@@ -2098,9 +2200,9 @@ function printDevWorkspaceLogs(context, argv) {
 function prepareFrontendWorkspace(context, { checkOnly }) {
   const frontendRoots = uniqueBy(
     Object.values(context.manifest.apps || {})
-      .filter(app => app.type === 'vite')
-      .map(app => resolve(context.root, app.cwd || '.')),
-    item => item,
+      .filter((app) => app.type === 'vite')
+      .map((app) => resolve(context.root, app.cwd || '.')),
+    (item) => item,
   );
   if (frontendRoots.length === 0) {
     process.stdout.write('No Vite frontend apps found.\n');
@@ -2111,7 +2213,9 @@ function prepareFrontendWorkspace(context, { checkOnly }) {
     const packageManager = detectPackageManager(appRoot, context.root);
     const mode = context.env.MANGO_FRONTEND_MODE || 'source';
     if (mode === 'package') {
-      process.stdout.write(`frontend package mode: ${relativeOrAbsolute(context.root, appRoot)} expects built package artifacts\n`);
+      process.stdout.write(
+        `frontend package mode: ${relativeOrAbsolute(context.root, appRoot)} expects built package artifacts\n`,
+      );
       continue;
     }
     if (!existsSync(join(uiRoot, 'package.json'))) {
@@ -2121,20 +2225,26 @@ function prepareFrontendWorkspace(context, { checkOnly }) {
     const adminStylesScript = packageJsonHasScript(join(uiRoot, 'package.json'), 'admin:styles');
     if (adminStylesScript) {
       if (checkOnly) {
-        process.stdout.write(`ok      frontend prepare can run ${packageManager} admin:styles in ${relativeOrAbsolute(process.cwd(), uiRoot)}\n`);
+        process.stdout.write(
+          `ok      frontend prepare can run ${packageManager} admin:styles in ${relativeOrAbsolute(process.cwd(), uiRoot)}\n`,
+        );
       } else {
         runCheckedCommand(uiRoot, packageManager, ['admin:styles'], 'frontend style aggregation');
       }
     }
     const adminPackagePath = join(uiRoot, 'packages/admin/package.json');
     if (existsSync(adminPackagePath)) {
-      const missing = requiredAdminSourceModeArtifacts(uiRoot).filter(path => !existsSync(path));
+      const missing = requiredAdminSourceModeArtifacts(uiRoot).filter((path) => !existsSync(path));
       if (missing.length === 0) {
-        process.stdout.write(`ok      frontend source artifacts ready in ${relativeOrAbsolute(process.cwd(), uiRoot)}\n`);
+        process.stdout.write(
+          `ok      frontend source artifacts ready in ${relativeOrAbsolute(process.cwd(), uiRoot)}\n`,
+        );
         continue;
       }
       if (checkOnly) {
-        process.stdout.write(`warn    missing source-mode artifacts:\n${missing.map(path => `        ${relativeOrAbsolute(process.cwd(), path)}`).join('\n')}\n`);
+        process.stdout.write(
+          `warn    missing source-mode artifacts:\n${missing.map((path) => `        ${relativeOrAbsolute(process.cwd(), path)}`).join('\n')}\n`,
+        );
       } else if (!adminStylesScript) {
         fail('frontend source-mode artifacts are missing and admin:styles script is unavailable');
       }
@@ -2165,10 +2275,7 @@ function packageJsonHasScript(packageJsonPath, scriptName) {
 }
 
 function requiredAdminSourceModeArtifacts(uiRoot) {
-  return [
-    join(uiRoot, 'packages/admin/generated-package-styles.css'),
-    join(uiRoot, 'packages/admin/style-full.css'),
-  ];
+  return [join(uiRoot, 'packages/admin/generated-package-styles.css'), join(uiRoot, 'packages/admin/style-full.css')];
 }
 
 function runCheckedCommand(cwd, command, args, label) {
@@ -2276,13 +2383,11 @@ function resolveDevApp(context, name, app) {
   resolved.command = commandSpec.command;
   resolved.args = commandSpec.args;
   resolved.url = port ? `http://${host || '127.0.0.1'}:${port}` : '';
-  resolved.healthUrl = resolved.health
-    ? resolveHealthUrl(resolved.url, resolved.health)
-    : '';
+  resolved.healthUrl = resolved.health ? resolveHealthUrl(resolved.url, resolved.health) : '';
   if (app.install) {
     resolved.install = {
       command: app.install.command,
-      args: (app.install.args || []).map(arg => interpolateValue(String(arg), vars)),
+      args: (app.install.args || []).map((arg) => interpolateValue(String(arg), vars)),
     };
   }
   return resolved;
@@ -2320,13 +2425,16 @@ function resolveDevCommand(context, app, vars) {
   if (app.command) {
     return {
       command: app.command,
-      args: (app.args || []).map(arg => interpolateValue(String(arg), vars)).filter(Boolean),
+      args: (app.args || []).map((arg) => interpolateValue(String(arg), vars)).filter(Boolean),
     };
   }
   if (app.type === 'spring-boot-maven') {
     const pom = app.pom || 'pom.xml';
     const goal = app.goal || DEFAULT_SPRING_BOOT_PLUGIN;
-    const springArgs = (app.args || []).map(arg => interpolateValue(String(arg), vars)).filter(Boolean).join(' ');
+    const springArgs = (app.args || [])
+      .map((arg) => interpolateValue(String(arg), vars))
+      .filter(Boolean)
+      .join(' ');
     return {
       command: 'mvn',
       args: ['-f', pom, `-Dspring-boot.run.arguments=${springArgs}`, goal],
@@ -2337,7 +2445,7 @@ function resolveDevCommand(context, app, vars) {
     return {
       command: packageManager,
       args: (app.args || ['run', 'dev', '--', '--host', '${host}', '--port', '${port}'])
-        .map(arg => interpolateValue(String(arg), vars))
+        .map((arg) => interpolateValue(String(arg), vars))
         .filter(Boolean),
     };
   }
@@ -2423,11 +2531,14 @@ function isProcessAlive(pid) {
   }
   try {
     process.kill(Number(pid), 0);
-    const stat = spawnSync('ps', ['-o', 'stat=', '-p', String(pid)], { encoding: 'utf8' });
-    return stat.status === 0 && !stat.stdout.trim().startsWith('Z');
   } catch {
     return false;
   }
+  const stat = spawnSync('ps', ['-o', 'stat=', '-p', String(pid)], { encoding: 'utf8' });
+  if (stat.error?.code === 'ENOENT') {
+    return true;
+  }
+  return stat.status === 0 && !stat.stdout.trim().startsWith('Z');
 }
 
 async function stopProcessGroup(pid) {
@@ -2444,7 +2555,7 @@ async function stopProcessGroup(pid) {
     if (!isProcessAlive(pid)) {
       return;
     }
-    await new Promise(resolvePromise => setTimeout(resolvePromise, 100));
+    await new Promise((resolvePromise) => setTimeout(resolvePromise, 100));
   }
   try {
     process.kill(-Number(pid), 'SIGKILL');
@@ -2461,7 +2572,9 @@ function isPortInUse(port) {
   if (!port) {
     return false;
   }
-  const result = spawnSync('sh', ['-c', `lsof -nP -iTCP:${Number(port)} -sTCP:LISTEN >/dev/null 2>&1`], { stdio: 'ignore' });
+  const result = spawnSync('sh', ['-c', `lsof -nP -iTCP:${Number(port)} -sTCP:LISTEN >/dev/null 2>&1`], {
+    stdio: 'ignore',
+  });
   return result.status === 0;
 }
 
@@ -2499,9 +2612,7 @@ function formatPortOccupants(port) {
   if (occupants.length === 0) {
     return '';
   }
-  const text = occupants
-    .map(item => `pid=${item.pid}${item.command ? ` command=${item.command}` : ''}`)
-    .join(', ');
+  const text = occupants.map((item) => `pid=${item.pid}${item.command ? ` command=${item.command}` : ''}`).join(', ');
   return ` (${text})`;
 }
 
@@ -2514,14 +2625,13 @@ function formatPortOwnerHint(root, port) {
 }
 
 function findRegisteredPortOwner(root, port) {
-  return readWorkspaceRegistry(root)
-    .find(entry => workspacePorts(entry).includes(Number(port)));
+  return readWorkspaceRegistry(root).find((entry) => workspacePorts(entry).includes(Number(port)));
 }
 
 function httpOk(url) {
-  return new Promise(resolvePromise => {
+  return new Promise((resolvePromise) => {
     const client = url.startsWith('https:') ? https : http;
-    const request = client.get(url, { timeout: 2000 }, response => {
+    const request = client.get(url, { timeout: 2000 }, (response) => {
       response.resume();
       resolvePromise(response.statusCode >= 200 && response.statusCode < 500);
     });
@@ -2593,16 +2703,17 @@ function resolveDocsContext(options) {
     fail(`project directory not found: ${projectDir}`);
   }
   const config = readOptionalJson(join(projectDir, 'mango.config.json'));
-  const version = options.version
-    || config?.mangoBackendVersion
-    || readMangoVersionFromPom(projectDir)
-    || defaultVersions.mangoBackend;
+  const version =
+    options.version ||
+    config?.mangoBackendVersion ||
+    readMangoVersionFromPom(projectDir) ||
+    defaultVersions.mangoBackend;
   if (!version || /[\\/]/.test(version)) {
     fail(`invalid Mango docs version: ${version || ''}`);
   }
-  const mavenRepository = ensureTrailingSlash(options.mavenRepository
-    || config?.mavenRepository
-    || DEFAULT_MAVEN_REPOSITORY);
+  const mavenRepository = ensureTrailingSlash(
+    options.mavenRepository || config?.mavenRepository || DEFAULT_MAVEN_REPOSITORY,
+  );
   const docsBaseDir = join(projectDir, '.mango/docs');
   const currentPath = join(docsBaseDir, 'current.json');
   const current = readOptionalJson(currentPath);
@@ -2629,7 +2740,9 @@ async function pullDocsBundle(context, options) {
       sourceUrl: context.current?.sourceUrl || context.sourceUrl,
       sha256: context.current?.sha256 || '',
     });
-    process.stdout.write(`Mango docs ${context.version} already available: ${resolveDocsContentRoot(context.installRoot)}\n`);
+    process.stdout.write(
+      `Mango docs ${context.version} already available: ${resolveDocsContentRoot(context.installRoot)}\n`,
+    );
     return;
   }
 
@@ -2666,16 +2779,22 @@ function printDocsStatus(context) {
     process.stdout.write(`path: ${resolveDocsContentRoot(context.installRoot)}\n`);
   } else {
     process.stdout.write(`path: none\n`);
-    process.stdout.write(`next: mango docs pull --project-dir ${relativeOrAbsolute(process.cwd(), context.projectDir)}\n`);
+    process.stdout.write(
+      `next: mango docs pull --project-dir ${relativeOrAbsolute(process.cwd(), context.projectDir)}\n`,
+    );
   }
   if (currentVersion && currentVersion !== context.version) {
-    process.stdout.write(`warning: current docs version ${currentVersion} differs from project Mango version ${context.version}\n`);
+    process.stdout.write(
+      `warning: current docs version ${currentVersion} differs from project Mango version ${context.version}\n`,
+    );
   }
 }
 
 function printDocsPath(context) {
   if (!existsSync(context.installRoot)) {
-    fail(`Mango docs ${context.version} are not installed. Run "mango docs pull --project-dir ${relativeOrAbsolute(process.cwd(), context.projectDir)}".`);
+    fail(
+      `Mango docs ${context.version} are not installed. Run "mango docs pull --project-dir ${relativeOrAbsolute(process.cwd(), context.projectDir)}".`,
+    );
   }
   process.stdout.write(`${resolveDocsContentRoot(context.installRoot)}\n`);
 }
@@ -2718,7 +2837,7 @@ async function downloadFile(url, targetPath) {
 function downloadHttpFile(url, targetPath, redirects = 0) {
   return new Promise((resolvePromise, reject) => {
     const client = url.startsWith('https:') ? https : http;
-    const request = client.get(url, response => {
+    const request = client.get(url, (response) => {
       const statusCode = response.statusCode || 0;
       const location = response.headers.location;
       if ([301, 302, 303, 307, 308].includes(statusCode) && location) {
@@ -2737,20 +2856,20 @@ function downloadHttpFile(url, targetPath, redirects = 0) {
         return;
       }
       const file = openSync(targetPath, 'w');
-      response.on('data', chunk => {
+      response.on('data', (chunk) => {
         writeFileSync(file, chunk);
       });
       response.on('end', () => {
         closeSync(file);
         resolvePromise();
       });
-      response.on('error', error => {
+      response.on('error', (error) => {
         closeSync(file);
         reject(error);
       });
     });
     request.on('error', reject);
-  }).catch(error => fail(error.message));
+  }).catch((error) => fail(error.message));
 }
 
 function extractArchive(archivePath, targetDir) {
@@ -2767,7 +2886,9 @@ function extractArchive(archivePath, targetDir) {
   if (unzipResult.status === 0) {
     return;
   }
-  fail(`cannot extract docs bundle. jar: ${jarResult.stderr || jarResult.stdout}; unzip: ${unzipResult.stderr || unzipResult.stdout}`);
+  fail(
+    `cannot extract docs bundle. jar: ${jarResult.stderr || jarResult.stdout}; unzip: ${unzipResult.stderr || unzipResult.stdout}`,
+  );
 }
 
 function resolveDocsContentRoot(installRoot) {
@@ -2872,9 +2993,10 @@ function syncPmoBaseline(argv, { command = 'sync' } = {}) {
   const installedLock = readPmoLock(targetDir);
   const availableBaseline = loadPmoPackageBaseline();
   verifyPmoBundle(availableBaseline);
-  const baseline = command === 'sync' && installedLock
-    ? resolveLockedPmoBaseline(targetDir, installedLock, availableBaseline)
-    : resolveUpgradePmoBaseline(availableBaseline, options.to);
+  const baseline =
+    command === 'sync' && installedLock
+      ? resolveLockedPmoBaseline(targetDir, installedLock, availableBaseline)
+      : resolveUpgradePmoBaseline(availableBaseline, options.to);
   const plan = [
     ...planPmoBaselineSync(targetDir, baseline),
     ...planPmoSkillSync(targetDir, baseline),
@@ -2889,7 +3011,7 @@ function syncPmoBaseline(argv, { command = 'sync' } = {}) {
   if (options.dryRun) {
     return;
   }
-  if (plan.some(item => item.scope === 'pmo-bundle' && item.action !== 'skip')) {
+  if (plan.some((item) => item.scope === 'pmo-bundle' && item.action !== 'skip')) {
     installPmoBundleAtomic(targetDir, baseline);
   }
   for (const item of plan) {
@@ -2997,7 +3119,9 @@ function loadPmoPackageBaseline() {
       };
     }
   }
-  fail('@mango/pmo baseline package is missing. Install @mango/pmo or rebuild the Mango CLI workspace before running mango pmo commands.');
+  fail(
+    '@mango/pmo baseline package is missing. Install @mango/pmo or rebuild the Mango CLI workspace before running mango pmo commands.',
+  );
 }
 
 function resolveInstalledPmoPackageBaseline() {
@@ -3028,21 +3152,24 @@ function planPmoBaselineSync(targetDir, baseline) {
       scope: 'pmo-bundle',
     });
   }
-  plan.push({ ...buildFilePlanItem(
-    'business-pmo/mango-baseline/baseline.json',
-    join(targetDir, 'business-pmo/mango-baseline/baseline.json'),
-    `${JSON.stringify(baseline.manifest, null, 2)}\n`,
-  ), scope: 'pmo-bundle' });
-  plan.push({ ...buildFilePlanItem(
-    PMO_LOCK_RELATIVE_PATH,
-    join(targetDir, PMO_LOCK_RELATIVE_PATH),
-    `${JSON.stringify(createPmoLock(baseline.manifest), null, 2)}\n`,
-  ), scope: 'pmo-bundle' });
+  plan.push({
+    ...buildFilePlanItem(
+      'business-pmo/mango-baseline/baseline.json',
+      join(targetDir, 'business-pmo/mango-baseline/baseline.json'),
+      `${JSON.stringify(baseline.manifest, null, 2)}\n`,
+    ),
+    scope: 'pmo-bundle',
+  });
+  plan.push({
+    ...buildFilePlanItem(
+      PMO_LOCK_RELATIVE_PATH,
+      join(targetDir, PMO_LOCK_RELATIVE_PATH),
+      `${JSON.stringify(createPmoLock(baseline.manifest), null, 2)}\n`,
+    ),
+    scope: 'pmo-bundle',
+  });
 
-  const expected = new Set([
-    ...(baseline.manifest.files || []).map(file => file.path),
-    'baseline.json',
-  ]);
+  const expected = new Set([...(baseline.manifest.files || []).map((file) => file.path), 'baseline.json']);
   const installedRoot = join(targetDir, PMO_BASELINE_RELATIVE_PATH);
   if (existsSync(installedRoot)) {
     for (const file of walkPmoFiles(installedRoot)) {
@@ -3149,7 +3276,9 @@ function getPmoStatus(targetDir, { locked = false } = {}) {
     errors.push(`${comparison.missing.length} baseline files are missing`);
   }
   if (comparison.changed.length > 0) {
-    warnings.push(`${comparison.changed.length} baseline files differ from ${baseline.manifest.packageName}@${baseline.manifest.packageVersion}`);
+    warnings.push(
+      `${comparison.changed.length} baseline files differ from ${baseline.manifest.packageName}@${baseline.manifest.packageVersion}`,
+    );
   }
   if (comparison.extra.length > 0) {
     errors.push(`${comparison.extra.length} stale baseline files are not declared by the PMO manifest`);
@@ -3182,7 +3311,7 @@ function getPmoStatus(targetDir, { locked = false } = {}) {
 }
 
 function comparePmoBaselineFiles(baselineDir, manifest) {
-  const expected = new Map((manifest.files || []).map(file => [file.path, file]));
+  const expected = new Map((manifest.files || []).map((file) => [file.path, file]));
   const missing = [];
   const changed = [];
   for (const [filePath, file] of expected.entries()) {
@@ -3193,17 +3322,15 @@ function comparePmoBaselineFiles(baselineDir, manifest) {
     }
     const content = readFileSync(targetPath);
     const actualHash = createHash('sha256').update(content).digest('hex');
-    const actualMode = process.platform === 'win32'
-      ? file.mode
-      : (statSync(targetPath).mode & 0o111 ? '0755' : '0644');
+    const actualMode = process.platform === 'win32' ? file.mode : statSync(targetPath).mode & 0o111 ? '0755' : '0644';
     if (actualHash !== file.sha256 || content.length !== file.size || actualMode !== file.mode) {
       changed.push(filePath);
     }
   }
   const expectedPaths = new Set([...expected.keys(), 'baseline.json']);
   const extra = walkPmoFiles(baselineDir)
-    .map(file => toPosix(relative(baselineDir, file)))
-    .filter(file => !expectedPaths.has(file));
+    .map((file) => toPosix(relative(baselineDir, file)))
+    .filter((file) => !expectedPaths.has(file));
   return { missing, changed, extra };
 }
 
@@ -3214,12 +3341,16 @@ function printPmoStatus(status) {
   if (status.lock) {
     process.stdout.write(`Lock: ${formatPmoIdentity(status.lock)}\n`);
   }
-  process.stdout.write(`Files: ${status.baseline.manifest.files?.length || 0} expected, ${status.missing.length} missing, ${status.changed.length} changed, ${status.extra.length} extra\n`);
   process.stdout.write(
-    `Skills: ${status.skillExpectedRoots || 0} roots, ${status.skillExpectedFiles || 0} expected, `
-    + `${status.skillMissing.length} missing, ${status.skillChanged.length} changed, ${status.skillExtra.length} extra\n`,
+    `Files: ${status.baseline.manifest.files?.length || 0} expected, ${status.missing.length} missing, ${status.changed.length} changed, ${status.extra.length} extra\n`,
   );
-  process.stdout.write('Codex plugin: project skills checked; user-level plugin installation is not managed by this command.\n');
+  process.stdout.write(
+    `Skills: ${status.skillExpectedRoots || 0} roots, ${status.skillExpectedFiles || 0} expected, ` +
+      `${status.skillMissing.length} missing, ${status.skillChanged.length} changed, ${status.skillExtra.length} extra\n`,
+  );
+  process.stdout.write(
+    'Codex plugin: project skills checked; user-level plugin installation is not managed by this command.\n',
+  );
   for (const warning of status.warnings) {
     process.stdout.write(`warn    ${warning}\n`);
   }
@@ -3227,10 +3358,14 @@ function printPmoStatus(status) {
     process.stdout.write(`error   ${error}\n`);
   }
   if (status.missing.length > 0) {
-    process.stdout.write(`Missing: ${status.missing.slice(0, 10).join(', ')}${status.missing.length > 10 ? ', ...' : ''}\n`);
+    process.stdout.write(
+      `Missing: ${status.missing.slice(0, 10).join(', ')}${status.missing.length > 10 ? ', ...' : ''}\n`,
+    );
   }
   if (status.changed.length > 0) {
-    process.stdout.write(`Changed: ${status.changed.slice(0, 10).join(', ')}${status.changed.length > 10 ? ', ...' : ''}\n`);
+    process.stdout.write(
+      `Changed: ${status.changed.slice(0, 10).join(', ')}${status.changed.length > 10 ? ', ...' : ''}\n`,
+    );
   }
   if (status.errors.length === 0 && status.warnings.length === 0) {
     process.stdout.write('PMO baseline is current.\n');
@@ -3240,8 +3375,8 @@ function printPmoStatus(status) {
 function resolveUpgradePmoBaseline(availableBaseline, requestedVersion) {
   if (requestedVersion && availableBaseline.manifest.packageVersion !== requestedVersion) {
     fail(
-      `@mango/pmo@${requestedVersion} is not available to this CLI. `
-      + `The resolved package is ${formatPmoIdentity(availableBaseline.manifest)}; run the project-local CLI that locks the requested PMO package.`,
+      `@mango/pmo@${requestedVersion} is not available to this CLI. ` +
+        `The resolved package is ${formatPmoIdentity(availableBaseline.manifest)}; run the project-local CLI that locks the requested PMO package.`,
     );
   }
   return availableBaseline;
@@ -3258,9 +3393,9 @@ function resolveLockedPmoBaseline(targetDir, lock, availableBaseline) {
     }
   }
   fail(
-    `mango pmo sync repairs the locked ${formatPmoIdentity(lock)}, but this CLI resolved `
-    + `${formatPmoIdentity(availableBaseline.manifest)} and no matching local backup exists. `
-    + `Use a project-local CLI with the locked @mango/pmo dependency or run mango pmo upgrade --to ${availableBaseline.manifest.packageVersion}.`,
+    `mango pmo sync repairs the locked ${formatPmoIdentity(lock)}, but this CLI resolved ` +
+      `${formatPmoIdentity(availableBaseline.manifest)} and no matching local backup exists. ` +
+      `Use a project-local CLI with the locked @mango/pmo dependency or run mango pmo upgrade --to ${availableBaseline.manifest.packageVersion}.`,
   );
 }
 
@@ -3272,7 +3407,7 @@ function createPmoLock(manifest) {
     bundleSha256: manifest.bundleSha256,
     sourceCommit: manifest.sourceCommit,
     manifestSchemaVersion: manifest.schemaVersion,
-    contracts: (manifest.contracts || []).map(contract => ({
+    contracts: (manifest.contracts || []).map((contract) => ({
       contractId: contract.contractId,
       schemaRevision: contract.schemaRevision,
     })),
@@ -3286,11 +3421,13 @@ function readPmoLock(targetDir, { strict = true } = {}) {
   }
   try {
     const lock = JSON.parse(readFileSync(path, 'utf8'));
-    if (lock.schemaVersion !== 1
-      || lock.packageName !== '@mango/pmo'
-      || typeof lock.packageVersion !== 'string'
-      || !isSha256(lock.bundleSha256)
-      || !Array.isArray(lock.contracts)) {
+    if (
+      lock.schemaVersion !== 1 ||
+      lock.packageName !== '@mango/pmo' ||
+      typeof lock.packageVersion !== 'string' ||
+      !isSha256(lock.bundleSha256) ||
+      !Array.isArray(lock.contracts)
+    ) {
       throw new Error(`invalid PMO project lock: ${PMO_LOCK_RELATIVE_PATH}`);
     }
     return lock;
@@ -3323,8 +3460,8 @@ function verifyPmoBundle(baseline) {
   const comparison = comparePmoBaselineFiles(baseline.root, baseline.manifest);
   if (comparison.missing.length > 0 || comparison.changed.length > 0 || comparison.extra.length > 0) {
     throw new Error(
-      `invalid ${formatPmoIdentity(baseline.manifest)} package bundle; `
-      + `missing=${comparison.missing.join(',') || '-'} changed=${comparison.changed.join(',') || '-'} extra=${comparison.extra.join(',') || '-'}`,
+      `invalid ${formatPmoIdentity(baseline.manifest)} package bundle; ` +
+        `missing=${comparison.missing.join(',') || '-'} changed=${comparison.changed.join(',') || '-'} extra=${comparison.extra.join(',') || '-'}`,
     );
   }
 }
@@ -3343,19 +3480,23 @@ function validatePmoManifest(manifest) {
     throw new Error('invalid @mango/pmo bundle manifest');
   }
   if (manifest.plugin !== null && manifest.plugin !== undefined) {
-    if (manifest.plugin.path !== 'package-root'
-      || !isSha256(manifest.plugin.sha256)
-      || !Array.isArray(manifest.plugin.files)) {
+    if (
+      manifest.plugin.path !== 'package-root' ||
+      !isSha256(manifest.plugin.sha256) ||
+      !Array.isArray(manifest.plugin.files)
+    ) {
       throw new Error('invalid @mango/pmo plugin projection descriptor');
     }
     const pluginPaths = new Set();
     for (const file of manifest.plugin.files) {
-      if (!isSafePmoPath(file.path)
-        || pluginPaths.has(file.path)
-        || !isSha256(file.sha256)
-        || !Number.isInteger(file.size)
-        || !['0644', '0755'].includes(file.mode)
-        || file.kind !== 'plugin') {
+      if (
+        !isSafePmoPath(file.path) ||
+        pluginPaths.has(file.path) ||
+        !isSha256(file.sha256) ||
+        !Number.isInteger(file.size) ||
+        !['0644', '0755'].includes(file.mode) ||
+        file.kind !== 'plugin'
+      ) {
         throw new Error(`invalid @mango/pmo plugin projection file: ${file.path}`);
       }
       pluginPaths.add(file.path);
@@ -3374,21 +3515,25 @@ function validatePmoManifest(manifest) {
     }
     paths.add(file.path);
     filesByPath.set(file.path, file);
-    if (!isSha256(file.sha256)
-      || !Number.isInteger(file.size)
-      || file.size < 0
-      || !['0644', '0755'].includes(file.mode)
-      || !['agent', 'rule', 'template', 'contract', 'tool', 'skill', 'documentation', 'asset'].includes(file.kind)) {
+    if (
+      !isSha256(file.sha256) ||
+      !Number.isInteger(file.size) ||
+      file.size < 0 ||
+      !['0644', '0755'].includes(file.mode) ||
+      !['agent', 'rule', 'template', 'contract', 'tool', 'skill', 'documentation', 'asset'].includes(file.kind)
+    ) {
       throw new Error(`invalid @mango/pmo manifest file descriptor: ${file.path}`);
     }
   }
   const contractIds = new Set();
   for (const contract of manifest.contracts) {
-    if (!contract.contractId
-      || contractIds.has(contract.contractId)
-      || !Number.isInteger(contract.schemaRevision)
-      || contract.schemaRevision < 1
-      || filesByPath.get(contract.path)?.kind !== 'contract') {
+    if (
+      !contract.contractId ||
+      contractIds.has(contract.contractId) ||
+      !Number.isInteger(contract.schemaRevision) ||
+      contract.schemaRevision < 1 ||
+      filesByPath.get(contract.path)?.kind !== 'contract'
+    ) {
       throw new Error(`invalid @mango/pmo contract descriptor: ${contract.contractId || '<missing>'}`);
     }
     contractIds.add(contract.contractId);
@@ -3417,9 +3562,11 @@ function checkPmoLockMatchesManifest(lock, manifest, failures) {
 }
 
 function samePmoBundle(left, right) {
-  return left?.packageName === right?.packageName
-    && left?.packageVersion === right?.packageVersion
-    && left?.bundleSha256 === right?.bundleSha256;
+  return (
+    left?.packageName === right?.packageName &&
+    left?.packageVersion === right?.packageVersion &&
+    left?.bundleSha256 === right?.bundleSha256
+  );
 }
 
 function emptyPmoBaseline(root) {
@@ -3441,7 +3588,9 @@ function formatPmoIdentity(value) {
 }
 
 function formatPmoStatusProblems(status) {
-  return [...status.errors.map(value => `error ${value}`), ...status.warnings.map(value => `warn ${value}`)].join('\n');
+  return [...status.errors.map((value) => `error ${value}`), ...status.warnings.map((value) => `warn ${value}`)].join(
+    '\n',
+  );
 }
 
 function isSha256(value) {
@@ -3449,11 +3598,13 @@ function isSha256(value) {
 }
 
 function isSafePmoPath(path) {
-  return typeof path === 'string'
-    && path.length > 0
-    && !path.startsWith('/')
-    && !path.includes('\\')
-    && path.split('/').every(segment => segment && segment !== '.' && segment !== '..');
+  return (
+    typeof path === 'string' &&
+    path.length > 0 &&
+    !path.startsWith('/') &&
+    !path.includes('\\') &&
+    path.split('/').every((segment) => segment && segment !== '.' && segment !== '..')
+  );
 }
 
 function planPmoSkillSync(targetDir, baseline) {
@@ -3467,14 +3618,17 @@ function planPmoSkillSync(targetDir, baseline) {
       scope: 'pmo-bundle',
     });
   }
-  plan.push({ ...buildFilePlanItem(
-    PMO_SKILL_STATE_RELATIVE_PATH,
-    join(targetDir, PMO_SKILL_STATE_RELATIVE_PATH),
-    `${JSON.stringify(projection, null, 2)}\n`,
-  ), scope: 'pmo-bundle' });
+  plan.push({
+    ...buildFilePlanItem(
+      PMO_SKILL_STATE_RELATIVE_PATH,
+      join(targetDir, PMO_SKILL_STATE_RELATIVE_PATH),
+      `${JSON.stringify(projection, null, 2)}\n`,
+    ),
+    scope: 'pmo-bundle',
+  });
 
   const currentState = resolvePreviousPmoSkillOwnership(targetDir, { strict: false });
-  const expectedFiles = new Set(projection.files.map(file => file.path));
+  const expectedFiles = new Set(projection.files.map((file) => file.path));
   for (const root of currentState?.roots || []) {
     const rootPath = join(targetDir, '.agents/skills', root);
     if (!existsSync(rootPath)) {
@@ -3497,8 +3651,8 @@ function planPmoSkillSync(targetDir, baseline) {
 
 function createPmoSkillProjection(manifest) {
   const files = (manifest.files || [])
-    .filter(file => file.kind === 'skill' && file.path.startsWith('skills/'))
-    .map(file => ({
+    .filter((file) => file.kind === 'skill' && file.path.startsWith('skills/'))
+    .map((file) => ({
       path: file.path.slice('skills/'.length),
       sha256: file.sha256,
       size: file.size,
@@ -3510,7 +3664,7 @@ function createPmoSkillProjection(manifest) {
       throw new Error(`invalid project PMO skill projection path: ${file.path}`);
     }
   }
-  const roots = [...new Set(files.map(file => file.path.split('/')[0]))].sort();
+  const roots = [...new Set(files.map((file) => file.path.split('/')[0]))].sort();
   return {
     schemaVersion: 1,
     packageName: manifest.packageName,
@@ -3528,11 +3682,13 @@ function readPmoSkillState(targetDir, { strict = true } = {}) {
   }
   try {
     const state = JSON.parse(readFileSync(path, 'utf8'));
-    if (state.schemaVersion !== 1
-      || state.packageName !== '@mango/pmo'
-      || !Array.isArray(state.roots)
-      || !Array.isArray(state.files)
-      || !isSha256(state.bundleSha256)) {
+    if (
+      state.schemaVersion !== 1 ||
+      state.packageName !== '@mango/pmo' ||
+      !Array.isArray(state.roots) ||
+      !Array.isArray(state.files) ||
+      !isSha256(state.bundleSha256)
+    ) {
       throw new Error(`invalid project PMO skill state: ${PMO_SKILL_STATE_RELATIVE_PATH}`);
     }
     for (const root of state.roots) {
@@ -3587,13 +3743,15 @@ function comparePmoSkillProjection(targetDir, manifest) {
 
   if (!state) {
     missing.push(PMO_SKILL_STATE_RELATIVE_PATH);
-  } else if (!samePmoBundle(state, manifest)
-    || JSON.stringify(state.roots) !== JSON.stringify(projection.roots)
-    || JSON.stringify(state.files) !== JSON.stringify(projection.files)) {
+  } else if (
+    !samePmoBundle(state, manifest) ||
+    JSON.stringify(state.roots) !== JSON.stringify(projection.roots) ||
+    JSON.stringify(state.files) !== JSON.stringify(projection.files)
+  ) {
     changed.push(PMO_SKILL_STATE_RELATIVE_PATH);
   }
 
-  const expected = new Map(projection.files.map(file => [file.path, file]));
+  const expected = new Map(projection.files.map((file) => [file.path, file]));
   for (const [relativePath, file] of expected) {
     const path = join(skillRoot, relativePath);
     if (!existsSync(path)) {
@@ -3601,12 +3759,12 @@ function comparePmoSkillProjection(targetDir, manifest) {
       continue;
     }
     const content = readFileSync(path);
-    const actualMode = process.platform === 'win32'
-      ? file.mode
-      : (statSync(path).mode & 0o111 ? '0755' : '0644');
-    if (content.length !== file.size
-      || createHash('sha256').update(content).digest('hex') !== file.sha256
-      || actualMode !== file.mode) {
+    const actualMode = process.platform === 'win32' ? file.mode : statSync(path).mode & 0o111 ? '0755' : '0644';
+    if (
+      content.length !== file.size ||
+      createHash('sha256').update(content).digest('hex') !== file.sha256 ||
+      actualMode !== file.mode
+    ) {
       changed.push(`.agents/skills/${relativePath}`);
     }
   }
@@ -3737,22 +3895,34 @@ function installPmoBundleAtomic(targetDir, baseline) {
   } catch (error) {
     const recoveryFailures = [];
     if (installedBaseline) {
-      attemptPmoRecovery(() => rmSync(liveBaseline, { recursive: true, force: true }), 'remove failed baseline', recoveryFailures);
+      attemptPmoRecovery(
+        () => rmSync(liveBaseline, { recursive: true, force: true }),
+        'remove failed baseline',
+        recoveryFailures,
+      );
     }
     if (movedBaseline && existsSync(backupBaseline)) {
-      attemptPmoRecovery(() => {
-        mkdirSync(dirname(liveBaseline), { recursive: true });
-        renameSync(backupBaseline, liveBaseline);
-      }, 'restore previous baseline', recoveryFailures);
+      attemptPmoRecovery(
+        () => {
+          mkdirSync(dirname(liveBaseline), { recursive: true });
+          renameSync(backupBaseline, liveBaseline);
+        },
+        'restore previous baseline',
+        recoveryFailures,
+      );
     }
     if (newLockInstalled) {
       attemptPmoRecovery(() => rmSync(liveLock, { force: true }), 'remove failed PMO lock', recoveryFailures);
     }
     if (movedLock && existsSync(backupLock)) {
-      attemptPmoRecovery(() => {
-        mkdirSync(dirname(liveLock), { recursive: true });
-        renameSync(backupLock, liveLock);
-      }, 'restore previous PMO lock', recoveryFailures);
+      attemptPmoRecovery(
+        () => {
+          mkdirSync(dirname(liveLock), { recursive: true });
+          renameSync(backupLock, liveLock);
+        },
+        'restore previous PMO lock',
+        recoveryFailures,
+      );
     }
     for (const root of installedSkillRoots) {
       attemptPmoRecovery(
@@ -3764,28 +3934,49 @@ function installPmoBundleAtomic(targetDir, baseline) {
     for (const root of movedSkillRoots) {
       const source = join(backupSkills, root);
       if (existsSync(source)) {
-        attemptPmoRecovery(() => {
-          mkdirSync(liveSkillRoot, { recursive: true });
-          renameSync(source, join(liveSkillRoot, root));
-        }, `restore previous PMO skill ${root}`, recoveryFailures);
+        attemptPmoRecovery(
+          () => {
+            mkdirSync(liveSkillRoot, { recursive: true });
+            renameSync(source, join(liveSkillRoot, root));
+          },
+          `restore previous PMO skill ${root}`,
+          recoveryFailures,
+        );
       }
     }
     if (installedSkillState) {
-      attemptPmoRecovery(() => rmSync(liveSkillState, { force: true }), 'remove failed PMO skill state', recoveryFailures);
+      attemptPmoRecovery(
+        () => rmSync(liveSkillState, { force: true }),
+        'remove failed PMO skill state',
+        recoveryFailures,
+      );
     }
     if (movedSkillState && existsSync(backupSkillState)) {
-      attemptPmoRecovery(() => {
-        mkdirSync(dirname(liveSkillState), { recursive: true });
-        renameSync(backupSkillState, liveSkillState);
-      }, 'restore previous PMO skill state', recoveryFailures);
+      attemptPmoRecovery(
+        () => {
+          mkdirSync(dirname(liveSkillState), { recursive: true });
+          renameSync(backupSkillState, liveSkillState);
+        },
+        'restore previous PMO skill state',
+        recoveryFailures,
+      );
     }
-    attemptPmoRecovery(() => rmSync(transactionRoot, { recursive: true, force: true }), 'clean PMO transaction staging', recoveryFailures);
+    attemptPmoRecovery(
+      () => rmSync(transactionRoot, { recursive: true, force: true }),
+      'clean PMO transaction staging',
+      recoveryFailures,
+    );
     if (existsSync(backupRoot) && walkPmoFiles(backupRoot).length === 0) {
-      attemptPmoRecovery(() => rmSync(backupRoot, { recursive: true, force: true }), 'clean empty PMO backup', recoveryFailures);
+      attemptPmoRecovery(
+        () => rmSync(backupRoot, { recursive: true, force: true }),
+        'clean empty PMO backup',
+        recoveryFailures,
+      );
     }
-    const recovery = recoveryFailures.length === 0
-      ? 'previous project bundle restored'
-      : `recovery incomplete: ${recoveryFailures.join('; ')}`;
+    const recovery =
+      recoveryFailures.length === 0
+        ? 'previous project bundle restored'
+        : `recovery incomplete: ${recoveryFailures.join('; ')}`;
     throw new Error(`PMO bundle transaction failed (${recovery}): ${error.message}`);
   }
 
@@ -3804,14 +3995,7 @@ function attemptPmoRecovery(action, label, failures) {
   }
 }
 
-function preparePmoTransaction({
-  baseline,
-  projection,
-  stagedBaseline,
-  stagedSkills,
-  stagedSkillState,
-  stagedLock,
-}) {
+function preparePmoTransaction({ baseline, projection, stagedBaseline, stagedSkills, stagedSkillState, stagedLock }) {
   mkdirSync(stagedBaseline, { recursive: true });
   for (const file of baseline.manifest.files) {
     copyPmoFile(join(baseline.root, file.path), join(stagedBaseline, file.path), file.mode);
@@ -3821,11 +4005,7 @@ function preparePmoTransaction({
 
   mkdirSync(stagedSkills, { recursive: true });
   for (const file of projection.files) {
-    copyPmoFile(
-      join(baseline.root, 'skills', file.path),
-      join(stagedSkills, file.path),
-      file.mode,
-    );
+    copyPmoFile(join(baseline.root, 'skills', file.path), join(stagedSkills, file.path), file.mode);
   }
   writeFileSync(stagedSkillState, `${JSON.stringify(projection, null, 2)}\n`);
   writeFileSync(stagedLock, `${JSON.stringify(createPmoLock(baseline.manifest), null, 2)}\n`);
@@ -3843,14 +4023,11 @@ function rollbackPmoBaseline(argv) {
   if (!existsSync(targetDir) || !statSync(targetDir).isDirectory()) {
     fail(`project directory not found: ${targetDir}`);
   }
-  const backups = listPmoBackups(targetDir)
-    .filter(backup => !options.to || backup.manifest.packageVersion === options.to);
+  const backups = listPmoBackups(targetDir).filter(
+    (backup) => !options.to || backup.manifest.packageVersion === options.to,
+  );
   if (backups.length === 0) {
-    fail(
-      options.to
-        ? `no PMO backup found for @mango/pmo@${options.to}`
-        : 'no PMO backup is available for rollback',
-    );
+    fail(options.to ? `no PMO backup found for @mango/pmo@${options.to}` : 'no PMO backup is available for rollback');
   }
   const selected = backups[0];
   process.stdout.write(
@@ -3907,8 +4084,8 @@ function prunePmoBackupDirectories(targetDir, keep) {
     return;
   }
   const directories = readdirSync(root, { withFileTypes: true })
-    .filter(entry => entry.isDirectory())
-    .map(entry => entry.name)
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name)
     .sort((left, right) => right.localeCompare(left));
   for (const directory of directories.slice(keep)) {
     rmSync(join(root, directory), { recursive: true, force: true });
@@ -3937,19 +4114,16 @@ function walkPmoFiles(root) {
 }
 
 function planShellSync(targetDir, variables, syncShell) {
-  const shellFiles = [
-    'scripts/dev-workspace.sh',
-    'scripts/backend-dev.sh',
-  ];
+  const shellFiles = ['scripts/dev-workspace.sh', 'scripts/backend-dev.sh'];
   if (!syncShell) {
-    return [...shellFiles, 'mango.dev.json'].map(path => ({
+    return [...shellFiles, 'mango.dev.json'].map((path) => ({
       action: 'skip',
       reason: 'rerun with --sync-shell to update generated startup entries',
       path,
       targetPath: join(targetDir, path),
     }));
   }
-  const plan = shellFiles.map(path => {
+  const plan = shellFiles.map((path) => {
     const sourceFile = join(templateRoot, path);
     const targetPath = join(targetDir, path);
     return buildFilePlanItem(path, targetPath, readRenderedTemplateFile(sourceFile, variables));
@@ -3964,11 +4138,7 @@ function planShellSync(targetDir, variables, syncShell) {
     });
   } else {
     const { manifest, warnings } = createBusinessDevManifest(targetDir, variables.projectKebab);
-    plan.push(buildFilePlanItem(
-      'mango.dev.json',
-      manifestPath,
-      `${JSON.stringify(manifest, null, 2)}\n`,
-    ));
+    plan.push(buildFilePlanItem('mango.dev.json', manifestPath, `${JSON.stringify(manifest, null, 2)}\n`));
     for (const warning of warnings) {
       plan.push({
         action: 'warn',
@@ -4055,8 +4225,7 @@ function renderBusinessAgents(variables) {
 }
 
 function containsExternalMangoPmoReference(content) {
-  return /\/Users\/[^\s`'"]*\/mango-pmo/.test(content)
-    || /\b[A-Za-z]:\\Users\\[^\s`'"]*\\mango-pmo/.test(content);
+  return /\/Users\/[^\s`'"]*\/mango-pmo/.test(content) || /\b[A-Za-z]:\\Users\\[^\s`'"]*\\mango-pmo/.test(content);
 }
 
 function buildFilePlanItem(path, targetPath, content) {
@@ -4098,15 +4267,20 @@ function writePlannedFile(item) {
 }
 
 function summarizeSyncPlan(plan) {
-  return plan.reduce((summary, item) => {
-    summary[item.action] = (summary[item.action] || 0) + 1;
-    return summary;
-  }, { add: 0, update: 0, delete: 0, skip: 0, warn: 0 });
+  return plan.reduce(
+    (summary, item) => {
+      summary[item.action] = (summary[item.action] || 0) + 1;
+      return summary;
+    },
+    { add: 0, update: 0, delete: 0, skip: 0, warn: 0 },
+  );
 }
 
 function printPmoSyncPlan(targetDir, plan, dryRun, command = 'sync') {
   const summary = summarizeSyncPlan(plan);
-  process.stdout.write(`${dryRun ? 'PMO baseline dry-run plan' : `PMO baseline ${command} plan`} for ${relativeOrAbsolute(process.cwd(), targetDir)}\n`);
+  process.stdout.write(
+    `${dryRun ? 'PMO baseline dry-run plan' : `PMO baseline ${command} plan`} for ${relativeOrAbsolute(process.cwd(), targetDir)}\n`,
+  );
   process.stdout.write(
     `  add: ${summary.add}, update: ${summary.update}, delete: ${summary.delete}, skip: ${summary.skip}, warn: ${summary.warn}\n`,
   );
@@ -4239,16 +4413,14 @@ function updateFrontendEntry(targetDir, variables) {
 
 function ensureFrontendTypeImport(importsBlock) {
   const typeImport = "import type { MangoAdminFeatureRegistrar } from '@mango/admin';";
-  return importsBlock.includes(typeImport)
-    ? importsBlock
-    : `${importsBlock.trimEnd()}\n${typeImport}`;
+  return importsBlock.includes(typeImport) ? importsBlock : `${importsBlock.trimEnd()}\n${typeImport}`;
 }
 
 function updateRuntimeConfigFiles(targetDir, variables) {
   const configFiles = [
     ['frontend/public/runtime-config.json', variables.runtimeModulesJson],
-    ['frontend/public/runtime-config.monolith.json', variables.runtimeModulesJson],
-    ['frontend/public/runtime-config.microservice.json', variables.runtimeModulesMicroserviceJson],
+    ['frontend/runtime-config.monolith.example.json', variables.runtimeModulesJson],
+    ['frontend/runtime-config.microservice.example.json', variables.runtimeModulesMicroserviceJson],
   ];
   for (const [relativePath, modulesJson] of configFiles) {
     const configPath = join(targetDir, relativePath);
@@ -4288,17 +4460,20 @@ function updateBackendBusinessIntegration(targetDir, variables) {
     `            <version>${variables.projectVersion}</version>`,
     '        </dependency>',
   ].join('\n');
-  writeFileSync(backendPomPath, appendManagedLine(readFileSync(backendPomPath, 'utf8'), 'business-modules', moduleLine));
-  writeFileSync(appPomPath, appendManagedLine(readFileSync(appPomPath, 'utf8'), 'business-dependencies', dependencyXml));
+  writeFileSync(
+    backendPomPath,
+    appendManagedLine(readFileSync(backendPomPath, 'utf8'), 'business-modules', moduleLine),
+  );
+  writeFileSync(
+    appPomPath,
+    appendManagedLine(readFileSync(appPomPath, 'utf8'), 'business-dependencies', dependencyXml),
+  );
   updateBackendBusinessFlywayConfig(targetDir, variables);
 }
 
 function updateBackendBusinessFlywayConfig(targetDir, variables) {
   const applicationPath = join(targetDir, 'backend/app/src/main/resources/application.yml');
-  const flywayModuleBlock = [
-    `        ${variables.moduleKebab}:`,
-    '          enabled: true',
-  ].join('\n');
+  const flywayModuleBlock = [`        ${variables.moduleKebab}:`, '          enabled: true'].join('\n');
   writeFileSync(
     applicationPath,
     appendYamlManagedBlock(readFileSync(applicationPath, 'utf8'), 'business-flyway-modules', flywayModuleBlock),
@@ -4310,19 +4485,22 @@ function updateFrontendBusinessIntegration(targetDir, variables) {
   const packageJson = JSON.parse(readFileSync(packagePath, 'utf8'));
   packageJson.dependencies = packageJson.dependencies || {};
   packageJson.workspaces = ensureWorkspace(packageJson.workspaces, 'packages/*');
-  packageJson.dependencies[`@${variables.projectKebab}/${variables.moduleKebab}`] = variables.projectVersion;
-  packageJson.dependencies[`@${variables.projectKebab}/${variables.moduleKebab}-api`] = variables.projectVersion;
+  packageJson.dependencies[`@${variables.projectKebab}/${variables.moduleKebab}`] =
+    `workspace:${variables.projectVersion}`;
+  packageJson.dependencies[`@${variables.projectKebab}/${variables.moduleKebab}-api`] =
+    `workspace:${variables.projectVersion}`;
   writeFileSync(packagePath, `${JSON.stringify(packageJson, null, 2)}\n`);
 
   const entryPath = join(targetDir, 'frontend/src/main.ts');
   const content = readFileSync(entryPath, 'utf8');
   const importLine = `import { register${variables.modulePascal}Pages } from '@${variables.projectKebab}/${variables.moduleKebab}';`;
   const styleImportLine = `import '@${variables.projectKebab}/${variables.moduleKebab}/style.css';`;
-  const registrarLine = `  register${variables.modulePascal}Pages,`;
+  const registrarLine = `  () => register${variables.modulePascal}Pages(),`;
   const preparedContent = ensureFrontendBusinessRegistrars(content);
-  const withImport = preparedContent.includes(importLine)
-    ? preparedContent
-    : preparedContent.replace('// mango-cli:imports:end', `${importLine}\n// mango-cli:imports:end`);
+  const withHttpClient = ensureFrontendBusinessHttpClient(preparedContent);
+  const withImport = withHttpClient.includes(importLine)
+    ? withHttpClient
+    : withHttpClient.replace('// mango-cli:imports:end', `${importLine}\n// mango-cli:imports:end`);
   const withStyleImport = withImport.includes(styleImportLine)
     ? withImport
     : withImport.replace('// mango-cli:imports:end', `${styleImportLine}\n// mango-cli:imports:end`);
@@ -4330,17 +4508,64 @@ function updateFrontendBusinessIntegration(targetDir, variables) {
   writeFileSync(entryPath, next);
 }
 
+function ensureFrontendBusinessHttpClient(content) {
+  const httpClientImport = "import { createMangoHttpClient } from '@mango/http-client';";
+  const sessionImport = "import { Session } from '@mango/common';";
+  const runtimeImport = "import { MANGO_HTTP_CLIENT_KEY } from '@mango/app-runtime';";
+  let next = content;
+  for (const importLine of [httpClientImport, sessionImport, runtimeImport]) {
+    if (!next.includes(importLine)) {
+      next = next.replace('// mango-cli:imports:end', `${importLine}\n// mango-cli:imports:end`);
+    }
+  }
+  if (!next.includes('const mangoBusinessHttpClient = createMangoHttpClient({')) {
+    const clientBlock = [
+      'const mangoBusinessHttpClient = createMangoHttpClient({',
+      "  baseUrl: import.meta.env.VITE_MANGO_API_BASE_URL || '/api',",
+      '  getAccessToken: () => Session.getToken(),',
+      "  getTenantId: () => Session.get('userInfo')?.tenantId ?? Session.get('tenantId'),",
+      '  onUnauthorized: () => {',
+      '    Session.clearSession();',
+      "    window.location.hash = '/login';",
+      '  },',
+      '});',
+      '',
+    ].join('\n');
+    next = next.replace(
+      '// mango-cli:business-feature-registrars:start',
+      `${clientBlock}// mango-cli:business-feature-registrars:start`,
+    );
+  }
+  return ensureFrontendBusinessAppProvision(next);
+}
+
+function ensureFrontendBusinessAppProvision(content) {
+  const provideLine = 'mangoAdminApp.app.provide(MANGO_HTTP_CLIENT_KEY, mangoBusinessHttpClient);';
+  if (content.includes(provideLine)) {
+    return content;
+  }
+  const createCall = 'createMangoAdminApp({';
+  const mountCall = '}).mount();';
+  if (!content.includes(createCall) || !content.includes(mountCall)) {
+    fail('frontend/src/main.ts must create and mount Mango admin app before adding a business module');
+  }
+  return content
+    .replace(createCall, `const mangoAdminApp = ${createCall}`)
+    .replace(mountCall, `});\n\n${provideLine}\nmangoAdminApp.mount();`);
+}
+
 function ensureFrontendBusinessRegistrars(content) {
   const preparedContent = ensureFrontendMainRegistrarTypes(ensureFrontendMainTypeImport(content));
-  if (content.includes('// mango-cli:business-feature-registrars:start')
-    && content.includes('// mango-cli:business-feature-registrars:end')) {
+  if (
+    content.includes('// mango-cli:business-feature-registrars:start') &&
+    content.includes('// mango-cli:business-feature-registrars:end')
+  ) {
     return ensureAllFeatureRegistrarsUsage(preparedContent);
   }
 
   const block = [
     '// mango-cli:business-feature-registrars:start',
-    'const mangoBusinessFeatureRegistrars: MangoAdminFeatureRegistrar[] = [',
-    '];',
+    'const mangoBusinessFeatureRegistrars: MangoAdminFeatureRegistrar[] = [];',
     '// mango-cli:business-feature-registrars:end',
     '',
     'const mangoAllFeatureRegistrars: MangoAdminFeatureRegistrar[] = [',
@@ -4370,10 +4595,7 @@ function ensureFrontendMainTypeImport(content) {
 
 function ensureFrontendMainRegistrarTypes(content) {
   return content
-    .replace(
-      /const mangoFeatureRegistrars = /,
-      'const mangoFeatureRegistrars: MangoAdminFeatureRegistrar[] = ',
-    )
+    .replace(/const mangoFeatureRegistrars = /, 'const mangoFeatureRegistrars: MangoAdminFeatureRegistrar[] = ')
     .replace(
       /const mangoBusinessFeatureRegistrars = \[/,
       'const mangoBusinessFeatureRegistrars: MangoAdminFeatureRegistrar[] = [',
@@ -4385,10 +4607,7 @@ function ensureFrontendMainRegistrarTypes(content) {
 }
 
 function ensureAllFeatureRegistrarsUsage(content) {
-  return content.replace(
-    'featureRegistrars: mangoFeatureRegistrars,',
-    'featureRegistrars: mangoAllFeatureRegistrars,',
-  );
+  return content.replace('featureRegistrars: mangoFeatureRegistrars,', 'featureRegistrars: mangoAllFeatureRegistrars,');
 }
 
 function appendBusinessFeatureRegistrar(content, registrarLine) {
@@ -4405,13 +4624,22 @@ function appendBusinessFeatureRegistrar(content, registrarLine) {
   if (currentBlock.includes(registrarLine.trim())) {
     return content;
   }
-  const nextBlock = currentBlock.replace('\n];', `\n${registrarLine}\n];`);
+  const registrarExpression = registrarLine.trim().replace(/,$/u, '');
+  let nextBlock;
+  if (currentBlock.includes(' = [];')) {
+    nextBlock = currentBlock.replace(' = [];', ` = [${registrarExpression}];`);
+  } else {
+    const oneLineMatch = currentBlock.match(/ = \[(.+)\];/u);
+    nextBlock = oneLineMatch
+      ? currentBlock.replace(oneLineMatch[0], ` = [\n  ${oneLineMatch[1]},\n  ${registrarExpression},\n];`)
+      : currentBlock.replace('\n];', `\n  ${registrarExpression},\n];`);
+  }
   return `${content.slice(0, startLineEnd + 1)}${nextBlock}${content.slice(endLineStart)}`;
 }
 
 function updateBusinessConfig(targetDir, config, variables) {
   const businessModules = Array.isArray(config.businessModules) ? config.businessModules : [];
-  const nextModules = businessModules.filter(item => item.module !== variables.moduleKebab);
+  const nextModules = businessModules.filter((item) => item.module !== variables.moduleKebab);
   nextModules.push({
     module: variables.moduleKebab,
     aggregate: variables.aggregateKebab,
@@ -4473,13 +4701,7 @@ function replaceManagedBlock(content, name, replacement) {
   if (startIndex < 0 || endIndex < 0 || endIndex < startIndex) {
     fail(`managed block not found in frontend/src/main.ts: ${name}`);
   }
-  return [
-    content.slice(0, startIndex + start.length),
-    '\n',
-    replacement,
-    '\n',
-    content.slice(endIndex),
-  ].join('');
+  return [content.slice(0, startIndex + start.length), '\n', replacement, '\n', content.slice(endIndex)].join('');
 }
 
 function replaceXmlManagedBlock(content, name, replacement, fileLabel = 'backend/pom.xml') {
@@ -4490,30 +4712,22 @@ function replaceXmlManagedBlock(content, name, replacement, fileLabel = 'backend
   if (startIndex < 0 || endIndex < 0 || endIndex < startIndex) {
     fail(`managed block not found in ${fileLabel}: ${name}`);
   }
-  return [
-    content.slice(0, startIndex + start.length),
-    '\n',
-    replacement,
-    '\n',
-    content.slice(endIndex),
-  ].join('');
+  return [content.slice(0, startIndex + start.length), '\n', replacement, '\n', content.slice(endIndex)].join('');
 }
 
 function resolveSelectedModules(options) {
-  const codes = options.preset === 'full'
-    ? FULL_MODULE_CODES
-    : resolveModuleCodes(options.modules || 'none');
-  return codes.map(code => MODULE_BY_CODE.get(code));
+  const codes = options.preset === 'full' ? FULL_MODULE_CODES : resolveModuleCodes(options.modules || 'none');
+  return codes.map((code) => MODULE_BY_CODE.get(code));
 }
 
 function resolveModuleCodes(value) {
   const rawCodes = Array.isArray(value)
-    ? value.flatMap(item => String(item).split(','))
+    ? value.flatMap((item) => String(item).split(','))
     : String(value || '').split(',');
   const normalized = rawCodes
-    .map(item => item.trim())
+    .map((item) => item.trim())
     .filter(Boolean)
-    .flatMap(item => item === 'all' ? FULL_MODULE_CODES : item === 'none' ? [] : [item]);
+    .flatMap((item) => (item === 'all' ? FULL_MODULE_CODES : item === 'none' ? [] : [item]));
   const result = [];
   for (const code of normalized) {
     if (!MODULE_BY_CODE.has(code)) {
@@ -4528,7 +4742,7 @@ function normalizeAdminModules(items) {
   if (!Array.isArray(items)) {
     return [];
   }
-  return items.map(item => ({
+  return items.map((item) => ({
     ...item,
     packageName: item.packageName || item.name,
     registrars: item.registrars || [],
@@ -4537,7 +4751,9 @@ function normalizeAdminModules(items) {
 
 function toFrontendDependency(module) {
   if (!module.packageName || !module.cliVersionKey) {
-    fail(`admin module ${module.code || module.packageName || '<unknown>'} must declare packageName and cliVersionKey for CLI`);
+    fail(
+      `admin module ${module.code || module.packageName || '<unknown>'} must declare packageName and cliVersionKey for CLI`,
+    );
   }
   return {
     name: module.packageName,
@@ -4546,10 +4762,10 @@ function toFrontendDependency(module) {
 }
 
 function buildOptionalModules(adminFullModules, overlays) {
-  const overlayByCode = new Map(overlays.map(overlay => [overlay.code, overlay]));
+  const overlayByCode = new Map(overlays.map((overlay) => [overlay.code, overlay]));
   return adminFullModules
-    .filter(module => module.cliOptional !== false)
-    .map(module => {
+    .filter((module) => module.cliOptional !== false)
+    .map((module) => {
       const overlay = overlayByCode.get(module.code);
       if (!overlay) {
         fail(`mango-cli optional module overlay missing for ${module.code}`);
@@ -4559,8 +4775,10 @@ function buildOptionalModules(adminFullModules, overlays) {
         frontendPackage: module.packageName,
         versionKey: module.cliVersionKey,
         styleImport: module.style,
-        registrarImport: module.registrars.map(registrar => `import { ${registrar.name} } from '${registrar.import}';`),
-        registrar: module.registrars.map(registrar => registrar.name),
+        registrarImport: module.registrars.map(
+          (registrar) => `import { ${registrar.name} } from '${registrar.import}';`,
+        ),
+        registrar: module.registrars.map((registrar) => registrar.name),
       };
     });
 }
@@ -4590,7 +4808,7 @@ function renderFrontendEntryImports(preset, selectedModules) {
   }
   const imports = ["import { createMangoAdminApp } from '@mango/admin';", "import '@mango/admin/style.css';"];
   for (const module of ADMIN_DEFAULT_MODULES) {
-    imports.push(...module.registrars.map(registrar => `import { ${registrar.name} } from '${registrar.import}';`));
+    imports.push(...module.registrars.map((registrar) => `import { ${registrar.name} } from '${registrar.import}';`));
   }
   for (const module of selectedModules) {
     imports.push(...toArray(module.registrarImport));
@@ -4600,15 +4818,15 @@ function renderFrontendEntryImports(preset, selectedModules) {
       imports.push(`import '${module.styleImport}';`);
     }
   }
-  return uniqueBy(imports, item => item).join('\n');
+  return uniqueBy(imports, (item) => item).join('\n');
 }
 
 function renderFrontendFeaturesExpression(preset, selectedModules) {
   if (preset === 'full') {
     return "'full'";
   }
-  const features = selectedModules.map(module => module.feature).filter(Boolean);
-  return `${JSON.stringify(features)} as const`;
+  const features = selectedModules.map((module) => module.feature).filter(Boolean);
+  return `[${features.map((feature) => `'${feature}'`).join(', ')}] as const`;
 }
 
 function renderFrontendFeatureRegistrarsExpression(preset, selectedModules) {
@@ -4616,13 +4834,13 @@ function renderFrontendFeatureRegistrarsExpression(preset, selectedModules) {
     return 'mangoFullAdminFeatureRegistrars';
   }
   const registrars = [
-    ...ADMIN_DEFAULT_MODULES.flatMap(module => module.registrars.map(registrar => registrar.name)),
-    ...selectedModules.flatMap(module => toArray(module.registrar)),
+    ...ADMIN_DEFAULT_MODULES.flatMap((module) => module.registrars.map((registrar) => registrar.name)),
+    ...selectedModules.flatMap((module) => toArray(module.registrar)),
   ];
   if (registrars.length === 0) {
     return '[]';
   }
-  return `[${registrars.join(', ')}]`;
+  return `[\n${registrars.map((registrar) => `  ${registrar},`).join('\n')}\n]`;
 }
 
 function renderBackendManagedDependencies(preset, selectedModules) {
@@ -4642,7 +4860,7 @@ function renderBackendManagedDependencies(preset, selectedModules) {
       ...CORE_BACKEND_DEPENDENCIES,
       ...BUSINESS_BACKEND_API_MANAGED_DEPENDENCIES,
       ...BUSINESS_BACKEND_MANAGED_DEPENDENCIES,
-      ...selectedModules.flatMap(module => module.backend || []),
+      ...selectedModules.flatMap((module) => module.backend || []),
     ],
     true,
     12,
@@ -4651,12 +4869,10 @@ function renderBackendManagedDependencies(preset, selectedModules) {
 
 function renderBackendDependencies(preset, selectedModules) {
   if (preset === 'full') {
-    return renderDependencyXml([
-      { groupId: 'io.mango', artifactId: 'mango-admin-starter' },
-    ], false, 8);
+    return renderDependencyXml([{ groupId: 'io.mango', artifactId: 'mango-admin-starter' }], false, 8);
   }
   return renderDependencyXml(
-    [...CORE_BACKEND_DEPENDENCIES, ...selectedModules.flatMap(module => module.backend || [])],
+    [...CORE_BACKEND_DEPENDENCIES, ...selectedModules.flatMap((module) => module.backend || [])],
     false,
     8,
   );
@@ -4665,14 +4881,16 @@ function renderBackendDependencies(preset, selectedModules) {
 function renderDependencyXml(dependencies, includeVersion, indentSize) {
   const indent = ' '.repeat(indentSize);
   const childIndent = `${indent}    `;
-  return uniqueBy(dependencies, dependency => `${dependency.groupId}:${dependency.artifactId}`)
-    .map(dependency => [
-      `${indent}<dependency>`,
-      `${childIndent}<groupId>${dependency.groupId}</groupId>`,
-      `${childIndent}<artifactId>${dependency.artifactId}</artifactId>`,
-      ...(includeVersion ? [`${childIndent}<version>${dependency.version || '${mango.version}'}</version>`] : []),
-      `${indent}</dependency>`,
-    ].join('\n'))
+  return uniqueBy(dependencies, (dependency) => `${dependency.groupId}:${dependency.artifactId}`)
+    .map((dependency) =>
+      [
+        `${indent}<dependency>`,
+        `${childIndent}<groupId>${dependency.groupId}</groupId>`,
+        `${childIndent}<artifactId>${dependency.artifactId}</artifactId>`,
+        ...(includeVersion ? [`${childIndent}<version>${dependency.version || '${mango.version}'}</version>`] : []),
+        `${indent}</dependency>`,
+      ].join('\n'),
+    )
     .join('\n');
 }
 
@@ -4690,12 +4908,11 @@ function renderRuntimeModulesJson(selectedModules, mode) {
   };
   for (const module of selectedModules) {
     if (module.runtimeModule) {
-      modules[module.runtimeModule.moduleCode] = mode === 'micro'
-        ? module.runtimeModule.micro
-        : module.runtimeModule.local;
+      modules[module.runtimeModule.moduleCode] =
+        mode === 'micro' ? module.runtimeModule.micro : module.runtimeModule.local;
     }
   }
-  return JSON.stringify(modules, null, 4).replace(/\n/g, '\n  ');
+  return JSON.stringify(modules, null, 2).replace(/\n/g, '\n  ');
 }
 
 function uniqueBy(items, getKey) {
@@ -4782,10 +4999,12 @@ function toPosix(path) {
 
 function isTextFile(file) {
   const name = basename(file);
-  return /\.(md|json|xml|java|ts|vue|html|mjs|sh|yml|yaml|txt|gitignore|npmrc|properties|imports|sql)$/.test(name)
-    || name.endsWith('.template')
-    || name === 'CODEOWNERS'
-    || name === 'AGENTS.md';
+  return (
+    /\.(md|json|xml|java|ts|vue|html|mjs|sh|yml|yaml|txt|gitignore|npmrc|properties|imports|sql)$/.test(name) ||
+    name.endsWith('.template') ||
+    name === 'CODEOWNERS' ||
+    name === 'AGENTS.md'
+  );
 }
 
 function readPackageVersion(path, fallback) {
@@ -4849,10 +5068,7 @@ function readMangoBaselineCommit() {
   }
   const ref = head.slice('ref: '.length);
   const commonGitDir = resolveCommonGitDir(gitDir);
-  return readGitRef(gitDir, ref)
-    || readGitRef(commonGitDir, ref)
-    || readPackedGitRef(commonGitDir, ref)
-    || 'unknown';
+  return readGitRef(gitDir, ref) || readGitRef(commonGitDir, ref) || readPackedGitRef(commonGitDir, ref) || 'unknown';
 }
 
 function resolveGitDir() {
@@ -4895,7 +5111,7 @@ function readPackedGitRef(gitDir, ref) {
     return '';
   }
   const lines = readFileSync(packedRefsPath, 'utf8').split(/\r?\n/);
-  const packedLine = lines.find(line => line.endsWith(` ${ref}`));
+  const packedLine = lines.find((line) => line.endsWith(` ${ref}`));
   return packedLine ? packedLine.split(' ')[0].slice(0, 12) : '';
 }
 
@@ -4958,7 +5174,7 @@ function fail(message) {
   process.exit(1);
 }
 
-main().catch(error => {
+main().catch((error) => {
   console.error(`Error: ${error.message}`);
   process.exit(1);
 });

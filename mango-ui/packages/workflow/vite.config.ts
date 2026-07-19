@@ -13,6 +13,7 @@ export default defineConfig({
         'widgets/my-todo': 'src/widgets/my-todo/my-todo.ts',
       },
       formats: ['es'],
+      cssFileName: 'style',
     },
     rollupOptions: {
       external: [

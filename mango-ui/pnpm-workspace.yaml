@@ -1,10 +1,60 @@
 packages:
   - 'packages/*'
   - 'apps/*'
+# The lockfile is generated and reviewed online; sealed/offline CI cannot re-query
+# registry provenance metadata, so it verifies integrity from this trusted lockfile.
+trustLockfile: true
 allowBuilds:
+  '@parcel/watcher': true
   '@swc/core': true
   core-js-pure: true
   es5-ext: true
   esbuild: true
   msw: true
   vue-demi: true
+overrides:
+  '@playwright/test': 1.61.1
+  '@types/node': 22.20.1
+  '@typescript-eslint/eslint-plugin': 8.64.0
+  '@typescript-eslint/parser': 8.64.0
+  '@vitejs/plugin-vue': 6.0.8
+  '@vitest/coverage-v8': 4.1.10
+  '@vitest/ui': 4.1.10
+  '@vue/compiler-sfc': 3.5.13
+  '@vue/test-utils': 2.4.11
+  eslint: 10.7.0
+  eslint-plugin-vue: 10.9.2
+  happy-dom: 20.10.6
+  playwright: 1.61.1
+  playwright-core: 1.61.1
+  postcss: 8.5.19
+  prettier: 3.9.5
+  sass: 1.101.0
+  typescript: 5.9.3
+  vite: 7.3.6
+  vitest: 4.1.10
+  vue-tsc: 3.3.7
+  vue-eslint-parser: 10.3.0
+minimumReleaseAgeExclude:
+  - '@mango/admin-pages@1.0.22'
+  - '@mango/admin-shell@1.0.44'
+  - '@mango/auth@1.0.17'
+  - '@mango/calendar@1.0.23'
+  - '@mango/cms@1.0.12'
+  - '@mango/common@1.0.18'
+  - '@mango/file@1.0.23'
+  - '@mango/grid-layout@1.0.9'
+  - '@mango/grid-widgets@1.0.15'
+  - '@mango/home@1.0.7'
+  - '@mango/job@1.0.15'
+  - '@mango/link-openapi@1.0.3'
+  - '@mango/link@1.0.9'
+  - '@mango/notice@1.0.25'
+  - '@mango/numgen@1.0.23'
+  - '@mango/payment@1.0.15'
+  - '@mango/pmo@1.3.1'
+  - '@mango/rbac@1.0.15'
+  - '@mango/system@1.0.21'
+  - '@mango/template@1.0.23'
+  - '@mango/workflow-business-example@1.0.28'
+  - '@mango/workflow@1.0.29'

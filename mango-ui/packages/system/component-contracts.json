@@ -1,0 +1,133 @@
+{
+  "schemaVersion": 1,
+  "packageName": "@mango/system",
+  "components": [],
+  "legacyComponentExports": [
+    {
+      "exportKey": ".",
+      "exportName": "AdminBrandingView",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2H-N",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": ".",
+      "exportName": "AreaView",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2H-N",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": ".",
+      "exportName": "ConfigView",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2H-N",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": ".",
+      "exportName": "DictView",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2H-N",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": ".",
+      "exportName": "DomainSelector",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2H-N",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": ".",
+      "exportName": "DomainSideTree",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2H-N",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": ".",
+      "exportName": "DomainView",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2H-N",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": ".",
+      "exportName": "LoginLogView",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2H-N",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": ".",
+      "exportName": "OperationLogView",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2H-N",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": ".",
+      "exportName": "ParticipantSelector",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2H-N",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": ".",
+      "exportName": "PublicPathView",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2H-N",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": ".",
+      "exportName": "QuickEntryWidget",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2H-N",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": ".",
+      "exportName": "SystemConfigPanel",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2H-N",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": ".",
+      "exportName": "SystemEventView",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2H-N",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": ".",
+      "exportName": "TenantView",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2H-N",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": ".",
+      "exportName": "UserProfileWidget",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2H-N",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": "./widgets/quick-entry",
+      "exportName": "QuickEntryWidget",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2H-N",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": "./widgets/user-profile",
+      "exportName": "UserProfileWidget",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2H-N",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    }
+  ]
+}

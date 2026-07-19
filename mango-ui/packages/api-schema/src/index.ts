@@ -6,6 +6,58 @@
  */
 export type ApiId = string;
 
+export type HttpMethod = 'DELETE' | 'GET' | 'HEAD' | 'OPTIONS' | 'PATCH' | 'POST' | 'PUT';
+
+export type HttpResponseType = 'arrayBuffer' | 'blob' | 'json' | 'stream' | 'text';
+
+export type HttpHeaderValue = string | readonly string[] | undefined;
+
+export type HttpHeaders = Readonly<Record<string, HttpHeaderValue>>;
+
+export type HttpQueryValue = string | number | boolean | null | undefined | readonly (string | number | boolean)[];
+
+export type HttpQuery = Readonly<Record<string, HttpQueryValue>>;
+
+export interface HttpProgress {
+  loaded: number;
+  total?: number;
+  progress?: number;
+  bytesPerSecond?: number;
+}
+
+export interface HttpRequest<TBody = unknown> {
+  method: HttpMethod;
+  /** Relative endpoint owned by the business API. Base URL belongs to the host provider. */
+  url: string;
+  body?: TBody;
+  query?: HttpQuery;
+  headers?: HttpHeaders;
+  signal?: AbortSignal;
+  timeoutMs?: number;
+  responseType?: HttpResponseType;
+  idempotencyKey?: string;
+  onUploadProgress?: (progress: HttpProgress) => void;
+  onDownloadProgress?: (progress: HttpProgress) => void;
+  metadata?: Readonly<Record<string, unknown>>;
+}
+
+export interface HttpClient {
+  request<TResponse = unknown, TBody = unknown>(request: HttpRequest<TBody>): Promise<TResponse>;
+}
+
+export type HttpFailureKind =
+  'aborted' | 'configuration' | 'network' | 'protocol' | 'timeout' | 'unauthorized' | 'unknown';
+
+export interface HttpError extends Error {
+  readonly name: 'HttpError';
+  readonly kind: HttpFailureKind;
+  readonly status?: number;
+  readonly code?: string;
+  readonly retryable: boolean;
+  readonly requestId?: string;
+  readonly details?: unknown;
+}
+
 /**
  * 统一响应结构
  */

@@ -3,7 +3,6 @@ import { resolve } from 'path';
 import { defineConfig, loadEnv, ConfigEnv } from 'vite';
 import vueSetupExtend from 'vite-plugin-vue-setup-extend';
 import AutoImport from 'unplugin-auto-import/vite';
-import topLevelAwait from 'vite-plugin-top-level-await';
 import { createStyleImportPlugin, VxeTableResolve } from 'vite-plugin-style-import';
 import viteCompression from 'vite-plugin-compression';
 import {
@@ -109,10 +108,6 @@ const viteConfig = defineConfig((mode: ConfigEnv) => {
       }),
       createStyleImportPlugin({
         resolves: [VxeTableResolve()],
-      }),
-      topLevelAwait({
-        promiseExportName: '__tla',
-        promiseImportName: (i) => `__tla_${i}`,
       }),
       ...(enableCompression ? [viteCompression({
         deleteOriginFile: false,

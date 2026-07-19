@@ -1,0 +1,140 @@
+{
+  "schemaVersion": 1,
+  "packageName": "@mango/notice",
+  "components": [],
+  "legacyComponentExports": [
+    {
+      "exportKey": ".",
+      "exportName": "MessageCenterWidget",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2H-N",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": "./admin",
+      "exportName": "NoticeAnnouncementUserView",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2H-N",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": "./admin",
+      "exportName": "NoticeAnnouncementView",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2H-N",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": "./admin",
+      "exportName": "NoticeBusinessConfigView",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2H-N",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": "./admin",
+      "exportName": "NoticeChannelView",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2H-N",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": "./admin",
+      "exportName": "NoticeMessageDefinitionView",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2H-N",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": "./admin",
+      "exportName": "NoticeReceiveSettingView",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2H-N",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": "./admin",
+      "exportName": "NoticeRecordView",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2H-N",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": "./admin",
+      "exportName": "NoticeRetryView",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2H-N",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": "./admin",
+      "exportName": "NoticeSendMessageView",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2H-N",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": "./admin",
+      "exportName": "NoticeSettingView",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2H-N",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": "./admin",
+      "exportName": "NoticeSiteMessageView",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2H-N",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": "./admin",
+      "exportName": "NoticeTaskView",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2H-N",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": "./client",
+      "exportName": "NoticeBell",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2H-N",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": "./client",
+      "exportName": "NoticeClientBell",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2H-N",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": "./client",
+      "exportName": "NoticeClientMessageCenter",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2H-N",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": "./client",
+      "exportName": "NoticeClientReceiveSetting",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2H-N",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": "./client",
+      "exportName": "NoticeDetailDialog",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2H-N",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": "./widgets/message-center",
+      "exportName": "MessageCenterWidget",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2H-N",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    }
+  ]
+}

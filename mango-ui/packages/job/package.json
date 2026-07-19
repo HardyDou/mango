@@ -1,6 +1,6 @@
 {
   "name": "@mango/job",
-  "version": "1.0.15",
+  "version": "1.0.17",
   "private": false,
   "type": "module",
   "main": "./dist/index.js",
@@ -26,8 +26,8 @@
   ],
   "dependencies": {
     "@element-plus/icons-vue": "2.3.2",
-    "@mango/admin-pages": "1.0.22",
-    "@mango/common": "1.0.18"
+    "@mango/admin-pages": "workspace:1.0.24",
+    "@mango/common": "workspace:1.0.19"
   },
   "peerDependencies": {
     "element-plus": ">=2.14.1 <3",
@@ -41,5 +41,28 @@
   "publishConfig": {
     "registry": "http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/"
   },
-  "types": "./dist/index.d.ts"
+  "types": "./dist/index.d.ts",
+  "mangoArchitecture": {
+    "architectureLayer": "FE2",
+    "role": "domain",
+    "domain": "job",
+    "ownerRole": "Frontend Standards Owner",
+    "sourceExports": {
+      ".": {
+        "source": "./src/index.ts",
+        "kind": "code"
+      },
+      "./admin-pages": {
+        "source": "./src/admin-pages.ts",
+        "kind": "code"
+      }
+    },
+    "nonCodeExports": {
+      "./style.css": {
+        "source": "./src/index.ts",
+        "dist": "./dist/style.css",
+        "generation": "build"
+      }
+    }
+  }
 }

@@ -17,6 +17,7 @@ export default defineConfig({
         types: 'src/types/notice.ts',
       },
       formats: ['es'],
+      cssFileName: 'style',
     },
     rollupOptions: {
       external: [

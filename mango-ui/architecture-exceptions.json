@@ -1,0 +1,331 @@
+{
+  "schemaVersion": 1,
+  "exceptions": [
+    {
+      "from": "@mango/calendar",
+      "to": "@mango/admin-pages",
+      "reason": "Legacy FE2 registrar consumes the FE3 admin extension implementation pending @mango/admin-extension extraction.",
+      "ownerRole": "Frontend Standards Owner",
+      "adr": "ADR-FE-005",
+      "decisionEvidence": "mango-docs/designs/2026-07-18-frontend-standards-enforcement-design.md",
+      "expiresAt": "2027-01-18"
+    },
+    {
+      "from": "@mango/calendar",
+      "to": "@mango/grid-widgets",
+      "reason": "Legacy calendar widget contract crosses the FE2 calendar and grid domains pending contract extraction.",
+      "ownerRole": "Frontend Standards Owner",
+      "adr": "ADR-FE-005",
+      "decisionEvidence": "mango-docs/designs/2026-07-18-frontend-standards-enforcement-design.md",
+      "expiresAt": "2027-01-18"
+    },
+    {
+      "from": "@mango/cms",
+      "to": "@mango/admin-pages",
+      "reason": "Legacy FE2 registrar consumes the FE3 admin extension implementation pending @mango/admin-extension extraction.",
+      "ownerRole": "Frontend Standards Owner",
+      "adr": "ADR-FE-005",
+      "decisionEvidence": "mango-docs/designs/2026-07-18-frontend-standards-enforcement-design.md",
+      "expiresAt": "2027-01-18"
+    },
+    {
+      "from": "@mango/cms",
+      "to": "@mango/file",
+      "reason": "Legacy CMS implementation directly consumes the file domain pending a narrow file resource contract.",
+      "ownerRole": "Frontend Standards Owner",
+      "adr": "ADR-FE-005",
+      "decisionEvidence": "mango-docs/designs/2026-07-18-frontend-standards-enforcement-design.md",
+      "expiresAt": "2027-01-18"
+    },
+    {
+      "from": "@mango/file",
+      "to": "@mango/admin-pages",
+      "reason": "Legacy FE2 registrar consumes the FE3 admin extension implementation pending @mango/admin-extension extraction.",
+      "ownerRole": "Frontend Standards Owner",
+      "adr": "ADR-FE-005",
+      "decisionEvidence": "mango-docs/designs/2026-07-18-frontend-standards-enforcement-design.md",
+      "expiresAt": "2027-01-18"
+    },
+    {
+      "from": "@mango/job",
+      "to": "@mango/admin-pages",
+      "reason": "Legacy FE2 registrar consumes the FE3 admin extension implementation pending @mango/admin-extension extraction.",
+      "ownerRole": "Frontend Standards Owner",
+      "adr": "ADR-FE-005",
+      "decisionEvidence": "mango-docs/designs/2026-07-18-frontend-standards-enforcement-design.md",
+      "expiresAt": "2027-01-18"
+    },
+    {
+      "from": "@mango/link",
+      "to": "@mango/admin-pages",
+      "reason": "Legacy FE2 registrar consumes the FE3 admin extension implementation pending @mango/admin-extension extraction.",
+      "ownerRole": "Frontend Standards Owner",
+      "adr": "ADR-FE-005",
+      "decisionEvidence": "mango-docs/designs/2026-07-18-frontend-standards-enforcement-design.md",
+      "expiresAt": "2027-01-18"
+    },
+    {
+      "from": "@mango/link",
+      "to": "@mango/grid-widgets",
+      "reason": "Legacy link widget contract crosses the FE2 link and grid domains pending contract extraction.",
+      "ownerRole": "Frontend Standards Owner",
+      "adr": "ADR-FE-005",
+      "decisionEvidence": "mango-docs/designs/2026-07-18-frontend-standards-enforcement-design.md",
+      "expiresAt": "2027-01-18"
+    },
+    {
+      "from": "@mango/notice",
+      "to": "@mango/admin-pages",
+      "reason": "Legacy FE2 registrar consumes the FE3 admin extension implementation pending @mango/admin-extension extraction.",
+      "ownerRole": "Frontend Standards Owner",
+      "adr": "ADR-FE-005",
+      "decisionEvidence": "mango-docs/designs/2026-07-18-frontend-standards-enforcement-design.md",
+      "expiresAt": "2027-01-18"
+    },
+    {
+      "from": "@mango/notice",
+      "to": "@mango/grid-widgets",
+      "reason": "Legacy notice widget contract crosses the FE2 notice and grid domains pending contract extraction.",
+      "ownerRole": "Frontend Standards Owner",
+      "adr": "ADR-FE-005",
+      "decisionEvidence": "mango-docs/designs/2026-07-18-frontend-standards-enforcement-design.md",
+      "expiresAt": "2027-01-18"
+    },
+    {
+      "from": "@mango/notice",
+      "to": "@mango/system",
+      "reason": "Legacy notice implementation consumes system contracts pending a lower-layer shared contract.",
+      "ownerRole": "Frontend Standards Owner",
+      "adr": "ADR-FE-005",
+      "decisionEvidence": "mango-docs/designs/2026-07-18-frontend-standards-enforcement-design.md",
+      "expiresAt": "2027-01-18"
+    },
+    {
+      "from": "@mango/numgen",
+      "to": "@mango/admin-pages",
+      "reason": "Legacy FE2 registrar consumes the FE3 admin extension implementation pending @mango/admin-extension extraction.",
+      "ownerRole": "Frontend Standards Owner",
+      "adr": "ADR-FE-005",
+      "decisionEvidence": "mango-docs/designs/2026-07-18-frontend-standards-enforcement-design.md",
+      "expiresAt": "2027-01-18"
+    },
+    {
+      "from": "@mango/numgen",
+      "to": "@mango/system",
+      "reason": "Legacy number-generation implementation consumes system contracts pending a lower-layer shared contract.",
+      "ownerRole": "Frontend Standards Owner",
+      "adr": "ADR-FE-005",
+      "decisionEvidence": "mango-docs/designs/2026-07-18-frontend-standards-enforcement-design.md",
+      "expiresAt": "2027-01-18"
+    },
+    {
+      "from": "@mango/payment",
+      "to": "@mango/admin-pages",
+      "reason": "Legacy FE2 registrar consumes the FE3 admin extension implementation pending @mango/admin-extension extraction.",
+      "ownerRole": "Frontend Standards Owner",
+      "adr": "ADR-FE-005",
+      "decisionEvidence": "mango-docs/designs/2026-07-18-frontend-standards-enforcement-design.md",
+      "expiresAt": "2027-01-18"
+    },
+    {
+      "from": "@mango/payment",
+      "to": "@mango/file",
+      "reason": "Legacy payment implementation directly consumes the file domain pending a narrow file resource contract.",
+      "ownerRole": "Frontend Standards Owner",
+      "adr": "ADR-FE-005",
+      "decisionEvidence": "mango-docs/designs/2026-07-18-frontend-standards-enforcement-design.md",
+      "expiresAt": "2027-01-18"
+    },
+    {
+      "from": "@mango/system",
+      "to": "@mango/file",
+      "reason": "Legacy system implementation directly consumes the file domain and participates in the registered three-package SCC.",
+      "ownerRole": "Frontend Standards Owner",
+      "adr": "ADR-FE-005",
+      "decisionEvidence": "mango-docs/designs/2026-07-18-frontend-standards-enforcement-design.md",
+      "expiresAt": "2027-01-18"
+    },
+    {
+      "from": "@mango/system",
+      "to": "@mango/grid-widgets",
+      "reason": "Legacy system widget contract crosses the FE2 system and grid domains pending contract extraction.",
+      "ownerRole": "Frontend Standards Owner",
+      "adr": "ADR-FE-005",
+      "decisionEvidence": "mango-docs/designs/2026-07-18-frontend-standards-enforcement-design.md",
+      "expiresAt": "2027-01-18"
+    },
+    {
+      "from": "@mango/system",
+      "to": "@mango/rbac",
+      "reason": "Legacy system implementation consumes RBAC runtime behavior pending an explicit domain integration contract.",
+      "ownerRole": "Frontend Standards Owner",
+      "adr": "ADR-FE-005",
+      "decisionEvidence": "mango-docs/designs/2026-07-18-frontend-standards-enforcement-design.md",
+      "expiresAt": "2027-01-18"
+    },
+    {
+      "from": "@mango/template",
+      "to": "@mango/admin-pages",
+      "reason": "Legacy FE2 registrar consumes the FE3 admin extension implementation pending @mango/admin-extension extraction.",
+      "ownerRole": "Frontend Standards Owner",
+      "adr": "ADR-FE-005",
+      "decisionEvidence": "mango-docs/designs/2026-07-18-frontend-standards-enforcement-design.md",
+      "expiresAt": "2027-01-18"
+    },
+    {
+      "from": "@mango/template",
+      "to": "@mango/file",
+      "reason": "Legacy template implementation directly consumes the file domain pending a narrow file resource contract.",
+      "ownerRole": "Frontend Standards Owner",
+      "adr": "ADR-FE-005",
+      "decisionEvidence": "mango-docs/designs/2026-07-18-frontend-standards-enforcement-design.md",
+      "expiresAt": "2027-01-18"
+    },
+    {
+      "from": "@mango/template",
+      "to": "@mango/system",
+      "reason": "Legacy template implementation consumes system contracts pending a lower-layer shared contract.",
+      "ownerRole": "Frontend Standards Owner",
+      "adr": "ADR-FE-005",
+      "decisionEvidence": "mango-docs/designs/2026-07-18-frontend-standards-enforcement-design.md",
+      "expiresAt": "2027-01-18"
+    },
+    {
+      "from": "@mango/workflow",
+      "to": "@mango/admin-pages",
+      "reason": "Legacy FE2 registrar consumes the FE3 admin extension implementation pending @mango/admin-extension extraction.",
+      "ownerRole": "Frontend Standards Owner",
+      "adr": "ADR-FE-005",
+      "decisionEvidence": "mango-docs/designs/2026-07-18-frontend-standards-enforcement-design.md",
+      "expiresAt": "2027-01-18"
+    },
+    {
+      "from": "@mango/workflow",
+      "to": "@mango/file",
+      "reason": "Legacy workflow implementation directly consumes the file domain pending a narrow file resource contract.",
+      "ownerRole": "Frontend Standards Owner",
+      "adr": "ADR-FE-005",
+      "decisionEvidence": "mango-docs/designs/2026-07-18-frontend-standards-enforcement-design.md",
+      "expiresAt": "2027-01-18"
+    },
+    {
+      "from": "@mango/workflow",
+      "to": "@mango/grid-widgets",
+      "reason": "Legacy workflow widget contract crosses the FE2 workflow and grid domains pending contract extraction.",
+      "ownerRole": "Frontend Standards Owner",
+      "adr": "ADR-FE-005",
+      "decisionEvidence": "mango-docs/designs/2026-07-18-frontend-standards-enforcement-design.md",
+      "expiresAt": "2027-01-18"
+    },
+    {
+      "from": "@mango/workflow",
+      "to": "@mango/system",
+      "reason": "Legacy workflow implementation consumes system contracts pending a lower-layer shared contract.",
+      "ownerRole": "Frontend Standards Owner",
+      "adr": "ADR-FE-005",
+      "decisionEvidence": "mango-docs/designs/2026-07-18-frontend-standards-enforcement-design.md",
+      "expiresAt": "2027-01-18"
+    },
+    {
+      "from": "@mango/workflow-business-example",
+      "to": "@mango/admin-pages",
+      "reason": "Legacy FE2 registrar consumes the FE3 admin extension implementation pending @mango/admin-extension extraction.",
+      "ownerRole": "Frontend Standards Owner",
+      "adr": "ADR-FE-005",
+      "decisionEvidence": "mango-docs/designs/2026-07-18-frontend-standards-enforcement-design.md",
+      "expiresAt": "2027-01-18"
+    }
+  ],
+  "legacySccs": [
+    {
+      "id": "admin-pages-file-system-manifest",
+      "graphKind": "manifest",
+      "members": ["@mango/admin-pages", "@mango/file", "@mango/system"],
+      "edges": [
+        {
+          "from": "@mango/admin-pages",
+          "to": "@mango/system",
+          "kind": "dependencies"
+        },
+        {
+          "from": "@mango/file",
+          "to": "@mango/admin-pages",
+          "kind": "dependencies"
+        },
+        {
+          "from": "@mango/system",
+          "to": "@mango/file",
+          "kind": "peerDependencies"
+        }
+      ],
+      "ownerRole": "Frontend Standards Owner",
+      "adr": "ADR-FE-005",
+      "targetPhase": 2
+    },
+    {
+      "id": "admin-pages-file-system-source-runtime",
+      "graphKind": "source-runtime",
+      "members": ["@mango/admin-pages", "@mango/file", "@mango/system"],
+      "edges": [
+        {
+          "from": "@mango/admin-pages",
+          "to": "@mango/system",
+          "kind": "runtime"
+        },
+        {
+          "from": "@mango/file",
+          "to": "@mango/admin-pages",
+          "kind": "runtime"
+        },
+        {
+          "from": "@mango/system",
+          "to": "@mango/file",
+          "kind": "runtime"
+        }
+      ],
+      "ownerRole": "Frontend Standards Owner",
+      "adr": "ADR-FE-005",
+      "targetPhase": 2
+    },
+    {
+      "id": "admin-pages-file-system-combined",
+      "graphKind": "combined",
+      "members": ["@mango/admin-pages", "@mango/file", "@mango/system"],
+      "edges": [
+        {
+          "from": "@mango/admin-pages",
+          "to": "@mango/system",
+          "kind": "dependencies"
+        },
+        {
+          "from": "@mango/admin-pages",
+          "to": "@mango/system",
+          "kind": "runtime"
+        },
+        {
+          "from": "@mango/file",
+          "to": "@mango/admin-pages",
+          "kind": "dependencies"
+        },
+        {
+          "from": "@mango/file",
+          "to": "@mango/admin-pages",
+          "kind": "runtime"
+        },
+        {
+          "from": "@mango/system",
+          "to": "@mango/file",
+          "kind": "peerDependencies"
+        },
+        {
+          "from": "@mango/system",
+          "to": "@mango/file",
+          "kind": "runtime"
+        }
+      ],
+      "ownerRole": "Frontend Standards Owner",
+      "adr": "ADR-FE-005",
+      "targetPhase": 2
+    }
+  ]
+}

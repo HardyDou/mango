@@ -13,7 +13,7 @@ describe('@mango/admin-shell package boundary', () => {
     expect(indexSource).toContain('MangoAdminShellOptions');
   });
 
-  it('does not publish workspace dependency ranges', () => {
+  it('uses only exact workspace dependency pins in the development manifest', () => {
     const packageJson = JSON.parse(readFile('package.json')) as {
       dependencies?: Record<string, string>;
       peerDependencies?: Record<string, string>;
@@ -23,7 +23,8 @@ describe('@mango/admin-shell package boundary', () => {
       ...Object.values(packageJson.peerDependencies || {}),
     ];
 
-    expect(dependencyRanges.some((range) => range.includes('workspace:'))).toBe(false);
+    const workspaceRanges = dependencyRanges.filter((range) => range.startsWith('workspace:'));
+    expect(workspaceRanges.every((range) => /^workspace:\d+\.\d+\.\d+$/u.test(range))).toBe(true);
   });
 
   it('keeps published subpath imports on built files instead of source files', () => {
@@ -69,23 +70,16 @@ describe('@mango/admin-shell package boundary', () => {
       npm?: Record<string, string>;
     };
 
-    expect(packageJson.dependencies?.['@mango/common']).toBe(releaseVersions.npm?.['@mango/common']);
+    expect(packageJson.dependencies?.['@mango/common']).toBe(`workspace:${releaseVersions.npm?.['@mango/common']}`);
   });
 
   it('does not depend on app-private source paths', () => {
-    const sourceFiles = listFiles(join(packageRoot, 'src'))
-      .filter((file) => /\.(ts|vue)$/.test(file));
-    const forbiddenPatterns = [
-      /apps\/mango-admin-shell/,
-      /from ['"]@\//,
-      /import\(['"]@\//,
-    ];
+    const sourceFiles = listFiles(join(packageRoot, 'src')).filter((file) => /\.(ts|vue)$/.test(file));
+    const forbiddenPatterns = [/apps\/mango-admin-shell/, /from ['"]@\//, /import\(['"]@\//];
 
     const violations = sourceFiles.flatMap((file) => {
       const content = readFileSync(file, 'utf-8');
-      return forbiddenPatterns
-        .filter((pattern) => pattern.test(content))
-        .map((pattern) => `${file}:${pattern}`);
+      return forbiddenPatterns.filter((pattern) => pattern.test(content)).map((pattern) => `${file}:${pattern}`);
     });
 
     expect(violations).toEqual([]);

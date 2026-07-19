@@ -1,6 +1,6 @@
 {
   "name": "@mango/notice",
-  "version": "1.0.25",
+  "version": "1.0.27",
   "private": false,
   "type": "module",
   "main": "./dist/index.js",
@@ -66,10 +66,10 @@
   ],
   "dependencies": {
     "@element-plus/icons-vue": "2.3.2",
-    "@mango/admin-pages": "1.0.22",
-    "@mango/common": "1.0.18",
-    "@mango/grid-widgets": "1.0.15",
-    "@mango/system": "1.0.21"
+    "@mango/admin-pages": "workspace:1.0.24",
+    "@mango/common": "workspace:1.0.19",
+    "@mango/grid-widgets": "workspace:1.0.16",
+    "@mango/system": "workspace:1.0.23"
   },
   "peerDependencies": {
     "element-plus": ">=2.14.1 <3",
@@ -84,5 +84,56 @@
   "publishConfig": {
     "registry": "http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/"
   },
-  "types": "./dist/index.d.ts"
+  "types": "./dist/index.d.ts",
+  "mangoArchitecture": {
+    "architectureLayer": "FE2",
+    "role": "domain",
+    "domain": "notice",
+    "ownerRole": "Frontend Standards Owner",
+    "sourceExports": {
+      ".": {
+        "source": "./src/index.ts",
+        "kind": "code"
+      },
+      "./admin": {
+        "source": "./src/admin.ts",
+        "kind": "code"
+      },
+      "./admin-pages": {
+        "source": "./src/admin-pages.ts",
+        "kind": "code"
+      },
+      "./admin-shell": {
+        "source": "./src/admin-shell.ts",
+        "kind": "code"
+      },
+      "./client": {
+        "source": "./src/client.ts",
+        "kind": "code"
+      },
+      "./realtime": {
+        "source": "./src/realtime.ts",
+        "kind": "code"
+      },
+      "./api": {
+        "source": "./src/api/notice.ts",
+        "kind": "code"
+      },
+      "./types": {
+        "source": "./src/types/notice.ts",
+        "kind": "code"
+      },
+      "./widgets/message-center": {
+        "source": "./src/widgets/message-center/message-center.ts",
+        "kind": "code"
+      }
+    },
+    "nonCodeExports": {
+      "./style.css": {
+        "source": "./src/style.css",
+        "dist": "./dist/style.css",
+        "generation": "build"
+      }
+    }
+  }
 }

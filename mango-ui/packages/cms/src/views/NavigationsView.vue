@@ -4,5 +4,8 @@
 
 <script setup lang="ts">
 import CmsResourceView from './CmsResourceView.vue';
-import { navigationConfig } from './configs';
+import { useCmsApi } from '../composables/useCmsApi';
+import { createCmsResourceConfigs } from './configs';
+
+const { navigationConfig } = createCmsResourceConfigs(useCmsApi());
 </script>

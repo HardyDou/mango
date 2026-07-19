@@ -1,6 +1,6 @@
 {
   "name": "@mango/common",
-  "version": "1.0.18",
+  "version": "1.0.19",
   "private": false,
   "type": "module",
   "main": "./dist/index.js",
@@ -94,7 +94,8 @@
     "package.json"
   ],
   "dependencies": {
-    "axios": "^1.3.3",
+    "axios": "1.18.1",
+    "@mango/http-client": "workspace:1.0.0",
     "qs": "^6.11.0",
     "screenfull": "^6.0.2",
     "nprogress": "^0.2.0",
@@ -113,7 +114,7 @@
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
-    "@mango/api-schema": "1.0.2",
+    "@mango/api-schema": "workspace:1.0.3",
     "@vitejs/plugin-vue": "^4.0.0",
     "@vue/test-utils": "^2.4.3",
     "happy-dom": "^14.12.0",
@@ -131,5 +132,112 @@
   "publishConfig": {
     "registry": "http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/"
   },
-  "types": "./dist/index.d.ts"
+  "types": "./dist/index.d.ts",
+  "mangoArchitecture": {
+    "architectureLayer": "FE1",
+    "role": "foundation",
+    "domain": "platform",
+    "ownerRole": "Frontend Standards Owner",
+    "sourceExports": {
+      ".": {
+        "source": "./index.ts",
+        "kind": "code"
+      },
+      "./components/Pagination/index.vue": {
+        "source": "./components/Pagination/index.vue",
+        "kind": "code"
+      },
+      "./components/MangoListPage/index.vue": {
+        "source": "./components/MangoListPage/index.vue",
+        "kind": "code"
+      },
+      "./components/MangoSearchPanel/index.vue": {
+        "source": "./components/MangoSearchPanel/index.vue",
+        "kind": "code"
+      },
+      "./components/MangoListPanel/index.vue": {
+        "source": "./components/MangoListPanel/index.vue",
+        "kind": "code"
+      },
+      "./components/MangoDetailPage/index.vue": {
+        "source": "./components/MangoDetailPage/index.vue",
+        "kind": "code"
+      },
+      "./components/MangoFormPage/index.vue": {
+        "source": "./components/MangoFormPage/index.vue",
+        "kind": "code"
+      },
+      "./components/MangoPageSection/index.vue": {
+        "source": "./components/MangoPageSection/index.vue",
+        "kind": "code"
+      },
+      "./components/IconSelector/index.vue": {
+        "source": "./components/IconSelector/index.vue",
+        "kind": "code"
+      },
+      "./components/DictTag/index.vue": {
+        "source": "./components/DictTag/index.vue",
+        "kind": "code"
+      },
+      "./components/DictSelect/index.vue": {
+        "source": "./components/DictSelect/index.vue",
+        "kind": "code"
+      },
+      "./components/PasswordPolicyHint/index.vue": {
+        "source": "./components/PasswordPolicyHint/index.vue",
+        "kind": "code"
+      },
+      "./components/MangoDialog/index.vue": {
+        "source": "./components/MangoDialog/index.vue",
+        "kind": "code"
+      },
+      "./utils/*": {
+        "sourcePattern": "./utils/*.ts",
+        "kind": "code",
+        "expiresAt": "2027-01-18"
+      },
+      "./utils/realtime/*": {
+        "sourcePattern": "./utils/realtime/*.ts",
+        "kind": "code",
+        "expiresAt": "2027-01-18"
+      },
+      "./hooks/*": {
+        "sourcePattern": "./hooks/*.ts",
+        "kind": "code",
+        "expiresAt": "2027-01-18"
+      },
+      "./api/*": {
+        "sourcePattern": "./api/*.ts",
+        "kind": "code",
+        "expiresAt": "2027-01-18"
+      }
+    },
+    "nonCodeExports": {
+      "./style.css": {
+        "source": "./index.ts",
+        "dist": "./dist/style.css",
+        "generation": "build"
+      },
+      "./theme/index.css": {
+        "source": "./theme/index.css",
+        "dist": "./theme/index.css",
+        "generation": "static"
+      },
+      "./theme/admin-standard.css": {
+        "source": "./theme/admin-standard.css",
+        "dist": "./theme/admin-standard.css",
+        "generation": "static"
+      },
+      "./theme/admin-compact.css": {
+        "source": "./theme/admin-compact.css",
+        "dist": "./theme/admin-compact.css",
+        "generation": "static"
+      },
+      "./theme/index.scss": {
+        "source": "./theme/index.scss",
+        "dist": "./theme/index.scss",
+        "generation": "static"
+      }
+    }
+  }
 }

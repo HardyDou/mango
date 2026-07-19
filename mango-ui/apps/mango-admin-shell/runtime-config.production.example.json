@@ -4,7 +4,7 @@
     "mango-authorization": {
       "mode": "micro",
       "runtimeCode": "mango-admin-rbac-app",
-      "entry": "https://rbac.mango.io/",
+      "entry": "https://rbac.mango.example/",
       "timeoutMs": 15000,
       "preload": false,
       "alive": false
@@ -16,7 +16,7 @@
     "mango-workflow": {
       "mode": "micro",
       "runtimeCode": "mango-admin-workflow-app",
-      "entry": "https://workflow.mango.io/",
+      "entry": "https://workflow.mango.example/",
       "timeoutMs": 15000,
       "preload": true,
       "alive": false
@@ -24,7 +24,7 @@
     "mango-template": {
       "mode": "micro",
       "runtimeCode": "mango-admin-template-app",
-      "entry": "https://template.mango.io/",
+      "entry": "https://template.mango.example/",
       "timeoutMs": 15000,
       "preload": false,
       "alive": false
@@ -32,7 +32,7 @@
     "mango-cms": {
       "mode": "micro",
       "runtimeCode": "mango-admin-cms-app",
-      "entry": "https://cms.mango.io/",
+      "entry": "https://cms.mango.example/",
       "timeoutMs": 15000,
       "preload": false,
       "alive": false

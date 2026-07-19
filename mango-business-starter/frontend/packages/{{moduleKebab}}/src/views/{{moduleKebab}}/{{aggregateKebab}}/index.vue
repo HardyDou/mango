@@ -3,12 +3,7 @@
     <template #search>
       <MangoSearchPanel :model="query" collapsible :collapsed-count="3" @search="handleSearch" @reset="handleReset">
         <el-form-item label="{{aggregateName}}名称">
-          <el-input
-            v-model="query.name"
-            clearable
-            placeholder="请输入{{aggregateName}}名称"
-            @keyup.enter="handleSearch"
-          />
+          <el-input v-model="query.name" clearable :placeholder="namePlaceholder" @keyup.enter="handleSearch" />
         </el-form-item>
       </MangoSearchPanel>
     </template>
@@ -31,12 +26,7 @@
       </el-table>
 
       <template #pagination>
-        <Pagination
-          v-model:page="query.page"
-          v-model:limit="query.size"
-          :total="total"
-          @pagination="loadData"
-        />
+        <Pagination v-model:page="query.page" v-model:limit="query.size" :total="total" @pagination="loadData" />
       </template>
     </MangoListPanel>
 
@@ -49,7 +39,7 @@
     >
       <el-form ref="formRef" :model="formModel" :rules="formRules" label-width="120px">
         <el-form-item label="{{aggregateName}}名称" prop="name">
-          <el-input v-model="formModel.name" maxlength="128" show-word-limit placeholder="请输入{{aggregateName}}名称" />
+          <el-input v-model="formModel.name" maxlength="128" show-word-limit :placeholder="namePlaceholder" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -75,15 +65,11 @@
 <script setup lang="ts">
 import { MangoListPage, MangoListPanel, MangoSearchPanel, Pagination } from '@mango/common';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
-import { onMounted, reactive, ref } from 'vue';
-import {
-  create{{aggregatePascal}},
-  delete{{aggregatePascal}},
-  get{{aggregatePascal}}Detail,
-  page{{aggregatePascal}},
-  update{{aggregatePascal}},
-  type {{aggregatePascal}}VO,
-} from '@{{projectKebab}}/{{moduleKebab}}-api';
+import { onBeforeUnmount, onMounted, reactive, ref } from 'vue';
+import { type {{aggregatePascal}}VO } from '@{{projectKebab}}/{{moduleKebab}}-api';
+import { use{{aggregatePascal}}Api } from '../../../api-context';
+
+defineOptions({ name: '{{aggregatePascal}}ListPage' });
 
 type FormMode = 'create' | 'edit';
 
@@ -101,6 +87,10 @@ const detailVisible = ref(false);
 const formMode = ref<FormMode>('create');
 const detailRecord = ref<{{aggregatePascal}}VO | null>(null);
 const formRef = ref<FormInstance>();
+const pageAbortController = new AbortController();
+let listRequestController: AbortController | undefined;
+const {{aggregateCamel}}Api = use{{aggregatePascal}}Api();
+const namePlaceholder = '请输入{{aggregateName}}名称';
 
 const query = reactive({
   page: 1,
@@ -120,13 +110,25 @@ const formRules: FormRules<{{aggregatePascal}}FormModel> = {
 };
 
 async function loadData() {
+  listRequestController?.abort('Superseded by a newer list request');
+  const requestController = new AbortController();
+  listRequestController = requestController;
+  const abortForPageUnmount = () => requestController.abort('{{moduleKebab}} page unmounted');
+  pageAbortController.signal.addEventListener('abort', abortForPageUnmount, { once: true });
   loading.value = true;
   try {
-    const result = await page{{aggregatePascal}}(query);
+    const result = await {{aggregateCamel}}Api.page({ ...query }, requestController.signal);
+    if (listRequestController !== requestController) return;
     records.value = result.records;
     total.value = Number(result.total || 0);
+  } catch (error) {
+    if (!isAbortedFailure(error)) ElMessage.error(errorMessage(error, '加载{{aggregateName}}列表失败'));
   } finally {
-    loading.value = false;
+    pageAbortController.signal.removeEventListener('abort', abortForPageUnmount);
+    if (listRequestController === requestController) {
+      listRequestController = undefined;
+      loading.value = false;
+    }
   }
 }
 
@@ -170,22 +172,29 @@ async function submitForm() {
   submitting.value = true;
   try {
     if (formMode.value === 'create') {
-      await create{{aggregatePascal}}({ name: formModel.name });
+      await {{aggregateCamel}}Api.create({ name: formModel.name }, pageAbortController.signal);
       ElMessage.success('新增成功');
     } else if (formModel.id) {
-      await update{{aggregatePascal}}({ id: formModel.id, name: formModel.name });
+      const command = { id: formModel.id, name: formModel.name };
+      await {{aggregateCamel}}Api.update(command, pageAbortController.signal);
       ElMessage.success('保存成功');
     }
     formDialogVisible.value = false;
     await loadData();
+  } catch (error) {
+    if (!isAbortedFailure(error)) ElMessage.error(errorMessage(error, '保存{{aggregateName}}失败'));
   } finally {
     submitting.value = false;
   }
 }
 
 async function openDetail(record: {{aggregatePascal}}VO) {
-  detailRecord.value = await get{{aggregatePascal}}Detail(String(record.id));
-  detailVisible.value = true;
+  try {
+    detailRecord.value = await {{aggregateCamel}}Api.detail(String(record.id), pageAbortController.signal);
+    detailVisible.value = true;
+  } catch (error) {
+    if (!isAbortedFailure(error)) ElMessage.error(errorMessage(error, '加载{{aggregateName}}详情失败'));
+  }
 }
 
 async function handleDelete(record: {{aggregatePascal}}VO) {
@@ -198,12 +207,24 @@ async function handleDelete(record: {{aggregatePascal}}VO) {
   } catch {
     return;
   }
-  await delete{{aggregatePascal}}({ id: record.id });
-  ElMessage.success('删除成功');
-  if (records.value.length === 1 && query.page > 1) {
-    query.page -= 1;
+  try {
+    await {{aggregateCamel}}Api.delete({ id: record.id }, pageAbortController.signal);
+    ElMessage.success('删除成功');
+    if (records.value.length === 1 && query.page > 1) query.page -= 1;
+    await loadData();
+  } catch (error) {
+    if (!isAbortedFailure(error)) ElMessage.error(errorMessage(error, '删除{{aggregateName}}失败'));
   }
-  await loadData();
+}
+
+function isAbortedFailure(error: unknown): boolean {
+  return (
+    error instanceof Error && (error.name === 'AbortError' || (error as Error & { kind?: string }).kind === 'aborted')
+  );
+}
+
+function errorMessage(error: unknown, fallback: string): string {
+  return error instanceof Error && error.message ? error.message : fallback;
 }
 
 function handleDialogClose() {
@@ -212,5 +233,10 @@ function handleDialogClose() {
 
 onMounted(() => {
   void loadData();
+});
+
+onBeforeUnmount(() => {
+  listRequestController?.abort('{{moduleKebab}} page unmounted');
+  pageAbortController.abort('{{moduleKebab}} page unmounted');
 });
 </script>

@@ -1,0 +1,152 @@
+name: Frontend Quality
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: frontend-quality-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  frontend-quality:
+    name: frontend-quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout complete history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.14.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.23.1
+          cache: pnpm
+          cache-dependency-path: mango-ui/pnpm-lock.yaml
+
+      - name: Install locked frontend dependencies
+        working-directory: mango-ui
+        run: pnpm install --frozen-lockfile --registry=https://registry.npmjs.org/
+
+      - name: Run pull request frontend quality gate
+        if: github.event_name == 'pull_request'
+        working-directory: mango-ui
+        env:
+          MANGO_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          MANGO_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: pnpm check:affected -- --base="$MANGO_BASE_SHA" --head="$MANGO_HEAD_SHA"
+
+      - name: Run main frontend quality gate
+        if: github.event_name == 'push'
+        working-directory: mango-ui
+        env:
+          MANGO_BASE_SHA: ${{ github.event.before }}
+          MANGO_HEAD_SHA: ${{ github.sha }}
+        run: pnpm check:affected -- --base="$MANGO_BASE_SHA" --head="$MANGO_HEAD_SHA"
+
+      - name: Run manual full frontend quality gate
+        if: github.event_name == 'workflow_dispatch'
+        working-directory: mango-ui
+        run: pnpm check
+
+      - name: Upload frontend quality evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-quality-${{ github.sha }}
+          path: .runtime/frontend-quality
+          if-no-files-found: warn
+          retention-days: 30
+
+  frontend-e2e-p0:
+    name: frontend-e2e-p0
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=12
+    steps:
+      - name: Checkout complete history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.14.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.23.1
+          cache: pnpm
+          cache-dependency-path: mango-ui/pnpm-lock.yaml
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      - name: Install MySQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes mysql-client
+
+      - name: Install locked frontend dependencies
+        working-directory: mango-ui
+        run: pnpm install --frozen-lockfile --registry=https://registry.npmjs.org/
+
+      - name: Install Chrome for Playwright
+        run: pnpm --dir mango-ui exec playwright install --with-deps chrome
+
+      - name: Initialize isolated Mango workspace
+        run: node mango-ui/packages/mango-cli/src/index.mjs workspace init
+
+      - name: Start real Mango backend
+        run: node mango-ui/packages/mango-cli/src/index.mjs dev start backend
+
+      - name: Run P0 browser acceptance
+        working-directory: mango-ui
+        run: pnpm test:e2e:p0
+
+      - name: Stop Mango development services
+        if: always()
+        continue-on-error: true
+        run: node mango-ui/packages/mango-cli/src/index.mjs dev stop
+
+      - name: Upload P0 browser evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-e2e-p0-${{ github.sha }}
+          path: |
+            .runtime/playwright
+            mango-ui/test-results
+            .mango/logs
+          if-no-files-found: warn
+          retention-days: 30

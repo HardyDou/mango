@@ -4,6 +4,17 @@ import { existsSync, mkdtempSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { deflateSync } from 'node:zlib';
+import {
+  checkButton,
+  confirmDelete,
+  expectToast,
+  expectUploadSuccess,
+  firstDialog,
+  formItem,
+  selectValue,
+  selectValues,
+  waitCmsReady,
+} from '../support/element-plus';
 
 type StepResult = {
   page: string;
@@ -55,9 +66,7 @@ async function allowCmsVideoUploads(page: Page) {
   const body = await response.json();
   expect(body.success || body.code === 200, JSON.stringify(body)).toBeTruthy();
   originalFileSettings = editableFileSettings(body.data);
-  const allowedExtensions = Array.isArray(body.data.allowedExtensions)
-    ? body.data.allowedExtensions
-    : [];
+  const allowedExtensions = Array.isArray(body.data.allowedExtensions) ? body.data.allowedExtensions : [];
   if (allowedExtensions.length === 0 || allowedExtensions.includes('mp4')) {
     return;
   }
@@ -85,90 +94,12 @@ async function restoreFileSettings(page: Page) {
   originalFileSettings = undefined;
 }
 
-function formItem(scope: Locator, label: string) {
-  return scope.locator('.el-form-item').filter({
-    has: scope.page().locator('.el-form-item__label').filter({ hasText: new RegExp(`^\\*?\\s*${escapeRegExp(label)}$`) }),
-  });
-}
-
 function escapeRegExp(value: string) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-function firstDialog(page: Page) {
-  return page.locator('.el-dialog:visible').last();
-}
-
 function rowByText(page: Page, text: string | RegExp) {
   return page.getByRole('row').filter({ hasText: text });
-}
-
-async function waitCmsReady(page: Page) {
-  await expect(page.locator('.cms-panel')).toBeVisible({ timeout: 15000 });
-  await expect.poll(
-    async () => page.locator('.cms-panel .el-loading-mask:visible').count(),
-    { timeout: 15000 },
-  ).toBe(0);
-}
-
-async function closeDropdowns(page: Page) {
-  const dropdowns = page.locator('.el-select-dropdown:visible, .el-tree-select__popper:visible');
-  if (await dropdowns.count() === 0) {
-    return;
-  }
-  const dialogHeader = page.locator('.el-dialog:visible .el-dialog__header').last();
-  if (await dialogHeader.count()) {
-    await dialogHeader.click({ position: { x: 12, y: 12 }, force: true });
-  } else {
-    await page.locator('main h2').first().click({ force: true });
-  }
-  await expect.poll(
-    async () => dropdowns.count(),
-    { timeout: 5000 },
-  ).toBe(0);
-}
-
-async function selectValue(scope: Locator, label: string, option: string | RegExp) {
-  const page = scope.page();
-  await closeDropdowns(page);
-  const select = formItem(scope, label).locator('.el-select, .el-tree-select').first();
-  await expect(select, `${label} 下拉不存在`).toBeVisible({ timeout: 10000 });
-  await select.scrollIntoViewIfNeeded();
-  await select.click({ force: true });
-  const dropdown = page.locator('.el-select-dropdown:visible, .el-tree-select__popper:visible').last();
-  await expect(dropdown, `${label} 下拉面板未打开`).toBeVisible({ timeout: 10000 });
-  const target = dropdown.getByRole('option', { name: option, exact: typeof option === 'string' }).first();
-  await expect(target, `${label} 选项不存在: ${String(option)}`).toBeVisible({ timeout: 10000 });
-  await target.scrollIntoViewIfNeeded();
-  await target.click({ force: true });
-  await closeDropdowns(page);
-}
-
-async function selectValues(scope: Locator, label: string, options: Array<string | RegExp>) {
-  const page = scope.page();
-  await closeDropdowns(page);
-  const select = formItem(scope, label).locator('.el-select, .el-tree-select').first();
-  await expect(select).toBeVisible({ timeout: 10000 });
-  await select.click({ force: true });
-  const dropdown = page.locator('.el-select-dropdown:visible, .el-tree-select__popper:visible').last();
-  await expect(dropdown).toBeVisible({ timeout: 10000 });
-  for (const option of options) {
-    const target = dropdown.getByRole('option', { name: option, exact: typeof option === 'string' }).first();
-    await expect(target).toBeVisible({ timeout: 10000 });
-    await target.click({ force: true });
-  }
-  await closeDropdowns(page);
-}
-
-async function checkButton(scope: Locator, label: string, option: string) {
-  const button = formItem(scope, label)
-    .locator('.el-checkbox-button')
-    .filter({ hasText: new RegExp(`^\\s*${escapeRegExp(option)}\\s*$`) })
-    .first();
-  await expect(button).toBeVisible({ timeout: 10000 });
-  if (!(await button.evaluate(element => element.classList.contains('is-checked')))) {
-    await button.click();
-  }
 }
 
 async function fillInput(scope: Locator, label: string, value: string) {
@@ -194,7 +125,9 @@ async function fillRichText(scope: Locator, label: string, value: string) {
   await expect(wrapper).toBeVisible({ timeout: 10000 });
   const html = normalizeRichTextHtml(value);
   const updated = await wrapper.evaluate((element, content) => {
-    const component = (element as HTMLElement & { __vueParentComponent?: { exposed?: { setContent?: (value: string) => void } } }).__vueParentComponent;
+    const component = (
+      element as HTMLElement & { __vueParentComponent?: { exposed?: { setContent?: (value: string) => void } } }
+    ).__vueParentComponent;
     const setContent = component?.exposed?.setContent;
     if (typeof setContent === 'function') {
       setContent(content);
@@ -203,12 +136,19 @@ async function fillRichText(scope: Locator, label: string, value: string) {
     return false;
   }, html);
   expect(updated, `${label} 富文本组件未暴露 setContent 方法`).toBeTruthy();
-  await expect.poll(async () => {
-    return wrapper.evaluate((element) => {
-      const component = (element as HTMLElement & { __vueParentComponent?: { exposed?: { getHtml?: () => string } } }).__vueParentComponent;
-      return component?.exposed?.getHtml?.() || '';
-    });
-  }, { timeout: 10000 }).toBe(html);
+  await expect
+    .poll(
+      async () => {
+        return wrapper.evaluate((element) => {
+          const component = (
+            element as HTMLElement & { __vueParentComponent?: { exposed?: { getHtml?: () => string } } }
+          ).__vueParentComponent;
+          return component?.exposed?.getHtml?.() || '';
+        });
+      },
+      { timeout: 10000 },
+    )
+    .toBe(html);
 }
 
 async function blurRichTextEditors(scope: Locator) {
@@ -218,9 +158,10 @@ async function blurRichTextEditors(scope: Locator) {
   if (count === 0) {
     return;
   }
-  for (let index = 0; index < count; index += 1) {
-    await wrappers.nth(index).evaluate((element) => {
-      const component = (element as HTMLElement & { __vueParentComponent?: { exposed?: { blur?: () => void } } }).__vueParentComponent;
+  for (const wrapper of await wrappers.all()) {
+    await wrapper.evaluate((element) => {
+      const component = (element as HTMLElement & { __vueParentComponent?: { exposed?: { blur?: () => void } } })
+        .__vueParentComponent;
       component?.exposed?.blur?.();
     });
   }
@@ -230,18 +171,23 @@ async function blurRichTextEditors(scope: Locator) {
       document.activeElement.blur();
     }
   });
-  await page.waitForTimeout(150);
+  await expect
+    .poll(() => page.evaluate(() => document.activeElement?.classList.contains('editor-wrapper')))
+    .toBeFalsy();
 }
 
 async function uploadFile(scope: Locator, label: string, file: UploadAsset) {
   const item = formItem(scope, label);
   const input = item.locator('input[type="file"]').first();
   await expect(input, `${label} 上传控件不存在`).toBeAttached({ timeout: 10000 });
-  const uploadResponsePromise = scope.page().waitForResponse(response =>
-    response.request().method() === 'POST'
-    && new URL(response.url()).pathname.endsWith('/file/files')
-    && response.status() === 200,
-  );
+  const uploadResponsePromise = scope
+    .page()
+    .waitForResponse(
+      (response) =>
+        response.request().method() === 'POST' &&
+        new URL(response.url()).pathname.endsWith('/file/files') &&
+        response.status() === 200,
+    );
   await input.setInputFiles({
     name: uniqueAssetFileName(file.name),
     mimeType: file.mimeType,
@@ -250,27 +196,8 @@ async function uploadFile(scope: Locator, label: string, file: UploadAsset) {
   const uploadResponse = await uploadResponsePromise;
   const responseBody = await uploadResponse.text().catch(() => '');
   expect(uploadResponse.ok(), `${label} 上传失败: ${uploadResponse.status()} ${responseBody}`).toBeTruthy();
-  await expect.poll(async () => {
-    const successCount = await item.locator('.el-upload-list__item.is-success').count();
-    if (successCount > 0) return 'success';
-    const messages = await scope.page().locator('.el-message:visible, .el-form-item__error:visible').allTextContents();
-    return messages.join(' | ') || 'waiting';
-  }, {
-    timeout: 15000,
-    message: `${label} 上传后未显示成功状态，接口响应：${responseBody.slice(0, 800)}`,
-  }).toBe('success');
+  await expectUploadSuccess(item, label, responseBody);
   return extractUploadedFileId(responseBody);
-}
-
-async function confirmDelete(page: Page) {
-  const box = page.locator('.el-message-box').last();
-  await expect(box).toBeVisible({ timeout: 10000 });
-  await box.getByRole('button', { name: /^(确定|OK)$/ }).click();
-  await expect(box).toBeHidden({ timeout: 10000 });
-}
-
-async function expectToast(page: Page, text: string | RegExp) {
-  await expect(page.locator('.el-message:visible').filter({ hasText: text }).last()).toBeVisible({ timeout: 10000 });
 }
 
 async function openCmsPage(page: Page, path: string, title: string) {
@@ -284,7 +211,9 @@ async function login(page: Page) {
   await page.goto('/#/login');
   await page.getByPlaceholder('用户名').fill('admin');
   await page.getByPlaceholder('密码').fill('admin123');
-  const tenants = page.waitForResponse(response => response.url().includes('/api/auth/login-institutions') && response.status() === 200);
+  const tenants = page.waitForResponse(
+    (response) => response.url().includes('/api/auth/login-institutions') && response.status() === 200,
+  );
   await page.getByPlaceholder('密码').blur();
   await tenants;
   await page.locator('.tenant-select').click();
@@ -309,10 +238,13 @@ async function saveCurrentDialog(page: Page, pageName: string, action: string) {
   if (await dialog.locator('.editor-wrapper').count()) {
     await blurRichTextEditors(dialog);
   }
-  const saveResponsePromise = page.waitForResponse(response => {
-    const method = response.request().method();
-    return response.url().includes('/api/cms/') && (method === 'POST' || method === 'PUT');
-  }, { timeout: 15000 });
+  const saveResponsePromise = page.waitForResponse(
+    (response) => {
+      const method = response.request().method();
+      return response.url().includes('/api/cms/') && (method === 'POST' || method === 'PUT');
+    },
+    { timeout: 15000 },
+  );
   await dialog.getByRole('button', { name: '保存' }).click();
   const saveResponse = await saveResponsePromise;
   expect(
@@ -325,13 +257,18 @@ async function saveCurrentDialog(page: Page, pageName: string, action: string) {
   record(pageName, action, 'PASS');
 }
 
-async function createRecord(page: Page, pageName: string, expectedText: string | RegExp, fill: (dialog: Locator) => Promise<void>) {
+async function createRecord(
+  page: Page,
+  pageName: string,
+  expectedText: string | RegExp,
+  fill: (dialog: Locator) => Promise<void>,
+) {
   await page.getByRole('button', { name: '新增' }).click();
   const dialog = firstDialog(page);
   await expect(dialog).toBeVisible({ timeout: 10000 });
   await fill(dialog);
   await saveCurrentDialog(page, pageName, '新增/保存');
-  if (typeof expectedText === 'string' && await rowByText(page, expectedText).count() === 0) {
+  if (typeof expectedText === 'string' && (await rowByText(page, expectedText).count()) === 0) {
     await page.getByPlaceholder('名称/编码').fill(expectedText);
     await page.getByRole('button', { name: '查询' }).click();
     await waitCmsReady(page);
@@ -339,7 +276,12 @@ async function createRecord(page: Page, pageName: string, expectedText: string |
   await expect(rowByText(page, expectedText).first()).toBeVisible({ timeout: 10000 });
 }
 
-async function editRecord(page: Page, pageName: string, rowText: string | RegExp, fill: (dialog: Locator) => Promise<void>) {
+async function editRecord(
+  page: Page,
+  pageName: string,
+  rowText: string | RegExp,
+  fill: (dialog: Locator) => Promise<void>,
+) {
   const row = rowByText(page, rowText).first();
   await expect(row).toBeVisible({ timeout: 10000 });
   await row.getByRole('button', { name: '编辑' }).click();
@@ -355,14 +297,18 @@ async function toggleStatus(page: Page, pageName: string, rowText: string | RegE
   if (await row.getByRole('button', { name: '禁用' }).count()) {
     await row.getByRole('button', { name: '禁用' }).click();
     await expectToast(page, '状态已更新');
-    await expect(rowByText(page, rowText).first().getByRole('button', { name: '启用' })).toBeVisible({ timeout: 10000 });
+    await expect(rowByText(page, rowText).first().getByRole('button', { name: '启用' })).toBeVisible({
+      timeout: 10000,
+    });
     record(pageName, '禁用', 'PASS');
   }
   const nextRow = rowByText(page, rowText).first();
   if (await nextRow.getByRole('button', { name: '启用' }).count()) {
     await nextRow.getByRole('button', { name: '启用' }).click();
     await expectToast(page, '状态已更新');
-    await expect(rowByText(page, rowText).first().getByRole('button', { name: '禁用' })).toBeVisible({ timeout: 10000 });
+    await expect(rowByText(page, rowText).first().getByRole('button', { name: '禁用' })).toBeVisible({
+      timeout: 10000,
+    });
     record(pageName, '启用', 'PASS');
   }
 }
@@ -370,10 +316,10 @@ async function toggleStatus(page: Page, pageName: string, rowText: string | RegE
 async function deleteRecord(page: Page, pageName: string, rowText: string | RegExp) {
   const row = rowByText(page, rowText).first();
   await expect(row).toBeVisible({ timeout: 10000 });
-  const deleteResponsePromise = page.waitForResponse(response =>
-    response.url().includes('/api/cms/')
-    && response.request().method() === 'DELETE',
-  { timeout: 15000 });
+  const deleteResponsePromise = page.waitForResponse(
+    (response) => response.url().includes('/api/cms/') && response.request().method() === 'DELETE',
+    { timeout: 15000 },
+  );
   await row.getByRole('button', { name: '删除' }).click();
   await confirmDelete(page);
   const deleteResponse = await deleteResponsePromise;
@@ -391,19 +337,6 @@ function normalizeRichTextHtml(value: string) {
     return value;
   }
   return `<p>${escapeHtml(value)}</p>`;
-}
-
-function richTextToPlainText(value: string) {
-  return value
-    .replace(/<br\s*\/?>/gi, '\n')
-    .replace(/<\/p>\s*<p>/gi, '\n')
-    .replace(/<[^>]+>/g, '')
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&amp;/g, '&');
 }
 
 function escapeHtml(value: string) {
@@ -439,9 +372,9 @@ function createPng(accent: [number, number, number]) {
     for (let x = 0; x < width; x += 1) {
       const offset = row + 1 + x * 4;
       const shade = Math.round(245 - (y / height) * 30);
-      raw[offset] = blend(shade, accent[0], x / width * 0.45);
-      raw[offset + 1] = blend(shade, accent[1], x / width * 0.45);
-      raw[offset + 2] = blend(255, accent[2], y / height * 0.25);
+      raw[offset] = blend(shade, accent[0], (x / width) * 0.45);
+      raw[offset + 1] = blend(shade, accent[1], (x / width) * 0.45);
+      raw[offset + 2] = blend(255, accent[2], (y / height) * 0.25);
       raw[offset + 3] = 255;
     }
   }
@@ -463,7 +396,16 @@ function blend(base: number, accent: number, ratio: number) {
   return Math.max(0, Math.min(255, Math.round(base * (1 - ratio) + accent * ratio)));
 }
 
-function drawPanel(buffer: Buffer, imageWidth: number, x: number, y: number, width: number, height: number, color: [number, number, number], alpha = 255) {
+function drawPanel(
+  buffer: Buffer,
+  imageWidth: number,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  color: [number, number, number],
+  alpha = 255,
+) {
   const stride = imageWidth * 4 + 1;
   const [red, green, blue] = color;
   for (let row = y; row < y + height; row += 1) {
@@ -503,18 +445,22 @@ function crc32(buffer: Buffer) {
 function createDemoVideoBuffer() {
   const directory = mkdtempSync(join(tmpdir(), 'mango-cms-buttons-video-'));
   const output = join(directory, `cms-buttons-${unique}.mp4`);
-  execFileSync('ffmpeg', [
-    '-y',
-    '-f',
-    'lavfi',
-    '-i',
-    'testsrc2=size=640x360:rate=12:duration=1',
-    '-pix_fmt',
-    'yuv420p',
-    '-movflags',
-    'faststart',
-    output,
-  ], { stdio: 'ignore' });
+  execFileSync(
+    'ffmpeg',
+    [
+      '-y',
+      '-f',
+      'lavfi',
+      '-i',
+      'testsrc2=size=640x360:rate=12:duration=1',
+      '-pix_fmt',
+      'yuv420p',
+      '-movflags',
+      'faststart',
+      output,
+    ],
+    { stdio: 'ignore' },
+  );
   expect(existsSync(output), `演示视频生成失败：${output}`).toBeTruthy();
   return readFileSync(output);
 }
@@ -526,19 +472,21 @@ test.describe('内容运营页面按钮浏览器验收', () => {
     await restoreFileSettings(page);
   });
 
-  test('逐页操作内容运营下所有主要按钮', async ({ page }) => {
+  test('@p2 @cms 逐页操作内容运营下所有主要按钮', async ({ page }) => {
     const consoleErrors: string[] = [];
     const failedResponses: string[] = [];
-    page.on('console', message => {
+    page.on('console', (message) => {
       if (message.type() === 'error') {
         const location = message.location();
         consoleErrors.push(`console:${location.url}:${location.lineNumber}:${location.columnNumber} ${message.text()}`);
       }
     });
-    page.on('pageerror', error => consoleErrors.push(`pageerror:${error.stack || error.message}`));
+    page.on('pageerror', (error) => consoleErrors.push(`pageerror:${error.stack || error.message}`));
     page.on('response', async (response) => {
       if (response.url().includes('/api/') && response.status() >= 400) {
-        failedResponses.push(`${response.status()} ${response.request().method()} ${response.url()} ${await response.text().catch(() => '')}`);
+        failedResponses.push(
+          `${response.status()} ${response.request().method()} ${response.url()} ${await response.text().catch(() => '')}`,
+        );
       }
     });
 
@@ -562,9 +510,21 @@ test.describe('内容运营页面按钮浏览器验收', () => {
     const adCode = `ad-${keyword.toLowerCase()}`;
     const adDeliveryName = `${keyword} 广告投放`;
     const adDeliveryUpdated = `${keyword} 广告投放更新`;
-    const imageAsset: UploadAsset = { name: 'cms-buttons-image.png', mimeType: 'image/png', buffer: createPng([0, 91, 216]) };
-    const secondImageAsset: UploadAsset = { name: 'cms-buttons-second.png', mimeType: 'image/png', buffer: createPng([0, 132, 204]) };
-    const videoAsset: UploadAsset = { name: 'cms-buttons-video.mp4', mimeType: 'video/mp4', buffer: createDemoVideoBuffer() };
+    const imageAsset: UploadAsset = {
+      name: 'cms-buttons-image.png',
+      mimeType: 'image/png',
+      buffer: createPng([0, 91, 216]),
+    };
+    const secondImageAsset: UploadAsset = {
+      name: 'cms-buttons-second.png',
+      mimeType: 'image/png',
+      buffer: createPng([0, 132, 204]),
+    };
+    const videoAsset: UploadAsset = {
+      name: 'cms-buttons-video.mp4',
+      mimeType: 'video/mp4',
+      buffer: createDemoVideoBuffer(),
+    };
 
     await login(page);
     await allowCmsVideoUploads(page);
@@ -581,7 +541,7 @@ test.describe('内容运营页面按钮浏览器验收', () => {
       await fillInput(dialog, 'SEO 标题', `${keyword} SEO`);
       await fillInput(dialog, '版权信息', `${keyword} copyright`);
     });
-    await editRecord(page, '站点列表', siteName, async dialog => fillInput(dialog, '站点名称', siteNameUpdated));
+    await editRecord(page, '站点列表', siteName, async (dialog) => fillInput(dialog, '站点名称', siteNameUpdated));
     await expect(rowByText(page, siteNameUpdated).first()).toBeVisible({ timeout: 10000 });
     await rowByText(page, siteNameUpdated).first().getByRole('button', { name: '详情' }).click();
     await expect(firstDialog(page)).toContainText(`${keyword} SEO`, { timeout: 10000 });
@@ -598,7 +558,9 @@ test.describe('内容运营页面按钮浏览器验收', () => {
       await selectValue(dialog, '状态', '启用');
       await fillTextarea(dialog, '备注', `${keyword} 内容分类备注`);
     });
-    await editRecord(page, '内容分类', contentCategoryName, async dialog => fillInput(dialog, '分类名称', contentCategoryUpdated));
+    await editRecord(page, '内容分类', contentCategoryName, async (dialog) =>
+      fillInput(dialog, '分类名称', contentCategoryUpdated),
+    );
     await toggleStatus(page, '内容分类', contentCategoryUpdated);
 
     await openCmsPage(page, '/cms/content-tags', '内容标签');
@@ -610,7 +572,7 @@ test.describe('内容运营页面按钮浏览器验收', () => {
       await selectValue(dialog, '状态', '启用');
       await fillTextarea(dialog, '备注', `${keyword} 标签备注`);
     });
-    await editRecord(page, '标签管理', tagName, async dialog => fillInput(dialog, '标签名称', tagUpdated));
+    await editRecord(page, '标签管理', tagName, async (dialog) => fillInput(dialog, '标签名称', tagUpdated));
     await toggleStatus(page, '标签管理', tagUpdated);
 
     await openCmsPage(page, '/cms/site-categories', '站点栏目');
@@ -622,7 +584,9 @@ test.describe('内容运营页面按钮浏览器验收', () => {
       await selectValue(dialog, '显示状态', '启用');
       await fillNumber(dialog, '排序', '1');
     });
-    await editRecord(page, '栏目管理', siteCategoryName, async dialog => fillInput(dialog, '栏目名称', siteCategoryUpdated));
+    await editRecord(page, '栏目管理', siteCategoryName, async (dialog) =>
+      fillInput(dialog, '栏目名称', siteCategoryUpdated),
+    );
     await toggleStatus(page, '栏目管理', siteCategoryUpdated);
 
     await openCmsPage(page, '/cms/contents', '内容管理');
@@ -636,9 +600,13 @@ test.describe('内容运营页面按钮浏览器验收', () => {
       await fillInput(dialog, '来源', '按钮验收');
       await fillInput(dialog, '作者', 'QA');
       await fillTextarea(dialog, '摘要', `${keyword} 摘要`);
-      await fillRichText(dialog, '正文', `<h2>${keyword} 富文本标题</h2><p><strong>${keyword}</strong> 富文本正文</p><ul><li>格式稳定性验证</li><li>列表内容验证</li></ul>`);
+      await fillRichText(
+        dialog,
+        '正文',
+        `<h2>${keyword} 富文本标题</h2><p><strong>${keyword}</strong> 富文本正文</p><ul><li>格式稳定性验证</li><li>列表内容验证</li></ul>`,
+      );
     });
-    await editRecord(page, '内容中心', contentTitle, async dialog => fillInput(dialog, '标题', contentUpdated));
+    await editRecord(page, '内容中心', contentTitle, async (dialog) => fillInput(dialog, '标题', contentUpdated));
     await rowByText(page, contentUpdated).first().getByRole('button', { name: '详情' }).click();
     await expect(firstDialog(page)).toContainText(`${keyword} 富文本标题`, { timeout: 10000 });
     await expect(firstDialog(page)).toContainText('格式稳定性验证', { timeout: 10000 });
@@ -674,7 +642,7 @@ test.describe('内容运营页面按钮浏览器验收', () => {
       await fillNumber(dialog, '排序', '1');
       await selectValue(dialog, '状态', '启用');
     });
-    await editRecord(page, '导航管理', navName, async dialog => fillInput(dialog, '导航名称', navUpdated));
+    await editRecord(page, '导航管理', navName, async (dialog) => fillInput(dialog, '导航名称', navUpdated));
     await toggleStatus(page, '导航管理', navUpdated);
 
     await openCmsPage(page, '/cms/advertisements', '广告位管理');
@@ -695,7 +663,7 @@ test.describe('内容运营页面按钮浏览器验收', () => {
       await selectValue(dialog, '状态', '启用');
       await fillTextarea(dialog, '备注', `${keyword} 广告位备注`);
     });
-    await editRecord(page, '广告位管理', adName, async dialog => fillInput(dialog, '广告位名称', adUpdated));
+    await editRecord(page, '广告位管理', adName, async (dialog) => fillInput(dialog, '广告位名称', adUpdated));
     await toggleStatus(page, '广告位管理', adUpdated);
 
     await openCmsPage(page, '/cms/ad-deliveries', '广告投放管理');
@@ -712,7 +680,9 @@ test.describe('内容运营页面按钮浏览器验收', () => {
       await fillNumber(dialog, '排序', '1');
       await selectValue(dialog, '状态', '启用');
     });
-    await editRecord(page, '广告投放管理', adDeliveryName, async dialog => fillInput(dialog, '投放名称', adDeliveryUpdated));
+    await editRecord(page, '广告投放管理', adDeliveryName, async (dialog) =>
+      fillInput(dialog, '投放名称', adDeliveryUpdated),
+    );
     await toggleStatus(page, '广告投放管理', adDeliveryUpdated);
 
     const extraDeliveries = [
@@ -850,7 +820,7 @@ test.describe('内容运营页面按钮浏览器验收', () => {
     await waitCmsReady(page);
     await deleteRecord(page, '站点列表', siteNameUpdated);
 
-    const failed = results.filter(item => item.status === 'FAIL');
+    const failed = results.filter((item) => item.status === 'FAIL');
     console.log(`CMS_BUTTON_RESULTS ${JSON.stringify(results, null, 2)}`);
     expect(failed, `按钮验收失败:\n${JSON.stringify(failed, null, 2)}`).toEqual([]);
     expect(failedResponses, `存在失败请求:\n${failedResponses.join('\n')}`).toEqual([]);

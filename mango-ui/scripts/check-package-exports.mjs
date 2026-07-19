@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
@@ -36,6 +36,32 @@ function assertPath(packageName, packageRoot, field, value) {
   const target = join(packageRoot, value.replace(/^\.\//, ''));
   if (!existsSync(target)) {
     addFailure(packageName, `${field} points to missing file ${value}`);
+  }
+}
+
+function assertStylesheetImports(packageName, packageRoot, stylesheetPath, seen = new Set()) {
+  if (seen.has(stylesheetPath) || !existsSync(stylesheetPath)) {
+    return;
+  }
+  seen.add(stylesheetPath);
+  const content = readFileSync(stylesheetPath, 'utf8');
+  const imports = content.matchAll(/@import\s+(?:url\(\s*)?['"]([^'"]+)['"]\s*\)?/gu);
+  for (const match of imports) {
+    const importPath = match[1].split(/[?#]/u, 1)[0];
+    if (!importPath.startsWith('.')) {
+      continue;
+    }
+    const target = resolve(dirname(stylesheetPath), importPath);
+    const packageRelativePath = relative(packageRoot, target).split('\\').join('/');
+    if (packageRelativePath === '..' || packageRelativePath.startsWith('../')) {
+      addFailure(packageName, `${stylesheetPath} imports stylesheet outside the package: ${match[1]}`);
+      continue;
+    }
+    if (!existsSync(target) || !statSync(target).isFile()) {
+      addFailure(packageName, `${stylesheetPath} imports missing stylesheet ${match[1]}`);
+      continue;
+    }
+    assertStylesheetImports(packageName, packageRoot, target, seen);
   }
 }
 
@@ -195,12 +221,21 @@ for (const packageDir of readdirSync(packagesRoot)) {
       continue;
     }
     if (exportPath.endsWith('.css') || exportPath.endsWith('.scss')) {
+      const stylesheetExport =
+        typeof exportConfig === 'string' ? exportConfig : exportConfig.default || exportConfig.import;
       assertPath(
         packageJson.name,
         packageRoot,
         `exports.${exportPath}`,
-        typeof exportConfig === 'string' ? exportConfig : exportConfig.default || exportConfig.import,
+        stylesheetExport,
       );
+      if (stylesheetExport) {
+        assertStylesheetImports(
+          packageJson.name,
+          packageRoot,
+          join(packageRoot, stylesheetExport.replace(/^\.\//u, '')),
+        );
+      }
       continue;
     }
     if (typeof exportConfig === 'string') {

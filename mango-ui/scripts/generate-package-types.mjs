@@ -54,7 +54,14 @@ function declarationPathForSource(source) {
     return join(packageRoot, 'dist', `${indexSourceMatch[1]}.d.ts`);
   }
   if (normalized.startsWith('src/')) {
-    return join(packageRoot, 'dist', normalized.replace(/^src\//, '').replace(/\.ts$/, '.d.ts').replace(/\.vue$/, '.d.ts'));
+    return join(
+      packageRoot,
+      'dist',
+      normalized
+        .replace(/^src\//, '')
+        .replace(/\.ts$/, '.d.ts')
+        .replace(/\.vue$/, '.d.ts'),
+    );
   }
   return join(packageRoot, 'dist', normalized.replace(/\.ts$/, '.d.ts').replace(/\.vue$/, '.d.ts'));
 }
@@ -67,13 +74,7 @@ function resolveLocalSource(fromSource, modulePath) {
     return undefined;
   }
   const base = resolve(packageRoot, dirname(fromSource), modulePath);
-  const candidates = [
-    base,
-    `${base}.ts`,
-    `${base}.vue`,
-    join(base, 'index.ts'),
-    join(base, 'index.vue'),
-  ];
+  const candidates = [base, `${base}.ts`, `${base}.vue`, join(base, 'index.ts'), join(base, 'index.vue')];
   const match = candidates.find((candidate) => existsSync(candidate) && statSync(candidate).isFile());
   if (!match) {
     return undefined;
@@ -185,10 +186,12 @@ function generateCommonSubpathTypes(root) {
         continue;
       }
       const name = file.replace(/\.ts$/, '');
-      generateDeclarationForSource(`utils/realtime/${name}.ts`);
+      const source = `utils/realtime/${name}.ts`;
+      const declarationPath = join(distDir, 'utils/realtime', `${name}.d.ts`);
+      generatedDeclarations.add(declarationPath);
+      writeFile(declarationPath, declarationForSource(source, declarationPath));
       writeFile(join(distDir, 'utils/realtime', `${name}.js`), "export * from '../../index.js';");
     }
-    generateDeclarationForSource('utils/realtime/index.ts');
     writeFile(join(distDir, 'utils/realtime.d.ts'), "export * from './realtime';");
     writeFile(join(distDir, 'utils/realtime.js'), "export * from '../index.js';");
   }

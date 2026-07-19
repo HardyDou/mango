@@ -1,6 +1,6 @@
 {
   "name": "@mango/cms",
-  "version": "1.0.12",
+  "version": "1.0.14",
   "private": false,
   "type": "module",
   "main": "./dist/index.js",
@@ -17,7 +17,8 @@
     "./style.css": "./dist/style.css"
   },
   "scripts": {
-    "build": "vite build && node ../../scripts/generate-package-types.mjs"
+    "build": "vite build && node ../../scripts/generate-package-types.mjs",
+    "test": "vitest run"
   },
   "files": [
     "dist",
@@ -26,9 +27,11 @@
   ],
   "dependencies": {
     "@element-plus/icons-vue": "2.3.2",
-    "@mango/admin-pages": "1.0.22",
-    "@mango/common": "1.0.18",
-    "@mango/file": "1.0.23"
+    "@mango/admin-pages": "workspace:1.0.24",
+    "@mango/api-schema": "workspace:1.0.3",
+    "@mango/app-runtime": "workspace:1.0.6",
+    "@mango/common": "workspace:1.0.19",
+    "@mango/file": "workspace:1.0.25"
   },
   "peerDependencies": {
     "element-plus": ">=2.14.1 <3",
@@ -36,11 +39,36 @@
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^4.0.0",
+    "@mango/http-client": "workspace:1.0.0",
     "typescript": "^5.9.3",
-    "vite": "^4.3.3"
+    "vite": "^4.3.3",
+    "vitest": "4.1.10"
   },
   "publishConfig": {
     "registry": "http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/"
   },
-  "types": "./dist/index.d.ts"
+  "types": "./dist/index.d.ts",
+  "mangoArchitecture": {
+    "architectureLayer": "FE2",
+    "role": "domain",
+    "domain": "cms",
+    "ownerRole": "Frontend Standards Owner",
+    "sourceExports": {
+      ".": {
+        "source": "./src/index.ts",
+        "kind": "code"
+      },
+      "./admin-pages": {
+        "source": "./src/admin-pages.ts",
+        "kind": "code"
+      }
+    },
+    "nonCodeExports": {
+      "./style.css": {
+        "source": "./src/style.css",
+        "dist": "./dist/style.css",
+        "generation": "build"
+      }
+    }
+  }
 }

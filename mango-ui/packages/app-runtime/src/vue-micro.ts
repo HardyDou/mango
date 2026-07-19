@@ -1,6 +1,6 @@
 import { createApp, type Component, type App as VueApp } from 'vue';
 import { createMemoryHistory, createRouter, type Router } from 'vue-router';
-import type { MangoAppRuntime, MangoRuntimeTheme } from './index';
+import { MANGO_HTTP_CLIENT_KEY, type MangoAppRuntime, type MangoRuntimeTheme } from './index';
 
 type MangoVueRoot = Component | (() => Promise<Component | { default?: Component }>);
 
@@ -8,7 +8,7 @@ export interface MangoWujieVueAppOptions {
   standaloneRoot: MangoVueRoot;
   standaloneRouter: Router;
   runtimeRoot: Component;
-  install: (app: VueApp) => void;
+  install: (app: VueApp, runtime?: MangoAppRuntime) => void;
   mountSelector?: string;
   onStandaloneReady?: (router: Router) => void | Promise<void>;
   onMicroReady?: (runtime?: MangoAppRuntime) => void | (() => void) | Promise<void | (() => void)>;
@@ -40,10 +40,11 @@ export function createMangoWujieVueApp(options: MangoWujieVueAppOptions) {
     });
 
     app = createApp(options.runtimeRoot);
-    options.install(app);
+    options.install(app, runtime);
     app.use(runtimeRouter);
     if (runtime) {
       app.provide('mangoRuntime', runtime);
+      app.provide(MANGO_HTTP_CLIENT_KEY, runtime.httpClient);
       await runtimeRouter.push(runtime.menu?.path || '/');
     }
     const dispose = await options.onMicroReady?.(runtime);
@@ -107,13 +108,15 @@ async function resolveRoot(root: MangoVueRoot): Promise<Component> {
 }
 
 function getWujieRuntime() {
-  return (window as Window & {
-    $wujie?: {
-      props?: {
-        mangoRuntime?: MangoAppRuntime;
+  return (
+    window as Window & {
+      $wujie?: {
+        props?: {
+          mangoRuntime?: MangoAppRuntime;
+        };
       };
-    };
-  }).$wujie?.props?.mangoRuntime;
+    }
+  ).$wujie?.props?.mangoRuntime;
 }
 
 function applyCssVar(name: string, value?: string) {

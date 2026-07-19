@@ -4,5 +4,8 @@
 
 <script setup lang="ts">
 import CmsResourceView from './CmsResourceView.vue';
-import { siteCategoryConfig } from './configs';
+import { useCmsApi } from '../composables/useCmsApi';
+import { createCmsResourceConfigs } from './configs';
+
+const { siteCategoryConfig } = createCmsResourceConfigs(useCmsApi());
 </script>

@@ -77,8 +77,8 @@ mango init {{projectKebab}} --preset {{preset}} --topology microservice
 | 配置入口 | 字段 / Key | 默认值 | 含义 | 影响行为 | 源码入口 |
 |----------|------------|--------|------|----------|----------|
 | `mango.dev.json` | `topology` 相关生成内容 | `microservice` | 当前拓扑选择 | 影响 runtime config 微前端入口 | CLI 模板渲染 |
-| `frontend/public/runtime-config.microservice.json` | `modules.<module>.mode` | `micro` | runtime module 模式 | 前端按远程 entry 加载 | CLI `renderRuntimeModulesJson` |
-| `frontend/public/runtime-config.microservice.json` | `modules.<module>.entry` | `http://b.mango.io:5181/` 等 | 微前端入口 | 浏览器加载远程模块 | CLI `renderRuntimeModulesJson` |
+| `frontend/runtime-config.microservice.example.json` | `modules.<module>.mode` | `micro` | runtime module 示例 | 部署平台据此生成外部配置 | CLI `renderRuntimeModulesJson` |
+| `frontend/runtime-config.microservice.example.json` | `modules.<module>.entry` | 本地开发 entry 示例 | 仅供开发和部署配置参考，不进入前端构建产物 | CLI `renderRuntimeModulesJson` |
 | 提供方 `application.yml` | Flyway module 开关 | 服务自定义 | 本服务 migration | 提供方启动时建表 | 服务配置 |
 | 提供方 `application.yml` | datasource | 服务自定义 | 本服务数据库 | 决定数据边界 | 服务配置 |
 | 调用方配置 | Feign / discovery 配置 | 服务自定义 | remote starter 连接服务 | 影响远程调用 | 部署平台和 Feign 配置 |

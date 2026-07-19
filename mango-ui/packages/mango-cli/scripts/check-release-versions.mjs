@@ -27,10 +27,25 @@ const uiDependencyTemplateLocks = {
 const registryArg = process.argv.find((arg) => arg.startsWith('--registry='));
 const registry = registryArg?.slice('--registry='.length);
 const checkRegistry = process.argv.includes('--check-registry');
-const ignoredRegistryPackages = new Set(process.argv
-  .filter((arg) => arg.startsWith('--ignore-registry-package='))
-  .map((arg) => arg.slice('--ignore-registry-package='.length)));
+const ignoredRegistryPackages = new Set(
+  process.argv
+    .filter((arg) => arg.startsWith('--ignore-registry-package='))
+    .map((arg) => arg.slice('--ignore-registry-package='.length)),
+);
 const mismatches = [];
+
+const lockedPackageNames = Object.keys(releaseVersions.npm ?? {}).sort();
+const localPackageNames = [...packageIndex.keys()].sort();
+for (const packageName of localPackageNames) {
+  if (!lockedPackageNames.includes(packageName)) {
+    mismatches.push(`${packageName}: local public package is missing from release-versions.json`);
+  }
+}
+for (const packageName of lockedPackageNames) {
+  if (!localPackageNames.includes(packageName)) {
+    mismatches.push(`${packageName}: release-versions.json entry has no local public package`);
+  }
+}
 
 const mangoBackendVersion = releaseVersions.maven?.mangoBackend;
 if (!mangoBackendVersion) {
@@ -73,13 +88,17 @@ for (const [packageName, workspacePackage] of packageIndex) {
       if (!dependencyPackage || declaredVersion === 'workspace:*') {
         continue;
       }
-      if (declaredVersion !== dependencyPackage.version) {
+      if (!matchesWorkspaceVersion(declaredVersion, dependencyPackage.version)) {
         mismatches.push(
           `${packageName}: ${dependencyType}.${dependencyName} ${declaredVersion} != local package ${dependencyPackage.version}`,
         );
       }
     }
   }
+}
+
+function matchesWorkspaceVersion(declaredVersion, localVersion) {
+  return declaredVersion === localVersion || declaredVersion === `workspace:${localVersion}`;
 }
 
 for (const packageJsonPath of collectPackageJsonFiles([
@@ -96,10 +115,10 @@ for (const packageJsonPath of collectPackageJsonFiles([
       const templateLockedVersion = uiDependencyTemplateLocks[dependencyName];
       const allowedRanges = uiDependencyAllowedRanges[dependencyName] ?? new Set();
       if (
-        declaredVersion
-        && declaredVersion !== lockedVersion
-        && declaredVersion !== templateLockedVersion
-        && !allowedRanges.has(declaredVersion)
+        declaredVersion &&
+        declaredVersion !== lockedVersion &&
+        declaredVersion !== templateLockedVersion &&
+        !allowedRanges.has(declaredVersion)
       ) {
         mismatches.push(
           `${relativePath(packageJsonPath)}: ${dependencyType}.${dependencyName} ${declaredVersion} != ${lockedVersion}`,

@@ -8,13 +8,14 @@
 
 ## 2. 功能清单
 
-| 类型 | 用途 |
-|------|------|
-| `ApiId` | 后端 Long、雪花主键、业务主键类 ID 在前端统一按字符串处理。 |
-| `R<T>` | 统一响应结构。 |
-| `PageQuery` | 分页查询参数。 |
-| `PageResult<T>` | 分页返回结果。 |
-| `BaseEntity` | 基础实体字段。 |
+| 类型                          | 用途                                                        |
+| ----------------------------- | ----------------------------------------------------------- |
+| `ApiId`                       | 后端 Long、雪花主键、业务主键类 ID 在前端统一按字符串处理。 |
+| `HttpClient` / `HttpRequest`  | 业务 API 注入的厂商无关请求契约。                           |
+| `HttpError` / `HttpProgress`  | 规范化错误与上传、下载进度，不暴露 Axios 对象。             |
+| `R<T>`                        | 统一响应结构。                                              |
+| `PageQuery` / `PageResult<T>` | 分页查询参数与返回结果。                                    |
+| `BaseEntity`                  | 基础实体字段。                                              |
 
 ## 3. 接入方式
 
@@ -37,19 +38,42 @@ export interface OrderRow {
 export type OrderPageResponse = R<PageResult<OrderRow>>;
 ```
 
+业务 package 使用注入的客户端声明 typed API，endpoint 保持相对路径：
+
+```ts
+import type { HttpClient } from '@mango/api-schema';
+
+export function createOrderApi(client: HttpClient) {
+  return {
+    getOrder(id: string, signal?: AbortSignal) {
+      return client.request<OrderRow>({
+        method: 'GET',
+        url: `/orders/${id}`,
+        signal,
+      });
+    },
+  };
+}
+```
+
 ## 4. 配置说明
 
 这个包没有运行时配置、环境变量或样式文件。
 
 ## 5. API 与扩展
 
-| 类型 | 字段 |
-|------|------|
-| `ApiId` | `string` |
-| `R<T>` | `code`、`data`、`msg`、`success` |
-| `PageQuery` | `page`、`size` 和扩展字段 |
-| `PageResult<T>` | `list`、`total`、`page`、`size` |
-| `BaseEntity` | `id`、`createTime`、`updateTime`、`createBy`、`updateBy` |
+| 类型                 | 字段或约束                                                                 |
+| -------------------- | -------------------------------------------------------------------------- |
+| `ApiId`              | `string`                                                                   |
+| `HttpClient`         | 只公开泛型 `request()`；实例由 host/runtime 创建并注入                     |
+| `HttpRequest<TBody>` | method、相对 url、body/query/header、标准 `AbortSignal`、timeout、progress |
+| `HttpError`          | kind、status、code、retryable、requestId、details                          |
+| `R<T>`               | `code`、`data`、`msg`、`success`                                           |
+| `PageQuery`          | `page`、`size` 和扩展字段                                                  |
+| `PageResult<T>`      | `list`、`total`、`page`、`size`                                            |
+| `BaseEntity`         | `id`、`createTime`、`updateTime`、`createBy`、`updateBy`                   |
+
+本包不依赖 Axios、Vue、Element Plus、router、store、DOM 实现或宿主环境。`AbortSignal` 仅使用 Web 标准类型；Node 消费者可使用 Node 自带的 Web 类型声明。
 
 `ApiId` 不要转成 number。JavaScript number 无法安全表示超过 `Number.MAX_SAFE_INTEGER` 的 Long。
 

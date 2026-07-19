@@ -1,6 +1,6 @@
 {
   "name": "@mango/admin-shell",
-  "version": "1.0.44",
+  "version": "1.0.46",
   "private": false,
   "type": "module",
   "main": "./dist/index.js",
@@ -77,25 +77,27 @@
   ],
   "dependencies": {
     "@element-plus/icons-vue": "2.3.2",
-    "@mango/admin-pages": "1.0.22",
-    "@mango/app-runtime": "1.0.4",
-    "@mango/auth": "1.0.17",
-    "@mango/common": "1.0.18",
-    "@mango/grid-layout": "1.0.9",
-    "@mango/grid-widgets": "1.0.15",
-    "@mango/home": "1.0.7",
-    "@mango/rbac": "1.0.15",
+    "@mango/admin-pages": "workspace:1.0.24",
+    "@mango/app-runtime": "workspace:1.0.6",
+    "@mango/auth": "workspace:1.0.18",
+    "@mango/common": "workspace:1.0.19",
+    "@mango/grid-layout": "workspace:1.0.10",
+    "@mango/grid-widgets": "workspace:1.0.16",
+    "@mango/home": "workspace:1.0.8",
+    "@mango/http-client": "workspace:1.0.0",
+    "@mango/job": "workspace:1.0.17",
+    "@mango/rbac": "workspace:1.0.17",
     "element-plus": "2.14.1",
-    "@mango/file": "1.0.23",
-    "@mango/notice": "1.0.25",
-    "@mango/workflow": "1.0.29"
+    "@mango/file": "workspace:1.0.25",
+    "@mango/notice": "workspace:1.0.27",
+    "@mango/workflow": "workspace:1.0.31"
   },
   "peerDependencies": {
-    "@mango/file": "1.0.23",
-    "@mango/grid-layout": "1.0.9",
-    "@mango/grid-widgets": "1.0.15",
-    "@mango/notice": "1.0.25",
-    "@mango/workflow": "1.0.29",
+    "@mango/file": "workspace:1.0.25",
+    "@mango/grid-layout": "workspace:1.0.10",
+    "@mango/grid-widgets": "workspace:1.0.16",
+    "@mango/notice": "workspace:1.0.27",
+    "@mango/workflow": "workspace:1.0.31",
     "pinia": ">=2.0.32 <3",
     "vue": ">=3.5.13 <4",
     "vue-i18n": ">=9.2.2 <10",
@@ -127,5 +129,76 @@
   "publishConfig": {
     "registry": "http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/"
   },
-  "types": "./dist/index.d.ts"
+  "types": "./dist/index.d.ts",
+  "mangoArchitecture": {
+    "architectureLayer": "FE3",
+    "role": "composition",
+    "domain": "platform-admin",
+    "ownerRole": "Frontend Standards Owner",
+    "sourceExports": {
+      ".": {
+        "source": "./src/index.ts",
+        "kind": "code"
+      },
+      "./runtime": {
+        "source": "./src/runtime/runtimeHost.ts",
+        "kind": "code"
+      },
+      "./menu": {
+        "source": "./src/runtime/menuHost.ts",
+        "kind": "code"
+      },
+      "./stores": {
+        "source": "./src/stores/index.ts",
+        "kind": "code"
+      },
+      "./router": {
+        "source": "./src/router.ts",
+        "kind": "code"
+      },
+      "./home": {
+        "source": "./src/views/home/index.vue",
+        "kind": "code"
+      },
+      "./home-management": {
+        "source": "./src/views/home/management/index.vue",
+        "kind": "code"
+      },
+      "./home-templates": {
+        "source": "./src/views/home/templates/index.vue",
+        "kind": "code"
+      },
+      "./home-list": {
+        "source": "./src/views/home/list/index.vue",
+        "kind": "code"
+      },
+      "./home-user": {
+        "source": "./src/views/home/user/index.vue",
+        "kind": "code"
+      },
+      "./dev-pages": {
+        "source": "./src/views/demo/registerDevPages.ts",
+        "kind": "code"
+      },
+      "./dev-base-pages": {
+        "source": "./src/views/demo/registerBaseDevPages.ts",
+        "kind": "code"
+      },
+      "./dev-upload-page": {
+        "source": "./src/views/demo/components/UploadView.vue",
+        "kind": "code"
+      },
+      "./dev-workflow-page": {
+        "source": "./src/views/demo/components/WorkflowComponentsView.vue",
+        "kind": "code"
+      }
+    },
+    "nonCodeExports": {
+      "./style.css": {
+        "source": "./style.css",
+        "dist": "./style.css",
+        "generation": "static"
+      }
+    }
+  }
 }

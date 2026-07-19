@@ -11,6 +11,7 @@ export default defineConfig({
         'widgets/calendar': 'src/widgets/calendar/calendar.ts',
       },
       formats: ['es'],
+      cssFileName: 'style',
     },
     rollupOptions: {
       external: [

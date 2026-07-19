@@ -1,0 +1,8 @@
+.runtime
+**/dist
+**/coverage
+**/node_modules
+**/*.min.*
+packages/admin/generated-package-styles.css
+packages/admin/style-full.css
+packages/mango-cli/templates

@@ -40,7 +40,7 @@ jobs:
       - name: Set up Node.js for common PMO gates
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: "22"
 
       - name: Read policy-resolved assurance selections
         id: assurance
@@ -83,7 +83,7 @@ jobs:
       - name: Set up Node.js for PMO gates
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: "22"
 
       - name: Test document contracts, lifecycle routing, and Skills
         if: needs.preflight_scope.outputs.pmo == 'true'
@@ -137,7 +137,7 @@ jobs:
       - name: Set up Node.js for CLI gates
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: "22"
 
       - name: Build and verify the reproducible PMO package for CLI tests
         if: needs.preflight_scope.outputs.distribution == 'true' && needs.preflight_scope.outputs.m11 == 'true'
@@ -153,6 +153,8 @@ jobs:
 
       - name: Test CLI PMO install, upgrade, rollback, and package contracts
         if: needs.preflight_scope.outputs.distribution == 'true' && needs.preflight_scope.outputs.m11 == 'true'
+        env:
+          NPM_CONFIG_REGISTRY: https://registry.npmjs.org/
         run: |
           node mango-ui/packages/mango-cli/scripts/check-release-versions.mjs
           node mango-ui/packages/mango-cli/scripts/check-cli.mjs
@@ -178,13 +180,13 @@ jobs:
       - name: Set up Node.js for generated backend gates
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: "22"
 
       - name: Set up Java for backend architecture gates
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '21'
+          java-version: "21"
           cache: maven
           cache-dependency-path: |
             mango/pom.xml
@@ -309,7 +311,7 @@ jobs:
       - name: Set up Node.js for documentation gates
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: "22"
 
       - name: Check governance intent
         if: needs.preflight_scope.outputs.pmo == 'true' && needs.preflight_scope.outputs.m09 == 'true'

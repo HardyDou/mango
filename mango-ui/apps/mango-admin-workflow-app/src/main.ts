@@ -4,7 +4,7 @@ import { createI18n } from 'vue-i18n';
 import ElementPlus from 'element-plus';
 import zhCn from 'element-plus/es/locale/lang/zh-cn';
 import * as ElementPlusIconsVue from '@element-plus/icons-vue';
-import { registerUnauthorizedHandler } from '@mango/common';
+import { registerUnauthorizedHandler, setRequestBaseUrl } from '@mango/common';
 import { registerDefaultAdminPages } from '@mango/admin-pages';
 import { registerMangoWorkflowAdminPages } from '@mango/workflow/admin-pages';
 import { registerMangoWorkflowBusinessExampleAdminPages } from '@mango/workflow-business-example/admin-pages';
@@ -17,16 +17,6 @@ import '@mango/workflow/style.css';
 import '@mango/workflow-business-example/style.css';
 import RuntimeRoot from './App.vue';
 import router from './router';
-
-declare global {
-  interface Window {
-    $wujie?: {
-      props?: {
-        mangoRuntime?: import('@mango/app-runtime').MangoAppRuntime;
-      };
-    };
-  }
-}
 
 function installCommon(appInstance: VueApp) {
   registerDefaultAdminPages({ features: ['workflow'] });
@@ -57,8 +47,9 @@ createMangoWujieVueApp({
   },
   onMicroReady(runtime) {
     const unbindTheme = bindMangoRuntimeTheme(runtime);
+    setRequestBaseUrl(runtime?.apiBaseUrl || '/api');
     registerUnauthorizedHandler(async () => {
-      window.$wujie?.props?.mangoRuntime?.eventBus.emit('unauthorized');
+      runtime?.eventBus.emit('unauthorized');
     });
     return unbindTheme;
   },

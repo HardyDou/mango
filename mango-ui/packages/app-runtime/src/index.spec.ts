@@ -1,83 +1,129 @@
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { HttpClient } from '@mango/api-schema';
 import {
-  MangoRuntimeConfigError,
-  isValidRuntimeEntry,
+  createRuntimeEventBus,
+  microAppAdapter,
   normalizeRuntimeConfig,
+  resolveRuntimeInstanceId,
+  type MangoAppRuntime,
+  type MangoRuntimeAppConfig,
 } from './index';
 
-describe('runtime config validation', () => {
-  it('requires an allowlist when configured for production remote entries', () => {
-    expect(isValidRuntimeEntry('https://unknown.mango.io/', {
-      allowHttpEntries: false,
-      requireEntryAllowlist: true,
-      allowedEntryOrigins: ['https://rbac.mango.io'],
-    })).toBe(false);
+const wujie = vi.hoisted(() => ({
+  destroyApp: vi.fn(),
+  preloadApp: vi.fn(),
+  startApp: vi.fn(),
+}));
 
-    expect(isValidRuntimeEntry('https://rbac.mango.io/', {
-      allowHttpEntries: false,
-      requireEntryAllowlist: true,
-      allowedEntryOrigins: ['https://rbac.mango.io'],
-    })).toBe(true);
+vi.mock('wujie', () => wujie);
+
+describe('micro app instance isolation', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
   });
 
-  it('does not allow production host wildcard style matching when only exact origins are configured', () => {
-    const productionOptions = {
-      allowHttpEntries: false,
-      requireEntryAllowlist: true,
-      allowedEntryOrigins: ['https://rbac.mango.io'],
-      allowedEntryHosts: [],
-    };
+  it('uses instanceId for Wujie identity and destroys only the selected runtime', async () => {
+    const destroyFirst = vi.fn();
+    const destroySecond = vi.fn();
+    wujie.startApp.mockResolvedValueOnce(destroyFirst).mockResolvedValueOnce(destroySecond);
+    const first = runtime('orders-a');
+    const second = runtime('orders-b');
+    const container = { innerHTML: '' } as HTMLElement;
 
-    expect(isValidRuntimeEntry('https://workflow.mango.io/', productionOptions)).toBe(false);
-    expect(isValidRuntimeEntry('https://rbac.mango.io/', productionOptions)).toBe(true);
+    await microAppAdapter.mount(config('orders-a'), container, first.value);
+    await microAppAdapter.mount(config('orders-b'), container, second.value);
+
+    expect(wujie.startApp).toHaveBeenNthCalledWith(1, expect.objectContaining({ name: 'orders-a' }));
+    expect(wujie.startApp).toHaveBeenNthCalledWith(2, expect.objectContaining({ name: 'orders-b' }));
+
+    await microAppAdapter.unmount?.(config('orders-a'));
+    expect(destroyFirst).toHaveBeenCalledTimes(1);
+    expect(first.dispose).toHaveBeenCalledTimes(1);
+    expect(destroySecond).not.toHaveBeenCalled();
+    expect(second.dispose).not.toHaveBeenCalled();
+
+    await microAppAdapter.unmount?.(config('orders-b'));
+    expect(destroySecond).toHaveBeenCalledTimes(1);
+    expect(second.dispose).toHaveBeenCalledTimes(1);
   });
 
-  it('rejects http entries unless development explicitly allows them', () => {
-    expect(isValidRuntimeEntry('http://b.mango.io:5181/', {
-      allowHttpEntries: false,
-      allowedEntryOrigins: ['http://b.mango.io:5181'],
-    })).toBe(false);
-
-    expect(isValidRuntimeEntry('http://b.mango.io:5181/', {
-      allowHttpEntries: true,
-      allowedEntryOrigins: ['http://b.mango.io:5181'],
-    })).toBe(true);
+  it('falls back to appCode when an instance id is absent or blank', () => {
+    expect(resolveRuntimeInstanceId({ appCode: 'orders' })).toBe('orders');
+    expect(resolveRuntimeInstanceId({ appCode: 'orders', instanceId: '  ' })).toBe('orders');
   });
 
-  it('reports invalid micro entries as error diagnostics', () => {
-    const config = normalizeRuntimeConfig({
-      profile: 'hybrid',
+  it('derives route-slot identities when one app is mounted by multiple modules', () => {
+    const normalized = normalizeRuntimeConfig({
+      profile: 'micro',
       modules: {
-        'mango-authorization': {
-          mode: 'micro',
-          runtimeCode: 'mango-admin-rbac-app',
-          entry: 'https://unknown.mango.io/',
-        },
+        'orders-east': microModule('https://orders.example.test/east'),
+        'orders-west': microModule('https://orders.example.test/west'),
       },
-    }, {
-      allowHttpEntries: false,
-      requireEntryAllowlist: true,
-      allowedEntryOrigins: ['https://rbac.mango.io'],
     });
 
-    expect(config.diagnostics).toContainEqual(expect.objectContaining({
-      level: 'error',
-      moduleCode: 'mango-authorization',
-      field: 'entry',
-    }));
+    expect(normalized.modules['orders-east'].instanceId).toBe('orders:orders-east');
+    expect(normalized.modules['orders-west'].instanceId).toBe('orders:orders-west');
+    expect(normalized.diagnostics).toEqual([]);
   });
 
-  it('exposes a typed runtime config error for fail-closed callers', () => {
-    const error = new MangoRuntimeConfigError('Runtime config validation failed', [
-      {
-        level: 'error',
-        moduleCode: 'mango-authorization',
-        field: 'entry',
-        message: 'invalid entry',
+  it('rejects duplicate explicit micro app identities', () => {
+    const normalized = normalizeRuntimeConfig({
+      profile: 'micro',
+      modules: {
+        'orders-east': { ...microModule('https://orders.example.test/east'), instanceId: 'orders-primary' },
+        'orders-west': { ...microModule('https://orders.example.test/west'), instanceId: 'orders-primary' },
       },
-    ]);
+    });
 
-    expect(error.name).toBe('MangoRuntimeConfigError');
-    expect(error.diagnostics?.[0].field).toBe('entry');
+    expect(normalized.diagnostics).toContainEqual(
+      expect.objectContaining({
+        level: 'error',
+        moduleCode: 'orders-west',
+        field: 'instanceId',
+      }),
+    );
   });
 });
+
+function microModule(entry: string) {
+  return {
+    mode: 'micro' as const,
+    runtimeCode: 'orders',
+    entry,
+  };
+}
+
+function config(instanceId: string): MangoRuntimeAppConfig {
+  return {
+    appCode: 'orders',
+    instanceId,
+    appName: 'Orders',
+    appType: 'MICRO_APP',
+    deployMode: 'REMOTE',
+    entryUrl: 'http://orders.example.test/',
+    status: 1,
+  };
+}
+
+function runtime(instanceId: string) {
+  const dispose = vi.fn();
+  const httpClient: HttpClient = { request: vi.fn() };
+  const value: MangoAppRuntime = {
+    instanceId,
+    token: 'token',
+    appCode: 'orders',
+    userInfo: {},
+    permissions: [],
+    theme: {},
+    request: {
+      get: vi.fn(),
+      post: vi.fn(),
+      put: vi.fn(),
+      delete: vi.fn(),
+    },
+    httpClient,
+    dispose,
+    eventBus: createRuntimeEventBus(),
+  };
+  return { dispose, value };
+}
