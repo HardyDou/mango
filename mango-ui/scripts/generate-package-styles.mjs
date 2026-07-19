@@ -99,9 +99,9 @@ function fail(message) {
 function hasDeclaredDependency(packageJson, dependencyName) {
   return Boolean(
     packageJson.dependencies?.[dependencyName] ||
-      packageJson.devDependencies?.[dependencyName] ||
-      packageJson.peerDependencies?.[dependencyName] ||
-      packageJson.optionalDependencies?.[dependencyName],
+    packageJson.devDependencies?.[dependencyName] ||
+    packageJson.peerDependencies?.[dependencyName] ||
+    packageJson.optionalDependencies?.[dependencyName],
   );
 }
 
@@ -411,10 +411,11 @@ function renderBuildDepsScript(defaultPackages, fullPackages, consumerPackageJso
       ...Object.keys(consumerPackageJson.dependencies || {}),
       ...defaultPackages.map((item) => item.packageName),
       ...fullPackages.map((item) => item.packageName),
-    ].filter((packageName) =>
-      packageName.startsWith('@mango/') &&
-      packageName !== '@mango/admin' &&
-      Boolean(readWorkspacePackageJson(options.root, packageName)?.scripts?.build),
+    ].filter(
+      (packageName) =>
+        packageName.startsWith('@mango/') &&
+        packageName !== '@mango/admin' &&
+        Boolean(readWorkspacePackageJson(options.root, packageName)?.scripts?.build),
     ),
     options.root,
   );
@@ -465,11 +466,7 @@ export function main(argv = process.argv.slice(2)) {
   checkOrWrite(options.out, renderStyles(resolvedPackages.defaultPackages, options), options);
 
   if (options['admin-manifest-out']) {
-    checkOrWrite(
-      options['admin-manifest-out'],
-      renderDefaultAdminManifest(resolvedPackages.defaultPackages),
-      options,
-    );
+    checkOrWrite(options['admin-manifest-out'], renderDefaultAdminManifest(resolvedPackages.defaultPackages), options);
   }
   if (options['full-style-out']) {
     checkOrWrite(
