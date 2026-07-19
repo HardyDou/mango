@@ -400,7 +400,7 @@ import { Delete, Edit, Plus, Refresh, Search, View } from '@element-plus/icons-v
 import { Editor } from '@mango/common';
 import { MUpload, fileApi } from '@mango/file';
 import { requestErrorMessage, type ApiId, type CmsPageQuery, type CmsRequestOptions, type CmsSite } from '../api/cms';
-import { useCmsApi } from '../api/context';
+import { useCmsApi } from '../composables/useCmsApi';
 
 type CmsRow = Record<string, unknown> & { id?: ApiId; status?: string; publishStatus?: string };
 

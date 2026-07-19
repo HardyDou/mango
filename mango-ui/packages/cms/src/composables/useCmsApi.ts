@@ -1,7 +1,7 @@
 import { inject } from 'vue';
 import type { HttpClient } from '@mango/api-schema';
 import { MANGO_HTTP_CLIENT_KEY } from '@mango/app-runtime';
-import { createCmsApi, type CmsApi } from './cms';
+import { createCmsApi, type CmsApi } from '../api/cms';
 
 const apiByClient = new WeakMap<HttpClient, CmsApi>();
 
