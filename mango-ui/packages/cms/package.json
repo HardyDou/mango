@@ -17,7 +17,8 @@
     "./style.css": "./dist/style.css"
   },
   "scripts": {
-    "build": "vite build && node ../../scripts/generate-package-types.mjs"
+    "build": "vite build && node ../../scripts/generate-package-types.mjs",
+    "test": "vitest run"
   },
   "files": [
     "dist",
@@ -27,6 +28,8 @@
   "dependencies": {
     "@element-plus/icons-vue": "2.3.2",
     "@mango/admin-pages": "workspace:1.0.23",
+    "@mango/api-schema": "workspace:1.0.3",
+    "@mango/app-runtime": "workspace:1.0.5",
     "@mango/common": "workspace:1.0.19",
     "@mango/file": "workspace:1.0.24"
   },
@@ -36,8 +39,10 @@
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^4.0.0",
+    "@mango/http-client": "workspace:1.0.0",
     "typescript": "^5.9.3",
-    "vite": "^4.3.3"
+    "vite": "^4.3.3",
+    "vitest": "4.1.10"
   },
   "publishConfig": {
     "registry": "http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/"

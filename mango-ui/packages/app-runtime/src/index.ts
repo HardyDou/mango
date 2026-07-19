@@ -2,6 +2,9 @@ import type { Component } from 'vue';
 import type { RouteRecordRaw } from 'vue-router';
 import type { HttpClient } from '@mango/api-schema';
 
+/** Vue provider key used by hosts to inject the instance-scoped HTTP client. */
+export const MANGO_HTTP_CLIENT_KEY = 'mangoHttpClient';
+
 export type MangoFrontendAppType = 'LOCAL' | 'MICRO_APP' | 'IFRAME' | 'EXTERNAL_LINK';
 export type MangoDeployMode = 'EMBEDDED' | 'REMOTE' | 'HYBRID';
 export type MangoStyleIsolation = 'NONE' | 'SCOPED' | 'SHADOW_DOM' | 'IFRAME';
@@ -128,6 +131,8 @@ export interface MangoRuntimeAppConfig {
 
 export interface MangoModuleRuntimeConfig {
   mode: MangoModuleRuntimeMode;
+  /** Stable identity for one routed instance of a deployable app. */
+  instanceId?: string;
   entry?: string;
   style?: string;
   runtimeCode?: string;
@@ -601,28 +606,74 @@ export function normalizeRuntimeConfig(
   options: MangoRuntimeConfigLoadOptions = {},
 ): MangoRuntimeConfig {
   const diagnostics: MangoRuntimeConfigDiagnostic[] = [];
-  const modules = Object.entries(config.modules || {}).reduce<Record<string, MangoModuleRuntimeConfig>>(
-    (acc, [moduleCode, module]) => {
-      const mode = normalizeRuntimeMode(moduleCode, module?.mode, diagnostics);
-      const timeoutMs = normalizeTimeout(moduleCode, module?.timeoutMs, diagnostics);
-      acc[moduleCode] = {
-        ...module,
-        mode,
-        appType: module?.appType || (mode === 'micro' ? 'MICRO_APP' : 'LOCAL'),
-        timeoutMs,
-      };
-      if (mode === 'micro') {
-        validateMicroModule(moduleCode, acc[moduleCode], diagnostics, options);
+  const moduleEntries = Object.entries(config.modules || {});
+  const runtimeCodeCounts = moduleEntries.reduce<Map<string, number>>((counts, [moduleCode, module]) => {
+    if (module?.mode !== 'micro') return counts;
+    const runtimeCode = module.runtimeCode?.trim() || moduleCode;
+    counts.set(runtimeCode, (counts.get(runtimeCode) || 0) + 1);
+    return counts;
+  }, new Map());
+  const runtimeInstanceOwners = new Map<string, string>();
+  const modules = moduleEntries.reduce<Record<string, MangoModuleRuntimeConfig>>((acc, [moduleCode, module]) => {
+    const mode = normalizeRuntimeMode(moduleCode, module?.mode, diagnostics);
+    const timeoutMs = normalizeTimeout(moduleCode, module?.timeoutMs, diagnostics);
+    const runtimeCode = module?.runtimeCode?.trim() || moduleCode;
+    const instanceId =
+      mode === 'micro'
+        ? normalizeRuntimeInstanceId(
+            moduleCode,
+            module?.instanceId,
+            runtimeCodeCounts.get(runtimeCode)! > 1 ? `${runtimeCode}:${moduleCode}` : runtimeCode,
+            diagnostics,
+          )
+        : module?.instanceId?.trim() || undefined;
+    acc[moduleCode] = {
+      ...module,
+      mode,
+      instanceId,
+      appType: module?.appType || (mode === 'micro' ? 'MICRO_APP' : 'LOCAL'),
+      timeoutMs,
+    };
+    if (mode === 'micro') {
+      validateMicroModule(moduleCode, acc[moduleCode], diagnostics, options);
+      const owner = runtimeInstanceOwners.get(instanceId!);
+      if (owner) {
+        diagnostics.push({
+          level: 'error',
+          moduleCode,
+          field: 'instanceId',
+          message: `Micro modules '${owner}' and '${moduleCode}' use duplicate instanceId '${instanceId}'`,
+        });
+      } else {
+        runtimeInstanceOwners.set(instanceId!, moduleCode);
       }
-      return acc;
-    },
-    {},
-  );
+    }
+    return acc;
+  }, {});
   return {
     profile: normalizeRuntimeProfile(config.profile, diagnostics),
     modules,
     diagnostics,
   };
+}
+
+function normalizeRuntimeInstanceId(
+  moduleCode: string,
+  value: unknown,
+  fallback: string,
+  diagnostics: MangoRuntimeConfigDiagnostic[],
+) {
+  const instanceId = typeof value === 'string' && value.trim() ? value.trim() : fallback;
+  if (/^[A-Za-z0-9._:-]+$/u.test(instanceId)) {
+    return instanceId;
+  }
+  diagnostics.push({
+    level: 'error',
+    moduleCode,
+    field: 'instanceId',
+    message: `Micro module '${moduleCode}' has invalid instanceId '${instanceId}', fallback to '${fallback}'`,
+  });
+  return fallback;
 }
 
 function finalizeRuntimeConfig(config: MangoRuntimeConfig, options: MangoRuntimeConfigLoadOptions) {

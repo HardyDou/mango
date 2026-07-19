@@ -4,5 +4,8 @@
 
 <script setup lang="ts">
 import CmsResourceView from './CmsResourceView.vue';
-import { advertisementConfig } from './configs';
+import { useCmsApi } from '../api/context';
+import { createCmsResourceConfigs } from './configs';
+
+const { advertisementConfig } = createCmsResourceConfigs(useCmsApi());
 </script>

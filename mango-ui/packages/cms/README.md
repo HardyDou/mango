@@ -40,13 +40,18 @@ import '@mango/cms/style.css';
 registerMangoCmsAdminPages();
 ```
 
-Use API helpers in admin pages or integration code:
+Create API helpers from the host-provided neutral `HttpClient`:
 
 ```ts
-import { cmsApi } from '@mango/cms';
+import { createCmsApi } from '@mango/cms';
+import type { MangoAppRuntime } from '@mango/app-runtime';
 
-const sites = await cmsApi.pageSites({ pageNum: 1, pageSize: 10 });
+export function loadSites(runtime: MangoAppRuntime) {
+  return createCmsApi(runtime.httpClient).pageSites({ pageNum: 1, pageSize: 10 });
+}
 ```
+
+The registered CMS pages resolve the same client from the Mango runtime provider. The Wujie helper and Admin Shell provide one client per mounted instance, so token, tenant, refresh and request cancellation state do not cross instances. The historical `cmsApi` export remains for compatibility but is deprecated; new integration code should use `createCmsApi(httpClient)`.
 
 Render an advertisement block from already loaded delivery data:
 
@@ -70,7 +75,7 @@ This package has no standalone environment file. Runtime behavior comes from pag
 |---------------|---------|---------|
 | `registerMangoCmsAdminPages()` | Not called | Registers CMS page keys into the admin page registry. |
 | `@mango/cms/style.css` | Not imported by this package consumer | Loads CMS page and component styles. |
-| Host request base URL | Host-defined | Determines where `/cms/**` API requests are sent. |
+| Host `HttpClient` | Required by registered pages | Determines base URL, token, tenant, refresh, cancellation and unauthorized handling for `/cms/**` requests. |
 
 For official Mango Admin full integration, `@mango/cms/style.css` is declared in `mango-ui/packages/admin/admin-packages.json` and generated into the admin style aggregation chain.
 
@@ -112,6 +117,8 @@ Main API helper groups:
 | Site settings | `detailSiteSetting()`, `saveSiteSetting()` |
 
 Shared TypeScript types include `ApiId`, `PageResult`, `CmsSite`, `CmsContent`, `CmsContentPublish`, `CmsNavigation`, `CmsAdvertisement`, `CmsAdDelivery`, `CmsStatus`, and `CmsContentStatus`.
+
+`createCmsApi(httpClient)` is the preferred API entry. `cmsApi` delegates to the historical global request client only for source compatibility and should not be used by new pages.
 
 ## 6. 数据与初始化
 
@@ -164,6 +171,10 @@ Confirm `@mango/cms/style.css` is imported directly by the micro app or included
 **Requests return 401 or 403**
 
 Confirm the current user has the corresponding `cms:*` menu or button permission, and that the backend application has `mango-cms-starter` enabled.
+
+**CMS page reports that Mango HttpClient is missing**
+
+Mount the page through Admin Shell or `createMangoWujieVueApp()`. A custom host must provide `MANGO_HTTP_CLIENT_KEY` from `@mango/app-runtime` with its own `HttpClient` instance before rendering registered CMS pages.
 
 **Image upload or preview is unavailable**
 

@@ -187,6 +187,8 @@ Shell 首页会自动把模块返回的 `widgets` 合并进组件库。`business
 
 `modules` 用于声明运行时模块加载方式，结构来自 `@mango/app-runtime`。本地页面优先使用已注册的 page loader；微前端页面需要在运行时配置中声明 entry、activeRule 和隔离策略。
 
+同一微应用可由多个模块或路由槽位挂载。Shell 使用模块的 `instanceId` 精确选择 Wujie 实例；未显式配置且同一 `runtimeCode` 出现多次时，运行时按 `runtimeCode:moduleCode` 生成稳定标识。重复的显式 `instanceId` 会作为配置错误阻断，避免请求上下文和定向销毁串到相邻实例。
+
 ### Home Widget Runtime
 
 Shell 首页通过 `@mango/home` 接入用户多首页能力。默认首页路由会解析当前用户默认首页；带 `homeId` 参数的首页路由会打开当前用户拥有的指定首页或授权模板首页。用户可在首页宿主中创建、重命名、复制、排序、删除个人首页，设置默认首页，并把工作台布局 JSON 保存到后端 `mango-home`。授权模板首页只读，但可复制为个人首页副本。

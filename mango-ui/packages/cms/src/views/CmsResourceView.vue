@@ -14,7 +14,12 @@
         </el-form-item>
         <el-form-item v-if="config.filterSite" label="站点" class="cms-search-item">
           <el-select v-model="query.siteId" clearable filterable placeholder="全部站点">
-            <el-option v-for="site in siteOptions" :key="site.id" :label="site.siteName || site.siteCode" :value="site.id" />
+            <el-option
+              v-for="site in siteOptions"
+              :key="site.id"
+              :label="site.siteName || site.siteCode"
+              :value="site.id"
+            />
           </el-select>
         </el-form-item>
         <el-form-item v-if="config.statusField" label="状态" class="cms-search-item">
@@ -80,17 +85,27 @@
               </div>
             </div>
             <div v-else-if="column.type === 'meta'" class="cms-meta-cell">
-              <strong>{{ column.optionKey ? optionLabel(resolveColumnOptions(column), formatValue(row, column.prop)) : formatValue(row, column.prop) || '-' }}</strong>
+              <strong>{{
+                column.optionKey
+                  ? optionLabel(resolveColumnOptions(column), formatValue(row, column.prop))
+                  : formatValue(row, column.prop) || '-'
+              }}</strong>
               <span>{{ column.subProp ? formatValue(row, column.subProp) || '-' : '-' }}</span>
             </div>
             <el-tag v-else-if="column.type === 'status'" :type="statusTag(formatValue(row, column.prop))" size="small">
               {{ optionLabel(statusOptions, formatValue(row, column.prop)) }}
             </el-tag>
-            <el-tag v-else-if="column.type === 'contentStatus'" :type="contentStatusTag(formatValue(row, column.prop))" size="small">
+            <el-tag
+              v-else-if="column.type === 'contentStatus'"
+              :type="contentStatusTag(formatValue(row, column.prop))"
+              size="small"
+            >
               {{ optionLabel(contentStatusOptions, formatValue(row, column.prop)) }}
             </el-tag>
             <span v-else-if="column.type === 'site'">{{ siteName(formatValue(row, column.prop)) }}</span>
-            <span v-else-if="column.optionKey">{{ optionLabels(resolveColumnOptions(column), formatValue(row, column.prop)) }}</span>
+            <span v-else-if="column.optionKey">{{
+              optionLabels(resolveColumnOptions(column), formatValue(row, column.prop))
+            }}</span>
             <span v-else>{{ formatValue(row, column.prop) || '-' }}</span>
           </template>
         </el-table-column>
@@ -102,13 +117,55 @@
             <div class="cms-actions">
               <el-button v-if="config.detail" link type="primary" :icon="View" @click="openDetail(row)">详情</el-button>
               <el-button v-if="config.editor" link type="primary" :icon="Edit" @click="openEditor(row)">编辑</el-button>
-              <el-button v-if="config.canToggleStatus && rowStatus(row) === 'ENABLED'" link type="warning" @click="changeStatus(row, 'DISABLED')">禁用</el-button>
-              <el-button v-if="config.canToggleStatus && rowStatus(row) === 'DISABLED'" link type="success" @click="changeStatus(row, 'ENABLED')">启用</el-button>
-              <el-button v-if="config.key === 'contents' && row.status === 'DRAFT'" link type="primary" @click="submitContent(row)">提交</el-button>
-              <el-button v-if="config.key === 'contents' && row.status === 'PENDING_REVIEW'" link type="success" @click="approveContent(row)">通过</el-button>
-              <el-button v-if="config.key === 'contents' && row.status === 'PENDING_REVIEW'" link type="warning" @click="rejectContent(row)">驳回</el-button>
-              <el-button v-if="config.key === 'contents' && row.status === 'PUBLISHED'" link type="warning" @click="offlineContent(row)">下线</el-button>
-              <el-button v-if="config.key === 'contentPublishes' && row.publishStatus === 'PUBLISHED'" link type="warning" @click="offlinePublish(row)">下线</el-button>
+              <el-button
+                v-if="config.canToggleStatus && rowStatus(row) === 'ENABLED'"
+                link
+                type="warning"
+                @click="changeStatus(row, 'DISABLED')"
+                >禁用</el-button
+              >
+              <el-button
+                v-if="config.canToggleStatus && rowStatus(row) === 'DISABLED'"
+                link
+                type="success"
+                @click="changeStatus(row, 'ENABLED')"
+                >启用</el-button
+              >
+              <el-button
+                v-if="config.key === 'contents' && row.status === 'DRAFT'"
+                link
+                type="primary"
+                @click="submitContent(row)"
+                >提交</el-button
+              >
+              <el-button
+                v-if="config.key === 'contents' && row.status === 'PENDING_REVIEW'"
+                link
+                type="success"
+                @click="approveContent(row)"
+                >通过</el-button
+              >
+              <el-button
+                v-if="config.key === 'contents' && row.status === 'PENDING_REVIEW'"
+                link
+                type="warning"
+                @click="rejectContent(row)"
+                >驳回</el-button
+              >
+              <el-button
+                v-if="config.key === 'contents' && row.status === 'PUBLISHED'"
+                link
+                type="warning"
+                @click="offlineContent(row)"
+                >下线</el-button
+              >
+              <el-button
+                v-if="config.key === 'contentPublishes' && row.publishStatus === 'PUBLISHED'"
+                link
+                type="warning"
+                @click="offlinePublish(row)"
+                >下线</el-button
+              >
               <el-button v-if="config.remove" link type="danger" :icon="Delete" @click="deleteRow(row)">删除</el-button>
             </div>
           </template>
@@ -129,7 +186,13 @@
       </div>
     </section>
 
-    <el-dialog v-model="editorVisible" :title="form.id ? `编辑${config.title}` : `新增${config.title}`" width="820px" destroy-on-close append-to-body>
+    <el-dialog
+      v-model="editorVisible"
+      :title="form.id ? `编辑${config.title}` : `新增${config.title}`"
+      width="820px"
+      destroy-on-close
+      append-to-body
+    >
       <el-form ref="formRef" :model="form" :rules="rules" label-width="112px">
         <div class="cms-form-section-title">基础信息</div>
         <el-row :gutter="14">
@@ -143,8 +206,20 @@
                 mode="default"
                 :placeholder="field.placeholder || field.label"
               />
-              <el-input v-else-if="field.type === 'textarea'" v-model="form[field.prop]" type="textarea" :rows="field.rows || 3" :placeholder="field.placeholder || field.label" />
-              <el-input-number v-else-if="field.type === 'number'" v-model="form[field.prop]" :min="0" :max="999999" style="width: 100%" />
+              <el-input
+                v-else-if="field.type === 'textarea'"
+                v-model="form[field.prop]"
+                type="textarea"
+                :rows="field.rows || 3"
+                :placeholder="field.placeholder || field.label"
+              />
+              <el-input-number
+                v-else-if="field.type === 'number'"
+                v-model="form[field.prop]"
+                :min="0"
+                :max="999999"
+                style="width: 100%"
+              />
               <el-date-picker
                 v-else-if="field.type === 'datetime'"
                 v-model="form[field.prop]"
@@ -153,13 +228,46 @@
                 :placeholder="field.placeholder || field.label"
                 style="width: 100%"
               />
-              <el-select v-else-if="field.type === 'select'" v-model="form[field.prop]" clearable filterable :placeholder="field.placeholder || field.label" style="width: 100%" @change="handleEditorFieldChange(field)">
-                <el-option v-for="item in resolveOptions(field)" :key="item.value" :label="item.label" :value="item.value" />
+              <el-select
+                v-else-if="field.type === 'select'"
+                v-model="form[field.prop]"
+                clearable
+                filterable
+                :placeholder="field.placeholder || field.label"
+                style="width: 100%"
+                @change="handleEditorFieldChange(field)"
+              >
+                <el-option
+                  v-for="item in resolveOptions(field)"
+                  :key="item.value"
+                  :label="item.label"
+                  :value="item.value"
+                />
               </el-select>
-              <el-select v-else-if="field.type === 'multiSelect'" v-model="form[field.prop]" multiple clearable filterable collapse-tags collapse-tags-tooltip :placeholder="field.placeholder || field.label" style="width: 100%" @change="handleEditorFieldChange(field)">
-                <el-option v-for="item in resolveOptions(field)" :key="item.value" :label="item.label" :value="item.value" />
+              <el-select
+                v-else-if="field.type === 'multiSelect'"
+                v-model="form[field.prop]"
+                multiple
+                clearable
+                filterable
+                collapse-tags
+                collapse-tags-tooltip
+                :placeholder="field.placeholder || field.label"
+                style="width: 100%"
+                @change="handleEditorFieldChange(field)"
+              >
+                <el-option
+                  v-for="item in resolveOptions(field)"
+                  :key="item.value"
+                  :label="item.label"
+                  :value="item.value"
+                />
               </el-select>
-              <el-checkbox-group v-else-if="field.type === 'checkButtonGroup'" v-model="form[field.prop]" class="cms-check-button-group">
+              <el-checkbox-group
+                v-else-if="field.type === 'checkButtonGroup'"
+                v-model="form[field.prop]"
+                class="cms-check-button-group"
+              >
                 <el-checkbox-button v-for="item in resolveOptions(field)" :key="item.value" :label="item.value">
                   {{ item.label }}
                 </el-checkbox-button>
@@ -207,10 +315,18 @@
       </template>
     </el-dialog>
 
-    <el-dialog v-model="detailVisible" :title="config.key === 'contents' ? '文章详情' : `${config.title}详情`" :width="config.key === 'contents' ? '920px' : '860px'" destroy-on-close append-to-body>
+    <el-dialog
+      v-model="detailVisible"
+      :title="config.key === 'contents' ? '文章详情' : `${config.title}详情`"
+      :width="config.key === 'contents' ? '920px' : '860px'"
+      destroy-on-close
+      append-to-body
+    >
       <article v-if="config.key === 'contents'" class="cms-article-detail">
         <h1>{{ formatValue(detailRow, 'title') || '-' }}</h1>
-        <p v-if="formatValue(detailRow, 'subtitle')" class="cms-article-subtitle">{{ formatValue(detailRow, 'subtitle') }}</p>
+        <p v-if="formatValue(detailRow, 'subtitle')" class="cms-article-subtitle">
+          {{ formatValue(detailRow, 'subtitle') }}
+        </p>
         <div class="cms-article-meta">
           <el-tag :type="contentStatusTag(formatValue(detailRow, 'status'))" size="small">
             {{ optionLabel(contentStatusOptions, formatValue(detailRow, 'status')) }}
@@ -220,14 +336,26 @@
           <span>{{ formatValue(detailRow, 'author') || '未署名' }}</span>
           <span>{{ detailRow.updatedAt || detailRow.createdAt || '-' }}</span>
         </div>
-        <div v-if="formatValue(detailRow, 'source') || formatValue(detailRow, 'externalUrl')" class="cms-article-source">
+        <div
+          v-if="formatValue(detailRow, 'source') || formatValue(detailRow, 'externalUrl')"
+          class="cms-article-source"
+        >
           <span v-if="formatValue(detailRow, 'source')">来源：{{ formatValue(detailRow, 'source') }}</span>
-          <a v-if="safeExternalUrl(formatValue(detailRow, 'externalUrl'))" :href="safeExternalUrl(formatValue(detailRow, 'externalUrl'))" target="_blank" rel="noopener noreferrer">
+          <a
+            v-if="safeExternalUrl(formatValue(detailRow, 'externalUrl'))"
+            :href="safeExternalUrl(formatValue(detailRow, 'externalUrl'))"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
             原文链接
           </a>
-          <span v-else-if="formatValue(detailRow, 'externalUrl')">外链：{{ formatValue(detailRow, 'externalUrl') }}</span>
+          <span v-else-if="formatValue(detailRow, 'externalUrl')"
+            >外链：{{ formatValue(detailRow, 'externalUrl') }}</span
+          >
         </div>
-        <p v-if="formatValue(detailRow, 'summary')" class="cms-article-summary">{{ formatValue(detailRow, 'summary') }}</p>
+        <p v-if="formatValue(detailRow, 'summary')" class="cms-article-summary">
+          {{ formatValue(detailRow, 'summary') }}
+        </p>
         <div
           v-if="hasRichTextValue(detailRow, 'body')"
           class="cms-detail-richtext cms-article-body"
@@ -239,7 +367,12 @@
         <section v-for="group in config.detail?.groups" :key="group.title" class="cms-detail-section">
           <div class="cms-detail-title">{{ group.title }}</div>
           <el-descriptions :column="2" border>
-            <el-descriptions-item v-for="field in group.fields" :key="field.prop" :label="field.label" :span="field.detailSpan || 1">
+            <el-descriptions-item
+              v-for="field in group.fields"
+              :key="field.prop"
+              :label="field.label"
+              :span="field.detailSpan || 1"
+            >
               <div
                 v-if="field.type === 'richText'"
                 class="cms-detail-richtext"
@@ -260,13 +393,14 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
 import type { FormInstance, FormRules } from 'element-plus';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { Delete, Edit, Plus, Refresh, Search, View } from '@element-plus/icons-vue';
 import { Editor } from '@mango/common';
 import { MUpload, fileApi } from '@mango/file';
-import { cmsApi, requestErrorMessage, type ApiId, type CmsPageQuery, type CmsSite } from '../api/cms';
+import { requestErrorMessage, type ApiId, type CmsPageQuery, type CmsRequestOptions, type CmsSite } from '../api/cms';
+import { useCmsApi } from '../api/context';
 
 type CmsRow = Record<string, unknown> & { id?: ApiId; status?: string; publishStatus?: string };
 
@@ -284,7 +418,18 @@ type FieldConfig = {
   key?: string;
   prop: string;
   label: string;
-  type?: 'input' | 'textarea' | 'richText' | 'number' | 'datetime' | 'select' | 'multiSelect' | 'checkButtonGroup' | 'treeSelect' | 'switch' | 'upload';
+  type?:
+    | 'input'
+    | 'textarea'
+    | 'richText'
+    | 'number'
+    | 'datetime'
+    | 'select'
+    | 'multiSelect'
+    | 'checkButtonGroup'
+    | 'treeSelect'
+    | 'switch'
+    | 'upload';
   optionKey?: string;
   required?: boolean;
   visibleWhen?: Record<string, unknown | unknown[]>;
@@ -343,7 +488,7 @@ export type CmsResourceConfig = {
   treeChildrenProp?: string;
   defaultExpandAll?: boolean;
   hidePagination?: boolean;
-  page: (query: CmsPageQuery) => Promise<PageData>;
+  page: (query: CmsPageQuery, options?: CmsRequestOptions) => Promise<PageData>;
   create?: (data: CmsRow) => Promise<unknown>;
   update?: (data: CmsRow) => Promise<unknown>;
   updateStatus?: (id: ApiId, status: 'ENABLED' | 'DISABLED') => Promise<unknown>;
@@ -361,6 +506,10 @@ export type CmsResourceConfig = {
 const props = defineProps<{
   config: CmsResourceConfig;
 }>();
+const cmsApi = useCmsApi();
+let pageRequest: AbortController | undefined;
+
+onBeforeUnmount(() => pageRequest?.abort());
 
 const statusOptions: OptionItem[] = [
   { label: '启用', value: 'ENABLED' },
@@ -459,12 +608,14 @@ const contentCategoryOptions = ref<CmsRow[]>([]);
 const siteCategoryOptions = ref<CmsRow[]>([]);
 const advertisementOptions = ref<CmsRow[]>([]);
 
-const visibleEditorFields = computed(() => (props.config.editor?.fields || []).filter(field => isFieldVisible(field)));
+const visibleEditorFields = computed(() =>
+  (props.config.editor?.fields || []).filter((field) => isFieldVisible(field)),
+);
 
 const rules = computed<FormRules>(() => {
   const nextRules: FormRules = {};
   visibleEditorFields.value
-    .filter(field => field.required)
+    .filter((field) => field.required)
     .forEach((field) => {
       nextRules[field.prop] = [{ required: true, message: `${field.label}不能为空`, trigger: 'blur' }];
     });
@@ -473,9 +624,12 @@ const rules = computed<FormRules>(() => {
 
 onMounted(loadResource);
 
-watch(() => props.config.key, () => {
-  void loadResource();
-});
+watch(
+  () => props.config.key,
+  () => {
+    void loadResource();
+  },
+);
 
 async function loadResource() {
   query.pageNum = 1;
@@ -497,14 +651,14 @@ async function loadResource() {
 }
 
 async function loadSiteOptions() {
-  if (!props.config.filterSite && !props.config.editor?.fields.some(field => field.optionKey === 'sites')) {
+  if (!props.config.filterSite && !props.config.editor?.fields.some((field) => field.optionKey === 'sites')) {
     return;
   }
   try {
     const page = await cmsApi.pageSites({ pageNum: 1, pageSize: 200 });
     siteOptions.value = page.list || [];
     if (props.config.requireSiteForPage && !query.siteId) {
-      query.siteId = siteOptions.value.find(site => site.id)?.id || '';
+      query.siteId = siteOptions.value.find((site) => site.id)?.id || '';
     }
   } catch (error) {
     errorMessage.value = requestErrorMessage(error, '站点选项加载失败');
@@ -514,21 +668,21 @@ async function loadSiteOptions() {
 async function loadEditorOptions() {
   const fields = props.config.editor?.fields || [];
   try {
-    if (fields.some(field => field.optionKey === 'contents')) {
+    if (fields.some((field) => field.optionKey === 'contents')) {
       const page = await cmsApi.pageContents({ pageNum: 1, pageSize: 200 });
       contentOptions.value = page.list || [];
     }
-    if (fields.some(field => field.optionKey === 'contentCategories')) {
-      contentCategoryOptions.value = await cmsApi.treeContentCategories({ status: 'ENABLED' }) as CmsRow[];
+    if (fields.some((field) => field.optionKey === 'contentCategories')) {
+      contentCategoryOptions.value = (await cmsApi.treeContentCategories({ status: 'ENABLED' })) as CmsRow[];
     }
-    if (fields.some(field => field.optionKey === 'siteCategories')) {
+    if (fields.some((field) => field.optionKey === 'siteCategories')) {
       siteCategoryOptions.value = [];
-      for (const site of siteOptions.value.filter(site => site.id)) {
+      for (const site of siteOptions.value.filter((site) => site.id)) {
         const tree = await cmsApi.treeSiteCategories({ siteId: site.id });
         siteCategoryOptions.value.push(...(tree as CmsRow[]));
       }
     }
-    if (fields.some(field => field.optionKey === 'advertisements')) {
+    if (fields.some((field) => field.optionKey === 'advertisements')) {
       const page = await cmsApi.pageAdvertisements({ pageNum: 1, pageSize: 500 });
       advertisementOptions.value = page.list || [];
     }
@@ -538,19 +692,28 @@ async function loadEditorOptions() {
 }
 
 async function loadRows() {
+  pageRequest?.abort();
+  pageRequest = new AbortController();
+  const request = pageRequest;
   loading.value = true;
   errorMessage.value = '';
   try {
     ensureRequiredSiteQuery();
-    const page = await props.config.page({ ...query });
+    const page = await props.config.page({ ...query }, { signal: request.signal });
     rows.value = page.list || [];
     total.value = Number(page.total || 0);
   } catch (error) {
+    if (pageRequest !== request || request.signal.aborted) {
+      return;
+    }
     rows.value = [];
     total.value = 0;
     errorMessage.value = requestErrorMessage(error, `${props.config.title}加载失败`);
   } finally {
-    loading.value = false;
+    if (pageRequest === request) {
+      pageRequest = undefined;
+      loading.value = false;
+    }
   }
 }
 
@@ -570,21 +733,28 @@ function ensureRequiredSiteQuery() {
 }
 
 function defaultSiteId() {
-  return siteOptions.value.find(site => site.id)?.id || '';
+  return siteOptions.value.find((site) => site.id)?.id || '';
 }
 
 function openEditor(row?: CmsRow) {
-  Object.keys(form).forEach(key => delete form[key]);
+  Object.keys(form).forEach((key) => delete form[key]);
   Object.assign(form, props.config.editor?.defaults || {}, row || {});
   props.config.editor?.fields.forEach((field) => {
     const value = form[field.prop];
-    if ((field.type === 'multiSelect' || field.type === 'checkButtonGroup' || (field.type === 'upload' && Number(field.upload?.count || 1) > 1))
-      && typeof value === 'string') {
-      form[field.prop] = value.split(',').map(item => item.trim()).filter(Boolean);
+    if (
+      (field.type === 'multiSelect' ||
+        field.type === 'checkButtonGroup' ||
+        (field.type === 'upload' && Number(field.upload?.count || 1) > 1)) &&
+      typeof value === 'string'
+    ) {
+      form[field.prop] = value
+        .split(',')
+        .map((item) => item.trim())
+        .filter(Boolean);
     }
   });
   props.config.editor?.fields
-    .filter(field => field.prop === 'parentId' && !form.parentId)
+    .filter((field) => field.prop === 'parentId' && !form.parentId)
     .forEach(() => {
       form.parentId = '0';
     });
@@ -592,7 +762,7 @@ function openEditor(row?: CmsRow) {
 }
 
 function openDetail(row: CmsRow) {
-  Object.keys(detailRow).forEach(key => delete detailRow[key]);
+  Object.keys(detailRow).forEach((key) => delete detailRow[key]);
   Object.assign(detailRow, row);
   detailVisible.value = true;
 }
@@ -611,7 +781,7 @@ function normalizeSiteScopedFields() {
     form.adId = '';
   }
   if (Array.isArray(form.categoryIds)) {
-    form.categoryIds = form.categoryIds.filter(id => siteCategoryBelongsToSite(id, form.siteId));
+    form.categoryIds = form.categoryIds.filter((id) => siteCategoryBelongsToSite(id, form.siteId));
   }
   if (form.categoryId && !siteCategoryBelongsToSite(form.categoryId, form.siteId)) {
     form.categoryId = '';
@@ -624,7 +794,7 @@ function normalizeAdMaterialType() {
     return;
   }
   const options = supportedMaterialOptions();
-  if (options.length && !options.some(item => item.value === form.materialType)) {
+  if (options.length && !options.some((item) => item.value === form.materialType)) {
     form.materialType = options[0].value;
   }
 }
@@ -668,7 +838,7 @@ function isFieldVisible(field: FieldConfig) {
     return true;
   }
   if (field.visibleWhenAny) {
-    return field.visibleWhenAny.some(condition => isConditionMatched(condition));
+    return field.visibleWhenAny.some((condition) => isConditionMatched(condition));
   }
   return isConditionMatched(field.visibleWhen || {});
 }
@@ -747,29 +917,32 @@ async function offlinePublish(row: CmsRow) {
 function resolveOptions(field: FieldConfig) {
   if (field.optionKey === 'sites') {
     return siteOptions.value
-      .filter(site => site.id)
-      .map(site => ({ label: site.siteName || site.siteCode || String(site.id), value: String(site.id) }));
+      .filter((site) => site.id)
+      .map((site) => ({ label: site.siteName || site.siteCode || String(site.id), value: String(site.id) }));
   }
   if (field.optionKey === 'contents') {
     return contentOptions.value
-      .filter(item => item.id)
-      .map(item => ({ label: String(item.title || item.id), value: String(item.id) }));
+      .filter((item) => item.id)
+      .map((item) => ({ label: String(item.title || item.id), value: String(item.id) }));
   }
   if (field.optionKey === 'contentCategories') {
     return contentCategoryOptions.value
-      .filter(item => item.id)
-      .map(item => ({ label: String(item.categoryName || item.categoryCode || item.id), value: String(item.id) }));
+      .filter((item) => item.id)
+      .map((item) => ({ label: String(item.categoryName || item.categoryCode || item.id), value: String(item.id) }));
   }
   if (field.optionKey === 'siteCategories') {
     return siteCategoryOptions.value
-      .filter(item => item.id)
-      .map(item => ({ label: String(item.categoryName || item.categoryCode || item.id), value: String(item.id) }));
+      .filter((item) => item.id)
+      .map((item) => ({ label: String(item.categoryName || item.categoryCode || item.id), value: String(item.id) }));
   }
   if (field.optionKey === 'advertisements') {
     return advertisementOptions.value
-      .filter(item => !form.siteId || String(item.siteId || '') === String(form.siteId))
-      .filter(item => item.id)
-      .map(item => ({ label: `${String(item.adName || item.adCode || item.id)} · ${String(item.position || '-')}`, value: String(item.id) }));
+      .filter((item) => !form.siteId || String(item.siteId || '') === String(form.siteId))
+      .filter((item) => item.id)
+      .map((item) => ({
+        label: `${String(item.adName || item.adCode || item.id)} · ${String(item.position || '-')}`,
+        value: String(item.id),
+      }));
   }
   if (field.optionKey === 'materialType' && props.config.key === 'adDeliveries') {
     return supportedMaterialOptions();
@@ -778,15 +951,15 @@ function resolveOptions(field: FieldConfig) {
 }
 
 function supportedMaterialOptions() {
-  const selectedAd = advertisementOptions.value.find(item => String(item.id || '') === String(form.adId || ''));
+  const selectedAd = advertisementOptions.value.find((item) => String(item.id || '') === String(form.adId || ''));
   const supportedValues = String(selectedAd?.supportedMaterialTypes || '')
     .split(',')
-    .map(item => item.trim())
+    .map((item) => item.trim())
     .filter(Boolean);
   if (!supportedValues.length) {
     return typeOptions.materialType;
   }
-  return typeOptions.materialType.filter(item => supportedValues.includes(item.value));
+  return typeOptions.materialType.filter((item) => supportedValues.includes(item.value));
 }
 
 function advertisementBelongsToSite(adId: unknown, siteId: unknown) {
@@ -795,7 +968,7 @@ function advertisementBelongsToSite(adId: unknown, siteId: unknown) {
   if (!id || !site) {
     return true;
   }
-  const ad = advertisementOptions.value.find(item => String(item.id || '') === id);
+  const ad = advertisementOptions.value.find((item) => String(item.id || '') === id);
   return !ad || String(ad.siteId || '') === site;
 }
 
@@ -823,16 +996,14 @@ function findTreeRecord(records: CmsRow[], id: string): CmsRow | undefined {
 }
 
 function resolveTreeOptions(field: FieldConfig) {
-  const topLevelOption: TreeOptionItem[] = field.prop === 'parentId'
-    ? [{ label: '顶级', value: '0' }]
-    : [];
+  const topLevelOption: TreeOptionItem[] = field.prop === 'parentId' ? [{ label: '顶级', value: '0' }] : [];
   if (field.optionKey === 'contentCategories') {
     return [
       ...topLevelOption,
       ...toTreeOptions(contentCategoryOptions.value, {
-      nameKey: 'categoryName',
-      codeKey: 'categoryCode',
-      excludeId: props.config.key === 'contentCategories' && field.prop === 'parentId' ? form.id : undefined,
+        nameKey: 'categoryName',
+        codeKey: 'categoryCode',
+        excludeId: props.config.key === 'contentCategories' && field.prop === 'parentId' ? form.id : undefined,
       }),
     ];
   }
@@ -840,9 +1011,9 @@ function resolveTreeOptions(field: FieldConfig) {
     return [
       ...topLevelOption,
       ...toTreeOptions(siteCategoryOptions.value, {
-      nameKey: 'categoryName',
-      codeKey: 'categoryCode',
-      excludeId: props.config.key === 'siteCategories' && field.prop === 'parentId' ? form.id : undefined,
+        nameKey: 'categoryName',
+        codeKey: 'categoryCode',
+        excludeId: props.config.key === 'siteCategories' && field.prop === 'parentId' ? form.id : undefined,
       }),
     ];
   }
@@ -857,7 +1028,7 @@ function toTreeOptions(records: CmsRow[], config: { nameKey: string; codeKey: st
       return undefined;
     }
     const children = ((record.children || []) as CmsRow[])
-      .map(child => toOption(child))
+      .map((child) => toOption(child))
       .filter((child): child is TreeOptionItem => Boolean(child));
     return {
       label: String(record[config.nameKey] || record[config.codeKey] || id),
@@ -866,9 +1037,7 @@ function toTreeOptions(records: CmsRow[], config: { nameKey: string; codeKey: st
       ...(children.length ? { children } : {}),
     };
   };
-  const roots = records
-    .map(record => toOption(record))
-    .filter((record): record is TreeOptionItem => Boolean(record));
+  const roots = records.map((record) => toOption(record)).filter((record): record is TreeOptionItem => Boolean(record));
   trimEmptyChildren(roots);
   return roots;
 }
@@ -908,18 +1077,21 @@ function resolveColumnOptions(column: ColumnConfig) {
 }
 
 function optionLabel(options: OptionItem[], value: unknown) {
-  const matched = options.find(item => item.value === value);
+  const matched = options.find((item) => item.value === value);
   return matched?.label || String(value || '-');
 }
 
 function optionLabels(options: OptionItem[], value: unknown) {
   const values = Array.isArray(value)
     ? value
-    : String(value || '').split(',').map(item => item.trim()).filter(Boolean);
+    : String(value || '')
+        .split(',')
+        .map((item) => item.trim())
+        .filter(Boolean);
   if (!values.length) {
     return '-';
   }
-  return values.map(item => optionLabel(options, item)).join('、');
+  return values.map((item) => optionLabel(options, item)).join('、');
 }
 
 function formatDetailValue(row: CmsRow, field: FieldConfig) {
@@ -953,7 +1125,9 @@ function safeExternalUrl(value: unknown) {
 function sanitizeRichText(html: string) {
   const template = document.createElement('template');
   template.innerHTML = html;
-  template.content.querySelectorAll('script, style, iframe, object, embed, link, meta').forEach(element => element.remove());
+  template.content
+    .querySelectorAll('script, style, iframe, object, embed, link, meta')
+    .forEach((element) => element.remove());
   template.content.querySelectorAll('*').forEach((element) => {
     Array.from(element.attributes).forEach((attribute) => {
       const name = attribute.name.toLowerCase();
@@ -993,7 +1167,7 @@ function contentStatusTag(value: unknown) {
 
 function siteName(value: unknown) {
   const id = String(value || '');
-  return siteOptions.value.find(site => String(site.id) === id)?.siteName || id || '-';
+  return siteOptions.value.find((site) => String(site.id) === id)?.siteName || id || '-';
 }
 
 function fileImageUrl(value: unknown) {
@@ -1013,6 +1187,6 @@ function formatValue(row: CmsRow, prop?: string) {
 }
 
 function flattenTree(records: CmsRow[]): CmsRow[] {
-  return records.flatMap(record => [record, ...flattenTree((record.children || []) as CmsRow[])]);
+  return records.flatMap((record) => [record, ...flattenTree((record.children || []) as CmsRow[])]);
 }
 </script>

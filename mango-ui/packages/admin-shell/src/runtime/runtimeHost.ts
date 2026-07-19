@@ -15,6 +15,7 @@ import {
   type MangoRuntimeConfigDiagnostic,
   MangoRuntimeConfigError,
   type MangoRuntimeAppConfig,
+  MANGO_HTTP_CLIENT_KEY,
 } from '@mango/app-runtime';
 import { getPageLoader } from '@mango/admin-pages/core';
 import { useThemeStore } from '../stores/theme';
@@ -25,6 +26,9 @@ import { getMangoAdminShellOptions } from '../config';
 import { ensureDevCenterPagesRegistered, MenuTypeEnum, type ShellMenu, type ShellRouteMenu } from './menuHost';
 import { ensureFeatureRegistrars } from './featureRegistrars';
 import { defaultRuntimeConfig, loadShellRuntimeConfig } from './runtimeConfig';
+import { resolveRuntimeAppConfig, toRuntimeApps } from './runtimeIdentity';
+
+export { resolveRuntimeAppConfig, toRuntimeApps } from './runtimeIdentity';
 
 const shellRuntimeEventBus = createRuntimeEventBus();
 const runtimeHttpClients = new Map<string, MangoHttpClient>();
@@ -50,6 +54,7 @@ export function useRuntimeHost(containerRef: Ref<HTMLElement | undefined>, route
   const runtimeDecision = ref<RuntimeDecision>();
   const runtimeConfigAvailable = ref(true);
   let mountedLocalPage: VueApp | undefined;
+  let mountedLocalRuntime: MangoAppRuntime | undefined;
   let mountedMicroConfig: MangoRuntimeAppConfig | undefined;
   let currentMenu: ShellMenu | undefined;
   let mountSeq = 0;
@@ -166,6 +171,9 @@ export function useRuntimeHost(containerRef: Ref<HTMLElement | undefined>, route
     mountedLocalPage = createApp({ render: () => h(component) });
     installShellApp(mountedLocalPage);
     mountedLocalPage.use(router);
+    mountedLocalRuntime = createLocalRuntime(menu);
+    mountedLocalPage.provide('mangoRuntime', mountedLocalRuntime);
+    mountedLocalPage.provide(MANGO_HTTP_CLIENT_KEY, mountedLocalRuntime.httpClient);
     mountedLocalPage.mount(container);
   }
 
@@ -233,7 +241,7 @@ export function useRuntimeHost(containerRef: Ref<HTMLElement | undefined>, route
     if (!runtimeCode) {
       return undefined;
     }
-    return runtimeApps.value.find((app) => app.appCode === runtimeCode);
+    return resolveRuntimeAppConfig(runtimeApps.value, runtimeCode, moduleConfig?.instanceId);
   }
 
   function ensureDefaultPages() {
@@ -278,6 +286,8 @@ export function useRuntimeHost(containerRef: Ref<HTMLElement | undefined>, route
   async function unmountCurrentPage() {
     mountedLocalPage?.unmount();
     mountedLocalPage = undefined;
+    mountedLocalRuntime?.dispose();
+    mountedLocalRuntime = undefined;
     if (mountedMicroConfig) {
       await resolveAdapter(mountedMicroConfig.appType || 'MICRO_APP').unmount?.(mountedMicroConfig);
       mountedMicroConfig = undefined;
@@ -387,26 +397,6 @@ export function useRuntimeHost(containerRef: Ref<HTMLElement | undefined>, route
   };
 }
 
-function toRuntimeApps(config: MangoRuntimeConfig): MangoRuntimeAppConfig[] {
-  return Object.entries(config.modules)
-    .filter(([, module]) => module.mode === 'micro' && module.entry)
-    .map(([moduleCode, module]) => ({
-      appCode: module.runtimeCode || moduleCode,
-      appName: module.runtimeCode || moduleCode,
-      appType: module.appType || 'MICRO_APP',
-      deployMode: 'REMOTE',
-      entryUrl: module.entry,
-      styleUrl: module.style,
-      framework: module.framework || 'vue3',
-      sandboxEnabled: false,
-      styleIsolation: 'NONE',
-      status: 1,
-      timeoutMs: module.timeoutMs || 15000,
-      preload: module.preload === true,
-      alive: module.alive === true,
-    }));
-}
-
 function resolveRuntimeCode(menu: ShellMenu, moduleConfig?: MangoModuleRuntimeConfig) {
   if (moduleConfig?.runtimeCode) {
     return moduleConfig.runtimeCode;
@@ -483,6 +473,21 @@ function createRuntime(config: MangoRuntimeAppConfig, menu?: ShellMenu): MangoAp
     ...createBaseRuntime(config),
     menu,
   };
+}
+
+function createLocalRuntime(menu: ShellMenu) {
+  const appCode = menu.moduleCode || 'mango-admin-local';
+  return createRuntime(
+    {
+      appCode,
+      instanceId: `local:${appCode}`,
+      appName: appCode,
+      appType: 'LOCAL',
+      deployMode: 'LOCAL',
+      status: 1,
+    },
+    menu,
+  );
 }
 
 function createBaseRuntime(config: MangoRuntimeAppConfig): MangoAppRuntime {

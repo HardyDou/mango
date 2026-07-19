@@ -3,7 +3,8 @@ import { createPinia } from 'pinia';
 import { createI18n } from 'vue-i18n';
 import ElementPlus from 'element-plus';
 import * as ElementPlusIconsVue from '@element-plus/icons-vue';
-import { registerUnauthorizedHandler } from '@mango/common';
+import { createMangoHttpClient, registerUnauthorizedHandler, Session } from '@mango/common';
+import { MANGO_HTTP_CLIENT_KEY, type MangoAppRuntime } from '@mango/app-runtime';
 import { registerDefaultAdminPages } from '@mango/admin-pages';
 import { registerMangoFileAdminPages } from '@mango/file/admin-pages';
 import { registerMangoCmsAdminPages } from '@mango/cms/admin-pages';
@@ -16,17 +17,19 @@ import '@mango/cms/style.css';
 import RuntimeRoot from './App.vue';
 import router from './router';
 
-declare global {
-  interface Window {
-    $wujie?: {
-      props?: {
-        mangoRuntime?: import('@mango/app-runtime').MangoAppRuntime;
-      };
-    };
-  }
+let standaloneHttpClient: ReturnType<typeof createMangoHttpClient> | undefined;
+
+function getStandaloneHttpClient() {
+  standaloneHttpClient ||= createMangoHttpClient({
+    baseUrl: '/api',
+    getAccessToken: () => Session.getToken?.() || '',
+    getTenantId: () => (Session.get('userInfo') || {}).tenantId ?? Session.get('tenantId'),
+    onUnauthorized: () => router.push('/login'),
+  });
+  return standaloneHttpClient;
 }
 
-function installCommon(appInstance: VueApp) {
+function installCommon(appInstance: VueApp, runtime?: MangoAppRuntime) {
   registerDefaultAdminPages({ features: ['cms', 'file'] });
   registerMangoFileAdminPages();
   registerMangoCmsAdminPages();
@@ -35,12 +38,15 @@ function installCommon(appInstance: VueApp) {
   }
   appInstance.use(ElementPlus);
   appInstance.use(createPinia());
-  appInstance.use(createI18n({
-    legacy: false,
-    locale: 'zh-cn',
-    fallbackLocale: 'zh-cn',
-    messages: { 'zh-cn': {} },
-  }));
+  appInstance.use(
+    createI18n({
+      legacy: false,
+      locale: 'zh-cn',
+      fallbackLocale: 'zh-cn',
+      messages: { 'zh-cn': {} },
+    }),
+  );
+  appInstance.provide(MANGO_HTTP_CLIENT_KEY, runtime?.httpClient || getStandaloneHttpClient());
 }
 
 createMangoWujieVueApp({
@@ -56,7 +62,7 @@ createMangoWujieVueApp({
   onMicroReady(runtime) {
     const unbindTheme = bindMangoRuntimeTheme(runtime);
     registerUnauthorizedHandler(async () => {
-      window.$wujie?.props?.mangoRuntime?.eventBus.emit('unauthorized');
+      runtime?.eventBus.emit('unauthorized');
     });
     return unbindTheme;
   },

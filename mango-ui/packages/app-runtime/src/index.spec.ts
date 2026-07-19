@@ -3,6 +3,7 @@ import type { HttpClient } from '@mango/api-schema';
 import {
   createRuntimeEventBus,
   microAppAdapter,
+  normalizeRuntimeConfig,
   resolveRuntimeInstanceId,
   type MangoAppRuntime,
   type MangoRuntimeAppConfig,
@@ -50,7 +51,47 @@ describe('micro app instance isolation', () => {
     expect(resolveRuntimeInstanceId({ appCode: 'orders' })).toBe('orders');
     expect(resolveRuntimeInstanceId({ appCode: 'orders', instanceId: '  ' })).toBe('orders');
   });
+
+  it('derives route-slot identities when one app is mounted by multiple modules', () => {
+    const normalized = normalizeRuntimeConfig({
+      profile: 'micro',
+      modules: {
+        'orders-east': microModule('https://orders.example.test/east'),
+        'orders-west': microModule('https://orders.example.test/west'),
+      },
+    });
+
+    expect(normalized.modules['orders-east'].instanceId).toBe('orders:orders-east');
+    expect(normalized.modules['orders-west'].instanceId).toBe('orders:orders-west');
+    expect(normalized.diagnostics).toEqual([]);
+  });
+
+  it('rejects duplicate explicit micro app identities', () => {
+    const normalized = normalizeRuntimeConfig({
+      profile: 'micro',
+      modules: {
+        'orders-east': { ...microModule('https://orders.example.test/east'), instanceId: 'orders-primary' },
+        'orders-west': { ...microModule('https://orders.example.test/west'), instanceId: 'orders-primary' },
+      },
+    });
+
+    expect(normalized.diagnostics).toContainEqual(
+      expect.objectContaining({
+        level: 'error',
+        moduleCode: 'orders-west',
+        field: 'instanceId',
+      }),
+    );
+  });
 });
+
+function microModule(entry: string) {
+  return {
+    mode: 'micro' as const,
+    runtimeCode: 'orders',
+    entry,
+  };
+}
 
 function config(instanceId: string): MangoRuntimeAppConfig {
   return {
