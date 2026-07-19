@@ -3,6 +3,9 @@ package io.mango.system.core.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
+import io.mango.resource.support.sync.ResourceSynchronizationCompletedEvent;
+import io.mango.resource.support.sync.ResourceSynchronizationPrerequisitesReadyEvent;
+import io.mango.resource.support.sync.ResourceSynchronizationStatus;
 import io.mango.system.api.tenant.TenantPackageBindingHandler;
 import io.mango.system.api.tenant.TenantProvisionCommand;
 import io.mango.system.api.tenant.TenantProvisioner;
@@ -13,10 +16,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.event.EventListener;
 import org.springframework.core.Ordered;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Reconciles idempotent tenant baselines after Resource Registry startup sync.
@@ -32,13 +39,91 @@ public class TenantProvisioningReconciliationRunner implements ApplicationRunner
     private final SysTenantMapper tenantMapper;
     private final ObjectProvider<TenantProvisioner> tenantProvisioners;
     private final ObjectProvider<TenantPackageBindingHandler> tenantPackageBindingHandlers;
+    private final ObjectProvider<ResourceSynchronizationStatus> resourceSynchronizationStatuses;
+    private final ApplicationEventPublisher eventPublisher;
+    private final AtomicBoolean reconciliationCompleted = new AtomicBoolean();
+    private final AtomicBoolean reconciliationInProgress = new AtomicBoolean();
 
     @Override
     public void run(ApplicationArguments args) {
+        if (!isResourceSynchronizationComplete()) {
+            reconcilePrerequisites();
+            eventPublisher.publishEvent(new ResourceSynchronizationPrerequisitesReadyEvent());
+            if (!isResourceSynchronizationComplete()) {
+                log.warn("Tenant provisioning final reconciliation deferred until resource synchronization completes");
+                return;
+            }
+        }
+        reconcileTenants();
+    }
+
+    /**
+     * Reconciles tenants after a deferred resource synchronization eventually succeeds.
+     *
+     * @param event resource synchronization completion event
+     */
+    @EventListener
+    public void onResourceSynchronizationCompleted(ResourceSynchronizationCompletedEvent event) {
+        tryReconcile("resource synchronization event for " + event.getApplicationName());
+    }
+
+    /**
+     * Retries tenant reconciliation after a transient provisioning failure.
+     */
+    @Scheduled(
+            fixedDelayString = "${mango.system.tenant-provisioning.retry-interval:10s}",
+            initialDelayString = "${mango.system.tenant-provisioning.retry-interval:10s}")
+    public void retryUntilReconciled() {
+        if (!reconciliationCompleted.get() && isResourceSynchronizationComplete()) {
+            tryReconcile("scheduled retry");
+        }
+    }
+
+    private void tryReconcile(String trigger) {
+        try {
+            reconcileTenants();
+        } catch (RuntimeException exception) {
+            log.error("Tenant provisioning reconciliation failed and will retry: trigger={}", trigger, exception);
+        }
+    }
+
+    private void reconcileTenants() {
+        if (reconciliationCompleted.get() || !reconciliationInProgress.compareAndSet(false, true)) {
+            return;
+        }
+        try {
+            int tenantCount = doReconcileTenants();
+            reconciliationCompleted.set(true);
+            log.info("Tenant provisioning reconciliation complete: tenants={}", tenantCount);
+        } finally {
+            reconciliationInProgress.set(false);
+        }
+    }
+
+    private void reconcilePrerequisites() {
+        if (reconciliationCompleted.get() || !reconciliationInProgress.compareAndSet(false, true)) {
+            return;
+        }
+        try {
+            int tenantCount = doReconcileTenants();
+            log.info("Tenant provisioning prerequisites ready: tenants={}", tenantCount);
+        } finally {
+            reconciliationInProgress.set(false);
+        }
+    }
+
+    private int doReconcileTenants() {
         List<SysTenantEntity> tenants = tenantMapper.selectList(new LambdaQueryWrapper<SysTenantEntity>()
                 .eq(SysTenantEntity::getStatus, ENABLED));
         tenants.forEach(this::reconcileTenant);
-        log.info("Tenant provisioning reconciliation complete: tenants={}", tenants.size());
+        return tenants.size();
+    }
+
+    private boolean isResourceSynchronizationComplete() {
+        return resourceSynchronizationStatuses.orderedStream()
+                .findFirst()
+                .map(ResourceSynchronizationStatus::isSynchronizationComplete)
+                .orElse(true);
     }
 
     private void reconcileTenant(SysTenantEntity tenant) {

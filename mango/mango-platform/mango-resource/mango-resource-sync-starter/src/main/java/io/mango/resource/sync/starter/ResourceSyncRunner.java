@@ -7,13 +7,18 @@ import io.mango.common.result.Require;
 import io.mango.resource.api.ResourceDeclarationApi;
 import io.mango.resource.api.command.RegisterResourceDeclarationsCommand;
 import io.mango.resource.api.enums.ResourceCode;
-import io.mango.resource.support.model.ResourceDeclaration;
 import io.mango.resource.support.config.ResourceRegistryProperties;
 import io.mango.resource.support.declaration.ResourceDeclarationCollector;
+import io.mango.resource.support.model.ResourceDeclaration;
+import io.mango.resource.support.sync.ResourceSynchronizationCompletedEvent;
+import io.mango.resource.support.sync.ResourceSynchronizationPrerequisitesReadyEvent;
+import io.mango.resource.support.sync.ResourceSynchronizationStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.event.EventListener;
 import org.springframework.core.Ordered;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.util.StringUtils;
@@ -26,7 +31,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 @Slf4j
 @RequiredArgsConstructor
-public class ResourceSyncRunner implements ApplicationRunner, Ordered {
+public class ResourceSyncRunner implements ApplicationRunner, Ordered, ResourceSynchronizationStatus {
 
     private static final int RESOURCE_SYNC_ORDER_OFFSET = 50;
 
@@ -35,12 +40,13 @@ public class ResourceSyncRunner implements ApplicationRunner, Ordered {
     private final ResourceDeclarationApi resourceDeclarationApi;
     private final ObjectMapper objectMapper;
     private final String applicationName;
+    private final ApplicationEventPublisher eventPublisher;
     private final AtomicBoolean syncCompleted = new AtomicBoolean();
     private final AtomicBoolean syncInProgress = new AtomicBoolean();
 
     @Override
     public void run(ApplicationArguments args) {
-        trySync();
+        trySync(false);
     }
 
     /**
@@ -51,22 +57,50 @@ public class ResourceSyncRunner implements ApplicationRunner, Ordered {
             initialDelayString = "${mango.resource.registry.remote.retry-interval:10s}")
     public void retryUntilSynchronized() {
         if (!syncCompleted.get()) {
-            trySync();
+            trySync(true);
         }
     }
 
-    private void trySync() {
+    /**
+     * Retries immediately after tenant provisioning creates declaration prerequisites such as built-in roles.
+     *
+     * @param event startup prerequisites ready event
+     */
+    @EventListener
+    public void onSynchronizationPrerequisitesReady(ResourceSynchronizationPrerequisitesReadyEvent event) {
+        retryUntilSynchronized();
+    }
+
+    private void trySync(boolean publishCompletionEvent) {
         if (!syncInProgress.compareAndSet(false, true)) {
             return;
         }
+        boolean notifyCompletion = false;
         try {
             synchronizeDeclarations();
-            syncCompleted.set(true);
+            notifyCompletion = syncCompleted.compareAndSet(false, true) && publishCompletionEvent;
         } catch (RuntimeException exception) {
             log.warn("Mango resource declaration sync deferred and will retry: {}", exception.getMessage());
         } finally {
             syncInProgress.set(false);
         }
+        if (notifyCompletion) {
+            publishCompletionEvent();
+        }
+    }
+
+    private void publishCompletionEvent() {
+        try {
+            eventPublisher.publishEvent(new ResourceSynchronizationCompletedEvent(applicationName));
+        } catch (RuntimeException exception) {
+            log.error("Resource synchronization completion listener failed: application={}",
+                    applicationName, exception);
+        }
+    }
+
+    @Override
+    public boolean isSynchronizationComplete() {
+        return syncCompleted.get();
     }
 
     private void synchronizeDeclarations() {
