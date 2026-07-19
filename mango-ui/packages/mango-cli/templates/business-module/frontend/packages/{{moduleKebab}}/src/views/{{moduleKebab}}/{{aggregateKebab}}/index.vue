@@ -3,12 +3,7 @@
     <template #search>
       <MangoSearchPanel :model="query" collapsible :collapsed-count="3" @search="handleSearch" @reset="handleReset">
         <el-form-item label="{{aggregateName}}名称">
-          <el-input
-            v-model="query.name"
-            clearable
-            placeholder="请输入{{aggregateName}}名称"
-            @keyup.enter="handleSearch"
-          />
+          <el-input v-model="query.name" clearable :placeholder="namePlaceholder" @keyup.enter="handleSearch" />
         </el-form-item>
       </MangoSearchPanel>
     </template>
@@ -44,12 +39,7 @@
     >
       <el-form ref="formRef" :model="formModel" :rules="formRules" label-width="120px">
         <el-form-item label="{{aggregateName}}名称" prop="name">
-          <el-input
-            v-model="formModel.name"
-            maxlength="128"
-            show-word-limit
-            placeholder="请输入{{aggregateName}}名称"
-          />
+          <el-input v-model="formModel.name" maxlength="128" show-word-limit :placeholder="namePlaceholder" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -100,6 +90,7 @@ const formRef = ref<FormInstance>();
 const pageAbortController = new AbortController();
 let listRequestController: AbortController | undefined;
 const {{aggregateCamel}}Api = get{{aggregatePascal}}Api();
+const namePlaceholder = '请输入{{aggregateName}}名称';
 
 const query = reactive({
   page: 1,
@@ -184,10 +175,8 @@ async function submitForm() {
       await {{aggregateCamel}}Api.create({ name: formModel.name }, pageAbortController.signal);
       ElMessage.success('新增成功');
     } else if (formModel.id) {
-      await {{aggregateCamel}}Api.update(
-        { id: formModel.id, name: formModel.name },
-        pageAbortController.signal,
-      );
+      const command = { id: formModel.id, name: formModel.name };
+      await {{aggregateCamel}}Api.update(command, pageAbortController.signal);
       ElMessage.success('保存成功');
     }
     formDialogVisible.value = false;
@@ -230,8 +219,7 @@ async function handleDelete(record: {{aggregatePascal}}VO) {
 
 function isAbortedFailure(error: unknown): boolean {
   return (
-    error instanceof Error &&
-    (error.name === 'AbortError' || (error as Error & { kind?: string }).kind === 'aborted')
+    error instanceof Error && (error.name === 'AbortError' || (error as Error & { kind?: string }).kind === 'aborted')
   );
 }
 
