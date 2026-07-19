@@ -12,7 +12,7 @@
 
 | 项目                       | 实际值                                                                    |
 | -------------------------- | ------------------------------------------------------------------------- |
-| 候选提交                   | `dc287be158f03984ba18c76b55ff727bd318f114`                                |
+| 被签名的功能提交           | `339fa12271e4d4a5914f437083fd00b57d5f4f28`                                |
 | 分支                       | `docs/frontend-standards-plan`                                            |
 | 一键入口                   | `pnpm -C mango-ui check:production-candidate`                             |
 | 固定镜像                   | `mango/frontend-quality:node22-pnpm11.14`                                 |
@@ -20,9 +20,9 @@
 | Node / pnpm                | `22.23.1` / `11.14.0`                                                     |
 | 平台                       | `linux/arm64`                                                             |
 | 发布候选                   | 29 个精确版本 npm tarball                                                 |
-| preparation report SHA-256 | `da72aa16adaf1729e8c43ad6f2050107a3591b4b22c9dd02b78a788ccdba6649`        |
-| sealed report SHA-256      | `d93b21d3e599c9d3e22a6da45b3f28146fd4654c7aabda86f8b3747a1edcebd8`        |
-| 业务 lockfile SHA-256      | `ddd63e00f2c378c94ae59a7fb3694a975014385427b4fb1be6de2e02e80cc1e4`        |
+| preparation report SHA-256 | `6ad3a3f09104ca131bf7430e85617d15e0ed029c6b5fd1f332beff5809f5b147`        |
+| sealed report SHA-256      | `4c265e7fe5301f11714062e5db6b4eb43af2014e5208b007aafbc8c3d714e14a`        |
+| 业务 lockfile SHA-256      | `cdc1be8bfae39ac273360ce389bcd0e702930b0eb420f11febd466576349e79b`        |
 
 准备报告逐包记录名称、版本和 tarball SHA-256。容器通过 Git worktree common-dir 只读挂载获得真实提交，项目、package store、tarball 和报告全部写入 Docker named volume；通过后只把报告复制回仓库，避免宿主绑定挂载的文件系统语义污染结论。
 
@@ -33,6 +33,7 @@
 - `@mango/http-client` 是 Axios 1.18.1 的 FE1 适配器。host 为每个应用实例创建并注入客户端，业务页面不创建 Axios 实例；取消使用 `AbortSignal`，错误统一为 `HttpError`。
 - 业务 UI 包拥有页面、私有组件、公共业务组件和显式 `style.css`。页面私有样式使用 scoped/module；跨页面样式随包导出，主题 token 归平台主题层。
 - 当前微前端实现为 Wujie，厂商 API 受限在 `@mango/app-runtime` adapter。实例以 `instanceId` 隔离，单体和微前端使用同一业务包，开发运行配置与发布制品分离。
+- CMS 真实页面通过 `useCmsApi()` 获取 host 注入的实例级客户端；`api/` 保持无 Vue 依赖，注入和缓存归 `composables/`。独立运行时延迟创建本地客户端，微前端运行时直接复用传入客户端。
 - CLI full preset 和 canonical starter 使用同一 API、组件、CSS、租户和注入合同；新增业务模块默认生成 API 包与 UI 包，不把请求代码塞入 Vue 页面。
 
 业务引用链固定为：
@@ -52,27 +53,28 @@ host/runtime
 | ------------------------------- | ------------------------------------------------------------------------- |
 | 38 workspace / 29 package build | 全部生产构建通过                                                          |
 | 架构图                          | 38/38 metadata；error 0；存量 exception 26、SCC 3                         |
-| 边界合同                        | 新增违规 0；存量 21 持平或减少                                            |
+| 边界合同                        | 新增违规 0；存量由 21 降至 19                                             |
 | 组件合同                        | 18 registry；195 个公开 Vue export 全覆盖；新增 legacy 0                  |
 | HTTP adapter                    | 12 个 mock 合同 + 3 个真实 Axios/本地 HTTP 集成测试通过                   |
-| Wujie instance runtime          | 2 个多实例 mount/unmount/destroy 隔离测试通过                             |
-| admin-shell runtime             | 44 个单元/合同测试通过                                                    |
-| 质量 checker                    | 58 个正向、反向和 fail-closed fixture 通过                                |
+| Wujie instance runtime          | 4 个配置身份、重复身份拒绝和精确 destroy 隔离测试通过                     |
+| admin-shell runtime             | 46 个单元/合同测试通过                                                    |
+| CMS 请求边界                    | 3 个双实例 Token/租户头隔离、真实 Axios、本地 HTTP 和取消合同测试通过     |
+| 质量 checker                    | 59 个正向、反向和 fail-closed fixture 通过                                |
 | package consumer                | 29 包 pack；独立安装；27 个公开类型合同；vue-tsc 与 production build 通过 |
 | release rollout                 | 健康样本 `promote`；越线样本 `rollback`                                   |
 | CLI/starter                     | full/custom/add/module/PMO、canonical template 和 19 个 CLI Node 测试通过 |
 
-真实运行链路另使用后端 `18001` 和 Chromium 执行 `runtime-composition.spec.ts`，6/6 通过，覆盖 monolith、Wujie hybrid、远程子应用、错误入口和 fail-closed 配置。该验证后只修改了候选执行脚本与生成代码格式，不涉及 runtime 业务实现；最终容器轮次再次覆盖 runtime 单测和全部生产构建。
+较早候选曾使用后端 `18001` 和 Chromium 执行 `runtime-composition.spec.ts`，6/6 通过；但此后实例身份和 CMS runtime 请求链发生了功能修改，因此该结果不作为当前提交的浏览器签名证据。当前提交已由 runtime/CMS 单测、全部生产构建、tarball 消费和封闭最小 Shell 覆盖；真实 monolith/Wujie 浏览器复验明确保留为生产毕业条件，避免用旧结果冒充当前结果。
 
 ## 5. 封闭业务开发环境
 
-CLI 从本次打出的 `@mango/cli@1.0.83` 创建 full preset，再生成 `orders-api` 与 `orders` 业务包。29 个 Mango 依赖全部重写到本地 tarball，未复制或链接 Mango 源码。
+CLI 从本次打出的 `@mango/cli@1.0.84` 创建 full preset，再生成 `orders-api` 与 `orders` 业务包。29 个 Mango 依赖全部重写到本地 tarball，未复制或链接 Mango 源码。
 
 封闭容器使用 `--network none`、`--cap-drop ALL`、`no-new-privileges`、独立 HOME 和离线 pnpm store。最终报告：
 
 | 断言                                    | 结果                                          |
 | --------------------------------------- | --------------------------------------------- |
-| offline frozen install                  | 524/524 复用，下载 0，2.16 s                  |
+| offline frozen install                  | 524/524 复用，下载 0，2.04 s                  |
 | DNS / HTTPS canary                      | `EAI_AGAIN` / `ENETUNREACH`，均被网络层阻断   |
 | 成功外部连接                            | 0                                             |
 | workspace/source/宿主路径泄漏           | 0                                             |
@@ -92,15 +94,15 @@ CLI 从本次打出的 `@mango/cli@1.0.83` 创建 full preset，再生成 `order
 | ESLint fatal             |      0 |          0 | 达标    |
 | ESLint error             |    232 |        232 | 持平    |
 | ESLint warning           |    903 |        904 | 减少 1  |
-| Prettier 不一致文件      |    576 |        589 | 减少 13 |
+| Prettier 不一致文件      |    571 |        589 | 减少 18 |
 | Stylelint error          |    935 |        935 | 持平    |
 | typecheck 失败 workspace |     25 |         25 | 持平    |
-| TypeScript diagnostics   |    784 |        789 | 减少 5  |
-| 前端边界 identity        |     21 |         21 | 持平    |
+| TypeScript diagnostics   |    787 |        789 | 减少 2  |
+| 前端边界 identity        |     19 |         21 | 减少 2  |
 
-21 个边界存量由 API 5、CSS 1、页面/组件分层 6、微前端厂商引用 9 组成。组件侧仍有 195 个 legacy export，当前完成新 C4 分类的组件数为 0；架构仍有 26 个例外和 3 个历史 SCC。
+19 个边界存量由 API 5、CSS 1、页面/组件分层 6、微前端厂商引用 7 组成。组件侧仍有 195 个 legacy export，当前完成新 C4 分类的组件数为 0；架构仍有 26 个例外和 3 个历史 SCC。
 
-性能和依赖债务也未清零：主应用最大 JS 为 2.25 MB（gzip 675 KB）；业务消费者聚合块为 2.69 MB（gzip 865 KB）；full Business Lab 聚合块为 5.70 MB（gzip 1.83 MB），CSS 约 850 KB。构建仍有 Sass `@import` 弃用、循环 manual chunk、VueUse annotation 和超大 chunk 警告；依赖树仍包含停止维护的 `vue-i18n@9.2.2` 及若干 deprecated 间接依赖。
+性能和依赖债务也未清零：主应用最大 JS 为 2.25 MB（gzip 675 KB）；业务消费者聚合块为 2.69 MB（gzip 866 KB）；full Business Lab 聚合块为 5.70 MB（gzip 1.83 MB），CSS 约 850 KB。构建仍有 Sass `@import` 弃用、循环 manual chunk、VueUse annotation 和超大 chunk 警告；依赖树仍包含停止维护的 `vue-i18n@9.2.2` 及若干 deprecated 间接依赖。
 
 因此当前质量结论是：新增代码治理和可消费制品合同已达到本地生产候选要求，历史静态质量与性能债务尚未达到零债务毕业要求。
 
