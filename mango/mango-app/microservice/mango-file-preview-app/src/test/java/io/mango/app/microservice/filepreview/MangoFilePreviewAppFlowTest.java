@@ -65,6 +65,7 @@ class MangoFilePreviewAppFlowTest {
 
     private static final Long FILE_ID = 10001L;
     private static final String FILE_NAME = "readme.txt";
+    private static final String ENGINE_FILE_NAME = "file-10001.txt";
     private static final String FILE_CONTENT = "Mango file preview E2E";
 
     @LocalServerPort
@@ -82,12 +83,13 @@ class MangoFilePreviewAppFlowTest {
         JsonNode body = objectMapper.readTree(linkResponse.getBody());
         assertThat(body.path("success").asBoolean()).isTrue();
         assertThat(body.at("/data/fileId").asText()).isEqualTo(FILE_ID.toString());
+        assertThat(body.at("/data/fileName").asText()).isEqualTo(FILE_NAME);
         String previewUrl = body.at("/data/previewUrl").asText();
         assertThat(previewUrl).startsWith("/file-preview/files/preview-entry?token=");
 
         ResponseEntity<String> previewResponse = restTemplate.getForEntity(baseUrl() + previewUrl, String.class);
         assertThat(previewResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(previewResponse.getBody()).contains(FILE_NAME);
+        assertThat(previewResponse.getBody()).contains(ENGINE_FILE_NAME);
         assertThat(previewResponse.getBody()).contains(Base64.getEncoder()
                 .encodeToString((FILE_CONTENT + "\r\n").getBytes(StandardCharsets.UTF_8)));
     }

@@ -24,9 +24,11 @@
 企业环境先配置 npm registry。全局安装 CLI 时使用用户级 `~/.npmrc`；项目内安装依赖时使用企业项目根目录 `.npmrc`。不要依赖父目录 `.npmrc` 配合 `npm --prefix <dir>`，npm 不会按这个方式稳定读取父目录配置。
 
 ```ini
-registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
-@mango:registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
+registry=${MANGO_NPM_REGISTRY}
+@mango:registry=${MANGO_NPM_REGISTRY}
 ```
+
+`MANGO_NPM_REGISTRY` 由企业环境或 CI 注入，公开文档不登记公司内部仓库地址。
 
 配置用户级 `~/.npmrc` 后安装 CLI：
 

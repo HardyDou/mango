@@ -9,11 +9,11 @@
 | 项目          | 值                                                                                                             |
 | ------------- | -------------------------------------------------------------------------------------------------------------- |
 | NPM 包        | `@mango/cli`                                                                                                   |
-| 当前候选版本  | `1.0.84`（尚未发布）                                                                                           |
+| 当前候选版本  | `1.0.85`（尚未发布）                                                                                           |
 | bin 命令      | `mango`、`mango-cli`                                                                                           |
 | 命令入口      | `src/index.mjs`                                                                                                |
-| 发布 registry | [npm-hosted](http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/)                                      |
-| 使用 registry | [npm-group](http://nexus.inner.yunxinbaokeji.com/repository/npm-group/)                                        |
+| 发布 registry | 由发布配置或 `MANGO_RELEASE_NPM_PUBLISH_REGISTRY` 注入                                                         |
+| 使用 registry | 由项目配置或 `MANGO_NPM_REGISTRY` 注入                                                                         |
 | 随包发布文件  | `src`、`templates`、`admin-modules.json`、`release-versions.json`、`CHANGELOG.md`、`README.md`、`package.json` |
 
 ## 2. 功能清单
@@ -65,12 +65,12 @@ CLI 不负责：
 
 全局安装只用于创建项目、历史项目升级和跨仓库临时诊断：
 
-使用内网 [npm-group](http://nexus.inner.yunxinbaokeji.com/repository/npm-group/) 安装：
+通过企业 npm group 安装；公开文档不登记公司内部仓库地址：
 
 ```bash
-npm view @mango/pmo@1.3.2 version --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
-npm view @mango/cli@1.0.84 version --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
-npm install -g @mango/cli@1.0.84 --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
+npm view @mango/pmo@1.3.2 version --registry "$MANGO_NPM_REGISTRY"
+npm view @mango/cli@1.0.84 version --registry "$MANGO_NPM_REGISTRY"
+npm install -g @mango/cli@1.0.84 --registry "$MANGO_NPM_REGISTRY"
 ```
 
 两个查询都返回精确版本后，该批次才可供业务项目安装。PMO 升级会整体同步 baseline、Agent 入口和 `.agents/skills`，不需要逐个安装 Skill。
@@ -132,26 +132,26 @@ mango docs path --project-dir demo-custom
 `mango docs pull` 默认从项目 `mango.config.json.mavenRepository` 拉取 `io.mango:mango-docs-bundle:<mangoBackendVersion>:jar`。业务仓没有 Mango 源码时，AI 和开发者应先读取 `mango docs path` 输出目录下的同版本文档，再参考在线文档或历史上下文。需要临时验证其它版本或仓库时使用：
 
 ```bash
-mango docs pull --project-dir demo-custom --version 1.0.1 --maven-repository https://nexus.inner.yunxinbaokeji.com/repository/maven-public/ --force
+mango docs pull --project-dir demo-custom --version 1.0.1 --maven-repository "$MANGO_MAVEN_REPOSITORY" --force
 ```
 
 ## 6. 配置说明
 
 ### 6.1 init 命令参数
 
-| 参数                 | 默认值                                                                         | 含义                                                   | 影响行为                                           | 源码入口                                       |
-| -------------------- | ------------------------------------------------------------------------------ | ------------------------------------------------------ | -------------------------------------------------- | ---------------------------------------------- |
-| `<project>`          | 无                                                                             | 目标项目名                                             | 会转成 kebab case 作为目录名和默认 project code    | `parseArgs`                                    |
-| `--preset`           | `full`                                                                         | 项目预设，支持 `full`、`custom`                        | full 使用聚合 starter；custom 按模块选择依赖       | `validateOptions`、`renderBackendDependencies` |
-| `--modules`          | 空                                                                             | custom 项目的可选模块列表；支持逗号列表、`all`、`none` | 决定前端包、页面注册、后端 starter、运行时模块配置 | `resolveModuleCodes`                           |
-| `--topology`         | `monolith`                                                                     | 拓扑，支持 `monolith`、`microservice`                  | 决定生成拓扑文档和 runtime config 的微前端入口     | `validateOptions`、`renderRuntimeModulesJson`  |
-| `--package`          | `com.example.mango`                                                            | Java base package                                      | 渲染后端包名和源码路径                             | `buildVariables`                               |
-| `--group-id`         | 同 `--package`                                                                 | Maven groupId                                          | 渲染生成项目 Maven 坐标                            | `parseArgs`                                    |
-| `--version`          | `1.0.0-SNAPSHOT`                                                               | 生成项目版本                                           | 渲染 Maven 和前端业务包版本                        | `buildVariables`                               |
-| `--mango-version`    | `release-versions.json` 的 `maven.mangoBackend`                                | Mango 后端 Maven 版本                                  | 写入生成项目 Maven 依赖版本                        | `defaultVersions`                              |
-| `--npm-registry`     | [npm-group](http://nexus.inner.yunxinbaokeji.com/repository/npm-group/)        | 生成项目 `.npmrc` registry                             | 前端安装 Mango NPM 包时使用                        | `parseArgs`                                    |
-| `--maven-repository` | [maven-public](https://nexus.inner.yunxinbaokeji.com/repository/maven-public/) | 生成项目 Maven 仓库                                    | 后端拉取 Mango Maven 包时使用                      | `parseArgs`                                    |
-| `--force`            | `false`                                                                        | 目标目录已存在时是否覆盖                               | 为 true 时先删除目标目录再生成                     | `main`                                         |
+| 参数                 | 默认值                                          | 含义                                                   | 影响行为                                           | 源码入口                                       |
+| -------------------- | ----------------------------------------------- | ------------------------------------------------------ | -------------------------------------------------- | ---------------------------------------------- |
+| `<project>`          | 无                                              | 目标项目名                                             | 会转成 kebab case 作为目录名和默认 project code    | `parseArgs`                                    |
+| `--preset`           | `full`                                          | 项目预设，支持 `full`、`custom`                        | full 使用聚合 starter；custom 按模块选择依赖       | `validateOptions`、`renderBackendDependencies` |
+| `--modules`          | 空                                              | custom 项目的可选模块列表；支持逗号列表、`all`、`none` | 决定前端包、页面注册、后端 starter、运行时模块配置 | `resolveModuleCodes`                           |
+| `--topology`         | `monolith`                                      | 拓扑，支持 `monolith`、`microservice`                  | 决定生成拓扑文档和 runtime config 的微前端入口     | `validateOptions`、`renderRuntimeModulesJson`  |
+| `--package`          | `com.example.mango`                             | Java base package                                      | 渲染后端包名和源码路径                             | `buildVariables`                               |
+| `--group-id`         | 同 `--package`                                  | Maven groupId                                          | 渲染生成项目 Maven 坐标                            | `parseArgs`                                    |
+| `--version`          | `1.0.0-SNAPSHOT`                                | 生成项目版本                                           | 渲染 Maven 和前端业务包版本                        | `buildVariables`                               |
+| `--mango-version`    | `release-versions.json` 的 `maven.mangoBackend` | Mango 后端 Maven 版本                                  | 写入生成项目 Maven 依赖版本                        | `defaultVersions`                              |
+| `--npm-registry`     | CLI 内置企业默认值；可显式传入                  | 生成项目 `.npmrc` registry                             | 前端安装 Mango NPM 包时使用                        | `parseArgs`                                    |
+| `--maven-repository` | CLI 内置企业默认值；可显式传入                  | 生成项目 Maven 仓库                                    | 后端拉取 Mango Maven 包时使用                      | `parseArgs`                                    |
+| `--force`            | `false`                                         | 目标目录已存在时是否覆盖                               | 为 true 时先删除目标目录再生成                     | `main`                                         |
 
 ### 6.2 mango.config.json
 
@@ -516,9 +516,13 @@ CLI 不在运行时管理菜单、权限和租户，但会生成让业务模块�
 
 ## 12. 相关文档
 
-### 1.0.84 候选影响
+### 1.0.85 候选影响
 
-`@mango/cli@1.0.84` 继续生成 `createXxxApi(HttpClient)` 业务 API，并锁定已打通真实 CMS 页面实例客户端与 Wujie 多实例身份的前端矩阵。候选继续精确锁定 `@mango/pmo@1.3.2`；该版本尚未发布，使用前必须完成 Nexus 回读、真实运行时灰度与回退。
+`@mango/cli@1.0.85` 将生成和升级锁更新到 Mango Maven `1.0.23`，并继续锁定 `@mango/pmo@1.3.2` 与 CLI `1.0.84` 已发布的完整前端矩阵。Maven `1.0.23` 包含 Workflow `1.0.20` 已知数据库 checksum 兼容和幂等 V2 审计列迁移、跨 worktree 质量基线修复、Resource Registry 与 System 启动协调，以及 Payment remote starter 补齐；发布前仍需完成 Maven、CLI、文档快照和干净业务消费者验证。
+
+### 1.0.84 发布影响
+
+`@mango/cli@1.0.84` 继续生成 `createXxxApi(HttpClient)` 业务 API，并锁定已打通真实 CMS 页面实例客户端与 Wujie 多实例身份的前端矩阵；该版本精确锁定 `@mango/pmo@1.3.2`，已完成私仓回读和干净业务消费者验证。
 
 ### 1.0.83 候选影响
 
