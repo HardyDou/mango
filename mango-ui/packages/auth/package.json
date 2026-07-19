@@ -1,6 +1,6 @@
 {
   "name": "@mango/auth",
-  "version": "1.0.17",
+  "version": "1.0.18",
   "private": false,
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -22,8 +22,8 @@
   },
   "dependencies": {
     "@element-plus/icons-vue": "2.3.2",
-    "@mango/common": "1.0.18",
-    "@mango/api-schema": "1.0.2"
+    "@mango/common": "workspace:1.0.19",
+    "@mango/api-schema": "workspace:1.0.3"
   },
   "peerDependencies": {
     "element-plus": ">=2.14.1 <3",

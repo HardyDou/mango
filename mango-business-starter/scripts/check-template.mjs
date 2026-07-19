@@ -1,14 +1,18 @@
-import { spawnSync } from 'node:child_process';
-import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
-import { join, relative } from 'node:path';
+import { spawnSync } from "node:child_process";
+import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
+import { join, relative } from "node:path";
 
-const root = new URL('..', import.meta.url).pathname;
-const repoRoot = new URL('../..', import.meta.url).pathname;
+const root = new URL("..", import.meta.url).pathname;
+const repoRoot = new URL("../..", import.meta.url).pathname;
 
-const baselineCheck = spawnSync(process.execPath, [join(root, 'scripts/sync-pmo-baseline.mjs'), '--check'], {
-  cwd: repoRoot,
-  encoding: 'utf8',
-});
+const baselineCheck = spawnSync(
+  process.execPath,
+  [join(root, "scripts/sync-pmo-baseline.mjs"), "--check"],
+  {
+    cwd: repoRoot,
+    encoding: "utf8",
+  },
+);
 if (baselineCheck.status !== 0) {
   console.error(baselineCheck.stdout);
   console.error(baselineCheck.stderr);
@@ -16,134 +20,174 @@ if (baselineCheck.status !== 0) {
 }
 
 const requiredFiles = [
-  'README.md',
-  'AGENTS.md',
-  '.github/CODEOWNERS',
-  'business-pmo/README.md',
-  'business-pmo/global-entity-exceptions.json',
-  'business-pmo/mango-baseline/README.md',
-  'business-pmo/mango-baseline/agents/01-pm-agent.md',
-  'business-pmo/mango-baseline/agents/02-tech-lead-agent.md',
-  'business-pmo/mango-baseline/agents/03-dev-agent.md',
-  'business-pmo/mango-baseline/agents/04-qa-agent.md',
-  'business-pmo/mango-baseline/agents/05-pmo-agent.md',
-  'business-pmo/mango-baseline/rules/index.json',
-  'business-pmo/mango-baseline/rules/00-dev-flow.md',
-  'business-pmo/mango-baseline/rules/01-delivery-contract.md',
-  'business-pmo/mango-baseline/rules/02-dev-environment.md',
-  'business-pmo/mango-baseline/rules/03-ai-coding-redlines.md',
-  'business-pmo/mango-baseline/rules/backend/01-code.md',
-  'business-pmo/mango-baseline/rules/backend/02-naming.md',
-  'business-pmo/mango-baseline/rules/backend/03-api.md',
-  'business-pmo/mango-baseline/rules/backend/04-db.md',
-  'business-pmo/mango-baseline/rules/backend/05-module.md',
-  'business-pmo/mango-baseline/rules/backend/06-security.md',
-  'business-pmo/mango-baseline/rules/backend/07-persistence.md',
-  'business-pmo/mango-baseline/rules/backend/08-test.md',
-  'business-pmo/mango-baseline/rules/backend/09-versioning.md',
-  'business-pmo/mango-baseline/rules/backend/10-dev-flow.md',
-  'business-pmo/mango-baseline/rules/frontend/01-vue-code.md',
-  'business-pmo/mango-baseline/rules/frontend/02-element-plus-ui.md',
-  'business-pmo/mango-baseline/rules/frontend/03-component-development.md',
-  'business-pmo/mango-baseline/rules/frontend/04-test.md',
-  'business-pmo/mango-baseline/rules/frontend/05-dev-flow.md',
-  'business-pmo/mango-baseline/rules/frontend/06-monorepo-architecture.md',
-  'business-pmo/mango-baseline/rules/product/01-prd-template.md',
-  'business-pmo/mango-baseline/rules/product/02-sprint.md',
-  'business-pmo/mango-baseline/templates/delivery-contract.md',
-  'business-pmo/mango-baseline/tools/pmo-preflight.mjs',
-  'business-pmo/mango-baseline/tools/check-document-set.mjs',
-  'business-pmo/mango-baseline/tools/delivery-contract-check.mjs',
-  'business-docs/plans/example-contract.md',
-  'business-docs/plans/example-ledger.md',
-  'backend/modules/{{moduleKebab}}/pom.xml',
-  'backend/modules/{{moduleKebab}}/README.md',
-  'backend/modules/{{moduleKebab}}/{{moduleKebab}}-api/pom.xml',
-  'backend/modules/{{moduleKebab}}/{{moduleKebab}}-api/src/main/java/{{basePackagePath}}/{{modulePackage}}/api/{{modulePascal}}Api.java',
-  'backend/modules/{{moduleKebab}}/{{moduleKebab}}-api/src/main/java/{{basePackagePath}}/{{modulePackage}}/api/command/Create{{aggregatePascal}}Command.java',
-  'backend/modules/{{moduleKebab}}/{{moduleKebab}}-api/src/main/java/{{basePackagePath}}/{{modulePackage}}/api/command/Update{{aggregatePascal}}Command.java',
-  'backend/modules/{{moduleKebab}}/{{moduleKebab}}-api/src/main/java/{{basePackagePath}}/{{modulePackage}}/api/enums/{{aggregatePascal}}Code.java',
-  'backend/modules/{{moduleKebab}}/{{moduleKebab}}-api/src/main/java/{{basePackagePath}}/{{modulePackage}}/api/query/{{aggregatePascal}}PageQuery.java',
-  'backend/modules/{{moduleKebab}}/{{moduleKebab}}-api/src/main/java/{{basePackagePath}}/{{modulePackage}}/api/vo/{{aggregatePascal}}VO.java',
-  'backend/modules/{{moduleKebab}}/{{moduleKebab}}-core/pom.xml',
-  'backend/modules/{{moduleKebab}}/{{moduleKebab}}-core/src/main/java/{{basePackagePath}}/{{modulePackage}}/core/entity/{{aggregatePascal}}Entity.java',
-  'backend/modules/{{moduleKebab}}/{{moduleKebab}}-core/src/main/java/{{basePackagePath}}/{{modulePackage}}/core/mapper/{{aggregatePascal}}Mapper.java',
-  'backend/modules/{{moduleKebab}}/{{moduleKebab}}-core/src/main/java/{{basePackagePath}}/{{modulePackage}}/core/service/I{{aggregatePascal}}Service.java',
-  'backend/modules/{{moduleKebab}}/{{moduleKebab}}-core/src/main/java/{{basePackagePath}}/{{modulePackage}}/core/service/impl/{{aggregatePascal}}Service.java',
-  'backend/modules/{{moduleKebab}}/{{moduleKebab}}-core/src/main/resources/db/migration/{{moduleKebab}}/V1__init_{{moduleKebab}}.sql',
-  'backend/modules/{{moduleKebab}}/{{moduleKebab}}-starter/pom.xml',
-  'backend/modules/{{moduleKebab}}/{{moduleKebab}}-starter/src/main/java/{{basePackagePath}}/{{modulePackage}}/starter/controller/{{modulePascal}}Controller.java',
-  'backend/modules/{{moduleKebab}}/{{moduleKebab}}-starter/src/main/resources/META-INF/mango/module.properties',
-  'backend/modules/{{moduleKebab}}/{{moduleKebab}}-starter/src/main/resources/META-INF/mango/resource-manifest.json',
-  'backend/modules/{{moduleKebab}}/{{moduleKebab}}-starter-remote/pom.xml',
-  'backend/modules/{{moduleKebab}}/{{moduleKebab}}-starter-remote/src/main/java/{{basePackagePath}}/{{modulePackage}}/starter/remote/{{modulePascal}}FeignClient.java',
-  'frontend/packages/{{moduleKebab}}-api/package.json',
-  'frontend/packages/{{moduleKebab}}-api/src/api.ts',
-  'frontend/packages/{{moduleKebab}}-api/src/types.ts',
-  'frontend/packages/{{moduleKebab}}/package.json',
-  'frontend/packages/{{moduleKebab}}/src/index.ts',
-  'frontend/packages/{{moduleKebab}}/src/views/{{moduleKebab}}/{{aggregateKebab}}/index.vue',
-  'frontend/apps/{{projectKebab}}-admin/package.json',
-  'frontend/apps/{{projectKebab}}-admin/src/main.ts',
-  'topologies/monolith/README.md',
-  'topologies/microservice/README.md',
+  "README.md",
+  "AGENTS.md",
+  ".github/CODEOWNERS",
+  "business-pmo/README.md",
+  "business-pmo/global-entity-exceptions.json",
+  "business-pmo/mango-baseline/README.md",
+  "business-pmo/mango-baseline/agents/01-pm-agent.md",
+  "business-pmo/mango-baseline/agents/02-tech-lead-agent.md",
+  "business-pmo/mango-baseline/agents/03-dev-agent.md",
+  "business-pmo/mango-baseline/agents/04-qa-agent.md",
+  "business-pmo/mango-baseline/agents/05-pmo-agent.md",
+  "business-pmo/mango-baseline/rules/index.json",
+  "business-pmo/mango-baseline/rules/00-dev-flow.md",
+  "business-pmo/mango-baseline/rules/01-delivery-contract.md",
+  "business-pmo/mango-baseline/rules/02-dev-environment.md",
+  "business-pmo/mango-baseline/rules/03-ai-coding-redlines.md",
+  "business-pmo/mango-baseline/rules/backend/01-code.md",
+  "business-pmo/mango-baseline/rules/backend/02-naming.md",
+  "business-pmo/mango-baseline/rules/backend/03-api.md",
+  "business-pmo/mango-baseline/rules/backend/04-db.md",
+  "business-pmo/mango-baseline/rules/backend/05-module.md",
+  "business-pmo/mango-baseline/rules/backend/06-security.md",
+  "business-pmo/mango-baseline/rules/backend/07-persistence.md",
+  "business-pmo/mango-baseline/rules/backend/08-test.md",
+  "business-pmo/mango-baseline/rules/backend/09-versioning.md",
+  "business-pmo/mango-baseline/rules/backend/10-dev-flow.md",
+  "business-pmo/mango-baseline/rules/frontend/01-vue-code.md",
+  "business-pmo/mango-baseline/rules/frontend/02-element-plus-ui.md",
+  "business-pmo/mango-baseline/rules/frontend/03-component-development.md",
+  "business-pmo/mango-baseline/rules/frontend/04-test.md",
+  "business-pmo/mango-baseline/rules/frontend/05-dev-flow.md",
+  "business-pmo/mango-baseline/rules/frontend/06-monorepo-architecture.md",
+  "business-pmo/mango-baseline/rules/product/01-prd-template.md",
+  "business-pmo/mango-baseline/rules/product/02-sprint.md",
+  "business-pmo/mango-baseline/templates/delivery-contract.md",
+  "business-pmo/mango-baseline/tools/pmo-preflight.mjs",
+  "business-pmo/mango-baseline/tools/check-document-set.mjs",
+  "business-pmo/mango-baseline/tools/delivery-contract-check.mjs",
+  "business-docs/plans/example-contract.md",
+  "business-docs/plans/example-ledger.md",
+  "backend/modules/{{moduleKebab}}/pom.xml",
+  "backend/modules/{{moduleKebab}}/README.md",
+  "backend/modules/{{moduleKebab}}/{{moduleKebab}}-api/pom.xml",
+  "backend/modules/{{moduleKebab}}/{{moduleKebab}}-api/src/main/java/{{basePackagePath}}/{{modulePackage}}/api/{{modulePascal}}Api.java",
+  "backend/modules/{{moduleKebab}}/{{moduleKebab}}-api/src/main/java/{{basePackagePath}}/{{modulePackage}}/api/command/Create{{aggregatePascal}}Command.java",
+  "backend/modules/{{moduleKebab}}/{{moduleKebab}}-api/src/main/java/{{basePackagePath}}/{{modulePackage}}/api/command/Update{{aggregatePascal}}Command.java",
+  "backend/modules/{{moduleKebab}}/{{moduleKebab}}-api/src/main/java/{{basePackagePath}}/{{modulePackage}}/api/enums/{{aggregatePascal}}Code.java",
+  "backend/modules/{{moduleKebab}}/{{moduleKebab}}-api/src/main/java/{{basePackagePath}}/{{modulePackage}}/api/query/{{aggregatePascal}}PageQuery.java",
+  "backend/modules/{{moduleKebab}}/{{moduleKebab}}-api/src/main/java/{{basePackagePath}}/{{modulePackage}}/api/vo/{{aggregatePascal}}VO.java",
+  "backend/modules/{{moduleKebab}}/{{moduleKebab}}-core/pom.xml",
+  "backend/modules/{{moduleKebab}}/{{moduleKebab}}-core/src/main/java/{{basePackagePath}}/{{modulePackage}}/core/entity/{{aggregatePascal}}Entity.java",
+  "backend/modules/{{moduleKebab}}/{{moduleKebab}}-core/src/main/java/{{basePackagePath}}/{{modulePackage}}/core/mapper/{{aggregatePascal}}Mapper.java",
+  "backend/modules/{{moduleKebab}}/{{moduleKebab}}-core/src/main/java/{{basePackagePath}}/{{modulePackage}}/core/service/I{{aggregatePascal}}Service.java",
+  "backend/modules/{{moduleKebab}}/{{moduleKebab}}-core/src/main/java/{{basePackagePath}}/{{modulePackage}}/core/service/impl/{{aggregatePascal}}Service.java",
+  "backend/modules/{{moduleKebab}}/{{moduleKebab}}-core/src/main/resources/db/migration/{{moduleKebab}}/V1__init_{{moduleKebab}}.sql",
+  "backend/modules/{{moduleKebab}}/{{moduleKebab}}-starter/pom.xml",
+  "backend/modules/{{moduleKebab}}/{{moduleKebab}}-starter/src/main/java/{{basePackagePath}}/{{modulePackage}}/starter/controller/{{modulePascal}}Controller.java",
+  "backend/modules/{{moduleKebab}}/{{moduleKebab}}-starter/src/main/resources/META-INF/mango/module.properties",
+  "backend/modules/{{moduleKebab}}/{{moduleKebab}}-starter/src/main/resources/META-INF/mango/resource-manifest.json",
+  "backend/modules/{{moduleKebab}}/{{moduleKebab}}-starter-remote/pom.xml",
+  "backend/modules/{{moduleKebab}}/{{moduleKebab}}-starter-remote/src/main/java/{{basePackagePath}}/{{modulePackage}}/starter/remote/{{modulePascal}}FeignClient.java",
+  "frontend/packages/{{moduleKebab}}-api/package.json",
+  "frontend/packages/{{moduleKebab}}-api/src/api.ts",
+  "frontend/packages/{{moduleKebab}}-api/src/types.ts",
+  "frontend/packages/{{moduleKebab}}/package.json",
+  "frontend/packages/{{moduleKebab}}/style.css",
+  "frontend/packages/{{moduleKebab}}/src/api-context.ts",
+  "frontend/packages/{{moduleKebab}}/src/index.ts",
+  "frontend/packages/{{moduleKebab}}/src/views/{{moduleKebab}}/{{aggregateKebab}}/index.vue",
+  "frontend/apps/{{projectKebab}}-admin/package.json",
+  "frontend/apps/{{projectKebab}}-admin/src/main.ts",
+  "topologies/monolith/README.md",
+  "topologies/microservice/README.md",
 ];
 
 const contentChecks = [
   {
-    file: 'backend/modules/{{moduleKebab}}/README.md',
+    file: "backend/modules/{{moduleKebab}}/README.md",
     patterns: [
-      'Mango 能力入口',
-      'Persistence 持久化',
-      'Authorization 授权资源',
-      'Admin Pages 页面注册',
-      'mango-docs/capabilities/README.md',
-      'mango/mango-infra/mango-infra-persistence/README.md',
-      'business-pmo/mango-baseline/rules/backend/07-persistence.md',
+      "Mango 能力入口",
+      "Persistence 持久化",
+      "Authorization 授权资源",
+      "Admin Pages 页面注册",
+      "mango-docs/capabilities/README.md",
+      "mango/mango-infra/mango-infra-persistence/README.md",
+      "business-pmo/mango-baseline/rules/backend/07-persistence.md",
     ],
   },
   {
-    file: 'backend/modules/{{moduleKebab}}/{{moduleKebab}}-api/src/main/java/{{basePackagePath}}/{{modulePackage}}/api/{{modulePascal}}Api.java',
-    patterns: ['R<Long>', 'R<PersistencePageResult<{{aggregatePascal}}VO>>', 'R<{{aggregatePascal}}VO>', '@Valid', '@NotNull'],
+    file: "backend/modules/{{moduleKebab}}/{{moduleKebab}}-api/src/main/java/{{basePackagePath}}/{{modulePackage}}/api/{{modulePascal}}Api.java",
+    patterns: [
+      "R<Long>",
+      "R<PersistencePageResult<{{aggregatePascal}}VO>>",
+      "R<{{aggregatePascal}}VO>",
+      "@Valid",
+      "@NotNull",
+    ],
   },
   {
-    file: 'backend/modules/{{moduleKebab}}/{{moduleKebab}}-api/src/main/java/{{basePackagePath}}/{{modulePackage}}/api/enums/{{aggregatePascal}}Code.java',
-    patterns: ['implements BizCode', 'NOT_FOUND', 'VALIDATION_ERROR'],
+    file: "backend/modules/{{moduleKebab}}/{{moduleKebab}}-api/src/main/java/{{basePackagePath}}/{{modulePackage}}/api/enums/{{aggregatePascal}}Code.java",
+    patterns: ["implements BizCode", "NOT_FOUND", "VALIDATION_ERROR"],
   },
   {
-    file: 'backend/modules/{{moduleKebab}}/{{moduleKebab}}-core/src/main/java/{{basePackagePath}}/{{modulePackage}}/core/service/I{{aggregatePascal}}Service.java',
-    patterns: ['extends MangoTypedCrudService<', 'Create{{aggregatePascal}}Command', '{{aggregatePascal}}VO', 'Long>'],
+    file: "backend/modules/{{moduleKebab}}/{{moduleKebab}}-core/src/main/java/{{basePackagePath}}/{{modulePackage}}/core/service/I{{aggregatePascal}}Service.java",
+    patterns: [
+      "extends MangoTypedCrudService<",
+      "Create{{aggregatePascal}}Command",
+      "{{aggregatePascal}}VO",
+      "Long>",
+    ],
   },
   {
-    file: 'backend/modules/{{moduleKebab}}/{{moduleKebab}}-core/src/main/java/{{basePackagePath}}/{{modulePackage}}/core/service/impl/{{aggregatePascal}}Service.java',
-    patterns: ['@Service', 'implements I{{aggregatePascal}}Service', 'extends MangoCrudServiceImpl<{{aggregatePascal}}Mapper, {{aggregatePascal}}Entity>', 'toVO({{aggregatePascal}}Entity entity)', 'Require.notNull(entity, {{aggregatePascal}}Code.NOT_FOUND)', '@Transactional(rollbackFor = Exception.class)', 'public Long create(Create{{aggregatePascal}}Command command)', 'public boolean update(Update{{aggregatePascal}}Command command)', 'public boolean delete(DeleteCommand command)', 'public PersistencePageResult<{{aggregatePascal}}VO> page(', 'public {{aggregatePascal}}VO detail(Long id)'],
+    file: "backend/modules/{{moduleKebab}}/{{moduleKebab}}-core/src/main/java/{{basePackagePath}}/{{modulePackage}}/core/service/impl/{{aggregatePascal}}Service.java",
+    patterns: [
+      "@Service",
+      "implements I{{aggregatePascal}}Service",
+      "extends MangoCrudServiceImpl<{{aggregatePascal}}Mapper, {{aggregatePascal}}Entity>",
+      "toVO({{aggregatePascal}}Entity entity)",
+      "Require.notNull(entity, {{aggregatePascal}}Code.NOT_FOUND)",
+      "@Transactional(rollbackFor = Exception.class)",
+      "public Long create(Create{{aggregatePascal}}Command command)",
+      "public boolean update(Update{{aggregatePascal}}Command command)",
+      "public boolean delete(DeleteCommand command)",
+      "public PersistencePageResult<{{aggregatePascal}}VO> page(",
+      "public {{aggregatePascal}}VO detail(Long id)",
+    ],
   },
   {
-    file: 'backend/modules/{{moduleKebab}}/{{moduleKebab}}-core/src/main/resources/db/migration/{{moduleKebab}}/V1__init_{{moduleKebab}}.sql',
-    patterns: ['tenant_id', 'org_id', 'created_by', 'created_at', 'updated_by', 'updated_at'],
+    file: "backend/modules/{{moduleKebab}}/{{moduleKebab}}-core/src/main/resources/db/migration/{{moduleKebab}}/V1__init_{{moduleKebab}}.sql",
+    patterns: [
+      "tenant_id",
+      "org_id",
+      "created_by",
+      "created_at",
+      "updated_by",
+      "updated_at",
+    ],
   },
   {
-    file: 'backend/modules/{{moduleKebab}}/{{moduleKebab}}-starter/src/main/java/{{basePackagePath}}/{{modulePackage}}/starter/controller/{{modulePascal}}Controller.java',
-    patterns: ['implements {{modulePascal}}Api', 'I{{aggregatePascal}}Service', '@Validated', '@Tag(', '@RequestMapping("/{{moduleKebab}}/{{aggregateKebab}}s")', '@RequestParam("id")', '@RequestBody Create{{aggregatePascal}}Command'],
+    file: "backend/modules/{{moduleKebab}}/{{moduleKebab}}-starter/src/main/java/{{basePackagePath}}/{{modulePackage}}/starter/controller/{{modulePascal}}Controller.java",
+    patterns: [
+      "implements {{modulePascal}}Api",
+      "I{{aggregatePascal}}Service",
+      "@Validated",
+      "@Tag(",
+      '@RequestMapping("/{{moduleKebab}}/{{aggregateKebab}}s")',
+      '@RequestParam("id")',
+      "@RequestBody Create{{aggregatePascal}}Command",
+    ],
   },
   {
-    file: 'backend/modules/{{moduleKebab}}/{{moduleKebab}}-starter/pom.xml',
-    patterns: ['io.mango.infra.web', 'mango-infra-persistence-web-starter'],
+    file: "backend/modules/{{moduleKebab}}/{{moduleKebab}}-starter/pom.xml",
+    patterns: ["io.mango.infra.web", "mango-infra-persistence-web-starter"],
   },
   {
-    file: 'backend/modules/{{moduleKebab}}/{{moduleKebab}}-starter-remote/pom.xml',
-    patterns: ['io.mango.infra.feign', 'mango-infra-feign-starter'],
+    file: "backend/modules/{{moduleKebab}}/{{moduleKebab}}-starter-remote/pom.xml",
+    patterns: ["io.mango.infra.feign", "mango-infra-feign-starter"],
   },
   {
-    file: 'backend/modules/{{moduleKebab}}/{{moduleKebab}}-api/src/main/java/{{basePackagePath}}/{{modulePackage}}/api/query/{{aggregatePascal}}PageQuery.java',
-    patterns: ['extends PageQuery', '@QueryField(type = QueryType.LIKE)'],
+    file: "backend/modules/{{moduleKebab}}/{{moduleKebab}}-api/src/main/java/{{basePackagePath}}/{{modulePackage}}/api/query/{{aggregatePascal}}PageQuery.java",
+    patterns: ["extends PageQuery", "@QueryField(type = QueryType.LIKE)"],
   },
   {
-    file: 'backend/modules/{{moduleKebab}}/{{moduleKebab}}-starter/src/main/resources/META-INF/mango/module.properties',
-    patterns: ['module-name={{moduleKebab}}', 'module-path={{moduleKebab}}'],
+    file: "backend/modules/{{moduleKebab}}/{{moduleKebab}}-starter/src/main/resources/META-INF/mango/module.properties",
+    patterns: ["module-name={{moduleKebab}}", "module-path={{moduleKebab}}"],
   },
   {
-    file: 'backend/modules/{{moduleKebab}}/{{moduleKebab}}-starter/src/main/resources/META-INF/mango/resource-manifest.json',
+    file: "backend/modules/{{moduleKebab}}/{{moduleKebab}}-starter/src/main/resources/META-INF/mango/resource-manifest.json",
     patterns: [
       '"moduleCode": "{{moduleKebab}}"',
       '"menuName": "{{aggregateName}}管理"',
@@ -156,55 +200,144 @@ const contentChecks = [
     ],
   },
   {
-    file: 'backend/modules/{{moduleKebab}}/{{moduleKebab}}-starter-remote/src/main/java/{{basePackagePath}}/{{modulePackage}}/starter/remote/{{modulePascal}}FeignClient.java',
-    patterns: ['extends {{modulePascal}}Api', 'name = "{{moduleKebab}}"', 'contextId = "{{moduleCamel}}FeignClient"', 'path = "/{{moduleKebab}}/{{aggregateKebab}}s"', '@RequestParam("id")', '@SpringQueryMap'],
+    file: "backend/modules/{{moduleKebab}}/{{moduleKebab}}-starter-remote/src/main/java/{{basePackagePath}}/{{modulePackage}}/starter/remote/{{modulePascal}}FeignClient.java",
+    patterns: [
+      "extends {{modulePascal}}Api",
+      'name = "{{moduleKebab}}"',
+      'contextId = "{{moduleCamel}}FeignClient"',
+      'path = "/{{moduleKebab}}/{{aggregateKebab}}s"',
+      '@RequestParam("id")',
+      "@SpringQueryMap",
+    ],
   },
   {
-    file: 'frontend/packages/{{moduleKebab}}-api/src/api.ts',
-    patterns: ["from '@mango/common'", 'post<string>', 'get<PageResult<{{aggregatePascal}}VO>>', '`${basePath}/create`', '`${basePath}/update`', '`${basePath}/delete`', '`${basePath}/page`', '`${basePath}/detail`'],
+    file: "frontend/packages/{{moduleKebab}}-api/src/api.ts",
+    patterns: [
+      "from '@mango/api-schema'",
+      "create{{aggregatePascal}}Api(client: HttpClient)",
+      "client.request<string",
+      "client.request<PageResult<{{aggregatePascal}}VO>>",
+      "signal?: AbortSignal",
+      "`${basePath}/create`",
+      "`${basePath}/update`",
+      "`${basePath}/delete`",
+      "`${basePath}/page`",
+      "`${basePath}/detail`",
+    ],
   },
   {
-    file: 'frontend/packages/{{moduleKebab}}-api/src/types.ts',
-    patterns: ['Update{{aggregatePascal}}Command', 'DeleteCommand', 'page: number', 'size: number', 'records: T[]'],
+    file: "frontend/packages/{{moduleKebab}}-api/src/types.ts",
+    patterns: [
+      "Update{{aggregatePascal}}Command",
+      "DeleteCommand",
+      "page: number",
+      "size: number",
+      "records: T[]",
+    ],
   },
   {
-    file: 'frontend/packages/{{moduleKebab}}/src/views/{{moduleKebab}}/{{aggregateKebab}}/index.vue',
-    patterns: ['create{{aggregatePascal}}', 'update{{aggregatePascal}}', 'delete{{aggregatePascal}}', 'get{{aggregatePascal}}Detail', 'openCreateDialog', 'openEditDialog', 'openDetail', 'handleDelete', '<Pagination', 'el-dialog', 'el-drawer', 'records.value = result.records', 'page: 1', 'size: 20'],
+    file: "frontend/packages/{{moduleKebab}}/src/views/{{moduleKebab}}/{{aggregateKebab}}/index.vue",
+    patterns: [
+      "{{aggregateCamel}}Api.create",
+      "{{aggregateCamel}}Api.update",
+      "{{aggregateCamel}}Api.delete",
+      "{{aggregateCamel}}Api.detail",
+      "pageAbortController.signal",
+      "pageAbortController.abort('{{moduleKebab}} page unmounted')",
+      "openCreateDialog",
+      "openEditDialog",
+      "openDetail",
+      "handleDelete",
+      "<Pagination",
+      "el-dialog",
+      "el-drawer",
+      "records.value = result.records",
+      "page: 1",
+      "size: 20",
+    ],
   },
   {
-    file: 'frontend/packages/{{moduleKebab}}/src/index.ts',
-    patterns: ["from '@mango/admin-pages/core'", 'registerModulePages', "'{{moduleKebab}}/{{aggregateKebab}}/index'"],
+    file: "frontend/packages/{{moduleKebab}}/src/api-context.ts",
+    patterns: [
+      "configure{{aggregatePascal}}Api(client: HttpClient)",
+      "create{{aggregatePascal}}Api(client)",
+      "get{{aggregatePascal}}Api()",
+    ],
   },
   {
-    file: 'frontend/apps/{{projectKebab}}-admin/src/main.ts',
-    patterns: ["from '@mango/admin'", "import '@mango/admin/style.css'", 'createMangoAdminApp', 'register{{modulePascal}}Pages'],
+    file: "frontend/packages/{{moduleKebab}}/package.json",
+    patterns: [
+      '"style": "./style.css"',
+      '"./style.css": "./style.css"',
+      '"mangoAdmin"',
+      "register{{modulePascal}}Pages",
+    ],
   },
   {
-    file: 'topologies/monolith/README.md',
-    patterns: ['<module>-starter', '不依赖 `<module>-starter-remote`', '<module>/<aggregate>/index'],
+    file: "frontend/packages/{{moduleKebab}}/src/index.ts",
+    patterns: [
+      "from '@mango/admin-pages/core'",
+      "registerModulePages",
+      "'{{moduleKebab}}/{{aggregateKebab}}/index'",
+    ],
   },
   {
-    file: 'topologies/microservice/README.md',
-    patterns: ['<module>-starter-remote', '调用方需要通过 Feign、网关或统一 API 入口访问业务服务', '调用方必须依赖提供方 `core`'],
+    file: "frontend/apps/{{projectKebab}}-admin/src/main.ts",
+    patterns: [
+      "from '@mango/admin'",
+      "import '@mango/admin/style.css'",
+      "from '@mango/http-client'",
+      "createMangoHttpClient",
+      "getTenantId: () => Session.get('userInfo')?.tenantId ?? Session.get('tenantId')",
+      "register{{modulePascal}}Pages(httpClient)",
+      "import '@{{projectKebab}}/{{moduleKebab}}/style.css'",
+      "createMangoAdminApp",
+    ],
   },
   {
-    file: 'backend/modules/{{moduleKebab}}/pom.xml',
-    patterns: ['<relativePath>../../pom.xml</relativePath>'],
+    file: "topologies/monolith/README.md",
+    patterns: [
+      "<module>-starter",
+      "不依赖 `<module>-starter-remote`",
+      "<module>/<aggregate>/index",
+    ],
   },
   {
-    file: 'backend/modules/{{moduleKebab}}/{{moduleKebab}}-api/pom.xml',
-    patterns: ['<relativePath>../pom.xml</relativePath>', 'mango-infra-persistence-api', 'jakarta.validation-api'],
+    file: "topologies/microservice/README.md",
+    patterns: [
+      "<module>-starter-remote",
+      "调用方需要通过 Feign、网关或统一 API 入口访问业务服务",
+      "调用方必须依赖提供方 `core`",
+    ],
   },
   {
-    file: 'AGENTS.md',
-    patterns: ['business-pmo/mango-baseline/tools/pmo-preflight.mjs', '实际加载的 Mango baseline 文件'],
+    file: "backend/modules/{{moduleKebab}}/pom.xml",
+    patterns: ["<relativePath>../../pom.xml</relativePath>"],
   },
   {
-    file: 'business-pmo/README.md',
-    patterns: ['business-pmo/mango-baseline/tools/pmo-preflight.mjs', '普通业务需求不直接修改 `mango-baseline/**`'],
+    file: "backend/modules/{{moduleKebab}}/{{moduleKebab}}-api/pom.xml",
+    patterns: [
+      "<relativePath>../pom.xml</relativePath>",
+      "mango-infra-persistence-api",
+      "jakarta.validation-api",
+    ],
   },
   {
-    file: 'business-pmo/global-entity-exceptions.json',
+    file: "AGENTS.md",
+    patterns: [
+      "business-pmo/mango-baseline/tools/pmo-preflight.mjs",
+      "实际加载的 Mango baseline 文件",
+    ],
+  },
+  {
+    file: "business-pmo/README.md",
+    patterns: [
+      "business-pmo/mango-baseline/tools/pmo-preflight.mjs",
+      "普通业务需求不直接修改 `mango-baseline/**`",
+    ],
+  },
+  {
+    file: "business-pmo/global-entity-exceptions.json",
     patterns: [
       '"contractId": "global-entity-exceptions"',
       '"schemaRevision": 1',
@@ -213,20 +346,42 @@ const contentChecks = [
     ],
   },
   {
-    file: 'business-pmo/mango-baseline/rules/index.json',
-    patterns: ['"rules/03-ai-coding-redlines.md"', '"frontend.elementPlusUi"', '"frontend.componentDevelopment"', '"rules/frontend/02-element-plus-ui.md"', '"rules/frontend/03-component-development.md"', '"backend/**"', '"frontend/**"', '"business-docs/**"', '"business-pmo/**"'],
+    file: "business-pmo/mango-baseline/rules/index.json",
+    patterns: [
+      '"rules/03-ai-coding-redlines.md"',
+      '"frontend.elementPlusUi"',
+      '"frontend.componentDevelopment"',
+      '"rules/frontend/02-element-plus-ui.md"',
+      '"rules/frontend/03-component-development.md"',
+      '"backend/**"',
+      '"frontend/**"',
+      '"business-docs/**"',
+      '"business-pmo/**"',
+    ],
   },
   {
-    file: 'business-pmo/mango-baseline/rules/backend/10-dev-flow.md',
-    patterns: ['必须先拆解需求并提取', '字典和枚举', '数据模型', '设计模式'],
+    file: "business-pmo/mango-baseline/rules/backend/10-dev-flow.md",
+    patterns: ["必须先拆解需求并提取", "字典和枚举", "数据模型", "设计模式"],
   },
   {
-    file: 'business-pmo/mango-baseline/rules/frontend/02-element-plus-ui.md',
-    patterns: ['Element Plus UI 规范', '选择组件必须优先支持单选', '必须支持输入检索', '业务状态统一使用 `ElTag`'],
+    file: "business-pmo/mango-baseline/rules/frontend/02-element-plus-ui.md",
+    patterns: [
+      "Element Plus UI 规范",
+      "选择组件必须优先支持单选",
+      "必须支持输入检索",
+      "业务状态统一使用 `ElTag`",
+    ],
   },
   {
-    file: 'business-pmo/mango-baseline/rules/frontend/03-component-development.md',
-    patterns: ['前端组件开发规范', '单体部署', '微前端部署', 'npm 独立消费', '独立消费要求', '组件包禁止依赖 `apps/*`'],
+    file: "business-pmo/mango-baseline/rules/frontend/03-component-development.md",
+    patterns: [
+      "前端组件开发规范",
+      "单体部署",
+      "微前端部署",
+      "npm 独立消费",
+      "独立消费要求",
+      "组件包禁止依赖 `apps/*`",
+    ],
   },
 ];
 
@@ -239,7 +394,7 @@ function check(condition, message) {
 }
 
 function readTemplateFile(path) {
-  return readFileSync(join(root, path), 'utf8');
+  return readFileSync(join(root, path), "utf8");
 }
 
 function walk(dir) {
@@ -265,31 +420,46 @@ for (const item of contentChecks) {
   }
   const content = readTemplateFile(item.file);
   for (const pattern of item.patterns) {
-    check(content.includes(pattern), `${item.file} missing pattern: ${pattern}`);
+    check(
+      content.includes(pattern),
+      `${item.file} missing pattern: ${pattern}`,
+    );
   }
 }
 
-const packageFiles = walk(root).filter((file) => file.endsWith('package.json'));
+const packageFiles = walk(root).filter((file) => file.endsWith("package.json"));
 for (const file of packageFiles) {
-  const content = readFileSync(file, 'utf8');
-  check(!content.includes('workspace:*'), `${relative(repoRoot, file)} contains workspace:*`);
+  const content = readFileSync(file, "utf8");
+  check(
+    !content.includes("workspace:*"),
+    `${relative(repoRoot, file)} contains workspace:*`,
+  );
 }
 
 const allTextFiles = walk(root).filter((file) => {
-  return !file.includes('node_modules') && !file.endsWith('.png') && !file.endsWith('.jpg');
+  return (
+    !file.includes("node_modules") &&
+    !file.endsWith(".png") &&
+    !file.endsWith(".jpg")
+  );
 });
 for (const file of allTextFiles) {
-  const content = readFileSync(file, 'utf8');
-  const forbiddenMangoAdminSourcePath = '../../../apps/' + 'mango-admin';
-  check(!content.includes(forbiddenMangoAdminSourcePath), `${relative(repoRoot, file)} references mango-admin source path`);
+  const content = readFileSync(file, "utf8");
+  const forbiddenMangoAdminSourcePath = "../../../apps/" + "mango-admin";
+  check(
+    !content.includes(forbiddenMangoAdminSourcePath),
+    `${relative(repoRoot, file)} references mango-admin source path`,
+  );
 }
 
 if (errors.length > 0) {
-  console.error('Template check failed:');
+  console.error("Template check failed:");
   for (const error of errors) {
     console.error(`- ${error}`);
   }
   process.exit(1);
 }
 
-console.log(`Template check passed: ${requiredFiles.length} required files, ${contentChecks.length} contract checks.`);
+console.log(
+  `Template check passed: ${requiredFiles.length} required files, ${contentChecks.length} contract checks.`,
+);

@@ -99,6 +99,15 @@ export function assertPackedPackageBoundary(packageJson, files) {
   if (sourceFile) {
     throw new Error(`${packageJson.name} tarball must not publish source file: ${sourceFile}`);
   }
+  for (const section of ['dependencies', 'devDependencies', 'optionalDependencies', 'peerDependencies']) {
+    for (const [dependency, version] of Object.entries(packageJson[section] || {})) {
+      if (typeof version === 'string' && version.startsWith('workspace:')) {
+        throw new Error(
+          `${packageJson.name} packed ${section}.${dependency} must not expose workspace protocol: ${version}`,
+        );
+      }
+    }
+  }
   for (const { label, target } of packedExportTargets(packageJson)) {
     assertPublishedTarget(packageJson.name, files, label, target);
   }

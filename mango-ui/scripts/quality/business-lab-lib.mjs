@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { existsSync, lstatSync, readFileSync, readdirSync, realpathSync, statSync, writeFileSync } from 'node:fs';
-import { join, relative, resolve } from 'node:path';
+import { dirname, join, relative, resolve } from 'node:path';
 
 const TEXT_BOUNDARY_FILES = new Set([
   '.npmrc',
@@ -74,6 +74,7 @@ export function applyTarballMappings(frontendRoot, tarballsByName, registry) {
 
 export function assertGeneratedProjectBoundary(projectRoot, forbiddenAbsoluteRoots = []) {
   const issues = [];
+  const workspacePackages = collectWorkspacePackages(projectRoot);
   for (const file of walkFiles(projectRoot, { skipNodeModules: true })) {
     const isTextFile = TEXT_BOUNDARY_FILES.has(file.name) || /\.(?:mjs|ts|json|ya?ml)$/u.test(file.name);
     if (!isTextFile) {
@@ -81,9 +82,28 @@ export function assertGeneratedProjectBoundary(projectRoot, forbiddenAbsoluteRoo
     }
     const source = readFileSync(file.path, 'utf8');
     if (TEXT_BOUNDARY_FILES.has(file.name)) {
-      for (const marker of ['workspace:', 'link:', 'portal:', 'mango-ui/packages/']) {
+      for (const marker of ['portal:', 'mango-ui/packages/']) {
         if (source.includes(marker)) {
           issues.push(`${relative(projectRoot, file.path)} contains forbidden source reference ${marker}`);
+        }
+      }
+      if (file.name === 'package.json') {
+        assertWorkspaceManifest(file.path, workspacePackages, issues, projectRoot);
+      } else if (source.includes('workspace:')) {
+        for (const specifier of source.match(/workspace:[^\s'"\]}]+/gu) || []) {
+          const version = specifier.slice('workspace:'.length);
+          if (![...workspacePackages.values()].some((entry) => entry.version === version)) {
+            issues.push(`${relative(projectRoot, file.path)} contains non-exact workspace reference ${specifier}`);
+          }
+        }
+      }
+      for (const match of source.matchAll(/link:([^\s'"\]}]+)/gu)) {
+        const workspaceEntries = [...workspacePackages.values()];
+        const possibleTargets = [dirname(file.path), ...workspaceEntries.map((entry) => entry.root)].map((root) =>
+          resolve(root, match[1]),
+        );
+        if (!workspaceEntries.some((entry) => possibleTargets.includes(entry.root))) {
+          issues.push(`${relative(projectRoot, file.path)} contains non-project link reference link:${match[1]}`);
         }
       }
     }
@@ -102,8 +122,11 @@ export function assertGeneratedProjectBoundary(projectRoot, forbiddenAbsoluteRoo
   }
 }
 
-export function assertInstalledSymlinkBoundary(nodeModulesRoot) {
+export function assertInstalledSymlinkBoundary(nodeModulesRoot, allowedWorkspaceRoots = []) {
   const allowedRoot = `${realpathSync(nodeModulesRoot)}/`;
+  const allowedWorkspacePrefixes = allowedWorkspaceRoots.map(
+    (root) => `${realpathSync(root).replace(/[\\/]+$/u, '')}/`,
+  );
   const issues = [];
   for (const file of walkFiles(nodeModulesRoot, { includeDirectories: true, followSymlinks: false })) {
     if (!file.isSymbolicLink) {
@@ -116,12 +139,42 @@ export function assertInstalledSymlinkBoundary(nodeModulesRoot) {
       issues.push(`${relative(nodeModulesRoot, file.path)} is broken: ${error.message}`);
       continue;
     }
-    if (target !== allowedRoot.slice(0, -1) && !target.startsWith(allowedRoot)) {
+    const allowedWorkspaceTarget = allowedWorkspacePrefixes.some(
+      (root) => target === root.slice(0, -1) || target.startsWith(root),
+    );
+    if (target !== allowedRoot.slice(0, -1) && !target.startsWith(allowedRoot) && !allowedWorkspaceTarget) {
       issues.push(`${relative(nodeModulesRoot, file.path)} escapes node_modules to ${target}`);
     }
   }
   if (issues.length > 0) {
     throw new Error(`installed dependency boundary failed:\n${issues.join('\n')}`);
+  }
+}
+
+function collectWorkspacePackages(projectRoot) {
+  const packages = new Map();
+  for (const file of walkFiles(projectRoot, { skipNodeModules: true })) {
+    if (file.name !== 'package.json') continue;
+    const packageJson = readJson(file.path);
+    if (typeof packageJson.name !== 'string' || typeof packageJson.version !== 'string') continue;
+    packages.set(packageJson.name, { version: packageJson.version, root: dirname(file.path) });
+  }
+  return packages;
+}
+
+function assertWorkspaceManifest(packagePath, workspacePackages, issues, projectRoot) {
+  const packageJson = readJson(packagePath);
+  for (const section of ['dependencies', 'devDependencies', 'optionalDependencies', 'peerDependencies']) {
+    for (const [dependency, specifier] of Object.entries(packageJson[section] || {})) {
+      if (typeof specifier !== 'string' || !specifier.startsWith('workspace:')) continue;
+      const workspacePackage = workspacePackages.get(dependency);
+      if (!workspacePackage || specifier !== `workspace:${workspacePackage.version}`) {
+        issues.push(
+          `${relative(projectRoot, packagePath)} contains invalid local workspace dependency ` +
+            `${section}.${dependency}=${specifier}`,
+        );
+      }
+    }
   }
 }
 

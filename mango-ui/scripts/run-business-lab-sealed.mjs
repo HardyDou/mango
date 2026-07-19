@@ -192,7 +192,7 @@ try {
     ],
     { cwd: frontendRoot },
   );
-  assertInstalledSymlinkBoundary(join(frontendRoot, 'node_modules'));
+  assertInstalledSymlinkBoundary(join(frontendRoot, 'node_modules'), [join(frontendRoot, 'packages')]);
   assertGeneratedProjectBoundary(projectRoot, [process.env.MANGO_BUSINESS_LAB_FORBIDDEN_ROOT]);
 
   const packageJson = readJson(join(frontendRoot, 'package.json'));

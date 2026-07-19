@@ -1,4 +1,6 @@
 import { registerModulePages } from '@mango/admin-pages/core';
+import type { HttpClient } from '@mango/api-schema';
+import { configure{{aggregatePascal}}Api } from './api-context';
 
 export const {{moduleCamel}}PageRegistry = {
   moduleCode: '{{moduleKebab}}',
@@ -9,7 +11,8 @@ export const {{moduleCamel}}PageRegistry = {
 
 let registered = false;
 
-export function register{{modulePascal}}Pages() {
+export function register{{modulePascal}}Pages(client: HttpClient) {
+  configure{{aggregatePascal}}Api(client);
   if (!registered) {
     registered = true;
     registerModulePages({{moduleCamel}}PageRegistry);

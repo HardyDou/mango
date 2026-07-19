@@ -59,3 +59,17 @@ test('accepts recursive wildcard targets and rejects source leakage', () => {
     /wildcard export conditions do not publish the same subpaths/u,
   );
 });
+
+test('rejects workspace protocols from a packed consumer manifest', () => {
+  assert.throws(
+    () =>
+      assertPackedPackageBoundary(
+        {
+          name: '@mango/example',
+          dependencies: { '@mango/common': 'workspace:1.2.3' },
+        },
+        ['package/package.json'],
+      ),
+    /packed dependencies\.@mango\/common must not expose workspace protocol/u,
+  );
+});

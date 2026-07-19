@@ -1,5 +1,27 @@
 # Mango Changelog
 
+## v2026.07.19-frontend-standards-production-candidate - 2026-07-19
+
+Status: `PRODUCTION_CANDIDATE_LOCAL`. This batch has not been pushed, merged, published to Nexus, or deployed to production.
+
+### Published Packages
+
+No package is published by this record. The immutable candidate matrix is `@mango/admin@1.0.50`, `@mango/admin-pages@1.0.23`, `@mango/admin-shell@1.0.45`, `@mango/api-schema@1.0.3`, `@mango/app-runtime@1.0.5`, `@mango/auth@1.0.18`, `@mango/calendar@1.0.24`, `@mango/cli@1.0.83`, `@mango/cms@1.0.13`, `@mango/common@1.0.19`, `@mango/file@1.0.24`, `@mango/grid-layout@1.0.10`, `@mango/grid-widgets@1.0.16`, `@mango/home@1.0.8`, `@mango/http-client@1.0.0`, `@mango/job@1.0.16`, `@mango/link@1.0.10`, `@mango/link-openapi@1.0.4`, `@mango/link-page@1.0.7`, `@mango/notice@1.0.26`, `@mango/numgen@1.0.24`, `@mango/payment@1.0.16`, `@mango/pmo@1.3.2`, `@mango/rbac@1.0.16`, `@mango/site-shell@1.0.6`, `@mango/system@1.0.22`, `@mango/template@1.0.24`, `@mango/workflow@1.0.30`, and `@mango/workflow-business-example@1.0.29`. Mango Maven remains `1.0.22`.
+
+### Upgrade Notes
+
+1. Upgrade the complete npm matrix together; do not mix this candidate with older fixed Mango package versions.
+2. New business APIs belong in `frontend/packages/<module>-api` and accept the vendor-neutral `HttpClient`. The host creates one `@mango/http-client` instance per runtime context and injects it when registering business pages. Vue pages do not import Axios, create transports, or own base URLs.
+3. Business package CSS remains in its package style entry; page-private styles stay scoped in the page. Hosts import package style exports explicitly.
+4. `@mango/pmo@1.3.2` must be published before `@mango/cli@1.0.83`; business projects then upgrade their locked PMO baseline to 1.3.2.
+5. Rollout uses 0%, 5%, 25%, and 100% stages. Any configured health threshold breach restores the exact stable package/runtime-entry matrix in `mango-ui/frontend-release-rollout.json`; the new HTTP client is removed when reverting to a pre-client stable batch.
+
+### Verification
+
+- Vendor-neutral HTTP contracts, Axios adapter lifecycle/refresh/retry/abort behavior, generated business API factories, CLI module generation, release-version impact, and deterministic rollout decisions are machine checked.
+- `frontend-release-rollout.json` binds every one of the 29 candidate npm packages to its exact `origin/main` rollback target and proves both promote and rollback decision paths.
+- Full fixed-toolchain, sealed Business Lab, clean tarball consumer, browser/runtime, and final quality results are recorded in `mango-docs/evidence/2026-07-19-frontend-production-candidate-evidence.md`; unavailable external Nexus/production facts remain explicitly pending.
+
 ## v2026.07.18-pmo-1.3.1-cli-1.0.82-release-governance - 2026-07-18
 
 ### Changed

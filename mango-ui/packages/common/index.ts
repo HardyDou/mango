@@ -1,5 +1,12 @@
 export * from './utils/request';
 export { default as request } from './utils/request';
+export {
+  createMangoHttpClient,
+  MangoHttpError,
+  type MangoHttpClient,
+  type MangoHttpClientOptions,
+  type MangoHttpClientState,
+} from '@mango/http-client';
 export * from './utils/storage';
 export * from './utils/validate';
 export * from './utils/theme';
@@ -54,12 +61,7 @@ export type {
   UploadConfig,
 } from './components/FormCreate/types';
 export { default as Sign } from './components/Sign/index.vue';
-export type {
-  SignEmits,
-  SignExpose,
-  SignInstance,
-  SignProps,
-} from './components/Sign/types';
+export type { SignEmits, SignExpose, SignInstance, SignProps } from './components/Sign/types';
 export { default as OrgSelector } from './components/OrgSelector/index.vue';
 export type {
   OrgNode,
@@ -78,11 +80,7 @@ export type {
 export { default as TreeSelect } from './components/TreeSelect/index.vue';
 export { default as MangoDialog } from './components/MangoDialog/index.vue';
 export { default as PasswordPolicyHint } from './components/PasswordPolicyHint/index.vue';
-export type {
-  MangoDialogEmits,
-  MangoDialogFooterAlign,
-  MangoDialogProps,
-} from './components/MangoDialog/types';
+export type { MangoDialogEmits, MangoDialogFooterAlign, MangoDialogProps } from './components/MangoDialog/types';
 export { default as CaptchaSelector } from './components/Captcha/index.vue';
 export { default as ArithmeticCaptcha } from './components/Captcha/ArithmeticCaptcha.vue';
 export { default as BlockPuzzleCaptcha } from './components/Captcha/BlockPuzzleCaptcha.vue';

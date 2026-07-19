@@ -56,6 +56,9 @@ importers:
       '@vue/test-utils':
         specifier: 2.4.11
         version: 2.4.11(@vue/compiler-dom@3.5.32)(@vue/server-renderer@3.5.13(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+      axios:
+        specifier: 1.18.1
+        version: 1.18.1
       eslint:
         specifier: 10.7.0
         version: 10.7.0(jiti@2.6.1)
@@ -186,8 +189,8 @@ importers:
         specifier: ^5.1.12
         version: 5.1.12(@wangeditor/editor@5.1.23)(vue@3.5.13(typescript@5.9.3))
       axios:
-        specifier: ^1.3.3
-        version: 1.15.0
+        specifier: 1.18.1
+        version: 1.18.1
       codemirror:
         specifier: ^5.65.21
         version: 5.65.21
@@ -708,65 +711,65 @@ importers:
         specifier: 2.3.2
         version: 2.3.2(vue@3.5.13(typescript@5.9.3))
       '@mango/admin-pages':
-        specifier: 1.0.22
-        version: 1.0.22(@mango/file@1.0.23(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3)))(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+        specifier: workspace:1.0.23
+        version: link:../admin-pages
       '@mango/admin-shell':
-        specifier: 1.0.44
-        version: 1.0.44(742d4b8689e6e1c8ded5554681305153)
+        specifier: workspace:1.0.45
+        version: link:../admin-shell
       '@mango/app-runtime':
-        specifier: 1.0.4
-        version: 1.0.4(vue@3.5.13(typescript@5.9.3))
+        specifier: workspace:1.0.5
+        version: link:../app-runtime
       '@mango/auth':
-        specifier: 1.0.17
-        version: 1.0.17(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+        specifier: workspace:1.0.18
+        version: link:../auth
       '@mango/calendar':
-        specifier: 1.0.23
-        version: 1.0.23(@mango/file@1.0.23(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3)))(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+        specifier: workspace:1.0.24
+        version: link:../calendar
       '@mango/cms':
-        specifier: 1.0.12
-        version: 1.0.12(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+        specifier: workspace:1.0.13
+        version: link:../cms
       '@mango/common':
-        specifier: 1.0.18
-        version: 1.0.18(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+        specifier: workspace:1.0.19
+        version: link:../common
       '@mango/file':
-        specifier: 1.0.23
-        version: 1.0.23(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+        specifier: workspace:1.0.24
+        version: link:../file
       '@mango/grid-layout':
-        specifier: 1.0.9
-        version: 1.0.9(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+        specifier: workspace:1.0.10
+        version: link:../grid-layout
       '@mango/grid-widgets':
-        specifier: 1.0.15
-        version: 1.0.15(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+        specifier: workspace:1.0.16
+        version: link:../grid-widgets
       '@mango/job':
-        specifier: 1.0.15
-        version: 1.0.15(@mango/file@1.0.23(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3)))(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+        specifier: workspace:1.0.16
+        version: link:../job
       '@mango/link':
-        specifier: 1.0.9
-        version: 1.0.9(@mango/file@1.0.23(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3)))(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+        specifier: workspace:1.0.10
+        version: link:../link
       '@mango/notice':
-        specifier: 1.0.25
-        version: 1.0.25(@mango/file@1.0.23(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3)))(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+        specifier: workspace:1.0.26
+        version: link:../notice
       '@mango/numgen':
-        specifier: 1.0.23
-        version: 1.0.23(@mango/file@1.0.23(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3)))(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+        specifier: workspace:1.0.24
+        version: link:../numgen
       '@mango/payment':
-        specifier: 1.0.15
-        version: 1.0.15(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+        specifier: workspace:1.0.16
+        version: link:../payment
       '@mango/rbac':
-        specifier: 1.0.15
-        version: 1.0.15(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+        specifier: workspace:1.0.16
+        version: link:../rbac
       '@mango/system':
-        specifier: 1.0.21
-        version: 1.0.21(@mango/file@1.0.23(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3)))(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+        specifier: workspace:1.0.22
+        version: link:../system
       '@mango/template':
-        specifier: 1.0.23
-        version: 1.0.23(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+        specifier: workspace:1.0.24
+        version: link:../template
       '@mango/workflow':
-        specifier: 1.0.29
-        version: 1.0.29(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+        specifier: workspace:1.0.30
+        version: link:../workflow
       '@mango/workflow-business-example':
-        specifier: 1.0.28
-        version: 1.0.28(@mango/file@1.0.23(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3)))(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+        specifier: workspace:1.0.29
+        version: link:../workflow-business-example
       element-plus:
         specifier: 2.14.1
         version: 2.14.1(vue@3.5.13(typescript@5.9.3))
@@ -796,17 +799,17 @@ importers:
   packages/admin-pages:
     dependencies:
       '@mango/auth':
-        specifier: 1.0.17
-        version: 1.0.17(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+        specifier: workspace:1.0.18
+        version: link:../auth
       '@mango/common':
-        specifier: 1.0.18
-        version: 1.0.18(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+        specifier: workspace:1.0.19
+        version: link:../common
       '@mango/rbac':
-        specifier: 1.0.15
-        version: 1.0.15(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+        specifier: workspace:1.0.16
+        version: link:../rbac
       '@mango/system':
-        specifier: 1.0.21
-        version: 1.0.21(@mango/file@1.0.23(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3)))(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+        specifier: workspace:1.0.22
+        version: link:../system
       vue:
         specifier: '>=3.5.13 <4'
         version: 3.5.13(typescript@5.9.3)
@@ -824,41 +827,44 @@ importers:
         specifier: 2.3.2
         version: 2.3.2(vue@3.5.13(typescript@5.9.3))
       '@mango/admin-pages':
-        specifier: 1.0.22
-        version: 1.0.22(@mango/file@1.0.23(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3)))(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+        specifier: workspace:1.0.23
+        version: link:../admin-pages
       '@mango/app-runtime':
-        specifier: 1.0.4
-        version: 1.0.4(vue@3.5.13(typescript@5.9.3))
+        specifier: workspace:1.0.5
+        version: link:../app-runtime
       '@mango/auth':
-        specifier: 1.0.17
-        version: 1.0.17(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+        specifier: workspace:1.0.18
+        version: link:../auth
       '@mango/common':
-        specifier: 1.0.18
-        version: 1.0.18(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+        specifier: workspace:1.0.19
+        version: link:../common
       '@mango/file':
-        specifier: 1.0.23
-        version: 1.0.23(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+        specifier: workspace:1.0.24
+        version: link:../file
       '@mango/grid-layout':
-        specifier: 1.0.9
-        version: 1.0.9(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+        specifier: workspace:1.0.10
+        version: link:../grid-layout
       '@mango/grid-widgets':
-        specifier: 1.0.15
-        version: 1.0.15(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+        specifier: workspace:1.0.16
+        version: link:../grid-widgets
       '@mango/home':
-        specifier: 1.0.7
-        version: 1.0.7(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+        specifier: workspace:1.0.8
+        version: link:../home
+      '@mango/http-client':
+        specifier: workspace:1.0.0
+        version: link:../http-client
       '@mango/job':
-        specifier: 1.0.15
-        version: 1.0.15(@mango/file@1.0.23(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3)))(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+        specifier: workspace:1.0.16
+        version: link:../job
       '@mango/notice':
-        specifier: 1.0.25
-        version: 1.0.25(@mango/file@1.0.23(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3)))(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+        specifier: workspace:1.0.26
+        version: link:../notice
       '@mango/rbac':
-        specifier: 1.0.15
-        version: 1.0.15(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+        specifier: workspace:1.0.16
+        version: link:../rbac
       '@mango/workflow':
-        specifier: 1.0.29
-        version: 1.0.29(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+        specifier: workspace:1.0.30
+        version: link:../workflow
       element-plus:
         specifier: 2.14.1
         version: 2.14.1(vue@3.5.13(typescript@5.9.3))
@@ -896,6 +902,9 @@ importers:
 
   packages/app-runtime:
     dependencies:
+      '@mango/api-schema':
+        specifier: workspace:1.0.3
+        version: link:../api-schema
       vue:
         specifier: '>=3.5.13 <4'
         version: 3.5.13(typescript@5.9.3)
@@ -912,6 +921,9 @@ importers:
       vite:
         specifier: 7.3.6
         version: 7.3.6(@types/node@22.20.1)(jiti@2.6.1)(sass@1.101.0)(terser@5.46.1)(yaml@2.8.3)
+      vitest:
+        specifier: 4.1.10
+        version: 4.1.10(@types/node@22.20.1)(@vitest/coverage-v8@4.1.10)(@vitest/ui@4.1.10)(happy-dom@20.10.6)(msw@2.13.3(@types/node@22.20.1)(typescript@5.9.3))(vite@7.3.6(@types/node@22.20.1)(jiti@2.6.1)(sass@1.101.0)(terser@5.46.1)(yaml@2.8.3))
 
   packages/auth:
     dependencies:
@@ -919,11 +931,11 @@ importers:
         specifier: 2.3.2
         version: 2.3.2(vue@3.5.13(typescript@5.9.3))
       '@mango/api-schema':
-        specifier: 1.0.2
-        version: 1.0.2
+        specifier: workspace:1.0.3
+        version: link:../api-schema
       '@mango/common':
-        specifier: 1.0.18
-        version: 1.0.18(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+        specifier: workspace:1.0.19
+        version: link:../common
       element-plus:
         specifier: '>=2.14.1 <3'
         version: 2.14.1(vue@3.5.13(typescript@5.9.3))
@@ -953,17 +965,17 @@ importers:
         specifier: 2.3.2
         version: 2.3.2(vue@3.5.13(typescript@5.9.3))
       '@mango/admin-pages':
-        specifier: 1.0.22
-        version: 1.0.22(@mango/file@1.0.23(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3)))(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+        specifier: workspace:1.0.23
+        version: link:../admin-pages
       '@mango/api-schema':
-        specifier: 1.0.2
-        version: 1.0.2
+        specifier: workspace:1.0.3
+        version: link:../api-schema
       '@mango/common':
-        specifier: 1.0.18
-        version: 1.0.18(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+        specifier: workspace:1.0.19
+        version: link:../common
       '@mango/grid-widgets':
-        specifier: 1.0.15
-        version: 1.0.15(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+        specifier: workspace:1.0.16
+        version: link:../grid-widgets
       element-plus:
         specifier: '>=2.14.1 <3'
         version: 2.14.1(vue@3.5.13(typescript@5.9.3))
@@ -987,14 +999,14 @@ importers:
         specifier: 2.3.2
         version: 2.3.2(vue@3.5.13(typescript@5.9.3))
       '@mango/admin-pages':
-        specifier: 1.0.22
-        version: 1.0.22(@mango/file@1.0.23(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3)))(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+        specifier: workspace:1.0.23
+        version: link:../admin-pages
       '@mango/common':
-        specifier: 1.0.18
-        version: 1.0.18(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+        specifier: workspace:1.0.19
+        version: link:../common
       '@mango/file':
-        specifier: 1.0.23
-        version: 1.0.23(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+        specifier: workspace:1.0.24
+        version: link:../file
       element-plus:
         specifier: '>=2.14.1 <3'
         version: 2.14.1(vue@3.5.13(typescript@5.9.3))
@@ -1017,6 +1029,9 @@ importers:
       '@element-plus/icons-vue':
         specifier: 2.3.2
         version: 2.3.2(vue@3.5.13(typescript@5.9.3))
+      '@mango/http-client':
+        specifier: workspace:1.0.0
+        version: link:../http-client
       '@microsoft/fetch-event-source':
         specifier: ^2.0.1
         version: 2.0.1
@@ -1030,8 +1045,8 @@ importers:
         specifier: ^5.1.12
         version: 5.1.12(@wangeditor/editor@5.1.23)(vue@3.5.13(typescript@5.9.3))
       axios:
-        specifier: ^1.3.3
-        version: 1.15.0
+        specifier: 1.18.1
+        version: 1.18.1
       codemirror:
         specifier: ^5.65.21
         version: 5.65.21
@@ -1082,8 +1097,8 @@ importers:
         version: 0.18.5
     devDependencies:
       '@mango/api-schema':
-        specifier: 1.0.2
-        version: 1.0.2
+        specifier: workspace:1.0.3
+        version: link:../api-schema
       '@vitejs/plugin-vue':
         specifier: 6.0.8
         version: 6.0.8(vite@7.3.6(@types/node@22.20.1)(jiti@2.6.1)(sass@1.101.0)(terser@5.46.1)(yaml@2.8.3))(vue@3.5.13(typescript@5.9.3))
@@ -1109,14 +1124,14 @@ importers:
         specifier: 2.3.2
         version: 2.3.2(vue@3.5.13(typescript@5.9.3))
       '@mango/admin-pages':
-        specifier: 1.0.22
-        version: 1.0.22(@mango/file@1.0.23(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3)))(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+        specifier: workspace:1.0.23
+        version: link:../admin-pages
       '@mango/api-schema':
-        specifier: 1.0.2
-        version: 1.0.2
+        specifier: workspace:1.0.3
+        version: link:../api-schema
       '@mango/common':
-        specifier: 1.0.18
-        version: 1.0.18(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+        specifier: workspace:1.0.19
+        version: link:../common
       element-plus:
         specifier: '>=2.14.1 <3'
         version: 2.14.1(vue@3.5.13(typescript@5.9.3))
@@ -1146,8 +1161,8 @@ importers:
         specifier: 2.3.2
         version: 2.3.2(vue@3.5.13(typescript@5.9.3))
       '@mango/common':
-        specifier: 1.0.18
-        version: 1.0.18(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+        specifier: workspace:1.0.19
+        version: link:../common
       element-plus:
         specifier: '>=2.14.1 <3'
         version: 2.14.1(vue@3.5.13(typescript@5.9.3))
@@ -1168,8 +1183,8 @@ importers:
   packages/grid-widgets:
     dependencies:
       '@mango/grid-layout':
-        specifier: 1.0.9
-        version: 1.0.9(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+        specifier: workspace:1.0.10
+        version: link:../grid-layout
       element-plus:
         specifier: '>=2.14.1 <3'
         version: 2.14.1(vue@3.5.13(typescript@5.9.3))
@@ -1190,11 +1205,11 @@ importers:
   packages/home:
     dependencies:
       '@mango/api-schema':
-        specifier: 1.0.2
-        version: 1.0.2
+        specifier: workspace:1.0.3
+        version: link:../api-schema
       '@mango/common':
-        specifier: 1.0.18
-        version: 1.0.18(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+        specifier: workspace:1.0.19
+        version: link:../common
     devDependencies:
       '@vitejs/plugin-vue':
         specifier: 6.0.8
@@ -1206,17 +1221,36 @@ importers:
         specifier: 7.3.6
         version: 7.3.6(@types/node@22.20.1)(jiti@2.6.1)(sass@1.101.0)(terser@5.46.1)(yaml@2.8.3)
 
+  packages/http-client:
+    dependencies:
+      '@mango/api-schema':
+        specifier: workspace:1.0.3
+        version: link:../api-schema
+      axios:
+        specifier: 1.18.1
+        version: 1.18.1
+    devDependencies:
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+      vite:
+        specifier: 7.3.6
+        version: 7.3.6(@types/node@22.20.1)(jiti@2.6.1)(sass@1.101.0)(terser@5.46.1)(yaml@2.8.3)
+      vitest:
+        specifier: 4.1.10
+        version: 4.1.10(@types/node@22.20.1)(@vitest/coverage-v8@4.1.10)(@vitest/ui@4.1.10)(happy-dom@20.10.6)(msw@2.13.3(@types/node@22.20.1)(typescript@5.9.3))(vite@7.3.6(@types/node@22.20.1)(jiti@2.6.1)(sass@1.101.0)(terser@5.46.1)(yaml@2.8.3))
+
   packages/job:
     dependencies:
       '@element-plus/icons-vue':
         specifier: 2.3.2
         version: 2.3.2(vue@3.5.13(typescript@5.9.3))
       '@mango/admin-pages':
-        specifier: 1.0.22
-        version: 1.0.22(@mango/file@1.0.23(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3)))(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+        specifier: workspace:1.0.23
+        version: link:../admin-pages
       '@mango/common':
-        specifier: 1.0.18
-        version: 1.0.18(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+        specifier: workspace:1.0.19
+        version: link:../common
       element-plus:
         specifier: '>=2.14.1 <3'
         version: 2.14.1(vue@3.5.13(typescript@5.9.3))
@@ -1240,17 +1274,17 @@ importers:
         specifier: 2.3.2
         version: 2.3.2(vue@3.5.13(typescript@5.9.3))
       '@mango/admin-pages':
-        specifier: 1.0.22
-        version: 1.0.22(@mango/file@1.0.23(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3)))(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+        specifier: workspace:1.0.23
+        version: link:../admin-pages
       '@mango/common':
-        specifier: 1.0.18
-        version: 1.0.18(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+        specifier: workspace:1.0.19
+        version: link:../common
       '@mango/grid-widgets':
-        specifier: 1.0.15
-        version: 1.0.15(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+        specifier: workspace:1.0.16
+        version: link:../grid-widgets
       '@mango/link-openapi':
-        specifier: 1.0.3
-        version: 1.0.3
+        specifier: workspace:1.0.4
+        version: link:../link-openapi
       element-plus:
         specifier: '>=2.14.1 <3'
         version: 2.14.1(vue@3.5.13(typescript@5.9.3))
@@ -1283,8 +1317,8 @@ importers:
         specifier: 2.3.2
         version: 2.3.2(vue@3.5.13(typescript@5.9.3))
       '@mango/link-openapi':
-        specifier: 1.0.3
-        version: 1.0.3
+        specifier: workspace:1.0.4
+        version: link:../link-openapi
       element-plus:
         specifier: '>=2.14.1 <3'
         version: 2.14.1(vue@3.5.13(typescript@5.9.3))
@@ -1308,8 +1342,8 @@ importers:
   packages/mango-cli:
     dependencies:
       '@mango/pmo':
-        specifier: 1.3.1
-        version: 1.3.1
+        specifier: workspace:1.3.2
+        version: link:../mango-pmo
 
   packages/mango-pmo: {}
 
@@ -1319,17 +1353,17 @@ importers:
         specifier: 2.3.2
         version: 2.3.2(vue@3.5.13(typescript@5.9.3))
       '@mango/admin-pages':
-        specifier: 1.0.22
-        version: 1.0.22(@mango/file@1.0.23(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3)))(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+        specifier: workspace:1.0.23
+        version: link:../admin-pages
       '@mango/common':
-        specifier: 1.0.18
-        version: 1.0.18(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+        specifier: workspace:1.0.19
+        version: link:../common
       '@mango/grid-widgets':
-        specifier: 1.0.15
-        version: 1.0.15(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+        specifier: workspace:1.0.16
+        version: link:../grid-widgets
       '@mango/system':
-        specifier: 1.0.21
-        version: 1.0.21(@mango/file@1.0.23(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3)))(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+        specifier: workspace:1.0.22
+        version: link:../system
       element-plus:
         specifier: '>=2.14.1 <3'
         version: 2.14.1(vue@3.5.13(typescript@5.9.3))
@@ -1356,17 +1390,17 @@ importers:
         specifier: 2.3.2
         version: 2.3.2(vue@3.5.13(typescript@5.9.3))
       '@mango/admin-pages':
-        specifier: 1.0.22
-        version: 1.0.22(@mango/file@1.0.23(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3)))(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+        specifier: workspace:1.0.23
+        version: link:../admin-pages
       '@mango/api-schema':
-        specifier: 1.0.2
-        version: 1.0.2
+        specifier: workspace:1.0.3
+        version: link:../api-schema
       '@mango/common':
-        specifier: 1.0.18
-        version: 1.0.18(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+        specifier: workspace:1.0.19
+        version: link:../common
       '@mango/system':
-        specifier: 1.0.21
-        version: 1.0.21(@mango/file@1.0.23(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3)))(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+        specifier: workspace:1.0.22
+        version: link:../system
       element-plus:
         specifier: '>=2.14.1 <3'
         version: 2.14.1(vue@3.5.13(typescript@5.9.3))
@@ -1390,17 +1424,17 @@ importers:
         specifier: 2.3.2
         version: 2.3.2(vue@3.5.13(typescript@5.9.3))
       '@mango/admin-pages':
-        specifier: 1.0.22
-        version: 1.0.22(@mango/file@1.0.23(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3)))(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+        specifier: workspace:1.0.23
+        version: link:../admin-pages
       '@mango/api-schema':
-        specifier: 1.0.2
-        version: 1.0.2
+        specifier: workspace:1.0.3
+        version: link:../api-schema
       '@mango/common':
-        specifier: 1.0.18
-        version: 1.0.18(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+        specifier: workspace:1.0.19
+        version: link:../common
       '@mango/file':
-        specifier: 1.0.23
-        version: 1.0.23(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+        specifier: workspace:1.0.24
+        version: link:../file
       element-plus:
         specifier: '>=2.14.1 <3'
         version: 2.14.1(vue@3.5.13(typescript@5.9.3))
@@ -1433,14 +1467,14 @@ importers:
         specifier: 2.3.2
         version: 2.3.2(vue@3.5.13(typescript@5.9.3))
       '@mango/api-schema':
-        specifier: 1.0.2
-        version: 1.0.2
+        specifier: workspace:1.0.3
+        version: link:../api-schema
       '@mango/app-runtime':
-        specifier: 1.0.4
-        version: 1.0.4(vue@3.5.13(typescript@5.9.3))
+        specifier: workspace:1.0.5
+        version: link:../app-runtime
       '@mango/common':
-        specifier: 1.0.18
-        version: 1.0.18(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+        specifier: workspace:1.0.19
+        version: link:../common
       element-plus:
         specifier: '>=2.14.1 <3'
         version: 2.14.1(vue@3.5.13(typescript@5.9.3))
@@ -1464,8 +1498,8 @@ importers:
   packages/site-shell:
     dependencies:
       '@mango/common':
-        specifier: 1.0.18
-        version: 1.0.18(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+        specifier: workspace:1.0.19
+        version: link:../common
       vue:
         specifier: '>=3.5.13 <4'
         version: 3.5.13(typescript@5.9.3)
@@ -1489,20 +1523,20 @@ importers:
         specifier: 3.2.42
         version: 3.2.42(vue@3.5.13(typescript@5.9.3))
       '@mango/api-schema':
-        specifier: 1.0.2
-        version: 1.0.2
+        specifier: workspace:1.0.3
+        version: link:../api-schema
       '@mango/common':
-        specifier: 1.0.18
-        version: 1.0.18(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+        specifier: workspace:1.0.19
+        version: link:../common
       '@mango/file':
-        specifier: 1.0.23
-        version: 1.0.23(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+        specifier: workspace:1.0.24
+        version: link:../file
       '@mango/grid-widgets':
-        specifier: 1.0.15
-        version: 1.0.15(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+        specifier: workspace:1.0.16
+        version: link:../grid-widgets
       '@mango/rbac':
-        specifier: 1.0.15
-        version: 1.0.15(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+        specifier: workspace:1.0.16
+        version: link:../rbac
       element-plus:
         specifier: '>=2.14.1 <3'
         version: 2.14.1(vue@3.5.13(typescript@5.9.3))
@@ -1532,17 +1566,17 @@ importers:
         specifier: 2.3.2
         version: 2.3.2(vue@3.5.13(typescript@5.9.3))
       '@mango/admin-pages':
-        specifier: 1.0.22
-        version: 1.0.22(@mango/file@1.0.23(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3)))(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+        specifier: workspace:1.0.23
+        version: link:../admin-pages
       '@mango/common':
-        specifier: 1.0.18
-        version: 1.0.18(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+        specifier: workspace:1.0.19
+        version: link:../common
       '@mango/file':
-        specifier: 1.0.23
-        version: 1.0.23(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+        specifier: workspace:1.0.24
+        version: link:../file
       '@mango/system':
-        specifier: 1.0.21
-        version: 1.0.21(@mango/file@1.0.23(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3)))(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+        specifier: workspace:1.0.22
+        version: link:../system
       element-plus:
         specifier: '>=2.14.1 <3'
         version: 2.14.1(vue@3.5.13(typescript@5.9.3))
@@ -1572,23 +1606,23 @@ importers:
         specifier: 3.2.42
         version: 3.2.42(vue@3.5.13(typescript@5.9.3))
       '@mango/admin-pages':
-        specifier: 1.0.22
-        version: 1.0.22(@mango/file@1.0.23(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3)))(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+        specifier: workspace:1.0.23
+        version: link:../admin-pages
       '@mango/api-schema':
-        specifier: 1.0.2
-        version: 1.0.2
+        specifier: workspace:1.0.3
+        version: link:../api-schema
       '@mango/common':
-        specifier: 1.0.18
-        version: 1.0.18(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+        specifier: workspace:1.0.19
+        version: link:../common
       '@mango/file':
-        specifier: 1.0.23
-        version: 1.0.23(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+        specifier: workspace:1.0.24
+        version: link:../file
       '@mango/grid-widgets':
-        specifier: 1.0.15
-        version: 1.0.15(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+        specifier: workspace:1.0.16
+        version: link:../grid-widgets
       '@mango/system':
-        specifier: 1.0.21
-        version: 1.0.21(@mango/file@1.0.23(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3)))(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+        specifier: workspace:1.0.22
+        version: link:../system
       element-plus:
         specifier: '>=2.14.1 <3'
         version: 2.14.1(vue@3.5.13(typescript@5.9.3))
@@ -1621,11 +1655,11 @@ importers:
   packages/workflow-business-example:
     dependencies:
       '@mango/admin-pages':
-        specifier: 1.0.22
-        version: 1.0.22(@mango/file@1.0.23(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3)))(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+        specifier: workspace:1.0.23
+        version: link:../admin-pages
       '@mango/workflow':
-        specifier: 1.0.29
-        version: 1.0.29(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+        specifier: workspace:1.0.30
+        version: link:../workflow
       element-plus:
         specifier: '>=2.14.1 <3'
         version: 2.14.1(vue@3.5.13(typescript@5.9.3))
@@ -2120,170 +2154,6 @@ packages:
 
   '@keyv/serialize@1.1.1':
     resolution: {integrity: sha512-dXn3FZhPv0US+7dtJsIi2R+c7qWYiReoEh5zUntWCf4oSpMNib8FDhSoed6m3QyZdx5hK7iLFkYk3rNxwt8vTA==}
-
-  '@mango/admin-pages@1.0.22':
-    resolution: {integrity: sha512-FhkW04dvs3F0ZJh4GmMN3nFZD8FGNUOjayznUjiQCIPc1su3774YaMxHCsvHW13+iau4b2Ai8ueQZ7ZS6IjDdg==, tarball: http://nexus.inner.yunxinbaokeji.com/repository/npm-group/@mango/admin-pages/-/admin-pages-1.0.22.tgz}
-    peerDependencies:
-      vue: '>=3.5.13 <4'
-
-  '@mango/admin-shell@1.0.44':
-    resolution: {integrity: sha512-l6AxFb1J1MpX5tE4q2BfYv69cQ3hDczX6pRNr2D308IqjnYRulZmPpnDvJWbPaxdzYQNTOZ3QJ2Xi8rR1/WOOg==, tarball: http://nexus.inner.yunxinbaokeji.com/repository/npm-group/@mango/admin-shell/-/admin-shell-1.0.44.tgz}
-    peerDependencies:
-      '@mango/file': 1.0.23
-      '@mango/grid-layout': 1.0.9
-      '@mango/grid-widgets': 1.0.15
-      '@mango/notice': 1.0.25
-      '@mango/workflow': 1.0.29
-      pinia: '>=2.0.32 <3'
-      vue: '>=3.5.13 <4'
-      vue-i18n: '>=9.2.2 <10'
-      vue-router: '>=4.1.6 <5'
-    peerDependenciesMeta:
-      '@mango/file':
-        optional: true
-      '@mango/grid-layout':
-        optional: true
-      '@mango/grid-widgets':
-        optional: true
-      '@mango/notice':
-        optional: true
-      '@mango/workflow':
-        optional: true
-
-  '@mango/api-schema@1.0.2':
-    resolution: {integrity: sha512-+vS9dOoJkRKY+cw1ACd49Ommjka+ZWtAISX8LlHpSl/hXf9TfBRFvbg+gjIPBNEo3nydctZwjXxOzojqL+gJBw==, tarball: http://nexus.inner.yunxinbaokeji.com/repository/npm-group/@mango/api-schema/-/api-schema-1.0.2.tgz}
-
-  '@mango/app-runtime@1.0.4':
-    resolution: {integrity: sha512-B/V12HG39fxUyk52h6L+aeHG2/gCSJFJo98JPYA5Si+xcKwP2lVvLwb7Dqtz6Qs/2KAI6mlVnJ6mNqoxWwyK3A==, tarball: http://nexus.inner.yunxinbaokeji.com/repository/npm-group/@mango/app-runtime/-/app-runtime-1.0.4.tgz}
-    peerDependencies:
-      vue: '>=3.5.13 <4'
-
-  '@mango/auth@1.0.17':
-    resolution: {integrity: sha512-uI0YFHFBjXN+Gc2oGsa0xtkHnD+Nc3e0akBExOL15BGfZgVRDXJiEMuZ5kSemlQXWESJLxosmp0AbRKXc08NBw==, tarball: http://nexus.inner.yunxinbaokeji.com/repository/npm-group/@mango/auth/-/auth-1.0.17.tgz}
-    peerDependencies:
-      element-plus: '>=2.14.1 <3'
-      pinia: '>=2.0.32 <3'
-      vue: '>=3.5.13 <4'
-      vue-router: '>=4.1.6 <5'
-
-  '@mango/calendar@1.0.23':
-    resolution: {integrity: sha512-wguoHk6jFYXWuAMZeewVEedbZWMRRRw0L5qQ54yEsbvzEHuBzq+EJs1sP9XNHKRnvf0JNHWmlQWKHXLO/v/Qog==, tarball: http://nexus.inner.yunxinbaokeji.com/repository/npm-group/@mango/calendar/-/calendar-1.0.23.tgz}
-    peerDependencies:
-      element-plus: '>=2.14.1 <3'
-      vue: '>=3.5.13 <4'
-
-  '@mango/cms@1.0.12':
-    resolution: {integrity: sha512-XvTjNvgIY3FzecEwYRfLAQHIKhwmf94F4pQ/TKgT/Jv3QAUZN7nnhmLahBshRVxpdQBvAr4ew3aB353WeRpZKA==, tarball: http://nexus.inner.yunxinbaokeji.com/repository/npm-group/@mango/cms/-/cms-1.0.12.tgz}
-    peerDependencies:
-      element-plus: '>=2.14.1 <3'
-      vue: '>=3.5.13 <4'
-
-  '@mango/common@1.0.18':
-    resolution: {integrity: sha512-fqi9EJajMG9udPKUREW29mV6gzisi3W9NFb3YoxhrZoxCunetczq2RjZWwjpiTIGJ0cbZkll/lYiA2KiVRv0Sw==, tarball: http://nexus.inner.yunxinbaokeji.com/repository/npm-group/@mango/common/-/common-1.0.18.tgz}
-    peerDependencies:
-      element-plus: '>=2.14.1 <3'
-      pinia: '>=2.0.32 <3'
-      vue: '>=3.5.13 <4'
-      vue-i18n: '>=9.2.2 <10'
-      vue-router: '>=4.1.6 <5'
-
-  '@mango/file@1.0.23':
-    resolution: {integrity: sha512-SxiIxD3OI9ZDSj8XRoGVnS2iHxA8SLHGcHtYfJg1ljEHSYyeC24vga5ohKrMqvrdXDvWMkBLa1rmCm4ltyGOlg==, tarball: http://nexus.inner.yunxinbaokeji.com/repository/npm-group/@mango/file/-/file-1.0.23.tgz}
-    peerDependencies:
-      element-plus: '>=2.14.1 <3'
-      vue: '>=3.5.13 <4'
-
-  '@mango/grid-layout@1.0.9':
-    resolution: {integrity: sha512-VG6GIETOoQ2lV/45tgisg9wSLs0qw6gd0lINDfxBGiYmsOsxjum4URqZa2yaVpPVTYUpN9IDIJXaXmGUnh984A==, tarball: http://nexus.inner.yunxinbaokeji.com/repository/npm-group/@mango/grid-layout/-/grid-layout-1.0.9.tgz}
-    peerDependencies:
-      element-plus: '>=2.14.1 <3'
-      vue: '>=3.5.13 <4'
-
-  '@mango/grid-widgets@1.0.15':
-    resolution: {integrity: sha512-Zjew7XeDAqUcybIx6k05yujniiKz1HNKb8KALmynZkVSF+w4yCcR+AnySb0byh2XpCZ0FZzhagBUbLAV8j8MBQ==, tarball: http://nexus.inner.yunxinbaokeji.com/repository/npm-group/@mango/grid-widgets/-/grid-widgets-1.0.15.tgz}
-    peerDependencies:
-      element-plus: '>=2.14.1 <3'
-      vue: '>=3.5.13 <4'
-
-  '@mango/home@1.0.7':
-    resolution: {integrity: sha512-kF6dQsX7stUBhTc3cvuuK1QERZIadSe63hY4zVCWOD60DUhJ858wE3qIjWxCcTKgoYLj58MYfJkDlOMZjoOvlg==, tarball: http://nexus.inner.yunxinbaokeji.com/repository/npm-group/@mango/home/-/home-1.0.7.tgz}
-
-  '@mango/job@1.0.15':
-    resolution: {integrity: sha512-l2CQd6TShFycgrnO0olGnrXALBVI6TltYM5FPBqbXmvSAqrXwzwWPWtOReOijdxKMdHzYDmTwiECNt2T8dJ4Sg==, tarball: http://nexus.inner.yunxinbaokeji.com/repository/npm-group/@mango/job/-/job-1.0.15.tgz}
-    peerDependencies:
-      element-plus: '>=2.14.1 <3'
-      vue: '>=3.5.13 <4'
-
-  '@mango/link-openapi@1.0.3':
-    resolution: {integrity: sha512-H9Gu/FICBP8TIdHUJAo/O6JWkVGkvpUM420muUpF+A56HmIYGus6duxF1F6f3DbtbPpNs0BugWZSyJrokPF5Tw==, tarball: http://nexus.inner.yunxinbaokeji.com/repository/npm-group/@mango/link-openapi/-/link-openapi-1.0.3.tgz}
-
-  '@mango/link@1.0.9':
-    resolution: {integrity: sha512-P5sm7kda6aK8FeInfEZrn914MyFp3GGnEQcedaIWd/6QuQOHF1FmSF59RvmIm1A6Qpzz+oLvjUkz46xYZzJ2Bw==, tarball: http://nexus.inner.yunxinbaokeji.com/repository/npm-group/@mango/link/-/link-1.0.9.tgz}
-    peerDependencies:
-      element-plus: '>=2.14.1 <3'
-      vue: '>=3.5.13 <4'
-
-  '@mango/notice@1.0.25':
-    resolution: {integrity: sha512-aGjZ4sPK9a+m9w2SASPc925QLyafEuFapMqCf0foriRLSsyDqRRtm1pmTBsnn0Iv40sjwcAdyWzHd9bay8Ksag==, tarball: http://nexus.inner.yunxinbaokeji.com/repository/npm-group/@mango/notice/-/notice-1.0.25.tgz}
-    peerDependencies:
-      element-plus: '>=2.14.1 <3'
-      vue: '>=3.5.13 <4'
-      vue-router: '>=4.1.6 <5'
-
-  '@mango/numgen@1.0.23':
-    resolution: {integrity: sha512-Wr/3EHJ1C7gqEKBS08xkpL0HXe9Mv3Wd3fE0BdeJaunx6YS29VQhJLoQHcJwZApEuIiEIJbT9FLLXzu3Ktsckw==, tarball: http://nexus.inner.yunxinbaokeji.com/repository/npm-group/@mango/numgen/-/numgen-1.0.23.tgz}
-    peerDependencies:
-      element-plus: '>=2.14.1 <3'
-      vue: '>=3.5.13 <4'
-
-  '@mango/payment@1.0.15':
-    resolution: {integrity: sha512-ryEq4Q9QJ0Z8CT1GUmUmdlnaHwRm60x5COaXyFF0yksfxm56LTUNllBROCj1cM9J2NfT4jiZoIMsNqAQrjEy0w==, tarball: http://nexus.inner.yunxinbaokeji.com/repository/npm-group/@mango/payment/-/payment-1.0.15.tgz}
-    peerDependencies:
-      element-plus: '>=2.14.1 <3'
-      vue: '>=3.5.13 <4'
-      vue-router: '>=4.1.6 <5'
-
-  '@mango/pmo@1.3.1':
-    resolution: {integrity: sha512-BoBZi9SaPP8fDxsVyXMVbUKiztx5ZITZfVnnWa/LvClqA+OKj1wYWE9EXoj0jXAv9t0XZvsoDMP7rb6b3C+ZdQ==, tarball: http://nexus.inner.yunxinbaokeji.com/repository/npm-group/@mango/pmo/-/pmo-1.3.1.tgz}
-
-  '@mango/rbac@1.0.15':
-    resolution: {integrity: sha512-HiaAaKeqUQknTQpV57qQjHRQv4+La8BmrQxuOViWUvVZTfI7kQJokZGL4qnT31OqZozRC3STsNtF5p6ospgoOA==, tarball: http://nexus.inner.yunxinbaokeji.com/repository/npm-group/@mango/rbac/-/rbac-1.0.15.tgz}
-    peerDependencies:
-      element-plus: '>=2.14.1 <3'
-      vue: '>=3.5.13 <4'
-      vue-router: '>=4.1.6 <5'
-
-  '@mango/system@1.0.21':
-    resolution: {integrity: sha512-2ZqlTLolEqImGfIFsOC8UPnEPEigMV2Z3DsoYaCgJflk/O/1U6G7yZeLEuRsHEjo9jiEVRVjqMBH8jPHCzluUA==, tarball: http://nexus.inner.yunxinbaokeji.com/repository/npm-group/@mango/system/-/system-1.0.21.tgz}
-    peerDependencies:
-      '@mango/file': 1.0.23
-      element-plus: '>=2.14.1 <3'
-      vue: '>=3.5.13 <4'
-      vue-router: '>=4.1.6 <5'
-    peerDependenciesMeta:
-      '@mango/file':
-        optional: true
-
-  '@mango/template@1.0.23':
-    resolution: {integrity: sha512-lemBw2OM7GnwDusgrvKtlHH8Ucnbyc/4h/dN3pmJGxfRd0W75WbxT0GE27wLoYWQb6rX4sWuCA3l5SeoG8gJqw==, tarball: http://nexus.inner.yunxinbaokeji.com/repository/npm-group/@mango/template/-/template-1.0.23.tgz}
-    peerDependencies:
-      element-plus: '>=2.14.1 <3'
-      vue: '>=3.5.13 <4'
-      vue-router: '>=4.1.6 <5'
-
-  '@mango/workflow-business-example@1.0.28':
-    resolution: {integrity: sha512-WOLHSuppCNROSMrcY7hnq3utSOI19YpG/3O5aYITlFSKRUckEIdL3/fCb+BK7No7x2gjuYMUlqZSPaJCeKaDlw==, tarball: http://nexus.inner.yunxinbaokeji.com/repository/npm-group/@mango/workflow-business-example/-/workflow-business-example-1.0.28.tgz}
-    peerDependencies:
-      element-plus: '>=2.14.1 <3'
-      vue: '>=3.5.13 <4'
-      vue-router: '>=4.1.6 <5'
-
-  '@mango/workflow@1.0.29':
-    resolution: {integrity: sha512-RsgAjqP0pNN6ZNbOFznNxHBz69Y192vbdZSTFdmbOJyXe6ai52+7o3729sWf7PdwL726AVUU0M4rrLJJBh71Ag==, tarball: http://nexus.inner.yunxinbaokeji.com/repository/npm-group/@mango/workflow/-/workflow-1.0.29.tgz}
-    peerDependencies:
-      element-plus: '>=2.14.1 <3'
-      vue: '>=3.5.13 <4'
-      vue-router: '>=4.1.6 <5'
 
   '@microsoft/fetch-event-source@2.0.1':
     resolution: {integrity: sha512-W6CLUJ2eBMw3Rec70qrsEW0jOm/3twwJv21mrmj2yORiaVmVYGS4sSS5yUwvQc1ZlDLYGPnClVWmUUMagKNsfA==}
@@ -3045,6 +2915,10 @@ packages:
     resolution: {integrity: sha512-ynZ4w/nUUv5rrsR8UUGoe1VC9hZj6V5hU9Qw1HlMDJGEJw5S7TfTErWTjMys6M7vr0YWcPqs3qAr4ss0nDfP+A==}
     engines: {node: '>=0.8'}
 
+  agent-base@6.0.2:
+    resolution: {integrity: sha512-RZNwNclF7+MS/8bDg70amg32dyeZGZxiDuQmZxKLAlQjr3jGyLx+4Kkk58UO7D2QdgFIQCovuSuZESne6RG6XQ==}
+    engines: {node: '>= 6.0.0'}
+
   ajv@6.14.0:
     resolution: {integrity: sha512-IWrosm/yrn43eiKqkfkHis7QioDleaXQHdDVPKg0FSwwd/DuvyX79TZnFOnYpB7dcsFAMmtFztZuXPDvSePkFw==}
 
@@ -3107,8 +2981,8 @@ packages:
     peerDependencies:
       postcss: 8.5.19
 
-  axios@1.15.0:
-    resolution: {integrity: sha512-wWyJDlAatxk30ZJer+GeCWS209sA42X+N5jU2jy6oHTp7ufw8uzUTVFBX9+wTfAlhiJXGS0Bq7X6efruWjuK9Q==}
+  axios@1.18.1:
+    resolution: {integrity: sha512-3nTvFlvpn9Zu/RkHUqtc7/+al4UpRW5az71ap5zccp6e8RAYEzhMTecX8Dz1wWDYrPpUoB1HAQEGEAEvUr7S9g==}
 
   balanced-match@1.0.2:
     resolution: {integrity: sha512-3oSeUO0TMV67hN1AmbXsK4yaqU7tjiHlbxRDZOpH0KW9+CeX4bRAaX0Anxt0tx2MrpRpWwQaPwIlISEJhYU5Pw==}
@@ -3846,6 +3720,10 @@ packages:
 
   htmlparser2@8.0.2:
     resolution: {integrity: sha512-GYdjWKDkbRLkZ5geuHs5NY1puJ+PXwP7+fHPRz06Eirsb9ugf6d8kkXav6ADhcODhFFPMIXyxkxSuMf3D6NCFA==}
+
+  https-proxy-agent@5.0.1:
+    resolution: {integrity: sha512-dFcAjpTQFgoLMzC2VwU+C/CbS7uRL0lWmxDITmqm7C+7F0Odmj6s9l6alZc6AELXhrnggM2CeWSXHGOdX2YtwA==}
+    engines: {node: '>= 6'}
 
   i18next@20.6.1:
     resolution: {integrity: sha512-yCMYTMEJ9ihCwEQQ3phLo7I/Pwycf8uAx+sRHwwk5U9Aui/IZYgQRyMqXafQOw5QQ7DM1Z+WyEXWIqSuJHhG2A==}
@@ -5648,506 +5526,6 @@ snapshots:
 
   '@keyv/serialize@1.1.1': {}
 
-  '@mango/admin-pages@1.0.22(@mango/file@1.0.23(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3)))(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))':
-    dependencies:
-      '@mango/auth': 1.0.17(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
-      '@mango/common': 1.0.18(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
-      '@mango/rbac': 1.0.15(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
-      '@mango/system': 1.0.21(@mango/file@1.0.23(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3)))(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
-      vue: 3.5.13(typescript@5.9.3)
-    transitivePeerDependencies:
-      - '@mango/file'
-      - '@vue/composition-api'
-      - debug
-      - element-plus
-      - pinia
-      - vue-i18n
-      - vue-router
-
-  '@mango/admin-pages@1.0.22(@mango/file@1.0.23(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3)))(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))':
-    dependencies:
-      '@mango/auth': 1.0.17(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
-      '@mango/common': 1.0.18(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
-      '@mango/rbac': 1.0.15(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
-      '@mango/system': 1.0.21(@mango/file@1.0.23(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3)))(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
-      vue: 3.5.13(typescript@5.9.3)
-    transitivePeerDependencies:
-      - '@mango/file'
-      - '@vue/composition-api'
-      - debug
-      - element-plus
-      - pinia
-      - vue-i18n
-      - vue-router
-
-  '@mango/admin-shell@1.0.44(742d4b8689e6e1c8ded5554681305153)':
-    dependencies:
-      '@element-plus/icons-vue': 2.3.2(vue@3.5.13(typescript@5.9.3))
-      '@mango/admin-pages': 1.0.22(@mango/file@1.0.23(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3)))(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
-      '@mango/app-runtime': 1.0.4(vue@3.5.13(typescript@5.9.3))
-      '@mango/auth': 1.0.17(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
-      '@mango/common': 1.0.18(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
-      '@mango/home': 1.0.7(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
-      '@mango/rbac': 1.0.15(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
-      element-plus: 2.14.1(vue@3.5.13(typescript@5.9.3))
-      pinia: 2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3))
-      vue: 3.5.13(typescript@5.9.3)
-      vue-i18n: 9.2.2(vue@3.5.13(typescript@5.9.3))
-      vue-router: 4.6.4(vue@3.5.13(typescript@5.9.3))
-    optionalDependencies:
-      '@mango/file': 1.0.23(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
-      '@mango/grid-layout': 1.0.9(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
-      '@mango/grid-widgets': 1.0.15(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
-      '@mango/notice': 1.0.25(@mango/file@1.0.23(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3)))(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
-      '@mango/workflow': 1.0.29(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
-    transitivePeerDependencies:
-      - '@vue/composition-api'
-      - debug
-
-  '@mango/api-schema@1.0.2':
-    dependencies:
-      typescript: 5.9.3
-
-  '@mango/app-runtime@1.0.4(vue@3.5.13(typescript@5.9.3))':
-    dependencies:
-      vue: 3.5.13(typescript@5.9.3)
-      vue-router: 4.6.4(vue@3.5.13(typescript@5.9.3))
-      wujie: 1.0.29
-
-  '@mango/auth@1.0.17(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))':
-    dependencies:
-      '@element-plus/icons-vue': 2.3.2(vue@3.5.13(typescript@5.9.3))
-      '@mango/api-schema': 1.0.2
-      '@mango/common': 1.0.18(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
-      element-plus: 2.14.1(vue@3.5.13(typescript@5.9.3))
-      pinia: 2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3))
-      vue: 3.5.13(typescript@5.9.3)
-      vue-router: 4.6.4(vue@3.5.13(typescript@5.9.3))
-    transitivePeerDependencies:
-      - '@vue/composition-api'
-      - debug
-      - vue-i18n
-
-  '@mango/auth@1.0.17(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))':
-    dependencies:
-      '@element-plus/icons-vue': 2.3.2(vue@3.5.13(typescript@5.9.3))
-      '@mango/api-schema': 1.0.2
-      '@mango/common': 1.0.18(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
-      element-plus: 2.14.1(vue@3.5.13(typescript@5.9.3))
-      pinia: 2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3))
-      vue: 3.5.13(typescript@5.9.3)
-      vue-router: 4.6.4(vue@3.5.13(typescript@5.9.3))
-    transitivePeerDependencies:
-      - '@vue/composition-api'
-      - debug
-      - vue-i18n
-
-  '@mango/calendar@1.0.23(@mango/file@1.0.23(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3)))(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))':
-    dependencies:
-      '@element-plus/icons-vue': 2.3.2(vue@3.5.13(typescript@5.9.3))
-      '@mango/admin-pages': 1.0.22(@mango/file@1.0.23(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3)))(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
-      '@mango/api-schema': 1.0.2
-      '@mango/common': 1.0.18(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
-      '@mango/grid-widgets': 1.0.15(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
-      element-plus: 2.14.1(vue@3.5.13(typescript@5.9.3))
-      vue: 3.5.13(typescript@5.9.3)
-    transitivePeerDependencies:
-      - '@mango/file'
-      - '@vue/composition-api'
-      - debug
-      - pinia
-      - vue-i18n
-      - vue-router
-
-  '@mango/cms@1.0.12(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))':
-    dependencies:
-      '@element-plus/icons-vue': 2.3.2(vue@3.5.13(typescript@5.9.3))
-      '@mango/admin-pages': 1.0.22(@mango/file@1.0.23(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3)))(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
-      '@mango/common': 1.0.18(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
-      '@mango/file': 1.0.23(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
-      element-plus: 2.14.1(vue@3.5.13(typescript@5.9.3))
-      vue: 3.5.13(typescript@5.9.3)
-    transitivePeerDependencies:
-      - '@vue/composition-api'
-      - debug
-      - pinia
-      - vue-i18n
-      - vue-router
-
-  '@mango/common@1.0.18(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))':
-    dependencies:
-      '@element-plus/icons-vue': 2.3.2(vue@3.5.13(typescript@5.9.3))
-      '@microsoft/fetch-event-source': 2.0.1
-      '@vueuse/core': 10.11.1(vue@3.5.13(typescript@5.9.3))
-      '@wangeditor/editor': 5.1.23
-      '@wangeditor/editor-for-vue': 5.1.12(@wangeditor/editor@5.1.23)(vue@3.5.13(typescript@5.9.3))
-      axios: 1.15.0
-      codemirror: 5.65.21
-      crypto-js: 3.3.0
-      echarts: 6.0.0
-      element-plus: 2.14.1(vue@3.5.13(typescript@5.9.3))
-      js-cookie: 3.0.5
-      lodash: 4.18.1
-      mitt: 3.0.1
-      nprogress: 0.2.0
-      pinia: 2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3))
-      qs: 6.15.1
-      screenfull: 6.0.2
-      sm-crypto: 0.3.14
-      vue: 3.5.13(typescript@5.9.3)
-      vue-i18n: 9.2.2(vue@3.5.13(typescript@5.9.3))
-      vue-router: 4.6.4(vue@3.5.13(typescript@5.9.3))
-      xlsx: 0.18.5
-    transitivePeerDependencies:
-      - '@vue/composition-api'
-      - debug
-
-  '@mango/common@1.0.18(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))':
-    dependencies:
-      '@element-plus/icons-vue': 2.3.2(vue@3.5.13(typescript@5.9.3))
-      '@microsoft/fetch-event-source': 2.0.1
-      '@vueuse/core': 10.11.1(vue@3.5.13(typescript@5.9.3))
-      '@wangeditor/editor': 5.1.23
-      '@wangeditor/editor-for-vue': 5.1.12(@wangeditor/editor@5.1.23)(vue@3.5.13(typescript@5.9.3))
-      axios: 1.15.0
-      codemirror: 5.65.21
-      crypto-js: 3.3.0
-      echarts: 6.0.0
-      element-plus: 2.14.1(vue@3.5.13(typescript@5.9.3))
-      js-cookie: 3.0.5
-      lodash: 4.18.1
-      mitt: 3.0.1
-      nprogress: 0.2.0
-      pinia: 2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3))
-      qs: 6.15.1
-      screenfull: 6.0.2
-      sm-crypto: 0.3.14
-      vue: 3.5.13(typescript@5.9.3)
-      vue-i18n: 9.2.2(vue@3.5.13(typescript@5.9.3))
-      vue-router: 4.6.4(vue@3.5.13(typescript@5.9.3))
-      xlsx: 0.18.5
-    transitivePeerDependencies:
-      - '@vue/composition-api'
-      - debug
-
-  '@mango/file@1.0.23(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))':
-    dependencies:
-      '@element-plus/icons-vue': 2.3.2(vue@3.5.13(typescript@5.9.3))
-      '@mango/admin-pages': 1.0.22(@mango/file@1.0.23(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3)))(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
-      '@mango/common': 1.0.18(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
-      element-plus: 2.14.1(vue@3.5.13(typescript@5.9.3))
-      vue: 3.5.13(typescript@5.9.3)
-    transitivePeerDependencies:
-      - '@vue/composition-api'
-      - debug
-      - pinia
-      - vue-i18n
-      - vue-router
-
-  '@mango/file@1.0.23(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))':
-    dependencies:
-      '@element-plus/icons-vue': 2.3.2(vue@3.5.13(typescript@5.9.3))
-      '@mango/admin-pages': 1.0.22(@mango/file@1.0.23(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3)))(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
-      '@mango/common': 1.0.18(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
-      element-plus: 2.14.1(vue@3.5.13(typescript@5.9.3))
-      vue: 3.5.13(typescript@5.9.3)
-    transitivePeerDependencies:
-      - '@vue/composition-api'
-      - debug
-      - pinia
-      - vue-i18n
-      - vue-router
-
-  '@mango/grid-layout@1.0.9(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))':
-    dependencies:
-      '@element-plus/icons-vue': 2.3.2(vue@3.5.13(typescript@5.9.3))
-      '@mango/common': 1.0.18(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
-      element-plus: 2.14.1(vue@3.5.13(typescript@5.9.3))
-      vue: 3.5.13(typescript@5.9.3)
-    transitivePeerDependencies:
-      - '@vue/composition-api'
-      - debug
-      - pinia
-      - vue-i18n
-      - vue-router
-
-  '@mango/grid-layout@1.0.9(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))':
-    dependencies:
-      '@element-plus/icons-vue': 2.3.2(vue@3.5.13(typescript@5.9.3))
-      '@mango/common': 1.0.18(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
-      element-plus: 2.14.1(vue@3.5.13(typescript@5.9.3))
-      vue: 3.5.13(typescript@5.9.3)
-    transitivePeerDependencies:
-      - '@vue/composition-api'
-      - debug
-      - pinia
-      - vue-i18n
-      - vue-router
-
-  '@mango/grid-widgets@1.0.15(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))':
-    dependencies:
-      '@mango/grid-layout': 1.0.9(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
-      element-plus: 2.14.1(vue@3.5.13(typescript@5.9.3))
-      vue: 3.5.13(typescript@5.9.3)
-    transitivePeerDependencies:
-      - '@vue/composition-api'
-      - debug
-      - pinia
-      - vue-i18n
-      - vue-router
-
-  '@mango/grid-widgets@1.0.15(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))':
-    dependencies:
-      '@mango/grid-layout': 1.0.9(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
-      element-plus: 2.14.1(vue@3.5.13(typescript@5.9.3))
-      vue: 3.5.13(typescript@5.9.3)
-    transitivePeerDependencies:
-      - '@vue/composition-api'
-      - debug
-      - pinia
-      - vue-i18n
-      - vue-router
-
-  '@mango/home@1.0.7(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))':
-    dependencies:
-      '@mango/api-schema': 1.0.2
-      '@mango/common': 1.0.18(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
-    transitivePeerDependencies:
-      - '@vue/composition-api'
-      - debug
-      - element-plus
-      - pinia
-      - vue
-      - vue-i18n
-      - vue-router
-
-  '@mango/job@1.0.15(@mango/file@1.0.23(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3)))(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))':
-    dependencies:
-      '@element-plus/icons-vue': 2.3.2(vue@3.5.13(typescript@5.9.3))
-      '@mango/admin-pages': 1.0.22(@mango/file@1.0.23(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3)))(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
-      '@mango/common': 1.0.18(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
-      element-plus: 2.14.1(vue@3.5.13(typescript@5.9.3))
-      vue: 3.5.13(typescript@5.9.3)
-    transitivePeerDependencies:
-      - '@mango/file'
-      - '@vue/composition-api'
-      - debug
-      - pinia
-      - vue-i18n
-      - vue-router
-
-  '@mango/link-openapi@1.0.3': {}
-
-  '@mango/link@1.0.9(@mango/file@1.0.23(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3)))(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))':
-    dependencies:
-      '@element-plus/icons-vue': 2.3.2(vue@3.5.13(typescript@5.9.3))
-      '@mango/admin-pages': 1.0.22(@mango/file@1.0.23(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3)))(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
-      '@mango/common': 1.0.18(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
-      '@mango/grid-widgets': 1.0.15(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
-      '@mango/link-openapi': 1.0.3
-      element-plus: 2.14.1(vue@3.5.13(typescript@5.9.3))
-      vue: 3.5.13(typescript@5.9.3)
-    transitivePeerDependencies:
-      - '@mango/file'
-      - '@vue/composition-api'
-      - debug
-      - pinia
-      - vue-i18n
-      - vue-router
-
-  '@mango/notice@1.0.25(@mango/file@1.0.23(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3)))(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))':
-    dependencies:
-      '@element-plus/icons-vue': 2.3.2(vue@3.5.13(typescript@5.9.3))
-      '@mango/admin-pages': 1.0.22(@mango/file@1.0.23(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3)))(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
-      '@mango/common': 1.0.18(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
-      '@mango/grid-widgets': 1.0.15(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
-      '@mango/system': 1.0.21(@mango/file@1.0.23(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3)))(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
-      element-plus: 2.14.1(vue@3.5.13(typescript@5.9.3))
-      vue: 3.5.13(typescript@5.9.3)
-      vue-router: 4.6.4(vue@3.5.13(typescript@5.9.3))
-    transitivePeerDependencies:
-      - '@mango/file'
-      - '@vue/composition-api'
-      - debug
-      - pinia
-      - vue-i18n
-
-  '@mango/numgen@1.0.23(@mango/file@1.0.23(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3)))(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))':
-    dependencies:
-      '@element-plus/icons-vue': 2.3.2(vue@3.5.13(typescript@5.9.3))
-      '@mango/admin-pages': 1.0.22(@mango/file@1.0.23(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3)))(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
-      '@mango/api-schema': 1.0.2
-      '@mango/common': 1.0.18(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
-      '@mango/system': 1.0.21(@mango/file@1.0.23(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3)))(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
-      element-plus: 2.14.1(vue@3.5.13(typescript@5.9.3))
-      vue: 3.5.13(typescript@5.9.3)
-    transitivePeerDependencies:
-      - '@mango/file'
-      - '@vue/composition-api'
-      - debug
-      - pinia
-      - vue-i18n
-      - vue-router
-
-  '@mango/payment@1.0.15(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))':
-    dependencies:
-      '@element-plus/icons-vue': 2.3.2(vue@3.5.13(typescript@5.9.3))
-      '@mango/admin-pages': 1.0.22(@mango/file@1.0.23(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3)))(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
-      '@mango/api-schema': 1.0.2
-      '@mango/common': 1.0.18(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
-      '@mango/file': 1.0.23(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
-      element-plus: 2.14.1(vue@3.5.13(typescript@5.9.3))
-      qrcode: 1.5.4
-      vue: 3.5.13(typescript@5.9.3)
-      vue-router: 4.6.4(vue@3.5.13(typescript@5.9.3))
-    transitivePeerDependencies:
-      - '@vue/composition-api'
-      - debug
-      - pinia
-      - vue-i18n
-
-  '@mango/pmo@1.3.1': {}
-
-  '@mango/rbac@1.0.15(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))':
-    dependencies:
-      '@element-plus/icons-vue': 2.3.2(vue@3.5.13(typescript@5.9.3))
-      '@mango/api-schema': 1.0.2
-      '@mango/app-runtime': 1.0.4(vue@3.5.13(typescript@5.9.3))
-      '@mango/common': 1.0.18(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
-      element-plus: 2.14.1(vue@3.5.13(typescript@5.9.3))
-      vue: 3.5.13(typescript@5.9.3)
-      vue-router: 4.6.4(vue@3.5.13(typescript@5.9.3))
-    transitivePeerDependencies:
-      - '@vue/composition-api'
-      - debug
-      - pinia
-      - vue-i18n
-
-  '@mango/rbac@1.0.15(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))':
-    dependencies:
-      '@element-plus/icons-vue': 2.3.2(vue@3.5.13(typescript@5.9.3))
-      '@mango/api-schema': 1.0.2
-      '@mango/app-runtime': 1.0.4(vue@3.5.13(typescript@5.9.3))
-      '@mango/common': 1.0.18(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
-      element-plus: 2.14.1(vue@3.5.13(typescript@5.9.3))
-      vue: 3.5.13(typescript@5.9.3)
-      vue-router: 4.6.4(vue@3.5.13(typescript@5.9.3))
-    transitivePeerDependencies:
-      - '@vue/composition-api'
-      - debug
-      - pinia
-      - vue-i18n
-
-  '@mango/system@1.0.21(@mango/file@1.0.23(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3)))(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))':
-    dependencies:
-      '@element-plus/icons-vue': 2.3.2(vue@3.5.13(typescript@5.9.3))
-      '@form-create/element-ui': 3.2.42(vue@3.5.13(typescript@5.9.3))
-      '@mango/api-schema': 1.0.2
-      '@mango/common': 1.0.18(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
-      '@mango/grid-widgets': 1.0.15(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
-      '@mango/rbac': 1.0.15(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
-      element-plus: 2.14.1(vue@3.5.13(typescript@5.9.3))
-      form-create-designer: 3.2.11-oem(vue@3.5.13(typescript@5.9.3))
-      vue: 3.5.13(typescript@5.9.3)
-      vue-router: 4.6.4(vue@3.5.13(typescript@5.9.3))
-    optionalDependencies:
-      '@mango/file': 1.0.23(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
-    transitivePeerDependencies:
-      - '@vue/composition-api'
-      - debug
-      - pinia
-      - vue-i18n
-
-  '@mango/system@1.0.21(@mango/file@1.0.23(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3)))(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))':
-    dependencies:
-      '@element-plus/icons-vue': 2.3.2(vue@3.5.13(typescript@5.9.3))
-      '@form-create/element-ui': 3.2.42(vue@3.5.13(typescript@5.9.3))
-      '@mango/api-schema': 1.0.2
-      '@mango/common': 1.0.18(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
-      '@mango/grid-widgets': 1.0.15(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
-      '@mango/rbac': 1.0.15(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
-      element-plus: 2.14.1(vue@3.5.13(typescript@5.9.3))
-      form-create-designer: 3.2.11-oem(vue@3.5.13(typescript@5.9.3))
-      vue: 3.5.13(typescript@5.9.3)
-      vue-router: 4.6.4(vue@3.5.13(typescript@5.9.3))
-    optionalDependencies:
-      '@mango/file': 1.0.23(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
-    transitivePeerDependencies:
-      - '@vue/composition-api'
-      - debug
-      - pinia
-      - vue-i18n
-
-  '@mango/template@1.0.23(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))':
-    dependencies:
-      '@element-plus/icons-vue': 2.3.2(vue@3.5.13(typescript@5.9.3))
-      '@mango/admin-pages': 1.0.22(@mango/file@1.0.23(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3)))(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
-      '@mango/common': 1.0.18(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
-      '@mango/file': 1.0.23(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
-      '@mango/system': 1.0.21(@mango/file@1.0.23(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3)))(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
-      element-plus: 2.14.1(vue@3.5.13(typescript@5.9.3))
-      vue: 3.5.13(typescript@5.9.3)
-      vue-router: 4.6.4(vue@3.5.13(typescript@5.9.3))
-    transitivePeerDependencies:
-      - '@vue/composition-api'
-      - debug
-      - pinia
-      - vue-i18n
-
-  '@mango/workflow-business-example@1.0.28(@mango/file@1.0.23(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3)))(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))':
-    dependencies:
-      '@mango/admin-pages': 1.0.22(@mango/file@1.0.23(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3)))(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
-      '@mango/workflow': 1.0.29(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
-      element-plus: 2.14.1(vue@3.5.13(typescript@5.9.3))
-      vue: 3.5.13(typescript@5.9.3)
-      vue-router: 4.6.4(vue@3.5.13(typescript@5.9.3))
-    transitivePeerDependencies:
-      - '@mango/file'
-      - '@vue/composition-api'
-      - debug
-      - pinia
-      - vue-i18n
-
-  '@mango/workflow@1.0.29(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))':
-    dependencies:
-      '@element-plus/icons-vue': 2.3.2(vue@3.5.13(typescript@5.9.3))
-      '@form-create/element-ui': 3.2.42(vue@3.5.13(typescript@5.9.3))
-      '@mango/admin-pages': 1.0.22(@mango/file@1.0.23(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3)))(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
-      '@mango/api-schema': 1.0.2
-      '@mango/common': 1.0.18(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
-      '@mango/file': 1.0.23(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
-      '@mango/grid-widgets': 1.0.15(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
-      '@mango/system': 1.0.21(@mango/file@1.0.23(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3)))(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
-      element-plus: 2.14.1(vue@3.5.13(typescript@5.9.3))
-      form-create-designer: 3.2.11-oem(vue@3.5.13(typescript@5.9.3))
-      vue: 3.5.13(typescript@5.9.3)
-      vue-router: 4.6.4(vue@3.5.13(typescript@5.9.3))
-    transitivePeerDependencies:
-      - '@vue/composition-api'
-      - debug
-      - pinia
-      - vue-i18n
-
-  '@mango/workflow@1.0.29(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))':
-    dependencies:
-      '@element-plus/icons-vue': 2.3.2(vue@3.5.13(typescript@5.9.3))
-      '@form-create/element-ui': 3.2.42(vue@3.5.13(typescript@5.9.3))
-      '@mango/admin-pages': 1.0.22(@mango/file@1.0.23(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3)))(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
-      '@mango/api-schema': 1.0.2
-      '@mango/common': 1.0.18(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
-      '@mango/file': 1.0.23(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
-      '@mango/grid-widgets': 1.0.15(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
-      '@mango/system': 1.0.21(@mango/file@1.0.23(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3)))(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
-      element-plus: 2.14.1(vue@3.5.13(typescript@5.9.3))
-      form-create-designer: 3.2.11-oem(vue@3.5.13(typescript@5.9.3))
-      vue: 3.5.13(typescript@5.9.3)
-      vue-router: 4.6.4(vue@3.5.13(typescript@5.9.3))
-    transitivePeerDependencies:
-      - '@vue/composition-api'
-      - debug
-      - pinia
-      - vue-i18n
-
   '@microsoft/fetch-event-source@2.0.1': {}
 
   '@mswjs/interceptors@0.41.3':
@@ -6927,6 +6305,12 @@ snapshots:
 
   adler-32@1.3.1: {}
 
+  agent-base@6.0.2:
+    dependencies:
+      debug: 4.4.3
+    transitivePeerDependencies:
+      - supports-color
+
   ajv@6.14.0:
     dependencies:
       fast-deep-equal: 3.1.3
@@ -6987,13 +6371,15 @@ snapshots:
       postcss: 8.5.19
       postcss-value-parser: 4.2.0
 
-  axios@1.15.0:
+  axios@1.18.1:
     dependencies:
       follow-redirects: 1.16.0
       form-data: 4.0.5
+      https-proxy-agent: 5.0.1
       proxy-from-env: 2.1.0
     transitivePeerDependencies:
       - debug
+      - supports-color
 
   balanced-match@1.0.2: {}
 
@@ -7802,6 +7188,13 @@ snapshots:
       domhandler: 5.0.3
       domutils: 3.2.2
       entities: 4.5.0
+
+  https-proxy-agent@5.0.1:
+    dependencies:
+      agent-base: 6.0.2
+      debug: 4.4.3
+    transitivePeerDependencies:
+      - supports-color
 
   i18next@20.6.1:
     dependencies:

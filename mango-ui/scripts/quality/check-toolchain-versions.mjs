@@ -7,8 +7,19 @@ import { fileURLToPath } from 'node:url';
 const uiRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const manifest = JSON.parse(fs.readFileSync(path.join(uiRoot, 'package.json'), 'utf8'));
 const governed = [
-  'eslint', 'eslint-plugin-vue', 'prettier', 'stylelint', 'typescript', 'vite', 'vitest',
-  'vue', 'vue-tsc', '@vitejs/plugin-vue', '@playwright/test', '@vue/compiler-sfc',
+  'axios',
+  'eslint',
+  'eslint-plugin-vue',
+  'prettier',
+  'stylelint',
+  'typescript',
+  'vite',
+  'vitest',
+  'vue',
+  'vue-tsc',
+  '@vitejs/plugin-vue',
+  '@playwright/test',
+  '@vue/compiler-sfc',
 ];
 const result = spawnSync('corepack', ['pnpm@11.14.0', 'list', '-r', '--depth', '0', '--json'], {
   cwd: uiRoot,
@@ -43,4 +54,3 @@ if (failures.length) {
   process.stderr.write(`${JSON.stringify(failures, null, 2)}\n`);
   process.exitCode = 1;
 }
-

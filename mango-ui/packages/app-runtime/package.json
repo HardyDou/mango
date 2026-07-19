@@ -1,6 +1,6 @@
 {
   "name": "@mango/app-runtime",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "private": false,
   "main": "./dist/index.js",
   "exports": {
@@ -19,6 +19,7 @@
     "package.json"
   ],
   "dependencies": {
+    "@mango/api-schema": "workspace:1.0.3",
     "vue-router": "^4.1.6",
     "wujie": "^1.0.29"
   },
@@ -32,11 +33,13 @@
   "module": "./dist/index.js",
   "type": "module",
   "scripts": {
-    "build": "vite build && node ../../scripts/generate-package-types.mjs"
+    "build": "vite build && node ../../scripts/generate-package-types.mjs",
+    "test": "vitest run"
   },
   "devDependencies": {
     "typescript": "^5.9.3",
-    "vite": "^4.3.3"
+    "vite": "^4.3.3",
+    "vitest": "4.1.10"
   },
   "mangoArchitecture": {
     "architectureLayer": "FE1",

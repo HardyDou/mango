@@ -145,6 +145,23 @@ function generateProject(cliPath) {
   if (!existsSync(join(frontendRoot, 'package.json'))) {
     throw new Error(`packed CLI did not generate ${frontendRoot}`);
   }
+  run(
+    cliPath,
+    [
+      'module',
+      'add',
+      'orders',
+      '--aggregate',
+      'sales-order',
+      '--aggregate-name',
+      '销售订单',
+      '--module-name',
+      '订单模块',
+      '--project-dir',
+      projectRoot,
+    ],
+    { cwd: projectRoot },
+  );
 }
 
 function prepareOfflineInstall(tarballsByName) {

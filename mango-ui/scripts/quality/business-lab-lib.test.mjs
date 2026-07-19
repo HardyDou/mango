@@ -82,6 +82,49 @@ test('rejects workspace aliases, host paths, and registry credentials', () => {
   }
 });
 
+test('allows only an exact workspace link to a package inside the generated project', () => {
+  const { root, frontend } = fixture();
+  try {
+    const apiRoot = join(frontend, 'packages/orders-api');
+    const uiRoot = join(frontend, 'packages/orders');
+    mkdirSync(apiRoot, { recursive: true });
+    mkdirSync(uiRoot, { recursive: true });
+    writeFileSync(
+      join(apiRoot, 'package.json'),
+      `${JSON.stringify({ name: '@lab/orders-api', version: '1.0.0-SNAPSHOT' }, null, 2)}\n`,
+    );
+    writeFileSync(
+      join(uiRoot, 'package.json'),
+      `${JSON.stringify(
+        {
+          name: '@lab/orders',
+          version: '1.0.0-SNAPSHOT',
+          dependencies: { '@lab/orders-api': 'workspace:1.0.0-SNAPSHOT' },
+        },
+        null,
+        2,
+      )}\n`,
+    );
+    writeFileSync(join(frontend, 'pnpm-lock.yaml'), 'version: link:../orders-api\n');
+    assert.doesNotThrow(() => assertGeneratedProjectBoundary(root, ['/repo']));
+    writeFileSync(
+      join(uiRoot, 'package.json'),
+      `${JSON.stringify(
+        {
+          name: '@lab/orders',
+          version: '1.0.0-SNAPSHOT',
+          dependencies: { '@lab/orders-api': 'workspace:*' },
+        },
+        null,
+        2,
+      )}\n`,
+    );
+    assert.throws(() => assertGeneratedProjectBoundary(root, ['/repo']), /invalid local workspace dependency/u);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test('does not interpret governance source text as an installed dependency reference', () => {
   const { root, frontend } = fixture();
   try {

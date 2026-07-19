@@ -53,6 +53,7 @@ const defaultVersions = {
   mangoCalendar: readReleasedMangoPackageVersion('calendar', '1.0.6'),
   mangoCms: readReleasedMangoPackageVersion('cms', '1.0.0'),
   mangoCommon: readReleasedMangoPackageVersion('common', '1.0.7'),
+  mangoHttpClient: readReleasedMangoPackageVersion('http-client', '1.0.0'),
   mangoFile: readReleasedMangoPackageVersion('file', '1.0.6'),
   mangoGridLayout: readReleasedMangoPackageVersion('grid-layout', '1.0.0'),
   mangoGridWidgets: readReleasedMangoPackageVersion('grid-widgets', '1.0.0'),
@@ -106,6 +107,7 @@ const CORE_FRONTEND_PACKAGES = uniqueBy(
     { name: '@mango/admin', versionKey: 'mangoAdmin' },
     { name: '@mango/admin-pages', versionKey: 'mangoAdminPages' },
     { name: '@mango/app-runtime', versionKey: 'mangoAppRuntime' },
+    { name: '@mango/http-client', versionKey: 'mangoHttpClient' },
     ...ADMIN_DEFAULT_MODULES.map(toFrontendDependency),
   ],
   (dependency) => dependency.name,
@@ -545,6 +547,7 @@ function buildVariables(options) {
     mangoAuthVersion: defaultVersions.mangoAuth,
     mangoCalendarVersion: defaultVersions.mangoCalendar,
     mangoCommonVersion: defaultVersions.mangoCommon,
+    mangoHttpClientVersion: defaultVersions.mangoHttpClient,
     mangoFileVersion: defaultVersions.mangoFile,
     mangoGridLayoutVersion: defaultVersions.mangoGridLayout,
     mangoGridWidgetsVersion: defaultVersions.mangoGridWidgets,
@@ -4482,24 +4485,57 @@ function updateFrontendBusinessIntegration(targetDir, variables) {
   const packageJson = JSON.parse(readFileSync(packagePath, 'utf8'));
   packageJson.dependencies = packageJson.dependencies || {};
   packageJson.workspaces = ensureWorkspace(packageJson.workspaces, 'packages/*');
-  packageJson.dependencies[`@${variables.projectKebab}/${variables.moduleKebab}`] = variables.projectVersion;
-  packageJson.dependencies[`@${variables.projectKebab}/${variables.moduleKebab}-api`] = variables.projectVersion;
+  packageJson.dependencies[`@${variables.projectKebab}/${variables.moduleKebab}`] =
+    `workspace:${variables.projectVersion}`;
+  packageJson.dependencies[`@${variables.projectKebab}/${variables.moduleKebab}-api`] =
+    `workspace:${variables.projectVersion}`;
   writeFileSync(packagePath, `${JSON.stringify(packageJson, null, 2)}\n`);
 
   const entryPath = join(targetDir, 'frontend/src/main.ts');
   const content = readFileSync(entryPath, 'utf8');
   const importLine = `import { register${variables.modulePascal}Pages } from '@${variables.projectKebab}/${variables.moduleKebab}';`;
   const styleImportLine = `import '@${variables.projectKebab}/${variables.moduleKebab}/style.css';`;
-  const registrarLine = `  register${variables.modulePascal}Pages,`;
+  const registrarLine = `  () => register${variables.modulePascal}Pages(mangoBusinessHttpClient),`;
   const preparedContent = ensureFrontendBusinessRegistrars(content);
-  const withImport = preparedContent.includes(importLine)
-    ? preparedContent
-    : preparedContent.replace('// mango-cli:imports:end', `${importLine}\n// mango-cli:imports:end`);
+  const withHttpClient = ensureFrontendBusinessHttpClient(preparedContent);
+  const withImport = withHttpClient.includes(importLine)
+    ? withHttpClient
+    : withHttpClient.replace('// mango-cli:imports:end', `${importLine}\n// mango-cli:imports:end`);
   const withStyleImport = withImport.includes(styleImportLine)
     ? withImport
     : withImport.replace('// mango-cli:imports:end', `${styleImportLine}\n// mango-cli:imports:end`);
   const next = appendBusinessFeatureRegistrar(withStyleImport, registrarLine);
   writeFileSync(entryPath, next);
+}
+
+function ensureFrontendBusinessHttpClient(content) {
+  const httpClientImport = "import { createMangoHttpClient } from '@mango/http-client';";
+  const sessionImport = "import { Session } from '@mango/common';";
+  let next = content;
+  for (const importLine of [httpClientImport, sessionImport]) {
+    if (!next.includes(importLine)) {
+      next = next.replace('// mango-cli:imports:end', `${importLine}\n// mango-cli:imports:end`);
+    }
+  }
+  if (next.includes('const mangoBusinessHttpClient = createMangoHttpClient({')) {
+    return next;
+  }
+  const clientBlock = [
+    'const mangoBusinessHttpClient = createMangoHttpClient({',
+    "  baseUrl: import.meta.env.VITE_MANGO_API_BASE_URL || '/api',",
+    '  getAccessToken: () => Session.getToken(),',
+    "  getTenantId: () => Session.get('userInfo')?.tenantId ?? Session.get('tenantId'),",
+    '  onUnauthorized: () => {',
+    '    Session.clearSession();',
+    "    window.location.hash = '/login';",
+    '  },',
+    '});',
+    '',
+  ].join('\n');
+  return next.replace(
+    '// mango-cli:business-feature-registrars:start',
+    `${clientBlock}// mango-cli:business-feature-registrars:start`,
+  );
 }
 
 function ensureFrontendBusinessRegistrars(content) {
@@ -4767,7 +4803,7 @@ function renderFrontendFeaturesExpression(preset, selectedModules) {
     return "'full'";
   }
   const features = selectedModules.map((module) => module.feature).filter(Boolean);
-  return `${JSON.stringify(features)} as const`;
+  return `[${features.map((feature) => `'${feature}'`).join(', ')}] as const`;
 }
 
 function renderFrontendFeatureRegistrarsExpression(preset, selectedModules) {
@@ -4781,7 +4817,7 @@ function renderFrontendFeatureRegistrarsExpression(preset, selectedModules) {
   if (registrars.length === 0) {
     return '[]';
   }
-  return `[${registrars.join(', ')}]`;
+  return `[\n${registrars.map((registrar) => `  ${registrar},`).join('\n')}\n]`;
 }
 
 function renderBackendManagedDependencies(preset, selectedModules) {

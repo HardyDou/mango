@@ -2,6 +2,7 @@ import { computed, createApp, h, nextTick, ref, type App as VueApp, type Ref } f
 import type { Router } from 'vue-router';
 import { del, get, post, put } from '@mango/common/utils/request';
 import { Session } from '@mango/common/utils/storage';
+import { createMangoHttpClient, type MangoHttpClient } from '@mango/http-client';
 import {
   createRuntimeEventBus,
   emitMangoRuntimeLog,
@@ -26,6 +27,7 @@ import { ensureFeatureRegistrars } from './featureRegistrars';
 import { defaultRuntimeConfig, loadShellRuntimeConfig } from './runtimeConfig';
 
 const shellRuntimeEventBus = createRuntimeEventBus();
+const runtimeHttpClients = new Map<string, MangoHttpClient>();
 
 export interface RuntimeDecision {
   menuName?: string;
@@ -231,7 +233,7 @@ export function useRuntimeHost(containerRef: Ref<HTMLElement | undefined>, route
     if (!runtimeCode) {
       return undefined;
     }
-    return runtimeApps.value.find(app => app.appCode === runtimeCode);
+    return runtimeApps.value.find((app) => app.appCode === runtimeCode);
   }
 
   function ensureDefaultPages() {
@@ -243,15 +245,17 @@ export function useRuntimeHost(containerRef: Ref<HTMLElement | undefined>, route
             home: () => import('../views/home/index.vue'),
             notFound: () => import('../views/error/404.vue'),
           },
-          registries: [{
-            moduleCode: 'mango-shell',
-            pages: {
-              'home/management/index': () => import('../views/home/management/index.vue'),
-              'home/templates/index': () => import('../views/home/templates/index.vue'),
-              'home/list/index': () => import('../views/home/list/index.vue'),
-              'home/user/index': () => import('../views/home/user/index.vue'),
+          registries: [
+            {
+              moduleCode: 'mango-shell',
+              pages: {
+                'home/management/index': () => import('../views/home/management/index.vue'),
+                'home/templates/index': () => import('../views/home/templates/index.vue'),
+                'home/list/index': () => import('../views/home/list/index.vue'),
+                'home/user/index': () => import('../views/home/user/index.vue'),
+              },
             },
-          }],
+          ],
         });
         await ensureFeatureRegistrars();
         return ensureDevCenterPagesRegistered();
@@ -302,10 +306,7 @@ export function useRuntimeHost(containerRef: Ref<HTMLElement | undefined>, route
     renderRuntimeState(container, {
       title: '页面加载失败',
       description: `${menu.menuName || menu.path || '当前页面'}：${errorMessage}`,
-      details: [
-        runtimeCode ? `运行单元：${runtimeCode}` : '',
-        entry ? `入口地址：${entry}` : '',
-      ].filter(Boolean),
+      details: [runtimeCode ? `运行单元：${runtimeCode}` : '', entry ? `入口地址：${entry}` : ''].filter(Boolean),
       retry: retryCurrentMenu,
     });
   }
@@ -320,7 +321,7 @@ export function useRuntimeHost(containerRef: Ref<HTMLElement | undefined>, route
     renderRuntimeState(container, {
       title: `缺少微应用运行配置：${runtimeCode}`,
       details: diagnostics.length
-        ? diagnostics.map(item => item.message)
+        ? diagnostics.map((item) => item.message)
         : ['请检查 runtime-config.json 是否配置 entry 和 runtimeCode。'],
       retry: retryCurrentMenu,
     });
@@ -334,7 +335,8 @@ export function useRuntimeHost(containerRef: Ref<HTMLElement | undefined>, route
     const diagnostics = menu.meta?.diagnostics || [];
     renderRuntimeState(container, {
       title: '菜单配置错误',
-      description: diagnostics[0] || `${menu.menuName || menu.path || '当前菜单'} 缺少 component，无法作为本地页面挂载。`,
+      description:
+        diagnostics[0] || `${menu.menuName || menu.path || '当前菜单'} 缺少 component，无法作为本地页面挂载。`,
       details: [
         `菜单编码：${menu.menuCode || '-'}`,
         `菜单路径：${menu.path || '-'}`,
@@ -346,8 +348,8 @@ export function useRuntimeHost(containerRef: Ref<HTMLElement | undefined>, route
   function findRuntimeDiagnostics(menu: ShellMenu, moduleConfig?: MangoModuleRuntimeConfig) {
     const moduleCode = menu.moduleCode;
     const runtimeCode = moduleConfig?.runtimeCode;
-    return (runtimeConfig.value.diagnostics || []).filter(item =>
-      item.moduleCode === moduleCode || item.moduleCode === runtimeCode
+    return (runtimeConfig.value.diagnostics || []).filter(
+      (item) => item.moduleCode === moduleCode || item.moduleCode === runtimeCode,
     );
   }
 
@@ -417,7 +419,7 @@ function resolveRuntimeCode(menu: ShellMenu, moduleConfig?: MangoModuleRuntimeCo
 
 function preloadRuntimeApps(apps: MangoRuntimeAppConfig[]) {
   apps
-    .filter(app => app.preload)
+    .filter((app) => app.preload)
     .forEach((app) => {
       try {
         preloadMicroApp(app, createBaseRuntime(app));
@@ -438,7 +440,7 @@ function renderRuntimeState(
     description?: string;
     details?: string[];
     retry?: () => void | Promise<void>;
-  }
+  },
 ) {
   container.replaceChildren();
   const wrapper = document.createElement('div');
@@ -463,9 +465,13 @@ function renderRuntimeState(
     retry.className = 'micro-runtime-retry';
     retry.type = 'button';
     retry.textContent = '重试';
-    retry.addEventListener('click', () => {
-      void options.retry?.();
-    }, { once: true });
+    retry.addEventListener(
+      'click',
+      () => {
+        void options.retry?.();
+      },
+      { once: true },
+    );
     content.appendChild(retry);
   }
   wrapper.appendChild(content);
@@ -481,7 +487,19 @@ function createRuntime(config: MangoRuntimeAppConfig, menu?: ShellMenu): MangoAp
 
 function createBaseRuntime(config: MangoRuntimeAppConfig): MangoAppRuntime {
   const userInfo = Session.get('userInfo') || {};
+  const instanceId = config.instanceId?.trim() || config.appCode;
+  let httpClient = runtimeHttpClients.get(instanceId);
+  if (!httpClient || httpClient.state === 'destroyed') {
+    httpClient = createMangoHttpClient({
+      baseUrl: window.location.origin + '/api',
+      getAccessToken: () => Session.getToken?.() || '',
+      getTenantId: () => (Session.get('userInfo') || {}).tenantId,
+      onUnauthorized: () => shellRuntimeEventBus.emit('unauthorized'),
+    });
+    runtimeHttpClients.set(instanceId, httpClient);
+  }
   return {
+    instanceId,
     token: Session.getToken?.() || '',
     tenantId: userInfo.tenantId,
     appCode: config.appCode,
@@ -494,6 +512,12 @@ function createBaseRuntime(config: MangoRuntimeAppConfig): MangoAppRuntime {
       post,
       put,
       delete: del,
+    },
+    httpClient,
+    dispose: () => {
+      if (runtimeHttpClients.get(instanceId) !== httpClient) return;
+      runtimeHttpClients.delete(instanceId);
+      httpClient.destroy();
     },
     eventBus: shellRuntimeEventBus,
     theme: createShellRuntimeTheme(),
@@ -554,7 +578,7 @@ export function onShellRuntimeUnauthorized(handler: () => void | Promise<void>) 
 function createRuntimeDecision(
   menu: ShellMenu,
   moduleConfig: MangoModuleRuntimeConfig | undefined,
-  resolvedPageType: string
+  resolvedPageType: string,
 ): RuntimeDecision {
   return {
     menuName: menu.menuName,

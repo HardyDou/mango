@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 1,
+  "owner": "Frontend Standards Owner",
+  "approvalMode": "single-owner",
+  "baseRef": "origin/main",
+  "candidateLock": "packages/mango-cli/release-versions.json",
+  "scope": "release-lock",
+  "trafficStages": [
+    { "name": "internal", "percent": 0, "minimumObservationMinutes": 30 },
+    { "name": "canary", "percent": 5, "minimumObservationMinutes": 30 },
+    { "name": "limited", "percent": 25, "minimumObservationMinutes": 60 },
+    { "name": "general", "percent": 100, "minimumObservationMinutes": 120 }
+  ],
+  "healthThresholds": {
+    "javascriptErrorRatePercent": 0.5,
+    "api5xxDeltaPercentagePoints": 0.3,
+    "unauthorizedRefreshFailureRatePercent": 1,
+    "microfrontendMountFailureRatePercent": 0.1,
+    "whiteScreenCount": 0,
+    "consumerGateFailureCount": 0
+  },
+  "rollbackPolicy": {
+    "automaticOnAnyThresholdBreach": true,
+    "retainImmutableStableAssets": true,
+    "restoreStableRuntimeEntries": true,
+    "databaseRollbackRequired": false,
+    "apiCompatibility": "backward-compatible"
+  },
+  "rollbackPackages": {
+    "@mango/admin": { "version": "1.0.49", "action": "pin" },
+    "@mango/admin-pages": { "version": "1.0.22", "action": "pin" },
+    "@mango/admin-shell": { "version": "1.0.44", "action": "pin" },
+    "@mango/api-schema": { "version": "1.0.2", "action": "pin" },
+    "@mango/app-runtime": { "version": "1.0.4", "action": "pin" },
+    "@mango/auth": { "version": "1.0.17", "action": "pin" },
+    "@mango/calendar": { "version": "1.0.23", "action": "pin" },
+    "@mango/cli": { "version": "1.0.82", "action": "pin" },
+    "@mango/cms": { "version": "1.0.12", "action": "pin" },
+    "@mango/common": { "version": "1.0.18", "action": "pin" },
+    "@mango/file": { "version": "1.0.23", "action": "pin" },
+    "@mango/grid-layout": { "version": "1.0.9", "action": "pin" },
+    "@mango/grid-widgets": { "version": "1.0.15", "action": "pin" },
+    "@mango/home": { "version": "1.0.7", "action": "pin" },
+    "@mango/http-client": { "version": null, "action": "remove" },
+    "@mango/job": { "version": "1.0.15", "action": "pin" },
+    "@mango/link": { "version": "1.0.9", "action": "pin" },
+    "@mango/link-openapi": { "version": "1.0.3", "action": "pin" },
+    "@mango/link-page": { "version": "1.0.6", "action": "pin" },
+    "@mango/notice": { "version": "1.0.25", "action": "pin" },
+    "@mango/numgen": { "version": "1.0.23", "action": "pin" },
+    "@mango/payment": { "version": "1.0.15", "action": "pin" },
+    "@mango/pmo": { "version": "1.3.1", "action": "pin" },
+    "@mango/rbac": { "version": "1.0.15", "action": "pin" },
+    "@mango/site-shell": { "version": "1.0.5", "action": "pin" },
+    "@mango/system": { "version": "1.0.21", "action": "pin" },
+    "@mango/template": { "version": "1.0.23", "action": "pin" },
+    "@mango/workflow": { "version": "1.0.29", "action": "pin" },
+    "@mango/workflow-business-example": { "version": "1.0.28", "action": "pin" }
+  },
+  "exerciseSamples": {
+    "healthy": {
+      "javascriptErrorRatePercent": 0.2,
+      "api5xxDeltaPercentagePoints": 0.1,
+      "unauthorizedRefreshFailureRatePercent": 0.2,
+      "microfrontendMountFailureRatePercent": 0,
+      "whiteScreenCount": 0,
+      "consumerGateFailureCount": 0
+    },
+    "breach": {
+      "javascriptErrorRatePercent": 0.2,
+      "api5xxDeltaPercentagePoints": 0.1,
+      "unauthorizedRefreshFailureRatePercent": 0.2,
+      "microfrontendMountFailureRatePercent": 0.2,
+      "whiteScreenCount": 0,
+      "consumerGateFailureCount": 0
+    }
+  }
+}

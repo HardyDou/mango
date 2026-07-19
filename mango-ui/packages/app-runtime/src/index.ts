@@ -1,5 +1,6 @@
 import type { Component } from 'vue';
 import type { RouteRecordRaw } from 'vue-router';
+import type { HttpClient } from '@mango/api-schema';
 
 export type MangoFrontendAppType = 'LOCAL' | 'MICRO_APP' | 'IFRAME' | 'EXTERNAL_LINK';
 export type MangoDeployMode = 'EMBEDDED' | 'REMOTE' | 'HYBRID';
@@ -35,6 +36,7 @@ export interface MangoMenu {
 }
 
 export interface MangoAppRuntime {
+  instanceId: string;
   token: string;
   tenantId?: string | number;
   appCode: string;
@@ -44,6 +46,8 @@ export interface MangoAppRuntime {
   permissions: string[];
   theme: MangoRuntimeTheme;
   request: MangoRuntimeRequest;
+  httpClient: HttpClient;
+  dispose?: () => void;
   eventBus: MangoRuntimeEventBus;
 }
 
@@ -101,6 +105,7 @@ export interface MangoFrontendApp {
 
 export interface MangoRuntimeAppConfig {
   appCode: string;
+  instanceId?: string;
   appName: string;
   appType: MangoFrontendAppType;
   deployMode: MangoDeployMode;
@@ -208,6 +213,7 @@ export class MangoRuntimeConfigError extends Error {
 
 const localApps = new Map<string, MangoFrontendApp>();
 const wujieDestroyers = new Map<string, Function>();
+const wujieRuntimeDisposers = new Map<string, () => void>();
 const validProfiles = new Set<MangoRuntimeProfile>(['monolith', 'hybrid', 'micro']);
 const validModes = new Set<MangoModuleRuntimeMode>(['local', 'micro']);
 let mangoRuntimeLogger: MangoRuntimeLogger = defaultRuntimeLogger;
@@ -241,6 +247,10 @@ export function getLocalApp(appCode: string) {
 export function registerMicroApp(appCode: string, app: MangoMicroAppModule) {
   void appCode;
   void app;
+}
+
+export function resolveRuntimeInstanceId(config: Pick<MangoRuntimeAppConfig, 'appCode' | 'instanceId'>): string {
+  return config.instanceId?.trim() || config.appCode;
 }
 
 export function getMicroApp(appCode: string) {
@@ -285,7 +295,7 @@ export async function loadRuntimeConfig(defaultConfig: MangoRuntimeConfig): Prom
 
 export async function loadRuntimeConfigWithOptions(
   defaultConfig: MangoRuntimeConfig,
-  options: MangoRuntimeConfigLoadOptions = {}
+  options: MangoRuntimeConfigLoadOptions = {},
 ): Promise<MangoRuntimeConfig> {
   const configUrl = options.configUrl || '/runtime-config.json';
   if (typeof fetch !== 'function') {
@@ -322,7 +332,10 @@ export async function loadRuntimeConfigWithOptions(
     } catch (error) {
       throw new MangoRuntimeConfigError('Invalid runtime-config.json: JSON parse failed', undefined, { cause: error });
     }
-    const config = finalizeRuntimeConfig(normalizeRuntimeConfig(mergeRuntimeConfig(defaultConfig, remote), options), options);
+    const config = finalizeRuntimeConfig(
+      normalizeRuntimeConfig(mergeRuntimeConfig(defaultConfig, remote), options),
+      options,
+    );
     emitMangoRuntimeLog({
       level: 'info',
       event: 'runtime-config-load',
@@ -361,7 +374,10 @@ export async function loadRuntimeConfigWithOptions(
   }
 }
 
-export function mergeRuntimeConfig(base: MangoRuntimeConfig, override?: Partial<MangoRuntimeConfig>): MangoRuntimeConfig {
+export function mergeRuntimeConfig(
+  base: MangoRuntimeConfig,
+  override?: Partial<MangoRuntimeConfig>,
+): MangoRuntimeConfig {
   return {
     profile: override?.profile || base.profile,
     modules: {
@@ -391,7 +407,8 @@ export const microAppAdapter: MangoAppAdapter = {
     if (!config.entryUrl) {
       throw new MangoRuntimeError(`Missing Mango micro app entry: ${config.appCode}`, config);
     }
-    await microAppAdapter.unmount?.(config);
+    const instanceId = runtime.instanceId || resolveRuntimeInstanceId(config);
+    await microAppAdapter.unmount?.({ ...config, instanceId });
     container.innerHTML = '';
     recordMicroAppDebug(config, 'load');
     emitMangoRuntimeLog({
@@ -403,39 +420,49 @@ export const microAppAdapter: MangoAppAdapter = {
     });
     try {
       const { destroyApp, startApp } = await import('wujie');
-      const destroy = await withTimeout(startApp({
-        name: config.appCode,
-        url: config.entryUrl,
-        el: container,
-        props: {
-          mangoRuntime: runtime,
-          mangoConfig: config,
-        },
-        alive: config.alive === true,
-        sync: false,
-        fiber: true,
-        attrs: {
-          'data-mango-app': config.appCode,
-        },
-        degradeAttrs: {
-          'data-mango-app': config.appCode,
-        },
-        beforeLoad: () => recordMicroAppDebug(config, 'before-load'),
-        beforeMount: () => recordMicroAppDebug(config, 'before-mount'),
-        afterMount: () => recordMicroAppDebug(config, 'mount'),
-        beforeUnmount: () => recordMicroAppDebug(config, 'before-unmount'),
-        afterUnmount: () => recordMicroAppDebug(config, 'after-unmount'),
-        loadError(url, error) {
-          recordMicroAppDebug(config, 'load-error', url);
-          throw new MangoRuntimeError(`Failed to load Mango micro app: ${config.appCode} (${url})`, config, { cause: error });
-        },
-      }), config.timeoutMs || 15000, config);
+      const destroy = await withTimeout(
+        startApp({
+          name: instanceId,
+          url: config.entryUrl,
+          el: container,
+          props: {
+            mangoRuntime: runtime,
+            mangoConfig: config,
+          },
+          alive: config.alive === true,
+          sync: false,
+          fiber: true,
+          attrs: {
+            'data-mango-app': config.appCode,
+            'data-mango-instance': instanceId,
+          },
+          degradeAttrs: {
+            'data-mango-app': config.appCode,
+            'data-mango-instance': instanceId,
+          },
+          beforeLoad: () => recordMicroAppDebug(config, 'before-load'),
+          beforeMount: () => recordMicroAppDebug(config, 'before-mount'),
+          afterMount: () => recordMicroAppDebug(config, 'mount'),
+          beforeUnmount: () => recordMicroAppDebug(config, 'before-unmount'),
+          afterUnmount: () => recordMicroAppDebug(config, 'after-unmount'),
+          loadError(url, error) {
+            recordMicroAppDebug(config, 'load-error', url);
+            throw new MangoRuntimeError(`Failed to load Mango micro app: ${config.appCode} (${url})`, config, {
+              cause: error,
+            });
+          },
+        }),
+        config.timeoutMs || 15000,
+        config,
+      );
       if (typeof destroy === 'function') {
-        wujieDestroyers.set(config.appCode, destroy);
+        wujieDestroyers.set(instanceId, destroy);
       }
+      if (runtime.dispose) wujieRuntimeDisposers.set(instanceId, runtime.dispose);
     } catch (error) {
       const { destroyApp } = await import('wujie');
-      destroyApp(config.appCode);
+      destroyApp(instanceId);
+      runtime.dispose?.();
       emitMangoRuntimeLog({
         level: 'error',
         event: 'micro-app-error',
@@ -459,14 +486,17 @@ export const microAppAdapter: MangoAppAdapter = {
   },
   async unmount(config) {
     const { destroyApp } = await import('wujie');
+    const instanceId = resolveRuntimeInstanceId(config);
     recordMicroAppDebug(config, 'before-unmount');
-    const destroy = wujieDestroyers.get(config.appCode);
+    const destroy = wujieDestroyers.get(instanceId);
     if (destroy) {
-      wujieDestroyers.delete(config.appCode);
+      wujieDestroyers.delete(instanceId);
       destroy();
     } else {
-      destroyApp(config.appCode);
+      destroyApp(instanceId);
     }
+    wujieRuntimeDisposers.get(instanceId)?.();
+    wujieRuntimeDisposers.delete(instanceId);
     recordMicroAppDebug(config, 'unmount');
     emitMangoRuntimeLog({
       level: 'info',
@@ -490,39 +520,46 @@ export function preloadMicroApp(config: MangoRuntimeAppConfig, runtime?: Partial
     entryUrl: config.entryUrl,
     message: `Preload Mango micro app: ${config.appCode}`,
   });
-  void import('wujie').then(({ preloadApp }) => {
-    preloadApp({
-      name: config.appCode,
-      url: config.entryUrl,
-      props: {
-        mangoRuntime: runtime,
-        mangoConfig: config,
-      },
-      alive: config.alive === true,
-      fiber: true,
-      attrs: {
-        'data-mango-app': config.appCode,
-      },
-      degradeAttrs: {
-        'data-mango-app': config.appCode,
-      },
-      loadError(url, error) {
-        recordMicroAppDebug(config, 'load-error', url);
-        throw new MangoRuntimeError(`Failed to preload Mango micro app: ${config.appCode} (${url})`, config, { cause: error });
-      },
+  void import('wujie')
+    .then(({ preloadApp }) => {
+      const instanceId = runtime?.instanceId || resolveRuntimeInstanceId(config);
+      preloadApp({
+        name: instanceId,
+        url: config.entryUrl,
+        props: {
+          mangoRuntime: runtime,
+          mangoConfig: config,
+        },
+        alive: config.alive === true,
+        fiber: true,
+        attrs: {
+          'data-mango-app': config.appCode,
+          'data-mango-instance': instanceId,
+        },
+        degradeAttrs: {
+          'data-mango-app': config.appCode,
+          'data-mango-instance': instanceId,
+        },
+        loadError(url, error) {
+          recordMicroAppDebug(config, 'load-error', url);
+          throw new MangoRuntimeError(`Failed to preload Mango micro app: ${config.appCode} (${url})`, config, {
+            cause: error,
+          });
+        },
+      });
+    })
+    .catch((error) => {
+      recordMicroAppDebug(config, 'load-error', 'preload import failed');
+      emitMangoRuntimeLog({
+        level: 'warn',
+        event: 'micro-app-error',
+        appCode: config.appCode,
+        entryUrl: config.entryUrl,
+        message: `Failed to preload Mango micro app: ${config.appCode}`,
+        detail: error,
+      });
+      console.warn('[mango-runtime] preload import failed', config.appCode, error);
     });
-  }).catch((error) => {
-    recordMicroAppDebug(config, 'load-error', 'preload import failed');
-    emitMangoRuntimeLog({
-      level: 'warn',
-      event: 'micro-app-error',
-      appCode: config.appCode,
-      entryUrl: config.entryUrl,
-      message: `Failed to preload Mango micro app: ${config.appCode}`,
-      detail: error,
-    });
-    console.warn('[mango-runtime] preload import failed', config.appCode, error);
-  });
 }
 
 export const iframeAdapter: MangoAppAdapter = {
@@ -561,23 +598,26 @@ export function resolveAdapter(type: MangoFrontendAppType): MangoAppAdapter {
 
 export function normalizeRuntimeConfig(
   config: MangoRuntimeConfig,
-  options: MangoRuntimeConfigLoadOptions = {}
+  options: MangoRuntimeConfigLoadOptions = {},
 ): MangoRuntimeConfig {
   const diagnostics: MangoRuntimeConfigDiagnostic[] = [];
-  const modules = Object.entries(config.modules || {}).reduce<Record<string, MangoModuleRuntimeConfig>>((acc, [moduleCode, module]) => {
-    const mode = normalizeRuntimeMode(moduleCode, module?.mode, diagnostics);
-    const timeoutMs = normalizeTimeout(moduleCode, module?.timeoutMs, diagnostics);
-    acc[moduleCode] = {
-      ...module,
-      mode,
-      appType: module?.appType || (mode === 'micro' ? 'MICRO_APP' : 'LOCAL'),
-      timeoutMs,
-    };
-    if (mode === 'micro') {
-      validateMicroModule(moduleCode, acc[moduleCode], diagnostics, options);
-    }
-    return acc;
-  }, {});
+  const modules = Object.entries(config.modules || {}).reduce<Record<string, MangoModuleRuntimeConfig>>(
+    (acc, [moduleCode, module]) => {
+      const mode = normalizeRuntimeMode(moduleCode, module?.mode, diagnostics);
+      const timeoutMs = normalizeTimeout(moduleCode, module?.timeoutMs, diagnostics);
+      acc[moduleCode] = {
+        ...module,
+        mode,
+        appType: module?.appType || (mode === 'micro' ? 'MICRO_APP' : 'LOCAL'),
+        timeoutMs,
+      };
+      if (mode === 'micro') {
+        validateMicroModule(moduleCode, acc[moduleCode], diagnostics, options);
+      }
+      return acc;
+    },
+    {},
+  );
   return {
     profile: normalizeRuntimeProfile(config.profile, diagnostics),
     modules,
@@ -610,7 +650,7 @@ function normalizeRuntimeProfile(profile: unknown, diagnostics: MangoRuntimeConf
 function normalizeRuntimeMode(
   moduleCode: string,
   mode: unknown,
-  diagnostics: MangoRuntimeConfigDiagnostic[]
+  diagnostics: MangoRuntimeConfigDiagnostic[],
 ): MangoModuleRuntimeMode {
   if (typeof mode === 'string' && validModes.has(mode as MangoModuleRuntimeMode)) {
     return mode as MangoModuleRuntimeMode;
@@ -624,11 +664,7 @@ function normalizeRuntimeMode(
   return 'local';
 }
 
-function normalizeTimeout(
-  moduleCode: string,
-  timeoutMs: unknown,
-  diagnostics: MangoRuntimeConfigDiagnostic[]
-) {
+function normalizeTimeout(moduleCode: string, timeoutMs: unknown, diagnostics: MangoRuntimeConfigDiagnostic[]) {
   const timeout = Number(timeoutMs || 15000);
   if (Number.isFinite(timeout) && timeout >= 1000) {
     return timeout;
@@ -646,7 +682,7 @@ function validateMicroModule(
   moduleCode: string,
   module: MangoModuleRuntimeConfig,
   diagnostics: MangoRuntimeConfigDiagnostic[],
-  options: MangoRuntimeConfigLoadOptions
+  options: MangoRuntimeConfigLoadOptions,
 ) {
   if (!module.runtimeCode) {
     diagnostics.push({
@@ -728,9 +764,7 @@ function withTimeout<T>(promise: Promise<T>, timeoutMs: number, config: MangoRun
 function defaultRuntimeLogger(event: MangoRuntimeLogEvent) {
   if (typeof window !== 'undefined') {
     const runtimeWindow = window as any;
-    const logs = Array.isArray(runtimeWindow.__MANGO_RUNTIME_LOGS__)
-      ? runtimeWindow.__MANGO_RUNTIME_LOGS__
-      : [];
+    const logs = Array.isArray(runtimeWindow.__MANGO_RUNTIME_LOGS__) ? runtimeWindow.__MANGO_RUNTIME_LOGS__ : [];
     logs.push(event);
     runtimeWindow.__MANGO_RUNTIME_LOGS__ = logs.slice(-200);
   }
@@ -760,9 +794,12 @@ function recordMicroAppDebug(config: MangoRuntimeAppConfig, phase: MangoMicroApp
     : [];
   events.push(event);
   runtimeWindow.__MANGO_MICRO_APP_EVENTS__ = events.slice(-50);
-  runtimeWindow.__MANGO_ACTIVE_MICRO_APP__ = phase === 'unmount' ? undefined : {
-    appCode: config.appCode,
-    entryUrl: config.entryUrl,
-    mountedAt: event.at,
-  };
+  runtimeWindow.__MANGO_ACTIVE_MICRO_APP__ =
+    phase === 'unmount'
+      ? undefined
+      : {
+          appCode: config.appCode,
+          entryUrl: config.entryUrl,
+          mountedAt: event.at,
+        };
 }

@@ -16,7 +16,6 @@
     "paths": {
       "@mango/admin": ["./src/mango-admin-modular.d.ts"],
       "@mango/admin/full": ["./src/mango-admin-full.d.ts"],
-      "@mango/common": ["./src/mango-common.d.ts"],
       "@mango/workflow/admin-pages": ["./src/mango-admin-modular.d.ts"],
       "@mango/workflow-business-example/admin-pages": ["./src/mango-admin-modular.d.ts"],
       "@mango/template/admin-pages": ["./src/mango-admin-modular.d.ts"],

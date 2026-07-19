@@ -80,7 +80,6 @@ try {
     'frontend/src/environment.test.ts',
     'frontend/src/main.ts',
     'frontend/src/mango-admin-modular.d.ts',
-    'frontend/src/mango-common.d.ts',
     'frontend/tsconfig.app.json',
     'frontend/public/runtime-config.json',
     'scripts/dev-workspace.sh',
@@ -190,6 +189,7 @@ try {
     '@mango/auth': readReleasedPackageVersion('@mango/auth'),
     '@mango/calendar': readReleasedPackageVersion('@mango/calendar'),
     '@mango/common': readReleasedPackageVersion('@mango/common'),
+    '@mango/http-client': readReleasedPackageVersion('@mango/http-client'),
     '@mango/grid-layout': readReleasedPackageVersion('@mango/grid-layout'),
     '@mango/grid-widgets': readReleasedPackageVersion('@mango/grid-widgets'),
     '@mango/file': readReleasedPackageVersion('@mango/file'),
@@ -679,7 +679,7 @@ try {
   if (!customMain.includes("from '@mango/admin'") || customMain.includes("from '@mango/admin/full'")) {
     throw new Error('custom frontend entry should consume modular @mango/admin entry');
   }
-  if (!customMain.includes('const mangoFeatures = ["workflow","template"] as const;')) {
+  if (!customMain.includes("const mangoFeatures = ['workflow', 'template'] as const;")) {
     throw new Error('custom frontend entry should preserve literal feature types');
   }
   for (const expected of [
@@ -870,6 +870,7 @@ try {
       throw new Error(`module add missing generated file: ${file}`);
     }
   }
+  assertGeneratedFrontendFormatting(customRoot);
   const modulePom = readFileSync(join(customRoot, 'backend/pom.xml'), 'utf8');
   const moduleAppPom = readFileSync(join(customRoot, 'backend/app/pom.xml'), 'utf8');
   const moduleApplicationYml = readFileSync(join(customRoot, 'backend/app/src/main/resources/application.yml'), 'utf8');
@@ -1059,12 +1060,29 @@ try {
     }
   }
   const moduleApi = readFileSync(join(customRoot, 'frontend/packages/contract-api/src/api.ts'), 'utf8');
-  if (moduleApi.includes('@mango/common/utils/request')) {
-    throw new Error('module add generated frontend API should use @mango/common public entry');
+  if (moduleApi.includes('@mango/common') || moduleApi.includes('axios')) {
+    throw new Error('module add generated frontend API must not depend on a transport implementation');
+  }
+  const generatedFrontendPackage = JSON.parse(readFileSync(join(customRoot, 'frontend/package.json'), 'utf8'));
+  for (const dependency of ['@mango-custom-acceptance/contract', '@mango-custom-acceptance/contract-api']) {
+    if (generatedFrontendPackage.dependencies?.[dependency] !== 'workspace:1.0.0-SNAPSHOT') {
+      throw new Error(`module add must pin local business package ${dependency} with an exact workspace version`);
+    }
+  }
+  for (const expected of [
+    "import type { HttpClient } from '@mango/api-schema';",
+    'export function createSealApi(client: HttpClient)',
+    "method: 'GET'",
+    "method: 'POST'",
+    'signal,',
+  ]) {
+    if (!moduleApi.includes(expected)) {
+      throw new Error(`module add generated frontend API missing client contract: ${expected}`);
+    }
   }
   const generatedTsConfig = readFileSync(join(customRoot, 'frontend/tsconfig.json'), 'utf8');
-  if (!generatedTsConfig.includes('"@mango/common"') || !generatedTsConfig.includes('./src/mango-common.d.ts')) {
-    throw new Error('generated frontend tsconfig should isolate @mango/common public request types');
+  if (generatedTsConfig.includes('mango-common.d.ts')) {
+    throw new Error('generated frontend tsconfig must use the published @mango/common type surface');
   }
   if (
     !moduleApi.includes('`${basePath}/create`') ||
@@ -1080,6 +1098,7 @@ try {
     'utf8',
   );
   for (const expected of [
+    "defineOptions({ name: 'SealListPage' })",
     'MangoListPage',
     'MangoSearchPanel',
     'MangoListPanel',
@@ -1090,9 +1109,12 @@ try {
     'handleDelete',
     'el-dialog',
     'el-drawer',
-    'updateSeal',
-    'deleteSeal',
-    'getSealDetail',
+    'getSealApi',
+    'sealApi.update',
+    'sealApi.delete',
+    'sealApi.detail',
+    'pageAbortController.signal',
+    'onBeforeUnmount',
     '合同印章名称',
     '新增合同印章',
     '编辑合同印章',
@@ -1199,10 +1221,14 @@ try {
   if (
     !moduleMain.includes("import { registerContractPages } from '@mango-custom-acceptance/contract';") ||
     !moduleMain.includes("import '@mango-custom-acceptance/contract/style.css';") ||
+    !moduleMain.includes("import { createMangoHttpClient } from '@mango/http-client';") ||
+    !moduleMain.includes("import { Session } from '@mango/common';") ||
+    !moduleMain.includes("getTenantId: () => Session.get('userInfo')?.tenantId ?? Session.get('tenantId')") ||
     !moduleMain.includes("import type { MangoAdminFeatureRegistrar } from '@mango/admin';") ||
+    !moduleMain.includes('const mangoBusinessHttpClient = createMangoHttpClient({') ||
     !moduleMain.includes('const mangoBusinessFeatureRegistrars: MangoAdminFeatureRegistrar[] = [') ||
     !moduleMain.includes('const mangoAllFeatureRegistrars: MangoAdminFeatureRegistrar[] = [') ||
-    !moduleMain.includes('  registerContractPages,') ||
+    !moduleMain.includes('  () => registerContractPages(mangoBusinessHttpClient),') ||
     moduleMain.includes('registerContractPages();') ||
     !moduleMain.includes('featureRegistrars: mangoAllFeatureRegistrars')
   ) {

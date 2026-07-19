@@ -80,7 +80,7 @@ for (const packageName of affectedPackages) {
         continue;
       }
       const dependencyPackage = packageIndex.get(dependencyName);
-      if (declaredVersion !== dependencyPackage.packageJson.version) {
+      if (!matchesWorkspaceVersion(declaredVersion, dependencyPackage.packageJson.version)) {
         mismatches.push(
           `${packageName}: ${dependencyType}.${dependencyName} ${declaredVersion} != affected package ${dependencyPackage.packageJson.version}`,
         );
@@ -201,6 +201,15 @@ function runSelfTest() {
       throw new Error(`expected non-package PMO source to be ignored: ${file}`);
     }
   }
+  if (!matchesWorkspaceVersion('1.2.3', '1.2.3') || !matchesWorkspaceVersion('workspace:1.2.3', '1.2.3')) {
+    throw new Error('exact and workspace-exact versions must match the local package');
+  }
+  if (matchesWorkspaceVersion('workspace:*', '1.2.3') || matchesWorkspaceVersion('^1.2.3', '1.2.3')) {
+    throw new Error('floating workspace and semver ranges must not match an exact release version');
+  }
+  if (!hasFixedDependencyOnAffected({ dependencies: { '@mango/base': 'workspace:1.2.3' } }, new Set(['@mango/base']))) {
+    throw new Error('workspace-exact dependencies must cascade release impact');
+  }
 }
 
 function resolveAffectedPackages(initialPackageNames) {
@@ -230,6 +239,10 @@ function hasFixedDependencyOnAffected(packageJson, affected) {
     }
   }
   return false;
+}
+
+function matchesWorkspaceVersion(declaredVersion, localVersion) {
+  return declaredVersion === localVersion || declaredVersion === `workspace:${localVersion}`;
 }
 
 function readBasePackageJson(workspacePackage) {

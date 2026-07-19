@@ -16,6 +16,7 @@ export default defineConfig({
       external: [
         '@element-plus/icons-vue',
         '@mango/api-schema',
+        '@mango/http-client',
         '@microsoft/fetch-event-source',
         '@vueuse/core',
         '@wangeditor/editor',

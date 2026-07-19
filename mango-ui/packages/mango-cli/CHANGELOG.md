@@ -1,6 +1,13 @@
 # @mango/cli Changelog
 
-## Unreleased
+## 1.0.83 - 2026-07-19
+
+### Changed
+
+- Generate business API packages as `createXxxApi(HttpClient)` factories instead of importing the legacy global request singleton.
+- Add `@mango/http-client` to generated frontend dependencies and inject one host-owned client into generated business page registrars.
+- Keep business pages transport-neutral, pass `AbortSignal` through generated CRUD APIs, and abort page-owned requests on unmount.
+- Lock the complete frontend standards production-candidate matrix, including `@mango/pmo@1.3.2` and `@mango/http-client@1.0.0`.
 
 ### Fixed
 

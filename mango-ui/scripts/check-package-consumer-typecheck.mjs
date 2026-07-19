@@ -180,9 +180,27 @@ function writePackageTypeSmoke(frontendRoot, packageNames) {
     (packageName, index) => `type MangoPackage${index + 1} = typeof import('${packageName}');`,
   );
   const tuple = packageNames.map((_, index) => `MangoPackage${index + 1}`).join(', ');
+  const httpClientSmoke =
+    packageNames.includes('@mango/api-schema') && packageNames.includes('@mango/http-client')
+      ? [
+          "import type { HttpClient } from '@mango/api-schema';",
+          "import { createMangoHttpClient } from '@mango/http-client';",
+          '',
+          'export function createHttpClientContractSmoke(): HttpClient {',
+          "  return createMangoHttpClient({ baseUrl: '/api' });",
+          '}',
+          '',
+          'export function requestHttpContractSmoke(client: HttpClient, signal?: AbortSignal) {',
+          "  return client.request<{ id: string }>({ method: 'GET', url: '/orders/100', signal });",
+          '}',
+          '',
+        ]
+      : [];
   writeFileSync(
     join(frontendRoot, 'src/mango-package-contract-smoke.ts'),
-    [...declarations, '', `export type MangoPublishedPackageContracts = [${tuple}];`, ''].join('\n'),
+    [...httpClientSmoke, ...declarations, '', `export type MangoPublishedPackageContracts = [${tuple}];`, ''].join(
+      '\n',
+    ),
   );
 }
 
