@@ -1340,7 +1340,9 @@ function assertGeneratedFrontendFormatting(projectRoot) {
 
   const useLocalPrettier = existsSync(localPrettierCommand);
   const prettierCommand = useLocalPrettier ? localPrettierCommand : process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm';
-  const prettierArgs = (args) => (useLocalPrettier ? args : ['dlx', `prettier@${prettierVersion}`, ...args]);
+  const fallbackRegistry = process.env.NPM_CONFIG_REGISTRY?.trim() || 'https://registry.npmjs.org/';
+  const prettierArgs = (args) =>
+    useLocalPrettier ? args : [`--config.registry=${fallbackRegistry}`, 'dlx', `prettier@${prettierVersion}`, ...args];
   const runPrettier = (args, options = {}) =>
     spawnSync(prettierCommand, prettierArgs(args), {
       cwd: frontendRoot,
