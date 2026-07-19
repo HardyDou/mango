@@ -179,6 +179,23 @@ test('fails closed for non-literal dynamic imports without treating code samples
   assert.doesNotMatch(report.errors.join('\n'), /not-a-workspace/u);
 });
 
+test('parses generic arrow functions in TypeScript sources without treating them as JSX', () => {
+  const root = fixture();
+  const sourceFile = path.join(root, 'packages/domain/src/index.ts');
+  fs.writeFileSync(
+    sourceFile,
+    [
+      "import type { ApiId } from '@mango/contracts';",
+      'const identity = <T>(value: T): T => value;',
+      "export const orderId = identity<ApiId>('order-1');",
+      '',
+    ].join('\n'),
+  );
+  const report = analyzeArchitecture(root);
+  assert.doesNotThrow(() => assertArchitecture(report));
+  assert.doesNotMatch(report.errors.join('\n'), /AST parse failed/u);
+});
+
 test('detects missing workspace manifests and preserves deterministic report hashes', () => {
   const root = fixture();
   fs.mkdirSync(path.join(root, 'packages/missing-manifest'));

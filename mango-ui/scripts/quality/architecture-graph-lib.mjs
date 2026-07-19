@@ -27,7 +27,7 @@ const ALLOWED_RUNTIME_TARGET_LAYERS = new Map([
   ['FE3', new Set(['FE0', 'FE1', 'FE2', 'FE3'])],
   ['FE4', new Set(['FE0', 'FE1', 'FE2', 'FE3', 'FE4'])],
 ]);
-const SOURCE_EXTENSIONS = new Set(['.js', '.mjs', '.cjs', '.ts', '.tsx', '.vue', '.css', '.scss', '.sass']);
+const SOURCE_EXTENSIONS = new Set(['.js', '.mjs', '.cjs', '.jsx', '.ts', '.tsx', '.vue', '.css', '.scss', '.sass']);
 const SKIPPED_DIRECTORIES = new Set(['node_modules', 'dist', 'coverage', '.git', '.runtime']);
 const DEPENDENCY_GROUPS = ['dependencies', 'optionalDependencies', 'peerDependencies'];
 const ALL_DEPENDENCY_GROUPS = [...DEPENDENCY_GROUPS, 'devDependencies'];
@@ -219,11 +219,20 @@ function sourceImports(content, file, workspaceName, errors) {
     for (const match of content.matchAll(/@import\s+(?:url\()?['"]([^'"]+)['"]/gu)) add('runtime', match[1]);
     return imports;
   }
+  const extension = path.extname(file);
   const script =
-    path.extname(file) === '.vue'
+    extension === '.vue'
       ? [...content.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/giu)].map((match) => match[1]).join('\n')
       : content;
-  const sourceFile = ts.createSourceFile(file, script, ts.ScriptTarget.Latest, false, ts.ScriptKind.TSX);
+  const scriptKind =
+    extension === '.tsx' ||
+    extension === '.jsx' ||
+    (extension === '.vue' && /<script\b[^>]*\blang=["']tsx["']/iu.test(content))
+      ? ts.ScriptKind.TSX
+      : extension === '.js' || extension === '.mjs' || extension === '.cjs'
+        ? ts.ScriptKind.JS
+        : ts.ScriptKind.TS;
+  const sourceFile = ts.createSourceFile(file, script, ts.ScriptTarget.Latest, false, scriptKind);
   if (sourceFile.parseDiagnostics.length > 0) {
     errors.push(
       `source:${workspaceName}: AST parse failed for ${toPosix(file)} (${sourceFile.parseDiagnostics[0].messageText})`,
