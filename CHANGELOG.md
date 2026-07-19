@@ -2,42 +2,42 @@
 
 ## v2026.07.19-frontend-standards-npm-release - 2026-07-19
 
-Status: `PENDING_RELEASE`. Exact-source fixed-container, sealed Business Lab, clean tarball consumer, and current runtime/browser revalidation passed. This npm-only batch will publish the complete frontend standards matrix after its source PR is merged; Mango Maven remains unchanged at `1.0.22`.
+Status: `PUBLISHED_AND_VERIFIED`. The complete frontend standards npm matrix was published from source commit `13166d9910836c59e9eb9a4b635828bd58a0a931`. Private hosted/group resolution, clean business consumption, Vue type checking, Vite production build, GitHub Release, and docs Latest verification passed. Mango Maven remains unchanged at `1.0.22`.
 
 ### Published Packages
 
-| Order | Target                        | Version                                      | Pre-release status |
-| ----- | ----------------------------- | -------------------------------------------- | ------------------ |
-| 1     | npm API schema                | `@mango/api-schema@1.0.3`                    | `PENDING`          |
-| 2     | npm Link OpenAPI              | `@mango/link-openapi@1.0.4`                  | `PENDING`          |
-| 3     | npm PMO bundle and Skills     | `@mango/pmo@1.3.2`                           | `PENDING`          |
-| 4     | npm application runtime       | `@mango/app-runtime@1.0.6`                   | `PENDING`          |
-| 5     | npm HTTP client Axios adapter | `@mango/http-client@1.0.0`                   | `PENDING`          |
-| 6     | npm Link page                 | `@mango/link-page@1.0.7`                     | `PENDING`          |
-| 7     | npm common                    | `@mango/common@1.0.19`                       | `PENDING`          |
-| 8     | npm auth                      | `@mango/auth@1.0.18`                         | `PENDING`          |
-| 9     | npm grid layout               | `@mango/grid-layout@1.0.10`                  | `PENDING`          |
-| 10    | npm home                      | `@mango/home@1.0.8`                          | `PENDING`          |
-| 11    | npm RBAC                      | `@mango/rbac@1.0.17`                         | `PENDING`          |
-| 12    | npm site shell                | `@mango/site-shell@1.0.6`                    | `PENDING`          |
-| 13    | npm grid widgets              | `@mango/grid-widgets@1.0.16`                 | `PENDING`          |
-| 14    | npm system                    | `@mango/system@1.0.23`                       | `PENDING`          |
-| 15    | npm admin pages               | `@mango/admin-pages@1.0.24`                  | `PENDING`          |
-| 16    | npm calendar                  | `@mango/calendar@1.0.25`                     | `PENDING`          |
-| 17    | npm file                      | `@mango/file@1.0.25`                         | `PENDING`          |
-| 18    | npm job                       | `@mango/job@1.0.17`                          | `PENDING`          |
-| 19    | npm link                      | `@mango/link@1.0.11`                         | `PENDING`          |
-| 20    | npm notice                    | `@mango/notice@1.0.27`                       | `PENDING`          |
-| 21    | npm numgen                    | `@mango/numgen@1.0.25`                       | `PENDING`          |
-| 22    | npm CMS                       | `@mango/cms@1.0.14`                          | `PENDING`          |
-| 23    | npm payment                   | `@mango/payment@1.0.17`                      | `PENDING`          |
-| 24    | npm template                  | `@mango/template@1.0.25`                     | `PENDING`          |
-| 25    | npm workflow                  | `@mango/workflow@1.0.31`                     | `PENDING`          |
-| 26    | npm admin shell               | `@mango/admin-shell@1.0.46`                  | `PENDING`          |
-| 27    | npm workflow business example | `@mango/workflow-business-example@1.0.30`    | `PENDING`          |
-| 28    | npm admin aggregate           | `@mango/admin@1.0.51`                        | `PENDING`          |
-| 29    | npm CLI                       | `@mango/cli@1.0.84`                          | `PENDING`          |
-| 30    | GitHub Release                | `v2026.07.19-frontend-standards-npm-release` | `PENDING`          |
+| Order | Target                        | Version                                      | Release status           |
+| ----- | ----------------------------- | -------------------------------------------- | ------------------------ |
+| 1     | npm API schema                | `@mango/api-schema@1.0.3`                    | `PUBLISHED_AND_VERIFIED` |
+| 2     | npm Link OpenAPI              | `@mango/link-openapi@1.0.4`                  | `PUBLISHED_AND_VERIFIED` |
+| 3     | npm PMO bundle and Skills     | `@mango/pmo@1.3.2`                           | `PUBLISHED_AND_VERIFIED` |
+| 4     | npm application runtime       | `@mango/app-runtime@1.0.6`                   | `PUBLISHED_AND_VERIFIED` |
+| 5     | npm HTTP client Axios adapter | `@mango/http-client@1.0.0`                   | `PUBLISHED_AND_VERIFIED` |
+| 6     | npm Link page                 | `@mango/link-page@1.0.7`                     | `PUBLISHED_AND_VERIFIED` |
+| 7     | npm common                    | `@mango/common@1.0.19`                       | `PUBLISHED_AND_VERIFIED` |
+| 8     | npm auth                      | `@mango/auth@1.0.18`                         | `PUBLISHED_AND_VERIFIED` |
+| 9     | npm grid layout               | `@mango/grid-layout@1.0.10`                  | `PUBLISHED_AND_VERIFIED` |
+| 10    | npm home                      | `@mango/home@1.0.8`                          | `PUBLISHED_AND_VERIFIED` |
+| 11    | npm RBAC                      | `@mango/rbac@1.0.17`                         | `PUBLISHED_AND_VERIFIED` |
+| 12    | npm site shell                | `@mango/site-shell@1.0.6`                    | `PUBLISHED_AND_VERIFIED` |
+| 13    | npm grid widgets              | `@mango/grid-widgets@1.0.16`                 | `PUBLISHED_AND_VERIFIED` |
+| 14    | npm system                    | `@mango/system@1.0.23`                       | `PUBLISHED_AND_VERIFIED` |
+| 15    | npm admin pages               | `@mango/admin-pages@1.0.24`                  | `PUBLISHED_AND_VERIFIED` |
+| 16    | npm calendar                  | `@mango/calendar@1.0.25`                     | `PUBLISHED_AND_VERIFIED` |
+| 17    | npm file                      | `@mango/file@1.0.25`                         | `PUBLISHED_AND_VERIFIED` |
+| 18    | npm job                       | `@mango/job@1.0.17`                          | `PUBLISHED_AND_VERIFIED` |
+| 19    | npm link                      | `@mango/link@1.0.11`                         | `PUBLISHED_AND_VERIFIED` |
+| 20    | npm notice                    | `@mango/notice@1.0.27`                       | `PUBLISHED_AND_VERIFIED` |
+| 21    | npm numgen                    | `@mango/numgen@1.0.25`                       | `PUBLISHED_AND_VERIFIED` |
+| 22    | npm CMS                       | `@mango/cms@1.0.14`                          | `PUBLISHED_AND_VERIFIED` |
+| 23    | npm payment                   | `@mango/payment@1.0.17`                      | `PUBLISHED_AND_VERIFIED` |
+| 24    | npm template                  | `@mango/template@1.0.25`                     | `PUBLISHED_AND_VERIFIED` |
+| 25    | npm workflow                  | `@mango/workflow@1.0.31`                     | `PUBLISHED_AND_VERIFIED` |
+| 26    | npm admin shell               | `@mango/admin-shell@1.0.46`                  | `PUBLISHED_AND_VERIFIED` |
+| 27    | npm workflow business example | `@mango/workflow-business-example@1.0.30`    | `PUBLISHED_AND_VERIFIED` |
+| 28    | npm admin aggregate           | `@mango/admin@1.0.51`                        | `PUBLISHED_AND_VERIFIED` |
+| 29    | npm CLI                       | `@mango/cli@1.0.84`                          | `PUBLISHED_AND_VERIFIED` |
+| 30    | GitHub Release                | `v2026.07.19-frontend-standards-npm-release` | `CREATED_AND_VERIFIED`   |
 
 ### Upgrade Notes
 
@@ -54,8 +54,8 @@ Status: `PENDING_RELEASE`. Exact-source fixed-container, sealed Business Lab, cl
 
 - Vendor-neutral HTTP contracts, Axios adapter lifecycle/refresh/retry/abort behavior, generated business API factories, CLI module generation, release-version impact, and standards adoption coverage are machine checked.
 - `frontend-standards-adoption.json` binds every one of the 29 release npm packages to its exact `origin/main` dependency recovery target; it does not represent a production traffic rollout.
-- The release manifest will bind the merged source commit, tag, exact commands, timestamps and private-registry verification results before this record is closed.
-- Full fixed-toolchain, sealed Business Lab, clean tarball consumer, browser/runtime, and final quality results are recorded in `mango-docs/evidence/2026-07-19-frontend-production-candidate-evidence.md`; unavailable external Nexus/production facts remain explicitly pending.
+- Release state `frontend-standards-npm-2026.07.19` completed all required states. Private hosted/group repositories resolve every exact package version, and the clean published consumer installed all 29 packages, typechecked 27 library packages, and completed a Vite production build.
+- Full fixed-toolchain, sealed Business Lab, clean tarball consumer, browser/runtime, final quality, and sanitized publication results are recorded in `mango-docs/evidence/2026-07-19-frontend-production-candidate-evidence.md` and `mango-docs/evidence/governance/release-v2026.07.19-frontend-standards-npm-release.json`.
 
 ## v2026.07.18-pmo-1.3.1-cli-1.0.82-release-governance - 2026-07-18
 
