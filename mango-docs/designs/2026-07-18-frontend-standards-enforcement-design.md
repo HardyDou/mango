@@ -1,5 +1,7 @@
 # Mango 前端代码与组件规范落地方案及执行计划
 
+> 历史基线说明：本文保留最初的完整设计与阶段拆分。前端规范的采用边界和完成定义已由 [前端规范采用与发布边界决定](./2026-07-19-frontend-standards-adoption-boundary.md) 修订；本文涉及部署 registry、生产灰度、故障注入和生产回滚的内容仅是可选的独立业务部署/运维扩展，不属于前端代码规范毕业门禁，也不触发 `mango-release`。
+
 **状态**：IMPLEMENTED_PRODUCTION_CANDIDATE（本地候选；未发布、未部署）
 **日期**：2026-07-18
 **交付模式**：STANDARD
@@ -47,7 +49,7 @@
 - 单体、微前端和 npm 独立消费下的组件样式、资源、副作用、provider 和兼容性验证。
 - 业务 package 的 typed API、service/composable 分工、HttpClient/provider 注入，以及页面、组件与 CSS 的明确放置位置。
 - 当前腾讯 Wujie 微前端与 Axios 请求层的事实确认、厂商隔离、默认技术栈和默认 UI 组件目录。
-- FE4 微应用的厂商无关生命周期、多实例、独立构建/部署制品、宿主兼容、灰度和回滚合同。
+- FE4 微应用的厂商无关生命周期、多实例、独立构建制品和宿主兼容合同；部署、灰度和生产回滚另属独立业务部署/运维扩展。
 - PR、主干定时、夜间和发布前的分层检查。
 - 存量 ESLint 和 TypeScript 债务的基线、棘轮、清理和退出条件。
 - Mango CLI 生成项目与 Mango 自身 Monorepo 的规范一致性。
@@ -553,7 +555,7 @@ preload/activate/deactivate failure -> failed
 
 每个 runtime instance 创建独立 HttpClient。refresh single-flight 只在同一 auth/runtime context 内共享；plugin 顺序固定为 trace/context、auth/tenant、serialization、dispatch、refresh、error normalization/unauthorized。自动重试只用于 GET/HEAD/OPTIONS 或带有效 idempotency key 的请求，并设上限；deactivate 取消 pending request，destroy 同时 eject interceptor/subscription。`HttpError/HttpProgress/cancel` 在运行时也不得携带 Axios 对象。目标 runtime 向子应用提供 request capability 和最小身份信息，refresh token 永不下发，裸 access token 进入弃用路径。
 
-### 7.15 微应用独立部署制品合同
+### 7.15 微应用独立部署制品合同（业务部署扩展，不属于规范毕业）
 
 独立启动不等于独立部署。每个 FE4 微应用 build 生成不可变 `mango-micro-app.manifest.json`：
 
@@ -577,7 +579,7 @@ preload/activate/deactivate failure -> failed
 
 微应用拥有独立 build/test/publish pipeline。HTML entry、异步 chunk、worker/font/style 的 public base、CORS 和缓存头都从已构建静态制品验证：带 hash 的资产长期缓存，HTML/manifest 使用可回读更新策略。相同 artifact hash 分别通过 standalone 静态服务和 Wujie 宿主运行矩阵，不能用源码 dev server 代替制品验收。
 
-灰度只修改 deployment registry 的 rollout/version 指向，不重建宿主或子应用；bucket key 固定为 `tenantId + subjectId + appCode` 的不可逆摘要，匿名场景使用受控设备标识，同一主体的同 app 多实例必须命中同一版本。分桶算法和 salt 版本化；sticky TTL 至少覆盖一次发布观察窗，fallback/紧急回滚可立即覆盖 sticky 结果。失败时把 registry 切回 `fallbackVersion` 并回读宿主实际加载的 version、`manifestSha256` 和 `artifactSha256`。发布、推广和回滚仍需独立授权，但工具必须支持先 candidate、后推广、再正式 smoke 的证据链。
+以下灰度与回滚设计仅供具体业务应用采用，是独立业务部署/运维合同，不计入前端代码规范完成状态。灰度只修改 deployment registry 的 rollout/version 指向，不重建宿主或子应用；bucket key 固定为 `tenantId + subjectId + appCode` 的不可逆摘要，匿名场景使用受控设备标识，同一主体的同 app 多实例必须命中同一版本。分桶算法和 salt 版本化；sticky TTL 至少覆盖一次发布观察窗，fallback/紧急回滚可立即覆盖 sticky 结果。失败时把 registry 切回 `fallbackVersion` 并回读宿主实际加载的 version、`manifestSha256` 和 `artifactSha256`。发布、推广和回滚仍需独立授权，其证据链由对应业务部署流程维护。
 
 ## 8. 代码与 UI 检查边界
 
@@ -865,7 +867,7 @@ Phase 1 不混入领域大重构和工具主版本升级。no-new-debt 在 fixtu
 | PR-2A FE0 HttpClient 契约 | `api-schema` 的 HttpClient/HttpError/HttpProgress 纯类型；请求取消参数使用标准 `AbortSignal` | 与 Axios、Vue、宿主无关的纯类型契约 | FE0 typecheck required；正反 consumer 通过 | 只回退 FE0 新契约，不改运行实现 |
 | PR-2B FE1 Axios adapter | 新 `@mango/http-client`、`common` 兼容入口 | `createMangoHttpClient`、固定插件序、auth-context single-flight、幂等重试、标准 AbortSignal 和 normalized error/progress | 双实例 token/tenant/base URL 不串扰；deactivate 取消请求，destroy eject；旧 request 兼容；运行值/声明均无 Axios 泄漏 | 保留旧 request facade，独立回退 adapter 注入 |
 | PR-2C 厂商无关 runtime | `app-runtime` host adapter、child bootstrap、descriptor/state machine 与 conformance suite | `MangoMicroAppAdapter/createMangoMicroVueApp`、品牌化 instanceId、实例级 preload、resource scope、多实例 route owner 和精确 lifecycle；Wujie 只在 bridge | fake/Wujie 同套合同；cold activate 与 create→preload→activate 均通过；async handshake、alive 路由、同 app 双实例、独立失败/销毁和固定 N 次资源基线通过 | 保留 Mango runtime facade，回退 Wujie adapter 内部实现 |
-| PR-2D 微应用部署合同 | FE4 build 插件、artifact/asset manifest、deployment registry/resource-policy checker、静态制品 fixture | manifest/artifact 双 hash、runtime compatibility/public base/CORS/cache/精确 origin/resource policy/稳定分桶/rollout/fallback 合同 | 同一构建 hash 通过 standalone+Wujie；manifest 元数据篡改及 HTML/chunk/redirect/credentials 反例失败；不兼容 fail-closed；配置灰度/回滚不重建 | 回退 manifest/registry 消费器并恢复上一 registry 版本 |
+| PR-2D 微应用部署合同（独立业务部署扩展） | FE4 build 插件、artifact/asset manifest、deployment registry/resource-policy checker、静态制品 fixture | manifest/artifact 双 hash、runtime compatibility/public base/CORS/cache/精确 origin/resource policy/稳定分桶/rollout/fallback 合同 | 同一构建 hash 通过 standalone+Wujie；manifest 元数据篡改及 HTML/chunk/redirect/credentials 反例失败；不兼容 fail-closed；配置灰度/回滚不重建；不作为规范毕业门禁 | 回退 manifest/registry 消费器并恢复上一 registry 版本 |
 | PR-2E `common` 组件分类 | `common` registry、文档和 legacy baseline | 组件逐项 C 级/owner/消费者登记；职责拆分候选清单 | 现有公开入口兼容；legacy identity 只减不增 | 不做大爆炸拆包；只回退本批 metadata/文档 |
 | PR-2F 扩展契约与 SCC 清理 | `admin-extension`、`admin-pages` 及受影响 registrar | 低层扩展 SDK、兼容 re-export、已知三包 SCC 清零 | combined graph SCC 只减不增；旧入口弃用提示和新入口消费者均通过 | 保留一个 minor 兼容入口；失败时回退单个迁移边 |
 | PR-2G C4 样板 | 优先选择已有明确业务消费意图且文档基础较好的组件 package | 首批完整 C4：API 文档、示例、类型、条件化样式、测试、tarball consumer | npm 冷安装/build/typecheck；按 registry 部署模式验证 computed style；空/错/卸载场景 | 保持旧 export；新 subpath/provider 可独立回退 |
@@ -884,9 +886,9 @@ Phase 2 退出条件：每个清零 package 单向升级为 required；机器发
 | PR-3B CLI/starter 制品验证 | CLI 模板、业务 starter baseline、开发者说明、CI path classifier | 新业务项目带同一命令合同、目录边界、C1-C4 指引和样式消费方式 | PR 先 pack CLI/starter，从本地 tarball 在空目录生成并 cold install/check/build；模板、CLI、starter 或根合同变化持续触发 | 模板/CLI 验证入口独立回退，不影响已发布 package |
 | PR-3C 发布合同收口 | release impact、exports/styles/types/pack contract | 发布批次、制品清单和本地 tarball 完整性门禁 | 目标包本地 pack/consumer 100%；不包含发布写操作 | 回退发布合同 checker，不修改已发布版本 |
 | PR-3D 仓库制品回读 | staging/正式 Nexus 验证脚本与证据 schema | candidate 与 post-release 两种只读回查模式 | 获得发布授权后：candidate 从 staging 坐标安装；正式发布后从 hosted/group 坐标 smoke test，失败阻断推广或触发发布恢复 | 回退回读脚本；发布/推广/恢复仍需独立授权 |
-| PR-3E 微应用部署回读 | 微应用静态 candidate、deployment registry 和宿主加载证据 | FE4 独立部署 candidate/推广/回滚三态回读 | 获授权后部署子应用且不重建宿主；宿主读取目标 version/hash；故障时只切 registry 恢复 fallback | 回退 registry 指向；部署、推广与恢复均需独立授权 |
+| PR-3E 微应用部署回读（独立业务部署扩展） | 微应用静态 candidate、deployment registry 和宿主加载证据 | FE4 独立部署 candidate/推广/回滚三态回读 | 获授权后部署子应用且不重建宿主；宿主读取目标 version/hash；故障时只切 registry 恢复 fallback；不作为规范毕业门禁 | 回退 registry 指向；部署、推广与恢复均需独立授权 |
 
-Phase 3 不自动授权发布。退出条件是全 workspace 零临时基线；模板生成项目和 Mango 主仓使用同一合同；C4 组件从本地 tarball、获授权的 staging candidate 和正式制品分别完成相应消费回读；FE4 子应用能独立部署/灰度/回滚且宿主无需重建；全量门禁达到稳定窗口。
+Phase 3 不自动授权发布。前端规范退出条件是全 workspace 零临时基线；模板生成项目和 Mango 主仓使用同一合同；C4 组件完成本地 tarball 独立消费验证；全量门禁达到稳定窗口。staging/正式制品回读属于发布合同，FE4 独立部署、灰度和生产回滚属于业务部署/运维合同，二者均单独授权和留证，不改变规范毕业状态。
 
 ### 12.1 每个 PR 的固定交付模板
 
@@ -1182,7 +1184,7 @@ Phase 2 的领域迁移 required 门禁只有在 PR-2B、PR-2C、PR-2D 和 PR-2G
 | AC-FE-042 | 每个 FE4 制品生成 version/entry/base/runtime/capability/asset manifest，registry 以 manifest/artifact 双 hash 完整绑定元数据和资产 | artifact contract checker + 元数据篡改/缺字段/坏 hash 反例 |
 | AC-FE-043 | 宿主从已校验 manifest 唯一推导入口，只加载 runtime contract、manifest/artifact hash 和资源策略均合法的微应用，不兼容 fail-closed | host compatibility matrix |
 | AC-FE-044 | 同一已构建 artifact hash 同时通过 standalone 与 Wujie，不使用源码 dev server 冒充 | static artifact Playwright matrix |
-| AC-FE-045 | 微应用可独立部署/灰度/回滚，宿主和子应用无需重建且实际 version/hash 可回读 | candidate registry switch + fallback recovery evidence |
+| AC-FE-045（业务部署扩展） | 微应用可独立部署/灰度/回滚，宿主和子应用无需重建且实际 version/hash 可回读；不作为规范毕业条件 | candidate registry switch + fallback recovery evidence |
 | AC-FE-046 | host route 是 micro 外部导航权威；snapshot/intent 含 instanceId、routeScope、routeRole、navigationId、version，同 app 多实例只有 primary 占有 URL，alive 再激活、前进后退、深链和刷新一致 | versioned route snapshot/navigationId browser matrix |
 | AC-FE-047 | HTML 与所有子资源/redirect/credentials 遵守精确 HTTPS origin 和资源策略 | real-browser resource allowlist/CORS/cache negative matrix |
 | AC-FE-048 | Node/pnpm/ESLint/TS/Vite/Vitest/Playwright 等解析为 §8.1 唯一认证版本，ESLint 10 与 TS 5.9 peer 合法 | cold install version inventory + catalog/lock/peer checker |

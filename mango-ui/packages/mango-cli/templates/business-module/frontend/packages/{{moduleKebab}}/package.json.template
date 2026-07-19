@@ -25,6 +25,7 @@
     "@{{projectKebab}}/{{moduleKebab}}-api": "workspace:{{projectVersion}}",
     "@mango/admin-pages": "1.0.24",
     "@mango/api-schema": "1.0.3",
+    "@mango/app-runtime": "{{mangoAppRuntimeVersion}}",
     "@mango/common": "1.0.19",
     "element-plus": "2.14.1"
   },

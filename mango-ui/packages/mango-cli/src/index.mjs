@@ -4495,7 +4495,7 @@ function updateFrontendBusinessIntegration(targetDir, variables) {
   const content = readFileSync(entryPath, 'utf8');
   const importLine = `import { register${variables.modulePascal}Pages } from '@${variables.projectKebab}/${variables.moduleKebab}';`;
   const styleImportLine = `import '@${variables.projectKebab}/${variables.moduleKebab}/style.css';`;
-  const registrarLine = `  () => register${variables.modulePascal}Pages(mangoBusinessHttpClient),`;
+  const registrarLine = `  () => register${variables.modulePascal}Pages(),`;
   const preparedContent = ensureFrontendBusinessRegistrars(content);
   const withHttpClient = ensureFrontendBusinessHttpClient(preparedContent);
   const withImport = withHttpClient.includes(importLine)
@@ -4511,31 +4511,47 @@ function updateFrontendBusinessIntegration(targetDir, variables) {
 function ensureFrontendBusinessHttpClient(content) {
   const httpClientImport = "import { createMangoHttpClient } from '@mango/http-client';";
   const sessionImport = "import { Session } from '@mango/common';";
+  const runtimeImport = "import { MANGO_HTTP_CLIENT_KEY } from '@mango/app-runtime';";
   let next = content;
-  for (const importLine of [httpClientImport, sessionImport]) {
+  for (const importLine of [httpClientImport, sessionImport, runtimeImport]) {
     if (!next.includes(importLine)) {
       next = next.replace('// mango-cli:imports:end', `${importLine}\n// mango-cli:imports:end`);
     }
   }
-  if (next.includes('const mangoBusinessHttpClient = createMangoHttpClient({')) {
-    return next;
+  if (!next.includes('const mangoBusinessHttpClient = createMangoHttpClient({')) {
+    const clientBlock = [
+      'const mangoBusinessHttpClient = createMangoHttpClient({',
+      "  baseUrl: import.meta.env.VITE_MANGO_API_BASE_URL || '/api',",
+      '  getAccessToken: () => Session.getToken(),',
+      "  getTenantId: () => Session.get('userInfo')?.tenantId ?? Session.get('tenantId'),",
+      '  onUnauthorized: () => {',
+      '    Session.clearSession();',
+      "    window.location.hash = '/login';",
+      '  },',
+      '});',
+      '',
+    ].join('\n');
+    next = next.replace(
+      '// mango-cli:business-feature-registrars:start',
+      `${clientBlock}// mango-cli:business-feature-registrars:start`,
+    );
   }
-  const clientBlock = [
-    'const mangoBusinessHttpClient = createMangoHttpClient({',
-    "  baseUrl: import.meta.env.VITE_MANGO_API_BASE_URL || '/api',",
-    '  getAccessToken: () => Session.getToken(),',
-    "  getTenantId: () => Session.get('userInfo')?.tenantId ?? Session.get('tenantId'),",
-    '  onUnauthorized: () => {',
-    '    Session.clearSession();',
-    "    window.location.hash = '/login';",
-    '  },',
-    '});',
-    '',
-  ].join('\n');
-  return next.replace(
-    '// mango-cli:business-feature-registrars:start',
-    `${clientBlock}// mango-cli:business-feature-registrars:start`,
-  );
+  return ensureFrontendBusinessAppProvision(next);
+}
+
+function ensureFrontendBusinessAppProvision(content) {
+  const provideLine = 'mangoAdminApp.app.provide(MANGO_HTTP_CLIENT_KEY, mangoBusinessHttpClient);';
+  if (content.includes(provideLine)) {
+    return content;
+  }
+  const createCall = 'createMangoAdminApp({';
+  const mountCall = '}).mount();';
+  if (!content.includes(createCall) || !content.includes(mountCall)) {
+    fail('frontend/src/main.ts must create and mount Mango admin app before adding a business module');
+  }
+  return content
+    .replace(createCall, `const mangoAdminApp = ${createCall}`)
+    .replace(mountCall, `});\n\n${provideLine}\nmangoAdminApp.mount();`);
 }
 
 function ensureFrontendBusinessRegistrars(content) {
@@ -4608,9 +4624,16 @@ function appendBusinessFeatureRegistrar(content, registrarLine) {
   if (currentBlock.includes(registrarLine.trim())) {
     return content;
   }
-  const nextBlock = currentBlock.includes(' = [];')
-    ? currentBlock.replace(' = [];', ` = [\n${registrarLine}\n];`)
-    : currentBlock.replace('\n];', `\n${registrarLine}\n];`);
+  const registrarExpression = registrarLine.trim().replace(/,$/u, '');
+  let nextBlock;
+  if (currentBlock.includes(' = [];')) {
+    nextBlock = currentBlock.replace(' = [];', ` = [${registrarExpression}];`);
+  } else {
+    const oneLineMatch = currentBlock.match(/ = \[(.+)\];/u);
+    nextBlock = oneLineMatch
+      ? currentBlock.replace(oneLineMatch[0], ` = [\n  ${oneLineMatch[1]},\n  ${registrarExpression},\n];`)
+      : currentBlock.replace('\n];', `\n  ${registrarExpression},\n];`);
+  }
   return `${content.slice(0, startLineEnd + 1)}${nextBlock}${content.slice(endLineStart)}`;
 }
 

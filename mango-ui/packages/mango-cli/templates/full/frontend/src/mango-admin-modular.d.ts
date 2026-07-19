@@ -1,4 +1,6 @@
 declare module '@mango/admin' {
+  import type { App as VueApp } from 'vue';
+
   export type MangoAdminFeatureCode =
     'authorization' | 'system' | 'workflow' | 'file' | 'template' | 'notice' | 'numgen' | 'calendar';
 
@@ -38,6 +40,7 @@ declare module '@mango/admin' {
   }
 
   export interface MangoAdminAppInstance {
+    app: VueApp;
     mount: (target?: string | Element) => unknown;
   }
 

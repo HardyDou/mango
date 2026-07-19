@@ -87,6 +87,7 @@ const requiredFiles = [
   "frontend/packages/{{moduleKebab}}/package.json",
   "frontend/packages/{{moduleKebab}}/style.css",
   "frontend/packages/{{moduleKebab}}/src/api-context.ts",
+  "frontend/packages/{{moduleKebab}}/src/__tests__/api-context.spec.ts",
   "frontend/packages/{{moduleKebab}}/src/index.ts",
   "frontend/packages/{{moduleKebab}}/src/views/{{moduleKebab}}/{{aggregateKebab}}/index.vue",
   "frontend/apps/{{projectKebab}}-admin/package.json",
@@ -259,9 +260,20 @@ const contentChecks = [
   {
     file: "frontend/packages/{{moduleKebab}}/src/api-context.ts",
     patterns: [
-      "configure{{aggregatePascal}}Api(client: HttpClient)",
+      "from '@mango/app-runtime'",
+      "const apiByClient = new WeakMap<HttpClient, {{aggregatePascal}}Api>()",
       "create{{aggregatePascal}}Api(client)",
-      "get{{aggregatePascal}}Api()",
+      "use{{aggregatePascal}}Api()",
+      "inject<HttpClient | undefined>(MANGO_HTTP_CLIENT_KEY, undefined)",
+    ],
+  },
+  {
+    file: "frontend/packages/{{moduleKebab}}/src/__tests__/api-context.spec.ts",
+    patterns: [
+      "keeps HttpClient instances isolated between Vue apps",
+      "firstApp.provide(MANGO_HTTP_CLIENT_KEY",
+      "secondApp.provide(MANGO_HTTP_CLIENT_KEY",
+      "fails closed when the current Vue app has no HttpClient provider",
     ],
   },
   {
@@ -270,6 +282,7 @@ const contentChecks = [
       '"style": "./style.css"',
       '"./style.css": "./style.css"',
       '"mangoAdmin"',
+      '"@mango/app-runtime": "1.0.6"',
       "register{{modulePascal}}Pages",
     ],
   },
@@ -289,10 +302,15 @@ const contentChecks = [
       "from '@mango/http-client'",
       "createMangoHttpClient",
       "getTenantId: () => Session.get('userInfo')?.tenantId ?? Session.get('tenantId')",
-      "register{{modulePascal}}Pages(httpClient)",
+      "register{{modulePascal}}Pages()",
+      "adminApp.app.provide(MANGO_HTTP_CLIENT_KEY, httpClient)",
       "import '@{{projectKebab}}/{{moduleKebab}}/style.css'",
       "createMangoAdminApp",
     ],
+  },
+  {
+    file: "frontend/apps/{{projectKebab}}-admin/package.json",
+    patterns: ['"@mango/app-runtime": "1.0.6"'],
   },
   {
     file: "topologies/monolith/README.md",
@@ -425,6 +443,20 @@ for (const item of contentChecks) {
       `${item.file} missing pattern: ${pattern}`,
     );
   }
+}
+
+const apiContext = readTemplateFile(
+  "frontend/packages/{{moduleKebab}}/src/api-context.ts",
+);
+for (const forbidden of [
+  "let {{aggregateCamel}}Api",
+  "configure{{aggregatePascal}}Api(",
+  "get{{aggregatePascal}}Api()",
+]) {
+  check(
+    !apiContext.includes(forbidden),
+    `frontend API context contains module singleton contract: ${forbidden}`,
+  );
 }
 
 const packageFiles = walk(root).filter((file) => file.endsWith("package.json"));

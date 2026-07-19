@@ -3,13 +3,14 @@
 > 历史阶段证据：本文记录的是 28 包 PR-0F 检查点，已由
 > `2026-07-19-frontend-production-candidate-evidence.md` 的 29 包最终候选证据取代。
 > 后续判定必须使用新文档和其中绑定的提交、报告哈希，不得沿用本文的阶段状态。
+> 业务灰度、故障注入和生产回滚属于独立业务部署/运维合同，不是规范毕业门禁。
 
 ## 1. 结论
 
 - PR-0F 已建立可重复执行的 `Mango Business Lab`：使用本次源码打出的 28 个 npm tarball 和其中的 `@mango/cli` 生成 full preset 独立业务工程，没有复制 `mango-ui`，也没有把生成工程加入 Mango workspace。
 - Linux/arm64、Node 22.23.1、pnpm 11.14.0 环境中，523 个依赖完成断网冻结安装，安装日志为 `reused 523 / downloaded 0`；DNS 与 HTTPS canary 均被网络层拒绝，成功外连数为 0。
 - 生成工程的 format、ESLint、Stylelint、Vue typecheck、unit、production build 和聚合 `check` 全部通过；项目内 CLI 完成 workspace 初始化，Vite 最小 shell 返回 HTTP 200 后正常停止。
-- PR-0F 的“业务开发环境基础”判定为 `READY`。它不证明业务 API/CSS/C4、真实后端、微前端、发布候选、灰度和回滚合同已完成；Mango 前端整体仍为 `NOT READY`，不得宣称生产毕业。
+- PR-0F 的“业务开发环境基础”判定为 `READY`。它不证明业务 API/CSS/C4、真实后端和微前端合同已完成；该阶段证据本身不能代表 Mango 前端规范的最终状态。
 
 ## 2. 固定环境与制品
 
@@ -78,7 +79,7 @@ CLI 自身另完成 full/custom/add/module/PMO 场景和 19 个 Node test；模�
 
 这些失败均来自真实 cold/offline 路径，修复后从 pack 和生成阶段重新执行，没有复用失败产物冒充通过。
 
-## 6. 仍然阻断生产毕业的事实
+## 6. 阶段未覆盖与后续独立事项
 
 full preset production build 虽然退出码为 0，但最大 `mango-platform` JavaScript asset 为 5,649,796 bytes（约 5.65 MB，gzip 约 1.82 MB），另有约 0.94 MB 的 form designer、0.92 MB 的 Element Plus、0.85 MB 的聚合 CSS 和 0.81 MB 的 rich text asset。构建还报告多组 charts 与 Mango package 循环 manual chunk，以及 VueUse PURE annotation 警告。
 
@@ -90,11 +91,11 @@ PR-0F 没有实现或验证以下合同，因此不得扩张结论：
 - API DTO/错误/取消/重试、Axios 实例归属和页面禁止直接请求；
 - CSS ownership、Element Plus 覆盖边界、C3/C4 四轴毕业；
 - Wujie 实例生命周期、单体/微前端同源构建、真实后端和浏览器业务 E2E；
-- Nexus staging candidate 回读、独立部署、灰度流量、失败注入与回滚演练；
+- Nexus staging candidate 回读属于独立制品发布合同；独立部署、灰度流量、失败注入与生产回滚属于独立业务部署/运维合同，均不作为规范门禁；
 - 全量零静态债务、bundle budget 和依赖弃用清零。
 
 ## 7. 阶段判定
 
 PR-0F Business Lab 基础：`READY`，可以在当前任务分支提交。
 
-下一入口：按设计执行 Phase 1 的新增债务和公共契约门禁，随后由 PR-1J 在本实验室中验证真实业务模块的 API/CSS/C4/部署合同。只有 Phase 2 清债、Phase 3 零基线、真实 Nexus candidate、单体/微前端浏览器矩阵、灰度和回滚全部通过后，整体状态才能变更为 `PRODUCTION GRADUATED`。
+下一入口：按设计执行 Phase 1 的新增债务和公共契约门禁，随后在本实验室中验证真实业务模块的 API/CSS/C4 与单体/微前端浏览器合同。最终规范状态由当前采用边界决定和最终候选证据判定；真实 Nexus、灰度和生产回滚分别由发布合同与业务部署/运维合同独立管理。

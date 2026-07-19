@@ -2,6 +2,7 @@ import { createMangoAdminApp } from '@mango/admin';
 import '@mango/admin/style.css';
 import { Session } from '@mango/common';
 import { createMangoHttpClient } from '@mango/http-client';
+import { MANGO_HTTP_CLIENT_KEY } from '@mango/app-runtime';
 import { register{{modulePascal}}Pages } from '@{{projectKebab}}/{{moduleKebab}}';
 import '@{{projectKebab}}/{{moduleKebab}}/style.css';
 
@@ -16,10 +17,13 @@ const httpClient = createMangoHttpClient({
   },
 });
 
-register{{modulePascal}}Pages(httpClient);
+register{{modulePascal}}Pages();
 
-createMangoAdminApp({
+const adminApp = createMangoAdminApp({
   mountTarget: '#app',
   apiBaseUrl,
   title: import.meta.env.VITE_APP_TITLE || '{{projectPascal}} Admin',
-}).mount();
+});
+
+adminApp.app.provide(MANGO_HTTP_CLIENT_KEY, httpClient);
+adminApp.mount();

@@ -67,7 +67,7 @@ import { MangoListPage, MangoListPanel, MangoSearchPanel, Pagination } from '@ma
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
 import { onBeforeUnmount, onMounted, reactive, ref } from 'vue';
 import { type {{aggregatePascal}}VO } from '@{{projectKebab}}/{{moduleKebab}}-api';
-import { get{{aggregatePascal}}Api } from '../../../api-context';
+import { use{{aggregatePascal}}Api } from '../../../api-context';
 
 defineOptions({ name: '{{aggregatePascal}}ListPage' });
 
@@ -89,7 +89,7 @@ const detailRecord = ref<{{aggregatePascal}}VO | null>(null);
 const formRef = ref<FormInstance>();
 const pageAbortController = new AbortController();
 let listRequestController: AbortController | undefined;
-const {{aggregateCamel}}Api = get{{aggregatePascal}}Api();
+const {{aggregateCamel}}Api = use{{aggregatePascal}}Api();
 const namePlaceholder = '请输入{{aggregateName}}名称';
 
 const query = reactive({

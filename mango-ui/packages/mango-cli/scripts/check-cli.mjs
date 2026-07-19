@@ -1109,7 +1109,7 @@ try {
     'handleDelete',
     'el-dialog',
     'el-drawer',
-    'getSealApi',
+    'useSealApi',
     'sealApi.update',
     'sealApi.delete',
     'sealApi.detail',
@@ -1228,8 +1228,13 @@ try {
     !moduleMain.includes('const mangoBusinessHttpClient = createMangoHttpClient({') ||
     !moduleMain.includes('const mangoBusinessFeatureRegistrars: MangoAdminFeatureRegistrar[] = [') ||
     !moduleMain.includes('const mangoAllFeatureRegistrars: MangoAdminFeatureRegistrar[] = [') ||
-    !moduleMain.includes('  () => registerContractPages(mangoBusinessHttpClient),') ||
-    moduleMain.includes('registerContractPages();') ||
+    !moduleMain.includes(
+      'const mangoBusinessFeatureRegistrars: MangoAdminFeatureRegistrar[] = [() => registerContractPages()];',
+    ) ||
+    !moduleMain.includes("import { MANGO_HTTP_CLIENT_KEY } from '@mango/app-runtime';") ||
+    !moduleMain.includes('const mangoAdminApp = createMangoAdminApp({') ||
+    !moduleMain.includes('mangoAdminApp.app.provide(MANGO_HTTP_CLIENT_KEY, mangoBusinessHttpClient);') ||
+    moduleMain.includes('registerContractPages(mangoBusinessHttpClient)') ||
     !moduleMain.includes('featureRegistrars: mangoAllFeatureRegistrars')
   ) {
     throw new Error('module add did not register frontend feature registrar and style entry');
@@ -1251,6 +1256,7 @@ try {
   if (
     businessUiPackageJson.style !== './style.css' ||
     businessUiPackageJson.exports?.['./style.css'] !== './style.css' ||
+    businessUiPackageJson.dependencies?.['@mango/app-runtime'] !== releaseVersions.npm['@mango/app-runtime'] ||
     businessUiPackageJson.mangoAdmin?.businessDomainCode !== 'CONTRACT' ||
     businessUiPackageJson.mangoAdmin?.businessDomainName !== '合同管理' ||
     businessUiPackageJson.mangoAdmin?.registrars?.[0]?.name !== 'registerContractPages' ||
@@ -1267,12 +1273,47 @@ try {
       throw new Error(`module add did not generate feature registration metadata: ${expected}`);
     }
   }
+  const businessApiContext = readFileSync(join(customRoot, 'frontend/packages/contract/src/api-context.ts'), 'utf8');
+  for (const expected of [
+    "import { inject } from 'vue';",
+    "import { MANGO_HTTP_CLIENT_KEY } from '@mango/app-runtime';",
+    'const apiByClient = new WeakMap<HttpClient, SealApi>();',
+    'export function useSealApi(): SealApi',
+    'inject<HttpClient | undefined>(MANGO_HTTP_CLIENT_KEY, undefined)',
+  ]) {
+    if (!businessApiContext.includes(expected)) {
+      throw new Error(`module add API context missing instance isolation contract: ${expected}`);
+    }
+  }
+  for (const forbidden of ['let sealApi', 'configureSealApi(', 'getSealApi()']) {
+    if (businessApiContext.includes(forbidden)) {
+      throw new Error(`module add API context contains module singleton contract: ${forbidden}`);
+    }
+  }
+  const businessApiContextTest = readFileSync(
+    join(customRoot, 'frontend/packages/contract/src/__tests__/api-context.spec.ts'),
+    'utf8',
+  );
+  for (const expected of [
+    'keeps HttpClient instances isolated between Vue apps',
+    'firstApp.provide(MANGO_HTTP_CLIENT_KEY',
+    'secondApp.provide(MANGO_HTTP_CLIENT_KEY',
+    'fails closed when the current Vue app has no HttpClient provider',
+  ]) {
+    if (!businessApiContextTest.includes(expected)) {
+      throw new Error(`module add API context test missing isolation assertion: ${expected}`);
+    }
+  }
   assertNoUnrenderedPlaceholders(customRoot);
   assertDevWorkspaceRunnerScenarios(tempRoot);
 
   console.log('mango-cli full/custom/add/module/pmo sync checks passed.');
 } finally {
-  rmSync(tempRoot, { recursive: true, force: true });
+  if (process.env.MANGO_CLI_KEEP_TEMP === 'true') {
+    console.log(`mango-cli diagnostic project retained at ${tempRoot}`);
+  } else {
+    rmSync(tempRoot, { recursive: true, force: true });
+  }
 }
 
 function assertEqual(actual, expected, field) {
@@ -1295,7 +1336,24 @@ function assertGeneratedFrontendFormatting(projectRoot) {
     encoding: 'utf8',
   });
   if (result.status !== 0) {
-    throw new Error(`generated frontend formatting failed:\n${result.stdout}\n${result.stderr}`);
+    const reportedFile = result.stdout.match(/^\[warn\] (.+)$/mu)?.[1] ?? 'src/main.ts';
+    const reportedPath = join(projectRoot, 'frontend', reportedFile);
+    const actual = readFileSync(reportedPath, 'utf8');
+    const formatted = spawnSync(prettierCommand, ['--stdin-filepath', reportedFile], {
+      cwd: join(projectRoot, 'frontend'),
+      encoding: 'utf8',
+      input: actual,
+    });
+    const actualLines = actual.split(/\r?\n/u);
+    const expectedLines = formatted.stdout.split(/\r?\n/u);
+    const differenceIndex = actualLines.findIndex((line, index) => line !== expectedLines[index]);
+    const difference =
+      differenceIndex < 0
+        ? 'unable to locate line difference'
+        : `line ${differenceIndex + 1}: actual=${JSON.stringify(actualLines[differenceIndex])}, expected=${JSON.stringify(expectedLines[differenceIndex])}`;
+    throw new Error(
+      `generated frontend formatting failed:\n${result.stdout}\n${result.stderr}\nfirst difference: ${difference}`,
+    );
   }
 }
 

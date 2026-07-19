@@ -1,11 +1,13 @@
 # 前端 CI 与业务边界门禁交付证据（2026-07-19）
 
+> 历史阶段证据：本文只记录 PR-1B/1G/1H/1I 当时的门禁状态。当前完成定义以采用边界决定和最终候选证据为准；业务灰度、故障注入和生产回滚不属于规范毕业门禁。
+
 ## 1. 阶段结论
 
 - PR-1B/1G/1H/1I 的基础门禁已在提交 `dc19e287d` 落地：稳定聚合工作流、affected/full 选择器、业务 API 分层、CSS 所有权和微前端厂商隔离均有机器检查与反向 fixture。
 - 工作流 `Frontend Quality / frontend-quality` 不使用 path filter；范围未知、空 diff、共享配置、lockfile、CI、前端 PMO 规则或 checker 变化一律升级 full。
 - 当前 21 条存量边界违规已按精确 identity 登记，只允许持平或减少；新增文件和新增 identity 立即失败，不能用总数额度替换债务。
-- 本批在固定 Node 22 环境通过静态、类型和测试验证，但 GitHub 工作流尚未推送运行，required check、30 日样本窗、浏览器、真实部署、灰度和回退均未完成，因此整体仍为 `NOT READY`。
+- 本批在固定 Node 22 环境通过静态、类型和测试验证；GitHub 工作流、required check、样本窗和浏览器验证在该阶段尚未完成，因此当时不能据此判定完整规范状态。
 
 ## 2. 固定验证环境
 
@@ -62,7 +64,7 @@ Docker Desktop bind mount 曾在 pnpm 复制 `echarts` 时返回 `ESTALE/-116`�
 
 37 workspace production build 在同一批源代码上通过。构建仍报告 Sass `@import` 弃用、动态/静态 import 混用、PURE annotation 和多个超大 chunk；这些是生产阻断债务，不计为毕业通过。
 
-## 6. 发布、灰度与回退状态
+## 6. 阶段外部状态（不属于规范本地验证）
 
 | 项目                       | 当前状态               | 毕业要求                                                 |
 | -------------------------- | ---------------------- | -------------------------------------------------------- |
@@ -71,7 +73,7 @@ Docker Desktop bind mount 曾在 pnpm 复制 `echarts` 时返回 `ESTALE/-116`�
 | required check             | 未配置远端分支保护     | 单拥有者按机器规则启用，不增加人工会签                   |
 | Nexus staging/hosted/group | 未授权写入             | candidate 与正式坐标分别回读                             |
 | 单体/微前端浏览器          | 未完成                 | 真实后端、交互、样式、卸载和副作用验证                   |
-| 灰度                       | 未执行                 | 按 deployment registry 定向流量/租户，观测错误和性能阈值 |
-| 回退                       | 未演练                 | 恢复上一稳定 CI/config 和部署版本，full inventory 复验   |
+| 灰度                       | 未执行                 | 独立业务部署/运维合同，不作为规范门禁                     |
+| 生产回滚                   | 未演练                 | 独立业务部署/运维合同，不作为规范门禁                     |
 
 本批回退边界是关闭 affected 优化并转 full，保留稳定 aggregator 身份和全部诊断基线；禁止通过 `continue-on-error`、抬高基线或移除失败证据恢复流水线。

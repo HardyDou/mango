@@ -1,4 +1,5 @@
 import { defineConfig, devices } from '@playwright/test';
+import { execFileSync } from 'node:child_process';
 import { copyFileSync, mkdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { resolveE2EApiBaseURL } from '../../playwright.workspace';
@@ -12,7 +13,18 @@ const reuseExistingServer = process.env.PLAYWRIGHT_REUSE_EXISTING_SERVER === 'tr
 const runtimeConfigPath =
   process.env.PLAYWRIGHT_RUNTIME_CONFIG_PATH ||
   resolve(uiRoot, '../.runtime/playwright/mango-admin-shell/runtime-config.json');
+const reportPath =
+  process.env.PLAYWRIGHT_JSON_REPORT_PATH || resolve(uiRoot, '../.runtime/playwright/mango-admin-shell/report.json');
+const gitCommit = execFileSync('git', ['rev-parse', 'HEAD'], {
+  cwd: uiRoot,
+  encoding: 'utf8',
+}).trim();
+const gitTree = execFileSync('git', ['rev-parse', 'HEAD^{tree}'], {
+  cwd: uiRoot,
+  encoding: 'utf8',
+}).trim();
 mkdirSync(dirname(runtimeConfigPath), { recursive: true });
+mkdirSync(dirname(reportPath), { recursive: true });
 copyFileSync(resolve(__dirname, './runtime-config.dev.json'), runtimeConfigPath);
 process.env.PLAYWRIGHT_RUNTIME_CONFIG_PATH = runtimeConfigPath;
 
@@ -26,7 +38,11 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: 1,
-  reporter: 'list',
+  metadata: {
+    gitCommit,
+    gitTree,
+  },
+  reporter: [['list'], ['json', { outputFile: reportPath }]],
   use: {
     baseURL,
     trace: 'on-first-retry',
