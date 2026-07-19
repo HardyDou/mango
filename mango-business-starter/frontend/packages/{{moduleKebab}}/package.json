@@ -6,8 +6,8 @@
   "main": "src/index.ts",
   "dependencies": {
     "@{{projectKebab}}/{{moduleKebab}}-api": "{{projectVersion}}",
-    "@mango/admin-pages": "1.0.21",
-    "@mango/common": "1.0.17",
+    "@mango/admin-pages": "1.0.22",
+    "@mango/common": "1.0.18",
     "element-plus": "2.14.1"
   },
   "peerDependencies": {

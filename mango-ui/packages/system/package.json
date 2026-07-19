@@ -1,6 +1,6 @@
 {
   "name": "@mango/system",
-  "version": "1.0.20",
+  "version": "1.0.21",
   "private": false,
   "type": "module",
   "main": "./dist/index.js",
@@ -48,13 +48,13 @@
     "@element-plus/icons-vue": "2.3.2",
     "@form-create/element-ui": "3.2.42",
     "@mango/api-schema": "1.0.2",
-    "@mango/common": "1.0.17",
-    "@mango/grid-widgets": "1.0.14",
-    "@mango/rbac": "1.0.14",
+    "@mango/common": "1.0.18",
+    "@mango/grid-widgets": "1.0.15",
+    "@mango/rbac": "1.0.15",
     "form-create-designer": "3.2.11-oem"
   },
   "peerDependencies": {
-    "@mango/file": "1.0.22",
+    "@mango/file": "1.0.23",
     "element-plus": ">=2.14.1 <3",
     "vue": ">=3.5.13 <4",
     "vue-router": ">=4.1.6 <5"

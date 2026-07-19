@@ -15,6 +15,10 @@
     <name>Mango Architecture Verification</name>
     <description>Runs the self-hosted architecture gate after Reactor compilation</description>
 
+    <properties>
+        <mango.check.baseRef>main</mango.check.baseRef>
+    </properties>
+
     <build>
         <plugins>
             <plugin>

@@ -8,6 +8,8 @@ import io.mango.payment.core.service.PaymentNumberGenerator;
 
 import io.mango.common.exception.BizException;
 import io.mango.common.result.Require;
+import io.mango.infra.context.api.MangoContextHolder;
+import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.payment.api.enums.PaymentCode;
 import io.mango.payment.api.command.MangoPayVirtualPaymentCommand;
 import io.mango.payment.api.command.PaymentChannelCallbackCommand;
@@ -50,11 +52,27 @@ public class MangoPayVirtualPaymentService implements IMangoPayVirtualPaymentSer
         Require.notNull(command.getCashierConfigId(), PaymentCode.PAYMENT_CASHIER_CONFIG_INVALID, "收银台配置 ID 不能为空");
         Require.notBlank(command.getPayOrderNo(), PaymentCode.PAYMENT_ORDER_NOT_FOUND, "支付订单号不能为空");
         Require.notBlank(command.getTitle(), PaymentCode.PAYMENT_CASHIER_PAY_INVALID, "付款标题不能为空");
+        String payOrderNo = command.getPayOrderNo().trim();
+        PaymentOrderEntity locatedOrder = paymentOrderMapper.selectByPayOrderNo(payOrderNo);
+        Require.notNull(locatedOrder, PaymentCode.PAYMENT_ORDER_NOT_FOUND);
+        Require.notBlank(locatedOrder.getTenantId(), PaymentCode.PAYMENT_ORDER_NOT_FOUND, "支付订单租户上下文不存在");
+        MangoContextSnapshot previous = MangoContextHolder.get();
+        try {
+            MangoContextHolder.set(previous.withTenantId(locatedOrder.getTenantId()));
+            return payInTenantContext(command, payOrderNo);
+        } finally {
+            MangoContextHolder.set(previous);
+        }
+    }
+
+    private MangoPayVirtualPaymentResultVO payInTenantContext(
+            MangoPayVirtualPaymentCommand command,
+            String payOrderNo) {
         String tenantId = PaymentContextSupport.currentTenantId();
         LocalDateTime paidTime = LocalDateTime.now();
         String virtualPaymentNo = numberService.next(PaymentNumberGenerator.PAY_MANGO_VIRTUAL_NO);
         long amount = Money.cents(command.getAmount()).toPositiveCents("付款金额");
-        PaymentOrderEntity order = paymentOrderMapper.selectByTenantAndPayOrderNo(tenantId, command.getPayOrderNo().trim());
+        PaymentOrderEntity order = paymentOrderMapper.selectByTenantAndPayOrderNo(tenantId, payOrderNo);
         Require.notNull(order, PaymentCode.PAYMENT_ORDER_NOT_FOUND);
         Require.isTrue(command.getCashierConfigId().equals(order.getCashierConfigId()),
                 PaymentCode.PAYMENT_CASHIER_PAY_INVALID, "收银台配置与支付订单不匹配");

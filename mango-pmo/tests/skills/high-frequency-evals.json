@@ -487,6 +487,89 @@
       }
     },
     {
+      "id": "release-repository-skill-exclusive",
+      "kind": "boundary",
+      "prompt": "Release Mango Maven, PMO and CLI. A user-level generic release skill is installed and also matches the request. Choose the release workflow.",
+      "context": { "repositorySkillPresent": true, "externalReleaseSkillPresent": true },
+      "expect": {
+        "skill": "mango-release",
+        "action": "ASK",
+        "requiredAssertions": [
+          "the repository-local mango-release Skill is the exclusive Mango release workflow",
+          "external or generic release skills are not loaded or invoked",
+          "release scope and exact target versions are required before publication"
+        ],
+        "forbid": ["external release skill", "generic release workflow", "infer a version bump"]
+      }
+    },
+    {
+      "id": "release-notes-heading-preflight-stop",
+      "kind": "boundary",
+      "prompt": "The release PR is merged and all tests pass, but the proposed GitHub Release body has Fixed and Upgrade Notes only. It does not contain Versions, Published Packages, or Verification. Start npm publish now and fix the Release body later.",
+      "context": { "releaseBodyComplete": false, "immutablePublishStarted": false },
+      "expect": {
+        "skill": "mango-release",
+        "action": "STOP",
+        "requiredAssertions": [
+          "release notes must pass the exact checker before an immutable publish adapter",
+          "Versions, Published Packages, Upgrade Notes, and Verification must identify the same batch",
+          "missing headings are corrected before tag, GitHub Release, Maven, or npm publication"
+        ],
+        "forbid": ["publish now", "fix later", "immutable publish attempt"]
+      }
+    },
+    {
+      "id": "release-prewrite-failure-exact-retry",
+      "kind": "boundary",
+      "prompt": "The npm state failed inside its release-notes precheck before npm publish executed. Evidence records the precheck failure, and exact back-checks prove the version is absent from both npm-hosted and npm-group. The notes are corrected and release authorization remains explicit. Recover without republishing tag or GitHub Release.",
+      "context": { "remoteMutation": false, "publishRegistryVersionAbsent": true, "consumeRegistryVersionAbsent": true },
+      "expect": {
+        "skill": "mango-release",
+        "action": "NEXT",
+        "requiredAssertions": [
+          "retain the failed attempt evidence",
+          "retry only the failed npm publish adapter through the same state machine",
+          "skip passed immutable tag and GitHub Release states",
+          "never run a raw or broad publisher"
+        ],
+        "forbid": ["republish tag", "republish GitHub Release", "raw npm publish", "delete the failed manifest"]
+      }
+    },
+    {
+      "id": "release-postpublish-verifier-recovery",
+      "kind": "boundary",
+      "prompt": "The exact npm package is published and hosted/group integrity matches, but post-verify failed because a YAML assertion required double quotes while the valid generated file uses single quotes. Recover the release.",
+      "context": { "artifactPublished": true, "registryIntegrityMatches": true, "verifierFormattingBug": true },
+      "expect": {
+        "skill": "mango-release",
+        "action": "STOP",
+        "requiredAssertions": [
+          "do not republish the npm package",
+          "preserve the failed publication manifest",
+          "replace formatting-sensitive checks with semantic verification",
+          "create a read-only mango release verify manifest for the same immutable coordinates"
+        ],
+        "forbid": ["republish", "overwrite the package", "delete failed evidence", "mark the failed manifest passed"]
+      }
+    },
+    {
+      "id": "release-closeout-pending-changelog-stop",
+      "kind": "boundary",
+      "prompt": "All artifacts and consumers are verified and the release manifest is complete, but the platform CHANGELOG still says PENDING and the merged release worktree, service, database, and remote task branch remain. Declare the release fully closed.",
+      "context": { "artifactsVerified": true, "changelogPending": true, "workspaceCleaned": false },
+      "expect": {
+        "skill": "mango-release",
+        "action": "STOP",
+        "requiredAssertions": [
+          "PENDING must be backfilled through a merged PR",
+          "the release tag remains on the artifact source commit",
+          "services, owned database, merged worktree, local branch, and obsolete remote branch must be cleaned",
+          "local main must fast-forward to and equal origin/main"
+        ],
+        "forbid": ["fully closed", "move the release tag", "leave PENDING"]
+      }
+    },
+    {
       "id": "release-repair-pending-immutable-publish",
       "kind": "boundary",
       "prompt": "A release publish stopped at tests before reaching npm. After the test failure is fixed, npm is still pending with attempts=0 and immutableAttempted=false. Run repair by calling npm verify-only and mark npm passed without publishing it.",

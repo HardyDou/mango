@@ -54,6 +54,7 @@ class MangoPayVirtualPaymentServiceTest {
         channelContractMapper = mock(PaymentChannelContractMapper.class);
         numberService = mock(PaymentNumberGenerator.class);
         when(numberService.next(PaymentNumberGenerator.PAY_MANGO_VIRTUAL_NO)).thenReturn("MP2026060600000001");
+        when(paymentOrderMapper.selectByPayOrderNo("PO202606060001")).thenReturn(paymentOrder());
         service = new MangoPayVirtualPaymentService(
                 virtualPaymentMapper,
                 paymentOrderMapper,
@@ -118,6 +119,25 @@ class MangoPayVirtualPaymentServiceTest {
         assertThat(result.getPayOrderNo()).isEqualTo("PO202606060001");
         assertThat(result.getStatus()).isEqualTo("SUCCESS");
         assertThat(result.getAmount()).isEqualTo(9900L);
+    }
+
+    @Test
+    @DisplayName("public pay should resolve and restore tenant context from payment order")
+    void pay_withoutTenantContext_resolvesAndRestoresOrderTenant() {
+        MangoContextHolder.clear();
+        MangoPayVirtualPaymentCommand command = command();
+        when(paymentOrderMapper.selectByTenantAndPayOrderNo("1", "PO202606060001")).thenReturn(paymentOrder());
+        when(paymentMethodMapper.selectById(340001L)).thenReturn(paymentMethod("PERSONAL_WECHAT_QR"));
+        when(virtualPaymentMapper.selectByTenantAndPayOrderNo("1", "PO202606060001")).thenReturn(null);
+        when(channelContractMapper.selectActiveConfigValuesJson("1", 331001L))
+                .thenReturn("{\"mangoPayScenario\":\"PROCESSING\"}");
+
+        MangoPayVirtualPaymentResultVO result = service.pay(command);
+
+        assertThat(result.getStatus()).isEqualTo("PAYING");
+        assertThat(MangoContextHolder.tenantId()).isNull();
+        verify(paymentOrderMapper).selectByPayOrderNo("PO202606060001");
+        verify(paymentOrderMapper).selectByTenantAndPayOrderNo("1", "PO202606060001");
     }
 
     @Test

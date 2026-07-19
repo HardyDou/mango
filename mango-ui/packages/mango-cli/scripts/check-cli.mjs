@@ -74,6 +74,7 @@ try {
     'frontend/eslint.config.mjs',
     'frontend/prettier.config.mjs',
     'frontend/stylelint.config.mjs',
+    'frontend/pnpm-workspace.yaml',
     'frontend/scripts/build-with-report.mjs',
     'frontend/src/environment.ts',
     'frontend/src/environment.test.ts',
@@ -167,6 +168,7 @@ try {
       throw new Error(`frontend package missing quality dependency: ${dependency}`);
     }
   }
+  assertGeneratedPnpmWorkspace(join(projectRoot, 'frontend/pnpm-workspace.yaml'));
   for (const dependency of [
     '@mango/admin',
     '@mango/grid-widgets',
@@ -1268,6 +1270,25 @@ function assertGeneratedFrontendFormatting(projectRoot) {
   });
   if (result.status !== 0) {
     throw new Error(`generated frontend formatting failed:\n${result.stdout}\n${result.stderr}`);
+  }
+}
+
+function assertGeneratedPnpmWorkspace(workspacePath) {
+  const workspace = readFileSync(workspacePath, 'utf8');
+  const requiredLines = [
+    "  - 'packages/*'",
+    'allowBuilds:',
+    "  '@swc/core': true",
+    '  core-js-pure: true',
+    '  es5-ext: true',
+    '  esbuild: true',
+    '  msw: true',
+    '  vue-demi: true',
+  ];
+  for (const line of requiredLines) {
+    if (!workspace.split(/\r?\n/u).includes(line)) {
+      throw new Error(`generated pnpm workspace missing required install policy: ${line}`);
+    }
   }
 }
 

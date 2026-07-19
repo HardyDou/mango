@@ -64,24 +64,12 @@ test.describe('主题系统 E2E 测试', () => {
     await expect(container.first()).toBeVisible();
   });
 
-  test('侧边栏主题', async ({ page }) => {
-    // 侧边栏应该存在
+  test('@p1 @theme 侧边栏主题', async ({ page }) => {
     const asideEl = page.locator('.layout-aside, .layout-columns-aside');
-    const asideCount = await asideEl.count();
+    await expect(asideEl.first()).toBeVisible();
 
-    if (asideCount > 0) {
-      // 测试侧边栏背景色
-      const bgColor = await page.evaluate(() => {
-        const aside = document.querySelector('.layout-aside, .layout-columns-aside');
-        return aside ? getComputedStyle(aside).backgroundColor : null;
-      });
-
-      // 应该有一个背景色
-      expect(bgColor).toBeTruthy();
-    } else {
-      // 如果没有侧边栏元素，跳过
-      test.skip();
-    }
+    const bgColor = await asideEl.first().evaluate(element => getComputedStyle(element).backgroundColor);
+    expect(bgColor).toBeTruthy();
   });
 
   test('菜单主题', async ({ page }) => {

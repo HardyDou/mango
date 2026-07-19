@@ -33,3 +33,7 @@ node mango-pmo/tools/pmo-preflight.mjs \
 | 编码、修复、重构 | `dev` | `develop` |
 | 测试、E2E、验收 | `qa` | `verify` |
 | 规范、流程、Agent 入口治理 | `pmo` | `governance` |
+
+## 4. Skill 路由
+
+- Mango 制品发布、发布验证、发布恢复和发布收尾只使用仓库内 [mango-release](./mango-pmo/skills/mango-release/SKILL.md)。不要调用用户级、插件级或其它外部通用 release skill。

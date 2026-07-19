@@ -32,6 +32,8 @@ node business-pmo/mango-baseline/tools/pmo-preflight.mjs \
 
 涉及业务需求、设计、台账或验收时，还必须读取本次任务对应的 `business-docs/**` 文件；没有明确路径时先定位或要求补齐，不得只按 Mango baseline 自行推断需求。
 
+发布、发布验证、发布恢复和发布收尾只使用项目内 `.agents/skills/mango-release`（规范源为 `business-pmo/mango-baseline/skills/mango-release`）。不要调用用户级、插件级或其它外部通用 release skill。
+
 ## 3. 交付报告
 
 最终回复必须包含：

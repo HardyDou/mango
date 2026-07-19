@@ -53,32 +53,26 @@ test.describe('布局系统 E2E 测试', () => {
     await expect(mainContent).toBeVisible();
   });
 
-  test('侧边栏折叠/展开', async ({ page }) => {
+  test('@p1 @layout 侧边栏折叠/展开', async ({ page }) => {
     // 查找折叠按钮 - 在桌面端，使用非移动端的 hamburger 按钮
     // 经典布局中，折叠按钮在导航栏左侧
     const collapseBtn = page.locator('.layout-navbars-container .hamburger:not(.hamburger-mobile)').first();
 
-    // 检查按钮是否存在
-    const btnCount = await collapseBtn.count();
-    if (btnCount === 0) {
-      // 如果没有折叠按钮，可能是其他布局，跳过
-      test.skip();
-      return;
-    }
+    await expect(collapseBtn).toBeVisible();
 
     await collapseBtn.click();
     await page.waitForTimeout(300);
 
-    // 侧边栏应该有折叠样式
+    // 侧边栏应该切换到桌面折叠宽度
     const asideEl = page.locator('.layout-aside');
-    if (await asideEl.count() > 0) {
-      await expect(asideEl).toHaveClass(/is-collapse/);
+    await expect(asideEl).toHaveClass(/layout-aside-pc-64/);
+    await expect(asideEl).toHaveCSS('width', '64px');
 
-      // 再次点击展开
-      await collapseBtn.click();
-      await page.waitForTimeout(300);
-      await expect(asideEl).not.toHaveClass(/is-collapse/);
-    }
+    // 再次点击展开
+    await collapseBtn.click();
+    await page.waitForTimeout(300);
+    await expect(asideEl).toHaveClass(/layout-aside-pc-220/);
+    await expect(asideEl).toHaveCSS('width', '220px');
   });
 
   test('标签导航功能', async ({ page }) => {
