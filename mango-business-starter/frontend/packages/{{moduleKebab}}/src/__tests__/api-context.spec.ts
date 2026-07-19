@@ -1,8 +1,10 @@
-import { createApp } from 'vue';
+import { createApp, defineComponent } from 'vue';
 import type { HttpClient, HttpRequest } from '@mango/api-schema';
 import { MANGO_HTTP_CLIENT_KEY } from '@mango/app-runtime';
 import { describe, expect, it } from 'vitest';
 import { use{{aggregatePascal}}Api } from '../api-context';
+
+const EmptyRoot = defineComponent({ render: () => null });
 
 function createRecordingClient(requests: HttpRequest[]): HttpClient {
   return {
@@ -23,8 +25,8 @@ describe('use{{aggregatePascal}}Api', () => {
   it('keeps HttpClient instances isolated between Vue apps', async () => {
     const firstRequests: HttpRequest[] = [];
     const secondRequests: HttpRequest[] = [];
-    const firstApp = createApp({ render: () => null });
-    const secondApp = createApp({ render: () => null });
+    const firstApp = createApp(EmptyRoot);
+    const secondApp = createApp(EmptyRoot);
     firstApp.provide(MANGO_HTTP_CLIENT_KEY, createRecordingClient(firstRequests));
     secondApp.provide(MANGO_HTTP_CLIENT_KEY, createRecordingClient(secondRequests));
 
@@ -42,7 +44,7 @@ describe('use{{aggregatePascal}}Api', () => {
   });
 
   it('fails closed when the current Vue app has no HttpClient provider', () => {
-    const app = createApp({ render: () => null });
+    const app = createApp(EmptyRoot);
 
     expect(() => app.runWithContext(() => use{{aggregatePascal}}Api())).toThrow(
       '{{modulePascal}} pages require an HttpClient provided by the current Vue app',
