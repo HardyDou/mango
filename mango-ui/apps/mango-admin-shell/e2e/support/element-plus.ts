@@ -23,7 +23,7 @@ export async function waitCmsReady(page: Page) {
 }
 
 async function closeDropdowns(page: Page) {
-  const dropdowns = page.locator('.el-select-dropdown:visible, .el-tree-select__popper:visible');
+  const dropdowns = page.locator('.el-select__popper:visible, .el-tree-select__popper:visible');
   if ((await dropdowns.count()) === 0) return;
   const dialogHeader = page.locator('.el-dialog:visible .el-dialog__header').last();
   if (await dialogHeader.count()) {
@@ -37,13 +37,13 @@ async function closeDropdowns(page: Page) {
 export async function selectValue(scope: Locator, label: string, option: string | RegExp) {
   const page = scope.page();
   await closeDropdowns(page);
-  const select = formItem(scope, label).locator('.el-select, .el-tree-select').first();
+  const select = formItem(scope, label).getByRole('combobox').first();
   await expect(select, `${label} 下拉不存在`).toBeVisible({ timeout: 10000 });
   await select.scrollIntoViewIfNeeded();
   await clickThroughTransientOverlay(select);
-  const dropdown = page.locator('.el-select-dropdown:visible, .el-tree-select__popper:visible').last();
+  const dropdown = await controlledListbox(select);
   await expect(dropdown, `${label} 下拉面板未打开`).toBeVisible({ timeout: 10000 });
-  const target = dropdown.getByRole('option', { name: option, exact: typeof option === 'string' }).first();
+  const target = page.getByRole('option', { name: option }).first();
   await expect(target, `${label} 选项不存在: ${String(option)}`).toBeVisible({ timeout: 10000 });
   await target.scrollIntoViewIfNeeded();
   await clickThroughTransientOverlay(target);
@@ -53,13 +53,13 @@ export async function selectValue(scope: Locator, label: string, option: string 
 export async function selectValues(scope: Locator, label: string, options: Array<string | RegExp>) {
   const page = scope.page();
   await closeDropdowns(page);
-  const select = formItem(scope, label).locator('.el-select, .el-tree-select').first();
+  const select = formItem(scope, label).getByRole('combobox').first();
   await expect(select, `${label} 下拉不存在`).toBeVisible({ timeout: 10000 });
   await clickThroughTransientOverlay(select);
-  const dropdown = page.locator('.el-select-dropdown:visible, .el-tree-select__popper:visible').last();
+  const dropdown = await controlledListbox(select);
   await expect(dropdown, `${label} 下拉面板未打开`).toBeVisible({ timeout: 10000 });
   for (const option of options) {
-    const target = dropdown.getByRole('option', { name: option, exact: typeof option === 'string' }).first();
+    const target = page.getByRole('option', { name: option }).first();
     await expect(target, `${label} 选项不存在: ${String(option)}`).toBeVisible({ timeout: 10000 });
     await clickThroughTransientOverlay(target);
   }
@@ -115,4 +115,14 @@ export async function clickThroughTransientOverlay(
 
 function escapeRegExp(value: string) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+async function controlledListbox(select: Locator) {
+  const listboxId = await select.getAttribute('aria-controls');
+  if (!listboxId) throw new Error('Element Plus combobox 未声明 aria-controls，无法关联下拉面板');
+  return select.page().locator(`[id="${escapeAttribute(listboxId)}"]`);
+}
+
+function escapeAttribute(value: string) {
+  return value.replace(/["\\]/g, '\\$&');
 }
