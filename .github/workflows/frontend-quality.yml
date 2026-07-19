@@ -125,10 +125,10 @@ jobs:
         run: pnpm --dir mango-ui exec playwright install --with-deps chrome
 
       - name: Initialize isolated Mango workspace
-        run: pnpm --dir mango-ui exec mango workspace init
+        run: node mango-ui/packages/mango-cli/src/index.mjs workspace init
 
       - name: Start real Mango backend
-        run: pnpm --dir mango-ui exec mango dev start backend
+        run: node mango-ui/packages/mango-cli/src/index.mjs dev start backend
 
       - name: Run P0 browser acceptance
         working-directory: mango-ui
@@ -136,7 +136,8 @@ jobs:
 
       - name: Stop Mango development services
         if: always()
-        run: pnpm --dir mango-ui exec mango dev stop
+        continue-on-error: true
+        run: node mango-ui/packages/mango-cli/src/index.mjs dev stop
 
       - name: Upload P0 browser evidence
         if: always()
