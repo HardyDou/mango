@@ -149,11 +149,29 @@ function readWorkspacePackageJson(rootDir, expectedName) {
 }
 
 function sortWorkspaceBuildPackages(packageNames, rootDir) {
-  const uniquePackageNames = [...new Set(packageNames)];
-  const packageNameSet = new Set(uniquePackageNames);
-  const packageJsonByName = new Map(
-    uniquePackageNames.map((packageName) => [packageName, readWorkspacePackageJson(rootDir, packageName)]),
-  );
+  const packageNameSet = new Set();
+  const packageJsonByName = new Map();
+
+  function includeBuildableDependencies(packageName) {
+    if (packageNameSet.has(packageName)) {
+      return;
+    }
+    const packageJson = readWorkspacePackageJson(rootDir, packageName);
+    if (!packageJson?.scripts?.build) {
+      return;
+    }
+    packageNameSet.add(packageName);
+    packageJsonByName.set(packageName, packageJson);
+    for (const dependencyName of Object.keys(packageJson.dependencies || {})) {
+      includeBuildableDependencies(dependencyName);
+    }
+  }
+
+  for (const packageName of packageNames) {
+    includeBuildableDependencies(packageName);
+  }
+
+  const uniquePackageNames = [...packageNameSet];
   const visiting = new Set();
   const visited = new Set();
   const sorted = [];

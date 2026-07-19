@@ -4,6 +4,8 @@ import { spawnSync } from 'node:child_process';
 const pnpmCommand = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm';
 
 const packages = [
+  '@mango/api-schema',
+  '@mango/http-client',
   '@mango/common',
   '@mango/auth',
   '@mango/app-runtime',
@@ -12,12 +14,14 @@ const packages = [
   '@mango/grid-widgets',
   '@mango/system',
   '@mango/admin-pages',
+  '@mango/home',
   '@mango/job',
   '@mango/file',
   '@mango/notice',
   '@mango/workflow',
   '@mango/admin-shell',
   '@mango/cms',
+  '@mango/link-openapi',
   '@mango/link',
   '@mango/template',
   '@mango/numgen',
