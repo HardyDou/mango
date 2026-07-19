@@ -13,7 +13,7 @@ import {
 
 const uiRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const repoRoot = resolve(uiRoot, '..');
-const runtimeRoot = join(repoRoot, '.runtime');
+const runtimeRoot = resolve(readArgument('--runtime-root=') || join(repoRoot, '.runtime'));
 const projectName = 'frontend-standards-business-lab';
 const projectRoot = join(runtimeRoot, 'projects', projectName);
 const frontendRoot = join(projectRoot, 'frontend');
