@@ -59,6 +59,29 @@ test('diagnostic identities ignore line movement but preserve file, rule, severi
   assert.match(first[0], /^apps\/demo\.ts\|error\|demo\/rule\|bad\|Bad value$/u);
 });
 
+test('diagnostic identities normalize the UI root embedded in messages', () => {
+  const diagnostic = (root) => ({
+    results: [
+      {
+        diagnostics: [
+          {
+            workspace: 'demo',
+            file: `${root}/apps/demo.ts`,
+            severity: 'error',
+            code: 'TS2322',
+            message: `Type from ${root}/packages/source.ts is not assignable`,
+          },
+        ],
+      },
+    ],
+  });
+  const host = collectDiagnosticIdentities('typecheck', diagnostic('/Users/demo/mango-ui'), '/Users/demo/mango-ui');
+  const container = collectDiagnosticIdentities('typecheck', diagnostic('/workspace/mango-ui'), '/workspace/mango-ui');
+
+  assert.deepEqual(host, container);
+  assert.match(host[0], /<ui-root>\/packages\/source\.ts/u);
+});
+
 test('prettier identities bind an unformatted file to its content', () => {
   const first = collectDiagnosticIdentities('prettier', ['demo.ts'], '/repo', () => 'const x=1');
   const changed = collectDiagnosticIdentities('prettier', ['demo.ts'], '/repo', () => 'const x = 2');

@@ -14,6 +14,15 @@ function normalizeText(value) {
     .replace(/\s+/gu, ' ');
 }
 
+function normalizeDiagnosticText(value, uiRoot) {
+  let normalized = normalizeText(value);
+  const roots = new Set([uiRoot, uiRoot.split(path.sep).join('/'), uiRoot.split(path.sep).join('\\')]);
+  for (const root of [...roots].filter(Boolean).sort((left, right) => right.length - left.length)) {
+    normalized = normalized.split(root).join('<ui-root>');
+  }
+  return normalized;
+}
+
 function relativeFile(uiRoot, value) {
   const file = String(value || '');
   const relative = path.isAbsolute(file) ? path.relative(uiRoot, file) : file;
@@ -34,7 +43,7 @@ export function collectDiagnosticIdentities(tool, raw, uiRoot, readFile = () => 
             message.severity === 2 ? 'error' : 'warning',
             message.fatal ? 'fatal' : message.ruleId || 'parser',
             message.messageId || '',
-            message.message,
+            normalizeDiagnosticText(message.message, uiRoot),
           ]),
         ),
       )
@@ -48,7 +57,7 @@ export function collectDiagnosticIdentities(tool, raw, uiRoot, readFile = () => 
             relativeFile(uiRoot, file.source),
             'parse-error',
             issue.rule || 'parser',
-            issue.text || issue.message,
+            normalizeDiagnosticText(issue.text || issue.message, uiRoot),
           ]),
         ),
         ...(file.warnings || []).map((issue) =>
@@ -56,7 +65,7 @@ export function collectDiagnosticIdentities(tool, raw, uiRoot, readFile = () => 
             relativeFile(uiRoot, file.source),
             issue.severity || 'warning',
             issue.rule || 'unknown',
-            issue.text,
+            normalizeDiagnosticText(issue.text, uiRoot),
           ]),
         ),
       ])
@@ -71,7 +80,7 @@ export function collectDiagnosticIdentities(tool, raw, uiRoot, readFile = () => 
             relativeFile(uiRoot, diagnostic.file),
             diagnostic.severity,
             diagnostic.code,
-            diagnostic.message,
+            normalizeDiagnosticText(diagnostic.message, uiRoot),
           ]),
         ),
       )
