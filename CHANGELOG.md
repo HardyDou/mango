@@ -2,7 +2,7 @@
 
 ## v2026.07.19-frontend-standards-production-candidate - 2026-07-19
 
-Status: `STANDARD_VALIDATED_LOCAL` pending current revalidation. This batch has not been pushed, merged, published to Nexus, or deployed to production.
+Status: `STANDARD_VALIDATED_LOCAL`. Exact-source fixed-container, sealed Business Lab, clean tarball consumer, and current runtime/browser revalidation passed. This batch has not been pushed, merged, published to Nexus, or deployed to production.
 
 ### Published Packages
 
@@ -11,16 +11,19 @@ No package is published by this record. The immutable candidate matrix is `@mang
 ### Upgrade Notes
 
 1. Upgrade the complete npm matrix together; do not mix this candidate with older fixed Mango package versions.
-2. New business APIs belong in `frontend/packages/<module>-api` and accept the vendor-neutral `HttpClient`. The host creates one `@mango/http-client` instance per runtime context and injects it when registering business pages. Vue pages do not import Axios, create transports, or own base URLs.
+2. New business APIs belong in `frontend/packages/<module>-api` and accept the vendor-neutral `HttpClient`. The host creates and provides one `@mango/http-client` instance per runtime context before mount; page registration remains client-free. Vue pages do not import Axios, create transports, or own base URLs.
 3. Mango CMS pages now consume that injected client in both Shell local and Wujie modes. Custom runtime configs may set a stable `instanceId`; duplicate explicit identities fail validation. The historical `cmsApi` export remains deprecated compatibility only.
 4. Business package CSS remains in its package style entry; page-private styles stay scoped in the page. Hosts import package style exports explicitly.
 5. Existing `@mango/pmo@1.3.2` remains the governance baseline; publish the affected runtime packages before `@mango/cli@1.0.84`, which carries their exact locks.
 6. Standards adoption uses `pilot`, `affected`, and `repository` stages. `mango-ui/frontend-standards-adoption.json` keeps the exact stable package matrix; the new HTTP client is removed when restoring a pre-client dependency batch.
+7. The repository-local `mango-release` Skill now triggers only for actual immutable artifact/tag/GitHub Release work. Frontend standards adoption, static quality governance, and application traffic rollout remain separate; single-owner governance does not add a separate approving-review ceremony.
+8. Playwright business specs use semantic locators through a centralized Element Plus adapter. Direct `.el-*`, positional `nth()`, fixed `waitForTimeout()`, and `force: true` usage is blocked; static-debt baselines cannot be raised by later commits on the task branch.
 
 ### Verification
 
 - Vendor-neutral HTTP contracts, Axios adapter lifecycle/refresh/retry/abort behavior, generated business API factories, CLI module generation, release-version impact, and standards adoption coverage are machine checked.
 - `frontend-standards-adoption.json` binds every one of the 29 candidate npm packages to its exact `origin/main` dependency recovery target; it does not represent a production traffic rollout.
+- Candidate identity is commit `47d257ed1c01c41df59c6854b5bb2cc5fd1874a9`, Git tree `cf0f6f96270f64c4a1d3da86518ffc0573e7e2f3`, and source mode `git-archive-exact-commit`.
 - Full fixed-toolchain, sealed Business Lab, clean tarball consumer, browser/runtime, and final quality results are recorded in `mango-docs/evidence/2026-07-19-frontend-production-candidate-evidence.md`; unavailable external Nexus/production facts remain explicitly pending.
 
 ## v2026.07.18-pmo-1.3.1-cli-1.0.82-release-governance - 2026-07-18
