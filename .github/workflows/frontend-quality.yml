@@ -39,7 +39,7 @@ jobs:
 
       - name: Install locked frontend dependencies
         working-directory: mango-ui
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile --registry=https://registry.npmjs.org/
 
       - name: Run pull request frontend quality gate
         if: github.event_name == 'pull_request'
@@ -119,7 +119,7 @@ jobs:
 
       - name: Install locked frontend dependencies
         working-directory: mango-ui
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile --registry=https://registry.npmjs.org/
 
       - name: Install Chrome for Playwright
         run: pnpm --dir mango-ui exec playwright install --with-deps chrome
