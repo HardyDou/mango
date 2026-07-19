@@ -13,6 +13,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 class WorkflowMigrationContractTest {
 
     private static final String MIGRATION = "db/migration/workflow/V1__init_workflow.sql";
+    private static final String AUDIT_MIGRATION =
+            "db/migration/workflow/V2__add_workflow_audit_columns.sql";
+    private static final String CHECKSUM_CALLBACK =
+            "db/migration/workflow/beforeValidate__workflow_v1_checksum_compatibility.sql";
     private static final Pattern DATA_MUTATION = Pattern.compile(
             "(?im)^\\s*(insert|update|delete|replace|set|prepare|execute|deallocate)\\b");
 
@@ -60,6 +64,36 @@ class WorkflowMigrationContractTest {
                     .contains("`updated_by` bigint DEFAULT NULL")
                     .contains("`updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
         }
+    }
+
+    @Test
+    void v2_conditionallyAddsEveryAuditColumnMissingFromMaven_1_0_20() throws IOException {
+        String sql = resourceText(AUDIT_MIGRATION);
+
+        assertThat(sql)
+                .contains("information_schema.columns")
+                .contains("PREPARE workflow_audit_column_stmt")
+                .contains("`workflow_task_record` ADD COLUMN `created_by`")
+                .contains("`workflow_copied_task` ADD COLUMN `created_by`")
+                .contains("`workflow_business_apply_current_task` ADD COLUMN `created_by`")
+                .contains("`workflow_business_apply_current_task` ADD COLUMN `updated_by`")
+                .contains("`workflow_business_apply_status_log` ADD COLUMN `created_by`")
+                .contains("`workflow_business_apply_status_log` ADD COLUMN `updated_by`")
+                .contains("`workflow_business_apply_status_log` ADD COLUMN `updated_at`");
+    }
+
+    @Test
+    void checksumCallback_repairsOnlyPublishedMaven_1_0_20V1() throws IOException {
+        String sql = resourceText(CHECKSUM_CALLBACK);
+
+        assertThat(sql)
+                .contains("table_name = '${flyway:table}'")
+                .contains("`checksum` = -1500222187")
+                .contains("`checksum` = -840523381")
+                .contains("`version` = ''1''")
+                .contains("`script` = ''V1__init_workflow.sql''")
+                .contains("`success` = 1")
+                .doesNotContain("validateOnMigrate");
     }
 
     private String tableDefinition(String sql, String tableName) {
