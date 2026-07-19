@@ -14,6 +14,17 @@ const failClosedRuntimeConfig = new URL(shellOrigin).port === '4176';
 let originalRuntimeConfig = '';
 let originalDistRuntimeConfig = '';
 
+type MangoRuntimeWindow = Window & {
+  __MANGO_RUNTIME_EVENT_BUS__: { emit(event: string): void };
+  __MANGO_ACTIVE_MICRO_APP__?: { entryUrl?: string };
+  __MANGO_MICRO_APP_EVENTS__?: Array<{ entryUrl?: string }>;
+  __MANGO_RUNTIME_CONFIG_DIAGNOSTICS__?: Array<{
+    moduleCode?: string;
+    field?: string;
+    level?: string;
+  }>;
+};
+
 const hybridConfig = {
   profile: 'hybrid',
   modules: {
@@ -136,7 +147,7 @@ test.describe.serial('Shell runtime composition', () => {
     }
   });
 
-  test('hybrid profile loads RBAC and Workflow from remote micro apps', async ({ page }) => {
+  test('@p0 @runtime hybrid profile loads RBAC and Workflow from remote micro apps', async ({ page }) => {
     writeRuntimeConfig(hybridConfig);
     await login(page);
 
@@ -188,7 +199,7 @@ test.describe.serial('Shell runtime composition', () => {
     await expectBusinessSmoke(page, 'cms');
   });
 
-  test('monolith profile renders modules locally without loading remote apps', async ({ page }) => {
+  test('@p0 @runtime monolith profile renders modules locally without loading remote apps', async ({ page }) => {
     writeRuntimeConfig(monolithConfig);
     await login(page);
 
@@ -226,7 +237,7 @@ test.describe.serial('Shell runtime composition', () => {
     expect(remoteResources).toEqual([]);
   });
 
-  test('broken remote app shows an actionable runtime error', async ({ page }) => {
+  test('@p1 @runtime broken remote app shows an actionable runtime error', async ({ page }) => {
     writeRuntimeConfig(brokenHybridConfig);
     await login(page);
 
@@ -254,7 +265,7 @@ test.describe.serial('Shell runtime composition', () => {
     await expect(page.getByRole('button', { name: '重试' })).toBeVisible();
   });
 
-  test('missing remote entry does not fall back to another micro app', async ({ page }) => {
+  test('@p1 @runtime missing remote entry does not fall back to another micro app', async ({ page }) => {
     writeRuntimeConfig(missingEntryHybridConfig);
     await login(page);
 
@@ -280,7 +291,7 @@ test.describe.serial('Shell runtime composition', () => {
     await expect(page.locator('main')).not.toContainText('新增套餐');
   });
 
-  test('invalid runtime mode falls back to local rendering with diagnostics', async ({ page }) => {
+  test('@p1 @runtime invalid runtime mode falls back to local rendering with diagnostics', async ({ page }) => {
     writeRuntimeConfig(invalidModeConfig);
     await login(page);
 
@@ -308,12 +319,12 @@ test.describe.serial('Shell runtime composition', () => {
     expect(remoteResources).toEqual([]);
   });
 
-  test('micro app unauthorized event is handled by the shell', async ({ page }) => {
+  test('@p0 @runtime micro app unauthorized event is handled by the shell', async ({ page }) => {
     writeRuntimeConfig(hybridConfig);
     await login(page);
 
     await page.evaluate(() => {
-      (window as any).__MANGO_RUNTIME_EVENT_BUS__.emit('unauthorized');
+      (window as MangoRuntimeWindow).__MANGO_RUNTIME_EVENT_BUS__.emit('unauthorized');
     });
 
     await page.waitForURL('**/#/login**', { timeout: 10000 });
@@ -335,8 +346,8 @@ async function login(page: Page) {
   await page.goto('/#/login');
   await page.getByPlaceholder('用户名').fill('admin');
   await page.getByPlaceholder('密码').fill('admin123');
-  const accountTenantsResponsePromise = page.waitForResponse((response) =>
-    response.url().includes('/api/auth/login-institutions') && response.status() === 200
+  const accountTenantsResponsePromise = page.waitForResponse(
+    (response) => response.url().includes('/api/auth/login-institutions') && response.status() === 200,
   );
   await page.getByPlaceholder('密码').blur();
   await accountTenantsResponsePromise;
@@ -354,42 +365,47 @@ async function expectRuntime(
     runtimeCode: string;
     pageType: string;
     entryIncludes?: string;
-  }
+  },
 ) {
-  await expect.poll(async () => {
-    return page.locator('.shell-runtime-content').evaluate((el) => ({
-      moduleCode: (el as HTMLElement).dataset.mangoRuntimeModule,
-      runtimeCode: (el as HTMLElement).dataset.mangoRuntimeCode,
-      pageType: (el as HTMLElement).dataset.mangoRuntimePageType,
-      entry: (el as HTMLElement).dataset.mangoRuntimeEntry,
-    }));
-  }).toMatchObject({
-    moduleCode: expected.moduleCode,
-    runtimeCode: expected.runtimeCode,
-    pageType: expected.pageType,
-  });
+  await expect
+    .poll(async () => {
+      return page.locator('.shell-runtime-content').evaluate((el) => ({
+        moduleCode: (el as HTMLElement).dataset.mangoRuntimeModule,
+        runtimeCode: (el as HTMLElement).dataset.mangoRuntimeCode,
+        pageType: (el as HTMLElement).dataset.mangoRuntimePageType,
+        entry: (el as HTMLElement).dataset.mangoRuntimeEntry,
+      }));
+    })
+    .toMatchObject({
+      moduleCode: expected.moduleCode,
+      runtimeCode: expected.runtimeCode,
+      pageType: expected.pageType,
+    });
 
   if (expected.entryIncludes) {
-    const entry = await page.locator('.shell-runtime-content').evaluate((el) =>
-      (el as HTMLElement).dataset.mangoRuntimeEntry || ''
-    );
+    const entry = await page
+      .locator('.shell-runtime-content')
+      .evaluate((el) => (el as HTMLElement).dataset.mangoRuntimeEntry || '');
     expect(entry).toContain(expected.entryIncludes);
   }
 }
 
 async function expectRemoteResource(page: Page, urlPart: string) {
-  await expect.poll(async () => {
-    const resources = await remoteRuntimeResources(page);
-    if (resources.some((url) => url.includes(urlPart))) {
-      return true;
-    }
-    const runtimeEvidence = await page.evaluate((part) => {
-      const active = (window as any).__MANGO_ACTIVE_MICRO_APP__;
-      const events = ((window as any).__MANGO_MICRO_APP_EVENTS__ || []) as Array<{ entryUrl?: string }>;
-      return Boolean(active?.entryUrl?.includes(part) || events.some((event) => event.entryUrl?.includes(part)));
-    }, urlPart);
-    return runtimeEvidence;
-  }).toBeTruthy();
+  await expect
+    .poll(async () => {
+      const resources = await remoteRuntimeResources(page);
+      if (resources.some((url) => url.includes(urlPart))) {
+        return true;
+      }
+      const runtimeEvidence = await page.evaluate((part) => {
+        const runtimeWindow = window as MangoRuntimeWindow;
+        const active = runtimeWindow.__MANGO_ACTIVE_MICRO_APP__;
+        const events = runtimeWindow.__MANGO_MICRO_APP_EVENTS__ || [];
+        return Boolean(active?.entryUrl?.includes(part) || events.some((event) => event.entryUrl?.includes(part)));
+      }, urlPart);
+      return runtimeEvidence;
+    })
+    .toBeTruthy();
 }
 
 async function expectBusinessSmoke(page: Page, module: 'rbac' | 'workflow' | 'cms') {
@@ -440,15 +456,13 @@ async function expectBusinessSmoke(page: Page, module: 'rbac' | 'workflow' | 'cm
 }
 
 async function currentRuntimeCode(page: Page) {
-  return page.locator('.shell-runtime-content').evaluate((el) =>
-    (el as HTMLElement).dataset.mangoRuntimeCode || ''
-  );
+  return page.locator('.shell-runtime-content').evaluate((el) => (el as HTMLElement).dataset.mangoRuntimeCode || '');
 }
 
 async function currentPageType(page: Page) {
-  return page.locator('.shell-runtime-content').evaluate((el) =>
-    (el as HTMLElement).dataset.mangoRuntimePageType || ''
-  );
+  return page
+    .locator('.shell-runtime-content')
+    .evaluate((el) => (el as HTMLElement).dataset.mangoRuntimePageType || '');
 }
 
 async function expectRuntimeDiagnostic(
@@ -457,22 +471,21 @@ async function expectRuntimeDiagnostic(
     moduleCode: string;
     field: string;
     level: string;
-  }
+  },
 ) {
-  await expect.poll(async () => {
-    return page.evaluate((item) => {
-      const diagnostics = ((window as any).__MANGO_RUNTIME_CONFIG_DIAGNOSTICS__ || []) as Array<{
-        moduleCode?: string;
-        field?: string;
-        level?: string;
-      }>;
-      return diagnostics.some(diagnostic =>
-        diagnostic.moduleCode === item.moduleCode
-        && diagnostic.field === item.field
-        && diagnostic.level === item.level
-      );
-    }, expected);
-  }).toBeTruthy();
+  await expect
+    .poll(async () => {
+      return page.evaluate((item) => {
+        const diagnostics = (window as MangoRuntimeWindow).__MANGO_RUNTIME_CONFIG_DIAGNOSTICS__ || [];
+        return diagnostics.some(
+          (diagnostic) =>
+            diagnostic.moduleCode === item.moduleCode &&
+            diagnostic.field === item.field &&
+            diagnostic.level === item.level,
+        );
+      }, expected);
+    })
+    .toBeTruthy();
 }
 
 async function remoteRuntimeResources(page: Page) {
@@ -480,14 +493,15 @@ async function remoteRuntimeResources(page: Page) {
     performance
       .getEntriesByType('resource')
       .map((entry) => entry.name)
-      .filter((url) =>
-        url.includes('b.mango.io:5181')
-        || url.includes('c.mango.io:5182')
-        || url.includes('e.mango.io:5184')
-        || url.includes('b.mango.io:4181')
-        || url.includes('c.mango.io:4182')
-        || url.includes('e.mango.io:4184')
-      )
+      .filter(
+        (url) =>
+          url.includes('b.mango.io:5181') ||
+          url.includes('c.mango.io:5182') ||
+          url.includes('e.mango.io:5184') ||
+          url.includes('b.mango.io:4181') ||
+          url.includes('c.mango.io:4182') ||
+          url.includes('e.mango.io:4184'),
+      ),
   );
 }
 
@@ -499,10 +513,4 @@ function resolvePeerEntry(hostname: string, devPort: number, previewPort: number
 
 function escapeRegExp(value: string) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
-async function closeTag(page: Page, title: string) {
-  const tag = page.locator('.tags-view-item', { hasText: title }).last();
-  await expect(tag).toBeVisible();
-  await tag.locator('.close-icon').click();
 }

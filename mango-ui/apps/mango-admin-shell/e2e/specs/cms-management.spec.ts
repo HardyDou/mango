@@ -40,7 +40,7 @@ async function loginToken(request: APIRequestContext) {
     },
   });
   expect(response.status()).toBe(200);
-  const body = await response.json() as ApiBody<{ accessToken: string }>;
+  const body = (await response.json()) as ApiBody<{ accessToken: string }>;
   return expectApiSuccess(body, '登录失败').accessToken;
 }
 
@@ -48,7 +48,12 @@ function authHeaders(token: string) {
   return { ...tenantHeaders, Authorization: `Bearer ${token}` };
 }
 
-async function apiGet<T>(request: APIRequestContext, token: string, path: string, params?: Record<string, string | number | boolean | undefined>) {
+async function apiGet<T>(
+  request: APIRequestContext,
+  token: string,
+  path: string,
+  params?: Record<string, string | number | boolean | undefined>,
+) {
   const response = await request.get(api(path), { headers: authHeaders(token), params });
   expect(response.status(), `${path} HTTP 状态错误`).toBe(200);
   return expectApiSuccess((await response.json()) as ApiBody<T>, `${path} 调用失败`);
@@ -60,16 +65,10 @@ async function apiPost<T>(request: APIRequestContext, token: string, path: strin
   return expectApiSuccess((await response.json()) as ApiBody<T>, `${path} 调用失败`);
 }
 
-async function apiPut<T>(request: APIRequestContext, token: string, path: string, data: Record<string, unknown>) {
-  const response = await request.put(api(path), { headers: authHeaders(token), data });
-  expect(response.status(), `${path} HTTP 状态错误`).toBe(200);
-  return expectApiSuccess((await response.json()) as ApiBody<T>, `${path} 调用失败`);
-}
-
 async function apiDelete(request: APIRequestContext, token: string, path: string, id: string) {
   const response = await request.delete(api(path), { headers: authHeaders(token), params: { id } });
   if (response.status() === 200) {
-    const body = await response.json() as ApiBody<boolean>;
+    const body = (await response.json()) as ApiBody<boolean>;
     expect(body.success || body.code === 200, `${path} 删除失败: ${JSON.stringify(body)}`).toBeTruthy();
   }
 }
@@ -78,8 +77,8 @@ async function login(page: Page) {
   await page.goto('/#/login');
   await page.getByPlaceholder('用户名').fill('admin');
   await page.getByPlaceholder('密码').fill('admin123');
-  const accountTenantsResponsePromise = page.waitForResponse((response) =>
-    response.url().includes('/api/auth/login-institutions') && response.status() === 200
+  const accountTenantsResponsePromise = page.waitForResponse(
+    (response) => response.url().includes('/api/auth/login-institutions') && response.status() === 200,
   );
   await page.getByPlaceholder('密码').blur();
   await accountTenantsResponsePromise;
@@ -152,14 +151,17 @@ async function checkButton(dialog: Locator, label: string, option: string) {
     .filter({ hasText: new RegExp(`^\\s*${escapeRegExp(option)}\\s*$`) })
     .first();
   await expect(button).toBeVisible({ timeout: 10000 });
-  if (!(await button.evaluate(element => element.classList.contains('is-checked')))) {
+  if (!(await button.evaluate((element) => element.classList.contains('is-checked')))) {
     await button.click();
   }
 }
 
 function formItem(scope: Locator, label: string) {
   return scope.locator('.el-form-item').filter({
-    has: scope.page().locator('.el-form-item__label').filter({ hasText: new RegExp(`^\\*?\\s*${escapeRegExp(label)}$`) }),
+    has: scope
+      .page()
+      .locator('.el-form-item__label')
+      .filter({ hasText: new RegExp(`^\\*?\\s*${escapeRegExp(label)}$`) }),
   });
 }
 
@@ -206,8 +208,12 @@ async function cleanupCmsData(request: APIRequestContext, token: string, keyword
   for (const item of deletes) {
     const records = item.tree
       ? await apiGet<CmsRecord[]>(request, token, item.list, {}).catch(() => [])
-      : (await apiGet<PageResult<CmsRecord>>(request, token, item.list, { page: 1, size: 100, keyword }).catch(() => ({ list: [] }))).list || [];
-    for (const record of flattenRecords(records).filter(record => JSON.stringify(record).includes(keyword))) {
+      : (
+          await apiGet<PageResult<CmsRecord>>(request, token, item.list, { page: 1, size: 100, keyword }).catch(() => ({
+            list: [],
+          }))
+        ).list || [];
+    for (const record of flattenRecords(records).filter((record) => JSON.stringify(record).includes(keyword))) {
       const id = asId(record.id);
       if (item.offline) {
         await apiPost<boolean>(request, token, item.offline, { id }).catch(() => undefined);
@@ -220,11 +226,11 @@ async function cleanupCmsData(request: APIRequestContext, token: string, keyword
 }
 
 function flattenRecords(records: CmsRecord[]): CmsRecord[] {
-  return records.flatMap(record => [record, ...flattenRecords((record.children || []) as CmsRecord[])]);
+  return records.flatMap((record) => [record, ...flattenRecords((record.children || []) as CmsRecord[])]);
 }
 
 test.describe('CMS 管理后台 E2E', () => {
-  test('CMS 资源管理、状态流转、发布关系和站点详情可用', async ({ page, request }) => {
+  test('@p0 @cms CMS 资源管理、状态流转、发布关系和站点详情可用', async ({ page, request }) => {
     const unique = Date.now();
     const keyword = String(unique);
     const siteName = `E2E 官网 ${unique}`;
@@ -264,7 +270,9 @@ test.describe('CMS 管理后台 E2E', () => {
     });
     await expect(rowByText(page, updatedSiteName)).toBeVisible({ timeout: 10000 });
     await rowByText(page, updatedSiteName).getByRole('button', { name: '详情' }).click();
-    await expect(page.getByRole('dialog', { name: '站点管理详情' })).toContainText(`${keyword} SEO`, { timeout: 10000 });
+    await expect(page.getByRole('dialog', { name: '站点管理详情' })).toContainText(`${keyword} SEO`, {
+      timeout: 10000,
+    });
     await page.getByRole('button', { name: '关闭' }).click();
     await rowByText(page, updatedSiteName).getByRole('button', { name: '禁用' }).click();
     await expect(page.getByText('状态已更新')).toBeVisible({ timeout: 10000 });
@@ -272,7 +280,9 @@ test.describe('CMS 管理后台 E2E', () => {
     await rowByText(page, updatedSiteName).getByRole('button', { name: '启用' }).click();
     await expect(rowByText(page, updatedSiteName)).toContainText('启用', { timeout: 10000 });
 
-    const site = (await apiGet<PageResult<CmsRecord>>(request, token, '/cms/sites/page', { page: 1, size: 10, keyword })).list?.[0];
+    const site = (
+      await apiGet<PageResult<CmsRecord>>(request, token, '/cms/sites/page', { page: 1, size: 10, keyword })
+    ).list?.[0];
     const siteId = asId(site?.id);
     expect(site?.siteName).toBe(updatedSiteName);
 
@@ -284,8 +294,14 @@ test.describe('CMS 管理后台 E2E', () => {
       await dialog.getByLabel('排序', { exact: true }).fill('10');
       await fillTextarea(dialog, '备注', `${keyword} 分类备注`);
     });
-    const contentCategory = (await apiGet<PageResult<CmsRecord>>(request, token, '/cms/content-categories/page', { page: 1, size: 10, keyword })).list?.[0];
-    const contentCategoryId = asId(contentCategory?.id);
+    const contentCategory = (
+      await apiGet<PageResult<CmsRecord>>(request, token, '/cms/content-categories/page', {
+        page: 1,
+        size: 10,
+        keyword,
+      })
+    ).list?.[0];
+    asId(contentCategory?.id);
 
     await openCmsPage(page, '/cms/content-tags', '内容标签');
     await searchKeyword(page, keyword);
@@ -306,7 +322,7 @@ test.describe('CMS 管理后台 E2E', () => {
       await dialog.getByLabel('排序', { exact: true }).fill('30');
     });
     const siteCategories = await apiGet<CmsRecord[]>(request, token, '/cms/site-categories/tree', { siteId });
-    const siteCategoryId = asId(flattenRecords(siteCategories).find(item => item.categoryName === siteCategoryName)?.id);
+    asId(flattenRecords(siteCategories).find((item) => item.categoryName === siteCategoryName)?.id);
     await rowByText(page, siteCategoryName).getByRole('button', { name: '禁用' }).click();
     await expect(rowByText(page, siteCategoryName)).toContainText('禁用', { timeout: 10000 });
     await rowByText(page, siteCategoryName).getByRole('button', { name: '启用' }).click();
@@ -331,7 +347,9 @@ test.describe('CMS 管理后台 E2E', () => {
     await expect(rowByText(page, updatedContentTitle)).toContainText('待审核', { timeout: 10000 });
     await rowByText(page, updatedContentTitle).getByRole('button', { name: '通过' }).click();
     await expect(rowByText(page, updatedContentTitle)).toContainText('已发布', { timeout: 10000 });
-    const content = (await apiGet<PageResult<CmsRecord>>(request, token, '/cms/contents/page', { page: 1, size: 10, keyword })).list?.[0];
+    const content = (
+      await apiGet<PageResult<CmsRecord>>(request, token, '/cms/contents/page', { page: 1, size: 10, keyword })
+    ).list?.[0];
     const contentId = asId(content?.id);
     expect(content?.status).toBe('PUBLISHED');
 
@@ -346,8 +364,9 @@ test.describe('CMS 管理后台 E2E', () => {
     await expect(rowByText(page, updatedContentTitle)).toContainText('已发布', { timeout: 10000 });
     await rowByText(page, updatedContentTitle).getByRole('button', { name: '下线' }).click();
     await expect(page.getByText('发布关系已下线')).toBeVisible({ timeout: 10000 });
-    const publish = (await apiGet<PageResult<CmsRecord>>(request, token, '/cms/content-publishes/page', { page: 1, size: 10, siteId })).list
-      ?.find(item => String(item.contentId) === contentId);
+    const publish = (
+      await apiGet<PageResult<CmsRecord>>(request, token, '/cms/content-publishes/page', { page: 1, size: 10, siteId })
+    ).list?.find((item) => String(item.contentId) === contentId);
     expect(publish?.publishStatus).toBe('OFFLINE');
 
     await openCmsPage(page, '/cms/navigations', '导航管理');

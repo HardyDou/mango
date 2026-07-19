@@ -75,6 +75,10 @@ try {
   };
   persist();
 
+  if (changes.scopeKnown && changes.changedPaths.length > 0) {
+    execute(process.execPath, ['./scripts/quality/run-changed-static.mjs', ...changes.changedPaths]);
+  }
+
   if (selection.mode === 'full') {
     execute('pnpm', ['run', 'check:full']);
   } else if (selection.mode === 'affected') {

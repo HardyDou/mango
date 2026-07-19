@@ -12,6 +12,19 @@ const repoRoot = resolve(cliRoot, '../../..');
 const canonicalRoot = join(repoRoot, 'mango-business-starter/backend/modules/{{moduleKebab}}');
 const projectionRoot = join(cliRoot, 'templates/business-module/backend/modules/{{moduleKebab}}');
 
+const frontendProjectionCases = [
+  {
+    name: 'UI source',
+    canonical: join(repoRoot, 'mango-business-starter/frontend/packages/{{moduleKebab}}/src'),
+    projection: join(cliRoot, 'templates/business-module/frontend/packages/{{moduleKebab}}/src'),
+  },
+  {
+    name: 'API source',
+    canonical: join(repoRoot, 'mango-business-starter/frontend/packages/{{moduleKebab}}-api/src'),
+    projection: join(cliRoot, 'templates/business-module/frontend/packages/{{moduleKebab}}-api/src'),
+  },
+];
+
 test('CLI business module backend is an exact canonical projection', () => {
   const comparison = compareProjectionTrees(canonicalRoot, projectionRoot);
   assert.equal(comparison.equal, true, JSON.stringify(comparison, null, 2));
@@ -20,6 +33,17 @@ test('CLI business module backend is an exact canonical projection', () => {
   assert.deepEqual(comparison.extra, []);
   assert.deepEqual(comparison.changed, []);
 });
+
+for (const projectionCase of frontendProjectionCases) {
+  test(`CLI business module frontend ${projectionCase.name} is an exact canonical projection`, () => {
+    const comparison = compareProjectionTrees(projectionCase.canonical, projectionCase.projection);
+    assert.equal(comparison.equal, true, JSON.stringify(comparison, null, 2));
+    assert.equal(comparison.fileCount > 0, true);
+    assert.deepEqual(comparison.missing, []);
+    assert.deepEqual(comparison.extra, []);
+    assert.deepEqual(comparison.changed, []);
+  });
+}
 
 test('projection comparison reports changed, missing, and extra files', () => {
   const tempRoot = mkdtempSync(join(tmpdir(), 'mango-business-module-projection-'));

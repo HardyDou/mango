@@ -51,7 +51,7 @@ node mango-business-starter/scripts/check-template.mjs
 
 当前 PMO baseline 按风险事实选择三档交付模式：L0/L1 使用 SIMPLE 并直接实现，L2 使用 STANDARD 单文件记录，L3 使用 FULL 适用流程。M01 默认自动创建或复用隔离 worktree，只有 main 例外、模式降级、破坏性数据库动作和外部写入等事实需要人工确认；M09-M16 仍按真实观察面选择。发布、版本和发布恢复继续使用独立发布流程。
 
-当前 PMO baseline 内置 `mango-workflow` Skill，供有明确 Mango 审批证据的接入、诊断和验收使用，例如精确包/模块坐标、`/workflow/` API、流程定义模型、审批任务动作或业务审批组件。Vue 工程规范、CI/GitHub Actions、PMO 交付流程、普通状态机和单独出现的 `workflow/工作流/流程` 属于非适用场景；仅有多义词时保持当前任务领域并按需澄清。完整分类边界见 [能力说明维护规范](../mango-pmo/rules/08-capability-docs.md#211-workflow-多义术语路由)。
+能力与 Skill 路由统一由项目 `AGENTS.md` 和 PMO preflight 决定；不要从普通技术术语推断无关能力。完整分类边界见[能力说明维护规范](../mango-pmo/rules/08-capability-docs.md)。
 
 当前 scope classifier 会为 partial 后端 PR 同时输出质量模块 `maven_projects` 和依赖准备模块 `maven_dependency_projects`。标准 workflow 先用后者执行带 `-am` 的跳过测试安装，再用前者执行不带 `-am`、`-amd` 的直接模块质量门禁。这样新 Runner 不依赖历史 Maven 缓存，也不会把上游模块的存量质量问题扩大到当前 PR。
 
@@ -102,7 +102,7 @@ mango dev start
 | `backend/modules/<module>/<module>-starter-remote` | Feign client 自动配置                                    | 微服务调用方按需依赖                                                                      |
 | `frontend/packages/<module>-api`                   | 只依赖 `@mango/api-schema` 的业务 API 工厂和 TS 类型     | 按[前端 Monorepo 规范](../mango-pmo/rules/frontend/06-monorepo-architecture.md)维护契约   |
 | `frontend/packages/<module>`                       | 页面注册、API 组合层和 Element Plus CRUD 页面            | 页面只管理交互状态；卸载时取消未完成请求                                                  |
-| `frontend/src/main.ts`                             | host 请求实例和业务页面注册                              | 每个 runtime context 创建 `@mango/http-client`，通过 `register<Module>Pages(client)` 注入 |
+| `frontend/src/main.ts`                             | host 请求实例和业务页面注册                              | 每个 app 创建 `@mango/http-client`，通过 `app.provide(MANGO_HTTP_CLIENT_KEY, client)` 注入；页面注册函数保持无参 |
 | `backend/pom.xml`                                  | 业务模块 Maven module                                    | 确认 `business-modules` managed block 已追加                                              |
 | `backend/app/pom.xml`                              | app 依赖业务 starter                                     | 确认 `business-dependencies` managed block 已追加                                         |
 | `backend/app/src/main/resources/application.yml`   | 业务 Flyway 模块开关                                     | 确认 `<module>.enabled: true` 已追加                                                      |
@@ -173,7 +173,7 @@ Controller 使用 `BaseCrudController`，类级路径由 module 和 aggregate �
 | 包             | 导出                                                                                                    | 依赖                                                                                     | 适用场景                     |
 | -------------- | ------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- | ---------------------------- |
 | `<module>-api` | TS 类型、`create<Aggregate>Api(HttpClient)` CRUD 工厂                                                   | `@mango/api-schema`                                                                      | 页面包、其他业务前端调用 API |
-| `<module>`     | `{{moduleCamel}}PageRegistry`、`register{{modulePascal}}Pages(httpClient)`、API re-export、公开样式入口 | `<module>-api`、`@mango/admin-pages`、`@mango/api-schema`、`@mango/common`、Element Plus | 管理后台页面注册             |
+| `<module>`     | `{{moduleCamel}}PageRegistry`、`register{{modulePascal}}Pages()`、API re-export、公开样式入口 | `<module>-api`、`@mango/admin-pages`、`@mango/api-schema`、`@mango/common`、Element Plus | 管理后台页面注册             |
 | admin app      | `createMangoAdminApp()` 调用和业务页面注册                                                              | `@mango/admin`                                                                           | 业务后台入口                 |
 
 页面默认使用 `@mango/common` 的 `MangoListPage`、`MangoSearchPanel`、`MangoListPanel` 和 `Pagination` 组织查询、功能区、表格区和分页区。搜索区默认启用常用项折叠，业务把高频条件放在前面，展开后显示全部条件。它是 CRUD 起点，业务交付时应补齐真实字段、权限控制、空状态、错误态和 E2E。
@@ -230,7 +230,7 @@ Controller 使用 `BaseCrudController`，类级路径由 module 和 aggregate �
 
 | 问题                                           | 原因                                                                                              | 处理方式                                                                                                                      |
 | ---------------------------------------------- | ------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| 生成后菜单打不开                               | 前端页面 key、resource manifest component、注册函数或请求实例注入不一致                           | 检查 `register<Module>Pages(httpClient)`、host client 和 component key                                                        |
+| 生成后菜单打不开                               | 前端页面 key、resource manifest component、注册函数或请求实例注入不一致                           | 检查 `register<Module>Pages()`、host 的 `app.provide(MANGO_HTTP_CLIENT_KEY, client)` 和 component key                          |
 | 后端启动没有建业务表                           | Flyway 模块未启用或 migration 路径不在扫描范围                                                    | 检查 `application.yml` 的 `<module>.enabled: true` 和 migration 路径                                                          |
 | 页面有按钮但权限不生效                         | 模板页面默认没有按钮级权限判断                                                                    | 接入前端权限指令或组件，并在后端接口补权限校验                                                                                |
 | 数据跨租户可见                                 | 模板只提供 `tenant_id` 起点，业务未补查询和写入约束                                               | 检查 `TenantEntity`、当前租户上下文、Mapper 查询和测试数据                                                                    |

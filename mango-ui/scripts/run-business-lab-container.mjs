@@ -104,6 +104,13 @@ try {
     ],
     { cwd: uiRoot },
   );
+  run(process.execPath, [
+    join(uiRoot, 'scripts', 'run-business-lab-browser.mjs'),
+    `--runtime-volume=${runtimeVolume}`,
+    `--image=${image}`,
+    `--git-sha=${gitSha}`,
+    `--git-tree=${gitTree}`,
+  ]);
 
   mkdirSync(reportRoot, { recursive: true });
   for (const file of ['preparation-report.json', 'sealed-report.json']) {

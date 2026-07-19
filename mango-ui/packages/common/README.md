@@ -205,6 +205,8 @@ const visible = ref(false);
 
 请求配置：
 
+`@mango/common/utils/request` 是存量兼容入口。新增业务 API 使用 `@mango/api-schema` 的中立合同，由 host 通过 `@mango/http-client` 创建实例并注入；迁移边界见[前端业务 API 规范](../../../mango-pmo/rules/frontend/12-business-api.md)。
+
 | 配置位置                               | 字段               | 默认值                               | 含义                                       |
 | -------------------------------------- | ------------------ | ------------------------------------ | ------------------------------------------ |
 | `setRequestBaseUrl(baseURL)`           | `baseURL`          | `/api` 或 Wujie runtime `apiBaseUrl` | 设置 axios 默认 API 前缀。                 |

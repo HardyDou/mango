@@ -25,10 +25,14 @@
 ```text
 host/runtime
   -> createMangoHttpClient(baseUrl, token, tenant, trace)
-  -> registerBusinessPages(client)
-  -> business UI composition layer
+  -> app.provide(MANGO_HTTP_CLIENT_KEY, client)
+  -> business UI composable injects the current app client
+  -> per-client WeakMap cache
   -> createBusinessApi(HttpClient)
   -> relative HTTP endpoint
+
+registerBusinessPages()
+  -> route/component metadata only; carries no client state
 ```
 
 - `frontend/packages/<module>-api`：DTO、Query、Command、VO 和 `createXxxApi(client)`；不依赖 Vue、Element Plus、Axios、环境变量或路由。
