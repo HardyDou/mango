@@ -78,6 +78,8 @@ class CheckGateFinalizer {
         result.issuesByRule = countIssuesByField(result, FIELD_RULE);
         result.excludedIssuesBySource = countIssuesByField(result.excludedIssues, FIELD_SOURCE);
         result.excludedIssuesByRule = countIssuesByField(result.excludedIssues, FIELD_RULE);
+        assignStableFingerprints(result.issues);
+        assignStableFingerprints(result.excludedIssues);
 
         if (isNoNewViolationsGate(result)) {
             finalizeNoNewViolations(result);
@@ -102,7 +104,6 @@ class CheckGateFinalizer {
         Map<String, Integer> baselineFingerprints = loadBaselineFingerprints(result);
         boolean hasBaseline = hasConfiguredBaseline();
         for (CheckIssue issue : result.issues) {
-            issue.fingerprint = fingerprint(issue);
             issue.inChangedFiles = isChangedIssue(issue, changedFileSet);
             issue.baseline = consumeBaselineMatch(baselineFingerprints, issue);
             if (isNewIssue(issue, changedFileSet, hasBaseline)) {
@@ -336,7 +337,7 @@ class CheckGateFinalizer {
             CheckResult baseline = objectMapper.readValue(baselinePath.toFile(), CheckResult.class);
             if (baseline.issues != null) {
                 for (CheckIssue issue : baseline.issues) {
-                    addFingerprint(fingerprints, stableFingerprint(issue));
+                    addFingerprint(fingerprints, fingerprintForBaseline(issue));
                 }
             }
             return fingerprints;
@@ -366,10 +367,24 @@ class CheckGateFinalizer {
     }
 
     private String fingerprintForBaseline(CheckIssue issue) {
-        if (issue.fingerprint == null || issue.fingerprint.isBlank()) {
-            return fingerprint(issue);
+        if (issue.fingerprint == null
+                || issue.fingerprint.isBlank()
+                || isLegacyLineFingerprint(issue)) {
+            return stableFingerprint(issue);
         }
         return issue.fingerprint;
+    }
+
+    private boolean isLegacyLineFingerprint(CheckIssue issue) {
+        String legacySuffix = String.join(
+                "|", "", Integer.toString(issue.line), normalizeFingerprintText(issue.description));
+        return issue.fingerprint.endsWith(legacySuffix);
+    }
+
+    private void assignStableFingerprints(Iterable<CheckIssue> issues) {
+        for (CheckIssue issue : issues) {
+            issue.fingerprint = stableFingerprint(issue);
+        }
     }
 
     private boolean isChangedIssue(CheckIssue issue, Set<String> changedFileSet) {
@@ -392,16 +407,6 @@ class CheckGateFinalizer {
         return issueFile.equals(changedFile)
                 || issueFile.endsWith(PATH_SEPARATOR + changedFile)
                 || changedFile.endsWith(PATH_SEPARATOR + issueFile);
-    }
-
-    private String fingerprint(CheckIssue issue) {
-        return String.join(
-                "|",
-                safeLower(issue.source),
-                safeLower(issue.rule),
-                normalizeIssueFile(issue.file),
-                Integer.toString(issue.line),
-                normalizeFingerprintText(issue.description));
     }
 
     private String stableFingerprint(CheckIssue issue) {

@@ -608,6 +608,198 @@ class CheckMojoTest {
     }
 
     @Test
+    void finalizeResult_allGatePersistsStableRepositoryRelativeFingerprint() throws Exception {
+        Path projectRoot = tempDir.resolve("baohan-system/baohan-backend");
+        CheckIssue issue = new CheckIssue();
+        issue.type = "MagicNumberCheck";
+        issue.severity = "MINOR";
+        issue.file = projectRoot.resolve("app/src/main/java/com/example/Demo.java").toString();
+        issue.line = 12;
+        issue.description = "'5' is a magic number.";
+        issue.rule = "MagicNumberCheck";
+        issue.reference = "auto-check-mapping.md";
+        issue.source = "checkstyle";
+        CheckIssue excludedIssue = new CheckIssue();
+        excludedIssue.file = projectRoot.resolve(
+                "app/src/main/java/com/example/ExcludedDemo.java").toString();
+        excludedIssue.description = "'8' is a magic number.";
+        excludedIssue.rule = "MagicNumberCheck";
+        excludedIssue.source = "checkstyle";
+        CheckResult result = new CheckResult();
+        result.issues.add(issue);
+        result.excludedIssues.add(excludedIssue);
+        CheckGateFinalizer finalizer = new CheckGateFinalizer(
+                objectMapper(),
+                new CheckGateOptions(projectRoot, null, null, null, "all", "block"));
+
+        finalizer.finalizeResult(result);
+
+        assertEquals(
+                "checkstyle|magicnumbercheck|app/src/main/java/com/example/Demo.java|literal:5",
+                issue.fingerprint);
+        assertEquals(
+                "checkstyle|magicnumbercheck|app/src/main/java/com/example/ExcludedDemo.java|literal:8",
+                excludedIssue.fingerprint);
+        assertSame(issue, result.newIssues.get(0));
+    }
+
+    @Test
+    void finalizeResult_noNewViolationsUsesPersistedFingerprintAcrossBusinessWorktrees()
+            throws Exception {
+        Path baselineRoot = tempDir.resolve("baohan-system/baohan-backend");
+        CheckIssue baselineIssue = new CheckIssue();
+        baselineIssue.type = "MagicNumberCheck";
+        baselineIssue.severity = "MINOR";
+        baselineIssue.file = baselineRoot.resolve(
+                "app/src/main/java/com/yunxinbaokeji/baohan/app/service/UserService.java").toString();
+        baselineIssue.line = 12;
+        baselineIssue.description = "'5' is a magic number.";
+        baselineIssue.rule = "MagicNumberCheck";
+        baselineIssue.reference = "auto-check-mapping.md";
+        baselineIssue.source = "checkstyle";
+        CheckResult baseline = new CheckResult();
+        baseline.issues.add(baselineIssue);
+        new CheckGateFinalizer(
+                objectMapper(),
+                new CheckGateOptions(baselineRoot, null, null, null, "all", "block"))
+                .finalizeResult(baseline);
+        Path baselineFile = tempDir.resolve("target/baohan-baseline.json");
+        Files.createDirectories(baselineFile.getParent());
+        Files.writeString(baselineFile, objectMapper().writeValueAsString(baseline));
+
+        Path currentRoot = tempDir.resolve("baohan-system-latest-upgrade/baohan-backend");
+        CheckIssue currentIssue = new CheckIssue();
+        currentIssue.type = "MagicNumberCheck";
+        currentIssue.severity = "MINOR";
+        currentIssue.file = currentRoot.resolve(
+                "app/src/main/java/com/yunxinbaokeji/baohan/app/service/UserService.java").toString();
+        currentIssue.line = 18;
+        currentIssue.description = "'5' is a magic number.";
+        currentIssue.rule = "MagicNumberCheck";
+        currentIssue.reference = "auto-check-mapping.md";
+        currentIssue.source = "checkstyle";
+        CheckResult result = new CheckResult();
+        result.issues.add(currentIssue);
+        CheckGateFinalizer finalizer = new CheckGateFinalizer(
+                objectMapper(),
+                new CheckGateOptions(
+                        currentRoot,
+                        "app/src/main/java/com/yunxinbaokeji/baohan/app/service/UserService.java",
+                        null,
+                        baselineFile.toString(),
+                        "no-new-violations",
+                        "block"));
+
+        finalizer.finalizeResult(result);
+
+        assertTrue(result.passed);
+        assertEquals(0, result.newIssueCount);
+        assertEquals(1, result.baselineIssueCount);
+        assertTrue(currentIssue.baseline);
+        assertEquals(baselineIssue.fingerprint, currentIssue.fingerprint);
+    }
+
+    @Test
+    void finalizeResult_noNewViolationsUpgradesLegacyLineFingerprint() throws Exception {
+        Path projectRoot = tempDir.resolve("business-backend");
+        Path sourceFile = projectRoot.resolve("app/src/main/java/com/example/UserService.java");
+        Path baselineFile = tempDir.resolve("legacy-baseline.json");
+        CheckIssue baselineIssue = new CheckIssue();
+        baselineIssue.source = "checkstyle";
+        baselineIssue.rule = "MagicNumberCheck";
+        baselineIssue.file = sourceFile.toString();
+        baselineIssue.line = 12;
+        baselineIssue.description = "Magic number: '5'";
+        baselineIssue.fingerprint = String.join(
+                "|",
+                "checkstyle",
+                "magicnumbercheck",
+                "app/src/main/java/com/example/UserService.java",
+                "12",
+                "magic number: '5'");
+        CheckResult baseline = new CheckResult();
+        baseline.issues.add(baselineIssue);
+        objectMapper().writeValue(baselineFile.toFile(), baseline);
+
+        CheckIssue currentIssue = new CheckIssue();
+        currentIssue.source = "checkstyle";
+        currentIssue.rule = "MagicNumberCheck";
+        currentIssue.file = sourceFile.toString();
+        currentIssue.line = 18;
+        currentIssue.description = "Magic number: '5'";
+        CheckResult current = new CheckResult();
+        current.issues.add(currentIssue);
+        CheckGateFinalizer finalizer = new CheckGateFinalizer(
+                objectMapper(),
+                new CheckGateOptions(
+                        projectRoot,
+                        null,
+                        null,
+                        baselineFile.toString(),
+                        "no-new-violations",
+                        "block"));
+
+        finalizer.finalizeResult(current);
+
+        assertTrue(current.passed);
+        assertEquals(0, current.newIssueCount);
+        assertEquals(1, current.baselineIssueCount);
+        assertEquals(
+                "checkstyle|magicnumbercheck|app/src/main/java/com/example/UserService.java|literal:5",
+                currentIssue.fingerprint);
+    }
+
+    @Test
+    void finalizeResult_legacyBusinessBaselineWithUnknownOldRootFailsClosed() throws Exception {
+        Path baselineRoot = tempDir.resolve("baohan-system/baohan-backend");
+        Path baselineSource = baselineRoot.resolve(
+                "app/src/main/java/com/example/UserService.java");
+        Path baselineFile = tempDir.resolve("legacy-cross-root-baseline.json");
+        CheckIssue baselineIssue = new CheckIssue();
+        baselineIssue.source = "checkstyle";
+        baselineIssue.rule = "MagicNumberCheck";
+        baselineIssue.file = baselineSource.toString();
+        baselineIssue.line = 12;
+        baselineIssue.description = "Magic number: '5'";
+        baselineIssue.fingerprint = String.join(
+                "|",
+                "checkstyle",
+                "magicnumbercheck",
+                "app/src/main/java/com/example/UserService.java",
+                "12",
+                "magic number: '5'");
+        CheckResult baseline = new CheckResult();
+        baseline.issues.add(baselineIssue);
+        objectMapper().writeValue(baselineFile.toFile(), baseline);
+
+        Path currentRoot = tempDir.resolve("baohan-system-upgrade/baohan-backend");
+        CheckIssue currentIssue = new CheckIssue();
+        currentIssue.source = "checkstyle";
+        currentIssue.rule = "MagicNumberCheck";
+        currentIssue.file = currentRoot.resolve(
+                "app/src/main/java/com/example/UserService.java").toString();
+        currentIssue.line = 18;
+        currentIssue.description = "Magic number: '5'";
+        CheckResult current = new CheckResult();
+        current.issues.add(currentIssue);
+        CheckGateFinalizer finalizer = new CheckGateFinalizer(
+                objectMapper(),
+                new CheckGateOptions(
+                        currentRoot,
+                        null,
+                        null,
+                        baselineFile.toString(),
+                        "no-new-violations",
+                        "block"));
+
+        finalizer.finalizeResult(current);
+
+        assertFalse(current.passed);
+        assertEquals(1, current.newIssueCount);
+        assertEquals(0, current.baselineIssueCount);
+    }
+
+    @Test
     void finalizeResult_noNewViolationsMatchesBaselineWhenLineDrifts() throws Exception {
         // given
         CheckIssue baselineIssue = new CheckIssue();
