@@ -12,8 +12,11 @@
 
 | 项目                       | 实际值                                                                    |
 | -------------------------- | ------------------------------------------------------------------------- |
+| 集成候选提交               | `7e4271002de7a3848e7fbb7c4d9c7796d3e7c79f`                                |
+| 集成候选 Git tree          | `1cdd1a74dac758f1efb242d491ec5660dbe91fbf`                                |
+| 已同步 origin/main         | `1694a7421`                                                               |
 | 功能候选提交               | `47d257ed1c01c41df59c6854b5bb2cc5fd1874a9`                                |
-| Git tree                   | `cf0f6f96270f64c4a1d3da86518ffc0573e7e2f3`                                |
+| 功能候选 Git tree          | `cf0f6f96270f64c4a1d3da86518ffc0573e7e2f3`                                |
 | 源码模式                   | `git-archive-exact-commit`                                                |
 | 分支                       | `docs/frontend-standards-plan`                                            |
 | 一键入口                   | `pnpm -C mango-ui check:standards-candidate`                              |
@@ -22,11 +25,11 @@
 | Node / pnpm                | `22.23.1` / `11.14.0`                                                     |
 | 平台                       | `linux/arm64`                                                             |
 | 候选 tarball               | 29 个精确版本                                                             |
-| preparation report SHA-256 | `0891a30669e5ca2d565977969fa323e9252080b832ddafed4cc78c1e214a6e2d`        |
-| sealed report SHA-256      | `f5d0350071e19a48177d0d412e1ca347d73b19c6fdea93044b1e1b4a92996769`        |
-| browser contract SHA-256   | `c2bebcefaaf7dd4d642afc8a95d12778d84d62658a1b09536e6d2006dedd4216`        |
+| preparation report SHA-256 | `7756d2ebe3cc065eada2cf9aac214fb149625061228a7a2ba155c03d876c5c38`        |
+| sealed report SHA-256      | `b8e7e953e95c4123f2b1810b0c223334fcf3e0aca447bb9206b2c6456f2d188c`        |
+| browser contract SHA-256   | `74410b48a0679da01f86241a5c334dbd3f2414df202d5381b9d80035c4b70947`        |
 | Playwright report SHA-256  | `f93db12cc0c60541193a76dec31161d2601ede6d091d3d96f384cef86f363828`        |
-| 业务 lockfile SHA-256      | `34c83cbc907b4c9319e1a517245036068bc186ee3ebd9c31e055737cd36358f0`        |
+| 业务 lockfile SHA-256      | `e3c49cd810ce56fc395c1f951a4a7aa1e8df724346cb9386fa685e8e74e904b2`        |
 
 过程报告位于忽略目录 `.runtime/frontend-quality/business-lab/`。准备报告逐包记录名称、版本和 tarball SHA-256；封闭报告引用准备报告摘要，并记录镜像、锁文件、命令、耗时、网络 canary、workspace 和最小 Shell 结果。
 
@@ -71,7 +74,7 @@ registerBusinessPages()
 | 质量门禁单测              | 73/73 通过；覆盖静态棘轮、E2E 选择器治理、边界、组件、运行配置和候选身份                  |
 | CLI / starter             | CLI 21/21；full project、add module、PMO 安装与业务包生成通过                             |
 
-固定容器同时执行了全仓质量 checker 单测和所有声明了 `test` 的 workspace 测试。历史债务由精确 identity 棘轮约束；基线只能来自 `origin/main` 或既定锚点，任务分支后续提交不能抬高基线，本次结果没有通过修改基线放宽。
+固定容器同时执行了全仓质量 checker 单测和所有声明了 `test` 的 workspace 测试。历史债务由精确 identity 棘轮约束；基线只能来自 `origin/main` 或既定锚点，任务分支后续提交不能抬高基线，本次结果没有通过修改基线放宽。集成候选先合并 `origin/main@1694a7421`，再从提交 `7e4271002` 的精确 Git archive 重新执行一键入口并通过，证明结果不依赖合并前的旧主分支快照。
 
 ## 5. 真实浏览器与 Wujie 验证
 
@@ -96,7 +99,7 @@ Playwright JSON 报告绑定提交 `47d257ed1c01c41df59c6854b5bb2cc5fd1874a9` �
 
 | 断言                                    | 结果                                                |
 | --------------------------------------- | --------------------------------------------------- |
-| offline frozen install                  | 524/524 复用，下载 0，1.952 s                       |
+| offline frozen install                  | 524/524 复用，下载 0，2.197 s                       |
 | DNS / HTTPS canary                      | `EAI_AGAIN` / `ENETUNREACH`，均被网络层阻断         |
 | 成功外部连接                            | 0                                                   |
 | workspace/source/宿主路径泄漏           | 0                                                   |
@@ -109,13 +112,13 @@ Chrome 随后从生成项目的 Vite 服务加载 `orders` Vue 页面模块和 `
 
 封闭工程使用 workspace `mango_001`、前端端口 `30001` 和数据库名 `mango_dev_frontend_standards_business_lab_001`。网络接口只有 `lo`。
 
-候选演进中先后发现 CLI 生成的实例隔离测试触发 3 条 `vue/one-component-per-file` 告警、跨宿主机和容器的 typecheck 绝对路径 identity 不一致、浏览器阶段误触发 pnpm 依赖状态自检，以及 CMS 广告编辑用例将 Element Plus 的 teleported 下拉框关联到错误 listbox。前三项通过修正模板或门禁实现解决；最后一项通过读取当前 combobox 的 `aria-controls` 并按可见 role option 选择修复，同时把业务 spec 对框架内部选择器和脆弱等待的禁令加入机器门禁。最终从提交 `47d257ed1` 重建完整候选并通过，未通过放宽规则或修改基线绕过问题。
+候选演进中先后发现 CLI 生成的实例隔离测试触发 3 条 `vue/one-component-per-file` 告警、跨宿主机和容器的 typecheck 绝对路径 identity 不一致、浏览器阶段误触发 pnpm 依赖状态自检，以及 CMS 广告编辑用例将 Element Plus 的 teleported 下拉框关联到错误 listbox。前三项通过修正模板或门禁实现解决；最后一项通过读取当前 combobox 的 `aria-controls` 并按可见 role option 选择修复，同时把业务 spec 对框架内部选择器和脆弱等待的禁令加入机器门禁。功能候选 `47d257ed1` 完成真实后端 Playwright 8/8；同步最新主分支后，集成候选 `7e4271002` 重新完成固定容器、29 包冷消费、封闭 Business Lab 与浏览器合同验证。两轮均未通过放宽规则或修改基线绕过问题。
 
 ## 7. 验收证据台账
 
 | 台账 ID   | 用例 ID | 页面/接口                                                    | 功能点                                         | 测试数据                                         | 关键断言                                                                           | UI/交互检查                                                         | console/network 结果                                                                     | 截图/trace/日志                                                                  | 结论 |
 | --------- | ------- | ------------------------------------------------------------ | ---------------------------------------------- | ------------------------------------------------ | ---------------------------------------------------------------------------------- | ------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- | ---- |
-| FE-AC-001 | TC-001  | 生成项目 `orders` 页面；`/runtime-config.json`；`orders-api` | 独立业务 API 包、UI 包和五类请求合同           | 新建订单、更新订单、`SO-1`、分页查询参数         | create/update/delete/page/detail 的方法、相对 URL、query、body 与返回结构逐项匹配  | Chrome 动态加载生成的 Vue 页面模块；合同状态页显示五类 API 断言通过 | console error 0；request failure 0；运行配置请求成功                                     | `00-business-lab-browser-contract.png`；browser contract SHA-256 `c2bebc...4216` | PASS |
+| FE-AC-001 | TC-001  | 生成项目 `orders` 页面；`/runtime-config.json`；`orders-api` | 独立业务 API 包、UI 包和五类请求合同           | 新建订单、更新订单、`SO-1`、分页查询参数         | create/update/delete/page/detail 的方法、相对 URL、query、body 与返回结构逐项匹配  | Chrome 动态加载生成的 Vue 页面模块；合同状态页显示五类 API 断言通过 | console error 0；request failure 0；运行配置请求成功                                     | `00-business-lab-browser-contract.png`；browser contract SHA-256 `74410b...0947` | PASS |
 | FE-AC-002 | TC-002  | `/cms/*` 资源管理与站点详情                                  | 资源创建、编辑、状态流转、发布关系、详情和清理 | 带唯一时间戳的站点、栏目、内容和媒体记录         | 新建结果可查询，编辑字段持久化，状态与发布关系按操作变化，末尾清理测试记录         | 列表、表单、状态动作、发布动作和详情页面逐步操作并留存终态          | Playwright status `passed`；受测 CMS 响应满足断言，未出现未预期请求失败                  | `01-cms-management.png`；Playwright report SHA-256 `f93db1...3828`               | PASS |
 | FE-AC-003 | TC-003  | CMS 内容运营页                                               | 主要操作按钮、上传和失败可观测性               | 唯一前缀 `CMS_BUTTONS` 数据；PNG 与 MP4 测试文件 | 70 余项按钮结果均为预期；上传回显匹配；API `>=400` 与 console error 集合为空       | 搜索、筛选、新建、编辑、状态、发布、上传、预览和清理均实际触发      | console error 0；API `>=400` 0；Playwright status `passed`                               | `02-cms-operations.png`；对应 test attachment                                    | PASS |
 | FE-AC-004 | TC-004  | hybrid runtime：menu-package、workflow、cms                  | Wujie 远端装载、RBAC 和业务内容组合            | hybrid runtime registry 与已授权菜单             | 三个目标路由标记为 `MICRO_ROUTE`，remote host 与业务内容分别匹配，目标资源实际装载 | Shell 菜单切换后逐一显示正确微应用内容，没有串用其它应用入口        | 目标 remote resource、runtime metadata 与业务 smoke 断言通过；Playwright status `passed` | `03-runtime-hybrid.png`；对应 test attachment                                    | PASS |
@@ -136,7 +139,7 @@ Chrome 随后从生成项目的 Vite 服务加载 `orders` Vue 页面模块和 `
 | ESLint fatal             |      0 | 达标                        |
 | ESLint error             |    232 | 存量持平                    |
 | ESLint warning           |    893 | 存量持平                    |
-| Prettier 不一致文件      |    565 | 存量持平                    |
+| Prettier 检查文件        |    564 | 全部符合格式                |
 | Stylelint error          |    935 | 存量持平                    |
 | typecheck 失败 workspace |     25 | 存量持平                    |
 | TypeScript diagnostics   |    787 | 未超过基线                  |
@@ -155,4 +158,4 @@ Chrome 随后从生成项目的 Vite 服务加载 `orders` Vue 页面模块和 `
 2. 至少一个真实业务项目按公开 API、样式和 runtime 配置完成试点；
 3. 目标仓库启用规范 required check 后，才能标记 `STANDARD_ENFORCED`。
 
-Nexus 发布、tag、GitHub Release、业务部署、生产流量灰度和故障注入只在用户另行发起真实发布或部署任务时执行，不属于前端代码规范的完成定义。
+当前任务已经进入真实发布准备，但本证据仍只声明本地候选状态。Nexus 发布、tag 和 GitHub Release 必须在精确版本矩阵、目标 registry 与 tag 获得当次明确授权，并且候选通过 required check 合并到 `main` 后执行；业务部署、生产流量灰度和故障注入不属于前端代码规范发布范围。
