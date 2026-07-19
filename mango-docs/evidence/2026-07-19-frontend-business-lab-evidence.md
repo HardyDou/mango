@@ -1,5 +1,9 @@
 # 前端封闭业务开发环境交付证据（2026-07-19）
 
+> 历史阶段证据：本文记录的是 28 包 PR-0F 检查点，已由
+> `2026-07-19-frontend-production-candidate-evidence.md` 的 29 包最终候选证据取代。
+> 后续判定必须使用新文档和其中绑定的提交、报告哈希，不得沿用本文的阶段状态。
+
 ## 1. 结论
 
 - PR-0F 已建立可重复执行的 `Mango Business Lab`：使用本次源码打出的 28 个 npm tarball 和其中的 `@mango/cli` 生成 full preset 独立业务工程，没有复制 `mango-ui`，也没有把生成工程加入 Mango workspace。
@@ -9,18 +13,18 @@
 
 ## 2. 固定环境与制品
 
-| 项目 | 实际值 |
-| --- | --- |
-| 容器镜像 | `mango/frontend-quality:node22-pnpm11.14` |
-| 镜像 identity | `sha256:2a04ce0242088af26fd0b147318842ae55ef09bcc2f917126347ff3ac0d2cf30` |
-| Node / pnpm | `22.23.1` / `11.14.0` |
-| 平台 | `linux/arm64` |
-| 业务工程 | `.runtime/projects/frontend-standards-business-lab` |
-| 外部依赖来源 | `http://nexus.inner.yunxinbaokeji.com/repository/npm-group/` |
-| Mango tarball | 28 个，全部带 SHA-256 |
-| 映射到本地 tarball 的 Mango 包 | 28 个 |
-| 业务工程 lockfile SHA-256 | `e995d095039d8e0a6d921df2463e6ca122b5d75353b5d8022c7cf48907cddc34` |
-| preparation report SHA-256 | `2a2390a6ca08d2012eb80eb63e220ea37fb4f0b86153513bb7ad938ba84362b8` |
+| 项目                           | 实际值                                                                    |
+| ------------------------------ | ------------------------------------------------------------------------- |
+| 容器镜像                       | `mango/frontend-quality:node22-pnpm11.14`                                 |
+| 镜像 identity                  | `sha256:2a04ce0242088af26fd0b147318842ae55ef09bcc2f917126347ff3ac0d2cf30` |
+| Node / pnpm                    | `22.23.1` / `11.14.0`                                                     |
+| 平台                           | `linux/arm64`                                                             |
+| 业务工程                       | `.runtime/projects/frontend-standards-business-lab`                       |
+| 外部依赖来源                   | `http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`              |
+| Mango tarball                  | 28 个，全部带 SHA-256                                                     |
+| 映射到本地 tarball 的 Mango 包 | 28 个                                                                     |
+| 业务工程 lockfile SHA-256      | `e995d095039d8e0a6d921df2463e6ca122b5d75353b5d8022c7cf48907cddc34`        |
+| preparation report SHA-256     | `2a2390a6ca08d2012eb80eb63e220ea37fb4f0b86153513bb7ad938ba84362b8`        |
 
 准备阶段在与封闭阶段相同的 Linux 镜像中执行。macOS 只负责启动容器；`.runtime` 使用 Docker named volume，避免宿主 bind mount 的文件系统语义和平台可选依赖污染结论。准备报告记录的 Git SHA 为 `b3563d006e8d7a4aee038ba43683e1eb2c7aa9f4`，tarball 与 lockfile 哈希进一步绑定本次实际候选制品。
 
@@ -28,35 +32,35 @@
 
 封闭阶段使用 Docker `--network none`、`--cap-drop ALL`、`no-new-privileges` 和独立 HOME。HTTP/HTTPS/ALL proxy、npm user config 和凭证入口被清空；安装只允许读取准备阶段生成的离线 store。
 
-| 断言 | 结果 |
-| --- | --- |
-| 网络接口 | 仅 `lo` |
-| DNS canary | 阻断，`EAI_AGAIN` |
-| HTTPS canary | 阻断，`ENETUNREACH` |
-| 成功外部连接 | 0 |
-| workspace/source 泄漏 | 0 |
-| 主仓 `node_modules` 透传 | 0 |
-| `workspace:` / `link:` / `portal:` / 源码 alias | 0 |
-| 宿主仓库绝对路径泄漏 | 0 |
-| registry 凭证写入生成工程 | 0 |
+| 断言                                            | 结果                |
+| ----------------------------------------------- | ------------------- |
+| 网络接口                                        | 仅 `lo`             |
+| DNS canary                                      | 阻断，`EAI_AGAIN`   |
+| HTTPS canary                                    | 阻断，`ENETUNREACH` |
+| 成功外部连接                                    | 0                   |
+| workspace/source 泄漏                           | 0                   |
+| 主仓 `node_modules` 透传                        | 0                   |
+| `workspace:` / `link:` / `portal:` / 源码 alias | 0                   |
+| 宿主仓库绝对路径泄漏                            | 0                   |
+| registry 凭证写入生成工程                       | 0                   |
 
 runner 对生成工程的 package、lockfile、workspace、TypeScript 和 Vite 配置做文本边界检查，并对安装后的符号链接做真实路径检查。任何本地源码引用、越界链接、外部连接成功、canary 未执行或扫描输入为零都会失败。
 
 ## 4. 自动验证
 
-| 命令 | 结果 | 耗时 |
-| --- | --- | ---: |
-| `pnpm install --offline --frozen-lockfile` | 523/523 离线复用，退出码 0 | 2.07 s |
-| `pnpm run format:check` | 退出码 0 | 0.68 s |
-| `pnpm run lint` | 0 warning，退出码 0 | 1.29 s |
-| `pnpm run stylelint` | 0 warning，退出码 0 | 0.68 s |
-| `pnpm run typecheck` | 0 diagnostics，退出码 0 | 1.51 s |
-| `pnpm run test:unit` | 1 file / 2 tests 通过 | 0.77 s |
-| `pnpm run build` | 2502 modules，退出码 0 | 32.61 s |
-| `pnpm run check` | 七项质量合同再次全通过 | 36.81 s |
-| `mango workspace init` | workspace 与隔离数据库坐标生成 | 0.39 s |
-| `mango dev start` | 前端进程启动 | 0.39 s |
-| `mango dev stop` | 进程正常停止 | 0.55 s |
+| 命令                                       | 结果                           |    耗时 |
+| ------------------------------------------ | ------------------------------ | ------: |
+| `pnpm install --offline --frozen-lockfile` | 523/523 离线复用，退出码 0     |  2.07 s |
+| `pnpm run format:check`                    | 退出码 0                       |  0.68 s |
+| `pnpm run lint`                            | 0 warning，退出码 0            |  1.29 s |
+| `pnpm run stylelint`                       | 0 warning，退出码 0            |  0.68 s |
+| `pnpm run typecheck`                       | 0 diagnostics，退出码 0        |  1.51 s |
+| `pnpm run test:unit`                       | 1 file / 2 tests 通过          |  0.77 s |
+| `pnpm run build`                           | 2502 modules，退出码 0         | 32.61 s |
+| `pnpm run check`                           | 七项质量合同再次全通过         | 36.81 s |
+| `mango workspace init`                     | workspace 与隔离数据库坐标生成 |  0.39 s |
+| `mango dev start`                          | 前端进程启动                   |  0.39 s |
+| `mango dev stop`                           | 进程正常停止                   |  0.55 s |
 
 运行时 workspace 为 `mango_001`，前端端口 `30001`，隔离数据库名 `mango_dev_frontend_standards_business_lab_001`。最小 shell `http://127.0.0.1:30001/` 返回 HTTP 200，响应体 831 bytes。
 

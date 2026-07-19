@@ -100,7 +100,7 @@ mango dev start
 | `backend/modules/<module>/<module>-core`           | Entity、Mapper、Service、Flyway SQL                      | 设计表结构、索引、租户字段、查询条件和业务逻辑                                            |
 | `backend/modules/<module>/<module>-starter`        | Controller、自动配置、module metadata、resource manifest | 接入 Web、菜单权限资源和模块启动                                                          |
 | `backend/modules/<module>/<module>-starter-remote` | Feign client 自动配置                                    | 微服务调用方按需依赖                                                                      |
-| `frontend/packages/<module>-api`                   | 只依赖 `@mango/api-schema` 的业务 API 工厂和 TS 类型     | 和后端 API 契约同步；不得导入 Vue、Axios 或全局 request                                   |
+| `frontend/packages/<module>-api`                   | 只依赖 `@mango/api-schema` 的业务 API 工厂和 TS 类型     | 按[前端 Monorepo 规范](../mango-pmo/rules/frontend/06-monorepo-architecture.md)维护契约   |
 | `frontend/packages/<module>`                       | 页面注册、API 组合层和 Element Plus CRUD 页面            | 页面只管理交互状态；卸载时取消未完成请求                                                  |
 | `frontend/src/main.ts`                             | host 请求实例和业务页面注册                              | 每个 runtime context 创建 `@mango/http-client`，通过 `register<Module>Pages(client)` 注入 |
 | `backend/pom.xml`                                  | 业务模块 Maven module                                    | 确认 `business-modules` managed block 已追加                                              |
