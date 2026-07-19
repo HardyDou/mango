@@ -699,6 +699,11 @@ async function loadRows() {
   errorMessage.value = '';
   try {
     ensureRequiredSiteQuery();
+    if (props.config.requireSiteForPage && !query.siteId) {
+      rows.value = [];
+      total.value = 0;
+      return;
+    }
     const page = await props.config.page({ ...query }, { signal: request.signal });
     if (pageRequest !== request || request.signal.aborted) {
       return;
