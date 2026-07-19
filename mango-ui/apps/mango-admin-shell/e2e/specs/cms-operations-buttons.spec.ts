@@ -4,6 +4,17 @@ import { existsSync, mkdtempSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { deflateSync } from 'node:zlib';
+import {
+  checkButton,
+  confirmDelete,
+  expectToast,
+  expectUploadSuccess,
+  firstDialog,
+  formItem,
+  selectValue,
+  selectValues,
+  waitCmsReady,
+} from '../support/element-plus';
 
 type StepResult = {
   page: string;
@@ -83,89 +94,12 @@ async function restoreFileSettings(page: Page) {
   originalFileSettings = undefined;
 }
 
-function formItem(scope: Locator, label: string) {
-  return scope.locator('.el-form-item').filter({
-    has: scope
-      .page()
-      .locator('.el-form-item__label')
-      .filter({ hasText: new RegExp(`^\\*?\\s*${escapeRegExp(label)}$`) }),
-  });
-}
-
 function escapeRegExp(value: string) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-function firstDialog(page: Page) {
-  return page.locator('.el-dialog:visible').last();
-}
-
 function rowByText(page: Page, text: string | RegExp) {
   return page.getByRole('row').filter({ hasText: text });
-}
-
-async function waitCmsReady(page: Page) {
-  await expect(page.locator('.cms-panel')).toBeVisible({ timeout: 15000 });
-  await expect
-    .poll(async () => page.locator('.cms-panel .el-loading-mask:visible').count(), { timeout: 15000 })
-    .toBe(0);
-}
-
-async function closeDropdowns(page: Page) {
-  const dropdowns = page.locator('.el-select-dropdown:visible, .el-tree-select__popper:visible');
-  if ((await dropdowns.count()) === 0) {
-    return;
-  }
-  const dialogHeader = page.locator('.el-dialog:visible .el-dialog__header').last();
-  if (await dialogHeader.count()) {
-    await dialogHeader.click({ position: { x: 12, y: 12 }, force: true });
-  } else {
-    await page.locator('main h2').first().click({ force: true });
-  }
-  await expect.poll(async () => dropdowns.count(), { timeout: 5000 }).toBe(0);
-}
-
-async function selectValue(scope: Locator, label: string, option: string | RegExp) {
-  const page = scope.page();
-  await closeDropdowns(page);
-  const select = formItem(scope, label).locator('.el-select, .el-tree-select').first();
-  await expect(select, `${label} 下拉不存在`).toBeVisible({ timeout: 10000 });
-  await select.scrollIntoViewIfNeeded();
-  await select.click({ force: true });
-  const dropdown = page.locator('.el-select-dropdown:visible, .el-tree-select__popper:visible').last();
-  await expect(dropdown, `${label} 下拉面板未打开`).toBeVisible({ timeout: 10000 });
-  const target = dropdown.getByRole('option', { name: option, exact: typeof option === 'string' }).first();
-  await expect(target, `${label} 选项不存在: ${String(option)}`).toBeVisible({ timeout: 10000 });
-  await target.scrollIntoViewIfNeeded();
-  await target.click({ force: true });
-  await closeDropdowns(page);
-}
-
-async function selectValues(scope: Locator, label: string, options: Array<string | RegExp>) {
-  const page = scope.page();
-  await closeDropdowns(page);
-  const select = formItem(scope, label).locator('.el-select, .el-tree-select').first();
-  await expect(select).toBeVisible({ timeout: 10000 });
-  await select.click({ force: true });
-  const dropdown = page.locator('.el-select-dropdown:visible, .el-tree-select__popper:visible').last();
-  await expect(dropdown).toBeVisible({ timeout: 10000 });
-  for (const option of options) {
-    const target = dropdown.getByRole('option', { name: option, exact: typeof option === 'string' }).first();
-    await expect(target).toBeVisible({ timeout: 10000 });
-    await target.click({ force: true });
-  }
-  await closeDropdowns(page);
-}
-
-async function checkButton(scope: Locator, label: string, option: string) {
-  const button = formItem(scope, label)
-    .locator('.el-checkbox-button')
-    .filter({ hasText: new RegExp(`^\\s*${escapeRegExp(option)}\\s*$`) })
-    .first();
-  await expect(button).toBeVisible({ timeout: 10000 });
-  if (!(await button.evaluate((element) => element.classList.contains('is-checked')))) {
-    await button.click();
-  }
 }
 
 async function fillInput(scope: Locator, label: string, value: string) {
@@ -224,8 +158,8 @@ async function blurRichTextEditors(scope: Locator) {
   if (count === 0) {
     return;
   }
-  for (let index = 0; index < count; index += 1) {
-    await wrappers.nth(index).evaluate((element) => {
+  for (const wrapper of await wrappers.all()) {
+    await wrapper.evaluate((element) => {
       const component = (element as HTMLElement & { __vueParentComponent?: { exposed?: { blur?: () => void } } })
         .__vueParentComponent;
       component?.exposed?.blur?.();
@@ -237,7 +171,9 @@ async function blurRichTextEditors(scope: Locator) {
       document.activeElement.blur();
     }
   });
-  await page.waitForTimeout(150);
+  await expect
+    .poll(() => page.evaluate(() => document.activeElement?.classList.contains('editor-wrapper')))
+    .toBeFalsy();
 }
 
 async function uploadFile(scope: Locator, label: string, file: UploadAsset) {
@@ -260,35 +196,8 @@ async function uploadFile(scope: Locator, label: string, file: UploadAsset) {
   const uploadResponse = await uploadResponsePromise;
   const responseBody = await uploadResponse.text().catch(() => '');
   expect(uploadResponse.ok(), `${label} 上传失败: ${uploadResponse.status()} ${responseBody}`).toBeTruthy();
-  await expect
-    .poll(
-      async () => {
-        const successCount = await item.locator('.el-upload-list__item.is-success').count();
-        if (successCount > 0) return 'success';
-        const messages = await scope
-          .page()
-          .locator('.el-message:visible, .el-form-item__error:visible')
-          .allTextContents();
-        return messages.join(' | ') || 'waiting';
-      },
-      {
-        timeout: 15000,
-        message: `${label} 上传后未显示成功状态，接口响应：${responseBody.slice(0, 800)}`,
-      },
-    )
-    .toBe('success');
+  await expectUploadSuccess(item, label, responseBody);
   return extractUploadedFileId(responseBody);
-}
-
-async function confirmDelete(page: Page) {
-  const box = page.locator('.el-message-box').last();
-  await expect(box).toBeVisible({ timeout: 10000 });
-  await box.getByRole('button', { name: /^(确定|OK)$/ }).click();
-  await expect(box).toBeHidden({ timeout: 10000 });
-}
-
-async function expectToast(page: Page, text: string | RegExp) {
-  await expect(page.locator('.el-message:visible').filter({ hasText: text }).last()).toBeVisible({ timeout: 10000 });
 }
 
 async function openCmsPage(page: Page, path: string, title: string) {

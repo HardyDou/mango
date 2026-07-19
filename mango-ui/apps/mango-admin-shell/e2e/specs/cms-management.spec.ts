@@ -1,5 +1,6 @@
 import { expect, test, type APIRequestContext, type Locator, type Page } from '@playwright/test';
 import { api as e2eApi } from '../support/api';
+import { checkButton, firstDialog, formItem, selectValue, selectValues } from '../support/element-plus';
 
 type ApiBody<T> = {
   code?: number;
@@ -103,16 +104,11 @@ async function searchKeyword(page: Page, keyword: string) {
 
 async function selectSearchSite(page: Page, siteName: string) {
   const toolbar = page.locator('.cms-toolbar');
-  await toolbar.locator('.el-form-item', { hasText: '站点' }).locator('.el-select').click();
-  await page.getByRole('option', { name: siteName }).last().click();
+  await selectValue(toolbar, '站点', siteName);
 }
 
 function rowByText(page: Page, text: string | RegExp) {
   return page.getByRole('row', { name: text });
-}
-
-function firstDialog(page: Page) {
-  return page.locator('.el-dialog').last();
 }
 
 async function fillInput(dialog: Locator, label: string, value: string) {
@@ -130,43 +126,6 @@ async function fillRichText(dialog: Locator, label: string, value: string) {
   await dialog.page().keyboard.press(process.platform === 'darwin' ? 'Meta+A' : 'Control+A');
   await dialog.page().keyboard.type(value);
   await expect(editor).toContainText(value.slice(0, 24));
-}
-
-async function selectValue(dialog: Locator, label: string, option: string | RegExp) {
-  await formItem(dialog, label).locator('.el-select').click();
-  await dialog.page().getByRole('option', { name: option }).last().click();
-}
-
-async function selectValues(dialog: Locator, label: string, options: Array<string | RegExp>) {
-  await formItem(dialog, label).locator('.el-select').click();
-  for (const option of options) {
-    await dialog.page().getByRole('option', { name: option }).last().click();
-  }
-  await dialog.page().keyboard.press('Escape');
-}
-
-async function checkButton(dialog: Locator, label: string, option: string) {
-  const button = formItem(dialog, label)
-    .locator('.el-checkbox-button')
-    .filter({ hasText: new RegExp(`^\\s*${escapeRegExp(option)}\\s*$`) })
-    .first();
-  await expect(button).toBeVisible({ timeout: 10000 });
-  if (!(await button.evaluate((element) => element.classList.contains('is-checked')))) {
-    await button.click();
-  }
-}
-
-function formItem(scope: Locator, label: string) {
-  return scope.locator('.el-form-item').filter({
-    has: scope
-      .page()
-      .locator('.el-form-item__label')
-      .filter({ hasText: new RegExp(`^\\*?\\s*${escapeRegExp(label)}$`) }),
-  });
-}
-
-function escapeRegExp(value: string) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 async function createByDialog(page: Page, expectedText: string, fill: (dialog: Locator) => Promise<void>) {

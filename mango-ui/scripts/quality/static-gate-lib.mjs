@@ -128,6 +128,44 @@ export function compareMetrics(tool, current, baseline, strict = false) {
   return failures;
 }
 
+export function validateStaticBaseline(baseline) {
+  const failures = [];
+  if (baseline?.schemaVersion !== 2) failures.push('static quality baseline schemaVersion must be 2');
+  for (const [tool, metrics] of Object.entries(METRICS)) {
+    if (!baseline?.tools?.[tool]) failures.push(`static quality baseline is missing tool metrics: ${tool}`);
+    for (const metric of metrics) {
+      const value = baseline?.tools?.[tool]?.[metric];
+      if (!Number.isInteger(value) || value < 0) {
+        failures.push(`static quality baseline ${tool}.${metric} must be a non-negative integer`);
+      }
+    }
+    if (!Array.isArray(baseline?.identities?.[tool])) {
+      failures.push(`static quality baseline is missing diagnostic identities: ${tool}`);
+    }
+  }
+  return failures;
+}
+
+export function compareStaticBaselines(current, base) {
+  const failures = [];
+  for (const [tool, metrics] of Object.entries(METRICS)) {
+    for (const metric of metrics) {
+      const actual = Number(current?.tools?.[tool]?.[metric] || 0);
+      const allowed = Number(base?.tools?.[tool]?.[metric] || 0);
+      if (actual > allowed) {
+        failures.push(`static quality baseline debt may not increase: ${tool}.${metric} ${actual} > ${allowed}`);
+      }
+    }
+    for (const diagnosticIdentity of compareIdentityMultisets(
+      current?.identities?.[tool] || [],
+      base?.identities?.[tool] || [],
+    )) {
+      failures.push(`static quality baseline identity may not be added: ${tool} ${diagnosticIdentity}`);
+    }
+  }
+  return failures;
+}
+
 export function assertToolExecution(result, allowedStatuses, name) {
   if (result.error) throw new Error(`${name} failed to start: ${result.error.message}`);
   if (result.signal) throw new Error(`${name} terminated by signal ${result.signal}`);

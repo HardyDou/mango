@@ -8,12 +8,17 @@ import {
   collectDiagnosticIdentities,
   compareIdentityMultisets,
   compareMetrics,
+  compareStaticBaselines,
   METRICS,
+  validateStaticBaseline,
 } from './static-gate-lib.mjs';
 
 const uiRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
+const repositoryRoot = path.resolve(uiRoot, '..');
 const tool = process.argv[2];
 const strict = process.argv.includes('--strict');
+const baseRef =
+  process.argv.find((value) => value.startsWith('--base-ref='))?.slice('--base-ref='.length) || 'origin/main';
 const requestedPaths = process.argv.slice(3).filter((value) => value !== '--strict' && !value.startsWith('--'));
 const baselineFile = path.join(uiRoot, 'quality-baseline.json');
 const reportDirectory = path.resolve(uiRoot, '../.runtime/frontend-quality/gate');
@@ -31,6 +36,28 @@ function run(command, args) {
     env: { ...process.env, FORCE_COLOR: '0' },
     maxBuffer: 128 * 1024 * 1024,
   });
+}
+
+function runGit(args) {
+  return spawnSync('git', args, {
+    cwd: repositoryRoot,
+    encoding: 'utf8',
+    env: { ...process.env, FORCE_COLOR: '0' },
+  });
+}
+
+function readBaseBaseline() {
+  const relative = path.relative(repositoryRoot, baselineFile).split(path.sep).join('/');
+  const commit = runGit(['rev-parse', '--verify', `${baseRef}^{commit}`]);
+  if (commit.status !== 0) throw new Error(`Static quality base ref is unavailable: ${baseRef}`);
+  const result = runGit(['show', `${baseRef}:${relative}`]);
+  if (result.status === 0) return { baseline: JSON.parse(result.stdout), source: baseRef };
+  const anchor = runGit(['log', '-1', '--format=%H', 'HEAD^', '--', relative]);
+  const anchorRef = anchor.status === 0 ? anchor.stdout.trim() : '';
+  if (!anchorRef) return null;
+  const anchorResult = runGit(['show', `${anchorRef}:${relative}`]);
+  if (anchorResult.status !== 0) throw new Error(`Static quality bootstrap anchor is unreadable: ${anchorRef}`);
+  return { baseline: JSON.parse(anchorResult.stdout), source: anchorRef };
 }
 
 function parseArrayResult(result, allowedStatuses, name) {
@@ -98,6 +125,17 @@ if (tool === 'eslint') {
 }
 
 const baseline = JSON.parse(fs.readFileSync(baselineFile, 'utf8'));
+const baselineFailures = validateStaticBaseline(baseline);
+const baseBaselineRecord = readBaseBaseline();
+if (baseBaselineRecord) {
+  baselineFailures.push(...validateStaticBaseline(baseBaselineRecord.baseline));
+  baselineFailures.push(...compareStaticBaselines(baseline, baseBaselineRecord.baseline));
+  if (baseBaselineRecord.source !== baseRef) {
+    process.stdout.write(`static quality ratchet uses branch bootstrap anchor ${baseBaselineRecord.source}\n`);
+  }
+} else {
+  process.stdout.write(`static quality ratchet BOOTSTRAP baseline is not present at ${baseRef}\n`);
+}
 const metricFailures = compareMetrics(tool, metrics, baseline.tools[tool], strict);
 const identities = collectDiagnosticIdentities(tool, raw, uiRoot, fs.readFileSync);
 const baselineIdentities = baseline.identities?.[tool];
@@ -106,6 +144,7 @@ if (!strict && !Array.isArray(baselineIdentities)) {
 }
 const identityAdditions = compareIdentityMultisets(identities, baselineIdentities, strict);
 const failures = [
+  ...baselineFailures.map((message) => ({ metric: 'baseline', message })),
   ...metricFailures,
   ...identityAdditions.map((diagnosticIdentity) => ({ metric: 'diagnosticIdentity', diagnosticIdentity })),
 ];
@@ -125,6 +164,8 @@ process.stdout.write(`${tool} ${failures.length ? 'FAIL' : 'PASS'} ${JSON.string
 for (const failure of failures) {
   if (failure.metric === 'diagnosticIdentity') {
     process.stderr.write(`new diagnostic identity: ${failure.diagnosticIdentity}\n`);
+  } else if (failure.metric === 'baseline') {
+    process.stderr.write(`${failure.message}\n`);
   } else {
     process.stderr.write(`${failure.metric}: ${failure.actual} exceeds ${failure.allowed}\n`);
   }

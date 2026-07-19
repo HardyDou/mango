@@ -5,6 +5,8 @@ import {
   collectDiagnosticIdentities,
   compareIdentityMultisets,
   compareMetrics,
+  compareStaticBaselines,
+  validateStaticBaseline,
 } from './static-gate-lib.mjs';
 
 test('ratchet accepts equal or reduced debt and rejects regression', () => {
@@ -93,4 +95,46 @@ test('tool execution fails closed for spawn errors, signals, and unexpected stat
   assert.throws(() => assertToolExecution({ signal: 'SIGKILL' }, [0], 'eslint'), /SIGKILL/u);
   assert.throws(() => assertToolExecution({ status: 2, stderr: 'bad config' }, [0, 1], 'eslint'), /bad config/u);
   assert.doesNotThrow(() => assertToolExecution({ status: 1 }, [0, 1], 'eslint'));
+});
+
+function baseline(overrides = {}) {
+  return {
+    schemaVersion: 2,
+    tools: {
+      eslint: { fatal: 0, errors: 2, warnings: 3 },
+      prettier: { files: 2 },
+      stylelint: { parseErrors: 0, errors: 2, warnings: 0 },
+      typecheck: { failedWorkspaces: 1, diagnostics: 2 },
+      ...overrides.tools,
+    },
+    identities: {
+      eslint: ['eslint-old', 'eslint-old'],
+      prettier: ['prettier-old'],
+      stylelint: ['stylelint-old'],
+      typecheck: ['typecheck-old'],
+      ...overrides.identities,
+    },
+  };
+}
+
+test('static baseline accepts only metric and identity reductions against the base ref', () => {
+  const base = baseline();
+  const reduced = baseline({
+    tools: { eslint: { fatal: 0, errors: 1, warnings: 2 } },
+    identities: { eslint: ['eslint-old'] },
+  });
+  assert.deepEqual(validateStaticBaseline(reduced), []);
+  assert.deepEqual(compareStaticBaselines(reduced, base), []);
+});
+
+test('static baseline rejects same-PR count growth and identity replacement', () => {
+  const base = baseline();
+  const raised = baseline({
+    tools: { typecheck: { failedWorkspaces: 1, diagnostics: 3 } },
+    identities: { typecheck: ['typecheck-new'] },
+  });
+  assert.deepEqual(compareStaticBaselines(raised, base), [
+    'static quality baseline debt may not increase: typecheck.diagnostics 3 > 2',
+    'static quality baseline identity may not be added: typecheck typecheck-new',
+  ]);
 });
