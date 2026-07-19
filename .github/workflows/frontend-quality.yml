@@ -130,6 +130,11 @@ jobs:
       - name: Start real Mango backend
         run: node mango-ui/packages/mango-cli/src/index.mjs dev start backend
 
+      - name: Configure micro frontend hostnames
+        run: |
+          echo "127.0.0.1 a.mango.io b.mango.io c.mango.io d.mango.io e.mango.io" | sudo tee -a /etc/hosts >/dev/null
+          getent hosts a.mango.io b.mango.io c.mango.io d.mango.io e.mango.io
+
       - name: Run P0 browser acceptance
         working-directory: mango-ui
         run: pnpm test:e2e:p0
