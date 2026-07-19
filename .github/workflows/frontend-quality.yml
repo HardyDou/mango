@@ -147,6 +147,6 @@ jobs:
           path: |
             .runtime/playwright
             mango-ui/test-results
-            .mango/logs
+            .mango/run/logs
           if-no-files-found: warn
           retention-days: 30
