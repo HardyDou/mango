@@ -597,7 +597,9 @@ for (const doc of publicDocs) {
   await cp(source, target);
   if (target.endsWith('.md')) {
     const original = await readFile(target, 'utf8');
-    await writeFile(target, rewriteMarkdownLinks(original, doc));
+    const staged = sanitizeInternalRepositoryAddresses(rewriteMarkdownLinks(original, doc));
+    assertNoInternalRepositoryAddress(staged, doc);
+    await writeFile(target, staged);
   }
 }
 
@@ -632,6 +634,19 @@ function rewriteMarkdownLinks(markdown, sourceDoc) {
     const sourceHref = `${githubBlobBase}/${encodeURI(resolved.repoPath)}${hash ? `#${hash}` : ''}`;
     return `${marker}[${text}](${sourceHref})`;
   });
+}
+
+function sanitizeInternalRepositoryAddresses(markdown) {
+  return markdown.replace(
+    /https?:\/\/[^/\s)\]}>"']*\.inner\.[^/\s)\]}>"']*(\/repository\/[^\s)\]}>"']*)/giu,
+    'https://registry.example.invalid$1'
+  );
+}
+
+function assertNoInternalRepositoryAddress(markdown, sourceDoc) {
+  if (/https?:\/\/[^/\s)\]}>"']*\.inner\.[^/\s)\]}>"']*\/repository\//iu.test(markdown)) {
+    throw new Error(`Public documentation still contains an internal repository address: ${sourceDoc}`);
+  }
 }
 
 function resolveMarkdownTarget(sourceDoc, hrefPath) {

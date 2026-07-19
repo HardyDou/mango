@@ -39,9 +39,11 @@
 先配置 npm registry。全局安装 CLI 时使用用户级 `~/.npmrc`；项目内安装依赖时使用企业项目根目录 `.npmrc`：
 
 ```ini
-registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
-@mango:registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
+registry=${MANGO_NPM_REGISTRY}
+@mango:registry=${MANGO_NPM_REGISTRY}
 ```
+
+`MANGO_NPM_REGISTRY` 由企业环境或 CI 注入，公开文档不登记公司内部仓库地址。
 
 再安装：
 

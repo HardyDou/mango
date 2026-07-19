@@ -1,5 +1,56 @@
 # Mango Changelog
 
+## v2026.07.20-maven-1.0.23-cli-1.0.85-platform-fixes-release - 2026-07-20
+
+Status: `PENDING_RELEASE`. This batch prepares the already-merged platform fixes for Maven `1.0.23`, then publishes CLI `1.0.85` against PMO `1.3.2` and the frontend matrix already published with CLI `1.0.84`.
+
+### Added
+
+- Complete the Payment remote starter with typed OpenFeign adapters for all 27 public Payment API contracts, covering 127 methods and registering the adapters through Spring Boot auto-configuration.
+- Add explicit Resource Registry synchronization lifecycle events and status so tenant provisioning reconciliation waits for required resource synchronization and can retry after an initial failure.
+
+### Fixed
+
+- Safely upgrade Workflow databases created by Maven `1.0.20` by repairing only the known historical V1 checksum and adding the seven missing audit columns through an idempotent V2 migration.
+- Coordinate Resource Registry and System startup without depending on incidental runner order, while preserving retry behavior after synchronization failures.
+- Generate stable project-relative quality fingerprints so the same `mango:check` baseline works across worktrees without normalizing paths or weakening rules.
+- Keep Mango Checkstyle defaults aligned between the Maven plugin and generated business template, including the intended ternary-expression, line-length and complexity policies.
+- Correct the File Preview application flow assertion so the API filename and engine-generated preview filename are validated independently.
+
+### Versions
+
+| Component                                   |                    Previous |   Release | Compatibility                                                                                         |
+| ------------------------------------------- | --------------------------: | --------: | ----------------------------------------------------------------------------------------------------- |
+| Mango Maven non-app backend and docs bundle |                    `1.0.22` |  `1.0.23` | Additive fixes; Workflow V2 is idempotent and narrowly repairs the known `1.0.20` checksum.           |
+| `@mango/cli`                                |                    `1.0.84` |  `1.0.85` | Locks generated backends to Maven `1.0.23`; keeps current commands and frontend generation contracts. |
+| `@mango/pmo`                                |                     `1.3.2` |   `1.3.2` | Unchanged.                                                                                            |
+| Runtime frontend packages                   | CLI `1.0.84` release matrix | unchanged | No runtime frontend package is republished in this batch.                                             |
+
+### Published Packages
+
+| Order | Target                                | Version                                                      | Pre-release status |
+| ----- | ------------------------------------- | ------------------------------------------------------------ | ------------------ |
+| 1     | Maven non-app backend and docs bundle | `io.mango:*:1.0.23`                                          | `PENDING`          |
+| 2     | npm CLI                               | `@mango/cli@1.0.85`                                          | `PENDING`          |
+| 3     | GitHub Release                        | `v2026.07.20-maven-1.0.23-cli-1.0.85-platform-fixes-release` | `PENDING`          |
+
+### Upgrade Notes
+
+1. Upgrade business backends from Mango Maven `1.0.22` to `1.0.23` as one consistent dependency set.
+2. Keep `@mango/pmo@1.3.2` and the runtime frontend versions published with CLI `1.0.84`; this batch does not republish them.
+3. Workflow databases initialized by Maven `1.0.20` receive the one known V1 checksum repair followed by the idempotent audit-column V2 migration. Unknown V1 checksums remain fail-closed.
+4. Payment microservice consumers may replace hand-written Feign adapters with `mango-payment-starter-remote`; monolith consumers and existing Payment APIs require no source migration.
+5. Upgrade the project-local CLI to `@mango/cli@1.0.85` only after Maven `1.0.23` is published and verified. No database reset or frontend runtime migration is required.
+
+### Verification
+
+- Required release PR checks must pass on the exact source commit before tagging or publishing immutable artifacts.
+- `pnpm -C mango-ui release:impact --base=v2026.07.19-frontend-standards-npm-release --head=HEAD`
+- `pnpm -C mango-ui --filter @mango/cli test`
+- `MANGO_BACKEND_GATE_VERSION=1.0.23 node mango-ui/packages/mango-cli/scripts/check-generated-backend-gate.mjs`
+- `mvn -f mango/pom.xml -pl mango-app/microservice/mango-file-preview-app -am -Dtest=MangoFilePreviewAppFlowTest -Dsurefire.failIfNoSpecifiedTests=false test`
+- Release completion additionally requires private repository read-back, a clean generated consumer, GitHub Release verification, docs Latest/snapshot verification and CHANGELOG closeout through the repository-local release state machine.
+
 ## v2026.07.19-frontend-standards-npm-release - 2026-07-19
 
 Status: `PUBLISHED_AND_VERIFIED`. The complete frontend standards npm matrix was published from source commit `13166d9910836c59e9eb9a4b635828bd58a0a931`. Private hosted/group resolution, clean business consumption, Vue type checking, Vite production build, GitHub Release, and docs Latest verification passed. Mango Maven remains unchanged at `1.0.22`.

@@ -1,5 +1,25 @@
 # @mango/cli Changelog
 
+## 1.0.85 - 2026-07-20
+
+### Changed
+
+- Lock generated and upgraded business backends to Mango Maven `1.0.23`.
+- Retain `@mango/pmo@1.3.2` and the complete frontend package matrix published with CLI `1.0.84`.
+- Ship the current generated Checkstyle policy together with the Maven `1.0.23` quality-gate behavior.
+
+### Upgrade Notes
+
+- Publish and verify Mango Maven `1.0.23` before installing `@mango/cli@1.0.85`.
+- Upgrade business projects as one compatible set: Maven `1.0.23`, CLI `1.0.85`, PMO `1.3.2`, and the existing CLI `1.0.84` frontend locks.
+- Workflow databases created by Maven `1.0.20` receive the narrowly scoped checksum repair and idempotent audit-column V2 migration; `1.0.21` and `1.0.22` databases already contain those columns.
+
+### Verification
+
+- `pnpm --filter @mango/cli test`
+- `MANGO_BACKEND_GATE_VERSION=1.0.23 node mango-ui/packages/mango-cli/scripts/check-generated-backend-gate.mjs`
+- Clean generated-project dependency and backend gate verification against the planned Maven `1.0.23` and CLI `1.0.85` coordinates.
+
 ## 1.0.84 - 2026-07-19
 
 ### Changed
