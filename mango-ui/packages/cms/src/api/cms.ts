@@ -241,7 +241,7 @@ export interface CmsRequestOptions {
 }
 
 export function createCmsApi(httpClient: HttpClient) {
-  type RequestConfig = CmsRequestOptions & { params?: Record<string, unknown> };
+  type RequestConfig = CmsRequestOptions & { params?: object };
   const get = <T>(url: string, config: RequestConfig = {}) =>
     httpClient.request<T>({
       method: 'GET',
