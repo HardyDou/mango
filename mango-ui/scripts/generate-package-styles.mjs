@@ -99,9 +99,9 @@ function fail(message) {
 function hasDeclaredDependency(packageJson, dependencyName) {
   return Boolean(
     packageJson.dependencies?.[dependencyName] ||
-      packageJson.devDependencies?.[dependencyName] ||
-      packageJson.peerDependencies?.[dependencyName] ||
-      packageJson.optionalDependencies?.[dependencyName],
+    packageJson.devDependencies?.[dependencyName] ||
+    packageJson.peerDependencies?.[dependencyName] ||
+    packageJson.optionalDependencies?.[dependencyName],
   );
 }
 
@@ -149,11 +149,29 @@ function readWorkspacePackageJson(rootDir, expectedName) {
 }
 
 function sortWorkspaceBuildPackages(packageNames, rootDir) {
-  const uniquePackageNames = [...new Set(packageNames)];
-  const packageNameSet = new Set(uniquePackageNames);
-  const packageJsonByName = new Map(
-    uniquePackageNames.map((packageName) => [packageName, readWorkspacePackageJson(rootDir, packageName)]),
-  );
+  const packageNameSet = new Set();
+  const packageJsonByName = new Map();
+
+  function includeBuildableDependencies(packageName) {
+    if (packageNameSet.has(packageName)) {
+      return;
+    }
+    const packageJson = readWorkspacePackageJson(rootDir, packageName);
+    if (!packageJson?.scripts?.build) {
+      return;
+    }
+    packageNameSet.add(packageName);
+    packageJsonByName.set(packageName, packageJson);
+    for (const dependencyName of Object.keys(packageJson.dependencies || {})) {
+      includeBuildableDependencies(dependencyName);
+    }
+  }
+
+  for (const packageName of packageNames) {
+    includeBuildableDependencies(packageName);
+  }
+
+  const uniquePackageNames = [...packageNameSet];
   const visiting = new Set();
   const visited = new Set();
   const sorted = [];
@@ -393,10 +411,11 @@ function renderBuildDepsScript(defaultPackages, fullPackages, consumerPackageJso
       ...Object.keys(consumerPackageJson.dependencies || {}),
       ...defaultPackages.map((item) => item.packageName),
       ...fullPackages.map((item) => item.packageName),
-    ].filter((packageName) =>
-      packageName.startsWith('@mango/') &&
-      packageName !== '@mango/admin' &&
-      Boolean(readWorkspacePackageJson(options.root, packageName)?.scripts?.build),
+    ].filter(
+      (packageName) =>
+        packageName.startsWith('@mango/') &&
+        packageName !== '@mango/admin' &&
+        Boolean(readWorkspacePackageJson(options.root, packageName)?.scripts?.build),
     ),
     options.root,
   );
@@ -447,11 +466,7 @@ export function main(argv = process.argv.slice(2)) {
   checkOrWrite(options.out, renderStyles(resolvedPackages.defaultPackages, options), options);
 
   if (options['admin-manifest-out']) {
-    checkOrWrite(
-      options['admin-manifest-out'],
-      renderDefaultAdminManifest(resolvedPackages.defaultPackages),
-      options,
-    );
+    checkOrWrite(options['admin-manifest-out'], renderDefaultAdminManifest(resolvedPackages.defaultPackages), options);
   }
   if (options['full-style-out']) {
     checkOrWrite(
