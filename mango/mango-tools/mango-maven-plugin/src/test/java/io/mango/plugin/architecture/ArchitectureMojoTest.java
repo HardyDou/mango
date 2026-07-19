@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.Set;
 
 import io.mango.architecture.ArchitectureIssue;
+import io.mango.architecture.MangoArchUnitChecker;
 import io.mango.architecture.ModuleRole;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.Dependency;
@@ -201,6 +202,88 @@ class ArchitectureMojoTest {
                 (List<ArchitectureIssue>) dependencyIssues.invoke(inputs);
         assertEquals(List.of("MANGO-ARCH-DEP-007"),
                 issues.stream().map(ArchitectureIssue::ruleId).toList());
+    }
+
+    @Test
+    void partialRemoteReactorLoadsApiBytecodeAndStarterIdentity(@TempDir Path root)
+            throws Exception {
+        MavenProject remote =
+                javaProject(
+                        root,
+                        "mango-payment/mango-payment-starter-remote",
+                        "mango-payment-starter-remote");
+        MavenProject api =
+                javaProject(root, "mango-payment/mango-payment-api", "mango-payment-api");
+        MavenProject starter =
+                project(root, "mango-payment/mango-payment-starter", "mango-payment-starter");
+        MavenProject unrelatedStarter =
+                project(root, "mango-order/mango-order-starter", "mango-order-starter");
+        Path metadata =
+                starter.getBasedir()
+                        .toPath()
+                        .resolve("src/main/resources/META-INF/mango/module.properties");
+        Files.createDirectories(metadata.getParent());
+        Files.writeString(metadata, "module-name=mango-payment\nmodule-path=/payment\n");
+        Path unrelatedMetadata =
+                unrelatedStarter
+                        .getBasedir()
+                        .toPath()
+                        .resolve("src/main/resources/META-INF/mango/module.properties");
+        Files.createDirectories(unrelatedMetadata.getParent());
+        Files.writeString(unrelatedMetadata, "module-name=malformed-without-path\n");
+
+        MavenSession session = mock(MavenSession.class);
+        when(session.getProjects()).thenReturn(List.of(remote));
+        when(session.getAllProjects()).thenReturn(List.of(remote, api, starter, unrelatedStarter));
+
+        ArchitectureMojo mojo = new ArchitectureMojo();
+        setField(mojo, "session", session);
+        setField(mojo, "rootDirectory", root.toFile());
+        setField(mojo, "excludedModules", List.of());
+        setField(mojo, "businessGroupPrefixes", List.of());
+        setField(mojo, "requireFullReactor", false);
+
+        Method collect = ArchitectureMojo.class.getDeclaredMethod("collectReactorInputs");
+        collect.setAccessible(true);
+        Object inputs = collect.invoke(mojo);
+        Method classDirectories = inputs.getClass().getDeclaredMethod("classDirectories");
+        classDirectories.setAccessible(true);
+        Method classDirectoryArtifacts =
+                inputs.getClass().getDeclaredMethod("classDirectoryArtifacts");
+        classDirectoryArtifacts.setAccessible(true);
+        Method contractContextDirectories =
+                inputs.getClass().getDeclaredMethod("contractContextDirectories");
+        contractContextDirectories.setAccessible(true);
+        Method sourceDirectories = inputs.getClass().getDeclaredMethod("sourceDirectories");
+        sourceDirectories.setAccessible(true);
+
+        @SuppressWarnings("unchecked")
+        Map<Path, ModuleRole> bytecodeInputs =
+                (Map<Path, ModuleRole>) classDirectories.invoke(inputs);
+        assertEquals(Set.of(ModuleRole.STARTER_REMOTE), Set.copyOf(bytecodeInputs.values()));
+        assertEquals(
+                Set.of(Path.of(api.getBuild().getOutputDirectory()).toAbsolutePath().normalize()),
+                contractContextDirectories.invoke(inputs));
+        assertEquals(
+                List.of(remote.getBuild().getSourceDirectory()),
+                ((List<Path>) sourceDirectories.invoke(inputs)).stream()
+                        .map(Path::toString)
+                        .toList());
+
+        Method contracts =
+                ArchitectureMojo.class.getDeclaredMethod("moduleContracts", Map.class);
+        contracts.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        Map<Path, MangoArchUnitChecker.ModuleContract> moduleContracts =
+                (Map<Path, MangoArchUnitChecker.ModuleContract>)
+                        contracts.invoke(mojo, classDirectoryArtifacts.invoke(inputs));
+        MangoArchUnitChecker.ModuleContract remoteContract =
+                moduleContracts.get(
+                        Path.of(remote.getBuild().getOutputDirectory())
+                                .toAbsolutePath()
+                                .normalize());
+        assertEquals("mango-payment", remoteContract.moduleName());
+        assertEquals("/payment", remoteContract.modulePath());
     }
 
     @Test
@@ -475,6 +558,22 @@ class ArchitectureMojoTest {
         MavenProject project = new MavenProject();
         project.setFile(pom.toFile());
         project.setArtifactId(artifactId);
+        return project;
+    }
+
+    private MavenProject javaProject(Path root, String relative, String artifactId)
+            throws Exception {
+        MavenProject project = project(root, relative, artifactId);
+        Path basedir = project.getBasedir().toPath();
+        Path source = basedir.resolve("src/main/java/example/Contract.java");
+        Path classes = basedir.resolve("target/classes");
+        Files.createDirectories(source.getParent());
+        Files.createDirectories(classes);
+        Files.writeString(source, "package example; public interface Contract {}\n");
+        Build build = new Build();
+        build.setSourceDirectory(basedir.resolve("src/main/java").toString());
+        build.setOutputDirectory(classes.toString());
+        project.setBuild(build);
         return project;
     }
 
