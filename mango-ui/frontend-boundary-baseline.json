@@ -1,0 +1,133 @@
+{
+  "schemaVersion": 1,
+  "ownerRole": "Frontend Standards Owner",
+  "policy": "exact-identities-only-decrease",
+  "violations": [
+    {
+      "identity": "api/no-direct-transport|packages/file/src/api/file.ts|const response = await fetch(sign.uploadUrl, {|1",
+      "rule": "api/no-direct-transport",
+      "file": "packages/file/src/api/file.ts",
+      "evidence": "const response = await fetch(sign.uploadUrl, {"
+    },
+    {
+      "identity": "api/no-environment-access|apps/mango-admin/src/api/admin/area.ts|if (import.meta.env.DEV && import.meta.env.VITE_USE_MOCK === 'true') {|1",
+      "rule": "api/no-environment-access",
+      "file": "apps/mango-admin/src/api/admin/area.ts",
+      "evidence": "if (import.meta.env.DEV && import.meta.env.VITE_USE_MOCK === 'true') {"
+    },
+    {
+      "identity": "api/no-environment-access|apps/mango-admin/src/api/admin/org.ts|if (import.meta.env.DEV && import.meta.env.VITE_USE_MOCK === 'true') {|1",
+      "rule": "api/no-environment-access",
+      "file": "apps/mango-admin/src/api/admin/org.ts",
+      "evidence": "if (import.meta.env.DEV && import.meta.env.VITE_USE_MOCK === 'true') {"
+    },
+    {
+      "identity": "api/no-environment-access|packages/common/api/area.ts|if (import.meta.env.DEV && import.meta.env.VITE_USE_MOCK === 'true') {|1",
+      "rule": "api/no-environment-access",
+      "file": "packages/common/api/area.ts",
+      "evidence": "if (import.meta.env.DEV && import.meta.env.VITE_USE_MOCK === 'true') {"
+    },
+    {
+      "identity": "api/no-environment-access|packages/common/api/org.ts|if (import.meta.env.DEV && import.meta.env.VITE_USE_MOCK === 'true') {|1",
+      "rule": "api/no-environment-access",
+      "file": "packages/common/api/org.ts",
+      "evidence": "if (import.meta.env.DEV && import.meta.env.VITE_USE_MOCK === 'true') {"
+    },
+    {
+      "identity": "css/page-style-must-be-scoped-or-module|packages/admin-shell/src/views/demo/components/DemoDocLayout.vue|<style lang=\"scss\">|1",
+      "rule": "css/page-style-must-be-scoped-or-module",
+      "file": "packages/admin-shell/src/views/demo/components/DemoDocLayout.vue",
+      "evidence": "<style lang=\"scss\">"
+    },
+    {
+      "identity": "layer/presentation-no-transport|packages/admin-shell/src/views/demo/components/RealtimeView.vue|const response = await fetch('/api/realtime/messages/publish', {|1",
+      "rule": "layer/presentation-no-transport",
+      "file": "packages/admin-shell/src/views/demo/components/RealtimeView.vue",
+      "evidence": "const response = await fetch('/api/realtime/messages/publish', {"
+    },
+    {
+      "identity": "layer/presentation-no-transport|packages/admin-shell/src/views/home/user/index.vue|import { get } from '@mango/common/utils/request';|1",
+      "rule": "layer/presentation-no-transport",
+      "file": "packages/admin-shell/src/views/home/user/index.vue",
+      "evidence": "import { get } from '@mango/common/utils/request';"
+    },
+    {
+      "identity": "layer/presentation-no-transport|packages/common/components/Chat/index.vue|const response = await fetch('/api/ai/chat', {|1",
+      "rule": "layer/presentation-no-transport",
+      "file": "packages/common/components/Chat/index.vue",
+      "evidence": "const response = await fetch('/api/ai/chat', {"
+    },
+    {
+      "identity": "layer/presentation-no-transport|packages/system/src/components/ParticipantSelector/index.vue|import { get } from '@mango/common';|1",
+      "rule": "layer/presentation-no-transport",
+      "file": "packages/system/src/components/ParticipantSelector/index.vue",
+      "evidence": "import { get } from '@mango/common';"
+    },
+    {
+      "identity": "layer/presentation-no-transport|packages/workflow/src/views/workflow-definition/components/workflow-designer/WorkflowParticipantSelector.vue|import { get } from '@mango/common';|1",
+      "rule": "layer/presentation-no-transport",
+      "file": "packages/workflow/src/views/workflow-definition/components/workflow-designer/WorkflowParticipantSelector.vue",
+      "evidence": "import { get } from '@mango/common';"
+    },
+    {
+      "identity": "layer/presentation-no-transport|packages/workflow/src/views/workflow-definition/index.vue|import { UserSelector, get } from '@mango/common';|1",
+      "rule": "layer/presentation-no-transport",
+      "file": "packages/workflow/src/views/workflow-definition/index.vue",
+      "evidence": "import { UserSelector, get } from '@mango/common';"
+    },
+    {
+      "identity": "microfrontend/vendor-symbol-outside-adapter|apps/mango-admin-cms-app/src/main.ts|$wujie?: {|1",
+      "rule": "microfrontend/vendor-symbol-outside-adapter",
+      "file": "apps/mango-admin-cms-app/src/main.ts",
+      "evidence": "$wujie?: {"
+    },
+    {
+      "identity": "microfrontend/vendor-symbol-outside-adapter|apps/mango-admin-cms-app/src/main.ts|window.$wujie?.props?.mangoRuntime?.eventBus.emit('unauthorized');|1",
+      "rule": "microfrontend/vendor-symbol-outside-adapter",
+      "file": "apps/mango-admin-cms-app/src/main.ts",
+      "evidence": "window.$wujie?.props?.mangoRuntime?.eventBus.emit('unauthorized');"
+    },
+    {
+      "identity": "microfrontend/vendor-symbol-outside-adapter|apps/mango-admin-rbac-app/src/main.ts|$wujie?: {|1",
+      "rule": "microfrontend/vendor-symbol-outside-adapter",
+      "file": "apps/mango-admin-rbac-app/src/main.ts",
+      "evidence": "$wujie?: {"
+    },
+    {
+      "identity": "microfrontend/vendor-symbol-outside-adapter|apps/mango-admin-rbac-app/src/main.ts|window.$wujie?.props?.mangoRuntime?.eventBus.emit('unauthorized');|1",
+      "rule": "microfrontend/vendor-symbol-outside-adapter",
+      "file": "apps/mango-admin-rbac-app/src/main.ts",
+      "evidence": "window.$wujie?.props?.mangoRuntime?.eventBus.emit('unauthorized');"
+    },
+    {
+      "identity": "microfrontend/vendor-symbol-outside-adapter|apps/mango-admin-template-app/src/main.ts|$wujie?: {|1",
+      "rule": "microfrontend/vendor-symbol-outside-adapter",
+      "file": "apps/mango-admin-template-app/src/main.ts",
+      "evidence": "$wujie?: {"
+    },
+    {
+      "identity": "microfrontend/vendor-symbol-outside-adapter|apps/mango-admin-template-app/src/main.ts|window.$wujie?.props?.mangoRuntime?.eventBus.emit('unauthorized');|1",
+      "rule": "microfrontend/vendor-symbol-outside-adapter",
+      "file": "apps/mango-admin-template-app/src/main.ts",
+      "evidence": "window.$wujie?.props?.mangoRuntime?.eventBus.emit('unauthorized');"
+    },
+    {
+      "identity": "microfrontend/vendor-symbol-outside-adapter|apps/mango-admin-workflow-app/src/main.ts|$wujie?: {|1",
+      "rule": "microfrontend/vendor-symbol-outside-adapter",
+      "file": "apps/mango-admin-workflow-app/src/main.ts",
+      "evidence": "$wujie?: {"
+    },
+    {
+      "identity": "microfrontend/vendor-symbol-outside-adapter|apps/mango-admin-workflow-app/src/main.ts|window.$wujie?.props?.mangoRuntime?.eventBus.emit('unauthorized');|1",
+      "rule": "microfrontend/vendor-symbol-outside-adapter",
+      "file": "apps/mango-admin-workflow-app/src/main.ts",
+      "evidence": "window.$wujie?.props?.mangoRuntime?.eventBus.emit('unauthorized');"
+    },
+    {
+      "identity": "microfrontend/vendor-symbol-outside-adapter|packages/common/utils/request.ts|? (window as any).$wujie?.props?.mangoRuntime|1",
+      "rule": "microfrontend/vendor-symbol-outside-adapter",
+      "file": "packages/common/utils/request.ts",
+      "evidence": "? (window as any).$wujie?.props?.mangoRuntime"
+    }
+  ]
+}
