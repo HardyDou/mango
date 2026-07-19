@@ -1,0 +1,9 @@
+packages:
+  - 'packages/*'
+allowBuilds:
+  '@swc/core': true
+  core-js-pure: true
+  es5-ext: true
+  esbuild: true
+  msw: true
+  vue-demi: true

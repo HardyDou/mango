@@ -7,6 +7,7 @@
 
 - `backend`：Spring Boot 后端应用，full preset 默认依赖 `io.mango:mango-admin-starter`。
 - `frontend`：Vue 管理后台，full preset 默认使用 `@mango/admin/full` 和 `@mango/admin/style-full.css`。
+- `frontend/pnpm-workspace.yaml`：前端 workspace 范围和 pnpm 11 依赖构建白名单。
 - `business-pmo`：业务仓库锁定的 PMO baseline、文档契约、Agent、检查工具和项目 Skill 入口。
 - `business-docs`：业务需求、设计、实施计划、交付台账和证据。
 - `topologies`：单体和微服务接入说明。
@@ -153,6 +154,7 @@ npm --prefix frontend run build
 | `frontend/package.json` | `scripts.dev` | `vite --host 0.0.0.0` | 本地前端启动 | CLI 启动 Vite 时执行 | `frontend/package.json` |
 | `frontend/package.json` | `scripts.build` | `node scripts/build-with-report.mjs` | 前端构建 | 生成构建报告 | `frontend/package.json` |
 | `frontend/package.json` | `scripts.test:e2e` | `playwright test` | E2E 测试 | 业务项目补充测试后执行 | `frontend/package.json` |
+| `frontend/pnpm-workspace.yaml` | `allowBuilds` | Mango 依赖所需构建脚本白名单 | pnpm 11 安装依赖时允许受控构建 | `pnpm install` | `frontend/pnpm-workspace.yaml` |
 | `frontend/src/main.ts` | `apiBaseUrl` | `/api` | API base URL | Vite dev proxy 转发到后端 | `frontend/src/main.ts` |
 | `frontend/src/main.ts` | `title` | `{{projectPascal}}` | 页面标题 | 管理后台标题 | `frontend/src/main.ts` |
 | `frontend` 下的 `public`、`runtime-config.json` | `profile` | `monolith` | runtime profile | runtime module 加载策略 | `runtime-config.json` |
@@ -226,6 +228,7 @@ full preset 会启用授权、身份、组织、系统等平台模块的 migrati
 | 问题 | 原因 | 处理方式 |
 |------|------|----------|
 | `mango CLI not found in project frontend dependencies or globally` | 前端依赖未安装或缺少 `@mango/cli`，且机器没有全局 CLI | 先执行 `cd frontend && pnpm install`，或安装全局 `@mango/cli` |
+| pnpm 11 安装报 `ERR_PNPM_IGNORED_BUILDS` | `frontend/pnpm-workspace.yaml` 缺失或未包含模板的 `allowBuilds` 映射 | 恢复当前模板的 workspace 配置；不要用测试脚本或全局配置临时放行未知依赖 |
 | 前端请求后端失败 | `VITE_ADMIN_PROXY_PATH` 未指向本机后端，或后端未启动 | 用 `mango workspace status` 查看端口，用 `mango dev status` 查看后端 |
 | Vite proxy 报 host 不允许 | `vite.config.ts` 只允许本机代理 | 本地开发保持代理到 `127.0.0.1` 或 `localhost` |
 | 后端 health 访问失败 | 数据库、Flyway、端口或密钥配置错误 | 查 `mango dev logs {{projectKebab}}-service` |

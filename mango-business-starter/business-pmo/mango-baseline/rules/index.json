@@ -1,5 +1,5 @@
 {
-  "version": 10,
+  "version": 11,
   "always": [
     {
       "path": "rules/00-dev-flow.md",
@@ -85,7 +85,7 @@
     },
     "process.releaseArtifacts": {
       "path": "rules/10-release-artifacts.md",
-      "reason": "npm、Maven、同版本 Maven 文档包、CLI、starter、模板、PMO、Skill 发布批次、不可变制品恢复及版本同步规范"
+      "reason": "仓库内 mango-release 唯一入口、npm/Maven/CLI/PMO/Skill 批次、发布说明预检、不可变制品恢复、CHANGELOG 回填与环境收尾规范"
     },
     "process.deliveryAssurance": {
       "path": "rules/11-delivery-assurance.md",

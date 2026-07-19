@@ -1,5 +1,43 @@
 # @mango/cli Changelog
 
+## 1.0.82 - 2026-07-18
+
+### Changed
+
+- Lock `@mango/pmo@1.3.1`, whose `mango-release` Skill is the exclusive repository-local Mango release workflow.
+- Generated and upgraded projects receive the hardened release readiness, recovery, CHANGELOG backfill, verification, and cleanup rules without using external generic release skills.
+
+### Upgrade Notes
+
+- Publish `@mango/pmo@1.3.1` before installing `@mango/cli@1.0.82`.
+- Run `mango pmo upgrade --project-dir . --to 1.3.1`, then use the project-local CLI for subsequent work.
+- Mango Maven and runtime frontend packages remain unchanged.
+
+### Verification
+
+- `pnpm --filter @mango/pmo build && pnpm --filter @mango/pmo check`
+- `node mango-business-starter/scripts/sync-pmo-baseline.mjs --check`
+- `pnpm --filter @mango/cli test`
+
+## 1.0.81 - 2026-07-18
+
+### Fixed
+
+- Generate `frontend/pnpm-workspace.yaml` with the pnpm 11 `allowBuilds` policy required by the generated Mango frontend dependency set.
+- Require the real generated workspace policy in CLI and packed-package consumer regressions instead of injecting an independent allowlist during verification.
+
+### Upgrade Notes
+
+- Install `@mango/cli@1.0.81` before generating new projects that use pnpm 11.
+- Existing generated projects can copy the `allowBuilds` map from the current full template into their business-owned `frontend/pnpm-workspace.yaml`; the CLI does not overwrite existing workspace policy.
+- Mango Maven remains `1.0.22`, PMO remains `1.3.0`, and runtime frontend package versions remain unchanged.
+
+### Verification
+
+- `pnpm --filter @mango/cli test`
+- `pnpm package-consumer:typecheck -- --registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`
+- Clean pnpm 11 install and `pnpm run typecheck` from a newly generated project.
+
 ## 1.0.80 - 2026-07-18
 
 ### Changed
