@@ -157,9 +157,24 @@ Java API：
 | `AuthUserProvider` | 给 `mango-auth` 使用的认证事实 Provider |
 | `TenantMemberProvider` | 按用户和租户查询启用成员事实 |
 
+### 7.1 从 Maven 1.0.21 升级到 1.0.22
+
+1.0.22 将身份 API 返回模型统一为 VO。旧业务源码需要做以下替换：
+
+| 1.0.21 | 1.0.22 |
+|---|---|
+| `IdentityUserInfo` | `IdentityUserInfoVO` |
+| `AuthUserInfo` | `AuthUserVO` |
+| `TenantMemberInfo` | `TenantMemberVO` |
+| `TenantMemberOrgRelationInfo` | `TenantMemberOrgRelationVO` |
+
+`IdentityUserApi.getUserInfo`、`getUserInfoById` 和 `listUserInfosByTarget` 的方法名与业务语义不变，返回泛型改为 `IdentityUserInfoVO`。实现 API、Feign 适配器或测试桩的业务代码需要同步覆盖方法签名。1.0.22 的参数校验约束由 API 接口声明，实现类不要重复或改变约束配置。
+
+完整的依赖、其它模块 API、数据库、验证和部署步骤见 [Mango Maven 1.0.21 到 1.0.22 Java API 升级](../../../mango-docs/guides/business-integration/maven-1.0.21-to-1.0.22-java-api-upgrade.md)。
+
 ## 8. 返回字段
 
-`AuthUserInfo` 是登录校验使用的认证事实，包含 userId、username、password hash、nickname、realm、actorType、partyType、partyId、status。
+`AuthUserVO` 是登录校验使用的认证事实，包含 userId、username、password hash、nickname、realm、actorType、partyType、partyId、status。
 
 `IdentityUserVO` 是用户管理页面使用的成员视图，包含用户资料、成员状态、租户成员信息、组织岗位关系和外部身份信息。
 
