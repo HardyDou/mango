@@ -12,6 +12,10 @@ const suffix = `${Date.now()}-${process.pid}`;
 const runtimeVolume = `mango-frontend-candidate-${suffix}`;
 const modulesVolume = `mango-frontend-candidate-modules-${suffix}`;
 const gitSha = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: repoRoot, encoding: 'utf8' }).trim();
+const gitCommonDir = resolve(
+  repoRoot,
+  execFileSync('git', ['rev-parse', '--git-common-dir'], { cwd: repoRoot, encoding: 'utf8' }).trim(),
+);
 const reportRoot = join(repoRoot, '.runtime', 'frontend-quality', 'business-lab');
 let passed = false;
 
@@ -52,8 +56,12 @@ try {
     '--rm',
     '-e',
     `MANGO_BUSINESS_LAB_GIT_COMMIT=${gitSha}`,
+    '-e',
+    `MANGO_PMO_SOURCE_COMMIT=${gitSha}`,
     '-v',
     `${repoRoot}:/workspace`,
+    '-v',
+    `${gitCommonDir}:${gitCommonDir}:ro`,
     '-v',
     `${modulesVolume}:/workspace/mango-ui/node_modules`,
     '-v',
