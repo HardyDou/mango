@@ -25,7 +25,7 @@ function readJson(file) {
 function listFiles(directory) {
   if (!fs.existsSync(directory)) return [];
   const results = [];
-  const visit = current => {
+  const visit = (current) => {
     for (const entry of fs.readdirSync(current, { withFileTypes: true })) {
       if (entry.isDirectory() && SKIPPED_DIRECTORIES.has(entry.name)) continue;
       const resolved = path.join(current, entry.name);
@@ -65,17 +65,17 @@ function resolveSource(fromFile, specifier) {
   const candidates = [base];
   for (const extension of SOURCE_EXTENSIONS) candidates.push(`${base}${extension}`);
   for (const extension of SOURCE_EXTENSIONS) candidates.push(path.join(base, `index${extension}`));
-  return candidates.find(candidate => fs.existsSync(candidate) && fs.statSync(candidate).isFile()) || null;
+  return candidates.find((candidate) => fs.existsSync(candidate) && fs.statSync(candidate).isFile()) || null;
 }
 
 function parseBindingList(value) {
   return value
     .split(',')
-    .map(item => item.trim())
+    .map((item) => item.trim())
     .filter(Boolean)
-    .map(item => item.replace(/^type\s+/u, '').trim())
-    .map(item => {
-      const [imported, exported] = item.split(/\s+as\s+/u).map(part => part.trim());
+    .map((item) => item.replace(/^type\s+/u, '').trim())
+    .map((item) => {
+      const [imported, exported] = item.split(/\s+as\s+/u).map((part) => part.trim());
       return { imported, exported: exported || imported };
     });
 }
@@ -105,10 +105,14 @@ function parseModule(file) {
     localExports.push(...parseBindingList(match[1]));
   }
 
-  const dynamicImports = [...content.matchAll(/import\(\s*['"]([^'"]+)['"]\s*\)/gu)].map(match => match[1]);
-  const globPatterns = [...content.matchAll(/import\.meta\.glob(?:Eager)?\(\s*(['"`])([^'"`]+)\1/gu)].map(match => match[2]);
-  const registrarNames = [...content.matchAll(/export\s+(?:async\s+)?function\s+(register[A-Za-z0-9_$]*Pages)\s*\(/gu)].map(match => match[1]);
-  const widgetTypes = [...content.matchAll(/\btype\s*:\s*['"]([^'"]+)['"]/gu)].map(match => match[1]);
+  const dynamicImports = [...content.matchAll(/import\(\s*['"]([^'"]+)['"]\s*\)/gu)].map((match) => match[1]);
+  const globPatterns = [...content.matchAll(/import\.meta\.glob(?:Eager)?\(\s*(['"`])([^'"`]+)\1/gu)].map(
+    (match) => match[2],
+  );
+  const registrarNames = [
+    ...content.matchAll(/export\s+(?:async\s+)?function\s+(register[A-Za-z0-9_$]*Pages)\s*\(/gu),
+  ].map((match) => match[1]);
+  const widgetTypes = [...content.matchAll(/\btype\s*:\s*['"]([^'"]+)['"]/gu)].map((match) => match[1]);
 
   return { content, reexports, imports, localExports, dynamicImports, globPatterns, registrarNames, widgetTypes };
 }
@@ -157,7 +161,7 @@ function collectVueExports(entryFile, exportKey) {
 
 function extractViteEntries(workspace) {
   const configFile = ['vite.config.ts', 'vite.config.js', 'vite.config.mjs']
-    .map(name => path.join(workspace.directory, name))
+    .map((name) => path.join(workspace.directory, name))
     .find(fs.existsSync);
   if (!configFile) return new Map();
   const content = fs.readFileSync(configFile, 'utf8');
@@ -188,9 +192,7 @@ function inferEntry(workspace, exportKey, exportValue, viteEntries) {
     const direct = path.resolve(workspace.directory, exportKey.replace(/^\.\//u, ''));
     if (fs.existsSync(direct)) return direct;
   }
-  const outputKey = importTarget
-    .replace(/^\.\/dist\//u, '')
-    .replace(/\.(?:m?js|cjs)$/u, '');
+  const outputKey = importTarget.replace(/^\.\/dist\//u, '').replace(/\.(?:m?js|cjs)$/u, '');
   if (viteEntries.has(outputKey)) return viteEntries.get(outputKey);
   if (exportKey === '.' && viteEntries.has('index')) return viteEntries.get('index');
   const logical = exportKey === '.' ? 'index' : exportKey.replace(/^\.\//u, '');
@@ -222,14 +224,16 @@ function testKind(file) {
 
 function dependencyEntries(manifest) {
   const groups = ['dependencies', 'devDependencies', 'peerDependencies', 'optionalDependencies'];
-  return groups.flatMap(group => Object.entries(manifest[group] || {}).map(([name, version]) => ({ group, name, version })));
+  return groups.flatMap((group) =>
+    Object.entries(manifest[group] || {}).map(([name, version]) => ({ group, name, version })),
+  );
 }
 
 export function createFrontendInventory(uiRoot) {
   const resolvedRoot = path.resolve(uiRoot);
   const workspaces = discoverWorkspaces(resolvedRoot);
   if (workspaces.length === 0) throw new Error(`No workspaces found under ${resolvedRoot}`);
-  const workspaceNames = new Set(workspaces.map(item => item.manifest.name));
+  const workspaceNames = new Set(workspaces.map((item) => item.manifest.name));
   const components = [];
   const publicVueExports = [];
   const registrars = [];
@@ -242,20 +246,35 @@ export function createFrontendInventory(uiRoot) {
 
   for (const workspace of workspaces) {
     const files = listFiles(workspace.directory);
-    const source = files.filter(file => SOURCE_EXTENSIONS.includes(path.extname(file)));
+    const source = files.filter((file) => SOURCE_EXTENSIONS.includes(path.extname(file)));
     for (const file of source) {
       const content = fs.readFileSync(file);
       sourceFiles.push({ file: relative(resolvedRoot, file), sha256: sha256(content), bytes: content.length });
       const kind = testKind(file);
       if (kind) tests.push({ workspace: workspace.manifest.name, file: relative(resolvedRoot, file), kind });
       const parsed = parseModule(file);
-      for (const pattern of parsed.globPatterns) globImports.push({ workspace: workspace.manifest.name, file: relative(resolvedRoot, file), pattern });
-      for (const specifier of parsed.dynamicImports) dynamicImports.push({ workspace: workspace.manifest.name, file: relative(resolvedRoot, file), specifier });
-      for (const name of parsed.registrarNames) registrars.push({ workspace: workspace.manifest.name, source: 'source', name, file: relative(resolvedRoot, file) });
-      const isWidgetMetadata = /(^|\/)widgets?\//u.test(relative(workspace.directory, file))
-        || /\bMango(?:Grid)?WidgetDefinition\b/u.test(parsed.content);
+      for (const pattern of parsed.globPatterns)
+        globImports.push({ workspace: workspace.manifest.name, file: relative(resolvedRoot, file), pattern });
+      for (const specifier of parsed.dynamicImports)
+        dynamicImports.push({ workspace: workspace.manifest.name, file: relative(resolvedRoot, file), specifier });
+      for (const name of parsed.registrarNames)
+        registrars.push({
+          workspace: workspace.manifest.name,
+          source: 'source',
+          name,
+          file: relative(resolvedRoot, file),
+        });
+      const isWidgetMetadata =
+        /(^|\/)widgets?\//u.test(relative(workspace.directory, file)) ||
+        /\bMango(?:Grid)?WidgetDefinition\b/u.test(parsed.content);
       if (isWidgetMetadata) {
-        for (const type of parsed.widgetTypes) widgets.push({ workspace: workspace.manifest.name, source: 'source-metadata', type, file: relative(resolvedRoot, file) });
+        for (const type of parsed.widgetTypes)
+          widgets.push({
+            workspace: workspace.manifest.name,
+            source: 'source-metadata',
+            type,
+            file: relative(resolvedRoot, file),
+          });
       }
       if (COMPONENT_EXTENSIONS.has(path.extname(file))) {
         components.push({
@@ -295,15 +314,16 @@ export function createFrontendInventory(uiRoot) {
     }
   }
 
-  const componentByFile = new Map(components.map(item => [item.file, item]));
+  const componentByFile = new Map(components.map((item) => [item.file, item]));
   const unresolvedPublicVueExports = [];
   for (const item of publicVueExports) {
     const component = componentByFile.get(item.file);
     if (!component) unresolvedPublicVueExports.push(item);
-    else component.exportedBy.push({ workspace: item.workspace, exportKey: item.exportKey, exportName: item.exportName });
+    else
+      component.exportedBy.push({ workspace: item.workspace, exportKey: item.exportKey, exportName: item.exportName });
   }
 
-  const workspaceReport = workspaces.map(workspace => {
+  const workspaceReport = workspaces.map((workspace) => {
     const dependencies = dependencyEntries(workspace.manifest);
     return {
       name: workspace.manifest.name,
@@ -313,24 +333,28 @@ export function createFrontendInventory(uiRoot) {
       directory: relative(resolvedRoot, workspace.directory),
       scripts: Object.fromEntries(Object.entries(workspace.manifest.scripts || {}).sort()),
       dependencies,
-      localDependencies: dependencies.filter(item => workspaceNames.has(item.name)),
+      localDependencies: dependencies.filter((item) => workspaceNames.has(item.name)),
       exports: Object.keys(workspace.manifest.exports || {}).sort(),
     };
   });
 
-  const sortByIdentity = list => list.sort((left, right) => JSON.stringify(left).localeCompare(JSON.stringify(right)));
+  const sortByIdentity = (list) =>
+    list.sort((left, right) => JSON.stringify(left).localeCompare(JSON.stringify(right)));
   for (const component of components) sortByIdentity(component.exportedBy);
   const report = {
     schemaVersion: 1,
     root: '.',
     summary: {
       workspaceCount: workspaceReport.length,
-      appCount: workspaceReport.filter(item => item.kind === 'app').length,
-      packageCount: workspaceReport.filter(item => item.kind === 'package').length,
+      appCount: workspaceReport.filter((item) => item.kind === 'app').length,
+      packageCount: workspaceReport.filter((item) => item.kind === 'package').length,
       sourceFileCount: sourceFiles.length,
       componentCandidateCount: components.length,
       publicVueExportCount: publicVueExports.length,
-      publicVueExportCoverage: publicVueExports.length === 0 ? 0 : (publicVueExports.length - unresolvedPublicVueExports.length) / publicVueExports.length,
+      publicVueExportCoverage:
+        publicVueExports.length === 0
+          ? 0
+          : (publicVueExports.length - unresolvedPublicVueExports.length) / publicVueExports.length,
       registrarCount: registrars.length,
       widgetMetadataCount: widgets.length,
       testFileCount: tests.length,
@@ -354,12 +378,16 @@ export function createFrontendInventory(uiRoot) {
   if (report.summary.sourceFileCount === 0) throw new Error('Frontend inventory source file count is zero');
   if (report.summary.componentCandidateCount === 0) throw new Error('Frontend component candidate count is zero');
   if (unresolvedCodeExportEntries.length > 0) {
-    const identities = unresolvedCodeExportEntries.map(item => `${item.workspace}:${item.exportKey}`).join(', ');
-    throw new Error(`Frontend code export source entry coverage is incomplete: ${unresolvedCodeExportEntries.length} unresolved (${identities})`);
+    const identities = unresolvedCodeExportEntries.map((item) => `${item.workspace}:${item.exportKey}`).join(', ');
+    throw new Error(
+      `Frontend code export source entry coverage is incomplete: ${unresolvedCodeExportEntries.length} unresolved (${identities})`,
+    );
   }
   if (report.summary.publicVueExportCount === 0) throw new Error('Frontend public Vue export count is zero');
   if (unresolvedPublicVueExports.length > 0) {
-    throw new Error(`Frontend public Vue export coverage is incomplete: ${unresolvedPublicVueExports.length} unresolved`);
+    throw new Error(
+      `Frontend public Vue export coverage is incomplete: ${unresolvedPublicVueExports.length} unresolved`,
+    );
   }
   return report;
 }

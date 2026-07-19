@@ -76,7 +76,11 @@ try {
   persist();
 
   if (changes.scopeKnown && changes.changedPaths.length > 0) {
-    execute(process.execPath, ['./scripts/quality/run-changed-static.mjs', ...changes.changedPaths]);
+    execute(process.execPath, [
+      './scripts/quality/run-changed-static.mjs',
+      `--base-ref=${changes.mergeBase}`,
+      ...changes.changedPaths,
+    ]);
   }
 
   if (selection.mode === 'full') {

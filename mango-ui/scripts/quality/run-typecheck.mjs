@@ -11,7 +11,7 @@ const defaultUiRoot = path.resolve(scriptDirectory, '../..');
 
 function option(name, fallback) {
   const prefix = `--${name}=`;
-  const argument = process.argv.slice(2).find(value => value.startsWith(prefix));
+  const argument = process.argv.slice(2).find((value) => value.startsWith(prefix));
   return argument ? argument.slice(prefix.length) : fallback;
 }
 
@@ -51,9 +51,14 @@ for (const target of targets) {
     diagnostics,
     diagnosticCount: diagnostics.length,
     outputSha256: createHash('sha256').update(output).digest('hex'),
-    unmatchedOutput: output.split(/\r?\n/u).filter(Boolean).filter(line => !/^(.*?)\((\d+),(\d+)\):\s+(error|warning)\s+TS\d+:/u.test(line)),
+    unmatchedOutput: output
+      .split(/\r?\n/u)
+      .filter(Boolean)
+      .filter((line) => !/^(.*?)\((\d+),(\d+)\):\s+(error|warning)\s+TS\d+:/u.test(line)),
   });
-  process.stderr.write(`${target.workspace}: ${child.status === 0 ? 'PASS' : `FAIL (${diagnostics.length} diagnostics)`}\n`);
+  process.stderr.write(
+    `${target.workspace}: ${child.status === 0 ? 'PASS' : `FAIL (${diagnostics.length} diagnostics)`}\n`,
+  );
 }
 
 const report = {
@@ -62,8 +67,8 @@ const report = {
   command: 'vue-tsc --noEmit --incremental false -p <workspace>/tsconfig.json',
   summary: {
     targetCount: results.length,
-    passedCount: results.filter(item => item.status === 'passed').length,
-    failedCount: results.filter(item => item.status === 'failed').length,
+    passedCount: results.filter((item) => item.status === 'passed').length,
+    failedCount: results.filter((item) => item.status === 'failed').length,
     skippedCount: skipped.length,
     diagnosticCount: results.reduce((total, item) => total + item.diagnosticCount, 0),
   },

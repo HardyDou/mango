@@ -8,7 +8,7 @@ const defaultUiRoot = path.resolve(scriptDirectory, '../..');
 
 function option(name, fallback) {
   const prefix = `--${name}=`;
-  const argument = process.argv.slice(2).find(value => value.startsWith(prefix));
+  const argument = process.argv.slice(2).find((value) => value.startsWith(prefix));
   return argument ? argument.slice(prefix.length) : fallback;
 }
 
@@ -18,7 +18,9 @@ const outputFile = path.resolve(option('out', path.join(uiRoot, '../.runtime/fro
 try {
   const report = createFrontendInventory(uiRoot);
   writeFrontendInventory(report, outputFile);
-  process.stdout.write(`${JSON.stringify({ outputFile, inventorySha256: report.inventorySha256, ...report.summary })}\n`);
+  process.stdout.write(
+    `${JSON.stringify({ outputFile, inventorySha256: report.inventorySha256, ...report.summary })}\n`,
+  );
 } catch (error) {
   process.stderr.write(`Frontend inventory failed: ${error.message}\n`);
   process.exitCode = 1;

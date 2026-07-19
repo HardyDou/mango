@@ -19,7 +19,11 @@ export function discoverTypecheckTargets(uiRoot) {
       const manifest = JSON.parse(fs.readFileSync(manifestFile, 'utf8'));
       const tsconfig = path.join(directory, 'tsconfig.json');
       if (!fs.existsSync(tsconfig)) {
-        skipped.push({ workspace: manifest.name, directory: toPosix(path.relative(uiRoot, directory)), reason: 'missing-tsconfig' });
+        skipped.push({
+          workspace: manifest.name,
+          directory: toPosix(path.relative(uiRoot, directory)),
+          reason: 'missing-tsconfig',
+        });
         continue;
       }
       targets.push({ workspace: manifest.name, directory, tsconfig });

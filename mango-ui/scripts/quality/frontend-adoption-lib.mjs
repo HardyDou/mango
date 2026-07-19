@@ -9,8 +9,8 @@ export function validateAdoptionContract(contract, context) {
 
   const stages = contract.adoptionStages ?? [];
   if (
-    stages.length !== EXPECTED_STAGES.length
-    || stages.some((stage, index) => stage.name !== EXPECTED_STAGES[index])
+    stages.length !== EXPECTED_STAGES.length ||
+    stages.some((stage, index) => stage.name !== EXPECTED_STAGES[index])
   ) {
     failures.push('adoption stages must be exactly pilot, affected, repository');
   }
@@ -44,7 +44,9 @@ export function validateAdoptionContract(contract, context) {
   for (const name of candidateNames) {
     const candidate = context.candidateVersions[name];
     if (context.localVersions[name] !== candidate) {
-      failures.push(`${name}: candidate lock ${candidate} != local package ${context.localVersions[name] ?? '<missing>'}`);
+      failures.push(
+        `${name}: candidate lock ${candidate} != local package ${context.localVersions[name] ?? '<missing>'}`,
+      );
     }
     const recovery = contract.dependencyRecovery?.[name];
     const baseVersion = context.baseVersions[name] ?? null;

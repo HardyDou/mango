@@ -28,7 +28,10 @@ function readDistSources(directory) {
     const absolute = path.join(directory, entry.name);
     if (entry.isDirectory()) sources.push(...readDistSources(absolute));
     else if (entry.isFile() && /\.(?:html|js|json)$/u.test(entry.name)) {
-      sources.push({ path: path.relative(distRoot, absolute).split(path.sep).join('/'), content: fs.readFileSync(absolute, 'utf8') });
+      sources.push({
+        path: path.relative(distRoot, absolute).split(path.sep).join('/'),
+        content: fs.readFileSync(absolute, 'utf8'),
+      });
     }
   }
   return sources;

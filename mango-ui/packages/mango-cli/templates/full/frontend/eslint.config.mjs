@@ -23,6 +23,14 @@ export default typescript.config(
     },
   },
   ...typescript.configs.recommended.map((config) => ({ ...config, files: ['**/*.{ts,tsx,vue}'] })),
+  {
+    files: ['**/*.{ts,tsx,vue}'],
+    languageOptions: {
+      parserOptions: {
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
+  },
   ...vue.configs['flat/recommended'],
   {
     files: ['**/*.vue'],
@@ -32,6 +40,7 @@ export default typescript.config(
         extraFileExtensions: ['.vue'],
         ecmaVersion: 'latest',
         sourceType: 'module',
+        tsconfigRootDir: import.meta.dirname,
       },
     },
   },

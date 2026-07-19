@@ -35,7 +35,9 @@ fs.writeFileSync(
 );
 
 if (report.failures.length > 0) {
-  process.stderr.write(`frontend standards adoption FAIL\n${report.failures.map((failure) => `- ${failure}`).join('\n')}\n`);
+  process.stderr.write(
+    `frontend standards adoption FAIL\n${report.failures.map((failure) => `- ${failure}`).join('\n')}\n`,
+  );
   process.exit(1);
 }
 process.stdout.write(

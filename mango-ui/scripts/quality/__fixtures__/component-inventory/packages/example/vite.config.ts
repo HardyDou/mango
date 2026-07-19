@@ -4,9 +4,9 @@ export default {
       entry: {
         index: 'src/index.ts',
         'admin-pages': 'src/admin-pages.ts',
-        'widgets/generated': 'src/widgets/generated.ts'
+        'widgets/generated': 'src/widgets/generated.ts',
       },
-      formats: ['es']
-    }
-  }
+      formats: ['es'],
+    },
+  },
 };
