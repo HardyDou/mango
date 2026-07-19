@@ -8,11 +8,14 @@ import io.mango.resource.support.ResourceProvider;
 import io.mango.resource.support.config.ResourceRegistryProperties;
 import io.mango.resource.support.declaration.ResourceDeclarationCollector;
 import io.mango.resource.support.model.ResourceDeclaration;
+import io.mango.resource.support.sync.ResourceSynchronizationCompletedEvent;
+import io.mango.resource.support.sync.ResourceSynchronizationPrerequisitesReadyEvent;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.DefaultApplicationArguments;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -52,15 +55,19 @@ class ResourceSyncRunnerTest {
                 return R.ok(Boolean.TRUE);
             }
         };
+        List<Object> events = new ArrayList<>();
         ResourceSyncRunner runner = new ResourceSyncRunner(
-                properties, collector, api, new ObjectMapper(), "authorization-service");
+                properties, collector, api, new ObjectMapper(), "authorization-service", events::add);
 
         runner.run(new DefaultApplicationArguments(new String[0]));
-        runner.retryUntilSynchronized();
+        assertThat(runner.isSynchronizationComplete()).isFalse();
+        runner.onSynchronizationPrerequisitesReady(new ResourceSynchronizationPrerequisitesReadyEvent());
         runner.retryUntilSynchronized();
         runner.retryUntilSynchronized();
 
         assertThat(attempts).hasValue(3);
+        assertThat(runner.isSynchronizationComplete()).isTrue();
+        assertThat(events).singleElement().isInstanceOf(ResourceSynchronizationCompletedEvent.class);
     }
 
     private static final class ListObjectProvider<T> implements ObjectProvider<T> {
