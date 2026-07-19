@@ -132,11 +132,13 @@ jobs:
 
       - name: Wait for bootstrap identity and tenant
         run: |
+          source .mango/dev-workspace.env
+          : "${MANGO_BACKEND_PORT:?MANGO_BACKEND_PORT is missing from .mango/dev-workspace.env}"
           for attempt in $(seq 1 150); do
             response="$(curl --silent --show-error \
               --header 'Content-Type: application/json' \
               --data '{"username":"admin","realm":"INTERNAL","appCode":"internal-admin"}' \
-              http://127.0.0.1:18080/auth/login-institutions || true)"
+              "http://127.0.0.1:${MANGO_BACKEND_PORT}/auth/login-institutions" || true)"
             if BOOTSTRAP_RESPONSE="$response" node --input-type=module -e '
               let body = {};
               try {
