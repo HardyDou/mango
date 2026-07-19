@@ -46,7 +46,7 @@
     "check:static": "pnpm quality:versions && pnpm check:boundaries && pnpm component-contracts:check && pnpm lint && pnpm format:check && pnpm stylelint && pnpm typecheck",
     "test:unit": "pnpm quality:gate:test && pnpm -r --if-present test",
     "check:full": "pnpm quality:inventory && pnpm admin:styles:check && pnpm build && pnpm check:static && pnpm test:unit && pnpm package-exports:check && pnpm package-consumer:typecheck -- --reuse-build && pnpm release:rollout:check",
-    "check:production-candidate": "pnpm check:full && pnpm test:business-lab:container",
+    "check:production-candidate": "pnpm test:business-lab:container",
     "check:affected": "node ./scripts/quality/check-affected.mjs",
     "check": "node ./scripts/quality/check-affected.mjs",
     "publish:pkg": "node ./scripts/publish-package.mjs",

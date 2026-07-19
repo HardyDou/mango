@@ -63,7 +63,7 @@ try {
     image,
     'sh',
     '-lc',
-    'pnpm install --frozen-lockfile && node scripts/run-business-lab.mjs --prepare-only --runtime-mount=/runtime',
+    'pnpm install --frozen-lockfile && pnpm check:full && node scripts/run-business-lab.mjs --prepare-only --runtime-mount=/runtime',
   ]);
   run(
     process.execPath,
