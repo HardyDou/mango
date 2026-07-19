@@ -62,6 +62,25 @@ Handler SPI。`mango-payment-starter` 同时带入 `mango-job-starter-remote`，
 </dependency>
 ```
 
+remote starter 会自动登记 27 个 `XxxFeignClient`，调用方继续按对应的
+`XxxApi` 注入，不依赖 Feign 实现类型。`/payment/**` 和 `/openapi/pay/**`
+都是 Payment 模块声明的正式服务路径，因此当前 `mango-payment-api` 的 27 个
+HTTP API 均提供远程适配，没有排除项：
+
+| 远程边界 | API |
+|----------|-----|
+| 支付入口与回调 | `MangoPayVirtualPaymentApi`、`PaymentChannelCallbackApi`、`PaymentOpenApi` |
+| 配置与治理 | `PaymentApplicationApi`、`PaymentCashierConfigApi`、`PaymentChannelApi`、`PaymentChannelContractApi`、`PaymentEnterpriseSubjectApi`、`PaymentMethodApi`、`PaymentMethodRouteApi`、`PaymentSecurityApi` |
+| 交易与资金处理 | `PaymentBusinessOrderApi`、`PaymentCashierApi`、`PaymentDifferenceApi`、`PaymentOfflineCollectionApi`、`PaymentOfflineRefundApi`、`PaymentOrderApi`、`PaymentReconciliationApi`、`PaymentRefundApprovalApi`、`PaymentRefundOrderApi`、`PaymentSettlementSummaryApi`、`PaymentTransactionFlowApi` |
+| 运维与任务 | `PaymentExceptionOrderApi`、`PaymentNotificationRecordApi`、`PaymentObservabilityApi`、`PaymentOperationAuditApi`、`PaymentTaskApi` |
+
+远程适配只转发既有 HTTP 契约，不降低服务端安全边界：
+
+- `PaymentOpenApi` 仍要求请求体携带合法应用、时间戳、随机数和签名，内部调用签名不能替代应用签名。
+- `PaymentChannelCallbackApi` 用于支付适配器完成通道验签后的标准内部回调，不替代公网通道验签入口。
+- `PaymentSecurityApi`、`PaymentTaskApi` 仍执行既有权限、租户和业务状态检查。
+- remote starter 不提供降级返回；网络、鉴权和 Payment 业务失败继续按既有错误协议返回。
+
 常用后端 API：
 
 | API | 用法 |
@@ -385,6 +404,10 @@ mango-payment-starter/src/main/resources/META-INF/mango/demo/
 - 对账没有数据：检查账单获取源、账单获取批次、导入文件、通道交易号和支付流水。
 - 编号异常：检查对应 `genKey` 是否初始化、租户上下文是否正确，不要在业务侧自行拼接编号。
 - 证书即将过期没有提醒：检查签约能力的 `certificateExpireTime` 和 `observability.certificate-warning-days`。
+- 无法注入 `XxxApi`：确认调用方依赖的是 `mango-payment-starter-remote`，并检查制品内 `AutoConfiguration.imports` 是否包含 `PaymentRemoteAutoConfiguration`。
+- 远程分页查询编码失败：不要把 Query 手工拆成查询参数；remote starter 已使用 JavaBean 属性编码继承的分页字段，优先检查是否被业务侧自定义 `QueryMapEncoder` 覆盖。
+- 开放接口远程调用被拒绝：检查 `PaymentOpenRequestCommand` 的应用签名字段；Feign 内部调用签名不会绕过开放接口应用签名。
+- 内部回调远程调用被拒绝：检查 `mango.internal-call.secret`、模块目标解析和适配器验签结果。
 
 ## 11. 相关文档
 
@@ -399,6 +422,7 @@ mango-payment-starter/src/main/resources/META-INF/mango/demo/
 - 开放接口统一为固定 `POST` 路径和 `PaymentOpenRequestCommand` 请求体，签名路径由服务端固定写入，客户端不能覆盖。
 - 公网通道回调统一为固定函数式路由，并以 `API_RESOURCE` 声明 `PUBLIC` 访问模式；原始请求体、参数和纯文本 ACK 语义保持。
 - Mapper 只返回 core projection，Service 边界显式转换 API VO；支付实体统一继承平台 `TenantEntity`。
+- Issue #570 补齐 `mango-payment-starter-remote` 的 27 个 Feign 客户端、唯一自动配置和自动配置索引；127 个 HTTP 方法的 verb、路径、参数绑定和返回泛型与既有 Controller 保持一致，权限、签名、租户及支付业务逻辑不变。
 
 支付四模块回归入口：
 

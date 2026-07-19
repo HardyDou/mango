@@ -36,6 +36,7 @@
 
 | 日期 | 能力 | 入口 | 设计与交付 |
 |------|------|------|------------|
+| 2026-07-19 | Payment remote adapter：`mango-payment-api` 的 27 个 HTTP API、127 个方法全部提供直接单继承 Feign 适配，覆盖正式模块路径 `/payment` 和 `/openapi/pay`；唯一自动配置同时提供继承分页 Query 的 JavaBean 编码。既有 HTTP、请求响应、应用签名、内部回调、权限、租户和支付业务语义不变 | [Payment README](../../mango/mango-platform/mango-payment/README.md) | [Issue #570 FULL 交付记录](../plans/2026-07-19-issue-570-payment-remote-delivery-record.md)；自动契约一致性、Spring 装配、消费者注入和真实 HTTP 测试 |
 | 2026-07-18 | Mango 发布治理：仓库内 `mango-release` 是唯一发布 Skill，外部通用 release skill 不再参与；发布批次增加 Release 正文预检、语义化 adapter 断言、远端写入前失败的受控精确重试、已发布制品的只读验证恢复、CHANGELOG 状态回填和服务/worktree/分支/数据库清理 | [Mango Release Skill](../../mango-pmo/skills/mango-release/SKILL.md)、[发布制品规范](../../mango-pmo/rules/10-release-artifacts.md)、[CLI README](../../mango-ui/packages/mango-cli/README.md) | `@mango/pmo@1.3.1` / `@mango/cli@1.0.82`；Skill eval、PMO 投影、CLI 安装升级回滚、发布后私服干净消费验证 |
 | 2026-07-18 | CLI pnpm 11 生成安装契约：新项目携带前端 `pnpm-workspace.yaml` 和受控 `allowBuilds`，首次安装不再因依赖构建脚本被拒绝；消费者回归直接校验生成配置，不再注入独立白名单。Maven、PMO、运行时前端包和业务逻辑均不变 | [CLI README](../../mango-ui/packages/mango-cli/README.md)、[Business Starter README](../../mango-business-starter/README.md) | CLI 生成契约、packed-package consumer、发布后私服干净消费验证 |
 | 2026-07-18 | Calendar 默认日历初始化边界修正：`CN_STANDARD` 定义及 2025-2026 年完整年度日期均作为正式必需资源默认同步，不再依赖 demo 开关；既有资源 ID、幂等键和 `INIT_ONLY` 语义不变，后续年度仍按国务院正式安排逐年维护 | [Calendar README](../../mango/mango-platform/mango-calendar/README.md) | Calendar 资源契约测试、关闭 demo 的全新 MySQL 初始化验证 |
