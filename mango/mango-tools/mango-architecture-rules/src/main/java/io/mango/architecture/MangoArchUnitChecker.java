@@ -17,6 +17,7 @@ import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -26,8 +27,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
-/** Bytecode architecture checks. Every Reactor class directory is imported in one ArchUnit pass. */
+/** Bytecode architecture checks with optional read-only contract context directories. */
 public final class MangoArchUnitChecker {
 
     private static final String REST_CONTROLLER =
@@ -168,7 +170,18 @@ public final class MangoArchUnitChecker {
 
     public List<ArchitectureIssue> check(Map<Path, ModuleRole> classDirectories) {
         Map<Path, ModuleRole> normalized = normalizeAndValidate(classDirectories);
-        return importAndCheck(normalized, Map.of(), false);
+        return importAndCheck(normalized, Map.of(), Set.of(), false);
+    }
+
+    public List<ArchitectureIssue> check(
+            Map<Path, ModuleRole> classDirectories,
+            Collection<Path> contractContextDirectories) {
+        Map<Path, ModuleRole> normalized = normalizeAndValidate(classDirectories);
+        return importAndCheck(
+                normalized,
+                Map.of(),
+                normalizeAndValidateContext(contractContextDirectories),
+                false);
     }
 
     public List<ArchitectureIssue> check(
@@ -178,16 +191,35 @@ public final class MangoArchUnitChecker {
         moduleContracts.forEach(
                 (path, contract) ->
                         normalizedContracts.put(path.toAbsolutePath().normalize(), contract));
-        return importAndCheck(normalized, normalizedContracts, true);
+        return importAndCheck(normalized, normalizedContracts, Set.of(), true);
+    }
+
+    public List<ArchitectureIssue> check(
+            Map<Path, ModuleRole> classDirectories,
+            Map<Path, ModuleContract> moduleContracts,
+            Collection<Path> contractContextDirectories) {
+        Map<Path, ModuleRole> normalized = normalizeAndValidate(classDirectories);
+        Map<Path, ModuleContract> normalizedContracts = new LinkedHashMap<>();
+        moduleContracts.forEach(
+                (path, contract) ->
+                        normalizedContracts.put(path.toAbsolutePath().normalize(), contract));
+        return importAndCheck(
+                normalized,
+                normalizedContracts,
+                normalizeAndValidateContext(contractContextDirectories),
+                true);
     }
 
     private List<ArchitectureIssue> importAndCheck(
             Map<Path, ModuleRole> normalized,
             Map<Path, ModuleContract> moduleContracts,
+            Set<Path> contractContextDirectories,
             boolean requireFeignContract) {
         JavaClasses classes;
         try {
-            classes = new ClassFileImporter().importPaths(normalized.keySet());
+            Set<Path> importDirectories = new LinkedHashSet<>(normalized.keySet());
+            importDirectories.addAll(contractContextDirectories);
+            classes = new ClassFileImporter().importPaths(importDirectories);
         } catch (RuntimeException exception) {
             throw new IllegalStateException(
                     "MANGO-ARCH-ENGINE-002 ArchUnit failed to import Reactor bytecode", exception);
@@ -199,30 +231,33 @@ public final class MangoArchUnitChecker {
                 classes,
                 javaClass -> roleOf(javaClass, normalized),
                 javaClass -> valueOf(javaClass, moduleContracts),
+                javaClass -> valueOf(javaClass, normalized) != null,
                 requireFeignContract);
     }
 
     public List<ArchitectureIssue> check(
             JavaClasses classes, Function<JavaClass, ModuleRole> roleResolver) {
-        return check(classes, roleResolver, ignored -> null, false);
+        return check(classes, roleResolver, ignored -> null, ignored -> true, false);
     }
 
     public List<ArchitectureIssue> check(
             JavaClasses classes,
             Function<JavaClass, ModuleRole> roleResolver,
             Function<JavaClass, ModuleContract> contractResolver) {
-        return check(classes, roleResolver, contractResolver, true);
+        return check(classes, roleResolver, contractResolver, ignored -> true, true);
     }
 
     private List<ArchitectureIssue> check(
             JavaClasses classes,
             Function<JavaClass, ModuleRole> roleResolver,
             Function<JavaClass, ModuleContract> contractResolver,
+            Predicate<JavaClass> governedClass,
             boolean requireFeignContract) {
         List<ArchitectureIssue> issues = new ArrayList<>();
         Map<String, JavaClass> feignContexts = new LinkedHashMap<>();
         List<JavaClass> orderedClasses = orderedClasses(classes).stream()
                 .filter(this::isMangoOwnedType)
+                .filter(governedClass)
                 .toList();
         Map<String, BeanRegistration> beanRegistrations = beanRegistrations(orderedClasses);
         for (JavaClass javaClass : orderedClasses) {
@@ -420,6 +455,22 @@ public final class MangoArchUnitChecker {
                     result.put(normalized, role);
                 });
         return result;
+    }
+
+    private Set<Path> normalizeAndValidateContext(Collection<Path> classDirectories) {
+        if (classDirectories == null || classDirectories.isEmpty()) {
+            return Set.of();
+        }
+        Set<Path> result = new LinkedHashSet<>();
+        for (Path path : classDirectories) {
+            Path normalized = path.toAbsolutePath().normalize();
+            if (!Files.isDirectory(normalized)) {
+                throw new IllegalStateException(
+                        "MANGO-ARCH-ENGINE-003 missing compiled class directory: " + normalized);
+            }
+            result.add(normalized);
+        }
+        return Set.copyOf(result);
     }
 
     private ModuleRole roleOf(JavaClass javaClass, Map<Path, ModuleRole> roots) {
