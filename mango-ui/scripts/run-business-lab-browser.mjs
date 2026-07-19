@@ -49,7 +49,8 @@ async function waitForURL(url, timeoutMs = 60_000) {
     }
     await new Promise((resolveWait) => setTimeout(resolveWait, 500));
   }
-  throw new Error(`generated frontend did not become ready: ${lastError}`);
+  const containerLogs = docker(['logs', containerName], true);
+  throw new Error(`generated frontend did not become ready: ${lastError}\n${containerLogs}`);
 }
 
 mkdirSync(reportRoot, { recursive: true });
@@ -78,8 +79,8 @@ try {
     '--workdir',
     '/runtime/projects/frontend-standards-business-lab/frontend',
     image,
-    'pnpm',
-    'dev',
+    'node',
+    'node_modules/vite/bin/vite.js',
     '--host',
     '0.0.0.0',
     '--port',
@@ -94,6 +95,7 @@ try {
 
   browser = await chromium.launch({ channel: 'chrome', headless: true });
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+  await page.route('**/favicon.ico', (route) => route.fulfill({ status: 204, body: '' }));
   const consoleErrors = [];
   const requestFailures = [];
   page.on('console', (message) => {
