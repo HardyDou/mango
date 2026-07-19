@@ -130,6 +130,29 @@ jobs:
       - name: Start real Mango backend
         run: node mango-ui/packages/mango-cli/src/index.mjs dev start backend
 
+      - name: Wait for bootstrap identity and tenant
+        run: |
+          for attempt in $(seq 1 150); do
+            response="$(curl --silent --show-error \
+              --header 'Content-Type: application/json' \
+              --data '{"username":"admin","realm":"INTERNAL","appCode":"internal-admin"}' \
+              http://127.0.0.1:18080/auth/login-institutions || true)"
+            if BOOTSTRAP_RESPONSE="$response" node --input-type=module -e '
+              let body = {};
+              try {
+                body = JSON.parse(process.env.BOOTSTRAP_RESPONSE || "{}");
+              } catch {}
+              const tenants = Array.isArray(body.data) ? body.data : [];
+              const succeeded = body.success === true || body.code === 200;
+              process.exit(succeeded && tenants.some((tenant) => tenant.tenantName === "芒果集团") ? 0 : 1);
+            '; then
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Bootstrap identity and tenant did not become ready within 5 minutes" >&2
+          exit 1
+
       - name: Configure micro frontend hostnames
         run: |
           echo "127.0.0.1 a.mango.io b.mango.io c.mango.io d.mango.io e.mango.io" | sudo tee -a /etc/hosts >/dev/null
