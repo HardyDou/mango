@@ -75,6 +75,8 @@
 
 ## 7. 变更影响记录
 
+- Issue #506 为 Maven `1.0.20` 已执行 Workflow V1 的数据库增加安全前向迁移。升级版本只兼容已知的 `1.0.20` V1 checksum，并通过 V2 幂等补齐 7 个审计列；`1.0.21`/`1.0.22` 创建的新数据库已有列时不会重复添加，未知 checksum 继续由 Flyway 阻断。业务审批 API、流程状态、权限、租户和页面行为不变；升级后检查 `flyway_schema_history_workflow` 的 V1/V2 状态和 Workflow README 列出的审计列。
+
 - PR #502 统一由 `mango-workflow-api` 提供参数校验约束，starter Controller 继承契约而不重复声明。业务审批的 HTTP/Java API、请求与响应结构、校验规则、流程状态流转、权限和事件行为不变，业务调用方无需改造。
 
 - PR #497 只把 Workflow 发布 Notice 事件时的租户标识显式写入事件契约，并同步 Payment 直接消费者；工作流定义、发起/审批/退回接口、业务状态回写、菜单权限和页面入口不变。业务审批通知继续使用既有业务类型与模板；未配置外部渠道账户时按 Notice 原有重试或取消策略处理。
