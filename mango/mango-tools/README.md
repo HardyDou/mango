@@ -155,6 +155,8 @@ mvn mango:check \
 
 `mango-pmo/baselines/mango-check/no-new-violations-baseline.json` 只服务仍由 `mango:check` 管理的存量规则。Java/Spring 架构红线不读取这个旧静态 baseline，而是读取 Git base 中独立的 schema-v4 architecture identity 预算；迁移窗口只读兼容 schema v3 顶层 identity。历史 identity 即使所在类被修改也不误阻断，同规则替换、跨模块移动或任何新 identity 仍直接阻断。
 
+所有 `mango:check` JSON 报告都会为 `issues`、`newIssues`、`baselineIssues` 和 `excludedIssues` 中的问题写入稳定指纹。文件路径在报告生成时按 `baseDir` 转为项目相对路径；`no-new-violations` 加载基线时优先使用报告内指纹，因此同一业务仓库在不同绝对 worktree 路径下可以直接复用基线。旧版本生成且缺少指纹的报告仍按现有兼容逻辑读取；跨 worktree 使用前应由包含本修复的插件重新生成一次基线。
+
 `mango:architecture` 硬校验：Controller 实现 `XxxApi`、启用 `@Validated/@Valid`、只依赖 `IXxxService`、统一返回 `R<T>`；Service 使用 `Require + BizCode/ErrorCode` 校验业务前置条件且不返回或拼装 `R`；Entity、Mapper、Feign、Controller 和 Service 实现必须位于规定模块。
 
 规则判定以业务边界为准：`MANGO-ARCH-BEAN-004` 只阻断手工构造的 Spring 托管 Service 实现，不把容器中注册的通用 `Map`、`Set` 或异常类型误认成业务 Service；组合 API 输入字段可用 `@Valid` 递归校验，`Require.rethrow` 被视为保持原异常语义的显式出口。三类判断均由正反例测试锁定。
