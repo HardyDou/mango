@@ -211,6 +211,22 @@ class MangoArchUnitCheckerTest {
     }
 
     @Test
+    void contractContextIsImportedButNotGoverned(@TempDir Path temporaryDirectory)
+            throws URISyntaxException, IOException {
+        Path testClasses = Path.of(MangoArchUnitCheckerTest.class
+                .getProtectionDomain().getCodeSource().getLocation().toURI());
+        Path remoteClasses = temporaryDirectory.resolve("remote/target/test-classes");
+        Path apiClasses = temporaryDirectory.resolve("api/target/test-classes");
+        copyClassFile(testClasses, remoteClasses, ContextFeignClient.class);
+        copyClassFile(testClasses, apiClasses, ContextApi.class);
+        copyClassFile(testClasses, apiClasses, MarkerContract.class);
+
+        assertThat(checker.check(
+                        Map.of(remoteClasses, ModuleRole.STARTER_REMOTE), List.of(apiClasses)))
+                .isEmpty();
+    }
+
+    @Test
     void feignWithInvalidContractAndPropertiesIsRejected() {
         JavaClasses classes = importClasses(BadFeignClient.class, OrderApi.class, ExtraApi.class);
 
@@ -937,6 +953,19 @@ class MangoArchUnitCheckerTest {
     }
 
     interface InheritedApi extends HiddenApiContract {
+    }
+
+    interface MarkerContract {
+    }
+
+    interface ContextApi extends MarkerContract {
+    }
+
+    @FeignClient(
+            name = "order",
+            contextId = "contextFeignClient",
+            path = "/orders")
+    interface ContextFeignClient extends ContextApi {
     }
 
     interface HiddenServiceContract {

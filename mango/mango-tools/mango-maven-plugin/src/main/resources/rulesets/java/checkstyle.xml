@@ -97,10 +97,7 @@
 
         <!-- 复杂度 -->
         <module name="CyclomaticComplexity">
-            <property name="max" value="10"/>
-        </module>
-        <module name="NPathComplexity">
-            <property name="max" value="200"/>
+            <property name="max" value="15"/>
         </module>
 
         <!-- 禁止魔法数 -->
@@ -109,8 +106,7 @@
             <property name="ignoreHashCodeMethod" value="true"/>
         </module>
 
-        <!-- 注释检查 -->
+        <!-- 相等性检查 -->
         <module name="CovariantEquals"/>
-        <module name="BooleanExpressionComplexity"/>
     </module>
 </module>

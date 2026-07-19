@@ -87,6 +87,8 @@ No package is published by this record. The immutable candidate matrix is `@mang
 
 - Mango Maven `1.0.22` removes `io.mango.resource.api.ResourceRegistryApi` and replaces the resource declaration contract with `ResourceDeclarationApi`. Business code that imports, injects, implements or references the old API (including Feign declarations) must migrate to `ResourceDeclarationApi`; this release intentionally does not retain a compatibility alias.
 - Resource synchronization now uses `mango-resource-sync-starter`. Business applications with source-level references to the former resource target topology must switch to the sync starter and its current declaration contract before upgrading.
+- Mango Maven `1.0.22` also removes or relocates public Java types from Identity, Access, Authorization, Calendar, CMS, Job, Org, System and Template. In particular, `IdentityUserInfo` becomes `IdentityUserInfoVO`, the monolithic `CmsAdminApi` is split by capability, and Job/Resource in-process extension points move from API artifacts to support artifacts. See the [complete 1.0.21 to 1.0.22 Java API upgrade guide](mango-docs/guides/business-integration/maven-1.0.21-to-1.0.22-java-api-upgrade.md) before changing the Maven version.
+- Workflow consumers upgrading directly from Maven 1.0.20 can remove the Issue #511 `MethodValidationExcludeFilter` workaround after aligning all `mango-workflow-*` artifacts to 1.0.21 or 1.0.22; both versions contain the API-owned validation constraint fix and its metadata regression test.
 
 ### Added
 
@@ -102,11 +104,14 @@ No package is published by this record. The immutable candidate matrix is `@mang
 
 ### Upgrade Notes
 
-1. Publish and verify Mango Maven `1.0.22` first. Before a business application upgrades, migrate every `ResourceRegistryApi` reference to `ResourceDeclarationApi` and replace former resource-target dependencies with `mango-resource-sync-starter` where applicable.
-2. Upgrade the PMO bundle with `mango pmo upgrade --project-dir . --to 1.3.0`; this synchronizes the new delivery-mode contracts and governed baseline.
-3. Upgrade frontend consumers to the package versions below. Aggregate admin consumers should use `@mango/admin@1.0.49`.
-4. Upgrade the project-local CLI to `@mango/cli@1.0.80` last so generated and upgraded projects receive the exact Maven, PMO and frontend locks from this batch.
-5. Existing databases run `V2__default_file_access_mode_to_proxy.sql`, changing the default file access mode to proxy delivery. Review deployments that intentionally require direct-access URLs and keep an explicit configuration for that behavior.
+1. Publish and verify Mango Maven `1.0.22` first. Before changing a business application's Maven version, scan and migrate the deleted Java APIs using the [complete upgrade guide](mango-docs/guides/business-integration/maven-1.0.21-to-1.0.22-java-api-upgrade.md).
+2. Migrate every `ResourceRegistryApi` reference to `ResourceDeclarationApi`, move local Resource extension points to `mango-resource-support`, and replace former resource-target deployment dependencies with `mango-resource-sync-starter` where applicable.
+3. Compile and verify the complete business backend on one consistent Mango `1.0.22` dependency set before upgrading the PMO, frontend or CLI.
+   The published `mango-maven-plugin:1.0.22` can misclassify absolute-path baselines from another worktree; until a later Maven version includes Issue #588, keep any temporary path normalization under the ignored `.runtime/` directory and never commit or relax the baseline.
+4. Upgrade the PMO bundle with `mango pmo upgrade --project-dir . --to 1.3.0`; this synchronizes the new delivery-mode contracts and governed baseline.
+5. Upgrade frontend consumers to the package versions below. Aggregate admin consumers should use `@mango/admin@1.0.49`.
+6. Upgrade the project-local CLI to `@mango/cli@1.0.80` last so generated and upgraded projects receive the exact Maven, PMO and frontend locks from this batch.
+7. Existing databases run `V2__default_file_access_mode_to_proxy.sql`, changing the default file access mode to proxy delivery. Review deployments that intentionally require direct-access URLs and keep an explicit configuration for that behavior.
 
 ### Published Packages
 

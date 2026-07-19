@@ -206,6 +206,7 @@ public final class ArchitectureMojo extends AbstractMojo {
         Map<Path, ModuleRole> classDirectories = new LinkedHashMap<>();
         Map<Path, String> classDirectoryArtifacts = new LinkedHashMap<>();
         Map<Path, String> classDirectoryModules = new LinkedHashMap<>();
+        Set<Path> contractContextDirectories = new LinkedHashSet<>();
         List<Path> sourceDirectories = new ArrayList<>();
         Set<String> reactorArtifactIds =
                 session.getProjects().stream()
@@ -237,6 +238,7 @@ public final class ArchitectureMojo extends AbstractMojo {
                     classDirectoryModules,
                     sourceDirectories);
         }
+        collectFeignApiContractInputs(reactorArtifactIds, contractContextDirectories);
         if (sourceDirectories.isEmpty()) {
             getLog().info(
                     "Reactor contains no Java sources; dependency architecture remains enforced");
@@ -246,12 +248,57 @@ public final class ArchitectureMojo extends AbstractMojo {
                 classDirectories,
                 classDirectoryArtifacts,
                 classDirectoryModules,
+                contractContextDirectories,
                 sourceDirectories);
+    }
+
+    private void collectFeignApiContractInputs(
+            Set<String> reactorArtifactIds, Set<Path> contractContextDirectories)
+            throws MojoExecutionException {
+        Set<String> remoteDomains =
+                session.getProjects().stream()
+                        .filter(
+                                project ->
+                                        ModuleRole.fromArtifactId(project.getArtifactId())
+                                                == ModuleRole.STARTER_REMOTE)
+                        .map(project -> ModuleRole.domainOf(project.getArtifactId()))
+                        .collect(Collectors.toCollection(LinkedHashSet::new));
+        if (remoteDomains.isEmpty()) {
+            return;
+        }
+
+        List<Path> contractSourceDirectories = new ArrayList<>();
+        Map<Path, ModuleRole> contractClassDirectories = new LinkedHashMap<>();
+        for (MavenProject project : session.getAllProjects()) {
+            String artifactId = project.getArtifactId();
+            if (reactorArtifactIds.contains(artifactId)
+                    || ModuleRole.fromArtifactId(artifactId) != ModuleRole.API
+                    || !remoteDomains.contains(ModuleRole.domainOf(artifactId))) {
+                continue;
+            }
+            collectJavaInputs(
+                    project,
+                    contractClassDirectories,
+                    new LinkedHashMap<>(),
+                    new LinkedHashMap<>(),
+                    contractSourceDirectories);
+        }
+        contractContextDirectories.addAll(contractClassDirectories.keySet());
+        if (!contractSourceDirectories.isEmpty()) {
+            getLog().info(
+                    "ArchUnit Feign contract context: "
+                            + contractSourceDirectories.size()
+                            + " API source directorie(s)");
+        }
     }
 
     private Map<Path, MangoArchUnitChecker.ModuleContract> moduleContracts(
             Map<Path, String> classDirectoryArtifacts) throws MojoExecutionException {
-        Map<String, ModuleIdentity> moduleIdentities = loadModuleIdentities();
+        Set<String> requiredDomains =
+                classDirectoryArtifacts.values().stream()
+                        .map(ModuleRole::domainOf)
+                        .collect(Collectors.toCollection(LinkedHashSet::new));
+        Map<String, ModuleIdentity> moduleIdentities = loadModuleIdentities(requiredDomains);
         Map<Path, MangoArchUnitChecker.ModuleContract> moduleContracts = new LinkedHashMap<>();
         for (Map.Entry<Path, String> entry : classDirectoryArtifacts.entrySet()) {
             String artifactId = entry.getValue();
@@ -282,7 +329,10 @@ public final class ArchitectureMojo extends AbstractMojo {
                         Set.copyOf(allowedReverseControllers),
                         GlobalEntityManifestLoader.load(
                                 rootDirectory.toPath(), toPath(globalEntityManifest)));
-        return checker.check(inputs.classDirectories(), moduleContracts);
+        return checker.check(
+                inputs.classDirectories(),
+                moduleContracts,
+                inputs.contractContextDirectories());
     }
 
     private List<ArchitectureIssue> checkSources(ReactorInputs inputs)
@@ -1486,17 +1536,21 @@ public final class ArchitectureMojo extends AbstractMojo {
         return new ClassOwnership(Map.copyOf(artifacts), Map.copyOf(modules));
     }
 
-    private Map<String, ModuleIdentity> loadModuleIdentities() throws MojoExecutionException {
+    private Map<String, ModuleIdentity> loadModuleIdentities(Set<String> requiredDomains)
+            throws MojoExecutionException {
         Map<String, ModuleIdentity> identities = new LinkedHashMap<>();
-        for (MavenProject reactorProject : session.getProjects()) {
+        for (MavenProject reactorProject : session.getAllProjects()) {
             if (!isStarterProject(reactorProject)) {
+                continue;
+            }
+            String domain = ModuleRole.domainOf(reactorProject.getArtifactId());
+            if (!requiredDomains.contains(domain)) {
                 continue;
             }
             Path propertiesFile = modulePropertiesFile(reactorProject);
             if (propertiesFile == null) {
                 continue;
             }
-            String domain = ModuleRole.domainOf(reactorProject.getArtifactId());
             registerModuleIdentity(identities, domain, readModuleIdentity(propertiesFile));
         }
         return identities;
@@ -1510,13 +1564,19 @@ public final class ArchitectureMojo extends AbstractMojo {
     }
 
     private Path modulePropertiesFile(MavenProject reactorProject) {
-        Path generated =
-                Path.of(reactorProject.getBuild().getOutputDirectory())
-                        .resolve("META-INF/mango/module.properties")
-                        .toAbsolutePath()
-                        .normalize();
-        if (Files.isRegularFile(generated)) {
-            return generated;
+        String outputDirectory =
+                reactorProject.getBuild() == null
+                        ? null
+                        : reactorProject.getBuild().getOutputDirectory();
+        if (outputDirectory != null && !outputDirectory.isBlank()) {
+            Path generated =
+                    Path.of(outputDirectory)
+                            .resolve("META-INF/mango/module.properties")
+                            .toAbsolutePath()
+                            .normalize();
+            if (Files.isRegularFile(generated)) {
+                return generated;
+            }
         }
         Path source =
                 reactorProject
@@ -1637,5 +1697,6 @@ public final class ArchitectureMojo extends AbstractMojo {
             Map<Path, ModuleRole> classDirectories,
             Map<Path, String> classDirectoryArtifacts,
             Map<Path, String> classDirectoryModules,
+            Set<Path> contractContextDirectories,
             List<Path> sourceDirectories) {}
 }
