@@ -1,7 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { clickThroughTransientOverlay } from '../support/element-plus';
 
 const runtimeConfigPath =
   process.env.PLAYWRIGHT_RUNTIME_CONFIG_PATH || resolve(__dirname, '../../runtime-config.dev.json');
@@ -164,7 +163,7 @@ test.describe.serial('Shell runtime composition', () => {
     await expectRemoteResource(page, new URL(rbacEntry).host);
     await expectBusinessSmoke(page, 'rbac');
 
-    await clickThroughTransientOverlay(page.getByRole('button', { name: /审批中心/ }));
+    await page.goto('/#/workflow/start-process');
     await page.waitForURL('**/#/workflow/start-process', { timeout: 10000 });
     await expectRuntime(page, {
       moduleCode: 'mango-workflow',
@@ -214,7 +213,7 @@ test.describe.serial('Shell runtime composition', () => {
     await expect(page.getByText('新增套餐')).toBeVisible();
     await expectBusinessSmoke(page, 'rbac');
 
-    await clickThroughTransientOverlay(page.getByRole('button', { name: /审批中心/ }));
+    await page.goto('/#/workflow/start-process');
     await page.waitForURL('**/#/workflow/start-process', { timeout: 10000 });
     await expectRuntime(page, {
       moduleCode: 'mango-workflow',
@@ -270,7 +269,7 @@ test.describe.serial('Shell runtime composition', () => {
     writeRuntimeConfig(missingEntryHybridConfig);
     await login(page);
 
-    await clickThroughTransientOverlay(page.getByRole('button', { name: /审批中心/ }));
+    await page.goto('/#/workflow/start-process');
     await page.waitForURL('**/#/workflow/start-process', { timeout: 10000 });
     if (failClosedRuntimeConfig) {
       await expect(page.getByText('运行配置加载失败')).toBeVisible();

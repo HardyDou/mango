@@ -46,6 +46,18 @@ class WorkflowResourceDeclarationContractTest {
         assertThat(json("leave-application-form.json").path("fields")).hasSize(5);
     }
 
+    @Test
+    void approvalCenterBelongsToPlatformCapabilitiesAndKeepsRoutes() throws IOException {
+        JsonNode declaration = objectMapper.readTree(
+                resourceText("META-INF/mango/resources/workflow-common-menu.json"));
+
+        JsonNode approvalCenter = findMenu(declaration, "workflow");
+        assertThat(approvalCenter).isNotNull();
+        assertThat(approvalCenter.path("parentCode").asText()).isEqualTo("data");
+        assertThat(approvalCenter.path("path").asText()).isEqualTo("/workflow");
+        assertThat(approvalCenter.path("redirect").asText()).isEqualTo("/workflow/start-process");
+    }
+
     private List<String> nodeIds(JsonNode root) {
         java.util.ArrayList<String> ids = new java.util.ArrayList<>();
         JsonNode current = root.path("childNode");
@@ -54,6 +66,19 @@ class WorkflowResourceDeclarationContractTest {
             current = current.path("childNode");
         }
         return ids;
+    }
+
+    private JsonNode findMenu(JsonNode node, String menuCode) {
+        if (node.isObject() && menuCode.equals(node.path("menuCode").asText())) {
+            return node;
+        }
+        for (JsonNode child : node) {
+            JsonNode match = findMenu(child, menuCode);
+            if (match != null) {
+                return match;
+            }
+        }
+        return null;
     }
 
     private JsonNode json(String name) throws IOException {

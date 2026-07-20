@@ -50,6 +50,38 @@ async function loginPage(page: import('@playwright/test').Page, tenantName = '�
 }
 
 test.describe('用户菜单导航 E2E', () => {
+  test('@p0 @menu 通知中心和审批中心归入平台能力且保留原路由', async ({ page }, testInfo) => {
+    const menuResponsePromise = page.waitForResponse((response) => {
+      const url = response.url();
+      return response.status() === 200 && url.includes('/api/authorization/menus/user') && url.includes('fmt=tree');
+    });
+
+    await loginPage(page);
+
+    const menuResponse = await menuResponsePromise;
+    const menuBody = await menuResponse.json();
+    const topLevelCodes = menuBody.data.map((item: { menuCode: string }) => item.menuCode);
+    expect(topLevelCodes).not.toContain('notice');
+    expect(topLevelCodes).not.toContain('workflow');
+
+    const platformCapabilities = menuBody.data.find((item: { menuCode: string }) => item.menuCode === 'data');
+    expect(platformCapabilities).toBeDefined();
+    expect(
+      platformCapabilities.children.find((item: { menuCode: string }) => item.menuCode === 'notice'),
+    ).toMatchObject({ menuName: '通知中心', path: '/notice' });
+    expect(
+      platformCapabilities.children.find((item: { menuCode: string }) => item.menuCode === 'workflow'),
+    ).toMatchObject({ menuName: '审批中心', path: '/workflow' });
+
+    await openTopMenu(page, '平台能力');
+    await expectMenuIcon(page, '通知中心');
+    await expectMenuIcon(page, '审批中心');
+    await testInfo.attach('platform-capability-menu', {
+      body: await page.screenshot(),
+      contentType: 'image/png',
+    });
+  });
+
   test('芒果集团登录后使用后端用户菜单树渲染完整管理导航', async ({ page }) => {
     const menuResponsePromise = page.waitForResponse((response) => {
       const url = response.url();
@@ -61,7 +93,7 @@ test.describe('用户菜单导航 E2E', () => {
 
     const menuResponse = await menuResponsePromise;
     const menuBody = await menuResponse.json();
-    expect(menuBody.data).toHaveLength(6);
+    expect(menuBody.data).toHaveLength(4);
     expect(menuBody.data[0]).toMatchObject({
       menuName: '系统管理',
       path: '/system',
@@ -78,47 +110,45 @@ test.describe('用户菜单导航 E2E', () => {
       '业务域',
     ]);
     expect(menuBody.data[1]).toMatchObject({
-      menuName: '审批中心',
-      path: '/workflow',
-    });
-    expect(menuBody.data[2]).toMatchObject({
       menuName: '平台能力',
       path: '/data',
     });
-    expect(menuBody.data[2].children.map((item: { menuName: string }) => item.menuName)).toEqual([
+    expect(menuBody.data[1].children.map((item: { menuName: string }) => item.menuName)).toEqual([
       '日历管理',
       '编号规则',
       '文件管理',
       '模板管理',
+      '审批中心',
       '网址管理',
+      '通知中心',
       '支付管理',
       '任务管理',
       '内容运营',
       '首页管理',
     ]);
-    expect(menuBody.data[3]).toMatchObject({
+    const approvalCenter = menuBody.data[1].children.find((item: { menuCode: string }) => item.menuCode === 'workflow');
+    expect(approvalCenter).toMatchObject({ path: '/workflow' });
+    const noticeCenter = menuBody.data[1].children.find((item: { menuCode: string }) => item.menuCode === 'notice');
+    expect(noticeCenter).toMatchObject({ path: '/notice' });
+    expect(
+      noticeCenter.children
+        .filter((item: { visible: number }) => item.visible !== 0)
+        .map((item: { menuName: string }) => item.menuName),
+    ).toEqual(['公告管理', '消息配置', '发送任务', '渠道配置', '发送记录', '失败重试']);
+    expect(menuBody.data[2]).toMatchObject({
       menuName: '网址导航',
       path: '/link',
     });
-    expect(menuBody.data[3].children.map((item: { menuName: string }) => item.menuName)).toEqual([
+    expect(menuBody.data[2].children.map((item: { menuName: string }) => item.menuName)).toEqual([
       '我的收藏',
       '我的分类',
       '我的网址',
     ]);
-    expect(menuBody.data[4]).toMatchObject({
-      menuName: '通知中心',
-      path: '/notice',
-    });
-    expect(
-      menuBody.data[4].children
-        .filter((item: { visible: number }) => item.visible !== 0)
-        .map((item: { menuName: string }) => item.menuName),
-    ).toEqual(['公告管理', '消息配置', '发送任务', '渠道配置', '发送记录', '失败重试']);
-    expect(menuBody.data[5]).toMatchObject({
+    expect(menuBody.data[3]).toMatchObject({
       menuName: '消息中心',
       path: '/message-center',
     });
-    expect(menuBody.data[5].children.map((item: { menuName: string }) => item.menuName)).toEqual([
+    expect(menuBody.data[3].children.map((item: { menuName: string }) => item.menuName)).toEqual([
       '我的消息',
       '系统公告',
       '接收配置',
@@ -144,21 +174,13 @@ test.describe('用户菜单导航 E2E', () => {
     await expectMenuIcon(page, '角色管理');
     await expectMenuIcon(page, '菜单管理');
 
-    await openTopMenu(page, '审批中心');
+    await openTopMenu(page, '平台能力');
+    await expectMenuIcon(page, '审批中心');
+    await expandMenuGroup(page, '审批中心');
     await expectMenuIcon(page, '流程办理');
-    await expandMenuGroup(page, '流程办理');
-    await expectMenuIcon(page, '发起流程');
-    await expectMenuIcon(page, '我的待办');
-    await expectMenuIcon(page, '我的申请');
-    await expectMenuIcon(page, '我的已办');
-    await expectMenuIcon(page, '抄送给我');
     await expectMenuIcon(page, '流程管理');
-    await expandMenuGroup(page, '流程管理');
-    await expectMenuIcon(page, '流程模板');
-    await expectMenuIcon(page, '流程定义');
     await expectMenuIcon(page, '业务示例');
 
-    await openTopMenu(page, '平台能力');
     await expectMenuIcon(page, '日历管理');
     await expectMenuIcon(page, '编号规则');
     await expectMenuIcon(page, '文件管理');
@@ -183,7 +205,9 @@ test.describe('用户菜单导航 E2E', () => {
     await expectMenuIcon(page, '我的分类');
     await expectMenuIcon(page, '我的网址');
 
-    await openTopMenu(page, '通知中心');
+    await openTopMenu(page, '平台能力');
+    await expectMenuIcon(page, '通知中心');
+    await expandMenuGroup(page, '通知中心');
     await expectMenuIcon(page, '公告管理');
     const noticeTasksResponsePromise = page.waitForResponse((response) => {
       return response.url().includes('/api/notice/tasks') && response.request().method() === 'GET';
@@ -218,28 +242,20 @@ test.describe('用户菜单导航 E2E', () => {
 
     const menuResponse = await menuResponsePromise;
     const menuBody = await menuResponse.json();
-    expect(menuBody.data).toHaveLength(6);
+    expect(menuBody.data).toHaveLength(4);
     expect(menuBody.data[0]).toMatchObject({
       menuName: '系统管理',
       path: '/system',
     });
     expect(menuBody.data[1]).toMatchObject({
-      menuName: '审批中心',
-      path: '/workflow',
-    });
-    expect(menuBody.data[2]).toMatchObject({
       menuName: '平台能力',
       path: '/data',
     });
-    expect(menuBody.data[3]).toMatchObject({
+    expect(menuBody.data[2]).toMatchObject({
       menuName: '网址导航',
       path: '/link',
     });
-    expect(menuBody.data[4]).toMatchObject({
-      menuName: '通知中心',
-      path: '/notice',
-    });
-    expect(menuBody.data[5]).toMatchObject({
+    expect(menuBody.data[3]).toMatchObject({
       menuName: '消息中心',
       path: '/message-center',
     });
@@ -250,27 +266,31 @@ test.describe('用户菜单导航 E2E', () => {
       '业务域',
     ]);
     expect(menuBody.data[1].children.map((item: { menuName: string }) => item.menuName)).toEqual([
-      '流程办理',
-      '业务示例',
-    ]);
-    expect(menuBody.data[2].children.map((item: { menuName: string }) => item.menuName)).toEqual([
       '日历管理',
       '编号规则',
+      '审批中心',
       '网址管理',
+      '通知中心',
       '任务管理',
       '内容运营',
     ]);
-    expect(menuBody.data[3].children.map((item: { menuName: string }) => item.menuName)).toEqual([
+    const approvalCenter = menuBody.data[1].children.find((item: { menuCode: string }) => item.menuCode === 'workflow');
+    expect(approvalCenter.children.map((item: { menuName: string }) => item.menuName)).toEqual([
+      '流程办理',
+      '业务示例',
+    ]);
+    const noticeCenter = menuBody.data[1].children.find((item: { menuCode: string }) => item.menuCode === 'notice');
+    expect(
+      noticeCenter.children
+        .filter((item: { visible: number }) => item.visible !== 0)
+        .map((item: { menuName: string }) => item.menuName),
+    ).toEqual(['公告管理', '消息配置', '发送任务', '渠道配置', '发送记录', '失败重试']);
+    expect(menuBody.data[2].children.map((item: { menuName: string }) => item.menuName)).toEqual([
       '我的收藏',
       '我的分类',
       '我的网址',
     ]);
-    expect(
-      menuBody.data[4].children
-        .filter((item: { visible: number }) => item.visible !== 0)
-        .map((item: { menuName: string }) => item.menuName),
-    ).toEqual(['公告管理', '消息配置', '发送任务', '渠道配置', '发送记录', '失败重试']);
-    expect(menuBody.data[5].children.map((item: { menuName: string }) => item.menuName)).toEqual(['我的消息', '公告']);
+    expect(menuBody.data[3].children.map((item: { menuName: string }) => item.menuName)).toEqual(['我的消息', '公告']);
     for (const menu of collectVisibleMenus(menuBody.data)) {
       expect(menu.icon, `${menu.menuName} 必须配置菜单图标`).toBeTruthy();
     }
@@ -281,11 +301,12 @@ test.describe('用户菜单导航 E2E', () => {
     await expectMenuIcon(page, '系统维护');
     await expectMenuIcon(page, '业务域');
 
-    await openTopMenu(page, '审批中心');
+    await openTopMenu(page, '平台能力');
+    await expectMenuIcon(page, '审批中心');
+    await expandMenuGroup(page, '审批中心');
     await expectMenuIcon(page, '流程办理');
     await expectMenuIcon(page, '业务示例');
 
-    await openTopMenu(page, '平台能力');
     await expectMenuIcon(page, '日历管理');
     await expectMenuIcon(page, '编号规则');
     await expectMenuIcon(page, '任务管理');
@@ -301,7 +322,9 @@ test.describe('用户菜单导航 E2E', () => {
     await expectMenuIcon(page, '我的分类');
     await expectMenuIcon(page, '我的网址');
 
-    await openTopMenu(page, '通知中心');
+    await openTopMenu(page, '平台能力');
+    await expectMenuIcon(page, '通知中心');
+    await expandMenuGroup(page, '通知中心');
     await expectMenuIcon(page, '公告管理');
     await expectMenuIcon(page, '消息配置');
     const noticeTasksResponsePromise = page.waitForResponse((response) => {

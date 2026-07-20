@@ -34,6 +34,7 @@ public class SysLogService implements ISysLogService, LoginLogRecorder {
 
     private static final long WEEK_START_OFFSET_DAYS = 6L;
     private static final long MONTH_START_OFFSET_DAYS = 29L;
+    private static final String PLATFORM_TENANT_ID = "default";
 
     private final SysLoginLogMapper sysLoginLogMapper;
     private final SysOperationLogMapper sysOperationLogMapper;
@@ -129,7 +130,7 @@ public class SysLogService implements ISysLogService, LoginLogRecorder {
         Require.notNull(command, SystemCode.SYSTEM_INVALID, "操作日志不能为空");
         SysOperationLogEntity entity = new SysOperationLogEntity();
         entity.setId(command.getId());
-        entity.setTenantId(command.getTenantId());
+        entity.setTenantId(operationLogTenantId(command.getTenantId()));
         entity.setUserId(command.getUserId());
         entity.setUsername(command.getUsername());
         entity.setModule(command.getModule());
@@ -207,6 +208,10 @@ public class SysLogService implements ISysLogService, LoginLogRecorder {
 
     private boolean isPlatformTenant(String tenantId) {
         return !StringUtils.hasText(tenantId) || "default".equals(tenantId) || "1".equals(tenantId);
+    }
+
+    private String operationLogTenantId(String tenantId) {
+        return StringUtils.hasText(tenantId) ? tenantId.trim() : PLATFORM_TENANT_ID;
     }
 
     private SysLoginLogVO toLoginVO(SysLoginLogEntity entity) {

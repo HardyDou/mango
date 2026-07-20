@@ -22,6 +22,7 @@ public class SchemaValidationRunner {
     private static final Logger LOGGER = LoggerFactory.getLogger(SchemaValidationRunner.class);
     private static final Set<String> SYSTEM_SCHEMAS = Set.of(
             "information_schema", "mysql", "performance_schema", "sys", "pg_catalog");
+    private static final Set<String> THIRD_PARTY_TABLE_PREFIXES = Set.of("act_", "flw_");
 
     private final DataSource dataSource;
     private final PersistenceProperties.SchemaValidation properties;
@@ -135,6 +136,9 @@ public class SchemaValidationRunner {
         }
         String normalizedTable = normalize(tableName);
         if (normalizedTable == null) {
+            return true;
+        }
+        if (THIRD_PARTY_TABLE_PREFIXES.stream().anyMatch(normalizedTable::startsWith)) {
             return true;
         }
         for (String excludedTable : properties.getExcludedTables()) {

@@ -340,6 +340,8 @@ mango-system-starter/src/main/resources/META-INF/mango/demo/system-demo-tenant.y
 | `SysLoginLogPo` | 记录时按调用方传入 | `id`、`tenantId`、`userId`、`username`、`loginType`、`ip`、`location`、`browser`、`os`、`status`、`msg`、`loginTime` |
 | `SysOperationLogPo` | 记录时按调用方传入 | `id`、`tenantId`、`userId`、`username`、`module`、`operation`、`method`、`url`、`status`、`errorMsg`、`duration`、`operateTime` |
 
+操作日志写入时保留调用方携带的有效租户 ID；平台级调用未携带租户 ID 时归属既有平台租户 `default`，避免审计记录因 `tenant_id` 为空而丢失。
+
 ## 9. 数据与初始化
 
 Flyway 路径：`mango-system-core/src/main/resources/db/migration/system`。

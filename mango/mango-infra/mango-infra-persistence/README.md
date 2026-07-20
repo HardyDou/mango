@@ -207,11 +207,16 @@ kv_record
 infra_kv_entry
 sys_login_log
 sys_operation_log
+act_*
+flw_*
+resource_*
 authorization_app_module
 authorization_frontend_app_registry
 frontend_menu_runtime_config
 authorization_frontend_module_runtime_strategy
 ```
+
+`act_*` 和 `flw_*` 是 Mango 直接集成的 Flowable 引擎表，由 Flowable 数据模型定义，不适用 Mango 业务表的 `id`、审计、租户和组织字段约束。Mango 自有的 `workflow_*` 表仍参与完整 Schema 校验。
 
 如果某张平台字典表、全局配置表或历史表不应该有 `tenant_id`，必须显式加入两个排除列表中对应的那个列表。只加到租户排除不会跳过 Schema 校验；只加到 Schema 排除也不会跳过租户 SQL 追加。
 

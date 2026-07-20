@@ -2,20 +2,26 @@ package io.mango.workflow.starter.notice;
 
 import io.mango.infra.event.api.DomainEvent;
 import io.mango.infra.event.api.DomainEventSubscriber;
+import io.mango.notice.api.command.NoticeJsonRequest;
+import io.mango.notice.api.command.NoticeRecipientTargetCommand;
+import io.mango.notice.api.command.NoticeSendEventCommand;
 import io.mango.notice.api.command.NoticeSiteMessageActionCommand;
 import io.mango.notice.api.command.NoticeSiteMessageSubjectCommand;
 import io.mango.notice.api.command.NoticeSiteMessageTargetCommand;
 import io.mango.notice.api.enums.NoticePriority;
+import io.mango.notice.api.enums.NoticeRecipientTargetType;
 import io.mango.notice.api.enums.NoticeSiteMessageActionInteractionType;
 import io.mango.notice.api.enums.NoticeSiteMessageTargetType;
-import io.mango.notice.api.command.NoticeJsonRequest;
-import io.mango.notice.api.command.NoticeSendEventCommand;
 import io.mango.workflow.api.WorkflowEventTypes;
+import io.mango.workflow.core.engine.WorkflowAssigneeResolver;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
+import java.util.Collection;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -23,6 +29,7 @@ import java.util.Set;
 /**
  * Converts workflow domain events into decoupled notice send events.
  */
+@Slf4j
 @Component
 public class WorkflowNoticeDomainEventSubscriber implements DomainEventSubscriber {
 
@@ -55,6 +62,13 @@ public class WorkflowNoticeDomainEventSubscriber implements DomainEventSubscribe
             return;
         }
         Map<String, Object> params = toParams(event);
+        RecipientSelection recipients = recipients(params);
+        if (WorkflowEventTypes.TASK_ADVANCED.equals(event.getEventType())
+                && (Boolean.TRUE.equals(params.get("ended")) || recipients.isEmpty())) {
+            log.debug("Skip task assigned notice without active recipients. eventId={}, businessKey={}",
+                    event.getEventId(), event.getBusinessKey());
+            return;
+        }
         NoticeSiteMessageTargetCommand target = target(event, params);
         NoticeSendEventCommand notice = new NoticeSendEventCommand();
         notice.setTenantId(stringValue(payload(event).get("tenantId")));
@@ -69,9 +83,13 @@ public class WorkflowNoticeDomainEventSubscriber implements DomainEventSubscribe
         notice.setMessageTarget(target);
         notice.setMessageData(NoticeJsonRequest.of(params));
         notice.setMessageActions(List.of(routeAction(actionLabel(event.getEventType()), target)));
-        Long assigneeId = parseLong(stringValue(payload(event).get("assignee")));
-        if (assigneeId != null) {
-            notice.setUserId(assigneeId);
+        if (recipients.userIds().size() == 1) {
+            notice.setUserId(recipients.userIds().getFirst());
+        } else if (!recipients.userIds().isEmpty()) {
+            notice.setUserIds(recipients.userIds());
+        }
+        if (!recipients.targets().isEmpty()) {
+            notice.setRecipientTargets(recipients.targets());
         }
         eventPublisher.publishEvent(notice);
     }
@@ -161,6 +179,80 @@ public class WorkflowNoticeDomainEventSubscriber implements DomainEventSubscribe
         return event.getPayload() == null ? Map.of() : event.getPayload();
     }
 
+    private RecipientSelection recipients(Map<String, Object> payload) {
+        Set<Long> userIds = new LinkedHashSet<>();
+        Map<String, NoticeRecipientTargetCommand> targets = new LinkedHashMap<>();
+        addUserId(userIds, payload.get("assigneeId"));
+        addUserId(userIds, payload.get("assignee"));
+        addCandidateUsers(userIds, payload.get("candidateUsers"));
+        addCandidateGroups(targets, payload.get("candidateGroups"));
+        Object currentTasks = payload.get("currentTasks");
+        if (currentTasks instanceof Collection<?> tasks) {
+            for (Object currentTask : tasks) {
+                if (currentTask instanceof Map<?, ?> task) {
+                    addUserId(userIds, task.get("assigneeId"));
+                    addCandidateUsers(userIds, task.get("candidateUsers"));
+                    addCandidateGroups(targets, task.get("candidateGroups"));
+                }
+            }
+        }
+        return new RecipientSelection(List.copyOf(userIds), List.copyOf(targets.values()));
+    }
+
+    private void addCandidateUsers(Set<Long> userIds, Object value) {
+        if (value instanceof Collection<?> candidates) {
+            candidates.forEach(candidate -> addUserId(userIds, candidate));
+        }
+    }
+
+    private void addUserId(Set<Long> userIds, Object value) {
+        Long userId = parseLong(stringValue(value));
+        if (userId != null) {
+            userIds.add(userId);
+        }
+    }
+
+    private void addCandidateGroups(Map<String, NoticeRecipientTargetCommand> targets, Object value) {
+        if (!(value instanceof Collection<?> groups)) {
+            return;
+        }
+        groups.stream()
+                .map(this::recipientTarget)
+                .filter(java.util.Objects::nonNull)
+                .forEach(target -> targets.putIfAbsent(
+                        target.getTargetType() + ":" + target.getTargetId(), target));
+    }
+
+    private NoticeRecipientTargetCommand recipientTarget(Object value) {
+        String group = stringValue(value);
+        if (!StringUtils.hasText(group)) {
+            return null;
+        }
+        String normalized = group.trim();
+        NoticeRecipientTargetType targetType;
+        String targetId;
+        if (normalized.startsWith(WorkflowAssigneeResolver.GROUP_ROLE_PREFIX)) {
+            targetType = NoticeRecipientTargetType.ROLE;
+            targetId = normalized.substring(WorkflowAssigneeResolver.GROUP_ROLE_PREFIX.length());
+        } else if (normalized.startsWith(WorkflowAssigneeResolver.GROUP_POST_PREFIX)) {
+            targetType = NoticeRecipientTargetType.POST;
+            targetId = normalized.substring(WorkflowAssigneeResolver.GROUP_POST_PREFIX.length());
+        } else if (normalized.startsWith(WorkflowAssigneeResolver.GROUP_ORG_PREFIX)) {
+            targetType = NoticeRecipientTargetType.ORG;
+            targetId = normalized.substring(WorkflowAssigneeResolver.GROUP_ORG_PREFIX.length());
+        } else {
+            return null;
+        }
+        Long parsedTargetId = parseLong(targetId);
+        if (parsedTargetId == null) {
+            return null;
+        }
+        NoticeRecipientTargetCommand target = new NoticeRecipientTargetCommand();
+        target.setTargetType(targetType);
+        target.setTargetId(parsedTargetId);
+        return target;
+    }
+
     private String firstText(String... values) {
         if (values == null) {
             return null;
@@ -185,6 +277,13 @@ public class WorkflowNoticeDomainEventSubscriber implements DomainEventSubscribe
             return Long.valueOf(value.trim());
         } catch (NumberFormatException ex) {
             return null;
+        }
+    }
+
+    private record RecipientSelection(List<Long> userIds, List<NoticeRecipientTargetCommand> targets) {
+
+        private boolean isEmpty() {
+            return userIds.isEmpty() && targets.isEmpty();
         }
     }
 }
