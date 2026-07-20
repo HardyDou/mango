@@ -18,7 +18,7 @@
 
 - `pnpm --filter @mango/cli test`
 - `MANGO_BACKEND_GATE_VERSION=1.0.23 node mango-ui/packages/mango-cli/scripts/check-generated-backend-gate.mjs`
-- Clean generated-project dependency and backend gate verification against the planned Maven `1.0.23` and CLI `1.0.85` coordinates.
+- Clean generated-project dependency and backend gate verification passed against the published Maven `1.0.23` and CLI `1.0.85` coordinates.
 
 ## 1.0.84 - 2026-07-19
 
