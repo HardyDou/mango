@@ -13,8 +13,6 @@
     "developerName": "Mango",
     "category": "Productivity",
     "capabilities": ["Read", "Write"],
-    "defaultPrompt": [
-      "Use Mango PMO to route this work through the correct governed stage."
-    ]
+    "defaultPrompt": ["Use Mango PMO to route this work through the correct governed stage."]
   }
 }

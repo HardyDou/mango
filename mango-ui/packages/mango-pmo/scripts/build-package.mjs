@@ -69,12 +69,12 @@ if (pluginManifest.version !== packageJson.version) {
     `PMO plugin source version ${pluginManifest.version} must equal package version ${packageJson.version}`,
   );
 }
-writeFileSync(pluginManifestPath, `${JSON.stringify(pluginManifest, null, 2)}\n`);
 const pluginFiles = [
-  ...describeFiles(packagePluginManifestRoot, 'plugin')
-    .map(file => ({ ...file, path: `.codex-plugin/${file.path}` })),
-  ...describeFiles(packageSkillsRoot, 'plugin')
-    .map(file => ({ ...file, path: `skills/${file.path}` })),
+  ...describeFiles(packagePluginManifestRoot, 'plugin').map((file) => ({
+    ...file,
+    path: `.codex-plugin/${file.path}`,
+  })),
+  ...describeFiles(packageSkillsRoot, 'plugin').map((file) => ({ ...file, path: `skills/${file.path}` })),
 ].sort((left, right) => compareText(left.path, right.path));
 const plugin = {
   path: 'package-root',
@@ -105,8 +105,9 @@ process.stdout.write(
 
 function copyTree(source, target) {
   mkdirSync(target, { recursive: true });
-  const entries = readdirSync(source, { withFileTypes: true })
-    .sort((left, right) => compareText(left.name, right.name));
+  const entries = readdirSync(source, { withFileTypes: true }).sort((left, right) =>
+    compareText(left.name, right.name),
+  );
   for (const entry of entries) {
     const sourcePath = join(source, entry.name);
     const targetPath = join(target, entry.name);
@@ -136,8 +137,7 @@ function copyRegularFile(source, target) {
 
 function walkFiles(root) {
   const result = [];
-  const entries = readdirSync(root, { withFileTypes: true })
-    .sort((left, right) => compareText(left.name, right.name));
+  const entries = readdirSync(root, { withFileTypes: true }).sort((left, right) => compareText(left.name, right.name));
   for (const entry of entries) {
     const fullPath = join(root, entry.name);
     if (entry.isSymbolicLink()) {
@@ -156,7 +156,7 @@ function walkFiles(root) {
 
 function describeFiles(root, kindOverride = '') {
   return walkFiles(root)
-    .map(file => {
+    .map((file) => {
       const content = readFileSync(file);
       const path = toPosix(relative(root, file));
       return {
@@ -172,16 +172,14 @@ function describeFiles(root, kindOverride = '') {
 
 function readContracts(files, root) {
   const contracts = [];
-  for (const file of files.filter(entry => entry.kind === 'contract' && extname(entry.path) === '.json')) {
+  for (const file of files.filter((entry) => entry.kind === 'contract' && extname(entry.path) === '.json')) {
     const document = JSON.parse(readFileSync(join(root, file.path), 'utf8'));
     const entries = Array.isArray(document.contracts) ? document.contracts : [document];
     for (const entry of entries) {
       const contractId = entry.contractId || entry.id;
       const schemaRevision = entry.schemaRevision ?? entry.revision;
       if (!contractId || !Number.isInteger(schemaRevision) || schemaRevision < 1) {
-        throw new Error(
-          `contract JSON must define contractId and positive integer schemaRevision: ${file.path}`,
-        );
+        throw new Error(`contract JSON must define contractId and positive integer schemaRevision: ${file.path}`);
       }
       const fixedPmoVersion = entry.metadata?.fixed?.pmoVersion;
       if (fixedPmoVersion && fixedPmoVersion !== packageJson.version) {
@@ -209,14 +207,16 @@ function readContracts(files, root) {
 
 function classifyFile(path) {
   const root = path.split('/')[0];
-  return {
-    agents: 'agent',
-    rules: 'rule',
-    templates: 'template',
-    contracts: 'contract',
-    tools: 'tool',
-    skills: 'skill',
-  }[root] || (basename(path) === 'README.md' ? 'documentation' : 'asset');
+  return (
+    {
+      agents: 'agent',
+      rules: 'rule',
+      templates: 'template',
+      contracts: 'contract',
+      tools: 'tool',
+      skills: 'skill',
+    }[root] || (basename(path) === 'README.md' ? 'documentation' : 'asset')
+  );
 }
 
 function normalizeMode(mode) {
