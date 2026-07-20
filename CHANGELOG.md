@@ -2,7 +2,7 @@
 
 ## v2026.07.20-maven-1.0.23-cli-1.0.85-platform-fixes-release - 2026-07-20
 
-Status: `PENDING_RELEASE`. This batch prepares the already-merged platform fixes for Maven `1.0.23`, then publishes CLI `1.0.85` against PMO `1.3.2` and the frontend matrix already published with CLI `1.0.84`.
+Status: `PUBLISHED_AND_VERIFIED`. Maven `1.0.23` and CLI `1.0.85` were published from source commit `f91cf7d327dde373ae657a8bbbb3ba9749eec712`, with PMO `1.3.2` and the frontend matrix from CLI `1.0.84` unchanged. Private publication/consumer read-back, clean generated-business-project verification, GitHub Release, and documentation checks passed.
 
 ### Added
 
@@ -28,11 +28,11 @@ Status: `PENDING_RELEASE`. This batch prepares the already-merged platform fixes
 
 ### Published Packages
 
-| Order | Target                                | Version                                                      | Pre-release status |
-| ----- | ------------------------------------- | ------------------------------------------------------------ | ------------------ |
-| 1     | Maven non-app backend and docs bundle | `io.mango:*:1.0.23`                                          | `PENDING`          |
-| 2     | npm CLI                               | `@mango/cli@1.0.85`                                          | `PENDING`          |
-| 3     | GitHub Release                        | `v2026.07.20-maven-1.0.23-cli-1.0.85-platform-fixes-release` | `PENDING`          |
+| Order | Target                                | Version                                                      | Release status           |
+| ----- | ------------------------------------- | ------------------------------------------------------------ | ------------------------ |
+| 1     | Maven non-app backend and docs bundle | `io.mango:*:1.0.23`                                          | `PUBLISHED_AND_VERIFIED` |
+| 2     | npm CLI                               | `@mango/cli@1.0.85`                                          | `PUBLISHED_AND_VERIFIED` |
+| 3     | GitHub Release                        | `v2026.07.20-maven-1.0.23-cli-1.0.85-platform-fixes-release` | `CREATED_AND_VERIFIED`   |
 
 ### Upgrade Notes
 
@@ -44,12 +44,12 @@ Status: `PENDING_RELEASE`. This batch prepares the already-merged platform fixes
 
 ### Verification
 
-- Required release PR checks must pass on the exact source commit before tagging or publishing immutable artifacts.
+- Required release PR checks passed on the exact source commit before tagging or publishing immutable artifacts.
 - `pnpm -C mango-ui release:impact --base=v2026.07.19-frontend-standards-npm-release --head=HEAD`
 - `pnpm -C mango-ui --filter @mango/cli test`
 - `MANGO_BACKEND_GATE_VERSION=1.0.23 node mango-ui/packages/mango-cli/scripts/check-generated-backend-gate.mjs`
 - `mvn -f mango/pom.xml -pl mango-app/microservice/mango-file-preview-app -am -Dtest=MangoFilePreviewAppFlowTest -Dsurefire.failIfNoSpecifiedTests=false test`
-- Release completion additionally requires private repository read-back, a clean generated consumer, GitHub Release verification, docs Latest/snapshot verification and CHANGELOG closeout through the repository-local release state machine.
+- The completed `1.0.23` release manifest records all 17 states as passed. It includes private publication and consumer read-back, a clean generated backend gate in 9 Maven invocations, installation and execution of the published CLI, generated project lock verification, GitHub Release verification, and docs Latest/snapshot verification.
 
 ## v2026.07.19-frontend-standards-npm-release - 2026-07-19
 

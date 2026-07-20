@@ -9,7 +9,7 @@
 | 项目          | 值                                                                                                             |
 | ------------- | -------------------------------------------------------------------------------------------------------------- |
 | NPM 包        | `@mango/cli`                                                                                                   |
-| 当前候选版本  | `1.0.85`（尚未发布）                                                                                           |
+| 当前发布版本  | `1.0.85`                                                                                                       |
 | bin 命令      | `mango`、`mango-cli`                                                                                           |
 | 命令入口      | `src/index.mjs`                                                                                                |
 | 发布 registry | 由发布配置或 `MANGO_RELEASE_NPM_PUBLISH_REGISTRY` 注入                                                         |
@@ -516,9 +516,9 @@ CLI 不在运行时管理菜单、权限和租户，但会生成让业务模块�
 
 ## 12. 相关文档
 
-### 1.0.85 候选影响
+### 1.0.85 发布影响
 
-`@mango/cli@1.0.85` 将生成和升级锁更新到 Mango Maven `1.0.23`，并继续锁定 `@mango/pmo@1.3.2` 与 CLI `1.0.84` 已发布的完整前端矩阵。Maven `1.0.23` 包含 Workflow `1.0.20` 已知数据库 checksum 兼容和幂等 V2 审计列迁移、跨 worktree 质量基线修复、Resource Registry 与 System 启动协调，以及 Payment remote starter 补齐；发布前仍需完成 Maven、CLI、文档快照和干净业务消费者验证。
+`@mango/cli@1.0.85` 将生成和升级锁更新到 Mango Maven `1.0.23`，并继续锁定 `@mango/pmo@1.3.2` 与 CLI `1.0.84` 已发布的完整前端矩阵。Maven `1.0.23` 包含 Workflow `1.0.20` 已知数据库 checksum 兼容和幂等 V2 审计列迁移、跨 worktree 质量基线修复、Resource Registry 与 System 启动协调，以及 Payment remote starter 补齐；Maven、CLI、文档快照和干净业务消费者验证均已完成。
 
 ### 1.0.84 发布影响
 
