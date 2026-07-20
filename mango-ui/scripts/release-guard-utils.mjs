@@ -13,18 +13,27 @@ export function commandForPlatform(command) {
   return command;
 }
 
+export function shouldUseShellForCommand(command) {
+  return process.platform === 'win32' && /\.cmd$/iu.test(command);
+}
+
 export function readJson(path) {
   return JSON.parse(readFileSync(path, 'utf8'));
 }
 
 export function run(command, args, options = {}) {
-  const result = spawnSync(commandForPlatform(command), args, {
+  const platformCommand = commandForPlatform(command);
+  const result = spawnSync(platformCommand, args, {
     stdio: options.capture ? 'pipe' : 'inherit',
     encoding: 'utf8',
+    shell: shouldUseShellForCommand(platformCommand),
     ...options,
   });
   if (options.capture) {
     return result;
+  }
+  if (result.error) {
+    console.error(result.error.message);
   }
   if (result.status !== 0) {
     process.exit(result.status ?? 1);
@@ -74,9 +83,11 @@ export function findPackage(packageName, workspaceRoot = process.cwd()) {
 }
 
 export function npmView(packageName, registry) {
-  return spawnSync(commandForPlatform('npm'), ['view', packageName, 'version', `--registry=${registry}`], {
+  const npmCommand = commandForPlatform('npm');
+  return spawnSync(npmCommand, ['view', packageName, 'version', `--registry=${registry}`], {
     stdio: 'pipe',
     encoding: 'utf8',
+    shell: shouldUseShellForCommand(npmCommand),
   });
 }
 
@@ -144,7 +155,9 @@ export function verifyPackageTree(packageName, packageRoot, sourcePackageJson, o
   if (styleExport) {
     const stylePath = typeof styleExport === 'string' ? styleExport : styleExport.import;
     if (!stylePath || !existsSync(join(packageRoot, stripDotSlash(stylePath)))) {
-      throw new Error(`Published tarball for ${packageName} is missing exported style.css: ${stylePath || '<unknown>'}.`);
+      throw new Error(
+        `Published tarball for ${packageName} is missing exported style.css: ${stylePath || '<unknown>'}.`,
+      );
     }
     verifyPublishedStyleContent(packageName, join(packageRoot, stripDotSlash(stylePath)));
   }
@@ -156,7 +169,9 @@ export function verifyPackageTree(packageName, packageRoot, sourcePackageJson, o
     }
     const content = readFileSync(contentPath, 'utf8');
     if (!content.includes(check.text)) {
-      throw new Error(`Published tarball for ${packageName} ${check.path} does not contain required text: ${check.text}`);
+      throw new Error(
+        `Published tarball for ${packageName} ${check.path} does not contain required text: ${check.text}`,
+      );
     }
   }
 }
@@ -169,13 +184,7 @@ export function verifyPublishedPackage(packageName, version, foundPackage, optio
   const tempDir = mkdtempSync(join(tmpdir(), 'mango-npm-publish-verify-'));
   try {
     console.log(`Verifying published tarball ${packageName}@${version} from ${registry}`);
-    run('npm', [
-      'pack',
-      `${packageName}@${version}`,
-      `--registry=${registry}`,
-      '--pack-destination',
-      tempDir,
-    ]);
+    run('npm', ['pack', `${packageName}@${version}`, `--registry=${registry}`, '--pack-destination', tempDir]);
     const tarball = readdirSync(tempDir).find((file) => file.endsWith('.tgz'));
     if (!tarball) {
       throw new Error(`Published tarball not found for ${packageName}@${version}.`);

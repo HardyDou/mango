@@ -32,6 +32,10 @@ const prepareOnly = process.argv.includes('--prepare-only');
 const sealedOnly = process.argv.includes('--sealed-only');
 const pnpmCommand = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm';
 
+function shouldUseShellForCommand(command) {
+  return process.platform === 'win32' && /\.cmd$/iu.test(command);
+}
+
 function readArgument(prefix) {
   return process.argv.find((argument) => argument.startsWith(prefix))?.slice(prefix.length) || '';
 }
@@ -64,6 +68,7 @@ function run(command, args, options = {}) {
     cwd: options.cwd || uiRoot,
     encoding: 'utf8',
     stdio: options.capture ? 'pipe' : 'inherit',
+    shell: shouldUseShellForCommand(command),
     env: {
       ...process.env,
       FORCE_COLOR: '0',

@@ -4,8 +4,9 @@ import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync } 
 import { join, relative, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
+import { fileURLToPath } from 'node:url';
 
-const packageRoot = resolve(new URL('..', import.meta.url).pathname);
+const packageRoot = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const distRoot = join(packageRoot, 'dist');
 const baselineRoot = join(distRoot, 'baseline');
 const manifestPath = join(distRoot, 'baseline.json');
@@ -57,15 +58,17 @@ for (const file of requiredFiles) {
 }
 
 const diskFiles = walkFiles(baselineRoot)
-  .map(path => toPosix(relative(baselineRoot, path)))
+  .map((path) => toPosix(relative(baselineRoot, path)))
   .sort(compareText);
 const expectedFiles = [...manifestFiles.keys()].sort(compareText);
 if (JSON.stringify(diskFiles) !== JSON.stringify(expectedFiles)) {
   const expected = new Set(expectedFiles);
   const actual = new Set(diskFiles);
-  const missing = expectedFiles.filter(path => !actual.has(path));
-  const extra = diskFiles.filter(path => !expected.has(path));
-  throw new Error(`baseline tree differs from manifest; missing=${missing.join(',') || '-'} extra=${extra.join(',') || '-'}`);
+  const missing = expectedFiles.filter((path) => !actual.has(path));
+  const extra = diskFiles.filter((path) => !expected.has(path));
+  throw new Error(
+    `baseline tree differs from manifest; missing=${missing.join(',') || '-'} extra=${extra.join(',') || '-'}`,
+  );
 }
 
 for (const file of manifest.files) {
@@ -92,34 +95,46 @@ for (const file of manifest.files) {
 validateContracts(manifest, manifestFiles);
 validatePluginProjection(manifest, manifestFiles);
 validatePublishExecutableFiles(manifest);
-const expectedBundleSha = sha256(Buffer.from(JSON.stringify({
-  files: manifest.files,
-  contracts: manifest.contracts,
-  plugin: manifest.plugin,
-}), 'utf8'));
+const expectedBundleSha = sha256(
+  Buffer.from(
+    JSON.stringify({
+      files: manifest.files,
+      contracts: manifest.contracts,
+      plugin: manifest.plugin,
+    }),
+    'utf8',
+  ),
+);
 if (manifest.bundleSha256 !== expectedBundleSha) {
   throw new Error(`bundle hash mismatch: expected ${expectedBundleSha}, got ${manifest.bundleSha256}`);
 }
 
-const preflight = spawnSync(process.execPath, [
-  'tools/pmo-preflight.mjs',
-  '--role',
-  'dev',
-  '--phase',
-  'develop',
-  '--task',
-  '验证 @mango/pmo baseline package',
-  '--paths',
-  'backend,frontend',
-], {
-  cwd: baselineRoot,
-  encoding: 'utf8',
-});
+const preflight = spawnSync(
+  process.execPath,
+  [
+    'tools/pmo-preflight.mjs',
+    '--role',
+    'dev',
+    '--phase',
+    'develop',
+    '--task',
+    '验证 @mango/pmo baseline package',
+    '--paths',
+    'backend,frontend',
+  ],
+  {
+    cwd: baselineRoot,
+    encoding: 'utf8',
+  },
+);
 
 if (preflight.status !== 0) {
   throw new Error(`packaged baseline preflight failed:\n${preflight.stdout}\n${preflight.stderr}`);
 }
-if (!preflight.stdout.includes('rules/00-dev-flow.md') || !preflight.stdout.includes('rules/03-ai-coding-redlines.md')) {
+if (
+  !preflight.stdout.includes('rules/00-dev-flow.md') ||
+  !preflight.stdout.includes('rules/03-ai-coding-redlines.md')
+) {
   throw new Error(`packaged baseline preflight did not load baseline rules:\n${preflight.stdout}`);
 }
 
@@ -163,7 +178,9 @@ function validateManifestFile(file) {
   if (!['0644', '0755'].includes(file.mode)) {
     throw new Error(`invalid baseline manifest mode: ${file.path}`);
   }
-  if (!['agent', 'rule', 'template', 'contract', 'tool', 'skill', 'documentation', 'asset', 'plugin'].includes(file.kind)) {
+  if (
+    !['agent', 'rule', 'template', 'contract', 'tool', 'skill', 'documentation', 'asset', 'plugin'].includes(file.kind)
+  ) {
     throw new Error(`invalid baseline manifest kind: ${file.path}`);
   }
 }
@@ -182,10 +199,12 @@ function validatePluginProjection(value, baselineFiles) {
     files.set(file.path, file);
   }
   const diskFiles = [
-    ...walkFiles(join(packageRoot, '.codex-plugin'))
-      .map(path => `.codex-plugin/${toPosix(relative(join(packageRoot, '.codex-plugin'), path))}`),
-    ...walkFiles(join(packageRoot, 'skills'))
-      .map(path => `skills/${toPosix(relative(join(packageRoot, 'skills'), path))}`),
+    ...walkFiles(join(packageRoot, '.codex-plugin')).map(
+      (path) => `.codex-plugin/${toPosix(relative(join(packageRoot, '.codex-plugin'), path))}`,
+    ),
+    ...walkFiles(join(packageRoot, 'skills')).map(
+      (path) => `skills/${toPosix(relative(join(packageRoot, 'skills'), path))}`,
+    ),
   ].sort(compareText);
   const expectedFiles = [...files.keys()].sort(compareText);
   if (JSON.stringify(diskFiles) !== JSON.stringify(expectedFiles)) {
@@ -216,13 +235,12 @@ function validatePluginProjection(value, baselineFiles) {
 }
 
 function validatePublishExecutableFiles(value) {
+  if (process.platform === 'win32') {
+    return;
+  }
   const expected = [
-    ...value.files
-      .filter(file => file.mode === '0755')
-      .map(file => `dist/baseline/${file.path}`),
-    ...value.plugin.files
-      .filter(file => file.mode === '0755')
-      .map(file => file.path),
+    ...value.files.filter((file) => file.mode === '0755').map((file) => `dist/baseline/${file.path}`),
+    ...value.plugin.files.filter((file) => file.mode === '0755').map((file) => file.path),
   ].sort(compareText);
   const declared = [...(packageJson.publishConfig?.executableFiles || [])].sort(compareText);
   if (JSON.stringify(declared) !== JSON.stringify(expected)) {
@@ -248,7 +266,7 @@ function validatePackedPackage(value) {
     if (pnpm.status !== 0) {
       throw new Error(`pnpm pack failed:\n${pnpm.stdout}\n${pnpm.stderr}`);
     }
-    const tarballs = readdirSync(temporaryRoot).filter(file => file.endsWith('.tgz'));
+    const tarballs = readdirSync(temporaryRoot).filter((file) => file.endsWith('.tgz'));
     if (tarballs.length !== 1) {
       throw new Error(`pnpm pack must create exactly one tarball, got ${tarballs.length}`);
     }
@@ -280,9 +298,7 @@ function validatePackedFile(path, descriptor) {
   }
   const content = readFileSync(path);
   const actualMode = statSync(path).mode & 0o111 ? '0755' : '0644';
-  if (content.length !== descriptor.size
-    || sha256(content) !== descriptor.sha256
-    || actualMode !== descriptor.mode) {
+  if (content.length !== descriptor.size || sha256(content) !== descriptor.sha256 || actualMode !== descriptor.mode) {
     throw new Error(
       `pnpm tarball file differs from manifest: ${descriptor.path} expectedMode=${descriptor.mode} actualMode=${actualMode}`,
     );
@@ -339,11 +355,13 @@ function walkFiles(root) {
 }
 
 function isSafeRelativePath(path) {
-  return typeof path === 'string'
-    && path.length > 0
-    && !path.startsWith('/')
-    && !path.includes('\\')
-    && path.split('/').every(segment => segment && segment !== '.' && segment !== '..');
+  return (
+    typeof path === 'string' &&
+    path.length > 0 &&
+    !path.startsWith('/') &&
+    !path.includes('\\') &&
+    path.split('/').every((segment) => segment && segment !== '.' && segment !== '..')
+  );
 }
 
 function isSha256(value) {

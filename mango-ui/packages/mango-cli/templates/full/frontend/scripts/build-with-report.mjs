@@ -9,6 +9,10 @@ const commands = [
   { name: 'vite-build', args: ['exec', 'vite', 'build'] },
 ];
 
+function shouldUseShellForCommand(command) {
+  return process.platform === 'win32' && /\.cmd$/iu.test(command);
+}
+
 mkdirSync(reportDir, { recursive: true });
 
 const outputs = [];
@@ -20,9 +24,10 @@ for (const command of commands) {
     encoding: 'utf8',
     env: { ...process.env, FORCE_COLOR: '0' },
     maxBuffer: 32 * 1024 * 1024,
+    shell: shouldUseShellForCommand(packageManagerCommand),
   });
   const stdout = result.stdout || '';
-  const stderr = result.stderr || '';
+  const stderr = [result.stderr || '', result.error?.message || ''].filter(Boolean).join('\n');
   outputs.push({ command: command.name, stdout, stderr, status: result.status ?? 1 });
   if (stdout) {
     process.stdout.write(stdout);

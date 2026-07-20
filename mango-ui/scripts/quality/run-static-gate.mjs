@@ -22,7 +22,7 @@ const baseRef =
 const requestedPaths = process.argv.slice(3).filter((value) => value !== '--strict' && !value.startsWith('--'));
 const baselineFile = path.join(uiRoot, 'quality-baseline.json');
 const reportDirectory = path.resolve(uiRoot, '../.runtime/frontend-quality/gate');
-const bin = (name) => path.join(uiRoot, 'node_modules', '.bin', name);
+const bin = (name) => path.join(uiRoot, 'node_modules', '.bin', process.platform === 'win32' ? `${name}.cmd` : name);
 
 if (!METRICS[tool]) {
   process.stderr.write(`Usage: run-static-gate.mjs <${Object.keys(METRICS).join('|')}> [--strict]\n`);
@@ -35,6 +35,7 @@ function run(command, args) {
     encoding: 'utf8',
     env: { ...process.env, FORCE_COLOR: '0' },
     maxBuffer: 128 * 1024 * 1024,
+    shell: process.platform === 'win32' && /\.cmd$/iu.test(command),
   });
 }
 
