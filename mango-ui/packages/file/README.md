@@ -270,6 +270,8 @@ import { FilePreviewPanel } from '@mango/file';
 
 ## 12. 变更影响记录
 
+- `@mango/file@1.0.26` publishes the file preview dialog fix: PDF preview fills the dialog content height and owns its own scrolling; the open-in-new-window action always renders and is disabled only when no usable preview URL exists. File ID persistence, upload, download, preview APIs, page keys, permissions and backend startup stay compatible.
+
 - `@mango/file@1.0.22` 发布文件预览弹框体验修复：文件管理页预览弹框中的 `FilePreviewPanel`
   会按弹框内容区高度铺满，PDF 由自身滚动承载内容；新窗口预览按钮始终渲染，缺少可用预览地址时仅禁用。
   文件 ID 持久化、上传、下载、预览 API、页面 key、权限和后端启动方式不变。

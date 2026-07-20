@@ -516,6 +516,10 @@ CLI 不在运行时管理菜单、权限和租户，但会生成让业务模块�
 
 ## 12. 相关文档
 
+### 1.0.86 发布影响
+
+`@mango/cli@1.0.86` 对齐本次前端 UI 修复 npm 矩阵：业务模块模板中的 `@mango/admin-pages`、`@mango/common` 版本，以及随包 `release-versions.json` 均更新到本批已发布目标。CLI 命令、参数、后端 Maven `1.0.23` 锁、PMO `1.3.2` 锁和业务模块生成语义不变。
+
 ### 1.0.85 发布影响
 
 `@mango/cli@1.0.85` 将生成和升级锁更新到 Mango Maven `1.0.23`，并继续锁定 `@mango/pmo@1.3.2` 与 CLI `1.0.84` 已发布的完整前端矩阵。Maven `1.0.23` 包含 Workflow `1.0.20` 已知数据库 checksum 兼容和幂等 V2 审计列迁移、跨 worktree 质量基线修复、Resource Registry 与 System 启动协调，以及 Payment remote starter 补齐；Maven、CLI、文档快照和干净业务消费者验证均已完成。

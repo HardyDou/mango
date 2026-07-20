@@ -15,9 +15,9 @@ import {
 import { tmpdir } from 'node:os';
 import { join, relative, resolve } from 'node:path';
 import { spawn, spawnSync } from 'node:child_process';
-import { pathToFileURL } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
-const packageRoot = resolve(new URL('..', import.meta.url).pathname);
+const packageRoot = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const cli = join(packageRoot, 'src/index.mjs');
 const pmoPackageRoot = resolve(packageRoot, '../mango-pmo');
 const cliPackage = JSON.parse(readFileSync(join(packageRoot, 'package.json'), 'utf8'));

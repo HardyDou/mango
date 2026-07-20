@@ -3,9 +3,9 @@ import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
-import { pathToFileURL } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
-const packageRoot = resolve(new URL('..', import.meta.url).pathname);
+const packageRoot = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const cli = join(packageRoot, 'src/index.mjs');
 const releaseVersions = JSON.parse(readFileSync(join(packageRoot, 'release-versions.json'), 'utf8'));
 const mangoVersion = process.env.MANGO_BACKEND_GATE_VERSION || releaseVersions.maven.mangoBackend;

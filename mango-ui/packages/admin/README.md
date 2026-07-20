@@ -137,6 +137,8 @@ import '@mango/admin/style-full.css';
 
 ## 11. 变更影响记录
 
+- `@mango/admin@1.0.52` aggregates this frontend UI-fix npm matrix, including theme settings colors, search-panel spacing, file preview dialog behavior and rich-text configuration. Default entry, `full` sub-entry, style entries and page registration contracts stay compatible.
+
 - `@mango/admin@1.0.46` 聚合 `@mango/admin-shell@1.0.41`、`@mango/notice@1.0.23` 和 `@mango/payment@1.0.13`；默认入口、`full` 子入口、样式入口和页面注册协议不变。
 
 - `@mango/admin@1.0.45` 聚合 `@mango/admin-pages@1.0.20`、`@mango/file@1.0.21`、
