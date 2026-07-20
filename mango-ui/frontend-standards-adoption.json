@@ -31,7 +31,7 @@
     "@mango/app-runtime": { "version": "1.0.6", "action": "pin" },
     "@mango/auth": { "version": "1.0.18", "action": "pin" },
     "@mango/calendar": { "version": "1.0.25", "action": "pin" },
-    "@mango/cli": { "version": "1.0.84", "action": "pin" },
+    "@mango/cli": { "version": "1.0.85", "action": "pin" },
     "@mango/cms": { "version": "1.0.14", "action": "pin" },
     "@mango/common": { "version": "1.0.19", "action": "pin" },
     "@mango/file": { "version": "1.0.25", "action": "pin" },

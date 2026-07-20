@@ -2,12 +2,10 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import test from 'node:test';
+import { fileURLToPath } from 'node:url';
 
-const packageRoot = resolve(new URL('..', import.meta.url).pathname);
-const gateSource = readFileSync(
-  join(packageRoot, 'scripts/check-generated-backend-gate.mjs'),
-  'utf8',
-);
+const packageRoot = resolve(fileURLToPath(new URL('..', import.meta.url)));
+const gateSource = readFileSync(join(packageRoot, 'scripts/check-generated-backend-gate.mjs'), 'utf8');
 
 test('generated backend gate stays within nine Maven invocations', () => {
   const budgetMatch = gateSource.match(/const MAX_MAVEN_INVOCATIONS = (\d+);/u);

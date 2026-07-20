@@ -9,7 +9,7 @@
 | 项目          | 值                                                                                                             |
 | ------------- | -------------------------------------------------------------------------------------------------------------- |
 | NPM 包        | `@mango/cli`                                                                                                   |
-| 当前发布版本  | `1.0.85`                                                                                                       |
+| 当前发布版本  | `1.0.86`                                                                                                       |
 | bin 命令      | `mango`、`mango-cli`                                                                                           |
 | 命令入口      | `src/index.mjs`                                                                                                |
 | 发布 registry | 由发布配置或 `MANGO_RELEASE_NPM_PUBLISH_REGISTRY` 注入                                                         |
@@ -515,6 +515,10 @@ CLI 不在运行时管理菜单、权限和租户，但会生成让业务模块�
 | pnpm 11 首次安装报 `ERR_PNPM_IGNORED_BUILDS`                                  | 旧版 CLI 生成的前端缺少 `pnpm-workspace.yaml` 构建白名单                       | 使用 `@mango/cli@1.0.81` 生成新项目；既有项目把当前 full 模板的 `allowBuilds` 映射合并到业务自有 workspace 配置                                                                                      |
 
 ## 12. 相关文档
+
+### 1.0.86 发布影响
+
+`@mango/cli@1.0.86` 对齐本次前端 UI 修复 npm 矩阵：业务模块模板中的 `@mango/admin-pages`、`@mango/common` 版本，以及随包 `release-versions.json` 均更新到本批已发布目标。CLI 命令、参数、后端 Maven `1.0.23` 锁、PMO `1.3.2` 锁和业务模块生成语义不变。
 
 ### 1.0.85 发布影响
 

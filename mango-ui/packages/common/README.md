@@ -411,6 +411,8 @@ const toolbarKeys = ['bold', 'color', '|', 'numberedList', 'bulletedList', '|', 
 
 ## 11. 变更影响记录
 
+- `@mango/common@1.0.20` publishes the `MangoSearchPanel` bottom expand/collapse spacer fix and the `Editor` `toolbarKeys` / `imageValueType` options. Search, reset, field grid, events and public props stay compatible; Editor still writes image URLs by default, while consumers may opt into file ID or `mango-file:<id>` storage for business-side preview resolution.
+
 - 本次扩展 `Editor` 富文本组件，新增 `toolbarKeys` 和 `imageValueType` 配置。默认仍按原逻辑写入图片 URL；消费项目可显式选择写入文件 ID 或 `mango-file:<id>`，用于业务保存后自行解析预览。图片上传仍依赖后端 `mango-file` 的 `/file/files` 接口。
 - `@mango/common@1.0.17` 发布主题 token 和 `MangoSearchPanel` 搜索面板布局修复。主题 CSS 继续通过
   `@mango/common/theme/index.css` 和公开主题入口消费；搜索项不需要展开时，底部更多操作行保留固定高度，
