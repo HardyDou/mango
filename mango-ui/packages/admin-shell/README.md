@@ -10,20 +10,20 @@
 
 ## 2. 功能清单
 
-| 能力 | 入口 |
-|------|------|
-| 创建管理后台应用 | `createMangoAdminApp()` |
-| 配置 Shell | `configureMangoAdminShell()` |
-| 读取 Shell 配置 | `getMangoAdminShellOptions()` |
-| 创建路由 | `createMangoAdminRouter()` |
-| 安装 Shell 插件 | `installShellApp()` |
-| 菜单运行时 | `useMenuHost()` |
-| 页面运行时 | `useRuntimeHost()` |
-| 运行时配置 | `loadShellRuntimeConfig()` |
-| 用户多首页工作台 | 默认首页路由、带 `homeId` 参数的首页路由、授权首页复制、`@mango/home` |
-| 首页管理页面 | 平台级首页模板、首页列表和用户首页页面，注册 key 为 `home/templates/index`、`home/list/index`、`home/user/index` |
-| store 导出 | `stores` 子入口 |
-| 开发中心页面 | `dev-pages`、`dev-base-pages` 等子入口 |
+| 能力             | 入口                                                                                                             |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------- |
+| 创建管理后台应用 | `createMangoAdminApp()`                                                                                          |
+| 配置 Shell       | `configureMangoAdminShell()`                                                                                     |
+| 读取 Shell 配置  | `getMangoAdminShellOptions()`                                                                                    |
+| 创建路由         | `createMangoAdminRouter()`                                                                                       |
+| 安装 Shell 插件  | `installShellApp()`                                                                                              |
+| 菜单运行时       | `useMenuHost()`                                                                                                  |
+| 页面运行时       | `useRuntimeHost()`                                                                                               |
+| 运行时配置       | `loadShellRuntimeConfig()`                                                                                       |
+| 用户多首页工作台 | 默认首页路由、带 `homeId` 参数的首页路由、授权首页复制、`@mango/home`                                            |
+| 首页管理页面     | 平台级首页模板、首页列表和用户首页页面，注册 key 为 `home/templates/index`、`home/list/index`、`home/user/index` |
+| store 导出       | `stores` 子入口                                                                                                  |
+| 开发中心页面     | `dev-pages`、`dev-base-pages` 等子入口                                                                           |
 
 ## 3. 接入方式
 
@@ -55,9 +55,7 @@ import { createMangoAdminApp } from '@mango/admin-shell';
 import { registerMangoWorkflowAdminPages } from '@mango/workflow/admin-pages';
 
 const admin = createMangoAdminApp({
-  featureRegistrars: [
-    registerMangoWorkflowAdminPages,
-  ],
+  featureRegistrars: [registerMangoWorkflowAdminPages],
   features: ['workflow'],
 });
 
@@ -68,24 +66,24 @@ admin.mount();
 
 `MangoAdminShellOptions`：
 
-| 字段 | 默认值 | 含义 |
-|------|--------|------|
-| `mountTarget` | `#app` | 默认挂载节点。 |
-| `apiBaseUrl` | `/api` | `@mango/common` request 基础地址。 |
-| `title` | `Mango Admin` | 页面标题。 |
-| `contentMode` | `runtime-outlet` | 内容渲染方式，支持 `router-view`、`runtime-outlet`。 |
-| `devCenter.visible` | 空 | 是否显示开发中心。 |
-| `devCenter.deployEnv` | 空 | 开发中心运行环境标识。 |
-| `devCenter.registrars` | 空 | 开发中心页面注册函数。 |
-| `devCenter.pages` | 空 | 开发中心页面列表函数。 |
-| `login` | 空 | 登录页配置；默认传给 `@mango/auth`，也可用 `login.component` 替换 `/login` 页面组件。 |
-| `modules` | 空 | 模块运行时配置，结构来自 `@mango/app-runtime`。 |
-| `localApps` | 空 | 本地应用配置。 |
-| `features` | `core` | 内置能力开关。 |
-| `featureRegistrars` | 空 | 额外能力注册函数，可注册页面并返回首页小组件。 |
-| `widgets` | 空 | 宿主直接传入的首页业务小组件定义。 |
-| `runtimeConfigUrl` | 空 | 运行时配置地址。 |
-| `runtimeConfigLoadOptions` | 空 | 运行时配置加载选项。 |
+| 字段                       | 默认值           | 含义                                                                                  |
+| -------------------------- | ---------------- | ------------------------------------------------------------------------------------- |
+| `mountTarget`              | `#app`           | 默认挂载节点。                                                                        |
+| `apiBaseUrl`               | `/api`           | `@mango/common` request 基础地址。                                                    |
+| `title`                    | `Mango Admin`    | 页面标题。                                                                            |
+| `contentMode`              | `runtime-outlet` | 内容渲染方式，支持 `router-view`、`runtime-outlet`。                                  |
+| `devCenter.visible`        | 空               | 是否显示开发中心。                                                                    |
+| `devCenter.deployEnv`      | 空               | 开发中心运行环境标识。                                                                |
+| `devCenter.registrars`     | 空               | 开发中心页面注册函数。                                                                |
+| `devCenter.pages`          | 空               | 开发中心页面列表函数。                                                                |
+| `login`                    | 空               | 登录页配置；默认传给 `@mango/auth`，也可用 `login.component` 替换 `/login` 页面组件。 |
+| `modules`                  | 空               | 模块运行时配置，结构来自 `@mango/app-runtime`。                                       |
+| `localApps`                | 空               | 本地应用配置。                                                                        |
+| `features`                 | `core`           | 内置能力开关。                                                                        |
+| `featureRegistrars`        | 空               | 额外能力注册函数，可注册页面并返回首页小组件。                                        |
+| `widgets`                  | 空               | 宿主直接传入的首页业务小组件定义。                                                    |
+| `runtimeConfigUrl`         | 空               | 运行时配置地址。                                                                      |
+| `runtimeConfigLoadOptions` | 空               | 运行时配置加载选项。                                                                  |
 
 自定义登录页：
 
@@ -108,45 +106,45 @@ const admin = createMangoAdminApp({
 
 `features` 支持：
 
-| 值 | 含义 |
-|----|------|
-| `core` | authorization、system。 |
-| `full` | core 加 workflow、file、template、notice、numgen、calendar、job。 |
-| 字符串数组 | core 永远启用，数组中的能力额外启用。 |
-| 对象 | core 永远启用，值为 `true` 的能力额外启用。 |
+| 值         | 含义                                                              |
+| ---------- | ----------------------------------------------------------------- |
+| `core`     | authorization、system。                                           |
+| `full`     | core 加 workflow、file、template、notice、numgen、calendar、job。 |
+| 字符串数组 | core 永远启用，数组中的能力额外启用。                             |
+| 对象       | core 永远启用，值为 `true` 的能力额外启用。                       |
 
 ## 5. API 与扩展
 
 主入口导出：
 
-| 导出 | 作用 |
-|------|------|
-| `createMangoAdminApp(options)` | 创建 Vue app、router，并返回 `mount()`。 |
-| `MangoAdminShellApp` | Shell 根组件。 |
-| `MangoAdminShellView` | Shell 内容视图。 |
-| `MangoAdminLayout` | 管理后台布局组件。 |
-| `MangoAdminParentView` | 父级路由占位组件。 |
-| `createMangoAdminRouter()` | 创建 Shell 路由。 |
-| `getShellPinia()` | 获取 Shell Pinia。 |
-| `installShellApp(app, options)` | 安装 Shell 依赖和配置。 |
-| `configureMangoAdminShell(options)` | 合并 Shell 配置。 |
-| `getMangoAdminShellOptions()` | 读取当前 Shell 配置。 |
+| 导出                                | 作用                                     |
+| ----------------------------------- | ---------------------------------------- |
+| `createMangoAdminApp(options)`      | 创建 Vue app、router，并返回 `mount()`。 |
+| `MangoAdminShellApp`                | Shell 根组件。                           |
+| `MangoAdminShellView`               | Shell 内容视图。                         |
+| `MangoAdminLayout`                  | 管理后台布局组件。                       |
+| `MangoAdminParentView`              | 父级路由占位组件。                       |
+| `createMangoAdminRouter()`          | 创建 Shell 路由。                        |
+| `getShellPinia()`                   | 获取 Shell Pinia。                       |
+| `installShellApp(app, options)`     | 安装 Shell 依赖和配置。                  |
+| `configureMangoAdminShell(options)` | 合并 Shell 配置。                        |
+| `getMangoAdminShellOptions()`       | 读取当前 Shell 配置。                    |
 
 子入口：
 
-| 子入口 | 内容 |
-|--------|------|
-| `runtime` | 运行时页面挂载。 |
-| `menu` | 菜单加载和菜单路由转换。 |
-| `stores` | 用户、布局、主题、偏好等 store。 |
-| `router` | Shell 路由。 |
-| `home` | 首页组件。 |
-| `home-management` | 首页管理兼容页面组件。 |
-| `home-templates` | 首页模板页面组件。 |
-| `home-list` | 首页列表页面组件。 |
-| `home-user` | 用户首页视图页面组件。 |
-| `dev-pages` | 开发中心页面注册。 |
-| `dev-base-pages` | 基础能力开发页注册。 |
+| 子入口            | 内容                             |
+| ----------------- | -------------------------------- |
+| `runtime`         | 运行时页面挂载。                 |
+| `menu`            | 菜单加载和菜单路由转换。         |
+| `stores`          | 用户、布局、主题、偏好等 store。 |
+| `router`          | Shell 路由。                     |
+| `home`            | 首页组件。                       |
+| `home-management` | 首页管理兼容页面组件。           |
+| `home-templates`  | 首页模板页面组件。               |
+| `home-list`       | 首页列表页面组件。               |
+| `home-user`       | 用户首页视图页面组件。           |
+| `dev-pages`       | 开发中心页面注册。               |
+| `dev-base-pages`  | 基础能力开发页注册。             |
 
 ### Feature Registrars
 
@@ -159,7 +157,7 @@ export function registerMangoRiskControlAdminPages() {
   registerModulePages({
     moduleCode: 'risk-control',
     pages: {
-      'risk-control/workbench/index': () => import('./index').then(m => m.RiskControlWorkbenchView),
+      'risk-control/workbench/index': () => import('./index').then((m) => m.RiskControlWorkbenchView),
     },
   });
   return {
@@ -175,9 +173,7 @@ export function registerMangoRiskControlAdminPages() {
 
 ```ts
 createMangoAdminApp({
-  featureRegistrars: [
-    registerMangoRiskControlAdminPages,
-  ],
+  featureRegistrars: [registerMangoRiskControlAdminPages],
 });
 ```
 
@@ -235,35 +231,35 @@ Shell 会安装管理端基础指令和权限相关运行时。业务包新增�
 
 ### Compatibility Matrix
 
-| 依赖 | 兼容版本 |
-|------|----------|
-| Vue | `>=3.5.13 <4` |
-| Vue Router | `>=4.1.6 <5` |
-| Pinia | `>=2.0.32 <3` |
-| Element Plus | `>=2.14.1 <3` |
-| vue-i18n | `>=9.2.2 <10` |
-| `@mango/common` | 与 `@mango/cli` 的 `release-versions.json` 保持一致 |
-| `@mango/home` | `1.0.0` |
-| `@mango/grid-layout` | `1.0.0` |
+| 依赖                 | 兼容版本                                            |
+| -------------------- | --------------------------------------------------- |
+| Vue                  | `>=3.5.13 <4`                                       |
+| Vue Router           | `>=4.1.6 <5`                                        |
+| Pinia                | `>=2.0.32 <3`                                       |
+| Element Plus         | `>=2.14.1 <3`                                       |
+| vue-i18n             | `>=9.2.2 <10`                                       |
+| `@mango/common`      | 与 `@mango/cli` 的 `release-versions.json` 保持一致 |
+| `@mango/home`        | `1.0.0`                                             |
+| `@mango/grid-layout` | `1.0.0`                                             |
 
 运行时菜单请求：
 
-| 接口 | 用途 |
-|------|------|
+| 接口                            | 用途                                     |
+| ------------------------------- | ---------------------------------------- |
 | `GET /authorization/menus/user` | 按当前用户读取 `internal-admin` 菜单树。 |
-| `GET /home/pages/resolve` | 解析当前用户默认或指定首页。 |
+| `GET /home/pages/resolve`       | 解析当前用户默认或指定首页。             |
 
 ## 6. 数据与初始化
 
 这个包不写数据库数据。运行时依赖后端已经初始化菜单和权限。
 
-| 数据 | 来源 |
-|------|------|
-| 菜单树 | `/authorization/menus/user?fmt=tree&appCode=internal-admin`。 |
-| 页面 loader | `@mango/admin-pages` 注册表。 |
+| 数据           | 来源                                                            |
+| -------------- | --------------------------------------------------------------- |
+| 菜单树         | `/authorization/menus/user?fmt=tree&appCode=internal-admin`。   |
+| 页面 loader    | `@mango/admin-pages` 注册表。                                   |
 | runtime config | `@mango/app-runtime` 加载的 `/runtime-config.json` 或默认配置。 |
-| 登录态 | `@mango/auth` 和 `@mango/common` session。 |
-| 主题和布局 | Shell stores。 |
+| 登录态         | `@mango/auth` 和 `@mango/common` session。                      |
+| 主题和布局     | Shell stores。                                                  |
 
 ## 7. 管理入口
 
@@ -338,3 +334,5 @@ Shell 会注册 unauthorized handler 并清理 session 后跳转 `/login`。检�
 - Auth 历史债务治理修复页面假退出：用户确认退出后，Shell 先调用 `@mango/auth` 的 `logout()` 撤销服务端会话，再清持久化 token、完成登录页路由切换，最后清理响应式用户与标签状态。服务端撤销失败时保留当前登录态并显示错误，避免 HttpOnly Cookie 仍有效但页面已伪装退出；状态清理顺序同时避免首页组件在 token 撤销后竞态发起 401 请求。
 
 - 本次 PR 将后台首页的 `mango-home` 列表和解析接口按可选能力处理：当 `/home/pages` 或 `/home/pages/resolve` 返回 404 时，Shell 静默回退到内置系统工作台，不弹出“资源不存在”或“首页工作台加载失败”；其他错误仍显示原有首页加载失败提示。不改变 Shell 菜单加载接口、动态路由匹配、页面注册方式、角色授权、按钮权限、租户绑定、登录态装配、启动方式和运行时页面加载协议。
+
+- 本次 PR 仅在开发中心 Editor 示例中展示 `@mango/common` 富文本工具栏精简配置和图片值写入类型；不改变 Shell 菜单加载接口、动态路由匹配、页面注册方式、角色授权、按钮权限、租户绑定、登录态装配、启动方式和运行时页面加载协议。

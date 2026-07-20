@@ -14,26 +14,26 @@ System 新库只执行纯 DDL `V1__init_system.sql`。平台默认租户、524 �
 
 ## 2. 阅读顺序
 
-| 顺序 | 文档 | 关注点 |
-|------|------|--------|
-| 1 | [Identity 后端 README](../../../mango/mango-platform/mango-identity/README.md) | 用户、账号、租户身份 |
-| 2 | [Org 后端 README](../../../mango/mango-platform/mango-org/README.md) | 组织、岗位、组织树 |
-| 3 | [System 后端 README](../../../mango/mango-platform/mango-system/README.md) | 系统配置、字典、参数 |
-| 4 | [Issue #184 数据治理设计](../../designs/2026-07-01-issue-184-data-governance-design.md) | Flyway、Resource、demo、`INIT_ONLY` 和外部 SQL 边界 |
-| 5 | [Resource 后端 README](../../../mango/mango-platform/mango-resource/README.md) | 资源声明同步、demo 隔离和运行时保留策略 |
-| 6 | [Access 后端 README](../../../mango/mango-platform/mango-access/README.md) | 接口访问和数据权限上下文 |
-| 7 | [Authorization 后端 README](../../../mango/mango-platform/mango-authorization/README.md) | 菜单、角色和权限资源 |
-| 8 | [@mango/admin-shell README](../../../mango-ui/packages/admin-shell/README.md) | 登录态、租户切换、上下文透传 |
+| 顺序 | 文档                                                                                     | 关注点                                              |
+| ---- | ---------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| 1    | [Identity 后端 README](../../../mango/mango-platform/mango-identity/README.md)           | 用户、账号、租户身份                                |
+| 2    | [Org 后端 README](../../../mango/mango-platform/mango-org/README.md)                     | 组织、岗位、组织树                                  |
+| 3    | [System 后端 README](../../../mango/mango-platform/mango-system/README.md)               | 系统配置、字典、参数                                |
+| 4    | [Issue #184 数据治理设计](../../designs/2026-07-01-issue-184-data-governance-design.md)  | Flyway、Resource、demo、`INIT_ONLY` 和外部 SQL 边界 |
+| 5    | [Resource 后端 README](../../../mango/mango-platform/mango-resource/README.md)           | 资源声明同步、demo 隔离和运行时保留策略             |
+| 6    | [Access 后端 README](../../../mango/mango-platform/mango-access/README.md)               | 接口访问和数据权限上下文                            |
+| 7    | [Authorization 后端 README](../../../mango/mango-platform/mango-authorization/README.md) | 菜单、角色和权限资源                                |
+| 8    | [@mango/admin-shell README](../../../mango-ui/packages/admin-shell/README.md)            | 登录态、租户切换、上下文透传                        |
 
 ## 3. 接入检查点
 
-| 环节 | 检查点 |
-|------|--------|
-| 租户上下文 | 当前登录用户的 tenantId 与业务数据 tenantId 一致 |
-| 请求透传 | 请求头或上下文中租户信息已透传到后端 |
-| 基础数据 | 目标租户已初始化所需字典、配置、组织或岗位数据 |
-| 数据过滤 | 查询接口没有被数据权限、组织范围或状态字段过滤掉 |
-| 前端参数 | 前端查询参数没有带错 appCode、dictCode、domainCode 或 status |
+| 环节       | 检查点                                                                                                                                                                                                 |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 租户上下文 | 当前登录用户的 tenantId 与业务数据 tenantId 一致                                                                                                                                                       |
+| 请求透传   | 请求头或上下文中租户信息已透传到后端                                                                                                                                                                   |
+| 基础数据   | 目标租户已初始化所需字典、配置、组织或岗位数据                                                                                                                                                         |
+| 数据过滤   | 查询接口没有被数据权限、组织范围或状态字段过滤掉                                                                                                                                                       |
+| 前端参数   | 前端查询参数没有带错 appCode、dictCode、domainCode 或 status                                                                                                                                           |
 | 初始化边界 | DDL 和大 SQL 由 Flyway 处理；正式小资源由 Resource `META-INF/mango/resources/` 处理；demo 资源由 `META-INF/mango/demo/` 且默认禁用；运行时可修改但升级要保留的数据使用 `INIT_ONLY` 或业务开通/导入流程 |
 
 ## 4. 最小闭环
@@ -46,13 +46,13 @@ System 新库只执行纯 DDL `V1__init_system.sql`。平台默认租户、524 �
 
 ## 5. 常见失败
 
-| 现象 | 优先检查 |
-|------|----------|
+| 现象                         | 优先检查                                 |
+| ---------------------------- | ---------------------------------------- |
 | 平台租户有数据，业务租户为空 | 租户开通流程、业务导入任务、租户应用绑定 |
-| 用户下拉为空 | identity 用户状态、组织关系、租户上下文 |
-| 组织树为空 | org 初始化数据、组织状态、父子关系 |
-| 字典项为空 | system 字典编码、状态、租户维度 |
-| 切换租户后仍显示旧数据 | 前端缓存、登录态刷新、请求头租户 ID |
+| 用户下拉为空                 | identity 用户状态、组织关系、租户上下文  |
+| 组织树为空                   | org 初始化数据、组织状态、父子关系       |
+| 字典项为空                   | system 字典编码、状态、租户维度          |
+| 切换租户后仍显示旧数据       | 前端缓存、登录态刷新、请求头租户 ID      |
 
 ## 6. 验证命令
 
@@ -200,6 +200,7 @@ pnpm -F @mango/admin-shell build
 - Issue #431 为 Excel `@ExcelColumn(dictType = "...")` 增加 Mango System 字典读取桥接，按当前租户已有字典执行 label 到 value 的精确转换；不新增或修改字典数据，不改变字典管理 API、页面、权限、资源同步和租户隔离。导入提示字典 label 不存在时，仍按本指南确认当前租户字典已同步并启用，再核对 Excel 原始 label。
 
 - 本次 PR 仅在开发中心组件库新增 `MangoSearchPanel` 搜索面板示例入口和示例页面；不新增租户字典、组织、用户或系统配置基础数据表，不改变租户字典、组织、用户、系统配置公开查询 API、权限、租户隔离、页面入口、页面路由、启动方式和运行时数据行为。
+
 ## search-panel-layout-enhance 影响记录
 
 - 本次仅增强开发中心搜索面板示例和 `@mango/common` 搜索面板固定列布局能力，不写入租户字典、组织、用户或系统配置基础数据，不改变公开查询 API、权限、租户隔离、页面入口、页面路由、启动方式和运行时数据行为。
@@ -221,3 +222,5 @@ pnpm -F @mango/admin-shell build
 ## 2026-07-19 前端规范候选影响
 
 - 本次前端规范候选将 base URL、Token 和租户头统一交由 Host 创建的请求客户端处理；不改变租户、字典、配置、Resource 初始化、后端接口、权限和数据隔离语义。业务项目主动升级时由 Host 注入客户端，并继续按本指南核对租户上下文、初始化资源和接口返回。
+
+- 本次 PR 仅在开发中心 Editor 示例中展示 `@mango/common` 富文本工具栏精简配置和图片值写入类型；不新增或修改租户字典、组织、用户、系统配置及资源声明数据，也不改变查询 API、权限、租户隔离、数据隔离语义和本场景排障步骤。
