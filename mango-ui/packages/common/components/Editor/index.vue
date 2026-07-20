@@ -4,7 +4,7 @@
       v-if="!disabled && editorInstance"
       class="editor-toolbar"
       :editor="editorInstance"
-      :default-config="mode === 'simple' ? {} : toolbarConfig"
+      :default-config="toolbarConfig"
       :mode="mode"
     />
     <Editor
@@ -21,10 +21,25 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onBeforeUnmount, shallowRef, nextTick, onMounted } from 'vue';
+import { computed, ref, watch, onBeforeUnmount, shallowRef, nextTick, onMounted } from 'vue';
 import { Editor, Toolbar } from '@wangeditor/editor-for-vue';
 import '@wangeditor/editor/dist/css/style.css';
-import { uploadImage } from '../../api/upload';
+import { fileToken, uploadImage, type UploadResult } from '../../api/upload';
+
+defineOptions({
+  name: 'MangoEditor',
+});
+
+type EditorMode = 'default' | 'simple';
+type EditorImageValueType = 'url' | 'id' | 'token';
+type EditorToolbarKey =
+  | string
+  | {
+      key: string;
+      title?: string;
+      iconSvg?: string;
+      menuKeys?: string[];
+    };
 
 const staleSelectionErrorMessage = 'Cannot resolve a Slate range from DOM range';
 let staleSelectionGuardRefs = 0;
@@ -78,7 +93,9 @@ const props = withDefaults(
     placeholder?: string;
     height?: number | string;
     disabled?: boolean;
-    mode?: 'default' | 'simple';
+    mode?: EditorMode;
+    toolbarKeys?: EditorToolbarKey[];
+    imageValueType?: EditorImageValueType;
   }>(),
   {
     modelValue: '',
@@ -86,7 +103,9 @@ const props = withDefaults(
     height: 300,
     disabled: false,
     mode: 'default',
-  }
+    toolbarKeys: () => [],
+    imageValueType: 'url',
+  },
 );
 
 const emit = defineEmits<{
@@ -98,50 +117,55 @@ const emit = defineEmits<{
 const editorInstance = shallowRef<any>(null);
 const valueHtml = ref(props.modelValue);
 
-// 显示所有工具栏
-const toolbarConfig = {
-  toolbarKeys: [
-    'headerSelect',
-    '|',
-    'bold',
-    'underline',
-    'italic',
-    '|',
-    'color',
-    'bgColor',
-    '|',
-    'fontSize',
-    'fontFamily',
-    '|',
-    'insertLink',
-    'unLink',
-    '|',
-    'bulletedList',
-    'numberedList',
-    'indent',
-    'delIndent',
-    '|',
-    'justifyLeft',
-    'justifyRight',
-    'justifyCenter',
-    'justifyJustify',
-    '|',
-    'blockquote',
-    '|',
-    'insertImage',
-    '|',
-    'insertVideo',
-    '|',
-    'codeBlock',
-    '|',
-    'undo',
-    'redo',
-    '|',
-    'fullScreen',
-  ],
-};
+// 显示完整工具栏；业务可通过 toolbarKeys 精简为指定按钮集合。
+const defaultToolbarKeys: EditorToolbarKey[] = [
+  'headerSelect',
+  '|',
+  'bold',
+  'underline',
+  'italic',
+  '|',
+  'color',
+  'bgColor',
+  '|',
+  'fontSize',
+  'fontFamily',
+  '|',
+  'insertLink',
+  'unLink',
+  '|',
+  'bulletedList',
+  'numberedList',
+  'indent',
+  'delIndent',
+  '|',
+  'justifyLeft',
+  'justifyRight',
+  'justifyCenter',
+  'justifyJustify',
+  '|',
+  'blockquote',
+  '|',
+  'insertImage',
+  '|',
+  'insertVideo',
+  '|',
+  'codeBlock',
+  '|',
+  'undo',
+  'redo',
+  '|',
+  'fullScreen',
+];
 
-const editorConfig = {
+const toolbarConfig = computed(() => {
+  if (props.toolbarKeys?.length) {
+    return { toolbarKeys: props.toolbarKeys };
+  }
+  return props.mode === 'simple' ? {} : { toolbarKeys: defaultToolbarKeys };
+});
+
+const editorConfig = computed(() => ({
   placeholder: props.placeholder,
   MENU_CONF: {
     uploadImage: {
@@ -149,14 +173,30 @@ const editorConfig = {
       customUpload: async (file: File, insertFn: (url: string, alt: string, href: string) => void) => {
         try {
           const result = await uploadImage(file);
-          insertFn(result.url, result.fileName, result.url);
+          const imageValue = resolveImageInsertValue(result);
+          insertFn(imageValue, result.fileName, imageValue);
         } catch (error) {
           console.error('Image upload failed:', error);
         }
       },
     },
   },
-};
+}));
+
+function resolveImageInsertValue(result: UploadResult) {
+  if (props.imageValueType === 'id') {
+    return result.id ? String(result.id) : fallbackImageUrl(result);
+  }
+  if (props.imageValueType === 'token') {
+    return result.id ? fileToken(result.id) : fallbackImageUrl(result);
+  }
+  return result.url;
+}
+
+function fallbackImageUrl(result: UploadResult) {
+  console.warn('[MangoEditor] imageValueType requires upload result id; fallback to url.');
+  return result.url;
+}
 
 // Handle editor created
 function handleCreated(editor: any) {
@@ -198,7 +238,7 @@ watch(
     if (valueHtml.value !== newValue && editorInstance.value) {
       valueHtml.value = newValue;
     }
-  }
+  },
 );
 
 // Watch for disabled state
@@ -212,7 +252,7 @@ watch(
         editorInstance.value.enable();
       }
     }
-  }
+  },
 );
 
 // Watch for mode changes - need to recreate editor when mode changes
@@ -227,7 +267,7 @@ watch(
         // Reinitialize will happen via component re-render
       });
     }
-  }
+  },
 );
 
 // Watch for height changes
@@ -242,7 +282,7 @@ watch(
         (wrapper as HTMLElement).style.setProperty('--editor-height', heightStr);
       }
     });
-  }
+  },
 );
 
 // Cleanup

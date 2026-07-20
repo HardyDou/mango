@@ -331,6 +331,27 @@ API 加密环境变量：
 | slots | `headerExtra`                                            | 标题右侧扩展区域。                                               |
 | slots | `footer`                                                 | 底部按钮区域。未传入时不渲染底部。                               |
 
+`Editor` 富文本组件：
+
+| 类型  | 名称             | 说明                                                                                                   |
+| ----- | ---------------- | ------------------------------------------------------------------------------------------------------ |
+| props | `toolbarKeys`    | 自定义 WangEditor 工具栏按钮；不传时沿用 `mode` 对应的默认工具栏。                                     |
+| props | `imageValueType` | 图片上传成功后写入 HTML 的值。`url` 为默认兼容模式，`id` 写入文件 ID，`token` 写入 `mango-file:<id>`。 |
+
+只保留加粗、文字颜色、有序列表、无序列表和图片上传时：
+
+```vue
+<script setup lang="ts">
+const toolbarKeys = ['bold', 'color', '|', 'numberedList', 'bulletedList', '|', 'uploadImage'];
+</script>
+
+<template>
+  <Editor v-model="content" :toolbar-keys="toolbarKeys" image-value-type="token" />
+</template>
+```
+
+图片上传调用 `uploadImage(file)`，即 `POST /file/files` 且 `purpose=image`。消费项目如果选择 `id` 或 `token`，展示富文本时需要把保存的文件标识解析为可预览地址；例如官网预览场景可把 `mango-file:<id>` 替换为后端提供的公开预览地址。
+
 ## 6. 数据与初始化
 
 `@mango/common` 不创建后端数据。组件和 API 能否返回数据，取决于后端模块是否已初始化：
@@ -390,6 +411,7 @@ API 加密环境变量：
 
 ## 11. 变更影响记录
 
+- 本次扩展 `Editor` 富文本组件，新增 `toolbarKeys` 和 `imageValueType` 配置。默认仍按原逻辑写入图片 URL；消费项目可显式选择写入文件 ID 或 `mango-file:<id>`，用于业务保存后自行解析预览。图片上传仍依赖后端 `mango-file` 的 `/file/files` 接口。
 - `@mango/common@1.0.17` 发布主题 token 和 `MangoSearchPanel` 搜索面板布局修复。主题 CSS 继续通过
   `@mango/common/theme/index.css` 和公开主题入口消费；搜索项不需要展开时，底部更多操作行保留固定高度，
   只隐藏展开/收起按钮，查询、重置、字段栅格、事件和公开 props 不变。
