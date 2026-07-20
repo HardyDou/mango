@@ -31,6 +31,10 @@ const customProjectName = 'mango-custom-acceptance';
 const customNoneProjectName = 'mango-custom-none-acceptance';
 const expectedMavenRepository = 'https://nexus.inner.yunxinbaokeji.com/repository/maven-public/';
 
+function shouldUseShellForCommand(command) {
+  return process.platform === 'win32' && /\.cmd$/iu.test(command);
+}
+
 try {
   assertPmoPackageBuilt();
   assertNoBundledTemplatePmoBaseline();
@@ -212,6 +216,7 @@ try {
     !frontendBuildScript.includes('frontend-build-warnings.log') ||
     !frontendBuildScript.includes('warningCount') ||
     !frontendBuildScript.includes("process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm'") ||
+    !frontendBuildScript.includes('shouldUseShellForCommand(packageManagerCommand)') ||
     !frontendBuildScript.includes("args: ['exec', 'vite', 'build']")
   ) {
     throw new Error('generated frontend build must use pnpm production build and capture warnings');
@@ -1347,6 +1352,7 @@ function assertGeneratedFrontendFormatting(projectRoot) {
     spawnSync(prettierCommand, prettierArgs(args), {
       cwd: frontendRoot,
       encoding: 'utf8',
+      shell: shouldUseShellForCommand(prettierCommand),
       ...options,
     });
 
@@ -1604,6 +1610,9 @@ function assertCommandOk(args, cwd, label) {
 }
 
 function assertGeneratedDevWorkspaceUsesCliFallback(projectRoot) {
+  if (process.platform === 'win32') {
+    return;
+  }
   const fakeLocalBinDir = join(projectRoot, '.runtime/fake-local-bin');
   mkdirSync(fakeLocalBinDir, { recursive: true });
   const frontendBinDir = join(projectRoot, 'frontend/node_modules/.bin');

@@ -26,15 +26,23 @@ const consumerStoreDir = process.env.MANGO_PACKAGE_CONSUMER_STORE_DIR;
 const pnpmCommand = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm';
 const governedPackageManager = readJson(join(uiRoot, 'package.json')).packageManager;
 
+function shouldUseShellForCommand(command) {
+  return process.platform === 'win32' && /\.cmd$/iu.test(command);
+}
+
 function run(command, args, options = {}) {
   const result = spawnSync(command, args, {
     cwd: options.cwd || uiRoot,
     stdio: options.capture ? 'pipe' : 'inherit',
     encoding: 'utf8',
+    shell: shouldUseShellForCommand(command),
     env: { ...process.env, FORCE_COLOR: '0', npm_config_registry: registry, ...options.env },
   });
   if (options.capture) {
     return result;
+  }
+  if (result.error) {
+    console.error(result.error.message);
   }
   if (result.status !== 0) {
     throw new Error(`${command} ${args.join(' ')} failed with status ${result.status ?? 1}`);
@@ -166,12 +174,15 @@ function applyTarballMappings(frontendRoot, mappings) {
   if (/^overrides:/mu.test(workspace)) {
     throw new Error('Generated pnpm workspace unexpectedly contains overrides before consumer mapping');
   }
-  writeFileSync(workspacePath, [
-    workspace,
-    'overrides:',
-    ...[...mappings].map(([dependency, tarball]) => `  "${dependency}": "${tarball}"`),
-    '',
-  ].join('\n'));
+  writeFileSync(
+    workspacePath,
+    [
+      workspace,
+      'overrides:',
+      ...[...mappings].map(([dependency, tarball]) => `  "${dependency}": "${tarball}"`),
+      '',
+    ].join('\n'),
+  );
   writeFileSync(join(frontendRoot, '.npmrc'), `registry=${registry}\n`);
 }
 

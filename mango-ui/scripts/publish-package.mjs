@@ -12,6 +12,7 @@ import {
   npmView,
   readReleaseContracts,
   run,
+  shouldUseShellForCommand,
   verifyPublishedPackage,
 } from './release-guard-utils.mjs';
 
@@ -94,10 +95,12 @@ function verifyPublishedPmoBaseline(packageRoot) {
     console.error('Published @mango/pmo manifest identity does not match package.json.');
     process.exit(1);
   }
-  if (manifest.schemaVersion !== 2
-    || !Array.isArray(manifest.files)
-    || !Array.isArray(manifest.contracts)
-    || typeof manifest.bundleSha256 !== 'string') {
+  if (
+    manifest.schemaVersion !== 2 ||
+    !Array.isArray(manifest.files) ||
+    !Array.isArray(manifest.contracts) ||
+    typeof manifest.bundleSha256 !== 'string'
+  ) {
     console.error('Published @mango/pmo baseline manifest has an unsupported structure.');
     process.exit(1);
   }
@@ -158,9 +161,11 @@ function verifyPublishedPmoBaseline(packageRoot) {
       continue;
     }
     const projectedEntry = pluginFiles.get(baselinePath);
-    if (!projectedEntry
-      || projectedEntry.sha256 !== baselineEntry.sha256
-      || projectedEntry.size !== baselineEntry.size) {
+    if (
+      !projectedEntry ||
+      projectedEntry.sha256 !== baselineEntry.sha256 ||
+      projectedEntry.size !== baselineEntry.size
+    ) {
       console.error(`Published @mango/pmo project Skill differs from its baseline source: ${baselinePath}`);
       process.exit(1);
     }
@@ -168,14 +173,21 @@ function verifyPublishedPmoBaseline(packageRoot) {
 
   const pluginSha256 = sha256(Buffer.from(JSON.stringify(plugin.files), 'utf8'));
   if (plugin.sha256 !== pluginSha256) {
-    console.error(`Published @mango/pmo plugin aggregate hash mismatch: expected ${pluginSha256}, got ${plugin.sha256}.`);
+    console.error(
+      `Published @mango/pmo plugin aggregate hash mismatch: expected ${pluginSha256}, got ${plugin.sha256}.`,
+    );
     process.exit(1);
   }
-  const bundleSha256 = sha256(Buffer.from(JSON.stringify({
-    files: manifest.files,
-    contracts: manifest.contracts,
-    plugin: manifest.plugin,
-  }), 'utf8'));
+  const bundleSha256 = sha256(
+    Buffer.from(
+      JSON.stringify({
+        files: manifest.files,
+        contracts: manifest.contracts,
+        plugin: manifest.plugin,
+      }),
+      'utf8',
+    ),
+  );
   if (manifest.bundleSha256 !== bundleSha256) {
     console.error(`Published @mango/pmo bundle hash mismatch: expected ${bundleSha256}, got ${manifest.bundleSha256}.`);
     process.exit(1);
@@ -189,12 +201,14 @@ function verifyPublishedPmoBaseline(packageRoot) {
 }
 
 function verifyPublishedPmoFile(packageRoot, packageRelativePath, entry, kind) {
-  if (!isSafePmoPackagePath(packageRelativePath)
-    || typeof entry?.sha256 !== 'string'
-    || !/^[0-9a-f]{64}$/i.test(entry.sha256)
-    || !Number.isInteger(entry.size)
-    || entry.size < 0
-    || !['0644', '0755'].includes(entry.mode)) {
+  if (
+    !isSafePmoPackagePath(packageRelativePath) ||
+    typeof entry?.sha256 !== 'string' ||
+    !/^[0-9a-f]{64}$/i.test(entry.sha256) ||
+    !Number.isInteger(entry.size) ||
+    entry.size < 0 ||
+    !['0644', '0755'].includes(entry.mode)
+  ) {
     console.error(`Published @mango/pmo ${kind} manifest contains an invalid file descriptor: ${packageRelativePath}`);
     process.exit(1);
   }
@@ -205,9 +219,7 @@ function verifyPublishedPmoFile(packageRoot, packageRelativePath, entry, kind) {
   }
   const content = readFileSync(filePath);
   const actualHash = sha256(content);
-  const actualMode = process.platform === 'win32'
-    ? entry.mode
-    : (statSync(filePath).mode & 0o111 ? '0755' : '0644');
+  const actualMode = process.platform === 'win32' ? entry.mode : statSync(filePath).mode & 0o111 ? '0755' : '0644';
   if (content.length !== entry.size || actualHash !== entry.sha256 || actualMode !== entry.mode) {
     console.error(`Published @mango/pmo ${kind} file differs from its manifest: ${packageRelativePath}`);
     process.exit(1);
@@ -215,11 +227,13 @@ function verifyPublishedPmoFile(packageRoot, packageRelativePath, entry, kind) {
 }
 
 function isSafePmoPackagePath(value) {
-  return typeof value === 'string'
-    && value.length > 0
-    && !value.startsWith('/')
-    && !value.includes('\\')
-    && value.split('/').every((segment) => segment && segment !== '.' && segment !== '..');
+  return (
+    typeof value === 'string' &&
+    value.length > 0 &&
+    !value.startsWith('/') &&
+    !value.includes('\\') &&
+    value.split('/').every((segment) => segment && segment !== '.' && segment !== '..')
+  );
 }
 
 function sha256(content) {
@@ -227,16 +241,17 @@ function sha256(content) {
 }
 
 function verifyPublishedRelease(packageName, version, found, releaseContracts, registries) {
-  for (const [name, registry] of [['publish registry', registries.publish], ['consume registry', registries.consume]]) {
+  for (const [name, registry] of [
+    ['publish registry', registries.publish],
+    ['consume registry', registries.consume],
+  ]) {
     const result = npmView(`${packageName}@${version}`, registry);
     if (result.status !== 0) {
       throw new Error(`${name} verification failed for ${packageName}@${version}.`);
     }
     const publishedVersion = result.stdout.trim();
     if (publishedVersion !== version) {
-      throw new Error(
-        `${name} resolved ${packageName}@${publishedVersion}; expected ${packageName}@${version}.`,
-      );
+      throw new Error(`${name} resolved ${packageName}@${publishedVersion}; expected ${packageName}@${version}.`);
     }
     console.log(`${name}: ${packageName}@${publishedVersion}`);
   }
@@ -371,6 +386,7 @@ if (!dryRun && existing.status === 0 && existing.stdout.trim() === version) {
 const whoami = spawnSync(npmCommand, ['whoami', `--registry=${publishRegistry}`], {
   stdio: 'pipe',
   encoding: 'utf8',
+  shell: shouldUseShellForCommand(npmCommand),
 });
 if (!dryRun && whoami.status !== 0) {
   console.error(`Not logged in to npm-hosted. Run:
