@@ -100,11 +100,7 @@ describe('admin-shell menu contract', () => {
     const menu = {
       path: '/link',
       redirect: '/link/favorites',
-      children: [
-        { path: '/link/favorites' },
-        { path: '/link/company' },
-        { path: '/link/my-links' },
-      ],
+      children: [{ path: '/link/favorites' }, { path: '/link/company' }, { path: '/link/my-links' }],
     } as ShellRouteMenu;
 
     expect(resolveAccessibleMenuPath(menu)).toBe('/link/favorites');
@@ -179,15 +175,26 @@ describe('admin-shell menu contract', () => {
       pages: {
         'notice/receive-setting/index': async () => ({}),
       },
-      routes: [{
-        menuCode: 'notice:receive-setting',
-        path: '/notice/receive-setting',
-        component: 'notice/receive-setting/index',
-        visible: 0,
-      }],
+      routes: [
+        {
+          menuCode: 'notice:receive-setting',
+          path: '/message-center/receive-setting',
+          component: 'notice/receive-setting/index',
+          visible: 0,
+        },
+        {
+          path: '/notice/receive-setting',
+          component: 'notice/receive-setting/index',
+          visible: 0,
+        },
+      ],
     });
 
-    expect(resolveMenuPathByCode([], 'notice:receive-setting')).toBe('/notice/receive-setting');
+    expect(resolveMenuPathByCode([], 'notice:receive-setting')).toBe('/message-center/receive-setting');
+    expect(getRegisteredPageRoutes(['mango-notice-route-test']).map((route: { path: string }) => route.path)).toEqual([
+      '/message-center/receive-setting',
+      '/notice/receive-setting',
+    ]);
   });
 
   it('resolves legacy mango-admin route names that preserve backend menu codes', () => {
@@ -300,10 +307,12 @@ describe('admin-shell menu contract', () => {
       },
     ];
 
-    expect(filterMenuForRouteByFeatures(menus, new Set(['authorization', 'system'])).map(menu => menu.menuName))
-      .toEqual(['系统管理']);
-    expect(filterMenuForRouteByFeatures(menus, new Set(['authorization', 'system', 'notice'])).map(menu => menu.menuName))
-      .toEqual(['系统管理', '通知中心']);
+    expect(
+      filterMenuForRouteByFeatures(menus, new Set(['authorization', 'system'])).map((menu) => menu.menuName),
+    ).toEqual(['系统管理']);
+    expect(
+      filterMenuForRouteByFeatures(menus, new Set(['authorization', 'system', 'notice'])).map((menu) => menu.menuName),
+    ).toEqual(['系统管理', '通知中心']);
   });
 
   it('hides deprecated CMS site setting menus from historical backend data', () => {
@@ -353,7 +362,7 @@ describe('admin-shell menu contract', () => {
     const filtered = filterMenuForRouteByFeatures(menus, new Set());
 
     expect(filtered).toHaveLength(1);
-    expect(filtered[0].children?.map(menu => menu.menuName)).toEqual(['站点管理']);
+    expect(filtered[0].children?.map((menu) => menu.menuName)).toEqual(['站点管理']);
   });
 
   it('keeps package hidden routes registered without exposing them as visible menus', () => {
@@ -373,13 +382,17 @@ describe('admin-shell menu contract', () => {
 
     const routes = getRegisteredPageRoutes(['mango-workflow']);
 
-    expect(routes).toContainEqual(expect.objectContaining({
-      moduleCode: 'mango-workflow',
-      path: '/workflow/custom-apply',
-      component: 'workflow/custom-apply/index',
-      visible: 0,
-    }));
-    expect(getRegisteredPageRoutes(['mango-notice']).some(route => route.path === '/workflow/custom-apply')).toBe(false);
+    expect(routes).toContainEqual(
+      expect.objectContaining({
+        moduleCode: 'mango-workflow',
+        path: '/workflow/custom-apply',
+        component: 'workflow/custom-apply/index',
+        visible: 0,
+      }),
+    );
+    expect(getRegisteredPageRoutes(['mango-notice']).some((route) => route.path === '/workflow/custom-apply')).toBe(
+      false,
+    );
   });
 });
 
@@ -411,7 +424,9 @@ function createRouteMenu(overrides: Partial<ShellRouteMenu> & { menuCode?: strin
   } as ShellRouteMenu;
 }
 
-function createShellRouteMenu(menu: Partial<ShellMenu> & Pick<ShellMenu, 'menuId' | 'menuName' | 'menuCode' | 'parentId' | 'menuType' | 'path'>): ShellRouteMenu {
+function createShellRouteMenu(
+  menu: Partial<ShellMenu> & Pick<ShellMenu, 'menuId' | 'menuName' | 'menuCode' | 'parentId' | 'menuType' | 'path'>,
+): ShellRouteMenu {
   return toShellRouteMenu({
     appCode: 'internal-admin',
     moduleCode: 'mango-workflow',

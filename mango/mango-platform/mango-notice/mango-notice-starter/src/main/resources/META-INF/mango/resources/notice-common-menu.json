@@ -8,7 +8,7 @@
         "AUTH_MENU": [
           {
             "id": "2951300000000009301",
-            "version": 2,
+            "version": 3,
             "bizKey": "notice.menu.internal-admin",
             "name": "通知中心菜单",
             "targetModule": "authorization",
@@ -170,25 +170,6 @@
                       },
                       {
                         "menuType": 2,
-                        "menuName": "接收设置",
-                        "menuCode": "notice:receive-setting",
-                        "path": "/notice/receive-setting",
-                        "icon": "Switch",
-                        "component": "notice/receive-setting/index",
-                        "sort": 90,
-                        "visible": 0,
-                        "remark": "接收设置仅从我的消息页面设置按钮进入，不作为消息中心主菜单展示",
-                        "packageCodes": [
-                          "platform_admin",
-                          "institution_collaboration"
-                        ],
-                        "apiCodes": [
-                          "notice:receive-setting:view",
-                          "notice:receive-setting:edit"
-                        ]
-                      },
-                      {
-                        "menuType": 2,
                         "menuName": "全局设置",
                         "menuCode": "notice:setting",
                         "path": "/notice/setting",
@@ -258,7 +239,7 @@
                       },
                       {
                         "menuType": 2,
-                        "menuName": "公告",
+                        "menuName": "系统公告",
                         "menuCode": "notice:announcement-user",
                         "path": "/message-center/announcement",
                         "icon": "Reading",
@@ -271,6 +252,23 @@
                         "apiCodes": [
                           "notice:site:view",
                           "notice:site:edit"
+                        ]
+                      },
+                      {
+                        "menuType": 2,
+                        "menuName": "接收配置",
+                        "menuCode": "notice:receive-setting",
+                        "path": "/message-center/receive-setting",
+                        "icon": "Switch",
+                        "component": "notice/receive-setting/index",
+                        "sort": 3,
+                        "remark": "当前用户接收账户、渠道偏好和提醒方式配置入口",
+                        "roleCodes": [
+                          "ROLE_LOGIN"
+                        ],
+                        "apiCodes": [
+                          "notice:receive-setting:view",
+                          "notice:receive-setting:edit"
                         ]
                       }
                     ],

@@ -18,7 +18,7 @@ function ok(data: unknown) {
 }
 
 test.describe('通知中心 E2E', () => {
-  test('登录后可以访问完整通知菜单、消息入口和系统消息主流程', async ({ page }) => {
+  test('@p1 @notice 登录后可以访问完整通知菜单、消息入口和系统消息主流程', async ({ page }) => {
     test.setTimeout(90_000);
     const businessTypes = [
       {
@@ -162,7 +162,14 @@ test.describe('通知中心 E2E', () => {
         priority: 0,
         weight: 100,
       },
-      { id: '1', channelType: 'EMAIL', providerCode: 'CUSTOM_SMTP', configName: '默认邮箱', enabled: true, priority: 0 },
+      {
+        id: '1',
+        channelType: 'EMAIL',
+        providerCode: 'CUSTOM_SMTP',
+        configName: '默认邮箱',
+        enabled: true,
+        priority: 0,
+      },
     ];
     const sendRecords = [
       {
@@ -211,11 +218,24 @@ test.describe('通知中心 E2E', () => {
       },
     ];
     const identityUsers = [
-      { userId: '1001', username: 'admin', nickname: '管理员', phone: '13800000000', email: 'admin@example.com', status: 1 },
+      {
+        userId: '1001',
+        username: 'admin',
+        nickname: '管理员',
+        phone: '13800000000',
+        email: 'admin@example.com',
+        status: 1,
+      },
       { userId: '1002', username: 'operator', nickname: '操作员', phone: '', email: 'operator@example.com', status: 1 },
     ];
     const orgTree = [
-      { id: '2001', orgName: '芒果集团', pid: '0', orgStatus: '1', children: [{ id: '2002', orgName: '技术部', pid: '2001', orgStatus: '1', children: [] }] },
+      {
+        id: '2001',
+        orgName: '芒果集团',
+        pid: '0',
+        orgStatus: '1',
+        children: [{ id: '2002', orgName: '技术部', pid: '2001', orgStatus: '1', children: [] }],
+      },
     ];
     const posts = [
       { id: '3001', postName: '产品经理', postCode: 'PM', postStatus: '1' },
@@ -251,7 +271,10 @@ test.describe('通知中心 E2E', () => {
 
         onclick?: () => void;
 
-        constructor(public title: string, public options?: NotificationOptions) {
+        constructor(
+          public title: string,
+          public options?: NotificationOptions,
+        ) {
           target.__noticeDesktopNotifications.push({ title, body: options?.body });
         }
 
@@ -271,7 +294,10 @@ test.describe('通知中心 E2E', () => {
 
       Object.defineProperty(window, 'Audio', { value: FakeAudio, configurable: true });
       Object.defineProperty(window, 'Notification', { value: FakeNotification, configurable: true });
-      Object.defineProperty(window, 'SpeechSynthesisUtterance', { value: FakeSpeechSynthesisUtterance, configurable: true });
+      Object.defineProperty(window, 'SpeechSynthesisUtterance', {
+        value: FakeSpeechSynthesisUtterance,
+        configurable: true,
+      });
       Object.defineProperty(window, 'speechSynthesis', {
         value: {
           cancel: () => undefined,
@@ -282,10 +308,18 @@ test.describe('通知中心 E2E', () => {
     });
 
     await page.route('**/api/system/tenant/login-options**', async (route) => {
-      await route.fulfill({ status: 200, contentType: 'application/json', body: ok([{ tenantId: '1', tenantCode: 'mango', tenantName: '芒果集团' }]) });
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: ok([{ tenantId: '1', tenantCode: 'mango', tenantName: '芒果集团' }]),
+      });
     });
     await page.route('**/api/auth/login-institutions', async (route) => {
-      await route.fulfill({ status: 200, contentType: 'application/json', body: ok([{ tenantId: '1', tenantCode: 'mango', tenantName: '芒果集团' }]) });
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: ok([{ tenantId: '1', tenantCode: 'mango', tenantName: '芒果集团' }]),
+      });
     });
     await page.route('**/api/auth/login', async (route) => {
       await route.fulfill({
@@ -303,9 +337,23 @@ test.describe('通知中心 E2E', () => {
             appCode: 'internal-admin',
             roles: ['admin'],
             permissions: [
-              'notice:business:view', 'notice:business:create', 'notice:business:edit', 'notice:business:publish', 'notice:business:delete',
-              'notice:channel:view', 'notice:channel:create', 'notice:channel:delete', 'notice:task:create', 'notice:task:view', 'notice:record:view',
-              'notice:site:view', 'notice:site:edit', 'notice:site:delete', 'notice:setting:view',
+              'notice:business:view',
+              'notice:business:create',
+              'notice:business:edit',
+              'notice:business:publish',
+              'notice:business:delete',
+              'notice:channel:view',
+              'notice:channel:create',
+              'notice:channel:delete',
+              'notice:task:create',
+              'notice:task:view',
+              'notice:record:view',
+              'notice:site:view',
+              'notice:site:edit',
+              'notice:site:delete',
+              'notice:setting:view',
+              'notice:receive-setting:view',
+              'notice:receive-setting:edit',
             ],
           },
         }),
@@ -313,12 +361,19 @@ test.describe('通知中心 E2E', () => {
     });
 
     await page.route('**/api/authorization/menus/user**', async (route) => {
-      const child = (menuId: string, menuName: string, path: string, component: string) => ({
+      const child = (
+        menuId: string,
+        menuName: string,
+        path: string,
+        component: string,
+        menuCode = path.replace('/notice/', 'notice:'),
+        parentId = '2900',
+      ) => ({
         menuId,
-        parentId: '2900',
+        parentId,
         menuType: 2,
         menuName,
-        menuCode: path.replace('/notice/', 'notice:'),
+        menuCode,
         path,
         icon: 'Message',
         component,
@@ -349,10 +404,48 @@ test.describe('通知中心 E2E', () => {
               child('2901', '消息配置', '/notice/message-definition', '@/views/notice/message-definition/index.vue'),
               child('2902', '发送任务', '/notice/send-message', '@/views/notice/send-message/index.vue'),
               child('2903', '渠道配置', '/notice/channel', '@/views/notice/channel/index.vue'),
-              child('2904', '接收设置', '/notice/receive-setting', '@/views/notice/receive-setting/index.vue'),
               child('2905', '发送记录', '/notice/record', '@/views/notice/record/index.vue'),
               child('2906', '失败重试', '/notice/retry', '@/views/notice/retry/index.vue'),
-              child('2907', '系统消息', '/notice/site-message', '@/views/notice/site-message/index.vue'),
+            ],
+          },
+          {
+            menuId: '2920',
+            parentId: '0',
+            menuType: 1,
+            menuName: '消息中心',
+            menuCode: 'message-center',
+            path: '/message-center',
+            icon: 'Message',
+            redirect: '/message-center/site-message',
+            moduleCode: 'mango-notice',
+            pageType: 'LOCAL_ROUTE',
+            visible: 1,
+            status: 1,
+            children: [
+              child(
+                '2921',
+                '我的消息',
+                '/message-center/site-message',
+                'notice/site-message/index',
+                'notice:site-message',
+                '2920',
+              ),
+              child(
+                '2922',
+                '系统公告',
+                '/message-center/announcement',
+                'notice/announcement-user/index',
+                'notice:announcement-user',
+                '2920',
+              ),
+              child(
+                '2923',
+                '接收配置',
+                '/message-center/receive-setting',
+                'notice/receive-setting/index',
+                'notice:receive-setting',
+                '2920',
+              ),
             ],
           },
         ]),
@@ -380,7 +473,11 @@ test.describe('通知中心 E2E', () => {
       if (url.pathname.includes('/channel-templates')) {
         const businessTypeId = url.searchParams.get('businessTypeId') || '';
         if (request.method() === 'GET') {
-          await route.fulfill({ status: 200, contentType: 'application/json', body: ok(templates[businessTypeId] || []) });
+          await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: ok(templates[businessTypeId] || []),
+          });
           return;
         }
         if (request.method() === 'PUT') {
@@ -389,7 +486,7 @@ test.describe('通知中心 E2E', () => {
           const saved = {
             id: `${businessTypeId}-${channelType}-${Date.now()}`,
             businessTypeId,
-            bizType: businessTypes.find(item => item.id === businessTypeId)?.bizType,
+            bizType: businessTypes.find((item) => item.id === businessTypeId)?.bizType,
             version: 2,
             versionStatus: 'DRAFT',
             enabled: true,
@@ -412,7 +509,11 @@ test.describe('通知中心 E2E', () => {
           await route.fulfill({ status: 200, contentType: 'application/json', body: ok(true) });
           return;
         }
-        await route.fulfill({ status: 200, contentType: 'application/json', body: ok(businessConfigVersions[businessTypeId] || []) });
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: ok(businessConfigVersions[businessTypeId] || []),
+        });
         return;
       }
       if (url.pathname.includes('/config-draft')) {
@@ -420,15 +521,15 @@ test.describe('通知中心 E2E', () => {
         if (request.method() === 'PUT') {
           const body = request.postDataJSON();
           const existing = businessConfigVersions[businessTypeId] || [];
-          const draft = existing.find(item => item.versionStatus === 'DRAFT') || {
+          const draft = existing.find((item) => item.versionStatus === 'DRAFT') || {
             id: `${businessTypeId}-config-draft`,
             businessTypeId,
-            bizType: businessTypes.find(item => item.id === businessTypeId)?.bizType,
+            bizType: businessTypes.find((item) => item.id === businessTypeId)?.bizType,
             version: existing.length + 1,
             versionStatus: 'DRAFT',
           };
           Object.assign(draft, body, { versionStatus: 'DRAFT' });
-          businessConfigVersions[businessTypeId] = [...existing.filter(item => item.id !== draft.id), draft];
+          businessConfigVersions[businessTypeId] = [...existing.filter((item) => item.id !== draft.id), draft];
           await route.fulfill({ status: 200, contentType: 'application/json', body: ok(draft) });
           return;
         }
@@ -438,7 +539,7 @@ test.describe('通知中心 E2E', () => {
             if (item.versionStatus === 'ACTIVE') item.versionStatus = 'HISTORY';
             if (item.versionStatus === 'DRAFT') {
               item.versionStatus = 'ACTIVE';
-              const business = businessTypes.find(type => type.id === businessTypeId);
+              const business = businessTypes.find((type) => type.id === businessTypeId);
               if (business) {
                 business.paramsSchema = String(item.paramsSchema || '');
                 business.defaultPriority = String(item.defaultPriority || 'NORMAL');
@@ -451,7 +552,11 @@ test.describe('通知中心 E2E', () => {
         }
       }
       if (request.method() === 'GET') {
-        await route.fulfill({ status: 200, contentType: 'application/json', body: ok({ list: businessTypes, total: businessTypes.length, page: 1, size: 10 }) });
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: ok({ list: businessTypes, total: businessTypes.length, page: 1, size: 10 }),
+        });
         return;
       }
       if (request.method() === 'POST') {
@@ -469,7 +574,7 @@ test.describe('通知中心 E2E', () => {
       if (request.method() === 'PUT') {
         const body = request.postDataJSON();
         const id = url.searchParams.get('id');
-        const index = businessTypes.findIndex(item => item.id === id);
+        const index = businessTypes.findIndex((item) => item.id === id);
         if (index >= 0) {
           businessTypes[index] = { ...businessTypes[index], ...body };
         }
@@ -478,7 +583,7 @@ test.describe('通知中心 E2E', () => {
       }
       if (request.method() === 'DELETE') {
         const id = url.searchParams.get('id');
-        const index = businessTypes.findIndex(item => item.id === id);
+        const index = businessTypes.findIndex((item) => item.id === id);
         if (index >= 0) businessTypes.splice(index, 1);
         delete businessConfigVersions[String(id)];
         delete templates[String(id)];
@@ -499,51 +604,84 @@ test.describe('通知中心 E2E', () => {
       if (request.method() === 'DELETE') {
         const url = new URL(request.url());
         const id = url.searchParams.get('id');
-        const index = channelConfigs.findIndex(item => item.id === id);
+        const index = channelConfigs.findIndex((item) => item.id === id);
         if (index >= 0) channelConfigs.splice(index, 1);
         await route.fulfill({ status: 200, contentType: 'application/json', body: ok(true) });
         return;
       }
-      await route.fulfill({ status: 200, contentType: 'application/json', body: ok({ list: channelConfigs, total: channelConfigs.length, page: 1, size: 10 }) });
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: ok({ list: channelConfigs, total: channelConfigs.length, page: 1, size: 10 }),
+      });
     });
     await page.route('**/api/notice/tasks**', async (route) => {
-      await route.fulfill({ status: 200, contentType: 'application/json', body: ok({ list: [{
-        id: '1',
-        taskCode: 'NT001',
-        bizType: 'WORKFLOW_APPROVED',
-        bizGroup: 'WORKFLOW',
-        bizName: '审批通过通知',
-        paramsSnapshot: '{"applyNo":"APPLY-001"}',
-        recipientTargetsSnapshot: '[{"targetType":"USER","targetId":"1001","targetName":"管理员"}]',
-        channelTypes: 'SITE',
-        status: 'SUCCESS',
-        totalCount: 1,
-        successCount: 1,
-        failCount: 0,
-      }], total: 1, page: 1, size: 10 }) });
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: ok({
+          list: [
+            {
+              id: '1',
+              taskCode: 'NT001',
+              bizType: 'WORKFLOW_APPROVED',
+              bizGroup: 'WORKFLOW',
+              bizName: '审批通过通知',
+              paramsSnapshot: '{"applyNo":"APPLY-001"}',
+              recipientTargetsSnapshot: '[{"targetType":"USER","targetId":"1001","targetName":"管理员"}]',
+              channelTypes: 'SITE',
+              status: 'SUCCESS',
+              totalCount: 1,
+              successCount: 1,
+              failCount: 0,
+            },
+          ],
+          total: 1,
+          page: 1,
+          size: 10,
+        }),
+      });
     });
     await page.route('**/api/notice/records**', async (route) => {
       const url = new URL(route.request().url());
       const status = url.searchParams.get('status');
-      const list = status ? sendRecords.filter(item => item.status === status) : sendRecords;
-      await route.fulfill({ status: 200, contentType: 'application/json', body: ok({ list, total: list.length, page: 1, size: 10 }) });
+      const list = status ? sendRecords.filter((item) => item.status === status) : sendRecords;
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: ok({ list, total: list.length, page: 1, size: 10 }),
+      });
     });
     await page.route('**/api/notice/send', async (route) => {
-      await route.fulfill({ status: 200, contentType: 'application/json', body: ok({ successCount: 0, failCount: 0 }) });
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: ok({ successCount: 0, failCount: 0 }),
+      });
     });
     await page.route('**/api/identity/users/page**', async (route) => {
       const url = new URL(route.request().url());
       const keyword = url.searchParams.get('keyword') || '';
       const list = keyword
-        ? identityUsers.filter(item => [item.username, item.nickname, item.phone, item.email].some(value => value.includes(keyword)))
+        ? identityUsers.filter((item) =>
+            [item.username, item.nickname, item.phone, item.email].some((value) => value.includes(keyword)),
+          )
         : identityUsers;
-      await route.fulfill({ status: 200, contentType: 'application/json', body: ok({ list, total: list.length, page: 1, size: 20 }) });
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: ok({ list, total: list.length, page: 1, size: 20 }),
+      });
     });
     await page.route('**/api/org/tree**', async (route) => {
       await route.fulfill({ status: 200, contentType: 'application/json', body: ok(orgTree) });
     });
     await page.route('**/api/post/page**', async (route) => {
-      await route.fulfill({ status: 200, contentType: 'application/json', body: ok({ list: posts, total: posts.length, page: 1, size: 20 }) });
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: ok({ list: posts, total: posts.length, page: 1, size: 20 }),
+      });
     });
     await page.route('**/api/authorization/roles', async (route) => {
       await route.fulfill({ status: 200, contentType: 'application/json', body: ok(roles) });
@@ -572,7 +710,11 @@ test.describe('通知中心 E2E', () => {
       await route.fulfill({ status: 200, contentType: 'application/json', body: ok([]) });
     });
     await page.route('**/api/link/personal-links/page**', async (route) => {
-      await route.fulfill({ status: 200, contentType: 'application/json', body: ok({ list: [], total: 0, page: 1, size: 500 }) });
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: ok({ list: [], total: 0, page: 1, size: 500 }),
+      });
     });
     await page.route('**/api/link/favorites/list**', async (route) => {
       await route.fulfill({ status: 200, contentType: 'application/json', body: ok([]) });
@@ -581,7 +723,11 @@ test.describe('通知中心 E2E', () => {
       await route.fulfill({ status: 200, contentType: 'application/json', body: ok([]) });
     });
     await page.route('**/api/calendar/workdays/day**', async (route) => {
-      await route.fulfill({ status: 200, contentType: 'application/json', body: ok({ workday: true, holiday: false }) });
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: ok({ workday: true, holiday: false }),
+      });
     });
     await page.route('**/api/calendar/lunar/day**', async (route) => {
       await route.fulfill({ status: 200, contentType: 'application/json', body: ok(null) });
@@ -610,7 +756,11 @@ test.describe('通知中心 E2E', () => {
       await route.fulfill({ status: 200, contentType: 'application/json', body: ok(null) });
     });
     await page.route('**/api/notice/settings**', async (route) => {
-      await route.fulfill({ status: 200, contentType: 'application/json', body: ok({ soundEnabled: true, desktopEnabled: true, maxRetry: 3, retentionDays: 180 }) });
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: ok({ soundEnabled: true, desktopEnabled: true, maxRetry: 3, retentionDays: 180 }),
+      });
     });
     await page.route('**/api/notice/recipient-accounts**', async (route) => {
       await route.fulfill({
@@ -634,11 +784,15 @@ test.describe('通知中心 E2E', () => {
       await route.fulfill({ status: 200, contentType: 'application/json', body: ok([]) });
     });
     await page.route('**/api/notice/site/messages', async (route) => {
-      await route.fulfill({ status: 200, contentType: 'application/json', body: ok({ successCount: 1, failCount: 0 }) });
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: ok({ successCount: 1, failCount: 0 }),
+      });
     });
     await page.route('**/api/notice/site/my/unread-count**', async (route) => {
       unreadCountRequestCount += 1;
-      const count = messages.filter(item => item.readStatus === 'UNREAD').length;
+      const count = messages.filter((item) => item.readStatus === 'UNREAD').length;
       await route.fulfill({ status: 200, contentType: 'application/json', body: ok({ count }) });
     });
     await page.route('**/api/notice/site/my/messages**', async (route) => {
@@ -646,19 +800,22 @@ test.describe('通知中心 E2E', () => {
       const url = new URL(request.url());
       if (request.method() === 'GET' && url.pathname.endsWith('/detail')) {
         const messageId = url.searchParams.get('id');
-        const message = messageId === realtimeMessage.id
-          ? realtimeMessage
-          : messages.find(item => item.id === messageId);
+        const message =
+          messageId === realtimeMessage.id ? realtimeMessage : messages.find((item) => item.id === messageId);
         await route.fulfill({ status: 200, contentType: 'application/json', body: ok(message || null) });
         return;
       }
       if (request.method() === 'GET') {
-        await route.fulfill({ status: 200, contentType: 'application/json', body: ok({ list: messages, total: messages.length, page: 1, size: 10 }) });
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: ok({ list: messages, total: messages.length, page: 1, size: 10 }),
+        });
         return;
       }
       if (request.method() === 'POST' && url.pathname.endsWith('/actions')) {
         const body = request.postDataJSON();
-        const action = messages[0].actions.find(item => item.actionCode === 'ACKNOWLEDGE');
+        const action = messages[0].actions.find((item) => item.actionCode === 'ACKNOWLEDGE');
         if (action) {
           action.status = 'PROCESSING';
         }
@@ -685,18 +842,20 @@ test.describe('通知中心 E2E', () => {
         return;
       }
       if (url.pathname.endsWith('/read-all')) {
-        messages.forEach(item => { item.readStatus = 'READ'; });
+        messages.forEach((item) => {
+          item.readStatus = 'READ';
+        });
         await route.fulfill({ status: 200, contentType: 'application/json', body: ok(true) });
         return;
       }
       if (url.pathname.endsWith('/read')) {
-        const message = messages.find(item => item.id === url.searchParams.get('id'));
+        const message = messages.find((item) => item.id === url.searchParams.get('id'));
         if (message) message.readStatus = 'READ';
         await route.fulfill({ status: 200, contentType: 'application/json', body: ok(true) });
         return;
       }
       if (url.pathname.endsWith('/delete')) {
-        const index = messages.findIndex(item => item.id === url.searchParams.get('id'));
+        const index = messages.findIndex((item) => item.id === url.searchParams.get('id'));
         if (index >= 0) messages.splice(index, 1);
         await route.fulfill({ status: 200, contentType: 'application/json', body: ok(true) });
         return;
@@ -708,18 +867,33 @@ test.describe('通知中心 E2E', () => {
     const noticeBell = page.locator('.notice-bell');
     await expect(page.getByLabel('消息提醒')).toBeVisible();
     await expect(noticeBell.locator('.el-badge__content')).toHaveText('1');
+    await page.waitForLoadState('networkidle');
     const unreadCountRequestsAfterLogin = unreadCountRequestCount;
     expect(unreadCountRequestsAfterLogin).toBeGreaterThanOrEqual(1);
     await page.evaluate(() => {
-      window.dispatchEvent(new CustomEvent('mango-notice-message', {
-        detail: { messageId: '2002', title: '实时系统消息', unreadCount: 2 },
-      }));
+      window.dispatchEvent(
+        new CustomEvent('mango-notice-message', {
+          detail: { messageId: '2002', title: '实时系统消息', unreadCount: 2 },
+        }),
+      );
     });
     await expect(noticeBell.locator('.el-badge__content')).toHaveText('2');
     expect(unreadCountRequestCount).toBe(unreadCountRequestsAfterLogin);
     await expect(page.getByText('实时系统消息')).toBeVisible();
-    await expect.poll(async () => page.evaluate(() => (window as Window & { __noticeSpokenTexts?: string[] }).__noticeSpokenTexts?.[0] || '')).toBe('您有新的系统消息，请及时查看');
-    await expect.poll(async () => page.evaluate(() => (window as Window & { __noticeDesktopNotifications?: Array<unknown> }).__noticeDesktopNotifications?.length ?? 0)).toBe(1);
+    await expect
+      .poll(async () =>
+        page.evaluate(() => (window as Window & { __noticeSpokenTexts?: string[] }).__noticeSpokenTexts?.[0] || ''),
+      )
+      .toBe('您有新的系统消息，请及时查看');
+    await expect
+      .poll(async () =>
+        page.evaluate(
+          () =>
+            (window as Window & { __noticeDesktopNotifications?: Array<unknown> }).__noticeDesktopNotifications
+              ?.length ?? 0,
+        ),
+      )
+      .toBe(1);
     await page.locator('.el-notification').click();
     const realtimeDetailDialog = page.getByRole('dialog', { name: '实时系统消息' });
     await expect(realtimeDetailDialog).toBeVisible();
@@ -744,7 +918,9 @@ test.describe('通知中心 E2E', () => {
     await page.locator('.el-select-dropdown__item:visible', { hasText: 'WORKFLOW' }).click();
     await maintainPage.locator('input[placeholder="order.shipped"]').fill('order.shipped');
     await maintainPage.locator('input[placeholder="出函成功"]').fill('订单发货通知');
-    await maintainPage.locator('textarea[placeholder="用于说明该消息配置的业务场景"]').fill('订单发货后发送系统消息和短信');
+    await maintainPage
+      .locator('textarea[placeholder="用于说明该消息配置的业务场景"]')
+      .fill('订单发货后发送系统消息和短信');
     await maintainPage.getByRole('button', { name: '保存' }).click();
     await expect(page.getByText('order.shipped', { exact: true })).toBeVisible();
     await maintainPage.getByRole('button', { name: '返回' }).click();
@@ -769,7 +945,9 @@ test.describe('通知中心 E2E', () => {
     await configPage.locator('.template-enabled-item .el-switch').click();
     await expect(configPage.locator('.template-enabled-item').getByText('启用', { exact: true })).toBeVisible();
     await configPage.locator('input[placeholder="例如：SMS_123456789"]').fill('SMS_10002');
-    await configPage.locator('textarea[placeholder="请输入短信内容，例如：订单 {{orderNo}} 已发货"]').fill('订单 {{orderNo}} 已发货');
+    await configPage
+      .locator('textarea[placeholder="请输入短信内容，例如：订单 {{orderNo}} 已发货"]')
+      .fill('订单 {{orderNo}} 已发货');
     await expect(page.getByText('订单号：{{orderNo}}')).toBeVisible();
     await page.getByRole('button', { name: '保存', exact: true }).click();
     await page.getByRole('button', { name: '发布新版本' }).click();
@@ -780,7 +958,9 @@ test.describe('通知中心 E2E', () => {
     await page.locator('.el-message-box').getByRole('button', { name: '取消' }).click();
     await expect(page.getByText('系统错误，请刷新页面')).toHaveCount(0);
     await expect(page.getByText('order.shipped', { exact: true })).toBeVisible();
-    const deleteBusiness = page.waitForRequest(request => request.method() === 'DELETE' && request.url().includes('/api/notice/business-types?id=2'));
+    const deleteBusiness = page.waitForRequest(
+      (request) => request.method() === 'DELETE' && request.url().includes('/api/notice/business-types?id=2'),
+    );
     await page.locator('tr', { hasText: 'order.shipped' }).getByRole('button', { name: '删除' }).click();
     await page.locator('.el-message-box').getByRole('button', { name: '删除', exact: true }).click();
     const deleteBusinessRequest = await deleteBusiness;
@@ -822,7 +1002,9 @@ test.describe('通知中心 E2E', () => {
     await sendDialog.getByLabel('发生时间').fill('2026-05-27 10:30:00');
     await sendDialog.getByRole('button', { name: '暂存' }).click();
     await expect(page.getByText('已暂存')).toBeVisible();
-    const sendNoticeRequest = page.waitForRequest(request => request.method() === 'POST' && request.url().includes('/api/notice/send'));
+    const sendNoticeRequest = page.waitForRequest(
+      (request) => request.method() === 'POST' && request.url().includes('/api/notice/send'),
+    );
     await sendDialog.getByRole('button', { name: '发送', exact: true }).click();
     const sendNoticeBody = (await sendNoticeRequest).postDataJSON();
     expect(sendNoticeBody.bizType).toBe('WORKFLOW_APPROVED');
@@ -839,7 +1021,9 @@ test.describe('通知中心 E2E', () => {
 
     await page.getByRole('menuitem', { name: '渠道配置' }).click();
     await expect(page.getByText('默认系统消息通道')).toBeVisible();
-    await expect(page.locator('tr', { hasText: '默认系统消息通道' }).getByRole('button', { name: '删除' })).toBeDisabled();
+    await expect(
+      page.locator('tr', { hasText: '默认系统消息通道' }).getByRole('button', { name: '删除' }),
+    ).toBeDisabled();
     await page.locator('tr', { hasText: '默认系统消息通道' }).getByRole('button', { name: '详情' }).click();
     const siteChannelDetailDialog = page.getByRole('dialog', { name: '渠道详情' });
     await expect(siteChannelDetailDialog.getByText('基础信息')).toBeVisible();
@@ -854,7 +1038,9 @@ test.describe('通知中心 E2E', () => {
     await expect(siteChannelDialog.getByLabel('播报内容')).toHaveValue('您有新的系统消息，请及时查看');
     await siteChannelDialog.getByRole('button', { name: '取消' }).click();
     await expect(page.getByText('默认邮箱')).toBeVisible();
-    const saveSmsChannel = page.waitForRequest(request => request.method() === 'POST' && request.url().includes('/api/notice/channels'));
+    const saveSmsChannel = page.waitForRequest(
+      (request) => request.method() === 'POST' && request.url().includes('/api/notice/channels'),
+    );
     await page.getByRole('button', { name: '新增' }).click();
     const channelDialog = page.getByRole('dialog', { name: '新增渠道' });
     await expect(channelDialog).toBeVisible();
@@ -869,7 +1055,7 @@ test.describe('通知中心 E2E', () => {
     await channelDialog.getByRole('button', { name: '保存' }).click();
     const smsChannelRequest = await saveSmsChannel;
     const smsChannelBody = smsChannelRequest.postDataJSON();
-    const smsChannelId = String(channelConfigs.find(item => item.configName === '阿里云短信')?.id || '');
+    const smsChannelId = String(channelConfigs.find((item) => item.configName === '阿里云短信')?.id || '');
     expect(smsChannelBody.channelType).toBe('SMS');
     expect(smsChannelBody.providerCode).toBe('ALIYUN_SMS');
     expect(JSON.parse(smsChannelBody.configJson)).toEqual({
@@ -882,13 +1068,17 @@ test.describe('通知中心 E2E', () => {
     });
     await expect(channelDialog).toBeHidden();
     await expect(page.locator('tr', { hasText: '阿里云短信' }).getByText('短信', { exact: true })).toBeVisible();
-    const deleteSmsChannel = page.waitForRequest(request => request.method() === 'DELETE' && request.url().includes('/api/notice/channels'));
+    const deleteSmsChannel = page.waitForRequest(
+      (request) => request.method() === 'DELETE' && request.url().includes('/api/notice/channels'),
+    );
     await page.locator('tr', { hasText: '阿里云短信' }).getByRole('button', { name: '删除' }).click();
     await page.locator('.el-message-box').getByRole('button', { name: '删除', exact: true }).click();
     const deleteSmsChannelRequest = await deleteSmsChannel;
     expect(new URL(deleteSmsChannelRequest.url()).searchParams.get('id')).toBe(smsChannelId);
     await expect(page.getByText('阿里云短信')).toHaveCount(0);
-    const saveEmailChannel = page.waitForRequest(request => request.method() === 'POST' && request.url().includes('/api/notice/channels'));
+    const saveEmailChannel = page.waitForRequest(
+      (request) => request.method() === 'POST' && request.url().includes('/api/notice/channels'),
+    );
     await page.getByRole('button', { name: '新增' }).click();
     const emailChannelDialog = page.getByRole('dialog', { name: '新增渠道' });
     await expect(emailChannelDialog).toBeVisible();
@@ -946,18 +1136,20 @@ test.describe('通知中心 E2E', () => {
     await expect(recordDetailDialog.getByText('NR001')).toBeVisible();
     await expect(recordDetailDialog.getByText('"status": "SENT"')).toBeVisible();
     await recordDetailDialog.getByRole('button', { name: '关闭', exact: true }).click();
-    await page.getByRole('menuitem', { name: '接收设置' }).click();
+    await page.getByRole('button', { name: '消息中心' }).click();
+    await page.getByRole('menuitem', { name: '接收配置' }).click();
+    await expect(page).toHaveURL(/#\/message-center\/receive-setting$/);
     await expect(page.getByLabel('提醒方式').getByText('提示音')).toBeVisible();
 
-    await page.getByRole('menuitem', { name: '系统消息' }).click();
+    await page.getByRole('menuitem', { name: '我的消息' }).click();
     await expect(page.locator('.notice-site-message-page__header').getByText('我的消息')).toBeVisible();
     const siteMessageRow = page.locator('tr', { hasText: '测试系统消息' });
     await expect(siteMessageRow).toBeVisible();
     await expect(siteMessageRow.getByText('未读', { exact: true })).toBeVisible();
     await expect(siteMessageRow.getByRole('button', { name: '标记处理' })).toBeVisible();
     await expect(siteMessageRow.getByRole('button', { name: '查看设置' })).toBeVisible();
-    const actionRequest = page.waitForRequest(request =>
-      request.method() === 'POST' && request.url().includes('/api/notice/site/my/messages/actions')
+    const actionRequest = page.waitForRequest(
+      (request) => request.method() === 'POST' && request.url().includes('/api/notice/site/my/messages/actions'),
     );
     await siteMessageRow.getByRole('button', { name: '标记处理' }).click();
     const actionRequestBody = (await actionRequest).postDataJSON();
@@ -987,7 +1179,7 @@ test.describe('通知中心 E2E', () => {
     await siteMessageRow.getByRole('button', { name: '查看设置' }).click();
     await expect(page.getByLabel('提醒方式').getByText('提示音')).toBeVisible();
     await page.screenshot({ path: 'test-results/notice-message-actions.png', fullPage: true });
-    await page.getByRole('menuitem', { name: '系统消息' }).click();
+    await page.getByRole('menuitem', { name: '我的消息' }).click();
     await expect(page.locator('.notice-site-message-page__header').getByText('我的消息')).toBeVisible();
     await page.locator('tr', { hasText: '测试系统消息' }).getByRole('button', { name: '详情' }).click();
     const siteDetailDialog = page.getByRole('dialog', { name: '测试系统消息' });

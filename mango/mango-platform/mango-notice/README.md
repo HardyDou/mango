@@ -149,7 +149,7 @@ registerMangoNoticeAdminShell();
 
 `LOGIN` 只表示当前登录人可以操作自己的通知数据，不表示可以查看全租户通知任务或替其他用户管理配置。后台发送系统消息、维护渠道密钥、查看发送记录仍必须配置 `notice:*` 权限码。
 
-个人消息接口仍使用 `notice:site:view/edit` 和 `notice:receive-setting:view/edit` 做资源校验；接收设置为展示业务类型还需要只读的 `notice:business:view`。Notice 的菜单资源会把这些最小权限以及“我的消息”“公告”菜单绑定到内置 `ROLE_LOGIN`。授权中心会为每个已登录主体自动叠加该角色，业务项目不需要逐个角色重复授权。`ROLE_ANONYMOUS` 不包含个人消息或 Realtime 建连权限。
+个人消息接口仍使用 `notice:site:view/edit` 和 `notice:receive-setting:view/edit` 做资源校验；接收设置为展示业务类型还需要只读的 `notice:business:view`。Notice 的菜单资源会把这些最小权限以及“我的消息”“系统公告”“接收配置”菜单绑定到内置 `ROLE_LOGIN`。授权中心会为每个已登录主体自动叠加该角色，业务项目不需要逐个角色重复授权。`ROLE_ANONYMOUS` 不包含个人消息或 Realtime 建连权限。
 
 ## 5. 快速开始
 
@@ -618,14 +618,16 @@ notice:announcement:offline
 |------|------|---------------|----------|
 | 我的消息 | `/message-center/site-message` | `notice/site-message/index` | 是 |
 | 公告管理 | `/notice/announcement` | `notice/announcement/index` | 是 |
-| 公告 | `/message-center/announcement` | `notice/announcement-user/index` | 是 |
+| 系统公告 | `/message-center/announcement` | `notice/announcement-user/index` | 是 |
 | 消息配置 | `/notice/message-definition` | `notice/message-definition/index` | 是 |
 | 发送任务 | `/notice/send-message` | `notice/send-message/index` | 是 |
 | 渠道配置 | `/notice/channel` | `notice/channel/index` | 是 |
 | 发送记录 | `/notice/record` | `notice/record/index` | 是 |
 | 失败重试 | `/notice/retry` | `notice/retry/index` | 是 |
-| 接收设置 | `/notice/receive-setting` | `notice/receive-setting/index` | 否 |
+| 接收配置 | `/message-center/receive-setting` | `notice/receive-setting/index` | 是 |
 | 全局设置 | `/notice/setting` | `notice/setting/index` | 否 |
+
+旧路径 `/notice/receive-setting` 由前端页面注册表保留为隐藏兼容入口；菜单资源、站内信设置按钮和 `notice:receive-setting` 命名目标统一使用 `/message-center/receive-setting`。
 
 ## 12. 数据与初始化
 

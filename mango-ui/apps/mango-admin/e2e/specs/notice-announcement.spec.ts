@@ -71,15 +71,15 @@ async function login(page: Page) {
   await page.goto('/#/login');
   await page.getByPlaceholder('用户名').fill('admin');
   await page.getByPlaceholder('密码').fill('admin123');
-  const tenantsResponsePromise = page.waitForResponse(response =>
-    response.url().includes('/api/auth/login-institutions') && response.status() === 200
+  const tenantsResponsePromise = page.waitForResponse(
+    (response) => response.url().includes('/api/auth/login-institutions') && response.status() === 200,
   );
   await page.getByPlaceholder('密码').blur();
   await tenantsResponsePromise;
   await page.locator('.tenant-select').click();
   await page.getByRole('option', { name: /芒果集团/ }).click();
-  const menuResponsePromise = page.waitForResponse(response =>
-    response.url().includes('/api/authorization/menus/user') && response.status() === 200
+  const menuResponsePromise = page.waitForResponse(
+    (response) => response.url().includes('/api/authorization/menus/user') && response.status() === 200,
   );
   await page.getByRole('button', { name: '登 录' }).click();
   await page.waitForURL('**/#/home', { timeout: 10000 });
@@ -125,7 +125,7 @@ function createState(): TestState {
 }
 
 function targetRecipientCount(targets: AnnouncementTarget[]) {
-  if (targets.some(target => target.targetType === 'ALL')) {
+  if (targets.some((target) => target.targetType === 'ALL')) {
     return 3;
   }
   const resolvedUsers = new Set<string>();
@@ -145,16 +145,35 @@ function targetRecipientCount(targets: AnnouncementTarget[]) {
 }
 
 function visibleAnnouncements(state: TestState) {
-  return state.announcements
-    .filter(item => item.status === 'PUBLISHED')
-    .map(item => ({ ...item }));
+  return state.announcements.filter((item) => item.status === 'PUBLISHED').map((item) => ({ ...item }));
 }
 
 async function setupRoutes(page: Page, state: TestState) {
   const identityUsers = [
-    { userId: '1001', username: 'admin', nickname: '管理员', phone: '13800000000', email: 'admin@example.com', status: 1 },
-    { userId: '1002', username: 'operator', nickname: '操作员', phone: '13800000001', email: 'operator@example.com', status: 1 },
-    { userId: '1003', username: 'auditor', nickname: '审计员', phone: '13800000002', email: 'auditor@example.com', status: 1 },
+    {
+      userId: '1001',
+      username: 'admin',
+      nickname: '管理员',
+      phone: '13800000000',
+      email: 'admin@example.com',
+      status: 1,
+    },
+    {
+      userId: '1002',
+      username: 'operator',
+      nickname: '操作员',
+      phone: '13800000001',
+      email: 'operator@example.com',
+      status: 1,
+    },
+    {
+      userId: '1003',
+      username: 'auditor',
+      nickname: '审计员',
+      phone: '13800000002',
+      email: 'auditor@example.com',
+      status: 1,
+    },
   ];
   const orgTree = [
     {
@@ -185,13 +204,14 @@ async function setupRoutes(page: Page, state: TestState) {
     children: [],
   });
 
-  await page.route('**/api/system/tenant/login-options**', route =>
-    fulfillJson(route, [{ tenantId: '1', tenantCode: 'mango', tenantName: '芒果集团' }])
+  await page.route('**/api/**', (route) => fulfillJson(route, []));
+  await page.route('**/api/system/tenant/login-options**', (route) =>
+    fulfillJson(route, [{ tenantId: '1', tenantCode: 'mango', tenantName: '芒果集团' }]),
   );
-  await page.route('**/api/auth/login-institutions', route =>
-    fulfillJson(route, [{ tenantId: '1', tenantCode: 'mango', tenantName: '芒果集团' }])
+  await page.route('**/api/auth/login-institutions', (route) =>
+    fulfillJson(route, [{ tenantId: '1', tenantCode: 'mango', tenantName: '芒果集团' }]),
   );
-  await page.route('**/api/auth/login', route =>
+  await page.route('**/api/auth/login', (route) =>
     fulfillJson(route, {
       accessToken: 'notice-announcement-e2e-token',
       tokenType: 'Bearer',
@@ -241,9 +261,9 @@ async function setupRoutes(page: Page, state: TestState) {
           'notice:site:delete',
         ],
       },
-    })
+    }),
   );
-  await page.route('**/api/auth/info', route =>
+  await page.route('**/api/auth/info', (route) =>
     fulfillJson(route, {
       userId: '1',
       memberId: '1001',
@@ -266,9 +286,9 @@ async function setupRoutes(page: Page, state: TestState) {
         'notice:site:edit',
         'notice:site:delete',
       ],
-    })
+    }),
   );
-  await page.route('**/api/authorization/menus/user**', route =>
+  await page.route('**/api/authorization/menus/user**', (route) =>
     fulfillJson(route, [
       {
         menuId: '2900',
@@ -283,10 +303,7 @@ async function setupRoutes(page: Page, state: TestState) {
         pageType: 'LOCAL_ROUTE',
         visible: 1,
         status: 1,
-        children: [
-          child('2907', '公告管理', '/notice/announcement', 'notice/announcement/index'),
-          child('2910', '接收设置', '/notice/receive-setting', 'notice/receive-setting/index', 0),
-        ],
+        children: [child('2907', '公告管理', '/notice/announcement', 'notice/announcement/index')],
       },
       {
         menuId: '2920',
@@ -302,32 +319,43 @@ async function setupRoutes(page: Page, state: TestState) {
         visible: 1,
         status: 1,
         children: [
-          { ...child('2921', '我的消息', '/message-center/site-message', 'notice/site-message/index'), parentId: '2920' },
-          { ...child('2922', '公告', '/message-center/announcement', 'notice/announcement-user/index'), parentId: '2920' },
+          {
+            ...child('2921', '我的消息', '/message-center/site-message', 'notice/site-message/index'),
+            parentId: '2920',
+            menuCode: 'notice:site-message',
+          },
+          {
+            ...child('2922', '系统公告', '/message-center/announcement', 'notice/announcement-user/index'),
+            parentId: '2920',
+            menuCode: 'notice:announcement-user',
+          },
+          {
+            ...child('2923', '接收配置', '/message-center/receive-setting', 'notice/receive-setting/index'),
+            parentId: '2920',
+            menuCode: 'notice:receive-setting',
+          },
         ],
       },
-    ])
+    ]),
   );
-  await page.route('**/api/grid-layout/personal**', route => fulfillJson(route, null));
-  await page.route('**/api/calendar/lunar/day**', route =>
-    fulfillJson(route, { date: '2026-06-26', lunarText: '五月十二', festival: '' })
+  await page.route('**/api/grid-layout/personal**', (route) => fulfillJson(route, null));
+  await page.route('**/api/calendar/lunar/day**', (route) =>
+    fulfillJson(route, { date: '2026-06-26', lunarText: '五月十二', festival: '' }),
   );
-  await page.route('**/api/calendar/workdays/day**', route =>
-    fulfillJson(route, { date: '2026-06-26', workday: true, holiday: false })
+  await page.route('**/api/calendar/workdays/day**', (route) =>
+    fulfillJson(route, { date: '2026-06-26', workday: true, holiday: false }),
   );
-  await page.route('**/api/calendar/workdays/month/summary**', route =>
-    fulfillJson(route, { workdayCount: 22, holidayCount: 8, adjustedWorkdayCount: 0 })
+  await page.route('**/api/calendar/workdays/month/summary**', (route) =>
+    fulfillJson(route, { workdayCount: 22, holidayCount: 8, adjustedWorkdayCount: 0 }),
   );
-  await page.route('**/api/workflow/tasks/my/summary**', route =>
-    fulfillJson(route, { total: 0, pending: 0, completed: 0 })
+  await page.route('**/api/workflow/tasks/my/summary**', (route) =>
+    fulfillJson(route, { total: 0, pending: 0, completed: 0 }),
   );
-  await page.route('**/api/workflow/tasks/todo/summary**', route =>
-    fulfillJson(route, { total: 0, pending: 0 })
+  await page.route('**/api/workflow/tasks/todo/summary**', (route) => fulfillJson(route, { total: 0, pending: 0 }));
+  await page.route('**/api/workflow/business-applies/my/summary**', (route) =>
+    fulfillJson(route, { total: 0, draft: 0, running: 0, completed: 0 }),
   );
-  await page.route('**/api/workflow/business-applies/my/summary**', route =>
-    fulfillJson(route, { total: 0, draft: 0, running: 0, completed: 0 })
-  );
-  await page.route('**/api/realtime/transports/negotiate**', route =>
+  await page.route('**/api/realtime/transports/negotiate**', (route) =>
     route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -336,47 +364,51 @@ async function setupRoutes(page: Page, state: TestState) {
         order: ['polling'],
         transports: [{ type: 'polling', enabled: true, available: true }],
       }),
-    })
+    }),
   );
-  await page.route('**/api/realtime/transports/polling**', route =>
-    route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([]) })
+  await page.route('**/api/realtime/transports/polling**', (route) =>
+    route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([]) }),
   );
-  await page.route('**/api/system/personal-configs/value**', route =>
+  await page.route('**/api/system/personal-configs/value**', (route) =>
     fulfillJson(route, {
       groupCode: 'notice',
       bizType: 'client_reminder',
       configKey: 'reminder_setting',
       configValue: JSON.stringify({ popupEnabled: false, voiceEnabled: false, desktopNotificationEnabled: false }),
       valueType: 'JSON',
-    })
+    }),
   );
-  await page.route('**/api/domain/domains/enabled-tree**', route =>
-    fulfillJson(route, [{ id: 'system', domainCode: 'SYSTEM', domainName: '系统平台', children: [] }])
+  await page.route('**/api/domain/domains/enabled-tree**', (route) =>
+    fulfillJson(route, [{ id: 'system', domainCode: 'SYSTEM', domainName: '系统平台', children: [] }]),
   );
-  await page.route('**/identity/users/page**', route => {
+  await page.route('**/identity/users/page**', (route) => {
     const url = new URL(route.request().url());
     const keyword = url.searchParams.get('keyword') || '';
     const list = keyword
-      ? identityUsers.filter(item => [item.username, item.nickname, item.phone, item.email].some(value => value.includes(keyword)))
+      ? identityUsers.filter((item) =>
+          [item.username, item.nickname, item.phone, item.email].some((value) => value.includes(keyword)),
+        )
       : identityUsers;
     return fulfillJson(route, { list, total: list.length, page: 1, size: 20 });
   });
-  await page.route('**/org/tree**', route => fulfillJson(route, orgTree));
-  await page.route('**/authorization/roles**', route => fulfillJson(route, roles));
-  await page.route('**/notice/site/my/unread-count**', route =>
-    fulfillJson(route, { count: state.messages.filter(item => item.readStatus === 'UNREAD').length })
+  await page.route('**/org/tree**', (route) => fulfillJson(route, orgTree));
+  await page.route('**/authorization/roles**', (route) => fulfillJson(route, roles));
+  await page.route('**/notice/site/my/unread-count**', (route) =>
+    fulfillJson(route, { count: state.messages.filter((item) => item.readStatus === 'UNREAD').length }),
   );
-  await page.route('**/notice/site/my/messages/read-batch', route => fulfillJson(route, true));
-  await page.route('**/notice/site/my/messages/read-all', route => {
-    state.messages.forEach(item => { item.readStatus = 'READ'; });
+  await page.route('**/notice/site/my/messages/read-batch', (route) => fulfillJson(route, true));
+  await page.route('**/notice/site/my/messages/read-all', (route) => {
+    state.messages.forEach((item) => {
+      item.readStatus = 'READ';
+    });
     return fulfillJson(route, true);
   });
-  await page.route('**/notice/site/my/messages**', route => {
+  await page.route('**/notice/site/my/messages**', (route) => {
     const url = new URL(route.request().url());
     const path = url.pathname;
     if (path.endsWith('/read')) {
       const id = url.searchParams.get('id');
-      const message = state.messages.find(item => item.id === id);
+      const message = state.messages.find((item) => item.id === id);
       if (message) {
         message.readStatus = 'READ';
       }
@@ -387,27 +419,27 @@ async function setupRoutes(page: Page, state: TestState) {
     }
     if (path.endsWith('/detail')) {
       const id = url.searchParams.get('id');
-      return fulfillJson(route, state.messages.find(item => item.id === id) || null);
+      return fulfillJson(route, state.messages.find((item) => item.id === id) || null);
     }
     if (route.request().method() !== 'GET') {
       return fulfillJson(route, true);
     }
     const unreadOnly = url.searchParams.get('unreadOnly') === 'true';
-    const list = unreadOnly ? state.messages.filter(item => item.readStatus === 'UNREAD') : state.messages;
+    const list = unreadOnly ? state.messages.filter((item) => item.readStatus === 'UNREAD') : state.messages;
     return fulfillJson(route, { list, total: list.length, page: 1, size: 10 });
   });
-  await page.route('**/notice/announcements/detail**', route => {
+  await page.route('**/notice/announcements/detail**', (route) => {
     const id = new URL(route.request().url()).searchParams.get('id') || '';
-    return fulfillJson(route, state.announcements.find(item => item.id === id) || null);
+    return fulfillJson(route, state.announcements.find((item) => item.id === id) || null);
   });
-  await page.route('**/notice/announcements/stats**', route => {
+  await page.route('**/notice/announcements/stats**', (route) => {
     const id = new URL(route.request().url()).searchParams.get('id') || '';
-    return fulfillJson(route, state.announcements.find(item => item.id === id)?.stats || null);
+    return fulfillJson(route, state.announcements.find((item) => item.id === id)?.stats || null);
   });
-  await page.route('**/notice/announcements/publish**', async route => {
+  await page.route('**/notice/announcements/publish**', async (route) => {
     const body = route.request().postDataJSON() as { id: string; targets?: AnnouncementTarget[] };
     state.publishRequests.push(body);
-    const announcement = state.announcements.find(item => item.id === body.id);
+    const announcement = state.announcements.find((item) => item.id === body.id);
     if (announcement) {
       announcement.status = 'PUBLISHED';
       announcement.publishTime = '2026-06-26 10:00:00';
@@ -421,7 +453,7 @@ async function setupRoutes(page: Page, state: TestState) {
       };
       announcement.readStatus = 'UNREAD';
       announcement.confirmStatus = announcement.confirmRequired ? 'PENDING' : 'NOT_REQUIRED';
-      if (announcement.syncMessageEnabled && !state.messages.some(item => item.bizId === announcement.id)) {
+      if (announcement.syncMessageEnabled && !state.messages.some((item) => item.bizId === announcement.id)) {
         state.messages.unshift({
           id: `msg-${announcement.id}`,
           title: `公告：${announcement.title}`,
@@ -439,30 +471,30 @@ async function setupRoutes(page: Page, state: TestState) {
     }
     await fulfillJson(route, true);
   });
-  await page.route('**/notice/announcements/offline**', route => {
+  await page.route('**/notice/announcements/offline**', (route) => {
     const body = route.request().postDataJSON() as { id: string };
-    const announcement = state.announcements.find(item => item.id === body.id);
+    const announcement = state.announcements.find((item) => item.id === body.id);
     if (announcement) {
       announcement.status = 'OFFLINE';
       announcement.updatedAt = '2026-06-26 10:10:00';
     }
     return fulfillJson(route, true);
   });
-  await page.route('**/notice/announcements**', route => {
+  await page.route('**/notice/announcements**', (route) => {
     const requestUrl = new URL(route.request().url());
     const path = requestUrl.pathname;
     if (path.endsWith('/detail')) {
       const id = requestUrl.searchParams.get('id') || '';
-      return fulfillJson(route, state.announcements.find(item => item.id === id) || null);
+      return fulfillJson(route, state.announcements.find((item) => item.id === id) || null);
     }
     if (path.endsWith('/stats')) {
       const id = requestUrl.searchParams.get('id') || '';
-      return fulfillJson(route, state.announcements.find(item => item.id === id)?.stats || null);
+      return fulfillJson(route, state.announcements.find((item) => item.id === id)?.stats || null);
     }
     if (path.endsWith('/publish')) {
       const body = route.request().postDataJSON() as { id: string; targets?: AnnouncementTarget[] };
       state.publishRequests.push(body);
-      const announcement = state.announcements.find(item => item.id === body.id);
+      const announcement = state.announcements.find((item) => item.id === body.id);
       if (announcement) {
         announcement.status = 'PUBLISHED';
         announcement.publishTime = '2026-06-26 10:00:00';
@@ -476,7 +508,7 @@ async function setupRoutes(page: Page, state: TestState) {
         };
         announcement.readStatus = 'UNREAD';
         announcement.confirmStatus = announcement.confirmRequired ? 'PENDING' : 'NOT_REQUIRED';
-        if (announcement.syncMessageEnabled && !state.messages.some(item => item.bizId === announcement.id)) {
+        if (announcement.syncMessageEnabled && !state.messages.some((item) => item.bizId === announcement.id)) {
           state.messages.unshift({
             id: `msg-${announcement.id}`,
             title: `公告：${announcement.title}`,
@@ -496,7 +528,7 @@ async function setupRoutes(page: Page, state: TestState) {
     }
     if (path.endsWith('/offline')) {
       const body = route.request().postDataJSON() as { id: string };
-      const announcement = state.announcements.find(item => item.id === body.id);
+      const announcement = state.announcements.find((item) => item.id === body.id);
       if (announcement) {
         announcement.status = 'OFFLINE';
         announcement.updatedAt = '2026-06-26 10:10:00';
@@ -525,7 +557,7 @@ async function setupRoutes(page: Page, state: TestState) {
     }
     if (method === 'PUT') {
       const body = route.request().postDataJSON() as Partial<Announcement> & { id: string };
-      const announcement = state.announcements.find(item => item.id === body.id);
+      const announcement = state.announcements.find((item) => item.id === body.id);
       if (announcement) {
         Object.assign(announcement, {
           title: body.title,
@@ -543,24 +575,25 @@ async function setupRoutes(page: Page, state: TestState) {
     }
     const status = requestUrl.searchParams.get('status');
     const keyword = requestUrl.searchParams.get('keyword') || '';
-    const list = state.announcements.filter(item =>
-      (!status || item.status === status) &&
-      (!keyword || item.title.includes(keyword) || item.content.includes(keyword))
+    const list = state.announcements.filter(
+      (item) =>
+        (!status || item.status === status) &&
+        (!keyword || item.title.includes(keyword) || item.content.includes(keyword)),
     );
     return fulfillJson(route, { list, total: list.length, page: 1, size: 50 });
   });
-  await page.route('**/notice/site/my/announcements/detail**', route => {
+  await page.route('**/notice/site/my/announcements/detail**', (route) => {
     const id = new URL(route.request().url()).searchParams.get('id') || '';
-    const announcement = state.announcements.find(item => item.id === id);
+    const announcement = state.announcements.find((item) => item.id === id);
     if (announcement) {
       announcement.readStatus = 'READ';
       announcement.stats.readCount = Math.min(announcement.stats.recipientCount, announcement.stats.readCount + 1);
     }
     return fulfillJson(route, announcement || null);
   });
-  await page.route('**/notice/site/my/announcements/confirm**', route => {
+  await page.route('**/notice/site/my/announcements/confirm**', (route) => {
     const body = route.request().postDataJSON() as { id: string };
-    const announcement = state.announcements.find(item => item.id === body.id);
+    const announcement = state.announcements.find((item) => item.id === body.id);
     if (announcement) {
       announcement.readStatus = 'READ';
       announcement.confirmStatus = 'CONFIRMED';
@@ -569,12 +602,12 @@ async function setupRoutes(page: Page, state: TestState) {
     }
     return fulfillJson(route, true);
   });
-  await page.route('**/notice/site/my/announcements**', route => {
+  await page.route('**/notice/site/my/announcements**', (route) => {
     const url = new URL(route.request().url());
     const path = url.pathname;
     if (path.endsWith('/detail')) {
       const id = url.searchParams.get('id') || '';
-      const announcement = state.announcements.find(item => item.id === id);
+      const announcement = state.announcements.find((item) => item.id === id);
       if (announcement) {
         announcement.readStatus = 'READ';
         announcement.stats.readCount = Math.min(announcement.stats.recipientCount, announcement.stats.readCount + 1);
@@ -583,7 +616,7 @@ async function setupRoutes(page: Page, state: TestState) {
     }
     if (path.endsWith('/confirm')) {
       const body = route.request().postDataJSON() as { id: string };
-      const announcement = state.announcements.find(item => item.id === body.id);
+      const announcement = state.announcements.find((item) => item.id === body.id);
       if (announcement) {
         announcement.readStatus = 'READ';
         announcement.confirmStatus = 'CONFIRMED';
@@ -595,10 +628,11 @@ async function setupRoutes(page: Page, state: TestState) {
     const unreadOnly = url.searchParams.get('unreadOnly') === 'true';
     const pendingConfirmOnly = url.searchParams.get('pendingConfirmOnly') === 'true';
     const keyword = url.searchParams.get('keyword') || '';
-    const list = visibleAnnouncements(state).filter(item =>
-      (!unreadOnly || item.readStatus === 'UNREAD') &&
-      (!pendingConfirmOnly || item.confirmStatus === 'PENDING') &&
-      (!keyword || item.title.includes(keyword) || item.content.includes(keyword))
+    const list = visibleAnnouncements(state).filter(
+      (item) =>
+        (!unreadOnly || item.readStatus === 'UNREAD') &&
+        (!pendingConfirmOnly || item.confirmStatus === 'PENDING') &&
+        (!keyword || item.title.includes(keyword) || item.content.includes(keyword)),
     );
     return fulfillJson(route, { list, total: list.length, page: 1, size: 50 });
   });
@@ -607,12 +641,12 @@ async function setupRoutes(page: Page, state: TestState) {
 async function assertNoRuntimeErrors(page: Page, action: () => Promise<void>) {
   const consoleErrors: string[] = [];
   const failedRequests: string[] = [];
-  page.on('console', message => {
+  page.on('console', (message) => {
     if (message.type() === 'error') {
       consoleErrors.push(message.text());
     }
   });
-  page.on('response', response => {
+  page.on('response', (response) => {
     if ((response.url().includes('/api/') || response.url().includes('/notice/')) && response.status() >= 400) {
       failedRequests.push(`${response.status()} ${response.url()}`);
     }
@@ -643,13 +677,13 @@ async function expectMessage(page: Page, text: string) {
 }
 
 test.describe('通知中心公告 E2E', () => {
-  test('覆盖公告管理、发布对象、用户公告确认和消息中心跳转', async ({ page }) => {
+  test('@p1 @notice 覆盖公告管理、发布对象、用户公告确认和消息中心跳转', async ({ page }) => {
     const state = createState();
     mkdirSync(evidenceDir, { recursive: true });
-    await login(page);
     await setupRoutes(page, state);
 
     await assertNoRuntimeErrors(page, async () => {
+      await login(page);
       await page.goto('/#/notice/announcement');
       await expect(page.getByRole('heading', { name: '公告管理' })).toBeVisible();
       await expect(page.locator('tr', { hasText: '端午值班安排' })).toContainText('已发布');
@@ -662,7 +696,10 @@ test.describe('通知中心公告 E2E', () => {
       await expect(page.getByText('请输入公告标题')).toBeVisible();
       await expect(page.getByText('请选择发布对象')).toBeVisible();
       await createDialog.locator('.el-form-item', { hasText: '标题' }).locator('input').fill('系统升级通知');
-      await createDialog.locator('.el-form-item', { hasText: '内容' }).locator('textarea').fill('今晚 22:00 至 23:00 系统升级，请提前保存数据。');
+      await createDialog
+        .locator('.el-form-item', { hasText: '内容' })
+        .locator('textarea')
+        .fill('今晚 22:00 至 23:00 系统升级，请提前保存数据。');
       await createDialog.getByText('需要确认').click();
       await chooseMixedTargets(page);
       await page.screenshot({ path: resolve(evidenceDir, 'announcement-admin-mixed-targets.png'), fullPage: true });
@@ -672,7 +709,10 @@ test.describe('通知中心公告 E2E', () => {
 
       await page.locator('tr', { hasText: '系统升级通知' }).getByRole('button', { name: '编辑' }).click();
       const editDialog = page.getByRole('dialog', { name: '编辑公告' });
-      await editDialog.locator('.el-form-item', { hasText: '内容' }).locator('textarea').fill('今晚 22:30 至 23:30 系统升级，请提前保存数据。');
+      await editDialog
+        .locator('.el-form-item', { hasText: '内容' })
+        .locator('textarea')
+        .fill('今晚 22:30 至 23:30 系统升级，请提前保存数据。');
       await editDialog.getByRole('button', { name: '保存草稿' }).click();
       await expectMessage(page, '公告已保存');
 
@@ -686,14 +726,20 @@ test.describe('通知中心公告 E2E', () => {
       await page.locator('tr', { hasText: '系统升级通知' }).getByRole('button', { name: '详情' }).click();
       const detailDialog = page.getByRole('dialog', { name: '公告详情' });
       await expect(detailDialog.getByText('接收人数')).toBeVisible();
-      await expect(detailDialog.locator('.el-descriptions__cell', { hasText: '接收人数' })
-        .locator('xpath=following-sibling::*[1]')).toHaveText('2');
+      await expect(
+        detailDialog
+          .locator('.el-descriptions__cell', { hasText: '接收人数' })
+          .locator('xpath=following-sibling::*[1]'),
+      ).toHaveText('2');
       await detailDialog.locator('.el-dialog__headerbtn').click();
 
       await page.getByRole('button', { name: '新增公告' }).click();
       const allDialog = page.getByRole('dialog', { name: '新增公告' });
       await allDialog.locator('.el-form-item', { hasText: '标题' }).locator('input').fill('全员安全提醒');
-      await allDialog.locator('.el-form-item', { hasText: '内容' }).locator('textarea').fill('请所有同事完成本周安全培训。');
+      await allDialog
+        .locator('.el-form-item', { hasText: '内容' })
+        .locator('textarea')
+        .fill('请所有同事完成本周安全培训。');
       await allDialog.getByText('全员').click();
       await expect(allDialog.getByText('请选择用户、部门、角色或岗位')).toHaveCount(0);
       await allDialog.getByRole('button', { name: '保存并发布' }).click();
@@ -707,7 +753,11 @@ test.describe('通知中心公告 E2E', () => {
       await expectMessage(page, '公告已下线');
       await expect(page.locator('tr', { hasText: '全员安全提醒' })).toContainText('已下线');
 
-      await page.goto('/#/message-center/announcement');
+      await page.getByRole('button', { name: '消息中心' }).click();
+      await expect(page.getByRole('menuitem', { name: '系统公告' })).toBeVisible();
+      await expect(page.getByRole('menuitem', { name: '接收配置' })).toBeVisible();
+      await page.getByRole('menuitem', { name: '系统公告' }).click();
+      await expect(page).toHaveURL(/#\/message-center\/announcement$/);
       await expect(page.getByRole('heading', { name: '公告' })).toBeVisible();
       await expect(page.locator('tr', { hasText: '端午值班安排' })).toContainText('待确认');
       await page.locator('tr', { hasText: '端午值班安排' }).getByRole('button', { name: '查看' }).click();
@@ -735,7 +785,7 @@ test.describe('通知中心公告 E2E', () => {
       await expect(page.getByRole('dialog', { name: '公告详情' })).toBeVisible();
       await expect(page.getByRole('dialog', { name: '公告详情' }).getByText('端午值班安排')).toBeVisible();
       await page.screenshot({ path: resolve(evidenceDir, 'site-message-announcement-jump.png'), fullPage: true });
-      expect(state.messages.find(item => item.id === 'msg-ann-100')?.readStatus).toBe('READ');
+      expect(state.messages.find((item) => item.id === 'msg-ann-100')?.readStatus).toBe('READ');
     });
   });
 });
