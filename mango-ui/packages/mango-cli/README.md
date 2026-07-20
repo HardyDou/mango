@@ -9,7 +9,7 @@
 | 项目          | 值                                                                                                             |
 | ------------- | -------------------------------------------------------------------------------------------------------------- |
 | NPM 包        | `@mango/cli`                                                                                                   |
-| 当前发布版本  | `1.0.86`                                                                                                       |
+| 当前发布版本  | `1.0.87`                                                                                                       |
 | bin 命令      | `mango`、`mango-cli`                                                                                           |
 | 命令入口      | `src/index.mjs`                                                                                                |
 | 发布 registry | 由发布配置或 `MANGO_RELEASE_NPM_PUBLISH_REGISTRY` 注入                                                         |
@@ -68,7 +68,7 @@ CLI 不负责：
 通过企业 npm group 安装；公开文档不登记公司内部仓库地址：
 
 ```bash
-npm view @mango/pmo@1.3.2 version --registry "$MANGO_NPM_REGISTRY"
+npm view @mango/pmo@1.3.3 version --registry "$MANGO_NPM_REGISTRY"
 npm view @mango/cli@1.0.84 version --registry "$MANGO_NPM_REGISTRY"
 npm install -g @mango/cli@1.0.84 --registry "$MANGO_NPM_REGISTRY"
 ```
@@ -89,7 +89,7 @@ pnpm exec mango dev start
 
 业务仓日常开发以项目内锁定的 `@mango/cli` 为准。进入生成项目的 `frontend` 后先安装依赖，再用 `pnpm exec mango workspace ...`、`pnpm exec mango dev ...` 和 `pnpm exec mango frontend ...` 执行本地开发命令。系统 `PATH` 上的 `mango` 可能是旧全局入口，不能作为业务项目 CLI 版本依据。
 
-生成项目中的 `scripts/dev-workspace.sh` 只保留为历史兼容 shim，会把旧命令转发到 Mango CLI。历史项目升级时，先用全局 CLI 执行 `mango pmo upgrade --project-dir . --to 1.3.2 --sync-shell`；已经锁定到该 bundle 的项目只需用 `mango pmo sync --project-dir . --sync-shell` 修复当前锁。随后进入 `frontend` 安装项目内依赖，并在每个 active worktree 执行 `pnpm exec mango workspace init` 生成 `.mango/workspace.json` 并补齐 `.mango/dev-workspace.env`。
+生成项目中的 `scripts/dev-workspace.sh` 只保留为历史兼容 shim，会把旧命令转发到 Mango CLI。历史项目升级时，先用全局 CLI 执行 `mango pmo upgrade --project-dir . --to 1.3.3 --sync-shell`；已经锁定到该 bundle 的项目只需用 `mango pmo sync --project-dir . --sync-shell` 修复当前锁。随后进入 `frontend` 安装项目内依赖，并在每个 active worktree 执行 `pnpm exec mango workspace init` 生成 `.mango/workspace.json` 并补齐 `.mango/dev-workspace.env`。
 
 生成 custom 项目：
 
@@ -117,7 +117,7 @@ mango pmo check --project-dir demo-custom
 mango pmo check --project-dir demo-custom --locked
 mango pmo sync --project-dir demo-custom --dry-run
 mango pmo sync --project-dir demo-custom
-mango pmo upgrade --project-dir demo-custom --to 1.3.2
+mango pmo upgrade --project-dir demo-custom --to 1.3.3
 mango pmo rollback --project-dir demo-custom --dry-run
 ```
 
@@ -487,7 +487,7 @@ CLI 不在运行时管理菜单、权限和租户，但会生成让业务模块�
 已有业务项目同步：
 
 1. 在项目根目录确认有 `mango.config.json` 和 `mango.dev.json`。
-2. 首次迁移或升版先执行 `mango pmo upgrade --project-dir . --to 1.3.2 --dry-run` 查看计划。
+2. 首次迁移或升版先执行 `mango pmo upgrade --project-dir . --to 1.3.3 --dry-run` 查看计划。
 3. 确认后执行相同 upgrade 命令，并用 `mango pmo check --project-dir . --locked` 校验项目锁、baseline 和项目 Skill。
 4. 已锁定项目发生文件漂移时执行 `mango pmo sync --project-dir .` 修复当前锁，不用 sync 隐式升版。
 5. 需要恢复时先执行 `mango pmo rollback --project-dir . --dry-run`；只有明确要同步兼容启动脚本时才加 `--sync-shell`。
@@ -515,6 +515,10 @@ CLI 不在运行时管理菜单、权限和租户，但会生成让业务模块�
 | pnpm 11 首次安装报 `ERR_PNPM_IGNORED_BUILDS`                                  | 旧版 CLI 生成的前端缺少 `pnpm-workspace.yaml` 构建白名单                       | 使用 `@mango/cli@1.0.81` 生成新项目；既有项目把当前 full 模板的 `allowBuilds` 映射合并到业务自有 workspace 配置                                                                                      |
 
 ## 12. 相关文档
+
+### 1.0.87 发布影响
+
+`@mango/cli@1.0.87` 继续发布本次前端 UI 修复 npm 矩阵，并纳入 Windows 发布脚本兼容修复：生成项目前端构建脚本、CLI 自检脚本和 PMO 包检查脚本在 Windows 下可以正确执行 `pnpm.cmd`。CLI 命令、参数、后端 Maven `1.0.23` 锁和业务模块生成语义不变；随包 PMO 锁更新为 `@mango/pmo@1.3.3`。
 
 ### 1.0.86 发布影响
 

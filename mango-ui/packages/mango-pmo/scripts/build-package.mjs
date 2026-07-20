@@ -24,6 +24,7 @@ const pluginSourceRoot = join(sourceRoot, 'plugin-src');
 const packagePluginManifestRoot = join(packageRoot, '.codex-plugin');
 const packageSkillsRoot = join(packageRoot, 'skills');
 const packageJson = JSON.parse(readFileSync(join(packageRoot, 'package.json'), 'utf8'));
+const gitFileModes = readGitFileModes();
 const sourceRoots = [
   { path: 'agents', required: true },
   { path: 'rules', required: true },
@@ -69,12 +70,15 @@ if (pluginManifest.version !== packageJson.version) {
     `PMO plugin source version ${pluginManifest.version} must equal package version ${packageJson.version}`,
   );
 }
-writeFileSync(pluginManifestPath, `${JSON.stringify(pluginManifest, null, 2)}\n`);
 const pluginFiles = [
-  ...describeFiles(packagePluginManifestRoot, 'plugin')
-    .map(file => ({ ...file, path: `.codex-plugin/${file.path}` })),
-  ...describeFiles(packageSkillsRoot, 'plugin')
-    .map(file => ({ ...file, path: `skills/${file.path}` })),
+  ...describeFiles(packagePluginManifestRoot, 'plugin', 'mango-pmo/plugin-src/.codex-plugin').map((file) => ({
+    ...file,
+    path: `.codex-plugin/${file.path}`,
+  })),
+  ...describeFiles(packageSkillsRoot, 'plugin', 'mango-pmo/skills').map((file) => ({
+    ...file,
+    path: `skills/${file.path}`,
+  })),
 ].sort((left, right) => compareText(left.path, right.path));
 const plugin = {
   path: 'package-root',
@@ -82,7 +86,7 @@ const plugin = {
   files: pluginFiles,
 };
 
-const files = describeFiles(baselineRoot);
+const files = describeFiles(baselineRoot, '', 'mango-pmo');
 
 const contracts = readContracts(files, baselineRoot);
 const bundleSha256 = sha256(Buffer.from(JSON.stringify({ files, contracts, plugin }), 'utf8'));
@@ -105,8 +109,9 @@ process.stdout.write(
 
 function copyTree(source, target) {
   mkdirSync(target, { recursive: true });
-  const entries = readdirSync(source, { withFileTypes: true })
-    .sort((left, right) => compareText(left.name, right.name));
+  const entries = readdirSync(source, { withFileTypes: true }).sort((left, right) =>
+    compareText(left.name, right.name),
+  );
   for (const entry of entries) {
     const sourcePath = join(source, entry.name);
     const targetPath = join(target, entry.name);
@@ -131,13 +136,12 @@ function copyRegularFile(source, target) {
   }
   mkdirSync(dirname(target), { recursive: true });
   copyFileSync(source, target);
-  chmodSync(target, sourceStat.mode & 0o111 ? 0o755 : 0o644);
+  chmodSync(target, modeForRepoPath(repoRelativePath(source), sourceStat.mode) === '0755' ? 0o755 : 0o644);
 }
 
 function walkFiles(root) {
   const result = [];
-  const entries = readdirSync(root, { withFileTypes: true })
-    .sort((left, right) => compareText(left.name, right.name));
+  const entries = readdirSync(root, { withFileTypes: true }).sort((left, right) => compareText(left.name, right.name));
   for (const entry of entries) {
     const fullPath = join(root, entry.name);
     if (entry.isSymbolicLink()) {
@@ -154,17 +158,18 @@ function walkFiles(root) {
   return result;
 }
 
-function describeFiles(root, kindOverride = '') {
+function describeFiles(root, kindOverride = '', sourceRepoPrefix = '') {
   return walkFiles(root)
-    .map(file => {
+    .map((file) => {
       const content = readFileSync(file);
       const path = toPosix(relative(root, file));
+      const sourceRepoPath = sourceRepoPrefix ? `${sourceRepoPrefix}/${path}` : repoRelativePath(file);
       return {
         path,
         sha256: sha256(content),
         size: content.length,
         kind: kindOverride || classifyFile(path),
-        mode: normalizeMode(statSync(file).mode),
+        mode: modeForRepoPath(sourceRepoPath, statSync(file).mode),
       };
     })
     .sort((left, right) => compareText(left.path, right.path));
@@ -172,16 +177,14 @@ function describeFiles(root, kindOverride = '') {
 
 function readContracts(files, root) {
   const contracts = [];
-  for (const file of files.filter(entry => entry.kind === 'contract' && extname(entry.path) === '.json')) {
+  for (const file of files.filter((entry) => entry.kind === 'contract' && extname(entry.path) === '.json')) {
     const document = JSON.parse(readFileSync(join(root, file.path), 'utf8'));
     const entries = Array.isArray(document.contracts) ? document.contracts : [document];
     for (const entry of entries) {
       const contractId = entry.contractId || entry.id;
       const schemaRevision = entry.schemaRevision ?? entry.revision;
       if (!contractId || !Number.isInteger(schemaRevision) || schemaRevision < 1) {
-        throw new Error(
-          `contract JSON must define contractId and positive integer schemaRevision: ${file.path}`,
-        );
+        throw new Error(`contract JSON must define contractId and positive integer schemaRevision: ${file.path}`);
       }
       const fixedPmoVersion = entry.metadata?.fixed?.pmoVersion;
       if (fixedPmoVersion && fixedPmoVersion !== packageJson.version) {
@@ -209,18 +212,47 @@ function readContracts(files, root) {
 
 function classifyFile(path) {
   const root = path.split('/')[0];
-  return {
-    agents: 'agent',
-    rules: 'rule',
-    templates: 'template',
-    contracts: 'contract',
-    tools: 'tool',
-    skills: 'skill',
-  }[root] || (basename(path) === 'README.md' ? 'documentation' : 'asset');
+  return (
+    {
+      agents: 'agent',
+      rules: 'rule',
+      templates: 'template',
+      contracts: 'contract',
+      tools: 'tool',
+      skills: 'skill',
+    }[root] || (basename(path) === 'README.md' ? 'documentation' : 'asset')
+  );
 }
 
 function normalizeMode(mode) {
   return mode & 0o111 ? '0755' : '0644';
+}
+
+function modeForRepoPath(path, fallbackMode) {
+  return gitFileModes.get(toPosix(path)) || normalizeMode(fallbackMode);
+}
+
+function repoRelativePath(path) {
+  return toPosix(relative(repoRoot, path));
+}
+
+function readGitFileModes() {
+  const output = execFileSync('git', ['ls-files', '-s', '--', 'mango-pmo'], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+  });
+  const modes = new Map();
+  for (const line of output.split(/\r?\n/)) {
+    if (!line.trim()) {
+      continue;
+    }
+    const match = /^(\d{6}) [0-9a-f]+ \d+\t(.+)$/.exec(line);
+    if (!match) {
+      continue;
+    }
+    modes.set(toPosix(match[2]), match[1] === '100755' ? '0755' : '0644');
+  }
+  return modes;
 }
 
 function readSourceCommit() {

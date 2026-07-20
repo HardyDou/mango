@@ -1,6 +1,6 @@
 {
   "base": "../valid/implementation-plan.md",
-  "replace": "notice 模块和管理端公告工作区 | NONE | 按设计实现契约",
+  "replace": "notice 模块和管理端公告工作区 | NONE     | 按设计实现契约",
   "with": "notice 模块和管理端公告工作区 | TASK-001 | 按设计实现契约",
   "expectedRuleId": "PLAN-DEP-030"
 }
