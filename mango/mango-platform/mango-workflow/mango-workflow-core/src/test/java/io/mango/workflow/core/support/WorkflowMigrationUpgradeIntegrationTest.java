@@ -23,7 +23,8 @@ class WorkflowMigrationUpgradeIntegrationTest {
 
     private static final String HISTORY_TABLE = "flyway_schema_history_workflow";
     private static final int MAVEN_1_0_20_V1_CHECKSUM = -840523381;
-    private static final int CURRENT_V1_CHECKSUM = -1500222187;
+    private static final int MAVEN_1_0_21_22_V1_CHECKSUM = -1500222187;
+    private static final int CURRENT_V1_CHECKSUM = 1010539203;
     private static final int UNKNOWN_V1_CHECKSUM = 506;
     private static final List<AuditColumn> AUDIT_COLUMNS = List.of(
             new AuditColumn("workflow_task_record", "created_by"),
@@ -60,6 +61,19 @@ class WorkflowMigrationUpgradeIntegrationTest {
         assertThat(historyChecksum("2")).isNotNull();
         assertCanonicalAuditColumns();
         assertThat(currentFlyway().migrate().migrationsExecuted).isZero();
+    }
+
+    @Test
+    void migrate_1_0_21_22Checksum_repairsKnownHistory() throws SQLException {
+        assertThat(releasedV1Flyway().migrate().migrationsExecuted).isOne();
+        replaceV1Checksum(MAVEN_1_0_21_22_V1_CHECKSUM);
+
+        var migrationResult = currentFlyway().migrate();
+
+        assertThat(migrationResult.migrationsExecuted).isOne();
+        assertThat(historyChecksum("1")).isEqualTo(CURRENT_V1_CHECKSUM);
+        assertThat(historyChecksum("2")).isNotNull();
+        assertCanonicalAuditColumns();
     }
 
     @Test

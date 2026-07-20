@@ -178,6 +178,8 @@ mango docs pull --project-dir demo-custom --version 1.0.1 --maven-repository "$M
 
 生成项目的后端 Mango jar 版本由 `backend/pom.xml` 中的 `<mango.version>` 统一锁定。默认值来自当前 CLI 随包发布的 `release-versions.json.maven.mangoBackend`，业务项目选择版本时优先固定 `@mango/cli` 版本；需要验证其它后端平台版本时，再通过 `mango init --mango-version <version>` 或项目内 `mango.config.json` 的 `mangoBackendVersion` 明确覆盖。
 
+当前源码生成的 `backend/pom.xml` 还会显式管理 `flyway-core` 与 `flyway-mysql` 11.20.3，避免回落到 Spring Boot 3.5.14 BOM 中只测试到 MySQL 8.1 的 Flyway 11.7.2。两个 Flyway artifact 必须保持完全相同的版本；该基线覆盖 MySQL 8.4。
+
 ### 6.3 docs bundle
 
 `mango docs` 解决业务仓不下载 Mango 源码时的文档可达性问题。版本解析顺序为：命令参数 `--version`、`mango.config.json.mangoBackendVersion`、`backend/pom.xml` 或 `pom.xml` 中的 `<mango.version>`、CLI 随包 `release-versions.json.maven.mangoBackend`。
@@ -515,6 +517,10 @@ CLI 不在运行时管理菜单、权限和租户，但会生成让业务模块�
 | pnpm 11 首次安装报 `ERR_PNPM_IGNORED_BUILDS`                                  | 旧版 CLI 生成的前端缺少 `pnpm-workspace.yaml` 构建白名单                       | 使用 `@mango/cli@1.0.81` 生成新项目；既有项目把当前 full 模板的 `allowBuilds` 映射合并到业务自有 workspace 配置                                                                                      |
 
 ## 12. 相关文档
+
+### 1.0.88 发布影响
+
+`@mango/cli@1.0.88` 生成的后端父 POM 显式对齐 `flyway-core` 与 `flyway-mysql` 11.20.3，覆盖 MySQL 8.4，并避免 Spring Boot 3.5.14 默认 Flyway 基线产生数据库版本支持告警。CLI 命令、前端运行时包锁和 Mango Maven `1.0.23` 锁保持不变；该版本需要后续 npm 发布后才能由业务仓消费。
 
 ### 1.0.87 发布影响
 

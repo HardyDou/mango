@@ -23,6 +23,7 @@
 - 租户隔离：默认注册 `TenantLineInnerInterceptor`，从 `MangoContextHolder.tenantId()` 读取租户。
 - 审计填充：新增和修改时自动填充创建人、创建时间、更新人、更新时间、租户字段。
 - Flyway：按 `db/migration/<module>/V*.sql` 分模块迁移，每个模块独立 history table。
+- Flyway MySQL 运行时：Mango 显式管理 `flyway-core` 与 `flyway-mysql` 11.20.3；该版本已测试到 MySQL 9.4，覆盖 Mango 的 MySQL 8.4 基线。
 - Flyway 外部 locations：停机升级可按模块加载 `filesystem:` 目录或 `http(s)` 单个 SQL 文件。
 - Schema baseline pack：新数据库可显式使用当前完整结构包，避免从 V1 执行全部历史 SQL。
 - 多数据源：支持定义多个数据源、按模块映射、按 `@PersistenceDataSource` 或代码作用域切换。

@@ -1,5 +1,21 @@
 # @mango/cli Changelog
 
+## 1.0.88 - 2026-07-20
+
+### Fixed
+
+- Generate backend parent POMs that explicitly align `flyway-core` and `flyway-mysql` on 11.20.3, avoiding the MySQL 8.4 support warning emitted by the Spring Boot 3.5.14 Flyway baseline.
+
+### Upgrade Notes
+
+- Use `@mango/cli@1.0.88` for newly generated projects that run on MySQL 8.4.
+- Existing generated projects can apply the same two Flyway dependency-management entries without changing CLI commands or frontend runtime packages.
+
+### Verification
+
+- `pnpm -C mango-ui --filter @mango/cli test`
+- Generated backend POM contract verifies the Flyway version and both MySQL artifacts.
+
 ## 1.0.87 - 2026-07-20
 
 ### Fixed

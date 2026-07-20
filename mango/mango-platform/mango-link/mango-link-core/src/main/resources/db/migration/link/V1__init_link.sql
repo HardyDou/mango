@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS link_item (
     visibility_scope VARCHAR(32) NOT NULL,
     owner_user_id BIGINT NULL,
     open_mode VARCHAR(32) NOT NULL,
-    recommended TINYINT(1) NOT NULL DEFAULT 0,
+    recommended tinyint NOT NULL DEFAULT 0,
     sort_no INT NOT NULL DEFAULT 0,
     status VARCHAR(32) NOT NULL,
     remark VARCHAR(256) NULL,
