@@ -3,8 +3,8 @@
   "packageVersion": "1.3.3",
   "schemaVersion": 2,
   "source": "mango-pmo",
-  "sourceCommit": "9248fb95447e6ecd0055648ca66d64c4df98ad4d",
-  "bundleSha256": "cec71ce79b30dbfdc0e676b172c30d56455decc08810e3235f1d14542e1f089b",
+  "sourceCommit": "558b5fd526bcb08f2e58af2f814f9b37c7c30b2d",
+  "bundleSha256": "3355f8bed5386a960d925db485c0ecd4d5e76b82b4ddb902211b01ca821c1404",
   "contracts": [
     {
       "contractId": "business-requirements",
@@ -13,7 +13,7 @@
     },
     {
       "contractId": "delivery-assurance",
-      "schemaRevision": 4,
+      "schemaRevision": 5,
       "path": "contracts/delivery-assurance.json"
     },
     {
@@ -294,8 +294,8 @@
   "files": [
     {
       "path": "README.md",
-      "sha256": "e7f488759e7ac633807a6aaef80076a24d93d167f1e93e02be5d9c9a1ed03fc7",
-      "size": 18198,
+      "sha256": "2b7064089fa1470b786c558c1ade960a0356415fcc75372192cc9be6df2d3254",
+      "size": 18731,
       "kind": "documentation",
       "mode": "0644"
     },
@@ -371,8 +371,8 @@
     },
     {
       "path": "contracts/delivery-assurance.json",
-      "sha256": "f2b7ca5da871e6e4dc99ca36fe5699457a09f34e310343a0ad4d8a93bdcb78d7",
-      "size": 6209,
+      "sha256": "fc0fc02fdbd5456fbad367dc44f2b1e8a7c12d73ddc5ad01f7e3ca950bc81467",
+      "size": 7156,
       "kind": "contract",
       "mode": "0644"
     },
@@ -965,6 +965,13 @@
       "mode": "0644"
     },
     {
+      "path": "templates/business-pull-request-template.md",
+      "sha256": "69f382f12d8fcf5829722b41e244d9775a62bd6cf706d8dda41414f3133ecf29",
+      "size": 1532,
+      "kind": "template",
+      "mode": "0644"
+    },
+    {
       "path": "templates/business-requirements.md",
       "sha256": "0a8b069ec725b58e0a2364a17488b84d947bdaf66303c4dff52d8657ce0753c6",
       "size": 4471,
@@ -1239,8 +1246,8 @@
     },
     {
       "path": "tools/risk-verification.mjs",
-      "sha256": "806c6a2d7044b3f1e5e88de301747811a34924431c33cb3c7f959f857e04aa89",
-      "size": 11448,
+      "sha256": "9991d145f33c1f8ff451bc58bc5d1551b4eb80c3fad0a1fca221ebef6975d3ca",
+      "size": 14248,
       "kind": "tool",
       "mode": "0644"
     },

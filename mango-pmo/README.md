@@ -22,6 +22,7 @@
 | 风险与保障基线门禁     | `tools/risk-verification.mjs`                                                                                   | 校验需求影响、方案风险、二者最大值、人工确认的 M01-M16 精确值和已启用措施证据；不补固定套餐                                                         |
 | CI 措施选择            | `tools/assurance-ci-scope.mjs`                                                                                  | 从已解析模式基线读取 M01-M16；CI 只执行事实启用且适用于 CI 的能力                                                                                   |
 | CI 影响范围分类        | `tools/classify-pmo-check-scope.mjs`                                                                            | 按 Git 改动裁剪已启用检查的 PMO、Java、投影和 README 影响范围；只缩小范围，不替用户选择措施                                                         |
+| 业务 PR 风险合同       | `contracts/delivery-assurance.json`、`templates/business-pull-request-template.md`、`tools/risk-verification.mjs` | 同一 schema 定义字段、canonical 模板、PR 正文校验和模板结构校验                                                                                    |
 | 模块架构债务预算       | `tools/check-architecture-debt-budget.mjs`                                                                      | 比较完整 Reactor 报告与 Git 基准，阻断新增、替换、跨模块迁移和预算回升，并支持按模块查询、递减                                                      |
 | 专项 Agent             | `agents/*-requirements-agent.md`、`agents/technical-design-agent.md`、`agents/implementation-plan-agent.md`     | 一个生命周期模板对应一个撰写 Agent                                                                                                                  |
 | 可安装 Skills          | `skills/**`                                                                                                     | 保障方案确认、生命周期协调、按需文档、工程、QA、Issue、模块、发布和 PR review                                                                       |
@@ -147,6 +148,7 @@ node business-pmo/mango-baseline/tools/pmo-preflight.mjs \
 | 问题                         | 原因                                         | 处理方式                                                       |
 | ---------------------------- | -------------------------------------------- | -------------------------------------------------------------- |
 | `mango pmo check` 报 changed | baseline 文件被手改或版本落后                | 确认不是业务需求改动后执行 `mango pmo upgrade --project-dir .` |
+| `pmo check --locked` 报 PR template missing / differs | 项目缺少 PR 模板或 Risk 区段与锁定合同漂移 | 使用项目内 CLI 执行 `mango pmo sync --project-dir .`；重复区段先人工合并 |
 | preflight Missing PMO file   | rules index JSON 指向不存在文件              | 修复 `mango-pmo` 源并重新发布 baseline                         |
 | 业务路径未命中规则           | rules index JSON bundle paths 不覆盖业务目录 | 在 mango-pmo rules index 补充路径                              |
 | 历史项目仍引用主仓路径       | 旧 `AGENTS.md` 未升级                        | 执行 `mango pmo upgrade --project-dir . --write-agents`        |

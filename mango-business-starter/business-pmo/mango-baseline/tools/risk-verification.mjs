@@ -12,6 +12,10 @@ const DELIVERY_ASSURANCE_CONTRACT = JSON.parse(fs.readFileSync(
 const ASSURANCE_VALUES = new Map(DELIVERY_ASSURANCE_CONTRACT.measures.map(measure => [measure.id, measure.allowedValues]));
 const DOWNWARD_POLICY = DELIVERY_ASSURANCE_CONTRACT.downwardModeOverride;
 const NON_DOWNGRADABLE_FACTS = new Map(DOWNWARD_POLICY.nonDowngradableFacts.map(fact => [fact.id, fact.keywords]));
+const PR_BODY_CONTRACT = DELIVERY_ASSURANCE_CONTRACT.pullRequestBody;
+const PR_BODY_FIELDS = new Map(PR_BODY_CONTRACT.fields.map(field => [field.key, field.label]));
+
+export const DELIVERY_ASSURANCE_SCHEMA_REVISION = DELIVERY_ASSURANCE_CONTRACT.schemaRevision;
 
 const PLACEHOLDERS = new Set([
   '',
@@ -27,12 +31,23 @@ const PLACEHOLDERS = new Set([
 ]);
 
 function sectionText(markdown, heading) {
-  const pattern = new RegExp(`^##[ \\t]+${escapeRegExp(heading)}[ \\t]*$`, 'm');
+  const pattern = new RegExp(`^##[ \\t]+${escapeRegExp(heading)}[ \\t]*\\r?$`, 'm');
   const match = pattern.exec(markdown);
   if (!match) return '';
   const rest = markdown.slice(match.index + match[0].length);
   const next = rest.search(/^##[ \t]+/m);
   return (next >= 0 ? rest.slice(0, next) : rest).trim();
+}
+
+function sectionMatches(markdown, heading) {
+  const pattern = new RegExp(`^##[ \\t]+${escapeRegExp(heading)}[ \\t]*\\r?$`, 'gm');
+  return [...markdown.matchAll(pattern)];
+}
+
+function fieldLabel(key) {
+  const label = PR_BODY_FIELDS.get(key);
+  if (!label) throw new Error(`delivery-assurance contract is missing PR body field: ${key}`);
+  return label;
 }
 
 function fieldValue(section, label) {
@@ -104,22 +119,22 @@ function hasHumanActor(value) {
 
 export function validateRiskVerification(markdown) {
   const failures = [];
-  const section = sectionText(markdown, 'Risk / Verification');
+  const section = sectionText(markdown, PR_BODY_CONTRACT.sectionHeading);
   if (!section) {
-    return { failures: ['PR body is missing section: ## Risk / Verification'] };
+    return { failures: [`PR body is missing section: ## ${PR_BODY_CONTRACT.sectionHeading}`] };
   }
 
-  const requirement = parseAssessedLevel(fieldValue(section, 'Requirement impact'));
-  const solution = parseAssessedLevel(fieldValue(section, 'Solution risk'));
-  const finalRisk = fieldValue(section, 'Final risk').toUpperCase();
-  const deliveryMode = fieldValue(section, 'Delivery mode').toUpperCase();
-  const workspaceDecision = fieldValue(section, 'Workspace decision').toUpperCase();
-  const declaredNonDowngradableFacts = parseNonDowngradableFacts(fieldValue(section, 'Non-downgradable facts'));
-  const baseline = fieldValue(section, 'Assurance baseline');
-  const selections = parseSelections(fieldValue(section, 'Assurance selections'));
-  const assuranceReasoning = fieldValue(section, 'Assurance reasoning');
-  const evidence = parseEvidence(fieldValue(section, 'Assurance evidence'));
-  const residualRisks = fieldValue(section, 'Residual risks');
+  const requirement = parseAssessedLevel(fieldValue(section, fieldLabel('requirementImpact')));
+  const solution = parseAssessedLevel(fieldValue(section, fieldLabel('solutionRisk')));
+  const finalRisk = fieldValue(section, fieldLabel('finalRisk')).toUpperCase();
+  const deliveryMode = fieldValue(section, fieldLabel('deliveryMode')).toUpperCase();
+  const workspaceDecision = fieldValue(section, fieldLabel('workspaceDecision')).toUpperCase();
+  const declaredNonDowngradableFacts = parseNonDowngradableFacts(fieldValue(section, fieldLabel('nonDowngradableFacts')));
+  const baseline = fieldValue(section, fieldLabel('assuranceBaseline'));
+  const selections = parseSelections(fieldValue(section, fieldLabel('assuranceSelections')));
+  const assuranceReasoning = fieldValue(section, fieldLabel('assuranceReasoning'));
+  const evidence = parseEvidence(fieldValue(section, fieldLabel('assuranceEvidence')));
+  const residualRisks = fieldValue(section, fieldLabel('residualRisks'));
   const releaseOnly = /^NOT_APPLICABLE\s*[-:：]\s*.+release/iu.test(baseline);
 
   if (!requirement) failures.push('"Requirement impact" must use "L0-L3 - concrete impact facts"');
@@ -190,7 +205,7 @@ export function validateRiskVerification(markdown) {
     }
   } else {
     if (selections && selections.size > 0) failures.push('release-only PR must not include delivery-assurance selections');
-    if (fieldValue(section, 'Assurance selections').trim().toLowerCase() !== 'none') failures.push('release-only PR must set "Assurance selections" to None');
+    if (fieldValue(section, fieldLabel('assuranceSelections')).trim().toLowerCase() !== 'none') failures.push('release-only PR must set "Assurance selections" to None');
   }
 
   return {
@@ -212,7 +227,48 @@ export function validateRiskVerification(markdown) {
   };
 }
 
+export function validateRiskVerificationTemplate(markdown) {
+  const failures = [];
+  const matches = sectionMatches(markdown, PR_BODY_CONTRACT.sectionHeading);
+  if (matches.length !== 1) {
+    failures.push(
+      `PR template must contain exactly one section: ## ${PR_BODY_CONTRACT.sectionHeading}; found ${matches.length}`,
+    );
+    return { failures, schemaRevision: DELIVERY_ASSURANCE_SCHEMA_REVISION };
+  }
+  const section = sectionText(markdown, PR_BODY_CONTRACT.sectionHeading);
+  const positions = [];
+  for (const field of PR_BODY_CONTRACT.fields) {
+    const pattern = new RegExp(`^-[ \\t]+${escapeRegExp(field.label)}:`, 'gm');
+    const fieldMatches = [...section.matchAll(pattern)];
+    if (fieldMatches.length === 0) {
+      failures.push(`PR template is missing field: ${field.label}`);
+      continue;
+    }
+    if (fieldMatches.length > 1) {
+      failures.push(`PR template field must appear exactly once: ${field.label}`);
+      continue;
+    }
+    positions.push({ label: field.label, index: fieldMatches[0].index });
+  }
+  for (const legacyField of PR_BODY_CONTRACT.legacyFields || []) {
+    const pattern = new RegExp(`^-[ \\t]+${escapeRegExp(legacyField)}:`, 'm');
+    if (pattern.test(section)) failures.push(`PR template contains legacy field: ${legacyField}`);
+  }
+  for (let index = 1; index < positions.length; index += 1) {
+    if (positions[index - 1].index > positions[index].index) {
+      failures.push(
+        `PR template field order differs from delivery-assurance schema revision ${DELIVERY_ASSURANCE_SCHEMA_REVISION}: ` +
+          `${positions[index - 1].label} must precede ${positions[index].label}`,
+      );
+      break;
+    }
+  }
+  return { failures, schemaRevision: DELIVERY_ASSURANCE_SCHEMA_REVISION };
+}
+
 export function runRiskVerificationCli(argv = process.argv.slice(2)) {
+  const templateMode = argv.includes('--template');
   const bodyIndex = argv.indexOf('--body');
   const bodyPath = bodyIndex >= 0
     ? argv[bodyIndex + 1]
@@ -226,9 +282,13 @@ export function runRiskVerificationCli(argv = process.argv.slice(2)) {
     process.stderr.write(`PR body file does not exist: ${bodyPath}\n`);
     return 1;
   }
-  const result = validateRiskVerification(fs.readFileSync(resolved, 'utf8'));
+  const result = templateMode
+    ? validateRiskVerificationTemplate(fs.readFileSync(resolved, 'utf8'))
+    : validateRiskVerification(fs.readFileSync(resolved, 'utf8'));
   if (result.failures.length === 0) {
-    process.stdout.write(`Risk verification contract passed: ${result.assessment.finalRisk}.\n`);
+    process.stdout.write(templateMode
+      ? `Risk verification template contract passed: schema revision ${result.schemaRevision}.\n`
+      : `Risk verification contract passed: ${result.assessment.finalRisk}.\n`);
     return 0;
   }
   for (const failure of result.failures) process.stderr.write(`[FAIL] ${failure}\n`);

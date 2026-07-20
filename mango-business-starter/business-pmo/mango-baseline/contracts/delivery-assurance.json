@@ -1,11 +1,33 @@
 {
   "contractSchema": 2,
   "contractId": "delivery-assurance",
-  "schemaRevision": 4,
+  "schemaRevision": 5,
   "ruleSource": "mango-pmo/rules/11-delivery-assurance.md",
   "selectionAuthority": "policy-with-human-exceptions",
   "legacyBaselinePrefixes": ["CONFIRMED"],
   "releaseIncluded": false,
+  "pullRequestBody": {
+    "sectionHeading": "Risk / Verification",
+    "templatePath": "templates/business-pull-request-template.md",
+    "fields": [
+      {"key":"requirementImpact","label":"Requirement impact"},
+      {"key":"solutionRisk","label":"Solution risk"},
+      {"key":"finalRisk","label":"Final risk"},
+      {"key":"deliveryMode","label":"Delivery mode"},
+      {"key":"workspaceDecision","label":"Workspace decision"},
+      {"key":"nonDowngradableFacts","label":"Non-downgradable facts"},
+      {"key":"assuranceBaseline","label":"Assurance baseline"},
+      {"key":"assuranceSelections","label":"Assurance selections"},
+      {"key":"assuranceReasoning","label":"Assurance reasoning"},
+      {"key":"assuranceEvidence","label":"Assurance evidence"},
+      {"key":"residualRisks","label":"Residual risks"}
+    ],
+    "legacyFields": [
+      "Selected verification",
+      "Why sufficient",
+      "Skipped verification"
+    ]
+  },
   "workspacePolicy": {
     "readOnly": "NO_WORKTREE",
     "trackedChangeOnPrimary": "CREATE",

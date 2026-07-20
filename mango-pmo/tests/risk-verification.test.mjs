@@ -1,8 +1,17 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
-import { validateRiskVerification } from '../tools/risk-verification.mjs';
+import {
+  validateRiskVerification,
+  validateRiskVerificationTemplate,
+} from '../tools/risk-verification.mjs';
 import { assuranceCiScope } from '../tools/assurance-ci-scope.mjs';
+
+const canonicalTemplate = readFileSync(
+  new URL('../templates/business-pull-request-template.md', import.meta.url),
+  'utf8',
+);
 
 function body(fields = {}) {
   return `## Risk / Verification
@@ -31,6 +40,42 @@ test('policy-resolved delivery mode and assurance measures pass', () => {
     M09: 'ENABLE',
     M13: 'ENABLE',
   });
+});
+
+test('canonical business PR template matches the delivery-assurance contract', () => {
+  assert.deepEqual(validateRiskVerificationTemplate(canonicalTemplate).failures, []);
+});
+
+test('canonical business PR template accepts CRLF line endings', () => {
+  assert.deepEqual(validateRiskVerificationTemplate(canonicalTemplate.replace(/\n/gu, '\r\n')).failures, []);
+});
+
+test('template validation rejects legacy fields and missing current fields', () => {
+  const legacyTemplate = `## Risk / Verification
+
+- Requirement impact: L0-L3 - facts
+- Solution risk: L0-L3 - facts
+- Final risk: L0-L3
+- Selected verification: STATIC, UNIT, API, UI
+- Why sufficient:
+- Skipped verification: None
+`;
+  const failures = validateRiskVerificationTemplate(legacyTemplate).failures.join('\n');
+  assert.match(failures, /legacy field.*Selected verification/);
+  assert.match(failures, /missing field.*Delivery mode/);
+  assert.match(failures, /missing field.*Assurance selections/);
+});
+
+test('template validation rejects duplicate sections and reordered fields', () => {
+  const duplicate = `${canonicalTemplate}\n${canonicalTemplate}`;
+  assert.match(validateRiskVerificationTemplate(duplicate).failures.join('\n'), /exactly one section/);
+
+  const reordered = canonicalTemplate
+    .replace(
+      /- Requirement impact:([^\n]*)\n- Solution risk:([^\n]*)/u,
+      '- Solution risk:$2\n- Requirement impact:$1',
+    );
+  assert.match(validateRiskVerificationTemplate(reordered).failures.join('\n'), /field order/);
 });
 
 test('final risk remains the maximum of requirement impact and solution risk', () => {

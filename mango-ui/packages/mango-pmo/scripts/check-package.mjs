@@ -24,11 +24,14 @@ const requiredFiles = [
   'tools/acceptance-evidence-check.mjs',
   'templates/delivery-contract.md',
   'templates/acceptance-evidence.md',
+  'templates/business-pull-request-template.md',
+  'contracts/delivery-assurance.json',
   'contracts/business-requirements.json',
   'contracts/system-requirements.json',
   'contracts/technical-design.json',
   'contracts/implementation-plan.json',
   'contracts/document-lifecycle.json',
+  'tools/risk-verification.mjs',
   'skills/mango-pmo-lifecycle/SKILL.md',
   'skills/mango-requirements-business/SKILL.md',
   'skills/mango-requirements-system/SKILL.md',
@@ -93,6 +96,7 @@ for (const file of manifest.files) {
 }
 
 validateContracts(manifest, manifestFiles);
+validatePullRequestTemplate(manifest);
 validatePluginProjection(manifest, manifestFiles);
 validatePublishExecutableFiles(manifest);
 const expectedBundleSha = sha256(
@@ -321,6 +325,7 @@ function validateContracts(value, files) {
     }
   }
   for (const contractId of [
+    'delivery-assurance',
     'business-requirements',
     'system-requirements',
     'technical-design',
@@ -330,6 +335,32 @@ function validateContracts(value, files) {
     if (!ids.has(contractId)) {
       throw new Error(`baseline manifest is missing required contract: ${contractId}`);
     }
+  }
+}
+
+function validatePullRequestTemplate(value) {
+  const descriptor = value.contracts.find((contract) => contract.contractId === 'delivery-assurance');
+  if (!descriptor) {
+    throw new Error('baseline manifest is missing delivery-assurance contract');
+  }
+  const contract = JSON.parse(readFileSync(join(baselineRoot, descriptor.path), 'utf8'));
+  if (
+    contract.schemaRevision !== descriptor.schemaRevision ||
+    typeof contract.pullRequestBody?.templatePath !== 'string'
+  ) {
+    throw new Error('delivery-assurance PR template metadata differs from the baseline manifest');
+  }
+  const templatePath = join(baselineRoot, contract.pullRequestBody.templatePath);
+  const checkerPath = join(baselineRoot, 'tools/risk-verification.mjs');
+  const result = spawnSync(process.execPath, [checkerPath, '--template', '--body', templatePath], {
+    cwd: baselineRoot,
+    encoding: 'utf8',
+  });
+  if (result.status !== 0) {
+    throw new Error(`packaged business PR template contract failed:\n${result.stdout}\n${result.stderr}`);
+  }
+  if (!result.stdout.includes(`schema revision ${descriptor.schemaRevision}`)) {
+    throw new Error(`packaged business PR template did not report schema revision ${descriptor.schemaRevision}`);
   }
 }
 

@@ -25,6 +25,7 @@ import { createRequire } from 'node:module';
 import { homedir } from 'node:os';
 import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { inspectProjectPullRequestTemplate, synchronizeProjectPullRequestTemplate } from './pmo-project-template.mjs';
 import { runReleaseCli } from './release-command.mjs';
 
 const requireFromCli = createRequire(import.meta.url);
@@ -2942,6 +2943,10 @@ const PMO_LOCK_RELATIVE_PATH = 'business-pmo/pmo-lock.json';
 const PMO_BASELINE_RELATIVE_PATH = 'business-pmo/mango-baseline';
 const PMO_SKILL_STATE_RELATIVE_PATH = '.agents/skills/.mango-pmo.json';
 const PMO_RUNTIME_RELATIVE_PATH = '.mango/pmo';
+const PMO_PROJECT_FILES_STATE_NAME = 'project-files.json';
+const PROJECT_PR_TEMPLATE_RELATIVE_PATH = '.github/pull_request_template.md';
+const DELIVERY_ASSURANCE_CONTRACT_ID = 'delivery-assurance';
+const PROJECT_PR_TEMPLATE_MINIMUM_REVISION = 5;
 
 function runPmoCommand(command, argv) {
   if (command === 'status') {
@@ -3000,6 +3005,7 @@ function syncPmoBaseline(argv, { command = 'sync' } = {}) {
   const plan = [
     ...planPmoBaselineSync(targetDir, baseline),
     ...planPmoSkillSync(targetDir, baseline),
+    ...planPmoProjectTemplateSync(targetDir, baseline),
     ...planTemplateSync('business-pmo/README.md', targetDir, variables),
     ...planBusinessDocsSync(targetDir, variables),
     planAgentsSync(targetDir, variables, options.writeAgents),
@@ -3010,6 +3016,13 @@ function syncPmoBaseline(argv, { command = 'sync' } = {}) {
   printPmoSyncPlan(targetDir, plan, options.dryRun, command);
   if (options.dryRun) {
     return;
+  }
+  const projectTemplateError = plan.find((item) => item.scope === 'project-pr-template' && item.action === 'warn');
+  if (projectTemplateError) {
+    fail(
+      `${projectTemplateError.reason}. Resolve ${PROJECT_PR_TEMPLATE_RELATIVE_PATH} and rerun ` +
+        `mango pmo ${command} --project-dir .`,
+    );
   }
   if (plan.some((item) => item.scope === 'pmo-bundle' && item.action !== 'skip')) {
     installPmoBundleAtomic(targetDir, baseline);
@@ -3187,6 +3200,75 @@ function planPmoBaselineSync(targetDir, baseline) {
   return plan;
 }
 
+function resolvePmoProjectTemplate(baseline) {
+  const descriptor = (baseline.manifest.contracts || []).find(
+    (contract) => contract.contractId === DELIVERY_ASSURANCE_CONTRACT_ID,
+  );
+  if (!descriptor || descriptor.schemaRevision < PROJECT_PR_TEMPLATE_MINIMUM_REVISION) {
+    return null;
+  }
+  const contractPath = descriptor.path;
+  if (!isSafePmoPath(contractPath)) {
+    throw new Error(`unsafe delivery-assurance contract path: ${contractPath}`);
+  }
+  const contractFile = join(baseline.root, contractPath);
+  if (!existsSync(contractFile)) {
+    throw new Error(`delivery-assurance contract file is missing: ${contractPath}`);
+  }
+  const contract = JSON.parse(readFileSync(contractFile, 'utf8'));
+  if (
+    contract.contractId !== DELIVERY_ASSURANCE_CONTRACT_ID ||
+    contract.schemaRevision !== descriptor.schemaRevision ||
+    !contract.pullRequestBody?.templatePath
+  ) {
+    throw new Error('delivery-assurance contract metadata differs from the PMO manifest');
+  }
+  const templatePath = contract.pullRequestBody.templatePath;
+  if (!isSafePmoPath(templatePath) || !templatePath.startsWith('templates/')) {
+    throw new Error(`unsafe delivery-assurance PR template path: ${templatePath}`);
+  }
+  const sourceFile = join(baseline.root, templatePath);
+  if (!existsSync(sourceFile)) {
+    throw new Error(`delivery-assurance PR template is missing: ${templatePath}`);
+  }
+  return {
+    content: readFileSync(sourceFile, 'utf8'),
+    schemaRevision: descriptor.schemaRevision,
+    templatePath,
+  };
+}
+
+function planPmoProjectTemplateSync(targetDir, baseline) {
+  const canonical = resolvePmoProjectTemplate(baseline);
+  if (!canonical) return [];
+  const targetPath = join(targetDir, PROJECT_PR_TEMPLATE_RELATIVE_PATH);
+  const targetExists = existsSync(targetPath);
+  const currentContent = targetExists ? readFileSync(targetPath, 'utf8') : '';
+  const result = synchronizeProjectPullRequestTemplate(currentContent, canonical.content, { targetExists });
+  if (result.action === 'error') {
+    return [
+      {
+        action: 'warn',
+        reason: result.reason,
+        path: PROJECT_PR_TEMPLATE_RELATIVE_PATH,
+        targetPath,
+        scope: 'project-pr-template',
+      },
+    ];
+  }
+  return [
+    {
+      action: result.action,
+      reason:
+        result.action === 'skip' ? `delivery-assurance schema revision ${canonical.schemaRevision} is current` : '',
+      path: PROJECT_PR_TEMPLATE_RELATIVE_PATH,
+      targetPath,
+      content: result.content,
+      scope: 'project-pr-template',
+    },
+  ];
+}
+
 function readRenderedBaselineFile(sourceFile) {
   return readFileSync(sourceFile);
 }
@@ -3195,6 +3277,12 @@ function installPmoBaseline(targetDir) {
   const baseline = loadPmoPackageBaseline();
   verifyPmoBundle(baseline);
   installPmoBundleAtomic(targetDir, baseline);
+  const templatePlan = planPmoProjectTemplateSync(targetDir, baseline);
+  const failure = templatePlan.find((item) => item.action === 'warn');
+  if (failure) fail(failure.reason);
+  for (const item of templatePlan.filter((entry) => ['add', 'update'].includes(entry.action))) {
+    writePlannedFile(item);
+  }
 }
 
 function getPmoStatus(targetDir, { locked = false } = {}) {
@@ -3293,6 +3381,27 @@ function getPmoStatus(targetDir, { locked = false } = {}) {
   if (skillComparison.extra.length > 0) {
     errors.push(`${skillComparison.extra.length} stale project PMO skill files remain installed`);
   }
+  let projectTemplateContract = null;
+  try {
+    projectTemplateContract = resolvePmoProjectTemplate(baseline);
+    if (projectTemplateContract) {
+      const targetPath = join(targetDir, PROJECT_PR_TEMPLATE_RELATIVE_PATH);
+      const targetExists = existsSync(targetPath);
+      const inspection = inspectProjectPullRequestTemplate(
+        targetExists ? readFileSync(targetPath, 'utf8') : '',
+        projectTemplateContract.content,
+        { targetExists },
+      );
+      for (const problem of inspection.errors) {
+        errors.push(
+          `${PROJECT_PR_TEMPLATE_RELATIVE_PATH}: ${problem} for ${formatPmoIdentity(baseline.manifest)}. ` +
+            'Run mango pmo sync --project-dir .',
+        );
+      }
+    }
+  } catch (error) {
+    errors.push(error.message);
+  }
   return {
     targetDir,
     baseline,
@@ -3305,6 +3414,7 @@ function getPmoStatus(targetDir, { locked = false } = {}) {
     skillExtra: skillComparison.extra,
     skillExpectedFiles: skillComparison.expectedFiles,
     skillExpectedRoots: skillComparison.expectedRoots,
+    projectTemplateContract,
     lock,
     locked,
   };
@@ -3350,6 +3460,11 @@ function printPmoStatus(status) {
   );
   process.stdout.write(
     'Codex plugin: project skills checked; user-level plugin installation is not managed by this command.\n',
+  );
+  process.stdout.write(
+    status.projectTemplateContract
+      ? `PR template: delivery-assurance schema revision ${status.projectTemplateContract.schemaRevision}\n`
+      : 'PR template: not managed by this historical PMO contract\n',
   );
   for (const warning of status.warnings) {
     process.stdout.write(`warn    ${warning}\n`);
@@ -3820,6 +3935,9 @@ function installPmoBundleAtomic(targetDir, baseline) {
   const backupSkills = join(backupRoot, 'skills');
   const backupSkillState = join(backupRoot, 'skill-state.json');
   const backupLock = join(backupRoot, 'pmo-lock.json');
+  const backupProjectFilesState = join(backupRoot, PMO_PROJECT_FILES_STATE_NAME);
+  const liveProjectTemplate = join(targetDir, PROJECT_PR_TEMPLATE_RELATIVE_PATH);
+  const backupProjectTemplate = join(backupRoot, 'project-files', PROJECT_PR_TEMPLATE_RELATIVE_PATH);
 
   preparePmoTransaction({
     baseline,
@@ -3830,6 +3948,25 @@ function installPmoBundleAtomic(targetDir, baseline) {
     stagedLock,
   });
   mkdirSync(backupRoot, { recursive: true });
+  const projectTemplateExisted = existsSync(liveProjectTemplate);
+  writeFileSync(
+    backupProjectFilesState,
+    `${JSON.stringify(
+      {
+        schemaVersion: 1,
+        pullRequestTemplate: {
+          path: PROJECT_PR_TEMPLATE_RELATIVE_PATH,
+          existed: projectTemplateExisted,
+        },
+      },
+      null,
+      2,
+    )}\n`,
+  );
+  if (projectTemplateExisted) {
+    mkdirSync(dirname(backupProjectTemplate), { recursive: true });
+    copyFileSync(liveProjectTemplate, backupProjectTemplate);
+  }
 
   let movedBaseline = false;
   let movedLock = false;
@@ -4030,6 +4167,10 @@ function rollbackPmoBaseline(argv) {
     fail(options.to ? `no PMO backup found for @mango/pmo@${options.to}` : 'no PMO backup is available for rollback');
   }
   const selected = backups[0];
+  const projectFilesState = readPmoBackupProjectFilesState(selected.backupRoot);
+  const savedProjectTemplate = projectFilesState?.pullRequestTemplate?.existed
+    ? readFileSync(join(selected.backupRoot, 'project-files', PROJECT_PR_TEMPLATE_RELATIVE_PATH))
+    : null;
   process.stdout.write(
     `PMO rollback ${options.dryRun ? 'dry-run ' : ''}target: ${formatPmoIdentity(selected.manifest)}\n`,
   );
@@ -4037,11 +4178,45 @@ function rollbackPmoBaseline(argv) {
     return;
   }
   installPmoBundleAtomic(targetDir, selected);
+  const projectTemplatePath = join(targetDir, PROJECT_PR_TEMPLATE_RELATIVE_PATH);
+  if (projectFilesState?.pullRequestTemplate) {
+    if (projectFilesState.pullRequestTemplate.existed) {
+      mkdirSync(dirname(projectTemplatePath), { recursive: true });
+      writeFileSync(projectTemplatePath, savedProjectTemplate);
+    } else {
+      rmSync(projectTemplatePath, { force: true });
+    }
+  } else {
+    const templatePlan = planPmoProjectTemplateSync(targetDir, selected);
+    const failure = templatePlan.find((item) => item.action === 'warn');
+    if (failure) fail(`PMO rollback PR template synchronization failed: ${failure.reason}`);
+    for (const item of templatePlan.filter((entry) => ['add', 'update'].includes(entry.action))) {
+      writePlannedFile(item);
+    }
+  }
   const status = getPmoStatus(targetDir, { locked: true });
   if (status.errors.length > 0 || status.warnings.length > 0) {
     fail(`PMO rollback verification failed:\n${formatPmoStatusProblems(status)}`);
   }
   process.stdout.write(`PMO rollback complete: ${formatPmoIdentity(selected.manifest)}\n`);
+}
+
+function readPmoBackupProjectFilesState(backupRoot) {
+  const statePath = join(backupRoot, PMO_PROJECT_FILES_STATE_NAME);
+  if (!existsSync(statePath)) return null;
+  const state = JSON.parse(readFileSync(statePath, 'utf8'));
+  if (
+    state.schemaVersion !== 1 ||
+    state.pullRequestTemplate?.path !== PROJECT_PR_TEMPLATE_RELATIVE_PATH ||
+    typeof state.pullRequestTemplate.existed !== 'boolean'
+  ) {
+    throw new Error(`invalid PMO backup project file state: ${statePath}`);
+  }
+  const savedPath = join(backupRoot, 'project-files', PROJECT_PR_TEMPLATE_RELATIVE_PATH);
+  if (state.pullRequestTemplate.existed && !existsSync(savedPath)) {
+    throw new Error(`PMO backup project PR template is missing: ${savedPath}`);
+  }
+  return state;
 }
 
 function listPmoBackups(targetDir) {

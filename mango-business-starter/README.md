@@ -51,6 +51,8 @@ node mango-business-starter/scripts/check-template.mjs
 
 当前 PMO baseline 按风险事实选择三档交付模式：L0/L1 使用 SIMPLE 并直接实现，L2 使用 STANDARD 单文件记录，L3 使用 FULL 适用流程。M01 默认自动创建或复用隔离 worktree，只有 main 例外、模式降级、破坏性数据库动作和外部写入等事实需要人工确认；M09-M16 仍按真实观察面选择。发布、版本和发布恢复继续使用独立发布流程。
 
+delivery-assurance schema revision 5 起，PMO baseline 同时携带 canonical 业务 PR 模板。项目内 `mango pmo sync/upgrade` 在模板缺失时创建文件，在模板存在时只托管 `## Risk / Verification` 区段；`mango pmo check --locked` 会阻断缺失或漂移，区段外业务说明保持不变。该能力将在包含修复的后续 PMO/CLI 补丁版本中提供，已发布的 PMO 1.3.3 / CLI 1.0.87 及更早版本不具备该同步链路。
+
 能力与 Skill 路由统一由项目 `AGENTS.md` 和 PMO preflight 决定；不要从普通技术术语推断无关能力。完整分类边界见[能力说明维护规范](../mango-pmo/rules/08-capability-docs.md)。
 
 当前 scope classifier 会为 partial 后端 PR 同时输出质量模块 `maven_projects` 和依赖准备模块 `maven_dependency_projects`。标准 workflow 先用后者执行带 `-am` 的跳过测试安装，再用前者执行不带 `-am`、`-amd` 的直接模块质量门禁。这样新 Runner 不依赖历史 Maven 缓存，也不会把上游模块的存量质量问题扩大到当前 PR。
@@ -239,6 +241,7 @@ Controller 使用 `BaseCrudController`，类级路径由 module 和 aggregate �
 | partial PR 报 Mango 上游 SNAPSHOT 找不到       | Runner 本地仓库为空，旧 workflow 直接进入质量阶段                                                 | 升级业务 PMO baseline，确认依赖准备步骤使用 `maven_dependency_projects` 和 `-am install`，质量步骤仍不带 `-am`                |
 | 嵌套静态分析报架构治理属性缺失                 | 旧版 Mango Maven 插件把 `architecture-verification` 带入了 PMD、Checkstyle、SpotBugs 的二次 Maven | 升级到包含治理聚合模块过滤的 Mango Maven 插件；外层 `mvn verify` 继续保留架构门禁                                             |
 | 纯升级 PR 被旧实施计划缺少 `documentType` 阻断 | PMO 合同启用前的历史计划尚未迁移                                                                  | 使用 PMO 1.2.5+，将每份存量文档按路径和当前 SHA-256 登记到 `.mango-pmo-legacy-documents.json`；内容变化后需迁移或重新审批基线 |
+| PR required check 因 Risk / Verification 缺失或旧字段失败 | 业务仓缺少 PR 模板，或模板未随 delivery-assurance 合同升级 | 安装包含 schema revision 5 的 PMO/CLI 补丁版后执行项目内 `mango pmo upgrade` 或 `sync`；已创建 PR 直接编辑正文 |
 | 已生成项目升级模板困难                         | 业务代码已经改过，不能直接覆盖                                                                    | 用 CLI managed block 同步可管理部分，其余人工迁移                                                                             |
 
 ## 12. 相关文档

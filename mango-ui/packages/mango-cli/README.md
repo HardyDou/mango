@@ -520,6 +520,10 @@ CLI 不在运行时管理菜单、权限和租户，但会生成让业务模块�
 
 `@mango/cli@1.0.87` 继续发布本次前端 UI 修复 npm 矩阵，并纳入 Windows 发布脚本兼容修复：生成项目前端构建脚本、CLI 自检脚本和 PMO 包检查脚本在 Windows 下可以正确执行 `pnpm.cmd`。CLI 命令、参数、后端 Maven `1.0.23` 锁和业务模块生成语义不变；随包 PMO 锁更新为 `@mango/pmo@1.3.3`。
 
+### Issue #603 后续补丁影响
+
+当前源码把业务 PR 模板纳入 delivery-assurance schema revision 5：PMO 包提供 canonical 模板，CLI init/sync/check/rollback 受控管理 Risk / Verification 区段并保留其它业务内容。该能力需要发布新的 `@mango/pmo` 与 `@mango/cli` 补丁版本后业务仓才能消费；已发布的 `@mango/pmo@1.3.3` / `@mango/cli@1.0.87` 不包含此修复。
+
 ### 1.0.86 发布影响
 
 `@mango/cli@1.0.86` 对齐本次前端 UI 修复 npm 矩阵：业务模块模板中的 `@mango/admin-pages`、`@mango/common` 版本，以及随包 `release-versions.json` 均更新到本批已发布目标。CLI 命令、参数、后端 Maven `1.0.23` 锁、PMO `1.3.2` 锁和业务模块生成语义不变。
