@@ -10,22 +10,18 @@ async function expandMenuGroup(page: import('@playwright/test').Page, name: stri
 }
 
 function collectVisibleMenus(menus: any[]): any[] {
-  return menus.flatMap((menu) => [
-    menu,
-    ...collectVisibleMenus(menu.children || []),
-  ]).filter((menu) => menu.menuType !== 3 && menu.visible !== 0);
+  return menus
+    .flatMap((menu) => [menu, ...collectVisibleMenus(menu.children || [])])
+    .filter((menu) => menu.menuType !== 3 && menu.visible !== 0);
 }
 
 async function expectMenuIcon(page: import('@playwright/test').Page, name: string) {
-  const menuItem = page.locator(
-    [
-      '.el-menu-item',
-      '.el-sub-menu__title',
-      '.layout-top-system-item',
-      '.layout-columns-aside li',
-    ].join(', '),
-    { hasText: name },
-  ).first();
+  const menuItem = page
+    .locator(
+      ['.el-menu-item', '.el-sub-menu__title', '.layout-top-system-item', '.layout-columns-aside li'].join(', '),
+      { hasText: name },
+    )
+    .first();
   await expect(menuItem, `${name} 菜单必须可见`).toBeVisible({ timeout: 10000 });
   await expect(menuItem.locator('.el-icon svg, img').first(), `${name} 必须渲染菜单图标`).toBeVisible();
 }
@@ -38,15 +34,12 @@ async function openTopMenu(page: import('@playwright/test').Page, name: string) 
   await page.getByRole('button', { name }).evaluate((button: HTMLButtonElement) => button.click());
 }
 
-async function loginPage(
-  page: import('@playwright/test').Page,
-  tenantName = '芒果集团',
-) {
+async function loginPage(page: import('@playwright/test').Page, tenantName = '芒果集团') {
   await page.goto('/#/login');
   await page.fill('input[placeholder="用户名"]', 'admin');
   await page.fill('input[placeholder="密码"]', 'admin123');
-  const accountTenantsResponsePromise = page.waitForResponse((response) =>
-    response.url().includes('/api/auth/login-institutions') && response.status() === 200
+  const accountTenantsResponsePromise = page.waitForResponse(
+    (response) => response.url().includes('/api/auth/login-institutions') && response.status() === 200,
   );
   await page.locator('input[placeholder="密码"]').blur();
   await accountTenantsResponsePromise;
@@ -60,9 +53,7 @@ test.describe('用户菜单导航 E2E', () => {
   test('芒果集团登录后使用后端用户菜单树渲染完整管理导航', async ({ page }) => {
     const menuResponsePromise = page.waitForResponse((response) => {
       const url = response.url();
-      return response.status() === 200
-        && url.includes('/api/authorization/menus/user')
-        && url.includes('fmt=tree');
+      return response.status() === 200 && url.includes('/api/authorization/menus/user') && url.includes('fmt=tree');
     });
 
     await loginPage(page);
@@ -118,16 +109,11 @@ test.describe('用户菜单导航 E2E', () => {
       menuName: '通知中心',
       path: '/notice',
     });
-    expect(menuBody.data[4].children
-      .filter((item: { visible: number }) => item.visible !== 0)
-      .map((item: { menuName: string }) => item.menuName)).toEqual([
-      '公告管理',
-      '消息配置',
-      '发送任务',
-      '渠道配置',
-      '发送记录',
-      '失败重试',
-    ]);
+    expect(
+      menuBody.data[4].children
+        .filter((item: { visible: number }) => item.visible !== 0)
+        .map((item: { menuName: string }) => item.menuName),
+    ).toEqual(['公告管理', '消息配置', '发送任务', '渠道配置', '发送记录', '失败重试']);
     expect(menuBody.data[5]).toMatchObject({
       menuName: '消息中心',
       path: '/message-center',
@@ -200,10 +186,12 @@ test.describe('用户菜单导航 E2E', () => {
     await openTopMenu(page, '通知中心');
     await expectMenuIcon(page, '公告管理');
     const noticeTasksResponsePromise = page.waitForResponse((response) => {
-      return response.url().includes('/api/notice/tasks')
-        && response.request().method() === 'GET';
+      return response.url().includes('/api/notice/tasks') && response.request().method() === 'GET';
     });
-    await page.locator('.el-menu-item, .el-sub-menu__title, .layout-columns-aside li', { hasText: '发送任务' }).first().click();
+    await page
+      .locator('.el-menu-item, .el-sub-menu__title, .layout-columns-aside li', { hasText: '发送任务' })
+      .first()
+      .click();
     const noticeTasksResponse = await noticeTasksResponsePromise;
     expect(noticeTasksResponse.status(), '发送任务页面查询接口必须有权限').toBe(200);
     await expect(page.getByRole('heading', { name: '发送任务' })).toBeVisible();
@@ -222,9 +210,7 @@ test.describe('用户菜单导航 E2E', () => {
   test('A 公司登录后只渲染机构授权范围内的系统管理、审批中心与平台能力导航', async ({ page }) => {
     const menuResponsePromise = page.waitForResponse((response) => {
       const url = response.url();
-      return response.status() === 200
-        && url.includes('/api/authorization/menus/user')
-        && url.includes('fmt=tree');
+      return response.status() === 200 && url.includes('/api/authorization/menus/user') && url.includes('fmt=tree');
     });
 
     await loginPage(page, 'A公司');
@@ -279,20 +265,12 @@ test.describe('用户菜单导航 E2E', () => {
       '我的分类',
       '我的网址',
     ]);
-    expect(menuBody.data[4].children
-      .filter((item: { visible: number }) => item.visible !== 0)
-      .map((item: { menuName: string }) => item.menuName)).toEqual([
-      '公告管理',
-      '消息配置',
-      '发送任务',
-      '渠道配置',
-      '发送记录',
-      '失败重试',
-    ]);
-    expect(menuBody.data[5].children.map((item: { menuName: string }) => item.menuName)).toEqual([
-      '我的消息',
-      '公告',
-    ]);
+    expect(
+      menuBody.data[4].children
+        .filter((item: { visible: number }) => item.visible !== 0)
+        .map((item: { menuName: string }) => item.menuName),
+    ).toEqual(['公告管理', '消息配置', '发送任务', '渠道配置', '发送记录', '失败重试']);
+    expect(menuBody.data[5].children.map((item: { menuName: string }) => item.menuName)).toEqual(['我的消息', '公告']);
     for (const menu of collectVisibleMenus(menuBody.data)) {
       expect(menu.icon, `${menu.menuName} 必须配置菜单图标`).toBeTruthy();
     }
@@ -327,10 +305,12 @@ test.describe('用户菜单导航 E2E', () => {
     await expectMenuIcon(page, '公告管理');
     await expectMenuIcon(page, '消息配置');
     const noticeTasksResponsePromise = page.waitForResponse((response) => {
-      return response.url().includes('/api/notice/tasks')
-        && response.request().method() === 'GET';
+      return response.url().includes('/api/notice/tasks') && response.request().method() === 'GET';
     });
-    await page.locator('.el-menu-item, .el-sub-menu__title, .layout-columns-aside li', { hasText: '发送任务' }).first().click();
+    await page
+      .locator('.el-menu-item, .el-sub-menu__title, .layout-columns-aside li', { hasText: '发送任务' })
+      .first()
+      .click();
     const noticeTasksResponse = await noticeTasksResponsePromise;
     expect(noticeTasksResponse.status(), 'A 公司发送任务页面查询接口必须有权限').toBe(200);
     await expect(page.getByRole('heading', { name: '发送任务' })).toBeVisible();

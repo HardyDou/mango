@@ -43,9 +43,9 @@ async function openNamedTarget(targetKey: string, params?: Record<string, unknow
     return;
   }
   try {
-    await router.push(path
-      ? { path, query: normalizeQuery(params) }
-      : { name: targetKey, query: normalizeQuery(params) });
+    await router.push(
+      path ? { path, query: normalizeQuery(params) } : { name: targetKey, query: normalizeQuery(params) },
+    );
   } catch (error) {
     console.warn('Notice target navigation failed', targetKey, error);
     ElMessage.warning('目标未注册或当前无权访问');
@@ -58,8 +58,10 @@ const NOTICE_TARGET_PATHS: Record<string, string> = {
 };
 
 function normalizeQuery(params?: Record<string, unknown>) {
-  return Object.fromEntries(Object.entries(params || {})
-    .filter(([, value]) => value !== undefined && value !== null)
-    .map(([key, value]) => [key, String(value)]));
+  return Object.fromEntries(
+    Object.entries(params || {})
+      .filter(([, value]) => value !== undefined && value !== null)
+      .map(([key, value]) => [key, String(value)]),
+  );
 }
 </script>

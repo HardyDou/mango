@@ -28,11 +28,7 @@ async function setupRoutes(page: Page) {
         tenantName: '芒果集团',
         appCode: 'internal-admin',
         roles: ['admin'],
-        permissions: [
-          'notice:business:view',
-          'notice:receive-setting:view',
-          'notice:receive-setting:edit',
-        ],
+        permissions: ['notice:business:view', 'notice:receive-setting:view', 'notice:receive-setting:edit'],
       },
     }),
   );
