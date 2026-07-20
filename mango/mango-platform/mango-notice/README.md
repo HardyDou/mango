@@ -614,6 +614,8 @@ notice:announcement:offline
 
 前端页面由 `@mango/notice/admin-pages` 注册。菜单通过 `notice-common-menu.json` 的 `AUTH_MENU` 资源注入到 `internal-admin`，component 映射到页面 key：
 
+管理侧“通知中心”以 `parentCode=data` 挂载在“平台能力”下；`/notice` 及所有子路由保持不变。“消息中心”仍是独立的用户侧一级入口。
+
 | 菜单 | 路径 | component key | 默认展示 |
 |------|------|---------------|----------|
 | 我的消息 | `/message-center/site-message` | `notice/site-message/index` | 是 |

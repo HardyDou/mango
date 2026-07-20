@@ -144,6 +144,7 @@ public class PersistenceProperties {
         private List<String> excludedTables = new ArrayList<>(
                 List.of("flyway_schema_history*", "databasechangelog", "databasechangeloglock",
                         "kv_record", "infra_kv_entry", "sys_login_log", "sys_operation_log",
+                        "act_*", "flw_*",
                         "resource_*",
                         "authorization_app_module", "authorization_frontend_app_registry", "frontend_menu_runtime_config",
                         "authorization_frontend_module_runtime_strategy"));

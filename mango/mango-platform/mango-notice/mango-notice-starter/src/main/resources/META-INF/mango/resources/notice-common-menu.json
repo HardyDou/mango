@@ -8,7 +8,7 @@
         "AUTH_MENU": [
           {
             "id": "2951300000000009301",
-            "version": 3,
+            "version": 4,
             "bizKey": "notice.menu.internal-admin",
             "name": "通知中心菜单",
             "targetModule": "authorization",
@@ -44,6 +44,7 @@
                     "menuType": 1,
                     "menuName": "通知中心",
                     "menuCode": "notice",
+                    "parentCode": "data",
                     "path": "/notice",
                     "icon": "Bell",
                     "sort": 7,

@@ -8,7 +8,7 @@
         "AUTH_MENU": [
           {
             "id": "2951300000000009001",
-            "version": 1,
+            "version": 2,
             "bizKey": "workflow.menu.internal-admin",
             "name": "工作流管理菜单",
             "targetModule": "authorization",
@@ -47,9 +47,10 @@
                     "menuType": 1,
                     "menuName": "审批中心",
                     "menuCode": "workflow",
+                    "parentCode": "data",
                     "path": "/workflow",
                     "icon": "Stamp",
-                    "sort": 2,
+                    "sort": 5,
                     "redirect": "/workflow/start-process",
                     "remark": "流程发起、审批办理和流程配置入口",
                     "children": [

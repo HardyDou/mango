@@ -52,6 +52,9 @@ class NoticeResourceDeclarationContractTest {
         JsonNode messageCenter = findMenu(declaration, "message-center");
         assertThat(noticeCenter).isNotNull();
         assertThat(messageCenter).isNotNull();
+        assertThat(noticeCenter.path("parentCode").asText()).isEqualTo("data");
+        assertThat(noticeCenter.path("path").asText()).isEqualTo("/notice");
+        assertThat(noticeCenter.path("redirect").asText()).isEqualTo("/notice/announcement");
 
         JsonNode loginBasic = findMenu(declaration, "notice:basic-login");
         assertThat(loginBasic).isNotNull();

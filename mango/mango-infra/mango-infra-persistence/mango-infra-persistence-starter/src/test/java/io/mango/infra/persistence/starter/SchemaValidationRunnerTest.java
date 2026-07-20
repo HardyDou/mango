@@ -180,6 +180,45 @@ class SchemaValidationRunnerTest {
         assertThatNoException().isThrownBy(runner::run);
     }
 
+    @Test
+    void run_withFlowableEngineTables_skipsSchemaValidationByDefault() throws Exception {
+        DataSource dataSource = dataSource("flowable_engine_tables");
+        execute(dataSource, """
+                CREATE TABLE ACT_EVT_LOG (
+                    LOG_NR_ BIGINT PRIMARY KEY,
+                    TYPE_ VARCHAR(64)
+                )
+                """);
+        execute(dataSource, """
+                CREATE TABLE FLW_RU_BATCH (
+                    ID_ VARCHAR(64) PRIMARY KEY,
+                    TYPE_ VARCHAR(64)
+                )
+                """);
+
+        SchemaValidationRunner runner = new SchemaValidationRunner(dataSource, newProperties(true));
+
+        assertThatNoException().isThrownBy(runner::run);
+    }
+
+    @Test
+    void run_withMangoWorkflowTable_stillValidatesSchema() throws Exception {
+        DataSource dataSource = dataSource("mango_workflow_table");
+        execute(dataSource, """
+                CREATE TABLE workflow_definition (
+                    definition_id BIGINT PRIMARY KEY,
+                    definition_key VARCHAR(64)
+                )
+                """);
+
+        SchemaValidationRunner runner = new SchemaValidationRunner(dataSource, newProperties(true));
+
+        assertThatThrownBy(runner::run)
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("workflow_definition")
+                .hasMessageContaining("标准主键字段 id");
+    }
+
     private PersistenceProperties.SchemaValidation newProperties(boolean failFast) {
         PersistenceProperties.SchemaValidation properties = new PersistenceProperties.SchemaValidation();
         properties.setFailFast(failFast);

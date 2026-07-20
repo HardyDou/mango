@@ -647,7 +647,11 @@ Workflow 参数校验约束统一由 `mango-workflow-api` 的 `XxxApi` 契约声
 | `currentAssigneeNames` | 刷新后的当前处理人名称。 |
 | `currentTask` | 第一个当前任务快照。 |
 | `taskId` / `taskDefinitionKey` / `taskName` | 第一个当前任务的 ID、定义 key 和名称。 |
-| `assignee` | 第一个当前任务的处理人 ID，供通知收件人解析使用。 |
+| `assignee` | 第一个当前任务的处理人 ID。 |
+| `candidateUsers` / `candidateGroups` | 第一个当前任务的候选用户和 Flowable 候选组。 |
+| `currentTasks` | 全部并行当前任务快照，通知和业务订阅方不得只消费第一个任务。 |
+
+`workflow.task.assigned` 通知会汇总 `assignee`、`candidateUsers` 和全部 `currentTasks`：数字用户值直接作为用户接收人，`ROLE:<id>`、`POST:<id>`、`ORG:<id>` 分别转换为 Notice 的角色、岗位、组织接收目标，再由 Identity 解析真实用户。流程已经结束或没有可解析的下一任务接收人时，不发送“审批待办”通知。`ORG_LEADER:<id>` 不会降级为全组织通知，避免把负责人通知错误扩大给整个组织。
 | `assigneeId` | 第一个当前任务的处理人 ID。 |
 | `assigneeName` | 第一个当前任务的处理人名称。 |
 | `claimStatus` | 第一个当前任务认领状态：`NONE`、`UNCLAIMED`、`ASSIGNED`。 |
@@ -801,11 +805,13 @@ workflow_business_apply_status_log.updated_at
 
 Flowable 启动所需的 `ACT_GE_PROPERTY` 元数据由 `WorkflowEngineMetadataInitializer` 在引擎初始化前按缺失项补齐。该访问明确绕过租户插件，因为 Flowable 元数据表没有 `tenant_id` 字段；随后仍由 Flowable 自己完成引擎配置项维护。
 
+`ACT_*`、`FLW_*` 属于直接集成的 Flowable 引擎表，字段和主键由 Flowable 数据模型定义，默认不参与 Mango Persistence 的业务表 Schema 标准字段校验。Mango 自有 `workflow_*` 表仍必须通过 `id`、审计、租户和组织字段校验。
+
 正式分类、业务域、节点目录和菜单等必需数据在 `META-INF/mango/resources/` 按资源类型声明，由 Resource Registry 同步；流程菜单、按钮权限等授权数据仍属于 authorization 数据边界。费用报销、合同盖章、请假三条示例流程单独位于 `META-INF/mango/demo/`，默认不加载，开启 `mango.resource.registry.demo-enabled=true` 后按 `INIT_ONLY` 初始化。
 
 ## 12. 管理入口
 
-菜单由 `mango-workflow-starter/src/main/resources/META-INF/mango/resources/workflow-common-menu.json` 的 `AUTH_MENU` 资源注入，应用编码是 `internal-admin`。
+菜单由 `mango-workflow-starter/src/main/resources/META-INF/mango/resources/workflow-common-menu.json` 的 `AUTH_MENU` 资源注入，应用编码是 `internal-admin`。“审批中心”以 `parentCode=data` 挂载在“平台能力”下，既有 `/workflow` 路由、子路由和页面 key 均保持不变。
 
 | 菜单 | 路径 | 组件 | 权限码 |
 |------|------|------|--------|
