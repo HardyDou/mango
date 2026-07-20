@@ -14,6 +14,7 @@
 | `mango-baseline/tools/acceptance-evidence-check.mjs` | 校验验收证据表 |
 | `mango-baseline/tools/check-document-set.mjs` | 扫描四类生命周期文档及其上游关系 |
 | `global-entity-exceptions.json` | 业务架构门禁显式读取的全局 Entity 例外清单，初始为空 |
+| 项目根 `.github/pull_request_template.md` | 业务仓自有 PR 说明；其中 Risk / Verification 区段由锁定 PMO 合同同步和检查 |
 | 项目根 `AGENTS.md` | Agent 入口，只路由到 baseline，不复制长期规则正文 |
 
 ## 2. 功能清单
@@ -25,7 +26,7 @@
 | 验收证据检查 | `acceptance-evidence-check.mjs` | 校验验收证据表和弱表达。 |
 | 文档集合门禁 | `check-document-set.mjs` | 自动识别 BRD、SRS、TDD、实施计划并阻断合同或链路错误。 |
 | baseline 快照 | `mango-baseline/rules`、`agents`、`templates` | 业务仓脱离 Mango 源码后仍能读取规则。 |
-| baseline 同步 | `mango pmo sync` | 从 CLI 模板同步 baseline、入口和兼容脚本。 |
+| baseline 同步 | `mango pmo sync` | 从锁定 PMO bundle 同步 baseline、Risk / Verification 区段、入口和兼容脚本。 |
 
 ## 3. 能力边界
 - 不作为 Mango 主仓长期规范源；长期规范仍由 Mango PMO 维护。
@@ -40,6 +41,7 @@
 边界要求：
 
 - baseline 内文件只通过 baseline 升级任务或 `mango pmo sync` 更新。
+- 项目 PR 模板区段外内容由业务仓维护；`mango pmo sync/upgrade` 只托管 `## Risk / Verification`，重复区段必须人工合并。
 - 业务需求的设计、台账、验收证据放到 `business-docs`。
 - Agent 每次正式交付前读取 preflight 输出的 Must read 文件原文。
 - 交付异常要写在业务交付记录中，不在 baseline 规则里临时改规则绕过。
@@ -140,6 +142,7 @@ node business-pmo/mango-baseline/tools/acceptance-evidence-check.mjs \
 | PMO baseline | `business-pmo/mango-baseline` | 规则、Agent、工具、模板 | 文件路径 | `mango init` 或 `mango pmo sync` | preflight 能输出 Must read |
 | 业务计划示例 | `business-docs/plans` | example contract 和 ledger | 文件路径 | `mango init`；sync 时已有文件不覆盖 | delivery contract check |
 | Agent 入口 | 项目根 `AGENTS.md` | 规则路由入口 | 文件路径 | `mango init` 或带参数 sync | 人工检查入口指向本仓 baseline |
+| PR 风险合同 | 项目根 `.github/pull_request_template.md` | Risk / Verification 字段和填写提示 | 二级标题 | `mango init` 或 `mango pmo sync/upgrade` | `mango pmo check --locked` 报缺失或漂移 |
 
 ## 9. 管理入口
 本目录不提供菜单、权限资源或租户数据。涉及菜单、权限和租户时，preflight 会根据任务和路径命中后端模块、数据库、安全或菜单规则；实际资源应在业务模块的 migration、resource manifest、授权配置和测试证据中登记。
@@ -161,6 +164,7 @@ node business-pmo/mango-baseline/tools/acceptance-evidence-check.mjs \
 | 禁用词扫描失败 | 代码或文档仍有临时实现标记 | 删除临时实现或登记明确例外 |
 | 验收证据被判弱表达 | 只写了“接口 200”“页面无异常”等泛化句 | 写具体测试数据、关键断言、UI 检查、network/console 结果和截图路径 |
 | 普通需求改了 baseline | 把规则当成业务文档改了 | 还原 baseline，业务说明放入 `business-docs` |
+| PR template missing / differs | 模板缺失或 Risk / Verification 仍是旧合同 | 执行项目内 `mango pmo sync --project-dir .`；已创建 PR 直接编辑正文 |
 
 ## 12. 相关文档
 - [开发流程规范](./mango-baseline/rules/00-dev-flow.md)

@@ -45,6 +45,7 @@ function hasCommand(command, args = ['--version']) {
 
 try {
   assertPmoPackageBuilt();
+  assertPackedCliPullRequestTemplate(tempRoot);
   assertNoBundledTemplatePmoBaseline();
   assertPublishedPnpmPmoResolution(tempRoot);
   assertNoWorkspacePackageJsonInTemplates();
@@ -249,6 +250,10 @@ try {
   const pmoWorkflow = readFileSync(join(projectRoot, '.github/workflows/pmo-doc-check.yml'), 'utf8');
   const giteaPmoWorkflow = readFileSync(join(projectRoot, '.gitea/workflows/pmo-doc-check.yml'), 'utf8');
   const pullRequestTemplate = readFileSync(join(projectRoot, '.github/pull_request_template.md'), 'utf8');
+  const canonicalPullRequestTemplate = readFileSync(
+    join(projectRoot, 'business-pmo/mango-baseline/templates/business-pull-request-template.md'),
+    'utf8',
+  );
   const codeowners = readFileSync(join(projectRoot, '.github/CODEOWNERS'), 'utf8');
   const devWorkspaceScript = readFileSync(join(projectRoot, 'scripts/dev-workspace.sh'), 'utf8');
   const backendDevScript = readFileSync(join(projectRoot, 'scripts/backend-dev.sh'), 'utf8');
@@ -426,13 +431,29 @@ try {
     'Requirement impact:',
     'Solution risk:',
     'Final risk:',
-    'Selected verification:',
-    'Skipped verification:',
+    'Delivery mode:',
+    'Workspace decision:',
+    'Non-downgradable facts:',
+    'Assurance baseline:',
+    'Assurance selections:',
+    'Assurance reasoning:',
+    'Assurance evidence:',
+    'Residual risks:',
   ]) {
     if (!pullRequestTemplate.includes(expected)) {
       throw new Error(`generated pull request template missing risk contract: ${expected}`);
     }
   }
+  for (const legacy of ['Selected verification:', 'Why sufficient:', 'Skipped verification:']) {
+    if (pullRequestTemplate.includes(legacy)) {
+      throw new Error(`generated pull request template contains legacy risk contract: ${legacy}`);
+    }
+  }
+  assertEqual(
+    pullRequestTemplate,
+    canonicalPullRequestTemplate,
+    'generated pull request template compared with the PMO canonical template',
+  );
   for (const expected of [
     '/backend/pom.xml @backend-team @tech-lead',
     '/backend/architecture-verification/ @backend-team @tech-lead',
@@ -1481,6 +1502,69 @@ function assertPmoPackageBuilt() {
   }
   if (!existsSync(join(pmoPackageRoot, 'dist/baseline.json'))) {
     throw new Error('@mango/pmo build did not create dist/baseline.json');
+  }
+}
+
+function assertPackedCliPullRequestTemplate(tempRoot) {
+  const packRoot = join(tempRoot, 'packed-cli-pmo-contract');
+  const cliPackRoot = join(packRoot, 'cli');
+  const pmoPackRoot = join(packRoot, 'pmo');
+  const cliExtractRoot = join(cliPackRoot, 'extract');
+  const pmoExtractRoot = join(pmoPackRoot, 'extract');
+  mkdirSync(cliExtractRoot, { recursive: true });
+  mkdirSync(pmoExtractRoot, { recursive: true });
+
+  const cliPack = spawnSync('pnpm', ['pack', '--pack-destination', cliPackRoot], {
+    cwd: packageRoot,
+    encoding: 'utf8',
+  });
+  if (cliPack.status !== 0) {
+    throw new Error(`@mango/cli pack failed:\n${cliPack.stdout}\n${cliPack.stderr}`);
+  }
+  const pmoPack = spawnSync('pnpm', ['pack', '--pack-destination', pmoPackRoot], {
+    cwd: pmoPackageRoot,
+    encoding: 'utf8',
+  });
+  if (pmoPack.status !== 0) {
+    throw new Error(`@mango/pmo pack failed:\n${pmoPack.stdout}\n${pmoPack.stderr}`);
+  }
+
+  const cliTarballs = readdirSync(cliPackRoot).filter((file) => file.endsWith('.tgz'));
+  const pmoTarballs = readdirSync(pmoPackRoot).filter((file) => file.endsWith('.tgz'));
+  if (cliTarballs.length !== 1 || pmoTarballs.length !== 1) {
+    throw new Error(
+      `expected one CLI and one PMO tarball; CLI=${cliTarballs.join(', ') || 'none'} PMO=${pmoTarballs.join(', ') || 'none'}`,
+    );
+  }
+  const cliExtract = spawnSync('tar', ['-xzf', join(cliPackRoot, cliTarballs[0]), '-C', cliExtractRoot], {
+    encoding: 'utf8',
+  });
+  if (cliExtract.status !== 0) {
+    throw new Error(`@mango/cli tarball extraction failed:\n${cliExtract.stdout}\n${cliExtract.stderr}`);
+  }
+  const pmoExtract = spawnSync('tar', ['-xzf', join(pmoPackRoot, pmoTarballs[0]), '-C', pmoExtractRoot], {
+    encoding: 'utf8',
+  });
+  if (pmoExtract.status !== 0) {
+    throw new Error(`@mango/pmo tarball extraction failed:\n${pmoExtract.stdout}\n${pmoExtract.stderr}`);
+  }
+
+  const packedTemplate = join(cliExtractRoot, 'package/templates/full/.github/pull_request_template.md');
+  const packedPmoBaseline = join(pmoExtractRoot, 'package/dist/baseline');
+  const canonicalTemplate = join(packedPmoBaseline, 'templates/business-pull-request-template.md');
+  const packagedChecker = join(packedPmoBaseline, 'tools/risk-verification.mjs');
+  if (!existsSync(packedTemplate)) {
+    throw new Error('@mango/cli tarball is missing templates/full/.github/pull_request_template.md');
+  }
+  if (!readFileSync(packedTemplate).equals(readFileSync(canonicalTemplate))) {
+    throw new Error('@mango/cli tarball PR template must match the canonical @mango/pmo template');
+  }
+
+  const check = spawnSync(process.execPath, [packagedChecker, '--template', '--body', packedTemplate], {
+    encoding: 'utf8',
+  });
+  if (check.status !== 0) {
+    throw new Error(`packed @mango/cli PR template failed @mango/pmo contract validation:\n${check.stdout}\n${check.stderr}`);
   }
 }
 
@@ -2674,6 +2758,96 @@ function assertPmoCommands(projectRoot) {
     projectRoot,
     'generated locked mango pmo check',
   );
+  const projectTemplatePath = join(projectRoot, '.github/pull_request_template.md');
+  const canonicalProjectTemplate = readFileSync(
+    join(projectRoot, 'business-pmo/mango-baseline/templates/business-pull-request-template.md'),
+    'utf8',
+  );
+  rmSync(projectTemplatePath);
+  const missingTemplateCheck = spawnSync(
+    process.execPath,
+    [cli, 'pmo', 'check', '--project-dir', projectRoot, '--locked'],
+    { cwd: projectRoot, encoding: 'utf8' },
+  );
+  if (
+    missingTemplateCheck.status === 0 ||
+    !missingTemplateCheck.stdout.includes('.github/pull_request_template.md') ||
+    !missingTemplateCheck.stdout.includes('mango pmo sync --project-dir .')
+  ) {
+    throw new Error(
+      `pmo check --locked should report a missing project PR template and repair command:\n${missingTemplateCheck.stdout}\n${missingTemplateCheck.stderr}`,
+    );
+  }
+  assertCommandOk(
+    [cli, 'pmo', 'sync', '--project-dir', projectRoot],
+    projectRoot,
+    'generated mango pmo missing PR template repair',
+  );
+  assertEqual(readFileSync(projectTemplatePath, 'utf8'), canonicalProjectTemplate, 'restored project PR template');
+
+  const legacyProjectTemplate = `## Summary
+
+- business-owned summary
+
+## Risk / Verification
+
+- Requirement impact: L0-L3 - facts
+- Solution risk: L0-L3 - facts
+- Final risk: L0-L3
+- Selected verification: STATIC, UNIT, API, UI
+- Why sufficient:
+- Skipped verification: None
+
+## Business Deployment
+
+- preserve this rollout section
+`;
+  writeFileSync(projectTemplatePath, legacyProjectTemplate);
+  const legacyTemplateCheck = spawnSync(
+    process.execPath,
+    [cli, 'pmo', 'check', '--project-dir', projectRoot, '--locked'],
+    { cwd: projectRoot, encoding: 'utf8' },
+  );
+  if (legacyTemplateCheck.status === 0 || !legacyTemplateCheck.stdout.includes('differs from the locked PMO contract')) {
+    throw new Error(
+      `pmo check --locked should reject a legacy project PR template:\n${legacyTemplateCheck.stdout}\n${legacyTemplateCheck.stderr}`,
+    );
+  }
+  assertCommandOk(
+    [cli, 'pmo', 'sync', '--project-dir', projectRoot],
+    projectRoot,
+    'generated mango pmo legacy PR template repair',
+  );
+  const repairedProjectTemplate = readFileSync(projectTemplatePath, 'utf8');
+  if (
+    !repairedProjectTemplate.includes('business-owned summary') ||
+    !repairedProjectTemplate.includes('preserve this rollout section') ||
+    !repairedProjectTemplate.includes('Assurance selections:') ||
+    repairedProjectTemplate.includes('Selected verification:')
+  ) {
+    throw new Error(`pmo sync must replace only the managed Risk / Verification section:\n${repairedProjectTemplate}`);
+  }
+  const duplicateProjectTemplate = `${repairedProjectTemplate}\n## Risk / Verification\n\n- duplicate\n`;
+  writeFileSync(projectTemplatePath, duplicateProjectTemplate);
+  const duplicateTemplateSync = spawnSync(
+    process.execPath,
+    [cli, 'pmo', 'sync', '--project-dir', projectRoot],
+    { cwd: projectRoot, encoding: 'utf8' },
+  );
+  if (
+    duplicateTemplateSync.status === 0 ||
+    !`${duplicateTemplateSync.stdout}\n${duplicateTemplateSync.stderr}`.includes('exactly one')
+  ) {
+    throw new Error(
+      `pmo sync should fail closed for duplicate managed PR template sections:\n${duplicateTemplateSync.stdout}\n${duplicateTemplateSync.stderr}`,
+    );
+  }
+  assertEqual(
+    readFileSync(projectTemplatePath, 'utf8'),
+    duplicateProjectTemplate,
+    'duplicate project PR template after rejected sync',
+  );
+  writeFileSync(projectTemplatePath, repairedProjectTemplate);
   const dryRun = assertCommandOk(
     [cli, 'pmo', 'upgrade', '--project-dir', projectRoot, '--dry-run'],
     projectRoot,
@@ -2741,6 +2915,11 @@ function assertPmoCommands(projectRoot) {
     );
   }
   assertEqual(readFileSync(skillPath, 'utf8'), originalSkill, 'tampered project skill after pmo sync');
+  const projectTemplateBeforeRollback = readFileSync(projectTemplatePath, 'utf8');
+  writeFileSync(
+    projectTemplatePath,
+    projectTemplateBeforeRollback.replace('business-owned summary', 'post-backup business summary'),
+  );
 
   const unavailableUpgrade = spawnSync(
     process.execPath,
@@ -2760,6 +2939,11 @@ function assertPmoCommands(projectRoot) {
   if (!rollback.stdout.includes('PMO rollback complete')) {
     throw new Error(`pmo rollback should restore a verified backup:\n${rollback.stdout}`);
   }
+  assertEqual(
+    readFileSync(projectTemplatePath, 'utf8'),
+    projectTemplateBeforeRollback,
+    'project PR template restored from PMO rollback backup',
+  );
   assertCommandOk(
     [cli, 'pmo', 'check', '--project-dir', projectRoot, '--locked'],
     projectRoot,
@@ -2828,6 +3012,7 @@ function assertPmoSyncCommand(tempRoot) {
     throw new Error(`pmo sync failed:\n${syncResult.stdout}\n${syncResult.stderr}`);
   }
   for (const file of [
+    '.github/pull_request_template.md',
     'business-pmo/README.md',
     'business-pmo/mango-baseline/README.md',
     'business-pmo/mango-baseline/baseline.json',

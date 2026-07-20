@@ -15,6 +15,7 @@
 | 项目根 `.agents/skills` | CLI 从锁定 bundle 同步的项目级交付 Skill |
 | 项目根 `.agents/skills/.mango-pmo.json` | bundle-owned Skill 文件和 hash 清单 |
 | 项目根 `AGENTS.md` | Agent 路由入口；只引用 baseline，不复制长期规则 |
+| 项目根 `.github/pull_request_template.md` | 业务仓自有 PR 说明；其中 Risk / Verification 区段由锁定 PMO 合同同步和检查 |
 | 项目根 `.mango` 下的 PMO 备份目录 | upgrade 和 rollback 使用的已校验本地备份 |
 
 项目级 Skill 同步与用户级 Codex plugin 安装是两件事。CLI 只维护当前项目的 `.agents/skills`，不会修改用户级 Codex 配置。
@@ -48,7 +49,7 @@ mango pmo status --project-dir .
 mango pmo check --project-dir . --locked
 ```
 
-`--locked` 以 `pmo-lock.json` 为准，同时校验 baseline、manifest、文件 hash/权限和项目级 Skill。未带 `--locked` 时，命令会对比当前 CLI 可用的 `@mango/pmo` 包，用于判断是否存在可升级版本。
+`--locked` 以 `pmo-lock.json` 为准，同时校验 baseline、manifest、文件 hash/权限、项目级 Skill 和 PR 风险合同区段。未带 `--locked` 时，命令会对比当前 CLI 可用的 `@mango/pmo` 包，用于判断是否存在可升级版本。
 
 ### 3.2 修复当前锁
 
@@ -57,7 +58,7 @@ mango pmo sync --project-dir . --dry-run
 mango pmo sync --project-dir .
 ```
 
-`sync` 只修复当前项目锁定的 bundle，不隐式升版；它会恢复被修改或缺失的 bundle-owned 文件，并删除清单之外的陈旧 bundle-owned 文件。
+`sync` 只修复当前项目锁定的 bundle，不隐式升版；它会恢复被修改或缺失的 bundle-owned 文件，并删除清单之外的陈旧 bundle-owned 文件。delivery-assurance schema revision 5 起，模板缺失时会创建 `.github/pull_request_template.md`，模板存在时只新增或替换 `## Risk / Verification` 区段，区段外业务内容保持不变；重复区段必须人工合并后重跑。
 
 ### 3.3 显式升级
 
@@ -147,9 +148,9 @@ checker 通过不等于自动审批。阶段状态和 `NEXT` 还需要规范指�
 
 ### 5.1 风险与验证
 
-PR 模板分别记录需求影响和解决方案风险，最终等级取二者最大值。BRD/SRS 记录影响预评，TDD 固化最终等级，Plan 原样继承；L0/L1 不生成空的四阶段文档，方案升到 L2/L3 时在实施前切换完整链路。
+PR 模板分别记录需求影响和解决方案风险，最终等级取二者最大值，并记录交付模式、工作区决策、不可降级事实和适用 M01-M16 的选择、理由、证据与剩余风险。BRD/SRS 记录影响预评，TDD 固化最终等级，Plan 原样继承；L0/L1 不生成空的四阶段文档，方案升到 L2/L3 时在实施前切换适用流程。
 
-验证只使用 `STATIC`、`UNIT`、`API`、`UI` 四类口径。每个验收结果选择能够观察该结果的最低成本类型，并在 PR 中说明充分性和每个跳过类型的理由。例如只移动按钮位置且行为不变时，`STATIC + UI` 定向截图足够；后端租户/事务结果由真实 API 入口证明，没有浏览器入口时不添加空 UI 测试。
+M09-M16 只按真实观察面启用，不要求为未触发措施填写跳过理由。例如只移动按钮位置且行为不变时可以选择 M09 静态验证与 M13 UI 验证；后端租户/事务结果由真实集成或 API 入口证明，没有浏览器入口时不添加 M13。
 
 ```bash
 node business-pmo/mango-baseline/tools/risk-verification.mjs \
@@ -188,6 +189,7 @@ node business-pmo/mango-baseline/tools/acceptance-evidence-check.mjs \
 | locked check 报 project Skill changed | bundle-owned Skill 被修改 | 执行 `mango pmo sync`；业务自有 Skill 使用其它名称 |
 | sync 提示锁定版本不可用 | 当前 CLI 的 PMO 依赖与项目锁不一致，且没有本地备份 | 使用锁定版本的项目内 CLI，或显式 upgrade 到当前可用版本 |
 | upgrade 拒绝 `--to` | 请求版本不是当前 CLI 可解析的精确 PMO 版本 | 安装匹配的 CLI 后重试 |
+| locked check 报 PR template missing / differs | 项目模板缺失或 Risk / Verification 与锁定合同漂移 | 执行项目内 `mango pmo sync --project-dir .`；重复区段先人工合并，已创建 PR 直接编辑正文 |
 | rollback 无可用版本 | 本地没有对应已校验备份 | 使用匹配版本的 CLI 执行 upgrade，不能伪造备份 |
 | Codex 中未出现用户级 plugin | 项目 Skill 同步不安装用户级 plugin | 对发布包的 package-root plugin 执行独立安装流程 |
 | 文档 checker 失败 | 章节、字段、边界、ID 或证据不满足机器契约 | 按 rule ID 回到对应规范和模板修订 |

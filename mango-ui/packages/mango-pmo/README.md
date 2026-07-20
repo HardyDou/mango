@@ -14,7 +14,7 @@
 | 校验 baseline     | `pnpm -F @mango/pmo check`                                                  | 校验必备文件、manifest、preflight 及真实 `pnpm pack` 的 hash、size、mode           |
 | 发布 manifest     | `dist/baseline.json`                                                        | 记录 package version、source commit、bundle hash、contract revision 和逐文件元数据 |
 | Codex plugin 投影 | `.codex-plugin`、`skills`                                                   | npm 包根可安装插件；版本由 build 从 package metadata 生成                          |
-| 业务同步          | `mango pmo sync/upgrade`                                                    | CLI 从本包安装业务仓 baseline                                                      |
+| 业务同步          | `mango pmo sync/upgrade`                                                    | CLI 从本包安装业务仓 baseline，并同步 canonical PR 风险合同区段                    |
 | 影响驱动门禁      | `dist/baseline/tools/risk-verification.mjs`、`classify-pmo-check-scope.mjs` | 校验需求/方案风险，并把 Java PR 限定到受影响 Maven 模块                            |
 
 ## 3. 接入方式
@@ -106,6 +106,7 @@ mango pmo check --project-dir . --locked
 | 业务项目 baseline changed                  | 业务仓锁定快照被修改                         | 执行 `mango pmo sync --project-dir .` 修复当前锁定版本                                            |
 | `sync` 提示锁定版本不可用                  | 当前 CLI 解析的 PMO 版本与项目锁不同         | 使用项目内锁定 CLI，或显式执行 `upgrade --to`                                                     |
 | 项目 Skill changed / extra                 | `.agents/skills` 中 PMO 管理文件被修改或残留 | 执行 `mango pmo sync` 修复当前锁定版本                                                            |
+| PR template missing / differs              | 项目模板缺失或 Risk / Verification 与锁定合同不一致 | 执行项目内 `mango pmo sync --project-dir .`；重复区段先人工合并                              |
 | Codex 中未出现插件                         | 项目 Skill 已同步不等于用户级 plugin 已安装  | 从 npm 包根插件投影执行独立 Codex plugin 安装流程并新开会话                                       |
 | npm tarball 缺 baseline                    | 发布前未 build 或 files 配置错误             | 执行 pack dry-run 并检查 `package.json`                                                           |
 | npm tarball 的工具 mode 与 manifest 不一致 | 打包器没有保留 manifest 声明的可执行权限     | 不发布该 tarball；同步 `publishConfig.executableFiles` 后重新执行 build/check，并使用新的补丁版本 |
