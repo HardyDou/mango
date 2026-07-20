@@ -5,10 +5,7 @@ import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
 const packageRoot = resolve(fileURLToPath(new URL('..', import.meta.url)));
-const gateSource = readFileSync(
-  join(packageRoot, 'scripts/check-generated-backend-gate.mjs'),
-  'utf8',
-);
+const gateSource = readFileSync(join(packageRoot, 'scripts/check-generated-backend-gate.mjs'), 'utf8');
 
 test('generated backend gate stays within nine Maven invocations', () => {
   const budgetMatch = gateSource.match(/const MAX_MAVEN_INVOCATIONS = (\d+);/u);

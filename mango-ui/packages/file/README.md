@@ -6,24 +6,24 @@
 
 这个包有三种集成形态：
 
-| 标识 | 内容 |
-|------|------|
-| `admin-pages` | 文件管理、存储配置、文件设置页面。 |
-| `business-component` | `MUpload`、`FilePreviewPanel`。 |
-| `api-client` | 文件、存储配置、文件设置接口封装。 |
+| 标识                 | 内容                               |
+| -------------------- | ---------------------------------- |
+| `admin-pages`        | 文件管理、存储配置、文件设置页面。 |
+| `business-component` | `MUpload`、`FilePreviewPanel`。    |
+| `api-client`         | 文件、存储配置、文件设置接口封装。 |
 
 `admin-pages` 面向 Mango 管理后台；官网、营销站或独立前台项目通常不应直接复用这些管理页面。业务页面需要上传或预览文件时，优先使用 `MUpload` 和 `FilePreviewPanel`。
 
 ## 2. 功能清单
 
-| 能力 | 使用入口 |
-|------|----------|
-| 文件记录分页、详情、上传、下载、归档、删除 | `FileView`、`fileApi`。 |
-| 存储配置分页、详情、新增、编辑、删除、测试、设为默认 | `FileStorageView`、`fileStorageApi`。 |
-| 上传限制、秒传、直传、访问、预览、归档策略 | `FileSettingsView`、`fileSettingsApi`。 |
-| 业务表单上传附件或图片 | `MUpload`。 |
-| 详情页预览图片、PDF、音视频或文档 | `FilePreviewPanel`。 |
-| 工作流运行时表单上传字段 | `MUpload`。 |
+| 能力                                                 | 使用入口                                |
+| ---------------------------------------------------- | --------------------------------------- |
+| 文件记录分页、详情、上传、下载、归档、删除           | `FileView`、`fileApi`。                 |
+| 存储配置分页、详情、新增、编辑、删除、测试、设为默认 | `FileStorageView`、`fileStorageApi`。   |
+| 上传限制、秒传、直传、访问、预览、归档策略           | `FileSettingsView`、`fileSettingsApi`。 |
+| 业务表单上传附件或图片                               | `MUpload`。                             |
+| 详情页预览图片、PDF、音视频或文档                    | `FilePreviewPanel`。                    |
+| 工作流运行时表单上传字段                             | `MUpload`。                             |
 
 ## 3. 集成形态
 
@@ -120,11 +120,11 @@ import { FilePreviewPanel } from '@mango/file';
 
 前端包没有独立配置文件。配置来自三个地方：
 
-| 配置来源 | 用途 |
-|----------|------|
-| `registerMangoFileAdminPages()` | 注册文件模块管理页面。 |
-| `GET /file/settings` | 后端文件运行时配置，控制大小限制、秒传、直传、访问、预览和归档策略。 |
-| `FilePreviewPanel.previewProviderUrl` 或 `VITE_FILE_PREVIEW_PROVIDER_URL` | 文档预览服务地址兜底。 |
+| 配置来源                                                                  | 用途                                                                 |
+| ------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| `registerMangoFileAdminPages()`                                           | 注册文件模块管理页面。                                               |
+| `GET /file/settings`                                                      | 后端文件运行时配置，控制大小限制、秒传、直传、访问、预览和归档策略。 |
+| `FilePreviewPanel.previewProviderUrl` 或 `VITE_FILE_PREVIEW_PROVIDER_URL` | 文档预览服务地址兜底。                                               |
 
 限制上传大小：
 
@@ -147,57 +147,57 @@ import { FilePreviewPanel } from '@mango/file';
 
 页面导出：
 
-| 导出 | 标识 | 页面 key |
-|------|------|----------|
-| `FileView` | `admin-pages` | `file/files/index` |
-| `FileStorageView` | `admin-pages` | `file/storage-configs/index` |
-| `FileSettingsView` | `admin-pages` | `file/settings/index` |
+| 导出               | 标识          | 页面 key                     |
+| ------------------ | ------------- | ---------------------------- |
+| `FileView`         | `admin-pages` | `file/files/index`           |
+| `FileStorageView`  | `admin-pages` | `file/storage-configs/index` |
+| `FileSettingsView` | `admin-pages` | `file/settings/index`        |
 
 组件导出：
 
-| 导出 | 标识 | 用途 |
-|------|------|------|
-| `MUpload` | `business-component` | 上传文件并回写 ID、token 或记录。 |
-| `FilePreviewPanel` | `business-component` | 预览、下载和打开文件。 |
+| 导出               | 标识                 | 用途                              |
+| ------------------ | -------------------- | --------------------------------- |
+| `MUpload`          | `business-component` | 上传文件并回写 ID、token 或记录。 |
+| `FilePreviewPanel` | `business-component` | 预览、下载和打开文件。            |
 
 `fileApi`：
 
-| 方法 | 接口 | 用途 |
-|------|------|------|
-| `page(params)` | `GET /file/files/page` | 文件分页。 |
-| `detail(id)` | `GET /file/files/detail` | 文件详情。 |
-| `preview(id)` | `GET /file/files/preview` | 文件预览元数据。 |
-| `previewLink(id)` | `GET /file-preview/files/preview-link` | 文档预览链接。 |
-| `upload(file, params, options)` | `POST /file/files` 或上传会话链路 | 上传单文件。 |
-| `uploadBatch(files, params, options)` | `POST /file/files/batch` | 批量上传小文件。 |
-| `archive(id, reason)` | `DELETE /file/files` | 归档。 |
-| `delete(ids)` | `POST /file/files/delete` | 删除记录。 |
-| `createUploadSession(command)` | `POST /file/files/uploads` | 初始化分片上传和秒传。 |
-| `createUploadPartSign(sessionId, partNumber, partSize)` | `POST /file/files/uploads/{sessionId}/parts/sign` | 获取直传签名。 |
-| `uploadServerPart(sessionId, partNumber, chunk, fileName)` | `POST /file/files/uploads/{sessionId}/parts` | 服务端接收分片。 |
-| `completeUploadPart(sessionId, command)` | `PUT /file/files/uploads/{sessionId}/parts` | 确认直传分片。 |
-| `completeUploadSession(sessionId)` | `POST /file/files/uploads/{sessionId}/complete` | 完成上传。 |
-| `abortUploadSession(sessionId)` | `DELETE /file/files/uploads/{sessionId}` | 取消上传。 |
-| `downloadUrl(id)` | `/api/file/files/download?id=...` | 拼接下载地址。 |
-| `download(id)` | `GET /file/files/download` | 下载二进制。 |
+| 方法                                                       | 接口                                              | 用途                   |
+| ---------------------------------------------------------- | ------------------------------------------------- | ---------------------- |
+| `page(params)`                                             | `GET /file/files/page`                            | 文件分页。             |
+| `detail(id)`                                               | `GET /file/files/detail`                          | 文件详情。             |
+| `preview(id)`                                              | `GET /file/files/preview`                         | 文件预览元数据。       |
+| `previewLink(id)`                                          | `GET /file-preview/files/preview-link`            | 文档预览链接。         |
+| `upload(file, params, options)`                            | `POST /file/files` 或上传会话链路                 | 上传单文件。           |
+| `uploadBatch(files, params, options)`                      | `POST /file/files/batch`                          | 批量上传小文件。       |
+| `archive(id, reason)`                                      | `DELETE /file/files`                              | 归档。                 |
+| `delete(ids)`                                              | `POST /file/files/delete`                         | 删除记录。             |
+| `createUploadSession(command)`                             | `POST /file/files/uploads`                        | 初始化分片上传和秒传。 |
+| `createUploadPartSign(sessionId, partNumber, partSize)`    | `POST /file/files/uploads/{sessionId}/parts/sign` | 获取直传签名。         |
+| `uploadServerPart(sessionId, partNumber, chunk, fileName)` | `POST /file/files/uploads/{sessionId}/parts`      | 服务端接收分片。       |
+| `completeUploadPart(sessionId, command)`                   | `PUT /file/files/uploads/{sessionId}/parts`       | 确认直传分片。         |
+| `completeUploadSession(sessionId)`                         | `POST /file/files/uploads/{sessionId}/complete`   | 完成上传。             |
+| `abortUploadSession(sessionId)`                            | `DELETE /file/files/uploads/{sessionId}`          | 取消上传。             |
+| `downloadUrl(id)`                                          | `/api/file/files/download?id=...`                 | 拼接下载地址。         |
+| `download(id)`                                             | `GET /file/files/download`                        | 下载二进制。           |
 
 `fileStorageApi`：
 
-| 方法 | 接口 |
-|------|------|
-| `page(params)` | `GET /file/storage-configs/page` |
-| `detail(id)` | `GET /file/storage-configs/detail` |
-| `create(data)` | `POST /file/storage-configs` |
-| `update(data)` | `PUT /file/storage-configs` |
-| `delete(id)` | `DELETE /file/storage-configs` |
-| `activate(id)` | `PUT /file/storage-configs/active` |
-| `test(command)` | `POST /file/storage-configs/test` |
+| 方法            | 接口                               |
+| --------------- | ---------------------------------- |
+| `page(params)`  | `GET /file/storage-configs/page`   |
+| `detail(id)`    | `GET /file/storage-configs/detail` |
+| `create(data)`  | `POST /file/storage-configs`       |
+| `update(data)`  | `PUT /file/storage-configs`        |
+| `delete(id)`    | `DELETE /file/storage-configs`     |
+| `activate(id)`  | `PUT /file/storage-configs/active` |
+| `test(command)` | `POST /file/storage-configs/test`  |
 
 `fileSettingsApi`：
 
-| 方法 | 接口 |
-|------|------|
-| `get()` | `GET /file/settings` |
+| 方法         | 接口                 |
+| ------------ | -------------------- |
+| `get()`      | `GET /file/settings` |
 | `save(data)` | `PUT /file/settings` |
 
 前端默认分片阈值 `DEFAULT_MULTIPART_THRESHOLD` 是 `20 * 1024 * 1024`。
@@ -206,32 +206,32 @@ import { FilePreviewPanel } from '@mango/file';
 
 这个前端包不包含数据库 migration。菜单、权限、存储默认配置和文件设置由后端 `mango-file` 初始化。
 
-| 数据 | 来源 |
-|------|------|
-| 文件记录、目录、存储配置、文件设置 | 后端 `mango-file`。 |
-| 文档预览链接 | 后端 `mango-file-preview`。 |
-| 菜单和权限 | 后端 migration 写入 `authorization_menu`。 |
+| 数据                               | 来源                                       |
+| ---------------------------------- | ------------------------------------------ |
+| 文件记录、目录、存储配置、文件设置 | 后端 `mango-file`。                        |
+| 文档预览链接                       | 后端 `mango-file-preview`。                |
+| 菜单和权限                         | 后端 migration 写入 `authorization_menu`。 |
 
 菜单 component 和前端页面 key：
 
-| 后端菜单 component | 前端页面 key |
-|-------------------|--------------|
-| `@/views/file/files/index.vue` | `file/files/index` |
+| 后端菜单 component                       | 前端页面 key                 |
+| ---------------------------------------- | ---------------------------- |
+| `@/views/file/files/index.vue`           | `file/files/index`           |
 | `@/views/file/storage-configs/index.vue` | `file/storage-configs/index` |
-| `@/views/file/settings/index.vue` | `file/settings/index` |
+| `@/views/file/settings/index.vue`        | `file/settings/index`        |
 
 ## 9. 管理入口
 
 文件模块访问基线：
 
-| 范围 | 访问要求 |
-|------|----------|
-| 详情、上传、批量、秒传、分片、预览、下载、打包、合并、运行时设置读取 | 登录即可，不要求角色权限码 |
-| 跨域预览、下载 | 直接使用查询返回的存储安全签名 URL，默认有效期 24 小时 |
-| 文件管理 | `file:files:list`、`file:files:archive`、`file:files:delete` |
-| 目录 | `file:directories:list`、`file:directories:add`、`file:directories:edit`、`file:directories:delete` |
-| 存储配置 | `file:storage-configs:list`、`file:storage-configs:query`、`file:storage-configs:add`、`file:storage-configs:edit`、`file:storage-configs:delete`、`file:storage-configs:active`、`file:storage-configs:test` |
-| 设置管理 | `file:settings:edit` |
+| 范围                                                                 | 访问要求                                                                                                                                                                                                      |
+| -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 详情、上传、批量、秒传、分片、预览、下载、打包、合并、运行时设置读取 | 登录即可，不要求角色权限码                                                                                                                                                                                    |
+| 跨域预览、下载                                                       | 直接使用查询返回的存储安全签名 URL，默认有效期 24 小时                                                                                                                                                        |
+| 文件管理                                                             | `file:files:list`、`file:files:archive`、`file:files:delete`                                                                                                                                                  |
+| 目录                                                                 | `file:directories:list`、`file:directories:add`、`file:directories:edit`、`file:directories:delete`                                                                                                           |
+| 存储配置                                                             | `file:storage-configs:list`、`file:storage-configs:query`、`file:storage-configs:add`、`file:storage-configs:edit`、`file:storage-configs:delete`、`file:storage-configs:active`、`file:storage-configs:test` |
+| 设置管理                                                             | `file:settings:edit`                                                                                                                                                                                          |
 
 前端只负责页面注册、按钮显隐和交互展示。租户、目录、文件状态、访问级别、业务归属和下载权限由后端校验。
 
