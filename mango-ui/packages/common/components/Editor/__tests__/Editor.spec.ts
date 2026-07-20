@@ -1,212 +1,138 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { mount } from '@vue/test-utils';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import Editor from '../index.vue';
+import { uploadImage } from '../../../api/upload';
 
-// Mock @wangeditor/editor-for-vue before importing the component
+const { fakeEditor } = vi.hoisted(() => ({
+  fakeEditor: {
+    getHtml: vi.fn(() => '<p>content</p>'),
+    getText: vi.fn(() => 'content'),
+    setHtml: vi.fn(),
+    enable: vi.fn(),
+    disable: vi.fn(),
+    destroy: vi.fn(),
+    blur: vi.fn(),
+  },
+}));
+
 vi.mock('@wangeditor/editor-for-vue', () => ({
   Editor: {
     name: 'Editor',
+    props: ['modelValue', 'defaultConfig', 'mode', 'disabled'],
+    emits: ['on-created', 'on-change', 'update:modelValue'],
     template: '<div class="editor-content"></div>',
+    mounted() {
+      this.$emit('on-created', fakeEditor);
+    },
   },
   Toolbar: {
     name: 'Toolbar',
+    props: ['editor', 'defaultConfig', 'mode'],
     template: '<div class="editor-toolbar"></div>',
   },
 }));
 
-// Mock the upload API
-vi.mock('@/api/admin/upload', () => ({
-  uploadImage: vi.fn().mockResolvedValue({
-    url: 'https://example.com/image.png',
-    fileName: 'image.png',
-  }),
-}));
-
-// Mock Element Plus
-vi.mock('element-plus', () => ({
-  ElMessage: {
-    error: vi.fn(),
-    success: vi.fn(),
-  },
+vi.mock('../../../api/upload', () => ({
+  fileToken: (id?: string) => (id ? `mango-file:${id}` : ''),
+  uploadImage: vi.fn(),
 }));
 
 describe('Editor 组件单元测试', () => {
-  describe('Props 定义验证', () => {
-    it('应该正确定义 modelValue prop 类型', () => {
-      const props = {
-        modelValue: '<p>测试内容</p>',
-        placeholder: '请输入内容...',
-        height: 300,
-        disabled: false,
-        mode: 'default' as const,
-      };
-
-      expect(typeof props.modelValue).toBe('string');
-      expect(props.modelValue).toBe('<p>测试内容</p>');
-    });
-
-    it('应该定义正确的默认值', () => {
-      const defaults = {
-        modelValue: '',
-        placeholder: '请输入内容...',
-        height: 300,
-        disabled: false,
-        mode: 'default' as const,
-      };
-
-      expect(defaults.modelValue).toBe('');
-      expect(defaults.placeholder).toBe('请输入内容...');
-      expect(defaults.height).toBe(300);
-      expect(defaults.disabled).toBe(false);
-      expect(defaults.mode).toBe('default');
-    });
-
-    it('应该支持 simple 模式', () => {
-      const props = {
-        mode: 'simple' as const,
-      };
-      expect(props.mode).toBe('simple');
+  beforeEach(() => {
+    vi.mocked(uploadImage).mockResolvedValue({
+      id: '1935600000000000001',
+      url: 'https://example.com/image.png',
+      fileName: 'image.png',
+      fileSize: 1024,
     });
   });
 
-  describe('工具栏配置', () => {
-    it('应该定义完整的工具栏配置', () => {
-      const toolbarConfig = {
-        toolbarKeys: [
-          'headerSelect',
-          '|',
-          'bold',
-          'underline',
-          'italic',
-          '|',
-          'color',
-          'bgColor',
-          '|',
-          'fontSize',
-          'fontFamily',
-          '|',
-          'insertLink',
-          'unLink',
-          '|',
-          'bulletedList',
-          'numberedList',
-          'indent',
-          'delIndent',
-          '|',
-          'justifyLeft',
-          'justifyRight',
-          'justifyCenter',
-          'justifyJustify',
-          '|',
-          'blockquote',
-          '|',
-          'insertImage',
-          '|',
-          'insertVideo',
-          '|',
-          'codeBlock',
-          '|',
-          'undo',
-          'redo',
-          '|',
-          'fullScreen',
-        ],
-      };
-
-      // 验证工具栏包含预期的按钮
-      expect(toolbarConfig.toolbarKeys).toContain('bold');
-      expect(toolbarConfig.toolbarKeys).toContain('italic');
-      expect(toolbarConfig.toolbarKeys).toContain('underline');
-      expect(toolbarConfig.toolbarKeys).toContain('headerSelect');
-      expect(toolbarConfig.toolbarKeys).toContain('insertImage');
-      expect(toolbarConfig.toolbarKeys).toContain('codeBlock');
-      expect(toolbarConfig.toolbarKeys).toContain('fullScreen');
-      expect(toolbarConfig.toolbarKeys).toContain('numberedList');
-    });
-
-    it('工具栏应该包含分隔符', () => {
-      const toolbarConfig = {
-        toolbarKeys: ['bold', '|', 'italic'],
-      };
-      expect(toolbarConfig.toolbarKeys).toContain('|');
-    });
+  afterEach(() => {
+    vi.clearAllMocks();
   });
 
-  describe('编辑器配置', () => {
-    it('应该配置图片上传最大文件大小', () => {
-      const maxFileSize = 10 * 1024 * 1024; // 10MB
-      expect(maxFileSize).toBe(10485760);
-    });
+  it('默认保留完整工具栏配置', async () => {
+    const wrapper = mount(Editor);
 
-    it('placeholder 应该是可配置的', () => {
-      const customPlaceholder = '自定义占位符';
-      expect(customPlaceholder).toBeTruthy();
-    });
+    await wrapper.vm.$nextTick();
+    const toolbar = wrapper.findComponent({ name: 'Toolbar' });
 
-    it('应该支持自定义菜单配置', () => {
-      const menuConfig = {
-        uploadImage: {
-          maxFileSize: 10 * 1024 * 1024,
-        },
-      };
-      expect(menuConfig.uploadImage.maxFileSize).toBe(10485760);
-    });
+    expect(toolbar.props('defaultConfig').toolbarKeys).toContain('bold');
+    expect(toolbar.props('defaultConfig').toolbarKeys).toContain('insertImage');
+    expect(toolbar.props('defaultConfig').toolbarKeys).toContain('fullScreen');
   });
 
-  describe('样式绑定', () => {
-    it('height 应该正确转换为像素字符串', () => {
-      const height = 300;
-      const expectedStyle = `${height}px`;
-      expect(expectedStyle).toBe('300px');
+  it('simple 模式不传完整工具栏配置', async () => {
+    const wrapper = mount(Editor, {
+      props: {
+        mode: 'simple',
+      },
     });
 
-    it('height 可以是数字类型', () => {
-      const height = 300;
-      expect(typeof height).toBe('number');
-    });
+    await wrapper.vm.$nextTick();
+    const toolbar = wrapper.findComponent({ name: 'Toolbar' });
 
-    it('height 可以是字符串类型', () => {
-      const height = '500px';
-      expect(typeof height).toBe('string');
-    });
+    expect(toolbar.props('defaultConfig')).toEqual({});
   });
 
-  describe('事件定义', () => {
-    it('应该定义 update:modelValue 和 change 事件', () => {
-      const eventNames = ['update:modelValue', 'change'];
-      eventNames.forEach((name) => {
-        expect(typeof name).toBe('string');
-        expect(name.length).toBeGreaterThan(0);
-      });
+  it('支持通过 toolbarKeys 自定义展示按钮', async () => {
+    const toolbarKeys = ['bold', 'color', '|', 'numberedList', 'bulletedList', '|', 'uploadImage'];
+    const wrapper = mount(Editor, {
+      props: {
+        toolbarKeys,
+      },
     });
+
+    await wrapper.vm.$nextTick();
+    const toolbar = wrapper.findComponent({ name: 'Toolbar' });
+
+    expect(toolbar.props('defaultConfig')).toEqual({ toolbarKeys });
   });
 
-  describe('组件暴露的方法', () => {
-    it('应该暴露 getEditor 方法', () => {
-      const exposedMethods = ['getEditor', 'getText', 'getHtml', 'setContent', 'clear'];
-      exposedMethods.forEach((method) => {
-        expect(typeof method).toBe('string');
-      });
-    });
+  it('图片上传默认写入可访问 URL', async () => {
+    const insertFn = vi.fn();
+    const wrapper = mount(Editor);
+    const config = wrapper.findComponent({ name: 'Editor' }).props('defaultConfig');
 
-    it('暴露的方法应该是函数', () => {
-      const methodNames = ['getEditor', 'getText', 'getHtml', 'setContent', 'clear'];
-      methodNames.forEach((name) => {
-        expect(typeof name).toBe('string');
-        expect(name.length).toBeGreaterThan(0);
-      });
-    });
+    await config.MENU_CONF.uploadImage.customUpload(new File(['image'], 'image.png'), insertFn);
+
+    expect(uploadImage).toHaveBeenCalled();
+    expect(insertFn).toHaveBeenCalledWith(
+      'https://example.com/image.png',
+      'image.png',
+      'https://example.com/image.png',
+    );
   });
 
-  describe('高度计算', () => {
-    it('应该正确计算 v-bind height', () => {
-      const height = 300;
-      const binding = `${height}px`;
-      expect(binding).toBe('300px');
+  it('imageValueType 为 id 时写入文件 ID', async () => {
+    const insertFn = vi.fn();
+    const wrapper = mount(Editor, {
+      props: {
+        imageValueType: 'id',
+      },
     });
+    const config = wrapper.findComponent({ name: 'Editor' }).props('defaultConfig');
 
-    it('应该处理自定义高度', () => {
-      const height = 500;
-      const binding = `${height}px`;
-      expect(binding).toBe('500px');
+    await config.MENU_CONF.uploadImage.customUpload(new File(['image'], 'image.png'), insertFn);
+
+    expect(insertFn).toHaveBeenCalledWith('1935600000000000001', 'image.png', '1935600000000000001');
+  });
+
+  it('imageValueType 为 token 时写入 mango-file token', async () => {
+    const insertFn = vi.fn();
+    const wrapper = mount(Editor, {
+      props: {
+        imageValueType: 'token',
+      },
     });
+    const config = wrapper.findComponent({ name: 'Editor' }).props('defaultConfig');
+
+    await config.MENU_CONF.uploadImage.customUpload(new File(['image'], 'image.png'), insertFn);
+
+    expect(insertFn).toHaveBeenCalledWith(
+      'mango-file:1935600000000000001',
+      'image.png',
+      'mango-file:1935600000000000001',
+    );
   });
 });

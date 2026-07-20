@@ -52,6 +52,22 @@
       </div>
     </section>
 
+    <section id="custom-toolbar" class="doc-section">
+      <h2>自定义工具栏与图片写入</h2>
+      <p>toolbar-keys 可只展示业务需要的按钮；图片上传会调用文件中心接口，image-value-type 控制图片写入 HTML 的值。</p>
+      <div class="demo-block">
+        <div class="demo-source">
+          <Editor v-model="customContent" :toolbar-keys="compactToolbarKeys" image-value-type="token" height="240px" />
+          <div class="result-note">当前示例图片写入：mango-file:&lt;id&gt;</div>
+        </div>
+        <div class="op-btns" @click="toggleCode('custom')">
+          <el-icon><component :is="codeVisible.custom ? ArrowUp : ArrowDown" /></el-icon>
+          <span>{{ codeVisible.custom ? '隐藏代码' : '显示代码' }}</span>
+        </div>
+        <DemoCodeBlock v-show="codeVisible.custom" :code="customCode" />
+      </div>
+    </section>
+
     <section id="methods" class="doc-section">
       <h2>方法调用</h2>
       <p>通过 ref 可以读取纯文本、读取 HTML、设置内容或清空编辑器。</p>
@@ -124,6 +140,7 @@ const tocItems = [
   { id: 'basic', label: '基础用法' },
   { id: 'simple', label: '简洁模式' },
   { id: 'readonly', label: '只读状态' },
+  { id: 'custom-toolbar', label: '自定义工具栏与图片写入' },
   { id: 'methods', label: '方法调用' },
   { id: 'props', label: '支持属性' },
   { id: 'slots', label: '支持插槽' },
@@ -132,14 +149,19 @@ const tocItems = [
 ];
 
 const editorRef = ref<InstanceType<typeof Editor>>();
-const basicContent = ref('<p>这是一个 <strong>富文本编辑器</strong> 示例。</p><p>支持加粗、斜体、链接、图片等常用编辑能力。</p>');
+const basicContent = ref(
+  '<p>这是一个 <strong>富文本编辑器</strong> 示例。</p><p>支持加粗、斜体、链接、图片等常用编辑能力。</p>',
+);
 const simpleContent = ref('<p>简洁模式适合备注、评论等轻量内容。</p>');
 const readonlyContent = ref('<p><strong>审批说明：</strong>当前内容为只读展示，不能修改。</p>');
+const customContent = ref('<p>当前工具栏只保留加粗、文字颜色、列表和图片上传。</p>');
 const methodContent = ref('<p>通过 ref 调用组件暴露的方法。</p>');
+const compactToolbarKeys = ['bold', 'color', '|', 'numberedList', 'bulletedList', '|', 'uploadImage'];
 const codeVisible = ref<Record<string, boolean>>({
   basic: false,
   simple: false,
   readonly: false,
+  custom: false,
   methods: false,
 });
 
@@ -161,6 +183,27 @@ const readonlyCode = `<Editor
   disabled
 />`;
 
+const customCode = `<script setup lang="ts">
+const toolbarKeys = [
+  'bold',
+  'color',
+  '|',
+  'numberedList',
+  'bulletedList',
+  '|',
+  'uploadImage',
+];
+${'</scr'}ipt>
+
+<template>
+  <Editor
+    v-model="content"
+    :toolbar-keys="toolbarKeys"
+    image-value-type="token"
+    height="240px"
+  />
+</template>`;
+
 const methodsCode = `<template>
   <Editor ref="editorRef" v-model="content" mode="simple" />
 </template>
@@ -179,19 +222,39 @@ function readText() {
 function clear() {
   editorRef.value?.clear();
 }
-<\/script>`;
+${'</scr'}ipt>`;
 
 const propsTable = [
-  { name: 'v-model', description: '编辑器 HTML 内容，表单提交时通常直接提交该字段', type: 'string', defaultValue: "''" },
+  {
+    name: 'v-model',
+    description: '编辑器 HTML 内容，表单提交时通常直接提交该字段',
+    type: 'string',
+    defaultValue: "''",
+  },
   { name: 'placeholder', description: '输入占位文本', type: 'string', defaultValue: '请输入内容...' },
   { name: 'height', description: '编辑区域高度，支持数字或 CSS 长度', type: 'number | string', defaultValue: '300' },
   { name: 'disabled', description: '是否禁用编辑器', type: 'boolean', defaultValue: 'false' },
-  { name: 'mode', description: '工具栏模式，default 为完整模式，simple 为简洁模式', type: "'default' | 'simple'", defaultValue: 'default' },
+  {
+    name: 'mode',
+    description: '工具栏模式，default 为完整模式，simple 为简洁模式',
+    type: "'default' | 'simple'",
+    defaultValue: 'default',
+  },
+  {
+    name: 'toolbarKeys',
+    description: '自定义 WangEditor 工具栏按钮；不传时沿用 mode 对应的默认工具栏',
+    type: 'Array<string | ToolbarGroup>',
+    defaultValue: '-',
+  },
+  {
+    name: 'imageValueType',
+    description: '图片上传成功后写入 HTML 的值；url 用于即时可见，id/token 用于业务长期保存文件标识后自行解析预览',
+    type: "'url' | 'id' | 'token'",
+    defaultValue: 'url',
+  },
 ];
 
-const slotsTable = [
-  { name: '-', description: '当前组件不提供业务插槽，内容通过 v-model 传入和回写', scope: '-' },
-];
+const slotsTable = [{ name: '-', description: '当前组件不提供业务插槽，内容通过 v-model 传入和回写', scope: '-' }];
 
 const eventsTable = [
   { name: 'update:modelValue', description: 'HTML 内容变化时触发，用于 v-model 双向绑定', payload: 'string' },
@@ -205,6 +268,11 @@ const eventsTable = [
 
 const valueTable = [
   { field: 'v-model', type: 'string', description: '返回完整 HTML 字符串，例如 <p>正文</p>，适合直接保存为富文本字段' },
+  {
+    field: '图片 src',
+    type: 'string',
+    description: '默认写入上传返回的 url；imageValueType="id" 写入文件 ID；imageValueType="token" 写入 mango-file:<id>',
+  },
   { field: 'getText()', type: 'string', description: '返回去除 HTML 标签后的纯文本，适合摘要、字数统计或检索字段' },
   { field: 'getHtml()', type: 'string', description: '返回当前 HTML 内容，和 v-model 当前值保持一致' },
 ];

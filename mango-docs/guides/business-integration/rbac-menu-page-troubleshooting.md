@@ -14,23 +14,23 @@
 
 ## 2. 阅读顺序
 
-| 顺序 | 文档 | 关注点 |
-|------|------|--------|
-| 1 | [Authorization 后端 README](../../../mango/mango-platform/mango-authorization/README.md) | 菜单、权限、资源同步、授权关系 |
-| 2 | [@mango/rbac README](../../../mango-ui/packages/rbac/README.md) | RBAC 前端包和 API |
-| 3 | [RBAC Views README](../../../mango-ui/packages/rbac/src/views/README.md) | 页面 key 和组件映射 |
-| 4 | [@mango/admin-shell README](../../../mango-ui/packages/admin-shell/README.md) | 页面注册、菜单渲染、登录后装配 |
+| 顺序 | 文档                                                                                     | 关注点                         |
+| ---- | ---------------------------------------------------------------------------------------- | ------------------------------ |
+| 1    | [Authorization 后端 README](../../../mango/mango-platform/mango-authorization/README.md) | 菜单、权限、资源同步、授权关系 |
+| 2    | [@mango/rbac README](../../../mango-ui/packages/rbac/README.md)                          | RBAC 前端包和 API              |
+| 3    | [RBAC Views README](../../../mango-ui/packages/rbac/src/views/README.md)                 | 页面 key 和组件映射            |
+| 4    | [@mango/admin-shell README](../../../mango-ui/packages/admin-shell/README.md)            | 页面注册、菜单渲染、登录后装配 |
 
 ## 3. 接入检查点
 
-| 环节 | 检查点 |
-|------|--------|
-| 菜单数据 | `/authorization/menus/user?fmt=tree&appCode=internal-admin` 返回目标菜单 |
-| 页面 key | 菜单 `component` 字段能匹配前端页面 key |
-| 前端注册 | 前端包已引入并完成页面注册或路由映射 |
-| 角色授权 | 当前用户角色已绑定目标菜单 |
-| 租户绑定 | 当前租户已绑定目标应用和菜单包 |
-| 运行态请求 | 浏览器 network 中页面依赖和业务接口没有未解释的 401/403/404 |
+| 环节       | 检查点                                                                   |
+| ---------- | ------------------------------------------------------------------------ |
+| 菜单数据   | `/authorization/menus/user?fmt=tree&appCode=internal-admin` 返回目标菜单 |
+| 页面 key   | 菜单 `component` 字段能匹配前端页面 key                                  |
+| 前端注册   | 前端包已引入并完成页面注册或路由映射                                     |
+| 角色授权   | 当前用户角色已绑定目标菜单                                               |
+| 租户绑定   | 当前租户已绑定目标应用和菜单包                                           |
+| 运行态请求 | 浏览器 network 中页面依赖和业务接口没有未解释的 401/403/404              |
 
 ## 4. 最小闭环
 
@@ -42,24 +42,24 @@
 
 ## 5. 页面 key 对照
 
-| 能力 | 常见页面 key 文档 |
-|------|------------------|
-| Auth | [Auth Views README](../../../mango-ui/packages/auth/src/views/README.md) |
-| File | [File Components README](../../../mango-ui/packages/file/src/components/README.md) |
-| Job | [Job Views README](../../../mango-ui/packages/job/src/views/README.md) |
-| RBAC | [RBAC Views README](../../../mango-ui/packages/rbac/src/views/README.md) |
-| System | [System Components README](../../../mango-ui/packages/system/src/components/README.md) |
+| 能力     | 常见页面 key 文档                                                                          |
+| -------- | ------------------------------------------------------------------------------------------ |
+| Auth     | [Auth Views README](../../../mango-ui/packages/auth/src/views/README.md)                   |
+| File     | [File Components README](../../../mango-ui/packages/file/src/components/README.md)         |
+| Job      | [Job Views README](../../../mango-ui/packages/job/src/views/README.md)                     |
+| RBAC     | [RBAC Views README](../../../mango-ui/packages/rbac/src/views/README.md)                   |
+| System   | [System Components README](../../../mango-ui/packages/system/src/components/README.md)     |
 | Workflow | [Workflow Components README](../../../mango-ui/packages/workflow/src/components/README.md) |
 
 ## 6. 常见失败
 
-| 现象 | 优先检查 |
-|------|----------|
-| 菜单存在但点击空白 | component key 与前端注册表不一致 |
-| 菜单不存在 | resource manifest、迁移 SQL、角色授权和租户应用绑定 |
-| 页面加载但接口 403 | Access、Authorization 和当前用户权限集合 |
-| 刷新后页面丢失 | 前端路由 fallback、admin-shell 注册时机 |
-| 只有某租户异常 | 租户应用绑定、菜单包绑定、租户初始化数据 |
+| 现象               | 优先检查                                            |
+| ------------------ | --------------------------------------------------- |
+| 菜单存在但点击空白 | component key 与前端注册表不一致                    |
+| 菜单不存在         | resource manifest、迁移 SQL、角色授权和租户应用绑定 |
+| 页面加载但接口 403 | Access、Authorization 和当前用户权限集合            |
+| 刷新后页面丢失     | 前端路由 fallback、admin-shell 注册时机             |
+| 只有某租户异常     | 租户应用绑定、菜单包绑定、租户初始化数据            |
 
 ## 7. 验证命令
 
@@ -214,6 +214,7 @@ pnpm -F @mango/admin-shell build
 - v2026.07.07-maven-1.0.13-menu-api-codes-release 仅发布 menuCode/apiCodes 权限模型的 Maven、npm 和 CLI 版本批次；不改变菜单 `component` key、菜单树接口、页面注册方式、角色授权关系、租户应用绑定、登录态权限聚合、页面路由和本场景排障步骤。业务项目升级时按发布说明成组升级后端 `<mango.version>`、前端 `@mango/*` 包和 `@mango/cli`。
 
 - 本次 PR 仅在开发中心组件库新增 `MangoSearchPanel` 搜索面板示例入口和示例页面；不改变菜单 `component` key 解析、菜单树接口、业务页面注册方式、角色授权关系、按钮权限关系、登录态权限聚合、租户应用绑定、页面路由和本场景排障步骤。
+
 ## search-panel-layout-enhance 影响记录
 
 - 本次仅增强开发中心搜索面板示例和 `@mango/common` 搜索面板固定列布局能力，不改变菜单 `component` key、菜单树接口、页面注册方式、角色菜单授权关系、租户绑定、页面路由和本场景排障步骤。
@@ -233,3 +234,5 @@ pnpm -F @mango/admin-shell build
 ## 2026-07-19 前端规范候选影响
 
 - 本次前端规范候选统一公开包合同、显式样式入口、Host 请求客户端注入和单体/微前端运行时边界；不改变菜单 `component` key、菜单树接口、页面注册结果、角色授权关系、登录态权限聚合、租户绑定和本场景排障步骤。业务项目只有主动升级完整前端包矩阵时才需要重新执行菜单、页面和权限冒烟验证。
+
+- 本次 PR 仅在开发中心 Editor 示例中展示 `@mango/common` 富文本工具栏精简配置和图片值写入类型；不改变菜单 `component` key、菜单树接口、页面注册结果、角色授权关系、登录态权限聚合、租户绑定和本场景排障步骤。
