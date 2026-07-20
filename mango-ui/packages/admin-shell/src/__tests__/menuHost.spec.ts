@@ -179,15 +179,26 @@ describe('admin-shell menu contract', () => {
       pages: {
         'notice/receive-setting/index': async () => ({}),
       },
-      routes: [{
-        menuCode: 'notice:receive-setting',
-        path: '/notice/receive-setting',
-        component: 'notice/receive-setting/index',
-        visible: 0,
-      }],
+      routes: [
+        {
+          menuCode: 'notice:receive-setting',
+          path: '/message-center/receive-setting',
+          component: 'notice/receive-setting/index',
+          visible: 0,
+        },
+        {
+          path: '/notice/receive-setting',
+          component: 'notice/receive-setting/index',
+          visible: 0,
+        },
+      ],
     });
 
-    expect(resolveMenuPathByCode([], 'notice:receive-setting')).toBe('/notice/receive-setting');
+    expect(resolveMenuPathByCode([], 'notice:receive-setting')).toBe('/message-center/receive-setting');
+    expect(getRegisteredPageRoutes(['mango-notice-route-test']).map(route => route.path)).toEqual([
+      '/message-center/receive-setting',
+      '/notice/receive-setting',
+    ]);
   });
 
   it('resolves legacy mango-admin route names that preserve backend menu codes', () => {

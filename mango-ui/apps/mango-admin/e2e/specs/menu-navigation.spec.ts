@@ -134,7 +134,8 @@ test.describe('用户菜单导航 E2E', () => {
     });
     expect(menuBody.data[5].children.map((item: { menuName: string }) => item.menuName)).toEqual([
       '我的消息',
-      '公告',
+      '系统公告',
+      '接收配置',
     ]);
     for (const menu of collectVisibleMenus(menuBody.data)) {
       expect(menu.icon, `${menu.menuName} 必须配置菜单图标`).toBeTruthy();
@@ -214,7 +215,8 @@ test.describe('用户菜单导航 E2E', () => {
 
     await openTopMenu(page, '消息中心');
     await expectMenuIcon(page, '我的消息');
-    await expectMenuIcon(page, '公告');
+    await expectMenuIcon(page, '系统公告');
+    await expectMenuIcon(page, '接收配置');
   });
 
   test('A 公司登录后只渲染机构授权范围内的系统管理、审批中心与平台能力导航', async ({ page }) => {

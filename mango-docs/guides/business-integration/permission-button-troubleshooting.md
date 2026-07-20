@@ -225,6 +225,8 @@ pnpm -F @mango/admin-shell build
 
 - Issue #553 只把个人消息、接收设置及其业务类型只读权限绑定到内置 `ROLE_LOGIN`，并保持 Realtime 客户端入口为 `LOGIN`；不改变按钮 `permissionCode`、按钮展示规则或通知管理写权限。按钮显示异常仍按本指南检查显式业务角色和登录态权限集合。
 
+- Issue #575 只调整 Notice 用户菜单的层级、名称和接收配置规范路由，不改变 `notice:receive-setting` menuCode、既有 `apiCodes`、按钮 `permissionCode`、登录态权限集合或接口鉴权。按钮显示异常仍按本指南检查角色授权、登录态刷新和页面 `v-auth`。
+
 ## 2026-07-19 前端规范候选影响
 
 - 本次前端规范候选统一组件合同、Host 请求客户端注入和质量门禁；不改变按钮 `permissionCode`、登录态权限集合、角色按钮授权、后端接口鉴权、租户边界和按钮展示规则。业务项目主动升级完整前端包矩阵后，仍按本指南验证按钮可见性、点击请求和后端授权结果。

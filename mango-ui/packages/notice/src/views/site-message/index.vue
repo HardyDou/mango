@@ -53,7 +53,7 @@ async function openNamedTarget(targetKey: string, params?: Record<string, unknow
 }
 
 const NOTICE_TARGET_PATHS: Record<string, string> = {
-  'notice:receive-setting': '/notice/receive-setting',
+  'notice:receive-setting': '/message-center/receive-setting',
   'notice:announcement-user': '/message-center/announcement',
 };
 

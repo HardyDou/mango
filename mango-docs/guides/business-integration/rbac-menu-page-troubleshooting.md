@@ -231,6 +231,8 @@ pnpm -F @mango/admin-shell build
 
 - Issue #553 修复通知铃铛把 `menuCode` 当作 Vue 命名路由的问题，并让 `mango-admin` 装载 Notice admin-pages 声明的隐藏接收设置路由。业务页面仍按既有 `component` key 注册；仅“我的消息/接收设置”入口异常时，额外确认内置 `ROLE_LOGIN`、Notice 菜单资源同步和 `registerMangoNoticeAdminPages()`，其它菜单页面继续按本指南原闭环排查。
 
+- Issue #575 将用户端“接收配置”从“通知中心”归入“消息中心”，并把用户端“公告”更名为“系统公告”。接收配置的规范路由调整为 `/message-center/receive-setting`，`notice/receive-setting/index` component key 和 `notice:receive-setting` menuCode 保持不变；旧 `/notice/receive-setting` 仅作为隐藏兼容路由。若升级后仍看到旧菜单层级或点击进入 404，依次确认 Notice 菜单资源已同步到第 3 版、前端已注册规范路由，以及业务侧没有缓存旧菜单数据。
+
 ## 2026-07-19 前端规范候选影响
 
 - 本次前端规范候选统一公开包合同、显式样式入口、Host 请求客户端注入和单体/微前端运行时边界；不改变菜单 `component` key、菜单树接口、页面注册结果、角色授权关系、登录态权限聚合、租户绑定和本场景排障步骤。业务项目只有主动升级完整前端包矩阵时才需要重新执行菜单、页面和权限冒烟验证。

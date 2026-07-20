@@ -48,6 +48,11 @@ class NoticeResourceDeclarationContractTest {
         JsonNode declaration = objectMapper.readTree(
                 resourceText("META-INF/mango/resources/notice-common-menu.json"));
 
+        JsonNode noticeCenter = findMenu(declaration, "notice");
+        JsonNode messageCenter = findMenu(declaration, "message-center");
+        assertThat(noticeCenter).isNotNull();
+        assertThat(messageCenter).isNotNull();
+
         JsonNode loginBasic = findMenu(declaration, "notice:basic-login");
         assertThat(loginBasic).isNotNull();
         assertThat(stringValues(loginBasic.get("roleCodes"))).containsExactly("ROLE_LOGIN");
@@ -66,10 +71,37 @@ class NoticeResourceDeclarationContractTest {
 
         JsonNode announcements = findMenu(declaration, "notice:announcement-user");
         assertThat(announcements).isNotNull();
+        assertThat(announcements.path("menuName").asText()).isEqualTo("系统公告");
         assertThat(stringValues(announcements.get("roleCodes"))).containsExactly("ROLE_LOGIN");
         assertThat(stringValues(announcements.get("apiCodes"))).containsExactlyInAnyOrder(
                 "notice:site:view", "notice:site:edit");
+
+        JsonNode receiveSetting = findMenu(declaration, "notice:receive-setting");
+        assertThat(receiveSetting).isNotNull();
+        assertThat(receiveSetting.path("menuName").asText()).isEqualTo("接收配置");
+        assertThat(receiveSetting.path("path").asText()).isEqualTo("/message-center/receive-setting");
+        assertThat(receiveSetting.path("component").asText()).isEqualTo("notice/receive-setting/index");
+        assertThat(receiveSetting.path("sort").asInt()).isEqualTo(3);
+        assertThat(stringValues(receiveSetting.get("roleCodes"))).containsExactly("ROLE_LOGIN");
+        assertThat(stringValues(receiveSetting.get("apiCodes"))).containsExactlyInAnyOrder(
+                "notice:receive-setting:view", "notice:receive-setting:edit");
+        assertThat(directChildMenuCodes(noticeCenter)).doesNotContain("notice:receive-setting");
+        assertThat(directChildMenuCodes(messageCenter)).contains("notice:receive-setting");
+        assertThat(countMenus(declaration, "notice:receive-setting")).isEqualTo(1);
         assertThat(declaration.toString()).doesNotContain("ROLE_ANONYMOUS");
+    }
+
+    private List<String> directChildMenuCodes(JsonNode menu) {
+        return StreamSupport.stream(menu.path("children").spliterator(), false)
+                .map(child -> child.path("menuCode").asText())
+                .toList();
+    }
+
+    private long countMenus(JsonNode node, String menuCode) {
+        long current = node.isObject() && menuCode.equals(node.path("menuCode").asText()) ? 1 : 0;
+        return current + StreamSupport.stream(node.spliterator(), false)
+                .mapToLong(child -> countMenus(child, menuCode))
+                .sum();
     }
 
     private JsonNode findMenu(JsonNode node, String menuCode) {

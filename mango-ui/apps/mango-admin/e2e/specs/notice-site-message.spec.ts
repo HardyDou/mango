@@ -18,7 +18,7 @@ function ok(data: unknown) {
 }
 
 test.describe('通知中心 E2E', () => {
-  test('登录后可以访问完整通知菜单、消息入口和系统消息主流程', async ({ page }) => {
+  test('@p1 @notice 登录后可以访问完整通知菜单、消息入口和系统消息主流程', async ({ page }) => {
     test.setTimeout(90_000);
     const businessTypes = [
       {
@@ -306,6 +306,7 @@ test.describe('通知中心 E2E', () => {
               'notice:business:view', 'notice:business:create', 'notice:business:edit', 'notice:business:publish', 'notice:business:delete',
               'notice:channel:view', 'notice:channel:create', 'notice:channel:delete', 'notice:task:create', 'notice:task:view', 'notice:record:view',
               'notice:site:view', 'notice:site:edit', 'notice:site:delete', 'notice:setting:view',
+              'notice:receive-setting:view', 'notice:receive-setting:edit',
             ],
           },
         }),
@@ -313,12 +314,19 @@ test.describe('通知中心 E2E', () => {
     });
 
     await page.route('**/api/authorization/menus/user**', async (route) => {
-      const child = (menuId: string, menuName: string, path: string, component: string) => ({
+      const child = (
+        menuId: string,
+        menuName: string,
+        path: string,
+        component: string,
+        menuCode = path.replace('/notice/', 'notice:'),
+        parentId = '2900',
+      ) => ({
         menuId,
-        parentId: '2900',
+        parentId,
         menuType: 2,
         menuName,
-        menuCode: path.replace('/notice/', 'notice:'),
+        menuCode,
         path,
         icon: 'Message',
         component,
@@ -349,10 +357,27 @@ test.describe('通知中心 E2E', () => {
               child('2901', '消息配置', '/notice/message-definition', '@/views/notice/message-definition/index.vue'),
               child('2902', '发送任务', '/notice/send-message', '@/views/notice/send-message/index.vue'),
               child('2903', '渠道配置', '/notice/channel', '@/views/notice/channel/index.vue'),
-              child('2904', '接收设置', '/notice/receive-setting', '@/views/notice/receive-setting/index.vue'),
               child('2905', '发送记录', '/notice/record', '@/views/notice/record/index.vue'),
               child('2906', '失败重试', '/notice/retry', '@/views/notice/retry/index.vue'),
-              child('2907', '系统消息', '/notice/site-message', '@/views/notice/site-message/index.vue'),
+            ],
+          },
+          {
+            menuId: '2920',
+            parentId: '0',
+            menuType: 1,
+            menuName: '消息中心',
+            menuCode: 'message-center',
+            path: '/message-center',
+            icon: 'Message',
+            redirect: '/message-center/site-message',
+            moduleCode: 'mango-notice',
+            pageType: 'LOCAL_ROUTE',
+            visible: 1,
+            status: 1,
+            children: [
+              child('2921', '我的消息', '/message-center/site-message', 'notice/site-message/index', 'notice:site-message', '2920'),
+              child('2922', '系统公告', '/message-center/announcement', 'notice/announcement-user/index', 'notice:announcement-user', '2920'),
+              child('2923', '接收配置', '/message-center/receive-setting', 'notice/receive-setting/index', 'notice:receive-setting', '2920'),
             ],
           },
         ]),
@@ -708,6 +733,7 @@ test.describe('通知中心 E2E', () => {
     const noticeBell = page.locator('.notice-bell');
     await expect(page.getByLabel('消息提醒')).toBeVisible();
     await expect(noticeBell.locator('.el-badge__content')).toHaveText('1');
+    await page.waitForLoadState('networkidle');
     const unreadCountRequestsAfterLogin = unreadCountRequestCount;
     expect(unreadCountRequestsAfterLogin).toBeGreaterThanOrEqual(1);
     await page.evaluate(() => {
@@ -946,10 +972,12 @@ test.describe('通知中心 E2E', () => {
     await expect(recordDetailDialog.getByText('NR001')).toBeVisible();
     await expect(recordDetailDialog.getByText('"status": "SENT"')).toBeVisible();
     await recordDetailDialog.getByRole('button', { name: '关闭', exact: true }).click();
-    await page.getByRole('menuitem', { name: '接收设置' }).click();
+    await page.getByRole('button', { name: '消息中心' }).click();
+    await page.getByRole('menuitem', { name: '接收配置' }).click();
+    await expect(page).toHaveURL(/#\/message-center\/receive-setting$/);
     await expect(page.getByLabel('提醒方式').getByText('提示音')).toBeVisible();
 
-    await page.getByRole('menuitem', { name: '系统消息' }).click();
+    await page.getByRole('menuitem', { name: '我的消息' }).click();
     await expect(page.locator('.notice-site-message-page__header').getByText('我的消息')).toBeVisible();
     const siteMessageRow = page.locator('tr', { hasText: '测试系统消息' });
     await expect(siteMessageRow).toBeVisible();
@@ -987,7 +1015,7 @@ test.describe('通知中心 E2E', () => {
     await siteMessageRow.getByRole('button', { name: '查看设置' }).click();
     await expect(page.getByLabel('提醒方式').getByText('提示音')).toBeVisible();
     await page.screenshot({ path: 'test-results/notice-message-actions.png', fullPage: true });
-    await page.getByRole('menuitem', { name: '系统消息' }).click();
+    await page.getByRole('menuitem', { name: '我的消息' }).click();
     await expect(page.locator('.notice-site-message-page__header').getByText('我的消息')).toBeVisible();
     await page.locator('tr', { hasText: '测试系统消息' }).getByRole('button', { name: '详情' }).click();
     const siteDetailDialog = page.getByRole('dialog', { name: '测试系统消息' });

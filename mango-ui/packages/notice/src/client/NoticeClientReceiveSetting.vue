@@ -1,5 +1,5 @@
 <template>
-  <div class="notice-receive-setting-page">
+  <div class="notice-receive-setting-page" data-page="notice.receive-setting">
     <el-card shadow="never" class="notice-section">
       <el-tabs v-model="activeTab" class="notice-receive-tabs">
         <el-tab-pane label="提醒设置" name="reminder">

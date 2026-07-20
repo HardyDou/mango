@@ -140,13 +140,13 @@ stop();
 | 消息定义 | `notice/message-definition/index` |
 | 发送消息 | `notice/send-message/index` |
 | 公告管理 | `notice/announcement/index` |
-| 公告 | `notice/announcement-user/index` |
+| 系统公告 | `notice/announcement-user/index` |
 | 渠道管理 | `notice/channel/index` |
 | 通知任务 | `notice/task/index` |
 | 发送记录 | `notice/record/index` |
 | 站内信 | `notice/site-message/index`、`notice/site/messages/index` |
 | 全局设置 | `notice/setting/index` |
-| 接收设置 | `notice/receive-setting/index` |
+| 接收配置 | `notice/receive-setting/index` |
 | 重试管理 | `notice/retry/index` |
 
 ### 7.2 导出对象
@@ -183,7 +183,7 @@ stop();
 
 个人消息和接收设置接口使用权限码完成资源校验；接收设置展示业务类型还依赖只读权限 `notice:business:view`。这些最小权限由后端 Notice 菜单资源绑定到内置 `ROLE_LOGIN`，所有已登录用户无需额外业务角色即可使用；`ROLE_ANONYMOUS` 不包含个人消息或 Realtime 建连权限。
 
-消息中心内部的接收设置和公告入口使用 Notice 自有稳定路径；业务消息携带的其它 `targetKey` 只有在宿主真实注册同名 Vue 路由时才执行跳转，未注册时显示“目标未注册或当前无权访问”。
+消息中心内部的接收配置和系统公告入口分别使用稳定路径 `/message-center/receive-setting` 和 `/message-center/announcement`；旧接收配置路径 `/notice/receive-setting` 仅作为隐藏兼容入口保留。业务消息携带的其它 `targetKey` 只有在宿主真实注册同名 Vue 路由时才执行跳转，未注册时显示“目标未注册或当前无权访问”。
 
 ### 7.4 站内信动作接入
 
@@ -347,14 +347,14 @@ executeMySiteMessageAction(messageId, actionCode, input)
 | 通知业务配置 | `notice/business-config/index` | `notice:business:*` |
 | 发送消息 | `notice/send-message/index` | `notice:task:create` |
 | 公告管理 | `notice/announcement/index` | `notice:announcement:*` |
-| 公告 | `notice/announcement-user/index` | `notice:site:view`、`notice:site:edit` |
+| 系统公告 | `notice/announcement-user/index` | `notice:site:view`、`notice:site:edit` |
 | 渠道管理 | `notice/channel/index` | `notice:channel:*` |
 | 通知任务 | `notice/task/index` | `notice:task:view` |
 | 发送记录 | `notice/record/index` | `notice:record:view` |
 | 重试管理 | `notice/retry/index` | `notice:retry:edit` |
 | 站内信 | `notice/site-message/index` | `ROLE_LOGIN` 默认提供 `notice:site:view/edit` |
 | 全局设置 | `notice/setting/index` | `notice:setting:*` |
-| 接收设置 | `notice/receive-setting/index` | `ROLE_LOGIN` 默认提供 `notice:receive-setting:view/edit` 和只读的 `notice:business:view` |
+| 接收配置 | `notice/receive-setting/index` | `ROLE_LOGIN` 默认提供 `notice:receive-setting:view/edit` 和只读的 `notice:business:view` |
 | 顶部铃铛 | Shell provider | 登录态和 `ROLE_LOGIN` 个人消息权限 |
 
 页面可见但打不开时，先检查 `registerMangoNoticeAdminPages()` 是否执行；铃铛不显示时，检查 `registerMangoNoticeAdminShell()` 是否执行。

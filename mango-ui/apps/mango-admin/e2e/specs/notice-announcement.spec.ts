@@ -185,6 +185,7 @@ async function setupRoutes(page: Page, state: TestState) {
     children: [],
   });
 
+  await page.route('**/api/**', route => fulfillJson(route, []));
   await page.route('**/api/system/tenant/login-options**', route =>
     fulfillJson(route, [{ tenantId: '1', tenantCode: 'mango', tenantName: '芒果集团' }])
   );
@@ -285,7 +286,6 @@ async function setupRoutes(page: Page, state: TestState) {
         status: 1,
         children: [
           child('2907', '公告管理', '/notice/announcement', 'notice/announcement/index'),
-          child('2910', '接收设置', '/notice/receive-setting', 'notice/receive-setting/index', 0),
         ],
       },
       {
@@ -302,8 +302,21 @@ async function setupRoutes(page: Page, state: TestState) {
         visible: 1,
         status: 1,
         children: [
-          { ...child('2921', '我的消息', '/message-center/site-message', 'notice/site-message/index'), parentId: '2920' },
-          { ...child('2922', '公告', '/message-center/announcement', 'notice/announcement-user/index'), parentId: '2920' },
+          {
+            ...child('2921', '我的消息', '/message-center/site-message', 'notice/site-message/index'),
+            parentId: '2920',
+            menuCode: 'notice:site-message',
+          },
+          {
+            ...child('2922', '系统公告', '/message-center/announcement', 'notice/announcement-user/index'),
+            parentId: '2920',
+            menuCode: 'notice:announcement-user',
+          },
+          {
+            ...child('2923', '接收配置', '/message-center/receive-setting', 'notice/receive-setting/index'),
+            parentId: '2920',
+            menuCode: 'notice:receive-setting',
+          },
         ],
       },
     ])
@@ -643,13 +656,13 @@ async function expectMessage(page: Page, text: string) {
 }
 
 test.describe('通知中心公告 E2E', () => {
-  test('覆盖公告管理、发布对象、用户公告确认和消息中心跳转', async ({ page }) => {
+  test('@p1 @notice 覆盖公告管理、发布对象、用户公告确认和消息中心跳转', async ({ page }) => {
     const state = createState();
     mkdirSync(evidenceDir, { recursive: true });
-    await login(page);
     await setupRoutes(page, state);
 
     await assertNoRuntimeErrors(page, async () => {
+      await login(page);
       await page.goto('/#/notice/announcement');
       await expect(page.getByRole('heading', { name: '公告管理' })).toBeVisible();
       await expect(page.locator('tr', { hasText: '端午值班安排' })).toContainText('已发布');
@@ -707,7 +720,11 @@ test.describe('通知中心公告 E2E', () => {
       await expectMessage(page, '公告已下线');
       await expect(page.locator('tr', { hasText: '全员安全提醒' })).toContainText('已下线');
 
-      await page.goto('/#/message-center/announcement');
+      await page.getByRole('button', { name: '消息中心' }).click();
+      await expect(page.getByRole('menuitem', { name: '系统公告' })).toBeVisible();
+      await expect(page.getByRole('menuitem', { name: '接收配置' })).toBeVisible();
+      await page.getByRole('menuitem', { name: '系统公告' }).click();
+      await expect(page).toHaveURL(/#\/message-center\/announcement$/);
       await expect(page.getByRole('heading', { name: '公告' })).toBeVisible();
       await expect(page.locator('tr', { hasText: '端午值班安排' })).toContainText('待确认');
       await page.locator('tr', { hasText: '端午值班安排' }).getByRole('button', { name: '查看' }).click();
