@@ -19,6 +19,8 @@ class WorkflowMigrationContractTest {
             "db/migration/workflow/beforeValidate__workflow_v1_checksum_compatibility.sql";
     private static final Pattern DATA_MUTATION = Pattern.compile(
             "(?im)^\\s*(insert|update|delete|replace|set|prepare|execute|deallocate)\\b");
+    private static final Pattern INTEGER_DISPLAY_WIDTH = Pattern.compile(
+            "(?i)\\b(tinyint|smallint|mediumint|int|integer|bigint)\\s*\\(\\d+\\)");
 
     @Test
     void v1_containsFinalSchemaAndNoDataMutation() throws IOException {
@@ -28,13 +30,17 @@ class WorkflowMigrationContractTest {
         assertThat(sql)
                 .contains("`tenant_id` varchar(64) NOT NULL DEFAULT '1'")
                 .contains("`domain_code` varchar(64) NOT NULL DEFAULT 'COMMON'")
-                .contains("`start_entry_visible` tinyint(1) NOT NULL DEFAULT '1'")
+                .contains("`start_entry_visible` tinyint NOT NULL DEFAULT '1'")
+                .contains("DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_bin")
                 .contains("`claim_status` varchar(32)")
                 .contains("`candidate_users` varchar(1000)")
                 .contains("`candidate_groups` varchar(1000)")
+                .doesNotContain("DEFAULT CHARSET=utf8 COLLATE utf8_bin")
+                .doesNotContain("utf8mb3")
                 .doesNotContain("common.schema.version")
                 .doesNotContain("next.dbid")
                 .doesNotContain("schema.history");
+        assertThat(INTEGER_DISPLAY_WIDTH.matcher(sql).find()).isFalse();
     }
 
     @Test
@@ -83,13 +89,13 @@ class WorkflowMigrationContractTest {
     }
 
     @Test
-    void checksumCallback_repairsOnlyPublishedMaven_1_0_20V1() throws IOException {
+    void checksumCallback_repairsKnownPublishedV1Checksums() throws IOException {
         String sql = resourceText(CHECKSUM_CALLBACK);
 
         assertThat(sql)
                 .contains("table_name = '${flyway:table}'")
-                .contains("`checksum` = -1500222187")
-                .contains("`checksum` = -840523381")
+                .contains("`checksum` = 1010539203")
+                .contains("`checksum` IN (-840523381, -1500222187)")
                 .contains("`version` = ''1''")
                 .contains("`script` = ''V1__init_workflow.sql''")
                 .contains("`success` = 1")

@@ -7,7 +7,7 @@ SET @workflow_v1_checksum_compatibility_sql = IF(
     WHERE table_schema = DATABASE()
       AND table_name = '${flyway:table}'
   ),
-  'UPDATE `${flyway:table}` SET `checksum` = -1500222187 WHERE `version` = ''1'' AND `script` = ''V1__init_workflow.sql'' AND `checksum` = -840523381 AND `success` = 1',
+  'UPDATE `${flyway:table}` SET `checksum` = 1010539203 WHERE `version` = ''1'' AND `script` = ''V1__init_workflow.sql'' AND `checksum` IN (-840523381, -1500222187) AND `success` = 1',
   'DO 0'
 );
 
