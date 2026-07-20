@@ -3,8 +3,8 @@
   "packageVersion": "1.3.3",
   "schemaVersion": 2,
   "source": "mango-pmo",
-  "sourceCommit": "de1408ca64d4baaadf73f4e525b2edcf9538f5fd",
-  "bundleSha256": "b10a04261d22c427ef906cc21826b373bd10eb5b226dced3211a8d1a7ccce5a3",
+  "sourceCommit": "9248fb95447e6ecd0055648ca66d64c4df98ad4d",
+  "bundleSha256": "cec71ce79b30dbfdc0e676b172c30d56455decc08810e3235f1d14542e1f089b",
   "contracts": [
     {
       "contractId": "business-requirements",
@@ -1060,7 +1060,7 @@
       "sha256": "86397778b71f7bf6ef9b8be01c57b75dd18eb5d53b896ea98afb55b0c0c9da2b",
       "size": 7507,
       "kind": "tool",
-      "mode": "0644"
+      "mode": "0755"
     },
     {
       "path": "tools/audit-module-readmes.mjs",
@@ -1186,7 +1186,7 @@
       "sha256": "1b5775633a91d3786038c46b6e5d216f4c7b2616cb279b768b6d8bf9a9512a20",
       "size": 21862,
       "kind": "tool",
-      "mode": "0644"
+      "mode": "0755"
     },
     {
       "path": "tools/document-contract/cli.mjs",
@@ -1235,7 +1235,7 @@
       "sha256": "0855d9fa73f765687f9a3ed2c5f8bec41e9813c8d302233f6f0179c03609750b",
       "size": 16351,
       "kind": "tool",
-      "mode": "0644"
+      "mode": "0755"
     },
     {
       "path": "tools/risk-verification.mjs",

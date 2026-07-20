@@ -24,6 +24,7 @@ const pluginSourceRoot = join(sourceRoot, 'plugin-src');
 const packagePluginManifestRoot = join(packageRoot, '.codex-plugin');
 const packageSkillsRoot = join(packageRoot, 'skills');
 const packageJson = JSON.parse(readFileSync(join(packageRoot, 'package.json'), 'utf8'));
+const gitFileModes = readGitFileModes();
 const sourceRoots = [
   { path: 'agents', required: true },
   { path: 'rules', required: true },
@@ -70,11 +71,14 @@ if (pluginManifest.version !== packageJson.version) {
   );
 }
 const pluginFiles = [
-  ...describeFiles(packagePluginManifestRoot, 'plugin').map((file) => ({
+  ...describeFiles(packagePluginManifestRoot, 'plugin', 'mango-pmo/plugin-src/.codex-plugin').map((file) => ({
     ...file,
     path: `.codex-plugin/${file.path}`,
   })),
-  ...describeFiles(packageSkillsRoot, 'plugin').map((file) => ({ ...file, path: `skills/${file.path}` })),
+  ...describeFiles(packageSkillsRoot, 'plugin', 'mango-pmo/skills').map((file) => ({
+    ...file,
+    path: `skills/${file.path}`,
+  })),
 ].sort((left, right) => compareText(left.path, right.path));
 const plugin = {
   path: 'package-root',
@@ -82,7 +86,7 @@ const plugin = {
   files: pluginFiles,
 };
 
-const files = describeFiles(baselineRoot);
+const files = describeFiles(baselineRoot, '', 'mango-pmo');
 
 const contracts = readContracts(files, baselineRoot);
 const bundleSha256 = sha256(Buffer.from(JSON.stringify({ files, contracts, plugin }), 'utf8'));
@@ -132,7 +136,7 @@ function copyRegularFile(source, target) {
   }
   mkdirSync(dirname(target), { recursive: true });
   copyFileSync(source, target);
-  chmodSync(target, sourceStat.mode & 0o111 ? 0o755 : 0o644);
+  chmodSync(target, modeForRepoPath(repoRelativePath(source), sourceStat.mode) === '0755' ? 0o755 : 0o644);
 }
 
 function walkFiles(root) {
@@ -154,17 +158,18 @@ function walkFiles(root) {
   return result;
 }
 
-function describeFiles(root, kindOverride = '') {
+function describeFiles(root, kindOverride = '', sourceRepoPrefix = '') {
   return walkFiles(root)
     .map((file) => {
       const content = readFileSync(file);
       const path = toPosix(relative(root, file));
+      const sourceRepoPath = sourceRepoPrefix ? `${sourceRepoPrefix}/${path}` : repoRelativePath(file);
       return {
         path,
         sha256: sha256(content),
         size: content.length,
         kind: kindOverride || classifyFile(path),
-        mode: normalizeMode(statSync(file).mode),
+        mode: modeForRepoPath(sourceRepoPath, statSync(file).mode),
       };
     })
     .sort((left, right) => compareText(left.path, right.path));
@@ -221,6 +226,33 @@ function classifyFile(path) {
 
 function normalizeMode(mode) {
   return mode & 0o111 ? '0755' : '0644';
+}
+
+function modeForRepoPath(path, fallbackMode) {
+  return gitFileModes.get(toPosix(path)) || normalizeMode(fallbackMode);
+}
+
+function repoRelativePath(path) {
+  return toPosix(relative(repoRoot, path));
+}
+
+function readGitFileModes() {
+  const output = execFileSync('git', ['ls-files', '-s', '--', 'mango-pmo'], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+  });
+  const modes = new Map();
+  for (const line of output.split(/\r?\n/)) {
+    if (!line.trim()) {
+      continue;
+    }
+    const match = /^(\d{6}) [0-9a-f]+ \d+\t(.+)$/.exec(line);
+    if (!match) {
+      continue;
+    }
+    modes.set(toPosix(match[2]), match[1] === '100755' ? '0755' : '0644');
+  }
+  return modes;
 }
 
 function readSourceCommit() {
