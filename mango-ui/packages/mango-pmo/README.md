@@ -99,18 +99,18 @@ mango pmo check --project-dir . --locked
 
 ## 9. 问题排查
 
-| 问题                                       | 原因                                         | 处理方式                                                                                          |
-| ------------------------------------------ | -------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| `dist/baseline.json` 不存在                | 未执行 build                                 | 执行 `pnpm -F @mango/pmo build`                                                                   |
-| check 报 hash mismatch                     | dist 内容和 manifest 不一致                  | 重新 build 后再 check                                                                             |
-| 业务项目 baseline changed                  | 业务仓锁定快照被修改                         | 执行 `mango pmo sync --project-dir .` 修复当前锁定版本                                            |
-| `sync` 提示锁定版本不可用                  | 当前 CLI 解析的 PMO 版本与项目锁不同         | 使用项目内锁定 CLI，或显式执行 `upgrade --to`                                                     |
-| 项目 Skill changed / extra                 | `.agents/skills` 中 PMO 管理文件被修改或残留 | 执行 `mango pmo sync` 修复当前锁定版本                                                            |
-| PR template missing / differs              | 项目模板缺失或 Risk / Verification 与锁定合同不一致 | 执行项目内 `mango pmo sync --project-dir .`；重复区段先人工合并                              |
-| Codex 中未出现插件                         | 项目 Skill 已同步不等于用户级 plugin 已安装  | 从 npm 包根插件投影执行独立 Codex plugin 安装流程并新开会话                                       |
-| npm tarball 缺 baseline                    | 发布前未 build 或 files 配置错误             | 执行 pack dry-run 并检查 `package.json`                                                           |
-| npm tarball 的工具 mode 与 manifest 不一致 | 打包器没有保留 manifest 声明的可执行权限     | 不发布该 tarball；同步 `publishConfig.executableFiles` 后重新执行 build/check，并使用新的补丁版本 |
-| `npm view` 返回 404                        | 目标版本尚未进入消费仓库                     | 等待发布状态机和 npm-group 回查完成，不使用源码目录冒充已发布包                                   |
+| 问题                                       | 原因                                                | 处理方式                                                                                          |
+| ------------------------------------------ | --------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| `dist/baseline.json` 不存在                | 未执行 build                                        | 执行 `pnpm -F @mango/pmo build`                                                                   |
+| check 报 hash mismatch                     | dist 内容和 manifest 不一致                         | 重新 build 后再 check                                                                             |
+| 业务项目 baseline changed                  | 业务仓锁定快照被修改                                | 执行 `mango pmo sync --project-dir .` 修复当前锁定版本                                            |
+| `sync` 提示锁定版本不可用                  | 当前 CLI 解析的 PMO 版本与项目锁不同                | 使用项目内锁定 CLI，或显式执行 `upgrade --to`                                                     |
+| 项目 Skill changed / extra                 | `.agents/skills` 中 PMO 管理文件被修改或残留        | 执行 `mango pmo sync` 修复当前锁定版本                                                            |
+| PR template missing / differs              | 项目模板缺失或 Risk / Verification 与锁定合同不一致 | 执行项目内 `mango pmo sync --project-dir .`；重复区段先人工合并                                   |
+| Codex 中未出现插件                         | 项目 Skill 已同步不等于用户级 plugin 已安装         | 从 npm 包根插件投影执行独立 Codex plugin 安装流程并新开会话                                       |
+| npm tarball 缺 baseline                    | 发布前未 build 或 files 配置错误                    | 执行 pack dry-run 并检查 `package.json`                                                           |
+| npm tarball 的工具 mode 与 manifest 不一致 | 打包器没有保留 manifest 声明的可执行权限            | 不发布该 tarball；同步 `publishConfig.executableFiles` 后重新执行 build/check，并使用新的补丁版本 |
+| `npm view` 返回 404                        | 目标版本尚未进入消费仓库                            | 等待发布状态机和 npm-group 回查完成，不使用源码目录冒充已发布包                                   |
 
 ## 10. 相关文档
 

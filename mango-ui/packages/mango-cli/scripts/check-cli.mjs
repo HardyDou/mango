@@ -1564,7 +1564,9 @@ function assertPackedCliPullRequestTemplate(tempRoot) {
     encoding: 'utf8',
   });
   if (check.status !== 0) {
-    throw new Error(`packed @mango/cli PR template failed @mango/pmo contract validation:\n${check.stdout}\n${check.stderr}`);
+    throw new Error(
+      `packed @mango/cli PR template failed @mango/pmo contract validation:\n${check.stdout}\n${check.stderr}`,
+    );
   }
 }
 
@@ -2808,7 +2810,10 @@ function assertPmoCommands(projectRoot) {
     [cli, 'pmo', 'check', '--project-dir', projectRoot, '--locked'],
     { cwd: projectRoot, encoding: 'utf8' },
   );
-  if (legacyTemplateCheck.status === 0 || !legacyTemplateCheck.stdout.includes('differs from the locked PMO contract')) {
+  if (
+    legacyTemplateCheck.status === 0 ||
+    !legacyTemplateCheck.stdout.includes('differs from the locked PMO contract')
+  ) {
     throw new Error(
       `pmo check --locked should reject a legacy project PR template:\n${legacyTemplateCheck.stdout}\n${legacyTemplateCheck.stderr}`,
     );
@@ -2829,11 +2834,10 @@ function assertPmoCommands(projectRoot) {
   }
   const duplicateProjectTemplate = `${repairedProjectTemplate}\n## Risk / Verification\n\n- duplicate\n`;
   writeFileSync(projectTemplatePath, duplicateProjectTemplate);
-  const duplicateTemplateSync = spawnSync(
-    process.execPath,
-    [cli, 'pmo', 'sync', '--project-dir', projectRoot],
-    { cwd: projectRoot, encoding: 'utf8' },
-  );
+  const duplicateTemplateSync = spawnSync(process.execPath, [cli, 'pmo', 'sync', '--project-dir', projectRoot], {
+    cwd: projectRoot,
+    encoding: 'utf8',
+  });
   if (
     duplicateTemplateSync.status === 0 ||
     !`${duplicateTemplateSync.stdout}\n${duplicateTemplateSync.stderr}`.includes('exactly one')

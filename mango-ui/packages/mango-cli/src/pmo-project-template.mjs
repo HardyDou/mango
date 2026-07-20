@@ -1,11 +1,7 @@
 const MANAGED_SECTION_HEADING = 'Risk / Verification';
 const DEFAULT_INSERT_BEFORE_HEADING = 'Validation';
 
-export function inspectProjectPullRequestTemplate(
-  currentContent,
-  canonicalContent,
-  { targetExists = true } = {},
-) {
+export function inspectProjectPullRequestTemplate(currentContent, canonicalContent, { targetExists = true } = {}) {
   const canonical = requireSingleSection(canonicalContent, MANAGED_SECTION_HEADING, 'canonical PMO template');
   if (!targetExists) {
     return { errors: ['project PR template is missing'] };
@@ -20,16 +16,14 @@ export function inspectProjectPullRequestTemplate(
   }
   const current = sectionContent(currentContent, currentSections[0]);
   if (normalizeLineEndings(current) !== normalizeLineEndings(canonical)) {
-    return { errors: [`project PR template ## ${MANAGED_SECTION_HEADING} section differs from the locked PMO contract`] };
+    return {
+      errors: [`project PR template ## ${MANAGED_SECTION_HEADING} section differs from the locked PMO contract`],
+    };
   }
   return { errors: [] };
 }
 
-export function synchronizeProjectPullRequestTemplate(
-  currentContent,
-  canonicalContent,
-  { targetExists = true } = {},
-) {
+export function synchronizeProjectPullRequestTemplate(currentContent, canonicalContent, { targetExists = true } = {}) {
   let canonical;
   try {
     canonical = requireSingleSection(canonicalContent, MANAGED_SECTION_HEADING, 'canonical PMO template');
@@ -79,7 +73,7 @@ function findSections(markdown, heading) {
   const escaped = escapeRegExp(heading);
   const headingPattern = new RegExp(`^##[ \\t]+${escaped}[ \\t]*\\r?$`, 'gm');
   const matches = [...markdown.matchAll(headingPattern)];
-  return matches.map(match => {
+  return matches.map((match) => {
     const restStart = match.index + match[0].length;
     const nextHeading = markdown.slice(restStart).search(/^##[ \t]+/m);
     return {

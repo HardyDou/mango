@@ -339,7 +339,7 @@ function validateContracts(value, files) {
 }
 
 function validatePullRequestTemplate(value) {
-  const descriptor = value.contracts.find(contract => contract.contractId === 'delivery-assurance');
+  const descriptor = value.contracts.find((contract) => contract.contractId === 'delivery-assurance');
   if (!descriptor) {
     throw new Error('baseline manifest is missing delivery-assurance contract');
   }

@@ -25,10 +25,7 @@ import { createRequire } from 'node:module';
 import { homedir } from 'node:os';
 import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import {
-  inspectProjectPullRequestTemplate,
-  synchronizeProjectPullRequestTemplate,
-} from './pmo-project-template.mjs';
+import { inspectProjectPullRequestTemplate, synchronizeProjectPullRequestTemplate } from './pmo-project-template.mjs';
 import { runReleaseCli } from './release-command.mjs';
 
 const requireFromCli = createRequire(import.meta.url);
@@ -3020,9 +3017,7 @@ function syncPmoBaseline(argv, { command = 'sync' } = {}) {
   if (options.dryRun) {
     return;
   }
-  const projectTemplateError = plan.find(
-    (item) => item.scope === 'project-pr-template' && item.action === 'warn',
-  );
+  const projectTemplateError = plan.find((item) => item.scope === 'project-pr-template' && item.action === 'warn');
   if (projectTemplateError) {
     fail(
       `${projectTemplateError.reason}. Resolve ${PROJECT_PR_TEMPLATE_RELATIVE_PATH} and rerun ` +
@@ -3251,24 +3246,27 @@ function planPmoProjectTemplateSync(targetDir, baseline) {
   const currentContent = targetExists ? readFileSync(targetPath, 'utf8') : '';
   const result = synchronizeProjectPullRequestTemplate(currentContent, canonical.content, { targetExists });
   if (result.action === 'error') {
-    return [{
-      action: 'warn',
-      reason: result.reason,
+    return [
+      {
+        action: 'warn',
+        reason: result.reason,
+        path: PROJECT_PR_TEMPLATE_RELATIVE_PATH,
+        targetPath,
+        scope: 'project-pr-template',
+      },
+    ];
+  }
+  return [
+    {
+      action: result.action,
+      reason:
+        result.action === 'skip' ? `delivery-assurance schema revision ${canonical.schemaRevision} is current` : '',
       path: PROJECT_PR_TEMPLATE_RELATIVE_PATH,
       targetPath,
+      content: result.content,
       scope: 'project-pr-template',
-    }];
-  }
-  return [{
-    action: result.action,
-    reason: result.action === 'skip'
-      ? `delivery-assurance schema revision ${canonical.schemaRevision} is current`
-      : '',
-    path: PROJECT_PR_TEMPLATE_RELATIVE_PATH,
-    targetPath,
-    content: result.content,
-    scope: 'project-pr-template',
-  }];
+    },
+  ];
 }
 
 function readRenderedBaselineFile(sourceFile) {
@@ -3951,13 +3949,20 @@ function installPmoBundleAtomic(targetDir, baseline) {
   });
   mkdirSync(backupRoot, { recursive: true });
   const projectTemplateExisted = existsSync(liveProjectTemplate);
-  writeFileSync(backupProjectFilesState, `${JSON.stringify({
-    schemaVersion: 1,
-    pullRequestTemplate: {
-      path: PROJECT_PR_TEMPLATE_RELATIVE_PATH,
-      existed: projectTemplateExisted,
-    },
-  }, null, 2)}\n`);
+  writeFileSync(
+    backupProjectFilesState,
+    `${JSON.stringify(
+      {
+        schemaVersion: 1,
+        pullRequestTemplate: {
+          path: PROJECT_PR_TEMPLATE_RELATIVE_PATH,
+          existed: projectTemplateExisted,
+        },
+      },
+      null,
+      2,
+    )}\n`,
+  );
   if (projectTemplateExisted) {
     mkdirSync(dirname(backupProjectTemplate), { recursive: true });
     copyFileSync(liveProjectTemplate, backupProjectTemplate);
