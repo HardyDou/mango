@@ -783,9 +783,9 @@ workflow_business_apply_current_task
 workflow_business_apply_status_log
 ```
 
-`V1__init_workflow.sql` 是当前空白数据库基线，只负责 12 张 Workflow 业务表及索引的 DDL，不写业务数据，也不写 Flowable 元数据。早期迁移的最终结构已经合并到 V1。
+`V1__init_workflow.sql` 是当前空白数据库基线，只负责 12 张 Workflow 业务表及索引的 DDL，不写业务数据，也不写 Flowable 元数据。早期迁移的最终结构已经合并到 V1。Flowable 与 Workflow 表统一使用 `utf8mb4`；Flowable 标识列所在表使用 `utf8mb4_bin` 保持大小写敏感的二进制比较，布尔状态使用无显示宽度的 `tinyint`，可在 MySQL 8.4 空库中无 UTF8MB3 和整数显示宽度弃用告警地创建。
 
-Mango Maven `1.0.20` 发布的 V1 缺少 7 个 Workflow 审计列，`1.0.21`/`1.0.22` 的 V1 已包含这些列。升级到包含 V2 的版本时，`beforeValidate__workflow_v1_checksum_compatibility.sql` 只把已知 `1.0.20` V1 checksum 修复为当前已发布 V1 checksum，随后 V2 按 `information_schema.columns` 检查并补齐缺失列。由 `1.0.21`/`1.0.22` 创建的新数据库已有这些列，V2 会安全跳过已有列。其它未知 V1 checksum 仍由 Flyway 校验阻断，不能通过关闭 `validate-on-migrate` 绕过。
+Mango Maven `1.0.20` 发布的 V1 缺少 7 个 Workflow 审计列，`1.0.21`/`1.0.22` 的 V1 已包含这些列。升级到包含 V2 的版本时，`beforeValidate__workflow_v1_checksum_compatibility.sql` 会把这两个已知历史 V1 checksum 修复为当前 V1 checksum，随后 V2 按 `information_schema.columns` 检查并补齐缺失列。由 `1.0.21`/`1.0.22` 创建的新数据库已有这些列，V2 会安全跳过已有列。其它未知 V1 checksum 仍由 Flyway 校验阻断，不能通过关闭 `validate-on-migrate` 绕过。
 
 升级后可以检查 `flyway_schema_history_workflow` 中 V1、V2 均为成功状态，并核对以下列：
 

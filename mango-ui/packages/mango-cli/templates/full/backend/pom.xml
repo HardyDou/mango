@@ -27,6 +27,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <spring-boot.version>{{springBootVersion}}</spring-boot.version>
+        <flyway.version>{{flywayVersion}}</flyway.version>
         <spring-cloud.version>{{springCloudVersion}}</spring-cloud.version>
         <mango.version>{{mangoBackendVersion}}</mango.version>
         <springdoc-openapi.version>{{springdocOpenapiVersion}}</springdoc-openapi.version>
@@ -58,6 +59,16 @@
                 <version>${spring-boot.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.flywaydb</groupId>
+                <artifactId>flyway-core</artifactId>
+                <version>${flyway.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.flywaydb</groupId>
+                <artifactId>flyway-mysql</artifactId>
+                <version>${flyway.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.springframework.cloud</groupId>

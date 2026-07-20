@@ -264,6 +264,13 @@ try {
   if (!pom.includes(`<mango.version>${releaseVersions.maven.mangoBackend}</mango.version>`)) {
     throw new Error('generated backend parent pom must use the CLI-owned fixed Mango Maven version lock');
   }
+  if (
+    !pom.includes('<flyway.version>11.20.3</flyway.version>') ||
+    !pom.includes('<artifactId>flyway-core</artifactId>') ||
+    !pom.includes('<artifactId>flyway-mysql</artifactId>')
+  ) {
+    throw new Error('generated backend parent pom must explicitly manage the MySQL 8.4 compatible Flyway baseline');
+  }
   if (!pom.includes(`<url>${expectedMavenRepository}</url>`)) {
     throw new Error('generated backend parent pom must use the HTTPS Mango Maven repository');
   }
