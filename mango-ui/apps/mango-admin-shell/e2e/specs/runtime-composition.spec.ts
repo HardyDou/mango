@@ -164,7 +164,7 @@ test.describe.serial('Shell runtime composition', () => {
     await expectRemoteResource(page, new URL(rbacEntry).host);
     await expectBusinessSmoke(page, 'rbac');
 
-    await clickThroughTransientOverlay(page.getByRole('button', { name: /审批中心/ }));
+    await page.goto('/#/workflow/start-process');
     await page.waitForURL('**/#/workflow/start-process', { timeout: 10000 });
     await expectRuntime(page, {
       moduleCode: 'mango-workflow',

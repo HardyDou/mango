@@ -69,7 +69,7 @@
 | SR-007 | M10 通知映射单元测试与模块门禁 | `mvn -pl mango-platform/mango-workflow/mango-workflow-starter -Dtest=WorkflowNoticeDomainEventSubscriberTest test`；同模块 `verify` | PASS：定向 3 tests；模块 12 tests | Maven `BUILD SUCCESS` |
 | SR-008 | M10 通知映射单元测试与模块门禁 | `mvn -pl mango-platform/mango-workflow/mango-workflow-starter -Dtest=WorkflowNoticeDomainEventSubscriberTest test`；同模块 `verify` | PASS：定向 3 tests；模块 12 tests | Maven `BUILD SUCCESS` |
 | SR-009 | M09/M10 资源合同、M13 定向 UI/E2E | Notice starter `verify`；Playwright `menu-navigation.spec.ts --grep "归入平台能力" --project=chromium` | PASS：Notice 13 tests；Chromium 1 test | Maven 与 Playwright `passed` 输出、测试附件截图 |
-| SR-010 | M09/M10 资源合同、M13 定向 UI/E2E | Workflow starter `verify`；Playwright `menu-navigation.spec.ts --grep "归入平台能力" --project=chromium` | PASS：Workflow 12 tests；Chromium 1 test | Maven 与 Playwright `passed` 输出、测试附件截图 |
+| SR-010 | M09/M10 资源合同、M13 定向 UI/E2E | Workflow starter `verify`；Playwright `menu-navigation.spec.ts --grep "归入平台能力" --project=chromium`；Shell runtime `--grep "hybrid profile loads RBAC and Workflow"` | PASS：Workflow 12 tests；菜单与 hybrid runtime 各 1 个 Chromium test | Maven 与 Playwright `passed` 输出、测试附件截图 |
 
 ## 7. 例外与剩余风险
 
