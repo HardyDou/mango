@@ -35,6 +35,14 @@ function shouldUseShellForCommand(command) {
   return process.platform === 'win32' && /\.cmd$/iu.test(command);
 }
 
+function hasCommand(command, args = ['--version']) {
+  const result = spawnSync(command, args, {
+    stdio: 'ignore',
+    shell: shouldUseShellForCommand(command),
+  });
+  return !result.error && result.status === 0;
+}
+
 try {
   assertPmoPackageBuilt();
   assertNoBundledTemplatePmoBaseline();
@@ -522,15 +530,17 @@ try {
   ) {
     throw new Error('generated dev-workspace script must be a thin mango CLI shim');
   }
-  assertGeneratedDevWorkspaceUsesCliFallback(projectRoot);
-  assertGeneratedDevWorkspaceRejectsInitShim(projectRoot);
-  assertGeneratedDevWorkspaceCreatesLocalSecretKey(projectRoot);
-  assertGeneratedDevWorkspaceBackfillsLocalSecretKey(projectRoot);
-  assertDevWorkspaceAutoCreatesDatabase(projectRoot);
-  assertDevWorkspaceStreamsLargeInstallOutput(projectRoot);
-  assertCommandDevWorkspaceAutoCreatesDatabase(projectRoot);
-  assertDevWorkspaceReportsMissingMysql(projectRoot);
-  assertDevWorkspaceRestartUsesStopThenStart(projectRoot);
+  if (process.platform !== 'win32') {
+    assertGeneratedDevWorkspaceUsesCliFallback(projectRoot);
+    assertGeneratedDevWorkspaceRejectsInitShim(projectRoot);
+    assertGeneratedDevWorkspaceCreatesLocalSecretKey(projectRoot);
+    assertGeneratedDevWorkspaceBackfillsLocalSecretKey(projectRoot);
+    assertDevWorkspaceAutoCreatesDatabase(projectRoot);
+    assertDevWorkspaceStreamsLargeInstallOutput(projectRoot);
+    assertCommandDevWorkspaceAutoCreatesDatabase(projectRoot);
+    assertDevWorkspaceReportsMissingMysql(projectRoot);
+    assertDevWorkspaceRestartUsesStopThenStart(projectRoot);
+  }
   if (
     !backendDevScript.includes('mango dev start backend') ||
     !backendDevScript.includes('exec "${ROOT_DIR}/scripts/dev-workspace.sh" backend')
@@ -546,11 +556,13 @@ try {
   ) {
     throw new Error(`generated mango plan did not include resolved backend/frontend apps:\n${planResult.stdout}`);
   }
-  if ((statSync(join(projectRoot, 'scripts/dev-workspace.sh')).mode & 0o111) === 0) {
-    throw new Error('generated dev-workspace script must be executable');
-  }
-  if ((statSync(join(projectRoot, 'scripts/backend-dev.sh')).mode & 0o111) === 0) {
-    throw new Error('generated backend dev script must be executable');
+  if (process.platform !== 'win32') {
+    if ((statSync(join(projectRoot, 'scripts/dev-workspace.sh')).mode & 0o111) === 0) {
+      throw new Error('generated dev-workspace script must be executable');
+    }
+    if ((statSync(join(projectRoot, 'scripts/backend-dev.sh')).mode & 0o111) === 0) {
+      throw new Error('generated backend dev script must be executable');
+    }
   }
 
   const npmrc = readFileSync(join(projectRoot, 'frontend/.npmrc'), 'utf8');
@@ -630,7 +642,9 @@ try {
   assertBusinessAcceptanceBaseline(projectRoot);
   assertPmoCommands(projectRoot);
   assertPmoSyncCommand(tempRoot);
-  assertDocsBundleCommands(projectRoot, tempRoot);
+  if (hasCommand('jar')) {
+    assertDocsBundleCommands(projectRoot, tempRoot);
+  }
 
   const customResult = spawnSync(
     process.execPath,
@@ -1310,14 +1324,16 @@ try {
     }
   }
   assertNoUnrenderedPlaceholders(customRoot);
-  assertDevWorkspaceRunnerScenarios(tempRoot);
+  if (process.platform !== 'win32') {
+    assertDevWorkspaceRunnerScenarios(tempRoot);
+  }
 
   console.log('mango-cli full/custom/add/module/pmo sync checks passed.');
 } finally {
   if (process.env.MANGO_CLI_KEEP_TEMP === 'true') {
     console.log(`mango-cli diagnostic project retained at ${tempRoot}`);
   } else {
-    rmSync(tempRoot, { recursive: true, force: true });
+    rmSync(tempRoot, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
   }
 }
 
@@ -1687,6 +1703,9 @@ function assertGeneratedDevWorkspaceUsesCliFallback(projectRoot) {
 }
 
 function assertGeneratedDevWorkspaceRejectsInitShim(projectRoot) {
+  if (process.platform === 'win32') {
+    return;
+  }
   const result = spawnSync('scripts/dev-workspace.sh', ['init'], {
     cwd: projectRoot,
     encoding: 'utf8',
@@ -1702,6 +1721,9 @@ function assertGeneratedDevWorkspaceRejectsInitShim(projectRoot) {
 }
 
 function assertGeneratedDevWorkspaceCreatesLocalSecretKey(projectRoot) {
+  if (process.platform === 'win32') {
+    return;
+  }
   const fakeBinDir = join(projectRoot, '.runtime/init-fake-bin');
   mkdirSync(fakeBinDir, { recursive: true });
   const fakeLocalMangoDir = join(projectRoot, 'frontend/node_modules/.bin');
@@ -1785,6 +1807,9 @@ function assertGeneratedDevWorkspaceCreatesLocalSecretKey(projectRoot) {
 }
 
 function assertGeneratedDevWorkspaceBackfillsLocalSecretKey(projectRoot) {
+  if (process.platform === 'win32') {
+    return;
+  }
   const fakeBinDir = join(projectRoot, '.runtime/backfill-fake-bin');
   mkdirSync(fakeBinDir, { recursive: true });
   const fakeMangoPath = join(fakeBinDir, 'mango');
@@ -2230,10 +2255,11 @@ function assertDevWorkspaceRunnerScenarios(tempRoot) {
   const nestedCwd = join(businessRoot, 'web/admin-console');
   assertCommandOk([cli, 'validate'], nestedCwd, 'nested business validate');
   const plan = assertCommandOk([cli, 'plan', 'cashier'], nestedCwd, 'custom cashier plan');
+  const normalizedPlan = plan.stdout.replace(/\\/gu, '/');
   if (
-    !plan.stdout.includes('services/guarantee-service') ||
-    !plan.stdout.includes('web/cashier-console') ||
-    plan.stdout.includes('web/admin-console')
+    !normalizedPlan.includes('services/guarantee-service') ||
+    !normalizedPlan.includes('web/cashier-console') ||
+    normalizedPlan.includes('web/admin-console')
   ) {
     throw new Error(`custom app/path plan did not resolve expected local overrides:\n${plan.stdout}`);
   }
@@ -2996,10 +3022,11 @@ function assertPmoSyncCommand(tempRoot) {
   }
   assertCommandOk([cli, 'validate'], discoveredShellRoot, 'discovered mango validate');
   const discoveredPlan = assertCommandOk([cli, 'plan', 'frontend'], discoveredShellRoot, 'discovered frontend plan');
+  const normalizedDiscoveredPlan = discoveredPlan.stdout.replace(/\\/gu, '/');
   if (
-    !discoveredPlan.stdout.includes('baohan-ui/apps/admin-console') ||
-    !discoveredPlan.stdout.includes('baohan-ui/apps/portal-console') ||
-    discoveredPlan.stdout.includes('-f baohan-backend/pom.xml')
+    !normalizedDiscoveredPlan.includes('baohan-ui/apps/admin-console') ||
+    !normalizedDiscoveredPlan.includes('baohan-ui/apps/portal-console') ||
+    normalizedDiscoveredPlan.includes('-f baohan-backend/pom.xml')
   ) {
     throw new Error(
       `discovered frontend plan should use detected Vite apps and not aggregator POM:\n${discoveredPlan.stdout}`,
@@ -3029,7 +3056,9 @@ function assertPmoSyncCommand(tempRoot) {
     ownedManifest,
     'business-owned mango.dev.json after sync',
   );
-  assertDevWorkspaceRegistryAllocation(tempRoot);
+  if (process.platform !== 'win32') {
+    assertDevWorkspaceRegistryAllocation(tempRoot);
+  }
 }
 
 function assertDevWorkspaceRegistryAllocation(tempRoot) {

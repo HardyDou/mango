@@ -2,7 +2,7 @@
 
 ## v2026.07.20-frontend-ui-fixes-npm-release - 2026-07-20
 
-Status: `PENDING`. This npm-only frontend batch republishes the affected runtime package matrix from source commit `e60705bc5671468f75c0913bad9c1f95fae045f6`. Mango Maven remains `1.0.23`, `@mango/cli` updates to `1.0.86` for template and version-lock alignment, and `@mango/pmo` remains `1.3.2`.
+Status: `PENDING`. This npm-only Mango package batch republishes the affected runtime package matrix from source commit `78cfd69e140f03fb7d2f46b2353948f0c9d32bff`. Mango Maven remains `1.0.23`, `@mango/cli` updates to `1.0.87` for template, version-lock and Windows release-script compatibility alignment, and `@mango/pmo` updates to `1.3.3` for the matching Windows package-check compatibility fix.
 
 ### Fixed
 
@@ -18,43 +18,45 @@ Status: `PENDING`. This npm-only frontend batch republishes the affected runtime
 
 ### Versions
 
-| Component | Previous | Release | Compatibility |
-| --- | ---: | ---: | --- |
-| `@mango/common` | `1.0.19` | `1.0.20` | Additive Editor props plus search-panel layout fix; existing props and events remain compatible. |
-| `@mango/file` | `1.0.25` | `1.0.26` | Preview dialog layout and button visibility fix; upload, download, file ID persistence and APIs remain compatible. |
-| `@mango/admin-shell` | `1.0.46` | `1.0.47` | Theme token behavior fix and dependency matrix alignment; route, menu and login contracts remain compatible. |
-| `@mango/admin` | `1.0.51` | `1.0.52` | Aggregate package alignment for the affected frontend matrix. |
-| `@mango/cli` | `1.0.85` | `1.0.86` | Business module template and release-version lock alignment only; command semantics remain compatible. |
-| Downstream runtime packages | `v2026.07.19` matrix | patch bumped | Version-only republish to keep exact workspace dependency locks consistent with the new `@mango/common` and `@mango/file` releases. |
+| Component                   |             Previous |      Release | Compatibility                                                                                                                                   |
+| --------------------------- | -------------------: | -----------: | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@mango/common`             |             `1.0.19` |     `1.0.20` | Additive Editor props plus search-panel layout fix; existing props and events remain compatible.                                                |
+| `@mango/file`               |             `1.0.25` |     `1.0.26` | Preview dialog layout and button visibility fix; upload, download, file ID persistence and APIs remain compatible.                              |
+| `@mango/admin-shell`        |             `1.0.46` |     `1.0.47` | Theme token behavior fix and dependency matrix alignment; route, menu and login contracts remain compatible.                                    |
+| `@mango/admin`              |             `1.0.51` |     `1.0.52` | Aggregate package alignment for the affected frontend matrix.                                                                                   |
+| `@mango/pmo`                |              `1.3.2` |      `1.3.3` | PMO package-check compatibility fix for Windows release validation; PMO rules and baseline semantics remain compatible.                         |
+| `@mango/cli`                |             `1.0.85` |     `1.0.87` | Business module template, release-version lock and Windows generated build-script compatibility alignment; command semantics remain compatible. |
+| Downstream runtime packages | `v2026.07.19` matrix | patch bumped | Version-only republish to keep exact workspace dependency locks consistent with the new `@mango/common` and `@mango/file` releases.             |
 
 ### Published Packages
 
-| Order | Target | Version | Release status |
-| --- | --- | --- | --- |
-| 1 | npm common | `@mango/common@1.0.20` | `PENDING` |
-| 2 | npm admin pages | `@mango/admin-pages@1.0.25` | `PENDING` |
-| 3 | npm auth | `@mango/auth@1.0.19` | `PENDING` |
-| 4 | npm grid layout | `@mango/grid-layout@1.0.11` | `PENDING` |
-| 5 | npm grid widgets | `@mango/grid-widgets@1.0.17` | `PENDING` |
-| 6 | npm home | `@mango/home@1.0.9` | `PENDING` |
-| 7 | npm RBAC | `@mango/rbac@1.0.18` | `PENDING` |
-| 8 | npm site shell | `@mango/site-shell@1.0.7` | `PENDING` |
-| 9 | npm job | `@mango/job@1.0.18` | `PENDING` |
-| 10 | npm link | `@mango/link@1.0.12` | `PENDING` |
-| 11 | npm file | `@mango/file@1.0.26` | `PENDING` |
-| 12 | npm notice | `@mango/notice@1.0.28` | `PENDING` |
-| 13 | npm calendar | `@mango/calendar@1.0.26` | `PENDING` |
-| 14 | npm numgen | `@mango/numgen@1.0.26` | `PENDING` |
-| 15 | npm payment | `@mango/payment@1.0.18` | `PENDING` |
-| 16 | npm template | `@mango/template@1.0.26` | `PENDING` |
-| 17 | npm workflow | `@mango/workflow@1.0.32` | `PENDING` |
-| 18 | npm workflow business example | `@mango/workflow-business-example@1.0.31` | `PENDING` |
-| 19 | npm CMS | `@mango/cms@1.0.15` | `PENDING` |
-| 20 | npm system | `@mango/system@1.0.24` | `PENDING` |
-| 21 | npm admin shell | `@mango/admin-shell@1.0.47` | `PENDING` |
-| 22 | npm admin aggregate | `@mango/admin@1.0.52` | `PENDING` |
-| 23 | npm CLI | `@mango/cli@1.0.86` | `PENDING` |
-| 24 | GitHub Release | `v2026.07.20-frontend-ui-fixes-npm-release` | `PENDING` |
+| Order | Target                        | Version                                     | Release status |
+| ----- | ----------------------------- | ------------------------------------------- | -------------- |
+| 1     | npm PMO bundle and Skills     | `@mango/pmo@1.3.3`                          | `PENDING`      |
+| 2     | npm common                    | `@mango/common@1.0.20`                      | `PENDING`      |
+| 3     | npm admin pages               | `@mango/admin-pages@1.0.25`                 | `PENDING`      |
+| 4     | npm auth                      | `@mango/auth@1.0.19`                        | `PENDING`      |
+| 5     | npm grid layout               | `@mango/grid-layout@1.0.11`                 | `PENDING`      |
+| 6     | npm grid widgets              | `@mango/grid-widgets@1.0.17`                | `PENDING`      |
+| 7     | npm home                      | `@mango/home@1.0.9`                         | `PENDING`      |
+| 8     | npm RBAC                      | `@mango/rbac@1.0.18`                        | `PENDING`      |
+| 9     | npm site shell                | `@mango/site-shell@1.0.7`                   | `PENDING`      |
+| 10    | npm job                       | `@mango/job@1.0.18`                         | `PENDING`      |
+| 11    | npm link                      | `@mango/link@1.0.12`                        | `PENDING`      |
+| 12    | npm file                      | `@mango/file@1.0.26`                        | `PENDING`      |
+| 13    | npm notice                    | `@mango/notice@1.0.28`                      | `PENDING`      |
+| 14    | npm calendar                  | `@mango/calendar@1.0.26`                    | `PENDING`      |
+| 15    | npm numgen                    | `@mango/numgen@1.0.26`                      | `PENDING`      |
+| 16    | npm payment                   | `@mango/payment@1.0.18`                     | `PENDING`      |
+| 17    | npm template                  | `@mango/template@1.0.26`                    | `PENDING`      |
+| 18    | npm workflow                  | `@mango/workflow@1.0.32`                    | `PENDING`      |
+| 19    | npm workflow business example | `@mango/workflow-business-example@1.0.31`   | `PENDING`      |
+| 20    | npm CMS                       | `@mango/cms@1.0.15`                         | `PENDING`      |
+| 21    | npm system                    | `@mango/system@1.0.24`                      | `PENDING`      |
+| 22    | npm admin shell               | `@mango/admin-shell@1.0.47`                 | `PENDING`      |
+| 23    | npm admin aggregate           | `@mango/admin@1.0.52`                       | `PENDING`      |
+| 24    | npm CLI                       | `@mango/cli@1.0.87`                         | `PENDING`      |
+| 25    | GitHub Release                | `v2026.07.20-frontend-ui-fixes-npm-release` | `PENDING`      |
 
 ### Upgrade Notes
 
@@ -63,7 +65,7 @@ Status: `PENDING`. This npm-only frontend batch republishes the affected runtime
 3. Projects that install individual Mango frontend packages should upgrade the affected packages listed in `Published Packages` to the exact versions in this release.
 4. Rich-text consumers can keep the default Editor behavior. Only pages that pass `toolbarKeys` or `imageValueType` opt into the new compact toolbar or file-ID/token image storage behavior.
 5. File preview consumers no longer need a local override to show the new-window preview action; the action is rendered by default and disabled when no preview address is available.
-6. Projects that use Mango CLI to generate business modules should upgrade the local CLI to `@mango/cli@1.0.86` after this npm batch is published.
+6. Projects that use Mango CLI to generate business modules should upgrade the local CLI to `@mango/cli@1.0.87` after this npm batch is published.
 
 ### Verification
 
@@ -72,7 +74,7 @@ Status: `PENDING`. This npm-only frontend batch republishes the affected runtime
 - `node mango-pmo/tools/workspace-layout-check.mjs --root .`
 - `pnpm -C mango-ui release:impact --base=v2026.07.19-frontend-standards-npm-release --head=HEAD`
 - `node mango-ui/packages/mango-cli/scripts/check-release-versions.mjs`
-- Target package builds before publish for the 23 affected npm packages.
+- Target package builds before publish for the 24 affected npm packages.
 
 ## v2026.07.20-maven-1.0.23-cli-1.0.85-platform-fixes-release - 2026-07-20
 

@@ -46,7 +46,7 @@
     "@mango/notice": { "version": "1.0.27", "action": "pin" },
     "@mango/numgen": { "version": "1.0.25", "action": "pin" },
     "@mango/payment": { "version": "1.0.17", "action": "pin" },
-    "@mango/pmo": { "version": "1.3.2", "action": "pin" },
+    "@mango/pmo": { "version": "1.3.3", "action": "pin" },
     "@mango/rbac": { "version": "1.0.17", "action": "pin" },
     "@mango/site-shell": { "version": "1.0.6", "action": "pin" },
     "@mango/system": { "version": "1.0.23", "action": "pin" },

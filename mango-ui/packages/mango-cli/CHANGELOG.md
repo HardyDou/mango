@@ -1,5 +1,17 @@
 # @mango/cli Changelog
 
+## 1.0.87 - 2026-07-20
+
+### Fixed
+
+- Run Mango CLI self checks, generated frontend build reports, and PMO package checks correctly on Windows when commands resolve to `.cmd` shims.
+- Keep the frontend UI fixes npm matrix aligned while locking generated projects to `@mango/pmo@1.3.3`.
+
+### Upgrade Notes
+
+- Upgrade business projects to `@mango/cli@1.0.87` after the full npm batch is published and verified.
+- No backend Maven upgrade or CLI command migration is required.
+
 ## 1.0.86 - 2026-07-20
 
 ### Changed

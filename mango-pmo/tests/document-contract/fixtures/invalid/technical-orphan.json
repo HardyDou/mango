@@ -1,6 +1,6 @@
 {
   "base": "../valid/technical-design.md",
-  "replace": "DEC-001, MOD-001, DM-001, FLOW-001, API-001, DB-001, SEC-001, ERR-001, UI-001, IMP-001 | TC-001 | 所有系统要求",
+  "replace": "DEC-001, MOD-001, DM-001, FLOW-001, API-001, DB-001, SEC-001, ERR-001, UI-001, IMP-001 | TC-001     | 所有系统要求",
   "with": "DEC-001, MOD-001, DM-001, FLOW-001, DB-001, SEC-001, ERR-001, UI-001, IMP-001 | TC-001 | 所有系统要求",
   "expectedRuleId": "TDD-TRACE-120"
 }
