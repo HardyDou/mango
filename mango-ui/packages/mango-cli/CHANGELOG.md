@@ -1,5 +1,22 @@
 # @mango/cli Changelog
 
+## 1.0.86 - 2026-07-20
+
+### Changed
+
+- Align the generated business-module frontend dependency locks with the frontend UI fixes npm batch.
+- Update the packaged `release-versions.json` to reference `@mango/admin-pages@1.0.25`, `@mango/common@1.0.20`, and the matching frontend package matrix.
+- Keep command semantics, Mango Maven `1.0.23`, and `@mango/pmo@1.3.2` unchanged.
+
+### Upgrade Notes
+
+- Upgrade business projects to `@mango/cli@1.0.86` after the full frontend UI fixes npm batch is published and verified.
+- No database reset, route migration, or backend Maven upgrade is required beyond the already published Maven `1.0.23` baseline.
+
+### Verification
+
+- Release impact, release-version lock, package builds, generated consumer typecheck/build, and Nexus target-version prechecks passed as part of the frontend UI fixes npm release batch.
+
 ## 1.0.85 - 2026-07-20
 
 ### Changed
