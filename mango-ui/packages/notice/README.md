@@ -327,7 +327,7 @@ executeMySiteMessageAction(messageId, actionCode, input);
 
 ## 8. 数据与初始化
 
-`@mango/notice@1.0.23` 对齐本批次后端 Notice 修复；渠道配置、发送记录、失败重试、站内信等公开页面 key、HTTP API 和初始化数据来源不变。
+`@mango/notice@1.0.29` 将个人接收设置并入消息中心入口，并与后端 Notice 公共菜单资源保持一致。通知管理、发送记录、失败重试、站内信 HTTP API 和初始化数据来源保持兼容；业务项目升级后应让资源注册流程重新协调菜单声明，不需要重建业务数据。
 
 本包不创建数据库表，也不初始化菜单权限。它依赖后端完成以下初始化：
 

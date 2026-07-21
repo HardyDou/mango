@@ -5,16 +5,20 @@
 ### Fixed
 
 - Generate backend parent POMs that explicitly align `flyway-core` and `flyway-mysql` on 11.20.3, avoiding the MySQL 8.4 support warning emitted by the Spring Boot 3.5.14 Flyway baseline.
+- Synchronize, validate and roll back the canonical business pull-request template's managed Risk / Verification block without overwriting project-owned content.
+- Lock generated projects to the Maven `1.0.24`, PMO `1.3.4`, Notice `1.0.29`, Admin Shell `1.0.48` and Admin `1.0.53` compatibility matrix.
 
 ### Upgrade Notes
 
 - Use `@mango/cli@1.0.88` for newly generated projects that run on MySQL 8.4.
-- Existing generated projects can apply the same two Flyway dependency-management entries without changing CLI commands or frontend runtime packages.
+- Publish and verify Maven `1.0.24` and `@mango/pmo@1.3.4` before installing this CLI version.
+- Existing generated projects can apply the same two Flyway dependency-management entries, then run `mango pmo upgrade --to 1.3.4 --sync-shell` to receive the managed PR template contract.
 
 ### Verification
 
 - `pnpm -C mango-ui --filter @mango/cli test`
 - Generated backend POM contract verifies the Flyway version and both MySQL artifacts.
+- PMO project-template tests cover create, managed-block update, drift detection and rollback.
 
 ## 1.0.87 - 2026-07-20
 
