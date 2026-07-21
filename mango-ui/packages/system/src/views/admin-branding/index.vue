@@ -1,22 +1,13 @@
 <template>
   <div class="admin-branding-page">
-    <el-card
-      class="admin-branding-card"
-      shadow="never"
-    >
+    <el-card class="admin-branding-card" shadow="never">
       <template #header>
         <div class="admin-branding-header">
           <div class="admin-branding-title">系统外观配置</div>
         </div>
       </template>
 
-      <el-form
-        ref="formRef"
-        v-loading="loading"
-        :model="form"
-        :rules="rules"
-        label-width="120px"
-      >
+      <el-form ref="formRef" v-loading="loading" :model="form" :rules="rules" label-width="120px">
         <section class="admin-branding-section">
           <div class="admin-branding-section__title">基础信息</div>
           <el-row :gutter="20">
@@ -136,20 +127,12 @@
             </el-col>
             <el-col :span="12">
               <el-form-item label="备案号" prop="icp">
-                <el-input
-                  v-model.trim="form.icp"
-                  maxlength="100"
-                  show-word-limit
-                />
+                <el-input v-model.trim="form.icp" maxlength="100" show-word-limit />
               </el-form-item>
             </el-col>
             <el-col :span="12">
               <el-form-item label="联系方式" prop="contact">
-                <el-input
-                  v-model.trim="form.contact"
-                  maxlength="100"
-                  show-word-limit
-                />
+                <el-input v-model.trim="form.contact" maxlength="100" show-word-limit />
               </el-form-item>
             </el-col>
           </el-row>
@@ -158,26 +141,15 @@
         <section class="admin-branding-section">
           <div class="admin-branding-section__title">启用状态</div>
           <el-form-item label="启用状态">
-            <el-switch
-              v-model="form.enabled"
-            />
+            <el-switch v-model="form.enabled" />
             <span class="admin-branding-status-tip">启用后覆盖系统默认展示</span>
           </el-form-item>
         </section>
 
         <div class="admin-branding-actions">
-          <el-button @click="loadConfig">
-            重置
-          </el-button>
-          <el-button
-            type="primary"
-            :loading="saving"
-            @click="handleSave"
-          >
-            保存配置
-          </el-button>
+          <el-button @click="loadConfig"> 重置 </el-button>
+          <el-button type="primary" :loading="saving" @click="handleSave"> 保存配置 </el-button>
         </div>
-
       </el-form>
     </el-card>
   </div>

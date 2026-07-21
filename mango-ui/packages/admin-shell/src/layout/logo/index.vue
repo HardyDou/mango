@@ -1,37 +1,11 @@
 <template>
-  <div
-    v-if="!layoutStore.isCollapse"
-    class="layout-logo"
-    @click="onLogoClick"
-  >
-    <img
-      v-if="fullLogoUrl"
-      class="logo-image logo-image-full"
-      :src="fullLogoUrl"
-      alt="logo"
-    >
-    <span
-      v-else
-      class="logo-text"
-      :style="{ color: setFontColor }"
-    >{{ preferencesStore.globalTitle }}</span>
+  <div v-if="!layoutStore.isCollapse" class="layout-logo" @click="onLogoClick">
+    <img v-if="fullLogoUrl" class="logo-image logo-image-full" :src="fullLogoUrl" alt="logo" />
+    <span v-else class="logo-text" :style="{ color: setFontColor }">{{ preferencesStore.globalTitle }}</span>
   </div>
-  <div
-    v-else
-    class="layout-logo-collapsed"
-    @click="onLogoClick"
-  >
-    <img
-      v-if="collapsedLogoUrl"
-      class="logo-image logo-image-collapsed"
-      :src="collapsedLogoUrl"
-      alt="logo"
-    >
-    <span
-      v-else
-      class="logo-icon"
-      :style="{ color: setFontColor }"
-    >{{ collapsedText }}</span>
+  <div v-else class="layout-logo-collapsed" @click="onLogoClick">
+    <img v-if="collapsedLogoUrl" class="logo-image logo-image-collapsed" :src="collapsedLogoUrl" alt="logo" />
+    <span v-else class="logo-icon" :style="{ color: setFontColor }">{{ collapsedText }}</span>
   </div>
 </template>
 

@@ -20,9 +20,10 @@ export type SaveAdminBrandingCommand = AdminBranding;
 
 export const adminBrandingApi = {
   get: () => get<AdminBranding>('/system/admin-branding'),
-  getPublic: () => get<AdminBranding>('/system/admin-branding/public', {
-    ignoreToken: true,
-    silentError: true,
-  }),
+  getPublic: () =>
+    get<AdminBranding>('/system/admin-branding/public', {
+      ignoreToken: true,
+      silentError: true,
+    }),
   save: (data: SaveAdminBrandingCommand) => put<boolean>('/system/admin-branding', data),
 };
