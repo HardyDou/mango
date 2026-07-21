@@ -202,7 +202,7 @@ jobs:
       - name: Build the architecture gate prerequisites
         run: |
           mvn -f mango/pom.xml \
-            -pl :mango-parent,:mango-common,:mango-tools \
+            -pl :mango-bom,:mango-parent,:mango-common,:mango-tools \
             -DskipTests \
             install
 

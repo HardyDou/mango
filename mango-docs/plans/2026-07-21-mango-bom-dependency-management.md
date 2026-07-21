@@ -3,10 +3,10 @@
 ## 1. 元数据
 
 - 任务 ID：mango-bom-dependency-management
-- 交付模式：STANDARD
+- 交付模式：FULL
 - 需求影响：L2 - 调整所有业务消费方的 Maven 依赖版本入口。
-- 方案风险：L2 - 新增发布制品并修改发布 Parent 的 dependencyManagement，需要全 Reactor 和独立消费者验证。
-- 最终风险：L2
+- 方案风险：L3 - 新增发布制品、修改发布 Parent 的 dependencyManagement，并调整 required-check 的 Maven 前置制品接线，需要全 Reactor、独立消费者和受保护 PR 验证。
+- 最终风险：L3
 - 工作区决策：CREATE
 
 ## 2. 目标与范围
