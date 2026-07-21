@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { installMangoAuth } from '@mango/auth';
 import { get } from '@mango/common/utils/request';
-import { fileApi, fileRuntimeUrl, normalizeFileId } from '@mango/file';
+import { fileApi, fileRuntimeUrl, normalizeFileId, type FilePreview } from '@mango/file';
 import { usePreferencesStore } from './preferences';
 
 export interface AdminBrandingConfig {
@@ -44,6 +44,8 @@ export const DEFAULT_ADMIN_BRANDING: AdminBrandingConfig = {
   contact: '',
 };
 
+let adminBrandingLoadSeq = 0;
+
 export const useAdminBrandingStore = defineStore('adminBranding', {
   state: (): AdminBrandingState => ({
     ...DEFAULT_ADMIN_BRANDING,
@@ -55,6 +57,7 @@ export const useAdminBrandingStore = defineStore('adminBranding', {
   }),
   actions: {
     async loadPublicConfig() {
+      const loadSeq = ++adminBrandingLoadSeq;
       const config = await fetchAdminBrandingPublic().catch(() => DEFAULT_ADMIN_BRANDING);
       const normalized = normalizeBrandingConfig(config);
       const [logoUrl, logoIconUrl, faviconUrl, loginImageUrl] = await Promise.all([
@@ -64,6 +67,11 @@ export const useAdminBrandingStore = defineStore('adminBranding', {
         resolveFilePreviewUrl(normalized.loginImageFile),
       ]);
 
+      if (loadSeq !== adminBrandingLoadSeq) {
+        revokeBrandingObjectUrls([logoUrl, logoIconUrl, faviconUrl, loginImageUrl]);
+        return;
+      }
+      revokeBrandingObjectUrls([this.logoUrl, this.logoIconUrl, this.faviconUrl, this.loginImageUrl]);
       this.$patch({
         ...normalized,
         logoUrl,
@@ -103,8 +111,10 @@ function normalizeBrandingConfig(config?: Partial<AdminBrandingConfig>): AdminBr
 }
 
 function normalizeText(value: unknown, fallback: string): string {
-  const text = typeof value === 'string' ? value.trim() : '';
-  return text || fallback;
+  if (typeof value !== 'string') {
+    return fallback;
+  }
+  return value.trim();
 }
 
 async function resolveFilePreviewUrl(value?: string): Promise<string> {
@@ -114,10 +124,48 @@ async function resolveFilePreviewUrl(value?: string): Promise<string> {
   }
   try {
     const preview = await fileApi.preview(fileId);
-    return fileRuntimeUrl(preview);
+    const runtimeUrl = fileRuntimeUrl(preview);
+    if (runtimeUrl) {
+      return runtimeUrl;
+    }
+    return await resolveProtectedImageObjectUrl(preview);
   } catch {
     return '';
   }
+}
+
+async function resolveProtectedImageObjectUrl(preview: FilePreview): Promise<string> {
+  if (!isImagePreview(preview) || typeof URL === 'undefined') {
+    return '';
+  }
+  const response = await fileApi.previewContent(preview.id);
+  const blob = response.data;
+  if (!(blob instanceof Blob)) {
+    return '';
+  }
+  return URL.createObjectURL(blob);
+}
+
+function isImagePreview(preview: FilePreview): boolean {
+  const contentType = preview.contentType?.toLowerCase();
+  if (contentType?.startsWith('image/')) {
+    return true;
+  }
+  const fileExt = preview.fileExt?.toLowerCase();
+  return Boolean(
+    fileExt && ['apng', 'avif', 'bmp', 'gif', 'ico', 'jpg', 'jpeg', 'png', 'svg', 'webp'].includes(fileExt),
+  );
+}
+
+function revokeBrandingObjectUrls(urls: string[]) {
+  if (typeof URL === 'undefined') {
+    return;
+  }
+  urls.forEach((url) => {
+    if (url.startsWith('blob:')) {
+      URL.revokeObjectURL(url);
+    }
+  });
 }
 
 function applyBrandingToRuntime(branding: AdminBrandingState) {

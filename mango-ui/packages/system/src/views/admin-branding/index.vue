@@ -186,6 +186,7 @@ const formRef = ref<FormInstance>();
 const loading = ref(false);
 const saving = ref(false);
 const form = reactive<AdminBranding>({ ...defaultForm });
+const ADMIN_BRANDING_UPDATED_EVENT = 'mango-admin-branding:updated';
 
 const rules: FormRules<AdminBranding> = {};
 
@@ -207,6 +208,7 @@ async function handleSave() {
   saving.value = true;
   try {
     await adminBrandingApi.save({ ...form });
+    window.dispatchEvent(new CustomEvent(ADMIN_BRANDING_UPDATED_EVENT));
     ElMessage.success('后台品牌配置已保存');
   } finally {
     saving.value = false;

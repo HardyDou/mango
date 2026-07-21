@@ -1,11 +1,7 @@
 import { computed, reactive, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
-import {
-  defaultPasswordPolicy,
-  getPasswordPolicyMessage,
-  isPasswordPolicyPassed,
-} from '@mango/common';
+import { defaultPasswordPolicy, getPasswordPolicyMessage, isPasswordPolicyPassed } from '@mango/common';
 import { Session } from '@mango/common/utils/storage';
 import {
   changeRequiredPassword,
@@ -21,6 +17,8 @@ import {
 import { useUserInfo, type UserInfosState } from '../store/userInfo';
 import type { MangoAuthConfig } from '../config';
 import { useAuthConfig } from './useAuthConfig';
+
+const MANGO_AUTH_LOGIN_SUCCESS_EVENT = 'mango-auth:login-success';
 
 export interface MangoLoginForm {
   tenantId: string;
@@ -93,9 +91,9 @@ export function useMangoLoginFlow(options: MangoLoginFlowOptions = {}) {
   const showMessage = computed(() => options.showMessage !== false);
   const shouldAutoRedirect = computed(() => options.autoRedirect !== false);
   const minLoadingMs = computed(() => options.minLoadingMs ?? DEFAULT_LOGIN_MIN_LOADING_MS);
-  const loginRedirectTarget = computed(() => normalizeLoginRedirect(
-    route.query[loginDefaults.value.redirectQueryKey || 'redirect']
-  ));
+  const loginRedirectTarget = computed(() =>
+    normalizeLoginRedirect(route.query[loginDefaults.value.redirectQueryKey || 'redirect']),
+  );
 
   const form = reactive<MangoLoginForm>({
     tenantId: '',
@@ -121,9 +119,10 @@ export function useMangoLoginFlow(options: MangoLoginFlowOptions = {}) {
 
   const selectedTenant = computed(() => tenantOptions.value.find((tenant) => tenant.tenantId === form.tenantId));
   const passwordPolicyMessage = computed(() => getPasswordPolicyMessage(defaultPasswordPolicy));
-  const canSubmitPasswordReset = computed(() =>
-    isPasswordPolicyPassed(passwordResetForm.newPassword, defaultPasswordPolicy)
-    && passwordResetForm.confirmPassword === passwordResetForm.newPassword
+  const canSubmitPasswordReset = computed(
+    () =>
+      isPasswordPolicyPassed(passwordResetForm.newPassword, defaultPasswordPolicy) &&
+      passwordResetForm.confirmPassword === passwordResetForm.newPassword,
   );
   const wecomQrUrl = computed(() => {
     const config = wecomLoginConfig.value;
@@ -170,9 +169,9 @@ export function useMangoLoginFlow(options: MangoLoginFlowOptions = {}) {
       return;
     }
     if (!form.tenantId || !selectedExists) {
-      form.tenantId = tenantOptions.value.find((tenant) =>
-        tenant.tenantCode === (loginDefaults.value.tenantCode || 'default'))?.tenantId
-        || tenantOptions.value[0].tenantId;
+      form.tenantId =
+        tenantOptions.value.find((tenant) => tenant.tenantCode === (loginDefaults.value.tenantCode || 'default'))
+          ?.tenantId || tenantOptions.value[0].tenantId;
     }
   }
 
@@ -253,6 +252,9 @@ export function useMangoLoginFlow(options: MangoLoginFlowOptions = {}) {
     userInfoStore.setUserInfos(normalizedUserInfo as Partial<UserInfosState['userInfos']>);
     if (normalizedUserInfo.tenantId) {
       Session.set('tenantId', String(normalizedUserInfo.tenantId));
+    }
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent(MANGO_AUTH_LOGIN_SUCCESS_EVENT));
     }
   }
 
@@ -415,10 +417,7 @@ export function useMangoLoginFlow(options: MangoLoginFlowOptions = {}) {
     }
   }
 
-  async function handleWecomCallback(
-    code: string,
-    state: MangoWecomCallbackState
-  ): Promise<MangoWecomActionResult> {
+  async function handleWecomCallback(code: string, state: MangoWecomCallbackState): Promise<MangoWecomActionResult> {
     wecomCode.value = code;
     if (!state.tenantId) {
       notify('warning', '企业微信回调缺少机构信息，请重新扫码');
@@ -434,9 +433,7 @@ export function useMangoLoginFlow(options: MangoLoginFlowOptions = {}) {
       return { status: 'failed', shouldOpenWecomDialog: true };
     }
 
-    wecomLoginConfig.value = state.channelConfigId
-      ? { channelConfigId: state.channelConfigId }
-      : undefined;
+    wecomLoginConfig.value = state.channelConfigId ? { channelConfigId: state.channelConfigId } : undefined;
     if (!wecomLoginConfig.value?.channelConfigId) {
       try {
         wecomLoginConfig.value = await getWecomLoginConfig(form.tenantId);
@@ -539,9 +536,7 @@ export function parseWecomState(rawState: string | null): MangoWecomCallbackStat
   if (rawState.startsWith('tenant:')) {
     return { tenantId: rawState.slice('tenant:'.length) || undefined };
   }
-  const statePrefix = rawState.startsWith('mango-wecom.')
-    ? 'mango-wecom.'
-    : 'mwc.';
+  const statePrefix = rawState.startsWith('mango-wecom.') ? 'mango-wecom.' : 'mwc.';
   if (!rawState.startsWith(statePrefix)) {
     return {};
   }
@@ -612,15 +607,12 @@ function base64UrlEncode(value: string) {
   bytes.forEach((byte) => {
     binary += String.fromCharCode(byte);
   });
-  return window.btoa(binary)
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=+$/g, '');
+  return window.btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
 }
 
 function base64UrlDecode(value: string) {
   const normalized = value.replace(/-/g, '+').replace(/_/g, '/');
-  const padded = normalized.padEnd(normalized.length + ((4 - normalized.length % 4) % 4), '=');
+  const padded = normalized.padEnd(normalized.length + ((4 - (normalized.length % 4)) % 4), '=');
   const binary = window.atob(padded);
   const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
   return new TextDecoder().decode(bytes);

@@ -318,12 +318,11 @@ watch(
 
   .layout-logo-link {
     flex-shrink: 0;
-    overflow: hidden;
+    overflow: visible;
 
     :deep(.layout-logo) {
       width: auto;
-      min-width: 160px;
-      max-width: 220px;
+      min-width: 220px;
       height: 40px;
       background: transparent;
       box-shadow: none;
@@ -354,9 +353,8 @@ watch(
 
     &.layout-logo-link--classic {
       :deep(.layout-logo) {
-        width: 220px;
+        width: auto;
         min-width: 220px;
-        max-width: 220px;
         padding: 0;
       }
     }

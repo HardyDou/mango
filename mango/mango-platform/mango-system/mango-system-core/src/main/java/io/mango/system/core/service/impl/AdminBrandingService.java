@@ -65,7 +65,7 @@ public class AdminBrandingService implements IAdminBrandingService {
     }
 
     private String resolveValue(SysConfigEntity config, Field field) {
-        if (config == null || Integer.valueOf(0).equals(config.getStatus()) || !StringUtils.hasText(config.getConfigValue())) {
+        if (config == null || Integer.valueOf(0).equals(config.getStatus()) || config.getConfigValue() == null) {
             return field.defaultValue;
         }
         return config.getConfigValue();

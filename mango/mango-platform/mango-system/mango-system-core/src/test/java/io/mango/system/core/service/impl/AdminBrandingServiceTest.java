@@ -51,6 +51,27 @@ class AdminBrandingServiceTest {
     }
 
     @Test
+    @DisplayName("get should preserve blank text values when config exists")
+    void get_blankTextConfig_preservesBlankValues() {
+        when(sysConfigMapper.selectList(any(Wrapper.class))).thenReturn(List.of(
+                config("admin.branding.title", ""),
+                config("admin.branding.shortTitle", ""),
+                config("admin.branding.loginTitle", ""),
+                config("admin.branding.loginSubtitle", ""),
+                config("admin.branding.footerCopyright", "")
+        ));
+
+        AdminBrandingVO result = adminBrandingService.get();
+
+        assertEquals("", result.getTitle());
+        assertEquals("", result.getShortTitle());
+        assertEquals("企业级管理平台", result.getSubtitle());
+        assertEquals("", result.getLoginTitle());
+        assertEquals("", result.getLoginSubtitle());
+        assertEquals("", result.getFooterCopyright());
+    }
+
+    @Test
     @DisplayName("save should insert normalized file id")
     void save_newConfig_insertsFileId() {
         when(sysConfigMapper.selectList(any(Wrapper.class))).thenReturn(List.of());
@@ -124,6 +145,14 @@ class AdminBrandingServiceTest {
         assertThrows(BizException.class, () -> adminBrandingService.save(command));
         verify(sysConfigMapper, never()).insert(any(SysConfigEntity.class));
         verify(sysConfigMapper, never()).updateById(any(SysConfigEntity.class));
+    }
+
+    private SysConfigEntity config(String key, String value) {
+        SysConfigEntity config = new SysConfigEntity();
+        config.setConfigKey(key);
+        config.setConfigValue(value);
+        config.setStatus(1);
+        return config;
     }
 
     private SaveAdminBrandingCommand createCommand() {

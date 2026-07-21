@@ -3,7 +3,7 @@ import { createPinia } from 'pinia';
 import piniaPluginPersist from 'pinia-plugin-persistedstate';
 import { mangoMessage, registerUnauthorizedHandler } from '@mango/common';
 import { installMangoAuth } from '@mango/auth';
-import { configureMangoAdminShell } from '@mango/admin-shell';
+import { configureMangoAdminShell, installAdminBrandingRuntime } from '@mango/admin-shell';
 import { mangoFullAdminFeatureRegistrars } from '@mango/admin/full';
 import { systemQuickEntryWidgets, systemUserProfileWidgets } from '@mango/system';
 import App from './App.vue';
@@ -19,10 +19,7 @@ import { registerAuthDirectives } from './directive/authDirective';
 configureMangoAdminShell({
   features: 'full',
   featureRegistrars: mangoFullAdminFeatureRegistrars,
-  widgets: [
-    ...systemUserProfileWidgets,
-    ...systemQuickEntryWidgets,
-  ],
+  widgets: [...systemUserProfileWidgets, ...systemQuickEntryWidgets],
 });
 
 // MSW Mock 支持（开发环境且启用时）
@@ -87,6 +84,7 @@ installMangoAuth(app, {
     minLength: 6,
   },
 });
+installAdminBrandingRuntime();
 
 // 在 Vue 首帧渲染前同步恢复 store 状态（布局/深色模式等），避免闪屏
 initThemeBeforeRender();
@@ -96,9 +94,11 @@ registerAuthDirectives(app);
 
 registerUnauthorizedHandler(async () => {
   const currentRoute = router.currentRoute.value;
-  await router.push(currentRoute.path === '/login'
-    ? { path: '/login' }
-    : { path: '/login', query: { redirect: currentRoute.fullPath } });
+  await router.push(
+    currentRoute.path === '/login'
+      ? { path: '/login' }
+      : { path: '/login', query: { redirect: currentRoute.fullPath } },
+  );
 });
 
 // 启用 Mock（如果配置了）

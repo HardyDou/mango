@@ -1,7 +1,7 @@
 <template>
   <div v-if="!layoutStore.isCollapse" class="layout-logo" @click="onLogoClick">
     <img v-if="fullLogoUrl" class="logo-image logo-image-full" :src="fullLogoUrl" alt="logo" />
-    <span v-else class="logo-text" :style="{ color: setFontColor }">{{ preferencesStore.globalTitle }}</span>
+    <span v-else class="logo-text" :style="{ color: setFontColor }">{{ preferencesStore.shortTitle }}</span>
   </div>
   <div v-else class="layout-logo-collapsed" @click="onLogoClick">
     <img v-if="collapsedLogoUrl" class="logo-image logo-image-collapsed" :src="collapsedLogoUrl" alt="logo" />
@@ -25,7 +25,7 @@ const setFontColor = computed(() => {
 
 const fullLogoUrl = computed(() => preferencesStore.logoUrl);
 const collapsedLogoUrl = computed(() => preferencesStore.logoIconUrl || preferencesStore.logoUrl);
-const collapsedText = computed(() => preferencesStore.shortTitle?.trim().charAt(0) || 'M');
+const collapsedText = computed(() => preferencesStore.shortTitle.trim().charAt(0));
 
 const onLogoClick = () => {
   if (layoutStore.layout === 'transverse') return false;
@@ -35,7 +35,8 @@ const onLogoClick = () => {
 
 <style scoped lang="scss">
 .layout-logo {
-  width: 220px;
+  width: auto;
+  min-width: 220px;
   height: var(--mango-header-height);
   display: flex;
   align-items: center;
@@ -52,7 +53,6 @@ const onLogoClick = () => {
 
   .logo-image-full {
     width: auto;
-    max-width: calc(100% - 24px);
     height: 32px;
     object-fit: contain;
   }
