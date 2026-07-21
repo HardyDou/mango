@@ -144,7 +144,7 @@ test("文档 pmoVersion 必须与版本化合同一致", () => {
     "mango-pmo/contracts/business-requirements.json",
   );
   const source = readFixture("valid/business-requirements.md").replace(
-    "pmoVersion: 1.3.3",
+    "pmoVersion: 1.3.4",
     "pmoVersion: 9.9.9",
   );
   const result = validateDocument(source, contract);
@@ -152,7 +152,7 @@ test("文档 pmoVersion 必须与版本化合同一致", () => {
     result.findings.some(
       (finding) =>
         finding.ruleId === "BRD-META-001" &&
-        finding.message.includes("pmoVersion 必须为 1.3.3"),
+        finding.message.includes("pmoVersion 必须为 1.3.4"),
     ),
   );
 });

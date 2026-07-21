@@ -27,7 +27,7 @@
     ],
     "fixed": {
       "documentType": "technical-design",
-      "pmoVersion": "1.3.3",
+      "pmoVersion": "1.3.4",
       "schemaRevision": "1"
     }
   },

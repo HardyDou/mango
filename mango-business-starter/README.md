@@ -51,7 +51,7 @@ node mango-business-starter/scripts/check-template.mjs
 
 当前 PMO baseline 按风险事实选择三档交付模式：L0/L1 使用 SIMPLE 并直接实现，L2 使用 STANDARD 单文件记录，L3 使用 FULL 适用流程。M01 默认自动创建或复用隔离 worktree，只有 main 例外、模式降级、破坏性数据库动作和外部写入等事实需要人工确认；M09-M16 仍按真实观察面选择。发布、版本和发布恢复继续使用独立发布流程。
 
-delivery-assurance schema revision 5 起，PMO baseline 同时携带 canonical 业务 PR 模板。项目内 `mango pmo sync/upgrade` 在模板缺失时创建文件，在模板存在时只托管 `## Risk / Verification` 区段；`mango pmo check --locked` 会阻断缺失或漂移，区段外业务说明保持不变。该能力将在包含修复的后续 PMO/CLI 补丁版本中提供，已发布的 PMO 1.3.3 / CLI 1.0.87 及更早版本不具备该同步链路。
+delivery-assurance schema revision 5 起，PMO baseline 同时携带 canonical 业务 PR 模板。项目内 `mango pmo sync/upgrade` 在模板缺失时创建文件，在模板存在时只托管 `## Risk / Verification` 区段；`mango pmo check --locked` 会阻断缺失或漂移，区段外业务说明保持不变。该能力由 `@mango/pmo@1.3.4` 与 `@mango/cli@1.0.88` 提供。
 
 能力与 Skill 路由统一由项目 `AGENTS.md` 和 PMO preflight 决定；不要从普通技术术语推断无关能力。完整分类边界见[能力说明维护规范](../mango-pmo/rules/08-capability-docs.md)。
 
@@ -254,7 +254,7 @@ Controller 使用 `BaseCrudController`，类级路径由 module 和 aggregate �
 
 ## 13. 补充资料
 
-- v2026.07.20 发布候选将业务 PMO baseline 对齐到 `@mango/pmo@1.3.3`，同步文档合同 fixture、plugin manifest 投影和 release package 元数据；业务项目升级后只影响 PMO 检查、preflight、文档合同和发布治理物料，不改变业务 API、菜单、权限、租户、页面、启动方式或运行时业务逻辑。
+- v2026.07.21 发布候选将业务 PMO baseline 对齐到 `@mango/pmo@1.3.4` 和 `@mango/cli@1.0.88`，同步 delivery-assurance schema revision 5、canonical PR 模板、文档合同 fixture、plugin manifest 投影和 release package 元数据；业务项目升级后只影响 PMO 检查、preflight、文档合同和发布治理物料，不改变业务 API、菜单、权限、租户、页面、启动方式或运行时业务逻辑。
 - v2026.07.19 本地候选将业务 API 改为 `createXxxApi(HttpClient)`，host 使用 `@mango/http-client@1.0.0` 注入，页面传递取消信号且不再引用 Axios/全局 request；真实 CMS 页面和 Wujie 多实例宿主链路已纳入验证，候选锁为 `@mango/pmo@1.3.2`、`@mango/cli@1.0.84` 和同批前端包。当前未发布，业务项目只能在本地 tarball/candidate 验证后试用。
 - v2026.07.18 将项目治理锁更新到 `@mango/pmo@1.3.1` 和 `@mango/cli@1.0.82`；Mango 发布只路由到项目内 `mango-release` Skill，并补齐发布说明预检、不可变制品恢复、CHANGELOG 回填和环境清理。Mango Maven、运行时前端包、菜单、权限、租户和业务逻辑不变。
 - v2026.07.18 CLI 热修将项目生成版本更新到 `@mango/cli@1.0.81`，为新项目补齐 pnpm 11 所需的前端 workspace 构建白名单；Mango Maven `1.0.22`、`@mango/pmo@1.3.0`、菜单、权限、租户和运行时业务逻辑不变。

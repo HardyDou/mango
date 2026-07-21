@@ -1,8 +1,67 @@
 # Mango Changelog
 
+## v2026.07.21-maven-1.0.24-pmo-1.3.4-cli-1.0.88-platform-notice-fixes-release - 2026-07-21
+
+Status: `PENDING`. This mixed Mango release publishes Maven `1.0.24`, PMO `1.3.4`, Notice `1.0.29`, Admin Shell `1.0.48`, Admin `1.0.53`, and CLI `1.0.88` from the release-preparation commit after it is merged to `main`. The exact source commit, tree, archive checksum, registry evidence and completed state manifest will be recorded before closeout.
+
+### Fixed
+
+- Align Flyway 11.20.3 across Mango parent POMs and generated projects, remove MySQL integer display widths and UTF8MB3 defaults from fresh migrations, and exclude explicitly managed third-party schemas from Mango schema ownership checks.
+- Move Notice receive settings into the user message center, keep personal Notice resources on the authenticated-user grant path, and remove the duplicate administration-menu placement.
+- Preserve the current tenant when System operation logs are written so tenant-scoped audit queries return the expected records.
+- Stabilize Workflow notice task routing and the matching menu/resource contracts while preserving existing runtime route identities.
+- Add the canonical business pull-request template to the PMO delivery-assurance contract and fail closed on missing, outdated or duplicated managed Risk / Verification blocks.
+
+### Changed
+
+- `mango pmo init/sync/upgrade/check/rollback` now manages only the canonical PR template block and preserves project-owned PR description content.
+- The CLI generated-project lock advances to the Maven `1.0.24`, PMO `1.3.4`, Notice `1.0.29`, Admin Shell `1.0.48` and Admin `1.0.53` compatibility matrix.
+
+### Versions
+
+| Component                                   |       Previous |   Release | Compatibility                                                                                                     |
+| ------------------------------------------- | -------------: | --------: | ----------------------------------------------------------------------------------------------------------------- |
+| Mango Maven non-app backend and docs bundle |       `1.0.23` |  `1.0.24` | Patch fixes; existing databases upgrade in place and fresh MySQL 8.4 schemas avoid the corrected warnings.        |
+| `@mango/pmo`                                |        `1.3.3` |   `1.3.4` | Adds schema revision 5 and canonical PR template governance; existing project-owned template content is retained. |
+| `@mango/notice`                             |       `1.0.28` |  `1.0.29` | Moves receive settings into the message center; public Notice APIs remain compatible.                             |
+| `@mango/admin-shell`                        |       `1.0.47` |  `1.0.48` | Aligns the Notice dependency and verified route contracts; Shell public APIs remain compatible.                   |
+| `@mango/admin`                              |       `1.0.52` |  `1.0.53` | Aggregate dependency alignment only; entries, exports and styles remain compatible.                               |
+| `@mango/cli`                                |       `1.0.87` |  `1.0.88` | Adds Flyway alignment and PMO PR-template lifecycle support while preserving command compatibility.               |
+| Other frontend runtime packages             | current matrix | unchanged | No other npm coordinate is republished in this batch.                                                             |
+
+### Published Packages
+
+| Order | Target                                | Version                                                                       | Release status |
+| ----: | ------------------------------------- | ----------------------------------------------------------------------------- | -------------- |
+|     1 | Maven non-app backend and docs bundle | `io.mango:*:1.0.24`                                                           | `PENDING`      |
+|     2 | npm PMO bundle and Skills             | `@mango/pmo@1.3.4`                                                            | `PENDING`      |
+|     3 | npm Notice                            | `@mango/notice@1.0.29`                                                        | `PENDING`      |
+|     4 | npm Admin Shell                       | `@mango/admin-shell@1.0.48`                                                   | `PENDING`      |
+|     5 | npm Admin aggregate                   | `@mango/admin@1.0.53`                                                         | `PENDING`      |
+|     6 | npm CLI                               | `@mango/cli@1.0.88`                                                           | `PENDING`      |
+|     7 | GitHub Release                        | `v2026.07.21-maven-1.0.24-pmo-1.3.4-cli-1.0.88-platform-notice-fixes-release` | `PENDING`      |
+
+### Upgrade Notes
+
+1. Upgrade Mango backend dependencies as one Maven `1.0.24` set. Do not mix platform modules from `1.0.23` and `1.0.24`.
+2. Existing databases do not require a reset. Workflow migration compatibility remains fail closed for unknown historical checksums, while fresh MySQL 8.4 databases use the corrected charset and type definitions.
+3. Publish and verify `@mango/pmo@1.3.4` before installing `@mango/cli@1.0.88`. Business repositories should run `mango pmo upgrade --project-dir . --to 1.3.4 --sync-shell`, review the managed PR template block, and retain their project-owned text outside that block.
+4. Frontend consumers using the aggregate admin package should upgrade to `@mango/admin@1.0.53`. Direct consumers should align `@mango/notice@1.0.29` and `@mango/admin-shell@1.0.48` together.
+5. After backend resource reconciliation, Notice receive settings appear under the user message center rather than the administration menu. Existing Notice APIs, tenant data and user preferences remain in place.
+
+### Verification
+
+- `pnpm -C mango-ui release:impact --base=v2026.07.20-frontend-ui-fixes-npm-release --head=HEAD`
+- `pnpm -C mango-ui --filter @mango/pmo build && pnpm -C mango-ui --filter @mango/pmo check`
+- `node mango-business-starter/scripts/sync-pmo-baseline.mjs --check`
+- `node mango-ui/packages/mango-cli/scripts/check-release-versions.mjs`
+- `MANGO_BACKEND_GATE_VERSION=1.0.24 node mango-ui/packages/mango-cli/scripts/check-generated-backend-gate.mjs`
+- `pnpm -C mango-ui admin:styles:check && pnpm -C mango-ui admin:module-styles:check`
+- Affected Maven, PMO, CLI, Notice, Admin Shell, Admin and documentation gates must pass on the exact merged source commit before immutable publication.
+
 ## v2026.07.20-frontend-ui-fixes-npm-release - 2026-07-20
 
-Status: `PENDING`. This npm-only Mango package batch republishes the affected runtime package matrix from source commit `78cfd69e140f03fb7d2f46b2353948f0c9d32bff`. Mango Maven remains `1.0.23`, `@mango/cli` updates to `1.0.87` for template, version-lock and Windows release-script compatibility alignment, and `@mango/pmo` updates to `1.3.3` for the matching Windows package-check compatibility fix.
+Status: `PUBLISHED_AND_VERIFIED`. This npm-only Mango package batch was published from source commit `bd9e81db2683787456eb0260a04100efb08e4096`. All 24 npm coordinates resolve from both Nexus npm hosted and group, and the GitHub Release is published at the matching immutable tag. Mango Maven remains `1.0.23`, `@mango/cli` updates to `1.0.87`, and `@mango/pmo` updates to `1.3.3`.
 
 ### Fixed
 
@@ -30,33 +89,33 @@ Status: `PENDING`. This npm-only Mango package batch republishes the affected ru
 
 ### Published Packages
 
-| Order | Target                        | Version                                     | Release status |
-| ----- | ----------------------------- | ------------------------------------------- | -------------- |
-| 1     | npm PMO bundle and Skills     | `@mango/pmo@1.3.3`                          | `PENDING`      |
-| 2     | npm common                    | `@mango/common@1.0.20`                      | `PENDING`      |
-| 3     | npm admin pages               | `@mango/admin-pages@1.0.25`                 | `PENDING`      |
-| 4     | npm auth                      | `@mango/auth@1.0.19`                        | `PENDING`      |
-| 5     | npm grid layout               | `@mango/grid-layout@1.0.11`                 | `PENDING`      |
-| 6     | npm grid widgets              | `@mango/grid-widgets@1.0.17`                | `PENDING`      |
-| 7     | npm home                      | `@mango/home@1.0.9`                         | `PENDING`      |
-| 8     | npm RBAC                      | `@mango/rbac@1.0.18`                        | `PENDING`      |
-| 9     | npm site shell                | `@mango/site-shell@1.0.7`                   | `PENDING`      |
-| 10    | npm job                       | `@mango/job@1.0.18`                         | `PENDING`      |
-| 11    | npm link                      | `@mango/link@1.0.12`                        | `PENDING`      |
-| 12    | npm file                      | `@mango/file@1.0.26`                        | `PENDING`      |
-| 13    | npm notice                    | `@mango/notice@1.0.28`                      | `PENDING`      |
-| 14    | npm calendar                  | `@mango/calendar@1.0.26`                    | `PENDING`      |
-| 15    | npm numgen                    | `@mango/numgen@1.0.26`                      | `PENDING`      |
-| 16    | npm payment                   | `@mango/payment@1.0.18`                     | `PENDING`      |
-| 17    | npm template                  | `@mango/template@1.0.26`                    | `PENDING`      |
-| 18    | npm workflow                  | `@mango/workflow@1.0.32`                    | `PENDING`      |
-| 19    | npm workflow business example | `@mango/workflow-business-example@1.0.31`   | `PENDING`      |
-| 20    | npm CMS                       | `@mango/cms@1.0.15`                         | `PENDING`      |
-| 21    | npm system                    | `@mango/system@1.0.24`                      | `PENDING`      |
-| 22    | npm admin shell               | `@mango/admin-shell@1.0.47`                 | `PENDING`      |
-| 23    | npm admin aggregate           | `@mango/admin@1.0.52`                       | `PENDING`      |
-| 24    | npm CLI                       | `@mango/cli@1.0.87`                         | `PENDING`      |
-| 25    | GitHub Release                | `v2026.07.20-frontend-ui-fixes-npm-release` | `PENDING`      |
+| Order | Target                        | Version                                     | Release status           |
+| ----- | ----------------------------- | ------------------------------------------- | ------------------------ |
+| 1     | npm PMO bundle and Skills     | `@mango/pmo@1.3.3`                          | `PUBLISHED_AND_VERIFIED` |
+| 2     | npm common                    | `@mango/common@1.0.20`                      | `PUBLISHED_AND_VERIFIED` |
+| 3     | npm admin pages               | `@mango/admin-pages@1.0.25`                 | `PUBLISHED_AND_VERIFIED` |
+| 4     | npm auth                      | `@mango/auth@1.0.19`                        | `PUBLISHED_AND_VERIFIED` |
+| 5     | npm grid layout               | `@mango/grid-layout@1.0.11`                 | `PUBLISHED_AND_VERIFIED` |
+| 6     | npm grid widgets              | `@mango/grid-widgets@1.0.17`                | `PUBLISHED_AND_VERIFIED` |
+| 7     | npm home                      | `@mango/home@1.0.9`                         | `PUBLISHED_AND_VERIFIED` |
+| 8     | npm RBAC                      | `@mango/rbac@1.0.18`                        | `PUBLISHED_AND_VERIFIED` |
+| 9     | npm site shell                | `@mango/site-shell@1.0.7`                   | `PUBLISHED_AND_VERIFIED` |
+| 10    | npm job                       | `@mango/job@1.0.18`                         | `PUBLISHED_AND_VERIFIED` |
+| 11    | npm link                      | `@mango/link@1.0.12`                        | `PUBLISHED_AND_VERIFIED` |
+| 12    | npm file                      | `@mango/file@1.0.26`                        | `PUBLISHED_AND_VERIFIED` |
+| 13    | npm notice                    | `@mango/notice@1.0.28`                      | `PUBLISHED_AND_VERIFIED` |
+| 14    | npm calendar                  | `@mango/calendar@1.0.26`                    | `PUBLISHED_AND_VERIFIED` |
+| 15    | npm numgen                    | `@mango/numgen@1.0.26`                      | `PUBLISHED_AND_VERIFIED` |
+| 16    | npm payment                   | `@mango/payment@1.0.18`                     | `PUBLISHED_AND_VERIFIED` |
+| 17    | npm template                  | `@mango/template@1.0.26`                    | `PUBLISHED_AND_VERIFIED` |
+| 18    | npm workflow                  | `@mango/workflow@1.0.32`                    | `PUBLISHED_AND_VERIFIED` |
+| 19    | npm workflow business example | `@mango/workflow-business-example@1.0.31`   | `PUBLISHED_AND_VERIFIED` |
+| 20    | npm CMS                       | `@mango/cms@1.0.15`                         | `PUBLISHED_AND_VERIFIED` |
+| 21    | npm system                    | `@mango/system@1.0.24`                      | `PUBLISHED_AND_VERIFIED` |
+| 22    | npm admin shell               | `@mango/admin-shell@1.0.47`                 | `PUBLISHED_AND_VERIFIED` |
+| 23    | npm admin aggregate           | `@mango/admin@1.0.52`                       | `PUBLISHED_AND_VERIFIED` |
+| 24    | npm CLI                       | `@mango/cli@1.0.87`                         | `PUBLISHED_AND_VERIFIED` |
+| 25    | GitHub Release                | `v2026.07.20-frontend-ui-fixes-npm-release` | `CREATED_AND_VERIFIED`   |
 
 ### Upgrade Notes
 
@@ -75,6 +134,7 @@ Status: `PENDING`. This npm-only Mango package batch republishes the affected ru
 - `pnpm -C mango-ui release:impact --base=v2026.07.19-frontend-standards-npm-release --head=HEAD`
 - `node mango-ui/packages/mango-cli/scripts/check-release-versions.mjs`
 - Target package builds before publish for the 24 affected npm packages.
+- Full post-publication back-check on 2026-07-21 confirmed every listed coordinate from both `npm-hosted` and `npm-group`; the GitHub Release is published and points to tag commit `bd9e81db2683787456eb0260a04100efb08e4096`.
 
 ## v2026.07.20-maven-1.0.23-cli-1.0.85-platform-fixes-release - 2026-07-20
 

@@ -29,12 +29,12 @@ pnpm -F @mango/pmo check
 业务项目使用：
 
 ```bash
-npm view @mango/pmo@1.3.3 version --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
-npm view @mango/cli@1.0.83 version --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
-npm install -g @mango/cli@1.0.83 --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
+npm view @mango/pmo@1.3.4 version --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
+npm view @mango/cli@1.0.88 version --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
+npm install -g @mango/cli@1.0.88 --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
 mango pmo status --project-dir .
-mango pmo upgrade --project-dir . --to 1.3.3 --dry-run
-mango pmo upgrade --project-dir . --to 1.3.3 --sync-shell
+mango pmo upgrade --project-dir . --to 1.3.4 --dry-run
+mango pmo upgrade --project-dir . --to 1.3.4 --sync-shell
 mango pmo check --project-dir . --locked
 ```
 

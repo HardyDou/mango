@@ -25,7 +25,7 @@
   },
   "dependencyRecovery": {
     "@mango/admin": {
-      "version": "1.0.52",
+      "version": "1.0.53",
       "action": "pin"
     },
     "@mango/admin-pages": {
@@ -33,7 +33,7 @@
       "action": "pin"
     },
     "@mango/admin-shell": {
-      "version": "1.0.47",
+      "version": "1.0.48",
       "action": "pin"
     },
     "@mango/api-schema": {
@@ -53,7 +53,7 @@
       "action": "pin"
     },
     "@mango/cli": {
-      "version": "1.0.87",
+      "version": "1.0.88",
       "action": "pin"
     },
     "@mango/cms": {
@@ -101,7 +101,7 @@
       "action": "pin"
     },
     "@mango/notice": {
-      "version": "1.0.28",
+      "version": "1.0.29",
       "action": "pin"
     },
     "@mango/numgen": {
@@ -113,7 +113,7 @@
       "action": "pin"
     },
     "@mango/pmo": {
-      "version": "1.3.3",
+      "version": "1.3.4",
       "action": "pin"
     },
     "@mango/rbac": {
