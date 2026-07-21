@@ -8,6 +8,7 @@ export interface AdminBranding {
   loginTitle: string;
   loginSubtitle: string;
   logoFile: string;
+  logoIconFile: string;
   faviconFile: string;
   loginImageFile: string;
   footerCopyright: string;

@@ -1730,6 +1730,57 @@ mango:
             remark:
               type: STRING
               value: 保存文件中心 token，不保存预览地址
+        - id: "2026062902590000012"
+          version: 1
+          biz-key: system.config.admin-branding-logo-icon-file
+          name: 折叠 Logo 文件
+          target-module: system
+          fields:
+            configId:
+              type: LONG
+              value: 2026062902590000012
+            configKey:
+              type: STRING
+              value: admin.branding.logoIconFile
+            configValue:
+              type: STRING
+              value: ""
+            configName:
+              type: STRING
+              value: 折叠 Logo 文件
+            type:
+              type: STRING
+              value: SYSTEM
+            domainCode:
+              type: STRING
+              value: COMMON
+            valueType:
+              type: STRING
+              value: STRING
+            groupCode:
+              type: STRING
+              value: admin-branding
+            groupName:
+              type: STRING
+              value: 后台品牌配置
+            defaultValue:
+              type: STRING
+              value: ""
+            optionSource:
+              type: STRING
+              value: CUSTOM
+            editable:
+              type: BOOLEAN
+              value: true
+            sort:
+              type: INT
+              value: 65
+            status:
+              type: INT
+              value: 1
+            remark:
+              type: STRING
+              value: 保存文件中心 ID，不保存预览地址
         - id: "2026062902590000007"
           version: 1
           biz-key: system.config.admin-branding-favicon-file

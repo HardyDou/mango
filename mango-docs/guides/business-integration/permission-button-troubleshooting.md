@@ -12,6 +12,10 @@ Access 会先校验 access token，再用令牌中的 tenant/member/party/app �
 
 System 租户初始化不改变任何按钮 `permissionCode`、登录态权限集合或接口鉴权规则；只保证创建 `ROLE_ADMIN` 后按租户已绑定的菜单套餐及时派生角色菜单。新租户出现按钮缺失或 403 时，在重新登录刷新权限集合前，先确认租户 package、管理员角色和菜单权限的派生链路完整。
 
+### 2026-07-21 后台品牌 Logo 配置影响
+
+后台品牌配置新增折叠 Logo 字段，只影响 Admin Shell 展开态/折叠态 Logo 展示；不改变按钮 `permissionCode`、登录态权限集合、`v-auth` 判断、接口鉴权和按钮权限排障步骤。
+
 ## 2. 阅读顺序
 
 | 顺序 | 文档                                                                                     | 关注点                       |

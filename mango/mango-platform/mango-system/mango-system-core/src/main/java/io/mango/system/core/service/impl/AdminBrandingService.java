@@ -152,6 +152,8 @@ public class AdminBrandingService implements IAdminBrandingService {
                 SaveAdminBrandingCommand::getLoginSubtitle, AdminBrandingVO::setLoginSubtitle),
         LOGO_FILE("admin.branding.logoFile", "后台 Logo 文件", "", 60, true,
                 SaveAdminBrandingCommand::getLogoFile, AdminBrandingVO::setLogoFile),
+        LOGO_ICON_FILE("admin.branding.logoIconFile", "折叠 Logo 文件", "", 65, true,
+                SaveAdminBrandingCommand::getLogoIconFile, AdminBrandingVO::setLogoIconFile),
         FAVICON_FILE("admin.branding.faviconFile", "浏览器 favicon 文件", "", 70, true,
                 SaveAdminBrandingCommand::getFaviconFile, AdminBrandingVO::setFaviconFile),
         LOGIN_IMAGE_FILE("admin.branding.loginImageFile", "登录页图片文件", "", 80, true,

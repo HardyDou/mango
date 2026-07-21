@@ -137,7 +137,7 @@ import '@mango/system/style.css';
 | `LoginLogView` | `system/login-log/index` | 登录日志、统计和清理。 |
 | `TenantView` | `system/tenant/index` | 租户维护、状态切换、菜单包授权。 |
 | `ConfigView` | `system/config/index` | 系统配置管理和分组查询。 |
-| `AdminBrandingView` | `system/admin-branding/index` | Admin 登录页、后台框架 Logo、favicon、页脚等品牌配置。 |
+| `AdminBrandingView` | `system/admin-branding/index` | Admin 登录页、后台框架展开 Logo、折叠 Logo、favicon、页脚等品牌配置。 |
 | `PublicPathView` | `system/public-path/index` | 公共路径维护。 |
 | `AreaView` | `system/area/index` | 地区树管理。 |
 | `DomainView` | `system/domain/index` | 业务域树管理。 |
@@ -176,7 +176,7 @@ import '@mango/system/style.css';
 |------|------|
 | 字典选项 | `label`、`value`、`sort`、`status` |
 | 系统配置 | `id`、`configKey`、`configValue`、`configName`、`domainCode`、`valueType`、`options`、`editable`、`status` |
-| 后台品牌配置 | `title`、`shortTitle`、`subtitle`、`loginTitle`、`loginSubtitle`、`logoFile`、`faviconFile`、`loginImageFile`、`footerCopyright`、`icp`、`contact` |
+| 后台品牌配置 | `title`、`shortTitle`、`subtitle`、`loginTitle`、`loginSubtitle`、`logoFile`、`logoIconFile`、`faviconFile`、`loginImageFile`、`footerCopyright`、`icp`、`contact` |
 | 租户 | `id`、`tenantCode`、`tenantName`、`status` |
 | 业务域 | `id`、`domainCode`、`domainShortCode`、`domainName`、`children` |
 | 系统事件 | `messageId`、`eventType`、`status`、`retryCount`、`createTime` |
@@ -224,7 +224,7 @@ import '@mango/system/style.css';
 | 入口 | 风险 |
 |------|------|
 | 系统配置 | 可能影响全局业务开关。 |
-| 后台品牌配置 | 会影响登录页、后台 Logo、浏览器标题、favicon 和页脚展示；图片字段只保存文件中心 ID。 |
+| 后台品牌配置 | 会影响登录页、后台展开 Logo、折叠 Logo、浏览器标题、favicon 和页脚展示；图片字段只保存文件中心 ID。 |
 | 租户 | 可能影响租户状态和菜单授权。 |
 | 公共路径 | 可能绕过接口权限，必须严格授权。 |
 | 操作日志和登录日志清理 | 会删除审计数据。 |

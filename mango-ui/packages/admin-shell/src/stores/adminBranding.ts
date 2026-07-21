@@ -12,6 +12,7 @@ export interface AdminBrandingConfig {
   loginTitle: string;
   loginSubtitle: string;
   logoFile: string;
+  logoIconFile: string;
   faviconFile: string;
   loginImageFile: string;
   footerCopyright: string;
@@ -21,6 +22,7 @@ export interface AdminBrandingConfig {
 
 export interface AdminBrandingState extends AdminBrandingConfig {
   logoUrl: string;
+  logoIconUrl: string;
   faviconUrl: string;
   loginImageUrl: string;
   loaded: boolean;
@@ -34,6 +36,7 @@ export const DEFAULT_ADMIN_BRANDING: AdminBrandingConfig = {
   loginTitle: 'Mango Admin',
   loginSubtitle: '企业级管理平台',
   logoFile: '',
+  logoIconFile: '',
   faviconFile: '',
   loginImageFile: '',
   footerCopyright: '© Mango',
@@ -45,6 +48,7 @@ export const useAdminBrandingStore = defineStore('adminBranding', {
   state: (): AdminBrandingState => ({
     ...DEFAULT_ADMIN_BRANDING,
     logoUrl: '',
+    logoIconUrl: '',
     faviconUrl: '',
     loginImageUrl: '',
     loaded: false,
@@ -53,8 +57,9 @@ export const useAdminBrandingStore = defineStore('adminBranding', {
     async loadPublicConfig() {
       const config = await fetchAdminBrandingPublic().catch(() => DEFAULT_ADMIN_BRANDING);
       const normalized = normalizeBrandingConfig(config);
-      const [logoUrl, faviconUrl, loginImageUrl] = await Promise.all([
+      const [logoUrl, logoIconUrl, faviconUrl, loginImageUrl] = await Promise.all([
         resolveFilePreviewUrl(normalized.logoFile),
+        resolveFilePreviewUrl(normalized.logoIconFile),
         resolveFilePreviewUrl(normalized.faviconFile),
         resolveFilePreviewUrl(normalized.loginImageFile),
       ]);
@@ -62,6 +67,7 @@ export const useAdminBrandingStore = defineStore('adminBranding', {
       this.$patch({
         ...normalized,
         logoUrl,
+        logoIconUrl,
         faviconUrl,
         loginImageUrl,
         loaded: true,
@@ -87,6 +93,7 @@ function normalizeBrandingConfig(config?: Partial<AdminBrandingConfig>): AdminBr
     loginTitle: normalizeText(config?.loginTitle, DEFAULT_ADMIN_BRANDING.loginTitle),
     loginSubtitle: normalizeText(config?.loginSubtitle, DEFAULT_ADMIN_BRANDING.loginSubtitle),
     logoFile: normalizeText(config?.logoFile, ''),
+    logoIconFile: normalizeText(config?.logoIconFile, ''),
     faviconFile: normalizeText(config?.faviconFile, ''),
     loginImageFile: normalizeText(config?.loginImageFile, ''),
     footerCopyright: normalizeText(config?.footerCopyright, DEFAULT_ADMIN_BRANDING.footerCopyright),
@@ -118,6 +125,7 @@ function applyBrandingToRuntime(branding: AdminBrandingState) {
     applyEnabledBrandingToRuntime({
       ...DEFAULT_ADMIN_BRANDING,
       logoUrl: '',
+      logoIconUrl: '',
       faviconUrl: '',
       loginImageUrl: '',
       loaded: true,
@@ -132,6 +140,7 @@ function applyEnabledBrandingToRuntime(branding: AdminBrandingState) {
   preferencesStore.globalTitle = branding.title;
   preferencesStore.shortTitle = branding.shortTitle;
   preferencesStore.logoUrl = branding.logoUrl;
+  preferencesStore.logoIconUrl = branding.logoIconUrl;
   preferencesStore.faviconUrl = branding.faviconUrl;
   preferencesStore.footerCopyright = branding.footerCopyright;
   preferencesStore.footerIcp = branding.icp;

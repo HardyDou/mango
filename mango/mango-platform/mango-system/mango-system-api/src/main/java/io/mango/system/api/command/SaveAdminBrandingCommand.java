@@ -38,6 +38,10 @@ public class SaveAdminBrandingCommand {
     @Schema(description = "Logo 文件标识")
     private String logoFile;
 
+    @Size(max = 100, message = "折叠 Logo 文件标识长度不能超过100")
+    @Schema(description = "折叠 Logo 文件标识")
+    private String logoIconFile;
+
     @Size(max = 100, message = "favicon 文件标识长度不能超过100")
     @Schema(description = "Favicon 文件标识")
     private String faviconFile;

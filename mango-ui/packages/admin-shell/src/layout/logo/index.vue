@@ -5,12 +5,13 @@
     @click="onLogoClick"
   >
     <img
-      v-if="preferencesStore.logoUrl"
-      class="logo-image"
-      :src="preferencesStore.logoUrl"
+      v-if="fullLogoUrl"
+      class="logo-image logo-image-full"
+      :src="fullLogoUrl"
       alt="logo"
     >
     <span
+      v-else
       class="logo-text"
       :style="{ color: setFontColor }"
     >{{ preferencesStore.globalTitle }}</span>
@@ -21,9 +22,9 @@
     @click="onLogoClick"
   >
     <img
-      v-if="preferencesStore.logoUrl"
-      class="logo-image"
-      :src="preferencesStore.logoUrl"
+      v-if="collapsedLogoUrl"
+      class="logo-image logo-image-collapsed"
+      :src="collapsedLogoUrl"
       alt="logo"
     >
     <span
@@ -48,6 +49,8 @@ const setFontColor = computed(() => {
     : 'var(--mango-color-primary)';
 });
 
+const fullLogoUrl = computed(() => preferencesStore.logoUrl);
+const collapsedLogoUrl = computed(() => preferencesStore.logoIconUrl || preferencesStore.logoUrl);
 const collapsedText = computed(() => preferencesStore.shortTitle?.trim().charAt(0) || 'M');
 
 const onLogoClick = () => {
@@ -58,9 +61,7 @@ const onLogoClick = () => {
 
 <style scoped lang="scss">
 .layout-logo {
-  width: auto;
-  min-width: 160px;
-  max-width: 220px;
+  width: 220px;
   height: var(--mango-header-height);
   display: flex;
   align-items: center;
@@ -75,9 +76,10 @@ const onLogoClick = () => {
     white-space: nowrap;
   }
 
-  .logo-image {
-    width: 28px;
-    height: 28px;
+  .logo-image-full {
+    width: auto;
+    max-width: calc(100% - 24px);
+    height: 32px;
     object-fit: contain;
   }
 }
@@ -96,7 +98,7 @@ const onLogoClick = () => {
     font-weight: 700;
   }
 
-  .logo-image {
+  .logo-image-collapsed {
     width: 30px;
     height: 30px;
     object-fit: contain;

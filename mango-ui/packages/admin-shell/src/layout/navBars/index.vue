@@ -13,7 +13,7 @@
       </div>
       <!-- 经典布局：显示 Logo + 折叠按钮 -->
       <template v-if="layoutStore.layout === 'classic' || layoutStore.layout === 'transverse'">
-        <Logo class="layout-logo-link" />
+        <Logo :class="['layout-logo-link', `layout-logo-link--${layoutStore.layout}`]" />
         <div
           v-if="layoutStore.layout === 'classic'"
           class="hamburger"
@@ -338,19 +338,24 @@ watch(
   .layout-logo-link {
     flex-shrink: 0;
     overflow: hidden;
+
     :deep(.layout-logo) {
       width: auto;
+      min-width: 160px;
+      max-width: 220px;
       height: 40px;
       background: transparent;
       box-shadow: none;
       font-size: 16px;
       padding: 0 8px;
+
       span {
         color: var(--mango-color-top-bar);
       }
     }
+
     :deep(.layout-logo-collapsed) {
-      width: 40px !important;
+      width: 64px !important;
       height: 40px;
       background: transparent;
       box-shadow: none;
@@ -363,6 +368,15 @@ watch(
         color: var(--mango-color-top-bar);
         font-size: 20px;
         font-weight: 700;
+      }
+    }
+
+    &.layout-logo-link--classic {
+      :deep(.layout-logo) {
+        width: 220px;
+        min-width: 220px;
+        max-width: 220px;
+        padding: 0;
       }
     }
   }

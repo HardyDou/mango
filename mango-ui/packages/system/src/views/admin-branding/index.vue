@@ -66,7 +66,7 @@
         <section class="admin-branding-section">
           <div class="admin-branding-section__title">品牌资源</div>
           <el-row :gutter="20">
-            <el-col :span="8">
+            <el-col :span="6">
               <el-form-item label="Logo 图片" prop="logoFile">
                 <MUpload
                   v-model="form.logoFile"
@@ -79,7 +79,20 @@
                 />
               </el-form-item>
             </el-col>
-            <el-col :span="8">
+            <el-col :span="6">
+              <el-form-item label="折叠 Logo" prop="logoIconFile">
+                <MUpload
+                  v-model="form.logoIconFile"
+                  value-type="id"
+                  display="thumbnail"
+                  fmt="image"
+                  purpose="admin-branding"
+                  access-level="PUBLIC_READ"
+                  button-text="选择图片"
+                />
+              </el-form-item>
+            </el-col>
+            <el-col :span="6">
               <el-form-item label="浏览器 favicon" prop="faviconFile">
                 <MUpload
                   v-model="form.faviconFile"
@@ -92,7 +105,7 @@
                 />
               </el-form-item>
             </el-col>
-            <el-col :span="8">
+            <el-col :span="6">
               <el-form-item label="登录页图片" prop="loginImageFile">
                 <MUpload
                   v-model="form.loginImageFile"
@@ -189,6 +202,7 @@ const defaultForm: AdminBranding = {
   loginTitle: 'Mango Admin',
   loginSubtitle: '企业级管理平台',
   logoFile: '',
+  logoIconFile: '',
   faviconFile: '',
   loginImageFile: '',
   footerCopyright: '© Mango',
@@ -201,11 +215,7 @@ const loading = ref(false);
 const saving = ref(false);
 const form = reactive<AdminBranding>({ ...defaultForm });
 
-const rules: FormRules<AdminBranding> = {
-  title: [{ required: true, message: '请输入后台名称', trigger: 'blur' }],
-  shortTitle: [{ required: true, message: '请输入后台简称', trigger: 'blur' }],
-  loginTitle: [{ required: true, message: '请输入登录页标题', trigger: 'blur' }],
-};
+const rules: FormRules<AdminBranding> = {};
 
 onMounted(() => {
   void loadConfig();
