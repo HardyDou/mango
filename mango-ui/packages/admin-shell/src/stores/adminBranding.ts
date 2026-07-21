@@ -138,7 +138,7 @@ async function resolveProtectedImageObjectUrl(preview: FilePreview): Promise<str
   if (!isImagePreview(preview) || typeof URL === 'undefined') {
     return '';
   }
-  const response = await fileApi.previewContent(preview.id);
+  const response = (await fileApi.previewContent(preview.id)) as { data?: unknown };
   const blob = response.data;
   if (!(blob instanceof Blob)) {
     return '';
