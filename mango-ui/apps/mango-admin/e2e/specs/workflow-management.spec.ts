@@ -615,6 +615,75 @@ function actionAddSignDesignerJson(unique: number, assigneeIds: string[]) {
   });
 }
 
+function workflowNoticeRegressionDesignerJson(unique: number, roleId: string) {
+  return JSON.stringify({
+    id: 'startEvent',
+    nodeName: '发起人',
+    nodeType: 'ROOT',
+    childNode: {
+      id: `notice_first_approve_${unique}`,
+      nodeName: '通知链路初审',
+      nodeType: 'APPROVAL',
+      bpmnType: 'userTask',
+      executionType: 'USER_TASK',
+      childNode: {
+        id: `notice_role_approve_${unique}`,
+        nodeName: '通知链路角色复核',
+        nodeType: 'APPROVAL',
+        bpmnType: 'userTask',
+        executionType: 'USER_TASK',
+        childNode: null,
+        conditionNodes: [],
+        properties: {
+          approvalConfig: {
+            assigneeType: 'SPECIFIED_ROLE',
+            assigneeIds: [],
+            roleIds: [roleId],
+            postIds: [],
+            orgIds: [],
+            approvalMode: 'COUNTERSIGN',
+            emptyAssigneeStrategy: 'TO_ADMIN',
+            emptyAssigneeUserIds: [],
+            rejectStrategy: 'END_PROCESS',
+            formPermissions: {},
+            eventNotify: {
+              enabled: false,
+              type: 'HTTP',
+              method: 'POST',
+              timeoutMillis: 5000,
+            },
+            initiatorSelectMultiple: false,
+          },
+        },
+      },
+      conditionNodes: [],
+      properties: {
+        approvalConfig: {
+          assigneeType: 'SPECIFIED_USER',
+          assigneeIds: ['admin'],
+          roleIds: [],
+          postIds: [],
+          orgIds: [],
+          approvalMode: 'COUNTERSIGN',
+          emptyAssigneeStrategy: 'TO_ADMIN',
+          emptyAssigneeUserIds: [],
+          rejectStrategy: 'END_PROCESS',
+          formPermissions: {},
+          eventNotify: {
+            enabled: false,
+            type: 'HTTP',
+            method: 'POST',
+            timeoutMillis: 5000,
+          },
+          initiatorSelectMultiple: false,
+        },
+      },
+    },
+    conditionNodes: [],
+    properties: {},
+  });
+}
+
 function leaveFormJson() {
   return JSON.stringify([
     {
@@ -1130,6 +1199,59 @@ async function prepareActionAddSignWorkflow(
   };
 }
 
+async function prepareWorkflowNoticeRegression(
+  request: APIRequestContext,
+  token: string,
+  unique: number,
+  keyword: string,
+  roleId: string,
+) {
+  const headers = { Authorization: `Bearer ${token}` };
+  const createCategoryResponse = await request.post(api('/workflow/categories'), {
+    headers,
+    data: {
+      categoryName: `E2E通知链路分类${unique}`,
+      categoryCode: keyword,
+      domainCode: defaultWorkflowDomainCode,
+      sort: 89,
+      status: 1,
+      remark: keyword,
+    },
+  });
+  expect(createCategoryResponse.status()).toBe(200);
+  const createCategoryBody = await createCategoryResponse.json();
+  expectApiSuccess(createCategoryBody, '创建通知链路流程分类失败');
+
+  const createDefinitionResponse = await request.post(api('/workflow/definitions'), {
+    headers,
+    data: {
+      categoryId: createCategoryBody.data,
+      domainCode: defaultWorkflowDomainCode,
+      definitionName: `E2E通知链路流程${unique}`,
+      definitionKey: `e2e_workflow_notice_${unique}`,
+      designerJson: workflowNoticeRegressionDesignerJson(unique, roleId),
+      formCode: `form_${keyword}`,
+      formJson: leaveFormJson(),
+      status: 'DRAFT',
+      remark: keyword,
+    },
+  });
+  expect(createDefinitionResponse.status()).toBe(200);
+  const createDefinitionBody = await createDefinitionResponse.json();
+  expectApiSuccess(createDefinitionBody, '创建通知链路流程定义失败');
+
+  const deployResponse = await request.post(api(`/workflow/definitions/deploy?id=${createDefinitionBody.data}`), {
+    headers,
+  });
+  expect(deployResponse.status()).toBe(200);
+  expectApiSuccess(await deployResponse.json(), '部署通知链路流程失败');
+
+  return {
+    definitionId: String(createDefinitionBody.data),
+    definitionName: `E2E通知链路流程${unique}`,
+  };
+}
+
 async function cleanupUser(request: APIRequestContext, token: string, username: string) {
   const headers = { Authorization: `Bearer ${token}` };
   const pageResponse = await request.get(api(`/identity/users/page`), {
@@ -1180,6 +1302,20 @@ async function createTempUser(request: APIRequestContext, token: string, usernam
   return user;
 }
 
+async function findUserByUsername(request: APIRequestContext, token: string, username: string) {
+  const response = await request.get(api('/identity/users/page'), {
+    headers: { Authorization: `Bearer ${token}` },
+    params: { page: 1, size: 20, username },
+  });
+  expect(response.status()).toBe(200);
+  const body = await response.json();
+  expectApiSuccess(body, `查询用户失败: ${username}`);
+  const records = body.data?.records || body.data?.list || [];
+  const user = records.find((item: any) => item.username === username);
+  expect(user, `未找到用户: ${username}`).toBeTruthy();
+  return user;
+}
+
 async function assignSubjectRoles(
   request: APIRequestContext,
   token: string,
@@ -1213,6 +1349,111 @@ async function findRoleId(request: APIRequestContext, token: string, roleCode: s
   const role = (body.data || []).find((item: any) => item.roleCode === roleCode);
   expect(role, `未找到角色: ${roleCode}`).toBeTruthy();
   return String(role.roleId);
+}
+
+async function startBusinessWorkflow(
+  request: APIRequestContext,
+  token: string,
+  definitionId: string,
+  businessKey: string,
+) {
+  const response = await request.post(api('/workflow/processes/start-business'), {
+    headers: { Authorization: `Bearer ${token}` },
+    data: {
+      definitionId,
+      businessType: 'E2E_WORKFLOW_NOTICE',
+      businessKey,
+      applyCode: `APPLY-${businessKey}`,
+      applyTitle: `通知链路申请 ${businessKey}`,
+      applySummary: '验证角色任务和终态通知接收人',
+      renderMode: 'DYNAMIC_FORM',
+      formDataSnapshot: JSON.stringify({ days: 1, reason: '通知链路回归' }),
+      variables: {
+        days: 1,
+        reason: '通知链路回归',
+      },
+    },
+  });
+  const responseText = await response.text();
+  expect(response.status(), responseText).toBe(200);
+  const body = JSON.parse(responseText);
+  expectApiSuccess(body, '正式业务流程发起失败');
+  expect(String(body.data.businessKey)).toBe(businessKey);
+  expect(body.data.processInstanceId).toBeTruthy();
+  expect(body.data.applyId).toBeTruthy();
+  return body.data;
+}
+
+async function waitForTodoTask(
+  request: APIRequestContext,
+  token: string,
+  businessKey: string,
+  taskName: string,
+) {
+  let matchedTask: any;
+  await expect.poll(async () => {
+    const tasks = await listTodoTasks(request, token, businessKey);
+    matchedTask = tasks.find((item: any) =>
+      String(item.businessKey) === businessKey && String(item.taskName).includes(taskName)
+    );
+    return Boolean(matchedTask);
+  }, {
+    message: `等待 ${businessKey} 的待办 ${taskName}`,
+    intervals: [250, 500, 1_000],
+    timeout: 15_000,
+  }).toBe(true);
+  return matchedTask;
+}
+
+async function readSiteMessages(
+  request: APIRequestContext,
+  token: string,
+  bizType: string,
+  businessKey: string,
+) {
+  const response = await request.get(api('/notice/site/my/messages'), {
+    headers: { Authorization: `Bearer ${token}` },
+    params: {
+      pageNum: 1,
+      pageSize: 20,
+      bizType,
+      bizId: businessKey,
+    },
+  });
+  expect(response.status()).toBe(200);
+  const body = await response.json();
+  expectApiSuccess(body, `查询站内消息失败: ${bizType}/${businessKey}`);
+  return body.data?.list || body.data?.records || [];
+}
+
+async function waitForSiteMessage(
+  request: APIRequestContext,
+  token: string,
+  bizType: string,
+  businessKey: string,
+  predicate: (message: any) => boolean,
+) {
+  let messages: any[] = [];
+  await expect.poll(async () => {
+    messages = await readSiteMessages(request, token, bizType, businessKey);
+    return messages.filter(predicate).length;
+  }, {
+    message: `等待站内消息 ${bizType}/${businessKey}`,
+    intervals: [250, 500, 1_000, 2_000],
+    timeout: 20_000,
+  }).toBe(1);
+  return messages.find(predicate);
+}
+
+async function expectNoSiteMessage(
+  request: APIRequestContext,
+  token: string,
+  bizType: string,
+  businessKey: string,
+  predicate: (message: any) => boolean = () => true,
+) {
+  const messages = await readSiteMessages(request, token, bizType, businessKey);
+  expect(messages.filter(predicate)).toHaveLength(0);
 }
 
 async function readCopiedList(request: APIRequestContext, token: string, businessKey: string) {
@@ -1277,6 +1518,23 @@ function cleanupWorkflowActionData(businessKeyPrefix: string) {
     `DELETE FROM workflow_business_apply WHERE business_key LIKE '${businessKeyPrefix}%'`,
     `DELETE FROM workflow_task_record WHERE process_instance_id IN (SELECT process_instance_id FROM workflow_form_instance WHERE business_key LIKE '${businessKeyPrefix}%')`,
     `DELETE FROM workflow_form_instance WHERE business_key LIKE '${businessKeyPrefix}%'`,
+  ]);
+}
+
+function sqlLiteral(value: string) {
+  return `'${value.replaceAll('\\', '\\\\').replaceAll("'", "''")}'`;
+}
+
+function cleanupWorkflowNoticeData(businessKey: string) {
+  const bizId = sqlLiteral(businessKey);
+  executeWorkspaceMysql([
+    `DELETE FROM notice_site_message_action_request WHERE message_id IN (SELECT id FROM notice_site_message WHERE biz_id = ${bizId})`,
+    `DELETE FROM notice_site_message_action WHERE message_id IN (SELECT id FROM notice_site_message WHERE biz_id = ${bizId})`,
+    `DELETE FROM notice_site_message WHERE biz_id = ${bizId}`,
+    `DELETE FROM notice_retry_log WHERE send_record_id IN (SELECT id FROM notice_send_record WHERE biz_id = ${bizId})`,
+    `DELETE FROM notice_send_record WHERE biz_id = ${bizId}`,
+    `DELETE FROM notice_recipient WHERE task_id IN (SELECT id FROM notice_task WHERE biz_id = ${bizId})`,
+    `DELETE FROM notice_task WHERE biz_id = ${bizId}`,
   ]);
 }
 
@@ -2669,6 +2927,136 @@ test.describe('工作流配置真实接口闭环', () => {
       await expectNoAuthError(page);
     } finally {
       await cleanupWorkflow(request, token, keyword).catch(() => undefined);
+    }
+  });
+
+  test('@p1 @workflow 正式业务流程的角色下一节点通知全部成员且终态通知原申请人', async ({ request }) => {
+    test.setTimeout(120_000);
+    const unique = Date.now();
+    const keyword = `e2e_workflow_notice_${unique}`;
+    const businessKey = `WORKFLOW-NOTICE-E2E-${unique}`;
+    const applicantName = `E2E_NOTICE_APPLICANT_${unique}`;
+    const roleMemberOneName = `E2E_NOTICE_ROLE_ONE_${unique}`;
+    const roleMemberTwoName = `E2E_NOTICE_ROLE_TWO_${unique}`;
+    const adminToken = await loginToken(request, platformTenant);
+
+    try {
+      cleanupWorkflowNoticeData(businessKey);
+      cleanupWorkflowBusinessApplies(businessKey);
+      await cleanupWorkflow(request, adminToken, keyword);
+      await cleanupUser(request, adminToken, applicantName);
+      await cleanupUser(request, adminToken, roleMemberOneName);
+      await cleanupUser(request, adminToken, roleMemberTwoName);
+
+      const applicant = await createTempUser(request, adminToken, applicantName);
+      const roleMemberOne = await createTempUser(request, adminToken, roleMemberOneName);
+      const roleMemberTwo = await createTempUser(request, adminToken, roleMemberTwoName);
+      const admin = await findUserByUsername(request, adminToken, 'admin');
+      const roleId = await findRoleId(request, adminToken, 'ROLE_ADMIN');
+      await assignSubjectRoles(request, adminToken, applicant.memberId, [roleId]);
+      await assignSubjectRoles(request, adminToken, roleMemberOne.memberId, [roleId]);
+      await assignSubjectRoles(request, adminToken, roleMemberTwo.memberId, [roleId]);
+
+      const workflow = await prepareWorkflowNoticeRegression(request, adminToken, unique, keyword, roleId);
+      const applicantToken = await loginTokenAs(request, platformTenant, applicantName, 'E2E@123456');
+      const roleMemberOneToken = await loginTokenAs(request, platformTenant, roleMemberOneName, 'E2E@123456');
+      const roleMemberTwoToken = await loginTokenAs(request, platformTenant, roleMemberTwoName, 'E2E@123456');
+      const startResult = await startBusinessWorkflow(
+        request,
+        applicantToken,
+        workflow.definitionId,
+        businessKey,
+      );
+      await assignSubjectRoles(request, adminToken, applicant.memberId, []);
+
+      const firstTask = await waitForTodoTask(request, adminToken, businessKey, '通知链路初审');
+      await completeTask(request, adminToken, String(firstTask.id), '初审通过，进入角色复核');
+
+      const adminRoleTask = await waitForTodoTask(request, adminToken, businessKey, '通知链路角色复核');
+      const roleMemberOneTask = await waitForTodoTask(
+        request,
+        roleMemberOneToken,
+        businessKey,
+        '通知链路角色复核',
+      );
+      const roleMemberTwoTask = await waitForTodoTask(
+        request,
+        roleMemberTwoToken,
+        businessKey,
+        '通知链路角色复核',
+      );
+      const roleTaskId = String(adminRoleTask.id);
+      expect(String(roleMemberOneTask.id)).toBe(roleTaskId);
+      expect(String(roleMemberTwoTask.id)).toBe(roleTaskId);
+      expect(String(adminRoleTask.assigneeId || '')).toBe('');
+
+      const roleTaskMessage = (message: any) => String(message.target?.params?.taskId) === roleTaskId;
+      const adminRoleMessage = await waitForSiteMessage(
+        request,
+        adminToken,
+        'workflow.task.assigned',
+        businessKey,
+        roleTaskMessage,
+      );
+      const roleMemberOneMessage = await waitForSiteMessage(
+        request,
+        roleMemberOneToken,
+        'workflow.task.assigned',
+        businessKey,
+        roleTaskMessage,
+      );
+      const roleMemberTwoMessage = await waitForSiteMessage(
+        request,
+        roleMemberTwoToken,
+        'workflow.task.assigned',
+        businessKey,
+        roleTaskMessage,
+      );
+      for (const [message, expectedUserId] of [
+        [adminRoleMessage, admin.userId],
+        [roleMemberOneMessage, roleMemberOne.userId],
+        [roleMemberTwoMessage, roleMemberTwo.userId],
+      ]) {
+        expect(String(message.userId)).toBe(String(expectedUserId));
+        expect(message.messageScene).toBe('workflow.task.assigned');
+        expect(message.bizType).toBe('workflow.task.assigned');
+        expect(message.bizId).toBe(businessKey);
+        expect(message.target?.targetKey).toBe('workflow:task:detail');
+        expect(String(message.target?.params?.taskId)).toBe(roleTaskId);
+      }
+      await expectNoSiteMessage(
+        request,
+        applicantToken,
+        'workflow.task.assigned',
+        businessKey,
+        roleTaskMessage,
+      );
+
+      await completeTask(request, adminToken, roleTaskId, '角色复核通过');
+      const completedMessage = await waitForSiteMessage(
+        request,
+        applicantToken,
+        'workflow.process.completed',
+        businessKey,
+        () => true,
+      );
+      expect(String(completedMessage.userId)).toBe(String(applicant.userId));
+      expect(completedMessage.messageScene).toBe('workflow.process.completed');
+      expect(completedMessage.bizType).toBe('workflow.process.completed');
+      expect(completedMessage.bizId).toBe(businessKey);
+      expect(completedMessage.target?.targetKey).toBe('workflow:task:done');
+      expect(String(completedMessage.target?.params?.processInstanceId)).toBe(String(startResult.processInstanceId));
+
+      await expectNoSiteMessage(request, adminToken, 'workflow.process.completed', businessKey);
+      await expectNoSiteMessage(request, roleMemberOneToken, 'workflow.process.completed', businessKey);
+      await expectNoSiteMessage(request, roleMemberTwoToken, 'workflow.process.completed', businessKey);
+    } finally {
+      cleanupWorkflowNoticeData(businessKey);
+      cleanupWorkflowBusinessApplies(businessKey);
+      await cleanupWorkflow(request, adminToken, keyword).catch(() => undefined);
+      await cleanupUser(request, adminToken, applicantName).catch(() => undefined);
+      await cleanupUser(request, adminToken, roleMemberOneName).catch(() => undefined);
+      await cleanupUser(request, adminToken, roleMemberTwoName).catch(() => undefined);
     }
   });
 

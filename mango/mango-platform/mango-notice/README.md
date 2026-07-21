@@ -515,7 +515,7 @@ mango-notice-starter/src/main/resources/META-INF/mango/resources/notice-common-d
 | `scheduledTime` | 定时发送时间。 |
 | `idempotentKey` | 幂等键。 |
 
-业务模块不希望通知失败影响主流程时，可发布 `NoticeSendEvent`。本地通知中心由 `mango-notice-starter` 监听事件并调用 `NoticeApi`；微服务调用方由 `mango-notice-starter-remote` 监听事件并远程调用通知中心。事件监听器会记录发送失败日志，但不向上抛出异常阻断业务事务。
+业务模块不希望通知失败影响主流程时，可发布 `NoticeSendEvent`。事件命令使用 `tenantId`、`appCode`、`realm` 保存产生事件时的应用上下文；本地 `mango-notice-starter` 和微服务 `mango-notice-starter-remote` 在调用 `NoticeApi` 前恢复这些字段，并在调用完成后恢复原线程上下文。这样 `ROLE` 接收目标会在正确的租户、应用和登录域中解析；旧事件未携带 `appCode` 或 `realm` 时沿用消费线程已有值。事件监听器会记录发送失败日志，但不向上抛出异常阻断业务事务。
 
 ### 9.2 接收人字段
 

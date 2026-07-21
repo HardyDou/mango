@@ -114,17 +114,21 @@ public class WorkflowEventPublisher {
     public void publishProcessCompleted(
             String processInstanceId,
             WorkflowFormInstanceEntity formInstance,
-            Map<String, Object> variables) {
-        publishProcessEvent(WorkflowDomainEvents.PROCESS_COMPLETED, processInstanceId, formInstance, variables);
+            Map<String, Object> variables,
+            WorkflowBusinessApplyVO businessApply) {
+        publishProcessEvent(WorkflowDomainEvents.PROCESS_COMPLETED, processInstanceId, formInstance, variables,
+                businessApply);
     }
 
     public void publishProcessRejected(
             String processInstanceId,
             WorkflowFormInstanceEntity formInstance,
             Map<String, Object> variables,
-            String reason) {
+            String reason,
+            WorkflowBusinessApplyVO businessApply) {
         WorkflowEventPayloadVO payload = basePayload(WorkflowDomainEvents.PROCESS_REJECTED, processInstanceId, variables);
         payload.setReason(reason);
+        putBusinessApply(payload, businessApply);
         publish(WorkflowDomainEvents.PROCESS_REJECTED, businessKey(formInstance, variables), variables, payload);
     }
 
@@ -132,9 +136,11 @@ public class WorkflowEventPublisher {
             String processInstanceId,
             WorkflowFormInstanceEntity formInstance,
             Map<String, Object> variables,
-            String reason) {
+            String reason,
+            WorkflowBusinessApplyVO businessApply) {
         WorkflowEventPayloadVO payload = basePayload(WorkflowDomainEvents.PROCESS_ENDED, processInstanceId, variables);
         payload.setReason(reason);
+        putBusinessApply(payload, businessApply);
         publish(WorkflowDomainEvents.PROCESS_ENDED, businessKey(formInstance, variables), variables, payload);
     }
 
@@ -176,6 +182,8 @@ public class WorkflowEventPublisher {
                 ? List.of()
                 : businessApply.getCurrentTasks();
         payload.setApplyId(businessApply.getId() == null ? null : String.valueOf(businessApply.getId()));
+        payload.setApplicantId(businessApply.getApplicantId());
+        payload.setApplicantName(businessApply.getApplicantName());
         payload.setBusinessType(businessApply.getBusinessType());
         payload.setBusinessKey(businessApply.getBusinessKey());
         payload.setApplyStatus(businessApply.getApplyStatus() == null ? null : businessApply.getApplyStatus().name());
@@ -222,8 +230,10 @@ public class WorkflowEventPublisher {
             String eventType,
             String processInstanceId,
             WorkflowFormInstanceEntity formInstance,
-            Map<String, Object> variables) {
+            Map<String, Object> variables,
+            WorkflowBusinessApplyVO businessApply) {
         WorkflowEventPayloadVO payload = basePayload(eventType, processInstanceId, variables);
+        putBusinessApply(payload, businessApply);
         publish(eventType, businessKey(formInstance, variables), variables, payload);
     }
 
@@ -251,6 +261,8 @@ public class WorkflowEventPublisher {
         payload.setEventType(eventType);
         payload.setProcessInstanceId(processInstanceId);
         payload.setTenantId(MangoContextHolder.tenantId());
+        payload.setAppCode(MangoContextHolder.appCode());
+        payload.setRealm(MangoContextHolder.get().realm());
         payload.setOperatorId(MangoContextHolder.userId());
         payload.setOperatorName(operatorName());
         payload.setBusinessType(stringVar(variables, VAR_BUSINESS_TYPE));
@@ -265,11 +277,15 @@ public class WorkflowEventPublisher {
         map.put("eventType", payload.getEventType());
         map.put("processInstanceId", payload.getProcessInstanceId());
         map.put("tenantId", payload.getTenantId());
+        map.put("appCode", payload.getAppCode());
+        map.put("realm", payload.getRealm());
         map.put("operatorId", payload.getOperatorId());
         map.put("operatorName", payload.getOperatorName());
         map.put("businessType", payload.getBusinessType());
         map.put("businessKey", payload.getBusinessKey());
         map.put("applyId", numericStringOrValue(payload.getApplyId()));
+        map.put("applicantId", payload.getApplicantId());
+        map.put("applicantName", payload.getApplicantName());
         map.put("variables", payload.getVariables() == null ? Map.of() : payload.getVariables().toMap());
         map.put("processDefinitionId", payload.getProcessDefinitionId());
         map.put("definitionId", payload.getDefinitionId());

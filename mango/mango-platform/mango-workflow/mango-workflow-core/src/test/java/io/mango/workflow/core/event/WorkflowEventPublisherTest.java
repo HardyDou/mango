@@ -2,6 +2,8 @@ package io.mango.workflow.core.event;
 
 import io.mango.infra.event.api.DomainEvent;
 import io.mango.infra.event.api.IDomainEventPublisher;
+import io.mango.infra.context.api.MangoContextHolder;
+import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.workflow.api.enums.WorkflowApplyStatus;
 import io.mango.workflow.api.enums.WorkflowTaskClaimStatus;
 import io.mango.workflow.api.vo.WorkflowBusinessApplyCurrentTaskVO;
@@ -10,6 +12,8 @@ import io.mango.workflow.core.entity.WorkflowDefinitionEntity;
 import io.mango.workflow.core.entity.WorkflowFormInstanceEntity;
 import org.flowable.engine.impl.persistence.entity.ExecutionEntityImpl;
 import org.flowable.task.service.impl.persistence.entity.TaskEntityImpl;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.ObjectProvider;
 
@@ -24,6 +28,18 @@ class WorkflowEventPublisherTest {
     private final List<DomainEvent> events = new ArrayList<>();
     private final WorkflowEventPublisher publisher = new WorkflowEventPublisher(
             new SingleObjectProvider(event -> events.add(event)));
+
+    @BeforeEach
+    void setUpContext() {
+        MangoContextHolder.set(MangoContextSnapshot.empty().withSecurity(
+                99L, "1", "operator", "INTERNAL", "INTERNAL_USER", "INTERNAL_ORG", 10L,
+                "internal-admin"));
+    }
+
+    @AfterEach
+    void clearContext() {
+        MangoContextHolder.clear();
+    }
 
     @Test
     void publishProcessStarted_shouldIncludeBusinessRoutingFields() {
@@ -47,6 +63,9 @@ class WorkflowEventPublisherTest {
         assertThat(event.getPayload())
                 .containsEntry("eventType", WorkflowDomainEvents.PROCESS_STARTED)
                 .containsEntry("processInstanceId", "PROC-1")
+                .containsEntry("tenantId", "1")
+                .containsEntry("appCode", "internal-admin")
+                .containsEntry("realm", "INTERNAL")
                 .containsEntry("definitionId", 1001L)
                 .containsEntry("definitionKey", "expense_reimbursement")
                 .containsEntry("definitionName", "费用报销");
@@ -96,6 +115,8 @@ class WorkflowEventPublisherTest {
                 .containsEntry("businessType", "EXPENSE_REIMBURSEMENT")
                 .containsEntry("businessKey", "EXP-20260516-001")
                 .containsEntry("applyStatus", WorkflowApplyStatus.IN_APPROVAL.name())
+                .containsEntry("applicantId", 1000L)
+                .containsEntry("applicantName", "申请人")
                 .containsEntry("currentTaskNames", "财务审批")
                 .containsEntry("currentTaskDefinitionKeys", "finance_approve")
                 .containsEntry("currentAssigneeNames", "lisi")
@@ -123,8 +144,9 @@ class WorkflowEventPublisherTest {
         WorkflowFormInstanceEntity formInstance = new WorkflowFormInstanceEntity();
         formInstance.setBusinessKey("EXP-FORM-KEY");
 
-        publisher.publishProcessRejected("PROC-1", formInstance, variables(), "票据不完整");
-        publisher.publishProcessEnded("PROC-1", formInstance, variables(), "票据不完整");
+        WorkflowBusinessApplyVO businessApply = businessApply();
+        publisher.publishProcessRejected("PROC-1", formInstance, variables(), "票据不完整", businessApply);
+        publisher.publishProcessEnded("PROC-1", formInstance, variables(), "票据不完整", businessApply);
 
         assertThat(events).hasSize(2);
         assertThat(events.get(0).getEventType()).isEqualTo(WorkflowDomainEvents.PROCESS_REJECTED);
@@ -134,7 +156,12 @@ class WorkflowEventPublisherTest {
                     assertThat(event.getBusinessType()).isEqualTo("EXPENSE_REIMBURSEMENT");
                     assertThat(event.getBusinessKey()).isEqualTo("EXP-FORM-KEY");
                     assertThat(event.getAggregateId()).isEqualTo("APPLY-1");
-                    assertThat(event.getPayload()).containsEntry("reason", "票据不完整");
+                    assertThat(event.getPayload())
+                            .containsEntry("reason", "票据不完整")
+                            .containsEntry("applicantId", 1000L)
+                            .containsEntry("applicantName", "申请人")
+                            .containsEntry("appCode", "internal-admin")
+                            .containsEntry("realm", "INTERNAL");
                 });
     }
 
@@ -176,6 +203,8 @@ class WorkflowEventPublisherTest {
         businessApply.setId(1001L);
         businessApply.setBusinessType("EXPENSE_REIMBURSEMENT");
         businessApply.setBusinessKey("EXP-20260516-001");
+        businessApply.setApplicantId(1000L);
+        businessApply.setApplicantName("申请人");
         businessApply.setApplyStatus(WorkflowApplyStatus.IN_APPROVAL);
         businessApply.setApplyStatusName("审批中");
         businessApply.setCurrentTaskNames("财务审批");

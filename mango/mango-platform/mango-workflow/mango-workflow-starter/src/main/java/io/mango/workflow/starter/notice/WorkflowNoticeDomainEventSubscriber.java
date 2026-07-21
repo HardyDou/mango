@@ -62,21 +62,58 @@ public class WorkflowNoticeDomainEventSubscriber implements DomainEventSubscribe
             return;
         }
         Map<String, Object> params = toParams(event);
-        RecipientSelection recipients = recipients(params);
-        if (WorkflowEventTypes.TASK_ADVANCED.equals(event.getEventType())
-                && (Boolean.TRUE.equals(params.get("ended")) || recipients.isEmpty())) {
-            log.debug("Skip task assigned notice without active recipients. eventId={}, businessKey={}",
+        if (WorkflowEventTypes.TASK_ADVANCED.equals(event.getEventType())) {
+            publishTaskAdvancedNotices(event, bizType, params);
+            return;
+        }
+        RecipientSelection recipients = processTerminalEvent(event.getEventType())
+                ? applicantRecipient(params)
+                : taskRecipients(params);
+        publishNotice(event, bizType, params, recipients, null);
+    }
+
+    private void publishTaskAdvancedNotices(DomainEvent event, String bizType, Map<String, Object> params) {
+        if (Boolean.TRUE.equals(params.get("ended"))) {
+            log.debug("Skip task assigned notice for ended process. eventId={}, businessKey={}",
                     event.getEventId(), event.getBusinessKey());
+            return;
+        }
+        Object currentTasks = params.get("currentTasks");
+        if (currentTasks instanceof Collection<?> tasks) {
+            for (Object currentTask : tasks) {
+                if (currentTask instanceof Map<?, ?> task) {
+                    Map<String, Object> taskParams = taskParams(params, task);
+                    publishNotice(event, bizType, taskParams, taskRecipients(taskParams),
+                            stringValue(taskParams.get("taskId")));
+                }
+            }
+            return;
+        }
+        publishNotice(event, bizType, params, taskRecipients(params), stringValue(params.get("taskId")));
+    }
+
+    private void publishNotice(
+            DomainEvent event,
+            String bizType,
+            Map<String, Object> params,
+            RecipientSelection recipients,
+            String taskId) {
+        if (recipients.isEmpty()) {
+            log.debug("Skip workflow notice without active recipients. eventId={}, eventType={}, taskId={}, businessKey={}",
+                    event.getEventId(), event.getEventType(), taskId, event.getBusinessKey());
             return;
         }
         NoticeSiteMessageTargetCommand target = target(event, params);
         NoticeSendEventCommand notice = new NoticeSendEventCommand();
         notice.setTenantId(stringValue(payload(event).get("tenantId")));
+        notice.setAppCode(stringValue(payload(event).get("appCode")));
+        notice.setRealm(stringValue(payload(event).get("realm")));
         notice.setBizType(bizType);
         notice.setBizId(firstText(event.getBusinessKey(), stringValue(payload(event).get("processInstanceId"))));
         notice.setRecipientRuleCode(RECIPIENT_RULE_CODE);
         notice.setPriority(priority(event.getEventType()));
-        notice.setIdempotentKey("workflow:" + event.getEventId());
+        notice.setIdempotentKey("workflow:" + event.getEventId()
+                + (StringUtils.hasText(taskId) ? ":" + taskId.trim() : ""));
         notice.setParams(NoticeJsonRequest.of(params));
         notice.setMessageScene(bizType);
         notice.setMessageSubject(subject(event, params));
@@ -92,6 +129,29 @@ public class WorkflowNoticeDomainEventSubscriber implements DomainEventSubscribe
             notice.setRecipientTargets(recipients.targets());
         }
         eventPublisher.publishEvent(notice);
+    }
+
+    private Map<String, Object> taskParams(Map<String, Object> params, Map<?, ?> task) {
+        Map<String, Object> resolved = new LinkedHashMap<>(params);
+        resolved.remove("taskId");
+        resolved.remove("taskDefinitionKey");
+        resolved.remove("taskName");
+        resolved.remove("currentTaskId");
+        resolved.remove("assignee");
+        resolved.remove("assigneeId");
+        resolved.remove("assigneeName");
+        resolved.remove("claimStatus");
+        resolved.remove("candidateUsers");
+        resolved.remove("candidateGroups");
+        task.forEach((key, value) -> {
+            if (key != null) {
+                resolved.put(String.valueOf(key), value);
+            }
+        });
+        resolved.put("assignee", resolved.get("assigneeId"));
+        resolved.put("currentTaskId", resolved.get("taskId"));
+        resolved.put("currentTask", task);
+        return resolved;
     }
 
     private String toNoticeBizType(String eventType) {
@@ -179,24 +239,29 @@ public class WorkflowNoticeDomainEventSubscriber implements DomainEventSubscribe
         return event.getPayload() == null ? Map.of() : event.getPayload();
     }
 
-    private RecipientSelection recipients(Map<String, Object> payload) {
+    private RecipientSelection taskRecipients(Map<String, Object> payload) {
         Set<Long> userIds = new LinkedHashSet<>();
         Map<String, NoticeRecipientTargetCommand> targets = new LinkedHashMap<>();
-        addUserId(userIds, payload.get("assigneeId"));
-        addUserId(userIds, payload.get("assignee"));
+        Long assigneeId = firstLong(payload.get("assigneeId"), payload.get("assignee"));
+        if (assigneeId != null) {
+            return new RecipientSelection(List.of(assigneeId), List.of());
+        }
         addCandidateUsers(userIds, payload.get("candidateUsers"));
         addCandidateGroups(targets, payload.get("candidateGroups"));
-        Object currentTasks = payload.get("currentTasks");
-        if (currentTasks instanceof Collection<?> tasks) {
-            for (Object currentTask : tasks) {
-                if (currentTask instanceof Map<?, ?> task) {
-                    addUserId(userIds, task.get("assigneeId"));
-                    addCandidateUsers(userIds, task.get("candidateUsers"));
-                    addCandidateGroups(targets, task.get("candidateGroups"));
-                }
-            }
-        }
         return new RecipientSelection(List.copyOf(userIds), List.copyOf(targets.values()));
+    }
+
+    private RecipientSelection applicantRecipient(Map<String, Object> payload) {
+        Long applicantId = parseLong(stringValue(payload.get("applicantId")));
+        return applicantId == null
+                ? new RecipientSelection(List.of(), List.of())
+                : new RecipientSelection(List.of(applicantId), List.of());
+    }
+
+    private boolean processTerminalEvent(String eventType) {
+        return WorkflowEventTypes.PROCESS_COMPLETED.equals(eventType)
+                || WorkflowEventTypes.PROCESS_REJECTED.equals(eventType)
+                || WorkflowEventTypes.PROCESS_ENDED.equals(eventType);
     }
 
     private void addCandidateUsers(Set<Long> userIds, Object value) {
@@ -210,6 +275,19 @@ public class WorkflowNoticeDomainEventSubscriber implements DomainEventSubscribe
         if (userId != null) {
             userIds.add(userId);
         }
+    }
+
+    private Long firstLong(Object... values) {
+        if (values == null) {
+            return null;
+        }
+        for (Object value : values) {
+            Long parsed = parseLong(stringValue(value));
+            if (parsed != null) {
+                return parsed;
+            }
+        }
+        return null;
     }
 
     private void addCandidateGroups(Map<String, NoticeRecipientTargetCommand> targets, Object value) {

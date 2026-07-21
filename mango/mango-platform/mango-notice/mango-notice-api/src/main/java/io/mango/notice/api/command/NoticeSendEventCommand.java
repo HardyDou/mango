@@ -23,4 +23,10 @@ public class NoticeSendEventCommand extends SendNoticeCommand {
     @Schema(description = "事件所属租户 ID，仅用于恢复事务提交后的内部调用上下文")
     @NotBlank(message = "事件租户 ID 不能为空")
     private String tenantId;
+
+    @Schema(description = "事件所属应用编码，仅用于恢复事务提交后的内部调用上下文")
+    private String appCode;
+
+    @Schema(description = "事件所属登录域，仅用于恢复事务提交后的内部调用上下文")
+    private String realm;
 }

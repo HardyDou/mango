@@ -142,8 +142,9 @@ public class WorkflowProcessService implements IWorkflowProcessService {
                     .eq(WorkflowFormInstanceEntity::getProcessInstanceId, instance.getProcessInstanceId())
                     .last("limit 1"));
             updateCompletedFormInstance(formInstance);
-            workflowEventPublisher.publishProcessCompleted(instance.getProcessInstanceId(), formInstance, variables);
             workflowBusinessApplyService.markApproved(instance.getProcessInstanceId());
+            WorkflowBusinessApplyVO apply = workflowBusinessApplyService.findByProcessInstance(instance.getProcessInstanceId());
+            workflowEventPublisher.publishProcessCompleted(instance.getProcessInstanceId(), formInstance, variables, apply);
         }
 
         WorkflowProcessInstanceVO vo = new WorkflowProcessInstanceVO();

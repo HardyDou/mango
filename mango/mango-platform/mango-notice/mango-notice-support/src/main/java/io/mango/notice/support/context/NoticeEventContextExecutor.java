@@ -7,7 +7,7 @@ import io.mango.notice.api.command.NoticeSendEventCommand;
 import java.util.Objects;
 
 /**
- * Restores the tenant context captured by a notice event for local and remote delivery.
+ * Restores the application context captured by a notice event for local and remote delivery.
  */
 public final class NoticeEventContextExecutor {
 
@@ -21,10 +21,15 @@ public final class NoticeEventContextExecutor {
         if (tenantId == null) {
             throw new IllegalArgumentException("notice event tenantId must not be blank");
         }
+        String appCode = firstText(event.getAppCode(), MangoContextHolder.appCode());
+        String realm = firstText(event.getRealm(), MangoContextHolder.get().realm());
         event.setTenantId(tenantId);
+        event.setAppCode(appCode);
+        event.setRealm(realm);
         MangoContextSnapshot previous = MangoContextHolder.get();
         try {
-            MangoContextHolder.set(previous.withTenantId(tenantId));
+            MangoContextHolder.set(previous.withSecurity(
+                    null, null, tenantId, null, realm, null, null, null, appCode));
             action.run();
         } finally {
             MangoContextHolder.set(previous);
