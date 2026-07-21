@@ -2,7 +2,7 @@
 
 ## v2026.07.21-maven-1.0.24-pmo-1.3.4-cli-1.0.88-platform-notice-fixes-release - 2026-07-21
 
-Status: `PENDING`. This mixed Mango release publishes Maven `1.0.24`, PMO `1.3.4`, Notice `1.0.29`, Admin Shell `1.0.48`, Admin `1.0.53`, and CLI `1.0.88` from the release-preparation commit after it is merged to `main`. The exact source commit, tree, archive checksum, registry evidence and completed state manifest will be recorded before closeout.
+Status: `PUBLISHED_AND_VERIFIED`. This mixed Mango release was published from source commit `6bef98bab0bbe5ae50fe7d1ac35e858cac24a8af` and tree `905150b5de2db658cb339a01d3fdea150d97e968`. The exact-source bundle SHA-256 is `e8557ef5c2b645e9a85d60c4afe0cdcd26f088e8e07129e1a4fd89a3d91ebb23`. The completed read-only recovery manifest at `.runtime/releases/1.0.24/manifest.json` has SHA-256 `fe1cb55be3af6c0a2c16318fdf3e0a989984329dfb2314a4507fd6665644e776` and records all 17 release states as passed.
 
 ### Fixed
 
@@ -31,15 +31,15 @@ Status: `PENDING`. This mixed Mango release publishes Maven `1.0.24`, PMO `1.3.4
 
 ### Published Packages
 
-| Order | Target                                | Version                                                                       | Release status |
-| ----: | ------------------------------------- | ----------------------------------------------------------------------------- | -------------- |
-|     1 | Maven non-app backend and docs bundle | `io.mango:*:1.0.24`                                                           | `PENDING`      |
-|     2 | npm PMO bundle and Skills             | `@mango/pmo@1.3.4`                                                            | `PENDING`      |
-|     3 | npm Notice                            | `@mango/notice@1.0.29`                                                        | `PENDING`      |
-|     4 | npm Admin Shell                       | `@mango/admin-shell@1.0.48`                                                   | `PENDING`      |
-|     5 | npm Admin aggregate                   | `@mango/admin@1.0.53`                                                         | `PENDING`      |
-|     6 | npm CLI                               | `@mango/cli@1.0.88`                                                           | `PENDING`      |
-|     7 | GitHub Release                        | `v2026.07.21-maven-1.0.24-pmo-1.3.4-cli-1.0.88-platform-notice-fixes-release` | `PENDING`      |
+| Order | Target                                | Version                                                                       | Release status           |
+| ----: | ------------------------------------- | ----------------------------------------------------------------------------- | ------------------------ |
+|     1 | Maven non-app backend and docs bundle | `io.mango:*:1.0.24`                                                           | `PUBLISHED_AND_VERIFIED` |
+|     2 | npm PMO bundle and Skills             | `@mango/pmo@1.3.4`                                                            | `PUBLISHED_AND_VERIFIED` |
+|     3 | npm Notice                            | `@mango/notice@1.0.29`                                                        | `PUBLISHED_AND_VERIFIED` |
+|     4 | npm Admin Shell                       | `@mango/admin-shell@1.0.48`                                                   | `PUBLISHED_AND_VERIFIED` |
+|     5 | npm Admin aggregate                   | `@mango/admin@1.0.53`                                                         | `PUBLISHED_AND_VERIFIED` |
+|     6 | npm CLI                               | `@mango/cli@1.0.88`                                                           | `PUBLISHED_AND_VERIFIED` |
+|     7 | GitHub Release                        | `v2026.07.21-maven-1.0.24-pmo-1.3.4-cli-1.0.88-platform-notice-fixes-release` | `CREATED_AND_VERIFIED`   |
 
 ### Upgrade Notes
 
@@ -57,7 +57,11 @@ Status: `PENDING`. This mixed Mango release publishes Maven `1.0.24`, PMO `1.3.4
 - `node mango-ui/packages/mango-cli/scripts/check-release-versions.mjs`
 - `MANGO_BACKEND_GATE_VERSION=1.0.24 node mango-ui/packages/mango-cli/scripts/check-generated-backend-gate.mjs`
 - `pnpm -C mango-ui admin:styles:check && pnpm -C mango-ui admin:module-styles:check`
-- Affected Maven, PMO, CLI, Notice, Admin Shell, Admin and documentation gates must pass on the exact merged source commit before immutable publication.
+- PR #609 and recovery PR #610 passed required PMO, frontend quality and P0 E2E checks before immutable publication.
+- Maven `io.mango:*:1.0.24` and all five npm coordinates resolve from both Nexus publish and consume repositories with exact versions and package integrity evidence.
+- A clean published `@mango/cli@1.0.88` consumer generated the Maven `1.0.24` / PMO `1.3.4` / Notice `1.0.29` / Admin Shell `1.0.48` / Admin `1.0.53` matrix, passed `mango pmo check --locked`, the nine-invocation generated backend gate, frontend typecheck and production build.
+- The immutable tag points to source commit `6bef98bab0bbe5ae50fe7d1ac35e858cac24a8af`; the matching [GitHub Release](https://github.com/HardyDou/mango/releases/tag/v2026.07.21-maven-1.0.24-pmo-1.3.4-cli-1.0.88-platform-notice-fixes-release), documentation Latest and version snapshot were verified.
+- Earlier failed manifests were retained as audit evidence. They stopped before remote mutation or failed only in local verification harness assumptions; no published Maven/npm/tag/Release state was replayed.
 
 ## v2026.07.20-frontend-ui-fixes-npm-release - 2026-07-20
 
