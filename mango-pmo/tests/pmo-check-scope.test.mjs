@@ -229,7 +229,7 @@ test('CI reruns when policy-resolved assurance selections change and keeps expli
   assert.match(workflow, /outputs\.m08 == 'true'/);
   assert.match(
     workflow,
-    /Build the architecture gate prerequisites[\s\S]*?-pl :mango-parent,:mango-common,:mango-tools[\s\S]*?-DskipTests[\s\S]*?install/,
+    /Build the architecture gate prerequisites[\s\S]*?-pl :mango-bom,:mango-parent,:mango-common,:mango-tools[\s\S]*?-DskipTests[\s\S]*?install/,
   );
   assert.match(
     workflow,
