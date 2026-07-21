@@ -75,6 +75,8 @@
 
 ## 7. 变更影响记录
 
+- Issue #613/#614 修复工作流通知接收人和异步应用上下文：流程完成、驳回和结束事件携带原申请人，终态通知只发送给 `applicantId`；`workflow.task.advanced` 对共享候选任务按候选用户、角色、岗位、组织扩展同一个 `taskId`，对并行或多实例的已分配任务按每条运行时任务及其 `assigneeId` 分开发送。事件同时携带 `tenantId`、`appCode`、`realm`，Notice 本地和远程监听器发送前恢复这些字段，角色成员按原应用与登录域解析。没有有效接收人的事件直接跳过；`ORG_LEADER` 仍不扩大为整个组织。
+
 - Issue #506 为 Maven `1.0.20` 已执行 Workflow V1 的数据库增加安全前向迁移。升级版本只兼容已知的 `1.0.20` V1 checksum，并通过 V2 幂等补齐 7 个审计列；`1.0.21`/`1.0.22` 创建的新数据库已有列时不会重复添加，未知 checksum 继续由 Flyway 阻断。业务审批 API、流程状态、权限、租户和页面行为不变；升级后检查 `flyway_schema_history_workflow` 的 V1/V2 状态和 Workflow README 列出的审计列。
 
 - PR #502 统一由 `mango-workflow-api` 提供参数校验约束，starter Controller 继承契约而不重复声明。业务审批的 HTTP/Java API、请求与响应结构、校验规则、流程状态流转、权限和事件行为不变，业务调用方无需改造。
@@ -195,7 +197,7 @@ pnpm -F @mango/workflow-business-example build
 ## 2026-07-20 工作流通知与菜单影响
 
 - 审批中心的菜单入口调整为 `平台能力 / 审批中心`，原 `/workflow` 及子路由、权限码、审批 API、状态回调保持不变。
-- `workflow.task.assigned` 通知会从直接办理人、候选用户、`ROLE`、`POST`、`ORG` 及并行当前任务中解析接收目标；流程已结束或没有有效接收目标时不再投递空接收人通知。`ORG_LEADER` 不会被扩大为整个组织，仍需上游提供明确候选用户或后续增加专用接收目标能力。
+- `workflow.task.assigned` 通知会按每条当前运行时任务解析直接办理人、候选用户、`ROLE`、`POST`、`ORG` 接收目标；流程已结束或没有有效接收目标时不再投递空接收人通知。`ORG_LEADER` 不会被扩大为整个组织，仍需上游提供明确候选用户或后续增加专用接收目标能力。
 
 ## 2026-07-19 前端规范候选影响
 

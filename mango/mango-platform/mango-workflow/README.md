@@ -631,10 +631,12 @@ Workflow 参数校验约束统一由 `mango-workflow-api` 的 `XxxApi` 契约声
 | `processInstanceId` | 流程实例 ID。 |
 | `eventType` | 事件类型，和 `DomainEvent.eventType` 保持一致。 |
 | `tenantId` | 当前租户 ID。 |
+| `appCode` / `realm` | 事件产生时的应用编码和登录域；异步 Notice 消费时用于恢复角色解析上下文。 |
 | `operatorId` / `operatorName` | 当前操作人。 |
 | `businessType` | 业务类型。 |
 | `businessKey` | 业务主键。 |
 | `applyId` | 业务申请 ID。 |
+| `applicantId` / `applicantName` | 原申请人；流程完成、驳回或结束通知使用 `applicantId` 作为接收人。 |
 | `completedTaskId` | 刚完成或发起退回的源任务 ID。 |
 | `completedTaskDefinitionKey` | 刚完成或发起退回的源任务定义 key。 |
 | `completedTaskName` | 刚完成或发起退回的源任务名称。 |
@@ -648,16 +650,16 @@ Workflow 参数校验约束统一由 `mango-workflow-api` 的 `XxxApi` 契约声
 | `currentTask` | 第一个当前任务快照。 |
 | `taskId` / `taskDefinitionKey` / `taskName` | 第一个当前任务的 ID、定义 key 和名称。 |
 | `assignee` | 第一个当前任务的处理人 ID。 |
-| `candidateUsers` / `candidateGroups` | 第一个当前任务的候选用户和 Flowable 候选组。 |
-| `currentTasks` | 全部并行当前任务快照，通知和业务订阅方不得只消费第一个任务。 |
-
-`workflow.task.assigned` 通知会汇总 `assignee`、`candidateUsers` 和全部 `currentTasks`：数字用户值直接作为用户接收人，`ROLE:<id>`、`POST:<id>`、`ORG:<id>` 分别转换为 Notice 的角色、岗位、组织接收目标，再由 Identity 解析真实用户。流程已经结束或没有可解析的下一任务接收人时，不发送“审批待办”通知。`ORG_LEADER:<id>` 不会降级为全组织通知，避免把负责人通知错误扩大给整个组织。
 | `assigneeId` | 第一个当前任务的处理人 ID。 |
 | `assigneeName` | 第一个当前任务的处理人名称。 |
 | `claimStatus` | 第一个当前任务认领状态：`NONE`、`UNCLAIMED`、`ASSIGNED`。 |
 | `candidateUsers` / `candidateGroups` | 第一个当前任务候选用户和候选组。 |
 | `currentTasks` | 刷新后的当前任务明细，包含 `taskId`、`taskDefinitionKey`、`taskName`、`assigneeId`、`assigneeName`、`claimStatus`、`candidateUsers`、`candidateGroups`、`arrivedAt`。 |
 | `variables` | 流程变量快照。 |
+
+`workflow.task.assigned` 按运行时任务发送：任务已有 `assigneeId` 时，只通知该办理人；任务尚未到人时，将候选用户以及 `ROLE:<id>`、`POST:<id>`、`ORG:<id>` 转成同一个任务的 Notice 接收目标，目标中的全部有效成员收到指向同一 `taskId` 的通知。并行或多实例产生多个运行时任务时，每个任务分别发送并使用 `eventId + taskId` 幂等，不能把接收人聚合到第一条任务。流程已经结束或没有可解析接收人时跳过通知；`ORG_LEADER:<id>` 不会降级为全组织通知。
+
+`workflow.process.completed`、`workflow.process.rejected` 和 `workflow.process.ended` 使用业务申请中的 `applicantId` 通知原申请人。事件异步转为 Notice 时会连同 `tenantId`、`appCode`、`realm` 恢复应用上下文，确保角色候选目标按原应用和登录域解析。
 
 事件消费选择：
 

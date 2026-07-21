@@ -35,6 +35,8 @@ class WorkflowNoticeDomainEventSubscriberTest {
                 .payload("taskId", "TASK-1001")
                 .payload("assignee", "1001")
                 .payload("tenantId", "1")
+                .payload("appCode", "internal-admin")
+                .payload("realm", "INTERNAL")
                 .payload("definitionName", "费用报销")
                 .build();
 
@@ -43,8 +45,11 @@ class WorkflowNoticeDomainEventSubscriberTest {
         assertThat(events).singleElement().satisfies(published -> {
             NoticeSendEventCommand notice = (NoticeSendEventCommand) published;
             assertThat(notice.getTenantId()).isEqualTo("1");
+            assertThat(notice.getAppCode()).isEqualTo("internal-admin");
+            assertThat(notice.getRealm()).isEqualTo("INTERNAL");
             assertThat(notice.getBizType()).isEqualTo("workflow.task.assigned");
             assertThat(notice.getUserId()).isEqualTo(1001L);
+            assertThat(notice.getIdempotentKey()).isEqualTo("workflow:event-1001:TASK-1001");
             assertThat(notice.getMessageScene()).isEqualTo("workflow.task.assigned");
             assertThat(notice.getMessageSubject().getSubjectType()).isEqualTo("WORKFLOW_PROCESS");
             assertThat(notice.getMessageSubject().getSubjectId()).isEqualTo("PI-1001");
@@ -60,7 +65,7 @@ class WorkflowNoticeDomainEventSubscriberTest {
     }
 
     @Test
-    void taskAdvancedShouldResolveCandidateUsersGroupsAndParallelTasks() {
+    void taskAdvancedShouldKeepSharedCandidateTaskAsOneNotice() {
         DomainEvent event = DomainEvent.builder()
                 .eventId("event-1002")
                 .eventType(WorkflowEventTypes.TASK_ADVANCED)
@@ -71,26 +76,23 @@ class WorkflowNoticeDomainEventSubscriberTest {
                 .payload("taskId", "TASK-1002")
                 .payload("tenantId", "1")
                 .payload("ended", false)
-                .payload("candidateUsers", List.of("1002", "1003", "invalid-user"))
-                .payload("candidateGroups", List.of("ROLE:2001", "POST:3001", "ORG_LEADER:4001"))
                 .payload("currentTasks", List.of(
                         Map.of(
                                 "taskId", "TASK-1002",
-                                "assigneeId", 1004L,
-                                "candidateUsers", List.of("1002"),
-                                "candidateGroups", List.of("ROLE:2001")),
-                        Map.of(
-                                "taskId", "TASK-1003",
-                                "candidateUsers", List.of("1005"),
-                                "candidateGroups", List.of("ORG:4002"))))
+                                "taskName", "财务审批",
+                                "candidateUsers", List.of("1002", "invalid-user"),
+                                "candidateGroups", List.of(
+                                        "ROLE:2001", "POST:3001", "ORG:4002", "ORG_LEADER:4003"))))
                 .build();
 
         subscriber.onEvent(event);
 
         assertThat(events).singleElement().satisfies(published -> {
             NoticeSendEventCommand notice = (NoticeSendEventCommand) published;
-            assertThat(notice.getUserId()).isNull();
-            assertThat(notice.getUserIds()).containsExactly(1002L, 1003L, 1004L, 1005L);
+            assertThat(notice.getUserId()).isEqualTo(1002L);
+            assertThat(notice.getUserIds()).isNull();
+            assertThat(notice.getIdempotentKey()).isEqualTo("workflow:event-1002:TASK-1002");
+            assertThat(notice.getMessageData().toMap()).containsEntry("taskId", "TASK-1002");
             assertThat(notice.getRecipientTargets())
                     .extracting(NoticeRecipientTargetCommand::getTargetType,
                             NoticeRecipientTargetCommand::getTargetId)
@@ -102,17 +104,98 @@ class WorkflowNoticeDomainEventSubscriberTest {
     }
 
     @Test
-    void taskAdvancedWithoutNextTaskShouldNotPublishAssignedNotice() {
+    void taskAdvancedShouldPublishOneNoticePerAssignedRuntimeTask() {
         DomainEvent event = DomainEvent.builder()
                 .eventId("event-1003")
                 .eventType(WorkflowEventTypes.TASK_ADVANCED)
-                .businessType("guarantee")
-                .businessKey("GUARANTEE-1003")
-                .aggregateId("PI-1003")
+                .businessType("expense")
+                .businessKey("EXP-1003")
                 .payload("processInstanceId", "PI-1003")
+                .payload("tenantId", "1")
+                .payload("ended", false)
+                .payload("currentTasks", List.of(
+                        Map.of(
+                                "taskId", "TASK-1003-A",
+                                "assigneeId", 1003L,
+                                "candidateUsers", List.of("9001"),
+                                "candidateGroups", List.of("ROLE:2001")),
+                        Map.of(
+                                "taskId", "TASK-1003-B",
+                                "assigneeId", 1004L,
+                                "candidateUsers", List.of("9002"))))
+                .build();
+
+        subscriber.onEvent(event);
+
+        assertThat(events).hasSize(2);
+        NoticeSendEventCommand first = (NoticeSendEventCommand) events.get(0);
+        NoticeSendEventCommand second = (NoticeSendEventCommand) events.get(1);
+        assertThat(first.getUserId()).isEqualTo(1003L);
+        assertThat(first.getRecipientTargets()).isNull();
+        assertThat(first.getMessageData().toMap())
+                .containsEntry("taskId", "TASK-1003-A")
+                .containsEntry("currentTaskId", "TASK-1003-A");
+        assertThat(first.getIdempotentKey()).isEqualTo("workflow:event-1003:TASK-1003-A");
+        assertThat(second.getUserId()).isEqualTo(1004L);
+        assertThat(second.getMessageData().toMap())
+                .containsEntry("taskId", "TASK-1003-B")
+                .containsEntry("currentTaskId", "TASK-1003-B");
+        assertThat(second.getIdempotentKey()).isEqualTo("workflow:event-1003:TASK-1003-B");
+    }
+
+    @Test
+    void terminalProcessShouldNotifyApplicantOnly() {
+        DomainEvent event = DomainEvent.builder()
+                .eventId("event-1004")
+                .eventType(WorkflowEventTypes.PROCESS_COMPLETED)
+                .businessType("expense")
+                .businessKey("EXP-1004")
+                .payload("processInstanceId", "PI-1004")
+                .payload("tenantId", "1")
+                .payload("applicantId", 8001L)
+                .payload("assigneeId", 9001L)
+                .payload("candidateGroups", List.of("ROLE:2001"))
+                .build();
+
+        subscriber.onEvent(event);
+
+        assertThat(events).singleElement().satisfies(published -> {
+            NoticeSendEventCommand notice = (NoticeSendEventCommand) published;
+            assertThat(notice.getUserId()).isEqualTo(8001L);
+            assertThat(notice.getUserIds()).isNull();
+            assertThat(notice.getRecipientTargets()).isNull();
+            assertThat(notice.getBizType()).isEqualTo("workflow.process.completed");
+        });
+    }
+
+    @Test
+    void taskAdvancedWithoutNextTaskShouldNotPublishAssignedNotice() {
+        DomainEvent event = DomainEvent.builder()
+                .eventId("event-1005")
+                .eventType(WorkflowEventTypes.TASK_ADVANCED)
+                .businessType("guarantee")
+                .businessKey("GUARANTEE-1005")
+                .aggregateId("PI-1005")
+                .payload("processInstanceId", "PI-1005")
                 .payload("tenantId", "1")
                 .payload("ended", true)
                 .payload("currentTasks", List.of())
+                .build();
+
+        subscriber.onEvent(event);
+
+        assertThat(events).isEmpty();
+    }
+
+    @Test
+    void workflowNoticeWithoutResolvableRecipientShouldNotPublish() {
+        DomainEvent event = DomainEvent.builder()
+                .eventId("event-1006")
+                .eventType(WorkflowEventTypes.PROCESS_ENDED)
+                .businessType("expense")
+                .businessKey("EXP-1006")
+                .payload("processInstanceId", "PI-1006")
+                .payload("tenantId", "1")
                 .build();
 
         subscriber.onEvent(event);

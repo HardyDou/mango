@@ -22,6 +22,12 @@ public class WorkflowEventPayloadVO {
     @Schema(description = "租户ID")
     private String tenantId;
 
+    @Schema(description = "应用编码")
+    private String appCode;
+
+    @Schema(description = "登录域")
+    private String realm;
+
     @Schema(description = "操作人ID")
     private Long operatorId;
 
@@ -36,6 +42,12 @@ public class WorkflowEventPayloadVO {
 
     @Schema(description = "业务申请ID")
     private String applyId;
+
+    @Schema(description = "申请人ID")
+    private Long applicantId;
+
+    @Schema(description = "申请人名称")
+    private String applicantName;
 
     @Schema(description = "流程变量快照")
     private WorkflowJsonVO variables;

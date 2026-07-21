@@ -11,6 +11,27 @@ type LoginTenant = {
   tenantName: string;
 };
 
+type WorkflowTodoTask = {
+  assigneeId?: unknown;
+  businessKey?: unknown;
+  id?: number | string;
+  taskName?: unknown;
+};
+
+type NoticeSiteMessage = {
+  bizId?: unknown;
+  bizType?: unknown;
+  messageScene?: unknown;
+  target?: {
+    params?: {
+      processInstanceId?: unknown;
+      taskId?: unknown;
+    };
+    targetKey?: unknown;
+  };
+  userId?: unknown;
+};
+
 const platformTenant: LoginTenant = {
   tenantId: '1',
   tenantCode: 'default',
@@ -23,19 +44,27 @@ function api(path: string) {
 }
 
 function executeWorkspaceMysql(statements: string[]) {
-  execFileSync('mysql', [
-    '--protocol=TCP',
-    '-h', process.env.MANGO_DB_HOST || '127.0.0.1',
-    '-P', process.env.MANGO_DB_PORT || '3306',
-    '-u', process.env.MANGO_DB_USERNAME || 'root',
-    process.env.MANGO_DB_NAME || 'mango',
-    '-e', statements.join('; '),
-  ], {
-    env: {
-      ...process.env,
-      MYSQL_PWD: process.env.MANGO_DB_PASSWORD || '',
+  execFileSync(
+    'mysql',
+    [
+      '--protocol=TCP',
+      '-h',
+      process.env.MANGO_DB_HOST || '127.0.0.1',
+      '-P',
+      process.env.MANGO_DB_PORT || '3306',
+      '-u',
+      process.env.MANGO_DB_USERNAME || 'root',
+      process.env.MANGO_DB_NAME || 'mango',
+      '-e',
+      statements.join('; '),
+    ],
+    {
+      env: {
+        ...process.env,
+        MYSQL_PWD: process.env.MANGO_DB_PASSWORD || '',
+      },
     },
-  });
+  );
 }
 
 async function loginToken(request: APIRequestContext, tenant: LoginTenant) {
@@ -82,10 +111,12 @@ async function loginPage(page: Page, tenant: LoginTenant) {
   await page.goto('/#/login');
   await page.fill('input[placeholder="用户名"]', 'admin');
   await page.fill('input[placeholder="密码"]', 'admin123');
-  const accountTenantsResponsePromise = page.waitForResponse((response) =>
-    response.url().includes('/api/auth/login-institutions') && response.status() === 200,
-    { timeout: 10000 },
-  ).catch(() => null);
+  const accountTenantsResponsePromise = page
+    .waitForResponse(
+      (response) => response.url().includes('/api/auth/login-institutions') && response.status() === 200,
+      { timeout: 10000 },
+    )
+    .catch(() => null);
   await page.locator('input[placeholder="密码"]').blur();
   await page.locator('.tenant-select').click();
   await accountTenantsResponsePromise;
@@ -112,12 +143,11 @@ async function openInitiatedTasks(page: Page) {
 }
 
 async function waitForInitiatedTasksLoad(page: Page) {
-  await page.waitForResponse((response) =>
-    response.status() === 200
-    && (
-      response.url().includes('/api/workflow/business-applies/page')
-      || response.url().includes('/api/workflow/processes/initiated')
-    )
+  await page.waitForResponse(
+    (response) =>
+      response.status() === 200 &&
+      (response.url().includes('/api/workflow/business-applies/page') ||
+        response.url().includes('/api/workflow/processes/initiated')),
   );
 }
 
@@ -131,21 +161,23 @@ async function selectWorkflowCategory(page: Page, categoryName: string) {
 }
 
 async function openClaimableTodoTab(page: Page, keyword?: string) {
-  const claimableResponsePromise = page.waitForResponse((response) =>
-    response.url().includes('/api/workflow/tasks/todo')
-    && response.url().includes('todoType=CLAIMABLE')
-    && response.status() === 200
+  const claimableResponsePromise = page.waitForResponse(
+    (response) =>
+      response.url().includes('/api/workflow/tasks/todo') &&
+      response.url().includes('todoType=CLAIMABLE') &&
+      response.status() === 200,
   );
   await page.getByRole('tab', { name: '待领取' }).click();
   await claimableResponsePromise;
   if (!keyword) {
     return;
   }
-  const filteredResponsePromise = page.waitForResponse((response) =>
-    response.url().includes('/api/workflow/tasks/todo')
-    && response.url().includes('todoType=CLAIMABLE')
-    && response.url().includes(`keyword=${encodeURIComponent(keyword)}`)
-    && response.status() === 200
+  const filteredResponsePromise = page.waitForResponse(
+    (response) =>
+      response.url().includes('/api/workflow/tasks/todo') &&
+      response.url().includes('todoType=CLAIMABLE') &&
+      response.url().includes(`keyword=${encodeURIComponent(keyword)}`) &&
+      response.status() === 200,
   );
   await page.getByPlaceholder('搜索流程/任务名称').fill(keyword);
   await page.getByRole('button', { name: '查询' }).click();
@@ -205,9 +237,12 @@ async function cleanupWorkflowTemplates(request: APIRequestContext, token: strin
     }
   }
 
-  const templateCategoriesResponse = await request.get(api(`/workflow/template-categories/page?page=1&size=100&keyword=${keyword}`), {
-    headers,
-  });
+  const templateCategoriesResponse = await request.get(
+    api(`/workflow/template-categories/page?page=1&size=100&keyword=${keyword}`),
+    {
+      headers,
+    },
+  );
   if (templateCategoriesResponse.status() === 200) {
     const templateCategoriesBody = await templateCategoriesResponse.json();
     for (const category of templateCategoriesBody.data?.list || []) {
@@ -221,9 +256,11 @@ async function cleanupWorkflowTemplates(request: APIRequestContext, token: strin
 async function cleanupWorkflowUploadFiles(request: APIRequestContext, token: string, fileIds: string[]) {
   const headers = { Authorization: `Bearer ${token}` };
   for (const id of fileIds) {
-    await request.delete(api(`/file/files?id=${encodeURIComponent(id)}&reason=e2e-workflow-cleanup`), {
-      headers,
-    }).catch(() => undefined);
+    await request
+      .delete(api(`/file/files?id=${encodeURIComponent(id)}&reason=e2e-workflow-cleanup`), {
+        headers,
+      })
+      .catch(() => undefined);
   }
 }
 
@@ -238,9 +275,12 @@ async function expectWorkflowCategoryAndDefinitionInDomain(
   },
 ) {
   const headers = { Authorization: `Bearer ${token}` };
-  const categoryResponse = await request.get(api(`/workflow/categories/list?status=1&domainCode=${params.domainCode}`), {
-    headers,
-  });
+  const categoryResponse = await request.get(
+    api(`/workflow/categories/list?status=1&domainCode=${params.domainCode}`),
+    {
+      headers,
+    },
+  );
   expect(categoryResponse.status()).toBe(200);
   const categoryBody = await categoryResponse.json();
   expectApiSuccess(categoryBody, '按业务域查询流程分类失败');
@@ -615,6 +655,75 @@ function actionAddSignDesignerJson(unique: number, assigneeIds: string[]) {
   });
 }
 
+function workflowNoticeRegressionDesignerJson(unique: number, roleId: string) {
+  return JSON.stringify({
+    id: 'startEvent',
+    nodeName: '发起人',
+    nodeType: 'ROOT',
+    childNode: {
+      id: `notice_first_approve_${unique}`,
+      nodeName: '通知链路初审',
+      nodeType: 'APPROVAL',
+      bpmnType: 'userTask',
+      executionType: 'USER_TASK',
+      childNode: {
+        id: `notice_role_approve_${unique}`,
+        nodeName: '通知链路角色复核',
+        nodeType: 'APPROVAL',
+        bpmnType: 'userTask',
+        executionType: 'USER_TASK',
+        childNode: null,
+        conditionNodes: [],
+        properties: {
+          approvalConfig: {
+            assigneeType: 'SPECIFIED_ROLE',
+            assigneeIds: [],
+            roleIds: [roleId],
+            postIds: [],
+            orgIds: [],
+            approvalMode: 'COUNTERSIGN',
+            emptyAssigneeStrategy: 'TO_ADMIN',
+            emptyAssigneeUserIds: [],
+            rejectStrategy: 'END_PROCESS',
+            formPermissions: {},
+            eventNotify: {
+              enabled: false,
+              type: 'HTTP',
+              method: 'POST',
+              timeoutMillis: 5000,
+            },
+            initiatorSelectMultiple: false,
+          },
+        },
+      },
+      conditionNodes: [],
+      properties: {
+        approvalConfig: {
+          assigneeType: 'SPECIFIED_USER',
+          assigneeIds: ['admin'],
+          roleIds: [],
+          postIds: [],
+          orgIds: [],
+          approvalMode: 'COUNTERSIGN',
+          emptyAssigneeStrategy: 'TO_ADMIN',
+          emptyAssigneeUserIds: [],
+          rejectStrategy: 'END_PROCESS',
+          formPermissions: {},
+          eventNotify: {
+            enabled: false,
+            type: 'HTTP',
+            method: 'POST',
+            timeoutMillis: 5000,
+          },
+          initiatorSelectMultiple: false,
+        },
+      },
+    },
+    conditionNodes: [],
+    properties: {},
+  });
+}
+
 function leaveFormJson() {
   return JSON.stringify([
     {
@@ -625,9 +734,7 @@ function leaveFormJson() {
         placeholder: '请输入请假天数',
         min: 1,
       },
-      validate: [
-        { required: true, message: '请假天数不能为空', trigger: 'change' },
-      ],
+      validate: [{ required: true, message: '请假天数不能为空', trigger: 'change' }],
     },
     {
       type: 'textarea',
@@ -636,9 +743,7 @@ function leaveFormJson() {
       props: {
         placeholder: '请输入请假原因',
       },
-      validate: [
-        { required: true, message: '请假原因不能为空', trigger: 'blur' },
-      ],
+      validate: [{ required: true, message: '请假原因不能为空', trigger: 'blur' }],
     },
   ]);
 }
@@ -656,9 +761,7 @@ function runtimeComponentFormJson() {
           props: {
             placeholder: '请输入申请主题',
           },
-          validate: [
-            { required: true, message: '申请主题不能为空', trigger: 'blur' },
-          ],
+          validate: [{ required: true, message: '申请主题不能为空', trigger: 'blur' }],
         },
         {
           type: 'select',
@@ -673,9 +776,7 @@ function runtimeComponentFormJson() {
             { label: '差旅费', value: 'TRAVEL' },
             { label: '办公费', value: 'OFFICE' },
           ],
-          validate: [
-            { required: true, message: '费用类型不能为空', trigger: 'change' },
-          ],
+          validate: [{ required: true, message: '费用类型不能为空', trigger: 'change' }],
         },
         {
           type: 'upload',
@@ -710,9 +811,7 @@ function runtimeComponentFormJson() {
             placeholder: '请输入申请金额',
             min: 1,
           },
-          validate: [
-            { required: true, message: '申请金额不能为空', trigger: 'change' },
-          ],
+          validate: [{ required: true, message: '申请金额不能为空', trigger: 'change' }],
         },
         {
           type: 'elTreeSelect',
@@ -725,9 +824,7 @@ function runtimeComponentFormJson() {
               {
                 label: '芒果集团',
                 value: '1',
-                children: [
-                  { label: '财务部', value: 'finance' },
-                ],
+                children: [{ label: '财务部', value: 'finance' }],
               },
             ],
             nodeKey: 'value',
@@ -745,9 +842,7 @@ function runtimeComponentFormJson() {
             clearable: true,
             filterable: true,
           },
-          validate: [
-            { required: true, message: '费用字典不能为空', trigger: 'change' },
-          ],
+          validate: [{ required: true, message: '费用字典不能为空', trigger: 'change' }],
         },
         {
           type: 'input',
@@ -759,9 +854,7 @@ function runtimeComponentFormJson() {
             width: 520,
             height: 180,
           },
-          validate: [
-            { required: true, message: '申请人签字不能为空', trigger: 'change' },
-          ],
+          validate: [{ required: true, message: '申请人签字不能为空', trigger: 'change' }],
         },
       ],
     },
@@ -947,7 +1040,9 @@ async function findTodoTask(request: APIRequestContext, token: string, businessK
   const body = await response.json();
   expect(body.success || body.code === 200).toBeTruthy();
   const tasks = body.data?.list || body.data?.records || [];
-  const task = tasks.find((item: any) => String(item.businessKey) === businessKey && String(item.taskName).includes(taskName));
+  const task = tasks.find(
+    (item: any) => String(item.businessKey) === businessKey && String(item.taskName).includes(taskName),
+  );
   expect(task, `未找到 ${businessKey} 的待办 ${taskName}`).toBeTruthy();
   return task;
 }
@@ -997,20 +1092,32 @@ async function expectApprovalActionBarInContentColumn(page: Page) {
 }
 
 async function pickUserFromDialog(page: Page, outerDialogName: string, pickerDialogName: string, username: string) {
-  const outerDialog = page.locator('.el-dialog:visible', {
-    has: page.getByRole('heading', { name: outerDialogName }),
-  }).filter({ has: page.getByPlaceholder(/请选择/) }).first();
+  const outerDialog = page
+    .locator('.el-dialog:visible', {
+      has: page.getByRole('heading', { name: outerDialogName }),
+    })
+    .filter({ has: page.getByPlaceholder(/请选择/) })
+    .first();
   await outerDialog.getByPlaceholder(new RegExp('请选择')).click();
-  const pickerDialog = page.locator('.el-dialog:visible', {
-    has: page.getByRole('heading', { name: pickerDialogName }),
-  }).filter({ has: page.locator('.selector-dialog') }).first();
+  const pickerDialog = page
+    .locator('.el-dialog:visible', {
+      has: page.getByRole('heading', { name: pickerDialogName }),
+    })
+    .filter({ has: page.locator('.selector-dialog') })
+    .first();
   await pickerDialog.getByPlaceholder('搜索姓名、用户名').fill(username);
   await pickerDialog.locator('.selector-item', { hasText: username }).click();
   await pickerDialog.locator('.el-dialog__footer').getByRole('button', { name: '确认' }).click();
   await outerDialog.locator('.el-dialog__footer').getByRole('button', { name: '确认' }).click();
 }
 
-async function completeTask(request: APIRequestContext, token: string, taskId: string, comment: string, variables: Record<string, any> = {}) {
+async function completeTask(
+  request: APIRequestContext,
+  token: string,
+  taskId: string,
+  comment: string,
+  variables: Record<string, any> = {},
+) {
   const response = await request.post(api(`/workflow/tasks/complete`), {
     headers: { Authorization: `Bearer ${token}` },
     data: { taskId, comment, variables },
@@ -1130,6 +1237,59 @@ async function prepareActionAddSignWorkflow(
   };
 }
 
+async function prepareWorkflowNoticeRegression(
+  request: APIRequestContext,
+  token: string,
+  unique: number,
+  keyword: string,
+  roleId: string,
+) {
+  const headers = { Authorization: `Bearer ${token}` };
+  const createCategoryResponse = await request.post(api('/workflow/categories'), {
+    headers,
+    data: {
+      categoryName: `E2E通知链路分类${unique}`,
+      categoryCode: keyword,
+      domainCode: defaultWorkflowDomainCode,
+      sort: 89,
+      status: 1,
+      remark: keyword,
+    },
+  });
+  expect(createCategoryResponse.status()).toBe(200);
+  const createCategoryBody = await createCategoryResponse.json();
+  expectApiSuccess(createCategoryBody, '创建通知链路流程分类失败');
+
+  const createDefinitionResponse = await request.post(api('/workflow/definitions'), {
+    headers,
+    data: {
+      categoryId: createCategoryBody.data,
+      domainCode: defaultWorkflowDomainCode,
+      definitionName: `E2E通知链路流程${unique}`,
+      definitionKey: `e2e_workflow_notice_${unique}`,
+      designerJson: workflowNoticeRegressionDesignerJson(unique, roleId),
+      formCode: `form_${keyword}`,
+      formJson: leaveFormJson(),
+      status: 'DRAFT',
+      remark: keyword,
+    },
+  });
+  expect(createDefinitionResponse.status()).toBe(200);
+  const createDefinitionBody = await createDefinitionResponse.json();
+  expectApiSuccess(createDefinitionBody, '创建通知链路流程定义失败');
+
+  const deployResponse = await request.post(api(`/workflow/definitions/deploy?id=${createDefinitionBody.data}`), {
+    headers,
+  });
+  expect(deployResponse.status()).toBe(200);
+  expectApiSuccess(await deployResponse.json(), '部署通知链路流程失败');
+
+  return {
+    definitionId: String(createDefinitionBody.data),
+    definitionName: `E2E通知链路流程${unique}`,
+  };
+}
+
 async function cleanupUser(request: APIRequestContext, token: string, username: string) {
   const headers = { Authorization: `Bearer ${token}` };
   const pageResponse = await request.get(api(`/identity/users/page`), {
@@ -1175,8 +1335,22 @@ async function createTempUser(request: APIRequestContext, token: string, usernam
   const detailBody = await detailResponse.json();
   expectApiSuccess(detailBody, `查询临时用户失败: ${username}`);
   const records = detailBody.data?.records || detailBody.data?.list || [];
-  const user = records.find((item: any) => item.username === username);
+  const user = records.find((item: { username?: unknown }) => item.username === username);
   expect(user, `临时用户未返回: ${username}`).toBeTruthy();
+  return user;
+}
+
+async function findUserByUsername(request: APIRequestContext, token: string, username: string) {
+  const response = await request.get(api('/identity/users/page'), {
+    headers: { Authorization: `Bearer ${token}` },
+    params: { page: 1, size: 20, username },
+  });
+  expect(response.status()).toBe(200);
+  const body = await response.json();
+  expectApiSuccess(body, `查询用户失败: ${username}`);
+  const records = body.data?.records || body.data?.list || [];
+  const user = records.find((item: any) => item.username === username);
+  expect(user, `未找到用户: ${username}`).toBeTruthy();
   return user;
 }
 
@@ -1215,6 +1389,125 @@ async function findRoleId(request: APIRequestContext, token: string, roleCode: s
   return String(role.roleId);
 }
 
+async function startBusinessWorkflow(
+  request: APIRequestContext,
+  token: string,
+  definitionId: string,
+  businessKey: string,
+) {
+  const response = await request.post(api('/workflow/processes/start-business'), {
+    headers: { Authorization: `Bearer ${token}` },
+    data: {
+      definitionId,
+      businessType: 'E2E_WORKFLOW_NOTICE',
+      businessKey,
+      applyCode: `APPLY-${businessKey}`,
+      applyTitle: `通知链路申请 ${businessKey}`,
+      applySummary: '验证角色任务和终态通知接收人',
+      renderMode: 'DYNAMIC_FORM',
+      formDataSnapshot: JSON.stringify({ days: 1, reason: '通知链路回归' }),
+      variables: {
+        days: 1,
+        reason: '通知链路回归',
+      },
+    },
+  });
+  const responseText = await response.text();
+  expect(response.status(), responseText).toBe(200);
+  const body = JSON.parse(responseText);
+  expectApiSuccess(body, '正式业务流程发起失败');
+  expect(String(body.data.businessKey)).toBe(businessKey);
+  expect(body.data.processInstanceId).toBeTruthy();
+  expect(body.data.applyId).toBeTruthy();
+  return body.data;
+}
+
+async function waitForTodoTask(request: APIRequestContext, token: string, businessKey: string, taskName: string) {
+  let matchedTask: WorkflowTodoTask | undefined;
+  await expect
+    .poll(
+      async () => {
+        const tasks = await listTodoTasks(request, token, businessKey);
+        matchedTask = tasks.find(
+          (item: WorkflowTodoTask) =>
+            String(item.businessKey) === businessKey && String(item.taskName).includes(taskName),
+        );
+        return Boolean(matchedTask);
+      },
+      {
+        message: `等待 ${businessKey} 的待办 ${taskName}`,
+        intervals: [250, 500, 1_000],
+        timeout: 15_000,
+      },
+    )
+    .toBe(true);
+  if (!matchedTask) {
+    throw new Error(`未找到 ${businessKey} 的待办 ${taskName}`);
+  }
+  return matchedTask;
+}
+
+async function readSiteMessages(
+  request: APIRequestContext,
+  token: string,
+  bizType: string,
+  businessKey: string,
+): Promise<NoticeSiteMessage[]> {
+  const response = await request.get(api('/notice/site/my/messages'), {
+    headers: { Authorization: `Bearer ${token}` },
+    params: {
+      pageNum: 1,
+      pageSize: 20,
+      bizType,
+      bizId: businessKey,
+    },
+  });
+  expect(response.status()).toBe(200);
+  const body = await response.json();
+  expectApiSuccess(body, `查询站内消息失败: ${bizType}/${businessKey}`);
+  const messages = body.data?.list || body.data?.records || [];
+  return Array.isArray(messages) ? (messages as NoticeSiteMessage[]) : [];
+}
+
+async function waitForSiteMessage(
+  request: APIRequestContext,
+  token: string,
+  bizType: string,
+  businessKey: string,
+  predicate: (message: NoticeSiteMessage) => boolean,
+) {
+  let messages: NoticeSiteMessage[] = [];
+  await expect
+    .poll(
+      async () => {
+        messages = await readSiteMessages(request, token, bizType, businessKey);
+        return messages.filter(predicate).length;
+      },
+      {
+        message: `等待站内消息 ${bizType}/${businessKey}`,
+        intervals: [250, 500, 1_000, 2_000],
+        timeout: 20_000,
+      },
+    )
+    .toBe(1);
+  const matchedMessage = messages.find(predicate);
+  if (!matchedMessage) {
+    throw new Error(`未找到站内消息 ${bizType}/${businessKey}`);
+  }
+  return matchedMessage;
+}
+
+async function expectNoSiteMessage(
+  request: APIRequestContext,
+  token: string,
+  bizType: string,
+  businessKey: string,
+  predicate: (message: NoticeSiteMessage) => boolean = () => true,
+) {
+  const messages = await readSiteMessages(request, token, bizType, businessKey);
+  expect(messages.filter(predicate)).toHaveLength(0);
+}
+
 async function readCopiedList(request: APIRequestContext, token: string, businessKey: string) {
   const response = await request.get(api(`/workflow/tasks/copied`), {
     headers: { Authorization: `Bearer ${token}` },
@@ -1231,7 +1524,7 @@ async function waitForCopiedTask(request: APIRequestContext, token: string, busi
     const copied = await readCopiedList(request, token, businessKey);
     const item = copied.find((row: any) => String(row.businessKey) === businessKey);
     if (item) return item;
-    await new Promise(resolve => setTimeout(resolve, 300));
+    await new Promise((resolve) => setTimeout(resolve, 300));
   }
   throw new Error(`未找到抄送记录: ${businessKey}`);
 }
@@ -1277,6 +1570,23 @@ function cleanupWorkflowActionData(businessKeyPrefix: string) {
     `DELETE FROM workflow_business_apply WHERE business_key LIKE '${businessKeyPrefix}%'`,
     `DELETE FROM workflow_task_record WHERE process_instance_id IN (SELECT process_instance_id FROM workflow_form_instance WHERE business_key LIKE '${businessKeyPrefix}%')`,
     `DELETE FROM workflow_form_instance WHERE business_key LIKE '${businessKeyPrefix}%'`,
+  ]);
+}
+
+function sqlLiteral(value: string) {
+  return `'${value.replaceAll('\\', '\\\\').replaceAll("'", "''")}'`;
+}
+
+function cleanupWorkflowNoticeData(businessKey: string) {
+  const bizId = sqlLiteral(businessKey);
+  executeWorkspaceMysql([
+    `DELETE FROM notice_site_message_action_request WHERE message_id IN (SELECT id FROM notice_site_message WHERE biz_id = ${bizId})`,
+    `DELETE FROM notice_site_message_action WHERE message_id IN (SELECT id FROM notice_site_message WHERE biz_id = ${bizId})`,
+    `DELETE FROM notice_site_message WHERE biz_id = ${bizId}`,
+    `DELETE FROM notice_retry_log WHERE send_record_id IN (SELECT id FROM notice_send_record WHERE biz_id = ${bizId})`,
+    `DELETE FROM notice_send_record WHERE biz_id = ${bizId}`,
+    `DELETE FROM notice_recipient WHERE task_id IN (SELECT id FROM notice_task WHERE biz_id = ${bizId})`,
+    `DELETE FROM notice_task WHERE biz_id = ${bizId}`,
   ]);
 }
 
@@ -1329,7 +1639,12 @@ async function prepareLeaveWorkflow(request: APIRequestContext, token: string, u
   };
 }
 
-async function prepareInitiatorSelectWorkflow(request: APIRequestContext, token: string, unique: number, keyword: string) {
+async function prepareInitiatorSelectWorkflow(
+  request: APIRequestContext,
+  token: string,
+  unique: number,
+  keyword: string,
+) {
   const headers = { Authorization: `Bearer ${token}` };
   const createCategoryResponse = await request.post(api(`/workflow/categories`), {
     headers,
@@ -1378,7 +1693,12 @@ async function prepareInitiatorSelectWorkflow(request: APIRequestContext, token:
   };
 }
 
-async function prepareInitiatorSelfWorkflow(request: APIRequestContext, token: string, unique: number, keyword: string) {
+async function prepareInitiatorSelfWorkflow(
+  request: APIRequestContext,
+  token: string,
+  unique: number,
+  keyword: string,
+) {
   const headers = { Authorization: `Bearer ${token}` };
   const createCategoryResponse = await request.post(api(`/workflow/categories`), {
     headers,
@@ -1427,7 +1747,14 @@ async function prepareInitiatorSelfWorkflow(request: APIRequestContext, token: s
   };
 }
 
-async function startLeaveProcess(request: APIRequestContext, token: string, definitionId: string, businessKey: string, days: number, reason: string) {
+async function startLeaveProcess(
+  request: APIRequestContext,
+  token: string,
+  definitionId: string,
+  businessKey: string,
+  days: number,
+  reason: string,
+) {
   const response = await request.post(api(`/workflow/processes/start`), {
     headers: { Authorization: `Bearer ${token}` },
     data: {
@@ -1539,22 +1866,27 @@ test.describe('工作流配置真实接口闭环', () => {
       await expect(definitionRow).toContainText(domainCode);
       await expect(definitionRow).toContainText(categoryName);
 
-      await page.locator('.workflow-definition-panel .el-form-item', { hasText: '流程分类' }).locator('.el-select').click();
+      await page
+        .locator('.workflow-definition-panel .el-form-item', { hasText: '流程分类' })
+        .locator('.el-select')
+        .click();
       await page.getByRole('option', { name: categoryName }).click();
-      const filteredResponsePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/workflow/definitions/page')
-        && response.url().includes(`categoryId=${encodeURIComponent(categoryId)}`)
-        && response.url().includes(`domainCode=${domainCode}`)
-        && response.status() === 200
+      const filteredResponsePromise = page.waitForResponse(
+        (response) =>
+          response.url().includes('/api/workflow/definitions/page') &&
+          response.url().includes(`categoryId=${encodeURIComponent(categoryId)}`) &&
+          response.url().includes(`domainCode=${domainCode}`) &&
+          response.status() === 200,
       );
       await page.locator('.workflow-definition-panel').getByRole('button', { name: '查询' }).click();
       await filteredResponsePromise;
       await expect(definitionRow).toBeVisible({ timeout: 10000 });
 
-      const publishedResponsePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/workflow/definitions/page')
-        && response.url().includes('publishedOnly=true')
-        && response.status() === 200
+      const publishedResponsePromise = page.waitForResponse(
+        (response) =>
+          response.url().includes('/api/workflow/definitions/page') &&
+          response.url().includes('publishedOnly=true') &&
+          response.status() === 200,
       );
       await openStartProcess(page);
       await publishedResponsePromise;
@@ -1608,14 +1940,18 @@ test.describe('工作流配置真实接口闭环', () => {
       await page.getByPlaceholder('如 contract_approve').fill(definitionKey);
 
       const iconPath = join(tmpdir(), `mango-workflow-icon-${unique}.png`);
-      writeFileSync(iconPath, Buffer.from(
-        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=',
-        'base64',
-      ));
-      const uploadResponsePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/file/files')
-        && response.request().method() === 'POST'
-        && response.status() === 200
+      writeFileSync(
+        iconPath,
+        Buffer.from(
+          'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=',
+          'base64',
+        ),
+      );
+      const uploadResponsePromise = page.waitForResponse(
+        (response) =>
+          response.url().includes('/api/file/files') &&
+          response.request().method() === 'POST' &&
+          response.status() === 200,
       );
       await page.locator('.workflow-icon-upload-control input[type="file"]').setInputFiles(iconPath);
       const uploadResponse = await uploadResponsePromise;
@@ -1635,9 +1971,8 @@ test.describe('工作流配置真实接口闭环', () => {
       await page.getByRole('button', { name: '下一步' }).click();
       await page.getByPlaceholder('如 contract_apply_form').fill(`form_${keyword}`);
 
-      const saveDraftResponsePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/workflow/definitions')
-        && response.request().method() === 'POST'
+      const saveDraftResponsePromise = page.waitForResponse(
+        (response) => response.url().includes('/api/workflow/definitions') && response.request().method() === 'POST',
       );
       await page.getByRole('button', { name: '保存' }).click();
       const saveDraftResponse = await saveDraftResponsePromise;
@@ -1664,7 +1999,7 @@ test.describe('工作流配置真实接口闭环', () => {
     const definitionKey = `e2e_ui_process_${unique}`;
     const token = await loginToken(request, platformTenant);
     const headers = { Authorization: `Bearer ${token}` };
-    page.on('pageerror', error => pageErrors.push(error.message));
+    page.on('pageerror', (error) => pageErrors.push(error.message));
 
     try {
       await cleanupWorkflow(request, token, keyword);
@@ -1740,7 +2075,9 @@ test.describe('工作流配置真实接口闭环', () => {
       await expect(participantDialog.getByRole('tab', { name: '部门范围' })).toBeVisible();
       await expect(participantDialog.getByRole('tab', { name: '岗位' })).toBeVisible();
       await expect(participantDialog.getByRole('tab', { name: '角色' })).toBeVisible();
-      await expect(participantDialog.locator('.participant-item', { hasText: /admin/ }).first()).toBeVisible({ timeout: 10000 });
+      await expect(participantDialog.locator('.participant-item', { hasText: /admin/ }).first()).toBeVisible({
+        timeout: 10000,
+      });
       await participantDialog.locator('.participant-item', { hasText: /admin/ }).first().click();
       await participantDialog.getByRole('tab', { name: '部门范围' }).click();
       await expect(participantDialog.locator('.participant-tree-wrap .el-tree')).toBeVisible({ timeout: 10000 });
@@ -1792,7 +2129,9 @@ test.describe('工作流配置真实接口闭环', () => {
       await expect(nodePanel.getByRole('button', { name: /多人审批/ })).toHaveCount(0);
       await nodePanel.getByText('指定成员').click();
       await nodePanel.locator('.approval-target-select').first().click();
-      await expect(page.locator('.el-select-dropdown:visible .el-select-dropdown__item', { hasText: /admin/ })).toBeVisible({ timeout: 10000 });
+      await expect(
+        page.locator('.el-select-dropdown:visible .el-select-dropdown__item', { hasText: /admin/ }),
+      ).toBeVisible({ timeout: 10000 });
       await page.locator('.el-select-dropdown:visible .el-select-dropdown__item', { hasText: /admin/ }).first().click();
       await expect(nodePanel.locator('.el-tag', { hasText: /admin/ })).toBeVisible();
       await nodePanel.getByRole('tab', { name: '高级' }).click();
@@ -1819,17 +2158,35 @@ test.describe('工作流配置真实接口闭环', () => {
       await page.getByRole('button', { name: '添加条件' }).click();
       await page.locator('.condition-row').first().locator('.condition-variable').click();
       const visibleConditionOptions = page.locator('.el-select-dropdown:visible .el-select-dropdown__item');
-      await expect(visibleConditionOptions.filter({ hasText: '当前机构ID' }).filter({ hasText: 'tenantId' })).toBeVisible();
-      await expect(visibleConditionOptions.filter({ hasText: '申请人ID' }).filter({ hasText: 'applicant.id' })).toBeVisible();
-      await expect(visibleConditionOptions.filter({ hasText: '申请人部门ID' }).filter({ hasText: 'applicant.orgId' })).toBeVisible();
-      await expect(visibleConditionOptions.filter({ hasText: '申请人岗位ID' }).filter({ hasText: 'applicant.postId' })).toBeVisible();
-      await visibleConditionOptions.filter({ hasText: '申请人部门ID' }).filter({ hasText: 'applicant.orgId' }).first().click();
+      await expect(
+        visibleConditionOptions.filter({ hasText: '当前机构ID' }).filter({ hasText: 'tenantId' }),
+      ).toBeVisible();
+      await expect(
+        visibleConditionOptions.filter({ hasText: '申请人ID' }).filter({ hasText: 'applicant.id' }),
+      ).toBeVisible();
+      await expect(
+        visibleConditionOptions.filter({ hasText: '申请人部门ID' }).filter({ hasText: 'applicant.orgId' }),
+      ).toBeVisible();
+      await expect(
+        visibleConditionOptions.filter({ hasText: '申请人岗位ID' }).filter({ hasText: 'applicant.postId' }),
+      ).toBeVisible();
+      await visibleConditionOptions
+        .filter({ hasText: '申请人部门ID' })
+        .filter({ hasText: 'applicant.orgId' })
+        .first()
+        .click();
       await expect(page.locator('.condition-row').first()).toContainText('选择部门');
       await page.locator('.condition-row').first().locator('.condition-value').click();
-      await expect(page.locator('.el-tree-select__popper:visible').filter({ hasText: '芒果集团' }).first()).toBeVisible();
+      await expect(
+        page.locator('.el-tree-select__popper:visible').filter({ hasText: '芒果集团' }).first(),
+      ).toBeVisible();
       await page.keyboard.press('Escape');
       await page.locator('.condition-row').first().locator('.condition-variable').click();
-      await page.locator('.el-select-dropdown:visible .el-select-dropdown__item', { hasText: '申请人ID' }).filter({ hasText: 'applicant.id' }).first().click();
+      await page
+        .locator('.el-select-dropdown:visible .el-select-dropdown__item', { hasText: '申请人ID' })
+        .filter({ hasText: 'applicant.id' })
+        .first()
+        .click();
       await expect(page.locator('.condition-row').first()).toContainText('选择人员');
       await page.locator('.condition-row').first().locator('.condition-operator').click();
       await expect(page.getByRole('option', { name: '是', exact: true })).toBeVisible();
@@ -1846,14 +2203,24 @@ test.describe('工作流配置真实接口闭环', () => {
       await page.locator('.condition-row').nth(1).locator('.el-select').first().click();
       await page.getByRole('option', { name: '或者 OR' }).click();
       await page.locator('.condition-row').nth(1).locator('.condition-variable').click();
-      await page.locator('.el-select-dropdown:visible .el-select-dropdown__item', { hasText: '当前机构ID' }).filter({ hasText: 'tenantId' }).first().click();
+      await page
+        .locator('.el-select-dropdown:visible .el-select-dropdown__item', { hasText: '当前机构ID' })
+        .filter({ hasText: 'tenantId' })
+        .first()
+        .click();
       await page.locator('.condition-row').nth(1).getByPlaceholder('比较值').fill('1');
       await page.locator('.condition-row').nth(1).getByPlaceholder('比较值').blur();
-      await expect(nodePanel.getByRole('textbox', { name: '条件表达式' })).toHaveValue("${(amount == 1000 || tenantId == '1')}");
+      await expect(nodePanel.getByRole('textbox', { name: '条件表达式' })).toHaveValue(
+        "${(amount == 1000 || tenantId == '1')}",
+      );
       await nodePanel.getByRole('button', { name: '关闭节点配置' }).click();
       await expect(nodePanel).toBeHidden();
-      await expect(page.locator('.workflow-node-card.branch-node', { hasText: '分支1' })).toContainText('流程金额 是 1000');
-      await expect(page.locator('.workflow-node-card.branch-node', { hasText: '分支1' })).toContainText('当前机构ID 是 1');
+      await expect(page.locator('.workflow-node-card.branch-node', { hasText: '分支1' })).toContainText(
+        '流程金额 是 1000',
+      );
+      await expect(page.locator('.workflow-node-card.branch-node', { hasText: '分支1' })).toContainText(
+        '当前机构ID 是 1',
+      );
       await expect(page.locator('.workflow-node-card.branch-node', { hasText: '分支1' })).not.toContainText('${');
       await page.locator('.workflow-add-node-button').last().click();
       await page.getByRole('button', { name: /抄送节点/ }).click();
@@ -1862,7 +2229,9 @@ test.describe('工作流配置真实接口闭环', () => {
       await nodePanel.locator('.workflow-participant-selector .participant-trigger').click();
       await expect(participantDialog).toBeVisible();
       await participantDialog.getByRole('tab', { name: '用户' }).click();
-      await expect(participantDialog.locator('.participant-item', { hasText: /admin/ }).first()).toBeVisible({ timeout: 10000 });
+      await expect(participantDialog.locator('.participant-item', { hasText: /admin/ }).first()).toBeVisible({
+        timeout: 10000,
+      });
       await participantDialog.locator('.participant-item', { hasText: /admin/ }).first().click();
       await participantDialog.getByRole('button', { name: '确认' }).click();
       await expect(nodePanel.locator('.participant-selected-group', { hasText: '用户：' })).toBeVisible();
@@ -1870,29 +2239,34 @@ test.describe('工作流配置真实接口闭环', () => {
       await nodePanel.getByRole('button', { name: '关闭节点配置' }).click();
       await expect(nodePanel).toBeHidden();
 
-      const saveDraftResponsePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/workflow/definitions')
-        && response.request().method() === 'POST'
+      const saveDraftResponsePromise = page.waitForResponse(
+        (response) => response.url().includes('/api/workflow/definitions') && response.request().method() === 'POST',
       );
       await page.getByRole('button', { name: '保存' }).click();
       const saveDraftResponse = await saveDraftResponsePromise;
       const saveDraftBody = await saveDraftResponse.json();
-      expect(saveDraftResponse.status(), JSON.stringify({
-        request: saveDraftResponse.request().postDataJSON(),
-        response: saveDraftBody,
-      }, null, 2)).toBe(200);
+      expect(
+        saveDraftResponse.status(),
+        JSON.stringify(
+          {
+            request: saveDraftResponse.request().postDataJSON(),
+            response: saveDraftBody,
+          },
+          null,
+          2,
+        ),
+      ).toBe(200);
       expect(saveDraftBody.success || saveDraftBody.code === 200).toBeTruthy();
       await expect(page.getByText('保存成功')).toBeVisible();
 
       await page.getByRole('button', { name: '发布流程' }).last().click();
       await expect(page.getByRole('dialog', { name: '发布前检查' })).toBeVisible();
       await expect(page.getByText('检查通过')).toBeVisible({ timeout: 10000 });
-      const updateDefinitionResponsePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/workflow/definitions')
-        && response.request().method() === 'PUT'
+      const updateDefinitionResponsePromise = page.waitForResponse(
+        (response) => response.url().includes('/api/workflow/definitions') && response.request().method() === 'PUT',
       );
       const deployResponsePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/workflow/definitions/deploy')
+        response.url().includes('/api/workflow/definitions/deploy'),
       );
       await page.getByRole('button', { name: '确认发布' }).click();
       const [updateDefinitionResponse, deployResponse] = await Promise.all([
@@ -1961,9 +2335,7 @@ test.describe('工作流配置真实接口闭环', () => {
               props: {
                 placeholder: '请输入流程金额',
               },
-              validate: [
-                { required: true, message: '流程金额不能为空', trigger: 'change' },
-              ],
+              validate: [{ required: true, message: '流程金额不能为空', trigger: 'change' }],
             },
           ]),
           status: 'DRAFT',
@@ -1996,8 +2368,8 @@ test.describe('工作流配置真实接口闭环', () => {
       expect(versionsBody.data?.[0]?.formJson).toContain('流程金额');
 
       await loginPage(page, platformTenant);
-      const pageResponsePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/workflow/definitions/page') && response.status() === 200
+      const pageResponsePromise = page.waitForResponse(
+        (response) => response.url().includes('/api/workflow/definitions/page') && response.status() === 200,
       );
       await openWorkflowManage(page);
       await pageResponsePromise;
@@ -2110,9 +2482,14 @@ test.describe('工作流配置真实接口闭环', () => {
       expectApiSuccess(createTemplateBody, '流程生成模板失败');
       const templateId = createTemplateBody.data;
 
-      const pageResponse = await request.get(api(`/workflow/templates/page?page=1&size=10&categoryCode=${domainCode}&templateCategoryId=${templateCategoryId}&keyword=${keyword}`), {
-        headers,
-      });
+      const pageResponse = await request.get(
+        api(
+          `/workflow/templates/page?page=1&size=10&categoryCode=${domainCode}&templateCategoryId=${templateCategoryId}&keyword=${keyword}`,
+        ),
+        {
+          headers,
+        },
+      );
       expect(pageResponse.status()).toBe(200);
       const pageBody = await pageResponse.json();
       expectApiSuccess(pageBody, '按业务域和模板分类查询流程模板失败');
@@ -2120,20 +2497,22 @@ test.describe('工作流配置真实接口闭环', () => {
       expect(pageBody.data?.list?.[0]?.categoryCode).toBe(domainCode);
 
       await loginPage(page, platformTenant);
-      const templatePageResponsePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/workflow/templates/page')
-        && response.url().includes(`categoryCode=${domainCode}`)
-        && response.status() === 200
+      const templatePageResponsePromise = page.waitForResponse(
+        (response) =>
+          response.url().includes('/api/workflow/templates/page') &&
+          response.url().includes(`categoryCode=${domainCode}`) &&
+          response.status() === 200,
       );
-      const templateCategoryListResponsePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/workflow/template-categories/list')
-        && response.status() === 200
+      const templateCategoryListResponsePromise = page.waitForResponse(
+        (response) => response.url().includes('/api/workflow/template-categories/list') && response.status() === 200,
       );
       await page.goto('/#/workflow/manage/template');
       const templateCategoryListResponse = await templateCategoryListResponsePromise;
       const templateCategoryListBody = await templateCategoryListResponse.json();
       expectApiSuccess(templateCategoryListBody, '查询流程模板分类选项失败');
-      expect((templateCategoryListBody.data || []).some((item: any) => item.categoryName === templateCategoryName)).toBeTruthy();
+      expect(
+        (templateCategoryListBody.data || []).some((item: any) => item.categoryName === templateCategoryName),
+      ).toBeTruthy();
       await page.getByRole('button', { name: /工作流域 WORKFLOW/ }).click();
       await templatePageResponsePromise;
       await page.getByPlaceholder('模板名称/编码/场景').fill(keyword);
@@ -2168,9 +2547,12 @@ test.describe('工作流配置真实接口闭环', () => {
       const singleImportBody = await singleImportResponse.json();
       expectApiSuccess(singleImportBody, '模板单个导入流程失败');
 
-      const importedDetailResponse = await request.get(api(`/workflow/definitions/detail?id=${singleImportBody.data}`), {
-        headers,
-      });
+      const importedDetailResponse = await request.get(
+        api(`/workflow/definitions/detail?id=${singleImportBody.data}`),
+        {
+          headers,
+        },
+      );
       expect(importedDetailResponse.status()).toBe(200);
       const importedDetailBody = await importedDetailResponse.json();
       expectApiSuccess(importedDetailBody, '查询模板导入流程失败');
@@ -2270,8 +2652,8 @@ test.describe('工作流配置真实接口闭环', () => {
       expect(deployBody.data.processDefinitionId).toBeTruthy();
 
       await loginPage(page, platformTenant);
-      const definitionsResponsePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/workflow/definitions/page') && response.status() === 200
+      const definitionsResponsePromise = page.waitForResponse(
+        (response) => response.url().includes('/api/workflow/definitions/page') && response.status() === 200,
       );
       await openStartProcess(page);
       await definitionsResponsePromise;
@@ -2286,8 +2668,8 @@ test.describe('工作流配置真实接口闭环', () => {
       await page.getByPlaceholder('请输入请假天数').fill('2');
       await page.getByPlaceholder('请输入请假原因').fill('E2E 请假发起验证');
 
-      const startResponsePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/workflow/processes/start') && response.status() === 200
+      const startResponsePromise = page.waitForResponse(
+        (response) => response.url().includes('/api/workflow/processes/start') && response.status() === 200,
       );
       await page.getByRole('button', { name: '确认发起' }).click();
       const startResponse = await startResponsePromise;
@@ -2365,8 +2747,8 @@ test.describe('工作流配置真实接口闭环', () => {
       expect(deployBody.data.processDefinitionId).toBeTruthy();
 
       await loginPage(page, platformTenant);
-      const definitionsResponsePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/workflow/definitions/page') && response.status() === 200
+      const definitionsResponsePromise = page.waitForResponse(
+        (response) => response.url().includes('/api/workflow/definitions/page') && response.status() === 200,
       );
       await openStartProcess(page);
       await definitionsResponsePromise;
@@ -2387,17 +2769,24 @@ test.describe('工作流配置真实接口闭环', () => {
       const attachmentPath = join(tmpdir(), `mango-workflow-attachment-${unique}.pdf`);
       const imagePath = join(tmpdir(), `mango-workflow-image-${unique}.png`);
       writeFileSync(attachmentPath, Buffer.from('%PDF-1.4\n% e2e workflow attachment\n', 'utf-8'));
-      writeFileSync(imagePath, Buffer.from(
-        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=',
-        'base64',
-      ));
-
-      const attachmentUploadResponsePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/file/files')
-        && response.request().method() === 'POST'
-        && response.status() === 200
+      writeFileSync(
+        imagePath,
+        Buffer.from(
+          'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=',
+          'base64',
+        ),
       );
-      await dialog.locator('.el-form-item', { hasText: '附件' }).locator('input[type="file"]').setInputFiles(attachmentPath);
+
+      const attachmentUploadResponsePromise = page.waitForResponse(
+        (response) =>
+          response.url().includes('/api/file/files') &&
+          response.request().method() === 'POST' &&
+          response.status() === 200,
+      );
+      await dialog
+        .locator('.el-form-item', { hasText: '附件' })
+        .locator('input[type="file"]')
+        .setInputFiles(attachmentPath);
       const attachmentUploadResponse = await attachmentUploadResponsePromise;
       const attachmentUploadBody = await attachmentUploadResponse.json();
       expect(attachmentUploadBody.success || attachmentUploadBody.code === 200).toBeTruthy();
@@ -2405,10 +2794,11 @@ test.describe('工作流配置真实接口闭环', () => {
       expect(attachmentFileId).toBeTruthy();
       uploadedFileIds.push(attachmentFileId);
 
-      const imageUploadResponsePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/file/files')
-        && response.request().method() === 'POST'
-        && response.status() === 200
+      const imageUploadResponsePromise = page.waitForResponse(
+        (response) =>
+          response.url().includes('/api/file/files') &&
+          response.request().method() === 'POST' &&
+          response.status() === 200,
       );
       await dialog.locator('.el-form-item', { hasText: '图片' }).locator('input[type="file"]').setInputFiles(imagePath);
       const imageUploadResponse = await imageUploadResponsePromise;
@@ -2424,7 +2814,10 @@ test.describe('工作流配置真实接口闭环', () => {
       await dialog.getByRole('spinbutton', { name: /申请金额/ }).fill('1280');
       await dialog.locator('.el-form-item', { hasText: '申请部门' }).locator('.el-select__wrapper').click();
       await page.getByRole('option', { name: '芒果集团' }).click();
-      await dialog.locator('.el-form-item', { hasText: '费用字典' }).locator('.dict-select .el-select__wrapper').click();
+      await dialog
+        .locator('.el-form-item', { hasText: '费用字典' })
+        .locator('.dict-select .el-select__wrapper')
+        .click();
       const dictDropdown = page.locator('.el-select-dropdown:visible');
       await expect(dictDropdown.getByRole('option', { name: '启用' })).toBeVisible({ timeout: 10000 });
       await dictDropdown.getByRole('option', { name: '启用' }).click();
@@ -2438,8 +2831,8 @@ test.describe('工作流配置真实接口闭环', () => {
       await page.mouse.move(box!.x + 180, box!.y + 44);
       await page.mouse.up();
 
-      const startResponsePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/workflow/processes/start') && response.status() === 200
+      const startResponsePromise = page.waitForResponse(
+        (response) => response.url().includes('/api/workflow/processes/start') && response.status() === 200,
       );
       await page.getByRole('button', { name: '确认发起' }).click();
       const startResponse = await startResponsePromise;
@@ -2470,8 +2863,8 @@ test.describe('工作流配置真实接口闭环', () => {
       const workflow = await prepareInitiatorSelectWorkflow(request, token, unique, keyword);
 
       await loginPage(page, platformTenant);
-      const definitionsResponsePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/workflow/definitions/page') && response.status() === 200
+      const definitionsResponsePromise = page.waitForResponse(
+        (response) => response.url().includes('/api/workflow/definitions/page') && response.status() === 200,
       );
       await openStartProcess(page);
       await definitionsResponsePromise;
@@ -2491,11 +2884,13 @@ test.describe('工作流配置真实接口闭环', () => {
       await expect(page.getByText('请选择「发起人自选审批」审批人')).toBeVisible({ timeout: 10000 });
 
       await startDialog.locator('.selected-assignee-select').click();
-      await expect(page.locator('.el-select-dropdown:visible .el-select-dropdown__item', { hasText: /admin/ })).toBeVisible({ timeout: 10000 });
+      await expect(
+        page.locator('.el-select-dropdown:visible .el-select-dropdown__item', { hasText: /admin/ }),
+      ).toBeVisible({ timeout: 10000 });
       await page.locator('.el-select-dropdown:visible .el-select-dropdown__item', { hasText: /admin/ }).first().click();
 
-      const startResponsePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/workflow/processes/start') && response.status() === 200
+      const startResponsePromise = page.waitForResponse(
+        (response) => response.url().includes('/api/workflow/processes/start') && response.status() === 200,
       );
       await startDialog.getByRole('button', { name: '确认发起' }).click();
       const startResponse = await startResponsePromise;
@@ -2505,8 +2900,8 @@ test.describe('工作流配置真实接口闭环', () => {
       expect(startedBusinessKey).toBeTruthy();
       await expect(page.getByText(/流程已发起/)).toBeVisible({ timeout: 10000 });
 
-      const todoResponsePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/workflow/tasks/todo') && response.status() === 200
+      const todoResponsePromise = page.waitForResponse(
+        (response) => response.url().includes('/api/workflow/tasks/todo') && response.status() === 200,
       );
       await openTodoTasks(page);
       await todoResponsePromise;
@@ -2531,8 +2926,8 @@ test.describe('工作流配置真实接口闭环', () => {
       await startLeaveProcess(request, token, workflow.definitionId, businessKey, 5, 'E2E 发起人自己审批验证');
 
       await loginPage(page, platformTenant);
-      const todoResponsePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/workflow/tasks/todo') && response.status() === 200
+      const todoResponsePromise = page.waitForResponse(
+        (response) => response.url().includes('/api/workflow/tasks/todo') && response.status() === 200,
       );
       await openTodoTasks(page);
       await todoResponsePromise;
@@ -2540,8 +2935,8 @@ test.describe('工作流配置真实接口闭环', () => {
       await expect(taskRow).toBeVisible({ timeout: 10000 });
       await expect(taskRow).toContainText('发起人自己审批');
 
-      const detailResponsePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/workflow/tasks/detail') && response.status() === 200
+      const detailResponsePromise = page.waitForResponse(
+        (response) => response.url().includes('/api/workflow/tasks/detail') && response.status() === 200,
       );
       await taskRow.getByRole('button', { name: '处理' }).click();
       await page.waitForURL('**/#/workflow/task/detail**', { timeout: 10000 });
@@ -2552,11 +2947,14 @@ test.describe('工作流配置真实接口闭环', () => {
       await expectApprovalActionBarInContentColumn(page);
 
       await page.getByPlaceholder('请输入审批意见').fill('本人确认通过');
-      const completeResponsePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/workflow/tasks/complete') && response.status() === 200
+      const completeResponsePromise = page.waitForResponse(
+        (response) => response.url().includes('/api/workflow/tasks/complete') && response.status() === 200,
       );
       await page.getByRole('button', { name: '通过' }).click();
-      await page.getByRole('dialog', { name: '审批通过' }).getByRole('button', { name: /^(OK|确定)$/ }).click();
+      await page
+        .getByRole('dialog', { name: '审批通过' })
+        .getByRole('button', { name: /^(OK|确定)$/ })
+        .click();
       const completeResponse = await completeResponsePromise;
       const completeBody = await completeResponse.json();
       expect(completeBody.success || completeBody.code === 200).toBeTruthy();
@@ -2581,15 +2979,15 @@ test.describe('工作流配置真实接口闭环', () => {
       await startLeaveProcess(request, token, workflow.definitionId, businessKey, 3, 'E2E 审批通过验证');
 
       await loginPage(page, platformTenant);
-      const todoResponsePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/workflow/tasks/todo') && response.status() === 200
+      const todoResponsePromise = page.waitForResponse(
+        (response) => response.url().includes('/api/workflow/tasks/todo') && response.status() === 200,
       );
       await openTodoTasks(page);
       await todoResponsePromise;
       await expect(page.locator('.el-table__row', { hasText: businessKey })).toBeVisible({ timeout: 10000 });
 
-      const detailResponsePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/workflow/tasks/detail') && response.status() === 200
+      const detailResponsePromise = page.waitForResponse(
+        (response) => response.url().includes('/api/workflow/tasks/detail') && response.status() === 200,
       );
       await page.locator('.el-table__row', { hasText: businessKey }).getByRole('button', { name: '处理' }).click();
       await page.waitForURL('**/#/workflow/task/detail**', { timeout: 10000 });
@@ -2601,11 +2999,14 @@ test.describe('工作流配置真实接口闭环', () => {
       await expectApprovalActionBarInContentColumn(page);
 
       await page.getByPlaceholder('请输入审批意见').fill('同意，UI E2E');
-      const completeResponsePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/workflow/tasks/complete') && response.status() === 200
+      const completeResponsePromise = page.waitForResponse(
+        (response) => response.url().includes('/api/workflow/tasks/complete') && response.status() === 200,
       );
       await page.getByRole('button', { name: '通过' }).click();
-      await page.getByRole('dialog', { name: '审批通过' }).getByRole('button', { name: /^(OK|确定)$/ }).click();
+      await page
+        .getByRole('dialog', { name: '审批通过' })
+        .getByRole('button', { name: /^(OK|确定)$/ })
+        .click();
       const completeResponse = await completeResponsePromise;
       const completeBody = await completeResponse.json();
       expect(completeBody.success || completeBody.code === 200).toBeTruthy();
@@ -2630,8 +3031,8 @@ test.describe('工作流配置真实接口闭环', () => {
       await startLeaveProcess(request, token, workflow.definitionId, businessKey, 1, 'E2E 审批驳回验证');
 
       await loginPage(page, platformTenant);
-      const todoResponsePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/workflow/tasks/todo') && response.status() === 200
+      const todoResponsePromise = page.waitForResponse(
+        (response) => response.url().includes('/api/workflow/tasks/todo') && response.status() === 200,
       );
       await openTodoTasks(page);
       await todoResponsePromise;
@@ -2641,11 +3042,14 @@ test.describe('工作流配置真实接口闭环', () => {
       await page.waitForURL('**/#/workflow/task/detail**', { timeout: 10000 });
       await expectReadonlyFieldValue(page, '请假原因', 'E2E 审批驳回验证');
       await page.getByPlaceholder('请输入审批意见').fill('驳回，UI E2E');
-      const rejectResponsePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/workflow/tasks/reject') && response.status() === 200
+      const rejectResponsePromise = page.waitForResponse(
+        (response) => response.url().includes('/api/workflow/tasks/reject') && response.status() === 200,
       );
       await page.getByRole('button', { name: '驳回' }).click();
-      await page.getByRole('dialog', { name: '审批驳回' }).getByRole('button', { name: /^(OK|确定)$/ }).click();
+      await page
+        .getByRole('dialog', { name: '审批驳回' })
+        .getByRole('button', { name: /^(OK|确定)$/ })
+        .click();
       const rejectResponse = await rejectResponsePromise;
       const rejectBody = await rejectResponse.json();
       expect(rejectBody.success || rejectBody.code === 200).toBeTruthy();
@@ -2656,8 +3060,8 @@ test.describe('工作流配置真实接口闭环', () => {
       await expect(page.locator('.el-table__row', { hasText: businessKey })).toBeVisible({ timeout: 10000 });
       await expect(page.locator('.el-table__row', { hasText: businessKey })).toContainText('已驳回');
 
-      const processDetailResponsePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/workflow/processes/detail') && response.status() === 200
+      const processDetailResponsePromise = page.waitForResponse(
+        (response) => response.url().includes('/api/workflow/processes/detail') && response.status() === 200,
       );
       await page.locator('.el-table__row', { hasText: businessKey }).getByRole('button', { name: '查看' }).click();
       await page.waitForURL('**/#/workflow/task/detail**', { timeout: 10000 });
@@ -2669,6 +3073,115 @@ test.describe('工作流配置真实接口闭环', () => {
       await expectNoAuthError(page);
     } finally {
       await cleanupWorkflow(request, token, keyword).catch(() => undefined);
+    }
+  });
+
+  test('@p1 @workflow 正式业务流程的角色下一节点通知全部成员且终态通知原申请人', async ({ request }) => {
+    test.setTimeout(120_000);
+    const unique = Date.now();
+    const keyword = `e2e_workflow_notice_${unique}`;
+    const businessKey = `WORKFLOW-NOTICE-E2E-${unique}`;
+    const applicantName = `E2E_NOTICE_APPLICANT_${unique}`;
+    const roleMemberOneName = `E2E_NOTICE_ROLE_ONE_${unique}`;
+    const roleMemberTwoName = `E2E_NOTICE_ROLE_TWO_${unique}`;
+    const adminToken = await loginToken(request, platformTenant);
+
+    try {
+      cleanupWorkflowNoticeData(businessKey);
+      cleanupWorkflowBusinessApplies(businessKey);
+      await cleanupWorkflow(request, adminToken, keyword);
+      await cleanupUser(request, adminToken, applicantName);
+      await cleanupUser(request, adminToken, roleMemberOneName);
+      await cleanupUser(request, adminToken, roleMemberTwoName);
+
+      const applicant = await createTempUser(request, adminToken, applicantName);
+      const roleMemberOne = await createTempUser(request, adminToken, roleMemberOneName);
+      const roleMemberTwo = await createTempUser(request, adminToken, roleMemberTwoName);
+      const admin = await findUserByUsername(request, adminToken, 'admin');
+      const roleId = await findRoleId(request, adminToken, 'ROLE_ADMIN');
+      await assignSubjectRoles(request, adminToken, applicant.memberId, [roleId]);
+      await assignSubjectRoles(request, adminToken, roleMemberOne.memberId, [roleId]);
+      await assignSubjectRoles(request, adminToken, roleMemberTwo.memberId, [roleId]);
+
+      const workflow = await prepareWorkflowNoticeRegression(request, adminToken, unique, keyword, roleId);
+      const applicantToken = await loginTokenAs(request, platformTenant, applicantName, 'E2E@123456');
+      const roleMemberOneToken = await loginTokenAs(request, platformTenant, roleMemberOneName, 'E2E@123456');
+      const roleMemberTwoToken = await loginTokenAs(request, platformTenant, roleMemberTwoName, 'E2E@123456');
+      const startResult = await startBusinessWorkflow(request, applicantToken, workflow.definitionId, businessKey);
+      await assignSubjectRoles(request, adminToken, applicant.memberId, []);
+
+      const firstTask = await waitForTodoTask(request, adminToken, businessKey, '通知链路初审');
+      await completeTask(request, adminToken, String(firstTask.id), '初审通过，进入角色复核');
+
+      const adminRoleTask = await waitForTodoTask(request, adminToken, businessKey, '通知链路角色复核');
+      const roleMemberOneTask = await waitForTodoTask(request, roleMemberOneToken, businessKey, '通知链路角色复核');
+      const roleMemberTwoTask = await waitForTodoTask(request, roleMemberTwoToken, businessKey, '通知链路角色复核');
+      const roleTaskId = String(adminRoleTask.id);
+      expect(String(roleMemberOneTask.id)).toBe(roleTaskId);
+      expect(String(roleMemberTwoTask.id)).toBe(roleTaskId);
+      expect(String(adminRoleTask.assigneeId || '')).toBe('');
+
+      const roleTaskMessage = (message: NoticeSiteMessage) => String(message.target?.params?.taskId) === roleTaskId;
+      const adminRoleMessage = await waitForSiteMessage(
+        request,
+        adminToken,
+        'workflow.task.assigned',
+        businessKey,
+        roleTaskMessage,
+      );
+      const roleMemberOneMessage = await waitForSiteMessage(
+        request,
+        roleMemberOneToken,
+        'workflow.task.assigned',
+        businessKey,
+        roleTaskMessage,
+      );
+      const roleMemberTwoMessage = await waitForSiteMessage(
+        request,
+        roleMemberTwoToken,
+        'workflow.task.assigned',
+        businessKey,
+        roleTaskMessage,
+      );
+      for (const [message, expectedUserId] of [
+        [adminRoleMessage, admin.userId],
+        [roleMemberOneMessage, roleMemberOne.userId],
+        [roleMemberTwoMessage, roleMemberTwo.userId],
+      ]) {
+        expect(String(message.userId)).toBe(String(expectedUserId));
+        expect(message.messageScene).toBe('workflow.task.assigned');
+        expect(message.bizType).toBe('workflow.task.assigned');
+        expect(message.bizId).toBe(businessKey);
+        expect(message.target?.targetKey).toBe('workflow:task:detail');
+        expect(String(message.target?.params?.taskId)).toBe(roleTaskId);
+      }
+      await expectNoSiteMessage(request, applicantToken, 'workflow.task.assigned', businessKey, roleTaskMessage);
+
+      await completeTask(request, adminToken, roleTaskId, '角色复核通过');
+      const completedMessage = await waitForSiteMessage(
+        request,
+        applicantToken,
+        'workflow.process.completed',
+        businessKey,
+        () => true,
+      );
+      expect(String(completedMessage.userId)).toBe(String(applicant.userId));
+      expect(completedMessage.messageScene).toBe('workflow.process.completed');
+      expect(completedMessage.bizType).toBe('workflow.process.completed');
+      expect(completedMessage.bizId).toBe(businessKey);
+      expect(completedMessage.target?.targetKey).toBe('workflow:task:done');
+      expect(String(completedMessage.target?.params?.processInstanceId)).toBe(String(startResult.processInstanceId));
+
+      await expectNoSiteMessage(request, adminToken, 'workflow.process.completed', businessKey);
+      await expectNoSiteMessage(request, roleMemberOneToken, 'workflow.process.completed', businessKey);
+      await expectNoSiteMessage(request, roleMemberTwoToken, 'workflow.process.completed', businessKey);
+    } finally {
+      cleanupWorkflowNoticeData(businessKey);
+      cleanupWorkflowBusinessApplies(businessKey);
+      await cleanupWorkflow(request, adminToken, keyword).catch(() => undefined);
+      await cleanupUser(request, adminToken, applicantName).catch(() => undefined);
+      await cleanupUser(request, adminToken, roleMemberOneName).catch(() => undefined);
+      await cleanupUser(request, adminToken, roleMemberTwoName).catch(() => undefined);
     }
   });
 
@@ -2693,13 +3206,15 @@ test.describe('工作流配置真实接口闭环', () => {
       await startLeaveProcess(request, token, workflow.definitionId, businessKey, 2, 'E2E 动作初始原因');
 
       let tasks = await listTodoTasks(request, token, businessKey);
-      let actionTask = tasks.find((item: any) => String(item.businessKey) === businessKey && String(item.taskName).includes('动作审批'));
+      let actionTask = tasks.find(
+        (item: any) => String(item.businessKey) === businessKey && String(item.taskName).includes('动作审批'),
+      );
       expect(actionTask, '候选动作审批待办未生成').toBeTruthy();
       expect(String(actionTask.assigneeName || '')).toBe('');
 
       await loginPage(page, platformTenant);
-      const todoResponsePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/workflow/tasks/todo') && response.status() === 200
+      const todoResponsePromise = page.waitForResponse(
+        (response) => response.url().includes('/api/workflow/tasks/todo') && response.status() === 200,
       );
       await openTodoTasks(page);
       await todoResponsePromise;
@@ -2717,11 +3232,14 @@ test.describe('工作流配置真实接口闭环', () => {
       await expect(page.getByRole('button', { name: '驳回' })).toBeVisible();
       await expect(page.getByRole('button', { name: '通过' })).toBeVisible();
 
-      const claimResponsePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/workflow/tasks/claim') && response.status() === 200
+      const claimResponsePromise = page.waitForResponse(
+        (response) => response.url().includes('/api/workflow/tasks/claim') && response.status() === 200,
       );
       await page.getByRole('button', { name: '认领' }).click();
-      await page.getByRole('dialog', { name: '审批认领' }).getByRole('button', { name: /^(OK|确定)$/ }).click();
+      await page
+        .getByRole('dialog', { name: '审批认领' })
+        .getByRole('button', { name: /^(OK|确定)$/ })
+        .click();
       const claimBody = await (await claimResponsePromise).json();
       expectApiSuccess(claimBody, '认领失败');
       await page.waitForURL('**/#/workflow/task/todo', { timeout: 10000 });
@@ -2734,11 +3252,14 @@ test.describe('工作流配置真实接口闭环', () => {
       await page.locator('.el-table__row', { hasText: businessKey }).getByRole('button', { name: '处理' }).click();
       await page.waitForURL('**/#/workflow/task/detail**', { timeout: 10000 });
       await expect(page.getByRole('button', { name: '释放' })).toBeVisible({ timeout: 10000 });
-      const unclaimResponsePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/workflow/tasks/unclaim') && response.status() === 200
+      const unclaimResponsePromise = page.waitForResponse(
+        (response) => response.url().includes('/api/workflow/tasks/unclaim') && response.status() === 200,
       );
       await page.getByRole('button', { name: '释放' }).click();
-      await page.getByRole('dialog', { name: '审批释放' }).getByRole('button', { name: /^(OK|确定)$/ }).click();
+      await page
+        .getByRole('dialog', { name: '审批释放' })
+        .getByRole('button', { name: /^(OK|确定)$/ })
+        .click();
       const unclaimBody = await (await unclaimResponsePromise).json();
       expectApiSuccess(unclaimBody, '释放失败');
       await page.waitForURL('**/#/workflow/task/todo', { timeout: 10000 });
@@ -2758,18 +3279,29 @@ test.describe('工作流配置真实接口闭环', () => {
       const detailBody = await detailResponse.json();
       expectApiSuccess(detailBody, '查询动作任务详情失败');
       expect(detailBody.data.renderConfig.nodeActions.save).toMatchObject({ enabled: true, label: '暂存' });
-      expect(detailBody.data.renderConfig.nodeActions.transfer).toMatchObject({ enabled: true, label: '转办', requireComment: true });
+      expect(detailBody.data.renderConfig.nodeActions.transfer).toMatchObject({
+        enabled: true,
+        label: '转办',
+        requireComment: true,
+      });
       expect(detailBody.data.renderConfig.nodeActions.addSign).toMatchObject({ enabled: true, label: '加签' });
-      expect(detailBody.data.renderConfig.nodeActions.reject).toMatchObject({ enabled: true, label: '驳回', requireComment: true });
+      expect(detailBody.data.renderConfig.nodeActions.reject).toMatchObject({
+        enabled: true,
+        label: '驳回',
+        requireComment: true,
+      });
       expect(detailBody.data.renderConfig.nodeActions.complete).toMatchObject({ enabled: true, label: '通过' });
 
       await page.getByRole('textbox', { name: '请假原因' }).fill('E2E 暂存后原因');
       await page.getByPlaceholder('请输入审批意见').fill('暂存草稿');
-      const saveResponsePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/workflow/tasks/save') && response.status() === 200
+      const saveResponsePromise = page.waitForResponse(
+        (response) => response.url().includes('/api/workflow/tasks/save') && response.status() === 200,
       );
       await page.getByRole('button', { name: '暂存' }).click();
-      await page.getByRole('dialog', { name: '审批暂存' }).getByRole('button', { name: /^(OK|确定)$/ }).click();
+      await page
+        .getByRole('dialog', { name: '审批暂存' })
+        .getByRole('button', { name: /^(OK|确定)$/ })
+        .click();
       const saveResponse = await saveResponsePromise;
       const saveRequest = saveResponse.request().postDataJSON() as any;
       expect(saveRequest.variables.reason).toBe('E2E 暂存后原因');
@@ -2782,12 +3314,15 @@ test.describe('工作流配置真实接口闭环', () => {
       await expect(page.getByText('请填写审批意见')).toBeVisible({ timeout: 10000 });
 
       await page.getByPlaceholder('请输入审批意见').fill('转给临时办理人');
-      const transferResponsePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/workflow/tasks/transfer') && response.status() === 200
+      const transferResponsePromise = page.waitForResponse(
+        (response) => response.url().includes('/api/workflow/tasks/transfer') && response.status() === 200,
       );
       await page.getByRole('button', { name: '转办' }).click();
       await pickUserFromDialog(page, '选择转办人员', '选择转办人员', transferUserName);
-      await page.getByRole('dialog', { name: '审批转办' }).getByRole('button', { name: /^(OK|确定)$/ }).click();
+      await page
+        .getByRole('dialog', { name: '审批转办' })
+        .getByRole('button', { name: /^(OK|确定)$/ })
+        .click();
       const transferBody = await (await transferResponsePromise).json();
       expectApiSuccess(transferBody, '转办失败');
       await page.waitForURL('**/#/workflow/task/done', { timeout: 10000 });
@@ -2801,16 +3336,16 @@ test.describe('工作流配置真实接口闭环', () => {
       const copied = await waitForCopiedTask(request, token, businessKey);
       expect(String(copied.status)).toBe('待阅');
 
-      const copiedResponsePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/workflow/tasks/copied') && response.status() === 200
+      const copiedResponsePromise = page.waitForResponse(
+        (response) => response.url().includes('/api/workflow/tasks/copied') && response.status() === 200,
       );
       await openCopiedTasks(page);
       await copiedResponsePromise;
       const copiedRow = page.locator('.el-table__row', { hasText: businessKey });
       await expect(copiedRow).toBeVisible({ timeout: 10000 });
       await expect(copiedRow).toContainText('待阅');
-      const readResponsePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/workflow/tasks/copied/read') && response.status() === 200
+      const readResponsePromise = page.waitForResponse(
+        (response) => response.url().includes('/api/workflow/tasks/copied/read') && response.status() === 200,
       );
       await copiedRow.getByRole('button', { name: '已阅' }).click();
       const readBody = await (await readResponsePromise).json();
@@ -2860,16 +3395,23 @@ test.describe('工作流配置真实接口闭环', () => {
       await loginPage(page, platformTenant);
       await openTodoTasks(page);
       await expect(page.locator('.el-table__row', { hasText: businessKey })).toBeVisible({ timeout: 10000 });
-      await page.locator('.el-table__row', { hasText: businessKey }).first().getByRole('button', { name: '处理' }).click();
+      await page
+        .locator('.el-table__row', { hasText: businessKey })
+        .first()
+        .getByRole('button', { name: '处理' })
+        .click();
       await page.waitForURL('**/#/workflow/task/detail**', { timeout: 10000 });
       await expect(page.getByRole('button', { name: '加签' })).toBeVisible({ timeout: 10000 });
 
-      const addSignResponsePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/workflow/tasks/add-sign') && response.status() === 200
+      const addSignResponsePromise = page.waitForResponse(
+        (response) => response.url().includes('/api/workflow/tasks/add-sign') && response.status() === 200,
       );
       await page.getByRole('button', { name: '加签' }).click();
       await pickUserFromDialog(page, '选择加签人员', '选择加签人员', addedUserName);
-      await page.getByRole('dialog', { name: '审批加签' }).getByRole('button', { name: /^(OK|确定)$/ }).click();
+      await page
+        .getByRole('dialog', { name: '审批加签' })
+        .getByRole('button', { name: /^(OK|确定)$/ })
+        .click();
       const addSignResponse = await addSignResponsePromise;
       const addSignRequest = addSignResponse.request().postDataJSON() as any;
       expect(addSignRequest.targetUserIds).toEqual([addedUserName]);
@@ -2922,7 +3464,12 @@ test.describe('工作流配置真实接口闭环', () => {
       expect(String(firstProgress.applyStatus)).toBe('IN_APPROVAL');
       expect(String(firstProgress.currentTaskNames)).toContain('部门经理审批');
       expect(String(firstProgress.currentTaskDefinitionKeys)).toContain(`manager_approve_${unique}`);
-      const nodeFiltered = await queryBusinessAppliesByCurrentNode(request, token, businessKey, `manager_approve_${unique}`);
+      const nodeFiltered = await queryBusinessAppliesByCurrentNode(
+        request,
+        token,
+        businessKey,
+        `manager_approve_${unique}`,
+      );
       expect(nodeFiltered.some((item: any) => String(item.businessKey) === businessKey)).toBeTruthy();
 
       await loginPage(page, platformTenant);
@@ -2930,8 +3477,8 @@ test.describe('工作流配置真实接口闭环', () => {
       const taskRow = page.locator('.el-table__row', { hasText: businessKey });
       await expect(taskRow).toBeVisible({ timeout: 10000 });
       await expect(taskRow).toContainText('部门经理审批');
-      const detailResponsePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/workflow/tasks/detail') && response.status() === 200
+      const detailResponsePromise = page.waitForResponse(
+        (response) => response.url().includes('/api/workflow/tasks/detail') && response.status() === 200,
       );
       await taskRow.getByRole('button', { name: '处理' }).click();
       await page.waitForURL('**/#/workflow/task/detail**', { timeout: 10000 });
@@ -2944,11 +3491,14 @@ test.describe('工作流配置真实接口闭环', () => {
       await expect(page.locator('.workflow-task-detail-page')).toContainText('MANAGER_APPROVE');
 
       await page.getByPlaceholder('请输入审批意见').fill('预算说明不完整，驳回重提');
-      const rejectResponsePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/workflow/tasks/reject') && response.status() === 200
+      const rejectResponsePromise = page.waitForResponse(
+        (response) => response.url().includes('/api/workflow/tasks/reject') && response.status() === 200,
       );
       await page.getByRole('button', { name: '退回修改' }).click();
-      await page.getByRole('dialog', { name: '审批退回修改' }).getByRole('button', { name: /^(OK|确定)$/ }).click();
+      await page
+        .getByRole('dialog', { name: '审批退回修改' })
+        .getByRole('button', { name: /^(OK|确定)$/ })
+        .click();
       const rejectResponse = await rejectResponsePromise;
       const rejectBody = await rejectResponse.json();
       expect(rejectBody.success || rejectBody.code === 200).toBeTruthy();
@@ -2977,8 +3527,12 @@ test.describe('工作流配置真实接口闭环', () => {
 
       const historyAfterReapply = await businessApplyHistory(request, token, businessKey);
       expect(historyAfterReapply).toHaveLength(2);
-      const firstHistory = historyAfterReapply.find((item: any) => String(item.processInstanceId) === firstStart.processInstanceId);
-      const secondHistory = historyAfterReapply.find((item: any) => String(item.processInstanceId) === secondStart.processInstanceId);
+      const firstHistory = historyAfterReapply.find(
+        (item: any) => String(item.processInstanceId) === firstStart.processInstanceId,
+      );
+      const secondHistory = historyAfterReapply.find(
+        (item: any) => String(item.processInstanceId) === secondStart.processInstanceId,
+      );
       expect(firstHistory?.variables?.reason).toBe('E2E 首次差旅报销');
       expect(Number(firstHistory?.variables?.amount)).toBe(1280);
       expect(firstHistory?.applyStatus).toBe('REJECTED');

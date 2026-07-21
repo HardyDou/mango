@@ -26,19 +26,26 @@ class NoticeSendEventListenerTest {
         NoticeApi noticeApi = mock(NoticeApi.class);
         NoticeSendEventCommand event = new NoticeSendEventCommand();
         event.setTenantId("event-tenant");
+        event.setAppCode("event-app");
+        event.setRealm("EVENT_REALM");
         event.setBizType("notice.test");
-        AtomicReference<String> tenantDuringSend = new AtomicReference<>();
+        AtomicReference<MangoContextSnapshot> contextDuringSend = new AtomicReference<>();
         when(noticeApi.send(event)).thenAnswer(invocation -> {
-            tenantDuringSend.set(MangoContextHolder.tenantId());
+            contextDuringSend.set(MangoContextHolder.get());
             return null;
         });
-        MangoContextHolder.set(MangoContextSnapshot.empty().withTenantId("caller-tenant"));
+        MangoContextHolder.set(MangoContextSnapshot.empty().withSecurity(
+                10L, "caller-tenant", "caller", "CALLER_REALM", "USER", "ORG", 20L, "caller-app"));
 
         new NoticeSendEventListener(noticeApi).onNoticeSendEvent(event);
 
         verify(noticeApi).send(event);
-        assertThat(tenantDuringSend).hasValue("event-tenant");
+        assertThat(contextDuringSend.get().tenantId()).isEqualTo("event-tenant");
+        assertThat(contextDuringSend.get().appCode()).isEqualTo("event-app");
+        assertThat(contextDuringSend.get().realm()).isEqualTo("EVENT_REALM");
         assertThat(MangoContextHolder.tenantId()).isEqualTo("caller-tenant");
+        assertThat(MangoContextHolder.appCode()).isEqualTo("caller-app");
+        assertThat(MangoContextHolder.get().realm()).isEqualTo("CALLER_REALM");
     }
 
     @Test
@@ -46,12 +53,15 @@ class NoticeSendEventListenerTest {
         NoticeApi noticeApi = mock(NoticeApi.class);
         NoticeSendEventCommand event = new NoticeSendEventCommand();
         event.setBizType("notice.test");
-        MangoContextHolder.set(MangoContextSnapshot.empty().withTenantId("current-tenant"));
+        MangoContextHolder.set(MangoContextSnapshot.empty().withSecurity(
+                null, "current-tenant", null, "CURRENT_REALM", null, null, null, "current-app"));
 
         new NoticeSendEventListener(noticeApi).onNoticeSendEvent(event);
 
         verify(noticeApi).send(event);
         assertThat(event.getTenantId()).isEqualTo("current-tenant");
+        assertThat(event.getAppCode()).isEqualTo("current-app");
+        assertThat(event.getRealm()).isEqualTo("CURRENT_REALM");
         assertThat(MangoContextHolder.tenantId()).isEqualTo("current-tenant");
     }
 }

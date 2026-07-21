@@ -209,7 +209,8 @@ class IdentityUserServiceIntegrationTest {
     @Test
     @DisplayName("按角色目标解析当前租户启用用户")
     void listUserInfosByTargetRoleReturnsEnabledUsersThroughRealMappers() {
-        MangoContextHolder.set(MangoContextSnapshot.empty().withTenantId("1"));
+        MangoContextHolder.set(MangoContextSnapshot.empty().withSecurity(
+                1L, "1", "admin", "INTERNAL", "INTERNAL_USER", "INTERNAL_ORG", 1L, "internal-admin"));
         seedUser(1001L, "admin", "管理员", "1", 1);
         seedUser(1002L, "disabled", "禁用用户", "1", 1);
         seedMember(10L, 1L, 1001L, 1, null);
@@ -228,6 +229,8 @@ class IdentityUserServiceIntegrationTest {
         assertThat(roleBindingApi.lastRoleQuery.getSubjectType())
                 .isEqualTo(AuthorizationQuery.SUBJECT_TYPE_TENANT_MEMBER);
         assertThat(roleBindingApi.lastRoleQuery.getRoleId()).isEqualTo(300L);
+        assertThat(roleBindingApi.lastRoleQuery.getAppCode()).isEqualTo("internal-admin");
+        assertThat(roleBindingApi.lastRoleQuery.getRealm()).isEqualTo("INTERNAL");
     }
 
     @Test

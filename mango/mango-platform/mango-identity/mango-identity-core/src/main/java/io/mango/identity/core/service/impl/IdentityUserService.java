@@ -728,6 +728,8 @@ public class IdentityUserService extends MangoCrudServiceImpl<IdentityUserMapper
         }
         SubjectRoleBindingQuery query = new SubjectRoleBindingQuery();
         query.setTenantId(tenantId);
+        query.setAppCode(MangoContextHolder.appCode());
+        query.setRealm(MangoContextHolder.get().realm());
         query.setSubjectType(AuthorizationQuery.SUBJECT_TYPE_TENANT_MEMBER);
         query.setRoleId(roleId);
         List<Long> subjectIds = roleBindingAdapter.listSubjectIdsByRole(query);
