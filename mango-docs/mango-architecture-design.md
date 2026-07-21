@@ -1134,9 +1134,9 @@ mango-infra-{name}/
 
 ### 8.2 依赖管理原则
 
-- **所有外部依赖版本锁定在 `mango-parent/pom.xml`** 的 `<dependencyManagement>`
+- **所有业务可消费依赖版本锁定在 `mango-bom/pom.xml`** 的 `<dependencyManagement>`，`mango-parent` 只导入同版本 BOM
 - 禁止子模块直接声明带版本的依赖
-- 新增依赖必须先在 `mango-parent` 中声明
+- 新增依赖必须先在 `mango-bom` 中声明；Maven 插件版本继续由 `mango-parent` 的 `<pluginManagement>` 管理
 
 ---
 

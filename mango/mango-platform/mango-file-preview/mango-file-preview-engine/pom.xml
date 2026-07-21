@@ -28,7 +28,6 @@
         <ffmpeg.version>7.1.1-1.5.12</ffmpeg.version>
         <sevenzipjbinding.version>16.02-2.01</sevenzipjbinding.version>
         <junrar.version>7.5.5</junrar.version>
-        <redisson.version>4.0.0</redisson.version>
         <rocksdb.version>5.17.2</rocksdb.version>
         <concurrentlinkedhashmap.version>1.4.2</concurrentlinkedhashmap.version>
         <commons-net.version>3.12.0</commons-net.version>
@@ -209,7 +208,6 @@
         <dependency>
             <groupId>org.redisson</groupId>
             <artifactId>redisson</artifactId>
-            <version>${redisson.version}</version>
         </dependency>
         <dependency>
             <groupId>org.rocksdb</groupId>
