@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { installMangoAuth } from '@mango/auth';
 import { get } from '@mango/common/utils/request';
-import { fileApi, fileRuntimeUrl, normalizeFileId } from '@mango/file';
+import { fileApi, fileRuntimeUrl, normalizeFileId, type FilePreview } from '@mango/file';
 import { usePreferencesStore } from './preferences';
 
 export interface AdminBrandingConfig {
@@ -12,6 +12,7 @@ export interface AdminBrandingConfig {
   loginTitle: string;
   loginSubtitle: string;
   logoFile: string;
+  logoIconFile: string;
   faviconFile: string;
   loginImageFile: string;
   footerCopyright: string;
@@ -21,6 +22,7 @@ export interface AdminBrandingConfig {
 
 export interface AdminBrandingState extends AdminBrandingConfig {
   logoUrl: string;
+  logoIconUrl: string;
   faviconUrl: string;
   loginImageUrl: string;
   loaded: boolean;
@@ -34,6 +36,7 @@ export const DEFAULT_ADMIN_BRANDING: AdminBrandingConfig = {
   loginTitle: 'Mango Admin',
   loginSubtitle: '企业级管理平台',
   logoFile: '',
+  logoIconFile: '',
   faviconFile: '',
   loginImageFile: '',
   footerCopyright: '© Mango',
@@ -41,27 +44,38 @@ export const DEFAULT_ADMIN_BRANDING: AdminBrandingConfig = {
   contact: '',
 };
 
+let adminBrandingLoadSeq = 0;
+
 export const useAdminBrandingStore = defineStore('adminBranding', {
   state: (): AdminBrandingState => ({
     ...DEFAULT_ADMIN_BRANDING,
     logoUrl: '',
+    logoIconUrl: '',
     faviconUrl: '',
     loginImageUrl: '',
     loaded: false,
   }),
   actions: {
     async loadPublicConfig() {
+      const loadSeq = ++adminBrandingLoadSeq;
       const config = await fetchAdminBrandingPublic().catch(() => DEFAULT_ADMIN_BRANDING);
       const normalized = normalizeBrandingConfig(config);
-      const [logoUrl, faviconUrl, loginImageUrl] = await Promise.all([
+      const [logoUrl, logoIconUrl, faviconUrl, loginImageUrl] = await Promise.all([
         resolveFilePreviewUrl(normalized.logoFile),
+        resolveFilePreviewUrl(normalized.logoIconFile),
         resolveFilePreviewUrl(normalized.faviconFile),
         resolveFilePreviewUrl(normalized.loginImageFile),
       ]);
 
+      if (loadSeq !== adminBrandingLoadSeq) {
+        revokeBrandingObjectUrls([logoUrl, logoIconUrl, faviconUrl, loginImageUrl]);
+        return;
+      }
+      revokeBrandingObjectUrls([this.logoUrl, this.logoIconUrl, this.faviconUrl, this.loginImageUrl]);
       this.$patch({
         ...normalized,
         logoUrl,
+        logoIconUrl,
         faviconUrl,
         loginImageUrl,
         loaded: true,
@@ -87,6 +101,7 @@ function normalizeBrandingConfig(config?: Partial<AdminBrandingConfig>): AdminBr
     loginTitle: normalizeText(config?.loginTitle, DEFAULT_ADMIN_BRANDING.loginTitle),
     loginSubtitle: normalizeText(config?.loginSubtitle, DEFAULT_ADMIN_BRANDING.loginSubtitle),
     logoFile: normalizeText(config?.logoFile, ''),
+    logoIconFile: normalizeText(config?.logoIconFile, ''),
     faviconFile: normalizeText(config?.faviconFile, ''),
     loginImageFile: normalizeText(config?.loginImageFile, ''),
     footerCopyright: normalizeText(config?.footerCopyright, DEFAULT_ADMIN_BRANDING.footerCopyright),
@@ -96,8 +111,10 @@ function normalizeBrandingConfig(config?: Partial<AdminBrandingConfig>): AdminBr
 }
 
 function normalizeText(value: unknown, fallback: string): string {
-  const text = typeof value === 'string' ? value.trim() : '';
-  return text || fallback;
+  if (typeof value !== 'string') {
+    return fallback;
+  }
+  return value.trim();
 }
 
 async function resolveFilePreviewUrl(value?: string): Promise<string> {
@@ -107,10 +124,48 @@ async function resolveFilePreviewUrl(value?: string): Promise<string> {
   }
   try {
     const preview = await fileApi.preview(fileId);
-    return fileRuntimeUrl(preview);
+    const runtimeUrl = fileRuntimeUrl(preview);
+    if (runtimeUrl) {
+      return runtimeUrl;
+    }
+    return await resolveProtectedImageObjectUrl(preview);
   } catch {
     return '';
   }
+}
+
+async function resolveProtectedImageObjectUrl(preview: FilePreview): Promise<string> {
+  if (!isImagePreview(preview) || typeof URL === 'undefined') {
+    return '';
+  }
+  const response = await fileApi.previewContent(preview.id);
+  const blob = response.data;
+  if (!(blob instanceof Blob)) {
+    return '';
+  }
+  return URL.createObjectURL(blob);
+}
+
+function isImagePreview(preview: FilePreview): boolean {
+  const contentType = preview.contentType?.toLowerCase();
+  if (contentType?.startsWith('image/')) {
+    return true;
+  }
+  const fileExt = preview.fileExt?.toLowerCase();
+  return Boolean(
+    fileExt && ['apng', 'avif', 'bmp', 'gif', 'ico', 'jpg', 'jpeg', 'png', 'svg', 'webp'].includes(fileExt),
+  );
+}
+
+function revokeBrandingObjectUrls(urls: string[]) {
+  if (typeof URL === 'undefined') {
+    return;
+  }
+  urls.forEach((url) => {
+    if (url.startsWith('blob:')) {
+      URL.revokeObjectURL(url);
+    }
+  });
 }
 
 function applyBrandingToRuntime(branding: AdminBrandingState) {
@@ -118,6 +173,7 @@ function applyBrandingToRuntime(branding: AdminBrandingState) {
     applyEnabledBrandingToRuntime({
       ...DEFAULT_ADMIN_BRANDING,
       logoUrl: '',
+      logoIconUrl: '',
       faviconUrl: '',
       loginImageUrl: '',
       loaded: true,
@@ -132,6 +188,7 @@ function applyEnabledBrandingToRuntime(branding: AdminBrandingState) {
   preferencesStore.globalTitle = branding.title;
   preferencesStore.shortTitle = branding.shortTitle;
   preferencesStore.logoUrl = branding.logoUrl;
+  preferencesStore.logoIconUrl = branding.logoIconUrl;
   preferencesStore.faviconUrl = branding.faviconUrl;
   preferencesStore.footerCopyright = branding.footerCopyright;
   preferencesStore.footerIcp = branding.icp;

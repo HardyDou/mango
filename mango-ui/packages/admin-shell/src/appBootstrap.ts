@@ -13,6 +13,10 @@ import { DEFAULT_ADMIN_BRANDING, useAdminBrandingStore } from './stores/adminBra
 
 let shellPinia: Pinia | undefined;
 let shellI18n: I18n | undefined;
+let adminBrandingRefreshListenerInstalled = false;
+
+const ADMIN_BRANDING_UPDATED_EVENT = 'mango-admin-branding:updated';
+const MANGO_AUTH_LOGIN_SUCCESS_EVENT = 'mango-auth:login-success';
 
 export function getShellPinia() {
   if (!shellPinia) {
@@ -108,7 +112,7 @@ export function installShellApp(app: VueApp, options: MangoAdminShellOptions = g
       minLength: 6,
     },
   });
-  void useAdminBrandingStore().loadPublicConfig();
+  installAdminBrandingRuntime();
   app.config.errorHandler = (err, instance, info) => {
     console.error('[mango-shell] Vue error:', err);
     console.error('[mango-shell] component:', instance);
@@ -118,6 +122,24 @@ export function installShellApp(app: VueApp, options: MangoAdminShellOptions = g
     }
     mangoMessage.error('系统错误，请刷新页面');
   };
+}
+
+export function installAdminBrandingRuntime() {
+  const adminBrandingStore = useAdminBrandingStore();
+  void adminBrandingStore.loadPublicConfig();
+  installAdminBrandingRefreshListener(adminBrandingStore);
+}
+
+function installAdminBrandingRefreshListener(adminBrandingStore: ReturnType<typeof useAdminBrandingStore>) {
+  if (adminBrandingRefreshListenerInstalled || typeof window === 'undefined') {
+    return;
+  }
+  const refreshAdminBranding = () => {
+    void adminBrandingStore.loadPublicConfig();
+  };
+  window.addEventListener(ADMIN_BRANDING_UPDATED_EVENT, refreshAdminBranding);
+  window.addEventListener(MANGO_AUTH_LOGIN_SUCCESS_EVENT, refreshAdminBranding);
+  adminBrandingRefreshListenerInstalled = true;
 }
 
 function toMangoAuthLoginOptions(login: MangoAdminShellOptions['login']) {

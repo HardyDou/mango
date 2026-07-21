@@ -46,7 +46,29 @@ class AdminBrandingServiceTest {
         assertTrue(result.getEnabled());
         assertEquals("Mango", result.getShortTitle());
         assertEquals("企业级管理平台", result.getSubtitle());
+        assertEquals("", result.getLogoIconFile());
         assertEquals("© Mango", result.getFooterCopyright());
+    }
+
+    @Test
+    @DisplayName("get should preserve blank text values when config exists")
+    void get_blankTextConfig_preservesBlankValues() {
+        when(sysConfigMapper.selectList(any(Wrapper.class))).thenReturn(List.of(
+                config("admin.branding.title", ""),
+                config("admin.branding.shortTitle", ""),
+                config("admin.branding.loginTitle", ""),
+                config("admin.branding.loginSubtitle", ""),
+                config("admin.branding.footerCopyright", "")
+        ));
+
+        AdminBrandingVO result = adminBrandingService.get();
+
+        assertEquals("", result.getTitle());
+        assertEquals("", result.getShortTitle());
+        assertEquals("企业级管理平台", result.getSubtitle());
+        assertEquals("", result.getLoginTitle());
+        assertEquals("", result.getLoginSubtitle());
+        assertEquals("", result.getFooterCopyright());
     }
 
     @Test
@@ -57,11 +79,12 @@ class AdminBrandingServiceTest {
 
         SaveAdminBrandingCommand command = createCommand();
         command.setLogoFile(" 1888888888888888888 ");
+        command.setLogoIconFile(" 1888888888888888889 ");
 
         assertTrue(adminBrandingService.save(command));
 
         ArgumentCaptor<SysConfigEntity> captor = ArgumentCaptor.forClass(SysConfigEntity.class);
-        verify(sysConfigMapper, times(12)).insert(captor.capture());
+        verify(sysConfigMapper, times(13)).insert(captor.capture());
         SysConfigEntity firstInserted = captor.getAllValues().get(0);
         assertEquals("admin.branding.enabled", firstInserted.getConfigKey());
         assertEquals("true", firstInserted.getConfigValue());
@@ -70,6 +93,10 @@ class AdminBrandingServiceTest {
         assertTrue(captor.getAllValues().stream()
                 .anyMatch(config -> "admin.branding.logoFile".equals(config.getConfigKey())
                         && "1888888888888888888".equals(config.getConfigValue())));
+        assertTrue(captor.getAllValues().stream()
+                .anyMatch(config -> "admin.branding.logoIconFile".equals(config.getConfigKey())
+                        && "1888888888888888889".equals(config.getConfigValue())
+                        && Integer.valueOf(65).equals(config.getSort())));
     }
 
     @Test
@@ -79,14 +106,14 @@ class AdminBrandingServiceTest {
         when(sysConfigMapper.insert(any(SysConfigEntity.class))).thenReturn(1);
 
         SaveAdminBrandingCommand command = createCommand();
-        command.setLogoFile(" mango-file:1888888888888888888 ");
+        command.setLogoIconFile(" mango-file:1888888888888888888 ");
 
         assertTrue(adminBrandingService.save(command));
 
         ArgumentCaptor<SysConfigEntity> captor = ArgumentCaptor.forClass(SysConfigEntity.class);
-        verify(sysConfigMapper, times(12)).insert(captor.capture());
+        verify(sysConfigMapper, times(13)).insert(captor.capture());
         assertTrue(captor.getAllValues().stream()
-                .anyMatch(config -> "admin.branding.logoFile".equals(config.getConfigKey())
+                .anyMatch(config -> "admin.branding.logoIconFile".equals(config.getConfigKey())
                         && "1888888888888888888".equals(config.getConfigValue())));
     }
 
@@ -120,6 +147,14 @@ class AdminBrandingServiceTest {
         verify(sysConfigMapper, never()).updateById(any(SysConfigEntity.class));
     }
 
+    private SysConfigEntity config(String key, String value) {
+        SysConfigEntity config = new SysConfigEntity();
+        config.setConfigKey(key);
+        config.setConfigValue(value);
+        config.setStatus(1);
+        return config;
+    }
+
     private SaveAdminBrandingCommand createCommand() {
         SaveAdminBrandingCommand command = new SaveAdminBrandingCommand();
         command.setEnabled(true);
@@ -129,6 +164,7 @@ class AdminBrandingServiceTest {
         command.setLoginTitle("新登录标题");
         command.setLoginSubtitle("新登录副标题");
         command.setLogoFile("");
+        command.setLogoIconFile("");
         command.setFaviconFile("");
         command.setLoginImageFile("");
         command.setFooterCopyright("© 新后台");

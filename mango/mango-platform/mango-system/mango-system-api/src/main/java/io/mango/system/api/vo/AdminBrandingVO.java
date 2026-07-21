@@ -27,6 +27,9 @@ public class AdminBrandingVO {
     @Schema(description = "Logo 文件标识")
     private String logoFile;
 
+    @Schema(description = "折叠 Logo 文件标识")
+    private String logoIconFile;
+
     @Schema(description = "Favicon 文件标识")
     private String faviconFile;
 

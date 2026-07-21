@@ -211,7 +211,7 @@ Shell 只消费后端授权菜单。菜单 `component` 会归一化后匹配 `@m
 
 ### Theme
 
-主题状态由 Shell store 管理，当前包含布局偏好、主题色和侧边栏状态。业务项目应通过 Shell 暴露的 store 或配置入口调整主题，不应直接依赖 Shell 内部组件路径。
+主题状态由 Shell store 管理，当前包含布局偏好、主题色和侧边栏状态。Shell 启动时会读取 `/system/admin-branding/public`，将 `logoFile` 解析为展开态 Logo，将 `logoIconFile` 解析为折叠态 Logo；未配置折叠 Logo 时回退使用展开态 Logo。业务项目应通过 Shell 暴露的 store、后台品牌配置或配置入口调整主题，不应直接依赖 Shell 内部组件路径。
 
 ### Layout Footer
 

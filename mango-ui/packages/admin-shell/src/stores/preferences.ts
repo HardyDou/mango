@@ -18,6 +18,7 @@ export interface PreferencesState {
   globalTitle: string;
   shortTitle: string;
   logoUrl: string;
+  logoIconUrl: string;
   faviconUrl: string;
   footerCopyright: string;
   footerIcp: string;
@@ -59,6 +60,7 @@ export const usePreferencesStore = defineStore('preferences', {
     globalTitle: import.meta.env.VITE_APP_TITLE || 'Mango',
     shortTitle: 'Mango',
     logoUrl: '',
+    logoIconUrl: '',
     faviconUrl: '',
     footerCopyright: '© Mango',
     footerIcp: '',

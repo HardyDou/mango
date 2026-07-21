@@ -32,7 +32,7 @@ export function createMangoAdminApp(options: MangoAdminShellOptions = {}): Mango
   });
   const apiBaseUrl = resolvedOptions.apiBaseUrl || '/api';
   setRequestBaseUrl(apiBaseUrl);
-  void ensureFeatureRegistrars().catch(error => {
+  void ensureFeatureRegistrars().catch((error) => {
     console.error('[mango-shell] failed to register shell features', error);
   });
 
@@ -45,9 +45,11 @@ export function createMangoAdminApp(options: MangoAdminShellOptions = {}): Mango
   async function redirectToLogin() {
     const currentRoute = router.currentRoute.value;
     Session.clearSession();
-    await router.push(currentRoute.path === '/login'
-      ? { path: '/login' }
-      : { path: '/login', query: { redirect: currentRoute.fullPath } });
+    await router.push(
+      currentRoute.path === '/login'
+        ? { path: '/login' }
+        : { path: '/login', query: { redirect: currentRoute.fullPath } },
+    );
   }
 
   registerUnauthorizedHandler(redirectToLogin);
@@ -67,7 +69,7 @@ export { default as MangoAdminShellView } from './ShellView.vue';
 export { default as MangoAdminLayout } from './layout/index.vue';
 export { default as MangoAdminParentView } from './layout/routerView/parent.vue';
 export { createMangoAdminRouter } from './router';
-export { getShellPinia, installShellApp } from './appBootstrap';
+export { getShellPinia, installAdminBrandingRuntime, installShellApp } from './appBootstrap';
 export { configureMangoAdminShell, getMangoAdminShellOptions };
 export { ensureFeatureRegistrars };
 export type {

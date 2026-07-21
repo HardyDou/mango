@@ -2,10 +2,7 @@
   <div class="layout-navbars-container">
     <div class="layout-navbars-container-left">
       <!-- 移动端汉堡菜单按钮 - 所有布局都显示 -->
-      <div
-        class="hamburger hamburger-mobile"
-        @click="onToggleMobileMenu"
-      >
+      <div class="hamburger hamburger-mobile" @click="onToggleMobileMenu">
         <el-icon :size="20">
           <Fold v-if="!layoutStore.isMobileMenuOpen" />
           <Close v-else />
@@ -13,12 +10,8 @@
       </div>
       <!-- 经典布局：显示 Logo + 折叠按钮 -->
       <template v-if="layoutStore.layout === 'classic' || layoutStore.layout === 'transverse'">
-        <Logo class="layout-logo-link" />
-        <div
-          v-if="layoutStore.layout === 'classic'"
-          class="hamburger"
-          @click="toggleCollapse"
-        >
+        <Logo :class="['layout-logo-link', `layout-logo-link--${layoutStore.layout}`]" />
+        <div v-if="layoutStore.layout === 'classic'" class="hamburger" @click="toggleCollapse">
           <el-icon :size="20">
             <Fold v-if="!layoutStore.isCollapse" />
             <Expand v-else />
@@ -26,10 +19,7 @@
         </div>
       </template>
       <template v-else-if="layoutStore.layout === 'defaults' || layoutStore.layout === 'columns'">
-        <div
-          class="hamburger"
-          @click="toggleCollapse"
-        >
+        <div class="hamburger" @click="toggleCollapse">
           <el-icon :size="20">
             <Fold v-if="!headerAsideExpanded" />
             <Expand v-else />
@@ -37,10 +27,7 @@
         </div>
       </template>
     </div>
-    <div
-      v-if="showTopSystems"
-      class="layout-top-systems"
-    >
+    <div v-if="showTopSystems" class="layout-top-systems">
       <button
         v-for="item in topMenus"
         :key="item.path"
@@ -49,19 +36,13 @@
         :class="{ active: item.path === activeTopRoutePath }"
         @click="onTopMenuClick(item)"
       >
-        <el-icon
-          v-if="item.meta?.icon && iconMap[item.meta.icon]"
-          :size="16"
-        >
+        <el-icon v-if="item.meta?.icon && iconMap[item.meta.icon]" :size="16">
           <component :is="iconMap[item.meta.icon]" />
         </el-icon>
         <span>{{ item.meta?.title || item.name }}</span>
       </button>
     </div>
-    <div
-      v-else
-      class="layout-top-nav"
-    >
+    <div v-else class="layout-top-nav">
       <BreadcrumbIndex />
     </div>
     <div class="layout-navbars-container-right">
@@ -114,13 +95,14 @@ const layoutStore = useLayoutStore();
 const storesRoutesList = useRoutesList();
 const { routesList, activeTopRoutePath } = storeToRefs(storesRoutesList);
 
-const topMenus = computed(() => routesList.value.filter(item => !item.meta?.isHide));
+const topMenus = computed(() => routesList.value.filter((item) => !item.meta?.isHide));
 const showTopSystems = computed(() => layoutStore.layout === 'classic' || layoutStore.layout === 'transverse');
 const noticeBellProvider = computed(() => getMangoNoticeBellProvider());
-const noticeClientEnabled = computed(() =>
-  resolveMangoAdminFeatures(getMangoAdminShellOptions().features).has('notice') &&
-  Boolean(noticeBellProvider.value) &&
-  hasPermission('notice:site:view'),
+const noticeClientEnabled = computed(
+  () =>
+    resolveMangoAdminFeatures(getMangoAdminShellOptions().features).has('notice') &&
+    Boolean(noticeBellProvider.value) &&
+    hasPermission('notice:site:view'),
 );
 const noticeBellComponent = computed(() => noticeBellProvider.value?.component || resolveDynamicComponent('span'));
 const headerAsideExpanded = computed(() => {
@@ -143,8 +125,7 @@ const noticeRealtimeOptions = computed<RealtimeOptions>(() => {
 });
 
 const findTopByPath = (path: string): ShellRouteMenu | undefined => {
-  return topMenus.value.find(item => containsMenuPath(item, path))
-    || topMenus.value[0];
+  return topMenus.value.find((item) => containsMenuPath(item, path)) || topMenus.value[0];
 };
 
 const toggleCollapse = () => {
@@ -217,7 +198,7 @@ watch(
       storesRoutesList.setActiveTopRoutePath(matchedTop.path);
     }
   },
-  { immediate: true }
+  { immediate: true },
 );
 </script>
 
@@ -337,20 +318,24 @@ watch(
 
   .layout-logo-link {
     flex-shrink: 0;
-    overflow: hidden;
+    overflow: visible;
+
     :deep(.layout-logo) {
       width: auto;
+      min-width: 220px;
       height: 40px;
       background: transparent;
       box-shadow: none;
       font-size: 16px;
       padding: 0 8px;
+
       span {
         color: var(--mango-color-top-bar);
       }
     }
+
     :deep(.layout-logo-collapsed) {
-      width: 40px !important;
+      width: 64px !important;
       height: 40px;
       background: transparent;
       box-shadow: none;
@@ -363,6 +348,14 @@ watch(
         color: var(--mango-color-top-bar);
         font-size: 20px;
         font-weight: 700;
+      }
+    }
+
+    &.layout-logo-link--classic {
+      :deep(.layout-logo) {
+        width: auto;
+        min-width: 220px;
+        padding: 0;
       }
     }
   }
