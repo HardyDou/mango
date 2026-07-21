@@ -1,5 +1,78 @@
 # Mango Changelog
 
+## v2026.07.21-maven-1.0.25-cli-1.0.89-branding-workflow-bom-release - 2026-07-21
+
+Status: `PENDING`. This mixed release will publish Maven `1.0.25`, the pending frontend branding and Workflow/Notice patch matrix, and `@mango/cli@1.0.89` from one reviewed source commit. `@mango/pmo` remains `1.3.4` and is not republished.
+
+### Added
+
+- Add the independently importable `io.mango:mango-bom`, covering all published non-app Mango JARs and the verified third-party dependency versions used by the Reactor.
+
+### Changed
+
+- Make `mango-parent` import only the same-version `mango-bom` for dependency management while retaining Java and Maven plugin defaults in the parent.
+- Extend Admin branding with separate expanded and collapsed logo assets and keep the runtime branding state consistent across the navigation shell.
+- Advance the CLI compatibility lock to Maven `1.0.25` and the exact frontend patch matrix in this batch; CLI commands and PMO `1.3.4` remain compatible.
+
+### Fixed
+
+- Send Workflow completion notices to the original applicant, expand shared candidate recipients consistently, and preserve tenant, application and realm context through local and remote Notice delivery.
+- Keep assigned parallel and multi-instance Workflow tasks mapped to their actual runtime assignees and skip notice dispatch when no valid recipient exists.
+
+### Versions
+
+| Component | Previous | Release | Compatibility |
+| --- | ---: | ---: | --- |
+| Mango Maven non-app backend and docs bundle | `1.0.24` | `1.0.25` | Adds the BOM consumption option; Parent consumers keep the same inheritance model and update one shared version. |
+| `@mango/admin` | `1.0.53` | `1.0.55` | Branding aggregate update; existing public entry points remain compatible. |
+| `@mango/admin-shell` | `1.0.48` | `1.0.50` | Adds expanded/collapsed branding asset support without changing route contracts. |
+| `@mango/admin-pages` | `1.0.25` | `1.0.26` | Exact dependency-matrix alignment. |
+| `@mango/auth` | `1.0.19` | `1.0.20` | Aligns login branding behavior and exact dependencies. |
+| `@mango/notice` | `1.0.29` | `1.0.30` | Aligns the Workflow/Notice patch matrix; public Notice APIs remain compatible. |
+| `@mango/system` | `1.0.24` | `1.0.25` | Adds collapsed-logo branding fields while preserving existing branding settings. |
+| `@mango/workflow` | `1.0.32` | `1.0.33` | Workflow recipient and context fixes; routes and approval APIs remain compatible. |
+| Other republished frontend packages | prior `1.0.x` matrix | exact versions below | Patch republish keeps exact inter-package dependency locks consistent. |
+| `@mango/cli` | `1.0.88` | `1.0.89` | Locks Maven `1.0.25` and this frontend matrix; command behavior remains compatible. |
+| `@mango/pmo` | `1.3.4` | unchanged | Not republished. |
+
+### Published Packages
+
+| Order | Target | Version | Release status |
+| ---: | --- | --- | --- |
+| 1 | Maven non-app backend and docs bundle | `io.mango:*:1.0.25` | `PENDING` |
+| 2 | npm Admin Pages | `@mango/admin-pages@1.0.26` | `PENDING` |
+| 3 | npm Auth | `@mango/auth@1.0.20` | `PENDING` |
+| 4 | npm Calendar | `@mango/calendar@1.0.27` | `PENDING` |
+| 5 | npm CMS | `@mango/cms@1.0.16` | `PENDING` |
+| 6 | npm File | `@mango/file@1.0.27` | `PENDING` |
+| 7 | npm Job | `@mango/job@1.0.19` | `PENDING` |
+| 8 | npm Link | `@mango/link@1.0.13` | `PENDING` |
+| 9 | npm Notice | `@mango/notice@1.0.30` | `PENDING` |
+| 10 | npm Numgen | `@mango/numgen@1.0.27` | `PENDING` |
+| 11 | npm Payment | `@mango/payment@1.0.19` | `PENDING` |
+| 12 | npm System | `@mango/system@1.0.25` | `PENDING` |
+| 13 | npm Template | `@mango/template@1.0.27` | `PENDING` |
+| 14 | npm Workflow | `@mango/workflow@1.0.33` | `PENDING` |
+| 15 | npm Workflow Business Example | `@mango/workflow-business-example@1.0.32` | `PENDING` |
+| 16 | npm Admin Shell | `@mango/admin-shell@1.0.50` | `PENDING` |
+| 17 | npm Admin aggregate | `@mango/admin@1.0.55` | `PENDING` |
+| 18 | npm CLI | `@mango/cli@1.0.89` | `PENDING` |
+| 19 | GitHub Release | `v2026.07.21-maven-1.0.25-cli-1.0.89-branding-workflow-bom-release` | `PENDING` |
+
+### Upgrade Notes
+
+1. Upgrade all backend Mango dependencies to `1.0.25` together. Projects inheriting `mango-parent` update their shared `mango.version`; projects retaining another parent import `io.mango:mango-bom:1.0.25` and omit versions from BOM-managed dependencies.
+2. Do not import another Spring Boot or Spring Cloud BOM and then silently override individual Mango-tested versions. Any intentional override requires a dependency-tree review and startup regression.
+3. Upgrade the 16 frontend runtime packages to the exact versions above as one matrix. Aggregate consumers can install `@mango/admin@1.0.55`; direct consumers must keep exact package versions aligned.
+4. Install `@mango/cli@1.0.89` only after Maven `1.0.25` and the frontend matrix resolve from the consume registries. Existing generated projects are not automatically converted between Parent inheritance and direct BOM import.
+5. Existing databases upgrade in place. The Workflow and Notice changes preserve routes, permissions and stored preferences; verify process-completion and shared-candidate notifications in the target tenant.
+
+### Verification
+
+- Local BOM coverage tests, the 212-module Maven Reactor, exact-version local installation and an independent Spring Boot consumer passed before release preparation.
+- Before publication, rerun the full Maven Reactor from the merged release source and run CLI tests, generated backend gates, release impact, package exports, Admin style checks, package builds, capability documentation audits and release-notes checks.
+- The canonical `mango release` state machine must record the clean merged source, required PR checks, registry doctor, target-version absence, Maven/npm publication, publish/consume back-checks, docs snapshot, tag, GitHub Release and clean consumer evidence before this section is closed out.
+
 ## v2026.07.21-maven-1.0.24-pmo-1.3.4-cli-1.0.88-platform-notice-fixes-release - 2026-07-21
 
 Status: `PUBLISHED_AND_VERIFIED`. This mixed Mango release was published from source commit `6bef98bab0bbe5ae50fe7d1ac35e858cac24a8af` and tree `905150b5de2db658cb339a01d3fdea150d97e968`. The exact-source bundle SHA-256 is `e8557ef5c2b645e9a85d60c4afe0cdcd26f088e8e07129e1a4fd89a3d91ebb23`. The completed read-only recovery manifest at `.runtime/releases/1.0.24/manifest.json` has SHA-256 `fe1cb55be3af6c0a2c16318fdf3e0a989984329dfb2314a4507fd6665644e776` and records all 17 release states as passed.

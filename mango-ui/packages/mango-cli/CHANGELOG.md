@@ -1,5 +1,26 @@
 # @mango/cli Changelog
 
+## 1.0.89 - 2026-07-21
+
+### Changed
+
+- Lock generated and upgraded business backends to Mango Maven `1.0.25`, whose published dependency contract adds the independently importable `io.mango:mango-bom` and makes `mango-parent` import that same-version BOM.
+- Lock the complete branding and Workflow/Notice frontend patch matrix headed by `@mango/admin@1.0.55`, `@mango/admin-shell@1.0.50`, `@mango/notice@1.0.30`, `@mango/system@1.0.25` and `@mango/workflow@1.0.33`.
+- Keep `@mango/pmo@1.3.4` and existing CLI command behavior unchanged.
+
+### Upgrade Notes
+
+- Publish and verify Maven `1.0.25` and the locked frontend package matrix before installing `@mango/cli@1.0.89`.
+- Business backends that inherit `mango-parent` only need to update their shared `mango.version`; projects with another parent can import `io.mango:mango-bom:1.0.25` and omit versions for BOM-managed dependencies.
+- Existing projects are not automatically converted from parent inheritance to direct BOM import. Choose one Maven integration style and do not mix Mango versions from different release batches.
+
+### Verification
+
+- `pnpm -C mango-ui --filter @mango/cli test`
+- `node mango-ui/packages/mango-cli/scripts/check-release-versions.mjs`
+- `MANGO_BACKEND_GATE_VERSION=1.0.25 node mango-ui/packages/mango-cli/scripts/check-generated-backend-gate.mjs`
+- Clean Maven BOM and generated-project consumers resolve only the exact combined-release coordinates.
+
 ## 1.0.88 - 2026-07-20
 
 ### Fixed

@@ -17,7 +17,8 @@
 
 | 目录 | 职责 | 业务接入时关注点 |
 |------|------|------------------|
-| `mango-parent` | 父 POM 和插件默认配置 | 依赖版本、构建默认值。 |
+| `mango-bom` | 可独立导入的完整依赖版本目录 | 业务保留自有 parent 时优先导入。 |
+| `mango-parent` | 父 POM 和插件默认配置 | 导入 BOM，并提供 Java 与构建插件默认值。 |
 | `mango-common` | 公共返回体、异常、分页、工具和通用契约 | API 返回、错误码、分页模型。 |
 | `mango-infra` | 技术基础设施 | Web、持久化、KV、事件、日志、加解密、文档、Feign、实时通信。 |
 | `mango-platform` | 平台业务能力 | 认证、身份、授权、组织、系统、文件、工作流、模板、支付等。 |
@@ -29,7 +30,7 @@
 平台能力一般采用 `api`、`core`、`starter`、`starter-remote` 拆分：服务提供方引入本地 `starter`，服务调用方引入 `starter-remote`。
 
 ## 4. 接入方式
-业务项目推荐优先用 `mango-business-starter` 或 CLI 生成工程，再按模块 README 接入能力。
+业务项目推荐优先用 `mango-business-starter` 或 CLI 生成工程，再按模块 README 接入能力。保留自有 parent 的项目在根 POM 导入 `io.mango:mango-bom`；接受 Mango 构建基线的项目可直接继承同版本 `mango-parent`。
 
 单体装配：
 
@@ -78,7 +79,8 @@ mvn -f mango/pom.xml mango:gen-crud -Dmodule=demo -Dentity=Demo -Dtable=demo_rec
 | `mango/pom.xml` | `revision` | 当前后端模块版本，默认 `1.0.0-SNAPSHOT`。 |
 | `mango/pom.xml` | `maven.compiler.release` | Java 编译版本，当前为 21。 |
 | `mango/pom.xml` | `spring-boot.version` | Spring Boot 版本，当前为 3.5.14。 |
-| `mango/pom.xml` | dependency management | 管理 Mango 内部模块和第三方依赖版本。 |
+| `mango/mango-bom/pom.xml` | dependency management | 对业务发布的 Mango 模块与已验证第三方依赖版本目录。 |
+| `mango/mango-parent/pom.xml` | plugin management | Java、编译、测试和质量插件构建基线，并导入同版本 BOM。 |
 | `.env.development` | `MANGO_BACKEND_PORT`、`MANGO_DB_URL`、`MANGO_DB_USERNAME`、`MANGO_DB_PASSWORD`、`MANGO_FILE_ROOT` | 本地单体联调常用环境变量。 |
 | `mango-app/**/application.yml` | `mango.persistence.flyway.modules.*.enabled` | 控制各模块 Flyway migration 是否执行。 |
 | `mango-app/**/application.yml` | `mango.kv.store.type` | KV 存储类型，常见为 `jdbc`、`redis`、`memory`。 |

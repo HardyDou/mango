@@ -192,6 +192,8 @@ pnpm -F @mango/file test
 
 ## 12. 变更影响记录
 
+- v2026.07.21-maven-1.0.25-cli-1.0.89-branding-workflow-bom-release 将 `mango-file-preview-engine` 的既有依赖版本交由同版本 `mango-bom` 统一管理，不改变文件上传、回显、预览、下载的公开 API、配置、权限、租户、页面入口、启动方式或本场景验收步骤。继承 `mango-parent` 的业务项目只需整体升级 Mango 版本；使用自有 parent 的项目导入 `io.mango:mango-bom:1.0.25`。
+
 - Issue #553 将 `/file-preview/files/preview-link` 和 `/file-preview/files/preview` 与现有文件上传、详情、预览内容和下载基线对齐为登录可用，业务表单无需再为统一预览链接配置 `file:files:download` 角色权限。链接生成仍先按当前租户查找文件，匿名请求不能生成预览 token；文件列表、归档、删除、目录和管理配置权限不变。前端 `/api` 仍只是代理路径标识，后端实际路径不带 `/api`。
 
 - Issue #563 修复 Office 文件名同时包含 URL 编码字节和括号等原始字符时的 PDF 预览失败。File Preview 内部改用基于 `fileId` 的 ASCII 转换名，并通过与源文件 token 绑定的同源接口读取转换 PDF。业务表单仍只保存 `fileId`/`fileIds`，上传、回显、预览入口、下载、权限、租户和本指南的验收步骤不变；涉及中文、空格或括号的 Word 附件时，确认 PDF.js 能渲染实际页面且网络请求不出现 `%25` 二次编码。

@@ -9,7 +9,7 @@
 | 项目          | 值                                                                                                             |
 | ------------- | -------------------------------------------------------------------------------------------------------------- |
 | NPM 包        | `@mango/cli`                                                                                                   |
-| 当前发布版本  | `1.0.88`                                                                                                       |
+| 当前发布版本  | `1.0.89`                                                                                                       |
 | bin 命令      | `mango`、`mango-cli`                                                                                           |
 | 命令入口      | `src/index.mjs`                                                                                                |
 | 发布 registry | 由发布配置或 `MANGO_RELEASE_NPM_PUBLISH_REGISTRY` 注入                                                         |
@@ -69,8 +69,8 @@ CLI 不负责：
 
 ```bash
 npm view @mango/pmo@1.3.4 version --registry "$MANGO_NPM_REGISTRY"
-npm view @mango/cli@1.0.88 version --registry "$MANGO_NPM_REGISTRY"
-npm install -g @mango/cli@1.0.88 --registry "$MANGO_NPM_REGISTRY"
+npm view @mango/cli@1.0.89 version --registry "$MANGO_NPM_REGISTRY"
+npm install -g @mango/cli@1.0.89 --registry "$MANGO_NPM_REGISTRY"
 ```
 
 两个查询都返回精确版本后，该批次才可供业务项目安装。PMO 升级会整体同步 baseline、Agent 入口和 `.agents/skills`，不需要逐个安装 Skill。
@@ -517,6 +517,10 @@ CLI 不在运行时管理菜单、权限和租户，但会生成让业务模块�
 | pnpm 11 首次安装报 `ERR_PNPM_IGNORED_BUILDS`                                  | 旧版 CLI 生成的前端缺少 `pnpm-workspace.yaml` 构建白名单                       | 使用 `@mango/cli@1.0.81` 生成新项目；既有项目把当前 full 模板的 `allowBuilds` 映射合并到业务自有 workspace 配置                                                                                      |
 
 ## 12. 相关文档
+
+### 1.0.89 发布影响
+
+`@mango/cli@1.0.89` 把生成和升级项目锁定到 Mango Maven `1.0.25`，并锁定本批 Admin 品牌配置与 Workflow/Notice 修复的完整前端版本矩阵。Maven `1.0.25` 首次发布可独立导入的 `io.mango:mango-bom`，同时让 `mango-parent` 只导入同版本 BOM；继承 Parent 的项目只需更新统一 `mango.version`，保留自有 Parent 的项目可以直接导入 BOM。CLI 不会自动把既有项目从 Parent 继承改为 BOM 导入，命令、PMO `1.3.4` 和既有业务运行时配置保持兼容。
 
 ### 1.0.88 发布影响
 
