@@ -2,6 +2,7 @@ package io.mango.notice.api.command;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
@@ -25,8 +26,10 @@ public class NoticeSendEventCommand extends SendNoticeCommand {
     private String tenantId;
 
     @Schema(description = "事件所属应用编码，仅用于恢复事务提交后的内部调用上下文")
+    @Size(max = 64, message = "事件应用编码最多64个字符")
     private String appCode;
 
     @Schema(description = "事件所属登录域，仅用于恢复事务提交后的内部调用上下文")
+    @Size(max = 32, message = "事件登录域最多32个字符")
     private String realm;
 }
