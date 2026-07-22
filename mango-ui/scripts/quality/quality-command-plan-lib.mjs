@@ -6,7 +6,6 @@ const PR_COMMON_COMMANDS = [
   ['pnpm', ['component-contracts:check']],
   ['pnpm', ['e2e-selectors:check']],
   ['pnpm', ['runtime-config:check']],
-  ['pnpm', ['typecheck']],
   ['pnpm', ['quality:gate:test']],
 ];
 
@@ -25,6 +24,19 @@ function appendWorkspaceCommands(commands, records, selection) {
   const buildTargets = selectedTargets(records, selection, 'build');
   const testTargets = selectedTargets(records, selection, 'test');
   if (buildTargets.length > 0) commands.push(['pnpm', [...filters(buildTargets), '-r', 'build']]);
+  if (testTargets.length > 0) commands.push(['pnpm', [...filters(testTargets), '-r', 'test']]);
+}
+
+function appendPullRequestBuild(commands, records, selection) {
+  const selected = new Set(selection.selected);
+  const buildTargets = records
+    .filter((item) => typeof item.scripts.build === 'string' && (item.kind === 'packages' || selected.has(item.name)))
+    .map((item) => item.name);
+  if (buildTargets.length > 0) commands.push(['pnpm', [...filters(buildTargets), '-r', 'build']]);
+}
+
+function appendSelectedTests(commands, records, selection) {
+  const testTargets = selectedTargets(records, selection, 'test');
   if (testTargets.length > 0) commands.push(['pnpm', [...filters(testTargets), '-r', 'test']]);
 }
 
@@ -50,7 +62,9 @@ function pullRequestPlan(records, selection) {
   if (selection.mode === 'none') return [['pnpm', ['quality:versions']]];
 
   const commands = PR_COMMON_COMMANDS.map(([command, arguments_]) => [command, [...arguments_]]);
-  appendWorkspaceCommands(commands, records, selection);
+  appendPullRequestBuild(commands, records, selection);
+  commands.push(['pnpm', ['typecheck']]);
+  appendSelectedTests(commands, records, selection);
   commands.push(['pnpm', ['package-exports:check']]);
   if (selection.mode === 'affected' && selection.publishableChanged.length > 0) {
     commands.push(['pnpm', ['package-consumer:typecheck']]);

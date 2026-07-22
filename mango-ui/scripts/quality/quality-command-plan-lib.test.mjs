@@ -3,9 +3,9 @@ import test from 'node:test';
 import { createQualityCommandPlan } from './quality-command-plan-lib.mjs';
 
 const records = [
-  { name: '@mango/contracts', scripts: { build: 'build', test: 'test' } },
-  { name: '@mango/domain', scripts: { build: 'build' } },
-  { name: 'admin-app', scripts: { test: 'test' } },
+  { name: '@mango/contracts', kind: 'packages', scripts: { build: 'build', test: 'test' } },
+  { name: '@mango/domain', kind: 'packages', scripts: { build: 'build' } },
+  { name: 'admin-app', kind: 'apps', scripts: { build: 'build', test: 'test' } },
 ];
 
 function rendered(plan) {
@@ -28,16 +28,17 @@ test('PR full profile checks all build and test targets without running the seri
       'pr',
     ),
   );
-  assert.ok(plan.includes('pnpm --filter @mango/contracts --filter @mango/domain -r build'));
+  assert.ok(plan.includes('pnpm --filter @mango/contracts --filter @mango/domain --filter admin-app -r build'));
   assert.ok(plan.includes('pnpm --filter @mango/contracts --filter admin-app -r test'));
   assert.ok(plan.includes('pnpm package-exports:check'));
   assert.ok(plan.includes('pnpm typecheck'));
   assert.ok(!plan.includes('pnpm run check:full'));
   assert.ok(!plan.includes('pnpm package-consumer:typecheck'));
   assert.ok(plan.every((command) => !command.includes('test:e2e')));
+  assert.ok(plan.indexOf('pnpm typecheck') > plan.findIndex((command) => command.endsWith('-r build')));
 });
 
-test('PR affected profile runs selected builds, tests, and public-package consumer compatibility', () => {
+test('PR affected profile builds package prerequisites plus selected apps before global typecheck', () => {
   const plan = rendered(
     createQualityCommandPlan(
       records,
@@ -49,9 +50,10 @@ test('PR affected profile runs selected builds, tests, and public-package consum
       'pr',
     ),
   );
-  assert.ok(plan.includes('pnpm --filter @mango/contracts -r build'));
+  assert.ok(plan.includes('pnpm --filter @mango/contracts --filter @mango/domain --filter admin-app -r build'));
   assert.ok(plan.includes('pnpm --filter @mango/contracts --filter admin-app -r test'));
   assert.ok(plan.includes('pnpm package-consumer:typecheck'));
+  assert.ok(plan.indexOf('pnpm typecheck') > plan.findIndex((command) => command.endsWith('-r build')));
 });
 
 test('PR non-frontend profile still produces a deterministic toolchain result', () => {
