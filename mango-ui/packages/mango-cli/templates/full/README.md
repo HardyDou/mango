@@ -221,6 +221,7 @@ full preset 会启用授权、身份、组织、系统等平台模块的 migrati
 4. 首次启动后确认 Flyway、Resource Registry 和模块初始化日志；租户、组织、账号等生产数据通过业务开通、后台维护或导入流程补齐。
 5. 通过 `mango module add` 新增业务模块，然后补齐表结构、菜单权限、租户边界、页面交互和测试。
 6. 本地完整验收可执行 `mvn -f backend/pom.xml verify`；PR 中的稳定 `pmo-doc-check` 根据 Git 变更只选择直接修改的 Maven 模块，不使用 `-am` 或 `-amd` 扩大质量扫描范围。依赖构建和消费者兼容性作为独立验证；根 POM、架构验证模块和全局架构输入仍使用完整 Reactor，架构和质量报告写入 `backend/target`。
+   存量模块首次补回 `module.properties` 时使用 `business-pmo/architecture-debt-budget.json` 和业务 PMO README 中的两 PR 纳管流程；required check 会在纳管 PR 现场重建完整 inventory。
 7. GitHub 使用 `.github/workflows/pmo-doc-check.yml`，Gitea 使用 `.gitea/workflows/pmo-doc-check.yml`；在对应平台的 `main` 分支保护中把 `PMO Documentation Checks / pmo-doc-check` 设为 required check。历史仓目录不是默认值时，先在 `mango.config.json` 的 `paths` 对象声明真实目录；PR 模板同时记录需求影响、方案风险、最终等级、交付模式、工作区决策和保障证据。模板缺失或 Risk / Verification 漂移时执行项目内 `mango pmo sync --project-dir .`，已创建的 PR 仍需直接编辑正文。
 8. 每个业务能力完成后，把模块 README、交付契约、验证证据和 E2E 更新到业务仓库。
 
@@ -234,6 +235,7 @@ full preset 会启用授权、身份、组织、系统等平台模块的 migrati
 | 后端 health 访问失败 | 数据库、Flyway、端口或密钥配置错误 | 查 `mango dev logs {{projectKebab}}-service` |
 | Maven verify 报 Mango architecture violation | 业务模块违反 API、Controller、Feign、Service、Mapper、Entity、统一返回或请求参数边界 | 按 `backend/target/mango-architecture-report.json` 的规则编号修复源码，不删除 `architecture-verification` 模块 |
 | Maven verify 报 quality gate failure | 模块元数据、持久化边界、P3C/PMD、Checkstyle 或 SpotBugs 失败 | 查看 `backend/target/mango-quality-report.json` 和对应模块 `target` 报告并修复源码 |
+| 首次补回 `module.properties` 后历史问题全部变成新增 | 模块身份扩大了门禁可见范围，但尚未完成受控首次纳管 | 不在业务 PR 抬高预算；按 `business-pmo/README.md` 建立独立纳管 PR，使用完整 inventory 写入并由 CI 复验 |
 | 后端 health 卡住且 `mango_dev_*` 数据库不存在 | `MANGO_DB_AUTO_CREATE` 未启用、本机缺少 `mysql` 命令，或 `.mango/dev-workspace.env` 中 MySQL 连接配置不可用 | 查 `command -v mysql`、`MANGO_DB_AUTO_CREATE`、`MANGO_DB_HOST`、`MANGO_DB_PORT`、`MANGO_DB_USERNAME`、`MANGO_DB_PASSWORD` 和 `.mango/run/logs/{{projectKebab}}-service.log`；如果 CLI 没有输出 `ensured database` 或 `failed to auto-create database`，按 Mango issue runbook 登记 |
 | 文件上传大小不符合预期 | multipart 上限仍是模板默认值 | 修改 `spring.servlet.multipart.max-file-size` 和 `max-request-size` |
 | Office 预览不可用 | `MANGO_OFFICE_PLUGIN_ENABLED=false` | 安装并确认 Office 插件后再启用 |

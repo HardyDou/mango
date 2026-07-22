@@ -13,6 +13,7 @@
 | `mango-baseline/tools/delivery-contract-check.mjs` | 校验设计和交付台账 |
 | `mango-baseline/tools/acceptance-evidence-check.mjs` | 校验验收证据表 |
 | `mango-baseline/tools/check-document-set.mjs` | 扫描四类生命周期文档及其上游关系 |
+| `architecture-debt-budget.json` | 项目自有的 schema v4 架构债务预算和不可变首次纳管审计；初始为空 |
 | `global-entity-exceptions.json` | 业务架构门禁显式读取的全局 Entity 例外清单，初始为空 |
 | 项目根 `.github/pull_request_template.md` | 业务仓自有 PR 说明；其中 Risk / Verification 区段由锁定 PMO 合同同步和检查 |
 | 项目根 `AGENTS.md` | Agent 入口，只路由到 baseline，不复制长期规则正文 |
@@ -41,6 +42,9 @@
 边界要求：
 
 - baseline 内文件只通过 baseline 升级任务或 `mango pmo sync` 更新。
+- `architecture-debt-budget.json` 位于 baseline 外，由完整 Reactor 报告受控递减；PMO sync、upgrade、rollback 均不得覆盖。
+- 旧项目尚无预算时，先独立升级 PMO 与 CLI 托管的 GitHub/Gitea workflow，再用只含预算文件的治理 PR 从完整 Reactor 报告初始化；迁移豁免要求 inventory-only 完整报告、至少一个 workflow 变更且 diff 仅含 PMO 资产，业务源码/POM/配置都会失败。
+- workflow 缺失时由 CLI 安装；历史标准 hash 或 Mango 托管文件可安全升级，未知定制默认拒绝覆盖，只有显式 `--adopt-governance` 才会备份并接管。
 - 项目 PR 模板区段外内容由业务仓维护；`mango pmo sync/upgrade` 只托管 `## Risk / Verification`，重复区段必须人工合并。
 - 业务需求的设计、台账、验收证据放到 `business-docs`。
 - Agent 每次正式交付前读取 preflight 输出的 Must read 文件原文。
@@ -143,6 +147,7 @@ node business-pmo/mango-baseline/tools/acceptance-evidence-check.mjs \
 | 业务计划示例 | `business-docs/plans` | example contract 和 ledger | 文件路径 | `mango init`；sync 时已有文件不覆盖 | delivery contract check |
 | Agent 入口 | 项目根 `AGENTS.md` | 规则路由入口 | 文件路径 | `mango init` 或带参数 sync | 人工检查入口指向本仓 baseline |
 | PR 风险合同 | 项目根 `.github/pull_request_template.md` | Risk / Verification 字段和填写提示 | 二级标题 | `mango init` 或 `mango pmo sync/upgrade` | `mango pmo check --locked` 报缺失或漂移 |
+| 架构债务预算 | `business-pmo/architecture-debt-budget.json` | 空 schema v4 项目预算 | 模块 identity | 完整 Reactor governance 检查 | `backend/target/mango-architecture-report.json` 与预算检查器 |
 
 ## 9. 管理入口
 本目录不提供菜单、权限资源或租户数据。涉及菜单、权限和租户时，preflight 会根据任务和路径命中后端模块、数据库、安全或菜单规则；实际资源应在业务模块的 migration、resource manifest、授权配置和测试证据中登记。
@@ -154,6 +159,17 @@ node business-pmo/mango-baseline/tools/acceptance-evidence-check.mjs \
 4. 验证阶段执行 `acceptance-evidence-check.mjs`，避免只写“接口 200”“页面正常”。
 5. 交付前执行 `delivery-contract-check.mjs --mode verify`，确认台账状态为 `DONE` 或有明确 `EXCEPTION`。
 6. 最终回复列出实际加载的 baseline 文件、验证命令、未验证项和 PMO 例外。
+
+### 10.1 存量业务仓升级
+
+新 starter 已包含空的 `architecture-debt-budget.json`，不需要初始化迁移。旧业务仓缺少预算时必须依次使用独立 PR：
+
+1. PMO/workflow 升级 PR：`mango pmo upgrade --project-dir . --to <version>`，不加 `--sync-shell`，不带业务文件；未知自定义 workflow 只有确认由 Mango 整文件托管后才加 `--adopt-governance`。
+2. 预算初始化 PR：以 PR 的精确 base SHA 运行 `-Dmango.architecture.requireFullReactor=true -Dmango.architecture.inventoryOnly=true` 的完整后端 Reactor，再执行 `check-architecture-debt-budget.mjs --report backend/target/mango-architecture-report.json --baseline business-pmo/architecture-debt-budget.json --write`；diff 只新增预算文件。
+3. 模块身份纳管 PR：只添加一个 starter `module.properties`，用同一完整 inventory 执行 `--onboard-module <moduleKey-prefix> --module-properties <path> --base-ref <base-sha> --reason "<已评审原因>" --write`；预算会保存不可变审计记录。
+4. 业务开发 PR：模块纳管合并后才修改业务源码、POM、配置或数据库；普通 PR 不得抬高预算。
+
+完整 Maven 参数、可信 CI 复验要求、rollback 边界和故障处理见由 CLI 生成的 `business-pmo/README.md`；PMO sync、upgrade、rollback 永远不覆盖项目预算。
 
 ## 11. 问题排查
 | 问题 | 原因 | 处理方式 |

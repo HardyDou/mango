@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 4,
+  "generatedAt": "1970-01-01T00:00:00.000Z",
+  "sourceReport": "uninitialized-project-budget",
+  "acceptedIncreaseReason": null,
+  "acceptedIncreaseFromSha256": null,
+  "moduleOnboardings": {},
+  "totalIssueCount": 0,
+  "engines": {
+    "dependency": 0,
+    "archunit": 0,
+    "pmd": 0
+  },
+  "rules": {},
+  "identities": {},
+  "modules": {}
+}

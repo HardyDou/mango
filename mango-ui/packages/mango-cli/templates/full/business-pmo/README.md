@@ -10,6 +10,7 @@
 |-------------|------|
 | `mango-baseline` | 当前项目锁定的 PMO baseline 快照 |
 | `mango-baseline/baseline.json` | bundle 文件、权限、hash、契约版本和 plugin 投影清单 |
+| `architecture-debt-budget.json` | 项目自有的 schema v4 架构债务预算与首次纳管审计记录；初始为空，不属于可同步 baseline |
 | `global-entity-exceptions.json` | 架构门禁显式读取的全局 Entity 例外清单，初始为空 |
 | `pmo-lock.json` | 精确锁定 `@mango/pmo` 版本、bundle hash、源码提交和契约版本 |
 | 项目根 `.agents/skills` | CLI 从锁定 bundle 同步的项目级交付 Skill |
@@ -58,7 +59,7 @@ mango pmo sync --project-dir . --dry-run
 mango pmo sync --project-dir .
 ```
 
-`sync` 只修复当前项目锁定的 bundle，不隐式升版；它会恢复被修改或缺失的 bundle-owned 文件，并删除清单之外的陈旧 bundle-owned 文件。delivery-assurance schema revision 5 起，模板缺失时会创建 `.github/pull_request_template.md`，模板存在时只新增或替换 `## Risk / Verification` 区段，区段外业务内容保持不变；重复区段必须人工合并后重跑。
+`sync` 只修复当前项目锁定的 bundle，不隐式升版；它会恢复被修改或缺失的 bundle-owned 文件，并删除清单之外的陈旧 bundle-owned 文件。GitHub/Gitea 的 `pmo-doc-check.yml` 是整文件托管资产：缺失时创建，带 Mango 托管标识或与已知历史标准版本 hash 完全一致时升级；无法识别的业务自定义 workflow 默认拒绝覆盖。确认要把自定义文件完整交给 Mango 管理时才使用 `--adopt-governance`，原文件会进入项目 `.mango` 下的 PMO 备份目录。delivery-assurance schema revision 5 起，PR 模板缺失时创建，存在时只同步 `## Risk / Verification` 区段；重复区段必须人工合并后重跑。
 
 ### 3.3 显式升级
 
@@ -79,6 +80,7 @@ mango pmo rollback --project-dir . --to <version>
 ```
 
 rollback 只使用项目根 `.mango` 下 PMO 运行时目录中的已校验本地备份，并在原子切换后再次执行 locked 校验。
+回滚会恢复当次备份中的 GitHub/Gitea workflow 和 PR 模板，但不会修改项目自有的 `architecture-debt-budget.json`。
 
 ## 4. Preflight
 
@@ -159,6 +161,62 @@ node business-pmo/mango-baseline/tools/risk-verification.mjs \
 
 生成项目的 `pmo-doc-check` 始终产生 required check 结果，但只在 `mango.config.json` 的 `paths.backend` 指向的后端路径受影响时启动 Java。普通后端质量门禁由 `classify-pmo-check-scope.mjs` 选择直接修改的 Maven 模块，不使用 `-am` 或 `-amd` 扩大 Reactor；依赖构建和消费者兼容性作为独立验证，根 POM、架构验证模块和全局架构输入才使用完整 Reactor。GitHub 与 Gitea 模板共用这套范围判定。
 
+### 5.2 存量模块首次纳管
+
+`architecture-debt-budget.json` 是业务仓自己的递减预算，不随 `mango pmo sync/upgrade` 覆盖。门禁启用前已经存在、但缺少 `module.properties` 的模块必须先建立独立纳管 PR；该 PR 只允许目标 starter 的身份文件和此预算文件。先用 PR 的精确 base SHA 生成完整 inventory，再写入审计记录：
+
+旧业务仓尚无项目预算时，先用 `mango pmo upgrade --dry-run` 检查并升级 PMO bundle 和 GitHub/Gitea workflow。迁移门禁只在预算确实缺失、变更至少包含一个托管 workflow、且 diff 仅含 PMO/Skill/PR 模板时允许这一 PR；夹带任何业务文件都会失败。合并后立即建立一个只新增 `business-pmo/architecture-debt-budget.json` 的治理 PR，以未修改业务源码的完整报告执行 `--write` 初始化。初始化 CI 同样要求完整报告，`--baseline-only` 或夹带其它文件都会失败。新生成的干净项目已经携带空预算，不需要此迁移 PR；已有非空预算永远不会被 sync、upgrade 或 rollback 覆盖。
+
+旧业务仓按以下四个独立 PR 顺序执行，前一个合并后再从目标分支创建下一个：
+
+1. PMO/workflow 升级 PR：执行 `mango pmo upgrade --project-dir . --to {{mangoPmoVersion}}`，不加 `--sync-shell`，不带业务文件。未知自定义 workflow 只有确认整文件交给 Mango 管理后才加 `--adopt-governance`。
+2. 预算初始化 PR：现场运行下方完整 Reactor inventory 命令，再执行 checker 的 `--report ... --baseline ... --write`；diff 只新增预算文件。
+3. 模块身份纳管 PR：只添加一个 starter `module.properties` 并用 `--onboard-module` 更新预算；每个 PR 只纳管一个明确模块范围。
+4. 业务开发 PR：纳管合并后再修改业务源码、POM、配置或数据库；普通 PR 只校验预算不可抬高。
+
+预算初始化命令：
+
+```bash
+BASE_SHA="$(git rev-parse origin/main)"
+
+mvn -B -ntp -f backend/pom.xml \
+  -DskipTests \
+  -Dmango.architecture.mode=changed \
+  -Dmango.architecture.base="$BASE_SHA" \
+  -Dmango.architecture.skip=false \
+  -Dmango.architecture.requireFullReactor=true \
+  -Dmango.architecture.inventoryOnly=true \
+  -Dmango.check.rule=all \
+  -Dmango.check.gate=no-new-violations \
+  -Dmango.check.changedOnly=true \
+  -Dmango.check.baseRef="$BASE_SHA" \
+  -Dmango.check.requireFullScope=true \
+  -Dmango.check.staticFailurePolicy=block \
+  verify
+
+node business-pmo/mango-baseline/tools/check-architecture-debt-budget.mjs \
+  --report backend/target/mango-architecture-report.json \
+  --baseline business-pmo/architecture-debt-budget.json \
+  --write
+```
+
+提交前用 `git diff --name-only "$BASE_SHA"...HEAD` 检查允许的文件集合。required check 必须在可信 CI 用 PR 的真实 base SHA 重建报告，不能复用开发者上传产物。
+
+模块身份纳管使用同一条完整 Reactor 命令，然后执行：
+
+```bash
+node business-pmo/mango-baseline/tools/check-architecture-debt-budget.mjs \
+  --report backend/target/mango-architecture-report.json \
+  --baseline business-pmo/architecture-debt-budget.json \
+  --onboard-module <moduleKey-prefix> \
+  --module-properties <starter-module-properties-path> \
+  --base-ref "$BASE_SHA" \
+  --reason "<reviewed reason>" \
+  --write
+```
+
+GitHub/Gitea required check 会在 governance 模式现场重建完整报告并复验预算；普通业务 PR 只做 base 预算不可变检查和受影响模块门禁。纳管 PR 合并后才能在第二个 PR 开发业务代码。
+
 ## 6. 验收证据
 
 验收证据写入 `business-docs/evidence`，并执行：
@@ -194,6 +252,8 @@ node business-pmo/mango-baseline/tools/acceptance-evidence-check.mjs \
 | Codex 中未出现用户级 plugin | 项目 Skill 同步不安装用户级 plugin | 对发布包的 package-root plugin 执行独立安装流程 |
 | 文档 checker 失败 | 章节、字段、边界、ID 或证据不满足机器契约 | 按 rule ID 回到对应规范和模板修订 |
 | 生命周期 hash 失效 | 上游文档在下游生成后发生变化 | 重新评审上游并重做受影响的下游移交 |
+| 首次纳管提示 `onboarding-report-required` | CI 只执行了 baseline-only，或项目工作流仍是旧版本 | 升级 GitHub/Gitea PMO workflow，并用完整 Reactor inventory 执行普通 `--base-ref` 复验 |
+| 初始化项目预算提示 `initial-budget-report-required` | 旧项目第一次提交预算时没有可信完整报告 | 在独立预算初始化 PR 现场生成完整 Reactor 报告；不得用 baseline-only 或夹带业务代码 |
 
 ## 9. 相关入口
 

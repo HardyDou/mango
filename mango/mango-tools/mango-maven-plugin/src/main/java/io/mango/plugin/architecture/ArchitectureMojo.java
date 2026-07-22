@@ -118,6 +118,9 @@ public final class ArchitectureMojo extends AbstractMojo {
     @Parameter(property = "mango.architecture.skip", defaultValue = "false")
     private boolean skip;
 
+    @Parameter(property = "mango.architecture.inventoryOnly", defaultValue = "false")
+    private boolean inventoryOnly;
+
     @Parameter private File globalEntityManifest;
 
     @Parameter private List<String> businessGroupPrefixes = List.of();
@@ -170,11 +173,18 @@ public final class ArchitectureMojo extends AbstractMojo {
                         mode,
                         inventoryScope,
                         ALL_DETECTED_ISSUES,
+                        inventoryOnly,
                         session.getProjects().size(),
                         session.getAllProjects().size(),
                         durationMillis);
         writeReport(report);
         logReport(report, durationMillis);
+        if (inventoryOnly) {
+            getLog().info(
+                    "Architecture inventory-only mode wrote a full report; policy enforcement"
+                            + " remains required");
+            return;
+        }
         failOnIssues(report);
     }
 
@@ -188,6 +198,10 @@ public final class ArchitectureMojo extends AbstractMojo {
             throw new MojoExecutionException(
                     "MANGO-ARCH-ENGINE-013 excludedModules is forbidden; architecture redlines"
                             + " cannot be skipped");
+        }
+        if (inventoryOnly && !requireFullReactor) {
+            throw new MojoExecutionException(
+                    "MANGO-ARCH-ENGINE-028 inventoryOnly requires a complete Reactor");
         }
         if (lockFullReactor && !requireFullReactor) {
             throw new MojoExecutionException(
@@ -1665,6 +1679,7 @@ public final class ArchitectureMojo extends AbstractMojo {
             String mode,
             String inventoryScope,
             String issueInventory,
+            boolean inventoryOnly,
             int reactorProjectCount,
             int expectedProjectCount,
             long durationMillis) {

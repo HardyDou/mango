@@ -79,6 +79,9 @@ test('generated backend validation only follows behavior-changing templates, gen
     'mango/mango-tools/mango-architecture-rules/src/main/java/example/Rule.java',
     'mango/mango-tools/mango-maven-plugin/src/main/java/example/Gate.java',
     'mango-business-starter/backend/modules/{{moduleKebab}}/pom.xml',
+    'mango-ui/packages/mango-cli/templates/full/.github/workflows/pmo-doc-check.yml',
+    'mango-ui/packages/mango-cli/templates/full/.gitea/workflows/pmo-doc-check.yml',
+    'mango-ui/packages/mango-cli/templates/full/business-pmo/architecture-debt-budget.json',
     'mango-ui/packages/mango-cli/templates/full/backend/pom.xml',
     'mango-ui/packages/mango-cli/src/index.mjs',
     'mango-ui/packages/mango-cli/scripts/check-generated-backend-gate.mjs',
@@ -111,6 +114,8 @@ test('unknown critical generated-backend governance inputs fail closed', () => {
     'mango/mango-parent/new-governance.xml',
     'mango-pmo/baselines/mango-check/new-policy.json',
     'mango-pmo/tools/classify-pmo-check-scope.mjs',
+    'mango-pmo/tools/check-architecture-debt-budget.mjs',
+    'business-pmo/architecture-debt-budget.json',
     'business-pmo/mango-baseline/tools/classify-pmo-check-scope.mjs',
   ]) {
     assert.equal(classifyChangedFiles([file]).generated_backend, true, file);
@@ -182,6 +187,14 @@ test('business repositories resolve custom paths from mango.config.json', t => {
   );
   assert.deepEqual(
     resolveMavenScope(['.gitea/workflows/pmo-doc-check.yml'], project),
+    { mode: 'governance', projects: [] },
+  );
+  assert.equal(
+    classifyChangedFiles(['business-pmo/architecture-debt-budget.json'], project).backend,
+    true,
+  );
+  assert.deepEqual(
+    resolveMavenScope(['business-pmo/architecture-debt-budget.json'], project),
     { mode: 'governance', projects: [] },
   );
 });
@@ -309,6 +322,8 @@ test('global backend inputs use governance acceptance instead of a full PR react
     'mango/mango-parent/pom.xml',
     'mango/mango-tools/mango-maven-plugin/src/main/java/example/Gate.java',
     'mango-pmo/baselines/architecture/debt-budget.json',
+    'mango-pmo/tools/check-architecture-debt-budget.mjs',
+    'business-pmo/architecture-debt-budget.json',
   ]) {
     assert.deepEqual(resolveMavenScope([file]), { mode: 'governance', projects: [] }, file);
   }

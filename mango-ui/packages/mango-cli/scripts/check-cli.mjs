@@ -111,6 +111,7 @@ try {
     'business-pmo/mango-baseline/tools/pmo-preflight.mjs',
     'business-pmo/mango-baseline/tools/check-document-set.mjs',
     'business-pmo/mango-baseline/baseline.json',
+    'business-pmo/architecture-debt-budget.json',
     'business-pmo/global-entity-exceptions.json',
     'business-pmo/pmo-lock.json',
     '.agents/skills/.mango-pmo.json',
@@ -136,6 +137,17 @@ try {
   assertEqual(globalEntityManifest.version, 1, 'global Entity manifest version');
   if (!Array.isArray(globalEntityManifest.exceptions) || globalEntityManifest.exceptions.length !== 0) {
     throw new Error('generated global Entity manifest must start with an empty exceptions array');
+  }
+  const architectureDebtBudget = JSON.parse(
+    readFileSync(join(projectRoot, 'business-pmo/architecture-debt-budget.json'), 'utf8'),
+  );
+  assertEqual(architectureDebtBudget.schemaVersion, 4, 'architecture debt budget schema');
+  assertEqual(architectureDebtBudget.totalIssueCount, 0, 'initial architecture debt total');
+  if (
+    Object.keys(architectureDebtBudget.modules || {}).length !== 0 ||
+    Object.keys(architectureDebtBudget.moduleOnboardings || {}).length !== 0
+  ) {
+    throw new Error('generated architecture debt budget must start empty and auditable');
   }
 
   const config = JSON.parse(readFileSync(join(projectRoot, 'mango.config.json'), 'utf8'));
@@ -359,15 +371,25 @@ try {
     '-pl "$MAVEN_PROJECTS"',
     '-Dmango.architecture.mode=changed',
     '-Dmango.architecture.requireFullReactor=false',
+    'Generate trusted full-Reactor architecture inventory for governance',
+    '-Dmango.architecture.requireFullReactor=true',
+    '-Dmango.architecture.inventoryOnly=true',
     '-Dmango.architecture.skip=false',
     '-Dmango.check.rule=all',
     '-Dmango.check.gate=no-new-violations',
     '-Dmango.check.changedOnly=true',
     '-Dmango.check.baseRef="$BASE_SHA"',
     '-Dmango.check.requireFullScope=false',
+    '-Dmango.check.requireFullScope=true',
     '-Dmango.check.staticFailurePolicy=block',
     '-Denforcer.skip=false',
     'verify',
+    'Enforce project architecture debt budget policy',
+    'business-pmo/mango-baseline/tools/check-architecture-debt-budget.mjs',
+    '--report "$BACKEND_ROOT/target/mango-architecture-report.json"',
+    '--baseline business-pmo/architecture-debt-budget.json',
+    '--baseline-only',
+    '--base-ref "$BASE_SHA"',
   ]) {
     for (const workflow of [pmoWorkflow, giteaPmoWorkflow]) {
       if (!workflow.includes(expected)) {
@@ -381,6 +403,7 @@ try {
     'cancel-in-progress: true',
     'preflight_scope:',
     'maven_dependency_projects: ${{ steps.scope.outputs.maven_dependency_projects }}',
+    'backend_root: ${{ steps.scope.outputs.backend_root }}',
     'pmo:\n    name: PMO contract gates\n    needs: preflight_scope',
     'docs:\n    name: PMO document gates\n    needs: preflight_scope',
     'backend:\n    name: Affected backend gates\n    needs: preflight_scope',
@@ -400,6 +423,7 @@ try {
     "steps.scope.outputs.backend_mode == 'governance'",
     "steps.scope.outputs.backend_mode == 'partial'",
     'steps.scope.outputs.maven_dependency_projects',
+    'steps.scope.outputs.backend_root',
   ]) {
     if (!giteaPmoWorkflow.includes(expected)) {
       throw new Error(`generated Gitea PMO workflow missing compatible scope contract: ${expected}`);
@@ -2753,6 +2777,11 @@ function assertPmoCommands(projectRoot) {
   assertEqual(lock.packageVersion, installedManifest.packageVersion, 'PMO lock package version');
   assertEqual(lock.bundleSha256, installedManifest.bundleSha256, 'PMO lock bundle hash');
   assertIncludes(skillState.roots, 'mango-pmo-lifecycle', 'project PMO skill roots');
+  const architectureBudgetPath = join(projectRoot, 'business-pmo/architecture-debt-budget.json');
+  const projectOwnedBudget = JSON.parse(readFileSync(architectureBudgetPath, 'utf8'));
+  projectOwnedBudget.generatedAt = '2026-07-22T12:34:56.000Z';
+  writeFileSync(architectureBudgetPath, `${JSON.stringify(projectOwnedBudget, null, 2)}\n`);
+  const projectOwnedBudgetText = readFileSync(architectureBudgetPath, 'utf8');
   const status = assertCommandOk(
     [cli, 'pmo', 'status', '--project-dir', projectRoot],
     projectRoot,
@@ -2927,10 +2956,16 @@ function assertPmoCommands(projectRoot) {
   }
   assertEqual(readFileSync(skillPath, 'utf8'), originalSkill, 'tampered project skill after pmo sync');
   const projectTemplateBeforeRollback = readFileSync(projectTemplatePath, 'utf8');
+  const githubWorkflowPath = join(projectRoot, '.github/workflows/pmo-doc-check.yml');
+  const giteaWorkflowPath = join(projectRoot, '.gitea/workflows/pmo-doc-check.yml');
+  const githubWorkflowBeforeRollback = readFileSync(githubWorkflowPath, 'utf8');
+  const giteaWorkflowBeforeRollback = readFileSync(giteaWorkflowPath, 'utf8');
   writeFileSync(
     projectTemplatePath,
     projectTemplateBeforeRollback.replace('business-owned summary', 'post-backup business summary'),
   );
+  writeFileSync(githubWorkflowPath, `${githubWorkflowBeforeRollback}\n# post-backup drift\n`);
+  writeFileSync(giteaWorkflowPath, `${giteaWorkflowBeforeRollback}\n# post-backup drift\n`);
 
   const unavailableUpgrade = spawnSync(
     process.execPath,
@@ -2955,6 +2990,13 @@ function assertPmoCommands(projectRoot) {
     projectTemplateBeforeRollback,
     'project PR template restored from PMO rollback backup',
   );
+  assertEqual(readFileSync(githubWorkflowPath, 'utf8'), githubWorkflowBeforeRollback, 'GitHub workflow restored');
+  assertEqual(readFileSync(giteaWorkflowPath, 'utf8'), giteaWorkflowBeforeRollback, 'Gitea workflow restored');
+  assertEqual(
+    readFileSync(architectureBudgetPath, 'utf8'),
+    projectOwnedBudgetText,
+    'project budget after PMO rollback',
+  );
   assertCommandOk(
     [cli, 'pmo', 'check', '--project-dir', projectRoot, '--locked'],
     projectRoot,
@@ -2978,6 +3020,98 @@ function assertPmoSyncCommand(tempRoot) {
     existsSync(join(dryRunRoot, 'business-pmo'))
   ) {
     throw new Error(`pmo sync dry-run should print a plan without writing files:\n${dryRunResult.stdout}`);
+  }
+
+  const customWorkflowRoot = join(tempRoot, 'existing-business-custom-workflow');
+  const customWorkflowPath = join(customWorkflowRoot, '.github/workflows/pmo-doc-check.yml');
+  mkdirSync(join(customWorkflowRoot, '.github/workflows'), { recursive: true });
+  const customWorkflow = 'name: Business-owned checks\n\non: [push]\n';
+  writeFileSync(customWorkflowPath, customWorkflow);
+  const rejectedCustomWorkflow = spawnSync(
+    process.execPath,
+    [cli, 'pmo', 'upgrade', '--project-dir', customWorkflowRoot],
+    { cwd: tempRoot, encoding: 'utf8' },
+  );
+  if (
+    rejectedCustomWorkflow.status === 0 ||
+    !`${rejectedCustomWorkflow.stdout}\n${rejectedCustomWorkflow.stderr}`.includes('will not be overwritten') ||
+    existsSync(join(customWorkflowRoot, 'business-pmo/mango-baseline'))
+  ) {
+    throw new Error(
+      `pmo upgrade must fail before writes for an unrecognized custom workflow:\n${rejectedCustomWorkflow.stdout}\n${rejectedCustomWorkflow.stderr}`,
+    );
+  }
+  assertEqual(readFileSync(customWorkflowPath, 'utf8'), customWorkflow, 'custom workflow after rejected upgrade');
+  assertCommandOk(
+    [cli, 'pmo', 'upgrade', '--project-dir', customWorkflowRoot, '--adopt-governance'],
+    customWorkflowRoot,
+    'explicit custom governance workflow adoption',
+  );
+  const adoptedWorkflow = readFileSync(customWorkflowPath, 'utf8');
+  if (!adoptedWorkflow.startsWith('# Managed by Mango CLI.')) {
+    throw new Error('pmo upgrade --adopt-governance did not establish explicit workflow ownership');
+  }
+  if (existsSync(join(customWorkflowRoot, 'business-pmo/architecture-debt-budget.json'))) {
+    throw new Error('pmo upgrade must never synthesize a legacy project architecture debt budget');
+  }
+  const idempotentGovernanceSync = assertCommandOk(
+    [cli, 'pmo', 'sync', '--project-dir', customWorkflowRoot, '--dry-run'],
+    customWorkflowRoot,
+    'idempotent governance workflow sync',
+  );
+  for (const workflowPath of ['.github/workflows/pmo-doc-check.yml', '.gitea/workflows/pmo-doc-check.yml']) {
+    if (!idempotentGovernanceSync.stdout.includes(`skip   ${workflowPath}`)) {
+      throw new Error(`second pmo sync should leave managed workflow unchanged: ${workflowPath}`);
+    }
+  }
+  const managedHistoricalWorkflow = `${readFileSync(customWorkflowPath, 'utf8')}\n# managed historical revision\n`;
+  writeFileSync(customWorkflowPath, managedHistoricalWorkflow);
+  assertCommandOk(
+    [cli, 'pmo', 'sync', '--project-dir', customWorkflowRoot],
+    customWorkflowRoot,
+    'managed governance workflow refresh before rollback',
+  );
+  assertCommandOk(
+    [cli, 'pmo', 'rollback', '--project-dir', customWorkflowRoot],
+    customWorkflowRoot,
+    'historical governance workflow rollback',
+  );
+  assertEqual(
+    readFileSync(customWorkflowPath, 'utf8'),
+    managedHistoricalWorkflow,
+    'byte-exact historical workflow rollback',
+  );
+  assertCommandOk(
+    [cli, 'pmo', 'sync', '--project-dir', customWorkflowRoot],
+    customWorkflowRoot,
+    'managed governance workflow repair after rollback',
+  );
+
+  const legacyWorkflowRoot = join(tempRoot, 'existing-business-legacy-workflow');
+  for (const workflowPath of ['.github/workflows/pmo-doc-check.yml', '.gitea/workflows/pmo-doc-check.yml']) {
+    const historical = spawnSync('git', ['show', `HEAD:mango-ui/packages/mango-cli/templates/full/${workflowPath}`], {
+      cwd: packageRoot,
+      encoding: 'utf8',
+    });
+    if (historical.status !== 0) {
+      throw new Error(`cannot load historical canonical workflow ${workflowPath}: ${historical.stderr}`);
+    }
+    const target = join(legacyWorkflowRoot, workflowPath);
+    mkdirSync(join(target, '..'), { recursive: true });
+    writeFileSync(
+      target,
+      workflowPath.startsWith('.gitea/') ? historical.stdout.replaceAll('\n', '\r\n') : historical.stdout,
+    );
+  }
+  assertCommandOk(
+    [cli, 'pmo', 'upgrade', '--project-dir', legacyWorkflowRoot],
+    legacyWorkflowRoot,
+    'verified legacy governance workflow upgrade',
+  );
+  for (const workflowPath of ['.github/workflows/pmo-doc-check.yml', '.gitea/workflows/pmo-doc-check.yml']) {
+    if (!readFileSync(join(legacyWorkflowRoot, workflowPath), 'utf8').startsWith('# Managed by Mango CLI.')) {
+      throw new Error(`legacy canonical workflow was not upgraded: ${workflowPath}`);
+    }
   }
 
   const syncRoot = join(tempRoot, 'existing-business-sync');

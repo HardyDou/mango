@@ -335,6 +335,19 @@ class ArchitectureMojoTest {
     }
 
     @Test
+    void inventoryOnlyCannotRunAgainstAPartialReactor() throws Exception {
+        ArchitectureMojo mojo = new ArchitectureMojo();
+        setField(mojo, "inventoryOnly", true);
+        setField(mojo, "requireFullReactor", false);
+        setField(mojo, "excludedModules", List.of());
+
+        var error = assertThrows(
+                org.apache.maven.plugin.MojoExecutionException.class, mojo::execute);
+
+        assertTrue(error.getMessage().contains("MANGO-ARCH-ENGINE-028"));
+    }
+
+    @Test
     void changedParentPomImpactsAllDescendantProjects(@TempDir Path root) throws Exception {
         MavenProject parent = project(root, "backend", "backend-parent");
         MavenProject order = project(root, "backend/modules/order", "order-parent");

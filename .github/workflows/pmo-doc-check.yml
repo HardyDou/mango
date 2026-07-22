@@ -263,14 +263,37 @@ jobs:
             -Dmango.check.baseRef="$BASE_SHA" \
             verify
 
-      - name: Enforce committed architecture debt budget policy
-        if: needs.preflight_scope.outputs.m09 == 'true' && needs.preflight_scope.outputs.backend == 'true'
+      - name: Generate trusted full-Reactor architecture inventory for governance
+        if: needs.preflight_scope.outputs.m09 == 'true' && needs.preflight_scope.outputs.backend_mode == 'governance'
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
-        run: >-
-          node mango-pmo/tools/check-architecture-debt-budget.mjs
-          --baseline-only
-          --base-ref "$BASE_SHA"
+        run: |
+          mvn -f mango/pom.xml \
+            -DskipTests \
+            -Dmango.architecture.skip=false \
+            -Dmango.architecture.mode=changed \
+            -Dmango.architecture.requireFullReactor=true \
+            -Dmango.architecture.inventoryOnly=true \
+            -Dmango.architecture.base="$BASE_SHA" \
+            -Dmango.check.changedOnly=true \
+            -Dmango.check.gate=no-new-violations \
+            -Dmango.check.baseRef="$BASE_SHA" \
+            verify
+
+      - name: Enforce committed architecture debt budget policy
+        if: >-
+          needs.preflight_scope.outputs.m09 == 'true' &&
+          (needs.preflight_scope.outputs.backend == 'true' ||
+          needs.preflight_scope.outputs.backend_mode == 'governance')
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          BACKEND_MODE: ${{ needs.preflight_scope.outputs.backend_mode }}
+        run: |
+          if [ "$BACKEND_MODE" = "governance" ]; then
+            node mango-pmo/tools/check-architecture-debt-budget.mjs --base-ref "$BASE_SHA"
+          else
+            node mango-pmo/tools/check-architecture-debt-budget.mjs --baseline-only --base-ref "$BASE_SHA"
+          fi
 
       - name: Verify generated business backend gates
         if: >-
