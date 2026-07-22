@@ -27,6 +27,12 @@ export function registerMangoNoticeAdminPages() {
     },
     routes: [
       {
+        path: '/notice/site-message',
+        component: 'notice/site-message/index',
+        menuName: '我的消息（兼容入口）',
+        visible: 0,
+      },
+      {
         path: '/message-center/receive-setting',
         component: 'notice/receive-setting/index',
         menuName: '接收配置',

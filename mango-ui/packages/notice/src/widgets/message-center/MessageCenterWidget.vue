@@ -62,7 +62,7 @@ import {
   getMyUnreadCount,
   markAllMySiteMessagesRead,
 } from '../../api/notice';
-import type { NoticeSiteMessage } from '../../api/notice';
+import type { NoticeSiteMessage } from '../../types/notice';
 import type { MessageCenterCategory, MessageCenterWidgetProps } from '../types';
 
 defineOptions({
@@ -77,7 +77,7 @@ const DEFAULT_CATEGORIES: MessageCenterCategory[] = [
 ];
 
 const props = withDefaults(defineProps<MessageCenterWidgetProps>(), {
-  messageCenterPath: '/notice/site-message',
+  messageCenterPath: '/message-center/site-message',
   pageSize: 1,
 });
 

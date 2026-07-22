@@ -1,31 +1,25 @@
-import { createRequire } from 'node:module';
 import { resolve } from 'path';
+import vue from '@vitejs/plugin-vue';
+import { defineConfig } from 'vitest/config';
 
 const repoRoot = resolve(__dirname, '../..');
-const adminNodeModules = resolve(repoRoot, 'apps/mango-admin/node_modules');
-const require = createRequire(import.meta.url);
-const vue = require(resolve(adminNodeModules, '@vitejs/plugin-vue')).default;
-const { defineConfig } = require(resolve(adminNodeModules, 'vite'));
 
 export default defineConfig({
   plugins: [vue()],
   test: {
     globals: true,
     environment: 'happy-dom',
-    include: ['packages/notice/src/**/*.spec.ts'],
+    include: ['src/**/*.spec.ts'],
   },
   resolve: {
     alias: {
+      '@mango/admin-pages/core': resolve(repoRoot, 'packages/admin-pages/src/core.ts'),
       '@mango/common': resolve(repoRoot, 'packages/common'),
+      '@mango/http-client': resolve(repoRoot, 'packages/http-client/src/index.ts'),
       '@mango/notice/admin': resolve(repoRoot, 'packages/notice/src/admin.ts'),
       '@mango/notice/client': resolve(repoRoot, 'packages/notice/src/client.ts'),
       '@mango/notice/realtime': resolve(repoRoot, 'packages/notice/src/realtime.ts'),
       '@mango/notice': resolve(repoRoot, 'packages/notice/src'),
-      '@vue/test-utils': resolve(adminNodeModules, '@vue/test-utils'),
-      vitest: resolve(adminNodeModules, 'vitest'),
-      vue: resolve(adminNodeModules, 'vue'),
-      'element-plus': resolve(adminNodeModules, 'element-plus'),
-      '@element-plus/icons-vue': resolve(adminNodeModules, '@element-plus/icons-vue'),
     },
   },
 });
