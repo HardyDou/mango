@@ -41,7 +41,7 @@
 | IMP-001 | DEC-001 | 1 | Workflow demo YAML | 新声明通过 Loader 解析且字段精确 |
 | IMP-002 | DEC-002 | 2 | Authorization resource handler | `AUTO` 继续更新，`INIT_ONLY` 保留已有目标 |
 | IMP-003 | DEC-003 | 3 | 两个 starter 的定向测试 | 新增回归用例通过 |
-| IMP-004 | DEC-001、DEC-002 | 4 | Workflow、Authorization README | 初始化行为、可见性边界和排查步骤可追踪 |
+| IMP-004 | DEC-001、DEC-002 | 4 | Workflow、Authorization README 与业务接入指南 | 初始化行为、可见性边界、角色菜单/按钮排查边界可追踪 |
 
 ## 6. 验收映射与结果
 
@@ -49,7 +49,7 @@
 |---|---|---|---|---|
 | REQ-001 | M09、M10 | `mvn -f mango/pom.xml -pl mango-platform/mango-workflow/mango-workflow-starter -Dtest=WorkflowResourceDeclarationContractTest test`；模块 `verify` | PASS - 声明装载测试 4/4；Workflow Starter 全量 16/16 | Maven 输出，2026-07-22 |
 | REQ-002 | M11 | `mvn -f mango/pom.xml -pl mango-platform/mango-authorization/mango-authorization-starter -Dtest=AuthRoleDataScopeResourceHandlerIntegrationTest test`；模块 `verify` | PASS - 真实 H2 + MyBatis-Plus 测试 8/8；Authorization Starter 全量 64/64 | Maven 输出，2026-07-22 |
-| REQ-003 | M09、M08 | `git diff --check`；`node mango-pmo/tools/test-quality-check.mjs --base main`；README 审计 | PASS - 无空白错误；2 个修改测试通过质量检查；模块 README 与源码事实审计通过 | 本次命令输出，2026-07-22 |
+| REQ-003 | M09、M08 | `git diff --check`；`node mango-pmo/tools/test-quality-check.mjs --base main`；能力说明与 README 审计 | PASS - 无空白错误；2 个修改测试通过质量检查；能力说明、模块 README 与源码事实审计通过 | 本次命令输出，2026-07-22 |
 
 ## 7. 例外与剩余风险
 

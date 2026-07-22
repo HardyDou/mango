@@ -86,6 +86,8 @@ pnpm -F @mango/admin-shell build
 
 ## 9. 变更影响记录
 
+- Issue #606 只为 Workflow demo 默认管理员补齐流程定义管理的数据范围，并保护已有 `INIT_ONLY` 目标配置；不改变菜单树 API、`component` key、角色菜单授权、租户应用绑定或页面注册协议。流程定义菜单已显示但列表为空时，应额外检查 `ROLE_ADMIN + workflow:definition:list` 数据范围；其它菜单问题仍按本指南链路排查。
+
 - MySQL 8.4 告警治理仅将 Authorization 空库 V1 中两个布尔列改为无显示宽度的 `tinyint`；菜单树 API、页面 key、角色授权、资源声明和本指南排障步骤均不改变。既有数据库不执行结构转换，新建数据库按相同业务语义初始化。
 
 - PR #557 将 Resource 收敛为六个发布物，并补强微服务乱序启动、锁竞争重试和内部调用验签；不改变菜单树 API、`component` key、菜单权限码、角色授权、租户应用绑定或页面注册协议。菜单缺失时仍按资源同步日志、角色菜单关系、租户绑定和前端页面 key 链路排查。
