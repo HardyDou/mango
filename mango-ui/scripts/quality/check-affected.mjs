@@ -4,12 +4,14 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { readAffectedWorkspaces, selectAffectedWorkspaces } from './affected-selector-lib.mjs';
+import { createQualityCommandPlan } from './quality-command-plan-lib.mjs';
 
 const uiRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const repositoryRoot = path.resolve(uiRoot, '..');
 const reportFile = path.join(repositoryRoot, '.runtime/frontend-quality/affected.json');
 const base = process.argv.find((value) => value.startsWith('--base='))?.slice('--base='.length);
 const head = process.argv.find((value) => value.startsWith('--head='))?.slice('--head='.length) || 'HEAD';
+const profile = process.argv.find((value) => value.startsWith('--profile='))?.slice('--profile='.length) || 'deep';
 let report;
 
 function git(arguments_) {
@@ -40,10 +42,6 @@ function run(command, arguments_) {
     throw new Error(`command failed (${result.status ?? 'signal'}): ${command} ${arguments_.join(' ')}`);
 }
 
-function filters(names) {
-  return names.flatMap((name) => ['--filter', name]);
-}
-
 try {
   const records = readAffectedWorkspaces(uiRoot);
   const changes = resolveChanges();
@@ -58,6 +56,7 @@ try {
     changedPathCount: changes.changedPaths?.length || 0,
     changedPaths: changes.changedPaths || [],
     ...selection,
+    profile,
     scannedWorkspaceCount: records.length,
     toolchain: {
       node: process.version,
@@ -83,33 +82,13 @@ try {
     ]);
   }
 
-  if (selection.mode === 'full') {
-    execute('pnpm', ['run', 'check:full']);
-  } else if (selection.mode === 'affected') {
-    execute('pnpm', ['quality:inventory']);
-    execute('pnpm', ['admin:styles:check']);
-    execute('pnpm', ['check:static']);
-    execute('pnpm', ['quality:gate:test']);
-    const selectedRecords = records.filter((item) => selection.selected.includes(item.name));
-    const buildTargets = selectedRecords
-      .filter((item) => typeof item.scripts.build === 'string')
-      .map((item) => item.name);
-    const testTargets = selectedRecords
-      .filter((item) => typeof item.scripts.test === 'string')
-      .map((item) => item.name);
-    if (buildTargets.length > 0) execute('pnpm', [...filters(buildTargets), '-r', 'build']);
-    if (testTargets.length > 0) execute('pnpm', [...filters(testTargets), '-r', 'test']);
-    if (selection.publishableChanged.length > 0) {
-      execute('pnpm', ['package-exports:check']);
-      execute('pnpm', ['package-consumer:typecheck']);
-    }
-  } else {
-    execute('pnpm', ['quality:versions']);
+  for (const [command, arguments_] of createQualityCommandPlan(records, selection, profile)) {
+    execute(command, arguments_);
   }
   report.completedAt = new Date().toISOString();
   report.status = 'passed';
   persist();
-  console.log(`affected frontend check PASS ${JSON.stringify(selection)}`);
+  console.log(`affected frontend check PASS profile=${profile} ${JSON.stringify(selection)}`);
 } catch (error) {
   const message = error instanceof Error ? error.message : String(error);
   if (report) {
