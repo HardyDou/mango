@@ -1,40 +1,44 @@
 package io.mango.ai.core.service.impl;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import io.mango.infra.realtime.api.RealtimeApi;
+import io.mango.infra.realtime.api.dto.RealtimeOutboundMessage;
 import org.junit.jupiter.api.Test;
-import reactor.core.Disposable;
-
-import java.util.concurrent.CopyOnWriteArrayList;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
- * AI 进程内推送行为测试。
+ * AI Realtime 推送行为测试。
  */
 class AiPushServiceTest {
 
     @Test
-    void connect_连接后可接收通知与告警广播() throws Exception {
-        ObjectMapper objectMapper = new ObjectMapper();
-        AiPushService service = new AiPushService(objectMapper, 25_000L);
-        CopyOnWriteArrayList<String> received = new CopyOnWriteArrayList<>();
+    void broadcast_通知与告警委托给RealtimeApi() {
+        RecordingRealtimeApi realtimeApi = new RecordingRealtimeApi();
+        AiPushService service = new AiPushService(realtimeApi);
 
-        Disposable connection = service.connect().take(3).subscribe(received::add);
         service.broadcastNotification("notice");
         service.broadcastAlert("alert");
 
-        assertEquals(3, received.size());
-        assertEvent(objectMapper, received.get(0), "connected", "SSE connected");
-        assertEvent(objectMapper, received.get(1), "notification", "notice");
-        assertEvent(objectMapper, received.get(2), "alert", "alert");
-        connection.dispose();
+        assertEquals("notification", realtimeApi.type);
+        assertEquals("alert", realtimeApi.lastType);
+        assertEquals("notice", realtimeApi.content);
+        assertEquals("alert", realtimeApi.lastContent);
     }
 
-    private void assertEvent(
-            ObjectMapper objectMapper, String event, String type, String content) throws Exception {
-        JsonNode json = objectMapper.readTree(event);
-        assertEquals(type, json.path("type").asText());
-        assertEquals(content, json.path("content").asText());
+    private static final class RecordingRealtimeApi implements RealtimeApi {
+        private String type;
+        private String content;
+        private String lastType;
+        private String lastContent;
+
+        @Override
+        public void publish(RealtimeOutboundMessage message) {
+            lastType = message.type();
+            lastContent = message.content();
+            if (type == null) {
+                type = lastType;
+                content = lastContent;
+            }
+        }
     }
 }

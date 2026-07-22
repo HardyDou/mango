@@ -16,16 +16,10 @@ import java.util.concurrent.atomic.AtomicReference;
 final class AiSseEmitterFactory {
 
     private static final long CHAT_TIMEOUT_MILLIS = 5 * 60 * 1000L;
-    private static final long NO_TIMEOUT = 0L;
-
     private AiSseEmitterFactory() {}
 
     static SseEmitter createChat(Flux<String> events) {
         return create(events, CHAT_TIMEOUT_MILLIS);
-    }
-
-    static SseEmitter createPush(Flux<String> events) {
-        return create(events, NO_TIMEOUT);
     }
 
     private static SseEmitter create(Flux<String> events, long timeout) {

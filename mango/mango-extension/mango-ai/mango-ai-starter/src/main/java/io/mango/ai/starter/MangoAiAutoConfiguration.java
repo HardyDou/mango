@@ -4,9 +4,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.ai.core.controller.ChatController;
 import io.mango.ai.core.provider.DeepSeekProvider;
 import io.mango.ai.core.provider.IAiProvider;
+import io.mango.ai.core.service.IAiPushService;
+import io.mango.ai.core.service.impl.AiPushService;
 import io.mango.ai.core.service.impl.ChatService;
+import io.mango.infra.realtime.api.RealtimeApi;
 import io.netty.channel.ChannelOption;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.AutoConfigureAfter;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -24,6 +29,10 @@ import java.time.Duration;
  * AI 扩展自动配置。
  */
 @AutoConfiguration
+@AutoConfigureAfter(name = {
+    "io.mango.infra.realtime.starter.MangoRealtimeAutoConfiguration",
+    "io.mango.infra.realtime.starter.remote.RealtimeRemoteAutoConfiguration"
+})
 @EnableConfigurationProperties(MangoAiProperties.class)
 @ComponentScan(basePackageClasses = {ChatController.class, ChatService.class})
 public class MangoAiAutoConfiguration {
@@ -51,5 +60,12 @@ public class MangoAiAutoConfiguration {
                 webClient,
                 properties.model(),
                 Duration.ofMillis(properties.readTimeout()));
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    @ConditionalOnBean(RealtimeApi.class)
+    IAiPushService aiPushService(RealtimeApi realtimeApi) {
+        return new AiPushService(realtimeApi);
     }
 }

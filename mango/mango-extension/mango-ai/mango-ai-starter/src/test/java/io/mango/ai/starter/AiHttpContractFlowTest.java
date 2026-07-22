@@ -21,6 +21,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -74,6 +75,12 @@ class AiHttpContractFlowTest {
     }
 
     @Test
+    void legacyAiSseEndpoint_已移除() throws Exception {
+        mockMvc.perform(get("/ai/sse"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
     void chat_合法请求_保持流式消息与会话完成事件() throws Exception {
         MvcResult result = mockMvc.perform(post("/ai/chat")
                         .header("Authorization", "Bearer test-token")
@@ -114,7 +121,8 @@ class AiHttpContractFlowTest {
     }
 
     @SpringBootConfiguration
-    @EnableAutoConfiguration
+    @EnableAutoConfiguration(
+            excludeName = "io.mango.infra.realtime.starter.MangoRealtimeAutoConfiguration")
     @Import(MangoAiAutoConfiguration.class)
     static class TestApplication {
 

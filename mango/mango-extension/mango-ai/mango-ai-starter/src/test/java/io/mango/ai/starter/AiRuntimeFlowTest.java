@@ -13,7 +13,6 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -23,7 +22,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag("ai")
 @SpringBootTest(
         classes = AiHttpContractFlowTest.TestApplication.class,
-        properties = "mango.ai.sse.heartbeat-interval=100",
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class AiRuntimeFlowTest {
 
@@ -56,20 +54,4 @@ class AiRuntimeFlowTest {
         assertFalse(events.stream().anyMatch(event -> event.startsWith("data:")));
     }
 
-    @Test
-    void sse_真实HTTP入口_建立连接后返回连接事件() {
-        WebClient client = WebClient.builder().baseUrl("http://127.0.0.1:" + port).build();
-
-        String event = client.get()
-                .uri("/ai/sse")
-                .accept(MediaType.TEXT_EVENT_STREAM)
-                .retrieve()
-                .bodyToFlux(String.class)
-                .blockFirst(Duration.ofSeconds(5));
-
-        assertNotNull(event);
-        assertTrue(event.contains("\"type\":\"connected\""), event);
-        assertTrue(event.contains("SSE connected"), event);
-        assertFalse(event.startsWith("data:"), event);
-    }
 }
