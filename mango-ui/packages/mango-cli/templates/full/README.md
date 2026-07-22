@@ -83,13 +83,13 @@ npm --prefix frontend run build
 | 命令 | 作用 |
 |------|------|
 | `mango workspace init` | 创建 `.mango/workspace.json`，并补齐 `.mango/dev-workspace.env` |
-| `mango workspace status` | 打印当前 workspace、端口和应用配置 |
+| `mango workspace status` | 打印当前 workspace、数据库、初始化来源、端口和应用配置 |
 | `mango dev doctor` | 校验工具链、POM 和端口 |
 | `mango dev start` | 启动默认分组 |
 | `mango dev start backend` | 启动后端 |
 | `mango dev start frontend` | 启动前端 |
 | `mango dev restart` | 按 stop + start 重启默认分组 |
-| `mango dev status` | 查看进程状态 |
+| `mango dev status` | 查看进程状态，并校验运行中后端 datasource database 与 workspace 数据库一致 |
 | `mango dev logs {{projectKebab}}-service` | 查看后端日志 |
 | `mango dev stop` | 停止默认分组 |
 | `mango frontend prepare` | 准备前端 source 模式样式聚合文件 |
