@@ -24,13 +24,13 @@ test.describe('T1 组织岗位权限闭环', () => {
 
     await loginAsCompanyA(page);
 
-    await expect(page.getByText('审批中心')).toHaveCount(0);
+    await expect(page.getByText('审批管理')).toHaveCount(0);
     await expect(page.getByText('机构管理')).toHaveCount(0);
     await expect(page.getByText('应用管理')).toHaveCount(0);
     await expect(page.getByText('菜单管理')).toHaveCount(0);
 
-    const orgResponsePromise = page.waitForResponse((response) =>
-      response.url().includes('/api/org/tree') && response.status() === 200
+    const orgResponsePromise = page.waitForResponse(
+      (response) => response.url().includes('/api/org/tree') && response.status() === 200,
     );
     await page.goto('/#/system/org');
     await orgResponsePromise;
@@ -39,8 +39,8 @@ test.describe('T1 组织岗位权限闭环', () => {
     await expect(page.getByText('请选择左侧组织')).toBeVisible();
     await expectNoAuthError(page);
 
-    const postPageResponsePromise = page.waitForResponse((response) =>
-      response.url().includes('/api/post/page') && response.status() === 200
+    const postPageResponsePromise = page.waitForResponse(
+      (response) => response.url().includes('/api/post/page') && response.status() === 200,
     );
     await page.goto('/#/system/post');
     await postPageResponsePromise;
@@ -54,8 +54,9 @@ test.describe('T1 组织岗位权限闭环', () => {
     await createDialog.getByLabel('岗位编码').fill(postCode);
     await createDialog.getByLabel('备注').fill('T1 E2E 临时岗位');
 
-    const createResponsePromise = page.waitForResponse((response) =>
-      response.url().includes('/api/post') && response.request().method() === 'POST' && response.status() === 200
+    const createResponsePromise = page.waitForResponse(
+      (response) =>
+        response.url().includes('/api/post') && response.request().method() === 'POST' && response.status() === 200,
     );
     await page.getByRole('button', { name: '确定' }).click();
     await createResponsePromise;
@@ -70,8 +71,9 @@ test.describe('T1 组织岗位权限闭环', () => {
     await expect(editDialog).toBeVisible();
     await editDialog.getByLabel('岗位名称').fill(editedPostName);
 
-    const updateResponsePromise = page.waitForResponse((response) =>
-      response.url().includes('/api/post') && response.request().method() === 'PUT' && response.status() === 200
+    const updateResponsePromise = page.waitForResponse(
+      (response) =>
+        response.url().includes('/api/post') && response.request().method() === 'PUT' && response.status() === 200,
     );
     await page.getByRole('button', { name: '确定' }).click();
     await updateResponsePromise;
@@ -83,8 +85,9 @@ test.describe('T1 组织岗位权限闭环', () => {
     await editedRow.getByRole('button', { name: '删除' }).click();
     await expect(page.getByText(`确认删除岗位「${editedPostName}」?`)).toBeVisible();
 
-    const deleteResponsePromise = page.waitForResponse((response) =>
-      response.url().includes('/api/post') && response.request().method() === 'DELETE' && response.status() === 200
+    const deleteResponsePromise = page.waitForResponse(
+      (response) =>
+        response.url().includes('/api/post') && response.request().method() === 'DELETE' && response.status() === 200,
     );
     await page.getByRole('button', { name: '确定' }).click();
     await deleteResponsePromise;

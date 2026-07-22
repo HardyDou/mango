@@ -127,7 +127,7 @@ class MenuServiceImplIntegrationTest {
     @Test
     @DisplayName("buildMenuTree should keep workflow manage children under workflow root")
     void buildMenuTreeKeepsWorkflowManageChildrenNested() {
-        seedMenu(menu(26L, 0L, "审批中心", "workflow", 1, 2, "mango-workflow"));
+        seedMenu(menu(26L, 0L, "审批管理", "workflow", 1, 2, "mango-workflow"));
         seedMenu(menu(2601L, 26L, "流程办理", "workflow:task", 2, 1, "mango-workflow"));
         seedMenu(menu(2604L, 26L, "流程管理", "workflow:manage", 1, 3, "mango-workflow"));
         seedMenu(menu(260401L, 2604L, "流程模板", "workflow:template", 2, 1, "mango-workflow"));

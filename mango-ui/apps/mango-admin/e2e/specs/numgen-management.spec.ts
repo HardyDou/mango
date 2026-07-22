@@ -13,8 +13,8 @@ async function login(page: Page) {
   await page.locator('.tenant-select').click();
   await page.getByRole('option', { name: /芒果集团/ }).click();
 
-  const loginResponsePromise = page.waitForResponse((response) =>
-    new URL(response.url()).pathname === '/api/auth/login' && response.request().method() === 'POST'
+  const loginResponsePromise = page.waitForResponse(
+    (response) => new URL(response.url()).pathname === '/api/auth/login' && response.request().method() === 'POST',
   );
   await page.locator('.login-btn').click();
   const loginResponse = await loginResponsePromise;
@@ -25,8 +25,9 @@ async function login(page: Page) {
     await expect(resetDialog).toBeVisible({ timeout: 10000 });
     await resetDialog.getByLabel('新密码', { exact: true }).fill(requiredPassword);
     await resetDialog.getByLabel('确认密码', { exact: true }).fill(requiredPassword);
-    const passwordChangeResponsePromise = page.waitForResponse((response) =>
-      response.url().includes('/api/auth/password/change-required') && response.request().method() === 'POST'
+    const passwordChangeResponsePromise = page.waitForResponse(
+      (response) =>
+        response.url().includes('/api/auth/password/change-required') && response.request().method() === 'POST',
     );
     await resetDialog.getByRole('button', { name: '确定' }).click();
     await expectBusinessOk(await passwordChangeResponsePromise);
@@ -56,7 +57,13 @@ async function expectBusinessOk(response: APIResponse) {
   return body;
 }
 
-async function createRuleVersion(page: Page, headers: Record<string, string>, genKey: string, version: number, prefix: string) {
+async function createRuleVersion(
+  page: Page,
+  headers: Record<string, string>,
+  genKey: string,
+  version: number,
+  prefix: string,
+) {
   const ruleResponse = await page.request.post('/api/numgen/rules', {
     headers,
     data: {
@@ -127,7 +134,7 @@ async function versions(page: Page, headers: Record<string, string>, genKey: str
   return body.data?.list || [];
 }
 
-test.describe('@numgen 编号规则管理 E2E', () => {
+test.describe('@numgen 编号管理 E2E', () => {
   test('@p1 新增规则时可在片段上配置流水分组', async ({ page }) => {
     await login(page);
     const stamp = Date.now();
@@ -142,7 +149,7 @@ test.describe('@numgen 编号规则管理 E2E', () => {
     });
 
     await page.goto('/#/data/numgen');
-    await expect(page.getByRole('heading', { name: '编号规则' })).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole('heading', { name: '编号管理' })).toBeVisible({ timeout: 10000 });
     await page.getByRole('button', { name: '新增规则' }).click();
     await expect(page.getByRole('dialog', { name: '新增生成器' })).toBeVisible();
     await page.getByLabel('业务Key').fill(genKey);
@@ -167,19 +174,24 @@ test.describe('@numgen 编号规则管理 E2E', () => {
     await segmentDialog.getByRole('radio', { name: '自增流水' }).click();
     await page.getByRole('button', { name: '保存片段' }).click();
 
-    const saveResponsePromise = page.waitForResponse((response) =>
-      response.url().includes('/api/numgen/segments') &&
-      response.request().method() === 'POST' &&
-      response.status() === 200
+    const saveResponsePromise = page.waitForResponse(
+      (response) =>
+        response.url().includes('/api/numgen/segments') &&
+        response.request().method() === 'POST' &&
+        response.status() === 200,
     );
     await page.getByRole('dialog', { name: '新增生成器' }).getByRole('button', { name: '保存' }).click();
     await saveResponsePromise;
-    await expect(page.locator('.el-message__content', { hasText: '生成器已保存' }).last()).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('.el-message__content', { hasText: '生成器已保存' }).last()).toBeVisible({
+      timeout: 10000,
+    });
 
-    expect(segmentPayloads).toEqual(expect.arrayContaining([
-      expect.objectContaining({ segmentType: 'DATE', sequenceScope: 1 }),
-      expect.objectContaining({ segmentType: 'SEQ', sequenceScope: 0 }),
-    ]));
+    expect(segmentPayloads).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ segmentType: 'DATE', sequenceScope: 1 }),
+        expect.objectContaining({ segmentType: 'SEQ', sequenceScope: 0 }),
+      ]),
+    );
   });
 
   test('@p1 历史版本列表可查看并切换为新的生效版本', async ({ page }) => {
@@ -192,10 +204,10 @@ test.describe('@numgen 编号规则管理 E2E', () => {
     await prepareHistoryData(page, headers, genKey, genName);
 
     await page.goto('/#/data/numgen');
-    await expect(page.getByRole('heading', { name: '编号规则' })).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole('heading', { name: '编号管理' })).toBeVisible({ timeout: 10000 });
     await page.getByPlaceholder('业务Key / 名称').fill(genKey);
-    const listResponsePromise = page.waitForResponse((response) =>
-      response.url().includes('/api/numgen/generators/page') && response.status() === 200
+    const listResponsePromise = page.waitForResponse(
+      (response) => response.url().includes('/api/numgen/generators/page') && response.status() === 200,
     );
     await page.getByRole('button', { name: '查询' }).click();
     await listResponsePromise;
@@ -213,26 +225,33 @@ test.describe('@numgen 编号规则管理 E2E', () => {
     await expect(v1Row).toContainText('OLD');
     await expect(v2Row).toContainText('生效中');
 
-    const switchResponsePromise = page.waitForResponse((response) =>
-      response.url().includes('/api/numgen/rules/publish') &&
-      response.request().method() === 'POST' &&
-      response.status() === 200
+    const switchResponsePromise = page.waitForResponse(
+      (response) =>
+        response.url().includes('/api/numgen/rules/publish') &&
+        response.request().method() === 'POST' &&
+        response.status() === 200,
     );
     await v1Row.getByRole('button', { name: '切换版本' }).click();
     await page.getByRole('dialog', { name: '切换历史版本' }).getByRole('button', { name: '确定' }).click();
     await switchResponsePromise;
-    await expect(page.locator('.el-message__content', { hasText: '历史版本已切换' }).last()).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('.el-message__content', { hasText: '历史版本已切换' }).last()).toBeVisible({
+      timeout: 10000,
+    });
 
     const updatedGenerator = await generatorDetail(page, headers, genKey);
     expect(updatedGenerator.currentRuleVersion).toBe(3);
     expect(updatedGenerator.hasUnpublishedChanges).toBeFalsy();
 
     const updatedVersions = await versions(page, headers, genKey);
-    expect(updatedVersions).toEqual(expect.arrayContaining([
-      expect.objectContaining({ version: 1, versionState: 'HISTORY' }),
-      expect.objectContaining({ version: 2, versionState: 'HISTORY' }),
-      expect.objectContaining({ version: 3, versionState: 'ACTIVE' }),
-    ]));
-    await expect(page.locator('.history-table .el-table__row', { hasText: 'V3' }).first()).toContainText('生效中', { timeout: 10000 });
+    expect(updatedVersions).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ version: 1, versionState: 'HISTORY' }),
+        expect.objectContaining({ version: 2, versionState: 'HISTORY' }),
+        expect.objectContaining({ version: 3, versionState: 'ACTIVE' }),
+      ]),
+    );
+    await expect(page.locator('.history-table .el-table__row', { hasText: 'V3' }).first()).toContainText('生效中', {
+      timeout: 10000,
+    });
   });
 });

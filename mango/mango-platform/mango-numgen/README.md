@@ -21,11 +21,11 @@
 | 单个取号 | 根据 `genKey` 和动态参数返回一个编号 | `NumgenApi.nextValue` / `POST /numgen/next` |
 | 批量取号 | 一次返回多个编号，`count` 范围为 1-1000 | `NumgenApi.batchValue` / `POST /numgen/batch` |
 | 规则校验 | 保存或发布前校验规则片段是否可用 | `NumgenApi.validateRule` / `POST /numgen/rules/validate` |
-| 生成器管理 | 维护业务编号键、名称、业务域和启停状态 | 管理接口 / 前端编号规则页面 |
-| 规则版本管理 | 维护规则版本、发布状态和历史版本 | 管理接口 / 前端编号规则页面 |
-| 规则片段管理 | 支持固定文本、日期、参数、序列和表达式片段 | 管理接口 / 前端编号规则页面 |
-| 序列查询 | 查看当前序列值和分组范围 | 管理接口 / 前端编号规则页面 |
-| 生成历史 | 查询生成结果、规则版本、业务键、输入摘要和失败原因 | 管理接口 / 前端编号规则页面 |
+| 生成器管理 | 维护业务编号键、名称、业务域和启停状态 | 管理接口 / 前端编号管理页面 |
+| 规则版本管理 | 维护规则版本、发布状态和历史版本 | 管理接口 / 前端编号管理页面 |
+| 规则片段管理 | 支持固定文本、日期、参数、序列和表达式片段 | 管理接口 / 前端编号管理页面 |
+| 序列查询 | 查看当前序列值和分组范围 | 管理接口 / 前端编号管理页面 |
+| 生成历史 | 查询生成结果、规则版本、业务键、输入摘要和失败原因 | 管理接口 / 前端编号管理页面 |
 
 ## 3. 后端接入
 
@@ -112,7 +112,7 @@ const orderNo = await numgenApi.nextValue({
 ## 5. 快速开始
 
 1. 确认部署应用已启用 `mango-numgen-starter`，数据库 migration 已执行。
-2. 在编号规则管理页创建生成器，填写 `genKey`、`genName`、`domainCode` 和启停状态。
+2. 在编号管理页创建生成器，填写 `genKey`、`genName`、`domainCode` 和启停状态。
 3. 创建规则版本，按顺序配置规则片段。
 4. 使用预览能力确认样例编号符合业务格式。
 5. 发布规则版本。
@@ -220,7 +220,7 @@ mango:
 
 ## 9. 运行时配置字段
 
-运行时规则在编号规则页面维护，核心字段如下。
+运行时规则在编号管理页面维护，核心字段如下。
 
 ### 9.1 生成器字段
 
@@ -300,14 +300,14 @@ mango:
 
 ## 10. 管理入口
 
-编号规则菜单由 `mango-numgen-starter` 随 jar 提供 Resource Registry 声明
+编号管理菜单由 `mango-numgen-starter` 随 jar 提供 Resource Registry 声明
 `META-INF/mango/resources/numgen-common-menu.json` 注入：
 
 | 菜单 | 路由 | component | 权限码 |
 |------|------|-----------|--------|
-| 编号规则 | `/data/numgen` | `numgen/index` | `numgen:manage:list` |
-| 编号规则查询 | 无页面路由 | 无 | `numgen:manage:list` |
-| 编号规则维护 | 无页面路由 | 无 | `numgen:manage:write` |
+| 编号管理 | `/data/numgen` | `numgen/index` | `numgen:manage:list` |
+| 编号管理查询 | 无页面路由 | 无 | `numgen:manage:list` |
+| 编号管理维护 | 无页面路由 | 无 | `numgen:manage:write` |
 
 前端运行时注册的页面 key 是 `platform/numgen/index` 和 `numgen/index`。如果菜单可见但页面打不开，先检查前端是否注册 `@mango/numgen/admin-pages`，再检查菜单 component 是否使用页面 key。
 

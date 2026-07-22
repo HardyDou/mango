@@ -8,7 +8,7 @@
         "AUTH_MENU": [
           {
             "id": "2951300000000009001",
-            "version": 2,
+            "version": 3,
             "bizKey": "workflow.menu.internal-admin",
             "name": "工作流管理菜单",
             "targetModule": "authorization",
@@ -45,7 +45,7 @@
                 "value": [
                   {
                     "menuType": 1,
-                    "menuName": "审批中心",
+                    "menuName": "审批管理",
                     "menuCode": "workflow",
                     "parentCode": "data",
                     "path": "/workflow",
@@ -147,7 +147,7 @@
                             "menuName": "查询流程任务",
                             "menuCode": "workflow:task:list",
                             "sort": 0,
-                            "remark": "审批中心任务列表查询权限",
+                            "remark": "审批管理任务列表查询权限",
                             "apiCodes": [
                               "workflow:task:list"
                             ]

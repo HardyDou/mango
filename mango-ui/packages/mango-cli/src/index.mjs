@@ -197,7 +197,7 @@ const BUSINESS_BACKEND_API_MANAGED_DEPENDENCIES = [
 const OPTIONAL_MODULE_OVERLAYS = [
   {
     code: 'file',
-    label: '文件中心',
+    label: '文件管理',
     feature: 'file',
     backend: [
       { groupId: 'io.mango.platform.file', artifactId: 'mango-file-starter' },
@@ -217,7 +217,7 @@ const OPTIONAL_MODULE_OVERLAYS = [
   },
   {
     code: 'cms',
-    label: '内容中心',
+    label: '内容运营',
     feature: 'cms',
     runtimeModule: {
       moduleCode: 'mango-cms',
@@ -228,13 +228,13 @@ const OPTIONAL_MODULE_OVERLAYS = [
   },
   {
     code: 'notice',
-    label: '通知中心',
+    label: '通知管理',
     feature: 'notice',
     backend: [{ groupId: 'io.mango.platform.notice', artifactId: 'mango-notice-starter' }],
   },
   {
     code: 'numgen',
-    label: '编号规则',
+    label: '编号管理',
     feature: 'numgen',
     backend: [{ groupId: 'io.mango.platform.numgen', artifactId: 'mango-numgen-starter' }],
   },
@@ -246,13 +246,13 @@ const OPTIONAL_MODULE_OVERLAYS = [
   },
   {
     code: 'payment',
-    label: '支付中心',
+    label: '支付管理',
     feature: 'payment',
     backend: [{ groupId: 'io.mango.platform.payment', artifactId: 'mango-payment-starter' }],
   },
   {
     code: 'workflow',
-    label: '审批中心',
+    label: '审批管理',
     feature: 'workflow',
     runtimeModule: {
       moduleCode: 'mango-workflow',

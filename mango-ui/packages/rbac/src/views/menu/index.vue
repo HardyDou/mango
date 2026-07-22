@@ -5,43 +5,20 @@
       <div class="group-tabs">
         <div class="tabs-wrapper">
           <el-tabs v-model="activeGroup" @tab-change="handleGroupChange">
-            <el-tab-pane
-              v-for="group in menuGroups"
-              :key="group.code"
-              :label="group.name"
-              :name="group.code"
-            />
+            <el-tab-pane v-for="group in menuGroups" :key="group.code" :label="group.name" :name="group.code" />
           </el-tabs>
         </div>
-        <el-button
-          type="primary"
-          circle
-          plain
-          size="small"
-          class="add-group-btn"
-          @click="handleAddGroup"
-        >
+        <el-button type="primary" circle plain size="small" class="add-group-btn" @click="handleAddGroup">
           <el-icon><Plus /></el-icon>
         </el-button>
       </div>
 
-      <el-form
-        :inline="true"
-        class="search-form"
-      >
+      <el-form :inline="true" class="search-form">
         <el-form-item label="关键词">
-          <el-input
-            v-model="query.keyword"
-            placeholder="搜索菜单名称/路径"
-            clearable
-          />
+          <el-input v-model="query.keyword" placeholder="搜索菜单名称/路径" clearable />
         </el-form-item>
         <el-form-item label="类型">
-          <el-select
-            v-model="query.menuType"
-            placeholder="请选择"
-            clearable
-          >
+          <el-select v-model="query.menuType" placeholder="请选择" clearable>
             <el-option
               v-for="item in menuTypeOptions"
               :key="item.value"
@@ -51,25 +28,12 @@
           </el-select>
         </el-form-item>
         <el-form-item label="模块">
-          <el-select
-            v-model="query.moduleCode"
-            placeholder="请选择"
-            clearable
-          >
-            <el-option
-              v-for="item in moduleOptions"
-              :key="item.value"
-              :label="item.label"
-              :value="item.value"
-            />
+          <el-select v-model="query.moduleCode" placeholder="请选择" clearable>
+            <el-option v-for="item in moduleOptions" :key="item.value" :label="item.label" :value="item.value" />
           </el-select>
         </el-form-item>
         <el-form-item label="状态">
-          <el-select
-            v-model="query.status"
-            placeholder="请选择"
-            clearable
-          >
+          <el-select v-model="query.status" placeholder="请选择" clearable>
             <el-option
               v-for="item in statusOptions"
               :key="item.value"
@@ -79,26 +43,14 @@
           </el-select>
         </el-form-item>
         <el-form-item>
-          <el-button
-            type="primary"
-            @click="handleSearch"
-          >
-            查询
-          </el-button>
-          <el-button @click="handleReset">
-            重置
-          </el-button>
+          <el-button type="primary" @click="handleSearch"> 查询 </el-button>
+          <el-button @click="handleReset"> 重置 </el-button>
         </el-form-item>
       </el-form>
 
       <div class="action-toolbar">
         <div class="toolbar-left">
-          <el-button
-            type="primary"
-            @click="handleAdd"
-          >
-            新增菜单
-          </el-button>
+          <el-button type="primary" @click="handleAdd"> 新增菜单 </el-button>
         </div>
       </div>
 
@@ -111,48 +63,24 @@
         stripe
         :tree-props="{ children: 'children', hasChildren: 'hasChildren' }"
       >
-        <el-table-column
-          prop="menuName"
-          label="菜单名称"
-          width="200"
-        />
-        <el-table-column
-          prop="path"
-          label="路由路径"
-        />
-        <el-table-column
-          prop="moduleCode"
-          label="来源模块"
-          min-width="150"
-          show-overflow-tooltip
-        >
+        <el-table-column prop="menuName" label="菜单名称" width="200" />
+        <el-table-column prop="path" label="路由路径" />
+        <el-table-column prop="moduleCode" label="来源模块" min-width="150" show-overflow-tooltip>
           <template #default="{ row }">
             {{ moduleLabel(row.moduleCode) }}
           </template>
         </el-table-column>
-        <el-table-column
-          prop="pageType"
-          label="页面类型"
-          width="110"
-        >
+        <el-table-column prop="pageType" label="页面类型" width="110">
           <template #default="{ row }">
             {{ pageTypeLabel(row.pageType, row.menuType) }}
           </template>
         </el-table-column>
-        <el-table-column
-          label="运行入口"
-          min-width="180"
-          show-overflow-tooltip
-        >
+        <el-table-column label="运行入口" min-width="180" show-overflow-tooltip>
           <template #default="{ row }">
             {{ row.externalUrl || row.component || '-' }}
           </template>
         </el-table-column>
-        <el-table-column
-          prop="menuType"
-          label="类型"
-          width="80"
-        >
+        <el-table-column prop="menuType" label="类型" width="80">
           <template #default="{ row }">
             <DictTag
               dict-code="authorization_menu_type"
@@ -162,43 +90,21 @@
             />
           </template>
         </el-table-column>
-        <el-table-column
-          prop="icon"
-          label="图标"
-          width="100"
-        >
+        <el-table-column prop="icon" label="图标" width="100">
           <template #default="{ row }">
-            <el-icon
-              v-if="row.icon"
-              size="16"
-            >
+            <el-icon v-if="row.icon" size="16">
               <component :is="row.icon" />
             </el-icon>
             <span v-else>-</span>
           </template>
         </el-table-column>
-        <el-table-column
-          prop="sort"
-          label="排序"
-          width="60"
-        />
-        <el-table-column
-          prop="status"
-          label="状态"
-          width="80"
-        >
+        <el-table-column prop="sort" label="排序" width="60" />
+        <el-table-column prop="status" label="状态" width="80">
           <template #default="{ row }">
-            <DictTag
-              dict-code="sys_normal_disable"
-              :value="row.status"
-              size="small"
-            />
+            <DictTag dict-code="sys_normal_disable" :value="row.status" size="small" />
           </template>
         </el-table-column>
-        <el-table-column
-          label="接口权限码"
-          min-width="200"
-        >
+        <el-table-column label="接口权限码" min-width="200">
           <template #default="{ row }">
             <el-tag
               v-for="perm in (row.apiCodes || '').split(',').filter(Boolean)"
@@ -211,25 +117,13 @@
             <span v-if="!row.apiCodes">-</span>
           </template>
         </el-table-column>
-        <el-table-column
-          label="按钮规则"
-          min-width="180"
-          show-overflow-tooltip
-        >
+        <el-table-column label="按钮规则" min-width="180" show-overflow-tooltip>
           <template #default="{ row }">
             <template v-if="row.menuType === 3">
-              <el-tag
-                v-if="row.buttonType"
-                size="small"
-                type="info"
-                effect="plain"
-              >
+              <el-tag v-if="row.buttonType" size="small" type="info" effect="plain">
                 {{ buttonTypeLabel(row.buttonType) }}
               </el-tag>
-              <span
-                v-if="row.buttonDisplayRule"
-                class="rule-preview"
-              >
+              <span v-if="row.buttonDisplayRule" class="rule-preview">
                 {{ row.buttonDisplayRule }}
               </span>
               <span v-if="!row.buttonType && !row.buttonDisplayRule">-</span>
@@ -237,118 +131,43 @@
             <span v-else>-</span>
           </template>
         </el-table-column>
-        <el-table-column
-          label="操作"
-          width="200"
-          fixed="right"
-        >
+        <el-table-column label="操作" width="200" fixed="right">
           <template #default="{ row }">
-            <el-button
-              link
-              type="primary"
-              size="small"
-              @click="handleAddChild(row)"
-            >
-              新增子级
-            </el-button>
-            <el-button
-              link
-              type="primary"
-              size="small"
-              @click="handleEdit(row)"
-            >
-              编辑
-            </el-button>
-            <el-button
-              link
-              type="danger"
-              size="small"
-              @click="handleDelete(row)"
-            >
-              删除
-            </el-button>
+            <el-button link type="primary" size="small" @click="handleAddChild(row)"> 新增子级 </el-button>
+            <el-button link type="primary" size="small" @click="handleEdit(row)"> 编辑 </el-button>
+            <el-button link type="danger" size="small" @click="handleDelete(row)"> 删除 </el-button>
           </template>
         </el-table-column>
       </el-table>
     </el-card>
 
     <!-- 新增分组弹窗 -->
-    <el-dialog
-      v-model="groupDialogVisible"
-      title="新增菜单分组"
-      width="400px"
-    >
+    <el-dialog v-model="groupDialogVisible" title="新增菜单分组" width="400px">
       <el-form label-width="80px">
         <el-form-item label="分组名称">
-          <el-input
-            v-model="newGroupName"
-            placeholder="请输入分组名称"
-            @keyup.enter="handleSubmitGroup"
-          />
+          <el-input v-model="newGroupName" placeholder="请输入分组名称" @keyup.enter="handleSubmitGroup" />
         </el-form-item>
         <el-form-item label="唯一标识">
-          <el-input
-            v-model="newGroupCode"
-            placeholder="请输入唯一标识，如：system"
-            @keyup.enter="handleSubmitGroup"
-          />
+          <el-input v-model="newGroupCode" placeholder="请输入唯一标识，如：system" @keyup.enter="handleSubmitGroup" />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="groupDialogVisible = false">
-          取消
-        </el-button>
-        <el-button
-          type="primary"
-          @click="handleSubmitGroup"
-        >
-          确定
-        </el-button>
+        <el-button @click="groupDialogVisible = false"> 取消 </el-button>
+        <el-button type="primary" @click="handleSubmitGroup"> 确定 </el-button>
       </template>
     </el-dialog>
 
     <!-- 编辑弹窗 -->
-    <el-dialog
-      v-model="dialogVisible"
-      :title="form.menuId ? '编辑菜单' : '新增菜单'"
-      width="600px"
-    >
-      <el-form
-        ref="formRef"
-        :model="form"
-        :rules="rules"
-        label-width="100px"
-      >
-        <el-form-item
-          label="菜单分组"
-          prop="groupCode"
-        >
-          <el-select
-            v-model="form.groupCode"
-            placeholder="请选择菜单分组"
-          >
-            <el-option
-              v-for="group in menuGroups"
-              :key="group.code"
-              :label="group.name"
-              :value="group.code"
-            />
+    <el-dialog v-model="dialogVisible" :title="form.menuId ? '编辑菜单' : '新增菜单'" width="600px">
+      <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
+        <el-form-item label="菜单分组" prop="groupCode">
+          <el-select v-model="form.groupCode" placeholder="请选择菜单分组">
+            <el-option v-for="group in menuGroups" :key="group.code" :label="group.name" :value="group.code" />
           </el-select>
         </el-form-item>
-        <el-form-item
-          label="来源模块"
-          prop="moduleCode"
-        >
-          <el-select
-            v-model="form.moduleCode"
-            placeholder="请选择能力模块"
-          >
-            <el-option
-              v-for="item in moduleOptions"
-              :key="item.value"
-              :label="item.label"
-              :value="item.value"
-            />
+        <el-form-item label="来源模块" prop="moduleCode">
+          <el-select v-model="form.moduleCode" placeholder="请选择能力模块">
+            <el-option v-for="item in moduleOptions" :key="item.value" :label="item.label" :value="item.value" />
           </el-select>
         </el-form-item>
         <el-form-item label="父级菜单">
@@ -361,85 +180,39 @@
             check-strictly
           />
         </el-form-item>
-        <el-form-item
-          label="菜单类型"
-          prop="menuType"
-        >
+        <el-form-item label="菜单类型" prop="menuType">
           <el-radio-group v-model="form.menuType">
-            <el-radio
-              v-for="item in menuTypeOptions"
-              :key="item.value"
-              :label="Number(item.value)"
-            >
+            <el-radio v-for="item in menuTypeOptions" :key="item.value" :label="Number(item.value)">
               {{ item.label }}
             </el-radio>
           </el-radio-group>
         </el-form-item>
-        <el-form-item
-          label="菜单名称"
-          prop="menuName"
-        >
-          <el-input
-            v-model="form.menuName"
-            placeholder="请输入菜单名称"
-          />
+        <el-form-item label="菜单名称" prop="menuName">
+          <el-input v-model="form.menuName" placeholder="请输入菜单名称" />
         </el-form-item>
-        <el-form-item
-          label="权限标识"
-          prop="menuCode"
-        >
-          <el-input
-            v-model="form.menuCode"
-            placeholder="请输入页面或按钮权限标识，如：system:user"
-          />
+        <el-form-item label="权限标识" prop="menuCode">
+          <el-input v-model="form.menuCode" placeholder="请输入页面或按钮权限标识，如：system:user" />
         </el-form-item>
-        <el-form-item
-          label="路由路径"
-          prop="path"
-        >
-          <el-input
-            v-model="form.path"
-            placeholder="请输入路由路径"
-          />
+        <el-form-item label="路由路径" prop="path">
+          <el-input v-model="form.path" placeholder="请输入路由路径" />
         </el-form-item>
-        <el-form-item
-          label="页面类型"
-          prop="pageType"
-        >
+        <el-form-item label="页面类型" prop="pageType">
           <el-select v-model="form.pageType">
-            <el-option
-              v-for="item in pageTypeOptions"
-              :key="item.value"
-              :label="item.label"
-              :value="item.value"
-            />
+            <el-option v-for="item in pageTypeOptions" :key="item.value" :label="item.label" :value="item.value" />
           </el-select>
         </el-form-item>
-        <el-form-item
-          v-if="form.pageType === 'LOCAL_ROUTE'"
-          label="组件路径"
-          prop="component"
-        >
-          <el-input
-            v-model="form.component"
-            placeholder="前端组件路径，如：/views/system/user/index.vue"
-          />
+        <el-form-item v-if="form.pageType === 'LOCAL_ROUTE'" label="组件路径" prop="component">
+          <el-input v-model="form.component" placeholder="前端组件路径，如：/views/system/user/index.vue" />
         </el-form-item>
         <el-form-item
           v-if="form.pageType === 'IFRAME' || form.pageType === 'EXTERNAL_LINK'"
           label="外部地址"
           prop="externalUrl"
         >
-          <el-input
-            v-model="form.externalUrl"
-            placeholder="iframe 或外链 URL"
-          />
+          <el-input v-model="form.externalUrl" placeholder="iframe 或外链 URL" />
         </el-form-item>
         <el-form-item label="图标">
-          <el-input
-            v-model="form.icon"
-            placeholder="Element Plus 图标名"
-          />
+          <el-input v-model="form.icon" placeholder="Element Plus 图标名" />
         </el-form-item>
         <el-form-item label="接口权限码">
           <div class="permissions-tags">
@@ -462,35 +235,18 @@
               @keyup.enter="handleInputPermission"
               @blur="handleInputPermission"
             />
-            <el-button
-              v-else
-              size="small"
-              class="add-permission-btn"
-              @click="showPermissionInput"
-            >
+            <el-button v-else size="small" class="add-permission-btn" @click="showPermissionInput">
               + 添加接口标识
             </el-button>
           </div>
         </el-form-item>
         <template v-if="form.menuType === 3">
           <el-form-item label="按钮类型">
-            <el-select
-              v-model="form.buttonType"
-              clearable
-              placeholder="请选择按钮类型"
-            >
-              <el-option
-                v-for="item in buttonTypeOptions"
-                :key="item.value"
-                :label="item.label"
-                :value="item.value"
-              />
+            <el-select v-model="form.buttonType" clearable placeholder="请选择按钮类型">
+              <el-option v-for="item in buttonTypeOptions" :key="item.value" :label="item.label" :value="item.value" />
             </el-select>
           </el-form-item>
-          <el-form-item
-            label="按钮展示规则"
-            prop="buttonDisplayRule"
-          >
+          <el-form-item label="按钮展示规则" prop="buttonDisplayRule">
             <el-input
               v-model="form.buttonDisplayRule"
               type="textarea"
@@ -501,41 +257,20 @@
             />
           </el-form-item>
         </template>
-        <el-form-item
-          label="排序"
-          prop="sort"
-        >
-          <el-input-number
-            v-model="form.sort"
-            :min="0"
-            :max="9999"
-          />
+        <el-form-item label="排序" prop="sort">
+          <el-input-number v-model="form.sort" :min="0" :max="9999" />
         </el-form-item>
-        <el-form-item
-          label="状态"
-          prop="status"
-        >
+        <el-form-item label="状态" prop="status">
           <el-radio-group v-model="form.status">
-            <el-radio
-              v-for="item in statusOptions"
-              :key="item.value"
-              :label="Number(item.value)"
-            >
+            <el-radio v-for="item in statusOptions" :key="item.value" :label="Number(item.value)">
               {{ item.label }}
             </el-radio>
           </el-radio-group>
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="dialogVisible = false">
-          取消
-        </el-button>
-        <el-button
-          type="primary"
-          @click="handleSubmit"
-        >
-          确定
-        </el-button>
+        <el-button @click="dialogVisible = false"> 取消 </el-button>
+        <el-button type="primary" @click="handleSubmit"> 确定 </el-button>
       </template>
     </el-dialog>
   </div>
@@ -563,7 +298,7 @@ const pageTypeOptions = [
 const moduleOptions = [
   { label: '授权权限模块', value: 'mango-authorization' },
   { label: '系统基础模块', value: 'mango-system' },
-  { label: '审批中心模块', value: 'mango-workflow' },
+  { label: '审批管理模块', value: 'mango-workflow' },
 ];
 
 const buttonTypeOptions = [
@@ -598,7 +333,7 @@ const permissionList = computed({
 });
 
 function handleRemovePermission(perm: string) {
-  permissionList.value = permissionList.value.filter(p => p !== perm);
+  permissionList.value = permissionList.value.filter((p) => p !== perm);
 }
 
 function showPermissionInput() {
@@ -630,9 +365,7 @@ interface MenuGroup {
 /**
  * 菜单分组列表
  */
-const menuGroups = ref<MenuGroup[]>([
-  { code: 'internal-admin', name: '管理系统' },
-]);
+const menuGroups = ref<MenuGroup[]>([{ code: 'internal-admin', name: '管理系统' }]);
 
 const groupDialogVisible = ref(false);
 const newGroupName = ref('');
@@ -654,7 +387,7 @@ function handleSubmitGroup() {
     return;
   }
   const code = newGroupCode.value.trim();
-  if (menuGroups.value.some(g => g.code === code)) {
+  if (menuGroups.value.some((g) => g.code === code)) {
     ElMessage.warning('唯一标识已存在');
     return;
   }
@@ -703,9 +436,10 @@ const rules = computed<FormRules>(() => ({
   menuCode: [{ required: true, message: '请输入权限标识', trigger: 'blur' }],
   path: form.menuType === 3 ? [] : [{ required: true, message: '请输入路由路径', trigger: 'blur' }],
   pageType: form.menuType === 3 ? [] : [{ required: true, message: '请选择页面类型', trigger: 'change' }],
-  externalUrl: form.pageType === 'IFRAME' || form.pageType === 'EXTERNAL_LINK'
-    ? [{ required: true, message: '请输入访问地址', trigger: 'blur' }]
-    : [],
+  externalUrl:
+    form.pageType === 'IFRAME' || form.pageType === 'EXTERNAL_LINK'
+      ? [{ required: true, message: '请输入访问地址', trigger: 'blur' }]
+      : [],
   menuType: [{ required: true, message: '请选择菜单类型', trigger: 'change' }],
   buttonDisplayRule: [
     {
@@ -909,15 +643,17 @@ function handleDelete(row: SysMenuVO) {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
     type: 'warning',
-  }).then(async () => {
-    try {
-      await menuApi.deleteMenu(row.menuId);
-      ElMessage.success('删除成功');
-      loadData();
-    } catch (error) {
-      console.error('删除失败:', error);
-    }
-  }).catch(() => {});
+  })
+    .then(async () => {
+      try {
+        await menuApi.deleteMenu(row.menuId);
+        ElMessage.success('删除成功');
+        loadData();
+      } catch (error) {
+        console.error('删除失败:', error);
+      }
+    })
+    .catch(() => {});
 }
 
 onMounted(() => {

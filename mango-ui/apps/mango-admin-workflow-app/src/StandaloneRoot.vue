@@ -1,55 +1,31 @@
 <template>
   <router-view v-if="route.path === '/login'" />
-  <div
-    v-else-if="debugShell"
-    class="workflow-standalone"
-  >
+  <div v-else-if="debugShell" class="workflow-standalone">
     <aside class="workflow-standalone__aside">
       <div class="workflow-standalone__brand">
         <strong>Approval</strong>
-        <span>审批中心</span>
+        <span>审批管理</span>
       </div>
       <el-scrollbar>
-        <el-menu
-          :default-active="activePath"
-          class="workflow-standalone__menu"
-          @select="handleMenuSelect"
-        >
-          <WorkflowMenuNode
-            v-for="menu in menus"
-            :key="menu.path || menu.menuCode"
-            :menu="menu"
-          />
+        <el-menu :default-active="activePath" class="workflow-standalone__menu" @select="handleMenuSelect">
+          <WorkflowMenuNode v-for="menu in menus" :key="menu.path || menu.menuCode" :menu="menu" />
         </el-menu>
       </el-scrollbar>
     </aside>
-    <main
-      v-loading="loading"
-      class="workflow-standalone__main"
-    >
+    <main v-loading="loading" class="workflow-standalone__main">
       <header class="workflow-standalone__header">
         <div>
-          <h1>{{ activeMenu?.menuName || '审批中心' }}</h1>
+          <h1>{{ activeMenu?.menuName || '审批管理' }}</h1>
           <p>{{ activeMenu?.path || 'mango-workflow' }}</p>
         </div>
       </header>
       <section class="workflow-standalone__content">
-        <WorkflowRuntimeRoot
-          :menu="activeMenu"
-          :empty-description="emptyDescription"
-        />
+        <WorkflowRuntimeRoot :menu="activeMenu" :empty-description="emptyDescription" />
       </section>
     </main>
   </div>
-  <main
-    v-else
-    v-loading="loading"
-    class="workflow-page-only"
-  >
-    <WorkflowRuntimeRoot
-      :menu="activeMenu"
-      :empty-description="emptyDescription"
-    />
+  <main v-else v-loading="loading" class="workflow-page-only">
+    <WorkflowRuntimeRoot :menu="activeMenu" :empty-description="emptyDescription" />
   </main>
 </template>
 
@@ -72,15 +48,17 @@ const DEBUG_SHELL_KEY = 'MANGO_WORKFLOW_DEBUG_SHELL';
 
 const activePath = computed(() => route.path);
 const debugShell = computed(() => route.query.debugShell === '1' || sessionStorage.getItem(DEBUG_SHELL_KEY) === '1');
-const activeMenu = computed(() => findMenuByPath(menus.value, route.path) || (route.path === '/' ? firstPageMenu(menus.value[0]) : undefined));
+const activeMenu = computed(
+  () => findMenuByPath(menus.value, route.path) || (route.path === '/' ? firstPageMenu(menus.value[0]) : undefined),
+);
 const emptyDescription = computed(() => {
   if (loading.value) {
-    return '正在加载审批中心页面';
+    return '正在加载审批管理页面';
   }
   if (route.path !== '/' && route.path !== '/home') {
-    return `当前路径不属于审批中心子应用：${route.path}`;
+    return `当前路径不属于审批管理子应用：${route.path}`;
   }
-  return '请选择审批中心菜单';
+  return '请选择审批管理菜单';
 });
 
 const WorkflowMenuNode = defineComponent({
@@ -104,7 +82,7 @@ watch(
     if (path !== '/login' && menus.value.length === 0 && Session.getToken()) {
       void loadMenus();
     }
-  }
+  },
 );
 
 watch(
@@ -116,7 +94,7 @@ watch(
       sessionStorage.removeItem(DEBUG_SHELL_KEY);
     }
   },
-  { immediate: true }
+  { immediate: true },
 );
 
 async function loadMenus() {
@@ -132,7 +110,8 @@ async function loadMenus() {
       params: { fmt: 'tree', appCode: 'internal-admin' },
     });
     menus.value = normalizeWorkflowMenus(response || []);
-    const selected = findMenuByPath(menus.value, route.path) || (route.path === '/' ? firstPageMenu(menus.value[0]) : undefined);
+    const selected =
+      findMenuByPath(menus.value, route.path) || (route.path === '/' ? firstPageMenu(menus.value[0]) : undefined);
     if (selected?.path && route.path === '/') {
       await router.replace({
         path: selected.path,
@@ -147,24 +126,20 @@ async function loadMenus() {
 }
 
 function normalizeWorkflowMenus(source: WorkflowMenu[]) {
-  return filterVisible(source)
-    .map(pickWorkflowBranch)
-    .filter(Boolean) as WorkflowMenu[];
+  return filterVisible(source).map(pickWorkflowBranch).filter(Boolean) as WorkflowMenu[];
 }
 
 function filterVisible(source: WorkflowMenu[]): WorkflowMenu[] {
   return source
-    .filter(menu => menu.menuType !== MenuTypeEnum.BUTTON && menu.visible !== 0)
-    .map(menu => ({
+    .filter((menu) => menu.menuType !== MenuTypeEnum.BUTTON && menu.visible !== 0)
+    .map((menu) => ({
       ...menu,
       children: menu.children ? filterVisible(menu.children) : [],
     }));
 }
 
 function pickWorkflowBranch(menu: WorkflowMenu): WorkflowMenu | undefined {
-  const children = (menu.children || [])
-    .map(pickWorkflowBranch)
-    .filter(Boolean) as WorkflowMenu[];
+  const children = (menu.children || []).map(pickWorkflowBranch).filter(Boolean) as WorkflowMenu[];
   const isWorkflowPage = Boolean(resolveWorkflowComponent(menu.component));
   if (!isWorkflowPage && children.length === 0) {
     return undefined;
@@ -178,10 +153,7 @@ function pickWorkflowBranch(menu: WorkflowMenu): WorkflowMenu | undefined {
 function renderMenuNode(menu: WorkflowMenu): any {
   const children = menu.children || [];
   const icon = menu.icon ? (Icons as any)[menu.icon] : undefined;
-  const title = [
-    icon ? h(ElIcon, null, () => h(icon)) : null,
-    h('span', null, menu.menuName),
-  ];
+  const title = [icon ? h(ElIcon, null, () => h(icon)) : null, h('span', null, menu.menuName)];
   if (children.length > 0) {
     return h(
       ElSubMenu,
@@ -189,14 +161,10 @@ function renderMenuNode(menu: WorkflowMenu): any {
       {
         title: () => title,
         default: () => children.map(renderMenuNode),
-      }
+      },
     );
   }
-  return h(
-    ElMenuItem as any,
-    { index: menu.path || '/' },
-    () => title
-  );
+  return h(ElMenuItem as any, { index: menu.path || '/' }, () => title);
 }
 
 function handleMenuSelect(path: string) {
