@@ -101,10 +101,6 @@ function positiveDuration(value, defaultValue) {
 
 function positiveProcessId(value) {
   const numeric =
-    typeof value === 'number'
-      ? value
-      : typeof value === 'string' && value.trim() !== ''
-        ? Number(value)
-        : Number.NaN;
+    typeof value === 'number' ? value : typeof value === 'string' && value.trim() !== '' ? Number(value) : Number.NaN;
   return Number.isSafeInteger(numeric) && numeric > 0 ? numeric : null;
 }

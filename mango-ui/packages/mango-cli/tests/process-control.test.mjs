@@ -19,10 +19,10 @@ test('stopProcessGroup rejects unsafe process ids before signal handling', async
     for (const pid of invalidProcessIds) {
       assert.equal(isProcessAlive(pid), false);
       assert.equal(isProcessGroupAlive(pid), false);
-      await assert.rejects(
-        stopProcessGroup(pid),
-        { name: 'TypeError', message: 'pid must be a positive safe integer' },
-      );
+      await assert.rejects(stopProcessGroup(pid), {
+        name: 'TypeError',
+        message: 'pid must be a positive safe integer',
+      });
     }
     assert.equal(signalAttempts, 0);
   } finally {

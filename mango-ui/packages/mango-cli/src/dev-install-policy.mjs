@@ -11,6 +11,8 @@ export function shouldRunDevInstall(app, env = {}) {
   if (app.type !== 'spring-boot-maven') {
     return true;
   }
-  const configured = String(env.MANGO_BACKEND_AUTO_INSTALL ?? 'true').trim().toLowerCase();
+  const configured = String(env.MANGO_BACKEND_AUTO_INSTALL ?? 'true')
+    .trim()
+    .toLowerCase();
   return !FALSE_VALUES.has(configured);
 }
