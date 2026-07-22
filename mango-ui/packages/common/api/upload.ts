@@ -30,6 +30,14 @@ export interface ExcelUploadResult {
   data: Record<string, unknown>[];
 }
 
+export interface ImportRemoteImageInput {
+  sourceUrl: string;
+  bizType?: string;
+  bizId?: string;
+  bizMeta?: string;
+  directoryId?: FileId;
+}
+
 export function uploadFile(file: File): Promise<UploadResult> {
   const formData = new FormData();
   formData.append('file', file);
@@ -93,7 +101,11 @@ export function uploadMultiple(files: File[]): Promise<UploadResult[]> {
 }
 
 export function getUploadedFileDetail(id: FileId): Promise<UploadResult> {
-  return get<any>('/file/files/detail', { params: { id } }).then(toUploadResult);
+  return get<any>('/file/files/detail', { params: { id } }).then(toUploadedFileDetail);
+}
+
+export function importRemoteImage(input: ImportRemoteImageInput): Promise<UploadResult> {
+  return post<any>('/file/files/import-image', input).then(toUploadResult);
 }
 
 export async function downloadUploadedFile(id: FileId) {
@@ -123,6 +135,13 @@ function toUploadResult(record: any): UploadResult {
     objectName: record.objectName,
     directPreviewUrl: record.directPreviewUrl,
     directDownloadUrl: record.directDownloadUrl,
+  };
+}
+
+function toUploadedFileDetail(record: any): UploadResult {
+  return {
+    ...toUploadResult(record),
+    previewUrl: directUrl(record?.previewUrl) || undefined,
   };
 }
 
@@ -159,7 +178,7 @@ async function assertBinaryDownloadResponse(response: any) {
     throw new Error(body?.msg || body?.message || '文件下载失败');
   } catch (error) {
     if (error instanceof SyntaxError) {
-      throw new Error('文件下载失败');
+      throw new Error('文件下载失败', { cause: error });
     }
     throw error;
   }

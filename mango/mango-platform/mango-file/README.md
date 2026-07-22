@@ -222,6 +222,8 @@ GET /file/files/download?id=123&compression=MEDIUM&perFileTargetSizeBytes=500000
 
 远程调用独立文件服务的应用引入 `mango-file-starter-remote`：
 
+富文本远程图片导入使用 `POST /file/files/import-image`。服务端固定按 `purpose=image`、`accessLevel=PRIVATE` 复用现有文件保存链路，不新增数据表，也不保存请求 URL。导入仅允许 HTTP/HTTPS，默认端口 80/443；每次跳转重新做 DNS/IP 地址校验并禁止 loopback、link-local、site-local、multicast、metadata、保留网段和 IP literal，禁止转发 Cookie、Authorization、Referer 等调用方凭据。响应需同时满足图片 MIME 与 PNG/JPEG/GIF/WebP magic 校验，默认最大 10 MiB、最多 3 次跳转。
+
 ```xml
 <dependency>
     <groupId>io.mango.platform.file</groupId>

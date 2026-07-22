@@ -352,6 +352,8 @@ const toolbarKeys = ['bold', 'color', '|', 'numberedList', 'bulletedList', '|', 
 
 图片上传调用 `uploadImage(file)`，即 `POST /file/files` 且 `purpose=image`。消费项目如果选择 `id` 或 `token`，展示富文本时需要把保存的文件标识解析为可预览地址；例如官网预览场景可把 `mango-file:<id>` 替换为后端提供的公开预览地址。
 
+富文本托管图片约定：`imageValueType="token"` 时编辑态使用文件详情返回的 `previewUrl` 回显，对外 `v-model` 只输出 `mango-file:<id>`；不持久化 Base64、Blob URL、预览 URL、下载 URL 或第三方图片 URL。复制粘贴托管通过 `pasteImageMode="upload"` 开启，支持本地图片和受控远程图片导入，失败图片会触发 `image-error`，上传状态通过 `uploading-change` 通知消费方。`toolbar-actions` slot 与工具栏处于同一 flex 流，可组合 `MUpload` 等附件控件，附件值应使用 `id` 或 `token`。
+
 ## 6. 数据与初始化
 
 `@mango/common` 不创建后端数据。组件和 API 能否返回数据，取决于后端模块是否已初始化：

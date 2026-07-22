@@ -24,6 +24,8 @@ class FileControllerAccessModeTest {
         assertLogin("preview", Long.class);
         assertLogin(FileBinaryController.class, "download", Long.class, String.class, Long.class);
         assertLogin(FileBinaryController.class, "previewContent", Long.class);
+        assertLogin(FileImportController.class, "importImage",
+                io.mango.file.api.command.ImportRemoteImageCommand.class);
         Method settings = FileSettingsController.class.getMethod("get");
         assertThat(settings.getAnnotation(ApiAccess.class).mode()).isEqualTo(ApiResourceAccessMode.LOGIN);
     }

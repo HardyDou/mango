@@ -37,6 +37,9 @@ public class FileProperties {
     /** 预览默认配置。 */
     private Preview preview = new Preview();
 
+    /** 远程图片导入配置。 */
+    private RemoteImport remoteImport = new RemoteImport();
+
     @Data
     public static class Local {
 
@@ -97,5 +100,27 @@ public class FileProperties {
                 "odt", "ods", "odp", "ofd", "wps", "et", "dps",
                 "csv", "txt", "zip", "rar", "7z", "eml", "msg"
         );
+    }
+
+    @Data
+    public static class RemoteImport {
+
+        /** 是否启用受控远程图片导入。 */
+        private boolean enabled = true;
+
+        /** 连接超时，单位毫秒。 */
+        private long connectTimeoutMillis = 3000L;
+
+        /** 单次请求总读取超时，单位毫秒。 */
+        private long readTimeoutMillis = 10000L;
+
+        /** 最大响应字节数。 */
+        private long maxSize = 10L * 1024L * 1024L;
+
+        /** 最大重定向跳数。 */
+        private int maxRedirects = 3;
+
+        /** 允许连接的端口。 */
+        private List<Integer> allowedPorts = List.of(80, 443);
     }
 }

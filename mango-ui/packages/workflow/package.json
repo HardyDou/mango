@@ -1,6 +1,6 @@
 {
   "name": "@mango/workflow",
-  "version": "1.0.33",
+  "version": "1.0.34",
   "private": false,
   "type": "module",
   "main": "./dist/index.js",
@@ -52,12 +52,12 @@
   "dependencies": {
     "@element-plus/icons-vue": "2.3.2",
     "@form-create/element-ui": "3.2.42",
-    "@mango/admin-pages": "workspace:1.0.26",
+    "@mango/admin-pages": "workspace:1.0.27",
     "@mango/api-schema": "workspace:1.0.3",
-    "@mango/common": "workspace:1.0.20",
-    "@mango/file": "workspace:1.0.27",
-    "@mango/grid-widgets": "workspace:1.0.17",
-    "@mango/system": "workspace:1.0.25",
+    "@mango/common": "workspace:1.0.21",
+    "@mango/file": "workspace:1.0.28",
+    "@mango/grid-widgets": "workspace:1.0.18",
+    "@mango/system": "workspace:1.0.26",
     "form-create-designer": "3.2.11-oem"
   },
   "peerDependencies": {
