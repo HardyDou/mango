@@ -59,7 +59,7 @@ mango pmo sync --project-dir . --dry-run
 mango pmo sync --project-dir .
 ```
 
-`sync` 只修复当前项目锁定的 bundle，不隐式升版；它会恢复被修改或缺失的 bundle-owned 文件，并删除清单之外的陈旧 bundle-owned 文件。GitHub/Gitea 的 `pmo-doc-check.yml` 是整文件托管资产：缺失时创建，带 Mango 托管标识或与已知历史标准版本 hash 完全一致时升级；无法识别的业务自定义 workflow 默认拒绝覆盖。确认要把自定义文件完整交给 Mango 管理时才使用 `--adopt-governance`，原文件会进入 `.mango/pmo/backups`。delivery-assurance schema revision 5 起，PR 模板缺失时创建，存在时只同步 `## Risk / Verification` 区段；重复区段必须人工合并后重跑。
+`sync` 只修复当前项目锁定的 bundle，不隐式升版；它会恢复被修改或缺失的 bundle-owned 文件，并删除清单之外的陈旧 bundle-owned 文件。GitHub/Gitea 的 `pmo-doc-check.yml` 是整文件托管资产：缺失时创建，带 Mango 托管标识或与已知历史标准版本 hash 完全一致时升级；无法识别的业务自定义 workflow 默认拒绝覆盖。确认要把自定义文件完整交给 Mango 管理时才使用 `--adopt-governance`，原文件会进入项目 `.mango` 下的 PMO 备份目录。delivery-assurance schema revision 5 起，PR 模板缺失时创建，存在时只同步 `## Risk / Verification` 区段；重复区段必须人工合并后重跑。
 
 ### 3.3 显式升级
 

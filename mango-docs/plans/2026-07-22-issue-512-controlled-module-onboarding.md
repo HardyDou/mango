@@ -46,7 +46,7 @@
 - delivery mode 历史 32 例、delivery assurance 100 例通过。
 - `node mango-pmo/tools/check-governance-intent.mjs`、`workspace-layout-check.mjs --root .`、`git diff --check`：通过。
 - `node mango-business-starter/scripts/sync-pmo-baseline.mjs`：`@mango/pmo@1.3.4` 的 139 个受管文件无漂移。
-- PMO package：bundle `929bf16d2bb5` 构建和校验通过。
+- PMO package：bundle `62651c351f1f` 构建和校验通过。
 - starter template：75 个必需文件、34 个合同检查通过；业务模块后端与前端投影通过。
 
 ### 5.2 Java 与真实 Reactor

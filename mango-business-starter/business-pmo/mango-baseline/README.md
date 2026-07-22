@@ -153,7 +153,7 @@ mango pmo upgrade --project-dir . --to 1.3.4
 mango pmo check --project-dir . --locked
 ```
 
-workflow 缺失、带 Mango marker 或匹配已知历史标准 hash 时，CLI 会安全安装或升级。无法识别的自定义 workflow 默认零写入失败；只有评审确认整文件改由 Mango 托管时，才重跑带 `--adopt-governance` 的 upgrade，原始字节会保存在 `.mango/pmo/backups`。
+workflow 缺失、带 Mango marker 或匹配已知历史标准 hash 时，CLI 会安全安装或升级。无法识别的自定义 workflow 默认零写入失败；只有评审确认整文件改由 Mango 托管时，才重跑带 `--adopt-governance` 的 upgrade，原始字节会保存在项目 `.mango` 下的 PMO 备份目录。
 
 该 PR 不加 `--sync-shell`，不修改业务源码、POM、运行配置或数据库文件。required check 使用 `inventoryOnly` 完整 Reactor 报告识别“预算尚缺失且本次只是治理升级”；`--baseline-only` 不能批准该迁移。检查通过并合并后再开始下一步。
 
