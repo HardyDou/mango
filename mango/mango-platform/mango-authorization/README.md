@@ -705,7 +705,7 @@ Resource Registry 还支持授权基线声明：
 | 资源类型 | 作用 |
 |----------|------|
 | `AUTH_ROLE` | 按 `tenantId + appCode + realm + actorType + roleCode` 幂等创建或更新角色，禁用时停用角色。 |
-| `AUTH_ROLE_DATA_SCOPE` | 按 `tenantId + appCode + roleCode + resourceCode` 声明角色数据权限，`scopeValues` 保存为 JSON 数组。 |
+| `AUTH_ROLE_DATA_SCOPE` | 按 `tenantId + appCode + roleCode + resourceCode` 声明角色数据权限，`scopeValues` 保存为 JSON 数组；`INIT_ONLY` 首次接管已有目标时保留运行时配置。 |
 | `AUTH_SUBJECT_ROLE` | 按 `subjectId`、`subjectCode`、`memberNo` 或 `username` 解析成员主体，并通过 `roleCodes` 确保角色绑定；禁用时移除声明中的角色绑定。 |
 
 同一轮资源同步中，`AUTH_MENU` 依赖 `AUTH_ROLE`。Resource Registry 会先同步角色，再同步菜单；当角色声明发生创建或更新时，也会重放依赖它的菜单声明，补齐 `roleCodes` 对应的 `authorization_role_menu` 绑定。

@@ -80,6 +80,8 @@ pnpm -F @mango/admin-shell build
 
 ## 8. 变更影响记录
 
+- Issue #606 调整的是 Workflow demo 默认管理员的列表数据范围和 `INIT_ONLY` 已有目标保护；不改变按钮 `permissionCode`、菜单 `apiCodes`、登录态权限集合、按钮展示规则或接口鉴权。按钮显示异常仍按本指南排查；只有流程定义管理页面能打开但返回空列表时，才进一步检查 `workflow:definition:list` 数据范围。
+
 - MySQL 8.4 告警治理仅规范 Authorization 空库 V1 的整数 DDL 写法；权限码、按钮可见性、接口授权计算和本指南排障步骤均不改变。既有数据库无需为该项调整权限数据。
 
 - PR #557 调整 Resource 内部模块边界、远程同步重试和 HMAC 验证结果传递；不改变按钮 `permissionCode`、菜单 `apiCodes`、角色授权、登录态权限集合、前端展示规则或外部鉴权语义。只有通过服务端 HMAC 验证的内部请求才会获得可信内部属性，客户端伪造 Header 不会放行；普通用户按钮问题仍按本指南排查。

@@ -75,6 +75,8 @@
 
 ## 7. 变更影响记录
 
+- Issue #606 为开启 demo 资源的租户 `1` 默认 `ROLE_ADMIN` 初始化 `workflow:definition:list = ALL`，使全新数据库中的流程定义管理分页可读取租户内已发布定义；`INIT_ONLY` 首次遇到已有数据范围时保留人工配置。该修复不改变业务模块按 `definitionKey` 发起审批、任务办理、回调、状态回写或租户隔离；`startEntryVisible=false` 仍只隐藏审批中心发起入口，不隐藏流程定义管理记录。
+
 - Issue #613/#614 修复工作流通知接收人和异步应用上下文：流程完成、驳回和结束事件携带原申请人，终态通知只发送给 `applicantId`；`workflow.task.advanced` 对共享候选任务按候选用户、角色、岗位、组织扩展同一个 `taskId`，对并行或多实例的已分配任务按每条运行时任务及其 `assigneeId` 分开发送。事件同时携带 `tenantId`、`appCode`、`realm`，Notice 本地和远程监听器发送前恢复这些字段，角色成员按原应用与登录域解析。没有有效接收人的事件直接跳过；`ORG_LEADER` 仍不扩大为整个组织。
 
 - Issue #506 为 Maven `1.0.20` 已执行 Workflow V1 的数据库增加安全前向迁移。升级版本只兼容已知的 `1.0.20` V1 checksum，并通过 V2 幂等补齐 7 个审计列；`1.0.21`/`1.0.22` 创建的新数据库已有列时不会重复添加，未知 checksum 继续由 Flyway 阻断。业务审批 API、流程状态、权限、租户和页面行为不变；升级后检查 `flyway_schema_history_workflow` 的 V1/V2 状态和 Workflow README 列出的审计列。

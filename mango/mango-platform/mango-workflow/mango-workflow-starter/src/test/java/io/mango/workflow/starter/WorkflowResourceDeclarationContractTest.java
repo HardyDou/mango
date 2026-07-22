@@ -2,6 +2,11 @@ package io.mango.workflow.starter;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.mango.resource.api.enums.ResourceSyncMode;
+import io.mango.resource.support.ResourceTypes;
+import io.mango.resource.support.config.ResourceRegistryProperties;
+import io.mango.resource.support.declaration.ResourceDeclarationLoader;
+import io.mango.resource.support.model.ResourceDeclaration;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -25,8 +30,32 @@ class WorkflowResourceDeclarationContractTest {
                 .contains("definitionKey: { type: STRING, value: expense_reimbursement }")
                 .contains("definitionKey: { type: STRING, value: contract_seal_approval }")
                 .contains("definitionKey: { type: STRING, value: leave_application }");
-        assertThat(count(declaration, "sync-mode: INIT_ONLY")).isEqualTo(3);
-        assertThat(count(declaration, "- id: \"")).isEqualTo(3);
+        assertThat(count(declaration, "sync-mode: INIT_ONLY")).isEqualTo(4);
+        assertThat(count(declaration, "- id: \"")).isEqualTo(4);
+    }
+
+    @Test
+    void demoDeclarations_initializeDefaultAdminDefinitionScope() {
+        ResourceRegistryProperties properties = new ResourceRegistryProperties();
+        properties.setLocations(List.of());
+        properties.setDemoEnabled(true);
+        properties.setDemoLocations(List.of(
+                "classpath:META-INF/mango/demo/workflow-demo-definition.yml"));
+
+        ResourceDeclaration scope = new ResourceDeclarationLoader(objectMapper, properties).load().stream()
+                .filter(resource -> ResourceTypes.AUTH_ROLE_DATA_SCOPE.equals(resource.getResourceType()))
+                .findFirst()
+                .orElseThrow();
+
+        assertThat(scope.getModuleCode()).isEqualTo("workflow");
+        assertThat(scope.getSyncMode()).isEqualTo(ResourceSyncMode.INIT_ONLY);
+        assertThat(scope.getFields()).satisfies(fields -> {
+            assertThat(fields.get("tenantId").getValue()).isEqualTo(1);
+            assertThat(fields.get("appCode").getValue()).isEqualTo("internal-admin");
+            assertThat(fields.get("roleCode").getValue()).isEqualTo("ROLE_ADMIN");
+            assertThat(fields.get("resourceCode").getValue()).isEqualTo("workflow:definition:list");
+            assertThat(fields.get("scopeMode").getValue()).isEqualTo("ALL");
+        });
     }
 
     @Test
