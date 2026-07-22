@@ -2,7 +2,7 @@ package io.mango.infra.kv.core.memory;
 
 import io.mango.common.result.Require;
 import io.mango.infra.kv.api.IKvSortedSet;
-import io.mango.infra.kv.api.IKvStore;
+import io.mango.infra.kv.api.ILeaseKvStore;
 import jakarta.annotation.PreDestroy;
 
 import java.time.Instant;
@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * Implements AutoCloseable for use with try-with-resources.
  * Spring automatically calls close() via @PreDestroy when the bean is destroyed.
  */
-public class MemoryKvStore implements IKvStore, IKvSortedSet, AutoCloseable {
+public class MemoryKvStore implements ILeaseKvStore, IKvSortedSet, AutoCloseable {
 
     private static final int BUCKET_COUNT = 32;
     private static final int POSITIVE_HASH_MASK = Integer.MAX_VALUE;
@@ -178,6 +178,33 @@ public class MemoryKvStore implements IKvStore, IKvSortedSet, AutoCloseable {
             return existing;
         });
         return deleted.get();
+    }
+
+    @Override
+    public boolean tryAcquireLease(String key, String token, long ttlSeconds) {
+        return setIfAbsent(key, token, ttlSeconds);
+    }
+
+    @Override
+    public boolean renewLease(String key, String token, long ttlSeconds) {
+        validateKey(key);
+        Objects.requireNonNull(token, "token cannot be null");
+        Require.positive(ttlSeconds, "ttlSeconds must be positive");
+        AtomicBoolean renewed = new AtomicBoolean();
+        Instant expiry = Instant.now().plusSeconds(ttlSeconds);
+        bucket(key).compute(key, (ignored, existing) -> {
+            if (existing != null && !existing.expired() && Objects.equals(existing.value(), token)) {
+                renewed.set(true);
+                return new KvEntry(existing.value(), expiry);
+            }
+            return existing;
+        });
+        return renewed.get();
+    }
+
+    @Override
+    public boolean releaseLease(String key, String token) {
+        return deleteIfValue(key, token);
     }
 
     @Override

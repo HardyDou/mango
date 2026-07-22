@@ -16,4 +16,8 @@ public interface SysOrgMapper extends BaseMapper<SysOrgEntity> {
 
     @InterceptorIgnore(tenantLine = "true")
     Long selectIdByTenantAndCode(@Param("tenantId") Long tenantId, @Param("orgCode") String orgCode);
+
+    @InterceptorIgnore(tenantLine = "true")
+    Long selectIdByTenantAndCodeForUpdate(@Param("tenantId") Long tenantId,
+                                          @Param("orgCode") String orgCode);
 }

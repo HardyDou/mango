@@ -10,4 +10,12 @@
           AND post_code = #{postCode}
         LIMIT 1
     </select>
+    <select id="selectByTenantAndCodeForUpdate" resultType="io.mango.org.core.entity.PostEntity">
+        SELECT *
+        FROM org_post
+        WHERE tenant_id = #{tenantId}
+          AND post_code = #{postCode}
+        LIMIT 1
+        FOR UPDATE
+    </select>
 </mapper>

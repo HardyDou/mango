@@ -44,6 +44,19 @@ public interface ResourceHandler {
     }
 
     /**
+     * Declaration field that defines the tenant execution scope for this handler.
+     *
+     * <p>When present, Resource executors group batch operations by this field,
+     * switch {@code MangoContextHolder} before invoking the handler, and restore
+     * the previous context afterward.</p>
+     *
+     * @return tenant field name, or an empty string for non-tenant-scoped handlers
+     */
+    default String executionTenantField() {
+        return "";
+    }
+
+    /**
      * 创建或更新目标资源。
      *
      * @param resource 资源声明。

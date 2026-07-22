@@ -19,6 +19,24 @@
         limit 1
     </select>
 
+    <select id="selectByResourceIds" resultType="io.mango.resource.core.entity.ResourceRegistryEntity">
+        select *
+        from resource_registry
+        where resource_id in
+        <foreach collection="resourceIds" item="resourceId" open="(" separator="," close=")">
+            #{resourceId}
+        </foreach>
+    </select>
+
+    <select id="selectByTypeAndBizKeys" resultType="io.mango.resource.core.entity.ResourceRegistryEntity">
+        select *
+        from resource_registry
+        where (resource_type, biz_key) in
+        <foreach collection="lookupKeys" item="lookupKey" open="(" separator="," close=")">
+            (#{lookupKey.resourceType}, #{lookupKey.bizKey})
+        </foreach>
+    </select>
+
     <select id="selectByModule" resultType="io.mango.resource.core.entity.ResourceRegistryEntity">
         select *
         from resource_registry
@@ -31,5 +49,16 @@
         where app_code = #{appCode}
           and service_code = #{serviceCode}
           and module_code = #{moduleCode}
+    </select>
+
+    <select id="selectBySourceAndModules" resultType="io.mango.resource.core.entity.ResourceRegistryEntity">
+        select *
+        from resource_registry
+        where app_code = #{appCode}
+          and service_code = #{serviceCode}
+          and module_code in
+        <foreach collection="moduleCodes" item="moduleCode" open="(" separator="," close=")">
+            #{moduleCode}
+        </foreach>
     </select>
 </mapper>

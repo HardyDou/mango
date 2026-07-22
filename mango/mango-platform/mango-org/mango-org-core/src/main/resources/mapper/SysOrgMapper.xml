@@ -10,4 +10,12 @@
           AND org_code = #{orgCode}
         LIMIT 1
     </select>
+    <select id="selectIdByTenantAndCodeForUpdate" resultType="java.lang.Long">
+        SELECT id
+        FROM sys_org
+        WHERE tenant_id = #{tenantId}
+          AND org_code = #{orgCode}
+        LIMIT 1
+        FOR UPDATE
+    </select>
 </mapper>

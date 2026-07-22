@@ -10,6 +10,7 @@ import io.mango.system.api.tenant.TenantProvisionCommand;
 import io.mango.system.api.tenant.TenantProvisioner;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.annotation.Order;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Component;
 
 import java.util.Optional;
@@ -65,7 +66,15 @@ public class OrgTenantProvisioner implements TenantProvisioner, TenantDependency
         root.setOrgType(2);
         root.setOrgSort(0);
         root.setOrgStatus("1");
-        sysOrgMapper.insert(root);
+        try {
+            sysOrgMapper.insert(root);
+        } catch (DuplicateKeyException exception) {
+            Long winnerId = sysOrgMapper.selectIdByTenantAndCodeForUpdate(
+                    context.getTenantId(), root.getOrgCode());
+            if (winnerId == null) {
+                throw exception;
+            }
+        }
     }
 
     private void ensureDefaultPost(TenantProvisionCommand context,
@@ -73,19 +82,26 @@ public class OrgTenantProvisioner implements TenantProvisioner, TenantDependency
                                    String name,
                                    int sort,
                                    String remark) {
+        String postCode = context.getTenantCode().toUpperCase() + "_" + code;
         Long count = postMapper.selectCount(new LambdaQueryWrapper<PostEntity>()
                 .eq(PostEntity::getTenantId, context.getTenantId())
-                .eq(PostEntity::getPostCode, context.getTenantCode().toUpperCase() + "_" + code));
+                .eq(PostEntity::getPostCode, postCode));
         if (count != null && count > 0) {
             return;
         }
         PostEntity post = new PostEntity();
         post.setTenantId(context.getTenantId());
-        post.setPostCode(context.getTenantCode().toUpperCase() + "_" + code);
+        post.setPostCode(postCode);
         post.setPostName(name);
         post.setPostSort(sort);
         post.setPostStatus("1");
         post.setRemark(remark);
-        postMapper.insert(post);
+        try {
+            postMapper.insert(post);
+        } catch (DuplicateKeyException exception) {
+            if (postMapper.selectByTenantAndCodeForUpdate(context.getTenantId(), postCode) == null) {
+                throw exception;
+            }
+        }
     }
 }

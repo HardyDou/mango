@@ -7,7 +7,9 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.common.exception.BizException;
 import io.mango.infra.kv.api.ILocker;
+import io.mango.infra.kv.api.ILeaseLocker;
 import io.mango.infra.kv.core.capability.KvStoreLocker;
+import io.mango.infra.kv.core.capability.KvStoreLeaseLocker;
 import io.mango.infra.kv.core.jdbc.JdbcKvStore;
 import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguration;
 import io.mango.resource.support.ResourceHandler;
@@ -27,9 +29,17 @@ import io.mango.resource.core.mapper.ResourceRegistryMapper;
 import io.mango.resource.core.sync.ResourceContentHasher;
 import io.mango.resource.core.sync.ResourceRegistryLock;
 import io.mango.resource.core.sync.ResourceRegistryRepository;
+import org.apache.ibatis.executor.Executor;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.mapping.MappedStatement;
+import org.apache.ibatis.plugin.Interceptor;
+import org.apache.ibatis.plugin.Intercepts;
+import org.apache.ibatis.plugin.Invocation;
+import org.apache.ibatis.plugin.Signature;
+import org.apache.ibatis.session.ResultHandler;
+import org.apache.ibatis.session.RowBounds;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,6 +57,10 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -95,12 +109,56 @@ class ResourceRegistrySyncServiceIntegrationTest {
     @Autowired
     private ResourceSyncOrderRecorder syncOrderRecorder;
 
+    @Autowired
+    private SqlStatementCounter sqlStatementCounter;
+
     @BeforeEach
     void setUp() {
+        syncService.start();
         rebuildTables();
         provider.setDeclaration(activeDeclaration(1, "提交申请"));
+        handler.resetBlocking();
+        handler.resetUpsertCount();
         dispatcher.reset();
         syncOrderRecorder.clear();
+        sqlStatementCounter.reset();
+    }
+
+    @Test
+    void shutdownBarrierWaitsForInFlightSyncAndRejectsRegistryWritesAfterStop() throws Exception {
+        handler.blockNextUpsert();
+        AtomicReference<RuntimeException> syncFailure = new AtomicReference<>();
+        Thread syncThread = new Thread(() -> {
+            try {
+                syncService.sync();
+            } catch (RuntimeException exception) {
+                syncFailure.set(exception);
+            }
+        }, "resource-sync-test");
+        syncThread.start();
+        assertThat(handler.awaitBlockedUpsert(5, TimeUnit.SECONDS)).isTrue();
+
+        CountDownLatch stopped = new CountDownLatch(1);
+        syncService.stop(stopped::countDown);
+
+        assertThat(stopped.await(200, TimeUnit.MILLISECONDS)).isFalse();
+        assertThat(syncService.syncRemote(
+                "platform-admin", "service-after-stop", List.of(activeDeclaration(1, "停机后资源"))))
+                .isFalse();
+        handler.releaseBlockedUpsert();
+        assertThat(stopped.await(5, TimeUnit.SECONDS)).isTrue();
+        syncThread.join(5000);
+
+        assertThat(syncThread.isAlive()).isFalse();
+        assertThat(syncFailure.get())
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("shutting down");
+        assertThat(count("resource_registry")).isZero();
+        assertThat(count("resource_sync_log")).isZero();
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM infra_kv_entry WHERE kv_key = ?",
+                Long.class,
+                ResourceRegistryLock.LOCK_NAME)).isZero();
     }
 
     @Test
@@ -120,6 +178,54 @@ class ResourceRegistrySyncServiceIntegrationTest {
         assertThat(count("resource_change_log")).isEqualTo(1);
         assertThat(stringValue("message_template", "title")).isEqualTo("提交申请");
         assertThat(dispatcher.upsertBatchCount()).isZero();
+    }
+
+    @Test
+    void warmSyncFor1964DeclarationsUsesConstantRegistryQueriesAndWritesNoSkipLogs() {
+        provider.setDeclarations(declarations(1964));
+        syncService.sync();
+        long syncLogCount = count("resource_sync_log");
+        long changeLogCount = count("resource_change_log");
+        handler.resetUpsertCount();
+        sqlStatementCounter.reset();
+
+        syncService.sync();
+
+        assertThat(sqlStatementCounter.count(ResourceRegistryMapper.class, "selectByResourceIds")).isEqualTo(1);
+        assertThat(sqlStatementCounter.count(ResourceRegistryMapper.class, "selectByTypeAndBizKeys")).isEqualTo(1);
+        assertThat(sqlStatementCounter.count(ResourceRegistryMapper.class, "selectBySourceAndModules")).isEqualTo(1);
+        assertThat(sqlStatementCounter.countForMapper(ResourceRegistryMapper.class)).isEqualTo(3);
+        assertThat(handler.upsertCount()).isZero();
+        assertThat(count("resource_sync_log")).isEqualTo(syncLogCount);
+        assertThat(count("resource_change_log")).isEqualTo(changeLogCount);
+        assertThat(count("resource_registry")).isEqualTo(1964);
+    }
+
+    @Test
+    void unchangedDeclarationsAcrossStatusesWriteNoSkipLogs() {
+        ResourceDeclaration active = activeDeclaration(
+                "1900000000000000001", 1, "guarantee.apply.active", "正常资源");
+        ResourceDeclaration initOnly = activeDeclaration(
+                "1900000000000000002", 1, "guarantee.apply.init-only", "初始化资源");
+        initOnly.setSyncMode(ResourceSyncMode.INIT_ONLY);
+        ResourceDeclaration disabled = activeDeclaration(
+                "1900000000000000003", 1, "guarantee.apply.disabled", "禁用资源");
+        disabled.setStatus(ResourceStatus.DISABLED);
+        ResourceDeclaration deprecated = activeDeclaration(
+                "1900000000000000004", 1, "guarantee.apply.deprecated", "废弃资源");
+        deprecated.setStatus(ResourceStatus.DEPRECATED);
+        provider.setDeclarations(List.of(active, initOnly, disabled, deprecated));
+        syncService.sync();
+        jdbcTemplate.update("update resource_registry set sync_mode = 'MANUAL' where resource_id = ?",
+                active.getId());
+        long syncLogCount = count("resource_sync_log");
+        long changeLogCount = count("resource_change_log");
+
+        syncService.sync();
+
+        assertThat(count("resource_sync_log")).isEqualTo(syncLogCount);
+        assertThat(count("resource_change_log")).isEqualTo(changeLogCount);
+        assertThat(count("resource_registry")).isEqualTo(4);
     }
 
     @Test
@@ -519,6 +625,18 @@ class ResourceRegistrySyncServiceIntegrationTest {
         );
     }
 
+    private List<ResourceDeclaration> declarations(int count) {
+        List<ResourceDeclaration> declarations = new ArrayList<>(count);
+        for (int index = 1; index <= count; index++) {
+            declarations.add(activeDeclaration(
+                    Long.toString(1_900_000_000_000_000_000L + index),
+                    1,
+                    "guarantee.apply.performance-" + index,
+                    "性能基线-" + index));
+        }
+        return declarations;
+    }
+
     private ResourceDeclaration declarationWithMode(String id, int version, String bizKey, String titleValue,
                                                     ResourceSyncMode syncMode) {
         ResourceDeclaration declaration = activeDeclaration(id, version, bizKey, titleValue);
@@ -706,6 +824,11 @@ class ResourceRegistrySyncServiceIntegrationTest {
         }
 
         @Bean
+        ILeaseLocker leaseLocker(JdbcTemplate jdbcTemplate) {
+            return new KvStoreLeaseLocker(new JdbcKvStore(jdbcTemplate));
+        }
+
+        @Bean
         MutableResourceProvider mutableResourceProvider() {
             return new MutableResourceProvider();
         }
@@ -718,6 +841,11 @@ class ResourceRegistrySyncServiceIntegrationTest {
         @Bean
         RecordingResourceTargetDispatcher recordingResourceTargetDispatcher() {
             return new RecordingResourceTargetDispatcher();
+        }
+
+        @Bean
+        SqlStatementCounter sqlStatementCounter() {
+            return new SqlStatementCounter();
         }
 
         @Bean
@@ -837,6 +965,9 @@ class ResourceRegistrySyncServiceIntegrationTest {
     static class TestMessageResourceHandler implements ResourceHandler {
 
         private final TestMessageTemplateMapper messageTemplateMapper;
+        private final AtomicInteger upsertCount = new AtomicInteger();
+        private final AtomicReference<CountDownLatch> enteredUpsert = new AtomicReference<>();
+        private final AtomicReference<CountDownLatch> releaseUpsert = new AtomicReference<>();
 
         TestMessageResourceHandler(TestMessageTemplateMapper messageTemplateMapper) {
             this.messageTemplateMapper = messageTemplateMapper;
@@ -849,6 +980,8 @@ class ResourceRegistrySyncServiceIntegrationTest {
 
         @Override
         public ResourceSyncResult upsert(ResourceDeclaration resource) {
+            upsertCount.incrementAndGet();
+            awaitReleaseIfBlocked();
             Long id = targetId(resource);
             String title = String.valueOf(resource.getFields().get("title").getValue());
             TestMessageTemplateEntity entity = messageTemplateMapper.selectById(id);
@@ -888,6 +1021,87 @@ class ResourceRegistrySyncServiceIntegrationTest {
         private Long targetId(ResourceDeclaration resource) {
             String id = resource.getId();
             return 91000L + Long.parseLong(id.substring(id.length() - 4));
+        }
+
+        void blockNextUpsert() {
+            enteredUpsert.set(new CountDownLatch(1));
+            releaseUpsert.set(new CountDownLatch(1));
+        }
+
+        boolean awaitBlockedUpsert(long timeout, TimeUnit unit) throws InterruptedException {
+            CountDownLatch latch = enteredUpsert.get();
+            return latch != null && latch.await(timeout, unit);
+        }
+
+        void releaseBlockedUpsert() {
+            CountDownLatch latch = releaseUpsert.get();
+            if (latch != null) {
+                latch.countDown();
+            }
+        }
+
+        void resetBlocking() {
+            releaseBlockedUpsert();
+            enteredUpsert.set(null);
+            releaseUpsert.set(null);
+        }
+
+        int upsertCount() {
+            return upsertCount.get();
+        }
+
+        void resetUpsertCount() {
+            upsertCount.set(0);
+        }
+
+        private void awaitReleaseIfBlocked() {
+            CountDownLatch entered = enteredUpsert.get();
+            CountDownLatch release = releaseUpsert.get();
+            if (entered == null || release == null) {
+                return;
+            }
+            entered.countDown();
+            try {
+                if (!release.await(5, TimeUnit.SECONDS)) {
+                    throw new IllegalStateException("Timed out waiting to release blocked test upsert");
+                }
+            } catch (InterruptedException exception) {
+                Thread.currentThread().interrupt();
+                throw new IllegalStateException("Blocked test upsert was interrupted", exception);
+            }
+        }
+    }
+
+    @Intercepts(@Signature(
+            type = Executor.class,
+            method = "query",
+            args = {MappedStatement.class, Object.class, RowBounds.class, ResultHandler.class}))
+    static class SqlStatementCounter implements Interceptor {
+
+        private final Map<String, AtomicInteger> counts = new ConcurrentHashMap<>();
+
+        @Override
+        public Object intercept(Invocation invocation) throws Throwable {
+            MappedStatement statement = (MappedStatement) invocation.getArgs()[0];
+            counts.computeIfAbsent(statement.getId(), ignored -> new AtomicInteger()).incrementAndGet();
+            return invocation.proceed();
+        }
+
+        int count(Class<?> mapperType, String statementName) {
+            AtomicInteger count = counts.get(mapperType.getName() + "." + statementName);
+            return count == null ? 0 : count.get();
+        }
+
+        int countForMapper(Class<?> mapperType) {
+            String prefix = mapperType.getName() + ".";
+            return counts.entrySet().stream()
+                    .filter(entry -> entry.getKey().startsWith(prefix))
+                    .mapToInt(entry -> entry.getValue().get())
+                    .sum();
+        }
+
+        void reset() {
+            counts.clear();
         }
     }
 

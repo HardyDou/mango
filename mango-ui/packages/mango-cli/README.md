@@ -213,6 +213,7 @@ CLI 从当前目录向上查找 `mango.dev.json`。本地工作区分配事实�
 | `mango.dev.json`                  | `apps.<name>.cwd`               | 模板内路径                                    | 应用工作目录                | 不存在时校验失败                                                                          | `validateDevWorkspace`                              |
 | `mango.dev.json`                  | `apps.<name>.dependsOn`         | 前端依赖后端                                  | 启动顺序                    | 先启动依赖应用                                                                            | `resolveDevWorkspaceTargets`                        |
 | `mango.dev.json`                  | `apps.<name>.health`            | `/actuator/health`                            | 健康检查路径                | `start` 等待后端 ready                                                                    | `waitForDevApp`                                     |
+| `mango.dev.json`                  | `apps.<name>.waitPollIntervalMs`| `500`                                         | 健康检查轮询间隔            | 最小 100ms；只改变 ready 被 CLI 观察到的粒度，不改变 120 秒总超时                        | `waitForDevApp`                                     |
 | `mango.dev.json`                  | `apps.<name>.portEnv`           | `MANGO_BACKEND_PORT` 或 `MANGO_FRONTEND_PORT` | 端口环境变量名              | 覆盖默认端口                                                                              | `resolveDevApp`                                     |
 | `.mango/workspace.json`           | `workspaceId`                   | `mango_<slot>`                                | 当前 worktree 标识          | 进程归属和诊断                                                                            | `ensureWorkspaceConfig`                             |
 | `.mango/workspace.json`           | `slot`                          | `1..200` 稳定工作区号 `NNN`                   | 本机工作区分配号            | 推导端口和数据库名                                                                        | `buildWorkspaceConfig`                              |
@@ -229,6 +230,7 @@ CLI 从当前目录向上查找 `mango.dev.json`。本地工作区分配事实�
 | `.mango/dev-workspace.env`        | `MANGO_FRONTEND_HOST`           | `127.0.0.1`                                   | 前端监听 host               | Vite host                                                                                 | `defaultDevWorkspaceEnv`                            |
 | `.mango/dev-workspace.env`        | `MANGO_FRONTEND_OPEN`           | `false`                                       | 是否自动打开浏览器          | 写入 `VITE_OPEN`                                                                          | `defaultDevWorkspaceEnv`                            |
 | `.mango/dev-workspace.env`        | `MANGO_FRONTEND_AUTO_INSTALL`   | `true`                                        | 预留前端自动安装开关        | 供生成脚本和后续扩展读取                                                                  | `defaultDevWorkspaceEnv`                            |
+| `.mango/dev-workspace.env`        | `MANGO_BACKEND_AUTO_INSTALL`    | `true`                                        | 后端启动前自动安装开关      | `false` 时跳过 manifest 的后端 `install`；适合依赖未变化的重复停启，依赖变化后应恢复安装 | `shouldRunDevInstall`                               |
 | `.mango/dev-workspace.env`        | `MANGO_DB_NAME`                 | 来自 `.mango/workspace.json`                  | 数据库名                    | 拼接 Spring datasource URL；同机 registry 分配避免跨 worktree 共用库                      | `ensureDevWorkspaceEnv`                             |
 | `.mango/dev-workspace.env`        | `MANGO_DB_HOST`                 | `127.0.0.1`                                   | 数据库 host                 | 拼接 Spring datasource URL                                                                | `defaultDevWorkspaceEnv`                            |
 | `.mango/dev-workspace.env`        | `MANGO_DB_PORT`                 | `3306`                                        | 数据库端口                  | 拼接 Spring datasource URL                                                                | `defaultDevWorkspaceEnv`                            |
@@ -252,6 +254,8 @@ CLI 从当前目录向上查找 `mango.dev.json`。本地工作区分配事实�
 `mango dev start` 执行前置安装命令时会把 stdout/stderr 直接追加到对应 app 日志，不在 CLI 进程内缓存完整输出。大型 Maven Reactor 即使产生超过 Node.js `spawnSync` 默认缓冲上限的日志，也不会因此被误判为安装失败；诊断仍统一使用 `mango dev logs <app>` 或对应 app 日志文件。
 
 `mango dev status`、`mango dev stop` 和 `mango dev restart` 先通过内核 PID 探测判断进程是否存在，再把 `ps` 作为可选的僵尸进程补充检查。因此业务开发镜像或精简容器没有安装 `ps` 时，本地进程状态、停止和重启仍可使用；安装了 `ps` 的环境继续保留僵尸进程识别。
+
+Unix 停服按整个进程组等待，而不是只观察 Maven leader。默认先发送 `SIGTERM` 并等待 60 秒，可在 `mango.dev.json` 的 app 上用 `stopTimeoutMs` 调整；超时后发送 `SIGKILL`，再按 `stopKillWaitMs`（默认 5 秒）确认进程组消失。仍有进程存活时命令失败并保留 pid 文件，不会误报 stopped；Windows 保持按单进程控制。
 
 ### 6.5 可审计发布状态机
 
@@ -395,7 +399,7 @@ mango release repair --version 1.0.16 --project-dir . --authorize
 | `mango dev restart`             | 按 stop + start 重启本地开发应用                                 | group 或 app                                                                   | `.mango/run`                                                                                                     |
 | `mango dev status`              | 查看进程状态                                                     | 无                                                                             | 不改文件                                                                                                         |
 | `mango dev logs <app>`          | 查看最近 200 行日志                                              | app name                                                                       | 不改文件                                                                                                         |
-| `mango dev stop`                | 停止本地开发应用                                                 | group 或 app                                                                   | 删除 pid file                                                                                                    |
+| `mango dev stop`                | 停止本地开发应用                                                 | group 或 app                                                                   | 成功确认目标进程组退出后删除 pid file；失败时保留                                                                |
 | `mango frontend prepare`        | 准备前端 source 模式必要文件                                     | 无                                                                             | `packages/admin/generated-package-styles.css`、`packages/admin/style-full.css`                                   |
 
 `mango validate`、`mango dev plan`、`mango dev backend` 和 `mango dev frontend` 仍作为历史兼容入口保留，新文档和交付命令应使用上表公开入口。

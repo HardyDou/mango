@@ -26,6 +26,9 @@ import { homedir } from 'node:os';
 import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { inspectProjectPullRequestTemplate, synchronizeProjectPullRequestTemplate } from './pmo-project-template.mjs';
+import { resolveHealthPollIntervalMs } from './dev-health-policy.mjs';
+import { shouldRunDevInstall } from './dev-install-policy.mjs';
+import { isProcessAlive, isProcessGroupAlive, stopProcessGroup } from './process-control.mjs';
 import { runReleaseCli } from './release-command.mjs';
 
 const requireFromCli = createRequire(import.meta.url);
@@ -1143,6 +1146,7 @@ function defaultDevWorkspaceEnv(root, workspace = ensureWorkspaceConfig(root)) {
     'MANGO_FRONTEND_HOST=127.0.0.1',
     'MANGO_FRONTEND_OPEN=false',
     'MANGO_FRONTEND_AUTO_INSTALL=true',
+    'MANGO_BACKEND_AUTO_INSTALL=true',
     'MANGO_FRONTEND_MODE=source',
     `MANGO_DB_NAME=${workspace.dbName}`,
     'MANGO_DB_HOST=127.0.0.1',
@@ -1962,13 +1966,15 @@ function startDevApp(context, name, app) {
   if (shouldEnsureWorkspaceDatabase(context, app)) {
     ensureWorkspaceDatabase(context, name, logPath);
   }
-  if (app.install) {
+  if (shouldRunDevInstall(app, context.env)) {
     requireCommand(app.install.command, name);
     process.stdout.write(`${name}: running install command\n`);
     const install = runForegroundCommand(app.cwd, app.install.command, app.install.args, app.env, logPath);
     if (install.status !== 0) {
       fail(`${name}: install command failed, see ${relativeOrAbsolute(process.cwd(), logPath)}`);
     }
+  } else if (app.install) {
+    process.stdout.write(`${name}: skipped install command (MANGO_BACKEND_AUTO_INSTALL=false)\n`);
   }
   requireCommand(app.command, name);
   const logFd = openSync(logPath, 'a');
@@ -2136,9 +2142,10 @@ function runForegroundCommand(cwd, command, args, env, logPath) {
 
 async function waitForDevApp(context, name, app) {
   const timeoutMs = Number(app.waitTimeoutMs || 120000);
+  const pollIntervalMs = resolveHealthPollIntervalMs(app.waitPollIntervalMs);
   const startedAt = Date.now();
   process.stdout.write(`${name}: waiting for ${app.healthUrl}\n`);
-  const tick = () => new Promise((resolvePromise) => setTimeout(resolvePromise, 2000));
+  const tick = () => new Promise((resolvePromise) => setTimeout(resolvePromise, pollIntervalMs));
   while (Date.now() - startedAt < timeoutMs) {
     const pidInfo = readPidFile(context, name);
     if (!pidInfo || !isProcessAlive(pidInfo.pid)) {
@@ -2303,14 +2310,21 @@ async function stopDevWorkspace(context, targets) {
       process.stdout.write(`${name}: no pid file\n`);
       continue;
     }
-    if (!isProcessAlive(pidInfo.pid)) {
+    if (!isProcessAlive(pidInfo.pid) && !isProcessGroupAlive(pidInfo.pid)) {
       rmSync(pidFilePath(context, name), { force: true });
       process.stdout.write(`${name}: stale pid removed\n`);
       continue;
     }
-    await stopProcessGroup(pidInfo.pid);
+    const app = context.manifest.apps[name] || {};
+    const outcome = await stopProcessGroup(pidInfo.pid, {
+      graceMs: app.stopTimeoutMs,
+      killWaitMs: app.stopKillWaitMs,
+    });
+    if (!outcome.stopped) {
+      fail(`${name}: process group ${pidInfo.pid} is still alive after SIGKILL`);
+    }
     rmSync(pidFilePath(context, name), { force: true });
-    process.stdout.write(`${name}: stopped pid=${pidInfo.pid}\n`);
+    process.stdout.write(`${name}: stopped pid=${pidInfo.pid}${outcome.forced ? ' forced=true' : ''}\n`);
   }
 }
 
@@ -2526,49 +2540,6 @@ function readPidFile(context, name) {
 function writePidFile(context, name, data) {
   mkdirSync(context.pidDir, { recursive: true });
   writeFileSync(pidFilePath(context, name), `${JSON.stringify(data, null, 2)}\n`);
-}
-
-function isProcessAlive(pid) {
-  if (!pid) {
-    return false;
-  }
-  try {
-    process.kill(Number(pid), 0);
-  } catch {
-    return false;
-  }
-  const stat = spawnSync('ps', ['-o', 'stat=', '-p', String(pid)], { encoding: 'utf8' });
-  if (stat.error?.code === 'ENOENT') {
-    return true;
-  }
-  return stat.status === 0 && !stat.stdout.trim().startsWith('Z');
-}
-
-async function stopProcessGroup(pid) {
-  try {
-    process.kill(-Number(pid), 'SIGTERM');
-  } catch {
-    try {
-      process.kill(Number(pid), 'SIGTERM');
-    } catch {
-      return;
-    }
-  }
-  for (let index = 0; index < 20; index += 1) {
-    if (!isProcessAlive(pid)) {
-      return;
-    }
-    await new Promise((resolvePromise) => setTimeout(resolvePromise, 100));
-  }
-  try {
-    process.kill(-Number(pid), 'SIGKILL');
-  } catch {
-    try {
-      process.kill(Number(pid), 'SIGKILL');
-    } catch {
-      return;
-    }
-  }
 }
 
 function isPortInUse(port) {
