@@ -2,37 +2,16 @@
   <div class="login-container">
     <div class="login-box">
       <div class="login-left">
-        <component
-          :is="loginSlots.brand"
-          v-if="loginSlots.brand"
-          :brand="loginBrand"
-        />
-        <div
-          v-else
-          class="login-title"
-        >
-          <img
-            v-if="loginBrand.logoUrl"
-            class="login-logo"
-            :src="loginBrand.logoUrl"
-            alt="logo"
-          />
+        <component :is="loginSlots.brand" v-if="loginSlots.brand" :brand="loginBrand" />
+        <div v-else class="login-title">
+          <img v-if="loginBrand.logoUrl" class="login-logo" :src="loginBrand.logoUrl" alt="logo" />
           <h1>{{ loginBrand.title }}</h1>
           <p>{{ loginBrand.subtitle }}</p>
-          <img
-            v-if="loginBrand.imageUrl"
-            class="login-brand-image"
-            :src="loginBrand.imageUrl"
-            alt="login brand"
-          />
+          <img v-if="loginBrand.imageUrl" class="login-brand-image" :src="loginBrand.imageUrl" alt="login brand" />
         </div>
       </div>
       <div class="login-form">
-        <component
-          :is="loginSlots.formHeader"
-          v-if="loginSlots.formHeader"
-          :form="form"
-        />
+        <component :is="loginSlots.formHeader" v-if="loginSlots.formHeader" :form="form" />
         <h2 class="form-title">
           {{ loginBrand.panelTitle || $t('login.title') }}
         </h2>
@@ -42,12 +21,7 @@
           :form="form"
           :tenant-options="tenantOptions"
         />
-        <el-form
-          ref="loginFormRef"
-          :model="form"
-          :rules="rules"
-          @keyup.enter="handleLogin"
-        >
+        <el-form ref="loginFormRef" :model="form" :rules="rules" @keyup.enter="handleLogin">
           <el-form-item prop="tenantId">
             <el-select
               v-model="form.tenantId"
@@ -60,14 +34,10 @@
               <el-option
                 v-for="tenant in tenantOptions"
                 :key="tenant.tenantId"
-              :label="tenant.tenantName"
-              :value="tenant.tenantId"
-            >
-                <component
-                  :is="loginSlots.tenantOption"
-                  v-if="loginSlots.tenantOption"
-                  :tenant="tenant"
-                />
+                :label="tenant.tenantName"
+                :value="tenant.tenantId"
+              >
+                <component :is="loginSlots.tenantOption" v-if="loginSlots.tenantOption" :tenant="tenant" />
                 <template v-else>
                   <span>{{ tenant.tenantName }}</span>
                   <span class="tenant-code">{{ tenant.tenantCode }}</span>
@@ -126,39 +96,19 @@
           :form="form"
           :tenant-options="tenantOptions"
         />
-        <component
-          :is="loginSlots.footer"
-          v-if="loginSlots.footer"
-        />
+        <component :is="loginSlots.footer" v-if="loginSlots.footer" />
       </div>
     </div>
-    <el-dialog
-      v-model="wecomDialogVisible"
-      title="企业微信扫码登录"
-      width="420px"
-    >
+    <el-dialog v-model="wecomDialogVisible" title="企业微信扫码登录" width="420px">
       <div class="wecom-login-panel">
-        <iframe
-          v-if="wecomQrUrl"
-          :src="wecomQrUrl"
-          class="wecom-qr-frame"
-        />
-        <div
-          v-else
-          class="wecom-login-placeholder"
-        >
+        <iframe v-if="wecomQrUrl" :src="wecomQrUrl" class="wecom-qr-frame" />
+        <div v-else class="wecom-login-placeholder">
           请在通知管理的企业微信渠道配置中启用扫码登录，并补充 AgentId 和扫码回调地址；本地联调可输入授权 code。
         </div>
-        <el-input
-          v-model="wecomCode"
-          placeholder="企业微信回调 code"
-          clearable
-        />
+        <el-input v-model="wecomCode" placeholder="企业微信回调 code" clearable />
       </div>
       <template #footer>
-        <el-button @click="wecomDialogVisible = false">
-          取消
-        </el-button>
+        <el-button @click="wecomDialogVisible = false"> 取消 </el-button>
         <el-button
           type="primary"
           :loading="wecomLoading"
@@ -184,10 +134,7 @@
         label-width="96px"
         @keyup.enter="handleChangeRequiredPassword"
       >
-        <el-form-item
-          label="新密码"
-          prop="newPassword"
-        >
+        <el-form-item label="新密码" prop="newPassword">
           <el-input
             v-model="passwordResetForm.newPassword"
             type="password"
@@ -197,10 +144,7 @@
           />
           <PasswordPolicyHint :password="passwordResetForm.newPassword" />
         </el-form-item>
-        <el-form-item
-          label="确认密码"
-          prop="confirmPassword"
-        >
+        <el-form-item label="确认密码" prop="confirmPassword">
           <el-input
             v-model="passwordResetForm.confirmPassword"
             type="password"
@@ -227,11 +171,7 @@
 <script setup lang="ts" name="Login">
 import { computed, nextTick, onMounted, ref } from 'vue';
 import { type FormInstance, type FormRules } from 'element-plus';
-import {
-  defaultPasswordPolicy,
-  isPasswordPolicyPassed,
-  PasswordPolicyHint,
-} from '@mango/common';
+import { defaultPasswordPolicy, isPasswordPolicyPassed, PasswordPolicyHint } from '@mango/common';
 import { useAuthConfig } from '../composables/useAuthConfig';
 import { useMangoLoginFlow } from '../composables/useMangoLoginFlow';
 
@@ -371,7 +311,7 @@ const handleLogin = async () => {
   justify-content: center;
   width: 50%;
   padding: 40px;
-  background: linear-gradient(135deg, #2E5CF6 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #2e5cf6 0%, #764ba2 100%);
 
   .login-title {
     color: #fff;

@@ -843,7 +843,7 @@ async function apiHeaders(page: Page) {
 }
 
 async function expectBusinessOk<T>(response: APIResponse) {
-  const body = await response.json() as ApiBody<T>;
+  const body = (await response.json()) as ApiBody<T>;
   expect(response.status(), body.msg || JSON.stringify(body)).toBe(200);
   expect(body.success || body.code === 200, body.msg || '业务响应失败').toBeTruthy();
   return body;
@@ -851,7 +851,7 @@ async function expectBusinessOk<T>(response: APIResponse) {
 
 async function expectBusinessError<T>(response: APIResponse) {
   expect(response.status()).toBe(200);
-  const body = await response.json() as ApiBody<T>;
+  const body = (await response.json()) as ApiBody<T>;
   expect(body.success || body.code === 200, '业务响应不应成功').toBeFalsy();
   return body;
 }
@@ -882,9 +882,11 @@ async function createMangoPayScenarioControl(
 }
 
 async function openCashierPage(page: Page, cashierConfigId: string | number, businessOrderId: string | number) {
-  const sessionPromise = page.waitForResponse(response => response.url().includes('/api/payment/cashier/session'));
+  const sessionPromise = page.waitForResponse((response) => response.url().includes('/api/payment/cashier/session'));
   await page.goto(`/#/payment/cashier-configs/${cashierConfigId}/cashier?businessOrderId=${businessOrderId}`);
-  await expect(page).toHaveURL(new RegExp(`#\\/payment\\/cashier-configs\\/${cashierConfigId}\\/cashier`), { timeout: 15000 });
+  await expect(page).toHaveURL(new RegExp(`#\\/payment\\/cashier-configs\\/${cashierConfigId}\\/cashier`), {
+    timeout: 15000,
+  });
   await expect(page.locator('.cashier-page')).toBeVisible({ timeout: 15000 });
   return expectBusinessOk<CashierSession>(await sessionPromise);
 }
@@ -894,7 +896,10 @@ function dialog(page: Page) {
 }
 
 function formItem(page: Page, label: string) {
-  return dialog(page).locator('.el-form-item').filter({ has: page.locator('.el-form-item__label', { hasText: label }) }).first();
+  return dialog(page)
+    .locator('.el-form-item')
+    .filter({ has: page.locator('.el-form-item__label', { hasText: label }) })
+    .first();
 }
 
 async function fillInput(page: Page, label: string, value: string) {
@@ -951,7 +956,10 @@ async function openSelect(page: Page, label: string): Promise<Locator> {
     (target as HTMLElement).click();
     return target.getAttribute('aria-controls') || '';
   });
-  const dropdown = page.locator(`[id="${listboxId}"]`).locator('xpath=ancestor::*[contains(@class, "el-select-dropdown")]').first();
+  const dropdown = page
+    .locator(`[id="${listboxId}"]`)
+    .locator('xpath=ancestor::*[contains(@class, "el-select-dropdown")]')
+    .first();
   await expect(dropdown).toBeVisible({ timeout: 10000 });
   return dropdown;
 }
@@ -972,7 +980,7 @@ async function chooseRadio(page: Page, label: string, optionText: string) {
 
 async function setSwitch(page: Page, label: string, enabled: boolean) {
   const switchInput = formItem(page, label).locator('.el-switch').first();
-  const checked = await switchInput.evaluate(element => element.classList.contains('is-checked'));
+  const checked = await switchInput.evaluate((element) => element.classList.contains('is-checked'));
   if (checked !== enabled) {
     await switchInput.click();
   }
@@ -1006,12 +1014,15 @@ async function clickPaymentTableRowButton(page: Page, rowText: string, buttonNam
   await button.click();
 }
 
-async function createApplicationByUi(page: Page, data: {
-  name: string;
-  status: '启用' | '停用';
-  demo: boolean;
-  payloadEncrypt: boolean;
-}): Promise<PaymentApplicationSaveResult> {
+async function createApplicationByUi(
+  page: Page,
+  data: {
+    name: string;
+    status: '启用' | '停用';
+    demo: boolean;
+    payloadEncrypt: boolean;
+  },
+): Promise<PaymentApplicationSaveResult> {
   await openPaymentPage(page, '/#/payment/applications', '应用管理');
   await page.getByRole('button', { name: '新增' }).click();
   await expect(dialog(page).getByText('新增应用管理')).toBeVisible();
@@ -1027,7 +1038,9 @@ async function createApplicationByUi(page: Page, data: {
   await fillInput(page, '通知重试策略', '1m,5m,15m,1h');
 
   const [createResponse] = await Promise.all([
-    page.waitForResponse(response => response.url().includes('/api/payment/applications') && response.request().method() === 'POST'),
+    page.waitForResponse(
+      (response) => response.url().includes('/api/payment/applications') && response.request().method() === 'POST',
+    ),
     dialog(page).getByRole('button', { name: '保存' }).click(),
   ]);
   const createBody = await expectBusinessOk<PaymentApplicationSaveResult>(createResponse);
@@ -1047,14 +1060,17 @@ async function createApplicationByUi(page: Page, data: {
   return createBody.data || {};
 }
 
-async function createCashierByUi(page: Page, data: {
-  appName: string;
-  cashierName: string;
-  subjectNames: string[];
-  methodNames: string[];
-  defaultMethodName: string;
-  resultReturnUrl: string;
-}) {
+async function createCashierByUi(
+  page: Page,
+  data: {
+    appName: string;
+    cashierName: string;
+    subjectNames: string[];
+    methodNames: string[];
+    defaultMethodName: string;
+    resultReturnUrl: string;
+  },
+) {
   await openPaymentPage(page, '/#/payment/cashier-configs', '收银台');
   await page.getByRole('button', { name: '新增' }).click();
   await expect(dialog(page).getByText('新增收银台')).toBeVisible();
@@ -1068,10 +1084,11 @@ async function createCashierByUi(page: Page, data: {
   await fillInput(page, '结果跳转', data.resultReturnUrl);
 
   const [createResponse] = await Promise.all([
-    page.waitForResponse(response =>
-      response.url().includes('/api/payment/cashier-configs')
-      && !response.url().includes('/api/payment/cashier-configs/page')
-      && response.request().method() === 'POST'
+    page.waitForResponse(
+      (response) =>
+        response.url().includes('/api/payment/cashier-configs') &&
+        !response.url().includes('/api/payment/cashier-configs/page') &&
+        response.request().method() === 'POST',
     ),
     dialog(page).getByRole('button', { name: '保存' }).click(),
   ]);
@@ -1086,15 +1103,18 @@ async function createCashierByUi(page: Page, data: {
   await fillTextarea(page, '帮助文案', '支付遇到问题请联系业务客服');
 
   const [decorationResponse] = await Promise.all([
-    page.waitForResponse(response =>
-      response.url().includes('/api/payment/cashier-configs')
-      && !response.url().includes('/api/payment/cashier-configs/page')
-      && response.request().method() === 'PUT'
+    page.waitForResponse(
+      (response) =>
+        response.url().includes('/api/payment/cashier-configs') &&
+        !response.url().includes('/api/payment/cashier-configs/page') &&
+        response.request().method() === 'PUT',
     ),
     dialog(page).getByRole('button', { name: '保存装修' }).click(),
   ]);
   await expectBusinessOk(decorationResponse);
-  await expect(page.locator('.el-message').filter({ hasText: '收银台装修已保存' }).last()).toBeVisible({ timeout: 10000 });
+  await expect(page.locator('.el-message').filter({ hasText: '收银台装修已保存' }).last()).toBeVisible({
+    timeout: 10000,
+  });
   await expect(page.getByRole('dialog', { name: '收银台装修' })).toBeHidden({ timeout: 10000 });
   return { logoFileId };
 }
@@ -1102,10 +1122,11 @@ async function createCashierByUi(page: Page, data: {
 async function uploadCashierLogo(page: Page) {
   const logoUpload = formItem(page, 'Logo 文件').locator('input[type="file"]').first();
   const [uploadResponse] = await Promise.all([
-    page.waitForResponse(response =>
-      response.url().includes('/api/file/files')
-      && !response.url().includes('/api/file/files/')
-      && response.request().method() === 'POST'
+    page.waitForResponse(
+      (response) =>
+        response.url().includes('/api/file/files') &&
+        !response.url().includes('/api/file/files/') &&
+        response.request().method() === 'POST',
     ),
     logoUpload.setInputFiles({
       name: `cashier-logo-${Date.now()}.png`,
@@ -1151,7 +1172,7 @@ async function findApplicationByName(page: Page, headers: Record<string, string>
     params: { page: '1', size: '10', keyword: appName },
   });
   const body = await expectBusinessOk<PageData>(response);
-  return (body.data?.list || []).find(item => item.appName === appName) as PaymentApplication | undefined;
+  return (body.data?.list || []).find((item) => item.appName === appName) as PaymentApplication | undefined;
 }
 
 async function findLatestAudit(page: Page, headers: Record<string, string>, appId: string, operationResult?: string) {
@@ -1160,27 +1181,32 @@ async function findLatestAudit(page: Page, headers: Record<string, string>, appI
     params: { page: '1', size: '50', keyword: 'DELETE_APPLICATION' },
   });
   const body = await expectBusinessOk<PageData>(response);
-  return (body.data?.list || []).find(item =>
-    item.resourceId === appId && (!operationResult || item.operationResult === operationResult)
+  return (body.data?.list || []).find(
+    (item) => item.resourceId === appId && (!operationResult || item.operationResult === operationResult),
   ) as PaymentOperationAudit | undefined;
 }
 
-async function findLatestPaymentAudit(page: Page, headers: Record<string, string>, options: {
-  action: string;
-  resourceType: string;
-  resourceId: string;
-  operationResult?: string;
-}) {
+async function findLatestPaymentAudit(
+  page: Page,
+  headers: Record<string, string>,
+  options: {
+    action: string;
+    resourceType: string;
+    resourceId: string;
+    operationResult?: string;
+  },
+) {
   const response = await page.request.get('/api/payment/operation-audits/page', {
     headers,
     params: { page: '1', size: '50', keyword: options.action },
   });
   const body = await expectBusinessOk<PageData>(response);
-  return (body.data?.list || []).find(item =>
-    item.operationAction === options.action
-    && item.resourceType === options.resourceType
-    && item.resourceId === options.resourceId
-    && (!options.operationResult || item.operationResult === options.operationResult)
+  return (body.data?.list || []).find(
+    (item) =>
+      item.operationAction === options.action &&
+      item.resourceType === options.resourceType &&
+      item.resourceId === options.resourceId &&
+      (!options.operationResult || item.operationResult === options.operationResult),
   ) as PaymentOperationAudit | undefined;
 }
 
@@ -1195,9 +1221,8 @@ async function findExceptionOrderByRelatedNo(
     params: { page: '1', size: '10', keyword: relatedOrderNo, statusCode },
   });
   const body = await expectBusinessOk<PageData>(response);
-  return (body.data?.list || []).find(item =>
-    (item as PaymentExceptionOrder).relatedOrderNo === relatedOrderNo
-  ) as PaymentExceptionOrder | undefined;
+  return (body.data?.list || []).find((item) => (item as PaymentExceptionOrder).relatedOrderNo === relatedOrderNo) as
+    PaymentExceptionOrder | undefined;
 }
 
 async function findPaymentOrderByNo(page: Page, headers: Record<string, string>, payOrderNo: string) {
@@ -1206,7 +1231,7 @@ async function findPaymentOrderByNo(page: Page, headers: Record<string, string>,
     params: { page: '1', size: '10', keyword: payOrderNo },
   });
   const body = await expectBusinessOk<PageData>(response);
-  return (body.data?.list || []).find(item => item.payOrderNo === payOrderNo) as PaymentOrder | undefined;
+  return (body.data?.list || []).find((item) => item.payOrderNo === payOrderNo) as PaymentOrder | undefined;
 }
 
 function movePaymentSuccessTime(payOrderNo: string, billDate: string, time = '10:30:00') {
@@ -1220,7 +1245,11 @@ function movePaymentSuccessTime(payOrderNo: string, billDate: string, time = '10
   `);
 }
 
-function moveHistoricalReconciliationE2eOrdersOutOfBillDate(bizOrderPrefix: string, billDate: string, currentPayOrderNo: string) {
+function moveHistoricalReconciliationE2eOrdersOutOfBillDate(
+  bizOrderPrefix: string,
+  billDate: string,
+  currentPayOrderNo: string,
+) {
   mysqlExec(`
     UPDATE payment_order po
     JOIN payment_business_order bo
@@ -1316,7 +1345,8 @@ async function findReconciliationByNo(page: Page, headers: Record<string, string
     params: { page: '1', size: '10', keyword: reconciliationNo },
   });
   const body = await expectBusinessOk<PageData>(response);
-  return (body.data?.list || []).find(item => item.reconciliationNo === reconciliationNo) as PaymentReconciliation | undefined;
+  return (body.data?.list || []).find((item) => item.reconciliationNo === reconciliationNo) as
+    PaymentReconciliation | undefined;
 }
 
 async function findBusinessOrderByNo(page: Page, headers: Record<string, string>, bizOrderNo: string) {
@@ -1325,7 +1355,7 @@ async function findBusinessOrderByNo(page: Page, headers: Record<string, string>
     params: { page: '1', size: '10', keyword: bizOrderNo },
   });
   const body = await expectBusinessOk<PageData>(response);
-  return (body.data?.list || []).find(item => item.bizOrderNo === bizOrderNo) as PaymentBusinessOrder | undefined;
+  return (body.data?.list || []).find((item) => item.bizOrderNo === bizOrderNo) as PaymentBusinessOrder | undefined;
 }
 
 async function findTransactionFlowByPayOrderNo(page: Page, headers: Record<string, string>, payOrderNo: string) {
@@ -1334,7 +1364,7 @@ async function findTransactionFlowByPayOrderNo(page: Page, headers: Record<strin
     params: { page: '1', size: '10', keyword: payOrderNo },
   });
   const body = await expectBusinessOk<PageData>(response);
-  return (body.data?.list || []).find(item => item.payOrderNo === payOrderNo) as PaymentTransactionFlow | undefined;
+  return (body.data?.list || []).find((item) => item.payOrderNo === payOrderNo) as PaymentTransactionFlow | undefined;
 }
 
 async function findRefundSuccessFlow(page: Page, headers: Record<string, string>, refundOrderNo: string) {
@@ -1343,8 +1373,8 @@ async function findRefundSuccessFlow(page: Page, headers: Record<string, string>
     params: { page: '1', size: '10', keyword: refundOrderNo },
   });
   const body = await expectBusinessOk<PageData>(response);
-  return (body.data?.list || []).find(item =>
-    item.refundOrderNo === refundOrderNo && item.flowType === 'REFUND_SUCCESS'
+  return (body.data?.list || []).find(
+    (item) => item.refundOrderNo === refundOrderNo && item.flowType === 'REFUND_SUCCESS',
   ) as PaymentTransactionFlow | undefined;
 }
 
@@ -1354,9 +1384,8 @@ async function findOfflineCollectionByPayOrderNo(page: Page, headers: Record<str
     params: { page: '1', size: '10', keyword: payOrderNo },
   });
   const body = await expectBusinessOk<PageData>(response);
-  return (body.data?.list || []).find(item =>
-    (item as PaymentOfflineCollection).payOrderNo === payOrderNo
-  ) as PaymentOfflineCollection | undefined;
+  return (body.data?.list || []).find((item) => (item as PaymentOfflineCollection).payOrderNo === payOrderNo) as
+    PaymentOfflineCollection | undefined;
 }
 
 async function findOfflineRefundByNo(page: Page, headers: Record<string, string>, offlineRefundNo: string) {
@@ -1365,9 +1394,8 @@ async function findOfflineRefundByNo(page: Page, headers: Record<string, string>
     params: { page: '1', size: '10', keyword: offlineRefundNo },
   });
   const body = await expectBusinessOk<PageData>(response);
-  return (body.data?.list || []).find(item =>
-    (item as PaymentOfflineRefund).offlineRefundNo === offlineRefundNo
-  ) as PaymentOfflineRefund | undefined;
+  return (body.data?.list || []).find((item) => (item as PaymentOfflineRefund).offlineRefundNo === offlineRefundNo) as
+    PaymentOfflineRefund | undefined;
 }
 
 async function uploadPaymentEvidenceFile(
@@ -1478,7 +1506,9 @@ async function findAvailableCashierConfig(page: Page, headers: Record<string, st
   });
   const body = await expectBusinessOk<PageData>(response);
   const configs = (body.data?.list || []) as PaymentCashierConfig[];
-  const config = configs.find(item => item.id && item.cashierName && item.methodNames) || configs.find(item => item.id && item.cashierName);
+  const config =
+    configs.find((item) => item.id && item.cashierName && item.methodNames) ||
+    configs.find((item) => item.id && item.cashierName);
   expect(config?.id, '应存在可预览的收银台').toBeTruthy();
   return config as PaymentCashierConfig;
 }
@@ -1489,7 +1519,8 @@ async function findEnterpriseSubjectByName(page: Page, headers: Record<string, s
     params: { page: '1', size: '10', keyword: subjectName },
   });
   const body = await expectBusinessOk<PageData>(response);
-  return (body.data?.list || []).find(item => item.subjectName === subjectName) as PaymentEnterpriseSubject | undefined;
+  return (body.data?.list || []).find((item) => item.subjectName === subjectName) as
+    PaymentEnterpriseSubject | undefined;
 }
 
 async function findChannelByName(page: Page, headers: Record<string, string>, channelName: string) {
@@ -1498,7 +1529,9 @@ async function findChannelByName(page: Page, headers: Record<string, string>, ch
     params: { page: '1', size: '20', keyword: channelName },
   });
   const body = await expectBusinessOk<PageData>(response);
-  return (body.data?.list || []).find(item => item.channelName === channelName || item.channelCode === 'MANGO_PAY') as PaymentChannel | undefined;
+  return (body.data?.list || []).find(
+    (item) => item.channelName === channelName || item.channelCode === 'MANGO_PAY',
+  ) as PaymentChannel | undefined;
 }
 
 async function findChannelByCode(page: Page, headers: Record<string, string>, channelCode: string) {
@@ -1507,7 +1540,7 @@ async function findChannelByCode(page: Page, headers: Record<string, string>, ch
     params: { page: '1', size: '20', keyword: channelCode },
   });
   const body = await expectBusinessOk<PageData>(response);
-  return (body.data?.list || []).find(item => item.channelCode === channelCode) as PaymentChannel | undefined;
+  return (body.data?.list || []).find((item) => item.channelCode === channelCode) as PaymentChannel | undefined;
 }
 
 async function unusedChannelCode(page: Page, headers: Record<string, string>) {
@@ -1527,13 +1560,18 @@ function channelCodeOptionText(channelCode: string) {
   return channelCode;
 }
 
-async function findChannelCapability(page: Page, headers: Record<string, string>, channelId: string, methodCode: string) {
+async function findChannelCapability(
+  page: Page,
+  headers: Record<string, string>,
+  channelId: string,
+  methodCode: string,
+) {
   const response = await page.request.get('/api/payment/channels/capabilities/page', {
     headers,
     params: { page: '1', size: '50', channelId, keyword: methodCode },
   });
   const body = await expectBusinessOk<PageData>(response);
-  return (body.data?.list || []).find(item => item.methodCode === methodCode) as PaymentChannelCapability | undefined;
+  return (body.data?.list || []).find((item) => item.methodCode === methodCode) as PaymentChannelCapability | undefined;
 }
 
 async function findChannelContractByCode(page: Page, headers: Record<string, string>, contractCode: string) {
@@ -1542,7 +1580,8 @@ async function findChannelContractByCode(page: Page, headers: Record<string, str
     params: { page: '1', size: '10', keyword: contractCode },
   });
   const body = await expectBusinessOk<PageData>(response);
-  return (body.data?.list || []).find(item => item.contractCode === contractCode) as PaymentChannelContract | undefined;
+  return (body.data?.list || []).find((item) => item.contractCode === contractCode) as
+    PaymentChannelContract | undefined;
 }
 
 async function findPaymentMethodByCode(page: Page, headers: Record<string, string>, methodCode: string) {
@@ -1551,7 +1590,7 @@ async function findPaymentMethodByCode(page: Page, headers: Record<string, strin
     params: { page: '1', size: '10', keyword: methodCode },
   });
   const body = await expectBusinessOk<PageData>(response);
-  return (body.data?.list || []).find(item => item.methodCode === methodCode) as PaymentMethod | undefined;
+  return (body.data?.list || []).find((item) => item.methodCode === methodCode) as PaymentMethod | undefined;
 }
 
 async function findRouteRuleByCode(page: Page, headers: Record<string, string>, ruleCode: string) {
@@ -1560,7 +1599,7 @@ async function findRouteRuleByCode(page: Page, headers: Record<string, string>, 
     params: { page: '1', size: '10', keyword: ruleCode },
   });
   const body = await expectBusinessOk<PageData>(response);
-  return (body.data?.list || []).find(item => item.ruleCode === ruleCode) as PaymentMethodRouteRule | undefined;
+  return (body.data?.list || []).find((item) => item.ruleCode === ruleCode) as PaymentMethodRouteRule | undefined;
 }
 
 function cashierDisplayTitle(config: PaymentCashierConfig) {
@@ -1613,7 +1652,7 @@ function mysqlQueryRows(sql: string) {
   }
   return execFileSync('mysql', args, { stdio: 'pipe', encoding: 'utf8' })
     .split(/\r?\n/)
-    .filter(line => line.length > 0);
+    .filter((line) => line.length > 0);
 }
 
 function sqlValue(value: string) {
@@ -1624,7 +1663,7 @@ async function startPaymentNotifyReceiver(ackBody = 'SUCCESS') {
   const notifications: PaymentOpenNotification[] = [];
   const server = createServer((request, response) => {
     const chunks: Buffer[] = [];
-    request.on('data', chunk => chunks.push(Buffer.from(chunk)));
+    request.on('data', (chunk) => chunks.push(Buffer.from(chunk)));
     request.on('end', () => {
       const raw = Buffer.concat(chunks).toString('utf8');
       if (raw) {
@@ -1655,11 +1694,11 @@ async function startPaymentNotifyReceiver(ackBody = 'SUCCESS') {
     ) => {
       const startedAt = Date.now();
       while (Date.now() - startedAt < timeout) {
-        const notification = notifications.find(item => item.notificationType === type && matcher(item));
+        const notification = notifications.find((item) => item.notificationType === type && matcher(item));
         if (notification) {
           return notification;
         }
-        await new Promise(resolveTimer => setTimeout(resolveTimer, 100));
+        await new Promise((resolveTimer) => setTimeout(resolveTimer, 100));
       }
       throw new Error(`未收到 ${type} 通知`);
     },
@@ -1697,7 +1736,7 @@ async function closeServer(server: Server) {
     return;
   }
   await new Promise<void>((resolveServer, reject) => {
-    server.close(error => (error ? reject(error) : resolveServer()));
+    server.close((error) => (error ? reject(error) : resolveServer()));
   });
 }
 
@@ -1857,7 +1896,14 @@ function prepareCashierConfig(options: {
   `);
 }
 
-function signPaymentOpenApi(method: string, path: string, body: string, appSecret: string, timestamp: string, nonce: string) {
+function signPaymentOpenApi(
+  method: string,
+  path: string,
+  body: string,
+  appSecret: string,
+  timestamp: string,
+  nonce: string,
+) {
   const bodyDigest = createHash('sha256').update(body).digest('hex');
   const canonical = [method.toUpperCase(), path, bodyDigest, timestamp, nonce].join('\n');
   return createHmac('sha256', appSecret).update(canonical).digest('base64');
@@ -1881,14 +1927,7 @@ function openApiRequestBody(options: {
     appId: options.appId,
     tenantId: '1',
     timestamp,
-    signature: signPaymentOpenApi(
-      'POST',
-      options.path,
-      body,
-      options.appSecret,
-      timestamp,
-      options.nonce,
-    ),
+    signature: signPaymentOpenApi('POST', options.path, body, options.appSecret, timestamp, options.nonce),
     nonce: options.nonce,
     bizOrderNo: options.bizOrderNo,
     payOrderNo: options.payOrderNo,
@@ -2430,10 +2469,9 @@ function prepareSettlementScenario(suffix: string, billDate: string) {
 }
 
 function collectMenuNames(nodes: MenuNode[]): string[] {
-  return nodes.flatMap((node) => [
-    node.menuName,
-    ...collectMenuNames(node.children || []),
-  ]).filter((name): name is string => Boolean(name));
+  return nodes
+    .flatMap((node) => [node.menuName, ...collectMenuNames(node.children || [])])
+    .filter((name): name is string => Boolean(name));
 }
 
 function collectRuntimeErrors(page: Page, apiPathPrefix = '/api/payment') {
@@ -2443,13 +2481,13 @@ function collectRuntimeErrors(page: Page, apiPathPrefix = '/api/payment') {
       runtimeErrors.push(message.text());
     }
   });
-  page.on('pageerror', error => runtimeErrors.push(error.message));
-  page.on('requestfailed', request => {
+  page.on('pageerror', (error) => runtimeErrors.push(error.message));
+  page.on('requestfailed', (request) => {
     if (request.url().includes(apiPathPrefix)) {
       runtimeErrors.push(`${request.method()} ${request.url()} ${request.failure()?.errorText || 'failed'}`);
     }
   });
-  page.on('response', response => {
+  page.on('response', (response) => {
     if (response.url().includes(apiPathPrefix) && response.status() >= 500) {
       runtimeErrors.push(`${response.request().method()} ${response.url()} HTTP ${response.status()}`);
     }
@@ -2457,12 +2495,7 @@ function collectRuntimeErrors(page: Page, apiPathPrefix = '/api/payment') {
   return runtimeErrors;
 }
 
-async function findFirstPageRecord<T>(
-  page: Page,
-  headers: Record<string, string>,
-  endpoint: string,
-  keyword = '',
-) {
+async function findFirstPageRecord<T>(page: Page, headers: Record<string, string>, endpoint: string, keyword = '') {
   const response = await page.request.get(`/api/payment/${endpoint}/page`, {
     headers,
     params: { page: '1', size: '10', keyword },
@@ -2478,7 +2511,7 @@ async function searchPaymentTable(page: Page, endpoint: string, keyword: string,
   const toolbarInput = page.locator(`${tableSelector.replace('__table', '__toolbar')} input`).first();
   await toolbarInput.fill(keyword);
   await Promise.all([
-    page.waitForResponse(response => response.url().includes(`/api/payment/${endpoint}/page`)),
+    page.waitForResponse((response) => response.url().includes(`/api/payment/${endpoint}/page`)),
     page.getByRole('button', { name: '查询' }).click(),
   ]);
   await expect(table).toBeVisible({ timeout: 10000 });
@@ -2488,12 +2521,15 @@ async function searchPaymentTable(page: Page, endpoint: string, keyword: string,
   return row;
 }
 
-async function expectPaymentListLayout(page: Page, config: {
-  path: string;
-  heading: string;
-  rootClass: string;
-  screenshotName: string;
-}) {
+async function expectPaymentListLayout(
+  page: Page,
+  config: {
+    path: string;
+    heading: string;
+    rootClass: string;
+    screenshotName: string;
+  },
+) {
   await openPaymentPage(page, config.path, config.heading);
   const root = page.locator(`.${config.rootClass}`).first();
   const header = root.locator(`.${config.rootClass}__header`);
@@ -2528,9 +2564,12 @@ async function expectNoTagText(scope: Locator, text: string | undefined, message
 }
 
 async function expectOnlySemanticTags(scope: Locator, allowed: RegExp[], message: string) {
-  const texts = (await scope.locator('.el-tag').allTextContents()).map(text => text.trim()).filter(Boolean);
+  const texts = (await scope.locator('.el-tag').allTextContents()).map((text) => text.trim()).filter(Boolean);
   for (const text of texts) {
-    expect(allowed.some(pattern => pattern.test(text)), `${message}：${text}`).toBeTruthy();
+    expect(
+      allowed.some((pattern) => pattern.test(text)),
+      `${message}：${text}`,
+    ).toBeTruthy();
   }
 }
 
@@ -2538,7 +2577,7 @@ test.describe('支付管理 E2E', () => {
   test.describe.configure({ mode: 'serial' });
   test.skip(
     process.env.PAYMENT_E2E_ALLOW_SHARED_DB_MUTATION !== 'true',
-    '支付管理 E2E 会写入隔离测试库；必须显式设置 PAYMENT_E2E_ALLOW_SHARED_DB_MUTATION=true 后运行'
+    '支付管理 E2E 会写入隔离测试库；必须显式设置 PAYMENT_E2E_ALLOW_SHARED_DB_MUTATION=true 后运行',
   );
   test.skip(({ browserName }) => browserName !== 'chromium', '支付管理 E2E 使用隔离测试库数据，仅在 Chromium 串行执行');
 
@@ -2633,11 +2672,11 @@ test.describe('支付管理 E2E', () => {
       };
       const createBody = JSON.stringify(createPayload);
       const createRequest = openApiRequestBody({
-          appId,
-          appSecret,
-          path: createPath,
-          body: createBody,
-          nonce: `create-${suffix}`,
+        appId,
+        appSecret,
+        path: createPath,
+        body: createBody,
+        nonce: `create-${suffix}`,
       });
       const createResponse = await page.request.post('/api/openapi/pay/orders/create', {
         data: createRequest,
@@ -2648,288 +2687,288 @@ test.describe('支付管理 E2E', () => {
       expectMoneyCents(createResult.data?.amount, 128800);
       expect(createResult.data?.status).toBe('TO_PAY');
 
-    const repeatRequest = openApiRequestBody({
+      const repeatRequest = openApiRequestBody({
         appId,
         appSecret,
         path: createPath,
         body: createBody,
         nonce: `repeat-${suffix}`,
-    });
-    const repeatResponse = await page.request.post('/api/openapi/pay/orders/create', {
-      data: repeatRequest,
-    });
-    const repeatResult = await expectBusinessOk<PaymentBusinessOrder>(repeatResponse);
-    expect(String(repeatResult.data?.id || '')).toBe(String(createResult.data?.id || ''));
+      });
+      const repeatResponse = await page.request.post('/api/openapi/pay/orders/create', {
+        data: repeatRequest,
+      });
+      const repeatResult = await expectBusinessOk<PaymentBusinessOrder>(repeatResponse);
+      expect(String(repeatResult.data?.id || '')).toBe(String(createResult.data?.id || ''));
 
-    const conflictBody = JSON.stringify({ ...createPayload, amount: 129900 });
-    const conflictRequest = openApiRequestBody({
+      const conflictBody = JSON.stringify({ ...createPayload, amount: 129900 });
+      const conflictRequest = openApiRequestBody({
         appId,
         appSecret,
         path: createPath,
         body: conflictBody,
         nonce: `conflict-${suffix}`,
-    });
-    const conflictResponse = await page.request.post('/api/openapi/pay/orders/create', {
-      data: conflictRequest,
-    });
-    const conflictResult = await expectBusinessError<PaymentBusinessOrder>(conflictResponse);
-    expect(conflictResult.code).toBe(3794);
+      });
+      const conflictResponse = await page.request.post('/api/openapi/pay/orders/create', {
+        data: conflictRequest,
+      });
+      const conflictResult = await expectBusinessError<PaymentBusinessOrder>(conflictResponse);
+      expect(conflictResult.code).toBe(3794);
 
-    const replayRequest = openApiRequestBody({
-      appId,
-      appSecret,
-      path: createPath,
-      body: createBody,
-      nonce: `replay-${suffix}`,
-    });
-    const replayFirstResponse = await page.request.post('/api/openapi/pay/orders/create', {
-      data: replayRequest,
-    });
-    await expectBusinessOk<PaymentBusinessOrder>(replayFirstResponse);
-    const replaySecondResponse = await page.request.post('/api/openapi/pay/orders/create', {
-      data: replayRequest,
-    });
-    const replaySecondResult = await expectBusinessError<PaymentBusinessOrder>(replaySecondResponse);
-    expect(replaySecondResult.code).toBe(3793);
+      const replayRequest = openApiRequestBody({
+        appId,
+        appSecret,
+        path: createPath,
+        body: createBody,
+        nonce: `replay-${suffix}`,
+      });
+      const replayFirstResponse = await page.request.post('/api/openapi/pay/orders/create', {
+        data: replayRequest,
+      });
+      await expectBusinessOk<PaymentBusinessOrder>(replayFirstResponse);
+      const replaySecondResponse = await page.request.post('/api/openapi/pay/orders/create', {
+        data: replayRequest,
+      });
+      const replaySecondResult = await expectBusinessError<PaymentBusinessOrder>(replaySecondResponse);
+      expect(replaySecondResult.code).toBe(3793);
 
-    const detailPath = '/openapi/pay/orders/detail';
-    const detailBody = openApiRequestBody({
+      const detailPath = '/openapi/pay/orders/detail';
+      const detailBody = openApiRequestBody({
         appId,
         appSecret,
         path: detailPath,
         nonce: `detail-${suffix}`,
         bizOrderNo,
-    });
-    const detailResponse = await page.request.post('/api/openapi/pay/orders/detail', {
-      data: detailBody,
-    });
-    const detailResult = await expectBusinessOk<PaymentBusinessOrder>(detailResponse);
-    expect(String(detailResult.data?.id || '')).toBe(String(createResult.data?.id || ''));
-    expect(detailResult.data?.bizOrderNo).toBe(bizOrderNo);
-    expectMoneyCents(detailResult.data?.amount, 128800);
+      });
+      const detailResponse = await page.request.post('/api/openapi/pay/orders/detail', {
+        data: detailBody,
+      });
+      const detailResult = await expectBusinessOk<PaymentBusinessOrder>(detailResponse);
+      expect(String(detailResult.data?.id || '')).toBe(String(createResult.data?.id || ''));
+      expect(detailResult.data?.bizOrderNo).toBe(bizOrderNo);
+      expectMoneyCents(detailResult.data?.amount, 128800);
 
-    const cashierPath = '/openapi/pay/cashier/detail';
-    const cashierBody = openApiRequestBody({
+      const cashierPath = '/openapi/pay/cashier/detail';
+      const cashierBody = openApiRequestBody({
         appId,
         appSecret,
         path: cashierPath,
         nonce: `cashier-${suffix}`,
         bizOrderNo,
-    });
-    const cashierResponse = await page.request.post('/api/openapi/pay/cashier/detail', {
-      data: cashierBody,
-    });
-    const cashierResult = await expectBusinessOk<PaymentOpenCashier>(cashierResponse);
-    expect(String(cashierResult.data?.cashierConfigId || '')).toBe(String(cashierConfigId));
-    expect(String(cashierResult.data?.businessOrderId || '')).toBe(String(createResult.data?.id || ''));
-    expect(cashierResult.data?.bizOrderNo).toBe(bizOrderNo);
-    expect(cashierResult.data?.cashierUrl).toBe(
-      `/payment/cashier-configs/${cashierConfigId}/cashier?businessOrderId=${createResult.data?.id}`,
-    );
+      });
+      const cashierResponse = await page.request.post('/api/openapi/pay/cashier/detail', {
+        data: cashierBody,
+      });
+      const cashierResult = await expectBusinessOk<PaymentOpenCashier>(cashierResponse);
+      expect(String(cashierResult.data?.cashierConfigId || '')).toBe(String(cashierConfigId));
+      expect(String(cashierResult.data?.businessOrderId || '')).toBe(String(createResult.data?.id || ''));
+      expect(cashierResult.data?.bizOrderNo).toBe(bizOrderNo);
+      expect(cashierResult.data?.cashierUrl).toBe(
+        `/payment/cashier-configs/${cashierConfigId}/cashier?businessOrderId=${createResult.data?.id}`,
+      );
 
-    const payPath = '/openapi/pay/payments/create';
-    const payBody = JSON.stringify({ methodCode: 'PERSONAL_WECHAT_QR' });
-    const payRequest = openApiRequestBody({
+      const payPath = '/openapi/pay/payments/create';
+      const payBody = JSON.stringify({ methodCode: 'PERSONAL_WECHAT_QR' });
+      const payRequest = openApiRequestBody({
         appId,
         appSecret,
         path: payPath,
         body: payBody,
         nonce: `pay-${suffix}`,
         bizOrderNo,
-    });
-    const payResponse = await page.request.post('/api/openapi/pay/payments/create', {
-      data: payRequest,
-    });
-    const payResult = await expectBusinessOk<PaymentOpenPaymentOrder>(payResponse);
-    expect(payResult.data?.payOrderNo).toBeTruthy();
-    expect(payResult.data?.bizOrderNo).toBe(bizOrderNo);
-    expect(payResult.data?.appId).toBe(appId);
-    expectMoneyCents(payResult.data?.amount, 128800);
-    expect(payResult.data?.currency).toBe('CNY');
-    expect(payResult.data?.status).toBe('PAYING');
-    expect(payResult.data?.methodCode).toBe('PERSONAL_WECHAT_QR');
-    expect(payResult.data?.channelCode).toBe('MANGO_PAY');
-    expect(String(payResult.data?.contractCapabilityId || '')).toBe('333001');
-    expect(String(payResult.data?.routeRuleId || '')).toBe(String(cashierConfigId + 1000));
-    expect(payResult.data?.channelTradeNo || '').toBeTruthy();
-    expect(payResult.data?.material?.materialType).toBe('QR');
-    expect(payResult.data?.material?.qrContent).toContain(String(payResult.data?.payOrderNo || ''));
-    expect(payResult.data?.material?.qrContent).toContain('PERSONAL_WECHAT_QR');
+      });
+      const payResponse = await page.request.post('/api/openapi/pay/payments/create', {
+        data: payRequest,
+      });
+      const payResult = await expectBusinessOk<PaymentOpenPaymentOrder>(payResponse);
+      expect(payResult.data?.payOrderNo).toBeTruthy();
+      expect(payResult.data?.bizOrderNo).toBe(bizOrderNo);
+      expect(payResult.data?.appId).toBe(appId);
+      expectMoneyCents(payResult.data?.amount, 128800);
+      expect(payResult.data?.currency).toBe('CNY');
+      expect(payResult.data?.status).toBe('PAYING');
+      expect(payResult.data?.methodCode).toBe('PERSONAL_WECHAT_QR');
+      expect(payResult.data?.channelCode).toBe('MANGO_PAY');
+      expect(String(payResult.data?.contractCapabilityId || '')).toBe('333001');
+      expect(String(payResult.data?.routeRuleId || '')).toBe(String(cashierConfigId + 1000));
+      expect(payResult.data?.channelTradeNo || '').toBeTruthy();
+      expect(payResult.data?.material?.materialType).toBe('QR');
+      expect(payResult.data?.material?.qrContent).toContain(String(payResult.data?.payOrderNo || ''));
+      expect(payResult.data?.material?.qrContent).toContain('PERSONAL_WECHAT_QR');
 
-    const virtualPayResponse = await request.post('/api/payment/mango-pay/virtual/pay', {
-      data: {
-        cashierConfigId,
-        payOrderNo: payResult.data?.payOrderNo,
-        title: createPayload.title,
-        amount: createPayload.amount,
-        paymentMethodCode: 'PERSONAL_WECHAT_QR',
-      },
-    });
-    const virtualPayResult = await expectBusinessOk<MangoPayVirtualPaymentResult>(virtualPayResponse);
-    expect(virtualPayResult.data?.payOrderNo).toBe(payResult.data?.payOrderNo);
-    expect(virtualPayResult.data?.status).toBe('SUCCESS');
+      const virtualPayResponse = await request.post('/api/payment/mango-pay/virtual/pay', {
+        data: {
+          cashierConfigId,
+          payOrderNo: payResult.data?.payOrderNo,
+          title: createPayload.title,
+          amount: createPayload.amount,
+          paymentMethodCode: 'PERSONAL_WECHAT_QR',
+        },
+      });
+      const virtualPayResult = await expectBusinessOk<MangoPayVirtualPaymentResult>(virtualPayResponse);
+      expect(virtualPayResult.data?.payOrderNo).toBe(payResult.data?.payOrderNo);
+      expect(virtualPayResult.data?.status).toBe('SUCCESS');
 
-    const paymentNotification = await notifyReceiver.waitFor('PAYMENT_SUCCESS');
-    expect(paymentNotification.notifyNo).toBeTruthy();
-    expect(paymentNotification.bizOrderNo).toBe(bizOrderNo);
-    expect(paymentNotification.payOrderNo).toBe(payResult.data?.payOrderNo);
-    expect(paymentNotification.appId).toBe(appId);
-    expectMoneyCents(paymentNotification.amount, 128800);
-    expect(paymentNotification.currency).toBe('CNY');
-    expect(paymentNotification.status).toBe('SUCCESS');
-    expect(paymentNotification.methodCode).toBe('PERSONAL_WECHAT_QR');
-    expect(paymentNotification.channelCode).toBe('MANGO_PAY');
-    expect(paymentNotification.channelTradeNo).toBeTruthy();
-    expect(paymentNotification.signAlgorithm).toBe('HMAC_SHA256');
-    expect(paymentNotification.signature).toBeTruthy();
+      const paymentNotification = await notifyReceiver.waitFor('PAYMENT_SUCCESS');
+      expect(paymentNotification.notifyNo).toBeTruthy();
+      expect(paymentNotification.bizOrderNo).toBe(bizOrderNo);
+      expect(paymentNotification.payOrderNo).toBe(payResult.data?.payOrderNo);
+      expect(paymentNotification.appId).toBe(appId);
+      expectMoneyCents(paymentNotification.amount, 128800);
+      expect(paymentNotification.currency).toBe('CNY');
+      expect(paymentNotification.status).toBe('SUCCESS');
+      expect(paymentNotification.methodCode).toBe('PERSONAL_WECHAT_QR');
+      expect(paymentNotification.channelCode).toBe('MANGO_PAY');
+      expect(paymentNotification.channelTradeNo).toBeTruthy();
+      expect(paymentNotification.signAlgorithm).toBe('HMAC_SHA256');
+      expect(paymentNotification.signature).toBeTruthy();
 
-    const paymentOrderPath = '/openapi/pay/payments/detail';
-    const paymentOrderBody = openApiRequestBody({
+      const paymentOrderPath = '/openapi/pay/payments/detail';
+      const paymentOrderBody = openApiRequestBody({
         appId,
         appSecret,
         path: paymentOrderPath,
         nonce: `payment-detail-${suffix}`,
         payOrderNo: payResult.data?.payOrderNo,
-    });
-    const paymentOrderResponse = await page.request.post('/api/openapi/pay/payments/detail', {
-      data: paymentOrderBody,
-    });
-    const paymentOrderResult = await expectBusinessOk<PaymentOpenPaymentOrder>(paymentOrderResponse);
-    expect(paymentOrderResult.data?.payOrderNo).toBe(payResult.data?.payOrderNo);
-    expect(paymentOrderResult.data?.bizOrderNo).toBe(bizOrderNo);
-    expect(paymentOrderResult.data?.appId).toBe(appId);
-    expectMoneyCents(paymentOrderResult.data?.amount, 128800);
-    expect(paymentOrderResult.data?.status).toBe('SUCCESS');
-    expect(paymentOrderResult.data?.methodCode).toBe('PERSONAL_WECHAT_QR');
-    expect(paymentOrderResult.data?.channelCode).toBe('MANGO_PAY');
-    expect(paymentOrderResult.data?.channelTradeNo).toBe(paymentNotification.channelTradeNo);
-    expect(paymentOrderResult.data?.flowNo).toBeTruthy();
+      });
+      const paymentOrderResponse = await page.request.post('/api/openapi/pay/payments/detail', {
+        data: paymentOrderBody,
+      });
+      const paymentOrderResult = await expectBusinessOk<PaymentOpenPaymentOrder>(paymentOrderResponse);
+      expect(paymentOrderResult.data?.payOrderNo).toBe(payResult.data?.payOrderNo);
+      expect(paymentOrderResult.data?.bizOrderNo).toBe(bizOrderNo);
+      expect(paymentOrderResult.data?.appId).toBe(appId);
+      expectMoneyCents(paymentOrderResult.data?.amount, 128800);
+      expect(paymentOrderResult.data?.status).toBe('SUCCESS');
+      expect(paymentOrderResult.data?.methodCode).toBe('PERSONAL_WECHAT_QR');
+      expect(paymentOrderResult.data?.channelCode).toBe('MANGO_PAY');
+      expect(paymentOrderResult.data?.channelTradeNo).toBe(paymentNotification.channelTradeNo);
+      expect(paymentOrderResult.data?.flowNo).toBeTruthy();
 
-    const receiptPath = '/openapi/pay/receipts/detail';
-    const receiptBody = openApiRequestBody({
+      const receiptPath = '/openapi/pay/receipts/detail';
+      const receiptBody = openApiRequestBody({
         appId,
         appSecret,
         path: receiptPath,
         nonce: `receipt-${suffix}`,
         bizOrderNo,
-    });
-    const receiptResponse = await page.request.post('/api/openapi/pay/receipts/detail', {
-      data: receiptBody,
-    });
-    const receiptResult = await expectBusinessOk<PaymentOpenReceipt>(receiptResponse);
-    expect(receiptResult.data?.receiptNo).toBe(`RCPT-${bizOrderNo}-${payResult.data?.payOrderNo}`);
-    expect(receiptResult.data?.bizOrderNo).toBe(bizOrderNo);
-    expect(receiptResult.data?.payOrderNo).toBe(payResult.data?.payOrderNo);
-    expect(receiptResult.data?.appId).toBe(appId);
-    expectMoneyCents(receiptResult.data?.amount, 128800);
-    expect(receiptResult.data?.currency).toBe('CNY');
-    expect(receiptResult.data?.status).toBe('SUCCESS');
-    expect(receiptResult.data?.methodCode).toBe('PERSONAL_WECHAT_QR');
-    expect(receiptResult.data?.channelCode).toBe('MANGO_PAY');
-    expect(receiptResult.data?.channelTradeNo).toBe(paymentOrderResult.data?.channelTradeNo);
-    expect(receiptResult.data?.flowNo).toBeTruthy();
-    expect(receiptResult.data?.payTime).toBeTruthy();
-    expect(receiptResult.data?.issuedTime).toBeTruthy();
+      });
+      const receiptResponse = await page.request.post('/api/openapi/pay/receipts/detail', {
+        data: receiptBody,
+      });
+      const receiptResult = await expectBusinessOk<PaymentOpenReceipt>(receiptResponse);
+      expect(receiptResult.data?.receiptNo).toBe(`RCPT-${bizOrderNo}-${payResult.data?.payOrderNo}`);
+      expect(receiptResult.data?.bizOrderNo).toBe(bizOrderNo);
+      expect(receiptResult.data?.payOrderNo).toBe(payResult.data?.payOrderNo);
+      expect(receiptResult.data?.appId).toBe(appId);
+      expectMoneyCents(receiptResult.data?.amount, 128800);
+      expect(receiptResult.data?.currency).toBe('CNY');
+      expect(receiptResult.data?.status).toBe('SUCCESS');
+      expect(receiptResult.data?.methodCode).toBe('PERSONAL_WECHAT_QR');
+      expect(receiptResult.data?.channelCode).toBe('MANGO_PAY');
+      expect(receiptResult.data?.channelTradeNo).toBe(paymentOrderResult.data?.channelTradeNo);
+      expect(receiptResult.data?.flowNo).toBeTruthy();
+      expect(receiptResult.data?.payTime).toBeTruthy();
+      expect(receiptResult.data?.issuedTime).toBeTruthy();
 
-    const bizRefundNo = `OPENAPI-RF-${suffix}`;
-    const refundPath = '/openapi/pay/refunds/create';
-    const refundPayload = {
-      tenantId: 1,
-      appId,
-      bizOrderNo,
-      bizRefundNo,
-      refundAmount: 38800,
-      reason: 'OpenAPI E2E 退款申请',
-    };
-    const refundBody = JSON.stringify(refundPayload);
-    const refundRequest = openApiRequestBody({
+      const bizRefundNo = `OPENAPI-RF-${suffix}`;
+      const refundPath = '/openapi/pay/refunds/create';
+      const refundPayload = {
+        tenantId: 1,
+        appId,
+        bizOrderNo,
+        bizRefundNo,
+        refundAmount: 38800,
+        reason: 'OpenAPI E2E 退款申请',
+      };
+      const refundBody = JSON.stringify(refundPayload);
+      const refundRequest = openApiRequestBody({
         appId,
         appSecret,
         path: refundPath,
         body: refundBody,
         nonce: `refund-${suffix}`,
-    });
-    const refundResponse = await page.request.post('/api/openapi/pay/refunds/create', {
-      data: refundRequest,
-    });
-    const refundResult = await expectBusinessOk<PaymentOpenRefundOrder>(refundResponse);
-    expect(refundResult.data?.refundOrderNo).toBeTruthy();
-    expect(refundResult.data?.bizRefundNo).toBe(bizRefundNo);
-    expect(refundResult.data?.bizOrderNo).toBe(bizOrderNo);
-    expect(refundResult.data?.appId).toBe(appId);
-    expect(refundResult.data?.payOrderNo).toBe(payResult.data?.payOrderNo);
-    expectMoneyCents(refundResult.data?.refundAmount, 38800);
-    expect(refundResult.data?.currency).toBe('CNY');
-    expect(refundResult.data?.reason).toBe('OpenAPI E2E 退款申请');
-    expect(refundResult.data?.status).toBe('REFUNDING');
-    expect(refundResult.data?.methodCode).toBe('PERSONAL_WECHAT_QR');
-    expect(refundResult.data?.channelCode).toBe('MANGO_PAY');
-    expect(refundResult.data?.channelTradeNo).toBe(paymentOrderResult.data?.channelTradeNo);
-    expect(refundResult.data?.channelRefundNo).toContain(String(refundResult.data?.refundOrderNo || ''));
+      });
+      const refundResponse = await page.request.post('/api/openapi/pay/refunds/create', {
+        data: refundRequest,
+      });
+      const refundResult = await expectBusinessOk<PaymentOpenRefundOrder>(refundResponse);
+      expect(refundResult.data?.refundOrderNo).toBeTruthy();
+      expect(refundResult.data?.bizRefundNo).toBe(bizRefundNo);
+      expect(refundResult.data?.bizOrderNo).toBe(bizOrderNo);
+      expect(refundResult.data?.appId).toBe(appId);
+      expect(refundResult.data?.payOrderNo).toBe(payResult.data?.payOrderNo);
+      expectMoneyCents(refundResult.data?.refundAmount, 38800);
+      expect(refundResult.data?.currency).toBe('CNY');
+      expect(refundResult.data?.reason).toBe('OpenAPI E2E 退款申请');
+      expect(refundResult.data?.status).toBe('REFUNDING');
+      expect(refundResult.data?.methodCode).toBe('PERSONAL_WECHAT_QR');
+      expect(refundResult.data?.channelCode).toBe('MANGO_PAY');
+      expect(refundResult.data?.channelTradeNo).toBe(paymentOrderResult.data?.channelTradeNo);
+      expect(refundResult.data?.channelRefundNo).toContain(String(refundResult.data?.refundOrderNo || ''));
 
-    const repeatRefundRequest = openApiRequestBody({
+      const repeatRefundRequest = openApiRequestBody({
         appId,
         appSecret,
         path: refundPath,
         body: refundBody,
         nonce: `refund-repeat-${suffix}`,
-    });
-    const repeatRefundResponse = await page.request.post('/api/openapi/pay/refunds/create', {
-      data: repeatRefundRequest,
-    });
-    const repeatRefundResult = await expectBusinessOk<PaymentOpenRefundOrder>(repeatRefundResponse);
-    expect(String(repeatRefundResult.data?.id || '')).toBe(String(refundResult.data?.id || ''));
-    expect(repeatRefundResult.data?.refundOrderNo).toBe(refundResult.data?.refundOrderNo);
+      });
+      const repeatRefundResponse = await page.request.post('/api/openapi/pay/refunds/create', {
+        data: repeatRefundRequest,
+      });
+      const repeatRefundResult = await expectBusinessOk<PaymentOpenRefundOrder>(repeatRefundResponse);
+      expect(String(repeatRefundResult.data?.id || '')).toBe(String(refundResult.data?.id || ''));
+      expect(repeatRefundResult.data?.refundOrderNo).toBe(refundResult.data?.refundOrderNo);
 
-    const conflictRefundBody = JSON.stringify({ ...refundPayload, refundAmount: 39900 });
-    const conflictRefundRequest = openApiRequestBody({
+      const conflictRefundBody = JSON.stringify({ ...refundPayload, refundAmount: 39900 });
+      const conflictRefundRequest = openApiRequestBody({
         appId,
         appSecret,
         path: refundPath,
         body: conflictRefundBody,
         nonce: `refund-conflict-${suffix}`,
-    });
-    const conflictRefundResponse = await page.request.post('/api/openapi/pay/refunds/create', {
-      data: conflictRefundRequest,
-    });
-    const conflictRefundResult = await expectBusinessError<PaymentOpenRefundOrder>(conflictRefundResponse);
-    expect(conflictRefundResult.code).toBe(3794);
+      });
+      const conflictRefundResponse = await page.request.post('/api/openapi/pay/refunds/create', {
+        data: conflictRefundRequest,
+      });
+      const conflictRefundResult = await expectBusinessError<PaymentOpenRefundOrder>(conflictRefundResponse);
+      expect(conflictRefundResult.code).toBe(3794);
 
-    const exceededRefundBody = JSON.stringify({
-      ...refundPayload,
-      bizRefundNo: `OPENAPI-RF-EXCEEDED-${suffix}`,
-      refundAmount: 200000,
-    });
-    const exceededRefundRequest = openApiRequestBody({
+      const exceededRefundBody = JSON.stringify({
+        ...refundPayload,
+        bizRefundNo: `OPENAPI-RF-EXCEEDED-${suffix}`,
+        refundAmount: 200000,
+      });
+      const exceededRefundRequest = openApiRequestBody({
         appId,
         appSecret,
         path: refundPath,
         body: exceededRefundBody,
         nonce: `refund-exceeded-${suffix}`,
-    });
-    const exceededRefundResponse = await page.request.post('/api/openapi/pay/refunds/create', {
-      data: exceededRefundRequest,
-    });
-    const exceededRefundResult = await expectBusinessError<PaymentOpenRefundOrder>(exceededRefundResponse);
-    expect(exceededRefundResult.code).toBe(3802);
+      });
+      const exceededRefundResponse = await page.request.post('/api/openapi/pay/refunds/create', {
+        data: exceededRefundRequest,
+      });
+      const exceededRefundResult = await expectBusinessError<PaymentOpenRefundOrder>(exceededRefundResponse);
+      expect(exceededRefundResult.code).toBe(3802);
 
-    const refundDetailPath = '/openapi/pay/refunds/detail';
-    const refundDetailBody = openApiRequestBody({
+      const refundDetailPath = '/openapi/pay/refunds/detail';
+      const refundDetailBody = openApiRequestBody({
         appId,
         appSecret,
         path: refundDetailPath,
         nonce: `refund-detail-${suffix}`,
         bizRefundNo,
-    });
-    const refundDetailResponse = await page.request.post('/api/openapi/pay/refunds/detail', {
-      data: refundDetailBody,
-    });
-    const refundDetailResult = await expectBusinessOk<PaymentOpenRefundOrder>(refundDetailResponse);
-    expect(refundDetailResult.data?.refundOrderNo).toBe(refundResult.data?.refundOrderNo);
-    expect(refundDetailResult.data?.bizRefundNo).toBe(bizRefundNo);
-    expect(refundDetailResult.data?.status).toBe('REFUNDING');
-    expect(refundDetailResult.data?.channelRefundNo).toBe(refundResult.data?.channelRefundNo);
-    expect(refundDetailResult.data?.flowNo).toBe(refundResult.data?.flowNo);
+      });
+      const refundDetailResponse = await page.request.post('/api/openapi/pay/refunds/detail', {
+        data: refundDetailBody,
+      });
+      const refundDetailResult = await expectBusinessOk<PaymentOpenRefundOrder>(refundDetailResponse);
+      expect(refundDetailResult.data?.refundOrderNo).toBe(refundResult.data?.refundOrderNo);
+      expect(refundDetailResult.data?.bizRefundNo).toBe(bizRefundNo);
+      expect(refundDetailResult.data?.status).toBe('REFUNDING');
+      expect(refundDetailResult.data?.channelRefundNo).toBe(refundResult.data?.channelRefundNo);
+      expect(refundDetailResult.data?.flowNo).toBe(refundResult.data?.flowNo);
     } finally {
       await notifyReceiver.close();
     }
@@ -2943,27 +2982,30 @@ test.describe('支付管理 E2E', () => {
 
     const categoryResponse = await page.request.get('/api/payment/methods/categories', { headers });
     const categoryBody = await expectBusinessOk<PaymentMethodCategory[]>(categoryResponse);
-    const personal = categoryBody.data?.find(item => item.categoryCode === 'PERSONAL');
-    const corporate = categoryBody.data?.find(item => item.categoryCode === 'CORPORATE');
+    const personal = categoryBody.data?.find((item) => item.categoryCode === 'PERSONAL');
+    const corporate = categoryBody.data?.find((item) => item.categoryCode === 'CORPORATE');
     expect(personal?.categoryName).toBe('对私');
     expect(corporate?.categoryName).toBe('对公');
-    const wechat = personal?.children?.find(item => item.categoryCode === 'WECHAT');
-    const alipay = personal?.children?.find(item => item.categoryCode === 'ALIPAY');
-    const wallet = personal?.children?.find(item => item.categoryCode === 'WALLET');
-    const ebank = corporate?.children?.find(item => item.categoryCode === 'EBANK');
-    const offline = corporate?.children?.find(item => item.categoryCode === 'OFFLINE_TRANSFER');
-    expect(wechat?.children?.map(item => item.categoryCode)).toEqual(expect.arrayContaining(['QR_CODE']));
-    expect(alipay?.children?.map(item => item.categoryCode)).toEqual(expect.arrayContaining(['QR_CODE', 'H5_REDIRECT']));
-    expect(ebank?.children?.map(item => item.categoryCode)).toEqual(expect.arrayContaining(['BANK_GATEWAY']));
-    expect(offline?.children?.map(item => item.categoryCode)).toEqual(expect.arrayContaining(['ACCOUNT_TRANSFER']));
-    expect(wallet?.children?.map(item => item.categoryCode)).toEqual(expect.arrayContaining(['WALLET_QUICK']));
+    const wechat = personal?.children?.find((item) => item.categoryCode === 'WECHAT');
+    const alipay = personal?.children?.find((item) => item.categoryCode === 'ALIPAY');
+    const wallet = personal?.children?.find((item) => item.categoryCode === 'WALLET');
+    const ebank = corporate?.children?.find((item) => item.categoryCode === 'EBANK');
+    const offline = corporate?.children?.find((item) => item.categoryCode === 'OFFLINE_TRANSFER');
+    expect(wechat?.children?.map((item) => item.categoryCode)).toEqual(expect.arrayContaining(['QR_CODE']));
+    expect(alipay?.children?.map((item) => item.categoryCode)).toEqual(
+      expect.arrayContaining(['QR_CODE', 'H5_REDIRECT']),
+    );
+    expect(ebank?.children?.map((item) => item.categoryCode)).toEqual(expect.arrayContaining(['BANK_GATEWAY']));
+    expect(offline?.children?.map((item) => item.categoryCode)).toEqual(expect.arrayContaining(['ACCOUNT_TRANSFER']));
+    expect(wallet?.children?.map((item) => item.categoryCode)).toEqual(expect.arrayContaining(['WALLET_QUICK']));
 
     const ebankResponse = await page.request.get('/api/payment/methods/page', {
       headers,
       params: { page: '1', size: '10', keyword: 'PERSONAL_EBANK_REDIRECT' },
     });
     const ebankBody = await expectBusinessOk<PageData>(ebankResponse);
-    const ebankMethod = (ebankBody.data?.list || []).find(item => item.methodCode === 'PERSONAL_EBANK_REDIRECT') as PaymentMethod | undefined;
+    const ebankMethod = (ebankBody.data?.list || []).find((item) => item.methodCode === 'PERSONAL_EBANK_REDIRECT') as
+      PaymentMethod | undefined;
     expect(ebankMethod).toMatchObject({
       accountNature: 'PERSONAL',
       instrumentType: 'EBANK',
@@ -3040,7 +3082,8 @@ test.describe('支付管理 E2E', () => {
       params: { page: '1', size: '10', keyword: 'PERSONAL_WECHAT_QR' },
     });
     const referencedBody = await expectBusinessOk<PageData>(referencedResponse);
-    const referenced = (referencedBody.data?.list || []).find(item => item.methodCode === 'PERSONAL_WECHAT_QR') as PaymentMethod | undefined;
+    const referenced = (referencedBody.data?.list || []).find((item) => item.methodCode === 'PERSONAL_WECHAT_QR') as
+      PaymentMethod | undefined;
     expect(referenced?.id).toBeTruthy();
     const referencedDeleteResponse = await page.request.delete('/api/payment/methods', {
       headers,
@@ -3088,8 +3131,8 @@ test.describe('支付管理 E2E', () => {
         runtimeErrors.push(message.text());
       }
     });
-    page.on('pageerror', error => runtimeErrors.push(error.message));
-    page.on('requestfailed', request => {
+    page.on('pageerror', (error) => runtimeErrors.push(error.message));
+    page.on('requestfailed', (request) => {
       if (request.url().includes('/api/payment/method-routes')) {
         runtimeErrors.push(`${request.method()} ${request.url()} ${request.failure()?.errorText || 'failed'}`);
       }
@@ -3105,7 +3148,9 @@ test.describe('支付管理 E2E', () => {
       disableHistoricalPaymentRouteE2eRules(ruleCode);
       const method = await findPaymentMethodByCode(page, headers, 'PERSONAL_WECHAT_QR');
       const contract = await findChannelContractByCode(page, headers, 'MANGO_PAY_MANGO_TECH');
-      const contractCapability = contract?.capabilities?.find(item => item.methodCode === 'PERSONAL_WECHAT_QR' && item.terminalType === 'WEB');
+      const contractCapability = contract?.capabilities?.find(
+        (item) => item.methodCode === 'PERSONAL_WECHAT_QR' && item.terminalType === 'WEB',
+      );
       expect(method?.id, '应存在微信扫码支付方式').toBeTruthy();
       expect(contract?.id, '应存在芒果支付签约').toBeTruthy();
       expect(contractCapability?.id, '签约能力应包含微信扫码 Web').toBeTruthy();
@@ -3122,14 +3167,16 @@ test.describe('支付管理 E2E', () => {
           routeMode: 'PRIORITY',
           fallbackEnabled: 1,
           status: 1,
-          items: [{
-            contractCapabilityId: contractCapability?.id,
-            priority: 1,
-            weight: 100,
-            minAmount: 1,
-            maxAmount: 5000000,
-            status: 1,
-          }],
+          items: [
+            {
+              contractCapabilityId: contractCapability?.id,
+              priority: 1,
+              weight: 100,
+              minAmount: 1,
+              maxAmount: 5000000,
+              status: 1,
+            },
+          ],
         },
       });
       const createBody = await expectBusinessOk<string | number>(createResponse);
@@ -3154,13 +3201,16 @@ test.describe('支付管理 E2E', () => {
       await openPaymentPage(page, '/#/payment/methods', '支付方式');
       await page.getByPlaceholder('名称 / 编码').fill('PERSONAL_WECHAT_QR');
       await Promise.all([
-        page.waitForResponse(response => response.url().includes('/api/payment/methods/page')),
+        page.waitForResponse((response) => response.url().includes('/api/payment/methods/page')),
         page.getByRole('button', { name: '查询' }).click(),
       ]);
-      const methodRow = page.locator('.payment-table .el-table__body-wrapper tbody tr').filter({ hasText: 'PERSONAL_WECHAT_QR' }).first();
+      const methodRow = page
+        .locator('.payment-table .el-table__body-wrapper tbody tr')
+        .filter({ hasText: 'PERSONAL_WECHAT_QR' })
+        .first();
       await expect(methodRow).toBeVisible({ timeout: 10000 });
       await Promise.all([
-        page.waitForResponse(response => response.url().includes('/api/payment/method-routes/page')),
+        page.waitForResponse((response) => response.url().includes('/api/payment/method-routes/page')),
         methodRow.getByRole('button', { name: '路由策略' }).click(),
       ]);
       const routeDialog = dialog(page);
@@ -3175,7 +3225,7 @@ test.describe('支付管理 E2E', () => {
       await searchAndChooseSelect(page, '企业主体', '芒果科技', '芒果科技有限公司');
       await fillNumber(page, '金额（元）', '99');
       await Promise.all([
-        page.waitForResponse(response => response.url().includes('/api/payment/method-routes/trial')),
+        page.waitForResponse((response) => response.url().includes('/api/payment/method-routes/trial')),
         trialDialog.getByRole('button', { name: '试算' }).click(),
       ]);
       await expect(trialDialog.getByText('已命中路由')).toBeVisible({ timeout: 10000 });
@@ -3240,34 +3290,36 @@ test.describe('支付管理 E2E', () => {
     });
     const menuBody = await expectBusinessOk<MenuNode[]>(menuResponse);
     const menuNames = collectMenuNames(menuBody.data || []);
-    expect(menuNames).toEqual(expect.arrayContaining([
-      '平台能力',
-      '支付管理',
-      '应用接入',
-      '支付通道',
-      '交易订单',
-      '对账结算',
-      '线下支付',
-      '应用管理',
-      '企业主体',
-      '签约通道',
-      '支付通道',
-      '支付方式',
-      '收银台',
-      '业务订单',
-      '支付订单',
-      '退款订单',
-      '退款审批',
-      '交易流水',
-      '异常订单',
-      '通知记录',
-      '对账管理',
-      '差异处理',
-      '结算汇总',
-      '操作审计',
-      '线下收款订单',
-      '线下退款订单',
-    ]));
+    expect(menuNames).toEqual(
+      expect.arrayContaining([
+        '平台能力',
+        '支付管理',
+        '应用接入',
+        '支付通道',
+        '交易订单',
+        '对账结算',
+        '线下支付',
+        '应用管理',
+        '企业主体',
+        '签约通道',
+        '支付通道',
+        '支付方式',
+        '收银台',
+        '业务订单',
+        '支付订单',
+        '退款订单',
+        '退款审批',
+        '交易流水',
+        '异常订单',
+        '通知记录',
+        '对账管理',
+        '差异处理',
+        '结算汇总',
+        '操作审计',
+        '线下收款订单',
+        '线下退款订单',
+      ]),
+    );
     expect(menuNames).not.toContain('租户收银台');
     expect(menuNames).not.toContain('App 收银台');
     expect(menuNames).not.toContain('小程序收银台');
@@ -3283,11 +3335,14 @@ test.describe('支付管理 E2E', () => {
     await expect(page.getByText('通知白名单')).toHaveCount(0);
     await expect(page.getByText('返回域名白名单')).toHaveCount(0);
     await Promise.all([
-      page.waitForResponse(response => response.url().includes('/api/payment/applications/page')),
+      page.waitForResponse((response) => response.url().includes('/api/payment/applications/page')),
       page.getByRole('button', { name: '查询' }).click(),
     ]);
     await expect(page.getByText('订单中心示例应用')).toBeVisible();
-    const appRow = page.locator('.payment-table .el-table__body-wrapper tbody tr').filter({ hasText: '订单中心示例应用' }).first();
+    const appRow = page
+      .locator('.payment-table .el-table__body-wrapper tbody tr')
+      .filter({ hasText: '订单中心示例应用' })
+      .first();
     await expect(appRow.locator('.el-tag').filter({ hasText: /^app_/ })).toHaveCount(0);
   });
 
@@ -3332,12 +3387,14 @@ test.describe('支付管理 E2E', () => {
     await openPaymentPage(page, '/#/payment/cashier-configs', '收银台');
     await page.getByPlaceholder('名称 / 编码').fill(cashierConfig.cashierName || '');
     await Promise.all([
-      page.waitForResponse(response => response.url().includes('/api/payment/cashier-configs/page')),
+      page.waitForResponse((response) => response.url().includes('/api/payment/cashier-configs/page')),
       page.getByRole('button', { name: '查询' }).click(),
     ]);
     const cashierConfigRow = await paymentTableRow(page, cashierConfig.cashierName || '');
     await expect(cashierConfigRow.getByText(cashierConfig.cashierName || '', { exact: true }).first()).toBeVisible();
-    await expect(cashierConfigRow.locator('.el-tag').filter({ hasText: cashierConfig.cashierName || '' })).toHaveCount(0);
+    await expect(cashierConfigRow.locator('.el-tag').filter({ hasText: cashierConfig.cashierName || '' })).toHaveCount(
+      0,
+    );
     if (cashierConfig.enterpriseSubjectNames) {
       await expect(page.getByText(cashierConfig.enterpriseSubjectNames.split(',')[0]).first()).toBeVisible();
     }
@@ -3346,26 +3403,28 @@ test.describe('支付管理 E2E', () => {
     }
 
     const previewPayRequests: string[] = [];
-    page.on('request', request => {
+    page.on('request', (request) => {
       if (request.url().includes('/api/payment/cashier/pay')) {
         previewPayRequests.push(request.url());
       }
     });
-    const sessionPromise = page.waitForResponse(response => response.url().includes('/api/payment/cashier/session'));
+    const sessionPromise = page.waitForResponse((response) => response.url().includes('/api/payment/cashier/session'));
     await clickPaymentTableRowButton(page, cashierConfig.cashierName || '', '预览');
     const sessionResponse = await sessionPromise;
     const sessionBody = await expectBusinessOk<CashierSession>(sessionResponse);
     expect(sessionBody.data?.cashierConfigId).toBe('350001');
     expect(sessionBody.data?.order?.status).toBe('PREVIEW');
     expect(sessionBody.data?.order?.businessOrderId).toBeNull();
-    expect(sessionBody.data?.methods?.map(item => item.methodCode)).toEqual(expect.arrayContaining([
-      'PERSONAL_WECHAT_QR',
-      'PERSONAL_ALIPAY_QR',
-      'PERSONAL_ALIPAY_PC',
-      'PERSONAL_EBANK_REDIRECT',
-      'CORPORATE_EBANK_REDIRECT',
-      'CORPORATE_OFFLINE_ACCOUNT',
-    ]));
+    expect(sessionBody.data?.methods?.map((item) => item.methodCode)).toEqual(
+      expect.arrayContaining([
+        'PERSONAL_WECHAT_QR',
+        'PERSONAL_ALIPAY_QR',
+        'PERSONAL_ALIPAY_PC',
+        'PERSONAL_EBANK_REDIRECT',
+        'CORPORATE_EBANK_REDIRECT',
+        'CORPORATE_OFFLINE_ACCOUNT',
+      ]),
+    );
     const cashierDialog = dialog(page);
     await expect(cashierDialog.getByRole('heading', { name: '收银台预览' })).toBeVisible({ timeout: 10000 });
     await expect(cashierDialog.getByText(expectedTitle)).toBeVisible();
@@ -3410,7 +3469,10 @@ test.describe('支付管理 E2E', () => {
     const fixtureExceptionNo = `EX-DISPLAY-${fixtureSuffix}`;
 
     // 运行态订单不属于 demo 初始化数据；展示测试显式准备自己的验收记录。
-    prepareSettlementScenario(fixtureSuffix, `2026-11-${String(10 + Number(fixtureSuffix.slice(-1))).padStart(2, '0')}`);
+    prepareSettlementScenario(
+      fixtureSuffix,
+      `2026-11-${String(10 + Number(fixtureSuffix.slice(-1))).padStart(2, '0')}`,
+    );
     mysqlExec(`
       INSERT INTO payment_exception_order
         (id, exception_no, related_order_no, exception_type, severity, handle_status, reason, tenant_id, created_by, created_at, updated_by, updated_at, del_flag)
@@ -3428,7 +3490,7 @@ test.describe('支付管理 E2E', () => {
     await openPaymentPage(page, '/#/payment/methods', '支付方式');
     await page.getByPlaceholder('名称 / 编码').fill('PERSONAL_WECHAT_QR');
     await Promise.all([
-      page.waitForResponse(response => response.url().includes('/api/payment/methods/page')),
+      page.waitForResponse((response) => response.url().includes('/api/payment/methods/page')),
       page.getByRole('button', { name: '查询' }).click(),
     ]);
     const methodRow = await paymentTableRow(page, 'PERSONAL_WECHAT_QR');
@@ -3440,14 +3502,17 @@ test.describe('支付管理 E2E', () => {
     const route = await findFirstPageRecord<PaymentMethodRouteRule>(page, headers, 'method-routes');
     await page.getByPlaceholder('名称 / 编码').fill(route.methodCode);
     await Promise.all([
-      page.waitForResponse(response => response.url().includes('/api/payment/methods/page')),
+      page.waitForResponse((response) => response.url().includes('/api/payment/methods/page')),
       page.getByRole('button', { name: '查询' }).click(),
     ]);
     const routedMethodRow = await paymentTableRow(page, route.methodCode);
     await routedMethodRow.getByRole('button', { name: '路由策略' }).click();
     const routeDialog = dialog(page);
     await expect(routeDialog.getByText('路由策略')).toBeVisible({ timeout: 10000 });
-    const routeRow = routeDialog.locator('.method-route-panel__table .el-table__body-wrapper tbody tr').filter({ hasText: route.ruleCode }).first();
+    const routeRow = routeDialog
+      .locator('.method-route-panel__table .el-table__body-wrapper tbody tr')
+      .filter({ hasText: route.ruleCode })
+      .first();
     await expect(routeRow).toBeVisible({ timeout: 10000 });
     await expectOnlySemanticTags(routeRow, [/^(启用|停用)$/], '路由策略列表只允许状态标签');
     await routeDialog.locator('.el-dialog__headerbtn').first().click();
@@ -3455,7 +3520,7 @@ test.describe('支付管理 E2E', () => {
     await openPaymentPage(page, '/#/payment/channels', '支付通道');
     await page.getByPlaceholder('名称 / 编码').fill('MANGO_PAY');
     await Promise.all([
-      page.waitForResponse(response => response.url().includes('/api/payment/channels/page')),
+      page.waitForResponse((response) => response.url().includes('/api/payment/channels/page')),
       page.getByRole('button', { name: '查询' }).click(),
     ]);
     const channelRow = await paymentTableRow(page, 'MANGO_PAY');
@@ -3465,47 +3530,89 @@ test.describe('支付管理 E2E', () => {
     await openPaymentPage(page, '/#/payment/channel-contracts', '签约通道');
     await page.getByPlaceholder('名称 / 编码').fill('MANGO_PAY_MERCHANT_001');
     await Promise.all([
-      page.waitForResponse(response => response.url().includes('/api/payment/channel-contracts/page')),
+      page.waitForResponse((response) => response.url().includes('/api/payment/channel-contracts/page')),
       page.getByRole('button', { name: '查询' }).click(),
     ]);
     const contractRow = await paymentTableRow(page, 'MANGO_PAY_MERCHANT_001');
     await expect(contractRow.getByText('接入场景')).toHaveCount(0);
-    await expect(contractRow.locator('.el-tag').filter({ hasText: /微信扫码|支付宝|网银|线下/ }).first()).toBeVisible();
+    await expect(
+      contractRow
+        .locator('.el-tag')
+        .filter({ hasText: /微信扫码|支付宝|网银|线下/ })
+        .first(),
+    ).toBeVisible();
 
     const flow = await findFirstPageRecord<PaymentTransactionFlow>(page, headers, 'transaction-flows');
     await openPaymentPage(page, '/#/payment/transaction-flows', '交易流水');
-    const flowRow = await searchPaymentTable(page, 'transaction-flows', flow.flowNo || '', '.payment-transaction-flows__table');
+    const flowRow = await searchPaymentTable(
+      page,
+      'transaction-flows',
+      flow.flowNo || '',
+      '.payment-transaction-flows__table',
+    );
     await expectNoTagText(flowRow, flow.flowTypeName || flow.flowType, '交易流水类型应为纯文本');
 
     const exception = await findFirstPageRecord<PaymentExceptionOrder>(page, headers, 'exception-orders');
     await openPaymentPage(page, '/#/payment/exception-orders', '异常订单');
-    const exceptionRow = await searchPaymentTable(page, 'exception-orders', exception.exceptionNo || '', '.payment-exception-orders__table');
+    const exceptionRow = await searchPaymentTable(
+      page,
+      'exception-orders',
+      exception.exceptionNo || '',
+      '.payment-exception-orders__table',
+    );
     await expectNoTagText(exceptionRow, exception.exceptionTypeName || exception.exceptionType, '异常类型应为纯文本');
 
     const notification = await findFirstPageRecord<PaymentNotificationRecord>(page, headers, 'notification-records');
     await openPaymentPage(page, '/#/payment/notification-records', '通知记录');
-    const notificationRow = await searchPaymentTable(page, 'notification-records', notification.notificationNo || '', '.payment-notification-records__table');
-    await expectNoTagText(notificationRow, notification.notificationTypeName || notification.notificationType, '通知类型应为纯文本');
+    const notificationRow = await searchPaymentTable(
+      page,
+      'notification-records',
+      notification.notificationNo || '',
+      '.payment-notification-records__table',
+    );
+    await expectNoTagText(
+      notificationRow,
+      notification.notificationTypeName || notification.notificationType,
+      '通知类型应为纯文本',
+    );
 
     const difference = await findFirstPageRecord<PaymentDifference>(page, headers, 'differences');
     await openPaymentPage(page, '/#/payment/differences', '差异处理');
-    const differenceRow = await searchPaymentTable(page, 'differences', difference.differenceNo || '', '.payment-differences__table');
-    await expectNoTagText(differenceRow, difference.differenceTypeName || difference.differenceType, '差异类型应为纯文本');
+    const differenceRow = await searchPaymentTable(
+      page,
+      'differences',
+      difference.differenceNo || '',
+      '.payment-differences__table',
+    );
+    await expectNoTagText(
+      differenceRow,
+      difference.differenceTypeName || difference.differenceType,
+      '差异类型应为纯文本',
+    );
 
     const audit = await findFirstPageRecord<PaymentOperationAudit>(page, headers, 'operation-audits');
     await openPaymentPage(page, '/#/payment/operation-audits', '操作审计');
-    const auditRow = await searchPaymentTable(page, 'operation-audits', audit.operationAction || '', '.payment-operation-audits__table');
+    const auditRow = await searchPaymentTable(
+      page,
+      'operation-audits',
+      audit.operationAction || '',
+      '.payment-operation-audits__table',
+    );
     await expectNoTagText(auditRow, audit.operationAction, '操作动作应为纯文本');
     await expectNoTagText(auditRow, audit.resourceType, '资源类型应为纯文本');
 
     const reconciliation = await findFirstPageRecord<PaymentReconciliation>(page, headers, 'reconciliations');
     await openPaymentPage(page, '/#/payment/reconciliations', '对账管理');
-    await page.locator('.payment-reconciliations__toolbar input').first().fill(reconciliation.reconciliationNo || '');
+    await page
+      .locator('.payment-reconciliations__toolbar input')
+      .first()
+      .fill(reconciliation.reconciliationNo || '');
     await Promise.all([
-      page.waitForResponse(response => response.url().includes('/api/payment/reconciliations/page')),
+      page.waitForResponse((response) => response.url().includes('/api/payment/reconciliations/page')),
       page.getByRole('button', { name: '查询' }).click(),
     ]);
-    const reconciliationRow = page.locator('.payment-reconciliations__table .el-table__body-wrapper tbody tr')
+    const reconciliationRow = page
+      .locator('.payment-reconciliations__table .el-table__body-wrapper tbody tr')
       .filter({ hasText: reconciliation.reconciliationNo || '' })
       .first();
     await expect(reconciliationRow).toBeVisible({ timeout: 10000 });
@@ -3514,11 +3621,16 @@ test.describe('支付管理 E2E', () => {
     await expect(reconciliationDrawer.getByText('账单明细')).toBeVisible({ timeout: 10000 });
     const billDetail = (reconciliation.details || [])[0];
     if (billDetail) {
-      const billDetailRow = reconciliationDrawer.locator('.el-table__body-wrapper tbody tr')
+      const billDetailRow = reconciliationDrawer
+        .locator('.el-table__body-wrapper tbody tr')
         .filter({ hasText: billDetail.channelTradeNo || '' })
         .first();
       await expect(billDetailRow).toBeVisible({ timeout: 10000 });
-      await expectNoTagText(billDetailRow, billDetail.tradeTypeName || billDetail.tradeType, '对账明细交易类型应为纯文本');
+      await expectNoTagText(
+        billDetailRow,
+        billDetail.tradeTypeName || billDetail.tradeType,
+        '对账明细交易类型应为纯文本',
+      );
     }
 
     await page.screenshot({ path: 'test-results/payment-list-ui-no-tag.png', fullPage: true });
@@ -3532,7 +3644,7 @@ test.describe('支付管理 E2E', () => {
     await openPaymentPage(page, '/#/payment/methods', '支付方式');
     await page.getByPlaceholder('名称 / 编码').fill('PERSONAL_WECHAT_QR');
     await Promise.all([
-      page.waitForResponse(response => response.url().includes('/api/payment/methods/page')),
+      page.waitForResponse((response) => response.url().includes('/api/payment/methods/page')),
       page.getByRole('button', { name: '查询' }).click(),
     ]);
     const methodRow = await paymentTableRow(page, 'PERSONAL_WECHAT_QR');
@@ -3591,14 +3703,9 @@ test.describe('支付管理 E2E', () => {
 
     const statusesResponse = await page.request.get('/api/payment/offline-collections/statuses', { headers });
     const statusesBody = await expectBusinessOk<Array<{ statusCode?: string; statusName?: string }>>(statusesResponse);
-    expect(statusesBody.data?.map(item => item.statusCode)).toEqual(expect.arrayContaining([
-      'WAITING_TRANSFER',
-      'PENDING_CONFIRM',
-      'CONFIRMED',
-      'RECONCILED',
-      'EXPIRED',
-      'CLOSED',
-    ]));
+    expect(statusesBody.data?.map((item) => item.statusCode)).toEqual(
+      expect.arrayContaining(['WAITING_TRANSFER', 'PENDING_CONFIRM', 'CONFIRMED', 'RECONCILED', 'EXPIRED', 'CLOSED']),
+    );
 
     const pageResponse = await page.request.get('/api/payment/offline-collections/page', {
       headers,
@@ -3613,12 +3720,13 @@ test.describe('支付管理 E2E', () => {
     await expect(page.getByPlaceholder('收款单号 / 支付单号 / 业务单号 / 对账码 / 备注')).toBeVisible();
     await page.getByPlaceholder('收款单号 / 支付单号 / 业务单号 / 对账码 / 备注').fill(payOrderNo);
     await Promise.all([
-      page.waitForResponse(response => response.url().includes('/api/payment/offline-collections/page')),
+      page.waitForResponse((response) => response.url().includes('/api/payment/offline-collections/page')),
       page.getByRole('button', { name: '查询' }).click(),
     ]);
     await expect(page.locator('.payment-offline-collections__table')).toBeVisible();
     await page.locator('.payment-offline-collections__table .el-table__body-wrapper').waitFor({ state: 'visible' });
-    const collectionRow = page.locator('.payment-offline-collections__table .el-table__body-wrapper tbody tr')
+    const collectionRow = page
+      .locator('.payment-offline-collections__table .el-table__body-wrapper tbody tr')
       .filter({ hasText: payOrderNo })
       .first();
     await expect(collectionRow).toBeVisible({ timeout: 10000 });
@@ -3635,13 +3743,14 @@ test.describe('支付管理 E2E', () => {
     await fillNumber(page, '到账金额（元）', '1288');
     await fillTextarea(page, '确认说明', 'E2E 后台菜单确认线下收款到账');
     await Promise.all([
-      page.waitForResponse(response => response.url().includes('/api/payment/offline-collections/confirm')),
+      page.waitForResponse((response) => response.url().includes('/api/payment/offline-collections/confirm')),
       confirmDialog.getByRole('button', { name: '确认到账' }).click(),
     ]);
     await expect(page.locator('.el-message').filter({ hasText: '已确认到账' }).last()).toBeVisible({ timeout: 10000 });
     await expect(confirmDialog).toBeHidden({ timeout: 10000 });
 
-    const confirmedRow = page.locator('.payment-offline-collections__table .el-table__body-wrapper tbody tr')
+    const confirmedRow = page
+      .locator('.payment-offline-collections__table .el-table__body-wrapper tbody tr')
       .filter({ hasText: payOrderNo })
       .first();
     await expect(confirmedRow).toContainText('已确认到账');
@@ -3672,8 +3781,8 @@ test.describe('支付管理 E2E', () => {
         runtimeErrors.push(message.text());
       }
     });
-    page.on('pageerror', error => runtimeErrors.push(error.message));
-    page.on('requestfailed', request => {
+    page.on('pageerror', (error) => runtimeErrors.push(error.message));
+    page.on('requestfailed', (request) => {
       if (request.url().includes('/api/payment/business-orders')) {
         runtimeErrors.push(`${request.method()} ${request.url()} ${request.failure()?.errorText || 'failed'}`);
       }
@@ -3705,7 +3814,9 @@ test.describe('支付管理 E2E', () => {
 
     const statusesResponse = await page.request.get('/api/payment/business-orders/statuses', { headers });
     const statusesBody = await expectBusinessOk<PaymentBusinessOrderStatus[]>(statusesResponse);
-    expect(statusesBody.data?.map(item => item.statusCode)).toEqual(expect.arrayContaining(['TO_PAY', 'PAYING', 'PAID', 'CLOSED', 'REFUNDED']));
+    expect(statusesBody.data?.map((item) => item.statusCode)).toEqual(
+      expect.arrayContaining(['TO_PAY', 'PAYING', 'PAID', 'CLOSED', 'REFUNDED']),
+    );
 
     const pageResponse = await page.request.get('/api/payment/business-orders/page', {
       headers,
@@ -3713,7 +3824,8 @@ test.describe('支付管理 E2E', () => {
     });
     const pageBody = await expectBusinessOk<PageData>(pageResponse);
     expect(Number(pageBody.data?.total || 0)).toBeGreaterThan(0);
-    const apiRow = (pageBody.data?.list || []).find(item => item.bizOrderNo === bizOrderNo) as PaymentBusinessOrder | undefined;
+    const apiRow = (pageBody.data?.list || []).find((item) => item.bizOrderNo === bizOrderNo) as
+      PaymentBusinessOrder | undefined;
     expect(apiRow).toMatchObject({
       id: String(businessOrderId),
       bizOrderNo,
@@ -3755,7 +3867,10 @@ test.describe('支付管理 E2E', () => {
         (target as HTMLElement).click();
         return target.getAttribute('aria-controls') || '';
       });
-      const dropdown = page.locator(`[id="${listboxId}"]`).locator('xpath=ancestor::*[contains(@class, "el-select-dropdown")]').first();
+      const dropdown = page
+        .locator(`[id="${listboxId}"]`)
+        .locator('xpath=ancestor::*[contains(@class, "el-select-dropdown")]')
+        .first();
       await expect(dropdown).toBeVisible({ timeout: 10000 });
       return dropdown;
     };
@@ -3764,11 +3879,17 @@ test.describe('支付管理 E2E', () => {
     await expect(statusDropdown.getByText('支付中')).toBeVisible();
     await clickVisibleOption(statusDropdown, '支付中');
     await Promise.all([
-      page.waitForResponse(response => response.url().includes('/api/payment/business-orders/page') && response.url().includes('statusCode=PAYING')),
+      page.waitForResponse(
+        (response) =>
+          response.url().includes('/api/payment/business-orders/page') && response.url().includes('statusCode=PAYING'),
+      ),
       toolbar.getByRole('button', { name: '查询' }).click(),
     ]);
 
-    const row = page.locator('.payment-business-orders__table .el-table__body-wrapper tbody tr').filter({ hasText: bizOrderNo }).first();
+    const row = page
+      .locator('.payment-business-orders__table .el-table__body-wrapper tbody tr')
+      .filter({ hasText: bizOrderNo })
+      .first();
     await expect(row).toBeVisible({ timeout: 10000 });
     await expect(row).toContainText(`E2E 业务订单 ${bizOrderNo}`);
     await expect(row).toContainText('订单中心示例应用');
@@ -3779,8 +3900,10 @@ test.describe('支付管理 E2E', () => {
     await expect(actionButtons.nth(0)).toHaveText(/支付/);
     await expect(actionButtons.nth(1)).toHaveText(/详情/);
 
-    const cashierSessionPromise = page.waitForResponse(response => response.url().includes('/api/payment/cashier/session'));
-    const cashierPayPromise = page.waitForResponse(response => response.url().includes('/api/payment/cashier/pay'));
+    const cashierSessionPromise = page.waitForResponse((response) =>
+      response.url().includes('/api/payment/cashier/session'),
+    );
+    const cashierPayPromise = page.waitForResponse((response) => response.url().includes('/api/payment/cashier/pay'));
     await row.getByRole('button', { name: '支付' }).click();
     const [cashierSessionBody, cashierPayBody] = await Promise.all([
       expectBusinessOk<CashierSession>(await cashierSessionPromise),
@@ -3791,7 +3914,10 @@ test.describe('支付管理 E2E', () => {
     expect(['PAYING', 'SUCCESS']).toContain(cashierPayBody.data?.status);
     expect(cashierPayBody.data?.payOrderNo).toBeTruthy();
     expect(cashierPayBody.data?.material?.materialType).toBe('QR');
-    const cashierDialog = page.getByRole('dialog').filter({ hasText: `收银台 - ${bizOrderNo}` }).last();
+    const cashierDialog = page
+      .getByRole('dialog')
+      .filter({ hasText: `收银台 - ${bizOrderNo}` })
+      .last();
     await expect(cashierDialog.getByText(bizOrderNo, { exact: true }).first()).toBeVisible();
     await expect(cashierDialog.getByRole('tab', { name: /微信支付/ })).toHaveAttribute('aria-selected', 'true');
     if (cashierPayBody.data?.status === 'SUCCESS') {
@@ -3803,7 +3929,7 @@ test.describe('支付管理 E2E', () => {
     await cashierDialog.locator('.el-dialog__headerbtn').click();
 
     await Promise.all([
-      page.waitForResponse(response => response.url().includes('/api/payment/business-orders/detail')),
+      page.waitForResponse((response) => response.url().includes('/api/payment/business-orders/detail')),
       row.getByRole('button', { name: '详情' }).click(),
     ]);
     const drawer = page.getByRole('dialog').filter({ hasText: '业务订单详情' }).last();
@@ -3819,10 +3945,16 @@ test.describe('支付管理 E2E', () => {
     const paidStatusDropdown = await openBusinessOrderStatusDropdown();
     await clickVisibleOption(paidStatusDropdown, '已支付');
     await Promise.all([
-      page.waitForResponse(response => response.url().includes('/api/payment/business-orders/page') && response.url().includes('statusCode=PAID')),
+      page.waitForResponse(
+        (response) =>
+          response.url().includes('/api/payment/business-orders/page') && response.url().includes('statusCode=PAID'),
+      ),
       toolbar.getByRole('button', { name: '查询' }).click(),
     ]);
-    const paidRow = page.locator('.payment-business-orders__table .el-table__body-wrapper tbody tr').filter({ hasText: paidBizOrderNo }).first();
+    const paidRow = page
+      .locator('.payment-business-orders__table .el-table__body-wrapper tbody tr')
+      .filter({ hasText: paidBizOrderNo })
+      .first();
     await expect(paidRow).toBeVisible({ timeout: 10000 });
     await expect(paidRow).toContainText('已支付');
     await expect(paidRow.getByRole('button', { name: '支付' })).toBeDisabled();
@@ -3830,7 +3962,11 @@ test.describe('支付管理 E2E', () => {
     const emptyKeyword = `NO-BIZ-ORDER-${Date.now()}`;
     await toolbar.getByPlaceholder('业务单号 / 应用 / 标题 / 企业主体').fill(emptyKeyword);
     await Promise.all([
-      page.waitForResponse(response => response.url().includes('/api/payment/business-orders/page') && response.url().includes(encodeURIComponent(emptyKeyword))),
+      page.waitForResponse(
+        (response) =>
+          response.url().includes('/api/payment/business-orders/page') &&
+          response.url().includes(encodeURIComponent(emptyKeyword)),
+      ),
       toolbar.getByRole('button', { name: '查询' }).click(),
     ]);
     await expect(page.locator('.payment-business-orders__table')).toContainText('未查询到匹配的业务订单');
@@ -3847,8 +3983,8 @@ test.describe('支付管理 E2E', () => {
         runtimeErrors.push(message.text());
       }
     });
-    page.on('pageerror', error => runtimeErrors.push(error.message));
-    page.on('requestfailed', request => {
+    page.on('pageerror', (error) => runtimeErrors.push(error.message));
+    page.on('requestfailed', (request) => {
       if (request.url().includes('/api/payment/payment-orders')) {
         runtimeErrors.push(`${request.method()} ${request.url()} ${request.failure()?.errorText || 'failed'}`);
       }
@@ -3875,15 +4011,17 @@ test.describe('支付管理 E2E', () => {
 
       const statusesResponse = await page.request.get('/api/payment/payment-orders/statuses', { headers });
       const statusesBody = await expectBusinessOk<PaymentOrderStatus[]>(statusesResponse);
-      expect(statusesBody.data?.map(item => item.statusCode)).toEqual(expect.arrayContaining([
-        'CREATED',
-        'PAYING',
-        'SUCCESS',
-        'FAILED',
-        'CLOSED',
-        'DUPLICATE_REFUNDING',
-        'DUPLICATE_REFUNDED',
-      ]));
+      expect(statusesBody.data?.map((item) => item.statusCode)).toEqual(
+        expect.arrayContaining([
+          'CREATED',
+          'PAYING',
+          'SUCCESS',
+          'FAILED',
+          'CLOSED',
+          'DUPLICATE_REFUNDING',
+          'DUPLICATE_REFUNDED',
+        ]),
+      );
 
       const pageResponse = await page.request.get('/api/payment/payment-orders/page', {
         headers,
@@ -3891,7 +4029,8 @@ test.describe('支付管理 E2E', () => {
       });
       const pageBody = await expectBusinessOk<PageData>(pageResponse);
       expect(Number(pageBody.data?.total || 0)).toBeGreaterThan(0);
-      const apiRow = (pageBody.data?.list || []).find(item => item.payOrderNo === payOrderNo) as PaymentOrder | undefined;
+      const apiRow = (pageBody.data?.list || []).find((item) => item.payOrderNo === payOrderNo) as
+        PaymentOrder | undefined;
       expect(apiRow).toMatchObject({
         payOrderNo,
         bizOrderNo,
@@ -3918,26 +4057,41 @@ test.describe('支付管理 E2E', () => {
         status: 'PAYING',
         statusName: '支付中',
       });
-      expect(detailBody.data?.statusFlows?.map(item => item.statusCode)).toEqual(expect.arrayContaining(['CREATED', 'PAYING']));
-      expect(detailBody.data?.statusFlows?.some(item => item.remark?.includes('等待通道回调'))).toBeTruthy();
+      expect(detailBody.data?.statusFlows?.map((item) => item.statusCode)).toEqual(
+        expect.arrayContaining(['CREATED', 'PAYING']),
+      );
+      expect(detailBody.data?.statusFlows?.some((item) => item.remark?.includes('等待通道回调'))).toBeTruthy();
 
       await openPaymentPage(page, '/#/payment/payment-orders', '支付订单');
       const toolbar = page.locator('.payment-orders__toolbar');
       await toolbar.getByPlaceholder('支付单号 / 业务单号 / 通道单号 / 方式 / 通道 / 商户号').fill(payOrderNo);
-      const statusSelect = toolbar.locator('.el-form-item').filter({ hasText: '支付状态' }).locator('.el-select').first();
+      const statusSelect = toolbar
+        .locator('.el-form-item')
+        .filter({ hasText: '支付状态' })
+        .locator('.el-select')
+        .first();
       const statusListboxId = await statusSelect.evaluate((element: Element) => {
         const target = element.querySelector('[role="combobox"]') || element.querySelector('input') || element;
         (target as HTMLElement).click();
         return target.getAttribute('aria-controls') || '';
       });
-      const statusDropdown = page.locator(`[id="${statusListboxId}"]`).locator('xpath=ancestor::*[contains(@class, "el-select-dropdown")]').first();
+      const statusDropdown = page
+        .locator(`[id="${statusListboxId}"]`)
+        .locator('xpath=ancestor::*[contains(@class, "el-select-dropdown")]')
+        .first();
       await clickVisibleOption(statusDropdown, '支付中');
       await Promise.all([
-        page.waitForResponse(response => response.url().includes('/api/payment/payment-orders/page') && response.url().includes('statusCode=PAYING')),
+        page.waitForResponse(
+          (response) =>
+            response.url().includes('/api/payment/payment-orders/page') && response.url().includes('statusCode=PAYING'),
+        ),
         toolbar.getByRole('button', { name: '查询' }).click(),
       ]);
 
-      const row = page.locator('.payment-orders__table .el-table__body-wrapper tbody tr').filter({ hasText: payOrderNo }).first();
+      const row = page
+        .locator('.payment-orders__table .el-table__body-wrapper tbody tr')
+        .filter({ hasText: payOrderNo })
+        .first();
       await expect(row).toBeVisible({ timeout: 10000 });
       await expect(row).toContainText(bizOrderNo);
       await expect(row).toContainText('微信扫码');
@@ -3948,7 +4102,7 @@ test.describe('支付管理 E2E', () => {
       await expect(row.locator('.el-tag').filter({ hasText: bizOrderNo })).toHaveCount(0);
 
       await Promise.all([
-        page.waitForResponse(response => response.url().includes('/api/payment/payment-orders/detail')),
+        page.waitForResponse((response) => response.url().includes('/api/payment/payment-orders/detail')),
         row.getByRole('button', { name: '详情' }).click(),
       ]);
       const drawer = page.getByRole('dialog').filter({ hasText: '支付订单详情' }).last();
@@ -3966,7 +4120,11 @@ test.describe('支付管理 E2E', () => {
       const emptyKeyword = `NO-PAY-ORDER-${Date.now()}`;
       await toolbar.getByPlaceholder('支付单号 / 业务单号 / 通道单号 / 方式 / 通道 / 商户号').fill(emptyKeyword);
       await Promise.all([
-        page.waitForResponse(response => response.url().includes('/api/payment/payment-orders/page') && response.url().includes(encodeURIComponent(emptyKeyword))),
+        page.waitForResponse(
+          (response) =>
+            response.url().includes('/api/payment/payment-orders/page') &&
+            response.url().includes(encodeURIComponent(emptyKeyword)),
+        ),
         toolbar.getByRole('button', { name: '查询' }).click(),
       ]);
       await expect(page.locator('.payment-orders__table')).toContainText('未查询到匹配的支付订单');
@@ -3986,12 +4144,12 @@ test.describe('支付管理 E2E', () => {
         runtimeErrors.push(message.text());
       }
     });
-    page.on('pageerror', error => runtimeErrors.push(error.message));
-    page.on('requestfailed', request => {
+    page.on('pageerror', (error) => runtimeErrors.push(error.message));
+    page.on('requestfailed', (request) => {
       if (
-        request.url().includes('/api/payment/payment-orders')
-        || request.url().includes('/api/payment/refund-approvals')
-        || request.url().includes('/api/payment/refund-orders')
+        request.url().includes('/api/payment/payment-orders') ||
+        request.url().includes('/api/payment/refund-approvals') ||
+        request.url().includes('/api/payment/refund-orders')
       ) {
         runtimeErrors.push(`${request.method()} ${request.url()} ${request.failure()?.errorText || 'failed'}`);
       }
@@ -4020,10 +4178,17 @@ test.describe('支付管理 E2E', () => {
       const paymentToolbar = page.locator('.payment-orders__toolbar');
       await paymentToolbar.getByPlaceholder('支付单号 / 业务单号 / 通道单号 / 方式 / 通道 / 商户号').fill(payOrderNo);
       await Promise.all([
-        page.waitForResponse(response => response.url().includes('/api/payment/payment-orders/page') && response.url().includes(encodeURIComponent(payOrderNo))),
+        page.waitForResponse(
+          (response) =>
+            response.url().includes('/api/payment/payment-orders/page') &&
+            response.url().includes(encodeURIComponent(payOrderNo)),
+        ),
         paymentToolbar.getByRole('button', { name: '查询' }).click(),
       ]);
-      const paymentRow = page.locator('.payment-orders__table .el-table__body-wrapper tbody tr').filter({ hasText: payOrderNo }).first();
+      const paymentRow = page
+        .locator('.payment-orders__table .el-table__body-wrapper tbody tr')
+        .filter({ hasText: payOrderNo })
+        .first();
       await expect(paymentRow).toBeVisible({ timeout: 10000 });
       await expect(paymentRow.getByRole('button', { name: '退款' })).toBeEnabled();
       await paymentRow.getByRole('button', { name: '退款' }).click();
@@ -4034,29 +4199,39 @@ test.describe('支付管理 E2E', () => {
       await refundDialog.getByLabel('退款原因').fill('E2E 后台部分退款申请');
       await refundDialog.getByLabel('备注').fill('E2E 覆盖退款审批闭环');
       await Promise.all([
-        page.waitForResponse(response => response.url().includes('/api/payment/refund-approvals') && response.request().method() === 'POST'),
+        page.waitForResponse(
+          (response) =>
+            response.url().includes('/api/payment/refund-approvals') && response.request().method() === 'POST',
+        ),
         refundDialog.getByRole('button', { name: '提交审批' }).click(),
       ]);
       await expect(page.getByText('退款审批已创建')).toBeVisible({ timeout: 10000 });
 
-      await expect.poll(async () => {
-        const response = await page.request.get('/api/payment/refund-approvals/page', {
-          headers,
-          params: { page: '1', size: '10', keyword: payOrderNo },
-        });
-        const body = await expectBusinessOk<PageData>(response);
-        const item = (body.data?.list || []).find(row => row.payOrderNo === payOrderNo) as PaymentRefundApproval | undefined;
-        return item?.status || '';
-      }, {
-        intervals: [1000, 2000, 3000],
-        timeout: 20000,
-      }).toBe('APPROVED');
+      await expect
+        .poll(
+          async () => {
+            const response = await page.request.get('/api/payment/refund-approvals/page', {
+              headers,
+              params: { page: '1', size: '10', keyword: payOrderNo },
+            });
+            const body = await expectBusinessOk<PageData>(response);
+            const item = (body.data?.list || []).find((row) => row.payOrderNo === payOrderNo) as
+              PaymentRefundApproval | undefined;
+            return item?.status || '';
+          },
+          {
+            intervals: [1000, 2000, 3000],
+            timeout: 20000,
+          },
+        )
+        .toBe('APPROVED');
       const approvalPageResponse = await page.request.get('/api/payment/refund-approvals/page', {
         headers,
         params: { page: '1', size: '10', keyword: payOrderNo },
       });
       const approvalPageBody = await expectBusinessOk<PageData>(approvalPageResponse);
-      const approval = (approvalPageBody.data?.list || []).find(item => item.payOrderNo === payOrderNo) as PaymentRefundApproval | undefined;
+      const approval = (approvalPageBody.data?.list || []).find((item) => item.payOrderNo === payOrderNo) as
+        PaymentRefundApproval | undefined;
       expect(approval).toMatchObject({
         payOrderNo,
         bizOrderNo,
@@ -4072,19 +4247,33 @@ test.describe('支付管理 E2E', () => {
       await openPaymentPage(page, '/#/payment/refund-approvals', '退款审批');
       const approvalToolbar = page.locator('.payment-refund-approvals__toolbar');
       await approvalToolbar.getByPlaceholder('审批单号 / 支付单号 / 业务退款号 / 退款单号').fill(payOrderNo);
-      const statusSelect = approvalToolbar.locator('.el-form-item').filter({ hasText: '审批状态' }).locator('.el-select').first();
+      const statusSelect = approvalToolbar
+        .locator('.el-form-item')
+        .filter({ hasText: '审批状态' })
+        .locator('.el-select')
+        .first();
       const statusListboxId = await statusSelect.evaluate((element: Element) => {
         const target = element.querySelector('[role="combobox"]') || element.querySelector('input') || element;
         (target as HTMLElement).click();
         return target.getAttribute('aria-controls') || '';
       });
-      const statusDropdown = page.locator(`[id="${statusListboxId}"]`).locator('xpath=ancestor::*[contains(@class, "el-select-dropdown")]').first();
+      const statusDropdown = page
+        .locator(`[id="${statusListboxId}"]`)
+        .locator('xpath=ancestor::*[contains(@class, "el-select-dropdown")]')
+        .first();
       await clickVisibleOption(statusDropdown, '已通过');
       await Promise.all([
-        page.waitForResponse(response => response.url().includes('/api/payment/refund-approvals/page') && response.url().includes('statusCode=APPROVED')),
+        page.waitForResponse(
+          (response) =>
+            response.url().includes('/api/payment/refund-approvals/page') &&
+            response.url().includes('statusCode=APPROVED'),
+        ),
         approvalToolbar.getByRole('button', { name: '查询' }).click(),
       ]);
-      const approvalRow = page.locator('.payment-refund-approvals__table .el-table__body-wrapper tbody tr').filter({ hasText: payOrderNo }).first();
+      const approvalRow = page
+        .locator('.payment-refund-approvals__table .el-table__body-wrapper tbody tr')
+        .filter({ hasText: payOrderNo })
+        .first();
       await expect(approvalRow).toBeVisible({ timeout: 10000 });
       await expect(approvalRow).toContainText('已通过');
       await expect(approvalRow).toContainText(approval?.refundOrderNo || '');
@@ -4105,7 +4294,8 @@ test.describe('支付管理 E2E', () => {
         params: { page: '1', size: '10', keyword: approval?.refundOrderNo || '' },
       });
       const refundOrderBody = await expectBusinessOk<PageData>(refundOrderResponse);
-      const refundOrder = (refundOrderBody.data?.list || []).find(item => item.payOrderNo === payOrderNo) as PaymentRefundOrder | undefined;
+      const refundOrder = (refundOrderBody.data?.list || []).find((item) => item.payOrderNo === payOrderNo) as
+        PaymentRefundOrder | undefined;
       expect(refundOrder).toMatchObject({
         refundOrderNo: approval?.refundOrderNo,
         payOrderNo,
@@ -4129,8 +4319,8 @@ test.describe('支付管理 E2E', () => {
         runtimeErrors.push(message.text());
       }
     });
-    page.on('pageerror', error => runtimeErrors.push(error.message));
-    page.on('requestfailed', request => {
+    page.on('pageerror', (error) => runtimeErrors.push(error.message));
+    page.on('requestfailed', (request) => {
       if (request.url().includes('/api/payment/refund-orders')) {
         runtimeErrors.push(`${request.method()} ${request.url()} ${request.failure()?.errorText || 'failed'}`);
       }
@@ -4161,13 +4351,9 @@ test.describe('支付管理 E2E', () => {
 
       const statusesResponse = await page.request.get('/api/payment/refund-orders/statuses', { headers });
       const statusesBody = await expectBusinessOk<PaymentRefundOrderStatus[]>(statusesResponse);
-      expect(statusesBody.data?.map(item => item.statusCode)).toEqual(expect.arrayContaining([
-        'CREATED',
-        'REFUNDING',
-        'SUCCESS',
-        'FAILED',
-        'CLOSED',
-      ]));
+      expect(statusesBody.data?.map((item) => item.statusCode)).toEqual(
+        expect.arrayContaining(['CREATED', 'REFUNDING', 'SUCCESS', 'FAILED', 'CLOSED']),
+      );
 
       const pageResponse = await page.request.get('/api/payment/refund-orders/page', {
         headers,
@@ -4175,7 +4361,8 @@ test.describe('支付管理 E2E', () => {
       });
       const pageBody = await expectBusinessOk<PageData>(pageResponse);
       expect(Number(pageBody.data?.total || 0)).toBeGreaterThan(0);
-      const apiRow = (pageBody.data?.list || []).find(item => item.refundOrderNo === refundOrderNo) as PaymentRefundOrder | undefined;
+      const apiRow = (pageBody.data?.list || []).find((item) => item.refundOrderNo === refundOrderNo) as
+        PaymentRefundOrder | undefined;
       expect(apiRow).toMatchObject({
         refundOrderNo,
         bizRefundNo,
@@ -4202,26 +4389,42 @@ test.describe('支付管理 E2E', () => {
         status: 'REFUNDING',
         statusName: '退款中',
       });
-      expect(detailBody.data?.statusFlows?.map(item => item.statusCode)).toEqual(expect.arrayContaining(['CREATED', 'REFUNDING']));
-      expect(detailBody.data?.statusFlows?.some(item => item.remark?.includes('等待通道回调'))).toBeTruthy();
+      expect(detailBody.data?.statusFlows?.map((item) => item.statusCode)).toEqual(
+        expect.arrayContaining(['CREATED', 'REFUNDING']),
+      );
+      expect(detailBody.data?.statusFlows?.some((item) => item.remark?.includes('等待通道回调'))).toBeTruthy();
 
       await openPaymentPage(page, '/#/payment/refund-orders', '退款订单');
       const toolbar = page.locator('.payment-refund-orders__toolbar');
       await toolbar.getByPlaceholder('退款单号 / 业务退款号 / 支付单号 / 通道单号').fill(refundOrderNo);
-      const statusSelect = toolbar.locator('.el-form-item').filter({ hasText: '退款状态' }).locator('.el-select').first();
+      const statusSelect = toolbar
+        .locator('.el-form-item')
+        .filter({ hasText: '退款状态' })
+        .locator('.el-select')
+        .first();
       const statusListboxId = await statusSelect.evaluate((element: Element) => {
         const target = element.querySelector('[role="combobox"]') || element.querySelector('input') || element;
         (target as HTMLElement).click();
         return target.getAttribute('aria-controls') || '';
       });
-      const statusDropdown = page.locator(`[id="${statusListboxId}"]`).locator('xpath=ancestor::*[contains(@class, "el-select-dropdown")]').first();
+      const statusDropdown = page
+        .locator(`[id="${statusListboxId}"]`)
+        .locator('xpath=ancestor::*[contains(@class, "el-select-dropdown")]')
+        .first();
       await clickVisibleOption(statusDropdown, '退款中');
       await Promise.all([
-        page.waitForResponse(response => response.url().includes('/api/payment/refund-orders/page') && response.url().includes('statusCode=REFUNDING')),
+        page.waitForResponse(
+          (response) =>
+            response.url().includes('/api/payment/refund-orders/page') &&
+            response.url().includes('statusCode=REFUNDING'),
+        ),
         toolbar.getByRole('button', { name: '查询' }).click(),
       ]);
 
-      const row = page.locator('.payment-refund-orders__table .el-table__body-wrapper tbody tr').filter({ hasText: refundOrderNo }).first();
+      const row = page
+        .locator('.payment-refund-orders__table .el-table__body-wrapper tbody tr')
+        .filter({ hasText: refundOrderNo })
+        .first();
       await expect(row).toBeVisible({ timeout: 10000 });
       await expect(row).toContainText(bizRefundNo);
       await expect(row).toContainText(payOrderNo);
@@ -4235,7 +4438,7 @@ test.describe('支付管理 E2E', () => {
       await expect(row.getByRole('button', { name: '主动查退款' })).toBeVisible();
 
       await Promise.all([
-        page.waitForResponse(response => response.url().includes('/api/payment/refund-orders/detail')),
+        page.waitForResponse((response) => response.url().includes('/api/payment/refund-orders/detail')),
         row.getByRole('button', { name: '详情' }).click(),
       ]);
       const drawer = page.getByRole('dialog').filter({ hasText: '退款订单详情' }).last();
@@ -4252,8 +4455,9 @@ test.describe('支付管理 E2E', () => {
       await drawer.locator('.el-drawer__close-btn').click();
 
       setMangoPayRefundScenario('SUCCESS');
-      const queryResponsePromise = page.waitForResponse(response =>
-        response.url().includes('/api/payment/refund-orders/query-channel') && response.request().method() === 'POST'
+      const queryResponsePromise = page.waitForResponse(
+        (response) =>
+          response.url().includes('/api/payment/refund-orders/query-channel') && response.request().method() === 'POST',
       );
       await row.getByRole('button', { name: '主动查退款' }).click();
       const queryResponse = await queryResponsePromise;
@@ -4271,7 +4475,9 @@ test.describe('支付管理 E2E', () => {
         params: { page: '1', size: '10', keyword: refundOrderNo, statusCode: 'SUCCESS' },
       });
       const queriedPageBody = await expectBusinessOk<PageData>(queriedPageResponse);
-      const queriedRefundOrder = (queriedPageBody.data?.list || []).find(item => item.refundOrderNo === refundOrderNo) as PaymentRefundOrder | undefined;
+      const queriedRefundOrder = (queriedPageBody.data?.list || []).find(
+        (item) => item.refundOrderNo === refundOrderNo,
+      ) as PaymentRefundOrder | undefined;
       expect(queriedRefundOrder).toMatchObject({
         refundOrderNo,
         bizRefundNo,
@@ -4309,13 +4515,22 @@ test.describe('支付管理 E2E', () => {
         (target as HTMLElement).click();
         return target.getAttribute('aria-controls') || '';
       });
-      const successStatusDropdown = page.locator(`[id="${successStatusListboxId}"]`).locator('xpath=ancestor::*[contains(@class, "el-select-dropdown")]').first();
+      const successStatusDropdown = page
+        .locator(`[id="${successStatusListboxId}"]`)
+        .locator('xpath=ancestor::*[contains(@class, "el-select-dropdown")]')
+        .first();
       await clickVisibleOption(successStatusDropdown, '退款成功');
       await Promise.all([
-        page.waitForResponse(response => response.url().includes('/api/payment/refund-orders/page') && response.url().includes('statusCode=SUCCESS')),
+        page.waitForResponse(
+          (response) =>
+            response.url().includes('/api/payment/refund-orders/page') && response.url().includes('statusCode=SUCCESS'),
+        ),
         toolbar.getByRole('button', { name: '查询' }).click(),
       ]);
-      const successRow = page.locator('.payment-refund-orders__table .el-table__body-wrapper tbody tr').filter({ hasText: refundOrderNo }).first();
+      const successRow = page
+        .locator('.payment-refund-orders__table .el-table__body-wrapper tbody tr')
+        .filter({ hasText: refundOrderNo })
+        .first();
       await expect(successRow).toBeVisible({ timeout: 10000 });
       await expect(successRow).toContainText('退款成功');
       await expect(successRow.getByRole('button', { name: '主动查退款' })).toHaveCount(0);
@@ -4323,7 +4538,11 @@ test.describe('支付管理 E2E', () => {
       const emptyKeyword = `NO-REFUND-ORDER-${Date.now()}`;
       await toolbar.getByPlaceholder('退款单号 / 业务退款号 / 支付单号 / 通道单号').fill(emptyKeyword);
       await Promise.all([
-        page.waitForResponse(response => response.url().includes('/api/payment/refund-orders/page') && response.url().includes(encodeURIComponent(emptyKeyword))),
+        page.waitForResponse(
+          (response) =>
+            response.url().includes('/api/payment/refund-orders/page') &&
+            response.url().includes(encodeURIComponent(emptyKeyword)),
+        ),
         toolbar.getByRole('button', { name: '查询' }).click(),
       ]);
       await expect(page.locator('.payment-refund-orders__table')).toContainText('未查询到匹配的退款订单');
@@ -4343,8 +4562,8 @@ test.describe('支付管理 E2E', () => {
         runtimeErrors.push(message.text());
       }
     });
-    page.on('pageerror', error => runtimeErrors.push(error.message));
-    page.on('requestfailed', request => {
+    page.on('pageerror', (error) => runtimeErrors.push(error.message));
+    page.on('requestfailed', (request) => {
       if (request.url().includes('/api/payment/transaction-flows')) {
         runtimeErrors.push(`${request.method()} ${request.url()} ${request.failure()?.errorText || 'failed'}`);
       }
@@ -4375,7 +4594,8 @@ test.describe('支付管理 E2E', () => {
       });
       const pageBody = await expectBusinessOk<PageData>(pageResponse);
       expect(Number(pageBody.data?.total || 0)).toBeGreaterThan(0);
-      const apiRow = (pageBody.data?.list || []).find(item => item.payOrderNo === payOrderNo) as PaymentTransactionFlow | undefined;
+      const apiRow = (pageBody.data?.list || []).find((item) => item.payOrderNo === payOrderNo) as
+        PaymentTransactionFlow | undefined;
       expect(apiRow).toMatchObject({
         bizOrderNo,
         payOrderNo,
@@ -4414,11 +4634,18 @@ test.describe('支付管理 E2E', () => {
       const toolbar = page.locator('.payment-transaction-flows__toolbar');
       await toolbar.getByPlaceholder('流水号 / 业务单号 / 支付单号 / 退款单号 / 类型').fill(payOrderNo);
       await Promise.all([
-        page.waitForResponse(response => response.url().includes('/api/payment/transaction-flows/page') && response.url().includes(encodeURIComponent(payOrderNo))),
+        page.waitForResponse(
+          (response) =>
+            response.url().includes('/api/payment/transaction-flows/page') &&
+            response.url().includes(encodeURIComponent(payOrderNo)),
+        ),
         toolbar.getByRole('button', { name: '查询' }).click(),
       ]);
 
-      const row = page.locator('.payment-transaction-flows__table .el-table__body-wrapper tbody tr').filter({ hasText: payOrderNo }).first();
+      const row = page
+        .locator('.payment-transaction-flows__table .el-table__body-wrapper tbody tr')
+        .filter({ hasText: payOrderNo })
+        .first();
       await expect(row).toBeVisible({ timeout: 10000 });
       await expect(row).toContainText(bizOrderNo);
       await expect(row).toContainText('支付成功收入');
@@ -4428,7 +4655,7 @@ test.describe('支付管理 E2E', () => {
       await expect(row.getByRole('button', { name: '删除' })).toHaveCount(0);
 
       await Promise.all([
-        page.waitForResponse(response => response.url().includes('/api/payment/transaction-flows/detail')),
+        page.waitForResponse((response) => response.url().includes('/api/payment/transaction-flows/detail')),
         row.getByRole('button', { name: '详情' }).click(),
       ]);
       const drawer = page.getByRole('dialog').filter({ hasText: '交易流水详情' }).last();
@@ -4441,14 +4668,21 @@ test.describe('支付管理 E2E', () => {
       const emptyKeyword = `NO-TRANSACTION-FLOW-${Date.now()}`;
       await toolbar.getByPlaceholder('流水号 / 业务单号 / 支付单号 / 退款单号 / 类型').fill(emptyKeyword);
       await Promise.all([
-        page.waitForResponse(response => response.url().includes('/api/payment/transaction-flows/page') && response.url().includes(encodeURIComponent(emptyKeyword))),
+        page.waitForResponse(
+          (response) =>
+            response.url().includes('/api/payment/transaction-flows/page') &&
+            response.url().includes(encodeURIComponent(emptyKeyword)),
+        ),
         toolbar.getByRole('button', { name: '查询' }).click(),
       ]);
       await expect(page.locator('.payment-transaction-flows__table')).toContainText('未查询到匹配的交易流水');
       await expect(page.locator('.payment-transaction-flows__table tbody tr')).toHaveCount(0);
-      await page.locator('.payment-transaction-flows__table .el-scrollbar__wrap').first().evaluate((element: Element) => {
-        element.scrollLeft = 0;
-      });
+      await page
+        .locator('.payment-transaction-flows__table .el-scrollbar__wrap')
+        .first()
+        .evaluate((element: Element) => {
+          element.scrollLeft = 0;
+        });
 
       await page.screenshot({ path: 'test-results/payment-transaction-flows.png', fullPage: true });
       expect(runtimeErrors).toEqual([]);
@@ -4464,8 +4698,8 @@ test.describe('支付管理 E2E', () => {
         runtimeErrors.push(message.text());
       }
     });
-    page.on('pageerror', error => runtimeErrors.push(error.message));
-    page.on('requestfailed', request => {
+    page.on('pageerror', (error) => runtimeErrors.push(error.message));
+    page.on('requestfailed', (request) => {
       if (request.url().includes('/api/payment/exception-orders')) {
         runtimeErrors.push(`${request.method()} ${request.url()} ${request.failure()?.errorText || 'failed'}`);
       }
@@ -4500,7 +4734,9 @@ test.describe('支付管理 E2E', () => {
       prioritizeProcessingPaymentOrder(uiPayOrderNo);
 
       setMangoPayScenario('FAILED');
-      const queryTaskResponse = await page.request.post('/api/payment/tasks/query-processing-orders?limit=100', { headers });
+      const queryTaskResponse = await page.request.post('/api/payment/tasks/query-processing-orders?limit=100', {
+        headers,
+      });
       const queryTaskBody = await expectBusinessOk<PaymentTaskDispatchResult>(queryTaskResponse);
       expect(Number(queryTaskBody.data?.scannedCount || 0)).toBeGreaterThan(0);
       expect(Number(queryTaskBody.data?.successCount || 0)).toBeGreaterThanOrEqual(2);
@@ -4522,22 +4758,15 @@ test.describe('支付管理 E2E', () => {
 
       const statusesResponse = await page.request.get('/api/payment/exception-orders/statuses', { headers });
       const statusesBody = await expectBusinessOk<PaymentExceptionOrderStatus[]>(statusesResponse);
-      expect(statusesBody.data?.map(item => item.statusCode)).toEqual(expect.arrayContaining([
-        'PENDING',
-        'PROCESSING',
-        'HANDLED',
-        'IGNORED',
-        'CLOSED',
-      ]));
+      expect(statusesBody.data?.map((item) => item.statusCode)).toEqual(
+        expect.arrayContaining(['PENDING', 'PROCESSING', 'HANDLED', 'IGNORED', 'CLOSED']),
+      );
 
       const actionsResponse = await page.request.get('/api/payment/exception-orders/actions', { headers });
       const actionsBody = await expectBusinessOk<PaymentExceptionOrderAction[]>(actionsResponse);
-      expect(actionsBody.data?.map(item => item.actionCode)).toEqual(expect.arrayContaining([
-        'ACTIVE_QUERY',
-        'CLOSE_PAYMENT_ORDER',
-        'ADD_EVIDENCE',
-        'MANUAL_CLOSE',
-      ]));
+      expect(actionsBody.data?.map((item) => item.actionCode)).toEqual(
+        expect.arrayContaining(['ACTIVE_QUERY', 'CLOSE_PAYMENT_ORDER', 'ADD_EVIDENCE', 'MANUAL_CLOSE']),
+      );
 
       const pageResponse = await page.request.get('/api/payment/exception-orders/page', {
         headers,
@@ -4545,7 +4774,8 @@ test.describe('支付管理 E2E', () => {
       });
       const pageBody = await expectBusinessOk<PageData>(pageResponse);
       expect(Number(pageBody.data?.total || 0)).toBeGreaterThan(0);
-      const apiRow = (pageBody.data?.list || []).find(item => item.exceptionNo === exceptionNo) as PaymentExceptionOrder | undefined;
+      const apiRow = (pageBody.data?.list || []).find((item) => item.exceptionNo === exceptionNo) as
+        PaymentExceptionOrder | undefined;
       expect(apiRow).toMatchObject({
         id: exceptionOrderId,
         exceptionNo,
@@ -4632,14 +4862,24 @@ test.describe('支付管理 E2E', () => {
         (target as HTMLElement).click();
         return target.getAttribute('aria-controls') || '';
       });
-      const statusDropdown = page.locator(`[id="${statusListboxId}"]`).locator('xpath=ancestor::*[contains(@class, "el-select-dropdown")]').first();
+      const statusDropdown = page
+        .locator(`[id="${statusListboxId}"]`)
+        .locator('xpath=ancestor::*[contains(@class, "el-select-dropdown")]')
+        .first();
       await clickVisibleOption(statusDropdown, '待处理');
       await Promise.all([
-        page.waitForResponse(response => response.url().includes('/api/payment/exception-orders/page') && response.url().includes('statusCode=PENDING')),
+        page.waitForResponse(
+          (response) =>
+            response.url().includes('/api/payment/exception-orders/page') &&
+            response.url().includes('statusCode=PENDING'),
+        ),
         toolbar.getByRole('button', { name: '查询' }).click(),
       ]);
 
-      const row = page.locator('.payment-exception-orders__table .el-table__body-wrapper tbody tr').filter({ hasText: uiExceptionNo }).first();
+      const row = page
+        .locator('.payment-exception-orders__table .el-table__body-wrapper tbody tr')
+        .filter({ hasText: uiExceptionNo })
+        .first();
       await expect(row).toBeVisible({ timeout: 10000 });
       await expect(row).toContainText(uiRelatedOrderNo);
       await expect(row).toContainText('通道失败');
@@ -4649,7 +4889,7 @@ test.describe('支付管理 E2E', () => {
       await expect(row.getByRole('button', { name: '删除' })).toHaveCount(0);
 
       await Promise.all([
-        page.waitForResponse(response => response.url().includes('/api/payment/exception-orders/detail')),
+        page.waitForResponse((response) => response.url().includes('/api/payment/exception-orders/detail')),
         row.getByRole('button', { name: '详情' }).click(),
       ]);
       const drawer = page.getByRole('dialog').filter({ hasText: '异常订单详情' }).last();
@@ -4668,26 +4908,45 @@ test.describe('支付管理 E2E', () => {
       await fillTextarea(page, '处理结果', 'E2E 页面记录通道失败处理结果');
       await fillTextarea(page, '处理凭据', `ui-channel-failed-${uiExceptionNo}`);
       await Promise.all([
-        page.waitForResponse(response => response.url().includes('/api/payment/exception-orders/handle') && response.request().method() === 'POST'),
+        page.waitForResponse(
+          (response) =>
+            response.url().includes('/api/payment/exception-orders/handle') && response.request().method() === 'POST',
+        ),
         handleDialog.getByRole('button', { name: '保存处理' }).click(),
       ]);
-      await expect(page.locator('.el-message').filter({ hasText: '异常订单已处理' }).last()).toBeVisible({ timeout: 10000 });
+      await expect(page.locator('.el-message').filter({ hasText: '异常订单已处理' }).last()).toBeVisible({
+        timeout: 10000,
+      });
       await expect(handleDialog).toBeHidden({ timeout: 10000 });
 
       await toolbar.getByPlaceholder('异常单号 / 关联订单号 / 类型 / 状态').fill(uiExceptionNo);
-      const handledStatusSelect = toolbar.locator('.el-form-item').filter({ hasText: '状态' }).locator('.el-select').first();
+      const handledStatusSelect = toolbar
+        .locator('.el-form-item')
+        .filter({ hasText: '状态' })
+        .locator('.el-select')
+        .first();
       const handledListboxId = await handledStatusSelect.evaluate((element: Element) => {
         const target = element.querySelector('[role="combobox"]') || element.querySelector('input') || element;
         (target as HTMLElement).click();
         return target.getAttribute('aria-controls') || '';
       });
-      const handledDropdown = page.locator(`[id="${handledListboxId}"]`).locator('xpath=ancestor::*[contains(@class, "el-select-dropdown")]').first();
+      const handledDropdown = page
+        .locator(`[id="${handledListboxId}"]`)
+        .locator('xpath=ancestor::*[contains(@class, "el-select-dropdown")]')
+        .first();
       await clickVisibleOption(handledDropdown, '处理中');
       await Promise.all([
-        page.waitForResponse(response => response.url().includes('/api/payment/exception-orders/page') && response.url().includes('statusCode=PROCESSING')),
+        page.waitForResponse(
+          (response) =>
+            response.url().includes('/api/payment/exception-orders/page') &&
+            response.url().includes('statusCode=PROCESSING'),
+        ),
         toolbar.getByRole('button', { name: '查询' }).click(),
       ]);
-      const handledRow = page.locator('.payment-exception-orders__table .el-table__body-wrapper tbody tr').filter({ hasText: uiExceptionNo }).first();
+      const handledRow = page
+        .locator('.payment-exception-orders__table .el-table__body-wrapper tbody tr')
+        .filter({ hasText: uiExceptionNo })
+        .first();
       await expect(handledRow).toBeVisible({ timeout: 10000 });
       await expect(handledRow).toContainText('处理中');
       await expect(handledRow.getByRole('button', { name: '处理' })).toBeVisible();
@@ -4695,14 +4954,21 @@ test.describe('支付管理 E2E', () => {
       const emptyKeyword = `NO-EXCEPTION-ORDER-${Date.now()}`;
       await toolbar.getByPlaceholder('异常单号 / 关联订单号 / 类型 / 状态').fill(emptyKeyword);
       await Promise.all([
-        page.waitForResponse(response => response.url().includes('/api/payment/exception-orders/page') && response.url().includes(encodeURIComponent(emptyKeyword))),
+        page.waitForResponse(
+          (response) =>
+            response.url().includes('/api/payment/exception-orders/page') &&
+            response.url().includes(encodeURIComponent(emptyKeyword)),
+        ),
         toolbar.getByRole('button', { name: '查询' }).click(),
       ]);
       await expect(page.locator('.payment-exception-orders__table')).toContainText('未查询到匹配的异常订单');
       await expect(page.locator('.payment-exception-orders__table tbody tr')).toHaveCount(0);
-      await page.locator('.payment-exception-orders__table .el-scrollbar__wrap').first().evaluate((element: Element) => {
-        element.scrollLeft = 0;
-      });
+      await page
+        .locator('.payment-exception-orders__table .el-scrollbar__wrap')
+        .first()
+        .evaluate((element: Element) => {
+          element.scrollLeft = 0;
+        });
 
       await page.screenshot({ path: 'test-results/payment-exception-orders.png', fullPage: true });
       expect(runtimeErrors).toEqual([]);
@@ -4718,13 +4984,15 @@ test.describe('支付管理 E2E', () => {
         runtimeErrors.push(message.text());
       }
     });
-    page.on('pageerror', error => runtimeErrors.push(error.message));
-    page.on('requestfailed', request => {
-      if (request.url().includes('/api/payment/exception-orders')
-        || request.url().includes('/api/payment/payment-orders')
-        || request.url().includes('/api/payment/business-orders')
-        || request.url().includes('/api/payment/refund-orders')
-        || request.url().includes('/api/payment/transaction-flows')) {
+    page.on('pageerror', (error) => runtimeErrors.push(error.message));
+    page.on('requestfailed', (request) => {
+      if (
+        request.url().includes('/api/payment/exception-orders') ||
+        request.url().includes('/api/payment/payment-orders') ||
+        request.url().includes('/api/payment/business-orders') ||
+        request.url().includes('/api/payment/refund-orders') ||
+        request.url().includes('/api/payment/transaction-flows')
+      ) {
         runtimeErrors.push(`${request.method()} ${request.url()} ${request.failure()?.errorText || 'failed'}`);
       }
     });
@@ -4764,7 +5032,9 @@ test.describe('支付管理 E2E', () => {
         effectiveCount: 1,
         remark: `E2E 主动查单失败 ${activePayOrderNo}`,
       });
-      const queryTaskResponse = await page.request.post('/api/payment/tasks/query-processing-orders?limit=100', { headers });
+      const queryTaskResponse = await page.request.post('/api/payment/tasks/query-processing-orders?limit=100', {
+        headers,
+      });
       const queryTaskBody = await expectBusinessOk<PaymentTaskDispatchResult>(queryTaskResponse);
       expect(Number(queryTaskBody.data?.successCount || 0)).toBeGreaterThanOrEqual(1);
       const activeException = await findExceptionOrderByRelatedNo(page, headers, activePayOrderNo);
@@ -4821,7 +5091,8 @@ test.describe('支付管理 E2E', () => {
         params: { page: '1', size: '10', keyword: refundOrderNo, statusCode: 'REFUNDING' },
       });
       const refundPageBody = await expectBusinessOk<PageData>(refundPageResponse);
-      const refundOrder = (refundPageBody.data?.list || []).find(item => item.refundOrderNo === refundOrderNo) as PaymentRefundOrder | undefined;
+      const refundOrder = (refundPageBody.data?.list || []).find((item) => item.refundOrderNo === refundOrderNo) as
+        PaymentRefundOrder | undefined;
       expect(refundOrder?.id).toBeTruthy();
       setMangoPayRefundScenario('FAILED');
       const failedRefundQueryResponse = await page.request.post('/api/payment/refund-orders/query-channel', {
@@ -4851,16 +5122,32 @@ test.describe('支付管理 E2E', () => {
           (target as HTMLElement).click();
           return target.getAttribute('aria-controls') || '';
         });
-        const statusDropdown = page.locator(`[id="${statusListboxId}"]`).locator('xpath=ancestor::*[contains(@class, "el-select-dropdown")]').first();
+        const statusDropdown = page
+          .locator(`[id="${statusListboxId}"]`)
+          .locator('xpath=ancestor::*[contains(@class, "el-select-dropdown")]')
+          .first();
         await clickVisibleOption(statusDropdown, '待处理');
         await Promise.all([
-          page.waitForResponse(response => response.url().includes('/api/payment/exception-orders/page') && response.url().includes(encodeURIComponent(keyword))),
+          page.waitForResponse(
+            (response) =>
+              response.url().includes('/api/payment/exception-orders/page') &&
+              response.url().includes(encodeURIComponent(keyword)),
+          ),
           toolbar.getByRole('button', { name: '查询' }).click(),
         ]);
       };
-      const handleException = async (exceptionNo: string, payOrderNo: string, actionLabel: string, reason: string, result: string) => {
+      const handleException = async (
+        exceptionNo: string,
+        payOrderNo: string,
+        actionLabel: string,
+        reason: string,
+        result: string,
+      ) => {
         await searchException(exceptionNo);
-        const row = page.locator('.payment-exception-orders__table .el-table__body-wrapper tbody tr').filter({ hasText: exceptionNo }).first();
+        const row = page
+          .locator('.payment-exception-orders__table .el-table__body-wrapper tbody tr')
+          .filter({ hasText: exceptionNo })
+          .first();
         await expect(row).toBeVisible({ timeout: 10000 });
         await expect(row).toContainText(payOrderNo);
         await expect(row).toContainText('待处理');
@@ -4874,11 +5161,16 @@ test.describe('支付管理 E2E', () => {
         await fillTextarea(page, '处理结果', result);
         await fillTextarea(page, '处理凭据', `payment-exception-${exceptionNo}`);
         const [handleResponse] = await Promise.all([
-          page.waitForResponse(response => response.url().includes('/api/payment/exception-orders/handle') && response.request().method() === 'POST'),
+          page.waitForResponse(
+            (response) =>
+              response.url().includes('/api/payment/exception-orders/handle') && response.request().method() === 'POST',
+          ),
           handleDialog.getByRole('button', { name: '保存处理' }).click(),
         ]);
         await expectBusinessOk<PaymentExceptionOrder>(handleResponse);
-        await expect(page.locator('.el-message').filter({ hasText: '异常订单已处理' }).last()).toBeVisible({ timeout: 10000 });
+        await expect(page.locator('.el-message').filter({ hasText: '异常订单已处理' }).last()).toBeVisible({
+          timeout: 10000,
+        });
         await expect(handleDialog).toBeHidden({ timeout: 10000 });
       };
 
@@ -4917,7 +5209,9 @@ test.describe('支付管理 E2E', () => {
         params: { page: '1', size: '10', keyword: activeExceptionNo, statusCode: 'HANDLED' },
       });
       const activeDetailBody = await expectBusinessOk<PageData>(activeDetailResponse);
-      const activeHandledRow = (activeDetailBody.data?.list || []).find(item => item.exceptionNo === activeExceptionNo) as PaymentExceptionOrder | undefined;
+      const activeHandledRow = (activeDetailBody.data?.list || []).find(
+        (item) => item.exceptionNo === activeExceptionNo,
+      ) as PaymentExceptionOrder | undefined;
       expect(activeHandledRow).toMatchObject({
         exceptionNo: activeExceptionNo,
         handleStatus: 'HANDLED',
@@ -4965,7 +5259,9 @@ test.describe('支付管理 E2E', () => {
         params: { page: '1', size: '10', keyword: closeExceptionNo, statusCode: 'CLOSED' },
       });
       const closeDetailBody = await expectBusinessOk<PageData>(closeDetailResponse);
-      const closeHandledRow = (closeDetailBody.data?.list || []).find(item => item.exceptionNo === closeExceptionNo) as PaymentExceptionOrder | undefined;
+      const closeHandledRow = (closeDetailBody.data?.list || []).find(
+        (item) => item.exceptionNo === closeExceptionNo,
+      ) as PaymentExceptionOrder | undefined;
       expect(closeHandledRow).toMatchObject({
         exceptionNo: closeExceptionNo,
         handleStatus: 'CLOSED',
@@ -4987,28 +5283,48 @@ test.describe('支付管理 E2E', () => {
       });
 
       await searchException(closeExceptionNo);
-      const closedRow = page.locator('.payment-exception-orders__table .el-table__body-wrapper tbody tr').filter({ hasText: closeExceptionNo }).first();
+      const closedRow = page
+        .locator('.payment-exception-orders__table .el-table__body-wrapper tbody tr')
+        .filter({ hasText: closeExceptionNo })
+        .first();
       await expect(closedRow).toHaveCount(0);
       await toolbar.getByPlaceholder('异常单号 / 关联订单号 / 类型 / 状态').fill(closeExceptionNo);
-      const handledStatusSelect = toolbar.locator('.el-form-item').filter({ hasText: '状态' }).locator('.el-select').first();
+      const handledStatusSelect = toolbar
+        .locator('.el-form-item')
+        .filter({ hasText: '状态' })
+        .locator('.el-select')
+        .first();
       const handledListboxId = await handledStatusSelect.evaluate((element: Element) => {
         const target = element.querySelector('[role="combobox"]') || element.querySelector('input') || element;
         (target as HTMLElement).click();
         return target.getAttribute('aria-controls') || '';
       });
-      const handledDropdown = page.locator(`[id="${handledListboxId}"]`).locator('xpath=ancestor::*[contains(@class, "el-select-dropdown")]').first();
+      const handledDropdown = page
+        .locator(`[id="${handledListboxId}"]`)
+        .locator('xpath=ancestor::*[contains(@class, "el-select-dropdown")]')
+        .first();
       await clickVisibleOption(handledDropdown, '已关闭');
       await Promise.all([
-        page.waitForResponse(response => response.url().includes('/api/payment/exception-orders/page') && response.url().includes('statusCode=CLOSED')),
+        page.waitForResponse(
+          (response) =>
+            response.url().includes('/api/payment/exception-orders/page') &&
+            response.url().includes('statusCode=CLOSED'),
+        ),
         toolbar.getByRole('button', { name: '查询' }).click(),
       ]);
-      const handledCloseRow = page.locator('.payment-exception-orders__table .el-table__body-wrapper tbody tr').filter({ hasText: closeExceptionNo }).first();
+      const handledCloseRow = page
+        .locator('.payment-exception-orders__table .el-table__body-wrapper tbody tr')
+        .filter({ hasText: closeExceptionNo })
+        .first();
       await expect(handledCloseRow).toBeVisible({ timeout: 10000 });
       await expect(handledCloseRow).toContainText('已关闭');
       await expect(handledCloseRow.getByRole('button', { name: '处理' })).toHaveCount(0);
 
       await searchException(refundExceptionNo);
-      const refundExceptionRow = page.locator('.payment-exception-orders__table .el-table__body-wrapper tbody tr').filter({ hasText: refundExceptionNo }).first();
+      const refundExceptionRow = page
+        .locator('.payment-exception-orders__table .el-table__body-wrapper tbody tr')
+        .filter({ hasText: refundExceptionNo })
+        .first();
       await expect(refundExceptionRow).toBeVisible({ timeout: 10000 });
       await expect(refundExceptionRow).toContainText(refundOrderNo);
       await expect(refundExceptionRow).toContainText('退款异常');
@@ -5025,7 +5341,10 @@ test.describe('支付管理 E2E', () => {
       await fillTextarea(page, '处理结果', '页面操作后记录退款失败终态的查退款结果');
       await fillTextarea(page, '处理凭据', `refund-exception-${refundExceptionNo}`);
       const [refundHandleResponse] = await Promise.all([
-        page.waitForResponse(response => response.url().includes('/api/payment/exception-orders/handle') && response.request().method() === 'POST'),
+        page.waitForResponse(
+          (response) =>
+            response.url().includes('/api/payment/exception-orders/handle') && response.request().method() === 'POST',
+        ),
         refundHandleDialog.getByRole('button', { name: '保存处理' }).click(),
       ]);
       const refundHandleBody = await expectBusinessOk<PaymentExceptionOrder>(refundHandleResponse);
@@ -5041,7 +5360,9 @@ test.describe('支付管理 E2E', () => {
         params: { page: '1', size: '10', keyword: refundOrderNo, statusCode: 'FAILED' },
       });
       const queriedRefundPageBody = await expectBusinessOk<PageData>(queriedRefundPageResponse);
-      const queriedRefundOrder = (queriedRefundPageBody.data?.list || []).find(item => item.refundOrderNo === refundOrderNo) as PaymentRefundOrder | undefined;
+      const queriedRefundOrder = (queriedRefundPageBody.data?.list || []).find(
+        (item) => item.refundOrderNo === refundOrderNo,
+      ) as PaymentRefundOrder | undefined;
       expect(queriedRefundOrder).toMatchObject({
         refundOrderNo,
         status: 'FAILED',
@@ -5063,8 +5384,8 @@ test.describe('支付管理 E2E', () => {
         runtimeErrors.push(message.text());
       }
     });
-    page.on('pageerror', error => runtimeErrors.push(error.message));
-    page.on('requestfailed', request => {
+    page.on('pageerror', (error) => runtimeErrors.push(error.message));
+    page.on('requestfailed', (request) => {
       if (request.url().includes('/api/payment/notification-records')) {
         runtimeErrors.push(`${request.method()} ${request.url()} ${request.failure()?.errorText || 'failed'}`);
       }
@@ -5075,16 +5396,17 @@ test.describe('支付管理 E2E', () => {
     const relatedOrderNo = `PO-NT-E2E-${Date.now()}`;
     const notificationRecordId = prepareNotificationRecord(notificationNo, relatedOrderNo, 'FAILED');
     const successNotificationNo = `NT-SUCCESS-E2E-${Date.now()}`;
-    const successNotificationRecordId = prepareNotificationRecord(successNotificationNo, `PO-NT-SUCCESS-${Date.now()}`, 'SUCCESS');
+    const successNotificationRecordId = prepareNotificationRecord(
+      successNotificationNo,
+      `PO-NT-SUCCESS-${Date.now()}`,
+      'SUCCESS',
+    );
 
     const statusesResponse = await page.request.get('/api/payment/notification-records/statuses', { headers });
     const statusesBody = await expectBusinessOk<PaymentNotificationStatus[]>(statusesResponse);
-    expect(statusesBody.data?.map(item => item.statusCode)).toEqual(expect.arrayContaining([
-      'SUCCESS',
-      'RETRYING',
-      'FAILED',
-      'PENDING',
-    ]));
+    expect(statusesBody.data?.map((item) => item.statusCode)).toEqual(
+      expect.arrayContaining(['SUCCESS', 'RETRYING', 'FAILED', 'PENDING']),
+    );
 
     const pageResponse = await page.request.get('/api/payment/notification-records/page', {
       headers,
@@ -5092,7 +5414,8 @@ test.describe('支付管理 E2E', () => {
     });
     const pageBody = await expectBusinessOk<PageData>(pageResponse);
     expect(Number(pageBody.data?.total || 0)).toBeGreaterThan(0);
-    const apiRow = (pageBody.data?.list || []).find(item => item.notificationNo === notificationNo) as PaymentNotificationRecord | undefined;
+    const apiRow = (pageBody.data?.list || []).find((item) => item.notificationNo === notificationNo) as
+      PaymentNotificationRecord | undefined;
     expect(apiRow).toMatchObject({
       id: String(notificationRecordId),
       notificationNo,
@@ -5173,14 +5496,24 @@ test.describe('支付管理 E2E', () => {
       (target as HTMLElement).click();
       return target.getAttribute('aria-controls') || '';
     });
-    const statusDropdown = page.locator(`[id="${statusListboxId}"]`).locator('xpath=ancestor::*[contains(@class, "el-select-dropdown")]').first();
+    const statusDropdown = page
+      .locator(`[id="${statusListboxId}"]`)
+      .locator('xpath=ancestor::*[contains(@class, "el-select-dropdown")]')
+      .first();
     await clickVisibleOption(statusDropdown, '通知失败');
     await Promise.all([
-      page.waitForResponse(response => response.url().includes('/api/payment/notification-records/page') && response.url().includes('statusCode=FAILED')),
+      page.waitForResponse(
+        (response) =>
+          response.url().includes('/api/payment/notification-records/page') &&
+          response.url().includes('statusCode=FAILED'),
+      ),
       toolbar.getByRole('button', { name: '查询' }).click(),
     ]);
 
-    const row = page.locator('.payment-notification-records__table .el-table__body-wrapper tbody tr').filter({ hasText: uiNotificationNo }).first();
+    const row = page
+      .locator('.payment-notification-records__table .el-table__body-wrapper tbody tr')
+      .filter({ hasText: uiNotificationNo })
+      .first();
     await expect(row).toBeVisible({ timeout: 10000 });
     await expect(row).toContainText(uiRelatedOrderNo);
     await expect(row).toContainText('支付失败通知');
@@ -5190,7 +5523,7 @@ test.describe('支付管理 E2E', () => {
     await expect(row.getByRole('button', { name: '删除' })).toHaveCount(0);
 
     await Promise.all([
-      page.waitForResponse(response => response.url().includes('/api/payment/notification-records/detail')),
+      page.waitForResponse((response) => response.url().includes('/api/payment/notification-records/detail')),
       row.getByRole('button', { name: '详情' }).click(),
     ]);
     const drawer = page.getByRole('dialog').filter({ hasText: '通知记录详情' }).last();
@@ -5207,26 +5540,45 @@ test.describe('支付管理 E2E', () => {
     await expect(formItem(page, '关联订单').locator('input')).toHaveValue(uiRelatedOrderNo);
     await fillTextarea(page, '重推原因', 'E2E 页面确认业务系统恢复后人工补偿推送');
     await Promise.all([
-      page.waitForResponse(response => response.url().includes('/api/payment/notification-records/retry') && response.request().method() === 'POST'),
+      page.waitForResponse(
+        (response) =>
+          response.url().includes('/api/payment/notification-records/retry') && response.request().method() === 'POST',
+      ),
       retryDialog.getByRole('button', { name: '确认重推' }).click(),
     ]);
-    await expect(page.locator('.el-message').filter({ hasText: '通知重推已登记' }).last()).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('.el-message').filter({ hasText: '通知重推已登记' }).last()).toBeVisible({
+      timeout: 10000,
+    });
     await expect(retryDialog).toBeHidden({ timeout: 10000 });
 
     await toolbar.getByPlaceholder('通知单号 / 关联订单号 / 类型 / 状态').fill(uiNotificationNo);
-    const retryingStatusSelect = toolbar.locator('.el-form-item').filter({ hasText: '状态' }).locator('.el-select').first();
+    const retryingStatusSelect = toolbar
+      .locator('.el-form-item')
+      .filter({ hasText: '状态' })
+      .locator('.el-select')
+      .first();
     const retryingListboxId = await retryingStatusSelect.evaluate((element: Element) => {
       const target = element.querySelector('[role="combobox"]') || element.querySelector('input') || element;
       (target as HTMLElement).click();
       return target.getAttribute('aria-controls') || '';
     });
-    const retryingDropdown = page.locator(`[id="${retryingListboxId}"]`).locator('xpath=ancestor::*[contains(@class, "el-select-dropdown")]').first();
+    const retryingDropdown = page
+      .locator(`[id="${retryingListboxId}"]`)
+      .locator('xpath=ancestor::*[contains(@class, "el-select-dropdown")]')
+      .first();
     await clickVisibleOption(retryingDropdown, '重试中');
     await Promise.all([
-      page.waitForResponse(response => response.url().includes('/api/payment/notification-records/page') && response.url().includes('statusCode=RETRYING')),
+      page.waitForResponse(
+        (response) =>
+          response.url().includes('/api/payment/notification-records/page') &&
+          response.url().includes('statusCode=RETRYING'),
+      ),
       toolbar.getByRole('button', { name: '查询' }).click(),
     ]);
-    const retryingRow = page.locator('.payment-notification-records__table .el-table__body-wrapper tbody tr').filter({ hasText: uiNotificationNo }).first();
+    const retryingRow = page
+      .locator('.payment-notification-records__table .el-table__body-wrapper tbody tr')
+      .filter({ hasText: uiNotificationNo })
+      .first();
     await expect(retryingRow).toBeVisible({ timeout: 10000 });
     await expect(retryingRow).toContainText('重试中');
 
@@ -5244,11 +5596,20 @@ test.describe('支付管理 E2E', () => {
       const confirmDialog = page.getByRole('dialog').filter({ hasText: '投递到期通知' }).last();
       await expect(confirmDialog.getByText('不会修改资金状态')).toBeVisible();
       await Promise.all([
-        page.waitForResponse(response => response.url().includes('/api/payment/notification-records/deliver-due') && response.request().method() === 'POST'),
-        page.waitForResponse(response => response.url().includes('/api/payment/notification-records/page')),
+        page.waitForResponse(
+          (response) =>
+            response.url().includes('/api/payment/notification-records/deliver-due') &&
+            response.request().method() === 'POST',
+        ),
+        page.waitForResponse((response) => response.url().includes('/api/payment/notification-records/page')),
         confirmDialog.getByRole('button', { name: '确认投递' }).click(),
       ]);
-      await expect(page.locator('.el-message').filter({ hasText: /已投递|暂无到期通知/ }).last()).toBeVisible({ timeout: 10000 });
+      await expect(
+        page
+          .locator('.el-message')
+          .filter({ hasText: /已投递|暂无到期通知/ })
+          .last(),
+      ).toBeVisible({ timeout: 10000 });
       const delivered = await deliverReceiver.waitFor('PAYMENT_SUCCESS');
       expect(delivered).toMatchObject({
         notifyNo: dueNotificationNo,
@@ -5270,19 +5631,31 @@ test.describe('支付管理 E2E', () => {
         operationResult: 'SUCCESS',
       });
       await toolbar.getByPlaceholder('通知单号 / 关联订单号 / 类型 / 状态').fill(dueNotificationNo);
-      const successStatusSelect = toolbar.locator('.el-form-item').filter({ hasText: '状态' }).locator('.el-select').first();
+      const successStatusSelect = toolbar
+        .locator('.el-form-item')
+        .filter({ hasText: '状态' })
+        .locator('.el-select')
+        .first();
       const successListboxId = await successStatusSelect.evaluate((element: Element) => {
         const target = element.querySelector('[role="combobox"]') || element.querySelector('input') || element;
         (target as HTMLElement).click();
         return target.getAttribute('aria-controls') || '';
       });
-      const successDropdown = page.locator(`[id="${successListboxId}"]`).locator('xpath=ancestor::*[contains(@class, "el-select-dropdown")]').first();
+      const successDropdown = page
+        .locator(`[id="${successListboxId}"]`)
+        .locator('xpath=ancestor::*[contains(@class, "el-select-dropdown")]')
+        .first();
       await clickVisibleOption(successDropdown, '通知成功');
       await Promise.all([
-        page.waitForResponse(response => response.url().includes('/api/payment/notification-records/page') && response.url().includes('statusCode=SUCCESS')),
+        page.waitForResponse(
+          (response) =>
+            response.url().includes('/api/payment/notification-records/page') &&
+            response.url().includes('statusCode=SUCCESS'),
+        ),
         toolbar.getByRole('button', { name: '查询' }).click(),
       ]);
-      const deliveredRow = page.locator('.payment-notification-records__table .el-table__body-wrapper tbody tr')
+      const deliveredRow = page
+        .locator('.payment-notification-records__table .el-table__body-wrapper tbody tr')
         .filter({ hasText: dueNotificationNo })
         .first();
       await expect(deliveredRow).toBeVisible({ timeout: 10000 });
@@ -5295,14 +5668,21 @@ test.describe('支付管理 E2E', () => {
     const emptyKeyword = `NO-NOTIFICATION-RECORD-${Date.now()}`;
     await toolbar.getByPlaceholder('通知单号 / 关联订单号 / 类型 / 状态').fill(emptyKeyword);
     await Promise.all([
-      page.waitForResponse(response => response.url().includes('/api/payment/notification-records/page') && response.url().includes(encodeURIComponent(emptyKeyword))),
+      page.waitForResponse(
+        (response) =>
+          response.url().includes('/api/payment/notification-records/page') &&
+          response.url().includes(encodeURIComponent(emptyKeyword)),
+      ),
       toolbar.getByRole('button', { name: '查询' }).click(),
     ]);
     await expect(page.locator('.payment-notification-records__table')).toContainText('未查询到匹配的通知记录');
     await expect(page.locator('.payment-notification-records__table tbody tr')).toHaveCount(0);
-    await page.locator('.payment-notification-records__table .el-scrollbar__wrap').first().evaluate((element: Element) => {
-      element.scrollLeft = 0;
-    });
+    await page
+      .locator('.payment-notification-records__table .el-scrollbar__wrap')
+      .first()
+      .evaluate((element: Element) => {
+        element.scrollLeft = 0;
+      });
 
     await page.screenshot({ path: 'test-results/payment-notification-records.png', fullPage: true });
     expect(runtimeErrors).toEqual([]);
@@ -5316,8 +5696,8 @@ test.describe('支付管理 E2E', () => {
         runtimeErrors.push(message.text());
       }
     });
-    page.on('pageerror', error => runtimeErrors.push(error.message));
-    page.on('requestfailed', request => {
+    page.on('pageerror', (error) => runtimeErrors.push(error.message));
+    page.on('requestfailed', (request) => {
       if (request.url().includes('/api/payment/notification-records')) {
         runtimeErrors.push(`${request.method()} ${request.url()} ${request.failure()?.errorText || 'failed'}`);
       }
@@ -5344,17 +5724,22 @@ test.describe('支付管理 E2E', () => {
         channelCode: 'MANGO_PAY',
       });
 
-      await expect.poll(async () => {
-        const detailResponse = await page.request.get('/api/payment/notification-records/detail', {
-          headers,
-          params: { id: String(notificationRecordId) },
-        });
-        const detailBody = await expectBusinessOk<PaymentNotificationRecord>(detailResponse);
-        return detailBody.data?.notifyStatus;
-      }, {
-        timeout: 30_000,
-        intervals: [500, 1000, 2000],
-      }).toBe('SUCCESS');
+      await expect
+        .poll(
+          async () => {
+            const detailResponse = await page.request.get('/api/payment/notification-records/detail', {
+              headers,
+              params: { id: String(notificationRecordId) },
+            });
+            const detailBody = await expectBusinessOk<PaymentNotificationRecord>(detailResponse);
+            return detailBody.data?.notifyStatus;
+          },
+          {
+            timeout: 30_000,
+            intervals: [500, 1000, 2000],
+          },
+        )
+        .toBe('SUCCESS');
 
       const detailResponse = await page.request.get('/api/payment/notification-records/detail', {
         headers,
@@ -5380,14 +5765,24 @@ test.describe('支付管理 E2E', () => {
         (target as HTMLElement).click();
         return target.getAttribute('aria-controls') || '';
       });
-      const statusDropdown = page.locator(`[id="${statusListboxId}"]`).locator('xpath=ancestor::*[contains(@class, "el-select-dropdown")]').first();
+      const statusDropdown = page
+        .locator(`[id="${statusListboxId}"]`)
+        .locator('xpath=ancestor::*[contains(@class, "el-select-dropdown")]')
+        .first();
       await clickVisibleOption(statusDropdown, '通知成功');
       await Promise.all([
-        page.waitForResponse(response => response.url().includes('/api/payment/notification-records/page') && response.url().includes('statusCode=SUCCESS')),
+        page.waitForResponse(
+          (response) =>
+            response.url().includes('/api/payment/notification-records/page') &&
+            response.url().includes('statusCode=SUCCESS'),
+        ),
         toolbar.getByRole('button', { name: '查询' }).click(),
       ]);
 
-      const row = page.locator('.payment-notification-records__table .el-table__body-wrapper tbody tr').filter({ hasText: notificationNo }).first();
+      const row = page
+        .locator('.payment-notification-records__table .el-table__body-wrapper tbody tr')
+        .filter({ hasText: notificationNo })
+        .first();
       await expect(row).toBeVisible({ timeout: 10000 });
       await expect(row).toContainText(relatedOrderNo);
       await expect(row).toContainText('支付成功通知');
@@ -5408,8 +5803,8 @@ test.describe('支付管理 E2E', () => {
         runtimeErrors.push(message.text());
       }
     });
-    page.on('pageerror', error => runtimeErrors.push(error.message));
-    page.on('requestfailed', request => {
+    page.on('pageerror', (error) => runtimeErrors.push(error.message));
+    page.on('requestfailed', (request) => {
       if (request.url().includes('/api/payment/notification-records')) {
         runtimeErrors.push(`${request.method()} ${request.url()} ${request.failure()?.errorText || 'failed'}`);
       }
@@ -5437,10 +5832,12 @@ test.describe('支付管理 E2E', () => {
       });
       await expectBusinessOk<number>(retryDispatchResponse);
 
-      await expect.poll(async () => retryReceiver.notifications.length, {
-        timeout: 10_000,
-        intervals: [200, 500, 1000],
-      }).toBe(1);
+      await expect
+        .poll(async () => retryReceiver.notifications.length, {
+          timeout: 10_000,
+          intervals: [200, 500, 1000],
+        })
+        .toBe(1);
       const retryDetailResponse = await page.request.get('/api/payment/notification-records/detail', {
         headers,
         params: { id: String(retryRecordId) },
@@ -5461,23 +5858,30 @@ test.describe('支付管理 E2E', () => {
 
       const exhaustedNotificationNo = `NT-EXHAUST-E2E-${Date.now()}`;
       const exhaustedRelatedOrderNo = `PO-EXHAUST-E2E-${Date.now()}`;
-      const exhaustedRecordId = prepareDueNotificationRecord(exhaustedNotificationNo, exhaustedRelatedOrderNo, exhaustedReceiver.url, {
-        appId,
-        notifyStatus: 'FAILED',
-        retryTimes: 2,
-        responseCode: '500',
-        responseMessage: 'E2E 第二次通知仍失败',
-      });
+      const exhaustedRecordId = prepareDueNotificationRecord(
+        exhaustedNotificationNo,
+        exhaustedRelatedOrderNo,
+        exhaustedReceiver.url,
+        {
+          appId,
+          notifyStatus: 'FAILED',
+          retryTimes: 2,
+          responseCode: '500',
+          responseMessage: 'E2E 第二次通知仍失败',
+        },
+      );
       const exhaustedDispatchResponse = await page.request.post('/api/payment/notification-records/deliver-due', {
         headers,
         params: { limit: '20' },
       });
       await expectBusinessOk<number>(exhaustedDispatchResponse);
 
-      await expect.poll(async () => exhaustedReceiver.notifications.length, {
-        timeout: 10_000,
-        intervals: [200, 500, 1000],
-      }).toBe(1);
+      await expect
+        .poll(async () => exhaustedReceiver.notifications.length, {
+          timeout: 10_000,
+          intervals: [200, 500, 1000],
+        })
+        .toBe(1);
       const exhaustedDetailResponse = await page.request.get('/api/payment/notification-records/detail', {
         headers,
         params: { id: String(exhaustedRecordId) },
@@ -5503,14 +5907,22 @@ test.describe('支付管理 E2E', () => {
         (target as HTMLElement).click();
         return target.getAttribute('aria-controls') || '';
       });
-      const statusDropdown = page.locator(`[id="${statusListboxId}"]`).locator('xpath=ancestor::*[contains(@class, "el-select-dropdown")]').first();
+      const statusDropdown = page
+        .locator(`[id="${statusListboxId}"]`)
+        .locator('xpath=ancestor::*[contains(@class, "el-select-dropdown")]')
+        .first();
       await clickVisibleOption(statusDropdown, '通知失败');
       await Promise.all([
-        page.waitForResponse(response => response.url().includes('/api/payment/notification-records/page') && response.url().includes('statusCode=FAILED')),
+        page.waitForResponse(
+          (response) =>
+            response.url().includes('/api/payment/notification-records/page') &&
+            response.url().includes('statusCode=FAILED'),
+        ),
         toolbar.getByRole('button', { name: '查询' }).click(),
       ]);
 
-      const exhaustedRow = page.locator('.payment-notification-records__table .el-table__body-wrapper tbody tr')
+      const exhaustedRow = page
+        .locator('.payment-notification-records__table .el-table__body-wrapper tbody tr')
         .filter({ hasText: exhaustedNotificationNo })
         .first();
       await expect(exhaustedRow).toBeVisible({ timeout: 10000 });
@@ -5532,11 +5944,13 @@ test.describe('支付管理 E2E', () => {
         runtimeErrors.push(message.text());
       }
     });
-    page.on('pageerror', error => runtimeErrors.push(error.message));
-    page.on('requestfailed', request => {
-      if (request.url().includes('/api/payment/exception-orders')
-        || request.url().includes('/api/payment/refund-orders')
-        || request.url().includes('/api/payment/notification-records')) {
+    page.on('pageerror', (error) => runtimeErrors.push(error.message));
+    page.on('requestfailed', (request) => {
+      if (
+        request.url().includes('/api/payment/exception-orders') ||
+        request.url().includes('/api/payment/refund-orders') ||
+        request.url().includes('/api/payment/notification-records')
+      ) {
         runtimeErrors.push(`${request.method()} ${request.url()} ${request.failure()?.errorText || 'failed'}`);
       }
     });
@@ -5577,7 +5991,9 @@ test.describe('支付管理 E2E', () => {
       createRefundOrderForPayment(refundPayOrderNo, refundOrderNo, bizRefundNo);
 
       setMangoPayScenario('FAILED');
-      const queryTaskResponse = await page.request.post('/api/payment/tasks/query-processing-orders?limit=100', { headers });
+      const queryTaskResponse = await page.request.post('/api/payment/tasks/query-processing-orders?limit=100', {
+        headers,
+      });
       const queryTaskBody = await expectBusinessOk<PaymentTaskDispatchResult>(queryTaskResponse);
       expect(Number(queryTaskBody.data?.successCount || 0)).toBeGreaterThanOrEqual(1);
       const failedException = await findExceptionOrderByRelatedNo(page, headers, failedPayOrderNo);
@@ -5593,7 +6009,9 @@ test.describe('支付管理 E2E', () => {
       const closedBusinessOrderId = preparePayingBusinessOrder(closedBizOrderNo, notifyReceiver.url);
       const closedPayOrderNo = await createPayOrder(closedBusinessOrderId);
       expireBusinessOrder(closedBizOrderNo);
-      const expireTaskResponse = await page.request.post('/api/payment/tasks/expire-open-orders?limit=100', { headers });
+      const expireTaskResponse = await page.request.post('/api/payment/tasks/expire-open-orders?limit=100', {
+        headers,
+      });
       const expireTaskBody = await expectBusinessOk<PaymentTaskDispatchResult>(expireTaskResponse);
       expect(Number(expireTaskBody.data?.successCount || 0)).toBeGreaterThanOrEqual(1);
       const closedException = await findExceptionOrderByRelatedNo(page, headers, closedPayOrderNo);
@@ -5608,22 +6026,36 @@ test.describe('支付管理 E2E', () => {
       const exceptionToolbar = page.locator('.payment-exception-orders__toolbar');
       const searchPendingException = async (exceptionNo: string) => {
         await exceptionToolbar.getByPlaceholder('异常单号 / 关联订单号 / 类型 / 状态').fill(exceptionNo);
-        const statusSelect = exceptionToolbar.locator('.el-form-item').filter({ hasText: '状态' }).locator('.el-select').first();
+        const statusSelect = exceptionToolbar
+          .locator('.el-form-item')
+          .filter({ hasText: '状态' })
+          .locator('.el-select')
+          .first();
         const statusListboxId = await statusSelect.evaluate((element: Element) => {
           const target = element.querySelector('[role="combobox"]') || element.querySelector('input') || element;
           (target as HTMLElement).click();
           return target.getAttribute('aria-controls') || '';
         });
-        const statusDropdown = page.locator(`[id="${statusListboxId}"]`).locator('xpath=ancestor::*[contains(@class, "el-select-dropdown")]').first();
+        const statusDropdown = page
+          .locator(`[id="${statusListboxId}"]`)
+          .locator('xpath=ancestor::*[contains(@class, "el-select-dropdown")]')
+          .first();
         await clickVisibleOption(statusDropdown, '待处理');
         await Promise.all([
-          page.waitForResponse(response => response.url().includes('/api/payment/exception-orders/page') && response.url().includes(encodeURIComponent(exceptionNo))),
+          page.waitForResponse(
+            (response) =>
+              response.url().includes('/api/payment/exception-orders/page') &&
+              response.url().includes(encodeURIComponent(exceptionNo)),
+          ),
           exceptionToolbar.getByRole('button', { name: '查询' }).click(),
         ]);
       };
       const handleException = async (exceptionNo: string, actionLabel: string) => {
         await searchPendingException(exceptionNo);
-        const row = page.locator('.payment-exception-orders__table .el-table__body-wrapper tbody tr').filter({ hasText: exceptionNo }).first();
+        const row = page
+          .locator('.payment-exception-orders__table .el-table__body-wrapper tbody tr')
+          .filter({ hasText: exceptionNo })
+          .first();
         await expect(row).toBeVisible({ timeout: 10000 });
         await row.getByRole('button', { name: '处理' }).click();
         const handleDialog = page.getByRole('dialog').filter({ hasText: '处理异常订单' }).last();
@@ -5633,7 +6065,10 @@ test.describe('支付管理 E2E', () => {
         await fillTextarea(page, '处理结果', `E2E 真实状态流生成${actionLabel}结果`);
         await fillTextarea(page, '处理凭据', `payment-notify-${exceptionNo}`);
         await Promise.all([
-          page.waitForResponse(response => response.url().includes('/api/payment/exception-orders/handle') && response.request().method() === 'POST'),
+          page.waitForResponse(
+            (response) =>
+              response.url().includes('/api/payment/exception-orders/handle') && response.request().method() === 'POST',
+          ),
           handleDialog.getByRole('button', { name: '保存处理' }).click(),
         ]);
         await expect(handleDialog).toBeHidden({ timeout: 10000 });
@@ -5660,29 +6095,47 @@ test.describe('支付管理 E2E', () => {
       await openPaymentPage(page, '/#/payment/refund-orders', '退款订单');
       const refundToolbar = page.locator('.payment-refund-orders__toolbar');
       await refundToolbar.getByPlaceholder('退款单号 / 业务退款号 / 支付单号 / 通道单号').fill(refundOrderNo);
-      const refundStatusSelect = refundToolbar.locator('.el-form-item').filter({ hasText: '退款状态' }).locator('.el-select').first();
+      const refundStatusSelect = refundToolbar
+        .locator('.el-form-item')
+        .filter({ hasText: '退款状态' })
+        .locator('.el-select')
+        .first();
       const refundStatusListboxId = await refundStatusSelect.evaluate((element: Element) => {
         const target = element.querySelector('[role="combobox"]') || element.querySelector('input') || element;
         (target as HTMLElement).click();
         return target.getAttribute('aria-controls') || '';
       });
-      const refundStatusDropdown = page.locator(`[id="${refundStatusListboxId}"]`).locator('xpath=ancestor::*[contains(@class, "el-select-dropdown")]').first();
+      const refundStatusDropdown = page
+        .locator(`[id="${refundStatusListboxId}"]`)
+        .locator('xpath=ancestor::*[contains(@class, "el-select-dropdown")]')
+        .first();
       await clickVisibleOption(refundStatusDropdown, '退款中');
       await Promise.all([
-        page.waitForResponse(response => response.url().includes('/api/payment/refund-orders/page') && response.url().includes('statusCode=REFUNDING')),
+        page.waitForResponse(
+          (response) =>
+            response.url().includes('/api/payment/refund-orders/page') &&
+            response.url().includes('statusCode=REFUNDING'),
+        ),
         refundToolbar.getByRole('button', { name: '查询' }).click(),
       ]);
-      const refundRow = page.locator('.payment-refund-orders__table .el-table__body-wrapper tbody tr').filter({ hasText: refundOrderNo }).first();
+      const refundRow = page
+        .locator('.payment-refund-orders__table .el-table__body-wrapper tbody tr')
+        .filter({ hasText: refundOrderNo })
+        .first();
       await expect(refundRow).toBeVisible({ timeout: 10000 });
       setMangoPayRefundScenario('FAILED');
       await Promise.all([
-        page.waitForResponse(response => response.url().includes('/api/payment/refund-orders/query-channel') && response.request().method() === 'POST'),
+        page.waitForResponse(
+          (response) =>
+            response.url().includes('/api/payment/refund-orders/query-channel') &&
+            response.request().method() === 'POST',
+        ),
         refundRow.getByRole('button', { name: '主动查退款' }).click(),
       ]);
       const refundFailedNotification = await notifyReceiver.waitFor(
         'REFUND_FAILED',
         10_000,
-        notification => notification.refundOrderNo === refundOrderNo,
+        (notification) => notification.refundOrderNo === refundOrderNo,
       );
       expect(refundFailedNotification).toMatchObject({
         notificationType: 'REFUND_FAILED',
@@ -5695,21 +6148,41 @@ test.describe('支付管理 E2E', () => {
 
       await openPaymentPage(page, '/#/payment/notification-records', '通知记录');
       const notificationToolbar = page.locator('.payment-notification-records__toolbar');
-      const assertNotificationRow = async (notification: PaymentOpenNotification, typeName: string, relatedOrderNo: string) => {
-        await notificationToolbar.getByPlaceholder('通知单号 / 关联订单号 / 类型 / 状态').fill(notification.notifyNo || '');
-        const statusSelect = notificationToolbar.locator('.el-form-item').filter({ hasText: '状态' }).locator('.el-select').first();
+      const assertNotificationRow = async (
+        notification: PaymentOpenNotification,
+        typeName: string,
+        relatedOrderNo: string,
+      ) => {
+        await notificationToolbar
+          .getByPlaceholder('通知单号 / 关联订单号 / 类型 / 状态')
+          .fill(notification.notifyNo || '');
+        const statusSelect = notificationToolbar
+          .locator('.el-form-item')
+          .filter({ hasText: '状态' })
+          .locator('.el-select')
+          .first();
         const statusListboxId = await statusSelect.evaluate((element: Element) => {
           const target = element.querySelector('[role="combobox"]') || element.querySelector('input') || element;
           (target as HTMLElement).click();
           return target.getAttribute('aria-controls') || '';
         });
-        const statusDropdown = page.locator(`[id="${statusListboxId}"]`).locator('xpath=ancestor::*[contains(@class, "el-select-dropdown")]').first();
+        const statusDropdown = page
+          .locator(`[id="${statusListboxId}"]`)
+          .locator('xpath=ancestor::*[contains(@class, "el-select-dropdown")]')
+          .first();
         await clickVisibleOption(statusDropdown, '通知成功');
         await Promise.all([
-          page.waitForResponse(response => response.url().includes('/api/payment/notification-records/page') && response.url().includes('statusCode=SUCCESS')),
+          page.waitForResponse(
+            (response) =>
+              response.url().includes('/api/payment/notification-records/page') &&
+              response.url().includes('statusCode=SUCCESS'),
+          ),
           notificationToolbar.getByRole('button', { name: '查询' }).click(),
         ]);
-        const row = page.locator('.payment-notification-records__table .el-table__body-wrapper tbody tr').filter({ hasText: notification.notifyNo || '' }).first();
+        const row = page
+          .locator('.payment-notification-records__table .el-table__body-wrapper tbody tr')
+          .filter({ hasText: notification.notifyNo || '' })
+          .first();
         await expect(row).toBeVisible({ timeout: 10000 });
         await expect(row).toContainText(relatedOrderNo);
         await expect(row).toContainText(typeName);
@@ -5734,8 +6207,8 @@ test.describe('支付管理 E2E', () => {
         runtimeErrors.push(message.text());
       }
     });
-    page.on('pageerror', error => runtimeErrors.push(error.message));
-    page.on('requestfailed', request => {
+    page.on('pageerror', (error) => runtimeErrors.push(error.message));
+    page.on('requestfailed', (request) => {
       if (request.url().includes('/api/payment/reconciliations')) {
         runtimeErrors.push(`${request.method()} ${request.url()} ${request.failure()?.errorText || 'failed'}`);
       }
@@ -5767,11 +6240,9 @@ test.describe('支付管理 E2E', () => {
 
     const statusesResponse = await page.request.get('/api/payment/reconciliations/statuses', { headers });
     const statusesBody = await expectBusinessOk<PaymentReconciliationStatus[]>(statusesResponse);
-    expect(statusesBody.data?.map(item => item.statusCode)).toEqual(expect.arrayContaining([
-      'IMPORTED',
-      'MATCHED',
-      'DIFFERENCE',
-    ]));
+    expect(statusesBody.data?.map((item) => item.statusCode)).toEqual(
+      expect.arrayContaining(['IMPORTED', 'MATCHED', 'DIFFERENCE']),
+    );
 
     const importResponse = await page.request.post('/api/payment/reconciliations/import', {
       headers,
@@ -5780,13 +6251,15 @@ test.describe('支付管理 E2E', () => {
         billDate,
         billFileName: `mango-pay-recon-${suffix}.csv`,
         fileDigest: digest,
-        items: [{
-          channelTradeNo,
-          tradeType: 'PAYMENT',
-          amount: 128800,
-          fee: 128,
-          tradeTime: `${billDate} 10:30:00`,
-        }],
+        items: [
+          {
+            channelTradeNo,
+            tradeType: 'PAYMENT',
+            amount: 128800,
+            fee: 128,
+            tradeTime: `${billDate} 10:30:00`,
+          },
+        ],
       },
     });
     const importBody = await expectBusinessOk<PaymentReconciliation>(importResponse);
@@ -5820,13 +6293,15 @@ test.describe('支付管理 E2E', () => {
         billDate,
         billFileName: `mango-pay-recon-${suffix}.csv`,
         fileDigest: digest,
-        items: [{
-          channelTradeNo,
-          tradeType: 'PAYMENT',
-          amount: 128800,
-          fee: 128,
-          tradeTime: `${billDate} 10:30:00`,
-        }],
+        items: [
+          {
+            channelTradeNo,
+            tradeType: 'PAYMENT',
+            amount: 128800,
+            fee: 128,
+            tradeTime: `${billDate} 10:30:00`,
+          },
+        ],
       },
     });
     const duplicateBody = await expectBusinessError(duplicateResponse);
@@ -5841,13 +6316,15 @@ test.describe('支付管理 E2E', () => {
         billDate,
         billFileName: `mango-pay-recon-diff-${suffix}.csv`,
         fileDigest: diffDigest,
-        items: [{
-          channelTradeNo: missingTradeNo,
-          tradeType: 'PAYMENT',
-          amount: 9900,
-          fee: 9,
-          tradeTime: `${billDate} 11:30:00`,
-        }],
+        items: [
+          {
+            channelTradeNo: missingTradeNo,
+            tradeType: 'PAYMENT',
+            amount: 9900,
+            fee: 9,
+            tradeTime: `${billDate} 11:30:00`,
+          },
+        ],
       },
     });
     const diffBody = await expectBusinessOk<PaymentReconciliation>(diffResponse);
@@ -5868,7 +6345,7 @@ test.describe('支付管理 E2E', () => {
       params: { page: '1', size: '10', keyword: missingTradeNo },
     });
     const differenceBody = await expectBusinessOk<PageData>(differenceResponse);
-    const difference = (differenceBody.data?.list || []).find(item => item.relatedOrderNo === missingTradeNo);
+    const difference = (differenceBody.data?.list || []).find((item) => item.relatedOrderNo === missingTradeNo);
     expect(difference).toMatchObject({
       differenceType: 'CHANNEL_SUCCESS_LOCAL_MISSING',
       processStatus: 'PENDING',
@@ -5891,17 +6368,20 @@ test.describe('支付管理 E2E', () => {
     await openPaymentPage(page, '/#/payment/reconciliations', '对账管理');
     await page.getByPlaceholder('批次号 / 通道 / 文件 / 导入人').fill(importBody.data?.reconciliationNo || '');
     await Promise.all([
-      page.waitForResponse(response => response.url().includes('/api/payment/reconciliations/page')),
+      page.waitForResponse((response) => response.url().includes('/api/payment/reconciliations/page')),
       page.getByRole('button', { name: '查询' }).click(),
     ]);
-    const row = page.locator('.payment-reconciliations__table .el-table__body-wrapper tbody tr').filter({ hasText: importBody.data?.reconciliationNo || '' }).first();
+    const row = page
+      .locator('.payment-reconciliations__table .el-table__body-wrapper tbody tr')
+      .filter({ hasText: importBody.data?.reconciliationNo || '' })
+      .first();
     await expect(row).toBeVisible({ timeout: 10000 });
     await expect(row).toContainText(reconciliationChannelCode);
     await expect(row).toContainText('已平账');
     await expect(row.getByRole('button', { name: '删除' })).toHaveCount(0);
 
     await Promise.all([
-      page.waitForResponse(response => response.url().includes('/api/payment/reconciliations/detail')),
+      page.waitForResponse((response) => response.url().includes('/api/payment/reconciliations/detail')),
       row.getByRole('button', { name: '详情' }).click(),
     ]);
     const drawer = page.getByRole('dialog').filter({ hasText: '对账批次详情' }).last();
@@ -5921,7 +6401,10 @@ test.describe('支付管理 E2E', () => {
     await importDialog.locator('.el-input-number input').nth(1).fill('18');
     await importDialog.locator('input[placeholder="选择交易时间"]').fill(`${billDate} 12:30:00`);
     await Promise.all([
-      page.waitForResponse(response => response.url().includes('/api/payment/reconciliations/import') && response.request().method() === 'POST'),
+      page.waitForResponse(
+        (response) =>
+          response.url().includes('/api/payment/reconciliations/import') && response.request().method() === 'POST',
+      ),
       importDialog.getByRole('button', { name: '导入' }).click(),
     ]);
     await expect(page.locator('.el-message').filter({ hasText: '账单已导入' }).last()).toBeVisible({ timeout: 10000 });
@@ -5930,13 +6413,20 @@ test.describe('支付管理 E2E', () => {
     const emptyKeyword = `NO-RECON-${Date.now()}`;
     await page.getByPlaceholder('批次号 / 通道 / 文件 / 导入人').fill(emptyKeyword);
     await Promise.all([
-      page.waitForResponse(response => response.url().includes('/api/payment/reconciliations/page') && response.url().includes(encodeURIComponent(emptyKeyword))),
+      page.waitForResponse(
+        (response) =>
+          response.url().includes('/api/payment/reconciliations/page') &&
+          response.url().includes(encodeURIComponent(emptyKeyword)),
+      ),
       page.getByRole('button', { name: '查询' }).click(),
     ]);
     await expect(page.locator('.payment-reconciliations__table')).toContainText('未查询到匹配的对账批次');
-    await page.locator('.payment-reconciliations__table .el-scrollbar__wrap').first().evaluate((element: Element) => {
-      element.scrollLeft = 0;
-    });
+    await page
+      .locator('.payment-reconciliations__table .el-scrollbar__wrap')
+      .first()
+      .evaluate((element: Element) => {
+        element.scrollLeft = 0;
+      });
 
     await page.screenshot({ path: 'test-results/payment-reconciliations.png', fullPage: true });
     expect(runtimeErrors).toEqual([]);
@@ -5949,8 +6439,8 @@ test.describe('支付管理 E2E', () => {
         runtimeErrors.push(message.text());
       }
     });
-    page.on('pageerror', error => runtimeErrors.push(error.message));
-    page.on('requestfailed', request => {
+    page.on('pageerror', (error) => runtimeErrors.push(error.message));
+    page.on('requestfailed', (request) => {
       if (request.url().includes('/api/payment/reconciliations')) {
         runtimeErrors.push(`${request.method()} ${request.url()} ${request.failure()?.errorText || 'failed'}`);
       }
@@ -5999,9 +6489,10 @@ test.describe('支付管理 E2E', () => {
     await expect(formItem(page, '账单日期').locator('input')).toHaveValue(billDate);
 
     const [generateResponse] = await Promise.all([
-      page.waitForResponse(response =>
-        response.url().includes('/api/payment/reconciliations/mango-pay/virtual/generate')
-        && response.request().method() === 'POST'
+      page.waitForResponse(
+        (response) =>
+          response.url().includes('/api/payment/reconciliations/mango-pay/virtual/generate') &&
+          response.request().method() === 'POST',
       ),
       generateDialog.getByRole('button', { name: '生成' }).click(),
     ]);
@@ -6013,13 +6504,18 @@ test.describe('支付管理 E2E', () => {
       billFileName: `MANGO_PAY-${billDate}-generated.bill`,
     });
     expect(Number(generateBody.data?.totalCount || 0)).toBeGreaterThan(0);
-    expect(generateBody.data?.details?.some(detail =>
-      detail.channelTradeNo === channelTradeNo
-      && detail.tradeType === 'PAYMENT'
-      && detail.matchStatus === 'MATCHED'
-      && detail.matchedOrderNo === payOrderNo
-    )).toBeTruthy();
-    await expect(page.locator('.el-message').filter({ hasText: '芒果支付账单已生成' }).last()).toBeVisible({ timeout: 10000 });
+    expect(
+      generateBody.data?.details?.some(
+        (detail) =>
+          detail.channelTradeNo === channelTradeNo &&
+          detail.tradeType === 'PAYMENT' &&
+          detail.matchStatus === 'MATCHED' &&
+          detail.matchedOrderNo === payOrderNo,
+      ),
+    ).toBeTruthy();
+    await expect(page.locator('.el-message').filter({ hasText: '芒果支付账单已生成' }).last()).toBeVisible({
+      timeout: 10000,
+    });
     await expect(generateDialog).toBeHidden({ timeout: 10000 });
 
     const reconciliationNo = generateBody.data?.reconciliationNo || '';
@@ -6034,10 +6530,13 @@ test.describe('支付管理 E2E', () => {
 
     await page.getByPlaceholder('批次号 / 通道 / 文件 / 导入人').fill(reconciliationNo);
     await Promise.all([
-      page.waitForResponse(response => response.url().includes('/api/payment/reconciliations/page')),
+      page.waitForResponse((response) => response.url().includes('/api/payment/reconciliations/page')),
       page.getByRole('button', { name: '查询' }).click(),
     ]);
-    const row = page.locator('.payment-reconciliations__table .el-table__body-wrapper tbody tr').filter({ hasText: reconciliationNo }).first();
+    const row = page
+      .locator('.payment-reconciliations__table .el-table__body-wrapper tbody tr')
+      .filter({ hasText: reconciliationNo })
+      .first();
     await expect(row).toBeVisible({ timeout: 10000 });
     await expect(row).toContainText('MANGO_PAY');
     await expect(row).toContainText('已平账');
@@ -6045,7 +6544,7 @@ test.describe('支付管理 E2E', () => {
     await expect(row.getByRole('button', { name: '删除' })).toHaveCount(0);
 
     await Promise.all([
-      page.waitForResponse(response => response.url().includes('/api/payment/reconciliations/detail')),
+      page.waitForResponse((response) => response.url().includes('/api/payment/reconciliations/detail')),
       row.getByRole('button', { name: '详情' }).click(),
     ]);
     const drawer = page.getByRole('dialog').filter({ hasText: '对账批次详情' }).last();
@@ -6067,9 +6566,12 @@ test.describe('支付管理 E2E', () => {
       operationResult: 'SUCCESS',
     });
 
-    await page.locator('.payment-reconciliations__table .el-scrollbar__wrap').first().evaluate((element: Element) => {
-      element.scrollLeft = 0;
-    });
+    await page
+      .locator('.payment-reconciliations__table .el-scrollbar__wrap')
+      .first()
+      .evaluate((element: Element) => {
+        element.scrollLeft = 0;
+      });
     await page.screenshot({ path: 'test-results/payment-reconciliations-special-bill.png', fullPage: true });
     expect(runtimeErrors).toEqual([]);
   });
@@ -6081,8 +6583,8 @@ test.describe('支付管理 E2E', () => {
         runtimeErrors.push(message.text());
       }
     });
-    page.on('pageerror', error => runtimeErrors.push(error.message));
-    page.on('requestfailed', request => {
+    page.on('pageerror', (error) => runtimeErrors.push(error.message));
+    page.on('requestfailed', (request) => {
       if (request.url().includes('/api/payment/reconciliations')) {
         runtimeErrors.push(`${request.method()} ${request.url()} ${request.failure()?.errorText || 'failed'}`);
       }
@@ -6141,7 +6643,7 @@ test.describe('支付管理 E2E', () => {
           tradeTime,
         };
       });
-      if (!items.some(item => item.channelTradeNo === channelTradeNo)) {
+      if (!items.some((item) => item.channelTradeNo === channelTradeNo)) {
         items.unshift({
           channelTradeNo,
           tradeType: 'PAYMENT',
@@ -6165,8 +6667,8 @@ test.describe('支付管理 E2E', () => {
         params: { page: '1', size: '50', contractId: '331001' },
       });
       const existingSourcesBody = await expectBusinessOk<PageData>(existingSourcesResponse);
-      const existingSource = (existingSourcesBody.data?.list || []).find(item =>
-        item.channelCode === 'MANGO_PAY' && item.fetchMode === 'HTTP'
+      const existingSource = (existingSourcesBody.data?.list || []).find(
+        (item) => item.channelCode === 'MANGO_PAY' && item.fetchMode === 'HTTP',
       ) as PaymentChannelBillSource | undefined;
       let sourceId = existingSource?.id;
       if (existingSource?.id) {
@@ -6199,16 +6701,18 @@ test.describe('支付管理 E2E', () => {
 
       const modeResponse = await page.request.get('/api/payment/reconciliations/bill-fetch-modes', { headers });
       const modeBody = await expectBusinessOk<Array<{ fetchMode: string; fetchModeName: string }>>(modeResponse);
-      expect(modeBody.data).toEqual(expect.arrayContaining([
-        expect.objectContaining({ fetchMode: 'HTTP', fetchModeName: 'HTTP 接口' }),
-        expect.objectContaining({ fetchMode: 'FTP', fetchModeName: 'FTP 拉取' }),
-        expect.objectContaining({ fetchMode: 'FTPS', fetchModeName: 'FTPS 拉取' }),
-        expect.objectContaining({ fetchMode: 'MANUAL', fetchModeName: '手动上传' }),
-      ]));
+      expect(modeBody.data).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ fetchMode: 'HTTP', fetchModeName: 'HTTP 接口' }),
+          expect.objectContaining({ fetchMode: 'FTP', fetchModeName: 'FTP 拉取' }),
+          expect.objectContaining({ fetchMode: 'FTPS', fetchModeName: 'FTPS 拉取' }),
+          expect.objectContaining({ fetchMode: 'MANUAL', fetchModeName: '手动上传' }),
+        ]),
+      );
 
       await openPaymentPage(page, '/#/payment/reconciliations', '对账管理');
       const [sourceResponse] = await Promise.all([
-        page.waitForResponse(response => response.url().includes('/api/payment/reconciliations/bill-sources/page')),
+        page.waitForResponse((response) => response.url().includes('/api/payment/reconciliations/bill-sources/page')),
         page.getByRole('button', { name: '发起获取' }).click(),
       ]);
       await expectBusinessOk<PageData>(sourceResponse);
@@ -6217,7 +6721,11 @@ test.describe('支付管理 E2E', () => {
       await chooseSelect(page, '账单源', 'MANGO_PAY / HTTP 接口');
       await expect(formItem(page, '账单日期').locator('input')).toHaveValue(billDate);
       const [fetchResponse] = await Promise.all([
-        page.waitForResponse(response => response.url().includes('/api/payment/reconciliations/bill-fetch') && response.request().method() === 'POST'),
+        page.waitForResponse(
+          (response) =>
+            response.url().includes('/api/payment/reconciliations/bill-fetch') &&
+            response.request().method() === 'POST',
+        ),
         fetchDialog.getByRole('button', { name: '发起获取' }).click(),
       ]);
       const fetchBody = await expectBusinessOk<PaymentReconciliation>(fetchResponse);
@@ -6226,19 +6734,23 @@ test.describe('支付管理 E2E', () => {
         billDate,
         matchStatus: 'MATCHED',
       });
-      expect(fetchBody.data?.details?.some(detail =>
-        detail.channelTradeNo === channelTradeNo && detail.matchedOrderNo === payOrderNo
-      )).toBeTruthy();
-      await expect(page.locator('.el-message').filter({ hasText: '账单获取并对账完成' }).last()).toBeVisible({ timeout: 10000 });
-      expect(billSource.requests.some(url => url.includes('billDate=') && url.includes('page=1'))).toBeTruthy();
+      expect(
+        fetchBody.data?.details?.some(
+          (detail) => detail.channelTradeNo === channelTradeNo && detail.matchedOrderNo === payOrderNo,
+        ),
+      ).toBeTruthy();
+      await expect(page.locator('.el-message').filter({ hasText: '账单获取并对账完成' }).last()).toBeVisible({
+        timeout: 10000,
+      });
+      expect(billSource.requests.some((url) => url.includes('billDate=') && url.includes('page=1'))).toBeTruthy();
 
       const fetchBatchResponse = await page.request.get('/api/payment/reconciliations/bill-fetch-batches/page', {
         headers,
         params: { page: '1', size: '10', keyword: fetchBody.data?.reconciliationNo || '' },
       });
       const fetchBatchBody = await expectBusinessOk<PageData>(fetchBatchResponse);
-      const fetchBatch = (fetchBatchBody.data?.list || []).find(item =>
-        item.reconciliationNo === fetchBody.data?.reconciliationNo
+      const fetchBatch = (fetchBatchBody.data?.list || []).find(
+        (item) => item.reconciliationNo === fetchBody.data?.reconciliationNo,
       ) as PaymentChannelBillFetchBatch | undefined;
       expect(fetchBatch).toMatchObject({
         channelCode: 'MANGO_PAY',
@@ -6260,8 +6772,8 @@ test.describe('支付管理 E2E', () => {
         runtimeErrors.push(message.text());
       }
     });
-    page.on('pageerror', error => runtimeErrors.push(error.message));
-    page.on('requestfailed', request => {
+    page.on('pageerror', (error) => runtimeErrors.push(error.message));
+    page.on('requestfailed', (request) => {
       if (request.url().includes('/api/payment/differences')) {
         runtimeErrors.push(`${request.method()} ${request.url()} ${request.failure()?.errorText || 'failed'}`);
       }
@@ -6275,22 +6787,15 @@ test.describe('支付管理 E2E', () => {
 
     const statusesResponse = await page.request.get('/api/payment/differences/statuses', { headers });
     const statusesBody = await expectBusinessOk<PaymentDifferenceStatus[]>(statusesResponse);
-    expect(statusesBody.data?.map(item => item.statusCode)).toEqual(expect.arrayContaining([
-      'PENDING',
-      'PROCESSING',
-      'HANDLED',
-      'IGNORED',
-      'CLOSED',
-    ]));
+    expect(statusesBody.data?.map((item) => item.statusCode)).toEqual(
+      expect.arrayContaining(['PENDING', 'PROCESSING', 'HANDLED', 'IGNORED', 'CLOSED']),
+    );
 
     const actionsResponse = await page.request.get('/api/payment/differences/actions', { headers });
     const actionsBody = await expectBusinessOk<PaymentDifferenceAction[]>(actionsResponse);
-    expect(actionsBody.data?.map(item => item.actionCode)).toEqual(expect.arrayContaining([
-      'ACTIVE_QUERY',
-      'SUPPLEMENT_ORDER',
-      'IGNORE',
-      'CLOSE',
-    ]));
+    expect(actionsBody.data?.map((item) => item.actionCode)).toEqual(
+      expect.arrayContaining(['ACTIVE_QUERY', 'SUPPLEMENT_ORDER', 'IGNORE', 'CLOSE']),
+    );
 
     const importResponse = await page.request.post('/api/payment/reconciliations/import', {
       headers,
@@ -6299,13 +6804,15 @@ test.describe('支付管理 E2E', () => {
         billDate,
         billFileName: `mango-pay-diff-process-${suffix}.csv`,
         fileDigest: `sha256-special-diff-process-${suffix}`,
-        items: [{
-          channelTradeNo: missingTradeNo,
-          tradeType: 'PAYMENT',
-          amount: 7799,
-          fee: 7,
-          tradeTime: `${billDate} 13:30:00`,
-        }],
+        items: [
+          {
+            channelTradeNo: missingTradeNo,
+            tradeType: 'PAYMENT',
+            amount: 7799,
+            fee: 7,
+            tradeTime: `${billDate} 13:30:00`,
+          },
+        ],
       },
     });
     const importBody = await expectBusinessOk<PaymentReconciliation>(importResponse);
@@ -6316,7 +6823,8 @@ test.describe('支付管理 E2E', () => {
       params: { page: '1', size: '10', keyword: missingTradeNo, statusCode: 'PENDING' },
     });
     const pageBody = await expectBusinessOk<PageData>(pageResponse);
-    const apiRow = (pageBody.data?.list || []).find(item => item.relatedOrderNo === missingTradeNo) as PaymentDifference | undefined;
+    const apiRow = (pageBody.data?.list || []).find((item) => item.relatedOrderNo === missingTradeNo) as
+      PaymentDifference | undefined;
     expect(apiRow).toMatchObject({
       relatedOrderNo: missingTradeNo,
       differenceType: 'CHANNEL_SUCCESS_LOCAL_MISSING',
@@ -6350,14 +6858,23 @@ test.describe('支付管理 E2E', () => {
       (target as HTMLElement).click();
       return target.getAttribute('aria-controls') || '';
     });
-    const statusDropdown = page.locator(`[id="${statusListboxId}"]`).locator('xpath=ancestor::*[contains(@class, "el-select-dropdown")]').first();
+    const statusDropdown = page
+      .locator(`[id="${statusListboxId}"]`)
+      .locator('xpath=ancestor::*[contains(@class, "el-select-dropdown")]')
+      .first();
     await clickVisibleOption(statusDropdown, '待处理');
     await Promise.all([
-      page.waitForResponse(response => response.url().includes('/api/payment/differences/page') && response.url().includes('statusCode=PENDING')),
+      page.waitForResponse(
+        (response) =>
+          response.url().includes('/api/payment/differences/page') && response.url().includes('statusCode=PENDING'),
+      ),
       toolbar.getByRole('button', { name: '查询' }).click(),
     ]);
 
-    const row = page.locator('.payment-differences__table .el-table__body-wrapper tbody tr').filter({ hasText: missingTradeNo }).first();
+    const row = page
+      .locator('.payment-differences__table .el-table__body-wrapper tbody tr')
+      .filter({ hasText: missingTradeNo })
+      .first();
     await expect(row).toBeVisible({ timeout: 10000 });
     await expect(row).toContainText(importBody.data?.reconciliationNo || '');
     await expect(row).toContainText('通道成功我方无单');
@@ -6366,7 +6883,7 @@ test.describe('支付管理 E2E', () => {
     await expect(row.getByRole('button', { name: '删除' })).toHaveCount(0);
 
     await Promise.all([
-      page.waitForResponse(response => response.url().includes('/api/payment/differences/detail')),
+      page.waitForResponse((response) => response.url().includes('/api/payment/differences/detail')),
       row.getByRole('button', { name: '详情' }).click(),
     ]);
     const drawer = page.getByRole('dialog').filter({ hasText: '差异详情' }).last();
@@ -6382,7 +6899,10 @@ test.describe('支付管理 E2E', () => {
     await fillTextarea(page, '处理结果', '关闭差异，不直接修改支付订单或退款订单状态');
     await fillInput(page, '处理凭据', `mango-file:diff-e2e-${suffix}`);
     await Promise.all([
-      page.waitForResponse(response => response.url().includes('/api/payment/differences/handle') && response.request().method() === 'POST'),
+      page.waitForResponse(
+        (response) =>
+          response.url().includes('/api/payment/differences/handle') && response.request().method() === 'POST',
+      ),
       dialog(page).getByRole('button', { name: '保存处理' }).click(),
     ]);
     await expect(page.locator('.el-message').filter({ hasText: '差异已处理' }).last()).toBeVisible({ timeout: 10000 });
@@ -6434,13 +6954,22 @@ test.describe('支付管理 E2E', () => {
       (target as HTMLElement).click();
       return target.getAttribute('aria-controls') || '';
     });
-    const closedStatusDropdown = page.locator(`[id="${closedStatusListboxId}"]`).locator('xpath=ancestor::*[contains(@class, "el-select-dropdown")]').first();
+    const closedStatusDropdown = page
+      .locator(`[id="${closedStatusListboxId}"]`)
+      .locator('xpath=ancestor::*[contains(@class, "el-select-dropdown")]')
+      .first();
     await clickVisibleOption(closedStatusDropdown, '已关闭');
     await Promise.all([
-      page.waitForResponse(response => response.url().includes('/api/payment/differences/page') && response.url().includes('statusCode=CLOSED')),
+      page.waitForResponse(
+        (response) =>
+          response.url().includes('/api/payment/differences/page') && response.url().includes('statusCode=CLOSED'),
+      ),
       toolbar.getByRole('button', { name: '查询' }).click(),
     ]);
-    const closedRow = page.locator('.payment-differences__table .el-table__body-wrapper tbody tr').filter({ hasText: missingTradeNo }).first();
+    const closedRow = page
+      .locator('.payment-differences__table .el-table__body-wrapper tbody tr')
+      .filter({ hasText: missingTradeNo })
+      .first();
     await expect(closedRow).toBeVisible({ timeout: 10000 });
     await expect(closedRow).toContainText('已关闭');
     await expect(closedRow.getByRole('button', { name: '处理' })).toHaveCount(0);
@@ -6448,13 +6977,20 @@ test.describe('支付管理 E2E', () => {
     const emptyKeyword = `NO-DIFF-${Date.now()}`;
     await toolbar.getByPlaceholder('差异单号 / 订单号 / 批次号 / 通道').fill(emptyKeyword);
     await Promise.all([
-      page.waitForResponse(response => response.url().includes('/api/payment/differences/page') && response.url().includes(encodeURIComponent(emptyKeyword))),
+      page.waitForResponse(
+        (response) =>
+          response.url().includes('/api/payment/differences/page') &&
+          response.url().includes(encodeURIComponent(emptyKeyword)),
+      ),
       toolbar.getByRole('button', { name: '查询' }).click(),
     ]);
     await expect(page.locator('.payment-differences__table')).toContainText('未查询到匹配的差异单');
-    await page.locator('.payment-differences__table .el-scrollbar__wrap').first().evaluate((element: Element) => {
-      element.scrollLeft = 0;
-    });
+    await page
+      .locator('.payment-differences__table .el-scrollbar__wrap')
+      .first()
+      .evaluate((element: Element) => {
+        element.scrollLeft = 0;
+      });
 
     await page.screenshot({ path: 'test-results/payment-differences.png', fullPage: true });
     expect(runtimeErrors).toEqual([]);
@@ -6466,7 +7002,9 @@ test.describe('支付管理 E2E', () => {
     const businessOrderId = preparePayingBusinessOrder(e2eBizOrderNo);
     setMangoPayScenario('PAYING');
     try {
-      const sessionPromise = page.waitForResponse(response => response.url().includes('/api/payment/cashier/session'));
+      const sessionPromise = page.waitForResponse((response) =>
+        response.url().includes('/api/payment/cashier/session'),
+      );
       await page.goto(`/#/payment/cashier-configs/350001/cashier?businessOrderId=${businessOrderId}`);
       const sessionResponse = await sessionPromise;
       const sessionBody = await expectBusinessOk<CashierSession>(sessionResponse);
@@ -6475,7 +7013,7 @@ test.describe('支付管理 E2E', () => {
       const cashierPage = page.locator('.cashier-page');
 
       await expect(cashierPage.getByText(e2eBizOrderNo).first()).toBeVisible({ timeout: 10000 });
-      const payPromise = page.waitForResponse(response => response.url().includes('/api/payment/cashier/pay'));
+      const payPromise = page.waitForResponse((response) => response.url().includes('/api/payment/cashier/pay'));
       const payResponse = await payPromise;
       const payBody = await expectBusinessOk<CashierPayResult>(payResponse);
       expect(payBody.data?.status).toBe('PAYING');
@@ -6485,20 +7023,22 @@ test.describe('支付管理 E2E', () => {
       await expect(cashierPage.getByAltText('支付二维码')).toBeVisible({ timeout: 10000 });
       await expect(cashierPage.getByRole('button', { name: '我已完成支付' })).toBeVisible();
 
-      const firstResultPromise = page.waitForResponse(response => response.url().includes('/api/payment/cashier/pay-result'));
+      const firstResultPromise = page.waitForResponse((response) =>
+        response.url().includes('/api/payment/cashier/pay-result'),
+      );
       const firstResultResponse = await firstResultPromise;
       const firstResultBody = await expectBusinessOk<CashierPayResult>(firstResultResponse);
       expect(firstResultBody.data?.status).toBe('PAYING');
 
-      const returnNavigationPromise = page.waitForRequest(request =>
-        request.isNavigationRequest() && request.url() === 'https://business.example.test/payment/result'
+      const returnNavigationPromise = page.waitForRequest(
+        (request) => request.isNavigationRequest() && request.url() === 'https://business.example.test/payment/result',
       );
       finishProcessingPayment(payBody.data?.payOrderNo || '');
       const successResultPromise = page.waitForResponse(async (response) => {
         if (!response.url().includes('/api/payment/cashier/pay-result')) {
           return false;
         }
-        const body = await response.json() as ApiBody<CashierPayResult>;
+        const body = (await response.json()) as ApiBody<CashierPayResult>;
         return body.data?.status === 'SUCCESS';
       });
       await successResultPromise;
@@ -6537,7 +7077,7 @@ test.describe('支付管理 E2E', () => {
     await cashierPage.getByRole('button', { name: '企业网银' }).click();
     await expect(cashierPage.getByRole('button', { name: '企业网银', exact: true })).toHaveClass(/active/);
     await expect(cashierPage.getByRole('button', { name: /中国工商银行/ })).toHaveClass(/active/);
-    const ebankPayPromise = page.waitForResponse(response => response.url().includes('/api/payment/cashier/pay'));
+    const ebankPayPromise = page.waitForResponse((response) => response.url().includes('/api/payment/cashier/pay'));
     await cashierPage.getByRole('button', { name: /进入企业网银支付/ }).click();
     const ebankPayBody = await expectBusinessOk<CashierPayResult>(await ebankPayPromise);
     expect(ebankPayBody.data?.material?.materialType).toBe('HTML_FORM');
@@ -6554,7 +7094,7 @@ test.describe('支付管理 E2E', () => {
       defaultMethodCode: 'CORPORATE_OFFLINE_ACCOUNT',
     });
     const transferBusinessOrderId = preparePayingBusinessOrder(transferBizOrderNo);
-    const transferPayPromise = page.waitForResponse(response => response.url().includes('/api/payment/cashier/pay'));
+    const transferPayPromise = page.waitForResponse((response) => response.url().includes('/api/payment/cashier/pay'));
     await openCashierPage(page, transferCashierConfigId, transferBusinessOrderId);
     await expect(cashierPage.getByText(transferBizOrderNo).first()).toBeVisible({ timeout: 10000 });
     const transferPayBody = await expectBusinessOk<CashierPayResult>(await transferPayPromise);
@@ -6812,10 +7352,13 @@ test.describe('支付管理 E2E', () => {
     await openPaymentPage(page, '/#/payment/applications', '应用管理');
     await page.getByPlaceholder('应用名称 / AppId').fill(enabledAppName);
     await Promise.all([
-      page.waitForResponse(response => response.url().includes('/api/payment/applications/page')),
+      page.waitForResponse((response) => response.url().includes('/api/payment/applications/page')),
       page.getByRole('button', { name: '查询' }).click(),
     ]);
-    const enabledRow = page.locator('.payment-table .el-table__body-wrapper tbody tr').filter({ hasText: enabledAppName }).first();
+    const enabledRow = page
+      .locator('.payment-table .el-table__body-wrapper tbody tr')
+      .filter({ hasText: enabledAppName })
+      .first();
     await expect(enabledRow).toBeVisible();
     await expect(enabledRow.getByText(enabledAppName, { exact: true })).toBeVisible();
     await expect(enabledRow.getByText('已配置', { exact: true })).toBeVisible();
@@ -6950,15 +7493,17 @@ test.describe('支付管理 E2E', () => {
           certificateFileId,
           mangoPayScenario: 'SUCCESS',
         }),
-        capabilities: [{
-          channelCapabilityId: channelCapability?.id,
-          feeRate: 0.006,
-          minAmount: 10,
-          maxAmount: 880000,
-          priority: 11,
-          certificateExpireTime: '2030-01-01 00:00:00',
-          status: 1,
-        }],
+        capabilities: [
+          {
+            channelCapabilityId: channelCapability?.id,
+            feeRate: 0.006,
+            minAmount: 10,
+            maxAmount: 880000,
+            priority: 11,
+            certificateExpireTime: '2030-01-01 00:00:00',
+            status: 1,
+          },
+        ],
         status: 1,
       },
     });
@@ -7000,10 +7545,13 @@ test.describe('支付管理 E2E', () => {
     await openPaymentPage(page, '/#/payment/channel-contracts', '签约通道');
     await page.getByPlaceholder('名称 / 编码').fill(merchantNo);
     await Promise.all([
-      page.waitForResponse(response => response.url().includes('/api/payment/channel-contracts/page')),
+      page.waitForResponse((response) => response.url().includes('/api/payment/channel-contracts/page')),
       page.getByRole('button', { name: '查询' }).click(),
     ]);
-    const createdRow = page.locator('.payment-table .el-table__body-wrapper tbody tr').filter({ hasText: merchantNo }).first();
+    const createdRow = page
+      .locator('.payment-table .el-table__body-wrapper tbody tr')
+      .filter({ hasText: merchantNo })
+      .first();
     await expect(createdRow).toBeVisible();
     await expect(createdRow.getByText(merchantNo, { exact: true })).toBeVisible();
     await expect(createdRow.locator('.el-tag').filter({ hasText: '微信扫码/电脑网页' })).toBeVisible();
@@ -7013,17 +7561,28 @@ test.describe('支付管理 E2E', () => {
     await createdRow.getByRole('button', { name: '编辑' }).click();
     await expect(dialog(page).getByText('编辑签约通道')).toBeVisible({ timeout: 10000 });
     await expect(dialog(page).getByText('接入场景')).toHaveCount(0);
-    await expect.poll(async () => formItem(page, '配置值').locator('input').evaluateAll((inputs) =>
-      inputs.map(input => (input as HTMLInputElement).value),
-    )).toContain('******');
+    await expect
+      .poll(async () =>
+        formItem(page, '配置值')
+          .locator('input')
+          .evaluateAll((inputs) => inputs.map((input) => (input as HTMLInputElement).value)),
+      )
+      .toContain('******');
     await expect(formItem(page, '开通能力').getByText('微信扫码')).toBeVisible({ timeout: 10000 });
-    await expect.poll(async () => formItem(page, '开通能力').locator('input').evaluateAll((inputs) =>
-      inputs.map(input => (input as HTMLInputElement).value),
-    )).toEqual(expect.arrayContaining([expect.stringMatching(/^0\.006(?:000)?$/)]));
+    await expect
+      .poll(async () =>
+        formItem(page, '开通能力')
+          .locator('input')
+          .evaluateAll((inputs) => inputs.map((input) => (input as HTMLInputElement).value)),
+      )
+      .toEqual(expect.arrayContaining([expect.stringMatching(/^0\.006(?:000)?$/)]));
     const appIdInput = formItem(page, 'AppId').locator('input').first();
     await appIdInput.fill(`e2e-app-edited-${suffix}`);
     const [updateResponse] = await Promise.all([
-      page.waitForResponse(response => response.url().includes('/api/payment/channel-contracts') && response.request().method() === 'PUT'),
+      page.waitForResponse(
+        (response) =>
+          response.url().includes('/api/payment/channel-contracts') && response.request().method() === 'PUT',
+      ),
       dialog(page).getByRole('button', { name: '保存' }).click(),
     ]);
     await expectBusinessOk<boolean>(updateResponse);
@@ -7057,7 +7616,10 @@ test.describe('支付管理 E2E', () => {
     }
 
     const [deleteResponse] = await Promise.all([
-      page.waitForResponse(response => response.url().includes('/api/payment/channel-contracts') && response.request().method() === 'DELETE'),
+      page.waitForResponse(
+        (response) =>
+          response.url().includes('/api/payment/channel-contracts') && response.request().method() === 'DELETE',
+      ),
       (async () => {
         await createdRow.getByRole('button', { name: '删除' }).click();
         await expect(page.getByText(/确认删除/)).toBeVisible({ timeout: 10000 });
@@ -7124,11 +7686,20 @@ test.describe('支付管理 E2E', () => {
       (target as HTMLElement).click();
       return target.getAttribute('aria-controls') || '';
     });
-    const methodDropdown = page.locator(`[id="${methodListboxId}"]`).locator('xpath=ancestor::*[contains(@class, "el-select-dropdown")]').first();
+    const methodDropdown = page
+      .locator(`[id="${methodListboxId}"]`)
+      .locator('xpath=ancestor::*[contains(@class, "el-select-dropdown")]')
+      .first();
     await clickVisibleOption(methodDropdown, '微信扫码');
     await closeSelectDropdown(page);
     await capabilityRow.locator('.el-select').nth(1).click();
-    await page.locator('.el-select-dropdown:visible').last().locator('.el-select-dropdown__item').filter({ hasText: 'Web/PC' }).first().click();
+    await page
+      .locator('.el-select-dropdown:visible')
+      .last()
+      .locator('.el-select-dropdown__item')
+      .filter({ hasText: 'Web/PC' })
+      .first()
+      .click();
     await closeSelectDropdown(page);
     await expect(capabilityRow.getByText('接入场景')).toHaveCount(0);
     await capabilityRow.locator('input[type="number"]').nth(0).fill('10');
@@ -7136,7 +7707,9 @@ test.describe('支付管理 E2E', () => {
     await capabilityRow.locator('input[type="number"]').nth(1).press('Tab');
 
     const [createResponse] = await Promise.all([
-      page.waitForResponse(response => response.url().includes('/api/payment/channels') && response.request().method() === 'POST'),
+      page.waitForResponse(
+        (response) => response.url().includes('/api/payment/channels') && response.request().method() === 'POST',
+      ),
       dialog(page).getByRole('button', { name: '保存' }).click(),
     ]);
     const createBody = await expectBusinessOk<string | number>(createResponse);
@@ -7189,10 +7762,13 @@ test.describe('支付管理 E2E', () => {
 
     await page.getByPlaceholder('名称 / 编码').fill(channelName);
     await Promise.all([
-      page.waitForResponse(response => response.url().includes('/api/payment/channels/page')),
+      page.waitForResponse((response) => response.url().includes('/api/payment/channels/page')),
       page.getByRole('button', { name: '查询' }).click(),
     ]);
-    const createdRow = page.locator('.payment-table .el-table__body-wrapper tbody tr').filter({ hasText: channelName }).first();
+    const createdRow = page
+      .locator('.payment-table .el-table__body-wrapper tbody tr')
+      .filter({ hasText: channelName })
+      .first();
     await expect(createdRow).toBeVisible();
     await expect(createdRow.getByText(channelCode, { exact: true })).toBeVisible();
     await expect(createdRow.getByText(adapterType, { exact: true })).toBeVisible();
@@ -7204,7 +7780,9 @@ test.describe('支付管理 E2E', () => {
     await expect(formItem(page, '通道能力').getByText('微信扫码')).toBeVisible({ timeout: 10000 });
     await fillInput(page, '通道名称', editedChannelName);
     const [updateResponse] = await Promise.all([
-      page.waitForResponse(response => response.url().includes('/api/payment/channels') && response.request().method() === 'PUT'),
+      page.waitForResponse(
+        (response) => response.url().includes('/api/payment/channels') && response.request().method() === 'PUT',
+      ),
       dialog(page).getByRole('button', { name: '保存' }).click(),
     ]);
     await expectBusinessOk<boolean>(updateResponse);
@@ -7226,13 +7804,18 @@ test.describe('支付管理 E2E', () => {
 
     await page.getByPlaceholder('名称 / 编码').fill(editedChannelName);
     await Promise.all([
-      page.waitForResponse(response => response.url().includes('/api/payment/channels/page')),
+      page.waitForResponse((response) => response.url().includes('/api/payment/channels/page')),
       page.getByRole('button', { name: '查询' }).click(),
     ]);
-    const editedRow = page.locator('.payment-table .el-table__body-wrapper tbody tr').filter({ hasText: editedChannelName }).first();
+    const editedRow = page
+      .locator('.payment-table .el-table__body-wrapper tbody tr')
+      .filter({ hasText: editedChannelName })
+      .first();
     await expect(editedRow).toBeVisible();
     const [deleteResponse] = await Promise.all([
-      page.waitForResponse(response => response.url().includes('/api/payment/channels') && response.request().method() === 'DELETE'),
+      page.waitForResponse(
+        (response) => response.url().includes('/api/payment/channels') && response.request().method() === 'DELETE',
+      ),
       (async () => {
         await editedRow.getByRole('button', { name: '删除' }).click();
         await expect(page.getByText(/确认删除/)).toBeVisible({ timeout: 10000 });
@@ -7299,10 +7882,12 @@ test.describe('支付管理 E2E', () => {
     await openPaymentPage(page, '/#/payment/cashier-configs', '收银台');
     await page.getByPlaceholder('名称 / 编码').fill(blockedCashierName);
     await Promise.all([
-      page.waitForResponse(response => response.url().includes('/api/payment/cashier-configs/page')),
+      page.waitForResponse((response) => response.url().includes('/api/payment/cashier-configs/page')),
       page.getByRole('button', { name: '查询' }).click(),
     ]);
-    const blockedCashierSessionPromise = page.waitForResponse(response => response.url().includes('/api/payment/cashier/session'));
+    const blockedCashierSessionPromise = page.waitForResponse((response) =>
+      response.url().includes('/api/payment/cashier/session'),
+    );
     await clickPaymentTableRowButton(page, blockedCashierName, '预览');
     const blockedCashierSessionBody = await expectBusinessOk<CashierSession>(await blockedCashierSessionPromise);
     expect(blockedCashierSessionBody.data?.order?.businessOrderId).toBeFalsy();
@@ -7318,26 +7903,38 @@ test.describe('支付管理 E2E', () => {
     await openPaymentPage(page, '/#/payment/applications', '应用管理');
     await page.getByPlaceholder('应用名称 / AppId').fill(blockedAppName);
     await Promise.all([
-      page.waitForResponse(response => response.url().includes('/api/payment/applications/page')),
+      page.waitForResponse((response) => response.url().includes('/api/payment/applications/page')),
       page.getByRole('button', { name: '查询' }).click(),
     ]);
-    const blockedRow = page.locator('.payment-table .el-table__body-wrapper tbody tr').filter({ hasText: blockedAppName }).first();
+    const blockedRow = page
+      .locator('.payment-table .el-table__body-wrapper tbody tr')
+      .filter({ hasText: blockedAppName })
+      .first();
     await expect(blockedRow).toBeVisible();
     await expect(blockedRow.getByRole('button', { name: '编辑' })).toBeVisible();
     await expect(blockedRow.getByRole('button', { name: '删除' })).toBeVisible();
 
     const [blockedDeleteResponse] = await Promise.all([
-      page.waitForResponse(response => response.url().includes('/api/payment/applications') && response.request().method() === 'DELETE'),
+      page.waitForResponse(
+        (response) => response.url().includes('/api/payment/applications') && response.request().method() === 'DELETE',
+      ),
       (async () => {
         await blockedRow.getByRole('button', { name: '删除' }).click();
-        await expect(page.getByText(/存在收银台配置、业务订单、支付订单、退款、流水、通知、异常、对账差异等关联数据/)).toBeVisible({ timeout: 10000 });
+        await expect(
+          page.getByText(/存在收银台配置、业务订单、支付订单、退款、流水、通知、异常、对账差异等关联数据/),
+        ).toBeVisible({ timeout: 10000 });
         await page.getByRole('button', { name: '删除' }).last().click();
       })(),
     ]);
     const blockedDeleteBody = await expectBusinessError<boolean>(blockedDeleteResponse);
     expect(blockedDeleteBody.code).toBe(3709);
     expect(blockedDeleteBody.msg).toContain('支付应用存在关联数据');
-    await expect(page.locator('.el-message').filter({ hasText: /支付应用存在关联数据/ }).last()).toBeVisible({ timeout: 10000 });
+    await expect(
+      page
+        .locator('.el-message')
+        .filter({ hasText: /支付应用存在关联数据/ })
+        .last(),
+    ).toBeVisible({ timeout: 10000 });
 
     const blockedAppAfterDelete = await findApplicationByName(page, headers, blockedAppName);
     expect(blockedAppAfterDelete?.appName).toBe(blockedAppName);
@@ -7352,16 +7949,23 @@ test.describe('支付管理 E2E', () => {
     await openPaymentPage(page, '/#/payment/applications', '应用管理');
     await page.getByPlaceholder('应用名称 / AppId').fill(removableAppName);
     await Promise.all([
-      page.waitForResponse(response => response.url().includes('/api/payment/applications/page')),
+      page.waitForResponse((response) => response.url().includes('/api/payment/applications/page')),
       page.getByRole('button', { name: '查询' }).click(),
     ]);
-    const removableRow = page.locator('.payment-table .el-table__body-wrapper tbody tr').filter({ hasText: removableAppName }).first();
+    const removableRow = page
+      .locator('.payment-table .el-table__body-wrapper tbody tr')
+      .filter({ hasText: removableAppName })
+      .first();
     await expect(removableRow).toBeVisible();
     await Promise.all([
-      page.waitForResponse(response => response.url().includes('/api/payment/applications') && response.request().method() === 'DELETE'),
+      page.waitForResponse(
+        (response) => response.url().includes('/api/payment/applications') && response.request().method() === 'DELETE',
+      ),
       (async () => {
         await removableRow.getByRole('button', { name: '删除' }).click();
-        await expect(page.getByText(/存在收银台配置、业务订单、支付订单、退款、流水、通知、异常、对账差异等关联数据/)).toBeVisible({ timeout: 10000 });
+        await expect(
+          page.getByText(/存在收银台配置、业务订单、支付订单、退款、流水、通知、异常、对账差异等关联数据/),
+        ).toBeVisible({ timeout: 10000 });
         await page.getByRole('button', { name: '删除' }).last().click();
       })(),
     ]);
@@ -7381,10 +7985,11 @@ test.describe('支付管理 E2E', () => {
     await openPaymentPage(page, '/#/payment/operation-audits', '操作审计');
     await page.getByPlaceholder('操作人 / 资源 / 动作').fill('DELETE_APPLICATION');
     await Promise.all([
-      page.waitForResponse(response => response.url().includes('/api/payment/operation-audits/page')),
+      page.waitForResponse((response) => response.url().includes('/api/payment/operation-audits/page')),
       page.getByRole('button', { name: '查询' }).click(),
     ]);
-    const rejectedAuditRow = page.locator('.payment-operation-audits__table .el-table__body-wrapper tbody tr')
+    const rejectedAuditRow = page
+      .locator('.payment-operation-audits__table .el-table__body-wrapper tbody tr')
       .filter({ hasText: String(blockedCreateResult.appId) })
       .first();
     await expect(rejectedAuditRow).toBeVisible();
@@ -7426,23 +8031,27 @@ test.describe('支付管理 E2E', () => {
       params: { page: '1', size: '20', keyword: 'CREATE_APPLICATION', statusCode: 'SUCCESS' },
     });
     const filteredBody = await expectBusinessOk<PageData>(filteredResponse);
-    expect((filteredBody.data?.list || []).every(item => item.operationResult === 'SUCCESS')).toBe(true);
-    expect((filteredBody.data?.list || []).some(item =>
-      item.operationAction === 'CREATE_APPLICATION'
-      && item.resourceType === 'PAYMENT_APPLICATION'
-      && item.resourceId === createResult.appId
-    )).toBe(true);
+    expect((filteredBody.data?.list || []).every((item) => item.operationResult === 'SUCCESS')).toBe(true);
+    expect(
+      (filteredBody.data?.list || []).some(
+        (item) =>
+          item.operationAction === 'CREATE_APPLICATION' &&
+          item.resourceType === 'PAYMENT_APPLICATION' &&
+          item.resourceId === createResult.appId,
+      ),
+    ).toBe(true);
 
     await openPaymentPage(page, '/#/payment/operation-audits', '操作审计');
     await page.getByPlaceholder('操作人 / 资源 / 动作').fill('CREATE_APPLICATION');
     await page.locator('.payment-operation-audits__toolbar .el-select').click();
     await page.getByRole('option', { name: '成功' }).click();
     await Promise.all([
-      page.waitForResponse(response => response.url().includes('/api/payment/operation-audits/page')),
+      page.waitForResponse((response) => response.url().includes('/api/payment/operation-audits/page')),
       page.getByRole('button', { name: '查询' }).click(),
     ]);
 
-    const auditRow = page.locator('.payment-operation-audits__table .el-table__body-wrapper tbody tr')
+    const auditRow = page
+      .locator('.payment-operation-audits__table .el-table__body-wrapper tbody tr')
       .filter({ hasText: createResult.appId })
       .first();
     await expect(auditRow).toBeVisible({ timeout: 10000 });
@@ -7475,7 +8084,10 @@ test.describe('支付管理 E2E', () => {
     await chooseRadio(page, '状态', '启用');
 
     const [createResponse] = await Promise.all([
-      page.waitForResponse(response => response.url().includes('/api/payment/enterprise-subjects') && response.request().method() === 'POST'),
+      page.waitForResponse(
+        (response) =>
+          response.url().includes('/api/payment/enterprise-subjects') && response.request().method() === 'POST',
+      ),
       dialog(page).getByRole('button', { name: '保存' }).click(),
     ]);
     const createBody = await expectBusinessOk<string | number>(createResponse);
@@ -7486,10 +8098,13 @@ test.describe('支付管理 E2E', () => {
 
     await page.getByPlaceholder('名称 / 编码').fill(subjectName);
     await Promise.all([
-      page.waitForResponse(response => response.url().includes('/api/payment/enterprise-subjects/page')),
+      page.waitForResponse((response) => response.url().includes('/api/payment/enterprise-subjects/page')),
       page.getByRole('button', { name: '查询' }).click(),
     ]);
-    const createdRow = page.locator('.payment-table .el-table__body-wrapper tbody tr').filter({ hasText: subjectName }).first();
+    const createdRow = page
+      .locator('.payment-table .el-table__body-wrapper tbody tr')
+      .filter({ hasText: subjectName })
+      .first();
     await expect(createdRow).toBeVisible();
     await expect(createdRow.getByText(subjectName, { exact: true })).toBeVisible();
     const creditCodeMask = `${creditCode.slice(0, 4)}****${creditCode.slice(-4)}`;
@@ -7528,7 +8143,10 @@ test.describe('支付管理 E2E', () => {
     await fillInput(page, '银行账户', bankAccountNo);
     await fillInput(page, '开户行', editedBankName);
     const [updateResponse] = await Promise.all([
-      page.waitForResponse(response => response.url().includes('/api/payment/enterprise-subjects') && response.request().method() === 'PUT'),
+      page.waitForResponse(
+        (response) =>
+          response.url().includes('/api/payment/enterprise-subjects') && response.request().method() === 'PUT',
+      ),
       dialog(page).getByRole('button', { name: '保存' }).click(),
     ]);
     await expectBusinessOk<boolean>(updateResponse);
@@ -7537,10 +8155,13 @@ test.describe('支付管理 E2E', () => {
 
     await page.getByPlaceholder('名称 / 编码').fill(editedSubjectName);
     await Promise.all([
-      page.waitForResponse(response => response.url().includes('/api/payment/enterprise-subjects/page')),
+      page.waitForResponse((response) => response.url().includes('/api/payment/enterprise-subjects/page')),
       page.getByRole('button', { name: '查询' }).click(),
     ]);
-    const editedRow = page.locator('.payment-table .el-table__body-wrapper tbody tr').filter({ hasText: editedSubjectName }).first();
+    const editedRow = page
+      .locator('.payment-table .el-table__body-wrapper tbody tr')
+      .filter({ hasText: editedSubjectName })
+      .first();
     await expect(editedRow).toBeVisible();
     await expect(editedRow.getByText(editedBankName, { exact: true })).toBeVisible();
     const editedSubject = await findEnterpriseSubjectByName(page, headers, editedSubjectName);
@@ -7565,13 +8186,19 @@ test.describe('支付管理 E2E', () => {
 
     await page.getByPlaceholder('名称 / 编码').fill('芒果科技有限公司');
     await Promise.all([
-      page.waitForResponse(response => response.url().includes('/api/payment/enterprise-subjects/page')),
+      page.waitForResponse((response) => response.url().includes('/api/payment/enterprise-subjects/page')),
       page.getByRole('button', { name: '查询' }).click(),
     ]);
-    const blockedRow = page.locator('.payment-table .el-table__body-wrapper tbody tr').filter({ hasText: '芒果科技有限公司' }).first();
+    const blockedRow = page
+      .locator('.payment-table .el-table__body-wrapper tbody tr')
+      .filter({ hasText: '芒果科技有限公司' })
+      .first();
     await expect(blockedRow).toBeVisible();
     const [blockedDeleteResponse] = await Promise.all([
-      page.waitForResponse(response => response.url().includes('/api/payment/enterprise-subjects') && response.request().method() === 'DELETE'),
+      page.waitForResponse(
+        (response) =>
+          response.url().includes('/api/payment/enterprise-subjects') && response.request().method() === 'DELETE',
+      ),
       (async () => {
         await blockedRow.getByRole('button', { name: '删除' }).click();
         await expect(page.getByText(/确认删除/)).toBeVisible({ timeout: 10000 });
@@ -7581,7 +8208,12 @@ test.describe('支付管理 E2E', () => {
     const blockedDeleteBody = await expectBusinessError<boolean>(blockedDeleteResponse);
     expect(blockedDeleteBody.code).toBe(3729);
     expect(blockedDeleteBody.msg).toContain('企业主体存在关联数据');
-    await expect(page.locator('.el-message').filter({ hasText: /企业主体存在关联数据/ }).last()).toBeVisible({ timeout: 10000 });
+    await expect(
+      page
+        .locator('.el-message')
+        .filter({ hasText: /企业主体存在关联数据/ })
+        .last(),
+    ).toBeVisible({ timeout: 10000 });
     const blockedAudit = await findLatestPaymentAudit(page, headers, {
       action: 'DELETE_ENTERPRISE_SUBJECT',
       resourceType: 'PAYMENT_ENTERPRISE_SUBJECT',
@@ -7597,13 +8229,19 @@ test.describe('支付管理 E2E', () => {
 
     await page.getByPlaceholder('名称 / 编码').fill(editedSubjectName);
     await Promise.all([
-      page.waitForResponse(response => response.url().includes('/api/payment/enterprise-subjects/page')),
+      page.waitForResponse((response) => response.url().includes('/api/payment/enterprise-subjects/page')),
       page.getByRole('button', { name: '查询' }).click(),
     ]);
-    const removableRow = page.locator('.payment-table .el-table__body-wrapper tbody tr').filter({ hasText: editedSubjectName }).first();
+    const removableRow = page
+      .locator('.payment-table .el-table__body-wrapper tbody tr')
+      .filter({ hasText: editedSubjectName })
+      .first();
     await expect(removableRow).toBeVisible();
     await Promise.all([
-      page.waitForResponse(response => response.url().includes('/api/payment/enterprise-subjects') && response.request().method() === 'DELETE'),
+      page.waitForResponse(
+        (response) =>
+          response.url().includes('/api/payment/enterprise-subjects') && response.request().method() === 'DELETE',
+      ),
       (async () => {
         await removableRow.getByRole('button', { name: '删除' }).click();
         await expect(page.getByText(/确认删除/)).toBeVisible({ timeout: 10000 });
@@ -7763,7 +8401,7 @@ test.describe('支付管理 E2E', () => {
     await openPaymentPage(page, '/#/payment/settlement-summaries', '结算汇总');
     await page.getByPlaceholder('应用 / 主体 / 通道').fill('ORDER_CENTER');
     await Promise.all([
-      page.waitForResponse(response => response.url().includes('/api/payment/settlement-summaries/page')),
+      page.waitForResponse((response) => response.url().includes('/api/payment/settlement-summaries/page')),
       page.getByRole('button', { name: '查询' }).click(),
     ]);
     await expect(page.getByText(billDate).first()).toBeVisible({ timeout: 10000 });

@@ -2,9 +2,7 @@
   <div class="workflow-page">
     <div v-if="designerMode" class="workflow-builder">
       <div class="builder-header">
-        <el-button class="builder-back" text @click="closeDesigner">
-          返回列表
-        </el-button>
+        <el-button class="builder-back" text @click="closeDesigner"> 返回列表 </el-button>
         <div class="builder-steps" role="navigation" aria-label="工作流设计步骤">
           <button
             v-for="(step, index) in designerSteps"
@@ -66,7 +64,11 @@
                   </el-tooltip>
                 </span>
               </template>
-              <el-input v-model="definitionForm.definitionKey" :disabled="Boolean(definitionForm.id)" placeholder="如 contract_approve" />
+              <el-input
+                v-model="definitionForm.definitionKey"
+                :disabled="Boolean(definitionForm.id)"
+                placeholder="如 contract_approve"
+              />
             </el-form-item>
             <el-form-item class="basic-field full" label="流程名称" prop="definitionName">
               <el-input v-model="definitionForm.definitionName" placeholder="请输入流程名称" />
@@ -84,12 +86,7 @@
               />
             </el-form-item>
             <el-form-item class="basic-field full" label="流程分类" prop="categoryId">
-              <el-select
-                v-model="definitionForm.categoryId"
-                clearable
-                filterable
-                placeholder="请选择流程分类"
-              >
+              <el-select v-model="definitionForm.categoryId" clearable filterable placeholder="请选择流程分类">
                 <el-option
                   v-for="item in definitionCategoryOptions"
                   :key="item.id"
@@ -105,18 +102,29 @@
               <template #label>
                 <span class="field-label-with-help">
                   流程管理员
-                  <el-tooltip content="用于流程维护；审批人为空且策略为转交管理员时，优先转交给这里配置的人员。" placement="top">
+                  <el-tooltip
+                    content="用于流程维护；审批人为空且策略为转交管理员时，优先转交给这里配置的人员。"
+                    placement="top"
+                  >
                     <el-icon><QuestionFilled /></el-icon>
                   </el-tooltip>
                 </span>
               </template>
-              <UserSelector v-model="definitionForm.adminUsers" multiple placeholder="请选择流程管理员" title="选择流程管理员" />
+              <UserSelector
+                v-model="definitionForm.adminUsers"
+                multiple
+                placeholder="请选择流程管理员"
+                title="选择流程管理员"
+              />
             </el-form-item>
             <el-form-item class="basic-field full" prop="startEntryVisible">
               <template #label>
                 <span class="field-label-with-help">
                   启动入口
-                  <el-tooltip content="关闭后不显示在审批管理的发起流程入口；业务页面仍可通过标准 API 发起。" placement="top">
+                  <el-tooltip
+                    content="关闭后不显示在审批管理的发起流程入口；业务页面仍可通过标准 API 发起。"
+                    placement="top"
+                  >
                     <el-icon><QuestionFilled /></el-icon>
                   </el-tooltip>
                 </span>
@@ -128,18 +136,27 @@
               />
             </el-form-item>
             <el-form-item class="basic-field full" label="备注">
-              <el-input v-model="definitionForm.remark" :rows="3" placeholder="说明流程适用场景、发起条件或维护边界" type="textarea" />
+              <el-input
+                v-model="definitionForm.remark"
+                :rows="3"
+                placeholder="说明流程适用场景、发起条件或维护边界"
+                type="textarea"
+              />
             </el-form-item>
           </el-form>
-          <div class="pane-help">
-            先选择业务域再定义流程；发布、停用等状态由列表操作和发布动作维护。
-          </div>
+          <div class="pane-help">先选择业务域再定义流程；发布、停用等状态由列表操作和发布动作维护。</div>
         </section>
 
         <section v-show="definitionStep === 1" class="builder-pane form-pane">
           <div class="form-design-shell">
             <div class="form-config-bar">
-              <el-form class="form-config-form" :model="definitionForm" :rules="definitionRules" label-position="right" label-width="84px">
+              <el-form
+                class="form-config-form"
+                :model="definitionForm"
+                :rules="definitionRules"
+                label-position="right"
+                label-width="84px"
+              >
                 <el-form-item label="表单编码" prop="formCode">
                   <el-input v-model="definitionForm.formCode" placeholder="如 contract_apply_form" />
                 </el-form-item>
@@ -185,16 +202,32 @@
                     <div class="section-title">自定义表单页面</div>
                     <el-form class="custom-route-form" label-position="top">
                       <el-form-item label="表单提交路径">
-                        <el-input v-model="customFormConfig.submitPath" placeholder="例如：/flow/contract/create" @input="syncCustomWorkflowForm" />
+                        <el-input
+                          v-model="customFormConfig.submitPath"
+                          placeholder="例如：/flow/contract/create"
+                          @input="syncCustomWorkflowForm"
+                        />
                       </el-form-item>
                       <el-form-item label="表单查看路径">
-                        <el-input v-model="customFormConfig.viewPath" placeholder="例如：/flow/contract/detail" @input="syncCustomWorkflowForm" />
+                        <el-input
+                          v-model="customFormConfig.viewPath"
+                          placeholder="例如：/flow/contract/detail"
+                          @input="syncCustomWorkflowForm"
+                        />
                       </el-form-item>
                       <el-form-item label="申请页Key">
-                        <el-input v-model="customFormConfig.applyPageKey" placeholder="例如：workflow.contract.apply" @input="syncCustomWorkflowForm" />
+                        <el-input
+                          v-model="customFormConfig.applyPageKey"
+                          placeholder="例如：workflow.contract.apply"
+                          @input="syncCustomWorkflowForm"
+                        />
                       </el-form-item>
                       <el-form-item label="审批页Key">
-                        <el-input v-model="customFormConfig.approvePageKey" placeholder="例如：workflow.contract.approve" @input="syncCustomWorkflowForm" />
+                        <el-input
+                          v-model="customFormConfig.approvePageKey"
+                          placeholder="例如：workflow.contract.approve"
+                          @input="syncCustomWorkflowForm"
+                        />
                       </el-form-item>
                     </el-form>
                   </div>
@@ -207,7 +240,11 @@
                       <el-button :icon="Plus" type="primary" @click="addCustomFormField">新增字段</el-button>
                     </div>
                     <div class="custom-field-list">
-                      <div v-for="(field, index) in customFormFields" :key="field.key || index" class="custom-field-card">
+                      <div
+                        v-for="(field, index) in customFormFields"
+                        :key="field.key || index"
+                        class="custom-field-card"
+                      >
                         <div class="custom-field-card-head">
                           <span>字段 {{ index + 1 }}</span>
                           <el-button link type="danger" @click="removeCustomFormField(index)">删除</el-button>
@@ -220,17 +257,36 @@
                             <el-input v-model="field.label" placeholder="如 流程金额" @input="syncCustomWorkflowForm" />
                           </el-form-item>
                           <el-form-item label="字段类型">
-                            <el-select v-model="field.type" filterable @change="() => handleCustomFieldTypeChange(field)">
+                            <el-select
+                              v-model="field.type"
+                              filterable
+                              @change="() => handleCustomFieldTypeChange(field)"
+                            >
                               <el-option-group label="基础字段">
-                                <el-option v-for="item in customFieldBaseTypeOptions" :key="item.value" :label="item.label" :value="item.value" />
+                                <el-option
+                                  v-for="item in customFieldBaseTypeOptions"
+                                  :key="item.value"
+                                  :label="item.label"
+                                  :value="item.value"
+                                />
                               </el-option-group>
                               <el-option-group label="系统数据">
-                                <el-option v-for="item in customFieldSystemTypeOptions" :key="item.value" :label="item.label" :value="item.value" />
+                                <el-option
+                                  v-for="item in customFieldSystemTypeOptions"
+                                  :key="item.value"
+                                  :label="item.label"
+                                  :value="item.value"
+                                />
                               </el-option-group>
                             </el-select>
                           </el-form-item>
                           <el-form-item label="是否必填">
-                            <el-switch v-model="field.required" active-text="必填" inactive-text="选填" @change="syncCustomWorkflowForm" />
+                            <el-switch
+                              v-model="field.required"
+                              active-text="必填"
+                              inactive-text="选填"
+                              @change="syncCustomWorkflowForm"
+                            />
                           </el-form-item>
                         </div>
                         <div class="custom-field-extra">
@@ -244,7 +300,9 @@
                           </template>
                           <template v-else-if="isSystemCustomFieldType(field.type)">
                             <label>系统数据</label>
-                            <span v-if="field.type === 'signature'" class="custom-field-hint">运行时渲染为手写签名区域，保存 base64 PNG。</span>
+                            <span v-if="field.type === 'signature'" class="custom-field-hint"
+                              >运行时渲染为手写签名区域，保存 base64 PNG。</span
+                            >
                             <el-select
                               v-else-if="field.type === 'systemDict'"
                               v-model="field.dictType"
@@ -253,10 +311,15 @@
                               :loading="customFieldSystemLoading(field.type)"
                               placeholder="请选择绑定字典"
                               @focus="ensureCustomFieldSystemOptions(field.type)"
-                              @visible-change="visible => visible && ensureCustomFieldSystemOptions(field.type)"
+                              @visible-change="(visible) => visible && ensureCustomFieldSystemOptions(field.type)"
                               @change="syncCustomWorkflowForm"
                             >
-                              <el-option v-for="item in workflowDictOptions" :key="item.value" :label="item.label" :value="item.value" />
+                              <el-option
+                                v-for="item in workflowDictOptions"
+                                :key="item.value"
+                                :label="item.label"
+                                :value="item.value"
+                              />
                             </el-select>
                             <el-select
                               v-else
@@ -266,15 +329,24 @@
                               :loading="customFieldSystemLoading(field.type)"
                               placeholder="可选默认值"
                               @focus="ensureCustomFieldSystemOptions(field.type)"
-                              @visible-change="visible => visible && ensureCustomFieldSystemOptions(field.type)"
-                              @change="value => updateCustomFieldDefault(field, value)"
+                              @visible-change="(visible) => visible && ensureCustomFieldSystemOptions(field.type)"
+                              @change="(value) => updateCustomFieldDefault(field, value)"
                             >
-                              <el-option v-for="item in customFieldSystemOptions(field.type)" :key="item.value" :label="item.label" :value="item.value" />
+                              <el-option
+                                v-for="item in customFieldSystemOptions(field.type)"
+                                :key="item.value"
+                                :label="item.label"
+                                :value="item.value"
+                              />
                             </el-select>
                           </template>
                           <template v-else>
                             <label>字段说明</label>
-                            <el-input v-model="field.placeholder" placeholder="请输入字段提示文案" @input="syncCustomWorkflowForm" />
+                            <el-input
+                              v-model="field.placeholder"
+                              placeholder="请输入字段提示文案"
+                              @input="syncCustomWorkflowForm"
+                            />
                           </template>
                         </div>
                       </div>
@@ -312,7 +384,7 @@
                   <el-tab-pane v-if="isUserTaskNode(selectedNode)" label="节点能力" name="capability">
                     <WorkflowNodeCapabilityConfig
                       :config="approvalConfig(selectedNode)"
-                      @update="patch => updateApprovalConfig(selectedNode!, patch)"
+                      @update="(patch) => updateApprovalConfig(selectedNode!, patch)"
                     />
                   </el-tab-pane>
 
@@ -326,7 +398,7 @@
                           :post-options="approvalPostOptions"
                           :org-tree-options="approvalOrgTreeOptions"
                           :target-loading="approvalTargetLoading"
-                          @update="patch => updateRootConfig(selectedNode!, patch)"
+                          @update="(patch) => updateRootConfig(selectedNode!, patch)"
                           @ensure-users="ensureApprovalUsersLoaded"
                           @ensure-roles="ensureApprovalRolesLoaded"
                           @ensure-posts="ensureApprovalPostsLoaded"
@@ -344,9 +416,9 @@
                           :target-loading="approvalTargetLoading"
                           :form-variables="workflowFormVariableOptions"
                           :show-mode-config="showApprovalModeConfig(selectedNode)"
-                          @update-assignee-type="value => updateApprovalAssigneeType(selectedNode!, value)"
-                          @update-config="patch => updateApprovalConfig(selectedNode!, patch)"
-                          @update-empty-strategy="value => updateEmptyAssigneeStrategy(selectedNode!, value)"
+                          @update-assignee-type="(value) => updateApprovalAssigneeType(selectedNode!, value)"
+                          @update-config="(patch) => updateApprovalConfig(selectedNode!, patch)"
+                          @update-empty-strategy="(value) => updateEmptyAssigneeStrategy(selectedNode!, value)"
                           @update-list="(key, value) => updateApprovalListValue(selectedNode!, key, value)"
                           @ensure-users="ensureApprovalUsersLoaded"
                           @ensure-roles="ensureApprovalRolesLoaded"
@@ -356,29 +428,29 @@
                       </template>
 
                       <template v-else-if="selectedNode.nodeType === 'EXCLUSIVE_BRANCH'">
-                          <WorkflowNodeConditionConfig
-                            :node="selectedNode"
-                            :groups="conditionGroups"
-                            :variable-groups="workflowVariableGroups"
-                            :mode="conditionEditMode(selectedNode)"
-                            :user-options="approvalUserOptions"
-                            :role-options="approvalRoleOptions"
-                            :post-options="approvalPostOptions"
-                            :org-tree-options="approvalOrgTreeOptions"
-                            :target-loading="approvalTargetLoading"
-                            @sync="syncDesignerJson"
-                            @apply="applyConditionBuilder"
-                            @update-mode="mode => updateConditionEditMode(selectedNode!, mode)"
-                            @parse-expression="parseConditionToBuilder"
-                            @add-group="addConditionGroup"
-                            @add-row="addConditionRow"
-                            @remove-group="removeConditionGroup"
-                            @remove-row="removeConditionRow"
-                            @ensure-users="ensureApprovalUsersLoaded"
-                            @ensure-roles="ensureApprovalRolesLoaded"
-                            @ensure-posts="ensureApprovalPostsLoaded"
-                            @ensure-orgs="ensureApprovalOrgsLoaded"
-                          />
+                        <WorkflowNodeConditionConfig
+                          :node="selectedNode"
+                          :groups="conditionGroups"
+                          :variable-groups="workflowVariableGroups"
+                          :mode="conditionEditMode(selectedNode)"
+                          :user-options="approvalUserOptions"
+                          :role-options="approvalRoleOptions"
+                          :post-options="approvalPostOptions"
+                          :org-tree-options="approvalOrgTreeOptions"
+                          :target-loading="approvalTargetLoading"
+                          @sync="syncDesignerJson"
+                          @apply="applyConditionBuilder"
+                          @update-mode="(mode) => updateConditionEditMode(selectedNode!, mode)"
+                          @parse-expression="parseConditionToBuilder"
+                          @add-group="addConditionGroup"
+                          @add-row="addConditionRow"
+                          @remove-group="removeConditionGroup"
+                          @remove-row="removeConditionRow"
+                          @ensure-users="ensureApprovalUsersLoaded"
+                          @ensure-roles="ensureApprovalRolesLoaded"
+                          @ensure-posts="ensureApprovalPostsLoaded"
+                          @ensure-orgs="ensureApprovalOrgsLoaded"
+                        />
                       </template>
                       <template v-else-if="isCcNode(selectedNode)">
                         <WorkflowNodeCcConfig
@@ -388,7 +460,7 @@
                           :post-options="approvalPostOptions"
                           :org-tree-options="approvalOrgTreeOptions"
                           :target-loading="approvalTargetLoading"
-                          @update="patch => updateCcConfig(selectedNode!, patch)"
+                          @update="(patch) => updateCcConfig(selectedNode!, patch)"
                           @ensure-users="ensureApprovalUsersLoaded"
                           @ensure-roles="ensureApprovalRolesLoaded"
                           @ensure-posts="ensureApprovalPostsLoaded"
@@ -396,7 +468,10 @@
                         />
                       </template>
                       <template v-else-if="isServiceTaskNode(selectedNode)">
-                          <WorkflowNodeServiceConfig :node="selectedNode" @update="(key, value) => updateNodeProperty(selectedNode!, key, value)" />
+                        <WorkflowNodeServiceConfig
+                          :node="selectedNode"
+                          @update="(key, value) => updateNodeProperty(selectedNode!, key, value)"
+                        />
                       </template>
                       <el-empty v-else description="当前节点暂无专属参数" :image-size="72" />
                     </el-form>
@@ -409,12 +484,23 @@
                         <span>权限</span>
                       </div>
                       <div class="form-permission-list drawer-permission-list">
-                        <div v-for="field in workflowFormVariableOptions" :key="field.value" class="form-permission-row">
+                        <div
+                          v-for="field in workflowFormVariableOptions"
+                          :key="field.value"
+                          class="form-permission-row"
+                        >
                           <span class="form-permission-field">
                             <strong>{{ field.label }}</strong>
                             <small>{{ field.value }}</small>
                           </span>
-                          <el-radio-group :model-value="nodeFieldPermission(selectedNode, field.value)" size="small" @change="value => updateNodeFieldPermission(selectedNode!, field.value, value as WorkflowFormPermission)">
+                          <el-radio-group
+                            :model-value="nodeFieldPermission(selectedNode, field.value)"
+                            size="small"
+                            @change="
+                              (value) =>
+                                updateNodeFieldPermission(selectedNode!, field.value, value as WorkflowFormPermission)
+                            "
+                          >
                             <el-radio-button label="HIDDEN">隐藏</el-radio-button>
                             <el-radio-button label="READONLY">只读</el-radio-button>
                             <el-radio-button label="EDITABLE">编辑</el-radio-button>
@@ -426,19 +512,36 @@
                   </el-tab-pane>
 
                   <el-tab-pane label="基础" name="basic">
-                    <el-form class="drawer-form compact-node-form compact-basic-form" label-position="right" label-width="68px">
+                    <el-form
+                      class="drawer-form compact-node-form compact-basic-form"
+                      label-position="right"
+                      label-width="68px"
+                    >
                       <el-form-item label="节点名称">
-                        <el-input v-model="selectedNode.nodeName" class="node-name-input" placeholder="请输入节点名称" @input="syncDesignerJson" />
+                        <el-input
+                          v-model="selectedNode.nodeName"
+                          class="node-name-input"
+                          placeholder="请输入节点名称"
+                          @input="syncDesignerJson"
+                        />
                       </el-form-item>
                       <el-form-item label="节点类型">
                         <el-input :model-value="workflowNodeTypeLabel(selectedNode)" disabled />
                       </el-form-item>
                       <el-form-item label="节点说明">
-                        <el-input v-model="selectedNode.description" :rows="2" placeholder="说明该节点的处理规则或业务含义" type="textarea" @input="syncDesignerJson" />
+                        <el-input
+                          v-model="selectedNode.description"
+                          :rows="2"
+                          placeholder="说明该节点的处理规则或业务含义"
+                          type="textarea"
+                          @input="syncDesignerJson"
+                        />
                       </el-form-item>
                       <div class="node-meta-strip">
                         <el-tag effect="plain" size="small">{{ workflowNodeTypeLabel(selectedNode) }}</el-tag>
-                        <el-tag v-if="selectedNode.nodeDefinitionCode" effect="plain" size="small" type="info">{{ selectedNode.nodeDefinitionCode }}</el-tag>
+                        <el-tag v-if="selectedNode.nodeDefinitionCode" effect="plain" size="small" type="info">{{
+                          selectedNode.nodeDefinitionCode
+                        }}</el-tag>
                       </div>
                     </el-form>
                   </el-tab-pane>
@@ -446,7 +549,7 @@
                   <el-tab-pane label="通知" name="notify">
                     <WorkflowNodeEventNotifyConfig
                       :config="nodeEventNotifyConfig(selectedNode)"
-                      @update="patch => updateNodeEventNotifyConfig(selectedNode!, patch)"
+                      @update="(patch) => updateNodeEventNotifyConfig(selectedNode!, patch)"
                     />
                   </el-tab-pane>
 
@@ -454,7 +557,7 @@
                     <WorkflowNodeAdvancedConfig
                       :model-value="advancedNodeProperties(selectedNode)"
                       :reserved-keys="reservedNodePropertyKeys(selectedNode)"
-                      @update:model-value="value => updateAdvancedNodeProperties(selectedNode!, value)"
+                      @update:model-value="(value) => updateAdvancedNodeProperties(selectedNode!, value)"
                     />
                   </el-tab-pane>
 
@@ -500,7 +603,12 @@
               <el-button type="primary" @click="gotoValidateError">返回修改</el-button>
             </template>
           </el-result>
-          <el-result v-else-if="validateFlowStep >= 3" icon="success" title="检查通过" sub-title="基础信息、表单信息和流程设计均已通过检查。">
+          <el-result
+            v-else-if="validateFlowStep >= 3"
+            icon="success"
+            title="检查通过"
+            sub-title="基础信息、表单信息和流程设计均已通过检查。"
+          >
             <template #extra>
               <el-button :loading="publishing" type="primary" @click="submitPublishDefinition">确认发布</el-button>
             </template>
@@ -545,7 +653,12 @@
           </el-form-item>
           <el-form-item label="生命周期">
             <el-select v-model="definitionQuery.status" clearable placeholder="全部生命周期">
-              <el-option v-for="item in workflowStatusOptions" :key="item.value" :label="item.label" :value="item.value" />
+              <el-option
+                v-for="item in workflowStatusOptions"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value"
+              />
             </el-select>
           </el-form-item>
           <el-form-item label="流程分类">
@@ -617,7 +730,7 @@
               <div class="table-actions">
                 <el-button link type="primary" @click="openDefinitionForm(row)">设计</el-button>
                 <el-button link type="success" @click="deployDefinition(row)">发布</el-button>
-                <el-dropdown trigger="click" @command="command => handleDefinitionRowCommand(command, row)">
+                <el-dropdown trigger="click" @command="(command) => handleDefinitionRowCommand(command, row)">
                   <el-button link type="primary">
                     更多
                     <el-icon class="el-icon--right"><ArrowDown /></el-icon>
@@ -809,7 +922,12 @@
     </el-dialog>
 
     <el-dialog v-model="definitionImportDialog" class="definition-import-dialog" title="导入流程" width="620px">
-      <el-form ref="definitionImportFormRef" :model="definitionImportForm" :rules="definitionImportRules" label-position="top">
+      <el-form
+        ref="definitionImportFormRef"
+        :model="definitionImportForm"
+        :rules="definitionImportRules"
+        label-position="top"
+      >
         <el-form-item label="目标业务域" prop="domainCode">
           <el-tree-select
             v-model="definitionImportForm.domainCode"
@@ -828,7 +946,12 @@
             <el-radio label="CATEGORY">导入当前业务域全部模板</el-radio>
           </el-radio-group>
         </el-form-item>
-        <el-form-item v-if="definitionImportMode === 'SELECTED'" class="definition-import-template-item" label="流程模板" prop="templateIds">
+        <el-form-item
+          v-if="definitionImportMode === 'SELECTED'"
+          class="definition-import-template-item"
+          label="流程模板"
+          prop="templateIds"
+        >
           <div v-loading="importTemplateLoading" class="definition-import-template-list">
             <el-checkbox-group v-model="definitionImportForm.templateIds" class="definition-import-template-checks">
               <el-checkbox
@@ -842,7 +965,11 @@
                 <span class="definition-import-template-code">{{ item.templateCode }}</span>
               </el-checkbox>
             </el-checkbox-group>
-            <el-empty v-if="!importTemplateLoading && importTemplates.length === 0" :image-size="72" description="暂无可导入模板" />
+            <el-empty
+              v-if="!importTemplateLoading && importTemplates.length === 0"
+              :image-size="72"
+              description="暂无可导入模板"
+            />
           </div>
         </el-form-item>
         <el-alert
@@ -858,14 +985,29 @@
         <el-button :loading="saving" type="primary" @click="submitDefinitionImport">确认导入</el-button>
       </template>
     </el-dialog>
-
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, nextTick, onMounted, reactive, ref } from 'vue';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
-import { ArrowDown, Bell, Box, Cloudy, Connection, Download, FolderAdd, ForkSpoon, Plus, QuestionFilled, Refresh, Search, Setting, Share, User } from '@element-plus/icons-vue';
+import {
+  ArrowDown,
+  Bell,
+  Box,
+  Cloudy,
+  Connection,
+  Download,
+  FolderAdd,
+  ForkSpoon,
+  Plus,
+  QuestionFilled,
+  Refresh,
+  Search,
+  Setting,
+  Share,
+  User,
+} from '@element-plus/icons-vue';
 import FcDesigner, { type Config as FcDesignerConfig } from 'form-create-designer';
 import type { Rule as FcRule } from '@form-create/element-ui';
 import 'form-create-designer/src/style/index.css';
@@ -960,7 +1102,8 @@ const NODE_ICON_MAP: Record<string, any> = {
 
 function workflowNodeTypeLabel(node: Partial<WorkflowDesignerNode>) {
   if (node.nodeType === 'ROOT') return '发起节点';
-  if (node.nodeType === 'APPROVAL' || node.executionType === 'USER_TASK' || node.bpmnType === 'userTask') return '审批节点';
+  if (node.nodeType === 'APPROVAL' || node.executionType === 'USER_TASK' || node.bpmnType === 'userTask')
+    return '审批节点';
   if (node.nodeType === 'CC') return '抄送节点';
   if (node.nodeType === 'EXCLUSIVE_GATEWAY') return '条件分支';
   if (node.nodeType === 'PARALLEL_GATEWAY') return '条件分支';
@@ -1168,20 +1311,26 @@ const workflowBusinessFormComponents: WorkflowBusinessComponent[] = [
     },
     options: approvalUserOptions.value.map(toFormCreateOption),
   })),
-  createWorkflowBusinessComponent('workflowOrg', '部门', 'icon-tree', () => ({
-    type: 'elTreeSelect',
-    field: createWorkflowBusinessField('orgId'),
-    title: '部门',
-    props: {
-      placeholder: '请选择部门',
-      clearable: true,
-      filterable: true,
-      nodeKey: 'value',
-      checkStrictly: true,
-      workflowDataType: 'systemOrg',
-      data: approvalOrgTreeOptions.value,
-    },
-  }), ['string', 'number', 'array']),
+  createWorkflowBusinessComponent(
+    'workflowOrg',
+    '部门',
+    'icon-tree',
+    () => ({
+      type: 'elTreeSelect',
+      field: createWorkflowBusinessField('orgId'),
+      title: '部门',
+      props: {
+        placeholder: '请选择部门',
+        clearable: true,
+        filterable: true,
+        nodeKey: 'value',
+        checkStrictly: true,
+        workflowDataType: 'systemOrg',
+        data: approvalOrgTreeOptions.value,
+      },
+    }),
+    ['string', 'number', 'array'],
+  ),
   createWorkflowBusinessComponent('workflowPost', '岗位', 'icon-tag', () => ({
     type: 'select',
     field: createWorkflowBusinessField('postId'),
@@ -1206,20 +1355,26 @@ const workflowBusinessFormComponents: WorkflowBusinessComponent[] = [
     },
     options: approvalRoleOptions.value.map(toFormCreateOption),
   })),
-  createWorkflowBusinessComponent('workflowDept', '组织架构', 'icon-tree', () => ({
-    type: 'elTreeSelect',
-    field: createWorkflowBusinessField('deptId'),
-    title: '组织架构',
-    props: {
-      placeholder: '请选择组织或部门',
-      clearable: true,
-      filterable: true,
-      nodeKey: 'value',
-      checkStrictly: true,
-      workflowDataType: 'systemDept',
-      data: approvalOrgTreeOptions.value,
-    },
-  }), ['string', 'number', 'array']),
+  createWorkflowBusinessComponent(
+    'workflowDept',
+    '组织架构',
+    'icon-tree',
+    () => ({
+      type: 'elTreeSelect',
+      field: createWorkflowBusinessField('deptId'),
+      title: '组织架构',
+      props: {
+        placeholder: '请选择组织或部门',
+        clearable: true,
+        filterable: true,
+        nodeKey: 'value',
+        checkStrictly: true,
+        workflowDataType: 'systemDept',
+        data: approvalOrgTreeOptions.value,
+      },
+    }),
+    ['string', 'number', 'array'],
+  ),
   createWorkflowBusinessComponent('workflowBusinessType', '业务类型', 'icon-select', () => ({
     type: 'select',
     field: 'businessType',
@@ -1237,38 +1392,56 @@ const workflowBusinessFormComponents: WorkflowBusinessComponent[] = [
       { label: '特殊业务', value: 'SPECIAL_BUSINESS' },
     ],
   })),
-  createWorkflowBusinessComponent('workflowUpload', '上传', 'icon-upload', () => ({
-    type: 'upload',
-    field: createWorkflowBusinessField('attachment'),
-    title: '上传',
-    props: {
-      action: '/api/file/files',
-      limit: 5,
-      multiple: true,
-    },
-  }), ['array']),
-  createWorkflowBusinessComponent('workflowImage', '图片', 'icon-image', () => ({
-    type: 'upload',
-    field: createWorkflowBusinessField('image'),
-    title: '图片',
-    props: {
-      action: '/api/file/files',
-      listType: 'picture-card',
-      accept: 'image/*',
-      limit: 6,
-    },
-  }), ['array']),
-  createWorkflowBusinessComponent('workflowArea', '地区', 'icon-cascader', () => ({
-    type: 'cascader',
-    field: createWorkflowBusinessField('areaCode'),
-    title: '地区',
-    props: {
-      placeholder: '请选择地区',
-      clearable: true,
-      filterable: true,
-      options: [],
-    },
-  }), ['string', 'number', 'array']),
+  createWorkflowBusinessComponent(
+    'workflowUpload',
+    '上传',
+    'icon-upload',
+    () => ({
+      type: 'upload',
+      field: createWorkflowBusinessField('attachment'),
+      title: '上传',
+      props: {
+        action: '/api/file/files',
+        limit: 5,
+        multiple: true,
+      },
+    }),
+    ['array'],
+  ),
+  createWorkflowBusinessComponent(
+    'workflowImage',
+    '图片',
+    'icon-image',
+    () => ({
+      type: 'upload',
+      field: createWorkflowBusinessField('image'),
+      title: '图片',
+      props: {
+        action: '/api/file/files',
+        listType: 'picture-card',
+        accept: 'image/*',
+        limit: 6,
+      },
+    }),
+    ['array'],
+  ),
+  createWorkflowBusinessComponent(
+    'workflowArea',
+    '地区',
+    'icon-cascader',
+    () => ({
+      type: 'cascader',
+      field: createWorkflowBusinessField('areaCode'),
+      title: '地区',
+      props: {
+        placeholder: '请选择地区',
+        clearable: true,
+        filterable: true,
+        options: [],
+      },
+    }),
+    ['string', 'number', 'array'],
+  ),
   createWorkflowBusinessComponent('workflowSignature', '签名', 'icon-edit', () => ({
     type: 'input',
     field: createWorkflowBusinessField('signature'),
@@ -1280,19 +1453,26 @@ const workflowBusinessFormComponents: WorkflowBusinessComponent[] = [
       height: 180,
     },
   })),
-  createWorkflowBusinessComponent('workflowDict', '字典', 'icon-select', () => ({
-    type: 'select',
-    field: createWorkflowBusinessField('dictValue'),
-    title: '字典',
-    props: {
-      placeholder: '请选择字典值',
-      clearable: true,
-      filterable: true,
-      workflowDataType: 'systemDict',
-      dictType: workflowDictOptions.value[0]?.value || '',
-    },
-    options: [],
-  }), ['string', 'number', 'array'], workflowDictComponentProps),
+  createWorkflowBusinessComponent(
+    'workflowDict',
+    '字典',
+    'icon-select',
+    () => ({
+      type: 'select',
+      field: createWorkflowBusinessField('dictValue'),
+      title: '字典',
+      props: {
+        placeholder: '请选择字典值',
+        clearable: true,
+        filterable: true,
+        workflowDataType: 'systemDict',
+        dictType: workflowDictOptions.value[0]?.value || '',
+      },
+      options: [],
+    }),
+    ['string', 'number', 'array'],
+    workflowDictComponentProps,
+  ),
   createWorkflowBusinessComponent('workflowSerialNo', '流水号', 'icon-number', () => ({
     type: 'input',
     field: createWorkflowBusinessField('serialNo'),
@@ -1313,9 +1493,7 @@ const defaultWorkflowFormRules = (): FcRule[] => [
       placeholder: '请输入流程金额',
       controlsPosition: 'right',
     },
-    validate: [
-      { required: true, message: '流程金额不能为空', trigger: 'change' },
-    ],
+    validate: [{ required: true, message: '流程金额不能为空', trigger: 'change' }],
   },
   {
     type: 'select',
@@ -1348,7 +1526,14 @@ const currentVersionDefinition = ref<WorkflowDefinition | null>(null);
 const currentVersionXml = ref('');
 const definitionTotal = ref(0);
 
-const definitionQuery = reactive({ pageNum: 1, pageSize: 10, keyword: '', domainCode: '', categoryId: '' as WorkflowId | '', status: '' });
+const definitionQuery = reactive({
+  pageNum: 1,
+  pageSize: 10,
+  keyword: '',
+  domainCode: '',
+  categoryId: '' as WorkflowId | '',
+  status: '',
+});
 
 const designerMode = ref(false);
 const publishing = ref(false);
@@ -1419,7 +1604,9 @@ const templateForm = reactive({
 
 const categoryEnabled = computed({
   get: () => categoryForm.status === 1,
-  set: value => { categoryForm.status = value ? 1 : 0; },
+  set: (value) => {
+    categoryForm.status = value ? 1 : 0;
+  },
 });
 
 const definitionImportMode = ref<'SELECTED' | 'CATEGORY'>('SELECTED');
@@ -1459,11 +1646,13 @@ const workflowSystemVariableOptions: WorkflowVariableOption[] = [
 
 const workflowFormVariableOptions = computed(() => collectWorkflowFormVariables(workflowFormRules.value));
 
-const workflowVariableGroups = computed<WorkflowVariableGroup[]>(() => [
-  { label: '表单字段', options: workflowFormVariableOptions.value },
-  { label: '申请人基础信息', options: workflowApplicantVariableOptions },
-  { label: '系统内置参数', options: workflowSystemVariableOptions },
-].filter(group => group.options.length > 0));
+const workflowVariableGroups = computed<WorkflowVariableGroup[]>(() =>
+  [
+    { label: '表单字段', options: workflowFormVariableOptions.value },
+    { label: '申请人基础信息', options: workflowApplicantVariableOptions },
+    { label: '系统内置参数', options: workflowSystemVariableOptions },
+  ].filter((group) => group.options.length > 0),
+);
 
 const approvalAssigneeTypeOptions = [
   { label: '指定成员', value: 'SPECIFIED_USER' },
@@ -1539,7 +1728,7 @@ function validateDefinitionDomain(_rule: unknown, value: unknown, callback: (err
     callback(new Error('请选择业务域'));
     return;
   }
-  if (!flattenDomainOptions(domainOptions.value).some(item => item.domainCode === domainCode)) {
+  if (!flattenDomainOptions(domainOptions.value).some((item) => item.domainCode === domainCode)) {
     callback(new Error('业务域不存在或已停用，请重新选择'));
     return;
   }
@@ -1597,14 +1786,16 @@ function handleDomainsLoaded(domains: WorkflowDomainOption[]) {
 }
 
 function flattenDomainOptions(options: WorkflowDomainOption[]): WorkflowDomainOption[] {
-  return options.flatMap(item => [item, ...flattenDomainOptions(item.children || [])]);
+  return options.flatMap((item) => [item, ...flattenDomainOptions(item.children || [])]);
 }
 
 function domainName(domainCode?: string) {
   if (!domainCode) {
     return '未设置业务域';
   }
-  return flattenDomainOptions(domainOptions.value).find(item => item.domainCode === domainCode)?.domainName || domainCode;
+  return (
+    flattenDomainOptions(domainOptions.value).find((item) => item.domainCode === domainCode)?.domainName || domainCode
+  );
 }
 
 function syncTemplateDomainName() {
@@ -1619,11 +1810,11 @@ async function registerWorkflowBusinessFormComponents() {
   }
   await ensureWorkflowBusinessFormDataLoaded();
   if (designer.setupState?.dragRuleList) {
-    workflowBusinessFormComponents.forEach(component => {
+    workflowBusinessFormComponents.forEach((component) => {
       designer.setupState.dragRuleList[component.name] = component;
     });
   } else {
-    designer.addComponent?.(workflowBusinessFormComponents.map(component => ({ ...component, menu: undefined })));
+    designer.addComponent?.(workflowBusinessFormComponents.map((component) => ({ ...component, menu: undefined })));
   }
   designer.setMenuItem?.('business', toWorkflowBusinessMenuItems());
 }
@@ -1644,7 +1835,7 @@ async function loadNodeCatalog() {
 
 async function loadDefinitionCategories(domainCode = definitionQuery.domainCode) {
   definitionCategoryOptions.value = await workflowApi.categoriesList(1, domainCode || undefined);
-  const availableIds = new Set(definitionCategoryOptions.value.map(item => item.id).filter(Boolean));
+  const availableIds = new Set(definitionCategoryOptions.value.map((item) => item.id).filter(Boolean));
   if (definitionQuery.categoryId && !availableIds.has(definitionQuery.categoryId)) {
     definitionQuery.categoryId = '';
   }
@@ -1696,22 +1887,25 @@ async function openDefinitionForm(row?: WorkflowDefinition) {
   const defaultDomainCode = definitionQuery.domainCode || domainOptions.value[0]?.domainCode || 'WORKFLOW';
   const targetDomainCode = row?.domainCode || defaultDomainCode;
   await loadDefinitionCategories(targetDomainCode);
-  Object.assign(definitionForm, row || {
-    id: undefined,
-    categoryId: definitionCategoryOptions.value[0]?.id || '',
-    domainCode: targetDomainCode,
-    adminUsers: [],
-    startEntryVisible: true,
-    icon: '',
-    definitionName: '',
-    definitionKey: '',
-    formCode: '',
-    formJson: JSON.stringify(defaultWorkflowFormRules(), null, 2),
-    designerJson: defaultDesignerJson(),
-    bpmnXml: '',
-    status: 'DRAFT' as WorkflowStatus,
-    remark: '',
-  });
+  Object.assign(
+    definitionForm,
+    row || {
+      id: undefined,
+      categoryId: definitionCategoryOptions.value[0]?.id || '',
+      domainCode: targetDomainCode,
+      adminUsers: [],
+      startEntryVisible: true,
+      icon: '',
+      definitionName: '',
+      definitionKey: '',
+      formCode: '',
+      formJson: JSON.stringify(defaultWorkflowFormRules(), null, 2),
+      designerJson: defaultDesignerJson(),
+      bpmnXml: '',
+      status: 'DRAFT' as WorkflowStatus,
+      remark: '',
+    },
+  );
   definitionForm.startEntryVisible = definitionForm.startEntryVisible !== false;
   loadWorkflowFormConfig(definitionForm.formJson);
   designerRoot.value = parseDesignerJson(definitionForm.designerJson);
@@ -1826,7 +2020,9 @@ async function validateStep(step: number, silent: boolean) {
 }
 
 async function deployDefinition(row: WorkflowDefinition) {
-  await ElMessageBox.confirm(`确认发布流程「${row.definitionName}」？发布后新发起的流程将使用当前设计。`, '发布流程', { type: 'warning' });
+  await ElMessageBox.confirm(`确认发布流程「${row.definitionName}」？发布后新发起的流程将使用当前设计。`, '发布流程', {
+    type: 'warning',
+  });
   await workflowApi.deployDefinition(row.id!);
   ElMessage.success('发布成功');
   await loadDefinitions();
@@ -1926,7 +2122,11 @@ async function toggleDefinitionStatus(row: WorkflowDefinition) {
 }
 
 async function discardDefinitionDraft(row: WorkflowDefinition) {
-  await ElMessageBox.confirm(`确认撤回流程「${row.definitionName}」的未发布修改？当前编辑内容会回滚到最近一次已发布版本。`, '撤回修改', { type: 'warning' });
+  await ElMessageBox.confirm(
+    `确认撤回流程「${row.definitionName}」的未发布修改？当前编辑内容会回滚到最近一次已发布版本。`,
+    '撤回修改',
+    { type: 'warning' },
+  );
   await workflowApi.discardDefinitionDraft(row.id!);
   ElMessage.success('已撤回未发布修改');
   if (definitionForm.id === row.id) {
@@ -1953,15 +2153,22 @@ async function openCategoryManage() {
 }
 
 function openCategoryForm(row?: WorkflowCategory) {
-  Object.assign(categoryForm, row || {
-    id: undefined,
-    categoryName: '',
-    categoryCode: '',
-    domainCode: categoryManageDomainCode.value || definitionQuery.domainCode || domainOptions.value[0]?.domainCode || 'WORKFLOW',
-    sort: 0,
-    status: 1,
-    remark: '',
-  });
+  Object.assign(
+    categoryForm,
+    row || {
+      id: undefined,
+      categoryName: '',
+      categoryCode: '',
+      domainCode:
+        categoryManageDomainCode.value ||
+        definitionQuery.domainCode ||
+        domainOptions.value[0]?.domainCode ||
+        'WORKFLOW',
+      sort: 0,
+      status: 1,
+      remark: '',
+    },
+  );
   categoryDialog.value = true;
 }
 
@@ -2055,8 +2262,8 @@ async function loadImportTemplates() {
       categoryCode: definitionImportForm.domainCode,
     });
     importTemplates.value = page.list;
-    const availableIds = new Set(importTemplates.value.map(item => item.id).filter(Boolean));
-    definitionImportForm.templateIds = definitionImportForm.templateIds.filter(id => availableIds.has(id));
+    const availableIds = new Set(importTemplates.value.map((item) => item.id).filter(Boolean));
+    definitionImportForm.templateIds = definitionImportForm.templateIds.filter((id) => availableIds.has(id));
   } finally {
     importTemplateLoading.value = false;
   }
@@ -2094,15 +2301,15 @@ function nodeIcon(item: Partial<WorkflowNodeCatalog | WorkflowDesignerNode>) {
 }
 
 function workflowIconComponent(icon?: string) {
-  return workflowIconOptions.find(item => item.value === icon)?.component || Setting;
+  return workflowIconOptions.find((item) => item.value === icon)?.component || Setting;
 }
 
 function isWorkflowPresetIcon(icon?: string) {
-  return workflowIconOptions.some(item => item.value === icon);
+  return workflowIconOptions.some((item) => item.value === icon);
 }
 
 function workflowIconLabel(icon?: string) {
-  return workflowIconOptions.find(item => item.value === icon)?.label || '流程图标';
+  return workflowIconOptions.find((item) => item.value === icon)?.label || '流程图标';
 }
 
 function clearWorkflowIcon() {
@@ -2117,22 +2324,39 @@ function loadWorkflowFormConfig(value?: string) {
   Object.assign(customFormConfig, config.customConfig);
 }
 
-function parseWorkflowFormConfig(value?: string): { mode: WorkflowFormMode; rules: FcRule[]; fields: CustomFormField[]; customConfig: CustomFormConfig } {
+function parseWorkflowFormConfig(value?: string): {
+  mode: WorkflowFormMode;
+  rules: FcRule[];
+  fields: CustomFormField[];
+  customConfig: CustomFormConfig;
+} {
   if (!value) {
     const rules = defaultWorkflowFormRules();
-    return { mode: 'DYNAMIC', rules, fields: formCreateRulesToCustomFields(rules), customConfig: defaultCustomFormConfig() };
+    return {
+      mode: 'DYNAMIC',
+      rules,
+      fields: formCreateRulesToCustomFields(rules),
+      customConfig: defaultCustomFormConfig(),
+    };
   }
   try {
     const parsed = JSON.parse(value);
     if (Array.isArray(parsed)) {
       const rules = normalizeFormCreateRules(parsed);
-      return { mode: 'DYNAMIC', rules, fields: formCreateRulesToCustomFields(rules), customConfig: defaultCustomFormConfig() };
+      return {
+        mode: 'DYNAMIC',
+        rules,
+        fields: formCreateRulesToCustomFields(rules),
+        customConfig: defaultCustomFormConfig(),
+      };
     }
     const mode: WorkflowFormMode = parsed?.mode === 'CUSTOM' ? 'CUSTOM' : 'DYNAMIC';
     const customConfig = normalizeCustomFormConfig(parsed?.customConfig || parsed);
     if (Array.isArray(parsed?.rules)) {
       const rules = normalizeFormCreateRules(parsed.rules);
-      const fields = Array.isArray(parsed?.fields) ? normalizeCustomFormFieldsValue(parsed.fields) : formCreateRulesToCustomFields(rules);
+      const fields = Array.isArray(parsed?.fields)
+        ? normalizeCustomFormFieldsValue(parsed.fields)
+        : formCreateRulesToCustomFields(rules);
       return { mode, rules, fields, customConfig };
     }
     if (Array.isArray(parsed?.fields)) {
@@ -2141,23 +2365,38 @@ function parseWorkflowFormConfig(value?: string): { mode: WorkflowFormMode; rule
       return { mode: 'CUSTOM', rules, fields, customConfig };
     }
     const rules = defaultWorkflowFormRules();
-    return { mode: 'DYNAMIC', rules, fields: formCreateRulesToCustomFields(rules), customConfig: defaultCustomFormConfig() };
+    return {
+      mode: 'DYNAMIC',
+      rules,
+      fields: formCreateRulesToCustomFields(rules),
+      customConfig: defaultCustomFormConfig(),
+    };
   } catch {
     const rules = defaultWorkflowFormRules();
-    return { mode: 'DYNAMIC', rules, fields: formCreateRulesToCustomFields(rules), customConfig: defaultCustomFormConfig() };
+    return {
+      mode: 'DYNAMIC',
+      rules,
+      fields: formCreateRulesToCustomFields(rules),
+      customConfig: defaultCustomFormConfig(),
+    };
   }
 }
 
 function stringifyWorkflowFormConfig() {
-  const fields = workflowFormMode.value === 'CUSTOM'
-    ? normalizeCustomFormFieldsValue(customFormFields.value)
-    : formCreateRulesToCustomFields(workflowFormRules.value);
-  return JSON.stringify({
-    mode: workflowFormMode.value,
-    rules: workflowFormRules.value,
-    fields,
-    customConfig: workflowFormMode.value === 'CUSTOM' ? customFormConfig : undefined,
-  }, null, 2);
+  const fields =
+    workflowFormMode.value === 'CUSTOM'
+      ? normalizeCustomFormFieldsValue(customFormFields.value)
+      : formCreateRulesToCustomFields(workflowFormRules.value);
+  return JSON.stringify(
+    {
+      mode: workflowFormMode.value,
+      rules: workflowFormRules.value,
+      fields,
+      customConfig: workflowFormMode.value === 'CUSTOM' ? customFormConfig : undefined,
+    },
+    null,
+    2,
+  );
 }
 
 function normalizeFieldKey(value: string) {
@@ -2246,7 +2485,7 @@ function syncCustomWorkflowForm() {
 function validateWorkflowForm(silent: boolean) {
   syncCurrentWorkflowForm();
   if (workflowFormMode.value === 'CUSTOM') {
-    const invalid = customFormFields.value.find(field => !field.key || !field.label);
+    const invalid = customFormFields.value.find((field) => !field.key || !field.label);
     if (invalid) {
       if (!silent) {
         ElMessage.warning('请完善自定义表单字段标识和字段名称');
@@ -2258,9 +2497,7 @@ function validateWorkflowForm(silent: boolean) {
 }
 
 function normalizeFormCreateRules(rules: any[]): FcRule[] {
-  const normalized = (rules || [])
-    .filter(Boolean)
-    .map((rule, index) => normalizeFormCreateRule(rule, index));
+  const normalized = (rules || []).filter(Boolean).map((rule, index) => normalizeFormCreateRule(rule, index));
   return normalized.length > 0 ? normalized : defaultWorkflowFormRules();
 }
 
@@ -2285,9 +2522,7 @@ function normalizeFormCreateRule(rule: any, index: number): FcRule {
 }
 
 function legacyFieldsToFormCreateRules(fields: any[]): FcRule[] {
-  const rules = fields
-    .filter(Boolean)
-    .map((field, index) => legacyFieldToFormCreateRule(field, index));
+  const rules = fields.filter(Boolean).map((field, index) => legacyFieldToFormCreateRule(field, index));
   return rules.length > 0 ? rules : defaultWorkflowFormRules();
 }
 
@@ -2305,83 +2540,110 @@ function normalizeCustomFormConfig(value: any): CustomFormConfig {
 }
 
 function normalizeCustomFormFieldsValue(fields: any[]): CustomFormField[] {
-  return (fields || [])
-    .filter(Boolean)
-    .map((field, index) => {
-      const key = normalizeFieldKey(field?.key || field?.field || createFieldKey(index + 1));
-      const label = String(field?.label || field?.title || key);
-      const props = field?.props || {};
-      const type = normalizeCustomFieldType(props?.workflowDataType || field?.workflowDataType || field?.type);
-      return {
-        key,
-        label,
-        type,
-        required: Boolean(field?.required || field?.validate?.some?.((rule: any) => rule?.required) || field?.rules?.some?.((rule: any) => rule?.required)),
-        optionsText: type === 'select' ? field?.optionsText || optionsToText(field?.options) : '',
-        placeholder: String(field?.placeholder || props?.placeholder || ''),
-        defaultValue: field?.defaultValue === undefined || field?.defaultValue === null ? '' : String(field.defaultValue),
-        dictType: type === 'systemDict' ? String(field?.dictType || props?.dictType || props?.dictCode || props?.typeCode || '') : '',
-      };
-    });
+  return (fields || []).filter(Boolean).map((field, index) => {
+    const key = normalizeFieldKey(field?.key || field?.field || createFieldKey(index + 1));
+    const label = String(field?.label || field?.title || key);
+    const props = field?.props || {};
+    const type = normalizeCustomFieldType(props?.workflowDataType || field?.workflowDataType || field?.type);
+    return {
+      key,
+      label,
+      type,
+      required: Boolean(
+        field?.required ||
+        field?.validate?.some?.((rule: any) => rule?.required) ||
+        field?.rules?.some?.((rule: any) => rule?.required),
+      ),
+      optionsText: type === 'select' ? field?.optionsText || optionsToText(field?.options) : '',
+      placeholder: String(field?.placeholder || props?.placeholder || ''),
+      defaultValue: field?.defaultValue === undefined || field?.defaultValue === null ? '' : String(field.defaultValue),
+      dictType:
+        type === 'systemDict'
+          ? String(field?.dictType || props?.dictType || props?.dictCode || props?.typeCode || '')
+          : '',
+    };
+  });
 }
 
 function normalizeCustomFieldType(type?: string) {
   if (type === 'number') return 'inputNumber';
   if (type === 'datetime') return 'datePicker';
   const normalized = String(type || '');
-  if (['input', 'textarea', 'inputNumber', 'select', 'datePicker', 'systemUser', 'systemOrg', 'systemDept', 'systemPost', 'systemRole', 'systemDict', 'signature'].includes(normalized)) {
+  if (
+    [
+      'input',
+      'textarea',
+      'inputNumber',
+      'select',
+      'datePicker',
+      'systemUser',
+      'systemOrg',
+      'systemDept',
+      'systemPost',
+      'systemRole',
+      'systemDict',
+      'signature',
+    ].includes(normalized)
+  ) {
     return normalized;
   }
   return 'input';
 }
 
 function customFieldsToFormCreateRules(fields: CustomFormField[]): FcRule[] {
-  const rules = normalizeCustomFormFieldsValue(fields)
-    .map((field): FcRule => {
-      const formCreateType = customFieldToFormCreateType(field.type);
-      const rule: FcRule = {
-        type: formCreateType,
-        field: field.key,
-        title: field.label,
-        props: {
-          placeholder: field.placeholder || (isSelectLikeCustomFieldType(field.type) ? `请选择${field.label}` : `请输入${field.label}`),
-          workflowDataType: isSystemCustomFieldType(field.type) ? field.type : undefined,
-          dictType: field.type === 'systemDict' ? field.dictType : undefined,
-          clearable: isSelectLikeCustomFieldType(field.type) ? true : undefined,
-          filterable: isSelectLikeCustomFieldType(field.type) ? true : undefined,
-        },
-        validate: field.required
-          ? [{ required: true, message: `${field.label}不能为空`, trigger: field.type === 'input' || field.type === 'textarea' ? 'blur' : 'change' }]
-          : [],
-      };
-      if (field.type === 'select') {
-        rule.options = textToOptions(field.optionsText);
+  const rules = normalizeCustomFormFieldsValue(fields).map((field): FcRule => {
+    const formCreateType = customFieldToFormCreateType(field.type);
+    const rule: FcRule = {
+      type: formCreateType,
+      field: field.key,
+      title: field.label,
+      props: {
+        placeholder:
+          field.placeholder ||
+          (isSelectLikeCustomFieldType(field.type) ? `请选择${field.label}` : `请输入${field.label}`),
+        workflowDataType: isSystemCustomFieldType(field.type) ? field.type : undefined,
+        dictType: field.type === 'systemDict' ? field.dictType : undefined,
+        clearable: isSelectLikeCustomFieldType(field.type) ? true : undefined,
+        filterable: isSelectLikeCustomFieldType(field.type) ? true : undefined,
+      },
+      validate: field.required
+        ? [
+            {
+              required: true,
+              message: `${field.label}不能为空`,
+              trigger: field.type === 'input' || field.type === 'textarea' ? 'blur' : 'change',
+            },
+          ]
+        : [],
+    };
+    if (field.type === 'select') {
+      rule.options = textToOptions(field.optionsText);
+    }
+    if (isSystemCustomFieldType(field.type)) {
+      const options = customFieldSystemOptions(field.type).map((item) => ({ label: item.label, value: item.value }));
+      if (field.type === 'systemOrg' || field.type === 'systemDept') {
+        rule.props = {
+          ...rule.props,
+          data: approvalOrgTreeOptions.value,
+          nodeKey: 'value',
+          checkStrictly: true,
+        };
+      } else if (field.type === 'systemDict') {
+        rule.options = [];
+      } else {
+        rule.options = options;
       }
-      if (isSystemCustomFieldType(field.type)) {
-        const options = customFieldSystemOptions(field.type).map(item => ({ label: item.label, value: item.value }));
-        if (field.type === 'systemOrg' || field.type === 'systemDept') {
-          rule.props = {
-            ...rule.props,
-            data: approvalOrgTreeOptions.value,
-            nodeKey: 'value',
-            checkStrictly: true,
-          };
-        } else if (field.type === 'systemDict') {
-          rule.options = [];
-        } else {
-          rule.options = options;
-        }
-      }
-      if (field.defaultValue) {
-        (rule as any).value = field.defaultValue;
-      }
-      return rule;
-    });
+    }
+    if (field.defaultValue) {
+      (rule as any).value = field.defaultValue;
+    }
+    return rule;
+  });
   return rules.length > 0 ? rules : defaultWorkflowFormRules();
 }
 
 function formCreateRulesToCustomFields(rules: FcRule[]): CustomFormField[] {
-  return collectWorkflowFormVariables(rules).map(variable => {
+  return collectWorkflowFormVariables(rules).map((variable) => {
     const rule = findRuleByField(rules, variable.value) || {};
     const props = rule.props || {};
     return {
@@ -2415,7 +2677,9 @@ function isSelectLikeCustomFieldType(type: string) {
 }
 
 function isSystemCustomFieldType(type: string) {
-  return ['systemUser', 'systemOrg', 'systemDept', 'systemPost', 'systemRole', 'systemDict', 'signature'].includes(String(type));
+  return ['systemUser', 'systemOrg', 'systemDept', 'systemPost', 'systemRole', 'systemDict', 'signature'].includes(
+    String(type),
+  );
 }
 
 function customFieldSystemLoading(type: string) {
@@ -2506,7 +2770,7 @@ function optionsToText(options: any[] | undefined) {
     return '';
   }
   return options
-    .map(option => `${option?.label || option?.value || ''}=${option?.value || option?.label || ''}`)
+    .map((option) => `${option?.label || option?.value || ''}=${option?.value || option?.label || ''}`)
     .filter(Boolean)
     .join(',');
 }
@@ -2514,10 +2778,10 @@ function optionsToText(options: any[] | undefined) {
 function textToOptions(value?: string) {
   return String(value || '')
     .split(',')
-    .map(item => item.trim())
+    .map((item) => item.trim())
     .filter(Boolean)
-    .map(item => {
-      const [label, optionValue] = item.split('=').map(part => part.trim());
+    .map((item) => {
+      const [label, optionValue] = item.split('=').map((part) => part.trim());
       return { label: label || optionValue, value: optionValue || label };
     });
 }
@@ -2550,7 +2814,7 @@ function mapLegacyFieldType(type?: string) {
 
 function normalizeLegacyRules(rules: any[] | undefined, title: string) {
   if (!Array.isArray(rules)) return [];
-  return rules.map(rule => ({
+  return rules.map((rule) => ({
     ...rule,
     message: rule?.message || `${title}不能为空`,
     trigger: rule?.trigger || 'change',
@@ -2600,7 +2864,7 @@ function normalizeWorkflowVariableDataType(type?: WorkflowVariableDataType) {
 
 function findWorkflowVariable(variable: string) {
   for (const group of workflowVariableGroups.value) {
-    const matched = group.options.find(item => item.value === variable);
+    const matched = group.options.find((item) => item.value === variable);
     if (matched) {
       return matched;
     }
@@ -2613,7 +2877,22 @@ function workflowVariableDataType(variable: string) {
 }
 
 function isFormInputRule(rule: any) {
-  return Boolean(rule?.field && rule.type !== 'hidden') || ['input', 'textarea', 'inputNumber', 'select', 'radio', 'checkbox', 'switch', 'datePicker', 'timePicker', 'cascader', 'treeSelect'].includes(String(rule?.type));
+  return (
+    Boolean(rule?.field && rule.type !== 'hidden') ||
+    [
+      'input',
+      'textarea',
+      'inputNumber',
+      'select',
+      'radio',
+      'checkbox',
+      'switch',
+      'datePicker',
+      'timePicker',
+      'cascader',
+      'treeSelect',
+    ].includes(String(rule?.type))
+  );
 }
 
 function updateNodeProperty(node: WorkflowDesignerNode, key: string, value: any) {
@@ -2853,7 +3132,7 @@ function updateApprovalListValue(node: WorkflowDesignerNode, key: keyof Workflow
 
 function normalizeApprovalIds(value: unknown): string[] {
   if (Array.isArray(value)) {
-    return value.map(item => String(item).trim()).filter(Boolean);
+    return value.map((item) => String(item).trim()).filter(Boolean);
   }
   if (value === undefined || value === null || value === '') {
     return [];
@@ -2877,7 +3156,7 @@ async function searchApprovalUsers(keyword = '') {
       },
     });
     approvalUserOptions.value = filterApprovalTargets(toPageList(data), keyword, ['username', 'nickname', 'memberName'])
-      .map(item => {
+      .map((item) => {
         const id = item.userId ?? item.id ?? item.memberId;
         const value = item.username ?? id;
         const name = item.nickname || item.memberName || item.username || id;
@@ -2902,7 +3181,7 @@ async function loadApprovalRoles() {
   try {
     const data = await get<any[]>('/authorization/roles');
     approvalRoleOptions.value = (data || [])
-      .map(item => {
+      .map((item) => {
         const id = item.roleId ?? item.id;
         const name = item.roleName || item.roleCode || id;
         const code = item.roleCode && item.roleCode !== name ? ` / ${item.roleCode}` : '';
@@ -2931,7 +3210,7 @@ async function searchApprovalPosts(keyword = '') {
       },
     });
     approvalPostOptions.value = filterApprovalTargets(toPageList(data), keyword, ['postName', 'postCode'])
-      .map(item => {
+      .map((item) => {
         const id = item.id ?? item.postId;
         const name = item.postName || item.postCode || id;
         const code = item.postCode && item.postCode !== name ? ` / ${item.postCode}` : '';
@@ -2972,7 +3251,7 @@ async function loadWorkflowDicts() {
   try {
     const data = await get<any[]>('/system/dict/type/list').catch(() => []);
     workflowDictOptions.value = (Array.isArray(data) ? data : [])
-      .map(item => {
+      .map((item) => {
         const code = item.dictType || item.typeCode || item.code || item.value || item.id;
         const name = item.dictName || item.typeName || item.name || item.label || code;
         return code === undefined ? undefined : { value: String(code), label: String(name) };
@@ -2989,16 +3268,24 @@ function toPageList<T = any>(data?: BackendPageResult<T>): T[] {
 }
 
 function filterApprovalTargets<T extends Record<string, any>>(items: T[], keyword: string, keys: string[]) {
-  const normalized = String(keyword || '').trim().toLowerCase();
+  const normalized = String(keyword || '')
+    .trim()
+    .toLowerCase();
   if (!normalized) {
     return items;
   }
-  return items.filter(item => keys.some(key => String(item[key] || '').toLowerCase().includes(normalized)));
+  return items.filter((item) =>
+    keys.some((key) =>
+      String(item[key] || '')
+        .toLowerCase()
+        .includes(normalized),
+    ),
+  );
 }
 
 function toApprovalOrgTree(items: any[]): ApprovalOrgTreeOption[] {
   return (items || [])
-    .map(item => {
+    .map((item) => {
       const id = item.id ?? item.orgId;
       const name = item.orgName || item.name || item.orgCode || id;
       if (id === undefined) {
@@ -3060,7 +3347,11 @@ function isUserTaskNode(node: WorkflowDesignerNode) {
 }
 
 function isServiceTaskNode(node: WorkflowDesignerNode) {
-  return node.bpmnType === 'serviceTask' || node.nodeType === 'SERVICE' || ['SPRING_BEAN', 'HTTP_URL', 'REMOTE_SERVICE', 'EVENT_PUBLISH'].includes(node.executionType || '');
+  return (
+    node.bpmnType === 'serviceTask' ||
+    node.nodeType === 'SERVICE' ||
+    ['SPRING_BEAN', 'HTTP_URL', 'REMOTE_SERVICE', 'EVENT_PUBLISH'].includes(node.executionType || '')
+  );
 }
 
 function hasAdvancedNodeProperties(node: WorkflowDesignerNode) {
@@ -3071,7 +3362,14 @@ function hasAdvancedNodeProperties(node: WorkflowDesignerNode) {
 }
 
 function hasNodeSpecificConfig(node: WorkflowDesignerNode) {
-  return isRootNode(node) || node.nodeType === 'EXCLUSIVE_BRANCH' || isUserTaskNode(node) || isCcNode(node) || isServiceTaskNode(node) || hasAdvancedNodeProperties(node);
+  return (
+    isRootNode(node) ||
+    node.nodeType === 'EXCLUSIVE_BRANCH' ||
+    isUserTaskNode(node) ||
+    isCcNode(node) ||
+    isServiceTaskNode(node) ||
+    hasAdvancedNodeProperties(node)
+  );
 }
 
 function conditionEditMode(node: WorkflowDesignerNode): ConditionEditMode {
@@ -3095,7 +3393,10 @@ function createConditionRow(partial: Partial<ConditionRow> = {}): ConditionRow {
     id: createNodeId('condition'),
     connector: partial.connector || 'AND',
     variable: partial.variable || '',
-    operator: shouldValidateOperator && !validConditionOperator(partial.variable || '', operator) ? defaultConditionOperator(partial.variable || '') : operator,
+    operator:
+      shouldValidateOperator && !validConditionOperator(partial.variable || '', operator)
+        ? defaultConditionOperator(partial.variable || '')
+        : operator,
     value: partial.value ?? '',
   };
 }
@@ -3148,7 +3449,7 @@ function applyConditionBuilder() {
   const groupParts = conditionGroups.value
     .map((group, groupIndex) => {
       const rows = group.rows
-        .filter(row => row.variable)
+        .filter((row) => row.variable)
         .map((row, rowIndex) => {
           const expression = formatConditionExpression(row);
           if (rowIndex === 0) {
@@ -3171,7 +3472,7 @@ function applyConditionBuilder() {
     syncDesignerJson();
     return;
   }
-  selectedNode.value.conditionExpression = `\${${groupParts.map((groupPart, index) => index === 0 ? groupPart.expression : `${groupPart.connector === 'OR' ? '||' : '&&'} ${groupPart.expression}`).join(' ')}}`;
+  selectedNode.value.conditionExpression = `\${${groupParts.map((groupPart, index) => (index === 0 ? groupPart.expression : `${groupPart.connector === 'OR' ? '||' : '&&'} ${groupPart.expression}`)).join(' ')}}`;
   syncDesignerJson();
 }
 
@@ -3207,19 +3508,23 @@ function parseConditionToBuilder(expression: string) {
   }
   const categories = splitConditionTerms(inner).map((groupPart, groupIndex) => {
     const groupText = stripConditionWrapper(groupPart.text);
-    const rows = splitConditionTerms(groupText).map((rowPart, rowIndex) => {
-      const rowText = stripConditionWrapper(rowPart.text);
-      const matched = rowText.match(/^([A-Za-z_][\w.]*)\s*(==|!=|>=|<=|>|<)\s*('(?:\\'|[^'])*'|true|false|null|-?\d+(?:\.\d+)?|[^\s&|]+)/);
-      if (!matched) {
-        return undefined;
-      }
-      return createConditionRow({
-        connector: rowIndex === 0 ? 'AND' : rowPart.connector,
-        variable: matched[1],
-        operator: matched[2],
-        value: unformatConditionValue(matched[3]),
-      });
-    }).filter(Boolean) as ConditionRow[];
+    const rows = splitConditionTerms(groupText)
+      .map((rowPart, rowIndex) => {
+        const rowText = stripConditionWrapper(rowPart.text);
+        const matched = rowText.match(
+          /^([A-Za-z_][\w.]*)\s*(==|!=|>=|<=|>|<)\s*('(?:\\'|[^'])*'|true|false|null|-?\d+(?:\.\d+)?|[^\s&|]+)/,
+        );
+        if (!matched) {
+          return undefined;
+        }
+        return createConditionRow({
+          connector: rowIndex === 0 ? 'AND' : rowPart.connector,
+          variable: matched[1],
+          operator: matched[2],
+          value: unformatConditionValue(matched[3]),
+        });
+      })
+      .filter(Boolean) as ConditionRow[];
     return createConditionGroup({
       connector: groupIndex === 0 ? 'AND' : groupPart.connector,
       rows: rows.length > 0 ? rows : [createConditionRow()],
@@ -3249,7 +3554,7 @@ function splitConditionTerms(expression: string) {
       }
       continue;
     }
-    if (char === '\'' || char === '"') {
+    if (char === "'" || char === '"') {
       quote = char;
       buffer += char;
       continue;
@@ -3310,7 +3615,7 @@ function stripConditionWrapper(value: string) {
       }
       continue;
     }
-    if (char === '\'' || char === '"') {
+    if (char === "'" || char === '"') {
       quote = char;
       continue;
     }
@@ -3344,7 +3649,9 @@ function formatConditionValue(value: string | number, dataType: string) {
 
 function formatConditionExpression(row: ConditionRow) {
   const dataType = workflowVariableDataType(row.variable);
-  const operator = validConditionOperator(row.variable, row.operator) ? row.operator : defaultConditionOperator(row.variable);
+  const operator = validConditionOperator(row.variable, row.operator)
+    ? row.operator
+    : defaultConditionOperator(row.variable);
   if (operator === 'contains') {
     return `${row.variable}.contains(${formatConditionValue(row.value ?? '', dataType)})`;
   }
@@ -3380,7 +3687,10 @@ function collectNodeErrors(node: WorkflowDesignerNode | null | undefined, errors
   if (node.nodeType === 'EXCLUSIVE_BRANCH' && requireCondition && !node.conditionExpression?.trim()) {
     errors.push(`${node.nodeName || '条件分支'} 未配置条件表达式`);
   }
-  if ((node.nodeType === 'EXCLUSIVE_GATEWAY' || node.nodeType === 'PARALLEL_GATEWAY') && (node.conditionNodes?.length || 0) < 2) {
+  if (
+    (node.nodeType === 'EXCLUSIVE_GATEWAY' || node.nodeType === 'PARALLEL_GATEWAY') &&
+    (node.conditionNodes?.length || 0) < 2
+  ) {
     errors.push(`${node.nodeName || '网关节点'} 至少需要两个分支`);
   }
   if (isRootNode(node)) {
@@ -3416,7 +3726,11 @@ function collectApprovalConfigErrors(node: WorkflowDesignerNode, errors: string[
   if (config.assigneeType === 'SPECIFIED_ORG' && !(config.orgIds || []).length) {
     errors.push(`${nodeName} 未选择组织`);
   }
-  if (config.assigneeType === 'ORG_LEADER' && config.orgLeaderUseInitiatorOrg === false && !(config.orgIds || []).length) {
+  if (
+    config.assigneeType === 'ORG_LEADER' &&
+    config.orgLeaderUseInitiatorOrg === false &&
+    !(config.orgIds || []).length
+  ) {
     errors.push(`${nodeName} 未选择主管所在组织`);
   }
   if (config.assigneeType === 'FORM_USER' && !config.formUserField) {
@@ -3433,7 +3747,12 @@ function collectApprovalConfigErrors(node: WorkflowDesignerNode, errors: string[
 function collectRootConfigErrors(node: WorkflowDesignerNode, errors: string[]) {
   const config = rootConfig(node);
   const nodeName = node.nodeName || '发起人';
-  const hasCompositeTargets = Boolean((config.userIds || []).length || (config.orgIds || []).length || (config.roleIds || []).length || (config.postIds || []).length);
+  const hasCompositeTargets = Boolean(
+    (config.userIds || []).length ||
+    (config.orgIds || []).length ||
+    (config.roleIds || []).length ||
+    (config.postIds || []).length,
+  );
   if (config.scopeType === 'SPECIFIED_USER' && !(config.userIds || []).length) {
     errors.push(`${nodeName} 未选择可发起成员`);
   }
@@ -3448,12 +3767,16 @@ function collectRootConfigErrors(node: WorkflowDesignerNode, errors: string[]) {
 function collectCcConfigErrors(node: WorkflowDesignerNode, errors: string[]) {
   const config = ccConfig(node);
   const nodeName = node.nodeName || '抄送节点';
-  const hasTargets = Boolean((config.userIds || []).length || (config.orgIds || []).length || (config.roleIds || []).length || (config.postIds || []).length);
+  const hasTargets = Boolean(
+    (config.userIds || []).length ||
+    (config.orgIds || []).length ||
+    (config.roleIds || []).length ||
+    (config.postIds || []).length,
+  );
   if (!hasTargets) {
     errors.push(`${nodeName} 未选择抄送对象`);
   }
 }
-
 </script>
 
 <style scoped>
@@ -3948,8 +4271,10 @@ function collectCcConfigErrors(node: WorkflowDesignerNode, errors: string[]) {
   box-shadow: none;
 }
 
-.workflow-icon-upload-control :deep(.el-upload-list--picture-card .el-upload-list__item-actions .el-upload-list__item-preview),
-.workflow-icon-upload-control :deep(.el-upload-list--picture-card .el-upload-list__item-actions .el-upload-list__item-delete) {
+.workflow-icon-upload-control
+  :deep(.el-upload-list--picture-card .el-upload-list__item-actions .el-upload-list__item-preview),
+.workflow-icon-upload-control
+  :deep(.el-upload-list--picture-card .el-upload-list__item-actions .el-upload-list__item-delete) {
   margin: 0;
   color: #fff;
   font-size: 18px;
@@ -4512,7 +4837,6 @@ function collectCcConfigErrors(node: WorkflowDesignerNode, errors: string[]) {
     align-items: flex-start;
     flex-direction: column;
   }
-
 }
 
 @media (max-width: 1180px) {

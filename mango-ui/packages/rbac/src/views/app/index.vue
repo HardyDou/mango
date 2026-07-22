@@ -3,58 +3,25 @@
     <el-card>
       <div class="action-toolbar">
         <div class="toolbar-left">
-          <el-button
-            type="primary"
-            @click="handleAdd"
-          >
-            新增应用
-          </el-button>
+          <el-button type="primary" @click="handleAdd"> 新增应用 </el-button>
         </div>
       </div>
 
-      <el-table
-        v-loading="loading"
-        :data="tableData"
-        stripe
-      >
-        <el-table-column
-          prop="appName"
-          label="应用名称"
-          min-width="160"
-        />
-        <el-table-column
-          prop="appCode"
-          label="应用编码"
-          min-width="160"
-        />
-        <el-table-column
-          prop="appType"
-          label="入口类型"
-          width="120"
-        >
+      <el-table v-loading="loading" :data="tableData" stripe>
+        <el-table-column prop="appName" label="应用名称" min-width="160" />
+        <el-table-column prop="appCode" label="应用编码" min-width="160" />
+        <el-table-column prop="appType" label="入口类型" width="120">
           <template #default="{ row }">
             {{ appTypeLabel(row.appType) }}
           </template>
         </el-table-column>
-        <el-table-column
-          prop="deployMode"
-          label="部署模式"
-          width="110"
-        >
+        <el-table-column prop="deployMode" label="部署模式" width="110">
           <template #default="{ row }">
             {{ deployModeLabel(row.deployMode) }}
           </template>
         </el-table-column>
-        <el-table-column
-          prop="mountPath"
-          label="挂载路径"
-          min-width="160"
-          show-overflow-tooltip
-        />
-        <el-table-column
-          label="登录上下文"
-          min-width="260"
-        >
+        <el-table-column prop="mountPath" label="挂载路径" min-width="160" show-overflow-tooltip />
+        <el-table-column label="登录上下文" min-width="260">
           <template #default="{ row }">
             <div class="context-tags">
               <el-tag
@@ -63,89 +30,38 @@
                 size="small"
                 :type="context.defaultFlag === 1 ? 'success' : 'info'"
               >
-                <DictTag
-                  dict-code="auth_realm"
-                  :value="context.realm"
-                />
+                <DictTag dict-code="auth_realm" :value="context.realm" />
                 /
-                <DictTag
-                  dict-code="auth_actor_type"
-                  :value="context.actorType"
-                />
+                <DictTag dict-code="auth_actor_type" :value="context.actorType" />
               </el-tag>
               <span v-if="!row.loginContexts?.length">-</span>
             </div>
           </template>
         </el-table-column>
-        <el-table-column
-          prop="icon"
-          label="图标"
-          width="90"
-        >
+        <el-table-column prop="icon" label="图标" width="90">
           <template #default="{ row }">
-            <el-icon
-              v-if="row.icon"
-              size="16"
-            >
+            <el-icon v-if="row.icon" size="16">
               <component :is="row.icon" />
             </el-icon>
             <span v-else>-</span>
           </template>
         </el-table-column>
-        <el-table-column
-          prop="sort"
-          label="排序"
-          width="80"
-        />
-        <el-table-column
-          prop="status"
-          label="状态"
-          width="90"
-        >
+        <el-table-column prop="sort" label="排序" width="80" />
+        <el-table-column prop="status" label="状态" width="90">
           <template #default="{ row }">
-            <DictTag
-              dict-code="sys_normal_disable"
-              :value="row.status"
-              size="small"
-            />
+            <DictTag dict-code="sys_normal_disable" :value="row.status" size="small" />
           </template>
         </el-table-column>
-        <el-table-column
-          prop="remark"
-          label="备注"
-          show-overflow-tooltip
-        />
-        <el-table-column
-          prop="createTime"
-          label="创建时间"
-          width="180"
-        >
+        <el-table-column prop="remark" label="备注" show-overflow-tooltip />
+        <el-table-column prop="createTime" label="创建时间" width="180">
           <template #default="{ row }">
             {{ formatTime(row.createTime) }}
           </template>
         </el-table-column>
-        <el-table-column
-          label="操作"
-          width="210"
-          fixed="right"
-        >
+        <el-table-column label="操作" width="210" fixed="right">
           <template #default="{ row }">
-            <el-button
-              link
-              type="primary"
-              size="small"
-              @click="handleModules(row)"
-            >
-              模块
-            </el-button>
-            <el-button
-              link
-              type="primary"
-              size="small"
-              @click="handleEdit(row)"
-            >
-              编辑
-            </el-button>
+            <el-button link type="primary" size="small" @click="handleModules(row)"> 模块 </el-button>
+            <el-button link type="primary" size="small" @click="handleEdit(row)"> 编辑 </el-button>
             <el-button
               link
               type="danger"
@@ -166,111 +82,44 @@
       width="min(640px, 92vw)"
       destroy-on-close
     >
-      <el-form
-        ref="formRef"
-        :model="form"
-        :rules="rules"
-        label-width="100px"
-      >
-        <el-form-item
-          label="应用名称"
-          prop="appName"
-        >
+      <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
+        <el-form-item label="应用名称" prop="appName">
           <el-input v-model="form.appName" />
         </el-form-item>
-        <el-form-item
-          label="应用编码"
-          prop="appCode"
-        >
-          <el-input
-            v-model="form.appCode"
-            :disabled="!!form.appId"
-          />
+        <el-form-item label="应用编码" prop="appCode">
+          <el-input v-model="form.appCode" :disabled="!!form.appId" />
         </el-form-item>
-        <el-form-item
-          label="入口类型"
-          prop="appType"
-        >
+        <el-form-item label="入口类型" prop="appType">
           <el-select v-model="form.appType">
-            <el-option
-              v-for="item in appTypeOptions"
-              :key="item.value"
-              :label="item.label"
-              :value="item.value"
-            />
+            <el-option v-for="item in appTypeOptions" :key="item.value" :label="item.label" :value="item.value" />
           </el-select>
         </el-form-item>
-        <el-form-item
-          label="部署模式"
-          prop="deployMode"
-        >
+        <el-form-item label="部署模式" prop="deployMode">
           <el-select v-model="form.deployMode">
-            <el-option
-              v-for="item in deployModeOptions"
-              :key="item.value"
-              :label="item.label"
-              :value="item.value"
-            />
+            <el-option v-for="item in deployModeOptions" :key="item.value" :label="item.label" :value="item.value" />
           </el-select>
         </el-form-item>
-        <el-form-item
-          label="入口地址"
-          prop="entryUrl"
-          v-if="form.appType !== 'LOCAL'"
-        >
-          <el-input
-            v-model="form.entryUrl"
-            placeholder="远程入口、iframe 或外链地址"
-          />
+        <el-form-item label="入口地址" prop="entryUrl" v-if="form.appType !== 'LOCAL'">
+          <el-input v-model="form.entryUrl" placeholder="远程入口、iframe 或外链地址" />
         </el-form-item>
-        <el-form-item
-          label="挂载路径"
-          prop="mountPath"
-        >
-          <el-input
-            v-model="form.mountPath"
-            placeholder="/micro/workflow"
-          />
+        <el-form-item label="挂载路径" prop="mountPath">
+          <el-input v-model="form.mountPath" placeholder="/micro/workflow" />
         </el-form-item>
-        <el-form-item
-          label="激活规则"
-          prop="activeRule"
-        >
-          <el-input
-            v-model="form.activeRule"
-            placeholder="/workflow/**"
-          />
+        <el-form-item label="激活规则" prop="activeRule">
+          <el-input v-model="form.activeRule" placeholder="/workflow/**" />
         </el-form-item>
         <el-form-item label="运行框架">
-          <el-select
-            v-model="form.framework"
-            clearable
-            filterable
-          >
-            <el-option
-              v-for="item in frameworkOptions"
-              :key="item.value"
-              :label="item.label"
-              :value="item.value"
-            />
+          <el-select v-model="form.framework" clearable filterable>
+            <el-option v-for="item in frameworkOptions" :key="item.value" :label="item.label" :value="item.value" />
           </el-select>
         </el-form-item>
         <el-form-item label="版本">
-          <el-input
-            v-model="form.version"
-            placeholder="例如 1.0.0"
-          />
+          <el-input v-model="form.version" placeholder="例如 1.0.0" />
         </el-form-item>
         <el-form-item label="健康检查">
-          <el-input
-            v-model="form.healthCheckUrl"
-            placeholder="健康检查地址"
-          />
+          <el-input v-model="form.healthCheckUrl" placeholder="健康检查地址" />
         </el-form-item>
-        <el-form-item
-          label="沙箱"
-          v-if="form.appType === 'MICRO_APP' || form.deployMode !== 'EMBEDDED'"
-        >
+        <el-form-item label="沙箱" v-if="form.appType === 'MICRO_APP' || form.deployMode !== 'EMBEDDED'">
           <el-switch v-model="form.sandboxEnabled" />
         </el-form-item>
         <el-form-item label="样式隔离">
@@ -283,16 +132,9 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item
-          label="登录上下文"
-          prop="loginContexts"
-        >
+        <el-form-item label="登录上下文" prop="loginContexts">
           <div class="context-editor">
-            <div
-              v-for="(context, index) in form.loginContexts"
-              :key="index"
-              class="context-row"
-            >
+            <div v-for="(context, index) in form.loginContexts" :key="index" class="context-row">
               <div class="context-fields">
                 <DictSelect
                   v-model="context.realm"
@@ -309,183 +151,77 @@
                 />
               </div>
               <div class="context-actions">
-                <el-checkbox
-                  :model-value="context.defaultFlag === 1"
-                  @change="setDefaultContext(index)"
-                >
+                <el-checkbox :model-value="context.defaultFlag === 1" @change="setDefaultContext(index)">
                   默认
                 </el-checkbox>
                 <div class="status-switch">
                   <span>启用</span>
-                  <el-switch
-                    v-model="context.status"
-                    :active-value="1"
-                    :inactive-value="0"
-                  />
+                  <el-switch v-model="context.status" :active-value="1" :inactive-value="0" />
                 </div>
-                <el-button
-                  link
-                  type="danger"
-                  :disabled="form.loginContexts.length <= 1"
-                  @click="removeContext(index)"
-                >
+                <el-button link type="danger" :disabled="form.loginContexts.length <= 1" @click="removeContext(index)">
                   删除
                 </el-button>
               </div>
             </div>
-            <el-button
-              class="context-add-button"
-              @click="addContext"
-            >
-              新增登录上下文
-            </el-button>
+            <el-button class="context-add-button" @click="addContext"> 新增登录上下文 </el-button>
           </div>
         </el-form-item>
-        <el-form-item
-          label="图标"
-          prop="icon"
-        >
+        <el-form-item label="图标" prop="icon">
           <div class="icon-picker-field">
             <div class="icon-preview">
-              <el-icon
-                v-if="form.icon"
-                size="18"
-              >
+              <el-icon v-if="form.icon" size="18">
                 <component :is="form.icon" />
               </el-icon>
               <span v-else>-</span>
             </div>
-            <el-input
-              v-model="form.icon"
-              readonly
-              placeholder="请选择应用图标"
-            />
-            <el-button @click="openIconSelector">
-              选择
-            </el-button>
-            <el-button
-              v-if="form.icon"
-              @click="form.icon = ''"
-            >
-              清空
-            </el-button>
+            <el-input v-model="form.icon" readonly placeholder="请选择应用图标" />
+            <el-button @click="openIconSelector"> 选择 </el-button>
+            <el-button v-if="form.icon" @click="form.icon = ''"> 清空 </el-button>
           </div>
         </el-form-item>
-        <el-form-item
-          label="状态"
-          prop="status"
-        >
+        <el-form-item label="状态" prop="status">
           <el-radio-group v-model="form.status">
-            <el-radio
-              v-for="item in statusOptions"
-              :key="item.value"
-              :label="Number(item.value)"
-            >
+            <el-radio v-for="item in statusOptions" :key="item.value" :label="Number(item.value)">
               {{ item.label }}
             </el-radio>
           </el-radio-group>
         </el-form-item>
-        <el-form-item
-          label="排序"
-          prop="sort"
-        >
-          <el-input-number
-            v-model="form.sort"
-            :min="0"
-            :max="9999"
-          />
+        <el-form-item label="排序" prop="sort">
+          <el-input-number v-model="form.sort" :min="0" :max="9999" />
         </el-form-item>
-        <el-form-item
-          label="备注"
-          prop="remark"
-        >
-          <el-input
-            v-model="form.remark"
-            type="textarea"
-            :rows="3"
-          />
+        <el-form-item label="备注" prop="remark">
+          <el-input v-model="form.remark" type="textarea" :rows="3" />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="dialogVisible = false">
-          取消
-        </el-button>
-        <el-button
-          type="primary"
-          :loading="submitLoading"
-          @click="handleSubmit"
-        >
-          确定
-        </el-button>
+        <el-button @click="dialogVisible = false"> 取消 </el-button>
+        <el-button type="primary" :loading="submitLoading" @click="handleSubmit"> 确定 </el-button>
       </template>
     </MangoDialog>
 
-    <IconSelector
-      ref="iconSelectorRef"
-      v-model="iconValue"
-    />
+    <IconSelector ref="iconSelectorRef" v-model="iconValue" />
 
-    <el-drawer
-      v-model="moduleDrawerVisible"
-      :title="`${currentApp?.appName || ''} 集成模块`"
-      size="520px"
-    >
+    <el-drawer v-model="moduleDrawerVisible" :title="`${currentApp?.appName || ''} 集成模块`" size="520px">
       <div class="module-toolbar">
-        <el-button
-          v-for="item in moduleOptions"
-          :key="item.value"
-          size="small"
-          @click="enableModule(item.value)"
-        >
+        <el-button v-for="item in moduleOptions" :key="item.value" size="small" @click="enableModule(item.value)">
           开通{{ item.label }}
         </el-button>
       </div>
-      <el-table
-        v-loading="moduleLoading"
-        :data="moduleBindings"
-        stripe
-      >
-        <el-table-column
-          prop="moduleCode"
-          label="模块编码"
-          min-width="160"
-          show-overflow-tooltip
-        />
-        <el-table-column
-          label="模块名称"
-          min-width="130"
-        >
+      <el-table v-loading="moduleLoading" :data="moduleBindings" stripe>
+        <el-table-column prop="moduleCode" label="模块编码" min-width="160" show-overflow-tooltip />
+        <el-table-column label="模块名称" min-width="130">
           <template #default="{ row }">
             {{ moduleLabel(row.moduleCode) }}
           </template>
         </el-table-column>
-        <el-table-column
-          prop="status"
-          label="状态"
-          width="80"
-        >
+        <el-table-column prop="status" label="状态" width="80">
           <template #default="{ row }">
-            <DictTag
-              dict-code="sys_normal_disable"
-              :value="row.status"
-              size="small"
-            />
+            <DictTag dict-code="sys_normal_disable" :value="row.status" size="small" />
           </template>
         </el-table-column>
-        <el-table-column
-          label="操作"
-          width="150"
-          fixed="right"
-        >
+        <el-table-column label="操作" width="150" fixed="right">
           <template #default="{ row }">
-            <el-button
-              link
-              type="primary"
-              size="small"
-              @click="syncModuleMenus(row.moduleCode)"
-            >
-              同步菜单
-            </el-button>
+            <el-button link type="primary" size="small" @click="syncModuleMenus(row.moduleCode)"> 同步菜单 </el-button>
             <el-button
               link
               type="danger"
@@ -499,101 +235,41 @@
         </el-table-column>
       </el-table>
 
-      <el-divider content-position="left">
-        模块运行策略
-      </el-divider>
+      <el-divider content-position="left"> 模块运行策略 </el-divider>
       <div class="strategy-toolbar">
-        <el-radio-group
-          v-model="strategyProfile"
-          size="small"
-          @change="loadRuntimeStrategies"
-        >
-          <el-radio-button label="monolith">
-            单体
-          </el-radio-button>
-          <el-radio-button label="hybrid">
-            混合
-          </el-radio-button>
-          <el-radio-button label="micro">
-            微前端
-          </el-radio-button>
+        <el-radio-group v-model="strategyProfile" size="small" @change="loadRuntimeStrategies">
+          <el-radio-button label="monolith"> 单体 </el-radio-button>
+          <el-radio-button label="hybrid"> 混合 </el-radio-button>
+          <el-radio-button label="micro"> 微前端 </el-radio-button>
         </el-radio-group>
       </div>
-      <el-table
-        v-loading="strategyLoading"
-        :data="runtimeStrategies"
-        stripe
-      >
-        <el-table-column
-          prop="moduleCode"
-          label="模块"
-          min-width="140"
-        >
+      <el-table v-loading="strategyLoading" :data="runtimeStrategies" stripe>
+        <el-table-column prop="moduleCode" label="模块" min-width="140">
           <template #default="{ row }">
             {{ moduleLabel(row.moduleCode) }}
           </template>
         </el-table-column>
-        <el-table-column
-          prop="pageType"
-          label="运行方式"
-          width="140"
-        >
+        <el-table-column prop="pageType" label="运行方式" width="140">
           <template #default="{ row }">
-            <el-select
-              v-model="row.pageType"
-              size="small"
-              @change="handleStrategyTypeChange(row)"
-            >
-              <el-option
-                label="本地页面"
-                value="LOCAL_ROUTE"
-              />
-              <el-option
-                label="微应用页面"
-                value="MICRO_ROUTE"
-              />
+            <el-select v-model="row.pageType" size="small" @change="handleStrategyTypeChange(row)">
+              <el-option label="本地页面" value="LOCAL_ROUTE" />
+              <el-option label="微应用页面" value="MICRO_ROUTE" />
             </el-select>
           </template>
         </el-table-column>
-        <el-table-column
-          prop="runtimeCode"
-          label="运行单元"
-          min-width="170"
-        >
+        <el-table-column prop="runtimeCode" label="运行单元" min-width="170">
           <template #default="{ row }">
-            <el-input
-              v-model="row.runtimeCode"
-              size="small"
-            />
+            <el-input v-model="row.runtimeCode" size="small" />
           </template>
         </el-table-column>
-        <el-table-column
-          prop="status"
-          label="状态"
-          width="100"
-        >
+        <el-table-column prop="status" label="状态" width="100">
           <template #default="{ row }">
-            <el-switch
-              v-model="row.status"
-              :active-value="1"
-              :inactive-value="0"
-            />
+            <el-switch v-model="row.status" :active-value="1" :inactive-value="0" />
           </template>
         </el-table-column>
-        <el-table-column
-          label="操作"
-          width="90"
-          fixed="right"
-        >
+        <el-table-column label="操作" width="90" fixed="right">
           <template #default="{ row }">
-            <el-button
-              link
-              type="primary"
-              size="small"
-              @click="saveRuntimeStrategy(row)"
-            >
-              保存
-            </el-button>
+            <el-button link type="primary" size="small" @click="saveRuntimeStrategy(row)"> 保存 </el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -766,10 +442,7 @@ function handleEdit(row: AuthorizationApp) {
 async function handleModules(row: AuthorizationApp) {
   currentApp.value = row;
   moduleDrawerVisible.value = true;
-  await Promise.all([
-    loadModules(row.appCode),
-    loadRuntimeStrategies(),
-  ]);
+  await Promise.all([loadModules(row.appCode), loadRuntimeStrategies()]);
 }
 
 async function loadModules(appCode: string) {
@@ -930,7 +603,11 @@ function setDefaultContext(index: number) {
   });
 }
 
-function validateLoginContexts(_rule: unknown, value: AppLoginContext[] | undefined, callback: (error?: Error) => void) {
+function validateLoginContexts(
+  _rule: unknown,
+  value: AppLoginContext[] | undefined,
+  callback: (error?: Error) => void,
+) {
   if (!value?.length) {
     callback(new Error('请至少配置一个登录上下文'));
     return;
@@ -979,11 +656,13 @@ function handleDelete(row: AuthorizationApp) {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
     type: 'warning',
-  }).then(async () => {
-    await appApi.delete(row.appId!);
-    ElMessage.success('删除成功');
-    await loadData();
-  }).catch(() => {});
+  })
+    .then(async () => {
+      await appApi.delete(row.appId!);
+      ElMessage.success('删除成功');
+      await loadData();
+    })
+    .catch(() => {});
 }
 
 function formatTime(value?: string) {

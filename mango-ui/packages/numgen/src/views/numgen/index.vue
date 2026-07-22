@@ -104,45 +104,47 @@
           highlight-current-row
           @row-click="selectGenerator"
         >
-        <el-table-column prop="genName" label="规则名称" min-width="180" show-overflow-tooltip />
-        <el-table-column prop="genKey" label="业务Key" min-width="180" show-overflow-tooltip />
-        <el-table-column prop="domainCode" label="业务域" width="120" show-overflow-tooltip />
-        <el-table-column label="生效版本" width="118">
-          <template #default="{ row }">
-            <span v-if="row.currentRuleVersion">V{{ row.currentRuleVersion }}</span>
-            <span v-else class="muted-text">未发布</span>
-          </template>
-        </el-table-column>
-        <el-table-column label="发布变更" width="100">
-          <template #default="{ row }">
-            <el-tooltip
-              v-if="row.hasUnpublishedChanges"
-              content="已保存但未发布，发布后才会成为业务生成使用的规则"
-              placement="top"
-            >
-              <el-tag type="warning">未同步</el-tag>
-            </el-tooltip>
-            <el-tag v-else effect="plain" type="success">已同步</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="状态" width="90">
-          <template #default="{ row }">
-            <el-tag :type="row.status === 1 ? 'success' : 'info'">
-              {{ row.status === 1 ? '启用' : '停用' }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="updateTime" label="更新时间" width="170" />
-        <el-table-column label="操作" width="250" fixed="right">
-          <template #default="{ row }">
-            <div class="table-actions">
-              <el-button link type="primary" :icon="Edit" @click.stop="openGeneratorDrawer(row)">编辑</el-button>
-              <el-button link type="success" :icon="Finished" @click.stop="publishCurrentVersion(row)">发布</el-button>
-              <el-button link type="primary" :icon="Clock" @click.stop="openHistoryPage(row)">历史版本</el-button>
-              <el-button link type="danger" :icon="Delete" @click.stop="deleteGenerator(row)">删除</el-button>
-            </div>
-          </template>
-        </el-table-column>
+          <el-table-column prop="genName" label="规则名称" min-width="180" show-overflow-tooltip />
+          <el-table-column prop="genKey" label="业务Key" min-width="180" show-overflow-tooltip />
+          <el-table-column prop="domainCode" label="业务域" width="120" show-overflow-tooltip />
+          <el-table-column label="生效版本" width="118">
+            <template #default="{ row }">
+              <span v-if="row.currentRuleVersion">V{{ row.currentRuleVersion }}</span>
+              <span v-else class="muted-text">未发布</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="发布变更" width="100">
+            <template #default="{ row }">
+              <el-tooltip
+                v-if="row.hasUnpublishedChanges"
+                content="已保存但未发布，发布后才会成为业务生成使用的规则"
+                placement="top"
+              >
+                <el-tag type="warning">未同步</el-tag>
+              </el-tooltip>
+              <el-tag v-else effect="plain" type="success">已同步</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column label="状态" width="90">
+            <template #default="{ row }">
+              <el-tag :type="row.status === 1 ? 'success' : 'info'">
+                {{ row.status === 1 ? '启用' : '停用' }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column prop="updateTime" label="更新时间" width="170" />
+          <el-table-column label="操作" width="250" fixed="right">
+            <template #default="{ row }">
+              <div class="table-actions">
+                <el-button link type="primary" :icon="Edit" @click.stop="openGeneratorDrawer(row)">编辑</el-button>
+                <el-button link type="success" :icon="Finished" @click.stop="publishCurrentVersion(row)"
+                  >发布</el-button
+                >
+                <el-button link type="primary" :icon="Clock" @click.stop="openHistoryPage(row)">历史版本</el-button>
+                <el-button link type="danger" :icon="Delete" @click.stop="deleteGenerator(row)">删除</el-button>
+              </div>
+            </template>
+          </el-table-column>
         </el-table>
 
         <div class="pagination-row">
@@ -156,11 +158,27 @@
       </section>
     </div>
 
-    <el-dialog v-model="generatorDrawerVisible" :title="generatorForm.id ? '编辑生成器' : '新增生成器'" width="860px" destroy-on-close append-to-body>
-      <el-form ref="generatorFormRef" :model="generatorForm" :rules="generatorRules" label-width="96px" class="generator-editor-block">
+    <el-dialog
+      v-model="generatorDrawerVisible"
+      :title="generatorForm.id ? '编辑生成器' : '新增生成器'"
+      width="860px"
+      destroy-on-close
+      append-to-body
+    >
+      <el-form
+        ref="generatorFormRef"
+        :model="generatorForm"
+        :rules="generatorRules"
+        label-width="96px"
+        class="generator-editor-block"
+      >
         <div class="base-form-stack">
           <el-form-item label="业务Key" prop="genKey">
-            <el-input v-model="generatorForm.genKey" :disabled="Boolean(generatorForm.id)" placeholder="例如 ORDER_NO" />
+            <el-input
+              v-model="generatorForm.genKey"
+              :disabled="Boolean(generatorForm.id)"
+              placeholder="例如 ORDER_NO"
+            />
           </el-form-item>
           <el-form-item label="名称" prop="genName">
             <el-input v-model="generatorForm.genName" placeholder="例如 订单号" />
@@ -303,7 +321,13 @@
           <el-input v-model="segmentForm.literalValue" placeholder="例如 SO-${orgCode}-${bizType}" />
         </el-form-item>
         <el-form-item v-if="segmentForm.segmentType === 'DATE'" label="日期格式" prop="dateFormat">
-          <el-select v-model="segmentForm.dateFormat" filterable allow-create default-first-option placeholder="选择或输入日期格式">
+          <el-select
+            v-model="segmentForm.dateFormat"
+            filterable
+            allow-create
+            default-first-option
+            placeholder="选择或输入日期格式"
+          >
             <el-option label="yyyyMMdd" value="yyyyMMdd" />
             <el-option label="yyyyMM" value="yyyyMM" />
             <el-option label="yyyy" value="yyyy" />
@@ -311,7 +335,12 @@
           </el-select>
         </el-form-item>
         <el-form-item v-if="segmentForm.segmentType === 'PARAM'" label="参数Key" prop="variableKey">
-          <el-select v-model="segmentForm.variableKey" filterable placeholder="选择参数" @change="handleSegmentParamChange">
+          <el-select
+            v-model="segmentForm.variableKey"
+            filterable
+            placeholder="选择参数"
+            @change="handleSegmentParamChange"
+          >
             <el-option v-for="item in businessParamOptions" :key="item.key" :label="item.label" :value="item.key" />
           </el-select>
         </el-form-item>
@@ -352,7 +381,13 @@
           <el-input-number v-model="previewForm.count" :min="1" :max="20" />
         </el-form-item>
         <el-form-item label="参数">
-          <el-input v-model="previewParamsText" type="textarea" :rows="7" spellcheck="false" placeholder='{"orgCode":"A1"}' />
+          <el-input
+            v-model="previewParamsText"
+            type="textarea"
+            :rows="7"
+            spellcheck="false"
+            placeholder='{"orgCode":"A1"}'
+          />
         </el-form-item>
       </el-form>
       <div class="drawer-result">
@@ -374,7 +409,13 @@
           <el-input-number v-model="issueForm.count" :min="1" :max="20" />
         </el-form-item>
         <el-form-item label="参数">
-          <el-input v-model="issueParamsText" type="textarea" :rows="7" spellcheck="false" placeholder='{"orgCode":"A1","bizKey":"ORDER-1"}' />
+          <el-input
+            v-model="issueParamsText"
+            type="textarea"
+            :rows="7"
+            spellcheck="false"
+            placeholder='{"orgCode":"A1","bizKey":"ORDER-1"}'
+          />
         </el-form-item>
       </el-form>
       <div class="drawer-result issued">
@@ -456,7 +497,13 @@ const segmentPropertyVisible = ref(false);
 const expressionHelpVisible = ref(false);
 
 const generatorFormRef = ref<FormInstance>();
-const generatorQuery = reactive<NumgenGeneratorQuery>({ pageNum: 1, pageSize: 10, keyword: '', domainCode: '', status: '' });
+const generatorQuery = reactive<NumgenGeneratorQuery>({
+  pageNum: 1,
+  pageSize: 10,
+  keyword: '',
+  domainCode: '',
+  status: '',
+});
 
 const generatorForm = reactive<NumgenGenerator>({
   genKey: '',
@@ -501,13 +548,19 @@ const segmentTypes = shallowRef<SegmentTypeOption[]>([
 
 const businessParamOptions = ref<ParamOption[]>([]);
 
-const activeVersion = computed(() => versionRows.value.find(item => item.versionState === 'ACTIVE' || item.publishStatus === 1));
-const dialogFormatPreview = computed(() => normalizedDialogSegments()
-  .map(segment => segmentPreview(segment))
-  .join(''));
-const dialogExamplePreview = computed(() => normalizedDialogSegments()
-  .map(segment => segmentExample(segment))
-  .join(''));
+const activeVersion = computed(() =>
+  versionRows.value.find((item) => item.versionState === 'ACTIVE' || item.publishStatus === 1),
+);
+const dialogFormatPreview = computed(() =>
+  normalizedDialogSegments()
+    .map((segment) => segmentPreview(segment))
+    .join(''),
+);
+const dialogExamplePreview = computed(() =>
+  normalizedDialogSegments()
+    .map((segment) => segmentExample(segment))
+    .join(''),
+);
 const sequenceScopeHint = computed(() => {
   if (segmentForm.segmentType === 'DATE') return '按日期重置流水';
   if (segmentForm.segmentType === 'PARAM') return '按参数值隔离流水';
@@ -562,14 +615,12 @@ function showExpressionHelp() {
 }
 
 function latestVersion(rows = versionRows.value) {
-  return rows
-    .slice()
-    .sort((a, b) => Number(b.version || 0) - Number(a.version || 0))[0];
+  return rows.slice().sort((a, b) => Number(b.version || 0) - Number(a.version || 0))[0];
 }
 
 function latestDraftVersion(rows = versionRows.value) {
   return rows
-    .filter(item => item.versionState === 'DRAFT')
+    .filter((item) => item.versionState === 'DRAFT')
     .sort((a, b) => Number(b.version || 0) - Number(a.version || 0))[0];
 }
 
@@ -591,14 +642,15 @@ async function loadVersions() {
     const data = await numgenApi.pageVersions({ pageNum: 1, pageSize: 20, genKey: selectedGenerator.value.genKey });
     versionRows.value = data.list;
     const next = selectedVersion.value
-      ? versionRows.value.find(item => String(item.id) === String(selectedVersion.value?.id))
+      ? versionRows.value.find((item) => String(item.id) === String(selectedVersion.value?.id))
       : preferredEditableVersion();
     if (next) {
       await selectVersion(next);
     } else {
       selectedVersion.value = undefined;
     }
-  } finally {}
+  } finally {
+  }
 }
 
 async function selectVersion(row: NumgenVersion) {
@@ -606,13 +658,16 @@ async function selectVersion(row: NumgenVersion) {
 }
 
 async function openGeneratorDrawer(row?: NumgenGenerator) {
-  Object.assign(generatorForm, row || {
-    id: undefined,
-    genKey: '',
-    genName: '',
-    domainCode: generatorQuery.domainCode || 'NUMGEN',
-    status: 1,
-  });
+  Object.assign(
+    generatorForm,
+    row || {
+      id: undefined,
+      genKey: '',
+      genName: '',
+      domainCode: generatorQuery.domainCode || 'NUMGEN',
+      status: 1,
+    },
+  );
   resetDialogSegmentEditor();
   editorActiveTab.value = 'params';
   generatorDrawerVisible.value = true;
@@ -645,7 +700,7 @@ async function saveGenerator() {
     ElMessage.success('生成器已保存');
     generatorDrawerVisible.value = false;
     await loadGenerators();
-    const current = generatorRows.value.find(item => item.genKey === generatorForm.genKey);
+    const current = generatorRows.value.find((item) => item.genKey === generatorForm.genKey);
     if (current) {
       selectedGenerator.value = current;
       selectedVersion.value = savedVersionId ? ({ id: savedVersionId } as NumgenVersion) : undefined;
@@ -714,14 +769,16 @@ async function loadHistoryVersions() {
 
 async function loadHistorySegmentPreviews(rows: NumgenVersion[]) {
   const previews: Record<string, string> = {};
-  await Promise.all(rows.map(async row => {
-    if (!row.id) return;
-    const data = await numgenApi.pageSegments({ ruleId: row.id, pageSize: 50 });
-    previews[String(row.id)] = data.list
-      .sort((a, b) => a.sortOrder - b.sortOrder)
-      .map(segment => segmentPreview({ ...segment, segmentType: inferEditorSegmentType(segment) }))
-      .join('');
-  }));
+  await Promise.all(
+    rows.map(async (row) => {
+      if (!row.id) return;
+      const data = await numgenApi.pageSegments({ ruleId: row.id, pageSize: 50 });
+      previews[String(row.id)] = data.list
+        .sort((a, b) => a.sortOrder - b.sortOrder)
+        .map((segment) => segmentPreview({ ...segment, segmentType: inferEditorSegmentType(segment) }))
+        .join('');
+    }),
+  );
   historySegmentsByRuleId.value = previews;
 }
 
@@ -732,9 +789,10 @@ function historySegmentPreview(row: NumgenVersion) {
 async function switchToHistoryVersion(row: NumgenVersion) {
   if (!row?.id) return;
   const state = versionState(row);
-  const message = state === 'DRAFT'
-    ? `发布 V${row.version} 后将作为当前生效版本，是否继续？`
-    : `将使用 V${row.version} 的规则内容发布为新的生效版本，流水号不会回退，是否继续？`;
+  const message =
+    state === 'DRAFT'
+      ? `发布 V${row.version} 后将作为当前生效版本，是否继续？`
+      : `将使用 V${row.version} 的规则内容发布为新的生效版本，流水号不会回退，是否继续？`;
   const confirmed = await confirmAction(message, state === 'DRAFT' ? '发布版本' : '切换历史版本');
   if (!confirmed) return;
   switchingVersionId.value = String(row.id);
@@ -743,7 +801,7 @@ async function switchToHistoryVersion(row: NumgenVersion) {
     ElMessage.success(state === 'DRAFT' ? '版本已发布' : '历史版本已切换');
     await loadGenerators();
     if (historyGenerator.value) {
-      const current = generatorRows.value.find(item => item.genKey === historyGenerator.value?.genKey);
+      const current = generatorRows.value.find((item) => item.genKey === historyGenerator.value?.genKey);
       historyGenerator.value = current || historyGenerator.value;
     }
     await loadHistoryVersions();
@@ -755,22 +813,26 @@ async function switchToHistoryVersion(row: NumgenVersion) {
 async function prepareVersionForm(row?: NumgenVersion) {
   const source = row;
   const cloningPublishedVersion = source?.versionState === 'ACTIVE' || source?.publishStatus === 1;
-  const versionNumber = cloningPublishedVersion || !source?.id ? nextVersionNumber() : source.version || nextVersionNumber();
-  Object.assign(versionForm, source
-    ? {
-        ...source,
-        id: cloningPublishedVersion ? undefined : source.id,
-        version: versionNumber,
-        publishStatus: 0,
-      }
-    : {
-        id: undefined,
-        genKey: generatorForm.genKey,
-        ruleName: generatorForm.genName || '默认规则',
-        version: 1,
-        status: 1,
-        publishStatus: 0,
-      });
+  const versionNumber =
+    cloningPublishedVersion || !source?.id ? nextVersionNumber() : source.version || nextVersionNumber();
+  Object.assign(
+    versionForm,
+    source
+      ? {
+          ...source,
+          id: cloningPublishedVersion ? undefined : source.id,
+          version: versionNumber,
+          publishStatus: 0,
+        }
+      : {
+          id: undefined,
+          genKey: generatorForm.genKey,
+          ruleName: generatorForm.genName || '默认规则',
+          version: 1,
+          status: 1,
+          publishStatus: 0,
+        },
+  );
   selectedDialogSegmentKey.value = '';
   await loadDialogSegments(source, cloningPublishedVersion);
 }
@@ -875,7 +937,7 @@ async function loadDialogSegments(row?: NumgenVersion, clone = false) {
     const data = await numgenApi.pageSegments({ ruleId: row.id, pageSize: 50 });
     dialogSegmentRows.value = data.list
       .sort((a, b) => a.sortOrder - b.sortOrder)
-      .map(item => ({
+      .map((item) => ({
         ...item,
         id: clone ? undefined : item.id,
         ruleId: clone ? undefined : item.ruleId,
@@ -909,7 +971,7 @@ function saveDialogSegment() {
     clientKey: segmentForm.clientKey || `new-${Date.now()}-${Math.random().toString(16).slice(2)}`,
   };
   const key = segmentKey(draft);
-  const index = dialogSegmentRows.value.findIndex(item => segmentKey(item) === key);
+  const index = dialogSegmentRows.value.findIndex((item) => segmentKey(item) === key);
   if (index >= 0) {
     dialogSegmentRows.value.splice(index, 1, draft);
   } else {
@@ -953,8 +1015,8 @@ function onSegmentDrop(target: EditableSegment) {
   const targetKey = segmentKey(target);
   if (!sourceKey || sourceKey === targetKey) return;
   const sorted = normalizedDialogSegments();
-  const sourceIndex = sorted.findIndex(item => segmentKey(item) === sourceKey);
-  const targetIndex = sorted.findIndex(item => segmentKey(item) === targetKey);
+  const sourceIndex = sorted.findIndex((item) => segmentKey(item) === sourceKey);
+  const targetIndex = sorted.findIndex((item) => segmentKey(item) === targetKey);
   if (sourceIndex < 0 || targetIndex < 0) return;
   const [source] = sorted.splice(sourceIndex, 1);
   sorted.splice(targetIndex, 0, source);
@@ -964,7 +1026,7 @@ function onSegmentDrop(target: EditableSegment) {
 }
 
 function handleSegmentParamChange(key: string) {
-  const option = businessParamOptions.value.find(item => item.key === key);
+  const option = businessParamOptions.value.find((item) => item.key === key);
   if (!option) return;
   segmentForm.segmentName = option.label;
 }
@@ -981,7 +1043,7 @@ function inferBusinessParam(key?: string, label?: string) {
   const value = key?.trim();
   if (!value) return;
   const name = (label || value).trim();
-  const existing = businessParamOptions.value.find(item => item.key === value);
+  const existing = businessParamOptions.value.find((item) => item.key === value);
   if (existing) {
     existing.label = existing.label === existing.key ? name : existing.label;
   } else {
@@ -1000,11 +1062,11 @@ function deleteBusinessParamAt(index: number) {
 function normalizeBusinessParams() {
   const seen = new Set<string>();
   businessParamOptions.value = businessParamOptions.value
-    .map(item => ({
+    .map((item) => ({
       key: item.key.trim(),
       label: (item.label || item.key).trim(),
     }))
-    .filter(item => {
+    .filter((item) => {
       if (!item.key || seen.has(item.key)) return false;
       seen.add(item.key);
       return true;
@@ -1012,8 +1074,8 @@ function normalizeBusinessParams() {
 }
 
 function syncParamDefinitionsToSegments() {
-  const labelByKey = new Map(businessParamOptions.value.map(item => [item.key, item.label || item.key]));
-  dialogSegmentRows.value = dialogSegmentRows.value.map(segment => {
+  const labelByKey = new Map(businessParamOptions.value.map((item) => [item.key, item.label || item.key]));
+  dialogSegmentRows.value = dialogSegmentRows.value.map((segment) => {
     if (segment.segmentType !== 'PARAM' || !segment.variableKey) return segment;
     const label = labelByKey.get(segment.variableKey);
     return label ? { ...segment, segmentName: label } : segment;
@@ -1021,11 +1083,9 @@ function syncParamDefinitionsToSegments() {
 }
 
 async function syncDialogSegments(ruleId: ApiId) {
-  const previous = versionForm.id
-    ? (await numgenApi.pageSegments({ ruleId, pageSize: 50 })).list
-    : [];
+  const previous = versionForm.id ? (await numgenApi.pageSegments({ ruleId, pageSize: 50 })).list : [];
   const next = normalizedDialogSegments();
-  const nextIds = new Set(next.filter(item => item.id).map(item => String(item.id)));
+  const nextIds = new Set(next.filter((item) => item.id).map((item) => String(item.id)));
   for (const item of previous) {
     if (item.id && !nextIds.has(String(item.id))) {
       await numgenApi.deleteSegment(item.id);
@@ -1131,9 +1191,10 @@ async function generateIssue() {
   issueLoading.value = true;
   try {
     const params = parseParamsText(issueParamsText.value);
-    const values = issueForm.count === 1
-      ? [await numgenApi.nextValue({ genKey: selectedGenerator.value.genKey, params })]
-      : await numgenApi.batchValue({ genKey: selectedGenerator.value.genKey, count: issueForm.count, params });
+    const values =
+      issueForm.count === 1
+        ? [await numgenApi.nextValue({ genKey: selectedGenerator.value.genKey, params })]
+        : await numgenApi.batchValue({ genKey: selectedGenerator.value.genKey, count: issueForm.count, params });
     issuedRows.value = values;
     ElMessage.success('编号已生成');
   } finally {
@@ -1156,7 +1217,7 @@ function parseParamsText(text: string): Record<string, unknown> {
 }
 
 function nextVersionNumber() {
-  return Math.max(0, ...versionRows.value.map(item => Number(item.version || 0))) + 1;
+  return Math.max(0, ...versionRows.value.map((item) => Number(item.version || 0))) + 1;
 }
 
 function segmentTitle(segment: EditableSegment) {
@@ -1168,7 +1229,8 @@ function segmentPreview(segment: EditableSegment) {
   if (segment.segmentType === 'EXPR') return segment.literalValue || '[表达式]';
   if (segment.segmentType === 'DATE') return `{${segment.dateFormat || 'yyyyMMdd'}}`;
   if (segment.segmentType === 'PARAM') return `{${segment.variableKey || '参数'}}`;
-  if (segment.segmentType === 'SEQ') return String('').padStart(segment.seqWidth || 6, segment.padChar || '0') || '{流水}';
+  if (segment.segmentType === 'SEQ')
+    return String('').padStart(segment.seqWidth || 6, segment.padChar || '0') || '{流水}';
   return '';
 }
 
@@ -1189,7 +1251,12 @@ function dateExample(format?: string) {
 }
 
 function paramExample(key?: string) {
-  return key ? key.replace(/[^a-zA-Z0-9]/g, '').slice(0, 4).toUpperCase() || 'P1' : 'P1';
+  return key
+    ? key
+        .replace(/[^a-zA-Z0-9]/g, '')
+        .slice(0, 4)
+        .toUpperCase() || 'P1'
+    : 'P1';
 }
 
 function expressionExample(expression?: string) {
@@ -1201,9 +1268,8 @@ function inferEditorSegmentType(segment: NumgenSegment): SegmentEditorType {
 }
 
 function segmentTypeLabel(type: SegmentEditorType) {
-  return segmentTypes.value.find(item => item.value === type)?.label || type;
+  return segmentTypes.value.find((item) => item.value === type)?.label || type;
 }
-
 </script>
 
 <style scoped lang="scss">
@@ -1510,7 +1576,10 @@ function segmentTypeLabel(type: SegmentEditorType) {
   font-weight: 500;
   line-height: 1;
   cursor: pointer;
-  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 .segment-type-option:last-child {

@@ -47,7 +47,7 @@ test('文件管理真实上传图片、合并 PDF、预览并下载有效结果 
       serverErrors.push(`${response.status()} ${response.request().method()} ${response.url()}`);
     }
   });
-  page.on('pageerror', error => browserErrors.push(`pageerror: ${error.message}`));
+  page.on('pageerror', (error) => browserErrors.push(`pageerror: ${error.message}`));
   page.on('console', (message) => {
     if (message.type() === 'error') {
       browserErrors.push(`console: ${message.text()}`);
@@ -93,10 +93,11 @@ test('文件管理真实上传图片、合并 PDF、预览并下载有效结果 
     expect(Number(merged.fileSize)).toBeGreaterThan(500);
 
     await page.getByPlaceholder('搜索文件名/业务信息').fill(outputName);
-    const pageResponsePromise = page.waitForResponse(response =>
-      response.url().includes('/api/file/files/page')
-      && response.request().method() === 'GET'
-      && response.status() === 200
+    const pageResponsePromise = page.waitForResponse(
+      (response) =>
+        response.url().includes('/api/file/files/page') &&
+        response.request().method() === 'GET' &&
+        response.status() === 200,
     );
     await page.getByRole('button', { name: '查询', exact: true }).click();
     await readBusinessResponse(await pageResponsePromise);
@@ -105,10 +106,11 @@ test('文件管理真实上传图片、合并 PDF、预览并下载有效结果 
     await expect(mergedRow).toHaveCount(1);
     await expect(mergedRow).toContainText('application/pdf');
 
-    const previewResponsePromise = page.waitForResponse(response =>
-      response.url().includes('/api/file/files/preview')
-      && response.url().includes(`id=${merged.id}`)
-      && response.status() === 200
+    const previewResponsePromise = page.waitForResponse(
+      (response) =>
+        response.url().includes('/api/file/files/preview') &&
+        response.url().includes(`id=${merged.id}`) &&
+        response.status() === 200,
     );
     await mergedRow.getByRole('button', { name: '预览', exact: true }).click();
     const preview = await readBusinessResponse<FilePreview>(await previewResponsePromise);
@@ -147,10 +149,9 @@ test('文件管理真实上传图片、合并 PDF、预览并下载有效结果 
 });
 
 async function uploadImageFromFilePage(page: Page, fileName: string, buffer: Buffer) {
-  const uploadResponsePromise = page.waitForResponse(response =>
-    response.url().endsWith('/api/file/files')
-    && response.request().method() === 'POST'
-    && response.status() === 200
+  const uploadResponsePromise = page.waitForResponse(
+    (response) =>
+      response.url().endsWith('/api/file/files') && response.request().method() === 'POST' && response.status() === 200,
   );
   await page.locator('input[type="file"]').setInputFiles({
     name: fileName,

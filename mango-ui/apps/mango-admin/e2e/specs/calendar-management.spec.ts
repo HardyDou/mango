@@ -77,19 +77,23 @@ async function cleanupCalendar(page: Page, headers: Record<string, string>, cale
   const calendars = listBody.data?.list || [];
   for (const calendar of calendars) {
     if (calendar.calendarCode === calendarCode) {
-      await page.request.delete('/api/calendar/admin/calendars', {
-        headers,
-        params: { id: String(calendar.id) },
-      }).catch(() => undefined);
+      await page.request
+        .delete('/api/calendar/admin/calendars', {
+          headers,
+          params: { id: String(calendar.id) },
+        })
+        .catch(() => undefined);
     }
   }
 }
 
 function collectVisibleMenuNames(menus: any[]): string[] {
-  return menus.flatMap((menu) => [
-    menu.menuType !== 3 && menu.visible !== 0 ? menu.menuName : undefined,
-    ...collectVisibleMenuNames(menu.children || []),
-  ]).filter(Boolean);
+  return menus
+    .flatMap((menu) => [
+      menu.menuType !== 3 && menu.visible !== 0 ? menu.menuName : undefined,
+      ...collectVisibleMenuNames(menu.children || []),
+    ])
+    .filter(Boolean);
 }
 
 async function ensureStandardCalendar(page: Page, headers: Record<string, string>) {
@@ -100,43 +104,47 @@ async function ensureStandardCalendar(page: Page, headers: Record<string, string
   const listBody = await expectBusinessOk(listResponse);
   const exists = (listBody.data?.list || []).some((calendar: any) => calendar.calendarCode === 'CN_STANDARD');
   if (!exists) {
-    await expectBusinessOk(await page.request.post('/api/calendar/admin/calendars', {
-      headers,
-      data: {
-        calendarCode: 'CN_STANDARD',
-        calendarName: '中国标准工作日历',
-      },
-    }));
+    await expectBusinessOk(
+      await page.request.post('/api/calendar/admin/calendars', {
+        headers,
+        data: {
+          calendarCode: 'CN_STANDARD',
+          calendarName: '中国标准工作日历',
+        },
+      }),
+    );
   }
 
   for (const year of [2025, 2026]) {
-    await expectBusinessOk(await page.request.post('/api/calendar/admin/years/init', {
-      headers,
-      data: { calendarCode: 'CN_STANDARD', year, overwrite: true },
-    }));
+    await expectBusinessOk(
+      await page.request.post('/api/calendar/admin/years/init', {
+        headers,
+        data: { calendarCode: 'CN_STANDARD', year, overwrite: true },
+      }),
+    );
   }
 
-  await expectBusinessOk(await page.request.post('/api/calendar/admin/days/import', {
-    headers,
-    data: {
-      calendarCode: 'CN_STANDARD',
-      year: 2026,
-      items: [
-        { date: '2026-01-01', dayType: 'LEGAL_HOLIDAY', dayName: '元旦', source: 'E2E' },
-        { date: '2026-01-02', dayType: 'LEGAL_HOLIDAY', dayName: '元旦', source: 'E2E' },
-        { date: '2026-01-04', dayType: 'ADJUSTED_WORKDAY', dayName: '元旦调休上班', source: 'E2E' },
-      ],
-    },
-  }));
+  await expectBusinessOk(
+    await page.request.post('/api/calendar/admin/days/import', {
+      headers,
+      data: {
+        calendarCode: 'CN_STANDARD',
+        year: 2026,
+        items: [
+          { date: '2026-01-01', dayType: 'LEGAL_HOLIDAY', dayName: '元旦', source: 'E2E' },
+          { date: '2026-01-02', dayType: 'LEGAL_HOLIDAY', dayName: '元旦', source: 'E2E' },
+          { date: '2026-01-04', dayType: 'ADJUSTED_WORKDAY', dayName: '元旦调休上班', source: 'E2E' },
+        ],
+      },
+    }),
+  );
 }
 
 test.describe('日历管理 E2E', () => {
   test('平台能力入口展示 2026 中国标准日历并提供工作日计算', async ({ page }) => {
     const menuResponsePromise = page.waitForResponse((response) => {
       const url = response.url();
-      return response.status() === 200
-        && url.includes('/api/authorization/menus/user')
-        && url.includes('fmt=tree');
+      return response.status() === 200 && url.includes('/api/authorization/menus/user') && url.includes('fmt=tree');
     });
 
     await login(page);
@@ -153,8 +161,8 @@ test.describe('日历管理 E2E', () => {
     await page.waitForURL('**/#/data/calendar', { timeout: 10000 });
     await expect(page.getByRole('heading', { name: '日历管理' })).toBeVisible();
 
-    const calendarPageResponsePromise = page.waitForResponse((response) =>
-      response.url().includes('/api/calendar/admin/calendars/page') && response.status() === 200
+    const calendarPageResponsePromise = page.waitForResponse(
+      (response) => response.url().includes('/api/calendar/admin/calendars/page') && response.status() === 200,
     );
     await page.getByPlaceholder('编码/名称').fill('CN_STANDARD');
     await page.locator('.calendar-side').getByRole('button', { name: '查询' }).click();
@@ -173,7 +181,10 @@ test.describe('日历管理 E2E', () => {
     }
 
     await expect(page.getByRole('tab', { name: '年度' })).toBeVisible();
-    const yearRow = page.locator('.calendar-main .el-table__row', { hasText: '2026' }).filter({ hasText: '中国标准工作日历' }).first();
+    const yearRow = page
+      .locator('.calendar-main .el-table__row', { hasText: '2026' })
+      .filter({ hasText: '中国标准工作日历' })
+      .first();
     await expect(yearRow).toContainText('365');
     await expect(yearRow).toContainText('260');
     await expect(yearRow).toContainText('105');
@@ -298,37 +309,46 @@ test.describe('日历管理 E2E', () => {
       await calendarRow.click();
       await expect(page.getByText(`删除验证日历 / ${calendarCode}`)).toBeVisible();
 
-      const yearRow = page.locator('.calendar-main .el-table__row', { hasText: '2099' }).filter({ hasText: '删除验证日历' }).first();
+      const yearRow = page
+        .locator('.calendar-main .el-table__row', { hasText: '2099' })
+        .filter({ hasText: '删除验证日历' })
+        .first();
       await expect(yearRow).toBeVisible();
       await yearRow.getByRole('button', { name: '查看日期' }).click();
 
       const dayRow = page.locator('.calendar-main .el-table__row', { hasText: '2099-01-01' }).first();
       await expect(dayRow).toBeVisible();
-      const deleteDayResponsePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/calendar/admin/days') &&
-        response.request().method() === 'DELETE' &&
-        response.status() === 200
+      const deleteDayResponsePromise = page.waitForResponse(
+        (response) =>
+          response.url().includes('/api/calendar/admin/days') &&
+          response.request().method() === 'DELETE' &&
+          response.status() === 200,
       );
       await dayRow.getByRole('button', { name: '删除' }).click();
       await page.locator('.el-message-box').getByRole('button', { name: '删除' }).click();
       await expectBusinessOk(await deleteDayResponsePromise);
 
       await page.getByRole('tab', { name: '年度' }).click();
-      const refreshedYearRow = page.locator('.calendar-main .el-table__row', { hasText: '2099' }).filter({ hasText: '删除验证日历' }).first();
+      const refreshedYearRow = page
+        .locator('.calendar-main .el-table__row', { hasText: '2099' })
+        .filter({ hasText: '删除验证日历' })
+        .first();
       await expect(refreshedYearRow).toBeVisible();
-      const deleteYearResponsePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/calendar/admin/years') &&
-        response.request().method() === 'DELETE' &&
-        response.status() === 200
+      const deleteYearResponsePromise = page.waitForResponse(
+        (response) =>
+          response.url().includes('/api/calendar/admin/years') &&
+          response.request().method() === 'DELETE' &&
+          response.status() === 200,
       );
       await refreshedYearRow.getByRole('button', { name: '删除' }).click();
       await page.locator('.el-message-box').getByRole('button', { name: '删除' }).click();
       await expectBusinessOk(await deleteYearResponsePromise);
 
-      const deleteCalendarResponsePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/calendar/admin/calendars') &&
-        response.request().method() === 'DELETE' &&
-        response.status() === 200
+      const deleteCalendarResponsePromise = page.waitForResponse(
+        (response) =>
+          response.url().includes('/api/calendar/admin/calendars') &&
+          response.request().method() === 'DELETE' &&
+          response.status() === 200,
       );
       await calendarRow.getByLabel('删除日历').click();
       await page.locator('.el-message-box').getByRole('button', { name: '删除' }).click();
