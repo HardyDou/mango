@@ -1545,6 +1545,24 @@ class CheckMojoTest {
     }
 
     @Test
+    void stripStringLiterals_preservesLayoutAcrossEscapesTextBlocksAndNewlines()
+            throws Exception {
+        CheckMojo mojo = new CheckMojo();
+        Method method = CheckMojo.class.getDeclaredMethod("stripStringLiterals", String.class);
+        method.setAccessible(true);
+
+        assertEquals(
+                "call(" + " ".repeat(6) + ");",
+                method.invoke(mojo, "call(\"a\\\"b\");"));
+        assertEquals(
+                "before " + " ".repeat(9) + "\n" + " ".repeat(8) + " after",
+                method.invoke(mojo, "before \"\"\"secret\nvalue\"\"\" after"));
+        assertEquals(
+                "call(" + " ".repeat(5) + "\nnext());",
+                method.invoke(mojo, "call(\"open\nnext());"));
+    }
+
+    @Test
     void invokeSingleGoal_whenDelegatedMavenCommandHangs_timesOut() throws Exception {
         // given
         Files.writeString(tempDir.resolve("pom.xml"), "<project/>");

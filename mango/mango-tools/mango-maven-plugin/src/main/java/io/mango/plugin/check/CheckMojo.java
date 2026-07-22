@@ -3589,15 +3589,12 @@ public class CheckMojo extends AbstractMojo {
         for (int i = 0; i < content.length(); i++) {
             char current = content.charAt(i);
             if (inTextBlock) {
-                if (i + 2 < content.length()
-                        && content.charAt(i) == '"'
-                        && content.charAt(i + 1) == '"'
-                        && content.charAt(i + 2) == '"') {
+                if (isTextBlockDelimiter(content, i)) {
                     result.append("   ");
                     i += 2;
                     inTextBlock = false;
                 } else {
-                    result.append(current == '\n' ? '\n' : ' ');
+                    appendMaskedLiteralCharacter(result, current);
                 }
                 continue;
             }
@@ -3613,15 +3610,9 @@ public class CheckMojo extends AbstractMojo {
                     inString = false;
                 }
                 escaped = current == '\\' && !escaped;
-                if (current != '\\') {
-                    escaped = false;
-                }
                 continue;
             }
-            if (i + 2 < content.length()
-                    && content.charAt(i) == '"'
-                    && content.charAt(i + 1) == '"'
-                    && content.charAt(i + 2) == '"') {
+            if (isTextBlockDelimiter(content, i)) {
                 result.append("   ");
                 i += 2;
                 inTextBlock = true;
@@ -3636,6 +3627,17 @@ public class CheckMojo extends AbstractMojo {
             result.append(current);
         }
         return result.toString();
+    }
+
+    private boolean isTextBlockDelimiter(String content, int index) {
+        return index + 2 < content.length()
+                && content.charAt(index) == '"'
+                && content.charAt(index + 1) == '"'
+                && content.charAt(index + 2) == '"';
+    }
+
+    private void appendMaskedLiteralCharacter(StringBuilder result, char current) {
+        result.append(current == '\n' ? '\n' : ' ');
     }
 
     private boolean containsLocalImplementationWord(String typeName) {
