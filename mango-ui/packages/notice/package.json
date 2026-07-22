@@ -7,8 +7,8 @@
   "module": "./dist/index.js",
   "mangoAdmin": {
     "businessDomainCode": "NOTICE",
-    "businessDomainName": "通知中心",
-    "groupName": "通知中心",
+    "businessDomainName": "通知管理",
+    "groupName": "通知管理",
     "style": "@mango/notice/style.css",
     "registrars": [
       {

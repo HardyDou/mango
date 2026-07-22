@@ -454,7 +454,7 @@ mango-workflow-starter/src/main/resources/META-INF/mango/resources/workflow-comm
 
 未安装授权数据权限能力时，workflow 保持原查询行为；安装后由 `DataScopeApplier` 追加本人、指定组织、本人主部门或本人主部门及下级范围条件，并校验 `workflow_definition` 存在当前规则需要的映射字段。租户隔离仍由 persistence 租户插件处理。
 
-开启 demo 资源后，Workflow 会为租户 `1` 的默认 `ROLE_ADMIN` 以 `INIT_ONLY` 声明初始化 `workflow:definition:list = ALL`。该规则只作用于租户内的流程定义管理数据范围；不会影响 `startEntryVisible`，该字段仍只控制审批中心的发起流程入口。若管理员已经维护过该数据范围，后续同步会保留运行时配置。
+开启 demo 资源后，Workflow 会为租户 `1` 的默认 `ROLE_ADMIN` 以 `INIT_ONLY` 声明初始化 `workflow:definition:list = ALL`。该规则只作用于租户内的流程定义管理数据范围；不会影响 `startEntryVisible`，该字段仍只控制审批管理的发起流程入口。若管理员已经维护过该数据范围，后续同步会保留运行时配置。
 
 ## 7. 快速开始
 
@@ -471,10 +471,10 @@ mango-workflow-starter/src/main/resources/META-INF/mango/resources/workflow-comm
 
 ### 启动入口可见性
 
-流程定义支持 `startEntryVisible` 启动入口可见性，默认 `true`，保持既有流程可在审批中心“发起流程”入口展示。业务内嵌流程可以设置为 `false`，用于声明流程不能脱离业务对象独立发起。
+流程定义支持 `startEntryVisible` 启动入口可见性，默认 `true`，保持既有流程可在审批管理“发起流程”入口展示。业务内嵌流程可以设置为 `false`，用于声明流程不能脱离业务对象独立发起。
 
-- `startEntryVisible=true`：出现在审批中心发起流程列表，可由通用发起页启动。
-- `startEntryVisible=false`：不出现在审批中心发起流程列表，也不作为通用发起入口展示。
+- `startEntryVisible=true`：出现在审批管理发起流程列表，可由通用发起页启动。
+- `startEntryVisible=false`：不出现在审批管理发起流程列表，也不作为通用发起入口展示。
 - 业务页面或业务服务仍可通过 `WorkflowBusinessApplyApi.create()` 和 `WorkflowProcessApi.start()` 按 `definitionKey`、`businessType`、`businessKey` 发起流程。
 - 管理端流程定义、版本、发布、启停、任务流转和业务上下文发起不受隐藏入口影响。
 - 启动入口可见性不是权限控制；业务模块仍需校验业务发起权限、业务状态、快照和幂等。
@@ -815,7 +815,7 @@ Flowable 启动所需的 `ACT_GE_PROPERTY` 元数据由 `WorkflowEngineMetadataI
 
 ## 12. 管理入口
 
-菜单由 `mango-workflow-starter/src/main/resources/META-INF/mango/resources/workflow-common-menu.json` 的 `AUTH_MENU` 资源注入，应用编码是 `internal-admin`。“审批中心”以 `parentCode=data` 挂载在“平台能力”下，既有 `/workflow` 路由、子路由和页面 key 均保持不变。
+菜单由 `mango-workflow-starter/src/main/resources/META-INF/mango/resources/workflow-common-menu.json` 的 `AUTH_MENU` 资源注入，应用编码是 `internal-admin`。“审批管理”以 `parentCode=data` 挂载在“平台能力”下，既有 `/workflow` 路由、子路由和页面 key 均保持不变。
 
 | 菜单 | 路径 | 组件 | 权限码 |
 |------|------|------|--------|

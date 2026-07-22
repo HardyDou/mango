@@ -84,7 +84,7 @@ async function login(page: Page) {
   await page.getByRole('button', { name: '登 录' }).click();
   await page.waitForURL('**/#/home', { timeout: 10000 });
   await menuResponsePromise;
-  await expect(page.getByRole('button', { name: '通知中心' })).toBeVisible({ timeout: 10000 });
+  await expect(page.getByRole('button', { name: '通知管理' })).toBeVisible({ timeout: 10000 });
 }
 
 function createState(): TestState {
@@ -294,7 +294,7 @@ async function setupRoutes(page: Page, state: TestState) {
         menuId: '2900',
         parentId: '0',
         menuType: 1,
-        menuName: '通知中心',
+        menuName: '通知管理',
         menuCode: 'notice',
         path: '/notice',
         icon: 'Bell',
@@ -676,7 +676,7 @@ async function expectMessage(page: Page, text: string) {
   await expect(page.locator('.el-message__content', { hasText: text }).last()).toBeVisible();
 }
 
-test.describe('通知中心公告 E2E', () => {
+test.describe('通知管理公告 E2E', () => {
   test('@p1 @notice 覆盖公告管理、发布对象、用户公告确认和消息中心跳转', async ({ page }) => {
     const state = createState();
     mkdirSync(evidenceDir, { recursive: true });

@@ -244,8 +244,8 @@ describe('admin-shell menu contract', () => {
   });
 
   it('rejects top-level menus that are neither backend menus nor explicit shell menus', () => {
-    const backendTopMenus = ['系统管理', '审批中心', '平台能力', '通知中心'];
-    const uiTopMenus = ['首页', '系统管理', '审批中心', '平台能力', '通知中心', '开发中心', '自造菜单'];
+    const backendTopMenus = ['系统管理', '审批管理', '平台能力', '通知管理'];
+    const uiTopMenus = ['首页', '系统管理', '审批管理', '平台能力', '通知管理', '开发中心', '自造菜单'];
     const allowedShellMenus = ['首页', '开发中心'];
 
     expect(findUnexpectedTopLevelMenus(uiTopMenus, backendTopMenus, allowedShellMenus)).toEqual(['自造菜单']);
@@ -281,7 +281,7 @@ describe('admin-shell menu contract', () => {
       {
         menuId: 'notice',
         moduleCode: 'mango-notice',
-        menuName: '通知中心',
+        menuName: '通知管理',
         menuCode: 'notice',
         parentId: 0,
         menuType: MenuTypeEnum.DIRECTORY,
@@ -312,7 +312,7 @@ describe('admin-shell menu contract', () => {
     ).toEqual(['系统管理']);
     expect(
       filterMenuForRouteByFeatures(menus, new Set(['authorization', 'system', 'notice'])).map((menu) => menu.menuName),
-    ).toEqual(['系统管理', '通知中心']);
+    ).toEqual(['系统管理', '通知管理']);
   });
 
   it('hides deprecated CMS site setting menus from historical backend data', () => {

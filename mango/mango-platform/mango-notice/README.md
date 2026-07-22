@@ -2,7 +2,7 @@
 
 ## 1. 概览
 
-`mango-notice` 是 Mango 的统一通知中心，用来把业务事件转换成站内信、短信、邮件、企业微信、钉钉、微信公众号等渠道通知。
+`mango-notice` 是 Mango 的统一通知管理能力，用来把业务事件转换成站内信、短信、邮件、企业微信、钉钉、微信公众号等渠道通知。
 
 业务模块使用它时只需要关心：
 
@@ -614,7 +614,7 @@ notice:announcement:offline
 
 前端页面由 `@mango/notice/admin-pages` 注册。菜单通过 `notice-common-menu.json` 的 `AUTH_MENU` 资源注入到 `internal-admin`，component 映射到页面 key：
 
-管理侧“通知中心”以 `parentCode=data` 挂载在“平台能力”下；`/notice` 及所有子路由保持不变。“消息中心”仍是独立的用户侧一级入口。
+管理侧“通知管理”以 `parentCode=data` 挂载在“平台能力”下；`/notice` 及所有子路由保持不变。“消息中心”仍是独立的用户侧一级入口。
 
 | 菜单 | 路径 | component key | 默认展示 |
 |------|------|---------------|----------|
@@ -640,7 +640,7 @@ Flyway 路径为 `mango-notice-core/src/main/resources/db/migration/notice`，�
 | 资源 | 用途 |
 |------|------|
 | `notice-common-domain.yml` | 通知业务域 |
-| `notice-common-menu.json` | 通知中心菜单与权限入口 |
+| `notice-common-menu.json` | 通知管理菜单与权限入口 |
 | `notice-common-message.yml` | 默认站内信内部通道 |
 
 这些资源属于模块运行所需的正式声明，不是演示数据。管理员接收账户、业务模板和第三方渠道账号不再自动初始化。认证、任务、支付、工作流等模块需要的通知模板由各自 starter 在自己的 `META-INF/mango/resources/` 中登记，Notice 不集中代管其他模块数据。

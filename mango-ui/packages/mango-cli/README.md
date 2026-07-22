@@ -255,6 +255,10 @@ CLI 从当前目录向上查找 `mango.dev.json`。本地工作区分配事实�
 
 `mango dev status`、`mango dev stop` 和 `mango dev restart` 先通过内核 PID 探测判断进程是否存在，再把 `ps` 作为可选的僵尸进程补充检查。因此业务开发镜像或精简容器没有安装 `ps` 时，本地进程状态、停止和重启仍可使用；安装了 `ps` 的环境继续保留僵尸进程识别。
 
+`mango workspace status` 会直接显示 `.mango/workspace.json` 分配的数据库名、数据库是否存在、workspace init 到 `.mango/dev-workspace.env` 的配置来源，以及 workspace 与 env 中数据库名是否一致。MySQL 客户端缺失或连接不可用时，数据库存在性显示为 `UNKNOWN`，不把本机工具或连接问题误报成数据库不存在。
+
+`mango dev status` 在上述 workspace 数据库摘要之外，还会从运行中后端的已解析启动记录读取 datasource database，并输出 `dbMatch=PASS|FAIL|UNKNOWN`。运行中后端明确连接到其它数据库时命令失败；输出不会展示数据库密码或完整 datasource 参数。
+
 Unix 停服按整个进程组等待，而不是只观察 Maven leader。默认先发送 `SIGTERM` 并等待 60 秒，可在 `mango.dev.json` 的 app 上用 `stopTimeoutMs` 调整；超时后发送 `SIGKILL`，再按 `stopKillWaitMs`（默认 5 秒）确认进程组消失。仍有进程存活时命令失败并保留 pid 文件，不会误报 stopped；Windows 保持按单进程控制。
 
 ### 6.5 可审计发布状态机
@@ -388,7 +392,7 @@ mango release repair --version 1.0.16 --project-dir . --authorize
 | `mango release repair`          | 从失败/待执行状态恢复，跳过已成功不可变制品                      | `--version`、`--authorize`                                                     | release manifest、缺失的发布动作                                                                                 |
 | `mango release registry doctor` | 校验 artifact mode、四类 registry 角色和认证引用                 | registry/mode 参数、`--json`                                                   | 不改文件                                                                                                         |
 | `mango workspace init`          | 初始化本地开发工作区                                             | 无                                                                             | `.mango/workspace.json`、`.mango/dev-workspace.env`、.mango/m2/repository，缺失时创建 `mango.dev.json`           |
-| `mango workspace status`        | 打印 workspace 应用和端口                                        | 无                                                                             | 不改文件                                                                                                         |
+| `mango workspace status`        | 打印 workspace、数据库、初始化来源、应用和端口                   | 无                                                                             | 不改文件                                                                                                         |
 | `mango workspace list`          | 查看本机 workspace registry                                      | 无                                                                             | 不改文件                                                                                                         |
 | `mango workspace release`       | 释放 workspace registry 并默认删除该 workspace 本地开发库        | `--workspace <path>`、`--keep-db`                                              | `~/.mango/workspaces.json`、本机 MySQL                                                                           |
 | `mango workspace doctor`        | 校验 workspace manifest                                          | 无                                                                             | 不改文件                                                                                                         |
@@ -397,7 +401,7 @@ mango release repair --version 1.0.16 --project-dir . --authorize
 | `mango dev start backend`       | 启动后端分组                                                     | 无                                                                             | `.mango/run`                                                                                                     |
 | `mango dev start frontend`      | 启动前端分组                                                     | 无                                                                             | `.mango/run`                                                                                                     |
 | `mango dev restart`             | 按 stop + start 重启本地开发应用                                 | group 或 app                                                                   | `.mango/run`                                                                                                     |
-| `mango dev status`              | 查看进程状态                                                     | 无                                                                             | 不改文件                                                                                                         |
+| `mango dev status`              | 查看进程、数据库和运行中后端 datasource 一致性                   | 无                                                                             | 不改文件                                                                                                         |
 | `mango dev logs <app>`          | 查看最近 200 行日志                                              | app name                                                                       | 不改文件                                                                                                         |
 | `mango dev stop`                | 停止本地开发应用                                                 | group 或 app                                                                   | 成功确认目标进程组退出后删除 pid file；失败时保留                                                                |
 | `mango frontend prepare`        | 准备前端 source 模式必要文件                                     | 无                                                                             | `packages/admin/generated-package-styles.css`、`packages/admin/style-full.css`                                   |
@@ -410,13 +414,13 @@ mango release repair --version 1.0.16 --project-dir . --authorize
 
 | code               | 能力     | 前端包                             | 后端 starter                                       | 页面注册 / runtime 说明                                                                                              |
 | ------------------ | -------- | ---------------------------------- | -------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| `file`             | 文件中心 | `@mango/file`                      | `mango-file-starter`、`mango-file-preview-starter` | 注册文件管理页面，不生成 runtime module                                                                              |
+| `file`             | 文件管理 | `@mango/file`                      | `mango-file-starter`、`mango-file-preview-starter` | 注册文件管理页面，不生成 runtime module                                                                              |
 | `template`         | 模板管理 | `@mango/template`                  | `mango-template-starter`                           | runtime module 为 `mango-template`                                                                                   |
-| `cms`              | 内容中心 | `@mango/cms`                       | `mango-cms-starter`                                | runtime module 为 `mango-cms`                                                                                        |
-| `notice`           | 通知中心 | `@mango/notice`                    | `mango-notice-starter`                             | custom 后端基础依赖已包含 `mango-notice-starter` 以满足认证通知接口；选择本模块时额外注册 admin pages 和 admin shell |
-| `numgen`           | 编号规则 | `@mango/numgen`                    | `mango-numgen-starter`                             | 注册编号规则页面                                                                                                     |
+| `cms`              | 内容运营 | `@mango/cms`                       | `mango-cms-starter`                                | runtime module 为 `mango-cms`                                                                                        |
+| `notice`           | 通知管理 | `@mango/notice`                    | `mango-notice-starter`                             | custom 后端基础依赖已包含 `mango-notice-starter` 以满足认证通知接口；选择本模块时额外注册 admin pages 和 admin shell |
+| `numgen`           | 编号管理 | `@mango/numgen`                    | `mango-numgen-starter`                             | 注册编号管理页面                                                                                                     |
 | `calendar`         | 工作日历 | `@mango/calendar`                  | `mango-calendar-starter`                           | 注册工作日历页面                                                                                                     |
-| `workflow`         | 审批中心 | `@mango/workflow`                  | `mango-workflow-starter`                           | runtime module 为 `mango-workflow`                                                                                   |
+| `workflow`         | 审批管理 | `@mango/workflow`                  | `mango-workflow-starter`                           | runtime module 为 `mango-workflow`                                                                                   |
 | `workflow-example` | 审批示例 | `@mango/workflow-business-example` | 无独立后端 starter                                 | 自动依赖 `workflow`                                                                                                  |
 
 必选 runtime module：

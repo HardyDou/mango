@@ -70,7 +70,7 @@ class MenuApiCodesBusinessScenarioIntegrationTest {
     }
 
     @Test
-    @DisplayName("业务角色可通过业务菜单获得 workflow 接口权限，但不会暴露审批中心或风控菜单")
+    @DisplayName("业务角色可通过业务菜单获得 workflow 接口权限，但不会暴露审批管理或风控菜单")
     void businessRoleGetsWorkflowApiCodesWithoutWorkflowMenus() {
         appModuleService.registerResourceManifest(riskWorkflowManifest());
         appModuleService.registerResourceManifest(discountApprovalManifest());
@@ -109,8 +109,8 @@ class MenuApiCodesBusinessScenarioIntegrationTest {
     }
 
     private AppModuleResourceManifestCommand riskWorkflowManifest() {
-        AppModuleResourceManifestCommand manifest = manifest("workflow", "审批中心", List.of("ROLE_RISK"));
-        AppModuleMenuRequest root = menu(1, "审批中心", "workflow", "/workflow", null);
+        AppModuleResourceManifestCommand manifest = manifest("workflow", "审批管理", List.of("ROLE_RISK"));
+        AppModuleMenuRequest root = menu(1, "审批管理", "workflow", "/workflow", null);
         AppModuleMenuRequest riskApproval = menu(2, "风控审批", "workflow:risk-approval",
                 "/workflow/risk-approval", "workflow/risk-approval/index");
         riskApproval.setApiCodes(List.of("workflow:risk:view", "workflow:risk:approve"));
@@ -147,8 +147,8 @@ class MenuApiCodesBusinessScenarioIntegrationTest {
     }
 
     private AppModuleResourceManifestCommand fileBasicManifest() {
-        AppModuleResourceManifestCommand manifest = manifest("file", "文件中心", List.of());
-        AppModuleMenuRequest root = menu(1, "文件中心", "file", "/file", null);
+        AppModuleResourceManifestCommand manifest = manifest("file", "文件管理", List.of());
+        AppModuleMenuRequest root = menu(1, "文件管理", "file", "/file", null);
         AppModuleMenuRequest anonymousBasic = menu(2, "文件匿名基础权限",
                 "file:basic-anonymous", "/file/basic-anonymous", null);
         anonymousBasic.setVisible(0);

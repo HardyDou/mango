@@ -50,8 +50,8 @@ export function registerMangoNoticeAdminPages() {
 
   return {
     businessDomainCode: 'NOTICE',
-    businessDomainName: '通知中心',
-    groupName: '通知中心',
+    businessDomainName: '通知管理',
+    groupName: '通知管理',
     widgets: noticeMessageCenterWidgets,
   };
 }

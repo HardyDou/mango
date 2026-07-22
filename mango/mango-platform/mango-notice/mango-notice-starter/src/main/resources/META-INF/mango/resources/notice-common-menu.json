@@ -3,14 +3,14 @@
     "resource": {
       "schemaVersion": 1,
       "moduleCode": "notice",
-      "moduleName": "通知中心模块",
+      "moduleName": "通知管理模块",
       "declarations": {
         "AUTH_MENU": [
           {
             "id": "2951300000000009301",
-            "version": 4,
+            "version": 5,
             "bizKey": "notice.menu.internal-admin",
-            "name": "通知中心菜单",
+            "name": "通知管理菜单",
             "targetModule": "authorization",
             "fields": {
               "appCode": {
@@ -23,7 +23,7 @@
               },
               "moduleName": {
                 "type": "STRING",
-                "value": "通知中心模块"
+                "value": "通知管理模块"
               },
               "sort": {
                 "type": "INT",
@@ -42,7 +42,7 @@
                 "value": [
                   {
                     "menuType": 1,
-                    "menuName": "通知中心",
+                    "menuName": "通知管理",
                     "menuCode": "notice",
                     "parentCode": "data",
                     "path": "/notice",
@@ -178,7 +178,7 @@
                         "component": "notice/setting/index",
                         "sort": 91,
                         "visible": 0,
-                        "remark": "通知提示、重试和保留周期设置接口权限，不作为通知中心后台菜单展示",
+                        "remark": "通知提示、重试和保留周期设置接口权限，不作为通知管理后台菜单展示",
                         "packageCodes": [],
                         "apiCodes": [
                           "notice:setting:view",

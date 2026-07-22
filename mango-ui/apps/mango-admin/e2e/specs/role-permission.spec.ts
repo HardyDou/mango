@@ -86,13 +86,16 @@ test.describe('T2 角色授权闭环', () => {
     await cleanupRole(request, token, roleCode);
 
     await loginAsCompanyA(page);
-    await expect(page.getByText('审批中心')).toHaveCount(0);
+    await expect(page.getByText('审批管理')).toHaveCount(0);
     await expect(page.getByText('机构管理')).toHaveCount(0);
     await expect(page.getByText('应用管理')).toHaveCount(0);
     await expect(page.getByText('菜单管理')).toHaveCount(0);
 
-    const roleListResponsePromise = page.waitForResponse((response) =>
-      response.url().includes('/api/authorization/roles') && response.request().method() === 'GET' && response.status() === 200
+    const roleListResponsePromise = page.waitForResponse(
+      (response) =>
+        response.url().includes('/api/authorization/roles') &&
+        response.request().method() === 'GET' &&
+        response.status() === 200,
     );
     await page.goto('/#/system/role');
     await roleListResponsePromise;
@@ -106,8 +109,11 @@ test.describe('T2 角色授权闭环', () => {
     await createDialog.getByLabel('角色编码').fill(roleCode);
     await createDialog.getByLabel('备注').fill('T2 E2E 临时角色');
 
-    const createResponsePromise = page.waitForResponse((response) =>
-      response.url().includes('/api/authorization/roles') && response.request().method() === 'POST' && response.status() === 200
+    const createResponsePromise = page.waitForResponse(
+      (response) =>
+        response.url().includes('/api/authorization/roles') &&
+        response.request().method() === 'POST' &&
+        response.status() === 200,
     );
     await createDialog.getByRole('button', { name: '确定' }).click();
     await createResponsePromise;
@@ -120,8 +126,11 @@ test.describe('T2 角色授权闭环', () => {
     await expect(editDialog).toBeVisible();
     await editDialog.getByLabel('角色名称').fill(editedRoleName);
 
-    const updateResponsePromise = page.waitForResponse((response) =>
-      response.url().includes('/api/authorization/roles') && response.request().method() === 'PUT' && response.status() === 200
+    const updateResponsePromise = page.waitForResponse(
+      (response) =>
+        response.url().includes('/api/authorization/roles') &&
+        response.request().method() === 'PUT' &&
+        response.status() === 200,
     );
     await editDialog.getByRole('button', { name: '确定' }).click();
     await updateResponsePromise;
@@ -129,8 +138,8 @@ test.describe('T2 角色授权闭环', () => {
     await expect(page.getByText(editedRoleName)).toBeVisible({ timeout: 10000 });
 
     const editedRow = page.locator('.el-table__row', { hasText: roleCode }).first();
-    const assignableMenusResponsePromise = page.waitForResponse((response) =>
-      response.url().includes('/api/authorization/roles/assignable-menus') && response.status() === 200
+    const assignableMenusResponsePromise = page.waitForResponse(
+      (response) => response.url().includes('/api/authorization/roles/assignable-menus') && response.status() === 200,
     );
     await editedRow.getByRole('button', { name: '分配权限' }).click();
     const assignDialog = page.getByRole('dialog', { name: '分配角色权限' });
@@ -145,8 +154,11 @@ test.describe('T2 角色授权闭环', () => {
 
     const roleManageNode = assignDialog.locator('.el-tree-node', { hasText: '角色管理' }).first();
     await roleManageNode.locator('.el-checkbox').first().click();
-    const assignResponsePromise = page.waitForResponse((response) =>
-      response.url().includes('/api/authorization/roles/menus') && response.request().method() === 'POST' && response.status() === 200
+    const assignResponsePromise = page.waitForResponse(
+      (response) =>
+        response.url().includes('/api/authorization/roles/menus') &&
+        response.request().method() === 'POST' &&
+        response.status() === 200,
     );
     await assignDialog.getByRole('button', { name: '确定' }).click();
     const assignResponse = await assignResponsePromise;
@@ -172,11 +184,17 @@ test.describe('T2 角色授权闭环', () => {
     const deleteRow = page.locator('.el-table__row', { hasText: roleCode }).first();
     await deleteRow.getByRole('button', { name: '删除' }).click();
     await expect(page.getByText(`确认删除角色「${editedRoleName}」?`)).toBeVisible();
-    const deleteResponsePromise = page.waitForResponse((response) =>
-      response.url().includes('/api/authorization/roles') && response.request().method() === 'DELETE' && response.status() === 200
+    const deleteResponsePromise = page.waitForResponse(
+      (response) =>
+        response.url().includes('/api/authorization/roles') &&
+        response.request().method() === 'DELETE' &&
+        response.status() === 200,
     );
-    const reloadAfterDeletePromise = page.waitForResponse((response) =>
-      response.url().includes('/api/authorization/roles') && response.request().method() === 'GET' && response.status() === 200
+    const reloadAfterDeletePromise = page.waitForResponse(
+      (response) =>
+        response.url().includes('/api/authorization/roles') &&
+        response.request().method() === 'GET' &&
+        response.status() === 200,
     );
     await page.getByRole('button', { name: '确定' }).click();
     await deleteResponsePromise;

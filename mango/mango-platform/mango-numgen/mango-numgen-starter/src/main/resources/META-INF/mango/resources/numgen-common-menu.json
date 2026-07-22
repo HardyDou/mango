@@ -8,7 +8,7 @@
         "AUTH_MENU": [
           {
             "id": "2951300000000008401",
-            "version": 1,
+            "version": 2,
             "bizKey": "numgen.menu.internal-admin",
             "name": "编号生成菜单",
             "targetModule": "authorization",
@@ -45,7 +45,7 @@
                 "value": [
                   {
                     "menuType": 2,
-                    "menuName": "编号规则",
+                    "menuName": "编号管理",
                     "menuCode": "data:numgen",
                     "path": "/data/numgen",
                     "icon": "Tickets",

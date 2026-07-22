@@ -1,12 +1,6 @@
 <template>
-  <component
-    :is="activeComponent"
-    v-if="activeComponent"
-  />
-  <el-empty
-    v-else
-    :description="emptyText"
-  />
+  <component :is="activeComponent" v-if="activeComponent" />
+  <el-empty v-else :description="emptyText" />
 </template>
 
 <script setup lang="ts">
@@ -22,19 +16,21 @@ const props = defineProps<{
 
 const runtime = inject<MangoAppRuntime | undefined>('mangoRuntime', undefined);
 
-const activeMenu = computed(() => props.menu || runtime?.menu as WorkflowMenu | undefined);
+const activeMenu = computed(() => props.menu || (runtime?.menu as WorkflowMenu | undefined));
 const activeComponent = computed(() => {
   const loader = resolveWorkflowComponent(activeMenu.value?.component);
-  return loader ? defineAsyncComponent(async () => {
-    const module = await loader();
-    return (module as any).default || module;
-  }) : undefined;
+  return loader
+    ? defineAsyncComponent(async () => {
+        const module = await loader();
+        return (module as any).default || module;
+      })
+    : undefined;
 });
 const emptyText = computed(() => {
   const menu = activeMenu.value;
   if (!menu) {
-    return props.emptyDescription || '请选择审批中心菜单';
+    return props.emptyDescription || '请选择审批管理菜单';
   }
-  return `缺少审批中心页面映射：${menu.component || menu.path || menu.menuName}`;
+  return `缺少审批管理页面映射：${menu.component || menu.path || menu.menuName}`;
 });
 </script>
