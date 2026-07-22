@@ -98,10 +98,13 @@ function changesGeneratedBackendBehavior(file) {
     /^mango\/mango-parent(?:\/|$)/,
     /^mango\/mango-tools\/mango-(?:architecture-rules|maven-plugin|architecture-verification)(?:\/|$)/,
     /^mango-pmo\/baselines\/(?:architecture|mango-check)(?:\/|$)/,
-    /^mango-pmo\/tools\/(?:classify-pmo-check-scope|check-governance-intent)\.mjs$/,
-    /^(?:mango-business-starter\/)?business-pmo\/mango-baseline\/tools\/(?:classify-pmo-check-scope|check-governance-intent)\.mjs$/,
+    /^mango-pmo\/tools\/(?:classify-pmo-check-scope|check-governance-intent|check-architecture-debt-budget)\.mjs$/,
+    /^(?:mango-business-starter\/)?business-pmo\/architecture-debt-budget\.json$/,
+    /^(?:mango-business-starter\/)?business-pmo\/mango-baseline\/tools\/(?:classify-pmo-check-scope|check-governance-intent|check-architecture-debt-budget)\.mjs$/,
     /^mango-business-starter\/backend(?:\/|$)/,
     /^mango-business-starter\/scripts\/check-template\.mjs$/,
+    /^mango-ui\/packages\/mango-cli\/templates\/full\/(?:\.github|\.gitea)\/workflows\/pmo-doc-check\.yml$/,
+    /^mango-ui\/packages\/mango-cli\/templates\/full\/business-pmo\/architecture-debt-budget\.json$/,
     /^mango-ui\/packages\/mango-cli\/templates\/full\/backend(?:\/|$)/,
     /^mango-ui\/packages\/mango-cli\/src(?:\/|$)/,
     /^mango-ui\/packages\/mango-cli\/scripts\/(?:check-cli|check-business-module-template|check-generated-backend-gate)\.mjs$/,
@@ -145,6 +148,8 @@ export function classifyChangedFiles(files, repositoryRoot = root) {
     /^backend\/.*\/src\/main\/resources\/META-INF\/mango\/module\.properties$/,
     /^mango\/mango-tools\/mango-(?:architecture-rules|maven-plugin)(?:\/|$)/,
     /^mango-pmo\/baselines\/(?:architecture|mango-check)(?:\/|$)/,
+    /^mango-pmo\/tools\/check-architecture-debt-budget\.mjs$/,
+    /^(?:mango-business-starter\/)?business-pmo\/architecture-debt-budget\.json$/,
   ]));
   const distribution = normalized.some(file => matchesAny(file, [
     /^mango-business-starter\//,
@@ -226,6 +231,8 @@ export function resolveMavenScope(files, repositoryRoot = root) {
       /^business-pmo\/global-entity-exceptions\.json$/,
     ]),
     /^mango-pmo\/baselines\/(?:architecture|mango-check)(?:\/|$)/,
+    /^mango-pmo\/tools\/check-architecture-debt-budget\.mjs$/,
+    /^(?:mango-business-starter\/)?business-pmo\/architecture-debt-budget\.json$/,
   ]));
   if (governanceGate) return { mode: 'governance', projects: [] };
 

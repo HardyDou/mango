@@ -97,6 +97,7 @@ CI 必须从最终 PR diff 执行 `mvn verify -Dmango.architecture.base=<base-sh
 - 禁止新增或使用 `mango.remote.*`。
 - 管理后台只负责查看、管理和运维模块信息。
 - 管理后台不承载模块信息采集核心逻辑。
+- 门禁启用前已存在但缺少 `module.properties` 的业务模块，首次补回身份时统一使用 [`../05-ai-delivery-quality.md`](../05-ai-delivery-quality.md) 的两 PR 受控纳管入口；不得在含业务代码改动的 PR 中生成或扩充历史债务预算。
 
 ## 7. Remote Adapter 规则
 

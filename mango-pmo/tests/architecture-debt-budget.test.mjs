@@ -118,6 +118,117 @@ function runBaselineOnly(fixture, extra = []) {
   };
 }
 
+function git(fixture, ...args) {
+  return spawnSync('git', ['-C', fixture.root, ...args], {
+    encoding: 'utf8',
+    env: {
+      ...process.env,
+      GIT_AUTHOR_NAME: 'Mango Test',
+      GIT_AUTHOR_EMAIL: 'mango-test@example.invalid',
+      GIT_COMMITTER_NAME: 'Mango Test',
+      GIT_COMMITTER_EMAIL: 'mango-test@example.invalid'
+    }
+  });
+}
+
+function writeOnboardingReport(file, extraIssues = [], omittedIssues = [], overrides = {}) {
+  const onboardingModules = [
+    {
+      moduleKey: 'backend/modules/guarantee/guarantee-api',
+      groupId: 'com.example.guarantee',
+      artifactId: 'guarantee-api'
+    },
+    {
+      moduleKey: 'backend/modules/guarantee/guarantee-core',
+      groupId: 'com.example.guarantee',
+      artifactId: 'guarantee-core'
+    },
+    {
+      moduleKey: 'backend/modules/guarantee/guarantee-starter',
+      groupId: 'com.example.guarantee',
+      artifactId: 'guarantee-starter'
+    },
+    {
+      moduleKey: 'backend/modules/billing/billing-core',
+      groupId: 'com.example.billing',
+      artifactId: 'billing-core'
+    }
+  ];
+  const allIssues = [
+    {
+      ruleId: 'MANGO-ARCH-SERVICE-001',
+      subject: 'LegacyGuaranteeServiceImpl',
+      message: 'Legacy service naming',
+      moduleKey: onboardingModules[1].moduleKey
+    },
+    {
+      ruleId: 'MANGO-ARCH-CTRL-004',
+      subject: 'LegacyGuaranteeController',
+      message: 'Legacy controller contract',
+      moduleKey: onboardingModules[2].moduleKey
+    },
+    ...extraIssues
+  ].filter(issue => !omittedIssues.includes(issue.subject));
+  fs.writeFileSync(file, JSON.stringify({
+    schemaVersion: 2,
+    modules: onboardingModules,
+    dependencyIssues: [],
+    archUnitIssues: allIssues,
+    pmdIssues: [],
+    blockingIssues: [],
+    mode: 'changed',
+    inventoryScope: 'full-reactor',
+    issueInventory: 'all-detected-issues',
+    inventoryOnly: true,
+    reactorProjectCount: onboardingModules.length,
+    expectedProjectCount: onboardingModules.length,
+    ...overrides
+  }));
+}
+
+function createOnboardingFixture() {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'mango-module-onboarding-'));
+  const fixture = {
+    root,
+    cwd: root,
+    report: path.join(root, 'target/mango-architecture-report.json'),
+    baseline: path.join(root, 'mango-pmo/baselines/architecture/debt-budget.json'),
+    moduleProperties: path.join(
+      root,
+      'backend/modules/guarantee/guarantee-starter/src/main/resources/META-INF/mango/module.properties'
+    )
+  };
+  fs.mkdirSync(path.dirname(fixture.report), { recursive: true });
+  fs.mkdirSync(path.dirname(fixture.baseline), { recursive: true });
+  writeOnboardingReport(fixture.report, [], [
+    'LegacyGuaranteeServiceImpl',
+    'LegacyGuaranteeController'
+  ]);
+  assert.equal(git(fixture, 'init', '-q').status, 0);
+  assert.equal(run(fixture, ['--write']).status, 0);
+  assert.equal(git(fixture, 'add', fixture.baseline).status, 0);
+  assert.equal(git(fixture, 'commit', '-qm', 'base architecture budget').status, 0);
+  writeOnboardingReport(fixture.report);
+  fs.mkdirSync(path.dirname(fixture.moduleProperties), { recursive: true });
+  fs.writeFileSync(
+    fixture.moduleProperties,
+    'module-name=guarantee\nmodule-path=/guarantee\nmodule-number=900\n'
+  );
+  assert.equal(git(fixture, 'add', fixture.moduleProperties).status, 0);
+  return fixture;
+}
+
+function runOnboarding(fixture, extra = []) {
+  return run(fixture, [
+    '--onboard-module', 'backend/modules/guarantee',
+    '--module-properties', fixture.moduleProperties,
+    '--base-ref', 'HEAD',
+    '--reason', 'reviewed first governance of the legacy guarantee module',
+    '--write',
+    ...extra
+  ]);
+}
+
 test('initializes and verifies a full-Reactor architecture debt budget', () => {
   const fixture = createFixture({ dependency: ['DEP-1'], archunit: ['ARCH-1'], pmd: ['PMD-1'] });
   try {
@@ -583,6 +694,407 @@ test('CI base-ref reads a budget larger than the child-process default buffer', 
       '--base-ref', 'HEAD'
     ], { cwd: fixture.root, encoding: 'utf8' });
     assert.equal(checked.status, 0, checked.stderr);
+  } finally {
+    fs.rmSync(fixture.root, { recursive: true, force: true });
+  }
+});
+
+test('initial project budget requires a trusted full report and a budget-only Git diff', () => {
+  for (const mutation of ['valid', 'baseline-only', 'business-source']) {
+    const fixture = createFixture({ dependency: [], archunit: [], pmd: [] });
+    fixture.cwd = fixture.root;
+    try {
+      assert.equal(git(fixture, 'init', '-q').status, 0);
+      fs.writeFileSync(path.join(fixture.root, 'README.md'), 'project base\n');
+      assert.equal(git(fixture, 'add', 'README.md').status, 0);
+      assert.equal(git(fixture, 'commit', '-qm', 'project base').status, 0);
+      assert.equal(run(fixture, ['--write']).status, 0);
+      assert.equal(git(fixture, 'add', fixture.baseline).status, 0);
+
+      if (mutation === 'business-source') {
+        const source = path.join(fixture.root, 'backend/src/main/java/BusinessService.java');
+        fs.mkdirSync(path.dirname(source), { recursive: true });
+        fs.writeFileSync(source, 'class BusinessService {}\n');
+        assert.equal(git(fixture, 'add', source).status, 0);
+      }
+
+      const checked = mutation === 'baseline-only'
+        ? spawnSync(process.execPath, [
+          checker,
+          '--baseline', fixture.baseline,
+          '--baseline-only',
+          '--base-ref', 'HEAD',
+          '--json'
+        ], { cwd: fixture.root, encoding: 'utf8' })
+        : run(fixture, ['--base-ref', 'HEAD']);
+      if (mutation === 'valid') {
+        assert.equal(checked.status, 0, checked.stderr);
+        assert.equal(checked.report.action, 'initialized-against-base');
+      } else if (mutation === 'baseline-only') {
+        assert.equal(checked.status, 1, checked.stderr);
+        assert.equal(JSON.parse(checked.stdout).action, 'initial-budget-report-required');
+      } else {
+        assert.equal(checked.status, 2);
+        assert.match(checked.stderr, /budget file; forbidden changes/u);
+      }
+    } finally {
+      fs.rmSync(fixture.root, { recursive: true, force: true });
+    }
+  }
+});
+
+test('missing project budget permits only a pure managed workflow governance upgrade', () => {
+  const fixture = createFixture({ dependency: [], archunit: [], pmd: [] });
+  fixture.cwd = fixture.root;
+  try {
+    writeReport(fixture.report, { dependency: [], archunit: [], pmd: [] }, { inventoryOnly: true });
+    assert.equal(git(fixture, 'init', '-q').status, 0);
+    fs.writeFileSync(path.join(fixture.root, 'README.md'), 'legacy project base\n');
+    assert.equal(git(fixture, 'add', 'README.md').status, 0);
+    assert.equal(git(fixture, 'commit', '-qm', 'legacy project base').status, 0);
+
+    const workflow = path.join(fixture.root, '.github/workflows/pmo-doc-check.yml');
+    fs.mkdirSync(path.dirname(workflow), { recursive: true });
+    fs.writeFileSync(workflow, '# Managed by Mango CLI.\nname: PMO Documentation Checks\n');
+    assert.equal(git(fixture, 'add', workflow).status, 0);
+    const accepted = run(fixture, [
+      '--base-ref', 'HEAD',
+      '--allow-missing-for-governance-upgrade'
+    ]);
+    assert.equal(accepted.status, 0, accepted.stderr);
+    assert.equal(accepted.report.action, 'missing-budget-governance-upgrade');
+
+    writeReport(fixture.report, { dependency: [], archunit: [], pmd: [] }, { inventoryOnly: false });
+    const nonInventory = run(fixture, [
+      '--base-ref', 'HEAD',
+      '--allow-missing-for-governance-upgrade'
+    ]);
+    assert.equal(nonInventory.status, 2);
+    assert.match(nonInventory.stderr, /requires an inventoryOnly full-Reactor report/u);
+    writeReport(fixture.report, { dependency: [], archunit: [], pmd: [] }, { inventoryOnly: true });
+
+    const businessSource = path.join(fixture.root, 'backend/src/main/java/BusinessService.java');
+    fs.mkdirSync(path.dirname(businessSource), { recursive: true });
+    fs.writeFileSync(businessSource, 'class BusinessService {}\n');
+    assert.equal(git(fixture, 'add', businessSource).status, 0);
+    const rejected = run(fixture, [
+      '--base-ref', 'HEAD',
+      '--allow-missing-for-governance-upgrade'
+    ]);
+    assert.equal(rejected.status, 2);
+    assert.match(rejected.stderr, /pure PMO\/workflow upgrade.*forbidden changes/u);
+  } finally {
+    fs.rmSync(fixture.root, { recursive: true, force: true });
+  }
+});
+
+test('onboards one legacy module scope and verifies it with a trusted full report', () => {
+  const fixture = createOnboardingFixture();
+  try {
+    const onboarded = runOnboarding(fixture);
+    assert.equal(onboarded.status, 0, onboarded.stderr);
+    assert.equal(onboarded.report.action, 'module-onboarded');
+    assert.deepEqual(onboarded.report.selectedModules, [
+      'backend/modules/guarantee/guarantee-api',
+      'backend/modules/guarantee/guarantee-core',
+      'backend/modules/guarantee/guarantee-starter'
+    ]);
+
+    const verified = run(fixture, ['--base-ref', 'HEAD']);
+    assert.equal(verified.status, 0, verified.stderr);
+    assert.equal(verified.report.action, 'module-onboarding-verified');
+    const budget = JSON.parse(fs.readFileSync(fixture.baseline, 'utf8'));
+    const [record] = Object.values(budget.moduleOnboardings);
+    assert.equal(record.baseCommit, git(fixture, 'rev-parse', 'HEAD').stdout.trim());
+    assert.equal(record.moduleName, 'guarantee');
+    assert.equal(record.modulePath, '/guarantee');
+    assert.equal(budget.totalIssueCount, 2);
+  } finally {
+    fs.rmSync(fixture.root, { recursive: true, force: true });
+  }
+});
+
+test('onboards from a committed empty project budget while the trusted report supplies the Reactor catalog', () => {
+  const fixture = createOnboardingFixture();
+  try {
+    assert.equal(git(fixture, 'reset', '-q', 'HEAD', '--', fixture.moduleProperties).status, 0);
+    const budget = JSON.parse(fs.readFileSync(fixture.baseline, 'utf8'));
+    budget.modules = {};
+    budget.totalIssueCount = 0;
+    budget.engines = { archunit: 0, dependency: 0, pmd: 0 };
+    budget.rules = {};
+    budget.identities = {};
+    fs.writeFileSync(fixture.baseline, `${JSON.stringify(budget, null, 2)}\n`);
+    assert.equal(git(fixture, 'add', fixture.baseline).status, 0);
+    assert.equal(git(fixture, 'commit', '--amend', '-qm', 'empty project architecture budget').status, 0);
+    assert.equal(git(fixture, 'add', fixture.moduleProperties).status, 0);
+
+    const onboarded = runOnboarding(fixture);
+    assert.equal(onboarded.status, 0, onboarded.stderr);
+    assert.equal(onboarded.report.action, 'module-onboarded');
+    assert.equal(run(fixture, ['--base-ref', 'HEAD']).status, 0);
+  } finally {
+    fs.rmSync(fixture.root, { recursive: true, force: true });
+  }
+});
+
+test('onboarding requires an explicitly inventory-only report', () => {
+  for (const inventoryOnly of [undefined, false, 'true']) {
+    const fixture = createOnboardingFixture();
+    try {
+      writeOnboardingReport(fixture.report, [], [], { inventoryOnly });
+      const rejected = runOnboarding(fixture);
+      assert.equal(rejected.status, 2);
+      assert.match(
+        rejected.stderr,
+        inventoryOnly === 'true'
+          ? /inventoryOnly must be boolean/u
+          : /requires an inventoryOnly full-Reactor report/u
+      );
+    } finally {
+      fs.rmSync(fixture.root, { recursive: true, force: true });
+    }
+  }
+});
+
+test('onboarding module.properties must be owned by a selected starter module', () => {
+  const fixture = createOnboardingFixture();
+  try {
+    assert.equal(git(fixture, 'reset', '-q', 'HEAD', '--', fixture.moduleProperties).status, 0);
+    fs.rmSync(fixture.moduleProperties);
+    fixture.moduleProperties = path.join(
+      fixture.root,
+      'backend/modules/guarantee/guarantee-core/src/main/resources/META-INF/mango/module.properties'
+    );
+    fs.mkdirSync(path.dirname(fixture.moduleProperties), { recursive: true });
+    fs.writeFileSync(
+      fixture.moduleProperties,
+      'module-name=guarantee\nmodule-path=/guarantee\nmodule-number=900\n'
+    );
+    assert.equal(git(fixture, 'add', fixture.moduleProperties).status, 0);
+    const rejected = runOnboarding(fixture);
+    assert.equal(rejected.status, 2);
+    assert.match(rejected.stderr, /must belong to a selected Maven starter module/u);
+  } finally {
+    fs.rmSync(fixture.root, { recursive: true, force: true });
+  }
+});
+
+test('onboarding rejects a base that is not an ancestor of HEAD', () => {
+  const fixture = createOnboardingFixture();
+  try {
+    assert.equal(git(fixture, 'commit', '-qm', 'future onboarding commit').status, 0);
+    const future = git(fixture, 'rev-parse', 'HEAD').stdout.trim();
+    assert.equal(git(fixture, 'reset', '-q', 'HEAD^').status, 0);
+    assert.equal(git(fixture, 'add', fixture.moduleProperties).status, 0);
+    const rejected = runOnboarding(fixture, ['--base-ref', future]);
+    assert.equal(rejected.status, 2);
+    assert.match(rejected.stderr, /must be an ancestor of HEAD/u);
+  } finally {
+    fs.rmSync(fixture.root, { recursive: true, force: true });
+  }
+});
+
+test('onboarding rejects duplicate module-name and module-path identities', () => {
+  const fixture = createOnboardingFixture();
+  try {
+    assert.equal(git(fixture, 'reset', '-q', 'HEAD', '--', fixture.moduleProperties).status, 0);
+    const existing = path.join(
+      fixture.root,
+      'backend/modules/existing/existing-starter/src/main/resources/META-INF/mango/module.properties'
+    );
+    fs.mkdirSync(path.dirname(existing), { recursive: true });
+    fs.writeFileSync(existing, 'module-name=guarantee\nmodule-path=/existing\n');
+    assert.equal(git(fixture, 'add', existing).status, 0);
+    assert.equal(git(fixture, 'commit', '--amend', '-qm', 'base with existing identity').status, 0);
+    assert.equal(git(fixture, 'add', fixture.moduleProperties).status, 0);
+    const rejected = runOnboarding(fixture);
+    assert.equal(rejected.status, 2);
+    assert.match(rejected.stderr, /module-name guarantee is already declared/u);
+  } finally {
+    fs.rmSync(fixture.root, { recursive: true, force: true });
+  }
+});
+
+test('a schemaVersion 4 base without onboarding metadata remains compatible', () => {
+  const fixture = createOnboardingFixture();
+  try {
+    assert.equal(git(fixture, 'reset', '-q', 'HEAD', '--', fixture.moduleProperties).status, 0);
+    const budget = JSON.parse(fs.readFileSync(fixture.baseline, 'utf8'));
+    delete budget.moduleOnboardings;
+    fs.writeFileSync(fixture.baseline, `${JSON.stringify(budget, null, 2)}\n`);
+    assert.equal(git(fixture, 'add', fixture.baseline).status, 0);
+    assert.equal(git(fixture, 'commit', '--amend', '-qm', 'legacy schema v4 budget').status, 0);
+    assert.equal(git(fixture, 'add', fixture.moduleProperties).status, 0);
+    const onboarded = runOnboarding(fixture);
+    assert.equal(onboarded.status, 0, onboarded.stderr);
+    const updated = JSON.parse(fs.readFileSync(fixture.baseline, 'utf8'));
+    assert.equal(Object.keys(updated.moduleOnboardings).length, 1);
+  } finally {
+    fs.rmSync(fixture.root, { recursive: true, force: true });
+  }
+});
+
+test('fresh onboarding cannot pass the CI baseline-only shortcut', () => {
+  const fixture = createOnboardingFixture();
+  try {
+    assert.equal(runOnboarding(fixture).status, 0);
+    const checked = spawnSync(process.execPath, [
+      checker,
+      '--baseline', fixture.baseline,
+      '--baseline-only',
+      '--base-ref', 'HEAD',
+      '--json'
+    ], { cwd: fixture.root, encoding: 'utf8' });
+    assert.equal(checked.status, 1, checked.stderr);
+    assert.equal(JSON.parse(checked.stdout).action, 'onboarding-report-required');
+  } finally {
+    fs.rmSync(fixture.root, { recursive: true, force: true });
+  }
+});
+
+test('onboarding refuses a PR that contains business source changes', () => {
+  const fixture = createOnboardingFixture();
+  try {
+    const source = path.join(
+      fixture.root,
+      'backend/modules/guarantee/guarantee-core/src/main/java/GuaranteeService.java'
+    );
+    fs.mkdirSync(path.dirname(source), { recursive: true });
+    fs.writeFileSync(source, 'class GuaranteeService {}\n');
+    assert.equal(git(fixture, 'add', source).status, 0);
+    const before = fs.readFileSync(fixture.baseline, 'utf8');
+    const rejected = runOnboarding(fixture);
+    assert.equal(rejected.status, 2);
+    assert.match(rejected.stderr, /forbidden changes/u);
+    assert.equal(fs.readFileSync(fixture.baseline, 'utf8'), before);
+  } finally {
+    fs.rmSync(fixture.root, { recursive: true, force: true });
+  }
+});
+
+test('onboarding refuses debt increases outside the selected module scope', () => {
+  const fixture = createOnboardingFixture();
+  try {
+    writeOnboardingReport(fixture.report, [{
+      ruleId: 'MANGO-ARCH-ENTITY-001',
+      subject: 'BillingEntity',
+      message: 'Unrelated billing debt',
+      moduleKey: 'backend/modules/billing/billing-core'
+    }]);
+    const rejected = runOnboarding(fixture);
+    assert.equal(rejected.status, 2);
+    assert.match(rejected.stderr, /selected module scope/u);
+  } finally {
+    fs.rmSync(fixture.root, { recursive: true, force: true });
+  }
+});
+
+test('trusted CI rejects tampered onboarding audit metadata', () => {
+  const fixture = createOnboardingFixture();
+  try {
+    assert.equal(runOnboarding(fixture).status, 0);
+    const budget = JSON.parse(fs.readFileSync(fixture.baseline, 'utf8'));
+    const [recordKey] = Object.keys(budget.moduleOnboardings);
+    budget.moduleOnboardings[recordKey].modulePropertiesSha256 = '0'.repeat(64);
+    fs.writeFileSync(fixture.baseline, `${JSON.stringify(budget, null, 2)}\n`);
+    const rejected = run(fixture, ['--base-ref', 'HEAD']);
+    assert.equal(rejected.status, 2);
+    assert.match(rejected.stderr, /audit metadata/u);
+  } finally {
+    fs.rmSync(fixture.root, { recursive: true, force: true });
+  }
+});
+
+test('later PRs cannot remove or modify an existing onboarding record', () => {
+  for (const mutation of ['remove', 'modify']) {
+    const fixture = createOnboardingFixture();
+    try {
+      assert.equal(runOnboarding(fixture).status, 0);
+      assert.equal(git(fixture, 'add', fixture.baseline).status, 0);
+      assert.equal(git(fixture, 'commit', '-qm', 'onboard guarantee module').status, 0);
+      const budget = JSON.parse(fs.readFileSync(fixture.baseline, 'utf8'));
+      const [recordKey] = Object.keys(budget.moduleOnboardings);
+      if (mutation === 'remove') {
+        delete budget.moduleOnboardings[recordKey];
+      } else {
+        budget.moduleOnboardings[recordKey].reason = 'silently rewritten reason';
+      }
+      fs.writeFileSync(fixture.baseline, `${JSON.stringify(budget, null, 2)}\n`);
+      const rejected = run(fixture, ['--base-ref', 'HEAD']);
+      assert.equal(rejected.status, 1, rejected.stderr);
+      assert.equal(rejected.report.action, 'onboarding-record-tampered');
+    } finally {
+      fs.rmSync(fixture.root, { recursive: true, force: true });
+    }
+  }
+});
+
+test('a later business PR keeps history allowed but rejects a new identity', () => {
+  const fixture = createOnboardingFixture();
+  try {
+    assert.equal(runOnboarding(fixture).status, 0);
+    assert.equal(git(fixture, 'add', fixture.baseline).status, 0);
+    assert.equal(git(fixture, 'commit', '-qm', 'onboard guarantee module').status, 0);
+
+    const unchanged = run(fixture, ['--base-ref', 'HEAD']);
+    assert.equal(unchanged.status, 0, unchanged.stderr);
+
+    writeOnboardingReport(fixture.report, [{
+      ruleId: 'MANGO-ARCH-CTRL-002',
+      subject: 'NewCreditPageController',
+      message: 'New controller violation',
+      moduleKey: 'backend/modules/guarantee/guarantee-starter'
+    }]);
+    const rejected = run(fixture, ['--base-ref', 'HEAD']);
+    assert.equal(rejected.status, 1);
+    assert.equal(rejected.report.action, 'check');
+    assert.equal(rejected.report.comparison.identityIncreases.length, 1);
+  } finally {
+    fs.rmSync(fixture.root, { recursive: true, force: true });
+  }
+});
+
+test('later debt reduction preserves the immutable onboarding record', () => {
+  const fixture = createOnboardingFixture();
+  try {
+    assert.equal(runOnboarding(fixture).status, 0);
+    assert.equal(git(fixture, 'add', fixture.baseline).status, 0);
+    assert.equal(git(fixture, 'commit', '-qm', 'onboard guarantee module').status, 0);
+    const before = JSON.parse(fs.readFileSync(fixture.baseline, 'utf8')).moduleOnboardings;
+
+    writeOnboardingReport(fixture.report, [], ['LegacyGuaranteeServiceImpl']);
+    const reduced = run(fixture, [
+      '--module', 'backend/modules/guarantee',
+      '--write'
+    ]);
+    assert.equal(reduced.status, 0, reduced.stderr);
+    const after = JSON.parse(fs.readFileSync(fixture.baseline, 'utf8'));
+    assert.deepEqual(after.moduleOnboardings, before);
+    assert.equal(after.totalIssueCount, 1);
+  } finally {
+    fs.rmSync(fixture.root, { recursive: true, force: true });
+  }
+});
+
+test('an onboarded module cannot repeat first governance after merge', () => {
+  const fixture = createOnboardingFixture();
+  try {
+    assert.equal(runOnboarding(fixture).status, 0);
+    assert.equal(git(fixture, 'add', fixture.baseline).status, 0);
+    assert.equal(git(fixture, 'commit', '-qm', 'onboard guarantee module').status, 0);
+    const repeated = spawnSync(process.execPath, [
+      checker,
+      '--report', fixture.report,
+      '--baseline', fixture.baseline,
+      '--onboard-module', 'backend/modules/guarantee',
+      '--module-properties', fixture.moduleProperties,
+      '--base-ref', 'HEAD',
+      '--reason', 'repeat onboarding must fail',
+      '--write'
+    ], { cwd: fixture.root, encoding: 'utf8' });
+    assert.equal(repeated.status, 2);
+    assert.match(repeated.stderr, /overlaps an existing onboarding record|already exists in the onboarding base/u);
   } finally {
     fs.rmSync(fixture.root, { recursive: true, force: true });
   }

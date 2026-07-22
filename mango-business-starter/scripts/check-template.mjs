@@ -25,6 +25,7 @@ const requiredFiles = [
   "AGENTS.md",
   ".github/CODEOWNERS",
   "business-pmo/README.md",
+  "business-pmo/architecture-debt-budget.json",
   "business-pmo/global-entity-exceptions.json",
   "business-pmo/mango-baseline/README.md",
   "business-pmo/mango-baseline/agents/01-pm-agent.md",
@@ -362,6 +363,15 @@ const contentChecks = [
       '"schemaRevision": 1',
       '"version": 1',
       '"exceptions": []',
+    ],
+  },
+  {
+    file: "business-pmo/architecture-debt-budget.json",
+    patterns: [
+      '"schemaVersion": 4',
+      '"moduleOnboardings": {}',
+      '"totalIssueCount": 0',
+      '"modules": {}',
     ],
   },
   {

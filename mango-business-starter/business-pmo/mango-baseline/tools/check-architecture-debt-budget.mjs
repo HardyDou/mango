@@ -22,9 +22,12 @@ function parseArgs(argv) {
     baseRef: '',
     baseBudget: '',
     modules: [],
+    onboardModule: '',
+    moduleProperties: '',
     write: false,
     acceptIncrease: false,
     baselineOnly: false,
+    allowMissingForGovernanceUpgrade: false,
     reason: '',
     json: false
   };
@@ -36,12 +39,15 @@ function parseArgs(argv) {
       args.acceptIncrease = true;
     } else if (arg === '--baseline-only') {
       args.baselineOnly = true;
+    } else if (arg === '--allow-missing-for-governance-upgrade') {
+      args.allowMissingForGovernanceUpgrade = true;
     } else if (arg === '--json') {
       args.json = true;
     } else if (arg === '--module') {
       args.modules.push(argv[index + 1] || '');
       index += 1;
-    } else if (['--report', '--baseline', '--base-ref', '--base-budget', '--reason'].includes(arg)) {
+    } else if (['--report', '--baseline', '--base-ref', '--base-budget', '--reason',
+      '--onboard-module', '--module-properties'].includes(arg)) {
       const key = arg.slice(2).replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
       args[key] = argv[index + 1] || '';
       index += 1;
@@ -68,6 +74,35 @@ function parseArgs(argv) {
   }
   if (args.baselineOnly && (args.write || args.acceptIncrease || args.modules.length > 0)) {
     throw new Error('--baseline-only cannot be combined with --write, --accept-increase, or --module');
+  }
+  if (args.allowMissingForGovernanceUpgrade) {
+    if (!args.baseRef) {
+      throw new Error('--allow-missing-for-governance-upgrade requires --base-ref');
+    }
+    if (args.write || args.acceptIncrease || args.baselineOnly || args.modules.length > 0 || args.onboardModule) {
+      throw new Error(
+        '--allow-missing-for-governance-upgrade cannot be combined with write, increase, baseline-only, module, or onboarding modes'
+      );
+    }
+  }
+  if (args.onboardModule) {
+    if (!args.write) {
+      throw new Error('--onboard-module requires --write');
+    }
+    if (!args.baseRef) {
+      throw new Error('--onboard-module requires --base-ref');
+    }
+    if (!args.moduleProperties) {
+      throw new Error('--onboard-module requires --module-properties');
+    }
+    if (!args.reason.trim()) {
+      throw new Error('--onboard-module requires a non-empty --reason');
+    }
+    if (args.baseBudget || args.acceptIncrease || args.baselineOnly || args.modules.length > 0) {
+      throw new Error('--onboard-module cannot be combined with --base-budget, --accept-increase, --baseline-only, or --module');
+    }
+  } else if (args.moduleProperties) {
+    throw new Error('--module-properties requires --onboard-module');
   }
   return args;
 }
@@ -157,6 +192,15 @@ function validModuleKey(moduleKey) {
   return moduleKey.split('/').every(segment => segment && segment !== '.' && segment !== '..');
 }
 
+function validRepositoryPath(value) {
+  return typeof value === 'string'
+    && value.length > 0
+    && !value.startsWith('/')
+    && !value.endsWith('/')
+    && !value.includes('\\')
+    && value.split('/').every(segment => segment && segment !== '.' && segment !== '..');
+}
+
 function validateReport(report) {
   if (report?.schemaVersion !== REPORT_SCHEMA_VERSION) {
     throw new Error(`architecture report schemaVersion must be ${REPORT_SCHEMA_VERSION}`);
@@ -166,6 +210,9 @@ function validateReport(report) {
   }
   if (report.issueInventory !== 'all-detected-issues') {
     throw new Error('architecture report issueInventory must be all-detected-issues');
+  }
+  if (report.inventoryOnly !== undefined && typeof report.inventoryOnly !== 'boolean') {
+    throw new Error('architecture report inventoryOnly must be boolean when present');
   }
   if (!Number.isInteger(report.reactorProjectCount) || report.reactorProjectCount <= 0) {
     throw new Error('architecture report reactorProjectCount must be a positive integer');
@@ -250,7 +297,7 @@ function aggregateModules(modules) {
   return normalizeCounters(aggregate);
 }
 
-function budgetWithModules(modules, sourceReport, acceptedIncreaseReason = null, acceptedIncreaseFromSha256 = null) {
+function budgetWithModules(modules, sourceReport, metadata = {}) {
   const sortedModules = Object.fromEntries(
     Object.entries(modules)
       .sort(([left], [right]) => left.localeCompare(right))
@@ -264,8 +311,9 @@ function budgetWithModules(modules, sourceReport, acceptedIncreaseReason = null,
     schemaVersion: SCHEMA_VERSION,
     generatedAt: new Date().toISOString(),
     sourceReport,
-    acceptedIncreaseReason,
-    acceptedIncreaseFromSha256,
+    acceptedIncreaseReason: metadata.acceptedIncreaseReason ?? null,
+    acceptedIncreaseFromSha256: metadata.acceptedIncreaseFromSha256 ?? null,
+    moduleOnboardings: normalizeModuleOnboardings(metadata.moduleOnboardings),
     ...aggregateModules(sortedModules),
     modules: sortedModules
   };
@@ -309,6 +357,12 @@ function withAcceptedIncrease(budget, reason, previousSha256) {
   };
 }
 
+function normalizeModuleOnboardings(moduleOnboardings = {}) {
+  return Object.fromEntries(
+    Object.entries(moduleOnboardings || {}).sort(([left], [right]) => left.localeCompare(right))
+  );
+}
+
 function validateAcceptedIncrease(budget, label) {
   const reason = budget.acceptedIncreaseReason;
   const previousSha = budget.acceptedIncreaseFromSha256;
@@ -320,6 +374,47 @@ function validateAcceptedIncrease(budget, label) {
   }
   if (previousSha !== null && !/^[a-f0-9]{64}$/u.test(previousSha)) {
     throw new Error(`${label} acceptedIncreaseFromSha256 must be a SHA-256 digest`);
+  }
+}
+
+function validateModuleOnboardings(budget, label) {
+  const records = budget.moduleOnboardings ?? {};
+  if (!records || typeof records !== 'object' || Array.isArray(records)) {
+    throw new Error(`${label} moduleOnboardings must be an object`);
+  }
+  for (const [recordKey, record] of Object.entries(records)) {
+    if (!validRepositoryPath(recordKey)
+      || !record || typeof record !== 'object' || Array.isArray(record)
+      || record.modulePropertiesPath !== recordKey) {
+      throw new Error(`${label} contains invalid module onboarding key: ${recordKey}`);
+    }
+    if (!Array.isArray(record.moduleKeys)
+      || record.moduleKeys.length === 0
+      || record.moduleKeys.some(moduleKey => !validModuleKey(moduleKey))
+      || new Set(record.moduleKeys).size !== record.moduleKeys.length
+      || JSON.stringify(record.moduleKeys) !== JSON.stringify([...record.moduleKeys].sort())) {
+      throw new Error(`${label} onboarding ${recordKey} contains invalid moduleKeys`);
+    }
+    if (record.moduleKeys.some(moduleKey => !budget.modules?.[moduleKey])) {
+      throw new Error(`${label} onboarding ${recordKey} references an unknown module`);
+    }
+    for (const [field, pattern] of Object.entries({
+      baseCommit: /^[a-f0-9]{40}$/u,
+      baseBudgetSha256: /^[a-f0-9]{64}$/u,
+      modulePropertiesSha256: /^[a-f0-9]{64}$/u,
+      inventorySha256: /^[a-f0-9]{64}$/u
+    })) {
+      if (typeof record[field] !== 'string' || !pattern.test(record[field])) {
+        throw new Error(`${label} onboarding ${recordKey} contains invalid ${field}`);
+      }
+    }
+    if (typeof record.moduleSelector !== 'string' || !record.moduleSelector.trim()
+      || typeof record.moduleName !== 'string' || !record.moduleName.trim()
+      || typeof record.modulePath !== 'string' || !record.modulePath.trim()
+      || typeof record.reason !== 'string' || !record.reason.trim()
+      || typeof record.onboardedAt !== 'string' || Number.isNaN(Date.parse(record.onboardedAt))) {
+      throw new Error(`${label} onboarding ${recordKey} contains incomplete audit metadata`);
+    }
   }
 }
 
@@ -376,6 +471,7 @@ function validateBudget(budget, label, options = {}) {
   if (!budget.modules || typeof budget.modules !== 'object' || Array.isArray(budget.modules)) {
     throw new Error(`${label} modules must be an object`);
   }
+  validateModuleOnboardings(budget, label);
   const coordinates = new Set();
   for (const [moduleKey, module] of Object.entries(budget.modules)) {
     if (!validModuleKey(moduleKey)
@@ -515,6 +611,291 @@ function runGit(cwd, args, label) {
   return result;
 }
 
+function canonicalJson(value) {
+  if (Array.isArray(value)) {
+    return `[${value.map(canonicalJson).join(',')}]`;
+  }
+  if (value && typeof value === 'object') {
+    return `{${Object.keys(value).sort().map(key => `${JSON.stringify(key)}:${canonicalJson(value[key])}`).join(',')}}`;
+  }
+  return JSON.stringify(value);
+}
+
+function resolveGitBase(baseRef) {
+  const root = repositoryRoot();
+  const resolved = runGit(root, ['rev-parse', `${baseRef}^{commit}`], 'cannot resolve onboarding base');
+  if (resolved.status !== 0) {
+    throw new Error(`cannot resolve onboarding base ${baseRef}: ${resolved.stderr.trim()}`);
+  }
+  const baseCommit = resolved.stdout.trim();
+  const mergeBase = runGit(root, ['merge-base', 'HEAD', baseCommit], 'cannot compare onboarding base');
+  if (mergeBase.status !== 0 || mergeBase.stdout.trim() !== baseCommit) {
+    throw new Error(`onboarding base ${baseCommit} must be an ancestor of HEAD`);
+  }
+  return { root, baseCommit };
+}
+
+function repositoryRelativeFile(file, label) {
+  const absolute = path.resolve(file);
+  const stats = fs.lstatSync(absolute);
+  if (!stats.isFile() || stats.isSymbolicLink()) {
+    throw new Error(`${label} must be a regular non-symbolic-link file: ${file}`);
+  }
+  const relative = path.relative(repositoryRoot(), fs.realpathSync(absolute)).split(path.sep).join('/');
+  if (!validRepositoryPath(relative)) {
+    throw new Error(`${label} must be inside the Git repository: ${file}`);
+  }
+  return relative;
+}
+
+function gitChangedPaths(root, baseCommit) {
+  const changed = runGit(
+    root,
+    ['diff', '--name-only', '-z', '--no-renames', baseCommit, '--'],
+    'cannot inspect onboarding changes'
+  );
+  if (changed.status !== 0) {
+    throw new Error(`cannot inspect onboarding changes: ${changed.stderr.trim()}`);
+  }
+  return changed.stdout.split('\0').filter(Boolean);
+}
+
+function readModuleIdentity(file) {
+  const values = new Map();
+  for (const rawLine of fs.readFileSync(file, 'utf8').split(/\r?\n/u)) {
+    const line = rawLine.trim();
+    if (!line || line.startsWith('#') || line.startsWith('!')) {
+      continue;
+    }
+    const separator = line.search(/[=:]/u);
+    if (separator < 1) {
+      continue;
+    }
+    const key = line.slice(0, separator).trim();
+    const value = line.slice(separator + 1).trim();
+    if (values.has(key)) {
+      throw new Error(`module.properties contains duplicate key: ${key}`);
+    }
+    values.set(key, value);
+  }
+  const moduleName = values.get('module-name') || '';
+  const modulePath = values.get('module-path') || '';
+  if (!moduleName || !modulePath) {
+    throw new Error('module.properties requires non-empty module-name and module-path');
+  }
+  return { moduleName, modulePath };
+}
+
+function ensureUniqueModuleIdentity(root, modulePropertiesPath, identity) {
+  const listing = runGit(
+    root,
+    ['ls-files', '-z', ':(glob)**/src/main/resources/META-INF/mango/module.properties'],
+    'cannot inspect module identities'
+  );
+  if (listing.status !== 0) {
+    throw new Error(`cannot inspect module identities: ${listing.stderr.trim()}`);
+  }
+  for (const candidate of listing.stdout.split('\0').filter(Boolean)) {
+    if (candidate === modulePropertiesPath) {
+      continue;
+    }
+    const candidateFile = path.join(root, ...candidate.split('/'));
+    if (!fs.existsSync(candidateFile)) {
+      continue;
+    }
+    const other = readModuleIdentity(candidateFile);
+    if (other.moduleName === identity.moduleName) {
+      throw new Error(`module-name ${identity.moduleName} is already declared by ${candidate}`);
+    }
+    if (other.modulePath === identity.modulePath) {
+      throw new Error(`module-path ${identity.modulePath} is already declared by ${candidate}`);
+    }
+  }
+}
+
+function validateOnboardingGitState({
+  baseRef,
+  baselinePath,
+  moduleProperties,
+  expectedModuleKeys,
+  requireBaselineChange
+}) {
+  const { root, baseCommit } = resolveGitBase(baseRef);
+  const baselineRelative = repositoryRelativeFile(baselinePath, 'architecture debt budget');
+  const modulePropertiesRelative = repositoryRelativeFile(moduleProperties, 'module.properties');
+  if (!modulePropertiesRelative.endsWith('/src/main/resources/META-INF/mango/module.properties')) {
+    throw new Error('onboarding module.properties must use the canonical starter resource path');
+  }
+  const resourceSuffix = '/src/main/resources/META-INF/mango/module.properties';
+  const ownerDirectory = modulePropertiesRelative.slice(0, -resourceSuffix.length);
+  const ownerModuleKey = expectedModuleKeys.find(moduleKey => ownerDirectory === moduleKey
+    || ownerDirectory.endsWith(`/${moduleKey}`));
+  if (!ownerModuleKey) {
+    throw new Error('module.properties is outside the selected onboarding module scope');
+  }
+  const tracked = runGit(root, ['ls-files', '--error-unmatch', '--', modulePropertiesRelative], 'module.properties must be tracked');
+  if (tracked.status !== 0) {
+    throw new Error('module.properties must be staged or committed before onboarding');
+  }
+  const existed = runGit(root, ['cat-file', '-e', `${baseCommit}:${modulePropertiesRelative}`], 'cannot inspect base module.properties');
+  if (existed.status === 0) {
+    throw new Error('module.properties already exists in the onboarding base');
+  }
+  const changedPaths = gitChangedPaths(root, baseCommit);
+  const allowed = new Set([baselineRelative, modulePropertiesRelative]);
+  const unexpected = changedPaths.filter(changedPath => !allowed.has(changedPath));
+  if (unexpected.length > 0) {
+    throw new Error(`onboarding PR contains forbidden changes: ${unexpected.join(', ')}`);
+  }
+  if (!changedPaths.includes(modulePropertiesRelative)) {
+    throw new Error('onboarding PR must add module.properties');
+  }
+  if (requireBaselineChange && !changedPaths.includes(baselineRelative)) {
+    throw new Error('onboarding PR must update the architecture debt budget');
+  }
+  const identity = readModuleIdentity(path.join(root, ...modulePropertiesRelative.split('/')));
+  ensureUniqueModuleIdentity(root, modulePropertiesRelative, identity);
+  return {
+    root,
+    baseCommit,
+    baselineRelative,
+    modulePropertiesRelative,
+    modulePropertiesSha256: sha256(fs.readFileSync(path.join(root, ...modulePropertiesRelative.split('/')), 'utf8')),
+    ownerModuleKey,
+    ...identity
+  };
+}
+
+function validateInitialBudgetGitState(baseRef, baselinePath) {
+  const { root, baseCommit } = resolveGitBase(baseRef);
+  const baselineRelative = repositoryRelativeFile(baselinePath, 'architecture debt budget');
+  const tracked = runGit(
+    root,
+    ['ls-files', '--error-unmatch', '--', baselineRelative],
+    'architecture debt budget must be tracked'
+  );
+  if (tracked.status !== 0) {
+    throw new Error('initial architecture debt budget must be staged or committed');
+  }
+  const existed = runGit(
+    root,
+    ['cat-file', '-e', `${baseCommit}:${baselineRelative}`],
+    'cannot inspect base architecture debt budget'
+  );
+  if (existed.status === 0) {
+    throw new Error('initial architecture debt budget already exists in the Git base');
+  }
+  const changedPaths = gitChangedPaths(root, baseCommit);
+  const unexpected = changedPaths.filter(changedPath => changedPath !== baselineRelative);
+  if (unexpected.length > 0 || !changedPaths.includes(baselineRelative)) {
+    throw new Error(
+      'initial architecture debt budget PR may contain only the budget file'
+        + (unexpected.length > 0 ? `; forbidden changes: ${unexpected.join(', ')}` : '')
+    );
+  }
+  return { baseCommit, baselineRelative };
+}
+
+function validateMissingBudgetGovernanceUpgrade(baseRef, baselinePath) {
+  const { root, baseCommit } = resolveGitBase(baseRef);
+  const baselineAbsolute = path.resolve(baselinePath);
+  const canonicalCandidate = path.join(fs.realpathSync(path.dirname(baselineAbsolute)), path.basename(baselineAbsolute));
+  const baselineRelative = path.relative(root, canonicalCandidate).split(path.sep).join('/');
+  if (!validRepositoryPath(baselineRelative)) {
+    throw new Error(`architecture debt budget must be inside the Git repository: ${baselinePath}`);
+  }
+  const existed = runGit(
+    root,
+    ['cat-file', '-e', `${baseCommit}:${baselineRelative}`],
+    'cannot inspect base architecture debt budget'
+  );
+  if (existed.status === 0 || fs.existsSync(baselinePath)) {
+    throw new Error('governance-upgrade transition is only valid while the project budget is absent');
+  }
+  const changedPaths = gitChangedPaths(root, baseCommit);
+  const allowedFiles = new Set([
+    '.github/pull_request_template.md',
+    '.github/workflows/pmo-doc-check.yml',
+    '.gitea/workflows/pmo-doc-check.yml',
+    'AGENTS.md',
+    'business-pmo/README.md',
+    'business-pmo/pmo-lock.json',
+    'business-docs/plans/example-contract.md'
+  ]);
+  const allowedPrefixes = ['.agents/skills/', 'business-pmo/mango-baseline/'];
+  const forbidden = changedPaths.filter(changedPath =>
+    !allowedFiles.has(changedPath) && !allowedPrefixes.some(prefix => changedPath.startsWith(prefix))
+  );
+  const workflowChanged = changedPaths.some(changedPath =>
+    changedPath === '.github/workflows/pmo-doc-check.yml'
+      || changedPath === '.gitea/workflows/pmo-doc-check.yml'
+  );
+  if (!workflowChanged || forbidden.length > 0) {
+    throw new Error(
+      'missing-budget transition requires a pure PMO/workflow upgrade and at least one managed workflow change'
+        + (forbidden.length > 0 ? `; forbidden changes: ${forbidden.join(', ')}` : '')
+    );
+  }
+  return { baseCommit, changedPaths };
+}
+
+function moduleInventorySha256(budget, moduleKeys) {
+  const inventory = Object.fromEntries(moduleKeys.map(moduleKey => [moduleKey, budget.modules[moduleKey]]));
+  return sha256(canonicalJson(inventory));
+}
+
+function compareModuleOnboardings(baseBudget, nextBudget) {
+  const base = baseBudget.moduleOnboardings ?? {};
+  const next = nextBudget.moduleOnboardings ?? {};
+  const removed = [];
+  const modified = [];
+  const added = [];
+  for (const [key, record] of Object.entries(base)) {
+    if (!next[key]) {
+      removed.push(key);
+    } else if (canonicalJson(record) !== canonicalJson(next[key])) {
+      modified.push(key);
+    }
+  }
+  for (const key of Object.keys(next)) {
+    if (!base[key]) {
+      added.push(key);
+    }
+  }
+  return { removed, modified, added };
+}
+
+function validateOnboardingDelta(baseBudget, nextBudget, moduleKeys) {
+  for (const moduleKey of moduleKeys) {
+    if (!nextBudget.modules?.[moduleKey]) {
+      throw new Error(`onboarding module is missing from the trusted current Reactor: ${moduleKey}`);
+    }
+  }
+  const selected = new Set(moduleKeys);
+  const comparison = compareBudgets(baseBudget, nextBudget);
+  if (comparison.totalDelta <= 0 || comparison.identityIncreases.length === 0
+    || comparison.reductions.length > 0 || comparison.identityReductions.length > 0) {
+    throw new Error('onboarding must add historical identities without replacing or reducing existing debt');
+  }
+  const changedModules = comparison.moduleComparisons.filter(item =>
+    hasCounterIncrease(item) || hasCounterReduction(item) || item.metadataChanged
+  );
+  if (changedModules.length === 0
+    || changedModules.some(item => !selected.has(item.moduleKey)
+      || item.metadataChanged
+      || hasCounterReduction(item))) {
+    throw new Error('onboarding may increase identities only inside the selected module scope');
+  }
+  return comparison;
+}
+
+function ensureSameInventory(expected, actual) {
+  const comparison = compareBudgets(expected, actual);
+  if (hasBudgetIncrease(comparison) || hasBudgetReduction(comparison)) {
+    throw new Error('trusted full-Reactor report does not exactly match the committed onboarding budget');
+  }
+}
+
 function readBaseFromGit(baseRef, baselinePath) {
   if (!/^[A-Za-z0-9][A-Za-z0-9._/-]*$/u.test(baseRef) || baseRef.includes('..')) {
     throw new Error(`invalid --base-ref: ${baseRef}`);
@@ -564,7 +945,130 @@ function readBaseBudget(args, baselinePath) {
   return null;
 }
 
-function checkAgainstBase(baseDocument, baseline, current) {
+function onboardingRecordFor(args, baselineDocument, baseDocument, current, moduleKeys, gitState) {
+  return {
+    modulePropertiesPath: gitState.modulePropertiesRelative,
+    moduleSelector: args.onboardModule.trim(),
+    moduleKeys,
+    baseCommit: gitState.baseCommit,
+    baseBudgetSha256: sha256(baseDocument.text),
+    modulePropertiesSha256: gitState.modulePropertiesSha256,
+    moduleName: gitState.moduleName,
+    modulePath: gitState.modulePath,
+    inventorySha256: moduleInventorySha256(current, moduleKeys),
+    reason: args.reason.trim(),
+    onboardedAt: new Date().toISOString()
+  };
+}
+
+function resultForModuleOnboarding(args, baselineDocument, current, baselinePath, reportInventoryOnly) {
+  if (!reportInventoryOnly) {
+    throw new Error('module onboarding requires an inventoryOnly full-Reactor report');
+  }
+  const baseDocument = readBaseBudget(args, baselinePath);
+  if (!baseDocument || baseDocument.missing) {
+    throw new Error('module onboarding requires an existing schemaVersion 4 budget in the Git base');
+  }
+  if (sha256(baselineDocument.text) !== sha256(baseDocument.text)) {
+    throw new Error('module onboarding must start from the exact unmodified base budget');
+  }
+  const baseline = baselineDocument.value;
+  validateBudget(baseDocument.value, 'base architecture budget');
+  const moduleKeys = resolveModuleSelectors(current, [args.onboardModule]);
+  const existingRecords = Object.values(baseline.moduleOnboardings ?? {});
+  if (existingRecords.some(record => record.moduleKeys.some(moduleKey => moduleKeys.includes(moduleKey)))) {
+    throw new Error('the selected module scope overlaps an existing onboarding record');
+  }
+  validateOnboardingDelta(baseDocument.value, current, moduleKeys);
+  const gitState = validateOnboardingGitState({
+    baseRef: args.baseRef,
+    baselinePath,
+    moduleProperties: args.moduleProperties,
+    expectedModuleKeys: moduleKeys,
+    requireBaselineChange: false
+  });
+  if (!current.modules[gitState.ownerModuleKey].artifactId.endsWith('-starter')) {
+    throw new Error('module.properties must belong to a selected Maven starter module');
+  }
+  const record = onboardingRecordFor(
+    args,
+    baselineDocument,
+    baseDocument,
+    current,
+    moduleKeys,
+    gitState
+  );
+  const updated = budgetWithModules(current.modules, current.sourceReport, {
+    acceptedIncreaseReason: baseline.acceptedIncreaseReason,
+    acceptedIncreaseFromSha256: baseline.acceptedIncreaseFromSha256,
+    moduleOnboardings: {
+      ...(baseline.moduleOnboardings ?? {}),
+      [record.modulePropertiesPath]: record
+    }
+  });
+  validateBudget(updated, 'updated architecture debt budget');
+  writeBudget(baselinePath, updated);
+  return {
+    passed: true,
+    action: 'module-onboarded',
+    selectedModules: moduleKeys,
+    baselinePath,
+    onboarding: record,
+    current: projectBudget(updated, moduleKeys, updated.modules)
+  };
+}
+
+function verifyFreshModuleOnboarding(baseDocument, baseline, current, context, recordKey) {
+  if (!context.fullReport || !context.reportInventoryOnly || !context.args?.baseRef) {
+    return {
+      passed: false,
+      action: 'onboarding-report-required',
+      message: 'Fresh module onboarding requires a trusted full-Reactor report and Git base-ref.',
+      baseline,
+      current
+    };
+  }
+  const record = baseline.moduleOnboardings[recordKey];
+  const resolvedKeys = resolveModuleSelectors(current, [record.moduleSelector]);
+  if (canonicalJson(resolvedKeys) !== canonicalJson(record.moduleKeys)) {
+    throw new Error('onboarding module selector no longer resolves to the recorded module scope');
+  }
+  if (baseDocument.value.acceptedIncreaseReason !== baseline.acceptedIncreaseReason
+    || baseDocument.value.acceptedIncreaseFromSha256 !== baseline.acceptedIncreaseFromSha256) {
+    throw new Error('module onboarding cannot modify global accepted-increase metadata');
+  }
+  validateOnboardingDelta(baseDocument.value, baseline, record.moduleKeys);
+  ensureSameInventory(baseline, current);
+  const gitState = validateOnboardingGitState({
+    baseRef: context.args.baseRef,
+    baselinePath: context.baselinePath,
+    moduleProperties: path.join(repositoryRoot(), ...record.modulePropertiesPath.split('/')),
+    expectedModuleKeys: record.moduleKeys,
+    requireBaselineChange: true
+  });
+  if (!baseline.modules[gitState.ownerModuleKey].artifactId.endsWith('-starter')) {
+    throw new Error('recorded module.properties does not belong to a Maven starter module');
+  }
+  if (record.baseCommit !== gitState.baseCommit
+    || record.baseBudgetSha256 !== sha256(baseDocument.text)
+    || record.modulePropertiesSha256 !== gitState.modulePropertiesSha256
+    || record.moduleName !== gitState.moduleName
+    || record.modulePath !== gitState.modulePath
+    || record.inventorySha256 !== moduleInventorySha256(baseline, record.moduleKeys)) {
+    throw new Error('module onboarding audit metadata does not match the Git base, identity, or inventory');
+  }
+  return {
+    passed: true,
+    action: 'module-onboarding-verified',
+    base: baseDocument.value,
+    baseline,
+    current,
+    selectedModules: record.moduleKeys,
+    onboarding: record
+  };
+}
+
+function checkAgainstBase(baseDocument, baseline, current, context = {}) {
   if (!baseDocument) {
     return { passed: true, action: 'check', baseline, current };
   }
@@ -578,6 +1082,25 @@ function checkAgainstBase(baseDocument, baseline, current) {
         current
       };
     }
+    if (Object.keys(baseline.moduleOnboardings ?? {}).length > 0) {
+      return {
+        passed: false,
+        action: 'invalid-initial-budget',
+        message: 'An initial debt budget cannot contain module onboarding records.',
+        baseline,
+        current
+      };
+    }
+    if (!context.fullReport || !context.args?.baseRef) {
+      return {
+        passed: false,
+        action: 'initial-budget-report-required',
+        message: 'Initial debt budget governance requires a trusted full-Reactor report and Git base-ref.',
+        baseline,
+        current
+      };
+    }
+    validateInitialBudgetGitState(context.args.baseRef, context.baselinePath);
     return {
       passed: true,
       action: 'initialized-against-base',
@@ -588,6 +1111,41 @@ function checkAgainstBase(baseDocument, baseline, current) {
   }
 
   validateBudget(baseDocument.value, 'base architecture budget', { allowLegacy: true });
+  if (baseDocument.value.schemaVersion === SCHEMA_VERSION
+    && baseline.schemaVersion === SCHEMA_VERSION) {
+    const onboardingChanges = compareModuleOnboardings(baseDocument.value, baseline);
+    if (onboardingChanges.removed.length > 0 || onboardingChanges.modified.length > 0) {
+      return {
+        passed: false,
+        action: 'onboarding-record-tampered',
+        message: 'Existing module onboarding records are immutable and cannot be removed or modified.',
+        base: baseDocument.value,
+        baseline,
+        current,
+        onboardingChanges
+      };
+    }
+    if (onboardingChanges.added.length > 1) {
+      return {
+        passed: false,
+        action: 'onboarding-scope-invalid',
+        message: 'A controlled onboarding PR may add exactly one module identity record.',
+        base: baseDocument.value,
+        baseline,
+        current,
+        onboardingChanges
+      };
+    }
+    if (onboardingChanges.added.length === 1) {
+      return verifyFreshModuleOnboarding(
+        baseDocument,
+        baseline,
+        current,
+        context,
+        onboardingChanges.added[0]
+      );
+    }
+  }
   const baseComparison = compareBudgets(baseDocument.value, baseline);
   if (hasBudgetIncrease(baseComparison)) {
     const expectedDigest = sha256(baseDocument.text);
@@ -677,7 +1235,19 @@ function mergeSelectedModules(baseline, current, moduleKeys) {
   for (const moduleKey of moduleKeys) {
     modules[moduleKey] = current.modules[moduleKey];
   }
-  return budgetWithModules(modules, current.sourceReport);
+  return budgetWithModules(modules, current.sourceReport, {
+    acceptedIncreaseReason: baseline.acceptedIncreaseReason,
+    acceptedIncreaseFromSha256: baseline.acceptedIncreaseFromSha256,
+    moduleOnboardings: baseline.moduleOnboardings
+  });
+}
+
+function inventoryWithAuditMetadata(current, baseline) {
+  return budgetWithModules(current.modules, current.sourceReport, {
+    acceptedIncreaseReason: baseline.acceptedIncreaseReason,
+    acceptedIncreaseFromSha256: baseline.acceptedIncreaseFromSha256,
+    moduleOnboardings: baseline.moduleOnboardings
+  });
 }
 
 function resultForModules(args, baselineDocument, current, baseline, baselinePath) {
@@ -776,8 +1346,9 @@ function resultForLegacyMigration(args, baselineDocument, current, baselinePath)
   };
 }
 
-function resultForGlobal(args, baselineDocument, current, baseline, baselinePath) {
-  const comparison = compareBudgets(baseline, current);
+function resultForGlobal(args, baselineDocument, current, baseline, baselinePath, reportInventoryOnly) {
+  const auditedCurrent = inventoryWithAuditMetadata(current, baseline);
+  const comparison = compareBudgets(baseline, auditedCurrent);
   const hasIncrease = hasBudgetIncrease(comparison);
   if (hasIncrease && !args.acceptIncrease) {
     return {
@@ -791,8 +1362,8 @@ function resultForGlobal(args, baselineDocument, current, baseline, baselinePath
   }
   if (args.write) {
     const updated = hasIncrease
-      ? withAcceptedIncrease(current, args.reason, sha256(baselineDocument.text))
-      : current;
+      ? withAcceptedIncrease(auditedCurrent, args.reason, sha256(baselineDocument.text))
+      : auditedCurrent;
     writeBudget(baselinePath, updated);
     return {
       passed: true,
@@ -813,7 +1384,12 @@ function resultForGlobal(args, baselineDocument, current, baseline, baselinePath
     };
   }
   const baseDocument = readBaseBudget(args, baselinePath);
-  return checkAgainstBase(baseDocument, baseline, current);
+  return checkAgainstBase(baseDocument, baseline, auditedCurrent, {
+    args,
+    baselinePath,
+    fullReport: true,
+    reportInventoryOnly
+  });
 }
 
 function resultFor(args) {
@@ -833,15 +1409,36 @@ function resultFor(args) {
     if (!baseDocument) {
       throw new Error('--baseline-only requires --base-ref or --base-budget');
     }
-    return checkAgainstBase(baseDocument, baseline, baseline);
+    return checkAgainstBase(baseDocument, baseline, baseline, {
+      args,
+      baselinePath,
+      fullReport: false
+    });
   }
 
   const reportPath = path.resolve(args.report);
   const report = readJsonDocument(reportPath, 'architecture report').value;
   const current = budgetFromReport(report, reportPath);
+  const reportInventoryOnly = report.inventoryOnly === true;
   validateBudget(current, 'current architecture budget');
 
   if (!fs.existsSync(baselinePath)) {
+    if (args.onboardModule) {
+      throw new Error('--onboard-module requires an existing architecture debt budget');
+    }
+    if (args.allowMissingForGovernanceUpgrade) {
+      if (!reportInventoryOnly) {
+        throw new Error('missing-budget governance upgrade requires an inventoryOnly full-Reactor report');
+      }
+      const transition = validateMissingBudgetGovernanceUpgrade(args.baseRef, baselinePath);
+      return {
+        passed: true,
+        action: 'missing-budget-governance-upgrade',
+        message: 'Pure PMO/workflow upgrade accepted; initialize the project budget in the next dedicated PR.',
+        current,
+        ...transition
+      };
+    }
     if (!args.write || args.modules.length > 0) {
       return {
         passed: false,
@@ -864,13 +1461,32 @@ function resultFor(args) {
     'architecture debt budget',
     { allowLegacy: true }
   );
+  if (args.onboardModule) {
+    if (schemaVersion !== SCHEMA_VERSION) {
+      throw new Error('--onboard-module requires a schemaVersion 4 current budget');
+    }
+    return resultForModuleOnboarding(
+      args,
+      baselineDocument,
+      current,
+      baselinePath,
+      reportInventoryOnly
+    );
+  }
   if (schemaVersion === LEGACY_SCHEMA_VERSION) {
     return resultForLegacyMigration(args, baselineDocument, current, baselinePath);
   }
   if (args.modules.length > 0) {
     return resultForModules(args, baselineDocument, current, baseline, baselinePath);
   }
-  return resultForGlobal(args, baselineDocument, current, baseline, baselinePath);
+  return resultForGlobal(
+    args,
+    baselineDocument,
+    current,
+    baseline,
+    baselinePath,
+    reportInventoryOnly
+  );
 }
 
 function printComparison(comparison, prefix = '') {

@@ -212,7 +212,34 @@ assertIncludes('.github/workflows/pmo-doc-check.yml', [
   'node mango-pmo/tools/audit-module-readmes.mjs',
   'node mango-pmo/tools/audit-readme-source-facts.mjs',
   'github.event.pull_request.base.sha',
-  'github.event.pull_request.head.sha'
+  'github.event.pull_request.head.sha',
+  'Generate trusted full-Reactor architecture inventory for governance',
+  'mango.architecture.requireFullReactor=true',
+  'mango.architecture.inventoryOnly=true',
+  'node mango-pmo/tools/check-architecture-debt-budget.mjs --base-ref "$BASE_SHA"',
+  'node mango-pmo/tools/check-architecture-debt-budget.mjs --baseline-only --base-ref "$BASE_SHA"'
+], failures);
+for (const workflow of [
+  'mango-ui/packages/mango-cli/templates/full/.github/workflows/pmo-doc-check.yml',
+  'mango-ui/packages/mango-cli/templates/full/.gitea/workflows/pmo-doc-check.yml'
+]) {
+  assertIncludes(workflow, [
+    'Generate trusted full-Reactor architecture inventory for governance',
+    'mango.architecture.requireFullReactor=true',
+    'mango.architecture.inventoryOnly=true',
+    'Enforce project architecture debt budget policy',
+    'business-pmo/mango-baseline/tools/check-architecture-debt-budget.mjs',
+    '--report "$BACKEND_ROOT/target/mango-architecture-report.json"',
+    '--baseline business-pmo/architecture-debt-budget.json',
+    '--baseline-only',
+    '--base-ref "$BASE_SHA"'
+  ], failures);
+}
+assertIncludes('mango-ui/packages/mango-cli/templates/full/business-pmo/architecture-debt-budget.json', [
+  '"schemaVersion": 4',
+  '"moduleOnboardings": {}',
+  '"totalIssueCount": 0',
+  '"modules": {}'
 ], failures);
 assertIncludes('.github/workflows/pr-contract-check.yml', [
   'name: PR Contract Checks',

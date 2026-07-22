@@ -35,6 +35,8 @@ const invalidApiModuleInfo = join(
 );
 const invalidApiResources = join(projectRoot, 'backend/modules/order/order-api/src/main/resources');
 const globalEntityManifest = join(projectRoot, 'business-pmo/global-entity-exceptions.json');
+const architectureDebtBudget = join(projectRoot, 'business-pmo/architecture-debt-budget.json');
+const githubGovernanceWorkflow = join(projectRoot, '.github/workflows/pmo-doc-check.yml');
 const orderApiPom = join(projectRoot, 'backend/modules/order/order-api/pom.xml');
 const architectureVerificationPom = join(projectRoot, 'backend/architecture-verification/pom.xml');
 const globalReferenceEntity = join(coreJavaRoot, 'entity/GlobalReferenceEntity.java');
@@ -82,9 +84,52 @@ try {
   keepOnlyFourLayerBusinessReactor();
   addApprovedGlobalEntityFixture();
   assertGeneratedPolicyContract();
+  const projectBudget = readFileSync(architectureDebtBudget, 'utf8');
+  const managedWorkflow = readFileSync(githubGovernanceWorkflow, 'utf8');
+  const legacyWorkflow = managedWorkflow.replace(/^# Managed by Mango CLI\.[^\n]*\n/u, '');
+  if (legacyWorkflow === managedWorkflow) {
+    throw new Error('generated GitHub governance workflow is missing its Mango ownership marker');
+  }
+  rmSync(architectureDebtBudget);
+  writeFileSync(githubGovernanceWorkflow, legacyWorkflow);
+  runGit(['init', '-q'], 'initialize generated legacy project Git repository');
+  runGit(['add', '.'], 'stage generated legacy project base');
+  runGit(['commit', '-qm', 'generated legacy project base'], 'commit generated legacy project base');
+  writeFileSync(githubGovernanceWorkflow, managedWorkflow);
 
-  runMaven(['verify'], true, 'generated four-layer backend');
+  runMaven(
+    ['-Dmango.architecture.inventoryOnly=true', 'verify'],
+    true,
+    'generated four-layer backend and full-Reactor inventory-only governance path',
+  );
   assertPassingReports();
+  assertInventoryOnlyReport();
+  runNode(
+    [
+      'business-pmo/mango-baseline/tools/check-architecture-debt-budget.mjs',
+      '--report',
+      'backend/target/mango-architecture-report.json',
+      '--baseline',
+      'business-pmo/architecture-debt-budget.json',
+      '--base-ref',
+      'HEAD',
+      '--allow-missing-for-governance-upgrade',
+    ],
+    projectRoot,
+    'generated legacy project PMO/workflow upgrade transition',
+  );
+  writeFileSync(architectureDebtBudget, projectBudget);
+  runNode(
+    [
+      'business-pmo/mango-baseline/tools/check-architecture-debt-budget.mjs',
+      '--report',
+      'backend/target/mango-architecture-report.json',
+      '--baseline',
+      'business-pmo/architecture-debt-budget.json',
+    ],
+    projectRoot,
+    'generated project architecture debt budget',
+  );
 
   const originalOrderApiPom = readFileSync(orderApiPom, 'utf8');
   const pmdSkippedOrderApiPom = originalOrderApiPom.replace(
@@ -297,6 +342,8 @@ public final class StaticViolation {
       'PathVariable, direct ServiceImpl, tenant schema, module info, Checkstyle, manifest, ' +
       'PMD suppression, reserved namespace shadowing, ' +
       'module-aware architecture report ownership, ' +
+      'full-Reactor inventory-only project budget verification, ' +
+      'missing-budget legacy workflow migration, ' +
       'per-Java-module static report coverage, ' +
       'unregistered/mismatched global Entity cases, approved global Entity acceptance, ' +
       'affected-module mode accepted, generated policy wiring locked, and representative ' +
@@ -415,6 +462,23 @@ function runMaven(goals, shouldPass, label) {
   return combinedOutput(result);
 }
 
+function runGit(args, label) {
+  const result = spawnSync('git', args, {
+    cwd: projectRoot,
+    encoding: 'utf8',
+    env: {
+      ...process.env,
+      GIT_AUTHOR_NAME: 'Mango Generated Gate',
+      GIT_AUTHOR_EMAIL: 'mango-generated-gate@example.invalid',
+      GIT_COMMITTER_NAME: 'Mango Generated Gate',
+      GIT_COMMITTER_EMAIL: 'mango-generated-gate@example.invalid',
+    },
+  });
+  if (result.status !== 0) {
+    throw new Error(`${label} failed:\n${combinedOutput(result)}`);
+  }
+}
+
 function assertMavenInvocationBudget() {
   if (mavenInvocationCount !== MAX_MAVEN_INVOCATIONS) {
     throw new Error(
@@ -443,6 +507,15 @@ function assertPassingReports() {
     quality.toolFailureCount !== 0
   ) {
     throw new Error(`generated backend quality report is not fail-closed: ${qualityPath}`);
+  }
+}
+
+function assertInventoryOnlyReport() {
+  const architecturePath = join(projectRoot, 'backend/target/mango-architecture-report.json');
+  const architecture = readJson(architecturePath);
+  assertArchitectureModuleOwnership(architecture);
+  if (architecture.inventoryOnly !== true || architecture.inventoryScope !== 'full-reactor') {
+    throw new Error(`generated backend inventory-only report is not full-Reactor: ${architecturePath}`);
   }
 }
 
