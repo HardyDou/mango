@@ -50,6 +50,10 @@ import java.util.concurrent.atomic.AtomicReference;
 public class ResourceSyncRunner implements ApplicationRunner, Ordered, ResourceSynchronizationStatus {
 
     private static final int RESOURCE_SYNC_ORDER_OFFSET = 50;
+    private static final int CLIENT_ERROR_MIN_CODE = 400;
+    private static final int SERVER_ERROR_MIN_CODE = 500;
+    private static final int DEFAULT_RETRY_INTERVAL_SECONDS = 10;
+    private static final long RETRY_JITTER_DIVISOR = 5L;
 
     private final ResourceRegistryProperties properties;
     private final ResourceDeclarationCollector collector;
@@ -108,7 +112,7 @@ public class ResourceSyncRunner implements ApplicationRunner, Ordered, ResourceS
         boolean notifyCompletion = false;
         String attemptSnapshot = null;
         try {
-            SyncRequest request = prepareSyncRequest();
+            PreparedSync request = prepareSyncRequest();
             attemptSnapshot = request.snapshot();
             if (readinessState.get() == StartupReadinessState.PERMANENT_FAILED
                     && request.snapshot().equals(permanentlyFailedSnapshot)) {
@@ -166,24 +170,24 @@ public class ResourceSyncRunner implements ApplicationRunner, Ordered, ResourceS
         return details;
     }
 
-    private SyncRequest prepareSyncRequest() {
+    private PreparedSync prepareSyncRequest() {
         if (!properties.isEnabled() || !properties.getRemote().isEnabled()) {
-            return SyncRequest.skipped("disabled");
+            return PreparedSync.skipped("disabled");
         }
         List<ResourceDeclaration> declarations = collector.collect();
         List<String> moduleCodes = collector.managedModuleCodes(declarations).stream().sorted().toList();
         if (declarations.isEmpty() && moduleCodes.isEmpty()) {
-            return SyncRequest.skipped("empty");
+            return PreparedSync.skipped("empty");
         }
         RegisterResourceDeclarationsCommand command = new RegisterResourceDeclarationsCommand();
         command.setAppCode(resolveAppCode());
         command.setServiceCode(resolveServiceCode());
         command.setModuleCodes(moduleCodes);
         command.setDeclarations(serializeDeclarations(declarations));
-        return new SyncRequest(command, declarations.size(), snapshot(command), null);
+        return new PreparedSync(command, declarations.size(), snapshot(command), null);
     }
 
-    private void synchronizeDeclarations(SyncRequest request) {
+    private void synchronizeDeclarations(PreparedSync request) {
         if (request.skipReason() != null) {
             log.info("Mango resource declaration sync skipped: reason={}", request.skipReason());
             return;
@@ -194,7 +198,7 @@ public class ResourceSyncRunner implements ApplicationRunner, Ordered, ResourceS
             throw SyncFailure.transientFailure("资源注册中心无响应");
         }
         if (!response.isSuccess()) {
-            throw response.getCode() >= 400 && response.getCode() < 500
+            throw response.getCode() >= CLIENT_ERROR_MIN_CODE && response.getCode() < SERVER_ERROR_MIN_CODE
                     ? SyncFailure.permanentFailure(response.getMsg())
                     : SyncFailure.transientFailure(response.getMsg());
         }
@@ -246,7 +250,8 @@ public class ResourceSyncRunner implements ApplicationRunner, Ordered, ResourceS
         boolean permanent = exception instanceof SyncFailure failure && failure.permanent()
                 || exception instanceof InvalidResourceDeclarationException
                 || exception instanceof BizException bizException
-                && bizException.getCode() >= 400 && bizException.getCode() < 500;
+                && bizException.getCode() >= CLIENT_ERROR_MIN_CODE
+                && bizException.getCode() < SERVER_ERROR_MIN_CODE;
         if (permanent) {
             String failedSnapshot = snapshot == null ? failureFingerprint(exception) : snapshot;
             if (readinessState.get() == StartupReadinessState.PERMANENT_FAILED
@@ -268,7 +273,8 @@ public class ResourceSyncRunner implements ApplicationRunner, Ordered, ResourceS
     }
 
     private long retryDelayMillis(int failureCount) {
-        Duration initial = positiveDuration(properties.getRemote().getRetryInterval(), Duration.ofSeconds(10));
+        Duration initial = positiveDuration(properties.getRemote().getRetryInterval(),
+                Duration.ofSeconds(DEFAULT_RETRY_INTERVAL_SECONDS));
         Duration maximum = positiveDuration(properties.getRemote().getRetryMaxInterval(), Duration.ofMinutes(1));
         long initialMillis = initial.toMillis();
         long maximumMillis = Math.max(initialMillis, maximum.toMillis());
@@ -276,7 +282,7 @@ public class ResourceSyncRunner implements ApplicationRunner, Ordered, ResourceS
         long exponential = initialMillis > (maximumMillis >> shift)
                 ? maximumMillis : initialMillis << shift;
         long bounded = Math.min(exponential, maximumMillis);
-        long jitterRange = Math.max(1L, bounded / 5L);
+        long jitterRange = Math.max(1L, bounded / RETRY_JITTER_DIVISOR);
         long jitter = ThreadLocalRandom.current().nextLong(-jitterRange, jitterRange + 1L);
         return Math.max(1L, bounded + jitter);
     }
@@ -335,13 +341,41 @@ public class ResourceSyncRunner implements ApplicationRunner, Ordered, ResourceS
         }
     }
 
-    private record SyncRequest(RegisterResourceDeclarationsCommand command,
-                               int declarationCount,
-                               String snapshot,
-                               String skipReason) {
+    private static final class PreparedSync {
 
-        private static SyncRequest skipped(String reason) {
-            return new SyncRequest(null, 0, reason, reason);
+        private final RegisterResourceDeclarationsCommand command;
+        private final int declarationCount;
+        private final String snapshot;
+        private final String skipReason;
+
+        private PreparedSync(RegisterResourceDeclarationsCommand command,
+                             int declarationCount,
+                             String snapshot,
+                             String skipReason) {
+            this.command = command;
+            this.declarationCount = declarationCount;
+            this.snapshot = snapshot;
+            this.skipReason = skipReason;
+        }
+
+        private static PreparedSync skipped(String reason) {
+            return new PreparedSync(null, 0, reason, reason);
+        }
+
+        private RegisterResourceDeclarationsCommand command() {
+            return command;
+        }
+
+        private int declarationCount() {
+            return declarationCount;
+        }
+
+        private String snapshot() {
+            return snapshot;
+        }
+
+        private String skipReason() {
+            return skipReason;
         }
     }
 

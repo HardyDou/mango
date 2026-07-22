@@ -18,6 +18,7 @@ import java.util.concurrent.atomic.AtomicReference;
 public class ResourceRegistryLock implements AutoCloseable {
 
     public static final String LOCK_NAME = "mango-resource-sync";
+    private static final long LEASE_RENEWAL_DIVISOR = 3L;
 
     private final ILeaseLocker locker;
     private final ScheduledExecutorService renewalExecutor;
@@ -96,7 +97,7 @@ public class ResourceRegistryLock implements AutoCloseable {
         }
 
         private synchronized void start() {
-            long renewalInterval = Math.max(1L, ttlSeconds / 3L);
+            long renewalInterval = Math.max(1L, ttlSeconds / LEASE_RENEWAL_DIVISOR);
             renewalTask = renewalExecutor.scheduleWithFixedDelay(
                     this::renewSafely, renewalInterval, renewalInterval, TimeUnit.SECONDS);
         }

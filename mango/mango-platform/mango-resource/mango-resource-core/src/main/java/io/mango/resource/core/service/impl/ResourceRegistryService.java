@@ -168,6 +168,7 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
 
     @Override
     public void deleteResource(String resourceId, boolean physical) {
+        Require.notBlank(resourceId, ResourceCode.RESOURCE_INVALID, "Resource id is required");
         if (!beginOperation()) {
             log.info("Mango resource registry delete skipped: application is shutting down, resourceId={}",
                     resourceId);
@@ -810,9 +811,8 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
     }
 
     private void assertOperationCanContinue() {
-        if (!running) {
-            throw new IllegalStateException("Resource Registry operation stopped because the application is shutting down");
-        }
+        Require.isTrue(running, ResourceCode.RESOURCE_SYNC_FAILED,
+                "Resource Registry operation stopped because the application is shutting down");
         lock.assertOwned();
     }
 

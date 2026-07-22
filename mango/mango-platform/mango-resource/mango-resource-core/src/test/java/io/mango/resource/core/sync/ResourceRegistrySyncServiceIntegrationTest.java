@@ -151,7 +151,7 @@ class ResourceRegistrySyncServiceIntegrationTest {
 
         assertThat(syncThread.isAlive()).isFalse();
         assertThat(syncFailure.get())
-                .isInstanceOf(IllegalStateException.class)
+                .isInstanceOf(BizException.class)
                 .hasMessageContaining("shutting down");
         assertThat(count("resource_registry")).isZero();
         assertThat(count("resource_sync_log")).isZero();
