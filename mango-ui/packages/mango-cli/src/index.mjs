@@ -1710,6 +1710,7 @@ function printDevWorkspace(context) {
   process.stdout.write(`Manifest:  ${context.manifestPath}\n`);
   process.stdout.write(`Workspace: ${context.workspacePath}\n`);
   process.stdout.write(`Env file:  ${join(context.root, '.mango/dev-workspace.env')}\n`);
+  const databaseStatus = printWorkspaceDatabaseStatus(context, workspace);
   for (const [name, app] of Object.entries(context.manifest.apps || {})) {
     const resolved = resolveDevApp(context, name, app);
     process.stdout.write(`${name.padEnd(16)} ${resolved.type.padEnd(18)} ${resolved.cwd}`);
@@ -1718,6 +1719,31 @@ function printDevWorkspace(context) {
     }
     process.stdout.write('\n');
   }
+  if (databaseStatus.envMatch === false) {
+    fail('workspace database does not match MANGO_DB_NAME in the workspace env');
+  }
+}
+
+function printWorkspaceDatabaseStatus(context, workspace = ensureWorkspaceConfig(context.root)) {
+  const envPath = join(context.root, '.mango/dev-workspace.env');
+  const fileEnv = readEnvFile(envPath);
+  const databaseName = workspace.dbName || '';
+  const envDatabaseName = fileEnv.MANGO_DB_NAME || '';
+  const envMatch = Boolean(databaseName && envDatabaseName) ? databaseName === envDatabaseName : null;
+  const probe = probeWorkspaceDatabase(databaseName, { ...context.env, ...fileEnv });
+  process.stdout.write(`Database:  ${databaseName || '<missing>'}\n`);
+  process.stdout.write(`DB exists: ${probe.state}\n`);
+  process.stdout.write(`Init source: mango workspace init -> ${context.workspacePath} -> ${envPath}\n`);
+  process.stdout.write(`DB env match: ${envMatch === null ? 'UNKNOWN' : envMatch ? 'PASS' : 'FAIL'}\n`);
+  process.stdout.write(
+    `DB auto-create: ${isTruthy(fileEnv.MANGO_DB_AUTO_CREATE) ? 'enabled' : 'disabled'} (mango dev start)\n`,
+  );
+  return {
+    databaseName,
+    envDatabaseName,
+    envMatch,
+    probe,
+  };
 }
 
 function validateDevWorkspace(context, { verbose }) {
@@ -2046,8 +2072,12 @@ function ensureWorkspaceDatabase(context, appName, logPath) {
 }
 
 function workspaceDatabaseExists(dbName, env = {}) {
+  return probeWorkspaceDatabase(dbName, env).state === 'YES';
+}
+
+function probeWorkspaceDatabase(dbName, env = {}) {
   if (!/^mango_dev_[a-zA-Z0-9_]+$/.test(dbName)) {
-    return false;
+    return { state: 'UNKNOWN' };
   }
   const statement = [
     'SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA',
@@ -2058,7 +2088,17 @@ function workspaceDatabaseExists(dbName, env = {}) {
     capture: true,
     allowFailure: true,
   });
-  return result.status === 0 && String(result.stdout || '').trim() === dbName;
+  if (result.status !== 0) {
+    return { state: 'UNKNOWN' };
+  }
+  return {
+    state: String(result.stdout || '')
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .includes(dbName)
+      ? 'YES'
+      : 'NO',
+  };
 }
 
 function runMysqlStatement(dbEnv = {}, statement, options = {}) {
@@ -2163,11 +2203,9 @@ function failWithDevAppLog(context, name, message) {
 
 function printDevWorkspaceStatus(context) {
   validateDevWorkspace(context, { verbose: false });
-  ensureDevWorkspaceEnv(context);
-  context.env = {
-    ...parseEnvText(defaultDevWorkspaceEnv(context.root)),
-    ...readEnvFile(join(context.root, '.mango/dev-workspace.env')),
-  };
+  const workspace = ensureWorkspaceConfig(context.root);
+  const databaseStatus = printWorkspaceDatabaseStatus(context, workspace);
+  const datasourceMismatches = [];
   for (const [name, app] of Object.entries(context.manifest.apps || {})) {
     const resolved = resolveDevApp(context, name, app);
     const pidInfo = readPidFile(context, name);
@@ -2181,8 +2219,51 @@ function printDevWorkspaceStatus(context) {
     const occupantText = occupied
       ? `${formatPortOccupants(resolved.port)}${formatPortOwnerHint(context.root, resolved.port)}`
       : '';
-    process.stdout.write(`${status.padEnd(8)} ${name}${pidText}${urlText}${ownerText}${occupantText}\n`);
+    let datasourceText = '';
+    if (alive) {
+      const datasourceDatabase = extractDatasourceDatabase(pidInfo.args || []);
+      if (resolved.type === 'spring-boot-maven' || datasourceDatabase) {
+        const datasourceMatch = datasourceDatabase ? datasourceDatabase === databaseStatus.databaseName : null;
+        datasourceText = ` datasourceDb=${datasourceDatabase || 'UNKNOWN'} dbMatch=${
+          datasourceMatch === null ? 'UNKNOWN' : datasourceMatch ? 'PASS' : 'FAIL'
+        }`;
+        if (datasourceMatch === false) {
+          datasourceMismatches.push(`${name}: ${datasourceDatabase}`);
+        }
+      }
+    }
+    process.stdout.write(
+      `${status.padEnd(8)} ${name}${pidText}${urlText}${ownerText}${occupantText}${datasourceText}\n`,
+    );
   }
+  if (databaseStatus.envMatch === false) {
+    fail('workspace database does not match MANGO_DB_NAME in the workspace env');
+  }
+  if (datasourceMismatches.length > 0) {
+    fail(
+      `running backend datasource does not match workspace database ${databaseStatus.databaseName}: ${datasourceMismatches.join(', ')}`,
+    );
+  }
+}
+
+function extractDatasourceDatabase(args) {
+  for (const value of args || []) {
+    const match = String(value).match(/(?:--|\b)spring\.datasource\.url=([^\s]+)/u);
+    if (!match) {
+      continue;
+    }
+    const jdbcUrl = match[1].replace(/^["']|["']$/g, '');
+    const databaseMatch = jdbcUrl.match(/^jdbc:mysql:\/\/[^/]+\/([^?;\s]+)/iu);
+    if (!databaseMatch) {
+      return '';
+    }
+    try {
+      return decodeURIComponent(databaseMatch[1]);
+    } catch {
+      return databaseMatch[1];
+    }
+  }
+  return '';
 }
 
 function printDevWorkspaceLogs(context, argv) {

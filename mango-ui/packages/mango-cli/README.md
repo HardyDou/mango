@@ -253,6 +253,10 @@ CLI 从当前目录向上查找 `mango.dev.json`。本地工作区分配事实�
 
 `mango dev status`、`mango dev stop` 和 `mango dev restart` 先通过内核 PID 探测判断进程是否存在，再把 `ps` 作为可选的僵尸进程补充检查。因此业务开发镜像或精简容器没有安装 `ps` 时，本地进程状态、停止和重启仍可使用；安装了 `ps` 的环境继续保留僵尸进程识别。
 
+`mango workspace status` 会直接显示 `.mango/workspace.json` 分配的数据库名、数据库是否存在、workspace init 到 `.mango/dev-workspace.env` 的配置来源，以及 workspace 与 env 中数据库名是否一致。MySQL 客户端缺失或连接不可用时，数据库存在性显示为 `UNKNOWN`，不把本机工具或连接问题误报成数据库不存在。
+
+`mango dev status` 在上述 workspace 数据库摘要之外，还会从运行中后端的已解析启动记录读取 datasource database，并输出 `dbMatch=PASS|FAIL|UNKNOWN`。运行中后端明确连接到其它数据库时命令失败；输出不会展示数据库密码或完整 datasource 参数。
+
 ### 6.5 可审计发布状态机
 
 `mango release` 固定维护 `source`、`versions`、`changelog`、`readmes`、`tests`、`pr`、`tag`、`github-release`、`maven`、`npm`、`cli-lock`、`private-registry-publish`、`private-registry-consume-verify`、`docs-latest`、`docs-snapshot`、`post-verify`、`cleanup`。每个状态只能是 `passed`、`failed`、`pending` 或 `not_applicable`，并必须有非空原因。适用且已执行的状态还必须逐次记录命令、工作目录、开始/完成时间、退出码和非空脱敏输出；`not_applicable` 因没有执行命令，只记录不适用原因和时间。
@@ -384,7 +388,7 @@ mango release repair --version 1.0.16 --project-dir . --authorize
 | `mango release repair`          | 从失败/待执行状态恢复，跳过已成功不可变制品                      | `--version`、`--authorize`                                                     | release manifest、缺失的发布动作                                                                                 |
 | `mango release registry doctor` | 校验 artifact mode、四类 registry 角色和认证引用                 | registry/mode 参数、`--json`                                                   | 不改文件                                                                                                         |
 | `mango workspace init`          | 初始化本地开发工作区                                             | 无                                                                             | `.mango/workspace.json`、`.mango/dev-workspace.env`、.mango/m2/repository，缺失时创建 `mango.dev.json`           |
-| `mango workspace status`        | 打印 workspace 应用和端口                                        | 无                                                                             | 不改文件                                                                                                         |
+| `mango workspace status`        | 打印 workspace、数据库、初始化来源、应用和端口                   | 无                                                                             | 不改文件                                                                                                         |
 | `mango workspace list`          | 查看本机 workspace registry                                      | 无                                                                             | 不改文件                                                                                                         |
 | `mango workspace release`       | 释放 workspace registry 并默认删除该 workspace 本地开发库        | `--workspace <path>`、`--keep-db`                                              | `~/.mango/workspaces.json`、本机 MySQL                                                                           |
 | `mango workspace doctor`        | 校验 workspace manifest                                          | 无                                                                             | 不改文件                                                                                                         |
@@ -393,7 +397,7 @@ mango release repair --version 1.0.16 --project-dir . --authorize
 | `mango dev start backend`       | 启动后端分组                                                     | 无                                                                             | `.mango/run`                                                                                                     |
 | `mango dev start frontend`      | 启动前端分组                                                     | 无                                                                             | `.mango/run`                                                                                                     |
 | `mango dev restart`             | 按 stop + start 重启本地开发应用                                 | group 或 app                                                                   | `.mango/run`                                                                                                     |
-| `mango dev status`              | 查看进程状态                                                     | 无                                                                             | 不改文件                                                                                                         |
+| `mango dev status`              | 查看进程、数据库和运行中后端 datasource 一致性                   | 无                                                                             | 不改文件                                                                                                         |
 | `mango dev logs <app>`          | 查看最近 200 行日志                                              | app name                                                                       | 不改文件                                                                                                         |
 | `mango dev stop`                | 停止本地开发应用                                                 | group 或 app                                                                   | 删除 pid file                                                                                                    |
 | `mango frontend prepare`        | 准备前端 source 模式必要文件                                     | 无                                                                             | `packages/admin/generated-package-styles.css`、`packages/admin/style-full.css`                                   |

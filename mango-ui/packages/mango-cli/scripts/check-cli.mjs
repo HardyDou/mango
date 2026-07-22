@@ -3351,6 +3351,7 @@ function assertDevWorkspaceRegistryAllocation(tempRoot) {
       );
     }
   }
+  assertWorkspaceDatabaseStatus(roots[0], registryPath, workspaces[0]);
   const before = readFileSync(join(roots[0], '.mango/dev-workspace.env'), 'utf8');
   const workspaceBefore = readFileSync(join(roots[0], '.mango/workspace.json'), 'utf8');
   const repeat = spawnSync(
@@ -3572,6 +3573,95 @@ function assertDevWorkspaceRegistryAllocation(tempRoot) {
   ) {
     throw new Error(
       `legacy workspace TSV registry should be readable during migration:\n${legacyList.stdout}\n${legacyList.stderr}`,
+    );
+  }
+}
+
+function assertWorkspaceDatabaseStatus(workspaceRoot, registryPath, workspace) {
+  const statusBinDir = join(workspaceRoot, '.runtime/status-bin');
+  mkdirSync(statusBinDir, { recursive: true });
+  writeFileSync(
+    join(statusBinDir, 'mysql'),
+    ['#!/usr/bin/env sh', `echo "${workspace.dbName}"`, 'exit 0', ''].join('\n'),
+  );
+  chmodExecutable(join(statusBinDir, 'mysql'));
+  const baseEnv = [`MANGO_WORKSPACE_REGISTRY=${registryPath}`, `PATH=${statusBinDir}:/usr/bin:/bin:/usr/sbin:/sbin`];
+  const workspaceStatus = spawnSync('env', [...baseEnv, process.execPath, cli, 'workspace', 'status'], {
+    cwd: workspaceRoot,
+    encoding: 'utf8',
+  });
+  if (
+    workspaceStatus.status !== 0 ||
+    !workspaceStatus.stdout.includes(`Database:  ${workspace.dbName}`) ||
+    !workspaceStatus.stdout.includes('DB exists: YES') ||
+    !workspaceStatus.stdout.includes('Init source: mango workspace init ->') ||
+    !workspaceStatus.stdout.includes('DB env match: PASS') ||
+    !workspaceStatus.stdout.includes('DB auto-create: enabled (mango dev start)')
+  ) {
+    throw new Error(
+      `workspace status should show effective database and init provenance:\n${workspaceStatus.stdout}\n${workspaceStatus.stderr}`,
+    );
+  }
+
+  const missingMysqlBinDir = join(workspaceRoot, '.runtime/status-missing-mysql-bin');
+  mkdirSync(missingMysqlBinDir, { recursive: true });
+  const unknownStatus = spawnSync(
+    'env',
+    [
+      `MANGO_WORKSPACE_REGISTRY=${registryPath}`,
+      `PATH=${missingMysqlBinDir}:/usr/bin:/bin:/usr/sbin:/sbin`,
+      process.execPath,
+      cli,
+      'workspace',
+      'status',
+    ],
+    {
+      cwd: workspaceRoot,
+      encoding: 'utf8',
+    },
+  );
+  if (unknownStatus.status !== 0 || !unknownStatus.stdout.includes('DB exists: UNKNOWN')) {
+    throw new Error(
+      `workspace status should keep MySQL probe failures distinct from a missing database:\n${unknownStatus.stdout}\n${unknownStatus.stderr}`,
+    );
+  }
+
+  const pidDir = join(workspaceRoot, '.mango/run/pids');
+  mkdirSync(pidDir, { recursive: true });
+  writeFileSync(
+    join(pidDir, 'backend.json'),
+    `${JSON.stringify(
+      {
+        pid: process.pid,
+        pgid: process.pid,
+        startedAt: new Date().toISOString(),
+        cwd: workspaceRoot,
+        command: 'node',
+        args: [
+          '--spring.datasource.url=jdbc:mysql://127.0.0.1:3306/mango_dev_wrong_999?useUnicode=true',
+          '--spring.datasource.password=top-secret-status-test',
+        ],
+        port: workspace.backendPort,
+        url: `http://127.0.0.1:${workspace.backendPort}`,
+        workspaceId: workspace.workspaceId,
+        workspaceRoot,
+      },
+      null,
+      2,
+    )}\n`,
+  );
+  const mismatchStatus = spawnSync('env', [...baseEnv, process.execPath, cli, 'dev', 'status'], {
+    cwd: workspaceRoot,
+    encoding: 'utf8',
+  });
+  if (
+    mismatchStatus.status === 0 ||
+    !mismatchStatus.stdout.includes('datasourceDb=mango_dev_wrong_999 dbMatch=FAIL') ||
+    !mismatchStatus.stderr.includes('running backend datasource does not match workspace database') ||
+    `${mismatchStatus.stdout}\n${mismatchStatus.stderr}`.includes('top-secret-status-test')
+  ) {
+    throw new Error(
+      `dev status should fail a datasource mismatch without exposing credentials:\n${mismatchStatus.stdout}\n${mismatchStatus.stderr}`,
     );
   }
 }
