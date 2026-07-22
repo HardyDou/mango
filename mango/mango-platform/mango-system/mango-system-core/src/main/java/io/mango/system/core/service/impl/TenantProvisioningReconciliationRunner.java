@@ -6,6 +6,9 @@ import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.resource.support.sync.ResourceSynchronizationCompletedEvent;
 import io.mango.resource.support.sync.ResourceSynchronizationPrerequisitesReadyEvent;
 import io.mango.resource.support.sync.ResourceSynchronizationStatus;
+import io.mango.resource.support.sync.StartupReadinessChangedEvent;
+import io.mango.resource.support.sync.StartupReadinessState;
+import io.mango.resource.support.sync.StartupReadinessStatus;
 import io.mango.system.api.tenant.TenantPackageBindingHandler;
 import io.mango.system.api.tenant.TenantProvisionCommand;
 import io.mango.system.api.tenant.TenantProvisioner;
@@ -22,8 +25,13 @@ import org.springframework.core.Ordered;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import java.time.Instant;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Reconciles idempotent tenant baselines after Resource Registry startup sync.
@@ -31,7 +39,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class TenantProvisioningReconciliationRunner implements ApplicationRunner, Ordered {
+public class TenantProvisioningReconciliationRunner
+        implements ApplicationRunner, Ordered, StartupReadinessStatus {
 
     private static final int ENABLED = 1;
     private static final int RESOURCE_SYNC_ORDER_OFFSET = 40;
@@ -43,6 +52,12 @@ public class TenantProvisioningReconciliationRunner implements ApplicationRunner
     private final ApplicationEventPublisher eventPublisher;
     private final AtomicBoolean reconciliationCompleted = new AtomicBoolean();
     private final AtomicBoolean reconciliationInProgress = new AtomicBoolean();
+    private final AtomicReference<StartupReadinessState> readinessState =
+            new AtomicReference<>(StartupReadinessState.RECONCILING_TENANTS);
+    private final AtomicInteger failureCount = new AtomicInteger();
+    private volatile long lastAttemptAtMillis;
+    private volatile long lastFailureAtMillis;
+    private volatile String lastErrorType;
 
     @Override
     public void run(ApplicationArguments args) {
@@ -50,11 +65,12 @@ public class TenantProvisioningReconciliationRunner implements ApplicationRunner
             reconcilePrerequisites();
             eventPublisher.publishEvent(new ResourceSynchronizationPrerequisitesReadyEvent());
             if (!isResourceSynchronizationComplete()) {
+                transitionTo(StartupReadinessState.TRANSIENT_WAIT);
                 log.warn("Tenant provisioning final reconciliation deferred until resource synchronization completes");
                 return;
             }
         }
-        reconcileTenants();
+        tryReconcile("application startup");
     }
 
     /**
@@ -80,9 +96,14 @@ public class TenantProvisioningReconciliationRunner implements ApplicationRunner
     }
 
     private void tryReconcile(String trigger) {
+        lastAttemptAtMillis = System.currentTimeMillis();
         try {
             reconcileTenants();
         } catch (RuntimeException exception) {
+            failureCount.incrementAndGet();
+            lastFailureAtMillis = System.currentTimeMillis();
+            lastErrorType = exception.getClass().getSimpleName();
+            transitionTo(StartupReadinessState.TRANSIENT_WAIT);
             log.error("Tenant provisioning reconciliation failed and will retry: trigger={}", trigger, exception);
         }
     }
@@ -91,9 +112,14 @@ public class TenantProvisioningReconciliationRunner implements ApplicationRunner
         if (reconciliationCompleted.get() || !reconciliationInProgress.compareAndSet(false, true)) {
             return;
         }
+        transitionTo(StartupReadinessState.RECONCILING_TENANTS);
         try {
             int tenantCount = doReconcileTenants();
             reconciliationCompleted.set(true);
+            failureCount.set(0);
+            lastFailureAtMillis = 0L;
+            lastErrorType = null;
+            transitionTo(StartupReadinessState.READY);
             log.info("Tenant provisioning reconciliation complete: tenants={}", tenantCount);
         } finally {
             reconciliationInProgress.set(false);
@@ -145,5 +171,41 @@ public class TenantProvisioningReconciliationRunner implements ApplicationRunner
     @Override
     public int getOrder() {
         return Ordered.LOWEST_PRECEDENCE - RESOURCE_SYNC_ORDER_OFFSET;
+    }
+
+    @Override
+    public String getReadinessComponent() {
+        return "tenant-provisioning-reconciliation";
+    }
+
+    @Override
+    public StartupReadinessState getReadinessState() {
+        return readinessState.get();
+    }
+
+    @Override
+    public Map<String, Object> getReadinessDetails() {
+        Map<String, Object> details = new LinkedHashMap<>();
+        details.put("state", getReadinessState().name());
+        details.put("failureCount", failureCount.get());
+        putTimestamp(details, "lastAttemptAt", lastAttemptAtMillis);
+        putTimestamp(details, "lastFailureAt", lastFailureAtMillis);
+        if (lastErrorType != null) {
+            details.put("lastErrorType", lastErrorType);
+        }
+        return details;
+    }
+
+    private void putTimestamp(Map<String, Object> details, String name, long epochMillis) {
+        if (epochMillis > 0L) {
+            details.put(name, Instant.ofEpochMilli(epochMillis).toString());
+        }
+    }
+
+    private void transitionTo(StartupReadinessState nextState) {
+        StartupReadinessState previous = readinessState.getAndSet(nextState);
+        if (previous != nextState) {
+            eventPublisher.publishEvent(new StartupReadinessChangedEvent(getReadinessComponent(), nextState));
+        }
     }
 }

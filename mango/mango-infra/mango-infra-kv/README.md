@@ -117,7 +117,7 @@ Redis 配置优先级在代码中按 `mango.dal.provider.redis.*`、`mango.redis
 |------|--------|-----------|
 | `capability.enabled` | `false` | 启用 capability 自动配置和 AOP。 |
 | `capability.cache` | `false` | `ICache`。 |
-| `capability.locker` | `false` | `ILocker`。 |
+| `capability.locker` | `false` | `ILocker` 与 owner-safe 的 `ILeaseLocker`。 |
 | `capability.counter` | `false` | `ICounter`。 |
 | `capability.rate-limiter` | `false` | `IRateLimiter`。 |
 | `capability.idempotent` | `false` | `IIdempotent`。 |
@@ -155,8 +155,9 @@ mango:
 
 ## 7. API 与扩展
 - Store：`IKvStore`、`IKvSortedSet`。`increment` / `incrementBy` 使用固定窗口：仅首次创建计数器时设置 TTL，后续增量不续期。
-- Owner 安全释放：`IKvStore.deleteIfValue(key, expectedValue)` 仅在当前值仍属于调用方时删除，并统一拒绝空 `expectedValue`。Memory、Redis、JDBC 内置 Store 均原子实现；自定义 Store 若用于分布式锁或 Outbox claim，必须原子覆写该方法，接口默认实现只用于源码兼容，不构成分布式安全保证。
-- Capability：`ICache`、`ILocker`、`ICounter`、`IRateLimiter`、`IIdempotent`、`ITokenStore`、`IIdGenerator`。
+- Owner-safe lease：`ILeaseLocker.tryAcquire` 每次返回带唯一 token 的 `LockLease`，`renew` 和 `release` 只在 token 仍拥有活跃租约时成功。Memory、Redis、JDBC 都在存储端原子执行获取、续租和释放；JDBC 的租期以数据库时间为准。
+- 自定义 Store 若要提供 lease，必须显式实现 `ILeaseKvStore` 的三个原子操作；缺少该能力时 Resource Registry 会 fail-fast，不会退回固定值或无条件删除的旧锁语义。
+- Capability：`ICache`、`ILocker`、`ILeaseLocker`、`ICounter`、`IRateLimiter`、`IIdempotent`、`ITokenStore`、`IIdGenerator`。
 - 支撑：`ISerializer`、`IConverter`、`KvContext`、`KvContextContributor`。
 - Outbox：`IOutboxPublisher`、`IOutboxStore`、`IOutboxDispatcher`、`OutboxMessage`、`OutboxStatus`、`OutboxTopics`。
 - 注解：`@Cacheable`、`@Locker`、`@RateLimit`、`@Idempotent`。

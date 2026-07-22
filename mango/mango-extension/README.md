@@ -1,7 +1,7 @@
 # Mango Extension
 
 ## 1. 概览
-`mango-extension` 承载 Mango 可选扩展能力。当前包含 `mango-ai`，提供 DeepSeek 流式对话和 AI SSE 推送示例。
+`mango-extension` 承载 Mango 可选扩展能力。当前包含 `mango-ai`，提供 DeepSeek 流式对话和基于 Realtime 的 AI 通知推送。
 
 扩展模块不属于核心平台必需能力。业务项目只有明确需要某个扩展时才引入对应 starter。
 
@@ -26,7 +26,7 @@
 |------|------|
 | `mango-ai-api` | AI 请求模型和业务错误码。 |
 | `mango-ai-core` | 对话、推送服务及可替换的 AI provider 端口。 |
-| `mango-ai-starter` | HTTP/SSE 适配、DeepSeek 默认实现和自动配置。 |
+| `mango-ai-starter` | AI HTTP/SSE 对话适配、DeepSeek 默认实现和 Realtime 推送自动配置。 |
 
 AI 的 HTTP Controller 只在 starter 暴露；core 不依赖 Servlet/SSE 类型。流式响应由
 starter 的异步 `SseEmitter` 适配器输出，保持标准 `text/event-stream` 协议。
@@ -54,8 +54,6 @@ mango:
       read-timeout: 60000
     session:
       ttl: 1800000
-    sse:
-      heartbeat-interval: 25000
 ```
 
 流式对话请求：
@@ -73,12 +71,9 @@ Content-Type: application/json
 }
 ```
 
-建立 AI SSE 推送连接：
-
-```http
-GET /ai/sse
-Authorization: Bearer <accessToken>
-```
+AI 通知通过 Mango Realtime 统一连接接收，不再建立独立的 `/ai/sse` 连接。宿主应用应同时引入
+`mango-infra-realtime-starter`，前端连接 `/realtime/transports/sse`（或使用 Realtime 自动协商），
+由 `IAiPushService` 将通知和告警发布到统一实时通道。
 
 ## 6. 配置说明
 | 配置 | 默认值 | 含义 |
@@ -89,7 +84,6 @@ Authorization: Bearer <accessToken>
 | `mango.ai.deepseek.connect-timeout` | `10000` | 连接超时，毫秒。 |
 | `mango.ai.deepseek.read-timeout` | `60000` | 读取超时，毫秒。 |
 | `mango.ai.session.ttl` | `1800000` | 会话上下文 TTL，毫秒。 |
-| `mango.ai.sse.heartbeat-interval` | `25000` | SSE 心跳间隔，毫秒。 |
 
 请求体 `ChatRequest`：
 
@@ -103,13 +97,12 @@ Authorization: Bearer <accessToken>
 HTTP 接口：
 
 - `POST /ai/chat`：受保护接口，返回标准 `text/event-stream`；兼容历史 `TENANT-ID` 请求头。
-- `GET /ai/sse`：建立 AI 模块 SSE 连接。
+- AI 通知不再提供独立 HTTP 推送入口，统一通过 Mango Realtime 传输。
 
 主要类：
 
 - `ChatRequest`
 - `ChatController`
-- `SseController`
 - `IChatService` / `ChatService`
 - `IAiPushService` / `AiPushService`
 - `IAiProvider`

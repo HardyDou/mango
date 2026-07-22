@@ -41,6 +41,11 @@ public class OrgMemberBindingResourceHandler implements ResourceHandler {
     }
 
     @Override
+    public String executionTenantField() {
+        return "tenantId";
+    }
+
+    @Override
     public List<String> dependsOnResourceTypes() {
         return List.of(ResourceTypes.IDENTITY_USER, ResourceTypes.ORG_UNIT, ResourceTypes.ORG_POST);
     }

@@ -5,6 +5,7 @@ import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.resource.support.sync.ResourceSynchronizationCompletedEvent;
 import io.mango.resource.support.sync.ResourceSynchronizationPrerequisitesReadyEvent;
 import io.mango.resource.support.sync.ResourceSynchronizationStatus;
+import io.mango.resource.support.sync.StartupReadinessState;
 import io.mango.system.api.tenant.TenantPackageBindingHandler;
 import io.mango.system.api.tenant.TenantProvisionCommand;
 import io.mango.system.api.tenant.TenantProvisioner;
@@ -96,7 +97,9 @@ class TenantProvisioningReconciliationRunnerTest {
 
         runner.run(new DefaultApplicationArguments(new String[0]));
         assertThat(reconciledTenants).containsExactly(3L);
-        assertThat(events).singleElement().isInstanceOf(ResourceSynchronizationPrerequisitesReadyEvent.class);
+        assertThat(events.stream().filter(ResourceSynchronizationPrerequisitesReadyEvent.class::isInstance))
+                .hasSize(1);
+        assertThat(runner.getReadinessState()).isEqualTo(StartupReadinessState.TRANSIENT_WAIT);
 
         synchronizedResources.set(true);
         runner.onResourceSynchronizationCompleted(
@@ -104,6 +107,7 @@ class TenantProvisioningReconciliationRunnerTest {
         runner.retryUntilReconciled();
 
         assertThat(reconciledTenants).containsExactly(3L, 3L);
+        assertThat(runner.getReadinessState()).isEqualTo(StartupReadinessState.READY);
     }
 
     @Test

@@ -108,19 +108,23 @@ Resource 不执行 SQL 文件，不做 Data Package/task 编排，不负责在�
 | `fail-on-conflict` | `true` | 资源 ID 或 `resourceType + bizKey` 冲突时是否启动失败。 |
 | `instance-id` | 空 | 同步锁持有者标识，为空时使用当前 JVM 进程名。 |
 | `lock-ttl-seconds` | `300` | 多实例同步锁 TTL。 |
+| `shutdown-wait-seconds` | `25` | 停服时等待在途同步释放 lease 的最长时间；默认低于 Spring Boot 单 shutdown phase 的 30 秒预算。若调大，必须同步调大 `spring.lifecycle.timeout-per-shutdown-phase` 与 CLI `stopTimeoutMs`。 |
 | `locations` | `classpath*:META-INF/mango/resources/*.{json,yml,yaml}` | 声明文件扫描路径。 |
 | `demo-enabled` | `false` | 是否额外扫描 demo 资源声明。 |
 | `demo-locations` | `classpath*:META-INF/mango/demo/*.{json,yml,yaml}` | demo 资源声明扫描路径。 |
 | `remote.enabled` | `true` | `mango-resource-sync-starter` 是否向注册中心上报声明。 |
 | `remote.app-code` | 空 | 远程上报应用编码，空时取 `spring.application.name`。 |
 | `remote.service-code` | 空 | 远程上报服务编码，空时取 `spring.application.name`。 |
-| `remote.retry-interval` | `10s` | 远程上报失败或注册中心返回“未完成”时的重试间隔；首次完整成功后停止重试。 |
+| `remote.retry-interval` | `10s` | 瞬态失败的首次重试间隔。 |
+| `remote.retry-max-interval` | `1m` | 指数退避和抖动后的最大重试间隔。 |
 
-本地注册中心应用必须提供 `mango-infra-kv` 的 `ILocker` 实现。Mango 单体和平台服务默认通过 `mango-infra-kv-starter` 提供 JDBC 或内存 KV 能力。
+本地注册中心应用必须提供 `mango-infra-kv` 的 `ILeaseLocker`。Mango 单体和平台服务默认通过 `mango-infra-kv-starter` 提供 JDBC、Redis 或 Memory lease；自定义 KV 没有原子 lease 能力时启动失败。
 
 微服务允许来源服务、Resource 注册中心和被依赖资源所属服务乱序启动。远程失败、父资源尚未注册或注册中心锁竞争时，本次同步返回未完成并由来源服务重试；注册中心不得在未取得锁、实际未处理声明时返回成功。该机制只保证启动阶段最终收敛，不吞掉声明校验或 Handler 业务错误。
 
-`ResourceSyncRunner` 实现 `ResourceSynchronizationStatus`。初次同步失败时状态保持未完成，依赖完整资源结果的启动任务必须延后；如果声明依赖尚未创建的内置机构角色，System 会先重放一次不标记最终完成的幂等前置基线，并发布 `ResourceSynchronizationPrerequisitesReadyEvent` 触发 Resource 立即重试。重试首次成功后只发布一次 `ResourceSynchronizationCompletedEvent`，供同一 JVM 内的最终幂等对账继续执行。同步被显式关闭或当前应用没有声明时视为已完成，不阻断无资源依赖的启动任务。
+`ResourceSyncRunner` 状态为 `BOOTSTRAPPING`、`SYNCING`、`TRANSIENT_WAIT`、`PERMANENT_FAILED` 或 `READY`。网络、数据库、锁等待和 5xx 按指数退避重试；声明校验、冲突等确定性 4xx 对同一声明 snapshot 最多完整执行一次，只有 snapshot 变化后才自动重试。Resource 同步与 System 机构对账都完成前，Spring readiness 为 `REFUSING_TRAFFIC`，Actuator 的 `resourceStartupHealthIndicator` 会给出各参与者状态；liveness 不受可恢复同步错误影响。同步被显式关闭、没有声明或没有状态参与者时保持兼容，不额外阻断启动。
+
+如果声明依赖尚未创建的内置机构角色，System 会先重放一次不标记最终完成的幂等前置基线，并发布 `ResourceSynchronizationPrerequisitesReadyEvent` 触发瞬态失败立即重试。首次完整成功后只发布一次 `ResourceSynchronizationCompletedEvent`，供同一 JVM 内的最终幂等对账继续执行。
 
 ## 6. API 与扩展
 
@@ -333,7 +337,7 @@ Flyway 路径：`mango-resource-core/src/main/resources/db/migration/resource`�
 声明的依赖图排序后再调用各 handler。声明文件顺序、文件扫描顺序和 jar 加载顺序不作为同步顺序语义。
 如果依赖图存在环，例如 `A -> B -> A`，同步会失败并提示 `Resource type dependency cycle detected`。
 
-多实例启动时通过 `mango-infra-kv` 的 `ILocker` 抢占 `mango-resource-sync` 锁，抢到锁的实例执行同步，其它实例跳过。
+多实例启动时通过 `ILeaseLocker` 抢占 `mango-resource-sync` lease。每次获取使用唯一 token，约在 TTL 三分之一周期续租；旧 session 不能续租或释放后来实例的 lease，失租后会在下一批次或持久化副作用前中止。停服先拒绝新同步并等待在途操作释放，再允许 Spring 销毁 DataSource。
 
 远程同步会携带来源 `appCode`、`serviceCode` 和 `moduleCodes`。缺失声明禁用只在同一来源服务和模块范围内计算，避免多个服务共用 `moduleCode` 时互相误禁用。批量 dispatch 会按 `targetModule` 分桶，不能把不同目标模块的同类资源发给同一个目标服务。
 
@@ -408,7 +412,8 @@ authorization_api_resource         API_RESOURCE 访问模式正确
 |------|----------|
 | 启动时报资源冲突 | 检查声明文件中的 `id` 和 `resourceType + bizKey` 是否重复。 |
 | 资源未覆盖目标数据 | 检查注册表中的 `sync_mode` 是否为 `AUTO`，以及声明 `version` 或内容 hash 是否变化。 |
-| 多实例重复同步 | 检查 `mango-infra-kv` 是否正常提供 `ILocker`，以及 `lock-ttl-seconds` 是否过短。 |
+| 多实例重复同步 | 检查 `mango-infra-kv` 是否提供 `ILeaseLocker`、续租是否成功，以及 `lock-ttl-seconds` 是否覆盖一次批次。 |
+| 同一错误持续刷屏或启动已 UP 但资源未完成 | 查看 `resourceStartupHealthIndicator` 的 participant 状态；`PERMANENT_FAILED` 需修正声明 snapshot，`TRANSIENT_WAIT` 查看下次退避重试和底层连接。 |
 | 微服务未上报资源 | 检查业务服务是否引入 `mango-resource-starter-remote` 和 `mango-resource-sync-starter`，并确认注册中心接口可访问。 |
 | 声明文件未加载 | 检查文件是否位于 `META-INF/mango/resources/`，扩展名是否为 `.json`、`.yml` 或 `.yaml`。 |
 

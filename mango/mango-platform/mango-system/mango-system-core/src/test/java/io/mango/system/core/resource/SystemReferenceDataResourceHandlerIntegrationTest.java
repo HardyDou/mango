@@ -25,6 +25,7 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.LinkedHashMap;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -145,6 +146,22 @@ class SystemReferenceDataResourceHandlerIntegrationTest {
         assertThat(value("sys_area", "area_status", "id = 1")).isEqualTo("0");
     }
 
+    @Test
+    void areaBatchUpsertPreservesInputOrderAndConvergesDuplicateTargetIds() throws Exception {
+        areaHandler.upsert(area("2026071610000000001", 1L, "北京市旧值"));
+
+        var results = areaHandler.upsertBatch(List.of(
+                area("2026071610000000001", 1L, "北京市新版"),
+                area("2026071610000000002", 2L, "天津市初值"),
+                area("2026071610000000003", 2L, "天津市最终值")));
+
+        assertThat(value("sys_area", "name", "id = 1")).isEqualTo("北京市新版");
+        assertThat(value("sys_area", "name", "id = 2")).isEqualTo("天津市最终值");
+        assertThat(count("sys_area")).isEqualTo(2);
+        assertThat(results.get("2026071610000000001").getTargetId()).isEqualTo(1L);
+        assertThat(results.get("2026071610000000003").getTargetId()).isEqualTo(2L);
+    }
+
     private ResourceDeclaration tenant(String name) {
         ResourceDeclaration declaration = declaration("2026071609000000001", ResourceTypes.SYSTEM_TENANT);
         field(declaration, "targetId", ResourceFieldType.LONG, 1L);
@@ -156,8 +173,13 @@ class SystemReferenceDataResourceHandlerIntegrationTest {
     }
 
     private ResourceDeclaration area(String name) {
-        ResourceDeclaration declaration = declaration("2026071610000000001", ResourceTypes.SYSTEM_AREA);
-        field(declaration, "targetId", ResourceFieldType.LONG, 1L);
+        return area("2026071610000000001", 1L, name);
+    }
+
+    private ResourceDeclaration area(String resourceId, Long targetId, String name) {
+        ResourceDeclaration declaration = declaration(resourceId, ResourceTypes.SYSTEM_AREA);
+        declaration.setBizKey("system.test.area." + resourceId);
+        field(declaration, "targetId", ResourceFieldType.LONG, targetId);
         field(declaration, "pid", ResourceFieldType.LONG, 0L);
         field(declaration, "name", ResourceFieldType.STRING, name);
         field(declaration, "adcode", ResourceFieldType.LONG, 110000L);

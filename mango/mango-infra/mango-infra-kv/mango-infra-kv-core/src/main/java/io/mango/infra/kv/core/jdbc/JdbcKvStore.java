@@ -5,7 +5,7 @@ import cn.hutool.core.util.IdUtil;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.common.result.Require;
 import io.mango.infra.kv.api.IKvSortedSet;
-import io.mango.infra.kv.api.IKvStore;
+import io.mango.infra.kv.api.ILeaseKvStore;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,7 +19,7 @@ import java.util.regex.Pattern;
 /**
  * JDBC KV store backed by atomic upsert statements supported by MySQL and H2 MySQL mode.
  */
-public class JdbcKvStore implements IKvStore, IKvSortedSet {
+public class JdbcKvStore implements ILeaseKvStore, IKvSortedSet {
 
     public static final String DEFAULT_TABLE_NAME = "infra_kv_entry";
 
@@ -117,6 +117,34 @@ public class JdbcKvStore implements IKvStore, IKvSortedSet {
                 expectedValue,
                 expectedValue,
                 now()) > 0;
+    }
+
+    @Override
+    @Transactional
+    public boolean tryAcquireLease(String key, String token, long ttlSeconds) {
+        validateKey(key);
+        Objects.requireNonNull(token, "token cannot be null");
+        Require.positive(ttlSeconds, "ttlSeconds must be positive");
+        long candidateId = nextId();
+        jdbcTemplate.update(sqlAcquireLease(), candidateId, key, token, ttlSeconds);
+        return findIdByKey(key).filter(id -> id == candidateId).isPresent();
+    }
+
+    @Override
+    @Transactional
+    public boolean renewLease(String key, String token, long ttlSeconds) {
+        validateKey(key);
+        Objects.requireNonNull(token, "token cannot be null");
+        Require.positive(ttlSeconds, "ttlSeconds must be positive");
+        return jdbcTemplate.update(sqlRenewLease(), ttlSeconds, key, token) > 0;
+    }
+
+    @Override
+    @Transactional
+    public boolean releaseLease(String key, String token) {
+        validateKey(key);
+        Objects.requireNonNull(token, "token cannot be null");
+        return jdbcTemplate.update(sqlReleaseLease(), key, token) > 0;
     }
 
     @Override
@@ -299,6 +327,27 @@ public class JdbcKvStore implements IKvStore, IKvSortedSet {
     private String sqlDeleteIfValue() {
         return "DELETE FROM " + tableName
                 + " WHERE kv_key = ? AND (kv_value = ? OR (kv_value IS NULL AND ? IS NULL)) AND expire_time > ?";
+    }
+
+    private String sqlAcquireLease() {
+        return "INSERT INTO " + tableName
+                + " (id, kv_key, kv_value, expire_time)"
+                + " VALUES (?, ?, ?, TIMESTAMPADD(SECOND, ?, CURRENT_TIMESTAMP))"
+                + " ON DUPLICATE KEY UPDATE"
+                + " id = CASE WHEN expire_time <= CURRENT_TIMESTAMP THEN VALUES(id) ELSE id END,"
+                + " kv_value = CASE WHEN expire_time <= CURRENT_TIMESTAMP THEN VALUES(kv_value) ELSE kv_value END,"
+                + " expire_time = CASE WHEN expire_time <= CURRENT_TIMESTAMP THEN VALUES(expire_time) ELSE expire_time END";
+    }
+
+    private String sqlRenewLease() {
+        return "UPDATE " + tableName
+                + " SET expire_time = TIMESTAMPADD(SECOND, ?, CURRENT_TIMESTAMP)"
+                + " WHERE kv_key = ? AND kv_value = ? AND expire_time > CURRENT_TIMESTAMP";
+    }
+
+    private String sqlReleaseLease() {
+        return "DELETE FROM " + tableName
+                + " WHERE kv_key = ? AND kv_value = ? AND expire_time > CURRENT_TIMESTAMP";
     }
 
     private String sqlSelectIdByKey() {

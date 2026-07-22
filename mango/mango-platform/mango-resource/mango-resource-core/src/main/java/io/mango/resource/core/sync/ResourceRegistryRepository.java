@@ -12,7 +12,9 @@ import io.mango.resource.core.mapper.ResourceSyncLogMapper;
 import lombok.RequiredArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -33,6 +35,28 @@ public class ResourceRegistryRepository {
         return toRow(registryMapper.selectByTypeAndBizKey(resourceType, bizKey));
     }
 
+    public ResourceRegistrySnapshot loadSnapshot(List<ResourceDeclaration> declarations) {
+        if (declarations == null || declarations.isEmpty()) {
+            return ResourceRegistrySnapshot.empty();
+        }
+        List<String> resourceIds = declarations.stream()
+                .map(ResourceDeclaration::getId)
+                .distinct()
+                .toList();
+        List<ResourceRegistryLookupKey> lookupKeys = declarations.stream()
+                .map(declaration -> new ResourceRegistryLookupKey(
+                        declaration.getResourceType(), declaration.getBizKey()))
+                .distinct()
+                .toList();
+        List<ResourceRegistryRow> rowsByResourceId = registryMapper.selectByResourceIds(resourceIds).stream()
+                .map(this::toRow)
+                .toList();
+        List<ResourceRegistryRow> rowsByBizKey = registryMapper.selectByTypeAndBizKeys(lookupKeys).stream()
+                .map(this::toRow)
+                .toList();
+        return ResourceRegistrySnapshot.of(rowsByResourceId, rowsByBizKey);
+    }
+
     public List<ResourceRegistryRow> listByModule(String moduleCode) {
         return registryMapper.selectByModule(moduleCode)
                 .stream()
@@ -42,6 +66,17 @@ public class ResourceRegistryRepository {
 
     public List<ResourceRegistryRow> listBySourceAndModule(String appCode, String serviceCode, String moduleCode) {
         return registryMapper.selectBySourceAndModule(appCode, serviceCode, moduleCode)
+                .stream()
+                .map(this::toRow)
+                .collect(Collectors.toList());
+    }
+
+    public List<ResourceRegistryRow> listBySourceAndModules(String appCode, String serviceCode,
+                                                            List<String> moduleCodes) {
+        if (moduleCodes == null || moduleCodes.isEmpty()) {
+            return List.of();
+        }
+        return registryMapper.selectBySourceAndModules(appCode, serviceCode, moduleCodes)
                 .stream()
                 .map(this::toRow)
                 .collect(Collectors.toList());
@@ -147,5 +182,41 @@ public class ResourceRegistryRepository {
         row.setSyncMode(ResourceSyncMode.valueOf(entity.getSyncMode()));
         row.setStatus(entity.getStatus());
         return row;
+    }
+
+    public static final class ResourceRegistrySnapshot {
+
+        private static final ResourceRegistrySnapshot EMPTY = new ResourceRegistrySnapshot(Map.of(), Map.of());
+
+        private final Map<String, ResourceRegistryRow> rowsByResourceId;
+        private final Map<ResourceRegistryLookupKey, ResourceRegistryRow> rowsByLookupKey;
+
+        private ResourceRegistrySnapshot(Map<String, ResourceRegistryRow> rowsByResourceId,
+                                         Map<ResourceRegistryLookupKey, ResourceRegistryRow> rowsByLookupKey) {
+            this.rowsByResourceId = rowsByResourceId;
+            this.rowsByLookupKey = rowsByLookupKey;
+        }
+
+        static ResourceRegistrySnapshot empty() {
+            return EMPTY;
+        }
+
+        static ResourceRegistrySnapshot of(List<ResourceRegistryRow> rowsByResourceId,
+                                           List<ResourceRegistryRow> rowsByBizKey) {
+            Map<String, ResourceRegistryRow> byResourceId = new LinkedHashMap<>();
+            rowsByResourceId.forEach(row -> byResourceId.put(row.getResourceId(), row));
+            Map<ResourceRegistryLookupKey, ResourceRegistryRow> byLookupKey = new LinkedHashMap<>();
+            rowsByBizKey.forEach(row -> byLookupKey.put(
+                    new ResourceRegistryLookupKey(row.getResourceType(), row.getBizKey()), row));
+            return new ResourceRegistrySnapshot(Map.copyOf(byResourceId), Map.copyOf(byLookupKey));
+        }
+
+        public ResourceRegistryRow findByResourceId(String resourceId) {
+            return rowsByResourceId.get(resourceId);
+        }
+
+        public ResourceRegistryRow findByTypeAndBizKey(String resourceType, String bizKey) {
+            return rowsByLookupKey.get(new ResourceRegistryLookupKey(resourceType, bizKey));
+        }
     }
 }
