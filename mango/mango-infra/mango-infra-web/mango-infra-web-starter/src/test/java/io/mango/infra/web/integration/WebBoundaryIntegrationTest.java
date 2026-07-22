@@ -15,10 +15,14 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -27,6 +31,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.sql.SQLException;
 import java.time.LocalDateTime;
@@ -45,6 +50,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
                 "spring.main.banner-mode=off",
                 "mango.web.inner.secret=web-e2e-secret"
         })
+@ExtendWith(OutputCaptureExtension.class)
 @Tag("flow")
 @Tag("infra-web")
 class WebBoundaryIntegrationTest {
@@ -82,6 +88,17 @@ class WebBoundaryIntegrationTest {
                 HttpStatus.METHOD_NOT_ALLOWED, 405, "不支持的请求方法: POST");
         assertFailure("/test/web/missing", HttpMethod.GET, null,
                 HttpStatus.NOT_FOUND, 404, "资源不存在");
+    }
+
+    @Test
+    void sseTimeout_closesTheCommittedStreamWithoutJsonExceptionNoise(CapturedOutput output) {
+        ResponseEntity<String> response = restTemplate.getForEntity("/test/web/sse-timeout", String.class);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(MediaType.TEXT_EVENT_STREAM, response.getHeaders().getContentType());
+        assertTrue(response.getBody().contains("connected"));
+        assertFalse(output.getAll().contains("HttpMessageNotWritableException"), output.getAll());
+        assertFalse(output.getAll().contains("uri=/test/web/sse-timeout, query="), output.getAll());
     }
 
     @Test
@@ -168,6 +185,13 @@ class WebBoundaryIntegrationTest {
         @GetMapping("/system")
         void systemFailure() {
             throw new IllegalStateException("sensitive system detail");
+        }
+
+        @GetMapping(value = "/sse-timeout", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+        SseEmitter sseTimeout() throws Exception {
+            SseEmitter emitter = new SseEmitter(100L);
+            emitter.send(SseEmitter.event().name("message").data("connected"));
+            return emitter;
         }
 
         @PostMapping("/body")
