@@ -739,11 +739,11 @@ public class CheckMojo extends AbstractMojo {
             throw new MojoExecutionException("Static analysis baseDir has no pom.xml: " + rootPath);
         }
 
-        List<String> reactorProjects = resolveStaticAnalysisProjects(rootPath);
-        if (reactorProjects.isEmpty() && !sessionContainsJavaCompileSource()) {
+        if (!sessionContainsJavaCompileSource()) {
             getLog().info("Aggregated static analysis: no Reactor Java compile sources");
             return;
         }
+        List<String> reactorProjects = resolveStaticAnalysisProjects(rootPath);
         cleanStaticReports(rootPath);
         invokeMavenGoals(rootPath, staticAnalysisReportGoals(), reactorProjects);
         collectPmdIssues(rootPath);
@@ -994,11 +994,17 @@ public class CheckMojo extends AbstractMojo {
             if (!projectPath.startsWith(normalizedRoot)) {
                 continue;
             }
-            if (!hasJavaCompileSource(project)) {
+            boolean hasJavaCompileSource = hasJavaCompileSource(project);
+            if (!hasJavaCompileSource && !isDependencyOnlyJarProject(project)) {
                 getLog().info(
                         "Excluded Reactor project without Java compile sources: "
                                 + project.getArtifactId());
                 continue;
+            }
+            if (!hasJavaCompileSource) {
+                getLog().info(
+                        "Included dependency-only Reactor JAR for delegated static analysis: "
+                                + project.getArtifactId());
             }
             String relativePath = normalizedRoot.relativize(projectPath).toString();
             if (!relativePath.isBlank()) {
@@ -1006,6 +1012,10 @@ public class CheckMojo extends AbstractMojo {
             }
         }
         return projects;
+    }
+
+    private boolean isDependencyOnlyJarProject(MavenProject reactorProject) {
+        return "jar".equalsIgnoreCase(reactorProject.getPackaging());
     }
 
     private boolean sessionContainsJavaCompileSource() throws MojoExecutionException {

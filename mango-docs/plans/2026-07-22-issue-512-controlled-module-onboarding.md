@@ -55,6 +55,8 @@
 - `mango-architecture-rules` 175 个测试、`mango-maven-plugin` 225 个测试通过。
 - 完整 212/212 Reactor `package` 成功，耗时约 1 分 37 秒。
 - 合并最新 `origin/main`（`d28f2bdd2`）后，按 required check 参数重新执行完整 212/212 governance Reactor `verify` 成功，耗时 7 分 34 秒。架构报告 dependency/archunit/pmd/blocking 均为 0；静态质量门禁对 15,461 条历史基线判定 0 新增、0 工具失败。
+- GitHub clean runner 首次复验发现聚合静态分析的嵌套 Maven Reactor 只保留有 Java 源码的项目，误排除了无源码但会产出依赖 JAR 的 `mango-admin-starter`，导致 `mango-monolith-app` 无法解析同 Reactor 依赖。修复后，选择器在存在 Java 分析目标时保留所有 `jar` 项目作为依赖闭包、继续排除纯 `pom` 聚合器；整个会话没有 Java 源码时仍提前跳过，未降低 PMD、Checkstyle、SpotBugs 或架构门禁。
+- 使用独立本地 Maven 仓库重新执行完整 212/212 governance Reactor `verify` 成功，耗时 7 分 15 秒；嵌套 Maven 的 `-pl` 清单现场确认包含 `mango-admin-starter` 和 `mango-app/monolith/mango-monolith-app`，两者及 `Mango Architecture Verification` 均构建成功。架构 dependency/ArchUnit/PMD/blocking 均为 0，15,461 条历史静态发现对应 0 新增、0 工具失败。
 - 完整报告后的 `node mango-pmo/tools/check-architecture-debt-budget.mjs --base-ref HEAD`：`current=0`，PASS。
 - 真实验证使用 Maven `verify` 生命周期加载 `mango-architecture-verification` 的 canonical 配置；根 POM 裸插件 goal 会漏掉已审批反向 Controller 配置，因此未作为交付命令。
 

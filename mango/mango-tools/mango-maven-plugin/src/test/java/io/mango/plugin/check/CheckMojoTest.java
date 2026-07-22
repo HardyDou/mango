@@ -1436,7 +1436,7 @@ class CheckMojoTest {
     }
 
     @Test
-    void resolveStaticAnalysisProjects_withSessionReactor_excludesNonJavaProjectsAndGovernanceAggregators()
+    void resolveStaticAnalysisProjects_withSessionReactor_keepsDependencyJarsAndExcludesGovernanceAggregators()
             throws Exception {
         // given
         Path rootPom = tempDir.resolve("pom.xml");
@@ -1490,6 +1490,7 @@ class CheckMojoTest {
         MavenProject adminStarterProject = new MavenProject();
         adminStarterProject.setFile(adminStarter.resolve("pom.xml").toFile());
         adminStarterProject.setArtifactId("mango-admin-starter");
+        adminStarterProject.setPackaging("jar");
         when(session.getProjects()).thenReturn(
                 List.of(
                         rootProject,
@@ -1513,7 +1514,8 @@ class CheckMojoTest {
         // then
         assertEquals(List.of(
                 "mango-platform/mango-job/mango-job-support",
-                "mango-platform/mango-job/mango-job-core"
+                "mango-platform/mango-job/mango-job-core",
+                "mango-admin-starter"
         ), projects);
     }
 
@@ -1525,6 +1527,7 @@ class CheckMojoTest {
         MavenProject adminProject = new MavenProject();
         adminProject.setFile(adminStarter.resolve("pom.xml").toFile());
         adminProject.setArtifactId("mango-admin-starter");
+        adminProject.setPackaging("jar");
         MavenSession session = mock(MavenSession.class);
         when(session.getProjects()).thenReturn(List.of(adminProject));
 
@@ -1538,7 +1541,7 @@ class CheckMojoTest {
         resolveProjects.setAccessible(true);
 
         assertFalse((boolean) containsSource.invoke(mojo));
-        assertEquals(List.of(), resolveProjects.invoke(mojo, tempDir));
+        assertEquals(List.of("mango-admin-starter"), resolveProjects.invoke(mojo, tempDir));
     }
 
     @Test
