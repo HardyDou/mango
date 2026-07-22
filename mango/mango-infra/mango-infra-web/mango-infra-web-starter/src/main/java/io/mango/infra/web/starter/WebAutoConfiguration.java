@@ -78,6 +78,12 @@ public class WebAutoConfiguration implements WebMvcConfigurer {
     }
 
     @Bean
+    @ConditionalOnMissingBean
+    public AsyncLifecycleExceptionResolver asyncLifecycleExceptionResolver() {
+        return new AsyncLifecycleExceptionResolver();
+    }
+
+    @Bean
     @ConditionalOnMissingBean(name = "mangoLongToStringJacksonCustomizer")
     public Jackson2ObjectMapperBuilderCustomizer mangoLongToStringJacksonCustomizer() {
         // Snowflake IDs exceed JavaScript's safe integer range; Java time values must be HTTP strings.
