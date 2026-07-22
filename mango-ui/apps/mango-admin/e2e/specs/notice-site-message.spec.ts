@@ -17,7 +17,7 @@ function ok(data: unknown) {
   return JSON.stringify({ code: 200, success: true, data });
 }
 
-test.describe('通知中心 E2E', () => {
+test.describe('通知管理 E2E', () => {
   test('@p1 @notice 登录后可以访问完整通知菜单、消息入口和系统消息主流程', async ({ page }) => {
     test.setTimeout(90_000);
     const businessTypes = [
@@ -391,7 +391,7 @@ test.describe('通知中心 E2E', () => {
             menuId: '2900',
             parentId: '0',
             menuType: 1,
-            menuName: '通知中心',
+            menuName: '通知管理',
             menuCode: 'notice',
             path: '/notice',
             icon: 'Bell',
@@ -905,7 +905,7 @@ test.describe('通知中心 E2E', () => {
     await expect(page.getByText('测试系统消息')).toBeVisible();
     await page.keyboard.press('Escape');
 
-    await page.getByRole('button', { name: '通知中心' }).click();
+    await page.getByRole('button', { name: '通知管理' }).click();
     await page.getByRole('menuitem', { name: '消息配置' }).click();
     await expect(page.getByText('WORKFLOW_APPROVED', { exact: true })).toBeVisible();
 

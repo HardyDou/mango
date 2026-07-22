@@ -36,7 +36,7 @@ type FilePreview = FileRecord & {
   downloadUrl?: string;
 };
 
-test('文件中心真实上传图片、合并 PDF、预览并下载有效结果 @p0 @fileproc', async ({ page }) => {
+test('文件管理真实上传图片、合并 PDF、预览并下载有效结果 @p0 @fileproc', async ({ page }) => {
   test.setTimeout(90 * 1000);
 
   const createdFileIds: string[] = [];

@@ -147,7 +147,7 @@ test.describe('日历管理 E2E', () => {
     const visibleMenus = collectVisibleMenuNames(menuBody.data || []);
     expect(visibleMenus).toContain('平台能力');
     expect(visibleMenus).toContain('日历管理');
-    expect(visibleMenus).toContain('编号规则');
+    expect(visibleMenus).toContain('编号管理');
 
     await page.getByRole('button', { name: '平台能力' }).click();
     await page.waitForURL('**/#/data/calendar', { timeout: 10000 });

@@ -563,7 +563,7 @@ const pageTypeOptions = [
 const moduleOptions = [
   { label: '授权权限模块', value: 'mango-authorization' },
   { label: '系统基础模块', value: 'mango-system' },
-  { label: '审批中心模块', value: 'mango-workflow' },
+  { label: '审批管理模块', value: 'mango-workflow' },
 ];
 
 const buttonTypeOptions = [

@@ -65,7 +65,7 @@
       <section class="numgen-rule-panel">
         <div class="numgen-table-head">
           <div>
-            <h3>编号规则</h3>
+            <h3>编号管理</h3>
             <p>维护业务Key、当前生效版本和待发布规则，编辑后发布才会影响业务生成。</p>
           </div>
           <div class="numgen-head-actions">

@@ -134,11 +134,11 @@ test.describe('T3 平台元数据隔离复核', () => {
     }
   });
 
-  test('平台机构可见系统与审批中心入口，A 公司不可见平台维护入口', async ({ page }) => {
+  test('平台机构可见系统与审批管理入口，A 公司不可见平台维护入口', async ({ page }) => {
     await loginPage(page, platformTenant);
     await openTopMenu(page, '系统管理');
     await expect(page.getByText('权限管理').first()).toBeVisible({ timeout: 10000 });
-    await expect(page.getByText('审批中心').first()).toBeVisible();
+    await expect(page.getByText('审批管理').first()).toBeVisible();
     await expect(page.getByText('应用管理').first()).toBeVisible();
     await expect(page.getByText('字典管理').first()).toBeVisible();
     await expect(page.getByText('行政区划').first()).toBeVisible();

@@ -116,7 +116,7 @@
               <template #label>
                 <span class="field-label-with-help">
                   启动入口
-                  <el-tooltip content="关闭后不显示在审批中心的发起流程入口；业务页面仍可通过标准 API 发起。" placement="top">
+                  <el-tooltip content="关闭后不显示在审批管理的发起流程入口；业务页面仍可通过标准 API 发起。" placement="top">
                     <el-icon><QuestionFilled /></el-icon>
                   </el-tooltip>
                 </span>

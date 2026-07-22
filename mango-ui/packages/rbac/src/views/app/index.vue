@@ -649,7 +649,7 @@ const styleIsolationOptions = [
 const moduleOptions = [
   { label: '授权权限模块', value: 'mango-authorization', sort: 1 },
   { label: '系统基础模块', value: 'mango-system', sort: 2 },
-  { label: '审批中心模块', value: 'mango-workflow', sort: 3 },
+  { label: '审批管理模块', value: 'mango-workflow', sort: 3 },
   { label: '工作日历模块', value: 'mango-calendar', sort: 4 },
 ];
 

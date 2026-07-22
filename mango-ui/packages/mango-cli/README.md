@@ -414,13 +414,13 @@ mango release repair --version 1.0.16 --project-dir . --authorize
 
 | code               | 能力     | 前端包                             | 后端 starter                                       | 页面注册 / runtime 说明                                                                                              |
 | ------------------ | -------- | ---------------------------------- | -------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| `file`             | 文件中心 | `@mango/file`                      | `mango-file-starter`、`mango-file-preview-starter` | 注册文件管理页面，不生成 runtime module                                                                              |
+| `file`             | 文件管理 | `@mango/file`                      | `mango-file-starter`、`mango-file-preview-starter` | 注册文件管理页面，不生成 runtime module                                                                              |
 | `template`         | 模板管理 | `@mango/template`                  | `mango-template-starter`                           | runtime module 为 `mango-template`                                                                                   |
-| `cms`              | 内容中心 | `@mango/cms`                       | `mango-cms-starter`                                | runtime module 为 `mango-cms`                                                                                        |
-| `notice`           | 通知中心 | `@mango/notice`                    | `mango-notice-starter`                             | custom 后端基础依赖已包含 `mango-notice-starter` 以满足认证通知接口；选择本模块时额外注册 admin pages 和 admin shell |
-| `numgen`           | 编号规则 | `@mango/numgen`                    | `mango-numgen-starter`                             | 注册编号规则页面                                                                                                     |
+| `cms`              | 内容运营 | `@mango/cms`                       | `mango-cms-starter`                                | runtime module 为 `mango-cms`                                                                                        |
+| `notice`           | 通知管理 | `@mango/notice`                    | `mango-notice-starter`                             | custom 后端基础依赖已包含 `mango-notice-starter` 以满足认证通知接口；选择本模块时额外注册 admin pages 和 admin shell |
+| `numgen`           | 编号管理 | `@mango/numgen`                    | `mango-numgen-starter`                             | 注册编号管理页面                                                                                                     |
 | `calendar`         | 工作日历 | `@mango/calendar`                  | `mango-calendar-starter`                           | 注册工作日历页面                                                                                                     |
-| `workflow`         | 审批中心 | `@mango/workflow`                  | `mango-workflow-starter`                           | runtime module 为 `mango-workflow`                                                                                   |
+| `workflow`         | 审批管理 | `@mango/workflow`                  | `mango-workflow-starter`                           | runtime module 为 `mango-workflow`                                                                                   |
 | `workflow-example` | 审批示例 | `@mango/workflow-business-example` | 无独立后端 starter                                 | 自动依赖 `workflow`                                                                                                  |
 
 必选 runtime module：

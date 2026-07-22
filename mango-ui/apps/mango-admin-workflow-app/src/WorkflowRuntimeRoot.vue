@@ -33,8 +33,8 @@ const activeComponent = computed(() => {
 const emptyText = computed(() => {
   const menu = activeMenu.value;
   if (!menu) {
-    return props.emptyDescription || '请选择审批中心菜单';
+    return props.emptyDescription || '请选择审批管理菜单';
   }
-  return `缺少审批中心页面映射：${menu.component || menu.path || menu.menuName}`;
+  return `缺少审批管理页面映射：${menu.component || menu.path || menu.menuName}`;
 });
 </script>

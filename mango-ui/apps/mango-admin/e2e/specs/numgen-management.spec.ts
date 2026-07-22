@@ -127,7 +127,7 @@ async function versions(page: Page, headers: Record<string, string>, genKey: str
   return body.data?.list || [];
 }
 
-test.describe('@numgen 编号规则管理 E2E', () => {
+test.describe('@numgen 编号管理 E2E', () => {
   test('@p1 新增规则时可在片段上配置流水分组', async ({ page }) => {
     await login(page);
     const stamp = Date.now();
@@ -142,7 +142,7 @@ test.describe('@numgen 编号规则管理 E2E', () => {
     });
 
     await page.goto('/#/data/numgen');
-    await expect(page.getByRole('heading', { name: '编号规则' })).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole('heading', { name: '编号管理' })).toBeVisible({ timeout: 10000 });
     await page.getByRole('button', { name: '新增规则' }).click();
     await expect(page.getByRole('dialog', { name: '新增生成器' })).toBeVisible();
     await page.getByLabel('业务Key').fill(genKey);
@@ -192,7 +192,7 @@ test.describe('@numgen 编号规则管理 E2E', () => {
     await prepareHistoryData(page, headers, genKey, genName);
 
     await page.goto('/#/data/numgen');
-    await expect(page.getByRole('heading', { name: '编号规则' })).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole('heading', { name: '编号管理' })).toBeVisible({ timeout: 10000 });
     await page.getByPlaceholder('业务Key / 名称').fill(genKey);
     const listResponsePromise = page.waitForResponse((response) =>
       response.url().includes('/api/numgen/generators/page') && response.status() === 200

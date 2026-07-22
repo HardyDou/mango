@@ -120,7 +120,7 @@ class AuthMenuResourceHandlerTest {
                 "mango-workflow",
                 List.of(Map.of(
                         "menuType", 1,
-                        "menuName", "审批中心",
+                        "menuName", "审批管理",
                         "menuCode", "workflow",
                         "path", "/workflow"
                 )));
@@ -144,7 +144,7 @@ class AuthMenuResourceHandlerTest {
                 "mango-workflow",
                 List.of(Map.of(
                         "menuType", 1,
-                        "menuName", "审批中心",
+                        "menuName", "审批管理",
                         "menuCode", "workflow",
                         "path", "/workflow",
                         "children", List.of(Map.of(
@@ -182,7 +182,7 @@ class AuthMenuResourceHandlerTest {
                 "mango-workflow",
                 List.of(Map.of(
                         "menuType", 1,
-                        "menuName", "审批中心",
+                        "menuName", "审批管理",
                         "menuCode", "workflow",
                         "path", "/workflow"
                 )));
@@ -206,7 +206,7 @@ class AuthMenuResourceHandlerTest {
                 "mango-workflow",
                 List.of(Map.of(
                         "menuType", 1,
-                        "menuName", "审批中心",
+                        "menuName", "审批管理",
                         "menuCode", "workflow",
                         "parentCode", "workflow:task",
                         "path", "/workflow"
@@ -235,7 +235,7 @@ class AuthMenuResourceHandlerTest {
                 "mango-workflow",
                 List.of(Map.of(
                         "menuType", 1,
-                        "menuName", "审批中心",
+                        "menuName", "审批管理",
                         "menuCode", "workflow",
                         "path", "/workflow",
                         "children", List.of(Map.of(

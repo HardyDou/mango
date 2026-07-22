@@ -147,7 +147,7 @@
           v-else
           class="wecom-login-placeholder"
         >
-          请在通知中心的企业微信渠道配置中启用扫码登录，并补充 AgentId 和扫码回调地址；本地联调可输入授权 code。
+          请在通知管理的企业微信渠道配置中启用扫码登录，并补充 AgentId 和扫码回调地址；本地联调可输入授权 code。
         </div>
         <el-input
           v-model="wecomCode"

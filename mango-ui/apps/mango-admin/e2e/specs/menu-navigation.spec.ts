@@ -50,7 +50,7 @@ async function loginPage(page: import('@playwright/test').Page, tenantName = '�
 }
 
 test.describe('用户菜单导航 E2E', () => {
-  test('@p0 @menu 通知中心和审批中心归入平台能力且保留原路由', async ({ page }, testInfo) => {
+  test('@p0 @menu 通知管理和审批管理归入平台能力且保留原路由', async ({ page }, testInfo) => {
     const menuResponsePromise = page.waitForResponse((response) => {
       const url = response.url();
       return response.status() === 200 && url.includes('/api/authorization/menus/user') && url.includes('fmt=tree');
@@ -68,14 +68,14 @@ test.describe('用户菜单导航 E2E', () => {
     expect(platformCapabilities).toBeDefined();
     expect(
       platformCapabilities.children.find((item: { menuCode: string }) => item.menuCode === 'notice'),
-    ).toMatchObject({ menuName: '通知中心', path: '/notice' });
+    ).toMatchObject({ menuName: '通知管理', path: '/notice' });
     expect(
       platformCapabilities.children.find((item: { menuCode: string }) => item.menuCode === 'workflow'),
-    ).toMatchObject({ menuName: '审批中心', path: '/workflow' });
+    ).toMatchObject({ menuName: '审批管理', path: '/workflow' });
 
     await openTopMenu(page, '平台能力');
-    await expectMenuIcon(page, '通知中心');
-    await expectMenuIcon(page, '审批中心');
+    await expectMenuIcon(page, '通知管理');
+    await expectMenuIcon(page, '审批管理');
     await testInfo.attach('platform-capability-menu', {
       body: await page.screenshot(),
       contentType: 'image/png',
@@ -115,12 +115,12 @@ test.describe('用户菜单导航 E2E', () => {
     });
     expect(menuBody.data[1].children.map((item: { menuName: string }) => item.menuName)).toEqual([
       '日历管理',
-      '编号规则',
+      '编号管理',
       '文件管理',
       '模板管理',
-      '审批中心',
+      '审批管理',
       '网址管理',
-      '通知中心',
+      '通知管理',
       '支付管理',
       '任务管理',
       '内容运营',
@@ -175,14 +175,14 @@ test.describe('用户菜单导航 E2E', () => {
     await expectMenuIcon(page, '菜单管理');
 
     await openTopMenu(page, '平台能力');
-    await expectMenuIcon(page, '审批中心');
-    await expandMenuGroup(page, '审批中心');
+    await expectMenuIcon(page, '审批管理');
+    await expandMenuGroup(page, '审批管理');
     await expectMenuIcon(page, '流程办理');
     await expectMenuIcon(page, '流程管理');
     await expectMenuIcon(page, '业务示例');
 
     await expectMenuIcon(page, '日历管理');
-    await expectMenuIcon(page, '编号规则');
+    await expectMenuIcon(page, '编号管理');
     await expectMenuIcon(page, '文件管理');
     await expandMenuGroup(page, '文件管理');
     await expectMenuIcon(page, '存储配置');
@@ -206,8 +206,8 @@ test.describe('用户菜单导航 E2E', () => {
     await expectMenuIcon(page, '我的网址');
 
     await openTopMenu(page, '平台能力');
-    await expectMenuIcon(page, '通知中心');
-    await expandMenuGroup(page, '通知中心');
+    await expectMenuIcon(page, '通知管理');
+    await expandMenuGroup(page, '通知管理');
     await expectMenuIcon(page, '公告管理');
     const noticeTasksResponsePromise = page.waitForResponse((response) => {
       return response.url().includes('/api/notice/tasks') && response.request().method() === 'GET';
@@ -231,7 +231,7 @@ test.describe('用户菜单导航 E2E', () => {
     await expectMenuIcon(page, '接收配置');
   });
 
-  test('A 公司登录后只渲染机构授权范围内的系统管理、审批中心与平台能力导航', async ({ page }) => {
+  test('A 公司登录后只渲染机构授权范围内的系统管理、审批管理与平台能力导航', async ({ page }) => {
     const menuResponsePromise = page.waitForResponse((response) => {
       const url = response.url();
       return response.status() === 200 && url.includes('/api/authorization/menus/user') && url.includes('fmt=tree');
@@ -267,10 +267,10 @@ test.describe('用户菜单导航 E2E', () => {
     ]);
     expect(menuBody.data[1].children.map((item: { menuName: string }) => item.menuName)).toEqual([
       '日历管理',
-      '编号规则',
-      '审批中心',
+      '编号管理',
+      '审批管理',
       '网址管理',
-      '通知中心',
+      '通知管理',
       '任务管理',
       '内容运营',
     ]);
@@ -302,13 +302,13 @@ test.describe('用户菜单导航 E2E', () => {
     await expectMenuIcon(page, '业务域');
 
     await openTopMenu(page, '平台能力');
-    await expectMenuIcon(page, '审批中心');
-    await expandMenuGroup(page, '审批中心');
+    await expectMenuIcon(page, '审批管理');
+    await expandMenuGroup(page, '审批管理');
     await expectMenuIcon(page, '流程办理');
     await expectMenuIcon(page, '业务示例');
 
     await expectMenuIcon(page, '日历管理');
-    await expectMenuIcon(page, '编号规则');
+    await expectMenuIcon(page, '编号管理');
     await expectMenuIcon(page, '任务管理');
     await expandMenuGroup(page, '任务管理');
     await expectMenuIcon(page, '任务定义');
@@ -323,8 +323,8 @@ test.describe('用户菜单导航 E2E', () => {
     await expectMenuIcon(page, '我的网址');
 
     await openTopMenu(page, '平台能力');
-    await expectMenuIcon(page, '通知中心');
-    await expandMenuGroup(page, '通知中心');
+    await expectMenuIcon(page, '通知管理');
+    await expandMenuGroup(page, '通知管理');
     await expectMenuIcon(page, '公告管理');
     await expectMenuIcon(page, '消息配置');
     const noticeTasksResponsePromise = page.waitForResponse((response) => {

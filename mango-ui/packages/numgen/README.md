@@ -2,11 +2,11 @@
 
 ## 1. 概览
 
-`@mango/numgen` 是编号生成的管理后台前端包，配套后端 `mango-numgen` 使用。
+`@mango/numgen` 是编号生成管理后台前端包，配套后端 `mango-numgen` 使用。
 
 它提供：
 
-- 编号规则管理页面。
+- 编号管理页面。
 - 生成器、规则版本、规则片段、生成历史的前端 API 封装。
 - 单个取号、批量取号和规则预览的前端调用封装。
 
@@ -29,7 +29,7 @@
 | 形态 | 是否支持 | 说明 |
 |------|----------|------|
 | `admin-shell` | 否 | 不提供管理后台壳、登录态、菜单运行时。 |
-| `admin-pages` | 是 | 通过 `registerMangoNumgenAdminPages` 注册编号规则页面。 |
+| `admin-pages` | 是 | 通过 `registerMangoNumgenAdminPages` 注册编号管理页面。 |
 | `business-component` | 否 | 不提供可嵌入普通业务页面的通用组件。 |
 | `api-client` | 是 | 导出 `numgenApi`，封装后端 `/numgen/**` 接口。 |
 
@@ -63,7 +63,7 @@ numgen/index
 1. 后端启用 `mango-numgen`，执行 numgen 相关 migration，并同步 numgen 菜单资源。
 2. 管理后台安装并注册 `@mango/numgen/admin-pages`。
 3. 给角色授权 `numgen:manage:list`；需要维护规则时再授权 `numgen:manage:write`。
-4. 打开 `/data/numgen` 编号规则菜单。
+4. 打开 `/data/numgen` 编号管理菜单。
 5. 创建生成器和规则版本，编辑规则片段。
 6. 预览编号，确认格式后发布规则。
 7. 业务后端调用 `NumgenApi` 取号，业务表用唯一索引兜底。
@@ -91,7 +91,7 @@ numgen/index
 
 | 导出 | 用途 |
 |------|------|
-| `NumgenView` | 编号规则管理页。 |
+| `NumgenView` | 编号管理页。 |
 | `registerMangoNumgenAdminPages` | 注册 admin-pages 页面。 |
 | `numgenApi` | 前端 API 调用封装。 |
 
@@ -99,8 +99,8 @@ numgen/index
 
 | key | 页面 |
 |-----|------|
-| `platform/numgen/index` | 编号规则管理页 |
-| `numgen/index` | 编号规则管理页 |
+| `platform/numgen/index` | 编号管理页 |
+| `numgen/index` | 编号管理页 |
 
 ### 7.3 常用 API
 
@@ -162,8 +162,8 @@ const no = await numgenApi.nextValue({
 
 | 菜单 | 路由 | 权限码 | 页面 key |
 |------|------|--------|----------|
-| 编号规则 | `/data/numgen` | `numgen:manage:list` | `platform/numgen/index` / `numgen/index` |
-| 编号规则维护 | 无独立页面 | `numgen:manage:write` | 同编号规则页面 |
+| 编号管理 | `/data/numgen` | `numgen:manage:list` | `platform/numgen/index` / `numgen/index` |
+| 编号管理维护 | 无独立页面 | `numgen:manage:write` | 同编号管理页面 |
 
 页面可见但操作失败时，分别检查：
 

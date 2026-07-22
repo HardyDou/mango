@@ -2,7 +2,7 @@
 
 ## 1. 概览
 
-`@mango/notice` 是 Mango 通知中心的前端包，配套后端 `mango-notice` 使用。
+`@mango/notice` 是 Mango 通知管理的前端包，配套后端 `mango-notice` 使用。
 
 它提供三类能力：
 
@@ -31,7 +31,7 @@
 | `admin-shell`        | 是       | `registerMangoNoticeAdminShell` 注册顶部铃铛 provider。                                                 |
 | `admin-pages`        | 是       | `registerMangoNoticeAdminPages` 注册通知管理页面。                                                      |
 | `business-component` | 部分     | `NoticeClientBell`、`NoticeClientMessageCenter`、`NoticeClientReceiveSetting` 可在 Mango 管理端内复用。 |
-| `api-client`         | 是       | 导出通知中心 API 封装和类型。                                                                           |
+| `api-client`         | 是       | 导出通知管理 API 封装和类型。                                                                           |
 
 ## 4. 接入方式
 
