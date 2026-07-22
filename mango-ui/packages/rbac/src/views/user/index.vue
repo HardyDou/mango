@@ -5,20 +5,9 @@
         <el-card class="layout-card">
           <div class="org-filter-header">
             <span>部门组织</span>
-            <el-button
-              link
-              type="primary"
-              @click="loadOrgTree"
-            >
-              刷新
-            </el-button>
+            <el-button link type="primary" @click="loadOrgTree"> 刷新 </el-button>
           </div>
-          <el-input
-            v-model="orgKeyword"
-            placeholder="请输入部门名称"
-            clearable
-            class="org-filter-search"
-          />
+          <el-input v-model="orgKeyword" placeholder="请输入部门名称" clearable class="org-filter-search" />
           <el-tree
             ref="orgTreeRef"
             v-loading="orgLoading"
@@ -35,11 +24,7 @@
             <template #default="{ data }">
               <span class="org-tree-node">
                 <span>{{ data.orgName }}</span>
-                <el-tag
-                  v-if="data.orgType"
-                  size="small"
-                  effect="plain"
-                >
+                <el-tag v-if="data.orgType" size="small" effect="plain">
                   {{ orgTypeLabel(data.orgType) }}
                 </el-tag>
               </span>
@@ -57,38 +42,18 @@
                 {{ selectedOrg ? '当前仅显示该组织下成员，可在此设置部门主管' : '请选择左侧部门查看部门成员' }}
               </span>
             </div>
-            <el-button
-              v-if="selectedOrg"
-              @click="clearOrgFilter"
-            >
-              查看全部
-            </el-button>
+            <el-button v-if="selectedOrg" @click="clearOrgFilter"> 查看全部 </el-button>
           </div>
 
-          <el-form
-            :inline="true"
-            class="search-form"
-          >
+          <el-form :inline="true" class="search-form">
             <el-form-item label="用户名">
-              <el-input
-                v-model="query.username"
-                placeholder="请输入用户名"
-                clearable
-              />
+              <el-input v-model="query.username" placeholder="请输入用户名" clearable />
             </el-form-item>
-            <el-form-item label="昵称">
-              <el-input
-                v-model="query.nickname"
-                placeholder="请输入昵称"
-                clearable
-              />
+            <el-form-item label="姓名">
+              <el-input v-model="query.nickname" placeholder="请输入姓名" clearable />
             </el-form-item>
             <el-form-item label="手机号">
-              <el-input
-                v-model="query.phone"
-                placeholder="请输入手机号"
-                clearable
-              />
+              <el-input v-model="query.phone" placeholder="请输入手机号" clearable />
             </el-form-item>
             <el-form-item label="状态">
               <DictSelect
@@ -101,54 +66,25 @@
               />
             </el-form-item>
             <el-form-item>
-              <el-button
-                type="primary"
-                @click="handleSearch"
-              >
-                查询
-              </el-button>
-              <el-button @click="handleReset">
-                重置
-              </el-button>
+              <el-button type="primary" @click="handleSearch"> 查询 </el-button>
+              <el-button @click="handleReset"> 重置 </el-button>
             </el-form-item>
           </el-form>
 
           <div class="action-toolbar">
             <div class="toolbar-left">
-              <el-button
-                type="primary"
-                @click="handleAdd"
-              >
-                新增成员
-              </el-button>
-              <el-button
-                type="danger"
-                :disabled="selectedUsers.length === 0"
-                @click="handleBatchDelete"
-              >
+              <el-button type="primary" @click="handleAdd"> 新增成员 </el-button>
+              <el-button type="danger" :disabled="selectedUsers.length === 0" @click="handleBatchDelete">
                 批量删除
               </el-button>
-              <el-tooltip
-                :disabled="canSyncWecom"
-                :content="wecomSyncDisabledTip"
-                placement="top"
-              >
+              <el-tooltip :disabled="canSyncWecom" :content="wecomSyncDisabledTip" placement="top">
                 <span>
-                  <el-button
-                    :disabled="!canSyncWecom"
-                    :loading="wecomSyncLoading"
-                    @click="openWecomSyncDialog"
-                  >
+                  <el-button :disabled="!canSyncWecom" :loading="wecomSyncLoading" @click="openWecomSyncDialog">
                     同步企微用户
                   </el-button>
                 </span>
               </el-tooltip>
-              <el-button
-                v-if="selectedOrg"
-                @click="handleAddOrgMember"
-              >
-                加入当前部门
-              </el-button>
+              <el-button v-if="selectedOrg" @click="handleAddOrgMember"> 加入当前部门 </el-button>
             </div>
           </div>
 
@@ -160,273 +96,127 @@
             class="user-table"
             @selection-change="handleSelectionChange"
           >
-        <el-table-column
-          type="selection"
-          width="54"
-          :selectable="isRowSelectable"
-        />
-        <el-table-column
-          prop="username"
-          label="用户名"
-          min-width="140"
-        />
-        <el-table-column
-          prop="nickname"
-          label="昵称"
-          min-width="140"
-        />
-        <el-table-column
-          prop="realm"
-          label="登录域"
-          width="120"
-        >
-          <template #default="{ row }">
-            <DictTag
-              dict-code="auth_realm"
-              :value="row.realm"
-              size="small"
-            />
-          </template>
-        </el-table-column>
-        <el-table-column
-          prop="actorType"
-          label="操作者类型"
-          width="140"
-        >
-          <template #default="{ row }">
-            <DictTag
-              dict-code="auth_actor_type"
-              :value="row.actorType"
-              size="small"
-            />
-          </template>
-        </el-table-column>
-        <el-table-column
-          prop="phone"
-          label="手机号"
-          min-width="130"
-        />
-        <el-table-column
-          v-if="selectedOrg"
-          label="部门岗位"
-          min-width="150"
-        >
-          <template #default="{ row }">
-            <el-tag
-              v-if="row.postName"
-              effect="plain"
-            >
-              {{ row.postName }}
-            </el-tag>
-            <span v-else>-</span>
-          </template>
-        </el-table-column>
-        <el-table-column
-          v-if="selectedOrg"
-          label="部门主管"
-          width="110"
-        >
-          <template #default="{ row }">
-            <el-tag
-              :type="row.orgLeaderFlag ? 'success' : 'info'"
-              effect="light"
-            >
-              {{ row.orgLeaderFlag ? '是' : '否' }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column
-          v-if="selectedOrg"
-          label="主部门"
-          width="100"
-        >
-          <template #default="{ row }">
-            <el-tag
-              :type="row.primaryOrgFlag ? 'primary' : 'info'"
-              effect="plain"
-            >
-              {{ row.primaryOrgFlag ? '是' : '否' }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column
-          prop="email"
-          label="邮箱"
-          min-width="180"
-          show-overflow-tooltip
-        />
-        <el-table-column
-          prop="status"
-          label="状态"
-          width="90"
-        >
-          <template #default="{ row }">
-            <DictTag
-              dict-code="sys_normal_disable"
-              :value="row.status"
-              size="small"
-            />
-          </template>
-        </el-table-column>
-        <el-table-column
-          label="密码状态"
-          width="110"
-        >
-          <template #default="{ row }">
-            <el-tag
-              :type="row.passwordResetRequired ? 'warning' : 'success'"
-              effect="light"
-            >
-              {{ row.passwordResetRequired ? '需改密' : '正常' }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column
-          label="锁定状态"
-          width="130"
-        >
-          <template #default="{ row }">
-            <el-tooltip
-              :disabled="!isLocked(row)"
-              :content="lockTip(row)"
-              placement="top"
-            >
-              <el-tag
-                :type="isLocked(row) ? 'danger' : 'success'"
-                effect="light"
-              >
-                {{ isLocked(row) ? '已锁定' : '未锁定' }}
-              </el-tag>
-            </el-tooltip>
-          </template>
-        </el-table-column>
-        <el-table-column
-          prop="lastLoginTime"
-          label="最近登录"
-          width="180"
-        >
-          <template #default="{ row }">
-            {{ formatTime(row.lastLoginTime) }}
-          </template>
-        </el-table-column>
-        <el-table-column
-          prop="createTime"
-          label="创建时间"
-          width="180"
-        >
-          <template #default="{ row }">
-            {{ formatTime(row.createTime) }}
-          </template>
-        </el-table-column>
-        <el-table-column
-          label="操作"
-          :width="selectedOrg ? 700 : 570"
-          fixed="right"
-        >
-          <template #default="{ row }">
-            <el-button
-              v-if="selectedOrg"
-              link
-              type="primary"
-              size="small"
-              @click="handleEditOrgPost(row)"
-            >
-              岗位
-            </el-button>
-            <el-button
-              v-if="selectedOrg && !row.orgLeaderFlag"
-              link
-              type="success"
-              size="small"
-              @click="handleSetLeader(row)"
-            >
-              设为主管
-            </el-button>
-            <el-button
-              v-if="selectedOrg && row.orgLeaderFlag"
-              link
-              type="warning"
-              size="small"
-              @click="handleUnsetLeader(row)"
-            >
-              取消主管
-            </el-button>
-            <el-button
-              v-if="selectedOrg && !row.primaryOrgFlag"
-              link
-              type="primary"
-              size="small"
-              @click="handleSetPrimaryOrg(row)"
-            >
-              设主部门
-            </el-button>
-            <el-button
-              link
-              type="primary"
-              size="small"
-              @click="handleAssignRoles(row)"
-            >
-              分配角色
-            </el-button>
-            <el-button
-              link
-              type="primary"
-              size="small"
-              @click="handleExternalIdentity(row)"
-            >
-              企微身份
-            </el-button>
-            <el-button
-              link
-              type="primary"
-              size="small"
-              @click="handleEdit(row)"
-            >
-              编辑
-            </el-button>
-            <el-button
-              link
-              type="warning"
-              size="small"
-              @click="handleResetPassword(row)"
-            >
-              重置密码
-            </el-button>
-            <el-button
-              link
-              type="warning"
-              size="small"
-              @click="handleRequirePasswordReset(row)"
-            >
-              要求改密
-            </el-button>
-            <el-button
-              link
-              type="success"
-              size="small"
-              :disabled="!isLocked(row)"
-              @click="handleUnlock(row)"
-            >
-              解锁
-            </el-button>
-            <el-button
-              link
-              :type="row.status === 1 ? 'warning' : 'success'"
-              size="small"
-              @click="handleStatus(row)"
-            >
-              {{ row.status === 1 ? '禁用' : '启用' }}
-            </el-button>
-            <el-button
-              link
-              type="danger"
-              size="small"
-              @click="handleDelete(row)"
-            >
-              删除
-            </el-button>
-          </template>
-        </el-table-column>
+            <el-table-column type="selection" width="54" :selectable="isRowSelectable" />
+            <el-table-column prop="username" label="用户名" min-width="140" />
+            <el-table-column prop="nickname" label="姓名" min-width="140" />
+            <el-table-column prop="realm" label="登录域" width="120">
+              <template #default="{ row }">
+                <DictTag dict-code="auth_realm" :value="row.realm" size="small" />
+              </template>
+            </el-table-column>
+            <el-table-column prop="actorType" label="操作者类型" width="140">
+              <template #default="{ row }">
+                <DictTag dict-code="auth_actor_type" :value="row.actorType" size="small" />
+              </template>
+            </el-table-column>
+            <el-table-column prop="phone" label="手机号" min-width="130" />
+            <el-table-column v-if="selectedOrg" label="部门岗位" min-width="150">
+              <template #default="{ row }">
+                <el-tag v-if="row.postName" effect="plain">
+                  {{ row.postName }}
+                </el-tag>
+                <span v-else>-</span>
+              </template>
+            </el-table-column>
+            <el-table-column v-if="selectedOrg" label="部门主管" width="110">
+              <template #default="{ row }">
+                <el-tag :type="row.orgLeaderFlag ? 'success' : 'info'" effect="light">
+                  {{ row.orgLeaderFlag ? '是' : '否' }}
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column v-if="selectedOrg" label="主部门" width="100">
+              <template #default="{ row }">
+                <el-tag :type="row.primaryOrgFlag ? 'primary' : 'info'" effect="plain">
+                  {{ row.primaryOrgFlag ? '是' : '否' }}
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column prop="email" label="邮箱" min-width="180" show-overflow-tooltip />
+            <el-table-column prop="status" label="状态" width="90">
+              <template #default="{ row }">
+                <DictTag dict-code="sys_normal_disable" :value="row.status" size="small" />
+              </template>
+            </el-table-column>
+            <el-table-column label="密码状态" width="110">
+              <template #default="{ row }">
+                <el-tag :type="row.passwordResetRequired ? 'warning' : 'success'" effect="light">
+                  {{ row.passwordResetRequired ? '需改密' : '正常' }}
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column label="锁定状态" width="130">
+              <template #default="{ row }">
+                <el-tooltip :disabled="!isLocked(row)" :content="lockTip(row)" placement="top">
+                  <el-tag :type="isLocked(row) ? 'danger' : 'success'" effect="light">
+                    {{ isLocked(row) ? '已锁定' : '未锁定' }}
+                  </el-tag>
+                </el-tooltip>
+              </template>
+            </el-table-column>
+            <el-table-column prop="lastLoginTime" label="最近登录" width="180">
+              <template #default="{ row }">
+                {{ formatTime(row.lastLoginTime) }}
+              </template>
+            </el-table-column>
+            <el-table-column prop="createTime" label="创建时间" width="180">
+              <template #default="{ row }">
+                {{ formatTime(row.createTime) }}
+              </template>
+            </el-table-column>
+            <el-table-column label="操作" :width="selectedOrg ? 700 : 570" fixed="right">
+              <template #default="{ row }">
+                <el-button v-if="selectedOrg" link type="primary" size="small" @click="handleEditOrgPost(row)">
+                  岗位
+                </el-button>
+                <el-button
+                  v-if="selectedOrg && !row.orgLeaderFlag"
+                  link
+                  type="success"
+                  size="small"
+                  @click="handleSetLeader(row)"
+                >
+                  设为主管
+                </el-button>
+                <el-button
+                  v-if="selectedOrg && row.orgLeaderFlag"
+                  link
+                  type="warning"
+                  size="small"
+                  @click="handleUnsetLeader(row)"
+                >
+                  取消主管
+                </el-button>
+                <el-button
+                  v-if="selectedOrg && !row.primaryOrgFlag"
+                  link
+                  type="primary"
+                  size="small"
+                  @click="handleSetPrimaryOrg(row)"
+                >
+                  设主部门
+                </el-button>
+                <el-button link type="primary" size="small" @click="handleAssignRoles(row)"> 分配角色 </el-button>
+                <el-button link type="primary" size="small" @click="handleExternalIdentity(row)"> 企微身份 </el-button>
+                <el-button link type="primary" size="small" @click="handleEdit(row)"> 编辑 </el-button>
+                <el-button link type="warning" size="small" @click="handleResetPassword(row)"> 重置密码 </el-button>
+                <el-button link type="warning" size="small" @click="handleRequirePasswordReset(row)">
+                  要求改密
+                </el-button>
+                <el-button link type="success" size="small" :disabled="!isLocked(row)" @click="handleUnlock(row)">
+                  解锁
+                </el-button>
+                <el-button
+                  link
+                  :type="row.status === 1 ? 'warning' : 'success'"
+                  size="small"
+                  @click="handleStatus(row)"
+                >
+                  {{ row.status === 1 ? '禁用' : '启用' }}
+                </el-button>
+                <el-button link type="danger" size="small" @click="handleDelete(row)"> 删除 </el-button>
+              </template>
+            </el-table-column>
           </el-table>
 
           <Pagination
@@ -439,69 +229,22 @@
       </section>
     </div>
 
-    <el-dialog
-      v-model="dialogVisible"
-      :title="form.userId ? '编辑成员' : '新增成员'"
-      width="620px"
-    >
-      <el-form
-        ref="formRef"
-        :model="form"
-        :rules="rules"
-        label-width="110px"
-      >
-        <el-form-item
-          label="用户名"
-          prop="username"
-        >
-          <el-input
-            v-model="form.username"
-            :disabled="!!form.userId"
-            placeholder="请输入用户名"
-          />
+    <el-dialog v-model="dialogVisible" :title="form.userId ? '编辑成员' : '新增成员'" width="620px">
+      <el-form ref="formRef" :model="form" :rules="rules" label-width="110px">
+        <el-form-item label="用户名" prop="username">
+          <el-input v-model="form.username" :disabled="!!form.userId" placeholder="请输入用户名" />
         </el-form-item>
-        <el-form-item
-          v-if="!form.userId"
-          label="初始密码"
-          prop="password"
-        >
-          <el-input
-            v-model="form.password"
-            type="password"
-            show-password
-            placeholder="不填默认 Mango@123456"
-          />
-          <PasswordPolicyHint
-            v-if="form.password"
-            :password="form.password"
-          />
+        <el-form-item v-if="!form.userId" label="初始密码" prop="password">
+          <el-input v-model="form.password" type="password" show-password placeholder="不填默认 Mango@123456" />
+          <PasswordPolicyHint v-if="form.password" :password="form.password" />
         </el-form-item>
-        <el-form-item
-          label="登录域"
-          prop="realm"
-        >
-          <el-select
-            v-model="form.realm"
-            :disabled="!!form.userId"
-            class="form-select"
-          >
-            <el-option
-              v-for="item in realmOptions"
-              :key="item.value"
-              :label="item.label"
-              :value="String(item.value)"
-            />
+        <el-form-item label="登录域" prop="realm">
+          <el-select v-model="form.realm" :disabled="!!form.userId" class="form-select">
+            <el-option v-for="item in realmOptions" :key="item.value" :label="item.label" :value="String(item.value)" />
           </el-select>
         </el-form-item>
-        <el-form-item
-          label="操作者类型"
-          prop="actorType"
-        >
-          <el-select
-            v-model="form.actorType"
-            :disabled="!!form.userId"
-            class="form-select"
-          >
+        <el-form-item label="操作者类型" prop="actorType">
+          <el-select v-model="form.actorType" :disabled="!!form.userId" class="form-select">
             <el-option
               v-for="item in actorTypeOptions"
               :key="item.value"
@@ -510,110 +253,44 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item
-          label="昵称"
-          prop="nickname"
-        >
-          <el-input
-            v-model="form.nickname"
-            placeholder="请输入昵称"
-          />
+        <el-form-item label="姓名" prop="nickname">
+          <el-input v-model="form.nickname" placeholder="请输入姓名" />
         </el-form-item>
-        <el-form-item
-          label="手机号"
-          prop="phone"
-        >
-          <el-input
-            v-model="form.phone"
-            placeholder="请输入手机号"
-          />
+        <el-form-item label="手机号" prop="phone">
+          <el-input v-model="form.phone" placeholder="请输入手机号" />
         </el-form-item>
-        <el-form-item
-          label="邮箱"
-          prop="email"
-        >
-          <el-input
-            v-model="form.email"
-            placeholder="请输入邮箱"
-          />
+        <el-form-item label="邮箱" prop="email">
+          <el-input v-model="form.email" placeholder="请输入邮箱" />
         </el-form-item>
-        <el-form-item
-          label="归属主体类型"
-          prop="partyType"
-        >
-          <el-input
-            v-model="form.partyType"
-            placeholder="例如 INTERNAL_ORG"
-          />
+        <el-form-item label="归属主体类型" prop="partyType">
+          <el-input v-model="form.partyType" placeholder="例如 INTERNAL_ORG" />
         </el-form-item>
-        <el-form-item
-          label="归属主体ID"
-          prop="partyId"
-        >
-            <el-input
-              v-model="form.partyId"
-              class="form-select"
-              placeholder="请输入归属主体ID"
-            />
+        <el-form-item label="归属主体ID" prop="partyId">
+          <el-input v-model="form.partyId" class="form-select" placeholder="请输入归属主体ID" />
         </el-form-item>
-        <el-form-item
-          label="状态"
-          prop="status"
-        >
+        <el-form-item label="状态" prop="status">
           <el-radio-group v-model="form.status">
-            <el-radio
-              v-for="item in statusOptions"
-              :key="item.value"
-              :label="Number(item.value)"
-            >
+            <el-radio v-for="item in statusOptions" :key="item.value" :label="Number(item.value)">
               {{ item.label }}
             </el-radio>
           </el-radio-group>
         </el-form-item>
-        <el-form-item
-          label="备注"
-          prop="remark"
-        >
-          <el-input
-            v-model="form.remark"
-            type="textarea"
-            :rows="3"
-          />
+        <el-form-item label="备注" prop="remark">
+          <el-input v-model="form.remark" type="textarea" :rows="3" />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="dialogVisible = false">
-          取消
-        </el-button>
-        <el-button
-          type="primary"
-          :loading="submitLoading"
-          @click="handleSubmit"
-        >
-          确定
-        </el-button>
+        <el-button @click="dialogVisible = false"> 取消 </el-button>
+        <el-button type="primary" :loading="submitLoading" @click="handleSubmit"> 确定 </el-button>
       </template>
     </el-dialog>
 
-    <el-dialog
-      v-model="resetPasswordDialogVisible"
-      title="重置密码"
-      width="460px"
-      :close-on-click-modal="false"
-    >
-      <el-form
-        ref="resetPasswordFormRef"
-        :model="resetPasswordForm"
-        :rules="resetPasswordRules"
-        label-width="96px"
-      >
+    <el-dialog v-model="resetPasswordDialogVisible" title="重置密码" width="460px" :close-on-click-modal="false">
+      <el-form ref="resetPasswordFormRef" :model="resetPasswordForm" :rules="resetPasswordRules" label-width="96px">
         <el-form-item label="用户">
           <span>{{ resetPasswordUser?.username }}</span>
         </el-form-item>
-        <el-form-item
-          label="新密码"
-          prop="password"
-        >
+        <el-form-item label="新密码" prop="password">
           <el-input
             v-model="resetPasswordForm.password"
             type="password"
@@ -625,9 +302,7 @@
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="resetPasswordDialogVisible = false">
-          取消
-        </el-button>
+        <el-button @click="resetPasswordDialogVisible = false"> 取消 </el-button>
         <el-button
           type="primary"
           :loading="resetPasswordLoading"
@@ -639,40 +314,22 @@
       </template>
     </el-dialog>
 
-    <el-dialog
-      v-model="wecomSyncDialogVisible"
-      title="同步企业微信用户"
-      width="620px"
-    >
-      <el-form
-        label-width="150px"
-        class="wecom-sync-form"
-      >
+    <el-dialog v-model="wecomSyncDialogVisible" title="同步企业微信用户" width="620px">
+      <el-form label-width="150px" class="wecom-sync-form">
         <el-form-item label="使用渠道配置">
           <el-switch v-model="wecomSyncUseChannelConfig" />
         </el-form-item>
         <template v-if="!wecomSyncUseChannelConfig">
           <el-form-item label="企业ID">
-            <el-input
-              v-model="wecomSyncForm.corpId"
-              placeholder="请输入企业ID"
-            />
+            <el-input v-model="wecomSyncForm.corpId" placeholder="请输入企业ID" />
           </el-form-item>
           <el-form-item label="通讯录Secret">
-            <el-input
-              v-model="wecomSyncForm.secret"
-              type="password"
-              show-password
-              placeholder="请输入通讯录Secret"
-            />
+            <el-input v-model="wecomSyncForm.secret" type="password" show-password placeholder="请输入通讯录Secret" />
           </el-form-item>
         </template>
         <el-form-item label="同步目标">
           <div class="sync-target">
-            <el-tag
-              v-if="selectedOrg"
-              effect="plain"
-            >
+            <el-tag v-if="selectedOrg" effect="plain">
               {{ selectedOrg.orgName }}
             </el-tag>
             <span class="sync-target-tip">
@@ -681,19 +338,13 @@
           </div>
         </el-form-item>
         <el-form-item label="同步组织架构">
-          <el-switch
-            v-model="wecomSyncForm.syncDepartments"
-            :disabled="!isSelectedCompany"
-          />
+          <el-switch v-model="wecomSyncForm.syncDepartments" :disabled="!isSelectedCompany" />
         </el-form-item>
         <el-form-item label="同步成员">
           <el-switch v-model="wecomSyncForm.syncUsers" />
         </el-form-item>
         <el-form-item label="同步子部门">
-          <el-switch
-            v-model="wecomSyncForm.fetchChild"
-            :disabled="!isSelectedCompany"
-          />
+          <el-switch v-model="wecomSyncForm.fetchChild" :disabled="!isSelectedCompany" />
         </el-form-item>
         <el-form-item label="跳过未变化数据">
           <el-switch v-model="wecomSyncForm.skipUnchanged" />
@@ -711,15 +362,8 @@
           <el-switch v-model="wecomSyncForm.bindLoginIdentity" />
         </el-form-item>
       </el-form>
-      <div
-        v-if="wecomSyncResult"
-        class="sync-result"
-      >
-        <el-descriptions
-          :column="4"
-          border
-          size="small"
-        >
+      <div v-if="wecomSyncResult" class="sync-result">
+        <el-descriptions :column="4" border size="small">
           <el-descriptions-item label="部门总数">
             {{ wecomSyncResult.departmentTotalCount }}
           </el-descriptions-item>
@@ -757,126 +401,55 @@
             {{ wecomSyncResult.failedCount }}
           </el-descriptions-item>
         </el-descriptions>
-        <el-alert
-          v-if="wecomSyncResult.messages?.length"
-          type="warning"
-          :closable="false"
-          class="sync-messages"
-        >
-          <div
-            v-for="message in wecomSyncResult.messages"
-            :key="message"
-          >
+        <el-alert v-if="wecomSyncResult.messages?.length" type="warning" :closable="false" class="sync-messages">
+          <div v-for="message in wecomSyncResult.messages" :key="message">
             {{ message }}
           </div>
         </el-alert>
       </div>
       <template #footer>
-        <el-button @click="wecomSyncDialogVisible = false">
-          取消
-        </el-button>
-        <el-button
-          type="primary"
-          :loading="wecomSyncLoading"
-          @click="handleWecomSync"
-        >
-          开始同步
-        </el-button>
+        <el-button @click="wecomSyncDialogVisible = false"> 取消 </el-button>
+        <el-button type="primary" :loading="wecomSyncLoading" @click="handleWecomSync"> 开始同步 </el-button>
       </template>
     </el-dialog>
 
-    <el-dialog
-      v-model="externalIdentityDialogVisible"
-      title="企微登录身份"
-      width="620px"
-    >
-      <el-form
-        label-width="120px"
-        class="external-identity-form"
-      >
+    <el-dialog v-model="externalIdentityDialogVisible" title="企微登录身份" width="620px">
+      <el-form label-width="120px" class="external-identity-form">
         <el-form-item label="成员">
           <span>{{ currentUser?.nickname || currentUser?.username }}</span>
         </el-form-item>
         <el-form-item label="企业ID">
-          <el-input
-            v-model="externalIdentityForm.corpId"
-            placeholder="请输入企业微信 CorpId"
-          />
+          <el-input v-model="externalIdentityForm.corpId" placeholder="请输入企业微信 CorpId" />
         </el-form-item>
         <el-form-item label="企微Userid">
-          <el-input
-            v-model="externalIdentityForm.externalUserId"
-            placeholder="请输入企业微信 userid"
-          />
+          <el-input v-model="externalIdentityForm.externalUserId" placeholder="请输入企业微信 userid" />
         </el-form-item>
         <el-form-item label="显示名称">
-          <el-input
-            v-model="externalIdentityForm.displayName"
-            placeholder="可选"
-          />
+          <el-input v-model="externalIdentityForm.displayName" placeholder="可选" />
         </el-form-item>
       </el-form>
-      <el-table
-        :data="externalIdentities"
-        size="small"
-        class="external-identity-table"
-      >
-        <el-table-column
-          prop="corpId"
-          label="企业ID"
-          min-width="140"
-        />
-        <el-table-column
-          prop="externalUserId"
-          label="企微Userid"
-          min-width="140"
-        />
-        <el-table-column
-          prop="bindSource"
-          label="来源"
-          width="90"
-        />
-        <el-table-column
-          label="操作"
-          width="90"
-        >
+      <el-table :data="externalIdentities" size="small" class="external-identity-table">
+        <el-table-column prop="corpId" label="企业ID" min-width="140" />
+        <el-table-column prop="externalUserId" label="企微Userid" min-width="140" />
+        <el-table-column prop="bindSource" label="来源" width="90" />
+        <el-table-column label="操作" width="90">
           <template #default="{ row }">
-            <el-button
-              link
-              type="danger"
-              size="small"
-              @click="handleUnbindExternalIdentity(row)"
-            >
-              解绑
-            </el-button>
+            <el-button link type="danger" size="small" @click="handleUnbindExternalIdentity(row)"> 解绑 </el-button>
           </template>
         </el-table-column>
       </el-table>
       <template #footer>
-        <el-button @click="externalIdentityDialogVisible = false">
-          关闭
-        </el-button>
-        <el-button
-          type="primary"
-          :loading="externalIdentityLoading"
-          @click="handleBindExternalIdentity"
-        >
+        <el-button @click="externalIdentityDialogVisible = false"> 关闭 </el-button>
+        <el-button type="primary" :loading="externalIdentityLoading" @click="handleBindExternalIdentity">
           绑定
         </el-button>
       </template>
     </el-dialog>
 
-    <el-dialog
-      v-model="assignDialogVisible"
-      title="分配成员角色"
-      width="520px"
-    >
+    <el-dialog v-model="assignDialogVisible" title="分配成员角色" width="520px">
       <div class="assign-header">
         <span>{{ currentUser?.nickname || currentUser?.username }}</span>
-        <el-tag
-          v-if="currentUser?.username"
-          effect="plain"
-        >
+        <el-tag v-if="currentUser?.username" effect="plain">
           {{ currentUser.username }}
         </el-tag>
       </div>
@@ -888,27 +461,13 @@
         title="角色如配置“本人部门”类数据权限，将按该成员主部门动态生效。"
       />
       <el-checkbox-group v-model="selectedRoleIds">
-        <div
-          v-for="role in roleOptions"
-          :key="role.roleId"
-          class="role-option"
-        >
-          <el-checkbox :label="role.roleId">
-            {{ role.roleName }}（{{ role.roleCode }}）
-          </el-checkbox>
+        <div v-for="role in roleOptions" :key="role.roleId" class="role-option">
+          <el-checkbox :label="role.roleId"> {{ role.roleName }}（{{ role.roleCode }}） </el-checkbox>
         </div>
       </el-checkbox-group>
       <template #footer>
-        <el-button @click="assignDialogVisible = false">
-          取消
-        </el-button>
-        <el-button
-          type="primary"
-          :loading="assignSubmitLoading"
-          @click="handleAssignSubmit"
-        >
-          确定
-        </el-button>
+        <el-button @click="assignDialogVisible = false"> 取消 </el-button>
+        <el-button type="primary" :loading="assignSubmitLoading" @click="handleAssignSubmit"> 确定 </el-button>
       </template>
     </el-dialog>
 
@@ -917,17 +476,8 @@
       :title="orgMemberForm.relationId ? '调整部门岗位' : '加入当前部门'"
       width="520px"
     >
-      <el-form
-        ref="orgMemberFormRef"
-        :model="orgMemberForm"
-        :rules="orgMemberRules"
-        label-width="100px"
-      >
-        <el-form-item
-          v-if="!orgMemberForm.relationId"
-          label="成员"
-          prop="memberId"
-        >
+      <el-form ref="orgMemberFormRef" :model="orgMemberForm" :rules="orgMemberRules" label-width="100px">
+        <el-form-item v-if="!orgMemberForm.relationId" label="成员" prop="memberId">
           <el-select
             v-model="orgMemberForm.memberId"
             filterable
@@ -946,17 +496,8 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item
-          label="部门岗位"
-          prop="postId"
-        >
-          <el-select
-            v-model="orgMemberForm.postId"
-            placeholder="请选择岗位"
-            filterable
-            clearable
-            class="form-select"
-          >
+        <el-form-item label="部门岗位" prop="postId">
+          <el-select v-model="orgMemberForm.postId" placeholder="请选择岗位" filterable clearable class="form-select">
             <el-option
               v-for="item in postOptions"
               :key="item.id"
@@ -973,16 +514,8 @@
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="orgMemberDialogVisible = false">
-          取消
-        </el-button>
-        <el-button
-          type="primary"
-          :loading="orgMemberSubmitLoading"
-          @click="handleOrgMemberSubmit"
-        >
-          确定
-        </el-button>
+        <el-button @click="orgMemberDialogVisible = false"> 取消 </el-button>
+        <el-button type="primary" :loading="orgMemberSubmitLoading" @click="handleOrgMemberSubmit"> 确定 </el-button>
       </template>
     </el-dialog>
   </div>
@@ -993,17 +526,20 @@ import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules, type TreeInstance } from 'element-plus';
 import type { ApiId } from '@mango/api-schema';
 import { useDict } from '@mango/common/hooks/useDict';
-import { DictSelect, DictTag, Pagination, PasswordPolicyHint, defaultPasswordPolicy, getPasswordPolicyMessage, isPasswordPolicyPassed } from '@mango/common';
+import {
+  DictSelect,
+  DictTag,
+  Pagination,
+  PasswordPolicyHint,
+  defaultPasswordPolicy,
+  getPasswordPolicyMessage,
+  isPasswordPolicyPassed,
+} from '@mango/common';
 import { Session } from '@mango/common/utils/storage';
 import { orgApi, type OrgMemberVO, type SysOrg } from '../../api/org';
 import { postApi, type PostVO } from '../../api/post';
 import { roleApi, type RoleVO } from '../../api/role';
-import {
-  userApi,
-  type ExternalIdentityBindingVO,
-  type IdentityUserVO,
-  type WecomUserSyncResult,
-} from '../../api/user';
+import { userApi, type ExternalIdentityBindingVO, type IdentityUserVO, type WecomUserSyncResult } from '../../api/user';
 
 const { options: statusOptions } = useDict('sys_normal_disable');
 const { options: realmOptions } = useDict('auth_realm');
@@ -1105,7 +641,9 @@ const wecomSyncForm = reactive({
 });
 
 const passwordPolicyMessage = getPasswordPolicyMessage(defaultPasswordPolicy);
-const canSubmitResetPassword = computed(() => isPasswordPolicyPassed(resetPasswordForm.password, defaultPasswordPolicy));
+const canSubmitResetPassword = computed(() =>
+  isPasswordPolicyPassed(resetPasswordForm.password, defaultPasswordPolicy),
+);
 
 const rules: FormRules = {
   username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
@@ -1411,11 +949,13 @@ function handleDelete(row: IdentityUserVO) {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
     type: 'warning',
-  }).then(async () => {
-    await userApi.delete(row.userId!);
-    ElMessage.success('移除成功');
-    await loadData();
-  }).catch(() => {});
+  })
+    .then(async () => {
+      await userApi.delete(row.userId!);
+      ElMessage.success('移除成功');
+      await loadData();
+    })
+    .catch(() => {});
 }
 
 function handleSelectionChange(rows: IdentityUserVO[]) {
@@ -1428,7 +968,7 @@ function isRowSelectable(row: IdentityUserVO) {
 }
 
 function handleBatchDelete() {
-  const userIds = selectedUsers.value.map(item => item.userId).filter(Boolean) as ApiId[];
+  const userIds = selectedUsers.value.map((item) => item.userId).filter(Boolean) as ApiId[];
   if (!userIds.length) {
     ElMessage.warning('请选择要删除的成员');
     return;
@@ -1437,11 +977,13 @@ function handleBatchDelete() {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
     type: 'warning',
-  }).then(async () => {
-    const count = await userApi.deleteBatch(userIds);
-    ElMessage.success(`已移除 ${count} 个成员`);
-    await loadData();
-  }).catch(() => {});
+  })
+    .then(async () => {
+      const count = await userApi.deleteBatch(userIds);
+      ElMessage.success(`已移除 ${count} 个成员`);
+      await loadData();
+    })
+    .catch(() => {});
 }
 
 function handleStatus(row: IdentityUserVO) {
@@ -1452,11 +994,13 @@ function handleStatus(row: IdentityUserVO) {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
     type: 'warning',
-  }).then(async () => {
-    await userApi.updateStatus(row.userId!, nextStatus);
-    ElMessage.success(`${action}成功`);
-    await loadData();
-  }).catch(() => {});
+  })
+    .then(async () => {
+      await userApi.updateStatus(row.userId!, nextStatus);
+      ElMessage.success(`${action}成功`);
+      await loadData();
+    })
+    .catch(() => {});
 }
 
 function handleResetPassword(row: IdentityUserVO) {
@@ -1490,11 +1034,13 @@ function handleRequirePasswordReset(row: IdentityUserVO) {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
     type: 'warning',
-  }).then(async () => {
-    await userApi.requirePasswordReset(row.userId!);
-    ElMessage.success('已设置下次登录改密');
-    await loadData();
-  }).catch(() => {});
+  })
+    .then(async () => {
+      await userApi.requirePasswordReset(row.userId!);
+      ElMessage.success('已设置下次登录改密');
+      await loadData();
+    })
+    .catch(() => {});
 }
 
 function handleUnlock(row: IdentityUserVO) {
@@ -1503,11 +1049,13 @@ function handleUnlock(row: IdentityUserVO) {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
     type: 'warning',
-  }).then(async () => {
-    await userApi.unlock(row.userId!);
-    ElMessage.success('已解锁');
-    await loadData();
-  }).catch(() => {});
+  })
+    .then(async () => {
+      await userApi.unlock(row.userId!);
+      ElMessage.success('已解锁');
+      await loadData();
+    })
+    .catch(() => {});
 }
 
 async function handleAssignRoles(row: IdentityUserVO) {
@@ -1517,10 +1065,7 @@ async function handleAssignRoles(row: IdentityUserVO) {
   }
   currentUser.value = row;
   assignDialogVisible.value = true;
-  const [roles, assignedRoles] = await Promise.all([
-    roleApi.list(),
-    roleApi.getSubjectRoles(row.memberId),
-  ]);
+  const [roles, assignedRoles] = await Promise.all([roleApi.list(), roleApi.getSubjectRoles(row.memberId)]);
   roleOptions.value = roles;
   selectedRoleIds.value = assignedRoles.map((role) => role.roleId).filter(Boolean) as ApiId[];
 }
@@ -1654,8 +1199,8 @@ async function searchCandidateUsers(keyword: string) {
       username: keyword,
       nickname: keyword,
     });
-    const existingMemberIds = new Set(tableData.value.map(item => item.memberId).filter(Boolean));
-    candidateUsers.value = data.list.filter(item => item.memberId && !existingMemberIds.has(item.memberId));
+    const existingMemberIds = new Set(tableData.value.map((item) => item.memberId).filter(Boolean));
+    candidateUsers.value = data.list.filter((item) => item.memberId && !existingMemberIds.has(item.memberId));
   } finally {
     candidateLoading.value = false;
   }

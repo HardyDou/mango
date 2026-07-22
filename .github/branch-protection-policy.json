@@ -6,6 +6,7 @@
   "requiredStatusChecks": {
     "strict": true,
     "contexts": [
+      "frontend-pr-quality",
       "pmo-doc-check",
       "pr-contract-check"
     ]

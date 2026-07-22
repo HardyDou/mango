@@ -15,8 +15,52 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  frontend-pr-quality:
+    name: frontend-pr-quality
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout complete history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.14.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.23.1
+          cache: pnpm
+          cache-dependency-path: mango-ui/pnpm-lock.yaml
+
+      - name: Install locked frontend dependencies
+        working-directory: mango-ui
+        run: pnpm install --frozen-lockfile --registry=https://registry.npmjs.org/
+
+      - name: Run affected pull request frontend quality gate
+        working-directory: mango-ui
+        env:
+          MANGO_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          MANGO_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: pnpm check:pr -- --base="$MANGO_BASE_SHA" --head="$MANGO_HEAD_SHA"
+
+      - name: Upload pull request frontend quality evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-pr-quality-${{ github.sha }}
+          path: .runtime/frontend-quality
+          if-no-files-found: warn
+          retention-days: 30
+
   frontend-quality:
     name: frontend-quality
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -40,14 +84,6 @@ jobs:
       - name: Install locked frontend dependencies
         working-directory: mango-ui
         run: pnpm install --frozen-lockfile --registry=https://registry.npmjs.org/
-
-      - name: Run pull request frontend quality gate
-        if: github.event_name == 'pull_request'
-        working-directory: mango-ui
-        env:
-          MANGO_BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          MANGO_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        run: pnpm check:affected -- --base="$MANGO_BASE_SHA" --head="$MANGO_HEAD_SHA"
 
       - name: Run main frontend quality gate
         if: github.event_name == 'push'
@@ -73,6 +109,7 @@ jobs:
 
   frontend-e2e-p0:
     name: frontend-e2e-p0
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     services:
@@ -111,6 +148,13 @@ jobs:
           distribution: temurin
           java-version: "21"
           cache: maven
+
+      - name: Install Mango backend prerequisites
+        run: |
+          mvn -f mango/pom.xml \
+            -pl :mango-bom,:mango-parent,:mango-common,:mango-tools \
+            -DskipTests \
+            install
 
       - name: Install MySQL client
         run: |

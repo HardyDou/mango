@@ -183,7 +183,7 @@ stop();
 
 个人消息和接收设置接口使用权限码完成资源校验；接收设置展示业务类型还依赖只读权限 `notice:business:view`。这些最小权限由后端 Notice 菜单资源绑定到内置 `ROLE_LOGIN`，所有已登录用户无需额外业务角色即可使用；`ROLE_ANONYMOUS` 不包含个人消息或 Realtime 建连权限。
 
-消息中心内部的接收配置和系统公告入口分别使用稳定路径 `/message-center/receive-setting` 和 `/message-center/announcement`；旧接收配置路径 `/notice/receive-setting` 仅作为隐藏兼容入口保留。业务消息携带的其它 `targetKey` 只有在宿主真实注册同名 Vue 路由时才执行跳转，未注册时显示“目标未注册或当前无权访问”。
+工作台消息卡的“查看全部”默认进入 `/message-center/site-message`。消息中心内部的接收配置和系统公告入口分别使用稳定路径 `/message-center/receive-setting` 和 `/message-center/announcement`；旧站内信路径 `/notice/site-message` 和旧接收配置路径 `/notice/receive-setting` 仅作为隐藏兼容入口保留。业务消息携带的其它 `targetKey` 只有在宿主真实注册同名 Vue 路由时才执行跳转，未注册时显示“目标未注册或当前无权访问”。
 
 ### 7.4 站内信动作接入
 
@@ -379,6 +379,9 @@ executeMySiteMessageAction(messageId, actionCode, input);
 - [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)
 
 ## 12. 变更影响记录
+
+- `@mango/notice@1.0.31` 将工作台消息卡默认入口对齐到 `/message-center/site-message`，并把旧路径
+  `/notice/site-message` 注册为隐藏兼容入口。站内信 API、页面 key、权限和租户语义保持不变。
 
 - `@mango/notice@1.0.22` 将精确依赖升级到 `@mango/admin-pages@1.0.20` 和 `@mango/system@1.0.19`；通知 API、
   页面 key、实时消息、权限、租户和运行时行为相对 `1.0.21` 不变。

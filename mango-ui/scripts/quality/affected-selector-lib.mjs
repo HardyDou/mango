@@ -3,7 +3,8 @@ import path from 'node:path';
 
 const DEPENDENCY_FIELDS = ['dependencies', 'devDependencies', 'optionalDependencies', 'peerDependencies'];
 const FULL_PATTERNS = [
-  /^\.github\/workflows\//u,
+  /^\.github\/workflows\/frontend-quality\.yml$/u,
+  /^mango-business-starter\/frontend\//u,
   /^mango-pmo\/(?:rules\/frontend\/|tools\/pmo-preflight)/u,
   /^mango-ui\/(?:package\.json|pnpm-lock\.yaml|pnpm-workspace\.yaml|quality-baseline\.json|architecture-exceptions\.json|frontend-boundary-baseline\.json)$/u,
   /^mango-ui\/(?:eslint\.config\.|prettier\.config\.|stylelint\.config\.|tsconfig|vite\.config\.)/u,
@@ -11,7 +12,7 @@ const FULL_PATTERNS = [
 ];
 const FRONTEND_PREFIX = /^mango-ui\/(?:apps|packages)\//u;
 const KNOWN_NON_FRONTEND_PREFIX =
-  /^(?:mango-docs\/|mango-pmo\/(?!rules\/frontend\/)|mango-server\/|README(?:\.|$)|\.gitignore$)/u;
+  /^(?:\.github\/(?!workflows\/frontend-quality\.yml$)|mango\/(?!ui\/)|mango-business-starter\/(?!frontend\/)|mango-docs\/|mango-pmo\/(?!rules\/frontend\/|tools\/pmo-preflight)|CHANGELOG(?:\.|$)|README(?:\.|$)|\.gitignore$)/u;
 
 function posix(value) {
   return value.split(path.sep).join('/');

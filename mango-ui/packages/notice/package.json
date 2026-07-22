@@ -1,6 +1,6 @@
 {
   "name": "@mango/notice",
-  "version": "1.0.30",
+  "version": "1.0.31",
   "private": false,
   "type": "module",
   "main": "./dist/index.js",
@@ -57,7 +57,8 @@
     "./style.css": "./dist/style.css"
   },
   "scripts": {
-    "build": "vite build && node ../../scripts/generate-package-types.mjs"
+    "build": "vite build && node ../../scripts/generate-package-types.mjs",
+    "test": "vitest run --config vitest.config.ts"
   },
   "files": [
     "dist",
