@@ -210,7 +210,7 @@ node business-pmo/mango-baseline/tools/check-architecture-debt-budget.mjs \
 
 PMO 升级需要恢复时先执行 `mango pmo rollback --project-dir . --dry-run`，确认后再执行 rollback。它会按备份字节级恢复 workflow 和 PR 模板，但永远不覆盖、删除或回滚项目自有预算。兼容脚本确需同步时，在预算迁移完成后的独立 PR 使用 `mango pmo sync --project-dir . --sync-shell`。
 
-## 9. Mango PMO 开发快速开始
+## 9. 快速开始
 
 1. 在 Mango 主仓修改 `mango-pmo/**`。
 2. 执行 `pnpm -F @mango/pmo build` 生成 package baseline。
