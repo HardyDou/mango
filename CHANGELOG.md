@@ -2,7 +2,7 @@
 
 ## v2026.07.21-maven-1.0.25-cli-1.0.89-branding-workflow-bom-release - 2026-07-21
 
-Status: `PENDING`. This mixed release will publish Maven `1.0.25`, the pending frontend branding and Workflow/Notice patch matrix, and `@mango/cli@1.0.89` from one reviewed source commit. `@mango/pmo` remains `1.3.4` and is not republished.
+Status: `PUBLISHED_AND_VERIFIED`. This mixed release was published from source commit `d77f5c1961edce33c8bf049105494b5f92fe6b9c` and tree `311affe083f05e9121bfc67209dbfbdeb37e79d1`. Maven `1.0.25`, the frontend patch matrix and `@mango/cli@1.0.89` resolve from their configured publish and consume registries; `@mango/pmo` remains `1.3.4` and was not republished. The immutable tag and GitHub Release point to the same source commit; the versioned documentation snapshot is included in this closeout and Pages verification remains recorded by the canonical release manifest.
 
 ### Added
 
@@ -39,25 +39,25 @@ Status: `PENDING`. This mixed release will publish Maven `1.0.25`, the pending f
 
 | Order | Target | Version | Release status |
 | ---: | --- | --- | --- |
-| 1 | Maven non-app backend and docs bundle | `io.mango:*:1.0.25` | `PENDING` |
-| 2 | npm Admin Pages | `@mango/admin-pages@1.0.26` | `PENDING` |
-| 3 | npm Auth | `@mango/auth@1.0.20` | `PENDING` |
-| 4 | npm Calendar | `@mango/calendar@1.0.27` | `PENDING` |
-| 5 | npm CMS | `@mango/cms@1.0.16` | `PENDING` |
-| 6 | npm File | `@mango/file@1.0.27` | `PENDING` |
-| 7 | npm Job | `@mango/job@1.0.19` | `PENDING` |
-| 8 | npm Link | `@mango/link@1.0.13` | `PENDING` |
-| 9 | npm Notice | `@mango/notice@1.0.30` | `PENDING` |
-| 10 | npm Numgen | `@mango/numgen@1.0.27` | `PENDING` |
-| 11 | npm Payment | `@mango/payment@1.0.19` | `PENDING` |
-| 12 | npm System | `@mango/system@1.0.25` | `PENDING` |
-| 13 | npm Template | `@mango/template@1.0.27` | `PENDING` |
-| 14 | npm Workflow | `@mango/workflow@1.0.33` | `PENDING` |
-| 15 | npm Workflow Business Example | `@mango/workflow-business-example@1.0.32` | `PENDING` |
-| 16 | npm Admin Shell | `@mango/admin-shell@1.0.50` | `PENDING` |
-| 17 | npm Admin aggregate | `@mango/admin@1.0.55` | `PENDING` |
-| 18 | npm CLI | `@mango/cli@1.0.89` | `PENDING` |
-| 19 | GitHub Release | `v2026.07.21-maven-1.0.25-cli-1.0.89-branding-workflow-bom-release` | `PENDING` |
+| 1 | Maven non-app backend and docs bundle | `io.mango:*:1.0.25` | `PUBLISHED_AND_VERIFIED` |
+| 2 | npm Admin Pages | `@mango/admin-pages@1.0.26` | `PUBLISHED_AND_VERIFIED` |
+| 3 | npm Auth | `@mango/auth@1.0.20` | `PUBLISHED_AND_VERIFIED` |
+| 4 | npm Calendar | `@mango/calendar@1.0.27` | `PUBLISHED_AND_VERIFIED` |
+| 5 | npm CMS | `@mango/cms@1.0.16` | `PUBLISHED_AND_VERIFIED` |
+| 6 | npm File | `@mango/file@1.0.27` | `PUBLISHED_AND_VERIFIED` |
+| 7 | npm Job | `@mango/job@1.0.19` | `PUBLISHED_AND_VERIFIED` |
+| 8 | npm Link | `@mango/link@1.0.13` | `PUBLISHED_AND_VERIFIED` |
+| 9 | npm Notice | `@mango/notice@1.0.30` | `PUBLISHED_AND_VERIFIED` |
+| 10 | npm Numgen | `@mango/numgen@1.0.27` | `PUBLISHED_AND_VERIFIED` |
+| 11 | npm Payment | `@mango/payment@1.0.19` | `PUBLISHED_AND_VERIFIED` |
+| 12 | npm System | `@mango/system@1.0.25` | `PUBLISHED_AND_VERIFIED` |
+| 13 | npm Template | `@mango/template@1.0.27` | `PUBLISHED_AND_VERIFIED` |
+| 14 | npm Workflow | `@mango/workflow@1.0.33` | `PUBLISHED_AND_VERIFIED` |
+| 15 | npm Workflow Business Example | `@mango/workflow-business-example@1.0.32` | `PUBLISHED_AND_VERIFIED` |
+| 16 | npm Admin Shell | `@mango/admin-shell@1.0.50` | `PUBLISHED_AND_VERIFIED` |
+| 17 | npm Admin aggregate | `@mango/admin@1.0.55` | `PUBLISHED_AND_VERIFIED` |
+| 18 | npm CLI | `@mango/cli@1.0.89` | `PUBLISHED_AND_VERIFIED` |
+| 19 | GitHub Release | `v2026.07.21-maven-1.0.25-cli-1.0.89-branding-workflow-bom-release` | `CREATED_AND_VERIFIED` |
 
 ### Upgrade Notes
 
