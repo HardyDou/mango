@@ -4,9 +4,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.ai.core.controller.ChatController;
 import io.mango.ai.core.provider.DeepSeekProvider;
 import io.mango.ai.core.provider.IAiProvider;
+import io.mango.ai.core.service.impl.AiPushService;
 import io.mango.ai.core.service.impl.ChatService;
 import io.netty.channel.ChannelOption;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -24,8 +26,12 @@ import java.time.Duration;
  * AI 扩展自动配置。
  */
 @AutoConfiguration
+@AutoConfigureAfter(name = {
+    "io.mango.infra.realtime.starter.MangoRealtimeAutoConfiguration",
+    "io.mango.infra.realtime.starter.remote.RealtimeRemoteAutoConfiguration"
+})
 @EnableConfigurationProperties(MangoAiProperties.class)
-@ComponentScan(basePackageClasses = {ChatController.class, ChatService.class})
+@ComponentScan(basePackageClasses = {ChatController.class, ChatService.class, AiPushService.class})
 public class MangoAiAutoConfiguration {
 
     private static final int MAX_IN_MEMORY_BYTES = 1024 * 1024;
@@ -52,4 +58,5 @@ public class MangoAiAutoConfiguration {
                 properties.model(),
                 Duration.ofMillis(properties.readTimeout()));
     }
+
 }

@@ -22,6 +22,12 @@
             <artifactId>mango-common</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>io.mango.infra.realtime</groupId>
+            <artifactId>mango-infra-realtime-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
         <!-- Mango AI API -->
         <dependency>
             <groupId>io.mango.extension.ai</groupId>
