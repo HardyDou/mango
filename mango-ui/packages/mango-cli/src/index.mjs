@@ -1729,7 +1729,7 @@ function printWorkspaceDatabaseStatus(context, workspace = ensureWorkspaceConfig
   const fileEnv = readEnvFile(envPath);
   const databaseName = workspace.dbName || '';
   const envDatabaseName = fileEnv.MANGO_DB_NAME || '';
-  const envMatch = Boolean(databaseName && envDatabaseName) ? databaseName === envDatabaseName : null;
+  const envMatch = databaseName && envDatabaseName ? databaseName === envDatabaseName : null;
   const probe = probeWorkspaceDatabase(databaseName, { ...context.env, ...fileEnv });
   process.stdout.write(`Database:  ${databaseName || '<missing>'}\n`);
   process.stdout.write(`DB exists: ${probe.state}\n`);
