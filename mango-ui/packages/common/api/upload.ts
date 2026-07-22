@@ -16,6 +16,19 @@ export interface UploadResult {
   directDownloadUrl?: string;
 }
 
+interface UploadApiRecord {
+  id?: unknown;
+  url?: string;
+  previewUrl?: string;
+  downloadUrl?: string;
+  fileName: string;
+  fileSize?: unknown;
+  contentType?: string;
+  objectName?: string;
+  directPreviewUrl?: string;
+  directDownloadUrl?: string;
+}
+
 export interface ExcelUploadResult {
   id?: FileId;
   url: string;
@@ -28,6 +41,14 @@ export interface ExcelUploadResult {
   directPreviewUrl?: string;
   directDownloadUrl?: string;
   data: Record<string, unknown>[];
+}
+
+export interface ImportRemoteImageInput {
+  sourceUrl: string;
+  bizType?: string;
+  bizId?: string;
+  bizMeta?: string;
+  directoryId?: FileId;
 }
 
 export function uploadFile(file: File): Promise<UploadResult> {
@@ -89,11 +110,15 @@ export function uploadMultiple(files: File[]): Promise<UploadResult[]> {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
-  }).then(records => records.map(toUploadResult));
+  }).then((records) => records.map(toUploadResult));
 }
 
 export function getUploadedFileDetail(id: FileId): Promise<UploadResult> {
-  return get<any>('/file/files/detail', { params: { id } }).then(toUploadResult);
+  return get<UploadApiRecord>('/file/files/detail', { params: { id } }).then(toUploadedFileDetail);
+}
+
+export function importRemoteImage(input: ImportRemoteImageInput): Promise<UploadResult> {
+  return post<UploadApiRecord>('/file/files/import-image', input).then(toUploadResult);
 }
 
 export async function downloadUploadedFile(id: FileId) {
@@ -110,7 +135,7 @@ export async function createUploadedFileObjectUrl(id: FileId): Promise<string> {
   return `/api/file/files/download?id=${encodeURIComponent(String(id))}`;
 }
 
-function toUploadResult(record: any): UploadResult {
+function toUploadResult(record: UploadApiRecord): UploadResult {
   const id = normalizeId(record.id);
   return {
     id,
@@ -126,17 +151,26 @@ function toUploadResult(record: any): UploadResult {
   };
 }
 
+function toUploadedFileDetail(record: UploadApiRecord): UploadResult {
+  return {
+    ...toUploadResult(record),
+    previewUrl: directUrl(record?.previewUrl) || undefined,
+  };
+}
+
 export function fileToken(id?: FileId): string {
   return id ? `mango-file:${id}` : '';
 }
 
-function uploadAccessUrl(record: any): string {
+function uploadAccessUrl(record: UploadApiRecord): string {
   const id = normalizeId(record?.id);
-  return directUrl(record?.directPreviewUrl)
-    || directUrl(record?.url)
-    || directUrl(record?.directDownloadUrl)
-    || directUrl(record?.downloadUrl)
-    || fileToken(id);
+  return (
+    directUrl(record?.directPreviewUrl) ||
+    directUrl(record?.url) ||
+    directUrl(record?.directDownloadUrl) ||
+    directUrl(record?.downloadUrl) ||
+    fileToken(id)
+  );
 }
 
 function directUrl(value?: string): string {
@@ -159,7 +193,7 @@ async function assertBinaryDownloadResponse(response: any) {
     throw new Error(body?.msg || body?.message || '文件下载失败');
   } catch (error) {
     if (error instanceof SyntaxError) {
-      throw new Error('文件下载失败');
+      throw new Error('文件下载失败', { cause: error });
     }
     throw error;
   }

@@ -11,6 +11,10 @@ import io.mango.file.core.storage.QiniuKodoFileStorage;
 import io.mango.file.core.storage.S3CompatibleFileStorage;
 import io.mango.file.core.storage.TencentCosFileStorage;
 import io.mango.file.core.service.IFileService;
+import io.mango.file.core.service.remote.IRemoteImageFetcher;
+import io.mango.file.core.service.remote.RemoteHostResolver;
+import io.mango.file.core.service.remote.RemoteImageAddressPolicy;
+import io.mango.file.starter.remoteimport.ApacheRemoteImageFetcher;
 import io.mango.infra.persistence.web.starter.excel.ExcelFailureFileStore;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -24,6 +28,8 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.core.Ordered;
 
 import java.io.ByteArrayInputStream;
+import java.net.InetAddress;
+import java.util.HashSet;
 import java.util.List;
 
 /**
@@ -69,6 +75,27 @@ public class FileAutoConfiguration {
     @Bean
     public FileStorageRouter fileStorageRouter(List<FileStorage> storages) {
         return new FileStorageRouter(storages);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(RemoteHostResolver.class)
+    public RemoteHostResolver remoteHostResolver() {
+        return InetAddress::getAllByName;
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(RemoteImageAddressPolicy.class)
+    public RemoteImageAddressPolicy remoteImageAddressPolicy(FileProperties properties,
+                                                             RemoteHostResolver resolver) {
+        return new RemoteImageAddressPolicy(resolver,
+                new HashSet<>(properties.getRemoteImport().getAllowedPorts()));
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(IRemoteImageFetcher.class)
+    public IRemoteImageFetcher remoteImageFetcher(FileProperties properties,
+                                                  RemoteImageAddressPolicy addressPolicy) {
+        return new ApacheRemoteImageFetcher(addressPolicy, properties.getRemoteImport());
     }
 
     @Bean

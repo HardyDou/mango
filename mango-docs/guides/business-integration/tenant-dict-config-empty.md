@@ -242,3 +242,7 @@ pnpm -F @mango/admin-shell build
 ## 2026-07-22 Resource Registry 租户作用域影响
 
 - Issues #620/#621 让每条 Resource 声明在自身 `tenantId` 作用域内执行，并按租户加业务键校验或并发回读，不改变租户、字典、组织、用户、系统配置的公开查询 API 和数据模型。空库或温库启动时应等待 Health 同时显示 Resource `READY` 和租户对账 `READY`；`PERMANENT_FAILED` 表示声明租户、业务键或目标引用存在确定性冲突，需要修正声明或数据，不能通过反复重启收敛。
+
+## 2026-07-22 富文本托管资源影响
+
+- 本次不新增数据库表、migration、租户字典、组织、用户、系统配置或 Resource 声明数据；远程图片导入复用当前租户文件保存链路并固定 `PRIVATE`，不改变基础数据查询 API、初始化顺序、租户隔离和本场景排障步骤。

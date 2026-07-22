@@ -57,7 +57,13 @@
       <p>toolbar-keys 可只展示业务需要的按钮；图片上传会调用文件中心接口，image-value-type 控制图片写入 HTML 的值。</p>
       <div class="demo-block">
         <div class="demo-source">
-          <Editor v-model="customContent" :toolbar-keys="compactToolbarKeys" image-value-type="token" height="240px" />
+          <Editor
+            v-model="customContent"
+            :toolbar-keys="compactToolbarKeys"
+            image-value-type="token"
+            paste-image-mode="upload"
+            height="240px"
+          />
           <div class="result-note">当前示例图片写入：mango-file:&lt;id&gt;</div>
         </div>
         <div class="op-btns" @click="toggleCode('custom')">
@@ -65,6 +71,40 @@
           <span>{{ codeVisible.custom ? '隐藏代码' : '显示代码' }}</span>
         </div>
         <DemoCodeBlock v-show="codeVisible.custom" :code="customCode" />
+      </div>
+    </section>
+
+    <section id="toolbar-actions" class="doc-section">
+      <h2>工具栏附件上传插槽</h2>
+      <p>toolbar-actions 用于组合业务按钮，例如在富文本编辑器工具栏旁挂接文件中心的附件上传。</p>
+      <div class="demo-block">
+        <div class="demo-source">
+          <Editor
+            v-model="attachmentContent"
+            :toolbar-keys="compactToolbarKeys"
+            image-value-type="token"
+            paste-image-mode="upload"
+            height="240px"
+          >
+            <template #toolbar-actions>
+              <MUpload
+                v-model="attachmentValue"
+                value-type="id"
+                purpose="attachment"
+                access-level="PRIVATE"
+                :count="3"
+                size="20MB"
+                data-testid="mango-editor-attachment-upload"
+              />
+            </template>
+          </Editor>
+          <div class="result-note">附件 v-model 仅保存文件标识，不写入图片地址或预览地址</div>
+        </div>
+        <div class="op-btns" @click="toggleCode('toolbarActions')">
+          <el-icon><component :is="codeVisible.toolbarActions ? ArrowUp : ArrowDown" /></el-icon>
+          <span>{{ codeVisible.toolbarActions ? '隐藏代码' : '显示代码' }}</span>
+        </div>
+        <DemoCodeBlock v-show="codeVisible.toolbarActions" :code="toolbarActionsCode" />
       </div>
     </section>
 
@@ -133,6 +173,7 @@ import { ref } from 'vue';
 import { ElMessage } from 'element-plus';
 import { ArrowDown, ArrowUp } from '@element-plus/icons-vue';
 import { Editor } from '@mango/common';
+import { MUpload } from '@mango/file';
 import DemoCodeBlock from './DemoCodeBlock.vue';
 import DemoDocLayout from './DemoDocLayout.vue';
 
@@ -141,6 +182,7 @@ const tocItems = [
   { id: 'simple', label: '简洁模式' },
   { id: 'readonly', label: '只读状态' },
   { id: 'custom-toolbar', label: '自定义工具栏与图片写入' },
+  { id: 'toolbar-actions', label: '工具栏附件上传' },
   { id: 'methods', label: '方法调用' },
   { id: 'props', label: '支持属性' },
   { id: 'slots', label: '支持插槽' },
@@ -155,6 +197,8 @@ const basicContent = ref(
 const simpleContent = ref('<p>简洁模式适合备注、评论等轻量内容。</p>');
 const readonlyContent = ref('<p><strong>审批说明：</strong>当前内容为只读展示，不能修改。</p>');
 const customContent = ref('<p>当前工具栏只保留加粗、文字颜色、列表和图片上传。</p>');
+const attachmentContent = ref('<p>在工具栏右侧选择附件，该 slot 不会改变编辑器的内容合同。</p>');
+const attachmentValue = ref<string[]>([]);
 const methodContent = ref('<p>通过 ref 调用组件暴露的方法。</p>');
 const compactToolbarKeys = ['bold', 'color', '|', 'numberedList', 'bulletedList', '|', 'uploadImage'];
 const codeVisible = ref<Record<string, boolean>>({
@@ -162,6 +206,7 @@ const codeVisible = ref<Record<string, boolean>>({
   simple: false,
   readonly: false,
   custom: false,
+  toolbarActions: false,
   methods: false,
 });
 
@@ -200,9 +245,26 @@ ${'</scr'}ipt>
     v-model="content"
     :toolbar-keys="toolbarKeys"
     image-value-type="token"
+    paste-image-mode="upload"
     height="240px"
   />
 </template>`;
+
+const toolbarActionsCode = `<Editor
+  v-model="content"
+  image-value-type="token"
+  paste-image-mode="upload"
+>
+  <template #toolbar-actions>
+    <MUpload
+      v-model="attachmentIds"
+      value-type="id"
+      purpose="attachment"
+      access-level="PRIVATE"
+      :count="3"
+    />
+  </template>
+</Editor>`;
 
 const methodsCode = `<template>
   <Editor ref="editorRef" v-model="content" mode="simple" />
@@ -252,9 +314,17 @@ const propsTable = [
     type: "'url' | 'id' | 'token'",
     defaultValue: 'url',
   },
+  {
+    name: 'pasteImageMode',
+    description: '粘贴图片处理模式；upload 会把本地图片及受控远程图片托管到文件中心',
+    type: "'default' | 'upload'",
+    defaultValue: 'default',
+  },
 ];
 
-const slotsTable = [{ name: '-', description: '当前组件不提供业务插槽，内容通过 v-model 传入和回写', scope: '-' }];
+const slotsTable = [
+  { name: 'toolbar-actions', description: '工具栏同一 flex 流的业务按钮或附件上传控件，支持自然换行', scope: '-' },
+];
 
 const eventsTable = [
   { name: 'update:modelValue', description: 'HTML 内容变化时触发，用于 v-model 双向绑定', payload: 'string' },
@@ -299,7 +369,7 @@ function clearContent() {
 </script>
 
 <style scoped lang="scss">
-@use './demo-page.scss';
+@use './demo-page';
 
 .result-note {
   margin-top: 12px;

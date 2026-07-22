@@ -268,3 +268,7 @@ pnpm -F @mango/file test
 ## 2026-07-19 前端规范候选影响
 
 - 本次前端规范候选统一公开包合同、显式 `style.css` 入口和 Host 请求客户端注入；不改变文件上传、下载、预览 API、文件 ID 持久化、权限、租户或业务表单验收步骤。业务项目主动升级完整前端包矩阵后，需要确认 Host 已注入请求客户端并显式引入文件组件样式，再执行本指南的上传、回显、预览和下载闭环。
+
+## 2026-07-22 富文本托管资源影响
+
+- `MangoEditor` 显式启用 `imageValueType="token"` 与 `pasteImageMode="upload"` 后，工具栏图片、剪贴板 File/Data URI 和远程 HTML 图片统一进入文件服务；对外 HTML 只保留 `mango-file:<id>` 与 `data-file-id`。远程图片通过登录态 `POST /file/files/import-image` 受控导入并固定为 `PRIVATE` 图片文件，普通附件继续复用 `MUpload`，业务表单仍只保存文件 ID、文件 ID 列表或文件 token。未启用新属性的 Editor 以及现有上传、回显、预览、下载接口保持兼容。

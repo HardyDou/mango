@@ -122,6 +122,8 @@ pnpm -F @mango/workflow-business-example build
 
 ## 9. 变更影响记录
 
+- 2026-07-22 富文本托管图片基础能力因前端固定依赖传播，将 `@mango/workflow` 升至 `1.0.34`、`@mango/workflow-business-example` 升至 `1.0.33`；本次仅对齐 npm 版本矩阵，不新增或修改审批组件、审批发起、任务办理、回调、状态回写、流程页面 key、API、菜单、权限、租户隔离或本场景验收步骤。
+
 - MySQL 8.4 告警治理将 Workflow 空库基线改为 `utf8mb4` 和无整数显示宽度 DDL，并把生成后端的 Flyway 基线对齐到 11.20.3；审批发起、任务办理、回调、状态回写、页面 key 和公开 API 均不改变。既有生产库不由本次基线改写转换字符集，新建数据库直接采用新基线。
 
 - PR #490 一次性治理 Workflow 后端架构债务并重建空白数据库初始化边界：公开 HTTP 路径、Java API、任务流转、事件类型和业务审批接入方式保持不变；Flyway 只保留纯 DDL 的 V1，Flowable 必需元数据由启动初始化器按缺失项补齐，三条示例流程改为 `META-INF/mango/demo/` 下的 `INIT_ONLY` 声明且默认不加载。业务项目继续只依赖 `mango-workflow-api` 或 remote starter；本次数据库基线只支持新数据库，演示环境需显式设置 `mango.resource.registry.demo-enabled=true`。

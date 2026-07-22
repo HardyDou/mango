@@ -37,6 +37,21 @@ public enum FileCode implements BizCode {
     /** 文件分片非法。 */
     FILE_UPLOAD_PART_INVALID(3413, "文件分片非法"),
 
+    /** 远程图片地址格式非法。 */
+    FILE_REMOTE_URL_INVALID(3420, "图片地址不可访问或不允许导入"),
+
+    /** 远程图片地址属于禁止网络。 */
+    FILE_REMOTE_ADDRESS_FORBIDDEN(3421, "图片地址不可访问或不允许导入"),
+
+    /** 远程图片获取失败。 */
+    FILE_REMOTE_FETCH_FAILED(3422, "远程图片获取失败，请确认图片仍可访问"),
+
+    /** 远程图片超过大小限制。 */
+    FILE_REMOTE_IMAGE_TOO_LARGE(3423, "图片大小超过限制"),
+
+    /** 远程内容不是受支持的安全图片。 */
+    FILE_REMOTE_CONTENT_INVALID(3424, "链接内容不是受支持的图片"),
+
     /** 文件存储失败。 */
     FILE_STORE_FAILED(3501, "文件存储失败"),
 

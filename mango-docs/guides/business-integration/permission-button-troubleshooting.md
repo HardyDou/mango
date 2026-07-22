@@ -246,3 +246,7 @@ pnpm -F @mango/admin-shell build
 ## 2026-07-22 Resource Registry 启动可靠性影响
 
 - Issues #620/#621 不改变按钮 `permissionCode`、角色授权、登录态权限集合、接口鉴权或按钮展示规则。`API_RESOURCE` 初始化改为按模块批量回读并在声明租户作用域内收敛；服务 readiness 只有在资源同步和租户对账完成后才为 UP。若升级后按钮权限缺失，应先确认 Health 未处于 `SYNCING`、`TRANSIENT_WAIT` 或 `PERMANENT_FAILED`，再按原流程检查角色授权与登录态权限刷新。
+
+## 2026-07-22 富文本托管资源影响
+
+- Editor 图片上传、远程图片导入和 token 回显沿用文件基础能力的登录态访问边界，不新增前端 `permissionCode`、角色按钮授权或业务按钮展示规则；文件管理类细粒度权限和本场景排障步骤保持不变。

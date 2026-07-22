@@ -252,3 +252,7 @@ pnpm -F @mango/admin-shell build
 ## 2026-07-22 Resource Registry 启动可靠性影响
 
 - Issues #620/#621 不改变菜单 `component` key、菜单树接口、角色菜单关系、按钮权限码或前端页面注册方式。空库启动时 readiness 会在 Resource Registry 和租户对账均完成后才转为 UP；若菜单资源未形成，应先查看 Health 中的同步状态和脱敏失败类型，再核对对应 `AUTH_MENU`、`API_RESOURCE` 声明的租户与业务键，避免把初始化未完成误判为页面注册问题。
+
+## 2026-07-22 富文本托管资源影响
+
+- 本次只扩展 `@mango/common` Editor 与 `mango-file` 登录态远程图片导入能力，不新增菜单、页面 key、角色菜单关系或按钮权限码，也不改变菜单树、前端页面注册、租户绑定和本场景排障步骤。
