@@ -35,29 +35,50 @@ public final class ApacheRemoteImageFetcher implements IRemoteImageFetcher {
 
     private static final String USER_AGENT = "Mango-Remote-Image-Importer/1.0";
     private static final int BUFFER_SIZE = 8192;
+    private static final int HTTP_SUCCESS_MIN = 200;
+    private static final int HTTP_REDIRECT_MIN = 300;
+    private static final int HTTP_REDIRECT_MAX = 400;
+    private static final int WEBP_MIN_LENGTH = 12;
+    private static final int WEBP_TYPE_OFFSET = 8;
+    private static final byte[] PNG_SIGNATURE = {
+        (byte) 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A
+    };
+    private static final byte[] JPEG_SIGNATURE = {(byte) 0xFF, (byte) 0xD8, (byte) 0xFF};
+    private static final byte[] RIFF_SIGNATURE = "RIFF".getBytes(StandardCharsets.US_ASCII);
+    private static final byte[] WEBP_SIGNATURE = "WEBP".getBytes(StandardCharsets.US_ASCII);
+    private static final byte[] GIF_87A_SIGNATURE = "GIF87a".getBytes(StandardCharsets.US_ASCII);
+    private static final byte[] GIF_89A_SIGNATURE = "GIF89a".getBytes(StandardCharsets.US_ASCII);
 
     private final RemoteImageAddressPolicy addressPolicy;
-    private final FileProperties.RemoteImport properties;
+    private final boolean enabled;
+    private final long connectTimeoutMillis;
+    private final long readTimeoutMillis;
+    private final long maxSize;
+    private final int maxRedirects;
 
     public ApacheRemoteImageFetcher(RemoteImageAddressPolicy addressPolicy,
                                     FileProperties.RemoteImport properties) {
         this.addressPolicy = addressPolicy;
-        this.properties = properties;
+        this.enabled = properties.isEnabled();
+        this.connectTimeoutMillis = properties.getConnectTimeoutMillis();
+        this.readTimeoutMillis = properties.getReadTimeoutMillis();
+        this.maxSize = properties.getMaxSize();
+        this.maxRedirects = properties.getMaxRedirects();
     }
 
     @Override
     public RemoteImageContent fetch(String sourceUrl) {
-        Require.isTrue(properties.isEnabled(), FileCode.FILE_REMOTE_FETCH_FAILED,
+        Require.isTrue(enabled, FileCode.FILE_REMOTE_FETCH_FAILED,
                 "远程图片导入已关闭");
         RemoteImageTarget target = addressPolicy.validate(sourceUrl);
-        long deadlineNanos = System.nanoTime() + Duration.ofMillis(properties.getReadTimeoutMillis()).toNanos();
+        long deadlineNanos = System.nanoTime() + Duration.ofMillis(readTimeoutMillis).toNanos();
         int redirects = 0;
         while (true) {
-            HopResponse response = execute(target, deadlineNanos);
+            HopResult response = execute(target, deadlineNanos);
             if (!response.redirect()) {
                 return validateImage(response.body(), response.contentType());
             }
-            Require.isTrue(redirects < properties.getMaxRedirects(), FileCode.FILE_REMOTE_FETCH_FAILED);
+            Require.isTrue(redirects < maxRedirects, FileCode.FILE_REMOTE_FETCH_FAILED);
             URI redirectTarget;
             try {
                 redirectTarget = target.uri().resolve(response.location());
@@ -69,7 +90,7 @@ public final class ApacheRemoteImageFetcher implements IRemoteImageFetcher {
         }
     }
 
-    private HopResponse execute(RemoteImageTarget target, long deadlineNanos) {
+    private HopResult execute(RemoteImageTarget target, long deadlineNanos) {
         long remainingMillis = remainingMillis(deadlineNanos);
         InetAddress[] approvedAddresses = target.addresses();
         String approvedHost = target.uri().getHost();
@@ -77,7 +98,7 @@ public final class ApacheRemoteImageFetcher implements IRemoteImageFetcher {
                 .setDnsResolver(pinnedDnsResolver(approvedHost, approvedAddresses))
                 .setDefaultConnectionConfig(ConnectionConfig.custom()
                         .setConnectTimeout(Timeout.ofMilliseconds(Math.min(
-                                properties.getConnectTimeoutMillis(), remainingMillis)))
+                                connectTimeoutMillis, remainingMillis)))
                         .setSocketTimeout(Timeout.ofMilliseconds(remainingMillis))
                         .build())
                 .build();
@@ -127,28 +148,29 @@ public final class ApacheRemoteImageFetcher implements IRemoteImageFetcher {
         };
     }
 
-    private HopResponse readResponse(org.apache.hc.core5.http.ClassicHttpResponse response,
-                                     long deadlineNanos) throws IOException {
+    private HopResult readResponse(org.apache.hc.core5.http.ClassicHttpResponse response,
+                                   long deadlineNanos) throws IOException {
         int status = response.getCode();
-        if (status >= 300 && status < 400) {
+        if (status >= HTTP_REDIRECT_MIN && status < HTTP_REDIRECT_MAX) {
             var locationHeader = response.getFirstHeader(HttpHeaders.LOCATION);
             Require.notNull(locationHeader, FileCode.FILE_REMOTE_FETCH_FAILED);
             String location = locationHeader.getValue();
             Require.notBlank(location, FileCode.FILE_REMOTE_FETCH_FAILED);
-            return HopResponse.redirect(location);
+            return HopResult.redirect(location);
         }
-        Require.isTrue(status >= 200 && status < 300, FileCode.FILE_REMOTE_FETCH_FAILED);
+        Require.isTrue(status >= HTTP_SUCCESS_MIN && status < HTTP_REDIRECT_MIN,
+                FileCode.FILE_REMOTE_FETCH_FAILED);
         HttpEntity entity = response.getEntity();
         Require.notNull(entity, FileCode.FILE_REMOTE_CONTENT_INVALID);
         long declaredLength = entity.getContentLength();
-        Require.isTrue(declaredLength < 0 || declaredLength <= properties.getMaxSize(),
+        Require.isTrue(declaredLength < 0 || declaredLength <= maxSize,
                 FileCode.FILE_REMOTE_IMAGE_TOO_LARGE);
         var contentTypeHeader = response.getFirstHeader(HttpHeaders.CONTENT_TYPE);
         Require.notNull(contentTypeHeader, FileCode.FILE_REMOTE_CONTENT_INVALID);
         String contentType = normalizeContentType(contentTypeHeader.getValue());
         Require.isTrue(contentType.startsWith("image/"), FileCode.FILE_REMOTE_CONTENT_INVALID);
         try (InputStream input = entity.getContent()) {
-            return HopResponse.success(readLimited(input, deadlineNanos), contentType);
+            return HopResult.success(readLimited(input, deadlineNanos), contentType);
         }
     }
 
@@ -160,7 +182,7 @@ public final class ApacheRemoteImageFetcher implements IRemoteImageFetcher {
         while ((read = input.read(buffer)) >= 0) {
             remainingMillis(deadlineNanos);
             total += read;
-            Require.isTrue(total <= properties.getMaxSize(), FileCode.FILE_REMOTE_IMAGE_TOO_LARGE);
+            Require.isTrue(total <= maxSize, FileCode.FILE_REMOTE_IMAGE_TOO_LARGE);
             output.write(buffer, 0, read);
         }
         Require.isTrue(total > 0, FileCode.FILE_REMOTE_CONTENT_INVALID);
@@ -175,19 +197,18 @@ public final class ApacheRemoteImageFetcher implements IRemoteImageFetcher {
     }
 
     private DetectedImage detect(byte[] bytes) {
-        if (startsWith(bytes, new byte[]{(byte) 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A})) {
+        if (startsWith(bytes, PNG_SIGNATURE)) {
             return new DetectedImage("image/png", "png");
         }
-        if (startsWith(bytes, new byte[]{(byte) 0xFF, (byte) 0xD8, (byte) 0xFF})) {
+        if (startsWith(bytes, JPEG_SIGNATURE)) {
             return new DetectedImage("image/jpeg", "jpg");
         }
-        if (startsWith(bytes, "GIF87a".getBytes(StandardCharsets.US_ASCII))
-                || startsWith(bytes, "GIF89a".getBytes(StandardCharsets.US_ASCII))) {
+        if (startsWith(bytes, GIF_87A_SIGNATURE) || startsWith(bytes, GIF_89A_SIGNATURE)) {
             return new DetectedImage("image/gif", "gif");
         }
-        if (bytes.length >= 12
-                && matchesAt(bytes, 0, "RIFF".getBytes(StandardCharsets.US_ASCII))
-                && matchesAt(bytes, 8, "WEBP".getBytes(StandardCharsets.US_ASCII))) {
+        if (bytes.length >= WEBP_MIN_LENGTH
+                && matchesAt(bytes, 0, RIFF_SIGNATURE)
+                && matchesAt(bytes, WEBP_TYPE_OFFSET, WEBP_SIGNATURE)) {
             return new DetectedImage("image/webp", "webp");
         }
         return null;
@@ -198,9 +219,13 @@ public final class ApacheRemoteImageFetcher implements IRemoteImageFetcher {
     }
 
     private boolean matchesAt(byte[] source, int offset, byte[] expected) {
-        if (source.length < offset + expected.length) return false;
+        if (source.length < offset + expected.length) {
+            return false;
+        }
         for (int index = 0; index < expected.length; index += 1) {
-            if (source[offset + index] != expected[index]) return false;
+            if (source[offset + index] != expected[index]) {
+                return false;
+            }
         }
         return true;
     }
@@ -217,18 +242,62 @@ public final class ApacheRemoteImageFetcher implements IRemoteImageFetcher {
         return remaining;
     }
 
-    private record HopResponse(boolean redirect, String location, byte[] body, String contentType) {
+    private static final class HopResult {
 
-        private static HopResponse redirect(String location) {
-            return new HopResponse(true, location, new byte[0], "");
+        private final boolean redirect;
+        private final String location;
+        private final byte[] body;
+        private final String contentType;
+
+        private HopResult(boolean redirect, String location, byte[] body, String contentType) {
+            this.redirect = redirect;
+            this.location = location;
+            this.body = body;
+            this.contentType = contentType;
         }
 
-        private static HopResponse success(byte[] body, String contentType) {
-            return new HopResponse(false, "", body, contentType);
+        private static HopResult redirect(String location) {
+            return new HopResult(true, location, new byte[0], "");
+        }
+
+        private static HopResult success(byte[] body, String contentType) {
+            return new HopResult(false, "", body, contentType);
+        }
+
+        private boolean redirect() {
+            return redirect;
+        }
+
+        private String location() {
+            return location;
+        }
+
+        private byte[] body() {
+            return body;
+        }
+
+        private String contentType() {
+            return contentType;
         }
     }
 
-    private record DetectedImage(String contentType, String extension) {
+    private static final class DetectedImage {
+
+        private final String contentType;
+        private final String extension;
+
+        private DetectedImage(String contentType, String extension) {
+            this.contentType = contentType;
+            this.extension = extension;
+        }
+
+        private String contentType() {
+            return contentType;
+        }
+
+        private String extension() {
+            return extension;
+        }
 
         private boolean matches(String declaredContentType) {
             return contentType.equals(declaredContentType)

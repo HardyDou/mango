@@ -17,10 +17,7 @@ export function normalizeManagedFileId(value?: string | null): FileId | undefine
   return managedIdPattern.test(normalized) ? normalized : undefined;
 }
 
-export function managedFileIdFromImage(
-  image: HTMLImageElement,
-  previewIds: ReadonlyMap<string, FileId> = new Map(),
-) {
+export function managedFileIdFromImage(image: HTMLImageElement, previewIds: ReadonlyMap<string, FileId> = new Map()) {
   const dataId = normalizeManagedFileId(image.getAttribute('data-file-id'));
   const source = image.getAttribute('src') || '';
   const tokenId = source.startsWith(managedTokenPrefix)
@@ -105,9 +102,5 @@ export function parseHtml(source: string) {
 }
 
 function escapeHtmlAttribute(value: string) {
-  return value
-    .replaceAll('&', '&amp;')
-    .replaceAll('"', '&quot;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;');
+  return value.replaceAll('&', '&amp;').replaceAll('"', '&quot;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
 }

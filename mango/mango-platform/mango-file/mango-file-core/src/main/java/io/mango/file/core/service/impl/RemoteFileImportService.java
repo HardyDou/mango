@@ -1,5 +1,6 @@
 package io.mango.file.core.service.impl;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.common.result.Require;
 import io.mango.file.api.command.ImportRemoteImageCommand;
 import io.mango.file.api.command.SaveFileCommand;
@@ -20,6 +21,8 @@ import java.util.regex.Pattern;
 /** Default remote image import orchestration. */
 @Service
 @RequiredArgsConstructor
+@SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+        justification = "Spring-managed service dependencies are intentionally retained")
 public class RemoteFileImportService implements IRemoteFileImportService {
 
     private static final Pattern FORBIDDEN_PERSISTED_URL = Pattern.compile(

@@ -1,12 +1,7 @@
 <template>
   <div ref="wrapperRef" class="editor-wrapper" data-testid="mango-editor">
     <div v-if="!disabled && editorInstance" class="editor-toolbar-row">
-      <Toolbar
-        class="editor-toolbar"
-        :editor="editorInstance"
-        :default-config="toolbarConfig"
-        :mode="mode"
-      />
+      <Toolbar class="editor-toolbar" :editor="editorInstance" :default-config="toolbarConfig" :mode="mode" />
       <div v-if="$slots['toolbar-actions']" class="editor-toolbar-actions">
         <slot name="toolbar-actions" />
       </div>
@@ -17,13 +12,15 @@
       data-testid="mango-editor-paste-status"
       role="status"
     >
-      {{ pasteStatus === 'processing' ? '正在托管粘贴图片…' : pasteStatus === 'failed' ? '部分图片处理失败' : '图片已托管' }}
+      {{
+        pasteStatus === 'processing'
+          ? '正在托管粘贴图片…'
+          : pasteStatus === 'failed'
+            ? '部分图片处理失败'
+            : '图片已托管'
+      }}
     </div>
-    <div
-      v-if="failedPreviewCount > 0"
-      class="editor-preview-warning"
-      data-testid="mango-editor-image-unavailable"
-    >
+    <div v-if="failedPreviewCount > 0" class="editor-preview-warning" data-testid="mango-editor-image-unavailable">
       {{ failedPreviewCount }} 张图片暂不可预览
     </div>
     <Editor
@@ -42,6 +39,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue';
 import { Editor, Toolbar } from '@wangeditor/editor-for-vue';
+import type { IDomEditor } from '@wangeditor/editor';
 import '@wangeditor/editor/dist/css/style.css';
 import {
   getUploadedFileDetail,
@@ -66,12 +64,14 @@ type EditorMode = 'default' | 'simple';
 type EditorImageValueType = 'url' | 'id' | 'token';
 type EditorPasteImageMode = 'default' | 'upload';
 type EditorImageErrorSource = 'upload' | 'paste' | 'preview' | 'serialize';
-type EditorToolbarKey = string | {
-  key: string;
-  title?: string;
-  iconSvg?: string;
-  menuKeys?: string[];
-};
+type EditorToolbarKey =
+  | string
+  | {
+      key: string;
+      title?: string;
+      iconSvg?: string;
+      menuKeys?: string[];
+    };
 
 export interface EditorImageError {
   code: string;
@@ -121,25 +121,28 @@ function releaseStaleSelectionGuard() {
   }
 }
 
-const props = withDefaults(defineProps<{
-  modelValue?: string;
-  placeholder?: string;
-  height?: number | string;
-  disabled?: boolean;
-  mode?: EditorMode;
-  toolbarKeys?: EditorToolbarKey[];
-  imageValueType?: EditorImageValueType;
-  pasteImageMode?: EditorPasteImageMode;
-}>(), {
-  modelValue: '',
-  placeholder: '请输入内容...',
-  height: 300,
-  disabled: false,
-  mode: 'default',
-  toolbarKeys: () => [],
-  imageValueType: 'url',
-  pasteImageMode: 'default',
-});
+const props = withDefaults(
+  defineProps<{
+    modelValue?: string;
+    placeholder?: string;
+    height?: number | string;
+    disabled?: boolean;
+    mode?: EditorMode;
+    toolbarKeys?: EditorToolbarKey[];
+    imageValueType?: EditorImageValueType;
+    pasteImageMode?: EditorPasteImageMode;
+  }>(),
+  {
+    modelValue: '',
+    placeholder: '请输入内容...',
+    height: 300,
+    disabled: false,
+    mode: 'default',
+    toolbarKeys: () => [],
+    imageValueType: 'url',
+    pasteImageMode: 'default',
+  },
+);
 
 const emit = defineEmits<{
   (event: 'update:modelValue', value: string): void;
@@ -149,7 +152,7 @@ const emit = defineEmits<{
 }>();
 
 const wrapperRef = ref<HTMLElement>();
-const editorInstance = shallowRef<any>(null);
+const editorInstance = shallowRef<IDomEditor | null>(null);
 const valueHtml = ref(props.modelValue);
 const canonicalHtml = ref(props.modelValue);
 const pasteStatus = ref<'idle' | 'processing' | 'done' | 'failed'>('idle');
@@ -161,11 +164,43 @@ let activeUploads = 0;
 let destroyed = false;
 
 const defaultToolbarKeys: EditorToolbarKey[] = [
-  'headerSelect', '|', 'bold', 'underline', 'italic', '|', 'color', 'bgColor', '|',
-  'fontSize', 'fontFamily', '|', 'insertLink', 'unLink', '|', 'bulletedList',
-  'numberedList', 'indent', 'delIndent', '|', 'justifyLeft', 'justifyRight',
-  'justifyCenter', 'justifyJustify', '|', 'blockquote', '|', 'insertImage', '|',
-  'insertVideo', '|', 'codeBlock', '|', 'undo', 'redo', '|', 'fullScreen',
+  'headerSelect',
+  '|',
+  'bold',
+  'underline',
+  'italic',
+  '|',
+  'color',
+  'bgColor',
+  '|',
+  'fontSize',
+  'fontFamily',
+  '|',
+  'insertLink',
+  'unLink',
+  '|',
+  'bulletedList',
+  'numberedList',
+  'indent',
+  'delIndent',
+  '|',
+  'justifyLeft',
+  'justifyRight',
+  'justifyCenter',
+  'justifyJustify',
+  '|',
+  'blockquote',
+  '|',
+  'insertImage',
+  '|',
+  'insertVideo',
+  '|',
+  'codeBlock',
+  '|',
+  'undo',
+  'redo',
+  '|',
+  'fullScreen',
 ];
 
 const toolbarConfig = computed(() => {
@@ -261,12 +296,12 @@ function notifyImageError(code: string, message: string, source: EditorImageErro
   emit('image-error', { code, message, source, fileId });
 }
 
-function handleCreated(editor: any) {
+function handleCreated(editor: IDomEditor) {
   editorInstance.value = editor;
   void syncExternalValue(props.modelValue);
 }
 
-function handleChange(editor: any) {
+function handleChange(editor: IDomEditor) {
   const rawHtml = editor.getHtml();
   valueHtml.value = rawHtml;
   if (applyingExternal) return;
@@ -309,17 +344,19 @@ async function syncExternalValue(content: string) {
     return;
   }
   const previews = new Map<FileId, string | undefined>();
-  await Promise.all(ids.map(async (id) => {
-    try {
-      const detail = await getUploadedFileDetail(id);
-      previews.set(id, detail.previewUrl);
-    } catch {
-      previews.set(id, undefined);
-      notifyImageError('EDITOR_IMAGE_PREVIEW_UNAVAILABLE', '图片暂不可预览', 'preview', id);
-    }
-  }));
+  await Promise.all(
+    ids.map(async (id) => {
+      try {
+        const detail = await getUploadedFileDetail(id);
+        previews.set(id, detail.previewUrl);
+      } catch {
+        previews.set(id, undefined);
+        notifyImageError('EDITOR_IMAGE_PREVIEW_UNAVAILABLE', '图片暂不可预览', 'preview', id);
+      }
+    }),
+  );
   if (destroyed || version !== contentVersion) return;
-  failedPreviewCount.value = ids.filter(id => !previews.get(id)).length;
+  failedPreviewCount.value = ids.filter((id) => !previews.get(id)).length;
   setEditorHtml(renderManagedHtml(normalized.html, previews, previewIds));
 }
 
@@ -346,13 +383,13 @@ function currentCanonicalHtml() {
   return serializeManagedHtml(editorInstance.value?.getHtml?.() || valueHtml.value || '', previewIds).html;
 }
 
-function handleCustomPaste(editor: any, event: ClipboardEvent, callback: (allowDefault: boolean) => void) {
+function handleCustomPaste(editor: IDomEditor, event: ClipboardEvent, callback: (allowDefault: boolean) => void) {
   if (props.disabled || !strictPasteMode() || !event.clipboardData) {
     callback(true);
     return;
   }
   const html = event.clipboardData.getData('text/html');
-  const imageFiles = [...event.clipboardData.files].filter(file => file.type.startsWith('image/'));
+  const imageFiles = [...event.clipboardData.files].filter((file) => file.type.startsWith('image/'));
   const imageCount = parseHtml(html).querySelectorAll('img').length;
   if (imageFiles.length === 0 && imageCount === 0) {
     callback(true);
@@ -387,7 +424,7 @@ async function preparePastedHtml(html: string, clipboardFiles: File[]) {
     notifyImageError('EDITOR_PASTE_IMAGE_LIMIT_EXCEEDED', `单次最多处理 ${maxPasteImages} 张图片`, 'paste');
   }
   const acceptedImages = images.slice(0, maxPasteImages);
-  images.slice(maxPasteImages).forEach(image => image.remove());
+  images.slice(maxPasteImages).forEach((image) => image.remove());
   failed += Math.max(0, images.length - acceptedImages.length);
   await mapWithConcurrency(acceptedImages, pasteConcurrency, async (image) => {
     const source = image.getAttribute('src') || '';
@@ -457,12 +494,16 @@ function dataUriToFile(source: string) {
   const match = /^data:(image\/[a-z0-9.+-]+);base64,([a-z0-9+/=\s]+)$/i.exec(source);
   if (!match) throw new Error('Unsupported data URI');
   const encoded = match[2].replace(/\s/g, '');
-  if (encoded.length > Math.ceil(maxInlineImageBytes * 4 / 3) + 4) throw new Error('Inline image is too large');
+  if (encoded.length > Math.ceil((maxInlineImageBytes * 4) / 3) + 4) throw new Error('Inline image is too large');
   const binary = window.atob(encoded);
   if (binary.length > maxInlineImageBytes) throw new Error('Inline image is too large');
   const bytes = new Uint8Array(binary.length);
   for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
-  const extension = match[1].split('/')[1].replace('jpeg', 'jpg').replace(/[^a-z0-9]/gi, '') || 'png';
+  const extension =
+    match[1]
+      .split('/')[1]
+      .replace('jpeg', 'jpg')
+      .replace(/[^a-z0-9]/gi, '') || 'png';
   return new File([bytes], `pasted-image.${extension}`, { type: match[1].toLowerCase() });
 }
 
@@ -488,25 +529,37 @@ onMounted(() => {
   applyHeight(props.height);
 });
 
-watch(() => props.modelValue, (newValue) => {
-  if (newValue !== canonicalHtml.value) void syncExternalValue(newValue);
-});
+watch(
+  () => props.modelValue,
+  (newValue) => {
+    if (newValue !== canonicalHtml.value) void syncExternalValue(newValue);
+  },
+);
 
-watch(() => props.imageValueType, () => {
-  void syncExternalValue(props.modelValue);
-});
+watch(
+  () => props.imageValueType,
+  () => {
+    void syncExternalValue(props.modelValue);
+  },
+);
 
-watch(() => props.disabled, (disabled) => {
-  if (!editorInstance.value) return;
-  if (disabled) editorInstance.value.disable();
-  else editorInstance.value.enable();
-});
+watch(
+  () => props.disabled,
+  (disabled) => {
+    if (!editorInstance.value) return;
+    if (disabled) editorInstance.value.disable();
+    else editorInstance.value.enable();
+  },
+);
 
-watch(() => props.mode, () => {
-  if (!editorInstance.value) return;
-  editorInstance.value.destroy();
-  editorInstance.value = null;
-});
+watch(
+  () => props.mode,
+  () => {
+    if (!editorInstance.value) return;
+    editorInstance.value.destroy();
+    editorInstance.value = null;
+  },
+);
 
 watch(() => props.height, applyHeight);
 

@@ -1,16 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import {
-  managedImageToken,
-  renderManagedHtml,
-  serializeManagedHtml,
-} from '../managedImages';
+import { managedImageToken, renderManagedHtml, serializeManagedHtml } from '../managedImages';
 
 describe('managedImages', () => {
   it('对外只序列化为 mango-file token，并移除非托管图片', () => {
     const result = serializeManagedHtml(
-      '<p><img src="https://preview.example/image.png" data-file-id="123"></p>'
-        + '<img src="data:image/png;base64,abc">'
-        + '<img src="https://third-party.example/image.png">',
+      '<p><img src="https://preview.example/image.png" data-file-id="123"></p>' +
+        '<img src="data:image/png;base64,abc">' +
+        '<img src="https://third-party.example/image.png">',
     );
 
     expect(result.invalidImageCount).toBe(2);

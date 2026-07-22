@@ -163,11 +163,7 @@ describe('Editor 组件单元测试', () => {
 
     await config.MENU_CONF.uploadImage.customUpload(new File(['image'], 'image.png'), insertFn);
 
-    expect(insertFn).toHaveBeenCalledWith(
-      'https://example.com/image.png',
-      'image.png',
-      '',
-    );
+    expect(insertFn).toHaveBeenCalledWith('https://example.com/image.png', 'image.png', '');
   });
 
   it('pasteImageMode 默认模式不拦截浏览器粘贴', () => {
@@ -178,13 +174,17 @@ describe('Editor 组件单元测试', () => {
     const callback = vi.fn();
     const preventDefault = vi.fn();
 
-    config.customPaste(fakeEditor, {
-      clipboardData: {
-        getData: () => '<p>text<img src="data:image/png;base64,aW1hZ2U="></p>',
-        files: [],
+    config.customPaste(
+      fakeEditor,
+      {
+        clipboardData: {
+          getData: () => '<p>text<img src="data:image/png;base64,aW1hZ2U="></p>',
+          files: [],
+        },
+        preventDefault,
       },
-      preventDefault,
-    }, callback);
+      callback,
+    );
 
     expect(callback).toHaveBeenCalledWith(true);
     expect(preventDefault).not.toHaveBeenCalled();
@@ -203,13 +203,18 @@ describe('Editor 组件单元测试', () => {
     const preventDefault = vi.fn();
     const clipboardFile = new File(['clipboard'], 'clipboard.png', { type: 'image/png' });
 
-    config.customPaste(fakeEditor, {
-      clipboardData: {
-        getData: () => '<p>保留文字<img src="data:image/png;base64,aW1hZ2U="><img src="mango-file:1935600000000000003"></p>',
-        files: [clipboardFile],
+    config.customPaste(
+      fakeEditor,
+      {
+        clipboardData: {
+          getData: () =>
+            '<p>保留文字<img src="data:image/png;base64,aW1hZ2U="><img src="mango-file:1935600000000000003"></p>',
+          files: [clipboardFile],
+        },
+        preventDefault,
       },
-      preventDefault,
-    }, callback);
+      callback,
+    );
     await flushPromises();
 
     expect(callback).toHaveBeenCalledWith(false);
@@ -242,13 +247,18 @@ describe('Editor 组件单元测试', () => {
     });
     const config = wrapper.findComponent({ name: 'Editor' }).props('defaultConfig');
 
-    config.customPaste(fakeEditor, {
-      clipboardData: {
-        getData: () => '<p>中文<a href="/detail">链接</a></p><ul><li>列表</li></ul><img src="https://public.example/ok.png"><img src="https://public.example/fail.png">',
-        files: [],
+    config.customPaste(
+      fakeEditor,
+      {
+        clipboardData: {
+          getData: () =>
+            '<p>中文<a href="/detail">链接</a></p><ul><li>列表</li></ul><img src="https://public.example/ok.png"><img src="https://public.example/fail.png">',
+          files: [],
+        },
+        preventDefault: vi.fn(),
       },
-      preventDefault: vi.fn(),
-    }, vi.fn());
+      vi.fn(),
+    );
     await flushPromises();
 
     expect(importRemoteImage).toHaveBeenCalledTimes(2);

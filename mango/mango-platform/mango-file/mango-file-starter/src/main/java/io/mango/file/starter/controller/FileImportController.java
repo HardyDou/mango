@@ -10,7 +10,6 @@ import io.mango.file.core.service.IRemoteFileImportService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import jakarta.validation.Valid;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -31,7 +30,7 @@ public class FileImportController implements FileImportApi {
     @PostMapping("/import-image")
     @ApiAccess(mode = ApiResourceAccessMode.LOGIN)
     @Operation(summary = "导入远程图片", description = "安全获取公网图片并保存到当前租户文件中心")
-    public R<FileRecordVO> importImage(@Valid @RequestBody ImportRemoteImageCommand command) {
+    public R<FileRecordVO> importImage(@RequestBody ImportRemoteImageCommand command) {
         return R.ok(remoteFileImportService.importImage(command));
     }
 }

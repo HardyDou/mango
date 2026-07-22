@@ -57,7 +57,13 @@
       <p>toolbar-keys 可只展示业务需要的按钮；图片上传会调用文件中心接口，image-value-type 控制图片写入 HTML 的值。</p>
       <div class="demo-block">
         <div class="demo-source">
-          <Editor v-model="customContent" :toolbar-keys="compactToolbarKeys" image-value-type="token" paste-image-mode="upload" height="240px" />
+          <Editor
+            v-model="customContent"
+            :toolbar-keys="compactToolbarKeys"
+            image-value-type="token"
+            paste-image-mode="upload"
+            height="240px"
+          />
           <div class="result-note">当前示例图片写入：mango-file:&lt;id&gt;</div>
         </div>
         <div class="op-btns" @click="toggleCode('custom')">
@@ -316,7 +322,9 @@ const propsTable = [
   },
 ];
 
-const slotsTable = [{ name: 'toolbar-actions', description: '工具栏同一 flex 流的业务按钮或附件上传控件，支持自然换行', scope: '-' }];
+const slotsTable = [
+  { name: 'toolbar-actions', description: '工具栏同一 flex 流的业务按钮或附件上传控件，支持自然换行', scope: '-' },
+];
 
 const eventsTable = [
   { name: 'update:modelValue', description: 'HTML 内容变化时触发，用于 v-model 双向绑定', payload: 'string' },
