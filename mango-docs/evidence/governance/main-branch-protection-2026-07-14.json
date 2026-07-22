@@ -2,12 +2,16 @@
   "schemaVersion": 1,
   "repository": "HardyDou/mango",
   "branch": "main",
-  "observedAt": "2026-07-14T04:20:58Z",
+  "observedAt": "2026-07-22T08:58:24Z",
   "source": "GitHub REST API branch protection read-back",
   "governanceMode": "single-owner",
   "requiredStatusChecks": {
     "strict": true,
     "checks": [
+      {
+        "context": "frontend-pr-quality",
+        "appId": 15368
+      },
       {
         "context": "pmo-doc-check",
         "appId": 15368

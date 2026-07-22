@@ -58,11 +58,11 @@
 | REQ-002 | M10 规划单测               | `pnpm quality:gate:test`                                                                           | PASS    | Node 22.23.1 下 81 项通过；覆盖 none/affected/full/unknown、后端和无关 workflow 分类    |
 | REQ-003 | M09 静态与构建验证         | `pnpm check:pr -- --base=origin/main --head=HEAD`                                                  | PASS    | 含 ratchet typecheck 的 fail-closed 全 workspace 路径通过，`real 223.06s`；未执行 E2E   |
 | REQ-004 | M09 workflow 与 Maven 验证 | `mvn -f mango/pom.xml -pl :mango-bom,:mango-parent,:mango-common,:mango-tools -DskipTests install` | PASS    | Reactor 4/4 SUCCESS，6.661 秒；合同测试确认 install 位于 backend startup 前             |
-| REQ-005 | M15 外部状态回读           | GitHub branch protection API 与真实 PR check-run                                                   | PENDING | 必须先由真实 PR 产生 `frontend-pr-quality` context，再启用并回读，避免 required pending |
+| REQ-005 | M15 外部状态回读           | GitHub branch protection API 与真实 PR check-run                                                   | PASS    | PR #626 已产生 GitHub Actions `frontend-pr-quality`（app ID 15368）；远端 required contexts 更新为 3 项并经 API 回读与声明一致 |
 
 ## 7. 例外与剩余风险
 
 - 用户明确停用本次 Frontend E2E 验证；不会用本地 E2E 声明运行态通过。
 - main/manual E2E 的首次真实结果需要在包含本变更的 GitHub Actions 运行中回读。
-- 分支保护只在 `frontend-pr-quality` 真实 check-run 出现后启用，避免新增 required context 永久 pending。
+- `frontend-pr-quality` 只在 PR #626 真实 check-run 出现后加入 required contexts，远端保护与受版本控制声明已经 API 回读一致。
 - 本地验证固定使用 Node 22.23.1 和 pnpm 11.14.0，与 workflow 版本一致。
