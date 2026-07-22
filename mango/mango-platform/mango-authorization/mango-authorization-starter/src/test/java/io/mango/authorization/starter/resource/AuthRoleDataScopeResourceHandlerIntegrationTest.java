@@ -7,9 +7,10 @@ import io.mango.authorization.core.entity.RoleDataScopeEntity;
 import io.mango.authorization.core.mapper.RoleDataScopeMapper;
 import io.mango.authorization.core.mapper.RoleMapper;
 import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguration;
-import io.mango.resource.support.ResourceTypes;
 import io.mango.resource.api.enums.ResourceFieldType;
 import io.mango.resource.api.enums.ResourceStatus;
+import io.mango.resource.api.enums.ResourceSyncMode;
+import io.mango.resource.support.ResourceTypes;
 import io.mango.resource.support.model.ResourceDeclaration;
 import io.mango.resource.support.model.ResourceField;
 import io.mango.resource.support.model.ResourceSyncResult;
@@ -106,6 +107,26 @@ class AuthRoleDataScopeResourceHandlerIntegrationTest {
         assertThat(scope.getScopeValues()).isEqualTo("[\"30\"]");
         assertThat(scope.getIncludeChildren()).isFalse();
         assertThat(scope.getStatus()).isZero();
+        assertThat(countScopes()).isEqualTo(1L);
+    }
+
+    @Test
+    void initOnlyPreservesExistingRuntimeScopeThroughRealMappers() {
+        seedRole(1001L, 1L, "internal-admin", "ROLE_DEMO");
+        ResourceSyncResult created = handler.upsert(resource());
+        ResourceDeclaration initOnly = resource();
+        initOnly.setSyncMode(ResourceSyncMode.INIT_ONLY);
+        put(initOnly, "scopeMode", ResourceFieldType.STRING, "ALL");
+        initOnly.removeField("scopeValues");
+
+        ResourceSyncResult preserved = handler.upsert(initOnly);
+
+        assertThat(preserved.getTargetId()).isEqualTo(created.getTargetId());
+        RoleDataScopeEntity scope = scopeMapper.selectById(created.getTargetId());
+        assertThat(scope.getScopeMode()).isEqualTo("ORG");
+        assertThat(scope.getScopeValues()).isEqualTo("[\"10\",\"20\"]");
+        assertThat(scope.getIncludeChildren()).isTrue();
+        assertThat(scope.getStatus()).isEqualTo(1);
         assertThat(countScopes()).isEqualTo(1L);
     }
 

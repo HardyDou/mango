@@ -454,6 +454,8 @@ mango-workflow-starter/src/main/resources/META-INF/mango/resources/workflow-comm
 
 未安装授权数据权限能力时，workflow 保持原查询行为；安装后由 `DataScopeApplier` 追加本人、指定组织、本人主部门或本人主部门及下级范围条件，并校验 `workflow_definition` 存在当前规则需要的映射字段。租户隔离仍由 persistence 租户插件处理。
 
+开启 demo 资源后，Workflow 会为租户 `1` 的默认 `ROLE_ADMIN` 以 `INIT_ONLY` 声明初始化 `workflow:definition:list = ALL`。该规则只作用于租户内的流程定义管理数据范围；不会影响 `startEntryVisible`，该字段仍只控制审批中心的发起流程入口。若管理员已经维护过该数据范围，后续同步会保留运行时配置。
+
 ## 7. 快速开始
 
 1. 业务后端引入 `mango-workflow-api`；部署 workflow 能力的应用引入 `mango-workflow-starter`。
@@ -873,6 +875,10 @@ workflow:template:push
 **空白库没有演示流程**
 
 这是默认行为。生产启动只同步正式资源；空白开发或演示环境需要示例流程时，设置 `mango.resource.registry.demo-enabled=true`，并确认 Resource Registry 已同步 `META-INF/mango/demo/workflow-demo-definition.yml`。
+
+**默认管理员打开流程定义管理后列表为空**
+
+确认 demo 资源同步成功，并检查租户 `1` 的 `ROLE_ADMIN` 是否存在有效的 `workflow:definition:list` 数据范围。Workflow demo 会以 `INIT_ONLY` 初始化 `ALL`；若该规则缺失，应检查 `AUTH_ROLE` 是否先于 `AUTH_ROLE_DATA_SCOPE` 同步成功，而不是通过修改 `startEntryVisible` 绕过管理数据权限。
 
 **HTTP_URL 或 REMOTE_SERVICE 节点执行失败**
 

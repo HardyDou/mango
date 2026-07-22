@@ -9,9 +9,10 @@ import io.mango.authorization.core.entity.RoleEntity;
 import io.mango.authorization.core.entity.RoleDataScopeEntity;
 import io.mango.authorization.core.mapper.RoleDataScopeMapper;
 import io.mango.authorization.core.mapper.RoleMapper;
+import io.mango.resource.api.enums.ResourceStatus;
+import io.mango.resource.api.enums.ResourceSyncMode;
 import io.mango.resource.support.ResourceHandler;
 import io.mango.resource.support.ResourceTypes;
-import io.mango.resource.api.enums.ResourceStatus;
 import io.mango.resource.support.model.ResourceDeclaration;
 import io.mango.resource.support.model.ResourceHandlerSpec;
 import io.mango.resource.support.model.ResourceSyncResult;
@@ -75,6 +76,10 @@ public class AuthRoleDataScopeResourceHandler implements ResourceHandler {
         RoleEntity role = requiredRole(resource);
         String resourceCode = fields.requiredString(resource, "resourceCode");
         RoleDataScopeEntity entity = findScope(role, resourceCode);
+        if (entity != null && resource.getSyncMode() == ResourceSyncMode.INIT_ONLY) {
+            return ResourceSyncResult.of(entity.getId(), TARGET_TABLE,
+                    "Auth role data scope preserved for INIT_ONLY: " + role.getRoleCode() + "/" + resourceCode);
+        }
         LocalDateTime now = LocalDateTime.now();
         if (entity == null) {
             entity = new RoleDataScopeEntity();

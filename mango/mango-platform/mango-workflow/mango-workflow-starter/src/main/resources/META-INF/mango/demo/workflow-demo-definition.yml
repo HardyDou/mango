@@ -4,6 +4,19 @@ mango:
     module-code: workflow
     module-name: 工作流演示
     declarations:
+      AUTH_ROLE_DATA_SCOPE:
+        - id: "2026072209000000001"
+          version: 1
+          biz-key: workflow.role-data-scope.tenant-1-admin-definition-list
+          name: 默认管理员流程定义管理数据权限
+          target-module: workflow
+          sync-mode: INIT_ONLY
+          fields:
+            tenantId: { type: LONG, value: 1 }
+            appCode: { type: STRING, value: internal-admin }
+            roleCode: { type: STRING, value: ROLE_ADMIN }
+            resourceCode: { type: STRING, value: "workflow:definition:list" }
+            scopeMode: { type: STRING, value: ALL }
       WORKFLOW_DEFINITION:
         - id: "2026071409000000001"
           version: 1
