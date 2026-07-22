@@ -310,6 +310,9 @@ Shell 会注册 unauthorized handler 并清理 session 后跳转 `/login`。检�
 
 ## 11. 变更影响记录
 
+- `@mango/admin-shell@1.0.51` 对齐 `@mango/notice@1.0.31`，使默认工作台消息卡进入当前消息中心路由，
+  同时保留旧站内信路径兼容入口。Shell 菜单加载、权限、租户和其它运行时路由语义保持不变。
+
 - `@mango/admin-shell@1.0.48` aligns the Shell dependency matrix with `@mango/notice@1.0.29` and preserves the verified Workflow runtime-route contract. Menu loading, page registration, login state, permissions, tenant handling and runtime routing semantics remain compatible.
 
 - `@mango/admin-shell@1.0.47` publishes the theme settings top-bar text color fix and aligns this frontend npm impact matrix. Menu loading, page registration, login state, permissions, tenant handling and runtime routing semantics stay compatible.
