@@ -54,6 +54,7 @@ test.describe('当前用户信息 E2E', () => {
       nickname: 'Administrator',
     });
 
+    await expect(page.locator('[data-field="current-user.display-name"]')).toHaveText(infoBody.data.nickname);
     await page.locator('.layout-breadcrumb-user').click();
     await expect(page.locator('.institution-dropdown-item')).toBeVisible({ timeout: 10000 });
     await expect(page.getByText(/当前租户：/)).toHaveCount(0);
