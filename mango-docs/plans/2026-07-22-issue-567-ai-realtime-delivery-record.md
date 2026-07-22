@@ -41,7 +41,7 @@
 | DEC-001 | REQ-001 | `AiPushService` 依赖最小 `mango-infra-realtime-api`，分别调用 `broadcast("notification", content)` 和 `broadcast("alert", content)` | `mango-ai-core` | 恢复旧进程内实现和 core 依赖 |
 | DEC-002 | REQ-002 | 删除 `SseController`、`IAiPushService.connect()`、推送 emitter 与心跳配置；这是 #567 要求的显式旧入口移除 | AI core/starter、README | 恢复删除的 Controller、接口和配置 |
 | DEC-003 | REQ-004 | 保留 `ChatController` 与 `AiSseEmitterFactory.createChat`，只移除通知专用 emitter | `mango-ai-starter` | 恢复任务前代码 |
-| DEC-004 | REQ-005 | `AiPushService` 由 starter 使用 `@Bean`、`@ConditionalOnMissingBean`、`@ConditionalOnBean(RealtimeApi.class)` 注册，并显式排在本地/远程 Realtime 自动配置之后 | `MangoAiAutoConfiguration` | 删除 Bean 定义并恢复组件扫描注册 |
+| DEC-004 | REQ-005 | `AiPushService` 作为 core `@Service` 组件并使用 `@ConditionalOnBean(RealtimeApi.class)` 注册；starter 扫描该组件并显式排在本地/远程 Realtime 自动配置之后 | `AiPushService`、`MangoAiAutoConfiguration` | 恢复 starter `@Bean` 注册或移除 Realtime 条件 |
 | DEC-005 | REQ-003 | E2E 使用实际 Realtime starter、MemoryKvStore、随机端口 Tomcat 和真实 HTTP SSE 客户端，不以 mock 替代传输链路 | starter 测试与 test-scope 依赖 | 删除 E2E 和测试依赖 |
 
 ## 5. 实施清单
