@@ -47,11 +47,12 @@ test('handles additions, deletions, renames, exports and style entries through w
   }
 });
 
-test('upgrades lockfile, shared config, workflow and frontend governance changes to full', () => {
+test('upgrades lockfile, shared config, frontend workflow and frontend governance changes to full', () => {
   for (const file of [
     'mango-ui/pnpm-lock.yaml',
     'mango-ui/tsconfig.base.json',
     '.github/workflows/frontend-quality.yml',
+    'mango-business-starter/frontend/apps/example/package.json',
     'mango-ui/scripts/quality/affected-selector-lib.mjs',
     'mango-pmo/rules/frontend/01-vue-code.md',
   ])
@@ -60,7 +61,10 @@ test('upgrades lockfile, shared config, workflow and frontend governance changes
 
 test('uses no-op only for classified non-frontend changes', () => {
   assert.equal(selectAffectedWorkspaces(records, ['mango-docs/designs/example.md']).mode, 'none');
-  assert.equal(selectAffectedWorkspaces(records, ['mango-server/pom.xml']).mode, 'none');
+  assert.equal(selectAffectedWorkspaces(records, ['mango/pom.xml']).mode, 'none');
+  assert.equal(selectAffectedWorkspaces(records, ['.github/workflows/pmo-doc-check.yml']).mode, 'none');
+  assert.equal(selectAffectedWorkspaces(records, ['mango-business-starter/backend/pom.xml']).mode, 'none');
+  assert.equal(selectAffectedWorkspaces(records, ['CHANGELOG.md']).mode, 'none');
 });
 
 test('fails closed for unknown scope, empty changes and unowned paths', () => {
