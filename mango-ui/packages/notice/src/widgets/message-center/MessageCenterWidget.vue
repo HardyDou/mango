@@ -1,22 +1,10 @@
 <template>
-  <section
-    v-loading="loading"
-    class="mango-grid-widget-message-center"
-    >
+  <section v-loading="loading" class="mango-grid-widget-message-center">
     <header class="mango-grid-widget-message-center__header">
       <span>我的消息</span>
       <div class="mango-grid-widget-message-center__header-actions">
-        <button
-          type="button"
-          @click="viewAllMessages"
-        >
-          查看全部
-        </button>
-        <button
-          type="button"
-          :disabled="unreadCount === 0 || markingRead"
-          @click="markAllRead"
-        >
+        <button type="button" @click="viewAllMessages">查看全部</button>
+        <button type="button" :disabled="unreadCount === 0 || markingRead" @click="markAllRead">
           {{ markingRead ? '处理中' : '全部已读' }}
         </button>
       </div>
@@ -50,18 +38,13 @@
         <strong>{{ item.count }}</strong>
       </div>
     </div>
-
   </section>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
 import { ElMessage } from 'element-plus';
-import {
-  getMySiteMessages,
-  getMyUnreadCount,
-  markAllMySiteMessagesRead,
-} from '../../api/notice';
+import { getMySiteMessages, getMyUnreadCount, markAllMySiteMessagesRead } from '../../api/notice';
 import type { NoticeSiteMessage } from '../../types/notice';
 import type { MessageCenterCategory, MessageCenterWidgetProps } from '../types';
 
@@ -87,15 +70,15 @@ const unreadCount = ref(0);
 const latestMessage = ref<NoticeSiteMessage>();
 const categoryCounts = ref<Record<string, number>>({});
 
-const resolvedCategories = computed(() => (
-  props.categories?.length ? props.categories : DEFAULT_CATEGORIES
-));
+const resolvedCategories = computed(() => (props.categories?.length ? props.categories : DEFAULT_CATEGORIES));
 
-const categoryStats = computed(() => resolvedCategories.value.map(item => ({
-  ...item,
-  count: categoryCounts.value[item.key] || 0,
-  color: item.color || '#2f80ff',
-})));
+const categoryStats = computed(() =>
+  resolvedCategories.value.map((item) => ({
+    ...item,
+    count: categoryCounts.value[item.key] || 0,
+    color: item.color || '#2f80ff',
+  })),
+);
 
 const latestTitle = computed(() => formatMessageText(latestMessage.value?.title, '暂无未读消息'));
 
@@ -115,11 +98,7 @@ onMounted(() => {
 async function refreshMessages(): Promise<void> {
   loading.value = true;
   try {
-    await Promise.all([
-      loadUnreadCount(),
-      loadLatestMessage(),
-      loadCategoryCounts(),
-    ]);
+    await Promise.all([loadUnreadCount(), loadLatestMessage(), loadCategoryCounts()]);
   } catch {
     ElMessage.error('消息加载失败，请稍后重试');
   } finally {
@@ -142,17 +121,19 @@ async function loadLatestMessage(): Promise<void> {
 }
 
 async function loadCategoryCounts(): Promise<void> {
-  const entries = await Promise.all(resolvedCategories.value.map(async (item) => {
-    const result = await getMySiteMessages({
-      pageNum: 1,
-      pageSize: 1,
-      unreadOnly: true,
-      bizGroup: item.bizGroup,
-      bizType: item.bizType,
-      priority: item.priority,
-    });
-    return [item.key, Number(result.total || 0)] as const;
-  }));
+  const entries = await Promise.all(
+    resolvedCategories.value.map(async (item) => {
+      const result = await getMySiteMessages({
+        pageNum: 1,
+        pageSize: 1,
+        unreadOnly: true,
+        bizGroup: item.bizGroup,
+        bizType: item.bizType,
+        priority: item.priority,
+      });
+      return [item.key, Number(result.total || 0)] as const;
+    }),
+  );
   categoryCounts.value = Object.fromEntries(entries);
 }
 
