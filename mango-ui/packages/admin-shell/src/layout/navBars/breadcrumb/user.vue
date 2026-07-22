@@ -1,20 +1,13 @@
 <template>
-  <el-dropdown
-    trigger="click"
-    @command="handleCommand"
-  >
+  <el-dropdown trigger="click" @command="handleCommand">
     <div class="layout-breadcrumb-user">
-      <el-avatar
-        :size="28"
-      >
+      <el-avatar :size="28">
         <el-icon><User /></el-icon>
       </el-avatar>
-      <span class="username">{{ currentUser.username || 'Admin' }}</span>
-      <span
-        v-if="institutionLabel"
-        class="institution-context"
-        :title="institutionLabel"
-      >
+      <span class="username" data-field="current-user.display-name">
+        {{ currentUser.nickname || currentUser.username || 'Admin' }}
+      </span>
+      <span v-if="institutionLabel" class="institution-context" :title="institutionLabel">
         {{ institutionLabel }}
       </span>
       <el-icon class="arrow-icon">
@@ -23,11 +16,7 @@
     </div>
     <template #dropdown>
       <el-dropdown-menu>
-        <el-dropdown-item
-          v-if="institutionLabel"
-          disabled
-          class="institution-dropdown-item"
-        >
+        <el-dropdown-item v-if="institutionLabel" disabled class="institution-dropdown-item">
           {{ institutionLabel }}
         </el-dropdown-item>
         <el-dropdown-item command="profile">
@@ -38,11 +27,7 @@
           <el-icon><Lock /></el-icon>
           修改密码
         </el-dropdown-item>
-        <el-dropdown-item
-          divided
-          command="logout"
-          data-action="auth.logout"
-        >
+        <el-dropdown-item divided command="logout" data-action="auth.logout">
           <el-icon><SwitchButton /></el-icon>
           退出登录
         </el-dropdown-item>
