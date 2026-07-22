@@ -3,6 +3,7 @@ package io.mango.authorization.starter.resource;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
 import io.mango.authorization.api.AuthorizationOrgReferenceProvider;
 import io.mango.authorization.api.enums.DataScopeMode;
 import io.mango.authorization.core.entity.RoleEntity;
@@ -16,7 +17,6 @@ import io.mango.resource.support.ResourceTypes;
 import io.mango.resource.support.model.ResourceDeclaration;
 import io.mango.resource.support.model.ResourceHandlerSpec;
 import io.mango.resource.support.model.ResourceSyncResult;
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Component;
 
@@ -27,7 +27,6 @@ import java.util.List;
  * Resource handler for role data scope declarations.
  */
 @Component
-@RequiredArgsConstructor
 public class AuthRoleDataScopeResourceHandler implements ResourceHandler {
 
     private static final String TARGET_TABLE = "authorization_role_data_scope";
@@ -36,8 +35,18 @@ public class AuthRoleDataScopeResourceHandler implements ResourceHandler {
     private final RoleMapper roleMapper;
     private final RoleDataScopeMapper roleDataScopeMapper;
     private final ObjectProvider<AuthorizationOrgReferenceProvider> orgReferenceProvider;
-    private final ObjectMapper objectMapper;
+    private final ObjectWriter scopeValuesWriter;
     private final ResourceFieldReader fields = new ResourceFieldReader(ResourceTypes.AUTH_ROLE_DATA_SCOPE);
+
+    public AuthRoleDataScopeResourceHandler(RoleMapper roleMapper,
+                                            RoleDataScopeMapper roleDataScopeMapper,
+                                            ObjectProvider<AuthorizationOrgReferenceProvider> orgReferenceProvider,
+                                            ObjectMapper objectMapper) {
+        this.roleMapper = roleMapper;
+        this.roleDataScopeMapper = roleDataScopeMapper;
+        this.orgReferenceProvider = orgReferenceProvider;
+        this.scopeValuesWriter = objectMapper.writer();
+    }
 
     @Override
     public String resourceType() {
@@ -147,7 +156,7 @@ public class AuthRoleDataScopeResourceHandler implements ResourceHandler {
 
     private String writeScopeValues(List<String> values) {
         try {
-            return objectMapper.writeValueAsString(values == null ? List.of() : values);
+            return scopeValuesWriter.writeValueAsString(values == null ? List.of() : values);
         } catch (JsonProcessingException e) {
             throw new IllegalStateException("AUTH_ROLE_DATA_SCOPE scopeValues cannot be serialized", e);
         }
