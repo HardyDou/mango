@@ -1,7 +1,7 @@
 package io.mango.resource.core.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.mango.infra.kv.api.ILocker;
+import io.mango.infra.kv.api.ILeaseLocker;
 import io.mango.resource.support.ResourceProvider;
 import io.mango.resource.core.mapper.ResourceChangeLogMapper;
 import io.mango.resource.core.mapper.ResourceRegistryMapper;
@@ -61,7 +61,7 @@ public class ResourceRegistryCoreConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public ResourceRegistryLock resourceRegistryLock(ILocker locker) {
+    public ResourceRegistryLock resourceRegistryLock(ILeaseLocker locker) {
         return new ResourceRegistryLock(locker);
     }
 

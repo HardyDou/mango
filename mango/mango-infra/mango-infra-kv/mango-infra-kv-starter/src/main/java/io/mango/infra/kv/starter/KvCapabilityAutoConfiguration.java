@@ -7,6 +7,7 @@ import io.mango.infra.kv.api.IIdGenerator;
 import io.mango.infra.kv.api.IIdempotent;
 import io.mango.infra.kv.api.IKvStore;
 import io.mango.infra.kv.api.ILocker;
+import io.mango.infra.kv.api.ILeaseLocker;
 import io.mango.infra.kv.api.IRateLimiter;
 import io.mango.infra.kv.api.ISerializer;
 import io.mango.infra.kv.api.ITokenStore;
@@ -16,6 +17,7 @@ import io.mango.infra.kv.core.capability.KvStoreCache;
 import io.mango.infra.kv.core.capability.KvStoreCounter;
 import io.mango.infra.kv.core.capability.KvStoreIdempotent;
 import io.mango.infra.kv.core.capability.KvStoreLocker;
+import io.mango.infra.kv.core.capability.KvStoreLeaseLocker;
 import io.mango.infra.kv.core.capability.KvStoreRateLimiter;
 import io.mango.infra.kv.core.capability.KvStoreTokenStore;
 import io.mango.infra.kv.core.support.JsonConverter;
@@ -84,6 +86,17 @@ public class KvCapabilityAutoConfiguration {
         ILocker rawBean = new KvStoreLocker(kvStore);
         ILocker bean = new PrefixedCapabilities.Locker(rawBean, keyNormalizer(props));
         LOGGER.info("KV capability initialized: ILocker ({})", bean.getClass().getSimpleName());
+        return bean;
+    }
+
+    @Bean
+    @ConditionalOnExpression("${mango.kv.capability.locker:false}")
+    @ConditionalOnBean(IKvStore.class)
+    @ConditionalOnMissingBean(ILeaseLocker.class)
+    public ILeaseLocker leaseLocker(IKvStore kvStore, KvStoreProperties props) {
+        ILeaseLocker rawBean = new KvStoreLeaseLocker(kvStore);
+        ILeaseLocker bean = new PrefixedCapabilities.LeaseLocker(rawBean, keyNormalizer(props));
+        LOGGER.info("KV capability initialized: ILeaseLocker ({})", bean.getClass().getSimpleName());
         return bean;
     }
 

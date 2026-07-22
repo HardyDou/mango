@@ -5,9 +5,13 @@ import io.mango.infra.kv.api.ICache;
 import io.mango.infra.kv.api.ICounter;
 import io.mango.infra.kv.api.IIdempotent;
 import io.mango.infra.kv.api.ILocker;
+import io.mango.infra.kv.api.ILeaseLocker;
+import io.mango.infra.kv.api.LockLease;
 import io.mango.infra.kv.api.IRateLimiter;
 import io.mango.infra.kv.api.ITokenStore;
 import lombok.RequiredArgsConstructor;
+
+import java.util.Optional;
 
 /**
  * Capability decorators that apply the Mango KV key namespace.
@@ -57,6 +61,28 @@ public final class PrefixedCapabilities {
         @Override
         public void unlock(String key) {
             delegate.unlock(keyNormalizer.normalize(KvKeyNormalizer.LOCK, key));
+        }
+    }
+
+    @RequiredArgsConstructor
+    public static class LeaseLocker implements ILeaseLocker {
+        private final ILeaseLocker delegate;
+        private final KvKeyNormalizer keyNormalizer;
+
+        @Override
+        public Optional<LockLease> tryAcquire(String key, String owner, long ttlSeconds) {
+            return delegate.tryAcquire(
+                    keyNormalizer.normalize(KvKeyNormalizer.LOCK, key), owner, ttlSeconds);
+        }
+
+        @Override
+        public Optional<LockLease> renew(LockLease lease, long ttlSeconds) {
+            return delegate.renew(lease, ttlSeconds);
+        }
+
+        @Override
+        public boolean release(LockLease lease) {
+            return delegate.release(lease);
         }
     }
 

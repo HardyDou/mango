@@ -1,16 +1,19 @@
 package io.mango.org.starter.resource;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import io.mango.common.result.Require;
 import io.mango.org.core.entity.SysOrgEntity;
 import io.mango.org.core.mapper.SysOrgMapper;
 import io.mango.resource.support.ResourceHandler;
 import io.mango.resource.support.ResourceTypes;
 import io.mango.resource.api.enums.ResourceSyncMode;
+import io.mango.resource.api.enums.ResourceCode;
 import io.mango.resource.api.enums.ResourceStatus;
 import io.mango.resource.support.model.ResourceDeclaration;
 import io.mango.resource.support.model.ResourceHandlerSpec;
 import io.mango.resource.support.model.ResourceSyncResult;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
@@ -39,6 +42,11 @@ public class OrgUnitResourceHandler implements ResourceHandler {
     }
 
     @Override
+    public String executionTenantField() {
+        return "tenantId";
+    }
+
+    @Override
     public ResourceHandlerSpec spec() {
         return ResourceHandlerSpec.builder()
                 .resourceType(resourceType())
@@ -60,17 +68,41 @@ public class OrgUnitResourceHandler implements ResourceHandler {
             org.setTenantId(fields.requiredLong(resource, "tenantId"));
             org.setOrgCode(fields.requiredString(resource, "orgCode"));
         }
+        applyFields(resource, org);
+        if (creating) {
+            org = insertOrReadWinner(resource, org);
+        } else {
+            requireUpdated(resource, orgMapper.updateById(org));
+        }
+        return ResourceSyncResult.of(org.getId(), TARGET_TABLE, "Org unit synced: " + org.getOrgCode());
+    }
+
+    private void applyFields(ResourceDeclaration resource, SysOrgEntity org) {
         org.setPid(parentId(resource));
         org.setOrgName(fields.requiredString(resource, "orgName"));
         org.setOrgType(fields.intField(resource, "orgType", null));
         org.setOrgSort(fields.intField(resource, "sort", 0));
         org.setOrgStatus(statusValue(resource));
-        if (creating) {
-            orgMapper.insert(org);
-        } else {
-            orgMapper.updateById(org);
+    }
+
+    private SysOrgEntity insertOrReadWinner(ResourceDeclaration resource, SysOrgEntity candidate) {
+        try {
+            orgMapper.insert(candidate);
+            return candidate;
+        } catch (DuplicateKeyException exception) {
+            SysOrgEntity winner = findByBusinessKey(resource);
+            if (winner == null) {
+                throw exception;
+            }
+            applyFields(resource, winner);
+            requireUpdated(resource, orgMapper.updateById(winner));
+            return winner;
         }
-        return ResourceSyncResult.of(org.getId(), TARGET_TABLE, "Org unit synced: " + org.getOrgCode());
+    }
+
+    private void requireUpdated(ResourceDeclaration resource, int updatedRows) {
+        Require.isTrue(updatedRows == 1, ResourceCode.RESOURCE_CONFLICT,
+                "ORG_UNIT目标在声明租户中不存在或已变化: " + resource.getId());
     }
 
     @Override
@@ -107,7 +139,8 @@ public class OrgUnitResourceHandler implements ResourceHandler {
         boolean changed = false;
         if (org != null && !"0".equals(org.getOrgStatus())) {
             org.setOrgStatus("0");
-            changed = orgMapper.updateById(org) > 0;
+            requireUpdated(resource, orgMapper.updateById(org));
+            changed = true;
         }
         Long targetId = null;
         if (org != null) {
@@ -179,10 +212,19 @@ public class OrgUnitResourceHandler implements ResourceHandler {
         if (targetId != null) {
             SysOrgEntity org = orgMapper.selectById(targetId);
             if (org != null) {
+                validateTarget(resource, org);
                 return org;
             }
         }
         return findByBusinessKey(resource);
+    }
+
+    private void validateTarget(ResourceDeclaration resource, SysOrgEntity org) {
+        String expectedTenantId = String.valueOf(fields.requiredLong(resource, "tenantId"));
+        String expectedOrgCode = fields.requiredString(resource, "orgCode");
+        Require.isTrue(expectedTenantId.equals(org.getTenantId()) && expectedOrgCode.equals(org.getOrgCode()),
+                ResourceCode.RESOURCE_CONFLICT,
+                "ORG_UNIT targetId与声明租户或组织编码不匹配: " + resource.getId());
     }
 
     private SysOrgEntity findByBusinessKey(ResourceDeclaration resource) {

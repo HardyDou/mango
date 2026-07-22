@@ -28,6 +28,7 @@ public class DefaultResourceTargetExecutor implements ResourceTargetExecutor {
 
     private final ObjectMapper objectMapper;
     private final List<ResourceHandler> handlers;
+    private final ResourceHandlerInvoker handlerInvoker = new ResourceHandlerInvoker();
 
     public DefaultResourceTargetExecutor(ObjectMapper objectMapper, Collection<ResourceHandler> handlers) {
         this.objectMapper = objectMapper;
@@ -45,7 +46,7 @@ public class DefaultResourceTargetExecutor implements ResourceTargetExecutor {
             ResourceHandler handler = findHandler(resourceType);
             List<ResourceDeclaration> handlerDeclarations = declarationsForHandler(
                     handler, typedDeclarations, completeBatch, resourceType);
-            Map<String, ResourceSyncResult> handlerResults = handler.upsertBatch(handlerDeclarations);
+            Map<String, ResourceSyncResult> handlerResults = handlerInvoker.upsertBatch(handler, handlerDeclarations);
             Require.notNull(handlerResults, ResourceCode.RESOURCE_SYNC_FAILED,
                     "资源处理器未返回批量同步结果: " + resourceType);
             handlerResults.forEach((resourceId, result) -> entries.add(toBatchEntry(resourceId, result)));
@@ -59,14 +60,16 @@ public class DefaultResourceTargetExecutor implements ResourceTargetExecutor {
     public ResourceSyncResultVO disable(ExecuteResourceTargetCommand command) {
         Require.notNull(command, ResourceCode.RESOURCE_INVALID, "资源目标端执行命令不能为空");
         ResourceDeclaration declaration = singleDeclaration(command);
-        return toResultVO(findHandler(declaration.getResourceType()).disable(declaration));
+        ResourceHandler handler = findHandler(declaration.getResourceType());
+        return toResultVO(handlerInvoker.disable(handler, declaration));
     }
 
     @Override
     public ResourceSyncResultVO delete(ExecuteResourceTargetCommand command) {
         Require.notNull(command, ResourceCode.RESOURCE_INVALID, "资源目标端执行命令不能为空");
         ResourceDeclaration declaration = singleDeclaration(command);
-        return toResultVO(findHandler(declaration.getResourceType()).delete(declaration));
+        ResourceHandler handler = findHandler(declaration.getResourceType());
+        return toResultVO(handlerInvoker.delete(handler, declaration));
     }
 
     private Map<String, List<ResourceDeclaration>> groupByResourceType(List<ResourceDeclaration> declarations) {

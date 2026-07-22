@@ -2,7 +2,7 @@ package io.mango.infra.kv.core.redis;
 
 import io.mango.common.result.Require;
 import io.mango.infra.kv.api.IKvSortedSet;
-import io.mango.infra.kv.api.IKvStore;
+import io.mango.infra.kv.api.ILeaseKvStore;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RBucket;
@@ -27,7 +27,7 @@ import java.util.Objects;
  */
 @Slf4j
 @RequiredArgsConstructor
-public class RedisKvStore implements IKvStore, IKvSortedSet {
+public class RedisKvStore implements ILeaseKvStore, IKvSortedSet {
 
     private static final String SORTED_SET_ADD_SCRIPT = """
             redis.call('zadd', KEYS[1], ARGV[1], ARGV[2])
@@ -51,6 +51,12 @@ public class RedisKvStore implements IKvStore, IKvSortedSet {
     private static final String COMPARE_DELETE_SCRIPT = """
             if redis.call('get', KEYS[1]) == ARGV[1] then
               return redis.call('del', KEYS[1])
+            end
+            return 0
+            """;
+    private static final String COMPARE_RENEW_SCRIPT = """
+            if redis.call('get', KEYS[1]) == ARGV[1] then
+              return redis.call('expire', KEYS[1], ARGV[2])
             end
             return 0
             """;
@@ -126,6 +132,31 @@ public class RedisKvStore implements IKvStore, IKvSortedSet {
                 List.of(key),
                 expectedValue);
         return result.longValue() > 0;
+    }
+
+    @Override
+    public boolean tryAcquireLease(String key, String token, long ttlSeconds) {
+        return setIfAbsent(key, token, ttlSeconds);
+    }
+
+    @Override
+    public boolean renewLease(String key, String token, long ttlSeconds) {
+        validateKey(key);
+        Objects.requireNonNull(token, "token cannot be null");
+        Require.positive(ttlSeconds, "ttlSeconds must be positive");
+        Number result = script().eval(
+                RScript.Mode.READ_WRITE,
+                COMPARE_RENEW_SCRIPT,
+                RScript.ReturnType.INTEGER,
+                List.of(key),
+                token,
+                String.valueOf(ttlSeconds));
+        return result.longValue() > 0;
+    }
+
+    @Override
+    public boolean releaseLease(String key, String token) {
+        return deleteIfValue(key, token);
     }
 
     @Override

@@ -70,7 +70,7 @@ public class ResourceDeclarationLoader {
             }
             return declarations;
         } catch (IOException e) {
-            throw new IllegalStateException("Load resource declarations failed: " + location, e);
+            throw new InvalidResourceDeclarationException("Load resource declarations failed: " + location, e);
         }
     }
 
@@ -81,7 +81,7 @@ public class ResourceDeclarationLoader {
             ResourceDeclarationFile file = mapper.readValue(inputStream, ResourceDeclarationFile.class);
             return flatten(file, source);
         } catch (IOException e) {
-            throw new IllegalStateException("Read resource declaration failed: " + source, e);
+            throw new InvalidResourceDeclarationException("Read resource declaration failed: " + source, e);
         }
     }
 
@@ -166,6 +166,6 @@ public class ResourceDeclarationLoader {
     }
 
     private void invalid(String source, String message) {
-        throw new IllegalStateException("Invalid resource declaration: " + source + " - " + message);
+        throw new InvalidResourceDeclarationException("Invalid resource declaration: " + source + " - " + message);
     }
 }

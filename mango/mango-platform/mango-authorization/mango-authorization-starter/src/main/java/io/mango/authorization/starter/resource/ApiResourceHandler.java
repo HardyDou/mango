@@ -47,15 +47,17 @@ public class ApiResourceHandler implements ResourceHandler {
 
     @Override
     public Map<String, ResourceSyncResult> upsertBatch(List<ResourceDeclaration> resources) {
-        Map<String, ApiResourceEntity> protectedResources = protectedResources(resources);
         List<ApiResourceRegisterCommand> commands = resources.stream()
                 .map(this::toCommand)
                 .toList();
+        Map<String, ApiResourceEntity> protectedResources = protectedResources(resources, commands);
         apiResourceService.registerApiResources(commands);
         restoreProtectedResources(protectedResources);
+        Map<ApiResourceKey, ApiResourceEntity> synchronizedResources = loadResourceIndex(commands);
         Map<String, ResourceSyncResult> results = new LinkedHashMap<>();
-        for (ResourceDeclaration resource : resources) {
-            ApiResourceEntity entity = find(toCommand(resource));
+        for (int index = 0; index < resources.size(); index++) {
+            ResourceDeclaration resource = resources.get(index);
+            ApiResourceEntity entity = synchronizedResources.get(ApiResourceKey.from(commands.get(index)));
             Long targetId = entity == null ? null : entity.getId();
             results.put(resource.getId(),
                     ResourceSyncResult.of(targetId, "authorization_api_resource", "api resource synced"));
@@ -63,13 +65,22 @@ public class ApiResourceHandler implements ResourceHandler {
         return results;
     }
 
-    private Map<String, ApiResourceEntity> protectedResources(List<ResourceDeclaration> resources) {
+    private Map<String, ApiResourceEntity> protectedResources(
+            List<ResourceDeclaration> resources,
+            List<ApiResourceRegisterCommand> commands) {
+        boolean requiresProtection = resources.stream()
+                .anyMatch(resource -> resource.getSyncMode() != ResourceSyncMode.AUTO);
+        if (!requiresProtection) {
+            return Map.of();
+        }
+        Map<ApiResourceKey, ApiResourceEntity> existingResources = loadResourceIndex(commands);
         Map<String, ApiResourceEntity> protectedResources = new LinkedHashMap<>();
-        for (ResourceDeclaration resource : resources) {
+        for (int index = 0; index < resources.size(); index++) {
+            ResourceDeclaration resource = resources.get(index);
             if (resource.getSyncMode() == ResourceSyncMode.AUTO) {
                 continue;
             }
-            ApiResourceEntity entity = find(toCommand(resource));
+            ApiResourceEntity entity = existingResources.get(ApiResourceKey.from(commands.get(index)));
             if (entity != null) {
                 protectedResources.put(resource.getId(), entity);
             }
@@ -81,6 +92,22 @@ public class ApiResourceHandler implements ResourceHandler {
         for (ApiResourceEntity entity : protectedResources.values()) {
             apiResourceMapper.updateById(entity);
         }
+    }
+
+    private Map<ApiResourceKey, ApiResourceEntity> loadResourceIndex(List<ApiResourceRegisterCommand> commands) {
+        List<String> moduleNames = commands.stream()
+                .map(ApiResourceRegisterCommand::getModuleName)
+                .filter(StringUtils::hasText)
+                .distinct()
+                .toList();
+        if (moduleNames.isEmpty()) {
+            return Map.of();
+        }
+        Map<ApiResourceKey, ApiResourceEntity> resources = new LinkedHashMap<>();
+        apiResourceMapper.selectList(new LambdaQueryWrapper<ApiResourceEntity>()
+                        .in(ApiResourceEntity::getModuleName, moduleNames))
+                .forEach(resource -> resources.put(ApiResourceKey.from(resource), resource));
+        return resources;
     }
 
     @Override
@@ -136,5 +163,16 @@ public class ApiResourceHandler implements ResourceHandler {
     private Long longField(ResourceDeclaration resource, String fieldName) {
         String value = stringField(resource, fieldName);
         return StringUtils.hasText(value) ? Long.valueOf(value) : null;
+    }
+
+    private record ApiResourceKey(String moduleName, String httpMethod, String pathPattern) {
+
+        private static ApiResourceKey from(ApiResourceRegisterCommand command) {
+            return new ApiResourceKey(command.getModuleName(), command.getHttpMethod(), command.getPathPattern());
+        }
+
+        private static ApiResourceKey from(ApiResourceEntity entity) {
+            return new ApiResourceKey(entity.getModuleName(), entity.getHttpMethod(), entity.getPathPattern());
+        }
     }
 }

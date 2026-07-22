@@ -3,6 +3,7 @@ package io.mango.resource.support.config;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -14,11 +15,14 @@ import java.util.List;
 public class ResourceRegistryProperties {
 
     private static final int DEFAULT_LOCK_TTL_SECONDS = 300;
+    // Keep below Spring Boot's default 30s timeout-per-shutdown-phase.
+    private static final int DEFAULT_SHUTDOWN_WAIT_SECONDS = 25;
 
     private boolean enabled = true;
     private boolean failOnConflict = true;
     private String instanceId = "";
     private int lockTtlSeconds = DEFAULT_LOCK_TTL_SECONDS;
+    private int shutdownWaitSeconds = DEFAULT_SHUTDOWN_WAIT_SECONDS;
     private Remote remote = new Remote();
     private List<String> locations = new ArrayList<>(List.of(
             "classpath*:META-INF/mango/resources/*.json",
@@ -62,8 +66,13 @@ public class ResourceRegistryProperties {
     @Data
     public static class Remote {
 
+        private static final Duration DEFAULT_RETRY_INTERVAL = Duration.ofSeconds(10);
+        private static final Duration DEFAULT_RETRY_MAX_INTERVAL = Duration.ofMinutes(1);
+
         private boolean enabled = true;
         private String appCode = "";
         private String serviceCode = "";
+        private Duration retryInterval = DEFAULT_RETRY_INTERVAL;
+        private Duration retryMaxInterval = DEFAULT_RETRY_MAX_INTERVAL;
     }
 }

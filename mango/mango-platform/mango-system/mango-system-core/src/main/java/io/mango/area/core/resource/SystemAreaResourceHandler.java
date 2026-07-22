@@ -13,6 +13,10 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 @Component
 @RequiredArgsConstructor
@@ -60,6 +64,37 @@ public class SystemAreaResourceHandler implements ResourceHandler {
     }
 
     @Override
+    public Map<String, ResourceSyncResult> upsertBatch(List<ResourceDeclaration> resources) {
+        List<Long> targetIds = resources.stream()
+                .map(this::targetIdForBatchLookup)
+                .filter(java.util.Objects::nonNull)
+                .distinct()
+                .toList();
+        Map<Long, SysAreaEntity> areasById = new HashMap<>();
+        if (!targetIds.isEmpty()) {
+            areaMapper.selectBatchIds(targetIds).forEach(area -> areasById.put(area.getId(), area));
+        }
+        Map<String, ResourceSyncResult> results = new LinkedHashMap<>();
+        for (ResourceDeclaration resource : resources) {
+            AreaPayload payload = AreaPayload.from(resource);
+            SysAreaEntity entity = areasById.get(payload.targetId());
+            if (entity == null) {
+                entity = new SysAreaEntity();
+                entity.setId(payload.targetId());
+                apply(entity, payload);
+                areaMapper.insert(entity);
+                areasById.put(entity.getId(), entity);
+            } else {
+                apply(entity, payload);
+                areaMapper.updateById(entity);
+            }
+            results.put(resource.getId(),
+                    ResourceSyncResult.of(entity.getId(), TARGET_TABLE, "System area synced: " + payload.name()));
+        }
+        return results;
+    }
+
+    @Override
     public ResourceSyncResult disable(ResourceDeclaration resource) {
         SysAreaEntity entity = resolve(resource);
         if (entity == null) {
@@ -81,6 +116,14 @@ public class SystemAreaResourceHandler implements ResourceHandler {
             targetId = Long.valueOf(resource.getId());
         }
         return areaMapper.selectById(targetId);
+    }
+
+    private Long targetIdForBatchLookup(ResourceDeclaration resource) {
+        try {
+            return number(resource, "targetId", false, Long.valueOf(resource.getId()));
+        } catch (NumberFormatException exception) {
+            return null;
+        }
     }
 
     private void apply(SysAreaEntity entity, AreaPayload payload) {

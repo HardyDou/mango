@@ -21,7 +21,8 @@ import io.mango.authorization.core.service.ISubjectAuthorityService;
 import io.mango.authorization.core.service.ITenantAppBindingService;
 import io.mango.authorization.core.service.impl.AuthorizationAppService;
 import io.mango.authorization.core.service.impl.FrontendRuntimeStrategyService;
-import io.mango.infra.kv.api.ILocker;
+import io.mango.infra.kv.api.ILeaseLocker;
+import io.mango.infra.kv.api.LockLease;
 import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguration;
 import io.mango.resource.support.ResourceHandler;
 import io.mango.resource.support.ResourceProvider;
@@ -55,9 +56,12 @@ import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.TestPropertySource;
 
+import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -440,8 +444,8 @@ class FrontendRuntimeResourceSyncIntegrationTest {
         }
 
         @Bean
-        ILocker locker() {
-            return new InMemoryLocker();
+        ILeaseLocker leaseLocker() {
+            return new InMemoryLeaseLocker();
         }
 
         @Bean
@@ -460,18 +464,31 @@ class FrontendRuntimeResourceSyncIntegrationTest {
         }
     }
 
-    static class InMemoryLocker implements ILocker {
+    static class InMemoryLeaseLocker implements ILeaseLocker {
 
-        private final Map<String, Boolean> locks = new ConcurrentHashMap<>();
+        private final Map<String, String> leases = new ConcurrentHashMap<>();
 
         @Override
-        public boolean tryLock(String key, long ttlSeconds) {
-            return locks.putIfAbsent(key, Boolean.TRUE) == null;
+        public Optional<LockLease> tryAcquire(String key, String owner, long ttlSeconds) {
+            String token = owner + ":" + UUID.randomUUID();
+            if (leases.putIfAbsent(key, token) != null) {
+                return Optional.empty();
+            }
+            Instant acquiredAt = Instant.now();
+            return Optional.of(new LockLease(key, owner, token, acquiredAt, acquiredAt.plusSeconds(ttlSeconds)));
         }
 
         @Override
-        public void unlock(String key) {
-            locks.remove(key);
+        public Optional<LockLease> renew(LockLease lease, long ttlSeconds) {
+            if (!leases.getOrDefault(lease.key(), "").equals(lease.token())) {
+                return Optional.empty();
+            }
+            return Optional.of(lease.renewedUntil(Instant.now().plusSeconds(ttlSeconds)));
+        }
+
+        @Override
+        public boolean release(LockLease lease) {
+            return leases.remove(lease.key(), lease.token());
         }
     }
 

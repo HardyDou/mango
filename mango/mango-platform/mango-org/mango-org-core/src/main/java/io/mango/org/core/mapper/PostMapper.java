@@ -11,4 +11,8 @@ public interface PostMapper extends BaseMapper<PostEntity> {
 
     @InterceptorIgnore(tenantLine = "true")
     Long selectIdByTenantAndCode(@Param("tenantId") Long tenantId, @Param("postCode") String postCode);
+
+    @InterceptorIgnore(tenantLine = "true")
+    PostEntity selectByTenantAndCodeForUpdate(@Param("tenantId") Long tenantId,
+                                              @Param("postCode") String postCode);
 }

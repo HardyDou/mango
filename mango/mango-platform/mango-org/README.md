@@ -85,6 +85,8 @@
 
 同一批 `ORG_UNIT` 声明会按 `parentOrgCode` 做父子排序后写入，业务模块不需要为了父组织先创建而拆分资源文件；如果父组织既不在本批声明中、也不在数据库中，handler 会明确报错。
 
+Resource Handler 按声明中的 `tenantId` 建立执行上下文，不能使用后台线程原有 tenant。`ORG_POST` 以 `(tenantId, postCode)`、`ORG_UNIT` 以 `(tenantId, orgCode)` 为稳定业务键；声明 `targetId` 只作为新建优选 ID。Provisioner、人工数据或并发同步已用另一 ID 创建同一业务键时复用数据库真实 ID；`targetId` 指向其它业务键时明确冲突且不修改数据。
+
 ## 6. 配置说明
 
 `mango-org` 当前没有独立 `@ConfigurationProperties` 前缀。引入 starter 后会通过自动配置注册 mapper、service、组织 controller、岗位 controller、租户初始化扩展和租户删除依赖检查扩展。
@@ -174,6 +176,8 @@ Flyway 只维护表、字段、索引和约束，不写业务数据。初始化�
 | `mango-org-starter/src/main/resources/META-INF/mango/resources/org-required-bootstrap.yml` | 系统运行必需的默认根组织和岗位，默认加载 |
 | `mango-org-starter/src/main/resources/META-INF/mango/demo/org-demo-structure.yml` | 演示组织树、演示租户根组织和演示岗位，仅启用 `mango.resource.registry.demo-enabled=true` 时加载 |
 | `OrgTenantProvisioner` | 新租户创建时生成根组织和默认岗位 |
+
+`OrgTenantProvisioner` 与 Resource Registry 共用上述稳定键。两者无论先后顺序或并发首次创建，都在唯一约束竞争后按同一租户和编码回读并收敛为一行；其它唯一键冲突不会被吞掉。
 
 新租户默认编码规则：
 
