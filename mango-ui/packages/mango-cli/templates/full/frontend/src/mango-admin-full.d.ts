@@ -21,6 +21,9 @@ declare module '@mango/admin/full' {
     title?: string;
     features?: 'full' | string[] | Set<string>;
     featureRegistrars?: MangoAdminFeatureRegistrar[];
+    moduleDiagnostics?: {
+      enabled?: boolean;
+    };
     devCenter?: {
       deployEnv?: string;
       enabled?: boolean;

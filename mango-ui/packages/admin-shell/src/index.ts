@@ -18,11 +18,16 @@ import {
 import { createMangoAdminRouter } from './router';
 import { ensureFeatureRegistrars } from './runtime/featureRegistrars';
 import { onShellRuntimeUnauthorized } from './runtime/runtimeHost';
+import { hasModuleDiagnosticChallenge, runModuleDiagnosticBridge } from './runtime/moduleDiagnosticBridge';
 
 export interface MangoAdminAppInstance {
   app: VueApp;
   router: Router;
   mount: (target?: string | Element) => Element | undefined;
+}
+
+export interface MangoAdminBootstrapHooks {
+  beforeMount?: (instance: MangoAdminAppInstance) => void;
 }
 
 export function createMangoAdminApp(options: MangoAdminShellOptions = {}): MangoAdminAppInstance {
@@ -32,9 +37,13 @@ export function createMangoAdminApp(options: MangoAdminShellOptions = {}): Mango
   });
   const apiBaseUrl = resolvedOptions.apiBaseUrl || '/api';
   setRequestBaseUrl(apiBaseUrl);
-  void ensureFeatureRegistrars().catch((error) => {
+  const featureRegistrars = ensureFeatureRegistrars().catch((error) => {
     console.error('[mango-shell] failed to register shell features', error);
+    throw error;
   });
+  if (resolvedOptions.moduleDiagnostics?.enabled && hasModuleDiagnosticChallenge()) {
+    void runModuleDiagnosticBridge(featureRegistrars);
+  }
 
   const app = createApp(App);
   const router = createMangoAdminRouter();
@@ -64,6 +73,33 @@ export function createMangoAdminApp(options: MangoAdminShellOptions = {}): Mango
   };
 }
 
+/**
+ * Uses a credential-free diagnostic bootstrap for a valid loopback challenge;
+ * otherwise creates, prepares and mounts the normal Admin application.
+ */
+export function bootstrapMangoAdminApp(
+  options: MangoAdminShellOptions = {},
+  hooks: MangoAdminBootstrapHooks = {},
+): MangoAdminAppInstance | undefined {
+  if (options.moduleDiagnostics?.enabled && hasModuleDiagnosticChallenge()) {
+    configureMangoAdminShell({
+      contentMode: 'runtime-outlet',
+      ...options,
+    });
+    void runModuleDiagnosticBridge(
+      ensureFeatureRegistrars().catch((error) => {
+        console.error('[mango-shell] failed to register diagnostic features', error);
+        throw error;
+      }),
+    );
+    return undefined;
+  }
+  const instance = createMangoAdminApp(options);
+  hooks.beforeMount?.(instance);
+  instance.mount();
+  return instance;
+}
+
 export { default as MangoAdminShellApp } from './App.vue';
 export { default as MangoAdminShellView } from './ShellView.vue';
 export { default as MangoAdminLayout } from './layout/index.vue';
@@ -84,3 +120,4 @@ export * from './runtime/menuHost';
 export * from './runtime/runtimeConfig';
 export * from './runtime/runtimeHost';
 export * from './runtime/homeWidgets';
+export * from './runtime/moduleDiagnosticBridge';

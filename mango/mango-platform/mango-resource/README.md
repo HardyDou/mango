@@ -42,6 +42,7 @@ Resource 不执行 SQL 文件，不做 Data Package/task 编排，不负责在�
 - 支持正式资源和 demo 资源目录隔离，demo 默认不扫描。
 - 支持本地单体注册中心和微服务远程上报两种拓扑。
 - 提供后台管理接口查询注册资源、同步日志、变更日志和处理器字段契约。
+- 为模块运行态诊断记录本 JVM 本次声明 fingerprint 与物化结果；历史 SUCCESS 不能单独证明当前可用。
 
 ## 4. 接入方式
 
@@ -416,6 +417,7 @@ authorization_api_resource         API_RESOURCE 访问模式正确
 | 同一错误持续刷屏或启动已 UP 但资源未完成 | 查看 `resourceStartupHealthIndicator` 的 participant 状态；`PERMANENT_FAILED` 需修正声明 snapshot，`TRANSIENT_WAIT` 查看下次退避重试和底层连接。 |
 | 微服务未上报资源 | 检查业务服务是否引入 `mango-resource-starter-remote` 和 `mango-resource-sync-starter`，并确认注册中心接口可访问。 |
 | 声明文件未加载 | 检查文件是否位于 `META-INF/mango/resources/`，扩展名是否为 `.json`、`.yml` 或 `.yaml`。 |
+| 模块诊断的 Resource 条件不是 PASS | 只有本 JVM 本次同步后的声明 fingerprint、registry sourceHash/status/target 与当前声明全部一致才通过；未拿到锁、旧 PASS 刷新失败或仅有历史 SUCCESS 都返回 UNKNOWN/FAIL。 |
 
 ## 15. 相关文档
 

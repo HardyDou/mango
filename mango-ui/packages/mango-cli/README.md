@@ -27,6 +27,7 @@
 | 初始化和启动本地开发工作区     | `mango workspace init`、`mango workspace status`、`mango workspace doctor`、`mango dev doctor`、`mango dev start` | `.mango/workspace.json`、`.mango/dev-workspace.env`、`.mango/run`             |
 | 拉取当前 Mango 版本文档包      | `mango docs pull`、`mango docs status`、`mango docs path`                                                         | `.mango/docs/<mango.version>`                                                 |
 | 编排可审计发布状态机           | `mango release publish/status/verify/repair`、`mango release registry doctor`                                     | `.mango/releases/<version>/manifest.json` 或项目配置的证据目录                |
+| 聚合模块真实运行态             | `mango module doctor mango-link`                                                                                  | loopback Actuator、Admin Shell、项目 Playwright                               |
 | 查看发布说明                   | `mango changelog`                                                                                                 | 不改文件                                                                      |
 
 ## 3. 能力边界
@@ -378,6 +379,7 @@ mango release repair --version 1.0.16 --project-dir . --authorize
 | `mango init <project>`          | 生成业务项目                                                     | `--preset`、`--modules`、`--topology`、`--package`                                           | 新项目目录                                                                                             |
 | `mango add <module...>`         | custom 项目追加 Mango 可选能力                                   | `--project-dir`                                                                              | `frontend/package.json`、`frontend/src/main.ts`、runtime config、后端 POM、`mango.config.json`         |
 | `mango module add <module>`     | 生成业务模块骨架                                                 | `--aggregate`、`--aggregate-name`、`--module-name`、`--project-dir`、`--force`               | `backend/modules`、`frontend/packages`、POM、前端入口、Flyway 模块配置、`mango.config.json`            |
+| `mango module doctor mango-link` | 聚合安装、Flyway、Resource、Authorization 和真实浏览器页面证据 | `--app`、`--backend-url`、`--frontend-url`、`--project-dir`、`--json`、`--strict`             | 不改项目文件；启动临时 loopback callback 和隔离浏览器上下文                                            |
 | `mango docs pull`               | 拉取当前 Mango 版本文档包                                        | `--project-dir`、`--version`、`--maven-repository`、`--force`                                | `.mango/docs/<version>`、`.mango/docs/current.json`                                                    |
 | `mango docs status`             | 查看当前 Mango 版本文档包状态                                    | `--project-dir`                                                                              | 不改文件                                                                                               |
 | `mango docs path`               | 输出本地文档包目录                                               | `--project-dir`                                                                              | 不改文件                                                                                               |
@@ -410,7 +412,35 @@ mango release repair --version 1.0.16 --project-dir . --authorize
 | `mango frontend doctor` | 检查前端 source 模式准备状态 | 无 | 不改文件 |
 | `mango changelog` | 打印 CLI changelog | 无 | 不改文件 |
 
-### 7.2 可选模块矩阵
+### 7.2 模块运行态诊断
+
+首版只支持 `mango-link`、单 JVM、默认同端口 `/actuator/mangoModules`、loopback Admin Shell。按以下顺序准备，任何一步缺失都应保留为 UNKNOWN，不应绕过检查：
+
+1. 后端设置 `mango.module.diagnostics.endpoint.enabled=true`，并把 `mangoModules` 加入 `management.endpoints.web.exposure.include` 后重启。
+2. 通过正常角色/权限治理给临时诊断主体分配 `diagnostic:read`，不要使用 permit path、IP 白名单或 internal-call 绕过。
+3. 前端设置 `VITE_MANGO_MODULE_DIAGNOSTICS_ENABLED=true`，重新构建或重启 Admin Shell。
+4. 在 `--project-dir` 指向的前端项目显式安装 Playwright，例如 `pnpm add --save-dev @playwright/test`。
+5. 在同一项目显式安装 Chromium，例如 `pnpm exec playwright install chromium`。
+6. 获取具有 `diagnostic:read` 的短期 token，只通过当前 CLI 进程的 `MANGO_DIAGNOSTIC_TOKEN` 注入。
+7. 使用后端和前端的 loopback IP literal origin 执行命令：
+
+```bash
+export MANGO_DIAGNOSTIC_TOKEN='<具有 diagnostic:read 的短期 access token>'
+mango module doctor mango-link \
+  --app internal-admin \
+  --backend-url http://127.0.0.1:18081 \
+  --frontend-url http://127.0.0.1:30001 \
+  --project-dir ./frontend \
+  --json
+```
+
+URL 只接受 `http://127.0.0.1` 或 `http://[::1]` base origin；拒绝 `localhost`、远程主机、userinfo、path、query、fragment 和 redirect。token 只从 `MANGO_DIAGNOSTIC_TOKEN` 读取并仅发给后端，既不进入浏览器，也不会出现在 challenge 或 callback 中。Chromium 子进程只继承运行所需的白名单环境变量，不继承任意业务、云平台或诊断秘密。
+
+CLI 绝不自动安装 Playwright、下载 Chromium或修改项目。缺少依赖时会在 `frontend.pageRuntime.evidence.hint` 和文本输出中给出显式安装提示，由操作者审核并执行。
+
+退出码：`0` 表示 required evidence 全部通过；`1` 表示确定性失败或 required WARN；`2` 表示参数/本地配置错误；`3` 表示权限、网络、协议、超时、过载、required UNKNOWN/stale 或浏览器不可用。JSON 模式 stdout 只输出一个对象。
+
+### 7.3 可选模块矩阵
 
 | code               | 能力     | 前端包                             | 后端 starter                                       | 页面注册 / runtime 说明                                                                                              |
 | ------------------ | -------- | ---------------------------------- | -------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
@@ -433,7 +463,7 @@ mango release repair --version 1.0.16 --project-dir . --authorize
 | `mango-template`      | `mango-admin-template-local` | `mango-admin-template-app`，entry `http://d.mango.io:5183/` |
 | `mango-cms`           | `mango-admin-cms-local`      | `mango-admin-cms-app`，entry `http://e.mango.io:5184/`      |
 
-### 7.3 模板和版本扩展点
+### 7.4 模板和版本扩展点
 
 | 入口                                         | 用途                                            | 注意事项                                                                                                                   |
 | -------------------------------------------- | ----------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |

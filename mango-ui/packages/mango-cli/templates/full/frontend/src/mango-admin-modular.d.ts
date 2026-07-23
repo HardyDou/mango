@@ -26,6 +26,9 @@ declare module '@mango/admin' {
     title?: string;
     features?: MangoAdminFeatures;
     featureRegistrars?: MangoAdminFeatureRegistrar[];
+    moduleDiagnostics?: {
+      enabled?: boolean;
+    };
     devCenter?: {
       visible?: boolean;
       deployEnv?: string;
@@ -44,7 +47,15 @@ declare module '@mango/admin' {
     mount: (target?: string | Element) => unknown;
   }
 
+  export interface MangoAdminBootstrapHooks {
+    beforeMount?: (instance: MangoAdminAppInstance) => void;
+  }
+
   export function createMangoAdminApp(options?: MangoAdminShellOptions): MangoAdminAppInstance;
+  export function bootstrapMangoAdminApp(
+    options?: MangoAdminShellOptions,
+    hooks?: MangoAdminBootstrapHooks,
+  ): MangoAdminAppInstance | undefined;
 }
 
 declare module '@mango/job/admin-pages' {

@@ -8,7 +8,7 @@
         "AUTH_MENU": [
           {
             "id": "2951300000000008101",
-            "version": 3,
+            "version": 4,
             "bizKey": "authorization.menu.internal-admin",
             "name": "授权基础菜单",
             "targetModule": "authorization",
@@ -110,6 +110,20 @@
                       "system:resource:sync-log:list",
                       "system:resource:change-log:list",
                       "system:resource:handler:list"
+                    ]
+                  },
+                  {
+                    "parentCode": "system:permission",
+                    "menuType": 3,
+                    "menuName": "模块运行诊断",
+                    "menuCode": "system:module-diagnostic:read",
+                    "sort": 9,
+                    "remark": "仅允许本机读取模块运行态诊断，不提供可见页面入口",
+                    "packageCodes": [
+                      "platform_admin"
+                    ],
+                    "apiCodes": [
+                      "diagnostic:read"
                     ]
                   },
                   {

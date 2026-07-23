@@ -22,6 +22,11 @@
             <artifactId>mango-infra-persistence-api</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>io.mango.infra.module</groupId>
+            <artifactId>mango-infra-module-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
 
         <!-- MyBatis-Plus 集成 -->
         <dependency>

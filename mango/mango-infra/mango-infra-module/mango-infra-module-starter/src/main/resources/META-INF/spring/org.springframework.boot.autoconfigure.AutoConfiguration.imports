@@ -1,1 +1,2 @@
 io.mango.infra.module.starter.ModuleAutoConfiguration
+io.mango.infra.module.starter.diagnostic.ModuleDiagnosticEndpointAutoConfiguration

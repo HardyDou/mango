@@ -2,6 +2,8 @@ package io.mango.infra.module.starter;
 
 import io.mango.infra.module.api.ModuleInfoRegistry;
 import io.mango.infra.module.api.ModuleInfoResolver;
+import io.mango.infra.module.api.diagnostic.ModuleInstallationRegistry;
+import io.mango.infra.module.core.diagnostic.ModuleDiagnosticAggregator;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
@@ -12,6 +14,30 @@ class ModuleAutoConfigurationTest {
 
     private final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
             .withConfiguration(AutoConfigurations.of(ModuleAutoConfiguration.class));
+
+    @Test
+    void diagnosticsAreAbsentByDefaultWhileModuleInfoRemainsAvailable() {
+        contextRunner.run(context -> {
+            assertThat(context).doesNotHaveBean(ModuleArtifactVersionResolver.class);
+            assertThat(context).doesNotHaveBean(ModuleInstallationRegistry.class);
+            assertThat(context).doesNotHaveBean(ModuleInstallationDiagnosticContributor.class);
+            assertThat(context).doesNotHaveBean(ModuleDiagnosticAggregator.class);
+            assertThat(context).hasSingleBean(ModuleInfoRegistry.class);
+            assertThat(context).hasSingleBean(ModuleInfoResolver.class);
+        });
+    }
+
+    @Test
+    void diagnosticsAreAssembledOnlyWhenExplicitlyEnabled() {
+        contextRunner
+                .withPropertyValues("mango.module.diagnostics.endpoint.enabled=true")
+                .run(context -> {
+                    assertThat(context).hasSingleBean(ModuleArtifactVersionResolver.class);
+                    assertThat(context).hasSingleBean(ModuleInstallationRegistry.class);
+                    assertThat(context).hasSingleBean(ModuleInstallationDiagnosticContributor.class);
+                    assertThat(context).hasSingleBean(ModuleDiagnosticAggregator.class);
+                });
+    }
 
     @Test
     void moduleInfoRegistry_withConfigMapping_registersModuleInfo() {

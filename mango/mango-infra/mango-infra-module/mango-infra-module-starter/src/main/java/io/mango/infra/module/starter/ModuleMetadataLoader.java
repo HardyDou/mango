@@ -6,7 +6,10 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
+
+import io.mango.infra.module.api.diagnostic.ModuleInstallation;
 
 import org.springframework.core.io.support.PropertiesLoaderUtils;
 
@@ -35,10 +38,15 @@ public class ModuleMetadataLoader {
                     if (modulePath != null) {
                         normalizedModulePath = modulePath.trim();
                     }
+                    String persistenceModule = properties.getProperty("diagnostic.persistence-module");
+                    String resourceModule = properties.getProperty("diagnostic.resource-module");
                     modules.add(new ModuleMetadata(
                             moduleName.trim(),
                             normalizedModulePath,
-                            resource.toString()));
+                            resource.toString(),
+                            resource,
+                            normalizeNullable(persistenceModule),
+                            normalizeNullable(resourceModule)));
                 }
             }
         } catch (IOException e) {
@@ -53,6 +61,35 @@ public class ModuleMetadataLoader {
         }
     }
 
-    public record ModuleMetadata(String moduleName, String modulePath, String source) {
+    private String normalizeNullable(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
+    }
+
+    public record ModuleMetadata(
+            String moduleName,
+            String modulePath,
+            String source,
+            URL resourceUrl,
+            String persistenceModule,
+            String resourceModule) {
+
+        public ModuleMetadata(String moduleName, String modulePath, String source) {
+            this(moduleName, modulePath, source, null, null, null);
+        }
+
+        public String sourceDescription() {
+            return source;
+        }
+
+        public Map<String, String> diagnosticAttributes() {
+            Map<String, String> attributes = new java.util.LinkedHashMap<>();
+            if (persistenceModule != null) {
+                attributes.put(ModuleInstallation.PERSISTENCE_MODULE_ATTRIBUTE, persistenceModule);
+            }
+            if (resourceModule != null) {
+                attributes.put(ModuleInstallation.RESOURCE_MODULE_ATTRIBUTE, resourceModule);
+            }
+            return Map.copyOf(attributes);
+        }
     }
 }

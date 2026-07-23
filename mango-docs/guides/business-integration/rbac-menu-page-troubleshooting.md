@@ -18,6 +18,10 @@
 
 后台品牌配置新增折叠 Logo 字段，只影响 Admin Shell 展开态/折叠态 Logo 展示和后台品牌配置保存；不改变菜单 component key、页面注册、动态路由、角色授权、菜单权限和页面打开排障步骤。
 
+### Issue #348 模块运行态诊断入口
+
+`mango module doctor mango-link` 可在显式启用诊断端点和 Admin Shell bridge 后，一次交叉检查 starter 安装、Flyway、当前 Resource 声明、Authorization 菜单/API 物化及五个 `mango-link` 页面 loader/chunk。它只支持本机 loopback、单实例、默认同端口 Actuator 和 `mango-link`，不改变菜单树 API、`component` key、角色授权或本指南的逐项排障链路；其它模块或任一证据不可观察时会保守返回 UNKNOWN，而不是替代人工排查得出 READY。
+
 ## 2. 阅读顺序
 
 | 顺序 | 文档                                                                                     | 关注点                         |

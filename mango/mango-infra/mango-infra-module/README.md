@@ -11,6 +11,7 @@
 | API 文档需要按模块分组 | Maven 依赖 / starter / Java API |
 | Feign 调用或内部模块路由需要解析模块目标 | Maven 依赖 / starter / Java API |
 | authorization 同步菜单、权限或 API 资源时，需要知道模块元数据来源 | Maven 依赖 / starter / Java API |
+| 本机确认管理模块安装、Flyway、资源、授权和页面运行态 | `mango module doctor mango-link` / Actuator |
 
 
 ## 3. 能力边界
@@ -55,6 +56,7 @@ String runtimeBasePath = moduleInfo.runtimeBasePath();
 | `modules.<module-name>.service-name` | `spring.application.name` 或 `application` | 模块所在服务名。 |
 | `modules.<module-name>.context-path` | `server.servlet.context-path`、`spring.webflux.base-path` 或空 | 模块所在服务的上下文路径。 |
 | `modules.<module-name>.module-path` | 由 module name 推导，如 `mango-payment` -> `/payment` | 模块业务根路径；支持逗号分隔多个路径。 |
+| `mango.module.diagnostics.endpoint.enabled` | `false` | 是否创建模块诊断 Actuator endpoint；还需显式 exposure 和固定名专用授权 bean。 |
 
 示例：
 
@@ -106,6 +108,10 @@ mango:
 - 模块分组或资源同步找不到模块：检查 `META-INF/mango/module.properties` 是否打进 jar。
 - 路径匹配不准：检查 `context-path` 和 `module-path` 是否重复拼接。
 - 微服务目标错误：用配置覆盖 module service 映射，不要在业务调用处硬编码。
+- 模块运行状态不确定：首版仅在单 JVM、默认 management path/port、loopback Admin Shell 下支持 `mango-link`。启用 `mango.module.diagnostics.endpoint.enabled=true`，把 `mangoModules` 加入 Actuator exposure，并给调用主体授予独立的 `diagnostic:read` 权限。endpoint 只接受 header Bearer；query、cookie、internal call、IP 白名单和通用 permit path 都不能绕过。
+- 诊断返回 `UNKNOWN`：它表示证据缺失、过期、超时、过载或不可观察，不等于失败，也不能作为发布成功。cache miss 调用和存活 flight 均有全局上限，过载时立即返回；诊断不会触发 migrate、repair、Resource resync，也不参与 readiness。
+
+运行态 profile `ADMIN_MODULE_RUNTIME_V1` 固定检查 `installation`、`persistence.flyway`、`resource.materialization`、`authorization.menuApi` 和 `frontend.pageRuntime`。后端与前端实际版本分开报告；Issue #346 提供期望来源前，expected version 保持 `UNKNOWN/NO_EXPECTATION_PROVIDER`。
 
 ## 12. 验证入口
 

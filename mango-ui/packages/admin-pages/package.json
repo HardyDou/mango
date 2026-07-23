@@ -36,7 +36,8 @@
     }
   },
   "scripts": {
-    "build": "vite build && node ../../scripts/generate-package-types.mjs"
+    "build": "vite build && node ../../scripts/generate-package-types.mjs",
+    "test": "vitest run"
   },
   "files": [
     "dist",
@@ -54,7 +55,8 @@
   },
   "devDependencies": {
     "typescript": "^5.9.3",
-    "vite": "^4.3.3"
+    "vite": "^4.3.3",
+    "vitest": "^4.1.10"
   },
   "publishConfig": {
     "registry": "http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/"

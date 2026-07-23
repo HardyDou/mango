@@ -17,6 +17,8 @@ import io.mango.resource.core.sync.ResourceRegistryLock;
 import io.mango.resource.core.sync.ResourceRegistryRepository;
 import io.mango.resource.core.sync.ResourceRegistryRepository.ResourceRegistrySnapshot;
 import io.mango.resource.core.sync.ResourceRegistryRow;
+import io.mango.resource.core.diagnostic.ResourceModuleSyncStatusRegistry;
+import io.mango.resource.core.diagnostic.ResourceModuleSyncStatusRegistry.ModuleObservation;
 import io.mango.resource.support.model.ResourceDeclaration;
 import io.mango.resource.support.model.ResourceField;
 import io.mango.resource.support.model.ResourceSyncResult;
@@ -59,6 +61,7 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
     private final ResourceRegistryRepository repository;
     private final ResourceRegistryLock lock;
     private final ObjectMapper objectMapper;
+    private final ResourceModuleSyncStatusRegistry moduleSyncStatusRegistry;
     private final ResourceHandlerInvoker handlerInvoker = new ResourceHandlerInvoker();
     private final Object lifecycleMonitor = new Object();
     private volatile boolean running = true;
@@ -88,20 +91,29 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
     }
 
     private void syncWhileRunning(boolean force) {
-        if (!properties.isEnabled()) {
-            log.info("Mango resource registry sync disabled");
-            return;
-        }
-        String owner = resolveOwner();
-        ResourceRegistryLock.LeaseSession lease = lock.tryLock(owner, properties.getLockTtlSeconds()).orElse(null);
-        if (lease == null) {
-            log.info("Mango resource registry sync skipped: lock is held by another instance");
-            return;
-        }
+        invalidateDiagnosticStatus("RESOURCE_SYNC_ATTEMPT_STARTED");
         try {
-            doSync(force);
-        } finally {
-            lease.close();
+            if (!properties.isEnabled()) {
+                invalidateDiagnosticStatus("RESOURCE_SYNC_DISABLED");
+                log.info("Mango resource registry sync disabled");
+                return;
+            }
+            String owner = resolveOwner();
+            ResourceRegistryLock.LeaseSession lease = lock.tryLock(
+                    owner, properties.getLockTtlSeconds()).orElse(null);
+            if (lease == null) {
+                invalidateDiagnosticStatus("RESOURCE_SYNC_LOCK_NOT_ACQUIRED");
+                log.info("Mango resource registry sync skipped: lock is held by another instance");
+                return;
+            }
+            try {
+                doSync(force);
+            } finally {
+                lease.close();
+            }
+        } catch (RuntimeException exception) {
+            failObservedDiagnosticStatus("RESOURCE_SYNC_FAILED");
+            throw exception;
         }
     }
 
@@ -128,23 +140,32 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
 
     private boolean syncRemoteWhileRunning(String appCode, String serviceCode, List<String> managedModuleCodes,
                                            List<ResourceDeclaration> declarations) {
-        requireText(appCode, "Resource remote appCode is required");
-        requireText(serviceCode, "Resource remote serviceCode is required");
-        if (!properties.isEnabled()) {
-            log.info("Mango resource registry remote sync disabled");
-            return true;
-        }
-        String owner = resolveOwner();
-        ResourceRegistryLock.LeaseSession lease = lock.tryLock(owner, properties.getLockTtlSeconds()).orElse(null);
-        if (lease == null) {
-            log.info("Mango resource registry remote sync deferred: lock is held by another instance");
-            return false;
-        }
+        invalidateDiagnosticStatus("RESOURCE_SYNC_ATTEMPT_STARTED");
         try {
-            doSync(appCode.trim(), serviceCode.trim(), declarations, managedModuleCodes, false);
-            return true;
-        } finally {
-            lease.close();
+            requireText(appCode, "Resource remote appCode is required");
+            requireText(serviceCode, "Resource remote serviceCode is required");
+            if (!properties.isEnabled()) {
+                invalidateDiagnosticStatus("RESOURCE_SYNC_DISABLED");
+                log.info("Mango resource registry remote sync disabled");
+                return true;
+            }
+            String owner = resolveOwner();
+            ResourceRegistryLock.LeaseSession lease = lock.tryLock(
+                    owner, properties.getLockTtlSeconds()).orElse(null);
+            if (lease == null) {
+                invalidateDiagnosticStatus("RESOURCE_SYNC_LOCK_NOT_ACQUIRED");
+                log.info("Mango resource registry remote sync deferred: lock is held by another instance");
+                return false;
+            }
+            try {
+                doSync(appCode.trim(), serviceCode.trim(), declarations, managedModuleCodes, false);
+                return true;
+            } finally {
+                lease.close();
+            }
+        } catch (RuntimeException exception) {
+            failObservedDiagnosticStatus("RESOURCE_SYNC_FAILED");
+            throw exception;
         }
     }
 
@@ -229,25 +250,110 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
                         Set<String> managedModuleCodes, boolean force) {
         assertOperationCanContinue();
         declarations.forEach(declaration -> applySource(declaration, appCode, serviceCode));
-        validateDeclarations(declarations);
-        ResourceRegistrySnapshot registrySnapshot = repository.loadSnapshot(declarations);
-        validateRegistryConflicts(declarations, registrySnapshot);
-        Set<String> seenResourceIds = new HashSet<>();
-        List<ResourceDeclaration> activeDeclarations = new ArrayList<>();
-        for (ResourceDeclaration declaration : declarations) {
-            assertOperationCanContinue();
-            seenResourceIds.add(declaration.getId());
-            if (isDeprecated(declaration)) {
-                syncDeprecated(declaration, force, registrySnapshot);
-            } else if (isDisabled(declaration)) {
-                syncOne(declaration, handlerMap, force, registrySnapshot);
-            } else {
-                activeDeclarations.add(declaration);
+        Map<String, ModuleObservation> observations = observeDeclarations(declarations);
+        recordDiagnosticRunning(observations, managedModuleCodes);
+        try {
+            validateDeclarations(declarations);
+            ResourceRegistrySnapshot registrySnapshot = repository.loadSnapshot(declarations);
+            validateRegistryConflicts(declarations, registrySnapshot);
+            Set<String> seenResourceIds = new HashSet<>();
+            List<ResourceDeclaration> activeDeclarations = new ArrayList<>();
+            for (ResourceDeclaration declaration : declarations) {
+                assertOperationCanContinue();
+                seenResourceIds.add(declaration.getId());
+                if (isDeprecated(declaration)) {
+                    syncDeprecated(declaration, force, registrySnapshot);
+                } else if (isDisabled(declaration)) {
+                    syncOne(declaration, handlerMap, force, registrySnapshot);
+                } else {
+                    activeDeclarations.add(declaration);
+                }
             }
+            syncActiveBatch(activeDeclarations, handlerMap, force, registrySnapshot);
+            disableMissing(appCode, serviceCode, managedModuleCodes, seenResourceIds, handlerMap);
+            observeDiagnosticCompletion(observations, declarations, handlerMap);
+            log.info("Mango resource registry sync complete: declarations={}", declarations.size());
+        } catch (RuntimeException exception) {
+            recordDiagnosticFailure(observations, "RESOURCE_SYNC_FAILED");
+            throw exception;
         }
-        syncActiveBatch(activeDeclarations, handlerMap, force, registrySnapshot);
-        disableMissing(appCode, serviceCode, managedModuleCodes, seenResourceIds, handlerMap);
-        log.info("Mango resource registry sync complete: declarations={}", declarations.size());
+    }
+
+    private Map<String, ModuleObservation> observeDeclarations(List<ResourceDeclaration> declarations) {
+        try {
+            return moduleSyncStatusRegistry.observations(declarations);
+        } catch (RuntimeException observationFailure) {
+            log.warn("Mango resource synchronization diagnostic observation failed before synchronization",
+                    observationFailure);
+            return Map.of();
+        }
+    }
+
+    private void observeDiagnosticCompletion(
+            Map<String, ModuleObservation> observations,
+            List<ResourceDeclaration> declarations,
+            Map<String, ResourceHandler> handlerMap) {
+        if (observations.isEmpty()) {
+            return;
+        }
+        try {
+            ResourceRegistrySnapshot completedSnapshot = repository.loadSnapshot(declarations);
+            moduleSyncStatusRegistry.complete(
+                    observations,
+                    completedSnapshot,
+                    declaration -> handlerMap.containsKey(declaration.getResourceType())
+                            || targetDispatcher(declaration) != null);
+        } catch (RuntimeException observationFailure) {
+            recordDiagnosticUnknown(observations, "RESOURCE_SYNC_OBSERVATION_FAILED");
+            log.warn("Mango resource synchronization succeeded but diagnostic observation failed",
+                    observationFailure);
+        }
+    }
+
+    private void invalidateDiagnosticStatus(String reasonCode) {
+        try {
+            moduleSyncStatusRegistry.invalidateObserved(reasonCode);
+        } catch (RuntimeException observationFailure) {
+            log.warn("Mango resource diagnostic invalidation failed: reasonCode={}",
+                    reasonCode, observationFailure);
+        }
+    }
+
+    private void recordDiagnosticRunning(
+            Map<String, ModuleObservation> observations,
+            Set<String> managedModuleCodes) {
+        try {
+            moduleSyncStatusRegistry.running(observations, managedModuleCodes);
+        } catch (RuntimeException observationFailure) {
+            log.warn("Mango resource diagnostic running state update failed", observationFailure);
+        }
+    }
+
+    private void recordDiagnosticFailure(Map<String, ModuleObservation> observations, String reasonCode) {
+        try {
+            moduleSyncStatusRegistry.failed(observations, reasonCode);
+        } catch (RuntimeException observationFailure) {
+            log.warn("Mango resource diagnostic failure state update failed: reasonCode={}",
+                    reasonCode, observationFailure);
+        }
+    }
+
+    private void failObservedDiagnosticStatus(String reasonCode) {
+        try {
+            moduleSyncStatusRegistry.failedObserved(reasonCode);
+        } catch (RuntimeException observationFailure) {
+            log.warn("Mango resource observed diagnostic failure state update failed: reasonCode={}",
+                    reasonCode, observationFailure);
+        }
+    }
+
+    private void recordDiagnosticUnknown(Map<String, ModuleObservation> observations, String reasonCode) {
+        try {
+            moduleSyncStatusRegistry.unknown(observations, reasonCode);
+        } catch (RuntimeException observationFailure) {
+            log.warn("Mango resource diagnostic unknown state update failed: reasonCode={}",
+                    reasonCode, observationFailure);
+        }
     }
 
     private void applySource(ResourceDeclaration declaration, String appCode, String serviceCode) {

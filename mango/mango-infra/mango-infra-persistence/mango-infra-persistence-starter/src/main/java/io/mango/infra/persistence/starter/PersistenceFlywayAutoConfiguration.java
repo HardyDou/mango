@@ -3,8 +3,13 @@ package io.mango.infra.persistence.starter;
 import io.mango.infra.persistence.starter.datasource.PersistenceDataSourceAutoConfiguration;
 import io.mango.infra.persistence.starter.datasource.PersistenceDataSourceRegistry;
 import io.mango.infra.persistence.api.datasource.PersistenceModuleDataSourceResolver;
+import io.mango.infra.persistence.starter.diagnostic.PersistenceModuleDiagnosticContributor;
+import io.mango.infra.persistence.starter.diagnostic.PersistenceModuleMigrationStatusRegistry;
+import lombok.extern.slf4j.Slf4j;
 import org.flywaydb.core.Flyway;
+import org.flywaydb.core.api.MigrationInfo;
 import org.flywaydb.core.api.configuration.FluentConfiguration;
+import org.flywaydb.core.api.output.MigrateResult;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -62,6 +67,7 @@ import java.util.Set;
 @ConditionalOnClass(Flyway.class)
 @ConditionalOnBean(DataSource.class)
 @EnableConfigurationProperties(PersistenceFlywayProperties.class)
+@Slf4j
 public class PersistenceFlywayAutoConfiguration {
 
     private static final int URL_TIMEOUT_MILLIS = 30_000;
@@ -99,10 +105,25 @@ public class PersistenceFlywayAutoConfiguration {
     }
 
     @Bean
+    @ConditionalOnMissingBean
+    public PersistenceModuleMigrationStatusRegistry persistenceModuleMigrationStatusRegistry() {
+        return new PersistenceModuleMigrationStatusRegistry();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public PersistenceModuleDiagnosticContributor persistenceModuleDiagnosticContributor(
+            PersistenceModuleMigrationStatusRegistry registry,
+            PersistenceFlywayProperties properties) {
+        return new PersistenceModuleDiagnosticContributor(registry, properties);
+    }
+
+    @Bean
     @ConditionalOnMissingBean(name = "persistenceFlywayMigrationInitializer")
     public FlywayMigrationInitializer persistenceFlywayMigrationInitializer(@Autowired Flyway flyway,
                                                                            @Autowired DataSource dataSource,
                                                                            @Autowired PersistenceFlywayProperties properties,
+                                                                           PersistenceModuleMigrationStatusRegistry statusRegistry,
                                                                            ObjectProvider<PersistenceDataSourceRegistry> registryProvider,
                                                                            ObjectProvider<PersistenceModuleDataSourceResolver> resolverProvider) {
         return new FlywayMigrationInitializer(flyway, ignored -> {
@@ -126,6 +147,7 @@ public class PersistenceFlywayAutoConfiguration {
                         DataSource moduleDataSource = resolvedDataSource.dataSource();
                         datasource = resolvedDataSource.description();
                         historyTable = resolveHistoryTable(module);
+                        recordMigrationRunning(statusRegistry, module.name(), historyTable);
                         resolvedLocations = resolveLocations(module);
                         configuration
                                 .dataSource(moduleDataSource)
@@ -138,8 +160,12 @@ public class PersistenceFlywayAutoConfiguration {
                         if (ignoreMissingMigrations) {
                             configuration.ignoreMigrationPatterns("*:missing");
                         }
-                        configuration.load().migrate();
+                        Flyway moduleFlyway = configuration.load();
+                        MigrateResult migrateResult = moduleFlyway.migrate();
+                        observeMigrationResult(
+                                statusRegistry, module.name(), historyTable, moduleFlyway, migrateResult);
                     } catch (Exception e) {
+                        recordMigrationFailed(statusRegistry, module.name(), historyTable);
                         throw new IllegalStateException(
                                 "Mango Flyway module migration failed: module=" + module.name()
                                         + ", historyTable=" + historyTable
@@ -166,6 +192,63 @@ public class PersistenceFlywayAutoConfiguration {
                 throw new IllegalStateException("Mango Flyway module migration failed", e);
             }
         });
+    }
+
+    private void observeMigrationResult(
+            PersistenceModuleMigrationStatusRegistry statusRegistry,
+            String module,
+            String historyTable,
+            Flyway moduleFlyway,
+            MigrateResult migrateResult) {
+        try {
+            MigrationInfo current = moduleFlyway.info().current();
+            int pendingCount = moduleFlyway.info().pending().length;
+            String currentVersion = current == null || current.getVersion() == null
+                    ? migrateResult.targetSchemaVersion
+                    : current.getVersion().getVersion();
+            statusRegistry.applied(module, historyTable, currentVersion, pendingCount);
+        } catch (RuntimeException observationFailure) {
+            recordMigrationUnknown(statusRegistry, module, historyTable, "MIGRATION_OBSERVATION_FAILED");
+            log.warn("Mango Flyway migration succeeded but diagnostic observation failed: module={}, historyTable={}",
+                    module, historyTable, observationFailure);
+        }
+    }
+
+    private void recordMigrationRunning(
+            PersistenceModuleMigrationStatusRegistry statusRegistry,
+            String module,
+            String historyTable) {
+        try {
+            statusRegistry.running(module, historyTable);
+        } catch (RuntimeException observationFailure) {
+            log.warn("Mango Flyway diagnostic state update failed before migration: module={}, historyTable={}",
+                    module, historyTable, observationFailure);
+        }
+    }
+
+    private void recordMigrationFailed(
+            PersistenceModuleMigrationStatusRegistry statusRegistry,
+            String module,
+            String historyTable) {
+        try {
+            statusRegistry.failed(module, historyTable);
+        } catch (RuntimeException observationFailure) {
+            log.warn("Mango Flyway diagnostic state update failed after migration failure: module={}, historyTable={}",
+                    module, historyTable, observationFailure);
+        }
+    }
+
+    private void recordMigrationUnknown(
+            PersistenceModuleMigrationStatusRegistry statusRegistry,
+            String module,
+            String historyTable,
+            String reasonCode) {
+        try {
+            statusRegistry.unknown(module, historyTable, reasonCode);
+        } catch (RuntimeException observationFailure) {
+            log.warn("Mango Flyway diagnostic state update failed after observation failure: module={}, historyTable={}",
+                    module, historyTable, observationFailure);
+        }
     }
 
     private boolean shouldExposeFlywayFailure(IllegalStateException exception) {

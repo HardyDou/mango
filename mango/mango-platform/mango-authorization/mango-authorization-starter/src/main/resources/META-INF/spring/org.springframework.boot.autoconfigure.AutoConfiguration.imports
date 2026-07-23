@@ -1,3 +1,4 @@
 io.mango.authorization.starter.AuthorizationAutoConfiguration
+io.mango.authorization.diagnostic.AuthorizationDiagnosticAutoConfiguration
 io.mango.authorization.starter.autoconfigure.SecurityAutoConfiguration
 io.mango.authorization.starter.autoconfigure.TokenAutoConfiguration

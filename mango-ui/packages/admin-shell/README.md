@@ -4,7 +4,7 @@
 
 ## 1. 概览
 
-这个包属于 `admin-shell`。业务后台项目如果要使用 Mango 管理端布局、菜单、登录态、主题和运行时页面加载能力，入口通常就是 `createMangoAdminApp()`。
+这个包属于 `admin-shell`。业务后台项目如果要使用 Mango 管理端布局、菜单、登录态、主题和运行时页面加载能力，入口推荐使用 `bootstrapMangoAdminApp()`；`createMangoAdminApp()` 继续作为兼容的底层创建入口。
 
 它不是纯组件库，也不适合官网、营销站点直接复用。
 
@@ -13,6 +13,7 @@
 | 能力             | 入口                                                                                                             |
 | ---------------- | ---------------------------------------------------------------------------------------------------------------- |
 | 创建管理后台应用 | `createMangoAdminApp()`                                                                                          |
+| 安全启动管理后台 | `bootstrapMangoAdminApp()`；诊断 challenge 模式不挂载登录 UI，普通模式创建并挂载应用                             |
 | 配置 Shell       | `configureMangoAdminShell()`                                                                                     |
 | 读取 Shell 配置  | `getMangoAdminShellOptions()`                                                                                    |
 | 创建路由         | `createMangoAdminRouter()`                                                                                       |
@@ -66,24 +67,25 @@ admin.mount();
 
 `MangoAdminShellOptions`：
 
-| 字段                       | 默认值           | 含义                                                                                  |
-| -------------------------- | ---------------- | ------------------------------------------------------------------------------------- |
-| `mountTarget`              | `#app`           | 默认挂载节点。                                                                        |
-| `apiBaseUrl`               | `/api`           | `@mango/common` request 基础地址。                                                    |
-| `title`                    | `Mango Admin`    | 页面标题。                                                                            |
-| `contentMode`              | `runtime-outlet` | 内容渲染方式，支持 `router-view`、`runtime-outlet`。                                  |
-| `devCenter.visible`        | 空               | 是否显示开发中心。                                                                    |
-| `devCenter.deployEnv`      | 空               | 开发中心运行环境标识。                                                                |
-| `devCenter.registrars`     | 空               | 开发中心页面注册函数。                                                                |
-| `devCenter.pages`          | 空               | 开发中心页面列表函数。                                                                |
-| `login`                    | 空               | 登录页配置；默认传给 `@mango/auth`，也可用 `login.component` 替换 `/login` 页面组件。 |
-| `modules`                  | 空               | 模块运行时配置，结构来自 `@mango/app-runtime`。                                       |
-| `localApps`                | 空               | 本地应用配置。                                                                        |
-| `features`                 | `core`           | 内置能力开关。                                                                        |
-| `featureRegistrars`        | 空               | 额外能力注册函数，可注册页面并返回首页小组件。                                        |
-| `widgets`                  | 空               | 宿主直接传入的首页业务小组件定义。                                                    |
-| `runtimeConfigUrl`         | 空               | 运行时配置地址。                                                                      |
-| `runtimeConfigLoadOptions` | 空               | 运行时配置加载选项。                                                                  |
+| 字段                        | 默认值           | 含义                                                                                  |
+| --------------------------- | ---------------- | ------------------------------------------------------------------------------------- |
+| `mountTarget`               | `#app`           | 默认挂载节点。                                                                        |
+| `apiBaseUrl`                | `/api`           | `@mango/common` request 基础地址。                                                    |
+| `title`                     | `Mango Admin`    | 页面标题。                                                                            |
+| `contentMode`               | `runtime-outlet` | 内容渲染方式，支持 `router-view`、`runtime-outlet`。                                  |
+| `devCenter.visible`         | 空               | 是否显示开发中心。                                                                    |
+| `devCenter.deployEnv`       | 空               | 开发中心运行环境标识。                                                                |
+| `devCenter.registrars`      | 空               | 开发中心页面注册函数。                                                                |
+| `devCenter.pages`           | 空               | 开发中心页面列表函数。                                                                |
+| `login`                     | 空               | 登录页配置；默认传给 `@mango/auth`，也可用 `login.component` 替换 `/login` 页面组件。 |
+| `modules`                   | 空               | 模块运行时配置，结构来自 `@mango/app-runtime`。                                       |
+| `localApps`                 | 空               | 本地应用配置。                                                                        |
+| `features`                  | `core`           | 内置能力开关。                                                                        |
+| `featureRegistrars`         | 空               | 额外能力注册函数，可注册页面并返回首页小组件。                                        |
+| `widgets`                   | 空               | 宿主直接传入的首页业务小组件定义。                                                    |
+| `runtimeConfigUrl`          | 空               | 运行时配置地址。                                                                      |
+| `runtimeConfigLoadOptions`  | 空               | 运行时配置加载选项。                                                                  |
+| `moduleDiagnostics.enabled` | `false`          | 是否接受一次性 loopback 模块诊断 challenge；仅用于 CLI 本地诊断。                     |
 
 自定义登录页：
 
@@ -184,6 +186,14 @@ Shell 首页会自动把模块返回的 `widgets` 合并进组件库。`business
 `modules` 用于声明运行时模块加载方式，结构来自 `@mango/app-runtime`。本地页面优先使用已注册的 page loader；微前端页面需要在运行时配置中声明 entry、activeRule 和隔离策略。
 
 同一微应用可由多个模块或路由槽位挂载。Shell 使用模块的 `instanceId` 精确选择 Wujie 实例；未显式配置且同一 `runtimeCode` 出现多次时，运行时按 `runtimeCode:moduleCode` 生成稳定标识。重复的显式 `instanceId` 会作为配置错误阻断，避免请求上下文和定向销毁串到相邻实例。
+
+### Module Runtime Diagnostics
+
+模块诊断默认关闭。示例应用只在 `VITE_MANGO_MODULE_DIAGNOSTICS_ENABLED=true` 时传入 `moduleDiagnostics.enabled=true`。启用后，Shell 仅接受 CLI 通过 URL fragment 注入的短 TTL、128-bit nonce、一次性 challenge；Shell 和 callback 都必须是 `127.0.0.1` 或 `[::1]` 的精确 origin。fragment 会在 hash router 初始化前从地址栏清除，不进入 redirect 或持久历史。
+
+bridge 等待 feature registrars 后，只 probe challenge 明确列出的 page key，以无凭据、`no-referrer`、禁止 redirect 的 bounded JSON 回传。它不读取或接收后端 Bearer token，不复用现有浏览器用户目录，不批量加载其它模块页面；CLI 浏览器上下文还会阻断第三方网络和 Service Worker。
+
+完整启用顺序是：后端开启 `mango.module.diagnostics.endpoint.enabled=true` 并 exposure `mangoModules`；通过正常权限治理分配 `diagnostic:read`；前端设置 `VITE_MANGO_MODULE_DIAGNOSTICS_ENABLED=true` 后重建；在 CLI 的 `--project-dir` 显式安装 Playwright 和 Chromium；最后注入短期 `MANGO_DIAGNOSTIC_TOKEN` 执行诊断。CLI 不会自动安装或下载任何浏览器依赖。
 
 ### Home Widget Runtime
 
@@ -301,6 +311,10 @@ Shell 自带首页、登录页、账户页和错误页。业务菜单来自后�
 **401 后没有回到登录页**
 
 Shell 会注册 unauthorized handler 并清理 session 后跳转 `/login`。检查 request 是否使用 `@mango/common` 的请求工具。
+
+**模块诊断一直是 UNKNOWN**
+
+确认 Shell 构建时显式启用了诊断、URL 使用 loopback IP literal、项目已安装 Playwright 和 Chromium。缺浏览器时 CLI 会明确返回 UNKNOWN/退出 3，且不会自动下载。
 
 ## 10. 相关文档
 

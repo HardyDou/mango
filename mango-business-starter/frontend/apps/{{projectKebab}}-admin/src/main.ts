@@ -1,4 +1,5 @@
-import { createMangoAdminApp } from '@mango/admin';
+import { bootstrapMangoAdminApp } from '@mango/admin';
+import type { MangoAdminBootstrapHooks, MangoAdminShellOptions } from '@mango/admin';
 import '@mango/admin/style.css';
 import { Session } from '@mango/common';
 import { createMangoHttpClient } from '@mango/http-client';
@@ -17,13 +18,20 @@ const httpClient = createMangoHttpClient({
   },
 });
 
-register{{modulePascal}}Pages();
-
-const adminApp = createMangoAdminApp({
+const mangoAdminOptions: MangoAdminShellOptions = {
   mountTarget: '#app',
   apiBaseUrl,
   title: import.meta.env.VITE_APP_TITLE || '{{projectPascal}} Admin',
-});
+  featureRegistrars: [register{{modulePascal}}Pages],
+  moduleDiagnostics: {
+    enabled: import.meta.env.VITE_MANGO_MODULE_DIAGNOSTICS_ENABLED === 'true',
+  },
+};
 
-adminApp.app.provide(MANGO_HTTP_CLIENT_KEY, httpClient);
-adminApp.mount();
+const mangoAdminBootstrapHooks: MangoAdminBootstrapHooks = {
+  beforeMount(adminApp) {
+    adminApp.app.provide(MANGO_HTTP_CLIENT_KEY, httpClient);
+  },
+};
+
+bootstrapMangoAdminApp(mangoAdminOptions, mangoAdminBootstrapHooks);

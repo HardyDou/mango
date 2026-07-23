@@ -26,6 +26,7 @@
 | 授权快照 | 为 `mango-auth` 返回 roles 和 permissions，为 `mango-access` 做权限码匹配 |
 | 角色数据权限 | 为 `mango-infra-persistence` 提供 `DataScopeProvider`，业务查询可显式应用数据范围 |
 | 前端运行时 | 返回应用 runtime descriptor 和模块运行策略 |
+| 模块运行态诊断 | 批量核对当前 Resource 推导的菜单/API 需求与真实物化行，只输出计数和安全 page key |
 
 ## 3. 后端接入
 
@@ -730,6 +731,7 @@ Resource Registry 还支持授权基线声明：
 | 改了资源策略但 access 仍按旧策略 | 调 `/authorization/api-resources/cache/refresh` 或重新注册资源清空缓存 |
 | 前端页面打不开 | 查菜单 `component` 是否等于前端包注册的页面 key，`pageType` 和 `externalUrl` 是否匹配 |
 | 登录后 `/auth/info` 权限为空 | 查成员角色绑定的 `subjectId` 是否等于登录 `memberId`，`appCode`、`realm`、`actorType` 是否一致 |
+| 模块诊断的 Authorization 条件失败 | Resource 当前声明已 APPLIED，但菜单或 API 物化行有缺失；响应只给 expected/missing 计数和 page key，不暴露 API path、handler、用户、角色或租户。 |
 
 ## 15. 相关文档
 

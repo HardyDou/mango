@@ -14,6 +14,10 @@ Org 的 `V1__init_org.sql` 只创建 `sys_org`、`org_post` 及索引约束。�
 
 System 新库只执行纯 DDL `V1__init_system.sql`。平台默认租户、524 条行政区划和 20 条国际化文案由 `META-INF/mango/resources/system-common-*.yml` 默认登记；A/B/C 公司租户位于 `META-INF/mango/demo/system-demo-tenant.yml`，只在 demo 开关启用时加载。System 资源写入使用运行时租户主键，不使用租户编码代替 `tenant_id`；排查空数据时同时核对资源同步顺序和目标表行数。
 
+### Issue #348 模块运行态诊断影响
+
+新增的 `mango module doctor mango-link` 是默认关闭、只读的本机诊断入口，不创建或修复租户、字典、组织、用户和系统配置数据，也不允许查询任意租户。首版 Authorization 诊断分别读取平台菜单权威域 `tenant_id=1` 和全局 API 资源权威域 `tenant_id=default`；它不改变业务租户数据隔离或本指南的空数据排障步骤。
+
 ## 2. 阅读顺序
 
 | 顺序 | 文档                                                                                     | 关注点                                              |

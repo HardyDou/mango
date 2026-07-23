@@ -1,1 +1,3 @@
 io.mango.auth.starter.AuthAutoConfiguration
+io.mango.auth.starter.config.ModuleDiagnosticAuthorizationAutoConfiguration
+io.mango.auth.starter.config.ModuleDiagnosticSecurityAutoConfiguration

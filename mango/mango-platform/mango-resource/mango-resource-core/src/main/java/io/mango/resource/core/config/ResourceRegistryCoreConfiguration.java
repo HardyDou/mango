@@ -9,6 +9,8 @@ import io.mango.resource.core.mapper.ResourceSyncLogMapper;
 import io.mango.resource.core.sync.ResourceContentHasher;
 import io.mango.resource.core.sync.ResourceRegistryLock;
 import io.mango.resource.core.sync.ResourceRegistryRepository;
+import io.mango.resource.core.diagnostic.ResourceModuleDiagnosticContributor;
+import io.mango.resource.core.diagnostic.ResourceModuleSyncStatusRegistry;
 import io.mango.resource.support.config.ResourceRegistryProperties;
 import io.mango.resource.support.declaration.FileResourceProvider;
 import io.mango.resource.support.declaration.ResourceDeclarationCollector;
@@ -63,6 +65,20 @@ public class ResourceRegistryCoreConfiguration {
     @ConditionalOnMissingBean
     public ResourceRegistryLock resourceRegistryLock(ILeaseLocker locker) {
         return new ResourceRegistryLock(locker);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public ResourceModuleSyncStatusRegistry resourceModuleSyncStatusRegistry(ResourceContentHasher hasher) {
+        return new ResourceModuleSyncStatusRegistry(hasher);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public ResourceModuleDiagnosticContributor resourceModuleDiagnosticContributor(
+            ResourceModuleSyncStatusRegistry registry,
+            ResourceRegistryProperties properties) {
+        return new ResourceModuleDiagnosticContributor(registry, properties);
     }
 
 }
