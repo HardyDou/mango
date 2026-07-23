@@ -2,7 +2,7 @@
 
 ## v2026.07.23-maven-1.0.26-pmo-1.3.5-cli-1.0.90-platform-runtime-release - 2026-07-23
 
-Status: `PENDING`. Publication is authorized for the source merged through the release preparation PR. The immutable source commit, tree, bundle checksum and completed state-machine manifest will be recorded in the closeout PR after registry and consumer verification.
+Status: `PUBLISHED_AND_VERIFIED`. This mixed release was published from source commit `e269b726a34440170555010c72e80f0c0c66e524` and tree `54225448d36961a15a473eee2d7f619ed51b9425`. The exact-source bundle SHA-256 is `e811a68934c41ea9594aef0c97ed7ae1d9c36d14e3d162d9731b97ef1f577af5`. Maven `1.0.26`, PMO `1.3.5`, the frontend runtime matrix and CLI `1.0.90` resolve from the configured publish and consume registries. The tag and GitHub Release point to the same source commit. The completed read-only recovery manifest at `.runtime/release-audit/1.0.26/read-only-v3/1.0.26/manifest.json` has SHA-256 `4bbdbc835ffd54264449d116cbd1d4b94de495697f1e331dcfc04d31307d6600` and records all 17 release states as passed; the original publication manifest is preserved with its post-publication harness failure and was not used to republish immutable artifacts.
 
 ### Added
 
@@ -33,14 +33,14 @@ Status: `PENDING`. Publication is authorized for the source merged through the r
 
 ### Published Packages
 
-| Order | Target | Version |
-| ---: | --- | --- |
-| 1 | Maven non-app Reactor including `io.mango:*` and `io.mango:mango-docs-bundle` | `1.0.26` |
-| 2 | `@mango/pmo` | `1.3.5` |
-| 3 | `@mango/admin-pages`, `@mango/auth`, `@mango/calendar`, `@mango/cms`, `@mango/common`, `@mango/file`, `@mango/grid-layout`, `@mango/grid-widgets`, `@mango/home`, `@mango/job`, `@mango/link`, `@mango/notice`, `@mango/numgen`, `@mango/payment`, `@mango/rbac`, `@mango/site-shell`, `@mango/system`, `@mango/template`, `@mango/workflow`, `@mango/workflow-business-example` | `1.0.27`, `1.0.21`, `1.0.28`, `1.0.17`, `1.0.21`, `1.0.28`, `1.0.12`, `1.0.18`, `1.0.10`, `1.0.20`, `1.0.14`, `1.0.32`, `1.0.28`, `1.0.20`, `1.0.19`, `1.0.8`, `1.0.26`, `1.0.28`, `1.0.34`, `1.0.33` |
-| 4 | `@mango/admin-shell`, `@mango/admin` | `1.0.52`, `1.0.57` |
-| 5 | `@mango/cli` | `1.0.90` |
-| 6 | Git tag and GitHub Release | `v2026.07.23-maven-1.0.26-pmo-1.3.5-cli-1.0.90-platform-runtime-release` |
+| Order | Target | Version | Release status |
+| ---: | --- | --- | --- |
+| 1 | Maven non-app Reactor including `io.mango:*` and `io.mango:mango-docs-bundle` | `1.0.26` | `PUBLISHED_AND_VERIFIED` |
+| 2 | `@mango/pmo` | `1.3.5` | `PUBLISHED_AND_VERIFIED` |
+| 3 | `@mango/admin-pages`, `@mango/auth`, `@mango/calendar`, `@mango/cms`, `@mango/common`, `@mango/file`, `@mango/grid-layout`, `@mango/grid-widgets`, `@mango/home`, `@mango/job`, `@mango/link`, `@mango/notice`, `@mango/numgen`, `@mango/payment`, `@mango/rbac`, `@mango/site-shell`, `@mango/system`, `@mango/template`, `@mango/workflow`, `@mango/workflow-business-example` | `1.0.27`, `1.0.21`, `1.0.28`, `1.0.17`, `1.0.21`, `1.0.28`, `1.0.12`, `1.0.18`, `1.0.10`, `1.0.20`, `1.0.14`, `1.0.32`, `1.0.28`, `1.0.20`, `1.0.19`, `1.0.8`, `1.0.26`, `1.0.28`, `1.0.34`, `1.0.33` | `PUBLISHED_AND_VERIFIED` |
+| 4 | `@mango/admin-shell`, `@mango/admin` | `1.0.52`, `1.0.57` | `PUBLISHED_AND_VERIFIED` |
+| 5 | `@mango/cli` | `1.0.90` | `PUBLISHED_AND_VERIFIED` |
+| 6 | Git tag and GitHub Release | `v2026.07.23-maven-1.0.26-pmo-1.3.5-cli-1.0.90-platform-runtime-release` | `CREATED_AND_VERIFIED` |
 
 ### Upgrade Notes
 
