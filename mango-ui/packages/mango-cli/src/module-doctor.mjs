@@ -3,7 +3,6 @@ import { existsSync } from 'node:fs';
 import http from 'node:http';
 import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
-import { pathToFileURL } from 'node:url';
 
 const PROFILE = 'ADMIN_MODULE_RUNTIME_V1';
 const ENDPOINT_PATH = '/actuator/mangoModules';
@@ -466,22 +465,25 @@ async function loadProjectPlaywright(projectDir) {
     );
   }
   const projectRequire = createRequire(packageFile);
-  let entry;
-  for (const packageName of ['playwright', '@playwright/test']) {
+  let installedPackage;
+  try {
+    projectRequire.resolve('playwright');
+    installedPackage = 'playwright';
+  } catch {
     try {
-      entry = projectRequire.resolve(packageName);
-      break;
+      projectRequire.resolve('@playwright/test');
+      installedPackage = '@playwright/test';
     } catch {
-      // Try the next supported project dependency.
+      // Report the same safe diagnostic for either missing supported dependency.
     }
   }
-  if (!entry) {
+  if (!installedPackage) {
     throw new ModuleDoctorError(
       'PLAYWRIGHT_UNAVAILABLE',
       'Playwright is not installed in --project-dir; add playwright or @playwright/test explicitly',
     );
   }
-  const loaded = await import(pathToFileURL(entry).href);
+  const loaded = installedPackage === 'playwright' ? projectRequire('playwright') : projectRequire('@playwright/test');
   const playwright = loaded.chromium ? loaded : loaded.default;
   if (!playwright?.chromium) {
     throw new ModuleDoctorError('PLAYWRIGHT_UNAVAILABLE', 'the project Playwright package does not export Chromium');
