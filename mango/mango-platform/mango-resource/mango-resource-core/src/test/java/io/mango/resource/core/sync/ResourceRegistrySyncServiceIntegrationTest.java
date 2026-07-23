@@ -25,6 +25,8 @@ import io.mango.resource.support.config.ResourceRegistryProperties;
 import io.mango.resource.support.declaration.ResourceDeclarationCollector;
 import io.mango.resource.support.declaration.ResourceDeclarationLoader;
 import io.mango.resource.core.entity.ResourceRegistryEntity;
+import io.mango.resource.core.diagnostic.ResourceModuleSyncState;
+import io.mango.resource.core.diagnostic.ResourceModuleSyncStatusRegistry;
 import io.mango.resource.core.mapper.ResourceRegistryMapper;
 import io.mango.resource.core.sync.ResourceContentHasher;
 import io.mango.resource.core.sync.ResourceRegistryLock;
@@ -112,6 +114,9 @@ class ResourceRegistrySyncServiceIntegrationTest {
     @Autowired
     private SqlStatementCounter sqlStatementCounter;
 
+    @Autowired
+    private ResourceModuleSyncStatusRegistry moduleSyncStatusRegistry;
+
     @BeforeEach
     void setUp() {
         syncService.start();
@@ -181,6 +186,59 @@ class ResourceRegistrySyncServiceIntegrationTest {
     }
 
     @Test
+    void collectorFailureReplacesPreviousPassInsteadOfLeavingStaleSuccess() {
+        syncService.sync();
+        assertThat(moduleSyncStatusRegistry.resolve("guarantee")).get()
+                .extracting(status -> status.state())
+                .isEqualTo(ResourceModuleSyncState.APPLIED);
+        provider.failWith(new IllegalStateException("collector failed"));
+
+        assertThatThrownBy(syncService::sync)
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("collector failed");
+
+        assertThat(moduleSyncStatusRegistry.resolve("guarantee")).get().satisfies(status -> {
+            assertThat(status.state()).isEqualTo(ResourceModuleSyncState.FAILED);
+            assertThat(status.reasonCode()).isEqualTo("RESOURCE_SYNC_FAILED");
+        });
+    }
+
+    @Test
+    void validationAndMissingHandlerFailuresAreObserved() {
+        ResourceDeclaration duplicate = activeDeclaration(1, "重复声明");
+        provider.setDeclarations(List.of(activeDeclaration(1, "提交申请"), duplicate));
+
+        assertThatThrownBy(syncService::sync).isInstanceOf(BizException.class);
+        assertThat(moduleSyncStatusRegistry.resolve("guarantee")).get()
+                .extracting(status -> status.state())
+                .isEqualTo(ResourceModuleSyncState.FAILED);
+
+        ResourceDeclaration unsupported = genericDeclaration(
+                "1900000000000000099", "UNSUPPORTED", "guarantee.unsupported", "missing-target");
+        provider.setDeclaration(unsupported);
+        assertThatThrownBy(syncService::sync)
+                .isInstanceOf(BizException.class)
+                .hasMessageContaining("未找到资源处理器");
+        assertThat(moduleSyncStatusRegistry.resolve("guarantee")).get()
+                .extracting(status -> status.state())
+                .isEqualTo(ResourceModuleSyncState.FAILED);
+    }
+
+    @Test
+    void diagnosticSnapshotFailureDoesNotReverseSuccessfulSynchronization() {
+        sqlStatementCounter.failOnInvocation(ResourceRegistryMapper.class, "selectByResourceIds", 2);
+
+        syncService.sync();
+
+        assertThat(count("resource_registry")).isEqualTo(1);
+        assertThat(count("message_template")).isEqualTo(1);
+        assertThat(moduleSyncStatusRegistry.resolve("guarantee")).get().satisfies(status -> {
+            assertThat(status.state()).isEqualTo(ResourceModuleSyncState.UNKNOWN);
+            assertThat(status.reasonCode()).isEqualTo("RESOURCE_SYNC_OBSERVATION_FAILED");
+        });
+    }
+
+    @Test
     void warmSyncFor1964DeclarationsUsesConstantRegistryQueriesAndWritesNoSkipLogs() {
         provider.setDeclarations(declarations(1964));
         syncService.sync();
@@ -191,10 +249,11 @@ class ResourceRegistrySyncServiceIntegrationTest {
 
         syncService.sync();
 
-        assertThat(sqlStatementCounter.count(ResourceRegistryMapper.class, "selectByResourceIds")).isEqualTo(1);
-        assertThat(sqlStatementCounter.count(ResourceRegistryMapper.class, "selectByTypeAndBizKeys")).isEqualTo(1);
+        // The second batched snapshot proves that persisted rows match the just-synchronized declarations.
+        assertThat(sqlStatementCounter.count(ResourceRegistryMapper.class, "selectByResourceIds")).isEqualTo(2);
+        assertThat(sqlStatementCounter.count(ResourceRegistryMapper.class, "selectByTypeAndBizKeys")).isEqualTo(2);
         assertThat(sqlStatementCounter.count(ResourceRegistryMapper.class, "selectBySourceAndModules")).isEqualTo(1);
-        assertThat(sqlStatementCounter.countForMapper(ResourceRegistryMapper.class)).isEqualTo(3);
+        assertThat(sqlStatementCounter.countForMapper(ResourceRegistryMapper.class)).isEqualTo(5);
         assertThat(handler.upsertCount()).isZero();
         assertThat(count("resource_sync_log")).isEqualTo(syncLogCount);
         assertThat(count("resource_change_log")).isEqualTo(changeLogCount);
@@ -814,6 +873,11 @@ class ResourceRegistrySyncServiceIntegrationTest {
         }
 
         @Bean
+        ResourceModuleSyncStatusRegistry resourceModuleSyncStatusRegistry(ResourceContentHasher hasher) {
+            return new ResourceModuleSyncStatusRegistry(hasher);
+        }
+
+        @Bean
         ObjectMapper objectMapper() {
             return new ObjectMapper();
         }
@@ -894,6 +958,7 @@ class ResourceRegistrySyncServiceIntegrationTest {
     static class MutableResourceProvider implements ResourceProvider {
 
         private final AtomicReference<List<ResourceDeclaration>> declarations = new AtomicReference<>(List.of());
+        private final AtomicReference<RuntimeException> failure = new AtomicReference<>();
 
         void setDeclaration(ResourceDeclaration declaration) {
             this.declarations.set(List.of(declaration));
@@ -907,6 +972,10 @@ class ResourceRegistrySyncServiceIntegrationTest {
             this.declarations.set(List.of());
         }
 
+        void failWith(RuntimeException exception) {
+            failure.set(exception);
+        }
+
         @Override
         public List<String> moduleCodes() {
             return List.of("guarantee");
@@ -914,6 +983,10 @@ class ResourceRegistrySyncServiceIntegrationTest {
 
         @Override
         public List<ResourceDeclaration> provide() {
+            RuntimeException exception = failure.getAndSet(null);
+            if (exception != null) {
+                throw exception;
+            }
             return declarations.get();
         }
     }
@@ -1079,12 +1152,25 @@ class ResourceRegistrySyncServiceIntegrationTest {
     static class SqlStatementCounter implements Interceptor {
 
         private final Map<String, AtomicInteger> counts = new ConcurrentHashMap<>();
+        private final AtomicReference<StatementFailure> failure = new AtomicReference<>();
 
         @Override
         public Object intercept(Invocation invocation) throws Throwable {
             MappedStatement statement = (MappedStatement) invocation.getArgs()[0];
-            counts.computeIfAbsent(statement.getId(), ignored -> new AtomicInteger()).incrementAndGet();
+            int invocationCount = counts.computeIfAbsent(
+                    statement.getId(), ignored -> new AtomicInteger()).incrementAndGet();
+            StatementFailure configuredFailure = failure.get();
+            if (configuredFailure != null
+                    && configuredFailure.statementId().equals(statement.getId())
+                    && configuredFailure.invocation() == invocationCount) {
+                failure.compareAndSet(configuredFailure, null);
+                throw new IllegalStateException("simulated diagnostic snapshot failure");
+            }
             return invocation.proceed();
+        }
+
+        void failOnInvocation(Class<?> mapperType, String statementName, int invocation) {
+            failure.set(new StatementFailure(mapperType.getName() + "." + statementName, invocation));
         }
 
         int count(Class<?> mapperType, String statementName) {
@@ -1102,6 +1188,10 @@ class ResourceRegistrySyncServiceIntegrationTest {
 
         void reset() {
             counts.clear();
+            failure.set(null);
+        }
+
+        private record StatementFailure(String statementId, int invocation) {
         }
     }
 

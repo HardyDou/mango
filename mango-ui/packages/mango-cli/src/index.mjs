@@ -30,6 +30,7 @@ import { resolveHealthPollIntervalMs } from './dev-health-policy.mjs';
 import { shouldRunDevInstall } from './dev-install-policy.mjs';
 import { isProcessAlive, isProcessGroupAlive, stopProcessGroup } from './process-control.mjs';
 import { runReleaseCli } from './release-command.mjs';
+import { runModuleDoctorCli } from './module-doctor.mjs';
 
 const requireFromCli = createRequire(import.meta.url);
 const currentFile = fileURLToPath(import.meta.url);
@@ -305,6 +306,7 @@ Usage:
   mango release verify --version <version>
   mango release repair --version <version> [--authorize]
   mango release registry doctor
+  mango module doctor mango-link --app <app> --backend-url <url> --frontend-url <url> [--project-dir <dir>] [--json] [--strict]
   mango module add <module> --aggregate <name> [--aggregate-name <name>] [options]
   mango-cli init <project> --preset full [options]
   mango-cli add <module...> [options]
@@ -323,6 +325,11 @@ Options:
   --aggregate-name <name>  Business aggregate display name for mango module add
   --module-name <name>     Business module display name for mango module add
   --project-dir <dir>      Existing project directory for add/module/pmo commands
+  --app <code>             Application code for module runtime diagnosis
+  --backend-url <url>      Loopback backend base origin for module runtime diagnosis
+  --frontend-url <url>     Loopback Admin Shell base origin for module runtime diagnosis
+  --json                   Emit one machine-readable result object
+  --strict                 Treat degraded or incomplete optional evidence as failure
   --dry-run                Print PMO sync plan without modifying files
   --write-agents           Update root AGENTS.md during PMO sync when it points to an external mango-pmo
   --sync-shell             Sync generated startup shell scripts during PMO sync
@@ -387,6 +394,10 @@ async function main(argv = process.argv.slice(2)) {
 
   if (args[0] === 'module') {
     const subCommand = args[1];
+    if (subCommand === 'doctor') {
+      process.exitCode = await runModuleDoctorCli(args.slice(2));
+      return;
+    }
     if (subCommand !== 'add') {
       fail(`unknown module command: ${subCommand || ''}`);
     }
@@ -4805,7 +4816,8 @@ function updateFrontendEntry(targetDir, variables) {
 }
 
 function ensureFrontendTypeImport(importsBlock) {
-  const typeImport = "import type { MangoAdminFeatureRegistrar } from '@mango/admin';";
+  const typeImport =
+    "import type { MangoAdminBootstrapHooks, MangoAdminFeatureRegistrar, MangoAdminShellOptions } from '@mango/admin';";
   return importsBlock.includes(typeImport) ? importsBlock : `${importsBlock.trimEnd()}\n${typeImport}`;
 }
 
@@ -4937,6 +4949,21 @@ function ensureFrontendBusinessAppProvision(content) {
   if (content.includes(provideLine)) {
     return content;
   }
+  const hooksStart = '// mango-cli:bootstrap-hooks:start';
+  const hooksEnd = '// mango-cli:bootstrap-hooks:end';
+  if (content.includes(hooksStart) && content.includes(hooksEnd)) {
+    return replaceManagedBlock(
+      content,
+      'bootstrap-hooks',
+      [
+        'const mangoAdminBootstrapHooks: MangoAdminBootstrapHooks = {',
+        '  beforeMount(mangoAdminApp) {',
+        `    ${provideLine}`,
+        '  },',
+        '};',
+      ].join('\n'),
+    );
+  }
   const createCall = 'createMangoAdminApp({';
   const mountCall = '}).mount();';
   if (!content.includes(createCall) || !content.includes(mountCall)) {
@@ -4975,9 +5002,11 @@ function ensureFrontendBusinessRegistrars(content) {
 }
 
 function ensureFrontendMainTypeImport(content) {
-  const typeImport = "import type { MangoAdminFeatureRegistrar } from '@mango/admin';";
-  if (content.includes(typeImport)) {
-    return content;
+  const typeImport =
+    "import type { MangoAdminBootstrapHooks, MangoAdminFeatureRegistrar, MangoAdminShellOptions } from '@mango/admin';";
+  const existingTypeImport = /import type \{[^}]*MangoAdminFeatureRegistrar[^}]*\} from '@mango\/admin';/u;
+  if (existingTypeImport.test(content)) {
+    return content.replace(existingTypeImport, typeImport);
   }
   const importsEnd = '// mango-cli:imports:end';
   if (content.includes(importsEnd)) {
@@ -5195,11 +5224,12 @@ function renderFrontendPackageDependencies(frontendVersions) {
 function renderFrontendEntryImports(preset, selectedModules) {
   if (preset === 'full') {
     return [
-      "import { createMangoAdminApp, mangoFullAdminFeatureRegistrars } from '@mango/admin/full';",
+      "import { bootstrapMangoAdminApp } from '@mango/admin';",
+      "import { mangoFullAdminFeatureRegistrars } from '@mango/admin/full';",
       "import '@mango/admin/style-full.css';",
     ].join('\n');
   }
-  const imports = ["import { createMangoAdminApp } from '@mango/admin';", "import '@mango/admin/style.css';"];
+  const imports = ["import { bootstrapMangoAdminApp } from '@mango/admin';", "import '@mango/admin/style.css';"];
   for (const module of ADMIN_DEFAULT_MODULES) {
     imports.push(...module.registrars.map((registrar) => `import { ${registrar.name} } from '${registrar.import}';`));
   }

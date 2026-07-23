@@ -8,17 +8,19 @@
 
 ## 2. 功能清单
 
-| 能力 | 入口 |
-|------|------|
-| 注册模块页面 | `registerModulePages()` |
-| 注册单个页面 | `registerPage()` |
-| 注册 Shell 内置页面 | `registerShellPages()` |
-| 按菜单 component 找页面 loader | `getPageLoader()` |
-| 从 component 或 path 反查模块 | `resolvePageModuleCode()` |
-| 注册隐藏动态路由 | `getRegisteredPageRoutes()` |
-| 注册默认系统页面 | `registerDefaultAdminPages()` |
-| 控制内置能力集合 | `resolveMangoAdminFeatures()` |
-| 注册通知铃铛提供方 | `registerMangoNoticeBellProvider()` |
+| 能力                                    | 入口                                 |
+| --------------------------------------- | ------------------------------------ |
+| 注册模块页面                            | `registerModulePages()`              |
+| 注册单个页面                            | `registerPage()`                     |
+| 注册 Shell 内置页面                     | `registerShellPages()`               |
+| 按菜单 component 找页面 loader          | `getPageLoader()`                    |
+| 从 component 或 path 反查模块           | `resolvePageModuleCode()`            |
+| 注册隐藏动态路由                        | `getRegisteredPageRoutes()`          |
+| 注册默认系统页面                        | `registerDefaultAdminPages()`        |
+| 控制内置能力集合                        | `resolveMangoAdminFeatures()`        |
+| 注册通知铃铛提供方                      | `registerMangoNoticeBellProvider()`  |
+| 读取不可变页面注册快照                  | `getRegisteredModulePagesSnapshot()` |
+| 定向探测页面 loader/chunk/Vue component | `probeRegisteredPage()`              |
 
 ## 3. 接入方式
 
@@ -37,7 +39,7 @@ export function registerExampleAdminPages() {
   registerModulePages({
     moduleCode: 'mango-system',
     pages: {
-      'system/dict/index': () => import('@mango/system').then(m => m.DictView),
+      'system/dict/index': () => import('@mango/system').then((m) => m.DictView),
     },
   });
 }
@@ -57,48 +59,51 @@ registerExampleAdminPages();
 
 页面注册配置：
 
-| 字段 | 含义 |
-|------|------|
-| `moduleCode` | 模块编码，需要和后端菜单的 `moduleCode` 或模块归属一致。 |
-| `pages` | 页面 key 到异步 loader 的映射。 |
-| `routes` | 可选隐藏路由，适合详情页、弹出式页面和非菜单页。 |
+| 字段                             | 含义                                                                 |
+| -------------------------------- | -------------------------------------------------------------------- |
+| `moduleCode`                     | 模块编码，需要和后端菜单的 `moduleCode` 或模块归属一致。             |
+| `pages`                          | 页面 key 到异步 loader 的映射。                                      |
+| `routes`                         | 可选隐藏路由，适合详情页、弹出式页面和非菜单页。                     |
+| `packageName` / `packageVersion` | 可选前端制品元数据，供运行态诊断分别报告 package 和 actual version。 |
 
 隐藏路由配置：
 
-| 字段 | 默认值 | 含义 |
-|------|--------|------|
-| `path` | 无 | 路由 path。 |
-| `component` | 无 | 页面 key。 |
-| `menuName` | 空 | 路由展示名。 |
-| `menuCode` | 空 | 权限码或路由编码。 |
-| `icon` | 空 | 图标。 |
-| `sort` | 空 | 排序。 |
-| `visible` | `0` | 是否可见。 |
-| `keepAlive` | `0` | 是否缓存。 |
+| 字段        | 默认值 | 含义               |
+| ----------- | ------ | ------------------ |
+| `path`      | 无     | 路由 path。        |
+| `component` | 无     | 页面 key。         |
+| `menuName`  | 空     | 路由展示名。       |
+| `menuCode`  | 空     | 权限码或路由编码。 |
+| `icon`      | 空     | 图标。             |
+| `sort`      | 空     | 排序。             |
+| `visible`   | `0`    | 是否可见。         |
+| `keepAlive` | `0`    | 是否缓存。         |
 
 默认能力配置：
 
-| 配置 | 含义 |
-|------|------|
-| `features: 'core'` | 只注册 authorization、system。 |
-| `features: 'full'` | 注册 core 和 workflow、file、template、notice、numgen、calendar、job。 |
-| `features: string[]` | core 永远启用，数组内能力额外启用。 |
-| `features: Record<string, boolean>` | core 永远启用，值为 `true` 的能力额外启用。 |
+| 配置                                | 含义                                                                   |
+| ----------------------------------- | ---------------------------------------------------------------------- |
+| `features: 'core'`                  | 只注册 authorization、system。                                         |
+| `features: 'full'`                  | 注册 core 和 workflow、file、template、notice、numgen、calendar、job。 |
+| `features: string[]`                | core 永远启用，数组内能力额外启用。                                    |
+| `features: Record<string, boolean>` | core 永远启用，值为 `true` 的能力额外启用。                            |
 
 ## 5. API 与扩展
 
-| API | 作用 |
-|-----|------|
-| `normalizeComponentPath(componentPath)` | 去掉 `@/`、`src/`、`views/`、`.vue`，得到页面 key。 |
-| `registerModulePages(registry)` | 注册一个模块的一组页面和隐藏路由。 |
-| `registerPage(moduleCode, component, loader)` | 注册单个页面。 |
-| `registerShellPages(loaders)` | 注册首页和 404 等 Shell 内置页面。 |
-| `getPageLoader(moduleCode, component)` | 优先按模块查找页面 loader；未传模块时全局查找。 |
-| `resolvePageModuleCode(component, path)` | 根据菜单 component 或 path 推断模块编码。 |
-| `getRegisteredPageRoutes(moduleCodes)` | 读取已注册的隐藏路由。 |
-| `registerDefaultAdminPages(options)` | 注册 Mango 内置 authorization、system 页面和自定义 registries。 |
-| `registerMangoNoticeBellProvider(provider)` | 注册通知铃铛组件和提醒配置读取函数。 |
-| `getMangoNoticeBellProvider()` | 获取通知铃铛提供方。 |
+| API                                            | 作用                                                                               |
+| ---------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `normalizeComponentPath(componentPath)`        | 去掉 `@/`、`src/`、`views/`、`.vue`，得到页面 key。                                |
+| `registerModulePages(registry)`                | 注册一个模块的一组页面和隐藏路由。                                                 |
+| `registerPage(moduleCode, component, loader)`  | 注册单个页面。                                                                     |
+| `registerShellPages(loaders)`                  | 注册首页和 404 等 Shell 内置页面。                                                 |
+| `getPageLoader(moduleCode, component)`         | 优先按模块查找页面 loader；未传模块时全局查找。                                    |
+| `resolvePageModuleCode(component, path)`       | 根据菜单 component 或 path 推断模块编码。                                          |
+| `getRegisteredPageRoutes(moduleCodes)`         | 读取已注册的隐藏路由。                                                             |
+| `getRegisteredModulePagesSnapshot(moduleCode)` | 返回深度不可变、稳定排序的模块/page key/版本快照，不暴露 loader Map。              |
+| `probeRegisteredPage(moduleCode, component)`   | 只加载指定页面并区分未注册、loader reject、chunk load、非 Vue component 和 ready。 |
+| `registerDefaultAdminPages(options)`           | 注册 Mango 内置 authorization、system 页面和自定义 registries。                    |
+| `registerMangoNoticeBellProvider(provider)`    | 注册通知铃铛组件和提醒配置读取函数。                                               |
+| `getMangoNoticeBellProvider()`                 | 获取通知铃铛提供方。                                                               |
 
 ## 6. 数据与初始化
 
@@ -106,12 +111,12 @@ registerExampleAdminPages();
 
 运行时数据来源：
 
-| 数据 | 来源 |
-|------|------|
-| 菜单树 | Admin Shell 请求 `/authorization/menus/user`。 |
-| 页面 loader | 各前端包调用 `registerModulePages()` 写入内存注册表。 |
-| 隐藏路由 | 各前端包注册 `routes`。 |
-| 默认系统页面 | `registerDefaultAdminPages()` 注册。 |
+| 数据         | 来源                                                  |
+| ------------ | ----------------------------------------------------- |
+| 菜单树       | Admin Shell 请求 `/authorization/menus/user`。        |
+| 页面 loader  | 各前端包调用 `registerModulePages()` 写入内存注册表。 |
+| 隐藏路由     | 各前端包注册 `routes`。                               |
+| 默认系统页面 | `registerDefaultAdminPages()` 注册。                  |
 
 ## 7. 管理入口
 

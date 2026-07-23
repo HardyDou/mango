@@ -21,6 +21,7 @@
 | 验证码入口 | 通过 `CaptchaApi` 发送短信或邮件验证码，登录请求可按路径要求验证码头 |
 | 防重放能力 | 支持时间戳、nonce、幂等键和可选签名校验 |
 | 远程调用契约 | 微服务可通过 `mango-auth-starter-remote` 使用 `AuthApi` Feign Client |
+| 模块诊断专用授权 | `/actuator/mangoModules` 在 permit/internal/IP/通用资源规则前独立校验 header Bearer 和 `diagnostic:read` |
 
 ## 3. 后端接入
 
@@ -314,6 +315,7 @@ token claim 会写入 `username`、`realm`、`actorType`、`partyType`、`partyI
 | 登录被验证码拦截返回 428 | 按 `X-Captcha-Key`、`X-Captcha-Code`、`X-Captcha-Type` 补齐请求头，或检查 `mango.captcha.required-paths` |
 | 防重放返回 401/409 | 检查客户端时间、nonce 是否重复、幂等键是否复用、签名密钥和算法是否匹配 |
 | 页面退出后 Cookie 仍存在 | 确认使用 Admin Shell 当前退出入口并实际调用了 `POST /auth/logout`；JavaScript 无法删除 HttpOnly Cookie |
+| 模块诊断端点一直 401/403 | 只接受精确 GET 和 header `Authorization: Bearer`；token subject 必须含 member/tenant/app，且授权快照含 `diagnostic:read`。query token、`MANGO_TOKEN` cookie、internal call、IP 白名单和 broad permit path 都不能绕过。 |
 
 ## 13. 相关文档
 

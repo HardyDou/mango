@@ -1,5 +1,6 @@
 package io.mango.infra.persistence.starter;
 
+import io.mango.infra.persistence.starter.diagnostic.PersistenceModuleMigrationStatusRegistry;
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
@@ -19,6 +20,11 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 class PersistenceFlywayMigrationIntegrationTest {
 
@@ -55,6 +61,32 @@ class PersistenceFlywayMigrationIntegrationTest {
                             "SELECT COUNT(*) FROM persistence_flyway_user WHERE username = 'migrated'",
                             Integer.class);
                     assertThat(count).isEqualTo(1);
+                });
+    }
+
+    @Test
+    void diagnosticStateFailureCannotReverseSuccessfulMigration() {
+        PersistenceModuleMigrationStatusRegistry registry = mock(PersistenceModuleMigrationStatusRegistry.class);
+        doThrow(new IllegalStateException("diagnostic running failed"))
+                .when(registry).running(anyString(), anyString());
+        doThrow(new IllegalStateException("diagnostic applied failed"))
+                .when(registry).applied(anyString(), anyString(), anyString(), anyInt());
+
+        contextRunner
+                .withPropertyValues(flywayProperties(
+                        "mango.persistence.flyway.enabled=true",
+                        "mango.persistence.flyway.modules.persistence-test.enabled=true"
+                ))
+                .withBean(PersistenceModuleMigrationStatusRegistry.class, () -> registry)
+                .withUserConfiguration(H2DataSourceConfig.class)
+                .run(ctx -> {
+                    assertThat(ctx).hasNotFailed();
+                    JdbcTemplate jdbcTemplate = new JdbcTemplate(ctx.getBean(DataSource.class));
+                    assertThat(tableExists(jdbcTemplate, "persistence_flyway_user")).isTrue();
+                    verify(registry).unknown(
+                            "persistence-test",
+                            "flyway_schema_history_persistence_test",
+                            "MIGRATION_OBSERVATION_FAILED");
                 });
     }
 

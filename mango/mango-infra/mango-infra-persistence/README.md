@@ -55,6 +55,7 @@
 | 业务实体需要统一 Long 雪花主键、审计字段和租户字段 | Maven 依赖 / starter / Java API |
 | 单表或薄业务逻辑资源需要快速实现 CRUD API | Maven 依赖 / starter / Java API |
 | 模块需要在启动时自动执行自己的 Flyway migration | Maven 依赖 / starter / Java API |
+| 模块诊断需要读取本次真实 Flyway 运行状态 | `ModuleDiagnosticContributor` / `mango module doctor` |
 | 停机升级时需要按模块执行外部 SQL 包 | YAML 配置 / 运维升级包 |
 | 新数据库需要使用当前完整 schema baseline | YAML 配置 / baseline pack |
 | 应用需要把不同模块路由到不同数据库 | Maven 依赖 / starter / Java API |
@@ -1162,6 +1163,8 @@ src/main/resources/db/migration/<module>/V2__add_xxx.sql
 **Flyway 没执行业务模块 migration**
 
 检查脚本路径是否是 `db/migration/<module>/V*.sql`，检查 `mango.persistence.flyway.enabled` 和 `mango.persistence.flyway.modules.<module>.enabled`，再检查模块脚本是否已经被当前模块 history table 记录。
+
+启用模块运行态诊断时，Persistence 只报告真实初始化流程记录的 RUNNING/APPLIED/FAILED/DISABLED、current version、pending count 和 history table；诊断调用本身不会执行 migrate、repair 或 validate。启动期 Flyway 失败仍按原行为阻断应用启动。
 
 **多数据源切换在事务里失败**
 

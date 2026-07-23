@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="io.mango.authorization.core.mapper.ApiResourceMapper">
+
+    <select id="selectDiagnosticApis"
+            resultType="io.mango.authorization.core.entity.ApiResourceEntity"
+            timeout="2">
+        select module_name, http_method, path_pattern, resource_code, permission_code,
+               access_mode, status, deleted
+        from authorization_api_resource
+        where tenant_id = #{tenantId}
+          and module_name = #{moduleName}
+          and deleted = 0
+    </select>
+</mapper>

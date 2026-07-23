@@ -53,6 +53,9 @@ export interface MangoAdminShellOptions {
   widgets?: MangoGridWidgetDefinition[];
   runtimeConfigUrl?: string;
   runtimeConfigLoadOptions?: Partial<MangoRuntimeConfigLoadOptions>;
+  moduleDiagnostics?: {
+    enabled?: boolean;
+  };
 }
 
 export type MangoAdminShellDeployEnv = 'dev' | 'test' | 'prod' | 'prd' | 'production' | string;
@@ -64,7 +67,9 @@ export interface MangoAdminShellDevCenterOptions {
   pages?: () => MangoAdminDevCenterPage[];
 }
 
-export const defaultMangoAdminShellOptions: Required<Pick<MangoAdminShellOptions, 'mountTarget' | 'apiBaseUrl' | 'title'>> = {
+export const defaultMangoAdminShellOptions: Required<
+  Pick<MangoAdminShellOptions, 'mountTarget' | 'apiBaseUrl' | 'title'>
+> = {
   mountTarget: '#app',
   apiBaseUrl: '/api',
   title: 'Mango Admin',
@@ -110,6 +115,10 @@ export function configureMangoAdminShell(options: MangoAdminShellOptions = {}) {
     runtimeConfigLoadOptions: {
       ...mangoAdminShellOptions.runtimeConfigLoadOptions,
       ...options.runtimeConfigLoadOptions,
+    },
+    moduleDiagnostics: {
+      ...mangoAdminShellOptions.moduleDiagnostics,
+      ...options.moduleDiagnostics,
     },
   };
   return mangoAdminShellOptions;

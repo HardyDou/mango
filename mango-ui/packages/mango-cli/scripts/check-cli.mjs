@@ -169,12 +169,24 @@ try {
     throw new Error('frontend entry does not consume @mango/admin/full');
   }
   if (
-    !mainTs.includes("import type { MangoAdminFeatureRegistrar } from '@mango/admin';") ||
+    !mainTs.includes('MangoAdminBootstrapHooks,') ||
+    !mainTs.includes('MangoAdminFeatureRegistrar,') ||
+    !mainTs.includes('MangoAdminShellOptions') ||
+    !mainTs.includes("import { bootstrapMangoAdminApp } from '@mango/admin';") ||
     !mainTs.includes('const mangoBusinessFeatureRegistrars: MangoAdminFeatureRegistrar[] =') ||
     !mainTs.includes('const mangoAllFeatureRegistrars: MangoAdminFeatureRegistrar[] = [') ||
-    !mainTs.includes('featureRegistrars: mangoAllFeatureRegistrars')
+    !mainTs.includes('featureRegistrars: mangoAllFeatureRegistrars') ||
+    !mainTs.includes("enabled: import.meta.env.VITE_MANGO_MODULE_DIAGNOSTICS_ENABLED === 'true'") ||
+    !mainTs.includes('bootstrapMangoAdminApp(mangoAdminOptions, mangoAdminBootstrapHooks);')
   ) {
     throw new Error('frontend entry does not provide business feature registrar aggregation');
+  }
+  const frontendHtml = readFileSync(join(projectRoot, 'frontend/index.html'), 'utf8');
+  if (!frontendHtml.includes('http-equiv="Referrer-Policy" content="no-referrer"')) {
+    throw new Error('frontend entry does not enforce the module diagnostic referrer boundary');
+  }
+  if (frontendHtml.includes('http-equiv="Content-Security-Policy"')) {
+    throw new Error('frontend entry hard-codes a CSP that can block remote runtime entries');
   }
   if (mainTs.includes('{{')) {
     throw new Error('frontend entry contains unrendered placeholders');
@@ -1295,7 +1307,9 @@ try {
     !moduleMain.includes("import { createMangoHttpClient } from '@mango/http-client';") ||
     !moduleMain.includes("import { Session } from '@mango/common';") ||
     !moduleMain.includes("getTenantId: () => Session.get('userInfo')?.tenantId ?? Session.get('tenantId')") ||
-    !moduleMain.includes("import type { MangoAdminFeatureRegistrar } from '@mango/admin';") ||
+    !moduleMain.includes('MangoAdminBootstrapHooks,') ||
+    !moduleMain.includes('MangoAdminFeatureRegistrar,') ||
+    !moduleMain.includes('MangoAdminShellOptions') ||
     !moduleMain.includes('const mangoBusinessHttpClient = createMangoHttpClient({') ||
     !moduleMain.includes('const mangoBusinessFeatureRegistrars: MangoAdminFeatureRegistrar[] = [') ||
     !moduleMain.includes('const mangoAllFeatureRegistrars: MangoAdminFeatureRegistrar[] = [') ||
@@ -1303,8 +1317,11 @@ try {
       'const mangoBusinessFeatureRegistrars: MangoAdminFeatureRegistrar[] = [() => registerContractPages()];',
     ) ||
     !moduleMain.includes("import { MANGO_HTTP_CLIENT_KEY } from '@mango/app-runtime';") ||
-    !moduleMain.includes('const mangoAdminApp = createMangoAdminApp({') ||
+    !moduleMain.includes('const mangoAdminBootstrapHooks: MangoAdminBootstrapHooks = {') ||
+    !moduleMain.includes('beforeMount(mangoAdminApp) {') ||
     !moduleMain.includes('mangoAdminApp.app.provide(MANGO_HTTP_CLIENT_KEY, mangoBusinessHttpClient);') ||
+    !moduleMain.includes('bootstrapMangoAdminApp(mangoAdminOptions, mangoAdminBootstrapHooks);') ||
+    moduleMain.includes('createMangoAdminApp({') ||
     moduleMain.includes('registerContractPages(mangoBusinessHttpClient)') ||
     !moduleMain.includes('featureRegistrars: mangoAllFeatureRegistrars')
   ) {

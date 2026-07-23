@@ -61,7 +61,7 @@ public class AuthSecurityConfig {
 
     @Bean
     @ConditionalOnProperty(name = "mango.access.auth-enabled", havingValue = "true", matchIfMissing = true)
-    @Order(Ordered.HIGHEST_PRECEDENCE)
+    @Order(Ordered.HIGHEST_PRECEDENCE + 1)
     public SecurityFilterChain authSecurityFilterChain(
             HttpSecurity http,
             AuthenticationEntryPoint authenticationEntryPoint,

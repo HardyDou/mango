@@ -103,6 +103,11 @@
             <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>io.mango.infra.module</groupId>
+            <artifactId>mango-infra-module-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
 
         <!-- OpenAPI 注解仅用于 starter 控制器文档展示 -->
         <dependency>

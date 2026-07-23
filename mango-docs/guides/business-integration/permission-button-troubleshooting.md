@@ -18,6 +18,10 @@ System 租户初始化不改变任何按钮 `permissionCode`、登录态权限�
 
 后台品牌配置新增折叠 Logo 字段，只影响 Admin Shell 展开态/折叠态 Logo 展示；不改变按钮 `permissionCode`、登录态权限集合、`v-auth` 判断、接口鉴权和按钮权限排障步骤。
 
+### Issue #348 模块运行态诊断影响
+
+`mango module doctor mango-link` 的 `authorization.menuApi` 只交叉检查当前 Resource 声明要求的菜单和 API 资源是否物化，不修改授权数据，也不判断某个用户的按钮展示规则、数据权限或当前登录态权限缓存。诊断 PASS 不能替代本指南的按钮级闭环；按钮缺失或点击 403 仍需核对 `permissionCode`、角色授权、登录态权限和接口鉴权。
+
 ## 2. 阅读顺序
 
 | 顺序 | 文档                                                                                     | 关注点                       |

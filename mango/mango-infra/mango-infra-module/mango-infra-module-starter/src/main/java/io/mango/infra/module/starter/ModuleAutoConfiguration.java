@@ -4,6 +4,11 @@ import io.mango.infra.module.api.ModuleInfo;
 import io.mango.infra.module.api.ModuleInfoRegistry;
 import io.mango.infra.module.api.ModuleInfoResolver;
 import io.mango.infra.module.core.MemoryModuleInfoRegistry;
+import io.mango.infra.module.api.diagnostic.ModuleDiagnosticContributor;
+import io.mango.infra.module.api.diagnostic.ModuleInstallation;
+import io.mango.infra.module.api.diagnostic.ModuleInstallationRegistry;
+import io.mango.infra.module.core.diagnostic.MemoryModuleInstallationRegistry;
+import io.mango.infra.module.core.diagnostic.ModuleDiagnosticAggregator;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -30,6 +35,47 @@ public class ModuleAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
+    @ConditionalOnProperty(name = "mango.module.diagnostics.endpoint.enabled", havingValue = "true")
+    public ModuleArtifactVersionResolver moduleArtifactVersionResolver() {
+        return new ModuleArtifactVersionResolver();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    @ConditionalOnProperty(name = "mango.module.diagnostics.endpoint.enabled", havingValue = "true")
+    public ModuleInstallationRegistry moduleInstallationRegistry(
+            ModuleMetadataLoader metadataLoader,
+            ModuleArtifactVersionResolver versionResolver) {
+        MemoryModuleInstallationRegistry registry = new MemoryModuleInstallationRegistry();
+        metadataLoader.load().forEach(metadata -> {
+            ModuleArtifactVersionResolver.VersionResult version = versionResolver.resolve(
+                    metadata.resourceUrl(), metadata.moduleName());
+            registry.register(new ModuleInstallation(
+                    metadata.moduleName(),
+                    version.version(),
+                    version.source(),
+                    metadata.diagnosticAttributes()));
+        });
+        return registry;
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    @ConditionalOnProperty(name = "mango.module.diagnostics.endpoint.enabled", havingValue = "true")
+    public ModuleInstallationDiagnosticContributor moduleInstallationDiagnosticContributor(
+            ModuleInstallationRegistry registry) {
+        return new ModuleInstallationDiagnosticContributor(registry);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    @ConditionalOnProperty(name = "mango.module.diagnostics.endpoint.enabled", havingValue = "true")
+    public ModuleDiagnosticAggregator moduleDiagnosticAggregator(List<ModuleDiagnosticContributor> contributors) {
+        return new ModuleDiagnosticAggregator(contributors);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
     public ModuleInfoRegistry moduleInfoRegistry(ModuleProperties properties,
                                                  ModuleMetadataLoader metadataLoader,
                                                  Environment environment) {
@@ -45,7 +91,7 @@ public class ModuleAutoConfiguration {
                         defaultServiceName,
                         defaultContextPath,
                         modulePath,
-                        metadata.source()))));
+                        metadata.sourceDescription()))));
 
         properties.getModules().forEach((moduleName, moduleService) -> {
             List<ModuleInfo> configuredModules = resolveModulePaths(

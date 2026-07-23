@@ -30,6 +30,7 @@ import io.mango.resource.support.ResourceTargetDispatcher;
 import io.mango.resource.api.enums.ResourceFieldType;
 import io.mango.resource.support.model.ResourceDeclaration;
 import io.mango.resource.support.model.ResourceField;
+import io.mango.resource.core.diagnostic.ResourceModuleSyncStatusRegistry;
 import io.mango.resource.core.mapper.ResourceChangeLogMapper;
 import io.mango.resource.core.mapper.ResourceRegistryMapper;
 import io.mango.resource.core.mapper.ResourceSyncLogMapper;
@@ -436,6 +437,11 @@ class FrontendRuntimeResourceSyncIntegrationTest {
         @Bean
         ResourceContentHasher resourceContentHasher(ObjectMapper objectMapper) {
             return new ResourceContentHasher(objectMapper);
+        }
+
+        @Bean
+        ResourceModuleSyncStatusRegistry resourceModuleSyncStatusRegistry(ResourceContentHasher hasher) {
+            return new ResourceModuleSyncStatusRegistry(hasher);
         }
 
         @Bean

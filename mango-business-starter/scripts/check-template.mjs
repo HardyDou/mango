@@ -93,6 +93,7 @@ const requiredFiles = [
   "frontend/packages/{{moduleKebab}}/src/index.ts",
   "frontend/packages/{{moduleKebab}}/src/views/{{moduleKebab}}/{{aggregateKebab}}/index.vue",
   "frontend/apps/{{projectKebab}}-admin/package.json",
+  "frontend/apps/{{projectKebab}}-admin/index.html",
   "frontend/apps/{{projectKebab}}-admin/src/main.ts",
   "topologies/monolith/README.md",
   "topologies/microservice/README.md",
@@ -304,11 +305,18 @@ const contentChecks = [
       "from '@mango/http-client'",
       "createMangoHttpClient",
       "getTenantId: () => Session.get('userInfo')?.tenantId ?? Session.get('tenantId')",
-      "register{{modulePascal}}Pages()",
+      "featureRegistrars: [register{{modulePascal}}Pages]",
+      "VITE_MANGO_MODULE_DIAGNOSTICS_ENABLED",
+      "const mangoAdminBootstrapHooks: MangoAdminBootstrapHooks",
+      "beforeMount(adminApp)",
       "adminApp.app.provide(MANGO_HTTP_CLIENT_KEY, httpClient)",
       "import '@{{projectKebab}}/{{moduleKebab}}/style.css'",
-      "createMangoAdminApp",
+      "bootstrapMangoAdminApp(mangoAdminOptions, mangoAdminBootstrapHooks)",
     ],
+  },
+  {
+    file: "frontend/apps/{{projectKebab}}-admin/index.html",
+    patterns: ['http-equiv="Referrer-Policy" content="no-referrer"'],
   },
   {
     file: "frontend/apps/{{projectKebab}}-admin/package.json",
@@ -455,6 +463,14 @@ for (const item of contentChecks) {
     );
   }
 }
+
+const genericAdminHtml = readTemplateFile(
+  "frontend/apps/{{projectKebab}}-admin/index.html",
+);
+check(
+  !genericAdminHtml.includes('http-equiv="Content-Security-Policy"'),
+  "generic admin template must not hard-code a CSP that blocks remote runtime entries",
+);
 
 const apiContext = readTemplateFile(
   "frontend/packages/{{moduleKebab}}/src/api-context.ts",

@@ -242,6 +242,7 @@ mvn -q -DskipTests mango:check -Drule=persistence-schema
 | 登录后看不到公司网址 | 当前用户是否属于租户/公司，部门或用户可见目标是否匹配。 |
 | 打开网址没有统计 | 系统配置 `mango.link.open.jump.enabled` 是否为 `true`，前端是否使用接口返回的 `redirectUrl`。 |
 | 跳转返回不可见 | 当前用户不满足该链接可见范围，或分类/网址已停用。 |
+| 需要交叉确认模块是否真正可用 | 在明确启用诊断端点和 Shell bridge 后执行 `mango module doctor mango-link`；它会检查安装与后端实际版本、Flyway、当前 Resource fingerprint、Authorization 菜单/API 物化和真实浏览器页面 loader/chunk。该命令首版只支持 loopback 单体环境。 |
 
 ## 12. 相关文档
 
