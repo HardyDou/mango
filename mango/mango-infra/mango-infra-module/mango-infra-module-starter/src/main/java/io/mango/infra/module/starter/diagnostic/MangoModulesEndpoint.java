@@ -1,5 +1,6 @@
 package io.mango.infra.module.starter.diagnostic;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.infra.module.api.diagnostic.ModuleDiagnosticProfile;
 import io.mango.infra.module.api.diagnostic.ModuleDiagnosticRequest;
 import io.mango.infra.module.api.diagnostic.ModuleDiagnosticSnapshot;
@@ -26,6 +27,8 @@ public class MangoModulesEndpoint {
     private final String service;
     private final String instanceId;
 
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+            justification = "Thread-safe Spring singleton collaborators are injected and intentionally retained")
     public MangoModulesEndpoint(
             ModuleDiagnosticCoordinator coordinator,
             ModuleInstallationRegistry installations,

@@ -1,6 +1,8 @@
 package io.mango.authorization.diagnostic;
 
 import com.baomidou.mybatisplus.autoconfigure.MybatisPlusAutoConfiguration;
+import io.mango.authorization.core.mapper.ApiResourceMapper;
+import io.mango.authorization.core.mapper.MenuMapper;
 import io.mango.authorization.starter.diagnostic.AuthorizationModuleDiagnosticContributor;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
@@ -10,10 +12,11 @@ import io.mango.infra.module.api.diagnostic.ModuleDiagnosticRequest;
 import io.mango.infra.module.api.diagnostic.ModuleInstallation;
 import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguration;
 import io.mango.resource.api.ResourceAuthorizationRequirementsProvider;
-import io.mango.resource.api.ResourceAuthorizationRequirementsProvider.ApiRequirement;
-import io.mango.resource.api.ResourceAuthorizationRequirementsProvider.AuthorizationRequirements;
-import io.mango.resource.api.ResourceAuthorizationRequirementsProvider.MenuRequirement;
+import io.mango.resource.api.vo.ApiRequirementVO;
+import io.mango.resource.api.vo.AuthorizationRequirementsVO;
+import io.mango.resource.api.vo.MenuRequirementVO;
 import org.apache.ibatis.session.SqlSessionFactory;
+import org.mybatis.spring.annotation.MapperScan;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -141,11 +144,11 @@ class AuthorizationDiagnosticIntegrationTest {
         var configuration = sqlSessionFactory.getConfiguration();
 
         assertThat(configuration.getMappedStatement(
-                AuthorizationDiagnosticMapper.class.getName() + ".selectMenus").getTimeout())
-                .isEqualTo(AuthorizationDiagnosticMapper.QUERY_TIMEOUT_SECONDS);
+                MenuMapper.class.getName() + ".selectDiagnosticMenus").getTimeout())
+                .isEqualTo(MenuMapper.DIAGNOSTIC_QUERY_TIMEOUT_SECONDS);
         assertThat(configuration.getMappedStatement(
-                AuthorizationDiagnosticMapper.class.getName() + ".selectApis").getTimeout())
-                .isEqualTo(AuthorizationDiagnosticMapper.QUERY_TIMEOUT_SECONDS);
+                ApiResourceMapper.class.getName() + ".selectDiagnosticApis").getTimeout())
+                .isEqualTo(ApiResourceMapper.DIAGNOSTIC_QUERY_TIMEOUT_SECONDS);
     }
 
     private void insertMenu(long id, String tenantId, String appCode, String apiCodes) {
@@ -167,6 +170,7 @@ class AuthorizationDiagnosticIntegrationTest {
     }
 
     @Configuration
+    @MapperScan(basePackageClasses = {MenuMapper.class, ApiResourceMapper.class})
     static class TestConfig {
 
         @Bean
@@ -175,17 +179,17 @@ class AuthorizationDiagnosticIntegrationTest {
                 if (!"link".equals(resourceModule)
                         || !"mango-link".equals(runtimeModule)
                         || !"internal-admin".equals(appCode)) {
-                    return AuthorizationRequirements.empty();
+                    return AuthorizationRequirementsVO.empty();
                 }
-                return new AuthorizationRequirements(
-                        List.of(new MenuRequirement(
+                return new AuthorizationRequirementsVO(
+                        List.of(new MenuRequirementVO(
                                 "internal-admin",
                                 "mango-link",
                                 "data:link:item",
                                 "link/items/index",
                                 List.of("link:item:view"),
                                 1)),
-                        List.of(new ApiRequirement(
+                        List.of(new ApiRequirementVO(
                                 "mango-link",
                                 "GET",
                                 "/link/items",

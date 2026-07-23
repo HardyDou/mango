@@ -1,10 +1,13 @@
 package io.mango.infra.module.api.diagnostic;
 
+import io.mango.common.contract.LocalCapabilityContract;
+
 import java.util.List;
 
 /**
  * Aggregate diagnosis for one observed module.
  */
+@LocalCapabilityContract
 public record ModuleDiagnosticReport(
         String moduleCode,
         ModuleRuntimeStatus status,

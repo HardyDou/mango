@@ -1,5 +1,7 @@
 package io.mango.infra.module.api.diagnostic;
 
+import io.mango.common.contract.LocalCapabilityContract;
+
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -10,6 +12,7 @@ import java.util.Set;
  * @param name stable profile name
  * @param requiredConditionIds required condition identifiers
  */
+@LocalCapabilityContract
 public record ModuleDiagnosticProfile(String name, Set<String> requiredConditionIds) {
 
     public static final String INSTALLATION = "installation";

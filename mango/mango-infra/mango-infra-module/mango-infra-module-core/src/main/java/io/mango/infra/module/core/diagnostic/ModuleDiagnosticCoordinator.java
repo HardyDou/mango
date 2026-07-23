@@ -26,12 +26,14 @@ import java.util.concurrent.TimeoutException;
  * Bounded single-flight execution for runtime diagnostics.
  * Expired successful evidence is never returned when a refresh fails.
  */
-public class ModuleDiagnosticCoordinator implements AutoCloseable {
+public final class ModuleDiagnosticCoordinator implements AutoCloseable {
 
     private static final int DEFAULT_THREADS = 4;
     private static final int DEFAULT_QUEUE_CAPACITY = 16;
     private static final int DEFAULT_MAX_KEYS = 64;
     private static final int THREAD_KEEP_ALIVE_SECONDS = 30;
+    private static final int MAX_AUDIT_TEXT_LENGTH = 80;
+    private static final int MAX_REQUEST_ID_LENGTH = 64;
     private static final Duration DEFAULT_TIMEOUT = Duration.ofSeconds(5);
     private static final Duration DEFAULT_CACHE_TTL = Duration.ofSeconds(2);
 
@@ -288,10 +290,10 @@ public class ModuleDiagnosticCoordinator implements AutoCloseable {
             long invocationStartedNanos) {
         try {
             auditSink.record(new DiagnosticAuditEvent(
-                    safeAuditText(request.moduleCode(), 80),
-                    safeAuditText(request.appCode(), 80),
+                    safeAuditText(request.moduleCode(), MAX_AUDIT_TEXT_LENGTH),
+                    safeAuditText(request.appCode(), MAX_AUDIT_TEXT_LENGTH),
                     ModuleRuntimeStatus.UNKNOWN.name(),
-                    safeAuditText(reasonCode, 80),
+                    safeAuditText(reasonCode, MAX_AUDIT_TEXT_LENGTH),
                     Math.max(0, TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - invocationStartedNanos)),
                     requestId));
         } catch (RuntimeException ignored) {
@@ -319,7 +321,7 @@ public class ModuleDiagnosticCoordinator implements AutoCloseable {
     private static String auditRequestId(ModuleDiagnosticRequest request) {
         String supplied = request.attributes().get("requestId");
         if (supplied != null && !supplied.isBlank()) {
-            return safeAuditText(supplied, 64);
+            return safeAuditText(supplied, MAX_REQUEST_ID_LENGTH);
         }
         return UUID.randomUUID().toString();
     }

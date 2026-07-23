@@ -32,8 +32,8 @@ import org.springframework.core.env.Environment;
                 + " && ('${server.servlet.context-path:}' == ''"
                 + " || '${server.servlet.context-path:}' == '/')")
 @ConditionalOnBean(name = {
-        "mangoModuleDiagnosticAuthorizationManager",
-        "mangoModuleDiagnosticSecurityFilterChain"
+    "mangoModuleDiagnosticAuthorizationManager",
+    "mangoModuleDiagnosticSecurityFilterChain"
 })
 public class ModuleDiagnosticEndpointAutoConfiguration {
 

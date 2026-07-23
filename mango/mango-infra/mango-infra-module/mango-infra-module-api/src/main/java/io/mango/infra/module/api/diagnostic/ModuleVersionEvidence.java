@@ -1,5 +1,7 @@
 package io.mango.infra.module.api.diagnostic;
 
+import io.mango.common.contract.LocalCapabilityContract;
+
 /**
  * Actual or expected version evidence for one runtime plane.
  *
@@ -8,6 +10,7 @@ package io.mango.infra.module.api.diagnostic;
  * @param status evidence status
  * @param reasonCode stable reason
  */
+@LocalCapabilityContract
 public record ModuleVersionEvidence(
         String value,
         String source,

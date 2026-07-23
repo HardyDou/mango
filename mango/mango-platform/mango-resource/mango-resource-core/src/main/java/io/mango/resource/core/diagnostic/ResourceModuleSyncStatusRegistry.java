@@ -1,9 +1,9 @@
 package io.mango.resource.core.diagnostic;
 
 import io.mango.resource.api.ResourceAuthorizationRequirementsProvider;
-import io.mango.resource.api.ResourceAuthorizationRequirementsProvider.ApiRequirement;
-import io.mango.resource.api.ResourceAuthorizationRequirementsProvider.AuthorizationRequirements;
-import io.mango.resource.api.ResourceAuthorizationRequirementsProvider.MenuRequirement;
+import io.mango.resource.api.vo.ApiRequirementVO;
+import io.mango.resource.api.vo.AuthorizationRequirementsVO;
+import io.mango.resource.api.vo.MenuRequirementVO;
 import io.mango.resource.core.sync.ResourceContentHasher;
 import io.mango.resource.core.sync.ResourceRegistryRepository.ResourceRegistrySnapshot;
 import io.mango.resource.core.sync.ResourceRegistryRow;
@@ -155,20 +155,20 @@ public class ResourceModuleSyncStatusRegistry implements ResourceAuthorizationRe
      * API paths remain internal to the contributor and must not be copied into endpoint evidence.
      */
     @Override
-    public AuthorizationRequirements authorizationRequirements(
+    public AuthorizationRequirementsVO authorizationRequirements(
             String resourceModule,
             String runtimeModule,
             String appCode) {
         if (resourceModule == null || resourceModule.isBlank()
                 || runtimeModule == null || runtimeModule.isBlank()
                 || appCode == null || appCode.isBlank()) {
-            return AuthorizationRequirements.empty();
+            return AuthorizationRequirementsVO.empty();
         }
         String normalizedResourceModule = resourceModule.trim();
         String normalizedRuntimeModule = runtimeModule.trim();
         String normalizedAppCode = appCode.trim();
-        List<MenuRequirement> menus = new ArrayList<>();
-        List<ApiRequirement> apis = new ArrayList<>();
+        List<MenuRequirementVO> menus = new ArrayList<>();
+        List<ApiRequirementVO> apis = new ArrayList<>();
         Set<String> sourceModules = ConcurrentHashMap.newKeySet();
         currentObservations.forEach((sourceModule, observation) -> {
             for (ResourceDeclaration declaration : observation.declarations()) {
@@ -189,11 +189,11 @@ public class ResourceModuleSyncStatusRegistry implements ResourceAuthorizationRe
                 .allMatch(module -> resolve(module)
                         .map(status -> status.state() == ResourceModuleSyncState.APPLIED)
                         .orElse(false));
-        return new AuthorizationRequirements(
-                menus.stream().distinct().sorted(Comparator.comparing(MenuRequirement::menuCode)).toList(),
+        return new AuthorizationRequirementsVO(
+                menus.stream().distinct().sorted(Comparator.comparing(MenuRequirementVO::menuCode)).toList(),
                 apis.stream().distinct().sorted(Comparator
-                        .comparing(ApiRequirement::httpMethod)
-                        .thenComparing(ApiRequirement::pathPattern)).toList(),
+                        .comparing(ApiRequirementVO::httpMethod)
+                        .thenComparing(ApiRequirementVO::pathPattern)).toList(),
                 sourcesApplied);
     }
 
@@ -285,7 +285,7 @@ public class ResourceModuleSyncStatusRegistry implements ResourceAuthorizationRe
         }
     }
 
-    private void collectMenuRequirements(ResourceDeclaration declaration, List<MenuRequirement> requirements) {
+    private void collectMenuRequirements(ResourceDeclaration declaration, List<MenuRequirementVO> requirements) {
         String appCode = stringField(declaration, "appCode");
         String moduleCode = stringField(declaration, "moduleCode");
         if (moduleCode == null || moduleCode.isBlank()) {
@@ -302,7 +302,7 @@ public class ResourceModuleSyncStatusRegistry implements ResourceAuthorizationRe
             Object value,
             String appCode,
             String moduleCode,
-            List<MenuRequirement> requirements) {
+            List<MenuRequirementVO> requirements) {
         if (value instanceof Collection<?> collection) {
             collection.forEach(item -> collectMenuRequirements(item, appCode, moduleCode, requirements));
             return;
@@ -312,7 +312,7 @@ public class ResourceModuleSyncStatusRegistry implements ResourceAuthorizationRe
         }
         String menuCode = text(map.get("menuCode"));
         if (menuCode != null) {
-            requirements.add(new MenuRequirement(
+            requirements.add(new MenuRequirementVO(
                     appCode,
                     moduleCode,
                     menuCode,
@@ -323,14 +323,14 @@ public class ResourceModuleSyncStatusRegistry implements ResourceAuthorizationRe
         collectMenuRequirements(map.get("children"), appCode, moduleCode, requirements);
     }
 
-    private void collectApiRequirement(ResourceDeclaration declaration, List<ApiRequirement> requirements) {
+    private void collectApiRequirement(ResourceDeclaration declaration, List<ApiRequirementVO> requirements) {
         String moduleName = stringField(declaration, "moduleName");
         String httpMethod = stringField(declaration, "httpMethod");
         String pathPattern = stringField(declaration, "pathPattern");
         if (moduleName == null || httpMethod == null || pathPattern == null) {
             return;
         }
-        requirements.add(new ApiRequirement(
+        requirements.add(new ApiRequirementVO(
                 moduleName,
                 httpMethod,
                 pathPattern,
@@ -382,6 +382,21 @@ public class ResourceModuleSyncStatusRegistry implements ResourceAuthorizationRe
             String fingerprint,
             List<ResourceDeclaration> declarations,
             List<String> pageRequirements) {
+
+        public ModuleObservation {
+            declarations = declarations == null ? List.of() : List.copyOf(declarations);
+            pageRequirements = pageRequirements == null ? List.of() : List.copyOf(pageRequirements);
+        }
+
+        @Override
+        public List<ResourceDeclaration> declarations() {
+            return List.copyOf(declarations);
+        }
+
+        @Override
+        public List<String> pageRequirements() {
+            return List.copyOf(pageRequirements);
+        }
     }
 
 }

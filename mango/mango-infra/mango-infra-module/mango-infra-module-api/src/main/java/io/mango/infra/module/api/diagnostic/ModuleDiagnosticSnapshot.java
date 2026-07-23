@@ -1,11 +1,14 @@
 package io.mango.infra.module.api.diagnostic;
 
+import io.mango.common.contract.LocalCapabilityContract;
+
 import java.time.Instant;
 import java.util.List;
 
 /**
  * Versioned diagnostic response produced by one runtime observation boundary.
  */
+@LocalCapabilityContract
 public record ModuleDiagnosticSnapshot(
         int schemaVersion,
         String profile,
@@ -18,7 +21,9 @@ public record ModuleDiagnosticSnapshot(
     public static final int CURRENT_SCHEMA_VERSION = 1;
 
     public ModuleDiagnosticSnapshot {
-        schemaVersion = CURRENT_SCHEMA_VERSION;
+        if (schemaVersion != CURRENT_SCHEMA_VERSION) {
+            throw new IllegalArgumentException("unsupported schemaVersion");
+        }
         reportScope = normalize(reportScope, "INSTANCE_OBSERVATION");
         service = normalize(service, "application");
         instanceId = normalize(instanceId, "unknown");

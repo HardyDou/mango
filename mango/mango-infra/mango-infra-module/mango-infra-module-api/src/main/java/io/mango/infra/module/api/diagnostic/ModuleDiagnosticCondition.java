@@ -1,5 +1,7 @@
 package io.mango.infra.module.api.diagnostic;
 
+import io.mango.common.contract.LocalCapabilityContract;
+
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -20,6 +22,7 @@ import java.util.Map;
  * @param durationMs observation duration
  * @param stale whether the evidence has exceeded its freshness window
  */
+@LocalCapabilityContract
 public record ModuleDiagnosticCondition(
         String id,
         ModuleConditionStatus status,
@@ -61,6 +64,11 @@ public record ModuleDiagnosticCondition(
         this(id, status, required, reasonCode, evidence, observedAt, boundedDuration(durationMs), stale);
     }
 
+    @Override
+    public Map<String, Object> evidence() {
+        return Map.copyOf(evidence);
+    }
+
     /**
      * Creates a required unknown condition when a profile contributor is absent.
      */
@@ -80,14 +88,14 @@ public record ModuleDiagnosticCondition(
         if (source == null || source.isEmpty()) {
             return Map.of();
         }
-        EvidenceBudget budget = new EvidenceBudget();
+        int[] budget = new int[1];
         return immutableMap(source, 0, budget);
     }
 
     private static Map<String, Object> immutableMap(
             Map<?, ?> source,
             int depth,
-            EvidenceBudget budget) {
+            int[] budget) {
         requireDepth(depth);
         if (source.size() > MAX_CONTAINER_VALUES) {
             throw new IllegalArgumentException("evidence map exceeds the entry limit");
@@ -97,13 +105,13 @@ public record ModuleDiagnosticCondition(
             if (!(rawKey instanceof String key) || key.isBlank() || key.length() > MAX_EVIDENCE_KEY_LENGTH) {
                 throw new IllegalArgumentException("evidence keys must be bounded non-blank strings");
             }
-            budget.consume();
+            consume(budget);
             copy.put(key, immutableValue(value, depth + 1, budget));
         });
         return Collections.unmodifiableMap(copy);
     }
 
-    private static Object immutableValue(Object value, int depth, EvidenceBudget budget) {
+    private static Object immutableValue(Object value, int depth, int[] budget) {
         requireDepth(depth);
         if (value instanceof String text) {
             if (text.length() > MAX_EVIDENCE_TEXT_LENGTH) {
@@ -111,24 +119,11 @@ public record ModuleDiagnosticCondition(
             }
             return text;
         }
-        if (value instanceof Boolean
-                || value instanceof Byte
-                || value instanceof Short
-                || value instanceof Integer
-                || value instanceof Long) {
+        if (value instanceof Boolean) {
             return value;
         }
-        if (value instanceof Float number) {
-            if (!Float.isFinite(number)) {
-                throw new IllegalArgumentException("evidence numbers must be finite");
-            }
-            return number;
-        }
-        if (value instanceof Double number) {
-            if (!Double.isFinite(number)) {
-                throw new IllegalArgumentException("evidence numbers must be finite");
-            }
-            return number;
+        if (value instanceof Number number) {
+            return immutableNumber(number);
         }
         if (value instanceof Collection<?> collection) {
             if (collection.size() > MAX_CONTAINER_VALUES) {
@@ -136,7 +131,7 @@ public record ModuleDiagnosticCondition(
             }
             List<Object> copy = new ArrayList<>(collection.size());
             for (Object item : collection) {
-                budget.consume();
+                consume(budget);
                 copy.add(immutableValue(item, depth + 1, budget));
             }
             return Collections.unmodifiableList(copy);
@@ -147,20 +142,32 @@ public record ModuleDiagnosticCondition(
         throw new IllegalArgumentException("unsupported evidence value type");
     }
 
+    private static Number immutableNumber(Number number) {
+        if (number instanceof Byte
+                || number instanceof Short
+                || number instanceof Integer
+                || number instanceof Long) {
+            return number;
+        }
+        if (number instanceof Float decimal && Float.isFinite(decimal)) {
+            return decimal;
+        }
+        if (number instanceof Double decimal && Double.isFinite(decimal)) {
+            return decimal;
+        }
+        throw new IllegalArgumentException("evidence numbers must be finite supported scalars");
+    }
+
     private static void requireDepth(int depth) {
         if (depth > MAX_EVIDENCE_DEPTH) {
             throw new IllegalArgumentException("evidence exceeds the nesting depth limit");
         }
     }
 
-    private static final class EvidenceBudget {
-        private int values;
-
-        private void consume() {
-            values++;
-            if (values > MAX_EVIDENCE_VALUES) {
-                throw new IllegalArgumentException("evidence exceeds the total value limit");
-            }
+    private static void consume(int[] budget) {
+        budget[0]++;
+        if (budget[0] > MAX_EVIDENCE_VALUES) {
+            throw new IllegalArgumentException("evidence exceeds the total value limit");
         }
     }
 

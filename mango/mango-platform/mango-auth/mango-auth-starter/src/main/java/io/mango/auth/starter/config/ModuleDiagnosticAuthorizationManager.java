@@ -21,10 +21,11 @@ import java.util.function.Supplier;
 public class ModuleDiagnosticAuthorizationManager
         implements AuthorizationManager<RequestAuthorizationContext> {
 
-    private static final Logger LOG = LoggerFactory.getLogger(ModuleDiagnosticAuthorizationManager.class);
-    private static final String PLATFORM_TENANT = "1";
     public static final String BEAN_NAME = "mangoModuleDiagnosticAuthorizationManager";
     public static final String REQUIRED_PERMISSION = "diagnostic:read";
+    private static final Logger LOG = LoggerFactory.getLogger(ModuleDiagnosticAuthorizationManager.class);
+    private static final String PLATFORM_TENANT = "1";
+    private static final int MAX_AUDIT_VALUE_LENGTH = 80;
 
     private final IAuthorizationProvider authorizationProvider;
 
@@ -38,10 +39,7 @@ public class ModuleDiagnosticAuthorizationManager
             RequestAuthorizationContext context) {
         try {
             HttpServletRequest request = context.getRequest();
-            String[] requestedApps = request.getParameterValues("app");
-            String requestedApp = requestedApps != null && requestedApps.length == 1
-                    ? requestedApps[0]
-                    : null;
+            String requestedApp = requestedApp(request);
             if (!isLoopback(request.getRemoteAddr())) {
                 return deny(requestedApp, null, request.getRemoteAddr(), "REMOTE_NOT_LOOPBACK");
             }
@@ -49,42 +47,66 @@ public class ModuleDiagnosticAuthorizationManager
                 return deny(requestedApp, null, request.getRemoteAddr(), "HEADER_BEARER_REQUIRED");
             }
             Authentication authentication = authenticationSupplier.get();
-            if (authentication == null
-                    || !authentication.isAuthenticated()
-                    || authentication instanceof AnonymousAuthenticationToken
-                    || !(authentication.getPrincipal() instanceof SecurityPrincipalVO principal)
-                    || principal.memberId() == null
-                    || isBlank(principal.tenantId())
-                    || isBlank(principal.appCode())) {
+            SecurityPrincipalVO principal = authenticatedPrincipal(authentication);
+            if (principal == null) {
                 return deny(requestedApp, null, request.getRemoteAddr(), "PRINCIPAL_SCOPE_INVALID");
             }
-            if (isBlank(requestedApp)
-                    || !principal.appCode().equals(requestedApp)
-                    || !PLATFORM_TENANT.equals(principal.tenantId())) {
+            if (!matchesScope(principal, requestedApp)) {
                 return deny(requestedApp, principal.memberId(), request.getRemoteAddr(), "REQUEST_SCOPE_MISMATCH");
             }
-            AuthorizationQuery query = AuthorizationQuery.member(principal.memberId())
-                    .withTenantId(principal.tenantId())
-                    .withSystemCode(principal.appCode())
-                    .withRealm(principal.realm())
-                    .withActorType(principal.actorType())
-                    .withParty(principal.partyType(), principal.partyId());
-            AuthorizationSnapshotVO snapshot = authorizationProvider.load(query);
-            boolean granted = snapshot != null && snapshot.permissionCodes().stream()
-                    .anyMatch(permission -> REQUIRED_PERMISSION.equals(permission) || "*:*".equals(permission));
-            LOG.info(
-                    "module_diagnostic_authorization app={} memberId={} remote={} decision={} reason={}",
-                    requestedApp,
-                    principal.memberId(),
-                    request.getRemoteAddr(),
-                    granted ? "ALLOW" : "DENY",
-                    granted ? "PERMISSION_GRANTED" : "PERMISSION_MISSING");
-            return new AuthorizationDecision(granted);
+            return authorize(principal, requestedApp, request.getRemoteAddr());
         } catch (RuntimeException exception) {
             LOG.warn("module_diagnostic_authorization decision=DENY reason=AUTHORIZATION_ERROR errorType={}",
                     exception.getClass().getSimpleName());
             return new AuthorizationDecision(false);
         }
+    }
+
+    private String requestedApp(HttpServletRequest request) {
+        String[] requestedApps = request.getParameterValues("app");
+        return requestedApps != null && requestedApps.length == 1 ? requestedApps[0] : null;
+    }
+
+    private SecurityPrincipalVO authenticatedPrincipal(Authentication authentication) {
+        if (authentication == null
+                || !authentication.isAuthenticated()
+                || authentication instanceof AnonymousAuthenticationToken
+                || !(authentication.getPrincipal() instanceof SecurityPrincipalVO principal)
+                || principal.memberId() == null
+                || isBlank(principal.tenantId())
+                || isBlank(principal.appCode())) {
+            return null;
+        }
+        return principal;
+    }
+
+    private boolean matchesScope(SecurityPrincipalVO principal, String requestedApp) {
+        return !isBlank(requestedApp)
+                && principal.appCode().equals(requestedApp)
+                && PLATFORM_TENANT.equals(principal.tenantId());
+    }
+
+    private AuthorizationDecision authorize(
+            SecurityPrincipalVO principal,
+            String requestedApp,
+            String remoteAddress) {
+        AuthorizationQuery query = AuthorizationQuery.member(principal.memberId())
+                .withTenantId(principal.tenantId())
+                .withSystemCode(principal.appCode())
+                .withRealm(principal.realm())
+                .withActorType(principal.actorType())
+                .withParty(principal.partyType(), principal.partyId());
+        AuthorizationSnapshotVO snapshot = authorizationProvider.load(query);
+        boolean granted = snapshot != null && snapshot.permissionCodes().stream()
+                .anyMatch(permission -> REQUIRED_PERMISSION.equals(permission) || "*:*".equals(permission));
+        LOG.info(
+                "module_diagnostic_authorization app={} memberId={} remote={} decision={} reason={}",
+                requestedApp,
+                principal.memberId(),
+                remoteAddress,
+                granted ? "ALLOW" : "DENY",
+                granted ? "PERMISSION_GRANTED" : "PERMISSION_MISSING");
+        return new AuthorizationDecision(granted);
     }
 
     private AuthorizationDecision deny(String app, Long memberId, String remoteAddress, String reason) {
@@ -132,7 +154,9 @@ public class ModuleDiagnosticAuthorizationManager
     }
 
     private String safeAuditValue(String value) {
-        if (isBlank(value) || value.length() > 80 || !value.matches("[A-Za-z0-9:.\\-]+")) {
+        if (isBlank(value)
+                || value.length() > MAX_AUDIT_VALUE_LENGTH
+                || !value.matches("[A-Za-z0-9:.\\-]+")) {
             return "unknown";
         }
         return value;

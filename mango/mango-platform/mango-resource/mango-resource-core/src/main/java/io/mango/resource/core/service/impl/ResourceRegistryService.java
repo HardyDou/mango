@@ -113,7 +113,7 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
             }
         } catch (RuntimeException exception) {
             failObservedDiagnosticStatus("RESOURCE_SYNC_FAILED");
-            throw exception;
+            Require.rethrow(exception);
         }
     }
 
@@ -165,7 +165,7 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
             }
         } catch (RuntimeException exception) {
             failObservedDiagnosticStatus("RESOURCE_SYNC_FAILED");
-            throw exception;
+            return Require.rethrow(exception);
         }
     }
 
@@ -275,7 +275,7 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
             log.info("Mango resource registry sync complete: declarations={}", declarations.size());
         } catch (RuntimeException exception) {
             recordDiagnosticFailure(observations, "RESOURCE_SYNC_FAILED");
-            throw exception;
+            Require.rethrow(exception);
         }
     }
 

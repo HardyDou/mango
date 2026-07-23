@@ -86,7 +86,7 @@ class ResourceModuleDiagnosticTest {
     void authorizationRequirementsJoinMenuResourceModuleAndApiRuntimeModuleAcrossProviders() {
         ResourceDeclaration menu = authorizationMenuDeclaration();
         ResourceDeclaration api = apiDeclarationFromDifferentProvider();
-        Map<String, ModuleObservation> observations = registry.observations(List.of(menu, api));
+        Map<String, ModuleObservation> observations = registry.observations(List.of(menu, menu, api, api));
 
         registry.running(observations);
         registry.complete(observations, ResourceRegistryRepository.ResourceRegistrySnapshot.of(

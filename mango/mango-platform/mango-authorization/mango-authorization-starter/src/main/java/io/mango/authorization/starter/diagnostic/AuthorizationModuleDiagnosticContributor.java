@@ -2,7 +2,8 @@ package io.mango.authorization.starter.diagnostic;
 
 import io.mango.authorization.core.entity.ApiResourceEntity;
 import io.mango.authorization.core.entity.MenuEntity;
-import io.mango.authorization.diagnostic.AuthorizationDiagnosticMapper;
+import io.mango.authorization.core.mapper.ApiResourceMapper;
+import io.mango.authorization.core.mapper.MenuMapper;
 import io.mango.infra.module.api.diagnostic.ModuleConditionStatus;
 import io.mango.infra.module.api.diagnostic.ModuleDiagnosticCondition;
 import io.mango.infra.module.api.diagnostic.ModuleDiagnosticContributor;
@@ -10,9 +11,9 @@ import io.mango.infra.module.api.diagnostic.ModuleDiagnosticProfile;
 import io.mango.infra.module.api.diagnostic.ModuleDiagnosticRequest;
 import io.mango.infra.module.api.diagnostic.ModuleInstallation;
 import io.mango.resource.api.ResourceAuthorizationRequirementsProvider;
-import io.mango.resource.api.ResourceAuthorizationRequirementsProvider.ApiRequirement;
-import io.mango.resource.api.ResourceAuthorizationRequirementsProvider.AuthorizationRequirements;
-import io.mango.resource.api.ResourceAuthorizationRequirementsProvider.MenuRequirement;
+import io.mango.resource.api.vo.ApiRequirementVO;
+import io.mango.resource.api.vo.AuthorizationRequirementsVO;
+import io.mango.resource.api.vo.MenuRequirementVO;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.Instant;
@@ -35,13 +36,16 @@ public class AuthorizationModuleDiagnosticContributor implements ModuleDiagnosti
     private static final String GLOBAL_API_RESOURCE_TENANT = "default";
 
     private final ResourceAuthorizationRequirementsProvider requirementsProvider;
-    private final AuthorizationDiagnosticMapper diagnosticMapper;
+    private final MenuMapper menuMapper;
+    private final ApiResourceMapper apiResourceMapper;
 
     public AuthorizationModuleDiagnosticContributor(
             ResourceAuthorizationRequirementsProvider requirementsProvider,
-            AuthorizationDiagnosticMapper diagnosticMapper) {
+            MenuMapper menuMapper,
+            ApiResourceMapper apiResourceMapper) {
         this.requirementsProvider = requirementsProvider;
-        this.diagnosticMapper = diagnosticMapper;
+        this.menuMapper = menuMapper;
+        this.apiResourceMapper = apiResourceMapper;
     }
 
     @Override
@@ -65,7 +69,7 @@ public class AuthorizationModuleDiagnosticContributor implements ModuleDiagnosti
                     startedAt,
                     startedNanos));
         }
-        AuthorizationRequirements requirements = requirementsProvider.authorizationRequirements(
+        AuthorizationRequirementsVO requirements = requirementsProvider.authorizationRequirements(
                 resourceModule, request.moduleCode(), request.appCode());
         if (requirements.menus().isEmpty() || requirements.apis().isEmpty()) {
             return List.of(condition(
@@ -79,6 +83,14 @@ public class AuthorizationModuleDiagnosticContributor implements ModuleDiagnosti
             return List.of(condition(
                     ModuleConditionStatus.UNKNOWN,
                     "RESOURCE_REQUIREMENTS_NOT_APPLIED",
+                    safeEvidence(requirements, requirements.menus().size(), requirements.apis().size()),
+                    startedAt,
+                    startedNanos));
+        }
+        if (menuMapper == null || apiResourceMapper == null) {
+            return List.of(condition(
+                    ModuleConditionStatus.UNKNOWN,
+                    "AUTHORIZATION_DIAGNOSTIC_DEPENDENCY_MISSING",
                     safeEvidence(requirements, requirements.menus().size(), requirements.apis().size()),
                     startedAt,
                     startedNanos));
@@ -110,17 +122,17 @@ public class AuthorizationModuleDiagnosticContributor implements ModuleDiagnosti
         }
     }
 
-    private MaterializationCounts compare(AuthorizationRequirements requirements, String appCode) {
+    private MaterializationCounts compare(AuthorizationRequirementsVO requirements, String appCode) {
         List<String> menuCodes = requirements.menus().stream()
-                .map(MenuRequirement::menuCode)
+                .map(MenuRequirementVO::menuCode)
                 .distinct()
                 .toList();
-        Map<MenuKey, MenuEntity> actualMenus = diagnosticMapper.selectMenus(
+        Map<MenuKey, MenuEntity> actualMenus = menuMapper.selectDiagnosticMenus(
                         PLATFORM_MENU_TENANT, appCode, menuCodes)
                 .stream()
                 .collect(Collectors.toMap(MenuKey::from, item -> item, (left, right) -> left));
         int missingMenus = 0;
-        for (MenuRequirement expected : requirements.menus()) {
+        for (MenuRequirementVO expected : requirements.menus()) {
             MenuEntity actual = actualMenus.get(MenuKey.from(expected));
             if (actual == null
                     || !Objects.equals(normalize(expected.component()), normalize(actual.getComponent()))
@@ -130,12 +142,12 @@ public class AuthorizationModuleDiagnosticContributor implements ModuleDiagnosti
             }
         }
 
-        Map<ApiKey, ApiResourceEntity> actualApis = diagnosticMapper.selectApis(
+        Map<ApiKey, ApiResourceEntity> actualApis = apiResourceMapper.selectDiagnosticApis(
                         GLOBAL_API_RESOURCE_TENANT, requirements.apis().getFirst().moduleName())
                 .stream()
                 .collect(Collectors.toMap(ApiKey::from, item -> item, (left, right) -> left));
         int missingApis = 0;
-        for (ApiRequirement expected : requirements.apis()) {
+        for (ApiRequirementVO expected : requirements.apis()) {
             ApiResourceEntity actual = actualApis.get(ApiKey.from(expected));
             if (actual == null
                     || !Objects.equals(normalize(expected.resourceCode()), normalize(actual.getResourceCode()))
@@ -149,7 +161,7 @@ public class AuthorizationModuleDiagnosticContributor implements ModuleDiagnosti
     }
 
     private Map<String, Object> safeEvidence(
-            AuthorizationRequirements requirements,
+            AuthorizationRequirementsVO requirements,
             int missingMenus,
             int missingApis) {
         Map<String, Object> evidence = new LinkedHashMap<>();
@@ -158,7 +170,7 @@ public class AuthorizationModuleDiagnosticContributor implements ModuleDiagnosti
         evidence.put("expectedApiCount", requirements.apis().size());
         evidence.put("missingApiCount", missingApis);
         evidence.put("pageRequirements", requirements.menus().stream()
-                .map(MenuRequirement::component)
+                .map(MenuRequirementVO::component)
                 .filter(Objects::nonNull)
                 .distinct()
                 .sorted()
@@ -205,7 +217,7 @@ public class AuthorizationModuleDiagnosticContributor implements ModuleDiagnosti
 
     private record MenuKey(String appCode, String moduleCode, String menuCode) {
 
-        private static MenuKey from(MenuRequirement requirement) {
+        private static MenuKey from(MenuRequirementVO requirement) {
             return new MenuKey(requirement.appCode(), requirement.moduleCode(), requirement.menuCode());
         }
 
@@ -216,7 +228,7 @@ public class AuthorizationModuleDiagnosticContributor implements ModuleDiagnosti
 
     private record ApiKey(String moduleName, String httpMethod, String pathPattern) {
 
-        private static ApiKey from(ApiRequirement requirement) {
+        private static ApiKey from(ApiRequirementVO requirement) {
             return new ApiKey(requirement.moduleName(), requirement.httpMethod(), requirement.pathPattern());
         }
 

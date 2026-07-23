@@ -1,5 +1,7 @@
 package io.mango.infra.module.api.diagnostic;
 
+import io.mango.common.contract.LocalCapabilityContract;
+
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -12,6 +14,7 @@ import java.util.Map;
  * @param profile selected request profile
  * @param attributes safe module mapping attributes resolved before asynchronous execution
  */
+@LocalCapabilityContract
 public record ModuleDiagnosticRequest(
         String moduleCode,
         String appCode,
@@ -30,6 +33,11 @@ public record ModuleDiagnosticRequest(
         attributes = attributes == null
                 ? Map.of()
                 : Collections.unmodifiableMap(new LinkedHashMap<>(attributes));
+    }
+
+    @Override
+    public Map<String, String> attributes() {
+        return Map.copyOf(attributes);
     }
 
     private static String requireText(String value, String name) {

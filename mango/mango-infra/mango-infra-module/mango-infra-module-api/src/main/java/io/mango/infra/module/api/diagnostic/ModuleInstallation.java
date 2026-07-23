@@ -1,5 +1,7 @@
 package io.mango.infra.module.api.diagnostic;
 
+import io.mango.common.contract.LocalCapabilityContract;
+
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -12,6 +14,7 @@ import java.util.Map;
  * @param versionSource source of the actual version
  * @param attributes optional explicit diagnostic mappings
  */
+@LocalCapabilityContract
 public record ModuleInstallation(
         String moduleCode,
         String actualVersion,
@@ -35,5 +38,10 @@ public record ModuleInstallation(
         attributes = attributes == null
                 ? Map.of()
                 : Collections.unmodifiableMap(new LinkedHashMap<>(attributes));
+    }
+
+    @Override
+    public Map<String, String> attributes() {
+        return Map.copyOf(attributes);
     }
 }

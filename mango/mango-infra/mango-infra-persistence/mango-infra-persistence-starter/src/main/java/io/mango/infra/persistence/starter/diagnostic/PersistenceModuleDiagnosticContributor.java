@@ -13,6 +13,8 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Maps retained Flyway domain state to the neutral module diagnostic contract.
@@ -20,13 +22,18 @@ import java.util.Map;
 public class PersistenceModuleDiagnosticContributor implements ModuleDiagnosticContributor {
 
     private final PersistenceModuleMigrationStatusRegistry registry;
-    private final PersistenceFlywayProperties properties;
+    private final boolean enabled;
+    private final Set<String> disabledModules;
 
     public PersistenceModuleDiagnosticContributor(
             PersistenceModuleMigrationStatusRegistry registry,
             PersistenceFlywayProperties properties) {
         this.registry = registry;
-        this.properties = properties;
+        this.enabled = properties.isEnabled();
+        this.disabledModules = properties.getModules().entrySet().stream()
+                .filter(entry -> !entry.getValue().isEnabled())
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toUnmodifiableSet());
     }
 
     @Override
@@ -41,7 +48,7 @@ public class PersistenceModuleDiagnosticContributor implements ModuleDiagnosticC
                     observedAt,
                     0));
         }
-        if (!properties.isEnabled()) {
+        if (!enabled) {
             return List.of(condition(
                     ModuleConditionStatus.SKIPPED,
                     "FLYWAY_GLOBALLY_DISABLED",
@@ -49,8 +56,7 @@ public class PersistenceModuleDiagnosticContributor implements ModuleDiagnosticC
                     observedAt,
                     0));
         }
-        PersistenceFlywayProperties.ModuleConfig moduleConfig = properties.getModules().get(persistenceModule);
-        if (moduleConfig != null && !moduleConfig.isEnabled()) {
+        if (disabledModules.contains(persistenceModule)) {
             return List.of(condition(
                     ModuleConditionStatus.SKIPPED,
                     "FLYWAY_MODULE_DISABLED",

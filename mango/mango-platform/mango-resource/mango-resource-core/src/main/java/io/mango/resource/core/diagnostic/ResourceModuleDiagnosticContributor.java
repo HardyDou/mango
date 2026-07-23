@@ -18,13 +18,13 @@ import java.util.Map;
 public class ResourceModuleDiagnosticContributor implements ModuleDiagnosticContributor {
 
     private final ResourceModuleSyncStatusRegistry registry;
-    private final ResourceRegistryProperties properties;
+    private final boolean enabled;
 
     public ResourceModuleDiagnosticContributor(
             ResourceModuleSyncStatusRegistry registry,
             ResourceRegistryProperties properties) {
         this.registry = registry;
-        this.properties = properties;
+        this.enabled = properties.isEnabled();
     }
 
     @Override
@@ -33,7 +33,7 @@ public class ResourceModuleDiagnosticContributor implements ModuleDiagnosticCont
         if (resourceModule == null || resourceModule.isBlank()) {
             return List.of(condition(ModuleConditionStatus.UNKNOWN, "MAPPING_UNRESOLVED", Map.of(), Instant.now()));
         }
-        if (!properties.isEnabled()) {
+        if (!enabled) {
             return List.of(condition(
                     ModuleConditionStatus.SKIPPED,
                     "RESOURCE_SYNC_DISABLED",

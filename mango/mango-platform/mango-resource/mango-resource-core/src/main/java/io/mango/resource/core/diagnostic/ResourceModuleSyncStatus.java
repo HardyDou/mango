@@ -29,6 +29,11 @@ public record ResourceModuleSyncStatus(
         reasonCode = requireText(reasonCode, "reasonCode");
     }
 
+    @Override
+    public List<String> pageRequirements() {
+        return List.copyOf(pageRequirements);
+    }
+
     private static String requireText(String value, String name) {
         if (value == null || value.isBlank()) {
             throw new IllegalArgumentException(name + " must not be blank");

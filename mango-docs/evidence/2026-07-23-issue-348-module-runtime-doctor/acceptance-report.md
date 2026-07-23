@@ -23,8 +23,8 @@
 
 | 台账 ID | 用例 ID | 页面/接口 | 功能点 | 测试数据 | 关键断言 | UI/交互检查 | console/network 结果 | 截图/trace/日志 | 结论 |
 |---|---|---|---|---|---|---|---|---|---|
-| ISSUE-348 | TC-001 | Module API/Core/Starter | 统一五段诊断、状态聚合、版本、超时、缓存与 single-flight | 同 module/app/profile 的并发请求、required WARN、缺安装元数据、超时、取消、全局过载与多 key 并发刷新 | required WARN 聚合为 DEGRADED；缺失安装证据为 UNKNOWN；同 key 只执行一次；超限 fail-fast；缓存容量不超过上限；超时会取消 executor task；duration 安全收敛到 `0..24h` | 后端纯逻辑；逐项断言 condition、reasonCode、required、stale 与 evidence 边界 | 不涉及浏览器；三个模块分别 5、14、20 tests，failure/error 均为 0 | 八模块 `verify` 的 Surefire 汇总与 coordinator 并发回归 | PASS |
-| ISSUE-348 | TC-002 | Persistence/Resource/Authorization contributor | 迁移、当前资源声明和授权快照 | H2 内存库、真实 Flyway/MyBatis、当前 fingerprint、app/tenant/permission/apiCode/resourceCode/accessMode | 观察失败不影响 Flyway 主流程；旧 PASS 不能替代当前声明；错误 app 不获得诊断权限；菜单/API 分别使用平台/全局权威租户并具备错误分区反例 | 后端分层集成；只输出低敏计数、fingerprint 和稳定 reasonCode | 不涉及浏览器；Persistence 87、Resource Core 55、Authorization Starter 75 tests，failure/error 均为 0 | Maven Surefire；真实 H2/Flyway/MyBatis 集成测试输出 | PASS |
+| ISSUE-348 | TC-001 | Module API/Core/Starter | 统一五段诊断、状态聚合、版本、超时、缓存与 single-flight | 同 module/app/profile 的并发请求、required WARN、缺安装元数据、超时、取消、全局过载与多 key 并发刷新 | required WARN 聚合为 DEGRADED；缺失安装证据为 UNKNOWN；同 key 只执行一次；超限 fail-fast；缓存容量不超过上限；超时会取消 executor task；duration 安全收敛到 `0..24h` | 后端纯逻辑；逐项断言 condition、reasonCode、required、stale 与 evidence 边界 | 不涉及浏览器；三个模块分别 5、14、20 tests，failure/error 均为 0 | 九模块 `verify` 的 Surefire 汇总与 coordinator 并发回归 | PASS |
+| ISSUE-348 | TC-002 | Persistence/Resource/Authorization contributor | 迁移、当前资源声明和授权快照 | H2 内存库、真实 Flyway/MyBatis、当前 fingerprint、app/tenant/permission/apiCode/resourceCode/accessMode | 观察失败不影响 Flyway 主流程；旧 PASS 不能替代当前声明；错误 app 不获得诊断权限；菜单/API 分别使用平台/全局权威租户并具备错误分区反例；诊断 Mapper 缺失时保持 UNKNOWN，不误报 READY | 后端分层集成；只输出低敏计数、fingerprint 和稳定 reasonCode | 不涉及浏览器；Persistence 87、Authorization Core 53、Resource Core 55、Authorization Starter 76 tests，failure/error 均为 0 | Maven Surefire；真实 H2/Flyway/MyBatis 集成测试输出 | PASS |
 | ISSUE-348 | TC-003 | `/actuator/mangoModules` | 默认关闭与专用授权 | 匿名、query token、cookie、internal 标志、错误 bearer、缺权限、错误/重复 app、错误 tenant、非 loopback、localhost、POST、根 context path `/` | 默认不装配；启用后仅 loopback GET、header bearer、正确 app/tenant 和 `diagnostic:read` 可访问；空 context path 与 Spring 等价的 `/` 可装配，其他组合被拒绝 | 实际 Actuator endpoint 与最高优先级独立 SecurityFilterChain，不依赖业务页面 | 不涉及浏览器；真实 MockMvc 同时断言 `durationMs` 为 JSON number | `ModuleDiagnosticActuatorSecurityIntegrationTest` 与 Auth 组合回归 | PASS |
 | ISSUE-348 | TC-004 | Admin Pages/Admin Shell bridge | 已登记页定向探测和前端实际版本 | mango-link 两个已登记 page key，诊断 challenge 与 callback | registrar、loader、Vue component、chunk 均成立；返回 frontend version `1.0.14`；响应 schema、condition 唯一性和 evidence 上限严格校验 | 诊断 bootstrap 不挂载登录 UI；通用 Shell 不固化会阻断远程 runtime entry 的 CSP | Admin Pages 3 tests、Admin Shell 52 tests；对应 package/app build 通过 | Vitest、Admin Pages build、Admin Shell package/default/enabled build 输出 | PASS |
 | ISSUE-348 | TC-005 | Admin Shell 缺页反例 | 防止静态登记或错误映射假绿 | `link/not-registered/index` | 总状态返回 FAILED，`frontend.pageRuntime` 为 FAIL，reasonCode 为 `PAGE_NOT_REGISTERED` | Chromium 真实执行 registrar 和定向 probe | 正反例共 2 tests；普通资源 requestfailed、console error、pageerror 均进入失败判定 | CLI Chromium E2E TAP 输出 | PASS |
@@ -37,12 +37,12 @@
 
 | 组件 | 验证结果 | 结论 |
 |---|---|---|
-| 八个 Maven 模块 | Module API 5、Core 14、Starter 20、Persistence 87、Resource API 无测试、Resource Core 55、Authorization 75、Auth 44；共 300 tests，failure/error 均为 0；本轮直接受影响模块及上游依赖另执行 `verify`，56 个 reactor 模块全部成功 | PASS |
+| 九个 Maven 模块 | Module API 5、Core 14、Starter 20、Persistence 87、Resource API 无测试、Authorization Core 53、Resource Core 55、Authorization Starter 76、Auth 44；共 354 tests，failure/error 均为 0；本轮直接受影响模块及上游依赖另执行 `verify`，56 个 reactor 模块全部成功 | PASS |
 | `@mango/admin-pages` | 3 tests；package build 通过 | PASS |
 | `@mango/admin-shell` | 52 tests；package build、应用默认关闭 build、diagnostics enabled build 均通过 | PASS |
 | `@mango/cli` | 56 tests；packed consumer 与真实 Chromium E2E 通过 | PASS |
 | Business starter | 76 required files、35 contract checks | PASS |
-| 静态与文档门禁 | 定向 Checkstyle/PMD/SpotBugs 命令 BUILD SUCCESS；PMD 仍打印仓库既有 Java 21 processing errors，SpotBugs 仍有历史 inventory，因此不声明“零告警” | PASS |
+| 静态、架构与文档门禁 | changed-mode 架构门禁 dependency/ArchUnit/PMD 均为 0、`blocking=0`；通用静态门禁 `newIssueCount=0`、`toolFailureCount=0`，保留 273 项基线 inventory，因此不声明“全仓零告警” | PASS |
 
 ## 5. 真实纵向证据与问题闭环
 
