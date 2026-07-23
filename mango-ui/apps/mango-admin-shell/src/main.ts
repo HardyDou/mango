@@ -1,5 +1,5 @@
 import { mangoFullAdminFeatureRegistrars } from '@mango/admin/full';
-import { bootstrapMangoAdminApp } from '@mango/admin-shell';
+import { bootstrapMangoAdminApp, type MangoAdminShellOptions } from '@mango/admin-shell';
 import '@mango/admin/style-full.css';
 import { getMangoDevComponentPages } from '@mango/admin-pages/dev-pages';
 import { registerMangoAdminShellBaseDevPages } from '@mango/admin-shell/dev-base-pages';
@@ -13,7 +13,7 @@ function splitEnvList(value?: string) {
 }
 
 const moduleDiagnosticsEnabled = import.meta.env.VITE_MANGO_MODULE_DIAGNOSTICS_ENABLED === 'true';
-const appOptions = {
+const appOptions: MangoAdminShellOptions = {
   mountTarget: '#app',
   apiBaseUrl: import.meta.env.VITE_MANGO_API_BASE_URL || '/api',
   title: import.meta.env.VITE_APP_TITLE || 'Mango Admin',
@@ -36,6 +36,6 @@ const appOptions = {
         allowedEntryHosts: splitEnvList(import.meta.env.VITE_MANGO_ALLOWED_REMOTE_HOSTS),
       }
     : undefined,
-} as const;
+};
 
 bootstrapMangoAdminApp(appOptions);
