@@ -1,7 +1,7 @@
 ---
 documentId: TDD-ANN-001
 documentType: technical-design
-pmoVersion: 1.3.4
+pmoVersion: 1.3.5
 schemaRevision: 1
 riskLevel: L2
 riskAssessmentEvidence: SRS-ANN-001 risk assessment
