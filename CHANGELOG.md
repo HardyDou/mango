@@ -1,5 +1,65 @@
 # Mango Changelog
 
+## v2026.07.23-maven-1.0.26-pmo-1.3.5-cli-1.0.90-platform-runtime-release - 2026-07-23
+
+Status: `PENDING`. Publication is authorized for the source merged through the release preparation PR. The immutable source commit, tree, bundle checksum and completed state-machine manifest will be recorded in the closeout PR after registry and consumer verification.
+
+### Added
+
+- Add fail-closed module runtime diagnostics and controlled onboarding for legacy modules, with explicit architecture-debt and service-registration checks.
+- Add managed rich-text asset upload, cleanup and rendering support across reusable frontend packages and the platform runtime.
+
+### Fixed
+
+- Initialize Workflow definition administrator data scope so clean databases expose the definition list to authorized administrators.
+- Harden startup resource synchronization and preserve dependency-only Reactor jars required by published Maven consumers.
+- Route Notice message cards to the canonical destination, display member nicknames consistently, and handle asynchronous web lifecycle failures without leaking framework warnings into business handling.
+- Expose workspace database status in the CLI and move AI notifications to the realtime delivery API.
+
+### Changed
+
+- Rename platform capability management surfaces consistently without changing route identities or permission semantics.
+- Require the frontend PR quality check and build affected frontend packages before consumer type checking.
+- Advance the generated-project compatibility locks to Maven `1.0.26`, PMO `1.3.5`, CLI `1.0.90` and the exact frontend package matrix below.
+
+### Versions
+
+| Component | Previous | Release | Compatibility |
+| --- | ---: | ---: | --- |
+| Mango Maven non-app backend and docs bundle | `1.0.25` | `1.0.26` | Patch release; Parent and BOM consumers upgrade as one set. |
+| `@mango/pmo` | `1.3.4` | `1.3.5` | Adds the current governance, onboarding and release baseline. |
+| `@mango/cli` | `1.0.89` | `1.0.90` | Locks Maven, PMO and all frontend packages in this batch. |
+| Frontend runtime packages | previous release matrix | versions below | Patch updates; public package identities and entry points remain compatible. |
+
+### Published Packages
+
+| Order | Target | Version |
+| ---: | --- | --- |
+| 1 | Maven non-app Reactor including `io.mango:*` and `io.mango:mango-docs-bundle` | `1.0.26` |
+| 2 | `@mango/pmo` | `1.3.5` |
+| 3 | `@mango/admin-pages`, `@mango/auth`, `@mango/calendar`, `@mango/cms`, `@mango/common`, `@mango/file`, `@mango/grid-layout`, `@mango/grid-widgets`, `@mango/home`, `@mango/job`, `@mango/link`, `@mango/notice`, `@mango/numgen`, `@mango/payment`, `@mango/rbac`, `@mango/site-shell`, `@mango/system`, `@mango/template`, `@mango/workflow`, `@mango/workflow-business-example` | `1.0.27`, `1.0.21`, `1.0.28`, `1.0.17`, `1.0.21`, `1.0.28`, `1.0.12`, `1.0.18`, `1.0.10`, `1.0.20`, `1.0.14`, `1.0.32`, `1.0.28`, `1.0.20`, `1.0.19`, `1.0.8`, `1.0.26`, `1.0.28`, `1.0.34`, `1.0.33` |
+| 4 | `@mango/admin-shell`, `@mango/admin` | `1.0.52`, `1.0.57` |
+| 5 | `@mango/cli` | `1.0.90` |
+| 6 | Git tag and GitHub Release | `v2026.07.23-maven-1.0.26-pmo-1.3.5-cli-1.0.90-platform-runtime-release` |
+
+### Upgrade Notes
+
+1. Upgrade all Mango backend dependencies together. Parent consumers set `mango.version` to `1.0.26`; projects with another parent import `io.mango:mango-bom:1.0.26` and omit versions from BOM-managed Mango dependencies.
+2. Upgrade the frontend packages to the exact versions in this release. Aggregate consumers use `@mango/admin@1.0.57`; direct consumers align their imported packages explicitly.
+3. Install `@mango/cli@1.0.90`, then run `mango pmo upgrade --project-dir . --to 1.3.5 --sync-shell` and `mango pmo check --project-dir . --locked`.
+4. Existing databases upgrade in place. After startup resource reconciliation, verify Workflow definition visibility, renamed platform management labels, message-card navigation and managed rich-text assets with the intended tenant and administrator account.
+
+### Verification
+
+- `pnpm -C mango-ui release:impact --base=v2026.07.21-maven-1.0.25-cli-1.0.89-branding-workflow-bom-release --head=HEAD`
+- `pnpm -C mango-ui --filter @mango/pmo build && pnpm -C mango-ui --filter @mango/pmo check`
+- `node mango-business-starter/scripts/sync-pmo-baseline.mjs --check`
+- `node mango-ui/packages/mango-cli/scripts/check-release-versions.mjs`
+- `MANGO_BACKEND_GATE_VERSION=1.0.26 node mango-ui/packages/mango-cli/scripts/check-generated-backend-gate.mjs`
+- `pnpm -C mango-ui admin:styles:check && pnpm -C mango-ui admin:module-styles:check`
+- The release preparation PR must pass all required checks on the exact source tree before immutable publication.
+- The release state machine will record Nexus publish/consume back-checks, clean published consumers, tag, GitHub Release, documentation and closeout evidence.
+
 ## v2026.07.21-maven-1.0.25-cli-1.0.89-branding-workflow-bom-release - 2026-07-21
 
 Status: `PUBLISHED_AND_VERIFIED`. This mixed release was published from source commit `d77f5c1961edce33c8bf049105494b5f92fe6b9c` and tree `311affe083f05e9121bfc67209dbfbdeb37e79d1`. Maven `1.0.25`, the frontend patch matrix and `@mango/cli@1.0.89` resolve from their configured publish and consume registries; `@mango/pmo` remains `1.3.4` and was not republished. The immutable tag and GitHub Release point to the same source commit; the versioned documentation snapshot is included in this closeout and Pages verification remains recorded by the canonical release manifest.
