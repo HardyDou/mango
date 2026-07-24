@@ -1,9 +1,11 @@
 package io.mango.notice.core.entity;
 
 import com.baomidou.mybatisplus.annotation.TableName;
+
+import io.mango.notice.api.enums.NoticeChannelRouteMode;
 import io.mango.notice.api.enums.NoticeChannelType;
 import io.mango.notice.api.enums.NoticeTemplateVersionStatus;
-import io.mango.notice.api.enums.NoticeChannelRouteMode;
+
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -13,7 +15,6 @@ import java.time.LocalDateTime;
 @EqualsAndHashCode(callSuper = true)
 @TableName(value = "notice_business_channel_template", excludeProperty = "orgId")
 public class NoticeBusinessChannelTemplateEntity extends NoticeBaseEntity {
-
     private Long businessTypeId;
 
     private String bizType;
@@ -45,5 +46,4 @@ public class NoticeBusinessChannelTemplateEntity extends NoticeBaseEntity {
     private LocalDateTime publishTime;
 
     private Long publishBy;
-
 }

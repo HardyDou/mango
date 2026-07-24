@@ -1,8 +1,9 @@
 package io.mango.notice.api.command;
 
-import io.mango.notice.api.enums.NoticeChannelType;
 import io.mango.notice.api.enums.NoticeChannelRouteMode;
+import io.mango.notice.api.enums.NoticeChannelType;
 import io.swagger.v3.oas.annotations.media.Schema;
+
 import lombok.Data;
 
 import java.io.Serializable;
@@ -10,7 +11,6 @@ import java.io.Serializable;
 @Data
 @Schema(description = "保存业务渠道模板命令")
 public class SaveNoticeChannelTemplateCommand implements Serializable {
-
     private static final long serialVersionUID = 1L;
 
     @Schema(description = "渠道类型")
@@ -38,7 +38,8 @@ public class SaveNoticeChannelTemplateCommand implements Serializable {
     private String variableMapping;
 
     @Schema(description = "是否启用")
-    @jakarta.validation.constraints.NotNull(groups = io.mango.notice.api.validation.NoticeOptionalValidation.class)
+    @jakarta.validation.constraints.NotNull(
+            groups = io.mango.notice.api.validation.NoticeOptionalValidation.class)
     private Boolean enabled = Boolean.TRUE;
 
     @Schema(description = "绑定渠道配置 ID，空表示 AUTO")

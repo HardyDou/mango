@@ -1,19 +1,21 @@
 package io.mango.notice.core.service;
 
 import io.mango.notice.support.channel.NoticeChannelSecretResolver;
+
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
 public class DefaultNoticeChannelSecretResolver implements NoticeChannelSecretResolver {
-
     private final Environment environment;
 
     @Override
     public boolean supports(String reference) {
-        return reference != null && (reference.startsWith("env:") || reference.startsWith("property:"));
+        return reference != null
+                && (reference.startsWith("env:") || reference.startsWith("property:"));
     }
 
     @Override

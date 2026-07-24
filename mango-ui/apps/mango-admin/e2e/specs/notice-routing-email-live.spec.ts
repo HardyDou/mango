@@ -422,7 +422,7 @@ test.describe('ISSUE 641/642 Notice 真实环境验收', () => {
               ssl: false,
               timeoutMillis: 500,
             }),
-            secretValues: { password: `runtime-bad-${unique}` },
+            secretValues: [{ key: 'password', value: `runtime-bad-${unique}` }],
             enabled: true,
             priority: 0,
             weight: 100,

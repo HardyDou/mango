@@ -8,7 +8,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ChannelSendResult {
-
     private boolean success;
 
     private Long siteMessageId;
@@ -27,8 +26,10 @@ public class ChannelSendResult {
         return new ChannelSendResult(true, siteMessageId, null, null, null, false, null);
     }
 
-    public static ChannelSendResult providerSuccess(String providerMessageId, String responseSnapshot) {
-        return new ChannelSendResult(true, null, providerMessageId, null, null, false, responseSnapshot);
+    public static ChannelSendResult providerSuccess(
+            String providerMessageId, String responseSnapshot) {
+        return new ChannelSendResult(
+                true, null, providerMessageId, null, null, false, responseSnapshot);
     }
 
     public static ChannelSendResult failed(String failReason) {
@@ -39,8 +40,9 @@ public class ChannelSendResult {
         return new ChannelSendResult(false, null, null, failCode, failReason, retryable, null);
     }
 
-    public static ChannelSendResult failed(String failCode, String failReason, boolean retryable,
-                                           String responseSnapshot) {
-        return new ChannelSendResult(false, null, null, failCode, failReason, retryable, responseSnapshot);
+    public static ChannelSendResult failed(
+            String failCode, String failReason, boolean retryable, String responseSnapshot) {
+        return new ChannelSendResult(
+                false, null, null, failCode, failReason, retryable, responseSnapshot);
     }
 }

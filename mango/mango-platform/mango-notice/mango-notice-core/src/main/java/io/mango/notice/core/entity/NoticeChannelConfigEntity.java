@@ -1,10 +1,12 @@
 package io.mango.notice.core.entity;
 
 import com.baomidou.mybatisplus.annotation.TableName;
+
 import io.mango.notice.api.enums.NoticeChannelConfigStatus;
-import io.mango.notice.api.enums.NoticeChannelSendHealthStatus;
 import io.mango.notice.api.enums.NoticeChannelSecretStatus;
+import io.mango.notice.api.enums.NoticeChannelSendHealthStatus;
 import io.mango.notice.api.enums.NoticeChannelType;
+
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -14,7 +16,6 @@ import java.time.LocalDateTime;
 @EqualsAndHashCode(callSuper = true)
 @TableName(value = "notice_channel_config", excludeProperty = "orgId")
 public class NoticeChannelConfigEntity extends NoticeBaseEntity {
-
     private String configCode;
 
     private NoticeChannelType channelType;
@@ -58,5 +59,4 @@ public class NoticeChannelConfigEntity extends NoticeBaseEntity {
     private String lastFailureReason;
 
     private String rateLimitConfig;
-
 }

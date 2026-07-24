@@ -1,10 +1,11 @@
 package io.mango.notice.api.vo;
 
 import io.mango.notice.api.enums.NoticeChannelConfigStatus;
-import io.mango.notice.api.enums.NoticeChannelSendHealthStatus;
 import io.mango.notice.api.enums.NoticeChannelSecretStatus;
+import io.mango.notice.api.enums.NoticeChannelSendHealthStatus;
 import io.mango.notice.api.enums.NoticeChannelType;
 import io.swagger.v3.oas.annotations.media.Schema;
+
 import lombok.Data;
 
 import java.io.Serializable;
@@ -14,7 +15,6 @@ import java.util.List;
 @Data
 @Schema(description = "通知渠道配置")
 public class NoticeChannelConfigVO implements Serializable {
-
     private static final long serialVersionUID = 1L;
 
     @Schema(description = "主键 ID")
@@ -85,4 +85,20 @@ public class NoticeChannelConfigVO implements Serializable {
 
     @Schema(description = "更新时间")
     private LocalDateTime updatedAt;
+
+    public List<String> getMissingSecretKeys() {
+        return missingSecretKeys == null ? null : List.copyOf(missingSecretKeys);
+    }
+
+    public void setMissingSecretKeys(List<String> missingSecretKeys) {
+        this.missingSecretKeys = missingSecretKeys == null ? null : List.copyOf(missingSecretKeys);
+    }
+
+    public List<String> getRouteTagCodes() {
+        return routeTagCodes == null ? null : List.copyOf(routeTagCodes);
+    }
+
+    public void setRouteTagCodes(List<String> routeTagCodes) {
+        this.routeTagCodes = routeTagCodes == null ? null : List.copyOf(routeTagCodes);
+    }
 }

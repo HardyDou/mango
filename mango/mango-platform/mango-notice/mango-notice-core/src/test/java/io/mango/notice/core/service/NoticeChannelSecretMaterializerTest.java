@@ -1,29 +1,36 @@
 package io.mango.notice.core.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import io.mango.notice.core.entity.NoticeChannelConfigEntity;
 import io.mango.notice.support.channel.NoticeChannelSecretResolver;
+
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Map;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-
 class NoticeChannelSecretMaterializerTest {
-
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Test
-    void materializeUsesReferenceBeforeManualSecretAndKeepsUnmanagedManualSecret() throws Exception {
-        NoticeChannelSecretMaterializer materializer = new NoticeChannelSecretMaterializer(
-                objectMapper, List.of(new MapSecretResolver(Map.of("property:mail.password", "from-reference"))));
-        NoticeChannelConfigEntity entity = entity(
-                "{\"host\":\"smtp.example.com\",\"password\":\"unsafe-config-value\"}",
-                "{\"password\":\"property:mail.password\"}",
-                "{\"password\":\"manual-value\",\"username\":\"manual-user\"}");
+    void materializeUsesReferenceBeforeManualSecretAndKeepsUnmanagedManualSecret()
+            throws Exception {
+        NoticeChannelSecretMaterializer materializer =
+                new NoticeChannelSecretMaterializer(
+                        objectMapper,
+                        List.of(
+                                new MapSecretResolver(
+                                        Map.of("property:mail.password", "from-reference"))));
+        NoticeChannelConfigEntity entity =
+                entity(
+                        "{\"host\":\"smtp.example.com\",\"password\":\"unsafe-config-value\"}",
+                        "{\"password\":\"property:mail.password\"}",
+                        "{\"password\":\"manual-value\",\"username\":\"manual-user\"}");
 
         JsonNode result = objectMapper.readTree(materializer.materialize(entity));
 
@@ -34,14 +41,21 @@ class NoticeChannelSecretMaterializerTest {
 
     @Test
     void materializeRejectsUnsupportedOrUnresolvedReferenceWithoutLeakingReferenceValue() {
-        NoticeChannelSecretMaterializer materializer = new NoticeChannelSecretMaterializer(
-                objectMapper, List.of(new MapSecretResolver(Map.of())));
+        NoticeChannelSecretMaterializer materializer =
+                new NoticeChannelSecretMaterializer(
+                        objectMapper, List.of(new MapSecretResolver(Map.of())));
 
-        assertThatThrownBy(() -> materializer.materialize(entity("{}", "{\"password\":\"file:/tmp/secret\"}", null)))
+        assertThatThrownBy(
+                        () ->
+                                materializer.materialize(
+                                        entity("{}", "{\"password\":\"file:/tmp/secret\"}", null)))
                 .isInstanceOf(NoticeChannelSecretResolutionException.class)
                 .hasMessageContaining("不受支持")
                 .hasMessageNotContaining("/tmp/secret");
-        assertThatThrownBy(() -> materializer.materialize(entity("{}", "{\"password\":\"property:missing\"}", null)))
+        assertThatThrownBy(
+                        () ->
+                                materializer.materialize(
+                                        entity("{}", "{\"password\":\"property:missing\"}", null)))
                 .isInstanceOf(NoticeChannelSecretResolutionException.class)
                 .hasMessageContaining("未解析")
                 .hasMessageNotContaining("property:missing");
@@ -55,8 +69,8 @@ class NoticeChannelSecretMaterializerTest {
         return entity;
     }
 
-    private record MapSecretResolver(Map<String, String> values) implements NoticeChannelSecretResolver {
-
+    private record MapSecretResolver(Map<String, String> values)
+            implements NoticeChannelSecretResolver {
         @Override
         public boolean supports(String reference) {
             return reference != null && reference.startsWith("property:");

@@ -1,12 +1,16 @@
 package io.mango.notice.core.resource;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.baomidou.mybatisplus.autoconfigure.MybatisPlusAutoConfiguration;
+
 import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguration;
 import io.mango.notice.core.mapper.NoticeBusinessTypeMapper;
-import io.mango.resource.support.ResourceTypes;
 import io.mango.resource.api.enums.ResourceFieldType;
+import io.mango.resource.support.ResourceTypes;
 import io.mango.resource.support.model.ResourceDeclaration;
 import io.mango.resource.support.model.ResourceField;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mybatis.spring.annotation.MapperScan;
@@ -18,36 +22,34 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.TestPropertySource;
 
-import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.LinkedHashMap;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import javax.sql.DataSource;
 
-@SpringBootTest(classes = {
-        DataSourceAutoConfiguration.class,
-        TransactionAutoConfiguration.class,
-        MybatisPlusAutoConfiguration.class,
-        PersistenceMybatisPlusAutoConfiguration.class,
-        NoticeMessageTemplateResourceHandlerIntegrationTest.TestConfig.class
-})
-@TestPropertySource(properties = {
-        "spring.datasource.url=jdbc:h2:mem:notice_message_template_resource;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE",
-        "spring.datasource.username=sa",
-        "spring.datasource.password=",
-        "spring.datasource.driver-class-name=org.h2.Driver",
-        "spring.flyway.enabled=false",
-        "mango.persistence.mybatis-plus.tenant.enabled=false"
-})
+@SpringBootTest(
+        classes = {
+            DataSourceAutoConfiguration.class,
+            TransactionAutoConfiguration.class,
+            MybatisPlusAutoConfiguration.class,
+            PersistenceMybatisPlusAutoConfiguration.class,
+            NoticeMessageTemplateResourceHandlerIntegrationTest.TestConfig.class
+        })
+@TestPropertySource(
+        properties = {
+            "spring.datasource.url=jdbc:h2:mem:notice_message_template_resource;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE",
+            "spring.datasource.username=sa",
+            "spring.datasource.password=",
+            "spring.datasource.driver-class-name=org.h2.Driver",
+            "spring.flyway.enabled=false",
+            "mango.persistence.mybatis-plus.tenant.enabled=false"
+        })
 class NoticeMessageTemplateResourceHandlerIntegrationTest {
+    @Autowired private DataSource dataSource;
 
-    @Autowired
-    private DataSource dataSource;
-
-    @Autowired
-    private NoticeMessageTemplateResourceHandler handler;
+    @Autowired private NoticeMessageTemplateResourceHandler handler;
 
     @BeforeEach
     void setUp() throws Exception {
@@ -63,11 +65,23 @@ class NoticeMessageTemplateResourceHandlerIntegrationTest {
         assertThat(count("notice_business_channel_template")).isOne();
         assertThat(stringValue("notice_business_type", "biz_type", "id = 2060000000000014001"))
                 .isEqualTo("job.instance.failed");
-        assertThat(stringValue("notice_business_type", "default_priority", "id = 2060000000000014001"))
+        assertThat(
+                        stringValue(
+                                "notice_business_type",
+                                "default_priority",
+                                "id = 2060000000000014001"))
                 .isEqualTo("HIGH");
-        assertThat(stringValue("notice_business_config_version", "version_status", "id = 2060000000000014002"))
+        assertThat(
+                        stringValue(
+                                "notice_business_config_version",
+                                "version_status",
+                                "id = 2060000000000014002"))
                 .isEqualTo("ACTIVE");
-        assertThat(stringValue("notice_business_channel_template", "channel_type", "id = 2060000000000014003"))
+        assertThat(
+                        stringValue(
+                                "notice_business_channel_template",
+                                "channel_type",
+                                "id = 2060000000000014003"))
                 .isEqualTo("SITE");
     }
 
@@ -77,7 +91,11 @@ class NoticeMessageTemplateResourceHandlerIntegrationTest {
 
         handler.upsert(messageTemplateDeclaration("任务失败：{{jobName}}", true));
 
-        assertThat(stringValue("notice_business_channel_template", "title_template", "id = 2060000000000014003"))
+        assertThat(
+                        stringValue(
+                                "notice_business_channel_template",
+                                "title_template",
+                                "id = 2060000000000014003"))
                 .isEqualTo("任务失败：{{jobName}}");
         assertThat(count("notice_business_channel_template")).isOne();
     }
@@ -89,8 +107,14 @@ class NoticeMessageTemplateResourceHandlerIntegrationTest {
 
         handler.disable(declaration);
 
-        assertThat(booleanValue("notice_business_type", "enabled", "id = 2060000000000014001")).isFalse();
-        assertThat(booleanValue("notice_business_channel_template", "enabled", "id = 2060000000000014003")).isFalse();
+        assertThat(booleanValue("notice_business_type", "enabled", "id = 2060000000000014001"))
+                .isFalse();
+        assertThat(
+                        booleanValue(
+                                "notice_business_channel_template",
+                                "enabled",
+                                "id = 2060000000000014003"))
+                .isFalse();
     }
 
     @Test
@@ -122,7 +146,11 @@ class NoticeMessageTemplateResourceHandlerIntegrationTest {
         assertThat(count("notice_business_type")).isOne();
         assertThat(count("notice_business_config_version")).isOne();
         assertThat(count("notice_business_channel_template")).isOne();
-        assertThat(stringValue("notice_business_channel_template", "channel_type", "id = 2060000000000014003"))
+        assertThat(
+                        stringValue(
+                                "notice_business_channel_template",
+                                "channel_type",
+                                "id = 2060000000000014003"))
                 .isEqualTo("SITE");
     }
 
@@ -137,21 +165,42 @@ class NoticeMessageTemplateResourceHandlerIntegrationTest {
                 .isEqualTo("job.instance.failed");
         assertThat(stringValue("notice_business_type", "biz_name", "id = 2060000000000014001"))
                 .isEqualTo("定时任务执行失败");
-        assertThat(stringValue("notice_business_type", "tenant_id", "id = 2060000000000014001")).isEqualTo("1");
+        assertThat(stringValue("notice_business_type", "tenant_id", "id = 2060000000000014001"))
+                .isEqualTo("1");
         assertThat(stringValue("notice_business_type", "params_schema", "id = 2060000000000014001"))
                 .contains("\"required\":[\"jobCode\",\"jobName\",\"instanceId\",\"errorSummary\"]");
-        assertThat(intValue("notice_business_config_version", "version", "id = 2060000000000014002")).isEqualTo(1);
-        assertThat(stringValue("notice_business_config_version", "version_status", "id = 2060000000000014002"))
+        assertThat(
+                        intValue(
+                                "notice_business_config_version",
+                                "version",
+                                "id = 2060000000000014002"))
+                .isEqualTo(1);
+        assertThat(
+                        stringValue(
+                                "notice_business_config_version",
+                                "version_status",
+                                "id = 2060000000000014002"))
                 .isEqualTo("ACTIVE");
-        assertThat(stringValue("notice_business_channel_template", "title_template", "id = 2060000000000014003"))
+        assertThat(
+                        stringValue(
+                                "notice_business_channel_template",
+                                "title_template",
+                                "id = 2060000000000014003"))
                 .isEqualTo("定时任务执行失败：{{jobName}}");
-        assertThat(stringValue("notice_business_channel_template", "content_template", "id = 2060000000000014003"))
+        assertThat(
+                        stringValue(
+                                "notice_business_channel_template",
+                                "content_template",
+                                "id = 2060000000000014003"))
                 .contains("请进入平台能力/任务管理/执行实例查看日志");
     }
 
     private ResourceDeclaration jobInstanceFailedMessageTemplateDeclaration() {
         ResourceDeclaration declaration = messageTemplateDeclaration("定时任务执行失败：{{jobName}}", true);
-        field(declaration, "paramsSchema", ResourceFieldType.JSON,
+        field(
+                declaration,
+                "paramsSchema",
+                ResourceFieldType.JSON,
                 "{\"type\":\"object\",\"required\":[\"jobCode\",\"jobName\",\"instanceId\",\"errorSummary\"]}");
         return declaration;
     }
@@ -184,13 +233,17 @@ class NoticeMessageTemplateResourceHandlerIntegrationTest {
         field(declaration, "channelType", ResourceFieldType.STRING, "SITE");
         field(declaration, "templateName", ResourceFieldType.STRING, "定时任务执行失败系统消息");
         field(declaration, "titleTemplate", ResourceFieldType.STRING, titleTemplate);
-        field(declaration, "contentTemplate", ResourceFieldType.STRING,
+        field(
+                declaration,
+                "contentTemplate",
+                ResourceFieldType.STRING,
                 "定时任务 {{jobName}}（{{jobCode}}）执行失败。实例：{{instanceId}}；处理器：{{handlerName}}；触发批次：{{triggerBatchNo}}；失败原因：{{errorSummary}}。请进入平台能力/任务管理/执行实例查看日志。");
         field(declaration, "operatorId", ResourceFieldType.LONG, 1L);
         return declaration;
     }
 
-    private void field(ResourceDeclaration declaration, String name, ResourceFieldType type, Object value) {
+    private void field(
+            ResourceDeclaration declaration, String name, ResourceFieldType type, Object value) {
         ResourceField field = new ResourceField();
         field.setType(type);
         field.setValue(value);
@@ -201,7 +254,8 @@ class NoticeMessageTemplateResourceHandlerIntegrationTest {
         execute("drop table if exists notice_business_channel_template");
         execute("drop table if exists notice_business_config_version");
         execute("drop table if exists notice_business_type");
-        execute("""
+        execute(
+                """
                 create table notice_business_type (
                     id bigint not null,
                     biz_type varchar(64) not null,
@@ -222,7 +276,8 @@ class NoticeMessageTemplateResourceHandlerIntegrationTest {
                     unique (tenant_id, biz_type)
                 )
                 """);
-        execute("""
+        execute(
+                """
                 create table notice_business_config_version (
                     id bigint not null,
                     business_type_id bigint not null,
@@ -243,7 +298,8 @@ class NoticeMessageTemplateResourceHandlerIntegrationTest {
                     unique (tenant_id, biz_type, version)
                 )
                 """);
-        execute("""
+        execute(
+                """
                 create table notice_business_channel_template (
                     id bigint not null,
                     business_type_id bigint not null,
@@ -275,25 +331,32 @@ class NoticeMessageTemplateResourceHandlerIntegrationTest {
 
     private void execute(String sql) throws Exception {
         try (Connection connection = dataSource.getConnection();
-             Statement statement = connection.createStatement()) {
+                Statement statement = connection.createStatement()) {
             statement.execute(sql);
         }
     }
 
     private long count(String tableName) throws Exception {
         try (Connection connection = dataSource.getConnection();
-             Statement statement = connection.createStatement();
-             ResultSet resultSet = statement.executeQuery("select count(*) from " + tableName)) {
+                Statement statement = connection.createStatement();
+                ResultSet resultSet = statement.executeQuery("select count(*) from " + tableName)) {
             resultSet.next();
             return resultSet.getLong(1);
         }
     }
 
-    private String stringValue(String tableName, String columnName, String whereClause) throws Exception {
+    private String stringValue(String tableName, String columnName, String whereClause)
+            throws Exception {
         try (Connection connection = dataSource.getConnection();
-             Statement statement = connection.createStatement();
-             ResultSet resultSet = statement.executeQuery(
-                     "select " + columnName + " from " + tableName + " where " + whereClause)) {
+                Statement statement = connection.createStatement();
+                ResultSet resultSet =
+                        statement.executeQuery(
+                                "select "
+                                        + columnName
+                                        + " from "
+                                        + tableName
+                                        + " where "
+                                        + whereClause)) {
             resultSet.next();
             return resultSet.getString(1);
         }
@@ -301,19 +364,32 @@ class NoticeMessageTemplateResourceHandlerIntegrationTest {
 
     private int intValue(String tableName, String columnName, String whereClause) throws Exception {
         try (Connection connection = dataSource.getConnection();
-             Statement statement = connection.createStatement();
-             ResultSet resultSet = statement.executeQuery(
-                     "select " + columnName + " from " + tableName + " where " + whereClause)) {
+                Statement statement = connection.createStatement();
+                ResultSet resultSet =
+                        statement.executeQuery(
+                                "select "
+                                        + columnName
+                                        + " from "
+                                        + tableName
+                                        + " where "
+                                        + whereClause)) {
             resultSet.next();
             return resultSet.getInt(1);
         }
     }
 
-    private boolean booleanValue(String tableName, String columnName, String whereClause) throws Exception {
+    private boolean booleanValue(String tableName, String columnName, String whereClause)
+            throws Exception {
         try (Connection connection = dataSource.getConnection();
-             Statement statement = connection.createStatement();
-             ResultSet resultSet = statement.executeQuery(
-                     "select " + columnName + " from " + tableName + " where " + whereClause)) {
+                Statement statement = connection.createStatement();
+                ResultSet resultSet =
+                        statement.executeQuery(
+                                "select "
+                                        + columnName
+                                        + " from "
+                                        + tableName
+                                        + " where "
+                                        + whereClause)) {
             resultSet.next();
             return resultSet.getBoolean(1);
         }
@@ -322,6 +398,5 @@ class NoticeMessageTemplateResourceHandlerIntegrationTest {
     @Configuration
     @Import(NoticeMessageTemplateResourceHandler.class)
     @MapperScan(basePackageClasses = NoticeBusinessTypeMapper.class)
-    static class TestConfig {
-    }
+    static class TestConfig {}
 }

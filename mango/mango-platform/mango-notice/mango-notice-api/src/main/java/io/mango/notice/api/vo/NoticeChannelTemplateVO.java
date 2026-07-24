@@ -1,9 +1,10 @@
 package io.mango.notice.api.vo;
 
-import io.mango.notice.api.enums.NoticeChannelType;
 import io.mango.notice.api.enums.NoticeChannelRouteMode;
+import io.mango.notice.api.enums.NoticeChannelType;
 import io.mango.notice.api.enums.NoticeTemplateVersionStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
+
 import lombok.Data;
 
 import java.io.Serializable;
@@ -12,7 +13,6 @@ import java.time.LocalDateTime;
 @Data
 @Schema(description = "业务渠道模板")
 public class NoticeChannelTemplateVO implements Serializable {
-
     private static final long serialVersionUID = 1L;
 
     @Schema(description = "主键 ID")

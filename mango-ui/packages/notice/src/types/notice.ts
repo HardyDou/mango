@@ -338,7 +338,7 @@ export interface NoticeChannelConfig {
   providerCode?: string;
   configName?: string;
   configJson?: string;
-  secretValues?: Record<string, string>;
+  secretValues?: NoticeChannelSecretValue[];
   resourceId?: string;
   resourceVersion?: number;
   resourceModuleCode?: string;
@@ -356,6 +356,11 @@ export interface NoticeChannelConfig {
   lastFailureReason?: string;
   rateLimitConfig?: string;
   updatedAt?: string;
+}
+
+export interface NoticeChannelSecretValue {
+  key: string;
+  value: string;
 }
 
 export interface NoticeRouteTag {

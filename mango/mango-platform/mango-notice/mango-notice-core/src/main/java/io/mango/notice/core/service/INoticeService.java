@@ -1,8 +1,8 @@
 package io.mango.notice.core.service;
 
 import io.mango.common.vo.PageResult;
-import io.mango.notice.api.command.CreateNoticeBusinessTypeCommand;
 import io.mango.notice.api.command.CompleteNoticeSiteMessageActionCommand;
+import io.mango.notice.api.command.CreateNoticeBusinessTypeCommand;
 import io.mango.notice.api.command.ExecuteNoticeSiteMessageActionCommand;
 import io.mango.notice.api.command.HandleNoticeSendRecordCommand;
 import io.mango.notice.api.command.HandleNoticeSendRecordsCommand;
@@ -11,9 +11,9 @@ import io.mango.notice.api.command.RetryNoticeSendRecordsCommand;
 import io.mango.notice.api.command.SaveNoticeBusinessConfigCommand;
 import io.mango.notice.api.command.SaveNoticeChannelConfigCommand;
 import io.mango.notice.api.command.SaveNoticeChannelTemplateCommand;
-import io.mango.notice.api.command.SaveNoticeRouteTagCommand;
 import io.mango.notice.api.command.SaveNoticeReceivePreferenceCommand;
 import io.mango.notice.api.command.SaveNoticeRecipientAccountCommand;
+import io.mango.notice.api.command.SaveNoticeRouteTagCommand;
 import io.mango.notice.api.command.SaveNoticeSettingsCommand;
 import io.mango.notice.api.command.SendNoticeCommand;
 import io.mango.notice.api.command.SyncWecomUsersCommand;
@@ -22,20 +22,20 @@ import io.mango.notice.api.enums.NoticeChannelType;
 import io.mango.notice.api.query.NoticeBusinessTypePageQuery;
 import io.mango.notice.api.query.NoticeChannelConfigPageQuery;
 import io.mango.notice.api.query.NoticeChannelReferenceImpactQuery;
-import io.mango.notice.api.query.NoticeRouteTagQuery;
 import io.mango.notice.api.query.NoticeReceivePreferenceQuery;
 import io.mango.notice.api.query.NoticeRecipientAccountQuery;
+import io.mango.notice.api.query.NoticeRouteTagQuery;
 import io.mango.notice.api.query.NoticeSendRecordPageQuery;
 import io.mango.notice.api.query.NoticeSiteMessagePageQuery;
 import io.mango.notice.api.query.NoticeTaskPageQuery;
 import io.mango.notice.api.vo.NoticeBusinessConfigVersionVO;
 import io.mango.notice.api.vo.NoticeBusinessTypeVO;
 import io.mango.notice.api.vo.NoticeChannelConfigVO;
-import io.mango.notice.api.vo.NoticeChannelTemplateVO;
 import io.mango.notice.api.vo.NoticeChannelReferenceImpactVO;
-import io.mango.notice.api.vo.NoticeRouteTagVO;
+import io.mango.notice.api.vo.NoticeChannelTemplateVO;
 import io.mango.notice.api.vo.NoticeReceivePreferenceVO;
 import io.mango.notice.api.vo.NoticeRecipientAccountVO;
+import io.mango.notice.api.vo.NoticeRouteTagVO;
 import io.mango.notice.api.vo.NoticeSendRecordVO;
 import io.mango.notice.api.vo.NoticeSendResultVO;
 import io.mango.notice.api.vo.NoticeSettingsVO;
@@ -49,108 +49,112 @@ import io.mango.notice.api.vo.WecomUserSyncResultVO;
 import java.util.List;
 
 public interface INoticeService {
+    NoticeSendResultVO send(SendNoticeCommand command);
 
- NoticeSendResultVO send(SendNoticeCommand command);
+    String findTaskTenantId(Long taskId);
 
- String findTaskTenantId(Long taskId);
+    int executeTask(Long taskId);
 
- int executeTask(Long taskId);
+    boolean hasRetryWaitingRecords(Long taskId);
 
- boolean hasRetryWaitingRecords(Long taskId);
+    void finalizeRetryWaitingRecords(Long taskId, String failReason);
 
- void finalizeRetryWaitingRecords(Long taskId, String failReason);
+    PageResult<NoticeBusinessTypeVO> listBusinessTypes(NoticeBusinessTypePageQuery query);
 
- PageResult<NoticeBusinessTypeVO> listBusinessTypes(NoticeBusinessTypePageQuery query);
+    NoticeBusinessTypeVO createBusinessType(CreateNoticeBusinessTypeCommand command);
 
- NoticeBusinessTypeVO createBusinessType(CreateNoticeBusinessTypeCommand command);
+    NoticeBusinessTypeVO updateBusinessType(Long id, UpdateNoticeBusinessTypeCommand command);
 
- NoticeBusinessTypeVO updateBusinessType(Long id, UpdateNoticeBusinessTypeCommand command);
+    boolean deleteBusinessType(Long id);
 
- boolean deleteBusinessType(Long id);
+    boolean enableBusinessType(Long id);
 
- boolean enableBusinessType(Long id);
+    boolean disableBusinessType(Long id);
 
- boolean disableBusinessType(Long id);
+    List<NoticeBusinessConfigVersionVO> listBusinessConfigVersions(Long businessTypeId);
 
- List<NoticeBusinessConfigVersionVO> listBusinessConfigVersions(Long businessTypeId);
+    NoticeBusinessConfigVersionVO saveBusinessConfigDraft(
+            Long businessTypeId, SaveNoticeBusinessConfigCommand command);
 
- NoticeBusinessConfigVersionVO saveBusinessConfigDraft(Long businessTypeId, SaveNoticeBusinessConfigCommand command);
+    boolean publishBusinessConfigDraft(Long businessTypeId);
 
- boolean publishBusinessConfigDraft(Long businessTypeId);
+    boolean activateBusinessConfigVersion(Long businessTypeId, Integer version);
 
- boolean activateBusinessConfigVersion(Long businessTypeId, Integer version);
+    List<NoticeChannelTemplateVO> listChannelTemplates(Long businessTypeId);
 
- List<NoticeChannelTemplateVO> listChannelTemplates(Long businessTypeId);
+    NoticeChannelTemplateVO saveChannelTemplate(
+            Long businessTypeId, SaveNoticeChannelTemplateCommand command);
 
- NoticeChannelTemplateVO saveChannelTemplate(Long businessTypeId, SaveNoticeChannelTemplateCommand command);
+    boolean publishChannelTemplate(Long businessTypeId, NoticeChannelType channelType);
 
- boolean publishChannelTemplate(Long businessTypeId, NoticeChannelType channelType);
+    PageResult<NoticeChannelConfigVO> listChannelConfigs(NoticeChannelConfigPageQuery query);
 
- PageResult<NoticeChannelConfigVO> listChannelConfigs(NoticeChannelConfigPageQuery query);
+    NoticeChannelConfigVO saveChannelConfig(SaveNoticeChannelConfigCommand command);
 
- NoticeChannelConfigVO saveChannelConfig(SaveNoticeChannelConfigCommand command);
+    List<NoticeRouteTagVO> listRouteTags(NoticeRouteTagQuery query);
 
- List<NoticeRouteTagVO> listRouteTags(NoticeRouteTagQuery query);
+    NoticeRouteTagVO saveRouteTag(SaveNoticeRouteTagCommand command);
 
- NoticeRouteTagVO saveRouteTag(SaveNoticeRouteTagCommand command);
+    boolean deleteRouteTag(Long id);
 
- boolean deleteRouteTag(Long id);
+    NoticeChannelReferenceImpactVO getChannelReferenceImpact(
+            NoticeChannelReferenceImpactQuery query);
 
- NoticeChannelReferenceImpactVO getChannelReferenceImpact(NoticeChannelReferenceImpactQuery query);
+    NoticeWecomLoginConfigVO getWecomLoginConfig(Long channelConfigId);
 
- NoticeWecomLoginConfigVO getWecomLoginConfig(Long channelConfigId);
+    boolean deleteChannelConfig(Long id);
 
- boolean deleteChannelConfig(Long id);
+    PageResult<NoticeTaskVO> listTasks(NoticeTaskPageQuery query);
 
- PageResult<NoticeTaskVO> listTasks(NoticeTaskPageQuery query);
+    PageResult<NoticeSendRecordVO> listSendRecords(NoticeSendRecordPageQuery query);
 
- PageResult<NoticeSendRecordVO> listSendRecords(NoticeSendRecordPageQuery query);
+    boolean retrySendRecord(Long id);
 
- boolean retrySendRecord(Long id);
+    boolean retrySendRecords(RetryNoticeSendRecordsCommand command);
 
- boolean retrySendRecords(RetryNoticeSendRecordsCommand command);
+    boolean markSendRecordManualSuccess(Long id, HandleNoticeSendRecordCommand command);
 
- boolean markSendRecordManualSuccess(Long id, HandleNoticeSendRecordCommand command);
+    boolean markSendRecordsManualSuccess(HandleNoticeSendRecordsCommand command);
 
- boolean markSendRecordsManualSuccess(HandleNoticeSendRecordsCommand command);
+    boolean ignoreSendRecord(Long id, HandleNoticeSendRecordCommand command);
 
- boolean ignoreSendRecord(Long id, HandleNoticeSendRecordCommand command);
+    boolean ignoreSendRecords(HandleNoticeSendRecordsCommand command);
 
- boolean ignoreSendRecords(HandleNoticeSendRecordsCommand command);
+    NoticeSettingsVO getSettings();
 
- NoticeSettingsVO getSettings();
+    boolean saveSettings(SaveNoticeSettingsCommand command);
 
- boolean saveSettings(SaveNoticeSettingsCommand command);
+    List<NoticeRecipientAccountVO> listRecipientAccounts(NoticeRecipientAccountQuery query);
 
- List<NoticeRecipientAccountVO> listRecipientAccounts(NoticeRecipientAccountQuery query);
+    NoticeRecipientAccountVO saveRecipientAccount(SaveNoticeRecipientAccountCommand command);
 
- NoticeRecipientAccountVO saveRecipientAccount(SaveNoticeRecipientAccountCommand command);
+    WecomUserSyncResultVO syncWecomUsers(SyncWecomUsersCommand command);
 
- WecomUserSyncResultVO syncWecomUsers(SyncWecomUsersCommand command);
+    boolean disableRecipientAccount(Long id, Long userId);
 
- boolean disableRecipientAccount(Long id, Long userId);
+    boolean setDefaultRecipientAccount(Long id, Long userId);
 
- boolean setDefaultRecipientAccount(Long id, Long userId);
+    List<NoticeReceivePreferenceVO> listReceivePreferences(NoticeReceivePreferenceQuery query);
 
- List<NoticeReceivePreferenceVO> listReceivePreferences(NoticeReceivePreferenceQuery query);
+    NoticeReceivePreferenceVO saveReceivePreference(SaveNoticeReceivePreferenceCommand command);
 
- NoticeReceivePreferenceVO saveReceivePreference(SaveNoticeReceivePreferenceCommand command);
+    PageResult<NoticeSiteMessageVO> listSiteMessages(NoticeSiteMessagePageQuery query);
 
- PageResult<NoticeSiteMessageVO> listSiteMessages(NoticeSiteMessagePageQuery query);
+    NoticeSiteMessageVO getSiteMessage(Long id);
 
- NoticeSiteMessageVO getSiteMessage(Long id);
+    NoticeSiteMessageActionRequestVO executeSiteMessageAction(
+            ExecuteNoticeSiteMessageActionCommand command);
 
- NoticeSiteMessageActionRequestVO executeSiteMessageAction(ExecuteNoticeSiteMessageActionCommand command);
+    NoticeSiteMessageActionRequestVO completeSiteMessageAction(
+            CompleteNoticeSiteMessageActionCommand command);
 
- NoticeSiteMessageActionRequestVO completeSiteMessageAction(CompleteNoticeSiteMessageActionCommand command);
+    NoticeUnreadCountVO unreadCount();
 
- NoticeUnreadCountVO unreadCount();
+    boolean markSiteMessageRead(Long id);
 
- boolean markSiteMessageRead(Long id);
+    boolean markSiteMessagesRead(MarkNoticeReadCommand command);
 
- boolean markSiteMessagesRead(MarkNoticeReadCommand command);
+    boolean markAllSiteMessagesRead();
 
- boolean markAllSiteMessagesRead();
-
- boolean deleteSiteMessage(Long id);
+    boolean deleteSiteMessage(Long id);
 }
