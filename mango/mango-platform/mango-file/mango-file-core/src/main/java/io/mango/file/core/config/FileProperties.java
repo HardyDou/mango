@@ -21,6 +21,7 @@ public class FileProperties {
     private static final long DEFAULT_READ_TIMEOUT_MILLIS = 10000L;
     private static final long DEFAULT_UPLOAD_EXPIRE_SECONDS = 900L;
     private static final long DEFAULT_UPLOAD_MAX_SIZE = 100L * 1024L * 1024L;
+    private static final long DEFAULT_MULTIPART_THRESHOLD = 20L * 1024L * 1024L;
     private static final long DEFAULT_REMOTE_IMAGE_MAX_SIZE = 10L * 1024L * 1024L;
     private static final int DEFAULT_MAX_REDIRECTS = 3;
     private static final int HTTP_PORT = 80;
@@ -110,7 +111,7 @@ public class FileProperties {
         private boolean multipartEnabled = true;
 
         /** 大文件分片上传临界值，单位字节。 */
-        private long multipartThreshold = 20L * 1024L * 1024L;
+        private long multipartThreshold = DEFAULT_MULTIPART_THRESHOLD;
 
         /** 是否允许浏览器直传对象存储。 */
         private boolean directUploadEnabled = false;

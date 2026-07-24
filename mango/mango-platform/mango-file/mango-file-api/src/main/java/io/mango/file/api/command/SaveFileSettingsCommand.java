@@ -1,10 +1,13 @@
 package io.mango.file.api.command;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.io.Serializable;
 import java.util.List;
@@ -25,10 +28,18 @@ public class SaveFileSettingsCommand implements Serializable {
 
     @Schema(description = "允许上传的扩展名。为空表示不限制")
     @NotNull(message = "允许上传的扩展名不能为空")
+    @Getter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP",
+            justification = "Jackson and Feign require this mutable collection getter"))
+    @Setter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+            justification = "Jackson and Feign require this mutable collection setter"))
     private List<String> allowedExtensions = List.of();
 
     @Schema(description = "禁止上传的扩展名")
     @NotNull(message = "禁止上传的扩展名不能为空")
+    @Getter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP",
+            justification = "Jackson and Feign require this mutable collection getter"))
+    @Setter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+            justification = "Jackson and Feign require this mutable collection setter"))
     private List<String> blockedExtensions = List.of();
 
     @Schema(description = "默认访问级别：PRIVATE、PUBLIC_READ、INTERNAL")
@@ -69,10 +80,18 @@ public class SaveFileSettingsCommand implements Serializable {
 
     @Schema(description = "允许上传的内容类型。为空表示不限制")
     @NotNull(message = "允许上传的内容类型不能为空")
+    @Getter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP",
+            justification = "Jackson and Feign require this mutable collection getter"))
+    @Setter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+            justification = "Jackson and Feign require this mutable collection setter"))
     private List<String> allowedContentTypes = List.of();
 
     @Schema(description = "禁止上传的内容类型")
     @NotNull(message = "禁止上传的内容类型不能为空")
+    @Getter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP",
+            justification = "Jackson and Feign require this mutable collection getter"))
+    @Setter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+            justification = "Jackson and Feign require this mutable collection setter"))
     private List<String> blockedContentTypes = List.of();
 
     @Schema(description = "是否启用浏览器直传对象存储")
@@ -109,6 +128,10 @@ public class SaveFileSettingsCommand implements Serializable {
 
     @Schema(description = "可交由文档预览服务处理的扩展名")
     @NotNull(message = "文档预览扩展名不能为空")
+    @Getter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP",
+            justification = "Jackson and Feign require this mutable collection getter"))
+    @Setter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+            justification = "Jackson and Feign require this mutable collection setter"))
     private List<String> previewExternalExtensions = List.of();
 
     @Schema(description = "是否保留归档记录")

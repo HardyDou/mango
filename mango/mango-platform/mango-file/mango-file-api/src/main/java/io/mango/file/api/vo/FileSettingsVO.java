@@ -1,7 +1,10 @@
 package io.mango.file.api.vo;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
@@ -26,9 +29,17 @@ public class FileSettingsVO implements Serializable {
     private Long maxSize;
 
     @Schema(description = "允许上传的扩展名。为空表示不限制")
+    @Getter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP",
+            justification = "Jackson and Feign require this mutable collection getter"))
+    @Setter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+            justification = "Jackson and Feign require this mutable collection setter"))
     private List<String> allowedExtensions;
 
     @Schema(description = "禁止上传的扩展名")
+    @Getter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP",
+            justification = "Jackson and Feign require this mutable collection getter"))
+    @Setter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+            justification = "Jackson and Feign require this mutable collection setter"))
     private List<String> blockedExtensions;
 
     @Schema(description = "默认访问级别：PRIVATE、PUBLIC_READ、INTERNAL")
@@ -59,9 +70,17 @@ public class FileSettingsVO implements Serializable {
     private Boolean contentTypeCheckEnabled;
 
     @Schema(description = "允许上传的内容类型。为空表示不限制")
+    @Getter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP",
+            justification = "Jackson and Feign require this mutable collection getter"))
+    @Setter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+            justification = "Jackson and Feign require this mutable collection setter"))
     private List<String> allowedContentTypes;
 
     @Schema(description = "禁止上传的内容类型")
+    @Getter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP",
+            justification = "Jackson and Feign require this mutable collection getter"))
+    @Setter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+            justification = "Jackson and Feign require this mutable collection setter"))
     private List<String> blockedContentTypes;
 
     @Schema(description = "是否启用浏览器直传对象存储")
@@ -89,6 +108,10 @@ public class FileSettingsVO implements Serializable {
     private Long previewExpireSeconds;
 
     @Schema(description = "可交由文档预览服务处理的扩展名")
+    @Getter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP",
+            justification = "Jackson and Feign require this mutable collection getter"))
+    @Setter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+            justification = "Jackson and Feign require this mutable collection setter"))
     private List<String> previewExternalExtensions;
 
     @Schema(description = "是否保留归档记录")
