@@ -206,7 +206,7 @@ function normalizeTextArray(value: any): string[] {
   return [];
 }
 
-function positiveOrDefault(value: any, defaultValue: number): number {
+function positiveOrDefault(value: unknown, defaultValue: number): number {
   const number = Number(value);
   return Number.isFinite(number) && number > 0 ? number : defaultValue;
 }
