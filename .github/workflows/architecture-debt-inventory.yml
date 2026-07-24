@@ -53,7 +53,7 @@ jobs:
             -Dmango.architecture.mode=changed \
             -Dmango.architecture.requireFullReactor=true \
             -Dmango.architecture.base="$BASE_SHA" \
-            -Dmango.check.changedOnly=true \
+            -Dmango.check.changedOnly=false \
             -Dmango.check.gate=no-new-violations \
             -Dmango.check.baseRef="$BASE_SHA" \
             verify

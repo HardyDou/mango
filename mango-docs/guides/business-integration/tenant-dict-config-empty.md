@@ -16,7 +16,7 @@ System 新库只执行纯 DDL `V1__init_system.sql`。平台默认租户、524 �
 
 ### Issue #348 模块运行态诊断影响
 
-新增的 `mango module doctor mango-link` 是默认关闭、只读的本机诊断入口，不创建或修复租户、字典、组织、用户和系统配置数据，也不允许查询任意租户。首版 Authorization 诊断分别读取平台菜单权威域 `tenant_id=1` 和全局 API 资源权威域 `tenant_id=default`；它不改变业务租户数据隔离或本指南的空数据排障步骤。
+新增的 `mango module doctor mango-link` 是默认关闭、只读的本机诊断入口，不创建或修复租户、字典、组织、用户和系统配置数据，查询范围仅限声明的权威租户域。首版 Authorization 诊断分别读取平台菜单权威域 `tenant_id=1` 和全局 API 资源权威域 `tenant_id=default`；它不改变业务租户数据隔离或本指南的空数据排障步骤。
 
 ## 2. 阅读顺序
 

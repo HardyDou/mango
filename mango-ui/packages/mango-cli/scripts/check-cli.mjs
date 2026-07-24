@@ -468,6 +468,19 @@ try {
     if (/^\s+-(?:am|amd)\s*$/mu.test(qualityGate)) {
       throw new Error('generated partial quality gate must not expand Maven scope with -am or -amd');
     }
+    const governanceInventory = extractNamedWorkflowStep(
+      workflow,
+      'Generate trusted full-Reactor architecture inventory for governance',
+    );
+    if (
+      !governanceInventory.includes('-Dmango.check.changedOnly=false') ||
+      /-Dmango\.check\.changedOnly=true/u.test(governanceInventory)
+    ) {
+      throw new Error('generated governance inventory must use full-scope changedOnly=false');
+    }
+    if (!qualityGate.includes('-Dmango.check.changedOnly=true')) {
+      throw new Error('generated partial quality gate must keep changedOnly=true');
+    }
   }
   for (const expected of [
     '## Risk / Verification',
