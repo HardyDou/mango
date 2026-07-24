@@ -11,6 +11,7 @@ import { useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import NoticeClientMessageCenter from '../../client/NoticeClientMessageCenter.vue';
 import type { NoticeSiteMessage, NoticeSiteMessageAction } from '../../types/notice';
+import { resolveNoticeTargetPath } from './targets';
 
 const router = useRouter();
 
@@ -37,7 +38,7 @@ async function handleInteraction(payload: {
 }
 
 async function openNamedTarget(targetKey: string, params?: Record<string, unknown>) {
-  const path = NOTICE_TARGET_PATHS[targetKey];
+  const path = resolveNoticeTargetPath(targetKey);
   if (!path && !router.hasRoute(targetKey)) {
     ElMessage.warning('目标未注册或当前无权访问');
     return;
@@ -51,11 +52,6 @@ async function openNamedTarget(targetKey: string, params?: Record<string, unknow
     ElMessage.warning('目标未注册或当前无权访问');
   }
 }
-
-const NOTICE_TARGET_PATHS: Record<string, string> = {
-  'notice:receive-setting': '/message-center/receive-setting',
-  'notice:announcement-user': '/message-center/announcement',
-};
 
 function normalizeQuery(params?: Record<string, unknown>) {
   return Object.fromEntries(

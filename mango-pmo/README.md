@@ -173,7 +173,7 @@ mvn -B -ntp -f backend/pom.xml \
   -Dmango.architecture.inventoryOnly=true \
   -Dmango.check.rule=all \
   -Dmango.check.gate=no-new-violations \
-  -Dmango.check.changedOnly=true \
+  -Dmango.check.changedOnly=false \
   -Dmango.check.baseRef="$BASE_SHA" \
   -Dmango.check.requireFullScope=true \
   -Dmango.check.staticFailurePolicy=block \
