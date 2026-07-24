@@ -3,8 +3,8 @@ package io.mango.notice.starter.remote;
 import io.mango.common.result.R;
 import io.mango.common.vo.PageResult;
 import io.mango.notice.api.NoticeApi;
-import io.mango.notice.api.command.CreateNoticeBusinessTypeCommand;
 import io.mango.notice.api.command.CompleteNoticeSiteMessageActionCommand;
+import io.mango.notice.api.command.CreateNoticeBusinessTypeCommand;
 import io.mango.notice.api.command.ExecuteNoticeSiteMessageActionCommand;
 import io.mango.notice.api.command.HandleNoticeSendRecordCommand;
 import io.mango.notice.api.command.HandleNoticeSendRecordsCommand;
@@ -15,6 +15,7 @@ import io.mango.notice.api.command.SaveNoticeChannelConfigCommand;
 import io.mango.notice.api.command.SaveNoticeChannelTemplateCommand;
 import io.mango.notice.api.command.SaveNoticeReceivePreferenceCommand;
 import io.mango.notice.api.command.SaveNoticeRecipientAccountCommand;
+import io.mango.notice.api.command.SaveNoticeRouteTagCommand;
 import io.mango.notice.api.command.SaveNoticeSettingsCommand;
 import io.mango.notice.api.command.SendNoticeCommand;
 import io.mango.notice.api.command.SyncWecomUsersCommand;
@@ -22,17 +23,21 @@ import io.mango.notice.api.command.UpdateNoticeBusinessTypeCommand;
 import io.mango.notice.api.enums.NoticeChannelType;
 import io.mango.notice.api.query.NoticeBusinessTypePageQuery;
 import io.mango.notice.api.query.NoticeChannelConfigPageQuery;
+import io.mango.notice.api.query.NoticeChannelReferenceImpactQuery;
 import io.mango.notice.api.query.NoticeReceivePreferenceQuery;
 import io.mango.notice.api.query.NoticeRecipientAccountQuery;
+import io.mango.notice.api.query.NoticeRouteTagQuery;
 import io.mango.notice.api.query.NoticeSendRecordPageQuery;
 import io.mango.notice.api.query.NoticeSiteMessagePageQuery;
 import io.mango.notice.api.query.NoticeTaskPageQuery;
 import io.mango.notice.api.vo.NoticeBusinessConfigVersionVO;
 import io.mango.notice.api.vo.NoticeBusinessTypeVO;
 import io.mango.notice.api.vo.NoticeChannelConfigVO;
+import io.mango.notice.api.vo.NoticeChannelReferenceImpactVO;
 import io.mango.notice.api.vo.NoticeChannelTemplateVO;
 import io.mango.notice.api.vo.NoticeReceivePreferenceVO;
 import io.mango.notice.api.vo.NoticeRecipientAccountVO;
+import io.mango.notice.api.vo.NoticeRouteTagVO;
 import io.mango.notice.api.vo.NoticeSendRecordVO;
 import io.mango.notice.api.vo.NoticeSendResultVO;
 import io.mango.notice.api.vo.NoticeSettingsVO;
@@ -42,8 +47,9 @@ import io.mango.notice.api.vo.NoticeTaskVO;
 import io.mango.notice.api.vo.NoticeUnreadCountVO;
 import io.mango.notice.api.vo.NoticeWecomLoginConfigVO;
 import io.mango.notice.api.vo.WecomUserSyncResultVO;
-import org.springframework.cloud.openfeign.SpringQueryMap;
+
 import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.cloud.openfeign.SpringQueryMap;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -55,7 +61,6 @@ import java.util.List;
 
 @FeignClient(name = "mango-notice", contextId = "noticeFeignClient", path = "/notice")
 public interface NoticeFeignClient extends NoticeApi {
-
     @Override
     @PostMapping("/send")
     R<NoticeSendResultVO> send(@RequestBody SendNoticeCommand command);
@@ -66,16 +71,18 @@ public interface NoticeFeignClient extends NoticeApi {
 
     @Override
     @GetMapping("/business-types")
-    R<PageResult<NoticeBusinessTypeVO>> listBusinessTypes(@SpringQueryMap NoticeBusinessTypePageQuery query);
+    R<PageResult<NoticeBusinessTypeVO>> listBusinessTypes(
+            @SpringQueryMap NoticeBusinessTypePageQuery query);
 
     @Override
     @PostMapping("/business-types")
-    R<NoticeBusinessTypeVO> createBusinessType(@RequestBody CreateNoticeBusinessTypeCommand command);
+    R<NoticeBusinessTypeVO> createBusinessType(
+            @RequestBody CreateNoticeBusinessTypeCommand command);
 
     @Override
     @PutMapping("/business-types")
-    R<NoticeBusinessTypeVO> updateBusinessType(@RequestParam("id") Long id,
-            @RequestBody UpdateNoticeBusinessTypeCommand command);
+    R<NoticeBusinessTypeVO> updateBusinessType(
+            @RequestParam("id") Long id, @RequestBody UpdateNoticeBusinessTypeCommand command);
 
     @Override
     @DeleteMapping("/business-types")
@@ -106,30 +113,52 @@ public interface NoticeFeignClient extends NoticeApi {
 
     @Override
     @PostMapping("/business-types/config-versions/activate")
-    R<Boolean> activateBusinessConfigVersion(@RequestParam("businessTypeId") Long businessTypeId,
+    R<Boolean> activateBusinessConfigVersion(
+            @RequestParam("businessTypeId") Long businessTypeId,
             @RequestParam("version") Integer version);
 
     @Override
     @GetMapping("/business-types/channel-templates")
-    R<List<NoticeChannelTemplateVO>> listChannelTemplates(@RequestParam("businessTypeId") Long businessTypeId);
+    R<List<NoticeChannelTemplateVO>> listChannelTemplates(
+            @RequestParam("businessTypeId") Long businessTypeId);
 
     @Override
     @PutMapping("/business-types/channel-templates")
-    R<NoticeChannelTemplateVO> saveChannelTemplate(@RequestParam("businessTypeId") Long businessTypeId,
+    R<NoticeChannelTemplateVO> saveChannelTemplate(
+            @RequestParam("businessTypeId") Long businessTypeId,
             @RequestBody SaveNoticeChannelTemplateCommand command);
 
     @Override
     @PostMapping("/business-types/channel-templates/publish")
-    R<Boolean> publishChannelTemplate(@RequestParam("businessTypeId") Long businessTypeId,
+    R<Boolean> publishChannelTemplate(
+            @RequestParam("businessTypeId") Long businessTypeId,
             @RequestParam("channelType") NoticeChannelType channelType);
 
     @Override
     @GetMapping("/channels")
-    R<PageResult<NoticeChannelConfigVO>> listChannelConfigs(@SpringQueryMap NoticeChannelConfigPageQuery query);
+    R<PageResult<NoticeChannelConfigVO>> listChannelConfigs(
+            @SpringQueryMap NoticeChannelConfigPageQuery query);
 
     @Override
     @PostMapping("/channels")
     R<NoticeChannelConfigVO> saveChannelConfig(@RequestBody SaveNoticeChannelConfigCommand command);
+
+    @Override
+    @GetMapping("/channel-route-tags")
+    R<List<NoticeRouteTagVO>> listRouteTags(@SpringQueryMap NoticeRouteTagQuery query);
+
+    @Override
+    @PostMapping("/channel-route-tags")
+    R<NoticeRouteTagVO> saveRouteTag(@RequestBody SaveNoticeRouteTagCommand command);
+
+    @Override
+    @DeleteMapping("/channel-route-tags")
+    R<Boolean> deleteRouteTag(@RequestParam("id") Long id);
+
+    @Override
+    @GetMapping("/channels/reference-impact")
+    R<NoticeChannelReferenceImpactVO> getChannelReferenceImpact(
+            @SpringQueryMap NoticeChannelReferenceImpactQuery query);
 
     @Override
     @GetMapping("/internal/wecom-login-config")
@@ -146,7 +175,8 @@ public interface NoticeFeignClient extends NoticeApi {
 
     @Override
     @GetMapping("/records")
-    R<PageResult<NoticeSendRecordVO>> listSendRecords(@SpringQueryMap NoticeSendRecordPageQuery query);
+    R<PageResult<NoticeSendRecordVO>> listSendRecords(
+            @SpringQueryMap NoticeSendRecordPageQuery query);
 
     @Override
     @PostMapping("/records/retry")
@@ -158,8 +188,8 @@ public interface NoticeFeignClient extends NoticeApi {
 
     @Override
     @PostMapping("/records/manual-success")
-    R<Boolean> markSendRecordManualSuccess(@RequestParam("id") Long id,
-            @RequestBody HandleNoticeSendRecordCommand command);
+    R<Boolean> markSendRecordManualSuccess(
+            @RequestParam("id") Long id, @RequestBody HandleNoticeSendRecordCommand command);
 
     @Override
     @PostMapping("/records/manual-success-batch")
@@ -167,8 +197,8 @@ public interface NoticeFeignClient extends NoticeApi {
 
     @Override
     @PostMapping("/records/ignore")
-    R<Boolean> ignoreSendRecord(@RequestParam("id") Long id,
-            @RequestBody HandleNoticeSendRecordCommand command);
+    R<Boolean> ignoreSendRecord(
+            @RequestParam("id") Long id, @RequestBody HandleNoticeSendRecordCommand command);
 
     @Override
     @PostMapping("/records/ignore-batch")
@@ -184,11 +214,13 @@ public interface NoticeFeignClient extends NoticeApi {
 
     @Override
     @GetMapping("/recipient-accounts")
-    R<List<NoticeRecipientAccountVO>> listRecipientAccounts(@SpringQueryMap NoticeRecipientAccountQuery query);
+    R<List<NoticeRecipientAccountVO>> listRecipientAccounts(
+            @SpringQueryMap NoticeRecipientAccountQuery query);
 
     @Override
     @PostMapping("/recipient-accounts")
-    R<NoticeRecipientAccountVO> saveRecipientAccount(@RequestBody SaveNoticeRecipientAccountCommand command);
+    R<NoticeRecipientAccountVO> saveRecipientAccount(
+            @RequestBody SaveNoticeRecipientAccountCommand command);
 
     @Override
     @PostMapping("/wecom/users/sync")
@@ -196,25 +228,30 @@ public interface NoticeFeignClient extends NoticeApi {
 
     @Override
     @PostMapping("/recipient-accounts/disable")
-    R<Boolean> disableRecipientAccount(@RequestParam("id") Long id,
+    R<Boolean> disableRecipientAccount(
+            @RequestParam("id") Long id,
             @RequestParam(value = "userId", required = false) Long userId);
 
     @Override
     @PostMapping("/recipient-accounts/default")
-    R<Boolean> setDefaultRecipientAccount(@RequestParam("id") Long id,
+    R<Boolean> setDefaultRecipientAccount(
+            @RequestParam("id") Long id,
             @RequestParam(value = "userId", required = false) Long userId);
 
     @Override
     @GetMapping("/receive-preferences")
-    R<List<NoticeReceivePreferenceVO>> listReceivePreferences(@SpringQueryMap NoticeReceivePreferenceQuery query);
+    R<List<NoticeReceivePreferenceVO>> listReceivePreferences(
+            @SpringQueryMap NoticeReceivePreferenceQuery query);
 
     @Override
     @PutMapping("/receive-preferences")
-    R<NoticeReceivePreferenceVO> saveReceivePreference(@RequestBody SaveNoticeReceivePreferenceCommand command);
+    R<NoticeReceivePreferenceVO> saveReceivePreference(
+            @RequestBody SaveNoticeReceivePreferenceCommand command);
 
     @Override
     @GetMapping("/site/my/messages")
-    R<PageResult<NoticeSiteMessageVO>> listSiteMessages(@SpringQueryMap NoticeSiteMessagePageQuery query);
+    R<PageResult<NoticeSiteMessageVO>> listSiteMessages(
+            @SpringQueryMap NoticeSiteMessagePageQuery query);
 
     @Override
     @GetMapping("/site/my/messages/detail")

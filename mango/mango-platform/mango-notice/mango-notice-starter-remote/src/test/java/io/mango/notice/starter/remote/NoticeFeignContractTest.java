@@ -1,6 +1,9 @@
 package io.mango.notice.starter.remote;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import io.mango.notice.api.NoticeApi;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,10 +22,7 @@ import java.util.Comparator;
 import java.util.HexFormat;
 import java.util.List;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 class NoticeFeignContractTest {
-
     @Test
     void feignClientImplementsThePublicApi() {
         assertThat(NoticeApi.class.isAssignableFrom(NoticeFeignClient.class)).isTrue();
@@ -30,7 +30,8 @@ class NoticeFeignContractTest {
 
     @Test
     void feignEndpointsKeepVerbsPathsAndBindings() {
-        assertThat(feignFingerprint()).isEqualTo("d78c897b7499132fb67c9a4e7cd1ee25c3549119053fb130d81542e70d4c66a7");
+        assertThat(feignFingerprint())
+                .isEqualTo("dde206c33419fd51e1b460fb48856f54e5f1733a101e9b0f391cae6c0b709bcd");
     }
 
     private static String feignFingerprint() {
@@ -39,19 +40,37 @@ class NoticeFeignContractTest {
                 .filter(method -> !method.isBridge() && !method.isSynthetic())
                 .filter(method -> mapping(method) != null)
                 .sorted(Comparator.comparing(NoticeFeignContractTest::methodSortKey))
-                .forEach(method -> {
-                    contract.append(verb(method)).append(' ').append(methodPath(method)).append(' ')
-                            .append(method.getName()).append('(');
-                    for (Parameter parameter : method.getParameters()) {
-                        contract.append(parameter.getParameterizedType().getTypeName()).append('[');
-                        Arrays.stream(parameter.getAnnotations())
-                                .filter(NoticeFeignContractTest::isContractAnnotation)
-                                .sorted(Comparator.comparing(annotation -> annotation.annotationType().getName()))
-                                .forEach(annotation -> contract.append(annotationContract(annotation)).append(','));
-                        contract.append("];");
-                    }
-                    contract.append(") -> ").append(method.getGenericReturnType().getTypeName()).append('\n');
-                });
+                .forEach(
+                        method -> {
+                            contract.append(verb(method))
+                                    .append(' ')
+                                    .append(methodPath(method))
+                                    .append(' ')
+                                    .append(method.getName())
+                                    .append('(');
+                            for (Parameter parameter : method.getParameters()) {
+                                contract.append(parameter.getParameterizedType().getTypeName())
+                                        .append('[');
+                                Arrays.stream(parameter.getAnnotations())
+                                        .filter(NoticeFeignContractTest::isContractAnnotation)
+                                        .sorted(
+                                                Comparator.comparing(
+                                                        annotation ->
+                                                                annotation
+                                                                        .annotationType()
+                                                                        .getName()))
+                                        .forEach(
+                                                annotation ->
+                                                        contract.append(
+                                                                        annotationContract(
+                                                                                annotation))
+                                                                .append(','));
+                                contract.append("];");
+                            }
+                            contract.append(") -> ")
+                                    .append(method.getGenericReturnType().getTypeName())
+                                    .append('\n');
+                        });
         return sha256(contract.toString());
     }
 
@@ -96,8 +115,13 @@ class NoticeFeignContractTest {
     }
 
     private static Annotation mapping(Method method) {
-        for (Class<? extends Annotation> type : List.of(
-                GetMapping.class, PostMapping.class, PutMapping.class, PatchMapping.class, DeleteMapping.class)) {
+        for (Class<? extends Annotation> type :
+                List.of(
+                        GetMapping.class,
+                        PostMapping.class,
+                        PutMapping.class,
+                        PatchMapping.class,
+                        DeleteMapping.class)) {
             Annotation annotation = method.getAnnotation(type);
             if (annotation != null) {
                 return annotation;
@@ -117,22 +141,30 @@ class NoticeFeignContractTest {
     }
 
     private static String methodSortKey(Method method) {
-        return method.getName() + Arrays.toString(method.getGenericParameterTypes())
+        return method.getName()
+                + Arrays.toString(method.getGenericParameterTypes())
                 + method.getGenericReturnType().getTypeName();
     }
 
     private static String annotationContract(Annotation annotation) {
-        StringBuilder contract = new StringBuilder(annotation.annotationType().getName()).append('(');
+        StringBuilder contract =
+                new StringBuilder(annotation.annotationType().getName()).append('(');
         Arrays.stream(annotation.annotationType().getDeclaredMethods())
                 .sorted(Comparator.comparing(Method::getName))
-                .forEach(method -> {
-                    try {
-                        contract.append(method.getName()).append('=')
-                                .append(Arrays.deepToString(new Object[]{method.invoke(annotation)})).append(';');
-                    } catch (ReflectiveOperationException ex) {
-                        throw new IllegalStateException("Cannot read annotation " + annotation, ex);
-                    }
-                });
+                .forEach(
+                        method -> {
+                            try {
+                                contract.append(method.getName())
+                                        .append('=')
+                                        .append(
+                                                Arrays.deepToString(
+                                                        new Object[] {method.invoke(annotation)}))
+                                        .append(';');
+                            } catch (ReflectiveOperationException ex) {
+                                throw new IllegalStateException(
+                                        "Cannot read annotation " + annotation, ex);
+                            }
+                        });
         return contract.append(')').toString();
     }
 
@@ -144,8 +176,9 @@ class NoticeFeignContractTest {
 
     private static String sha256(String value) {
         try {
-            byte[] digest = MessageDigest.getInstance("SHA-256")
-                    .digest(value.getBytes(StandardCharsets.UTF_8));
+            byte[] digest =
+                    MessageDigest.getInstance("SHA-256")
+                            .digest(value.getBytes(StandardCharsets.UTF_8));
             return HexFormat.of().formatHex(digest);
         } catch (NoSuchAlgorithmException ex) {
             throw new IllegalStateException(ex);

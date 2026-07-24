@@ -1,22 +1,27 @@
 package io.mango.notice.api.vo;
 
 import io.mango.notice.api.enums.NoticeChannelConfigStatus;
+import io.mango.notice.api.enums.NoticeChannelSecretStatus;
 import io.mango.notice.api.enums.NoticeChannelSendHealthStatus;
 import io.mango.notice.api.enums.NoticeChannelType;
 import io.swagger.v3.oas.annotations.media.Schema;
+
 import lombok.Data;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @Schema(description = "通知渠道配置")
 public class NoticeChannelConfigVO implements Serializable {
-
     private static final long serialVersionUID = 1L;
 
     @Schema(description = "主键 ID")
     private Long id;
+
+    @Schema(description = "渠道配置稳定编码")
+    private String configCode;
 
     @Schema(description = "渠道类型")
     private NoticeChannelType channelType;
@@ -29,6 +34,27 @@ public class NoticeChannelConfigVO implements Serializable {
 
     @Schema(description = "脱敏配置 JSON")
     private String configJson;
+
+    @Schema(description = "Resource 声明 ID")
+    private String resourceId;
+
+    @Schema(description = "Resource 版本")
+    private Integer resourceVersion;
+
+    @Schema(description = "Resource 模块编码")
+    private String resourceModuleCode;
+
+    @Schema(description = "配置来源：MANUAL 或 RESOURCE")
+    private String resourceSource;
+
+    @Schema(description = "Secret 完整性状态")
+    private NoticeChannelSecretStatus secretStatus;
+
+    @Schema(description = "缺失的 Secret 键")
+    private List<String> missingSecretKeys;
+
+    @Schema(description = "绑定的路由标签编码")
+    private List<String> routeTagCodes;
 
     @Schema(description = "是否启用")
     private Boolean enabled;
@@ -59,4 +85,20 @@ public class NoticeChannelConfigVO implements Serializable {
 
     @Schema(description = "更新时间")
     private LocalDateTime updatedAt;
+
+    public List<String> getMissingSecretKeys() {
+        return missingSecretKeys == null ? null : List.copyOf(missingSecretKeys);
+    }
+
+    public void setMissingSecretKeys(List<String> missingSecretKeys) {
+        this.missingSecretKeys = missingSecretKeys == null ? null : List.copyOf(missingSecretKeys);
+    }
+
+    public List<String> getRouteTagCodes() {
+        return routeTagCodes == null ? null : List.copyOf(routeTagCodes);
+    }
+
+    public void setRouteTagCodes(List<String> routeTagCodes) {
+        this.routeTagCodes = routeTagCodes == null ? null : List.copyOf(routeTagCodes);
+    }
 }

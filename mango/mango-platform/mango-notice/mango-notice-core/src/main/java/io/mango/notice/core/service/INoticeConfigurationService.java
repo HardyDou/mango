@@ -5,21 +5,25 @@ import io.mango.notice.api.command.CreateNoticeBusinessTypeCommand;
 import io.mango.notice.api.command.SaveNoticeBusinessConfigCommand;
 import io.mango.notice.api.command.SaveNoticeChannelConfigCommand;
 import io.mango.notice.api.command.SaveNoticeChannelTemplateCommand;
+import io.mango.notice.api.command.SaveNoticeRouteTagCommand;
 import io.mango.notice.api.command.UpdateNoticeBusinessTypeCommand;
 import io.mango.notice.api.enums.NoticeChannelType;
 import io.mango.notice.api.query.NoticeBusinessTypePageQuery;
 import io.mango.notice.api.query.NoticeChannelConfigPageQuery;
+import io.mango.notice.api.query.NoticeChannelReferenceImpactQuery;
+import io.mango.notice.api.query.NoticeRouteTagQuery;
 import io.mango.notice.api.vo.NoticeBusinessConfigVersionVO;
 import io.mango.notice.api.vo.NoticeBusinessTypeVO;
 import io.mango.notice.api.vo.NoticeChannelConfigVO;
+import io.mango.notice.api.vo.NoticeChannelReferenceImpactVO;
 import io.mango.notice.api.vo.NoticeChannelTemplateVO;
+import io.mango.notice.api.vo.NoticeRouteTagVO;
 import io.mango.notice.api.vo.NoticeWecomLoginConfigVO;
 
 import java.util.List;
 
 /** Owns business definition, version, template and channel configuration transactions. */
 public interface INoticeConfigurationService {
-
     PageResult<NoticeBusinessTypeVO> listBusinessTypes(NoticeBusinessTypePageQuery query);
 
     NoticeBusinessTypeVO createBusinessType(CreateNoticeBusinessTypeCommand command);
@@ -34,8 +38,8 @@ public interface INoticeConfigurationService {
 
     List<NoticeBusinessConfigVersionVO> listBusinessConfigVersions(Long businessTypeId);
 
-    NoticeBusinessConfigVersionVO saveBusinessConfigDraft(Long businessTypeId,
-                                                           SaveNoticeBusinessConfigCommand command);
+    NoticeBusinessConfigVersionVO saveBusinessConfigDraft(
+            Long businessTypeId, SaveNoticeBusinessConfigCommand command);
 
     boolean publishBusinessConfigDraft(Long businessTypeId);
 
@@ -43,13 +47,23 @@ public interface INoticeConfigurationService {
 
     List<NoticeChannelTemplateVO> listChannelTemplates(Long businessTypeId);
 
-    NoticeChannelTemplateVO saveChannelTemplate(Long businessTypeId, SaveNoticeChannelTemplateCommand command);
+    NoticeChannelTemplateVO saveChannelTemplate(
+            Long businessTypeId, SaveNoticeChannelTemplateCommand command);
 
     boolean publishChannelTemplate(Long businessTypeId, NoticeChannelType channelType);
 
     PageResult<NoticeChannelConfigVO> listChannelConfigs(NoticeChannelConfigPageQuery query);
 
     NoticeChannelConfigVO saveChannelConfig(SaveNoticeChannelConfigCommand command);
+
+    List<NoticeRouteTagVO> listRouteTags(NoticeRouteTagQuery query);
+
+    NoticeRouteTagVO saveRouteTag(SaveNoticeRouteTagCommand command);
+
+    boolean deleteRouteTag(Long id);
+
+    NoticeChannelReferenceImpactVO getChannelReferenceImpact(
+            NoticeChannelReferenceImpactQuery query);
 
     NoticeWecomLoginConfigVO getWecomLoginConfig(Long channelConfigId);
 

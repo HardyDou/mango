@@ -1,5 +1,5 @@
 <template>
-  <div class="notice-channel-page">
+  <div class="notice-channel-page" data-surface="notice.channel.routing">
     <el-card shadow="never" class="channel-main page-card">
       <div class="list-page-header">
         <h1>渠道配置</h1>
@@ -22,10 +22,14 @@
             <el-button type="primary" @click="load">查询</el-button>
           </el-form-item>
         </el-form>
-        <el-button type="primary" :icon="Plus" @click="openCreate">新增</el-button>
+        <div class="toolbar-actions">
+          <el-button @click="openRouteTagManager">路由标签</el-button>
+          <el-button type="primary" :icon="Plus" @click="openCreate">新增</el-button>
+        </div>
       </div>
 
-      <el-table :data="configs" border stripe v-loading="loading">
+      <el-table v-loading="loading" :data="configs" border stripe>
+        <el-table-column prop="configCode" label="配置编码" min-width="170" show-overflow-tooltip />
         <el-table-column label="渠道类型" width="120">
           <template #default="{ row }">{{ channelLabel(row.channelType) }}</template>
         </el-table-column>
@@ -33,7 +37,25 @@
         <el-table-column label="接入平台" width="140">
           <template #default="{ row }">{{ providerLabel(row.channelType, row.providerCode) }}</template>
         </el-table-column>
-        <el-table-column prop="weight" label="权重" width="90" />
+        <el-table-column label="优先级 / 权重" width="120">
+          <template #default="{ row }">{{ row.priority }} / {{ row.weight }}</template>
+        </el-table-column>
+        <el-table-column label="来源" width="110">
+          <template #default="{ row }">
+            <el-tooltip
+              :content="
+                row.resourceId ? `${row.resourceModuleCode || '-'} / V${row.resourceVersion || '-'}` : '人工维护'
+              "
+            >
+              <el-tag :type="row.resourceSource === 'RESOURCE' ? 'primary' : 'info'" effect="plain">
+                {{ row.resourceSource === 'RESOURCE' ? 'Resource' : '人工' }}
+              </el-tag>
+            </el-tooltip>
+          </template>
+        </el-table-column>
+        <el-table-column label="路由标签" min-width="150">
+          <template #default="{ row }">{{ row.routeTagCodes?.join('、') || '-' }}</template>
+        </el-table-column>
         <el-table-column label="启用状态" width="100">
           <template #default="{ row }">
             <el-tag :type="row.enabled ? 'success' : 'info'">{{ row.enabled ? '启用' : '停用' }}</el-tag>
@@ -44,6 +66,19 @@
             <el-tag :type="row.configStatus === 'COMPLETE' ? 'success' : 'warning'">
               {{ row.configStatus === 'COMPLETE' ? '完整' : '未完成' }}
             </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="Secret" width="110" data-field="notice.channel.secret-status">
+          <template #default="{ row }">
+            <el-tooltip
+              :content="row.missingSecretKeys?.length ? `缺失：${row.missingSecretKeys.join('、')}` : 'Secret 已完整'"
+            >
+              <el-tag :type="row.secretStatus === 'INCOMPLETE' ? 'warning' : 'success'">
+                {{
+                  row.secretStatus === 'INCOMPLETE' ? '待补录' : row.secretStatus === 'NOT_REQUIRED' ? '不需要' : '完整'
+                }}
+              </el-tag>
+            </el-tooltip>
           </template>
         </el-table-column>
         <el-table-column label="最近发送" width="110">
@@ -59,12 +94,7 @@
             <el-button link type="primary" @click="openEdit(row)">编辑</el-button>
             <el-tooltip :disabled="!isBuiltinSiteChannel(row)" content="系统消息内置通道不允许删除" placement="top">
               <span class="operation-button-wrap">
-                <el-button
-                  link
-                  type="danger"
-                  :disabled="isBuiltinSiteChannel(row)"
-                  @click="removeChannel(row)"
-                >
+                <el-button link type="danger" :disabled="isBuiltinSiteChannel(row)" @click="removeChannel(row)">
                   删除
                 </el-button>
               </span>
@@ -76,19 +106,41 @@
 
     <el-dialog v-model="visible" :title="dialogTitle" width="760px" class="channel-dialog" destroy-on-close>
       <el-form :model="form" label-width="92px" class="channel-form">
+        <el-alert
+          v-if="form.resourceSource === 'RESOURCE'"
+          title="该账号由 Resource 管理；非敏感字段以声明为准，本页仅补录 Secret 和标签。"
+          type="info"
+          :closable="false"
+          show-icon
+        />
         <section class="form-section">
           <div class="section-title">基础信息</div>
           <el-row :gutter="16">
             <el-col :xs="24" :sm="12">
+              <el-form-item label="配置编码" required>
+                <el-input v-model="form.configCode" :disabled="!!form.id" placeholder="例如：EMAIL_PRIMARY" />
+              </el-form-item>
+            </el-col>
+            <el-col :xs="24" :sm="12">
               <el-form-item label="渠道类型" required>
-                <el-select v-model="form.channelType" class="form-control" @change="handleChannelTypeChange">
+                <el-select
+                  v-model="form.channelType"
+                  :disabled="isResourceManaged"
+                  class="form-control"
+                  @change="handleChannelTypeChange"
+                >
                   <el-option v-for="item in channels" :key="item" :label="channelLabel(item)" :value="item" />
                 </el-select>
               </el-form-item>
             </el-col>
             <el-col :xs="24" :sm="12">
               <el-form-item label="接入平台" required>
-                <el-select v-model="form.providerCode" class="form-control" @change="resetChannelConfig">
+                <el-select
+                  v-model="form.providerCode"
+                  :disabled="isResourceManaged"
+                  class="form-control"
+                  @change="resetChannelConfig"
+                >
                   <el-option
                     v-for="item in providerOptions(form.channelType || 'EMAIL')"
                     :key="item.value"
@@ -100,17 +152,56 @@
             </el-col>
             <el-col :xs="24" :sm="12">
               <el-form-item label="通道名称" required>
-                <el-input v-model="form.configName" placeholder="例如：阿里云短信主通道" />
+                <el-input
+                  v-model="form.configName"
+                  :disabled="isResourceManaged"
+                  placeholder="例如：阿里云短信主通道"
+                />
+              </el-form-item>
+            </el-col>
+            <el-col :xs="24" :sm="12">
+              <el-form-item label="优先级" required>
+                <el-input-number
+                  v-model="form.priority"
+                  :disabled="isResourceManaged"
+                  :min="0"
+                  :max="1000"
+                  class="number-control"
+                />
               </el-form-item>
             </el-col>
             <el-col :xs="24" :sm="12">
               <el-form-item label="权重" required>
-                <el-input-number v-model="form.weight" :min="1" :max="1000" class="number-control" />
+                <el-input-number
+                  v-model="form.weight"
+                  :disabled="isResourceManaged"
+                  :min="1"
+                  :max="1000"
+                  class="number-control"
+                />
               </el-form-item>
             </el-col>
             <el-col :xs="24" :sm="12">
               <el-form-item label="启用">
-                <el-switch v-model="form.enabled" />
+                <el-switch v-model="form.enabled" :disabled="isResourceManaged" />
+              </el-form-item>
+            </el-col>
+            <el-col :span="24">
+              <el-form-item label="路由标签">
+                <el-select
+                  v-model="form.routeTagCodes"
+                  multiple
+                  clearable
+                  class="form-control"
+                  placeholder="可选择多个稳定路由标签"
+                >
+                  <el-option
+                    v-for="item in availableRouteTags"
+                    :key="item.id"
+                    :label="item.tagName"
+                    :value="item.tagCode"
+                  />
+                </el-select>
               </el-form-item>
             </el-col>
           </el-row>
@@ -121,17 +212,32 @@
           <el-row :gutter="16">
             <el-col :xs="24" :sm="8">
               <el-form-item label="每分钟">
-                <el-input-number v-model="rateLimit.maxPerMinute" :min="0" class="number-control" />
+                <el-input-number
+                  v-model="rateLimit.maxPerMinute"
+                  :disabled="isResourceManaged"
+                  :min="0"
+                  class="number-control"
+                />
               </el-form-item>
             </el-col>
             <el-col :xs="24" :sm="8">
               <el-form-item label="超时秒数">
-                <el-input-number v-model="rateLimit.timeoutSeconds" :min="1" class="number-control" />
+                <el-input-number
+                  v-model="rateLimit.timeoutSeconds"
+                  :disabled="isResourceManaged"
+                  :min="1"
+                  class="number-control"
+                />
               </el-form-item>
             </el-col>
             <el-col :xs="24" :sm="8">
               <el-form-item label="并发限制">
-                <el-input-number v-model="rateLimit.concurrentLimit" :min="0" class="number-control" />
+                <el-input-number
+                  v-model="rateLimit.concurrentLimit"
+                  :disabled="isResourceManaged"
+                  :min="0"
+                  class="number-control"
+                />
               </el-form-item>
             </el-col>
           </el-row>
@@ -139,10 +245,40 @@
 
         <section class="form-section">
           <div class="section-title">渠道参数</div>
-          <el-tabs v-model="configEditMode" class="stable-tabs channel-config-tabs" @tab-change="handleConfigModeChange">
+          <template v-if="isResourceManaged">
+            <el-alert
+              title="Resource 声明的非敏感参数为只读；此处只接收 Secret，留空表示保留原值。"
+              type="info"
+              :closable="false"
+              show-icon
+            />
+            <el-row :gutter="16" class="resource-secret-grid">
+              <el-col v-for="item in resourceSecretFields" :key="item.key" :xs="24" :sm="12">
+                <el-form-item :label="item.label">
+                  <el-input
+                    v-model="secretValues[item.key]"
+                    show-password
+                    autocomplete="new-password"
+                    :placeholder="form.missingSecretKeys?.includes(item.key) ? '必填，当前缺失' : '留空表示保留原值'"
+                  />
+                </el-form-item>
+              </el-col>
+            </el-row>
+          </template>
+          <el-tabs
+            v-else
+            v-model="configEditMode"
+            class="stable-tabs channel-config-tabs"
+            @tab-change="handleConfigModeChange"
+          >
             <el-tab-pane label="表单形式" name="FORM">
               <template v-if="form.channelType === 'SITE'">
-                <el-alert title="系统消息为系统内置通道，这里只配置投递运行参数。" type="info" :closable="false" show-icon />
+                <el-alert
+                  title="系统消息为系统内置通道，这里只配置投递运行参数。"
+                  type="info"
+                  :closable="false"
+                  show-icon
+                />
                 <el-row :gutter="16" class="site-config-row">
                   <el-col :xs="24" :sm="12">
                     <el-form-item label="默认发送人">
@@ -151,7 +287,12 @@
                   </el-col>
                   <el-col :xs="24" :sm="12">
                     <el-form-item label="保留天数">
-                      <el-input-number v-model="channelConfig.retentionDays" :min="1" :max="3650" class="number-control" />
+                      <el-input-number
+                        v-model="channelConfig.retentionDays"
+                        :min="1"
+                        :max="3650"
+                        class="number-control"
+                      />
                     </el-form-item>
                   </el-col>
                   <el-col :xs="24" :sm="12">
@@ -246,7 +387,9 @@
                     <el-form-item label="接入地址">
                       <el-input
                         v-model="channelConfig.endpoint"
-                        :placeholder="isTencentSmsProvider(form.providerCode) ? 'sms.tencentcloudapi.com' : 'dysmsapi.aliyuncs.com'"
+                        :placeholder="
+                          isTencentSmsProvider(form.providerCode) ? 'sms.tencentcloudapi.com' : 'dysmsapi.aliyuncs.com'
+                        "
                       />
                     </el-form-item>
                   </el-col>
@@ -339,7 +482,12 @@
                 </el-row>
               </template>
               <template v-else-if="form.channelType === 'EMAIL'">
-                <el-alert title="当前接入平台暂未提供专用表单，请使用 JSON 形式维护渠道参数。" type="warning" :closable="false" show-icon />
+                <el-alert
+                  title="当前接入平台暂未提供专用表单，请使用 JSON 形式维护渠道参数。"
+                  type="warning"
+                  :closable="false"
+                  show-icon
+                />
               </template>
               <template v-else-if="form.channelType === 'WECHAT_OFFICIAL'">
                 <el-row :gutter="16">
@@ -384,7 +532,10 @@
                   </el-col>
                   <el-col :xs="24" :sm="12">
                     <el-form-item label="扫码回调">
-                      <el-input v-model="channelConfig.loginRedirectUri" placeholder="https://admin.example.com/login" />
+                      <el-input
+                        v-model="channelConfig.loginRedirectUri"
+                        placeholder="https://admin.example.com/login"
+                      />
                     </el-form-item>
                   </el-col>
                 </el-row>
@@ -421,7 +572,7 @@
                 type="textarea"
                 :rows="12"
                 spellcheck="false"
-                placeholder="{&quot;host&quot;:&quot;smtp.example.com&quot;}"
+                placeholder='{"host":"smtp.example.com"}'
               />
             </el-tab-pane>
           </el-tabs>
@@ -429,7 +580,69 @@
       </el-form>
       <template #footer>
         <el-button @click="visible = false">取消</el-button>
-        <el-button type="primary" @click="save">保存</el-button>
+        <el-button type="primary" data-action="notice.channel.secret-supply" @click="save">保存</el-button>
+      </template>
+    </el-dialog>
+
+    <el-dialog
+      v-model="routeTagVisible"
+      title="路由标签"
+      width="820px"
+      class="channel-dialog"
+      destroy-on-close
+      data-surface="notice.channel.reference-impact"
+    >
+      <div class="route-tag-toolbar">
+        <span class="notice-muted">标签编码用于模板稳定路由，创建后不可修改。</span>
+        <el-button type="primary" :icon="Plus" @click="openRouteTagEditor()">新增标签</el-button>
+      </div>
+      <el-table :data="routeTags" border stripe>
+        <el-table-column label="渠道" width="120">
+          <template #default="{ row }">{{ channelLabel(row.channelType) }}</template>
+        </el-table-column>
+        <el-table-column prop="tagCode" label="标签编码" min-width="140" />
+        <el-table-column prop="tagName" label="标签名称" min-width="140" />
+        <el-table-column label="候选账号" min-width="190" show-overflow-tooltip>
+          <template #default="{ row }">{{ row.candidateConfigNames.join('、') || '暂无' }}</template>
+        </el-table-column>
+        <el-table-column label="操作" width="130" fixed="right">
+          <template #default="{ row }">
+            <el-button link type="primary" @click="openRouteTagEditor(row)">编辑</el-button>
+            <el-button link type="danger" @click="removeRouteTag(row)">删除</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+      <template #footer>
+        <el-button type="primary" @click="routeTagVisible = false">关闭</el-button>
+      </template>
+    </el-dialog>
+
+    <el-dialog
+      v-model="routeTagEditorVisible"
+      :title="routeTagForm.id ? '编辑路由标签' : '新增路由标签'"
+      width="520px"
+      append-to-body
+      destroy-on-close
+    >
+      <el-form :model="routeTagForm" label-width="92px">
+        <el-form-item label="渠道类型" required>
+          <el-select v-model="routeTagForm.channelType" :disabled="!!routeTagForm.id" class="form-control">
+            <el-option v-for="item in channels" :key="item" :label="channelLabel(item)" :value="item" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="标签编码" required>
+          <el-input v-model="routeTagForm.tagCode" :disabled="!!routeTagForm.id" placeholder="例如：PRIMARY" />
+        </el-form-item>
+        <el-form-item label="标签名称" required>
+          <el-input v-model="routeTagForm.tagName" placeholder="例如：主通道" />
+        </el-form-item>
+        <el-form-item label="说明">
+          <el-input v-model="routeTagForm.description" type="textarea" :rows="3" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="routeTagEditorVisible = false">取消</el-button>
+        <el-button type="primary" @click="saveRouteTag">保存</el-button>
       </template>
     </el-dialog>
 
@@ -473,7 +686,9 @@
               </el-col>
               <el-col :xs="24" :sm="12">
                 <el-form-item label="最近发送">
-                  <el-tag :type="sendStatusTag(current.lastSendStatus)">{{ sendStatusLabel(current.lastSendStatus) }}</el-tag>
+                  <el-tag :type="sendStatusTag(current.lastSendStatus)">{{
+                    sendStatusLabel(current.lastSendStatus)
+                  }}</el-tag>
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :sm="12">
@@ -542,8 +757,21 @@
 import { computed, onMounted, reactive, ref } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { Plus } from '@element-plus/icons-vue';
-import { deleteChannelConfig, getChannelConfigs, saveChannelConfig } from '../../api/notice';
-import type { NoticeChannelConfig, NoticeChannelSendHealthStatus, NoticeChannelType } from '../../types/notice';
+import {
+  deleteChannelConfig,
+  deleteNoticeRouteTag,
+  getChannelConfigs,
+  getNoticeChannelReferenceImpact,
+  getNoticeRouteTags,
+  saveChannelConfig,
+  saveNoticeRouteTag,
+} from '../../api/notice';
+import type {
+  NoticeChannelConfig,
+  NoticeChannelSendHealthStatus,
+  NoticeChannelType,
+  NoticeRouteTag,
+} from '../../types/notice';
 
 type ConfigEditMode = 'FORM' | 'JSON';
 type ChannelConfigValue = string | number | boolean | undefined;
@@ -576,52 +804,68 @@ const providers: Record<NoticeChannelType, Array<{ label: string; value: string 
 const loading = ref(false);
 const visible = ref(false);
 const detailVisible = ref(false);
+const routeTagVisible = ref(false);
+const routeTagEditorVisible = ref(false);
 const configEditMode = ref<ConfigEditMode>('FORM');
 const configs = ref<NoticeChannelConfig[]>([]);
+const routeTags = ref<NoticeRouteTag[]>([]);
 const current = ref<NoticeChannelConfig>();
 const query = reactive<{ channelType?: NoticeChannelType; enabled?: boolean }>({});
 const form = reactive<Partial<NoticeChannelConfig>>({});
+const routeTagForm = reactive<Partial<NoticeRouteTag>>({});
 const channelConfig = reactive<ChannelConfigForm>({});
+const secretValues = reactive<Record<string, string>>({});
 const rateLimit = reactive({ maxPerMinute: 0, timeoutSeconds: 10, concurrentLimit: 0 });
 const configJsonText = ref('{}');
 
 const dialogTitle = computed(() => (form.id ? '编辑渠道' : '新增渠道'));
 const configJsonPreview = computed(() => JSON.stringify(compactObject(channelConfig), null, 2));
 const rateLimitJsonPreview = computed(() => JSON.stringify(compactObject(rateLimit), null, 2));
+const availableRouteTags = computed(() => routeTags.value.filter((item) => item.channelType === form.channelType));
+const isResourceManaged = computed(() => form.resourceSource === 'RESOURCE');
+const resourceSecretFields = computed(() => secretFields(form.channelType || 'EMAIL', form.providerCode));
 
 async function load() {
   loading.value = true;
   try {
-    const result = await getChannelConfigs(query);
+    const [result, tags] = await Promise.all([getChannelConfigs(query), getNoticeRouteTags()]);
     configs.value = result.list || [];
+    routeTags.value = tags || [];
   } finally {
     loading.value = false;
   }
 }
 
 function openCreate() {
+  Object.keys(form).forEach((key) => delete form[key as keyof typeof form]);
   Object.assign(form, {
     id: undefined,
+    configCode: '',
     channelType: 'EMAIL',
     providerCode: 'CUSTOM_SMTP',
     configName: '',
     enabled: true,
     weight: 100,
     priority: 0,
+    routeTagCodes: [],
+    resourceSource: 'MANUAL',
   });
   resetRateLimit();
   resetChannelConfig();
+  resetSecretValues();
   configEditMode.value = 'FORM';
   visible.value = true;
 }
 
 function openEdit(row: NoticeChannelConfig) {
+  Object.keys(form).forEach((key) => delete form[key as keyof typeof form]);
   Object.assign(form, row);
   form.providerCode = normalizeProviderCode(row.channelType, row.providerCode);
   resetChannelConfig();
   parseConfig(row.configJson, channelConfig, defaultConfig(row.channelType));
   resetRateLimit();
   parseConfig(row.rateLimitConfig, rateLimit, defaultRateLimit());
+  resetSecretValues();
   configJsonText.value = configJsonPreview.value;
   configEditMode.value = 'FORM';
   visible.value = true;
@@ -634,7 +878,7 @@ function openDetail(row: NoticeChannelConfig) {
 
 function detailConfigItems(row: NoticeChannelConfig) {
   const config = fromJson(row.configJson);
-  return configFieldLabels(row.channelType, row.providerCode).map(item => ({
+  return configFieldLabels(row.channelType, row.providerCode).map((item) => ({
     ...item,
     value: displayConfigValue(config[item.key]),
   }));
@@ -656,13 +900,42 @@ function isBuiltinSiteChannel(row: NoticeChannelConfig) {
 function handleChannelTypeChange() {
   const channelType = form.channelType || 'EMAIL';
   form.providerCode = providerOptions(channelType)[0]?.value;
+  form.routeTagCodes = [];
   resetChannelConfig();
 }
 
 function resetChannelConfig() {
-  Object.keys(channelConfig).forEach(key => delete channelConfig[key]);
+  Object.keys(channelConfig).forEach((key) => delete channelConfig[key]);
   Object.assign(channelConfig, defaultConfig(form.channelType || 'EMAIL'));
   configJsonText.value = configJsonPreview.value;
+}
+
+function resetSecretValues() {
+  Object.keys(secretValues).forEach((key) => delete secretValues[key]);
+  resourceSecretFields.value.forEach((item) => {
+    secretValues[item.key] = '';
+  });
+}
+
+function secretFields(channelType: NoticeChannelType, providerCode?: string) {
+  const provider = normalizeProviderCode(channelType, providerCode);
+  if (channelType === 'SITE') return [];
+  if (channelType === 'EMAIL') {
+    return provider === 'ALIYUN_DM'
+      ? [{ key: 'accessKeySecret', label: 'AccessKey Secret' }]
+      : [{ key: 'password', label: 'SMTP 密码' }];
+  }
+  if (channelType === 'SMS') {
+    return provider === 'TENCENT_SMS'
+      ? [{ key: 'secretKey', label: 'SecretKey' }]
+      : [{ key: 'accessKeySecret', label: 'AccessKey Secret' }];
+  }
+  if (channelType === 'WECHAT_OFFICIAL') return [{ key: 'appSecret', label: 'AppSecret' }];
+  if (channelType === 'WECOM') return [{ key: 'secret', label: 'Secret' }];
+  return [
+    { key: 'appSecret', label: 'AppSecret' },
+    { key: 'webhookUrl', label: 'Webhook Secret URL' },
+  ];
 }
 
 function resetRateLimit() {
@@ -796,7 +1069,11 @@ function configFieldLabels(channelType: NoticeChannelType, providerCode?: string
       { key: 'ssl', label: 'SSL' },
     ];
   }
-  if (channelType === 'WECHAT_OFFICIAL') return [{ key: 'appId', label: 'AppId' }, { key: 'appSecret', label: 'Secret' }];
+  if (channelType === 'WECHAT_OFFICIAL')
+    return [
+      { key: 'appId', label: 'AppId' },
+      { key: 'appSecret', label: 'Secret' },
+    ];
   if (channelType === 'WECOM') {
     return [
       { key: 'corpId', label: '企业ID' },
@@ -840,8 +1117,12 @@ function compactObject(source: Record<string, ChannelConfigValue>) {
   return Object.fromEntries(Object.entries(source).filter(([, value]) => value !== '' && value !== undefined));
 }
 
-function parseConfig(value: string | undefined, target: Record<string, ChannelConfigValue>, defaults: Record<string, ChannelConfigValue>) {
-  Object.keys(target).forEach(key => delete target[key]);
+function parseConfig(
+  value: string | undefined,
+  target: Record<string, ChannelConfigValue>,
+  defaults: Record<string, ChannelConfigValue>,
+) {
+  Object.keys(target).forEach((key) => delete target[key]);
   Object.assign(target, defaults);
   if (!value) return;
   try {
@@ -870,7 +1151,7 @@ function channelLabel(channel: NoticeChannelType) {
 
 function providerLabel(channelType: NoticeChannelType, providerCode?: string) {
   const normalized = normalizeProviderCode(channelType, providerCode);
-  return providerOptions(channelType).find(item => item.value === normalized)?.label || providerCode || '-';
+  return providerOptions(channelType).find((item) => item.value === normalized)?.label || providerCode || '-';
 }
 
 function normalizeProviderCode(channelType: NoticeChannelType, providerCode?: string) {
@@ -910,6 +1191,10 @@ function validateForm() {
     ElMessage.warning('请选择渠道类型');
     return false;
   }
+  if (!form.configCode?.trim()) {
+    ElMessage.warning('请输入配置编码');
+    return false;
+  }
   if (!form.providerCode) {
     ElMessage.warning('请选择接入平台');
     return false;
@@ -936,11 +1221,24 @@ function resolveConfigJson() {
 
 async function save() {
   if (!validateForm()) return;
-  const configJson = resolveConfigJson();
-  if (configJson === undefined) return;
+  const resolvedConfigJson = isResourceManaged.value ? form.configJson || '{}' : resolveConfigJson();
+  if (resolvedConfigJson === undefined) return;
+  const { configJson, extractedSecrets } = splitSensitiveConfig(resolvedConfigJson);
   await saveChannelConfig({
-    ...form,
+    id: form.id,
+    configCode: form.configCode,
+    channelType: form.channelType,
+    providerCode: form.providerCode,
+    configName: form.configName,
+    enabled: form.enabled,
+    priority: form.priority,
+    weight: form.weight,
+    routeTagCodes: form.routeTagCodes,
     configJson,
+    secretValues: Object.entries({ ...extractedSecrets, ...compactSecretValues(secretValues) }).map(([key, value]) => ({
+      key,
+      value,
+    })),
     rateLimitConfig: rateLimitJsonPreview.value,
   });
   ElMessage.success('已保存');
@@ -948,7 +1246,111 @@ async function save() {
   await load();
 }
 
+function splitSensitiveConfig(configJson: string) {
+  const config = fromJson(configJson);
+  const extractedSecrets: Record<string, string> = {};
+  Object.keys(config).forEach((key) => {
+    if (!isSensitiveKey(key)) return;
+    const value = config[key];
+    if (value !== undefined && value !== null && String(value).trim()) {
+      extractedSecrets[key] = String(value);
+    }
+    delete config[key];
+  });
+  return { configJson: JSON.stringify(config, null, 2), extractedSecrets };
+}
+
+function compactSecretValues(values: Record<string, string>) {
+  return Object.fromEntries(Object.entries(values).filter(([, value]) => value?.trim()));
+}
+
+function isSensitiveKey(key: string) {
+  const normalized = key.toLowerCase();
+  return (
+    [
+      'secret',
+      'password',
+      'token',
+      'appsecret',
+      'accesskeysecret',
+      'accesssecret',
+      'secretkey',
+      'smtppassword',
+      'corpsecret',
+    ].includes(normalized) ||
+    normalized.endsWith('password') ||
+    normalized.endsWith('token')
+  );
+}
+
+function openRouteTagManager() {
+  routeTagVisible.value = true;
+}
+
+function openRouteTagEditor(row?: NoticeRouteTag) {
+  Object.assign(
+    routeTagForm,
+    row || {
+      id: undefined,
+      channelType: 'EMAIL',
+      tagCode: '',
+      tagName: '',
+      description: '',
+    },
+  );
+  routeTagEditorVisible.value = true;
+}
+
+async function saveRouteTag() {
+  if (!routeTagForm.channelType || !routeTagForm.tagCode?.trim() || !routeTagForm.tagName?.trim()) {
+    ElMessage.warning('请填写渠道类型、标签编码和标签名称');
+    return;
+  }
+  await saveNoticeRouteTag({
+    ...routeTagForm,
+    tagCode: routeTagForm.tagCode.trim().toUpperCase(),
+    tagName: routeTagForm.tagName.trim(),
+  });
+  ElMessage.success('路由标签已保存');
+  routeTagEditorVisible.value = false;
+  await load();
+}
+
+async function removeRouteTag(row: NoticeRouteTag) {
+  const impact = await getNoticeChannelReferenceImpact({
+    channelType: row.channelType,
+    routeTagCode: row.tagCode,
+  });
+  if (impact.referenceCount > 0) {
+    await ElMessageBox.alert(
+      `标签被 ${impact.referenceCount} 个消息模板引用：${impact.businessTemplateNames.join('、')}`,
+      '无法删除',
+    );
+    return;
+  }
+  try {
+    await ElMessageBox.confirm(`确认删除标签“${row.tagName}”？账号上的标签关系也会一并移除。`, '删除路由标签', {
+      type: 'warning',
+      confirmButtonText: '删除',
+      cancelButtonText: '取消',
+    });
+  } catch {
+    return;
+  }
+  await deleteNoticeRouteTag(row.id);
+  ElMessage.success('路由标签已删除');
+  await load();
+}
+
 async function removeChannel(row: NoticeChannelConfig) {
+  const impact = await getNoticeChannelReferenceImpact({ configId: String(row.id) });
+  if (impact.referenceCount > 0) {
+    await ElMessageBox.alert(
+      `该账号被 ${impact.referenceCount} 个消息模板引用：${impact.businessTemplateNames.join('、')}`,
+      '无法删除',
+    );
+    return;
+  }
   try {
     await ElMessageBox.confirm(`确认删除通道「${row.configName}」？`, '删除渠道', {
       type: 'warning',
@@ -1020,6 +1422,18 @@ onMounted(load);
   margin-bottom: 12px;
 }
 
+.toolbar-actions,
+.route-tag-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.route-tag-toolbar {
+  margin-bottom: 12px;
+}
+
 .notice-filter {
   flex: 1;
   min-width: 0;
@@ -1071,8 +1485,12 @@ onMounted(load);
   margin-bottom: 18px;
 }
 
+.resource-secret-grid {
+  margin-top: 16px;
+}
+
 .json-editor :deep(.el-textarea__inner) {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
 }
 
 .operation-button-wrap {
@@ -1085,12 +1503,12 @@ onMounted(load);
   background-color: var(--el-fill-color-lighter);
 }
 
-@media (max-width: 768px) {
+@media (width <= 768px) {
   .list-toolbar {
     display: block;
   }
 
-  .list-toolbar > .el-button {
+  .toolbar-actions {
     margin-top: 12px;
   }
 }

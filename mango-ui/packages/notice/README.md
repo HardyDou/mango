@@ -14,15 +14,15 @@
 
 ## 2. 功能清单
 
-| 能力         | 说明                                                                   |
-| ------------ | ---------------------------------------------------------------------- |
-| 通知管理页面 | 维护业务类型、配置版本、渠道模板、渠道账号、任务、记录和重试。         |
-| 站内信页面   | 查询站内信、未读数、详情、已读和删除。                                 |
-| 顶部铃铛     | 在 admin shell 顶部展示未读提醒和最近消息。                            |
-| 消息中心     | 展示当前用户站内信列表。                                               |
-| 接收设置     | 用户维护接收账户、渠道偏好和提醒方式。                                 |
-| 实时提醒     | 订阅通知实时事件，触发弹窗、桌面通知、声音或语音。                     |
-| API 封装     | 导出通知发送、业务配置、渠道、任务、记录、站内信和接收偏好的请求函数。 |
+| 能力         | 说明                                                                      |
+| ------------ | ------------------------------------------------------------------------- |
+| 通知管理页面 | 维护业务类型、配置版本、EXACT/TAG/AUTO 路由、渠道账号、任务、记录和重试。 |
+| 站内信页面   | 查询站内信、未读数、详情、已读和删除。                                    |
+| 顶部铃铛     | 在 admin shell 顶部展示未读提醒和最近消息。                               |
+| 消息中心     | 展示当前用户站内信列表。                                                  |
+| 接收设置     | 用户维护接收账户、渠道偏好和提醒方式。                                    |
+| 实时提醒     | 订阅通知实时事件，触发弹窗、桌面通知、声音或语音。                        |
+| API 封装     | 导出通知发送、业务配置、渠道、任务、记录、站内信和接收偏好的请求函数。    |
 
 ## 3. 集成形态
 
@@ -78,6 +78,10 @@ stop();
 5. 创建业务类型，保存并发布配置版本和渠道模板。
 6. 保存渠道配置；短信渠道按 provider 选择阿里云或腾讯云并填写密钥、签名和接入地址。
 7. 发送站内信，确认任务记录、未读数、铃铛和消息中心都正常。
+
+渠道页会展示稳定 `configCode`、Resource 来源和版本、路由标签、Secret 完整性、优先级、权重及健康状态。Resource 管理账号的非敏感字段只读，管理员只能补录 Secret 和维护标签；Secret 输入只写不回显。删除或停用账号、删除标签前会展示引用影响，存在模板引用时后端拒绝破坏性操作。
+
+消息配置页的渠道路由三选一：指定账号（`EXACT`）、路由标签（`TAG`）或自动轮换（`AUTO`）。TAG 会展示当前候选账号数量和名称；零候选标签不能保存为已启用模板，运行时也不会回退到 AUTO。
 
 ## 6. 配置说明
 
@@ -176,6 +180,7 @@ stop();
 | 配置版本   | `getBusinessConfigVersions`、`saveBusinessConfigDraft`、`publishBusinessConfigDraft`、`activateBusinessConfigVersion` |
 | 渠道模板   | `getChannelTemplates`、`saveChannelTemplate`、`publishChannelTemplate`                                                |
 | 渠道配置   | `getChannelConfigs`、`saveChannelConfig`、`deleteChannelConfig`                                                       |
+| 路由标签   | `getNoticeRouteTags`、`saveNoticeRouteTag`、`deleteNoticeRouteTag`、`getNoticeChannelReferenceImpact`                 |
 | 任务和记录 | `getNoticeTasks`、`getSendRecords`、`retrySendRecord`、`markSendRecordManualSuccess`、`ignoreSendRecord`              |
 | 站内信     | `getMySiteMessages`、`getMySiteMessageDetail`、`getMyUnreadCount`、`markMySiteMessageRead`、`deleteMySiteMessage`     |
 | 接收设置   | `getRecipientAccounts`、`saveRecipientAccount`、`getReceivePreferences`、`saveReceivePreference`                      |

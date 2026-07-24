@@ -32,7 +32,7 @@
             </el-form>
             <el-button type="primary" :icon="Plus" @click="openCreate">新增</el-button>
           </div>
-          <el-table :data="businessTypes" border stripe v-loading="loading">
+          <el-table v-loading="loading" :data="businessTypes" border stripe>
             <el-table-column prop="bizName" label="消息名称" min-width="150" />
             <el-table-column prop="bizType" label="消息编码" min-width="180" />
             <el-table-column prop="domainCode" label="业务域" width="110" />
@@ -52,7 +52,12 @@
             </el-table-column>
             <el-table-column label="开启渠道" min-width="150">
               <template #default="{ row }">
-                <el-tag v-for="item in enabledChannelLabels(row.enabledChannels)" :key="item" class="notice-tag" effect="plain">
+                <el-tag
+                  v-for="item in enabledChannelLabels(row.enabledChannels)"
+                  :key="item"
+                  class="notice-tag"
+                  effect="plain"
+                >
                   {{ item }}
                 </el-tag>
                 <span v-if="enabledChannelLabels(row.enabledChannels).length === 0" class="notice-muted">未发布</span>
@@ -84,8 +89,12 @@
           <span>{{ form.bizType || '新增消息配置' }}</span>
         </div>
         <div class="page-actions">
-          <el-tag v-if="editingBusinessType" :type="businessConfigStatusTag.type" effect="plain">{{ businessConfigStatusTag.label }}</el-tag>
-          <span v-if="editingBusinessType" class="version-summary-inline">当前版本：{{ businessConfigVersionText }}</span>
+          <el-tag v-if="editingBusinessType" :type="businessConfigStatusTag.type" effect="plain">{{
+            businessConfigStatusTag.label
+          }}</el-tag>
+          <span v-if="editingBusinessType" class="version-summary-inline"
+            >当前版本：{{ businessConfigVersionText }}</span
+          >
           <el-button @click="backToList">返回</el-button>
           <el-button @click="saveMaintenance">保存</el-button>
           <el-button type="primary" @click="publishMaintenance">发布新版本</el-button>
@@ -123,7 +132,12 @@
             </el-col>
             <el-col :span="24">
               <el-form-item label="描述">
-                <el-input v-model="form.description" type="textarea" :rows="3" placeholder="用于说明该消息配置的业务场景" />
+                <el-input
+                  v-model="form.description"
+                  type="textarea"
+                  :rows="3"
+                  placeholder="用于说明该消息配置的业务场景"
+                />
               </el-form-item>
             </el-col>
           </el-row>
@@ -136,7 +150,11 @@
                 <span>参数设置</span>
                 <el-button size="small" type="primary" :icon="Plus" @click="addSchemaField">新增参数</el-button>
               </div>
-              <el-tabs v-model="schemaEditMode" class="stable-tabs notice-schema-tabs" @tab-change="handleSchemaModeChange">
+              <el-tabs
+                v-model="schemaEditMode"
+                class="stable-tabs notice-schema-tabs"
+                @tab-change="handleSchemaModeChange"
+              >
                 <el-tab-pane label="表单形式" name="FORM">
                   <el-table :data="schemaFields" border size="small" max-height="360" class="schema-field-table">
                     <el-table-column label="参数名" min-width="128">
@@ -148,7 +166,12 @@
                     <el-table-column label="类型" width="108">
                       <template #default="{ row }">
                         <el-select v-model="row.type">
-                          <el-option v-for="item in schemaTypeOptions" :key="item.value" :label="item.label" :value="item.value" />
+                          <el-option
+                            v-for="item in schemaTypeOptions"
+                            :key="item.value"
+                            :label="item.label"
+                            :value="item.value"
+                          />
                         </el-select>
                       </template>
                     </el-table-column>
@@ -177,7 +200,7 @@
                     class="schema-json-input"
                     type="textarea"
                     :rows="14"
-                    placeholder="{ &quot;type&quot;: &quot;object&quot;, &quot;properties&quot;: {} }"
+                    placeholder='{ "type": "object", "properties": {} }'
                     spellcheck="false"
                   />
                 </el-tab-pane>
@@ -192,7 +215,12 @@
                 <span class="notice-muted">启用后必须配置对应消息内容；停用时已有配置不会丢失。</span>
               </div>
               <el-tabs v-model="activeChannel" class="message-type-tabs">
-                <el-tab-pane v-for="channel in channels" :key="channel" :label="channelLabel(channel)" :name="channel" />
+                <el-tab-pane
+                  v-for="channel in channels"
+                  :key="channel"
+                  :label="channelLabel(channel)"
+                  :name="channel"
+                />
               </el-tabs>
               <div class="template-config-form">
                 <el-row :gutter="16">
@@ -208,14 +236,21 @@
                     </el-form-item>
                   </el-col>
                   <el-col :span="24">
-                    <el-form-item label="通道">
+                    <el-form-item label="路由模式" data-field="notice.channel.route-mode">
+                      <el-radio-group v-model="templateForm.routeMode" @change="handleRouteModeChange">
+                        <el-radio-button value="EXACT">指定账号</el-radio-button>
+                        <el-radio-button value="TAG">路由标签</el-radio-button>
+                        <el-radio-button value="AUTO">自动轮换</el-radio-button>
+                      </el-radio-group>
+                    </el-form-item>
+                  </el-col>
+                  <el-col v-if="templateForm.routeMode === 'EXACT'" :span="24">
+                    <el-form-item label="渠道账号">
                       <el-select
                         v-model="templateForm.channelConfigId"
                         class="template-route-select"
-                        clearable
-                        placeholder="AUTO 权重轮换"
+                        placeholder="请选择精确渠道账号"
                       >
-                        <el-option label="AUTO 权重轮换" value="" />
                         <el-option
                           v-for="item in channelConfigOptions(activeChannel)"
                           :key="item.id"
@@ -223,6 +258,26 @@
                           :value="item.id"
                         />
                       </el-select>
+                    </el-form-item>
+                  </el-col>
+                  <el-col v-if="templateForm.routeMode === 'TAG'" :span="24">
+                    <el-form-item label="路由标签" data-field="notice.channel.route-tag">
+                      <el-select
+                        v-model="templateForm.routeTagCode"
+                        class="template-route-select"
+                        placeholder="请选择路由标签"
+                      >
+                        <el-option
+                          v-for="item in routeTagOptions(activeChannel)"
+                          :key="item.id"
+                          :label="`${item.tagName}（${item.candidateCount} 个候选）`"
+                          :value="item.tagCode"
+                          :disabled="item.candidateCount === 0"
+                        />
+                      </el-select>
+                      <span v-if="selectedRouteTag" class="notice-muted">
+                        候选账号：{{ selectedRouteTag.candidateConfigNames.join('、') || '暂无' }}
+                      </span>
                     </el-form-item>
                   </el-col>
                   <el-col v-if="activeChannel === 'SMS'" :span="24">
@@ -272,7 +327,13 @@
                       <el-button size="small" type="primary" :icon="Plus" @click="addMappingRow">新增映射</el-button>
                     </div>
                   </div>
-                  <el-table :data="templateMappingRows" border size="small" class="template-mapping-table" empty-text="无需映射">
+                  <el-table
+                    :data="templateMappingRows"
+                    border
+                    size="small"
+                    class="template-mapping-table"
+                    empty-text="无需映射"
+                  >
                     <el-table-column label="模板变量名" min-width="160">
                       <template #default="{ row }">
                         <el-input v-model="row.paramName" placeholder="code 或 1" />
@@ -280,7 +341,13 @@
                     </el-table-column>
                     <el-table-column label="系统参数" min-width="180">
                       <template #default="{ row }">
-                        <el-select v-model="row.targetName" filterable allow-create default-first-option placeholder="请选择参数">
+                        <el-select
+                          v-model="row.targetName"
+                          filterable
+                          allow-create
+                          default-first-option
+                          placeholder="请选择参数"
+                        >
                           <el-option
                             v-for="item in templateParamOptions"
                             :key="item.name"
@@ -342,7 +409,9 @@
         <section class="form-section">
           <div class="section-title">基础信息</div>
           <el-descriptions :column="2" border>
-            <el-descriptions-item label="业务域">{{ domainText(currentBusinessType?.domainCode || currentBusinessType?.bizGroup) }}</el-descriptions-item>
+            <el-descriptions-item label="业务域">{{
+              domainText(currentBusinessType?.domainCode || currentBusinessType?.bizGroup)
+            }}</el-descriptions-item>
             <el-descriptions-item label="业务Key">{{ currentBusinessType?.bizType || '-' }}</el-descriptions-item>
             <el-descriptions-item label="名称">{{ currentBusinessType?.bizName || '-' }}</el-descriptions-item>
             <el-descriptions-item label="生命周期">
@@ -358,7 +427,9 @@
             <el-descriptions-item label="生效版本">
               {{ currentBusinessType?.activeVersion ? `V${currentBusinessType.activeVersion}` : '未发布' }}
             </el-descriptions-item>
-            <el-descriptions-item label="描述" :span="2">{{ currentBusinessType?.description || '-' }}</el-descriptions-item>
+            <el-descriptions-item label="描述" :span="2">{{
+              currentBusinessType?.description || '-'
+            }}</el-descriptions-item>
           </el-descriptions>
         </section>
 
@@ -393,7 +464,12 @@
                 <span class="notice-muted">只读查看各渠道模板配置</span>
               </div>
               <el-tabs v-model="activeChannel" class="message-type-tabs">
-                <el-tab-pane v-for="channel in channels" :key="channel" :label="channelLabel(channel)" :name="channel" />
+                <el-tab-pane
+                  v-for="channel in channels"
+                  :key="channel"
+                  :label="channelLabel(channel)"
+                  :name="channel"
+                />
               </el-tabs>
               <el-descriptions :column="2" border class="template-readonly-descriptions">
                 <el-descriptions-item label="是否启用">
@@ -401,7 +477,7 @@
                     {{ templateForm.enabled ? '启用' : '停用' }}
                   </el-tag>
                 </el-descriptions-item>
-                <el-descriptions-item label="通道">{{ channelRouteText(templateForm.channelConfigId) }}</el-descriptions-item>
+                <el-descriptions-item label="通道">{{ channelRouteText(templateForm) }}</el-descriptions-item>
                 <el-descriptions-item v-if="activeChannel === 'SMS'" label="模板 Code" :span="2">
                   {{ templateForm.channelTemplateId || '-' }}
                 </el-descriptions-item>
@@ -480,7 +556,9 @@
             <section class="form-section">
               <div class="section-title">基础信息</div>
               <el-descriptions :column="2" border>
-                <el-descriptions-item label="业务域">{{ domainText(currentBusinessType?.domainCode || currentBusinessType?.bizGroup) }}</el-descriptions-item>
+                <el-descriptions-item label="业务域">{{
+                  domainText(currentBusinessType?.domainCode || currentBusinessType?.bizGroup)
+                }}</el-descriptions-item>
                 <el-descriptions-item label="业务Key">{{ currentBusinessType?.bizType || '-' }}</el-descriptions-item>
                 <el-descriptions-item label="名称">{{ currentBusinessType?.bizName || '-' }}</el-descriptions-item>
                 <el-descriptions-item label="查看版本">
@@ -491,8 +569,12 @@
                     {{ versionStatusTag(selectedHistoryVersion?.versionStatus).label }}
                   </el-tag>
                 </el-descriptions-item>
-                <el-descriptions-item label="发布时间">{{ selectedHistoryVersion?.publishTime || '-' }}</el-descriptions-item>
-                <el-descriptions-item label="描述" :span="2">{{ currentBusinessType?.description || '-' }}</el-descriptions-item>
+                <el-descriptions-item label="发布时间">{{
+                  selectedHistoryVersion?.publishTime || '-'
+                }}</el-descriptions-item>
+                <el-descriptions-item label="描述" :span="2">{{
+                  currentBusinessType?.description || '-'
+                }}</el-descriptions-item>
               </el-descriptions>
             </section>
 
@@ -527,7 +609,12 @@
                     <span class="notice-muted">只读查看当前版本的渠道模板配置</span>
                   </div>
                   <el-tabs v-model="activeChannel" class="message-type-tabs">
-                    <el-tab-pane v-for="channel in channels" :key="channel" :label="channelLabel(channel)" :name="channel" />
+                    <el-tab-pane
+                      v-for="channel in channels"
+                      :key="channel"
+                      :label="channelLabel(channel)"
+                      :name="channel"
+                    />
                   </el-tabs>
                   <el-descriptions :column="2" border class="template-readonly-descriptions">
                     <el-descriptions-item label="是否启用">
@@ -535,7 +622,7 @@
                         {{ templateForm.enabled ? '启用' : '停用' }}
                       </el-tag>
                     </el-descriptions-item>
-                    <el-descriptions-item label="通道">{{ channelRouteText(templateForm.channelConfigId) }}</el-descriptions-item>
+                    <el-descriptions-item label="通道">{{ channelRouteText(templateForm) }}</el-descriptions-item>
                     <el-descriptions-item v-if="activeChannel === 'SMS'" label="模板 Code" :span="2">
                       {{ templateForm.channelTemplateId || '-' }}
                     </el-descriptions-item>
@@ -566,7 +653,6 @@
         </main>
       </div>
     </el-card>
-
   </div>
 </template>
 
@@ -583,6 +669,7 @@ import {
   getBusinessConfigVersions,
   getBusinessTypes,
   getChannelConfigs,
+  getNoticeRouteTags,
   getChannelTemplates,
   getNoticeDomains,
   publishBusinessConfigDraft,
@@ -599,6 +686,7 @@ import type {
   NoticeChannelTemplate,
   NoticeChannelType,
   NoticePriority,
+  NoticeRouteTag,
   NoticeTemplateVersionStatus,
 } from '../../types/notice';
 
@@ -673,6 +761,7 @@ const pageMode = ref<PageMode>('LIST');
 const businessTypes = ref<NoticeBusinessType[]>([]);
 const domainOptions = ref<NoticeDomainOption[]>([]);
 const channelConfigs = ref<NoticeChannelConfig[]>([]);
+const routeTags = ref<NoticeRouteTag[]>([]);
 const currentBusinessType = ref<NoticeBusinessType>();
 const editingBusinessType = ref<NoticeBusinessType>();
 const activeChannel = ref<NoticeChannelType>('SITE');
@@ -683,10 +772,14 @@ const form = reactive<BusinessTypeForm>(createBusinessTypeForm());
 const schemaFields = ref<SchemaField[]>([]);
 const schemaEditMode = ref<SchemaEditMode>('FORM');
 const schemaJsonText = ref('');
-const templateForm = reactive<Partial<NoticeChannelTemplate>>({ enabled: true });
+const templateForm = reactive<Partial<NoticeChannelTemplate>>({ enabled: true, routeMode: 'AUTO' });
 const templateMappingRows = ref<TemplateMappingRow[]>([]);
-const channelDrafts = reactive<Record<NoticeChannelType, Partial<NoticeChannelTemplate>>>({} as Record<NoticeChannelType, Partial<NoticeChannelTemplate>>);
-const channelMappingDrafts = reactive<Record<NoticeChannelType, TemplateMappingRow[]>>({} as Record<NoticeChannelType, TemplateMappingRow[]>);
+const channelDrafts = reactive<Record<NoticeChannelType, Partial<NoticeChannelTemplate>>>(
+  {} as Record<NoticeChannelType, Partial<NoticeChannelTemplate>>,
+);
+const channelMappingDrafts = reactive<Record<NoticeChannelType, TemplateMappingRow[]>>(
+  {} as Record<NoticeChannelType, TemplateMappingRow[]>,
+);
 const query = reactive<{ bizType?: string; enabled?: boolean }>({});
 const activeDomain = ref('');
 const domainTreeProps = {
@@ -696,19 +789,27 @@ const domainTreeProps = {
 };
 
 const paramsSchemaJson = computed(() => JSON.stringify(buildParamsSchema(), null, 2));
-const schemaFieldCount = computed(() => schemaFields.value.filter(item => item.name.trim()).length);
-const templateParamOptions = computed(() => parseSchemaFields(resolveParamsSchemaForOptions()).filter(item => item.name.trim()));
-const activeBusinessConfig = computed(() => businessConfigVersions.value.find(item => item.versionStatus === 'ACTIVE'));
-const draftBusinessConfig = computed(() => businessConfigVersions.value.find(item => item.versionStatus === 'DRAFT'));
+const schemaFieldCount = computed(() => schemaFields.value.filter((item) => item.name.trim()).length);
+const templateParamOptions = computed(() =>
+  parseSchemaFields(resolveParamsSchemaForOptions()).filter((item) => item.name.trim()),
+);
+const activeBusinessConfig = computed(() =>
+  businessConfigVersions.value.find((item) => item.versionStatus === 'ACTIVE'),
+);
+const draftBusinessConfig = computed(() => businessConfigVersions.value.find((item) => item.versionStatus === 'DRAFT'));
 const businessConfigForForm = computed(() => draftBusinessConfig.value || activeBusinessConfig.value);
-const businessConfigStatusTag = computed(() => versionStatusTag(draftBusinessConfig.value ? 'DRAFT' : activeBusinessConfig.value?.versionStatus));
+const businessConfigStatusTag = computed(() =>
+  versionStatusTag(draftBusinessConfig.value ? 'DRAFT' : activeBusinessConfig.value?.versionStatus),
+);
 const businessConfigVersionText = computed(() => {
   const version = businessConfigForForm.value;
   return version ? `V${version.version}` : '未发布';
 });
-const currentTemplate = computed(() => {
-  return resolveTemplateForChannel(activeChannel.value);
-});
+const selectedRouteTag = computed(() =>
+  routeTags.value.find(
+    (item) => item.channelType === activeChannel.value && item.tagCode === templateForm.routeTagCode,
+  ),
+);
 const showTemplateTitle = computed(() => activeChannel.value !== 'SMS');
 const templateTitleLabel = computed(() => {
   if (activeChannel.value === 'SITE') {
@@ -770,8 +871,9 @@ async function loadBusinessTypes() {
 }
 
 async function loadChannelConfigs() {
-  const result = await getChannelConfigs({ enabled: true, pageSize: 200 });
+  const [result, tags] = await Promise.all([getChannelConfigs({ enabled: true, pageSize: 200 }), getNoticeRouteTags()]);
   channelConfigs.value = result.list || [];
+  routeTags.value = tags || [];
 }
 
 async function loadDomainOptions() {
@@ -783,13 +885,13 @@ function handleDomainsLoaded(domains: NoticeDomainOption[]) {
 }
 
 function flattenDomainOptions(options: NoticeDomainOption[]): NoticeDomainOption[] {
-  return options.flatMap(item => [item, ...flattenDomainOptions(item.children || [])]);
+  return options.flatMap((item) => [item, ...flattenDomainOptions(item.children || [])]);
 }
 
 function domainText(code?: string) {
   const normalizedCode = code?.trim();
   if (!normalizedCode) return '-';
-  const domain = flattenDomainOptions(domainOptions.value).find(item => item.domainCode === normalizedCode);
+  const domain = flattenDomainOptions(domainOptions.value).find((item) => item.domainCode === normalizedCode);
   if (!domain) return normalizedCode;
   return domain.domainName && domain.domainName !== domain.domainCode
     ? `${domain.domainName}（${domain.domainCode}）`
@@ -958,8 +1060,8 @@ function buildParamsSchema(): JsonSchema {
   const properties: Record<string, JsonSchemaProperty> = {};
   const required: string[] = [];
   schemaFields.value
-    .filter(item => item.name.trim())
-    .forEach(item => {
+    .filter((item) => item.name.trim())
+    .forEach((item) => {
       const property: JsonSchemaProperty = {
         type: item.type === 'datetime' ? 'string' : item.type,
         title: item.label.trim() || item.name.trim(),
@@ -1043,7 +1145,9 @@ function isJsonSchema(value: unknown): value is JsonSchema {
   if (value.required !== undefined && !Array.isArray(value.required)) {
     return false;
   }
-  return Object.values(value.properties).every(property => isJsonObject(property) && typeof property.type === 'string');
+  return Object.values(value.properties).every(
+    (property) => isJsonObject(property) && typeof property.type === 'string',
+  );
 }
 
 function parseSchemaFields(value?: string): SchemaField[] {
@@ -1061,7 +1165,7 @@ function parseSchemaFields(value?: string): SchemaField[] {
 }
 
 function hasSchemaProperties(value?: string) {
-  return parseSchemaFields(value).some(item => item.name.trim());
+  return parseSchemaFields(value).some((item) => item.name.trim());
 }
 
 function resolveBusinessConfigParamsSchema(config: NoticeBusinessConfigVersion) {
@@ -1091,7 +1195,7 @@ function toSchemaFieldType(property: JsonSchemaProperty): SchemaFieldType {
 }
 
 function schemaTypeLabel(type: SchemaFieldType) {
-  return schemaTypeOptions.find(item => item.value === type)?.label || type;
+  return schemaTypeOptions.find((item) => item.value === type)?.label || type;
 }
 
 function applyJsonSchemaToForm() {
@@ -1137,31 +1241,56 @@ function channelLabel(channel: NoticeChannelType) {
 
 function enabledChannelLabels(value?: string) {
   if (!value) return [];
-  return value.split(',').filter(Boolean).map(item => channelLabels[item as NoticeChannelType] || item);
+  return value
+    .split(',')
+    .filter(Boolean)
+    .map((item) => channelLabels[item as NoticeChannelType] || item);
 }
 
 function channelConfigOptions(channelType: NoticeChannelType) {
-  return channelConfigs.value.filter(item => item.channelType === channelType && item.enabled && item.configStatus === 'COMPLETE');
+  return channelConfigs.value.filter(
+    (item) => item.channelType === channelType && item.enabled && item.configStatus === 'COMPLETE',
+  );
 }
 
-function channelRouteText(channelConfigId?: string) {
-  if (!channelConfigId) {
+function routeTagOptions(channelType: NoticeChannelType) {
+  return routeTags.value.filter((item) => item.channelType === channelType);
+}
+
+function handleRouteModeChange() {
+  if (templateForm.routeMode !== 'EXACT') templateForm.channelConfigId = undefined;
+  if (templateForm.routeMode !== 'TAG') templateForm.routeTagCode = undefined;
+}
+
+function channelRouteText(template: Partial<NoticeChannelTemplate>) {
+  const routeMode = template.routeMode || (template.channelConfigId ? 'EXACT' : 'AUTO');
+  if (routeMode === 'AUTO') {
     return 'AUTO 权重轮换';
   }
-  const config = channelConfigs.value.find(item => item.id === channelConfigId);
-  return config?.configName || config?.providerCode || channelConfigId;
+  if (routeMode === 'TAG') {
+    const tag = routeTags.value.find(
+      (item) => item.channelType === template.channelType && item.tagCode === template.routeTagCode,
+    );
+    return tag ? `TAG：${tag.tagName}` : `TAG：${template.routeTagCode || '-'}`;
+  }
+  const config = channelConfigs.value.find((item) => item.id === template.channelConfigId);
+  return config?.configName || config?.providerCode || template.channelConfigId || '-';
 }
 
 function resolveTemplateForChannel(channel: NoticeChannelType) {
   const version = pageMode.value === 'HISTORY' ? selectedHistoryVersion.value?.version : undefined;
   if (version) {
-    return templates.value.find(item => item.channelType === channel && item.version === version)
-      || templates.value.find(item => item.channelType === channel && item.versionStatus === 'ACTIVE')
-      || templates.value.find(item => item.channelType === channel);
+    return (
+      templates.value.find((item) => item.channelType === channel && item.version === version) ||
+      templates.value.find((item) => item.channelType === channel && item.versionStatus === 'ACTIVE') ||
+      templates.value.find((item) => item.channelType === channel)
+    );
   }
-  return templates.value.find(item => item.channelType === channel && item.versionStatus === 'DRAFT')
-    || templates.value.find(item => item.channelType === channel && item.versionStatus === 'ACTIVE')
-    || templates.value.find(item => item.channelType === channel);
+  return (
+    templates.value.find((item) => item.channelType === channel && item.versionStatus === 'DRAFT') ||
+    templates.value.find((item) => item.channelType === channel && item.versionStatus === 'ACTIVE') ||
+    templates.value.find((item) => item.channelType === channel)
+  );
 }
 
 function setChannelEnabled(channel: NoticeChannelType, enabled: boolean) {
@@ -1179,7 +1308,10 @@ function handleTemplateEnabledChange(value: string | number | boolean) {
 
 function validateEnabledTemplates() {
   for (const channel of channels) {
-    const draft = channelDrafts[channel] || templates.value.find(item => item.channelType === channel) || createEmptyTemplate(channel);
+    const draft =
+      channelDrafts[channel] ||
+      templates.value.find((item) => item.channelType === channel) ||
+      createEmptyTemplate(channel);
     if (draft.enabled && !draft.contentTemplate?.trim()) {
       ElMessage.error(`${channelLabel(channel)}已启用，请填写${channelContentLabel(channel)}`);
       activeChannel.value = channel;
@@ -1191,6 +1323,28 @@ function validateEnabledTemplates() {
       activeChannel.value = channel;
       applyTemplate();
       return false;
+    }
+    const routeMode = draft.routeMode || (draft.channelConfigId ? 'EXACT' : 'AUTO');
+    if (draft.enabled && routeMode === 'EXACT' && !draft.channelConfigId) {
+      ElMessage.error(`${channelLabel(channel)}使用指定账号路由，请选择渠道账号`);
+      activeChannel.value = channel;
+      applyTemplate();
+      return false;
+    }
+    if (draft.enabled && routeMode === 'TAG') {
+      const tag = routeTags.value.find((item) => item.channelType === channel && item.tagCode === draft.routeTagCode);
+      if (!tag) {
+        ElMessage.error(`${channelLabel(channel)}使用标签路由，请选择路由标签`);
+        activeChannel.value = channel;
+        applyTemplate();
+        return false;
+      }
+      if (tag.candidateCount === 0) {
+        ElMessage.error(`${channelLabel(channel)}路由标签“${tag.tagName}”暂无可用候选账号`);
+        activeChannel.value = channel;
+        applyTemplate();
+        return false;
+      }
     }
   }
   if (!validateTemplateMappings()) {
@@ -1235,20 +1389,26 @@ async function quickPublish(row: NoticeBusinessType) {
   }
   await publishBusinessConfigDraft(row.id);
   const templatesToPublish = await getChannelTemplates(row.id);
-  await Promise.all(templatesToPublish
-    .filter((item: NoticeChannelTemplate) => item.versionStatus === 'DRAFT')
-    .map((item: NoticeChannelTemplate) => publishChannelTemplate(row.id, item.channelType)));
+  await Promise.all(
+    templatesToPublish
+      .filter((item: NoticeChannelTemplate) => item.versionStatus === 'DRAFT')
+      .map((item: NoticeChannelTemplate) => publishChannelTemplate(row.id, item.channelType)),
+  );
   ElMessage.success('已发布');
   await loadBusinessTypes();
 }
 
 async function removeBusinessType(row: NoticeBusinessType) {
   try {
-    await ElMessageBox.confirm(`确认删除消息配置「${row.bizName || row.bizType}」？删除后将移除参数、版本和渠道模板配置。`, '删除消息配置', {
-      type: 'warning',
-      confirmButtonText: '删除',
-      cancelButtonText: '取消',
-    });
+    await ElMessageBox.confirm(
+      `确认删除消息配置「${row.bizName || row.bizType}」？删除后将移除参数、版本和渠道模板配置。`,
+      '删除消息配置',
+      {
+        type: 'warning',
+        confirmButtonText: '删除',
+        cancelButtonText: '取消',
+      },
+    );
   } catch {
     return;
   }
@@ -1358,7 +1518,9 @@ function applyTemplate() {
   const channel = activeChannel.value;
   const draft = channelDrafts[channel] || resolveTemplateForChannel(channel) || createEmptyTemplate(channel);
   Object.assign(templateForm, draft);
-  templateMappingRows.value = cloneMappingRows(channelMappingDrafts[channel] || parseVariableMapping(templateForm.variableMapping));
+  templateMappingRows.value = cloneMappingRows(
+    channelMappingDrafts[channel] || parseVariableMapping(templateForm.variableMapping),
+  );
 }
 
 function snapshotTemplateForm(channel = activeChannel.value, useCurrentForm = channel === activeChannel.value) {
@@ -1372,7 +1534,9 @@ function snapshotTemplateForm(channel = activeChannel.value, useCurrentForm = ch
       channelType: channel,
       variableMapping: existing.variableMapping || '',
     };
-    channelMappingDrafts[channel] = cloneMappingRows(channelMappingDrafts[channel] || parseVariableMapping(existing.variableMapping));
+    channelMappingDrafts[channel] = cloneMappingRows(
+      channelMappingDrafts[channel] || parseVariableMapping(existing.variableMapping),
+    );
     return;
   }
   const variableMapping = buildVariableMappingJson(templateMappingRows.value);
@@ -1380,7 +1544,9 @@ function snapshotTemplateForm(channel = activeChannel.value, useCurrentForm = ch
     ...existing,
     ...templateForm,
     channelType: channel,
-    channelConfigId: templateForm.channelConfigId || undefined,
+    routeMode: templateForm.routeMode || (templateForm.channelConfigId ? 'EXACT' : 'AUTO'),
+    channelConfigId: templateForm.routeMode === 'EXACT' ? templateForm.channelConfigId : undefined,
+    routeTagCode: templateForm.routeMode === 'TAG' ? templateForm.routeTagCode : undefined,
     channelTemplateId: templateForm.channelTemplateId?.trim() || '',
     variableMapping,
   };
@@ -1430,7 +1596,9 @@ async function publishBusinessTemplate() {
     return;
   }
   await publishBusinessConfigDraft(businessType.id);
-  const draftChannels = channels.filter(channel => templates.value.some(item => item.channelType === channel && item.versionStatus === 'DRAFT'));
+  const draftChannels = channels.filter((channel) =>
+    templates.value.some((item) => item.channelType === channel && item.versionStatus === 'DRAFT'),
+  );
   for (const channel of draftChannels) {
     await publishChannelTemplate(businessType.id, channel);
   }
@@ -1449,6 +1617,7 @@ function createEmptyTemplate(channel: NoticeChannelType): Partial<NoticeChannelT
   return {
     channelType: channel,
     enabled: false,
+    routeMode: 'AUTO',
     templateName: '',
     titleTemplate: '',
     contentTemplate: '',
@@ -1462,13 +1631,13 @@ function hasTemplateDraft(draft?: Partial<NoticeChannelTemplate>) {
     return false;
   }
   return Boolean(
-    draft.titleTemplate?.trim()
-    || draft.contentTemplate?.trim()
-    || draft.channelTemplateId?.trim()
-    || draft.variableMapping?.trim()
-    || draft.channelConfigId
-    || draft.enabled === true
-    || draft.enabled === false,
+    draft.titleTemplate?.trim() ||
+    draft.contentTemplate?.trim() ||
+    draft.channelTemplateId?.trim() ||
+    draft.variableMapping?.trim() ||
+    draft.channelConfigId ||
+    draft.enabled === true ||
+    draft.enabled === false,
   );
 }
 
@@ -1484,7 +1653,7 @@ function clearChannelDraft(channel: NoticeChannelType) {
 }
 
 function cloneMappingRows(rows: TemplateMappingRow[]) {
-  return rows.map(item => ({ ...item }));
+  return rows.map((item) => ({ ...item }));
 }
 
 function addMappingRow() {
@@ -1497,10 +1666,10 @@ function removeMappingRow(index: number) {
 
 function generateSmsMappingRows() {
   const variables = extractTemplateVariables(templateForm.contentTemplate || '');
-  const source = variables.length > 0 ? variables : templateParamOptions.value.map(item => item.name);
+  const source = variables.length > 0 ? variables : templateParamOptions.value.map((item) => item.name);
   templateMappingRows.value = Array.from(new Set(source))
     .filter(Boolean)
-    .map(name => ({ paramName: name, targetName: name }));
+    .map((name) => ({ paramName: name, targetName: name }));
 }
 
 function extractTemplateVariables(content: string) {
@@ -1515,8 +1684,8 @@ function extractTemplateVariables(content: string) {
 
 function buildVariableMappingJson(rows: TemplateMappingRow[]) {
   const mapping = rows
-    .map(row => ({ paramName: row.paramName.trim(), targetName: row.targetName.trim() }))
-    .filter(row => row.paramName && row.targetName)
+    .map((row) => ({ paramName: row.paramName.trim(), targetName: row.targetName.trim() }))
+    .filter((row) => row.paramName && row.targetName)
     .reduce<Record<string, string>>((result, row) => {
       result[row.paramName] = row.targetName;
       return result;
@@ -1525,11 +1694,12 @@ function buildVariableMappingJson(rows: TemplateMappingRow[]) {
 }
 
 function validateTemplateMappings() {
-  const availableParams = new Set(templateParamOptions.value.map(item => item.name));
+  const availableParams = new Set(templateParamOptions.value.map((item) => item.name));
   for (const channel of channels) {
-    const rows = channel === activeChannel.value
-      ? templateMappingRows.value
-      : channelMappingDrafts[channel] || parseVariableMapping(channelDrafts[channel]?.variableMapping);
+    const rows =
+      channel === activeChannel.value
+        ? templateMappingRows.value
+        : channelMappingDrafts[channel] || parseVariableMapping(channelDrafts[channel]?.variableMapping);
     for (const row of rows) {
       const paramName = row.paramName.trim();
       const targetName = row.targetName.trim();
@@ -1560,7 +1730,12 @@ function resolveParamsSchemaForOptions() {
   if (schemaFieldCount.value > 0) {
     return paramsSchemaJson.value;
   }
-  return businessConfigForForm.value?.paramsSchema || currentBusinessType.value?.paramsSchema || form.paramsSchema || paramsSchemaJson.value;
+  return (
+    businessConfigForForm.value?.paramsSchema ||
+    currentBusinessType.value?.paramsSchema ||
+    form.paramsSchema ||
+    paramsSchemaJson.value
+  );
 }
 
 function versionStatusTag(status?: NoticeTemplateVersionStatus) {
@@ -1815,7 +1990,7 @@ onMounted(() => {
 
 .schema-json-input :deep(.el-textarea__inner) {
   min-height: 150px !important;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
   line-height: 1.5;
 }
 
@@ -1932,8 +2107,8 @@ onMounted(() => {
   min-height: 260px;
   max-height: 260px;
   overflow: auto;
+  overflow-wrap: anywhere;
   white-space: pre-wrap;
-  word-break: break-word;
 }
 
 .param-variable-panel {
@@ -2038,7 +2213,7 @@ onMounted(() => {
   gap: 8px;
 }
 
-@media (max-width: 980px) {
+@media (width <= 980px) {
   .definition-layout,
   .history-layout {
     grid-template-columns: 1fr;

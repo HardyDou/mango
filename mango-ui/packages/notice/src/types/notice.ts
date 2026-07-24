@@ -16,6 +16,8 @@ export type NoticeTemplateVersionStatus = 'DRAFT' | 'ACTIVE' | 'HISTORY';
 export type NoticeSyncStatus = 'SYNCED' | 'PENDING_PUBLISH';
 export type NoticeChannelConfigStatus = 'COMPLETE' | 'INCOMPLETE';
 export type NoticeChannelSendHealthStatus = 'NONE' | 'SUCCESS' | 'FAILED';
+export type NoticeChannelRouteMode = 'EXACT' | 'TAG' | 'AUTO';
+export type NoticeChannelSecretStatus = 'NOT_REQUIRED' | 'COMPLETE' | 'INCOMPLETE';
 export type NoticeRecipientTargetType = 'USER' | 'ORG' | 'POST' | 'ROLE';
 export type NoticeAnnouncementStatus = 'DRAFT' | 'PUBLISHED' | 'OFFLINE';
 export type NoticeAnnouncementTargetType = 'ALL' | 'ORG' | 'ROLE' | 'USER';
@@ -26,12 +28,7 @@ export type NoticeReceivePreferenceScopeType = 'GLOBAL' | 'BIZ_GROUP' | 'BIZ_TYP
 export type NoticeSiteMessageTargetType = 'NONE' | 'ROUTE' | 'FLOW';
 export type NoticeSiteMessageActionInteractionType = 'EVENT' | 'ROUTE';
 export type NoticeSiteMessageActionStatus =
-  | 'AVAILABLE'
-  | 'PROCESSING'
-  | 'SUCCEEDED'
-  | 'FAILED'
-  | 'DISABLED'
-  | 'EXPIRED';
+  'AVAILABLE' | 'PROCESSING' | 'SUCCEEDED' | 'FAILED' | 'DISABLED' | 'EXPIRED';
 export type NoticeSiteMessageActionRequestStatus = 'REQUESTED' | 'SUCCEEDED' | 'FAILED';
 
 export interface NoticeSiteMessageTarget {
@@ -330,14 +327,25 @@ export interface NoticeChannelTemplate {
   versionStatus: NoticeTemplateVersionStatus;
   enabled: boolean;
   channelConfigId?: string;
+  routeMode?: NoticeChannelRouteMode;
+  routeTagCode?: string;
 }
 
 export interface NoticeChannelConfig {
   id: string;
+  configCode: string;
   channelType: NoticeChannelType;
   providerCode?: string;
   configName?: string;
   configJson?: string;
+  secretValues?: NoticeChannelSecretValue[];
+  resourceId?: string;
+  resourceVersion?: number;
+  resourceModuleCode?: string;
+  resourceSource?: 'MANUAL' | 'RESOURCE';
+  secretStatus?: NoticeChannelSecretStatus;
+  missingSecretKeys?: string[];
+  routeTagCodes?: string[];
   enabled: boolean;
   priority: number;
   weight: number;
@@ -348,6 +356,26 @@ export interface NoticeChannelConfig {
   lastFailureReason?: string;
   rateLimitConfig?: string;
   updatedAt?: string;
+}
+
+export interface NoticeChannelSecretValue {
+  key: string;
+  value: string;
+}
+
+export interface NoticeRouteTag {
+  id: string;
+  channelType: NoticeChannelType;
+  tagCode: string;
+  tagName: string;
+  description?: string;
+  candidateCount: number;
+  candidateConfigNames: string[];
+}
+
+export interface NoticeChannelReferenceImpact {
+  referenceCount: number;
+  businessTemplateNames: string[];
 }
 
 export interface NoticeTask {

@@ -8,6 +8,8 @@ import type {
   NoticeChannelConfig,
   NoticeChannelTemplate,
   NoticeChannelType,
+  NoticeRouteTag,
+  NoticeChannelReferenceImpact,
   NoticeReceivePreference,
   NoticeReceivePreferenceScopeType,
   NoticeReminderSetting,
@@ -130,8 +132,8 @@ export function getBusinessTypes(params?: Record<string, unknown>) {
 }
 
 export function getNoticeDomains() {
-  return get<any[]>('/domain/domains/enabled-tree').then((list) =>
-    (Array.isArray(list) ? list : []).map(normalizeDomainOption)
+  return get<unknown[]>('/domain/domains/enabled-tree').then((list) =>
+    (Array.isArray(list) ? list : []).map(normalizeDomainOption),
   );
 }
 
@@ -147,12 +149,18 @@ export function deleteBusinessType(id: string) {
   return del<boolean>('/notice/business-types', { params: { id } });
 }
 
-function normalizeDomainOption(item: any): NoticeDomainOption {
+function normalizeDomainOption(item: unknown): NoticeDomainOption {
+  const value = item && typeof item === 'object' ? (item as Record<string, unknown>) : {};
   return {
-    id: item?.id ? String(item.id) : undefined,
-    domainCode: item?.domainCode ?? '',
-    domainName: item?.domainName ?? item?.domainCode ?? '',
-    children: Array.isArray(item?.children) ? item.children.map(normalizeDomainOption) : [],
+    id: value.id ? String(value.id) : undefined,
+    domainCode: typeof value.domainCode === 'string' ? value.domainCode : '',
+    domainName:
+      typeof value.domainName === 'string'
+        ? value.domainName
+        : typeof value.domainCode === 'string'
+          ? value.domainCode
+          : '',
+    children: Array.isArray(value.children) ? value.children.map(normalizeDomainOption) : [],
   };
 }
 
@@ -178,17 +186,27 @@ export function getChannelTemplates(businessTypeId: string) {
   return get<NoticeChannelTemplate[]>('/notice/business-types/channel-templates', { params: { businessTypeId } });
 }
 
-export function saveChannelTemplate(businessTypeId: string, channelType: NoticeChannelType, data: Partial<NoticeChannelTemplate>) {
-  return put<NoticeChannelTemplate>('/notice/business-types/channel-templates', {
-    channelType,
-    templateName: data.templateName,
-    titleTemplate: data.titleTemplate,
-    contentTemplate: data.contentTemplate,
-    channelTemplateId: data.channelTemplateId,
-    variableMapping: data.variableMapping,
-    enabled: data.enabled,
-    channelConfigId: data.channelConfigId,
-  }, { params: { businessTypeId } });
+export function saveChannelTemplate(
+  businessTypeId: string,
+  channelType: NoticeChannelType,
+  data: Partial<NoticeChannelTemplate>,
+) {
+  return put<NoticeChannelTemplate>(
+    '/notice/business-types/channel-templates',
+    {
+      channelType,
+      templateName: data.templateName,
+      titleTemplate: data.titleTemplate,
+      contentTemplate: data.contentTemplate,
+      channelTemplateId: data.channelTemplateId,
+      variableMapping: data.variableMapping,
+      enabled: data.enabled,
+      channelConfigId: data.channelConfigId,
+      routeMode: data.routeMode,
+      routeTagCode: data.routeTagCode,
+    },
+    { params: { businessTypeId } },
+  );
 }
 
 export function publishChannelTemplate(businessTypeId: string, channelType: NoticeChannelType) {
@@ -207,6 +225,26 @@ export function saveChannelConfig(data: Partial<NoticeChannelConfig>) {
 
 export function deleteChannelConfig(id: string) {
   return del<boolean>('/notice/channels', { params: { id } });
+}
+
+export function getNoticeRouteTags(params?: { channelType?: NoticeChannelType; keyword?: string }) {
+  return get<NoticeRouteTag[]>('/notice/channel-route-tags', { params });
+}
+
+export function saveNoticeRouteTag(data: Partial<NoticeRouteTag>) {
+  return post<NoticeRouteTag>('/notice/channel-route-tags', data);
+}
+
+export function deleteNoticeRouteTag(id: string) {
+  return del<boolean>('/notice/channel-route-tags', { params: { id } });
+}
+
+export function getNoticeChannelReferenceImpact(params: {
+  configId?: string;
+  channelType?: NoticeChannelType;
+  routeTagCode?: string;
+}) {
+  return get<NoticeChannelReferenceImpact>('/notice/channels/reference-impact', { params });
 }
 
 export function getNoticeTasks(params?: Record<string, unknown>) {
@@ -309,11 +347,13 @@ export function getRecipientAccounts(params?: { userId?: string; accountType?: N
   return get<NoticeRecipientAccount[]>('/notice/recipient-accounts', { params });
 }
 
-export function saveRecipientAccount(data: Partial<NoticeRecipientAccount> & {
-  accountType: NoticeRecipientAccountType;
-  accountValue: string;
-  verifiedStatus?: NoticeRecipientAccountStatus;
-}) {
+export function saveRecipientAccount(
+  data: Partial<NoticeRecipientAccount> & {
+    accountType: NoticeRecipientAccountType;
+    accountValue: string;
+    verifiedStatus?: NoticeRecipientAccountStatus;
+  },
+) {
   return post<NoticeRecipientAccount>('/notice/recipient-accounts', data);
 }
 
@@ -333,26 +373,20 @@ export function getReceivePreferences(params?: {
   return get<NoticeReceivePreference[]>('/notice/receive-preferences', { params });
 }
 
-export function saveReceivePreference(data: Partial<NoticeReceivePreference> & {
-  scopeType: NoticeReceivePreferenceScopeType;
-  enabled: boolean;
-}) {
+export function saveReceivePreference(
+  data: Partial<NoticeReceivePreference> & {
+    scopeType: NoticeReceivePreferenceScopeType;
+    enabled: boolean;
+  },
+) {
   return put<NoticeReceivePreference>('/notice/receive-preferences', data);
 }
 
-export function getPersonalConfigs(params?: {
-  groupCode?: string;
-  bizType?: string;
-  configKey?: string;
-}) {
+export function getPersonalConfigs(params?: { groupCode?: string; bizType?: string; configKey?: string }) {
   return get<Array<PersonalConfig<string>>>('/system/personal-configs', { params });
 }
 
-export function getPersonalConfigValue(params: {
-  groupCode: string;
-  bizType: string;
-  configKey: string;
-}) {
+export function getPersonalConfigValue(params: { groupCode: string; bizType: string; configKey: string }) {
   return get<PersonalConfig<string> | null>('/system/personal-configs/value', { params });
 }
 
@@ -370,25 +404,30 @@ export function normalizeNoticeReminderSetting(value?: unknown): NoticeReminderS
   };
   const soundTypes = new Set(['IM', 'SOFT', 'DOUBLE', 'NONE']);
   return {
-    popupEnabled: typeof record.popupEnabled === 'boolean' ? record.popupEnabled : defaultNoticeReminderSetting.popupEnabled,
+    popupEnabled:
+      typeof record.popupEnabled === 'boolean' ? record.popupEnabled : defaultNoticeReminderSetting.popupEnabled,
     popupPlacement: record.popupPlacement === 'bottom-right' ? 'bottom-right' : 'top-right',
-    voiceEnabled: typeof record.voiceEnabled === 'boolean'
-      ? record.voiceEnabled
-      : typeof record.soundEnabled === 'boolean'
-        ? record.soundEnabled
-        : defaultNoticeReminderSetting.voiceEnabled,
+    voiceEnabled:
+      typeof record.voiceEnabled === 'boolean'
+        ? record.voiceEnabled
+        : typeof record.soundEnabled === 'boolean'
+          ? record.soundEnabled
+          : defaultNoticeReminderSetting.voiceEnabled,
     reminderMode: record.reminderMode === 'VOICE' ? 'VOICE' : 'SOUND',
-    voiceText: typeof record.voiceText === 'string' && record.voiceText.trim()
-      ? record.voiceText
-      : typeof record.soundText === 'string' && record.soundText.trim()
-        ? record.soundText
-        : defaultNoticeReminderSetting.voiceText,
-    soundType: typeof record.soundType === 'string' && soundTypes.has(record.soundType)
-      ? record.soundType
-      : defaultNoticeReminderSetting.soundType,
-    desktopNotificationEnabled: typeof record.desktopNotificationEnabled === 'boolean'
-      ? record.desktopNotificationEnabled
-      : defaultNoticeReminderSetting.desktopNotificationEnabled,
+    voiceText:
+      typeof record.voiceText === 'string' && record.voiceText.trim()
+        ? record.voiceText
+        : typeof record.soundText === 'string' && record.soundText.trim()
+          ? record.soundText
+          : defaultNoticeReminderSetting.voiceText,
+    soundType:
+      typeof record.soundType === 'string' && soundTypes.has(record.soundType)
+        ? record.soundType
+        : defaultNoticeReminderSetting.soundType,
+    desktopNotificationEnabled:
+      typeof record.desktopNotificationEnabled === 'boolean'
+        ? record.desktopNotificationEnabled
+        : defaultNoticeReminderSetting.desktopNotificationEnabled,
   };
 }
 

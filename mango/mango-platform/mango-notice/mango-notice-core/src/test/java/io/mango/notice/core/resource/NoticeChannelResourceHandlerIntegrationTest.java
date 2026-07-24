@@ -1,14 +1,19 @@
 package io.mango.notice.core.resource;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 import com.baomidou.mybatisplus.autoconfigure.MybatisPlusAutoConfiguration;
+
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguration;
 import io.mango.notice.core.mapper.NoticeChannelConfigMapper;
-import io.mango.resource.support.ResourceTypes;
 import io.mango.resource.api.enums.ResourceFieldType;
+import io.mango.resource.support.ResourceTypes;
 import io.mango.resource.support.model.ResourceDeclaration;
 import io.mango.resource.support.model.ResourceField;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -21,37 +26,35 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.TestPropertySource;
 
-import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.LinkedHashMap;
 import java.util.List;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import javax.sql.DataSource;
 
-@SpringBootTest(classes = {
-        DataSourceAutoConfiguration.class,
-        TransactionAutoConfiguration.class,
-        MybatisPlusAutoConfiguration.class,
-        PersistenceMybatisPlusAutoConfiguration.class,
-        NoticeChannelResourceHandlerIntegrationTest.TestConfig.class
-})
-@TestPropertySource(properties = {
-        "spring.datasource.url=jdbc:h2:mem:notice_channel_resource;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE",
-        "spring.datasource.username=sa",
-        "spring.datasource.password=",
-        "spring.datasource.driver-class-name=org.h2.Driver",
-        "spring.flyway.enabled=false",
-        "mango.persistence.mybatis-plus.tenant.enabled=true"
-})
+@SpringBootTest(
+        classes = {
+            DataSourceAutoConfiguration.class,
+            TransactionAutoConfiguration.class,
+            MybatisPlusAutoConfiguration.class,
+            PersistenceMybatisPlusAutoConfiguration.class,
+            NoticeChannelResourceHandlerIntegrationTest.TestConfig.class
+        })
+@TestPropertySource(
+        properties = {
+            "spring.datasource.url=jdbc:h2:mem:notice_channel_resource;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE",
+            "spring.datasource.username=sa",
+            "spring.datasource.password=",
+            "spring.datasource.driver-class-name=org.h2.Driver",
+            "spring.flyway.enabled=false",
+            "mango.persistence.mybatis-plus.tenant.enabled=true"
+        })
 class NoticeChannelResourceHandlerIntegrationTest {
+    @Autowired private DataSource dataSource;
 
-    @Autowired
-    private DataSource dataSource;
-
-    @Autowired
-    private NoticeChannelResourceHandler handler;
+    @Autowired private NoticeChannelResourceHandler handler;
 
     @BeforeEach
     void setUp() throws Exception {
@@ -68,9 +71,12 @@ class NoticeChannelResourceHandlerIntegrationTest {
     void upsertCreatesNoticeChannel() throws Exception {
         handler.upsert(channelDeclaration(270501L, "default", "默认系统消息通道", 100));
 
-        assertThat(stringValue("notice_channel_config", "channel_type", "id = 270501")).isEqualTo("SITE");
-        assertThat(stringValue("notice_channel_config", "provider_code", "id = 270501")).isEqualTo("INTERNAL");
-        assertThat(stringValue("notice_channel_config", "config_status", "id = 270501")).isEqualTo("COMPLETE");
+        assertThat(stringValue("notice_channel_config", "channel_type", "id = 270501"))
+                .isEqualTo("SITE");
+        assertThat(stringValue("notice_channel_config", "provider_code", "id = 270501"))
+                .isEqualTo("INTERNAL");
+        assertThat(stringValue("notice_channel_config", "config_status", "id = 270501"))
+                .isEqualTo("COMPLETE");
         assertThat(intValue("notice_channel_config", "weight", "id = 270501")).isEqualTo(100);
     }
 
@@ -80,7 +86,8 @@ class NoticeChannelResourceHandlerIntegrationTest {
 
         handler.upsert(channelDeclaration(270501L, "default", "默认系统消息通道新版", 80));
 
-        assertThat(stringValue("notice_channel_config", "config_name", "id = 270501")).isEqualTo("默认系统消息通道新版");
+        assertThat(stringValue("notice_channel_config", "config_name", "id = 270501"))
+                .isEqualTo("默认系统消息通道新版");
         assertThat(intValue("notice_channel_config", "weight", "id = 270501")).isEqualTo(80);
     }
 
@@ -111,8 +118,10 @@ class NoticeChannelResourceHandlerIntegrationTest {
         }
 
         assertThat(count("notice_channel_config")).isEqualTo(2);
-        assertThat(stringValue("notice_channel_config", "config_name", "id = 270501")).isEqualTo("默认系统消息通道");
-        assertThat(stringValue("notice_channel_config", "tenant_id", "id = 270501")).isEqualTo("default");
+        assertThat(stringValue("notice_channel_config", "config_name", "id = 270501"))
+                .isEqualTo("默认系统消息通道");
+        assertThat(stringValue("notice_channel_config", "tenant_id", "id = 270501"))
+                .isEqualTo("default");
         assertThat(stringValue("notice_channel_config", "tenant_id", "id = 270502")).isEqualTo("1");
         assertThat(stringValue("notice_channel_config", "config_json", "id = 270501"))
                 .contains("\"soundText\":\"您有新的系统消息，请及时查看\"");
@@ -132,19 +141,53 @@ class NoticeChannelResourceHandlerIntegrationTest {
         }
 
         assertThat(count("notice_channel_config")).isEqualTo(2);
-        assertThat(stringValue("notice_channel_config", "tenant_id", "id = 270501")).isEqualTo("default");
+        assertThat(stringValue("notice_channel_config", "tenant_id", "id = 270501"))
+                .isEqualTo("default");
         assertThat(stringValue("notice_channel_config", "tenant_id", "id = 270502")).isEqualTo("1");
         assertThat(MangoContextHolder.tenantId()).isEqualTo("caller-tenant");
+    }
+
+    @Test
+    void resourceRejectsPlaintextSecretInConfigJson() {
+        ResourceDeclaration declaration = emailChannelDeclaration();
+        field(
+                declaration,
+                "configJson",
+                ResourceFieldType.STRING,
+                "{\"host\":\"smtp.example.com\",\"username\":\"notice\","
+                        + "\"password\":\"plain-secret\",\"from\":\"notice@example.com\"}");
+
+        assertThatThrownBy(() -> handler.upsert(declaration))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("plaintext Secret");
+    }
+
+    @Test
+    void resourceReplayPreservesManuallySuppliedSecret() throws Exception {
+        ResourceDeclaration declaration = emailChannelDeclaration();
+        handler.upsert(declaration);
+        execute(
+                "update notice_channel_config set secret_config_json ="
+                        + " '{\"password\":\"manual-secret\"}' where id = 270601");
+
+        handler.upsert(declaration);
+
+        assertThat(stringValue("notice_channel_config", "secret_config_json", "id = 270601"))
+                .isEqualTo("{\"password\":\"manual-secret\"}");
+        assertThat(stringValue("notice_channel_config", "secret_status", "id = 270601"))
+                .isEqualTo("COMPLETE");
+        assertThat(stringValue("notice_channel_config", "config_status", "id = 270601"))
+                .isEqualTo("COMPLETE");
     }
 
     private List<ResourceDeclaration> commonNoticeChannelDeclarations() {
         return List.of(
                 channelDeclaration(270501L, "default", "默认系统消息通道", 100),
-                channelDeclaration(270502L, "1", "默认系统消息通道", 100)
-        );
+                channelDeclaration(270502L, "1", "默认系统消息通道", 100));
     }
 
-    private ResourceDeclaration channelDeclaration(Long channelConfigId, String tenantId, String configName, int weight) {
+    private ResourceDeclaration channelDeclaration(
+            Long channelConfigId, String tenantId, String configName, int weight) {
         ResourceDeclaration declaration = new ResourceDeclaration();
         declaration.setId(String.valueOf(2026061800700000000L + channelConfigId));
         declaration.setVersion(1);
@@ -155,23 +198,48 @@ class NoticeChannelResourceHandlerIntegrationTest {
         declaration.setTargetModule("notice");
         declaration.setFields(new LinkedHashMap<>());
         field(declaration, "channelConfigId", ResourceFieldType.LONG, channelConfigId);
+        field(
+                declaration,
+                "configCode",
+                ResourceFieldType.STRING,
+                "SITE_INTERNAL_" + tenantId.toUpperCase());
         field(declaration, "tenantId", ResourceFieldType.STRING, tenantId);
         field(declaration, "channelType", ResourceFieldType.STRING, "SITE");
         field(declaration, "providerCode", ResourceFieldType.STRING, "INTERNAL");
         field(declaration, "configName", ResourceFieldType.STRING, configName);
-        field(declaration, "configJson", ResourceFieldType.STRING,
+        field(
+                declaration,
+                "configJson",
+                ResourceFieldType.STRING,
                 "{\"senderName\":\"系统通知\",\"soundText\":\"您有新的系统消息，请及时查看\"}");
         field(declaration, "enabled", ResourceFieldType.BOOLEAN, true);
         field(declaration, "priority", ResourceFieldType.INT, 0);
         field(declaration, "weight", ResourceFieldType.INT, weight);
-        field(declaration, "configStatus", ResourceFieldType.STRING, "COMPLETE");
         field(declaration, "lastSendStatus", ResourceFieldType.STRING, "NONE");
-        field(declaration, "rateLimitConfig", ResourceFieldType.STRING,
+        field(
+                declaration,
+                "rateLimitConfig",
+                ResourceFieldType.STRING,
                 "{\"maxPerMinute\":0,\"timeoutSeconds\":10,\"concurrentLimit\":0}");
         return declaration;
     }
 
-    private void field(ResourceDeclaration declaration, String name, ResourceFieldType type, Object value) {
+    private ResourceDeclaration emailChannelDeclaration() {
+        ResourceDeclaration declaration = channelDeclaration(270601L, "default", "默认邮件通道", 100);
+        declaration.setBizKey("notice.channel.email-default");
+        field(declaration, "configCode", ResourceFieldType.STRING, "EMAIL_DEFAULT");
+        field(declaration, "channelType", ResourceFieldType.STRING, "EMAIL");
+        field(declaration, "providerCode", ResourceFieldType.STRING, "CUSTOM_SMTP");
+        field(
+                declaration,
+                "configJson",
+                ResourceFieldType.STRING,
+                "{\"host\":\"smtp.example.com\",\"username\":\"notice\",\"from\":\"notice@example.com\"}");
+        return declaration;
+    }
+
+    private void field(
+            ResourceDeclaration declaration, String name, ResourceFieldType type, Object value) {
         ResourceField field = new ResourceField();
         field.setType(type);
         field.setValue(value);
@@ -179,14 +247,26 @@ class NoticeChannelResourceHandlerIntegrationTest {
     }
 
     private void rebuildTables() throws Exception {
+        execute("drop table if exists notice_channel_config_route_tag");
+        execute("drop table if exists notice_channel_route_tag");
         execute("drop table if exists notice_channel_config");
-        execute("""
+        execute(
+                """
                 create table notice_channel_config (
                     id bigint not null,
+                    config_code varchar(64) not null,
                     channel_type varchar(32) not null,
                     provider_code varchar(64),
                     config_name varchar(128),
                     config_json clob,
+                    secret_refs_json clob,
+                    secret_config_json clob,
+                    resource_id varchar(128),
+                    resource_version int,
+                    resource_module_code varchar(64),
+                    resource_source varchar(32) not null default 'MANUAL',
+                    managed_fields_json clob,
+                    secret_status varchar(32) not null default 'NOT_REQUIRED',
                     enabled boolean not null default true,
                     priority int not null default 0,
                     weight int not null default 100,
@@ -204,34 +284,77 @@ class NoticeChannelResourceHandlerIntegrationTest {
                     primary key (id)
                 )
                 """);
-        execute("create index idx_notice_channel_type on notice_channel_config(tenant_id, channel_type, enabled)");
-        execute("""
+        execute(
+                "create index idx_notice_channel_type on notice_channel_config(tenant_id,"
+                        + " channel_type, enabled)");
+        execute(
+                "create unique index uk_notice_channel_config_code on"
+                        + " notice_channel_config(tenant_id, config_code)");
+        execute(
+                """
                 create index idx_notice_channel_route
                 on notice_channel_config(tenant_id, channel_type, enabled, config_status, weight)
+                """);
+        execute(
+                """
+                create table notice_channel_route_tag (
+                    id bigint not null,
+                    channel_type varchar(32) not null,
+                    tag_code varchar(64) not null,
+                    tag_name varchar(128) not null,
+                    description varchar(500),
+                    tenant_id varchar(64) not null default 'default',
+                    created_by bigint,
+                    created_at timestamp not null default current_timestamp,
+                    updated_by bigint,
+                    updated_at timestamp not null default current_timestamp,
+                    primary key (id)
+                )
+                """);
+        execute(
+                """
+                create table notice_channel_config_route_tag (
+                    id bigint not null,
+                    channel_config_id bigint not null,
+                    route_tag_id bigint not null,
+                    tenant_id varchar(64) not null default 'default',
+                    created_by bigint,
+                    created_at timestamp not null default current_timestamp,
+                    updated_by bigint,
+                    updated_at timestamp not null default current_timestamp,
+                    primary key (id)
+                )
                 """);
     }
 
     private void execute(String sql) throws Exception {
         try (Connection connection = dataSource.getConnection();
-             Statement statement = connection.createStatement()) {
+                Statement statement = connection.createStatement()) {
             statement.execute(sql);
         }
     }
 
     private long count(String tableName) throws Exception {
         try (Connection connection = dataSource.getConnection();
-             Statement statement = connection.createStatement();
-             ResultSet resultSet = statement.executeQuery("select count(*) from " + tableName)) {
+                Statement statement = connection.createStatement();
+                ResultSet resultSet = statement.executeQuery("select count(*) from " + tableName)) {
             resultSet.next();
             return resultSet.getLong(1);
         }
     }
 
-    private String stringValue(String tableName, String columnName, String whereClause) throws Exception {
+    private String stringValue(String tableName, String columnName, String whereClause)
+            throws Exception {
         try (Connection connection = dataSource.getConnection();
-             Statement statement = connection.createStatement();
-             ResultSet resultSet = statement.executeQuery(
-                     "select " + columnName + " from " + tableName + " where " + whereClause)) {
+                Statement statement = connection.createStatement();
+                ResultSet resultSet =
+                        statement.executeQuery(
+                                "select "
+                                        + columnName
+                                        + " from "
+                                        + tableName
+                                        + " where "
+                                        + whereClause)) {
             resultSet.next();
             return resultSet.getString(1);
         }
@@ -239,19 +362,32 @@ class NoticeChannelResourceHandlerIntegrationTest {
 
     private int intValue(String tableName, String columnName, String whereClause) throws Exception {
         try (Connection connection = dataSource.getConnection();
-             Statement statement = connection.createStatement();
-             ResultSet resultSet = statement.executeQuery(
-                     "select " + columnName + " from " + tableName + " where " + whereClause)) {
+                Statement statement = connection.createStatement();
+                ResultSet resultSet =
+                        statement.executeQuery(
+                                "select "
+                                        + columnName
+                                        + " from "
+                                        + tableName
+                                        + " where "
+                                        + whereClause)) {
             resultSet.next();
             return resultSet.getInt(1);
         }
     }
 
-    private boolean booleanValue(String tableName, String columnName, String whereClause) throws Exception {
+    private boolean booleanValue(String tableName, String columnName, String whereClause)
+            throws Exception {
         try (Connection connection = dataSource.getConnection();
-             Statement statement = connection.createStatement();
-             ResultSet resultSet = statement.executeQuery(
-                     "select " + columnName + " from " + tableName + " where " + whereClause)) {
+                Statement statement = connection.createStatement();
+                ResultSet resultSet =
+                        statement.executeQuery(
+                                "select "
+                                        + columnName
+                                        + " from "
+                                        + tableName
+                                        + " where "
+                                        + whereClause)) {
             resultSet.next();
             return resultSet.getBoolean(1);
         }
@@ -260,6 +396,5 @@ class NoticeChannelResourceHandlerIntegrationTest {
     @Configuration
     @Import(NoticeChannelResourceHandler.class)
     @MapperScan(basePackageClasses = NoticeChannelConfigMapper.class)
-    static class TestConfig {
-    }
+    static class TestConfig {}
 }
