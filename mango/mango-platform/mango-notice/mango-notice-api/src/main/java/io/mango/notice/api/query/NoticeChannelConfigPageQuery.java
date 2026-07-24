@@ -1,6 +1,7 @@
 package io.mango.notice.api.query;
 
 import io.mango.notice.api.enums.NoticeChannelType;
+import io.mango.notice.api.enums.NoticeChannelSecretStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
@@ -27,4 +28,13 @@ public class NoticeChannelConfigPageQuery implements Serializable {
     @Schema(description = "是否启用")
     @jakarta.validation.constraints.NotNull(groups = io.mango.notice.api.validation.NoticeOptionalValidation.class)
     private Boolean enabled;
+
+    @Schema(description = "渠道配置稳定编码")
+    private String configCode;
+
+    @Schema(description = "配置来源：MANUAL 或 RESOURCE")
+    private String resourceSource;
+
+    @Schema(description = "Secret 完整性状态")
+    private NoticeChannelSecretStatus secretStatus;
 }

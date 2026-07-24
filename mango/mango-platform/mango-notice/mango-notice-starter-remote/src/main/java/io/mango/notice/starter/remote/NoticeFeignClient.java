@@ -13,6 +13,7 @@ import io.mango.notice.api.command.RetryNoticeSendRecordsCommand;
 import io.mango.notice.api.command.SaveNoticeBusinessConfigCommand;
 import io.mango.notice.api.command.SaveNoticeChannelConfigCommand;
 import io.mango.notice.api.command.SaveNoticeChannelTemplateCommand;
+import io.mango.notice.api.command.SaveNoticeRouteTagCommand;
 import io.mango.notice.api.command.SaveNoticeReceivePreferenceCommand;
 import io.mango.notice.api.command.SaveNoticeRecipientAccountCommand;
 import io.mango.notice.api.command.SaveNoticeSettingsCommand;
@@ -22,6 +23,8 @@ import io.mango.notice.api.command.UpdateNoticeBusinessTypeCommand;
 import io.mango.notice.api.enums.NoticeChannelType;
 import io.mango.notice.api.query.NoticeBusinessTypePageQuery;
 import io.mango.notice.api.query.NoticeChannelConfigPageQuery;
+import io.mango.notice.api.query.NoticeChannelReferenceImpactQuery;
+import io.mango.notice.api.query.NoticeRouteTagQuery;
 import io.mango.notice.api.query.NoticeReceivePreferenceQuery;
 import io.mango.notice.api.query.NoticeRecipientAccountQuery;
 import io.mango.notice.api.query.NoticeSendRecordPageQuery;
@@ -31,6 +34,8 @@ import io.mango.notice.api.vo.NoticeBusinessConfigVersionVO;
 import io.mango.notice.api.vo.NoticeBusinessTypeVO;
 import io.mango.notice.api.vo.NoticeChannelConfigVO;
 import io.mango.notice.api.vo.NoticeChannelTemplateVO;
+import io.mango.notice.api.vo.NoticeChannelReferenceImpactVO;
+import io.mango.notice.api.vo.NoticeRouteTagVO;
 import io.mango.notice.api.vo.NoticeReceivePreferenceVO;
 import io.mango.notice.api.vo.NoticeRecipientAccountVO;
 import io.mango.notice.api.vo.NoticeSendRecordVO;
@@ -130,6 +135,23 @@ public interface NoticeFeignClient extends NoticeApi {
     @Override
     @PostMapping("/channels")
     R<NoticeChannelConfigVO> saveChannelConfig(@RequestBody SaveNoticeChannelConfigCommand command);
+
+    @Override
+    @GetMapping("/channel-route-tags")
+    R<List<NoticeRouteTagVO>> listRouteTags(@SpringQueryMap NoticeRouteTagQuery query);
+
+    @Override
+    @PostMapping("/channel-route-tags")
+    R<NoticeRouteTagVO> saveRouteTag(@RequestBody SaveNoticeRouteTagCommand command);
+
+    @Override
+    @DeleteMapping("/channel-route-tags")
+    R<Boolean> deleteRouteTag(@RequestParam("id") Long id);
+
+    @Override
+    @GetMapping("/channels/reference-impact")
+    R<NoticeChannelReferenceImpactVO> getChannelReferenceImpact(
+            @SpringQueryMap NoticeChannelReferenceImpactQuery query);
 
     @Override
     @GetMapping("/internal/wecom-login-config")

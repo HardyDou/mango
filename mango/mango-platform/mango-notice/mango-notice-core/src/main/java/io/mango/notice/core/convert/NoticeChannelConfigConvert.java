@@ -19,10 +19,16 @@ public final class NoticeChannelConfigConvert {
  public static NoticeChannelConfigVO toVO(NoticeChannelConfigEntity entity) {
  NoticeChannelConfigVO vo = new NoticeChannelConfigVO();
  vo.setId(entity.getId());
+ vo.setConfigCode(entity.getConfigCode());
  vo.setChannelType(entity.getChannelType());
  vo.setProviderCode(entity.getProviderCode());
  vo.setConfigName(entity.getConfigName());
  vo.setConfigJson(mask(entity.getConfigJson()));
+ vo.setResourceId(entity.getResourceId());
+ vo.setResourceVersion(entity.getResourceVersion());
+ vo.setResourceModuleCode(entity.getResourceModuleCode());
+ vo.setResourceSource(entity.getResourceSource());
+ vo.setSecretStatus(entity.getSecretStatus());
  vo.setEnabled(entity.getEnabled());
  vo.setPriority(entity.getPriority());
  vo.setWeight(entity.getWeight());

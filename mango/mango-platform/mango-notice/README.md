@@ -334,7 +334,7 @@ noticeApi.send(command);
 
 ## 6. 配置说明
 
-YAML 只配置通知 outbox 分发行为。渠道账号、签名、模板 ID、Webhook、Secret 等运行时配置保存在 `notice_channel_config.config_json`，通过通知渠道管理页面维护。
+YAML 只配置通知 outbox 分发行为。渠道账号的非敏感运行参数保存在 `notice_channel_config.config_json`；Resource Secret 引用和环境人工补录值分别保存在 `secret_refs_json`、`secret_config_json`，查询接口不会返回解析值或人工 Secret。模板 ID、路由模式和标签通过通知管理页面或 API 维护。
 
 ```yaml
 mango:
@@ -408,7 +408,25 @@ mango:
 
 腾讯云短信的 `{1}`、`{2}` 这类序号变量也使用同一映射方式，例如 `{ "1": "verifyCode" }`。没有配置 `variableMapping` 时，通知参数 `params` 会原样作为短信模板参数传递。
 
-### 7.2 Outbox Topic
+### 7.2 邮件附件
+
+EMAIL 渠道会消费 `attachmentFileIds`，通过 Mango File 服务读取当前租户可访问的文件并生成标准 `multipart/mixed` 邮件。默认限制为最多 10 个附件、单文件 10 MiB、总计 25 MiB、单文件读取 15 秒；渠道 `configJson` 可覆盖限制和 MIME 白名单。任一附件读取、权限、大小或类型校验失败时，整封邮件不会提交 SMTP，也不会记录伪成功。
+
+发送记录只保存文件 ID、文件名、类型、大小和处理阶段等安全摘要，不保存文件内容、临时下载地址或 Secret。无附件邮件继续使用原单正文 MIME。
+
+### 7.3 渠道路由与 Secret
+
+每个渠道账号使用同租户唯一且创建后不可变的 `configCode`。渠道模板支持：
+
+- `EXACT`：只发送到指定 `channelConfigId`；
+- `TAG`：只在同渠道类型、匹配 `routeTagCode` 的账号中选择；无候选时返回 `CHANNEL_ROUTE_TAG_UNAVAILABLE`，不回退 AUTO；
+- `AUTO`：使用同渠道类型全部可用账号。
+
+候选账号必须启用且 `configStatus=COMPLETE`，按较小 `priority`、健康状态、`weight` 和发送记录 ID 稳定轮换。单账号可重试失败达到上限后切换下一账号；不可重试错误立即停止，避免误用其它发送身份。
+
+Resource 的 `configJson` 禁止明文 Secret，`secretRefs` 首批支持 `env:NAME` 和 `property:path.to.secret`。运行时优先使用引用解析值，其次使用没有被引用管理的人工 Secret，最后合并非敏感配置。Resource 重放不会清空人工 Secret。
+
+### 7.4 Outbox Topic
 
 通知 outbox 写入 `topic=notice`、`eventType=notice.send`，后台 worker 只通过 `claimByTopic(..., OutboxTopics.NOTICE, ...)` 获取通知发送任务。历史无 topic 的 `notice.send` 消息会被 KV outbox 推断为通知消息，升级时不需要额外数据迁移。
 
@@ -426,7 +444,7 @@ mango-notice-starter/src/main/resources/META-INF/mango/resources/notice-common-d
 
 ### 8.1 MESSAGE_CHANNEL
 
-`MESSAGE_CHANNEL` 落库到 `notice_channel_config`，按 `tenantId + channelType + providerCode` 合并更新。
+`MESSAGE_CHANNEL` 落库到 `notice_channel_config`，按 `tenantId + configCode` 合并更新。同一 provider 可以声明多个账号。
 
 | 字段 | 类型 | 必填 | 含义 |
 |------|------|------|------|
@@ -435,16 +453,18 @@ mango-notice-starter/src/main/resources/META-INF/mango/resources/notice-common-d
 | `biz-key` | `STRING` | 是 | 资源业务键，例如 `notice.channel.site-internal-default`。 |
 | `target-module` | `STRING` | 是 | 固定为 `notice`。 |
 | `channelConfigId` | `LONG` | 否 | 通知渠道配置稳定 ID，不填时使用资源 ID。 |
+| `configCode` | `STRING` | 是 | 同租户唯一的稳定账号编码，创建后不可修改。 |
 | `tenantId` | `STRING` | 否 | 租户 ID，默认 `1`。 |
 | `channelType` | `STRING` | 是 | `SITE`、`SMS`、`EMAIL`、`WECHAT_OFFICIAL`、`WECOM`、`DINGTALK`。 |
-| `providerCode` | `STRING` | 是 | 渠道服务商编码，同一租户同一渠道内唯一。 |
+| `providerCode` | `STRING` | 是 | 渠道服务商编码。 |
 | `configName` | `STRING` | 是 | 渠道配置名称。 |
-| `configJson` | `STRING` | 否 | 渠道配置 JSON。 |
+| `configJson` | `STRING` | 否 | 非敏感渠道配置 JSON；出现明文 Secret 时同步失败。 |
+| `secretRefs` | `STRING` | 否 | Secret 键到 `env:` / `property:` 引用的 JSON 对象。 |
+| `routeTagCodes` | `STRING` | 否 | 账号绑定的稳定路由标签编码 JSON 数组；标签需已存在。 |
 | `rateLimitConfig` | `STRING` | 否 | 限流配置 JSON。 |
 | `enabled` | `BOOLEAN` | 否 | 是否启用，默认 `true`。 |
 | `priority` | `INT` | 否 | 优先级，默认 `0`。 |
 | `weight` | `INT` | 否 | 权重，默认 `100`。 |
-| `configStatus` | `STRING` | 否 | 配置状态，默认 `COMPLETE`。 |
 | `lastSendStatus` | `STRING` | 否 | 最近发送状态，默认 `NONE`。 |
 
 ### 8.2 MESSAGE_TEMPLATE
@@ -633,7 +653,7 @@ notice:announcement:offline
 
 ## 12. 数据与初始化
 
-Flyway 路径为 `mango-notice-core/src/main/resources/db/migration/notice`，新数据库只执行 `V1__init_notice.sql`。该脚本一次创建最终的 20 张通知表，只包含 DDL，不包含 `INSERT`、`UPDATE`、`DELETE`、账号、模板或演示数据。
+Flyway 路径为 `mango-notice-core/src/main/resources/db/migration/notice`。`V1__init_notice.sql` 是包含 22 张通知表的当前完整新装 schema；`V2__notice_channel_resource_route_and_secret.sql` 使用 `information_schema` 条件守卫，为已发布的旧 V1 增加稳定账号编码、Secret 分层和路由标签，并在当前 V1 新装库上安全空跑。V1 不包含账号、模板或演示数据；V2 只做兼容回填和 DDL。
 
 正式必需资源由 `mango-notice-starter` 在 `META-INF/mango/resources/` 中按 Notice 模块登记，文件统一使用 `notice-common-` 前缀：
 
@@ -647,7 +667,7 @@ Flyway 路径为 `mango-notice-core/src/main/resources/db/migration/notice`，�
 
 Notice 当前不提供演示数据。以后新增示例业务或示例账号时，必须放入 `mango-notice-starter/src/main/resources/META-INF/mango/demo/`，文件使用 `notice-demo-` 前缀并采用 `INIT_ONLY`；只有显式设置 `mango.resource.registry.demo-enabled=true` 才能加载，禁止写回 Flyway 或正式资源目录。
 
-核心表包括 `notice_announcement`、`notice_announcement_recipient`、`notice_announcement_target`、`notice_audit_log`、`notice_business_channel_template`、`notice_business_config_version`、`notice_business_type`、`notice_callback_log`、`notice_channel_config`、`notice_receive_preference`、`notice_recipient`、`notice_recipient_account`、`notice_retry_log`、`notice_send_record`、`notice_setting`、`notice_site_message`、`notice_site_message_action`、`notice_site_message_action_request`、`notice_task`、`notice_wecom_sync_mapping`。
+核心表包括 `notice_announcement`、`notice_announcement_recipient`、`notice_announcement_target`、`notice_audit_log`、`notice_business_channel_template`、`notice_business_config_version`、`notice_business_type`、`notice_callback_log`、`notice_channel_config`、`notice_channel_route_tag`、`notice_channel_config_route_tag`、`notice_receive_preference`、`notice_recipient`、`notice_recipient_account`、`notice_retry_log`、`notice_send_record`、`notice_setting`、`notice_site_message`、`notice_site_message_action`、`notice_site_message_action_request`、`notice_task`、`notice_wecom_sync_mapping`。
 
 通知异步分发依赖 `mango-infra-kv` outbox。部署时要确认 outbox 存储可用，否则任务可能创建成功但不会被后台 worker 分发。
 

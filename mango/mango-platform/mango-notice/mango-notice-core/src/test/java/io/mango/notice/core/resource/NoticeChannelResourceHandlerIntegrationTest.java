@@ -29,6 +29,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SpringBootTest(classes = {
         DataSourceAutoConfiguration.class,
@@ -137,6 +138,33 @@ class NoticeChannelResourceHandlerIntegrationTest {
         assertThat(MangoContextHolder.tenantId()).isEqualTo("caller-tenant");
     }
 
+    @Test
+    void resourceRejectsPlaintextSecretInConfigJson() {
+        ResourceDeclaration declaration = emailChannelDeclaration();
+        field(declaration, "configJson", ResourceFieldType.STRING,
+                "{\"host\":\"smtp.example.com\",\"username\":\"notice\","
+                        + "\"password\":\"plain-secret\",\"from\":\"notice@example.com\"}");
+
+        assertThatThrownBy(() -> handler.upsert(declaration))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("plaintext Secret");
+    }
+
+    @Test
+    void resourceReplayPreservesManuallySuppliedSecret() throws Exception {
+        ResourceDeclaration declaration = emailChannelDeclaration();
+        handler.upsert(declaration);
+        execute("update notice_channel_config set secret_config_json = '{\"password\":\"manual-secret\"}' "
+                + "where id = 270601");
+
+        handler.upsert(declaration);
+
+        assertThat(stringValue("notice_channel_config", "secret_config_json", "id = 270601"))
+                .isEqualTo("{\"password\":\"manual-secret\"}");
+        assertThat(stringValue("notice_channel_config", "secret_status", "id = 270601")).isEqualTo("COMPLETE");
+        assertThat(stringValue("notice_channel_config", "config_status", "id = 270601")).isEqualTo("COMPLETE");
+    }
+
     private List<ResourceDeclaration> commonNoticeChannelDeclarations() {
         return List.of(
                 channelDeclaration(270501L, "default", "默认系统消息通道", 100),
@@ -155,6 +183,7 @@ class NoticeChannelResourceHandlerIntegrationTest {
         declaration.setTargetModule("notice");
         declaration.setFields(new LinkedHashMap<>());
         field(declaration, "channelConfigId", ResourceFieldType.LONG, channelConfigId);
+        field(declaration, "configCode", ResourceFieldType.STRING, "SITE_INTERNAL_" + tenantId.toUpperCase());
         field(declaration, "tenantId", ResourceFieldType.STRING, tenantId);
         field(declaration, "channelType", ResourceFieldType.STRING, "SITE");
         field(declaration, "providerCode", ResourceFieldType.STRING, "INTERNAL");
@@ -164,10 +193,20 @@ class NoticeChannelResourceHandlerIntegrationTest {
         field(declaration, "enabled", ResourceFieldType.BOOLEAN, true);
         field(declaration, "priority", ResourceFieldType.INT, 0);
         field(declaration, "weight", ResourceFieldType.INT, weight);
-        field(declaration, "configStatus", ResourceFieldType.STRING, "COMPLETE");
         field(declaration, "lastSendStatus", ResourceFieldType.STRING, "NONE");
         field(declaration, "rateLimitConfig", ResourceFieldType.STRING,
                 "{\"maxPerMinute\":0,\"timeoutSeconds\":10,\"concurrentLimit\":0}");
+        return declaration;
+    }
+
+    private ResourceDeclaration emailChannelDeclaration() {
+        ResourceDeclaration declaration = channelDeclaration(270601L, "default", "默认邮件通道", 100);
+        declaration.setBizKey("notice.channel.email-default");
+        field(declaration, "configCode", ResourceFieldType.STRING, "EMAIL_DEFAULT");
+        field(declaration, "channelType", ResourceFieldType.STRING, "EMAIL");
+        field(declaration, "providerCode", ResourceFieldType.STRING, "CUSTOM_SMTP");
+        field(declaration, "configJson", ResourceFieldType.STRING,
+                "{\"host\":\"smtp.example.com\",\"username\":\"notice\",\"from\":\"notice@example.com\"}");
         return declaration;
     }
 
@@ -179,14 +218,25 @@ class NoticeChannelResourceHandlerIntegrationTest {
     }
 
     private void rebuildTables() throws Exception {
+        execute("drop table if exists notice_channel_config_route_tag");
+        execute("drop table if exists notice_channel_route_tag");
         execute("drop table if exists notice_channel_config");
         execute("""
                 create table notice_channel_config (
                     id bigint not null,
+                    config_code varchar(64) not null,
                     channel_type varchar(32) not null,
                     provider_code varchar(64),
                     config_name varchar(128),
                     config_json clob,
+                    secret_refs_json clob,
+                    secret_config_json clob,
+                    resource_id varchar(128),
+                    resource_version int,
+                    resource_module_code varchar(64),
+                    resource_source varchar(32) not null default 'MANUAL',
+                    managed_fields_json clob,
+                    secret_status varchar(32) not null default 'NOT_REQUIRED',
                     enabled boolean not null default true,
                     priority int not null default 0,
                     weight int not null default 100,
@@ -205,9 +255,38 @@ class NoticeChannelResourceHandlerIntegrationTest {
                 )
                 """);
         execute("create index idx_notice_channel_type on notice_channel_config(tenant_id, channel_type, enabled)");
+        execute("create unique index uk_notice_channel_config_code on notice_channel_config(tenant_id, config_code)");
         execute("""
                 create index idx_notice_channel_route
                 on notice_channel_config(tenant_id, channel_type, enabled, config_status, weight)
+                """);
+        execute("""
+                create table notice_channel_route_tag (
+                    id bigint not null,
+                    channel_type varchar(32) not null,
+                    tag_code varchar(64) not null,
+                    tag_name varchar(128) not null,
+                    description varchar(500),
+                    tenant_id varchar(64) not null default 'default',
+                    created_by bigint,
+                    created_at timestamp not null default current_timestamp,
+                    updated_by bigint,
+                    updated_at timestamp not null default current_timestamp,
+                    primary key (id)
+                )
+                """);
+        execute("""
+                create table notice_channel_config_route_tag (
+                    id bigint not null,
+                    channel_config_id bigint not null,
+                    route_tag_id bigint not null,
+                    tenant_id varchar(64) not null default 'default',
+                    created_by bigint,
+                    created_at timestamp not null default current_timestamp,
+                    updated_by bigint,
+                    updated_at timestamp not null default current_timestamp,
+                    primary key (id)
+                )
                 """);
     }
 

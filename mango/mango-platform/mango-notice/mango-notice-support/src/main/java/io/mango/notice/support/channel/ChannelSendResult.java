@@ -38,4 +38,9 @@ public class ChannelSendResult {
     public static ChannelSendResult failed(String failCode, String failReason, boolean retryable) {
         return new ChannelSendResult(false, null, null, failCode, failReason, retryable, null);
     }
+
+    public static ChannelSendResult failed(String failCode, String failReason, boolean retryable,
+                                           String responseSnapshot) {
+        return new ChannelSendResult(false, null, null, failCode, failReason, retryable, responseSnapshot);
+    }
 }

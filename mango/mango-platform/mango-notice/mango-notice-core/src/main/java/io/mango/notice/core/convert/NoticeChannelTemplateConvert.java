@@ -24,6 +24,8 @@ public final class NoticeChannelTemplateConvert {
  vo.setPublishTime(entity.getPublishTime());
  vo.setEnabled(entity.getEnabled());
  vo.setChannelConfigId(entity.getChannelConfigId());
+ vo.setRouteMode(entity.getRouteMode());
+ vo.setRouteTagCode(entity.getRouteTagCode());
  return vo;
  }
 }

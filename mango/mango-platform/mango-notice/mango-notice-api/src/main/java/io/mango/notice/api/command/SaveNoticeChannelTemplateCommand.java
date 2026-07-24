@@ -1,6 +1,7 @@
 package io.mango.notice.api.command;
 
 import io.mango.notice.api.enums.NoticeChannelType;
+import io.mango.notice.api.enums.NoticeChannelRouteMode;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
@@ -43,4 +44,11 @@ public class SaveNoticeChannelTemplateCommand implements Serializable {
     @Schema(description = "绑定渠道配置 ID，空表示 AUTO")
     @jakarta.validation.constraints.Positive
     private Long channelConfigId;
+
+    @Schema(description = "路由模式：EXACT、TAG、AUTO；未传时按旧字段兼容推导")
+    private NoticeChannelRouteMode routeMode;
+
+    @Schema(description = "TAG 模式使用的路由标签编码")
+    @jakarta.validation.constraints.Size(max = 64)
+    private String routeTagCode;
 }

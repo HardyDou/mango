@@ -42,6 +42,7 @@ import io.mango.notice.api.command.SaveNoticeChannelConfigCommand;
 import io.mango.notice.api.command.SendNoticeCommand;
 import io.mango.notice.api.enums.NoticeChannelConfigStatus;
 import io.mango.notice.api.enums.NoticeChannelSendHealthStatus;
+import io.mango.notice.api.enums.NoticeChannelRouteMode;
 import io.mango.notice.api.enums.NoticeChannelType;
 import io.mango.notice.api.enums.NoticeDeleteStatus;
 import io.mango.notice.api.enums.NoticePriority;
@@ -77,6 +78,8 @@ import io.mango.notice.core.mapper.NoticeSiteMessageMapper;
 import io.mango.notice.core.mapper.NoticeTaskMapper;
 import io.mango.notice.core.outbox.NoticeOutboxMessageFactory;
 import io.mango.notice.core.service.NoticeRecipientResolver;
+import io.mango.notice.core.service.DefaultNoticeChannelSecretResolver;
+import io.mango.notice.core.service.NoticeChannelSecretMaterializer;
 import io.mango.notice.support.channel.NoticeChannelMessage;
 import io.mango.notice.support.channel.ChannelSendResult;
 import io.mango.notice.support.channel.NoticeChannelSender;
@@ -177,6 +180,9 @@ class NoticeServiceIntegrationTest {
     @Autowired
     private TestIdentityUserApi identityUserApi;
 
+    @Autowired
+    private TestEmailChannelSender emailChannelSender;
+
     @BeforeEach
     void setUp() {
         MangoContextHolder.set(MangoContextSnapshot.empty()
@@ -186,6 +192,7 @@ class NoticeServiceIntegrationTest {
         realtimeApi.clear();
         domainEventPublisher.clear();
         identityUserApi.clear();
+        emailChannelSender.clear();
         identityUserApi.addUser(1L, "张三", "zhangsan@example.com", "13800000001");
         identityUserApi.addUser(2L, "李四", "lisi@example.com", "13800000002");
     }
@@ -438,8 +445,78 @@ class NoticeServiceIntegrationTest {
 
         NoticeChannelConfigEntity persisted = channelConfigMapper.selectById(30L);
         assertThat(persisted.getConfigStatus()).isEqualTo(NoticeChannelConfigStatus.COMPLETE);
-        assertThat(persisted.getConfigJson()).contains("\"smtpPassword\":\"old-secret\"");
-        assertThat(persisted.getConfigJson()).doesNotContain("\"smtpPassword\":\"***\"");
+        assertThat(persisted.getConfigJson()).doesNotContain("smtpPassword", "old-secret", "***");
+        assertThat(persisted.getSecretConfigJson()).contains("\"smtpPassword\":\"old-secret\"");
+        assertThat(persisted.getSecretConfigJson()).doesNotContain("\"smtpPassword\":\"***\"");
+    }
+
+    @Test
+    void tagRouteWithoutCandidateFailsWithoutFallingBackToAuto() {
+        seedBusinessType();
+        seedSiteChannelConfig(20L);
+        seedActiveEmailTemplate(40L, NoticeChannelRouteMode.TAG, null, "PRIMARY");
+        insertEmailChannelConfig(41L, "{\"host\":\"smtp.example.com\",\"username\":\"mango\","
+                + "\"password\":\"secret\",\"from\":\"notice@example.com\"}");
+        jdbcTemplate.update("insert into notice_channel_route_tag (id, channel_type, tag_code, tag_name) "
+                + "values (50, 'EMAIL', 'PRIMARY', '主通道')");
+        SendNoticeCommand command = sendCommand();
+        command.setUserIds(List.of(1L));
+        command.setChannelTypes(List.of(NoticeChannelType.EMAIL));
+
+        noticeService.send(command);
+        noticeService.executeTask(singleTask().getId());
+
+        assertThat(emailRecord().getFailCode()).isEqualTo("CHANNEL_ROUTE_TAG_UNAVAILABLE");
+        assertThat(emailRecord().getChannelConfigId()).isNull();
+        assertThat(emailChannelSender.configIds).isEmpty();
+    }
+
+    @Test
+    void autoRouteRetriesThenUsesNextPriorityAccount() {
+        seedBusinessType();
+        seedSiteChannelConfig(20L);
+        seedActiveEmailTemplate(40L, NoticeChannelRouteMode.AUTO, null, null);
+        insertEmailChannelConfig(41L, "{\"host\":\"smtp-1.example.com\",\"username\":\"mango\","
+                + "\"password\":\"secret\",\"from\":\"notice@example.com\"}");
+        insertEmailChannelConfig(42L, "{\"host\":\"smtp-2.example.com\",\"username\":\"mango\","
+                + "\"password\":\"secret\",\"from\":\"notice@example.com\"}");
+        jdbcTemplate.update("update notice_channel_config set priority = 0 where id = 41");
+        jdbcTemplate.update("update notice_channel_config set priority = 1 where id = 42");
+        emailChannelSender.results.put(41L, ChannelSendResult.failed("SMTP_TEMPORARY", "temporary", true));
+        SendNoticeCommand command = sendCommand();
+        command.setUserIds(List.of(1L));
+        command.setChannelTypes(List.of(NoticeChannelType.EMAIL));
+
+        noticeService.send(command);
+        noticeService.executeTask(singleTask().getId());
+
+        assertThat(emailChannelSender.configIds).containsExactly(41L, 41L, 41L, 42L);
+        assertThat(emailRecord().getStatus()).isEqualTo(NoticeSendStatus.SUCCESS);
+        assertThat(emailRecord().getChannelConfigId()).isEqualTo(42L);
+    }
+
+    @Test
+    void nonRetryableRouteFailureDoesNotSwitchIdentity() {
+        seedBusinessType();
+        seedSiteChannelConfig(20L);
+        seedActiveEmailTemplate(40L, NoticeChannelRouteMode.AUTO, null, null);
+        insertEmailChannelConfig(41L, "{\"host\":\"smtp-1.example.com\",\"username\":\"mango\","
+                + "\"password\":\"secret\",\"from\":\"notice@example.com\"}");
+        insertEmailChannelConfig(42L, "{\"host\":\"smtp-2.example.com\",\"username\":\"mango\","
+                + "\"password\":\"secret\",\"from\":\"notice@example.com\"}");
+        jdbcTemplate.update("update notice_channel_config set priority = 0 where id = 41");
+        jdbcTemplate.update("update notice_channel_config set priority = 1 where id = 42");
+        emailChannelSender.results.put(41L, ChannelSendResult.failed("CHANNEL_CONFIG_INVALID", "invalid", false));
+        SendNoticeCommand command = sendCommand();
+        command.setUserIds(List.of(1L));
+        command.setChannelTypes(List.of(NoticeChannelType.EMAIL));
+
+        noticeService.send(command);
+        noticeService.executeTask(singleTask().getId());
+
+        assertThat(emailChannelSender.configIds).containsExactly(41L);
+        assertThat(emailRecord().getStatus()).isEqualTo(NoticeSendStatus.FAILED);
+        assertThat(emailRecord().getChannelConfigId()).isEqualTo(41L);
     }
 
     private SendNoticeCommand sendCommand() {
@@ -486,6 +563,8 @@ class NoticeServiceIntegrationTest {
         jdbcTemplate.execute("drop table if exists notice_task");
         jdbcTemplate.execute("drop table if exists notice_receive_preference");
         jdbcTemplate.execute("drop table if exists notice_recipient_account");
+        jdbcTemplate.execute("drop table if exists notice_channel_config_route_tag");
+        jdbcTemplate.execute("drop table if exists notice_channel_route_tag");
         jdbcTemplate.execute("drop table if exists notice_channel_config");
         jdbcTemplate.execute("drop table if exists notice_business_channel_template");
         jdbcTemplate.execute("drop table if exists notice_business_config_version");
@@ -496,6 +575,8 @@ class NoticeServiceIntegrationTest {
         createBusinessConfigVersionTable();
         createBusinessChannelTemplateTable();
         createChannelConfigTable();
+        createChannelRouteTagTable();
+        createChannelConfigRouteTagTable();
         createRecipientAccountTable();
         createReceivePreferenceTable();
         createTaskTable();
@@ -568,6 +649,8 @@ class NoticeServiceIntegrationTest {
                     version_status varchar(32),
                     enabled boolean,
                     channel_config_id bigint,
+                    route_mode varchar(16),
+                    route_tag_code varchar(64),
                     publish_time timestamp,
                     publish_by bigint,
                     tenant_id varchar(64),
@@ -583,10 +666,19 @@ class NoticeServiceIntegrationTest {
         jdbcTemplate.execute("""
                 create table notice_channel_config (
                     id bigint generated by default as identity primary key,
+                    config_code varchar(128),
                     channel_type varchar(32),
                     provider_code varchar(64),
                     config_name varchar(128),
                     config_json clob,
+                    secret_refs_json clob,
+                    secret_config_json clob,
+                    resource_id varchar(128),
+                    resource_version bigint,
+                    resource_module_code varchar(128),
+                    resource_source varchar(32),
+                    managed_fields_json clob,
+                    secret_status varchar(32),
                     enabled boolean,
                     priority int,
                     weight int,
@@ -596,6 +688,38 @@ class NoticeServiceIntegrationTest {
                     last_failure_code varchar(128),
                     last_failure_reason varchar(512),
                     rate_limit_config clob,
+                    tenant_id varchar(64),
+                    created_by bigint,
+                    created_at timestamp default current_timestamp,
+                    updated_by bigint,
+                    updated_at timestamp default current_timestamp
+                )
+                """);
+    }
+
+    private void createChannelRouteTagTable() {
+        jdbcTemplate.execute("""
+                create table notice_channel_route_tag (
+                    id bigint generated by default as identity primary key,
+                    channel_type varchar(32),
+                    tag_code varchar(64),
+                    tag_name varchar(128),
+                    description varchar(512),
+                    tenant_id varchar(64),
+                    created_by bigint,
+                    created_at timestamp default current_timestamp,
+                    updated_by bigint,
+                    updated_at timestamp default current_timestamp
+                )
+                """);
+    }
+
+    private void createChannelConfigRouteTagTable() {
+        jdbcTemplate.execute("""
+                create table notice_channel_config_route_tag (
+                    id bigint generated by default as identity primary key,
+                    channel_config_id bigint,
+                    route_tag_id bigint,
                     tenant_id varchar(64),
                     created_by bigint,
                     created_at timestamp default current_timestamp,
@@ -866,13 +990,26 @@ class NoticeServiceIntegrationTest {
                 id, BIZ_TYPE);
     }
 
+    private void seedActiveEmailTemplate(Long id, NoticeChannelRouteMode routeMode, Long configId,
+                                         String routeTagCode) {
+        jdbcTemplate.update("""
+                        insert into notice_business_channel_template
+                        (id, business_type_id, biz_type, channel_type, template_name, title_template, content_template,
+                         version, version_status, enabled, channel_config_id, route_mode, route_tag_code,
+                         publish_time, created_at, updated_at)
+                        values (?, 1, ?, 'EMAIL', '邮件模板', '作业 {{ jobName }} 失败', '错误码 {{errorCode}}',
+                         1, 'ACTIVE', true, ?, ?, ?, current_timestamp, current_timestamp, current_timestamp)
+                        """,
+                id, BIZ_TYPE, configId, routeMode.name(), routeTagCode);
+    }
+
     private void seedSiteChannelConfig(Long id) {
         jdbcTemplate.update("""
                         insert into notice_channel_config
-                        (id, channel_type, provider_code, config_name, config_json, enabled, priority, weight,
-                         config_status, last_send_status, created_at, updated_at)
-                        values (?, 'SITE', 'INTERNAL', '站内信', '{}', true, 1, 100,
-                         'COMPLETE', 'NONE', current_timestamp, current_timestamp)
+                        (id, config_code, channel_type, provider_code, config_name, config_json, resource_source,
+                         secret_status, enabled, priority, weight, config_status, last_send_status, created_at, updated_at)
+                        values (?, 'SITE_INTERNAL', 'SITE', 'INTERNAL', '站内信', '{}', 'MANUAL',
+                         'NOT_REQUIRED', true, 1, 100, 'COMPLETE', 'NONE', current_timestamp, current_timestamp)
                         """,
                 id);
     }
@@ -891,12 +1028,12 @@ class NoticeServiceIntegrationTest {
     private void insertEmailChannelConfig(Long id, String configJson) {
         jdbcTemplate.update("""
                         insert into notice_channel_config
-                        (id, channel_type, provider_code, config_name, config_json, enabled, priority, weight,
-                         config_status, last_send_status, created_at, updated_at)
-                        values (?, 'EMAIL', 'SMTP', 'SMTP', ?, true, 1, 100,
-                         'COMPLETE', 'NONE', current_timestamp, current_timestamp)
+                        (id, config_code, channel_type, provider_code, config_name, config_json, resource_source,
+                         secret_status, enabled, priority, weight, config_status, last_send_status, created_at, updated_at)
+                        values (?, concat('EMAIL_', ?), 'EMAIL', 'SMTP', 'SMTP', ?, 'MANUAL',
+                         'COMPLETE', true, 1, 100, 'COMPLETE', 'NONE', current_timestamp, current_timestamp)
                         """,
-                id, configJson);
+                id, id, configJson);
     }
 
     private void insertSiteMessage(Long id, Long userId, NoticeReadStatus readStatus, NoticeDeleteStatus deleteStatus) {
@@ -915,6 +1052,12 @@ class NoticeServiceIntegrationTest {
                 .get(0);
     }
 
+    private io.mango.notice.core.entity.NoticeSendRecordEntity emailRecord() {
+        return sendRecordMapper.selectOne(new LambdaQueryWrapper<io.mango.notice.core.entity.NoticeSendRecordEntity>()
+                .eq(io.mango.notice.core.entity.NoticeSendRecordEntity::getChannelType, NoticeChannelType.EMAIL)
+                .last("limit 1"));
+    }
+
     private List<NoticeBusinessConfigVersionEntity> configVersionsByStatus(NoticeTemplateVersionStatus status) {
         return businessConfigVersionMapper.selectList(
                 new LambdaQueryWrapper<NoticeBusinessConfigVersionEntity>()
@@ -928,6 +1071,8 @@ class NoticeServiceIntegrationTest {
             NoticeService.class,
             NoticeDeliveryService.class,
             NoticeConfigurationService.class,
+            NoticeChannelSecretMaterializer.class,
+            DefaultNoticeChannelSecretResolver.class,
             NoticeRecordOperationService.class,
             NoticeRecipientSettingService.class,
             NoticeSiteMessageService.class,
@@ -982,6 +1127,11 @@ class NoticeServiceIntegrationTest {
         NoticeChannelSender siteChannelSender(NoticeSiteMessageWriterImpl messageWriter) {
             return new TestSiteChannelSender(messageWriter);
         }
+
+        @Bean
+        TestEmailChannelSender emailChannelSender() {
+            return new TestEmailChannelSender();
+        }
     }
 
     static class TestSiteChannelSender implements NoticeChannelSender {
@@ -1000,6 +1150,29 @@ class NoticeServiceIntegrationTest {
         @Override
         public ChannelSendResult send(NoticeChannelMessage command) {
             return ChannelSendResult.success(messageWriter.write(command).messageId());
+        }
+    }
+
+    static class TestEmailChannelSender implements NoticeChannelSender {
+
+        private final List<Long> configIds = new ArrayList<>();
+        private final Map<Long, ChannelSendResult> results = new HashMap<>();
+
+        @Override
+        public NoticeChannelType channelType() {
+            return NoticeChannelType.EMAIL;
+        }
+
+        @Override
+        public ChannelSendResult send(NoticeChannelMessage command) {
+            configIds.add(command.getChannelConfigId());
+            return results.getOrDefault(command.getChannelConfigId(),
+                    ChannelSendResult.providerSuccess("email-message", "{\"status\":\"SENT\"}"));
+        }
+
+        void clear() {
+            configIds.clear();
+            results.clear();
         }
     }
 

@@ -1,38 +1,77 @@
 package io.mango.notice.channel.email;
 
+import io.mango.common.exception.BizException;
+import io.mango.file.api.IFileContentProvider;
+import io.mango.file.api.enums.FileCode;
+import io.mango.file.api.vo.FileDownloadVO;
 import io.mango.notice.api.enums.NoticeChannelType;
 import io.mango.notice.api.enums.NoticeFailureCode;
 import io.mango.notice.support.channel.NoticeChannelMessage;
 import io.mango.notice.support.channel.ChannelSendResult;
 import io.mango.notice.support.channel.NoticeChannelSender;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 import javax.net.ssl.SSLSocketFactory;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Base64;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.function.Supplier;
 
 @Component
 public class EmailNoticeChannelSender implements NoticeChannelSender {
 
-    private final SmtpMailSender smtpMailSender;
+    private static final ExecutorService ATTACHMENT_EXECUTOR = Executors.newThreadPerTaskExecutor(
+            Thread.ofVirtual().name("notice-email-attachment-", 0).factory());
 
-    public EmailNoticeChannelSender() {
-        this(new SocketSmtpMailSender());
+    private final SmtpMailSender smtpMailSender;
+    private final Supplier<IFileContentProvider> fileContentProvider;
+
+    EmailNoticeChannelSender() {
+        this(new SocketSmtpMailSender(), () -> null);
     }
 
     EmailNoticeChannelSender(SmtpMailSender smtpMailSender) {
+        this(smtpMailSender, () -> null);
+    }
+
+    EmailNoticeChannelSender(SmtpMailSender smtpMailSender, IFileContentProvider fileContentProvider) {
+        this(smtpMailSender, () -> fileContentProvider);
+    }
+
+    private EmailNoticeChannelSender(SmtpMailSender smtpMailSender,
+                                     Supplier<IFileContentProvider> fileContentProvider) {
         this.smtpMailSender = smtpMailSender;
+        this.fileContentProvider = fileContentProvider;
+    }
+
+    @Autowired
+    public EmailNoticeChannelSender(ObjectProvider<IFileContentProvider> fileContentProvider) {
+        this(new SocketSmtpMailSender(), fileContentProvider::getIfAvailable);
     }
 
     @Override
@@ -55,13 +94,210 @@ public class EmailNoticeChannelSender implements NoticeChannelSender {
             return ChannelSendResult.failed(NoticeFailureCode.CHANNEL_CONFIG_INVALID.name(), ex.getMessage(), false);
         }
         try {
-            String messageId = smtpMailSender.send(EmailMessage.from(command, config));
-            return ChannelSendResult.providerSuccess(messageId, "{\"status\":\"SENT\",\"provider\":\"SMTP\"}");
+            validateHeader(command.getEmail(), "收件人地址");
+            validateHeader(config.from(), "发件人地址");
+            validateHeader(config.senderName(), "发件人名称");
+            validateHeader(command.getTitle(), "邮件标题");
+            List<ResolvedAttachment> attachments = resolveAttachments(command.getAttachmentFileIds(),
+                    config.attachmentPolicy());
+            String messageId = smtpMailSender.send(EmailMessage.from(command, config, attachments));
+            return ChannelSendResult.providerSuccess(messageId, successSnapshot(attachments));
+        } catch (AttachmentException ex) {
+            return ChannelSendResult.failed(ex.failureCode().name(), ex.getMessage(), ex.retryable(),
+                    failureSnapshot(ex));
+        } catch (IllegalArgumentException ex) {
+            return ChannelSendResult.failed(NoticeFailureCode.CHANNEL_CONFIG_INVALID.name(), ex.getMessage(), false);
         } catch (SmtpAuthException ex) {
             return ChannelSendResult.failed(NoticeFailureCode.PROVIDER_REJECTED.name(), "SMTP 认证失败", false);
         } catch (SmtpException ex) {
             return ChannelSendResult.failed(NoticeFailureCode.PROVIDER_ERROR.name(), ex.getMessage(), true);
         }
+    }
+
+    private List<ResolvedAttachment> resolveAttachments(List<Long> fileIds, AttachmentPolicy policy)
+            throws AttachmentException {
+        if (fileIds == null || fileIds.isEmpty()) {
+            return List.of();
+        }
+        if (fileIds.size() > policy.maxCount()) {
+            throw attachmentFailure(NoticeFailureCode.ATTACHMENT_LIMIT_EXCEEDED, null,
+                    "附件数量超过限制（最多 " + policy.maxCount() + " 个）", false);
+        }
+        IFileContentProvider provider = fileContentProvider.get();
+        if (provider == null) {
+            throw attachmentFailure(NoticeFailureCode.ATTACHMENT_PROVIDER_UNAVAILABLE, null,
+                    "文件服务不可用，无法读取邮件附件", false);
+        }
+        List<ResolvedAttachment> attachments = new ArrayList<>(fileIds.size());
+        long totalSize = 0;
+        for (Long fileId : fileIds) {
+            if (fileId == null) {
+                throw attachmentFailure(NoticeFailureCode.ATTACHMENT_NOT_FOUND_OR_FORBIDDEN, null,
+                        "附件文件标识不能为空", false);
+            }
+            long remaining = policy.maxTotalSizeBytes() - totalSize;
+            if (remaining <= 0) {
+                throw attachmentFailure(NoticeFailureCode.ATTACHMENT_LIMIT_EXCEEDED, fileId,
+                        "附件总大小超过限制", false);
+            }
+            Future<ResolvedAttachment> future = ATTACHMENT_EXECUTOR.submit(
+                    () -> loadAttachment(provider, fileId, policy, remaining));
+            try {
+                ResolvedAttachment attachment = future.get(policy.readTimeout().toMillis(), TimeUnit.MILLISECONDS);
+                attachments.add(attachment);
+                totalSize += attachment.content().length;
+            } catch (TimeoutException ex) {
+                future.cancel(true);
+                throw attachmentFailure(NoticeFailureCode.ATTACHMENT_READ_TIMEOUT, fileId,
+                        "附件读取超时，fileId=" + fileId, true);
+            } catch (InterruptedException ex) {
+                future.cancel(true);
+                Thread.currentThread().interrupt();
+                throw attachmentFailure(NoticeFailureCode.ATTACHMENT_READ_FAILED, fileId,
+                        "附件读取被中断，fileId=" + fileId, true);
+            } catch (ExecutionException ex) {
+                Throwable cause = ex.getCause();
+                if (cause instanceof AttachmentException attachmentException) {
+                    throw attachmentException;
+                }
+                throw attachmentFailure(NoticeFailureCode.ATTACHMENT_READ_FAILED, fileId,
+                        "附件读取失败，fileId=" + fileId, true);
+            }
+        }
+        return List.copyOf(attachments);
+    }
+
+    private ResolvedAttachment loadAttachment(IFileContentProvider provider, Long fileId, AttachmentPolicy policy,
+                                              long remainingTotal) throws AttachmentException {
+        FileDownloadVO download;
+        try {
+            download = provider.downloadForService(fileId);
+        } catch (BizException ex) {
+            boolean unavailable = ex.getCode() == FileCode.FILE_NOT_FOUND.getCode()
+                    || ex.getCode() == FileCode.FILE_ACCESS_DENIED.getCode()
+                    || ex.getCode() == FileCode.FILE_STATUS_INVALID.getCode();
+            throw attachmentFailure(unavailable
+                            ? NoticeFailureCode.ATTACHMENT_NOT_FOUND_OR_FORBIDDEN
+                            : NoticeFailureCode.ATTACHMENT_READ_FAILED,
+                    fileId, unavailable ? "附件不存在或不可访问，fileId=" + fileId : "附件读取失败，fileId=" + fileId,
+                    !unavailable);
+        } catch (RuntimeException ex) {
+            throw attachmentFailure(NoticeFailureCode.ATTACHMENT_READ_FAILED, fileId,
+                    "附件读取失败，fileId=" + fileId, true);
+        }
+        if (download == null || download.inputStream() == null) {
+            throw attachmentFailure(NoticeFailureCode.ATTACHMENT_READ_FAILED, fileId,
+                    "附件内容不可用，fileId=" + fileId, true);
+        }
+        String contentType = normalizeContentType(download.contentType());
+        if (!policy.allowedContentTypes().contains(contentType)) {
+            closeQuietly(download.inputStream());
+            throw attachmentFailure(NoticeFailureCode.ATTACHMENT_TYPE_NOT_ALLOWED, fileId,
+                    "附件类型不允许，fileId=" + fileId + "，contentType=" + contentType, false);
+        }
+        long declaredSize = download.contentLength();
+        if (declaredSize > policy.maxFileSizeBytes() || declaredSize > remainingTotal) {
+            closeQuietly(download.inputStream());
+            throw attachmentFailure(NoticeFailureCode.ATTACHMENT_LIMIT_EXCEEDED, fileId,
+                    "附件大小超过限制，fileId=" + fileId, false);
+        }
+        long readLimit = Math.min(policy.maxFileSizeBytes(), remainingTotal);
+        try (InputStream inputStream = download.inputStream()) {
+            byte[] content = readLimited(inputStream, readLimit, fileId);
+            return new ResolvedAttachment(fileId, safeFileName(download.fileName(), fileId), contentType, content);
+        } catch (AttachmentException ex) {
+            throw ex;
+        } catch (IOException ex) {
+            throw attachmentFailure(NoticeFailureCode.ATTACHMENT_READ_FAILED, fileId,
+                    "附件读取失败，fileId=" + fileId, true);
+        }
+    }
+
+    private byte[] readLimited(InputStream inputStream, long limit, Long fileId)
+            throws IOException, AttachmentException {
+        ByteArrayOutputStream output = new ByteArrayOutputStream((int) Math.min(limit, 8192));
+        byte[] buffer = new byte[8192];
+        long total = 0;
+        while (true) {
+            if (Thread.currentThread().isInterrupted()) {
+                throw new IOException("interrupted");
+            }
+            int read = inputStream.read(buffer);
+            if (read < 0) {
+                return output.toByteArray();
+            }
+            total += read;
+            if (total > limit) {
+                throw attachmentFailure(NoticeFailureCode.ATTACHMENT_LIMIT_EXCEEDED, fileId,
+                        "附件实际大小超过限制，fileId=" + fileId, false);
+            }
+            output.write(buffer, 0, read);
+        }
+    }
+
+    private void validateHeader(String value, String fieldName) {
+        if (value != null && (value.indexOf('\r') >= 0 || value.indexOf('\n') >= 0)) {
+            throw new IllegalArgumentException(fieldName + "包含非法换行符");
+        }
+    }
+
+    private static String normalizeContentType(String contentType) {
+        if (!StringUtils.hasText(contentType)) {
+            return "application/octet-stream";
+        }
+        int parameter = contentType.indexOf(';');
+        String value = parameter >= 0 ? contentType.substring(0, parameter) : contentType;
+        return value.trim().toLowerCase(Locale.ROOT);
+    }
+
+    private static String safeFileName(String fileName, Long fileId) {
+        String value = StringUtils.hasText(fileName) ? fileName : "attachment-" + fileId;
+        value = value.replace('\\', '/');
+        value = value.substring(value.lastIndexOf('/') + 1).replace("\r", "").replace("\n", "").trim();
+        return value.isEmpty() ? "attachment-" + fileId : value;
+    }
+
+    private static void closeQuietly(InputStream inputStream) {
+        try {
+            inputStream.close();
+        } catch (IOException ignored) {
+            // Best-effort close before returning a deterministic validation failure.
+        }
+    }
+
+    private static AttachmentException attachmentFailure(NoticeFailureCode failureCode, Long fileId,
+                                                         String message, boolean retryable) {
+        return new AttachmentException(failureCode, fileId, message, retryable);
+    }
+
+    private static String successSnapshot(List<ResolvedAttachment> attachments) {
+        if (attachments.isEmpty()) {
+            return "{\"status\":\"SENT\",\"provider\":\"SMTP\"}";
+        }
+        StringBuilder snapshot = new StringBuilder("{\"status\":\"SENT\",\"provider\":\"SMTP\",\"attachments\":[");
+        for (int index = 0; index < attachments.size(); index++) {
+            if (index > 0) {
+                snapshot.append(',');
+            }
+            ResolvedAttachment attachment = attachments.get(index);
+            snapshot.append("{\"fileId\":").append(attachment.fileId())
+                    .append(",\"fileName\":\"").append(jsonEscape(attachment.fileName()))
+                    .append("\",\"contentType\":\"").append(jsonEscape(attachment.contentType()))
+                    .append("\",\"size\":").append(attachment.content().length)
+                    .append(",\"status\":\"SENT\"}");
+        }
+        return snapshot.append("]}").toString();
+    }
+
+    private static String failureSnapshot(AttachmentException failure) {
+        return "{\"status\":\"FAILED\",\"stage\":\"ATTACHMENT\",\"fileId\":"
+                + (failure.fileId() == null ? "null" : failure.fileId())
+                + ",\"failCode\":\"" + failure.failureCode().name() + "\"}";
+    }
+
+    private static String jsonEscape(String value) {
+        return value.replace("\\", "\\\\").replace("\"", "\\\"")
+                .replace("\r", "\\r").replace("\n", "\\n");
     }
 
     interface SmtpMailSender {
@@ -70,7 +306,7 @@ public class EmailNoticeChannelSender implements NoticeChannelSender {
     }
 
     record EmailConfig(String host, int port, String username, String password, String from, String senderName,
-                       boolean ssl, int timeoutMillis) {
+                       boolean ssl, int timeoutMillis, AttachmentPolicy attachmentPolicy) {
 
         static EmailConfig from(String configJson) {
             Map<String, String> config = SimpleJson.parse(configJson);
@@ -92,7 +328,8 @@ public class EmailNoticeChannelSender implements NoticeChannelSender {
             }
             boolean ssl = bool(config.get("ssl"), false);
             return new EmailConfig(host, integer(config.get("port"), ssl ? 465 : 25), username, password, from,
-                    text(config, "senderName", "fromAlias"), ssl, integer(config.get("timeoutMillis"), 20000));
+                    text(config, "senderName", "fromAlias"), ssl, integer(config.get("timeoutMillis"), 20000),
+                    AttachmentPolicy.from(config));
         }
 
         private static String text(Map<String, String> config, String... keys) {
@@ -116,8 +353,107 @@ public class EmailNoticeChannelSender implements NoticeChannelSender {
             }
         }
 
+        private static long longValue(String value, long defaultValue) {
+            if (!StringUtils.hasText(value)) {
+                return defaultValue;
+            }
+            try {
+                return Long.parseLong(value.trim());
+            } catch (NumberFormatException ignored) {
+                throw new IllegalArgumentException("邮件附件限制配置必须为整数");
+            }
+        }
+
         private static boolean bool(String value, boolean defaultValue) {
             return StringUtils.hasText(value) ? Boolean.parseBoolean(value.trim()) : defaultValue;
+        }
+    }
+
+    record AttachmentPolicy(int maxCount, long maxFileSizeBytes, long maxTotalSizeBytes, Duration readTimeout,
+                            Set<String> allowedContentTypes) {
+
+        private static final int DEFAULT_MAX_COUNT = 10;
+        private static final long DEFAULT_MAX_FILE_SIZE = 10L * 1024 * 1024;
+        private static final long DEFAULT_MAX_TOTAL_SIZE = 25L * 1024 * 1024;
+        private static final long DEFAULT_TIMEOUT_MILLIS = 15_000L;
+        private static final Set<String> DEFAULT_ALLOWED_TYPES = Set.of(
+                "application/pdf",
+                "application/zip",
+                "application/json",
+                "application/msword",
+                "application/vnd.ms-excel",
+                "application/vnd.ms-powerpoint",
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                "image/gif",
+                "image/jpeg",
+                "image/png",
+                "image/webp",
+                "text/csv",
+                "text/plain");
+
+        static AttachmentPolicy from(Map<String, String> config) {
+            int maxCount = EmailConfig.integer(config.get("attachmentMaxCount"), DEFAULT_MAX_COUNT);
+            long maxFileSize = EmailConfig.longValue(config.get("attachmentMaxFileSizeBytes"),
+                    DEFAULT_MAX_FILE_SIZE);
+            long maxTotalSize = EmailConfig.longValue(config.get("attachmentMaxTotalSizeBytes"),
+                    DEFAULT_MAX_TOTAL_SIZE);
+            long timeoutMillis = EmailConfig.longValue(config.get("attachmentReadTimeoutMillis"),
+                    DEFAULT_TIMEOUT_MILLIS);
+            if (maxCount <= 0 || maxCount > 50 || maxFileSize <= 0 || maxFileSize > 100L * 1024 * 1024
+                    || maxTotalSize <= 0 || maxTotalSize > 100L * 1024 * 1024
+                    || timeoutMillis <= 0 || timeoutMillis > 120_000L) {
+                throw new IllegalArgumentException("邮件附件限制配置超出允许范围");
+            }
+            Set<String> allowedTypes = parseAllowedTypes(config.get("attachmentAllowedContentTypes"));
+            if (allowedTypes.isEmpty()) {
+                throw new IllegalArgumentException("邮件附件 MIME 白名单不能为空");
+            }
+            return new AttachmentPolicy(maxCount, maxFileSize, maxTotalSize, Duration.ofMillis(timeoutMillis),
+                    allowedTypes);
+        }
+
+        private static Set<String> parseAllowedTypes(String configured) {
+            if (!StringUtils.hasText(configured)) {
+                return DEFAULT_ALLOWED_TYPES;
+            }
+            Set<String> values = new HashSet<>();
+            for (String value : configured.split(",")) {
+                if (StringUtils.hasText(value)) {
+                    values.add(normalizeContentType(value));
+                }
+            }
+            return Set.copyOf(values);
+        }
+    }
+
+    record ResolvedAttachment(Long fileId, String fileName, String contentType, byte[] content) {
+    }
+
+    static class AttachmentException extends Exception {
+
+        private final NoticeFailureCode failureCode;
+        private final Long fileId;
+        private final boolean retryable;
+
+        AttachmentException(NoticeFailureCode failureCode, Long fileId, String message, boolean retryable) {
+            super(message);
+            this.failureCode = failureCode;
+            this.fileId = fileId;
+            this.retryable = retryable;
+        }
+
+        NoticeFailureCode failureCode() {
+            return failureCode;
+        }
+
+        Long fileId() {
+            return fileId;
+        }
+
+        boolean retryable() {
+            return retryable;
         }
     }
 
@@ -128,19 +464,23 @@ public class EmailNoticeChannelSender implements NoticeChannelSender {
         private final String subject;
         private final String content;
         private final EmailConfig config;
+        private final List<ResolvedAttachment> attachments;
 
-        private EmailMessage(Long sendRecordId, String to, String subject, String content, EmailConfig config) {
+        private EmailMessage(Long sendRecordId, String to, String subject, String content, EmailConfig config,
+                             List<ResolvedAttachment> attachments) {
             this.sendRecordId = sendRecordId;
             this.to = to;
             this.subject = subject;
             this.content = content;
             this.config = config;
+            this.attachments = attachments;
         }
 
-        static EmailMessage from(NoticeChannelMessage command, EmailConfig config) {
+        static EmailMessage from(NoticeChannelMessage command, EmailConfig config,
+                                 List<ResolvedAttachment> attachments) {
             return new EmailMessage(command.getSendRecordId(), command.getEmail(),
                     StringUtils.hasText(command.getTitle()) ? command.getTitle() : "通知消息",
-                    StringUtils.hasText(command.getContent()) ? command.getContent() : "", config);
+                    StringUtils.hasText(command.getContent()) ? command.getContent() : "", config, attachments);
         }
 
         Long sendRecordId() {
@@ -161,6 +501,10 @@ public class EmailNoticeChannelSender implements NoticeChannelSender {
 
         EmailConfig config() {
             return config;
+        }
+
+        List<ResolvedAttachment> attachments() {
+            return attachments;
         }
     }
 
@@ -197,7 +541,7 @@ public class EmailNoticeChannelSender implements NoticeChannelSender {
             return new Socket(config.host(), config.port());
         }
 
-        private String message(EmailMessage request, String messageId) {
+        String message(EmailMessage request, String messageId) {
             String fromName = StringUtils.hasText(request.config().senderName())
                     ? mimeText(request.config().senderName()) + " <" + request.config().from() + ">"
                     : request.config().from();
@@ -207,13 +551,72 @@ public class EmailNoticeChannelSender implements NoticeChannelSender {
             builder.append("To: ").append(request.to()).append("\r\n");
             builder.append("Subject: ").append(mimeText(request.subject())).append("\r\n");
             builder.append("MIME-Version: 1.0\r\n");
+            if (request.attachments().isEmpty()) {
+                appendHtmlPart(builder, request.content(), null);
+            } else {
+                String boundary = "mango-notice-" + UUID.randomUUID();
+                builder.append("Content-Type: multipart/mixed; boundary=\"").append(boundary).append("\"\r\n");
+                builder.append("\r\n");
+                appendHtmlPart(builder, request.content(), boundary);
+                for (ResolvedAttachment attachment : request.attachments()) {
+                    appendAttachmentPart(builder, boundary, attachment);
+                }
+                builder.append("--").append(boundary).append("--\r\n");
+            }
+            builder.append("\r\n.\r\n");
+            return builder.toString();
+        }
+
+        private void appendHtmlPart(StringBuilder builder, String content, String boundary) {
+            if (boundary != null) {
+                builder.append("--").append(boundary).append("\r\n");
+            }
             builder.append("Content-Type: text/html; charset=UTF-8\r\n");
             builder.append("Content-Transfer-Encoding: base64\r\n");
             builder.append("\r\n");
             builder.append(Base64.getMimeEncoder(76, "\r\n".getBytes(StandardCharsets.US_ASCII))
-                    .encodeToString(htmlBody(request.content()).getBytes(StandardCharsets.UTF_8)));
-            builder.append("\r\n.\r\n");
-            return builder.toString();
+                    .encodeToString(htmlBody(content).getBytes(StandardCharsets.UTF_8)));
+            builder.append("\r\n");
+        }
+
+        private void appendAttachmentPart(StringBuilder builder, String boundary, ResolvedAttachment attachment) {
+            String fallbackName = asciiFileName(attachment.fileName());
+            String encodedName = rfc5987(attachment.fileName());
+            builder.append("--").append(boundary).append("\r\n");
+            builder.append("Content-Type: ").append(attachment.contentType())
+                    .append("; name=\"").append(fallbackName).append("\"\r\n");
+            builder.append("Content-Disposition: attachment; filename=\"").append(fallbackName)
+                    .append("\"; filename*=UTF-8''").append(encodedName).append("\r\n");
+            builder.append("Content-Transfer-Encoding: base64\r\n");
+            builder.append("\r\n");
+            builder.append(Base64.getMimeEncoder(76, "\r\n".getBytes(StandardCharsets.US_ASCII))
+                    .encodeToString(attachment.content()));
+            builder.append("\r\n");
+        }
+
+        private String asciiFileName(String fileName) {
+            StringBuilder value = new StringBuilder(fileName.length());
+            for (int index = 0; index < fileName.length(); index++) {
+                char ch = fileName.charAt(index);
+                value.append(ch >= 0x20 && ch <= 0x7e && ch != '"' && ch != '\\' && ch != ';' ? ch : '_');
+            }
+            return value.isEmpty() ? "attachment" : value.toString();
+        }
+
+        private String rfc5987(String fileName) {
+            StringBuilder encoded = new StringBuilder();
+            for (byte value : fileName.getBytes(StandardCharsets.UTF_8)) {
+                int unsigned = value & 0xff;
+                if ((unsigned >= 'a' && unsigned <= 'z') || (unsigned >= 'A' && unsigned <= 'Z')
+                        || (unsigned >= '0' && unsigned <= '9') || "!#$&+-.^_`|~".indexOf(unsigned) >= 0) {
+                    encoded.append((char) unsigned);
+                } else {
+                    encoded.append('%');
+                    encoded.append(Character.toUpperCase(Character.forDigit(unsigned >>> 4, 16)));
+                    encoded.append(Character.toUpperCase(Character.forDigit(unsigned & 0x0f, 16)));
+                }
+            }
+            return encoded.toString();
         }
 
         private String htmlBody(String content) {

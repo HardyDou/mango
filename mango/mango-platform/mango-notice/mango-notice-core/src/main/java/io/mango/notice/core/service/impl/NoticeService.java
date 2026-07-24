@@ -12,6 +12,7 @@ import io.mango.notice.api.command.RetryNoticeSendRecordsCommand;
 import io.mango.notice.api.command.SaveNoticeBusinessConfigCommand;
 import io.mango.notice.api.command.SaveNoticeChannelConfigCommand;
 import io.mango.notice.api.command.SaveNoticeChannelTemplateCommand;
+import io.mango.notice.api.command.SaveNoticeRouteTagCommand;
 import io.mango.notice.api.command.SaveNoticeReceivePreferenceCommand;
 import io.mango.notice.api.command.SaveNoticeRecipientAccountCommand;
 import io.mango.notice.api.command.SaveNoticeSettingsCommand;
@@ -22,6 +23,8 @@ import io.mango.notice.api.enums.NoticeChannelType;
 import io.mango.notice.api.enums.NoticeCode;
 import io.mango.notice.api.query.NoticeBusinessTypePageQuery;
 import io.mango.notice.api.query.NoticeChannelConfigPageQuery;
+import io.mango.notice.api.query.NoticeChannelReferenceImpactQuery;
+import io.mango.notice.api.query.NoticeRouteTagQuery;
 import io.mango.notice.api.query.NoticeReceivePreferenceQuery;
 import io.mango.notice.api.query.NoticeRecipientAccountQuery;
 import io.mango.notice.api.query.NoticeSendRecordPageQuery;
@@ -31,6 +34,8 @@ import io.mango.notice.api.vo.NoticeBusinessConfigVersionVO;
 import io.mango.notice.api.vo.NoticeBusinessTypeVO;
 import io.mango.notice.api.vo.NoticeChannelConfigVO;
 import io.mango.notice.api.vo.NoticeChannelTemplateVO;
+import io.mango.notice.api.vo.NoticeChannelReferenceImpactVO;
+import io.mango.notice.api.vo.NoticeRouteTagVO;
 import io.mango.notice.api.vo.NoticeReceivePreferenceVO;
 import io.mango.notice.api.vo.NoticeRecipientAccountVO;
 import io.mango.notice.api.vo.NoticeSendRecordVO;
@@ -189,6 +194,26 @@ public class NoticeService implements INoticeService {
  public NoticeChannelConfigVO saveChannelConfig(SaveNoticeChannelConfigCommand command) {
  Require.notNull(command, NoticeCode.NOTICE_BUSINESS_ERROR, "渠道配置不能为空");
  return configurationService.saveChannelConfig(command);
+ }
+
+ @Override
+ public List<NoticeRouteTagVO> listRouteTags(NoticeRouteTagQuery query) {
+ return configurationService.listRouteTags(query);
+ }
+
+ @Override
+ public NoticeRouteTagVO saveRouteTag(SaveNoticeRouteTagCommand command) {
+ return configurationService.saveRouteTag(command);
+ }
+
+ @Override
+ public boolean deleteRouteTag(Long id) {
+ return configurationService.deleteRouteTag(id);
+ }
+
+ @Override
+ public NoticeChannelReferenceImpactVO getChannelReferenceImpact(NoticeChannelReferenceImpactQuery query) {
+ return configurationService.getChannelReferenceImpact(query);
  }
 
  @Override

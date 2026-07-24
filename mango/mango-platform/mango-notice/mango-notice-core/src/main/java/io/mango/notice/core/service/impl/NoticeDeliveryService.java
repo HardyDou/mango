@@ -15,6 +15,7 @@ import io.mango.notice.api.command.NoticeSiteMessageTargetCommand;
 import io.mango.notice.api.command.SendNoticeCommand;
 import io.mango.notice.api.enums.NoticeChannelConfigStatus;
 import io.mango.notice.api.enums.NoticeChannelSendHealthStatus;
+import io.mango.notice.api.enums.NoticeChannelRouteMode;
 import io.mango.notice.api.enums.NoticeChannelType;
 import io.mango.notice.api.enums.NoticeCode;
 import io.mango.notice.api.enums.NoticeFailureCode;
@@ -33,6 +34,8 @@ import io.mango.notice.api.vo.NoticeSendResultVO;
 import io.mango.notice.core.entity.NoticeBusinessChannelTemplateEntity;
 import io.mango.notice.core.entity.NoticeBusinessTypeEntity;
 import io.mango.notice.core.entity.NoticeChannelConfigEntity;
+import io.mango.notice.core.entity.NoticeChannelConfigRouteTagEntity;
+import io.mango.notice.core.entity.NoticeChannelRouteTagEntity;
 import io.mango.notice.core.entity.NoticeReceivePreferenceEntity;
 import io.mango.notice.core.entity.NoticeRecipientAccountEntity;
 import io.mango.notice.core.entity.NoticeRecipientEntity;
@@ -41,6 +44,8 @@ import io.mango.notice.core.entity.NoticeTaskEntity;
 import io.mango.notice.core.mapper.NoticeBusinessChannelTemplateMapper;
 import io.mango.notice.core.mapper.NoticeBusinessTypeMapper;
 import io.mango.notice.core.mapper.NoticeChannelConfigMapper;
+import io.mango.notice.core.mapper.NoticeChannelConfigRouteTagMapper;
+import io.mango.notice.core.mapper.NoticeChannelRouteTagMapper;
 import io.mango.notice.core.mapper.NoticeReceivePreferenceMapper;
 import io.mango.notice.core.mapper.NoticeRecipientAccountMapper;
 import io.mango.notice.core.mapper.NoticeRecipientMapper;
@@ -49,6 +54,8 @@ import io.mango.notice.core.mapper.NoticeTaskMapper;
 import io.mango.notice.core.outbox.NoticeOutboxMessageFactory;
 import io.mango.notice.core.service.INoticeDeliveryService;
 import io.mango.notice.core.service.NoticeRecipientResolver;
+import io.mango.notice.core.service.NoticeChannelSecretMaterializer;
+import io.mango.notice.core.service.NoticeChannelSecretResolutionException;
 import io.mango.notice.support.channel.ChannelSendResult;
 import io.mango.notice.support.channel.NoticeChannelMessage;
 import io.mango.notice.support.channel.NoticeChannelSender;
@@ -62,6 +69,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -86,6 +94,8 @@ public class NoticeDeliveryService implements INoticeDeliveryService {
  private final NoticeBusinessTypeMapper businessTypeMapper;
  private final NoticeBusinessChannelTemplateMapper channelTemplateMapper;
  private final NoticeChannelConfigMapper channelConfigMapper;
+ private final NoticeChannelRouteTagMapper routeTagMapper;
+ private final NoticeChannelConfigRouteTagMapper configRouteTagMapper;
  private final NoticeTaskMapper taskMapper;
  private final NoticeRecipientMapper recipientMapper;
  private final NoticeRecipientAccountMapper recipientAccountMapper;
@@ -95,6 +105,7 @@ public class NoticeDeliveryService implements INoticeDeliveryService {
  private final ObjectMapper objectMapper;
  private final IOutboxStore outboxStore;
  private final NoticeRecipientResolver recipientResolver;
+ private final NoticeChannelSecretMaterializer secretMaterializer;
 
  @Override
  @Transactional(rollbackFor = Exception.class)
@@ -751,13 +762,22 @@ public class NoticeDeliveryService implements INoticeDeliveryService {
  NoticeRecipientEntity recipient, NoticeBusinessChannelTemplateEntity template) {
  List<NoticeChannelConfigEntity> configs = routeChannelConfigs(template, record.getId());
  if (configs.isEmpty()) {
+ if (routeMode(template) == NoticeChannelRouteMode.TAG) {
+ return ChannelSendResult.failed(NoticeFailureCode.CHANNEL_ROUTE_TAG_UNAVAILABLE.name(),
+ "路由标签没有可用通知通道", false);
+ }
  return ChannelSendResult.failed(NoticeFailureCode.CHANNEL_UNAVAILABLE.name(), "没有可用通知通道", true);
  }
  ChannelSendResult lastResult = null;
  for (NoticeChannelConfigEntity config : configs) {
  for (int attempt = 1; attempt <= MAX_CHANNEL_ATTEMPTS; attempt++) {
+ ChannelSendResult result;
+ try {
  NoticeChannelMessage command = toChannelCommand(task, record, recipient, template, config);
- ChannelSendResult result = sender.send(command);
+ result = sender.send(command);
+ } catch (NoticeChannelSecretResolutionException ex) {
+ result = ChannelSendResult.failed(NoticeFailureCode.CHANNEL_CONFIG_INVALID.name(), ex.getMessage(), false);
+ }
  lastResult = result;
  record.setChannelConfigId(config.getId());
  updateChannelSendStatus(config, result);
@@ -809,7 +829,7 @@ public class NoticeDeliveryService implements INoticeDeliveryService {
  sendCommand.setChannelConfigId(config.getId());
  sendCommand.setChannelProviderCode(config.getProviderCode());
  sendCommand.setChannelConfigName(config.getConfigName());
- sendCommand.setChannelConfigJson(config.getConfigJson());
+ sendCommand.setChannelConfigJson(secretMaterializer.materialize(config));
  sendCommand.setChannelTemplateId(template.getChannelTemplateId());
  sendCommand.setVariableMapping(template.getVariableMapping());
  return sendCommand;
@@ -828,9 +848,11 @@ public class NoticeDeliveryService implements INoticeDeliveryService {
  }
 
  private List<NoticeChannelConfigEntity> routeChannelConfigs(NoticeBusinessChannelTemplateEntity template, Long seed) {
- if (template.getChannelConfigId() != null) {
+ NoticeChannelRouteMode routeMode = routeMode(template);
+ if (routeMode == NoticeChannelRouteMode.EXACT) {
  NoticeChannelConfigEntity config = channelConfigMapper.selectById(template.getChannelConfigId());
- if (config == null || !Boolean.TRUE.equals(config.getEnabled())) {
+ if (config == null || config.getChannelType() != template.getChannelType()
+ || !Boolean.TRUE.equals(config.getEnabled())) {
  return Collections.emptyList();
  }
  if (config.getConfigStatus() == NoticeChannelConfigStatus.INCOMPLETE) {
@@ -838,14 +860,65 @@ public class NoticeDeliveryService implements INoticeDeliveryService {
  }
  return List.of(config);
  }
- List<NoticeChannelConfigEntity> configs = channelConfigMapper.selectList(new LambdaQueryWrapper<NoticeChannelConfigEntity>()
+ List<Long> taggedConfigIds = null;
+ if (routeMode == NoticeChannelRouteMode.TAG) {
+ if (!StringUtils.hasText(template.getRouteTagCode())) {
+ return Collections.emptyList();
+ }
+ NoticeChannelRouteTagEntity tag = routeTagMapper.selectOne(new LambdaQueryWrapper<NoticeChannelRouteTagEntity>()
+ .eq(NoticeChannelRouteTagEntity::getChannelType, template.getChannelType())
+ .eq(NoticeChannelRouteTagEntity::getTagCode, template.getRouteTagCode())
+ .last("limit 1"));
+ if (tag == null) {
+ return Collections.emptyList();
+ }
+ taggedConfigIds = configRouteTagMapper.selectList(new LambdaQueryWrapper<NoticeChannelConfigRouteTagEntity>()
+ .eq(NoticeChannelConfigRouteTagEntity::getRouteTagId, tag.getId())).stream()
+ .map(NoticeChannelConfigRouteTagEntity::getChannelConfigId).toList();
+ if (taggedConfigIds.isEmpty()) {
+ return Collections.emptyList();
+ }
+ }
+ LambdaQueryWrapper<NoticeChannelConfigEntity> wrapper = new LambdaQueryWrapper<NoticeChannelConfigEntity>()
  .eq(NoticeChannelConfigEntity::getChannelType, template.getChannelType())
  .eq(NoticeChannelConfigEntity::getEnabled, true)
- .eq(NoticeChannelConfigEntity::getConfigStatus, NoticeChannelConfigStatus.COMPLETE));
+ .eq(NoticeChannelConfigEntity::getConfigStatus, NoticeChannelConfigStatus.COMPLETE);
+ if (taggedConfigIds != null) {
+ wrapper.in(NoticeChannelConfigEntity::getId, taggedConfigIds);
+ }
+ List<NoticeChannelConfigEntity> configs = channelConfigMapper.selectList(wrapper);
  if (configs.isEmpty()) {
  return Collections.emptyList();
  }
- return weightedRotation(configs, seed == null ? 0L : seed);
+ return orderedRotation(configs, seed == null ? 0L : seed);
+ }
+
+ private NoticeChannelRouteMode routeMode(NoticeBusinessChannelTemplateEntity template) {
+ if (template.getRouteMode() != null) {
+ return template.getRouteMode();
+ }
+ return template.getChannelConfigId() == null ? NoticeChannelRouteMode.AUTO : NoticeChannelRouteMode.EXACT;
+ }
+
+ private List<NoticeChannelConfigEntity> orderedRotation(List<NoticeChannelConfigEntity> configs, long seed) {
+ Map<String, List<NoticeChannelConfigEntity>> groups = configs.stream()
+ .sorted(Comparator.comparingInt(this::priority).thenComparingInt(this::healthRank))
+ .collect(Collectors.groupingBy(config -> priority(config) + ":" + healthRank(config),
+ LinkedHashMap::new, Collectors.toList()));
+ List<NoticeChannelConfigEntity> ordered = new ArrayList<>();
+ long groupSeed = seed;
+ for (List<NoticeChannelConfigEntity> group : groups.values()) {
+ ordered.addAll(weightedRotation(group, groupSeed++));
+ }
+ return ordered;
+ }
+
+ private int priority(NoticeChannelConfigEntity config) {
+ return config.getPriority() == null ? 0 : config.getPriority();
+ }
+
+ private int healthRank(NoticeChannelConfigEntity config) {
+ return config.getLastSendStatus() == NoticeChannelSendHealthStatus.FAILED ? 1 : 0;
  }
 
  private List<NoticeChannelConfigEntity> weightedRotation(List<NoticeChannelConfigEntity> configs, long seed) {
@@ -997,4 +1070,3 @@ public class NoticeDeliveryService implements INoticeDeliveryService {
  }
 
 }
-

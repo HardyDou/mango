@@ -33,6 +33,8 @@ class NoticeMigrationCharacterizationTest {
             "notice_business_type",
             "notice_callback_log",
             "notice_channel_config",
+            "notice_channel_config_route_tag",
+            "notice_channel_route_tag",
             "notice_receive_preference",
             "notice_recipient",
             "notice_recipient_account",
@@ -50,9 +52,10 @@ class NoticeMigrationCharacterizationTest {
         List<Path> migrations = migrations();
         assertThat(migrations)
                 .extracting(path -> path.getFileName().toString())
-                .containsExactly("V1__init_notice.sql");
+                .containsExactly("V1__init_notice.sql", "V2__notice_channel_resource_route_and_secret.sql");
 
         String sql = read(migrations.getFirst());
+        String upgradeSql = read(migrations.get(1));
 
         Matcher matcher = CREATE_TABLE.matcher(sql);
         Set<String> tables = new TreeSet<>();
@@ -65,12 +68,21 @@ class NoticeMigrationCharacterizationTest {
                 .contains("`domain_code`")
                 .contains("`recipient_targets_snapshot`")
                 .contains("`channel_config_id`")
+                .contains("`config_code`")
+                .contains("`secret_refs_json`")
+                .contains("`route_mode`")
+                .contains("`notice_channel_route_tag`")
                 .contains("`biz_type`")
                 .contains("`biz_id`")
                 .contains("`message_actions_json`")
                 .contains("`notice_site_message_action_request`")
                 .contains("`notice_announcement_recipient`");
         assertThat(DML.matcher(sql).find()).isFalse();
+        assertThat(upgradeSql)
+                .contains("information_schema.columns")
+                .contains("information_schema.statistics")
+                .contains("CONCAT('LEGACY_', `id`)")
+                .contains("WHEN `channel_config_id` IS NULL THEN 'AUTO' ELSE 'EXACT'");
     }
 
     private List<Path> migrations() throws IOException, URISyntaxException {

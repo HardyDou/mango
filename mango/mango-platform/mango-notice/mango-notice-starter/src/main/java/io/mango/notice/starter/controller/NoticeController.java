@@ -15,6 +15,7 @@ import io.mango.notice.api.command.RetryNoticeSendRecordsCommand;
 import io.mango.notice.api.command.SaveNoticeBusinessConfigCommand;
 import io.mango.notice.api.command.SaveNoticeChannelConfigCommand;
 import io.mango.notice.api.command.SaveNoticeChannelTemplateCommand;
+import io.mango.notice.api.command.SaveNoticeRouteTagCommand;
 import io.mango.notice.api.command.SaveNoticeReceivePreferenceCommand;
 import io.mango.notice.api.command.SaveNoticeRecipientAccountCommand;
 import io.mango.notice.api.command.SaveNoticeSettingsCommand;
@@ -24,6 +25,8 @@ import io.mango.notice.api.command.UpdateNoticeBusinessTypeCommand;
 import io.mango.notice.api.enums.NoticeChannelType;
 import io.mango.notice.api.query.NoticeBusinessTypePageQuery;
 import io.mango.notice.api.query.NoticeChannelConfigPageQuery;
+import io.mango.notice.api.query.NoticeChannelReferenceImpactQuery;
+import io.mango.notice.api.query.NoticeRouteTagQuery;
 import io.mango.notice.api.query.NoticeReceivePreferenceQuery;
 import io.mango.notice.api.query.NoticeRecipientAccountQuery;
 import io.mango.notice.api.query.NoticeSendRecordPageQuery;
@@ -33,6 +36,8 @@ import io.mango.notice.api.vo.NoticeBusinessConfigVersionVO;
 import io.mango.notice.api.vo.NoticeBusinessTypeVO;
 import io.mango.notice.api.vo.NoticeChannelConfigVO;
 import io.mango.notice.api.vo.NoticeChannelTemplateVO;
+import io.mango.notice.api.vo.NoticeChannelReferenceImpactVO;
+import io.mango.notice.api.vo.NoticeRouteTagVO;
 import io.mango.notice.api.vo.NoticeReceivePreferenceVO;
 import io.mango.notice.api.vo.NoticeRecipientAccountVO;
 import io.mango.notice.api.vo.NoticeSendRecordVO;
@@ -222,6 +227,39 @@ public class NoticeController implements NoticeApi {
  @Operation(summary = "保存渠道配置", description = "保存短信、邮件、微信、企微、钉钉等渠道配置")
  public R<NoticeChannelConfigVO> saveChannelConfig(@RequestBody SaveNoticeChannelConfigCommand command) {
  return R.ok(noticeService.saveChannelConfig(command));
+ }
+
+ @Override
+ @GetMapping("/channel-route-tags")
+ @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:channel:view")
+ @Operation(summary = "查询渠道路由标签")
+ public R<List<NoticeRouteTagVO>> listRouteTags(@ParameterObject NoticeRouteTagQuery query) {
+ return R.ok(noticeService.listRouteTags(query));
+ }
+
+ @Override
+ @PostMapping("/channel-route-tags")
+ @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:channel:edit")
+ @Operation(summary = "保存渠道路由标签")
+ public R<NoticeRouteTagVO> saveRouteTag(@RequestBody SaveNoticeRouteTagCommand command) {
+ return R.ok(noticeService.saveRouteTag(command));
+ }
+
+ @Override
+ @DeleteMapping("/channel-route-tags")
+ @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:channel:delete")
+ @Operation(summary = "删除未被引用的渠道路由标签")
+ public R<Boolean> deleteRouteTag(@RequestParam("id") Long id) {
+ return R.ok(noticeService.deleteRouteTag(id));
+ }
+
+ @Override
+ @GetMapping("/channels/reference-impact")
+ @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:channel:view")
+ @Operation(summary = "查询渠道或标签的模板引用影响")
+ public R<NoticeChannelReferenceImpactVO> getChannelReferenceImpact(
+ @ParameterObject NoticeChannelReferenceImpactQuery query) {
+ return R.ok(noticeService.getChannelReferenceImpact(query));
  }
 
  @Override

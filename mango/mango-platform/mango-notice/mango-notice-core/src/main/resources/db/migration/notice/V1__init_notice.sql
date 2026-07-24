@@ -83,6 +83,8 @@ CREATE TABLE IF NOT EXISTS `notice_business_channel_template` (
   `version_status` varchar(32) NOT NULL DEFAULT 'DRAFT' COMMENT '版本状态',
   `enabled` tinyint NOT NULL DEFAULT '1' COMMENT '是否启用',
   `channel_config_id` bigint DEFAULT NULL COMMENT '绑定渠道配置 ID，空表示 AUTO',
+  `route_mode` varchar(16) NOT NULL DEFAULT 'AUTO' COMMENT '路由模式：EXACT、TAG、AUTO',
+  `route_tag_code` varchar(64) DEFAULT NULL COMMENT 'TAG 模式标签编码',
   `publish_time` datetime DEFAULT NULL COMMENT '发布时间',
   `publish_by` bigint DEFAULT NULL COMMENT '发布人 ID',
   `tenant_id` varchar(64) NOT NULL DEFAULT 'default' COMMENT '租户标识',
@@ -147,10 +149,19 @@ CREATE TABLE IF NOT EXISTS `notice_callback_log` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='通知回调日志表';
 CREATE TABLE IF NOT EXISTS `notice_channel_config` (
   `id` bigint NOT NULL COMMENT '主键',
+  `config_code` varchar(64) NOT NULL COMMENT '渠道配置稳定编码',
   `channel_type` varchar(32) NOT NULL COMMENT '渠道类型',
   `provider_code` varchar(64) DEFAULT NULL COMMENT '供应商编码',
   `config_name` varchar(128) DEFAULT NULL COMMENT '配置名称',
-  `config_json` text COMMENT '配置 JSON 或密文引用',
+  `config_json` text COMMENT '非敏感配置 JSON',
+  `secret_refs_json` text COMMENT 'Resource Secret 引用 JSON',
+  `secret_config_json` text COMMENT '环境人工补录 Secret JSON',
+  `resource_id` varchar(128) DEFAULT NULL COMMENT 'Resource 声明 ID',
+  `resource_version` int DEFAULT NULL COMMENT 'Resource 版本',
+  `resource_module_code` varchar(64) DEFAULT NULL COMMENT 'Resource 模块编码',
+  `resource_source` varchar(32) NOT NULL DEFAULT 'MANUAL' COMMENT '配置来源',
+  `managed_fields_json` text COMMENT 'Resource 管理字段清单',
+  `secret_status` varchar(32) NOT NULL DEFAULT 'NOT_REQUIRED' COMMENT 'Secret 完整性状态',
   `enabled` tinyint NOT NULL DEFAULT '1' COMMENT '是否启用',
   `priority` int NOT NULL DEFAULT '0' COMMENT '优先级',
   `weight` int NOT NULL DEFAULT '100' COMMENT 'AUTO 路由权重',
@@ -166,9 +177,39 @@ CREATE TABLE IF NOT EXISTS `notice_channel_config` (
   `updated_by` bigint DEFAULT NULL COMMENT '更新人 ID',
   `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_notice_channel_config_code` (`tenant_id`,`config_code`),
   KEY `idx_notice_channel_type` (`tenant_id`,`channel_type`,`enabled`),
-  KEY `idx_notice_channel_route` (`tenant_id`,`channel_type`,`enabled`,`config_status`,`weight`)
+  KEY `idx_notice_channel_route` (`tenant_id`,`channel_type`,`enabled`,`config_status`,`weight`),
+  KEY `idx_notice_channel_source` (`tenant_id`,`resource_source`,`resource_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='通知渠道配置表';
+CREATE TABLE IF NOT EXISTS `notice_channel_route_tag` (
+  `id` bigint NOT NULL COMMENT '主键',
+  `channel_type` varchar(32) NOT NULL COMMENT '渠道类型',
+  `tag_code` varchar(64) NOT NULL COMMENT '标签稳定编码',
+  `tag_name` varchar(128) NOT NULL COMMENT '标签名称',
+  `description` varchar(500) DEFAULT NULL COMMENT '标签说明',
+  `tenant_id` varchar(64) NOT NULL DEFAULT 'default' COMMENT '租户标识',
+  `created_by` bigint DEFAULT NULL COMMENT '创建人 ID',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_by` bigint DEFAULT NULL COMMENT '更新人 ID',
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_notice_channel_route_tag` (`tenant_id`,`channel_type`,`tag_code`),
+  KEY `idx_notice_channel_route_tag_name` (`tenant_id`,`channel_type`,`tag_name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='通知渠道路由标签表';
+CREATE TABLE IF NOT EXISTS `notice_channel_config_route_tag` (
+  `id` bigint NOT NULL COMMENT '主键',
+  `channel_config_id` bigint NOT NULL COMMENT '渠道配置 ID',
+  `route_tag_id` bigint NOT NULL COMMENT '路由标签 ID',
+  `tenant_id` varchar(64) NOT NULL DEFAULT 'default' COMMENT '租户标识',
+  `created_by` bigint DEFAULT NULL COMMENT '创建人 ID',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_by` bigint DEFAULT NULL COMMENT '更新人 ID',
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_notice_channel_config_route_tag` (`tenant_id`,`channel_config_id`,`route_tag_id`),
+  KEY `idx_notice_channel_route_tag_config` (`tenant_id`,`route_tag_id`,`channel_config_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='通知渠道配置路由标签关系表';
 CREATE TABLE IF NOT EXISTS `notice_receive_preference` (
   `id` bigint NOT NULL COMMENT '主键',
   `user_id` bigint NOT NULL COMMENT '用户 ID',

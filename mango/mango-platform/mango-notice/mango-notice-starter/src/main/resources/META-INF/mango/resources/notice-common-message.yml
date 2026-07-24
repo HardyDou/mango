@@ -6,7 +6,7 @@ mango:
     declarations:
       MESSAGE_CHANNEL:
         - id: "202606180070270501"
-          version: 1
+          version: 2
           biz-key: notice.channel.site-internal-default
           name: 默认系统消息通道
           target-module: notice
@@ -14,6 +14,9 @@ mango:
             channelConfigId:
               type: LONG
               value: 270501
+            configCode:
+              type: STRING
+              value: SITE_INTERNAL_DEFAULT
             tenantId:
               type: STRING
               value: default
@@ -38,9 +41,6 @@ mango:
             weight:
               type: INT
               value: 100
-            configStatus:
-              type: STRING
-              value: COMPLETE
             lastSendStatus:
               type: STRING
               value: NONE
@@ -48,7 +48,7 @@ mango:
               type: STRING
               value: '{"maxPerMinute":0,"timeoutSeconds":10,"concurrentLimit":0}'
         - id: "202606180070270502"
-          version: 1
+          version: 2
           biz-key: notice.channel.site-internal-tenant-1
           name: 默认系统消息通道
           target-module: notice
@@ -56,6 +56,9 @@ mango:
             channelConfigId:
               type: LONG
               value: 270502
+            configCode:
+              type: STRING
+              value: SITE_INTERNAL_TENANT_1
             tenantId:
               type: STRING
               value: "1"
@@ -80,9 +83,6 @@ mango:
             weight:
               type: INT
               value: 100
-            configStatus:
-              type: STRING
-              value: COMPLETE
             lastSendStatus:
               type: STRING
               value: NONE

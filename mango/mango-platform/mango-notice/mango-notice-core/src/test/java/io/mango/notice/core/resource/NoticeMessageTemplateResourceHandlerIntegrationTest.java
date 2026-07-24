@@ -258,6 +258,8 @@ class NoticeMessageTemplateResourceHandlerIntegrationTest {
                     version_status varchar(32) not null default 'DRAFT',
                     enabled boolean not null default true,
                     channel_config_id bigint,
+                    route_mode varchar(16) not null default 'AUTO',
+                    route_tag_code varchar(64),
                     publish_time timestamp,
                     publish_by bigint,
                     tenant_id varchar(64) not null default 'default',
