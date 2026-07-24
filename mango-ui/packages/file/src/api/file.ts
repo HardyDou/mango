@@ -4,6 +4,8 @@
 
 import { del, get, post, put, request, type RequestConfig } from '@mango/common';
 import type { ApiId } from '@mango/api-schema';
+import { defaultFileSettings, fileSettingsApi } from './fileSettings';
+import { sha256IfSupported, shouldUseMultipart } from './uploadSupport';
 
 export type FileId = ApiId;
 export type FileBizMeta = Record<string, unknown> | string;
@@ -80,14 +82,20 @@ export interface FileQuery {
 
 export type FileUploadParams = Partial<Pick<FileRecord, 'purpose' | 'accessLevel' | 'bizType' | 'bizId' | 'bizMeta' | 'directoryId'>>;
 export interface FileUploadOptions extends Pick<RequestConfig, 'onUploadProgress'> {
+  multipartEnabled?: boolean;
   multipartThreshold?: number;
   chunkSize?: number;
+}
+
+export interface FileUploadPolicy {
+  multipartEnabled: boolean;
+  multipartThreshold: number;
 }
 
 export interface CreateFileUploadSessionCommand extends FileUploadParams {
   fileName: string;
   fileSize: number;
-  fileHash: string;
+  fileHash?: string;
   contentType?: string;
   chunkSize?: number;
   totalParts?: number;
@@ -158,6 +166,7 @@ export const fileApi = {
     return response as any;
   },
   upload: (file: File, params?: FileUploadParams, options?: FileUploadOptions) => uploadSmart(file, params, options),
+  uploadPolicy: () => resolveUploadPolicy(),
   uploadBatch: (files: File[], params?: FileUploadParams, options?: FileUploadOptions) => {
     const formData = new FormData();
     files.forEach(file => formData.append('files', file));
@@ -275,11 +284,28 @@ export const DEFAULT_MULTIPART_THRESHOLD = 20 * 1024 * 1024;
 export const DEFAULT_CHUNK_SIZE = 10 * 1024 * 1024;
 
 async function uploadSmart(file: File, params?: FileUploadParams, options?: FileUploadOptions): Promise<FileRecord> {
-  const threshold = options?.multipartThreshold ?? DEFAULT_MULTIPART_THRESHOLD;
-  if (file.size < threshold) {
+  const policy = await resolveUploadPolicy(options);
+  if (!shouldUseMultipart(file.size, policy)) {
     return uploadSimple(file, params, options);
   }
   return uploadMultipart(file, params, options);
+}
+
+async function resolveUploadPolicy(options?: FileUploadOptions): Promise<FileUploadPolicy> {
+  if (options?.multipartEnabled !== undefined && options.multipartThreshold !== undefined) {
+    return {
+      multipartEnabled: options.multipartEnabled,
+      multipartThreshold: positiveNumber(options.multipartThreshold, DEFAULT_MULTIPART_THRESHOLD),
+    };
+  }
+  const settings = await fileSettingsApi.get().catch(() => defaultFileSettings);
+  return {
+    multipartEnabled: options?.multipartEnabled ?? settings.multipartEnabled,
+    multipartThreshold: positiveNumber(
+      options?.multipartThreshold ?? settings.multipartThreshold,
+      DEFAULT_MULTIPART_THRESHOLD,
+    ),
+  };
 }
 
 function uploadSimple(file: File, params?: FileUploadParams, options?: FileUploadOptions) {
@@ -295,7 +321,7 @@ function uploadSimple(file: File, params?: FileUploadParams, options?: FileUploa
 async function uploadMultipart(file: File, params?: FileUploadParams, options?: FileUploadOptions): Promise<FileRecord> {
   const chunkSize = options?.chunkSize ?? DEFAULT_CHUNK_SIZE;
   const totalParts = Math.ceil(file.size / chunkSize);
-  const fileHash = await sha256(file);
+  const fileHash = await sha256IfSupported(file);
   const init = await fileApi.createUploadSession({
     ...params,
     fileName: file.name,
@@ -361,12 +387,9 @@ function reportMultipartProgress(options: FileUploadOptions | undefined, loaded:
   } as any);
 }
 
-async function sha256(file: File): Promise<string> {
-  const buffer = await file.arrayBuffer();
-  const digest = await crypto.subtle.digest('SHA-256', buffer);
-  return Array.from(new Uint8Array(digest))
-    .map(item => item.toString(16).padStart(2, '0'))
-    .join('');
+function positiveNumber(value: unknown, fallback: number): number {
+  const number = Number(value);
+  return Number.isFinite(number) && number > 0 ? number : fallback;
 }
 
 function openDirectDownload(url: string, fileName: string) {

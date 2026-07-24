@@ -46,6 +46,12 @@ public class FileSettingsVO implements Serializable {
     @Schema(description = "是否启用秒传")
     private Boolean instantUploadEnabled;
 
+    @Schema(description = "是否启用大文件分片上传")
+    private Boolean multipartEnabled;
+
+    @Schema(description = "大文件分片上传临界值，单位字节")
+    private Long multipartThreshold;
+
     @Schema(description = "秒传匹配范围：TENANT-机构内、GLOBAL-全局")
     private String instantUploadScope;
 

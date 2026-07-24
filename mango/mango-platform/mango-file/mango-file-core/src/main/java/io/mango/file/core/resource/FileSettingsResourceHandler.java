@@ -48,6 +48,8 @@ public class FileSettingsResourceHandler implements ResourceHandler {
                 .fieldDescription("duplicateCheckDirectoryScoped", "是否按目录隔离重名，默认 1。")
                 .fieldDescription("objectNameStrategy", "对象命名策略，默认 DATE_UUID。")
                 .fieldDescription("instantUploadEnabled", "是否启用秒传，默认 1。")
+                .fieldDescription("multipartEnabled", "是否启用大文件分片上传，默认 1。")
+                .fieldDescription("multipartThreshold", "大文件分片上传临界值，单位字节，默认 20971520。")
                 .fieldDescription("instantUploadScope", "秒传匹配范围，默认 TENANT。")
                 .fieldDescription("contentTypeCheckEnabled", "是否校验内容类型，默认 1。")
                 .fieldDescription("allowedContentTypes", "允许上传内容类型，逗号分隔；为空表示不限制。")
@@ -94,6 +96,7 @@ public class FileSettingsResourceHandler implements ResourceHandler {
         }
         LocalDateTime now = LocalDateTime.now();
         entity.setInstantUploadEnabled(DISABLED);
+        entity.setMultipartEnabled(DISABLED);
         entity.setDirectUploadEnabled(DISABLED);
         entity.setAccessTokenEnabled(DISABLED);
         entity.setArchiveRestoreEnabled(DISABLED);
@@ -126,6 +129,8 @@ public class FileSettingsResourceHandler implements ResourceHandler {
         entity.setDuplicateCheckDirectoryScoped(payload.duplicateCheckDirectoryScoped());
         entity.setObjectNameStrategy(payload.objectNameStrategy());
         entity.setInstantUploadEnabled(payload.instantUploadEnabled());
+        entity.setMultipartEnabled(payload.multipartEnabled());
+        entity.setMultipartThreshold(payload.multipartThreshold());
         entity.setInstantUploadScope(payload.instantUploadScope());
         entity.setContentTypeCheckEnabled(payload.contentTypeCheckEnabled());
         entity.setAllowedContentTypes(payload.allowedContentTypes());
@@ -177,6 +182,7 @@ public class FileSettingsResourceHandler implements ResourceHandler {
                                    String blockedExtensions, String defaultAccessLevel,
                                    String duplicateNameStrategy, Integer duplicateCheckDirectoryScoped,
                                    String objectNameStrategy, Integer instantUploadEnabled,
+                                   Integer multipartEnabled, Long multipartThreshold,
                                    String instantUploadScope, Integer contentTypeCheckEnabled,
                                    String allowedContentTypes, String blockedContentTypes,
                                    Integer directUploadEnabled, Long directUploadExpireSeconds,
@@ -199,6 +205,8 @@ public class FileSettingsResourceHandler implements ResourceHandler {
                     fieldInt(resource, "duplicateCheckDirectoryScoped", false, ENABLED),
                     defaultText(fieldText(resource, "objectNameStrategy", false), "DATE_UUID").toUpperCase(),
                     fieldInt(resource, "instantUploadEnabled", false, ENABLED),
+                    fieldInt(resource, "multipartEnabled", false, ENABLED),
+                    fieldLong(resource, "multipartThreshold", false, 20971520L),
                     defaultText(fieldText(resource, "instantUploadScope", false), "TENANT").toUpperCase(),
                     fieldInt(resource, "contentTypeCheckEnabled", false, ENABLED),
                     fieldText(resource, "allowedContentTypes", false),

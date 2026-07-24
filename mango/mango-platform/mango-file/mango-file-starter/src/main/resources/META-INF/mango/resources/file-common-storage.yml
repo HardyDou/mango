@@ -46,7 +46,7 @@ mango:
               value: 系统默认本地文件存储
       FILE_SETTINGS:
         - id: "2026061801000000101"
-          version: 4
+          version: 5
           biz-key: file.settings.default
           name: 文件中心默认配置
           target-module: file
@@ -79,6 +79,12 @@ mango:
             instantUploadEnabled:
               type: INT
               value: 1
+            multipartEnabled:
+              type: INT
+              value: 1
+            multipartThreshold:
+              type: LONG
+              value: 20971520
             instantUploadScope:
               type: STRING
               value: TENANT

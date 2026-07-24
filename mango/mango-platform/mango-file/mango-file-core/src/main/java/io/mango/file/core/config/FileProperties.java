@@ -106,6 +106,12 @@ public class FileProperties {
         /** 是否启用秒传。 */
         private boolean instantUploadEnabled = true;
 
+        /** 是否启用大文件分片上传。 */
+        private boolean multipartEnabled = true;
+
+        /** 大文件分片上传临界值，单位字节。 */
+        private long multipartThreshold = 20L * 1024L * 1024L;
+
         /** 是否允许浏览器直传对象存储。 */
         private boolean directUploadEnabled = false;
 

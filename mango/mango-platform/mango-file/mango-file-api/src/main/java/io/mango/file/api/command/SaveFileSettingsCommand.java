@@ -51,6 +51,14 @@ public class SaveFileSettingsCommand implements Serializable {
     @NotNull(message = "是否启用秒传不能为空")
     private Boolean instantUploadEnabled = true;
 
+    @Schema(description = "是否启用大文件分片上传")
+    @NotNull(message = "是否启用大文件分片上传不能为空")
+    private Boolean multipartEnabled = true;
+
+    @Min(value = 1, message = "分片上传临界值必须大于0")
+    @Schema(description = "大文件分片上传临界值，单位字节")
+    private Long multipartThreshold;
+
     @Schema(description = "秒传匹配范围：TENANT-机构内、GLOBAL-全局")
     @Size(max = 32, message = "秒传匹配范围长度不能超过32")
     private String instantUploadScope;

@@ -146,9 +146,10 @@ const fileIds = ref<string[]>([]);
 - `auto=false` 时，点击“上传到服务器”后提交。
 - 小文件批量上传调用 `fileApi.uploadBatch()`。
 - 单个文件或存在大文件时逐个上传，便于走分片链路。
-- 前端默认分片阈值是 `20MB`。
+- 分片开关和临界值读取 `GET /file/settings` 的 `multipartEnabled`、`multipartThreshold`；读取失败时默认启用并使用 `20MiB` 临界值。
+- HTTP IP 等非安全上下文不能使用 Web Crypto 时，大文件自动省略客户端哈希并降级为服务端分片，不会因 `crypto.subtle` 不可用中断。
 - 秒传命中时，后端返回 `instant=true` 和 `fileRecord`，组件直接回写。
-- `fmt`、`size`、`sizes` 是前端预检查；后端最终限制来自 `GET /file/settings`。
+- `fmt`、`size`、`sizes` 是组件预检查；`MUpload` 还会读取 `GET /file/settings` 的 `maxSize`，存在两类限制时取较小值，后端仍做最终校验。
 
 `FilePreviewPanel` props：
 

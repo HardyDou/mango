@@ -602,13 +602,13 @@ public class FileService implements IFileService, IFileContentProvider {
         Long resolvedDirectoryId = normalizeDirectoryId(command.getDirectoryId());
         directoryService.selectVisible(resolvedDirectoryId);
         FileSettingsVO settings = settingsService.current();
+        Require.isTrue(!Boolean.FALSE.equals(settings.getMultipartEnabled()), FileCode.FILE_UPLOAD_SESSION_INVALID);
         Require.isTrue(command.getFileSize() <= settings.getMaxSize(), FileCode.FILE_SIZE_EXCEEDED);
         String fileName = resolveFileName(tenantId, resolvedDirectoryId, normalizeFileName(command.getFileName()), settings);
         String fileExt = fileExt(fileName);
         validateExtension(fileExt, settings);
         validateContentType(command.getContentType(), settings);
         String fileHash = trimToNull(command.getFileHash());
-        Require.notBlank(fileHash, FileCode.FILE_UPLOAD_PART_INVALID);
         String normalizedBizMeta = normalizeBizMeta(command.getBizMeta());
         FileStorageConfigEntity storageConfig = activeStorageConfig();
         FileObjectEntity instantObject = findInstantUploadObject(tenantId, storageConfig, fileHash, command.getFileSize(), settings);
@@ -639,7 +639,10 @@ public class FileService implements IFileService, IFileContentProvider {
         long chunkSize = resolveChunkSize(command.getChunkSize());
         int totalParts = resolveTotalParts(command.getTotalParts(), command.getFileSize(), chunkSize);
         String objectName = generateObjectName(storageConfig, tenantId, resolvedDirectoryId, fileName, fileExt, fileHash, settings);
-        FileUploadMode uploadMode = fileStorageRouter.supportsMultipartUpload(storageConfig)
+        // A browser without Web Crypto cannot provide a hash. Keep that path on server chunks so
+        // the server can calculate the final hash while merging instead of requiring S3 metadata.
+        FileUploadMode uploadMode = StringUtils.hasText(fileHash)
+                && fileStorageRouter.supportsMultipartUpload(storageConfig)
                 ? FileUploadMode.S3_MULTIPART : FileUploadMode.SERVER_CHUNK;
         String storageUploadId = null;
         if (uploadMode == FileUploadMode.S3_MULTIPART) {
@@ -761,15 +764,16 @@ public class FileService implements IFileService, IFileContentProvider {
         session.setUpdatedTime(LocalDateTime.now());
         fileUploadSessionMapper.updateById(session);
         FileStorageConfigEntity storageConfig = storageConfigService.getEnabledConfig(storageQuery(session));
-        completePhysicalUpload(session, storageConfig, parts);
+        String resolvedFileHash = completePhysicalUpload(session, storageConfig, parts);
+        session.setFileHash(resolvedFileHash);
         FileObjectEntity fileObject = createOrReuseFileObject(session.getTenantIdAsLong(),
                 storageConfig,
                 session.getObjectName(),
-                session.getFileHash(),
+                resolvedFileHash,
                 session.getFileSize(),
                 session.getContentType(),
                 0L);
-        createHashMapping(session.getTenantIdAsLong(), storageConfig, session.getFileHash(), session.getFileSize(), fileObject, settingsService.current());
+        createHashMapping(session.getTenantIdAsLong(), storageConfig, resolvedFileHash, session.getFileSize(), fileObject, settingsService.current());
         FileRecordEntity record = createFileRecord(session.getTenantIdAsLong(),
                 MangoContextHolder.userId(),
                 fileObject,
@@ -777,7 +781,7 @@ public class FileService implements IFileService, IFileContentProvider {
                 session.getFileExt(),
                 session.getFileSize(),
                 session.getContentType(),
-                session.getFileHash(),
+                resolvedFileHash,
                 session.getPurpose(),
                 session.getAccessLevel(),
                 session.getBizType(),
@@ -1230,9 +1234,9 @@ public class FileService implements IFileService, IFileContentProvider {
         fileUploadSessionMapper.updateById(session);
     }
 
-    private void completePhysicalUpload(FileUploadSessionEntity session,
-                                        FileStorageConfigEntity storageConfig,
-                                        List<FileUploadPartEntity> parts) {
+    private String completePhysicalUpload(FileUploadSessionEntity session,
+                                          FileStorageConfigEntity storageConfig,
+                                          List<FileUploadPartEntity> parts) {
         if (FileUploadMode.S3_MULTIPART.name().equals(session.getUploadMode())) {
             List<CompletedUploadPart> completedParts = parts.stream()
                     .sorted(Comparator.comparing(FileUploadPartEntity::getPartNumber))
@@ -1242,16 +1246,29 @@ public class FileService implements IFileService, IFileContentProvider {
                     session.getObjectName(),
                     session.getStorageUploadId(),
                     completedParts);
-            return;
+            return session.getFileHash();
         }
         Path merged = null;
+        MessageDigest digest = StringUtils.hasText(session.getFileHash()) ? null : newSha256Digest();
         try {
             merged = Files.createTempFile("mango-file-merged-", ".upload");
             try (OutputStream output = Files.newOutputStream(merged)) {
                 for (FileUploadPartEntity part : parts) {
                     Path partPath = serverChunkPath(session.getId(), part.getPartNumber());
                     Require.isTrue(Files.exists(partPath), FileCode.FILE_UPLOAD_PART_INVALID);
-                    Files.copy(partPath, output);
+                    try (InputStream input = Files.newInputStream(partPath)) {
+                        byte[] buffer = new byte[8192];
+                        int length;
+                        while ((length = input.read(buffer)) >= 0) {
+                            if (length == 0) {
+                                continue;
+                            }
+                            output.write(buffer, 0, length);
+                            if (digest != null) {
+                                digest.update(buffer, 0, length);
+                            }
+                        }
+                    }
                 }
             }
             try (InputStream input = Files.newInputStream(merged)) {
@@ -1262,10 +1279,11 @@ public class FileService implements IFileService, IFileContentProvider {
                         session.getContentType());
             }
             cleanupServerChunkSession(session.getId());
+            return digest == null ? session.getFileHash() : HexFormat.of().formatHex(digest.digest());
         } catch (IOException e) {
-            Require.fail(FileCode.FILE_STORE_FAILED);
+            return Require.fail(FileCode.FILE_STORE_FAILED);
         } catch (Exception e) {
-            Require.fail(FileCode.FILE_STORE_FAILED);
+            return Require.fail(FileCode.FILE_STORE_FAILED);
         } finally {
             if (merged != null) {
                 try {
@@ -1274,6 +1292,14 @@ public class FileService implements IFileService, IFileContentProvider {
                     // 临时文件清理失败不影响主流程结果。
                 }
             }
+        }
+    }
+
+    private MessageDigest newSha256Digest() {
+        try {
+            return MessageDigest.getInstance("SHA-256");
+        } catch (Exception e) {
+            return Require.fail(FileCode.FILE_READ_FAILED);
         }
     }
 

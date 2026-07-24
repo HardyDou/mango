@@ -40,6 +40,7 @@ import java.util.stream.Collectors;
 public class FileSettingsService implements IFileSettingsService {
 
     private static final int DEFAULT_ARCHIVE_RETAIN_DAYS = 180;
+    private static final long DEFAULT_MULTIPART_THRESHOLD = 20L * 1024L * 1024L;
 
     private final FileSettingsMapper mapper;
     private final FileProperties properties;
@@ -59,6 +60,9 @@ public class FileSettingsService implements IFileSettingsService {
         validateExpire(command.getDirectUploadExpireSeconds(), "直传有效期必须大于0");
         validateExpire(command.getAccessTokenExpireSeconds(), "访问有效期必须大于0");
         validateExpire(command.getPreviewExpireSeconds(), "预览有效期必须大于0");
+        if (command.getMultipartThreshold() != null) {
+            Require.isTrue(command.getMultipartThreshold() > 0, FileCode.STORAGE_SETTINGS_INVALID);
+        }
         if (command.getArchiveRetainDays() != null) {
             Require.isTrue(command.getArchiveRetainDays() > 0, FileCode.STORAGE_SETTINGS_INVALID);
         }
@@ -132,6 +136,8 @@ public class FileSettingsService implements IFileSettingsService {
         entity.setDuplicateCheckDirectoryScoped(enabledByDefault(command.getDuplicateCheckDirectoryScoped()));
         entity.setObjectNameStrategy(FileObjectNameStrategy.of(command.getObjectNameStrategy()).name());
         entity.setInstantUploadEnabled(enabledByDefault(command.getInstantUploadEnabled()));
+        entity.setMultipartEnabled(enabledByDefault(command.getMultipartEnabled()));
+        entity.setMultipartThreshold(resolveDefault(command.getMultipartThreshold(), defaults.getMultipartThreshold()));
         entity.setInstantUploadScope(FileInstantUploadScope.of(command.getInstantUploadScope()).name());
         entity.setContentTypeCheckEnabled(enabledByDefault(command.getContentTypeCheckEnabled()));
         entity.setAllowedContentTypes(joinTextValues(command.getAllowedContentTypes()));
@@ -167,6 +173,8 @@ public class FileSettingsService implements IFileSettingsService {
         vo.setDuplicateCheckDirectoryScoped(!Integer.valueOf(0).equals(entity.getDuplicateCheckDirectoryScoped()));
         vo.setObjectNameStrategy(FileObjectNameStrategy.of(entity.getObjectNameStrategy()).name());
         vo.setInstantUploadEnabled(Integer.valueOf(1).equals(entity.getInstantUploadEnabled()));
+        vo.setMultipartEnabled(!Integer.valueOf(0).equals(entity.getMultipartEnabled()));
+        vo.setMultipartThreshold(positiveOrDefault(entity.getMultipartThreshold(), DEFAULT_MULTIPART_THRESHOLD));
         vo.setInstantUploadScope(FileInstantUploadScope.of(entity.getInstantUploadScope()).name());
         vo.setContentTypeCheckEnabled(!Integer.valueOf(0).equals(entity.getContentTypeCheckEnabled()));
         vo.setAllowedContentTypes(splitTextValues(entity.getAllowedContentTypes()));
@@ -204,6 +212,8 @@ public class FileSettingsService implements IFileSettingsService {
         vo.setDuplicateCheckDirectoryScoped(true);
         vo.setObjectNameStrategy(FileObjectNameStrategy.DATE_UUID.name());
         vo.setInstantUploadEnabled(properties.getUpload().isInstantUploadEnabled());
+        vo.setMultipartEnabled(properties.getUpload().isMultipartEnabled());
+        vo.setMultipartThreshold(positiveOrDefault(properties.getUpload().getMultipartThreshold(), DEFAULT_MULTIPART_THRESHOLD));
         vo.setInstantUploadScope(FileInstantUploadScope.TENANT.name());
         vo.setContentTypeCheckEnabled(true);
         vo.setAllowedContentTypes(List.of());
@@ -250,6 +260,10 @@ public class FileSettingsService implements IFileSettingsService {
             return defaultValue;
         }
         return value;
+    }
+
+    private Long positiveOrDefault(Long value, Long defaultValue) {
+        return value == null || value <= 0 ? defaultValue : value;
     }
 
     private Integer resolveDefault(Integer value, Integer defaultValue) {

@@ -20,6 +20,8 @@ public class FileSettingsEntity extends FileTenantEntity {
     private Integer duplicateCheckDirectoryScoped;
     private String objectNameStrategy;
     private Integer instantUploadEnabled;
+    private Integer multipartEnabled;
+    private Long multipartThreshold;
     private String instantUploadScope;
     private Integer contentTypeCheckEnabled;
     private String allowedContentTypes;

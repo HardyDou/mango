@@ -154,6 +154,30 @@
               </el-form-item>
             </el-col>
           </el-row>
+          <el-row :gutter="20">
+            <el-col :xs="24" :md="8">
+              <el-form-item label="大文件分片">
+                <el-switch
+                  v-model="form.multipartEnabled"
+                  active-text="启用"
+                  inactive-text="停用"
+                />
+              </el-form-item>
+            </el-col>
+            <el-col :xs="24" :md="8">
+              <el-form-item label="分片临界值" prop="multipartThreshold">
+                <el-input-number
+                  v-model="multipartThresholdMb"
+                  :min="1"
+                  :max="serverUploadLimit.maxFileSizeMb"
+                  :precision="0"
+                  controls-position="right"
+                  class="number-input"
+                />
+                <span class="unit-text">MB</span>
+              </el-form-item>
+            </el-col>
+          </el-row>
         </section>
 
         <section class="settings-section">
@@ -344,8 +368,16 @@ const maxSizeMb = computed({
   },
 });
 
+const multipartThresholdMb = computed({
+  get: () => Math.max(1, Math.round(Number(form.multipartThreshold || 0) / 1024 / 1024)),
+  set: (value: number) => {
+    form.multipartThreshold = Number(value || 1) * 1024 * 1024;
+  },
+});
+
 const rules: FormRules = {
   maxSize: [{ required: true, message: '请输入单文件大小限制', trigger: 'blur' }],
+  multipartThreshold: [{ required: true, message: '请输入分片临界值', trigger: 'blur' }],
   directUploadExpireSeconds: [{ required: true, message: '请输入直传有效期', trigger: 'blur' }],
   accessTokenExpireSeconds: [{ required: true, message: '请输入访问有效期', trigger: 'blur' }],
   previewExpireSeconds: [{ required: true, message: '请输入预览有效期', trigger: 'blur' }],

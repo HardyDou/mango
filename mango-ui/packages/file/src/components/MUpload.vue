@@ -103,7 +103,6 @@ import { ElMessage, type UploadProps, type UploadRequestOptions, type UploadUser
 import type { AxiosProgressEvent } from 'axios';
 import { Plus, Upload as UploadIcon, UploadFilled } from '@element-plus/icons-vue';
 import {
-  DEFAULT_MULTIPART_THRESHOLD,
   fileApi,
   fileToken,
   isFileAccessUrl,
@@ -114,7 +113,7 @@ import {
   type FileBizMeta,
   type FileId,
 } from '../api/file';
-import { formatBytes } from '../api/fileSettings';
+import { fileSettingsApi, formatBytes } from '../api/fileSettings';
 
 defineOptions({
   name: 'MUpload',
@@ -244,13 +243,17 @@ async function handleUpload(options: UploadRequestOptions) {
   }
 }
 
-const handleBeforeUpload: UploadProps['beforeUpload'] = (file) => {
+const handleBeforeUpload: UploadProps['beforeUpload'] = async (file) => {
   if (props.readonly) return false;
   if (!formatAllowed(file.name)) {
     ElMessage.error('该文件类型不允许上传');
     return false;
   }
-  const maxSize = resolveMaxSize(file);
+  const componentMaxSize = resolveMaxSize(file);
+  const runtimeMaxSize = Number((await fileSettingsApi.get().catch(() => undefined))?.maxSize || 0);
+  const maxSize = componentMaxSize > 0 && runtimeMaxSize > 0
+    ? Math.min(componentMaxSize, runtimeMaxSize)
+    : componentMaxSize || runtimeMaxSize;
   if (maxSize > 0 && file.size > maxSize) {
     ElMessage.error(`文件大小不能超过 ${formatBytes(maxSize)}`);
     return false;
@@ -309,10 +312,12 @@ async function submitUpload() {
       file.percentage = 0;
     });
     const files = pending.map(item => item.raw as File);
-    const records = files.length === 1 || hasMultipartCandidate(files)
+    const policy = await fileApi.uploadPolicy();
+    const records = files.length === 1 || hasMultipartCandidate(files, policy)
       ? [await fileApi.upload(files[0], uploadParams(), {
+          ...policy,
           onUploadProgress: event => updateSingleProgress(pending[0], event),
-        }), ...(await uploadRemainingFiles(files.slice(1), pending.slice(1)))]
+        }), ...(await uploadRemainingFiles(files.slice(1), pending.slice(1), policy))]
       : await fileApi.uploadBatch(files, uploadParams(), {
           onUploadProgress: event => updateBatchProgress(pending, event),
         });
@@ -357,18 +362,23 @@ function updateBatchProgress(files: InternalUploadFile[], event: AxiosProgressEv
   });
 }
 
-async function uploadRemainingFiles(files: File[], pending: InternalUploadFile[]) {
+async function uploadRemainingFiles(
+  files: File[],
+  pending: InternalUploadFile[],
+  policy: { multipartEnabled: boolean; multipartThreshold: number },
+) {
   const records: FileRecord[] = [];
   for (let index = 0; index < files.length; index++) {
     records.push(await fileApi.upload(files[index], uploadParams(), {
+      ...policy,
       onUploadProgress: event => updateSingleProgress(pending[index], event),
     }));
   }
   return records;
 }
 
-function hasMultipartCandidate(files: File[]) {
-  return files.some(file => file.size >= DEFAULT_MULTIPART_THRESHOLD);
+function hasMultipartCandidate(files: File[], policy: { multipartEnabled: boolean; multipartThreshold: number }) {
+  return policy.multipartEnabled && files.some(file => file.size >= policy.multipartThreshold);
 }
 
 function progressPercent(loaded: number, total: number) {

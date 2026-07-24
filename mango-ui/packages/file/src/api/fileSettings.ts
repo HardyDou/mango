@@ -16,6 +16,8 @@ export interface FileSettings {
   duplicateCheckDirectoryScoped: boolean;
   objectNameStrategy: 'DATE_UUID' | 'HASH' | 'ORIGINAL';
   instantUploadEnabled: boolean;
+  multipartEnabled: boolean;
+  multipartThreshold: number;
   instantUploadScope: 'TENANT' | 'GLOBAL';
   contentTypeCheckEnabled: boolean;
   allowedContentTypes: string[];
@@ -37,8 +39,18 @@ export interface FileSettings {
   updatedTime?: string;
 }
 
+let pendingSettings: Promise<FileSettings> | undefined;
+
 export const fileSettingsApi = {
-  get: () => get<FileSettings>('/file/settings').then(fromBackendSettings),
+  get: () => {
+    if (pendingSettings) return pendingSettings;
+    pendingSettings = get<FileSettings>('/file/settings')
+      .then(fromBackendSettings)
+      .finally(() => {
+        pendingSettings = undefined;
+      });
+    return pendingSettings;
+  },
   save: (data: FileSettings) => put<boolean>('/file/settings', toBackendSettings(data)),
 };
 
@@ -51,6 +63,8 @@ export const defaultFileSettings: FileSettings = {
   duplicateCheckDirectoryScoped: true,
   objectNameStrategy: 'DATE_UUID',
   instantUploadEnabled: true,
+  multipartEnabled: true,
+  multipartThreshold: 20 * 1024 * 1024,
   instantUploadScope: 'TENANT',
   contentTypeCheckEnabled: true,
   allowedContentTypes: [],
@@ -120,6 +134,8 @@ function fromBackendSettings(item: any): FileSettings {
     duplicateCheckDirectoryScoped: item?.duplicateCheckDirectoryScoped !== false,
     objectNameStrategy: item?.objectNameStrategy || defaultFileSettings.objectNameStrategy,
     instantUploadEnabled: item?.instantUploadEnabled !== false,
+    multipartEnabled: item?.multipartEnabled !== false,
+    multipartThreshold: positiveOrDefault(item?.multipartThreshold, defaultFileSettings.multipartThreshold),
     instantUploadScope: item?.instantUploadScope || defaultFileSettings.instantUploadScope,
     contentTypeCheckEnabled: item?.contentTypeCheckEnabled !== false,
     allowedContentTypes: normalizeTextArray(item?.allowedContentTypes),
@@ -152,6 +168,8 @@ function toBackendSettings(data: FileSettings) {
     duplicateCheckDirectoryScoped: Boolean(data.duplicateCheckDirectoryScoped),
     objectNameStrategy: data.objectNameStrategy,
     instantUploadEnabled: Boolean(data.instantUploadEnabled),
+    multipartEnabled: Boolean(data.multipartEnabled),
+    multipartThreshold: positiveOrDefault(data.multipartThreshold, defaultFileSettings.multipartThreshold),
     instantUploadScope: data.instantUploadScope,
     contentTypeCheckEnabled: Boolean(data.contentTypeCheckEnabled),
     allowedContentTypes: data.allowedContentTypes || [],
@@ -186,6 +204,11 @@ function normalizeTextArray(value: any): string[] {
   if (Array.isArray(value)) return value.map(String).filter(Boolean);
   if (typeof value === 'string') return parseTextList(value);
   return [];
+}
+
+function positiveOrDefault(value: any, defaultValue: number): number {
+  const number = Number(value);
+  return Number.isFinite(number) && number > 0 ? number : defaultValue;
 }
 
 function normalizeDateTime(value: any): string {
