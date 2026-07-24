@@ -1235,9 +1235,10 @@ async function save() {
     weight: form.weight,
     routeTagCodes: form.routeTagCodes,
     configJson,
-    secretValues: Object.entries({ ...extractedSecrets, ...compactSecretValues(secretValues) }).map(
-      ([key, value]) => ({ key, value }),
-    ),
+    secretValues: Object.entries({ ...extractedSecrets, ...compactSecretValues(secretValues) }).map(([key, value]) => ({
+      key,
+      value,
+    })),
     rateLimitConfig: rateLimitJsonPreview.value,
   });
   ElMessage.success('已保存');
