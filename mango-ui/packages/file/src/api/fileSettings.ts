@@ -78,9 +78,27 @@ export const defaultFileSettings: FileSettings = {
   previewProviderUrl: '/file-preview/files/preview',
   previewExpireSeconds: 600,
   previewExternalExtensions: [
-    'doc', 'docx', 'xls', 'xlsx', 'xlsm', 'ppt', 'pptx',
-    'odt', 'ods', 'odp', 'ofd', 'wps', 'et', 'dps',
-    'csv', 'txt', 'zip', 'rar', '7z', 'eml', 'msg',
+    'doc',
+    'docx',
+    'xls',
+    'xlsx',
+    'xlsm',
+    'ppt',
+    'pptx',
+    'odt',
+    'ods',
+    'odp',
+    'ofd',
+    'wps',
+    'et',
+    'dps',
+    'csv',
+    'txt',
+    'zip',
+    'rar',
+    '7z',
+    'eml',
+    'msg',
   ],
   archiveRetainEnabled: true,
   archiveRetainDays: 180,
@@ -91,7 +109,7 @@ export const defaultFileSettings: FileSettings = {
 export function parseExtensions(value: string): string[] {
   return value
     .split(/[,，\s\n]+/)
-    .map(item => item.trim().replace(/^\./, '').toLowerCase())
+    .map((item) => item.trim().replace(/^\./, '').toLowerCase())
     .filter(Boolean)
     .filter((item, index, array) => array.indexOf(item) === index);
 }
@@ -103,7 +121,7 @@ export function stringifyExtensions(values?: string[]): string {
 export function parseTextList(value: string): string[] {
   return value
     .split(/[,，\s\n]+/)
-    .map(item => item.trim())
+    .map((item) => item.trim())
     .filter(Boolean)
     .filter((item, index, array) => array.indexOf(item) === index);
 }

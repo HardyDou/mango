@@ -1,3 +1,5 @@
+import { describe, expect, it } from 'vitest';
+
 import { defaultFileSettings } from '../fileSettings';
 
 describe('file settings defaults', () => {

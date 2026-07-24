@@ -1,3 +1,5 @@
+import { describe, expect, it, vi } from 'vitest';
+
 import { sha256IfSupported, shouldUseMultipart } from '../uploadSupport';
 
 describe('multipart upload support', () => {

@@ -120,11 +120,11 @@ import { FilePreviewPanel } from '@mango/file';
 
 前端包没有独立配置文件。配置来自三个地方：
 
-| 配置来源                                                                  | 用途                                                                 |
-| ------------------------------------------------------------------------- | -------------------------------------------------------------------- |
-| `registerMangoFileAdminPages()`                                           | 注册文件模块管理页面。                                               |
+| 配置来源                                                                  | 用途                                                                       |
+| ------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| `registerMangoFileAdminPages()`                                           | 注册文件模块管理页面。                                                     |
 | `GET /file/settings`                                                      | 后端文件运行时配置，控制大小限制、分片、秒传、直传、访问、预览和归档策略。 |
-| `FilePreviewPanel.previewProviderUrl` 或 `VITE_FILE_PREVIEW_PROVIDER_URL` | 文档预览服务地址兜底。                                               |
+| `FilePreviewPanel.previewProviderUrl` 或 `VITE_FILE_PREVIEW_PROVIDER_URL` | 文档预览服务地址兜底。                                                     |
 
 限制上传大小：
 
@@ -176,7 +176,7 @@ import { FilePreviewPanel } from '@mango/file';
 | `preview(id)`                                              | `GET /file/files/preview`                         | 文件预览元数据。       |
 | `previewLink(id)`                                          | `GET /file-preview/files/preview-link`            | 文档预览链接。         |
 | `upload(file, params, options)`                            | `POST /file/files` 或上传会话链路                 | 上传单文件。           |
-| `uploadPolicy()`                                          | `GET /file/settings`                              | 读取当前租户分片策略。 |
+| `uploadPolicy()`                                           | `GET /file/settings`                              | 读取当前租户分片策略。 |
 | `uploadBatch(files, params, options)`                      | `POST /file/files/batch`                          | 批量上传小文件。       |
 | `archive(id, reason)`                                      | `DELETE /file/files`                              | 归档。                 |
 | `delete(ids)`                                              | `POST /file/files/delete`                         | 删除记录。             |

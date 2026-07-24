@@ -141,42 +141,48 @@ export interface UploadColumn {
 }
 
 type UploadModelValue = string | string[] | FileRecord | FileRecord[] | null | undefined;
-type RuntimeFileRecord = FileRecord & Partial<Pick<
-  FilePreview,
-  'directPreviewUrl' | 'directDownloadUrl' | 'directPreviewExpireSeconds' | 'directDownloadExpireSeconds'
->> & {
-  url?: string;
-};
+type RuntimeFileRecord = FileRecord &
+  Partial<
+    Pick<
+      FilePreview,
+      'directPreviewUrl' | 'directDownloadUrl' | 'directPreviewExpireSeconds' | 'directDownloadExpireSeconds'
+    >
+  > & {
+    url?: string;
+  };
 type InternalUploadFile = UploadUserFile & Partial<Omit<RuntimeFileRecord, 'status'>>;
 
-const props = withDefaults(defineProps<{
-  modelValue?: UploadModelValue;
-  fmt?: string | string[];
-  count?: number;
-  size?: string | number;
-  sizes?: UploadSizeRules;
-  display?: UploadDisplay;
-  columns?: Array<UploadColumn | UploadColumnKey>;
-  valueType?: UploadValueType;
-  auto?: boolean;
-  readonly?: boolean;
-  purpose?: string;
-  accessLevel?: string;
-  bizType?: string;
-  bizId?: FileId;
-  bizMeta?: FileBizMeta;
-  directoryId?: FileId;
-  buttonText?: string;
-}>(), {
-  count: 1,
-  display: 'list',
-  valueType: 'token',
-  auto: true,
-  readonly: false,
-  purpose: 'attachment',
-  accessLevel: 'PRIVATE',
-  buttonText: '上传文件',
-});
+const props = withDefaults(
+  defineProps<{
+    modelValue?: UploadModelValue;
+    fmt?: string | string[];
+    count?: number;
+    size?: string | number;
+    sizes?: UploadSizeRules;
+    display?: UploadDisplay;
+    columns?: Array<UploadColumn | UploadColumnKey>;
+    valueType?: UploadValueType;
+    auto?: boolean;
+    readonly?: boolean;
+    purpose?: string;
+    accessLevel?: string;
+    bizType?: string;
+    bizId?: FileId;
+    bizMeta?: FileBizMeta;
+    directoryId?: FileId;
+    buttonText?: string;
+  }>(),
+  {
+    count: 1,
+    display: 'list',
+    valueType: 'token',
+    auto: true,
+    readonly: false,
+    purpose: 'attachment',
+    accessLevel: 'PRIVATE',
+    buttonText: '上传文件',
+  },
+);
 
 const emit = defineEmits<{
   (event: 'update:modelValue', value: UploadModelValue): void;
@@ -191,50 +197,63 @@ const uploadRef = ref();
 const objectUrls = new Map<string, string>();
 
 const multiple = computed(() => props.count > 1);
-const accept = computed(() => normalizeFormats(props.fmt).map(item => `.${item}`).join(','));
+const accept = computed(() =>
+  normalizeFormats(props.fmt)
+    .map((item) => `.${item}`)
+    .join(','),
+);
 const normalizedDisplay = computed<UploadDisplay>(() => {
   if (props.display === 'thumbnail') return 'thumbnail';
   if (props.display === 'table') return 'table';
   if (props.display === 'drag') return 'drag';
   return 'list';
 });
-const elementListType = computed(() => normalizedDisplay.value === 'thumbnail' ? 'picture-card' : 'text');
+const elementListType = computed(() => (normalizedDisplay.value === 'thumbnail' ? 'picture-card' : 'text'));
 const tableFiles = computed(() => internalFiles.value);
-const pendingFiles = computed(() => internalFiles.value.filter(item => item.status === 'ready' && !item.id));
+const pendingFiles = computed(() => internalFiles.value.filter((item) => item.status === 'ready' && !item.id));
 const resolvedColumns = computed(() => normalizeColumns(props.columns));
 const showUploadTrigger = computed(() => !props.readonly && (!props.count || internalFiles.value.length < props.count));
 const showManualAction = computed(() => !props.auto && !props.readonly);
 const showInlineManualAction = computed(() => showManualAction.value && normalizedDisplay.value !== 'drag');
 
-watch(() => props.modelValue, (value) => {
-  if (isSameRecordValue(value)) return;
-  syncing.value = true;
-  internalFiles.value = modelValueToFiles(value);
-  syncing.value = false;
-  internalFiles.value
-    .map(fileToRecord)
-    .filter((item): item is RuntimeFileRecord => Boolean(item?.id))
-    .forEach(record => void hydratePreviewUrl(record, true));
-}, { immediate: true, deep: true });
+watch(
+  () => props.modelValue,
+  (value) => {
+    if (isSameRecordValue(value)) return;
+    syncing.value = true;
+    internalFiles.value = modelValueToFiles(value);
+    syncing.value = false;
+    internalFiles.value
+      .map(fileToRecord)
+      .filter((item): item is RuntimeFileRecord => Boolean(item?.id))
+      .forEach((record) => void hydratePreviewUrl(record, true));
+  },
+  { immediate: true, deep: true },
+);
 
 async function handleUpload(options: UploadRequestOptions) {
   try {
     const meta = normalizeBizMeta(props.bizMeta);
-    const record = await fileApi.upload(options.file as File, {
-      purpose: props.purpose,
-      accessLevel: props.accessLevel,
-      bizType: props.bizType,
-      bizId: props.bizId ? String(props.bizId) : undefined,
-      bizMeta: meta,
-      directoryId: props.directoryId,
-    }, {
-      onUploadProgress: options.onProgress
-        ? event => options.onProgress?.({
-            ...event,
-            percent: progressPercent(event.loaded, event.total || (options.file as File).size || 0),
-          } as any)
-        : undefined,
-    });
+    const record = await fileApi.upload(
+      options.file as File,
+      {
+        purpose: props.purpose,
+        accessLevel: props.accessLevel,
+        bizType: props.bizType,
+        bizId: props.bizId ? String(props.bizId) : undefined,
+        bizMeta: meta,
+        directoryId: props.directoryId,
+      },
+      {
+        onUploadProgress: options.onProgress
+          ? (event) =>
+              options.onProgress?.({
+                ...event,
+                percent: progressPercent(event.loaded, event.total || (options.file as File).size || 0),
+              } as any)
+          : undefined,
+      },
+    );
     options.onSuccess?.(record);
     emit('success', record);
   } catch (error) {
@@ -251,9 +270,10 @@ const handleBeforeUpload: UploadProps['beforeUpload'] = async (file) => {
   }
   const componentMaxSize = resolveMaxSize(file);
   const runtimeMaxSize = Number((await fileSettingsApi.get().catch(() => undefined))?.maxSize || 0);
-  const maxSize = componentMaxSize > 0 && runtimeMaxSize > 0
-    ? Math.min(componentMaxSize, runtimeMaxSize)
-    : componentMaxSize || runtimeMaxSize;
+  const maxSize =
+    componentMaxSize > 0 && runtimeMaxSize > 0
+      ? Math.min(componentMaxSize, runtimeMaxSize)
+      : componentMaxSize || runtimeMaxSize;
   if (maxSize > 0 && file.size > maxSize) {
     ElMessage.error(`文件大小不能超过 ${formatBytes(maxSize)}`);
     return false;
@@ -287,7 +307,7 @@ const handleSuccess: UploadProps['onSuccess'] = (response, file, files) => {
 };
 
 const handleError: UploadProps['onError'] = (_error, file, files) => {
-  internalFiles.value = files.filter(item => item.uid !== file.uid).map(normalizeUploadFile);
+  internalFiles.value = files.filter((item) => item.uid !== file.uid).map(normalizeUploadFile);
   syncValue();
 };
 
@@ -311,27 +331,28 @@ async function submitUpload() {
       file.status = 'uploading';
       file.percentage = 0;
     });
-    const files = pending.map(item => item.raw as File);
+    const files = pending.map((item) => item.raw as File);
     const policy = await fileApi.uploadPolicy();
-    const records = files.length === 1 || hasMultipartCandidate(files, policy)
-      ? [await fileApi.upload(files[0], uploadParams(), {
-          ...policy,
-          onUploadProgress: event => updateSingleProgress(pending[0], event),
-        }), ...(await uploadRemainingFiles(files.slice(1), pending.slice(1), policy))]
-      : await fileApi.uploadBatch(files, uploadParams(), {
-          onUploadProgress: event => updateBatchProgress(pending, event),
-        });
+    const records =
+      files.length === 1 || hasMultipartCandidate(files, policy)
+        ? [
+            await fileApi.upload(files[0], uploadParams(), {
+              ...policy,
+              onUploadProgress: (event) => updateSingleProgress(pending[0], event),
+            }),
+            ...(await uploadRemainingFiles(files.slice(1), pending.slice(1), policy)),
+          ]
+        : await fileApi.uploadBatch(files, uploadParams(), {
+            onUploadProgress: (event) => updateBatchProgress(pending, event),
+          });
     pending.forEach((file) => {
       file.percentage = 100;
     });
     const uploaded = records.map((record, index) => recordToFile(record, pending[index]?.uid));
-    const uploadedUidSet = new Set(pending.map(item => item.uid));
-    internalFiles.value = [
-      ...internalFiles.value.filter(item => !uploadedUidSet.has(item.uid)),
-      ...uploaded,
-    ];
+    const uploadedUidSet = new Set(pending.map((item) => item.uid));
+    internalFiles.value = [...internalFiles.value.filter((item) => !uploadedUidSet.has(item.uid)), ...uploaded];
     syncValue();
-    records.forEach(record => emit('success', record));
+    records.forEach((record) => emit('success', record));
   } catch (error) {
     pending.forEach((file) => {
       file.status = 'fail';
@@ -369,16 +390,18 @@ async function uploadRemainingFiles(
 ) {
   const records: FileRecord[] = [];
   for (let index = 0; index < files.length; index++) {
-    records.push(await fileApi.upload(files[index], uploadParams(), {
-      ...policy,
-      onUploadProgress: event => updateSingleProgress(pending[index], event),
-    }));
+    records.push(
+      await fileApi.upload(files[index], uploadParams(), {
+        ...policy,
+        onUploadProgress: (event) => updateSingleProgress(pending[index], event),
+      }),
+    );
   }
   return records;
 }
 
 function hasMultipartCandidate(files: File[], policy: { multipartEnabled: boolean; multipartThreshold: number }) {
-  return policy.multipartEnabled && files.some(file => file.size >= policy.multipartThreshold);
+  return policy.multipartEnabled && files.some((file) => file.size >= policy.multipartThreshold);
 }
 
 function progressPercent(loaded: number, total: number) {
@@ -407,9 +430,9 @@ function modelValueFromRecords(records: FileRecord[]): UploadModelValue {
     return multiple.value ? records : records[0] || null;
   }
   if (props.valueType === 'id') {
-    return multiple.value ? records.map(item => String(item.id || '')).filter(Boolean) : String(records[0]?.id || '');
+    return multiple.value ? records.map((item) => String(item.id || '')).filter(Boolean) : String(records[0]?.id || '');
   }
-  return multiple.value ? records.map(item => fileToken(item.id)) : fileToken(records[0]?.id);
+  return multiple.value ? records.map((item) => fileToken(item.id)) : fileToken(records[0]?.id);
 }
 
 function uploadParams() {
@@ -429,17 +452,14 @@ function isSameRecordValue(value?: UploadModelValue) {
   const currentIds = internalFiles.value
     .map(fileToRecord)
     .filter((item): item is RuntimeFileRecord => Boolean(item?.id))
-    .map(item => String(item.id));
-  return currentIds.length === incomingIds.length
-    && currentIds.every((id, index) => id === incomingIds[index]);
+    .map((item) => String(item.id));
+  return currentIds.length === incomingIds.length && currentIds.every((id, index) => id === incomingIds[index]);
 }
 
 function modelValueIds(value?: UploadModelValue) {
   if (!value) return [];
   const values = Array.isArray(value) ? value : [value];
-  return values
-    .map(item => normalizeFileId(item as any))
-    .filter(Boolean);
+  return values.map((item) => normalizeFileId(item as any)).filter(Boolean);
 }
 
 function modelValueToFiles(value?: UploadModelValue): InternalUploadFile[] {
@@ -449,21 +469,25 @@ function modelValueToFiles(value?: UploadModelValue): InternalUploadFile[] {
     if (!item) return [];
     if (typeof item === 'string') {
       if (isFileAccessUrl(item)) {
-        return [{
-          uid: index,
-          name: item.split('/').pop() || `file-${index}`,
-          fileName: item.split('/').pop() || `file-${index}`,
-          url: item,
-        }];
+        return [
+          {
+            uid: index,
+            name: item.split('/').pop() || `file-${index}`,
+            fileName: item.split('/').pop() || `file-${index}`,
+            url: item,
+          },
+        ];
       }
       const id = normalizeFileId(item);
-      return [{
-        uid: index,
-        id,
-        name: `file-${id || index}`,
-        fileName: `file-${id || index}`,
-        url: '',
-      }];
+      return [
+        {
+          uid: index,
+          id,
+          name: `file-${id || index}`,
+          fileName: `file-${id || index}`,
+          url: '',
+        },
+      ];
     }
     return [recordToFile(item)];
   });
@@ -501,19 +525,19 @@ function recordToFile(record: RuntimeFileRecord, uid?: number, runtimeUrl?: stri
 }
 
 function previewUrl(record: Partial<RuntimeFileRecord>) {
-  return directDisplayUrl(record.directPreviewUrl)
-    || directDisplayUrl(record.directDownloadUrl)
-    || directDisplayUrl(record.url)
-    || directDisplayUrl(record.previewUrl)
-    || directDisplayUrl(record.downloadUrl)
-    || (record.id ? fileApi.downloadUrl(record.id) : '');
+  return (
+    directDisplayUrl(record.directPreviewUrl) ||
+    directDisplayUrl(record.directDownloadUrl) ||
+    directDisplayUrl(record.url) ||
+    directDisplayUrl(record.previewUrl) ||
+    directDisplayUrl(record.downloadUrl) ||
+    (record.id ? fileApi.downloadUrl(record.id) : '')
+  );
 }
 
 function displayUrl(record: Partial<RuntimeFileRecord>) {
-  const directUrl = thumbnailDirectUrl(record)
-    || directDisplayUrl(record.previewUrl)
-    || directDisplayUrl(record.downloadUrl)
-    || '';
+  const directUrl =
+    thumbnailDirectUrl(record) || directDisplayUrl(record.previewUrl) || directDisplayUrl(record.downloadUrl) || '';
   if (normalizedDisplay.value === 'thumbnail') {
     return thumbnailDirectUrl(record);
   }
@@ -537,10 +561,14 @@ async function hydratePreviewUrl(record: RuntimeFileRecord, shouldSyncValue = fa
         return file;
       }
       hydrated = true;
-      return recordToFile({
-        ...current,
-        ...nextRecord,
-      }, file.uid, runtimeUrl);
+      return recordToFile(
+        {
+          ...current,
+          ...nextRecord,
+        },
+        file.uid,
+        runtimeUrl,
+      );
     });
     cleanupUnusedObjectUrls();
     if (hydrated && shouldSyncValue) {
@@ -592,19 +620,24 @@ async function objectUrlForRecord(record: RuntimeFileRecord) {
     return existing;
   }
   const response = await fileApi.download(record.id);
-  const blob = response.data instanceof Blob
-    ? response.data
-    : new Blob([response.data], { type: record.contentType || response.headers?.['content-type'] || 'application/octet-stream' });
+  const blob =
+    response.data instanceof Blob
+      ? response.data
+      : new Blob([response.data], {
+          type: record.contentType || response.headers?.['content-type'] || 'application/octet-stream',
+        });
   const url = URL.createObjectURL(blob);
   objectUrls.set(key, url);
   return url;
 }
 
 function thumbnailDirectUrl(record: Partial<RuntimeFileRecord>) {
-  return directDisplayUrl(record.directPreviewUrl)
-    || directDisplayUrl(record.directDownloadUrl)
-    || directDisplayUrl(record.url)
-    || '';
+  return (
+    directDisplayUrl(record.directPreviewUrl) ||
+    directDisplayUrl(record.directDownloadUrl) ||
+    directDisplayUrl(record.url) ||
+    ''
+  );
 }
 
 function isImageRecord(record: Partial<FileRecord>) {
@@ -620,7 +653,7 @@ function cleanupUnusedObjectUrls() {
     internalFiles.value
       .map(fileToRecord)
       .filter((item): item is RuntimeFileRecord => Boolean(item?.id))
-      .map(item => String(item.id)),
+      .map((item) => String(item.id)),
   );
   objectUrls.forEach((url, id) => {
     if (!activeIds.has(id)) {
@@ -631,7 +664,7 @@ function cleanupUnusedObjectUrls() {
 }
 
 function revokeAllObjectUrls() {
-  objectUrls.forEach(url => URL.revokeObjectURL(url));
+  objectUrls.forEach((url) => URL.revokeObjectURL(url));
   objectUrls.clear();
 }
 
@@ -705,7 +738,7 @@ function resolveMaxSize(file: File) {
 function normalizeFormats(value?: string | string[]) {
   const values = Array.isArray(value) ? value : String(value || '').split(/[,，\s]+/);
   return values
-    .flatMap(item => expandFormat(item.trim().replace(/^\./, '').toLowerCase()))
+    .flatMap((item) => expandFormat(item.trim().replace(/^\./, '').toLowerCase()))
     .filter(Boolean)
     .filter((item, index, array) => array.indexOf(item) === index);
 }
