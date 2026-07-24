@@ -86,6 +86,25 @@ create table biz_contract_attachment (
 | 预览链路 | 启用预览时，file-preview 和 fileproc 依赖可用 |
 | 业务语义 | 编辑、删除业务单据时，附件解绑或物理清理策略清晰 |
 
+### 5.1 大文件和 HTTP IP 环境
+
+文件管理员在“文件配置”页面维护当前租户的大文件策略：
+
+| 配置 | 说明 |
+|------|------|
+| `multipartEnabled` | 是否启用分片上传；关闭后文件走普通上传。 |
+| `multipartThreshold` | 进入分片上传的临界值，单位字节，默认 `20971520`（20 MiB）。 |
+| `maxSize` | 文件中心单文件上限；`MUpload` 与组件自身限制同时存在时取较小值。 |
+
+业务页面不需要为 HTTP IP 单独配置 `MUpload`。浏览器没有 Web Crypto 时，组件会省略客户端 SHA-256，后端使用 `SERVER_CHUNK` 接收并在合并后计算哈希。本次上传不能在上传前命中秒传，完成后生成的哈希映射可供后续相同文件使用；HTTPS 或 localhost 环境仍保留客户端哈希、秒传和存储支持时的 `S3_MULTIPART`。
+
+业务项目升级后至少验证：
+
+1. HTTP IP 页面上传达到临界值的文件，不再出现 `crypto.subtle.digest` 异常。
+2. 开启分片时上传会话按环境返回 `SERVER_CHUNK` 或 `S3_MULTIPART`，关闭分片时改走普通上传。
+3. 临界值和 `maxSize` 修改后，新上传请求读取当前租户最新配置。
+4. Spring/Tomcat、网关和反向代理的请求大小及超时足以承载普通上传或单个分片。
+
 ## 6. 最小闭环
 
 1. 打开业务新增页。
@@ -191,6 +210,8 @@ pnpm -F @mango/file test
 - [前端文件上传与回显规则](../../../mango-pmo/rules/frontend/01-vue-code.md#41-文件上传与回显规则)
 
 ## 12. 变更影响记录
+
+- Issue #639 修复 HTTP IP、非安全上下文中大文件上传因 Web Crypto 不可用而中断的问题。文件管理员可配置 `multipartEnabled` 和 `multipartThreshold`；`MUpload` 自动读取当前租户策略和 `maxSize`。无客户端哈希时固定走 `SERVER_CHUNK`，服务端完成后补算 SHA-256；业务表单仍只保存 `fileId`/`fileIds`，无需增加组件属性。业务项目需在后续发布批次整体升级 `@mango/file`、固定版本前端消费者和对应后端 Maven 物料，并执行本节 HTTP IP 验收步骤。
 
 - v2026.07.21-maven-1.0.25-cli-1.0.89-branding-workflow-bom-release 将 `mango-file-preview-engine` 的既有依赖版本交由同版本 `mango-bom` 统一管理，不改变文件上传、回显、预览、下载的公开 API、配置、权限、租户、页面入口、启动方式或本场景验收步骤。继承 `mango-parent` 的业务项目只需整体升级 Mango 版本；使用自有 parent 的项目导入 `io.mango:mango-bom:1.0.25`。
 

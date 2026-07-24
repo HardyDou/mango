@@ -379,9 +379,18 @@ mango:
 | `instantUploadEnabled` | 是否开启秒传。 |
 | `instantUploadScope` | 秒传匹配范围：`TENANT` 当前租户，`GLOBAL` 全局。 |
 
-客户端初始化分片上传时传 `fileHash` 和 `fileSize`。命中后 `FileUploadInitVO.instant=true`，并直接返回 `fileRecord`，前端不再上传分片。
+客户端初始化分片上传时通常传 `fileHash` 和 `fileSize`。命中后 `FileUploadInitVO.instant=true`，并直接返回 `fileRecord`，前端不再上传分片。HTTP IP 等非安全上下文可能没有 Web Crypto，此时 `fileHash` 可以不传：本次上传不能在上传前命中秒传，服务端完成分片合并后会计算 SHA-256，后续相同文件仍可命中秒传。
 
 ### 5.4 大文件分片上传
+
+管理端“文件配置”页面提供以下运行时配置：
+
+| 字段 | 含义 |
+|------|------|
+| `multipartEnabled` | 是否启用大文件分片上传，默认启用。 |
+| `multipartThreshold` | 分片临界值，单位字节，默认 `20971520`（20 MiB）。 |
+
+`@mango/file` 每次上传都会读取当前租户配置。关闭分片后所有文件走普通上传；开启时，文件大小达到临界值后进入上传会话链路。
 
 初始化：
 
@@ -395,7 +404,7 @@ POST /file/files/uploads
 |------|------|
 | `fileName` | 原始文件名。 |
 | `fileSize` | 文件大小，必须小于等于当前 `maxSize`。 |
-| `fileHash` | SHA-256，用于秒传和完成校验。 |
+| `fileHash` | 可选 SHA-256，用于上传前秒传。HTTP IP 等无法使用 Web Crypto 的环境可以不传。 |
 | `contentType` | MIME 类型。 |
 | `chunkSize` | 分片大小；不传时服务端按默认值处理。 |
 | `totalParts` | 总分片数；最大 10000。 |
@@ -419,6 +428,8 @@ POST /file/files/uploads
 |------|----------|
 | `SERVER_CHUNK` | `POST /file/files/uploads/{sessionId}/parts` 上传分片，再 `POST /file/files/uploads/{sessionId}/complete` 完成。 |
 | `S3_MULTIPART` | `POST /file/files/uploads/{sessionId}/parts/sign` 获取直传地址，浏览器直传对象存储，再 `PUT /file/files/uploads/{sessionId}/parts` 登记分片，最后 complete。 |
+
+浏览器不能计算 SHA-256 时，服务端固定返回 `SERVER_CHUNK`，在合并分片时流式计算哈希并写入文件对象、文件记录和秒传映射。该降级不要求 HTTPS，因此通过 HTTP IP 访问也能完成大文件上传。
 
 取消上传：
 
@@ -478,6 +489,8 @@ mango:
       allowed-extensions: []
       blocked-extensions: [exe, bat, cmd, sh, jar]
       instant-upload-enabled: true
+      multipart-enabled: true
+      multipart-threshold: 20971520
       direct-upload-enabled: false
       direct-upload-expire-seconds: 900
     access:
@@ -502,6 +515,8 @@ mango:
 | `upload.allowed-extensions` | `[]` | 扩展名白名单，空表示不限制。 |
 | `upload.blocked-extensions` | `exe,bat,cmd,sh,jar` | 扩展名黑名单。 |
 | `upload.instant-upload-enabled` | `true` | 是否默认开启秒传。 |
+| `upload.multipart-enabled` | `true` | 是否默认开启大文件分片上传。 |
+| `upload.multipart-threshold` | `20971520` | 默认分片临界值，单位字节（20 MiB）。 |
 | `upload.direct-upload-enabled` | `false` | 是否默认允许浏览器直传对象存储。 |
 | `upload.direct-upload-expire-seconds` | `900` | 直传分片签名有效期，单位秒。 |
 | `access.mode` | `DIRECT` | YAML/代码兼容默认值；多前端部署推荐显式使用 `PROXY`。新平台资源会将首次运行时配置初始化为 `PROXY`。 |
@@ -629,6 +644,8 @@ mango-file-starter/src/main/resources/META-INF/mango/resources/file-common-stora
 | `duplicateCheckDirectoryScoped` | `INT` | 否 | 是否按目录隔离重名，默认 `1`。 |
 | `objectNameStrategy` | `STRING` | 否 | 对象命名策略，默认 `DATE_UUID`。 |
 | `instantUploadEnabled` | `INT` | 否 | 是否启用秒传，默认 `1`。 |
+| `multipartEnabled` | `INT` | 否 | 是否启用大文件分片上传，默认 `1`。 |
+| `multipartThreshold` | `LONG` | 否 | 分片临界值，单位字节，默认 `20971520`。 |
 | `instantUploadScope` | `STRING` | 否 | 秒传匹配范围，默认 `TENANT`。 |
 | `contentTypeCheckEnabled` | `INT` | 否 | 是否校验 MIME 类型，默认 `1`。 |
 | `allowedContentTypes` | `STRING` | 否 | 允许上传 MIME，逗号分隔；为空表示不限制。 |
@@ -653,7 +670,7 @@ mango-file-starter/src/main/resources/META-INF/mango/resources/file-common-stora
 
 | 接口 | 权限 | 用途 |
 |------|------|------|
-| `GET /file/settings` | `file:settings:query` | 读取当前租户文件配置。 |
+| `GET /file/settings` | `LOGIN` | 读取当前租户文件配置，上传组件也通过此接口读取运行时策略。 |
 | `PUT /file/settings` | `file:settings:edit` | 保存当前租户文件配置。 |
 
 字段：
@@ -668,6 +685,8 @@ mango-file-starter/src/main/resources/META-INF/mango/resources/file-common-stora
 | `duplicateCheckDirectoryScoped` | `true` | 是否只在同一逻辑目录内检查重名。 |
 | `objectNameStrategy` | `DATE_UUID` | 底层对象命名：`DATE_UUID`、`HASH`、`ORIGINAL`。 |
 | `instantUploadEnabled` | `mango.file.upload.instant-upload-enabled` | 是否开启秒传。 |
+| `multipartEnabled` | `mango.file.upload.multipart-enabled` | 是否开启大文件分片上传。 |
+| `multipartThreshold` | `mango.file.upload.multipart-threshold` | 分片临界值，单位字节。 |
 | `instantUploadScope` | `TENANT` | 秒传范围：`TENANT` 当前租户，`GLOBAL` 全局。 |
 | `contentTypeCheckEnabled` | `true` | 是否校验 MIME 类型。 |
 | `allowedContentTypes` | `[]` | MIME 白名单，空表示不限制。 |
@@ -751,6 +770,7 @@ Flyway 路径：`mango-file-core/src/main/resources/db/migration/file`。
 | Migration | 初始化内容 | 幂等键 / 唯一键 |
 |-----------|------------|-----------------|
 | `V1__init_file.sql` | `file_record`、`file_storage_config`、`file_settings`、`file_directory`、`file_object`、`file_hash_mapping`、`file_upload_session`、`file_upload_part` | 表级 `CREATE TABLE IF NOT EXISTS`、`file_storage_config.config_name`、`file_settings.tenant_id` |
+| `V3__multipart_upload_settings.sql` | 增加分片开关、临界值，并允许上传会话暂缺客户端哈希 | `multipart_enabled`、`multipart_threshold`、可空 `file_hash` |
 
 默认本地存储、MinIO 本地联调配置和默认文件中心运行时配置通过 `mango-resource` 注入，资源文件是 `file-common-storage.yml`。运行时文件配置写入 `file_settings`，按 `tenant_id` 唯一；当前租户没有配置时，`GET /file/settings` 会返回 YAML 默认值和 `defaultConfig=true`。
 
@@ -759,8 +779,8 @@ Flyway 路径：`mango-file-core/src/main/resources/db/migration/file`。
 ## 13. 问题排查
 
 - 上传被拒绝：先查 `GET /file/settings` 返回的 `maxSize`、扩展名和 MIME 黑白名单，再查前端 `MUpload` 的 `fmt`、`size`、`sizes`。
-- 秒传没有命中：确认运行时配置 `instantUploadEnabled=true`，客户端初始化分片上传时传了 `fileHash`，并确认 `instantUploadScope` 是否按租户或全局匹配。
-- 大文件分片失败：检查 `POST /file/files/uploads` 返回的 `uploadMode`，`S3_MULTIPART` 需要存储配置支持直传签名，`SERVER_CHUNK` 需要 Java 服务能接收分片。
+- 秒传没有命中：确认运行时配置 `instantUploadEnabled=true`，客户端初始化分片上传时传了 `fileHash`，并确认 `instantUploadScope` 是否按租户或全局匹配。HTTP IP 首次上传没有客户端哈希时不能预先秒传，完成后服务端会补建映射。
+- 大文件分片失败：先检查 `multipartEnabled`、`multipartThreshold`，再检查 `POST /file/files/uploads` 返回的 `uploadMode`。`S3_MULTIPART` 需要存储配置支持直传签名；HTTP IP 等无 Web Crypto 环境应返回 `SERVER_CHUNK`，Java 服务必须能接收分片。
 - 预览只能下载不能打开：检查 `previewProviderUrl`、`previewExternalExtensions`，Office 类文件还需要 `mango-file-preview` 和 `mango-infra-fileproc`。
 - 页面空白或按钮不可见：检查 authorization 菜单 component 是否是 `file/files/index`、`file/storage-configs/index`、`file/settings/index`，并确认账号拥有对应 `file:*` 权限码。
 - 业务表里出现对象存储地址：应改为保存 `fileId` 或业务附件关系；`previewUrl`、`downloadUrl` 只用于当前页面即时展示。

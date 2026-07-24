@@ -77,7 +77,7 @@ class FileResourceHandlerIntegrationTest {
 
         assertThat(storageConfigs).hasSize(1);
         assertThat(settings).hasSize(1);
-        assertThat(settings.getFirst().getVersion()).isEqualTo(4);
+        assertThat(settings.getFirst().getVersion()).isEqualTo(5);
         assertThat(settings.getFirst().getSyncMode()).isEqualTo(ResourceSyncMode.INIT_ONLY);
         assertThat(count("file_storage_config")).isOne();
         assertThat(count("file_settings")).isOne();
@@ -91,6 +91,8 @@ class FileResourceHandlerIntegrationTest {
         assertThat(intValue("file_settings", "access_token_expire_seconds", "id = 1")).isEqualTo(86400);
         assertThat(intValue("file_settings", "preview_expire_seconds", "id = 1")).isEqualTo(86400);
         assertThat(intValue("file_settings", "archive_retain_days", "id = 1")).isEqualTo(180);
+        assertThat(intValue("file_settings", "multipart_enabled", "id = 1")).isOne();
+        assertThat(longValue("file_settings", "multipart_threshold", "id = 1")).isEqualTo(20971520L);
     }
 
     @Test
@@ -240,6 +242,8 @@ class FileResourceHandlerIntegrationTest {
                     duplicate_check_directory_scoped tinyint not null default 1,
                     object_name_strategy varchar(32) not null default 'DATE_UUID',
                     instant_upload_enabled tinyint not null default 1,
+                    multipart_enabled tinyint not null default 1,
+                    multipart_threshold bigint not null default 20971520,
                     instant_upload_scope varchar(32) not null default 'TENANT',
                     content_type_check_enabled tinyint not null default 1,
                     allowed_content_types varchar(1000),
@@ -282,6 +286,12 @@ class FileResourceHandlerIntegrationTest {
         Integer value = jdbcTemplate.queryForObject("select " + columnName + " from " + tableName + " where " + whereClause,
                 Integer.class);
         return value == null ? 0 : value;
+    }
+
+    private long longValue(String tableName, String columnName, String whereClause) {
+        Long value = jdbcTemplate.queryForObject("select " + columnName + " from " + tableName + " where " + whereClause,
+                Long.class);
+        return value == null ? 0L : value;
     }
 
     @Configuration

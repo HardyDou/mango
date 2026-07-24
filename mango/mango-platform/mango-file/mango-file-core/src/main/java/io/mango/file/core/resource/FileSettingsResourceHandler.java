@@ -24,6 +24,10 @@ public class FileSettingsResourceHandler implements ResourceHandler {
 
     private static final String TARGET_TABLE = "file_settings";
     private static final long DEFAULT_TENANT_ID = 1L;
+    private static final long DEFAULT_MAX_SIZE = 104857600L;
+    private static final long DEFAULT_MULTIPART_THRESHOLD = 20971520L;
+    private static final long DEFAULT_DIRECT_UPLOAD_EXPIRE_SECONDS = 900L;
+    private static final long DEFAULT_ACCESS_EXPIRE_SECONDS = 86400L;
     private static final int ENABLED = 1;
     private static final int DISABLED = 0;
 
@@ -48,6 +52,8 @@ public class FileSettingsResourceHandler implements ResourceHandler {
                 .fieldDescription("duplicateCheckDirectoryScoped", "是否按目录隔离重名，默认 1。")
                 .fieldDescription("objectNameStrategy", "对象命名策略，默认 DATE_UUID。")
                 .fieldDescription("instantUploadEnabled", "是否启用秒传，默认 1。")
+                .fieldDescription("multipartEnabled", "是否启用大文件分片上传，默认 1。")
+                .fieldDescription("multipartThreshold", "大文件分片上传临界值，单位字节，默认 20971520。")
                 .fieldDescription("instantUploadScope", "秒传匹配范围，默认 TENANT。")
                 .fieldDescription("contentTypeCheckEnabled", "是否校验内容类型，默认 1。")
                 .fieldDescription("allowedContentTypes", "允许上传内容类型，逗号分隔；为空表示不限制。")
@@ -94,6 +100,7 @@ public class FileSettingsResourceHandler implements ResourceHandler {
         }
         LocalDateTime now = LocalDateTime.now();
         entity.setInstantUploadEnabled(DISABLED);
+        entity.setMultipartEnabled(DISABLED);
         entity.setDirectUploadEnabled(DISABLED);
         entity.setAccessTokenEnabled(DISABLED);
         entity.setArchiveRestoreEnabled(DISABLED);
@@ -126,6 +133,8 @@ public class FileSettingsResourceHandler implements ResourceHandler {
         entity.setDuplicateCheckDirectoryScoped(payload.duplicateCheckDirectoryScoped());
         entity.setObjectNameStrategy(payload.objectNameStrategy());
         entity.setInstantUploadEnabled(payload.instantUploadEnabled());
+        entity.setMultipartEnabled(payload.multipartEnabled());
+        entity.setMultipartThreshold(payload.multipartThreshold());
         entity.setInstantUploadScope(payload.instantUploadScope());
         entity.setContentTypeCheckEnabled(payload.contentTypeCheckEnabled());
         entity.setAllowedContentTypes(payload.allowedContentTypes());
@@ -177,6 +186,7 @@ public class FileSettingsResourceHandler implements ResourceHandler {
                                    String blockedExtensions, String defaultAccessLevel,
                                    String duplicateNameStrategy, Integer duplicateCheckDirectoryScoped,
                                    String objectNameStrategy, Integer instantUploadEnabled,
+                                   Integer multipartEnabled, Long multipartThreshold,
                                    String instantUploadScope, Integer contentTypeCheckEnabled,
                                    String allowedContentTypes, String blockedContentTypes,
                                    Integer directUploadEnabled, Long directUploadExpireSeconds,
@@ -191,7 +201,7 @@ public class FileSettingsResourceHandler implements ResourceHandler {
             return new SettingsPayload(
                     fieldLong(resource, "settingsId", false, Long.valueOf(resource.getId())),
                     fieldLong(resource, "tenantId", false, DEFAULT_TENANT_ID),
-                    fieldLong(resource, "maxSize", false, 104857600L),
+                    fieldLong(resource, "maxSize", false, DEFAULT_MAX_SIZE),
                     fieldText(resource, "allowedExtensions", false),
                     defaultText(fieldText(resource, "blockedExtensions", false), "exe,bat,cmd,sh,jar"),
                     defaultText(fieldText(resource, "defaultAccessLevel", false), "PRIVATE").toUpperCase(),
@@ -199,19 +209,21 @@ public class FileSettingsResourceHandler implements ResourceHandler {
                     fieldInt(resource, "duplicateCheckDirectoryScoped", false, ENABLED),
                     defaultText(fieldText(resource, "objectNameStrategy", false), "DATE_UUID").toUpperCase(),
                     fieldInt(resource, "instantUploadEnabled", false, ENABLED),
+                    fieldInt(resource, "multipartEnabled", false, ENABLED),
+                    fieldLong(resource, "multipartThreshold", false, DEFAULT_MULTIPART_THRESHOLD),
                     defaultText(fieldText(resource, "instantUploadScope", false), "TENANT").toUpperCase(),
                     fieldInt(resource, "contentTypeCheckEnabled", false, ENABLED),
                     fieldText(resource, "allowedContentTypes", false),
                     defaultText(fieldText(resource, "blockedContentTypes", false),
                             "application/x-msdownload,application/x-sh"),
                     fieldInt(resource, "directUploadEnabled", false, DISABLED),
-                    fieldLong(resource, "directUploadExpireSeconds", false, 900L),
+                    fieldLong(resource, "directUploadExpireSeconds", false, DEFAULT_DIRECT_UPLOAD_EXPIRE_SECONDS),
                     fieldInt(resource, "accessTokenEnabled", false, ENABLED),
                     fieldInt(resource, "publicReadRequiresToken", false, ENABLED),
                     defaultText(fieldText(resource, "accessMode", false), "DIRECT").toUpperCase(),
-                    fieldLong(resource, "accessTokenExpireSeconds", false, 86400L),
+                    fieldLong(resource, "accessTokenExpireSeconds", false, DEFAULT_ACCESS_EXPIRE_SECONDS),
                     fieldText(resource, "previewProviderUrl", false),
-                    fieldLong(resource, "previewExpireSeconds", false, 86400L),
+                    fieldLong(resource, "previewExpireSeconds", false, DEFAULT_ACCESS_EXPIRE_SECONDS),
                     defaultText(fieldText(resource, "previewExternalExtensions", false),
                             "doc,docx,xls,xlsx,xlsm,ppt,pptx,odt,ods,odp,ofd,wps,et,dps,csv,txt,zip,rar,7z,eml,msg"),
                     fieldInt(resource, "archiveRetainEnabled", false, ENABLED),

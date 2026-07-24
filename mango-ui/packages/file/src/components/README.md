@@ -8,29 +8,29 @@
 
 ## 2. 功能清单
 
-| 能力 | 导出 |
-|------|------|
-| 上传文件 | `MUpload` |
-| 预览文件 | `FilePreviewPanel` |
+| 能力         | 导出                                                                                     |
+| ------------ | ---------------------------------------------------------------------------------------- |
+| 上传文件     | `MUpload`                                                                                |
+| 预览文件     | `FilePreviewPanel`                                                                       |
 | 上传组件类型 | `UploadColumn`、`UploadColumnKey`、`UploadDisplay`、`UploadSizeRules`、`UploadValueType` |
 
 组件选型边界：
 
-| 场景 | 使用组件 | 说明 |
-|------|----------|------|
-| 业务表单上传、附件列表、图片缩略图回显 | `MUpload` | 负责选择、上传、回写和上传列表展示。点击上传列表文件时，组件内部按文件记录打开可用预览地址，不渲染 `FilePreviewPanel`。 |
-| 业务详情页、只读附件区、后台文件管理预览内容区 | `FilePreviewPanel` | 负责按文件 ID 或预览元数据展示图片、PDF、音视频和文档预览，并提供下载、新窗口预览能力。它是内容面板，不是完整弹框组件。 |
-| 后端在线预览服务 | `mango-file-preview` | 提供 `/file-preview/files/preview-link` 和 `/file-preview/files/preview`，不是前端 Vue 组件。前端组件通过 `fileApi.previewLink()` 或预览元数据消费它。 |
+| 场景                                           | 使用组件             | 说明                                                                                                                                                   |
+| ---------------------------------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 业务表单上传、附件列表、图片缩略图回显         | `MUpload`            | 负责选择、上传、回写和上传列表展示。点击上传列表文件时，组件内部按文件记录打开可用预览地址，不渲染 `FilePreviewPanel`。                                |
+| 业务详情页、只读附件区、后台文件管理预览内容区 | `FilePreviewPanel`   | 负责按文件 ID 或预览元数据展示图片、PDF、音视频和文档预览，并提供下载、新窗口预览能力。它是内容面板，不是完整弹框组件。                                |
+| 后端在线预览服务                               | `mango-file-preview` | 提供 `/file-preview/files/preview-link` 和 `/file-preview/files/preview`，不是前端 Vue 组件。前端组件通过 `fileApi.previewLink()` 或预览元数据消费它。 |
 
 Issue #411 的布局优化目标是 `FilePreviewPanel` 及文件管理页承载它的预览弹框；如果业务页面看到的是 `MUpload` 上传列表点击后的新窗口预览，需要按 `MUpload` 的预览行为另行评估，与 `FilePreviewPanel` 布局无关。
 
 正确用法：
 
-| 需求 | 推荐方式 | 边界 |
-|------|----------|------|
-| 在详情页内嵌预览 | 直接使用 `<FilePreviewPanel :file-id="fileId" />` | 页面负责外围标题和布局，组件负责预览内容、下载和新窗口预览。 |
-| 在弹框中预览文件 | 使用统一的文件预览弹框入口；当前缺少公共 `FilePreviewDialog` 时，业务外层 `el-dialog` 只做标题、尺寸和确认动作包装，内部放置 `FilePreviewPanel` | 不要在业务页重新实现 PDF/iframe/img 预览逻辑，不要复制 `FilePreviewPanel` 内部能力。 |
-| 上传列表点击文件 | 使用 `MUpload` 自带预览行为 | 这是上传组件交互，不等同于详情预览弹框。需要弹框式预览时，应在业务详情区另行接入 `FilePreviewPanel`。 |
+| 需求             | 推荐方式                                                                                                                                        | 边界                                                                                                  |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| 在详情页内嵌预览 | 直接使用 `<FilePreviewPanel :file-id="fileId" />`                                                                                               | 页面负责外围标题和布局，组件负责预览内容、下载和新窗口预览。                                          |
+| 在弹框中预览文件 | 使用统一的文件预览弹框入口；当前缺少公共 `FilePreviewDialog` 时，业务外层 `el-dialog` 只做标题、尺寸和确认动作包装，内部放置 `FilePreviewPanel` | 不要在业务页重新实现 PDF/iframe/img 预览逻辑，不要复制 `FilePreviewPanel` 内部能力。                  |
+| 上传列表点击文件 | 使用 `MUpload` 自带预览行为                                                                                                                     | 这是上传组件交互，不等同于详情预览弹框。需要弹框式预览时，应在业务详情区另行接入 `FilePreviewPanel`。 |
 
 弹框包装约定：
 
@@ -95,50 +95,50 @@ const fileIds = ref<string[]>([]);
 
 `MUpload` props：
 
-| Prop | 类型 | 默认值 | 含义 |
-|------|------|--------|------|
-| `modelValue` | `string \| string[] \| FileRecord \| FileRecord[] \| null` | 空 | 表单值。 |
-| `fmt` | `string \| string[]` | 空 | 前端扩展名限制，例如 `pdf,docx,png`。 |
-| `count` | `number` | `1` | 最大文件数；大于 1 时允许多选。 |
-| `size` | `string \| number` | 空 | 前端通用大小限制，支持字节数或 `20MB`。 |
-| `sizes` | `UploadSizeRules` | 空 | 按文件类型设置大小限制。 |
-| `display` | `list \| thumbnail \| table \| drag` | `list` | 展示样式。 |
-| `columns` | `UploadColumn[] \| UploadColumnKey[]` | 默认列 | `display="table"` 时的列配置。 |
-| `valueType` | `id \| token \| record` | `token` | 回写值格式。 |
-| `auto` | `boolean` | `true` | 是否选择文件后立即上传。 |
-| `readonly` | `boolean` | `false` | 只读展示。 |
-| `purpose` | `string` | `attachment` | 上传用途。 |
-| `accessLevel` | `string` | `PRIVATE` | 文件访问级别。 |
-| `bizType` | `string` | 空 | 业务类型。 |
-| `bizId` | `string \| number` | 空 | 业务 ID。 |
-| `bizMeta` | `object \| string` | 空 | 业务元数据。 |
-| `directoryId` | `string \| number` | 空 | 文件中心逻辑目录 ID。 |
-| `buttonText` | `string` | `上传文件` | 默认按钮文字。 |
+| Prop          | 类型                                                       | 默认值       | 含义                                    |
+| ------------- | ---------------------------------------------------------- | ------------ | --------------------------------------- |
+| `modelValue`  | `string \| string[] \| FileRecord \| FileRecord[] \| null` | 空           | 表单值。                                |
+| `fmt`         | `string \| string[]`                                       | 空           | 前端扩展名限制，例如 `pdf,docx,png`。   |
+| `count`       | `number`                                                   | `1`          | 最大文件数；大于 1 时允许多选。         |
+| `size`        | `string \| number`                                         | 空           | 前端通用大小限制，支持字节数或 `20MB`。 |
+| `sizes`       | `UploadSizeRules`                                          | 空           | 按文件类型设置大小限制。                |
+| `display`     | `list \| thumbnail \| table \| drag`                       | `list`       | 展示样式。                              |
+| `columns`     | `UploadColumn[] \| UploadColumnKey[]`                      | 默认列       | `display="table"` 时的列配置。          |
+| `valueType`   | `id \| token \| record`                                    | `token`      | 回写值格式。                            |
+| `auto`        | `boolean`                                                  | `true`       | 是否选择文件后立即上传。                |
+| `readonly`    | `boolean`                                                  | `false`      | 只读展示。                              |
+| `purpose`     | `string`                                                   | `attachment` | 上传用途。                              |
+| `accessLevel` | `string`                                                   | `PRIVATE`    | 文件访问级别。                          |
+| `bizType`     | `string`                                                   | 空           | 业务类型。                              |
+| `bizId`       | `string \| number`                                         | 空           | 业务 ID。                               |
+| `bizMeta`     | `object \| string`                                         | 空           | 业务元数据。                            |
+| `directoryId` | `string \| number`                                         | 空           | 文件中心逻辑目录 ID。                   |
+| `buttonText`  | `string`                                                   | `上传文件`   | 默认按钮文字。                          |
 
 `valueType`：
 
-| 值 | 回写内容 |
-|----|----------|
-| `id` | 文件记录 ID。 |
-| `token` | `mango-file:<id>`。 |
+| 值       | 回写内容            |
+| -------- | ------------------- |
+| `id`     | 文件记录 ID。       |
+| `token`  | `mango-file:<id>`。 |
 | `record` | 完整 `FileRecord`。 |
 
 `MUpload` events：
 
-| 事件 | 参数 | 含义 |
-|------|------|------|
-| `update:modelValue` | `value` | v-model 更新。 |
-| `change` | `value, records` | 文件列表变化。 |
-| `success` | `record` | 单个文件上传成功。 |
-| `error` | `error` | 上传失败。 |
+| 事件                | 参数             | 含义               |
+| ------------------- | ---------------- | ------------------ |
+| `update:modelValue` | `value`          | v-model 更新。     |
+| `change`            | `value, records` | 文件列表变化。     |
+| `success`           | `record`         | 单个文件上传成功。 |
+| `error`             | `error`          | 上传失败。         |
 
 `MUpload` slots：
 
-| Slot | 含义 |
-|------|------|
-| `trigger` | 默认上传触发器。 |
+| Slot                | 含义               |
+| ------------------- | ------------------ |
+| `trigger`           | 默认上传触发器。   |
 | `thumbnail-trigger` | 缩略图模式触发器。 |
-| `drag-trigger` | 拖拽模式触发器。 |
+| `drag-trigger`      | 拖拽模式触发器。   |
 
 上传策略：
 
@@ -146,28 +146,29 @@ const fileIds = ref<string[]>([]);
 - `auto=false` 时，点击“上传到服务器”后提交。
 - 小文件批量上传调用 `fileApi.uploadBatch()`。
 - 单个文件或存在大文件时逐个上传，便于走分片链路。
-- 前端默认分片阈值是 `20MB`。
+- 分片开关和临界值读取 `GET /file/settings` 的 `multipartEnabled`、`multipartThreshold`；读取失败时默认启用并使用 `20MiB` 临界值。
+- HTTP IP 等非安全上下文不能使用 Web Crypto 时，大文件自动省略客户端哈希并降级为服务端分片，不会因 `crypto.subtle` 不可用中断。
 - 秒传命中时，后端返回 `instant=true` 和 `fileRecord`，组件直接回写。
-- `fmt`、`size`、`sizes` 是前端预检查；后端最终限制来自 `GET /file/settings`。
+- `fmt`、`size`、`sizes` 是组件预检查；`MUpload` 还会读取 `GET /file/settings` 的 `maxSize`，存在两类限制时取较小值，后端仍做最终校验。
 
 `FilePreviewPanel` props：
 
-| Prop | 类型 | 默认值 | 含义 |
-|------|------|--------|------|
-| `fileId` | `ApiId \| mango-file:<id> \| null` | 空 | 文件 ID 或 token。 |
-| `file` | `FileReference` | 空 | 文件引用，优先用于解析 ID。 |
-| `preview` | `FilePreview \| null` | 空 | 外部已加载预览对象；传入后不再请求 `fileApi.preview()`。 |
-| `previewProviderUrl` | `string` | 环境变量或后端返回 | 文档预览服务地址。 |
-| `previewExternalExtensions` | `string[]` | 空 | 外部预览扩展名。 |
-| `showActions` | `boolean` | `true` | 是否显示下载和新窗口预览操作。 |
+| Prop                        | 类型                               | 默认值             | 含义                                                     |
+| --------------------------- | ---------------------------------- | ------------------ | -------------------------------------------------------- |
+| `fileId`                    | `ApiId \| mango-file:<id> \| null` | 空                 | 文件 ID 或 token。                                       |
+| `file`                      | `FileReference`                    | 空                 | 文件引用，优先用于解析 ID。                              |
+| `preview`                   | `FilePreview \| null`              | 空                 | 外部已加载预览对象；传入后不再请求 `fileApi.preview()`。 |
+| `previewProviderUrl`        | `string`                           | 环境变量或后端返回 | 文档预览服务地址。                                       |
+| `previewExternalExtensions` | `string[]`                         | 空                 | 外部预览扩展名。                                         |
+| `showActions`               | `boolean`                          | `true`             | 是否显示下载和新窗口预览操作。                           |
 
 `FilePreviewPanel` events 和 expose：
 
-| 名称 | 参数 | 含义 |
-|------|------|------|
-| `actions-change` | `{ canDownload, canOpenInNewWindow }` | 操作可用状态变化。 |
-| `openDownload()` | 无 | 暴露方法，触发下载。 |
-| `openPreviewInNewWindow()` | 无 | 暴露方法，打开预览。 |
+| 名称                       | 参数                                  | 含义                 |
+| -------------------------- | ------------------------------------- | -------------------- |
+| `actions-change`           | `{ canDownload, canOpenInNewWindow }` | 操作可用状态变化。   |
+| `openDownload()`           | 无                                    | 暴露方法，触发下载。 |
+| `openPreviewInNewWindow()` | 无                                    | 暴露方法，打开预览。 |
 
 预览规则：
 
@@ -183,22 +184,22 @@ const fileIds = ref<string[]>([]);
 
 ## 5. 后端依赖
 
-| 能力 | 后端依赖 |
-|------|----------|
-| 上传、批量上传、下载、预览元数据 | `mango-file`。 |
-| 分片上传和秒传 | `/file/files/uploads` 上传会话接口。 |
-| 文档预览链接 | `mango-file-preview` 的 `/file-preview/files/preview-link`。 |
-| Office/PDF 等文件处理 | `mango-infra-fileproc`。 |
+| 能力                             | 后端依赖                                                     |
+| -------------------------------- | ------------------------------------------------------------ |
+| 上传、批量上传、下载、预览元数据 | `mango-file`。                                               |
+| 分片上传和秒传                   | `/file/files/uploads` 上传会话接口。                         |
+| 文档预览链接                     | `mango-file-preview` 的 `/file-preview/files/preview-link`。 |
+| Office/PDF 等文件处理            | `mango-infra-fileproc`。                                     |
 
 ## 6. 权限与数据边界
 
 访问基线：
 
-| 操作 | 访问模式 |
-|------|----------|
-| 上传、秒传、分片、预览、下载 | `LOGIN`，不依赖角色权限码 |
-| 跨域预览、下载 | 直接使用文件查询返回的安全签名链接，默认有效期 24 小时 |
-| 列表、归档、删除、管理配置 | 后端细粒度权限 |
+| 操作                         | 访问模式                                               |
+| ---------------------------- | ------------------------------------------------------ |
+| 上传、秒传、分片、预览、下载 | `LOGIN`，不依赖角色权限码                              |
+| 跨域预览、下载               | 直接使用文件查询返回的安全签名链接，默认有效期 24 小时 |
+| 列表、归档、删除、管理配置   | 后端细粒度权限                                         |
 
 租户、目录、文件状态、访问级别和业务归属由后端校验。组件不会绕过后端权限。
 

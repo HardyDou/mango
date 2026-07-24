@@ -39,6 +39,8 @@ class FileSettingsServiceTest {
         assertThat(existing.getPreviewExternalExtensions()).isEmpty();
         assertThat(existing.getDuplicateCheckDirectoryScoped()).isOne();
         assertThat(existing.getInstantUploadEnabled()).isOne();
+        assertThat(existing.getMultipartEnabled()).isOne();
+        assertThat(existing.getMultipartThreshold()).isEqualTo(20L * 1024 * 1024);
         assertThat(existing.getContentTypeCheckEnabled()).isOne();
         assertThat(existing.getDirectUploadEnabled()).isZero();
         assertThat(existing.getDirectUploadExpireSeconds()).isEqualTo(900L);
@@ -83,6 +85,8 @@ class FileSettingsServiceTest {
         command.setDuplicateCheckDirectoryScoped(true);
         command.setObjectNameStrategy(FileObjectNameStrategy.DATE_UUID.name());
         command.setInstantUploadEnabled(true);
+        command.setMultipartEnabled(true);
+        command.setMultipartThreshold(20L * 1024 * 1024);
         command.setInstantUploadScope(FileInstantUploadScope.TENANT.name());
         command.setContentTypeCheckEnabled(true);
         command.setAllowedContentTypes(List.of());

@@ -4,6 +4,8 @@
 
 import { del, get, post, put, request, type RequestConfig } from '@mango/common';
 import type { ApiId } from '@mango/api-schema';
+import { defaultFileSettings, fileSettingsApi } from './fileSettings';
+import { sha256IfSupported, shouldUseMultipart } from './uploadSupport';
 
 export type FileId = ApiId;
 export type FileBizMeta = Record<string, unknown> | string;
@@ -50,10 +52,16 @@ export interface FilePreview {
   directDownloadExpireSeconds?: number;
 }
 
-type FileRuntimeAccess = Partial<Pick<
-  FilePreview,
-  'directAccess' | 'directPreviewUrl' | 'directDownloadUrl' | 'directPreviewExpireSeconds' | 'directDownloadExpireSeconds'
->> & {
+type FileRuntimeAccess = Partial<
+  Pick<
+    FilePreview,
+    | 'directAccess'
+    | 'directPreviewUrl'
+    | 'directDownloadUrl'
+    | 'directPreviewExpireSeconds'
+    | 'directDownloadExpireSeconds'
+  >
+> & {
   url?: string;
 };
 
@@ -78,16 +86,24 @@ export interface FileQuery {
   includeArchived?: boolean;
 }
 
-export type FileUploadParams = Partial<Pick<FileRecord, 'purpose' | 'accessLevel' | 'bizType' | 'bizId' | 'bizMeta' | 'directoryId'>>;
+export type FileUploadParams = Partial<
+  Pick<FileRecord, 'purpose' | 'accessLevel' | 'bizType' | 'bizId' | 'bizMeta' | 'directoryId'>
+>;
 export interface FileUploadOptions extends Pick<RequestConfig, 'onUploadProgress'> {
+  multipartEnabled?: boolean;
   multipartThreshold?: number;
   chunkSize?: number;
+}
+
+export interface FileUploadPolicy {
+  multipartEnabled: boolean;
+  multipartThreshold: number;
 }
 
 export interface CreateFileUploadSessionCommand extends FileUploadParams {
   fileName: string;
   fileSize: number;
-  fileHash: string;
+  fileHash?: string;
   contentType?: string;
   chunkSize?: number;
   totalParts?: number;
@@ -126,28 +142,32 @@ export interface PageResult<T> {
 }
 
 export const fileApi = {
-  page: (params?: FileQuery) => get<any>('/file/files/page', { params: toBackendPageParams(params) })
-    .then((data) => fromBackendPageResult(data, fromBackendFileRecord, params)),
+  page: (params?: FileQuery) =>
+    get<any>('/file/files/page', { params: toBackendPageParams(params) }).then((data) =>
+      fromBackendPageResult(data, fromBackendFileRecord, params),
+    ),
   detail: (id: FileId) => get<FileRecord>('/file/files/detail', { params: { id } }).then(fromBackendFileRecord),
-  preview: (id: FileId) => get<FilePreview>('/file/files/preview', { params: { id } }).then((item: any) => ({
-    ...item,
-    id: normalizeId(item.id),
-    previewable: Boolean(item.previewable),
-    previewUrl: normalizeApiUrl(item.previewUrl),
-    downloadUrl: normalizeApiUrl(item.downloadUrl),
-    documentPreviewUrl: normalizeApiUrl(item.documentPreviewUrl),
-    directAccess: Boolean(item.directAccess),
-    directPreviewUrl: normalizeApiUrl(item.directPreviewUrl),
-    directDownloadUrl: normalizeApiUrl(item.directDownloadUrl),
-    directPreviewExpireSeconds: Number(item.directPreviewExpireSeconds ?? 0),
-    directDownloadExpireSeconds: Number(item.directDownloadExpireSeconds ?? 0),
-  })),
-  previewLink: (fileId: FileId) => get<FilePreviewLink>('/file-preview/files/preview-link', { params: { fileId } }).then((item: any) => ({
-    ...item,
-    fileId: normalizeId(item.fileId),
-    previewUrl: normalizeApiUrl(item.previewUrl),
-    expireSeconds: Number(item.expireSeconds ?? 0),
-  })),
+  preview: (id: FileId) =>
+    get<FilePreview>('/file/files/preview', { params: { id } }).then((item: any) => ({
+      ...item,
+      id: normalizeId(item.id),
+      previewable: Boolean(item.previewable),
+      previewUrl: normalizeApiUrl(item.previewUrl),
+      downloadUrl: normalizeApiUrl(item.downloadUrl),
+      documentPreviewUrl: normalizeApiUrl(item.documentPreviewUrl),
+      directAccess: Boolean(item.directAccess),
+      directPreviewUrl: normalizeApiUrl(item.directPreviewUrl),
+      directDownloadUrl: normalizeApiUrl(item.directDownloadUrl),
+      directPreviewExpireSeconds: Number(item.directPreviewExpireSeconds ?? 0),
+      directDownloadExpireSeconds: Number(item.directDownloadExpireSeconds ?? 0),
+    })),
+  previewLink: (fileId: FileId) =>
+    get<FilePreviewLink>('/file-preview/files/preview-link', { params: { fileId } }).then((item: any) => ({
+      ...item,
+      fileId: normalizeId(item.fileId),
+      previewUrl: normalizeApiUrl(item.previewUrl),
+      expireSeconds: Number(item.expireSeconds ?? 0),
+    })),
   previewContent: async (id: FileId) => {
     const response = await request.get('/file/files/preview-content', {
       params: { id },
@@ -158,23 +178,27 @@ export const fileApi = {
     return response as any;
   },
   upload: (file: File, params?: FileUploadParams, options?: FileUploadOptions) => uploadSmart(file, params, options),
+  uploadPolicy: () => resolveUploadPolicy(),
   uploadBatch: (files: File[], params?: FileUploadParams, options?: FileUploadOptions) => {
     const formData = new FormData();
-    files.forEach(file => formData.append('files', file));
+    files.forEach((file) => formData.append('files', file));
     appendOptional(formData, params);
     return post<FileRecord[]>('/file/files/batch', formData as any, {
       headers: { 'Content-Type': 'multipart/form-data' },
       onUploadProgress: options?.onUploadProgress,
-    }).then(items => (items || []).map(fromBackendFileRecord));
+    }).then((items) => (items || []).map(fromBackendFileRecord));
   },
   archive: (id: FileId, reason?: string) => del<boolean>('/file/files', { params: { id, reason } }),
   delete: (ids: FileId[]) => post<boolean>('/file/files/delete', { ids }),
-  createUploadSession: (command: CreateFileUploadSessionCommand) => post<FileUploadInit>('/file/files/uploads', normalizeUploadSessionCommand(command) as any)
-    .then(fromBackendUploadInit),
-  createUploadPartSign: (sessionId: FileId, partNumber: number, partSize?: number) => post<FileUploadPartSign>(
-    `/file/files/uploads/${encodeURIComponent(String(sessionId))}/parts/sign`,
-    { partNumber, partSize },
-  ),
+  createUploadSession: (command: CreateFileUploadSessionCommand) =>
+    post<FileUploadInit>('/file/files/uploads', normalizeUploadSessionCommand(command) as any).then(
+      fromBackendUploadInit,
+    ),
+  createUploadPartSign: (sessionId: FileId, partNumber: number, partSize?: number) =>
+    post<FileUploadPartSign>(`/file/files/uploads/${encodeURIComponent(String(sessionId))}/parts/sign`, {
+      partNumber,
+      partSize,
+    }),
   uploadServerPart: (sessionId: FileId, partNumber: number, chunk: Blob, fileName: string) => {
     const formData = new FormData();
     formData.append('partNumber', String(partNumber));
@@ -183,14 +207,14 @@ export const fileApi = {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
   },
-  completeUploadPart: (sessionId: FileId, command: CompleteFileUploadPartCommand) => put<boolean>(
-    `/file/files/uploads/${encodeURIComponent(String(sessionId))}/parts`,
-    command,
-  ),
-  completeUploadSession: (sessionId: FileId) => post<FileRecord>(
-    `/file/files/uploads/${encodeURIComponent(String(sessionId))}/complete`,
-  ).then(fromBackendFileRecord),
-  abortUploadSession: (sessionId: FileId) => del<boolean>(`/file/files/uploads/${encodeURIComponent(String(sessionId))}`),
+  completeUploadPart: (sessionId: FileId, command: CompleteFileUploadPartCommand) =>
+    put<boolean>(`/file/files/uploads/${encodeURIComponent(String(sessionId))}/parts`, command),
+  completeUploadSession: (sessionId: FileId) =>
+    post<FileRecord>(`/file/files/uploads/${encodeURIComponent(String(sessionId))}/complete`).then(
+      fromBackendFileRecord,
+    ),
+  abortUploadSession: (sessionId: FileId) =>
+    del<boolean>(`/file/files/uploads/${encodeURIComponent(String(sessionId))}`),
   downloadUrl: (id: FileId) => `/api/file/files/download?id=${encodeURIComponent(String(id))}`,
   download: async (id: FileId) => {
     const response = await request.get('/file/files/download', {
@@ -213,9 +237,7 @@ export function normalizeFileId(value?: FileReference): FileId {
   }
   const text = value.trim();
   if (!text || isFileAccessUrl(text)) return '';
-  const rawId = text.startsWith('mango-file:')
-    ? text.slice('mango-file:'.length).trim()
-    : text;
+  const rawId = text.startsWith('mango-file:') ? text.slice('mango-file:'.length).trim() : text;
   return isValidFileId(rawId) ? rawId : '';
 }
 
@@ -239,7 +261,7 @@ export function fileRuntimeUrl(record?: Partial<FileRecord | FilePreview> | null
     record.previewUrl,
     record.downloadUrl,
   ];
-  return candidates.find(item => Boolean(item && !isProtectedApiUrl(item))) || '';
+  return candidates.find((item) => Boolean(item && !isProtectedApiUrl(item))) || '';
 }
 
 export function isFileDisplayUrl(value?: string): boolean {
@@ -252,7 +274,9 @@ export function isFileAccessUrl(value?: string): boolean {
   return /^(https?:|data:|blob:)/i.test(value) || value.startsWith('/') || isProtectedApiUrl(value);
 }
 
-export async function downloadFileRecord(row: Pick<FileRecord, 'id' | 'fileName'> & Partial<Pick<FilePreview, 'directDownloadUrl'>>) {
+export async function downloadFileRecord(
+  row: Pick<FileRecord, 'id' | 'fileName'> & Partial<Pick<FilePreview, 'directDownloadUrl'>>,
+) {
   if (row.directDownloadUrl && !isProtectedApiUrl(row.directDownloadUrl)) {
     openDirectDownload(row.directDownloadUrl, row.fileName || `file-${row.id}`);
     return;
@@ -263,9 +287,10 @@ export async function downloadFileRecord(row: Pick<FileRecord, 'id' | 'fileName'
     return;
   }
   const response = await fileApi.download(row.id);
-  const blob = response.data instanceof Blob
-    ? response.data
-    : new Blob([response.data], { type: response.headers?.['content-type'] || 'application/octet-stream' });
+  const blob =
+    response.data instanceof Blob
+      ? response.data
+      : new Blob([response.data], { type: response.headers?.['content-type'] || 'application/octet-stream' });
   const objectUrl = URL.createObjectURL(blob);
   openDirectDownload(objectUrl, preview?.fileName || row.fileName || `file-${row.id}`);
   setTimeout(() => URL.revokeObjectURL(objectUrl), 0);
@@ -275,11 +300,28 @@ export const DEFAULT_MULTIPART_THRESHOLD = 20 * 1024 * 1024;
 export const DEFAULT_CHUNK_SIZE = 10 * 1024 * 1024;
 
 async function uploadSmart(file: File, params?: FileUploadParams, options?: FileUploadOptions): Promise<FileRecord> {
-  const threshold = options?.multipartThreshold ?? DEFAULT_MULTIPART_THRESHOLD;
-  if (file.size < threshold) {
+  const policy = await resolveUploadPolicy(options);
+  if (!shouldUseMultipart(file.size, policy)) {
     return uploadSimple(file, params, options);
   }
   return uploadMultipart(file, params, options);
+}
+
+async function resolveUploadPolicy(options?: FileUploadOptions): Promise<FileUploadPolicy> {
+  if (options?.multipartEnabled !== undefined && options.multipartThreshold !== undefined) {
+    return {
+      multipartEnabled: options.multipartEnabled,
+      multipartThreshold: positiveNumber(options.multipartThreshold, DEFAULT_MULTIPART_THRESHOLD),
+    };
+  }
+  const settings = await fileSettingsApi.get().catch(() => defaultFileSettings);
+  return {
+    multipartEnabled: options?.multipartEnabled ?? settings.multipartEnabled,
+    multipartThreshold: positiveNumber(
+      options?.multipartThreshold ?? settings.multipartThreshold,
+      DEFAULT_MULTIPART_THRESHOLD,
+    ),
+  };
 }
 
 function uploadSimple(file: File, params?: FileUploadParams, options?: FileUploadOptions) {
@@ -292,10 +334,14 @@ function uploadSimple(file: File, params?: FileUploadParams, options?: FileUploa
   }).then(fromBackendFileRecord);
 }
 
-async function uploadMultipart(file: File, params?: FileUploadParams, options?: FileUploadOptions): Promise<FileRecord> {
+async function uploadMultipart(
+  file: File,
+  params?: FileUploadParams,
+  options?: FileUploadOptions,
+): Promise<FileRecord> {
   const chunkSize = options?.chunkSize ?? DEFAULT_CHUNK_SIZE;
   const totalParts = Math.ceil(file.size / chunkSize);
-  const fileHash = await sha256(file);
+  const fileHash = await sha256IfSupported(file);
   const init = await fileApi.createUploadSession({
     ...params,
     fileName: file.name,
@@ -361,12 +407,9 @@ function reportMultipartProgress(options: FileUploadOptions | undefined, loaded:
   } as any);
 }
 
-async function sha256(file: File): Promise<string> {
-  const buffer = await file.arrayBuffer();
-  const digest = await crypto.subtle.digest('SHA-256', buffer);
-  return Array.from(new Uint8Array(digest))
-    .map(item => item.toString(16).padStart(2, '0'))
-    .join('');
+function positiveNumber(value: unknown, fallback: number): number {
+  const number = Number(value);
+  return Number.isFinite(number) && number > 0 ? number : fallback;
 }
 
 function openDirectDownload(url: string, fileName: string) {

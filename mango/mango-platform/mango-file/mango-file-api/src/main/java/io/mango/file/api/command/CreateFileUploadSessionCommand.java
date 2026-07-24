@@ -29,7 +29,7 @@ public class CreateFileUploadSessionCommand implements Serializable {
     @Min(value = 1, message = "文件大小必须大于0")
     private Long fileSize;
 
-    @Schema(description = "文件 SHA-256 哈希")
+    @Schema(description = "文件 SHA-256 哈希；客户端无法计算时可不传，由服务端在合并分片后计算")
     @Size(max = 128, message = "文件哈希长度不能超过128")
     private String fileHash;
 

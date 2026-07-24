@@ -120,17 +120,24 @@ import { FilePreviewPanel } from '@mango/file';
 
 前端包没有独立配置文件。配置来自三个地方：
 
-| 配置来源                                                                  | 用途                                                                 |
-| ------------------------------------------------------------------------- | -------------------------------------------------------------------- |
-| `registerMangoFileAdminPages()`                                           | 注册文件模块管理页面。                                               |
-| `GET /file/settings`                                                      | 后端文件运行时配置，控制大小限制、秒传、直传、访问、预览和归档策略。 |
-| `FilePreviewPanel.previewProviderUrl` 或 `VITE_FILE_PREVIEW_PROVIDER_URL` | 文档预览服务地址兜底。                                               |
+| 配置来源                                                                  | 用途                                                                       |
+| ------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| `registerMangoFileAdminPages()`                                           | 注册文件模块管理页面。                                                     |
+| `GET /file/settings`                                                      | 后端文件运行时配置，控制大小限制、分片、秒传、直传、访问、预览和归档策略。 |
+| `FilePreviewPanel.previewProviderUrl` 或 `VITE_FILE_PREVIEW_PROVIDER_URL` | 文档预览服务地址兜底。                                                     |
 
 限制上传大小：
 
 - 管理端在“文件配置”页面保存 `maxSize`。
 - 后端可配置 `mango.file.upload.max-size`。
 - `MUpload.size`、`MUpload.sizes` 只是前端提前拦截，最终以后端 `maxSize` 为准。
+
+配置分片上传：
+
+- 管理端在“文件配置”页面设置 `multipartEnabled` 和 `multipartThreshold`。
+- 默认启用分片，默认临界值为 `20 * 1024 * 1024` 字节（20 MiB）。
+- `fileApi.upload()` 和 `MUpload` 会读取当前租户运行时配置；关闭分片时改走普通上传。
+- HTTP IP 等非安全上下文没有 Web Crypto 时，前端不再因 SHA-256 计算失败中断，而是省略客户端哈希并走 `SERVER_CHUNK`。本次上传不能预先秒传，服务端合并后会补算哈希，后续上传可继续秒传。
 
 开启秒传：
 
@@ -169,6 +176,7 @@ import { FilePreviewPanel } from '@mango/file';
 | `preview(id)`                                              | `GET /file/files/preview`                         | 文件预览元数据。       |
 | `previewLink(id)`                                          | `GET /file-preview/files/preview-link`            | 文档预览链接。         |
 | `upload(file, params, options)`                            | `POST /file/files` 或上传会话链路                 | 上传单文件。           |
+| `uploadPolicy()`                                           | `GET /file/settings`                              | 读取当前租户分片策略。 |
 | `uploadBatch(files, params, options)`                      | `POST /file/files/batch`                          | 批量上传小文件。       |
 | `archive(id, reason)`                                      | `DELETE /file/files`                              | 归档。                 |
 | `delete(ids)`                                              | `POST /file/files/delete`                         | 删除记录。             |
@@ -200,7 +208,7 @@ import { FilePreviewPanel } from '@mango/file';
 | `get()`      | `GET /file/settings` |
 | `save(data)` | `PUT /file/settings` |
 
-前端默认分片阈值 `DEFAULT_MULTIPART_THRESHOLD` 是 `20 * 1024 * 1024`。
+前端分片开关和临界值来自 `GET /file/settings`；接口失败时回退为启用分片、临界值 `20 * 1024 * 1024`。
 
 ## 8. 数据与初始化
 

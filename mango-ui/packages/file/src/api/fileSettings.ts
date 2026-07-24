@@ -16,6 +16,8 @@ export interface FileSettings {
   duplicateCheckDirectoryScoped: boolean;
   objectNameStrategy: 'DATE_UUID' | 'HASH' | 'ORIGINAL';
   instantUploadEnabled: boolean;
+  multipartEnabled: boolean;
+  multipartThreshold: number;
   instantUploadScope: 'TENANT' | 'GLOBAL';
   contentTypeCheckEnabled: boolean;
   allowedContentTypes: string[];
@@ -37,8 +39,18 @@ export interface FileSettings {
   updatedTime?: string;
 }
 
+let pendingSettings: Promise<FileSettings> | undefined;
+
 export const fileSettingsApi = {
-  get: () => get<FileSettings>('/file/settings').then(fromBackendSettings),
+  get: () => {
+    if (pendingSettings) return pendingSettings;
+    pendingSettings = get<FileSettings>('/file/settings')
+      .then(fromBackendSettings)
+      .finally(() => {
+        pendingSettings = undefined;
+      });
+    return pendingSettings;
+  },
   save: (data: FileSettings) => put<boolean>('/file/settings', toBackendSettings(data)),
 };
 
@@ -51,6 +63,8 @@ export const defaultFileSettings: FileSettings = {
   duplicateCheckDirectoryScoped: true,
   objectNameStrategy: 'DATE_UUID',
   instantUploadEnabled: true,
+  multipartEnabled: true,
+  multipartThreshold: 20 * 1024 * 1024,
   instantUploadScope: 'TENANT',
   contentTypeCheckEnabled: true,
   allowedContentTypes: [],
@@ -64,9 +78,27 @@ export const defaultFileSettings: FileSettings = {
   previewProviderUrl: '/file-preview/files/preview',
   previewExpireSeconds: 600,
   previewExternalExtensions: [
-    'doc', 'docx', 'xls', 'xlsx', 'xlsm', 'ppt', 'pptx',
-    'odt', 'ods', 'odp', 'ofd', 'wps', 'et', 'dps',
-    'csv', 'txt', 'zip', 'rar', '7z', 'eml', 'msg',
+    'doc',
+    'docx',
+    'xls',
+    'xlsx',
+    'xlsm',
+    'ppt',
+    'pptx',
+    'odt',
+    'ods',
+    'odp',
+    'ofd',
+    'wps',
+    'et',
+    'dps',
+    'csv',
+    'txt',
+    'zip',
+    'rar',
+    '7z',
+    'eml',
+    'msg',
   ],
   archiveRetainEnabled: true,
   archiveRetainDays: 180,
@@ -77,7 +109,7 @@ export const defaultFileSettings: FileSettings = {
 export function parseExtensions(value: string): string[] {
   return value
     .split(/[,，\s\n]+/)
-    .map(item => item.trim().replace(/^\./, '').toLowerCase())
+    .map((item) => item.trim().replace(/^\./, '').toLowerCase())
     .filter(Boolean)
     .filter((item, index, array) => array.indexOf(item) === index);
 }
@@ -89,7 +121,7 @@ export function stringifyExtensions(values?: string[]): string {
 export function parseTextList(value: string): string[] {
   return value
     .split(/[,，\s\n]+/)
-    .map(item => item.trim())
+    .map((item) => item.trim())
     .filter(Boolean)
     .filter((item, index, array) => array.indexOf(item) === index);
 }
@@ -120,6 +152,8 @@ function fromBackendSettings(item: any): FileSettings {
     duplicateCheckDirectoryScoped: item?.duplicateCheckDirectoryScoped !== false,
     objectNameStrategy: item?.objectNameStrategy || defaultFileSettings.objectNameStrategy,
     instantUploadEnabled: item?.instantUploadEnabled !== false,
+    multipartEnabled: item?.multipartEnabled !== false,
+    multipartThreshold: positiveOrDefault(item?.multipartThreshold, defaultFileSettings.multipartThreshold),
     instantUploadScope: item?.instantUploadScope || defaultFileSettings.instantUploadScope,
     contentTypeCheckEnabled: item?.contentTypeCheckEnabled !== false,
     allowedContentTypes: normalizeTextArray(item?.allowedContentTypes),
@@ -152,6 +186,8 @@ function toBackendSettings(data: FileSettings) {
     duplicateCheckDirectoryScoped: Boolean(data.duplicateCheckDirectoryScoped),
     objectNameStrategy: data.objectNameStrategy,
     instantUploadEnabled: Boolean(data.instantUploadEnabled),
+    multipartEnabled: Boolean(data.multipartEnabled),
+    multipartThreshold: positiveOrDefault(data.multipartThreshold, defaultFileSettings.multipartThreshold),
     instantUploadScope: data.instantUploadScope,
     contentTypeCheckEnabled: Boolean(data.contentTypeCheckEnabled),
     allowedContentTypes: data.allowedContentTypes || [],
@@ -186,6 +222,11 @@ function normalizeTextArray(value: any): string[] {
   if (Array.isArray(value)) return value.map(String).filter(Boolean);
   if (typeof value === 'string') return parseTextList(value);
   return [];
+}
+
+function positiveOrDefault(value: unknown, defaultValue: number): number {
+  const number = Number(value);
+  return Number.isFinite(number) && number > 0 ? number : defaultValue;
 }
 
 function normalizeDateTime(value: any): string {

@@ -10,26 +10,14 @@
               <span v-if="form.defaultConfig">，使用 yml 默认值</span>
             </div>
           </div>
-          <el-button
-            v-auth="'file:settings:edit'"
-            type="primary"
-            :loading="saving"
-            @click="handleSave"
-          >
+          <el-button v-auth="'file:settings:edit'" type="primary" :loading="saving" @click="handleSave">
             保存配置
           </el-button>
         </div>
       </template>
 
       <el-skeleton v-if="loading" :rows="8" animated />
-      <el-form
-        v-else
-        ref="formRef"
-        :model="form"
-        :rules="rules"
-        label-width="150px"
-        class="settings-form"
-      >
+      <el-form v-else ref="formRef" :model="form" :rules="rules" label-width="150px" class="settings-form">
         <section class="settings-section">
           <div class="section-title">上传准入</div>
           <el-row :gutter="20">
@@ -56,16 +44,13 @@
               </el-form-item>
             </el-col>
           </el-row>
-          <el-alert
-            class="limit-alert"
-            type="warning"
-            show-icon
-            :closable="false"
-          >
+          <el-alert class="limit-alert" type="warning" show-icon :closable="false">
             <template #title>
-              上传传输上限：单文件 {{ formatBytes(serverUploadLimit.maxFileSize) }}，单次请求 {{ formatBytes(serverUploadLimit.maxRequestSize) }}
+              上传传输上限：单文件 {{ formatBytes(serverUploadLimit.maxFileSize) }}，单次请求
+              {{ formatBytes(serverUploadLimit.maxRequestSize) }}
             </template>
-            文件中心的单文件大小不能超过单文件传输上限；批量上传时所有文件加起来不能超过单次请求上限。原因是 multipart 会先由 Spring/Tomcat 解析，超过上限会在进入文件中心业务校验前被容器拦截。
+            文件中心的单文件大小不能超过单文件传输上限；批量上传时所有文件加起来不能超过单次请求上限。原因是 multipart
+            会先由 Spring/Tomcat 解析，超过上限会在进入文件中心业务校验前被容器拦截。
           </el-alert>
           <el-form-item label="允许扩展名">
             <el-input
@@ -76,12 +61,7 @@
             />
           </el-form-item>
           <el-form-item label="禁止扩展名">
-            <el-input
-              v-model="blockedExtensionsText"
-              type="textarea"
-              :rows="2"
-              placeholder="如 exe,bat,cmd,sh,jar"
-            />
+            <el-input v-model="blockedExtensionsText" type="textarea" :rows="2" placeholder="如 exe,bat,cmd,sh,jar" />
           </el-form-item>
           <el-row :gutter="20">
             <el-col :xs="24" :md="12">
@@ -138,11 +118,7 @@
           <el-row :gutter="20">
             <el-col :xs="24" :md="8">
               <el-form-item label="秒传">
-                <el-switch
-                  v-model="form.instantUploadEnabled"
-                  active-text="启用"
-                  inactive-text="停用"
-                />
+                <el-switch v-model="form.instantUploadEnabled" active-text="启用" inactive-text="停用" />
               </el-form-item>
             </el-col>
             <el-col :xs="24" :md="8">
@@ -154,6 +130,26 @@
               </el-form-item>
             </el-col>
           </el-row>
+          <el-row :gutter="20">
+            <el-col :xs="24" :md="8">
+              <el-form-item label="大文件分片">
+                <el-switch v-model="form.multipartEnabled" active-text="启用" inactive-text="停用" />
+              </el-form-item>
+            </el-col>
+            <el-col :xs="24" :md="8">
+              <el-form-item label="分片临界值" prop="multipartThreshold">
+                <el-input-number
+                  v-model="multipartThresholdMb"
+                  :min="1"
+                  :max="serverUploadLimit.maxFileSizeMb"
+                  :precision="0"
+                  controls-position="right"
+                  class="number-input"
+                />
+                <span class="unit-text">MB</span>
+              </el-form-item>
+            </el-col>
+          </el-row>
         </section>
 
         <section class="settings-section">
@@ -161,11 +157,7 @@
           <el-row :gutter="20">
             <el-col :xs="24" :md="8">
               <el-form-item label="浏览器直传">
-                <el-switch
-                  v-model="form.directUploadEnabled"
-                  active-text="启用"
-                  inactive-text="停用"
-                />
+                <el-switch v-model="form.directUploadEnabled" active-text="启用" inactive-text="停用" />
               </el-form-item>
             </el-col>
             <el-col :xs="24" :md="8">
@@ -182,11 +174,7 @@
             </el-col>
             <el-col :xs="24" :md="8">
               <el-form-item label="限时访问令牌">
-                <el-switch
-                  v-model="form.accessTokenEnabled"
-                  active-text="启用"
-                  inactive-text="停用"
-                />
+                <el-switch v-model="form.accessTokenEnabled" active-text="启用" inactive-text="停用" />
               </el-form-item>
             </el-col>
           </el-row>
@@ -201,11 +189,7 @@
             </el-col>
             <el-col :xs="24" :md="12">
               <el-form-item label="公开文件签名">
-                <el-switch
-                  v-model="form.publicReadRequiresToken"
-                  active-text="强制"
-                  inactive-text="不强制"
-                />
+                <el-switch v-model="form.publicReadRequiresToken" active-text="强制" inactive-text="不强制" />
               </el-form-item>
             </el-col>
           </el-row>
@@ -240,7 +224,8 @@
               clearable
             />
             <div class="form-tip">
-              支持绝对地址、相对地址；无占位符时默认追加 fileId、fileName、expireSeconds 参数。也可使用 {fileId}、{fileUrl}、{fileName}、{expireSeconds}。
+              支持绝对地址、相对地址；无占位符时默认追加 fileId、fileName、expireSeconds 参数。也可使用
+              {fileId}、{fileUrl}、{fileName}、{expireSeconds}。
             </div>
           </el-form-item>
           <el-row :gutter="20">
@@ -264,9 +249,7 @@
               :rows="3"
               placeholder="如 doc,docx,xls,xlsx,ppt,pptx,odt,ods,ofd"
             />
-            <div class="form-tip">
-              兼容历史配置。文件管理预览入口会对所有文件开放，具体渲染能力由预览服务决定。
-            </div>
+            <div class="form-tip">兼容历史配置。文件管理预览入口会对所有文件开放，具体渲染能力由预览服务决定。</div>
           </el-form-item>
         </section>
 
@@ -344,8 +327,16 @@ const maxSizeMb = computed({
   },
 });
 
+const multipartThresholdMb = computed({
+  get: () => Math.max(1, Math.round(Number(form.multipartThreshold || 0) / 1024 / 1024)),
+  set: (value: number) => {
+    form.multipartThreshold = Number(value || 1) * 1024 * 1024;
+  },
+});
+
 const rules: FormRules = {
   maxSize: [{ required: true, message: '请输入单文件大小限制', trigger: 'blur' }],
+  multipartThreshold: [{ required: true, message: '请输入分片临界值', trigger: 'blur' }],
   directUploadExpireSeconds: [{ required: true, message: '请输入直传有效期', trigger: 'blur' }],
   accessTokenExpireSeconds: [{ required: true, message: '请输入访问有效期', trigger: 'blur' }],
   previewExpireSeconds: [{ required: true, message: '请输入预览有效期', trigger: 'blur' }],
