@@ -51,7 +51,7 @@
 | SR-001 | M09 静态验证 | Common 字节码契约检查与 SpotBugs 消费 fixture | PASS：四个重载均保留 `@NonNull` 字节码注解；基线写法触发 NP，`Require.nonNull` 消费写法不触发 | `javap -v` 与 SpotBugs 4.9.3.0 XML 输出 |
 | SR-001, SR-002 | M09 静态验证 | `mvn -f mango/pom.xml -pl :mango-common verify` | PASS：Checkstyle 0、SpotBugs 0、PMD 0，22 个测试通过 | Maven verify 输出 |
 | SR-003 | M09 静态验证 | `test-quality-check`、`workspace-layout-check`、README 结构与源码事实检查 | PASS | 四项检查输出 |
-| SR-001, SR-002, SR-003 | M15 外部状态回读 | PR required checks | 计划执行 | GitHub PR check runs |
+| SR-001, SR-002, SR-003 | M15 外部状态回读 | PR #645 required checks | PASS：8 个检查成功、2 个不适用检查跳过、0 失败 | GitHub PR check runs |
 
 ## 7. 例外与剩余风险
 
