@@ -93,7 +93,7 @@
     },
     "backend.code": {
       "path": "rules/backend/01-code.md",
-      "reason": "后端代码规范"
+      "reason": "后端代码规范、Require 前置条件与 SpotBugs 非空收窄约束"
     },
     "backend.naming": {
       "path": "rules/backend/02-naming.md",
