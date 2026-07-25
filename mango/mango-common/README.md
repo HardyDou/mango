@@ -58,11 +58,13 @@ public R<String> ping() {
 import io.mango.common.exception.BizException;
 import io.mango.common.result.Require;
 
-Require.notNull(order, "订单不存在");
+Order order = Require.nonNull(orderMapper.selectById(orderId), OrderCode.ORDER_NOT_FOUND, "订单不存在");
 Require.isTrue(order.canPay(), OrderCode.ORDER_STATUS_INVALID, "当前订单状态不可支付");
 
 throw new BizException(400, "订单状态不允许操作");
 ```
+
+`Require.nonNull` 返回经过 `@NonNull` 标注的原对象，适合在保留统一业务异常的同时让 SpotBugs 继续传播非空事实。复合业务条件仍使用 `Require.isTrue`；如果静态分析无法从布尔断言推导对象非空，可在断言后局部使用 `Objects.requireNonNull` 收窄，不要改成手写 `if + Require.fail`。
 
 `Require` 支持 `BizCode`、自定义细化消息和原始异常链。需要在完成补偿后保持原运行时异常类型时，使用 `Require.rethrow(exception)`；不要把未知异常改写成不相关的业务错误码。
 
@@ -96,7 +98,7 @@ PageResult<OrderVO> result = PageResult.of(rows, total, query.getPage(), query.g
 | `Query` | 查询请求基础类。 |
 | `PageQuery` | 分页查询请求，规范化页码和分页大小。 |
 | `PageResult<T>` | 分页返回，字段为 `list`、`total`、`page`、`size`、`pages`。 |
-| `Require` | 断言和失败工具；支持 `BizCode`、细化消息、cause 保留，以及补偿后的运行时异常原样重抛。 |
+| `Require` | 断言和失败工具；支持 `BizCode`、细化消息、返回非空值的 `nonNull`、cause 保留，以及补偿后的运行时异常原样重抛。 |
 
 业务模块自定义错误码示例：
 

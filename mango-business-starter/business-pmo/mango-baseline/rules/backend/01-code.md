@@ -25,7 +25,10 @@
 
 - 业务逻辑入口必须先做前置条件校验。
 - 业务前置条件统一使用 `Require`。
+- 单个对象判空且后续继续使用该对象时，优先接收 `Require.nonNull(...)` 返回的非空值，统一保留业务异常并向 SpotBugs 提供静态非空契约。
+- 复合业务条件继续使用 `Require.isTrue(...)`；SpotBugs 无法识别其布尔条件与原对象的非空关系时，只允许在断言后局部使用 `Objects.requireNonNull(...)` 收窄，不得改变业务失败语义。
 - 禁止在业务逻辑中直接写 `if (...) throw ...` 做前置条件校验。
+- 禁止为了消除 `NP_NULL_PARAM_DEREF` 把 `Require` 改写成 `if + Require.fail`，或对方法、类、模块全局抑制该规则。
 - 禁止用 `if (...) return ...` 跳过非法参数处理。
 - `Require` 失败统一抛业务异常。
 

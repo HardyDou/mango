@@ -2,6 +2,7 @@ package io.mango.common.result;
 
 import io.mango.common.exception.BizException;
 import org.junit.jupiter.api.Test;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class RequireTest {
@@ -14,6 +15,26 @@ public class RequireTest {
                 .hasMessage("is null")
                 .extracting("code")
                 .isEqualTo(400);
+    }
+
+    @Test
+    void nonNullReturnsTheOriginalValueForStaticNullNarrowing() {
+        Object value = new Object();
+
+        assertThat(Require.nonNull(value, "value is required")).isSameAs(value);
+        assertThat(Require.nonNull(value, CommonCode.BAD_REQUEST)).isSameAs(value);
+        assertThat(Require.nonNull(value, CommonCode.BAD_REQUEST, "value is required"))
+                .isSameAs(value);
+        assertThat(Require.nonNull(value, 400, "value is required")).isSameAs(value);
+    }
+
+    @Test
+    void nonNullKeepsTheConfiguredBusinessFailure() {
+        assertThatThrownBy(() -> Require.nonNull(null, CommonCode.NOT_FOUND, "指定对象不存在"))
+                .isInstanceOf(BizException.class)
+                .hasMessage("指定对象不存在")
+                .extracting("code")
+                .isEqualTo(CommonCode.NOT_FOUND.getCode());
     }
 
     @Test

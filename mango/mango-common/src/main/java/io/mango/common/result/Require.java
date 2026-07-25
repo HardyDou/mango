@@ -1,6 +1,8 @@
 package io.mango.common.result;
 
+import edu.umd.cs.findbugs.annotations.NonNull;
 import io.mango.common.exception.BizException;
+import java.util.Objects;
 
 /**
  * 断言工具。
@@ -55,6 +57,61 @@ public final class Require {
      */
     public static void notNull(Object obj, int code, String message) {
         failWhen(obj == null, code, message);
+    }
+
+    /**
+     * 断言对象不为 null，并返回经过非空收窄的原对象。
+     *
+     * @param obj 待校验对象。
+     * @param message 失败消息。
+     * @param <T> 对象类型。
+     * @return 原对象，保证不为 null。
+     */
+    @NonNull
+    public static <T> T nonNull(T obj, String message) {
+        return nonNull(obj, DEFAULT_BIZ_CODE.getCode(), message);
+    }
+
+    /**
+     * 断言对象不为 null，并返回经过非空收窄的原对象。
+     *
+     * @param obj 待校验对象。
+     * @param bizCode 失败错误码。
+     * @param <T> 对象类型。
+     * @return 原对象，保证不为 null。
+     */
+    @NonNull
+    public static <T> T nonNull(T obj, BizCode bizCode) {
+        return nonNull(obj, bizCode.getCode(), bizCode.getMessage());
+    }
+
+    /**
+     * 断言对象不为 null，并返回经过非空收窄的原对象。
+     *
+     * @param obj 待校验对象。
+     * @param bizCode 失败错误码。
+     * @param message 失败消息。
+     * @param <T> 对象类型。
+     * @return 原对象，保证不为 null。
+     */
+    @NonNull
+    public static <T> T nonNull(T obj, BizCode bizCode, String message) {
+        return nonNull(obj, bizCode.getCode(), message);
+    }
+
+    /**
+     * 断言对象不为 null，并返回经过非空收窄的原对象。
+     *
+     * @param obj 待校验对象。
+     * @param code 失败错误码。
+     * @param message 失败消息。
+     * @param <T> 对象类型。
+     * @return 原对象，保证不为 null。
+     */
+    @NonNull
+    public static <T> T nonNull(T obj, int code, String message) {
+        notNull(obj, code, message);
+        return Objects.requireNonNull(obj);
     }
 
     /**
