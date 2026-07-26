@@ -1,6 +1,6 @@
 {
   "name": "@mango/cms",
-  "version": "1.0.17",
+  "version": "1.0.18",
   "private": false,
   "type": "module",
   "main": "./dist/index.js",
@@ -27,11 +27,11 @@
   ],
   "dependencies": {
     "@element-plus/icons-vue": "2.3.2",
-    "@mango/admin-pages": "workspace:1.0.27",
+    "@mango/admin-pages": "workspace:1.0.28",
     "@mango/api-schema": "workspace:1.0.3",
     "@mango/app-runtime": "workspace:1.0.6",
     "@mango/common": "workspace:1.0.21",
-    "@mango/file": "workspace:1.0.28"
+    "@mango/file": "workspace:1.0.29"
   },
   "peerDependencies": {
     "element-plus": ">=2.14.1 <3",

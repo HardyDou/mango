@@ -3681,6 +3681,8 @@ function assertDevWorkspaceRegistryAllocation(tempRoot) {
     ].join('\n'),
   );
   chmodExecutable(join(existingDbFakeBinDir, 'mysql'));
+  writeFileSync(join(existingDbFakeBinDir, 'lsof'), ['#!/usr/bin/env sh', 'exit 1', ''].join('\n'));
+  chmodExecutable(join(existingDbFakeBinDir, 'lsof'));
   const existingDbInit = spawnSync(
     'env',
     [

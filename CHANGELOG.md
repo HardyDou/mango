@@ -1,5 +1,63 @@
 # Mango Changelog
 
+## v2026.07.26-maven-1.0.27-pmo-1.3.6-cli-1.0.91-file-notice-release - 2026-07-26
+
+Status: `PENDING`. Publication is authorized for the source merged through the release preparation PR. The immutable source commit, tree, bundle checksum and completed state-machine manifest will be recorded in the closeout PR after registry and consumer verification.
+
+### Added
+
+- Add File HTTP multipart upload support with the corresponding backend and reusable frontend integration paths.
+- Add Notice multi-mailbox delivery configuration, route selection, managed credentials and real attachment delivery through the configured mailbox.
+- Add `Require.nonNull` as the canonical null-validation API so business validation remains consistent while SpotBugs receives an explicit non-null return value.
+
+### Fixed
+
+- Resolve Issues 641 and 642 by keeping mailbox selection, encrypted client authorization credentials, attachment resolution and delivery records aligned across Notice configuration and dispatch.
+- Eliminate the `NP_NULL_PARAM_DEREF` false-positive pattern without disabling SpotBugs or replacing required `Require` validation with tool-driven control flow.
+
+### Changed
+
+- Document the `Require.nonNull` convention in PMO and project templates, and advance the generated-project compatibility locks to Maven `1.0.27`, PMO `1.3.6`, CLI `1.0.91` and the exact frontend package matrix below.
+
+### Versions
+
+| Component | Previous | Release | Compatibility |
+| --- | ---: | ---: | --- |
+| Mango Maven non-app backend and docs bundle | `1.0.26` | `1.0.27` | Patch release; Parent and BOM consumers upgrade as one set. |
+| `@mango/pmo` | `1.3.5` | `1.3.6` | Adds the current `Require`/SpotBugs governance and generated-project baseline. |
+| `@mango/cli` | `1.0.90` | `1.0.91` | Locks Maven, PMO and all affected frontend packages in this batch. |
+| Frontend runtime packages | previous release matrix | versions below | Patch updates; public package identities and entry points remain compatible. |
+
+### Published Packages
+
+| Order | Target | Version |
+| ---: | --- | --- |
+| 1 | Maven non-app Reactor including `io.mango:*` and `io.mango:mango-docs-bundle` | `1.0.27` |
+| 2 | `@mango/pmo` | `1.3.6` |
+| 3 | `@mango/admin-pages`, `@mango/file`, `@mango/system`, `@mango/notice`, `@mango/calendar`, `@mango/cms`, `@mango/job`, `@mango/link`, `@mango/numgen`, `@mango/payment`, `@mango/template`, `@mango/workflow`, `@mango/workflow-business-example` | `1.0.28`, `1.0.29`, `1.0.27`, `1.0.33`, `1.0.29`, `1.0.18`, `1.0.21`, `1.0.15`, `1.0.29`, `1.0.21`, `1.0.29`, `1.0.35`, `1.0.34` |
+| 4 | `@mango/admin-shell`, `@mango/admin` | `1.0.53`, `1.0.58` |
+| 5 | `@mango/cli` | `1.0.91` |
+| 6 | Git tag and GitHub Release | `v2026.07.26-maven-1.0.27-pmo-1.3.6-cli-1.0.91-file-notice-release` |
+
+### Upgrade Notes
+
+1. Upgrade all Mango backend dependencies together. Parent consumers set `mango.version` to `1.0.27`; projects with another parent import `io.mango:mango-bom:1.0.27` and omit versions from BOM-managed Mango dependencies.
+2. Upgrade the frontend packages to the exact versions in this release. Aggregate consumers use `@mango/admin@1.0.58`; direct consumers align their imported packages explicitly.
+3. Install `@mango/cli@1.0.91`, then run `mango pmo upgrade --project-dir . --to 1.3.6 --sync-shell` and `mango pmo check --project-dir . --locked`.
+4. Existing databases upgrade in place. Configure each Notice mailbox with its own client authorization credential, verify route selection, and send a real attachment through the intended mailbox before production use.
+
+### Verification
+
+- `pnpm -C mango-ui release:impact --base=v2026.07.23-maven-1.0.26-pmo-1.3.5-cli-1.0.90-platform-runtime-release --head=HEAD`
+- `pnpm -C mango-ui --filter @mango/pmo build && pnpm -C mango-ui --filter @mango/pmo check`
+- `node mango-business-starter/scripts/sync-pmo-baseline.mjs --check`
+- `node mango-ui/packages/mango-cli/scripts/check-release-versions.mjs`
+- `MANGO_BACKEND_GATE_VERSION=1.0.27 node mango-ui/packages/mango-cli/scripts/check-generated-backend-gate.mjs`
+- `pnpm -C mango-ui admin:styles:check && pnpm -C mango-ui admin:module-styles:check`
+- The File and Notice feature suites, full Maven Reactor quality gates, clean package consumers and the real attachment-mail path must pass before closeout.
+- The release preparation PR must pass all required checks on the exact source tree before immutable publication.
+- The release state machine will record Nexus publish/consume back-checks, clean published consumers, tag, GitHub Release, documentation and closeout evidence.
+
 ## v2026.07.23-maven-1.0.26-pmo-1.3.5-cli-1.0.90-platform-runtime-release - 2026-07-23
 
 Status: `PUBLISHED_AND_VERIFIED`. This mixed release was published from source commit `e269b726a34440170555010c72e80f0c0c66e524` and tree `54225448d36961a15a473eee2d7f619ed51b9425`. The exact-source bundle SHA-256 is `e811a68934c41ea9594aef0c97ed7ae1d9c36d14e3d162d9731b97ef1f577af5`. Maven `1.0.26`, PMO `1.3.5`, the frontend runtime matrix and CLI `1.0.90` resolve from the configured publish and consume registries. The tag and GitHub Release point to the same source commit. The completed read-only recovery manifest at `.runtime/release-audit/1.0.26/read-only-v3/1.0.26/manifest.json` has SHA-256 `4bbdbc835ffd54264449d116cbd1d4b94de495697f1e331dcfc04d31307d6600` and records all 17 release states as passed; the original publication manifest is preserved with its post-publication harness failure and was not used to republish immutable artifacts.
