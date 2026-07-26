@@ -2,7 +2,7 @@
 
 ## v2026.07.26-maven-1.0.27-pmo-1.3.6-cli-1.0.91-file-notice-release - 2026-07-26
 
-Status: `PENDING`. Publication is authorized for the source merged through the release preparation PR. The immutable source commit, tree, bundle checksum and completed state-machine manifest will be recorded in the closeout PR after registry and consumer verification.
+Status: `PUBLISHED_AND_VERIFIED`. This mixed release was published from source commit `34835c1a8091950689f766f4e8c4f4d786bca7e0` and tree `2457334c8e093261c68479882cdeab051bf25c23`. The exact-source bundle SHA-256 is `9c9d9876fd2343642f93713a8323bdbaae9395ff6a043aa5b2fc396b1982bbf5`. Maven `1.0.27`, PMO `1.3.6`, the affected frontend matrix and CLI `1.0.91` resolve from the configured publish and consume registries. The tag and GitHub Release are `CREATED_AND_VERIFIED` and point to the same source commit. The completed release manifest at `.runtime/releases/1.0.27/manifest.json` has SHA-256 `9c230734ce553e163537846bf36b1eb17f629e3293f9af36cdf6963702bd6b11` and records all 17 release states as passed.
 
 ### Added
 
@@ -30,14 +30,14 @@ Status: `PENDING`. Publication is authorized for the source merged through the r
 
 ### Published Packages
 
-| Order | Target | Version |
-| ---: | --- | --- |
-| 1 | Maven non-app Reactor including `io.mango:*` and `io.mango:mango-docs-bundle` | `1.0.27` |
-| 2 | `@mango/pmo` | `1.3.6` |
-| 3 | `@mango/admin-pages`, `@mango/file`, `@mango/system`, `@mango/notice`, `@mango/calendar`, `@mango/cms`, `@mango/job`, `@mango/link`, `@mango/numgen`, `@mango/payment`, `@mango/template`, `@mango/workflow`, `@mango/workflow-business-example` | `1.0.28`, `1.0.29`, `1.0.27`, `1.0.33`, `1.0.29`, `1.0.18`, `1.0.21`, `1.0.15`, `1.0.29`, `1.0.21`, `1.0.29`, `1.0.35`, `1.0.34` |
-| 4 | `@mango/admin-shell`, `@mango/admin` | `1.0.53`, `1.0.58` |
-| 5 | `@mango/cli` | `1.0.91` |
-| 6 | Git tag and GitHub Release | `v2026.07.26-maven-1.0.27-pmo-1.3.6-cli-1.0.91-file-notice-release` |
+| Order | Target | Version | Release status |
+| ---: | --- | --- | --- |
+| 1 | Maven non-app Reactor including `io.mango:*` and `io.mango:mango-docs-bundle` | `1.0.27` | `PUBLISHED_AND_VERIFIED` |
+| 2 | `@mango/pmo` | `1.3.6` | `PUBLISHED_AND_VERIFIED` |
+| 3 | `@mango/admin-pages`, `@mango/file`, `@mango/system`, `@mango/notice`, `@mango/calendar`, `@mango/cms`, `@mango/job`, `@mango/link`, `@mango/numgen`, `@mango/payment`, `@mango/template`, `@mango/workflow`, `@mango/workflow-business-example` | `1.0.28`, `1.0.29`, `1.0.27`, `1.0.33`, `1.0.29`, `1.0.18`, `1.0.21`, `1.0.15`, `1.0.29`, `1.0.21`, `1.0.29`, `1.0.35`, `1.0.34` | `PUBLISHED_AND_VERIFIED` |
+| 4 | `@mango/admin-shell`, `@mango/admin` | `1.0.53`, `1.0.58` | `PUBLISHED_AND_VERIFIED` |
+| 5 | `@mango/cli` | `1.0.91` | `PUBLISHED_AND_VERIFIED` |
+| 6 | Git tag and GitHub Release | `v2026.07.26-maven-1.0.27-pmo-1.3.6-cli-1.0.91-file-notice-release` | `CREATED_AND_VERIFIED` |
 
 ### Upgrade Notes
 
@@ -54,9 +54,9 @@ Status: `PENDING`. Publication is authorized for the source merged through the r
 - `node mango-ui/packages/mango-cli/scripts/check-release-versions.mjs`
 - `MANGO_BACKEND_GATE_VERSION=1.0.27 node mango-ui/packages/mango-cli/scripts/check-generated-backend-gate.mjs`
 - `pnpm -C mango-ui admin:styles:check && pnpm -C mango-ui admin:module-styles:check`
-- The File and Notice feature suites, full Maven Reactor quality gates, clean package consumers and the real attachment-mail path must pass before closeout.
-- The release preparation PR must pass all required checks on the exact source tree before immutable publication.
-- The release state machine will record Nexus publish/consume back-checks, clean published consumers, tag, GitHub Release, documentation and closeout evidence.
+- The File and Notice feature suites, full Maven Reactor quality gates, clean package consumers and the real attachment-mail path passed before closeout.
+- Release preparation PR #646 passed all required checks on the exact source tree before immutable publication.
+- The completed release state machine records Nexus publish/consume back-checks, clean published consumers, tag, GitHub Release and documentation evidence; an independent `release verify` run also passed all 17 states.
 
 ## v2026.07.23-maven-1.0.26-pmo-1.3.5-cli-1.0.90-platform-runtime-release - 2026-07-23
 
