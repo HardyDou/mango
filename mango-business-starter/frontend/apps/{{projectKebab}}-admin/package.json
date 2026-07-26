@@ -9,7 +9,7 @@
   },
   "dependencies": {
     "@{{projectKebab}}/{{moduleKebab}}": "{{projectVersion}}",
-    "@mango/admin": "1.0.57",
+    "@mango/admin": "1.0.58",
     "@mango/app-runtime": "1.0.6",
     "@mango/common": "1.0.21",
     "@mango/http-client": "1.0.0",

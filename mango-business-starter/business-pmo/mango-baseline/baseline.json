@@ -1,10 +1,10 @@
 {
   "packageName": "@mango/pmo",
-  "packageVersion": "1.3.5",
+  "packageVersion": "1.3.6",
   "schemaVersion": 2,
   "source": "mango-pmo",
-  "sourceCommit": "3a0dd82cde9ec3281136625fe45c780d2c203b3f",
-  "bundleSha256": "098c29409f9df30ee5ab2c62cefbfea0334deff2809d30a86cb7a257f5fe6cde",
+  "sourceCommit": "2bd24e544a87e7736085ff7abab2da80514ddd19",
+  "bundleSha256": "82ef40860dccaa69f2a1af9f672c7df5e02ebb73a842397014398a101d657271",
   "contracts": [
     {
       "contractId": "business-requirements",
@@ -49,11 +49,11 @@
   ],
   "plugin": {
     "path": "package-root",
-    "sha256": "842703e0454187caa26facc212e6095cecb25a1f33655745c3ebdd480f308679",
+    "sha256": "7e755d50e9a979d2a3bc2278419200dbd9f4723978026e09173447c63e49f977",
     "files": [
       {
         "path": ".codex-plugin/plugin.json",
-        "sha256": "18cafdb439c84e71267df848eb5127d6e68d7588c2396326e26c93a32813f6a3",
+        "sha256": "84c0437f99c10504ca41b6a59ed2ccfa716384542463c4bb378d6ed38e6dd680",
         "size": 708,
         "kind": "plugin",
         "mode": "0644"
@@ -294,7 +294,7 @@
   "files": [
     {
       "path": "README.md",
-      "sha256": "874d12cb85a07bbbd6982049d9a9bc48e79f25c97302984f96a37d54679883b4",
+      "sha256": "ca57a331be7fbf3c8a1aafb0ad4efe3a79ae8e05b66a6e3155c25e9497f805dd",
       "size": 24063,
       "kind": "documentation",
       "mode": "0644"
@@ -364,7 +364,7 @@
     },
     {
       "path": "contracts/business-requirements.json",
-      "sha256": "34cacdd43bd8b7a5bf5b89cb426e22bf4ba7e18236e377e4ad64de7b8971fbb4",
+      "sha256": "7fee258b19c96e39718ddedfd60445170b4fa5fdaf88333e80926486f5d117e1",
       "size": 10034,
       "kind": "contract",
       "mode": "0644"
@@ -399,21 +399,21 @@
     },
     {
       "path": "contracts/implementation-plan.json",
-      "sha256": "373ec64cff7d702c2afffc8560bd8606039afba4d78f4f23596a1893a9850e9c",
+      "sha256": "eb0383b3e4945bc1632879f1e0656f92f6e7a6f7b68108ffce7722208f11726e",
       "size": 10715,
       "kind": "contract",
       "mode": "0644"
     },
     {
       "path": "contracts/system-requirements.json",
-      "sha256": "ea8d94789fe63bdbe6bb084949480d66105c7a2452ce853c2d1ef211899383e3",
+      "sha256": "cea93893c86bd5b80f2dd2cdf233427e6ecff584f956e22f4a0c4c2896c37337",
       "size": 11815,
       "kind": "contract",
       "mode": "0644"
     },
     {
       "path": "contracts/technical-design.json",
-      "sha256": "b060593c7b821dc032bc9db540535687239bf8db449f5eec3a2aec118374e4e1",
+      "sha256": "cc189599d3cc4a60e17c82dd3c91632087bfdc3e4abc72b5f672425eb48d6dfa",
       "size": 14149,
       "kind": "contract",
       "mode": "0644"

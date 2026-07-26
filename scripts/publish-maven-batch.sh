@@ -239,15 +239,23 @@ deploy_architecture_verification_pom() {
   local group_id artifact_id packaging repository_id repository_url
   local flatten_args deploy_args
 
-  group_id="$(mvn_eval "${pom_file}" project.groupId)"
-  artifact_id="$(mvn_eval "${pom_file}" project.artifactId)"
-  packaging="$(mvn_eval "${pom_file}" project.packaging)"
-  repository_id="$(mvn_eval "${pom_file}" project.distributionManagement.repository.id)"
-  repository_url="$(mvn_eval "${pom_file}" project.distributionManagement.repository.url)"
-  if [[ -z "${group_id}" || -z "${artifact_id}" || "${packaging}" != "pom" \
-    || -z "${repository_id}" || -z "${repository_url}" ]]; then
-    echo "Unable to resolve architecture verification POM publication coordinates." >&2
-    exit 1
+  if [[ "${dry_run}" == "true" ]]; then
+    group_id="resolved-project.groupId"
+    artifact_id="mango-architecture-verification"
+    packaging="pom"
+    repository_id="resolved-distribution-repository-id"
+    repository_url="resolved-distribution-repository-url"
+  else
+    group_id="$(mvn_eval "${pom_file}" project.groupId)"
+    artifact_id="$(mvn_eval "${pom_file}" project.artifactId)"
+    packaging="$(mvn_eval "${pom_file}" project.packaging)"
+    repository_id="$(mvn_eval "${pom_file}" project.distributionManagement.repository.id)"
+    repository_url="$(mvn_eval "${pom_file}" project.distributionManagement.repository.url)"
+    if [[ -z "${group_id}" || -z "${artifact_id}" || "${packaging}" != "pom" \
+      || -z "${repository_id}" || -z "${repository_url}" ]]; then
+      echo "Unable to resolve architecture verification POM publication coordinates." >&2
+      exit 1
+    fi
   fi
 
   flatten_args=(
@@ -294,11 +302,16 @@ deploy_docs_bundle() {
   local repository_id repository_url
   local deploy_args
 
-  repository_id="$(mvn_eval "${MAVEN_ROOT}/pom.xml" project.distributionManagement.repository.id)"
-  repository_url="$(mvn_eval "${MAVEN_ROOT}/pom.xml" project.distributionManagement.repository.url)"
-  if [[ ! -d "${DOCS_BUNDLE_SOURCE_DIR}" || -z "${repository_id}" || -z "${repository_url}" ]]; then
-    echo "Unable to resolve Mango docs bundle source or publication repository." >&2
-    exit 1
+  if [[ "${dry_run}" == "true" ]]; then
+    repository_id="resolved-distribution-repository-id"
+    repository_url="resolved-distribution-repository-url"
+  else
+    repository_id="$(mvn_eval "${MAVEN_ROOT}/pom.xml" project.distributionManagement.repository.id)"
+    repository_url="$(mvn_eval "${MAVEN_ROOT}/pom.xml" project.distributionManagement.repository.url)"
+    if [[ ! -d "${DOCS_BUNDLE_SOURCE_DIR}" || -z "${repository_id}" || -z "${repository_url}" ]]; then
+      echo "Unable to resolve Mango docs bundle source or publication repository." >&2
+      exit 1
+    fi
   fi
 
   deploy_args=(

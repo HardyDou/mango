@@ -23,7 +23,7 @@
   },
   "dependencies": {
     "@{{projectKebab}}/{{moduleKebab}}-api": "workspace:{{projectVersion}}",
-    "@mango/admin-pages": "1.0.27",
+    "@mango/admin-pages": "1.0.28",
     "@mango/api-schema": "1.0.3",
     "@mango/app-runtime": "1.0.6",
     "@mango/common": "1.0.21",
