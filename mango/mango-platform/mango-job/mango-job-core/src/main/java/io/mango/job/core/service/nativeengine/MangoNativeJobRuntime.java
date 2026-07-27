@@ -578,7 +578,7 @@ public class MangoNativeJobRuntime implements IMangoNativeJobRuntime {
                     tenantId, workerAddress);
             return;
         }
-        LOGGER.info("Mango embedded job worker upsert started, tenantId={}, handlerCount={}, workerAddress={}",
+        LOGGER.debug("Mango embedded job worker upsert started, tenantId={}, handlerCount={}, workerAddress={}",
                 tenantId, handlers.size(), workerAddress);
         handlers.stream()
                 .collect(Collectors.groupingBy(this::workerRegistrationKey))
@@ -603,7 +603,7 @@ public class MangoNativeJobRuntime implements IMangoNativeJobRuntime {
         command.setWorkerInstanceId(workerInstanceId);
         command.setHandlers(handlers.stream().map(this::toHandlerCommand).toList());
         Long workerId = workerRegistryService.registerWorker(command);
-        LOGGER.info("Mango embedded job worker upserted, workerId={}, appCode={}, serviceCode={}, workerGroup={}, handlerCount={}, workerAddress={}",
+        LOGGER.debug("Mango embedded job worker upserted, workerId={}, appCode={}, serviceCode={}, workerGroup={}, handlerCount={}, workerAddress={}",
                 workerId, first.getAppCode(), first.getServiceCode(), first.getWorkerGroup(), handlers.size(), workerAddress);
     }
 

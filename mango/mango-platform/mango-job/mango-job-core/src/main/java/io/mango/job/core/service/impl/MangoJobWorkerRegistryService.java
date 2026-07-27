@@ -65,7 +65,7 @@ public class MangoJobWorkerRegistryService implements IMangoJobWorkerRegistrySer
             MangoJobWorkerSnapshotEntity worker = upsertWorker(command, false);
             upsertCapabilities(command, worker);
             disableMissingCapabilities(command, worker);
-            LOGGER.info("Mango job worker registered, workerId={}, appCode={}, serviceCode={}, workerGroup={}, transportType={}, registerSource={}, handlerCount={}, workerAddress={}",
+            LOGGER.debug("Mango job worker registered, workerId={}, appCode={}, serviceCode={}, workerGroup={}, transportType={}, registerSource={}, handlerCount={}, workerAddress={}",
                     worker.getId(), worker.getAppCode(), worker.getServiceCode(), worker.getWorkerGroup(),
                     worker.getTransportType(), worker.getRegisterSource(), command.getHandlers().size(), worker.getWorkerAddress());
             return worker.getId();
