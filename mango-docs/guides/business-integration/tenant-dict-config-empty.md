@@ -253,4 +253,4 @@ pnpm -F @mango/admin-shell build
 
 ## 2026-07-27 Bootstrap 生命周期影响
 
-- Mango 将租户前置基线、启动前必需 Resource 和最终租户对账迁入独立 Bootstrap，租户、字典、组织、用户和系统配置的公开 API、数据模型、权限及隔离语义不变。业务升级后必须先完成 `bootstrap apply` 与 `bootstrap verify`，再启动 Runtime；基础数据为空时按 `TENANT_PREREQUISITES -> RESOURCE_REQUIRED -> TENANT_RECONCILIATION` 步骤回执定位。Runtime 只校验成功回执，不再隐式补跑初始化，也不能通过延长 readiness 窗口等待这些数据形成。
+- Mango 将租户前置基线、启动前必需 Resource 和最终租户对账迁入独立 Bootstrap，租户、字典、组织、用户和系统配置的公开 API、数据模型、权限及隔离语义不变。业务升级顺序调整为先完成 `bootstrap apply` 与 `bootstrap verify`，再启动 Runtime；基础数据为空时按 `TENANT_PREREQUISITES -> RESOURCE_REQUIRED -> TENANT_RECONCILIATION` 步骤回执定位。Runtime 只校验成功回执，不再隐式补跑初始化，也不能通过延长 readiness 窗口等待这些数据形成。
