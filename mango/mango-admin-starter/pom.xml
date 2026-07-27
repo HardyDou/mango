@@ -19,6 +19,10 @@
 
     <dependencies>
         <dependency>
+            <groupId>io.mango.infra.bootstrap</groupId>
+            <artifactId>mango-infra-bootstrap-starter</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.mango.infra.module</groupId>
             <artifactId>mango-infra-module-starter</artifactId>
         </dependency>

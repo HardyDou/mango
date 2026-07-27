@@ -1,6 +1,6 @@
 package io.mango.app.microservice.filepreview;
 
-import org.springframework.boot.SpringApplication;
+import io.mango.infra.bootstrap.starter.MangoApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 /**
@@ -10,6 +10,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class MangoFilePreviewAppApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(MangoFilePreviewAppApplication.class, args);
+        MangoApplication.run(MangoFilePreviewAppApplication.class, args);
     }
 }

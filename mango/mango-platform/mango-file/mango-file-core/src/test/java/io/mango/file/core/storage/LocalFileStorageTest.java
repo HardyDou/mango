@@ -3,12 +3,20 @@ package io.mango.file.core.storage;
 import io.mango.file.core.config.FileProperties;
 import io.mango.file.core.entity.FileStorageConfigEntity;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
+import java.io.ByteArrayInputStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Duration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 class LocalFileStorageTest {
+
+    @TempDir
+    Path tempDirectory;
 
     @Test
     void publicGetUrl_withoutPublicEndpoint_returnsLocalObjectAccessPath() {
@@ -66,6 +74,23 @@ class LocalFileStorageTest {
         String url = storage.publicDownloadUrl(config, "2026/05/test file.txt", "test file.txt").orElseThrow();
 
         assertThat(url).isEqualTo("https://local-files.example.com/static/local/2026/05/test%20file.txt?download=1");
+    }
+
+    @Test
+    void publishObjectAtomicallyReplacesStableTargetAndRemovesStagingObject() throws Exception {
+        FileProperties properties = properties();
+        properties.getLocal().setRootPath(tempDirectory.toString());
+        LocalFileStorage storage = new LocalFileStorage(properties);
+        FileStorageConfigEntity config = localConfig();
+        byte[] content = "managed asset".getBytes(StandardCharsets.UTF_8);
+
+        storage.putObject(config, ".mango-staging/resource/hash",
+                new ByteArrayInputStream(content), content.length, "text/plain");
+        storage.publishObject(config, ".mango-staging/resource/hash", "mango-assets/app/file.txt");
+
+        assertThat(Files.readAllBytes(tempDirectory.resolve("local/mango-assets/app/file.txt")))
+                .isEqualTo(content);
+        assertThat(tempDirectory.resolve("local/.mango-staging/resource/hash")).doesNotExist();
     }
 
     private FileProperties properties() {

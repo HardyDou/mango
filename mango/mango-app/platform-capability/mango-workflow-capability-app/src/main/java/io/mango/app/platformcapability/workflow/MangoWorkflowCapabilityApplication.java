@@ -1,6 +1,6 @@
 package io.mango.app.platformcapability.workflow;
 
-import org.springframework.boot.SpringApplication;
+import io.mango.infra.bootstrap.starter.MangoApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 /**
@@ -10,6 +10,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class MangoWorkflowCapabilityApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(MangoWorkflowCapabilityApplication.class, args);
+        MangoApplication.run(MangoWorkflowCapabilityApplication.class, args);
     }
 }

@@ -21,9 +21,11 @@ import io.mango.authorization.core.service.ISubjectAuthorityService;
 import io.mango.authorization.core.service.ITenantAppBindingService;
 import io.mango.authorization.core.service.impl.AuthorizationAppService;
 import io.mango.authorization.core.service.impl.FrontendRuntimeStrategyService;
+import io.mango.infra.bootstrap.api.BootstrapGenerationFence;
 import io.mango.infra.kv.api.ILeaseLocker;
 import io.mango.infra.kv.api.LockLease;
 import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguration;
+import io.mango.resource.api.enums.ResourceApplyMode;
 import io.mango.resource.support.ResourceHandler;
 import io.mango.resource.support.ResourceProvider;
 import io.mango.resource.support.ResourceTargetDispatcher;
@@ -87,6 +89,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 })
 class FrontendRuntimeResourceSyncIntegrationTest {
 
+    private static final String BOOTSTRAP_ENVIRONMENT = "frontend-runtime-test";
+    private static final long BOOTSTRAP_GENERATION = 1L;
+    private static final String BOOTSTRAP_FINGERPRINT = "a".repeat(64);
+    private static final long BOOTSTRAP_FENCING_TOKEN = 1L;
+
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
@@ -122,6 +129,11 @@ class FrontendRuntimeResourceSyncIntegrationTest {
         command.setServiceCode("frontend-manifest");
         command.setModuleCodes(List.of("authorization"));
         command.setDeclarations(objectMapper.writeValueAsString(List.of(runtimeUnit, strategy)));
+        command.setEnvironmentKey(BOOTSTRAP_ENVIRONMENT);
+        command.setGeneration(BOOTSTRAP_GENERATION);
+        command.setManifestFingerprint(BOOTSTRAP_FINGERPRINT);
+        command.setFencingToken(BOOTSTRAP_FENCING_TOKEN);
+        command.setApplyMode(ResourceApplyMode.EXPAND);
         registryService.registerDeclarations(command);
 
         assertThat(stringValue("authorization_frontend_app_registry", "app_code")).isEqualTo("guarantee-remote");
@@ -452,6 +464,16 @@ class FrontendRuntimeResourceSyncIntegrationTest {
         @Bean
         ILeaseLocker leaseLocker() {
             return new InMemoryLeaseLocker();
+        }
+
+        @Bean
+        BootstrapGenerationFence bootstrapGenerationFence() {
+            return authority -> {
+                assertThat(authority.environmentKey()).isEqualTo(BOOTSTRAP_ENVIRONMENT);
+                assertThat(authority.generation()).isEqualTo(BOOTSTRAP_GENERATION);
+                assertThat(authority.manifestFingerprint()).isEqualTo(BOOTSTRAP_FINGERPRINT);
+                assertThat(authority.fencingToken()).isEqualTo(BOOTSTRAP_FENCING_TOKEN);
+            };
         }
 
         @Bean

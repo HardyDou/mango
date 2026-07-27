@@ -3,6 +3,7 @@ package io.mango.resource.support.model;
 import com.fasterxml.jackson.annotation.JsonAlias;
 import io.mango.resource.api.enums.ResourceStatus;
 import io.mango.resource.api.enums.ResourceSyncMode;
+import io.mango.resource.api.enums.ResourceExecutionPhase;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -35,6 +36,8 @@ public class ResourceDeclaration {
     private String targetModule;
     @JsonAlias("sync-mode")
     private ResourceSyncMode syncMode = ResourceSyncMode.AUTO;
+    @JsonAlias("execution-phase")
+    private ResourceExecutionPhase executionPhase = ResourceExecutionPhase.BOOTSTRAP_REQUIRED;
     private ResourceStatus status = ResourceStatus.ACTIVE;
     private Map<String, ResourceField> fields = new LinkedHashMap<>();
     private String source;
@@ -76,6 +79,7 @@ public class ResourceDeclaration {
         copy.setName(name);
         copy.setTargetModule(targetModule);
         copy.setSyncMode(syncMode);
+        copy.setExecutionPhase(executionPhase);
         copy.setStatus(status);
         copy.setFields(fields);
         copy.setSource(source);

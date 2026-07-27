@@ -1,17 +1,19 @@
 package io.mango.infra.persistence.starter;
 
 import com.sun.net.httpserver.HttpServer;
+import io.mango.infra.bootstrap.api.BootstrapPhase;
+import io.mango.infra.persistence.starter.datasource.PersistenceDataSourceAutoConfiguration;
 import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.Location;
 import org.flywaydb.core.api.configuration.ClassicConfiguration;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.autoconfigure.flyway.FlywayMigrationInitializer;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
+import org.springframework.boot.autoconfigure.flyway.FlywayMigrationInitializer;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.JdbcTemplate;
-import io.mango.infra.persistence.starter.datasource.PersistenceDataSourceAutoConfiguration;
 
 import javax.sql.DataSource;
 
@@ -30,6 +32,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class PersistenceFlywayAutoConfigurationTest {
 
@@ -59,7 +62,7 @@ class PersistenceFlywayAutoConfigurationTest {
             .withConfiguration(AutoConfigurations.of(PersistenceFlywayAutoConfiguration.class));
 
     @Test
-    void whenEnabled_shouldCreateFlywayBean() {
+    void whenEnabled_shouldCreateFlywayBeanWithoutRuntimeInitializer() {
         contextRunner
                 .withPropertyValues(flywayProperties(
                         "mango.persistence.flyway.enabled=true",
@@ -68,7 +71,8 @@ class PersistenceFlywayAutoConfigurationTest {
                 .withUserConfiguration(H2DataSourceConfig.class)
                 .run(ctx -> {
                     assertThat(ctx).hasSingleBean(Flyway.class);
-                    assertThat(ctx).hasSingleBean(FlywayMigrationInitializer.class);
+                    assertThat(ctx).hasSingleBean(PersistenceFlywayBootstrapExecutor.class);
+                    assertThat(ctx).doesNotHaveBean(FlywayMigrationInitializer.class);
                 });
     }
 
@@ -101,6 +105,7 @@ class PersistenceFlywayAutoConfigurationTest {
                 ))
                 .withUserConfiguration(H2DataSourceConfig.class)
                 .run(ctx -> {
+                    migrate(ctx);
                     JdbcTemplate jdbcTemplate = new JdbcTemplate(ctx.getBean(DataSource.class));
                     assertThat(tableExists(jdbcTemplate, "persistence_flyway_user")).isFalse();
                 });
@@ -114,6 +119,7 @@ class PersistenceFlywayAutoConfigurationTest {
                 )
                 .withUserConfiguration(H2DataSourceConfig.class)
                 .run(ctx -> {
+                    migrate(ctx);
                     JdbcTemplate jdbcTemplate = new JdbcTemplate(ctx.getBean(DataSource.class));
                     assertThat(tableExists(jdbcTemplate, "persistence_flyway_user")).isTrue();
                 });
@@ -128,8 +134,8 @@ class PersistenceFlywayAutoConfigurationTest {
                 )
                 .withUserConfiguration(H2DataSourceConfig.class)
                 .run(ctx -> {
-                    assertThat(ctx).hasFailed();
-                    assertThat(ctx.getStartupFailure())
+                    assertThat(ctx).hasNotFailed();
+                    assertThatThrownBy(() -> migrate(ctx))
                             .hasMessageContaining("Mango Flyway classpath migration modules are not fully declared")
                             .hasMessageContaining("missingModules=[another-test, business-upgrade, comparison-data, link, payment]")
                             .hasMessageContaining("classpath:db/migration/another-test")
@@ -147,8 +153,8 @@ class PersistenceFlywayAutoConfigurationTest {
                 ))
                 .withUserConfiguration(H2DataSourceConfig.class)
                 .run(ctx -> {
-                    assertThat(ctx).hasFailed();
-                    assertThat(ctx.getStartupFailure())
+                    assertThat(ctx).hasNotFailed();
+                    assertThatThrownBy(() -> migrate(ctx))
                             .hasMessageContaining("Mango Flyway classpath migration modules are not fully declared")
                             .hasMessageContaining("disabledWithoutSkipReason=[persistence-test]")
                             .hasMessageContaining("enabled=false with skip-reason");
@@ -165,6 +171,7 @@ class PersistenceFlywayAutoConfigurationTest {
                 ))
                 .withUserConfiguration(H2DataSourceConfig.class)
                 .run(ctx -> {
+                    migrate(ctx);
                     JdbcTemplate jdbcTemplate = new JdbcTemplate(ctx.getBean(DataSource.class));
                     assertThat(tableExists(jdbcTemplate, "persistence_flyway_user")).isTrue();
                 });
@@ -180,6 +187,7 @@ class PersistenceFlywayAutoConfigurationTest {
                 ))
                 .withUserConfiguration(H2DataSourceConfig.class)
                 .run(ctx -> {
+                    migrate(ctx);
                     JdbcTemplate jdbcTemplate = new JdbcTemplate(ctx.getBean(DataSource.class));
                     assertThat(tableExists(jdbcTemplate, "persistence_flyway_user")).isTrue();
                     assertThat(tableExists(jdbcTemplate, "flyway_history_custom_test")).isTrue();
@@ -197,6 +205,7 @@ class PersistenceFlywayAutoConfigurationTest {
                 ))
                 .withUserConfiguration(H2DataSourceConfig.class)
                 .run(ctx -> {
+                    migrate(ctx);
                     JdbcTemplate jdbcTemplate = new JdbcTemplate(ctx.getBean(DataSource.class));
                     assertThat(tableExists(jdbcTemplate, "persistence_flyway_user")).isTrue();
                 });
@@ -220,6 +229,7 @@ class PersistenceFlywayAutoConfigurationTest {
                 ))
                 .withBean(DataSource.class, () -> h2DataSource(url))
                 .run(ctx -> {
+                    migrate(ctx);
                     JdbcTemplate jdbcTemplate = new JdbcTemplate(h2DataSource(url));
                     assertThat(tableExists(jdbcTemplate, "payment_platform_schema")).isTrue();
                     assertThat(tableExists(jdbcTemplate, "payment_method_contract")).isTrue();
@@ -248,6 +258,7 @@ class PersistenceFlywayAutoConfigurationTest {
                 .withBean(DataSource.class, () -> h2DataSource(url))
                 .run(ctx -> {
                     assertThat(ctx).hasNotFailed();
+                    migrate(ctx);
                     JdbcTemplate jdbcTemplate = new JdbcTemplate(h2DataSource(url));
                     assertThat(tableExists(jdbcTemplate, "link_legacy_v6")).isTrue();
                     assertThat(tableExists(jdbcTemplate, "link_high_version_seed")).isTrue();
@@ -278,8 +289,8 @@ class PersistenceFlywayAutoConfigurationTest {
                 ))
                 .withBean(DataSource.class, () -> h2DataSource(url))
                 .run(ctx -> {
-                    assertThat(ctx).hasFailed();
-                    assertThat(ctx.getStartupFailure())
+                    assertThat(ctx).hasNotFailed();
+                    assertThatThrownBy(() -> migrate(ctx))
                             .hasMessageContaining("Mango Flyway module migration failed: module=payment")
                             .hasMessageContaining("outOfOrder=false");
                 });
@@ -303,8 +314,8 @@ class PersistenceFlywayAutoConfigurationTest {
                 ))
                 .withBean(DataSource.class, () -> h2DataSource(url))
                 .run(ctx -> {
-                    assertThat(ctx).hasFailed();
-                    assertThat(ctx.getStartupFailure())
+                    assertThat(ctx).hasNotFailed();
+                    assertThatThrownBy(() -> migrate(ctx))
                             .hasMessageContaining("Mango Flyway module migration failed: module=business-upgrade")
                             .hasMessageContaining("outOfOrder=false");
                 });
@@ -322,8 +333,8 @@ class PersistenceFlywayAutoConfigurationTest {
                 ))
                 .withUserConfiguration(H2DataSourceConfig.class)
                 .run(ctx -> {
-                    assertThat(ctx).hasFailed();
-                    assertThat(ctx.getStartupFailure())
+                    assertThat(ctx).hasNotFailed();
+                    assertThatThrownBy(() -> migrate(ctx))
                             .hasMessageContaining("Mango Flyway module migration failed: module=another-test")
                             .hasMessageContaining("historyTable=flyway_history_shared_test")
                             .hasMessageContaining("locations=[classpath:db/migration/another-test]")
@@ -346,12 +357,12 @@ class PersistenceFlywayAutoConfigurationTest {
                         "mango.persistence.flyway.modules.persistence-test.enabled=true"
                 ))
                 .run(ctx -> {
-                    assertThat(ctx).hasFailed();
-                    assertThat(ctx.getStartupFailure())
+                    assertThat(ctx).hasNotFailed();
+                    assertThatThrownBy(() -> migrate(ctx))
                             .hasMessageContaining("Mango Flyway module migration failed: module=persistence-test")
                             .hasMessageContaining("historyTable=<unresolved>")
                             .hasMessageContaining("locations=[classpath:db/migration/persistence-test]")
-                            .hasMessageContaining("datasource=missing")
+                            .hasMessageContaining("datasource=registry:missing")
                             .hasMessageContaining("outOfOrder=false");
                 });
     }
@@ -383,6 +394,7 @@ class PersistenceFlywayAutoConfigurationTest {
                 ))
                 .withUserConfiguration(H2DataSourceConfig.class)
                 .run(ctx -> {
+                    migrate(ctx);
                     JdbcTemplate jdbcTemplate = new JdbcTemplate(ctx.getBean(DataSource.class));
                     assertThat(tableExists(jdbcTemplate, "external_file_migration")).isTrue();
                     assertThat(tableExists(jdbcTemplate, "flyway_schema_history_external_file")).isTrue();
@@ -425,6 +437,7 @@ class PersistenceFlywayAutoConfigurationTest {
                 ))
                 .withUserConfiguration(H2DataSourceConfig.class)
                 .run(ctx -> {
+                    migrate(ctx);
                     JdbcTemplate jdbcTemplate = new JdbcTemplate(ctx.getBean(DataSource.class));
                     assertThat(tableExists(jdbcTemplate, "persistence_flyway_user")).isTrue();
                     assertThat(tableExists(jdbcTemplate, "convention_upgrade_migration")).isTrue();
@@ -461,6 +474,7 @@ class PersistenceFlywayAutoConfigurationTest {
                 ))
                 .withUserConfiguration(H2DataSourceConfig.class)
                 .run(ctx -> {
+                    migrate(ctx);
                     JdbcTemplate jdbcTemplate = new JdbcTemplate(ctx.getBean(DataSource.class));
                     assertThat(tableExists(jdbcTemplate, "persistence_flyway_user")).isTrue();
                     assertThat(tableExists(jdbcTemplate, "explicit_location_should_not_run")).isFalse();
@@ -477,6 +491,7 @@ class PersistenceFlywayAutoConfigurationTest {
                 ))
                 .withUserConfiguration(H2DataSourceConfig.class)
                 .run(ctx -> {
+                    migrate(ctx);
                     JdbcTemplate jdbcTemplate = new JdbcTemplate(ctx.getBean(DataSource.class));
                     assertThat(tableExists(jdbcTemplate, "flyway_comparison_data")).isTrue();
                     classpathRows.set(migrationRows(jdbcTemplate, "flyway_comparison_data"));
@@ -501,6 +516,7 @@ class PersistenceFlywayAutoConfigurationTest {
                 ))
                 .withUserConfiguration(H2DataSourceConfig.class)
                 .run(ctx -> {
+                    migrate(ctx);
                     JdbcTemplate jdbcTemplate = new JdbcTemplate(ctx.getBean(DataSource.class));
                     assertThat(tableExists(jdbcTemplate, "flyway_comparison_data")).isTrue();
                     assertThat(migrationRows(jdbcTemplate, "flyway_comparison_data"))
@@ -542,6 +558,7 @@ class PersistenceFlywayAutoConfigurationTest {
                     ))
                     .withUserConfiguration(H2DataSourceConfig.class)
                     .run(ctx -> {
+                        migrate(ctx);
                         JdbcTemplate jdbcTemplate = new JdbcTemplate(ctx.getBean(DataSource.class));
                         assertThat(tableExists(jdbcTemplate, "external_url_migration")).isTrue();
                         assertThat(tableExists(jdbcTemplate, "flyway_schema_history_external_url")).isTrue();
@@ -572,6 +589,7 @@ class PersistenceFlywayAutoConfigurationTest {
                 ))
                 .withUserConfiguration(H2DataSourceConfig.class)
                 .run(ctx -> {
+                    migrate(ctx);
                     JdbcTemplate defaultJdbcTemplate = new JdbcTemplate(ctx.getBean(DataSource.class));
                     assertThat(tableExists(defaultJdbcTemplate, "persistence_flyway_user")).isFalse();
 
@@ -601,6 +619,7 @@ class PersistenceFlywayAutoConfigurationTest {
                         "mango.persistence.flyway.modules.persistence-test.enabled=true"
                 ))
                 .run(ctx -> {
+                    migrate(ctx);
                     JdbcTemplate primaryJdbcTemplate = new JdbcTemplate(h2DataSource(primaryUrl));
                     assertThat(tableExists(primaryJdbcTemplate, "persistence_flyway_user")).isFalse();
 
@@ -611,12 +630,12 @@ class PersistenceFlywayAutoConfigurationTest {
     }
 
     @Test
-    void flywayMigrationInitializer_shouldBeCreated() {
+    void flywayMigrationInitializer_shouldNotBeCreated() {
         contextRunner
                 .withPropertyValues("mango.persistence.flyway.enabled=true")
                 .withUserConfiguration(H2DataSourceConfig.class)
                 .run(ctx -> {
-                    assertThat(ctx).hasSingleBean(FlywayMigrationInitializer.class);
+                    assertThat(ctx).doesNotHaveBean(FlywayMigrationInitializer.class);
                 });
     }
 
@@ -632,13 +651,14 @@ class PersistenceFlywayAutoConfigurationTest {
     }
 
     @Test
-    void disabled_shouldCreateNonMigratingFlywayToBlockBootDefaultFlow() {
+    void disabled_shouldCreateNonMigratingFlywayWithoutRuntimeInitializer() {
         contextRunner
                 .withPropertyValues("mango.persistence.flyway.enabled=false")
                 .withUserConfiguration(H2DataSourceConfig.class)
                 .run(ctx -> {
                     assertThat(ctx).hasSingleBean(Flyway.class);
-                    assertThat(ctx).hasSingleBean(FlywayMigrationInitializer.class);
+                    assertThat(ctx).doesNotHaveBean(FlywayMigrationInitializer.class);
+                    assertThat(migrate(ctx).migrationCount()).isZero();
                 });
     }
 
@@ -668,6 +688,10 @@ class PersistenceFlywayAutoConfigurationTest {
             return null;
         }
         return tail.substring(0, dotIndex);
+    }
+
+    private static PersistenceFlywayBootstrapExecutor.MigrationSummary migrate(ApplicationContext context) {
+        return context.getBean(PersistenceFlywayBootstrapExecutor.class).migrate(BootstrapPhase.EXPAND);
     }
 
     @Configuration

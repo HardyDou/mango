@@ -74,6 +74,7 @@ Maven 依赖：
 ## 7. API 与扩展
 以下清单与 POM 的直接生产依赖保持相同顺序。聚合的基础设施 starter：
 
+- `mango-infra-bootstrap-starter`
 - `mango-infra-module-starter`
 - `mango-infra-kv-starter`
 - `mango-infra-event-starter`

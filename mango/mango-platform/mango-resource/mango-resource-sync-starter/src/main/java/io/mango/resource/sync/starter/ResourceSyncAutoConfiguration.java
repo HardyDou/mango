@@ -1,6 +1,7 @@
 package io.mango.resource.sync.starter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.mango.infra.bootstrap.api.BootstrapRuntimeAuthorityProvider;
 import io.mango.resource.sync.starter.controller.ResourceTargetController;
 import io.mango.resource.support.ResourceHandler;
 import io.mango.resource.support.ResourceProvider;
@@ -23,7 +24,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
@@ -68,14 +68,28 @@ public class ResourceSyncAutoConfiguration {
     @Bean
     @ConditionalOnBean(ResourceDeclarationApi.class)
     @ConditionalOnMissingBean
-    public ResourceSyncRunner resourceSyncRunner(ResourceRegistryProperties properties,
-                                                 ResourceDeclarationCollector collector,
-                                                 ResourceDeclarationApi resourceDeclarationApi,
-                                                 ObjectMapper objectMapper,
-                                                 @Value("${spring.application.name:}") String applicationName,
-                                                 ApplicationEventPublisher eventPublisher) {
-        return new ResourceSyncRunner(
-                properties, collector, resourceDeclarationApi, objectMapper, applicationName, eventPublisher);
+    public ResourceBootstrapStepContributor resourceBootstrapStepContributor(
+            ResourceRegistryProperties properties,
+            ResourceDeclarationCollector collector,
+            ResourceDeclarationApi resourceDeclarationApi,
+            ObjectMapper objectMapper,
+            @Value("${spring.application.name:}") String applicationName) {
+        return new ResourceBootstrapStepContributor(
+                properties, collector, resourceDeclarationApi, objectMapper, applicationName);
+    }
+
+    @Bean
+    @ConditionalOnBean({ResourceDeclarationApi.class, BootstrapRuntimeAuthorityProvider.class})
+    @ConditionalOnMissingBean
+    public ResourceEventualReconciliationWorker resourceEventualReconciliationWorker(
+            ResourceRegistryProperties properties,
+            ResourceDeclarationCollector collector,
+            ResourceDeclarationApi resourceDeclarationApi,
+            ObjectMapper objectMapper,
+            BootstrapRuntimeAuthorityProvider authorityProvider,
+            @Value("${spring.application.name:}") String applicationName) {
+        return new ResourceEventualReconciliationWorker(properties, collector, resourceDeclarationApi,
+                objectMapper, authorityProvider, applicationName);
     }
 
     @Bean

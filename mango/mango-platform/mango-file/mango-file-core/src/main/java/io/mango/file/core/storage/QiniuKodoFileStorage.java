@@ -69,6 +69,18 @@ public class QiniuKodoFileStorage extends AbstractCloudFileStorage {
     }
 
     @Override
+    public void publishObject(FileStorageConfigEntity config, String stagingObjectName, String targetObjectName) {
+        requireConfig(config);
+        try {
+            Response response = bucketManager(config).move(config.getBucketName(), stagingObjectName,
+                    config.getBucketName(), targetObjectName, true);
+            Require.isTrue(response.isOK(), FileCode.FILE_STORE_FAILED);
+        } catch (QiniuException e) {
+            Require.fail(FileCode.FILE_STORE_FAILED);
+        }
+    }
+
+    @Override
     public void test(FileStorageConfigEntity config) throws Exception {
         requireConfig(config);
         String objectName = ".mango-storage-test";

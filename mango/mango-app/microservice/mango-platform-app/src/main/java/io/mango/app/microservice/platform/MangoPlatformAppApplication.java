@@ -1,6 +1,6 @@
 package io.mango.app.microservice.platform;
 
-import org.springframework.boot.SpringApplication;
+import io.mango.infra.bootstrap.starter.MangoApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 /**
@@ -12,6 +12,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class MangoPlatformAppApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(MangoPlatformAppApplication.class, args);
+        MangoApplication.run(MangoPlatformAppApplication.class, args);
     }
 }

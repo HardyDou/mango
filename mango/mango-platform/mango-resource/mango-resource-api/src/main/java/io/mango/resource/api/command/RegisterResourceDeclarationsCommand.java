@@ -5,6 +5,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
+import io.mango.resource.api.enums.ResourceApplyMode;
+import jakarta.validation.constraints.Min;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -35,6 +37,25 @@ public class RegisterResourceDeclarationsCommand implements Serializable {
     @NotBlank(message = "资源声明JSON不能为空")
     @Schema(description = "资源声明JSON数组", requiredMode = Schema.RequiredMode.REQUIRED)
     private String declarations;
+
+    @NotBlank(message = "Bootstrap 环境标识不能为空")
+    @Size(max = 128, message = "Bootstrap 环境标识不能超过128个字符")
+    private String environmentKey;
+
+    @NotNull(message = "Release generation 不能为空")
+    @Min(value = 1, message = "Release generation 必须大于0")
+    private Long generation;
+
+    @NotBlank(message = "Manifest fingerprint 不能为空")
+    @Size(min = 64, max = 64, message = "Manifest fingerprint 必须为64位")
+    private String manifestFingerprint;
+
+    @NotNull(message = "Fencing token 不能为空")
+    @Min(value = 1, message = "Fencing token 必须大于0")
+    private Long fencingToken;
+
+    @NotNull(message = "Resource apply mode 不能为空")
+    private ResourceApplyMode applyMode;
 
     public List<String> getModuleCodes() {
         return List.copyOf(moduleCodes);

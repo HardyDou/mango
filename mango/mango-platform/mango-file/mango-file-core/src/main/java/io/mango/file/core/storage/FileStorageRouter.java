@@ -33,6 +33,10 @@ public class FileStorageRouter {
         storage(config).removeObject(config, objectName);
     }
 
+    public void publishObject(FileStorageConfigEntity config, String stagingObjectName, String targetObjectName) {
+        storage(config).publishObject(config, stagingObjectName, targetObjectName);
+    }
+
     public void test(FileStorageConfigEntity config) throws Exception {
         storage(config).test(config);
     }

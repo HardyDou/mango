@@ -1,6 +1,6 @@
 package io.mango.app.platformcapability.identity;
 
-import org.springframework.boot.SpringApplication;
+import io.mango.infra.bootstrap.starter.MangoApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 /**
@@ -10,6 +10,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class MangoIdentityCapabilityApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(MangoIdentityCapabilityApplication.class, args);
+        MangoApplication.run(MangoIdentityCapabilityApplication.class, args);
     }
 }

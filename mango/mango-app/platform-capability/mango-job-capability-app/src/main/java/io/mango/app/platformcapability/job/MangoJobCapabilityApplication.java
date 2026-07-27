@@ -1,6 +1,6 @@
 package io.mango.app.platformcapability.job;
 
-import org.springframework.boot.SpringApplication;
+import io.mango.infra.bootstrap.starter.MangoApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 /**
@@ -10,6 +10,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class MangoJobCapabilityApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(MangoJobCapabilityApplication.class, args);
+        MangoApplication.run(MangoJobCapabilityApplication.class, args);
     }
 }

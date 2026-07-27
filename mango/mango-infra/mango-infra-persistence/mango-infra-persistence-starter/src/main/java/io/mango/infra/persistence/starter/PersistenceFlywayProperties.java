@@ -54,6 +54,14 @@ public class PersistenceFlywayProperties {
      */
     private String upgradeRoot;
 
+    /** Optional one-shot schema snapshot for a genuinely empty database. */
+    private ColdBaseline coldBaseline = new ColdBaseline();
+
+    @Data
+    public static class ColdBaseline {
+        private boolean enabled = false;
+    }
+
     @Data
     public static class ModuleConfig {
         /**
@@ -93,10 +101,20 @@ public class PersistenceFlywayProperties {
         private List<String> locations = new ArrayList<>();
 
         /**
+         * 当前模块破坏性迁移脚本位置。为空时仅在
+         * classpath:db/migration-contract/{module} 存在时启用。
+         * EXPAND 与 CONTRACT 使用同一个 Flyway history table，版本号必须全局唯一。
+         */
+        private List<String> contractLocations = new ArrayList<>();
+
+        /**
          * 当前模块独立迁移数据源。
          * 未配置时使用应用主数据源。
          */
         private DataSourceConfig datasource = new DataSourceConfig();
+
+        /** 当前模块拥有的空库快速基线。 */
+        private BaselineConfig baseline = new BaselineConfig();
 
         /**
          * 是否在迁移前校验历史记录。
@@ -117,6 +135,11 @@ public class PersistenceFlywayProperties {
     @Data
     public static class DataSourceConfig {
         /**
+         * 逻辑数据源名称。多个模块指向同一显式 JDBC URL 时必须配置相同名称。
+         */
+        private String logicalName;
+
+        /**
          * JDBC URL。配置后当前模块迁移使用独立数据库。
          */
         private String url;
@@ -135,5 +158,19 @@ public class PersistenceFlywayProperties {
          * 数据库密码。
          */
         private String password;
+    }
+
+    @Data
+    public static class BaselineConfig {
+        /**
+         * 当前模块唯一的基线 SQL。未配置时按
+         * classpath*:db/baseline/{module}/B*__baseline.sql 自动发现。
+         */
+        private String location;
+
+        /**
+         * 基线包含的最高 migration 版本。未配置时从 B{version}__*.sql 文件名解析。
+         */
+        private String version;
     }
 }

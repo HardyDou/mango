@@ -23,6 +23,7 @@ public class ResourceRegistryProperties {
     private String instanceId = "";
     private int lockTtlSeconds = DEFAULT_LOCK_TTL_SECONDS;
     private int shutdownWaitSeconds = DEFAULT_SHUTDOWN_WAIT_SECONDS;
+    private Duration eventualReconciliationInterval = Duration.ofSeconds(30);
     private Remote remote = new Remote();
     private List<String> locations = new ArrayList<>(List.of(
             "classpath*:META-INF/mango/resources/*.json",

@@ -14,8 +14,11 @@ import org.springframework.util.StringUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
+import java.io.OutputStream;
+import java.security.DigestInputStream;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.TreeMap;
@@ -40,6 +43,7 @@ public class ResourceContentHasher {
             normalized.put("name", declaration.getName());
             normalized.put("targetModule", declaration.getTargetModule());
             normalized.put("syncMode", declaration.getSyncMode());
+            normalized.put("executionPhase", declaration.getExecutionPhase());
             normalized.put("status", declaration.getStatus());
             normalized.put("fields", normalizeFields(declaration.getFields()));
             return DigestUtils.md5DigestAsHex(objectMapper.writeValueAsBytes(normalized));
@@ -62,14 +66,14 @@ public class ResourceContentHasher {
             value.put("encoding", field.getEncoding());
             value.put("mediaType", field.getMediaType());
             if (field.getType() == ResourceFieldType.FILE) {
-                value.put("content", readClasspathContent(field));
+                value.put("content", readClasspathContentFingerprint(field));
             }
             normalized.put(entry.getKey(), value);
         }
         return normalized;
     }
 
-    private String readClasspathContent(ResourceField field) {
+    private Map<String, Object> readClasspathContentFingerprint(ResourceField field) {
         if (!StringUtils.hasText(field.getLocation()) || !field.getLocation().startsWith("classpath:")) {
             throw new IllegalStateException("File resource field only supports classpath location: " + field.getLocation());
         }
@@ -77,14 +81,15 @@ public class ResourceContentHasher {
         if (!resource.exists() || !resource.isReadable()) {
             throw new IllegalStateException("Classpath file resource is not readable: " + field.getLocation());
         }
-        Charset charset = StandardCharsets.UTF_8;
-        if (StringUtils.hasText(field.getEncoding())) {
-            charset = Charset.forName(field.getEncoding());
-        }
-        try (InputStream inputStream = resource.getInputStream()) {
-            return new String(inputStream.readAllBytes(), charset);
-        } catch (IOException e) {
-            throw new IllegalStateException("Read classpath file resource failed: " + field.getLocation(), e);
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            try (InputStream inputStream = resource.getInputStream();
+                 DigestInputStream digestInput = new DigestInputStream(inputStream, digest)) {
+                long size = digestInput.transferTo(OutputStream.nullOutputStream());
+                return Map.of("sha256", HexFormat.of().formatHex(digest.digest()), "size", size);
+            }
+        } catch (IOException | NoSuchAlgorithmException e) {
+            throw new IllegalStateException("Fingerprint classpath file resource failed: " + field.getLocation(), e);
         }
     }
 }

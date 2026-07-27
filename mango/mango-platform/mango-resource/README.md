@@ -12,13 +12,25 @@
 
 | 场景 | 入口 | 关键配置 |
 |------|------|----------|
-| 正式内置资源，例如菜单、字典、系统配置、消息模板、任务、号段、文件配置 | `META-INF/mango/resources/` | 默认扫描。 |
+| 正式内置资源，例如菜单、字典、流程定义、预置文件、系统配置 | `META-INF/mango/resources/` | 默认 `BOOTSTRAP_REQUIRED`，由 Bootstrap 在 Runtime 前同步。 |
 | 演示站点、演示角色、演示流程、演示日历、sample job | `META-INF/mango/demo/` | 只有 `mango.resource.registry.demo-enabled=true` 才扫描。 |
 | 首次初始化后用户或业务运行时会改的数据 | Resource 声明 | 使用 `sync-mode: INIT_ONLY`。 |
 | 表结构、索引、约束、大 SQL、停机升级 SQL | Flyway | 见 `mango-infra-persistence` README。 |
 | 用户创建的业务单据、流程实例、任务实例、日历事件、用户改的角色授权 | 业务 Owner Service | 不进入 Resource 声明。 |
 
-Resource 不执行 SQL 文件，不做 Data Package/task 编排，不负责在线升级。大 SQL、磁盘 SQL 和远程 URL SQL 统一走 `mango-infra-persistence` 的模块化 Flyway `locations`。
+Resource 不执行 SQL 文件。DDL、大 SQL、磁盘 SQL 和远程 URL SQL 统一走 `mango-infra-persistence`；结构化资源、流程定义以及 `FILE_ASSET` 二进制制品由 Bootstrap Resource 步骤按依赖顺序物化。
+
+### 1.2 Bootstrap 与 Runtime
+
+Resource 声明的 `execution-phase` 与 `sync-mode` 正交：
+
+| `execution-phase` | 执行位置 | 语义 |
+|-------------------|----------|------|
+| `BOOTSTRAP_REQUIRED` | `bootstrap apply` | Runtime 前必须完成；未声明时的兼容默认值。 |
+| `RUNTIME_EVENTUAL` | Runtime 后台 worker | 不阻断流量，只有权威 generation 可持续对账。 |
+| `MANUAL` | 管理员显式入口 | 只进入计划，不自动物化。 |
+
+`bootstrap apply --strategy=rolling` 的 expand 只新增或更新，不因本代 manifest 缺失而禁用旧资源。`bootstrap finalize` 才处理 `disableMissing` 和显式删除。所有远程注册命令携带 environment、generation、manifest fingerprint 和 fencing token；旧实例无法覆盖新代资源。
 
 历史 Flyway 中如果保留旧字典、旧菜单或旧 demo seed，只能作为历史库兼容证据，不能作为新增资源声明模板。新增或调整字典、菜单、角色、工作流等小资源时，先看当前 handler 是否开放，再按本 README 的 Resource 声明和 `sync-mode` 处理。
 
@@ -39,6 +51,7 @@ Resource 不执行 SQL 文件，不做 Data Package/task 编排，不负责在�
 - 将声明写入 `resource_registry`，并记录同步日志和变更日志。
 - 按资源类型调用目标模块 `ResourceHandler` 完成创建、更新、禁用和删除。
 - 支持 `AUTO`、`INIT_ONLY`、`MANUAL`、`LOCKED` 同步模式和强制同步。
+- 支持 `BOOTSTRAP_REQUIRED`、`RUNTIME_EVENTUAL`、`MANUAL` 执行阶段和 generation fencing。
 - 支持正式资源和 demo 资源目录隔离，demo 默认不扫描。
 - 支持本地单体注册中心和微服务远程上报两种拓扑。
 - 提供后台管理接口查询注册资源、同步日志、变更日志和处理器字段契约。
@@ -406,6 +419,7 @@ authorization_api_resource         API_RESOURCE 访问模式正确
 | `JOB_DEFINITION` | `mango-job` | 见 `mango-job` README。 |
 | `FILE_STORAGE_CONFIG` | `mango-file` | 见 `mango-file` README。 |
 | `FILE_SETTINGS` | `mango-file` | 见 `mango-file` README。 |
+| `FILE_ASSET` | `mango-file` | 把 Jar 内 `META-INF/mango/assets/` 二进制发布到文件存储并写入稳定 `fileId`。 |
 
 ## 14. 问题排查
 

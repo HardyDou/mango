@@ -156,6 +156,21 @@
 
             <!-- Mango Modules -->
             <dependency>
+                <groupId>io.mango.infra.bootstrap</groupId>
+                <artifactId>mango-infra-bootstrap-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.mango.infra.bootstrap</groupId>
+                <artifactId>mango-infra-bootstrap-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.mango.infra.bootstrap</groupId>
+                <artifactId>mango-infra-bootstrap-starter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.mango</groupId>
                 <artifactId>mango-admin-starter</artifactId>
                 <version>${project.version}</version>

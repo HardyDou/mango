@@ -22,6 +22,7 @@ public class SchemaValidationAutoConfiguration {
             name = "enabled",
             havingValue = "true",
             matchIfMissing = true)
+    @ConditionalOnProperty(prefix = "mango.bootstrap", name = "mode", havingValue = "runtime")
     public ApplicationRunner persistenceSchemaValidationRunner(DataSource dataSource,
                                                                PersistenceProperties properties) {
         return args -> new SchemaValidationRunner(dataSource, properties.getSchemaValidation()).run();

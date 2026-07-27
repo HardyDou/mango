@@ -24,6 +24,7 @@ import org.springframework.context.event.EventListener;
 import org.springframework.core.Ordered;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 
 import java.time.Instant;
 import java.util.LinkedHashMap;
@@ -38,6 +39,8 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 @Slf4j
 @Component
+@ConditionalOnProperty(prefix = "mango.system.tenant-provisioning", name = "legacy-startup-enabled",
+        havingValue = "true")
 @RequiredArgsConstructor
 public class TenantProvisioningReconciliationRunner
         implements ApplicationRunner, Ordered, StartupReadinessStatus {

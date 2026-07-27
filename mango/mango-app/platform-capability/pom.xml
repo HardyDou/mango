@@ -42,6 +42,10 @@
 
     <dependencies>
         <dependency>
+            <groupId>io.mango.infra.bootstrap</groupId>
+            <artifactId>mango-infra-bootstrap-starter</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.mango.common</groupId>
             <artifactId>mango-common</artifactId>
         </dependency>

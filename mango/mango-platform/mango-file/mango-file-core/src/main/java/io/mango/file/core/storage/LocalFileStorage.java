@@ -15,6 +15,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.AtomicMoveNotSupportedException;
 import java.time.Duration;
 import java.util.Optional;
 
@@ -59,6 +60,22 @@ public class LocalFileStorage implements FileStorage {
             Files.deleteIfExists(target);
         } catch (IOException e) {
             Require.fail(FileCode.FILE_READ_FAILED);
+        }
+    }
+
+    @Override
+    public void publishObject(FileStorageConfigEntity config, String stagingObjectName, String targetObjectName) {
+        Path staging = resolvePath(config.getBucketName(), stagingObjectName);
+        Path target = resolvePath(config.getBucketName(), targetObjectName);
+        try {
+            Files.createDirectories(target.getParent());
+            try {
+                Files.move(staging, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+            } catch (AtomicMoveNotSupportedException ignored) {
+                Files.move(staging, target, StandardCopyOption.REPLACE_EXISTING);
+            }
+        } catch (IOException e) {
+            Require.fail(FileCode.FILE_STORE_FAILED);
         }
     }
 

@@ -18,6 +18,11 @@
 
     <dependencies>
         <dependency>
+            <groupId>io.mango.infra.bootstrap</groupId>
+            <artifactId>mango-infra-bootstrap-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>io.mango.infra.persistence</groupId>
             <artifactId>mango-infra-persistence-api</artifactId>
             <version>${project.version}</version>

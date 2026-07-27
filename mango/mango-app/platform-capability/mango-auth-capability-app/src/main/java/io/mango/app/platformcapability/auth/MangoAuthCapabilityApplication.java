@@ -1,6 +1,6 @@
 package io.mango.app.platformcapability.auth;
 
-import org.springframework.boot.SpringApplication;
+import io.mango.infra.bootstrap.starter.MangoApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 /**
@@ -10,6 +10,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class MangoAuthCapabilityApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(MangoAuthCapabilityApplication.class, args);
+        MangoApplication.run(MangoAuthCapabilityApplication.class, args);
     }
 }

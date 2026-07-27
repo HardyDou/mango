@@ -1,9 +1,11 @@
 package io.mango.job.starter.remote;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import io.mango.infra.bootstrap.api.BootstrapPhase;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.infra.persistence.api.datasource.PersistenceDataSourceContext;
+import io.mango.infra.persistence.starter.PersistenceFlywayBootstrapExecutor;
 import io.mango.job.api.command.CreateMangoJobDefinitionCommand;
 import io.mango.job.api.command.TriggerMangoJobCommand;
 import io.mango.job.api.command.UpdateMangoJobDefinitionStatusCommand;
@@ -23,6 +25,7 @@ import io.mango.job.core.service.IMangoJobQueryService;
 import io.mango.job.starter.JobAutoConfiguration;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -32,6 +35,8 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.web.context.WebServerApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -210,6 +215,12 @@ class MangoJobRemoteDispatchFlowTest {
     @SpringBootConfiguration
     @EnableAutoConfiguration
     static class JobCenterApplication {
+
+        @Bean
+        @Order(Ordered.HIGHEST_PRECEDENCE)
+        ApplicationRunner bootstrapPersistence(PersistenceFlywayBootstrapExecutor executor) {
+            return arguments -> executor.migrate(BootstrapPhase.EXPAND);
+        }
     }
 
     @SpringBootConfiguration
