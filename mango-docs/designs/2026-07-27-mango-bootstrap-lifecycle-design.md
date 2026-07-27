@@ -420,7 +420,7 @@ Bootstrap 根据 `PersistenceModuleDataSourceResolver` 或模块显式 datasourc
 性能门禁不是只计算 SQL 文本或 Resource 元数据。仓库基准必须真实执行 MySQL DDL/DML、`WORKFLOW_DEFINITION`
 到 Flowable 的 BPMN 发布，以及 `FILE_ASSET` 到文件存储层的二进制写入和 SHA-256 回读。当前 5 倍保函参考负载为
 5 模块、375 表、37,500 行、16,372,270 SQL 字节，以及 1,255 条 Resource、75 MiB 文件和 20 个八级审批流程。
-Resource 规模以保函只读统计的 232 个声明、4 个启动发布 Workflow、15 个启动物化文件为基准，三个维度分别达到 5 倍，不能用普通声明填充量替代 Workflow/File 覆盖。MySQL 8.4 实测 SQL 3.443 秒、完整 Bootstrap Resource 冷注入 13.447 秒、同代热重入 84 毫秒，均低于一分钟目标。
+Resource 规模以保函只读统计的 232 个声明、4 个启动发布 Workflow、15 个启动物化文件为基准，三个维度分别达到 5 倍，不能用普通声明填充量替代 Workflow/File 覆盖。MySQL 8.4 实测 SQL 2.267 秒、完整 Bootstrap Resource 冷注入 13.049 秒、同代热重入 53 毫秒，均低于一分钟目标。
 
 ## 13. 安全、租户与多数据源
 

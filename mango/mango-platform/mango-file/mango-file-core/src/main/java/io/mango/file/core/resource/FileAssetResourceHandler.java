@@ -102,15 +102,16 @@ public class FileAssetResourceHandler implements ResourceHandler {
 
         FileObjectEntity fileObject = resolveFileObject(record, payload, storageConfig);
         boolean metadataMatches = matches(fileObject, payload, storageConfig);
-        boolean objectReadable = metadataMatches && objectReadable(storageConfig, payload.objectName());
-        if (!objectReadable) {
+        boolean objectMatches = metadataMatches
+                && storedObjectMatches(storageConfig, payload.objectName(), payload);
+        if (!objectMatches) {
             publish(payload, storageConfig, declaration.getId());
         }
 
         fileObject = persistFileObject(fileObject, payload, storageConfig);
         record = persistFileRecord(record, fileObject, payload, declaration);
         return ResourceSyncResult.of(record.getId(), TARGET_TABLE,
-                objectReadable ? "File asset verified: " + payload.objectName()
+                objectMatches ? "File asset verified: " + payload.objectName()
                         : "File asset published: " + payload.objectName());
     }
 
@@ -181,17 +182,6 @@ public class FileAssetResourceHandler implements ResourceHandler {
                 && Objects.equals(fileObject.getFileHash(), payload.sha256())
                 && Objects.equals(fileObject.getFileSize(), payload.contentLength())
                 && Integer.valueOf(FileObjectStatus.COMPLETED.value()).equals(fileObject.getStatus());
-    }
-
-    private boolean objectReadable(FileStorageConfigEntity config, String objectName) {
-        try {
-            FileObject object = fileStorageRouter.getObject(config, objectName);
-            try (InputStream ignored = object.inputStream()) {
-                return true;
-            }
-        } catch (RuntimeException | IOException ignored) {
-            return false;
-        }
     }
 
     private void publish(AssetPayload payload, FileStorageConfigEntity storageConfig, String resourceId) {

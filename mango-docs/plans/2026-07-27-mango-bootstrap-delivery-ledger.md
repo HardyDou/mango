@@ -8,8 +8,8 @@
 - 最终风险：L3，交付模式 FULL。
 - 工作区：`/Users/hardy/Work/mango-bootstrap`，分支 `feat/mango-bootstrap`，M01=REUSE。
 - 设计：[Mango Bootstrap 生命周期治理设计](../designs/2026-07-27-mango-bootstrap-lifecycle-design.md)，用户已确认进入实施。
-- 启用措施：M08 能力说明、M09 静态验证、M10 状态机/指纹/门禁单测、M11 MySQL/Spring/跨模块集成、M12 命令与 Resource API 契约验证、M14 高风险架构复核、M16 空库/升级/滚动场景验收。
-- 不启用：M13（无页面或浏览器入口）、M15（当前交付不写外部系统状态）。M02 性能测试只创建带 `_bootstrap_sql_perf` / `_bootstrap_resource_perf` 后缀的专用空库，并在结束后自动删除；不清空共享或既有业务库。
+- 启用措施：M02 一次性测试库重建、M08 能力说明、M09 静态验证、M10 状态机/指纹/门禁单测、M11 MySQL/Spring/跨模块集成、M12 命令与 Resource API 契约验证、M14 高风险架构复核。
+- 不启用：M13（无页面或浏览器入口）、M15（当前交付不写外部系统状态）、M16（保函消费新制品须在发布后由业务流水线验收，本次保持业务仓只读且不伪造结果）。M02 性能测试只创建带 `_bootstrap_sql_perf` / `_bootstrap_resource_perf` 后缀的专用空库，并在结束后自动删除；不清空共享或既有业务库。
 - 旧业务升级口径：保留业务源码与模块能力，允许丢弃旧数据库、历史业务数据和旧 Flyway 执行历史，以空库 cold Bootstrap 生成 generation 1；新生命周期启用后的后续升级继续执行 rolling 三阶段。
 
 ## 2. 原子交付台账
@@ -29,8 +29,8 @@
 | MB-011 | DEC-001/007 | 最终应用模板、BOM 和 starter 使用新入口 | 删除旧隐式初始化契约 | app/admin-starter/BOM | Bootstrap README、能力地图 | 官方应用 Reactor test-compile 通过 | DONE |
 | MB-012 | AC-001..015 | 一次性交付验证 | 定向单元、真实 MySQL、入口流程和消费验证 | 正式测试目录与最小证据 | 本台账结果区 | 定向模块套件、真实 MySQL 性能与回滚、静态审计通过；Baohan 仓按用户要求只读 | DONE |
 | MB-013 | 用户补充约束 | 已有 Mango 业务保留源码、允许清库接入 | 入口迁移 + 空库 cold Bootstrap，不提供旧库原地兼容 | app starter、迁移检查 | Bootstrap README | 官方应用代码保留并切换统一入口 | DONE |
-| MB-014 | 用户性能基线 | 同库手工初始化 SQL 约 1 分钟，避免逐模块历史重放 | 每模块唯一空库 baseline + 模块 history + 后续增量 | persistence starter | persistence README | 5 模块、375 表、37,500 行、16.37 MB，MySQL 8.4 为 3.443s | DONE |
-| MB-015 | 用户 Resource 规模补充 | 真实测试 Workflow 发布与文件存储写入，各关键类型规模均至少为保函 5 倍 | 以保函 232 个声明、4 个启动发布流程、15 个启动物化文件为只读基准；运行时生成资产，真实 Registry/Handler/Flowable/LOCAL，分阶段计时 | admin-starter 性能集成测试、基准脚本 | Resource/File/Workflow README | 1,255 声明、75 MiB 文件、20 个八级流程，冷 13.447s、热 84ms | DONE |
+| MB-014 | 用户性能基线 | 同库手工初始化 SQL 约 1 分钟，避免逐模块历史重放 | 每模块唯一空库 baseline + 模块 history + 后续增量 | persistence starter | persistence README | 5 模块、375 表、37,500 行、16.37 MB，MySQL 8.4 为 2.267s | DONE |
+| MB-015 | 用户 Resource 规模补充 | 真实测试 Workflow 发布与文件存储写入，各关键类型规模均至少为保函 5 倍 | 以保函 232 个声明、4 个启动发布流程、15 个启动物化文件为只读基准；运行时生成资产，真实 Registry/Handler/Flowable/LOCAL，分阶段计时 | admin-starter 性能集成测试、基准脚本 | Resource/File/Workflow README | 1,255 声明、75 MiB 文件、20 个八级流程，冷 13.049s、热 53ms | DONE |
 
 ## 3. 测试用例候选
 
@@ -44,7 +44,7 @@
 | TC-MB-006 | AC-014 | finalize 前停止候选并恢复稳定代 | P1 | 入口流程 | AUTO | 独立库 | stable/candidate/fingerprint | Bootstrap abort flow test | 活跃候选拒绝、清除 candidate、stable 恢复、旧 token 失效的 MySQL 测试通过 | PASS |
 | TC-MB-007 | AC-015 | Baohan 类空库消费制品启动 | P0 | 人工/消费验证 | MANUAL | 一次性测试环境 reset-demo | Bootstrap Job 0 + Runtime ready | 业务测试流水线 | 用户明确 Baohan 仓只读参考，本次不修改或发布业务制品 | EXCLUDED |
 | TC-MB-008 | 用户业务复测 | 与旧启动模式 649 秒 API readiness、732 秒发布耗时对比 | P0 | 消费/性能验收 | MANUAL | 同等空库与业务制品 | Bootstrap 可长时独立执行；其后 Runtime readiness 秒级 | 业务测试流水线 | 旧模式基线：649s/732s，前端均 200；新制品消费留给业务发布验证 | BASELINE_ONLY |
-| TC-MB-009 | 用户 Resource 规模补充 | 声明、Workflow、File 三个维度分别达到 5 倍参考量，执行真实冷注入与热重入 | P0 | MySQL/存储/Flowable 集成 | AUTO | 两个后缀专用库和临时文件目录自动清理 | 1,255 registry、20 个 Flowable deployment、75 组 file 记录与对象大小/SHA-256、无新增日志/部署 | `scripts/tests/bootstrap-performance.sh` | SQL 3.443s；Resource 冷 13.447s、热 84ms | PASS |
+| TC-MB-009 | 用户 Resource 规模补充 | 声明、Workflow、File 三个维度分别达到 5 倍参考量，执行真实冷注入与热重入 | P0 | MySQL/存储/Flowable 集成 | AUTO | 两个后缀专用库和临时文件目录自动清理 | 1,255 registry、20 个 Flowable deployment、75 组 file 记录与对象大小/SHA-256、无新增日志/部署 | `scripts/tests/bootstrap-performance.sh` | SQL 2.267s；Resource 冷 13.049s、热 53ms | PASS |
 
 ## 4. 执行顺序
 

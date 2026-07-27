@@ -19,6 +19,7 @@ import org.springframework.core.io.DefaultResourceLoader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
@@ -113,6 +114,19 @@ class FileAssetResourceHandlerTest {
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("sha256 mismatch");
         assertThat(storage.putCount).isZero();
+    }
+
+    @Test
+    void republishesWhenStoredObjectChecksumDrifts() {
+        ResourceDeclaration declaration = declaration(OBJECT_NAME, SHA256);
+        handler.upsert(declaration);
+        storage.objects.put(OBJECT_NAME, "corrupted".getBytes(StandardCharsets.UTF_8));
+
+        handler.upsert(declaration);
+
+        assertThat(storage.putCount).isEqualTo(2);
+        assertThat(storage.objects.get(OBJECT_NAME))
+                .isEqualTo("mango-file-asset\n".getBytes(StandardCharsets.UTF_8));
     }
 
     @Test
