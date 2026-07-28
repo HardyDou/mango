@@ -57,11 +57,13 @@ vi.mock('../../../api/workflow', async () => {
       definitionDetail: vi.fn(),
       definitionsPage: vi.fn(),
       completeTask: vi.fn(() => Promise.resolve(true)),
-      returnTask: vi.fn(() => Promise.resolve({
-        processInstanceId: 'proc-1',
-        ended: false,
-        currentTasks: [],
-      })),
+      returnTask: vi.fn(() =>
+        Promise.resolve({
+          processInstanceId: 'proc-1',
+          ended: false,
+          currentTasks: [],
+        }),
+      ),
       transferTask: vi.fn(() => Promise.resolve(true)),
       addSignTask: vi.fn(() => Promise.resolve(true)),
       claimTask: vi.fn(() => Promise.resolve(true)),
@@ -93,13 +95,15 @@ describe('workflow task detail', () => {
         },
       },
     });
-    vi.mocked(workflowApi.taskDetail).mockResolvedValueOnce(taskDetail({
-      formJson: JSON.stringify({
-        mode: 'CUSTOM_PAGE',
-        customConfig: { approvePageKey: 'workflow.test.approve' },
-      }),
-      renderConfig: {},
-    }) as any);
+    vi.mocked(workflowApi.taskDetail).mockResolvedValueOnce(
+      taskDetail({
+        formJson: JSON.stringify({
+          mode: 'CUSTOM_PAGE',
+          customConfig: { approvePageKey: 'workflow.test.approve' },
+        }),
+        renderConfig: {},
+      }) as any,
+    );
     vi.mocked(workflowApi.businessApplyByProcessInstance).mockRejectedValueOnce(new Error('no apply'));
 
     const { el, unmount } = await mountTaskDetail();
@@ -110,29 +114,29 @@ describe('workflow task detail', () => {
   });
 
   it('does not query definition management APIs when task runtime detail is enough', async () => {
-    vi.mocked(workflowApi.taskDetail).mockResolvedValueOnce(taskDetail({
-      process: {
-        processInstanceId: 'proc-1',
-        processName: '保函风控审批',
-        processKey: 'WF_GUARANTEE_RISK_REVIEW',
-        processDefinitionId: 'workflow:runtime:definition',
-        definitionId: '10001',
-        businessKey: 'RISK-1',
-      },
-      formJson: JSON.stringify([
-        { type: 'input', field: 'riskTitle', title: '风控标题' },
-      ]),
-      variables: {
-        businessType: 'GUARANTEE_RISK_REVIEW',
-        riskTitle: '保函审批办理',
-      },
-      renderConfig: {
-        renderMode: 'DYNAMIC_FORM',
-        businessType: 'GUARANTEE_RISK_REVIEW',
-        businessKey: 'RISK-1',
-        nodeActions: {},
-      },
-    }) as any);
+    vi.mocked(workflowApi.taskDetail).mockResolvedValueOnce(
+      taskDetail({
+        process: {
+          processInstanceId: 'proc-1',
+          processName: '保函风控审批',
+          processKey: 'WF_GUARANTEE_RISK_REVIEW',
+          processDefinitionId: 'workflow:runtime:definition',
+          definitionId: '10001',
+          businessKey: 'RISK-1',
+        },
+        formJson: JSON.stringify([{ type: 'input', field: 'riskTitle', title: '风控标题' }]),
+        variables: {
+          businessType: 'GUARANTEE_RISK_REVIEW',
+          riskTitle: '保函审批办理',
+        },
+        renderConfig: {
+          renderMode: 'DYNAMIC_FORM',
+          businessType: 'GUARANTEE_RISK_REVIEW',
+          businessKey: 'RISK-1',
+          nodeActions: {},
+        },
+      }) as any,
+    );
     vi.mocked(workflowApi.businessApplyByProcessInstance).mockRejectedValueOnce(new Error('no apply'));
 
     const { el, unmount } = await mountTaskDetail();
@@ -146,25 +150,27 @@ describe('workflow task detail', () => {
   });
 
   it('renders the runtime designer snapshot without querying definition management APIs', async () => {
-    vi.mocked(workflowApi.taskDetail).mockResolvedValueOnce(taskDetail({
-      designerJson: JSON.stringify({
-        id: 'startEvent',
-        nodeName: '发起人',
-        nodeType: 'ROOT',
-        conditionNodes: [],
-        properties: {},
-        childNode: {
-          id: 'manager_approve',
-          nodeName: '经理审批节点',
-          nodeType: 'APPROVAL',
-          bpmnType: 'userTask',
-          executionType: 'USER_TASK',
+    vi.mocked(workflowApi.taskDetail).mockResolvedValueOnce(
+      taskDetail({
+        designerJson: JSON.stringify({
+          id: 'startEvent',
+          nodeName: '发起人',
+          nodeType: 'ROOT',
           conditionNodes: [],
           properties: {},
-          childNode: null,
-        },
-      }),
-    }) as WorkflowTaskDetail);
+          childNode: {
+            id: 'manager_approve',
+            nodeName: '经理审批节点',
+            nodeType: 'APPROVAL',
+            bpmnType: 'userTask',
+            executionType: 'USER_TASK',
+            conditionNodes: [],
+            properties: {},
+            childNode: null,
+          },
+        }),
+      }) as WorkflowTaskDetail,
+    );
     vi.mocked(workflowApi.businessApplyByProcessInstance).mockRejectedValueOnce(new Error('no apply'));
 
     const { el, unmount } = await mountTaskDetail();
@@ -192,20 +198,24 @@ describe('workflow task detail', () => {
       },
     });
     vi.mocked(workflowApi.taskDetail)
-      .mockResolvedValueOnce(taskDetail({
-        formJson: JSON.stringify({
-          mode: 'CUSTOM_PAGE',
-          customConfig: { approvePageKey: 'workflow.test.custom-record' },
-        }),
-        records: [{ action: 'COMPLETE', actionName: '通过', processInstanceId: 'proc-1', comment: '同意' }],
-      }) as any)
-      .mockResolvedValueOnce(taskDetail({
-        formJson: JSON.stringify({
-          mode: 'CUSTOM_PAGE',
-          customConfig: { approvePageKey: 'workflow.test.hidden-record' },
-        }),
-        records: [{ action: 'COMPLETE', actionName: '通过', processInstanceId: 'proc-2', comment: '隐藏记录' }],
-      }) as any);
+      .mockResolvedValueOnce(
+        taskDetail({
+          formJson: JSON.stringify({
+            mode: 'CUSTOM_PAGE',
+            customConfig: { approvePageKey: 'workflow.test.custom-record' },
+          }),
+          records: [{ action: 'COMPLETE', actionName: '通过', processInstanceId: 'proc-1', comment: '同意' }],
+        }) as any,
+      )
+      .mockResolvedValueOnce(
+        taskDetail({
+          formJson: JSON.stringify({
+            mode: 'CUSTOM_PAGE',
+            customConfig: { approvePageKey: 'workflow.test.hidden-record' },
+          }),
+          records: [{ action: 'COMPLETE', actionName: '通过', processInstanceId: 'proc-2', comment: '隐藏记录' }],
+        }) as any,
+      );
     vi.mocked(workflowApi.businessApplyByProcessInstance).mockRejectedValue(new Error('no apply'));
 
     const { el, unmount } = await mountTaskDetail();
@@ -221,29 +231,29 @@ describe('workflow task detail', () => {
 
   it('reloads detail when route task id changes', async () => {
     vi.mocked(workflowApi.taskDetail)
-      .mockResolvedValueOnce(taskDetail({
-        formJson: JSON.stringify([
-          { type: 'input', field: 'firstField', title: '第一字段' },
-        ]),
-      }) as any)
-      .mockResolvedValueOnce(taskDetail({
-        task: {
-          id: 'task-2',
-          taskName: '复核',
-          taskDefinitionKey: 'review',
-          processInstanceId: 'proc-2',
-          businessKey: 'BIZ-2',
-        },
-        process: {
-          processInstanceId: 'proc-2',
-          processName: '第二流程',
-          processKey: 'second_process',
-          businessKey: 'BIZ-2',
-        },
-        formJson: JSON.stringify([
-          { type: 'input', field: 'secondField', title: '第二字段' },
-        ]),
-      }) as any);
+      .mockResolvedValueOnce(
+        taskDetail({
+          formJson: JSON.stringify([{ type: 'input', field: 'firstField', title: '第一字段' }]),
+        }) as any,
+      )
+      .mockResolvedValueOnce(
+        taskDetail({
+          task: {
+            id: 'task-2',
+            taskName: '复核',
+            taskDefinitionKey: 'review',
+            processInstanceId: 'proc-2',
+            businessKey: 'BIZ-2',
+          },
+          process: {
+            processInstanceId: 'proc-2',
+            processName: '第二流程',
+            processKey: 'second_process',
+            businessKey: 'BIZ-2',
+          },
+          formJson: JSON.stringify([{ type: 'input', field: 'secondField', title: '第二字段' }]),
+        }) as any,
+      );
     vi.mocked(workflowApi.businessApplyByProcessInstance).mockRejectedValue(new Error('no apply'));
 
     const { el, unmount } = await mountTaskDetail();
@@ -327,14 +337,16 @@ describe('workflow task detail', () => {
   });
 
   it('uses user selector for transfer and add sign actions', async () => {
-    vi.mocked(workflowApi.taskDetail).mockResolvedValueOnce(taskDetail({
-      renderConfig: {
-        nodeActions: {
-          transfer: { enabled: true, label: '转办', order: 1 },
-          addSign: { enabled: true, label: '加签', order: 2 },
+    vi.mocked(workflowApi.taskDetail).mockResolvedValueOnce(
+      taskDetail({
+        renderConfig: {
+          nodeActions: {
+            transfer: { enabled: true, label: '转办', order: 1 },
+            addSign: { enabled: true, label: '加签', order: 2 },
+          },
         },
-      },
-    }) as any);
+      }) as any,
+    );
     vi.mocked(workflowApi.businessApplyByProcessInstance).mockRejectedValue(new Error('no apply'));
     const { el, unmount } = await mountTaskDetail();
 
@@ -353,22 +365,24 @@ describe('workflow task detail', () => {
   });
 
   it('submits return task action without rejecting the process', async () => {
-    vi.mocked(workflowApi.taskDetail).mockResolvedValueOnce(taskDetail({
-      renderConfig: {
-        nodeExtension: {
-          returnTargetTaskDefinitionKey: 'legacy-draft',
-        },
-        nodeActions: {
-          returnTask: {
-            enabled: true,
-            label: '退回专员',
-            requireComment: false,
-            order: 1,
-            targetTaskDefinitionKey: 'draft',
+    vi.mocked(workflowApi.taskDetail).mockResolvedValueOnce(
+      taskDetail({
+        renderConfig: {
+          nodeExtension: {
+            returnTargetTaskDefinitionKey: 'legacy-draft',
+          },
+          nodeActions: {
+            returnTask: {
+              enabled: true,
+              label: '退回专员',
+              requireComment: false,
+              order: 1,
+              targetTaskDefinitionKey: 'draft',
+            },
           },
         },
-      },
-    }) as any);
+      }) as any,
+    );
     vi.mocked(workflowApi.businessApplyByProcessInstance).mockRejectedValue(new Error('no apply'));
     const { el, unmount } = await mountTaskDetail();
 
@@ -387,41 +401,47 @@ describe('workflow task detail', () => {
 
   it('renders claim actions only from backend claim flags', async () => {
     vi.mocked(workflowApi.taskDetail)
-      .mockResolvedValueOnce(taskDetail({
-        task: {
-          id: 'assigned-task',
-          taskName: '普通审批',
-          taskDefinitionKey: 'approve',
-          processInstanceId: 'proc-1',
-          businessKey: 'BIZ-1',
-          assigneeName: 'admin',
-          claimable: false,
-          unclaimable: false,
-        },
-      }) as any)
-      .mockResolvedValueOnce(taskDetail({
-        task: {
-          id: 'candidate-task',
-          taskName: '候选审批',
-          taskDefinitionKey: 'approve',
-          processInstanceId: 'proc-2',
-          businessKey: 'BIZ-2',
-          claimable: true,
-          unclaimable: false,
-        },
-      }) as any)
-      .mockResolvedValueOnce(taskDetail({
-        task: {
-          id: 'claimed-task',
-          taskName: '已认领审批',
-          taskDefinitionKey: 'approve',
-          processInstanceId: 'proc-3',
-          businessKey: 'BIZ-3',
-          assigneeName: 'admin',
-          claimable: false,
-          unclaimable: true,
-        },
-      }) as any);
+      .mockResolvedValueOnce(
+        taskDetail({
+          task: {
+            id: 'assigned-task',
+            taskName: '普通审批',
+            taskDefinitionKey: 'approve',
+            processInstanceId: 'proc-1',
+            businessKey: 'BIZ-1',
+            assigneeName: 'admin',
+            claimable: false,
+            unclaimable: false,
+          },
+        }) as any,
+      )
+      .mockResolvedValueOnce(
+        taskDetail({
+          task: {
+            id: 'candidate-task',
+            taskName: '候选审批',
+            taskDefinitionKey: 'approve',
+            processInstanceId: 'proc-2',
+            businessKey: 'BIZ-2',
+            claimable: true,
+            unclaimable: false,
+          },
+        }) as any,
+      )
+      .mockResolvedValueOnce(
+        taskDetail({
+          task: {
+            id: 'claimed-task',
+            taskName: '已认领审批',
+            taskDefinitionKey: 'approve',
+            processInstanceId: 'proc-3',
+            businessKey: 'BIZ-3',
+            assigneeName: 'admin',
+            claimable: false,
+            unclaimable: true,
+          },
+        }) as any,
+      );
     vi.mocked(workflowApi.businessApplyByProcessInstance).mockRejectedValue(new Error('no apply'));
 
     const { el, unmount } = await mountTaskDetail();
@@ -441,17 +461,19 @@ describe('workflow task detail', () => {
   });
 
   it('defaults approval form fields to readonly when node permissions are not explicit', async () => {
-    vi.mocked(workflowApi.taskDetail).mockResolvedValueOnce(taskDetail({
-      formJson: JSON.stringify([
-        { type: 'input', field: 'title', title: '标题' },
-        { type: 'textarea', field: 'reason', title: '说明' },
-      ]),
-      variables: {
-        title: '候选任务详情示例',
-        reason: '认领节点只读验证',
-      },
-      formPermissions: {},
-    }) as any);
+    vi.mocked(workflowApi.taskDetail).mockResolvedValueOnce(
+      taskDetail({
+        formJson: JSON.stringify([
+          { type: 'input', field: 'title', title: '标题' },
+          { type: 'textarea', field: 'reason', title: '说明' },
+        ]),
+        variables: {
+          title: '候选任务详情示例',
+          reason: '认领节点只读验证',
+        },
+        formPermissions: {},
+      }) as any,
+    );
     vi.mocked(workflowApi.businessApplyByProcessInstance).mockRejectedValue(new Error('no apply'));
 
     const { el, unmount } = await mountTaskDetail();
@@ -464,20 +486,22 @@ describe('workflow task detail', () => {
   });
 
   it('renders the workflow layout sidebar and keeps back/action affordances', async () => {
-    vi.mocked(workflowApi.taskDetail).mockResolvedValueOnce(taskDetail({
-      records: [
-        {
-          action: 'COMPLETE',
-          actionName: '通过',
-          processInstanceId: 'proc-1',
-          taskDefinitionKey: 'manager_approve',
-          taskName: '经理审批',
-          operatorName: 'admin',
-          comment: '同意',
-          createdTime: '2026-06-26 18:29:21',
-        },
-      ],
-    }) as any);
+    vi.mocked(workflowApi.taskDetail).mockResolvedValueOnce(
+      taskDetail({
+        records: [
+          {
+            action: 'COMPLETE',
+            actionName: '通过',
+            processInstanceId: 'proc-1',
+            taskDefinitionKey: 'manager_approve',
+            taskName: '经理审批',
+            operatorName: 'admin',
+            comment: '同意',
+            createdTime: '2026-06-26 18:29:21',
+          },
+        ],
+      }) as any,
+    );
     vi.mocked(workflowApi.businessApplyByProcessInstance).mockRejectedValue(new Error('no apply'));
 
     const { el, unmount } = await mountTaskDetail();
@@ -561,22 +585,31 @@ function registerElementStubs(app: ReturnType<typeof createApp>) {
     'ElTimePicker',
     'ElTransfer',
     'ElTreeSelect',
-  ].forEach(name => app.component(name, passthroughStub));
+  ].forEach((name) => app.component(name, passthroughStub));
   app.component('ElCard', { template: '<div><slot name="header" /><slot /></div>' });
   app.directive('loading', {});
   app.component('ElEmpty', { template: '<div />' });
   app.component('ElTag', { template: '<span><slot /></span>' });
-  app.component('ElButton', { props: ['disabled'], template: '<button :disabled="disabled" @click="$emit(\'click\')"><slot /></button>' });
+  app.component('ElButton', {
+    props: ['disabled'],
+    template: '<button :disabled="disabled" @click="$emit(\'click\')"><slot /></button>',
+  });
   app.component('ElTooltip', { template: '<span><slot /></span>' });
   app.component('ElDescriptions', { template: '<div><slot /></div>' });
   app.component('ElDescriptionsItem', { template: '<div><slot /></div>' });
   app.component('ElAlert', { props: ['title'], template: '<div class="el-alert">{{ title }}</div>' });
   app.component('ElForm', { template: '<form><slot /></form>' });
-  app.component('ElFormItem', { props: ['label'], template: '<div><span class="form-item-label">{{ label }}</span><slot /></div>' });
+  app.component('ElFormItem', {
+    props: ['label'],
+    template: '<div><span class="form-item-label">{{ label }}</span><slot /></div>',
+  });
   app.component('ElInput', { template: '<textarea />' });
   app.component('ElTimeline', { template: '<div><slot /></div>' });
   app.component('ElTimelineItem', { template: '<div><slot /></div>' });
-  app.component('ElDialog', { props: ['modelValue'], template: '<div v-if="modelValue"><slot /><slot name="footer" /></div>' });
+  app.component('ElDialog', {
+    props: ['modelValue'],
+    template: '<div v-if="modelValue"><slot /><slot name="footer" /></div>',
+  });
 }
 
 async function flushPromises() {
@@ -587,11 +620,12 @@ async function flushPromises() {
 }
 
 function clickButton(el: HTMLElement, text: string) {
-  const button = [...el.querySelectorAll('button')].find(item => item.textContent?.trim() === text) as HTMLElement | undefined;
+  const button = [...el.querySelectorAll('button')].find((item) => item.textContent?.trim() === text) as
+    HTMLElement | undefined;
   expect(button).toBeTruthy();
   button?.click();
 }
 
 function buttonTexts(el: HTMLElement) {
-  return [...el.querySelectorAll('button')].map(item => item.textContent?.trim() || '');
+  return [...el.querySelectorAll('button')].map((item) => item.textContent?.trim() || '');
 }
