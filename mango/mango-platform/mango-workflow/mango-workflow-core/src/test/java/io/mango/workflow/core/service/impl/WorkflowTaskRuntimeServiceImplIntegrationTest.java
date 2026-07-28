@@ -39,10 +39,12 @@ import io.mango.workflow.api.vo.WorkflowTaskVO;
 import io.mango.workflow.core.engine.WorkflowAssigneeResolver;
 import io.mango.workflow.core.engine.WorkflowCandidateGroupProvider;
 import io.mango.workflow.core.entity.WorkflowDefinitionEntity;
+import io.mango.workflow.core.entity.WorkflowDefinitionVersionEntity;
 import io.mango.workflow.core.entity.WorkflowFormInstanceEntity;
 import io.mango.workflow.core.entity.WorkflowTaskRecordEntity;
 import io.mango.workflow.core.event.WorkflowEventPublisher;
 import io.mango.workflow.core.mapper.WorkflowDefinitionMapper;
+import io.mango.workflow.core.mapper.WorkflowDefinitionVersionMapper;
 import io.mango.workflow.core.mapper.WorkflowFormInstanceMapper;
 import io.mango.workflow.core.mapper.WorkflowTaskRecordMapper;
 import io.mango.workflow.core.service.IWorkflowBusinessApplyService;
@@ -129,6 +131,8 @@ class WorkflowTaskRuntimeServiceImplIntegrationTest {
     private WorkflowTaskRuntimeService service;
     @Autowired
     private WorkflowDefinitionMapper definitionMapper;
+    @Autowired
+    private WorkflowDefinitionVersionMapper definitionVersionMapper;
     @Autowired
     private WorkflowFormInstanceMapper formInstanceMapper;
     @Autowired
@@ -401,6 +405,23 @@ class WorkflowTaskRuntimeServiceImplIntegrationTest {
     }
 
     @Test
+    void taskAndProcessDetailsReturnTheRuntimeDefinitionVersionDesignerSnapshot() {
+        Task task = task("task-1", "manager_approve", "proc-1", "pd-1", "anonymous");
+        TaskQuery query = taskQuery(task, 1L, List.of());
+        when(taskService.createTaskQuery()).thenReturn(query);
+        insertFormInstance("proc-1", "{}", WorkflowInstanceStatus.RUNNING.name());
+        insertDefinition(1001L, "pd-2", "claim_form", "[]", "{\"version\":2}");
+        insertDefinitionVersion(3001L, 1001L, 1, "pd-1", "{\"version\":1}");
+
+        WorkflowTaskDetailVO taskDetail = service.detail("task-1");
+        WorkflowProcessDetailVO processDetail = service.processDetail("proc-1");
+
+        assertThat(taskDetail.getDesignerJson()).isEqualTo("{\"version\":1}");
+        assertThat(processDetail.getDesignerJson()).isEqualTo("{\"version\":1}");
+        assertThat(taskDetail.getDesignerJson()).doesNotContain("\"version\":2");
+    }
+
+    @Test
     void myTaskSummaryAggregatesCurrentUserTaskStatus() {
         TaskQuery pendingQuery = countTaskQuery(3L);
         TaskQuery processingQuery = countTaskQuery(5L);
@@ -428,6 +449,7 @@ class WorkflowTaskRuntimeServiceImplIntegrationTest {
         jdbcTemplate.execute("drop table if exists workflow_business_apply");
         jdbcTemplate.execute("drop table if exists workflow_task_record");
         jdbcTemplate.execute("drop table if exists workflow_form_instance");
+        jdbcTemplate.execute("drop table if exists workflow_definition_version");
         jdbcTemplate.execute("drop table if exists workflow_definition");
         jdbcTemplate.execute("""
                 create table workflow_definition (
@@ -455,6 +477,40 @@ class WorkflowTaskRuntimeServiceImplIntegrationTest {
                     status varchar(64),
                     last_deploy_time timestamp,
                     remark varchar(255),
+                    created_by bigint,
+                    created_time timestamp,
+                    created_at timestamp,
+                    updated_by bigint,
+                    updated_time timestamp,
+                    updated_at timestamp,
+                    primary key (id)
+                )
+                """);
+        jdbcTemplate.execute("""
+                create table workflow_definition_version (
+                    id bigint not null,
+                    tenant_id bigint,
+                    definition_id bigint,
+                    version_no int,
+                    category_id bigint,
+                    domain_code varchar(64),
+                    org_id bigint,
+                    admin_users text,
+                    start_entry_visible boolean,
+                    icon varchar(512),
+                    definition_name varchar(128),
+                    definition_key varchar(128),
+                    remark varchar(255),
+                    form_code varchar(128),
+                    designer_json text,
+                    form_json text,
+                    bpmn_xml text,
+                    deployment_id varchar(128),
+                    process_definition_id varchar(128),
+                    process_definition_version int,
+                    publish_status varchar(64),
+                    publish_message varchar(255),
+                    publish_time timestamp,
                     created_by bigint,
                     created_time timestamp,
                     created_at timestamp,
@@ -572,6 +628,11 @@ class WorkflowTaskRuntimeServiceImplIntegrationTest {
     }
 
     private void insertDefinition(Long id, String processDefinitionId, String formCode, String formJson) {
+        insertDefinition(id, processDefinitionId, formCode, formJson, null);
+    }
+
+    private void insertDefinition(Long id, String processDefinitionId, String formCode, String formJson,
+                                  String designerJson) {
         WorkflowDefinitionEntity definition = new WorkflowDefinitionEntity();
         definition.setId(id);
         definition.setTenantId(1L);
@@ -581,10 +642,34 @@ class WorkflowTaskRuntimeServiceImplIntegrationTest {
         definition.setProcessDefinitionVersion(1);
         definition.setFormCode(formCode);
         definition.setFormJson(formJson);
+        definition.setDesignerJson(designerJson);
         definition.setCreatedBy(1001L);
         definition.setCreatedTime(LocalDateTime.parse("2026-06-27T10:00:00"));
         definition.setCreatedAt(LocalDateTime.parse("2026-06-27T10:00:00"));
         assertThat(definitionMapper.insert(definition)).isEqualTo(1);
+    }
+
+    private void insertDefinitionVersion(Long id, Long definitionId, int versionNo, String processDefinitionId,
+                                         String designerJson) {
+        WorkflowDefinitionVersionEntity version = new WorkflowDefinitionVersionEntity();
+        version.setId(id);
+        version.setTenantId(1L);
+        version.setDefinitionId(definitionId);
+        version.setVersionNo(versionNo);
+        version.setDefinitionName("测试流程 V" + versionNo);
+        version.setDefinitionKey("test_process");
+        version.setProcessDefinitionId(processDefinitionId);
+        version.setProcessDefinitionVersion(versionNo);
+        version.setDesignerJson(designerJson);
+        version.setPublishStatus("SUCCESS");
+        LocalDateTime now = LocalDateTime.parse("2026-06-27T10:00:00");
+        version.setCreatedBy(1001L);
+        version.setCreatedTime(now);
+        version.setCreatedAt(now);
+        version.setUpdatedBy(1001L);
+        version.setUpdatedTime(now);
+        version.setUpdatedAt(now);
+        assertThat(definitionVersionMapper.insert(version)).isEqualTo(1);
     }
 
     private void stubAliveProcess(String processInstanceId, boolean ended) {

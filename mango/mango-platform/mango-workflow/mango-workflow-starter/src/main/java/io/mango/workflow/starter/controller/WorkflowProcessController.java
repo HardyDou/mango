@@ -64,7 +64,7 @@ public class WorkflowProcessController implements WorkflowProcessApi {
     }
 
     @GetMapping("/detail")
-    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:process:detail")
+    @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "已登录用户查询业务流程实例详情")
     @Operation(summary = "查询流程实例详情", description = "按流程实例ID查询流程、表单和审批记录")
     @Override
     public R<WorkflowProcessDetailVO> detail(

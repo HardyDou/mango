@@ -6,6 +6,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.common.result.R;
 import io.mango.common.result.Require;
 import io.mango.common.vo.PageResult;
@@ -50,12 +51,14 @@ import io.mango.workflow.core.engine.WorkflowNodeExecutionEvent;
 import io.mango.workflow.core.entity.WorkflowBusinessApplyEntity;
 import io.mango.workflow.core.entity.WorkflowCopiedTaskEntity;
 import io.mango.workflow.core.entity.WorkflowDefinitionEntity;
+import io.mango.workflow.core.entity.WorkflowDefinitionVersionEntity;
 import io.mango.workflow.core.entity.WorkflowFormInstanceEntity;
 import io.mango.workflow.core.entity.WorkflowTaskRecordEntity;
 import io.mango.workflow.core.event.WorkflowEventPublisher;
 import io.mango.workflow.core.mapper.WorkflowBusinessApplyMapper;
 import io.mango.workflow.core.mapper.WorkflowCopiedTaskMapper;
 import io.mango.workflow.core.mapper.WorkflowDefinitionMapper;
+import io.mango.workflow.core.mapper.WorkflowDefinitionVersionMapper;
 import io.mango.workflow.core.mapper.WorkflowFormInstanceMapper;
 import io.mango.workflow.core.mapper.WorkflowTaskRecordMapper;
 import io.mango.workflow.core.model.WorkflowApprovalNodeConfig;
@@ -100,7 +103,8 @@ import java.util.Set;
  * 工作流任务运行时服务实现。
  */
 @Service
-@RequiredArgsConstructor
+@RequiredArgsConstructor(onConstructor_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+        justification = "Spring singleton collaborators are injected dependencies, not owned mutable state"))
 public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
 
     private static final String CLAIMED_FROM_CANDIDATE_VARIABLE = "mangoClaimedFromCandidate";
@@ -116,6 +120,7 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
     private final WorkflowBusinessApplyMapper businessApplyMapper;
     private final WorkflowCopiedTaskMapper copiedTaskMapper;
     private final WorkflowDefinitionMapper definitionMapper;
+    private final WorkflowDefinitionVersionMapper definitionVersionMapper;
     private final WorkflowFormInstanceMapper formInstanceMapper;
     private final WorkflowTaskRecordMapper taskRecordMapper;
     private final ObjectMapper objectMapper;
@@ -334,6 +339,7 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
                 ? findDefinition(task.getProcessDefinitionId(), runtimeVariables)
                 : null;
         fillForm(vo, formInstance, definition, runtimeVariables);
+        vo.setDesignerJson(findDesignerJson(task.getProcessDefinitionId(), definition));
         Map<String, String> formPermissions = taskFormPermissions(task, vo.getFormJson());
         vo.setFormPermissions(WorkflowJsonVO.of(formPermissions));
         vo.setRenderConfig(renderConfig(task, formInstance, formPermissions));
@@ -845,6 +851,7 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
                 : null;
         vo.setFormCode(formInstance == null ? (definition == null ? null : definition.getFormCode()) : formInstance.getFormCode());
         vo.setFormJson(formInstance == null ? (definition == null ? null : definition.getFormJson()) : formInstance.getFormJson());
+        vo.setDesignerJson(findDesignerJson(vo.getProcess().getProcessDefinitionId(), definition));
         vo.setVariables(WorkflowJsonVO.of(formInstance == null ? runtimeVariables : parseMap(formInstance.getVariablesJson())));
         vo.setRenderConfig(renderConfig(processInstanceId, null, formInstance, Map.of()));
         vo.setRecords(records(processInstanceId));
@@ -895,6 +902,29 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
         }
         Long definitionId = variableLong(variables, "mangoDefinitionId");
         return definitionId == null ? null : definitionMapper.selectById(definitionId);
+    }
+
+    private String findDesignerJson(String processDefinitionId, WorkflowDefinitionEntity resolvedDefinition) {
+        if (!StringUtils.hasText(processDefinitionId)) {
+            return null;
+        }
+        WorkflowDefinitionVersionEntity version = definitionVersionMapper.selectOne(
+                new LambdaQueryWrapper<WorkflowDefinitionVersionEntity>()
+                        .eq(WorkflowDefinitionVersionEntity::getProcessDefinitionId, processDefinitionId)
+                        .orderByDesc(WorkflowDefinitionVersionEntity::getId)
+                        .last("limit 1"));
+        if (version != null && StringUtils.hasText(version.getDesignerJson())) {
+            return version.getDesignerJson();
+        }
+        WorkflowDefinitionEntity definition = resolvedDefinition;
+        if (definition == null || !processDefinitionId.equals(definition.getProcessDefinitionId())) {
+            definition = definitionMapper.selectOne(new LambdaQueryWrapper<WorkflowDefinitionEntity>()
+                    .eq(WorkflowDefinitionEntity::getProcessDefinitionId, processDefinitionId)
+                    .last("limit 1"));
+        }
+        return definition == null || !processDefinitionId.equals(definition.getProcessDefinitionId())
+                ? null
+                : definition.getDesignerJson();
     }
 
     private WorkflowProcessInstanceVO processInfo(String processInstanceId) {

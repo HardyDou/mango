@@ -1,5 +1,7 @@
 package io.mango.workflow.starter.controller;
 
+import io.mango.authorization.api.annotation.ApiAccess;
+import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.common.result.R;
 import io.mango.common.vo.PageResult;
 import io.mango.workflow.api.WorkflowBusinessApplyApi;
@@ -47,6 +49,13 @@ class WorkflowApiControllerContractTest {
         assertThat(processController).isInstanceOf(WorkflowProcessApi.class);
         assertThat(businessProcessController).isInstanceOf(WorkflowBusinessProcessApi.class);
         assertThat(taskController).isInstanceOf(WorkflowTaskRuntimeApi.class);
+    }
+
+    @Test
+    void businessDetailEndpointsRequireLoginWithoutResourcePermission() throws NoSuchMethodException {
+        assertLoginAccess(WorkflowProcessController.class, "detail");
+        assertLoginAccess(WorkflowTaskController.class, "detail");
+        assertLoginAccess(WorkflowTaskController.class, "processDetail");
     }
 
     @Test
@@ -120,5 +129,12 @@ class WorkflowApiControllerContractTest {
         verify(runtimeService).claim(claim);
         verify(runtimeService).unclaim(claim);
         verify(runtimeService).readCopied(readCopied);
+    }
+
+    private void assertLoginAccess(Class<?> controllerType, String methodName) throws NoSuchMethodException {
+        ApiAccess apiAccess = controllerType.getDeclaredMethod(methodName, String.class).getAnnotation(ApiAccess.class);
+        assertThat(apiAccess).isNotNull();
+        assertThat(apiAccess.mode()).isEqualTo(ApiResourceAccessMode.LOGIN);
+        assertThat(apiAccess.permission()).isBlank();
     }
 }
