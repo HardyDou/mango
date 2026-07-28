@@ -245,6 +245,8 @@ import { WorkflowLayout, WorkflowSidebar } from '@mango/workflow';
 | 业务申请   | `createBusinessApply()`、`businessAppliesPage()`、`businessApplyMySummary()`、`businessApplyDetail()`、`businessApplyHistory()`、`businessApplyLatestProgress()`、`businessApplyLatestProgressBatch()`、`businessApplyLatestByKeys()`、`businessApplyByProcessInstance()` |
 | 候选项     | `users()`、`tenants()`、`enabledDomains()`                                                                                                                                                                                                                                |
 
+`taskDetail()` 和 `processDetail()` 是业务详情渲染入口，对应后端接口只要求登录，不要求 `workflow:definition:*`、`workflow:task:detail` 或 `workflow:process:detail` 资源权限。响应中的可选 `designerJson` 来自流程实例实际运行的不可变发布版本，`WorkflowProgressTree`、`WorkflowSidebar` 和流程图弹窗可直接消费；字段缺失时继续降级展示审批记录，不应调用流程定义管理 API 补取最新定义。
+
 ## 8. 数据与初始化
 
 这个前端包不包含数据库 migration，也不初始化菜单。

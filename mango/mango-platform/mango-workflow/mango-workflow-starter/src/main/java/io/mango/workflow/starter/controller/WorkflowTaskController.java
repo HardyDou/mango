@@ -89,7 +89,7 @@ public class WorkflowTaskController implements WorkflowTaskRuntimeApi {
     }
 
     @GetMapping("/detail")
-    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:task:detail")
+    @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "已登录用户查询业务任务详情")
     @Operation(summary = "查询任务详情", description = "按任务ID查询流程、表单、权限和审批记录")
     @Override
     public R<WorkflowTaskDetailVO> detail(
@@ -219,7 +219,7 @@ public class WorkflowTaskController implements WorkflowTaskRuntimeApi {
     }
 
     @GetMapping("/process-detail")
-    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:process:detail")
+    @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "已登录用户按任务接口查询业务流程实例详情")
     @Operation(summary = "按任务接口查询流程实例详情", description = "按流程实例ID查询流程、表单和审批记录")
     @Override
     public R<WorkflowProcessDetailVO> processDetail(

@@ -527,7 +527,8 @@ mango:
 | `WorkflowStartResultVO` | 申请 ID、流程实例 ID、流程状态、当前任务、认领状态、候选用户/组。 | 业务侧一体化创建申请并发起流程后的结果回显。 |
 | `WorkflowTaskVO` | 任务 ID、流程实例、任务名称、办理人、候选信息、申请信息、创建时间。 | 待办、已办、抄送列表。 |
 | `WorkflowTaskActionResultVO` | 已处理任务、业务申请、流程状态、当前任务、认领状态、候选用户/组、是否结束。 | 驳回、暂存、认领和释放后立即刷新业务状态。 |
-| `WorkflowTaskDetailVO` | 任务详情、表单渲染配置、变量、审批记录、节点动作配置。 | 审批详情页渲染和按钮控制。 |
+| `WorkflowProcessDetailVO` | 流程实例、表单渲染配置、变量、审批记录，以及实例实际运行发布版本的 `designerJson`。 | 业务只读详情和流程轨迹渲染。 |
+| `WorkflowTaskDetailVO` | 任务详情、表单渲染配置、变量、审批记录、节点动作配置，以及所属实例实际运行发布版本的 `designerJson`。 | 审批详情页渲染、按钮控制和流程轨迹渲染。 |
 | `WorkflowDefinitionVO` | 流程定义 ID、编码、名称、分类、业务域、启动入口可见性、状态、发布版本和流程管理员。 | 流程定义管理和业务选择流程。 |
 | `WorkflowDeployVO` | 部署 ID、流程定义 ID、流程定义 key、版本和发布结果。 | 发布流程或确保流程已发布后的结果。 |
 
@@ -550,22 +551,23 @@ Workflow 参数校验约束统一由 `mango-workflow-api` 的 `XxxApi` 契约声
 
 流程实例接口：
 
-| 能力 | 接口 | 权限码 |
+| 能力 | 接口 | 访问要求 |
 |------|------|--------|
 | 发起流程 | `POST /workflow/processes/start` | `workflow:process:start` |
 | 创建业务申请并发起流程 | `POST /workflow/processes/start-business` | `workflow:process:start` |
 | 我的发起 | `GET /workflow/processes/initiated` | `workflow:task:list` |
-| 流程详情 | `GET /workflow/processes/detail` | `workflow:process:detail` |
+| 流程详情 | `GET /workflow/processes/detail` | `LOGIN`，仅要求登录 |
 | 流程历史 | `GET /workflow/processes/history` | `workflow:process:detail` |
 
 任务接口：
 
-| 能力 | 接口 | 权限码 |
+| 能力 | 接口 | 访问要求 |
 |------|------|--------|
 | 待办 | `GET /workflow/tasks/todo` | `workflow:task:list` |
 | 已发起任务入口 | `GET /workflow/tasks/initiated` | `workflow:task:list` |
 | 已办 | `GET /workflow/tasks/done` | `workflow:task:list` |
-| 任务详情 | `GET /workflow/tasks/detail` | `workflow:task:detail` |
+| 任务详情 | `GET /workflow/tasks/detail` | `LOGIN`，仅要求登录 |
+| 按任务接口查询流程详情 | `GET /workflow/tasks/process-detail` | `LOGIN`，仅要求登录 |
 | 审批通过 | `POST /workflow/tasks/complete` | `workflow:task:complete` |
 | 审批通过并返回推进结果 | `POST /workflow/tasks/complete-result` | `workflow:task:complete` |
 | 审批驳回 | `POST /workflow/tasks/reject` | `workflow:task:reject` |
@@ -585,6 +587,8 @@ Workflow 参数校验约束统一由 `mango-workflow-api` 的 `XxxApi` 契约声
 | 抄送已阅 | `POST /workflow/tasks/copied/read` | `workflow:task:read-copied` |
 
 `POST /workflow/tasks/complete`、`reject`、`save`、`claim`、`unclaim` 保持兼容，只返回布尔成功结果。业务审批页在办理后需要立即刷新业务申请状态、当前任务、当前办理人、认领状态或判断流程是否结束时，优先使用对应的 `*-result` 接口；返回体包含已处理任务、流程实例、是否结束、业务申请状态和刷新后的当前任务快照。
+
+流程实例和任务详情是业务渲染入口，只要求用户已登录，不要求流程定义管理权限或详情资源权限。两个详情响应中的 `designerJson` 按运行实例的 Flowable `processDefinitionId` 从不可变发布版本读取；流程定义发布新版本后，历史实例仍返回启动时版本。精确快照缺失时字段为空，前端降级展示审批记录，不读取最新定义，也不调用流程定义管理接口。
 
 `complete-result` 返回字段：
 

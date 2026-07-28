@@ -145,6 +145,37 @@ describe('workflow task detail', () => {
     unmount();
   });
 
+  it('renders the runtime designer snapshot without querying definition management APIs', async () => {
+    vi.mocked(workflowApi.taskDetail).mockResolvedValueOnce(taskDetail({
+      designerJson: JSON.stringify({
+        id: 'startEvent',
+        nodeName: '发起人',
+        nodeType: 'ROOT',
+        conditionNodes: [],
+        properties: {},
+        childNode: {
+          id: 'manager_approve',
+          nodeName: '经理审批节点',
+          nodeType: 'APPROVAL',
+          bpmnType: 'userTask',
+          executionType: 'USER_TASK',
+          conditionNodes: [],
+          properties: {},
+          childNode: null,
+        },
+      }),
+    }) as any);
+    vi.mocked(workflowApi.businessApplyByProcessInstance).mockRejectedValueOnce(new Error('no apply'));
+
+    const { el, unmount } = await mountTaskDetail();
+
+    expect(el.textContent).toContain('经理审批节点');
+    expect(workflowApi.definitionVersions).not.toHaveBeenCalled();
+    expect(workflowApi.definitionDetail).not.toHaveBeenCalled();
+    expect(workflowApi.definitionsPage).not.toHaveBeenCalled();
+    unmount();
+  });
+
   it('allows business registration to customize or hide the record panel', async () => {
     registerBusinessApprovalComponents({
       'workflow.test.custom-record': {
