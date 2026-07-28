@@ -1,6 +1,6 @@
 import { createApp, nextTick, reactive } from 'vue';
 import TaskDetail from '../index.vue';
-import { workflowApi } from '../../../api/workflow';
+import { workflowApi, type WorkflowTaskDetail } from '../../../api/workflow';
 import { registerBusinessApprovalComponents } from '../../../components/businessApproval';
 
 const routeQuery = reactive<Record<string, any>>({ taskId: 'task-1' });
@@ -164,7 +164,7 @@ describe('workflow task detail', () => {
           childNode: null,
         },
       }),
-    }) as any);
+    }) as WorkflowTaskDetail);
     vi.mocked(workflowApi.businessApplyByProcessInstance).mockRejectedValueOnce(new Error('no apply'));
 
     const { el, unmount } = await mountTaskDetail();
