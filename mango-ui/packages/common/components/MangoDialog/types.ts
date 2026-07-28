@@ -15,6 +15,22 @@ export interface MangoDialogProps {
   footerAlign?: MangoDialogFooterAlign;
   /** Destroy content when dialog is closed */
   destroyOnClose?: boolean;
+  /** Whether to render a modal mask. Draggable dialogs default to no mask when omitted. */
+  modal?: boolean;
+  /** Whether clicking the modal mask closes the dialog */
+  closeOnClickModal?: boolean;
+  /** Whether opening the dialog locks document scrolling */
+  lockScroll?: boolean;
+  /** Minimum z-index used by this dialog before dynamic stacking */
+  zIndex?: number;
+  /** Whether the title area can drag the whole dialog */
+  draggable?: boolean;
+  /** Whether the four corners can resize the dialog */
+  resizable?: boolean;
+  /** Minimum interactive width in pixels */
+  minWidth?: number;
+  /** Minimum interactive height in pixels */
+  minHeight?: number;
 }
 
 export interface MangoDialogEmits {
@@ -24,4 +40,3 @@ export interface MangoDialogEmits {
   (e: 'close'): void;
   (e: 'closed'): void;
 }
-

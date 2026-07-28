@@ -1,23 +1,35 @@
 <template>
   <el-dialog
     ref="dialogRef"
-    v-bind="$attrs"
+    v-bind="forwardedAttrs"
     v-model="visible"
     :width="width"
     :show-close="false"
     :destroy-on-close="destroyOnClose"
+    :modal="resolvedModal"
+    :modal-penetrable="!resolvedModal"
+    :close-on-click-modal="resolvedCloseOnClickModal"
+    :lock-scroll="resolvedLockScroll"
+    :z-index="dialogZIndex"
+    :class="[
+      $attrs.class,
+      {
+        'mango-dialog--draggable': draggable,
+        'mango-dialog--resizable': resizable,
+        'mango-dialog--free-layout': hasFreeLayout,
+        'mango-dialog--interacting': isInteracting,
+      },
+    ]"
+    :style="[$attrs.style, dialogStyle]"
     align-center
     class="mango-dialog"
-    @open="emit('open')"
+    @open="handleOpen"
     @opened="emit('opened')"
     @close="emit('close')"
-    @closed="emit('closed')"
+    @closed="handleClosed"
   >
     <template #header>
-      <div
-        v-if="showHeader"
-        class="mango-dialog__header"
-      >
+      <div v-if="showHeader" class="mango-dialog__header" @pointerdown="startDrag">
         <div class="mango-dialog__title">
           <slot name="title">
             {{ title }}
@@ -25,13 +37,7 @@
         </div>
         <div class="mango-dialog__header-actions">
           <slot name="headerExtra" />
-          <button
-            v-if="showClose"
-            class="mango-dialog__close"
-            type="button"
-            aria-label="close"
-            @click="handleClose"
-          >
+          <button v-if="showClose" class="mango-dialog__close" type="button" aria-label="close" @click="handleClose">
             <el-icon>
               <Close />
             </el-icon>
@@ -39,35 +45,35 @@
         </div>
       </div>
 
-      <div
-        v-else
-        class="mango-dialog__header mango-dialog__header--close-only"
-      >
-        <button
-          v-if="showClose"
-          class="mango-dialog__close"
-          type="button"
-          aria-label="close"
-          @click="handleClose"
-        >
+      <div v-else class="mango-dialog__header mango-dialog__header--close-only" @pointerdown="startDrag">
+        <button v-if="showClose" class="mango-dialog__close" type="button" aria-label="close" @click="handleClose">
           <el-icon>
             <Close />
           </el-icon>
         </button>
       </div>
+
+      <template v-if="resizable">
+        <span
+          v-for="corner in resizeCorners"
+          :key="corner"
+          class="mango-dialog__resize-handle"
+          :class="`mango-dialog__resize-handle--${corner}`"
+          aria-hidden="true"
+          @pointerdown="startResize($event, corner)"
+        />
+      </template>
     </template>
 
-    <div class="mango-dialog__body">
+    <div class="mango-dialog__body" @pointerdown.capture="bringToFront">
       <slot />
     </div>
 
-    <template
-      v-if="$slots.footer"
-      #footer
-    >
+    <template v-if="$slots.footer" #footer>
       <div
         class="mango-dialog__footer"
         :class="`mango-dialog__footer--${footerAlign}`"
+        @pointerdown.capture="bringToFront"
       >
         <slot name="footer" />
       </div>
@@ -76,9 +82,10 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, ref, useAttrs } from 'vue';
 import { Close } from '@element-plus/icons-vue';
 import type { MangoDialogEmits, MangoDialogProps } from './types';
+import { type DialogResizeCorner, useDialogWindow } from './useDialogWindow';
 
 interface DialogExpose {
   handleClose: () => void;
@@ -96,11 +103,47 @@ const props = withDefaults(defineProps<MangoDialogProps>(), {
   showClose: true,
   footerAlign: 'right',
   destroyOnClose: false,
+  modal: undefined,
+  closeOnClickModal: false,
+  lockScroll: undefined,
+  zIndex: undefined,
+  draggable: false,
+  resizable: false,
+  minWidth: 320,
+  minHeight: 240,
 });
 
 const emit = defineEmits<MangoDialogEmits>();
-
+const attrs = useAttrs();
 const dialogRef = ref<DialogExpose>();
+const resizeCorners: DialogResizeCorner[] = ['north-west', 'north-east', 'south-west', 'south-east'];
+
+const forwardedAttrs = computed(() => {
+  const result = { ...attrs };
+  delete result.class;
+  delete result.style;
+  return result;
+});
+
+const resolvedModal = computed(() => props.modal ?? !props.draggable);
+const resolvedCloseOnClickModal = computed(() => (resolvedModal.value ? props.closeOnClickModal : false));
+const resolvedLockScroll = computed(() => props.lockScroll ?? resolvedModal.value);
+const {
+  bringToFront,
+  dialogStyle,
+  isInteracting,
+  resetWindow,
+  startDrag,
+  startResize,
+  zIndex: dialogZIndex,
+} = useDialogWindow({
+  draggable: computed(() => props.draggable),
+  resizable: computed(() => props.resizable),
+  minWidth: computed(() => props.minWidth),
+  minHeight: computed(() => props.minHeight),
+  zIndex: computed(() => props.zIndex),
+});
+const hasFreeLayout = computed(() => Object.keys(dialogStyle.value).length > 0);
 
 const visible = computed({
   get: () => props.modelValue,
@@ -113,10 +156,21 @@ function handleClose() {
   // Use Element Plus close flow so attrs such as before-close still take effect.
   dialogRef.value?.handleClose();
 }
+
+function handleOpen() {
+  bringToFront();
+  emit('open');
+}
+
+function handleClosed() {
+  resetWindow();
+  emit('closed');
+}
 </script>
 
 <style scoped lang="scss">
 :global(.mango-dialog.el-dialog) {
+  --mango-dialog-max-width: calc(100vw - 24px);
   --mango-dialog-max-height: 90vh;
   --mango-dialog-header-height: 56px;
   --mango-dialog-close-row-height: 44px;
@@ -124,14 +178,21 @@ function handleClose() {
   --mango-dialog-body-padding: 20px 24px;
   --mango-dialog-header-padding: 0 20px 0 24px;
   --mango-dialog-footer-padding: 16px 24px 18px;
-  --mango-dialog-header-shadow: 0 6px 14px rgba(0, 0, 0, 0.06);
+  --mango-dialog-header-shadow: 0 6px 14px rgb(0 0 0 / 6%);
 
   display: flex;
+  position: relative;
   flex-direction: column;
+  max-width: var(--mango-dialog-max-width);
   max-height: var(--mango-dialog-max-height);
   margin: 0;
   padding: 0;
   overflow: hidden;
+}
+
+:global(.mango-dialog--free-layout.el-dialog) {
+  max-width: none;
+  max-height: none;
 }
 
 :global(.mango-dialog .el-dialog__header) {
@@ -163,6 +224,12 @@ function handleClose() {
   padding: var(--mango-dialog-header-padding);
   background: var(--el-bg-color);
   box-shadow: var(--mango-dialog-header-shadow);
+}
+
+:global(.mango-dialog--draggable .mango-dialog__header) {
+  cursor: move;
+  user-select: none;
+  touch-action: none;
 }
 
 .mango-dialog__header--close-only {
@@ -218,14 +285,52 @@ function handleClose() {
   flex: 1 1 auto;
   min-height: 0;
   max-height: calc(
-    var(--mango-dialog-max-height) -
-    var(--mango-dialog-header-height) -
-    var(--mango-dialog-footer-min-height)
+    var(--mango-dialog-max-height) - var(--mango-dialog-header-height) - var(--mango-dialog-footer-min-height)
   );
   padding: var(--mango-dialog-body-padding);
-  overflow-x: hidden;
-  overflow-y: auto;
+  overflow: hidden auto;
   background: var(--el-bg-color);
+}
+
+:global(.mango-dialog--free-layout .mango-dialog__body) {
+  max-height: none;
+}
+
+.mango-dialog__resize-handle {
+  position: absolute;
+  z-index: 2;
+  width: 18px;
+  height: 18px;
+  touch-action: none;
+}
+
+.mango-dialog__resize-handle--north-west {
+  top: 0;
+  left: 0;
+  cursor: nwse-resize;
+}
+
+.mango-dialog__resize-handle--north-east {
+  top: 0;
+  right: 0;
+  cursor: nesw-resize;
+}
+
+.mango-dialog__resize-handle--south-west {
+  bottom: 0;
+  left: 0;
+  cursor: nesw-resize;
+}
+
+.mango-dialog__resize-handle--south-east {
+  right: 0;
+  bottom: 0;
+  cursor: nwse-resize;
+}
+
+:global(.mango-dialog--interacting.el-dialog),
+:global(.mango-dialog--interacting.el-dialog *) {
+  user-select: none;
 }
 
 .mango-dialog__footer {
