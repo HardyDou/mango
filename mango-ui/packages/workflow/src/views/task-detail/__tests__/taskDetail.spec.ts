@@ -1,4 +1,5 @@
 import { createApp, nextTick, reactive } from 'vue';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import TaskDetail from '../index.vue';
 import { workflowApi, type WorkflowTaskDetail } from '../../../api/workflow';
 import { registerBusinessApprovalComponents } from '../../../components/businessApproval';
@@ -169,7 +170,7 @@ describe('workflow task detail', () => {
             childNode: null,
           },
         }),
-      }) as WorkflowTaskDetail,
+      }) as unknown as WorkflowTaskDetail,
     );
     vi.mocked(workflowApi.businessApplyByProcessInstance).mockRejectedValueOnce(new Error('no apply'));
 
