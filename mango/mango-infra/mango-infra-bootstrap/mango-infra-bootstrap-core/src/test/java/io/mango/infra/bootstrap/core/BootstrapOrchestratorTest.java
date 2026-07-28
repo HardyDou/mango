@@ -206,8 +206,8 @@ class BootstrapOrchestratorTest {
                 databaseLock, repository, contributors);
     }
 
-    private static BootstrapRequest request(BootstrapAction action, BootstrapStrategy strategy) {
-        return new BootstrapRequest("test", "release", "revision", 2L, null,
+    private static BootstrapInvocation request(BootstrapAction action, BootstrapStrategy strategy) {
+        return new BootstrapInvocation("test", "release", "revision", 2L, null,
                 action, strategy, null, 5);
     }
 

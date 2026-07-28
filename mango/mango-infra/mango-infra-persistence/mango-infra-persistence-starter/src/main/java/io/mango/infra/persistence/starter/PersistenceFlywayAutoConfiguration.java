@@ -36,6 +36,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -90,6 +91,9 @@ import java.util.TreeMap;
 public class PersistenceFlywayAutoConfiguration {
 
     private static final int URL_TIMEOUT_MILLIS = 30_000;
+    private static final int MAX_LOGICAL_DATA_SOURCE_KEY_LENGTH = 128;
+    private static final int CHECKSUM_SUMMARY_LENGTH = 16;
+    private static final int MAX_EXISTING_TABLES_IN_ERROR = 20;
     private static final String MIGRATION_LOCATION_PREFIX = "classpath:db/migration/";
     private static final String MIGRATION_SCAN_PATTERN = "classpath*:db/migration/*/*.sql";
     private static final String CONTRACT_MIGRATION_LOCATION_PREFIX = "classpath:db/migration-contract/";
@@ -297,7 +301,7 @@ public class PersistenceFlywayAutoConfiguration {
         String checksum = sha256(resource);
         String registeredName = resolveRegisteredDataSourceName(module, resolver);
         String logicalKey = resolveLogicalDataSourceKey(module, registry, registeredName);
-        if (logicalKey.length() > 128) {
+        if (logicalKey.length() > MAX_LOGICAL_DATA_SOURCE_KEY_LENGTH) {
             throw new IllegalStateException("Mango logical datasource key is too long: module=" + module.name());
         }
         return new ColdBaselineModule(module, resource, location, version, checksum,
@@ -390,7 +394,7 @@ public class PersistenceFlywayAutoConfiguration {
 
     private String coldBaselineDescription(ColdBaselineModule module) {
         return "Mango cold baseline " + module.migration().name()
-                + " sha256=" + module.checksum().substring(0, 16);
+                + " sha256=" + module.checksum().substring(0, CHECKSUM_SUMMARY_LENGTH);
     }
 
     private boolean coldBaselineStateTablesExist(JdbcTemplate jdbcTemplate) {
@@ -483,7 +487,7 @@ public class PersistenceFlywayAutoConfiguration {
         List<String> userTables = coldBaselineUserTables(new JdbcTemplate(dataSource));
         if (!userTables.isEmpty()) {
             throw new IllegalStateException("Mango cold baseline requires an empty database: existingTables="
-                    + userTables.stream().sorted().limit(20).toList());
+                    + userTables.stream().sorted().limit(MAX_EXISTING_TABLES_IN_ERROR).toList());
         }
     }
 
@@ -933,10 +937,7 @@ public class PersistenceFlywayAutoConfiguration {
     private String sha256(Resource resource) throws IOException {
         try (InputStream input = resource.getInputStream();
              DigestInputStream digestInput = new DigestInputStream(input, sha256Digest())) {
-            byte[] buffer = new byte[8192];
-            while (digestInput.read(buffer) >= 0) {
-                // Consume the stream to update the digest.
-            }
+            digestInput.transferTo(OutputStream.nullOutputStream());
             return HexFormat.of().formatHex(digestInput.getMessageDigest().digest());
         }
     }

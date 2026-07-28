@@ -9,8 +9,10 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 
-import java.sql.Timestamp;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
@@ -18,6 +20,8 @@ import java.util.Objects;
 import java.util.Optional;
 
 public final class JdbcBootstrapRepository implements BootstrapGenerationFence {
+
+    private static final int MAX_SUMMARY_LENGTH = 1000;
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -50,7 +54,7 @@ public final class JdbcBootstrapRepository implements BootstrapGenerationFence {
         }
     }
 
-    public long prepareCandidate(BootstrapRequest request, String fingerprint) {
+    public long prepareCandidate(BootstrapInvocation request, String fingerprint) {
         Optional<BootstrapControl> existing = findControl(request.environmentKey());
         if (existing.isEmpty()) {
             jdbcTemplate.update("""
@@ -199,7 +203,7 @@ public final class JdbcBootstrapRepository implements BootstrapGenerationFence {
         requireFingerprint(expected, authority.manifestFingerprint(), "resource-authority");
     }
 
-    public void startExecution(String executionId, BootstrapRequest request, String fingerprint, long token) {
+    public void startExecution(String executionId, BootstrapInvocation request, String fingerprint, long token) {
         jdbcTemplate.update("""
                         INSERT INTO mango_bootstrap_execution
                         (execution_id, environment_key, release_id, build_revision, generation,
@@ -246,18 +250,24 @@ public final class JdbcBootstrapRepository implements BootstrapGenerationFence {
                           String stepCode, String stepFingerprint) {
         KeyHolder keyHolder = new GeneratedKeyHolder();
         jdbcTemplate.update(connection -> {
-            var statement = connection.prepareStatement("""
+            PreparedStatement statement = connection.prepareStatement("""
                     INSERT INTO mango_bootstrap_step_execution
                     (execution_id, environment_key, generation, phase, step_code, step_fingerprint, status)
                     VALUES (?, ?, ?, ?, ?, ?, 'RUNNING')
                     """, Statement.RETURN_GENERATED_KEYS);
-            statement.setString(1, executionId);
-            statement.setString(2, environmentKey);
-            statement.setLong(3, generation);
-            statement.setString(4, phase.name());
-            statement.setString(5, stepCode);
-            statement.setString(6, stepFingerprint);
-            return statement;
+            try {
+                int parameterIndex = 1;
+                statement.setString(parameterIndex++, executionId);
+                statement.setString(parameterIndex++, environmentKey);
+                statement.setLong(parameterIndex++, generation);
+                statement.setString(parameterIndex++, phase.name());
+                statement.setString(parameterIndex++, stepCode);
+                statement.setString(parameterIndex, stepFingerprint);
+                return statement;
+            } catch (SQLException exception) {
+                closeAfterPreparationFailure(statement, exception);
+                throw exception;
+            }
         }, keyHolder);
         Number id = keyHolder.getKey();
         if (id == null) {
@@ -338,9 +348,17 @@ public final class JdbcBootstrapRepository implements BootstrapGenerationFence {
     }
 
     private static String summarize(String value) {
-        if (value == null || value.length() <= 1000) {
+        if (value == null || value.length() <= MAX_SUMMARY_LENGTH) {
             return value;
         }
-        return value.substring(0, 1000);
+        return value.substring(0, MAX_SUMMARY_LENGTH);
+    }
+
+    private static void closeAfterPreparationFailure(PreparedStatement statement, SQLException failure) {
+        try {
+            statement.close();
+        } catch (SQLException closeFailure) {
+            failure.addSuppressed(closeFailure);
+        }
     }
 }

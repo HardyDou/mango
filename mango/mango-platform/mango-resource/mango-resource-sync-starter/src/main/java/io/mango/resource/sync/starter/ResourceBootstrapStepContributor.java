@@ -2,6 +2,7 @@ package io.mango.resource.sync.starter;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.common.result.R;
 import io.mango.infra.bootstrap.api.BootstrapExecutionContext;
 import io.mango.infra.bootstrap.api.BootstrapPhase;
@@ -29,6 +30,8 @@ public final class ResourceBootstrapStepContributor implements BootstrapStepCont
     private final ObjectMapper objectMapper;
     private final String applicationName;
 
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+            justification = "The contributor intentionally retains Spring-managed configuration and mapper collaborators")
     public ResourceBootstrapStepContributor(ResourceRegistryProperties properties,
                                             ResourceDeclarationCollector collector,
                                             ResourceDeclarationApi declarationApi,

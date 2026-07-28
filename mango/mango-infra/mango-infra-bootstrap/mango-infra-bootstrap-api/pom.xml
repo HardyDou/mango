@@ -10,4 +10,11 @@
     </parent>
     <artifactId>mango-infra-bootstrap-api</artifactId>
     <name>Mango Infra Bootstrap API</name>
+
+    <dependencies>
+        <dependency>
+            <groupId>io.mango.common</groupId>
+            <artifactId>mango-common</artifactId>
+        </dependency>
+    </dependencies>
 </project>

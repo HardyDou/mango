@@ -35,7 +35,7 @@ public final class BootstrapOrchestrator {
         this.contributors = List.copyOf(contributors);
     }
 
-    public BootstrapOutcome execute(BootstrapRequest request) {
+    public BootstrapOutcome execute(BootstrapInvocation request) {
         validate(request);
         BootstrapPlan plan = planBuilder.build(request.releaseId(), request.buildRevision(), contributors);
         verifyExpectedFingerprint(request.expectedFingerprint(), plan.manifestFingerprint());
@@ -60,7 +60,7 @@ public final class BootstrapOrchestrator {
         }
     }
 
-    private BootstrapOutcome abortCandidate(BootstrapRequest request, BootstrapPlan plan) {
+    private BootstrapOutcome abortCandidate(BootstrapInvocation request, BootstrapPlan plan) {
         BootstrapControl control = repository.findControl(request.environmentKey())
                 .orElseThrow(() -> new IllegalStateException("BOOTSTRAP_RECEIPT_MISSING"));
         if (control.candidateGeneration() == null || control.candidateGeneration() != request.generation()) {
@@ -83,7 +83,7 @@ public final class BootstrapOrchestrator {
         }
     }
 
-    private BootstrapOutcome apply(BootstrapRequest request, BootstrapPlan plan) {
+    private BootstrapOutcome apply(BootstrapInvocation request, BootstrapPlan plan) {
         long token = repository.prepareCandidate(request, plan.manifestFingerprint());
         BootstrapControl control = repository.findControl(request.environmentKey()).orElseThrow();
         if (control.stableGeneration() == request.generation()
@@ -117,7 +117,7 @@ public final class BootstrapOrchestrator {
         }
     }
 
-    private BootstrapOutcome finalizeCandidate(BootstrapRequest request, BootstrapPlan plan) {
+    private BootstrapOutcome finalizeCandidate(BootstrapInvocation request, BootstrapPlan plan) {
         BootstrapControl control = repository.findControl(request.environmentKey())
                 .orElseThrow(() -> new IllegalStateException("BOOTSTRAP_RECEIPT_MISSING"));
         if (control.candidateGeneration() == null || control.candidateGeneration() != request.generation()) {
@@ -147,7 +147,7 @@ public final class BootstrapOrchestrator {
         }
     }
 
-    private void executePhase(String executionId, BootstrapRequest request, BootstrapPlan plan,
+    private void executePhase(String executionId, BootstrapInvocation request, BootstrapPlan plan,
                               BootstrapPhase phase, long token, StepCounts counts) {
         BootstrapExecutionContext context = new BootstrapExecutionContext(
                 executionId, request.environmentKey(), request.releaseId(), request.buildRevision(),
@@ -177,8 +177,8 @@ public final class BootstrapOrchestrator {
         }
     }
 
-    private static BootstrapRequest withPhase(BootstrapRequest request, BootstrapPhase phase) {
-        return new BootstrapRequest(request.environmentKey(), request.releaseId(), request.buildRevision(),
+    private static BootstrapInvocation withPhase(BootstrapInvocation request, BootstrapPhase phase) {
+        return new BootstrapInvocation(request.environmentKey(), request.releaseId(), request.buildRevision(),
                 request.generation(), request.expectedFingerprint(), request.action(), request.strategy(),
                 phase, request.lockTimeoutSeconds());
     }
@@ -189,7 +189,7 @@ public final class BootstrapOrchestrator {
         }
     }
 
-    private static void validate(BootstrapRequest request) {
+    private static void validate(BootstrapInvocation request) {
         requireText(request.environmentKey(), "Bootstrap environment key is required");
         requireText(request.releaseId(), "Mango release id is required");
         requireText(request.buildRevision(), "Mango build revision is required");

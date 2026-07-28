@@ -14,23 +14,23 @@
 
 ## 2. 原子交付台账
 
-| ID | 来源 | 要求 | 设计决策 | 代码交付物 | 说明或文档 | 验证与证据 | 状态 |
+| ID | 来源 | 要求 | 设计决策 | 交付物 | 验收方式 | 状态 | 证据文件 |
 |---|---|---|---|---|---|---|---|
-| MB-001 | DEC-001/002/003 | 提供同制品 Bootstrap/Runtime 入口，Runtime 不执行阻断初始化 | `MangoApplication` 路由进程模式，Bootstrap 非 Web | `mango-infra-bootstrap-api/core/starter` | Bootstrap README、应用接入指南 | 所有官方应用已切换入口，164 模块 test-compile 通过 | DONE |
-| MB-002 | DEC-002/007 | 提供 plan/apply/verify/finalize 编排与有向步骤图 | SPI contributor + 拓扑排序 + 幂等步骤执行 | Bootstrap API/core | 设计第 6 节 | `BootstrapPlanBuilderTest` 与编排测试 | DONE |
-| MB-003 | DEC-005 | 持久化 execution、step、control、runtime lease | Bootstrap 自有 Flyway migration 与 JDBC repository | Bootstrap core/starter migration | 数据表说明 | `JdbcBootstrapRepositoryIntegrationTest` | DONE |
-| MB-004 | DEC-005 | release/generation/manifest fingerprint fail closed | 规范化 SHA-256、同代防漂移、stale 拒绝 | Bootstrap manifest/gate | Bootstrap README | fingerprint、同代冲突、generation 边界测试 | DONE |
-| MB-005 | DEC-002/006 | Flyway 从 Runtime 自动执行迁入 Bootstrap expand/contract | 显式 migration executor，保留模块 history table | persistence starter contributor | persistence README | Persistence Flyway 96 项测试基线 | DONE |
-| MB-006 | DEC-004 | Resource 新增 executionPhase，与 syncMode 正交 | 默认 required；eventual/manual 显式声明 | resource API/support/core | resource README/schema 示例 | 声明过滤、兼容默认与 eventual worker 测试 | DONE |
-| MB-007 | DEC-005/006 | Resource 命令携带 generation/fingerprint/fencing，服务端拒绝旧代 | control fence 校验；写操作只允许权威代 | resource API/core/remote | Resource 生命周期说明 | stale、同代漂移和失锁测试 | DONE |
-| MB-008 | DEC-006 | expand 不 disable missing，finalize 才执行 destructive resource | apply/finalize 分离 | resource core/bootstrap contributor | Resource 生命周期说明 | expand/finalize 模式测试 | DONE |
-| MB-009 | DEC-002 | 租户前置与最终对账迁入 Bootstrap | prerequisites -> resource -> reconciliation | system core contributor | 设计第 10 节 | contributor 顺序与重入测试 | DONE |
-| MB-010 | DEC-003/005 | Runtime receipt gate、lease、旧代 drain/finalize 门禁与候选撤回 | stable/candidate 双代窗口；abort 恢复 stable 权威代并刷新 fencing token | Bootstrap starter/core | Bootstrap README | repository lease、finalize 与 abort 门禁测试 | DONE |
-| MB-011 | DEC-001/007 | 最终应用模板、BOM 和 starter 使用新入口 | 删除旧隐式初始化契约 | app/admin-starter/BOM | Bootstrap README、能力地图 | 官方应用 Reactor test-compile 通过 | DONE |
-| MB-012 | AC-001..015 | 一次性交付验证 | 定向单元、真实 MySQL、入口流程和消费验证 | 正式测试目录与最小证据 | 本台账结果区 | 定向模块套件、真实 MySQL 性能与回滚、静态审计通过；Baohan 仓按用户要求只读 | DONE |
-| MB-013 | 用户补充约束 | 已有 Mango 业务保留源码、允许清库接入 | 入口迁移 + 空库 cold Bootstrap，不提供旧库原地兼容 | app starter、迁移检查 | Bootstrap README | 官方应用代码保留并切换统一入口 | DONE |
-| MB-014 | 用户性能基线 | 同库手工初始化 SQL 约 1 分钟，避免逐模块历史重放 | 每模块唯一空库 baseline + 模块 history + 后续增量 | persistence starter | persistence README | 5 模块、375 表、37,500 行、16.37 MB，MySQL 8.4 为 2.267s | DONE |
-| MB-015 | 用户 Resource 规模补充 | 真实测试 Workflow 发布与文件存储写入，各关键类型规模均至少为保函 5 倍 | 以保函 232 个声明、4 个启动发布流程、15 个启动物化文件为只读基准；运行时生成资产，真实 Registry/Handler/Flowable/LOCAL，分阶段计时 | admin-starter 性能集成测试、基准脚本 | Resource/File/Workflow README | 1,255 声明、75 MiB 文件、20 个八级流程，冷 13.049s、热 53ms | DONE |
+| MB-001 | DEC-001/002/003 | 提供同制品 Bootstrap/Runtime 入口，Runtime 不执行阻断初始化 | `MangoApplication` 路由进程模式，Bootstrap 非 Web | Bootstrap API/core/starter、官方应用入口与 Bootstrap README | 官方应用入口、未初始化 Runtime 拒绝及 Bootstrap 命令测试 | DONE | `mango/mango-infra/mango-infra-bootstrap/mango-infra-bootstrap-starter/src/test/java/io/mango/infra/bootstrap/starter/MangoApplicationTest.java` |
+| MB-002 | DEC-002/007 | 提供 plan/apply/verify/finalize 编排与有向步骤图 | SPI contributor、拓扑排序与幂等步骤执行 | Bootstrap API/core 与生命周期设计 | 步骤拓扑、编排状态和重入单元测试 | DONE | `mango/mango-infra/mango-infra-bootstrap/mango-infra-bootstrap-core/src/test/java/io/mango/infra/bootstrap/core/BootstrapPlanBuilderTest.java` |
+| MB-003 | DEC-005 | 持久化 execution、step、control、runtime lease | Bootstrap 自有 Flyway migration 与 JDBC repository | Bootstrap core/starter migration 和数据表说明 | 真实 MySQL repository、lease 与状态迁移集成测试 | DONE | `mango/mango-infra/mango-infra-bootstrap/mango-infra-bootstrap-core/src/test/java/io/mango/infra/bootstrap/core/JdbcBootstrapRepositoryIntegrationTest.java` |
+| MB-004 | DEC-005 | release/generation/manifest fingerprint fail closed | 规范化 SHA-256、同代防漂移、stale 拒绝 | Bootstrap manifest、gate 与 Bootstrap README | fingerprint、同代冲突和 generation 边界测试 | DONE | `mango/mango-infra/mango-infra-bootstrap/mango-infra-bootstrap-core/src/test/java/io/mango/infra/bootstrap/core/BootstrapOrchestratorTest.java` |
+| MB-005 | DEC-002/006 | Flyway 从 Runtime 自动执行迁入 Bootstrap expand/contract | 显式 migration executor，保留模块 history table | Persistence Bootstrap contributor 与 Persistence README | Flyway 配置、冷 baseline、增量和装配测试 | DONE | `mango/mango-infra/mango-infra-persistence/mango-infra-persistence-starter/src/test/java/io/mango/infra/persistence/starter/PersistenceFlywayAutoConfigurationTest.java` |
+| MB-006 | DEC-004 | Resource 新增 executionPhase，与 syncMode 正交 | 默认 required，eventual/manual 显式声明 | Resource API/support/core、Bootstrap contributor 和 Resource README | 声明过滤、兼容默认与 eventual worker 测试 | DONE | `mango/mango-platform/mango-resource/mango-resource-sync-starter/src/test/java/io/mango/resource/sync/starter/ResourceBootstrapStepContributorTest.java` |
+| MB-007 | DEC-005/006 | Resource 命令携带 generation/fingerprint/fencing，服务端拒绝旧代 | control fence 校验，写操作只允许权威代 | Resource API/core/remote 与生命周期说明 | stale、同代漂移、失锁和同步集成测试 | DONE | `mango/mango-platform/mango-resource/mango-resource-core/src/test/java/io/mango/resource/core/sync/ResourceRegistrySyncServiceIntegrationTest.java` |
+| MB-008 | DEC-006 | expand 不 disable missing，finalize 才执行 destructive resource | apply/finalize 分离 | Resource core、Bootstrap contributor 与 Resource README | expand/finalize 模式和缺失资源处理测试 | DONE | `mango/mango-platform/mango-resource/mango-resource-sync-starter/src/test/java/io/mango/resource/sync/starter/ResourceBootstrapStepContributorTest.java` |
+| MB-009 | DEC-002 | 租户前置与最终对账迁入 Bootstrap | prerequisites -> resource -> reconciliation | System tenant contributor 与生命周期设计 | contributor 顺序、租户上下文和重入测试 | DONE | `mango/mango-platform/mango-system/mango-system-core/src/test/java/io/mango/system/core/service/impl/TenantProvisioningBootstrapContributorTest.java` |
+| MB-010 | DEC-003/005 | Runtime receipt gate、lease、旧代 drain/finalize 门禁与候选撤回 | stable/candidate 双代窗口，abort 恢复 stable 权威代并刷新 fencing token | Bootstrap starter/core 与 Bootstrap README | repository lease、finalize、abort 和旧 token 失效的 MySQL 测试 | DONE | `mango/mango-infra/mango-infra-bootstrap/mango-infra-bootstrap-core/src/test/java/io/mango/infra/bootstrap/core/JdbcBootstrapRepositoryIntegrationTest.java` |
+| MB-011 | DEC-001/007 | 最终应用模板、BOM 和 starter 使用新入口 | 删除旧隐式初始化契约 | App、Admin Starter、BOM、Bootstrap README 与能力地图 | 216 模块全 Reactor 编译和架构门禁 | DONE | `mango/target/mango-architecture-report.json` |
+| MB-012 | AC-001..015 | 一次性交付验证 | 定向单元、真实 MySQL、入口流程和消费边界验证 | 正式测试目录、本台账结果与最小报告 | 定向模块套件、真实性能、静态库存和债务预算检查 | DONE | `mango/target/mango-static-report.json` |
+| MB-013 | 用户补充约束 | 已有 Mango 业务保留源码、允许清库接入 | 入口迁移与空库 cold Bootstrap，不提供旧库原地兼容 | App starter、迁移检查与 Bootstrap README | 官方应用代码保留和统一入口静态验证 | DONE | `mango/mango-infra/mango-infra-bootstrap/README.md` |
+| MB-014 | 用户性能基线 | 同库手工初始化 SQL 约 1 分钟，避免逐模块历史重放 | 每模块唯一空库 baseline、模块 history 与后续增量 | Persistence starter、性能测试与 Persistence README | 5 模块、375 表、37,500 行、16.37 MB 的 MySQL 8.4 基准 | DONE | `mango/mango-infra/mango-infra-persistence/mango-infra-persistence-starter/src/test/java/io/mango/infra/persistence/starter/PersistenceColdBaselinePerformanceIntegrationTest.java` |
+| MB-015 | 用户 Resource 规模补充 | 真实测试 Workflow 发布与文件存储写入，各关键类型规模均至少为保函 5 倍 | 以保函只读基准放大 5 倍，执行真实 Registry、Handler、Flowable 和 LOCAL 存储 | Admin Starter 性能集成测试、基准脚本及 Resource/File/Workflow README | 1,255 声明、75 MiB 文件、20 个八级流程冷注入与热重入 | DONE | `mango/mango-admin-starter/src/test/java/io/mango/admin/starter/BootstrapResourcePerformanceIntegrationTest.java` |
 
 ## 3. 测试用例候选
 
@@ -44,7 +44,7 @@
 | TC-MB-006 | AC-014 | finalize 前停止候选并恢复稳定代 | P1 | 入口流程 | AUTO | 独立库 | stable/candidate/fingerprint | Bootstrap abort flow test | 活跃候选拒绝、清除 candidate、stable 恢复、旧 token 失效的 MySQL 测试通过 | PASS |
 | TC-MB-007 | AC-015 | Baohan 类空库消费制品启动 | P0 | 人工/消费验证 | MANUAL | 一次性测试环境 reset-demo | Bootstrap Job 0 + Runtime ready | 业务测试流水线 | 用户明确 Baohan 仓只读参考，本次不修改或发布业务制品 | EXCLUDED |
 | TC-MB-008 | 用户业务复测 | 与旧启动模式 649 秒 API readiness、732 秒发布耗时对比 | P0 | 消费/性能验收 | MANUAL | 同等空库与业务制品 | Bootstrap 可长时独立执行；其后 Runtime readiness 秒级 | 业务测试流水线 | 旧模式基线：649s/732s，前端均 200；新制品消费留给业务发布验证 | BASELINE_ONLY |
-| TC-MB-009 | 用户 Resource 规模补充 | 声明、Workflow、File 三个维度分别达到 5 倍参考量，执行真实冷注入与热重入 | P0 | MySQL/存储/Flowable 集成 | AUTO | 两个后缀专用库和临时文件目录自动清理 | 1,255 registry、20 个 Flowable deployment、75 组 file 记录与对象大小/SHA-256、无新增日志/部署 | `scripts/tests/bootstrap-performance.sh` | SQL 2.267s；Resource 冷 13.049s、热 53ms | PASS |
+| TC-MB-009 | 用户 Resource 规模补充 | 声明、Workflow、File 三个维度分别达到 5 倍参考量，执行真实冷注入与热重入 | P0 | MySQL/存储/Flowable 集成 | AUTO | 两个后缀专用库和临时文件目录自动清理 | 1,255 registry、20 个 Flowable deployment、75 组 file 记录与对象大小/SHA-256、无新增日志/部署 | `scripts/tests/bootstrap-performance.sh` | SQL 3.443s；Resource schema 2.593s、冷 16.450s、热 68ms | PASS |
 
 ## 4. 执行顺序
 
@@ -57,4 +57,12 @@
 
 ## 5. 结果与证据
 
-框架交付与自动化门禁已完成：真实 MySQL 8.4 SQL baseline、Workflow/File Resource 注入、热重入、rolling/finalize/abort、测试质量和文档静态审计均通过。Baohan 仓按用户要求保持只读；业务制品升级后的流水线耗时对比属于消费方发布验证，不在本工作区伪造结论。
+框架交付与自动化门禁已完成：真实 MySQL 8.4 SQL baseline、Workflow/File Resource 注入、热重入、rolling/finalize/abort、测试质量和文档静态审计均通过。
+
+- 2026-07-28 Resource 性能复验使用专用空库 `mango_dev_mango_bootstrap_005_bootstrap_resource_perf`，完成后自动删除；schema 准备 2.593s，冷 Bootstrap 16.450s，未变化热重入 68ms，满足冷阶段小于 60s、热重入小于 10s 的断言。
+- 性能数据包含 1,255 条 Resource、20 个真实 Flowable deployment（每个流程 8 级审批）和 75 个真实 LOCAL 文件对象（共 75 MiB）；重入后部署数、文件内容长度/SHA-256、Resource 数量和同步日志均保持稳定。
+- 最终全 Reactor `verify` 覆盖 216/216 模块并通过，耗时 7 分 41 秒；架构报告为 schema v2、`full-reactor`、`all-detected-issues`，dependency/ArchUnit/PMD/blocking 均为 0。
+- 聚合静态库存为 13,562 条历史问题，`newIssueCount=0`、`toolFailureCount=0`、`gateStatus=PASS`；架构债务预算检查为 `current=0`，未增加或抬高预算。
+- `git diff --check`、workspace layout、24 个变更测试文件质量检查和 PMO scope 17/17 均通过。
+
+Baohan 仓按用户要求保持只读；业务制品升级后的流水线耗时对比属于消费方发布验证，不在本工作区伪造结论。当前已发布 Maven 最新版本仍为 `1.0.27`，本次能力尚未发布为新的精确版本，也未声明保函已消费本次新制品。

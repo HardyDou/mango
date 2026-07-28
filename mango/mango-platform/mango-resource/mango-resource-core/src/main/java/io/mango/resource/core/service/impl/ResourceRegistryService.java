@@ -184,33 +184,40 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
 
     @Override
     public Boolean registerDeclarations(RegisterResourceDeclarationsCommand command) {
-        Require.notNull(command, ResourceCode.RESOURCE_INVALID, "资源声明注册命令不能为空");
-        Require.notBlank(command.getAppCode(), ResourceCode.RESOURCE_INVALID, "来源应用不能为空");
-        Require.notBlank(command.getServiceCode(), ResourceCode.RESOURCE_INVALID, "来源服务不能为空");
-        Require.notBlank(command.getEnvironmentKey(), ResourceCode.RESOURCE_INVALID, "Bootstrap 环境标识不能为空");
-        Require.notNull(command.getGeneration(), ResourceCode.RESOURCE_INVALID, "Release generation 不能为空");
-        Require.isTrue(command.getGeneration() > 0, ResourceCode.RESOURCE_INVALID, "Release generation 必须大于0");
-        Require.notBlank(command.getManifestFingerprint(), ResourceCode.RESOURCE_INVALID,
+        RegisterResourceDeclarationsCommand validatedCommand = Require.nonNull(
+                command, ResourceCode.RESOURCE_INVALID, "资源声明注册命令不能为空");
+        Require.notBlank(validatedCommand.getAppCode(), ResourceCode.RESOURCE_INVALID, "来源应用不能为空");
+        Require.notBlank(validatedCommand.getServiceCode(), ResourceCode.RESOURCE_INVALID, "来源服务不能为空");
+        Require.notBlank(validatedCommand.getEnvironmentKey(), ResourceCode.RESOURCE_INVALID,
+                "Bootstrap 环境标识不能为空");
+        long validatedGeneration = Require.nonNull(
+                validatedCommand.getGeneration(), ResourceCode.RESOURCE_INVALID, "Release generation 不能为空");
+        Require.isTrue(validatedGeneration > 0, ResourceCode.RESOURCE_INVALID, "Release generation 必须大于0");
+        Require.notBlank(validatedCommand.getManifestFingerprint(), ResourceCode.RESOURCE_INVALID,
                 "Manifest fingerprint 不能为空");
-        Require.notNull(command.getFencingToken(), ResourceCode.RESOURCE_INVALID, "Fencing token 不能为空");
-        Require.notNull(command.getApplyMode(), ResourceCode.RESOURCE_INVALID, "Resource apply mode 不能为空");
-        BootstrapGenerationFence generationFence = generationFences.getIfAvailable();
-        Require.notNull(generationFence, ResourceCode.RESOURCE_INVALID, "Bootstrap generation fence 未启用");
+        long fencingToken = Require.nonNull(
+                validatedCommand.getFencingToken(), ResourceCode.RESOURCE_INVALID, "Fencing token 不能为空");
+        ResourceApplyMode validatedApplyMode = Require.nonNull(
+                validatedCommand.getApplyMode(), ResourceCode.RESOURCE_INVALID, "Resource apply mode 不能为空");
+        BootstrapGenerationFence generationFence = Require.nonNull(
+                generationFences.getIfAvailable(), ResourceCode.RESOURCE_INVALID, "Bootstrap generation fence 未启用");
         generationFence.assertAuthoritative(new BootstrapWriteAuthority(
-                command.getEnvironmentKey(), command.getGeneration(), command.getManifestFingerprint(),
-                command.getFencingToken()));
-        List<ResourceDeclaration> declarations = parseDeclarations(command.getDeclarations());
-        Require.isTrue(!declarations.isEmpty() || !command.getModuleCodes().isEmpty(),
+                validatedCommand.getEnvironmentKey(), validatedGeneration, validatedCommand.getManifestFingerprint(),
+                fencingToken));
+        List<ResourceDeclaration> declarations = parseDeclarations(validatedCommand.getDeclarations());
+        List<String> moduleCodes = validatedCommand.getModuleCodes() == null
+                ? List.of() : List.copyOf(validatedCommand.getModuleCodes());
+        Require.isTrue(!declarations.isEmpty() || !moduleCodes.isEmpty(),
                 ResourceCode.RESOURCE_INVALID, "资源声明和管理模块不能同时为空");
-        List<ResourceDeclaration> selectedDeclarations = selectDeclarations(declarations, command.getApplyMode());
+        List<ResourceDeclaration> selectedDeclarations = selectDeclarations(declarations, validatedApplyMode);
         boolean synchronizedNow = syncRemote(
-                command.getAppCode(), command.getServiceCode(), command.getModuleCodes(), selectedDeclarations,
-                command.getApplyMode() == ResourceApplyMode.FINALIZE);
+                validatedCommand.getAppCode(), validatedCommand.getServiceCode(), moduleCodes, selectedDeclarations,
+                validatedApplyMode == ResourceApplyMode.FINALIZE);
         if (!synchronizedNow) {
             return Boolean.FALSE;
         }
         log.info("Mango resource remote declarations registered: appCode={}, serviceCode={}, count={}",
-                command.getAppCode(), command.getServiceCode(), declarations.size());
+                validatedCommand.getAppCode(), validatedCommand.getServiceCode(), declarations.size());
         return Boolean.TRUE;
     }
 
@@ -263,11 +270,6 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
         List<ResourceDeclaration> declarations = collector.collect();
         doSync(LOCAL_APP_CODE, LOCAL_SERVICE_CODE, declarations, handlerMap,
                 collector.managedModuleCodes(declarations), force);
-    }
-
-    private void doSync(String appCode, String serviceCode, List<ResourceDeclaration> declarations,
-                        List<String> managedModuleCodes, boolean force) {
-        doSync(appCode, serviceCode, declarations, managedModuleCodes, force, true);
     }
 
     private void doSync(String appCode, String serviceCode, List<ResourceDeclaration> declarations,

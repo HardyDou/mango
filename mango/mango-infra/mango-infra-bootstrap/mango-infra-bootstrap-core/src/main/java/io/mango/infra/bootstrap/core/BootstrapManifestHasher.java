@@ -2,6 +2,7 @@ package io.mango.infra.bootstrap.core;
 
 import io.mango.infra.bootstrap.api.BootstrapStep;
 
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -42,10 +43,7 @@ public final class BootstrapManifestHasher {
 
     private static void update(MessageDigest digest, String value) {
         byte[] bytes = value == null ? new byte[0] : value.getBytes(StandardCharsets.UTF_8);
-        digest.update((byte) (bytes.length >>> 24));
-        digest.update((byte) (bytes.length >>> 16));
-        digest.update((byte) (bytes.length >>> 8));
-        digest.update((byte) bytes.length);
+        digest.update(ByteBuffer.allocate(Integer.BYTES).putInt(bytes.length).array());
         digest.update(bytes);
     }
 }

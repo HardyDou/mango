@@ -1,6 +1,9 @@
 package io.mango.infra.persistence.starter;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.util.ArrayList;
@@ -40,6 +43,10 @@ public class PersistenceFlywayProperties {
      * 模块级迁移配置。
      * Key 为模块名称，例如 user、area、org。
      */
+    @Getter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP",
+            justification = "Spring configuration binding intentionally exposes this mutable module map"))
+    @Setter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+            justification = "Spring configuration binding intentionally stores this mutable module map"))
     private Map<String, ModuleConfig> modules = new LinkedHashMap<>();
 
     /**
@@ -55,6 +62,10 @@ public class PersistenceFlywayProperties {
     private String upgradeRoot;
 
     /** Optional one-shot schema snapshot for a genuinely empty database. */
+    @Getter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP",
+            justification = "Spring configuration binding intentionally exposes this nested property bean"))
+    @Setter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+            justification = "Spring configuration binding intentionally stores this nested property bean"))
     private ColdBaseline coldBaseline = new ColdBaseline();
 
     @Data
@@ -98,6 +109,10 @@ public class PersistenceFlywayProperties {
          * 当前模块迁移脚本位置。为空时使用 classpath:db/migration/{module}。
          * 支持 classpath:、filesystem:，以及 http(s) 单个 SQL 文件。
          */
+        @Getter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP",
+                justification = "Spring configuration binding intentionally exposes this mutable location list"))
+        @Setter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+                justification = "Spring configuration binding intentionally stores this mutable location list"))
         private List<String> locations = new ArrayList<>();
 
         /**
@@ -105,15 +120,27 @@ public class PersistenceFlywayProperties {
          * classpath:db/migration-contract/{module} 存在时启用。
          * EXPAND 与 CONTRACT 使用同一个 Flyway history table，版本号必须全局唯一。
          */
+        @Getter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP",
+                justification = "Spring configuration binding intentionally exposes this mutable location list"))
+        @Setter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+                justification = "Spring configuration binding intentionally stores this mutable location list"))
         private List<String> contractLocations = new ArrayList<>();
 
         /**
          * 当前模块独立迁移数据源。
          * 未配置时使用应用主数据源。
          */
+        @Getter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP",
+                justification = "Spring configuration binding intentionally exposes this nested property bean"))
+        @Setter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+                justification = "Spring configuration binding intentionally stores this nested property bean"))
         private DataSourceConfig datasource = new DataSourceConfig();
 
         /** 当前模块拥有的空库快速基线。 */
+        @Getter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP",
+                justification = "Spring configuration binding intentionally exposes this nested property bean"))
+        @Setter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+                justification = "Spring configuration binding intentionally stores this nested property bean"))
         private BaselineConfig baseline = new BaselineConfig();
 
         /**

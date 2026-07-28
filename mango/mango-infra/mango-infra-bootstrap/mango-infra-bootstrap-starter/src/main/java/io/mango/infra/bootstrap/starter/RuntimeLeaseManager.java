@@ -33,6 +33,8 @@ final class RuntimeLeaseManager implements ApplicationRunner, DisposableBean, Or
         BootstrapRuntimeAuthorityProvider {
 
     private static final Logger LOG = LoggerFactory.getLogger(RuntimeLeaseManager.class);
+    private static final Duration DEFAULT_HEARTBEAT_INTERVAL = Duration.ofSeconds(10);
+    private static final Duration DEFAULT_LEASE_TTL = Duration.ofSeconds(30);
 
     private final BootstrapProperties bootstrapProperties;
     private final MangoReleaseProperties releaseProperties;
@@ -74,7 +76,7 @@ final class RuntimeLeaseManager implements ApplicationRunner, DisposableBean, Or
                 releaseProperties.getGeneration(), manifestFingerprint);
         instanceId = resolveInstanceId();
         heartbeat();
-        Duration interval = positive(bootstrapProperties.getRuntimeHeartbeatInterval(), Duration.ofSeconds(10));
+        Duration interval = positive(bootstrapProperties.getRuntimeHeartbeatInterval(), DEFAULT_HEARTBEAT_INTERVAL);
         heartbeatExecutor = Executors.newSingleThreadScheduledExecutor(Thread.ofPlatform()
                 .name("mango-runtime-lease-").daemon(true).factory());
         heartbeatExecutor.scheduleWithFixedDelay(this::safeHeartbeat,
@@ -138,7 +140,7 @@ final class RuntimeLeaseManager implements ApplicationRunner, DisposableBean, Or
     private void heartbeat() {
         repository.upsertRuntimeLease(instanceId, bootstrapProperties.getEnvironmentKey(), releaseProperties.getId(),
                 releaseProperties.getGeneration(), manifestFingerprint,
-                positive(bootstrapProperties.getRuntimeLeaseTtl(), Duration.ofSeconds(30)));
+                positive(bootstrapProperties.getRuntimeLeaseTtl(), DEFAULT_LEASE_TTL));
     }
 
     private String resolveInstanceId() {

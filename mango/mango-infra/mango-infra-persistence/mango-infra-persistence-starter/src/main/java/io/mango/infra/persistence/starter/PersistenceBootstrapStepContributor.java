@@ -1,5 +1,6 @@
 package io.mango.infra.persistence.starter;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.infra.bootstrap.api.BootstrapExecutionContext;
 import io.mango.infra.bootstrap.api.BootstrapPhase;
 import io.mango.infra.bootstrap.api.BootstrapStep;
@@ -35,6 +36,8 @@ public final class PersistenceBootstrapStepContributor implements BootstrapStepC
     private final PersistenceDataSourceRegistry dataSourceRegistry;
     private final PersistenceModuleDataSourceResolver dataSourceResolver;
 
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+            justification = "The contributor intentionally retains Spring-managed configuration collaborators")
     public PersistenceBootstrapStepContributor(PersistenceFlywayProperties properties,
                                                PersistenceModuleMigrationStatusRegistry statusRegistry,
                                                PersistenceFlywayBootstrapExecutor executor,

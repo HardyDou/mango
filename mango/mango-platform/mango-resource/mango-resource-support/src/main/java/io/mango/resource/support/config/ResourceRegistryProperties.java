@@ -17,13 +17,14 @@ public class ResourceRegistryProperties {
     private static final int DEFAULT_LOCK_TTL_SECONDS = 300;
     // Keep below Spring Boot's default 30s timeout-per-shutdown-phase.
     private static final int DEFAULT_SHUTDOWN_WAIT_SECONDS = 25;
+    private static final Duration DEFAULT_EVENTUAL_RECONCILIATION_INTERVAL = Duration.ofSeconds(30);
 
     private boolean enabled = true;
     private boolean failOnConflict = true;
     private String instanceId = "";
     private int lockTtlSeconds = DEFAULT_LOCK_TTL_SECONDS;
     private int shutdownWaitSeconds = DEFAULT_SHUTDOWN_WAIT_SECONDS;
-    private Duration eventualReconciliationInterval = Duration.ofSeconds(30);
+    private Duration eventualReconciliationInterval = DEFAULT_EVENTUAL_RECONCILIATION_INTERVAL;
     private Remote remote = new Remote();
     private List<String> locations = new ArrayList<>(List.of(
             "classpath*:META-INF/mango/resources/*.json",

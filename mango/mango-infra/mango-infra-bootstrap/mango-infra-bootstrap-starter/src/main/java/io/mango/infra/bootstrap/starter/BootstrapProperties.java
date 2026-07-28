@@ -11,15 +11,19 @@ import java.time.Duration;
 @ConfigurationProperties(prefix = "mango.bootstrap")
 public class BootstrapProperties {
 
+    private static final int DEFAULT_LOCK_TIMEOUT_SECONDS = 30;
+    private static final Duration DEFAULT_RUNTIME_LEASE_TTL = Duration.ofSeconds(30);
+    private static final Duration DEFAULT_RUNTIME_HEARTBEAT_INTERVAL = Duration.ofSeconds(10);
+
     private BootstrapMode mode;
     private BootstrapAction action = BootstrapAction.APPLY;
     private BootstrapStrategy strategy = BootstrapStrategy.ROLLING;
     private BootstrapPhase phase = BootstrapPhase.EXPAND;
     private String environmentKey = "default";
-    private int lockTimeoutSeconds = 30;
+    private int lockTimeoutSeconds = DEFAULT_LOCK_TIMEOUT_SECONDS;
     private String instanceId;
-    private Duration runtimeLeaseTtl = Duration.ofSeconds(30);
-    private Duration runtimeHeartbeatInterval = Duration.ofSeconds(10);
+    private Duration runtimeLeaseTtl = DEFAULT_RUNTIME_LEASE_TTL;
+    private Duration runtimeHeartbeatInterval = DEFAULT_RUNTIME_HEARTBEAT_INTERVAL;
 
     public BootstrapMode getMode() {
         return mode;

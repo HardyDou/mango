@@ -1,5 +1,8 @@
 package io.mango.infra.bootstrap.api;
 
+import io.mango.common.contract.LocalCapabilityContract;
+
+@LocalCapabilityContract
 public record BootstrapExecutionContext(
         String executionId,
         String environmentKey,

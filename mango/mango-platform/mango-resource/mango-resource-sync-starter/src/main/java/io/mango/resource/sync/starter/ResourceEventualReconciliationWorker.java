@@ -31,6 +31,7 @@ import java.util.concurrent.TimeUnit;
 final class ResourceEventualReconciliationWorker implements ApplicationRunner, DisposableBean, Ordered {
 
     private static final Logger LOG = LoggerFactory.getLogger(ResourceEventualReconciliationWorker.class);
+    private static final Duration DEFAULT_RECONCILIATION_INTERVAL = Duration.ofSeconds(30);
 
     private final ResourceRegistryProperties properties;
     private final ResourceDeclarationCollector collector;
@@ -61,8 +62,9 @@ final class ResourceEventualReconciliationWorker implements ApplicationRunner, D
         }
         executor = Executors.newSingleThreadScheduledExecutor(Thread.ofPlatform()
                 .name("mango-resource-eventual-").daemon(true).factory());
-        Duration interval = positive(properties.getEventualReconciliationInterval(), Duration.ofSeconds(30));
-        executor.scheduleWithFixedDelay(this::reconcileSafely, 0, interval.toMillis(), TimeUnit.MILLISECONDS);
+        Duration interval = positive(properties.getEventualReconciliationInterval(),
+                DEFAULT_RECONCILIATION_INTERVAL);
+        executor.scheduleWithFixedDelay(this::reconcileOnce, 0, interval.toMillis(), TimeUnit.MILLISECONDS);
     }
 
     @Override
@@ -77,7 +79,7 @@ final class ResourceEventualReconciliationWorker implements ApplicationRunner, D
         return Ordered.LOWEST_PRECEDENCE;
     }
 
-    private void reconcileSafely() {
+    void reconcileOnce() {
         try {
             BootstrapWriteAuthority authority = authorityProvider.currentWriteAuthority().orElse(null);
             if (authority == null) {

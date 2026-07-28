@@ -1,7 +1,10 @@
 package io.mango.infra.bootstrap.api;
 
+import io.mango.common.contract.LocalCapabilityContract;
+
 import java.util.Map;
 
+@LocalCapabilityContract
 public record BootstrapStepResult(String summary, Map<String, Object> details) {
 
     public BootstrapStepResult {

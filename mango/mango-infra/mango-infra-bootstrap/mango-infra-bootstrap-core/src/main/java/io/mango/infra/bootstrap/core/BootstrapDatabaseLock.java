@@ -10,6 +10,8 @@ import java.util.Objects;
 
 public final class BootstrapDatabaseLock {
 
+    private static final int MYSQL_LOCK_NAME_MAX_LENGTH = 64;
+
     private final DataSource dataSource;
 
     public BootstrapDatabaseLock(DataSource dataSource) {
@@ -51,7 +53,8 @@ public final class BootstrapDatabaseLock {
     private static String lockName(String environmentKey) {
         String normalized = environmentKey == null ? "default" : environmentKey.trim();
         String value = "mango-bootstrap:" + normalized;
-        return value.length() <= 64 ? value : value.substring(0, 64);
+        return value.length() <= MYSQL_LOCK_NAME_MAX_LENGTH
+                ? value : value.substring(0, MYSQL_LOCK_NAME_MAX_LENGTH);
     }
 
     public static final class Lease implements AutoCloseable {

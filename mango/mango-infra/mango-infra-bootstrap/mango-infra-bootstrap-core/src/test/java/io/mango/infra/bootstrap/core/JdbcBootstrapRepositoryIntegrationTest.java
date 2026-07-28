@@ -45,7 +45,7 @@ class JdbcBootstrapRepositoryIntegrationTest {
 
     @Test
     void shouldFenceGenerationsAndBlockFinalizeUntilOldRuntimeDrains() {
-        BootstrapRequest generationOne = request(1);
+        BootstrapInvocation generationOne = request(1);
         long firstToken = repository.prepareCandidate(generationOne, "fingerprint-one");
         repository.markExpanded(environmentKey, 1, "fingerprint-one", firstToken);
         repository.beginFinalize(environmentKey, 1, "fingerprint-one", firstToken);
@@ -85,7 +85,7 @@ class JdbcBootstrapRepositoryIntegrationTest {
                 .hasMessageContaining("BOOTSTRAP_FINGERPRINT_MISMATCH");
 
         String executionId = UUID.randomUUID().toString();
-        BootstrapRequest request = request(1);
+        BootstrapInvocation request = request(1);
         repository.startExecution(executionId, request, "fingerprint-one", token);
         long stepId = repository.startStep(executionId, environmentKey, 1, BootstrapPhase.EXPAND,
                 "TEST_STEP", "step-fingerprint");
@@ -166,8 +166,8 @@ class JdbcBootstrapRepositoryIntegrationTest {
                 .extracting(BootstrapControl::stableGeneration).isEqualTo(2L);
     }
 
-    private BootstrapRequest request(long generation) {
-        return new BootstrapRequest(environmentKey, "release-" + generation, "revision-" + generation,
+    private BootstrapInvocation request(long generation) {
+        return new BootstrapInvocation(environmentKey, "release-" + generation, "revision-" + generation,
                 generation, null, BootstrapAction.APPLY, BootstrapStrategy.ROLLING,
                 BootstrapPhase.EXPAND, 1);
     }

@@ -26,7 +26,7 @@ import io.mango.infra.bootstrap.core.BootstrapManifestHasher;
 import io.mango.infra.bootstrap.core.BootstrapOrchestrator;
 import io.mango.infra.bootstrap.core.BootstrapOutcome;
 import io.mango.infra.bootstrap.core.BootstrapPlanBuilder;
-import io.mango.infra.bootstrap.core.BootstrapRequest;
+import io.mango.infra.bootstrap.core.BootstrapInvocation;
 import io.mango.infra.bootstrap.core.BootstrapSchemaMigrator;
 import io.mango.infra.bootstrap.core.JdbcBootstrapRepository;
 import io.mango.infra.context.api.MangoContextHolder;
@@ -161,7 +161,7 @@ class BootstrapResourcePerformanceIntegrationTest {
                 BootstrapOrchestrator orchestrator = bootstrapOrchestrator(
                         dataSource, context.getBean(JdbcBootstrapRepository.class),
                         registryProperties, collector, registryService, objectMapper);
-                BootstrapRequest applyRequest = request(BootstrapAction.APPLY);
+                BootstrapInvocation applyRequest = request(BootstrapAction.APPLY);
                 long coldStarted = System.nanoTime();
                 BootstrapOutcome coldOutcome = orchestrator.execute(applyRequest);
                 long coldElapsed = elapsedMillis(coldStarted);
@@ -266,8 +266,8 @@ class BootstrapResourcePerformanceIntegrationTest {
         };
     }
 
-    private BootstrapRequest request(BootstrapAction action) {
-        return new BootstrapRequest(
+    private BootstrapInvocation request(BootstrapAction action) {
+        return new BootstrapInvocation(
                 "bootstrap-resource-performance", "performance-release", "performance-revision",
                 1L, null, action, BootstrapStrategy.COLD, null, 30);
     }

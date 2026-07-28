@@ -3,7 +3,7 @@ package io.mango.infra.bootstrap.starter;
 import io.mango.infra.bootstrap.api.BootstrapMode;
 import io.mango.infra.bootstrap.core.BootstrapOrchestrator;
 import io.mango.infra.bootstrap.core.BootstrapOutcome;
-import io.mango.infra.bootstrap.core.BootstrapRequest;
+import io.mango.infra.bootstrap.core.BootstrapInvocation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationArguments;
@@ -31,7 +31,7 @@ final class BootstrapCommandRunner implements ApplicationRunner, Ordered {
         if (bootstrapProperties.getMode() != BootstrapMode.BOOTSTRAP) {
             return;
         }
-        BootstrapOutcome outcome = orchestrator.execute(new BootstrapRequest(
+        BootstrapOutcome outcome = orchestrator.execute(new BootstrapInvocation(
                 bootstrapProperties.getEnvironmentKey(), releaseProperties.getId(), releaseProperties.getRevision(),
                 releaseProperties.getGeneration(), releaseProperties.getFingerprint(),
                 bootstrapProperties.getAction(), bootstrapProperties.getStrategy(), bootstrapProperties.getPhase(),

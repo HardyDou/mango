@@ -1,6 +1,7 @@
 package io.mango.file.core.resource;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.file.api.enums.FileObjectStatus;
 import io.mango.file.api.enums.FileRecordStatus;
 import io.mango.file.core.entity.FileObjectEntity;
@@ -41,7 +42,8 @@ import java.util.Objects;
  * 将业务模块随 Jar 发布的二进制资产幂等写入文件服务。
  */
 @Component
-@RequiredArgsConstructor
+@RequiredArgsConstructor(onConstructor_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+        justification = "The handler intentionally retains Spring-managed storage collaborators"))
 public class FileAssetResourceHandler implements ResourceHandler {
 
     private static final String TARGET_TABLE = "file_record";
@@ -50,6 +52,8 @@ public class FileAssetResourceHandler implements ResourceHandler {
     private static final String STAGING_PREFIX = ".mango-staging/resources/";
     private static final long DEFAULT_TENANT_ID = 1L;
     private static final int ENABLED = 1;
+    private static final int MAX_FILE_NAME_LENGTH = 255;
+    private static final int MAX_OBJECT_NAME_LENGTH = 500;
 
     private final FileStorageConfigMapper storageConfigMapper;
     private final FileObjectMapper fileObjectMapper;
@@ -319,42 +323,19 @@ public class FileAssetResourceHandler implements ResourceHandler {
             Long tenantId = fieldLong(declaration, "tenantId", false, DEFAULT_TENANT_ID);
             Long fileId = fieldLong(declaration, "fileId", true, null);
             Long storageConfigId = fieldLong(declaration, "storageConfigId", true, null);
-            if (tenantId == null || tenantId <= 0 || fileId == null || fileId <= 0
-                    || storageConfigId == null || storageConfigId <= 0) {
-                throw new IllegalStateException("FILE_ASSET tenantId, fileId and storageConfigId must be positive");
-            }
+            validatePositiveIds(tenantId, fileId, storageConfigId);
             String objectName = requiredText(declaration, "objectName");
             validateObjectName(objectName);
-            String fileName = requiredText(declaration, "fileName");
-            if (fileName.length() > 255) {
-                throw new IllegalStateException("FILE_ASSET fileName must not exceed 255 characters");
-            }
-            String sha256 = requiredText(declaration, "sha256").toLowerCase(Locale.ROOT);
-            if (!sha256.matches("[0-9a-f]{64}")) {
-                throw new IllegalStateException("FILE_ASSET sha256 must contain 64 lowercase hex characters");
-            }
-            ResourceField contentField = declaration.getFields().get("content");
-            if (contentField == null || contentField.getType() != ResourceFieldType.FILE
-                    || !StringUtils.hasText(contentField.getLocation())
-                    || !contentField.getLocation().startsWith(ASSET_CLASSPATH_PREFIX)
-                    || contentField.getLocation().contains("..")) {
-                throw new IllegalStateException("FILE_ASSET content must use " + ASSET_CLASSPATH_PREFIX);
-            }
-            Resource content = resourceLoader.getResource(contentField.getLocation());
-            if (!content.exists() || !content.isReadable()) {
-                throw new IllegalStateException("FILE_ASSET content is not readable: "
-                        + contentField.getLocation());
-            }
+            String fileName = validatedFileName(declaration);
+            String sha256 = validatedSha256(declaration);
+            ResourceField contentField = requiredContentField(declaration);
+            Resource content = readableContent(resourceLoader, contentField);
             long contentLength = contentLength(content);
             String actualHash = sha256(content);
             if (!sha256.equals(actualHash)) {
                 throw new IllegalStateException("FILE_ASSET sha256 mismatch: " + contentField.getLocation());
             }
-            String accessLevel = defaultText(fieldText(declaration, "accessLevel", false), "INTERNAL")
-                    .toUpperCase(Locale.ROOT);
-            if (!List.of("PRIVATE", "PUBLIC_READ", "INTERNAL").contains(accessLevel)) {
-                throw new IllegalStateException("FILE_ASSET accessLevel is invalid: " + accessLevel);
-            }
+            String accessLevel = validatedAccessLevel(declaration);
             return new AssetPayload(tenantId, fileId, storageConfigId, objectName, fileName, sha256,
                     content, contentLength, defaultText(contentField.getMediaType(), "application/octet-stream"),
                     defaultText(fieldText(declaration, "purpose", false), "managed-asset"),
@@ -374,10 +355,63 @@ public class FileAssetResourceHandler implements ResourceHandler {
         private static void validateObjectName(String objectName) {
             if (!objectName.startsWith(MANAGED_OBJECT_PREFIX) || objectName.startsWith("/")
                     || objectName.contains("..") || objectName.contains("\\")
-                    || objectName.length() > 500) {
+                    || objectName.length() > MAX_OBJECT_NAME_LENGTH) {
                 throw new IllegalStateException("FILE_ASSET objectName must be a safe path under "
                         + MANAGED_OBJECT_PREFIX);
             }
+        }
+
+        private static void validatePositiveIds(Long tenantId, Long fileId, Long storageConfigId) {
+            if (tenantId == null || tenantId <= 0 || fileId == null || fileId <= 0
+                    || storageConfigId == null || storageConfigId <= 0) {
+                throw new IllegalStateException("FILE_ASSET tenantId, fileId and storageConfigId must be positive");
+            }
+        }
+
+        private static String validatedFileName(ResourceDeclaration declaration) {
+            String fileName = requiredText(declaration, "fileName");
+            if (fileName.length() > MAX_FILE_NAME_LENGTH) {
+                throw new IllegalStateException("FILE_ASSET fileName must not exceed "
+                        + MAX_FILE_NAME_LENGTH + " characters");
+            }
+            return fileName;
+        }
+
+        private static String validatedSha256(ResourceDeclaration declaration) {
+            String sha256 = requiredText(declaration, "sha256").toLowerCase(Locale.ROOT);
+            if (!sha256.matches("[0-9a-f]{64}")) {
+                throw new IllegalStateException("FILE_ASSET sha256 must contain 64 lowercase hex characters");
+            }
+            return sha256;
+        }
+
+        private static ResourceField requiredContentField(ResourceDeclaration declaration) {
+            ResourceField contentField = declaration.getFields().get("content");
+            if (contentField == null || contentField.getType() != ResourceFieldType.FILE
+                    || !StringUtils.hasText(contentField.getLocation())
+                    || !contentField.getLocation().startsWith(ASSET_CLASSPATH_PREFIX)
+                    || contentField.getLocation().contains("..")) {
+                throw new IllegalStateException("FILE_ASSET content must use " + ASSET_CLASSPATH_PREFIX);
+            }
+            return contentField;
+        }
+
+        private static Resource readableContent(ResourceLoader resourceLoader, ResourceField contentField) {
+            Resource content = resourceLoader.getResource(contentField.getLocation());
+            if (!content.exists() || !content.isReadable()) {
+                throw new IllegalStateException("FILE_ASSET content is not readable: "
+                        + contentField.getLocation());
+            }
+            return content;
+        }
+
+        private static String validatedAccessLevel(ResourceDeclaration declaration) {
+            String accessLevel = defaultText(fieldText(declaration, "accessLevel", false), "INTERNAL")
+                    .toUpperCase(Locale.ROOT);
+            if (!List.of("PRIVATE", "PUBLIC_READ", "INTERNAL").contains(accessLevel)) {
+                throw new IllegalStateException("FILE_ASSET accessLevel is invalid: " + accessLevel);
+            }
+            return accessLevel;
         }
 
         private static long contentLength(Resource content) {

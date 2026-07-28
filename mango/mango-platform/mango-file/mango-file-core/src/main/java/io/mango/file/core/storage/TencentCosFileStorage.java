@@ -47,7 +47,7 @@ public class TencentCosFileStorage extends AbstractCloudFileStorage {
                 metadata.setContentType(contentType);
             }
             client.putObject(new PutObjectRequest(config.getBucketName(), objectName, inputStream, metadata));
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             Require.fail(FileCode.FILE_STORE_FAILED);
         } finally {
             client.shutdown();
@@ -62,7 +62,7 @@ public class TencentCosFileStorage extends AbstractCloudFileStorage {
             COSObject object = client.getObject(config.getBucketName(), objectName);
             ObjectMetadata metadata = object.getObjectMetadata();
             return FileObject.of(object.getObjectContent(), metadata.getContentLength(), metadata.getContentType(), client::shutdown);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             client.shutdown();
             return Require.fail(FileCode.FILE_READ_FAILED);
         }
