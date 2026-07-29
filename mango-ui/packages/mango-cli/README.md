@@ -9,7 +9,7 @@
 | 项目          | 值                                                                                                             |
 | ------------- | -------------------------------------------------------------------------------------------------------------- |
 | NPM 包        | `@mango/cli`                                                                                                   |
-| 当前发布版本  | `1.0.91`                                                                                                       |
+| 当前发布版本  | `1.0.92`                                                                                                       |
 | bin 命令      | `mango`、`mango-cli`                                                                                           |
 | 命令入口      | `src/index.mjs`                                                                                                |
 | 发布 registry | 由发布配置或 `MANGO_RELEASE_NPM_PUBLISH_REGISTRY` 注入                                                         |
@@ -70,8 +70,8 @@ CLI 不负责：
 
 ```bash
 npm view @mango/pmo@1.3.6 version --registry "$MANGO_NPM_REGISTRY"
-npm view @mango/cli@1.0.91 version --registry "$MANGO_NPM_REGISTRY"
-npm install -g @mango/cli@1.0.91 --registry "$MANGO_NPM_REGISTRY"
+npm view @mango/cli@1.0.92 version --registry "$MANGO_NPM_REGISTRY"
+npm install -g @mango/cli@1.0.92 --registry "$MANGO_NPM_REGISTRY"
 ```
 
 两个查询都返回精确版本后，该批次才可供业务项目安装。PMO 升级会整体同步 baseline、Agent 入口和 `.agents/skills`，不需要逐个安装 Skill。
@@ -556,6 +556,10 @@ CLI 不在运行时管理菜单、权限和租户，但会生成让业务模块�
 | pnpm 11 首次安装报 `ERR_PNPM_IGNORED_BUILDS`                                  | 旧版 CLI 生成的前端缺少 `pnpm-workspace.yaml` 构建白名单                       | 使用 `@mango/cli@1.0.81` 生成新项目；既有项目把当前 full 模板的 `allowBuilds` 映射合并到业务自有 workspace 配置                                                                                      |
 
 ## 12. 相关文档
+
+### 1.0.92 发布影响
+
+`@mango/cli@1.0.92` 把生成和升级项目锁定到 Mango Maven `1.0.28`、`@mango/pmo@1.3.6` 和本批完整前端版本矩阵。该批次修复 Workflow 运行时流程图快照，降低 Job worker 心跳日志噪声，并为公共 `MangoDialog` 增加可选拖动、缩放、最大化与视口边界交互；CLI 命令和现有生成项目入口保持兼容。
 
 ### 1.0.91 发布影响
 
