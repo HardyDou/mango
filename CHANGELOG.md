@@ -2,7 +2,7 @@
 
 ## v2026.07.29-maven-1.0.28-cli-1.0.92-dialog-workflow-job-release - 2026-07-29
 
-Status: `PENDING`. Publication is authorized for the source merged through the release preparation PR. The immutable source commit, tree, bundle checksum and completed state-machine manifest will be recorded in the closeout PR after registry and consumer verification.
+Status: `PUBLISHED_AND_VERIFIED`. This mixed release was published from source commit `7bfa481a4f769b2b348ed1786656d02961933708` and tree `e91b789edb66e3b246d85edf49419292db32ea16`. The exact-source bundle SHA-256 is `96f18067dfa63f84b254955d986a96c3859a2ef4a21f1beca2cd0ab127e0d562`. Maven `1.0.28`, all 23 npm packages and CLI `1.0.92` resolve from the configured publish and consume registries; `@mango/pmo` remains `1.3.6` and was not republished. The tag and GitHub Release are `CREATED_AND_VERIFIED` and point to the same source commit. The completed read-only recovery manifest at `.runtime/release-audit/1.0.28/read-only-v1/1.0.28/manifest.json` has SHA-256 `a426a00afb53f903cab7d70a7b2d88b20c0f3dd45b48b311c555878c2f62b035` and records all 17 release states as passed. The original publication manifest at `.runtime/releases/1.0.28/manifest.json` is preserved with SHA-256 `77db4972477244806987a239631b83f2ff635727aa26b20708d427f03a4616e5`; its only failure was a post-publication verifier that incorrectly required optional `home` and `site-shell` packages as direct full-preset dependencies, and no immutable artifact was republished during recovery.
 
 ### Added
 
@@ -52,9 +52,11 @@ Status: `PENDING`. Publication is authorized for the source merged through the r
 - `node mango-ui/packages/mango-cli/scripts/check-release-versions.mjs`
 - `MANGO_BACKEND_GATE_VERSION=1.0.28 node mango-ui/packages/mango-cli/scripts/check-generated-backend-gate.mjs`
 - `pnpm -C mango-ui admin:styles:check && pnpm -C mango-ui admin:module-styles:check`
-- The MangoDialog component suite, Workflow API/integration suites, Job quality gate, full Maven Reactor, affected frontend builds and clean published consumers must pass before closeout.
-- The release preparation PR must pass all required checks on the exact source tree before immutable publication.
-- The release state machine will record publish/consume registry back-checks, clean consumer builds, tag, GitHub Release and documentation evidence.
+- The MangoDialog component suite, Workflow API/integration suites, Job quality gate, full Maven Reactor and affected frontend builds passed before publication.
+- Release preparation PR #653 passed all required checks on the exact source tree; live `main` branch protection matched the checked-in `single-owner` policy before immutable publication.
+- The Maven non-app Reactor and docs bundle passed publish- and consume-repository HTTP verification. All 23 npm packages passed hosted and group registry tarball verification; `@mango/cli@1.0.92` was published at `2026-07-29T03:19:00.483Z` with integrity `sha512-gHRSAq7AL0aOjMoWWOlM545UhuSqjSNjk/0WZXj4htW1Pts/ThPYUPDXg7tMRTZuJHQsglwzxxEWJ1KQbt07FA==`.
+- A clean consumer installed `@mango/cli@1.0.92` from the consume registry, generated a full monolith project, verified Maven `1.0.28`, PMO `1.3.6`, the complete frontend release lock and generated direct dependencies, passed locked PMO checks, installed dependencies, typechecked and completed a production build.
+- The completed read-only recovery manifest verified all 17 states, including both registry sides, tag, GitHub Release, Latest docs and the versioned documentation snapshot without republishing immutable artifacts.
 
 ## v2026.07.26-maven-1.0.27-pmo-1.3.6-cli-1.0.91-file-notice-release - 2026-07-26
 
