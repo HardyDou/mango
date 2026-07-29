@@ -67,6 +67,22 @@
             <artifactId>jackson-databind</artifactId>
         </dependency>
 
+        <!-- Build-time Flyway baseline generation. These dependencies stay in the Maven plugin
+             process and never become business runtime dependencies. -->
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-mysql</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
         <!-- Mango Common -->
         <dependency>
             <groupId>io.mango.common</groupId>
@@ -113,5 +129,48 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>baseline-packaging-integration-test</id>
+            <activation>
+                <property>
+                    <name>env.MANGO_BASELINE_TEST_DB_URL</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-invoker-plugin</artifactId>
+                        <version>3.9.1</version>
+                        <configuration>
+                            <projectsDirectory>src/it</projectsDirectory>
+                            <cloneProjectsTo>${project.build.directory}/it</cloneProjectsTo>
+                            <streamLogs>true</streamLogs>
+                            <showErrors>true</showErrors>
+                            <goals>
+                                <goal>clean</goal>
+                                <goal>package</goal>
+                            </goals>
+                            <properties>
+                                <mango.plugin.version>${project.version}</mango.plugin.version>
+                                <spring.boot.version>${spring-boot.version}</spring.boot.version>
+                            </properties>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>baseline-packaging-integration-test</id>
+                                <phase>install</phase>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 
 </project>

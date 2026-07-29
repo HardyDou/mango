@@ -274,14 +274,17 @@ Flyway executor 从 Spring 自动初始化器中抽出为显式服务：Runtime 
 当空库逐模块重放历史 migration 明显偏慢时，允许显式启用 `mango.persistence.flyway.cold-baseline`。基线仍按模块和逻辑数据源隔离，不生成全应用单一 SQL：
 
 - 只在除 Bootstrap 自身表之外没有任何用户表的真正空库执行；非空库直接 fail closed。
-- 每个启用模块必须随制品提供且只提供一份 `db/baseline/{module}/B{version}__baseline.sql`；`B{version}` 覆盖当前模块的最高 migration 版本。
-- 发布候选准备阶段由模块 Owner 从当前 schema 维护并评审该文件；部署现场不拼接、不生成 SQL。
+- `V*.sql` 是唯一数据库源码，继续由模块 Owner 使用模块内连续版本维护；并行分支的版本和 SQL 语义冲突必须在 PR 合并前人工解决，已进入 `main` 的 migration 不修改、不重命名。
+- PR 只验证最终 `V*.sql` 能在最新 `main` 数据库上升级，不生成、提交或传递正式 baseline。
+- PR 合并后，API 制品构建使用 Mango 独立生成命令和一次性目标版本数据库，从 `main` 的最终 migrations 为每个启用模块生成且只生成一份 `target/generated-resources/db/baseline/{module}/B{version}__baseline.sql`；`B{version}` 覆盖当前模块的最高 migration 版本。
+- 生成命令直接读取 migration 路径和模块 history table，通过构建参数连接一次性数据库；它不启动业务应用、不读取或改写业务运行时 datasource 配置。
+- 生成后的 baseline 不进入 Git，只进入模块 JAR、最终 Boot JAR 和 Docker 镜像；部署流水线不生成 SQL。
 - 每个模块 SQL 成功后，Bootstrap 把该模块原有 history table baseline 到 `B{version}`，再由 `FLYWAY_EXPAND` 执行版本之后的增量。
 - 逻辑数据源 key、模块归属、基线版本和 SQL SHA-256 进入 manifest fingerprint；连接地址和凭据不进入。
 - 历史 `V*.sql` 继续保留在源码和制品中；已有库不走 fast cold baseline，仍使用原 history 增量升级。
 - MySQL DDL 非事务性；快照中途失败可能留下半初始化结构。该状态不得自动 baseline，按本次“旧库数据可丢弃”约束删除并重建空库后重试。
 
-该路径把业务已验证的一分钟级手工 SQL 纳入 Mango 的锁、回执、指纹和失败门禁，不允许部署脚本在框架外直接导入后伪造成功回执。
+制品构建使用三个隔离 schema：replay/determinism 各完整重放一次 `V1...Vn`，两次规范化结构和 migration 静态数据必须一致；verify 连续执行两次生成的 `Bn`，并与 replay 快照完全一致后才允许打包。生成器版本、数据库 vendor/version、模块 migration 路径、内容和顺序共同形成 generation fingerprint。构建失败只阻断制品，不回写源码或伪造 baseline；该路径把一分钟级快速 SQL 纳入 Mango 的锁、回执、指纹和失败门禁。
 
 ### 9.4 contract 约束
 
@@ -399,14 +402,22 @@ bootstrap finalize --generation=N+1
 
 ### 12.4 快速空库基线
 
-快速空库初始化不在部署现场把全部 migration 动态拼成一份 SQL。每个模块在发布候选准备阶段维护且只维护一份当前基线：
+快速空库初始化不在部署现场把全部 migration 动态拼成一份 SQL。模块 Owner 只维护连续的历史 migration：
 
 ```text
-db/baseline/{module}/B{version}__baseline.sql
+db/migration/{module}/V{version}__{description}.sql
 ```
 
-`B{version}` 表示该 SQL 已包含的最高模块 migration 版本。历史 `V*.sql` 继续保留在源码中，用于审计、增量升级和
-基线之后的 migration；基线 SQL 进入版本控制、评审和制品 fingerprint，部署阶段只执行已签名制品，不生成 SQL。
+所有 migration 冲突在 PR 合并前由开发者基于最新 `main` 解决。PR 不制作正式 baseline；合并后的 API 制品构建
+执行独立 Mango generator，把最终 migration 集合重放到一次性目标版本数据库，并输出：
+
+```text
+target/generated-resources/db/baseline/{module}/B{version}__baseline.sql
+```
+
+`B{version}` 表示该 SQL 已包含的最高模块 migration 版本。生成文件不进入 Git，只随模块 JAR、Boot JAR 和 Docker
+镜像交付。生成器不启动业务应用，不修改 `application.yml` 或模块 datasource；Jenkins 只提供一次性数据库连接和
+执行命令。部署阶段只执行已签名制品，不生成 SQL。
 
 Bootstrap 根据 `PersistenceModuleDataSourceResolver` 或模块显式 datasource 配置，将模块按逻辑数据源分组并按
 数据源 key、模块 code 的稳定顺序执行。每个数据源在导入任何模块前单独验证为空；随后依次导入该组模块基线，
@@ -417,7 +428,8 @@ Bootstrap 根据 `PersistenceModuleDataSourceResolver` 或模块显式 datasourc
 回执保持失败。锁按逻辑数据源 key 排序获取，避免并发 Bootstrap 在多库间形成死锁。普通已有库升级不执行基线，
 仍走 `V*.sql` 的 expand/finalize 协议。
 
-性能门禁不是只计算 SQL 文本或 Resource 元数据。仓库基准必须真实执行 MySQL DDL/DML、`WORKFLOW_DEFINITION`
+制品构建使用 migration 重放库和 baseline 验证库证明两条空库路径最终等价；需要验证已有库升级时再增加从上一正式
+制品升级到候选 migrations 的独立数据库场景。性能门禁不是只计算 SQL 文本或 Resource 元数据。仓库基准必须真实执行 MySQL DDL/DML、`WORKFLOW_DEFINITION`
 到 Flowable 的 BPMN 发布，以及 `FILE_ASSET` 到文件存储层的二进制写入和 SHA-256 回读。当前 5 倍保函参考负载为
 5 模块、375 表、37,500 行、16,372,270 SQL 字节，以及 1,255 条 Resource、75 MiB 文件和 20 个八级审批流程。
 Resource 规模以保函只读统计的 232 个声明、4 个启动发布 Workflow、15 个启动物化文件为基准，三个维度分别达到 5 倍，不能用普通声明填充量替代 Workflow/File 覆盖。MySQL 8.4 实测 SQL 2.267 秒、完整 Bootstrap Resource 冷注入 13.049 秒、同代热重入 53 毫秒，均低于一分钟目标。

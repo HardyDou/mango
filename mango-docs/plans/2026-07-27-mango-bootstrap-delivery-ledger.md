@@ -29,7 +29,7 @@
 | MB-011 | DEC-001/007 | 最终应用模板、BOM 和 starter 使用新入口 | 删除旧隐式初始化契约 | App、Admin Starter、BOM、Bootstrap README 与能力地图 | 216 模块全 Reactor 编译和架构门禁 | DONE | `mango/target/mango-architecture-report.json` |
 | MB-012 | AC-001..015 | 一次性交付验证 | 定向单元、真实 MySQL、入口流程和消费边界验证 | 正式测试目录、本台账结果与最小报告 | 定向模块套件、真实性能、静态库存和债务预算检查 | DONE | `mango/target/mango-static-report.json` |
 | MB-013 | 用户补充约束 | 已有 Mango 业务保留源码、允许清库接入 | 入口迁移与空库 cold Bootstrap，不提供旧库原地兼容 | App starter、迁移检查与 Bootstrap README | 官方应用代码保留和统一入口静态验证 | DONE | `mango/mango-infra/mango-infra-bootstrap/README.md` |
-| MB-014 | 用户性能基线 | 同库手工初始化 SQL 约 1 分钟，避免逐模块历史重放 | 每模块唯一空库 baseline、模块 history 与后续增量 | Persistence starter、性能测试与 Persistence README | 5 模块、375 表、37,500 行、16.37 MB 的 MySQL 8.4 基准 | DONE | `mango/mango-infra/mango-infra-persistence/mango-infra-persistence-starter/src/test/java/io/mango/infra/persistence/starter/PersistenceColdBaselinePerformanceIntegrationTest.java` |
+| MB-014 | 用户性能基线 | 同库手工初始化 SQL 约 1 分钟，避免逐模块历史重放 | 模块只维护 V；主分支制品构建生成每模块唯一 B，已有库仍增量 V | Maven Plugin、Persistence starter、打包夹具、性能测试与接入指南 | 5 模块、375 表、37,500 行、16.36 MB migration 的 MySQL 8.4 生成基准；Boot JAR 资源断言 | DONE | `mango/mango-tools/mango-maven-plugin/src/test/java/io/mango/plugin/baseline/BaselineGeneratorPerformanceIntegrationTest.java`、`mango/mango-tools/mango-maven-plugin/src/it/baseline-boot-package/verify.groovy` |
 | MB-015 | 用户 Resource 规模补充 | 真实测试 Workflow 发布与文件存储写入，各关键类型规模均至少为保函 5 倍 | 以保函只读基准放大 5 倍，执行真实 Registry、Handler、Flowable 和 LOCAL 存储 | Admin Starter 性能集成测试、基准脚本及 Resource/File/Workflow README | 1,255 声明、75 MiB 文件、20 个八级流程冷注入与热重入 | DONE | `mango/mango-admin-starter/src/test/java/io/mango/admin/starter/BootstrapResourcePerformanceIntegrationTest.java` |
 
 ## 3. 测试用例候选
@@ -45,6 +45,8 @@
 | TC-MB-007 | AC-015 | Baohan 类空库消费制品启动 | P0 | 人工/消费验证 | MANUAL | 一次性测试环境 reset-demo | Bootstrap Job 0 + Runtime ready | 业务测试流水线 | 用户明确 Baohan 仓只读参考，本次不修改或发布业务制品 | EXCLUDED |
 | TC-MB-008 | 用户业务复测 | 与旧启动模式 649 秒 API readiness、732 秒发布耗时对比 | P0 | 消费/性能验收 | MANUAL | 同等空库与业务制品 | Bootstrap 可长时独立执行；其后 Runtime readiness 秒级 | 业务测试流水线 | 旧模式基线：649s/732s，前端均 200；新制品消费留给业务发布验证 | BASELINE_ONLY |
 | TC-MB-009 | 用户 Resource 规模补充 | 声明、Workflow、File 三个维度分别达到 5 倍参考量，执行真实冷注入与热重入 | P0 | MySQL/存储/Flowable 集成 | AUTO | 两个后缀专用库和临时文件目录自动清理 | 1,255 registry、20 个 Flowable deployment、75 组 file 记录与对象大小/SHA-256、无新增日志/部署 | `scripts/tests/bootstrap-performance.sh` | SQL 3.443s；Resource schema 2.593s、冷 16.450s、热 68ms | PASS |
+| TC-MB-010 | Cold baseline 制品化 | 最终 V 双回放可复现、B 双执行可重入、等价验证、失败清理与产物保留 | P0 | MySQL/Maven 集成 | AUTO | 随机 replay/determinism/verify schema 自动清理 | 每模块一份 B、manifest checksum、无 datasource secret | Baseline generator integration tests | 3 模块/2 逻辑数据源生成、非确定数据/存储过程阻断、失败重放、制品破坏检测均通过 | PASS |
+| TC-MB-011 | API 构建消费 | `generate-resources` 后 Spring Boot repackage 包含 B/manifest，源码不产生 B | P0 | Maven 制品 | AUTO | Invoker 临时工程与随机 schema | `BOOT-INF/classes/db/baseline/**` 与 manifest | Maven Invoker packaging fixture | Spring Boot 3.5.14 JAR 三项资源断言通过，生成 1.395s | PASS |
 
 ## 4. 执行顺序
 
@@ -60,6 +62,8 @@
 框架交付与自动化门禁已完成：真实 MySQL 8.4 SQL baseline、Workflow/File Resource 注入、热重入、rolling/finalize/abort、测试质量和文档静态审计均通过。
 
 - 2026-07-28 Resource 性能复验使用专用空库 `mango_dev_mango_bootstrap_005_bootstrap_resource_perf`，完成后自动删除；schema 准备 2.593s，冷 Bootstrap 16.450s，未变化热重入 68ms，满足冷阶段小于 60s、热重入小于 10s 的断言。
+- 2026-07-29 构建期 baseline 生成器在本机 MySQL 8.4 使用 5 模块、375 表、37,500 行和 16,364,250 migration 字节，完成 V 双回放、B 生成与双执行、等价验证和清理共 19.739s，低于 60s 目标。
+- Maven Invoker 使用 Spring Boot 3.5.14 完成真实 `generate-resources -> package -> repackage`；最终 Boot JAR 包含两个模块 B 和 `META-INF/mango/baseline-manifest.json`，源码目录无 B，夹具生成耗时 1.395s。
 - 性能数据包含 1,255 条 Resource、20 个真实 Flowable deployment（每个流程 8 级审批）和 75 个真实 LOCAL 文件对象（共 75 MiB）；重入后部署数、文件内容长度/SHA-256、Resource 数量和同步日志均保持稳定。
 - 最终全 Reactor `verify` 覆盖 216/216 模块并通过，耗时 7 分 41 秒；架构报告为 schema v2、`full-reactor`、`all-detected-issues`，dependency/ArchUnit/PMD/blocking 均为 0。
 - 聚合静态库存为 13,562 条历史问题，`newIssueCount=0`、`toolFailureCount=0`、`gateStatus=PASS`；架构债务预算检查为 `current=0`，未增加或抬高预算。

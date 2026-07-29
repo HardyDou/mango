@@ -25,7 +25,7 @@
 - Flyway：按 `db/migration/<module>/V*.sql` 分模块迁移，每个模块独立 history table。
 - Flyway MySQL 运行时：Mango 显式管理 `flyway-core` 与 `flyway-mysql` 11.20.3；该版本已测试到 MySQL 9.4，覆盖 Mango 的 MySQL 8.4 基线。
 - Flyway 外部 locations：停机升级可按模块加载 `filesystem:` 目录或 `http(s)` 单个 SQL 文件。
-- Cold baseline：每个模块维护一份当前 `B*__baseline.sql`，新数据库可跳过 V1...Vn 历史回放。
+- Cold baseline：API 制品构建从最终 V 为每个模块生成一份 `B*__baseline.sql`，新数据库可跳过 V1...Vn 历史回放。
 - 多数据源：支持定义多个数据源、按模块映射、按 `@PersistenceDataSource` 或代码作用域切换。
 - Schema 校验：启动时检查业务表主键和审计租户字段。
 - Web CRUD：提供标准 `/create`、`/update`、`/delete`、`/batch-delete`、`/detail`、`/page`、`/export`、`/import`、`/import-template` 入口。
@@ -38,7 +38,7 @@
 |------|------|----------|
 | 新表、改表、索引、约束 | `db/migration/<module>/V*.sql` | 只用 Flyway 管理 DDL。 |
 | 停机升级修复历史数据 | `mango.persistence.flyway.modules.<module>.locations` | 使用 `filesystem:` 目录或 `http(s)` 单个 SQL 文件，仍写模块 history table。 |
-| 新库当前完整结构 | `db/baseline/<module>/B*__baseline.sql` | 每模块恰好一份，只由 Bootstrap cold 在真空库执行。 |
+| 新库当前完整结构 | 制品内 `db/baseline/<module>/B*__baseline.sql` | 构建期生成，每模块恰好一份，只由 Bootstrap cold 在真空库执行。 |
 | 菜单、字典、配置、消息模板、任务、号段等结构化资源 | `mango-resource` | 不写默认 Flyway DML。 |
 | demo/sample 数据 | `META-INF/mango/demo/` | 默认不加载，见 `mango-resource` README。 |
 | 500MB/1GB 行政区划、年度日历等大数据 | 外部 SQL 包或模块批量导入服务 | 不放 YAML，不打进默认 jar classpath。 |
@@ -417,15 +417,16 @@ mango:
 
 ### 6.5 Cold Baseline
 
-模块历史 migration 很多时，发布候选准备阶段为每个启用模块维护一份当前完整基线：
+模块历史 migration 很多时，主分支 API 制品构建将 `mango:baseline-generate` 绑定到 `generate-resources`，从模块最终 V 生成当前完整基线：
 
 ```text
-src/main/resources/db/baseline/<module>/B<version>__baseline.sql
+target/generated-resources/db/baseline/<module>/B<version>__baseline.sql
+target/generated-resources/META-INF/mango/baseline-manifest.json
 ```
 
-目录中必须恰好只有一个 `B*__baseline.sql`。`B<version>` 表示 SQL 已覆盖的最高模块 migration 版本；历史 `db/migration/<module>/V*.sql` 继续保留，供审计、既有库升级和基线后的增量 migration 使用。基线不是在部署现场动态拼接，也不是把所有模块合成一个大 SQL。
+生成目录中每个模块恰好只有一个 `B*__baseline.sql`。`B<version>` 表示 SQL 已覆盖的最高模块 migration 版本；历史 `db/migration/<module>/V*.sql` 继续保留，供审计、既有库升级和基线后的增量 migration 使用。B 不进入 Git，不在 PR 或部署现场生成，也不把所有模块合成一个大 SQL。具体 POM/Jenkins 配置见[业务 API 构建期 cold baseline](../../../mango-docs/guides/business-integration/build-time-cold-baseline.md)，长期约束见[数据库规范](../../../mango-pmo/rules/backend/04-db.md)。
 
-基线首行必须声明可重入：
+生成基线首行包含可重入标记：
 
 ```sql
 -- mango:baseline-idempotent
@@ -447,7 +448,7 @@ mango:
             version: 2026072701
 ```
 
-Bootstrap 按逻辑数据源分组，并按数据源 key、模块 code 的稳定顺序执行。每个数据源必须是真正空库；允许存在的只有 Bootstrap 自身控制表。每个模块 SQL 成功后，框架以 `B<version>` 为该模块原有 Flyway history table 建立基线，并记录模块 SQL SHA-256；失败重入只复用同一 fingerprint 已完成的模块。
+制品生成器先在一次性 replay/determinism schema 各回放一次所有 V，确认结构和静态数据可复现；再在独立 verify schema 连续执行两次生成的 B，对结构和全部 migration 静态行做等价比较。全部通过后才将 B 和 manifest 注册进 Maven resource。Bootstrap 消费制品时按逻辑数据源分组，并按数据源 key、模块 code 的稳定顺序执行。每个数据源必须是真正空库；允许存在的只有 Bootstrap 自身控制表。每个模块 SQL 成功后，框架以 `B<version>` 为该模块原有 Flyway history table 建立基线，并记录模块 SQL SHA-256；失败重入只复用同一 fingerprint 已完成的模块。
 
 | 数据库状态 | 执行路径 |
 |------------|----------|
