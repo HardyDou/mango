@@ -1,5 +1,61 @@
 # Mango Changelog
 
+## v2026.07.29-maven-1.0.28-cli-1.0.92-dialog-workflow-job-release - 2026-07-29
+
+Status: `PENDING`. Publication is authorized for the source merged through the release preparation PR. The immutable source commit, tree, bundle checksum and completed state-machine manifest will be recorded in the closeout PR after registry and consumer verification.
+
+### Added
+
+- Add optional drag, eight-direction resize, maximize/restore, viewport constraints and resize-time boundary convergence to the public `MangoDialog` component while preserving its default behavior.
+
+### Fixed
+
+- Return the deployed runtime Workflow designer snapshot from process and task detail APIs so historical instances render the version that actually ran without requiring definition-management permission.
+- Reduce native Job worker heartbeat log noise without changing registration, dispatch or execution behavior.
+
+### Changed
+
+- Advance the generated-project compatibility locks to Maven `1.0.28`, CLI `1.0.92` and the exact frontend package matrix below; `@mango/pmo` remains `1.3.6` and is not republished.
+
+### Versions
+
+| Component | Previous | Release | Compatibility |
+| --- | ---: | ---: | --- |
+| Mango Maven non-app backend and docs bundle | `1.0.27` | `1.0.28` | Patch release; Parent and BOM consumers upgrade as one set. |
+| `@mango/common` | `1.0.21` | `1.0.22` | Adds opt-in window interactions; existing dialog defaults remain compatible. |
+| `@mango/workflow` | `1.0.35` | `1.0.36` | Uses the runtime designer snapshot returned by Maven `1.0.28`. |
+| `@mango/cli` | `1.0.91` | `1.0.92` | Locks Maven `1.0.28` and all affected frontend packages in this batch. |
+| `@mango/pmo` | `1.3.6` | unchanged | No PMO source changed; the package is not republished. |
+| Other affected frontend packages | previous release matrix | exact versions below | Patch republish keeps fixed inter-package dependencies aligned. |
+
+### Published Packages
+
+| Order | Target | Version |
+| ---: | --- | --- |
+| 1 | Maven non-app Reactor including `io.mango:*` and `io.mango:mango-docs-bundle` | `1.0.28` |
+| 2 | `@mango/common`, `@mango/workflow` | `1.0.22`, `1.0.36` |
+| 3 | `@mango/admin-pages`, `@mango/auth`, `@mango/calendar`, `@mango/cms`, `@mango/file`, `@mango/grid-layout`, `@mango/grid-widgets`, `@mango/home`, `@mango/job`, `@mango/link`, `@mango/notice`, `@mango/numgen`, `@mango/payment`, `@mango/rbac`, `@mango/site-shell`, `@mango/system`, `@mango/template`, `@mango/workflow-business-example` | `1.0.29`, `1.0.22`, `1.0.30`, `1.0.19`, `1.0.30`, `1.0.13`, `1.0.19`, `1.0.11`, `1.0.22`, `1.0.16`, `1.0.34`, `1.0.30`, `1.0.22`, `1.0.20`, `1.0.9`, `1.0.28`, `1.0.30`, `1.0.35` |
+| 4 | `@mango/admin-shell`, `@mango/admin` | `1.0.54`, `1.0.59` |
+| 5 | `@mango/cli` | `1.0.92` |
+| 6 | Git tag and GitHub Release | `v2026.07.29-maven-1.0.28-cli-1.0.92-dialog-workflow-job-release` |
+
+### Upgrade Notes
+
+1. Upgrade all Mango backend dependencies together. Parent consumers set `mango.version` to `1.0.28`; projects with another parent import `io.mango:mango-bom:1.0.28` and omit versions from BOM-managed Mango dependencies.
+2. Upgrade the frontend packages to the exact versions in this release. Aggregate consumers use `@mango/admin@1.0.59`; direct consumers align their imported packages explicitly.
+3. Install `@mango/cli@1.0.92`. Keep `@mango/pmo@1.3.6`; no PMO baseline migration is required.
+4. Existing databases upgrade in place. Verify a historical Workflow instance renders its deployed diagram, and enable `MangoDialog` window interactions only where the host wants draggable, resizable or maximizable dialogs.
+
+### Verification
+
+- `pnpm -C mango-ui release:impact --base=v2026.07.26-maven-1.0.27-pmo-1.3.6-cli-1.0.91-file-notice-release --head=HEAD`
+- `node mango-ui/packages/mango-cli/scripts/check-release-versions.mjs`
+- `MANGO_BACKEND_GATE_VERSION=1.0.28 node mango-ui/packages/mango-cli/scripts/check-generated-backend-gate.mjs`
+- `pnpm -C mango-ui admin:styles:check && pnpm -C mango-ui admin:module-styles:check`
+- The MangoDialog component suite, Workflow API/integration suites, Job quality gate, full Maven Reactor, affected frontend builds and clean published consumers must pass before closeout.
+- The release preparation PR must pass all required checks on the exact source tree before immutable publication.
+- The release state machine will record publish/consume registry back-checks, clean consumer builds, tag, GitHub Release and documentation evidence.
+
 ## v2026.07.26-maven-1.0.27-pmo-1.3.6-cli-1.0.91-file-notice-release - 2026-07-26
 
 Status: `PUBLISHED_AND_VERIFIED`. This mixed release was published from source commit `34835c1a8091950689f766f4e8c4f4d786bca7e0` and tree `2457334c8e093261c68479882cdeab051bf25c23`. The exact-source bundle SHA-256 is `9c9d9876fd2343642f93713a8323bdbaae9395ff6a043aa5b2fc396b1982bbf5`. Maven `1.0.27`, PMO `1.3.6`, the affected frontend matrix and CLI `1.0.91` resolve from the configured publish and consume registries. The tag and GitHub Release are `CREATED_AND_VERIFIED` and point to the same source commit. The completed release manifest at `.runtime/releases/1.0.27/manifest.json` has SHA-256 `9c230734ce553e163537846bf36b1eb17f629e3293f9af36cdf6963702bd6b11` and records all 17 release states as passed.

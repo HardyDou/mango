@@ -710,64 +710,64 @@ importers:
         specifier: 2.3.2
         version: 2.3.2(vue@3.5.13(typescript@5.9.3))
       '@mango/admin-pages':
-        specifier: workspace:1.0.28
+        specifier: workspace:1.0.29
         version: link:../admin-pages
       '@mango/admin-shell':
-        specifier: workspace:1.0.53
+        specifier: workspace:1.0.54
         version: link:../admin-shell
       '@mango/app-runtime':
         specifier: workspace:1.0.6
         version: link:../app-runtime
       '@mango/auth':
-        specifier: workspace:1.0.21
+        specifier: workspace:1.0.22
         version: link:../auth
       '@mango/calendar':
-        specifier: workspace:1.0.29
+        specifier: workspace:1.0.30
         version: link:../calendar
       '@mango/cms':
-        specifier: workspace:1.0.18
+        specifier: workspace:1.0.19
         version: link:../cms
       '@mango/common':
-        specifier: workspace:1.0.21
+        specifier: workspace:1.0.22
         version: link:../common
       '@mango/file':
-        specifier: workspace:1.0.29
+        specifier: workspace:1.0.30
         version: link:../file
       '@mango/grid-layout':
-        specifier: workspace:1.0.12
+        specifier: workspace:1.0.13
         version: link:../grid-layout
       '@mango/grid-widgets':
-        specifier: workspace:1.0.18
+        specifier: workspace:1.0.19
         version: link:../grid-widgets
       '@mango/job':
-        specifier: workspace:1.0.21
+        specifier: workspace:1.0.22
         version: link:../job
       '@mango/link':
-        specifier: workspace:1.0.15
+        specifier: workspace:1.0.16
         version: link:../link
       '@mango/notice':
-        specifier: workspace:1.0.33
+        specifier: workspace:1.0.34
         version: link:../notice
       '@mango/numgen':
-        specifier: workspace:1.0.29
+        specifier: workspace:1.0.30
         version: link:../numgen
       '@mango/payment':
-        specifier: workspace:1.0.21
+        specifier: workspace:1.0.22
         version: link:../payment
       '@mango/rbac':
-        specifier: workspace:1.0.19
+        specifier: workspace:1.0.20
         version: link:../rbac
       '@mango/system':
-        specifier: workspace:1.0.27
+        specifier: workspace:1.0.28
         version: link:../system
       '@mango/template':
-        specifier: workspace:1.0.29
+        specifier: workspace:1.0.30
         version: link:../template
       '@mango/workflow':
-        specifier: workspace:1.0.35
+        specifier: workspace:1.0.36
         version: link:../workflow
       '@mango/workflow-business-example':
-        specifier: workspace:1.0.34
+        specifier: workspace:1.0.35
         version: link:../workflow-business-example
       element-plus:
         specifier: 2.14.1
@@ -798,16 +798,16 @@ importers:
   packages/admin-pages:
     dependencies:
       '@mango/auth':
-        specifier: workspace:1.0.21
+        specifier: workspace:1.0.22
         version: link:../auth
       '@mango/common':
-        specifier: workspace:1.0.21
+        specifier: workspace:1.0.22
         version: link:../common
       '@mango/rbac':
-        specifier: workspace:1.0.19
+        specifier: workspace:1.0.20
         version: link:../rbac
       '@mango/system':
-        specifier: workspace:1.0.27
+        specifier: workspace:1.0.28
         version: link:../system
       vue:
         specifier: '>=3.5.13 <4'
@@ -829,43 +829,43 @@ importers:
         specifier: 2.3.2
         version: 2.3.2(vue@3.5.13(typescript@5.9.3))
       '@mango/admin-pages':
-        specifier: workspace:1.0.28
+        specifier: workspace:1.0.29
         version: link:../admin-pages
       '@mango/app-runtime':
         specifier: workspace:1.0.6
         version: link:../app-runtime
       '@mango/auth':
-        specifier: workspace:1.0.21
+        specifier: workspace:1.0.22
         version: link:../auth
       '@mango/common':
-        specifier: workspace:1.0.21
+        specifier: workspace:1.0.22
         version: link:../common
       '@mango/file':
-        specifier: workspace:1.0.29
+        specifier: workspace:1.0.30
         version: link:../file
       '@mango/grid-layout':
-        specifier: workspace:1.0.12
+        specifier: workspace:1.0.13
         version: link:../grid-layout
       '@mango/grid-widgets':
-        specifier: workspace:1.0.18
+        specifier: workspace:1.0.19
         version: link:../grid-widgets
       '@mango/home':
-        specifier: workspace:1.0.10
+        specifier: workspace:1.0.11
         version: link:../home
       '@mango/http-client':
         specifier: workspace:1.0.0
         version: link:../http-client
       '@mango/job':
-        specifier: workspace:1.0.21
+        specifier: workspace:1.0.22
         version: link:../job
       '@mango/notice':
-        specifier: workspace:1.0.33
+        specifier: workspace:1.0.34
         version: link:../notice
       '@mango/rbac':
-        specifier: workspace:1.0.19
+        specifier: workspace:1.0.20
         version: link:../rbac
       '@mango/workflow':
-        specifier: workspace:1.0.35
+        specifier: workspace:1.0.36
         version: link:../workflow
       element-plus:
         specifier: 2.14.1
@@ -936,7 +936,7 @@ importers:
         specifier: workspace:1.0.3
         version: link:../api-schema
       '@mango/common':
-        specifier: workspace:1.0.21
+        specifier: workspace:1.0.22
         version: link:../common
       element-plus:
         specifier: '>=2.14.1 <3'
@@ -967,16 +967,16 @@ importers:
         specifier: 2.3.2
         version: 2.3.2(vue@3.5.13(typescript@5.9.3))
       '@mango/admin-pages':
-        specifier: workspace:1.0.28
+        specifier: workspace:1.0.29
         version: link:../admin-pages
       '@mango/api-schema':
         specifier: workspace:1.0.3
         version: link:../api-schema
       '@mango/common':
-        specifier: workspace:1.0.21
+        specifier: workspace:1.0.22
         version: link:../common
       '@mango/grid-widgets':
-        specifier: workspace:1.0.18
+        specifier: workspace:1.0.19
         version: link:../grid-widgets
       element-plus:
         specifier: '>=2.14.1 <3'
@@ -1001,7 +1001,7 @@ importers:
         specifier: 2.3.2
         version: 2.3.2(vue@3.5.13(typescript@5.9.3))
       '@mango/admin-pages':
-        specifier: workspace:1.0.28
+        specifier: workspace:1.0.29
         version: link:../admin-pages
       '@mango/api-schema':
         specifier: workspace:1.0.3
@@ -1010,10 +1010,10 @@ importers:
         specifier: workspace:1.0.6
         version: link:../app-runtime
       '@mango/common':
-        specifier: workspace:1.0.21
+        specifier: workspace:1.0.22
         version: link:../common
       '@mango/file':
-        specifier: workspace:1.0.29
+        specifier: workspace:1.0.30
         version: link:../file
       element-plus:
         specifier: '>=2.14.1 <3'
@@ -1138,13 +1138,13 @@ importers:
         specifier: 2.3.2
         version: 2.3.2(vue@3.5.13(typescript@5.9.3))
       '@mango/admin-pages':
-        specifier: workspace:1.0.28
+        specifier: workspace:1.0.29
         version: link:../admin-pages
       '@mango/api-schema':
         specifier: workspace:1.0.3
         version: link:../api-schema
       '@mango/common':
-        specifier: workspace:1.0.21
+        specifier: workspace:1.0.22
         version: link:../common
       element-plus:
         specifier: '>=2.14.1 <3'
@@ -1175,7 +1175,7 @@ importers:
         specifier: 2.3.2
         version: 2.3.2(vue@3.5.13(typescript@5.9.3))
       '@mango/common':
-        specifier: workspace:1.0.21
+        specifier: workspace:1.0.22
         version: link:../common
       element-plus:
         specifier: '>=2.14.1 <3'
@@ -1197,7 +1197,7 @@ importers:
   packages/grid-widgets:
     dependencies:
       '@mango/grid-layout':
-        specifier: workspace:1.0.12
+        specifier: workspace:1.0.13
         version: link:../grid-layout
       element-plus:
         specifier: '>=2.14.1 <3'
@@ -1222,7 +1222,7 @@ importers:
         specifier: workspace:1.0.3
         version: link:../api-schema
       '@mango/common':
-        specifier: workspace:1.0.21
+        specifier: workspace:1.0.22
         version: link:../common
     devDependencies:
       '@vitejs/plugin-vue':
@@ -1260,10 +1260,10 @@ importers:
         specifier: 2.3.2
         version: 2.3.2(vue@3.5.13(typescript@5.9.3))
       '@mango/admin-pages':
-        specifier: workspace:1.0.28
+        specifier: workspace:1.0.29
         version: link:../admin-pages
       '@mango/common':
-        specifier: workspace:1.0.21
+        specifier: workspace:1.0.22
         version: link:../common
       element-plus:
         specifier: '>=2.14.1 <3'
@@ -1288,13 +1288,13 @@ importers:
         specifier: 2.3.2
         version: 2.3.2(vue@3.5.13(typescript@5.9.3))
       '@mango/admin-pages':
-        specifier: workspace:1.0.28
+        specifier: workspace:1.0.29
         version: link:../admin-pages
       '@mango/common':
-        specifier: workspace:1.0.21
+        specifier: workspace:1.0.22
         version: link:../common
       '@mango/grid-widgets':
-        specifier: workspace:1.0.18
+        specifier: workspace:1.0.19
         version: link:../grid-widgets
       '@mango/link-openapi':
         specifier: workspace:1.0.4
@@ -1367,16 +1367,16 @@ importers:
         specifier: 2.3.2
         version: 2.3.2(vue@3.5.13(typescript@5.9.3))
       '@mango/admin-pages':
-        specifier: workspace:1.0.28
+        specifier: workspace:1.0.29
         version: link:../admin-pages
       '@mango/common':
-        specifier: workspace:1.0.21
+        specifier: workspace:1.0.22
         version: link:../common
       '@mango/grid-widgets':
-        specifier: workspace:1.0.18
+        specifier: workspace:1.0.19
         version: link:../grid-widgets
       '@mango/system':
-        specifier: workspace:1.0.27
+        specifier: workspace:1.0.28
         version: link:../system
       element-plus:
         specifier: '>=2.14.1 <3'
@@ -1404,16 +1404,16 @@ importers:
         specifier: 2.3.2
         version: 2.3.2(vue@3.5.13(typescript@5.9.3))
       '@mango/admin-pages':
-        specifier: workspace:1.0.28
+        specifier: workspace:1.0.29
         version: link:../admin-pages
       '@mango/api-schema':
         specifier: workspace:1.0.3
         version: link:../api-schema
       '@mango/common':
-        specifier: workspace:1.0.21
+        specifier: workspace:1.0.22
         version: link:../common
       '@mango/system':
-        specifier: workspace:1.0.27
+        specifier: workspace:1.0.28
         version: link:../system
       element-plus:
         specifier: '>=2.14.1 <3'
@@ -1438,16 +1438,16 @@ importers:
         specifier: 2.3.2
         version: 2.3.2(vue@3.5.13(typescript@5.9.3))
       '@mango/admin-pages':
-        specifier: workspace:1.0.28
+        specifier: workspace:1.0.29
         version: link:../admin-pages
       '@mango/api-schema':
         specifier: workspace:1.0.3
         version: link:../api-schema
       '@mango/common':
-        specifier: workspace:1.0.21
+        specifier: workspace:1.0.22
         version: link:../common
       '@mango/file':
-        specifier: workspace:1.0.29
+        specifier: workspace:1.0.30
         version: link:../file
       element-plus:
         specifier: '>=2.14.1 <3'
@@ -1487,7 +1487,7 @@ importers:
         specifier: workspace:1.0.6
         version: link:../app-runtime
       '@mango/common':
-        specifier: workspace:1.0.21
+        specifier: workspace:1.0.22
         version: link:../common
       element-plus:
         specifier: '>=2.14.1 <3'
@@ -1512,7 +1512,7 @@ importers:
   packages/site-shell:
     dependencies:
       '@mango/common':
-        specifier: workspace:1.0.21
+        specifier: workspace:1.0.22
         version: link:../common
       vue:
         specifier: '>=3.5.13 <4'
@@ -1540,16 +1540,16 @@ importers:
         specifier: workspace:1.0.3
         version: link:../api-schema
       '@mango/common':
-        specifier: workspace:1.0.21
+        specifier: workspace:1.0.22
         version: link:../common
       '@mango/file':
-        specifier: workspace:1.0.29
+        specifier: workspace:1.0.30
         version: link:../file
       '@mango/grid-widgets':
-        specifier: workspace:1.0.18
+        specifier: workspace:1.0.19
         version: link:../grid-widgets
       '@mango/rbac':
-        specifier: workspace:1.0.19
+        specifier: workspace:1.0.20
         version: link:../rbac
       element-plus:
         specifier: '>=2.14.1 <3'
@@ -1580,16 +1580,16 @@ importers:
         specifier: 2.3.2
         version: 2.3.2(vue@3.5.13(typescript@5.9.3))
       '@mango/admin-pages':
-        specifier: workspace:1.0.28
+        specifier: workspace:1.0.29
         version: link:../admin-pages
       '@mango/common':
-        specifier: workspace:1.0.21
+        specifier: workspace:1.0.22
         version: link:../common
       '@mango/file':
-        specifier: workspace:1.0.29
+        specifier: workspace:1.0.30
         version: link:../file
       '@mango/system':
-        specifier: workspace:1.0.27
+        specifier: workspace:1.0.28
         version: link:../system
       element-plus:
         specifier: '>=2.14.1 <3'
@@ -1620,22 +1620,22 @@ importers:
         specifier: 3.2.42
         version: 3.2.42(vue@3.5.13(typescript@5.9.3))
       '@mango/admin-pages':
-        specifier: workspace:1.0.28
+        specifier: workspace:1.0.29
         version: link:../admin-pages
       '@mango/api-schema':
         specifier: workspace:1.0.3
         version: link:../api-schema
       '@mango/common':
-        specifier: workspace:1.0.21
+        specifier: workspace:1.0.22
         version: link:../common
       '@mango/file':
-        specifier: workspace:1.0.29
+        specifier: workspace:1.0.30
         version: link:../file
       '@mango/grid-widgets':
-        specifier: workspace:1.0.18
+        specifier: workspace:1.0.19
         version: link:../grid-widgets
       '@mango/system':
-        specifier: workspace:1.0.27
+        specifier: workspace:1.0.28
         version: link:../system
       element-plus:
         specifier: '>=2.14.1 <3'
@@ -1669,10 +1669,10 @@ importers:
   packages/workflow-business-example:
     dependencies:
       '@mango/admin-pages':
-        specifier: workspace:1.0.28
+        specifier: workspace:1.0.29
         version: link:../admin-pages
       '@mango/workflow':
-        specifier: workspace:1.0.35
+        specifier: workspace:1.0.36
         version: link:../workflow
       element-plus:
         specifier: '>=2.14.1 <3'
