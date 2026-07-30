@@ -369,6 +369,8 @@ describe('MangoDialog', () => {
   it('programmatically switches the highest layer between open dialog instances', async () => {
     const firstDialogRef = ref<MangoDialogExpose | null>(null);
     const secondDialogRef = ref<MangoDialogExpose | null>(null);
+    // A local host is required to exercise multiple component refs in one test.
+    // eslint-disable-next-line vue/one-component-per-file
     const Host = defineComponent({
       setup() {
         return () =>
@@ -415,6 +417,8 @@ describe('MangoDialog', () => {
     const dialogRef = ref<MangoDialogExpose | null>(null);
     const visible = ref(false);
     const rendered = ref(true);
+    // A local host is required to exercise ref safety across unmounting.
+    // eslint-disable-next-line vue/one-component-per-file
     const Host = defineComponent({
       setup() {
         return () =>

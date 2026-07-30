@@ -56,7 +56,7 @@
 | AR-04        | M09 全 workspace 构建 | `pnpm -C mango-ui build`                                                                                 | 通过 | 38 个 workspace 项目全部完成构建；存在既有 chunk 体积 warning，无构建错误                                    |
 | AR-01        | M09 包导出与消费者    | `pnpm -C mango-ui package-exports:check`、`pnpm -C mango-ui package-consumer:typecheck -- --reuse-build` | 通过 | 包导出完整；29 个本地 tarball 临时消费者 `vue-tsc` 与生产构建通过                                            |
 | AR-01~AR-04  | PMO 测试质量门禁      | `node mango-pmo/tools/test-quality-check.mjs --base origin/main`                                         | 通过 | `Test quality PASS: 1 file(s)`                                                                               |
-| TD-04        | 文档与变更静态检查    | README 审计、组件契约检查、定向 ESLint、`git diff --check`                                               | 通过 | 两项 README 审计、195 个公开 Vue 导出契约、ESLint 0 error（测试 stub 5 warning）及 diff 检查通过             |
+| TD-04        | 文档与变更静态检查    | README 审计、组件契约检查、定向 ESLint、`git diff --check`                                               | 通过 | 两项 README 审计、195 个公开 Vue 导出契约、ESLint 0 error（测试 stub 3 个既有 warning）及 diff 检查通过     |
 
 ## 7. 例外与剩余风险
 

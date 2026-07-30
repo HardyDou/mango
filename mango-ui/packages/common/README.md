@@ -329,28 +329,28 @@ API 加密环境变量：
 
 `MangoDialog` 组件：
 
-| 类型  | 名称                                                     | 说明                                                             |
-| ----- | -------------------------------------------------------- | ---------------------------------------------------------------- |
-| props | `modelValue`                                             | 弹框显示状态，支持 `v-model`。                                   |
-| props | `title`                                                  | 标题文本，也可通过 `title` slot 覆盖。                           |
-| props | `width`                                                  | 弹框宽度，语义与 Element Plus Dialog 一致，默认 `50%`。          |
-| props | `showHeader`                                             | 是否展示完整顶部标题区，默认 `true`。                            |
-| props | `showClose`                                              | 是否展示关闭按钮，默认 `true`。                                  |
-| props | `footerAlign`                                            | 底部插槽对齐方式，支持 `left`、`center`、`right`，默认 `right`。 |
-| props | `destroyOnClose`                                         | 关闭后是否销毁内容，默认 `false`。                               |
-| props | `modal`                                                  | 是否保留遮罩；未指定时普通弹框为 `true`，拖拽弹框为 `false`。    |
-| props | `closeOnClickModal`                                      | 点击遮罩是否关闭，默认 `false`。                                 |
-| props | `lockScroll`                                             | 是否锁定页面滚动；未指定时跟随 `modal`。                         |
-| props | `zIndex`                                                 | 弹框动态置顶使用的最低层级；未指定时跟随 Element Plus。          |
-| props | `draggable`                                              | 是否允许通过标题区拖动整个弹框，默认 `false`。                   |
-| props | `resizable`                                              | 是否允许通过四个角自由调整宽高，默认 `false`。                   |
-| props | `minWidth` / `minHeight`                                 | 交互调整时的最小宽高，默认 `320` / `240` 像素。                  |
-| emits | `update:modelValue`、`open`、`opened`、`close`、`closed` | 透出弹框显示状态和 Element Plus Dialog 生命周期事件。            |
-| expose | `bringToFront()`                                       | 将已打开的当前实例提升到其它 `MangoDialog` 之上；关闭中、已关闭或销毁后调用安全 no-op。 |
-| slots | `default`                                                | 内容区域。内容区独立滚动，弹框最大高度为视口高度的 90%。         |
-| slots | `title`                                                  | 自定义标题内容。                                                 |
-| slots | `headerExtra`                                            | 标题右侧扩展区域。                                               |
-| slots | `footer`                                                 | 底部按钮区域。未传入时不渲染底部。                               |
+| 类型   | 名称                                                     | 说明                                                                                    |
+| ------ | -------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| props  | `modelValue`                                             | 弹框显示状态，支持 `v-model`。                                                          |
+| props  | `title`                                                  | 标题文本，也可通过 `title` slot 覆盖。                                                  |
+| props  | `width`                                                  | 弹框宽度，语义与 Element Plus Dialog 一致，默认 `50%`。                                 |
+| props  | `showHeader`                                             | 是否展示完整顶部标题区，默认 `true`。                                                   |
+| props  | `showClose`                                              | 是否展示关闭按钮，默认 `true`。                                                         |
+| props  | `footerAlign`                                            | 底部插槽对齐方式，支持 `left`、`center`、`right`，默认 `right`。                        |
+| props  | `destroyOnClose`                                         | 关闭后是否销毁内容，默认 `false`。                                                      |
+| props  | `modal`                                                  | 是否保留遮罩；未指定时普通弹框为 `true`，拖拽弹框为 `false`。                           |
+| props  | `closeOnClickModal`                                      | 点击遮罩是否关闭，默认 `false`。                                                        |
+| props  | `lockScroll`                                             | 是否锁定页面滚动；未指定时跟随 `modal`。                                                |
+| props  | `zIndex`                                                 | 弹框动态置顶使用的最低层级；未指定时跟随 Element Plus。                                 |
+| props  | `draggable`                                              | 是否允许通过标题区拖动整个弹框，默认 `false`。                                          |
+| props  | `resizable`                                              | 是否允许通过四个角自由调整宽高，默认 `false`。                                          |
+| props  | `minWidth` / `minHeight`                                 | 交互调整时的最小宽高，默认 `320` / `240` 像素。                                         |
+| emits  | `update:modelValue`、`open`、`opened`、`close`、`closed` | 透出弹框显示状态和 Element Plus Dialog 生命周期事件。                                   |
+| expose | `bringToFront()`                                         | 将已打开的当前实例提升到其它 `MangoDialog` 之上；关闭中、已关闭或销毁后调用安全 no-op。 |
+| slots  | `default`                                                | 内容区域。内容区独立滚动，弹框最大高度为视口高度的 90%。                                |
+| slots  | `title`                                                  | 自定义标题内容。                                                                        |
+| slots  | `headerExtra`                                            | 标题右侧扩展区域。                                                                      |
+| slots  | `footer`                                                 | 底部按钮区域。未传入时不渲染底部。                                                      |
 
 `draggable` 和 `resizable` 相互独立，内容仍由 slots 提供。拖拽默认关闭遮罩，并允许弹框移出浏览器可视区域；需要拖拽且保留遮罩时显式传入 `:modal="true"`。多个无模态弹框同时存在时，用户按下弹框的标题、内容或 footer 任意区域都会将该实例提升到最高层级；置顶监听不阻止内部按钮、输入框和其它控件的原有事件。显式传入的 `zIndex` 会作为动态层级的最低基线。四角调整以每次按下时读取的真实宽高为起点，浏览器视口缩小时只收缩弹框宽高，不强制修改已经拖动的位置；弹框关闭后重新按 `width` 和当前视口恢复自适应布局。
 
