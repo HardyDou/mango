@@ -1,5 +1,26 @@
 # @mango/cli Changelog
 
+## 1.0.92 - 2026-07-29
+
+### Changed
+
+- Lock generated and upgraded business backends to Mango Maven `1.0.28` while keeping the PMO baseline at `1.3.6`.
+- Lock the exact frontend patch matrix published with the Workflow runtime designer snapshot and `MangoDialog` drag, resize, maximize and viewport-boundary interactions.
+- Preserve existing CLI command behavior and generated-project entry points.
+
+### Upgrade Notes
+
+- Publish and verify Maven `1.0.28` and the frontend package matrix before installing `@mango/cli@1.0.92`.
+- Projects inheriting `mango-parent` update their shared `mango.version` to `1.0.28`; projects with another parent import `io.mango:mango-bom:1.0.28`.
+- Keep `@mango/pmo@1.3.6`; no PMO baseline upgrade is required for this batch.
+
+### Verification
+
+- `pnpm -C mango-ui --filter @mango/cli test`
+- `node mango-ui/packages/mango-cli/scripts/check-release-versions.mjs`
+- `MANGO_BACKEND_GATE_VERSION=1.0.28 node mango-ui/packages/mango-cli/scripts/check-generated-backend-gate.mjs`
+- Clean published Maven, CLI and generated-project consumers resolve only the exact release coordinates.
+
 ## 1.0.91 - 2026-07-26
 
 ### Changed

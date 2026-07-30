@@ -1,6 +1,6 @@
 {
   "name": "@mango/home",
-  "version": "1.0.10",
+  "version": "1.0.11",
   "private": false,
   "type": "module",
   "main": "./dist/index.js",
@@ -21,7 +21,7 @@
   ],
   "dependencies": {
     "@mango/api-schema": "workspace:1.0.3",
-    "@mango/common": "workspace:1.0.21"
+    "@mango/common": "workspace:1.0.22"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^4.0.0",
