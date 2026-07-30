@@ -1,7 +1,2 @@
 export { default as MangoDialog } from './index.vue';
-export type {
-  MangoDialogEmits,
-  MangoDialogFooterAlign,
-  MangoDialogProps,
-} from './types';
-
+export type { MangoDialogEmits, MangoDialogExpose, MangoDialogFooterAlign, MangoDialogProps } from './types';
