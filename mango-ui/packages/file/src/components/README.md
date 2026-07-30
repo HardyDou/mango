@@ -16,11 +16,11 @@
 
 组件选型边界：
 
-| 场景                                           | 使用组件             | 说明                                                                                                                                                   |
-| ---------------------------------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 业务表单上传、附件列表、图片缩略图回显         | `MUpload`            | 负责选择、上传、回写和上传列表展示。点击上传列表文件时，组件内部按文件记录打开可用预览地址，不渲染 `FilePreviewPanel`。                                |
-| 业务详情页、只读附件区、后台文件管理预览内容区 | `FilePreviewPanel`   | 负责按文件 ID 或预览元数据展示图片、PDF、音视频和文档预览，并提供下载、新窗口预览能力。它是内容面板，不是完整弹框组件。                                |
-| 后端在线预览服务                               | `mango-file-preview` | 提供 `/file-preview/files/preview-link` 和 `/file-preview/files/preview`，不是前端 Vue 组件。前端组件通过 `fileApi.previewLink()` 或预览元数据消费它。 |
+| 场景                                           | 使用组件             | 说明                                                                                                                                                               |
+| ---------------------------------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 业务表单上传、附件列表、图片缩略图回显         | `MUpload`            | 负责选择、上传、回写和上传列表展示。点击上传列表文件时，组件内部按文件记录打开可用预览地址，不渲染 `FilePreviewPanel`。                                            |
+| 业务详情页、只读附件区、后台文件管理预览内容区 | `FilePreviewPanel`   | 负责按文件 ID 或预览元数据展示图片、PDF、音视频和文档预览，并提供下载、新窗口预览能力。图片默认直接显示无蒙层的内嵌 Image Viewer。它是内容面板，不是完整弹框组件。 |
+| 后端在线预览服务                               | `mango-file-preview` | 提供 `/file-preview/files/preview-link` 和 `/file-preview/files/preview`，不是前端 Vue 组件。前端组件通过 `fileApi.previewLink()` 或预览元数据消费它。             |
 
 Issue #411 的布局优化目标是 `FilePreviewPanel` 及文件管理页承载它的预览弹框；如果业务页面看到的是 `MUpload` 上传列表点击后的新窗口预览，需要按 `MUpload` 的预览行为另行评估，与 `FilePreviewPanel` 布局无关。
 
@@ -37,7 +37,9 @@ Issue #411 的布局优化目标是 `FilePreviewPanel` 及文件管理页承载�
 - 外层弹框负责业务标题、文件名、版本、确认/取消等业务动作。
 - `FilePreviewPanel` 负责文件展示、下载和新窗口预览。
 - 外层弹框如果隐藏 `FilePreviewPanel` 自带操作区，需接管并透传下载、新窗口预览能力，避免只保留部分按钮；没有可用预览地址时，新窗口预览按钮保持渲染但处于禁用态。
-- 弹框宽高、小屏适配和内容区高度与 `FilePreviewPanel` 的 CSS 变量配合，例如设置 `--mango-file-preview-panel-height`、`--mango-file-preview-content-height` 和 `--mango-file-preview-content-min-height`。
+- 固定高度容器或弹框正文使用 `fit-container`，父容器负责提供可计算高度，组件负责填满剩余区域并随父容器缩放。
+- `--mango-file-preview-*` CSS 变量继续作为特殊场景的兼容覆盖入口；启用 `fit-container` 不要求手工设置这些变量。
+- 图片直接展示 Element Plus Image Viewer，不需要点击图片再次打开覆盖层；Viewer 只占用预览内容区，不显示遮罩和关闭按钮。
 - 业务页面把可展示预览地址传入预览内容区；`/file/files/download` 用于下载动作。
 
 ## 3. 接入方式
@@ -89,6 +91,24 @@ const fileIds = ref<string[]>([]);
 
 ```vue
 <FilePreviewPanel :file-id="fileId" />
+```
+
+填满固定尺寸容器：
+
+```vue
+<div class="preview-container">
+  <FilePreviewPanel :file-id="fileId" fit-container />
+</div>
+
+<style scoped>
+.preview-container {
+  display: flex;
+  width: 60vw;
+  height: 65vh;
+  min-width: 0;
+  min-height: 0;
+}
+</style>
 ```
 
 ## 4. 参数与事件
@@ -161,6 +181,7 @@ const fileIds = ref<string[]>([]);
 | `previewProviderUrl`        | `string`                           | 环境变量或后端返回 | 文档预览服务地址。                                       |
 | `previewExternalExtensions` | `string[]`                         | 空                 | 外部预览扩展名。                                         |
 | `showActions`               | `boolean`                          | `true`             | 是否显示下载和新窗口预览操作。                           |
+| `fitContainer`              | `boolean`                          | `false`            | 是否占满父容器可用宽高并让预览内容随容器缩放。           |
 
 `FilePreviewPanel` events 和 expose：
 
@@ -172,7 +193,7 @@ const fileIds = ref<string[]>([]);
 
 预览规则：
 
-- 图片：`image/*` 或 `jpg`、`jpeg`、`png`、`gif`、`webp`、`bmp`、`svg`、`ico`。
+- 图片：`image/*` 或 `jpg`、`jpeg`、`png`、`gif`、`webp`、`bmp`、`svg`、`ico`。识别后默认直接渲染无蒙层、非 Teleport 的 Element Plus Image Viewer，提供原生缩放、旋转、适应模式、原始尺寸和拖拽能力。
 - PDF：`application/pdf` 或 `pdf`。
 - 视频：`video/*` 或 `mp4`、`webm`、`ogg`、`mov`、`m4v`。
 - 音频：`audio/*` 或 `mp3`、`wav`、`ogg`、`m4a`、`aac`、`flac`。
@@ -236,6 +257,16 @@ const fileIds = ref<string[]>([]);
 - [能力说明维护规范](../../../../../mango-pmo/rules/08-capability-docs.md)
 
 ## 10. 变更影响记录
+
+- 2026-07-30：图片预览默认从可点击的 `ElImage` 改为直接展示内嵌 Element Plus Image Viewer。Viewer 不 Teleport、
+  不显示遮罩和关闭按钮，原生缩放、旋转、适应模式、原始尺寸和拖拽工具栏直接可用；在 `fit-container` 下随
+  `preview-stage` 和外层弹框同步缩放。没有新增图片模式 prop，所有 `FilePreviewPanel` 图片消费者采用新默认交互；
+  文件 API、权限、下载、文件 ID 和文档转换接口不变。本记录不代表 npm 版本已经发布。
+
+- 2026-07-30：`FilePreviewPanel` 源码新增默认关闭的 `fit-container` 模式。该模式适用于固定高度容器、
+  `ElDialog` 和 `MangoDialog` 正文；PDF 与 Office iframe 在预览区内填充并自行滚动，图片保持 `contain`，
+  空状态和下载查看状态在可用区域居中。父容器必须提供可计算高度；现有自然高度模式和 CSS 变量入口保持兼容。
+  本记录不代表 npm 版本已经发布。
 
 - `@mango/file@1.0.22` 让弹框场景下的 `FilePreviewPanel` 高度跟随外层内容区，PDF 内容由预览自身滚动；
   新窗口预览操作不再由 `v-if` 移除，缺少预览地址时保持禁用态，便于消费项目获得稳定操作区布局。
