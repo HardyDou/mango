@@ -34,6 +34,10 @@ import java.util.zip.ZipFile;
 
 final class BaselineMigrationCatalog {
 
+    private static final int VERSION_MATCHER_GROUP = 3;
+    private static final String SQL_SUFFIX = ".sql";
+    private static final Set<String> EXCLUDED_DIRECTORIES = Set.of(
+            "target", ".git", ".runtime", "node_modules");
     private static final Pattern MIGRATION_PATH = Pattern.compile(
             "(?:^|/)db/migration/([a-z0-9][a-z0-9-]*)/(V([^/]+?)__[^/]+\\.sql)$",
             Pattern.CASE_INSENSITIVE);
@@ -147,10 +151,7 @@ final class BaselineMigrationCatalog {
                             ? ""
                             : directory.getFileName().toString();
                     if (!directory.equals(searchDirectory)
-                            && (name.equals("target")
-                            || name.equals(".git")
-                            || name.equals(".runtime")
-                            || name.equals("node_modules"))) {
+                            && EXCLUDED_DIRECTORIES.contains(name)) {
                         return FileVisitResult.SKIP_SUBTREE;
                     }
                     return FileVisitResult.CONTINUE;
@@ -159,7 +160,7 @@ final class BaselineMigrationCatalog {
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attributes)
                         throws IOException {
-                    if (file.getFileName().toString().toLowerCase(Locale.ROOT).endsWith(".sql")) {
+                    if (file.getFileName().toString().toLowerCase(Locale.ROOT).endsWith(SQL_SUFFIX)) {
                         MigrationResource resource;
                         try {
                             resource = fromPath(
@@ -201,7 +202,8 @@ final class BaselineMigrationCatalog {
                 var entries = zipFile.entries();
                 while (entries.hasMoreElements()) {
                     ZipEntry entry = entries.nextElement();
-                    if (entry.isDirectory() || !entry.getName().toLowerCase(Locale.ROOT).endsWith(".sql")) {
+                    if (entry.isDirectory()
+                            || !entry.getName().toLowerCase(Locale.ROOT).endsWith(SQL_SUFFIX)) {
                         continue;
                     }
                     try (InputStream input = zipFile.getInputStream(entry)) {
@@ -228,7 +230,7 @@ final class BaselineMigrationCatalog {
         }
         String module = matcher.group(1).toLowerCase(Locale.ROOT);
         String fileName = matcher.group(2);
-        String version = matcher.group(3);
+        String version = matcher.group(VERSION_MATCHER_GROUP);
         if (version.isBlank()) {
             throw new MojoExecutionException(
                     "MANGO-BASELINE-006 migration has an empty version: " + source);

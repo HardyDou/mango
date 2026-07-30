@@ -34,6 +34,11 @@ final class BaselineGenerator {
     static final String GENERATOR_FORMAT_VERSION = "1";
     private static final String ADMIN_DATABASE = "mysql";
     private static final String MANIFEST_PATH = "META-INF/mango/baseline-manifest.json";
+    private static final String DATASOURCE_GROUP_PATTERN = "[a-z][a-z0-9-]{0,31}";
+    private static final String DETERMINISM_DATABASE_SEPARATOR = "_determinism_";
+    private static final int RUN_ID_LENGTH = 10;
+    private static final int MYSQL_IDENTIFIER_MAX_LENGTH = 64;
+    private static final int DIFFERENCE_PREVIEW_LENGTH = 320;
 
     private final BaselineGenerationRequest request;
     private final BaselineMigrationCatalog catalog;
@@ -60,88 +65,139 @@ final class BaselineGenerator {
         Path staging = createStagingDirectory();
         Path migrationExtraction = createTemporaryDirectory("mango-baseline-migrations-");
         Map<String, TemporaryDatabases> databases = new LinkedHashMap<>();
-        boolean installed = false;
         try {
             MySqlBaselineStore.DatabaseIdentity databaseIdentity =
                     store.databaseIdentity(ADMIN_DATABASE);
-            for (Map.Entry<String, List<String>> group : groups.entrySet()) {
-                TemporaryDatabases temporary = temporaryDatabases(group.getKey());
-                databases.put(group.getKey(), temporary);
-                store.createDatabase(ADMIN_DATABASE, temporary.replay());
-                store.createDatabase(ADMIN_DATABASE, temporary.determinism());
-                store.createDatabase(ADMIN_DATABASE, temporary.verify());
-                migrateVersions(group.getValue(), temporary.replay(), migrationExtraction);
-                migrateVersions(group.getValue(), temporary.determinism(), migrationExtraction);
-            }
-
-            List<ModuleManifest> modules = new ArrayList<>();
-            Map<String, MySqlBaselineStore.SchemaSnapshot> replaySnapshots = new LinkedHashMap<>();
-            for (Map.Entry<String, List<String>> group : groups.entrySet()) {
-                String groupName = group.getKey();
-                TemporaryDatabases temporary = databases.get(groupName);
-                Set<String> groupModuleSet = Set.copyOf(group.getValue());
-                for (String module : group.getValue()) {
-                    String version = catalog.latestVersion(module);
-                    Path baseline = staging.resolve("db/baseline")
-                            .resolve(module)
-                            .resolve("B" + version + "__baseline.sql");
-                    writeBaseline(baseline, store.dumpModule(
-                            temporary.replay(), module, groupModuleSet, ownership));
-                    modules.add(new ModuleManifest(
-                            module,
-                            groupName,
-                            version,
-                            "flyway_schema_history_" + sqlIdentifier(module),
-                            "db/baseline/" + module + "/" + baseline.getFileName(),
-                            sha256(Files.readAllBytes(baseline)),
-                            catalog.fingerprint(module)));
-                }
-                replaySnapshots.put(groupName,
-                        store.snapshot(temporary.replay(), groupModuleSet, ownership));
-                MySqlBaselineStore.SchemaSnapshot deterministic =
-                        store.snapshot(temporary.determinism(), groupModuleSet, ownership);
-                if (!replaySnapshots.get(groupName).equals(deterministic)) {
-                    throw new MojoExecutionException(
-                            "MANGO-BASELINE-040 V migrations are not deterministic across clean replays"
-                                    + "; datasourceGroup=" + groupName + "; difference="
-                                    + snapshotDifference(replaySnapshots.get(groupName), deterministic));
-                }
-                migrateBaselines(group.getValue(), temporary.verify(), staging, false);
-                migrateBaselines(group.getValue(), temporary.verify(), staging, true);
-                MySqlBaselineStore.SchemaSnapshot verified =
-                        store.snapshot(temporary.verify(), groupModuleSet, ownership);
-                if (!replaySnapshots.get(groupName).equals(verified)) {
-                    throw new MojoExecutionException(
-                            "MANGO-BASELINE-019 generated baseline is not equivalent to V migrations"
-                                    + "; datasourceGroup=" + groupName + "; difference="
-                                    + snapshotDifference(replaySnapshots.get(groupName), verified));
-                }
-            }
-
+            prepareDatabases(groups, migrationExtraction, databases);
+            List<ModuleManifest> modules = generateAndVerifyBaselines(groups, databases, staging);
             String generationFingerprint = generationFingerprint(databaseIdentity, modules);
             writeManifest(staging, databaseIdentity, generationFingerprint, modules, groups);
             BaselineArtifactVerifier.verify(staging);
             installGeneratedResources(staging, request.outputDirectory());
-            installed = true;
             Duration elapsed = Duration.ofNanos(System.nanoTime() - startedAt);
-            log.info("Mango baselines generated and verified: modules=" + modules.size()
-                    + ", datasourceGroups=" + groups.size()
-                    + ", elapsedMs=" + elapsed.toMillis()
-                    + ", fingerprint=" + generationFingerprint);
+            logResult(modules.size(), groups.size(), generationFingerprint, elapsed);
             return new GenerationResult(modules.size(), groups.size(), generationFingerprint, elapsed);
         } catch (IOException exception) {
             throw new MojoExecutionException(
                     "MANGO-BASELINE-020 failed to write generated baseline resources", exception);
         } finally {
-            if (!installed) {
-                deleteQuietly(staging);
-            }
+            deleteQuietly(staging);
             deleteQuietly(migrationExtraction);
-            if (!request.keepSchemas()) {
-                cleanupDatabases(databases);
-            } else if (!databases.isEmpty()) {
-                log.warn("Temporary baseline databases were retained by configuration: " + databases);
-            }
+            cleanupWorkspaceDatabases(databases);
+        }
+    }
+
+    private void prepareDatabases(
+            Map<String, List<String>> groups,
+            Path migrationExtraction,
+            Map<String, TemporaryDatabases> databases) throws MojoExecutionException {
+        for (Map.Entry<String, List<String>> group : groups.entrySet()) {
+            TemporaryDatabases temporary = temporaryDatabases(group.getKey());
+            databases.put(group.getKey(), temporary);
+            store.createDatabase(ADMIN_DATABASE, temporary.replay());
+            store.createDatabase(ADMIN_DATABASE, temporary.determinism());
+            store.createDatabase(ADMIN_DATABASE, temporary.verify());
+            migrateVersions(group.getValue(), temporary.replay(), migrationExtraction);
+            migrateVersions(group.getValue(), temporary.determinism(), migrationExtraction);
+        }
+    }
+
+    private List<ModuleManifest> generateAndVerifyBaselines(
+            Map<String, List<String>> groups,
+            Map<String, TemporaryDatabases> databases,
+            Path staging) throws MojoExecutionException, IOException {
+        List<ModuleManifest> modules = new ArrayList<>();
+        for (Map.Entry<String, List<String>> group : groups.entrySet()) {
+            String groupName = group.getKey();
+            List<String> groupModules = group.getValue();
+            TemporaryDatabases temporary = databases.get(groupName);
+            Set<String> groupModuleSet = Set.copyOf(groupModules);
+            modules.addAll(generateModuleBaselines(
+                    groupName, groupModules, groupModuleSet, temporary.replay(), staging));
+            MySqlBaselineStore.SchemaSnapshot replay =
+                    store.snapshot(temporary.replay(), groupModuleSet, ownership);
+            verifyDeterministicReplay(groupName, groupModuleSet, temporary, replay);
+            verifyGeneratedBaselines(groupName, groupModules, groupModuleSet, temporary, staging, replay);
+        }
+        return List.copyOf(modules);
+    }
+
+    private List<ModuleManifest> generateModuleBaselines(
+            String groupName,
+            List<String> modules,
+            Set<String> groupModuleSet,
+            String replayDatabase,
+            Path staging) throws MojoExecutionException, IOException {
+        List<ModuleManifest> manifests = new ArrayList<>();
+        for (String module : modules) {
+            String version = catalog.latestVersion(module);
+            Path baseline = staging.resolve("db/baseline")
+                    .resolve(module)
+                    .resolve("B" + version + "__baseline.sql");
+            writeBaseline(baseline,
+                    store.dumpModule(replayDatabase, module, groupModuleSet, ownership));
+            manifests.add(new ModuleManifest(
+                    module,
+                    groupName,
+                    version,
+                    "flyway_schema_history_" + sqlIdentifier(module),
+                    "db/baseline/" + module + "/" + baseline.getFileName(),
+                    sha256(Files.readAllBytes(baseline)),
+                    catalog.fingerprint(module)));
+        }
+        return manifests;
+    }
+
+    private void verifyDeterministicReplay(
+            String groupName,
+            Set<String> groupModules,
+            TemporaryDatabases temporary,
+            MySqlBaselineStore.SchemaSnapshot replay) throws MojoExecutionException {
+        MySqlBaselineStore.SchemaSnapshot deterministic =
+                store.snapshot(temporary.determinism(), groupModules, ownership);
+        if (!replay.equals(deterministic)) {
+            throw new MojoExecutionException(
+                    "MANGO-BASELINE-040 V migrations are not deterministic across clean replays"
+                            + "; datasourceGroup=" + groupName + "; difference="
+                            + snapshotDifference(replay, deterministic));
+        }
+    }
+
+    private void verifyGeneratedBaselines(
+            String groupName,
+            List<String> modules,
+            Set<String> groupModules,
+            TemporaryDatabases temporary,
+            Path staging,
+            MySqlBaselineStore.SchemaSnapshot replay) throws MojoExecutionException {
+        migrateBaselines(modules, temporary.verify(), staging, false);
+        migrateBaselines(modules, temporary.verify(), staging, true);
+        MySqlBaselineStore.SchemaSnapshot verified =
+                store.snapshot(temporary.verify(), groupModules, ownership);
+        if (!replay.equals(verified)) {
+            throw new MojoExecutionException(
+                    "MANGO-BASELINE-019 generated baseline is not equivalent to V migrations"
+                            + "; datasourceGroup=" + groupName + "; difference="
+                            + snapshotDifference(replay, verified));
+        }
+    }
+
+    private void logResult(
+            int moduleCount,
+            int groupCount,
+            String fingerprint,
+            Duration elapsed) {
+        log.info("Mango baselines generated and verified: modules=" + moduleCount
+                + ", datasourceGroups=" + groupCount
+                + ", elapsedMs=" + elapsed.toMillis()
+                + ", fingerprint=" + fingerprint);
+    }
+
+    private void cleanupWorkspaceDatabases(Map<String, TemporaryDatabases> databases) {
+        if (!request.keepSchemas()) {
+            cleanupDatabases(databases);
+        } else if (!databases.isEmpty()) {
+            log.warn("Temporary baseline databases were retained by configuration: " + databases);
         }
     }
 
@@ -257,7 +313,7 @@ final class BaselineGenerator {
         Map<String, List<String>> groups = new LinkedHashMap<>();
         for (String module : moduleOrder) {
             String group = request.moduleGroups().getOrDefault(module, "default");
-            if (!group.matches("[a-z][a-z0-9-]{0,31}")) {
+            if (!group.matches(DATASOURCE_GROUP_PATTERN)) {
                 throw new MojoExecutionException(
                         "MANGO-BASELINE-025 invalid datasource group for module " + module
                                 + ": " + group);
@@ -268,9 +324,11 @@ final class BaselineGenerator {
     }
 
     private TemporaryDatabases temporaryDatabases(String group) {
-        String runId = UUID.randomUUID().toString().replace("-", "").substring(0, 10);
+        String runId = UUID.randomUUID().toString().replace("-", "")
+                .substring(0, RUN_ID_LENGTH);
         String stem = sqlIdentifier(request.schemaPrefix() + "_" + group);
-        int maximumStemLength = 64 - "_determinism_".length() - runId.length();
+        int maximumStemLength = MYSQL_IDENTIFIER_MAX_LENGTH
+                - DETERMINISM_DATABASE_SEPARATOR.length() - runId.length();
         if (stem.length() > maximumStemLength) {
             stem = stem.substring(0, maximumStemLength);
         }
@@ -496,10 +554,10 @@ final class BaselineGenerator {
     }
 
     private static String abbreviate(String value) {
-        if (value == null || value.length() <= 320) {
+        if (value == null || value.length() <= DIFFERENCE_PREVIEW_LENGTH) {
             return value;
         }
-        return value.substring(0, 320) + "...";
+        return value.substring(0, DIFFERENCE_PREVIEW_LENGTH) + "...";
     }
 
     record GenerationResult(

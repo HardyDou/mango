@@ -11,6 +11,15 @@ import java.util.regex.Pattern;
 
 final class BaselineObjectOwnership {
 
+    private static final char SINGLE_QUOTE_CHARACTER = '\'';
+    private static final char DOUBLE_QUOTE_CHARACTER = '"';
+    private static final char HASH_CHARACTER = '#';
+    private static final char ESCAPE_CHARACTER = '\\';
+    private static final char LINE_FEED_CHARACTER = '\n';
+    private static final char ASTERISK_CHARACTER = '*';
+    private static final char SLASH_CHARACTER = '/';
+    private static final char DASH_CHARACTER = '-';
+    private static final char END_OF_INPUT_CHARACTER = '\0';
     private static final Pattern CREATE_TABLE = Pattern.compile(
             "(?is)\\bcreate\\s+table\\s+(?:if\\s+not\\s+exists\\s+)?"
                     + "(?:`?[a-zA-Z0-9_]+`?\\s*\\.\\s*)?`?([a-zA-Z0-9_]+)`?");
@@ -71,88 +80,19 @@ final class BaselineObjectOwnership {
         Matcher matcher = pattern.matcher(maskedSql);
         while (matcher.find()) {
             String objectName = normalize(matcher.group(1));
-            String previous = owners.putIfAbsent(objectName, migration.module());
-            if (previous != null && !previous.equals(migration.module())) {
-                throw new MojoExecutionException(
-                        "MANGO-BASELINE-012 cross-module " + objectType + " ownership conflict for "
-                                + objectName + ": " + previous + " and " + migration.module());
+            String module = migration.module();
+            String previous = owners.putIfAbsent(objectName, module);
+            if (previous == null || previous.equals(module)) {
+                continue;
             }
+            throw new MojoExecutionException(
+                    "MANGO-BASELINE-012 cross-module " + objectType + " ownership conflict for "
+                            + objectName + ": " + previous + " and " + module);
         }
     }
 
     private static String maskCommentsAndLiterals(String sql) {
-        StringBuilder masked = new StringBuilder(sql.length());
-        State state = State.SQL;
-        for (int index = 0; index < sql.length(); index++) {
-            char current = sql.charAt(index);
-            char next = index + 1 < sql.length() ? sql.charAt(index + 1) : '\0';
-            switch (state) {
-                case SQL -> {
-                    if (current == '\'') {
-                        state = State.SINGLE_QUOTE;
-                        masked.append(' ');
-                    } else if (current == '"') {
-                        state = State.DOUBLE_QUOTE;
-                        masked.append(' ');
-                    } else if (current == '/' && next == '*') {
-                        state = State.BLOCK_COMMENT;
-                        masked.append("  ");
-                        index++;
-                    } else if (current == '#') {
-                        state = State.LINE_COMMENT;
-                        masked.append(' ');
-                    } else if (current == '-' && next == '-'
-                            && (index + 2 >= sql.length() || Character.isWhitespace(sql.charAt(index + 2)))) {
-                        state = State.LINE_COMMENT;
-                        masked.append("  ");
-                        index++;
-                    } else {
-                        masked.append(current);
-                    }
-                }
-                case SINGLE_QUOTE -> {
-                    masked.append(current == '\n' ? '\n' : ' ');
-                    if (current == '\\' && index + 1 < sql.length()) {
-                        masked.append(' ');
-                        index++;
-                    } else if (current == '\'' && next == '\'') {
-                        masked.append(' ');
-                        index++;
-                    } else if (current == '\'') {
-                        state = State.SQL;
-                    }
-                }
-                case DOUBLE_QUOTE -> {
-                    masked.append(current == '\n' ? '\n' : ' ');
-                    if (current == '\\' && index + 1 < sql.length()) {
-                        masked.append(' ');
-                        index++;
-                    } else if (current == '"' && next == '"') {
-                        masked.append(' ');
-                        index++;
-                    } else if (current == '"') {
-                        state = State.SQL;
-                    }
-                }
-                case LINE_COMMENT -> {
-                    masked.append(current == '\n' ? '\n' : ' ');
-                    if (current == '\n') {
-                        state = State.SQL;
-                    }
-                }
-                case BLOCK_COMMENT -> {
-                    if (current == '*' && next == '/') {
-                        masked.append("  ");
-                        index++;
-                        state = State.SQL;
-                    } else {
-                        masked.append(current == '\n' ? '\n' : ' ');
-                    }
-                }
-                default -> throw new IllegalStateException("Unknown SQL masking state: " + state);
-            }
-        }
-        return masked.toString();
+        return new SqlMasker(sql).mask();
     }
 
     private static String normalize(String name) {
@@ -160,10 +100,137 @@ final class BaselineObjectOwnership {
     }
 
     private enum State {
+        /** Executable SQL text. */
         SQL,
+        /** Single-quoted string literal. */
         SINGLE_QUOTE,
+        /** Double-quoted string literal. */
         DOUBLE_QUOTE,
+        /** Hash or double-dash line comment. */
         LINE_COMMENT,
+        /** Slash-star block comment. */
         BLOCK_COMMENT
+    }
+
+    private static final class SqlMasker {
+
+        private final String sql;
+        private final StringBuilder masked;
+        private State state = State.SQL;
+        private int index;
+
+        private SqlMasker(String sql) {
+            this.sql = sql;
+            this.masked = new StringBuilder(sql.length());
+        }
+
+        private String mask() {
+            while (index < sql.length()) {
+                if (state == State.SQL) {
+                    maskSql();
+                } else if (state == State.SINGLE_QUOTE) {
+                    maskQuoted(SINGLE_QUOTE_CHARACTER);
+                } else if (state == State.DOUBLE_QUOTE) {
+                    maskQuoted(DOUBLE_QUOTE_CHARACTER);
+                } else if (state == State.LINE_COMMENT) {
+                    maskLineComment();
+                } else if (state == State.BLOCK_COMMENT) {
+                    maskBlockComment();
+                } else {
+                    throw new IllegalStateException("Unknown SQL masking state: " + state);
+                }
+                index++;
+            }
+            return masked.toString();
+        }
+
+        private void maskSql() {
+            char current = current();
+            if (current == SINGLE_QUOTE_CHARACTER) {
+                beginMaskedState(State.SINGLE_QUOTE);
+            } else if (current == DOUBLE_QUOTE_CHARACTER) {
+                beginMaskedState(State.DOUBLE_QUOTE);
+            } else if (isBlockCommentStart()) {
+                beginTwoCharacterMaskedState(State.BLOCK_COMMENT);
+            } else if (current == HASH_CHARACTER) {
+                beginMaskedState(State.LINE_COMMENT);
+            } else if (isDashCommentStart()) {
+                beginTwoCharacterMaskedState(State.LINE_COMMENT);
+            } else {
+                masked.append(current);
+            }
+        }
+
+        private void maskQuoted(char quote) {
+            char current = current();
+            appendMasked(current);
+            if (current == ESCAPE_CHARACTER && hasNext()) {
+                masked.append(' ');
+                index++;
+            } else if (current == quote && next() == quote) {
+                masked.append(' ');
+                index++;
+            } else if (current == quote) {
+                state = State.SQL;
+            }
+        }
+
+        private void maskLineComment() {
+            char current = current();
+            appendMasked(current);
+            if (current == LINE_FEED_CHARACTER) {
+                state = State.SQL;
+            }
+        }
+
+        private void maskBlockComment() {
+            if (current() == ASTERISK_CHARACTER && next() == SLASH_CHARACTER) {
+                masked.append("  ");
+                index++;
+                state = State.SQL;
+            } else {
+                appendMasked(current());
+            }
+        }
+
+        private void beginMaskedState(State nextState) {
+            state = nextState;
+            masked.append(' ');
+        }
+
+        private void beginTwoCharacterMaskedState(State nextState) {
+            state = nextState;
+            masked.append("  ");
+            index++;
+        }
+
+        private boolean isBlockCommentStart() {
+            return current() == SLASH_CHARACTER && next() == ASTERISK_CHARACTER;
+        }
+
+        private boolean isDashCommentStart() {
+            if (current() != DASH_CHARACTER || next() != DASH_CHARACTER) {
+                return false;
+            }
+            int followingIndex = index + 2;
+            return followingIndex >= sql.length()
+                    || Character.isWhitespace(sql.charAt(followingIndex));
+        }
+
+        private void appendMasked(char current) {
+            masked.append(current == LINE_FEED_CHARACTER ? LINE_FEED_CHARACTER : ' ');
+        }
+
+        private char current() {
+            return sql.charAt(index);
+        }
+
+        private char next() {
+            return hasNext() ? sql.charAt(index + 1) : END_OF_INPUT_CHARACTER;
+        }
+
+        private boolean hasNext() {
+            return index + 1 < sql.length();
+        }
     }
 }

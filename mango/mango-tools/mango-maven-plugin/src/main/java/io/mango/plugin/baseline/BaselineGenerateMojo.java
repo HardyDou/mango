@@ -30,6 +30,11 @@ import java.util.Set;
         threadSafe = false)
 public final class BaselineGenerateMojo extends AbstractMojo {
 
+    private static final String LIST_DELIMITER = ",";
+    private static final String SCHEMA_PREFIX_PATTERN = "[a-z][a-z0-9_]{0,31}";
+    private static final String DATASOURCE_GROUP_PATTERN = "[a-z][a-z0-9-]{0,31}";
+    private static final String MODULE_PATTERN = "[a-z0-9][a-z0-9-]*";
+
     @Parameter(property = "mango.baseline.jdbcUrl", required = true)
     private String jdbcUrl;
 
@@ -105,7 +110,7 @@ public final class BaselineGenerateMojo extends AbstractMojo {
             throw new MojoExecutionException(
                     "MANGO-BASELINE-029 mango.baseline.username must not be blank");
         }
-        if (schemaPrefix == null || !schemaPrefix.matches("[a-z][a-z0-9_]{0,31}")) {
+        if (schemaPrefix == null || !schemaPrefix.matches(SCHEMA_PREFIX_PATTERN)) {
             throw new MojoExecutionException(
                     "MANGO-BASELINE-030 mango.baseline.schemaPrefix must match [a-z][a-z0-9_]{0,31}");
         }
@@ -156,7 +161,7 @@ public final class BaselineGenerateMojo extends AbstractMojo {
             return List.of();
         }
         List<String> modules = new ArrayList<>();
-        for (String token : value.split(",")) {
+        for (String token : value.split(LIST_DELIMITER)) {
             String module = normalizeModule(token, property);
             modules.add(module);
         }
@@ -169,7 +174,7 @@ public final class BaselineGenerateMojo extends AbstractMojo {
             return Map.of();
         }
         Map<String, String> groups = new LinkedHashMap<>();
-        for (String token : value.split(",")) {
+        for (String token : value.split(LIST_DELIMITER)) {
             String[] parts = token.trim().split("=", -1);
             if (parts.length != 2) {
                 throw new MojoExecutionException(
@@ -177,7 +182,7 @@ public final class BaselineGenerateMojo extends AbstractMojo {
             }
             String module = normalizeModule(parts[0], "moduleGroups");
             String group = parts[1].trim().toLowerCase(Locale.ROOT);
-            if (!group.matches("[a-z][a-z0-9-]{0,31}")) {
+            if (!group.matches(DATASOURCE_GROUP_PATTERN)) {
                 throw new MojoExecutionException(
                         "MANGO-BASELINE-035 invalid datasource group: " + parts[1]);
             }
@@ -193,7 +198,7 @@ public final class BaselineGenerateMojo extends AbstractMojo {
     private static String normalizeModule(String value, String property)
             throws MojoExecutionException {
         String module = value.trim().toLowerCase(Locale.ROOT);
-        if (!module.matches("[a-z0-9][a-z0-9-]*")) {
+        if (!module.matches(MODULE_PATTERN)) {
             throw new MojoExecutionException(
                     "MANGO-BASELINE-037 invalid module in " + property + ": " + value);
         }

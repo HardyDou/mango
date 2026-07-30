@@ -13,11 +13,14 @@ import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
 import java.util.LinkedHashSet;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 final class BaselineArtifactVerifier {
 
     private static final String MANIFEST_PATH = "META-INF/mango/baseline-manifest.json";
     private static final String MARKER = "-- mango:baseline-idempotent";
+    private static final Pattern BASELINE_FILE_NAME =
+            Pattern.compile("B[^/]+__baseline\\.sql");
 
     private BaselineArtifactVerifier() {
     }
@@ -29,64 +32,101 @@ final class BaselineArtifactVerifier {
             throw failure("manifest is missing or unsafe: " + manifestPath);
         }
         try {
-            JsonNode manifest = new ObjectMapper().readTree(manifestPath.toFile());
-            JsonNode modules = manifest.path("modules");
-            if (!modules.isArray() || modules.isEmpty()) {
-                throw failure("manifest modules must be a non-empty array");
-            }
-            Set<Path> expected = new LinkedHashSet<>();
-            for (JsonNode module : modules) {
-                String moduleName = requiredText(module, "module");
-                String resource = requiredText(module, "baselineResource");
-                String expectedSha256 = requiredText(module, "baselineSha256");
-                Path baseline = root.resolve(resource).normalize();
-                Path expectedParent = root.resolve("db/baseline").resolve(moduleName).normalize();
-                if (!baseline.startsWith(expectedParent)
-                        || !baseline.getParent().equals(expectedParent)
-                        || !baseline.getFileName().toString().matches("B[^/]+__baseline\\.sql")) {
-                    throw failure("invalid baseline path for module " + moduleName + ": " + resource);
-                }
-                if (!Files.isRegularFile(baseline) || Files.isSymbolicLink(baseline)) {
-                    throw failure("baseline is missing or unsafe: " + resource);
-                }
-                byte[] content = Files.readAllBytes(baseline);
-                String actualSha256 = sha256(content);
-                if (!expectedSha256.equals(actualSha256)) {
-                    throw failure("baseline checksum mismatch: " + resource);
-                }
-                String firstLine = new String(content, StandardCharsets.UTF_8).lines()
-                        .findFirst()
-                        .orElse("");
-                if (!MARKER.equals(firstLine)) {
-                    throw failure("baseline marker is missing: " + resource);
-                }
-                if (!expected.add(baseline)) {
-                    throw failure("duplicate baseline manifest entry: " + resource);
-                }
-            }
-
-            Set<Path> actual = new LinkedHashSet<>();
-            Path baselineRoot = root.resolve("db/baseline");
-            if (Files.isDirectory(baselineRoot)) {
-                try (var files = Files.walk(baselineRoot)) {
-                    files.filter(Files::isRegularFile)
-                            .filter(path -> path.getFileName().toString().matches("B[^/]+__baseline\\.sql"))
-                            .map(path -> path.toAbsolutePath().normalize())
-                            .forEach(actual::add);
-                }
-            }
-            if (!actual.equals(expected)) {
-                Set<Path> missing = new LinkedHashSet<>(expected);
-                missing.removeAll(actual);
-                Set<Path> unexpected = new LinkedHashSet<>(actual);
-                unexpected.removeAll(expected);
-                throw failure("baseline inventory mismatch; missing=" + relative(root, missing)
-                        + ", unexpected=" + relative(root, unexpected));
-            }
+            Set<Path> expected = expectedBaselines(root, manifestPath);
+            verifyInventory(root, expected, actualBaselines(root));
         } catch (IOException exception) {
             throw new MojoExecutionException(
                     "MANGO-BASELINE-038 failed to verify generated baseline artifacts", exception);
         }
+    }
+
+    private static Set<Path> expectedBaselines(Path root, Path manifestPath)
+            throws IOException, MojoExecutionException {
+        JsonNode manifest = new ObjectMapper().readTree(manifestPath.toFile());
+        JsonNode modules = manifest.path("modules");
+        if (!modules.isArray() || modules.isEmpty()) {
+            throw failure("manifest modules must be a non-empty array");
+        }
+        Set<Path> expected = new LinkedHashSet<>();
+        for (JsonNode module : modules) {
+            verifyManifestModule(root, module, expected);
+        }
+        return expected;
+    }
+
+    private static void verifyManifestModule(
+            Path root,
+            JsonNode module,
+            Set<Path> expected) throws IOException, MojoExecutionException {
+        String moduleName = requiredText(module, "module");
+        String resource = requiredText(module, "baselineResource");
+        String expectedSha256 = requiredText(module, "baselineSha256");
+        Path baseline = validatedBaselinePath(root, moduleName, resource);
+        if (!Files.isRegularFile(baseline) || Files.isSymbolicLink(baseline)) {
+            throw failure("baseline is missing or unsafe: " + resource);
+        }
+        byte[] content = Files.readAllBytes(baseline);
+        if (!expectedSha256.equals(sha256(content))) {
+            throw failure("baseline checksum mismatch: " + resource);
+        }
+        verifyMarker(content, resource);
+        if (!expected.add(baseline)) {
+            throw failure("duplicate baseline manifest entry: " + resource);
+        }
+    }
+
+    private static Path validatedBaselinePath(
+            Path root,
+            String moduleName,
+            String resource) throws MojoExecutionException {
+        Path baseline = root.resolve(resource).normalize();
+        Path expectedParent = root.resolve("db/baseline").resolve(moduleName).normalize();
+        boolean directChild = expectedParent.equals(baseline.getParent());
+        boolean validFileName = baseline.getFileName() != null
+                && BASELINE_FILE_NAME.matcher(baseline.getFileName().toString()).matches();
+        if (!baseline.startsWith(expectedParent) || !directChild || !validFileName) {
+            throw failure("invalid baseline path for module " + moduleName + ": " + resource);
+        }
+        return baseline;
+    }
+
+    private static void verifyMarker(byte[] content, String resource)
+            throws MojoExecutionException {
+        String firstLine = new String(content, StandardCharsets.UTF_8).lines()
+                .findFirst()
+                .orElse("");
+        if (!MARKER.equals(firstLine)) {
+            throw failure("baseline marker is missing: " + resource);
+        }
+    }
+
+    private static Set<Path> actualBaselines(Path root) throws IOException {
+        Set<Path> actual = new LinkedHashSet<>();
+        Path baselineRoot = root.resolve("db/baseline");
+        if (!Files.isDirectory(baselineRoot)) {
+            return actual;
+        }
+        try (var files = Files.walk(baselineRoot)) {
+            files.filter(Files::isRegularFile)
+                    .filter(path -> BASELINE_FILE_NAME
+                            .matcher(path.getFileName().toString()).matches())
+                    .map(path -> path.toAbsolutePath().normalize())
+                    .forEach(actual::add);
+        }
+        return actual;
+    }
+
+    private static void verifyInventory(Path root, Set<Path> expected, Set<Path> actual)
+            throws MojoExecutionException {
+        if (actual.equals(expected)) {
+            return;
+        }
+        Set<Path> missing = new LinkedHashSet<>(expected);
+        missing.removeAll(actual);
+        Set<Path> unexpected = new LinkedHashSet<>(actual);
+        unexpected.removeAll(expected);
+        throw failure("baseline inventory mismatch; missing=" + relative(root, missing)
+                + ", unexpected=" + relative(root, unexpected));
     }
 
     private static String requiredText(JsonNode node, String field) throws MojoExecutionException {
