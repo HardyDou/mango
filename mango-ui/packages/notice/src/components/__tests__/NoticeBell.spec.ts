@@ -281,9 +281,7 @@ describe('NoticeBell', () => {
     expect(notificationOptions.message.children[0].children[0].children[1].props.innerHTML).toBe('SYSTEM_NOTICE');
     expect(notificationOptions.message.children[0].children[1].children[0].children).toBe('消息内容：');
     expect(notificationOptions.message.children[0].children[1].children[1].props.innerHTML).toBe('系统消息内容');
-    expect(notificationOptions.message.children[0].children[2].children[1].props.innerHTML).toBe(
-      '2026-05-26 10:00:00',
-    );
+    expect(notificationOptions.message.children[0].children[2].children[1].props.innerHTML).toBe('2026-05-26 10:00:00');
     expect(notificationOptions.message.children[1].children[0].children).toBe('点击查看');
     wrapper.unmount();
   });

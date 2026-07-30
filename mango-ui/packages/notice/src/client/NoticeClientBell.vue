@@ -26,7 +26,12 @@
         </button>
       </div>
       <el-empty v-else-if="messages.length === 0" description="暂无消息" :image-size="60" />
-      <div v-for="message in grouped ? [] : messages" :key="message.id" class="notice-bell__item" @click="openDetail(message.id)">
+      <div
+        v-for="message in grouped ? [] : messages"
+        :key="message.id"
+        class="notice-bell__item"
+        @click="openDetail(message.id)"
+      >
         <div class="notice-bell__avatar">{{ bizAvatar(message) }}</div>
         <div class="notice-bell__body">
           <!-- 标题和摘要可能包含基础富文本，必须先按通知白名单清洗再渲染。 -->

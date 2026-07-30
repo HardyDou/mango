@@ -1,17 +1,7 @@
 <template>
-  <el-dialog
-    v-model="visible"
-    :title="dialogTitle"
-    width="640px"
-    class="notice-detail-dialog"
-    destroy-on-close
-  >
+  <el-dialog v-model="visible" :title="dialogTitle" width="640px" class="notice-detail-dialog" destroy-on-close>
     <div v-if="message" class="notice-detail">
-      <div
-        v-for="row in detailRows"
-        :key="row.key"
-        class="notice-detail__row"
-      >
+      <div v-for="row in detailRows" :key="row.key" class="notice-detail__row">
         <span class="notice-detail__label">{{ row.label }}：</span>
         <!-- 字段值已由 notice HTML 白名单清洗，按消息协议要求使用 v-html 保留基础格式。 -->
         <!-- eslint-disable-next-line vue/no-v-html -->
