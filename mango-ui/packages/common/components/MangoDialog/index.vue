@@ -25,7 +25,7 @@
     class="mango-dialog"
     @open="handleOpen"
     @opened="emit('opened')"
-    @close="emit('close')"
+    @close="handleClosing"
     @closed="handleClosed"
   >
     <template #header>
@@ -82,9 +82,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, useAttrs } from 'vue';
+import { computed, onBeforeUnmount, ref, useAttrs, watch } from 'vue';
 import { Close } from '@element-plus/icons-vue';
-import type { MangoDialogEmits, MangoDialogProps } from './types';
+import type { MangoDialogEmits, MangoDialogExpose, MangoDialogProps } from './types';
 import { type DialogResizeCorner, useDialogWindow } from './useDialogWindow';
 
 interface DialogExpose {
@@ -117,6 +117,8 @@ const emit = defineEmits<MangoDialogEmits>();
 const attrs = useAttrs();
 const dialogRef = ref<DialogExpose>();
 const resizeCorners: DialogResizeCorner[] = ['north-west', 'north-east', 'south-west', 'south-east'];
+let dialogUnavailable = false;
+let dialogUnmounted = false;
 
 const forwardedAttrs = computed(() => {
   const result = { ...attrs };
@@ -129,7 +131,7 @@ const resolvedModal = computed(() => props.modal ?? !props.draggable);
 const resolvedCloseOnClickModal = computed(() => (resolvedModal.value ? props.closeOnClickModal : false));
 const resolvedLockScroll = computed(() => props.lockScroll ?? resolvedModal.value);
 const {
-  bringToFront,
+  bringToFront: bringDialogToFront,
   dialogStyle,
   isInteracting,
   resetWindow,
@@ -152,20 +154,47 @@ const visible = computed({
   },
 });
 
+watch(
+  () => props.modelValue,
+  (value) => {
+    if (value) dialogUnavailable = false;
+  },
+);
+
 function handleClose() {
   // Use Element Plus close flow so attrs such as before-close still take effect.
   dialogRef.value?.handleClose();
 }
 
 function handleOpen() {
-  bringToFront();
+  dialogUnavailable = false;
+  bringDialogToFront();
   emit('open');
 }
 
+function handleClosing() {
+  dialogUnavailable = true;
+  emit('close');
+}
+
 function handleClosed() {
+  dialogUnavailable = true;
   resetWindow();
   emit('closed');
 }
+
+function bringToFront() {
+  if (!props.modelValue || dialogUnavailable || dialogUnmounted) return;
+  bringDialogToFront();
+}
+
+onBeforeUnmount(() => {
+  dialogUnmounted = true;
+});
+
+defineExpose<MangoDialogExpose>({
+  bringToFront,
+});
 </script>
 
 <style scoped lang="scss">

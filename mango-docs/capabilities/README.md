@@ -37,6 +37,7 @@
 
 | 日期 | 能力 | 入口 | 设计与交付 |
 |------|------|------|------------|
+| 2026-07-30 | MangoDialog 编程式置顶：公共弹框导出 `MangoDialogExpose`，父组件可通过实例 `bringToFront()` 将已打开资源重新提升到其它 MangoDialog 之上；用户按下标题、内容或 footer 任意区域均可置顶且不阻止内部控件事件，关闭中、已关闭或销毁后的调用安全忽略，拖拽、缩放、遮罩和挂载行为不变 | [Common README](../../mango-ui/packages/common/README.md) | [MangoDialog 编程式置顶 STANDARD 交付记录](../plans/2026-07-30-mango-dialog-programmatic-bring-to-front.md)；双实例层级往返、全区域交互、生命周期安全、公开类型及真实包消费者验证 |
 | 2026-07-29 | MangoDialog 窗口交互：公共弹框支持可选拖动、八方向缩放、最大化/还原、视口边界约束和窗口尺寸变化后的自动收敛；既有默认弹框行为保持不变 | [Common README](../../mango-ui/packages/common/README.md) | [MangoDialog 窗口交互计划](../plans/2026-07-28-mango-dialog-window-interactions.md)；组件单测覆盖拖动、缩放、最大化、还原、视口变化和清理 |
 | 2026-07-28 | Workflow 业务流程图快照：任务详情、流程实例详情和任务侧流程详情只要求登录，直接返回实例实际运行发布版本的 `designerJson`；业务流程轨迹不再依赖定义管理权限，历史实例不漂移到最新定义 | [Workflow README](../../mango/mango-platform/mango-workflow/README.md)、[Workflow Frontend README](../../mango-ui/packages/workflow/README.md)、[业务审批接入](../guides/business-integration/workflow-business-approval.md) | [Issue #650 STANDARD 交付记录](../plans/2026-07-28-issue-650-workflow-runtime-designer-json.md)；后端历史版本集成测试、LOGIN 访问合同与前端业务渲染回归 |
 | 2026-07-26 | 后端业务前置条件非空收窄：`Require.nonNull` 在保持统一 `BizException` 语义的同时返回带 SpotBugs 非空契约的原对象；复合条件继续使用 `Require.isTrue`，不再为消除 `NP_NULL_PARAM_DEREF` 改写业务校验风格 | [Common README](../../mango/mango-common/README.md)、[后端代码规范](../../mango-pmo/rules/backend/01-code.md) | [STANDARD 交付记录](../plans/2026-07-26-require-nonnull-spotbugs.md)；Common 单测、SpotBugs 与直接模块质量门禁 |

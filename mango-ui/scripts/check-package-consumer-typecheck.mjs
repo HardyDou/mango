@@ -191,6 +191,19 @@ function writePackageTypeSmoke(frontendRoot, packageNames) {
     (packageName, index) => `type MangoPackage${index + 1} = typeof import('${packageName}');`,
   );
   const tuple = packageNames.map((_, index) => `MangoPackage${index + 1}`).join(', ');
+  const mangoDialogExposeSmoke = packageNames.includes('@mango/common')
+    ? [
+        "import { ref } from 'vue';",
+        "import type { MangoDialogExpose } from '@mango/common';",
+        '',
+        'export const mangoDialogRef = ref<MangoDialogExpose | null>(null);',
+        '',
+        'export function focusMangoDialog() {',
+        '  mangoDialogRef.value?.bringToFront();',
+        '}',
+        '',
+      ]
+    : [];
   const httpClientSmoke =
     packageNames.includes('@mango/api-schema') && packageNames.includes('@mango/http-client')
       ? [
@@ -209,9 +222,14 @@ function writePackageTypeSmoke(frontendRoot, packageNames) {
       : [];
   writeFileSync(
     join(frontendRoot, 'src/mango-package-contract-smoke.ts'),
-    [...httpClientSmoke, ...declarations, '', `export type MangoPublishedPackageContracts = [${tuple}];`, ''].join(
-      '\n',
-    ),
+    [
+      ...mangoDialogExposeSmoke,
+      ...httpClientSmoke,
+      ...declarations,
+      '',
+      `export type MangoPublishedPackageContracts = [${tuple}];`,
+      '',
+    ].join('\n'),
   );
 }
 
