@@ -4,7 +4,7 @@ import FilePreviewPanel from '../FilePreviewPanel.vue';
 import { fileApi, type FilePreview } from '../../api/file';
 
 const mountedApps: App[] = [];
-const happyDomSettings = (window as Window & {
+const happyDomSettings = (window as unknown as Window & {
   happyDOM: { settings: { disableIframePageLoading: boolean } };
 }).happyDOM.settings;
 const iframePageLoadingDisabled = happyDomSettings.disableIframePageLoading;
@@ -30,9 +30,13 @@ const ElImageStub = defineComponent({
   name: 'ElImage',
   props: {
     src: String,
+    fit: {
+      type: String,
+      default: undefined,
+    },
   },
   setup(props) {
-    return () => h('img', { src: props.src });
+    return () => h('img', { src: props.src, 'data-fit': props.fit });
   },
 });
 
@@ -50,12 +54,16 @@ function createPreview(overrides: Partial<FilePreview> = {}): FilePreview {
   };
 }
 
-async function mountPanel(preview: FilePreview) {
+async function mountPanel(
+  preview: FilePreview | null,
+  options: { fitContainer?: boolean; showActions?: boolean } = {},
+) {
   const host = document.createElement('div');
   document.body.appendChild(host);
   const app = createApp(FilePreviewPanel, {
     preview,
-    showActions: true,
+    showActions: options.showActions ?? true,
+    fitContainer: options.fitContainer ?? false,
   });
   app.component('ElButton', ElButtonStub);
   app.component('ElTag', ElTagStub);
@@ -96,6 +104,85 @@ afterEach(() => {
 });
 
 describe('FilePreviewPanel', () => {
+  it('keeps the natural-height mode by default', async () => {
+    const host = await mountPanel(createPreview({ directPreviewUrl: '/preview/report.pdf' }));
+
+    expect(host.querySelector('.file-preview-panel--fit-container')).toBeNull();
+    expect(host.querySelector('.preview-stage')).not.toBeNull();
+  });
+
+  it('enables the container-fill class without requiring layout variables', async () => {
+    const host = await mountPanel(
+      createPreview({ directPreviewUrl: '/preview/report.pdf' }),
+      { fitContainer: true },
+    );
+
+    const panel = host.querySelector('.file-preview-panel');
+    expect(panel?.classList.contains('file-preview-panel--fit-container')).toBe(true);
+    expect(panel?.getAttribute('style')).toBeNull();
+  });
+
+  it('keeps the stage as the only flex region when actions are hidden', async () => {
+    const host = await mountPanel(
+      createPreview({ directPreviewUrl: '/preview/report.pdf' }),
+      { fitContainer: true, showActions: false },
+    );
+
+    expect(host.querySelector('.preview-actions')).toBeNull();
+    expect(host.querySelector('.preview-stage')).not.toBeNull();
+  });
+
+  it.each([
+    ['PDF', createPreview({ directPreviewUrl: '/preview/report.pdf' }), 'iframe.preview-frame'],
+    ['image', createPreview({
+      fileName: 'diagram.png',
+      fileExt: 'png',
+      contentType: 'image/png',
+      directPreviewUrl: '/preview/diagram.png',
+    }), 'img.preview-image'],
+    ['video', createPreview({
+      fileName: 'demo.mp4',
+      fileExt: 'mp4',
+      contentType: 'video/mp4',
+      directPreviewUrl: '/preview/demo.mp4',
+    }), 'video.preview-media'],
+    ['audio', createPreview({
+      fileName: 'recording.mp3',
+      fileExt: 'mp3',
+      contentType: 'audio/mpeg',
+      directPreviewUrl: '/preview/recording.mp3',
+    }), 'audio.preview-audio'],
+    ['Office document', createPreview({
+      fileName: 'report.docx',
+      fileExt: 'docx',
+      contentType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      documentPreviewUrl: '/document/report.docx',
+    }), 'iframe.preview-frame'],
+  ])('renders %s content inside the container-fill stage', async (_label, preview, selector) => {
+    const host = await mountPanel(preview, { fitContainer: true });
+
+    expect(host.querySelector(`.preview-stage > ${selector}`)).not.toBeNull();
+    if (selector === 'img.preview-image') {
+      expect(host.querySelector(selector)?.getAttribute('data-fit')).toBe('contain');
+    }
+  });
+
+  it('keeps empty and download-only states in fill-mode containers', async () => {
+    const emptyHost = await mountPanel(null, { fitContainer: true });
+    expect(emptyHost.querySelector('.preview-empty')).not.toBeNull();
+
+    mountedApps.pop()?.unmount();
+    emptyHost.remove();
+
+    const placeholderHost = await mountPanel(createPreview({
+      fileName: 'report.docx',
+      fileExt: 'docx',
+      contentType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      previewable: false,
+    }), { fitContainer: true });
+    expect(placeholderHost.querySelector('.preview-stage > .preview-placeholder')).not.toBeNull();
+  });
+
   it('keeps the new window preview button rendered when preview url is unavailable', async () => {
     const host = await mountPanel(createPreview({
       fileName: 'report.docx',

@@ -140,6 +140,11 @@ FileRecordVO zipFile = fileApi.packageFiles(command).getData();
 
 ## 8. 变更影响记录
 
+- 2026-07-30：`FilePreviewPanel` 新增默认关闭的 `fit-container` 容器填充模式。固定高度容器、`ElDialog` 或
+  `MangoDialog` 正文可以直接传入该 prop，使 PDF、Office、图片和音视频随容器缩放，无需业务页面监听 resize
+  或组合预览高度变量。未传入时继续使用自然高度；文件 ID 持久化、上传/预览/下载 API、权限、租户、文档转换
+  接口和本场景验收步骤不变。
+
 - v2026.07.08-admin-page-layout-release 只发布后台统一页面骨架组件、运营列表页 CLI/starter 模板和前端 npm 版本锁；不改变文件上传、回显、下载、预览、文件权限、租户隔离、业务表保存 fileId/fileIds 的接入方式和本场景验收步骤。业务项目升级时按发布说明成组升级前端 `@mango/*` 包和 `@mango/cli`。
 
 ## 8. 后端合并 PDF 归档

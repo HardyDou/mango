@@ -269,12 +269,12 @@
       </template>
       <FilePreviewPanel
         ref="previewPanelRef"
-        class="preview-dialog-panel"
         :file-id="preview?.id"
         :preview="preview"
         :preview-provider-url="settings.previewProviderUrl"
         :preview-external-extensions="settings.previewExternalExtensions"
         :show-actions="false"
+        fit-container
         @actions-change="handlePreviewActionsChange"
       />
     </el-dialog>
@@ -657,16 +657,6 @@ onMounted(() => {
   align-items: center;
   gap: 2px;
   flex-shrink: 0;
-}
-
-.preview-dialog-panel {
-  flex: 1 1 auto;
-  width: 100%;
-  --mango-file-preview-panel-height: 100%;
-  --mango-file-preview-panel-min-height: 0;
-  --mango-file-preview-stage-min-height: 0;
-  --mango-file-preview-content-height: 100%;
-  --mango-file-preview-content-min-height: 0;
 }
 
 :deep(.file-preview-dialog.el-dialog) {

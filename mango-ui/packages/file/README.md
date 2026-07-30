@@ -108,6 +108,19 @@ import { FilePreviewPanel } from '@mango/file';
 </template>
 ```
 
+固定高度容器或弹框正文需要占满可用区域时，启用 `fit-container`：
+
+```vue
+<FilePreviewPanel
+  :file-id="attachmentId"
+  fit-container
+/>
+```
+
+`fit-container` 默认关闭，不影响普通流式页面的自然高度。启用后，父容器需要提供可计算的高度；组件会占满可用宽高，
+并让 PDF、Office iframe、图片和音视频随容器尺寸变化。现有
+`--mango-file-preview-*` CSS 变量继续作为特殊场景的兼容覆盖入口，但启用该 prop 不要求手工设置变量。
+
 ## 5. 快速开始
 
 1. 后端应用启用 `mango-file`，需要文档预览时同时启用 `mango-file-preview`。
@@ -277,6 +290,10 @@ import { FilePreviewPanel } from '@mango/file';
 - [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)
 
 ## 12. 变更影响记录
+
+- 2026-07-30：`FilePreviewPanel` 源码新增默认关闭的 `fit-container` 容器填充模式。固定高度容器和弹框正文可直接
+  启用该 prop，让预览区域及 PDF、Office、图片和音视频跟随可用尺寸；普通流式页面和现有 CSS 变量入口保持兼容。
+  本记录不代表 npm 版本已经发布。
 
 - `@mango/file@1.0.26` publishes the file preview dialog fix: PDF preview fills the dialog content height and owns its own scrolling; the open-in-new-window action always renders and is disabled only when no usable preview URL exists. File ID persistence, upload, download, preview APIs, page keys, permissions and backend startup stay compatible.
 

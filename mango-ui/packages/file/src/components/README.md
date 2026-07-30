@@ -37,7 +37,8 @@ Issue #411 的布局优化目标是 `FilePreviewPanel` 及文件管理页承载�
 - 外层弹框负责业务标题、文件名、版本、确认/取消等业务动作。
 - `FilePreviewPanel` 负责文件展示、下载和新窗口预览。
 - 外层弹框如果隐藏 `FilePreviewPanel` 自带操作区，需接管并透传下载、新窗口预览能力，避免只保留部分按钮；没有可用预览地址时，新窗口预览按钮保持渲染但处于禁用态。
-- 弹框宽高、小屏适配和内容区高度与 `FilePreviewPanel` 的 CSS 变量配合，例如设置 `--mango-file-preview-panel-height`、`--mango-file-preview-content-height` 和 `--mango-file-preview-content-min-height`。
+- 固定高度容器或弹框正文使用 `fit-container`，父容器负责提供可计算高度，组件负责填满剩余区域并随父容器缩放。
+- `--mango-file-preview-*` CSS 变量继续作为特殊场景的兼容覆盖入口；启用 `fit-container` 不要求手工设置这些变量。
 - 业务页面把可展示预览地址传入预览内容区；`/file/files/download` 用于下载动作。
 
 ## 3. 接入方式
@@ -89,6 +90,24 @@ const fileIds = ref<string[]>([]);
 
 ```vue
 <FilePreviewPanel :file-id="fileId" />
+```
+
+填满固定尺寸容器：
+
+```vue
+<div class="preview-container">
+  <FilePreviewPanel :file-id="fileId" fit-container />
+</div>
+
+<style scoped>
+.preview-container {
+  display: flex;
+  width: 60vw;
+  height: 65vh;
+  min-width: 0;
+  min-height: 0;
+}
+</style>
 ```
 
 ## 4. 参数与事件
@@ -161,6 +180,7 @@ const fileIds = ref<string[]>([]);
 | `previewProviderUrl`        | `string`                           | 环境变量或后端返回 | 文档预览服务地址。                                       |
 | `previewExternalExtensions` | `string[]`                         | 空                 | 外部预览扩展名。                                         |
 | `showActions`               | `boolean`                          | `true`             | 是否显示下载和新窗口预览操作。                           |
+| `fitContainer`              | `boolean`                          | `false`            | 是否占满父容器可用宽高并让预览内容随容器缩放。           |
 
 `FilePreviewPanel` events 和 expose：
 
@@ -236,6 +256,11 @@ const fileIds = ref<string[]>([]);
 - [能力说明维护规范](../../../../../mango-pmo/rules/08-capability-docs.md)
 
 ## 10. 变更影响记录
+
+- 2026-07-30：`FilePreviewPanel` 源码新增默认关闭的 `fit-container` 模式。该模式适用于固定高度容器、
+  `ElDialog` 和 `MangoDialog` 正文；PDF 与 Office iframe 在预览区内填充并自行滚动，图片保持 `contain`，
+  空状态和下载查看状态在可用区域居中。父容器必须提供可计算高度；现有自然高度模式和 CSS 变量入口保持兼容。
+  本记录不代表 npm 版本已经发布。
 
 - `@mango/file@1.0.22` 让弹框场景下的 `FilePreviewPanel` 高度跟随外层内容区，PDF 内容由预览自身滚动；
   新窗口预览操作不再由 `v-if` 移除，缺少预览地址时保持禁用态，便于消费项目获得稳定操作区布局。

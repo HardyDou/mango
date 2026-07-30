@@ -1,7 +1,10 @@
 <template>
-  <div class="file-preview-panel">
-    <el-skeleton v-if="loading" :rows="4" animated />
-    <el-empty v-else-if="!preview" description="暂无文件" />
+  <div
+    class="file-preview-panel"
+    :class="{ 'file-preview-panel--fit-container': fitContainer }"
+  >
+    <el-skeleton v-if="loading" class="preview-loading" :rows="4" animated />
+    <el-empty v-else-if="!preview" class="preview-empty" description="暂无文件" />
     <template v-else>
       <div v-if="showActions" class="preview-actions">
         <el-tag size="small" :type="previewModeTag">
@@ -65,24 +68,18 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { Document } from '@element-plus/icons-vue';
-import { downloadFileRecord, fileApi, normalizeFileId, type FilePreview, type FileReference } from '../api/file';
+import { downloadFileRecord, fileApi, normalizeFileId, type FilePreview } from '../api/file';
 import { isBackendFileContentUrl, isPreviewDisplayUrl } from '../utils/previewUrl';
-import type { ApiId } from '@mango/api-schema';
+import type { FilePreviewPanelProps } from './FilePreviewPanel.types';
 
 type PreviewActionsState = {
   canDownload: boolean;
   canOpenInNewWindow: boolean;
 };
 
-const props = withDefaults(defineProps<{
-  fileId?: ApiId | `mango-file:${string}` | null;
-  file?: FileReference;
-  preview?: FilePreview | null;
-  previewProviderUrl?: string;
-  previewExternalExtensions?: string[];
-  showActions?: boolean;
-}>(), {
+const props = withDefaults(defineProps<FilePreviewPanelProps>(), {
   showActions: true,
+  fitContainer: false,
 });
 
 const emit = defineEmits<{
@@ -313,6 +310,7 @@ defineExpose({
 
 .preview-actions {
   display: flex;
+  flex: none;
   align-items: center;
   justify-content: flex-end;
   gap: 12px;
@@ -376,5 +374,61 @@ defineExpose({
 
 .preview-tip {
   font-size: 13px;
+}
+
+.file-preview-panel--fit-container {
+  width: 100%;
+  height: var(--mango-file-preview-panel-height, 100%);
+  min-width: 0;
+  min-height: var(--mango-file-preview-panel-min-height, 0);
+}
+
+.file-preview-panel--fit-container .preview-stage {
+  width: 100%;
+  height: var(--mango-file-preview-stage-height, auto);
+  min-width: 0;
+  min-height: var(--mango-file-preview-stage-min-height, 0);
+}
+
+.file-preview-panel--fit-container .preview-image,
+.file-preview-panel--fit-container .preview-media,
+.file-preview-panel--fit-container .preview-frame {
+  flex: 1 1 auto;
+  width: 100%;
+  height: var(--mango-file-preview-content-height, 100%);
+  min-width: 0;
+  min-height: var(--mango-file-preview-content-min-height, 0);
+  max-width: 100%;
+  max-height: 100%;
+}
+
+.file-preview-panel--fit-container .preview-image :deep(.el-image__inner) {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.file-preview-panel--fit-container .preview-media {
+  object-fit: contain;
+}
+
+.file-preview-panel--fit-container .preview-audio {
+  flex: none;
+  width: 100%;
+  max-width: 100%;
+  margin: auto 0;
+}
+
+.file-preview-panel--fit-container .preview-placeholder {
+  min-width: 0;
+  min-height: var(--mango-file-preview-stage-min-height, 0);
+}
+
+.file-preview-panel--fit-container > .preview-loading,
+.file-preview-panel--fit-container > .preview-empty {
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
 }
 </style>

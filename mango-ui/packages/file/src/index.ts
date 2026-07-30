@@ -2,6 +2,7 @@ export { default as FileView } from './views/files/index.vue';
 export { default as FileStorageView } from './views/storage-configs/index.vue';
 export { default as FileSettingsView } from './views/settings/index.vue';
 export { default as FilePreviewPanel } from './components/FilePreviewPanel.vue';
+export type { FilePreviewPanelProps } from './components/FilePreviewPanel.types';
 export { default as MUpload } from './components/MUpload.vue';
 export type {
   UploadColumn,
