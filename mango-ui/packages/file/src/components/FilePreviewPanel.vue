@@ -1,8 +1,5 @@
 <template>
-  <div
-    class="file-preview-panel"
-    :class="{ 'file-preview-panel--fit-container': fitContainer }"
-  >
+  <div class="file-preview-panel" :class="{ 'file-preview-panel--fit-container': fitContainer }">
     <el-skeleton v-if="loading" class="preview-loading" :rows="4" animated />
     <el-empty v-else-if="!preview" class="preview-empty" description="暂无文件" />
     <template v-else>
@@ -10,15 +7,8 @@
         <el-tag size="small" :type="previewModeTag">
           {{ previewModeLabel }}
         </el-tag>
-        <el-button link type="primary" @click="openDownload">
-          下载
-        </el-button>
-        <el-button
-          link
-          type="primary"
-          :disabled="!canOpenInNewWindow"
-          @click="openPreviewInNewWindow"
-        >
+        <el-button link type="primary" @click="openDownload"> 下载 </el-button>
+        <el-button link type="primary" :disabled="!canOpenInNewWindow" @click="openPreviewInNewWindow">
           新窗口预览
         </el-button>
       </div>
@@ -31,30 +21,10 @@
           class="preview-image"
           :preview-src-list="[inlinePreviewUrl]"
         />
-        <iframe
-          v-else-if="isPdf && inlinePreviewUrl"
-          class="preview-frame"
-          :src="inlinePreviewUrl"
-          title="文件预览"
-        />
-        <video
-          v-else-if="isVideo && inlinePreviewUrl"
-          class="preview-media"
-          :src="inlinePreviewUrl"
-          controls
-        />
-        <audio
-          v-else-if="isAudio && inlinePreviewUrl"
-          class="preview-audio"
-          :src="inlinePreviewUrl"
-          controls
-        />
-        <iframe
-          v-else-if="documentPreviewUrl"
-          class="preview-frame"
-          :src="documentPreviewUrl"
-          title="文件预览"
-        />
+        <iframe v-else-if="isPdf && inlinePreviewUrl" class="preview-frame" :src="inlinePreviewUrl" title="文件预览" />
+        <video v-else-if="isVideo && inlinePreviewUrl" class="preview-media" :src="inlinePreviewUrl" controls />
+        <audio v-else-if="isAudio && inlinePreviewUrl" class="preview-audio" :src="inlinePreviewUrl" controls />
+        <iframe v-else-if="documentPreviewUrl" class="preview-frame" :src="documentPreviewUrl" title="文件预览" />
         <div v-else class="preview-placeholder">
           <el-icon><Document /></el-icon>
           <div class="preview-name">{{ preview.fileName }}</div>
@@ -99,8 +69,10 @@ const resolvedFileId = computed(() => normalizeFileId(props.file || props.fileId
 const isImage = computed(() => {
   const item = preview.value;
   const ext = extension.value;
-  return Boolean(item?.contentType?.startsWith('image/'))
-    || ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg', 'ico'].includes(ext);
+  return (
+    Boolean(item?.contentType?.startsWith('image/')) ||
+    ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg', 'ico'].includes(ext)
+  );
 });
 
 const isPdf = computed(() => {
@@ -110,13 +82,16 @@ const isPdf = computed(() => {
 
 const isVideo = computed(() => {
   const ext = extension.value;
-  return Boolean(preview.value?.contentType?.startsWith('video/'))
-    || ['mp4', 'webm', 'ogg', 'mov', 'm4v'].includes(ext);
+  return (
+    Boolean(preview.value?.contentType?.startsWith('video/')) || ['mp4', 'webm', 'ogg', 'mov', 'm4v'].includes(ext)
+  );
 });
 const isAudio = computed(() => {
   const ext = extension.value;
-  return Boolean(preview.value?.contentType?.startsWith('audio/'))
-    || ['mp3', 'wav', 'ogg', 'm4a', 'aac', 'flac'].includes(ext);
+  return (
+    Boolean(preview.value?.contentType?.startsWith('audio/')) ||
+    ['mp3', 'wav', 'ogg', 'm4a', 'aac', 'flac'].includes(ext)
+  );
 });
 
 const extension = computed(() => preview.value?.fileExt?.toLowerCase() || fileExtension(preview.value?.fileName));
@@ -144,7 +119,7 @@ const previewModeLabel = computed(() => {
   return '下载查看';
 });
 
-const previewModeTag = computed(() => documentPreviewUrl.value ? 'success' : 'info');
+const previewModeTag = computed(() => (documentPreviewUrl.value ? 'success' : 'info'));
 const previewTargetUrl = computed(() => inlinePreviewUrl.value || documentPreviewUrl.value);
 const canOpenInNewWindow = computed(() => Boolean(previewTargetUrl.value));
 const canDownload = computed(() => Boolean(preview.value?.id));
@@ -202,9 +177,10 @@ async function openPreviewInNewWindow() {
   if (!item || !previewTargetUrl.value) return;
 
   const target = window.open('about:blank', '_blank');
-  const url = documentPreviewUrl.value && isDefaultPreviewProviderUrl(item.documentPreviewUrl)
-    ? await resolveExternalPreviewUrl(item)
-    : previewTargetUrl.value;
+  const url =
+    documentPreviewUrl.value && isDefaultPreviewProviderUrl(item.documentPreviewUrl)
+      ? await resolveExternalPreviewUrl(item)
+      : previewTargetUrl.value;
   if (!url) {
     target?.close();
     return;
@@ -235,9 +211,7 @@ function resolveInlinePreviewUrl(item: FilePreview) {
 async function resolveInlinePreviewObjectUrl(item: FilePreview) {
   const response = await fileApi.previewContent(item.id);
   const contentType = item.contentType || response.headers?.['content-type'] || 'application/octet-stream';
-  const blob = response.data instanceof Blob
-    ? response.data
-    : new Blob([response.data], { type: contentType });
+  const blob = response.data instanceof Blob ? response.data : new Blob([response.data], { type: contentType });
   return URL.createObjectURL(blob);
 }
 
@@ -251,10 +225,12 @@ function isDefaultPreviewProviderUrl(value?: string) {
   if (!value) return false;
   try {
     const url = new URL(value, window.location.origin);
-    return url.pathname === '/api/file-preview/files/preview'
-      || url.pathname === '/file-preview/files/preview'
-      || url.pathname === '/api/file-preview/files/preview-entry'
-      || url.pathname === '/file-preview/files/preview-entry';
+    return (
+      url.pathname === '/api/file-preview/files/preview' ||
+      url.pathname === '/file-preview/files/preview' ||
+      url.pathname === '/api/file-preview/files/preview-entry' ||
+      url.pathname === '/file-preview/files/preview-entry'
+    );
   } catch {
     return value.startsWith('/api/file-preview/files/preview') || value.startsWith('/file-preview/files/preview');
   }
@@ -267,12 +243,16 @@ function fileExtension(fileName?: string): string {
 
 watch(() => [resolvedFileId.value, props.preview], loadPreview);
 watch(preview, loadInlinePreview, { immediate: true });
-watch(() => [canDownload.value, canOpenInNewWindow.value], () => {
-  emit('actions-change', {
-    canDownload: canDownload.value,
-    canOpenInNewWindow: canOpenInNewWindow.value,
-  });
-}, { immediate: true });
+watch(
+  () => [canDownload.value, canOpenInNewWindow.value],
+  () => {
+    emit('actions-change', {
+      canDownload: canDownload.value,
+      canOpenInNewWindow: canOpenInNewWindow.value,
+    });
+  },
+  { immediate: true },
+);
 onMounted(loadPreview);
 onBeforeUnmount(() => {
   previewLoadSequence += 1;

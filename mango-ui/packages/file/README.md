@@ -111,10 +111,7 @@ import { FilePreviewPanel } from '@mango/file';
 固定高度容器或弹框正文需要占满可用区域时，启用 `fit-container`：
 
 ```vue
-<FilePreviewPanel
-  :file-id="attachmentId"
-  fit-container
-/>
+<FilePreviewPanel :file-id="attachmentId" fit-container />
 ```
 
 `fit-container` 默认关闭，不影响普通流式页面的自然高度。启用后，父容器需要提供可计算的高度；组件会占满可用宽高，

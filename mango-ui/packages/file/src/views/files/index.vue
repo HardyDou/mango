@@ -4,21 +4,13 @@
       <div class="directory-header">
         <span>目录</span>
         <div class="directory-actions">
-          <el-button v-auth="'file:directories:add'" link type="primary" @click="handleAddDirectory">
-            新建
-          </el-button>
+          <el-button v-auth="'file:directories:add'" link type="primary" @click="handleAddDirectory"> 新建 </el-button>
           <el-dropdown v-if="selectedDirectoryId !== '0'" trigger="click" @command="handleDirectoryCommand">
-            <el-button link type="primary">
-              更多
-            </el-button>
+            <el-button link type="primary"> 更多 </el-button>
             <template #dropdown>
               <el-dropdown-menu>
-                <el-dropdown-item v-auth="'file:directories:edit'" command="edit">
-                  重命名
-                </el-dropdown-item>
-                <el-dropdown-item v-auth="'file:directories:delete'" command="delete">
-                  删除
-                </el-dropdown-item>
+                <el-dropdown-item v-auth="'file:directories:edit'" command="edit"> 重命名 </el-dropdown-item>
+                <el-dropdown-item v-auth="'file:directories:delete'" command="delete"> 删除 </el-dropdown-item>
               </el-dropdown-menu>
             </template>
           </el-dropdown>
@@ -37,44 +29,22 @@
     </aside>
 
     <el-card class="file-main">
-      <el-form
-        :inline="true"
-        class="search-form"
-      >
+      <el-form :inline="true" class="search-form">
         <el-form-item label="关键词">
-          <el-input
-            v-model="query.keyword"
-            placeholder="搜索文件名/业务信息"
-            clearable
-          />
+          <el-input v-model="query.keyword" placeholder="搜索文件名/业务信息" clearable />
         </el-form-item>
         <el-form-item label="用途">
-          <el-input
-            v-model="query.purpose"
-            placeholder="如 attachment"
-            clearable
-          />
+          <el-input v-model="query.purpose" placeholder="如 attachment" clearable />
         </el-form-item>
         <el-form-item label="访问级别">
-          <DictSelect
-            v-model="query.accessLevel"
-            dict-type="file_access_level"
-            placeholder="全部级别"
-            clearable
-          />
+          <DictSelect v-model="query.accessLevel" dict-type="file_access_level" placeholder="全部级别" clearable />
         </el-form-item>
         <el-form-item>
-          <el-checkbox v-model="query.includeArchived">
-            包含归档
-          </el-checkbox>
+          <el-checkbox v-model="query.includeArchived"> 包含归档 </el-checkbox>
         </el-form-item>
         <el-form-item>
-          <el-button v-auth="'file:files:list'" type="primary" @click="handleSearch">
-            查询
-          </el-button>
-          <el-button v-auth="'file:files:list'" @click="handleReset">
-            重置
-          </el-button>
+          <el-button v-auth="'file:files:list'" type="primary" @click="handleSearch"> 查询 </el-button>
+          <el-button v-auth="'file:files:list'" @click="handleReset"> 重置 </el-button>
         </el-form-item>
       </el-form>
 
@@ -101,40 +71,12 @@
         </div>
       </div>
 
-      <el-table
-        v-loading="loading"
-        :data="tableData"
-        stripe
-        row-key="id"
-        @selection-change="handleSelectionChange"
-      >
-        <el-table-column
-          type="selection"
-          width="48"
-          :selectable="isSelectableFile"
-        />
-        <el-table-column
-          prop="fileName"
-          label="文件名"
-          min-width="220"
-          show-overflow-tooltip
-        />
-        <el-table-column
-          prop="purpose"
-          label="用途"
-          width="120"
-        />
-        <el-table-column
-          prop="bizId"
-          label="业务ID"
-          min-width="130"
-          show-overflow-tooltip
-        />
-        <el-table-column
-          prop="accessLevel"
-          label="访问级别"
-          width="110"
-        >
+      <el-table v-loading="loading" :data="tableData" stripe row-key="id" @selection-change="handleSelectionChange">
+        <el-table-column type="selection" width="48" :selectable="isSelectableFile" />
+        <el-table-column prop="fileName" label="文件名" min-width="220" show-overflow-tooltip />
+        <el-table-column prop="purpose" label="用途" width="120" />
+        <el-table-column prop="bizId" label="业务ID" min-width="130" show-overflow-tooltip />
+        <el-table-column prop="accessLevel" label="访问级别" width="110">
           <template #default="{ row }">
             <DictTag
               dict-code="file_access_level"
@@ -144,54 +86,25 @@
             />
           </template>
         </el-table-column>
-        <el-table-column
-          prop="fileSize"
-          label="大小"
-          width="110"
-        >
+        <el-table-column prop="fileSize" label="大小" width="110">
           <template #default="{ row }">
             {{ formatSize(row.fileSize) }}
           </template>
         </el-table-column>
-        <el-table-column
-          prop="contentType"
-          label="类型"
-          min-width="150"
-          show-overflow-tooltip
-        />
-        <el-table-column
-          prop="createdBy"
-          label="上传账号"
-          width="110"
-        />
-        <el-table-column
-          prop="status"
-          label="状态"
-          width="90"
-        >
+        <el-table-column prop="contentType" label="类型" min-width="150" show-overflow-tooltip />
+        <el-table-column prop="createdBy" label="上传账号" width="110" />
+        <el-table-column prop="status" label="状态" width="90">
           <template #default="{ row }">
             <el-tag size="small" :type="row.archived === 1 ? 'info' : 'success'">
               {{ row.archived === 1 ? '已归档' : '可用' }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column
-          prop="createdTime"
-          label="创建时间"
-          width="180"
-        />
-        <el-table-column
-          label="操作"
-          width="230"
-          fixed="right"
-        >
+        <el-table-column prop="createdTime" label="创建时间" width="180" />
+        <el-table-column label="操作" width="230" fixed="right">
           <template #default="{ row }">
-            <el-button link type="primary" size="small" @click="handlePreview(row)">
-              预览
-            </el-button>
-            <el-button link type="primary" size="small" @click="handleDownload(row)">
-              下载
-            </el-button>
+            <el-button link type="primary" size="small" @click="handlePreview(row)"> 预览 </el-button>
+            <el-button link type="primary" size="small" @click="handleDownload(row)"> 下载 </el-button>
             <el-button
               v-auth="'file:files:archive'"
               v-if="row.archived !== 1"
@@ -256,13 +169,7 @@
               />
             </el-tooltip>
             <el-tooltip content="关闭" placement="bottom">
-              <el-button
-                text
-                circle
-                :icon="Close"
-                aria-label="关闭"
-                @click="previewVisible = false"
-              />
+              <el-button text circle :icon="Close" aria-label="关闭" @click="previewVisible = false" />
             </el-tooltip>
           </div>
         </div>
@@ -279,18 +186,18 @@
       />
     </el-dialog>
 
-    <el-dialog
-      v-model="directoryDialogVisible"
-      :title="directoryDialogTitle"
-      width="420px"
-      destroy-on-close
-    >
+    <el-dialog v-model="directoryDialogVisible" :title="directoryDialogTitle" width="420px" destroy-on-close>
       <el-form :model="directoryForm" label-width="90px">
         <el-form-item label="父目录">
           <el-input :model-value="currentDirectoryName" disabled />
         </el-form-item>
         <el-form-item label="目录名称">
-          <el-input v-model="directoryForm.directoryName" placeholder="请输入目录名称" maxlength="128" show-word-limit />
+          <el-input
+            v-model="directoryForm.directoryName"
+            placeholder="请输入目录名称"
+            maxlength="128"
+            show-word-limit
+          />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -350,7 +257,7 @@ const currentDirectoryName = computed(() => {
   return found?.directoryName || '全部文件';
 });
 const uploadSize = computed(() => `${Math.floor(settings.maxSize / 1024 / 1024)}MB`);
-const uploadFormats = computed(() => settings.allowedExtensions.length ? settings.allowedExtensions : undefined);
+const uploadFormats = computed(() => (settings.allowedExtensions.length ? settings.allowedExtensions : undefined));
 const previewDialogTitle = computed(() => preview.value?.fileName || '文件预览');
 
 async function loadData() {
@@ -425,7 +332,7 @@ function handleAddDirectory() {
   directoryDialogVisible.value = true;
 }
 
-const directoryDialogTitle = computed(() => directoryMode.value === 'edit' ? '重命名目录' : '新建目录');
+const directoryDialogTitle = computed(() => (directoryMode.value === 'edit' ? '重命名目录' : '新建目录'));
 
 function handleDirectoryCommand(command: 'edit' | 'delete') {
   if (command === 'edit') {
@@ -521,11 +428,13 @@ function handleArchive(row: FileRecord) {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
     type: 'warning',
-  }).then(async () => {
-    await fileApi.archive(row.id, '页面归档');
-    ElMessage.success('归档成功');
-    loadData();
-  }).catch(() => {});
+  })
+    .then(async () => {
+      await fileApi.archive(row.id, '页面归档');
+      ElMessage.success('归档成功');
+      loadData();
+    })
+    .catch(() => {});
 }
 
 async function handleDelete(row: FileRecord) {
@@ -540,7 +449,7 @@ async function handleDelete(row: FileRecord) {
 }
 
 async function handleBatchDelete() {
-  const ids = selectedRows.value.map(row => row.id);
+  const ids = selectedRows.value.map((row) => row.id);
   if (!ids.length) return;
   await ElMessageBox.confirm(`确认删除选中的 ${ids.length} 个文件？删除后将不再出现在文件列表中。`, '提示', {
     confirmButtonText: '确定',
