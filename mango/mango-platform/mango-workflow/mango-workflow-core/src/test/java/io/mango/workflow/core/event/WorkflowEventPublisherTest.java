@@ -117,6 +117,7 @@ class WorkflowEventPublisherTest {
                 .containsEntry("applyStatus", WorkflowApplyStatus.IN_APPROVAL.name())
                 .containsEntry("applicantId", 1000L)
                 .containsEntry("applicantName", "申请人")
+                .containsEntry("viewPath", "/expense/apply/detail")
                 .containsEntry("currentTaskNames", "财务审批")
                 .containsEntry("currentTaskDefinitionKeys", "finance_approve")
                 .containsEntry("currentAssigneeNames", "lisi")
@@ -205,6 +206,7 @@ class WorkflowEventPublisherTest {
         businessApply.setBusinessKey("EXP-20260516-001");
         businessApply.setApplicantId(1000L);
         businessApply.setApplicantName("申请人");
+        businessApply.setViewPath("/expense/apply/detail");
         businessApply.setApplyStatus(WorkflowApplyStatus.IN_APPROVAL);
         businessApply.setApplyStatusName("审批中");
         businessApply.setCurrentTaskNames("财务审批");

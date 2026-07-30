@@ -47,6 +47,7 @@ import io.mango.notice.api.vo.NoticeSiteMessageActionRequestVO;
 import io.mango.notice.api.vo.NoticeSiteMessageVO;
 import io.mango.notice.api.vo.NoticeTaskVO;
 import io.mango.notice.api.vo.NoticeUnreadCountVO;
+import io.mango.notice.api.vo.NoticeUnreadCategoryStatsVO;
 import io.mango.notice.api.vo.NoticeWecomLoginConfigVO;
 import io.mango.notice.api.vo.WecomUserSyncResultVO;
 import io.mango.notice.core.service.INoticeConfigurationService;
@@ -358,6 +359,11 @@ public class NoticeService implements INoticeService {
     @Override
     public NoticeUnreadCountVO unreadCount() {
         return siteMessageService.unreadCount();
+    }
+
+    @Override
+    public NoticeUnreadCategoryStatsVO unreadCategoryStats() {
+        return siteMessageService.unreadCategoryStats();
     }
 
     @Override

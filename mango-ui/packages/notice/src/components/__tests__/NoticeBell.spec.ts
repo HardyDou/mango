@@ -5,10 +5,12 @@ import type { NoticeRealtimeEvent } from '../../realtime/noticeRealtime';
 
 const apiMock = vi.hoisted(() => ({
   getMyUnreadCount: vi.fn(),
+  getMyUnreadCategoryStats: vi.fn(),
   getMySiteMessages: vi.fn(),
   getMySiteMessageDetail: vi.fn(),
   markAllMySiteMessagesRead: vi.fn(),
   markMySiteMessageRead: vi.fn(),
+  executeMySiteMessageAction: vi.fn(),
 }));
 
 const realtimeMock = vi.hoisted(() => ({
@@ -28,6 +30,8 @@ const realtimeMock = vi.hoisted(() => ({
 
 const notificationMock = vi.hoisted(() => ({
   ElNotification: vi.fn(),
+  ElMessage: { success: vi.fn() },
+  ElMessageBox: { confirm: vi.fn(() => Promise.resolve()) },
 }));
 
 vi.mock('../../api/notice', () => apiMock);
@@ -75,7 +79,8 @@ function mountNoticeBell() {
         },
         ElBadge: {
           props: ['value', 'hidden'],
-          template: '<span class="notice-bell-test-badge"><slot /><span v-if="!hidden" data-test="badge-count">{{ value }}</span></span>',
+          template:
+            '<span class="notice-bell-test-badge"><slot /><span v-if="!hidden" data-test="badge-count">{{ value }}</span></span>',
         },
         ElIcon: {
           template: '<span><slot /></span>',
@@ -89,7 +94,9 @@ function mountNoticeBell() {
         },
         NoticeDetailDialog: {
           props: ['modelValue', 'message'],
-          template: '<div data-test="detail-dialog" :data-visible="String(modelValue)">{{ message?.content }}</div>',
+          emits: ['action'],
+          template:
+            '<div data-test="detail-dialog" :data-visible="String(modelValue)">{{ message?.content }}<button v-if="message?.actions?.[0]" data-test="detail-action" @click="$emit(\'action\', message.actions[0])">action</button></div>',
         },
       },
     },
@@ -107,6 +114,14 @@ describe('NoticeBell', () => {
       total: 1,
       page: 1,
       size: 5,
+    });
+    apiMock.getMyUnreadCategoryStats.mockResolvedValue({
+      total: 1,
+      categories: [
+        { category: 'APPROVAL', count: 0 },
+        { category: 'SYSTEM', count: 1 },
+        { category: 'BUSINESS', count: 0 },
+      ],
     });
     apiMock.getMySiteMessageDetail.mockResolvedValue(testMessage);
     apiMock.markAllMySiteMessagesRead.mockResolvedValue(true);
@@ -174,7 +189,8 @@ describe('NoticeBell', () => {
           },
           ElBadge: {
             props: ['value', 'hidden'],
-            template: '<span class="notice-bell-test-badge"><slot /><span v-if="!hidden" data-test="badge-count">{{ value }}</span></span>',
+            template:
+              '<span class="notice-bell-test-badge"><slot /><span v-if="!hidden" data-test="badge-count">{{ value }}</span></span>',
           },
           ElIcon: {
             template: '<span><slot /></span>',
@@ -188,6 +204,7 @@ describe('NoticeBell', () => {
           },
           NoticeDetailDialog: {
             props: ['modelValue', 'message'],
+            emits: ['action'],
             template: '<div data-test="detail-dialog" :data-visible="String(modelValue)">{{ message?.content }}</div>',
           },
         },
@@ -228,7 +245,8 @@ describe('NoticeBell', () => {
           },
           ElBadge: {
             props: ['value', 'hidden'],
-            template: '<span class="notice-bell-test-badge"><slot /><span v-if="!hidden" data-test="badge-count">{{ value }}</span></span>',
+            template:
+              '<span class="notice-bell-test-badge"><slot /><span v-if="!hidden" data-test="badge-count">{{ value }}</span></span>',
           },
           ElIcon: {
             template: '<span><slot /></span>',
@@ -242,6 +260,7 @@ describe('NoticeBell', () => {
           },
           NoticeDetailDialog: {
             props: ['modelValue', 'message'],
+            emits: ['action'],
             template: '<div data-test="detail-dialog" :data-visible="String(modelValue)">{{ message?.content }}</div>',
           },
         },
@@ -256,10 +275,16 @@ describe('NoticeBell', () => {
     expect(apiMock.getMyUnreadCount).toHaveBeenCalledTimes(1);
     expect(realtimeMock.speakNoticeText).toHaveBeenCalledWith('新的系统消息');
     expect(realtimeMock.showDesktopNotice).not.toHaveBeenCalled();
-    expect(notificationOptions.title).toBe('测试系统消息');
+    expect(notificationOptions.title).toBe('SYSTEM_NOTICE');
     expect(notificationOptions.position).toBe('bottom-right');
-    expect(notificationOptions.message.children[0].children).toBe('系统消息内容');
-    expect(notificationOptions.message.children[1].children).toBe('SYSTEM_NOTICE · 2026-05-26 10:00:00');
+    expect(notificationOptions.message.children[0].children[0].children[0].children).toBe('消息类型：');
+    expect(notificationOptions.message.children[0].children[0].children[1].props.innerHTML).toBe('SYSTEM_NOTICE');
+    expect(notificationOptions.message.children[0].children[1].children[0].children).toBe('消息内容：');
+    expect(notificationOptions.message.children[0].children[1].children[1].props.innerHTML).toBe('系统消息内容');
+    expect(notificationOptions.message.children[0].children[2].children[1].props.innerHTML).toBe(
+      '2026-05-26 10:00:00',
+    );
+    expect(notificationOptions.message.children[1].children[0].children).toBe('点击查看');
     wrapper.unmount();
   });
 
@@ -298,6 +323,88 @@ describe('NoticeBell', () => {
     wrapper.unmount();
   });
 
+  it('未读超过十条时显示分类统计并把分类筛选交给宿主', async () => {
+    apiMock.getMyUnreadCount.mockResolvedValue({ count: 26 });
+    apiMock.getMyUnreadCategoryStats.mockResolvedValue({
+      total: 26,
+      categories: [
+        { category: 'APPROVAL', count: 15 },
+        { category: 'SYSTEM', count: 10 },
+        { category: 'BUSINESS', count: 1 },
+      ],
+    });
+    const wrapper = mountNoticeBell();
+    await flushPromises();
+
+    expect(wrapper.find('.notice-bell__item').exists()).toBe(false);
+    expect(wrapper.get('[data-test="notice-category-approval"]').text()).toBe('审批类消息（15条）');
+    expect(wrapper.get('[data-test="notice-category-system"]').text()).toBe('系统通知（10条）');
+    expect(wrapper.get('[data-test="notice-category-business"]').text()).toBe('业务通知（1条）');
+
+    await wrapper.get('[data-test="notice-category-approval"]').trigger('click');
+    expect(wrapper.emitted('view-all')?.[0]?.[0]).toEqual({ category: 'APPROVAL', unreadOnly: true });
+    wrapper.unmount();
+  });
+
+  it('未读等于十条时仍展示单条消息列表', async () => {
+    apiMock.getMyUnreadCount.mockResolvedValue({ count: 10 });
+    apiMock.getMyUnreadCategoryStats.mockResolvedValue({
+      total: 10,
+      categories: [
+        { category: 'APPROVAL', count: 10 },
+        { category: 'SYSTEM', count: 0 },
+        { category: 'BUSINESS', count: 0 },
+      ],
+    });
+    const wrapper = mountNoticeBell();
+    await flushPromises();
+
+    expect(wrapper.find('.notice-bell__item').exists()).toBe(true);
+    expect(wrapper.find('.notice-bell__categories').exists()).toBe(false);
+    wrapper.unmount();
+  });
+
+  it('详情主操作通过 interaction 交给宿主导航并关闭弹框', async () => {
+    apiMock.getMyUnreadCount.mockResolvedValue({ count: 1 });
+    apiMock.getMySiteMessageDetail.mockResolvedValue({
+      ...testMessage,
+      actions: [
+        {
+          id: 'action-1',
+          actionCode: 'OPEN_WORKFLOW',
+          actionLabel: '去审批',
+          interactionType: 'ROUTE',
+          status: 'AVAILABLE',
+          target: {
+            targetType: 'ROUTE',
+            targetKey: 'workflow:task:detail',
+            params: { taskId: 'TASK-1' },
+          },
+        },
+      ],
+    });
+    const wrapper = mountNoticeBell();
+    await flushPromises();
+
+    await wrapper.get('.notice-bell__item').trigger('click');
+    await flushPromises();
+    await wrapper.get('[data-test="detail-action"]').trigger('click');
+
+    const interaction = wrapper.emitted('interaction')?.[0]?.[0] as {
+      targetKey?: string;
+      params?: Record<string, unknown>;
+      onComplete?: (success: boolean) => void;
+    };
+    expect(interaction).toMatchObject({
+      targetKey: 'workflow:task:detail',
+      params: { taskId: 'TASK-1', messageId: '1001' },
+    });
+    interaction.onComplete?.(true);
+    await wrapper.vm.$nextTick();
+    expect(wrapper.get('[data-test="detail-dialog"]').attributes('data-visible')).toBe('false');
+    wrapper.unmount();
+  });
+
   it('消息列表使用领域头像、标题和内容摘要展示', async () => {
     apiMock.getMyUnreadCount.mockResolvedValue({ count: 1 });
     const wrapper = mountNoticeBell();
@@ -306,6 +413,34 @@ describe('NoticeBell', () => {
     expect(wrapper.get('.notice-bell__avatar').text()).toBe('S');
     expect(wrapper.get('.notice-bell__title').text()).toBe('测试系统消息');
     expect(wrapper.get('.notice-bell__summary').text()).toBe('系统消息内容摘要');
+    wrapper.unmount();
+  });
+
+  it('消息列表保留安全 HTML 格式并移除危险内容', async () => {
+    apiMock.getMyUnreadCount.mockResolvedValue({ count: 1 });
+    apiMock.getMySiteMessages.mockResolvedValue({
+      list: [
+        {
+          ...testMessage,
+          title: '<strong onclick="alert(1)">加急消息</strong><script>alert(1)</script>',
+          content: '<span style="color:red">请查看</span><a href="javascript:alert(1)">详情</a>',
+        },
+      ],
+      total: 1,
+      page: 1,
+      size: 10,
+    });
+
+    const wrapper = mountNoticeBell();
+    await flushPromises();
+
+    const titleHtml = wrapper.get('.notice-bell__title').element.innerHTML;
+    const summaryHtml = wrapper.get('.notice-bell__summary').element.innerHTML;
+    expect(titleHtml).toBe('<strong>加急消息</strong>');
+    expect(summaryHtml).toBe('<span>请查看</span><a>详情</a>');
+    expect(`${titleHtml}${summaryHtml}`).not.toContain('onclick');
+    expect(`${titleHtml}${summaryHtml}`).not.toContain('javascript:');
+    expect(`${titleHtml}${summaryHtml}`).not.toContain('<script');
     wrapper.unmount();
   });
 });

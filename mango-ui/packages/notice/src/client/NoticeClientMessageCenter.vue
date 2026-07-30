@@ -31,6 +31,13 @@
             <el-option v-for="item in domainOptions" :key="item.value" :label="item.label" :value="item.value" />
           </el-select>
         </el-form-item>
+        <el-form-item label="消息分类">
+          <el-select v-model="query.category" clearable placeholder="全部" class="notice-filter-form__select">
+            <el-option label="审批类消息" value="APPROVAL" />
+            <el-option label="系统通知" value="SYSTEM" />
+            <el-option label="业务通知" value="BUSINESS" />
+          </el-select>
+        </el-form-item>
         <el-form-item label="优先级">
           <el-select v-model="query.priority" clearable placeholder="全部" class="notice-filter-form__select">
             <el-option label="低" value="LOW" />
@@ -140,7 +147,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue';
+import { onMounted, reactive, ref, watch } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import NoticeDetailDialog from '../components/NoticeDetailDialog.vue';
 import {
@@ -152,10 +159,22 @@ import {
   markMySiteMessageRead,
   markMySiteMessagesRead,
 } from '../api/notice';
-import type { NoticePriority, NoticeSiteMessage, NoticeSiteMessageAction } from '../types/notice';
+import type {
+  NoticePriority,
+  NoticeSiteMessage,
+  NoticeSiteMessageAction,
+  NoticeSiteMessageCategory,
+} from '../types/notice';
 import { useNoticeDomains } from '../components/useNoticeDomains';
+import { buildNoticeActionInput } from './interaction';
+import type { NoticeInteractionPayload } from './interaction';
+import { isNoticeActionDisabled, visibleNoticeActions } from './messagePresentation';
 
 const loading = ref(false);
+const props = defineProps<{
+  category?: NoticeSiteMessageCategory;
+  unreadOnly?: boolean;
+}>();
 const messages = ref<NoticeSiteMessage[]>([]);
 const total = ref(0);
 const detailVisible = ref(false);
@@ -168,11 +187,12 @@ const flowContext = ref<{
   input?: Record<string, unknown>;
 }>();
 const selectedIds = ref<string[]>([]);
-const readFilter = ref<'ALL' | 'UNREAD' | 'READ'>('ALL');
+const readFilter = ref<'ALL' | 'UNREAD' | 'READ'>(props.unreadOnly ? 'UNREAD' : 'ALL');
 const query = reactive({
   pageNum: 1,
   pageSize: 10,
   unreadOnly: undefined as boolean | undefined,
+  category: props.category,
   keyword: '',
   bizGroup: '',
   priority: undefined as NoticePriority | undefined,
@@ -187,7 +207,7 @@ async function loadMessages() {
       unreadOnly: readFilter.value === 'UNREAD' ? true : undefined,
     });
     const list = result.list || [];
-    messages.value = readFilter.value === 'READ' ? list.filter(item => item.readStatus === 'READ') : list;
+    messages.value = readFilter.value === 'READ' ? list.filter((item) => item.readStatus === 'READ') : list;
     const totalValue = Number(result.total ?? messages.value.length);
     total.value = Number.isFinite(totalValue) ? totalValue : messages.value.length;
   } finally {
@@ -204,6 +224,7 @@ function resetSearch() {
   query.pageNum = 1;
   query.keyword = '';
   query.bizGroup = '';
+  query.category = undefined;
   query.priority = undefined;
   readFilter.value = 'ALL';
   void loadMessages();
@@ -227,7 +248,7 @@ async function markRead(id: string) {
 }
 
 function handleSelectionChange(rows: NoticeSiteMessage[]) {
-  selectedIds.value = rows.map(row => row.id);
+  selectedIds.value = rows.map((row) => row.id);
 }
 
 async function markSelectedRead() {
@@ -254,13 +275,7 @@ async function removeMessage(id: string) {
 const emit = defineEmits<{
   (event: 'settings'): void;
   (event: 'announcement', id: string): void;
-  (event: 'interaction', payload: {
-    message: NoticeSiteMessage;
-    action?: NoticeSiteMessageAction;
-    targetKey?: string;
-    targetType?: 'ROUTE' | 'FLOW';
-    params?: Record<string, unknown>;
-  }): void;
+  (event: 'interaction', payload: NoticeInteractionPayload): void;
 }>();
 
 function openReceiveSetting() {
@@ -268,38 +283,32 @@ function openReceiveSetting() {
 }
 
 function priorityText(priority: NoticePriority) {
-  return ({ LOW: '低', NORMAL: '普通', HIGH: '高', URGENT: '紧急' } as Record<NoticePriority, string>)[priority] || priority;
+  return (
+    ({ LOW: '低', NORMAL: '普通', HIGH: '高', URGENT: '紧急' } as Record<NoticePriority, string>)[priority] || priority
+  );
 }
 
 function priorityTag(priority: NoticePriority) {
-  return ({ LOW: 'info', NORMAL: 'info', HIGH: 'warning', URGENT: 'danger' } as Record<NoticePriority, 'info' | 'warning' | 'danger'>)[priority] || 'info';
+  return (
+    (
+      { LOW: 'info', NORMAL: 'info', HIGH: 'warning', URGENT: 'danger' } as Record<
+        NoticePriority,
+        'info' | 'warning' | 'danger'
+      >
+    )[priority] || 'info'
+  );
 }
 
 function visibleActions(row: NoticeSiteMessage) {
-  return (row.actions || []).filter(action => action.status !== 'DISABLED').slice(0, 2);
+  return visibleNoticeActions(row).slice(0, 2);
 }
 
 function isActionDisabled(action: NoticeSiteMessageAction) {
-  if (action.interactionType === 'EVENT') {
-    return !['AVAILABLE', 'FAILED'].includes(action.status);
-  }
-  return ['DISABLED', 'EXPIRED'].includes(action.status);
+  return isNoticeActionDisabled(action);
 }
 
 function buildActionInput(row: NoticeSiteMessage, action: NoticeSiteMessageAction): Record<string, unknown> {
-  return {
-    ...(row.target?.params || {}),
-    ...(action.target?.params || {}),
-    bizType: row.bizType,
-    bizId: row.bizId,
-    bizGroup: row.bizGroup,
-    bizName: row.bizName,
-    messageScene: row.messageScene,
-    messageId: row.id,
-    actionCode: action.actionCode,
-    subject: row.subject || {},
-    data: row.data || {},
-  };
+  return buildNoticeActionInput(row, action);
 }
 
 async function handleMessageAction(row: NoticeSiteMessage, action: NoticeSiteMessageAction) {
@@ -317,6 +326,11 @@ async function handleMessageAction(row: NoticeSiteMessage, action: NoticeSiteMes
       targetKey,
       targetType: 'ROUTE',
       params: input,
+      onComplete: (success) => {
+        if (success && currentMessage.value?.id === row.id) {
+          detailVisible.value = false;
+        }
+      },
     });
     return;
   }
@@ -334,6 +348,9 @@ async function executeEventAction(
   }
   await executeMySiteMessageAction(row.id, action.actionCode, input);
   ElMessage.success('操作已提交');
+  if (currentMessage.value?.id === row.id) {
+    detailVisible.value = false;
+  }
   await loadMessages();
 }
 
@@ -342,7 +359,12 @@ function handleDetailAction(action: NoticeSiteMessageAction) {
   void handleMessageAction(currentMessage.value, action);
 }
 
-function openFlowDialog(row: NoticeSiteMessage, action: NoticeSiteMessageAction, targetKey?: string, input?: Record<string, unknown>) {
+function openFlowDialog(
+  row: NoticeSiteMessage,
+  action: NoticeSiteMessageAction,
+  targetKey?: string,
+  input?: Record<string, unknown>,
+) {
   flowContext.value = {
     message: row,
     action,
@@ -356,8 +378,9 @@ const flowDialogTitle = '业务流程处理';
 
 async function submitFlowAction() {
   if (!flowContext.value) return;
-  const eventAction = (flowContext.value.message.actions || [])
-    .find(action => action.interactionType === 'EVENT' && !isActionDisabled(action));
+  const eventAction = (flowContext.value.message.actions || []).find(
+    (action) => action.interactionType === 'EVENT' && !isActionDisabled(action),
+  );
   if (eventAction) {
     await executeEventAction(flowContext.value.message, eventAction, false, {
       ...buildActionInput(flowContext.value.message, eventAction),
@@ -374,6 +397,15 @@ onMounted(() => {
   void loadDomains();
   void loadMessages();
 });
+
+watch(
+  () => [props.category, props.unreadOnly] as const,
+  ([category, unreadOnly]) => {
+    query.category = category;
+    readFilter.value = unreadOnly ? 'UNREAD' : 'ALL';
+    search();
+  },
+);
 </script>
 
 <style scoped>
@@ -449,5 +481,4 @@ onMounted(() => {
   color: var(--el-text-color-regular);
   line-height: 1.6;
 }
-
 </style>

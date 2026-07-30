@@ -49,6 +49,7 @@ import io.mango.notice.api.vo.NoticeSiteMessageActionRequestVO;
 import io.mango.notice.api.vo.NoticeSiteMessageVO;
 import io.mango.notice.api.vo.NoticeTaskVO;
 import io.mango.notice.api.vo.NoticeUnreadCountVO;
+import io.mango.notice.api.vo.NoticeUnreadCategoryStatsVO;
 import io.mango.notice.api.vo.NoticeWecomLoginConfigVO;
 import io.mango.notice.api.vo.WecomUserSyncResultVO;
 import io.mango.notice.core.service.INoticeService;
@@ -497,6 +498,14 @@ public class NoticeController implements NoticeApi {
     @Operation(summary = "获取我的系统消息未读数", description = "权限接口。查询当前用户系统消息未读数量")
     public R<NoticeUnreadCountVO> unreadCount() {
         return R.ok(noticeService.unreadCount());
+    }
+
+    @Override
+    @GetMapping("/site/my/unread-category-stats")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:site:view")
+    @Operation(summary = "获取我的系统消息未读分类统计", description = "权限接口。按审批、系统和业务分类统计当前用户未读系统消息")
+    public R<NoticeUnreadCategoryStatsVO> unreadCategoryStats() {
+        return R.ok(noticeService.unreadCategoryStats());
     }
 
     @Override

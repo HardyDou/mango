@@ -1,5 +1,6 @@
 export type NoticePriority = 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
 export type NoticeReadStatus = 'UNREAD' | 'READ';
+export type NoticeSiteMessageCategory = 'APPROVAL' | 'SYSTEM' | 'BUSINESS';
 export type NoticeChannelType = 'SITE' | 'SMS' | 'EMAIL' | 'WECHAT_OFFICIAL' | 'WECOM' | 'DINGTALK';
 export type NoticeTaskStatus = 'WAITING' | 'SENDING' | 'PARTIAL_SUCCESS' | 'SUCCESS' | 'FAILED' | 'CANCELED';
 export type NoticeSendStatus =
@@ -97,6 +98,7 @@ export interface NoticeSiteMessagePageQuery {
   pageNum?: number;
   pageSize?: number;
   unreadOnly?: boolean;
+  category?: NoticeSiteMessageCategory;
   keyword?: string;
   bizGroup?: string;
   bizType?: string;
@@ -433,6 +435,16 @@ export interface NoticeSendResult {
 
 export interface NoticeUnreadCount {
   count: number;
+}
+
+export interface NoticeUnreadCategoryCount {
+  category: NoticeSiteMessageCategory;
+  count: number;
+}
+
+export interface NoticeUnreadCategoryStats {
+  total: number;
+  categories: NoticeUnreadCategoryCount[];
 }
 
 export interface PageResult<T> {

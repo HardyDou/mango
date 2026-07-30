@@ -184,6 +184,7 @@ public class WorkflowEventPublisher {
         payload.setApplyId(businessApply.getId() == null ? null : String.valueOf(businessApply.getId()));
         payload.setApplicantId(businessApply.getApplicantId());
         payload.setApplicantName(businessApply.getApplicantName());
+        payload.setViewPath(businessApply.getViewPath());
         payload.setBusinessType(businessApply.getBusinessType());
         payload.setBusinessKey(businessApply.getBusinessKey());
         payload.setApplyStatus(businessApply.getApplyStatus() == null ? null : businessApply.getApplyStatus().name());
@@ -286,6 +287,7 @@ public class WorkflowEventPublisher {
         map.put("applyId", numericStringOrValue(payload.getApplyId()));
         map.put("applicantId", payload.getApplicantId());
         map.put("applicantName", payload.getApplicantName());
+        map.put("viewPath", payload.getViewPath());
         map.put("variables", payload.getVariables() == null ? Map.of() : payload.getVariables().toMap());
         map.put("processDefinitionId", payload.getProcessDefinitionId());
         map.put("definitionId", payload.getDefinitionId());

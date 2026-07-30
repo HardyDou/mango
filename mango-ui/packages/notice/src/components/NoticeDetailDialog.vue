@@ -1,124 +1,147 @@
 <template>
- <el-dialog v-model="visible" :title="message?.title || '消息详情'" width="560px" class="notice-detail-dialog">
- <div v-if="message" class="notice-detail">
- <div class="notice-detail__content">
- <div class="notice-detail__content-text">{{ message.content || '-' }}</div>
- </div>
- <div class="notice-detail__time">{{ message.createTime || '-' }}</div>
- </div>
- <template #footer>
- <div class="notice-detail__footer">
- <div class="notice-detail__actions">
- <el-button
- v-for="action in visibleActions"
- :key="action.actionCode"
- plain
- :type="action.interactionType === 'EVENT' ? 'primary' : 'success'"
- :disabled="isActionDisabled(action)"
- @click="emit('action', action)"
- >
- {{ action.actionLabel }}
- </el-button>
- </div>
- <el-button type="primary" @click="visible = false">确认</el-button>
- </div>
- </template>
- </el-dialog>
+  <el-dialog
+    v-model="visible"
+    :title="dialogTitle"
+    width="640px"
+    class="notice-detail-dialog"
+    destroy-on-close
+  >
+    <div v-if="message" class="notice-detail">
+      <div
+        v-for="row in detailRows"
+        :key="row.key"
+        class="notice-detail__row"
+      >
+        <span class="notice-detail__label">{{ row.label }}：</span>
+        <!-- 字段值已由 notice HTML 白名单清洗，按消息协议要求使用 v-html 保留基础格式。 -->
+        <!-- eslint-disable-next-line vue/no-v-html -->
+        <span class="notice-detail__value" v-html="row.html" />
+      </div>
+    </div>
+
+    <template #footer>
+      <div class="notice-detail__footer">
+        <el-button @click="visible = false">关闭</el-button>
+        <el-button
+          v-if="presentation.primaryAction"
+          type="primary"
+          data-test="notice-primary-action"
+          @click="emit('action', presentation.primaryAction)"
+        >
+          {{ presentation.primaryActionLabel }}
+        </el-button>
+      </div>
+    </template>
+  </el-dialog>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue';
+import { presentNoticeMessage } from '../client/messagePresentation';
+import { noticePlainText, sanitizeNoticeHtml } from '../client/html';
 import type { NoticeSiteMessage, NoticeSiteMessageAction } from '../types/notice';
 
 const props = defineProps<{
- modelValue: boolean;
- message?: NoticeSiteMessage;
+  modelValue: boolean;
+  message?: NoticeSiteMessage;
 }>();
 
 const emit = defineEmits<{
- (event: 'update:modelValue', value: boolean): void;
- (event: 'action', action: NoticeSiteMessageAction): void;
+  (event: 'update:modelValue', value: boolean): void;
+  (event: 'action', action: NoticeSiteMessageAction): void;
 }>();
 
 const visible = computed({
- get: () => props.modelValue,
- set: value => emit('update:modelValue', value),
+  get: () => props.modelValue,
+  set: (value) => emit('update:modelValue', value),
 });
 
-const visibleActions = computed(() => (props.message?.actions || [])
- .filter(action => action.status !== 'DISABLED')
- .slice(0, 3));
+const presentation = computed(() => presentNoticeMessage(props.message || emptyMessage));
+const dialogTitle = computed(() => noticePlainText(presentation.value.typeLabel));
+const detailRows = computed(() => {
+  const current = presentation.value;
+  return [
+    { key: 'type', label: '消息类型', html: sanitizeNoticeHtml(current.typeLabel) },
+    { key: 'content', label: '消息内容', html: sanitizeNoticeHtml(props.message?.content) },
+    { key: 'time', label: '消息时间', html: sanitizeNoticeHtml(props.message?.createTime) },
+  ];
+});
 
-function isActionDisabled(action: NoticeSiteMessageAction) {
- if (action.interactionType === 'EVENT') {
- return !['AVAILABLE', 'FAILED'].includes(action.status);
- }
- return ['DISABLED', 'EXPIRED'].includes(action.status);
-}
+const emptyMessage: NoticeSiteMessage = {
+  id: '',
+  title: '',
+  content: '',
+  userId: '',
+  priority: 'NORMAL',
+  readStatus: 'READ',
+};
 </script>
 
 <style scoped>
-.notice-detail-dialog :deep(.el-dialog__header) {
- text-align: left;
-}
-
+.notice-detail-dialog :deep(.el-dialog__header),
 .notice-detail-dialog :deep(.el-dialog__title) {
- display: block;
- text-align: left;
+  text-align: left;
 }
 
 .notice-detail {
- display: flex;
- flex-direction: column;
- min-height: 220px;
- max-height: 420px;
+  display: flex;
+  max-height: min(64vh, 560px);
+  flex-direction: column;
+  overflow-y: auto;
+  padding-right: 4px;
 }
 
-.notice-detail__content {
- flex: 1;
- display: flex;
- align-items: center;
- justify-content: flex-start;
- overflow-y: auto;
- padding-right: 4px;
- text-align: left;
+.notice-detail__row {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  padding: 10px 0;
+  border-bottom: 1px solid var(--el-border-color-lighter);
+  font-size: 14px;
+  line-height: 22px;
 }
 
-.notice-detail__content-text {
- width: 100%;
- white-space: pre-wrap;
- word-break: break-word;
- color: var(--el-text-color-primary);
- font-size: 15px;
- line-height: 1.8;
+.notice-detail__row:last-child {
+  border-bottom: 0;
 }
 
-.notice-detail__time {
- flex: 0 0 auto;
- margin-top: 16px;
- color: var(--el-text-color-secondary);
- font-size: 13px;
- line-height: 1.4;
- text-align: right;
+.notice-detail__label {
+  color: var(--el-text-color-secondary);
+}
+
+.notice-detail__value {
+  min-width: 0;
+  color: var(--el-text-color-primary);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.notice-detail__value :deep(p:first-child) {
+  margin-top: 0;
+}
+
+.notice-detail__value :deep(p:last-child) {
+  margin-bottom: 0;
 }
 
 .notice-detail__footer {
- display: flex;
- align-items: center;
- justify-content: flex-end;
- gap: 12px;
- width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  width: 100%;
 }
 
-.notice-detail__actions {
- display: flex;
- flex-wrap: wrap;
- gap: 8px;
- min-width: 0;
- justify-content: flex-end;
+.notice-detail__footer :deep(.el-button) {
+  margin-left: 0;
 }
 
-.notice-detail__actions :deep(.el-button) {
- margin-left: 0;
+@media (max-width: 680px) {
+  :global(.notice-detail-dialog.el-dialog) {
+    width: calc(100vw - 24px) !important;
+  }
+
+  .notice-detail__row {
+    grid-template-columns: 80px minmax(0, 1fr);
+  }
 }
 </style>

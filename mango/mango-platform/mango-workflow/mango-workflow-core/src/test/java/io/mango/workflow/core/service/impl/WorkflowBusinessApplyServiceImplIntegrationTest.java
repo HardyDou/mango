@@ -98,6 +98,20 @@ class WorkflowBusinessApplyServiceImplIntegrationTest {
         assertThat(summary.getWithdrawn()).isZero();
     }
 
+    @Test
+    void detailDerivesCustomViewPathFromFormSnapshot() {
+        insertApply(10L, 1001L, "APPROVED");
+        jdbcTemplate.update("""
+                update workflow_business_apply
+                set form_json_snapshot = ?
+                where id = ?
+                """, "{\"mode\":\"CUSTOM\",\"customConfig\":{\"viewPath\":\" /expense/apply/detail \"}}", 10L);
+
+        var detail = service.detail(10L);
+
+        assertThat(detail.getViewPath()).isEqualTo("/expense/apply/detail");
+    }
+
     private void rebuildTables() {
         jdbcTemplate.execute("drop table if exists workflow_business_apply_current_task");
         jdbcTemplate.execute("drop table if exists workflow_business_apply_status_log");
@@ -153,6 +167,22 @@ class WorkflowBusinessApplyServiceImplIntegrationTest {
                     tenant_id bigint,
                     org_id bigint,
                     apply_id bigint,
+                    business_type varchar(128),
+                    business_key varchar(128),
+                    process_instance_id varchar(128),
+                    task_id varchar(128),
+                    task_definition_key varchar(128),
+                    task_name varchar(255),
+                    assignee_id bigint,
+                    assignee_name varchar(128),
+                    claim_status varchar(64),
+                    candidate_users text,
+                    candidate_groups text,
+                    arrived_at timestamp,
+                    created_by bigint,
+                    created_at timestamp,
+                    updated_by bigint,
+                    updated_at timestamp,
                     primary key (id)
                 )
                 """);

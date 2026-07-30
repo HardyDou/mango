@@ -9,3 +9,10 @@ export interface NoticeClientBellRuntimeConfig {
   popupPlacement?: 'top-right' | 'bottom-right';
   desktopNotificationEnabled?: boolean;
 }
+
+export interface NoticeBellViewAllOptions {
+  category?: import('../types/notice').NoticeSiteMessageCategory;
+  unreadOnly?: boolean;
+}
+
+export type { NoticeInteractionPayload } from './interaction';

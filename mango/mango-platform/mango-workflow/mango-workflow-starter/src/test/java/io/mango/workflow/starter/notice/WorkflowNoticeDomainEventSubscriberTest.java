@@ -58,7 +58,7 @@ class WorkflowNoticeDomainEventSubscriberTest {
             assertThat(notice.getMessageData().toMap()).containsEntry("taskId", "TASK-1001");
             assertThat(notice.getMessageActions()).singleElement().satisfies(action -> {
                 assertThat(action.getActionCode()).isEqualTo("OPEN_WORKFLOW");
-                assertThat(action.getActionLabel()).isEqualTo("处理任务");
+                assertThat(action.getActionLabel()).isEqualTo("去审批");
                 assertThat(action.getInteractionType()).isEqualTo(NoticeSiteMessageActionInteractionType.ROUTE);
             });
         });
@@ -165,6 +165,52 @@ class WorkflowNoticeDomainEventSubscriberTest {
             assertThat(notice.getUserIds()).isNull();
             assertThat(notice.getRecipientTargets()).isNull();
             assertThat(notice.getBizType()).isEqualTo("workflow.process.completed");
+        });
+    }
+
+    @Test
+    void terminalProcessShouldPreferSafeCustomViewPathAndKeepWorkflowFallback() {
+        DomainEvent event = DomainEvent.builder()
+                .eventId("event-view-path")
+                .eventType(WorkflowEventTypes.PROCESS_COMPLETED)
+                .businessType("expense")
+                .businessKey("EXP-VIEW-1")
+                .payload("processInstanceId", "PI-VIEW-1")
+                .payload("applicantId", 8001L)
+                .payload("viewPath", "/expense/apply/detail")
+                .build();
+
+        subscriber.onEvent(event);
+
+        assertThat(events).singleElement().satisfies(published -> {
+            NoticeSendEventCommand notice = (NoticeSendEventCommand) published;
+            assertThat(notice.getMessageTarget().getTargetKey()).isEqualTo("/expense/apply/detail");
+            assertThat(notice.getMessageTarget().getParams().toMap())
+                    .containsEntry("fallbackTargetKey", "workflow:task:done")
+                    .containsEntry("processInstanceId", "PI-VIEW-1");
+            assertThat(notice.getMessageActions()).singleElement()
+                    .satisfies(action -> assertThat(action.getActionLabel()).isEqualTo("查看申请"));
+        });
+    }
+
+    @Test
+    void terminalProcessShouldRejectExternalViewPathAndUseWorkflowFallback() {
+        DomainEvent event = DomainEvent.builder()
+                .eventId("event-unsafe-view-path")
+                .eventType(WorkflowEventTypes.PROCESS_REJECTED)
+                .businessType("expense")
+                .businessKey("EXP-VIEW-2")
+                .payload("processInstanceId", "PI-VIEW-2")
+                .payload("applicantId", 8001L)
+                .payload("viewPath", "https://example.com/detail")
+                .build();
+
+        subscriber.onEvent(event);
+
+        assertThat(events).singleElement().satisfies(published -> {
+            NoticeSendEventCommand notice = (NoticeSendEventCommand) published;
+            assertThat(notice.getMessageTarget().getTargetKey()).isEqualTo("workflow:task:initiated");
+            assertThat(notice.getMessageTarget().getParams().toMap()).doesNotContainKey("fallbackTargetKey");
         });
     }
 

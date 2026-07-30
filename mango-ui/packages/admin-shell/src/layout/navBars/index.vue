@@ -57,6 +57,7 @@
         :realtime-options="noticeRealtimeOptions"
         @view-all="goNoticeMessages"
         @settings="goNoticeReceiveSetting"
+        @interaction="handleNoticeInteraction"
       />
       <Settings />
       <User />
@@ -79,7 +80,13 @@ import { hasPermission } from '@mango/common/utils/authFunction';
 import type { RealtimeOptions } from '@mango/common/utils/realtime/types';
 import { resolveMangoAdminFeatures } from '@mango/admin-pages/features';
 import { getMangoNoticeBellProvider } from '@mango/admin-pages/notice';
-import type { NoticeClientBellRuntimeConfig } from '@mango/notice/client';
+import {
+  noticeFallbackTargetKey,
+  resolveNoticeTargetLocation,
+  type NoticeClientBellRuntimeConfig,
+  type NoticeBellViewAllOptions,
+  type NoticeInteractionPayload,
+} from '@mango/notice/client';
 import { getMangoAdminShellOptions } from '../../config';
 import { resolveAccessibleMenuPath, resolveMenuPathByCode, type ShellRouteMenu } from '../../runtime/menuHost';
 
@@ -148,8 +155,12 @@ const onTopMenuClick = (item: ShellRouteMenu) => {
   }
 };
 
-const goNoticeMessages = () => {
-  navigateToNoticeMenu('notice:site-message', '当前账号无权访问我的消息，或消息菜单尚未配置');
+const goNoticeMessages = (options?: NoticeBellViewAllOptions) => {
+  navigateToNoticeMenu(
+    'notice:site-message',
+    '当前账号无权访问我的消息，或消息菜单尚未配置',
+    options?.category ? { category: options.category, unreadOnly: options.unreadOnly ? 'true' : undefined } : undefined,
+  );
 };
 
 const goNoticeReceiveSetting = () => {
@@ -160,14 +171,59 @@ const goNoticeReceiveSetting = () => {
   navigateToNoticeMenu('notice:receive-setting', '当前账号无权访问接收设置，或接收设置页面尚未配置');
 };
 
-const navigateToNoticeMenu = (menuCode: string, unavailableMessage: string) => {
+const navigateToNoticeMenu = (
+  menuCode: string,
+  unavailableMessage: string,
+  query?: Record<string, string | undefined>,
+) => {
   const targetPath = resolveMenuPathByCode(routesList.value as ShellRouteMenu[], menuCode);
   if (!targetPath) {
     ElMessage.warning(unavailableMessage);
     return;
   }
-  void router.push(targetPath);
+  void router.push({ path: targetPath, query });
 };
+
+async function handleNoticeInteraction(payload: NoticeInteractionPayload) {
+  if (!payload.targetKey) {
+    ElMessage.warning('该消息动作未配置目标');
+    payload.onComplete?.(false);
+    return;
+  }
+  const fallbackTargetKey = noticeFallbackTargetKey(payload.params);
+  const location = resolveNoticeTargetLocation(router, payload.targetKey, payload.params);
+  const fallbackLocation =
+    fallbackTargetKey && fallbackTargetKey !== payload.targetKey
+      ? resolveNoticeTargetLocation(router, fallbackTargetKey, payload.params)
+      : undefined;
+  const targetLocation = location || fallbackLocation;
+  if (!targetLocation) {
+    ElMessage.warning('目标未注册或当前无权访问');
+    payload.onComplete?.(false);
+    return;
+  }
+  try {
+    await router.push(targetLocation);
+    payload.onComplete?.(true);
+    if (!location && fallbackLocation) {
+      ElMessage.warning('原页面不可访问，已打开通用工作流页面');
+    }
+  } catch (error) {
+    console.warn('Notice target navigation failed', payload.targetKey, error);
+    if (location && fallbackLocation) {
+      try {
+        await router.push(fallbackLocation);
+        payload.onComplete?.(true);
+        ElMessage.warning('原页面不可访问，已打开通用工作流页面');
+        return;
+      } catch (fallbackError) {
+        console.warn('Notice fallback navigation failed', fallbackTargetKey, fallbackError);
+      }
+    }
+    payload.onComplete?.(false);
+    ElMessage.warning('目标未注册或当前无权访问');
+  }
+}
 
 async function loadNoticeRuntimeConfig(): Promise<NoticeClientBellRuntimeConfig> {
   const defaults: NoticeClientBellRuntimeConfig = {

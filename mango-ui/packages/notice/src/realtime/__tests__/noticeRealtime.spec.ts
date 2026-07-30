@@ -1,5 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { createNoticeRealtime, playNoticeSound, requestDesktopPermission, showDesktopNotice, speakNoticeText } from '../noticeRealtime';
+import {
+  createNoticeRealtime,
+  playNoticeSound,
+  requestDesktopPermission,
+  showDesktopNotice,
+  speakNoticeText,
+} from '../noticeRealtime';
 import type { NoticeSiteMessage } from '../../types/notice';
 
 const realtimeMock = vi.hoisted(() => ({
@@ -14,7 +20,7 @@ const realtimeMock = vi.hoisted(() => ({
   })),
 }));
 
-vi.mock('@mango/common', async importOriginal => ({
+vi.mock('@mango/common', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@mango/common')>()),
   createRealtimeClient: realtimeMock.createRealtimeClient,
 }));
@@ -58,7 +64,10 @@ describe('noticeRealtime', () => {
       onclose?: () => void;
       close = vi.fn(() => this.onclose?.());
 
-      constructor(public title: string, public options?: NotificationOptions) {
+      constructor(
+        public title: string,
+        public options?: NotificationOptions,
+      ) {
         notifications.push(this);
       }
     }
@@ -69,7 +78,7 @@ describe('noticeRealtime', () => {
     notifications[0].onclick?.();
 
     expect(notifications[0].title).toBe('新的审批消息');
-    expect(notifications[0].options?.body).toBe('审批内容');
+    expect(notifications[0].options?.body).toBe('通知 · 新的审批消息 · 审批内容');
     expect(onClick).toHaveBeenCalledTimes(1);
   });
 
@@ -134,13 +143,17 @@ describe('noticeRealtime', () => {
     const handler = vi.fn();
     const stop = createNoticeRealtime(handler);
 
-    window.dispatchEvent(new CustomEvent('mango-notice-message', {
-      detail: { messageId: '1001', title: '新的审批消息' },
-    }));
+    window.dispatchEvent(
+      new CustomEvent('mango-notice-message', {
+        detail: { messageId: '1001', title: '新的审批消息' },
+      }),
+    );
     stop();
-    window.dispatchEvent(new CustomEvent('mango-notice-message', {
-      detail: { messageId: '1002', title: '解除后的消息' },
-    }));
+    window.dispatchEvent(
+      new CustomEvent('mango-notice-message', {
+        detail: { messageId: '1002', title: '解除后的消息' },
+      }),
+    );
 
     expect(handler).toHaveBeenCalledTimes(1);
     expect(handler).toHaveBeenCalledWith({ messageId: '1001', title: '新的审批消息' });
