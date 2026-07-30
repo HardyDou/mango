@@ -57,6 +57,7 @@
         :realtime-options="noticeRealtimeOptions"
         @view-all="goNoticeMessages"
         @settings="goNoticeReceiveSetting"
+        @interaction="handleNoticeInteraction"
       />
       <Settings />
       <User />
@@ -79,7 +80,13 @@ import { hasPermission } from '@mango/common/utils/authFunction';
 import type { RealtimeOptions } from '@mango/common/utils/realtime/types';
 import { resolveMangoAdminFeatures } from '@mango/admin-pages/features';
 import { getMangoNoticeBellProvider } from '@mango/admin-pages/notice';
-import type { NoticeClientBellRuntimeConfig } from '@mango/notice/client';
+import {
+  noticeFallbackTargetKey,
+  resolveNoticeTargetLocation,
+  type NoticeClientBellRuntimeConfig,
+  type NoticeBellViewAllOptions,
+  type NoticeInteractionPayload,
+} from '@mango/notice/client';
 import { getMangoAdminShellOptions } from '../../config';
 import { resolveAccessibleMenuPath, resolveMenuPathByCode, type ShellRouteMenu } from '../../runtime/menuHost';
 
@@ -148,8 +155,12 @@ const onTopMenuClick = (item: ShellRouteMenu) => {
   }
 };
 
-const goNoticeMessages = () => {
-  navigateToNoticeMenu('notice:site-message', '当前账号无权访问我的消息，或消息菜单尚未配置');
+const goNoticeMessages = (options?: NoticeBellViewAllOptions) => {
+  navigateToNoticeMenu(
+    'notice:site-message',
+    '当前账号无权访问我的消息，或消息菜单尚未配置',
+    options?.category ? { category: options.category, unreadOnly: options.unreadOnly ? 'true' : undefined } : undefined,
+  );
 };
 
 const goNoticeReceiveSetting = () => {
@@ -160,14 +171,59 @@ const goNoticeReceiveSetting = () => {
   navigateToNoticeMenu('notice:receive-setting', '当前账号无权访问接收设置，或接收设置页面尚未配置');
 };
 
-const navigateToNoticeMenu = (menuCode: string, unavailableMessage: string) => {
+const navigateToNoticeMenu = (
+  menuCode: string,
+  unavailableMessage: string,
+  query?: Record<string, string | undefined>,
+) => {
   const targetPath = resolveMenuPathByCode(routesList.value as ShellRouteMenu[], menuCode);
   if (!targetPath) {
     ElMessage.warning(unavailableMessage);
     return;
   }
-  void router.push(targetPath);
+  void router.push({ path: targetPath, query });
 };
+
+async function handleNoticeInteraction(payload: NoticeInteractionPayload) {
+  if (!payload.targetKey) {
+    ElMessage.warning('该消息动作未配置目标');
+    payload.onComplete?.(false);
+    return;
+  }
+  const fallbackTargetKey = noticeFallbackTargetKey(payload.params);
+  const location = resolveNoticeTargetLocation(router, payload.targetKey, payload.params);
+  const fallbackLocation =
+    fallbackTargetKey && fallbackTargetKey !== payload.targetKey
+      ? resolveNoticeTargetLocation(router, fallbackTargetKey, payload.params)
+      : undefined;
+  const targetLocation = location || fallbackLocation;
+  if (!targetLocation) {
+    ElMessage.warning('目标未注册或当前无权访问');
+    payload.onComplete?.(false);
+    return;
+  }
+  try {
+    await router.push(targetLocation);
+    payload.onComplete?.(true);
+    if (!location && fallbackLocation) {
+      ElMessage.warning('原页面不可访问，已打开通用工作流页面');
+    }
+  } catch (error) {
+    console.warn('Notice target navigation failed', payload.targetKey, error);
+    if (location && fallbackLocation) {
+      try {
+        await router.push(fallbackLocation);
+        payload.onComplete?.(true);
+        ElMessage.warning('原页面不可访问，已打开通用工作流页面');
+        return;
+      } catch (fallbackError) {
+        console.warn('Notice fallback navigation failed', fallbackTargetKey, fallbackError);
+      }
+    }
+    payload.onComplete?.(false);
+    ElMessage.warning('目标未注册或当前无权访问');
+  }
+}
 
 async function loadNoticeRuntimeConfig(): Promise<NoticeClientBellRuntimeConfig> {
   const defaults: NoticeClientBellRuntimeConfig = {
@@ -209,7 +265,7 @@ watch(
   justify-content: space-between;
   width: 100%;
   height: 100%;
-  padding: 0px;
+  padding: 0;
   background: var(--mango-bg-top-bar);
   color: var(--mango-color-top-bar);
 
@@ -230,8 +286,7 @@ watch(
     margin-left: 12px;
     flex: 1;
     min-width: 0;
-    overflow-x: auto;
-    overflow-y: hidden;
+    overflow: auto hidden;
     scrollbar-width: none;
 
     &::-webkit-scrollbar {
@@ -284,7 +339,7 @@ watch(
 
     &:hover,
     &.active {
-      background: rgba(255, 255, 255, 0.16);
+      background: rgb(255 255 255 / 16%);
     }
   }
 
@@ -306,6 +361,7 @@ watch(
     width: 32px;
     height: 32px;
     justify-content: center;
+
     &:hover {
       opacity: 0.8;
     }
@@ -344,6 +400,7 @@ watch(
       display: flex;
       align-items: center;
       justify-content: center;
+
       .logo-icon {
         color: var(--mango-color-top-bar);
         font-size: 20px;
@@ -362,14 +419,14 @@ watch(
 }
 
 // 桌面端：隐藏移动端汉堡按钮 (1000px breakpoint)
-@media screen and (min-width: 1001px) {
+@media screen and (width >= 1001px) {
   .hamburger.hamburger-mobile {
     display: none !important;
   }
 }
 
 // 移动端：显示汉堡按钮 + 隐藏经典布局的折叠按钮
-@media screen and (max-width: 1000px) {
+@media screen and (width <= 1000px) {
   .layout-top-systems {
     max-width: calc(100vw - 210px);
     margin-left: 4px;
@@ -386,6 +443,7 @@ watch(
   .hamburger:not(.hamburger-mobile) {
     display: none !important;
   }
+
   .hamburger.hamburger-mobile {
     display: flex !important;
   }

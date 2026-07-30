@@ -541,6 +541,7 @@ public class WorkflowBusinessApplyService implements IWorkflowBusinessApplyServi
         vo.setRenderMode(WorkflowApplyRenderMode.fromCode(apply.getRenderMode()));
         vo.setApplyPageKey(apply.getApplyPageKey());
         vo.setApprovePageKey(apply.getApprovePageKey());
+        vo.setViewPath(customFormViewPath(apply.getFormJsonSnapshot()));
         vo.setFormKey(apply.getFormKey());
         vo.setFormVersion(apply.getFormVersion());
         vo.setSnapshotRef(apply.getSnapshotRef());
@@ -552,6 +553,15 @@ public class WorkflowBusinessApplyService implements IWorkflowBusinessApplyServi
         vo.setCreatedAt(apply.getCreatedAt());
         vo.setUpdatedAt(apply.getUpdatedAt());
         return vo;
+    }
+
+    private String customFormViewPath(String formJson) {
+        Object customConfig = parseMap(formJson).get("customConfig");
+        if (!(customConfig instanceof Map<?, ?> config)) {
+            return null;
+        }
+        Object viewPath = config.get("viewPath");
+        return viewPath == null ? null : trim(String.valueOf(viewPath));
     }
 
     private WorkflowBusinessApplyProgressVO toProgressVo(WorkflowBusinessApplyEntity apply, List<WorkflowBusinessApplyCurrentTaskEntity> tasks) {

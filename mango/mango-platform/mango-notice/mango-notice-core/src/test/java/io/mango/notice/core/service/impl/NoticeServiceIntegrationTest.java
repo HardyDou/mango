@@ -55,9 +55,11 @@ import io.mango.notice.api.enums.NoticeSendStatus;
 import io.mango.notice.api.enums.NoticeSiteMessageActionInteractionType;
 import io.mango.notice.api.enums.NoticeSiteMessageActionRequestStatus;
 import io.mango.notice.api.enums.NoticeSiteMessageActionStatus;
+import io.mango.notice.api.enums.NoticeSiteMessageCategory;
 import io.mango.notice.api.enums.NoticeSiteMessageTargetType;
 import io.mango.notice.api.enums.NoticeTaskStatus;
 import io.mango.notice.api.enums.NoticeTemplateVersionStatus;
+import io.mango.notice.api.query.NoticeSiteMessagePageQuery;
 import io.mango.notice.channel.wecom.WecomDepartment;
 import io.mango.notice.channel.wecom.WecomDirectoryClient;
 import io.mango.notice.channel.wecom.WecomDirectoryUser;
@@ -423,6 +425,48 @@ class NoticeServiceIntegrationTest {
         assertThat(other.getDeleteStatus()).isEqualTo(NoticeDeleteStatus.NORMAL);
         assertThat(realtimeApi.messages).hasSize(1);
         assertThat(realtimeApi.messages.get(0).content()).contains("\"unreadCount\":0");
+    }
+
+    @Test
+    void unreadCategoryStatsAndPageFilterUseTheSameVisibleMessageRules() {
+        MangoContextHolder.set(
+                MangoContextSnapshot.empty()
+                        .withSecurity(
+                                8L, "default", "notice-test", null, null, null, null, "test"));
+        insertBusinessType(11L, "workflow.task.assigned", "WORKFLOW");
+        insertBusinessType(12L, "identity.password.expired", "IDENTITY");
+        insertBusinessType(13L, "order.paid", "ORDER");
+        insertSiteMessage(110L, 8L, NoticeReadStatus.UNREAD, NoticeDeleteStatus.NORMAL,
+                "workflow.task.assigned");
+        insertSiteMessage(111L, 8L, NoticeReadStatus.UNREAD, NoticeDeleteStatus.NORMAL,
+                "identity.password.expired");
+        insertSiteMessage(112L, 8L, NoticeReadStatus.UNREAD, NoticeDeleteStatus.NORMAL,
+                "order.paid");
+        insertSiteMessage(113L, 8L, NoticeReadStatus.UNREAD, NoticeDeleteStatus.NORMAL, null);
+        insertSiteMessage(114L, 8L, NoticeReadStatus.READ, NoticeDeleteStatus.NORMAL,
+                "workflow.task.assigned");
+        insertSiteMessage(115L, 8L, NoticeReadStatus.UNREAD, NoticeDeleteStatus.DELETED,
+                "identity.password.expired");
+        insertSiteMessage(116L, 9L, NoticeReadStatus.UNREAD, NoticeDeleteStatus.NORMAL,
+                "workflow.task.assigned");
+
+        var stats = noticeService.unreadCategoryStats();
+
+        assertThat(stats.getTotal()).isEqualTo(4L);
+        assertThat(stats.getCategories())
+                .extracting(item -> item.getCategory() + "=" + item.getCount())
+                .containsExactly("APPROVAL=1", "SYSTEM=1", "BUSINESS=2");
+
+        NoticeSiteMessagePageQuery query = new NoticeSiteMessagePageQuery();
+        query.setUnreadOnly(true);
+        query.setCategory(NoticeSiteMessageCategory.BUSINESS);
+        query.setPageSize(10);
+        var page = noticeService.listSiteMessages(query);
+
+        assertThat(page.getTotal()).isEqualTo(2L);
+        assertThat(page.getList())
+                .extracting(item -> item.getId())
+                .containsExactlyInAnyOrder(112L, 113L);
     }
 
     @Test
@@ -1044,6 +1088,19 @@ class NoticeServiceIntegrationTest {
                 BIZ_TYPE);
     }
 
+    private void insertBusinessType(Long id, String bizType, String bizGroup) {
+        jdbcTemplate.update(
+                """
+                insert into notice_business_type
+                (id, biz_type, biz_name, biz_group, domain_code, enabled, default_priority, created_at, updated_at)
+                values (?, ?, ?, ?, 'test', true, 'NORMAL', current_timestamp, current_timestamp)
+                """,
+                id,
+                bizType,
+                bizType,
+                bizGroup);
+    }
+
     private void seedActiveSiteTemplate(Long id) {
         jdbcTemplate.update(
                 """
@@ -1126,6 +1183,15 @@ class NoticeServiceIntegrationTest {
 
     private void insertSiteMessage(
             Long id, Long userId, NoticeReadStatus readStatus, NoticeDeleteStatus deleteStatus) {
+        insertSiteMessage(id, userId, readStatus, deleteStatus, BIZ_TYPE);
+    }
+
+    private void insertSiteMessage(
+            Long id,
+            Long userId,
+            NoticeReadStatus readStatus,
+            NoticeDeleteStatus deleteStatus,
+            String bizType) {
         jdbcTemplate.update(
                 """
                 insert into notice_site_message
@@ -1138,7 +1204,7 @@ class NoticeServiceIntegrationTest {
                 userId,
                 readStatus.name(),
                 deleteStatus.name(),
-                BIZ_TYPE);
+                bizType);
     }
 
     private NoticeTaskEntity singleTask() {

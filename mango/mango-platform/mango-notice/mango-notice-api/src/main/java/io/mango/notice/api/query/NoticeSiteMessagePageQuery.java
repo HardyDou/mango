@@ -1,6 +1,7 @@
 package io.mango.notice.api.query;
 
 import io.mango.notice.api.enums.NoticePriority;
+import io.mango.notice.api.enums.NoticeSiteMessageCategory;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
@@ -21,6 +22,10 @@ public class NoticeSiteMessagePageQuery {
     @Schema(description = "是否只查询未读系统消息")
     @jakarta.validation.constraints.NotNull(groups = io.mango.notice.api.validation.NoticeOptionalValidation.class)
     private Boolean unreadOnly;
+
+    @Schema(description = "消息分类")
+    @jakarta.validation.constraints.NotNull(groups = io.mango.notice.api.validation.NoticeOptionalValidation.class)
+    private NoticeSiteMessageCategory category;
 
     @Schema(description = "业务类型")
     @jakarta.validation.constraints.Size(max = 65535)

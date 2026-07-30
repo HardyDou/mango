@@ -34,6 +34,8 @@ import java.util.Set;
 public class WorkflowNoticeDomainEventSubscriber implements DomainEventSubscriber {
 
     private static final String RECIPIENT_RULE_CODE = "workflow.operator";
+    private static final int C0_CONTROL_LIMIT = 0x20;
+    private static final int DELETE_CONTROL_CODE_POINT = 0x7f;
     private static final Set<String> SUPPORTED_EVENTS = Set.of(
             WorkflowEventTypes.TASK_ADVANCED,
             WorkflowEventTypes.TASK_REJECTED,
@@ -194,12 +196,28 @@ public class WorkflowNoticeDomainEventSubscriber implements DomainEventSubscribe
     private NoticeSiteMessageTargetCommand target(DomainEvent event, Map<String, Object> params) {
         NoticeSiteMessageTargetCommand target = new NoticeSiteMessageTargetCommand();
         target.setTargetType(NoticeSiteMessageTargetType.ROUTE);
-        target.setTargetKey(workflowTargetKey(event.getEventType(), params));
-        target.setParams(NoticeJsonRequest.of(params));
+        String fallbackTargetKey = defaultWorkflowTargetKey(event.getEventType(), params);
+        String targetKey = workflowTargetKey(event.getEventType(), params);
+        Map<String, Object> targetParams = new LinkedHashMap<>(params);
+        if (!targetKey.equals(fallbackTargetKey)) {
+            targetParams.put("fallbackTargetKey", fallbackTargetKey);
+        }
+        target.setTargetKey(targetKey);
+        target.setParams(NoticeJsonRequest.of(targetParams));
         return target;
     }
 
     private String workflowTargetKey(String eventType, Map<String, Object> params) {
+        if (processTerminalEvent(eventType)) {
+            String viewPath = safeInternalPath(stringValue(params.get("viewPath")));
+            if (StringUtils.hasText(viewPath)) {
+                return viewPath;
+            }
+        }
+        return defaultWorkflowTargetKey(eventType, params);
+    }
+
+    private String defaultWorkflowTargetKey(String eventType, Map<String, Object> params) {
         if ((WorkflowEventTypes.TASK_ADVANCED.equals(eventType) || WorkflowEventTypes.TASK_REJECTED.equals(eventType))
                 && StringUtils.hasText(stringValue(params.get("taskId")))) {
             return "workflow:task:detail";
@@ -214,16 +232,27 @@ public class WorkflowNoticeDomainEventSubscriber implements DomainEventSubscribe
         return "workflow:task:todo";
     }
 
+    private String safeInternalPath(String value) {
+        if (!StringUtils.hasText(value)) {
+            return null;
+        }
+        String path = value.trim();
+        if (!path.startsWith("/") || path.startsWith("//") || path.contains("\\")
+                || path.contains("?") || path.contains("#")) {
+            return null;
+        }
+        return path.chars().anyMatch(character -> character < C0_CONTROL_LIMIT
+                || character == DELETE_CONTROL_CODE_POINT) ? null : path;
+    }
+
     private String actionLabel(String eventType) {
-        if (WorkflowEventTypes.TASK_REJECTED.equals(eventType)
-                || WorkflowEventTypes.PROCESS_REJECTED.equals(eventType)) {
-            return "查看驳回";
+        if (WorkflowEventTypes.TASK_REJECTED.equals(eventType)) {
+            return "查看驳回详情";
         }
-        if (WorkflowEventTypes.PROCESS_COMPLETED.equals(eventType)
-                || WorkflowEventTypes.PROCESS_ENDED.equals(eventType)) {
-            return "查看已办";
+        if (processTerminalEvent(eventType)) {
+            return "查看申请";
         }
-        return "处理任务";
+        return "去审批";
     }
 
     private NoticeSiteMessageActionCommand routeAction(String actionLabel, NoticeSiteMessageTargetCommand target) {

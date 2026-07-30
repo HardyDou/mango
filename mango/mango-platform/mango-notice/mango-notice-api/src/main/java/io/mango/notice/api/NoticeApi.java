@@ -44,6 +44,7 @@ import io.mango.notice.api.vo.NoticeSiteMessageActionRequestVO;
 import io.mango.notice.api.vo.NoticeSiteMessageVO;
 import io.mango.notice.api.vo.NoticeTaskVO;
 import io.mango.notice.api.vo.NoticeUnreadCountVO;
+import io.mango.notice.api.vo.NoticeUnreadCategoryStatsVO;
 import io.mango.notice.api.vo.NoticeWecomLoginConfigVO;
 import io.mango.notice.api.vo.WecomUserSyncResultVO;
 
@@ -158,6 +159,8 @@ public interface NoticeApi {
             @Valid CompleteNoticeSiteMessageActionCommand command);
 
     R<NoticeUnreadCountVO> unreadCount();
+
+    R<NoticeUnreadCategoryStatsVO> unreadCategoryStats();
 
     R<Boolean> markSiteMessageRead(@Positive Long id);
 

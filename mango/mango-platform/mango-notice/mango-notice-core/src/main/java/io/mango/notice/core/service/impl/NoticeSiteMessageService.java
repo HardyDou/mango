@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.common.result.Require;
 import io.mango.common.vo.PageResult;
 import io.mango.infra.context.api.MangoContextHolder;
@@ -19,6 +20,7 @@ import io.mango.notice.api.enums.NoticeReadStatus;
 import io.mango.notice.api.enums.NoticeSiteMessageActionInteractionType;
 import io.mango.notice.api.enums.NoticeSiteMessageActionRequestStatus;
 import io.mango.notice.api.enums.NoticeSiteMessageActionStatus;
+import io.mango.notice.api.enums.NoticeSiteMessageCategory;
 import io.mango.notice.api.enums.NoticeSiteMessageTargetType;
 import io.mango.notice.api.query.NoticeSiteMessagePageQuery;
 import io.mango.notice.api.vo.NoticeJsonVO;
@@ -28,6 +30,8 @@ import io.mango.notice.api.vo.NoticeSiteMessageSubjectVO;
 import io.mango.notice.api.vo.NoticeSiteMessageTargetVO;
 import io.mango.notice.api.vo.NoticeSiteMessageVO;
 import io.mango.notice.api.vo.NoticeUnreadCountVO;
+import io.mango.notice.api.vo.NoticeUnreadCategoryCountVO;
+import io.mango.notice.api.vo.NoticeUnreadCategoryStatsVO;
 import io.mango.notice.core.convert.NoticeSiteMessageConvert;
 import io.mango.notice.core.entity.NoticeBusinessTypeEntity;
 import io.mango.notice.core.entity.NoticeSiteMessageActionEntity;
@@ -50,13 +54,21 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
 @Slf4j
 @RequiredArgsConstructor
+@SuppressFBWarnings(
+        value = "EI_EXPOSE_REP2",
+        justification = "Spring singleton collaborators are injected and intentionally shared")
 public class NoticeSiteMessageService implements INoticeSiteMessageService {
+
+    private static final String APPROVAL_BIZ_GROUP = "WORKFLOW";
+    private static final Set<String> SYSTEM_BIZ_GROUPS = Set.of("AUTH", "IDENTITY", "JOB");
 
     private final NoticeSiteMessageMapper messageMapper;
     private final NoticeSiteMessageActionMapper messageActionMapper;
@@ -72,6 +84,10 @@ public class NoticeSiteMessageService implements INoticeSiteMessageService {
         LambdaQueryWrapper<NoticeSiteMessageEntity> wrapper = userVisibleWrapper(userId);
         if (Boolean.TRUE.equals(query.getUnreadOnly())) {
             wrapper.eq(NoticeSiteMessageEntity::getReadStatus, NoticeReadStatus.UNREAD);
+        }
+        if (query.getCategory() != null
+                && !applyCategoryFilter(wrapper, query.getCategory(), loadCategoryBizTypes())) {
+            return PageResult.of(List.of(), 0, query.getPageNum(), query.getPageSize());
         }
         if (StringUtils.hasText(query.getBizType())) {
             wrapper.eq(NoticeSiteMessageEntity::getBizType, query.getBizType());
@@ -127,6 +143,21 @@ public class NoticeSiteMessageService implements INoticeSiteMessageService {
         Long count = messageMapper.selectCount(userVisibleWrapper(userId)
                 .eq(NoticeSiteMessageEntity::getReadStatus, NoticeReadStatus.UNREAD));
         return new NoticeUnreadCountVO(count);
+    }
+
+    @Override
+    public NoticeUnreadCategoryStatsVO unreadCategoryStats() {
+        Long userId = currentUserId();
+        CategoryBizTypes categoryBizTypes = loadCategoryBizTypes();
+        long approval = countUnreadByCategory(userId, NoticeSiteMessageCategory.APPROVAL, categoryBizTypes);
+        long system = countUnreadByCategory(userId, NoticeSiteMessageCategory.SYSTEM, categoryBizTypes);
+        long business = countUnreadByCategory(userId, NoticeSiteMessageCategory.BUSINESS, categoryBizTypes);
+        return new NoticeUnreadCategoryStatsVO(
+                approval + system + business,
+                List.of(
+                        new NoticeUnreadCategoryCountVO(NoticeSiteMessageCategory.APPROVAL, approval),
+                        new NoticeUnreadCategoryCountVO(NoticeSiteMessageCategory.SYSTEM, system),
+                        new NoticeUnreadCategoryCountVO(NoticeSiteMessageCategory.BUSINESS, business)));
     }
 
     @Override
@@ -341,8 +372,10 @@ public class NoticeSiteMessageService implements INoticeSiteMessageService {
             NoticeSiteMessageActionEntity action,
             NoticeSiteMessageActionRequestEntity request,
             Map<String, Object> input) {
-        IDomainEventPublisher publisher = domainEventPublisherProvider.getIfAvailable();
-        Require.notNull(publisher, NoticeCode.NOTICE_BUSINESS_ERROR, "领域事件发布器未装配");
+        IDomainEventPublisher publisher = Require.nonNull(
+                domainEventPublisherProvider.getIfAvailable(),
+                NoticeCode.NOTICE_BUSINESS_ERROR,
+                "领域事件发布器未装配");
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("messageId", message.getId());
         payload.put("actionCode", action.getActionCode());
@@ -403,7 +436,7 @@ public class NoticeSiteMessageService implements INoticeSiteMessageService {
         Long unreadCount = messageMapper.selectCount(userVisibleWrapper(userId)
                 .eq(NoticeSiteMessageEntity::getReadStatus, NoticeReadStatus.UNREAD));
         try {
-            Map<String, Object> payload = Map.of("unreadCount", unreadCount == null ? 0L : unreadCount);
+            Map<String, Object> payload = Map.of("unreadCount", Objects.requireNonNullElse(unreadCount, 0L));
             realtimeApi.publishToUser(userId, "notice", objectMapper.writeValueAsString(payload));
         } catch (JsonProcessingException | RuntimeException ex) {
             log.warn("Failed to publish notice unread count realtime message: userId={}", userId, ex);
@@ -495,6 +528,69 @@ public class NoticeSiteMessageService implements INoticeSiteMessageService {
         return new LambdaQueryWrapper<NoticeSiteMessageEntity>()
                 .eq(NoticeSiteMessageEntity::getUserId, userId)
                 .eq(NoticeSiteMessageEntity::getDeleteStatus, NoticeDeleteStatus.NORMAL);
+    }
+
+    private long countUnreadByCategory(
+            Long userId, NoticeSiteMessageCategory category, CategoryBizTypes categoryBizTypes) {
+        LambdaQueryWrapper<NoticeSiteMessageEntity> wrapper = userVisibleWrapper(userId)
+                .eq(NoticeSiteMessageEntity::getReadStatus, NoticeReadStatus.UNREAD);
+        if (!applyCategoryFilter(wrapper, category, categoryBizTypes)) {
+            return 0L;
+        }
+        Long count = messageMapper.selectCount(wrapper);
+        return count == null ? 0L : count;
+    }
+
+    private boolean applyCategoryFilter(
+            LambdaQueryWrapper<NoticeSiteMessageEntity> wrapper,
+            NoticeSiteMessageCategory category,
+            CategoryBizTypes categoryBizTypes) {
+        if (category == null) {
+            return true;
+        }
+        Set<String> bizTypes = switch (category) {
+            case APPROVAL -> categoryBizTypes.approval();
+            case SYSTEM -> categoryBizTypes.system();
+            case BUSINESS -> categoryBizTypes.excluded();
+        };
+        if (category == NoticeSiteMessageCategory.BUSINESS) {
+            if (!bizTypes.isEmpty()) {
+                wrapper.and(item -> item.isNull(NoticeSiteMessageEntity::getBizType)
+                        .or()
+                        .notIn(NoticeSiteMessageEntity::getBizType, bizTypes));
+            }
+            return true;
+        }
+        if (bizTypes.isEmpty()) {
+            return false;
+        }
+        wrapper.in(NoticeSiteMessageEntity::getBizType, bizTypes);
+        return true;
+    }
+
+    private CategoryBizTypes loadCategoryBizTypes() {
+        List<NoticeBusinessTypeEntity> businessTypes = businessTypeMapper.selectList(
+                new LambdaQueryWrapper<NoticeBusinessTypeEntity>()
+                        .in(NoticeBusinessTypeEntity::getBizGroup,
+                                Set.of(APPROVAL_BIZ_GROUP, "AUTH", "IDENTITY", "JOB")));
+        Set<String> approval = businessTypes.stream()
+                .filter(item -> APPROVAL_BIZ_GROUP.equals(item.getBizGroup()))
+                .map(NoticeBusinessTypeEntity::getBizType)
+                .filter(StringUtils::hasText)
+                .collect(Collectors.toSet());
+        Set<String> system = businessTypes.stream()
+                .filter(item -> SYSTEM_BIZ_GROUPS.contains(item.getBizGroup()))
+                .map(NoticeBusinessTypeEntity::getBizType)
+                .filter(StringUtils::hasText)
+                .collect(Collectors.toSet());
+        return new CategoryBizTypes(approval, system);
+    }
+
+    private record CategoryBizTypes(Set<String> approval, Set<String> system) {
+        private Set<String> excluded() {
+            return java.util.stream.Stream.concat(approval.stream(), system.stream())
+                    .collect(Collectors.toSet());
+        }
     }
 
     @SuppressWarnings("unchecked")

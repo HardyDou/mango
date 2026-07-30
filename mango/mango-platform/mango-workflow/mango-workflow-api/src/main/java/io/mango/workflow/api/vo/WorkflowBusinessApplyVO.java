@@ -79,6 +79,9 @@ public class WorkflowBusinessApplyVO {
     @Schema(description = "自定义审批页Key")
     private String approvePageKey;
 
+    @Schema(description = "自定义业务查看路径")
+    private String viewPath;
+
     @Schema(description = "表单Key")
     private String formKey;
 

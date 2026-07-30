@@ -45,6 +45,7 @@ import io.mango.notice.api.vo.NoticeSiteMessageActionRequestVO;
 import io.mango.notice.api.vo.NoticeSiteMessageVO;
 import io.mango.notice.api.vo.NoticeTaskVO;
 import io.mango.notice.api.vo.NoticeUnreadCountVO;
+import io.mango.notice.api.vo.NoticeUnreadCategoryStatsVO;
 import io.mango.notice.api.vo.NoticeWecomLoginConfigVO;
 import io.mango.notice.api.vo.WecomUserSyncResultVO;
 
@@ -270,6 +271,10 @@ public interface NoticeFeignClient extends NoticeApi {
     @Override
     @GetMapping("/site/my/unread-count")
     R<NoticeUnreadCountVO> unreadCount();
+
+    @Override
+    @GetMapping("/site/my/unread-category-stats")
+    R<NoticeUnreadCategoryStatsVO> unreadCategoryStats();
 
     @Override
     @PostMapping("/site/my/messages/read")
