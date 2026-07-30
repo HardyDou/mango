@@ -101,8 +101,8 @@ const emptyMessage: NoticeSiteMessage = {
 .notice-detail__value {
   min-width: 0;
   color: var(--el-text-color-primary);
+  overflow-wrap: anywhere;
   white-space: pre-wrap;
-  word-break: break-word;
 }
 
 .notice-detail__value :deep(p:first-child) {
@@ -125,7 +125,7 @@ const emptyMessage: NoticeSiteMessage = {
   margin-left: 0;
 }
 
-@media (max-width: 680px) {
+@media (width <= 680px) {
   :global(.notice-detail-dialog.el-dialog) {
     width: calc(100vw - 24px) !important;
   }

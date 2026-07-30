@@ -265,7 +265,7 @@ watch(
   justify-content: space-between;
   width: 100%;
   height: 100%;
-  padding: 0px;
+  padding: 0;
   background: var(--mango-bg-top-bar);
   color: var(--mango-color-top-bar);
 
@@ -286,8 +286,7 @@ watch(
     margin-left: 12px;
     flex: 1;
     min-width: 0;
-    overflow-x: auto;
-    overflow-y: hidden;
+    overflow: auto hidden;
     scrollbar-width: none;
 
     &::-webkit-scrollbar {
@@ -340,7 +339,7 @@ watch(
 
     &:hover,
     &.active {
-      background: rgba(255, 255, 255, 0.16);
+      background: rgb(255 255 255 / 16%);
     }
   }
 
@@ -362,6 +361,7 @@ watch(
     width: 32px;
     height: 32px;
     justify-content: center;
+
     &:hover {
       opacity: 0.8;
     }
@@ -400,6 +400,7 @@ watch(
       display: flex;
       align-items: center;
       justify-content: center;
+
       .logo-icon {
         color: var(--mango-color-top-bar);
         font-size: 20px;
@@ -418,14 +419,14 @@ watch(
 }
 
 // 桌面端：隐藏移动端汉堡按钮 (1000px breakpoint)
-@media screen and (min-width: 1001px) {
+@media screen and (width >= 1001px) {
   .hamburger.hamburger-mobile {
     display: none !important;
   }
 }
 
 // 移动端：显示汉堡按钮 + 隐藏经典布局的折叠按钮
-@media screen and (max-width: 1000px) {
+@media screen and (width <= 1000px) {
   .layout-top-systems {
     max-width: calc(100vw - 210px);
     margin-left: 4px;
@@ -442,6 +443,7 @@ watch(
   .hamburger:not(.hamburger-mobile) {
     display: none !important;
   }
+
   .hamburger.hamburger-mobile {
     display: flex !important;
   }
