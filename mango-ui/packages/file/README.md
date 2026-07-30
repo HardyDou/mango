@@ -37,7 +37,7 @@
 
 - `MUpload` 负责选择文件、前端预检查、调用文件上传接口并回写文件 ID、token 或完整记录。
 - `MUpload` 上传和回显只要求文件 ID、`previewUrl`、`downloadUrl` 这些业务字段；需要图片缩略图时，组件会按文件 ID 获取预览元数据，或通过鉴权下载生成临时 `blob:` 地址，不会把预览地址写入业务表单值。
-- `FilePreviewPanel` 负责按文件 ID 或文件记录加载预览元数据，并展示预览、下载和新窗口预览操作；预览区域只使用有效 `previewUrl`、预览元数据中的临时展示地址或文档预览服务地址，`downloadUrl` 和 `fileApi.downloadUrl(id)` 只用于下载动作。
+- `FilePreviewPanel` 负责按文件 ID 或文件记录加载预览元数据，并展示预览、下载和新窗口预览操作；图片默认直接使用无蒙层的内嵌 Element Plus Image Viewer，进入预览区即可缩放、旋转、切换适应模式和拖拽，不会要求用户再次点击图片打开覆盖层。预览区域只使用有效 `previewUrl`、预览元数据中的临时展示地址或文档预览服务地址，`downloadUrl` 和 `fileApi.downloadUrl(id)` 只用于下载动作。
 
 `api-client`：
 
@@ -117,6 +117,9 @@ import { FilePreviewPanel } from '@mango/file';
 `fit-container` 默认关闭，不影响普通流式页面的自然高度。启用后，父容器需要提供可计算的高度；组件会占满可用宽高，
 并让 PDF、Office iframe、图片和音视频随容器尺寸变化。现有
 `--mango-file-preview-*` CSS 变量继续作为特殊场景的兼容覆盖入口，但启用该 prop 不要求手工设置变量。
+
+图片预览不需要额外 prop：`FilePreviewPanel` 默认直接展示 Element Plus Image Viewer 的缩放、旋转、适应窗口、原始尺寸和
+拖拽能力。Viewer 被限制在预览区域内，不 Teleport 到 `body`，不显示遮罩和关闭按钮，也不会在业务弹框上再次打开一层图片弹窗。
 
 ## 5. 快速开始
 
@@ -287,6 +290,11 @@ import { FilePreviewPanel } from '@mango/file';
 - [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)
 
 ## 12. 变更影响记录
+
+- 2026-07-30：`FilePreviewPanel` 图片预览由点击 `ElImage` 再打开覆盖层，调整为默认直接展示无蒙层的内嵌
+  Element Plus Image Viewer。缩放、旋转、适应模式、原始尺寸和拖拽能力保持使用 Element Plus 原生实现，Viewer 只占用
+  `preview-stage`，并随 `fit-container` 和外层弹框尺寸变化。该默认行为变化不新增 prop；文件 API、文件 ID、权限、下载和
+  文档转换接口不变。本记录不代表 npm 版本已经发布。
 
 - 2026-07-30：`FilePreviewPanel` 源码新增默认关闭的 `fit-container` 容器填充模式。固定高度容器和弹框正文可直接
   启用该 prop，让预览区域及 PDF、Office、图片和音视频跟随可用尺寸；普通流式页面和现有 CSS 变量入口保持兼容。

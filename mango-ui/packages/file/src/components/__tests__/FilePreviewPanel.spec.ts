@@ -28,17 +28,31 @@ const ElTagStub = defineComponent({
   },
 });
 
-const ElImageStub = defineComponent({
-  name: 'ElImage',
+const ElImageViewerStub = defineComponent({
+  name: 'ElImageViewer',
   props: {
-    src: String,
-    fit: {
-      type: String,
-      default: undefined,
+    urlList: {
+      type: Array<string>,
+      default: () => [],
     },
+    infinite: Boolean,
+    teleported: Boolean,
+    closeOnPressEscape: Boolean,
   },
   setup(props) {
-    return () => h('img', { src: props.src, 'data-fit': props.fit });
+    return () =>
+      h('div', { 'data-image-viewer': '' }, [
+        h('div', { class: 'el-image-viewer__mask' }),
+        h('button', { class: 'el-image-viewer__close', type: 'button' }),
+        h('img', {
+          class: 'el-image-viewer__img',
+          src: props.urlList[0],
+          'data-infinite': String(props.infinite),
+          'data-teleported': String(props.teleported),
+          'data-close-on-press-escape': String(props.closeOnPressEscape),
+        }),
+        h('div', { class: 'el-image-viewer__actions' }),
+      ]);
   },
 });
 
@@ -71,7 +85,7 @@ async function mountPanel(
   app.component('ElTag', ElTagStub);
   app.component('ElSkeleton', defineComponent({ setup: () => () => h('div') }));
   app.component('ElEmpty', defineComponent({ setup: () => () => h('div') }));
-  app.component('ElImage', ElImageStub);
+  app.component('ElImageViewer', ElImageViewerStub);
   app.component(
     'ElIcon',
     defineComponent({
@@ -149,7 +163,7 @@ describe('FilePreviewPanel', () => {
         contentType: 'image/png',
         directPreviewUrl: '/preview/diagram.png',
       }),
-      'img.preview-image',
+      '.preview-image-viewer',
     ],
     [
       'video',
@@ -185,9 +199,25 @@ describe('FilePreviewPanel', () => {
     const host = await mountPanel(preview, { fitContainer: true });
 
     expect(host.querySelector(`.preview-stage > ${selector}`)).not.toBeNull();
-    if (selector === 'img.preview-image') {
-      expect(host.querySelector(selector)?.getAttribute('data-fit')).toBe('contain');
-    }
+  });
+
+  it('renders images as a persistent inline Element Plus viewer by default', async () => {
+    const host = await mountPanel(
+      createPreview({
+        fileName: 'diagram.png',
+        fileExt: 'png',
+        contentType: 'image/png',
+        directPreviewUrl: '/preview/diagram.png',
+      }),
+    );
+
+    const viewerImage = host.querySelector('.preview-image-viewer [data-image-viewer] .el-image-viewer__img');
+    expect(viewerImage?.getAttribute('src')).toBe('/preview/diagram.png');
+    expect(viewerImage?.getAttribute('data-infinite')).toBe('false');
+    expect(viewerImage?.getAttribute('data-teleported')).toBe('false');
+    expect(viewerImage?.getAttribute('data-close-on-press-escape')).toBe('false');
+    expect(host.querySelector('.preview-image-viewer .el-image-viewer__actions')).not.toBeNull();
+    expect(host.querySelector('el-image')).toBeNull();
   });
 
   it('keeps empty and download-only states in fill-mode containers', async () => {
@@ -239,7 +269,7 @@ describe('FilePreviewPanel', () => {
 
   it.each([
     ['PDF', 'report.pdf', 'pdf', 'application/pdf', 'iframe'],
-    ['image', 'diagram.png', 'png', 'image/png', 'img'],
+    ['image', 'diagram.png', 'png', 'image/png', '.el-image-viewer__img'],
     ['video', 'demo.mp4', 'mp4', 'video/mp4', 'video'],
     ['audio', 'recording.mp3', 'mp3', 'audio/mpeg', 'audio'],
   ])(

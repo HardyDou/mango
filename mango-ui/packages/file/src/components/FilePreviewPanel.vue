@@ -14,13 +14,14 @@
       </div>
 
       <div class="preview-stage">
-        <el-image
-          v-if="isImage && inlinePreviewUrl"
-          :src="inlinePreviewUrl"
-          fit="contain"
-          class="preview-image"
-          :preview-src-list="[inlinePreviewUrl]"
-        />
+        <div v-if="isImage && inlinePreviewUrl" class="preview-image-viewer">
+          <el-image-viewer
+            :url-list="[inlinePreviewUrl]"
+            :infinite="false"
+            :teleported="false"
+            :close-on-press-escape="false"
+          />
+        </div>
         <iframe v-else-if="isPdf && inlinePreviewUrl" class="preview-frame" :src="inlinePreviewUrl" title="文件预览" />
         <video v-else-if="isVideo && inlinePreviewUrl" class="preview-media" :src="inlinePreviewUrl" controls />
         <audio v-else-if="isAudio && inlinePreviewUrl" class="preview-audio" :src="inlinePreviewUrl" controls />
@@ -277,6 +278,7 @@ defineExpose({
 }
 
 .preview-stage {
+  position: relative;
   flex: 1 1 auto;
   min-height: var(--mango-file-preview-stage-min-height, 220px);
   height: var(--mango-file-preview-stage-height, auto);
@@ -296,10 +298,25 @@ defineExpose({
   gap: 12px;
 }
 
-.preview-image {
+.preview-image-viewer {
+  position: relative;
   width: 100%;
   height: var(--mango-file-preview-content-height, 360px);
+  overflow: hidden;
   display: block;
+}
+
+/* ElImageViewer has no inline mode; retain its native controls while constraining the modal surface to this stage. */
+.preview-image-viewer :deep(.el-image-viewer__wrapper) {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.preview-image-viewer :deep(.el-image-viewer__mask),
+.preview-image-viewer :deep(.el-image-viewer__close) {
+  display: none;
 }
 
 .preview-media {
@@ -370,7 +387,7 @@ defineExpose({
   min-height: var(--mango-file-preview-stage-min-height, 0);
 }
 
-.file-preview-panel--fit-container .preview-image,
+.file-preview-panel--fit-container .preview-image-viewer,
 .file-preview-panel--fit-container .preview-media,
 .file-preview-panel--fit-container .preview-frame {
   flex: 1 1 auto;
@@ -380,12 +397,6 @@ defineExpose({
   min-height: var(--mango-file-preview-content-min-height, 0);
   max-width: 100%;
   max-height: 100%;
-}
-
-.file-preview-panel--fit-container .preview-image :deep(.el-image__inner) {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
 }
 
 .file-preview-panel--fit-container .preview-media {
