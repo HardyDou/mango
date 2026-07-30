@@ -40,3 +40,8 @@ export interface MangoDialogEmits {
   (e: 'close'): void;
   (e: 'closed'): void;
 }
+
+export interface MangoDialogExpose {
+  /** Bring the open dialog above other MangoDialog instances. Closed dialogs ignore the call. */
+  bringToFront(): void;
+}
