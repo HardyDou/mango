@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.common.result.Require;
 import io.mango.common.vo.PageResult;
 import io.mango.infra.context.api.MangoContextHolder;
@@ -53,6 +54,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -60,6 +62,9 @@ import java.util.stream.Collectors;
 @Service
 @Slf4j
 @RequiredArgsConstructor
+@SuppressFBWarnings(
+        value = "EI_EXPOSE_REP2",
+        justification = "Spring singleton collaborators are injected and intentionally shared")
 public class NoticeSiteMessageService implements INoticeSiteMessageService {
 
     private static final String APPROVAL_BIZ_GROUP = "WORKFLOW";
@@ -367,8 +372,10 @@ public class NoticeSiteMessageService implements INoticeSiteMessageService {
             NoticeSiteMessageActionEntity action,
             NoticeSiteMessageActionRequestEntity request,
             Map<String, Object> input) {
-        IDomainEventPublisher publisher = domainEventPublisherProvider.getIfAvailable();
-        Require.notNull(publisher, NoticeCode.NOTICE_BUSINESS_ERROR, "领域事件发布器未装配");
+        IDomainEventPublisher publisher = Require.nonNull(
+                domainEventPublisherProvider.getIfAvailable(),
+                NoticeCode.NOTICE_BUSINESS_ERROR,
+                "领域事件发布器未装配");
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("messageId", message.getId());
         payload.put("actionCode", action.getActionCode());
@@ -429,7 +436,7 @@ public class NoticeSiteMessageService implements INoticeSiteMessageService {
         Long unreadCount = messageMapper.selectCount(userVisibleWrapper(userId)
                 .eq(NoticeSiteMessageEntity::getReadStatus, NoticeReadStatus.UNREAD));
         try {
-            Map<String, Object> payload = Map.of("unreadCount", unreadCount == null ? 0L : unreadCount);
+            Map<String, Object> payload = Map.of("unreadCount", Objects.requireNonNullElse(unreadCount, 0L));
             realtimeApi.publishToUser(userId, "notice", objectMapper.writeValueAsString(payload));
         } catch (JsonProcessingException | RuntimeException ex) {
             log.warn("Failed to publish notice unread count realtime message: userId={}", userId, ex);

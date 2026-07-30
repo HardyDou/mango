@@ -34,6 +34,8 @@ import java.util.Set;
 public class WorkflowNoticeDomainEventSubscriber implements DomainEventSubscriber {
 
     private static final String RECIPIENT_RULE_CODE = "workflow.operator";
+    private static final int C0_CONTROL_LIMIT = 0x20;
+    private static final int DELETE_CONTROL_CODE_POINT = 0x7f;
     private static final Set<String> SUPPORTED_EVENTS = Set.of(
             WorkflowEventTypes.TASK_ADVANCED,
             WorkflowEventTypes.TASK_REJECTED,
@@ -239,7 +241,8 @@ public class WorkflowNoticeDomainEventSubscriber implements DomainEventSubscribe
                 || path.contains("?") || path.contains("#")) {
             return null;
         }
-        return path.chars().anyMatch(character -> character < 32 || character == 127) ? null : path;
+        return path.chars().anyMatch(character -> character < C0_CONTROL_LIMIT
+                || character == DELETE_CONTROL_CODE_POINT) ? null : path;
     }
 
     private String actionLabel(String eventType) {
