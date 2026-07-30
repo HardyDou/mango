@@ -1,29 +1,6 @@
-const ALLOWED_TAGS = new Set([
-  'A',
-  'B',
-  'BR',
-  'CODE',
-  'EM',
-  'I',
-  'LI',
-  'OL',
-  'P',
-  'S',
-  'SPAN',
-  'STRONG',
-  'U',
-  'UL',
-]);
+const ALLOWED_TAGS = new Set(['A', 'B', 'BR', 'CODE', 'EM', 'I', 'LI', 'OL', 'P', 'S', 'SPAN', 'STRONG', 'U', 'UL']);
 
-const DROP_WITH_CONTENT = new Set([
-  'IFRAME',
-  'MATH',
-  'OBJECT',
-  'SCRIPT',
-  'STYLE',
-  'SVG',
-  'TEMPLATE',
-]);
+const DROP_WITH_CONTENT = new Set(['IFRAME', 'MATH', 'OBJECT', 'SCRIPT', 'STYLE', 'SVG', 'TEMPLATE']);
 
 const SAFE_LINK_PROTOCOLS = new Set(['http:', 'https:', 'mailto:', 'tel:']);
 
@@ -52,7 +29,10 @@ export function sanitizeNoticeHtml(value: unknown): string {
 export function noticePlainText(value: unknown): string {
   const sanitized = sanitizeNoticeHtml(value);
   if (typeof DOMParser === 'undefined') {
-    return String(value == null || value === '' ? '-' : value).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+    return String(value == null || value === '' ? '-' : value)
+      .replace(/<[^>]*>/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
   }
   const document = new DOMParser().parseFromString(sanitized, 'text/html');
   return (document.body.textContent || '-').replace(/\s+/g, ' ').trim() || '-';
