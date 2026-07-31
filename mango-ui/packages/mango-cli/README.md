@@ -197,7 +197,9 @@ mango docs pull --project-dir demo-custom --version 1.0.1 --maven-repository "$M
 
 CLI 从当前目录向上查找 `mango.dev.json`。本地工作区分配事实来自 `.mango/workspace.json`，本地私有运行配置来自 `.mango/dev-workspace.env`，局部覆盖来自 `.mango/dev-workspace.local.json`。本机全局注册表为 `~/.mango/workspaces.json`。
 
-`mango workspace init` 还会在路径不存在时创建 .mango/m2/repository，并把它链接到用户公共仓库 ~/.m2/repository。因此业务 `mango.dev.json` 可以继续使用 -Dmaven.repo.local=.mango/m2/repository，不同 worktree 的端口、数据库和进程仍隔离，但不会重复下载 Maven 依赖。若该路径已经是一个真实目录或指向其它位置的链接，CLI 只提示并保留现状，供明确需要独立 Maven 缓存的工作区继续使用。
+`mango workspace init` 还会在路径不存在时创建 .mango/m2/repository，并把它链接到用户公共仓库 ~/.m2/repository。第三方依赖和 Maven 插件因此不会在各 worktree 重复下载；若该路径已经是真实目录或指向其它位置的链接，CLI 只提示并保留现状，继续支持完整 repository 隔离。
+
+共享 repository 不再意味着共享本项目 SNAPSHOT 坐标。CLI 为每个 workspace 保存稳定的 `mavenRevisionQualifier`（例如 `mango-010`），从各 Maven reactor 根 POM 读取基础 `<revision>`，并在开发 install 与 Spring Boot Maven run 中同时注入 `-Drevision=1.0.0-mango-010-SNAPSHOT`。新生成项目的根版本、子模块 parent 和内部模块依赖统一使用 `${revision}`。旧 workspace 再次执行 `mango workspace init` 会自动补齐限定符；旧项目 POM 尚未采用 CI-friendly `${revision}` 时，`mango dev plan/start` 会明确失败并提示升级，不会回退到可能覆盖其它 worktree 的固定 GAV。发布命令不经过该开发注入链。
 
 新项目模板会生成固定的 `backend`、`frontend` 开发清单。历史业务项目执行 `mango pmo sync --sync-shell` 或缺少清单时执行 `mango workspace init`，CLI 会先扫描项目结构再生成 `mango.dev.json`：
 
@@ -217,6 +219,7 @@ CLI 从当前目录向上查找 `mango.dev.json`。本地工作区分配事实�
 | `mango.dev.json`                  | `apps.<name>.waitPollIntervalMs` | `500`                                         | 健康检查轮询间隔            | 最小 100ms；只改变 ready 被 CLI 观察到的粒度，不改变 120 秒总超时                         | `waitForDevApp`                                     |
 | `mango.dev.json`                  | `apps.<name>.portEnv`            | `MANGO_BACKEND_PORT` 或 `MANGO_FRONTEND_PORT` | 端口环境变量名              | 覆盖默认端口                                                                              | `resolveDevApp`                                     |
 | `.mango/workspace.json`           | `workspaceId`                    | `mango_<slot>`                                | 当前 worktree 标识          | 进程归属和诊断                                                                            | `ensureWorkspaceConfig`                             |
+| `.mango/workspace.json`           | `mavenRevisionQualifier`         | `mango-<slot>`                                | 本项目 Maven 版本限定符     | 为各 worktree 形成不同 SNAPSHOT GAV                                                       | `ensureWorkspaceConfig`                             |
 | `.mango/workspace.json`           | `slot`                           | `1..200` 稳定工作区号 `NNN`                   | 本机工作区分配号            | 推导端口和数据库名                                                                        | `buildWorkspaceConfig`                              |
 | `.mango/workspace.json`           | `backendPort`                    | `18NNN`                                       | 后端端口                    | 写入 `MANGO_BACKEND_PORT`                                                                 | `workspacePorts`                                    |
 | `.mango/workspace.json`           | `frontendPort`                   | `30NNN`                                       | 前端主端口                  | 写入 `MANGO_FRONTEND_PORT`                                                                | `workspacePorts`                                    |
@@ -225,6 +228,7 @@ CLI 从当前目录向上查找 `mango.dev.json`。本地工作区分配事实�
 | .mango/m2/repository              | 目录链接                         | ~/.m2/repository                              | worktree Maven 本地仓库入口 | 默认复用用户公共 Maven 缓存；已有路径不覆盖                                               | `ensureWorkspaceMavenRepository`                    |
 | `.mango/dev-workspace.env`        | `MANGO_CRYPTO_SM4_SECRET_KEY`    | 随机 16 字节 hex                              | Mango 加密密钥              | 注入后端环境变量；缺失时自动补写                                                          | `defaultDevWorkspaceEnv`、`ensureDevWorkspaceEnv`   |
 | `.mango/dev-workspace.env`        | `MANGO_WORKSPACE_ID`             | 来自 `.mango/workspace.json`                  | 当前本地 worktree 标识      | 用于区分同机多业务工作区                                                                  | `ensureDevWorkspaceEnv`                             |
+| `.mango/dev-workspace.env`        | `MANGO_MAVEN_REVISION_QUALIFIER` | 来自 `.mango/workspace.json`                  | Maven 版本限定符            | 与 workspace ownership 同步；CLI 据此派生每个 reactor 的最终 revision                     | `ensureDevWorkspaceEnv`、`applyWorkspaceMavenRevision` |
 | `.mango/dev-workspace.env`        | `MANGO_BACKEND_PORT`             | 来自 `.mango/workspace.json`                  | 后端端口                    | 后端 `server.port` 和前端代理目标；同机 registry 分配避免冲突                             | `ensureDevWorkspaceEnv`                             |
 | `.mango/dev-workspace.env`        | `MANGO_FRONTEND_PORT`            | 来自 `.mango/workspace.json`                  | 前端端口                    | Vite dev server 端口；同机 registry 分配避免冲突                                          | `ensureDevWorkspaceEnv`                             |
 | `.mango/dev-workspace.env`        | `MANGO_FRONTEND_MODE`            | `source`                                      | 前端运行模式                | `source` 运行源码；`package` 要求已构建包产物                                             | `prepareFrontendWorkspace`                          |

@@ -28,6 +28,13 @@ import { fileURLToPath } from 'node:url';
 import { inspectProjectPullRequestTemplate, synchronizeProjectPullRequestTemplate } from './pmo-project-template.mjs';
 import { resolveHealthPollIntervalMs } from './dev-health-policy.mjs';
 import { shouldRunDevInstall } from './dev-install-policy.mjs';
+import {
+  buildWorkspaceMavenRevisionQualifier,
+  injectMavenRevisionArgs,
+  isMavenCommand,
+  qualifyWorkspaceMavenRevision,
+  readCiFriendlyMavenRevision,
+} from './dev-maven-revision.mjs';
 import { isProcessAlive, isProcessGroupAlive, stopProcessGroup } from './process-control.mjs';
 import { runReleaseCli } from './release-command.mjs';
 import { runModuleDoctorCli } from './module-doctor.mjs';
@@ -1150,6 +1157,7 @@ function defaultDevWorkspaceEnv(root, workspace = ensureWorkspaceConfig(root)) {
     '# Mango local workspace configuration.',
     '# This file is generated once per workspace and must not be committed.',
     `MANGO_WORKSPACE_ID=${workspace.workspaceId}`,
+    `MANGO_MAVEN_REVISION_QUALIFIER=${workspace.mavenRevisionQualifier}`,
     `MANGO_CRYPTO_SM4_SECRET_KEY=${randomBytes(16).toString('hex')}`,
     `MANGO_BACKEND_PORT=${workspace.backendPort}`,
     `MANGO_FRONTEND_PORT=${workspace.frontendPort}`,
@@ -1174,7 +1182,11 @@ function defaultDevWorkspaceEnv(root, workspace = ensureWorkspaceConfig(root)) {
 function ensureWorkspaceConfig(root) {
   const workspacePath = join(root, '.mango/workspace.json');
   if (existsSync(workspacePath)) {
-    const workspace = readJsonFile(workspacePath);
+    const persistedWorkspace = readJsonFile(workspacePath);
+    const workspace = withMavenRevisionQualifier(persistedWorkspace);
+    if (persistedWorkspace.mavenRevisionQualifier !== workspace.mavenRevisionQualifier) {
+      writeFileSync(workspacePath, `${JSON.stringify(workspace, null, 2)}\n`);
+    }
     registerWorkspace(root, workspace);
     return workspace;
   }
@@ -1189,7 +1201,7 @@ function allocateDevWorkspace(root) {
   const registry = readWorkspaceRegistry(normalizedRoot);
   const existing = registry.find((entry) => entry.root === normalizedRoot);
   if (existing) {
-    return existing;
+    return withMavenRevisionQualifier(existing);
   }
   const usedSlots = new Set(registry.map((entry) => Number(entry.slot)).filter(Number.isFinite));
   const usedPorts = new Set(registry.flatMap((entry) => workspacePorts(entry)));
@@ -1219,11 +1231,19 @@ function buildWorkspaceConfig(root, slot) {
     version: 1,
     root,
     workspaceId: `mango_${slotText}`,
+    mavenRevisionQualifier: `mango-${slotText}`,
     slot,
     backendPort: BACKEND_PORT_BASE + slot,
     frontendPort,
     frontendApps: buildFrontendAppPorts(frontendPort),
     dbName: `mango_dev_${workspaceProjectSlug(root)}_${slotText}`,
+  };
+}
+
+function withMavenRevisionQualifier(workspace) {
+  return {
+    ...workspace,
+    mavenRevisionQualifier: buildWorkspaceMavenRevisionQualifier(workspace.workspaceId),
   };
 }
 
@@ -1722,6 +1742,7 @@ function printDevWorkspace(context) {
   const workspace = ensureWorkspaceConfig(context.root);
   process.stdout.write(`Workspace: ${context.root}\n`);
   process.stdout.write(`Workspace ID: ${workspace.workspaceId} slot=${workspace.slot}\n`);
+  process.stdout.write(`Maven revision qualifier: ${workspace.mavenRevisionQualifier}\n`);
   process.stdout.write(`Manifest:  ${context.manifestPath}\n`);
   process.stdout.write(`Workspace: ${context.workspacePath}\n`);
   process.stdout.write(`Env file:  ${join(context.root, '.mango/dev-workspace.env')}\n`);
@@ -1947,6 +1968,7 @@ function ensureDevWorkspaceEnv(context) {
   }
   const requiredValues = {
     MANGO_WORKSPACE_ID: workspace.workspaceId,
+    MANGO_MAVEN_REVISION_QUALIFIER: workspace.mavenRevisionQualifier,
     MANGO_BACKEND_PORT: workspace.backendPort,
     MANGO_FRONTEND_PORT: workspace.frontendPort,
     MANGO_DB_NAME: workspace.dbName,
@@ -2499,7 +2521,67 @@ function resolveDevApp(context, name, app) {
       args: (app.install.args || []).map((arg) => interpolateValue(String(arg), vars)),
     };
   }
+  applyWorkspaceMavenRevision(context, resolved);
   return resolved;
+}
+
+function applyWorkspaceMavenRevision(context, app) {
+  const runUsesMaven = isMavenCommand(app.command);
+  const installUsesMaven = app.install && isMavenCommand(app.install.command);
+  if (app.type !== 'spring-boot-maven' || (!runUsesMaven && !installUsesMaven)) {
+    return;
+  }
+  const rootPom = findMavenRevisionRootPom(context.root, app);
+  if (!rootPom) {
+    fail(
+      `${app.name}: Maven project does not use CI-friendly \${revision}. ` +
+        'Upgrade the reactor root POM to <version>${revision}</version> with a concrete <revision> value before mango dev start.',
+    );
+  }
+  const baseRevision = readCiFriendlyMavenRevision(readFileSync(rootPom, 'utf8'));
+  const qualifier = ensureWorkspaceConfig(context.root).mavenRevisionQualifier;
+  const revision = qualifyWorkspaceMavenRevision(baseRevision, qualifier);
+  app.mavenRevision = revision;
+  app.mavenRevisionPom = rootPom;
+  if (runUsesMaven) {
+    app.args = injectMavenRevisionArgs(app.args, revision);
+  }
+  if (installUsesMaven) {
+    app.install.args = injectMavenRevisionArgs(app.install.args, revision);
+  }
+}
+
+function findMavenRevisionRootPom(workspaceRoot, app) {
+  const candidates = [];
+  const installPom = findMavenPomArgument(app.install?.args || []);
+  if (installPom) {
+    candidates.push(resolve(app.cwd, installPom));
+  }
+  candidates.push(resolve(app.cwd, app.pom || 'pom.xml'));
+  for (const candidate of candidates) {
+    let directory = dirname(candidate);
+    while (isPathInside(directory, workspaceRoot)) {
+      const pomPath = join(directory, 'pom.xml');
+      if (existsSync(pomPath) && readCiFriendlyMavenRevision(readFileSync(pomPath, 'utf8'))) {
+        return pomPath;
+      }
+      if (resolve(directory) === resolve(workspaceRoot) || dirname(directory) === directory) {
+        break;
+      }
+      directory = dirname(directory);
+    }
+  }
+  return '';
+}
+
+function findMavenPomArgument(args) {
+  const index = args.findIndex((arg) => arg === '-f' || arg === '--file');
+  return index >= 0 ? args[index + 1] || '' : '';
+}
+
+function isPathInside(path, root) {
+  const relativePath = relative(resolve(root), resolve(path));
+  return relativePath === '' || (!relativePath.startsWith('..') && !isAbsolute(relativePath));
 }
 
 function resolveAppPort(context, app) {
@@ -4862,7 +4944,7 @@ function updateBackendBusinessIntegration(targetDir, variables) {
     '        <dependency>',
     `            <groupId>${variables.groupId}</groupId>`,
     `            <artifactId>${variables.moduleKebab}-starter</artifactId>`,
-    `            <version>${variables.projectVersion}</version>`,
+    '            <version>${revision}</version>',
     '        </dependency>',
   ].join('\n');
   writeFileSync(
