@@ -1,8 +1,11 @@
 package io.mango.file.api.vo;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.file.api.enums.FilePackageSizeControlMode;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.io.Serializable;
 import java.util.List;
@@ -17,6 +20,10 @@ public class FilePackageResultVO implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Schema(description = "最终ZIP文件记录")
+    @Getter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP",
+            justification = "Jackson and Feign require this mutable value object getter"))
+    @Setter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+            justification = "Jackson and Feign require this mutable value object setter"))
     private FileRecordVO file;
 
     @Schema(description = "大小控制模式")
@@ -38,6 +45,10 @@ public class FilePackageResultVO implements Serializable {
     private Boolean compressionApplied;
 
     @Schema(description = "逐条目大小控制结果")
+    @Getter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP",
+            justification = "Jackson and Feign require this mutable collection getter"))
+    @Setter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+            justification = "Jackson and Feign require this mutable collection setter"))
     private List<FilePackageEntryResultVO> entries;
 
     @Schema(description = "总体处理说明")

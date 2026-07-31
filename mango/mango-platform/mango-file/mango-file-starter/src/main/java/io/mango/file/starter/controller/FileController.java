@@ -1,5 +1,6 @@
 package io.mango.file.starter.controller;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.authorization.api.annotation.ApiAccess;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.common.result.R;
@@ -32,7 +33,8 @@ import org.springframework.web.bind.annotation.RestController;
 /** File metadata and lifecycle endpoints. */
 @RestController("mangoFileController")
 @RequestMapping("/file/files")
-@RequiredArgsConstructor
+@RequiredArgsConstructor(onConstructor_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+        justification = "Spring collaborators are intentionally retained for the controller lifetime"))
 @Validated
 @Tag(name = "文件管理", description = "文件记录查询、派生、归档与删除接口")
 public class FileController implements FileApi {
