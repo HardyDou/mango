@@ -27,7 +27,7 @@
 | 失败处理 | 支持单条/批量重试、人工成功、忽略失败 | `/notice/records/**` |
 | 接收账户 | 维护用户手机号、邮箱、企业微信 ID 等接收账户 | `/notice/recipient-accounts/**` |
 | 接收偏好 | 维护用户或范围级渠道开关 | `/notice/receive-preferences` |
-| 我的站内信 | 查询未读数、列表、详情、已读和删除 | `/notice/site/my/**` |
+| 我的站内信 | 查询未读数、未读分类统计、分类列表、详情、已读和删除 | `/notice/site/my/**` |
 
 ## 3. 后端接入
 
@@ -188,22 +188,22 @@ registerMangoNoticeAdminShell();
 | `messageSubject.subjectId` | 否 | 业务对象 ID，例如任务 ID、订单 ID | 不默认展示 |
 | `messageSubject.subjectName` | 否 | 业务对象名称快照，用于必要的用户可读摘要 | 可在流程弹窗显示 |
 | `messageTarget.targetType` | 否 | 消息默认目标，取值 `NONE`、`ROUTE`、`FLOW` | 不直接展示 |
-| `messageTarget.targetKey` | 否 | 命名目标键，例如 `workflow:task-detail` | 不直接展示 |
+| `messageTarget.targetKey` | 否 | 命名目标键或应用内绝对路径，例如 `workflow:task-detail`、`/workflow/task/detail` | 不直接展示 |
 | `messageTarget.params` | 否 | 消息级隐藏参数，所有动作默认继承 | 不默认展示 |
 | `messageData` | 否 | 业务扩展数据，例如流程实例、任务、订单、锁定记录 | 不默认展示 |
 | `messageActions` | 否 | 站内信按钮列表 | 展示按钮名称 |
 
-`targetKey` 是命名目标，不是页面地址。业务前端需要提前注册这个名称；未注册或当前用户无权访问时，前端会提示“目标未注册或当前无权访问”。
+`targetKey` 支持业务前端提前注册的命名目标，也支持经过前端安全校验且当前用户可访问的应用内绝对路径。协议地址、协议相对地址、反斜杠和控制字符不会用于跳转；目标未注册、路径不安全或当前用户无权访问时，前端会提示“目标未注册或当前无权访问”。
 
 #### 5.1.2 动作字段
 
 | 字段 | 必填 | 用途 |
 |------|------|------|
 | `actionCode` | 是 | 动作稳定编码，同一条消息内不能重复。 |
-| `actionLabel` | 是 | 按钮名称，由业务方定义，例如“进入审批”“确认告警”。 |
+| `actionLabel` | 是 | 业务动作名称；详情弹窗会优先按消息场景生成“去审批”“去领取”“查看申请”“查看资料”等用户文案，无法识别场景时回退到该字段。 |
 | `interactionType` | 否 | `EVENT` 或 `ROUTE`，默认 `EVENT`。`FLOW` 通过 `interactionType=ROUTE` 加 `target.targetType=FLOW` 表达。 |
 | `eventType` | `EVENT` 必填 | 后端点击后发布的领域事件类型。 |
-| `target` | `ROUTE/FLOW` 必填 | 动作自己的命名目标，可覆盖消息默认目标。 |
+| `target` | `ROUTE/FLOW` 必填 | 动作自己的目标，可覆盖消息默认目标；`ROUTE` 可使用命名目标或应用内绝对路径。 |
 | `target.params` | 否 | 动作级隐藏参数，会和消息级参数合并后传回。 |
 | `confirmRequired` | 否 | `EVENT` 点击前是否弹确认框。 |
 | `inputSchema` | 否 | 动作输入 JSON Schema，预留给需要表单输入的动作。 |
@@ -241,12 +241,12 @@ registerMangoNoticeAdminShell();
 
 #### 5.1.4 ROUTE
 
-`ROUTE` 用于进入已注册的命名页面目标。它不提交后端业务命令，点击后不会自动改变动作状态，也不会禁用按钮。用户关闭页面后可以再次点击进入。
+`ROUTE` 用于进入已注册的命名页面目标或经过校验的应用内绝对路径。它不提交后端业务命令，点击后不会自动改变动作状态，也不会禁用按钮。用户关闭页面后可以再次点击进入。
 
 业务方需要准备：
 
 1. 发送消息时设置 `target.targetType=ROUTE`。
-2. 设置 `target.targetKey` 为前端已注册的命名页面目标。
+2. 设置 `target.targetKey` 为前端已注册的命名页面目标，或以单个 `/` 开头的应用内绝对路径。
 3. 把页面需要的业务参数放入 `target.params` 或 `messageTarget.params`。
 4. 前端命名目标读取参数后自行加载业务数据和校验权限。
 
@@ -561,6 +561,18 @@ mango-notice-starter/src/main/resources/META-INF/mango/resources/notice-common-d
 | 接收账户 | 用户手机号、邮箱、企微 ID、钉钉 ID 等接收地址。 |
 | 接收偏好 | 用户或范围级渠道开关。 |
 
+### 9.4 站内信分类
+
+Maven `1.0.29` 增加站内信未读分类统计和分页筛选，不新增数据库字段。服务根据通知业务类型的 `bizGroup` 计算分类，统计和分页查询复用同一组当前用户、租户、未删除和可见性条件。
+
+| 分类 | 枚举 | `bizGroup` 口径 |
+|------|------|-----------------|
+| 审批类消息 | `APPROVAL` | `WORKFLOW` |
+| 系统通知 | `SYSTEM` | `AUTH`、`IDENTITY`、`JOB` |
+| 业务通知 | `BUSINESS` | 其它业务组 |
+
+`NoticeSiteMessagePageQuery.category` 接受上述枚举，`unreadOnly=true` 只返回未读消息。`NoticeApi.unreadCategoryStats()` 和 `GET /notice/site/my/unread-category-stats` 返回总未读数及三个分类的精确数量；数量为 0 的分类仍会出现在 API 结果中，由前端决定是否展示。
+
 ## 10. 请求与返回字段
 
 HTTP 根路径：`/notice`。
@@ -579,7 +591,7 @@ HTTP 根路径：`/notice`。
 | 接收账户 | `/notice/recipient-accounts/**` | `notice:receive-setting:*` | 维护接收账户。 |
 | 企业微信 | `POST /notice/wecom/users/sync` | `system:user:add` | 同步企微用户映射。 |
 | 接收偏好 | `GET /notice/receive-preferences`、`PUT /notice/receive-preferences` | `notice:receive-setting:*` | 维护接收偏好。 |
-| 我的站内信 | `/notice/site/my/**` | `notice:site:*` | 未读数、列表、详情、已读和删除。 |
+| 我的站内信 | `/notice/site/my/**` | `notice:site:*` | 未读数、未读分类统计、分类列表、详情、已读和删除。 |
 
 常用返回对象：
 
@@ -590,6 +602,8 @@ HTTP 根路径：`/notice`。
 | `NoticeSendRecordVO` | 每个接收人、每个渠道的发送记录。 |
 | `NoticeSiteMessageVO` | 站内信消息。 |
 | `NoticeUnreadCountVO` | 未读数量。 |
+| `NoticeUnreadCategoryCountVO` | 单个站内信分类及未读数量。 |
+| `NoticeUnreadCategoryStatsVO` | 总未读数及审批、系统、业务分类统计。 |
 | `NoticeBusinessTypeVO` | 通知业务类型。 |
 | `NoticeBusinessConfigVersionVO` | 业务配置版本。 |
 | `NoticeChannelTemplateVO` | 渠道模板。 |

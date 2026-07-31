@@ -291,14 +291,10 @@ import { FilePreviewPanel } from '@mango/file';
 
 ## 12. 变更影响记录
 
-- 2026-07-30：`FilePreviewPanel` 图片预览由点击 `ElImage` 再打开覆盖层，调整为默认直接展示无蒙层的内嵌
+- `@mango/file@1.0.31` 发布 `FilePreviewPanel.fitContainer` 容器填充模式，并把图片预览由点击 `ElImage` 再打开覆盖层，调整为默认直接展示无蒙层的内嵌
   Element Plus Image Viewer。缩放、旋转、适应模式、原始尺寸和拖拽能力保持使用 Element Plus 原生实现，Viewer 只占用
-  `preview-stage`，并随 `fit-container` 和外层弹框尺寸变化。该默认行为变化不新增 prop；文件 API、文件 ID、权限、下载和
-  文档转换接口不变。本记录不代表 npm 版本已经发布。
-
-- 2026-07-30：`FilePreviewPanel` 源码新增默认关闭的 `fit-container` 容器填充模式。固定高度容器和弹框正文可直接
-  启用该 prop，让预览区域及 PDF、Office、图片和音视频跟随可用尺寸；普通流式页面和现有 CSS 变量入口保持兼容。
-  本记录不代表 npm 版本已经发布。
+  `preview-stage`，并随 `fit-container` 和外层弹框尺寸变化。该 prop 默认关闭；普通流式页面和现有 CSS 变量入口保持兼容，
+  文件 API、文件 ID、权限、下载和文档转换接口不变。
 
 - `@mango/file@1.0.26` publishes the file preview dialog fix: PDF preview fills the dialog content height and owns its own scrolling; the open-in-new-window action always renders and is disabled only when no usable preview URL exists. File ID persistence, upload, download, preview APIs, page keys, permissions and backend startup stay compatible.
 
