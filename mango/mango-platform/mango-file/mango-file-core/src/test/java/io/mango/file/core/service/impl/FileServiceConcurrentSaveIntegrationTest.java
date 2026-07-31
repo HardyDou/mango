@@ -327,7 +327,8 @@ class FileServiceConcurrentSaveIntegrationTest {
                     new FileAccessUrlAssembler(new FileProperties()),
                     List.of(),
                     List.of(),
-                    List.of());
+                    List.of(),
+                    new FilePackageSizeControlProcessor(List.of()));
         }
     }
 

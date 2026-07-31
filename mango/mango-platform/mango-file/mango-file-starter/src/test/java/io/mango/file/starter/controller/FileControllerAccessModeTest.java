@@ -22,6 +22,8 @@ class FileControllerAccessModeTest {
                 String.class,
                 Long.class);
         assertLogin("preview", Long.class);
+        assertLogin("packageFilesWithSizeControl",
+                io.mango.file.api.command.FilePackageSizeControlCommand.class);
         assertLogin(FileBinaryController.class, "download", Long.class, String.class, Long.class);
         assertLogin(FileBinaryController.class, "previewContent", Long.class);
         assertLogin(FileImportController.class, "importImage",

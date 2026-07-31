@@ -18,6 +18,7 @@ import io.mango.file.api.command.FileMergePdfCommand;
 import io.mango.file.api.command.FileMergePdfEntryCommand;
 import io.mango.file.api.command.FilePackageCommand;
 import io.mango.file.api.command.FilePackageEntryCommand;
+import io.mango.file.api.command.FilePackageSizeControlCommand;
 import io.mango.file.api.command.SaveFileCommand;
 import io.mango.file.api.enums.FileAccessLevel;
 import io.mango.file.api.enums.FileAccessMode;
@@ -32,6 +33,7 @@ import io.mango.file.api.enums.FileUploadMode;
 import io.mango.file.api.enums.FileUploadSessionStatus;
 import io.mango.file.api.query.FileRecordPageQuery;
 import io.mango.file.api.vo.FileDownloadVO;
+import io.mango.file.api.vo.FilePackageResultVO;
 import io.mango.file.api.vo.FilePreviewVO;
 import io.mango.file.api.vo.FileRecordVO;
 import io.mango.file.api.vo.FileSettingsVO;
@@ -157,6 +159,7 @@ public class FileService implements IFileService, IFileContentProvider {
     private final List<FileCompressApi> fileCompressApis;
     private final List<ConvertApi> convertApis;
     private final List<RenderApi> renderApis;
+    private final FilePackageSizeControlProcessor filePackageSizeControlProcessor;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -198,6 +201,39 @@ public class FileService implements IFileService, IFileContentProvider {
         saveCommand.setBizMeta(command.getBizMeta());
         saveCommand.setDirectoryId(command.getDirectoryId());
         return save(saveCommand);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public FilePackageResultVO packageFilesWithSizeControl(FilePackageSizeControlCommand command) {
+        FilePackageSizeControlCommand requiredCommand = Require.nonNull(command, FileCode.FILE_EMPTY);
+        Require.notEmpty(requiredCommand.getEntries(), FileCode.FILE_EMPTY);
+        String zipFileName = normalizeZipFileName(requiredCommand.getFileName());
+        try (FilePackageSizeControlProcessor.PackageBuild build = filePackageSizeControlProcessor.process(
+                requiredCommand, this::downloadForService);
+             FileInput input = FileInput.fromPath(build.zipPath(), zipFileName, "application/zip")) {
+            SaveFileCommand saveCommand = packageSaveCommand(requiredCommand, zipFileName, input.fileSize);
+            FilePackageResultVO result = build.result();
+            result.setFile(save(input, saveCommand));
+            result.setActualPackageSizeBytes(input.fileSize);
+            return result;
+        } catch (IOException ex) {
+            return Require.fail(FileCode.FILE_STORE_FAILED);
+        }
+    }
+
+    private SaveFileCommand packageSaveCommand(FilePackageCommand command, String fileName, long fileSize) {
+        SaveFileCommand saveCommand = new SaveFileCommand();
+        saveCommand.setFileName(fileName);
+        saveCommand.setFileSize(fileSize);
+        saveCommand.setContentType("application/zip");
+        saveCommand.setPurpose(command.getPurpose());
+        saveCommand.setAccessLevel(command.getAccessLevel());
+        saveCommand.setBizType(command.getBizType());
+        saveCommand.setBizId(command.getBizId());
+        saveCommand.setBizMeta(command.getBizMeta());
+        saveCommand.setDirectoryId(command.getDirectoryId());
+        return saveCommand;
     }
 
     @Override
@@ -1691,7 +1727,7 @@ public class FileService implements IFileService, IFileContentProvider {
         return path;
     }
 
-    private String normalizeFileName(String fileName) {
+    static String normalizeFileName(String fileName) {
         if (!StringUtils.hasText(fileName)) {
             return "unnamed";
         }
@@ -1714,7 +1750,7 @@ public class FileService implements IFileService, IFileContentProvider {
         return normalized + ".pdf";
     }
 
-    private String normalizeZipEntryPath(String value) {
+    static String normalizeZipEntryPath(String value) {
         Require.notBlank(value, FileCode.STORAGE_PATH_INVALID);
         String path = value.trim().replace('\\', '/');
         Require.isFalse(path.isBlank() || path.endsWith("/"), FileCode.STORAGE_PATH_INVALID);
@@ -1731,7 +1767,7 @@ public class FileService implements IFileService, IFileContentProvider {
         return path;
     }
 
-    private String resolveZipEntryPath(String path, String fileName) {
+    static String resolveZipEntryPath(String path, String fileName) {
         if (path == null || !path.contains("${fileName}")) {
             return path;
         }
@@ -1848,6 +1884,17 @@ public class FileService implements IFileService, IFileContentProvider {
                     throw new IllegalStateException(e);
                 }
             }, temp, command.getFileName(), declaredSize, command.getContentType(), declaredSize <= 0);
+        }
+
+        private static FileInput fromPath(Path path, String fileName, String contentType) throws IOException {
+            long size = Files.size(path);
+            return new FileInput(() -> {
+                try {
+                    return Files.newInputStream(path);
+                } catch (IOException e) {
+                    throw new IllegalStateException(e);
+                }
+            }, null, fileName, size, contentType, size <= 0);
         }
 
         private InputStream openStream() {

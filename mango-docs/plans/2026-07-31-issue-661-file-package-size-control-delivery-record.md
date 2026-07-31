@@ -88,14 +88,15 @@ targetSize(i) = max(1, currentSize(i) - allocatedSaving(i))
 
 | 要求 ID | 验证方式 | 命令或步骤 | 结果 | 证据 |
 |---|---|---|---|---|
-| REQ-001、REQ-002、REQ-003、REQ-004、REQ-005 | M10 定向单元测试 | 执行 `mango-file-core` 的文件打包测试 | PENDING | Surefire 报告 |
-| REQ-006、REQ-007 | M12 API 契约与兼容测试 | 执行 starter Controller、Feign/接口契约和既有打包回归测试 | PENDING | Surefire 报告 |
-| 全部 | M09 模块质量门禁 | 对直接修改的 Maven 模块执行定向 `mvn verify`，不使用 `-am` 或 `-amd` 扩大质量扫描 | PENDING | Maven 输出 |
-| 全部 | 差异与测试质量检查 | `git diff --check`；`node mango-pmo/tools/test-quality-check.mjs --base origin/main` | PENDING | 命令输出 |
-| REQ-001、REQ-002、REQ-006 | M08 能力说明检查 | 校验文件模块 README 与 API 实现一致 | PENDING | README diff 和能力说明检查结果 |
+| REQ-001、REQ-002、REQ-003、REQ-004、REQ-005 | M10 定向单元测试 | `mvn -B -ntp -pl :mango-file-core -am -Dtest=FileServicePackageFilesTest -Dsurefire.failIfNoSpecifiedTests=false -Dcheckstyle.skip=true -Dpmd.skip=true -Dspotbugs.skip=true test` | PASS：10/10 | AUTO 比例分摊、触底动态再分配、不可达目标正常返回、MANUAL、NONE/不支持格式均覆盖 |
+| REQ-006、REQ-007 | M12 API 契约与兼容测试 | `mvn -B -ntp -pl :mango-file-starter -am -Dtest=FileControllerPackageSizeControlTest,FileControllerAccessModeTest -Dsurefire.failIfNoSpecifiedTests=false -Dcheckstyle.skip=true -Dpmd.skip=true -Dspotbugs.skip=true test`；消费者模块 compile | PASS：2/2；`mango-file-preview-core`、`mango-file-preview-app` 编译通过 | Controller、登录权限、Feign/API 消费者兼容 |
+| 全部 | M09 模块质量门禁 | 直接模块 `mvn verify -DskipTests`；四模块 `checkstyle:check`；`mango:check -Dgate=no-new-violations`；`mango:architecture -Dmango.architecture.base=origin/main` | PASS：Checkstyle 0 新违规；基线 `newIssueCount=0`；架构 `dependency=0, pmd=0, blocking=0` | PMD 7/ArchUnit/依赖边界和专项基线均通过 |
+| 全部 | 差异与测试质量检查 | `git diff --check`；`node mango-pmo/tools/test-quality-check.mjs --base origin/main`；`node mango-pmo/tools/audit-backend-test-mocks.mjs --report-only --changed-only --base origin/main` | PASS：diff clean；测试质量 8 文件；Mock 审计 block=0、warn=0 | 仓库质量脚本输出 |
+| REQ-001、REQ-002、REQ-006 | M08 能力说明检查 | `node mango-pmo/tools/audit-module-readmes.mjs`；`node mango-pmo/tools/audit-readme-source-facts.mjs`；`node mango-pmo/tools/check-capability-docs.mjs --base origin/main --head HEAD` | PASS：README/source facts 无问题；能力说明检查 20 个变更文件通过 | `mango/mango-platform/mango-file/README.md` 已补 AUTO/MANUAL/NONE/未达标语义 |
 
 ## 7. 例外与剩余风险
 
 - `FileCompressApi` 当前以单文件 `byte[]` 返回压缩结果。此次通过逐文件处理和临时 ZIP 限制峰值，但单个超大 PDF/图片仍受压缩 SPI 的内存模型约束；本 Issue 不扩展 `mango-infra-fileproc` SPI。
 - ZIP DEFLATE、文件名和中央目录会造成实际大小与条目字节和不同。AUTO 模式必须按实际 ZIP 反复校验；无法达到目标时返回当前最优结果，不提供硬上限保证。
 - 本任务不发布 Maven 制品；消费项目需等待后续 Mango 版本发布后接入新增契约。
+- 完整 `mvn verify` 的既有 `FileServiceConcurrentSaveIntegrationTest` 需要外部 MySQL，当前环境因未提供 `MANGO_DB_USERNAME` 失败；本次新增和相关回归测试均通过，静态门禁使用 `-DskipTests` 并已由 PMD 7/ArchUnit/基线检查补充验证。

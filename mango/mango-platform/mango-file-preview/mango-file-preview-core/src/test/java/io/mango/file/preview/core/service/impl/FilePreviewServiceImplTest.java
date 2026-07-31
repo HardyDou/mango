@@ -283,6 +283,12 @@ class FilePreviewServiceImplTest {
         }
 
         @Override
+        public R<io.mango.file.api.vo.FilePackageResultVO> packageFilesWithSizeControl(
+                io.mango.file.api.command.FilePackageSizeControlCommand command) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
         public R<FileRecordVO> mergeToPdf(io.mango.file.api.command.FileMergePdfCommand command) {
             throw new UnsupportedOperationException();
         }

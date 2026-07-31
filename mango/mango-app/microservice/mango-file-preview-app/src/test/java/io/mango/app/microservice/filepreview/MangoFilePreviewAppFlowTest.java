@@ -172,6 +172,12 @@ class MangoFilePreviewAppFlowTest {
         }
 
         @Override
+        public R<io.mango.file.api.vo.FilePackageResultVO> packageFilesWithSizeControl(
+                io.mango.file.api.command.FilePackageSizeControlCommand command) {
+            return R.fail("文件不存在");
+        }
+
+        @Override
         public R<FileRecordVO> mergeToPdf(FileMergePdfCommand command) {
             return R.fail("文件不存在");
         }

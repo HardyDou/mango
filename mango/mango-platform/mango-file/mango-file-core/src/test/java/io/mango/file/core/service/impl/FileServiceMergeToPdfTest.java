@@ -181,7 +181,8 @@ class FileServiceMergeToPdfTest {
                 accessUrlAssembler,
                 List.of(),
                 convertApis,
-                renderApis);
+                renderApis,
+                new FilePackageSizeControlProcessor(List.of()));
     }
 
     @AfterEach
