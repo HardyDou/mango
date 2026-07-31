@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>io.mango.plugin.it</groupId>
+    <artifactId>baseline-boot-package</artifactId>
+    <version>1.0.0</version>
+
+    <properties>
+        <maven.compiler.release>21</maven.compiler.release>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>io.mango.tools.maven.plugin</groupId>
+                <artifactId>mango-maven-plugin</artifactId>
+                <version>${mango.plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>generate-cold-baselines</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>baseline-generate</goal>
+                        </goals>
+                        <configuration>
+                            <jdbcUrl>${env.MANGO_BASELINE_TEST_DB_URL}</jdbcUrl>
+                            <username>${env.MANGO_BASELINE_TEST_DB_USERNAME}</username>
+                            <passwordEnv>MANGO_BASELINE_TEST_DB_PASSWORD</passwordEnv>
+                            <allowEmptyPassword>true</allowEmptyPassword>
+                            <includedModules>package-alpha,package-beta</includedModules>
+                            <moduleOrder>package-alpha,package-beta</moduleOrder>
+                            <schemaPrefix>mango_package_it</schemaPrefix>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <version>${spring.boot.version}</version>
+                <configuration>
+                    <mainClass>io.mango.plugin.it.BaselinePackageApplication</mainClass>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>

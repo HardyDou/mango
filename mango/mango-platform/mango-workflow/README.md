@@ -321,7 +321,7 @@ registerMangoWorkflowAdminPages();
 
 ## 5. 资源注入
 
-工作流默认分类、模板分类和设计器节点定义通过 `mango-resource` 注入，不在 Flyway 中写业务配置数据。资源文件放在：
+工作流默认分类、模板分类、设计器节点和内置业务流程定义通过 `mango-resource` 注入，不在 Flyway 中写业务配置数据。`BOOTSTRAP_REQUIRED` 声明在 Runtime 前完成；Runtime 不再执行阻断启动的流程定义发布。资源文件放在：
 
 ```text
 mango-workflow-starter/src/main/resources/META-INF/mango/resources/workflow-common-definition.yml
@@ -418,7 +418,7 @@ mango-workflow-starter/src/main/resources/META-INF/mango/resources/workflow-comm
 
 ### 5.4 WORKFLOW_DEFINITION
 
-`WORKFLOW_DEFINITION` 用于初始化业务内置流程定义。资源处理器会按 `tenantId + definitionKey` 幂等创建或更新流程定义，并发布到 Flowable。
+`WORKFLOW_DEFINITION` 用于初始化业务内置流程定义。Bootstrap Resource 处理器会按 `tenantId + definitionKey` 幂等创建或更新流程定义，把 `designerJson` 转换为 BPMN，并通过 `WorkflowDefinitionService.ensurePublished()` 真实发布到 Flowable；内容未变化的重入不会新增部署或版本。
 
 | 字段 | 类型 | 必填 | 含义 |
 |------|------|------|------|
@@ -462,7 +462,7 @@ mango-workflow-starter/src/main/resources/META-INF/mango/resources/workflow-comm
 2. 管理后台安装 `@mango/workflow`，注册 workflow 页面。
 3. 启动后确认 workflow starter 的 `AUTH_MENU` 资源已同步，流程菜单和权限已经进入 `authorization_menu`。
 4. 在流程定义页面维护流程分类、流程定义、表单和节点配置。
-5. 调用 `/workflow/definitions/deploy` 发布流程，或在业务初始化逻辑中调用 `WorkflowDefinitionApi.ensurePublished()`。
+5. 管理员维护的流程调用 `/workflow/definitions/deploy` 发布；业务内置流程使用 `WORKFLOW_DEFINITION` 声明，不在 Runtime 初始化代码中调用 `ensurePublished()`。
 6. 业务单据提交审批前，先保存业务主表、业务明细、附件关系和业务快照引用。
 7. 调用 `WorkflowBusinessApplyApi.create()` 创建业务申请。
 8. 调用 `WorkflowProcessApi.start()` 发起流程。

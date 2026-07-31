@@ -15,6 +15,7 @@ import io.mango.common.result.Require;
 import org.springframework.util.StringUtils;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
@@ -53,7 +54,7 @@ public class QiniuKodoFileStorage extends AbstractCloudFileStorage {
             String signedUrl = auth(config).privateDownloadUrl(url);
             URLConnection connection = new URL(signedUrl).openConnection();
             return new FileObject(connection.getInputStream(), info.fsize, info.mimeType);
-        } catch (Exception e) {
+        } catch (IOException e) {
             return Require.fail(FileCode.FILE_READ_FAILED);
         }
     }
@@ -65,6 +66,18 @@ public class QiniuKodoFileStorage extends AbstractCloudFileStorage {
             bucketManager(config).delete(config.getBucketName(), objectName);
         } catch (QiniuException e) {
             Require.fail(FileCode.FILE_READ_FAILED);
+        }
+    }
+
+    @Override
+    public void publishObject(FileStorageConfigEntity config, String stagingObjectName, String targetObjectName) {
+        requireConfig(config);
+        try {
+            Response response = bucketManager(config).move(config.getBucketName(), stagingObjectName,
+                    config.getBucketName(), targetObjectName, true);
+            Require.isTrue(response.isOK(), FileCode.FILE_STORE_FAILED);
+        } catch (QiniuException e) {
+            Require.fail(FileCode.FILE_STORE_FAILED);
         }
     }
 

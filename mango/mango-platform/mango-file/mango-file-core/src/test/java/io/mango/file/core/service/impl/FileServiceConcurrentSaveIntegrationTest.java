@@ -372,6 +372,12 @@ class FileServiceConcurrentSaveIntegrationTest {
         }
 
         @Override
+        public void publishObject(FileStorageConfigEntity config, String stagingObjectName, String targetObjectName) {
+            byte[] content = objects.remove(stagingObjectName);
+            objects.put(targetObjectName, content);
+        }
+
+        @Override
         public void test(FileStorageConfigEntity config) {
             Objects.requireNonNull(config, "config");
         }

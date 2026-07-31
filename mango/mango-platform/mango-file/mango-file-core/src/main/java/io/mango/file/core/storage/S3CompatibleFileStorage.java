@@ -16,6 +16,7 @@ import software.amazon.awssdk.services.s3.model.AbortMultipartUploadRequest;
 import software.amazon.awssdk.services.s3.model.CompletedMultipartUpload;
 import software.amazon.awssdk.services.s3.model.CompletedPart;
 import software.amazon.awssdk.services.s3.model.CompleteMultipartUploadRequest;
+import software.amazon.awssdk.services.s3.model.CopyObjectRequest;
 import software.amazon.awssdk.services.s3.model.CreateMultipartUploadRequest;
 import software.amazon.awssdk.services.s3.model.CreateMultipartUploadResponse;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
@@ -100,6 +101,24 @@ public class S3CompatibleFileStorage extends AbstractCloudFileStorage {
                     .build());
         } catch (Exception e) {
             Require.fail(FileCode.FILE_READ_FAILED);
+        }
+    }
+
+    @Override
+    public void publishObject(FileStorageConfigEntity config, String stagingObjectName, String targetObjectName) {
+        requireConfig(config);
+        try (S3Client client = client(config)) {
+            client.copyObject(CopyObjectRequest.builder()
+                    .copySource(config.getBucketName() + "/" + stagingObjectName)
+                    .destinationBucket(config.getBucketName())
+                    .destinationKey(targetObjectName)
+                    .build());
+            client.deleteObject(DeleteObjectRequest.builder()
+                    .bucket(config.getBucketName())
+                    .key(stagingObjectName)
+                    .build());
+        } catch (Exception e) {
+            Require.fail(FileCode.FILE_STORE_FAILED);
         }
     }
 

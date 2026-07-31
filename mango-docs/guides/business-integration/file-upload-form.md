@@ -302,3 +302,7 @@ pnpm -F @mango/file test
 ## 2026-07-22 富文本托管资源影响
 
 - `MangoEditor` 显式启用 `imageValueType="token"` 与 `pasteImageMode="upload"` 后，工具栏图片、剪贴板 File/Data URI 和远程 HTML 图片统一进入文件服务；对外 HTML 只保留 `mango-file:<id>` 与 `data-file-id`。远程图片通过登录态 `POST /file/files/import-image` 受控导入并固定为 `PRIVATE` 图片文件，普通附件继续复用 `MUpload`，业务表单仍只保存文件 ID、文件 ID 列表或文件 token。未启用新属性的 Editor 以及现有上传、回显、预览、下载接口保持兼容。
+
+## 2026-07-27 Bootstrap 生命周期影响
+
+- 普通业务表单上传、回显、预览和下载 API、文件 ID 持久化、权限及租户边界保持不变。需要随业务制品预置的固定文件改用 `FILE_ASSET` Resource，由 Bootstrap 把 classpath 二进制发布到配置的 LOCAL/S3/OSS/COS/Qiniu 存储并写入稳定的 `file_record`、`file_object`；重入时按对象长度和 SHA-256 校验，内容漂移会重新发布。业务升级顺序调整为先完成 `bootstrap apply` 与 `bootstrap verify`，不再在 Runtime 启动代码中上传预置文件。

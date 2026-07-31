@@ -21,6 +21,10 @@
 
     <dependencies>
         <dependency>
+            <groupId>io.mango.infra.bootstrap</groupId>
+            <artifactId>mango-infra-bootstrap-starter</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.alibaba.cloud</groupId>
             <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
         </dependency>

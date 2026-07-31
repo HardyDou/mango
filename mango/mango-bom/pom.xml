@@ -91,6 +91,21 @@
 
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>io.mango.infra.bootstrap</groupId>
+                <artifactId>mango-infra-bootstrap-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.mango.infra.bootstrap</groupId>
+                <artifactId>mango-infra-bootstrap-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.mango.infra.bootstrap</groupId>
+                <artifactId>mango-infra-bootstrap-starter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
             <!-- Shared platform catalog. Keep this section aligned with the reactor root. -->
             <!-- Spring Boot Dependencies -->
             <dependency>

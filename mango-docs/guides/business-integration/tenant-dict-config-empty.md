@@ -250,3 +250,7 @@ pnpm -F @mango/admin-shell build
 ## 2026-07-22 富文本托管资源影响
 
 - 本次不新增数据库表、migration、租户字典、组织、用户、系统配置或 Resource 声明数据；远程图片导入复用当前租户文件保存链路并固定 `PRIVATE`，不改变基础数据查询 API、初始化顺序、租户隔离和本场景排障步骤。
+
+## 2026-07-27 Bootstrap 生命周期影响
+
+- Mango 将租户前置基线、启动前必需 Resource 和最终租户对账迁入独立 Bootstrap，租户、字典、组织、用户和系统配置的公开 API、数据模型、权限及隔离语义不变。业务升级顺序调整为先完成 `bootstrap apply` 与 `bootstrap verify`，再启动 Runtime；基础数据为空时按 `TENANT_PREREQUISITES -> RESOURCE_REQUIRED -> TENANT_RECONCILIATION` 步骤回执定位。Runtime 只校验成功回执，不再隐式补跑初始化，也不能通过延长 readiness 窗口等待这些数据形成。

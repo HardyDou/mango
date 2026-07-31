@@ -246,7 +246,7 @@ test('CI reruns when policy-resolved assurance selections change and keeps expli
   );
   assert.match(
     workflow,
-    /Build generated four-layer backend prerequisites[\s\S]*?:mango-infra-persistence-api[\s\S]*?:mango-infra-feign-starter[\s\S]*?install/,
+    /Build generated four-layer backend prerequisites[\s\S]*?:mango-infra-bootstrap-api[\s\S]*?:mango-infra-persistence-api[\s\S]*?:mango-infra-feign-starter[\s\S]*?install/,
   );
   const dependencyBuild = workflow.match(
     /      - name: Build affected-module upstream dependencies[\s\S]*?(?=\n      - name:)/,

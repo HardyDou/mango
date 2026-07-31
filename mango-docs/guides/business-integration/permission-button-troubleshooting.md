@@ -254,3 +254,7 @@ pnpm -F @mango/admin-shell build
 ## 2026-07-22 富文本托管资源影响
 
 - Editor 图片上传、远程图片导入和 token 回显沿用文件基础能力的登录态访问边界，不新增前端 `permissionCode`、角色按钮授权或业务按钮展示规则；文件管理类细粒度权限和本场景排障步骤保持不变。
+
+## 2026-07-27 Bootstrap 生命周期影响
+
+- Mango 将 `API_RESOURCE`、`AUTH_MENU` 等启动前必需声明及租户授权对账迁入独立 Bootstrap。按钮 `permissionCode`、登录态权限集合、角色按钮授权、接口鉴权和租户隔离协议不变；业务升级后先确认 `bootstrap apply` 与 `bootstrap verify` 成功，再启动 Runtime 并刷新登录态。若按钮权限缺失，应先检查 Bootstrap 的 Resource 与租户步骤回执，再按本指南检查角色授权和前后端权限码，不能把 Runtime 已启动等同于初始化已完成。

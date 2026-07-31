@@ -265,7 +265,7 @@ const fileIds = ref<string[]>([]);
 
 - 2026-07-30：`FilePreviewPanel` 源码新增默认关闭的 `fit-container` 模式。该模式适用于固定高度容器、
   `ElDialog` 和 `MangoDialog` 正文；PDF 与 Office iframe 在预览区内填充并自行滚动，图片保持 `contain`，
-  空状态和下载查看状态在可用区域居中。父容器必须提供可计算高度；现有自然高度模式和 CSS 变量入口保持兼容。
+  空状态和下载查看状态在可用区域居中。使用该模式时由父容器提供可计算高度；现有自然高度模式和 CSS 变量入口保持兼容。
   本记录不代表 npm 版本已经发布。
 
 - `@mango/file@1.0.22` 让弹框场景下的 `FilePreviewPanel` 高度跟随外层内容区，PDF 内容由预览自身滚动；

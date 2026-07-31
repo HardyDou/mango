@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>io.mango.infra</groupId>
+        <artifactId>mango-infra</artifactId>
+        <version>${revision}</version>
+    </parent>
+    <groupId>io.mango.infra.bootstrap</groupId>
+    <artifactId>mango-infra-bootstrap</artifactId>
+    <packaging>pom</packaging>
+    <name>Mango Infra Bootstrap</name>
+    <description>Bootstrap/runtime lifecycle, release receipts and generation fencing</description>
+    <modules>
+        <module>mango-infra-bootstrap-api</module>
+        <module>mango-infra-bootstrap-core</module>
+        <module>mango-infra-bootstrap-starter</module>
+    </modules>
+</project>

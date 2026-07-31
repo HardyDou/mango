@@ -15,7 +15,9 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.AtomicMoveNotSupportedException;
 import java.time.Duration;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -36,7 +38,7 @@ public class LocalFileStorage implements FileStorage {
     @Override
     public void putObject(FileStorageConfigEntity config, String objectName, InputStream inputStream, long contentLength, String contentType) throws IOException {
         Path target = resolvePath(config.getBucketName(), objectName);
-        Files.createDirectories(target.getParent());
+        Files.createDirectories(requireParent(target));
         Files.copy(inputStream, target, StandardCopyOption.REPLACE_EXISTING);
     }
 
@@ -63,9 +65,25 @@ public class LocalFileStorage implements FileStorage {
     }
 
     @Override
+    public void publishObject(FileStorageConfigEntity config, String stagingObjectName, String targetObjectName) {
+        Path staging = resolvePath(config.getBucketName(), stagingObjectName);
+        Path target = resolvePath(config.getBucketName(), targetObjectName);
+        try {
+            Files.createDirectories(requireParent(target));
+            try {
+                Files.move(staging, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+            } catch (AtomicMoveNotSupportedException ignored) {
+                Files.move(staging, target, StandardCopyOption.REPLACE_EXISTING);
+            }
+        } catch (IOException e) {
+            Require.fail(FileCode.FILE_STORE_FAILED);
+        }
+    }
+
+    @Override
     public void test(FileStorageConfigEntity config) throws IOException {
         Path target = resolvePath(config.getBucketName(), ".mango-storage-test");
-        Files.createDirectories(target.getParent());
+        Files.createDirectories(requireParent(target));
     }
 
     @Override
@@ -116,6 +134,10 @@ public class LocalFileStorage implements FileStorage {
         Path resolved = root.resolve(bucket).resolve(objectName).normalize();
         Require.isTrue(resolved.startsWith(root), FileCode.FILE_ACCESS_DENIED);
         return resolved;
+    }
+
+    private static Path requireParent(Path target) {
+        return Objects.requireNonNull(target.getParent(), "Resolved local storage path must have a parent");
     }
 
     private String encodeObjectName(String objectName) {

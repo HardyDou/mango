@@ -12,13 +12,25 @@
 
 | 场景 | 入口 | 关键配置 |
 |------|------|----------|
-| 正式内置资源，例如菜单、字典、系统配置、消息模板、任务、号段、文件配置 | `META-INF/mango/resources/` | 默认扫描。 |
+| 正式内置资源，例如菜单、字典、流程定义、预置文件、系统配置 | `META-INF/mango/resources/` | 默认 `BOOTSTRAP_REQUIRED`，由 Bootstrap 在 Runtime 前同步。 |
 | 演示站点、演示角色、演示流程、演示日历、sample job | `META-INF/mango/demo/` | 只有 `mango.resource.registry.demo-enabled=true` 才扫描。 |
 | 首次初始化后用户或业务运行时会改的数据 | Resource 声明 | 使用 `sync-mode: INIT_ONLY`。 |
 | 表结构、索引、约束、大 SQL、停机升级 SQL | Flyway | 见 `mango-infra-persistence` README。 |
 | 用户创建的业务单据、流程实例、任务实例、日历事件、用户改的角色授权 | 业务 Owner Service | 不进入 Resource 声明。 |
 
-Resource 不执行 SQL 文件，不做 Data Package/task 编排，不负责在线升级。大 SQL、磁盘 SQL 和远程 URL SQL 统一走 `mango-infra-persistence` 的模块化 Flyway `locations`。
+Resource 不执行 SQL 文件。DDL、大 SQL、磁盘 SQL 和远程 URL SQL 统一走 `mango-infra-persistence`；结构化资源、流程定义以及 `FILE_ASSET` 二进制制品由 Bootstrap Resource 步骤按依赖顺序物化。
+
+### 1.2 Bootstrap 与 Runtime
+
+Resource 声明的 `execution-phase` 与 `sync-mode` 正交：
+
+| `execution-phase` | 执行位置 | 语义 |
+|-------------------|----------|------|
+| `BOOTSTRAP_REQUIRED` | `bootstrap apply` | Runtime 前必须完成；未声明时的兼容默认值。 |
+| `RUNTIME_EVENTUAL` | Runtime 后台 worker | 不阻断流量，只有权威 generation 可持续对账。 |
+| `MANUAL` | 管理员显式入口 | 只进入计划，不自动物化。 |
+
+`bootstrap apply --strategy=rolling` 的 expand 只新增或更新，不因本代 manifest 缺失而禁用旧资源。`bootstrap finalize` 才处理 `disableMissing` 和显式删除。所有远程注册命令携带 environment、generation、manifest fingerprint 和 fencing token；旧实例无法覆盖新代资源。
 
 历史 Flyway 中如果保留旧字典、旧菜单或旧 demo seed，只能作为历史库兼容证据，不能作为新增资源声明模板。新增或调整字典、菜单、角色、工作流等小资源时，先看当前 handler 是否开放，再按本 README 的 Resource 声明和 `sync-mode` 处理。
 
@@ -30,7 +42,7 @@ Resource 不执行 SQL 文件，不做 Data Package/task 编排，不负责在�
 | `mango-resource-support` | Resource 专属 common，包含 `ResourceProvider`、`ResourceHandler`、声明文件加载、采集、配置绑定、同步状态契约和纯 Java 目标执行器；不访问数据库、不暴露 HTTP。 |
 | `mango-resource-core` | 本地注册中心核心逻辑，负责同步编排、hash 比对、锁、注册表、同步日志和变更日志。 |
 | `mango-resource-starter` | 本地资源注册中心 starter，装配 core、Mapper 和 `/resource/**` 管理接口。 |
-| `mango-resource-sync-starter` | 资源声明扫描和上报 runner，并提供 `/resource/targets/**` 目标执行入口；汇总文件声明和 Java Provider 后调用 `ResourceDeclarationApi`。 |
+| `mango-resource-sync-starter` | 装配 Bootstrap Resource contributor、Runtime eventual worker 和 `/resource/targets/**` 目标执行入口；汇总文件声明和 Java Provider 后调用 `ResourceDeclarationApi`。 |
 | `mango-resource-starter-remote` | 微服务远程客户端适配，提供注册上报 Feign 实现和动态目标地址客户端。 |
 
 ## 3. 功能清单
@@ -39,6 +51,7 @@ Resource 不执行 SQL 文件，不做 Data Package/task 编排，不负责在�
 - 将声明写入 `resource_registry`，并记录同步日志和变更日志。
 - 按资源类型调用目标模块 `ResourceHandler` 完成创建、更新、禁用和删除。
 - 支持 `AUTO`、`INIT_ONLY`、`MANUAL`、`LOCKED` 同步模式和强制同步。
+- 支持 `BOOTSTRAP_REQUIRED`、`RUNTIME_EVENTUAL`、`MANUAL` 执行阶段和 generation fencing。
 - 支持正式资源和 demo 资源目录隔离，demo 默认不扫描。
 - 支持本地单体注册中心和微服务远程上报两种拓扑。
 - 提供后台管理接口查询注册资源、同步日志、变更日志和处理器字段契约。
@@ -121,11 +134,9 @@ Resource 不执行 SQL 文件，不做 Data Package/task 编排，不负责在�
 
 本地注册中心应用必须提供 `mango-infra-kv` 的 `ILeaseLocker`。Mango 单体和平台服务默认通过 `mango-infra-kv-starter` 提供 JDBC、Redis 或 Memory lease；自定义 KV 没有原子 lease 能力时启动失败。
 
-微服务允许来源服务、Resource 注册中心和被依赖资源所属服务乱序启动。远程失败、父资源尚未注册或注册中心锁竞争时，本次同步返回未完成并由来源服务重试；注册中心不得在未取得锁、实际未处理声明时返回成功。该机制只保证启动阶段最终收敛，不吞掉声明校验或 Handler 业务错误。
+微服务允许 Bootstrap 执行器、Resource 注册中心和被依赖资源所属服务乱序启动。远程失败、父资源尚未注册或注册中心锁竞争时，`bootstrap apply` 返回未完成并由发布编排重试；注册中心不得在未取得锁、实际未处理声明时返回成功。Runtime 只接管 `RUNTIME_EVENTUAL` 声明，后台 worker 在持有当前 generation write authority 时周期性对账，失败不阻断流量并在下一周期重试。
 
-`ResourceSyncRunner` 状态为 `BOOTSTRAPPING`、`SYNCING`、`TRANSIENT_WAIT`、`PERMANENT_FAILED` 或 `READY`。网络、数据库、锁等待和 5xx 按指数退避重试；声明校验、冲突等确定性 4xx 对同一声明 snapshot 最多完整执行一次，只有 snapshot 变化后才自动重试。Resource 同步与 System 机构对账都完成前，Spring readiness 为 `REFUSING_TRAFFIC`，Actuator 的 `resourceStartupHealthIndicator` 会给出各参与者状态；liveness 不受可恢复同步错误影响。同步被显式关闭、没有声明或没有状态参与者时保持兼容，不额外阻断启动。
-
-如果声明依赖尚未创建的内置机构角色，System 会先重放一次不标记最终完成的幂等前置基线，并发布 `ResourceSynchronizationPrerequisitesReadyEvent` 触发瞬态失败立即重试。首次完整成功后只发布一次 `ResourceSynchronizationCompletedEvent`，供同一 JVM 内的最终幂等对账继续执行。
+`BOOTSTRAP_REQUIRED` Resource 与 System 租户基础数据都由 Bootstrap 明确步骤执行；Runtime readiness 只校验同一 environment、generation、manifest fingerprint 的成功回执，不再通过启动期 `ResourceSyncRunner` 扫描和阻断流量。Actuator 的 `resourceStartupHealthIndicator` 继续汇总 Runtime 可用性参与者；liveness 不受 eventual 对账错误影响。
 
 ## 6. API 与扩展
 
@@ -138,8 +149,7 @@ Resource 不执行 SQL 文件，不做 Data Package/task 编排，不负责在�
 | `ResourceTargetExecutor` | 在当前 JVM 中按资源类型调度 `ResourceHandler`；自身不访问数据库。 |
 | `ResourceDeclarationApi` | 本地或远程注册资源声明。 |
 | `ResourceHandlerSpec` | 暴露资源处理器字段契约，供后台和文档查看。 |
-| `ResourceSynchronizationStatus` | 暴露当前应用启动资源同步是否已经完成。 |
-| `ResourceSynchronizationPrerequisitesReadyEvent` | System 已创建内置角色等声明前置数据后发布，触发 Resource 立即重试。 |
+| `ResourceSynchronizationStatus` | 暴露 Runtime 可用性参与者的当前状态。 |
 | `ResourceSynchronizationCompletedEvent` | 初次失败后的重试首次成功时发布，驱动同 JVM 下游幂等对账。 |
 
 `ResourceHandler` 可以通过 `dependsOnResourceTypes()` 声明当前资源类型在同一同步批次内依赖的其它资源类型。
@@ -320,7 +330,7 @@ Flyway 路径：`mango-resource-core/src/main/resources/db/migration/resource`�
 
 资源注册中心只保存声明索引和同步审计数据。字典、系统参数、消息模板、编号规则、工作流配置等目标资源仍由目标模块自己的 migration 和资源处理器维护。
 
-应用启动时由 `ResourceSyncRunner` 运行时初始化器扫描声明并幂等同步；本地注册中心由 `ResourceRegistrySyncService` 完成目标资源 upsert、disable 和 delete。
+Runtime 前由 `ResourceBootstrapStepContributor` 扫描并幂等同步 `BOOTSTRAP_REQUIRED` 声明；Runtime 中由 `ResourceEventualReconciliationWorker` 只对账 `RUNTIME_EVENTUAL` 声明。本地注册中心由 `ResourceRegistryService` 完成目标资源 upsert、disable 和 delete。
 
 ## 10. 同步规则
 
@@ -406,6 +416,7 @@ authorization_api_resource         API_RESOURCE 访问模式正确
 | `JOB_DEFINITION` | `mango-job` | 见 `mango-job` README。 |
 | `FILE_STORAGE_CONFIG` | `mango-file` | 见 `mango-file` README。 |
 | `FILE_SETTINGS` | `mango-file` | 见 `mango-file` README。 |
+| `FILE_ASSET` | `mango-file` | 把 Jar 内 `META-INF/mango/assets/` 二进制发布到文件存储并写入稳定 `fileId`。 |
 
 ## 14. 问题排查
 

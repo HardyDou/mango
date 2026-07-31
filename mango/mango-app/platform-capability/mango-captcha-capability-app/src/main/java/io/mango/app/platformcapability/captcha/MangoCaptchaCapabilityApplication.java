@@ -1,6 +1,6 @@
 package io.mango.app.platformcapability.captcha;
 
-import org.springframework.boot.SpringApplication;
+import io.mango.infra.bootstrap.starter.MangoApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 /**
@@ -10,6 +10,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class MangoCaptchaCapabilityApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(MangoCaptchaCapabilityApplication.class, args);
+        MangoApplication.run(MangoCaptchaCapabilityApplication.class, args);
     }
 }

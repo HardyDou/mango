@@ -47,7 +47,7 @@ public class TencentCosFileStorage extends AbstractCloudFileStorage {
                 metadata.setContentType(contentType);
             }
             client.putObject(new PutObjectRequest(config.getBucketName(), objectName, inputStream, metadata));
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             Require.fail(FileCode.FILE_STORE_FAILED);
         } finally {
             client.shutdown();
@@ -62,7 +62,7 @@ public class TencentCosFileStorage extends AbstractCloudFileStorage {
             COSObject object = client.getObject(config.getBucketName(), objectName);
             ObjectMetadata metadata = object.getObjectMetadata();
             return FileObject.of(object.getObjectContent(), metadata.getContentLength(), metadata.getContentType(), client::shutdown);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             client.shutdown();
             return Require.fail(FileCode.FILE_READ_FAILED);
         }
@@ -76,6 +76,21 @@ public class TencentCosFileStorage extends AbstractCloudFileStorage {
             client.deleteObject(config.getBucketName(), objectName);
         } catch (Exception e) {
             Require.fail(FileCode.FILE_READ_FAILED);
+        } finally {
+            client.shutdown();
+        }
+    }
+
+    @Override
+    public void publishObject(FileStorageConfigEntity config, String stagingObjectName, String targetObjectName) {
+        requireConfig(config);
+        COSClient client = client(config);
+        try {
+            client.copyObject(config.getBucketName(), stagingObjectName,
+                    config.getBucketName(), targetObjectName);
+            client.deleteObject(config.getBucketName(), stagingObjectName);
+        } catch (Exception e) {
+            Require.fail(FileCode.FILE_STORE_FAILED);
         } finally {
             client.shutdown();
         }

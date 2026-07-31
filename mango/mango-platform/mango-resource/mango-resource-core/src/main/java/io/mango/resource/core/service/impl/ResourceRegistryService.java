@@ -4,13 +4,17 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.common.result.Require;
+import io.mango.infra.bootstrap.api.BootstrapGenerationFence;
+import io.mango.infra.bootstrap.api.BootstrapWriteAuthority;
 import io.mango.resource.api.command.RegisterResourceDeclarationsCommand;
+import io.mango.resource.api.enums.ResourceApplyMode;
 import io.mango.resource.api.enums.ResourceCode;
 import io.mango.resource.support.ResourceHandler;
 import io.mango.resource.support.ResourceTargetDispatcher;
 import io.mango.resource.api.enums.ResourceFieldType;
 import io.mango.resource.api.enums.ResourceStatus;
 import io.mango.resource.api.enums.ResourceSyncMode;
+import io.mango.resource.api.enums.ResourceExecutionPhase;
 import io.mango.resource.core.service.IResourceRegistryService;
 import io.mango.resource.core.sync.ResourceContentHasher;
 import io.mango.resource.core.sync.ResourceRegistryLock;
@@ -62,6 +66,7 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
     private final ResourceRegistryLock lock;
     private final ObjectMapper objectMapper;
     private final ResourceModuleSyncStatusRegistry moduleSyncStatusRegistry;
+    private final ObjectProvider<BootstrapGenerationFence> generationFences;
     private final ResourceHandlerInvoker handlerInvoker = new ResourceHandlerInvoker();
     private final Object lifecycleMonitor = new Object();
     private volatile boolean running = true;
@@ -127,19 +132,26 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
 
     boolean syncRemote(String appCode, String serviceCode, List<String> managedModuleCodes,
                        List<ResourceDeclaration> declarations) {
+        return syncRemote(appCode, serviceCode, managedModuleCodes, declarations, true);
+    }
+
+    boolean syncRemote(String appCode, String serviceCode, List<String> managedModuleCodes,
+                       List<ResourceDeclaration> declarations, boolean disableMissingResources) {
         if (!beginOperation()) {
             log.info("Mango resource registry remote sync deferred: application is shutting down");
             return false;
         }
         try {
-            return syncRemoteWhileRunning(appCode, serviceCode, managedModuleCodes, declarations);
+            return syncRemoteWhileRunning(
+                    appCode, serviceCode, managedModuleCodes, declarations, disableMissingResources);
         } finally {
             endOperation();
         }
     }
 
     private boolean syncRemoteWhileRunning(String appCode, String serviceCode, List<String> managedModuleCodes,
-                                           List<ResourceDeclaration> declarations) {
+                                           List<ResourceDeclaration> declarations,
+                                           boolean disableMissingResources) {
         invalidateDiagnosticStatus("RESOURCE_SYNC_ATTEMPT_STARTED");
         try {
             requireText(appCode, "Resource remote appCode is required");
@@ -158,7 +170,8 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
                 return false;
             }
             try {
-                doSync(appCode.trim(), serviceCode.trim(), declarations, managedModuleCodes, false);
+                doSync(appCode.trim(), serviceCode.trim(), declarations, managedModuleCodes, false,
+                        disableMissingResources);
                 return true;
             } finally {
                 lease.close();
@@ -171,20 +184,51 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
 
     @Override
     public Boolean registerDeclarations(RegisterResourceDeclarationsCommand command) {
-        Require.notNull(command, ResourceCode.RESOURCE_INVALID, "资源声明注册命令不能为空");
-        Require.notBlank(command.getAppCode(), ResourceCode.RESOURCE_INVALID, "来源应用不能为空");
-        Require.notBlank(command.getServiceCode(), ResourceCode.RESOURCE_INVALID, "来源服务不能为空");
-        List<ResourceDeclaration> declarations = parseDeclarations(command.getDeclarations());
-        Require.isTrue(!declarations.isEmpty() || !command.getModuleCodes().isEmpty(),
+        RegisterResourceDeclarationsCommand validatedCommand = Require.nonNull(
+                command, ResourceCode.RESOURCE_INVALID, "资源声明注册命令不能为空");
+        Require.notBlank(validatedCommand.getAppCode(), ResourceCode.RESOURCE_INVALID, "来源应用不能为空");
+        Require.notBlank(validatedCommand.getServiceCode(), ResourceCode.RESOURCE_INVALID, "来源服务不能为空");
+        Require.notBlank(validatedCommand.getEnvironmentKey(), ResourceCode.RESOURCE_INVALID,
+                "Bootstrap 环境标识不能为空");
+        long validatedGeneration = Require.nonNull(
+                validatedCommand.getGeneration(), ResourceCode.RESOURCE_INVALID, "Release generation 不能为空");
+        Require.isTrue(validatedGeneration > 0, ResourceCode.RESOURCE_INVALID, "Release generation 必须大于0");
+        Require.notBlank(validatedCommand.getManifestFingerprint(), ResourceCode.RESOURCE_INVALID,
+                "Manifest fingerprint 不能为空");
+        long fencingToken = Require.nonNull(
+                validatedCommand.getFencingToken(), ResourceCode.RESOURCE_INVALID, "Fencing token 不能为空");
+        ResourceApplyMode validatedApplyMode = Require.nonNull(
+                validatedCommand.getApplyMode(), ResourceCode.RESOURCE_INVALID, "Resource apply mode 不能为空");
+        BootstrapGenerationFence generationFence = Require.nonNull(
+                generationFences.getIfAvailable(), ResourceCode.RESOURCE_INVALID, "Bootstrap generation fence 未启用");
+        generationFence.assertAuthoritative(new BootstrapWriteAuthority(
+                validatedCommand.getEnvironmentKey(), validatedGeneration, validatedCommand.getManifestFingerprint(),
+                fencingToken));
+        List<ResourceDeclaration> declarations = parseDeclarations(validatedCommand.getDeclarations());
+        List<String> moduleCodes = validatedCommand.getModuleCodes() == null
+                ? List.of() : List.copyOf(validatedCommand.getModuleCodes());
+        Require.isTrue(!declarations.isEmpty() || !moduleCodes.isEmpty(),
                 ResourceCode.RESOURCE_INVALID, "资源声明和管理模块不能同时为空");
+        List<ResourceDeclaration> selectedDeclarations = selectDeclarations(declarations, validatedApplyMode);
         boolean synchronizedNow = syncRemote(
-                command.getAppCode(), command.getServiceCode(), command.getModuleCodes(), declarations);
+                validatedCommand.getAppCode(), validatedCommand.getServiceCode(), moduleCodes, selectedDeclarations,
+                validatedApplyMode == ResourceApplyMode.FINALIZE);
         if (!synchronizedNow) {
             return Boolean.FALSE;
         }
         log.info("Mango resource remote declarations registered: appCode={}, serviceCode={}, count={}",
-                command.getAppCode(), command.getServiceCode(), declarations.size());
+                validatedCommand.getAppCode(), validatedCommand.getServiceCode(), declarations.size());
         return Boolean.TRUE;
+    }
+
+    private List<ResourceDeclaration> selectDeclarations(
+            List<ResourceDeclaration> declarations, ResourceApplyMode applyMode) {
+        return declarations.stream().filter(declaration -> switch (applyMode) {
+            case EXPAND -> declaration.getExecutionPhase() == null
+                    || declaration.getExecutionPhase() == ResourceExecutionPhase.BOOTSTRAP_REQUIRED;
+            case EVENTUAL -> declaration.getExecutionPhase() == ResourceExecutionPhase.RUNTIME_EVENTUAL;
+            case FINALIZE -> declaration.getExecutionPhase() != ResourceExecutionPhase.MANUAL;
+        }).toList();
     }
 
     @Override
@@ -229,7 +273,7 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
     }
 
     private void doSync(String appCode, String serviceCode, List<ResourceDeclaration> declarations,
-                        List<String> managedModuleCodes, boolean force) {
+                        List<String> managedModuleCodes, boolean force, boolean disableMissingResources) {
         Map<String, ResourceHandler> handlerMap = loadHandlers();
         List<ResourceDeclaration> safeDeclarations = declarations;
         if (safeDeclarations == null) {
@@ -242,12 +286,18 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
                     .map(String::trim)
                     .forEach(modules::add);
         }
-        doSync(appCode, serviceCode, safeDeclarations, handlerMap, modules, force);
+        doSync(appCode, serviceCode, safeDeclarations, handlerMap, modules, force, disableMissingResources);
     }
 
     private void doSync(String appCode, String serviceCode, List<ResourceDeclaration> declarations,
                         Map<String, ResourceHandler> handlerMap,
                         Set<String> managedModuleCodes, boolean force) {
+        doSync(appCode, serviceCode, declarations, handlerMap, managedModuleCodes, force, true);
+    }
+
+    private void doSync(String appCode, String serviceCode, List<ResourceDeclaration> declarations,
+                        Map<String, ResourceHandler> handlerMap,
+                        Set<String> managedModuleCodes, boolean force, boolean disableMissingResources) {
         assertOperationCanContinue();
         declarations.forEach(declaration -> applySource(declaration, appCode, serviceCode));
         Map<String, ModuleObservation> observations = observeDeclarations(declarations);
@@ -270,7 +320,9 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
                 }
             }
             syncActiveBatch(activeDeclarations, handlerMap, force, registrySnapshot);
-            disableMissing(appCode, serviceCode, managedModuleCodes, seenResourceIds, handlerMap);
+            if (disableMissingResources) {
+                disableMissing(appCode, serviceCode, managedModuleCodes, seenResourceIds, handlerMap);
+            }
             observeDiagnosticCompletion(observations, declarations, handlerMap);
             log.info("Mango resource registry sync complete: declarations={}", declarations.size());
         } catch (RuntimeException exception) {

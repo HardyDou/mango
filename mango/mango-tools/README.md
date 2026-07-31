@@ -184,11 +184,47 @@ mvn mango:check \
 | `mango:gen-module` | `GenModuleMojo` | 已退役；fail-closed 并指向 `mango module add`。 |
 | `mango:gen-crud` | `GenCrudMojo` | 生成 CRUD 脚手架。 |
 | `mango:gen-permission` | `GenPermissionMojo` | 生成权限资源草稿。 |
+| `mango:baseline-generate` | `BaselineGenerateMojo` | 在 API 制品构建中回放模块 V，生成并验证每模块唯一 cold baseline。 |
 
 `CheckMojo` 当前仍较大，复杂度偏高，是既有技术债；后续拆分时应保持参数兼容和报告格式兼容。
 
+### 7.1 构建期 cold baseline
+
+业务 API POM 将 goal 绑定到 `generate-resources`。生成器扫描当前工程和运行时依赖 JAR 中的 `db/migration/<module>/V*.sql`，在临时 MySQL 中按 `moduleOrder` 回放，并把结果写入：
+
+```text
+target/generated-resources/db/baseline/<module>/B<version>__baseline.sql
+target/generated-resources/META-INF/mango/baseline-manifest.json
+```
+
+这些目录会被注册为 Maven resource。普通 JAR 从 `db` 目录下的 `baseline` 子目录读取；Spring Boot JAR 中的对应目录层级如下：
+
+```text
+BOOT-INF
+└── classes
+    └── db
+        └── baseline
+```
+
+源码目录不会生成 B；Docker 镜像只复制已经完成校验的最终 JAR。
+
+最小 POM 配置和 Jenkins 使用方式见[业务 API 构建期 cold baseline](../../mango-docs/guides/business-integration/build-time-cold-baseline.md)。常用参数：
+
+| 参数 | 默认值 | 说明 |
+|------|--------|------|
+| `mango.baseline.jdbcUrl` | 无 | 一次性 MySQL 服务器 JDBC URL；必填，URL 中原数据库名不会被使用。 |
+| `mango.baseline.username` | `root` | 一次性数据库账号。 |
+| `mango.baseline.passwordEnv` | `MANGO_BASELINE_DB_PASSWORD` | 保存密码的环境变量名；密码不进入 POM、manifest 或日志。 |
+| `mango.baseline.includedModules` | 全部发现模块 | 当前 API 制品需要打包的模块清单。 |
+| `mango.baseline.moduleOrder` | 模块名稳定顺序 | 显式配置时必须恰好包含所有发现模块一次。 |
+| `mango.baseline.moduleGroups` | 全部为 `default` | `module=group` 列表；同组模块使用同一对临时 schema，不同组隔离。 |
+| `mango.baseline.outputDirectory` | `target/generated-resources` | 仅构建目录；不要指向 `src/main/resources`。 |
+| `mango.baseline.keepSchemas` | `false` | 诊断时保留临时 schema；正常 CI 保持关闭。 |
+
+生成过程使用 replay/determinism/verify 三套 schema：前两套独立回放 V 以排除 `UUID()`、当前时间等不可复现数据，verify schema 连续执行 B 两次后再比较表、视图、触发器和全部 migration 静态行。存储过程、函数和事件当前 fail closed；重复版本、跨模块对象所有权、制品碰撞、缺失或被修改的 B、不可重入、结构或数据不等价都会使构建失败。安装新生成目录前保留上一次结果，安装异常时回滚。
+
 ## 8. 数据与初始化
-无生产数据库。工具可能读取 migration 和权限资源文件，但不直接连接生产库，也不授予运行时权限。
+质量和脚手架 goal 不连接生产数据库。`baseline-generate` 只连接构建参数指定的一次性 MySQL，创建并清理带随机后缀的 replay/determinism/verify schema；不要向它提供生产或共享业务数据库账号。
 
 ## 9. 管理入口
 工具可生成或检查菜单、权限、API 资源相关文件；真正的菜单入库、角色授权和租户隔离仍由 `mango-authorization`、Flyway migration 和业务初始化流程负责。

@@ -4,8 +4,10 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
+import io.mango.infra.bootstrap.api.BootstrapPhase;
 import io.mango.infra.persistence.api.datasource.PersistenceDataSourceContext;
 import io.mango.infra.persistence.api.datasource.PersistenceModuleDataSourceResolver;
+import io.mango.infra.persistence.starter.PersistenceFlywayBootstrapExecutor;
 import io.mango.common.result.R;
 import io.mango.job.api.command.CreateMangoJobWorkerCommand;
 import io.mango.job.api.command.RegisterMangoJobWorkerCommand;
@@ -79,6 +81,7 @@ import org.junit.jupiter.api.Test;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
@@ -120,6 +123,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
                 "mango.persistence.mybatis-plus.tenant.enabled=false",
                 "mango.persistence.schema-validation.enabled=false",
                 "mango.job.native.app-code=internal-admin",
+                "mango.job.native.embedded-worker-enabled=false",
+                "mango.job.native.scheduler-enabled=false",
                 "spring.autoconfigure.exclude=io.mango.job.starter.remote.JobRemoteAutoConfiguration"
         }
 )
@@ -1582,6 +1587,12 @@ class MangoJobMultiDataSourceIntegrationTest {
     @EnableAutoConfiguration(exclude = DataSourceAutoConfiguration.class)
     @MapperScan(basePackageClasses = MangoJobDefinitionMapper.class)
     static class TestApplication {
+
+        @Bean
+        @Order(Ordered.HIGHEST_PRECEDENCE)
+        ApplicationRunner bootstrapPersistence(PersistenceFlywayBootstrapExecutor executor) {
+            return arguments -> executor.migrate(BootstrapPhase.EXPAND);
+        }
 
         @Bean
         @Order(Ordered.LOWEST_PRECEDENCE)

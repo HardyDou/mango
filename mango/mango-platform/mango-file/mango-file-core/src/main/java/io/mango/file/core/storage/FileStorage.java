@@ -24,6 +24,13 @@ public interface FileStorage {
     /** 删除文件对象。 */
     void removeObject(FileStorageConfigEntity config, String objectName);
 
+    /**
+     * 将已完整上传的临时对象发布到稳定位置。
+     *
+     * <p>实现必须在发布目标可见后删除临时对象；同名目标允许被原子替换。</p>
+     */
+    void publishObject(FileStorageConfigEntity config, String stagingObjectName, String targetObjectName);
+
     /** 测试存储配置连通性。 */
     void test(FileStorageConfigEntity config) throws Exception;
 

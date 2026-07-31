@@ -12,6 +12,11 @@
     <name>Mango System Core</name>
     <dependencies>
         <dependency>
+            <groupId>io.mango.infra.bootstrap</groupId>
+            <artifactId>mango-infra-bootstrap-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>io.mango.platform.system</groupId>
             <artifactId>mango-system-api</artifactId>
             <version>${project.version}</version>

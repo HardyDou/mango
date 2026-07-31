@@ -77,6 +77,21 @@ public class AliyunOssFileStorage extends AbstractCloudFileStorage {
     }
 
     @Override
+    public void publishObject(FileStorageConfigEntity config, String stagingObjectName, String targetObjectName) {
+        requireConfig(config);
+        OSS client = client(config);
+        try {
+            client.copyObject(config.getBucketName(), stagingObjectName,
+                    config.getBucketName(), targetObjectName);
+            client.deleteObject(config.getBucketName(), stagingObjectName);
+        } catch (Exception e) {
+            Require.fail(FileCode.FILE_STORE_FAILED);
+        } finally {
+            client.shutdown();
+        }
+    }
+
+    @Override
     public void test(FileStorageConfigEntity config) {
         requireConfig(config);
         OSS client = client(config);

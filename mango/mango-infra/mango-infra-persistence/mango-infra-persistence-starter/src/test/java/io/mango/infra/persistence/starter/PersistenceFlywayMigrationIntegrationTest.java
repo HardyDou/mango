@@ -1,5 +1,6 @@
 package io.mango.infra.persistence.starter;
 
+import io.mango.infra.bootstrap.api.BootstrapPhase;
 import io.mango.infra.persistence.starter.diagnostic.PersistenceModuleMigrationStatusRegistry;
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.Test;
@@ -46,7 +47,7 @@ class PersistenceFlywayMigrationIntegrationTest {
             .withConfiguration(AutoConfigurations.of(PersistenceFlywayAutoConfiguration.class));
 
     @Test
-    void flywayMigrationInitializer_shouldRunRealFlywayMigrationAgainstDatabase() {
+    void bootstrapExecutor_shouldRunRealFlywayMigrationAgainstDatabase() {
         contextRunner
                 .withPropertyValues(flywayProperties(
                         "mango.persistence.flyway.enabled=true",
@@ -55,6 +56,7 @@ class PersistenceFlywayMigrationIntegrationTest {
                 .withUserConfiguration(H2DataSourceConfig.class)
                 .run(ctx -> {
                     assertThat(ctx).hasSingleBean(Flyway.class);
+                    migrate(ctx);
 
                     JdbcTemplate jdbcTemplate = new JdbcTemplate(ctx.getBean(DataSource.class));
                     Integer count = jdbcTemplate.queryForObject(
@@ -81,6 +83,7 @@ class PersistenceFlywayMigrationIntegrationTest {
                 .withUserConfiguration(H2DataSourceConfig.class)
                 .run(ctx -> {
                     assertThat(ctx).hasNotFailed();
+                    migrate(ctx);
                     JdbcTemplate jdbcTemplate = new JdbcTemplate(ctx.getBean(DataSource.class));
                     assertThat(tableExists(jdbcTemplate, "persistence_flyway_user")).isTrue();
                     verify(registry).unknown(
@@ -100,12 +103,17 @@ class PersistenceFlywayMigrationIntegrationTest {
                 ))
                 .withUserConfiguration(H2DataSourceConfig.class)
                 .run(ctx -> {
+                    migrate(ctx);
                     JdbcTemplate jdbcTemplate = new JdbcTemplate(ctx.getBean(DataSource.class));
                     assertThat(tableExists(jdbcTemplate, "persistence_flyway_user")).isTrue();
                     assertThat(tableExists(jdbcTemplate, "another_flyway_user")).isTrue();
                     assertThat(tableExists(jdbcTemplate, "flyway_schema_history_persistence_test")).isTrue();
                     assertThat(tableExists(jdbcTemplate, "flyway_schema_history_another_test")).isTrue();
                 });
+    }
+
+    private static void migrate(org.springframework.context.ApplicationContext context) {
+        context.getBean(PersistenceFlywayBootstrapExecutor.class).migrate(BootstrapPhase.EXPAND);
     }
 
     private static String[] flywayProperties(String... properties) {

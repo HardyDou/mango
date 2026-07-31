@@ -260,3 +260,7 @@ pnpm -F @mango/admin-shell build
 ## 2026-07-22 富文本托管资源影响
 
 - 本次只扩展 `@mango/common` Editor 与 `mango-file` 登录态远程图片导入能力，不新增菜单、页面 key、角色菜单关系或按钮权限码，也不改变菜单树、前端页面注册、租户绑定和本场景排障步骤。
+
+## 2026-07-27 Bootstrap 生命周期影响
+
+- Mango 将 Flyway、启动前必需 Resource 和租户对账从 Runtime 启动迁入独立 Bootstrap。菜单 `component` key、菜单树接口、页面注册方式、角色授权、按钮权限和租户绑定协议不变；业务升级顺序调整为先完成 `bootstrap apply` 与 `bootstrap verify`，再启动 Runtime。若菜单未形成，应先检查 Bootstrap 的 `RESOURCE_REQUIRED`、`TENANT_PREREQUISITES`、`TENANT_RECONCILIATION` 步骤回执，再按本指南核对 `AUTH_MENU` 声明、角色授权和页面 key，不能继续通过延长 Runtime healthcheck 等待初始化。

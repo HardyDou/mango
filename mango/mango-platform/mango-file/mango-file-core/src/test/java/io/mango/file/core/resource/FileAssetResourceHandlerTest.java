@@ -1,0 +1,205 @@
+package io.mango.file.core.resource;
+
+import io.mango.file.core.entity.FileObjectEntity;
+import io.mango.file.core.entity.FileRecordEntity;
+import io.mango.file.core.entity.FileStorageConfigEntity;
+import io.mango.file.core.mapper.FileObjectMapper;
+import io.mango.file.core.mapper.FileRecordMapper;
+import io.mango.file.core.mapper.FileStorageConfigMapper;
+import io.mango.file.core.storage.FileObject;
+import io.mango.file.core.storage.FileStorage;
+import io.mango.file.core.storage.FileStorageRouter;
+import io.mango.resource.support.ResourceTypes;
+import io.mango.resource.support.builder.ResourceDeclarationBuilder;
+import io.mango.resource.support.model.ResourceDeclaration;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.core.io.DefaultResourceLoader;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+class FileAssetResourceHandlerTest {
+
+    private static final Long FILE_ID = 900000000000001L;
+    private static final Long STORAGE_CONFIG_ID = 1L;
+    private static final String OBJECT_NAME = "mango-assets/test/sample.txt";
+    private static final String SHA256 = "5ca4a7a6c1faf50702ba8a8f2c164bf420ec40a8a795f435e52b35857682bbdb";
+
+    private final FileStorageConfigMapper storageConfigMapper = mock(FileStorageConfigMapper.class);
+    private final FileObjectMapper fileObjectMapper = mock(FileObjectMapper.class);
+    private final FileRecordMapper fileRecordMapper = mock(FileRecordMapper.class);
+    private final AtomicReference<FileObjectEntity> objectState = new AtomicReference<>();
+    private final AtomicReference<FileRecordEntity> recordState = new AtomicReference<>();
+    private final InMemoryFileStorage storage = new InMemoryFileStorage();
+    private FileAssetResourceHandler handler;
+
+    @BeforeEach
+    void setUp() {
+        FileStorageConfigEntity config = new FileStorageConfigEntity();
+        config.setId(STORAGE_CONFIG_ID);
+        config.setTenantId(1L);
+        config.setStorageType("MEMORY");
+        config.setBucketName("test-bucket");
+        config.setStatus(1);
+        when(storageConfigMapper.selectById(STORAGE_CONFIG_ID)).thenReturn(config);
+        when(fileRecordMapper.selectById(FILE_ID)).thenAnswer(ignored -> recordState.get());
+        when(fileObjectMapper.selectById(any())).thenAnswer(ignored -> objectState.get());
+        when(fileObjectMapper.selectOne(any())).thenAnswer(ignored -> objectState.get());
+        doAnswer(invocation -> {
+            FileObjectEntity entity = invocation.getArgument(0);
+            entity.setId(7001L);
+            objectState.set(entity);
+            return 1;
+        }).when(fileObjectMapper).insert(any(FileObjectEntity.class));
+        doAnswer(invocation -> {
+            objectState.set(invocation.getArgument(0));
+            return 1;
+        }).when(fileObjectMapper).updateById(any(FileObjectEntity.class));
+        doAnswer(invocation -> {
+            recordState.set(invocation.getArgument(0));
+            return 1;
+        }).when(fileRecordMapper).insert(any(FileRecordEntity.class));
+        doAnswer(invocation -> {
+            recordState.set(invocation.getArgument(0));
+            return 1;
+        }).when(fileRecordMapper).updateById(any(FileRecordEntity.class));
+        handler = new FileAssetResourceHandler(storageConfigMapper, fileObjectMapper, fileRecordMapper,
+                new FileStorageRouter(java.util.List.of(storage)), new DefaultResourceLoader());
+    }
+
+    @Test
+    void publishesOnceAndKeepsStableFileIdentity() {
+        ResourceDeclaration declaration = declaration(OBJECT_NAME, SHA256);
+
+        handler.upsert(declaration);
+        handler.upsert(declaration);
+
+        assertThat(storage.putCount).isOne();
+        assertThat(storage.objects).containsKey(OBJECT_NAME);
+        assertThat(storage.objects.keySet()).noneMatch(key -> key.startsWith(".mango-staging/"));
+        assertThat(recordState.get()).satisfies(record -> {
+            assertThat(record.getId()).isEqualTo(FILE_ID);
+            assertThat(record.getObjectName()).isEqualTo(OBJECT_NAME);
+            assertThat(record.getFileHash()).isEqualTo(SHA256);
+            assertThat(record.getObjectId()).isEqualTo(7001L);
+        });
+    }
+
+    @Test
+    void rejectsStableObjectLocationDrift() {
+        handler.upsert(declaration(OBJECT_NAME, SHA256));
+
+        assertThatThrownBy(() -> handler.upsert(declaration("mango-assets/test/other.txt", SHA256)))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("stable identity drift");
+        assertThat(storage.putCount).isOne();
+    }
+
+    @Test
+    void rejectsArtifactChecksumMismatchBeforeUpload() {
+        assertThatThrownBy(() -> handler.upsert(declaration(OBJECT_NAME, "0".repeat(64))))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("sha256 mismatch");
+        assertThat(storage.putCount).isZero();
+    }
+
+    @Test
+    void republishesWhenStoredObjectChecksumDrifts() {
+        ResourceDeclaration declaration = declaration(OBJECT_NAME, SHA256);
+        handler.upsert(declaration);
+        storage.objects.put(OBJECT_NAME, "corrupted".getBytes(StandardCharsets.UTF_8));
+
+        handler.upsert(declaration);
+
+        assertThat(storage.putCount).isEqualTo(2);
+        assertThat(storage.objects.get(OBJECT_NAME))
+                .isEqualTo("mango-file-asset\n".getBytes(StandardCharsets.UTF_8));
+    }
+
+    @Test
+    void logicalDeleteArchivesRecordAndRetainsObject() {
+        ResourceDeclaration declaration = declaration(OBJECT_NAME, SHA256);
+        handler.upsert(declaration);
+
+        handler.delete(declaration);
+
+        assertThat(recordState.get().getArchived()).isOne();
+        assertThat(storage.objects).containsKey(OBJECT_NAME);
+    }
+
+    private ResourceDeclaration declaration(String objectName, String sha256) {
+        return ResourceDeclarationBuilder.create(ResourceTypes.FILE_ASSET)
+                .id("service-a.sample-file")
+                .version(1)
+                .bizKey("service-a.sample-file")
+                .longValue("tenantId", 1L)
+                .longValue("fileId", FILE_ID)
+                .longValue("storageConfigId", STORAGE_CONFIG_ID)
+                .string("objectName", objectName)
+                .string("fileName", "sample.txt")
+                .string("sha256", sha256)
+                .file("content", "classpath:META-INF/mango/assets/test/sample.txt", null, "text/plain")
+                .build();
+    }
+
+    private static final class InMemoryFileStorage implements FileStorage {
+
+        private final Map<String, byte[]> objects = new HashMap<>();
+        private int putCount;
+
+        @Override
+        public boolean supports(String storageType) {
+            return "MEMORY".equals(storageType);
+        }
+
+        @Override
+        public void putObject(FileStorageConfigEntity config, String objectName, InputStream inputStream,
+                              long contentLength, String contentType) throws Exception {
+            ByteArrayOutputStream output = new ByteArrayOutputStream();
+            inputStream.transferTo(output);
+            objects.put(objectName, output.toByteArray());
+            putCount++;
+        }
+
+        @Override
+        public FileObject getObject(FileStorageConfigEntity config, String objectName) {
+            byte[] content = objects.get(objectName);
+            if (content == null) {
+                throw new IllegalStateException("Object not found");
+            }
+            return new FileObject(new ByteArrayInputStream(content), content.length, "text/plain");
+        }
+
+        @Override
+        public void removeObject(FileStorageConfigEntity config, String objectName) {
+            objects.remove(objectName);
+        }
+
+        @Override
+        public void publishObject(FileStorageConfigEntity config, String stagingObjectName,
+                                  String targetObjectName) {
+            byte[] content = objects.remove(stagingObjectName);
+            if (content == null) {
+                throw new IllegalStateException("Staging object not found");
+            }
+            objects.put(targetObjectName, content);
+        }
+
+        @Override
+        public void test(FileStorageConfigEntity config) {
+        }
+    }
+}

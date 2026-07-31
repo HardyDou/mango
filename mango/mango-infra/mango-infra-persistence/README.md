@@ -25,7 +25,7 @@
 - Flyway：按 `db/migration/<module>/V*.sql` 分模块迁移，每个模块独立 history table。
 - Flyway MySQL 运行时：Mango 显式管理 `flyway-core` 与 `flyway-mysql` 11.20.3；该版本已测试到 MySQL 9.4，覆盖 Mango 的 MySQL 8.4 基线。
 - Flyway 外部 locations：停机升级可按模块加载 `filesystem:` 目录或 `http(s)` 单个 SQL 文件。
-- Schema baseline pack：新数据库可显式使用当前完整结构包，避免从 V1 执行全部历史 SQL。
+- Cold baseline：API 制品构建从最终 V 为每个模块生成一份 `B*__baseline.sql`，新数据库可跳过 V1...Vn 历史回放。
 - 多数据源：支持定义多个数据源、按模块映射、按 `@PersistenceDataSource` 或代码作用域切换。
 - Schema 校验：启动时检查业务表主键和审计租户字段。
 - Web CRUD：提供标准 `/create`、`/update`、`/delete`、`/batch-delete`、`/detail`、`/page`、`/export`、`/import`、`/import-template` 入口。
@@ -38,7 +38,7 @@
 |------|------|----------|
 | 新表、改表、索引、约束 | `db/migration/<module>/V*.sql` | 只用 Flyway 管理 DDL。 |
 | 停机升级修复历史数据 | `mango.persistence.flyway.modules.<module>.locations` | 使用 `filesystem:` 目录或 `http(s)` 单个 SQL 文件，仍写模块 history table。 |
-| 新库当前完整结构 | baseline pack 目录 | 只给新库显式配置，不和历史 V1...Vn 混用。 |
+| 新库当前完整结构 | 制品内 `db/baseline/<module>/B*__baseline.sql` | 构建期生成，每模块恰好一份，只由 Bootstrap cold 在真空库执行。 |
 | 菜单、字典、配置、消息模板、任务、号段等结构化资源 | `mango-resource` | 不写默认 Flyway DML。 |
 | demo/sample 数据 | `META-INF/mango/demo/` | 默认不加载，见 `mango-resource` README。 |
 | 500MB/1GB 行政区划、年度日历等大数据 | 外部 SQL 包或模块批量导入服务 | 不放 YAML，不打进默认 jar classpath。 |
@@ -57,7 +57,7 @@
 | 模块需要在启动时自动执行自己的 Flyway migration | Maven 依赖 / starter / Java API |
 | 模块诊断需要读取本次真实 Flyway 运行状态 | `ModuleDiagnosticContributor` / `mango module doctor` |
 | 停机升级时需要按模块执行外部 SQL 包 | YAML 配置 / 运维升级包 |
-| 新数据库需要使用当前完整 schema baseline | YAML 配置 / baseline pack |
+| 新数据库需要使用当前完整 schema baseline | YAML 配置 / 每模块唯一 `B*__baseline.sql` |
 | 应用需要把不同模块路由到不同数据库 | Maven 依赖 / starter / Java API |
 | 非 Web 任务、定时任务或测试环境需要显式配置默认租户 | Maven 依赖 / starter / Java API |
 | 管理端资源需要复用标准导入导出入口和官方 Excel 解析 | `mango-infra-excel-starter` / Java API |
@@ -301,6 +301,7 @@ mango:
 | `enabled` | `true` | 全局迁移开关 |
 | `upgrade-locations-enabled` | `true` | 是否启用默认外部升级目录；目录存在时追加到未显式配置 locations 的模块 |
 | `upgrade-root` | 空 | 默认外部升级根目录；为空时按 `mango.upgrade.root`、`MANGO_UPGRADE_DIR`、`mango.home`/`MANGO_HOME`、`/opt/mango/upgrade` 解析 |
+| `cold-baseline.enabled` | `false` | 是否允许 Bootstrap 对真正空库执行每模块当前基线 |
 | `modules.<module>.enabled` | `true` | 是否执行当前模块迁移 |
 | `modules.<module>.skip-reason` | 空 | `enabled=false` 且 classpath 存在当前模块 migration 时必须填写的跳过原因 |
 | `modules.<module>.baseline-on-migrate` | `true` | 存量库无 history table 时是否从 baseline 接管 |
@@ -313,6 +314,8 @@ mango:
 | `modules.<module>.datasource.driver-class-name` | 空 | 当前模块迁移独立驱动 |
 | `modules.<module>.datasource.username` | 空 | 当前模块迁移独立用户名 |
 | `modules.<module>.datasource.password` | 空 | 当前模块迁移独立密码 |
+| `modules.<module>.baseline.location` | 自动发现 | 当前模块唯一基线；默认要求 `classpath*:db/baseline/<module>/B*__baseline.sql` 恰好一个匹配 |
+| `modules.<module>.baseline.version` | 从文件名解析 | 基线包含的最高模块 migration 版本 |
 
 停机升级需要执行不随应用 jar 发布的 SQL 时，不新增裸 SQL 执行器，仍把脚本作为 Flyway migration 管理。默认约定目录为：
 
@@ -333,7 +336,7 @@ ${MANGO_HOME:-/opt/mango}/upgrade/<module>/
 5. /opt/mango/upgrade
 ```
 
-需要远程 URL、baseline pack 或完全自定义目录时，显式配置模块 `locations`，此时配置值表示完整来源清单，不再隐式追加默认升级目录：
+需要远程 URL 或完全自定义升级目录时，显式配置模块 `locations`，此时配置值表示完整来源清单，不再隐式追加默认升级目录。cold baseline 使用独立的 `modules.<module>.baseline`，不要放进 `locations`：
 
 ```yaml
 mango:
@@ -412,53 +415,49 @@ mango:
 5. 校验业务关键数据。
 ```
 
-### 6.5 Schema Baseline Pack
+### 6.5 Cold Baseline
 
-模块历史 migration 很多时，新数据库可以使用 baseline pack 初始化当前完整结构，避免从 V1 执行所有历史 SQL。baseline pack 仍然是 Flyway migration，不绕过模块 history table。
-
-推荐目录：
+模块历史 migration 很多时，主分支 API 制品构建将 `mango:baseline-generate` 绑定到 `generate-resources`，从模块最终 V 生成当前完整基线：
 
 ```text
-<baseline-root>/<module>/
-  V2026070100__baseline_<module>_schema.sql
-  V2026070101__add_after_baseline_change.sql
+target/generated-resources/db/baseline/<module>/B<version>__baseline.sql
+target/generated-resources/META-INF/mango/baseline-manifest.json
 ```
 
-新数据库配置：
+生成目录中每个模块恰好只有一个 `B*__baseline.sql`。`B<version>` 表示 SQL 已覆盖的最高模块 migration 版本；历史 `db/migration/<module>/V*.sql` 继续保留，供审计、既有库升级和基线后的增量 migration 使用。B 不进入 Git，不在 PR 或部署现场生成，也不把所有模块合成一个大 SQL。具体 POM/Jenkins 配置见[业务 API 构建期 cold baseline](../../../mango-docs/guides/business-integration/build-time-cold-baseline.md)，长期约束见[数据库规范](../../../mango-pmo/rules/backend/04-db.md)。
+
+生成基线首行包含可重入标记：
+
+```sql
+-- mango:baseline-idempotent
+```
+
+启用方式：
 
 ```yaml
 mango:
   persistence:
     flyway:
+      cold-baseline:
+        enabled: true
       modules:
         payment:
-          locations:
-            - filesystem:${MANGO_BASELINE_DIR}/payment
+          baseline:
+            # 默认可省略，自动发现 classpath 中唯一文件
+            location: classpath:db/baseline/payment/B2026072701__baseline.sql
+            version: 2026072701
 ```
 
-旧数据库升级继续使用历史 migration 或升级包：
+制品生成器先在一次性 replay/determinism schema 各回放一次所有 V，确认结构和静态数据可复现；再在独立 verify schema 连续执行两次生成的 B，对结构和全部 migration 静态行做等价比较。全部通过后才将 B 和 manifest 注册进 Maven resource。Bootstrap 消费制品时按逻辑数据源分组，并按数据源 key、模块 code 的稳定顺序执行。每个数据源必须是真正空库；允许存在的只有 Bootstrap 自身控制表。每个模块 SQL 成功后，框架以 `B<version>` 为该模块原有 Flyway history table 建立基线，并记录模块 SQL SHA-256；失败重入只复用同一 fingerprint 已完成的模块。
 
-```yaml
-mango:
-  persistence:
-    flyway:
-      modules:
-        payment:
-          locations:
-            - classpath:db/migration/payment
-            - filesystem:/opt/mango/upgrade/payment
-```
+| 数据库状态 | 执行路径 |
+|------------|----------|
+| 全新空库且 `cold-baseline.enabled=true` | 先执行每模块唯一 `B*`，再执行高于 `B<version>` 的 expand migration。 |
+| 全新空库但未准备完整 `B*` | fail closed；关闭 cold baseline 后才能从 V1 回放。 |
+| 已有模块 history 的数据库 | 不执行 cold baseline，继续按模块执行 expand/finalize 增量。 |
+| 半初始化且没有完成回执 | MySQL DDL 不可事务回滚；删除并重建该一次性空库后重试。 |
 
-不要在同一个新库配置中同时放入 baseline pack 和该模块历史 V1...Vn 目录；这会重复建表或造成版本冲突。旧库切换到 baseline pack 前必须做单独升级评审，确认 history table、已执行版本和 baseline 版本关系。
-
-Agent 判断口径：
-
-| 数据库状态 | 推荐 locations | 说明 |
-|------------|----------------|------|
-| 全新空库，决定使用 baseline | `filesystem:${MANGO_BASELINE_DIR}/<module>` | baseline 目录必须包含当前完整结构和 baseline 之后的新 migration。 |
-| 全新空库，未准备 baseline | 默认 `classpath:db/migration/<module>` | 从 V1 执行完整历史。 |
-| 已有旧库，有模块 history table | `classpath:db/migration/<module>` + 必要的 `filesystem:/opt/mango/upgrade/<module>` | 继续增量升级。 |
-| 已有旧库，想切 baseline | 不直接切 | 先单独评审 history table、已执行版本和 baseline 覆盖版本。 |
+性能回归入口为仓库根目录 `scripts/tests/bootstrap-performance.sh`。当前 MySQL 8.4 基线使用 5 个模块、375 张表、37,500 行和 16,372,270 SQL 字节，实测 4.805 秒；该数字是开发机证据，不替代目标环境验收。
 
 模块迁移数据源解析顺序：
 

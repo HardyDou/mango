@@ -37,6 +37,7 @@ public final class ResourceTypes {
     public static final String JOB_DEFINITION = "JOB_DEFINITION";
     public static final String FILE_STORAGE_CONFIG = "FILE_STORAGE_CONFIG";
     public static final String FILE_SETTINGS = "FILE_SETTINGS";
+    public static final String FILE_ASSET = "FILE_ASSET";
 
     private ResourceTypes() {
     }

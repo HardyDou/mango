@@ -33,6 +33,7 @@
 | 逻辑目录 | 管理文件中心目录树 | `/file/directories/**` |
 | 存储配置 | 配置本地、MinIO、S3、OSS、COS、七牛等存储 | `/file/storage-configs/**` |
 | 文件配置 | 配置大小、扩展名、MIME、秒传、直传、访问、预览、归档策略 | `GET/PUT /file/settings` |
+| 预置文件资产 | 在 Bootstrap 中把业务 Jar 内二进制写入当前环境文件存储，并生成稳定 `fileId` | `FILE_ASSET` Resource |
 
 下载入口支持图片/PDF 下载副本压缩。压缩只影响本次下载或 ZIP 内条目内容，不覆盖原始文件记录。
 
@@ -664,6 +665,51 @@ mango-file-starter/src/main/resources/META-INF/mango/resources/file-common-stora
 | `archiveRestoreEnabled` | `INT` | 否 | 是否允许恢复归档，默认 `0`。 |
 | `physicalDeleteEnabled` | `INT` | 否 | 是否删除物理对象，默认 `0`。 |
 
+### 8.3 FILE_ASSET
+
+业务模块需要预置工作流附件、打印模板或其它二进制时，把文件放在本模块 Jar 的 `META-INF/mango/assets/<module>/`，再声明 `FILE_ASSET`。不要在 Runtime 启动代码中读取 classpath 后调用普通上传 API。
+
+```yaml
+mango:
+  resource:
+    schema-version: 1
+    module-code: guarantee
+    module-name: 保函
+    declarations:
+      FILE_ASSET:
+        - id: "840000000000000001"
+          version: 1
+          biz-key: guarantee.workflow.payment-voucher
+          name: 付款凭证示例
+          target-module: file
+          sync-mode: INIT_ONLY
+          fields:
+            tenantId: { type: LONG, value: 1 }
+            fileId: { type: LONG, value: 840000000000000101 }
+            storageConfigId: { type: LONG, value: 1 }
+            objectName: { type: STRING, value: mango-assets/guarantee/payment-voucher.pdf }
+            fileName: { type: STRING, value: payment-voucher.pdf }
+            sha256: { type: STRING, value: "<64 位小写 SHA-256>" }
+            content:
+              type: FILE
+              location: classpath:META-INF/mango/assets/guarantee/payment-voucher.pdf
+              mediaType: application/pdf
+            purpose: { type: STRING, value: workflow-attachment-template }
+            bizType: { type: STRING, value: WORKFLOW_DEFINITION }
+            bizId: { type: STRING, value: GUARANTEE_PAYMENT }
+```
+
+| 字段 | 必填 | 约束 |
+|------|------|------|
+| `fileId` | 是 | 业务长期引用的稳定 `file_record.id`。 |
+| `storageConfigId` | 是 | 必须先由 `FILE_STORAGE_CONFIG` 创建且启用。 |
+| `objectName` | 是 | 固定在 `mango-assets/` 前缀下，不允许 `..` 或反斜杠。 |
+| `fileName` | 是 | 业务展示名，最长 255。 |
+| `sha256` | 是 | classpath 制品的 64 位小写 SHA-256。 |
+| `content` | 是 | `FILE` 类型，且只能读取 `classpath:META-INF/mango/assets/`。 |
+
+Handler 流式校验内容后先写 `.mango-staging/resources/`，再发布到固定 `objectName`，支持 LOCAL、S3/MinIO、OSS、COS 和七牛实现。对象已存在但数据库事务未提交时，重入会按 `objectName + sha256` 补齐记录；数据库记录存在但对象丢失时会重新发布。相同 `fileId` 不允许改变 tenant、存储配置或对象位置；缺失声明只归档记录，默认不物理删除可能被历史业务引用的对象。
+
 ## 9. 运行时配置字段
 
 接口：
@@ -771,6 +817,7 @@ Flyway 路径：`mango-file-core/src/main/resources/db/migration/file`。
 |-----------|------------|-----------------|
 | `V1__init_file.sql` | `file_record`、`file_storage_config`、`file_settings`、`file_directory`、`file_object`、`file_hash_mapping`、`file_upload_session`、`file_upload_part` | 表级 `CREATE TABLE IF NOT EXISTS`、`file_storage_config.config_name`、`file_settings.tenant_id` |
 | `V3__multipart_upload_settings.sql` | 增加分片开关、临界值，并允许上传会话暂缺客户端哈希 | `multipart_enabled`、`multipart_threshold`、可空 `file_hash` |
+| `V4__stable_managed_file_object_location.sql` | 为托管文件对象建立稳定对象位置唯一性 | `storage_config_id + object_name` |
 
 默认本地存储、MinIO 本地联调配置和默认文件中心运行时配置通过 `mango-resource` 注入，资源文件是 `file-common-storage.yml`。运行时文件配置写入 `file_settings`，按 `tenant_id` 唯一；当前租户没有配置时，`GET /file/settings` 会返回 YAML 默认值和 `defaultConfig=true`。
 
@@ -784,6 +831,7 @@ Flyway 路径：`mango-file-core/src/main/resources/db/migration/file`。
 - 预览只能下载不能打开：检查 `previewProviderUrl`、`previewExternalExtensions`，Office 类文件还需要 `mango-file-preview` 和 `mango-infra-fileproc`。
 - 页面空白或按钮不可见：检查 authorization 菜单 component 是否是 `file/files/index`、`file/storage-configs/index`、`file/settings/index`，并确认账号拥有对应 `file:*` 权限码。
 - 业务表里出现对象存储地址：应改为保存 `fileId` 或业务附件关系；`previewUrl`、`downloadUrl` 只用于当前页面即时展示。
+- 预置文件只有数据库记录没有物理对象：检查 `FILE_ASSET` 的 `storageConfigId`、classpath 路径和 SHA-256；修正声明并用相同 generation/fingerprint 重入 Bootstrap，不要手工伪造 `file_record`。
 
 ## 14. 相关文档
 
