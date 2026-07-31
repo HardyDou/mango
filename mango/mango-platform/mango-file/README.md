@@ -86,6 +86,7 @@ business_id / file_id / purpose / sort
 | `FileApi.downloadTo(Long id, Path directory)` | 下载文件到指定目录。 |
 | `FileApi.save(SaveFileCommand)` | 保存后端生成的文件。 |
 | `FileApi.packageFiles(FilePackageCommand)` | 按目录结构清单生成 ZIP 并保存为新文件记录。 |
+| `FileApi.packageFilesWithSizeControl(FilePackageSizeControlCommand)` | 生成单个 ZIP，按自动或手动模式控制 PDF/图片大小并返回实际结果。 |
 | `FileApi.mergeToPdf(FileMergePdfCommand)` | 按文件清单顺序生成 PDF 并保存为新文件记录。 |
 | `FileApi.archive(FileArchiveCommand)` | 归档文件记录。 |
 
@@ -172,6 +173,56 @@ original.setCompression("NONE");
 ```
 
 当前仅图片和 PDF 会被压缩；Word、PPT、Excel 等其它文件会按原内容写入 ZIP。需要 Office 转 PDF 后再压缩时，应先使用 `mango-infra-fileproc` 转换能力生成 PDF，再通过文件中心保存或下载。
+
+需要控制最终 ZIP 大小时，使用独立的大小控制入口。该入口始终只生成一个 ZIP，不拆包；无法达到目标时仍保存当前结果，并通过 `FilePackageResultVO` 返回实际大小和原因。
+
+自动模式由服务端按可压缩文件的当前大小比例分配目标。大文件承担更多绝对压缩量；某个文件无法继续缩小时，它未完成的额度会按比例重新分配给其它可压缩文件。每轮都以真实 ZIP 字节数重新判断：
+
+```java
+FilePackageSizeControlCommand command = new FilePackageSizeControlCommand();
+command.setFileName("contract-materials.zip");
+command.setSizeControlMode(FilePackageSizeControlMode.AUTO);
+command.setMaxPackageSizeBytes(5L * 1024 * 1024);
+command.setCompression("MEDIUM");
+command.setEntries(List.of(
+        new FilePackageEntryCommand(pdfFileId, "PDF/${fileName}"),
+        new FilePackageEntryCommand(imageFileId, "图片/${fileName}"),
+        new FilePackageEntryCommand(excelFileId, "表格/${fileName}")
+));
+
+FilePackageResultVO result = fileApi.packageFilesWithSizeControl(command).getData();
+boolean reached = Boolean.TRUE.equals(result.getPackageTargetAchieved());
+long actualSize = result.getActualPackageSizeBytes();
+```
+
+手动模式只执行每个 entry 自己声明的目标，不会为了满足可选的 ZIP 总目标而补压缩其它文件：
+
+```java
+FilePackageEntryCommand pdf = new FilePackageEntryCommand(pdfFileId, "PDF/${fileName}");
+pdf.setTargetSizeBytes(2L * 1024 * 1024);
+
+FilePackageEntryCommand image = new FilePackageEntryCommand(imageFileId, "图片/${fileName}");
+image.setTargetSizeBytes(1L * 1024 * 1024);
+
+FilePackageSizeControlCommand command = new FilePackageSizeControlCommand();
+command.setFileName("contract-materials.zip");
+command.setSizeControlMode(FilePackageSizeControlMode.MANUAL);
+command.setMaxPackageSizeBytes(5L * 1024 * 1024); // 可选，仅用于结果判断
+command.setCompression("MEDIUM");
+command.setEntries(List.of(pdf, image));
+
+FilePackageResultVO result = fileApi.packageFilesWithSizeControl(command).getData();
+```
+
+两种模式都遵守以下边界：
+
+- entry 的 `compression=NONE` 是硬约束，文件始终保持原样。
+- 只有 `FileCompressApi.supports()` 支持的 PDF、JPG/JPEG、PNG 等格式参与压缩。
+- DOC、DOCX、XLS、XLSX、PPT、PPTX、ZIP 等不受支持格式保持原样。
+- `packageTargetAchieved=false` 或条目 `targetAchieved=false` 是正常结果，不表示接口失败。
+- `FilePackageResultVO.entries` 返回每个文件的原始大小、输出大小、目标、是否实际压缩和处理说明。
+
+AUTO 模式要求 `maxPackageSizeBytes`；AUTO 中 entry 的 `targetSizeBytes` 不参与比例分配。MANUAL 模式使用 entry 的 `targetSizeBytes`，未设置目标的 entry 保持原样。顶层或 entry 的压缩档位仍按 entry 覆盖顶层解析；有效档位为 `NONE` 时不调用压缩组件。
 
 `entries.path` 支持变量，业务不需要为了拼 ZIP 路径额外查询文件名；文件服务在读取源文件记录时会替换变量，然后再做路径安全校验。当前支持的变量：
 

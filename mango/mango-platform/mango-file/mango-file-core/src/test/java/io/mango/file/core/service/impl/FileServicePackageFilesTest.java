@@ -6,9 +6,12 @@ import io.mango.common.exception.BizException;
 import io.mango.file.api.enums.FileCode;
 import io.mango.file.api.command.FilePackageCommand;
 import io.mango.file.api.command.FilePackageEntryCommand;
+import io.mango.file.api.command.FilePackageSizeControlCommand;
 import io.mango.file.api.enums.FileAccessLevel;
 import io.mango.file.api.enums.FileObjectStatus;
+import io.mango.file.api.enums.FilePackageSizeControlMode;
 import io.mango.file.api.enums.FileRecordStatus;
+import io.mango.file.api.vo.FilePackageResultVO;
 import io.mango.file.api.vo.FileRecordVO;
 import io.mango.file.api.vo.FileSettingsVO;
 import io.mango.file.core.config.FileProperties;
@@ -41,10 +44,12 @@ import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.ArrayDeque;
+import java.util.Arrays;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.zip.ZipInputStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -67,6 +72,7 @@ class FileServicePackageFilesTest {
     private FileRecordMapper fileRecordMapper;
     private FileObjectMapper fileObjectMapper;
     private FileService fileService;
+    private RecordingTargetCompressApi targetCompressApi;
     private long recordId;
     private long objectId;
 
@@ -123,6 +129,7 @@ class FileServicePackageFilesTest {
             throw new IllegalStateException(e);
         }
 
+        targetCompressApi = new RecordingTargetCompressApi();
         fileService = new FileService(fileStorageRouter,
                 storageConfigService,
                 settingsService,
@@ -137,7 +144,8 @@ class FileServicePackageFilesTest {
                 accessUrlAssembler,
                 List.of(new StubFileCompressApi()),
                 List.of(),
-                List.of());
+                List.of(),
+                new FilePackageSizeControlProcessor(List.of(targetCompressApi)));
         sourceFile(11L, 101L, "source/contract.pdf", "合同正文".getBytes(StandardCharsets.UTF_8), "application/pdf");
         sourceFile(12L, 102L, "source/license.pdf", "营业执照".getBytes(StandardCharsets.UTF_8), "application/pdf");
     }
@@ -205,6 +213,141 @@ class FileServicePackageFilesTest {
     }
 
     @Test
+    void packageFilesWithSizeControl_AUTO_按文件大小比例分摊并生成单个达标Zip() throws Exception {
+        byte[] largePdf = randomBytes(2400, 11);
+        byte[] smallPdf = randomBytes(1200, 12);
+        sourceFile(11L, 101L, "source/large.pdf", largePdf, "application/pdf");
+        sourceFile(12L, 102L, "source/small.pdf", smallPdf, "application/pdf");
+        FilePackageSizeControlCommand command = sizeControlCommand(
+                FilePackageSizeControlMode.AUTO,
+                1700L,
+                entry(11L, "资料/large.pdf"),
+                entry(12L, "资料/small.pdf"));
+        command.setCompression("MEDIUM");
+        sourceLookupIds.addAll(List.of(11L, 12L));
+
+        FilePackageResultVO result = fileService.packageFilesWithSizeControl(command);
+
+        assertThat(result.getFile()).isNotNull();
+        assertThat(result.getFile().getFileName()).isEqualTo("size-control.zip");
+        assertThat(result.getPackageTargetAchieved()).isTrue();
+        assertThat(result.getActualPackageSizeBytes()).isLessThanOrEqualTo(1700L);
+        assertThat(result.getEntries()).hasSize(2);
+        assertThat(result.getEntries()).allMatch(item -> Boolean.TRUE.equals(item.getCompressionApplied()));
+        assertThat(targetCompressApi.requests()).hasSizeGreaterThanOrEqualTo(2);
+        TargetRequest largeRequest = targetCompressApi.requests().get(0);
+        TargetRequest smallRequest = targetCompressApi.requests().get(1);
+        long largeSaving = largeRequest.sourceSize() - largeRequest.targetSize();
+        long smallSaving = smallRequest.sourceSize() - smallRequest.targetSize();
+        assertThat(largeSaving).isGreaterThan(smallSaving);
+        assertThat(Math.abs(largeSaving - 2L * smallSaving)).isLessThanOrEqualTo(1L);
+        assertThat(savedZip(result.getFile().getId())).hasSize(2);
+    }
+
+    @Test
+    void packageFilesWithSizeControl_AUTO_候选触底后将缺口重新分配给其余文件() {
+        byte[] limitedPdf = randomBytes(2400, 31);
+        byte[] flexiblePdf = randomBytes(1200, 32);
+        sourceFile(11L, 101L, "source/limited.pdf", limitedPdf, "application/pdf");
+        sourceFile(12L, 102L, "source/flexible.pdf", flexiblePdf, "application/pdf");
+        targetCompressApi.setMinimumSize("limited.pdf", 1800);
+        FilePackageSizeControlCommand command = sizeControlCommand(
+                FilePackageSizeControlMode.AUTO,
+                2500L,
+                entry(11L, "资料/limited.pdf"),
+                entry(12L, "资料/flexible.pdf"));
+        command.setCompression("MEDIUM");
+        sourceLookupIds.addAll(List.of(11L, 12L));
+
+        FilePackageResultVO result = fileService.packageFilesWithSizeControl(command);
+
+        List<TargetRequest> limitedRequests = targetCompressApi.requests().stream()
+                .filter(request -> request.fileName().equals("limited.pdf"))
+                .toList();
+        List<TargetRequest> flexibleRequests = targetCompressApi.requests().stream()
+                .filter(request -> request.fileName().equals("flexible.pdf"))
+                .toList();
+        assertThat(limitedRequests).hasSize(1);
+        assertThat(flexibleRequests).hasSizeGreaterThanOrEqualTo(2);
+        assertThat(flexibleRequests.get(1).targetSize()).isLessThan(flexibleRequests.get(0).targetSize());
+        assertThat(result.getEntries().get(0).getOutputSizeBytes()).isEqualTo(1800L);
+        assertThat(result.getEntries().get(1).getOutputSizeBytes()).isLessThan(1200L);
+    }
+
+    @Test
+    void packageFilesWithSizeControl_AUTO_目标不可达时正常返回实际大小() {
+        byte[] originalPdf = randomBytes(600, 41);
+        byte[] excel = randomBytes(500, 42);
+        sourceFile(11L, 101L, "source/original.pdf", originalPdf, "application/pdf");
+        sourceFile(13L, 103L, "source/table.xlsx", excel,
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        FilePackageEntryCommand noneEntry = entry(11L, "资料/original.pdf");
+        noneEntry.setCompression("NONE");
+        FilePackageSizeControlCommand command = sizeControlCommand(
+                FilePackageSizeControlMode.AUTO,
+                100L,
+                noneEntry,
+                entry(13L, "资料/table.xlsx"));
+        command.setCompression("HIGH");
+        sourceLookupIds.addAll(List.of(11L, 13L));
+
+        FilePackageResultVO result = fileService.packageFilesWithSizeControl(command);
+
+        assertThat(result.getPackageTargetAchieved()).isFalse();
+        assertThat(result.getActualPackageSizeBytes()).isGreaterThan(100L);
+        assertThat(result.getMessage())
+                .contains("目标100字节")
+                .contains("当前只能压缩到" + result.getActualPackageSizeBytes() + "字节");
+        assertThat(targetCompressApi.requests()).isEmpty();
+        assertThat(result.getEntries()).extracting("outputSizeBytes")
+                .containsExactly(600L, 500L);
+    }
+
+    @Test
+    void packageFilesWithSizeControl_MANUAL_只按Entry目标压缩且None和Excel保持原样() throws Exception {
+        byte[] compressedPdf = randomBytes(1000, 21);
+        byte[] nonePdf = randomBytes(600, 22);
+        byte[] excel = randomBytes(500, 23);
+        sourceFile(11L, 101L, "source/compressed.pdf", compressedPdf, "application/pdf");
+        sourceFile(12L, 102L, "source/original.pdf", nonePdf, "application/pdf");
+        sourceFile(13L, 103L, "source/table.xlsx", excel,
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        FilePackageEntryCommand compressedEntry = entry(11L, "资料/compressed.pdf");
+        compressedEntry.setTargetSizeBytes(400L);
+        FilePackageEntryCommand noneEntry = entry(12L, "资料/original.pdf");
+        noneEntry.setCompression("NONE");
+        noneEntry.setTargetSizeBytes(100L);
+        FilePackageEntryCommand excelEntry = entry(13L, "资料/table.xlsx");
+        excelEntry.setTargetSizeBytes(100L);
+        FilePackageSizeControlCommand command = sizeControlCommand(
+                FilePackageSizeControlMode.MANUAL,
+                300L,
+                compressedEntry,
+                noneEntry,
+                excelEntry);
+        command.setCompression("MEDIUM");
+        sourceLookupIds.addAll(List.of(11L, 12L, 13L));
+
+        FilePackageResultVO result = fileService.packageFilesWithSizeControl(command);
+
+        assertThat(result.getFile()).isNotNull();
+        assertThat(result.getPackageTargetAchieved()).isFalse();
+        assertThat(result.getEntryTargetsAchieved()).isFalse();
+        assertThat(result.getCompressionApplied()).isTrue();
+        assertThat(result.getEntries()).extracting("outputSizeBytes")
+                .containsExactly(400L, 600L, 500L);
+        assertThat(result.getEntries()).extracting("targetAchieved")
+                .containsExactly(true, false, false);
+        assertThat(result.getEntries().get(1).getMessage()).contains("NONE");
+        assertThat(result.getEntries().get(2).getMessage()).contains("不支持压缩");
+        assertThat(targetCompressApi.requests()).hasSize(1);
+        Map<String, byte[]> zipEntries = savedZip(result.getFile().getId());
+        assertThat(zipEntries.get("资料/compressed.pdf")).hasSize(400);
+        assertThat(zipEntries.get("资料/original.pdf")).isEqualTo(nonePdf);
+        assertThat(zipEntries.get("资料/table.xlsx")).isEqualTo(excel);
+    }
+
+    @Test
     void packageFiles_压缩档位非法_拒绝生成文件记录() {
         FilePackageCommand command = command("bad-compression.zip", entry(11L, "资料/合同.pdf"));
         command.setCompression("BAD");
@@ -263,6 +406,21 @@ class FileServicePackageFilesTest {
         return command;
     }
 
+    private FilePackageSizeControlCommand sizeControlCommand(FilePackageSizeControlMode mode,
+                                                             Long maxPackageSizeBytes,
+                                                             FilePackageEntryCommand... entries) {
+        FilePackageSizeControlCommand command = new FilePackageSizeControlCommand();
+        command.setFileName("size-control.zip");
+        command.setPurpose("guarantee-order-material-package");
+        command.setAccessLevel(FileAccessLevel.PRIVATE.name());
+        command.setBizType("GUARANTEE_ORDER_MATERIAL_PACKAGE");
+        command.setBizId("123456");
+        command.setSizeControlMode(mode);
+        command.setMaxPackageSizeBytes(maxPackageSizeBytes);
+        command.setEntries(List.of(entries));
+        return command;
+    }
+
     private FilePackageEntryCommand entry(Long fileId, String path) {
         FilePackageEntryCommand entry = new FilePackageEntryCommand();
         entry.setFileId(fileId);
@@ -295,7 +453,8 @@ class FileServicePackageFilesTest {
         record.setBucketName("local");
         record.setObjectName(objectName);
         record.setFileName(objectName.substring(objectName.lastIndexOf('/') + 1));
-        record.setFileExt("pdf");
+        int extensionIndex = objectName.lastIndexOf('.');
+        record.setFileExt(extensionIndex < 0 ? "" : objectName.substring(extensionIndex + 1));
         record.setFileSize((long) content.length);
         record.setContentType(contentType);
         record.setStatus(FileRecordStatus.COMPLETED.value());
@@ -351,6 +510,28 @@ class FileServicePackageFilesTest {
         return result;
     }
 
+    private Map<String, byte[]> savedZip(Long fileId) throws Exception {
+        FileRecordEntity savedRecord = records.get(fileId);
+        byte[] content = storage.get(objects.get(savedRecord.getObjectId()).getObjectName());
+        Map<String, byte[]> result = new HashMap<>();
+        try (ZipInputStream zipInput = new ZipInputStream(new ByteArrayInputStream(content))) {
+            java.util.zip.ZipEntry entry = zipInput.getNextEntry();
+            while (entry != null) {
+                ByteArrayOutputStream output = new ByteArrayOutputStream();
+                zipInput.transferTo(output);
+                result.put(entry.getName(), output.toByteArray());
+                entry = zipInput.getNextEntry();
+            }
+        }
+        return result;
+    }
+
+    private byte[] randomBytes(int size, long seed) {
+        byte[] content = new byte[size];
+        new Random(seed).nextBytes(content);
+        return content;
+    }
+
     private static final class StubFileCompressApi implements FileCompressApi {
 
         @Override
@@ -368,5 +549,39 @@ class FileServicePackageFilesTest {
             return new CompressFileResultVO(command.fileName(), command.contentType(), compressed,
                     source.length, compressed.length, command.targetSizeBytes(), true);
         }
+    }
+
+    private static final class RecordingTargetCompressApi implements FileCompressApi {
+
+        private final List<TargetRequest> requests = new java.util.ArrayList<>();
+        private final Map<String, Integer> minimumSizes = new HashMap<>();
+
+        @Override
+        public boolean supports(String fileName, String contentType) {
+            return "application/pdf".equals(contentType) || (contentType != null && contentType.startsWith("image/"));
+        }
+
+        @Override
+        public CompressFileResultVO compress(CompressFileCommand command) {
+            byte[] source = command.readAllBytes();
+            long requestedTarget = command.targetSizeBytes() == null ? source.length : command.targetSizeBytes();
+            long minimumSize = minimumSizes.getOrDefault(command.fileName(), 1);
+            int outputSize = (int) Math.max(minimumSize, Math.min(source.length, requestedTarget));
+            requests.add(new TargetRequest(command.fileName(), source.length, requestedTarget));
+            byte[] compressed = Arrays.copyOf(source, outputSize);
+            return new CompressFileResultVO(command.fileName(), command.contentType(), compressed,
+                    source.length, compressed.length, command.targetSizeBytes(), compressed.length <= requestedTarget);
+        }
+
+        private void setMinimumSize(String fileName, int minimumSize) {
+            minimumSizes.put(fileName, minimumSize);
+        }
+
+        private List<TargetRequest> requests() {
+            return List.copyOf(requests);
+        }
+    }
+
+    private record TargetRequest(String fileName, long sourceSize, long targetSize) {
     }
 }

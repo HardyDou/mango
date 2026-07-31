@@ -6,8 +6,10 @@ import io.mango.file.api.FileApi;
 import io.mango.file.api.command.FileDeleteCommand;
 import io.mango.file.api.command.FileMergePdfCommand;
 import io.mango.file.api.command.FilePackageCommand;
+import io.mango.file.api.command.FilePackageSizeControlCommand;
 import io.mango.file.api.query.FileRecordPageQuery;
 import io.mango.file.api.vo.FilePreviewVO;
+import io.mango.file.api.vo.FilePackageResultVO;
 import io.mango.file.api.vo.FileRecordVO;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.cloud.openfeign.SpringQueryMap;
@@ -36,6 +38,10 @@ public interface FileFeignClient extends FileApi {
     @Override
     @PostMapping("/package")
     R<FileRecordVO> packageFiles(@RequestBody FilePackageCommand command);
+
+    @Override
+    @PostMapping("/package-size-control")
+    R<FilePackageResultVO> packageFilesWithSizeControl(@RequestBody FilePackageSizeControlCommand command);
 
     @Override
     @PostMapping("/merge-pdf")

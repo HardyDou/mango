@@ -309,3 +309,7 @@ pnpm -F @mango/file test
 ## 2026-07-31 文件预览容器适配影响
 
 - `v2026.07.31-maven-1.0.29-pmo-1.3.7-cli-1.0.93-notice-file-dialog-release` 为 `FilePreviewPanel` 增加可选的 `fitContainer`，用于让预览面板填满宿主容器；图片预览默认在预览舞台内使用嵌入式 Element Plus Viewer，不再依赖全屏遮罩交互。上传、文件 ID 持久化、回显、预览元数据、下载 API、权限和租户边界均不变。业务页面升级后应同时验证普通尺寸与 `fitContainer` 布局、图片缩放/切换/关闭，以及自定义 Viewer CSS 是否仍适配。
+
+## Issue #661 单 ZIP 大小控制影响
+
+- 文件模块新增可选的 `FileApi.packageFilesWithSizeControl` 和 `POST /file/files/package-size-control`，供业务后端以 AUTO 总目标或 MANUAL 逐文件目标生成单个 ZIP。普通上传表单的 fileId/fileIds 持久化、上传、回显、预览、下载、权限、租户和前端组件接入均不变。业务使用新入口时应验收 PDF/图片压缩、`compression=NONE`、Office 原样保留，以及目标不可达时仍返回实际 ZIP 和结构化未达标结果。

@@ -5,7 +5,9 @@ import io.mango.common.vo.PageResult;
 import io.mango.file.api.command.FileDeleteCommand;
 import io.mango.file.api.command.FileMergePdfCommand;
 import io.mango.file.api.command.FilePackageCommand;
+import io.mango.file.api.command.FilePackageSizeControlCommand;
 import io.mango.file.api.query.FileRecordPageQuery;
+import io.mango.file.api.vo.FilePackageResultVO;
 import io.mango.file.api.vo.FilePreviewVO;
 import io.mango.file.api.vo.FileRecordVO;
 import jakarta.validation.Valid;
@@ -25,6 +27,15 @@ public interface FileApi {
     R<FilePreviewVO> preview(@NotNull @Positive Long id);
 
     R<FileRecordVO> packageFiles(@Valid FilePackageCommand command);
+
+    /**
+     * 生成单个 ZIP，并按自动或手动模式控制可压缩条目的大小。
+     * 无法达到目标大小时仍返回已保存的 ZIP 和实际处理结果。
+     *
+     * @param command 大小控制打包命令
+     * @return ZIP 文件记录和大小控制摘要
+     */
+    R<FilePackageResultVO> packageFilesWithSizeControl(@Valid FilePackageSizeControlCommand command);
 
     R<FileRecordVO> mergeToPdf(@Valid FileMergePdfCommand command);
 

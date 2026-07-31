@@ -1,5 +1,6 @@
 package io.mango.file.starter.controller;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.authorization.api.annotation.ApiAccess;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.common.result.R;
@@ -9,8 +10,10 @@ import io.mango.file.api.command.FileArchiveCommand;
 import io.mango.file.api.command.FileDeleteCommand;
 import io.mango.file.api.command.FileMergePdfCommand;
 import io.mango.file.api.command.FilePackageCommand;
+import io.mango.file.api.command.FilePackageSizeControlCommand;
 import io.mango.file.api.query.FileRecordPageQuery;
 import io.mango.file.api.vo.FilePreviewVO;
+import io.mango.file.api.vo.FilePackageResultVO;
 import io.mango.file.api.vo.FileRecordVO;
 import io.mango.file.core.service.IFileService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -30,7 +33,8 @@ import org.springframework.web.bind.annotation.RestController;
 /** File metadata and lifecycle endpoints. */
 @RestController("mangoFileController")
 @RequestMapping("/file/files")
-@RequiredArgsConstructor
+@RequiredArgsConstructor(onConstructor_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+        justification = "Spring collaborators are intentionally retained for the controller lifetime"))
 @Validated
 @Tag(name = "文件管理", description = "文件记录查询、派生、归档与删除接口")
 public class FileController implements FileApi {
@@ -69,6 +73,15 @@ public class FileController implements FileApi {
     @Operation(summary = "打包文件", description = "按当前租户可见文件清单生成并保存ZIP文件")
     public R<FileRecordVO> packageFiles(@RequestBody FilePackageCommand command) {
         return R.ok(fileService.packageFiles(command));
+    }
+
+    @Override
+    @PostMapping("/package-size-control")
+    @ApiAccess(mode = ApiResourceAccessMode.LOGIN)
+    @Operation(summary = "按目标大小打包文件", description = "生成单个ZIP，并返回自动或手动大小控制结果")
+    public R<FilePackageResultVO> packageFilesWithSizeControl(
+            @RequestBody FilePackageSizeControlCommand command) {
+        return R.ok(fileService.packageFilesWithSizeControl(command));
     }
 
     @Override

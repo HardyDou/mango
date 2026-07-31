@@ -257,3 +257,7 @@ mvn -f mango/pom.xml -pl :mango-file-preview-app -am \
 - [@mango/file](../../../mango-ui/packages/file/README.md)
 - [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)
 - [Mango 能力地图](../../../mango-docs/capabilities/README.md)
+
+### Issue #661 文件打包大小控制影响
+
+`mango-file` 的公共 `FileApi` 新增 `packageFilesWithSizeControl` 后，本模块测试替身同步该方法以保持消费者编译兼容。文件预览模块不调用新打包入口，预览 URL、源文件 token、转换缓存、权限、租户和浏览器验收流程均不变。
