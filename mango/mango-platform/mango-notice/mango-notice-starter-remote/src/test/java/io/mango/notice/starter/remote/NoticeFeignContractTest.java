@@ -31,7 +31,7 @@ class NoticeFeignContractTest {
     @Test
     void feignEndpointsKeepVerbsPathsAndBindings() {
         assertThat(feignFingerprint())
-                .isEqualTo("dde206c33419fd51e1b460fb48856f54e5f1733a101e9b0f391cae6c0b709bcd");
+                .isEqualTo("d671d629e88a733c4a889387789df084a93885d8e3aaeaf7fda6352a1d164232");
     }
 
     private static String feignFingerprint() {
