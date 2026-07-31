@@ -21,6 +21,10 @@ Before drafting, read these authoritative assets:
 - `$PMO_ROOT/tools/check-lifecycle-handoff.mjs`
 - `$PMO_ROOT/rules/09-test-case-automation-flow.md`
 - `$PMO_ROOT/rules/product/05-document-lifecycle.md`
+- `$PMO_ROOT/rules/00-dev-flow.md`
+- `$PMO_ROOT/rules/03-ai-coding-redlines.md`
+- `$PMO_ROOT/rules/backend/01-code.md`
+- `$PMO_ROOT/rules/backend/08-test.md`
 
 Run PMO preflight with role `tech-lead` and phase `design`, then read every `Must read` file.
 
@@ -32,8 +36,10 @@ Run PMO preflight with role `tech-lead` and phase `design`, then read every `Mus
    - `ASK`: ownership, dependency, sequencing, target path, verification, or rollout facts cannot be established.
    - `WRITE`: inputs satisfy the rule; fill the official template with executable, traceable work items only.
 3. Set `pmoVersion` to the contract's exact `metadata.fixed.pmoVersion`, then run `node "$PMO_ROOT/tools/check-implementation-plan.mjs" --document <document-path>`.
-4. Turn only fact-enabled M09-M16 capabilities into executable commands or steps. Do not add tests without an observation target. Fix failures without weakening the checker or silently redesigning the approved solution. Any new endpoint, schema, technology choice or architecture decision requires a FULL TDD revision or a STANDARD record update and mode reassessment.
-5. Run the lifecycle checker for the user-enabled Plan and applicable upstream; require valid hashes and trace coverage, `APPROVED/NEXT`, a human approver, approval evidence and no open blocker.
-6. Return `NEXT: $mango-pmo-lifecycle` only when the dedicated checker, applicable lifecycle handoff, dependency graph, gate table and human approval all pass. Let the coordinator choose the next enabled measure or engineering.
+4. For each implementation item, reject historical code as an authority when it conflicts with current rules. A rewrite or replacement item must explicitly remove the old implementation, calls, configuration and fallback and include a search/verification step; compatibility must be a separate scoped migration item with an exit condition.
+5. For Java work, include a mechanical-code review that prefers the backend rule's Lombok annotations and requires a semantic justification for handwritten getters, setters or constructors. For layered backend work, record production and test ownership across `api/core/starter/starter-remote`.
+6. Turn only fact-enabled M09-M16 capabilities into executable commands or steps. Every test step must name the observed rule, state, failure, side effect or integration boundary, the real participating target and the owning module. Do not use “add unit tests” as an item without that mapping. Fix failures without weakening the checker or silently redesigning the approved solution. Any new endpoint, schema, technology choice or architecture decision requires a FULL TDD revision or a STANDARD record update and mode reassessment.
+7. Run the lifecycle checker for the user-enabled Plan and applicable upstream; require valid hashes and trace coverage, `APPROVED/NEXT`, a human approver, approval evidence and no open blocker.
+8. Return `NEXT: $mango-pmo-lifecycle` only when the dedicated checker, applicable lifecycle handoff, dependency graph, gate table and human approval all pass. Let the coordinator choose the next enabled measure or engineering.
 
 With an empty context, return `ASK` for M06 confirmation and the implementation source. When a confirmed Plan lacks an applicable approved design, return `STOP` and identify it. Do not infer Plan from L2/L3.

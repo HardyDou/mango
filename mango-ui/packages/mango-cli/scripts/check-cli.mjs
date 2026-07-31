@@ -1947,8 +1947,7 @@ function assertGeneratedDevWorkspaceCreatesLocalSecretKey(projectRoot) {
     workspaceConfig.backendPort !== backendPort ||
     workspaceConfig.frontendPort !== frontendPort ||
     workspaceConfig.dbName !== envFile.match(/^MANGO_DB_NAME=(.+)$/m)?.[1] ||
-    workspaceConfig.mavenRevisionQualifier !==
-      envFile.match(/^MANGO_MAVEN_REVISION_QUALIFIER=(.+)$/m)?.[1]
+    workspaceConfig.mavenRevisionQualifier !== envFile.match(/^MANGO_MAVEN_REVISION_QUALIFIER=(.+)$/m)?.[1]
   ) {
     throw new Error(
       `generated workspace.json must match dev-workspace.env:\n${JSON.stringify(workspaceConfig, null, 2)}\n${envFile}`,
@@ -2083,9 +2082,8 @@ function assertDevWorkspaceAutoCreatesDatabase(projectRoot) {
   const createCall = calls.find((line) =>
     line.includes('CREATE DATABASE IF NOT EXISTS `mango_dev_mango_full_acceptance_'),
   );
-  const mavenCall = calls.find(
-    (line) =>
-      /mvn:-Drevision=1\.0\.0-mango-[0-9]{3}-SNAPSHOT -f pom\.xml -DskipTests install/u.test(line),
+  const mavenCall = calls.find((line) =>
+    /mvn:-Drevision=1\.0\.0-mango-[0-9]{3}-SNAPSHOT -f pom\.xml -DskipTests install/u.test(line),
   );
   if (
     !calls.some((line) => line.includes('SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA')) ||
@@ -2153,14 +2151,8 @@ function assertDevWorkspaceStreamsLargeInstallOutput(projectRoot) {
   const calls = waitForCallLogLines(callLog, 4);
   const mavenCalls = calls.filter((line) => line.startsWith('mvn:'));
   if (
-    !mavenCalls.some(
-      (line) =>
-        /-Drevision=1\.0\.0-mango-[0-9]{3}-SNAPSHOT .*?-DskipTests install/u.test(line),
-    ) ||
-    !mavenCalls.some(
-      (line) =>
-        /-Drevision=1\.0\.0-mango-[0-9]{3}-SNAPSHOT .*?spring-boot-maven-plugin/u.test(line),
-    )
+    !mavenCalls.some((line) => /-Drevision=1\.0\.0-mango-[0-9]{3}-SNAPSHOT .*?-DskipTests install/u.test(line)) ||
+    !mavenCalls.some((line) => /-Drevision=1\.0\.0-mango-[0-9]{3}-SNAPSHOT .*?spring-boot-maven-plugin/u.test(line))
   ) {
     throw new Error(`large install output scenario must reach backend startup:\n${calls.join('\n')}`);
   }
