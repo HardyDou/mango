@@ -17,10 +17,7 @@ test('workspace id becomes a Maven-safe stable qualifier', () => {
 test('workspace qualifier is inserted before SNAPSHOT and remains idempotent', () => {
   assert.equal(qualifyWorkspaceMavenRevision('1.0.0-SNAPSHOT', 'mango-010'), '1.0.0-mango-010-SNAPSHOT');
   assert.equal(qualifyWorkspaceMavenRevision('1.0.0', 'mango-010'), '1.0.0-mango-010-SNAPSHOT');
-  assert.equal(
-    qualifyWorkspaceMavenRevision('1.0.0-mango-010-SNAPSHOT', 'mango-010'),
-    '1.0.0-mango-010-SNAPSHOT',
-  );
+  assert.equal(qualifyWorkspaceMavenRevision('1.0.0-mango-010-SNAPSHOT', 'mango-010'), '1.0.0-mango-010-SNAPSHOT');
   assert.throws(() => qualifyWorkspaceMavenRevision('${revision}', 'mango-010'), /concrete value/);
 });
 
@@ -47,10 +44,10 @@ test('Maven invocations receive exactly one workspace revision property', () => 
     'pom.xml',
     'install',
   ]);
-  assert.deepEqual(
-    injectMavenRevisionArgs(['-Drevision=old', 'verify'], '1.0.0-mango-010-SNAPSHOT'),
-    ['-Drevision=1.0.0-mango-010-SNAPSHOT', 'verify'],
-  );
+  assert.deepEqual(injectMavenRevisionArgs(['-Drevision=old', 'verify'], '1.0.0-mango-010-SNAPSHOT'), [
+    '-Drevision=1.0.0-mango-010-SNAPSHOT',
+    'verify',
+  ]);
   assert.equal(isMavenCommand('mvn'), true);
   assert.equal(isMavenCommand('./mvnw'), true);
   assert.equal(isMavenCommand('C:\\project\\mvnw.cmd'), process.platform === 'win32');
