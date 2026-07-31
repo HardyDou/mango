@@ -89,7 +89,7 @@ public final class BaselineGenerateMojo extends AbstractMojo {
         Path generatedResources = outputDirectory.toPath().toAbsolutePath().normalize();
         registerGeneratedResources(generatedResources);
 
-        BaselineGenerationRequest request = new BaselineGenerationRequest(
+        BaselineGenerationSettings settings = new BaselineGenerationSettings(
                 jdbcUrl.trim(),
                 username.trim(),
                 password,
@@ -98,7 +98,7 @@ public final class BaselineGenerateMojo extends AbstractMojo {
                 order,
                 groups,
                 keepSchemas);
-        new BaselineGenerator(request, catalog, getLog()).generate();
+        new BaselineGenerator(settings, catalog, getLog()).generate();
     }
 
     private void validateConfiguration() throws MojoExecutionException {

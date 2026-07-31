@@ -40,22 +40,22 @@ final class BaselineGenerator {
     private static final int MYSQL_IDENTIFIER_MAX_LENGTH = 64;
     private static final int DIFFERENCE_PREVIEW_LENGTH = 320;
 
-    private final BaselineGenerationRequest request;
+    private final BaselineGenerationSettings settings;
     private final BaselineMigrationCatalog catalog;
     private final BaselineObjectOwnership ownership;
     private final Log log;
     private final MySqlBaselineStore store;
 
     BaselineGenerator(
-            BaselineGenerationRequest request,
+            BaselineGenerationSettings settings,
             BaselineMigrationCatalog catalog,
             Log log) throws MojoExecutionException {
-        this.request = request;
+        this.settings = settings;
         this.catalog = catalog;
         this.ownership = BaselineObjectOwnership.analyze(catalog);
         this.log = log;
         this.store = new MySqlBaselineStore(
-                request.jdbcUrl(), request.username(), request.password());
+                settings.jdbcUrl(), settings.username(), settings.password());
     }
 
     GenerationResult generate() throws MojoExecutionException {
@@ -73,7 +73,7 @@ final class BaselineGenerator {
             String generationFingerprint = generationFingerprint(databaseIdentity, modules);
             writeManifest(staging, databaseIdentity, generationFingerprint, modules, groups);
             BaselineArtifactVerifier.verify(staging);
-            installGeneratedResources(staging, request.outputDirectory());
+            installGeneratedResources(staging, settings.outputDirectory());
             Duration elapsed = Duration.ofNanos(System.nanoTime() - startedAt);
             logResult(modules.size(), groups.size(), generationFingerprint, elapsed);
             return new GenerationResult(modules.size(), groups.size(), generationFingerprint, elapsed);
@@ -194,7 +194,7 @@ final class BaselineGenerator {
     }
 
     private void cleanupWorkspaceDatabases(Map<String, TemporaryDatabases> databases) {
-        if (!request.keepSchemas()) {
+        if (!settings.keepSchemas()) {
             cleanupDatabases(databases);
         } else if (!databases.isEmpty()) {
             log.warn("Temporary baseline databases were retained by configuration: " + databases);
@@ -256,7 +256,7 @@ final class BaselineGenerator {
         }
         try {
             Flyway flyway = Flyway.configure()
-                    .dataSource(store.databaseUrl(database), request.username(), request.password())
+                    .dataSource(store.databaseUrl(database), settings.username(), settings.password())
                     .locations("filesystem:" + location.toAbsolutePath())
                     .table(historyTable)
                     .baselineOnMigrate(true)
@@ -281,14 +281,14 @@ final class BaselineGenerator {
 
     private List<String> validateModuleOrder() throws MojoExecutionException {
         Set<String> discovered = new LinkedHashSet<>(catalog.moduleNames());
-        if (request.moduleOrder().isEmpty()) {
+        if (settings.moduleOrder().isEmpty()) {
             return List.copyOf(discovered);
         }
-        Set<String> configured = new LinkedHashSet<>(request.moduleOrder());
-        if (configured.size() != request.moduleOrder().size()) {
+        Set<String> configured = new LinkedHashSet<>(settings.moduleOrder());
+        if (configured.size() != settings.moduleOrder().size()) {
             throw new MojoExecutionException(
                     "MANGO-BASELINE-022 moduleOrder contains duplicate modules: "
-                            + request.moduleOrder());
+                            + settings.moduleOrder());
         }
         if (!configured.equals(discovered)) {
             Set<String> missing = new LinkedHashSet<>(discovered);
@@ -299,12 +299,12 @@ final class BaselineGenerator {
                     "MANGO-BASELINE-023 moduleOrder must contain every discovered module exactly once"
                             + "; missing=" + missing + ", unknown=" + unknown);
         }
-        return List.copyOf(request.moduleOrder());
+        return List.copyOf(settings.moduleOrder());
     }
 
     private Map<String, List<String>> groupModules(List<String> moduleOrder)
             throws MojoExecutionException {
-        Set<String> unknown = new LinkedHashSet<>(request.moduleGroups().keySet());
+        Set<String> unknown = new LinkedHashSet<>(settings.moduleGroups().keySet());
         unknown.removeAll(moduleOrder);
         if (!unknown.isEmpty()) {
             throw new MojoExecutionException(
@@ -312,7 +312,7 @@ final class BaselineGenerator {
         }
         Map<String, List<String>> groups = new LinkedHashMap<>();
         for (String module : moduleOrder) {
-            String group = request.moduleGroups().getOrDefault(module, "default");
+            String group = settings.moduleGroups().getOrDefault(module, "default");
             if (!group.matches(DATASOURCE_GROUP_PATTERN)) {
                 throw new MojoExecutionException(
                         "MANGO-BASELINE-025 invalid datasource group for module " + module
@@ -326,7 +326,7 @@ final class BaselineGenerator {
     private TemporaryDatabases temporaryDatabases(String group) {
         String runId = UUID.randomUUID().toString().replace("-", "")
                 .substring(0, RUN_ID_LENGTH);
-        String stem = sqlIdentifier(request.schemaPrefix() + "_" + group);
+        String stem = sqlIdentifier(settings.schemaPrefix() + "_" + group);
         int maximumStemLength = MYSQL_IDENTIFIER_MAX_LENGTH
                 - DETERMINISM_DATABASE_SEPARATOR.length() - runId.length();
         if (stem.length() > maximumStemLength) {
@@ -453,7 +453,7 @@ final class BaselineGenerator {
 
     private Path createStagingDirectory() throws MojoExecutionException {
         try {
-            Path parent = request.outputDirectory().toAbsolutePath().getParent();
+            Path parent = settings.outputDirectory().toAbsolutePath().getParent();
             Files.createDirectories(parent);
             return Files.createTempDirectory(parent, "mango-baseline-staging-");
         } catch (IOException exception) {

@@ -141,7 +141,7 @@ class BaselineGeneratorIntegrationTest {
             Map<String, String> groups) throws Exception {
         BaselineMigrationCatalog catalog = BaselineMigrationCatalog.discover(
                 directory, new MavenProject(), Set.copyOf(moduleOrder));
-        BaselineGenerationRequest request = new BaselineGenerationRequest(
+        BaselineGenerationSettings settings = new BaselineGenerationSettings(
                 requiredEnvironment("MANGO_BASELINE_TEST_DB_URL"),
                 environment("MANGO_BASELINE_TEST_DB_USERNAME", "root"),
                 environment("MANGO_BASELINE_TEST_DB_PASSWORD", ""),
@@ -150,7 +150,7 @@ class BaselineGeneratorIntegrationTest {
                 moduleOrder,
                 groups,
                 false);
-        return new BaselineGenerator(request, catalog, mock(Log.class));
+        return new BaselineGenerator(settings, catalog, mock(Log.class));
     }
 
     private void createCompleteMigrationSet() throws Exception {

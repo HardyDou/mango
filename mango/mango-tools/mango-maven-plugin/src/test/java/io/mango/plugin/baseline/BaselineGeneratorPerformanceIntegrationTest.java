@@ -49,7 +49,7 @@ class BaselineGeneratorPerformanceIntegrationTest {
         String prefix = "perf_baseline_"
                 + UUID.randomUUID().toString().replace("-", "").substring(0, 6);
         Path output = directory.resolve("target/generated-resources");
-        BaselineGenerationRequest request = new BaselineGenerationRequest(
+        BaselineGenerationSettings settings = new BaselineGenerationSettings(
                 requiredEnvironment("MANGO_BASELINE_PERF_DB_URL"),
                 environment("MANGO_BASELINE_PERF_DB_USERNAME", "root"),
                 environment("MANGO_BASELINE_PERF_DB_PASSWORD", ""),
@@ -60,7 +60,7 @@ class BaselineGeneratorPerformanceIntegrationTest {
                 false);
 
         BaselineGenerator.GenerationResult result =
-                new BaselineGenerator(request, catalog, mock(Log.class)).generate();
+                new BaselineGenerator(settings, catalog, mock(Log.class)).generate();
 
         assertEquals(MODULE_COUNT, result.moduleCount());
         assertEquals(1, result.datasourceGroupCount());
