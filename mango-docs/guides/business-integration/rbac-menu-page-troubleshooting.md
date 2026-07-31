@@ -264,3 +264,6 @@ pnpm -F @mango/admin-shell build
 ## 2026-07-27 Bootstrap 生命周期影响
 
 - Mango 将 Flyway、启动前必需 Resource 和租户对账从 Runtime 启动迁入独立 Bootstrap。菜单 `component` key、菜单树接口、页面注册方式、角色授权、按钮权限和租户绑定协议不变；业务升级顺序调整为先完成 `bootstrap apply` 与 `bootstrap verify`，再启动 Runtime。若菜单未形成，应先检查 Bootstrap 的 `RESOURCE_REQUIRED`、`TENANT_PREREQUISITES`、`TENANT_RECONCILIATION` 步骤回执，再按本指南核对 `AUTH_MENU` 声明、角色授权和页面 key，不能继续通过延长 Runtime healthcheck 等待初始化。
+## 2026-07-31 结构化通知发布影响
+
+- `v2026.07.31-maven-1.0.29-pmo-1.3.7-cli-1.0.93-notice-file-dialog-release` 仅为通知主操作补齐已注册页面的跳转，并同步固定依赖版本；不改变菜单 `component` key、菜单树接口、页面注册方式、角色菜单授权或租户应用绑定。若通知按钮无法进入目标页，应核对消息目标和 Shell 注册路由；普通菜单页面仍按本指南原闭环排查。

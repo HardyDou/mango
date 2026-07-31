@@ -328,5 +328,7 @@ import { WorkflowLayout, WorkflowSidebar } from '@mango/workflow';
 
 ## 12. 变更影响记录
 
+- `@mango/workflow@1.0.37` 将精确依赖对齐到 `@mango/admin-pages@1.0.30`、`@mango/common@1.0.23`、`@mango/file@1.0.31`、`@mango/grid-widgets@1.0.20` 和 `@mango/system@1.0.29`。Workflow 查看类通知的 `viewPath` 和 fallback 目标由 Maven `1.0.29` 生成、由 `@mango/notice@1.0.35` 导航；本包页面 key、审批组件、权限和租户语义保持不变。
+
 - `@mango/workflow@1.0.27` 将精确依赖升级到 `@mango/admin-pages@1.0.20`、`@mango/file@1.0.21` 和
   `@mango/system@1.0.19`；流程 API、页面 key、审批组件、权限、租户和运行时行为相对 `1.0.26` 不变。

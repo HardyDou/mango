@@ -9,7 +9,7 @@
 | 项目          | 值                                                                                                             |
 | ------------- | -------------------------------------------------------------------------------------------------------------- |
 | NPM 包        | `@mango/cli`                                                                                                   |
-| 当前发布版本  | `1.0.92`                                                                                                       |
+| 当前发布版本  | `1.0.93`                                                                                                       |
 | bin 命令      | `mango`、`mango-cli`                                                                                           |
 | 命令入口      | `src/index.mjs`                                                                                                |
 | 发布 registry | 由发布配置或 `MANGO_RELEASE_NPM_PUBLISH_REGISTRY` 注入                                                         |
@@ -69,9 +69,9 @@ CLI 不负责：
 通过企业 npm group 安装；公开文档不登记公司内部仓库地址：
 
 ```bash
-npm view @mango/pmo@1.3.6 version --registry "$MANGO_NPM_REGISTRY"
-npm view @mango/cli@1.0.92 version --registry "$MANGO_NPM_REGISTRY"
-npm install -g @mango/cli@1.0.92 --registry "$MANGO_NPM_REGISTRY"
+npm view @mango/pmo@1.3.7 version --registry "$MANGO_NPM_REGISTRY"
+npm view @mango/cli@1.0.93 version --registry "$MANGO_NPM_REGISTRY"
+npm install -g @mango/cli@1.0.93 --registry "$MANGO_NPM_REGISTRY"
 ```
 
 两个查询都返回精确版本后，该批次才可供业务项目安装。PMO 升级会整体同步 baseline、Agent 入口和 `.agents/skills`，不需要逐个安装 Skill。
@@ -90,7 +90,7 @@ pnpm exec mango dev start
 
 业务仓日常开发以项目内锁定的 `@mango/cli` 为准。进入生成项目的 `frontend` 后先安装依赖，再用 `pnpm exec mango workspace ...`、`pnpm exec mango dev ...` 和 `pnpm exec mango frontend ...` 执行本地开发命令。系统 `PATH` 上的 `mango` 可能是旧全局入口，不能作为业务项目 CLI 版本依据。
 
-生成项目中的 `scripts/dev-workspace.sh` 只保留为历史兼容 shim，会把旧命令转发到 Mango CLI。历史项目升级时，先用全局 CLI 执行 `mango pmo upgrade --project-dir . --to 1.3.6 --sync-shell`；已经锁定到该 bundle 的项目只需用 `mango pmo sync --project-dir . --sync-shell` 修复当前锁。随后进入 `frontend` 安装项目内依赖，并在每个 active worktree 执行 `pnpm exec mango workspace init` 生成 `.mango/workspace.json` 并补齐 `.mango/dev-workspace.env`。
+生成项目中的 `scripts/dev-workspace.sh` 只保留为历史兼容 shim，会把旧命令转发到 Mango CLI。历史项目升级时，先用全局 CLI 执行 `mango pmo upgrade --project-dir . --to 1.3.7 --sync-shell`；已经锁定到该 bundle 的项目只需用 `mango pmo sync --project-dir . --sync-shell` 修复当前锁。随后进入 `frontend` 安装项目内依赖，并在每个 active worktree 执行 `pnpm exec mango workspace init` 生成 `.mango/workspace.json` 并补齐 `.mango/dev-workspace.env`。
 
 生成 custom 项目：
 
@@ -118,7 +118,7 @@ mango pmo check --project-dir demo-custom
 mango pmo check --project-dir demo-custom --locked
 mango pmo sync --project-dir demo-custom --dry-run
 mango pmo sync --project-dir demo-custom
-mango pmo upgrade --project-dir demo-custom --to 1.3.6
+mango pmo upgrade --project-dir demo-custom --to 1.3.7
 mango pmo rollback --project-dir demo-custom --dry-run
 ```
 
@@ -527,7 +527,7 @@ CLI 不在运行时管理菜单、权限和租户，但会生成让业务模块�
 已有业务项目同步：
 
 1. 在项目根目录确认有 `mango.config.json` 和 `mango.dev.json`。
-2. 首次迁移或升版先执行 `mango pmo upgrade --project-dir . --to 1.3.6 --dry-run` 查看计划。
+2. 首次迁移或升版先执行 `mango pmo upgrade --project-dir . --to 1.3.7 --dry-run` 查看计划。
 3. 确认后执行相同 upgrade 命令，并用 `mango pmo check --project-dir . --locked` 校验项目锁、baseline、项目 Skill 和两套治理 workflow。自定义 workflow 默认不覆盖；只有确认整文件改由 Mango 托管时才加 `--adopt-governance`。
 4. 老项目没有 `business-pmo/architecture-debt-budget.json` 时，先单独合并上述 PMO/workflow 升级 PR，再在只新增预算文件的 PR 中用完整 Reactor 报告执行 checker `--write`；任何业务代码都不能进入这两个 PR。已有预算禁止删除或替换。
 5. 已锁定项目发生文件漂移时执行 `mango pmo sync --project-dir .` 修复当前锁，不用 sync 隐式升版；重复执行应全部显示 workflow `skip`。
@@ -556,6 +556,10 @@ CLI 不在运行时管理菜单、权限和租户，但会生成让业务模块�
 | pnpm 11 首次安装报 `ERR_PNPM_IGNORED_BUILDS`                                  | 旧版 CLI 生成的前端缺少 `pnpm-workspace.yaml` 构建白名单                       | 使用 `@mango/cli@1.0.81` 生成新项目；既有项目把当前 full 模板的 `allowBuilds` 映射合并到业务自有 workspace 配置                                                                                      |
 
 ## 12. 相关文档
+
+### 1.0.93 发布影响
+
+`@mango/cli@1.0.93` 把生成和升级项目锁定到 Mango Maven `1.0.29`、`@mango/pmo@1.3.7` 和本批完整前端版本矩阵。该批次发布结构化且安全清洗的 Notice 展示与分类聚合、Workflow 查看目标元数据、`FilePreviewPanel` 容器填充/内嵌图片查看和 `MangoDialogExpose.bringToFront()`；CLI 命令和现有生成项目入口保持兼容。
 
 ### 1.0.92 发布影响
 

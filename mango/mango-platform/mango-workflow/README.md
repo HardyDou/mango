@@ -520,7 +520,7 @@ mango:
 
 | 返回对象 | 主要字段 | 什么时候用 |
 |----------|----------|------------|
-| `WorkflowBusinessApplyVO` | 申请 ID、业务类型、业务主键、申请标题、流程定义、渲染模式、状态、当前任务、快照引用、变量、扩展信息。 | 申请分页、详情、历史申请和创建申请后回显。 |
+| `WorkflowBusinessApplyVO` | 申请 ID、业务类型、业务主键、申请标题、流程定义、渲染模式、只读 `viewPath`、状态、当前任务、快照引用、变量、扩展信息。 | 申请分页、详情、历史申请和创建申请后回显。 |
 | `WorkflowBusinessApplyProgressVO` | 业务类型、业务主键、申请 ID、流程实例 ID、流程状态、当前任务、当前处理人、认领状态、候选用户/组、发起和结束时间。 | 业务列表展示审批状态和当前处理节点，支持批量查询。 |
 | `WorkflowBusinessProcessVO` | 业务类型、业务主键、申请 ID、流程实例 ID、流程状态和当前任务摘要。 | 业务侧批量查询最新流程状态。 |
 | `WorkflowProcessInstanceVO` | 流程实例 ID、流程定义信息、业务主键、发起人、状态、开始时间。 | 发起流程后的结果回显。 |
@@ -643,6 +643,7 @@ Workflow 参数校验约束统一由 `mango-workflow-api` 的 `XxxApi` 契约声
 | `businessKey` | 业务主键。 |
 | `applyId` | 业务申请 ID。 |
 | `applicantId` / `applicantName` | 原申请人；流程完成、驳回或结束通知使用 `applicantId` 作为接收人。 |
+| `viewPath` | 从业务申请 `formJsonSnapshot.customConfig.viewPath` 派生的只读站内路径；仅安全的应用内绝对路径用于通知目标。 |
 | `completedTaskId` | 刚完成或发起退回的源任务 ID。 |
 | `completedTaskDefinitionKey` | 刚完成或发起退回的源任务定义 key。 |
 | `completedTaskName` | 刚完成或发起退回的源任务名称。 |
@@ -666,6 +667,8 @@ Workflow 参数校验约束统一由 `mango-workflow-api` 的 `XxxApi` 契约声
 `workflow.task.assigned` 按运行时任务发送：任务已有 `assigneeId` 时，只通知该办理人；任务尚未到人时，将候选用户以及 `ROLE:<id>`、`POST:<id>`、`ORG:<id>` 转成同一个任务的 Notice 接收目标，目标中的全部有效成员收到指向同一 `taskId` 的通知。并行或多实例产生多个运行时任务时，每个任务分别发送并使用 `eventId + taskId` 幂等，不能把接收人聚合到第一条任务。流程已经结束或没有可解析接收人时跳过通知；`ORG_LEADER:<id>` 不会降级为全组织通知。
 
 `workflow.process.completed`、`workflow.process.rejected` 和 `workflow.process.ended` 使用业务申请中的 `applicantId` 通知原申请人。事件异步转为 Notice 时会连同 `tenantId`、`appCode`、`realm` 恢复应用上下文，确保角色候选目标按原应用和登录域解析。
+
+Maven `1.0.29` 会把业务申请快照中的 `customConfig.viewPath` 派生到 `WorkflowBusinessApplyVO` 和 `WorkflowEventPayloadVO`。完成、拒绝和结束类 Notice 优先使用安全的应用内 `viewPath` 作为查看目标，并在目标参数中携带对应的通用 Workflow `fallbackTargetKey`；没有配置、配置为外部地址或目标不可访问时，前端回退到已办、我发起等通用页面。该字段只读派生，不新增数据库列，不把任意外部 URL 交给 Shell 路由。
 
 事件消费选择：
 
