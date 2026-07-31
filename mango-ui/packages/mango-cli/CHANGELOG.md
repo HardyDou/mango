@@ -1,11 +1,13 @@
 # @mango/cli Changelog
 
-## 1.0.93 - 2026-07-31
+## 1.0.93 - 2026-08-01
 
 ### Changed
 
 - Lock generated and upgraded business backends to Mango Maven `1.0.29` and the PMO baseline at `1.3.7`.
 - Lock the exact frontend patch matrix published with structured Notice presentation and grouping, Workflow target metadata, `FilePreviewPanel.fitContainer` and `MangoDialogExpose.bringToFront()`.
+- Assign every initialized worktree a stable Maven revision qualifier, use that qualifier consistently for local install and Spring Boot startup, and keep immutable third-party dependencies in the shared Maven cache.
+- Generate business backend POMs with a CI-friendly `${revision}` project version so mutable project artifacts from parallel worktrees resolve to distinct GAVs.
 - Preserve existing CLI command behavior and generated-project entry points.
 
 ### Upgrade Notes
@@ -13,10 +15,12 @@
 - Publish and verify Maven `1.0.29`, `@mango/pmo@1.3.7` and the frontend package matrix before installing `@mango/cli@1.0.93`.
 - Projects inheriting `mango-parent` update their shared `mango.version` to `1.0.29`; projects with another parent import `io.mango:mango-bom:1.0.29`.
 - Run `mango pmo upgrade --project-dir . --to 1.3.7 --sync-shell`, review the managed baseline changes, then run `mango pmo check --project-dir . --locked`.
+- Run `mango workspace init` in each existing worktree before local Maven commands. Upgrade generated backends that still use a fixed project version before relying on parallel worktree isolation.
 
 ### Verification
 
 - `pnpm -C mango-ui --filter @mango/cli test`
+- CLI tests cover stable qualifier allocation, existing workspace upgrades, reactor revision injection and fixed-version fail-closed behavior.
 - `node mango-ui/packages/mango-cli/scripts/check-release-versions.mjs`
 - `MANGO_BACKEND_GATE_VERSION=1.0.29 node mango-ui/packages/mango-cli/scripts/check-generated-backend-gate.mjs`
 - Clean published Maven, CLI and generated-project consumers resolve only the exact release coordinates.

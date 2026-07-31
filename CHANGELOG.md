@@ -1,8 +1,8 @@
 # Mango Changelog
 
-## v2026.07.31-maven-1.0.29-pmo-1.3.7-cli-1.0.93-notice-file-dialog-release - 2026-07-31
+## v2026.08.01-maven-1.0.29-pmo-1.3.7-cli-1.0.93-platform-bootstrap-file-release - 2026-08-01
 
-Status: `PENDING`. Publication is authorized for the source merged through the release preparation PR. The immutable source commit, tree, bundle checksum and completed state-machine manifest will be recorded in the closeout PR after registry and consumer verification.
+Status: `PENDING`. The immutable source commit, tree, bundle checksum and completed state-machine manifest will be recorded in the closeout PR after registry and consumer verification. Registry publication, tag creation and GitHub Release creation require explicit authorization against the final merged source tree.
 
 ### Added
 
@@ -11,27 +11,33 @@ Status: `PENDING`. Publication is authorized for the source merged through the r
 - Add exact unread Notice category statistics and paging filters for approval, system and business messages; the top bell keeps individual messages through 10 unread items and switches to non-empty category groups above 10.
 - Add the public `MangoDialogExpose.bringToFront()` contract and automatic pointer-based dialog promotion across the header, content and footer.
 - Add the optional `FilePreviewPanel.fitContainer` mode and make image preview use the embedded Element Plus viewer directly inside the preview stage.
+- Add the Bootstrap lifecycle that separates initialization from Runtime with generation fencing, apply/finalize/abort phases, Flyway expand/finalize handling, Resource reconciliation and build-time cold baseline artifacts.
+- Add File ZIP package size control with automatic proportional allocation or per-entry manual targets, preserving a single archive and returning achieved-size details when a target cannot be reached.
 
 ### Fixed
 
 - Route Notice primary actions through the registered Shell target, preserve safe fallback navigation, and derive Workflow read-only targets from `customConfig.viewPath` when available.
 - Keep Workflow completion, rejection and ended notifications navigable when a custom view path is missing or invalid by falling back to the corresponding generic task or application page.
+- Keep managed File asset content and storage locations stable across bootstrap reentry, and fail closed when packaged resource content changes unexpectedly.
+
 ### Changed
 
 - Advance the generated-project compatibility locks to Maven `1.0.29`, PMO `1.3.7`, CLI `1.0.93` and the exact frontend package matrix below.
+- Isolate mutable Maven project outputs between worktrees by assigning each Mango workspace a stable revision qualifier while continuing to share immutable third-party dependencies.
+- Tighten PMO engineering rules for rewrite semantics, current-rule precedence, Lombok boundaries and valid test ownership, and ship the synchronized business baseline in `@mango/pmo@1.3.7`.
 
 ### Versions
 
 | Component | Previous | Release | Compatibility |
 | --- | ---: | ---: | --- |
-| Mango Maven non-app backend and docs bundle | `1.0.28` | `1.0.29` | Patch release; Parent and BOM consumers upgrade as one set. |
+| Mango Maven non-app backend and docs bundle | `1.0.28` | `1.0.29` | Patch release adding Bootstrap lifecycle, cold baseline and File package controls; Parent and BOM consumers upgrade as one set. |
 | `@mango/common` | `1.0.22` | `1.0.23` | Adds a typed dialog instance method; existing props and default behavior remain compatible. |
 | `@mango/file` | `1.0.30` | `1.0.31` | Adds opt-in container filling; embedded image viewing becomes the default preview interaction. |
 | `@mango/notice` | `1.0.34` | `1.0.35` | Adds structured/sanitized presentation, category grouping and unified navigation. |
 | `@mango/admin-shell` | `1.0.54` | `1.0.55` | Handles Notice category and primary-action navigation without changing menu contracts. |
 | `@mango/workflow` | `1.0.36` | `1.0.37` | Aligns the frontend dependency matrix with Workflow/Notice target metadata from Maven `1.0.29`. |
-| `@mango/pmo` | `1.3.6` | `1.3.7` | Packages the current PMO rules, scope checks and generated-project baseline. |
-| `@mango/cli` | `1.0.92` | `1.0.93` | Locks Maven `1.0.29` and all affected frontend packages in this batch. |
+| `@mango/pmo` | `1.3.6` | `1.3.7` | Packages the current engineering rules, scope checks and synchronized generated-project baseline. |
+| `@mango/cli` | `1.0.92` | `1.0.93` | Locks this batch and isolates each workspace's mutable Maven project revision. |
 | Other affected frontend packages | previous release matrix | exact versions below | Patch republish keeps fixed inter-package dependencies aligned. |
 
 ### Published Packages
@@ -44,15 +50,18 @@ Status: `PENDING`. Publication is authorized for the source merged through the r
 | 4 | `@mango/admin-pages`, `@mango/auth`, `@mango/calendar`, `@mango/cms`, `@mango/grid-layout`, `@mango/grid-widgets`, `@mango/home`, `@mango/job`, `@mango/link`, `@mango/numgen`, `@mango/payment`, `@mango/rbac`, `@mango/site-shell`, `@mango/system`, `@mango/template`, `@mango/workflow-business-example` | `1.0.30`, `1.0.23`, `1.0.31`, `1.0.20`, `1.0.14`, `1.0.20`, `1.0.12`, `1.0.23`, `1.0.17`, `1.0.31`, `1.0.23`, `1.0.21`, `1.0.10`, `1.0.29`, `1.0.31`, `1.0.36` |
 | 5 | `@mango/admin-shell`, `@mango/admin` | `1.0.55`, `1.0.60` |
 | 6 | `@mango/cli` | `1.0.93` |
-| 7 | Git tag and GitHub Release | `v2026.07.31-maven-1.0.29-pmo-1.3.7-cli-1.0.93-notice-file-dialog-release` |
+| 7 | Git tag and GitHub Release | `v2026.08.01-maven-1.0.29-pmo-1.3.7-cli-1.0.93-platform-bootstrap-file-release` |
 
 ### Upgrade Notes
 
 1. Upgrade all Mango backend dependencies together. Parent consumers set `mango.version` to `1.0.29`; projects with another parent import `io.mango:mango-bom:1.0.29` and omit versions from BOM-managed Mango dependencies.
 2. Upgrade the frontend packages to the exact versions in this release. Aggregate consumers use `@mango/admin@1.0.60`; direct consumers align their imported packages explicitly.
 3. Publish and upgrade `@mango/pmo@1.3.7` before installing `@mango/cli@1.0.93`, then run `mango pmo upgrade --project-dir . --to 1.3.7 --sync-shell` and verify the locked baseline.
-4. Existing databases upgrade in place. Notice categories are derived from existing business-type groups and require no schema migration. Verify the intended `bizGroup`, registered target route and Workflow `customConfig.viewPath` for business notifications.
-5. `FilePreviewPanel.fitContainer` is opt-in, but image preview now opens as an embedded viewer by default; verify any custom viewer CSS after upgrading Element Plus. Existing `MangoDialog` callers are unchanged unless they use the new `bringToFront()` instance method.
+4. Existing databases upgrade in place. New installations and controlled upgrades use the Bootstrap plan/apply/finalize lifecycle; review module order, cold baseline availability, Resource modes and finalize/abort procedures before enabling it in an existing deployment.
+5. File package size targets are best-effort results rather than implicit errors. Callers that adopt `packageFilesWithSizeControl` must inspect `packageTargetAchieved`, actual archive bytes and per-entry results; existing `packageFiles` callers are unchanged.
+6. Notice categories are derived from existing business-type groups and require no schema migration. Verify the intended `bizGroup`, registered target route and Workflow `customConfig.viewPath` for business notifications.
+7. `FilePreviewPanel.fitContainer` is opt-in, but image preview now opens as an embedded viewer by default; verify any custom viewer CSS after upgrading Element Plus. Existing `MangoDialog` callers are unchanged unless they use the new `bringToFront()` instance method.
+8. Run `mango workspace init` in every existing worktree before the next local Maven install or backend start. The CLI preserves third-party cache reuse but assigns each workspace a distinct project revision; generated backends that still use fixed project versions must be upgraded to the CI-friendly `${revision}` template first.
 
 ### Verification
 
@@ -60,7 +69,8 @@ Status: `PENDING`. Publication is authorized for the source merged through the r
 - `node mango-ui/packages/mango-cli/scripts/check-release-versions.mjs`
 - `MANGO_BACKEND_GATE_VERSION=1.0.29 node mango-ui/packages/mango-cli/scripts/check-generated-backend-gate.mjs`
 - `pnpm -C mango-ui admin:styles:check && pnpm -C mango-ui admin:module-styles:check`
-- Notice, Common, File, Workflow, Admin Shell, Maven Reactor, affected frontend builds, package exports, clean consumers and capability-documentation gates must pass before closeout.
+- Bootstrap lifecycle and performance suites, cold-baseline generation, File package-size API/controller/core tests, and managed-asset reentry tests must pass before publication.
+- CLI workspace revision tests, PMO projection checks, Notice, Common, frontend File, Workflow, Admin Shell, Maven Reactor, affected frontend builds, package exports, clean consumers and capability-documentation gates must pass before closeout.
 - The release preparation PR must pass all required checks on the exact source tree before immutable publication.
 - The release state machine will record publish/consume registry back-checks, clean consumer builds, tag, GitHub Release and documentation evidence.
 
