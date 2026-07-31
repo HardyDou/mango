@@ -2,7 +2,7 @@
 
 ## v2026.08.01-maven-1.0.29-pmo-1.3.7-cli-1.0.93-platform-bootstrap-file-release - 2026-08-01
 
-Status: `PENDING`. The immutable source commit, tree, bundle checksum and completed state-machine manifest will be recorded in the closeout PR after registry and consumer verification. Registry publication, tag creation and GitHub Release creation require explicit authorization against the final merged source tree.
+Status: `PUBLISHED_AND_VERIFIED`. This mixed release was published from source commit `840bd4de116de53d89de208146aef8de5d0cd2c9` and tree `8093ccc6d31ac10bc52cfb02cf570a0968619d4b`. The exact-source bundle SHA-256 is `d9e11790fcf1b66c771bc01f100d731660a7bd37c46b7bf9146da8b2d82ce11c`. All 188 Maven coordinates at `1.0.29` and all 24 npm packages below resolve from the configured publish and consume registries. The tag and GitHub Release are `CREATED_AND_VERIFIED` and point to the reviewed source commit; the versioned documentation snapshot is published at the same tag path. The completed read-only manifest at `.runtime/releases-final-verify/1.0.29/manifest.json` has SHA-256 `37c54aad85dc8ac2708892b7ade2e3c72ccbeb67a7a67e53fe82f41a0394f27a` and records all 17 release states as passed. The original and recovery manifests are preserved with SHA-256 values `c71d762d71b4bba6218b954525d791e608085b9b85fb3e63e389e42e0a9ee829`, `e863fd840cb7f7220fd0afec4f6e2df191f92b55f6c6ce652b541ed77136a774` and `c475dfe44e013d8fc768e3fd816dac5c42ac6e4fb5c5721c7c7f69c960cc7cde`; they retain the malformed initial tag adapter, Maven output-buffer/docs-bundle recovery, and the post-publication verifier that incorrectly required optional `home` and `site-shell` packages as direct full-preset dependencies. No passed immutable artifact was republished during recovery.
 
 ### Added
 
@@ -42,15 +42,15 @@ Status: `PENDING`. The immutable source commit, tree, bundle checksum and comple
 
 ### Published Packages
 
-| Order | Target | Version |
-| ---: | --- | --- |
-| 1 | Maven non-app Reactor including `io.mango:*` and `io.mango:mango-docs-bundle` | `1.0.29` |
-| 2 | `@mango/pmo` | `1.3.7` |
-| 3 | `@mango/common`, `@mango/file`, `@mango/notice`, `@mango/workflow` | `1.0.23`, `1.0.31`, `1.0.35`, `1.0.37` |
-| 4 | `@mango/admin-pages`, `@mango/auth`, `@mango/calendar`, `@mango/cms`, `@mango/grid-layout`, `@mango/grid-widgets`, `@mango/home`, `@mango/job`, `@mango/link`, `@mango/numgen`, `@mango/payment`, `@mango/rbac`, `@mango/site-shell`, `@mango/system`, `@mango/template`, `@mango/workflow-business-example` | `1.0.30`, `1.0.23`, `1.0.31`, `1.0.20`, `1.0.14`, `1.0.20`, `1.0.12`, `1.0.23`, `1.0.17`, `1.0.31`, `1.0.23`, `1.0.21`, `1.0.10`, `1.0.29`, `1.0.31`, `1.0.36` |
-| 5 | `@mango/admin-shell`, `@mango/admin` | `1.0.55`, `1.0.60` |
-| 6 | `@mango/cli` | `1.0.93` |
-| 7 | Git tag and GitHub Release | `v2026.08.01-maven-1.0.29-pmo-1.3.7-cli-1.0.93-platform-bootstrap-file-release` |
+| Order | Target | Version | Status |
+| ---: | --- | --- | --- |
+| 1 | Maven non-app Reactor including `io.mango:*` and `io.mango:mango-docs-bundle` | `1.0.29` | `PUBLISHED_AND_VERIFIED` |
+| 2 | `@mango/pmo` | `1.3.7` | `PUBLISHED_AND_VERIFIED` |
+| 3 | `@mango/common`, `@mango/file`, `@mango/notice`, `@mango/workflow` | `1.0.23`, `1.0.31`, `1.0.35`, `1.0.37` | `PUBLISHED_AND_VERIFIED` |
+| 4 | `@mango/admin-pages`, `@mango/auth`, `@mango/calendar`, `@mango/cms`, `@mango/grid-layout`, `@mango/grid-widgets`, `@mango/home`, `@mango/job`, `@mango/link`, `@mango/numgen`, `@mango/payment`, `@mango/rbac`, `@mango/site-shell`, `@mango/system`, `@mango/template`, `@mango/workflow-business-example` | `1.0.30`, `1.0.23`, `1.0.31`, `1.0.20`, `1.0.14`, `1.0.20`, `1.0.12`, `1.0.23`, `1.0.17`, `1.0.31`, `1.0.23`, `1.0.21`, `1.0.10`, `1.0.29`, `1.0.31`, `1.0.36` | `PUBLISHED_AND_VERIFIED` |
+| 5 | `@mango/admin-shell`, `@mango/admin` | `1.0.55`, `1.0.60` | `PUBLISHED_AND_VERIFIED` |
+| 6 | `@mango/cli` | `1.0.93` | `PUBLISHED_AND_VERIFIED` |
+| 7 | Git tag and GitHub Release | `v2026.08.01-maven-1.0.29-pmo-1.3.7-cli-1.0.93-platform-bootstrap-file-release` | `CREATED_AND_VERIFIED` |
 
 ### Upgrade Notes
 
@@ -65,14 +65,12 @@ Status: `PENDING`. The immutable source commit, tree, bundle checksum and comple
 
 ### Verification
 
-- `pnpm -C mango-ui release:impact --base=v2026.07.29-maven-1.0.28-cli-1.0.92-dialog-workflow-job-release --head=HEAD`
-- `node mango-ui/packages/mango-cli/scripts/check-release-versions.mjs`
-- `MANGO_BACKEND_GATE_VERSION=1.0.29 node mango-ui/packages/mango-cli/scripts/check-generated-backend-gate.mjs`
-- `pnpm -C mango-ui admin:styles:check && pnpm -C mango-ui admin:module-styles:check`
-- Bootstrap lifecycle and performance suites, cold-baseline generation, File package-size API/controller/core tests, and managed-asset reentry tests must pass before publication.
-- CLI workspace revision tests, PMO projection checks, Notice, Common, frontend File, Workflow, Admin Shell, Maven Reactor, affected frontend builds, package exports, clean consumers and capability-documentation gates must pass before closeout.
-- The release preparation PR must pass all required checks on the exact source tree before immutable publication.
-- The release state machine will record publish/consume registry back-checks, clean consumer builds, tag, GitHub Release and documentation evidence.
+- Release preparation PR #665 passed `frontend-pr-quality`, `pmo-doc-check` and `pr-contract-check` on the exact source tree before publication.
+- The complete 216-module Maven Reactor, Architecture Verification, static analysis with zero new issues, `pnpm -C mango-ui check:full`, package exports, release-note checks and registry doctor passed before publication.
+- The completed read-only manifest verifies all 188 Maven coordinates and all 24 npm coordinates from both publish and consume repositories, plus the CLI release lock, tag and GitHub Release.
+- A clean consumer installed `@mango/cli@1.0.93` from the consume registry, generated the Maven `1.0.29` / PMO `1.3.7` / frontend compatibility matrix, passed `mango pmo check --locked`, installed frontend dependencies from Nexus, and passed typecheck and production build.
+- Documentation snapshot PR #666 passed all required checks; GitHub Pages deployed the tag-addressed snapshot and both Latest and versioned URLs return HTTP 200.
+- The canonical final verification manifest at `.runtime/releases-final-verify/1.0.29/manifest.json` records all 17 release states as passed with no pending or failed required state.
 
 ## v2026.07.29-maven-1.0.28-cli-1.0.92-dialog-workflow-job-release - 2026-07-29
 
