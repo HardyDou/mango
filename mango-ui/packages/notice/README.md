@@ -18,7 +18,7 @@
 | ------------ | ------------------------------------------------------------------------- |
 | 通知管理页面 | 维护业务类型、配置版本、EXACT/TAG/AUTO 路由、渠道账号、任务、记录和重试。 |
 | 站内信页面   | 查询站内信、未读数、详情、已读和删除。                                    |
-| 顶部铃铛     | 在 admin shell 顶部展示未读提醒和最近消息。                               |
+| 顶部铃铛     | 未读不超过 10 条时展示最近消息；超过 10 条时按审批、系统、业务分类聚合。  |
 | 消息中心     | 展示当前用户站内信列表。                                                  |
 | 接收设置     | 用户维护接收账户、渠道偏好和提醒方式。                                    |
 | 实时提醒     | 订阅通知实时事件，触发弹窗、桌面通知、声音或语音。                        |
@@ -172,29 +172,29 @@ stop();
 
 ### 7.3 常用 API
 
-| 分组       | 函数                                                                                                                  |
-| ---------- | --------------------------------------------------------------------------------------------------------------------- |
-| 发送       | `sendNotice`、`sendSiteNotice`                                                                                        |
-| 接收人辅助 | `getIdentityUsers`、`getNoticeOrgTree`、`getNoticePosts`、`getNoticeRoles`                                            |
-| 业务类型   | `getBusinessTypes`、`createBusinessType`、`updateBusinessType`、`deleteBusinessType`                                  |
-| 配置版本   | `getBusinessConfigVersions`、`saveBusinessConfigDraft`、`publishBusinessConfigDraft`、`activateBusinessConfigVersion` |
-| 渠道模板   | `getChannelTemplates`、`saveChannelTemplate`、`publishChannelTemplate`                                                |
-| 渠道配置   | `getChannelConfigs`、`saveChannelConfig`、`deleteChannelConfig`                                                       |
-| 路由标签   | `getNoticeRouteTags`、`saveNoticeRouteTag`、`deleteNoticeRouteTag`、`getNoticeChannelReferenceImpact`                 |
-| 任务和记录 | `getNoticeTasks`、`getSendRecords`、`retrySendRecord`、`markSendRecordManualSuccess`、`ignoreSendRecord`              |
-| 站内信     | `getMySiteMessages`、`getMySiteMessageDetail`、`getMyUnreadCount`、`markMySiteMessageRead`、`deleteMySiteMessage`     |
-| 接收设置   | `getRecipientAccounts`、`saveRecipientAccount`、`getReceivePreferences`、`saveReceivePreference`                      |
-| 个人提醒   | `getNoticeReminderSetting`、`saveNoticeReminderSetting`                                                               |
+| 分组       | 函数                                                                                                                                          |
+| ---------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| 发送       | `sendNotice`、`sendSiteNotice`                                                                                                                |
+| 接收人辅助 | `getIdentityUsers`、`getNoticeOrgTree`、`getNoticePosts`、`getNoticeRoles`                                                                    |
+| 业务类型   | `getBusinessTypes`、`createBusinessType`、`updateBusinessType`、`deleteBusinessType`                                                          |
+| 配置版本   | `getBusinessConfigVersions`、`saveBusinessConfigDraft`、`publishBusinessConfigDraft`、`activateBusinessConfigVersion`                         |
+| 渠道模板   | `getChannelTemplates`、`saveChannelTemplate`、`publishChannelTemplate`                                                                        |
+| 渠道配置   | `getChannelConfigs`、`saveChannelConfig`、`deleteChannelConfig`                                                                               |
+| 路由标签   | `getNoticeRouteTags`、`saveNoticeRouteTag`、`deleteNoticeRouteTag`、`getNoticeChannelReferenceImpact`                                         |
+| 任务和记录 | `getNoticeTasks`、`getSendRecords`、`retrySendRecord`、`markSendRecordManualSuccess`、`ignoreSendRecord`                                      |
+| 站内信     | `getMySiteMessages`、`getMySiteMessageDetail`、`getMyUnreadCount`、`getMyUnreadCategoryStats`、`markMySiteMessageRead`、`deleteMySiteMessage` |
+| 接收设置   | `getRecipientAccounts`、`saveRecipientAccount`、`getReceivePreferences`、`saveReceivePreference`                                              |
+| 个人提醒   | `getNoticeReminderSetting`、`saveNoticeReminderSetting`                                                                                       |
 
 个人消息和接收设置接口使用权限码完成资源校验；接收设置展示业务类型还依赖只读权限 `notice:business:view`。这些最小权限由后端 Notice 菜单资源绑定到内置 `ROLE_LOGIN`，所有已登录用户无需额外业务角色即可使用；`ROLE_ANONYMOUS` 不包含个人消息或 Realtime 建连权限。
 
-工作台消息卡的“查看全部”默认进入 `/message-center/site-message`。消息中心内部的接收配置和系统公告入口分别使用稳定路径 `/message-center/receive-setting` 和 `/message-center/announcement`；旧站内信路径 `/notice/site-message` 和旧接收配置路径 `/notice/receive-setting` 仅作为隐藏兼容入口保留。业务消息携带的其它 `targetKey` 只有在宿主真实注册同名 Vue 路由时才执行跳转，未注册时显示“目标未注册或当前无权访问”。
+工作台消息卡的“查看全部”默认进入 `/message-center/site-message`。消息中心内部的接收配置和系统公告入口分别使用稳定路径 `/message-center/receive-setting` 和 `/message-center/announcement`；旧站内信路径 `/notice/site-message` 和旧接收配置路径 `/notice/receive-setting` 仅作为隐藏兼容入口保留。业务消息携带的其它 `targetKey` 可以是宿主已注册的命名 Vue 路由，也可以是经过校验且当前用户可访问的应用内绝对路径；未注册、越权或不安全的目标会显示“目标未注册或当前无权访问”。
 
 ### 7.4 站内信动作接入
 
 站内信动作由业务后端发送时定义，前端只负责展示按钮、把点击交给命名目标或后端动作接口处理。
 
-按钮名称来自业务后端的 `messageActions[].actionLabel`。前端不会根据 `bizType` 自行生成按钮名称。
+详情弹窗的主按钮会按消息场景生成用户可理解的名称，例如“去审批”“去领取”“查看申请”“查看资料”；没有匹配场景时回退到业务后端的 `messageActions[].actionLabel`。
 
 #### 7.4.1 动作类型
 
@@ -204,7 +204,7 @@ stop();
 | 进入自定义流程 | `interactionType=ROUTE`，`target.targetType=FLOW`  | 打开流程处理入口或触发 `interaction` 给宿主处理     | 否                  |
 | 提交后台命令   | `interactionType=EVENT`，`eventType` 必填          | 调用动作接口，提交隐藏 `input`                      | 是，`FAILED` 可重试 |
 
-`targetKey` 是命名目标键，不是页面地址。业务前端必须提前注册这个名称，或者在宿主的 `interaction` 事件里处理它。
+`targetKey` 支持命名目标键和应用内绝对路径。命名目标必须提前注册或由宿主的 `interaction` 事件处理；绝对路径必须以单个 `/` 开头，通过路由解析且当前用户可访问，协议地址、协议相对地址、反斜杠和控制字符会被拒绝。
 
 #### 7.4.2 隐藏业务参数
 
@@ -241,7 +241,7 @@ stop();
 
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
-import { NoticeClientMessageCenter } from '@mango/notice/client';
+import { NoticeClientMessageCenter, resolveNoticeTargetLocation } from '@mango/notice/client';
 import type { NoticeSiteMessage, NoticeSiteMessageAction } from '@mango/notice';
 
 const router = useRouter();
@@ -255,19 +255,13 @@ async function openNoticeTarget(payload: {
 }) {
   if (!payload.targetKey) return;
 
-  await router.push({
-    name: payload.targetKey,
-    query: Object.fromEntries(
-      Object.entries(payload.params || {})
-        .filter(([, value]) => value !== undefined && value !== null)
-        .map(([key, value]) => [key, String(value)]),
-    ),
-  });
+  const location = resolveNoticeTargetLocation(router, payload.targetKey, payload.params);
+  if (location) await router.push(location);
 }
 </script>
 ```
 
-宿主可以把 `targetKey` 映射到本地页面，也可以通过微前端运行时把它分发给对应子应用。通知组件只传命名目标和参数，不关心目标属于哪个子应用。
+宿主可以把命名 `targetKey` 映射到本地页面，也可以通过微前端运行时把它分发给对应子应用；应用内绝对路径则由路由解析和权限校验后跳转。
 
 #### 7.4.4 ROUTE 处理
 
@@ -275,7 +269,7 @@ async function openNoticeTarget(payload: {
 
 业务前端需要保证：
 
-1. `targetKey` 对应的页面名称已注册。
+1. `targetKey` 对应的页面名称已注册，或应用内绝对路径能够解析且当前用户可访问。
 2. 页面能从 `params` 读取业务 ID 或对象 ID。
 3. 页面进入后用真实接口加载业务数据，并按当前用户权限判断是否可操作。
 4. 页面关闭或返回后，站内信按钮仍可再次进入。
@@ -322,13 +316,40 @@ executeMySiteMessageAction(messageId, actionCode, input);
 
 #### 7.4.7 常见问题
 
-| 现象                         | 原因                                                 | 处理方式                                   |
-| ---------------------------- | ---------------------------------------------------- | ------------------------------------------ |
-| 按钮不显示                   | 后端没有传 `messageActions`，或动作状态为 `DISABLED` | 检查站内信详情接口返回的 `actions`。       |
-| 按钮名称不对                 | 后端 `actionLabel` 定义不符合业务语义                | 业务发送消息时修正 `actionLabel`。         |
-| 提示目标未注册或当前无权访问 | `targetKey` 没有注册，或当前用户不能进入目标页面     | 注册命名目标，或补齐菜单/权限。            |
-| 点击 EVENT 后按钮灰掉        | 正常行为，命令已提交并处于 `PROCESSING`              | 等业务订阅方回写成功或失败。               |
-| 业务 ID 没在弹窗里显示       | 正常行为，业务上下文是隐藏参数                       | 在目标业务页面展示需要给用户看的业务信息。 |
+| 现象                         | 原因                                                     | 处理方式                                   |
+| ---------------------------- | -------------------------------------------------------- | ------------------------------------------ |
+| 按钮不显示                   | 后端没有传 `messageActions`，或动作状态为 `DISABLED`     | 检查站内信详情接口返回的 `actions`。       |
+| 按钮名称不对                 | 消息场景无法识别，且后端 `actionLabel` 不符合业务语义    | 补齐消息场景，或修正 `actionLabel`。       |
+| 提示目标未注册或当前无权访问 | `targetKey` 未注册、路径不安全或当前用户不能进入目标页面 | 注册命名目标，或修正路径、菜单和权限。     |
+| 点击 EVENT 后按钮灰掉        | 正常行为，命令已提交并处于 `PROCESSING`                  | 等业务订阅方回写成功或失败。               |
+| 业务 ID 没在弹窗里显示       | 正常行为，业务上下文是隐藏参数                           | 在目标业务页面展示需要给用户看的业务信息。 |
+
+### 7.5 消息展示与未读分类
+
+`@mango/notice@1.0.35` 使用同一份展示模型承载消息中心详情、顶部铃铛单条消息和右上角实时提醒：
+
+- 详情标题只显示用户可理解的消息类型。
+- 详情正文只保留 `消息类型: value`、`消息内容: value`、`消息时间: value`。
+- 底部右侧只保留“关闭”和一个按消息场景生成的主操作，例如“去审批”“去领取”“查看申请”“查看资料”。
+- 右上角实时提醒使用同一组字段，并提供“点击查看”进入完整详情。
+- 消息类型和内容允许基础富文本；渲染前会保留 `a`、`strong`、`em`、`p`、`br`、列表等文本格式标签，移除脚本、事件属性、内联样式和危险链接协议，再通过 `v-html` 或 `innerHTML` 展示。
+
+顶部铃铛的未读阈值固定为 10：
+
+| 未读数量 | 展示方式                                          | 点击结果                                                                  |
+| -------- | ------------------------------------------------- | ------------------------------------------------------------------------- |
+| `0-10`   | 按单条消息展示                                    | 打开对应消息详情。                                                        |
+| `>10`    | 只展示数量大于 0 的审批类、系统通知、业务通知分组 | 进入 `/message-center/site-message?category=<CATEGORY>&unreadOnly=true`。 |
+
+分类由后端根据业务类型配置的 `bizGroup` 统一计算，统计和分页筛选使用同一口径：
+
+| 分类       | `category` | 典型业务组                |
+| ---------- | ---------- | ------------------------- |
+| 审批类消息 | `APPROVAL` | `WORKFLOW`                |
+| 系统通知   | `SYSTEM`   | `AUTH`、`IDENTITY`、`JOB` |
+| 业务通知   | `BUSINESS` | 其它业务组                |
+
+`getMyUnreadCategoryStats()` 调用 `GET /notice/site/my/unread-category-stats`；`getMySiteMessages()` 支持 `category` 和 `unreadOnly` 查询参数。分类项为 0 时铃铛不展示该分组，统计失败时不伪造本地数量。
 
 ## 8. 数据与初始化
 
@@ -384,6 +405,8 @@ executeMySiteMessageAction(messageId, actionCode, input);
 - [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)
 
 ## 12. 变更影响记录
+
+- `@mango/notice@1.0.35` 发布结构化消息详情和实时提醒、安全富文本展示、上下文主操作、未读超过 10 条时的审批/系统/业务分类聚合，以及统一的目标导航与安全降级。新增未读分类统计和分页分类参数；既有站内信 ID、页面 key、权限码、租户边界和历史消息数据保持兼容。
 
 - `@mango/notice@1.0.31` 将工作台消息卡默认入口对齐到 `/message-center/site-message`，并把旧路径
   `/notice/site-message` 注册为隐藏兼容入口。站内信 API、页面 key、权限和租户语义保持不变。

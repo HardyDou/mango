@@ -215,6 +215,8 @@ Shell 顶部通知铃铛只负责展示站内消息入口和跳转，不定义�
 
 铃铛的“查看全部”和“接收配置”会从 Shell 当前菜单树按 `menuCode` 解析真实路径，再交给通配 `ShellMenu` 路由挂载页面；动态菜单编码不是 Vue Router 命名路由。接收配置由 Notice 页面注册表声明，规范路由为 `/message-center/receive-setting`，旧 `/notice/receive-setting` 只保留为隐藏兼容路由。目标菜单或页面不存在时，Shell 显示不可访问提示，不向 Vue 错误处理器抛出未匹配命名路由异常。
 
+`@mango/admin-shell@1.0.55` 承接 Notice 的统一交互载荷：未读超过 10 条时，铃铛分类项进入消息中心对应的 `category + unreadOnly=true` 筛选；单条消息和详情主操作优先使用已注册的安全目标路径或命名目标，失败时再尝试 `fallbackTargetKey`。Shell 只使用当前动态路由表执行跳转，不把通知数据当作任意外部 URL，也不改变菜单、页面 key 或权限契约。
+
 ### Menu Contract
 
 Shell 只消费后端授权菜单。菜单 `component` 会归一化后匹配 `@mango/admin-pages` 注册的页面 key；匹配失败时显示 404，不会自动推断业务包路径。后端菜单、前端注册 key、能力开关必须保持一致。
@@ -323,6 +325,8 @@ Shell 会注册 unauthorized handler 并清理 session 后跳转 `/login`。检�
 - [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)
 
 ## 11. 变更影响记录
+
+- `@mango/admin-shell@1.0.55` 对齐 `@mango/notice@1.0.35`，承接未读分类筛选、结构化详情主操作和安全 fallback 导航。菜单加载、页面注册、登录态、权限、租户和其它运行时路由语义保持不变。
 
 - `@mango/admin-shell@1.0.51` 对齐 `@mango/notice@1.0.31`，使默认工作台消息卡进入当前消息中心路由，
   同时保留旧站内信路径兼容入口。Shell 菜单加载、权限、租户和其它运行时路由语义保持不变。

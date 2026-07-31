@@ -254,3 +254,6 @@ pnpm -F @mango/admin-shell build
 ## 2026-07-27 Bootstrap 生命周期影响
 
 - Mango 将租户前置基线、启动前必需 Resource 和最终租户对账迁入独立 Bootstrap，租户、字典、组织、用户和系统配置的公开 API、数据模型、权限及隔离语义不变。业务升级顺序调整为先完成 `bootstrap apply` 与 `bootstrap verify`，再启动 Runtime；基础数据为空时按 `TENANT_PREREQUISITES -> RESOURCE_REQUIRED -> TENANT_RECONCILIATION` 步骤回执定位。Runtime 只校验成功回执，不再隐式补跑初始化，也不能通过延长 readiness 窗口等待这些数据形成。
+## 2026-07-31 结构化通知发布影响
+
+- `v2026.07.31-maven-1.0.29-pmo-1.3.7-cli-1.0.93-notice-file-dialog-release` 复用已有通知业务类型、工作流配置和文件记录，不新增数据库表或 migration，也不修改租户、字典、组织、用户、系统配置与 Resource 声明数据。通知分类统计按当前用户和租户读取既有站内信，固定依赖升版不改变基础数据查询 API、初始化顺序、租户隔离或本场景排障步骤。

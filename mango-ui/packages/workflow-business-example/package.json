@@ -1,6 +1,6 @@
 {
   "name": "@mango/workflow-business-example",
-  "version": "1.0.35",
+  "version": "1.0.36",
   "private": false,
   "type": "module",
   "main": "./dist/index.js",
@@ -18,7 +18,7 @@
   },
   "scripts": {
     "build": "vite build && node ../../scripts/generate-package-types.mjs",
-    "test": "vitest run --config vitest.config.ts src/__tests__/*.spec.ts"
+    "test": "vitest run --config vitest.config.ts src/__tests__"
   },
   "files": [
     "dist",
@@ -26,8 +26,8 @@
     "package.json"
   ],
   "dependencies": {
-    "@mango/admin-pages": "workspace:1.0.29",
-    "@mango/workflow": "workspace:1.0.36"
+    "@mango/admin-pages": "workspace:1.0.30",
+    "@mango/workflow": "workspace:1.0.37"
   },
   "peerDependencies": {
     "element-plus": ">=2.14.1 <3",
