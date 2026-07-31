@@ -46,6 +46,14 @@
 - 业务模块需要预览、下载、归档、权限校验、派生文件处理时，必须通过 `mango-file` 按文件 ID 操作。
 - 文件访问地址属于运行时派生数据，不能写入业务实体、业务扩展字段、JSON 配置或缓存作为长期数据。
 
+## 5.2 Lombok 与机械代码
+
+- 普通 JavaBean 的机械 getter、setter 优先使用 Lombok `@Getter`、`@Setter`，禁止无业务语义地重复手写。
+- Spring 构造器注入优先使用 `final` 字段和 `@RequiredArgsConstructor`；无参或全参构造器只在框架约束或模型语义确有需要时使用对应 Lombok 注解。
+- 禁止为了减少注解无差别使用 `@Data`，尤其不得因此意外改变 Entity、聚合根或值对象的 `equals`、`hashCode`、`toString` 和可变性语义。
+- getter、setter 或构造器包含校验、归一化、防御性复制、权限控制、懒加载、特殊可见性或框架要求时允许手写；必须能指出 Lombok 生成代码无法表达的真实语义。
+- record、枚举和不可变值类型优先遵循语言自身语义，不得为了使用 Lombok 改写本来更合适的结构。
+
 ## 6. 质量要求
 
 - 提交前统一执行 `mvn verify`；Java/Spring 架构红线由构建生命周期自动执行。
@@ -63,6 +71,7 @@
   - `@author`、Javadoc 首句句号等形式规则不作为 Mango 质量规则。
 - 明显重复代码必须抽取。
 - 明显无用代码必须删除。
+- 新增或修改 Java 类型时必须检查机械 getter、setter 和构造器是否可由合适的 Lombok 注解表达；保留手写实现时说明其额外语义。
 
 ## 7. 禁止事项
 

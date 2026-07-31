@@ -7,7 +7,7 @@
     <parent>
         <groupId>{{groupId}}</groupId>
         <artifactId>{{moduleKebab}}</artifactId>
-        <version>{{projectVersion}}</version>
+        <version>${revision}</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -17,7 +17,7 @@
         <dependency>
             <groupId>{{groupId}}</groupId>
             <artifactId>{{moduleKebab}}-api</artifactId>
-            <version>{{projectVersion}}</version>
+            <version>${revision}</version>
         </dependency>
         <dependency>
             <groupId>io.mango.infra.feign</groupId>

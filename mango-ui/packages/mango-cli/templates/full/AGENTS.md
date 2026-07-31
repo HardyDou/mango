@@ -81,6 +81,6 @@ mango workspace status
 mango dev start
 ```
 
-启动前必须确认并在交付记录中报告 `.mango/dev-workspace.env` 中的 `MANGO_WORKSPACE_ID`、`MANGO_BACKEND_PORT`、`MANGO_FRONTEND_PORT`、`MANGO_DB_NAME`。不要交叉使用其它 worktree 的服务、端口或数据库。
+启动前必须确认并在交付记录中报告 `.mango/dev-workspace.env` 中的 `MANGO_WORKSPACE_ID`、`MANGO_MAVEN_REVISION_QUALIFIER`、`MANGO_BACKEND_PORT`、`MANGO_FRONTEND_PORT`、`MANGO_DB_NAME`。不要交叉使用其它 worktree 的 Maven revision、服务、端口或数据库。
 
 不要用 `java -jar` 或手写 Maven reactor 命令作为开发启动入口；这些细节由 Mango CLI 封装。

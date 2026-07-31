@@ -36,11 +36,23 @@
 - 新工作区首次生成 `.mango/dev-workspace.env` 时，禁止选择本机已存在的 `MANGO_DB_NAME`，避免误复用旧库数据。
 - 新建 Git worktree 后必须执行 `mango workspace init`。
 
+### 2.1 Worktree 项目产出隔离
+
+- 同一项目的多个 worktree 必须隔离项目自产出的可变内容，包括构建结果、生成代码、本地安装制品、测试过程数据和运行态文件；产出目录及其路径必须归属于当前 worktree。
+- 允许跨 worktree 共享从远端下载且内容不可变的第三方或平台依赖缓存，避免重复下载；共享前必须能证明缓存键唯一标识不可变内容。
+- 相同 GAV 的 SNAPSHOT、本项目执行 `install` 产生的 Maven 制品、来源不明的本地制品以及其它可能被当前构建覆盖的缓存，禁止跨 worktree 共享。
+- Mango CLI 默认继续共享用户 Maven repository，但必须为每个 workspace 生成稳定且唯一的 Maven revision qualifier，并在开发 `install` 与 Spring Boot Maven 启动命令中统一注入；本项目制品必须以不同 GAV 落盘，第三方依赖和插件缓存保持共享。
+- Maven reactor 根 POM 必须使用 CI-friendly `${revision}` 作为项目版本，reactor 内 parent 和本项目模块依赖必须引用 `${revision}`；基础 `revision` 由项目 POM 维护，workspace qualifier 不得写回受版本控制文件。
+- 旧项目缺少 CI-friendly `${revision}` 时，Mango CLI 必须在执行 Maven 前明确失败并提示升级，禁止静默使用未隔离的固定 SNAPSHOT；旧公共仓库内容不得由迁移过程自动删除。
+- 构建工具或 CLI 无法区分“不可变外部依赖”与“本项目可变产出”时，必须选择隔离并明确失败原因，禁止退回共享本地仓库后继续构建。
+- 隔离只覆盖项目产出及无法证明不可变的缓存，不要求复制操作系统工具、只读 SDK 或已证明不可变的外部依赖缓存。
+
 ## 3. 必需配置项
 
 `.mango/workspace.json` 至少包含：
 
 - `workspaceId`：当前 worktree 标识。
+- `mavenRevisionQualifier`：由 workspace id 派生的稳定 Maven 版本限定符。
 - `slot`：当前 worktree 的稳定端口槽位。
 - `backendPort`：后端端口。
 - `frontendPort`：前端主端口。
@@ -50,6 +62,7 @@
 `.mango/dev-workspace.env` 至少包含：
 
 - `MANGO_BACKEND_PORT`：后端本地端口。
+- `MANGO_MAVEN_REVISION_QUALIFIER`：与 `.mango/workspace.json` 同步的 Maven 版本限定符。
 - `MANGO_FRONTEND_PORT`：前端本地端口。
 - `MANGO_DB_NAME`：当前工作区本地数据库名。
 - `MANGO_DB_HOST`：数据库主机。
@@ -68,6 +81,7 @@
 - 诊断当前工作区使用 `mango dev doctor`。
 - 前端 source 模式准备使用 `mango frontend prepare`。
 - Mango CLI 必须从 `.mango/workspace.json` 和 `.mango/dev-workspace.env` 读取端口、数据库名和数据库连接信息。
+- Mango CLI 解析每个 `spring-boot-maven` app 时，必须从对应 reactor 根 POM 读取基础 revision，并将 workspace qualifier 形成的最终 revision 同时注入 install 与 run；同一 workspace 重复初始化必须保持限定符不变。
 - 开发环境默认关闭 Office 转换插件；需要本地调试文件预览转换时，显式将 `MANGO_OFFICE_PLUGIN_ENABLED=true` 并配置本机 Office 组件。
 - Mango CLI 必须在启动前检查端口占用和工作区归属。
 - 端口冲突时必须失败并提示占用进程或 owner worktree，禁止静默随机换端口。

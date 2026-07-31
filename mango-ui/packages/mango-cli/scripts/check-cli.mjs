@@ -289,6 +289,14 @@ try {
     throw new Error('generated backend parent pom must use the CLI-owned fixed Mango Maven version lock');
   }
   if (
+    !pom.includes('<version>${revision}</version>') ||
+    !pom.includes('<revision>1.0.0-SNAPSHOT</revision>') ||
+    !appPom.includes('<version>${revision}</version>') ||
+    !architecturePom.includes('<version>${revision}</version>')
+  ) {
+    throw new Error('generated backend reactor must use the CI-friendly revision property');
+  }
+  if (
     !pom.includes('<flyway.version>11.20.3</flyway.version>') ||
     !pom.includes('<artifactId>flyway-core</artifactId>') ||
     !pom.includes('<artifactId>flyway-mysql</artifactId>')
@@ -612,6 +620,7 @@ try {
     assertGeneratedDevWorkspaceRejectsInitShim(projectRoot);
     assertGeneratedDevWorkspaceCreatesLocalSecretKey(projectRoot);
     assertGeneratedDevWorkspaceBackfillsLocalSecretKey(projectRoot);
+    assertDevWorkspaceRejectsNonCiFriendlyMavenPom(projectRoot);
     assertDevWorkspaceAutoCreatesDatabase(projectRoot);
     assertDevWorkspaceStreamsLargeInstallOutput(projectRoot);
     assertCommandDevWorkspaceAutoCreatesDatabase(projectRoot);
@@ -628,6 +637,7 @@ try {
   const planResult = assertCommandOk([cli, 'plan'], projectRoot, 'generated mango plan');
   if (
     !planResult.stdout.includes('mango-full-acceptance-service') ||
+    !/-Drevision=1\.0\.0-mango-[0-9]{3}-SNAPSHOT/u.test(planResult.stdout) ||
     !planResult.stdout.includes('org.springframework.boot:spring-boot-maven-plugin:3.5.14:run') ||
     !planResult.stdout.includes('mango-full-acceptance-admin')
   ) {
@@ -1913,6 +1923,7 @@ function assertGeneratedDevWorkspaceCreatesLocalSecretKey(projectRoot) {
   }
   for (const expected of [
     /^MANGO_WORKSPACE_ID=mango_[0-9]{3}$/m,
+    /^MANGO_MAVEN_REVISION_QUALIFIER=mango-[0-9]{3}$/m,
     /^MANGO_BACKEND_PORT=[0-9]+$/m,
     /^MANGO_FRONTEND_PORT=[0-9]+$/m,
     /^MANGO_DB_NAME=mango_dev_mango_full_acceptance_[0-9]{3}$/m,
@@ -1935,7 +1946,8 @@ function assertGeneratedDevWorkspaceCreatesLocalSecretKey(projectRoot) {
   if (
     workspaceConfig.backendPort !== backendPort ||
     workspaceConfig.frontendPort !== frontendPort ||
-    workspaceConfig.dbName !== envFile.match(/^MANGO_DB_NAME=(.+)$/m)?.[1]
+    workspaceConfig.dbName !== envFile.match(/^MANGO_DB_NAME=(.+)$/m)?.[1] ||
+    workspaceConfig.mavenRevisionQualifier !== envFile.match(/^MANGO_MAVEN_REVISION_QUALIFIER=(.+)$/m)?.[1]
   ) {
     throw new Error(
       `generated workspace.json must match dev-workspace.env:\n${JSON.stringify(workspaceConfig, null, 2)}\n${envFile}`,
@@ -2002,9 +2014,31 @@ function assertGeneratedDevWorkspaceBackfillsLocalSecretKey(projectRoot) {
   if (
     !/^MANGO_BACKEND_PORT=180[0-9]{2}$/m.test(envFile) ||
     !/^MANGO_FRONTEND_PORT=30[0-9]{3}$/m.test(envFile) ||
+    !/^MANGO_MAVEN_REVISION_QUALIFIER=mango-[0-9]{3}$/m.test(envFile) ||
     !/^MANGO_DB_NAME=mango_dev_mango_full_acceptance_[0-9]{3}$/m.test(envFile)
   ) {
     throw new Error(`generated dev-workspace env must contain current workspace ownership values:\n${envFile}`);
+  }
+}
+
+function assertDevWorkspaceRejectsNonCiFriendlyMavenPom(projectRoot) {
+  const pomPath = join(projectRoot, 'backend/pom.xml');
+  const originalPom = readFileSync(pomPath, 'utf8');
+  const incompatiblePom = originalPom
+    .replace('<version>${revision}</version>', '<version>1.0.0-SNAPSHOT</version>')
+    .replace(/\s*<revision>1\.0\.0-SNAPSHOT<\/revision>/u, '');
+  writeFileSync(pomPath, incompatiblePom);
+  try {
+    const result = spawnSync(process.execPath, [cli, 'dev', 'plan', 'backend'], {
+      cwd: projectRoot,
+      encoding: 'utf8',
+    });
+    const output = `${result.stdout}\n${result.stderr}`;
+    if (result.status === 0 || !output.includes('does not use CI-friendly ${revision}')) {
+      throw new Error(`mango dev plan must reject a non-CI-friendly Maven reactor:\n${output}`);
+    }
+  } finally {
+    writeFileSync(pomPath, originalPom);
   }
 }
 
@@ -2048,7 +2082,9 @@ function assertDevWorkspaceAutoCreatesDatabase(projectRoot) {
   const createCall = calls.find((line) =>
     line.includes('CREATE DATABASE IF NOT EXISTS `mango_dev_mango_full_acceptance_'),
   );
-  const mavenCall = calls.find((line) => line.includes('mvn:-f pom.xml -DskipTests install'));
+  const mavenCall = calls.find((line) =>
+    /mvn:-Drevision=1\.0\.0-mango-[0-9]{3}-SNAPSHOT -f pom\.xml -DskipTests install/u.test(line),
+  );
   if (
     !calls.some((line) => line.includes('SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA')) ||
     !createCall?.includes('mysql:--protocol=TCP') ||
@@ -2115,8 +2151,8 @@ function assertDevWorkspaceStreamsLargeInstallOutput(projectRoot) {
   const calls = waitForCallLogLines(callLog, 4);
   const mavenCalls = calls.filter((line) => line.startsWith('mvn:'));
   if (
-    !mavenCalls.some((line) => line.includes('-DskipTests install')) ||
-    !mavenCalls.some((line) => line.includes('spring-boot-maven-plugin'))
+    !mavenCalls.some((line) => /-Drevision=1\.0\.0-mango-[0-9]{3}-SNAPSHOT .*?-DskipTests install/u.test(line)) ||
+    !mavenCalls.some((line) => /-Drevision=1\.0\.0-mango-[0-9]{3}-SNAPSHOT .*?spring-boot-maven-plugin/u.test(line))
   ) {
     throw new Error(`large install output scenario must reach backend startup:\n${calls.join('\n')}`);
   }
@@ -3296,7 +3332,10 @@ function assertPmoSyncCommand(tempRoot) {
     join(discoveredShellRoot, 'baohan-backend/pom.xml'),
     [
       '<project>',
+      '  <artifactId>baohan-backend</artifactId>',
+      '  <version>${revision}</version>',
       '  <packaging>pom</packaging>',
+      '  <properties><revision>1.0.0-SNAPSHOT</revision></properties>',
       '  <modules><module>apps/baohan-api</module></modules>',
       '</project>',
     ].join('\n'),
@@ -3481,7 +3520,8 @@ function assertDevWorkspaceRegistryAllocation(tempRoot) {
     workspaces[0].slot === workspaces[1].slot ||
     workspaces[0].backendPort === workspaces[1].backendPort ||
     workspaces[0].frontendPort === workspaces[1].frontendPort ||
-    workspaces[0].dbName === workspaces[1].dbName
+    workspaces[0].dbName === workspaces[1].dbName ||
+    workspaces[0].mavenRevisionQualifier === workspaces[1].mavenRevisionQualifier
   ) {
     throw new Error(
       `workspace allocation should isolate workspace.json values:\n${JSON.stringify(workspaces, null, 2)}`,
@@ -3490,7 +3530,8 @@ function assertDevWorkspaceRegistryAllocation(tempRoot) {
   if (
     envs[0].MANGO_BACKEND_PORT === envs[1].MANGO_BACKEND_PORT ||
     envs[0].MANGO_FRONTEND_PORT === envs[1].MANGO_FRONTEND_PORT ||
-    envs[0].MANGO_DB_NAME === envs[1].MANGO_DB_NAME
+    envs[0].MANGO_DB_NAME === envs[1].MANGO_DB_NAME ||
+    envs[0].MANGO_MAVEN_REVISION_QUALIFIER === envs[1].MANGO_MAVEN_REVISION_QUALIFIER
   ) {
     throw new Error(`workspace allocation should isolate ports and DBs:\n${JSON.stringify(envs, null, 2)}`);
   }
@@ -3508,6 +3549,7 @@ function assertDevWorkspaceRegistryAllocation(tempRoot) {
       workspace.frontendPort !== 30000 + workspace.slot ||
       workspace.frontendApps.MANGO_ADMIN_SHELL_PORT !== 31000 + workspace.slot ||
       workspace.frontendApps.MANGO_ADMIN_RBAC_APP_PORT !== 32000 + workspace.slot ||
+      workspace.mavenRevisionQualifier !== `mango-${slotText}` ||
       !workspace.dbName.endsWith(`_${slotText}`)
     ) {
       throw new Error(
@@ -3578,6 +3620,9 @@ function assertDevWorkspaceRegistryAllocation(tempRoot) {
       '',
     ].join('\n'),
   );
+  const legacyWorkspace = JSON.parse(readFileSync(join(roots[0], '.mango/workspace.json'), 'utf8'));
+  delete legacyWorkspace.mavenRevisionQualifier;
+  writeFileSync(join(roots[0], '.mango/workspace.json'), `${JSON.stringify(legacyWorkspace, null, 2)}\n`);
   const syncRepeat = spawnSync(
     'env',
     [`MANGO_WORKSPACE_REGISTRY=${registryPath}`, process.execPath, cli, 'workspace', 'init'],
@@ -3596,10 +3641,17 @@ function assertDevWorkspaceRegistryAllocation(tempRoot) {
     syncedEnv.MANGO_BACKEND_PORT !== String(workspaces[0].backendPort) ||
     syncedEnv.MANGO_FRONTEND_PORT !== String(workspaces[0].frontendPort) ||
     syncedEnv.MANGO_DB_NAME !== workspaces[0].dbName ||
+    syncedEnv.MANGO_MAVEN_REVISION_QUALIFIER !== workspaces[0].mavenRevisionQualifier ||
     syncedEnv.MANGO_DB_USERNAME !== 'root'
   ) {
     throw new Error(
       `mango workspace init repeat should sync ownership fields but preserve DB connection fields:\n${JSON.stringify(syncedEnv, null, 2)}`,
+    );
+  }
+  const migratedWorkspace = JSON.parse(readFileSync(join(roots[0], '.mango/workspace.json'), 'utf8'));
+  if (migratedWorkspace.mavenRevisionQualifier !== workspaces[0].mavenRevisionQualifier) {
+    throw new Error(
+      `mango workspace init must migrate a legacy workspace qualifier:\n${JSON.stringify(migratedWorkspace, null, 2)}`,
     );
   }
 
