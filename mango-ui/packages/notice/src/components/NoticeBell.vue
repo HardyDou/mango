@@ -4,11 +4,12 @@
     :runtime-config="runtimeConfig"
     :load-runtime-config="loadRuntimeConfig"
     :realtime-options="realtimeOptions"
-    @view-all="() => emit('view-all')"
+    @view-all="(options) => emit('view-all', options)"
     @settings="() => emit('settings')"
-    @unread-change="count => emit('unread-change', count)"
-    @message-open="message => emit('message-open', message)"
-    @message-received="message => emit('message-received', message)"
+    @unread-change="(count) => emit('unread-change', count)"
+    @message-open="(message) => emit('message-open', message)"
+    @message-received="(message) => emit('message-received', message)"
+    @interaction="(payload) => emit('interaction', payload)"
   />
 </template>
 
@@ -16,7 +17,8 @@
 import NoticeClientBell from '../client/NoticeClientBell.vue';
 import type { RealtimeOptions } from '@mango/common';
 import type { NoticeSiteMessage } from '../types/notice';
-import type { NoticeClientBellRuntimeConfig } from '../client/types';
+import type { NoticeBellViewAllOptions, NoticeClientBellRuntimeConfig } from '../client/types';
+import type { NoticeInteractionPayload } from '../client/interaction';
 
 defineOptions({ inheritAttrs: false });
 
@@ -27,10 +29,11 @@ defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (event: 'view-all'): void;
+  (event: 'view-all', options?: NoticeBellViewAllOptions): void;
   (event: 'settings'): void;
   (event: 'unread-change', count: number): void;
   (event: 'message-open', message: NoticeSiteMessage): void;
   (event: 'message-received', message: NoticeSiteMessage): void;
+  (event: 'interaction', payload: NoticeInteractionPayload): void;
 }>();
 </script>

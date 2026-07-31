@@ -26,6 +26,7 @@ import type {
   NoticeSiteMessagePageQuery,
   NoticeTask,
   NoticeUnreadCount,
+  NoticeUnreadCategoryStats,
   PageResult,
   PersonalConfig,
 } from '../types/notice';
@@ -456,6 +457,10 @@ export function getMyUnreadCount() {
   return get<NoticeUnreadCount>('/notice/site/my/unread-count');
 }
 
+export function getMyUnreadCategoryStats() {
+  return get<NoticeUnreadCategoryStats>('/notice/site/my/unread-category-stats');
+}
+
 export function markMySiteMessageRead(id: string) {
   return post<boolean>('/notice/site/my/messages/read', undefined, { params: { id } });
 }
@@ -528,6 +533,7 @@ export const noticeApi = {
   getNoticeReminderSetting,
   saveNoticeReminderSetting,
   getMyUnreadCount,
+  getMyUnreadCategoryStats,
   markMySiteMessageRead,
   markMySiteMessagesRead,
   markAllMySiteMessagesRead,

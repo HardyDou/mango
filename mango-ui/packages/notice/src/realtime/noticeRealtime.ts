@@ -1,6 +1,7 @@
 import { createRealtimeClient } from '@mango/common';
 import type { RealtimeClient, RealtimeMessage, RealtimeOptions } from '@mango/common';
 import type { NoticeSiteMessage, NoticeSoundType } from '../types/notice';
+import { noticeDesktopSummary } from '../client/messagePresentation';
 
 export interface NoticeRealtimeEvent {
   messageId?: string;
@@ -30,7 +31,7 @@ export function showDesktopNotice(message: NoticeSiteMessage, onClick: () => voi
     return false;
   }
   const notification = new Notification(message.title || '您有新消息了', {
-    body: message.content || message.bizName || message.bizType || '',
+    body: noticeDesktopSummary(message),
     tag: message.id,
     requireInteraction: false,
     silent: false,
@@ -58,7 +59,7 @@ export function playNoticeSound(soundType: NoticeSoundType = 'IM') {
   const audioContext = new AudioContext();
   const now = audioContext.currentTime;
   const steps = soundPattern(soundType);
-  steps.forEach(step => {
+  steps.forEach((step) => {
     const oscillator = audioContext.createOscillator();
     const gain = audioContext.createGain();
     oscillator.type = 'sine';
@@ -114,7 +115,7 @@ export function createNoticeRealtime(handler: NoticeRealtimeHandler, options: No
   window.addEventListener('mango-notice-message', listener as EventListener);
   try {
     client = createRealtimeClient({ ...(options.realtimeOptions || {}), autoConnect: true });
-    client.subscribe('notice', message => {
+    client.subscribe('notice', (message) => {
       const event = toNoticeRealtimeEvent(message);
       if (event?.messageId || typeof event?.unreadCount === 'number') {
         notifyHandler(handler, event);
@@ -167,7 +168,7 @@ function normalizePayload(payload: unknown): Record<string, unknown> {
   if (typeof payload === 'string') {
     try {
       const parsed = JSON.parse(payload);
-      return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed as Record<string, unknown> : {};
+      return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? (parsed as Record<string, unknown>) : {};
     } catch {
       return {};
     }

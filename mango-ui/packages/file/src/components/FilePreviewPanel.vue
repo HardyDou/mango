@@ -1,57 +1,31 @@
 <template>
-  <div class="file-preview-panel">
-    <el-skeleton v-if="loading" :rows="4" animated />
-    <el-empty v-else-if="!preview" description="暂无文件" />
+  <div class="file-preview-panel" :class="{ 'file-preview-panel--fit-container': fitContainer }">
+    <el-skeleton v-if="loading" class="preview-loading" :rows="4" animated />
+    <el-empty v-else-if="!preview" class="preview-empty" description="暂无文件" />
     <template v-else>
       <div v-if="showActions" class="preview-actions">
         <el-tag size="small" :type="previewModeTag">
           {{ previewModeLabel }}
         </el-tag>
-        <el-button link type="primary" @click="openDownload">
-          下载
-        </el-button>
-        <el-button
-          link
-          type="primary"
-          :disabled="!canOpenInNewWindow"
-          @click="openPreviewInNewWindow"
-        >
+        <el-button link type="primary" @click="openDownload"> 下载 </el-button>
+        <el-button link type="primary" :disabled="!canOpenInNewWindow" @click="openPreviewInNewWindow">
           新窗口预览
         </el-button>
       </div>
 
       <div class="preview-stage">
-        <el-image
-          v-if="isImage && inlinePreviewUrl"
-          :src="inlinePreviewUrl"
-          fit="contain"
-          class="preview-image"
-          :preview-src-list="[inlinePreviewUrl]"
-        />
-        <iframe
-          v-else-if="isPdf && inlinePreviewUrl"
-          class="preview-frame"
-          :src="inlinePreviewUrl"
-          title="文件预览"
-        />
-        <video
-          v-else-if="isVideo && inlinePreviewUrl"
-          class="preview-media"
-          :src="inlinePreviewUrl"
-          controls
-        />
-        <audio
-          v-else-if="isAudio && inlinePreviewUrl"
-          class="preview-audio"
-          :src="inlinePreviewUrl"
-          controls
-        />
-        <iframe
-          v-else-if="documentPreviewUrl"
-          class="preview-frame"
-          :src="documentPreviewUrl"
-          title="文件预览"
-        />
+        <div v-if="isImage && inlinePreviewUrl" class="preview-image-viewer">
+          <el-image-viewer
+            :url-list="[inlinePreviewUrl]"
+            :infinite="false"
+            :teleported="false"
+            :close-on-press-escape="false"
+          />
+        </div>
+        <iframe v-else-if="isPdf && inlinePreviewUrl" class="preview-frame" :src="inlinePreviewUrl" title="文件预览" />
+        <video v-else-if="isVideo && inlinePreviewUrl" class="preview-media" :src="inlinePreviewUrl" controls />
+        <audio v-else-if="isAudio && inlinePreviewUrl" class="preview-audio" :src="inlinePreviewUrl" controls />
+        <iframe v-else-if="documentPreviewUrl" class="preview-frame" :src="documentPreviewUrl" title="文件预览" />
         <div v-else class="preview-placeholder">
           <el-icon><Document /></el-icon>
           <div class="preview-name">{{ preview.fileName }}</div>
@@ -65,24 +39,18 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { Document } from '@element-plus/icons-vue';
-import { downloadFileRecord, fileApi, normalizeFileId, type FilePreview, type FileReference } from '../api/file';
+import { downloadFileRecord, fileApi, normalizeFileId, type FilePreview } from '../api/file';
 import { isBackendFileContentUrl, isPreviewDisplayUrl } from '../utils/previewUrl';
-import type { ApiId } from '@mango/api-schema';
+import type { FilePreviewPanelProps } from './FilePreviewPanel.types';
 
 type PreviewActionsState = {
   canDownload: boolean;
   canOpenInNewWindow: boolean;
 };
 
-const props = withDefaults(defineProps<{
-  fileId?: ApiId | `mango-file:${string}` | null;
-  file?: FileReference;
-  preview?: FilePreview | null;
-  previewProviderUrl?: string;
-  previewExternalExtensions?: string[];
-  showActions?: boolean;
-}>(), {
+const props = withDefaults(defineProps<FilePreviewPanelProps>(), {
   showActions: true,
+  fitContainer: false,
 });
 
 const emit = defineEmits<{
@@ -102,8 +70,10 @@ const resolvedFileId = computed(() => normalizeFileId(props.file || props.fileId
 const isImage = computed(() => {
   const item = preview.value;
   const ext = extension.value;
-  return Boolean(item?.contentType?.startsWith('image/'))
-    || ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg', 'ico'].includes(ext);
+  return (
+    Boolean(item?.contentType?.startsWith('image/')) ||
+    ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg', 'ico'].includes(ext)
+  );
 });
 
 const isPdf = computed(() => {
@@ -113,13 +83,16 @@ const isPdf = computed(() => {
 
 const isVideo = computed(() => {
   const ext = extension.value;
-  return Boolean(preview.value?.contentType?.startsWith('video/'))
-    || ['mp4', 'webm', 'ogg', 'mov', 'm4v'].includes(ext);
+  return (
+    Boolean(preview.value?.contentType?.startsWith('video/')) || ['mp4', 'webm', 'ogg', 'mov', 'm4v'].includes(ext)
+  );
 });
 const isAudio = computed(() => {
   const ext = extension.value;
-  return Boolean(preview.value?.contentType?.startsWith('audio/'))
-    || ['mp3', 'wav', 'ogg', 'm4a', 'aac', 'flac'].includes(ext);
+  return (
+    Boolean(preview.value?.contentType?.startsWith('audio/')) ||
+    ['mp3', 'wav', 'ogg', 'm4a', 'aac', 'flac'].includes(ext)
+  );
 });
 
 const extension = computed(() => preview.value?.fileExt?.toLowerCase() || fileExtension(preview.value?.fileName));
@@ -147,7 +120,7 @@ const previewModeLabel = computed(() => {
   return '下载查看';
 });
 
-const previewModeTag = computed(() => documentPreviewUrl.value ? 'success' : 'info');
+const previewModeTag = computed(() => (documentPreviewUrl.value ? 'success' : 'info'));
 const previewTargetUrl = computed(() => inlinePreviewUrl.value || documentPreviewUrl.value);
 const canOpenInNewWindow = computed(() => Boolean(previewTargetUrl.value));
 const canDownload = computed(() => Boolean(preview.value?.id));
@@ -205,9 +178,10 @@ async function openPreviewInNewWindow() {
   if (!item || !previewTargetUrl.value) return;
 
   const target = window.open('about:blank', '_blank');
-  const url = documentPreviewUrl.value && isDefaultPreviewProviderUrl(item.documentPreviewUrl)
-    ? await resolveExternalPreviewUrl(item)
-    : previewTargetUrl.value;
+  const url =
+    documentPreviewUrl.value && isDefaultPreviewProviderUrl(item.documentPreviewUrl)
+      ? await resolveExternalPreviewUrl(item)
+      : previewTargetUrl.value;
   if (!url) {
     target?.close();
     return;
@@ -238,9 +212,7 @@ function resolveInlinePreviewUrl(item: FilePreview) {
 async function resolveInlinePreviewObjectUrl(item: FilePreview) {
   const response = await fileApi.previewContent(item.id);
   const contentType = item.contentType || response.headers?.['content-type'] || 'application/octet-stream';
-  const blob = response.data instanceof Blob
-    ? response.data
-    : new Blob([response.data], { type: contentType });
+  const blob = response.data instanceof Blob ? response.data : new Blob([response.data], { type: contentType });
   return URL.createObjectURL(blob);
 }
 
@@ -254,10 +226,12 @@ function isDefaultPreviewProviderUrl(value?: string) {
   if (!value) return false;
   try {
     const url = new URL(value, window.location.origin);
-    return url.pathname === '/api/file-preview/files/preview'
-      || url.pathname === '/file-preview/files/preview'
-      || url.pathname === '/api/file-preview/files/preview-entry'
-      || url.pathname === '/file-preview/files/preview-entry';
+    return (
+      url.pathname === '/api/file-preview/files/preview' ||
+      url.pathname === '/file-preview/files/preview' ||
+      url.pathname === '/api/file-preview/files/preview-entry' ||
+      url.pathname === '/file-preview/files/preview-entry'
+    );
   } catch {
     return value.startsWith('/api/file-preview/files/preview') || value.startsWith('/file-preview/files/preview');
   }
@@ -270,12 +244,16 @@ function fileExtension(fileName?: string): string {
 
 watch(() => [resolvedFileId.value, props.preview], loadPreview);
 watch(preview, loadInlinePreview, { immediate: true });
-watch(() => [canDownload.value, canOpenInNewWindow.value], () => {
-  emit('actions-change', {
-    canDownload: canDownload.value,
-    canOpenInNewWindow: canOpenInNewWindow.value,
-  });
-}, { immediate: true });
+watch(
+  () => [canDownload.value, canOpenInNewWindow.value],
+  () => {
+    emit('actions-change', {
+      canDownload: canDownload.value,
+      canOpenInNewWindow: canOpenInNewWindow.value,
+    });
+  },
+  { immediate: true },
+);
 onMounted(loadPreview);
 onBeforeUnmount(() => {
   previewLoadSequence += 1;
@@ -300,6 +278,7 @@ defineExpose({
 }
 
 .preview-stage {
+  position: relative;
   flex: 1 1 auto;
   min-height: var(--mango-file-preview-stage-min-height, 220px);
   height: var(--mango-file-preview-stage-height, auto);
@@ -313,15 +292,31 @@ defineExpose({
 
 .preview-actions {
   display: flex;
+  flex: none;
   align-items: center;
   justify-content: flex-end;
   gap: 12px;
 }
 
-.preview-image {
+.preview-image-viewer {
+  position: relative;
   width: 100%;
   height: var(--mango-file-preview-content-height, 360px);
+  overflow: hidden;
   display: block;
+}
+
+/* ElImageViewer has no inline mode; retain its native controls while constraining the modal surface to this stage. */
+.preview-image-viewer :deep(.el-image-viewer__wrapper) {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.preview-image-viewer :deep(.el-image-viewer__mask),
+.preview-image-viewer :deep(.el-image-viewer__close) {
+  display: none;
 }
 
 .preview-media {
@@ -376,5 +371,55 @@ defineExpose({
 
 .preview-tip {
   font-size: 13px;
+}
+
+.file-preview-panel--fit-container {
+  width: 100%;
+  height: var(--mango-file-preview-panel-height, 100%);
+  min-width: 0;
+  min-height: var(--mango-file-preview-panel-min-height, 0);
+}
+
+.file-preview-panel--fit-container .preview-stage {
+  width: 100%;
+  height: var(--mango-file-preview-stage-height, auto);
+  min-width: 0;
+  min-height: var(--mango-file-preview-stage-min-height, 0);
+}
+
+.file-preview-panel--fit-container .preview-image-viewer,
+.file-preview-panel--fit-container .preview-media,
+.file-preview-panel--fit-container .preview-frame {
+  flex: 1 1 auto;
+  width: 100%;
+  height: var(--mango-file-preview-content-height, 100%);
+  min-width: 0;
+  min-height: var(--mango-file-preview-content-min-height, 0);
+  max-width: 100%;
+  max-height: 100%;
+}
+
+.file-preview-panel--fit-container .preview-media {
+  object-fit: contain;
+}
+
+.file-preview-panel--fit-container .preview-audio {
+  flex: none;
+  width: 100%;
+  max-width: 100%;
+  margin: auto 0;
+}
+
+.file-preview-panel--fit-container .preview-placeholder {
+  min-width: 0;
+  min-height: var(--mango-file-preview-stage-min-height, 0);
+}
+
+.file-preview-panel--fit-container > .preview-loading,
+.file-preview-panel--fit-container > .preview-empty {
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
 }
 </style>

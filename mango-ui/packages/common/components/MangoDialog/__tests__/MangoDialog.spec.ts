@@ -1,8 +1,8 @@
 import { mount } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { defineComponent, h, nextTick } from 'vue';
+import { defineComponent, h, nextTick, onMounted, ref } from 'vue';
 import MangoDialog from '../index.vue';
-import type { MangoDialogProps } from '../types';
+import type { MangoDialogExpose, MangoDialogProps } from '../types';
 
 const ElDialogStub = defineComponent({
   name: 'ElDialog',
@@ -38,12 +38,16 @@ const ElDialogStub = defineComponent({
     },
   },
   emits: ['update:modelValue', 'open', 'opened', 'close', 'closed'],
-  setup(_props, { attrs, emit, slots, expose }) {
+  setup(props, { attrs, emit, slots, expose }) {
     expose({
       handleClose: () => {
         emit('update:modelValue', false);
         emit('close');
       },
+    });
+
+    onMounted(() => {
+      if (props.modelValue) emit('open');
     });
 
     return () =>
@@ -77,6 +81,12 @@ const CloseStub = defineComponent({
   },
 });
 
+const dialogStubs = {
+  ElDialog: ElDialogStub,
+  ElIcon: ElIconStub,
+  Close: CloseStub,
+};
+
 function mountDialog(props: Partial<MangoDialogProps> = {}, attrs: Record<string, unknown> = {}) {
   return mount(MangoDialog, {
     props: {
@@ -90,11 +100,7 @@ function mountDialog(props: Partial<MangoDialogProps> = {}, attrs: Record<string
       footer: '<button class="confirm-button">Confirm</button>',
     },
     global: {
-      stubs: {
-        ElDialog: ElDialogStub,
-        ElIcon: ElIconStub,
-        Close: CloseStub,
-      },
+      stubs: dialogStubs,
     },
   });
 }
@@ -306,16 +312,45 @@ describe('MangoDialog', () => {
   });
 
   it('raises the clicked dialog above its previous layer', async () => {
-    const wrapper = mountDialog({ draggable: true });
+    const wrapper = mountDialog({ draggable: true, modelValue: false });
     const dialog = wrapper.getComponent(ElDialogStub);
 
+    await wrapper.setProps({ modelValue: true });
     await wrapper.get('.mango-dialog__body').trigger('pointerdown');
     const firstZIndex = dialog.props('zIndex') as number;
     await wrapper.get('.mango-dialog__body').trigger('pointerdown');
     const secondZIndex = dialog.props('zIndex') as number;
+    await wrapper.get('.confirm-button').trigger('pointerdown');
+    const footerZIndex = dialog.props('zIndex') as number;
 
     expect(firstZIndex).toBeTypeOf('number');
     expect(secondZIndex).toBeGreaterThan(firstZIndex);
+    expect(footerZIndex).toBeGreaterThan(secondZIndex);
+  });
+
+  it('raises from interactive content without blocking its action', async () => {
+    const handleClick = vi.fn();
+    const wrapper = mount(MangoDialog, {
+      props: {
+        modelValue: true,
+      },
+      slots: {
+        default: () => h('button', { class: 'dialog-action', onClick: handleClick }, 'Action'),
+      },
+      global: {
+        stubs: dialogStubs,
+      },
+    });
+    await nextTick();
+    const dialog = wrapper.getComponent(ElDialogStub);
+    const initialZIndex = dialog.props('zIndex') as number;
+    const action = wrapper.get('.dialog-action');
+
+    await action.trigger('pointerdown');
+    await action.trigger('click');
+
+    expect(dialog.props('zIndex')).toBeGreaterThan(initialZIndex);
+    expect(handleClick).toHaveBeenCalledOnce();
   });
 
   it('uses a consumer z-index as the dynamic stacking baseline', async () => {
@@ -329,6 +364,105 @@ describe('MangoDialog', () => {
 
     expect(firstZIndex).toBeGreaterThanOrEqual(3200);
     expect(secondZIndex).toBeGreaterThan(firstZIndex);
+  });
+
+  it('programmatically switches the highest layer between open dialog instances', async () => {
+    const firstDialogRef = ref<MangoDialogExpose | null>(null);
+    const secondDialogRef = ref<MangoDialogExpose | null>(null);
+    // A local host is required to exercise multiple component refs in one test.
+    // eslint-disable-next-line vue/one-component-per-file
+    const Host = defineComponent({
+      setup() {
+        return () =>
+          h('div', [
+            h(MangoDialog, {
+              ref: firstDialogRef,
+              modelValue: true,
+              title: 'First dialog',
+            }),
+            h(MangoDialog, {
+              ref: secondDialogRef,
+              modelValue: true,
+              title: 'Second dialog',
+            }),
+          ]);
+      },
+    });
+    const wrapper = mount(Host, {
+      global: {
+        stubs: dialogStubs,
+      },
+    });
+    await nextTick();
+
+    const dialogs = wrapper.findAllComponents(MangoDialog);
+    const firstDialog = dialogs[0].getComponent(ElDialogStub);
+    const secondDialog = dialogs[1].getComponent(ElDialogStub);
+    const initialFirstZIndex = firstDialog.props('zIndex') as number;
+    const initialSecondZIndex = secondDialog.props('zIndex') as number;
+    expect(initialFirstZIndex).not.toBe(initialSecondZIndex);
+
+    firstDialogRef.value?.bringToFront();
+    await nextTick();
+    expect(firstDialog.props('zIndex')).toBeGreaterThan(secondDialog.props('zIndex') as number);
+
+    secondDialogRef.value?.bringToFront();
+    await nextTick();
+    expect(secondDialog.props('zIndex')).toBeGreaterThan(firstDialog.props('zIndex') as number);
+
+    wrapper.unmount();
+  });
+
+  it('safely ignores programmatic stacking while closed, closing, or destroyed', async () => {
+    const dialogRef = ref<MangoDialogExpose | null>(null);
+    const visible = ref(false);
+    const rendered = ref(true);
+    // A local host is required to exercise ref safety across unmounting.
+    // eslint-disable-next-line vue/one-component-per-file
+    const Host = defineComponent({
+      setup() {
+        return () =>
+          rendered.value
+            ? h(MangoDialog, {
+                ref: dialogRef,
+                modelValue: visible.value,
+                'onUpdate:modelValue': (value: boolean) => {
+                  visible.value = value;
+                },
+              })
+            : null;
+      },
+    });
+    const wrapper = mount(Host, {
+      global: {
+        stubs: dialogStubs,
+      },
+    });
+    await nextTick();
+
+    const dialog = wrapper.getComponent(MangoDialog).getComponent(ElDialogStub);
+    expect(() => dialogRef.value?.bringToFront()).not.toThrow();
+    expect(dialog.props('zIndex')).toBeUndefined();
+
+    visible.value = true;
+    await nextTick();
+    dialog.vm.$emit('open');
+    await nextTick();
+    const openZIndex = dialog.props('zIndex') as number;
+
+    dialog.vm.$emit('close');
+    expect(() => dialogRef.value?.bringToFront()).not.toThrow();
+    await nextTick();
+    expect(dialog.props('zIndex')).toBe(openZIndex);
+
+    dialog.vm.$emit('closed');
+    const staleExpose = dialogRef.value;
+    rendered.value = false;
+    await nextTick();
+    expect(dialogRef.value).toBeNull();
+    expect(() => staleExpose?.bringToFront()).not.toThrow();
+
+    wrapper.unmount();
   });
 
   it('preserves consumer class and style after switching to interactive layout', async () => {

@@ -30,6 +30,7 @@ class NoticeControllerAccessModeTest {
         assertPermission("executeSiteMessageAction", "notice:site:edit",
                 ExecuteNoticeSiteMessageActionCommand.class);
         assertPermission("unreadCount", "notice:site:view");
+        assertPermission("unreadCategoryStats", "notice:site:view");
         assertPermission("markSiteMessageRead", "notice:site:edit", Long.class);
         assertPermission("markSiteMessagesRead", "notice:site:edit", MarkNoticeReadCommand.class);
         assertPermission("markAllSiteMessagesRead", "notice:site:edit");

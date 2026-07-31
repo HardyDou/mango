@@ -6,25 +6,25 @@
 
 ## 2. 阅读顺序
 
-| 顺序 | 文档 | 关注点 |
-|------|------|--------|
-| 1 | [File 后端 README](../../../mango/mango-platform/mango-file/README.md) | 存储配置、文件记录、下载接口、数据库资源 |
-| 2 | [Fileproc README](../../../mango/mango-infra/mango-infra-fileproc/README.md) | 文件渲染、转换、Aspose 配置 |
-| 3 | [File Preview README](../../../mango/mango-platform/mango-file-preview/README.md) | 预览 token、预览页面、下载边界 |
-| 4 | [@mango/file README](../../../mango-ui/packages/file/README.md) | 前端组件、API 封装、页面 key |
-| 5 | [File Components README](../../../mango-ui/packages/file/src/components/README.md) | `MUpload`、`FilePreviewPanel` 用法和 props |
-| 6 | [能力地图：文件上传到预览闭环](../../capabilities/README.md#3-组合接入入口) | 组合验证入口 |
+| 顺序 | 文档                                                                               | 关注点                                     |
+| ---- | ---------------------------------------------------------------------------------- | ------------------------------------------ |
+| 1    | [File 后端 README](../../../mango/mango-platform/mango-file/README.md)             | 存储配置、文件记录、下载接口、数据库资源   |
+| 2    | [Fileproc README](../../../mango/mango-infra/mango-infra-fileproc/README.md)       | 文件渲染、转换、Aspose 配置                |
+| 3    | [File Preview README](../../../mango/mango-platform/mango-file-preview/README.md)  | 预览 token、预览页面、下载边界             |
+| 4    | [@mango/file README](../../../mango-ui/packages/file/README.md)                    | 前端组件、API 封装、页面 key               |
+| 5    | [File Components README](../../../mango-ui/packages/file/src/components/README.md) | `MUpload`、`FilePreviewPanel` 用法和 props |
+| 6    | [能力地图：文件上传到预览闭环](../../capabilities/README.md#3-组合接入入口)        | 组合验证入口                               |
 
 ## 3. 接入检查点
 
-| 环节 | 检查点 |
-|------|--------|
-| 后端依赖 | 业务后端引入 file 相关 starter，确认存储配置可用 |
-| 业务表 | 业务表保存 fileId、fileIds 或业务附件关联表，不直接保存临时 URL |
-| 上传接口 | 前端上传后拿到文件 ID，再随业务 Command/Request 一起提交 |
-| 回显 | 登录用户按文件 ID 查询元数据；业务页面仍自行控制附件入口，图片缩略图由 `MUpload` 按原始内容预览地址、存储公开访问地址或鉴权下载的临时 `blob:` 地址回显 |
-| 预览 | 需要在线预览时确认 file-preview 能拿到源文件并生成预览 token |
-| 删除 | 删除业务单据时区分业务解绑和物理文件清理 |
+| 环节     | 检查点                                                                                                                                                 |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 后端依赖 | 业务后端引入 file 相关 starter，确认存储配置可用                                                                                                       |
+| 业务表   | 业务表保存 fileId、fileIds 或业务附件关联表，不直接保存临时 URL                                                                                        |
+| 上传接口 | 前端上传后拿到文件 ID，再随业务 Command/Request 一起提交                                                                                               |
+| 回显     | 登录用户按文件 ID 查询元数据；业务页面仍自行控制附件入口，图片缩略图由 `MUpload` 按原始内容预览地址、存储公开访问地址或鉴权下载的临时 `blob:` 地址回显 |
+| 预览     | 需要在线预览时确认 file-preview 能拿到源文件并生成预览 token                                                                                           |
+| 删除     | 删除业务单据时区分业务解绑和物理文件清理                                                                                                               |
 
 ## 4. 最小业务样例
 
@@ -32,9 +32,9 @@
 
 ```vue
 <script setup lang="ts">
-import { ref } from 'vue';
-import { MUpload, FilePreviewPanel } from '@mango/file';
-import '@mango/file/style.css';
+import { ref } from "vue";
+import { MUpload, FilePreviewPanel } from "@mango/file";
+import "@mango/file/style.css";
 
 const contractId = ref<string>();
 const attachmentIds = ref<string[]>([]);
@@ -76,25 +76,25 @@ create table biz_contract_attachment (
 
 ## 5. 业务场景验收点
 
-| 类别 | 检查项 |
-|------|--------|
-| 存储配置 | 目标环境已配置可用存储，上传接口能写入文件记录；多个独立前端共用后端时优先使用 `PROXY`，每个前端通过同源 `/api` 访问文件接口 |
-| 权限基线 | 测试用户已登录；上传、回显、预览和下载无需额外角色权限，文件列表、归档、删除和管理配置仍按细粒度权限授权 |
-| 租户数据 | 文件记录、业务单据和当前登录用户处于同一租户上下文 |
+| 类别     | 检查项                                                                                                                                                                                 |
+| -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 存储配置 | 目标环境已配置可用存储，上传接口能写入文件记录；多个独立前端共用后端时优先使用 `PROXY`，每个前端通过同源 `/api` 访问文件接口                                                           |
+| 权限基线 | 测试用户已登录；上传、回显、预览和下载无需额外角色权限，文件列表、归档、删除和管理配置仍按细粒度权限授权                                                                               |
+| 租户数据 | 文件记录、业务单据和当前登录用户处于同一租户上下文                                                                                                                                     |
 | 前端组件 | `MUpload` 返回 `fileId`、`fileIds` 或 token，详情页按文件 ID 回显；不要把 `previewUrl`、`downloadUrl` 或临时 `blob:` 地址提交给业务接口；`FilePreviewPanel` 不会把下载地址当作预览地址 |
-| 菜单页面 | 使用文件中心管理页时，页面 key 和菜单 component 对齐 |
-| 预览链路 | 启用预览时，file-preview 和 fileproc 依赖可用 |
-| 业务语义 | 编辑、删除业务单据时，附件解绑或物理清理策略清晰 |
+| 菜单页面 | 使用文件中心管理页时，页面 key 和菜单 component 对齐                                                                                                                                   |
+| 预览链路 | 启用预览时，file-preview 和 fileproc 依赖可用                                                                                                                                          |
+| 业务语义 | 编辑、删除业务单据时，附件解绑或物理清理策略清晰                                                                                                                                       |
 
 ### 5.1 大文件和 HTTP IP 环境
 
 文件管理员在“文件配置”页面维护当前租户的大文件策略：
 
-| 配置 | 说明 |
-|------|------|
-| `multipartEnabled` | 是否启用分片上传；关闭后文件走普通上传。 |
-| `multipartThreshold` | 进入分片上传的临界值，单位字节，默认 `20971520`（20 MiB）。 |
-| `maxSize` | 文件中心单文件上限；`MUpload` 与组件自身限制同时存在时取较小值。 |
+| 配置                 | 说明                                                             |
+| -------------------- | ---------------------------------------------------------------- |
+| `multipartEnabled`   | 是否启用分片上传；关闭后文件走普通上传。                         |
+| `multipartThreshold` | 进入分片上传的临界值，单位字节，默认 `20971520`（20 MiB）。      |
+| `maxSize`            | 文件中心单文件上限；`MUpload` 与组件自身限制同时存在时取较小值。 |
 
 业务页面不需要为 HTTP IP 单独配置 `MUpload`。浏览器没有 Web Crypto 时，组件会省略客户端 SHA-256，后端使用 `SERVER_CHUNK` 接收并在合并后计算哈希。本次上传不能在上传前命中秒传，完成后生成的哈希映射可供后续相同文件使用；HTTPS 或 localhost 环境仍保留客户端哈希、秒传和存储支持时的 `S3_MULTIPART`。
 
@@ -140,6 +140,15 @@ FileRecordVO zipFile = fileApi.packageFiles(command).getData();
 
 ## 8. 变更影响记录
 
+- 2026-07-30：`FilePreviewPanel` 新增默认关闭的 `fit-container` 容器填充模式。固定高度容器、`ElDialog` 或
+  `MangoDialog` 正文可以直接传入该 prop，使 PDF、Office、图片和音视频随容器缩放，无需业务页面监听 resize
+  或组合预览高度变量。未传入时继续使用自然高度；文件 ID 持久化、上传/预览/下载 API、权限、租户、文档转换
+  接口和本场景验收步骤不变。
+
+- 2026-07-30：`FilePreviewPanel` 的图片预览默认直接展示无蒙层的内嵌 Element Plus Image Viewer，缩放、旋转、
+  适应模式、原始尺寸和拖拽工具栏进入预览区后即可使用，不再点击图片打开第二层覆盖层。业务接入不需要增加 prop；
+  文件 ID 持久化、上传/预览/下载 API、权限、租户和文档转换接口不变。
+
 - v2026.07.08-admin-page-layout-release 只发布后台统一页面骨架组件、运营列表页 CLI/starter 模板和前端 npm 版本锁；不改变文件上传、回显、下载、预览、文件权限、租户隔离、业务表保存 fileId/fileIds 的接入方式和本场景验收步骤。业务项目升级时按发布说明成组升级前端 `@mango/*` 包和 `@mango/cli`。
 
 ## 8. 后端合并 PDF 归档
@@ -173,17 +182,17 @@ FileRecordVO pdfFile = fileApi.mergeToPdf(command).getData();
 
 ## 9. 常见失败
 
-| 现象 | 优先检查 |
-|------|----------|
-| 上传成功但业务保存后文件丢失 | 表单提交是否带 fileId，后端 Command/Request 是否接收并持久化 |
-| 下载 404 | fileId 是否存在，存储配置是否指向正确 bucket、目录或本地路径 |
-| 预览失败 | file-preview 依赖、转换配置、预览 token 和源文件读取权限 |
-| 多租户下看不到文件 | 文件记录 tenantId、业务数据 tenantId、当前登录上下文是否一致 |
-| 图片能下载但缩略图裂图 | 是否把受保护的 `previewUrl` 或 `downloadUrl` 直接交给 `<img>`；应升级并使用 `MUpload`，由组件按文件 ID 获取预览元数据或通过鉴权下载生成临时 `blob:` 地址 |
-| 图片能下载但不能在线预览 | 前端是否使用预览入口，后端 MIME 类型和预览类型是否匹配 |
-| 点击预览触发下载 | 是否把 `/api/file/files/download` 或 `/file/files/download` 写入了 `previewUrl`；详情预览应使用有效 `previewUrl` 或文档预览服务链接，没有可用预览地址时展示下载查看提示 |
-| ZIP 打包失败 | `entries.path` 是否为空、重复、包含绝对路径或 `..`，源文件是否处于可下载的已完成状态 |
-| PDF 合并失败 | `targetFormat` 是否为 `PDF`，源文件是否为 PDF、JPG/JPEG、PNG、TIFF、DOC、DOCX，fileproc 转换和 PDF 合并能力是否已配置，源文件是否处于可下载的已完成状态 |
+| 现象                         | 优先检查                                                                                                                                                                |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 上传成功但业务保存后文件丢失 | 表单提交是否带 fileId，后端 Command/Request 是否接收并持久化                                                                                                            |
+| 下载 404                     | fileId 是否存在，存储配置是否指向正确 bucket、目录或本地路径                                                                                                            |
+| 预览失败                     | file-preview 依赖、转换配置、预览 token 和源文件读取权限                                                                                                                |
+| 多租户下看不到文件           | 文件记录 tenantId、业务数据 tenantId、当前登录上下文是否一致                                                                                                            |
+| 图片能下载但缩略图裂图       | 是否把受保护的 `previewUrl` 或 `downloadUrl` 直接交给 `<img>`；应升级并使用 `MUpload`，由组件按文件 ID 获取预览元数据或通过鉴权下载生成临时 `blob:` 地址                |
+| 图片能下载但不能在线预览     | 前端是否使用预览入口，后端 MIME 类型和预览类型是否匹配                                                                                                                  |
+| 点击预览触发下载             | 是否把 `/api/file/files/download` 或 `/file/files/download` 写入了 `previewUrl`；详情预览应使用有效 `previewUrl` 或文档预览服务链接，没有可用预览地址时展示下载查看提示 |
+| ZIP 打包失败                 | `entries.path` 是否为空、重复、包含绝对路径或 `..`，源文件是否处于可下载的已完成状态                                                                                    |
+| PDF 合并失败                 | `targetFormat` 是否为 `PDF`，源文件是否为 PDF、JPG/JPEG、PNG、TIFF、DOC、DOCX，fileproc 转换和 PDF 合并能力是否已配置，源文件是否处于可下载的已完成状态                 |
 
 ## 10. 验证命令
 

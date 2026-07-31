@@ -8,6 +8,7 @@ import io.mango.notice.api.query.NoticeSiteMessagePageQuery;
 import io.mango.notice.api.vo.NoticeSiteMessageActionRequestVO;
 import io.mango.notice.api.vo.NoticeSiteMessageVO;
 import io.mango.notice.api.vo.NoticeUnreadCountVO;
+import io.mango.notice.api.vo.NoticeUnreadCategoryStatsVO;
 
 /** Current-user site message queries, state changes and controlled actions. */
 public interface INoticeSiteMessageService {
@@ -17,6 +18,8 @@ public interface INoticeSiteMessageService {
     NoticeSiteMessageVO getSiteMessage(Long id);
 
     NoticeUnreadCountVO unreadCount();
+
+    NoticeUnreadCategoryStatsVO unreadCategoryStats();
 
     boolean markSiteMessageRead(Long id);
 

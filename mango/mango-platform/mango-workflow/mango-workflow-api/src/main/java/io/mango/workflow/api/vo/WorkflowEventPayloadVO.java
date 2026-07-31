@@ -49,6 +49,9 @@ public class WorkflowEventPayloadVO {
     @Schema(description = "申请人名称")
     private String applicantName;
 
+    @Schema(description = "自定义业务查看路径")
+    private String viewPath;
+
     @Schema(description = "流程变量快照")
     private WorkflowJsonVO variables;
 
