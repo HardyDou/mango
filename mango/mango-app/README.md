@@ -142,3 +142,7 @@ app 层只装配权限能力。菜单、权限和租户数据由 `mango-authoriz
 - [微服务部署入口](./microservice/README.md)
 - [Mango 后端根 README](../README.md)
 - [Mango 能力地图](../../mango-docs/capabilities/README.md)
+
+### Issue #661 文件打包大小控制影响
+
+`mango-file` 新增可选的 `packageFilesWithSizeControl` Java/HTTP/Feign 入口，文件预览 app 的测试替身仅同步公共 `FileApi` 方法以保持编译兼容。现有 app 装配、服务路由、启动配置、文件上传、预览和下载入口均不变；需要控制单个 ZIP 最终大小的业务调用方应直接使用文件模块的新入口。
