@@ -16,7 +16,7 @@
 | Codex plugin 投影 | `.codex-plugin`、`skills`                                                   | npm 包根可安装插件；版本由 build 从 package metadata 生成                          |
 | 业务同步          | `mango pmo sync/upgrade`                                                    | CLI 从本包安装业务仓 baseline，并同步 canonical PR 风险合同区段                    |
 | 影响驱动门禁      | `dist/baseline/tools/risk-verification.mjs`、`classify-pmo-check-scope.mjs` | 校验需求/方案风险，并把 Java PR 限定到受影响 Maven 模块                            |
-| 前端页面基线      | `dist/baseline/tools/check-frontend-page-baseline.mjs`                     | 阻断新增或修改页面继续使用旧列表骨架和原生标准 Dialog                             |
+| 前端页面基线      | `dist/baseline/tools/check-frontend-page-baseline.mjs`                      | 阻断新增或修改页面继续使用旧列表骨架和原生标准 Dialog                              |
 
 ## 3. 接入方式
 
