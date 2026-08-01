@@ -26,15 +26,30 @@
 
 - Upgrade historical, schema-compatible lifecycle documents by writing their path, SHA-256 and PMO-version baseline before enforcing the document-set gate.
 
+### Changed
+
+- Install PMO 1.3.8 frontend rules that require the current Mango list, independent detail/form and standard-dialog page shells for new or modified business pages.
+- Sync `check-frontend-page-baseline.mjs` and generated GitHub/Gitea workflows so frontend page changes contribute to the stable `pmo-doc-check` required check.
+
+### PMO Required Checks
+
+- `check-frontend-page-baseline.mjs`
+  - Migration: Before upgrading, inspect changed `views/**/*.vue` files and migrate management lists to `MangoListPage`, `MangoSearchPanel`, `MangoListPanel` and `Pagination`, independent detail/form pages to their Mango page shells, and standard dialogs to `MangoDialog`.
+  - Exception: Use a reviewable typed comment such as `<!-- mango-page-baseline-exception dialog: third-party editor requires the native dialog contract -->` only when the page semantics or native dependency makes the standard shell inapplicable; supported kinds are `list`, `detail`, `form` and `dialog`.
+  - Verify: `node business-pmo/mango-baseline/tools/check-frontend-page-baseline.mjs --base <base-sha> --head <head-sha> --frontend-root <frontend-root>`.
+
 ### Upgrade Notes
 
 - Publish and verify `@mango/pmo@1.3.8` before installing `@mango/cli@1.0.94`.
+- Inspect open and planned frontend page changes before syncing PMO 1.3.8; migrate affected pages or record a typed exception with a concrete reason.
 - Existing business projects run `mango pmo upgrade --project-dir . --to 1.3.8 --sync-shell`, review `.mango-pmo-legacy-documents.json`, then run `mango pmo check --project-dir . --locked`.
+- Run the frontend page-baseline checker against the intended PR base/head before relying on the generated required check.
 - New lifecycle documents remain on PMO `1.3.8`; the upgrade baseline only admits unchanged documents on contract-declared historical versions.
 
 ### Verification
 
 - `node mango-ui/packages/mango-cli/scripts/check-cli.mjs`
+- `node --test mango-pmo/tests/frontend-page-baseline.test.mjs`
 - `node mango-ui/packages/mango-pmo/scripts/build-package.mjs && node mango-ui/packages/mango-pmo/scripts/check-package.mjs`
 
 ## 1.0.93 - 2026-08-01
