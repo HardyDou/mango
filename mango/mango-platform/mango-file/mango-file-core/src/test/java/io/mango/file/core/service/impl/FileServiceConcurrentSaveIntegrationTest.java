@@ -138,6 +138,48 @@ class FileServiceConcurrentSaveIntegrationTest {
         assertThat(fileStorage.objectCount()).isOne();
     }
 
+    @Test
+    void saveGenerated_秒传映射对象缺失时恢复原对象行并可下载() throws Exception {
+        fileStorage.reset(1);
+        byte[] content = "IT_683_missing_object".getBytes(StandardCharsets.UTF_8);
+
+        FileRecordVO first = saveNow(content, 0);
+        fileStorage.removeObject(first.getObjectName());
+
+        FileRecordVO repaired = saveNow(content, 1);
+
+        assertThat(repaired.getObjectId()).isEqualTo(first.getObjectId());
+        assertThat(count("file_object")).isOne();
+        assertThat(count("file_hash_mapping")).isOne();
+        assertThat(longValue("file_hash_mapping", "status")).isEqualTo(1L);
+        assertThat(fileStorage.objectCount()).isOne();
+        MangoContextHolder.set(MangoContextSnapshot.empty()
+                .withSecurity(USER_ID, String.valueOf(TENANT_ID), "IT_683", "admin",
+                        "USER", "USER", USER_ID, "IT_683"));
+        try (InputStream inputStream = fileService.downloadForService(first.getId()).inputStream()) {
+            assertThat(inputStream.readAllBytes())
+                    .containsExactly(content);
+        } finally {
+            MangoContextHolder.clear();
+        }
+    }
+
+    @Test
+    void save_失活映射对象缺失时仍恢复原对象行() {
+        fileStorage.reset(1);
+        byte[] content = "IT_683_inactive_mapping".getBytes(StandardCharsets.UTF_8);
+        FileRecordVO first = saveNow(content, 0);
+        jdbcTemplate.update("update file_hash_mapping set status = 0");
+        fileStorage.removeObject(first.getObjectName());
+
+        FileRecordVO repaired = saveNow(content, 1);
+
+        assertThat(repaired.getObjectId()).isEqualTo(first.getObjectId());
+        assertThat(count("file_object")).isOne();
+        assertThat(longValue("file_hash_mapping", "status")).isEqualTo(1L);
+        assertThat(fileStorage.objectCount()).isOne();
+    }
+
     private FileRecordVO saveGenerated(CountDownLatch start, byte[] content, int fileIndex) throws Exception {
         start.await(10, TimeUnit.SECONDS);
         MangoContextHolder.set(MangoContextSnapshot.empty()
@@ -151,6 +193,25 @@ class FileServiceConcurrentSaveIntegrationTest {
             command.setBizType("IT_453");
             command.setBizId(String.valueOf(fileIndex));
             return fileService.saveGenerated(content, command);
+        } finally {
+            MangoContextHolder.clear();
+        }
+    }
+
+    private FileRecordVO saveNow(byte[] content, int fileIndex) {
+        MangoContextHolder.set(MangoContextSnapshot.empty()
+                .withSecurity(USER_ID, String.valueOf(TENANT_ID), "IT_683", "admin",
+                        "USER", "USER", USER_ID, "IT_683"));
+        try {
+            SaveFileCommand command = new SaveFileCommand();
+            command.setInputStream(new ByteArrayInputStream(content));
+            command.setFileName("IT_683_" + fileIndex + ".zip");
+            command.setFileSize((long) content.length);
+            command.setContentType("application/zip");
+            command.setPurpose("IT_683");
+            command.setBizType("IT_683");
+            command.setBizId(String.valueOf(fileIndex));
+            return fileService.save(command);
         } finally {
             MangoContextHolder.clear();
         }
@@ -344,6 +405,10 @@ class FileServiceConcurrentSaveIntegrationTest {
 
         int objectCount() {
             return objects.size();
+        }
+
+        void removeObject(String objectName) {
+            objects.remove(objectName);
         }
 
         @Override

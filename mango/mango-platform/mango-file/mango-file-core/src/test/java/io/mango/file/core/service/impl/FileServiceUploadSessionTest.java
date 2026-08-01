@@ -9,6 +9,7 @@ import io.mango.file.api.enums.FileUploadMode;
 import io.mango.file.api.vo.FileSettingsVO;
 import io.mango.file.api.vo.FileUploadInitVO;
 import io.mango.file.core.config.FileProperties;
+import io.mango.file.core.entity.FileHashMappingEntity;
 import io.mango.file.core.entity.FileStorageConfigEntity;
 import io.mango.file.core.entity.FileUploadSessionEntity;
 import io.mango.file.core.mapper.FileDirectoryMapper;
@@ -42,6 +43,8 @@ class FileServiceUploadSessionTest {
 
     private FileUploadSessionMapper uploadSessionMapper;
     private FileStorageRouter storageRouter;
+    private FileObjectMapper fileObjectMapper;
+    private FileHashMappingMapper hashMappingMapper;
     private FileSettingsVO runtimeSettings;
     private FileService fileService;
 
@@ -55,8 +58,8 @@ class FileServiceUploadSessionTest {
         IFileSettingsService settingsService = mock(IFileSettingsService.class);
         IFileDirectoryService directoryService = mock(IFileDirectoryService.class);
         FileRecordMapper fileRecordMapper = mock(FileRecordMapper.class);
-        FileObjectMapper fileObjectMapper = mock(FileObjectMapper.class);
-        FileHashMappingMapper hashMappingMapper = mock(FileHashMappingMapper.class);
+        fileObjectMapper = mock(FileObjectMapper.class);
+        hashMappingMapper = mock(FileHashMappingMapper.class);
         uploadSessionMapper = mock(FileUploadSessionMapper.class);
         FileUploadPartMapper uploadPartMapper = mock(FileUploadPartMapper.class);
         FileDirectoryMapper directoryMapper = mock(FileDirectoryMapper.class);
@@ -129,6 +132,25 @@ class FileServiceUploadSessionTest {
         assertThat(result.getUploadMode()).isEqualTo(FileUploadMode.S3_MULTIPART.name());
         assertThat(result.getStorageUploadId()).isEqualTo("storage-upload-1");
         verify(storageRouter).initiateMultipartUpload(any(), any(), any());
+    }
+
+    @Test
+    void createUploadSession_withMissingInstantObject_fallsBackToNormalUpload() {
+        runtimeSettings.setInstantUploadEnabled(true);
+        FileHashMappingEntity mapping = new FileHashMappingEntity();
+        mapping.setObjectId(88L);
+        mapping.setStatus(1);
+        when(hashMappingMapper.selectOne(any())).thenReturn(mapping);
+        when(storageRouter.supportsMultipartUpload(any())).thenReturn(false);
+        CreateFileUploadSessionCommand command = uploadCommand();
+        command.setFileHash("a".repeat(64));
+
+        FileUploadInitVO result = fileService.createUploadSession(command);
+
+        assertThat(result.getInstant()).isFalse();
+        assertThat(result.getUploadMode()).isEqualTo(FileUploadMode.SERVER_CHUNK.name());
+        verify(hashMappingMapper).updateById(mapping);
+        verify(fileObjectMapper, never()).update(any(), any());
     }
 
     @Test

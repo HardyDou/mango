@@ -1408,41 +1408,78 @@ public class FileService implements IFileService, IFileContentProvider {
         }
         FileObjectEntity fileObject = fileObjectMapper.selectById(mapping.getObjectId());
         if (fileObject == null || !Integer.valueOf(FileObjectStatus.COMPLETED.value()).equals(fileObject.getStatus())) {
+            invalidateHashMapping(mapping, fileObject);
+            return null;
+        }
+        if (!isStoredObjectReadable(storageConfig, fileObject)) {
+            invalidateHashMapping(mapping, fileObject);
             return null;
         }
         return fileObject;
     }
-
     private FileObjectEntity findCompletedObject(FileStorageConfigEntity storageConfig,
                                                  String hash,
                                                  Long fileSize) {
         if (!StringUtils.hasText(hash) || fileSize == null) {
             return null;
         }
-        return fileObjectMapper.selectOne(new LambdaQueryWrapper<FileObjectEntity>()
+        FileObjectEntity fileObject = fileObjectMapper.selectOne(new LambdaQueryWrapper<FileObjectEntity>()
                 .eq(FileObjectEntity::getStorageConfigId, normalizedStorageConfigId(storageConfig))
                 .eq(FileObjectEntity::getBucketName, storageConfig.getBucketName())
                 .eq(FileObjectEntity::getFileHash, hash)
                 .eq(FileObjectEntity::getFileSize, fileSize)
                 .eq(FileObjectEntity::getStatus, FileObjectStatus.COMPLETED.value())
                 .last("LIMIT 1"));
-    }
-
-    private FileObjectEntity findCompletedObjectForUpdate(FileStorageConfigEntity storageConfig,
-                                                          String hash,
-                                                          Long fileSize) {
-        if (!StringUtils.hasText(hash) || fileSize == null) {
-            return null;
+        if (fileObject == null || isStoredObjectReadable(storageConfig, fileObject)) {
+            return fileObject;
         }
+        invalidateFileObject(fileObject);
+        return null;
+    }
+    private FileObjectEntity findObjectForUpdate(FileStorageConfigEntity storageConfig,
+                                                 String hash,
+                                                 Long fileSize) {
         return fileObjectMapper.selectOne(new LambdaQueryWrapper<FileObjectEntity>()
                 .eq(FileObjectEntity::getStorageConfigId, normalizedStorageConfigId(storageConfig))
                 .eq(FileObjectEntity::getBucketName, storageConfig.getBucketName())
                 .eq(FileObjectEntity::getFileHash, hash)
                 .eq(FileObjectEntity::getFileSize, fileSize)
-                .eq(FileObjectEntity::getStatus, FileObjectStatus.COMPLETED.value())
                 .last("LIMIT 1 FOR UPDATE"));
     }
-
+    private boolean isStoredObjectReadable(FileStorageConfigEntity storageConfig, FileObjectEntity fileObject) {
+        if (fileObject == null || !StringUtils.hasText(fileObject.getObjectName())) {
+            return false;
+        }
+        try {
+            FileObject storedObject = fileStorageRouter.getObject(storageConfig, fileObject.getObjectName());
+            if (storedObject == null || storedObject.inputStream() == null) {
+                return false;
+            }
+            try (InputStream ignored = storedObject.inputStream()) {
+                return Objects.equals(storedObject.contentLength(), fileObject.getFileSize());
+            }
+        } catch (RuntimeException | IOException ex) {
+            log.debug("Hash dedup object is not readable, objectId={}, objectName={}",
+                    fileObject.getId(), fileObject.getObjectName(), ex);
+            return false;
+        }
+    }
+    private void invalidateHashMapping(FileHashMappingEntity mapping, FileObjectEntity fileObject) {
+        mapping.setStatus(0);
+        mapping.setUpdatedBy(MangoContextHolder.userId());
+        mapping.setUpdatedTime(LocalDateTime.now());
+        fileHashMappingMapper.updateById(mapping);
+        if (fileObject != null) {
+            invalidateFileObject(fileObject);
+        }
+    }
+    private void invalidateFileObject(FileObjectEntity fileObject) {
+        fileObjectMapper.update(null, new LambdaUpdateWrapper<FileObjectEntity>()
+                .eq(FileObjectEntity::getId, fileObject.getId())
+                .set(FileObjectEntity::getStatus, FileObjectStatus.UNREFERENCED.value())
+                .set(FileObjectEntity::getUpdatedTime, LocalDateTime.now()));
+        disableHashMapping(fileObject.getId());
+    }
     private void cleanupRedundantStoredObject(FileStorageConfigEntity storageConfig,
                                               String uploadedObjectName,
                                               FileObjectEntity concurrentObject,
@@ -1466,7 +1503,23 @@ public class FileService implements IFileService, IFileContentProvider {
                     ex);
         }
     }
-
+    private void restoreFileObject(FileStorageConfigEntity storageConfig,
+                                   FileObjectEntity fileObject,
+                                   String objectName,
+                                   String contentType) {
+        String previousObjectName = fileObject.getObjectName();
+        fileObject.setStorageType(storageConfig.getStorageType());
+        fileObject.setStorageConfigId(normalizedStorageConfigId(storageConfig));
+        fileObject.setBucketName(storageConfig.getBucketName());
+        fileObject.setObjectName(objectName);
+        fileObject.setContentType(trimToNull(contentType));
+        fileObject.setStatus(FileObjectStatus.COMPLETED.value());
+        fileObject.setUpdatedBy(MangoContextHolder.userId());
+        fileObject.setUpdatedTime(LocalDateTime.now());
+        fileObjectMapper.updateById(fileObject);
+        cleanupRedundantStoredObject(storageConfig, previousObjectName, fileObject,
+                fileObject.getFileHash(), fileObject.getFileSize());
+    }
     private FileObjectEntity createOrReuseFileObject(Long tenantId,
                                                      FileStorageConfigEntity storageConfig,
                                                      String objectName,
@@ -1495,13 +1548,17 @@ public class FileService implements IFileService, IFileContentProvider {
             fileObjectMapper.insert(entity);
             return entity;
         } catch (DuplicateKeyException ex) {
-            FileObjectEntity concurrentObject = findCompletedObjectForUpdate(storageConfig, hash, fileSize);
+            FileObjectEntity concurrentObject = findObjectForUpdate(storageConfig, hash, fileSize);
             Require.notNull(concurrentObject, FileCode.FILE_STORE_FAILED);
-            cleanupRedundantStoredObject(storageConfig, objectName, concurrentObject, hash, fileSize);
+            if (Integer.valueOf(FileObjectStatus.COMPLETED.value()).equals(concurrentObject.getStatus())
+                    && isStoredObjectReadable(storageConfig, concurrentObject)) {
+                cleanupRedundantStoredObject(storageConfig, objectName, concurrentObject, hash, fileSize);
+                return concurrentObject;
+            }
+            restoreFileObject(storageConfig, concurrentObject, objectName, contentType);
             return concurrentObject;
         }
     }
-
     private void createHashMapping(Long tenantId,
                                    FileStorageConfigEntity storageConfig,
                                    String hash,
