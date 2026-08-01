@@ -28,7 +28,9 @@ class PersistenceColdBaselineIntegrationTest {
 
     private final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
             .withConfiguration(AutoConfigurations.of(PersistenceFlywayAutoConfiguration.class))
-            .withPropertyValues("mango.persistence.flyway.upgrade-locations-enabled=false");
+            .withPropertyValues(
+                    "mango.bootstrap.mode=bootstrap",
+                    "mango.persistence.flyway.upgrade-locations-enabled=false");
 
     @Test
     void applyColdBaseline_twoModulesInOneLogicalDatasource_createsModuleHistories() {

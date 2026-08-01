@@ -7,6 +7,8 @@ import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.Location;
 import org.flywaydb.core.api.configuration.ClassicConfiguration;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.autoconfigure.flyway.FlywayMigrationInitializer;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
@@ -50,35 +52,46 @@ class PersistenceFlywayAutoConfigurationTest {
     );
 
     private final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
+            .withPropertyValues(
+                    "mango.bootstrap.mode=runtime",
+                    "mango.persistence.flyway.upgrade-locations-enabled=false")
+            .withConfiguration(AutoConfigurations.of(PersistenceFlywayAutoConfiguration.class));
+
+    private final ApplicationContextRunner compatibilityContextRunner = new ApplicationContextRunner()
             .withPropertyValues("mango.persistence.flyway.upgrade-locations-enabled=false")
             .withConfiguration(AutoConfigurations.of(PersistenceFlywayAutoConfiguration.class));
 
     private final ApplicationContextRunner multiDataSourceContextRunner = new ApplicationContextRunner()
-            .withPropertyValues("mango.persistence.flyway.upgrade-locations-enabled=false")
+            .withPropertyValues(
+                    "mango.bootstrap.mode=runtime",
+                    "mango.persistence.flyway.upgrade-locations-enabled=false")
             .withConfiguration(AutoConfigurations.of(PersistenceDataSourceAutoConfiguration.class,
                     PersistenceFlywayAutoConfiguration.class));
 
     private final ApplicationContextRunner upgradeContextRunner = new ApplicationContextRunner()
+            .withPropertyValues("mango.bootstrap.mode=runtime")
             .withConfiguration(AutoConfigurations.of(PersistenceFlywayAutoConfiguration.class));
 
     @Test
-    void whenEnabled_shouldCreateFlywayBeanWithoutRuntimeInitializer() {
-        contextRunner
+    void whenLifecycleModeIsMissing_shouldCreateCompatibilityInitializerAndMigrateModules() {
+        compatibilityContextRunner
                 .withPropertyValues(flywayProperties(
                         "mango.persistence.flyway.enabled=true",
-                        "mango.persistence.flyway.modules.user.enabled=true"
+                        "mango.persistence.flyway.modules.persistence-test.enabled=true"
                 ))
                 .withUserConfiguration(H2DataSourceConfig.class)
                 .run(ctx -> {
                     assertThat(ctx).hasSingleBean(Flyway.class);
                     assertThat(ctx).hasSingleBean(PersistenceFlywayBootstrapExecutor.class);
-                    assertThat(ctx).doesNotHaveBean(FlywayMigrationInitializer.class);
+                    assertThat(ctx).hasSingleBean(FlywayMigrationInitializer.class);
+                    JdbcTemplate jdbcTemplate = new JdbcTemplate(ctx.getBean(DataSource.class));
+                    assertThat(tableExists(jdbcTemplate, "persistence_flyway_user")).isTrue();
                 });
     }
 
     @Test
     void flywayBean_shouldUseNoopLocationBecauseInitializerMigratesModules() {
-        contextRunner
+        compatibilityContextRunner
                 .withPropertyValues(flywayProperties(
                         "mango.persistence.flyway.enabled=true",
                         "mango.persistence.flyway.modules.persistence-test.enabled=true"
@@ -122,6 +135,7 @@ class PersistenceFlywayAutoConfigurationTest {
                     migrate(ctx);
                     JdbcTemplate jdbcTemplate = new JdbcTemplate(ctx.getBean(DataSource.class));
                     assertThat(tableExists(jdbcTemplate, "persistence_flyway_user")).isTrue();
+                    assertThat(tableExists(jdbcTemplate, "reserved_bootstrap_probe")).isFalse();
                 });
     }
 
@@ -629,13 +643,20 @@ class PersistenceFlywayAutoConfigurationTest {
                 });
     }
 
-    @Test
-    void flywayMigrationInitializer_shouldNotBeCreated() {
+    @ParameterizedTest
+    @ValueSource(strings = {"bootstrap", "runtime"})
+    void lifecycleMode_shouldNotCreateCompatibilityInitializerOrRunMigration(String lifecycleMode) {
         contextRunner
-                .withPropertyValues("mango.persistence.flyway.enabled=true")
+                .withPropertyValues(flywayProperties(
+                        "mango.bootstrap.mode=" + lifecycleMode,
+                        "mango.persistence.flyway.enabled=true",
+                        "mango.persistence.flyway.modules.persistence-test.enabled=true"
+                ))
                 .withUserConfiguration(H2DataSourceConfig.class)
                 .run(ctx -> {
                     assertThat(ctx).doesNotHaveBean(FlywayMigrationInitializer.class);
+                    JdbcTemplate jdbcTemplate = new JdbcTemplate(ctx.getBean(DataSource.class));
+                    assertThat(tableExists(jdbcTemplate, "persistence_flyway_user")).isFalse();
                 });
     }
 
@@ -651,13 +672,13 @@ class PersistenceFlywayAutoConfigurationTest {
     }
 
     @Test
-    void disabled_shouldCreateNonMigratingFlywayWithoutRuntimeInitializer() {
-        contextRunner
+    void disabled_shouldCreateCompatibilityInitializerWithoutRunningMigration() {
+        compatibilityContextRunner
                 .withPropertyValues("mango.persistence.flyway.enabled=false")
                 .withUserConfiguration(H2DataSourceConfig.class)
                 .run(ctx -> {
                     assertThat(ctx).hasSingleBean(Flyway.class);
-                    assertThat(ctx).doesNotHaveBean(FlywayMigrationInitializer.class);
+                    assertThat(ctx).hasSingleBean(FlywayMigrationInitializer.class);
                     assertThat(migrate(ctx).migrationCount()).isZero();
                 });
     }

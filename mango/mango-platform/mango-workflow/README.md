@@ -814,7 +814,7 @@ workflow_business_apply_status_log.updated_by
 workflow_business_apply_status_log.updated_at
 ```
 
-Flowable 启动所需的 `ACT_GE_PROPERTY` 元数据由 `WorkflowEngineMetadataInitializer` 在引擎初始化前按缺失项补齐。该访问明确绕过租户插件，因为 Flowable 元数据表没有 `tenant_id` 字段；随后仍由 Flowable 自己完成引擎配置项维护。
+Flowable 启动所需的 `ACT_GE_PROPERTY` 元数据由 `WorkflowEngineMetadataInitializer` 在引擎初始化前按缺失项补齐。该初始化器依赖数据库初始化完成：使用 `MangoApplication` 时必须先完成 `bootstrap apply`；仍使用 `SpringApplication.run` 且未配置 `mango.bootstrap.mode` 的兼容直启应用，由 Persistence 兼容初始化器先执行 workflow EXPAND migration。该访问明确绕过租户插件，因为 Flowable 元数据表没有 `tenant_id` 字段；随后仍由 Flowable 自己完成引擎配置项维护。
 
 `ACT_*`、`FLW_*` 属于直接集成的 Flowable 引擎表，字段和主键由 Flowable 数据模型定义，默认不参与 Mango Persistence 的业务表 Schema 标准字段校验。Mango 自有 `workflow_*` 表仍必须通过 `id`、审计、租户和组织字段校验。
 
@@ -882,6 +882,10 @@ workflow:template:push
 **空白库没有演示流程**
 
 这是默认行为。生产启动只同步正式资源；空白开发或演示环境需要示例流程时，设置 `mango.resource.registry.demo-enabled=true`，并确认 Resource Registry 已同步 `META-INF/mango/demo/workflow-demo-definition.yml`。
+
+**空白库启动提示 `ACT_GE_PROPERTY` 不存在**
+
+先确认 `mango.persistence.flyway.modules.workflow.enabled=true`。使用 `MangoApplication` 时检查当前 generation 是否已成功执行 `bootstrap apply`；仍使用 `SpringApplication.run` 的兼容直启应用不要配置 `mango.bootstrap.mode`，并确认应用使用包含 Issue #674 修复的 Persistence starter。禁止手工预建 `ACT_GE_PROPERTY` 或单独执行 Workflow V1 绕过初始化顺序。
 
 **默认管理员打开流程定义管理后列表为空**
 
