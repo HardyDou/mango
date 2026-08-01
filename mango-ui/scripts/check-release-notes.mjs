@@ -41,18 +41,11 @@ export function runReleaseNotesCheck(argv = process.argv.slice(2)) {
     errors.push('Root CHANGELOG.md is missing.');
   } else {
     const rootChangelog = readFileSync(rootChangelogPath, 'utf8');
-    const section = latestReleaseSection(rootChangelog);
     errors.push(
-      ...validateReleaseSection(section, {
-        label: 'Latest root CHANGELOG.md release section',
+      ...validateRootReleaseNotes(rootChangelog, {
         packageName: args.packageName,
         version: args.version,
-      }),
-    );
-    errors.push(
-      ...validateRequiredCheckCoverage(section, {
-        label: 'Latest root CHANGELOG.md release section',
-        checkers: requiredPmoChecks,
+        requiredPmoChecks,
       }),
     );
   }
@@ -114,6 +107,15 @@ export function releaseSectionForVersion(changelog, version) {
   const versionPattern = new RegExp(`(^|[^0-9.])${escapedVersion}(?![0-9.])`, 'u');
   const releaseSections = changelog.match(/^##\s+.+$(?:\n(?!##\s).*)*/gm) || [];
   return releaseSections.find((section) => versionPattern.test(section.split('\n', 1)[0])) || '';
+}
+
+export function validateRootReleaseNotes(changelog, { packageName, version, requiredPmoChecks = [] }) {
+  const label = `Root CHANGELOG.md ${packageName}@${version} release section`;
+  const section = releaseSectionForVersion(changelog, version);
+  return [
+    ...validateReleaseSection(section, { label, packageName, version }),
+    ...validateRequiredCheckCoverage(section, { label, checkers: requiredPmoChecks }),
+  ];
 }
 
 export function extractWorkflowCheckers(content) {

@@ -36,8 +36,9 @@
 
 ## 5. 验证结果
 
-- release-notes 单元测试：6/6 通过。
-- `@mango/pmo@1.3.8` 与 `@mango/cli@1.0.94` 实际发布说明检查通过。
+- release-notes 单元测试：7/7 通过。
+- `@mango/pmo@1.3.8`、当前 `@mango/cli@1.0.95` 与历史目标
+  `@mango/cli@1.0.94` 实际发布说明检查通过；新增发布条目不影响目标版本段选择。
 - admin 样式聚合、模块样式治理、release impact、workspace layout、Prettier 和
   `git diff --check` 全部通过。
 - 本地 Node `26.5.0` 不在仓库声明的 `>=22.23.1 <23` 范围内；命令仅产生 engine

@@ -59,9 +59,11 @@ PMO 1.3.8 的条目覆盖列表、详情、表单和标准弹框公共骨架，�
    披露，锁发生变化时把该 CLI 发布作为上一已发布基线。
 3. 对比上一 CLI 发布与当前工作树中的 GitHub/Gitea 业务 `pmo-doc-check` 模板，提取
    随 PMO 锁升级新增的 `business-pmo/mango-baseline/tools/check-*.mjs`。
-4. 要求 PMO 对应版本 changelog、CLI 对应版本 changelog、根最新发布段，以及启用
+4. 要求 PMO 对应版本 changelog、CLI 对应版本 changelog、根目标版本发布段，以及启用
    `--check-github-release` 时的 Release 正文，都包含该 checker 的 Migration、Exception、
    Verify 三项说明。
+
+根 Changelog 必须按目标包版本精确选择发布段，后续新发布条目不能改变历史版本检查结果。
 
 `@mango/pmo` 的发布说明检查也提前执行同一 CLI 消费覆盖判定，确保 PMO 制品进入不可变
 publish 之前发现遗漏，而不是等 PMO 已发布后才在 CLI 步骤失败。

@@ -6,6 +6,7 @@ import {
   extractWorkflowCheckers,
   releaseSectionForVersion,
   validateRequiredCheckCoverage,
+  validateRootReleaseNotes,
 } from './check-release-notes.mjs';
 
 const frontendChecker = 'check-frontend-page-baseline.mjs';
@@ -87,4 +88,33 @@ old
 `;
   assert.match(releaseSectionForVersion(changelog, '1.0.94'), /current/u);
   assert.match(releaseSectionForVersion(changelog, '1.0.9'), /old/u);
+});
+
+test('validates the target root release after a newer release is added', () => {
+  const changelog = `
+## v2026.08.01-cli-1.0.95-release
+
+@mango/cli 1.0.95
+
+### Published Packages
+### Upgrade Notes
+### Verification
+
+## v2026.08.01-pmo-1.3.8-cli-1.0.94-release
+
+@mango/cli 1.0.94
+
+### Published Packages
+${completeEntry}
+### Upgrade Notes
+### Verification
+`;
+  assert.deepEqual(
+    validateRootReleaseNotes(changelog, {
+      packageName: '@mango/cli',
+      version: '1.0.94',
+      requiredPmoChecks: [frontendChecker],
+    }),
+    [],
+  );
 });
