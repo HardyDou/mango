@@ -18,11 +18,16 @@ import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.condition.NoneNestedConditions;
 import org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration;
+import org.springframework.boot.autoconfigure.flyway.FlywayMigrationInitializer;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.DependsOn;
+import org.springframework.context.annotation.ConfigurationCondition.ConfigurationPhase;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
@@ -102,6 +107,7 @@ public class PersistenceFlywayAutoConfiguration {
     private static final String HISTORY_TABLE_PREFIX = "flyway_schema_history_";
     private static final String DEFAULT_MANGO_HOME = "/opt/mango";
     private static final String DEFAULT_UPGRADE_DIRECTORY_NAME = "upgrade";
+    private static final Set<String> PERSISTENCE_EXCLUDED_CLASSPATH_MODULES = Set.of("bootstrap");
     private static final Set<String> MANGO_NON_LINEAR_PUBLISHED_MODULES = Set.of(
             "authorization",
             "domain",
@@ -119,7 +125,8 @@ public class PersistenceFlywayAutoConfiguration {
     @ConditionalOnMissingBean(Flyway.class)
     public Flyway flyway(@Autowired DataSource dataSource,
                          @Autowired PersistenceFlywayProperties properties) {
-        // Mango runs module migrations explicitly in the ApplicationRunner below.
+        // Mango runs module migrations through its lifecycle executor or the
+        // compatibility initializer below.
         // This bean prevents Spring Boot's default Flyway flow from merging all
         // module locations into one history table, where duplicate V1 scripts clash.
         return Flyway.configure()
@@ -226,6 +233,27 @@ public class PersistenceFlywayAutoConfiguration {
                     moduleCount, migrationCount, phase.name());
         }, () -> applyColdBaseline(dataSource, properties, registryProvider.getIfAvailable(),
                 resolverProvider.getIfAvailable()));
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(FlywayMigrationInitializer.class)
+    @Conditional(LegacyDirectStartupCondition.class)
+    public FlywayMigrationInitializer persistenceFlywayMigrationInitializer(
+            Flyway flyway,
+            PersistenceFlywayBootstrapExecutor executor) {
+        return new FlywayMigrationInitializer(flyway,
+                ignored -> executor.migrate(BootstrapPhase.EXPAND));
+    }
+
+    static final class LegacyDirectStartupCondition extends NoneNestedConditions {
+
+        LegacyDirectStartupCondition() {
+            super(ConfigurationPhase.REGISTER_BEAN);
+        }
+
+        @ConditionalOnProperty(prefix = "mango.bootstrap", name = "mode")
+        static final class BootstrapLifecycleModeConfigured {
+        }
     }
 
     private PersistenceFlywayBootstrapExecutor.MigrationSummary applyColdBaseline(
@@ -771,6 +799,7 @@ public class PersistenceFlywayAutoConfiguration {
         }
         return modules.stream()
                 .filter(StringUtils::hasText)
+                .filter(module -> !PERSISTENCE_EXCLUDED_CLASSPATH_MODULES.contains(module))
                 .sorted(Comparator.naturalOrder())
                 .collect(LinkedHashSet::new, LinkedHashSet::add, LinkedHashSet::addAll);
     }

@@ -268,6 +268,14 @@ persistence-datasource=job
 
 来源：`PersistenceFlywayProperties`，配置前缀为 `mango.persistence.flyway`。
 
+模块 migration 有两个互斥入口：
+
+- 使用 `MangoApplication` 的正式 lifecycle 应先运行 `bootstrap apply`，由 Persistence Bootstrap step 执行 migration；`runtime` 只校验回执，不自动执行 Flyway。
+- 仍使用 `SpringApplication.run` 且未配置 `mango.bootstrap.mode` 的兼容直启应用，由 `persistenceFlywayMigrationInitializer` 在数据库依赖 Bean 创建前自动执行 EXPAND migration。这个入口用于兼容尚未迁移到 Mango Bootstrap lifecycle 的业务项目。
+- `db/migration/bootstrap` 是 Bootstrap lifecycle 自有 schema，由 `BootstrapSchemaMigrator` 独立维护，不参与 Persistence 的模块发现、声明校验或模块 history table。
+
+两种入口复用同一个模块解析和执行器，不会把多个模块合并到同一张 Flyway history table。
+
 如果不配置 `modules`，starter 会扫描所有 `classpath*:db/migration/*/V*.sql`，把中间目录名当作模块名，并按模块名排序执行。每个模块默认使用独立 history table，例如模块 `mango-job` 的默认表是 `flyway_schema_history_mango_job`。
 
 如果显式配置了 `modules`，starter 会把配置视为当前应用的 Flyway 模块清单，并继续扫描 classpath。classpath 中存在 `db/migration/<module>/V*.sql` 但清单未声明的模块会导致启动失败。有意跳过某个已进入 classpath 的模块时，必须声明该模块 `enabled=false` 并填写 `skip-reason`，避免 starter、Controller 或 Resource 已装配但表结构未初始化的假集成。
@@ -1089,7 +1097,8 @@ src/main/resources/db/migration/<module>/V2__add_xxx.sql
 
 | 初始化器 | 触发条件 | 幂等边界 | 排查入口 |
 |----------|----------|----------|----------|
-| `persistenceFlywayMigrationInitializer` | 存在 `DataSource`、classpath 有 Flyway、`mango.persistence.flyway.enabled=true` | Flyway 按模块 history table 记录已执行版本；重复启动不会重复执行同一版本 | 检查对应 `flyway_schema_history_<module>` 表和应用启动日志 |
+| `persistenceFlywayMigrationInitializer` | 存在 `DataSource`、classpath 有 Flyway、未配置 `mango.bootstrap.mode`；`mango.persistence.flyway.enabled=true` 时执行 migration | Flyway 按模块 history table 记录已执行版本；重复启动不会重复执行同一版本 | 检查对应 `flyway_schema_history_<module>` 表、应用启动日志和 `mango.bootstrap.mode` |
+| `PersistenceBootstrapStepContributor` | `mango.bootstrap.mode=bootstrap` 且执行 apply/finalize | Bootstrap step 回执与模块 Flyway history 共同保证重入 | 检查 Bootstrap execution/step 回执和对应 `flyway_schema_history_<module>` |
 | `SchemaValidationRunner` | 存在 `DataSource`、`mango.persistence.schema-validation.enabled=true` | 只读取数据库元数据，不写业务数据 | 启动日志出现 `数据库结构校验通过`，或在发现问题时按 `fail-fast` 决定告警或启动失败 |
 
 业务表最小要求：
@@ -1161,7 +1170,7 @@ src/main/resources/db/migration/<module>/V2__add_xxx.sql
 
 **Flyway 没执行业务模块 migration**
 
-检查脚本路径是否是 `db/migration/<module>/V*.sql`，检查 `mango.persistence.flyway.enabled` 和 `mango.persistence.flyway.modules.<module>.enabled`，再检查模块脚本是否已经被当前模块 history table 记录。
+先检查当前进程入口：`SpringApplication.run` 兼容直启不能配置 `mango.bootstrap.mode`；使用 `MangoApplication` 时必须先完成 `bootstrap apply`，不能依赖 `runtime` 补 migration。然后检查脚本路径是否是 `db/migration/<module>/V*.sql`，检查 `mango.persistence.flyway.enabled` 和 `mango.persistence.flyway.modules.<module>.enabled`，再检查模块脚本是否已经被当前模块 history table 记录。
 
 启用模块运行态诊断时，Persistence 只报告真实初始化流程记录的 RUNNING/APPLIED/FAILED/DISABLED、current version、pending count 和 history table；诊断调用本身不会执行 migrate、repair 或 validate。启动期 Flyway 失败仍按原行为阻断应用启动。
 

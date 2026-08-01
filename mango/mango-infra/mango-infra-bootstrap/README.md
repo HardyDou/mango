@@ -83,6 +83,8 @@ MangoApplication.run(MyApplication.class, args);
 
 生命周期表由 `mango-infra-bootstrap-core/src/main/resources/db/migration/bootstrap/V1__init_bootstrap_lifecycle.sql` 创建：
 
+该目录由 `BootstrapSchemaMigrator` 独立迁移，不作为 `mango.persistence.flyway.modules` 模块，也不进入 Persistence 的模块 history table。
+
 | 表 | 用途 |
 |----|------|
 | `mango_bootstrap_control` | 环境的 stable/candidate generation、fingerprint、状态和 fencing token。 |

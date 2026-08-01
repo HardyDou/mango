@@ -43,7 +43,9 @@ class PersistenceFlywayMigrationIntegrationTest {
     );
 
     private final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
-            .withPropertyValues("mango.persistence.flyway.upgrade-locations-enabled=false")
+            .withPropertyValues(
+                    "mango.bootstrap.mode=bootstrap",
+                    "mango.persistence.flyway.upgrade-locations-enabled=false")
             .withConfiguration(AutoConfigurations.of(PersistenceFlywayAutoConfiguration.class));
 
     @Test
