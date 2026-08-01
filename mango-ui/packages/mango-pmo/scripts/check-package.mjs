@@ -20,6 +20,7 @@ const requiredFiles = [
   'agents/05-pmo-agent.md',
   'tools/pmo-preflight.mjs',
   'tools/check-document-set.mjs',
+  'tools/pin-historical-pmo-version-documents.mjs',
   'tools/check-frontend-page-baseline.mjs',
   'tools/delivery-contract-check.mjs',
   'tools/acceptance-evidence-check.mjs',

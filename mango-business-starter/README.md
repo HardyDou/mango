@@ -59,6 +59,8 @@ delivery-assurance schema revision 5 起，PMO baseline 同时携带 canonical �
 
 PMO 合同启用前形成、尚未迁移的生命周期文档可以在业务文档根目录的 `.mango-pmo-legacy-documents.json` 中逐文件登记相对路径、SHA-256 和迁移原因。该基线只锁定完全相同的存量内容：文件变化、删除、越界、重复或已经迁移为正式 `documentType` 时都会失败；新生命周期文档不能通过该文件绕过合同。
 
+当 PMO 合同在同一 schema revision 内仅升级 `pmoVersion` 时，重新执行 `mango pmo upgrade` 会为升级前已有且合同明确支持的版本自动登记路径、SHA-256、`pmoVersion` 和迁移原因；不会改写文档正文、审批证据或上游摘要。新建文档的版本口径见 [产品文档生命周期规范](../mango-pmo/rules/product/05-document-lifecycle.md)。
+
 ## 5. 接入方式
 
 业务开发者通常不直接复制本目录，而是通过 CLI 使用：

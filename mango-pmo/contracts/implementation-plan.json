@@ -27,9 +27,10 @@
     ],
     "fixed": {
       "documentType": "implementation-plan",
-      "pmoVersion": "1.3.7",
+      "pmoVersion": "1.3.8",
       "schemaRevision": "1"
-    }
+    },
+    "historicalPmoVersions": ["1.3.6", "1.3.7"]
   },
   "localPrefixes": ["DEL", "TASK", "MS", "VAL", "DATA", "DOC", "RISK"],
   "upstreamPrefixes": [

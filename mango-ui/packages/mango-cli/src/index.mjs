@@ -3158,11 +3158,14 @@ function syncPmoBaseline(argv, { command = 'sync' } = {}) {
     command === 'sync' && installedLock
       ? resolveLockedPmoBaseline(targetDir, installedLock, availableBaseline)
       : resolveUpgradePmoBaseline(availableBaseline, options.to);
+  const historicalPmoVersionPlan =
+    command === 'upgrade' ? planHistoricalPmoVersionCompatibility(targetDir, baseline) : [];
   const projectTemplatePlan = planPmoProjectTemplateSync(targetDir, baseline);
   const governanceWorkflowPlan = planPmoGovernanceWorkflowSync(targetDir, variables, options.adoptGovernance);
   const plan = [
     ...planPmoBaselineSync(targetDir, baseline),
     ...planPmoSkillSync(targetDir, baseline),
+    ...historicalPmoVersionPlan,
     ...projectTemplatePlan,
     ...governanceWorkflowPlan,
     ...planTemplateSync('business-pmo/README.md', targetDir, variables),
@@ -3201,7 +3204,12 @@ function syncPmoBaseline(argv, { command = 'sync' } = {}) {
     installPmoBundleAtomic(targetDir, baseline);
   }
   for (const item of plan) {
-    if (item.scope === 'pmo-bundle' || item.action === 'skip' || item.action === 'warn') {
+    if (
+      item.scope === 'pmo-bundle' ||
+      item.scope === 'historical-pmo-version' ||
+      item.action === 'skip' ||
+      item.action === 'warn'
+    ) {
       continue;
     }
     if (item.action === 'delete') {
@@ -3210,6 +3218,8 @@ function syncPmoBaseline(argv, { command = 'sync' } = {}) {
     }
     writePlannedFile(item);
   }
+  const historicalPmoVersionResult =
+    command === 'upgrade' ? runHistoricalPmoVersionCompatibility(targetDir, baseline) : null;
   const status = getPmoStatus(targetDir, { locked: true });
   if (status.errors.length > 0 || status.warnings.length > 0) {
     fail(`PMO baseline ${command} verification failed:\n${formatPmoStatusProblems(status)}`);
@@ -3221,6 +3231,70 @@ function syncPmoBaseline(argv, { command = 'sync' } = {}) {
   process.stdout.write(
     `Project PMO skills are synchronized under .agents/skills; no user-level Codex plugin installation was performed.\n`,
   );
+  if (historicalPmoVersionResult?.added.length > 0) {
+    process.stdout.write(
+      `Historical PMO version baseline locked ${historicalPmoVersionResult.added.length} lifecycle document(s).\n`,
+    );
+  }
+}
+
+function planHistoricalPmoVersionCompatibility(targetDir, baseline) {
+  const result = runHistoricalPmoVersionCompatibility(targetDir, baseline, { dryRun: true });
+  if (result.added.length === 0) return [];
+  return [
+    {
+      action: existsSync(result.baselinePath) ? 'update' : 'add',
+      path: relative(targetDir, result.baselinePath).split('\\').join('/'),
+      targetPath: result.baselinePath,
+      reason: `lock ${result.added.length} historical lifecycle document(s) created with prior supported PMO versions`,
+      scope: 'historical-pmo-version',
+    },
+  ];
+}
+
+function runHistoricalPmoVersionCompatibility(targetDir, baseline, { dryRun = false } = {}) {
+  const toolPath = join(baseline.root, 'tools/pin-historical-pmo-version-documents.mjs');
+  if (!existsSync(toolPath)) {
+    fail(`PMO bundle is missing historical pmoVersion compatibility tool: ${toolPath}`);
+  }
+  const businessDocsRoot = resolveBusinessDocsRoot(targetDir);
+  const args = [toolPath, '--root', businessDocsRoot, '--json'];
+  if (dryRun) args.push('--dry-run');
+  const result = spawnSync(process.execPath, args, { encoding: 'utf8' });
+  if (result.status !== 0) {
+    fail(
+      `historical pmoVersion compatibility ${dryRun ? 'plan' : 'pin'} failed:\n` +
+        `${result.stdout}\n${result.stderr}`.trim(),
+    );
+  }
+  try {
+    const parsed = JSON.parse(result.stdout);
+    if (!Array.isArray(parsed.added) || typeof parsed.baselinePath !== 'string') {
+      throw new Error('tool output is missing added or baselinePath');
+    }
+    return parsed;
+  } catch (error) {
+    fail(`historical pmoVersion compatibility returned invalid JSON: ${error.message}`);
+  }
+}
+
+function resolveBusinessDocsRoot(targetDir) {
+  const config = readOptionalJson(join(targetDir, 'mango.config.json'));
+  const configuredPath = config?.paths?.businessDocs ?? 'business-docs';
+  if (typeof configuredPath !== 'string' || !configuredPath.trim() || isAbsolute(configuredPath)) {
+    fail('mango.config.json paths.businessDocs must be a non-empty project-relative path');
+  }
+  const resolvedPath = resolve(targetDir, configuredPath);
+  const relativePath = relative(targetDir, resolvedPath);
+  if (
+    relativePath === '..' ||
+    relativePath.startsWith('../') ||
+    relativePath.startsWith('..\\') ||
+    isAbsolute(relativePath)
+  ) {
+    fail('mango.config.json paths.businessDocs must stay inside the project directory');
+  }
+  return resolvedPath;
 }
 
 function parsePmoArgs(argv) {

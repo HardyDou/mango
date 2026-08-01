@@ -1,5 +1,22 @@
 # @mango/cli Changelog
 
+## 1.0.94 - 2026-08-01
+
+### Fixed
+
+- Upgrade historical, schema-compatible lifecycle documents by writing their path, SHA-256 and PMO-version baseline before enforcing the document-set gate.
+
+### Upgrade Notes
+
+- Publish and verify `@mango/pmo@1.3.8` before installing `@mango/cli@1.0.94`.
+- Existing business projects run `mango pmo upgrade --project-dir . --to 1.3.8 --sync-shell`, review `.mango-pmo-legacy-documents.json`, then run `mango pmo check --project-dir . --locked`.
+- New lifecycle documents remain on PMO `1.3.8`; the upgrade baseline only admits unchanged documents on contract-declared historical versions.
+
+### Verification
+
+- `node mango-ui/packages/mango-cli/scripts/check-cli.mjs`
+- `node mango-ui/packages/mango-pmo/scripts/build-package.mjs && node mango-ui/packages/mango-pmo/scripts/check-package.mjs`
+
 ## 1.0.93 - 2026-08-01
 
 ### Changed
