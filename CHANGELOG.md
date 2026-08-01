@@ -51,6 +51,12 @@ Status: `PUBLISHED_AND_VERIFIED`. This npm-only release was published from merge
 - Preserve unchanged lifecycle documents created under PMO `1.3.6` or `1.3.7` when their current contracts remain schema-compatible, without allowing new documents to select an obsolete version.
 - Make `mango pmo upgrade` create a path, SHA-256 and version baseline for eligible historical documents, so the documented upgrade path resolves the collection gate failure.
 
+### Changed
+
+- Require new or modified management list pages to use `MangoListPage`, `MangoSearchPanel`, `MangoListPanel` and `Pagination`; require independent detail and form pages to use their current Mango page shells, and standard dialogs to use `MangoDialog`.
+- Add the incremental `check-frontend-page-baseline.mjs` checker to the PMO bundle and generated business-project baseline.
+- Add the frontend page-baseline job to generated GitHub and Gitea `pmo-doc-check` workflows and include its result in the stable required-check aggregate.
+
 ### Versions
 
 | Component | Previous | Release | Compatibility |
@@ -66,15 +72,25 @@ Status: `PUBLISHED_AND_VERIFIED`. This npm-only release was published from merge
 | 2 | `@mango/cli` | `1.0.94` | `PUBLISHED_AND_VERIFIED` |
 | 3 | Git tag and GitHub Release | `v2026.08.01-pmo-1.3.8-cli-1.0.94-document-version-compat-release` | `CREATED_AND_VERIFIED` |
 
+### PMO Required Checks
+
+- `check-frontend-page-baseline.mjs`
+  - Migration: Before upgrading, inspect changed `views/**/*.vue` files and migrate management lists to the Mango list-page components, independent detail/form pages to their page shells, and standard dialogs to `MangoDialog`.
+  - Exception: For a non-management table or a native component dependency that cannot use the standard shell, add a reviewable typed comment such as `<!-- mango-page-baseline-exception list: embedded comparison table is not a management list -->`; supported kinds are `list`, `detail`, `form` and `dialog`.
+  - Verify: `node business-pmo/mango-baseline/tools/check-frontend-page-baseline.mjs --base <base-sha> --head <head-sha> --frontend-root <frontend-root>`.
+
 ### Upgrade Notes
 
 1. Publish and install `@mango/pmo@1.3.8` before `@mango/cli@1.0.94`.
-2. In each existing business repository, run `mango pmo upgrade --project-dir . --to 1.3.8 --sync-shell`, review the planned or written `.mango-pmo-legacy-documents.json`, then run `mango pmo check --project-dir . --locked`.
-3. The generated baseline is accepted only for unchanged documents whose version is explicitly supported by the current contract. New or migrated lifecycle documents must use `1.3.8`.
+2. Before syncing the new PMO baseline, inspect open and planned frontend changes for the page patterns above; migrate affected pages or record a typed, reviewable exception reason.
+3. In each existing business repository, run `mango pmo upgrade --project-dir . --to 1.3.8 --sync-shell`, review the planned or written `.mango-pmo-legacy-documents.json`, then run `mango pmo check --project-dir . --locked`.
+4. Run the frontend page-baseline checker against the intended PR base/head before relying on the generated `pmo-doc-check` required check.
+5. The generated historical-document baseline is accepted only for unchanged documents whose version is explicitly supported by the current contract. New or migrated lifecycle documents must use `1.3.8`.
 
 ### Verification
 
 - `node --test mango-pmo/tests/document-contract/document-contract.test.mjs`
+- `node --test mango-pmo/tests/frontend-page-baseline.test.mjs`
 - `node mango-ui/packages/mango-pmo/scripts/build-package.mjs && node mango-ui/packages/mango-pmo/scripts/check-package.mjs`
 - `node mango-ui/packages/mango-cli/scripts/check-cli.mjs`
 - `node mango-business-starter/scripts/sync-pmo-baseline.mjs --check`
