@@ -89,6 +89,7 @@ test('generated backend validation only follows behavior-changing templates, gen
     'mango-ui/packages/mango-cli/templates/full/backend/pom.xml',
     'mango-ui/packages/mango-cli/src/index.mjs',
     'mango-ui/packages/mango-cli/scripts/check-generated-backend-gate.mjs',
+    'mango-pmo/tools/resolve-pmo-check-event-mode.mjs',
   ]) {
     assert.equal(classifyChangedFiles([file]).generated_backend, true, file);
   }
@@ -118,6 +119,7 @@ test('unknown critical generated-backend governance inputs fail closed', () => {
     'mango/mango-parent/new-governance.xml',
     'mango-pmo/baselines/mango-check/new-policy.json',
     'mango-pmo/tools/classify-pmo-check-scope.mjs',
+    'mango-pmo/tools/resolve-pmo-check-event-mode.mjs',
     'mango-pmo/tools/check-architecture-debt-budget.mjs',
     'business-pmo/architecture-debt-budget.json',
     'business-pmo/mango-baseline/tools/classify-pmo-check-scope.mjs',
@@ -297,6 +299,19 @@ test('CI reruns when policy-resolved assurance selections change and keeps expli
   assert.match(stableSummary, /if: \$\{\{ always\(\) \}\}/);
   assert.match(stableSummary, /success\|skipped\) ;;/);
   assert.match(stableSummary, /\*\) exit 1 ;;/);
+});
+
+test('Gitea terminal PR body edits skip diff-based checks but retain the PR contract check', () => {
+  const workflow = fs.readFileSync(
+    new URL('../../mango-ui/packages/mango-cli/templates/full/.gitea/workflows/pmo-doc-check.yml', import.meta.url),
+    'utf8',
+  );
+  assert.match(workflow, /Resolve PMO validation mode/);
+  assert.match(workflow, /resolve-pmo-check-event-mode\.mjs/);
+  assert.match(workflow, /PR_STATE: \$\{\{ gitea\.event\.pull_request\.state \}\}/);
+  assert.match(workflow, /PR_MERGED: \$\{\{ gitea\.event\.pull_request\.merged \}\}/);
+  assert.match(workflow, /Classify affected Maven scope\n\s+id: scope\n\s+if: steps\.event_mode\.outputs\.mode == 'change-validation'/);
+  assert.match(workflow, /Check impact-driven risk and verification contract\n\s+if: gitea\.event_name == 'pull_request'/);
 });
 
 test('Java source maps to one Maven module plus the governed architecture aggregator', () => {
