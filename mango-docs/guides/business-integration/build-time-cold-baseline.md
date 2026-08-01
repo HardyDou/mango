@@ -12,7 +12,7 @@
 PR：校验 V，可升级；不生成 B
   -> 合并 main，人工冲突已解决
   -> API artifact build：临时 MySQL + mango:baseline-generate
-  -> replay/determinism schema 各执行一次最终 V，先验证可复现
+  -> replay/determinism schema 各执行一次最终 V，先验证可复现（忽略标准审计时钟列）
   -> 生成每模块一个 B
   -> verify schema 连续执行 B 两次并比较结构/静态数据
   -> package/repackage 把 B + manifest 打进 JAR
@@ -114,6 +114,6 @@ Workflow 定义同理：B 只负责相关表结构和 V 静态行，流程部署
 - `migration resource/version collision`：PR 合并前人工确定版本顺序和 SQL 语义，CI 不自动改名。
 - `cross-module ... ownership conflict`：两个模块声明了同一表或视图；归并到唯一 Owner。
 - `generated baseline is not equivalent`：B 在第二 schema 的结构或静态数据不同；构建已阻断，不要跳过验证。
-- `V migrations are not deterministic`：同一组 V 在两个空 schema 产生了不同结构或静态数据；移除 `UUID()`、当前时间等非确定初始化表达式。
+- `V migrations are not deterministic`：同一组 V 在两个空 schema 产生了不同结构或静态数据。生成器只在这一步忽略 `created_at`、`updated_at`、`published_at` 的运行时钟差异；B 仍保留真实值并接受全列等价验证。其它列中的 `UUID()`、当前时间等非确定初始化表达式会继续被阻断，应改用稳定业务值。
 - `stored routines and events are not supported`：当前生成器不静默遗漏存储过程、函数或事件；将其迁移方案单独评审。
 - Jenkins 没有 MySQL：为该构建增加临时 MySQL 8.4 service/container，而不是改业务 datasource 或把生成推迟到部署服务器。

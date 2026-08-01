@@ -221,7 +221,7 @@ BOOT-INF
 | `mango.baseline.outputDirectory` | `target/generated-resources` | 仅构建目录；不要指向 `src/main/resources`。 |
 | `mango.baseline.keepSchemas` | `false` | 诊断时保留临时 schema；正常 CI 保持关闭。 |
 
-生成过程使用 replay/determinism/verify 三套 schema：前两套独立回放 V 以排除 `UUID()`、当前时间等不可复现数据，verify schema 连续执行 B 两次后再比较表、视图、触发器和全部 migration 静态行。存储过程、函数和事件当前 fail closed；重复版本、跨模块对象所有权、制品碰撞、缺失或被修改的 B、不可重入、结构或数据不等价都会使构建失败。安装新生成目录前保留上一次结果，安装异常时回滚。
+生成过程使用 replay/determinism/verify 三套 schema。前两套独立回放 V 时，确定性比较只忽略标准运行审计时间列 `created_at`、`updated_at`、`published_at`；B SQL 仍保留 replay 中这些列的真实值，verify schema 连续执行 B 两次后仍按全部列比较表、视图、触发器和 migration 静态行。其它列中的 `UUID()`、当前时间等非确定值继续阻断构建。存储过程、函数和事件当前 fail closed；重复版本、跨模块对象所有权、制品碰撞、缺失或被修改的 B、不可重入、结构或数据不等价都会使构建失败。安装新生成目录前保留上一次结果，安装异常时回滚。
 
 ## 8. 数据与初始化
 质量和脚手架 goal 不连接生产数据库。`baseline-generate` 只连接构建参数指定的一次性 MySQL，创建并清理带随机后缀的 replay/determinism/verify schema；不要向它提供生产或共享业务数据库账号。

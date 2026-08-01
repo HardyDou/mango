@@ -126,6 +126,57 @@ class BaselineGeneratorIntegrationTest {
         assertEquals(0, temporaryDatabaseCount(prefix));
     }
 
+    @Test
+    void allowsRuntimeAuditTimestampsAcrossCleanReplays() throws Exception {
+        migration("alpha", "V1__init.sql", """
+                CREATE TABLE alpha_record (
+                  id bigint primary key,
+                  record_code varchar(64) NOT NULL,
+                  created_at datetime(6) NOT NULL,
+                  updated_at datetime(6) NOT NULL,
+                  published_at datetime(6) NOT NULL
+                );
+                DO SLEEP(0.02);
+                INSERT INTO alpha_record (
+                  id, record_code, created_at, updated_at, published_at
+                ) VALUES (
+                  1, 'ALPHA-1', CURRENT_TIMESTAMP(6), NOW(6), CURRENT_TIMESTAMP(6)
+                );
+                """);
+        String prefix = uniquePrefix("it_audit_time");
+        Path output = directory.resolve("target/generated-resources");
+
+        generator(prefix, output, List.of("alpha"), Map.of()).generate();
+
+        String baseline = Files.readString(output.resolve("db/baseline/alpha/B1__baseline.sql"));
+        assertTrue(baseline.contains("`created_at`, `updated_at`, `published_at`"));
+        assertTrue(Files.exists(output.resolve("META-INF/mango/baseline-manifest.json")));
+        assertEquals(0, temporaryDatabaseCount(prefix));
+    }
+
+    @Test
+    void rejectsNondeterministicNonAuditTimestampData() throws Exception {
+        migration("alpha", "V1__init.sql", """
+                CREATE TABLE alpha_record (
+                  id bigint primary key,
+                  effective_at datetime(6) NOT NULL
+                );
+                DO SLEEP(0.02);
+                INSERT INTO alpha_record (id, effective_at)
+                VALUES (1, CURRENT_TIMESTAMP(6));
+                """);
+        String prefix = uniquePrefix("it_business_time");
+        Path output = directory.resolve("target/generated-resources");
+
+        MojoExecutionException exception = assertThrows(
+                MojoExecutionException.class,
+                () -> generator(prefix, output, List.of("alpha"), Map.of()).generate());
+
+        assertTrue(exception.getMessage().contains("not deterministic across clean replays"));
+        assertFalse(Files.exists(output.resolve("META-INF/mango/baseline-manifest.json")));
+        assertEquals(0, temporaryDatabaseCount(prefix));
+    }
+
     private BaselineGenerator generator(String prefix, Path output) throws Exception {
         return generator(
                 prefix,

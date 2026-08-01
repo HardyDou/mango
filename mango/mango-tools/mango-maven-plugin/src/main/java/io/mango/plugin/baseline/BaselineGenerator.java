@@ -116,7 +116,7 @@ final class BaselineGenerator {
                     groupName, groupModules, groupModuleSet, temporary.replay(), staging));
             MySqlBaselineStore.SchemaSnapshot replay =
                     store.snapshot(temporary.replay(), groupModuleSet, ownership);
-            verifyDeterministicReplay(groupName, groupModuleSet, temporary, replay);
+            verifyDeterministicReplay(groupName, groupModuleSet, temporary);
             verifyGeneratedBaselines(groupName, groupModules, groupModuleSet, temporary, staging, replay);
         }
         return List.copyOf(modules);
@@ -151,15 +151,16 @@ final class BaselineGenerator {
     private void verifyDeterministicReplay(
             String groupName,
             Set<String> groupModules,
-            TemporaryDatabases temporary,
-            MySqlBaselineStore.SchemaSnapshot replay) throws MojoExecutionException {
+            TemporaryDatabases temporary) throws MojoExecutionException {
         MySqlBaselineStore.SchemaSnapshot deterministic =
-                store.snapshot(temporary.determinism(), groupModules, ownership);
-        if (!replay.equals(deterministic)) {
+                store.determinismSnapshot(temporary.determinism(), groupModules, ownership);
+        MySqlBaselineStore.SchemaSnapshot comparableReplay =
+                store.determinismSnapshot(temporary.replay(), groupModules, ownership);
+        if (!comparableReplay.equals(deterministic)) {
             throw new MojoExecutionException(
                     "MANGO-BASELINE-040 V migrations are not deterministic across clean replays"
                             + "; datasourceGroup=" + groupName + "; difference="
-                            + snapshotDifference(replay, deterministic));
+                            + snapshotDifference(comparableReplay, deterministic));
         }
     }
 
