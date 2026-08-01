@@ -21,6 +21,7 @@ class ApiResourceProviderAutoConfigurationTest {
         contextRunner.run(context -> {
             assertThat(context).hasSingleBean(ApiAccessResourceProvider.class);
             assertThat(context).hasSingleBean(ApiAccessResourceDiscoverer.class);
+            assertThat(context.getBean(ApiAccessResourceProvider.class).participatesInBootstrap()).isFalse();
         });
     }
 
@@ -29,6 +30,16 @@ class ApiResourceProviderAutoConfigurationTest {
         contextRunner
                 .withPropertyValues("mango.authorization.resource-sync.resource-provider.enabled=false")
                 .run(context -> assertThat(context).doesNotHaveBean(ApiAccessResourceProvider.class));
+    }
+
+    @Test
+    void apiResourceProvider_shouldNotBeCreatedWithoutMvcHandlerMapping() {
+        new ApplicationContextRunner()
+                .withConfiguration(AutoConfigurations.of(ApiResourceProviderAutoConfiguration.class))
+                .run(context -> {
+                    assertThat(context).doesNotHaveBean(ApiAccessResourceDiscoverer.class);
+                    assertThat(context).doesNotHaveBean(ApiAccessResourceProvider.class);
+                });
     }
 
     @RestController

@@ -13,6 +13,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -83,6 +84,23 @@ class DefaultResourceTargetExecutorTest {
 
         assertThat(handler.deleteCalled.get()).isTrue();
         assertThat(result.getMessage()).isEqualTo("deleted");
+    }
+
+    @Test
+    void targetOperations_resolveLazyHandlersOnceOnFirstExecution() throws Exception {
+        AtomicInteger resolutions = new AtomicInteger();
+        RecordingHandler handler = new RecordingHandler(false);
+        DefaultResourceTargetExecutor executor = new DefaultResourceTargetExecutor(objectMapper, () -> {
+            resolutions.incrementAndGet();
+            return List.of(handler);
+        });
+
+        assertThat(resolutions).hasValue(0);
+
+        executor.upsertBatch(command(List.of(declaration("1", "AUTH_MENU")), List.of()));
+        executor.disable(command(List.of(declaration("1", "AUTH_MENU")), List.of()));
+
+        assertThat(resolutions).hasValue(1);
     }
 
     private DefaultResourceTargetExecutor executor(ResourceHandler handler) {

@@ -18,6 +18,8 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.function.Supplier;
 
 /**
  * 资源目标执行端口的纯 Java 默认实现。
@@ -27,12 +29,28 @@ public class DefaultResourceTargetExecutor implements ResourceTargetExecutor {
     private static final TypeReference<List<ResourceDeclaration>> DECLARATION_LIST_TYPE = new TypeReference<>() { };
 
     private final ObjectMapper objectMapper;
-    private final List<ResourceHandler> handlers;
+    private final Supplier<? extends Collection<ResourceHandler>> handlerSupplier;
     private final ResourceHandlerInvoker handlerInvoker = new ResourceHandlerInvoker();
+    private volatile List<ResourceHandler> handlers;
 
     public DefaultResourceTargetExecutor(ObjectMapper objectMapper, Collection<ResourceHandler> handlers) {
-        this.objectMapper = objectMapper;
-        this.handlers = List.copyOf(handlers);
+        this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper");
+        List<ResourceHandler> resolvedHandlers = List.copyOf(handlers);
+        this.handlerSupplier = () -> resolvedHandlers;
+        this.handlers = resolvedHandlers;
+    }
+
+    /**
+     * Creates an executor that resolves handlers only when a target operation first executes.
+     *
+     * @param objectMapper JSON protocol mapper
+     * @param handlerSupplier ordered handler source
+     */
+    public DefaultResourceTargetExecutor(
+            ObjectMapper objectMapper,
+            Supplier<? extends Collection<ResourceHandler>> handlerSupplier) {
+        this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper");
+        this.handlerSupplier = Objects.requireNonNull(handlerSupplier, "handlerSupplier");
     }
 
     @Override
@@ -93,13 +111,30 @@ public class DefaultResourceTargetExecutor implements ResourceTargetExecutor {
     }
 
     private ResourceHandler findHandler(String resourceType) {
-        ResourceHandler handler = handlers.stream()
+        ResourceHandler handler = handlers().stream()
                 .filter(candidate -> candidate.resourceType().equals(resourceType))
                 .findFirst()
                 .orElse(null);
         Require.notNull(handler, ResourceCode.RESOURCE_NOT_FOUND,
                 "未找到资源处理器: " + resourceType);
         return handler;
+    }
+
+    private List<ResourceHandler> handlers() {
+        List<ResourceHandler> resolvedHandlers = handlers;
+        if (resolvedHandlers != null) {
+            return resolvedHandlers;
+        }
+        synchronized (this) {
+            resolvedHandlers = handlers;
+            if (resolvedHandlers == null) {
+                Collection<ResourceHandler> suppliedHandlers = Objects.requireNonNull(
+                        handlerSupplier.get(), "handlerSupplier returned null");
+                resolvedHandlers = List.copyOf(suppliedHandlers);
+                handlers = resolvedHandlers;
+            }
+        }
+        return resolvedHandlers;
     }
 
     private ResourceDeclaration singleDeclaration(ExecuteResourceTargetCommand command) {

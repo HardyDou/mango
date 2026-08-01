@@ -1,6 +1,7 @@
 package io.mango.authorization.resource.sync;
 
 import io.mango.authorization.api.command.ApiResourceRegisterCommand;
+import io.mango.resource.api.enums.ResourceExecutionPhase;
 import io.mango.resource.support.ResourceTypes;
 import io.mango.resource.support.builder.ResourceDeclarationBuilder;
 import io.mango.resource.support.model.ResourceDeclaration;
@@ -17,7 +18,7 @@ public class ApiResourceDeclarationConverter {
     private static final String TARGET_MODULE = "authorization";
 
     public ResourceDeclaration toDeclaration(ApiResourceRegisterCommand command, String sourceModuleCode) {
-        return ResourceDeclarationBuilder.create(ResourceTypes.API_RESOURCE)
+        ResourceDeclaration declaration = ResourceDeclarationBuilder.create(ResourceTypes.API_RESOURCE)
                 .id(stableResourceId(command))
                 .version(1)
                 .module(sourceModuleCode, command.getModuleName())
@@ -34,6 +35,8 @@ public class ApiResourceDeclarationConverter {
                 .string("handlerMethod", command.getHandlerMethod())
                 .string("description", command.getDescription())
                 .build();
+        declaration.setExecutionPhase(ResourceExecutionPhase.RUNTIME_EVENTUAL);
+        return declaration;
     }
 
     private String bizKey(ApiResourceRegisterCommand command) {

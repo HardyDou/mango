@@ -17,6 +17,11 @@ public class ApiAccessResourceProvider implements ResourceProvider {
     private final ApiResourceDeclarationConverter converter;
 
     @Override
+    public boolean participatesInBootstrap() {
+        return false;
+    }
+
+    @Override
     public List<String> moduleCodes() {
         return List.of(properties.getProviderModuleCode());
     }
