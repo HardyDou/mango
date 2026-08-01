@@ -22,6 +22,7 @@
 | 风险与保障基线门禁     | `tools/risk-verification.mjs`                                                                                   | 校验需求影响、方案风险、二者最大值、人工确认的 M01-M16 精确值和已启用措施证据；不补固定套餐                                                         |
 | CI 措施选择            | `tools/assurance-ci-scope.mjs`                                                                                  | 从已解析模式基线读取 M01-M16；CI 只执行事实启用且适用于 CI 的能力                                                                                   |
 | CI 影响范围分类        | `tools/classify-pmo-check-scope.mjs`                                                                            | 按 Git 改动裁剪已启用检查的 PMO、Java、投影和 README 影响范围；只缩小范围，不替用户选择措施                                                         |
+| 前端页面基线           | `tools/check-frontend-page-baseline.mjs`、`rules/frontend/07-admin-ui-common.md`                                 | 检查新增或修改页面的默认骨架；特殊页面可填写可复核原因后按类型或整页例外                                                                           |
 | 业务 PR 风险合同       | `contracts/delivery-assurance.json`、`templates/business-pull-request-template.md`、`tools/risk-verification.mjs` | 同一 schema 定义字段、canonical 模板、PR 正文校验和模板结构校验                                                                                    |
 | 模块架构债务预算       | `tools/check-architecture-debt-budget.mjs`                                                                      | 比较完整 Reactor 报告与 Git 基准，阻断新增、替换、跨模块迁移和预算回升，并支持按模块查询、递减及存量模块两 PR 受控首次纳管                           |
 | 专项 Agent             | `agents/*-requirements-agent.md`、`agents/technical-design-agent.md`、`agents/implementation-plan-agent.md`     | 一个生命周期模板对应一个撰写 Agent                                                                                                                  |
@@ -58,6 +59,8 @@ mango pmo check --project-dir . --locked
 ```
 
 升级成功后，规则、合同、模板和 Agent 位于 `business-pmo/mango-baseline`，项目 Skill 位于 `.agents/skills`，版本身份位于 `business-pmo/pmo-lock.json`。项目级 Skill 已足够支持业务仓内的 Agent 路由，不要求同时安装用户级 Codex plugin。
+
+页面基线误判或页面确属特殊场景时，在对应 `.vue` 文件中登记例外：按类型使用 `<!-- mango-page-baseline-exception <list|detail|form|dialog>: <具体、可复核的原因> -->`；整个页面均不适用默认骨架时使用 `<!-- mango-page-baseline-exception all: <具体、可复核的原因> -->`。原因缺失或过短不会生效；完整规则见 `rules/frontend/07-admin-ui-common.md`，CI 失败输出也会直接提示这两种格式。
 
 业务仓日常命令使用项目内 CLI：
 

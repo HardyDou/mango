@@ -74,10 +74,17 @@ function changedVueViews(repositoryRoot, base, head, frontendRoot) {
 
 function hasException(content, kind) {
   const pattern = new RegExp(
-    `<!--\\s*mango-page-baseline-exception\\s+${kind}:\\s*([^\\n-][^\\n]{9,})\\s*-->`,
-    'iu',
+    `<!--\\s*mango-page-baseline-exception\\s+${kind}:\\s*([^\\n]*?)\\s*-->`,
+    'giu',
   );
-  return pattern.test(content);
+  return [...content.matchAll(pattern)].some(([, rawReason]) => {
+    const reason = rawReason.trim();
+    return reason.length >= 10 && !reason.startsWith('-');
+  });
+}
+
+function hasPageBaselineException(content, kind) {
+  return hasException(content, 'all') || hasException(content, kind);
 }
 
 function hasAny(content, patterns) {
@@ -87,29 +94,36 @@ function hasAny(content, patterns) {
 export function evaluateVuePageBaseline(file, content, status = 'M') {
   const failures = [];
   const isListPage = hasAny(content, [/<el-table\b/iu, /<ElTable\b/u]);
-  if (isListPage && !hasException(content, 'list')) {
+  if (isListPage && !hasPageBaselineException(content, 'list')) {
     for (const component of ['MangoListPage', 'MangoSearchPanel', 'MangoListPanel', 'Pagination']) {
       if (!content.includes(component)) failures.push(`${file}: list page must use ${component}`);
     }
   }
 
-  if (hasAny(content, [/<el-dialog\b/iu, /<ElDialog\b/u]) && !hasException(content, 'dialog')) {
+  if (hasAny(content, [/<el-dialog\b/iu, /<ElDialog\b/u]) && !hasPageBaselineException(content, 'dialog')) {
     failures.push(`${file}: standard dialog must use MangoDialog`);
   }
 
   const detailPath = /(?:^|\/)(?:detail|details)(?:\/|\.|$)|Detail(?:Page|View)?\.vue$/u.test(file);
   const formPath = /(?:^|\/)(?:form|create|edit)(?:\/|\.|$)|Form(?:Page|View)?\.vue$/u.test(file);
-  if (detailPath && hasAny(content, [/<el-descriptions\b/iu, /<ElDescriptions\b/u]) && !hasException(content, 'detail')) {
+  if (detailPath && hasAny(content, [/<el-descriptions\b/iu, /<ElDescriptions\b/u]) && !hasPageBaselineException(content, 'detail')) {
     for (const component of ['MangoDetailPage', 'MangoPageSection']) {
       if (!content.includes(component)) failures.push(`${file}: independent detail page must use ${component}`);
     }
   }
-  if (formPath && hasAny(content, [/<el-form\b/iu, /<ElForm\b/u]) && !hasException(content, 'form')) {
+  if (formPath && hasAny(content, [/<el-form\b/iu, /<ElForm\b/u]) && !hasPageBaselineException(content, 'form')) {
     for (const component of ['MangoFormPage', 'MangoPageSection']) {
       if (!content.includes(component)) failures.push(`${file}: independent form page must use ${component}`);
     }
   }
   return failures;
+}
+
+export function formatFrontendPageBaselineFailures(failures) {
+  return `Frontend page baseline FAIL:\n${failures.map(item => `- ${item}`).join('\n')}\n\n`
+    + 'Reviewed special cases may register an exception with a concrete reason:\n'
+    + '- one check: <!-- mango-page-baseline-exception <list|detail|form|dialog>: <concrete, reviewable reason> -->\n'
+    + '- whole page: <!-- mango-page-baseline-exception all: <concrete, reviewable reason> -->\n';
 }
 
 export function checkChangedFrontendPages({ repositoryRoot, base, head, frontendRoot }) {
@@ -135,7 +149,7 @@ export function runFrontendPageBaselineCli(argv = process.argv.slice(2)) {
     const frontendRoot = args.frontendRoot || readConfiguredFrontendRoot(repositoryRoot);
     const result = checkChangedFrontendPages({ repositoryRoot, ...args, frontendRoot });
     if (result.failures.length > 0) {
-      process.stderr.write(`Frontend page baseline FAIL:\n${result.failures.map(item => `- ${item}`).join('\n')}\n`);
+      process.stderr.write(formatFrontendPageBaselineFailures(result.failures));
       return 1;
     }
     process.stdout.write(`Frontend page baseline PASS: ${result.records.length} changed view files checked.\n`);
