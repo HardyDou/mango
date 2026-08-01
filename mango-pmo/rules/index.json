@@ -1,5 +1,5 @@
 {
-  "version": 12,
+  "version": 13,
   "always": [
     {
       "path": "rules/00-dev-flow.md",
@@ -181,7 +181,7 @@
     },
     "product.documentLifecycle": {
       "path": "rules/product/05-document-lifecycle.md",
-      "reason": "BRD、SRS、TDD、实施计划顺序、摘要、追踪与门禁规范"
+      "reason": "BRD、SRS、TDD、实施计划顺序、摘要、追踪、受控历史 PMO 文档版本基线与门禁规范"
     },
     "frontend.adminUiCommon": {
       "path": "rules/frontend/07-admin-ui-common.md",

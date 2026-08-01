@@ -1,10 +1,10 @@
 {
   "packageName": "@mango/pmo",
-  "packageVersion": "1.3.7",
+  "packageVersion": "1.3.8",
   "schemaVersion": 2,
   "source": "mango-pmo",
-  "sourceCommit": "8809e144244cc6d7137c1f19d0f593e1cbabea14",
-  "bundleSha256": "a3637475c3b9af0a9695e51f1b3ae3f840b4db3e7ef99269c402638223dc9d99",
+  "sourceCommit": "f28c95999dfb549abe6e7b709c2d1d1382d585a4",
+  "bundleSha256": "9631140327f53a0e93683dd815ea03958dc4e68e19a6a360640c7f2c9b861002",
   "contracts": [
     {
       "contractId": "business-requirements",
@@ -49,11 +49,11 @@
   ],
   "plugin": {
     "path": "package-root",
-    "sha256": "3b8853cca54c88b9f97db282dddf147a683f68b90cb42f0eadd93e3f78733f69",
+    "sha256": "245575df5b85b50fef97f1d46dedbd4f36ec950dcdf8f3b6f00ccdbe11c4deab",
     "files": [
       {
         "path": ".codex-plugin/plugin.json",
-        "sha256": "de21ca7f62f1f65cece46758a5c76729c97303571b6319ccc2ce2cf9c29b0d27",
+        "sha256": "248be01f4d54127808adc3a49778ac054e97089b2a0f2dac32229c2312362b87",
         "size": 708,
         "kind": "plugin",
         "mode": "0644"
@@ -294,8 +294,8 @@
   "files": [
     {
       "path": "README.md",
-      "sha256": "56a92848d3caffbcfee9dcf87fa446b79db0848519ba4cb7a581180fea47c132",
-      "size": 24063,
+      "sha256": "f0e6b37f8a177fb5c68193c54cd30e70890a8e2445685460fef24732153a8e39",
+      "size": 24066,
       "kind": "documentation",
       "mode": "0644"
     },
@@ -364,8 +364,8 @@
     },
     {
       "path": "contracts/business-requirements.json",
-      "sha256": "d5b3929b8c3b6eaa376137b37952d4bfb494a17aa431ddcbdbe7dab1b6c055f4",
-      "size": 10034,
+      "sha256": "2350876238e2e50f02e2e93f6cb0db7e86f3b9a699412d5448f6d5efcb083d9b",
+      "size": 10083,
       "kind": "contract",
       "mode": "0644"
     },
@@ -399,22 +399,22 @@
     },
     {
       "path": "contracts/implementation-plan.json",
-      "sha256": "b48982e8d5f78be0d46f36d65241689cdbd0c534b7edbd159454405b79a87331",
-      "size": 10715,
+      "sha256": "2115adde09560ac47ea78d6e25f62140ba0f549d66673d35c9913d9caa21bda5",
+      "size": 10764,
       "kind": "contract",
       "mode": "0644"
     },
     {
       "path": "contracts/system-requirements.json",
-      "sha256": "d4ea50e55fd622c185f8b129245187f7d446e9b838dfc316023acf9a38ee0d18",
-      "size": 11815,
+      "sha256": "01be4c6e47ba140b3474f4bfa4054de22819e18528920038395b616871adc80c",
+      "size": 11864,
       "kind": "contract",
       "mode": "0644"
     },
     {
       "path": "contracts/technical-design.json",
-      "sha256": "6991a5e1520535db3f6bd0ce1ac686a5917677cb169d4ac811dc63893dab79ca",
-      "size": 14149,
+      "sha256": "e875b0dfbcaac5d7f510d1e927cbdccdb756cf1245c625e2ef6a3b6c708c7c26",
+      "size": 14198,
       "kind": "contract",
       "mode": "0644"
     },
@@ -665,8 +665,8 @@
     },
     {
       "path": "rules/index.json",
-      "sha256": "e2669bd8b1460b3eca68e984eaaa6d91257d7b3de0921130f3fb305a33697ca1",
-      "size": 26411,
+      "sha256": "7ec792f86c78d003acb1815e9a9859860f461121d6321ea19bdf702cd19606a9",
+      "size": 26449,
       "kind": "rule",
       "mode": "0644"
     },
@@ -721,8 +721,8 @@
     },
     {
       "path": "rules/product/05-document-lifecycle.md",
-      "sha256": "d2f2d725e8b99bf590412d3745596ab09d7e73990beaff2eb0d0884165c056c7",
-      "size": 6343,
+      "sha256": "d202b1d71fcde4d5eed8fab8139cdacb780065b4de7095e104874b544649e275",
+      "size": 8158,
       "kind": "rule",
       "mode": "0644"
     },
@@ -1120,8 +1120,8 @@
     },
     {
       "path": "tools/check-document-set.mjs",
-      "sha256": "2278848ca0ef934688e46f00de2eb121f509d5fa9a687cd9d33569305992dd1a",
-      "size": 9776,
+      "sha256": "d80e4a60ab9e4f9a25e49728440f01135bb169a4e5ef14ced7a9bcdfc83a6b9e",
+      "size": 11373,
       "kind": "tool",
       "mode": "0644"
     },
@@ -1239,8 +1239,15 @@
     },
     {
       "path": "tools/document-contract/validator.mjs",
-      "sha256": "460070e76a2aecf5d618661a3abe255bf08951a758258e0aa1ad47f8d0d456d3",
-      "size": 21810,
+      "sha256": "d5a3c1c83b6852d7b38f5b7894d58d4003aa71004a165361e06429ae9dcd5ab3",
+      "size": 22200,
+      "kind": "tool",
+      "mode": "0644"
+    },
+    {
+      "path": "tools/pin-historical-pmo-version-documents.mjs",
+      "sha256": "8e06e0f6ccb801bc35ba0e76a369355931004a18c68d64bd137e931c412a114f",
+      "size": 5802,
       "kind": "tool",
       "mode": "0644"
     },

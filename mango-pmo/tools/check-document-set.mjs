@@ -88,7 +88,12 @@ function loadLegacyBaseline(root, findings) {
       findings.push(finding('LIFE-ORDER-010', `历史文档基线路径重复：${relativePath}`, baselinePath));
       continue;
     }
-    entries.set(resolved, { relativePath, expectedHash, reason });
+    const pmoVersion = item?.pmoVersion === undefined ? '' : String(item.pmoVersion).trim();
+    if (pmoVersion && !/^\d+\.\d+\.\d+$/u.test(pmoVersion)) {
+      findings.push(finding('LIFE-ORDER-010', `历史文档基线 pmoVersion 必须是三段数字版本：${relativePath}`, baselinePath));
+      continue;
+    }
+    entries.set(resolved, { relativePath, expectedHash, reason, pmoVersion });
   }
   return { baselinePath, entries };
 }
@@ -98,11 +103,13 @@ export function checkDocumentSet(rootPath) {
   const findings = [];
   const documents = [];
   const legacyDocuments = [];
+  const historicalPmoVersionDocuments = [];
   if (!fs.existsSync(root) || !fs.statSync(root).isDirectory()) {
     return {
       root,
       documents,
       legacyDocuments,
+      historicalPmoVersionDocuments,
       findings: [finding('LIFE-ORDER-010', `业务文档目录不存在或不是目录：${root}`, root)],
     };
   }
@@ -133,9 +140,29 @@ export function checkDocumentSet(rootPath) {
       findings.push(finding('LIFE-ORDER-010', `不支持的生命周期 documentType：${type}`, file));
       continue;
     }
-    const result = validateDocument(source, contract, { documentPath: file });
+    const legacy = legacyBaseline.entries.get(path.resolve(file));
+    const pmoVersion = String(ast.frontmatter.values.pmoVersion ?? '').trim();
+    const isHistoricalPmoVersion = contract.metadata.historicalPmoVersions?.includes(pmoVersion) === true;
+    const hasPinnedHistoricalPmoVersion = isHistoricalPmoVersion
+      && legacy?.pmoVersion === pmoVersion
+      && sha256(source) === legacy.expectedHash;
+    if (isHistoricalPmoVersion && !hasPinnedHistoricalPmoVersion) {
+      findings.push(finding(
+        'LIFE-HASH-020',
+        '历史 pmoVersion 文档必须使用路径、SHA-256 和 pmoVersion 基线锁定；请重新执行 mango pmo upgrade 或受控迁移',
+        file,
+      ));
+    }
+    const result = validateDocument(source, contract, {
+      documentPath: file,
+      allowHistoricalPmoVersions: hasPinnedHistoricalPmoVersion,
+    });
     const document = { file, source, type, contract, result, meta: result.ast.frontmatter.values };
     documents.push(document);
+    if (hasPinnedHistoricalPmoVersion) {
+      consumedLegacyEntries.add(path.resolve(file));
+      historicalPmoVersionDocuments.push({ file, pmoVersion: document.meta.pmoVersion });
+    }
     for (const item of result.findings) {
       findings.push({ ...item, file });
     }
@@ -145,7 +172,7 @@ export function checkDocumentSet(rootPath) {
     if (!consumedLegacyEntries.has(resolved)) {
       findings.push(finding(
         'LIFE-ORDER-010',
-        `历史文档基线项已失效，目标必须仍是缺少 documentType 的生命周期文档：${legacy.relativePath}`,
+        `历史文档基线项已失效，目标必须仍是已锁定的历史生命周期文档：${legacy.relativePath}`,
         legacyBaseline.baselinePath,
       ));
     }
@@ -199,7 +226,7 @@ export function checkDocumentSet(rootPath) {
     }
   }
 
-  return { root, documents, legacyDocuments, findings };
+  return { root, documents, legacyDocuments, historicalPmoVersionDocuments, findings };
 }
 
 function parseArgs(argv) {
@@ -225,6 +252,7 @@ export function runDocumentSetCli(argv = process.argv.slice(2)) {
       root: result.root,
       checkedDocuments: result.documents.map((document) => document.file),
       pinnedLegacyDocuments: result.legacyDocuments,
+      historicalPmoVersionDocuments: result.historicalPmoVersionDocuments,
       findings: result.findings,
     }, null, 2)}\n`);
   } else {
@@ -232,6 +260,7 @@ export function runDocumentSetCli(argv = process.argv.slice(2)) {
     process.stdout.write(`目录：${result.root}\n`);
     process.stdout.write(`生命周期文档：${result.documents.length}\n`);
     process.stdout.write(`哈希锁定的历史文档：${result.legacyDocuments.length}\n`);
+    process.stdout.write(`兼容的历史 PMO 版本文档：${result.historicalPmoVersionDocuments.length}\n`);
     for (const item of result.findings) {
       const location = [item.file, item.line ? `line ${item.line}` : ''].filter(Boolean).join(':');
       process.stdout.write(`[FAIL] ${item.ruleId}${location ? ` (${location})` : ''} ${item.message}\n`);

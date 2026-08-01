@@ -18,7 +18,7 @@
 | 模板资产               | `templates/**`                                                                                                  | PRD、详细设计、交付契约、验收证据模板                                                                                                               |
 | 交付模式               | `rules/11-delivery-assurance.md`、`contracts/delivery-assurance.json`、`skills/mango-design-delivery-assurance` | 自动隔离工作区，按 L0-L3 路由 SIMPLE、STANDARD、FULL；发布独立                                                                                      |
 | 文档生命周期           | `contracts/*.json`、`tools/check-*-requirements.mjs`                                                            | STANDARD 检查单文件，FULL 对适用 BRD、SRS、TDD、实施计划执行结构、追踪和审批门禁                                                                    |
-| 文档集合门禁           | `tools/check-document-set.mjs`                                                                                  | 扫描业务文档目录，阻断漏类型、未知类型、重复 ID、断链和失效摘要；仅允许用 `.mango-pmo-legacy-documents.json` 对合同启用前的历史文档做逐文件哈希锁定 |
+| 文档集合门禁           | `tools/check-document-set.mjs`                                                                                  | 扫描业务文档目录，阻断漏类型、未知类型、重复 ID、断链和失效摘要；合同声明的同 schema 历史 `pmoVersion` 必须由升级生成的路径、SHA-256 和版本基线锁定 |
 | 风险与保障基线门禁     | `tools/risk-verification.mjs`                                                                                   | 校验需求影响、方案风险、二者最大值、人工确认的 M01-M16 精确值和已启用措施证据；不补固定套餐                                                         |
 | CI 措施选择            | `tools/assurance-ci-scope.mjs`                                                                                  | 从已解析模式基线读取 M01-M16；CI 只执行事实启用且适用于 CI 的能力                                                                                   |
 | CI 影响范围分类        | `tools/classify-pmo-check-scope.mjs`                                                                            | 按 Git 改动裁剪已启用检查的 PMO、Java、投影和 README 影响范围；只缩小范围，不替用户选择措施                                                         |
@@ -36,9 +36,9 @@ Skill 按实际能力命名，而不是按发布包命名：只有治理编排�
 业务项目通过 `@mango/cli` 提供的 `mango pmo ...` 命令管理 baseline。全局 CLI 只用于创建项目、历史项目升级和临时诊断：
 
 ```bash
-npm view @mango/pmo@1.3.7 version --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
-npm view @mango/cli@1.0.93 version --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
-npm install -g @mango/cli@1.0.93 --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
+npm view @mango/pmo@1.3.8 version --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
+npm view @mango/cli@1.0.94 version --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
+npm install -g @mango/cli@1.0.94 --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
 ```
 
 两个 `npm view` 都返回精确版本后再执行安装。返回 404 表示该批次仍未发布，源码仓可见不等于业务项目已经可消费。
@@ -52,8 +52,8 @@ npm install -g @mango/cli@1.0.93 --registry http://nexus.inner.yunxinbaokeji.com
 ```bash
 mango pmo status --project-dir .
 mango pmo check --project-dir .
-mango pmo upgrade --project-dir . --to 1.3.7 --dry-run
-mango pmo upgrade --project-dir . --to 1.3.7 --sync-shell
+mango pmo upgrade --project-dir . --to 1.3.8 --dry-run
+mango pmo upgrade --project-dir . --to 1.3.8 --sync-shell
 mango pmo check --project-dir . --locked
 ```
 
@@ -148,8 +148,8 @@ node business-pmo/mango-baseline/tools/pmo-preflight.mjs \
 ```bash
 BASE_SHA="$(git rev-parse origin/main)"
 
-mango pmo upgrade --project-dir . --to 1.3.7 --dry-run
-mango pmo upgrade --project-dir . --to 1.3.7
+mango pmo upgrade --project-dir . --to 1.3.8 --dry-run
+mango pmo upgrade --project-dir . --to 1.3.8
 mango pmo check --project-dir . --locked
 ```
 

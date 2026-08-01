@@ -43,6 +43,14 @@ function findSection(ast, title) {
   return ast.sections.find((section) => section.logicalTitle === title) ?? null;
 }
 
+function matchesFixedMetadataValue(key, value, expected, contract, options) {
+  if (value === expected) return true;
+  return key === 'pmoVersion'
+    && options.allowHistoricalPmoVersions === true
+    && Array.isArray(contract.metadata.historicalPmoVersions)
+    && contract.metadata.historicalPmoVersions.includes(value);
+}
+
 function validateMetadata(ast, contract, findings, options) {
   const ruleId = contract.metadata.ruleId;
   const values = ast.frontmatter.values;
@@ -55,7 +63,9 @@ function validateMetadata(ast, contract, findings, options) {
     if (isEmpty(values[key])) addFinding(findings, ruleId, `frontmatter 缺少有效值：${key}`);
   }
   for (const [key, expected] of Object.entries(contract.metadata.fixed ?? {})) {
-    if (values[key] !== expected) addFinding(findings, ruleId, `${key} 必须为 ${expected}，实际为 ${values[key] ?? '<缺失>'}`);
+    if (!matchesFixedMetadataValue(key, values[key], expected, contract, options)) {
+      addFinding(findings, ruleId, `${key} 必须为 ${expected}，实际为 ${values[key] ?? '<缺失>'}`);
+    }
   }
   if (!isDocumentId(values.documentId, contract.documentIdPrefix)) {
     addFinding(findings, ruleId, `documentId 必须是 ${contract.documentIdPrefix}-... 格式`);

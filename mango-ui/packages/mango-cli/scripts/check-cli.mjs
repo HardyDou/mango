@@ -110,6 +110,7 @@ try {
     '.gitea/workflows/pmo-doc-check.yml',
     'business-pmo/mango-baseline/tools/pmo-preflight.mjs',
     'business-pmo/mango-baseline/tools/check-document-set.mjs',
+    'business-pmo/mango-baseline/tools/pin-historical-pmo-version-documents.mjs',
     'business-pmo/mango-baseline/baseline.json',
     'business-pmo/architecture-debt-budget.json',
     'business-pmo/global-entity-exceptions.json',
@@ -2882,6 +2883,7 @@ function assertPmoCommands(projectRoot) {
     projectRoot,
     'generated locked mango pmo check',
   );
+  assertHistoricalPmoVersionUpgrade(projectRoot);
   const projectTemplatePath = join(projectRoot, '.github/pull_request_template.md');
   const canonicalProjectTemplate = readFileSync(
     join(projectRoot, 'business-pmo/mango-baseline/templates/business-pull-request-template.md'),
@@ -3088,6 +3090,60 @@ function assertPmoCommands(projectRoot) {
     projectRoot,
     'rolled back mango pmo check',
   );
+}
+
+function assertHistoricalPmoVersionUpgrade(projectRoot) {
+  const fixtureRoot = resolve(pmoPackageRoot, '../../../mango-pmo/tests/document-contract/fixtures/valid');
+  const businessDocsRoot = join(projectRoot, 'business-docs');
+  const reviewRoot = join(businessDocsRoot, 'review');
+  mkdirSync(reviewRoot, { recursive: true });
+  cpSync(join(fixtureRoot, 'review/BRD-ANN-001.md'), join(reviewRoot, 'BRD-ANN-001.md'));
+  writeFileSync(
+    join(businessDocsRoot, 'historical-brd.md'),
+    readFileSync(join(fixtureRoot, 'business-requirements.md'), 'utf8').replace('pmoVersion: 1.3.8', 'pmoVersion: 1.3.6'),
+  );
+
+  const beforeUpgrade = assertCommandFails(
+    ['business-pmo/mango-baseline/tools/check-document-set.mjs', '--root', 'business-docs'],
+    projectRoot,
+    'historical PMO version before upgrade',
+    '必须使用路径、SHA-256 和 pmoVersion 基线锁定',
+  );
+  if (!beforeUpgrade.stdout.includes('pmoVersion 必须为')) {
+    throw new Error(`historical PMO version should still fail strict metadata before upgrade:\n${beforeUpgrade.stdout}`);
+  }
+  const dryRun = assertCommandOk(
+    [cli, 'pmo', 'upgrade', '--project-dir', projectRoot, '--dry-run'],
+    projectRoot,
+    'historical PMO version upgrade dry-run',
+  );
+  if (!dryRun.stdout.includes('business-docs/.mango-pmo-legacy-documents.json')) {
+    throw new Error(`pmo upgrade dry-run should plan the historical PMO version baseline:\n${dryRun.stdout}`);
+  }
+  const upgrade = assertCommandOk(
+    [cli, 'pmo', 'upgrade', '--project-dir', projectRoot],
+    projectRoot,
+    'historical PMO version upgrade',
+  );
+  if (!upgrade.stdout.includes('Historical PMO version baseline locked 1 lifecycle document')) {
+    throw new Error(`pmo upgrade should lock historical PMO version documents:\n${upgrade.stdout}`);
+  }
+  const baseline = JSON.parse(readFileSync(join(businessDocsRoot, '.mango-pmo-legacy-documents.json'), 'utf8'));
+  if (
+    baseline.documents.length !== 1 ||
+    baseline.documents[0].path !== 'historical-brd.md' ||
+    baseline.documents[0].pmoVersion !== '1.3.6'
+  ) {
+    throw new Error(`pmo upgrade wrote an invalid historical PMO version baseline:\n${JSON.stringify(baseline, null, 2)}`);
+  }
+  const afterUpgrade = assertCommandOk(
+    ['business-pmo/mango-baseline/tools/check-document-set.mjs', '--root', 'business-docs'],
+    projectRoot,
+    'historical PMO version document set after upgrade',
+  );
+  if (!afterUpgrade.stdout.includes('兼容的历史 PMO 版本文档：1')) {
+    throw new Error(`document set should report its pinned historical PMO version document:\n${afterUpgrade.stdout}`);
+  }
 }
 
 function assertPmoSyncCommand(tempRoot) {

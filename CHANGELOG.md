@@ -1,5 +1,42 @@
 # Mango Changelog
 
+## v2026.08.01-pmo-1.3.8-cli-1.0.94-document-version-compat-release - 2026-08-01
+
+Status: `PENDING`. This release publishes only the PMO and CLI compatibility pair for Issue #669; Maven, starter topology and frontend runtime package coordinates remain at their existing compatible versions.
+
+### Fixed
+
+- Preserve unchanged lifecycle documents created under PMO `1.3.6` or `1.3.7` when their current contracts remain schema-compatible, without allowing new documents to select an obsolete version.
+- Make `mango pmo upgrade` create a path, SHA-256 and version baseline for eligible historical documents, so the documented upgrade path resolves the collection gate failure.
+
+### Versions
+
+| Component | Previous | Release | Compatibility |
+| --- | ---: | ---: | --- |
+| `@mango/pmo` | `1.3.7` | `1.3.8` | Keeps schema revision `1`; contracts explicitly accept locked `1.3.6` and `1.3.7` historical documents. |
+| `@mango/cli` | `1.0.93` | `1.0.94` | Depends exactly on `@mango/pmo@1.3.8` and runs the controlled historical-document baseline step during `pmo upgrade`. |
+
+### Published Packages
+
+| Order | Target | Version | Status |
+| ---: | --- | --- | --- |
+| 1 | `@mango/pmo` | `1.3.8` | `PENDING` |
+| 2 | `@mango/cli` | `1.0.94` | `PENDING` |
+| 3 | Git tag and GitHub Release | `v2026.08.01-pmo-1.3.8-cli-1.0.94-document-version-compat-release` | `PENDING` |
+
+### Upgrade Notes
+
+1. Publish and install `@mango/pmo@1.3.8` before `@mango/cli@1.0.94`.
+2. In each existing business repository, run `mango pmo upgrade --project-dir . --to 1.3.8 --sync-shell`, review the planned or written `.mango-pmo-legacy-documents.json`, then run `mango pmo check --project-dir . --locked`.
+3. The generated baseline is accepted only for unchanged documents whose version is explicitly supported by the current contract. New or migrated lifecycle documents must use `1.3.8`.
+
+### Verification
+
+- `node --test mango-pmo/tests/document-contract/document-contract.test.mjs`
+- `node mango-ui/packages/mango-pmo/scripts/build-package.mjs && node mango-ui/packages/mango-pmo/scripts/check-package.mjs`
+- `node mango-ui/packages/mango-cli/scripts/check-cli.mjs`
+- `node mango-business-starter/scripts/sync-pmo-baseline.mjs --check`
+
 ## v2026.08.01-maven-1.0.29-pmo-1.3.7-cli-1.0.93-platform-bootstrap-file-release - 2026-08-01
 
 Status: `PUBLISHED_AND_VERIFIED`. This mixed release was published from source commit `840bd4de116de53d89de208146aef8de5d0cd2c9` and tree `8093ccc6d31ac10bc52cfb02cf570a0968619d4b`. The exact-source bundle SHA-256 is `d9e11790fcf1b66c771bc01f100d731660a7bd37c46b7bf9146da8b2d82ce11c`. All 188 Maven coordinates at `1.0.29` and all 24 npm packages below resolve from the configured publish and consume registries. The tag and GitHub Release are `CREATED_AND_VERIFIED` and point to the reviewed source commit; the versioned documentation snapshot is published at the same tag path. The completed read-only manifest at `.runtime/releases-final-verify/1.0.29/manifest.json` has SHA-256 `37c54aad85dc8ac2708892b7ade2e3c72ccbeb67a7a67e53fe82f41a0394f27a` and records all 17 release states as passed. The original and recovery manifests are preserved with SHA-256 values `c71d762d71b4bba6218b954525d791e608085b9b85fb3e63e389e42e0a9ee829`, `e863fd840cb7f7220fd0afec4f6e2df191f92b55f6c6ce652b541ed77136a774` and `c475dfe44e013d8fc768e3fd816dac5c42ac6e4fb5c5721c7c7f69c960cc7cde`; they retain the malformed initial tag adapter, Maven output-buffer/docs-bundle recovery, and the post-publication verifier that incorrectly required optional `home` and `site-shell` packages as direct full-preset dependencies. No passed immutable artifact was republished during recovery.
