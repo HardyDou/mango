@@ -3100,7 +3100,10 @@ function assertHistoricalPmoVersionUpgrade(projectRoot) {
   cpSync(join(fixtureRoot, 'review/BRD-ANN-001.md'), join(reviewRoot, 'BRD-ANN-001.md'));
   writeFileSync(
     join(businessDocsRoot, 'historical-brd.md'),
-    readFileSync(join(fixtureRoot, 'business-requirements.md'), 'utf8').replace('pmoVersion: 1.3.8', 'pmoVersion: 1.3.6'),
+    readFileSync(join(fixtureRoot, 'business-requirements.md'), 'utf8').replace(
+      'pmoVersion: 1.3.8',
+      'pmoVersion: 1.3.6',
+    ),
   );
 
   const beforeUpgrade = assertCommandFails(
@@ -3110,7 +3113,9 @@ function assertHistoricalPmoVersionUpgrade(projectRoot) {
     '必须使用路径、SHA-256 和 pmoVersion 基线锁定',
   );
   if (!beforeUpgrade.stdout.includes('pmoVersion 必须为')) {
-    throw new Error(`historical PMO version should still fail strict metadata before upgrade:\n${beforeUpgrade.stdout}`);
+    throw new Error(
+      `historical PMO version should still fail strict metadata before upgrade:\n${beforeUpgrade.stdout}`,
+    );
   }
   const dryRun = assertCommandOk(
     [cli, 'pmo', 'upgrade', '--project-dir', projectRoot, '--dry-run'],
@@ -3134,7 +3139,9 @@ function assertHistoricalPmoVersionUpgrade(projectRoot) {
     baseline.documents[0].path !== 'historical-brd.md' ||
     baseline.documents[0].pmoVersion !== '1.3.6'
   ) {
-    throw new Error(`pmo upgrade wrote an invalid historical PMO version baseline:\n${JSON.stringify(baseline, null, 2)}`);
+    throw new Error(
+      `pmo upgrade wrote an invalid historical PMO version baseline:\n${JSON.stringify(baseline, null, 2)}`,
+    );
   }
   const afterUpgrade = assertCommandOk(
     ['business-pmo/mango-baseline/tools/check-document-set.mjs', '--root', 'business-docs'],

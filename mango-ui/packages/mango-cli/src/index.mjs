@@ -3158,9 +3158,8 @@ function syncPmoBaseline(argv, { command = 'sync' } = {}) {
     command === 'sync' && installedLock
       ? resolveLockedPmoBaseline(targetDir, installedLock, availableBaseline)
       : resolveUpgradePmoBaseline(availableBaseline, options.to);
-  const historicalPmoVersionPlan = command === 'upgrade'
-    ? planHistoricalPmoVersionCompatibility(targetDir, baseline)
-    : [];
+  const historicalPmoVersionPlan =
+    command === 'upgrade' ? planHistoricalPmoVersionCompatibility(targetDir, baseline) : [];
   const projectTemplatePlan = planPmoProjectTemplateSync(targetDir, baseline);
   const governanceWorkflowPlan = planPmoGovernanceWorkflowSync(targetDir, variables, options.adoptGovernance);
   const plan = [
@@ -3205,7 +3204,12 @@ function syncPmoBaseline(argv, { command = 'sync' } = {}) {
     installPmoBundleAtomic(targetDir, baseline);
   }
   for (const item of plan) {
-    if (item.scope === 'pmo-bundle' || item.scope === 'historical-pmo-version' || item.action === 'skip' || item.action === 'warn') {
+    if (
+      item.scope === 'pmo-bundle' ||
+      item.scope === 'historical-pmo-version' ||
+      item.action === 'skip' ||
+      item.action === 'warn'
+    ) {
       continue;
     }
     if (item.action === 'delete') {
@@ -3214,9 +3218,8 @@ function syncPmoBaseline(argv, { command = 'sync' } = {}) {
     }
     writePlannedFile(item);
   }
-  const historicalPmoVersionResult = command === 'upgrade'
-    ? runHistoricalPmoVersionCompatibility(targetDir, baseline)
-    : null;
+  const historicalPmoVersionResult =
+    command === 'upgrade' ? runHistoricalPmoVersionCompatibility(targetDir, baseline) : null;
   const status = getPmoStatus(targetDir, { locked: true });
   if (status.errors.length > 0 || status.warnings.length > 0) {
     fail(`PMO baseline ${command} verification failed:\n${formatPmoStatusProblems(status)}`);
@@ -3283,7 +3286,12 @@ function resolveBusinessDocsRoot(targetDir) {
   }
   const resolvedPath = resolve(targetDir, configuredPath);
   const relativePath = relative(targetDir, resolvedPath);
-  if (relativePath === '..' || relativePath.startsWith('../') || relativePath.startsWith('..\\') || isAbsolute(relativePath)) {
+  if (
+    relativePath === '..' ||
+    relativePath.startsWith('../') ||
+    relativePath.startsWith('..\\') ||
+    isAbsolute(relativePath)
+  ) {
     fail('mango.config.json paths.businessDocs must stay inside the project directory');
   }
   return resolvedPath;
