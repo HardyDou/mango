@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "release": "v2026.08.01-pmo-1.3.8-cli-1.0.94-document-version-compat-release",
+  "releaseKind": "npm-only",
+  "source": {
+    "commit": "cbe184378344b3502058259c40a87fd41949b9c4",
+    "tree": "dc2fe69f27cb27b64d3164e0b1b069cf1f375ff6",
+    "releasePr": 670,
+    "requiredChecks": "passed"
+  },
+  "manifest": {
+    "version": "2026.08.01-pmo-1.3.8-cli-1.0.94",
+    "sha256": "d6276af0bfe1f73abd78abbc37db67f9658901062894f7aab8c97c0a04cf2db9",
+    "completed": true,
+    "applicableStates": "passed",
+    "maven": "not_applicable",
+    "docsSnapshot": "not_applicable"
+  },
+  "packages": {
+    "@mango/pmo@1.3.8": {
+      "status": "PUBLISHED_AND_VERIFIED",
+      "publishedAt": "2026-08-01T08:42:46.826Z",
+      "integrity": "sha512-/7dKtX0iOJ8+OjqZX0LKpFnolronY0p3EQ4zJti06pN2+o8XWxCKhrcMEOSHtcopGPbvNmkSUfOuFYTEGFD79Q==",
+      "publishRegistry": "verified",
+      "consumeRegistry": "verified"
+    },
+    "@mango/cli@1.0.94": {
+      "status": "PUBLISHED_AND_VERIFIED",
+      "publishedAt": "2026-08-01T08:43:04.433Z",
+      "integrity": "sha512-wcP45HpgxqGgO60tInevnCAIRQqMTFNJzKil6cQyxQ5pCgb2a8Vo8x2L0GbCX/7seQicQ7IJ76iCRbP09SwFpA==",
+      "publishRegistry": "verified",
+      "consumeRegistry": "verified"
+    }
+  },
+  "githubRelease": {
+    "status": "CREATED_AND_VERIFIED",
+    "url": "https://github.com/HardyDou/mango/releases/tag/v2026.08.01-pmo-1.3.8-cli-1.0.94-document-version-compat-release",
+    "targetCommit": "cbe184378344b3502058259c40a87fd41949b9c4",
+    "draft": false,
+    "prerelease": false
+  }
+}
