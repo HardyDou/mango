@@ -1,5 +1,25 @@
 # @mango/cli Changelog
 
+## 1.0.95 - 2026-08-01
+
+### Fixed
+
+- Lock generated and upgraded business backends to Mango Maven `1.0.30`, which restores module Flyway migration ordering for legacy direct-start applications before Workflow/Flowable metadata initialization.
+- Preserve explicit Bootstrap lifecycle behavior: `bootstrap` owns migration and `runtime` does not execute Flyway.
+
+### Upgrade Notes
+
+- Publish and verify Maven non-app artifacts and `io.mango:mango-docs-bundle:1.0.30` before installing `@mango/cli@1.0.95`.
+- Projects inheriting `mango-parent` update their shared `mango.version` to `1.0.30`; projects with another parent import `io.mango:mango-bom:1.0.30`.
+- Keep `@mango/pmo@1.3.8` and the existing frontend runtime package matrix. No PMO baseline migration or database rebuild is required.
+
+### Verification
+
+- `mvn -q -f mango/mango-infra/mango-infra-persistence/mango-infra-persistence-starter/pom.xml verify`
+- `node mango-ui/packages/mango-cli/scripts/check-release-versions.mjs`
+- `MANGO_BACKEND_GATE_VERSION=1.0.30 node mango-ui/packages/mango-cli/scripts/check-generated-backend-gate.mjs`
+- Clean publish- and consume-registry consumers resolve Maven `1.0.30` and `@mango/cli@1.0.95`.
+
 ## 1.0.94 - 2026-08-01
 
 ### Fixed

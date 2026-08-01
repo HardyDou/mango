@@ -1,8 +1,50 @@
 # Mango Changelog
 
+## v2026.08.01-maven-1.0.30-cli-1.0.95-flyway-startup-order-release - 2026-08-01
+
+Status: `PENDING`. This mixed patch release publishes the PR #675 Persistence/Flyway startup-order fix as the complete non-app `io.mango` Maven Reactor, the matching `io.mango:mango-docs-bundle`, and the CLI version lock that makes Maven `1.0.30` the default for newly generated or upgraded business projects. `@mango/pmo` and frontend runtime packages are unchanged and are not republished.
+
+### Fixed
+
+- Restore module EXPAND migration before database-dependent Workflow/Flowable metadata initialization for legacy business applications that call `SpringApplication.run` without configuring `mango.bootstrap.mode`.
+- Exclude the Bootstrap lifecycle-owned schema from Persistence module discovery so compatibility startup does not claim or migrate Bootstrap control tables.
+- Preserve the explicit lifecycle boundary: `bootstrap` performs migration and `runtime` does not execute Flyway.
+
+### Versions
+
+| Component | Previous | Release | Compatibility |
+| --- | ---: | ---: | --- |
+| Mango Maven non-app backend and `io.mango:mango-docs-bundle` | `1.0.29` | `1.0.30` | Patch fix for direct-start database initialization ordering; public Java/HTTP contracts and explicit Bootstrap lifecycle semantics are unchanged. |
+| `@mango/cli` | `1.0.94` | `1.0.95` | Locks generated and upgraded backends to Maven `1.0.30`; continues to depend exactly on `@mango/pmo@1.3.8`. |
+| `@mango/pmo` | `1.3.8` | unchanged | No PMO source changed; the package is not republished. |
+| Frontend runtime packages | current release matrix | unchanged | No frontend package source or lock changed; packages are not republished. |
+
+### Published Packages
+
+| Order | Target | Version | Status |
+| ---: | --- | --- | --- |
+| 1 | Maven non-app Reactor including `io.mango:*` | `1.0.30` | `PENDING` |
+| 2 | `io.mango:mango-docs-bundle` | `1.0.30` | `PENDING` |
+| 3 | `@mango/cli` | `1.0.95` | `PENDING` |
+| 4 | Git tag and GitHub Release | `v2026.08.01-maven-1.0.30-cli-1.0.95-flyway-startup-order-release` | `PENDING` |
+
+### Upgrade Notes
+
+1. Publish and verify the complete Maven `1.0.30` non-app Reactor and `io.mango:mango-docs-bundle:1.0.30` before publishing `@mango/cli@1.0.95`.
+2. Existing business projects inheriting `mango-parent` update their shared `mango.version` to `1.0.30`; projects with another parent import `io.mango:mango-bom:1.0.30` and omit versions from BOM-managed Mango dependencies.
+3. Install `@mango/cli@1.0.95` for newly generated or upgraded projects. Keep `@mango/pmo@1.3.8` and the current frontend runtime package matrix.
+4. Existing databases upgrade in place. Do not rebuild or manually pre-create Flowable tables. Direct-start applications leave `mango.bootstrap.mode` unset; applications using the governed lifecycle continue to run `bootstrap apply` before `runtime`.
+
+### Verification
+
+- PR #675 passed all required checks and merged as `f3088aeb046d7936d5170cb3737828084c24831b` before release preparation.
+- Persistence starter targeted tests and module `verify` cover compatible direct startup, explicit bootstrap/runtime modes, module discovery and reserved Bootstrap schema exclusion.
+- A real MySQL empty-database Workflow consumer created the module and Flowable schema in the governed order before ProcessEngine creation.
+- Release preparation must pass the complete non-app Maven Reactor, CLI tests and version locks, capability/README audits, registry doctor and exact target-absence checks. After Maven `1.0.30` is published, the generated backend gate and clean consumer verification must pass before the release can close.
+
 ## v2026.08.01-pmo-1.3.8-cli-1.0.94-document-version-compat-release - 2026-08-01
 
-Status: `PENDING`. This release publishes the PMO and CLI pair containing the Issue #669 lifecycle-document compatibility fix and the previously merged frontend page-baseline governance; Maven, starter topology and frontend runtime package coordinates remain at their existing compatible versions.
+Status: `PUBLISHED_AND_VERIFIED`. This npm-only release was published from merge commit `cbe184378344b3502058259c40a87fd41949b9c4` and tree `dc2fe69f27cb27b64d3164e0b1b069cf1f375ff6`. Both `@mango/pmo@1.3.8` and `@mango/cli@1.0.94` resolve from the configured publish and consume registries with matching integrity. The tag and GitHub Release are `CREATED_AND_VERIFIED` and point to that commit. The completed manifest has SHA-256 `d6276af0bfe1f73abd78abbc37db67f9658901062894f7aab8c97c0a04cf2db9` and records all applicable states as passed; Maven and the versioned Maven documentation snapshot were correctly not applicable. The durable release summary is `mango-docs/evidence/governance/release-v2026.08.01-pmo-1.3.8-cli-1.0.94-document-version-compat-release.json`.
 
 ### Fixed
 
@@ -26,9 +68,9 @@ Status: `PENDING`. This release publishes the PMO and CLI pair containing the Is
 
 | Order | Target | Version | Status |
 | ---: | --- | --- | --- |
-| 1 | `@mango/pmo` | `1.3.8` | `PENDING` |
-| 2 | `@mango/cli` | `1.0.94` | `PENDING` |
-| 3 | Git tag and GitHub Release | `v2026.08.01-pmo-1.3.8-cli-1.0.94-document-version-compat-release` | `PENDING` |
+| 1 | `@mango/pmo` | `1.3.8` | `PUBLISHED_AND_VERIFIED` |
+| 2 | `@mango/cli` | `1.0.94` | `PUBLISHED_AND_VERIFIED` |
+| 3 | Git tag and GitHub Release | `v2026.08.01-pmo-1.3.8-cli-1.0.94-document-version-compat-release` | `CREATED_AND_VERIFIED` |
 
 ### PMO Required Checks
 
