@@ -26,8 +26,20 @@ jobs:
         with:
           node-version: '22'
 
+      - name: Resolve PMO validation mode
+        id: event_mode
+        env:
+          EVENT_NAME: ${{ gitea.event_name }}
+          EVENT_ACTION: ${{ gitea.event.action }}
+          PR_STATE: ${{ gitea.event.pull_request.state }}
+          PR_MERGED: ${{ gitea.event.pull_request.merged }}
+        run: >-
+          node business-pmo/mango-baseline/tools/resolve-pmo-check-event-mode.mjs
+          --output "$GITHUB_OUTPUT"
+
       - name: Classify affected Maven scope
         id: scope
+        if: steps.event_mode.outputs.mode == 'change-validation'
         env:
           BASE_SHA: ${{ gitea.event.pull_request.base.sha || gitea.event.before || 'HEAD^' }}
           HEAD_SHA: ${{ gitea.event.pull_request.head.sha || gitea.sha }}
@@ -50,6 +62,7 @@ jobs:
         run: node business-pmo/mango-baseline/tools/risk-verification.mjs
 
       - name: Check PMO document contracts
+        if: steps.event_mode.outputs.mode == 'change-validation'
         env:
           BUSINESS_DOCS_ROOT: ${{ steps.scope.outputs.business_docs_root }}
         run: >-
@@ -57,7 +70,9 @@ jobs:
           --root "$BUSINESS_DOCS_ROOT"
 
       - name: Enforce current frontend page components
-        if: steps.scope.outputs.frontend == 'true'
+        if: >-
+          steps.event_mode.outputs.mode == 'change-validation' &&
+          steps.scope.outputs.frontend == 'true'
         env:
           BASE_SHA: ${{ gitea.event.pull_request.base.sha || gitea.event.before || 'HEAD^' }}
           HEAD_SHA: ${{ gitea.event.pull_request.head.sha || gitea.sha }}
@@ -69,7 +84,9 @@ jobs:
           --frontend-root "$FRONTEND_ROOT"
 
       - name: Set up Java
-        if: steps.scope.outputs.backend == 'true'
+        if: >-
+          steps.event_mode.outputs.mode == 'change-validation' &&
+          steps.scope.outputs.backend == 'true'
         uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -77,7 +94,10 @@ jobs:
           cache: maven
 
       - name: Build affected-module upstream dependencies
-        if: steps.scope.outputs.backend_mode == 'partial' && steps.scope.outputs.maven_dependency_projects != ''
+        if: >-
+          steps.event_mode.outputs.mode == 'change-validation' &&
+          steps.scope.outputs.backend_mode == 'partial' &&
+          steps.scope.outputs.maven_dependency_projects != ''
         env:
           BACKEND_POM: ${{ steps.scope.outputs.backend_pom }}
           MAVEN_DEPENDENCY_PROJECTS: ${{ steps.scope.outputs.maven_dependency_projects }}
@@ -93,7 +113,9 @@ jobs:
           install
 
       - name: Validate backend governance POMs
-        if: steps.scope.outputs.backend_mode == 'governance'
+        if: >-
+          steps.event_mode.outputs.mode == 'change-validation' &&
+          steps.scope.outputs.backend_mode == 'governance'
         env:
           BACKEND_POM: ${{ steps.scope.outputs.backend_pom }}
         run: >-
@@ -103,7 +125,9 @@ jobs:
           help:effective-pom
 
       - name: Verify affected backend modules and Mango architecture
-        if: steps.scope.outputs.backend_mode == 'partial'
+        if: >-
+          steps.event_mode.outputs.mode == 'change-validation' &&
+          steps.scope.outputs.backend_mode == 'partial'
         env:
           BASE_SHA: ${{ gitea.event.pull_request.base.sha || gitea.event.before || 'HEAD^' }}
           BACKEND_POM: ${{ steps.scope.outputs.backend_pom }}
@@ -125,7 +149,9 @@ jobs:
           verify
 
       - name: Generate trusted full-Reactor architecture inventory for governance
-        if: steps.scope.outputs.backend_mode == 'governance'
+        if: >-
+          steps.event_mode.outputs.mode == 'change-validation' &&
+          steps.scope.outputs.backend_mode == 'governance'
         env:
           BASE_SHA: ${{ gitea.event.pull_request.base.sha || gitea.event.before || 'HEAD^' }}
           BACKEND_POM: ${{ steps.scope.outputs.backend_pom }}
@@ -147,7 +173,9 @@ jobs:
           verify
 
       - name: Enforce project architecture debt budget policy
-        if: steps.scope.outputs.backend == 'true'
+        if: >-
+          steps.event_mode.outputs.mode == 'change-validation' &&
+          steps.scope.outputs.backend == 'true'
         env:
           BASE_SHA: ${{ gitea.event.pull_request.base.sha || gitea.event.before || 'HEAD^' }}
           BACKEND_MODE: ${{ steps.scope.outputs.backend_mode }}

@@ -444,6 +444,8 @@ try {
   }
   for (const expected of [
     'pmo-doc-check:\n    runs-on: ubuntu-latest',
+    'resolve-pmo-check-event-mode.mjs',
+    "steps.event_mode.outputs.mode == 'change-validation'",
     "steps.scope.outputs.backend_mode == 'governance'",
     "steps.scope.outputs.backend_mode == 'partial'",
     'steps.scope.outputs.maven_dependency_projects',
