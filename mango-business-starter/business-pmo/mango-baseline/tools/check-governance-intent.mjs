@@ -255,6 +255,12 @@ for (const workflow of [
     failures,
   );
 }
+
+assertIncludes('mango-ui/packages/mango-cli/templates/full/.gitea/workflows/pmo-doc-check.yml', [
+  'resolve-pmo-check-event-mode.mjs',
+  "steps.event_mode.outputs.mode == 'change-validation'",
+  "if: gitea.event_name == 'pull_request'"
+], failures);
 assertIncludes('mango-ui/packages/mango-cli/templates/full/business-pmo/architecture-debt-budget.json', [
   '"schemaVersion": 4',
   '"moduleOnboardings": {}',
