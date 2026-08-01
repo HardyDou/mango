@@ -9,7 +9,7 @@
 | 项目          | 值                                                                                                             |
 | ------------- | -------------------------------------------------------------------------------------------------------------- |
 | NPM 包        | `@mango/cli`                                                                                                   |
-| 当前发布版本  | `1.0.94`                                                                                                       |
+| 当前发布版本  | `1.0.95`                                                                                                       |
 | bin 命令      | `mango`、`mango-cli`                                                                                           |
 | 命令入口      | `src/index.mjs`                                                                                                |
 | 发布 registry | 由发布配置或 `MANGO_RELEASE_NPM_PUBLISH_REGISTRY` 注入                                                         |
@@ -70,8 +70,8 @@ CLI 不负责：
 
 ```bash
 npm view @mango/pmo@1.3.8 version --registry "$MANGO_NPM_REGISTRY"
-npm view @mango/cli@1.0.94 version --registry "$MANGO_NPM_REGISTRY"
-npm install -g @mango/cli@1.0.94 --registry "$MANGO_NPM_REGISTRY"
+npm view @mango/cli@1.0.95 version --registry "$MANGO_NPM_REGISTRY"
+npm install -g @mango/cli@1.0.95 --registry "$MANGO_NPM_REGISTRY"
 ```
 
 两个查询都返回精确版本后，该批次才可供业务项目安装。PMO 升级会整体同步 baseline、Agent 入口和 `.agents/skills`，不需要逐个安装 Skill。
@@ -560,6 +560,12 @@ CLI 不在运行时管理菜单、权限和租户，但会生成让业务模块�
 | pnpm 11 首次安装报 `ERR_PNPM_IGNORED_BUILDS`                                  | 旧版 CLI 生成的前端缺少 `pnpm-workspace.yaml` 构建白名单                       | 使用 `@mango/cli@1.0.81` 生成新项目；既有项目把当前 full 模板的 `allowBuilds` 映射合并到业务自有 workspace 配置                                                                                      |
 
 ## 12. 相关文档
+
+### 1.0.95 发布影响
+
+`@mango/cli@1.0.95` 把生成和升级项目的后端锁更新到 Mango Maven `1.0.30`，并继续精确依赖 `@mango/pmo@1.3.8`。Maven `1.0.30` 修复未配置 `mango.bootstrap.mode`、直接使用 `SpringApplication.run` 的业务应用在空库启动时，Workflow/Flowable 元数据先于模块 Flyway migration 初始化的问题；正式 `bootstrap` / `runtime` lifecycle 的职责边界不变。
+
+业务项目升级时，继承 `mango-parent` 的项目把统一 `mango.version` 更新为 `1.0.30`；使用其它 Parent 的项目导入 `io.mango:mango-bom:1.0.30`。随后安装 `@mango/cli@1.0.95`。本批次不升级 PMO、前端运行时包，不要求数据库重建，也不修改公开 Java API、HTTP API、菜单、权限或租户契约。
 
 ### 1.0.94 发布影响
 
