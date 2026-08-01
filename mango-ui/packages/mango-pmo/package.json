@@ -22,6 +22,7 @@
     "registry": "http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/",
     "executableFiles": [
       "dist/baseline/tools/audit-backend-test-mocks.mjs",
+      "dist/baseline/tools/check-frontend-page-baseline.mjs",
       "dist/baseline/tools/delivery-contract-check.mjs",
       "dist/baseline/tools/pmo-preflight.mjs"
     ]

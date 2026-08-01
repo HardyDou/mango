@@ -20,6 +20,7 @@ test('frontend-only button layout avoids Java, PMO, CLI and starter suites', () 
       distribution: false,
       readmes: true,
       generated_backend: false,
+      frontend: true,
     },
   );
 });
@@ -34,6 +35,7 @@ test('plain design document keeps only common lightweight gates', () => {
       distribution: false,
       readmes: false,
       generated_backend: false,
+      frontend: false,
     },
   );
 });
@@ -48,6 +50,7 @@ test('backend Java triggers architecture and README audits without CLI tests', (
       distribution: false,
       readmes: true,
       generated_backend: false,
+      frontend: false,
     },
   );
 });
@@ -62,6 +65,7 @@ test('packaged PMO rules trigger PMO tests and projection checks', () => {
       distribution: false,
       readmes: false,
       generated_backend: false,
+      frontend: false,
     },
   );
 });
@@ -137,6 +141,7 @@ test('governance workflow changes self-verify every conditional suite', () => {
         distribution: true,
         readmes: true,
         generated_backend: true,
+        frontend: true,
       },
       file,
     );
@@ -153,6 +158,7 @@ test('fast PR contract workflow self-verifies PMO without starting Java or gener
       distribution: false,
       readmes: false,
       generated_backend: false,
+      frontend: false,
     },
   );
 });
@@ -191,6 +197,10 @@ test('business repositories resolve custom paths from mango.config.json', t => {
   );
   assert.equal(
     classifyChangedFiles(['business-pmo/architecture-debt-budget.json'], project).backend,
+    true,
+  );
+  assert.equal(
+    classifyChangedFiles(['baohan-ui/packages/order/src/views/orders/index.vue'], project).frontend,
     true,
   );
   assert.deepEqual(

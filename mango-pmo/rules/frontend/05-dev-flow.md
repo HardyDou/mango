@@ -19,6 +19,7 @@
 ## 3. 开发中
 
 - 优先复用 `mango-ui` 现有包和组件。
+- 列表、独立详情、独立表单和标准弹框按对应页面规范使用 `@mango/common` 当前公共骨架，不从存量页面复制旧布局。
 - 页面私有能力留在页面目录。
 - 可复用能力下沉到对应 `packages/*`。
 - 新增公共能力必须补导出。
@@ -32,6 +33,7 @@
 - `pnpm build`
 - `pnpm test`
 - `pnpm playwright test`
+- `node business-pmo/mango-baseline/tools/check-frontend-page-baseline.mjs --base <base> --head <head>`（业务项目页面变更）
 
 ## 5. 提交要求
 

@@ -193,15 +193,15 @@
     },
     "frontend.detailPage": {
       "path": "rules/frontend/09-detail-page.md",
-      "reason": "详情页 UI 规范与基线格式门禁"
+      "reason": "详情页 MangoDetailPage/MangoPageSection 统一骨架、UI 规范与基线门禁"
     },
     "frontend.formPage": {
       "path": "rules/frontend/10-form-page.md",
-      "reason": "表单页 UI 规范与基线格式门禁"
+      "reason": "表单页 MangoFormPage/MangoPageSection 统一骨架、UI 规范与基线门禁"
     },
     "frontend.dialogDrawer": {
       "path": "rules/frontend/11-dialog-drawer.md",
-      "reason": "弹框与抽屉 UI 规范与基线格式门禁"
+      "reason": "MangoDialog 默认弹框、Element Plus Drawer 边界与基线门禁"
     }
   },
   "roles": {

@@ -52,3 +52,10 @@
 5. 技术字段是否后置。
 6. 状态是否放在概要模块或具体字段中，而不是返回栏。
 7. 是否覆盖 loading、empty、error 和无权限状态。
+
+## 6. 统一骨架
+
+1. 新增或修改的独立详情页必须使用 `MangoDetailPage` 组织返回栏、内容区和底部操作栏。
+2. 详情业务分组必须使用 `MangoPageSection`，业务字段优先在分组内使用 `ElDescriptions`。
+3. 列表上下文中的短详情可以使用 Element Plus Drawer，不得把 `MangoDetailPage` 塞进 Drawer。
+4. 特殊详情页不使用统一骨架时必须说明页面语义和例外原因，禁止复制存量旧页面作为依据。

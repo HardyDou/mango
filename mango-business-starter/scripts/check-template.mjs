@@ -54,11 +54,18 @@ const requiredFiles = [
   "business-pmo/mango-baseline/rules/frontend/04-test.md",
   "business-pmo/mango-baseline/rules/frontend/05-dev-flow.md",
   "business-pmo/mango-baseline/rules/frontend/06-monorepo-architecture.md",
+  "business-pmo/mango-baseline/rules/frontend/07-admin-ui-common.md",
+  "business-pmo/mango-baseline/rules/frontend/08-list-page.md",
+  "business-pmo/mango-baseline/rules/frontend/09-detail-page.md",
+  "business-pmo/mango-baseline/rules/frontend/10-form-page.md",
+  "business-pmo/mango-baseline/rules/frontend/11-dialog-drawer.md",
+  "business-pmo/mango-baseline/rules/frontend/12-business-api.md",
   "business-pmo/mango-baseline/rules/product/01-prd-template.md",
   "business-pmo/mango-baseline/rules/product/02-sprint.md",
   "business-pmo/mango-baseline/templates/delivery-contract.md",
   "business-pmo/mango-baseline/tools/pmo-preflight.mjs",
   "business-pmo/mango-baseline/tools/check-document-set.mjs",
+  "business-pmo/mango-baseline/tools/check-frontend-page-baseline.mjs",
   "business-pmo/mango-baseline/tools/delivery-contract-check.mjs",
   "business-docs/plans/example-contract.md",
   "business-docs/plans/example-ledger.md",
@@ -253,8 +260,12 @@ const contentChecks = [
       "openDetail",
       "handleDelete",
       "<Pagination",
-      "el-dialog",
+      "MangoDialog",
       "el-drawer",
+      "data-page=\"{{moduleKebab}}.{{aggregateKebab}}\"",
+      "data-surface=\"{{moduleKebab}}.{{aggregateKebab}}.table\"",
+      "data-action=\"{{moduleKebab}}.{{aggregateKebab}}.create\"",
+      "data-field=\"{{moduleKebab}}.{{aggregateKebab}}.name\"",
       "records.value = result.records",
       "page: 1",
       "size: 20",
@@ -420,6 +431,22 @@ const contentChecks = [
       "组件包禁止依赖 `apps/*`",
     ],
   },
+  {
+    file: "business-pmo/mango-baseline/rules/frontend/08-list-page.md",
+    patterns: ["MangoListPage", "MangoSearchPanel", "MangoListPanel", "Pagination"],
+  },
+  {
+    file: "business-pmo/mango-baseline/rules/frontend/09-detail-page.md",
+    patterns: ["MangoDetailPage", "MangoPageSection"],
+  },
+  {
+    file: "business-pmo/mango-baseline/rules/frontend/10-form-page.md",
+    patterns: ["MangoFormPage", "MangoPageSection"],
+  },
+  {
+    file: "business-pmo/mango-baseline/rules/frontend/11-dialog-drawer.md",
+    patterns: ["MangoDialog", "Element Plus Drawer"],
+  },
 ];
 
 const errors = [];
@@ -483,6 +510,22 @@ for (const forbidden of [
   check(
     !apiContext.includes(forbidden),
     `frontend API context contains module singleton contract: ${forbidden}`,
+  );
+}
+
+const businessPage = readTemplateFile(
+  "frontend/packages/{{moduleKebab}}/src/views/{{moduleKebab}}/{{aggregateKebab}}/index.vue",
+);
+for (const forbidden of [
+  "<el-dialog",
+  "<ElDialog",
+  'class="query-form"',
+  'class="table-toolbar"',
+  'class="pagination-wrap"',
+]) {
+  check(
+    !businessPage.includes(forbidden),
+    `business page contains legacy page baseline: ${forbidden}`,
   );
 }
 

@@ -410,6 +410,8 @@ try {
     '--baseline business-pmo/architecture-debt-budget.json',
     '--baseline-only',
     '--base-ref "$BASE_SHA"',
+    'business-pmo/mango-baseline/tools/check-frontend-page-baseline.mjs',
+    '--frontend-root "$FRONTEND_ROOT"',
   ]) {
     for (const workflow of [pmoWorkflow, giteaPmoWorkflow]) {
       if (!workflow.includes(expected)) {
@@ -426,11 +428,12 @@ try {
     'backend_root: ${{ steps.scope.outputs.backend_root }}',
     'pmo:\n    name: PMO contract gates\n    needs: preflight_scope',
     'docs:\n    name: PMO document gates\n    needs: preflight_scope',
+    'frontend:\n    name: Frontend page baseline\n    needs: preflight_scope',
     'backend:\n    name: Affected backend gates\n    needs: preflight_scope',
     "needs.preflight_scope.outputs.backend_mode == 'governance'",
     "needs.preflight_scope.outputs.backend_mode == 'partial'",
     'pmo-doc-check:\n    name: pmo-doc-check',
-    'needs: [preflight_scope, pmo, docs, backend]',
+    'needs: [preflight_scope, pmo, docs, frontend, backend]',
     'if: ${{ always() }}',
     'success|skipped) ;;',
   ]) {
@@ -444,6 +447,8 @@ try {
     "steps.scope.outputs.backend_mode == 'partial'",
     'steps.scope.outputs.maven_dependency_projects',
     'steps.scope.outputs.backend_root',
+    "steps.scope.outputs.frontend == 'true'",
+    'steps.scope.outputs.frontend_root',
   ]) {
     if (!giteaPmoWorkflow.includes(expected)) {
       throw new Error(`generated Gitea PMO workflow missing compatible scope contract: ${expected}`);
@@ -1213,8 +1218,12 @@ try {
     'openEditDialog',
     'openDetail',
     'handleDelete',
-    'el-dialog',
+    'MangoDialog',
     'el-drawer',
+    'data-page="contract.seal"',
+    'data-surface="contract.seal.table"',
+    'data-action="contract.seal.create"',
+    'data-field="contract.seal.name"',
     'useSealApi',
     'sealApi.update',
     'sealApi.delete',
@@ -1228,6 +1237,17 @@ try {
   ]) {
     if (!modulePage.includes(expected)) {
       throw new Error(`module add generated frontend page missing CRUD capability: ${expected}`);
+    }
+  }
+  for (const forbidden of [
+    '<el-dialog',
+    '<ElDialog',
+    'class="query-form"',
+    'class="table-toolbar"',
+    'class="pagination-wrap"',
+  ]) {
+    if (modulePage.includes(forbidden)) {
+      throw new Error(`module add generated frontend page contains legacy page baseline: ${forbidden}`);
     }
   }
   const moduleManifest = JSON.parse(

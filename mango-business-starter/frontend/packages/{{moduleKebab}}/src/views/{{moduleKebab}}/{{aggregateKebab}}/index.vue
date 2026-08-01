@@ -2,7 +2,7 @@
   <MangoListPage data-page="{{moduleKebab}}.{{aggregateKebab}}">
     <template #search>
       <MangoSearchPanel :model="query" collapsible :collapsed-count="3" @search="handleSearch" @reset="handleReset">
-        <el-form-item label="{{aggregateName}}名称">
+        <el-form-item label="{{aggregateName}}名称" data-field="{{moduleKebab}}.{{aggregateKebab}}.name">
           <el-input v-model="query.name" clearable :placeholder="namePlaceholder" @keyup.enter="handleSearch" />
         </el-form-item>
       </MangoSearchPanel>
@@ -10,10 +10,17 @@
 
     <MangoListPanel>
       <template #actions>
-        <el-button type="primary" plain @click="openCreateDialog">新增</el-button>
+        <el-button type="primary" plain data-action="{{moduleKebab}}.{{aggregateKebab}}.create" @click="openCreateDialog">新增</el-button>
       </template>
 
-      <el-table v-loading="loading" :data="records" row-key="id" stripe highlight-current-row>
+      <el-table
+        v-loading="loading"
+        :data="records"
+        row-key="id"
+        stripe
+        highlight-current-row
+        data-surface="{{moduleKebab}}.{{aggregateKebab}}.table"
+      >
         <el-table-column prop="name" label="{{aggregateName}}名称" min-width="180" show-overflow-tooltip />
         <el-table-column prop="id" label="业务标识" min-width="180" show-overflow-tooltip />
         <el-table-column label="操作" width="180" fixed="right">
@@ -30,12 +37,13 @@
       </template>
     </MangoListPanel>
 
-    <el-dialog
+    <MangoDialog
       v-model="formDialogVisible"
       :title="formMode === 'create' ? '新增{{aggregateName}}' : '编辑{{aggregateName}}'"
       width="520px"
       :close-on-click-modal="!submitting"
       @close="handleDialogClose"
+      data-surface="{{moduleKebab}}.{{aggregateKebab}}.form"
     >
       <el-form ref="formRef" :model="formModel" :rules="formRules" label-width="120px">
         <el-form-item label="{{aggregateName}}名称" prop="name">
@@ -46,7 +54,7 @@
         <el-button :disabled="submitting" @click="formDialogVisible = false">取消</el-button>
         <el-button type="primary" :loading="submitting" @click="submitForm">保存</el-button>
       </template>
-    </el-dialog>
+    </MangoDialog>
 
     <el-drawer v-model="detailVisible" title="{{aggregateName}}详情" size="420px">
       <el-descriptions v-if="detailRecord" :column="1" border>
@@ -63,7 +71,7 @@
 </template>
 
 <script setup lang="ts">
-import { MangoListPage, MangoListPanel, MangoSearchPanel, Pagination } from '@mango/common';
+import { MangoDialog, MangoListPage, MangoListPanel, MangoSearchPanel, Pagination } from '@mango/common';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
 import { onBeforeUnmount, onMounted, reactive, ref } from 'vue';
 import { type {{aggregatePascal}}VO } from '@{{projectKebab}}/{{moduleKebab}}-api';
