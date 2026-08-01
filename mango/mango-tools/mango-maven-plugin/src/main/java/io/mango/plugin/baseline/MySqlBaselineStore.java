@@ -11,6 +11,7 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -19,7 +20,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.Collections;
 import java.util.regex.Pattern;
 
 final class MySqlBaselineStore {
@@ -34,6 +34,8 @@ final class MySqlBaselineStore {
     private static final Pattern AUTO_INCREMENT = Pattern.compile("(?i)\\s+AUTO_INCREMENT=\\d+");
     private static final Pattern DEFINER = Pattern.compile(
             "(?i)DEFINER\\s*=\\s*(?:`[^`]*`|[^@\\s]+)@(?:`[^`]*`|[^\\s]+)\\s*");
+    private static final Set<String> RUNTIME_AUDIT_TIMESTAMP_COLUMNS = Set.of(
+            "created_at", "updated_at", "published_at");
     private static final int INSERT_BATCH_SIZE = 250;
 
     private final MySqlJdbcUrl jdbcUrl;
@@ -138,6 +140,21 @@ final class MySqlBaselineStore {
             String database,
             Set<String> groupModules,
             BaselineObjectOwnership ownership) throws MojoExecutionException {
+        return snapshot(database, groupModules, ownership, Set.of());
+    }
+
+    SchemaSnapshot determinismSnapshot(
+            String database,
+            Set<String> groupModules,
+            BaselineObjectOwnership ownership) throws MojoExecutionException {
+        return snapshot(database, groupModules, ownership, RUNTIME_AUDIT_TIMESTAMP_COLUMNS);
+    }
+
+    private SchemaSnapshot snapshot(
+            String database,
+            Set<String> groupModules,
+            BaselineObjectOwnership ownership,
+            Set<String> ignoredDataColumns) throws MojoExecutionException {
         try (Connection connection = connect(database)) {
             DatabaseObjects objects = inspectObjects(connection, database);
             validateOwnership(objects, groupModules, ownership);
@@ -149,7 +166,8 @@ final class MySqlBaselineStore {
                 }
                 definitions.put("table:" + table.getKey(),
                         normalizeDefinition(showCreateTable(connection, table.getValue()), database));
-                data.put(table.getKey(), readHexRows(connection, database, table.getValue()));
+                data.put(table.getKey(), readHexRows(
+                        connection, database, table.getValue(), ignoredDataColumns));
             }
             for (Map.Entry<String, String> view : objects.views().entrySet()) {
                 if (!groupModules.contains(ownership.viewOwner(view.getKey()))) {
@@ -333,6 +351,24 @@ final class MySqlBaselineStore {
             Connection connection,
             String database,
             String table,
+            Set<String> ignoredColumns) throws SQLException {
+        List<ColumnSpec> insertable = insertableColumns(connection, database, table);
+        if (ignoredColumns.isEmpty()) {
+            return readHexRows(connection, database, table, insertable);
+        }
+        List<ColumnSpec> comparable = insertable.stream()
+                .filter(column -> !ignoredColumns.contains(column.name().toLowerCase(Locale.ROOT)))
+                .toList();
+        if (comparable.isEmpty() && !insertable.isEmpty()) {
+            return readRowCardinality(connection, table);
+        }
+        return readHexRows(connection, database, table, comparable);
+    }
+
+    private static List<List<String>> readHexRows(
+            Connection connection,
+            String database,
+            String table,
             List<ColumnSpec> columns) throws SQLException {
         if (columns.isEmpty()) {
             return List.of();
@@ -356,6 +392,18 @@ final class MySqlBaselineStore {
         }
         rows.sort(MySqlBaselineStore::compareRows);
         return List.copyOf(rows);
+    }
+
+    private static List<List<String>> readRowCardinality(
+            Connection connection,
+            String table) throws SQLException {
+        try (Statement statement = connection.createStatement();
+                ResultSet resultSet = statement.executeQuery(
+                        "SELECT COUNT(*) FROM " + quote(table))) {
+            resultSet.next();
+            int rowCount = Math.toIntExact(resultSet.getLong(1));
+            return Collections.nCopies(rowCount, List.of());
+        }
     }
 
     private static List<ColumnSpec> insertableColumns(
