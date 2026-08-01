@@ -4644,6 +4644,7 @@ public class CheckMojo extends AbstractMojo {
         }
 
         List<PersistenceStyleIssue> issues = new ArrayList<>();
+        List<Path> tenantSetterCandidates = new ArrayList<>();
         try {
             Files.walkFileTree(
                     rootPath,
@@ -4653,7 +4654,7 @@ public class CheckMojo extends AbstractMojo {
                             if (isMainJavaFile(file)
                                     && !isMangoToolingFile(file)
                                     && !isMangoPersistenceFrameworkFile(file)) {
-                                analyzePersistenceCrudBaseline(file, issues);
+                                analyzePersistenceCrudBaseline(file, issues, tenantSetterCandidates);
                             }
                             return FileVisitResult.CONTINUE;
                         }
@@ -4661,6 +4662,7 @@ public class CheckMojo extends AbstractMojo {
         } catch (IOException e) {
             getLog().error("Error walking file tree", e);
         }
+        analyzeTenantSetterAssignments(tenantSetterCandidates, issues);
 
         if (!issues.isEmpty()) {
             for (PersistenceStyleIssue issue : issues) {
@@ -4689,7 +4691,10 @@ public class CheckMojo extends AbstractMojo {
         }
     }
 
-    private void analyzePersistenceCrudBaseline(Path file, List<PersistenceStyleIssue> issues) {
+    private void analyzePersistenceCrudBaseline(
+            Path file,
+            List<PersistenceStyleIssue> issues,
+            List<Path> tenantSetterCandidates) {
         try {
             String content = Files.readString(file);
             String code = stripStringLiterals(content);
@@ -4728,18 +4733,55 @@ public class CheckMojo extends AbstractMojo {
                     DATA_SCOPE_CONDITION_PATTERN,
                     issues,
                     "普通数据权限查询禁止手写 created_by/org_id 条件，请通过 DataScopeApplier 统一追加数据范围");
-            addPatternIssue(
-                    file,
-                    content,
-                    code,
-                    SET_TENANT_ID_PATTERN,
-                    issues,
-                    "插入普通租户实体禁止手工 setTenantId，请依赖 PersistenceAuditMetaObjectHandler 自动填充");
+            if (SET_TENANT_ID_PATTERN.matcher(code).find()) {
+                tenantSetterCandidates.add(file);
+            }
         } catch (IOException e) {
             issues.add(
                     new PersistenceStyleIssue(
                             "MAJOR", file.toString(), 0, "持久化 CRUD 基线检查失败: " + e.getMessage()));
         }
+    }
+
+    private void analyzeTenantSetterAssignments(
+            List<Path> candidateFiles, List<PersistenceStyleIssue> issues) {
+        if (candidateFiles.isEmpty()) {
+            return;
+        }
+        try {
+            TenantSetterAnalyzer.AnalysisResult analysis =
+                    TenantSetterAnalyzer.analyze(candidateFiles);
+            analysis.unsafeLines().forEach(
+                    (file, line) -> addTenantSetterIssue(file, line, issues));
+            analysis.unresolvedFiles().forEach(
+                    file -> addUnresolvedTenantSetterIssue(file, issues));
+        } catch (IOException | RuntimeException e) {
+            getLog().warn("Unable to parse setTenantId receivers; keeping fail-closed behavior", e);
+            candidateFiles.forEach(file -> addUnresolvedTenantSetterIssue(file, issues));
+        }
+    }
+
+    private void addUnresolvedTenantSetterIssue(
+            Path file, List<PersistenceStyleIssue> issues) {
+        try {
+            String content = Files.readString(file);
+            Matcher matcher = SET_TENANT_ID_PATTERN.matcher(stripStringLiterals(content));
+            addTenantSetterIssue(file, matcher.find() ? lineNumber(content, matcher.start()) : 1, issues);
+        } catch (IOException e) {
+            issues.add(
+                    new PersistenceStyleIssue(
+                            "MAJOR", file.toString(), 0, "持久化 CRUD 基线检查失败: " + e.getMessage()));
+        }
+    }
+
+    private void addTenantSetterIssue(
+            Path file, int line, List<PersistenceStyleIssue> issues) {
+        issues.add(
+                new PersistenceStyleIssue(
+                        "CRITICAL",
+                        file.toString(),
+                        line,
+                        "插入普通租户实体禁止手工 setTenantId，请依赖 PersistenceAuditMetaObjectHandler 自动填充"));
     }
 
     private void addPatternIssue(

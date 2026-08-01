@@ -4956,6 +4956,99 @@ class CheckMojoTest {
     }
 
     @Test
+    void checkPersistenceCrudBaseline_withApiProtocolTenantSetter_passes() throws Exception {
+        // given
+        Path sourceDir = tempDir.resolve("demo/src/main/java/io/mango/demo/core/service");
+        Files.createDirectories(sourceDir);
+        Files.writeString(sourceDir.resolve("SigningWorkflowService.java"), """
+                package io.mango.demo.core.service;
+
+                import io.mango.authorization.api.query.RoleLookupQuery;
+                import io.mango.demo.core.entity.DemoEntity;
+
+                public class SigningWorkflowService {
+                    private RoleLookupQuery fieldQuery;
+                    private DemoEntity query;
+
+                    public void initialize(RoleLookupQuery query) {
+                        query.setTenantId(1L);
+                        this.fieldQuery.setTenantId(1L);
+                        new RoleLookupQuery().setTenantId(1L);
+                    }
+                }
+                """);
+
+        // when
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "persistence-crud-baseline");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        // then
+        assertDoesNotThrow(() -> mojo.execute());
+    }
+
+    @Test
+    void checkPersistenceCrudBaseline_withTenantEntitySetter_reportsIssue() throws Exception {
+        // given
+        Path sourceDir = tempDir.resolve("demo/src/main/java/io/mango/demo/core/service");
+        Files.createDirectories(sourceDir);
+        Files.writeString(sourceDir.resolve("DemoService.java"), """
+                package io.mango.demo.core.service;
+
+                import io.mango.demo.core.entity.DemoEntity;
+
+                public class DemoService {
+                    public void create(Long tenantId) {
+                        DemoEntity entity = new DemoEntity();
+                        entity.setTenantId(String.valueOf(tenantId));
+                    }
+                }
+                """);
+
+        // when
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "persistence-crud-baseline");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        // then
+        org.apache.maven.plugin.MojoExecutionException exception =
+                assertThrows(
+                        org.apache.maven.plugin.MojoExecutionException.class,
+                        () -> mojo.execute());
+        assertTrue(exception.getMessage().contains("newIssues=1"));
+    }
+
+    @Test
+    void checkPersistenceCrudBaseline_withUnknownTenantSetterReceiver_reportsIssue()
+            throws Exception {
+        // given
+        Path sourceDir = tempDir.resolve("demo/src/main/java/io/mango/demo/core/service");
+        Files.createDirectories(sourceDir);
+        Files.writeString(sourceDir.resolve("DemoService.java"), """
+                package io.mango.demo.core.service;
+
+                public class DemoService {
+                    public void initialize(TenantCarrier carrier) {
+                        carrier.setTenantId("1");
+                    }
+                }
+                """);
+
+        // when
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "persistence-crud-baseline");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        // then
+        assertThrows(
+                org.apache.maven.plugin.MojoExecutionException.class,
+                () -> mojo.execute());
+    }
+
+    @Test
     void checkPersistenceCrudBaseline_withMangoCrudService_passes() throws Exception {
         // given
         Path sourceDir = tempDir.resolve("demo/src/main/java/io/mango/demo/core/service");
