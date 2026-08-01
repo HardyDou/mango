@@ -1,7 +1,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { evaluateVuePageBaseline } from '../tools/check-frontend-page-baseline.mjs';
+import {
+  evaluateVuePageBaseline,
+  formatFrontendPageBaselineFailures,
+} from '../tools/check-frontend-page-baseline.mjs';
 
 const listPage = `
 <template>
@@ -32,6 +35,36 @@ test('accepts typed exceptions with reviewable reasons', () => {
     <!-- mango-page-baseline-exception dialog: third-party editor requires the native dialog contract -->
     <template><el-table /><el-dialog /></template>`;
   assert.deepEqual(evaluateVuePageBaseline('frontend/packages/report/src/views/report/index.vue', content, 'M'), []);
+});
+
+test('accepts a whole-page exception for every page baseline check', () => {
+  const content = `
+    <!-- mango-page-baseline-exception all: embedded workflow canvas owns its complete page layout -->
+    <template><el-table /><el-dialog /><el-descriptions /><el-form /></template>`;
+  assert.deepEqual(
+    evaluateVuePageBaseline('frontend/packages/workflow/src/views/detail/form/index.vue', content, 'M'),
+    [],
+  );
+});
+
+test('rejects whole-page exceptions with a missing or short reason', () => {
+  for (const exception of [
+    '<!-- mango-page-baseline-exception all: -->',
+    '<!-- mango-page-baseline-exception all: too short -->',
+  ]) {
+    const content = `${exception}
+      <template><el-table /><el-dialog /><el-descriptions /><el-form /></template>`;
+    assert.equal(
+      evaluateVuePageBaseline('frontend/packages/workflow/src/views/detail/form/index.vue', content, 'M').length,
+      9,
+    );
+  }
+});
+
+test('failure output explains typed and whole-page exceptions', () => {
+  const output = formatFrontendPageBaselineFailures(['frontend/views/index.vue: list page must use MangoListPage']);
+  assert.match(output, /mango-page-baseline-exception <list\|detail\|form\|dialog>:/u);
+  assert.match(output, /mango-page-baseline-exception all:/u);
 });
 
 test('requires page shells for new or modified independent detail and form pages', () => {
