@@ -56,6 +56,18 @@ jobs:
           node business-pmo/mango-baseline/tools/check-document-set.mjs
           --root "$BUSINESS_DOCS_ROOT"
 
+      - name: Enforce current frontend page components
+        if: steps.scope.outputs.frontend == 'true'
+        env:
+          BASE_SHA: ${{ gitea.event.pull_request.base.sha || gitea.event.before || 'HEAD^' }}
+          HEAD_SHA: ${{ gitea.event.pull_request.head.sha || gitea.sha }}
+          FRONTEND_ROOT: ${{ steps.scope.outputs.frontend_root }}
+        run: >-
+          node business-pmo/mango-baseline/tools/check-frontend-page-baseline.mjs
+          --base "$BASE_SHA"
+          --head "$HEAD_SHA"
+          --frontend-root "$FRONTEND_ROOT"
+
       - name: Set up Java
         if: steps.scope.outputs.backend == 'true'
         uses: actions/setup-java@v4

@@ -242,7 +242,9 @@ for (const workflow of [
     '--report "$BACKEND_ROOT/target/mango-architecture-report.json"',
     '--baseline business-pmo/architecture-debt-budget.json',
     '--baseline-only',
-    '--base-ref "$BASE_SHA"'
+    '--base-ref "$BASE_SHA"',
+    'business-pmo/mango-baseline/tools/check-frontend-page-baseline.mjs',
+    '--frontend-root "$FRONTEND_ROOT"'
   ], failures);
   assertIncludes(workflow, ['-Dmango.check.changedOnly=false'], failures);
   assertSectionNotIncludes(

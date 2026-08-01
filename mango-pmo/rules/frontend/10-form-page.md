@@ -70,3 +70,10 @@
 6. label 是否默认左右结构。
 7. 技术字段是否后置。
 8. 操作区是否稳定、提交态是否完整。
+
+## 8. 统一骨架
+
+1. 新增或修改的独立表单页必须使用 `MangoFormPage` 组织返回栏、内容区和底部操作栏。
+2. 表单业务分组必须使用 `MangoPageSection`，分组内部继续使用 `ElForm`、`ElFormItem`、`ElRow` 和 `ElCol`。
+3. 短表单使用 `MangoDialog`，强上下文编辑可以使用 Element Plus Drawer；不得把 `MangoFormPage` 塞进 Dialog 或 Drawer。
+4. 特殊表单页不使用统一骨架时必须说明页面语义和例外原因，禁止复制存量旧页面作为依据。

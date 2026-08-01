@@ -124,6 +124,7 @@ export function classifyChangedFiles(files, repositoryRoot = root) {
       distribution: true,
       readmes: true,
       generated_backend: true,
+      frontend: true,
     };
   }
 
@@ -168,9 +169,17 @@ export function classifyChangedFiles(files, repositoryRoot = root) {
     /^mango-ui\/packages\/.*\.(?:ts|tsx|vue|js|mjs|json|css|scss|less)$/,
     /^frontend\/.*\.(?:ts|tsx|vue|js|mjs|json|css|scss|less)$/,
   ]));
+  const frontend = normalized.some(file => matchesAny(file, [
+    /^frontend(?:\/|$)/,
+    /^mango-ui\/(?:apps|packages|scripts)(?:\/|$)/,
+    /^mango-business-starter\/frontend(?:\/|$)/,
+    /^mango-ui\/packages\/mango-cli\/templates\/(?:full\/frontend|business-module\/frontend)(?:\/|$)/,
+    /^mango-pmo\/tools\/check-frontend-page-baseline\.mjs$/,
+    /^mango-pmo\/tests\/frontend-page-baseline\.test\.mjs$/,
+  ]));
   const generated_backend = normalized.some(changesGeneratedBackendBehavior);
 
-  return { pmo, backend, projection, distribution, readmes, generated_backend };
+  return { pmo, backend, projection, distribution, readmes, generated_backend, frontend };
 }
 
 function listPomProjects(directory, mangoRoot) {

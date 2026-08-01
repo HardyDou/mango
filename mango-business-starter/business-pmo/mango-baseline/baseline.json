@@ -3,8 +3,8 @@
   "packageVersion": "1.3.7",
   "schemaVersion": 2,
   "source": "mango-pmo",
-  "sourceCommit": "d8a0c28fb8d386bac04836662ea486841621e4a7",
-  "bundleSha256": "ea9d591c01dc632aee90a25b15feecc1e3ea417d480f0df88defcfc696a3aef2",
+  "sourceCommit": "8809e144244cc6d7137c1f19d0f593e1cbabea14",
+  "bundleSha256": "a3637475c3b9af0a9695e51f1b3ae3f840b4db3e7ef99269c402638223dc9d99",
   "contracts": [
     {
       "contractId": "business-requirements",
@@ -588,8 +588,8 @@
     },
     {
       "path": "rules/frontend/02-element-plus-ui.md",
-      "sha256": "6368821ef3205ca912ebaf19b19774bdc22e1c8c409e843b2ba5825181cccf3c",
-      "size": 9489,
+      "sha256": "b2c803b730cae49e400362cc04f386a466a6046ee321175681c04815fed70f4d",
+      "size": 10283,
       "kind": "rule",
       "mode": "0644"
     },
@@ -609,8 +609,8 @@
     },
     {
       "path": "rules/frontend/05-dev-flow.md",
-      "sha256": "bc1b223cc29d7c3b2ac7a040517aa45e5a71028047df3a9d22195659f5822322",
-      "size": 958,
+      "sha256": "d3d112c4eb02c9afeea996d2ffb6ed83775147838609b2d1b969fa92530b9676",
+      "size": 1247,
       "kind": "rule",
       "mode": "0644"
     },
@@ -623,36 +623,36 @@
     },
     {
       "path": "rules/frontend/07-admin-ui-common.md",
-      "sha256": "6acfcb328cecadf6d023f925a18d9f89f1c1cd7ccb574be180c72e73db237b04",
-      "size": 2197,
+      "sha256": "1b05ffd012aab71a2c061f6cfe52fc84f55c9ed8bd5e4fda015fbf58e04ce333",
+      "size": 2659,
       "kind": "rule",
       "mode": "0644"
     },
     {
       "path": "rules/frontend/08-list-page.md",
-      "sha256": "093c9b85e2a96fc45ffa3abf7738c758617623c0befc804b39c18299da170b0d",
-      "size": 3036,
+      "sha256": "2bdb52804ed11377c638555046fe85a956488f4f633529c8661d3510c69ec919",
+      "size": 3224,
       "kind": "rule",
       "mode": "0644"
     },
     {
       "path": "rules/frontend/09-detail-page.md",
-      "sha256": "415b764f4d05796fbef30c3448c499876a50bc9ca2f159b81530b8055cdf153e",
-      "size": 1824,
+      "sha256": "3fc50fc521915119cea5870a850ec6238674bd65b433a575e36baa3f79f9c89a",
+      "size": 2313,
       "kind": "rule",
       "mode": "0644"
     },
     {
       "path": "rules/frontend/10-form-page.md",
-      "sha256": "5617e65a22c8b07d4b212b8c49d9fd67d14db3cb7751fe0ca20fd2b9401a5d11",
-      "size": 2757,
+      "sha256": "d2d27e4b27f0f45d31ef20d29b964551be48590f38bab2ce254a5f1b595c422f",
+      "size": 3290,
       "kind": "rule",
       "mode": "0644"
     },
     {
       "path": "rules/frontend/11-dialog-drawer.md",
-      "sha256": "acc2f718698192e46b84c930f1dc91e95be24409456849de3bfb826923ee5e47",
-      "size": 1361,
+      "sha256": "9224559a552a493c8a423c848f08d295ed9ca20adaab92a57670f8a08a972c32",
+      "size": 1767,
       "kind": "rule",
       "mode": "0644"
     },
@@ -665,8 +665,8 @@
     },
     {
       "path": "rules/index.json",
-      "sha256": "aa8e6484d8d1dcf90f3b828a4b88deb19dba1e0037693fd8765bc5d75fc328a9",
-      "size": 26307,
+      "sha256": "e2669bd8b1460b3eca68e984eaaa6d91257d7b3de0921130f3fb305a33697ca1",
+      "size": 26411,
       "kind": "rule",
       "mode": "0644"
     },
@@ -1126,9 +1126,16 @@
       "mode": "0644"
     },
     {
+      "path": "tools/check-frontend-page-baseline.mjs",
+      "sha256": "bd5800f1e46538516639ce0dc8d620375ee1905b9ed5fff767a342272a2158de",
+      "size": 6323,
+      "kind": "tool",
+      "mode": "0755"
+    },
+    {
       "path": "tools/check-governance-intent.mjs",
-      "sha256": "47d7e18573bd7a834fc98b6a4c9db535dab5ed7a94368ab10026b9b80d6f3852",
-      "size": 13022,
+      "sha256": "2c5d5569f4041790db909e9e5e6cf30b8787c5c000b98e639faf96151c76a490",
+      "size": 13136,
       "kind": "tool",
       "mode": "0644"
     },
@@ -1183,8 +1190,8 @@
     },
     {
       "path": "tools/classify-pmo-check-scope.mjs",
-      "sha256": "baa159da631740abbacf7168882381d15a63271b84beaa780dd4ab29eb0c9cd6",
-      "size": 14534,
+      "sha256": "188725a07f7945f0d01014fbba2dfeef7369e869a96a9643f37ff49b21b050c8",
+      "size": 14986,
       "kind": "tool",
       "mode": "0644"
     },

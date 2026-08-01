@@ -38,6 +38,16 @@ jobs:
           cache: pnpm
           cache-dependency-path: mango-ui/pnpm-lock.yaml
 
+      - name: Enforce current frontend page components
+        env:
+          MANGO_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          MANGO_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: >-
+          node mango-pmo/tools/check-frontend-page-baseline.mjs
+          --base "$MANGO_BASE_SHA"
+          --head "$MANGO_HEAD_SHA"
+          --frontend-root mango-ui
+
       - name: Install locked frontend dependencies
         working-directory: mango-ui
         run: pnpm install --frozen-lockfile --registry=https://registry.npmjs.org/
@@ -92,6 +102,17 @@ jobs:
           MANGO_BASE_SHA: ${{ github.event.before }}
           MANGO_HEAD_SHA: ${{ github.sha }}
         run: pnpm check:affected -- --base="$MANGO_BASE_SHA" --head="$MANGO_HEAD_SHA"
+
+      - name: Enforce current frontend page components
+        if: github.event_name == 'push'
+        env:
+          MANGO_BASE_SHA: ${{ github.event.before }}
+          MANGO_HEAD_SHA: ${{ github.sha }}
+        run: >-
+          node mango-pmo/tools/check-frontend-page-baseline.mjs
+          --base "$MANGO_BASE_SHA"
+          --head "$MANGO_HEAD_SHA"
+          --frontend-root mango-ui
 
       - name: Run manual full frontend quality gate
         if: github.event_name == 'workflow_dispatch'

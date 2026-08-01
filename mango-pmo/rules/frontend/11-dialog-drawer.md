@@ -14,6 +14,7 @@
 4. 确认按钮必须有提交 loading。
 5. 提交中禁止重复提交。
 6. 关闭未保存内容前必须提醒确认。
+7. 新增或修改的标准弹框必须使用 `@mango/common` 的 `MangoDialog` 统一标题、内容滚动区和 footer；第三方组件强依赖原生 Dialog 时必须说明例外原因。
 
 ## 3. 抽屉规则
 
@@ -21,6 +22,7 @@
 2. 抽屉内仍需按业务模块分组。
 3. 抽屉操作区保持稳定。
 4. 不得把完整复杂页面硬塞进抽屉。
+5. 当前继续使用 Element Plus Drawer，不得用 `MangoDialog`、`MangoDetailPage` 或 `MangoFormPage` 假冒 Drawer。
 
 ## 4. 删除确认
 
@@ -38,3 +40,4 @@
 4. 确认按钮是否有 loading。
 5. 未保存关闭是否有确认。
 6. 危险操作是否说明影响范围并使用 `danger`。
+7. 标准弹框是否使用 `MangoDialog`，原生 Dialog 是否有明确例外原因。

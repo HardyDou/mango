@@ -101,7 +101,18 @@ const rows = await get('/system/dict/data/options', {
 
 ```vue
 <script setup lang="ts">
-import { DictSelect, MangoListPage, MangoListPanel, MangoSearchPanel, OrgSelector, Pagination } from '@mango/common';
+import {
+  DictSelect,
+  MangoDetailPage,
+  MangoDialog,
+  MangoFormPage,
+  MangoListPage,
+  MangoListPanel,
+  MangoPageSection,
+  MangoSearchPanel,
+  OrgSelector,
+  Pagination,
+} from '@mango/common';
 import '@mango/common/style.css';
 </script>
 ```
@@ -150,7 +161,38 @@ import '@mango/common/style.css';
 </template>
 ```
 
-`MangoSearchPanel` 会按字段顺序识别常用搜索项。启用 `collapsible` 后，收起态默认显示两行字段，展开态显示全部字段；查询、重置按钮默认固定在搜索区域右侧，展开或收起按钮默认以图标形式在搜索区底部居中。组件只负责字段栅格、按钮区和展开收起能力，不自带白底、边框、圆角或阴影，业务页面可在外层使用统一卡片容器。字段区默认桌面端一行四列，也可设置 `columns="auto"` 使用字段宽度自适应；移动端使用单列撑满。字段区和按钮区在桌面端按 `10:2` 比例排布。表单默认使用中等尺寸、label 右对齐并带中文冒号，可通过 `size`、`label-position`、`label-suffix` 覆盖：
+独立详情页和表单页使用对应页面外壳，并通过 `MangoPageSection` 按业务语义分组：
+
+```vue
+<template>
+  <MangoDetailPage title="订单详情" data-page="orders.detail" @back="router.back()">
+    <MangoPageSection title="基本信息">
+      <el-descriptions :column="2" border>
+        <el-descriptions-item label="订单号">{{ detail.orderNo }}</el-descriptions-item>
+        <el-descriptions-item label="状态">{{ detail.statusName }}</el-descriptions-item>
+      </el-descriptions>
+    </MangoPageSection>
+  </MangoDetailPage>
+
+  <MangoFormPage title="编辑订单" data-page="orders.edit" @back="router.back()">
+    <MangoPageSection title="基本信息">
+      <el-form :model="form" label-width="120px">
+        <el-form-item label="订单名称">
+          <el-input v-model="form.name" />
+        </el-form-item>
+      </el-form>
+    </MangoPageSection>
+    <template #actions>
+      <el-button @click="router.back()">取消</el-button>
+      <el-button type="primary" :loading="submitting" @click="save">保存</el-button>
+    </template>
+  </MangoFormPage>
+</template>
+```
+
+列表上下文中的短详情可以继续使用 Element Plus Drawer；短表单和标准弹框使用 `MangoDialog`。不要把 `MangoDetailPage` 或 `MangoFormPage` 塞进弹框、抽屉。
+
+`MangoSearchPanel` 会按字段顺序识别常用搜索项。启用 `collapsible` 后，收起态默认显示两行字段，展开态显示全部字段；查询、重置按钮默认固定在搜索区域右侧，展开或收起按钮默认以图标形式在搜索区底部居中。组件只负责字段栅格、按钮区和展开收起能力，不自带白底、边框、圆角或阴影。字段区默认桌面端一行四列，也可设置 `columns="auto"` 使用字段宽度自适应；移动端使用单列撑满。字段区和按钮区在桌面端按 `10:2` 比例排布。表单默认使用中等尺寸、label 右对齐并带中文冒号，可通过 `size`、`label-position`、`label-suffix` 覆盖：
 
 ```vue
 <MangoSearchPanel :model="query" label-suffix="" label-position="left" size="small" @search="search" @reset="reset">
@@ -316,9 +358,9 @@ API 加密环境变量：
 | ------------------------------- | ---------------------------------- | -------------------------------------------------------------------------------------- |
 | `collapsible`                   | `false`                            | 是否启用搜索项展开/收起。                                                              |
 | `collapsed-count`               | 自动按列数和 `collapsed-rows` 计算 | 收起态显示前几个搜索项。业务把常用搜索项放在前面。                                     |
-| `collapsed-rows`                | `1`                                | 未指定 `collapsed-count` 时，收起态显示几行。                                          |
-| `columns`                       | `auto`                             | 搜索字段区列数。默认自适应；传入数字时按固定列数排版，并在窄屏下自动降列。             |
-| `more-placement`                | `actions`                          | 展开/收起按钮位置。`actions` 表示跟随查询、重置按钮；`bottom` 表示放在搜索区底部居中。 |
+| `collapsed-rows`                | `2`                                | 未指定 `collapsed-count` 时，收起态显示几行。                                          |
+| `columns`                       | `4`                                | 搜索字段区列数。传入 `auto` 时按字段宽度自适应；固定列数在窄屏下自动降列。             |
+| `more-placement`                | `bottom`                           | 展开/收起按钮位置。`actions` 表示跟随查询、重置按钮；`bottom` 表示放在搜索区底部居中。 |
 | `field-min-width`               | `280px`                            | 自适应列模式下字段最小宽度。                                                           |
 | `field-max-width`               | `320px`                            | 自适应列模式下字段最大宽度。                                                           |
 | `default-expanded`              | `false`                            | 初始是否展开全部搜索项。                                                               |

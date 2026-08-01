@@ -18,6 +18,7 @@ jobs:
       projection: ${{ steps.scope.outputs.projection }}
       distribution: ${{ steps.scope.outputs.distribution }}
       generated_backend: ${{ steps.scope.outputs.generated_backend }}
+      frontend: ${{ steps.scope.outputs.frontend }}
       readmes: ${{ steps.scope.outputs.readmes }}
       backend_mode: ${{ steps.scope.outputs.backend_mode }}
       maven_projects: ${{ steps.scope.outputs.maven_projects }}
@@ -92,6 +93,7 @@ jobs:
             mango-pmo/tests/architecture-debt-budget.test.mjs \
             mango-pmo/tests/branch-protection-policy.test.mjs \
             mango-pmo/tests/document-contract/document-contract.test.mjs \
+            mango-pmo/tests/frontend-page-baseline.test.mjs \
             mango-pmo/tests/pmo-check-scope.test.mjs \
             mango-pmo/tests/pmo-preflight.test.mjs \
             mango-pmo/tests/risk-verification.test.mjs \

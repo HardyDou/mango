@@ -22,11 +22,13 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       backend: ${{ steps.scope.outputs.backend }}
+      frontend: ${{ steps.scope.outputs.frontend }}
       backend_mode: ${{ steps.scope.outputs.backend_mode }}
       maven_projects: ${{ steps.scope.outputs.maven_projects }}
       maven_dependency_projects: ${{ steps.scope.outputs.maven_dependency_projects }}
       backend_root: ${{ steps.scope.outputs.backend_root }}
       backend_pom: ${{ steps.scope.outputs.backend_pom }}
+      frontend_root: ${{ steps.scope.outputs.frontend_root }}
       business_docs_root: ${{ steps.scope.outputs.business_docs_root }}
     steps:
       - name: Checkout
@@ -94,6 +96,35 @@ jobs:
         run: >-
           node business-pmo/mango-baseline/tools/check-document-set.mjs
           --root "$BUSINESS_DOCS_ROOT"
+
+  frontend:
+    name: Frontend page baseline
+    needs: preflight_scope
+    if: >-
+      (github.event_name != 'pull_request' || github.event.action != 'edited') &&
+      needs.preflight_scope.outputs.frontend == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Enforce current frontend page components
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before || 'HEAD^' }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          FRONTEND_ROOT: ${{ needs.preflight_scope.outputs.frontend_root }}
+        run: >-
+          node business-pmo/mango-baseline/tools/check-frontend-page-baseline.mjs
+          --base "$BASE_SHA"
+          --head "$HEAD_SHA"
+          --frontend-root "$FRONTEND_ROOT"
 
   backend:
     name: Affected backend gates
@@ -208,7 +239,7 @@ jobs:
 
   pmo-doc-check:
     name: pmo-doc-check
-    needs: [preflight_scope, pmo, docs, backend]
+    needs: [preflight_scope, pmo, docs, frontend, backend]
     if: ${{ always() }}
     runs-on: ubuntu-latest
     steps:
@@ -217,12 +248,14 @@ jobs:
           PREFLIGHT_SCOPE_RESULT: ${{ needs.preflight_scope.result }}
           PMO_RESULT: ${{ needs.pmo.result }}
           DOCS_RESULT: ${{ needs.docs.result }}
+          FRONTEND_RESULT: ${{ needs.frontend.result }}
           BACKEND_RESULT: ${{ needs.backend.result }}
         run: |
           for result in \
             "$PREFLIGHT_SCOPE_RESULT" \
             "$PMO_RESULT" \
             "$DOCS_RESULT" \
+            "$FRONTEND_RESULT" \
             "$BACKEND_RESULT"; do
             case "$result" in
               success|skipped) ;;
