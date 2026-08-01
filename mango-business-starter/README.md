@@ -182,7 +182,7 @@ Controller 使用 `BaseCrudController`，类级路径由 module 和 aggregate �
 
 页面默认使用 `@mango/common` 的 `MangoListPage`、`MangoSearchPanel`、`MangoListPanel` 和 `Pagination` 组织查询、功能区、表格区和分页区，短表单使用 `MangoDialog`，列表上下文中的短详情继续使用 Element Plus Drawer。独立详情页使用 `MangoDetailPage` 和 `MangoPageSection`，独立表单页使用 `MangoFormPage` 和 `MangoPageSection`。搜索区默认启用常用项折叠，业务把高频条件放在前面，展开后显示全部条件。业务交付时应补齐真实字段、权限控制、空状态、错误态和 E2E。
 
-生成项目的 PMO required check 会对本次新增或修改的 `views/**/*.vue` 执行页面基线检查。列表页缺少列表四件套、标准弹框直接新增原生 `ElDialog` 时会失败；特殊页面的例外方式见[Admin UI 通用规范](../mango-pmo/rules/frontend/07-admin-ui-common.md)。
+生成项目的 PMO required check 会对本次新增或修改的 `views/**/*.vue` 执行页面基线检查。列表页缺少列表四件套、标准弹框直接新增原生 `ElDialog` 时会失败。机器误判或页面确属特殊场景时，可在 `.vue` 文件中登记按类型例外 `<!-- mango-page-baseline-exception list: <具体、可复核的原因> -->`；整个页面均不适用默认骨架时，登记整页例外 `<!-- mango-page-baseline-exception all: <具体、可复核的原因> -->`。支持的类型及原因要求见项目内 [Admin UI 通用规范](./business-pmo/mango-baseline/rules/frontend/07-admin-ui-common.md)。
 
 ## 8. 数据与初始化
 

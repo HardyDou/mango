@@ -194,6 +194,8 @@ full preset 默认后端 app 依赖 `io.mango:mango-admin-starter`。平台默�
 
 full preset 前端入口使用 `createMangoAdminApp` 和 `mangoFullAdminFeatureRegistrars`。custom preset 会按默认模块和已选模块生成独立 registrar import。`mango module add` 生成的业务 UI 包会追加到 `mangoBusinessFeatureRegistrars`，业务包后续新增首页小组件时不需要再改宿主入口。
 
+PMO required check 会检查本次新增或修改的 `views/**/*.vue` 页面基线。机器误判或页面确属特殊场景时，可在 `.vue` 文件登记按类型例外 `<!-- mango-page-baseline-exception list: <具体、可复核的原因> -->`；整个页面均不适用默认骨架时，登记整页例外 `<!-- mango-page-baseline-exception all: <具体、可复核的原因> -->`。完整类型和原因要求见生成项目内 `business-pmo/mango-baseline/rules/frontend/07-admin-ui-common.md`，CI 失败输出也会直接提示两种格式。
+
 ## 8. 数据与初始化
 模板自身不直接写生产业务数据；数据库结构、平台默认资源和业务模块基线由后端启动时的 Flyway 模块、Resource Registry 和模块自身初始化流程处理。
 

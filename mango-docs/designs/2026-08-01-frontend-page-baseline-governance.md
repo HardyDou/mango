@@ -64,6 +64,8 @@
 
 业务项目 GitHub/Gitea PMO workflow 根据 `mango.config.json.paths.frontend` 运行同一 checker。Mango 主仓前端 workflow 对 `mango-ui` 运行同一 checker，避免规则、模板和平台代码出现两套判定。
 
+Issue #672 补充例外合同：保留 `list`、`detail`、`form`、`dialog` 按类型例外；整个页面均不适用默认骨架时允许登记 `all` 整页例外，一次跳过四类检查。两种例外都必须在页面源码中填写具体、可复核的页面语义或第三方合同原因；原因缺失或过短不生效。checker 失败输出必须直接给出两种登记格式，避免业务开发者只能通过主仓规则反查用法。
+
 ## 5. 失败与恢复
 
 - checker 无法读取 base/head、frontend 根目录越界或 Git diff 失败时 fail-closed。
@@ -79,3 +81,4 @@
 - AC-004：PMO 主规则与业务 baseline 同步，详情、表单和弹框规则明确默认组件。
 - AC-005：正例列表页通过；缺少列表骨架、详情/表单外壳或新增原生 Dialog 的反例失败；未改存量页面不被阻断。
 - AC-006：GitHub/Gitea 业务 workflow 对前端变更产生可审计的页面基线检查结果。
+- AC-007：按类型例外保持兼容；`all` 整页例外可跳过四类页面检查，原因不合格时仍然失败，CI 日志直接提示登记格式。

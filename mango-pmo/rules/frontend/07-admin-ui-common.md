@@ -19,7 +19,14 @@ Mango Admin UI 以系统级一致性为最高优先级。
 9. 删除、移除、清空等危险操作统一使用 `danger`。
 10. 页面必须覆盖 loading、empty、error 和无权限状态。
 11. 特殊页面可以例外，但必须说明原因，基础控件仍尽量遵守统一样式。
-12. 机器无法识别的特殊页面例外必须使用 `mango-page-baseline-exception <list|detail|form|dialog>: <具体原因>` 注释；原因必须描述页面语义或第三方合同，禁止只写“历史页面”“暂不迁移”。
+12. 机器无法识别的特殊页面例外必须使用 `mango-page-baseline-exception <list|detail|form|dialog>: <具体原因>` 注释跳过对应类型检查；整个页面均不适用默认页面骨架时，使用 `mango-page-baseline-exception all: <具体原因>` 一次跳过 `list`、`detail`、`form`、`dialog` 四类检查。原因必须描述页面语义或第三方合同，禁止只写“历史页面”“暂不迁移”。
+
+例外注释放在对应 `.vue` 文件中，例如：
+
+```html
+<!-- mango-page-baseline-exception list: 此处是对比结果中的局部表格，不是管理列表页 -->
+<!-- mango-page-baseline-exception all: 此页面由第三方流程设计器接管完整布局和弹框合同 -->
+```
 
 ## 3. 命名约定
 

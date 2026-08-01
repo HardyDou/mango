@@ -16,7 +16,7 @@
 | Codex plugin 投影 | `.codex-plugin`、`skills`                                                   | npm 包根可安装插件；版本由 build 从 package metadata 生成                          |
 | 业务同步          | `mango pmo sync/upgrade`                                                    | CLI 从本包安装业务仓 baseline，并同步 canonical PR 风险合同区段                    |
 | 影响驱动门禁      | `dist/baseline/tools/risk-verification.mjs`、`classify-pmo-check-scope.mjs` | 校验需求/方案风险，并把 Java PR 限定到受影响 Maven 模块                            |
-| 前端页面基线      | `dist/baseline/tools/check-frontend-page-baseline.mjs`                      | 阻断新增或修改页面继续使用旧列表骨架和原生标准 Dialog                              |
+| 前端页面基线      | `dist/baseline/tools/check-frontend-page-baseline.mjs`                      | 检查新增或修改页面的默认骨架，并支持带可复核原因的按类型或整页例外                 |
 
 ## 3. 接入方式
 
@@ -40,6 +40,8 @@ mango pmo check --project-dir . --locked
 ```
 
 升级会原子同步 `business-pmo/mango-baseline`、`business-pmo/pmo-lock.json`、项目 Agent 入口和 `.agents/skills`。项目级 Skill 与 PMO bundle 使用同一 manifest/hash，不需要逐个安装；用户级 Codex plugin 是独立的可选安装面，不由业务项目升级命令修改。
+
+页面基线误判或特殊页面可以在对应 `.vue` 文件登记例外。按类型使用 `<!-- mango-page-baseline-exception <list|detail|form|dialog>: <具体、可复核的原因> -->`；整个页面均不适用默认骨架时使用 `<!-- mango-page-baseline-exception all: <具体、可复核的原因> -->`。CI 失败输出也会显示这两种写法。
 
 ## 4. 配置说明
 
