@@ -159,7 +159,7 @@ node business-pmo/mango-baseline/tools/risk-verification.mjs \
   --body .pr-body.md
 ```
 
-生成项目的 `pmo-doc-check` 始终产生 required check 结果，但只在 `mango.config.json` 的 `paths.backend` 指向的后端路径受影响时启动 Java。普通后端质量门禁由 `classify-pmo-check-scope.mjs` 选择直接修改的 Maven 模块，不使用 `-am` 或 `-amd` 扩大 Reactor；依赖构建和消费者兼容性作为独立验证，根 POM、架构验证模块和全局架构输入才使用完整 Reactor。GitHub 与 Gitea 模板共用这套范围判定。
+生成项目的 `pmo-doc-check` 始终产生 required check 结果，但只在 `mango.config.json` 的 `paths.backend` 指向的后端路径受影响时启动 Java。普通后端质量门禁由 `classify-pmo-check-scope.mjs` 选择直接修改的 Maven 模块，不使用 `-am` 或 `-amd` 扩大 Reactor；依赖构建和消费者兼容性作为独立验证，根 POM、架构验证模块和全局架构输入才使用完整 Reactor。GitHub 与 Gitea 模板共用这套范围判定；Gitea 对已关闭或已合并 PR 的 `edited` 事件只执行正文合同检查，不再构造无效 diff。
 
 ### 5.2 存量模块首次纳管
 
