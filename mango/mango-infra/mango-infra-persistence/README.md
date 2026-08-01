@@ -456,7 +456,7 @@ mango:
             version: 2026072701
 ```
 
-制品生成器先在一次性 replay/determinism schema 各回放一次所有 V，确认结构和静态数据可复现；再在独立 verify schema 连续执行两次生成的 B，对结构和全部 migration 静态行做等价比较。全部通过后才将 B 和 manifest 注册进 Maven resource。Bootstrap 消费制品时按逻辑数据源分组，并按数据源 key、模块 code 的稳定顺序执行。每个数据源必须是真正空库；允许存在的只有 Bootstrap 自身控制表。每个模块 SQL 成功后，框架以 `B<version>` 为该模块原有 Flyway history table 建立基线，并记录模块 SQL SHA-256；失败重入只复用同一 fingerprint 已完成的模块。
+制品生成器先在一次性 replay/determinism schema 各回放一次所有 V，确认结构和静态数据可复现；该确定性比较只忽略 `created_at`、`updated_at`、`published_at` 的运行时钟差异。生成的 B 保留这些审计列的真实值，并在独立 verify schema 连续执行两次后，对结构和全部 migration 静态行做全列等价比较。全部通过后才将 B 和 manifest 注册进 Maven resource。Bootstrap 消费制品时按逻辑数据源分组，并按数据源 key、模块 code 的稳定顺序执行。每个数据源必须是真正空库；允许存在的只有 Bootstrap 自身控制表。每个模块 SQL 成功后，框架以 `B<version>` 为该模块原有 Flyway history table 建立基线，并记录模块 SQL SHA-256；失败重入只复用同一 fingerprint 已完成的模块。
 
 | 数据库状态 | 执行路径 |
 |------------|----------|
