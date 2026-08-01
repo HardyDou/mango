@@ -28,8 +28,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 
-import java.util.List;
-
 /**
  * 资源声明扫描同步自动配置。
  */
@@ -42,8 +40,7 @@ public class ResourceSyncAutoConfiguration {
     @ConditionalOnMissingBean
     public ResourceTargetExecutor resourceTargetExecutor(ObjectMapper objectMapper,
                                                          ObjectProvider<ResourceHandler> handlers) {
-        List<ResourceHandler> orderedHandlers = handlers.orderedStream().toList();
-        return new DefaultResourceTargetExecutor(objectMapper, orderedHandlers);
+        return new DefaultResourceTargetExecutor(objectMapper, () -> handlers.orderedStream().toList());
     }
 
     @Bean

@@ -57,10 +57,10 @@ public final class ResourceBootstrapStepContributor implements BootstrapStepCont
     }
 
     private PreparedDeclarations prepare() {
-        List<ResourceDeclaration> declarations = collector.collect().stream()
+        List<ResourceDeclaration> declarations = collector.collectBootstrap().stream()
                 .sorted(Comparator.comparing(ResourceDeclaration::getId))
                 .toList();
-        List<String> moduleCodes = collector.managedModuleCodes(declarations).stream().sorted().toList();
+        List<String> moduleCodes = collector.managedBootstrapModuleCodes(declarations).stream().sorted().toList();
         try {
             return new PreparedDeclarations(declarations, moduleCodes,
                     objectMapper.writeValueAsString(declarations));

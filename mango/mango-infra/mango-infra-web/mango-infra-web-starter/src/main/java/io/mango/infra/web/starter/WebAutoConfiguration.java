@@ -27,6 +27,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
@@ -133,6 +134,7 @@ public class WebAutoConfiguration implements WebMvcConfigurer {
 
     @Bean
     @ConditionalOnBean(InnerMappingInternalPathProvider.class)
+    @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
     public InnerMappingScanner innerMappingScanner(
                                                    @Qualifier("requestMappingHandlerMapping")
                                                    RequestMappingHandlerMapping handlerMapping,

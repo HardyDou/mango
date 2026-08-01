@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -35,6 +36,28 @@ class ResourceSyncAutoConfigurationTest {
             assertThat(context).hasSingleBean(ResourceTargetExecutor.class);
             assertThat(context).hasSingleBean(ResourceTargetController.class);
             assertThat(context.getBean(ResourceTargetController.class).upsertBatch(command).isSuccess()).isTrue();
+        });
+    }
+
+    @Test
+    void contextRefresh_defersLazyResourceHandlerCreationUntilTargetExecution() throws Exception {
+        AtomicInteger handlerCreations = new AtomicInteger();
+        ExecuteResourceTargetCommand command = command();
+        ApplicationContextRunner lazyHandlerContext = new ApplicationContextRunner()
+                .withConfiguration(AutoConfigurations.of(ResourceSyncAutoConfiguration.class))
+                .withBean(ObjectMapper.class, () -> objectMapper)
+                .withBean(ResourceHandler.class, () -> {
+                    handlerCreations.incrementAndGet();
+                    return new RecordingHandler();
+                }, beanDefinition -> beanDefinition.setLazyInit(true));
+
+        lazyHandlerContext.run(context -> {
+            assertThat(context).hasSingleBean(ResourceTargetExecutor.class);
+            assertThat(handlerCreations).hasValue(0);
+
+            context.getBean(ResourceTargetExecutor.class).upsertBatch(command);
+
+            assertThat(handlerCreations).hasValue(1);
         });
     }
 

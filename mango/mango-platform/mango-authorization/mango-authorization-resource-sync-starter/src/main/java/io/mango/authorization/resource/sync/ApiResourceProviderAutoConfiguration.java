@@ -5,6 +5,7 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -32,6 +33,7 @@ public class ApiResourceProviderAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
+    @ConditionalOnBean(RequestMappingHandlerMapping.class)
     public ApiAccessResourceDiscoverer apiAccessResourceDiscoverer(
             @Qualifier("requestMappingHandlerMapping") RequestMappingHandlerMapping handlerMapping,
             ObjectProvider<ModuleInfoRegistry> moduleInfoRegistryProvider,
@@ -41,6 +43,7 @@ public class ApiResourceProviderAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
+    @ConditionalOnBean(ApiAccessResourceDiscoverer.class)
     public ApiAccessResourceProvider apiAccessResourceProvider(ApiAccessResourceDiscoverer discoverer,
                                                               ApiResourceSyncProperties properties,
                                                               ApiResourceDeclarationConverter converter) {

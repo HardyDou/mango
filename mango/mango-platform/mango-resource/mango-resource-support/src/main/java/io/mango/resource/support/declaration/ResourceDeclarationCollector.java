@@ -19,8 +19,16 @@ public class ResourceDeclarationCollector {
     private final ObjectProvider<ResourceProvider> providers;
 
     public List<ResourceDeclaration> collect() {
+        return collectProviders(providers);
+    }
+
+    public List<ResourceDeclaration> collectBootstrap() {
+        return collectProviders(providers.orderedStream().filter(ResourceProvider::participatesInBootstrap).toList());
+    }
+
+    private List<ResourceDeclaration> collectProviders(Iterable<ResourceProvider> source) {
         List<ResourceDeclaration> declarations = new ArrayList<>();
-        for (ResourceProvider provider : providers) {
+        for (ResourceProvider provider : source) {
             List<ResourceDeclaration> provided = provider.provide();
             if (provided != null) {
                 declarations.addAll(provided);
@@ -30,13 +38,23 @@ public class ResourceDeclarationCollector {
     }
 
     public Set<String> managedModuleCodes(List<ResourceDeclaration> declarations) {
+        return managedModuleCodes(declarations, providers);
+    }
+
+    public Set<String> managedBootstrapModuleCodes(List<ResourceDeclaration> declarations) {
+        return managedModuleCodes(declarations,
+                providers.orderedStream().filter(ResourceProvider::participatesInBootstrap).toList());
+    }
+
+    private Set<String> managedModuleCodes(List<ResourceDeclaration> declarations,
+                                           Iterable<ResourceProvider> source) {
         Set<String> moduleCodes = new LinkedHashSet<>();
         for (ResourceDeclaration declaration : declarations) {
             if (declaration.getModuleCode() != null && !declaration.getModuleCode().isBlank()) {
                 moduleCodes.add(declaration.getModuleCode());
             }
         }
-        for (ResourceProvider provider : providers) {
+        for (ResourceProvider provider : source) {
             List<String> providedModuleCodes = provider.moduleCodes();
             if (providedModuleCodes != null) {
                 providedModuleCodes.stream()

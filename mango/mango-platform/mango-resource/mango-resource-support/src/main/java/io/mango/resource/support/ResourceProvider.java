@@ -10,6 +10,15 @@ import java.util.List;
 public interface ResourceProvider {
 
     /**
+     * Whether this provider can produce a deterministic declaration set during non-Web bootstrap.
+     *
+     * @return true when the provider participates in bootstrap resource publication
+     */
+    default boolean participatesInBootstrap() {
+        return true;
+    }
+
+    /**
      * 当前 Provider 管理的来源模块编码。
      * <p>
      * 当某模块删除了全部资源声明时，同步服务仍需要知道该模块的历史注册记录范围，

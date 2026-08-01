@@ -1,16 +1,31 @@
 package io.mango.infra.web.starter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.mango.infra.web.support.InnerMappingScanner;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
+import org.springframework.boot.autoconfigure.AutoConfigurations;
+import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 
 import java.time.LocalDateTime;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 class WebAutoConfigurationTest {
+
+    @Test
+    void nonWebBootstrapContext_doesNotCreateMvcOnlyInnerMappingScanner() {
+        new ApplicationContextRunner()
+                .withConfiguration(AutoConfigurations.of(WebAutoConfiguration.class))
+                .withPropertyValues("spring.main.web-application-type=none")
+                .run(context -> {
+                    assertThat(context).hasNotFailed();
+                    assertThat(context).doesNotHaveBean(InnerMappingScanner.class);
+                });
+    }
 
     @Test
     void longValuesShouldSerializeAsStringAndDeserializeFromString() throws Exception {
