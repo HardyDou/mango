@@ -1,1 +1,2 @@
+io.mango.workflow.starter.WorkflowBootstrapApiIsolationAutoConfiguration
 io.mango.workflow.starter.WorkflowAutoConfiguration

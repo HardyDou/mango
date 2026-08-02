@@ -816,6 +816,8 @@ workflow_business_apply_status_log.updated_at
 
 Flowable 启动所需的 `ACT_GE_PROPERTY` 元数据由 `WorkflowEngineMetadataInitializer` 在引擎初始化前按缺失项补齐。该初始化器依赖数据库初始化完成：使用 `MangoApplication` 时必须先完成 `bootstrap apply`；仍使用 `SpringApplication.run` 且未配置 `mango.bootstrap.mode` 的兼容直启应用，由 Persistence 兼容初始化器先执行 workflow EXPAND migration。该访问明确绕过租户插件，因为 Flowable 元数据表没有 `tenant_id` 字段；随后仍由 Flowable 自己完成引擎配置项维护。
 
+Bootstrap context 会为 `mango-workflow-api` 的本地公开 API 注入延迟代理。业务 starter 可以按公开边界注入 `WorkflowTaskRuntimeApi`、`WorkflowProcessApi`、`WorkflowBusinessApplyApi` 等接口，Bean 装配本身不会创建 Controller、Runtime Service 或 Flowable 引擎；真正调用 API 时才解析原 Controller。`runtime` 模式仍直接使用 Controller，不经过该代理。Bootstrap 的 Resource step 在 migration 完成后继续按需创建 Workflow ResourceHandler 和 Flowable，不改变流程定义发布顺序。
+
 `ACT_*`、`FLW_*` 属于直接集成的 Flowable 引擎表，字段和主键由 Flowable 数据模型定义，默认不参与 Mango Persistence 的业务表 Schema 标准字段校验。Mango 自有 `workflow_*` 表仍必须通过 `id`、审计、租户和组织字段校验。
 
 正式分类、业务域、节点目录和菜单等必需数据在 `META-INF/mango/resources/` 按资源类型声明，由 Resource Registry 同步；流程菜单、按钮权限等授权数据仍属于 authorization 数据边界。费用报销、合同盖章、请假三条示例流程单独位于 `META-INF/mango/demo/`，默认不加载，开启 `mango.resource.registry.demo-enabled=true` 后按 `INIT_ONLY` 初始化。
@@ -885,7 +887,7 @@ workflow:template:push
 
 **空白库启动提示 `ACT_GE_PROPERTY` 不存在**
 
-先确认 `mango.persistence.flyway.modules.workflow.enabled=true`。使用 `MangoApplication` 时检查当前 generation 是否已成功执行 `bootstrap apply`；仍使用 `SpringApplication.run` 的兼容直启应用不要配置 `mango.bootstrap.mode`，并确认应用使用包含 Issue #674 修复的 Persistence starter。禁止手工预建 `ACT_GE_PROPERTY` 或单独执行 Workflow V1 绕过初始化顺序。
+先确认 `mango.persistence.flyway.modules.workflow.enabled=true`。使用 `MangoApplication` 时检查当前 generation 是否已成功执行 `bootstrap apply`；若调用链显示业务 Bean 注入 `WorkflowTaskRuntimeApi` 等公开接口后提前创建 `WorkflowTaskController`，升级到包含 Bootstrap API 延迟代理的版本。仍使用 `SpringApplication.run` 的兼容直启应用不要配置 `mango.bootstrap.mode`，并确认应用使用包含 Issue #674 修复的 Persistence starter。禁止手工预建 `ACT_GE_PROPERTY`、开启 Flowable 自动建表或单独执行 Workflow V1 绕过初始化顺序。
 
 **默认管理员打开流程定义管理后列表为空**
 

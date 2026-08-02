@@ -46,6 +46,7 @@
 | 驳回后业务不可再次提交 | 业务状态流转是否覆盖驳回到草稿或重新提交 |
 | 退回后业务侧仍显示原审批节点 | 业务侧是否使用 `POST /workflow/tasks/return` 响应或 `workflow.task.advanced` 同步刷新后的 `currentTasks` |
 | 多租户流程串数据 | 流程定义、实例、任务和业务表 tenantId 是否一致 |
+| 空库 `bootstrap apply` 在 migration 前查询 `ACT_GE_PROPERTY` | 调用链是否由业务 Bean 注入 `WorkflowTaskRuntimeApi` 等公开接口后提前创建 Controller；升级到包含 Bootstrap API 延迟代理的 Maven 版本，不要手工建 Flowable 表或恢复业务 `forceSync()` 兼容 |
 
 ## 6. 事件接入
 
@@ -76,6 +77,8 @@
 业务订阅事件时，依赖边界应停留在 `mango-workflow-api`：事件类型使用 `WorkflowEventTypes`，`event.payload` 使用 `WorkflowEventPayloadVO` 反序列化。不要在业务模块中引用 `io.mango.workflow.core.event.WorkflowDomainEvents`、`WorkflowEventPublisher` 或 `io.mango.workflow.core.service.*`。业务列表需要展示当前节点、当前办理人、认领状态或候选人时，使用 `WorkflowBusinessApplyApi.latestProgress()`、批量进度 API 或任务动作 result 返回值，不要直接查询 workflow 运行表。
 
 ## 7. 变更影响记录
+
+- 2026-08-03 修复空库 Bootstrap 装配业务 starter 时公开 Workflow API 注入提前创建 Flowable 的问题。Bootstrap 只注入延迟解析的公开 API 代理，migration 后的 Resource step 仍按需发布定义，Runtime 仍使用原 Controller。业务继续依赖 `mango-workflow-api`，不需要改为 core service、恢复 `forceSync()`、手工建表或开启 Flowable 自动建表。
 
 - Issue #606 为开启 demo 资源的租户 `1` 默认 `ROLE_ADMIN` 初始化 `workflow:definition:list = ALL`，使全新数据库中的流程定义管理分页可读取租户内已发布定义；`INIT_ONLY` 首次遇到已有数据范围时保留人工配置。该修复不改变业务模块按 `definitionKey` 发起审批、任务办理、回调、状态回写或租户隔离；`startEntryVisible=false` 仍只隐藏审批中心发起入口，不隐藏流程定义管理记录。
 
