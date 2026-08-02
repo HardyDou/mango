@@ -233,6 +233,7 @@ mango-identity-core/src/main/resources/db/migration/identity
 |------|------|
 | `V1__init_identity.sql` | 新环境一次性创建 identity 最终态表、索引和约束，只包含 DDL |
 | `V2__add_real_name_and_binding_app.sql` | 存量环境增加实名字段和绑定 `app_code`，存量绑定默认回填 `internal-admin` |
+| `META-INF/mango/resources/identity-common-domain.yml` | 注册 `IDENTITY`（身份管理）业务域 |
 | `META-INF/mango/resources/identity-common-bootstrap.yml` | 默认加载必需的 `admin` 全局账号和租户 1 成员 |
 | `META-INF/mango/demo/identity-demo-members.yml` | 开启 demo 资源后加载租户 2、3、4 的演示成员和组织关系 |
 | `IdentityTenantProvisioner` | 新建租户时，如果当前上下文有创建者用户，则补建成员号 `ADMIN-<tenantId>-<userId>` 的机构管理员成员 |
@@ -244,6 +245,7 @@ mango-identity-core/src/main/resources/db/migration/identity
 | 资源类型 | 目标模块 | 声明入口 | 内容 |
 |----------|----------|----------|------|
 | `IDENTITY_USER` | `identity` | `identity-common-bootstrap.yml`、`identity-demo-members.yml` | 必需管理员账号与演示租户成员 |
+| `BUSINESS_DOMAIN` | `domain` | `identity-common-domain.yml` | 身份管理业务域 |
 | `ORG_MEMBER_BINDING` | `identity` | `identity-demo-members.yml` | 演示成员与所属租户组织的绑定 |
 | `MESSAGE_TEMPLATE` | `notice` | `IdentityMessageTemplateResourceProvider` | `identity.user.created`、`identity.password.reset`、`auth.wecom.login.bound`、`auth.wecom.login.unbound` |
 

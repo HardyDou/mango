@@ -13,19 +13,28 @@ export function useNoticeDomains() {
 
   const flatDomains = computed(() => flattenDomainOptions(domains.value));
 
-  const domainOptions = computed<NoticeDomainSelectOption[]>(() => flatDomains.value
-    .filter(item => Boolean(item.domainCode))
-    .map(item => ({
-      label: domainDisplayName(item),
-      value: item.domainCode,
-    }))
-    .sort((left, right) => left.label.localeCompare(right.label, 'zh-CN')));
+  const domainOptions = computed<NoticeDomainSelectOption[]>(() =>
+    flatDomains.value
+      .filter((item) => Boolean(item.domainCode))
+      .map((item) => ({
+        label: domainDisplayName(item),
+        value: item.domainCode,
+      }))
+      .sort((left, right) => left.label.localeCompare(right.label, 'zh-CN')),
+  );
 
   function domainText(code?: string) {
     const normalizedCode = code?.trim();
     if (!normalizedCode) return '-';
-    const domain = flatDomains.value.find(item => item.domainCode === normalizedCode);
+    const domain = flatDomains.value.find((item) => item.domainCode === normalizedCode);
     return domain ? domainDisplayName(domain) : normalizedCode;
+  }
+
+  function domainName(code?: string) {
+    const normalizedCode = code?.trim();
+    if (!normalizedCode) return '-';
+    const domain = flatDomains.value.find((item) => item.domainCode === normalizedCode);
+    return domain?.domainName || normalizedCode;
   }
 
   async function loadDomains() {
@@ -41,13 +50,14 @@ export function useNoticeDomains() {
     domainLoading: loading,
     domains,
     domainOptions,
+    domainName,
     domainText,
     loadDomains,
   };
 }
 
 function flattenDomainOptions(options: NoticeDomainOption[]): NoticeDomainOption[] {
-  return options.flatMap(item => [item, ...flattenDomainOptions(item.children || [])]);
+  return options.flatMap((item) => [item, ...flattenDomainOptions(item.children || [])]);
 }
 
 function domainDisplayName(domain: NoticeDomainOption) {

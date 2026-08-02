@@ -1,7 +1,26 @@
 {
   "schemaVersion": 1,
   "packageName": "@mango/system",
-  "components": [],
+  "components": [
+    {
+      "name": "PersonalLoginLogView",
+      "exportKey": ".",
+      "exportName": "PersonalLoginLogView",
+      "level": "C4",
+      "hostProfile": "host-agnostic",
+      "environmentProfile": "browser-only",
+      "distribution": ["npm"],
+      "deploymentModes": ["monolith", "microfrontend"],
+      "stability": "stable",
+      "ownerRole": "Frontend Standards Owner",
+      "styleExportKeys": ["./style.css"],
+      "docs": {
+        "path": "README.md",
+        "requiredSections": ["概览", "接入方式", "API 与扩展", "问题排查"]
+      },
+      "testEvidence": ["../../apps/mango-admin/e2e/specs/notice-message-center-menu.spec.ts"]
+    }
+  ],
   "legacyComponentExports": [
     {
       "exportKey": ".",

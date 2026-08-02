@@ -61,6 +61,9 @@ public interface NoticeApi {
 
     R<PageResult<NoticeBusinessTypeVO>> listBusinessTypes(@Valid NoticeBusinessTypePageQuery query);
 
+    R<PageResult<NoticeBusinessTypeVO>> listEnabledBusinessTypes(
+            @Valid NoticeBusinessTypePageQuery query);
+
     R<NoticeBusinessTypeVO> createBusinessType(@Valid CreateNoticeBusinessTypeCommand command);
 
     R<NoticeBusinessTypeVO> updateBusinessType(

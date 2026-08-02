@@ -41,12 +41,32 @@ public class SysLogService implements ISysLogService, LoginLogRecorder {
 
     @Override
     public PageResult<SysLoginLogVO> pageLoginLogs(LoginLogPageQuery query) {
-        LoginLogPageQuery resolved = query;
-        if (resolved == null) {
-            resolved = new LoginLogPageQuery();
-        }
+        LoginLogPageQuery resolved = resolveLoginLogQuery(query);
         IPage<SysLoginLogEntity> page = sysLoginLogMapper.selectPage(
                 new Page<>(resolved.getPage(), resolved.getSize()), loginLogWrapper(resolved));
+        List<SysLoginLogVO> records = page.getRecords().stream().map(this::toLoginVO).toList();
+        return PageResult.of(records, page.getTotal(), page.getCurrent(), page.getSize());
+    }
+
+    @Override
+    public PageResult<SysLoginLogVO> pageCurrentUserLoginLogs(LoginLogPageQuery query) {
+        LoginLogPageQuery resolved = resolveLoginLogQuery(query);
+        Long userId = Require.nonNull(
+                MangoContextHolder.userId(), SystemCode.SYSTEM_INVALID, "缺少当前用户上下文");
+        String tenantId = MangoContextHolder.tenantId();
+        Require.isTrue(StringUtils.hasText(tenantId), SystemCode.SYSTEM_INVALID, "缺少当前租户上下文");
+        String username = MangoContextHolder.principalName();
+        IPage<SysLoginLogEntity> page = sysLoginLogMapper.selectPage(
+                new Page<>(resolved.getPage(), resolved.getSize()),
+                loginLogWrapper(resolved)
+                        .eq(SysLoginLogEntity::getTenantId, tenantId.trim())
+                        .and(nested -> {
+                            nested.eq(SysLoginLogEntity::getUserId, userId);
+                            if (StringUtils.hasText(username)) {
+                                nested.or(failed -> failed.isNull(SysLoginLogEntity::getUserId)
+                                        .eq(SysLoginLogEntity::getUsername, username));
+                            }
+                        }));
         List<SysLoginLogVO> records = page.getRecords().stream().map(this::toLoginVO).toList();
         return PageResult.of(records, page.getTotal(), page.getCurrent(), page.getSize());
     }
@@ -178,6 +198,10 @@ public class SysLogService implements ISysLogService, LoginLogRecorder {
                 .ge(query.getStartTime() != null, SysLoginLogEntity::getLoginTime, query.getStartTime())
                 .le(query.getEndTime() != null, SysLoginLogEntity::getLoginTime, query.getEndTime())
                 .orderByDesc(SysLoginLogEntity::getLoginTime);
+    }
+
+    private LoginLogPageQuery resolveLoginLogQuery(LoginLogPageQuery query) {
+        return query == null ? new LoginLogPageQuery() : query;
     }
 
     private LambdaQueryWrapper<SysOperationLogEntity> operationLogWrapper(OperationLogPageQuery query) {

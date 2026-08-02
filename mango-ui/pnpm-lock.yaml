@@ -133,6 +133,9 @@ importers:
       '@mango/admin-shell':
         specifier: workspace:*
         version: link:../../packages/admin-shell
+      '@mango/app-runtime':
+        specifier: workspace:*
+        version: link:../../packages/app-runtime
       '@mango/auth':
         specifier: workspace:*
         version: link:../../packages/auth
@@ -151,6 +154,9 @@ importers:
       '@mango/home':
         specifier: workspace:*
         version: link:../../packages/home
+      '@mango/http-client':
+        specifier: workspace:*
+        version: link:../../packages/http-client
       '@mango/job':
         specifier: workspace:*
         version: link:../../packages/job

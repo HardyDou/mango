@@ -16,8 +16,11 @@ export default defineConfig({
       external: [
         '@element-plus/icons-vue',
         '@mango/admin-pages/core',
+        '@mango/api-schema',
+        '@mango/app-runtime',
         '@mango/common',
         '@mango/common/utils/request',
+        '@mango/file',
         'element-plus',
         'vue',
       ],

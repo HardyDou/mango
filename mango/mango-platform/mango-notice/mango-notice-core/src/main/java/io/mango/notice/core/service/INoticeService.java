@@ -62,6 +62,8 @@ public interface INoticeService {
 
     PageResult<NoticeBusinessTypeVO> listBusinessTypes(NoticeBusinessTypePageQuery query);
 
+    PageResult<NoticeBusinessTypeVO> listEnabledBusinessTypes(NoticeBusinessTypePageQuery query);
+
     NoticeBusinessTypeVO createBusinessType(CreateNoticeBusinessTypeCommand command);
 
     NoticeBusinessTypeVO updateBusinessType(Long id, UpdateNoticeBusinessTypeCommand command);

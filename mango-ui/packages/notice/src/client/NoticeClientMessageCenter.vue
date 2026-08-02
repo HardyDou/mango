@@ -1,21 +1,7 @@
 <template>
-  <div class="notice-site-message-page">
-    <el-card shadow="never">
-      <template #header>
-        <div class="notice-site-message-page__header">
-          <div class="notice-site-message-page__title">
-            <span>我的消息</span>
-            <el-button type="primary" plain @click="openReceiveSetting">接收设置</el-button>
-          </div>
-          <div class="notice-site-message-page__actions">
-            <el-button :disabled="selectedIds.length === 0" @click="markSelectedRead">批量已读</el-button>
-            <el-button @click="markAllRead">全部已读</el-button>
-            <el-button type="primary" plain @click="loadMessages">刷新</el-button>
-          </div>
-        </div>
-      </template>
-
-      <el-form :model="query" inline class="notice-filter-form">
+  <MangoListPage class="notice-site-message-page" data-page="notice.site-message">
+    <template #search>
+      <MangoSearchPanel :model="query" collapsible :collapsed-count="4" @search="search" @reset="resetSearch">
         <el-form-item label="关键词">
           <el-input v-model="query.keyword" clearable placeholder="标题/内容" @keyup.enter="search" />
         </el-form-item>
@@ -53,13 +39,26 @@
             <el-option label="已读" value="READ" />
           </el-select>
         </el-form-item>
-        <el-form-item>
-          <el-button type="primary" @click="search">查询</el-button>
-          <el-button @click="resetSearch">重置</el-button>
-        </el-form-item>
-      </el-form>
+      </MangoSearchPanel>
+    </template>
 
-      <el-table :data="messages" border stripe v-loading="loading" @selection-change="handleSelectionChange">
+    <MangoListPanel>
+      <template #actions>
+        <el-button plain :disabled="selectedIds.length === 0" @click="markSelectedRead">批量已读</el-button>
+        <el-button plain @click="markAllRead">全部已读</el-button>
+      </template>
+      <template #view-actions>
+        <el-button type="primary" plain @click="loadMessages">刷新</el-button>
+      </template>
+      <el-table
+        v-loading="loading"
+        :data="messages"
+        row-key="id"
+        border
+        stripe
+        data-surface="notice.site-message.table"
+        @selection-change="handleSelectionChange"
+      >
         <el-table-column type="selection" width="48" />
         <el-table-column label="业务域" width="150" show-overflow-tooltip>
           <template #default="{ row }">{{ domainText(row.bizGroup) }}</template>
@@ -106,17 +105,15 @@
         </el-table-column>
       </el-table>
 
-      <div class="notice-site-message-page__pagination">
-        <el-pagination
-          v-model:current-page="query.pageNum"
-          v-model:page-size="query.pageSize"
+      <template #pagination>
+        <Pagination
+          v-model:page="query.pageNum"
+          v-model:limit="query.pageSize"
           :total="total"
-          layout="total, sizes, prev, pager, next"
-          @size-change="loadMessages"
-          @current-change="loadMessages"
+          @pagination="loadMessages"
         />
-      </div>
-    </el-card>
+      </template>
+    </MangoListPanel>
 
     <NoticeDetailDialog v-model="detailVisible" :message="currentMessage" @action="handleDetailAction" />
 
@@ -143,12 +140,13 @@
         <el-button type="primary" @click="submitFlowAction">提交处理</el-button>
       </template>
     </el-dialog>
-  </div>
+  </MangoListPage>
 </template>
 
 <script setup lang="ts">
 import { onMounted, reactive, ref, watch } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
+import { MangoListPage, MangoListPanel, MangoSearchPanel, Pagination } from '@mango/common';
 import NoticeDetailDialog from '../components/NoticeDetailDialog.vue';
 import {
   deleteMySiteMessage,
@@ -273,14 +271,9 @@ async function removeMessage(id: string) {
 }
 
 const emit = defineEmits<{
-  (event: 'settings'): void;
   (event: 'announcement', id: string): void;
   (event: 'interaction', payload: NoticeInteractionPayload): void;
 }>();
-
-function openReceiveSetting() {
-  emit('settings');
-}
 
 function priorityText(priority: NoticePriority) {
   return (
@@ -409,39 +402,8 @@ watch(
 </script>
 
 <style scoped>
-.notice-site-message-page {
-  padding: 0;
-}
-
-.notice-site-message-page__header,
-.notice-site-message-page__title,
-.notice-site-message-page__actions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.notice-site-message-page__header {
-  justify-content: space-between;
-  flex-wrap: wrap;
-}
-
-.notice-site-message-page__title {
-  min-width: 0;
-}
-
-.notice-filter-form {
-  margin-bottom: 12px;
-}
-
 .notice-filter-form__select {
-  width: 140px;
-}
-
-.notice-site-message-page__pagination {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 16px;
+  width: 100%;
 }
 
 .notice-message-actions {

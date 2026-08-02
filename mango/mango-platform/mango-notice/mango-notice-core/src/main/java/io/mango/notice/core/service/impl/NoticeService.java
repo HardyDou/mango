@@ -114,6 +114,19 @@ public class NoticeService implements INoticeService {
     }
 
     @Override
+    public PageResult<NoticeBusinessTypeVO> listEnabledBusinessTypes(NoticeBusinessTypePageQuery query) {
+        Require.notNull(query, NoticeCode.NOTICE_BUSINESS_ERROR, "查询条件不能为空");
+        NoticeBusinessTypePageQuery enabledQuery = new NoticeBusinessTypePageQuery();
+        enabledQuery.setPageNum(query.getPageNum());
+        enabledQuery.setPageSize(query.getPageSize());
+        enabledQuery.setBizType(query.getBizType());
+        enabledQuery.setBizGroup(query.getBizGroup());
+        enabledQuery.setDomainCode(query.getDomainCode());
+        enabledQuery.setEnabled(true);
+        return configurationService.listBusinessTypes(enabledQuery);
+    }
+
+    @Override
     public NoticeBusinessTypeVO createBusinessType(CreateNoticeBusinessTypeCommand command) {
         Require.notNull(command, NoticeCode.NOTICE_BUSINESS_ERROR, "业务通知配置不能为空");
         return configurationService.createBusinessType(command);

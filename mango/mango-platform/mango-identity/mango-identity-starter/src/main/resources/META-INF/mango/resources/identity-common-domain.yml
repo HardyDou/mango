@@ -1,0 +1,37 @@
+mango:
+  resource:
+    schema-version: 1
+    module-code: identity
+    module-name: 身份
+    declarations:
+      BUSINESS_DOMAIN:
+        - id: "2026080202000000200"
+          version: 1
+          biz-key: identity.domain.identity
+          name: 身份管理
+          target-module: domain
+          fields:
+            domainId:
+              type: LONG
+              value: 200
+            domainCode:
+              type: STRING
+              value: IDENTITY
+            domainShortCode:
+              type: STRING
+              value: IDN
+            domainName:
+              type: STRING
+              value: 身份管理
+            parentId:
+              type: LONG
+              value: 0
+            sort:
+              type: INT
+              value: 11
+            status:
+              type: INT
+              value: 1
+            remark:
+              type: STRING
+              value: 身份账号与租户成员业务域

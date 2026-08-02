@@ -49,6 +49,7 @@ import io.mango.notice.api.command.NoticeSiteMessageSubjectCommand;
 import io.mango.notice.api.command.NoticeSiteMessageTargetCommand;
 import io.mango.notice.api.command.SaveNoticeBusinessConfigCommand;
 import io.mango.notice.api.command.SaveNoticeChannelConfigCommand;
+import io.mango.notice.api.command.SaveNoticeReceivePreferenceCommand;
 import io.mango.notice.api.command.SendNoticeCommand;
 import io.mango.notice.api.enums.NoticeChannelConfigStatus;
 import io.mango.notice.api.enums.NoticeChannelRouteMode;
@@ -57,6 +58,7 @@ import io.mango.notice.api.enums.NoticeChannelType;
 import io.mango.notice.api.enums.NoticeDeleteStatus;
 import io.mango.notice.api.enums.NoticePriority;
 import io.mango.notice.api.enums.NoticeReadStatus;
+import io.mango.notice.api.enums.NoticeReceivePreferenceScopeType;
 import io.mango.notice.api.enums.NoticeSendStatus;
 import io.mango.notice.api.enums.NoticeSiteMessageActionInteractionType;
 import io.mango.notice.api.enums.NoticeSiteMessageActionRequestStatus;
@@ -66,6 +68,7 @@ import io.mango.notice.api.enums.NoticeSiteMessageTargetType;
 import io.mango.notice.api.enums.NoticeTaskStatus;
 import io.mango.notice.api.enums.NoticeTemplateVersionStatus;
 import io.mango.notice.api.query.NoticeSiteMessagePageQuery;
+import io.mango.notice.api.query.NoticeReceivePreferenceQuery;
 import io.mango.notice.channel.wecom.WecomDepartment;
 import io.mango.notice.channel.wecom.WecomDirectoryClient;
 import io.mango.notice.channel.wecom.WecomDirectoryUser;
@@ -431,6 +434,52 @@ class NoticeServiceIntegrationTest {
         assertThat(other.getDeleteStatus()).isEqualTo(NoticeDeleteStatus.NORMAL);
         assertThat(realtimeApi.messages).hasSize(1);
         assertThat(realtimeApi.messages.get(0).content()).contains("\"unreadCount\":0");
+    }
+
+    @Test
+    void receivePreferencesIgnoreRequestedUserAndOnlyAccessCurrentUser() {
+        MangoContextHolder.set(
+                MangoContextSnapshot.empty()
+                        .withSecurity(
+                                8L, "default", "notice-test", null, null, null, null, "test"));
+        jdbcTemplate.update(
+                """
+                insert into notice_receive_preference
+                (id, user_id, scope_type, scope_value, channel_type, enabled)
+                values (?, ?, ?, ?, ?, ?)
+                """,
+                200L, 8L, "BIZ_TYPE", BIZ_TYPE, "EMAIL", false);
+        jdbcTemplate.update(
+                """
+                insert into notice_receive_preference
+                (id, user_id, scope_type, scope_value, channel_type, enabled)
+                values (?, ?, ?, ?, ?, ?)
+                """,
+                201L, 9L, "BIZ_TYPE", BIZ_TYPE, "EMAIL", false);
+
+        NoticeReceivePreferenceQuery query = new NoticeReceivePreferenceQuery();
+        query.setUserId(9L);
+        query.setScopeType(NoticeReceivePreferenceScopeType.BIZ_TYPE);
+        query.setScopeValue(BIZ_TYPE);
+
+        assertThat(noticeService.listReceivePreferences(query))
+                .singleElement()
+                .satisfies(preference -> assertThat(preference.getUserId()).isEqualTo(8L));
+
+        SaveNoticeReceivePreferenceCommand command = new SaveNoticeReceivePreferenceCommand();
+        command.setUserId(9L);
+        command.setScopeType(NoticeReceivePreferenceScopeType.BIZ_TYPE);
+        command.setScopeValue(BIZ_TYPE);
+        command.setChannelType(NoticeChannelType.EMAIL);
+        command.setEnabled(true);
+
+        assertThat(noticeService.saveReceivePreference(command).getUserId()).isEqualTo(8L);
+        assertThat(jdbcTemplate.queryForObject(
+                "select enabled from notice_receive_preference where user_id = 8", Boolean.class))
+                .isTrue();
+        assertThat(jdbcTemplate.queryForObject(
+                "select enabled from notice_receive_preference where user_id = 9", Boolean.class))
+                .isFalse();
     }
 
     @Test

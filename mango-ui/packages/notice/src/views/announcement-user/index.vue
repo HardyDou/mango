@@ -1,17 +1,31 @@
+<!-- eslint-disable vue/multi-word-component-names -->
 <template>
-  <div class="notice-announcement-user-page">
-    <div class="page-header">
-      <h1>公告</h1>
-      <div class="page-actions">
-        <el-checkbox v-model="query.unreadOnly" @change="loadData">未读</el-checkbox>
-        <el-checkbox v-model="query.pendingConfirmOnly" @change="loadData">待确认</el-checkbox>
-        <el-input v-model="query.keyword" clearable placeholder="搜索公告" class="filter-control" @keyup.enter="loadData" />
-        <el-button :loading="loading" @click="loadData">刷新</el-button>
-      </div>
-    </div>
-
-    <el-card shadow="never">
-      <el-table :data="rows" border stripe v-loading="loading">
+  <MangoListPage class="notice-announcement-user-page" data-page="notice.announcement-user">
+    <template #search>
+      <MangoSearchPanel :model="query" :columns="4" @search="search" @reset="resetSearch">
+        <el-form-item label="关键词">
+          <el-input v-model="query.keyword" clearable placeholder="搜索公告" @keyup.enter="search" />
+        </el-form-item>
+        <el-form-item label="阅读状态">
+          <el-checkbox v-model="query.unreadOnly">仅未读</el-checkbox>
+        </el-form-item>
+        <el-form-item label="确认状态">
+          <el-checkbox v-model="query.pendingConfirmOnly">仅待确认</el-checkbox>
+        </el-form-item>
+      </MangoSearchPanel>
+    </template>
+    <MangoListPanel>
+      <template #view-actions>
+        <el-button type="primary" plain :loading="loading" @click="loadData">刷新</el-button>
+      </template>
+      <el-table
+        v-loading="loading"
+        :data="rows"
+        row-key="id"
+        border
+        stripe
+        data-surface="notice.announcement-user.table"
+      >
         <el-table-column label="标题" min-width="240" show-overflow-tooltip>
           <template #default="{ row }">
             <el-badge is-dot :hidden="row.readStatus === 'READ'">
@@ -36,14 +50,19 @@
           </template>
         </el-table-column>
       </el-table>
-    </el-card>
+      <template #pagination>
+        <Pagination v-model:page="query.pageNum" v-model:limit="query.pageSize" :total="total" @pagination="loadData" />
+      </template>
+    </MangoListPanel>
 
-    <el-dialog v-model="detailVisible" title="公告详情" width="760px" destroy-on-close>
+    <MangoDialog v-model="detailVisible" title="公告详情" width="760px" destroy-on-close>
       <template v-if="current">
         <h2 class="detail-title">{{ current.title }}</h2>
         <div class="detail-meta">
           <span>{{ current.publishTime || '-' }}</span>
-          <el-tag v-if="current.confirmRequired" effect="plain" type="warning">{{ confirmLabel(current.confirmStatus) }}</el-tag>
+          <el-tag v-if="current.confirmRequired" effect="plain" type="warning">{{
+            confirmLabel(current.confirmStatus)
+          }}</el-tag>
         </div>
         <div class="content-box">{{ current.content }}</div>
       </template>
@@ -58,14 +77,15 @@
           确认已读
         </el-button>
       </template>
-    </el-dialog>
-  </div>
+    </MangoDialog>
+  </MangoListPage>
 </template>
 
 <script setup lang="ts">
 import { nextTick, onMounted, reactive, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import { ElMessage } from 'element-plus';
+import { MangoDialog, MangoListPage, MangoListPanel, MangoSearchPanel, Pagination } from '@mango/common';
 import { confirmMyAnnouncement, getMyAnnouncement, getMyAnnouncements } from '../../api/notice';
 import type { NoticeAnnouncement, NoticeAnnouncementConfirmStatus } from '../../types/notice';
 
@@ -73,18 +93,39 @@ const loading = ref(false);
 const confirming = ref(false);
 const detailVisible = ref(false);
 const rows = ref<NoticeAnnouncement[]>([]);
+const total = ref(0);
 const current = ref<NoticeAnnouncement>();
-const query = reactive<{ keyword?: string; unreadOnly?: boolean; pendingConfirmOnly?: boolean }>({});
+const query = reactive<{
+  pageNum: number;
+  pageSize: number;
+  keyword?: string;
+  unreadOnly?: boolean;
+  pendingConfirmOnly?: boolean;
+}>({
+  pageNum: 1,
+  pageSize: 10,
+});
 const route = useRoute();
 
 async function loadData() {
   loading.value = true;
   try {
-    const result = await getMyAnnouncements({ pageNum: 1, pageSize: 50, ...query });
+    const result = await getMyAnnouncements(query);
     rows.value = result.list || [];
+    total.value = Number(result.total || rows.value.length);
   } finally {
     loading.value = false;
   }
+}
+
+function search() {
+  query.pageNum = 1;
+  void loadData();
+}
+
+function resetSearch() {
+  Object.assign(query, { pageNum: 1, keyword: undefined, unreadOnly: undefined, pendingConfirmOnly: undefined });
+  void loadData();
 }
 
 async function openDetail(row: NoticeAnnouncement) {
@@ -109,7 +150,9 @@ async function confirmCurrent() {
 }
 
 function confirmLabel(status?: NoticeAnnouncementConfirmStatus) {
-  return ({ NOT_REQUIRED: '无需确认', PENDING: '待确认', CONFIRMED: '已确认' } as Record<string, string>)[status || 'NOT_REQUIRED'];
+  return ({ NOT_REQUIRED: '无需确认', PENDING: '待确认', CONFIRMED: '已确认' } as Record<string, string>)[
+    status || 'NOT_REQUIRED'
+  ];
 }
 
 function confirmTag(status?: NoticeAnnouncementConfirmStatus) {
@@ -127,33 +170,6 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.notice-announcement-user-page {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.page-header,
-.page-actions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.page-header {
-  justify-content: space-between;
-}
-
-.page-header h1 {
-  margin: 0;
-  font-size: 20px;
-  font-weight: 600;
-}
-
-.filter-control {
-  width: 220px;
-}
-
 .detail-title {
   margin: 0 0 8px;
   font-size: 20px;

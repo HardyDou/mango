@@ -12,6 +12,8 @@ class IdentityResourceDeclarationContractTest {
 
     private static final Path FORMAL = Path.of(
             "src/main/resources/META-INF/mango/resources/identity-common-bootstrap.yml");
+    private static final Path DOMAIN = Path.of(
+            "src/main/resources/META-INF/mango/resources/identity-common-domain.yml");
     private static final Path DEMO = Path.of(
             "src/main/resources/META-INF/mango/demo/identity-demo-members.yml");
 
@@ -37,6 +39,19 @@ class IdentityResourceDeclarationContractTest {
                 .doesNotContain("password:");
         assertThat(count(formal, "sync-mode: INIT_ONLY")).isEqualTo(1);
         assertThat(count(demo, "sync-mode: INIT_ONLY")).isEqualTo(6);
+    }
+
+    @Test
+    void identityBusinessDomainIsFormallyRegistered() throws IOException {
+        String domain = Files.readString(DOMAIN);
+
+        assertThat(domain)
+                .contains("module-code: identity")
+                .contains("BUSINESS_DOMAIN:")
+                .contains("biz-key: identity.domain.identity")
+                .contains("value: IDENTITY")
+                .contains("value: 身份管理")
+                .contains("target-module: domain");
     }
 
     private int count(String text, String token) {

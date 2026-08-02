@@ -3,6 +3,7 @@ import './style.css';
 export { default as DictView } from './views/dict/index.vue';
 export { default as OperationLogView } from './views/operation-log/index.vue';
 export { default as LoginLogView } from './views/login-log/index.vue';
+export { default as PersonalLoginLogView } from './views/personal-login-log/index.vue';
 export { default as TenantView } from './views/tenant/index.vue';
 export { default as ConfigView } from './views/config/index.vue';
 export { default as AdminBrandingView } from './views/admin-branding/index.vue';

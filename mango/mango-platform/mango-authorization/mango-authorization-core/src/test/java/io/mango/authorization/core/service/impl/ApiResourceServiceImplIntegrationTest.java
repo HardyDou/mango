@@ -101,6 +101,28 @@ class ApiResourceServiceImplIntegrationTest {
     }
 
     @Test
+    @DisplayName("registerApiResources should reactivate a disabled public resource")
+    void registerApiResourcesReactivatesDisabledPublicResource() {
+        seedResource(5L, "mango-auth", "POST", "/auth/login-institutions",
+                "io.mango.auth.starter.controller.AuthController", 0,
+                null, ApiResourceAccessMode.PUBLIC);
+
+        ApiResourceRegisterCommand command = command("mango-auth", "POST", "/auth/login-institutions",
+                "io.mango.auth.starter.controller.AuthController");
+        command.setAccessMode(ApiResourceAccessMode.PUBLIC);
+        command.setHandlerMethod("loginInstitutions");
+
+        service.registerApiResources(List.of(command));
+
+        ApiResourceEntity resource = apiResourceMapper.selectById(5L);
+        assertThat(resource.getStatus()).isEqualTo(1);
+        assertThat(resource.getAccessMode()).isEqualTo(ApiResourceAccessMode.PUBLIC.name());
+        ApiResourceAccessDecisionVO decision = service.resolveAccessDecision("POST", "/auth/login-institutions");
+        assertThat(decision.matched()).isTrue();
+        assertThat(decision.accessMode()).isEqualTo(ApiResourceAccessMode.PUBLIC);
+    }
+
+    @Test
     @DisplayName("resolveAccessDecision should match persisted active resources")
     void resolveAccessDecisionMatchesPersistedActiveResources() {
         seedResource(10L, "mango-workflow", "GET", "/workflow/definitions/**",

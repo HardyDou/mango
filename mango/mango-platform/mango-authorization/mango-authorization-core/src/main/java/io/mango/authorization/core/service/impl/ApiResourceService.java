@@ -39,18 +39,19 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ApiResourceService implements IApiResourceService {
 
+    private static final AntPathMatcher PATH_MATCHER = new AntPathMatcher();
+    private static final int MAX_DECISION_CACHE_SIZE = 10_000;
+    private static final int MAX_REGISTER_BATCH_SIZE = 10_000;
+
     private final ApiResourceMapper apiResourceMapper;
 
     private final Map<String, ApiResourceAccessDecisionVO> decisionCache = new ConcurrentHashMap<>();
     private final ConcurrentLinkedQueue<String> decisionCacheKeys = new ConcurrentLinkedQueue<>();
     private volatile List<ApiResourceEntity> activeResourceCache;
-    private static final AntPathMatcher PATH_MATCHER = new AntPathMatcher();
-    private static final int MAX_DECISION_CACHE_SIZE = 10_000;
-
     @Override
     @Transactional(rollbackFor = Exception.class)
     public ApiResourceRegisterResultVO registerApiResources(List<ApiResourceRegisterCommand> resources) {
-        Require.isTrue(resources == null || resources.size() <= 10_000,
+        Require.isTrue(resources == null || resources.size() <= MAX_REGISTER_BATCH_SIZE,
                 AuthorizationCode.AUTHORIZATION_BUSINESS_ERROR, "API 资源批量注册数量不能超过10000条");
         if (resources == null || resources.isEmpty()) {
             return ApiResourceRegisterResultVO.empty();
@@ -302,9 +303,7 @@ public class ApiResourceService implements IApiResourceService {
         entity.setHandlerClass(resource.getHandlerClass());
         entity.setHandlerMethod(resource.getHandlerMethod());
         entity.setDescription(resource.getDescription());
-        if (entity.getStatus() == null) {
-            entity.setStatus(1);
-        }
+        entity.setStatus(1);
     }
 
     private String defaultResourceCode(ApiResourceRegisterCommand resource) {
