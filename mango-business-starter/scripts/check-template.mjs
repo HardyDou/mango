@@ -87,7 +87,7 @@ const requiredFiles = [
   "backend/modules/{{moduleKebab}}/{{moduleKebab}}-starter/pom.xml",
   "backend/modules/{{moduleKebab}}/{{moduleKebab}}-starter/src/main/java/{{basePackagePath}}/{{modulePackage}}/starter/controller/{{modulePascal}}Controller.java",
   "backend/modules/{{moduleKebab}}/{{moduleKebab}}-starter/src/main/resources/META-INF/mango/module.properties",
-  "backend/modules/{{moduleKebab}}/{{moduleKebab}}-starter/src/main/resources/META-INF/mango/resource-manifest.json",
+  "backend/modules/{{moduleKebab}}/{{moduleKebab}}-starter/src/main/resources/META-INF/mango/resources/{{moduleKebab}}-common-menu.json",
   "backend/modules/{{moduleKebab}}/{{moduleKebab}}-starter-remote/pom.xml",
   "backend/modules/{{moduleKebab}}/{{moduleKebab}}-starter-remote/src/main/java/{{basePackagePath}}/{{modulePackage}}/starter/remote/{{modulePascal}}FeignClient.java",
   "frontend/packages/{{moduleKebab}}-api/package.json",
@@ -198,16 +198,19 @@ const contentChecks = [
     patterns: ["module-name={{moduleKebab}}", "module-path={{moduleKebab}}"],
   },
   {
-    file: "backend/modules/{{moduleKebab}}/{{moduleKebab}}-starter/src/main/resources/META-INF/mango/resource-manifest.json",
+    file: "backend/modules/{{moduleKebab}}/{{moduleKebab}}-starter/src/main/resources/META-INF/mango/resources/{{moduleKebab}}-common-menu.json",
     patterns: [
+      '"schemaVersion": 1',
       '"moduleCode": "{{moduleKebab}}"',
+      '"declarations"',
+      '"AUTH_MENU"',
       '"menuName": "{{aggregateName}}管理"',
       '"component": "{{moduleKebab}}/{{aggregateKebab}}/index"',
       '"{{moduleKebab}}:{{aggregateKebab}}:create"',
       '"{{moduleKebab}}:{{aggregateKebab}}:view"',
       '"{{moduleKebab}}:{{aggregateKebab}}:update"',
       '"{{moduleKebab}}:{{aggregateKebab}}:delete"',
-      '"permissionItems"',
+      '"apiCodes"',
     ],
   },
   {
@@ -262,10 +265,10 @@ const contentChecks = [
       "<Pagination",
       "MangoDialog",
       "el-drawer",
-      "data-page=\"{{moduleKebab}}.{{aggregateKebab}}\"",
-      "data-surface=\"{{moduleKebab}}.{{aggregateKebab}}.table\"",
-      "data-action=\"{{moduleKebab}}.{{aggregateKebab}}.create\"",
-      "data-field=\"{{moduleKebab}}.{{aggregateKebab}}.name\"",
+      'data-page="{{moduleKebab}}.{{aggregateKebab}}"',
+      'data-surface="{{moduleKebab}}.{{aggregateKebab}}.table"',
+      'data-action="{{moduleKebab}}.{{aggregateKebab}}.create"',
+      'data-field="{{moduleKebab}}.{{aggregateKebab}}.name"',
       "records.value = result.records",
       "page: 1",
       "size: 20",
@@ -433,7 +436,12 @@ const contentChecks = [
   },
   {
     file: "business-pmo/mango-baseline/rules/frontend/08-list-page.md",
-    patterns: ["MangoListPage", "MangoSearchPanel", "MangoListPanel", "Pagination"],
+    patterns: [
+      "MangoListPage",
+      "MangoSearchPanel",
+      "MangoListPanel",
+      "Pagination",
+    ],
   },
   {
     file: "business-pmo/mango-baseline/rules/frontend/09-detail-page.md",
@@ -477,6 +485,13 @@ function walk(dir) {
 for (const file of requiredFiles) {
   check(existsSync(join(root, file)), `missing required file: ${file}`);
 }
+
+const retiredResourceManifest =
+  "backend/modules/{{moduleKebab}}/{{moduleKebab}}-starter/src/main/resources/META-INF/mango/resource-manifest.json";
+check(
+  !existsSync(join(root, retiredResourceManifest)),
+  `retired untyped resource manifest must not be restored: ${retiredResourceManifest}`,
+);
 
 for (const item of contentChecks) {
   if (!existsSync(join(root, item.file))) {

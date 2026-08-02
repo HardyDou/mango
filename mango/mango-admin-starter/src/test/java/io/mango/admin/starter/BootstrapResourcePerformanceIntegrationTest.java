@@ -162,7 +162,7 @@ class BootstrapResourcePerformanceIntegrationTest {
                         foundationDeclarations, fileDeclarations, workflowDeclarations));
                 BootstrapOrchestrator orchestrator = bootstrapOrchestrator(
                         dataSource, context.getBean(JdbcBootstrapRepository.class),
-                        registryProperties, collector, registryService);
+                        registryProperties, collector, registryService, objectMapper);
                 BootstrapInvocation applyRequest = request(BootstrapAction.APPLY);
                 long coldStarted = System.nanoTime();
                 BootstrapOutcome coldOutcome = orchestrator.execute(applyRequest);
@@ -226,7 +226,8 @@ class BootstrapResourcePerformanceIntegrationTest {
             JdbcBootstrapRepository repository,
             ResourceRegistryProperties properties,
             ResourceDeclarationCollector collector,
-            ResourceRegistryService registryService) {
+            ResourceRegistryService registryService,
+            ObjectMapper objectMapper) {
         BootstrapManifestHasher hasher = new BootstrapManifestHasher();
         ResourceDeclarationApi declarationApi = command -> R.ok(registryService.registerDeclarations(command));
         ResourceBootstrapStepContributor resourceContributor = new ResourceBootstrapStepContributor(

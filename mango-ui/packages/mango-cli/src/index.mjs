@@ -815,7 +815,9 @@ function addBusinessModule(argv) {
     }
     const recovery =
       recoveryFailures.length === 0 ? 'restored byte-for-byte' : `restore failures: ${recoveryFailures.join('; ')}`;
-    throw new Error(`MODULE_ADD_TRANSACTION_FAILED stage=${stage}; ${recovery}; cause=${error.message}`);
+    throw new Error(`MODULE_ADD_TRANSACTION_FAILED stage=${stage}; ${recovery}; cause=${error.message}`, {
+      cause: error,
+    });
   }
   process.stdout.write(`Added business module: ${moduleKebab} (${aggregateKebab})\n`);
 }
@@ -3058,7 +3060,7 @@ function resolveDevCommand(context, app, vars) {
     if (modeArguments.length > 0) {
       fail(
         `${app.name}: process mode must be declared only through processMode; ` +
-        `remove ${modeArguments.join(', ')} from app.args`,
+          `remove ${modeArguments.join(', ')} from app.args`,
       );
     }
     const springArgs = [processMode, ...configuredSpringArgs];
@@ -3664,7 +3666,7 @@ function syncPmoBaseline(argv, { command = 'sync' } = {}) {
   }
   const snapshots = capturePmoUpgradeSnapshots(plan);
   let pmoInstallResult = null;
-  let historicalPmoVersionResult = null;
+  let historicalPmoVersionResult;
   let releaseTupleWriteCount = 0;
   try {
     if (
@@ -3718,7 +3720,9 @@ function syncPmoBaseline(argv, { command = 'sync' } = {}) {
       recoveryFailures.length === 0
         ? 'all managed project files restored byte-for-byte'
         : `recovery incomplete: ${recoveryFailures.join('; ')}`;
-    throw new Error(`PMO baseline ${command} transaction failed (${recovery}): ${error.message}`);
+    throw new Error(`PMO baseline ${command} transaction failed (${recovery}): ${error.message}`, {
+      cause: error,
+    });
   }
   const synced = summary.add + summary.update;
   process.stdout.write(
@@ -4660,7 +4664,7 @@ function loadInstalledPmoBaseline(targetDir) {
   try {
     manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
   } catch (error) {
-    throw new Error(`cannot parse installed PMO manifest: ${error.message}`);
+    throw new Error(`cannot parse installed PMO manifest: ${error.message}`, { cause: error });
   }
   validatePmoManifest(manifest);
   return { root, manifest };
@@ -5211,7 +5215,7 @@ function installPmoBundleAtomic(targetDir, baseline) {
       recoveryFailures.length === 0
         ? 'previous project bundle restored'
         : `recovery incomplete: ${recoveryFailures.join('; ')}`;
-    throw new Error(`PMO bundle transaction failed (${recovery}): ${error.message}`);
+    throw new Error(`PMO bundle transaction failed (${recovery}): ${error.message}`, { cause: error });
   }
 
   rmSync(transactionRoot, { recursive: true, force: true });

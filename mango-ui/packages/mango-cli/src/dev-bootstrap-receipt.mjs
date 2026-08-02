@@ -21,7 +21,9 @@ export function readStableBootstrapReceipt({
     if (!existsSync(directory)) {
       continue;
     }
-    for (const name of readdirSync(directory).filter((entry) => entry.endsWith('.json')).sort()) {
+    for (const name of readdirSync(directory)
+      .filter((entry) => entry.endsWith('.json'))
+      .sort()) {
       const path = join(directory, name);
       const stats = lstatSync(path);
       if (!stats.isFile()) {
@@ -99,7 +101,9 @@ export function injectStableBootstrapIdentity(args, receipt) {
   }
   const propertyIndex = propertyIndexes[0];
   const springArguments = String(result[propertyIndex]);
-  if (/--mango\.(?:bootstrap\.environment-key|release\.(?:id|revision|generation|fingerprint))=/u.test(springArguments)) {
+  if (
+    /--mango\.(?:bootstrap\.environment-key|release\.(?:id|revision|generation|fingerprint))=/u.test(springArguments)
+  ) {
     throw new BootstrapReceiptError(
       'BOOTSTRAP_RUNTIME_IDENTITY_CONFLICT',
       'remove manually configured release identity arguments',
@@ -120,14 +124,7 @@ export function validateStableBootstrapReceipt(receipt) {
   if (receipt.schemaVersion !== 1) {
     return 'schemaVersion must be 1';
   }
-  for (const field of [
-    'environmentKey',
-    'databaseName',
-    'releaseId',
-    'buildRevision',
-    'stableFingerprint',
-    'state',
-  ]) {
+  for (const field of ['environmentKey', 'databaseName', 'releaseId', 'buildRevision', 'stableFingerprint', 'state']) {
     if (typeof receipt[field] !== 'string' || !receipt[field].trim()) {
       return `${field} must be a non-empty string`;
     }
@@ -161,5 +158,7 @@ function receiptError(code, workspaceRoot, path, reason) {
 
 function relativeOrAbsolute(root, path) {
   const relativePath = relative(resolve(root), resolve(path));
-  return relativePath === '' || (!relativePath.startsWith('..') && !isAbsolute(relativePath)) ? relativePath || '.' : path;
+  return relativePath === '' || (!relativePath.startsWith('..') && !isAbsolute(relativePath))
+    ? relativePath || '.'
+    : path;
 }

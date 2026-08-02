@@ -125,10 +125,7 @@ test('rejects database/environment drift and manually supplied identity argument
 
   assert.throws(
     () =>
-      injectStableBootstrapIdentity(
-        ['-Dspring-boot.run.arguments=runtime --mango.release.generation=1'],
-        receipt(),
-      ),
+      injectStableBootstrapIdentity(['-Dspring-boot.run.arguments=runtime --mango.release.generation=1'], receipt()),
     (error) => error.code === 'BOOTSTRAP_RUNTIME_IDENTITY_CONFLICT',
   );
 });
