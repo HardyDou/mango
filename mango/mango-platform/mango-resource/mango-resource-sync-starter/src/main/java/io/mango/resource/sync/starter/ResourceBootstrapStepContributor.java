@@ -14,6 +14,8 @@ import io.mango.resource.support.config.ResourceRegistryProperties;
 import io.mango.resource.support.declaration.ResourceDeclarationCollector;
 import io.mango.resource.support.declaration.ResourceDeclarationCanonicalizer;
 import io.mango.resource.support.model.ResourceDeclaration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.util.StringUtils;
 
 import java.util.Comparator;
@@ -22,6 +24,8 @@ import java.util.Map;
 import java.util.Set;
 
 public final class ResourceBootstrapStepContributor implements BootstrapStepContributor {
+
+    private static final Logger LOG = LoggerFactory.getLogger(ResourceBootstrapStepContributor.class);
 
     private final ResourceRegistryProperties properties;
     private final ResourceDeclarationCollector collector;
@@ -66,8 +70,11 @@ public final class ResourceBootstrapStepContributor implements BootstrapStepCont
         List<String> semanticInventory = declarations.stream()
                 .map(declaration -> declaration.getId() + "=" + canonicalizer.fingerprint(declaration))
                 .toList();
-        return new PreparedDeclarations(declarations, moduleCodes,
+        PreparedDeclarations prepared = new PreparedDeclarations(declarations, moduleCodes,
                 manifestSerializer.serialize(declarations), semanticInventory);
+        LOG.debug("Mango resource bootstrap manifest computed: modules={}, declarations={}",
+                prepared.moduleCodes(), prepared.declarations().size());
+        return prepared;
     }
 
     private String appCode() {

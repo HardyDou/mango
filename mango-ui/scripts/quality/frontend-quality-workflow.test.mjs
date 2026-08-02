@@ -20,7 +20,7 @@ test('pull requests run the stable affected frontend gate without browser E2E', 
   const dependencyInstall = pullRequestJob.indexOf('- name: Install locked frontend dependencies');
   assert.match(pullRequestJob, /name: frontend-pr-quality/u);
   assert.match(pullRequestJob, /if: github\.event_name == 'pull_request'/u);
-  assert.match(pullRequestJob, /node mango-ui\/packages\/mango-cli\/src\/index\.mjs plan mango-backend/u);
+  assert.match(pullRequestJob, /node mango-ui\/scripts\/quality\/check-repository-dev-manifest\.mjs/u);
   assert.ok(manifestValidation >= 0, 'missing repository development manifest validation step');
   assert.ok(
     dependencyInstall > manifestValidation,

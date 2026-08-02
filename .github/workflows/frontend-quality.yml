@@ -39,7 +39,7 @@ jobs:
           cache-dependency-path: mango-ui/pnpm-lock.yaml
 
       - name: Validate repository development manifest
-        run: node mango-ui/packages/mango-cli/src/index.mjs plan mango-backend
+        run: node mango-ui/scripts/quality/check-repository-dev-manifest.mjs
 
       - name: Enforce current frontend page components
         env:

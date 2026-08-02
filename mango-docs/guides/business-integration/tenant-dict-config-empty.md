@@ -2,7 +2,7 @@
 
 > 2026-07-22 菜单显示文案调整说明：通知中心、审批中心和编号规则分别更名为通知管理、审批管理和编号管理；租户数据、资源同步顺序、菜单权限和本指南排障步骤均不受影响，历史记录保留原名称。
 
-> 2026-08-02 Issue #690 影响说明：租户字典和系统配置查询 API、权限、租户隔离及已有数据不变；初始化入口统一为 `META-INF/mango/resources/` typed declarations。使用 Maven `1.0.30`/`1.0.3x` 的业务仓升级后，排障时同时核对新 release tuple、Bootstrap stable receipt 的 environment/generation/fingerprint、Resource 同步日志和目标 handler 结果，不重建已有业务库或用手工 SQL 绕过声明同步。
+> 2026-08-02 Issue #690 影响说明：租户字典和系统配置查询 API、权限、租户隔离及已有数据不变；初始化入口统一为 `META-INF/mango/resources/` typed declarations。Maven `1.0.31` 的声明 identity 使用独立 canonical mapper，非 Web Bootstrap 与 Web Runtime 的 `Long`/Java Time Jackson 配置不会改变同一 Resource fingerprint。使用 Maven `1.0.30`/`1.0.3x` 的业务仓升级后，排障时同时核对完整 release tuple、Bootstrap stable receipt 的 environment/generation/fingerprint、Resource 同步日志和目标 handler 结果；旧 fingerprint 不一致应升级完整 tuple 后使用新 generation 重新 plan/apply/verify，不重建已有业务库、手工修改 Bootstrap 审计表或用手工 SQL 绕过声明同步。
 
 ## 1. 适用场景
 

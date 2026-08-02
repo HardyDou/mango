@@ -33,7 +33,7 @@
           "-f",
           "pom.xml",
           "-pl",
-          "mango-app/monolith/mango-monolith-app",
+          ":mango-bom,mango-app/monolith/mango-monolith-app",
           "-am",
           "-DskipTests",
           "install"

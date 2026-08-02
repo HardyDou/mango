@@ -5,6 +5,7 @@ import io.mango.infra.bootstrap.api.BootstrapRuntimeAuthorityProvider;
 import io.mango.infra.bootstrap.api.BootstrapStepContributor;
 import io.mango.infra.bootstrap.api.BootstrapWriteAuthority;
 import io.mango.infra.bootstrap.core.BootstrapControl;
+import io.mango.infra.bootstrap.core.BootstrapManifestHasher;
 import io.mango.infra.bootstrap.core.BootstrapPlan;
 import io.mango.infra.bootstrap.core.BootstrapPlanBuilder;
 import io.mango.infra.bootstrap.core.JdbcBootstrapRepository;
@@ -86,6 +87,13 @@ final class RuntimeLeaseManager implements ApplicationRunner, DisposableBean, Or
         BootstrapPlan plan = planBuilder.build(
                 releaseProperties.getId(), releaseProperties.getRevision(), contributors);
         String resolvedFingerprint = plan.manifestFingerprint();
+        if (LOG.isDebugEnabled()) {
+            BootstrapManifestHasher hasher = new BootstrapManifestHasher();
+            LOG.debug("Mango runtime manifest computed: fingerprint={}, steps={}", resolvedFingerprint,
+                    plan.steps().stream()
+                            .map(step -> step.code() + "=" + hasher.stepFingerprint(step))
+                            .toList());
+        }
         if (releaseProperties.getFingerprint() != null && !releaseProperties.getFingerprint().isBlank()
                 && !releaseProperties.getFingerprint().equals(resolvedFingerprint)) {
             throw new IllegalStateException("BOOTSTRAP_FINGERPRINT_MISMATCH: scope=artifact, expected="

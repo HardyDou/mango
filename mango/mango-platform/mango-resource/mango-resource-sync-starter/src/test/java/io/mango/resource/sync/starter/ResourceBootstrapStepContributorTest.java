@@ -2,6 +2,8 @@ package io.mango.resource.sync.starter;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import io.mango.common.result.R;
 import io.mango.infra.bootstrap.api.BootstrapExecutionContext;
 import io.mango.infra.bootstrap.api.BootstrapPhase;
@@ -9,11 +11,13 @@ import io.mango.infra.bootstrap.api.BootstrapStep;
 import io.mango.resource.api.ResourceDeclarationApi;
 import io.mango.resource.api.command.RegisterResourceDeclarationsCommand;
 import io.mango.resource.api.enums.ResourceApplyMode;
+import io.mango.resource.api.enums.ResourceFieldType;
 import io.mango.resource.support.ResourceProvider;
 import io.mango.resource.support.config.ResourceRegistryProperties;
 import io.mango.resource.support.declaration.ResourceDeclarationCollector;
 import io.mango.resource.support.declaration.ResourceDeclarationCanonicalizer;
 import io.mango.resource.support.model.ResourceDeclaration;
+import io.mango.resource.support.model.ResourceField;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 
@@ -110,11 +114,33 @@ class ResourceBootstrapStepContributorTest {
         assertThat(fingerprintMaterial(nested)).isNotEqualTo(explodedFingerprint);
     }
 
+    @Test
+    void bootstrapAndRuntimeHostMappersProduceSameStepFingerprintMaterial() {
+        ResourceDeclaration declaration = declaration("resource-1", "module-a");
+        ResourceField tenantId = new ResourceField();
+        tenantId.setType(ResourceFieldType.LONG);
+        tenantId.setValue(9_007_199_254_740_993L);
+        declaration.putField("tenantId", tenantId);
+        SimpleModule webLongSerialization = new SimpleModule()
+                .addSerializer(Long.class, ToStringSerializer.instance)
+                .addSerializer(Long.TYPE, ToStringSerializer.instance);
+
+        String bootstrapMaterial = fingerprintMaterial(declaration, new ObjectMapper());
+        String runtimeMaterial = fingerprintMaterial(
+                declaration, new ObjectMapper().registerModule(webLongSerialization));
+
+        assertThat(runtimeMaterial).isEqualTo(bootstrapMaterial);
+    }
+
     private String fingerprintMaterial(ResourceDeclaration declaration) {
+        return fingerprintMaterial(declaration, objectMapper);
+    }
+
+    private String fingerprintMaterial(ResourceDeclaration declaration, ObjectMapper hostObjectMapper) {
         ResourceRegistryProperties properties = new ResourceRegistryProperties();
         ResourceBootstrapStepContributor contributor = new ResourceBootstrapStepContributor(
                 properties, collector(() -> List.of(declaration)), command -> R.ok(true), new ResourceManifestSerializer(),
-                new ResourceDeclarationCanonicalizer(objectMapper), "app");
+                new ResourceDeclarationCanonicalizer(hostObjectMapper), "app");
         return contributor.contributeSteps().get(0).fingerprintMaterial();
     }
 
