@@ -35,6 +35,9 @@ import java.util.List;
 @RequiredArgsConstructor
 public class NoticeRecipientSettingService implements INoticeRecipientSettingService {
 
+    private static final int DEFAULT_MAX_RETRY = 3;
+    private static final int DEFAULT_RETENTION_DAYS = 180;
+
     private final NoticeRecipientAccountMapper recipientAccountMapper;
     private final NoticeReceivePreferenceMapper receivePreferenceMapper;
     private final NoticeSettingMapper settingMapper;
@@ -227,8 +230,8 @@ public class NoticeRecipientSettingService implements INoticeRecipientSettingSer
         NoticeSettingsVO settings = new NoticeSettingsVO();
         settings.setSoundEnabled(true);
         settings.setDesktopEnabled(true);
-        settings.setMaxRetry(3);
-        settings.setRetentionDays(180);
+        settings.setMaxRetry(DEFAULT_MAX_RETRY);
+        settings.setRetentionDays(DEFAULT_RETENTION_DAYS);
         return settings;
     }
 
