@@ -19,6 +19,7 @@ public class FilePreviewEngineResourceRegistrar implements ApplicationRunner, Or
 
     private static final String MODULE_NAME = "mango-file-preview";
     private static final String HANDLER_CLASS = "cn.keking.web.controller.OnlinePreviewController";
+    private static final int RESOURCE_REGISTRATION_ORDER_OFFSET = 100;
 
     private final ApiResourceApi apiResourceApi;
 
@@ -48,7 +49,7 @@ public class FilePreviewEngineResourceRegistrar implements ApplicationRunner, Or
     @Override
     public int getOrder() {
         // Finish direct startup registration before eventual resource workers can write.
-        return Ordered.LOWEST_PRECEDENCE - 100;
+        return Ordered.LOWEST_PRECEDENCE - RESOURCE_REGISTRATION_ORDER_OFFSET;
     }
 
     private static ApiResourceRegisterCommand publicGet(String pathPattern, String description) {

@@ -22,13 +22,13 @@ import static org.springframework.web.servlet.function.RouterFunctions.route;
 @EnableConfigurationProperties(PaymentProperties.class)
 @MapperScan("io.mango.payment.core.mapper")
 @ComponentScan({
-        "io.mango.payment.core.service",
-        "io.mango.payment.starter.notice",
-        "io.mango.payment.starter.controller",
-        "io.mango.payment.starter.endpoint",
-        "io.mango.payment.starter.resource",
-        "io.mango.payment.starter.workflow"
-})
+    "io.mango.payment.core.service",
+    "io.mango.payment.starter.notice",
+    "io.mango.payment.starter.controller",
+    "io.mango.payment.starter.endpoint",
+    "io.mango.payment.starter.resource",
+    "io.mango.payment.starter.workflow"
+    })
 public class PaymentAutoConfiguration {
 
     @Bean

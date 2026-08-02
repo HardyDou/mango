@@ -19,6 +19,8 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
         matchIfMissing = true)
 public class PaymentRuntimeAutoConfiguration {
 
+    private static final int TASK_TERMINATION_TIMEOUT_SECONDS = 10;
+
     @Bean(name = "paymentNotificationTaskScheduler")
     @ConditionalOnBean({PaymentNotificationRecordMapper.class, PaymentNotificationDispatcher.class})
     @ConditionalOnProperty(prefix = "mango.payment.notification.dispatch", name = "enabled",
@@ -28,7 +30,7 @@ public class PaymentRuntimeAutoConfiguration {
         scheduler.setPoolSize(1);
         scheduler.setThreadNamePrefix("payment-notification-");
         scheduler.setWaitForTasksToCompleteOnShutdown(true);
-        scheduler.setAwaitTerminationSeconds(10);
+        scheduler.setAwaitTerminationSeconds(TASK_TERMINATION_TIMEOUT_SECONDS);
         scheduler.initialize();
         return scheduler;
     }

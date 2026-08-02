@@ -1,5 +1,6 @@
 package io.mango.payment.starter.workflow;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.common.result.Require;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
@@ -20,7 +21,8 @@ import org.springframework.core.annotation.Order;
  */
 @Slf4j
 @Order(Ordered.LOWEST_PRECEDENCE - 1)
-@RequiredArgsConstructor
+@RequiredArgsConstructor(onConstructor_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+        justification = "Bound Spring configuration is intentionally retained for startup initialization"))
 public class PaymentRefundApprovalWorkflowDefinitionInitializer implements ApplicationRunner {
 
     private final PaymentRefundApprovalWorkflowPublisher workflowDefinitionService;

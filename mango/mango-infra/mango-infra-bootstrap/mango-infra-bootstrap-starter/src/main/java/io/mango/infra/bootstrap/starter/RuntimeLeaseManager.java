@@ -103,7 +103,7 @@ final class RuntimeLeaseManager implements ApplicationRunner, DisposableBean, Or
     }
 
     @Override
-    public void destroy() {
+    public synchronized void destroy() {
         if (heartbeatExecutor != null) {
             heartbeatExecutor.shutdownNow();
         }
@@ -119,7 +119,7 @@ final class RuntimeLeaseManager implements ApplicationRunner, DisposableBean, Or
     }
 
     @Override
-    public Optional<BootstrapWriteAuthority> currentWriteAuthority() {
+    public synchronized Optional<BootstrapWriteAuthority> currentWriteAuthority() {
         if (bootstrapProperties.getMode() != BootstrapMode.RUNTIME || manifestFingerprint == null) {
             return Optional.empty();
         }
@@ -135,7 +135,7 @@ final class RuntimeLeaseManager implements ApplicationRunner, DisposableBean, Or
                 manifestFingerprint, control.fencingToken()));
     }
 
-    private void safeHeartbeat() {
+    private synchronized void safeHeartbeat() {
         try {
             repository.assertRuntimeAllowed(bootstrapProperties.getEnvironmentKey(),
                     releaseProperties.getGeneration(), manifestFingerprint);

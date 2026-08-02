@@ -17,6 +17,8 @@ import java.util.regex.Pattern;
 
 final class BootstrapReceiptWriter {
 
+    private static final int INITIAL_JSON_CAPACITY = 16;
+    private static final int ASCII_CONTROL_CHARACTER_LIMIT = 0x20;
     private static final Pattern ENVIRONMENT_KEY = Pattern.compile("[A-Za-z0-9][A-Za-z0-9._-]{0,127}");
     private static final Pattern JDBC_DATABASE = Pattern.compile("^jdbc:[^:]+://[^/]+/([^?;]+).*$");
 
@@ -113,7 +115,7 @@ final class BootstrapReceiptWriter {
     }
 
     private static String escape(String value) {
-        StringBuilder result = new StringBuilder(value.length() + 16);
+        StringBuilder result = new StringBuilder(value.length() + INITIAL_JSON_CAPACITY);
         for (int index = 0; index < value.length(); index++) {
             char character = value.charAt(index);
             switch (character) {
@@ -125,7 +127,7 @@ final class BootstrapReceiptWriter {
                 case '\r' -> result.append("\\r");
                 case '\t' -> result.append("\\t");
                 default -> {
-                    if (character < 0x20) {
+                    if (character < ASCII_CONTROL_CHARACTER_LIMIT) {
                         result.append(String.format("\\u%04x", (int) character));
                     } else {
                         result.append(character);

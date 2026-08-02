@@ -1,5 +1,6 @@
 package io.mango.payment.starter;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.common.result.Require;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
@@ -32,6 +33,8 @@ public class PaymentNotificationDispatchScheduler implements AutoCloseable {
     private boolean started;
     private boolean closed;
 
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+            justification = "The Spring-managed dispatcher is intentionally retained as a shared service dependency")
     public PaymentNotificationDispatchScheduler(
             PaymentNotificationRecordMapper notificationRecordMapper,
             PaymentNotificationDispatcher notificationService,

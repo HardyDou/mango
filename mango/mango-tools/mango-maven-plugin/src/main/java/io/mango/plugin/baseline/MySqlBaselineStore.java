@@ -265,12 +265,12 @@ final class MySqlBaselineStore {
                     throw new SQLException("table metadata returned no row for " + table);
                 }
                 return new TableHeader(
-                        normalizeIdentifier(resultSet.getString(1)),
-                        normalizeIdentifier(resultSet.getString(2)),
-                        normalizeIdentifier(resultSet.getString(3)),
-                        normalizeIdentifier(resultSet.getString(4)),
-                        normalizeOptions(resultSet.getString(5)),
-                        resultSet.getString(6));
+                        normalizeIdentifier(resultSet.getString("ENGINE")),
+                        normalizeIdentifier(resultSet.getString("CHARACTER_SET_NAME")),
+                        normalizeIdentifier(resultSet.getString("TABLE_COLLATION")),
+                        normalizeIdentifier(resultSet.getString("ROW_FORMAT")),
+                        normalizeOptions(resultSet.getString("CREATE_OPTIONS")),
+                        resultSet.getString("TABLE_COMMENT"));
             }
         }
     }
@@ -299,18 +299,18 @@ final class MySqlBaselineStore {
             statement.setString(2, table);
             try (ResultSet resultSet = statement.executeQuery()) {
                 while (resultSet.next()) {
-                    String name = resultSet.getString(2);
+                    String name = resultSet.getString("COLUMN_NAME");
                     columns.put(name.toLowerCase(Locale.ROOT), new ColumnSnapshot(
-                            resultSet.getInt(1),
+                            resultSet.getInt("ORDINAL_POSITION"),
                             name,
-                            normalizeIdentifier(resultSet.getString(3)),
-                            "YES".equalsIgnoreCase(resultSet.getString(4)),
-                            resultSet.getString(5),
-                            normalizeSqlFragment(resultSet.getString(6)),
-                            normalizeSqlFragment(resultSet.getString(7)),
-                            normalizeIdentifier(resultSet.getString(8)),
-                            normalizeIdentifier(resultSet.getString(9)),
-                            resultSet.getString(10)));
+                            normalizeIdentifier(resultSet.getString("COLUMN_TYPE")),
+                            "YES".equalsIgnoreCase(resultSet.getString("IS_NULLABLE")),
+                            resultSet.getString("COLUMN_DEFAULT"),
+                            normalizeSqlFragment(resultSet.getString("EXTRA")),
+                            normalizeSqlFragment(resultSet.getString("GENERATION_EXPRESSION")),
+                            normalizeIdentifier(resultSet.getString("CHARACTER_SET_NAME")),
+                            normalizeIdentifier(resultSet.getString("COLLATION_NAME")),
+                            resultSet.getString("COLUMN_COMMENT")));
                 }
             }
         }
@@ -344,22 +344,22 @@ final class MySqlBaselineStore {
             statement.setString(2, table);
             try (ResultSet resultSet = statement.executeQuery()) {
                 while (resultSet.next()) {
-                    String name = resultSet.getString(1);
+                    String name = resultSet.getString("INDEX_NAME");
                     String key = name.toLowerCase(Locale.ROOT);
                     headers.putIfAbsent(key, new IndexHeader(
-                            !resultSet.getBoolean(2),
-                            normalizeIdentifier(resultSet.getString(3)),
-                            resultSet.getString(4),
-                            resultSet.getString(5),
-                            "YES".equalsIgnoreCase(resultSet.getString(6))));
+                            !resultSet.getBoolean("NON_UNIQUE"),
+                            normalizeIdentifier(resultSet.getString("INDEX_TYPE")),
+                            resultSet.getString("COMMENT"),
+                            resultSet.getString("INDEX_COMMENT"),
+                            "YES".equalsIgnoreCase(resultSet.getString("IS_VISIBLE"))));
                     parts.computeIfAbsent(key, ignored -> new ArrayList<>()).add(
                             new IndexColumnSnapshot(
-                                    resultSet.getInt(7),
-                                    resultSet.getString(8),
-                                    normalizeIdentifier(resultSet.getString(9)),
-                                    nullableLong(resultSet, 10),
-                                    "YES".equalsIgnoreCase(resultSet.getString(11)),
-                                    normalizeSqlFragment(resultSet.getString(12))));
+                                    resultSet.getInt("SEQ_IN_INDEX"),
+                                    resultSet.getString("COLUMN_NAME"),
+                                    normalizeIdentifier(resultSet.getString("COLLATION")),
+                                    nullableLong(resultSet, "SUB_PART"),
+                                    "YES".equalsIgnoreCase(resultSet.getString("NULLABLE")),
+                                    normalizeSqlFragment(resultSet.getString("EXPRESSION"))));
                 }
             }
         }
@@ -409,10 +409,10 @@ final class MySqlBaselineStore {
             statement.setString(2, table);
             try (ResultSet resultSet = statement.executeQuery()) {
                 while (resultSet.next()) {
-                    headers.put(resultSet.getString(1).toLowerCase(Locale.ROOT),
+                    headers.put(resultSet.getString("CONSTRAINT_NAME").toLowerCase(Locale.ROOT),
                             new ConstraintHeader(
-                                    normalizeIdentifier(resultSet.getString(2)),
-                                    "YES".equalsIgnoreCase(resultSet.getString(3))));
+                                    normalizeIdentifier(resultSet.getString("CONSTRAINT_TYPE")),
+                                    "YES".equalsIgnoreCase(resultSet.getString("ENFORCED"))));
                 }
             }
         }
@@ -440,15 +440,15 @@ final class MySqlBaselineStore {
             statement.setString(2, table);
             try (ResultSet resultSet = statement.executeQuery()) {
                 while (resultSet.next()) {
-                    String key = resultSet.getString(1).toLowerCase(Locale.ROOT);
+                    String key = resultSet.getString("CONSTRAINT_NAME").toLowerCase(Locale.ROOT);
                     columns.computeIfAbsent(key, ignored -> new ArrayList<>()).add(
                             new ConstraintColumnSnapshot(
-                                    resultSet.getInt(2),
-                                    nullableLong(resultSet, 3),
-                                    resultSet.getString(4),
-                                    portableSchema(resultSet.getString(5), database),
-                                    resultSet.getString(6),
-                                    resultSet.getString(7)));
+                                    resultSet.getInt("ORDINAL_POSITION"),
+                                    nullableLong(resultSet, "POSITION_IN_UNIQUE_CONSTRAINT"),
+                                    resultSet.getString("COLUMN_NAME"),
+                                    portableSchema(resultSet.getString("REFERENCED_TABLE_SCHEMA"), database),
+                                    resultSet.getString("REFERENCED_TABLE_NAME"),
+                                    resultSet.getString("REFERENCED_COLUMN_NAME")));
                 }
             }
         }
@@ -475,13 +475,13 @@ final class MySqlBaselineStore {
             statement.setString(2, table);
             try (ResultSet resultSet = statement.executeQuery()) {
                 while (resultSet.next()) {
-                    references.put(resultSet.getString(1).toLowerCase(Locale.ROOT),
+                    references.put(resultSet.getString("CONSTRAINT_NAME").toLowerCase(Locale.ROOT),
                             new ReferentialConstraintSnapshot(
-                                    portableSchema(resultSet.getString(2), database),
-                                    resultSet.getString(3),
-                                    normalizeIdentifier(resultSet.getString(4)),
-                                    normalizeIdentifier(resultSet.getString(5)),
-                                    normalizeIdentifier(resultSet.getString(6))));
+                                    portableSchema(resultSet.getString("UNIQUE_CONSTRAINT_SCHEMA"), database),
+                                    resultSet.getString("UNIQUE_CONSTRAINT_NAME"),
+                                    normalizeIdentifier(resultSet.getString("MATCH_OPTION")),
+                                    normalizeIdentifier(resultSet.getString("UPDATE_RULE")),
+                                    normalizeIdentifier(resultSet.getString("DELETE_RULE"))));
                 }
             }
         }
@@ -514,8 +514,8 @@ final class MySqlBaselineStore {
         return clauses;
     }
 
-    private static Long nullableLong(ResultSet resultSet, int index) throws SQLException {
-        long value = resultSet.getLong(index);
+    private static Long nullableLong(ResultSet resultSet, String columnLabel) throws SQLException {
+        long value = resultSet.getLong(columnLabel);
         return resultSet.wasNull() ? null : value;
     }
 
