@@ -1,0 +1,166 @@
+{
+  "schemaVersion": 1,
+  "release": "v2026.08.02-maven-1.0.31-pmo-1.3.9-cli-1.0.96-platform-identity-bootstrap-release",
+  "releaseKind": "mixed",
+  "status": "PUBLISHED_AND_VERIFIED",
+  "scope": {
+    "issue": 690,
+    "excludedIssues": [687, 688]
+  },
+  "source": {
+    "commit": "50ad66fc14234b696b88edcd12f31f0715544b5d",
+    "tree": "2001eb07e3a84ed7d0bfabb51939837cc1eb8d4c",
+    "preparationCommit": "064e3a58ea2783456197d3241b8625e46d8cbd5e",
+    "exactSourceBundleSha256": "f90d8e07767e172ba915da8a291a53912d684918d971bf1c5ec472897395df56",
+    "mergedPullRequests": [696, 697, 698, 699, 700],
+    "requiredChecks": "passed",
+    "finalMainRun": 30769520118,
+    "finalPagesRun": 30769520109,
+    "isAncestorOfCloseoutMain": true
+  },
+  "versions": {
+    "maven": "1.0.31",
+    "docsBundle": "1.0.31",
+    "pmo": "1.3.9",
+    "cli": "1.0.96",
+    "npmPackageCount": 24
+  },
+  "manifests": [
+    {
+      "kind": "initial-publication-preflight",
+      "path": "/Users/hardy/Work/mango/.runtime/releases-1.0.31/1.0.31/manifest.json",
+      "sha256": "8afce091b1c91ed9233ad6ab8bd74405d31331076193c32e4df1bded6f164c8b",
+      "completed": false,
+      "status": "audit-preserved",
+      "result": "Stopped before immutable actions because the release PR field contained a comma-separated list instead of one resolvable final PR."
+    },
+    {
+      "kind": "canonical-publication-and-repair",
+      "path": "/Users/hardy/Work/mango/.runtime/releases-1.0.31-repair-1/1.0.31/manifest.json",
+      "sha256": "6fb6bfdb579263eee4f7d6a7824d31f79e60307068ceb90f37666379da3bab49",
+      "completed": false,
+      "status": "audit-preserved",
+      "result": "Published Tag, GitHub Release, 188 Maven coordinates and 24 npm packages. Maven output capture exceeded the state-machine buffer after publication, so the same manifest verified existing Maven coordinates without republishing. Post-verification then stopped on an over-broad direct-dependency assertion."
+    },
+    {
+      "kind": "read-only-verification-with-prepublish-check",
+      "path": "/Users/hardy/Work/mango/.runtime/releases-1.0.31-final-verify/1.0.31/manifest.json",
+      "sha256": "c43295b2a488eb92e5630be3eb2838b417af9c32bb4595c1d7bbc6a0eda1f9c9",
+      "completed": false,
+      "status": "audit-preserved",
+      "result": "Stopped because a publication-time absence check was not applicable to read-only verification after publication."
+    },
+    {
+      "kind": "read-only-verification-with-verbose-maven-transfer",
+      "path": "/Users/hardy/Work/mango/.runtime/releases-1.0.31-final-verify-2/1.0.31/manifest.json",
+      "sha256": "6ee0da9798399912f5bf936d7226027d9a3f72baf0256bec71cc9c5c3d3f08b5",
+      "completed": false,
+      "status": "audit-preserved",
+      "result": "Registry, docs and frontend clean-consumer verification passed; Maven dependency progress output exceeded the state-machine buffer before backend verification completed."
+    },
+    {
+      "kind": "final-read-only-verification",
+      "path": "/Users/hardy/Work/mango/.runtime/releases-1.0.31-final-verify-3/1.0.31/manifest.json",
+      "sha256": "0f0bc0339a2e5f622bc075a1b549fc42e83aca631f69fa3a404172139fda9db6",
+      "completed": true,
+      "states": 17,
+      "passedStates": 17,
+      "failedStates": 0,
+      "pendingStates": 0,
+      "status": "passed"
+    }
+  ],
+  "maven": {
+    "status": "PUBLISHED_AND_VERIFIED",
+    "coordinates": 188,
+    "version": "1.0.31",
+    "docsBundle": "io.mango:mango-docs-bundle:1.0.31",
+    "publishRegistry": "maven-releases",
+    "consumeRegistry": "maven-public",
+    "artifactChecksumAlgorithm": "SHA-1",
+    "publishConsumeChecksumsMatch": true,
+    "checksumMatrixSha256": "7b331e0affe672c4aaad21cb0bc9bdba22167faaba5d7c0533c30986516efe98",
+    "earliestLastModified": "2026-08-02T22:23:29.000Z",
+    "latestLastModified": "2026-08-02T22:28:02.000Z",
+    "bomSha1": "a7f81e02970485c6a9ee5d0f69942ff09dde1fc9",
+    "docsBundleSha1": "88b35c275647d28b9a435987c795d292e72eed9c"
+  },
+  "npm": {
+    "status": "PUBLISHED_AND_VERIFIED",
+    "packageCount": 24,
+    "publishRegistry": "npm-hosted",
+    "consumeRegistry": "npm-group",
+    "publishConsumeIntegrityMatch": true,
+    "integrityMatrixSha256": "75e7bd7c1e073fd2da0e8600bd17256aada26a5277a3f00acd799b23d9c4c7ea",
+    "earliestPublishedAt": "2026-08-02T22:31:25.874Z",
+    "latestPublishedAt": "2026-08-02T22:34:51.163Z",
+    "coordinates": {
+      "@mango/pmo": "1.3.9",
+      "@mango/common": "1.0.24",
+      "@mango/grid-layout": "1.0.15",
+      "@mango/grid-widgets": "1.0.21",
+      "@mango/rbac": "1.0.22",
+      "@mango/auth": "1.0.24",
+      "@mango/system": "1.0.30",
+      "@mango/admin-pages": "1.0.31",
+      "@mango/file": "1.0.32",
+      "@mango/calendar": "1.0.32",
+      "@mango/cms": "1.0.21",
+      "@mango/home": "1.0.13",
+      "@mango/job": "1.0.24",
+      "@mango/link": "1.0.18",
+      "@mango/notice": "1.0.36",
+      "@mango/numgen": "1.0.32",
+      "@mango/payment": "1.0.24",
+      "@mango/site-shell": "1.0.11",
+      "@mango/template": "1.0.32",
+      "@mango/workflow": "1.0.38",
+      "@mango/workflow-business-example": "1.0.37",
+      "@mango/admin-shell": "1.0.56",
+      "@mango/admin": "1.0.61",
+      "@mango/cli": "1.0.96"
+    }
+  },
+  "githubRelease": {
+    "status": "CREATED_AND_VERIFIED",
+    "url": "https://github.com/HardyDou/mango/releases/tag/v2026.08.02-maven-1.0.31-pmo-1.3.9-cli-1.0.96-platform-identity-bootstrap-release",
+    "targetCommit": "50ad66fc14234b696b88edcd12f31f0715544b5d",
+    "publishedAt": "2026-08-02T22:23:26Z",
+    "draft": false,
+    "prerelease": false
+  },
+  "documentation": {
+    "latest": {
+      "url": "https://hardydou.github.io/mango/",
+      "httpStatus": 200
+    },
+    "snapshot": {
+      "url": "https://hardydou.github.io/mango/versions/v2026.08.02-maven-1.0.31-pmo-1.3.9-cli-1.0.96-platform-identity-bootstrap-release/",
+      "httpStatus": 200
+    }
+  },
+  "cleanConsumer": {
+    "consumeRegistryOnly": true,
+    "mavenBom": "io.mango:mango-bom:1.0.31",
+    "mavenIsolatedLocalRepository": "passed",
+    "installedCli": "@mango/cli@1.0.96",
+    "generatedMavenVersion": "1.0.31",
+    "generatedPmoVersion": "1.3.9",
+    "generatedDirectFrontendCoordinates": 22,
+    "transitiveHomeVersion": "1.0.13",
+    "alternateSiteShellVersion": "1.0.11",
+    "cliMatrixAlignment": "passed",
+    "pmoLockedCheck": "passed",
+    "frontendInstall": "passed",
+    "frontendTypecheck": "passed",
+    "frontendProductionBuild": "passed",
+    "backendMavenVerify": "passed"
+  },
+  "recovery": {
+    "immutableArtifactsRepublished": false,
+    "failedManifestsPreserved": true,
+    "releaseTagMovedDuringCloseout": false,
+    "mavenOutputBufferRecovery": "verify-existing",
+    "finalVerificationTransferProgressSuppressed": true
+  }
+}

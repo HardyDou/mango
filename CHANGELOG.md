@@ -2,7 +2,7 @@
 
 ## v2026.08.02-maven-1.0.31-pmo-1.3.9-cli-1.0.96-platform-identity-bootstrap-release - 2026-08-02
 
-Status: `PENDING`. This mixed release is prepared as one indivisible compatibility tuple from the protected `main` source that will be locked after the release-preparation PR merges. Immutable tag, GitHub Release, Maven/npm publication and documentation snapshot have not started.
+Status: `PUBLISHED_AND_VERIFIED`. This indivisible mixed release was published from protected `main` commit `50ad66fc14234b696b88edcd12f31f0715544b5d` and tree `2001eb07e3a84ed7d0bfabb51939837cc1eb8d4c`. The exact-source bundle SHA-256 is `f90d8e07767e172ba915da8a291a53912d684918d971bf1c5ec472897395df56`; Maven/npm publish and consume registries, the Git tag, GitHub Release, Latest docs, versioned docs snapshot and a clean generated business consumer are verified. The completed read-only release manifest has SHA-256 `0f0bc0339a2e5f622bc075a1b549fc42e83aca631f69fa3a404172139fda9db6` and records all 17 release states as passed.
 
 ### Added
 
@@ -41,13 +41,13 @@ Status: `PENDING`. This mixed release is prepared as one indivisible compatibili
 
 | Order | Target | Version | Status |
 | ---: | --- | --- | --- |
-| 1 | Complete non-app `io.mango` Maven Reactor and `io.mango:mango-docs-bundle` | `1.0.31` | `PENDING` |
-| 2 | `@mango/pmo` | `1.3.9` | `PENDING` |
-| 3 | `@mango/common`, `@mango/grid-layout`, `@mango/grid-widgets`, `@mango/rbac`, `@mango/auth`, `@mango/system`, `@mango/admin-pages`, `@mango/file` | `1.0.24`, `1.0.15`, `1.0.21`, `1.0.22`, `1.0.24`, `1.0.30`, `1.0.31`, `1.0.32` | `PENDING` |
-| 4 | `@mango/calendar`, `@mango/cms`, `@mango/home`, `@mango/job`, `@mango/link`, `@mango/notice`, `@mango/numgen`, `@mango/payment`, `@mango/site-shell`, `@mango/template`, `@mango/workflow`, `@mango/workflow-business-example` | `1.0.32`, `1.0.21`, `1.0.13`, `1.0.24`, `1.0.18`, `1.0.36`, `1.0.32`, `1.0.24`, `1.0.11`, `1.0.32`, `1.0.38`, `1.0.37` | `PENDING` |
-| 5 | `@mango/admin-shell`, `@mango/admin` | `1.0.56`, `1.0.61` | `PENDING` |
-| 6 | `@mango/cli` | `1.0.96` | `PENDING` |
-| 7 | Git tag, GitHub Release, Latest docs and versioned docs snapshot | `v2026.08.02-maven-1.0.31-pmo-1.3.9-cli-1.0.96-platform-identity-bootstrap-release` | `PENDING` |
+| 1 | Complete non-app `io.mango` Maven Reactor and `io.mango:mango-docs-bundle` | `1.0.31` | `PUBLISHED_AND_VERIFIED` |
+| 2 | `@mango/pmo` | `1.3.9` | `PUBLISHED_AND_VERIFIED` |
+| 3 | `@mango/common`, `@mango/grid-layout`, `@mango/grid-widgets`, `@mango/rbac`, `@mango/auth`, `@mango/system`, `@mango/admin-pages`, `@mango/file` | `1.0.24`, `1.0.15`, `1.0.21`, `1.0.22`, `1.0.24`, `1.0.30`, `1.0.31`, `1.0.32` | `PUBLISHED_AND_VERIFIED` |
+| 4 | `@mango/calendar`, `@mango/cms`, `@mango/home`, `@mango/job`, `@mango/link`, `@mango/notice`, `@mango/numgen`, `@mango/payment`, `@mango/site-shell`, `@mango/template`, `@mango/workflow`, `@mango/workflow-business-example` | `1.0.32`, `1.0.21`, `1.0.13`, `1.0.24`, `1.0.18`, `1.0.36`, `1.0.32`, `1.0.24`, `1.0.11`, `1.0.32`, `1.0.38`, `1.0.37` | `PUBLISHED_AND_VERIFIED` |
+| 5 | `@mango/admin-shell`, `@mango/admin` | `1.0.56`, `1.0.61` | `PUBLISHED_AND_VERIFIED` |
+| 6 | `@mango/cli` | `1.0.96` | `PUBLISHED_AND_VERIFIED` |
+| 7 | Git tag, GitHub Release, Latest docs and versioned docs snapshot | `v2026.08.02-maven-1.0.31-pmo-1.3.9-cli-1.0.96-platform-identity-bootstrap-release` | `CREATED_AND_VERIFIED` |
 
 Unchanged npm coordinates are `@mango/api-schema@1.0.3`, `@mango/app-runtime@1.0.6`, `@mango/http-client@1.0.0`, `@mango/link-openapi@1.0.4` and `@mango/link-page@1.0.7`; they are not republished.
 
@@ -65,8 +65,11 @@ Unchanged npm coordinates are `@mango/api-schema@1.0.3`, `@mango/app-runtime@1.0
 
 - `pnpm -C mango-ui release:impact --base=4a959d2ac3906f1cfa14359eb3abf2cd652733b1 --head=HEAD` passes and identifies the exact 24-package npm publication closure.
 - `node mango-pmo/tools/workspace-layout-check.mjs --root .` passes in the isolated release worktree.
-- Release preparation must additionally pass PMO projection/package checks, CLI and generated-project gates, Maven/frontend affected gates, capability README audits, release-note checks, branch-protection comparison and target-version absence checks before any immutable action.
-- Publication will be verified from both publish and consume registries with Maven checksums, npm integrity, a clean generated business consumer, locked PMO, frontend typecheck/build, Maven consumer resolution, tag/source equality and Latest/versioned documentation HTTP checks.
+- PRs #696 through #700 passed all required checks; final protected `main` Frontend Quality run `30769520118`, including the real-backend browser P0 job, and Pages run `30769520109` passed before publication.
+- All 188 Maven coordinates resolve from publish and consume registries with matching checksums; `mango-bom:1.0.31` has SHA-1 `a7f81e02970485c6a9ee5d0f69942ff09dde1fc9` and `mango-docs-bundle:1.0.31` has SHA-1 `88b35c275647d28b9a435987c795d292e72eed9c`.
+- All 24 npm coordinates resolve from publish and consume registries with matching versions, integrity and shasum. Publication timestamps span `2026-08-02T22:31:25.874Z` through `2026-08-02T22:34:51.163Z`.
+- A clean consume-registry-only project installed `@mango/cli@1.0.96`, generated the Maven `1.0.31`/PMO `1.3.9` full monolith preset, passed locked PMO validation, frontend install/typecheck/production build and backend Maven `verify` with an isolated local repository.
+- The final read-only manifest is `.runtime/releases-1.0.31-final-verify-3/1.0.31/manifest.json`; its durable release summary is `mango-docs/evidence/governance/release-v2026.08.02-maven-1.0.31-pmo-1.3.9-cli-1.0.96-platform-identity-bootstrap-release.json`.
 
 ## v2026.08.01-maven-1.0.30-cli-1.0.95-flyway-startup-order-release - 2026-08-01
 
