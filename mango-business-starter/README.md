@@ -76,6 +76,8 @@ PMO 合同启用前形成、尚未迁移的生命周期文档可以在业务文�
 mango module add order --aggregate sales-order --aggregate-name 销售订单 --module-name 订单模块 --project-dir .
 ```
 
+显式传入的 `--module-name` 与 `--aggregate-name` 是中文展示名，至少包含一个中文字符。CLI 在创建目录或修改受管文件前校验；纯英文显示名失败时不改变业务项目。
+
 老业务升级 Mango PMO baseline 时，从业务项目根目录执行：
 
 ```bash
@@ -142,8 +144,8 @@ mango dev start
 | `mango.config.json`      | `businessModules[].displayName`          | `<Module>模块` 或 `--module-name`      | 模块中文名               | 菜单模块名、OpenAPI tag          | `addBusinessModule`                 |
 | `mango.config.json`      | `businessModules[].aggregateDisplayName` | aggregate Pascal 或 `--aggregate-name` | 聚合中文名               | 页面文案、菜单名、权限名         | `addBusinessModule`                 |
 | `application.yml`        | `<module>.enabled`                       | `true`                                 | 业务 Flyway 模块启用开关 | 后端启动时纳入业务模块 migration | `updateBackendBusinessFlywayConfig` |
-| `resource-manifest.json` | `appCode`                                | `internal-admin`                       | 菜单权限归属应用         | 资源同步时归入内部管理端         | `resource-manifest.json`            |
-| `resource-manifest.json` | `moduleCode`                             | `{{moduleKebab}}`                      | 菜单权限归属模块         | 菜单、权限唯一归属               | `resource-manifest.json`            |
+| typed Resource declaration | `appCode`                              | `internal-admin`                       | 菜单权限归属应用         | Bootstrap 资源同步时归入内部管理端 | `META-INF/mango/resources/*.json`   |
+| typed Resource declaration | `moduleCode`                           | `{{moduleKebab}}`                      | 菜单权限归属模块         | 菜单、权限唯一归属               | `META-INF/mango/resources/*.json`   |
 | `module.properties`      | `module-name`                            | `{{moduleKebab}}`                      | Mango 模块名             | 模块资源发现                     | `module.properties`                 |
 | `module.properties`      | `module-path`                            | `{{moduleKebab}}`                      | Mango 模块路径           | 模块资源发现                     | `module.properties`                 |
 
@@ -157,7 +159,7 @@ mango dev start
 | ------------------------- | -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- | ----------------------------------------- |
 | `<module>-api`            | `{{modulePascal}}Api`、`Create...Command`、`Update...Command`、`...PageQuery`、`...VO` | `mango-common`、`mango-infra-persistence-starter`、Spring Web、Validation、Swagger                | 定义稳定 API 契约、字段校验、分页查询条件 |
 | `<module>-core`           | `...Entity`、Mapper、Service 接口和实现、Flyway SQL                                    | `<module>-api`、`mango-infra-persistence-starter`                                                 | 表结构、租户字段、查询实现、业务规则      |
-| `<module>-starter`        | Controller、AutoConfiguration、`module.properties`、`resource-manifest.json`           | `<module>-api`、`<module>-core`、`mango-infra-web-starter`、`mango-infra-persistence-web-starter` | Web 暴露、菜单权限资源、应用依赖          |
+| `<module>-starter`        | Controller、AutoConfiguration、`module.properties`、typed Resource declarations        | `<module>-api`、`<module>-core`、`mango-infra-web-starter`、`mango-infra-persistence-web-starter` | Web 暴露、菜单权限资源、应用依赖          |
 | `<module>-starter-remote` | Feign client 和 AutoConfiguration                                                      | `<module>-api`、`mango-infra-feign-starter`                                                       | 微服务调用方远程访问                      |
 
 模板 API 形态：
@@ -192,7 +194,7 @@ Controller 使用 `BaseCrudController`，类级路径由 module 和 aggregate �
 | ---------------- | ------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- | ----------------------------------------------------- | ------------------------------------------- | ------------------------------------ |
 | Flyway migration | `backend/modules/<module>/<module>-core/src/main/resources/db/migration/<module>/V1__init_<module>.sql` | `<module>_<aggregate>` 业务表示例，字段包含 `id`、`name`、`tenant_id`、审计字段 | 由表主键和 Flyway version 控制                        | 后端应用启动，且业务 Flyway 模块启用        | Flyway history、业务表、后端启动日志 |
 | Flyway 模块开关  | `backend/app/src/main/resources/application.yml`                                                        | `<module>.enabled: true`                                                        | module code                                           | `mango module add` 写入后，下次应用启动生效 | application.yml managed block        |
-| 资源清单         | `<module>-starter/src/main/resources/META-INF/mango/resource-manifest.json`                             | 模块菜单、聚合列表页、create/view/update/delete 权限                            | `appCode`、`moduleCode`、`menuCode`、`permissionCode` | 资源同步 starter 随应用启动处理             | 菜单树、权限码、资源同步日志         |
+| 资源声明         | `<module>-starter/src/main/resources/META-INF/mango/resources/<module>-common-menu.json`              | 模块菜单、聚合列表页、create/view/update/delete 权限                            | declaration id、version、bizKey 和目标模块 | Bootstrap `BOOTSTRAP_REQUIRED` 处理 | 菜单树、权限码、资源同步日志         |
 | 模块元数据       | `<module>-starter/src/main/resources/META-INF/mango/module.properties`                                  | `module-name`、`module-path`                                                    | module name                                           | 模块资源发现阶段                            | 打包产物和模块扫描日志               |
 
 默认 Entity 继承 `TenantEntity`，默认 SQL 也包含 `tenant_id`。生成后如果业务不使用租户隔离，要明确删除或解释；如果使用租户隔离，要把查询、写入、测试和数据权限补齐。
@@ -203,12 +205,12 @@ Controller 使用 `BaseCrudController`，类级路径由 module 和 aggregate �
 
 | 菜单 / 页面 | component key                              | 权限码                                                                  | 入库来源                 | 默认套餐 / 角色                  | 后端校验入口                               |
 | ----------- | ------------------------------------------ | ----------------------------------------------------------------------- | ------------------------ | -------------------------------- | ------------------------------------------ |
-| 模块目录    | 无                                         | 无                                                                      | `resource-manifest.json` | 由授权模块资源同步和角色授权决定 | 无直接 Controller                          |
-| 聚合管理页  | `{{moduleKebab}}/{{aggregateKebab}}/index` | `{{moduleKebab}}:{{aggregateKebab}}:create`、`view`、`update`、`delete` | `resource-manifest.json` | 模板不直接授予角色               | `{{modulePascal}}Controller`、业务 Service |
+| 模块目录    | 无                                         | 无                                                                      | typed Resource declaration | 由授权模块资源同步和角色授权决定 | 无直接 Controller                          |
+| 聚合管理页  | `{{moduleKebab}}/{{aggregateKebab}}/index` | `{{moduleKebab}}:{{aggregateKebab}}:create`、`view`、`update`、`delete` | typed Resource declaration | 模板不直接授予角色               | `{{modulePascal}}Controller`、业务 Service |
 
 生成后重点检查：
 
-- `menuCode` 是否符合业务模块命名。
+- `menuCode` 是否符合业务模块命名；声明文件位置为 `META-INF/mango/resources/`，并使用当前 schema。
 - `path`、`redirect`、`component` 是否能和前端页面注册对上。
 - 权限码是否覆盖页面按钮和后端接口；模板页面默认没有按钮级权限判断，需要业务补齐。
 - 租户隔离是否和 `TenantEntity`、`tenant_id`、查询条件、当前登录上下文一致。
@@ -269,3 +271,9 @@ Controller 使用 `BaseCrudController`，类级路径由 module 和 aggregate �
 - [单体拓扑说明](./topologies/monolith/README.md)
 - [微服务拓扑说明](./topologies/microservice/README.md)
 - [Mango 能力地图](../mango-docs/capabilities/README.md)
+
+## 14. Issue #690 升级登记
+
+使用过 Mango Maven `1.0.30` 或其它 `1.0.3x` 组合的业务仓属于 #690 回归影响范围。当前 `@mango/cli@1.0.95`、`@mango/pmo@1.3.8`、Maven `1.0.30` 仍是历史已发布组合，不代表已包含本次源码修复；在新的完整 release tuple 发布前，这组三方版本不能作为本次修复的升级目标。升级按 [CLI 升级合同](../mango-ui/packages/mango-cli/README.md) 成组执行。
+
+升级时保留数据库和工作区审计证据，先升级 CLI/PMO，再统一更新 `<mango.version>` 或 `mango-bom`，执行冻结安装、完整 Maven Reactor、前端检查、`workspace init`、Bootstrap receipt 校验和真实业务验收。已有数据库不重建、不删除业务数据；滚动升级在 `finalize` 前可用 `bootstrap abort` 撤回候选 generation。模块资源迁移到 `META-INF/mango/resources/*.json|yml|yaml` typed declarations，Flyway 只负责 DDL 和大 SQL。

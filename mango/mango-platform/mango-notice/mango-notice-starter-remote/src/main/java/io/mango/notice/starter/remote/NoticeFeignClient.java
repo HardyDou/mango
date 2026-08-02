@@ -76,6 +76,11 @@ public interface NoticeFeignClient extends NoticeApi {
             @SpringQueryMap NoticeBusinessTypePageQuery query);
 
     @Override
+    @GetMapping("/site/business-types")
+    R<PageResult<NoticeBusinessTypeVO>> listEnabledBusinessTypes(
+            @SpringQueryMap NoticeBusinessTypePageQuery query);
+
+    @Override
     @PostMapping("/business-types")
     R<NoticeBusinessTypeVO> createBusinessType(
             @RequestBody CreateNoticeBusinessTypeCommand command);

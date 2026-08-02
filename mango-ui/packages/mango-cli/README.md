@@ -110,6 +110,8 @@ mango add file notice --project-dir demo-custom
 mango module add order --aggregate sales-order --aggregate-name 销售订单 --module-name 订单模块 --project-dir demo-custom
 ```
 
+显式传入的 `--module-name` 和 `--aggregate-name` 是中文展示名，至少包含一个中文字符。CLI 在创建目录或修改 POM、配置、入口和 lockfile 前完成校验；纯英文显示名会直接失败且不留下半生成模块。未传 `--module-name` 时继续使用带“模块”的默认显示名，未传 `--aggregate-name` 时保持现有聚合 Pascal 名兼容行为。
+
 同步 PMO baseline：
 
 ```bash
@@ -508,14 +510,14 @@ CLI 生成或更新的数据库相关入口：
 
 CLI 不在运行时管理菜单、权限和租户，但会生成让业务模块接入菜单权限体系的模板文件。
 
-| 菜单 / 页面    | component key                                | 权限码                                    | 入库来源                                                                                             | 默认套餐 / 角色  | 后端校验入口                                  |
-| -------------- | -------------------------------------------- | ----------------------------------------- | ---------------------------------------------------------------------------------------------------- | ---------------- | --------------------------------------------- |
-| 业务聚合列表页 | 由业务模块模板 `resource-manifest.json` 渲染 | 由业务模块模板按 module 和 aggregate 渲染 | `backend/modules/<module>/<module>-starter/src/main/resources/META-INF/mango/resource-manifest.json` | 模板资源清单定义 | `<module>-starter` Controller 和 core Service |
-| Mango 平台页面 | 各 `@mango/*` 包的 admin pages               | 各平台模块 README 登记                    | 平台模块 migration 或 resource manifest                                                              | 各平台模块定义   | 各平台模块 Controller / Service               |
+| 菜单 / 页面    | component key                         | 权限码                                    | 入库来源                                                                                                          | 默认套餐 / 角色  | 后端校验入口                                  |
+| -------------- | ------------------------------------- | ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | ---------------- | --------------------------------------------- |
+| 业务聚合列表页 | 由业务模块模板 typed declaration 渲染 | 由业务模块模板按 module 和 aggregate 渲染 | `backend/modules/<module>/<module>-starter/src/main/resources/META-INF/mango/resources/<module>-common-menu.json` | 模板资源声明定义 | `<module>-starter` Controller 和 core Service |
+| Mango 平台页面 | 各 `@mango/*` 包的 admin pages        | 各平台模块 README 登记                    | 平台模块 migration 或 resource manifest                                                                           | 各平台模块定义   | 各平台模块 Controller / Service               |
 
 业务模块生成后需要检查：
 
-- `resource-manifest.json` 中 `moduleCode`、菜单 code、component key 与前端页面路径一致。
+- typed declaration 中 `moduleCode`、菜单 code、component key 与前端页面路径一致，且文件位于 `META-INF/mango/resources/`。
 - `frontend/src/main.ts` 已写入 `register<Module>Pages()`。
 - 后端 app POM 已加入 `<module>-starter` 依赖。
 - 后端生成 `Api`、实现该契约的 Controller 和 Feign，并使用 `MangoTypedCrudService`、`Require` 与模块 `BizCode`。
@@ -565,6 +567,56 @@ CLI 不在运行时管理菜单、权限和租户，但会生成让业务模块�
 | pnpm 11 首次安装报 `ERR_PNPM_IGNORED_BUILDS`                                  | 旧版 CLI 生成的前端缺少 `pnpm-workspace.yaml` 构建白名单                       | 使用 `@mango/cli@1.0.81` 生成新项目；既有项目把当前 full 模板的 `allowBuilds` 映射合并到业务自有 workspace 配置                                                                                      |
 
 ## 12. 相关文档
+
+### Issue #690：1.0.3x 业务升级与回归修复
+
+Issue #690 覆盖 CLI、Maven plugin、Bootstrap/runtime、Resource、BSQL、Boot JAR、前端生成物和真实业务链路的联合回归。本 PR 的源码修复尚未生成新的正式制品版本；当前已发布的 `@mango/cli@1.0.95`、`@mango/pmo@1.3.8`、Maven `1.0.30`（即 `1.0.3x` 受影响范围）不能被标记为“包含 #690 修复”。业务仓应等待发布说明中的新完整 release tuple，再执行升级。
+
+不要只升级一个坐标。CLI、PMO、Maven 后端和前端包必须使用同一 release tuple 中的精确版本；不要把 `1.0.30` 与新 CLI 或任意 SNAPSHOT 混用。
+
+#### 已使用 1.0.3x 的业务仓升级步骤
+
+1. 建立升级分支并备份 `mango.config.json`、`backend/pom.xml`、`frontend/package.json`、`frontend/pnpm-lock.yaml`、`.mango/` 和数据库备份。升级不会删除业务表或重建业务库。
+2. 安装发布说明指定的精确 CLI，并在业务仓根目录升级 PMO：
+
+   ```bash
+   npm install -g @mango/cli@<tuple.cli> --registry "$MANGO_NPM_REGISTRY"
+   mango pmo upgrade --project-dir . --to <tuple.pmo> --sync-shell
+   ```
+
+3. 按 tuple 更新后端统一版本：继承 `mango-parent` 的项目修改 `<mango.version>`；自有 Parent 的项目导入同版本 `io.mango:mango-bom`。同步 `mango.config.json.mangoBackendVersion`，不要只改某个模块 POM。
+4. 在 `frontend` 冻结安装并确认所有 `@mango/*` 包来自同一矩阵：
+
+   ```bash
+   pnpm install --frozen-lockfile
+   pnpm exec mango pmo check --project-dir .. --locked
+   ```
+
+5. 逐 worktree 初始化并验证开发合同：
+
+   ```bash
+   pnpm exec mango workspace init
+   pnpm exec mango workspace doctor
+   pnpm exec mango dev doctor
+   mvn -f ../backend/pom.xml verify
+   mvn -f ../backend/pom.xml install
+   pnpm check
+   pnpm exec mango dev start
+   ```
+
+6. 对既有库按 `bootstrap plan -> apply --strategy=rolling -> verify -> runtime -> finalize` 执行；首次空库才使用 `--strategy=cold`。确认 receipt 的 environment、generation、revision、fingerprint 全部匹配，确认旧 Runtime lease 已排空后再 finalize。
+7. 业务验收至少覆盖登录、菜单/权限、一个真实 CRUD、API 未登录返回 401、前端生产构建、Boot JAR `java -jar` 启动、独立 Maven consumer 和 BSQL baseline。任何一步失败，停止候选 generation，按 Bootstrap README 的 `abort`/回滚流程处理，不要手工删表或覆盖旧回执。
+
+#### #690 修复特性清单
+
+- `mango dev start` 的进程模式、worktree revision 和 workspace 端口/数据库隔离可审计。
+- `verify/install` 使用完整 Reactor，架构、质量和 `${revision}` 独立消费契约不再误报。
+- Bootstrap 的 plan/apply/verify/finalize/abort、stable/candidate generation、receipt、fingerprint、fencing 和 runtime lease 形成明确边界；Runtime 不代做 Flyway 或必需 Resource 初始化。
+- Resource 使用 typed declarations、依赖拓扑和 eventual reconciliation；空库菜单、租户和模块资源由 Bootstrap 明确同步。
+- Maven plugin 的 BSQL 结构化比较、确定性回放、制品路径和 Boot JAR manifest 校验 fail closed。
+- 生成模板、模块 lockfile、Notice E2E、页面/API 路由和 Playwright reporter 纳入真实业务回归。
+
+若升级后出现 `BOOTSTRAP_RECEIPT_MISSING`、`BOOTSTRAP_FINGERPRINT_MISMATCH`、`OLD_RUNTIME_INSTANCES_ACTIVE`、固定 Maven 版本 POM 或 typed resource declaration 解析错误，先保留 `.mango`、Bootstrap 审计表和构建日志，再按对应模块 README 排障；不要降级单个组件掩盖 tuple 不一致。
 
 ### 1.0.95 发布影响
 

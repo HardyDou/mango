@@ -12,6 +12,7 @@ import io.mango.resource.api.command.RegisterResourceDeclarationsCommand;
 import io.mango.resource.api.enums.ResourceApplyMode;
 import io.mango.resource.support.config.ResourceRegistryProperties;
 import io.mango.resource.support.declaration.ResourceDeclarationCollector;
+import io.mango.resource.support.declaration.ResourceDeclarationCanonicalizer;
 import io.mango.resource.support.model.ResourceDeclaration;
 import org.springframework.util.StringUtils;
 
@@ -26,6 +27,7 @@ public final class ResourceBootstrapStepContributor implements BootstrapStepCont
     private final ResourceDeclarationCollector collector;
     private final ResourceDeclarationApi declarationApi;
     private final ResourceManifestSerializer manifestSerializer;
+    private final ResourceDeclarationCanonicalizer canonicalizer;
     private final String applicationName;
 
     @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
@@ -34,11 +36,13 @@ public final class ResourceBootstrapStepContributor implements BootstrapStepCont
                                             ResourceDeclarationCollector collector,
                                             ResourceDeclarationApi declarationApi,
                                             ResourceManifestSerializer manifestSerializer,
+                                            ResourceDeclarationCanonicalizer canonicalizer,
                                             String applicationName) {
         this.properties = properties;
         this.collector = collector;
         this.declarationApi = declarationApi;
         this.manifestSerializer = manifestSerializer;
+        this.canonicalizer = canonicalizer;
         this.applicationName = applicationName;
     }
 
@@ -59,8 +63,11 @@ public final class ResourceBootstrapStepContributor implements BootstrapStepCont
                 .sorted(Comparator.comparing(ResourceDeclaration::getId))
                 .toList();
         List<String> moduleCodes = collector.managedBootstrapModuleCodes(declarations).stream().sorted().toList();
+        List<String> semanticInventory = declarations.stream()
+                .map(declaration -> declaration.getId() + "=" + canonicalizer.fingerprint(declaration))
+                .toList();
         return new PreparedDeclarations(declarations, moduleCodes,
-                manifestSerializer.serialize(declarations));
+                manifestSerializer.serialize(declarations), semanticInventory);
     }
 
     private String appCode() {
@@ -122,8 +129,8 @@ public final class ResourceBootstrapStepContributor implements BootstrapStepCont
 
         @Override
         public String fingerprintMaterial() {
-            return "resource-v1|" + applyMode + "|" + appCode() + "|" + serviceCode() + "|"
-                    + prepared.moduleCodes() + "|" + prepared.json();
+            return "resource-v2|" + applyMode + "|" + appCode() + "|" + serviceCode() + "|"
+                    + prepared.moduleCodes() + "|inventory=" + prepared.semanticInventory();
         }
 
         @Override
@@ -152,6 +159,7 @@ public final class ResourceBootstrapStepContributor implements BootstrapStepCont
     private record PreparedDeclarations(
             List<ResourceDeclaration> declarations,
             List<String> moduleCodes,
-            String json) {
+            String json,
+            List<String> semanticInventory) {
     }
 }

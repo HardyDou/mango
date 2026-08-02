@@ -1,1 +1,2 @@
 io.mango.job.starter.JobAutoConfiguration
+io.mango.job.starter.JobRuntimeAutoConfiguration

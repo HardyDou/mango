@@ -13,8 +13,9 @@ test('generated backend gate stays within nine Maven invocations', () => {
   assert.ok(Number(budgetMatch[1]) <= 9, 'Maven invocation budget must remain at most nine');
 
   const runMavenReferences = gateSource.match(/\brunMaven\(/gu) || [];
+  const externalConsumerReferences = gateSource.match(/\brunExternalConsumer\(/gu) || [];
   assert.equal(
-    runMavenReferences.length - 1,
+    runMavenReferences.length - 1 + externalConsumerReferences.length - 1,
     Number(budgetMatch[1]),
     'each Maven scenario must be an explicit, budgeted call site',
   );
@@ -37,6 +38,9 @@ test('combined Maven scenarios retain the critical positive and negative coverag
     "assertMangoCheckRule('MODULE_INFO')",
     "globalEntityManifestJson('order_global_reference')",
     'assertGeneratedPolicyContract();',
+    "['-Dmango.architecture.inventoryOnly=true', 'install']",
+    'assertFlattenedInstalledPoms();',
+    'runExternalConsumer();',
   ]) {
     assert.ok(gateSource.includes(expected), `coverage contract missing ${expected}`);
   }

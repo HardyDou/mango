@@ -258,7 +258,18 @@ test('CI reruns when policy-resolved assurance selections change and keeps expli
   );
   assert.match(
     workflow,
-    /Build generated four-layer backend prerequisites[\s\S]*?:mango-infra-bootstrap-api[\s\S]*?:mango-infra-persistence-api[\s\S]*?:mango-infra-feign-starter[\s\S]*?install/,
+    /Build generated four-layer backend prerequisites[\s\S]*?:mango-infra-bootstrap-api[\s\S]*?:mango-infra-persistence-api[\s\S]*?:mango-infra-feign-starter[\s\S]*?:mango-admin-starter[\s\S]*?\n\s+-am \\[\s\S]*?install/,
+  );
+  const javaJob = workflow.match(/\n  java:\n[\s\S]*?(?=\n  docs:)/)?.[0] ?? '';
+  assert.match(javaJob, /Set up pnpm for generated backend gates[\s\S]*?pnpm\/action-setup@v4/);
+  assert.match(
+    javaJob,
+    /Install CLI runtime dependencies for generated backend acceptance[\s\S]*?pnpm --dir mango-ui install[\s\S]*?--frozen-lockfile[\s\S]*?--filter @mango\/cli\.\.\.[\s\S]*?--ignore-scripts/,
+  );
+  assert.ok(
+    javaJob.indexOf('Install CLI runtime dependencies for generated backend acceptance')
+      < javaJob.indexOf('Generate trusted full-Reactor architecture inventory for governance'),
+    'Java generated-backend CLI dependencies must fail fast before the full Reactor inventory',
   );
   const dependencyBuild = workflow.match(
     /      - name: Build affected-module upstream dependencies[\s\S]*?(?=\n      - name:)/,

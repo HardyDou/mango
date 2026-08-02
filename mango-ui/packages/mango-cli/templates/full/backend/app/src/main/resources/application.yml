@@ -33,6 +33,8 @@ mybatis-plus:
       id-type: auto
 
 mango:
+  bootstrap:
+    receipt-directory: ${MANGO_BOOTSTRAP_RECEIPT_DIRECTORY:../.mango/bootstrap}
   security:
     jwt:
       secret: ${JWT_SECRET:mango-secret-key-for-jwt-token-generation-must-be-at-least-256-bits}
@@ -73,6 +75,7 @@ mango:
       type: jdbc
     capability:
       enabled: true
+      locker: true
       token-store: true
       outbox: true
   persistence:

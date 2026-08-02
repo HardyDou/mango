@@ -8,6 +8,7 @@ import {
   lstatSync,
   mkdirSync,
   openSync,
+  readlinkSync,
   readdirSync,
   readFileSync,
   realpathSync,
@@ -28,6 +29,7 @@ import { fileURLToPath } from 'node:url';
 import { inspectProjectPullRequestTemplate, synchronizeProjectPullRequestTemplate } from './pmo-project-template.mjs';
 import { resolveHealthPollIntervalMs } from './dev-health-policy.mjs';
 import { shouldRunDevInstall } from './dev-install-policy.mjs';
+import { injectStableBootstrapIdentity, readStableBootstrapReceipt } from './dev-bootstrap-receipt.mjs';
 import {
   buildWorkspaceMavenRevisionQualifier,
   injectMavenRevisionArgs,
@@ -130,6 +132,7 @@ const ADMIN_OPTIONAL_PEER_PACKAGES = ADMIN_FULL_MODULES.map(toFrontendDependency
 
 const CORE_BACKEND_DEPENDENCIES = [
   { groupId: 'io.mango.common', artifactId: 'mango-common' },
+  { groupId: 'io.mango.infra.bootstrap', artifactId: 'mango-infra-bootstrap-starter' },
   { groupId: 'io.mango.infra.module', artifactId: 'mango-infra-module-starter' },
   { groupId: 'io.mango.infra.kv', artifactId: 'mango-infra-kv-starter' },
   { groupId: 'io.mango.infra.event', artifactId: 'mango-infra-event-starter' },
@@ -719,6 +722,13 @@ function addBusinessModule(argv) {
   if (!aggregateKebab) {
     fail('missing business aggregate name');
   }
+  const moduleDisplayName = requireChineseDisplayName(
+    options.moduleName || `${toPascalCase(moduleKebab)}模块`,
+    '--module-name',
+  );
+  const aggregateDisplayName = options.aggregateName
+    ? requireChineseDisplayName(options.aggregateName, '--aggregate-name')
+    : toPascalCase(aggregateKebab);
   const moduleTarget = join(targetDir, 'backend/modules', moduleKebab);
   if (existsSync(moduleTarget) && !options.force) {
     fail(`business module already exists: ${moduleKebab}`);
@@ -740,36 +750,207 @@ function addBusinessModule(argv) {
     modulePackage: toJavaSegment(moduleKebab),
     modulePascal: toPascalCase(moduleKebab),
     moduleCamel: toCamelCase(moduleKebab),
-    moduleName: options.moduleName || `${toPascalCase(moduleKebab)}模块`,
+    moduleName: moduleDisplayName,
     moduleBusinessDomainCode: toSnakeCase(moduleKebab).toUpperCase(),
     moduleKebabSnake: toSnakeCase(moduleKebab),
     aggregateKebab,
     aggregateKebabSnake: toSnakeCase(aggregateKebab),
     aggregatePascal: toPascalCase(aggregateKebab),
     aggregateCamel: toCamelCase(aggregateKebab),
-    aggregateName: options.aggregateName || toPascalCase(aggregateKebab),
+    aggregateName: aggregateDisplayName,
+    businessResourceMenuId: stableResourceDeclarationId(
+      config.groupId || config.basePackage || 'com.example.mango',
+      config.project || basename(targetDir),
+      moduleKebab,
+      'auth-menu',
+    ),
     backendBusinessFlywayModules: '',
   };
-  copyTemplate(join(businessStarterRoot, 'backend/modules/{{moduleKebab}}'), moduleTarget, variables);
-  copyTemplate(
-    join(businessStarterRoot, 'frontend/packages/{{moduleKebab}}-api'),
-    join(targetDir, 'frontend/packages', `${moduleKebab}-api`),
-    variables,
-  );
-  copyTemplate(
-    join(businessStarterRoot, 'frontend/packages/{{moduleKebab}}'),
-    join(targetDir, 'frontend/packages', moduleKebab),
-    variables,
-  );
-  assertNoUnrenderedPlaceholders(targetDir, [
-    `backend/modules/${moduleKebab}`,
-    `frontend/packages/${moduleKebab}-api`,
-    `frontend/packages/${moduleKebab}`,
-  ]);
-  updateBackendBusinessIntegration(targetDir, variables);
-  updateFrontendBusinessIntegration(targetDir, variables);
-  updateBusinessConfig(targetDir, config, variables);
+  const frontendApiTarget = join(targetDir, 'frontend/packages', `${moduleKebab}-api`);
+  const frontendModuleTarget = join(targetDir, 'frontend/packages', moduleKebab);
+  const transactionPaths = [
+    moduleTarget,
+    frontendApiTarget,
+    frontendModuleTarget,
+    join(targetDir, 'backend/pom.xml'),
+    join(targetDir, 'backend/app/pom.xml'),
+    join(targetDir, 'backend/app/src/main/resources/application.yml'),
+    join(targetDir, 'frontend/package.json'),
+    join(targetDir, 'frontend/src/main.ts'),
+    join(targetDir, 'frontend/pnpm-lock.yaml'),
+    configPath,
+  ];
+  const snapshots = transactionPaths.map(captureBusinessModuleSnapshot);
+  let stage = 'render';
+  try {
+    if (options.force) {
+      for (const path of [moduleTarget, frontendApiTarget, frontendModuleTarget]) {
+        rmSync(path, { recursive: true, force: true });
+      }
+    }
+    copyTemplate(join(businessStarterRoot, 'backend/modules/{{moduleKebab}}'), moduleTarget, variables);
+    copyTemplate(join(businessStarterRoot, 'frontend/packages/{{moduleKebab}}-api'), frontendApiTarget, variables);
+    copyTemplate(join(businessStarterRoot, 'frontend/packages/{{moduleKebab}}'), frontendModuleTarget, variables);
+    assertNoUnrenderedPlaceholders(targetDir, [
+      `backend/modules/${moduleKebab}`,
+      `frontend/packages/${moduleKebab}-api`,
+      `frontend/packages/${moduleKebab}`,
+    ]);
+    stage = 'integrate';
+    updateBackendBusinessIntegration(targetDir, variables);
+    updateFrontendBusinessIntegration(targetDir, variables);
+    updateBusinessConfig(targetDir, config, variables);
+    stage = 'format';
+    formatBusinessModuleFrontend(targetDir, variables);
+    stage = 'lockfile';
+    synchronizeBusinessModuleLockfile(targetDir, variables);
+  } catch (error) {
+    const recoveryFailures = [];
+    for (const snapshot of [...snapshots].reverse()) {
+      try {
+        restoreBusinessModuleSnapshot(snapshot);
+      } catch (recoveryError) {
+        recoveryFailures.push(`${snapshot.path}: ${recoveryError.message}`);
+      }
+    }
+    const recovery =
+      recoveryFailures.length === 0 ? 'restored byte-for-byte' : `restore failures: ${recoveryFailures.join('; ')}`;
+    throw new Error(`MODULE_ADD_TRANSACTION_FAILED stage=${stage}; ${recovery}; cause=${error.message}`, {
+      cause: error,
+    });
+  }
   process.stdout.write(`Added business module: ${moduleKebab} (${aggregateKebab})\n`);
+}
+
+function captureBusinessModuleSnapshot(path) {
+  if (!existsSync(path)) {
+    return { path, node: null };
+  }
+  return { path, node: captureBusinessModuleNode(path) };
+}
+
+function captureBusinessModuleNode(path) {
+  const stat = lstatSync(path);
+  if (stat.isSymbolicLink()) {
+    return { type: 'symlink', target: readlinkSync(path) };
+  }
+  if (stat.isDirectory()) {
+    return {
+      type: 'directory',
+      mode: stat.mode,
+      children: readdirSync(path).map((name) => ({ name, node: captureBusinessModuleNode(join(path, name)) })),
+    };
+  }
+  if (!stat.isFile()) {
+    throw new Error(`unsupported module transaction path type: ${path}`);
+  }
+  return { type: 'file', mode: stat.mode, content: readFileSync(path) };
+}
+
+function restoreBusinessModuleSnapshot(snapshot) {
+  rmSync(snapshot.path, { recursive: true, force: true });
+  if (snapshot.node) {
+    restoreBusinessModuleNode(snapshot.path, snapshot.node);
+  }
+}
+
+function restoreBusinessModuleNode(path, node) {
+  if (node.type === 'symlink') {
+    mkdirSync(dirname(path), { recursive: true });
+    symlinkSync(node.target, path);
+    return;
+  }
+  if (node.type === 'directory') {
+    mkdirSync(path, { recursive: true, mode: node.mode });
+    for (const child of node.children) {
+      restoreBusinessModuleNode(join(path, child.name), child.node);
+    }
+    chmodSync(path, node.mode);
+    return;
+  }
+  mkdirSync(dirname(path), { recursive: true });
+  writeFileSync(path, node.content, { mode: node.mode });
+  chmodSync(path, node.mode);
+}
+
+function formatBusinessModuleFrontend(targetDir, variables) {
+  const frontendRoot = join(targetDir, 'frontend');
+  const packageJson = JSON.parse(readFileSync(join(frontendRoot, 'package.json'), 'utf8'));
+  const prettierVersion = packageJson.devDependencies?.prettier;
+  if (!/^\d+\.\d+\.\d+$/u.test(prettierVersion ?? '')) {
+    throw new Error(`generated frontend must declare an exact Prettier version, got ${prettierVersion ?? 'missing'}`);
+  }
+  let cliPrettierPackage;
+  let cliPrettier;
+  try {
+    cliPrettierPackage = requireFromCli.resolve('prettier/package.json');
+    cliPrettier = requireFromCli.resolve('prettier/bin/prettier.cjs');
+  } catch (error) {
+    throw new Error('the installed @mango/cli is missing its Prettier runtime dependency; reinstall @mango/cli', {
+      cause: error,
+    });
+  }
+  const cliPrettierVersion = JSON.parse(readFileSync(cliPrettierPackage, 'utf8')).version;
+  if (cliPrettierVersion !== prettierVersion) {
+    throw new Error(
+      `Prettier version mismatch: @mango/cli provides ${cliPrettierVersion}, generated frontend requires ${prettierVersion}`,
+    );
+  }
+  const targets = [
+    'package.json',
+    'src/main.ts',
+    `packages/${variables.moduleKebab}-api`,
+    `packages/${variables.moduleKebab}`,
+  ];
+  runBusinessModuleCommand(process.execPath, [cliPrettier, '--write', ...targets], frontendRoot, 'Prettier');
+}
+
+function synchronizeBusinessModuleLockfile(targetDir, variables) {
+  const frontendRoot = join(targetDir, 'frontend');
+  const pnpm = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm';
+  runBusinessModuleCommand(
+    pnpm,
+    ['install', '--lockfile-only', '--ignore-scripts'],
+    frontendRoot,
+    'pnpm lockfile update',
+  );
+  runBusinessModuleCommand(
+    pnpm,
+    ['install', '--frozen-lockfile', '--lockfile-only', '--ignore-scripts'],
+    frontendRoot,
+    'pnpm frozen lockfile verification',
+  );
+  const lockfilePath = join(frontendRoot, 'pnpm-lock.yaml');
+  if (!existsSync(lockfilePath)) {
+    throw new Error('pnpm did not create frontend/pnpm-lock.yaml');
+  }
+  const lockfile = readFileSync(lockfilePath, 'utf8');
+  for (const importer of [`packages/${variables.moduleKebab}`, `packages/${variables.moduleKebab}-api`]) {
+    if (!lockfile.includes(`  ${importer}:`)) {
+      throw new Error(`pnpm lockfile is missing workspace importer ${importer}`);
+    }
+  }
+}
+
+function runBusinessModuleCommand(command, args, cwd, label) {
+  const result = spawnSync(command, args, {
+    cwd,
+    encoding: 'utf8',
+    maxBuffer: 50 * 1024 * 1024,
+    shell: process.platform === 'win32' && command.endsWith('.cmd'),
+  });
+  if (result.error) {
+    throw new Error(`${label} could not start: ${result.error.message}`);
+  }
+  if (result.status !== 0) {
+    throw new Error(`${label} failed (exit ${result.status}):\n${result.stdout ?? ''}\n${result.stderr ?? ''}`);
+  }
+}
+
+function stableResourceDeclarationId(...parts) {
+  const digest = createHash('sha256').update(parts.join(':')).digest('hex');
+  const suffix = (BigInt(`0x${digest.slice(0, 16)}`) % 10_000_000_000_000n).toString().padStart(13, '0');
+  return `269069${suffix}`;
 }
 
 const DEV_WORKSPACE_COMMANDS = new Set([
@@ -1416,6 +1597,7 @@ function defaultBusinessDevManifest(projectName) {
     apps: {
       backend: {
         type: 'spring-boot-maven',
+        processMode: 'runtime',
         cwd: 'backend',
         pom: 'app/pom.xml',
         install: {
@@ -1429,7 +1611,6 @@ function defaultBusinessDevManifest(projectName) {
           MANGO_CRYPTO_SM4_SECRET_KEY: '${env.MANGO_CRYPTO_SM4_SECRET_KEY}',
         },
         args: [
-          'runtime',
           '--server.port=${port}',
           '--spring.datasource.url=jdbc:mysql://${env.MANGO_DB_HOST}:${env.MANGO_DB_PORT}/${env.MANGO_DB_NAME}?useUnicode=true&characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai',
           '--spring.datasource.username=${env.MANGO_DB_USERNAME}',
@@ -1617,6 +1798,7 @@ function hasViteConfig(directory) {
 function buildSpringBootDevApp(cwd, index) {
   const app = {
     type: 'spring-boot-maven',
+    processMode: 'runtime',
     cwd,
     pom: 'pom.xml',
     port: 5555 + index,
@@ -1625,7 +1807,6 @@ function buildSpringBootDevApp(cwd, index) {
       MANGO_CRYPTO_SM4_SECRET_KEY: '${env.MANGO_CRYPTO_SM4_SECRET_KEY}',
     },
     args: [
-      'runtime',
       '--server.port=${port}',
       '--spring.datasource.url=jdbc:mysql://${env.MANGO_DB_HOST}:${env.MANGO_DB_PORT}/${env.MANGO_DB_NAME}?useUnicode=true&characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai',
       '--spring.datasource.username=${env.MANGO_DB_USERNAME}',
@@ -1820,9 +2001,23 @@ function validateDevWorkspace(context, { verbose }) {
       if (!existsSync(pomPath)) {
         errors.push(`${name}: pom not found: ${relativeOrAbsolute(context.root, pomPath)}`);
       }
+      if (app.bootstrapReceiptDirectory) {
+        const receiptDirectory = resolve(cwdPath, app.bootstrapReceiptDirectory);
+        if (!isPathInside(receiptDirectory, context.root)) {
+          errors.push(`${name}: bootstrapReceiptDirectory must stay inside the workspace`);
+        }
+      }
     }
     if (app.type === 'spring-boot-maven' && app.goal && app.goal === 'spring-boot:run') {
       errors.push(`${name}: use explicit Spring Boot Maven plugin coordinate instead of spring-boot:run`);
+    }
+    if (app.type === 'spring-boot-maven') {
+      const processMode = app.processMode || 'runtime';
+      if (!['bootstrap', 'runtime'].includes(processMode)) {
+        errors.push(`${name}: unsupported Mango processMode ${processMode}; expected bootstrap or runtime`);
+      } else if (processMode !== 'runtime') {
+        errors.push(`${name}: mango dev requires processMode runtime; use the Bootstrap CLI for initialization`);
+      }
     }
   }
   for (const [groupName, members] of Object.entries(manifest?.groups || {})) {
@@ -1910,6 +2105,7 @@ function printDevWorkspacePlan(context, targets) {
   process.stdout.write(`Start plan for ${relativeOrAbsolute(process.cwd(), context.root)}\n`);
   for (const name of appNames) {
     const resolved = resolveDevApp(context, name, context.manifest.apps[name]);
+    applyStableBootstrapReceipt(context, resolved);
     process.stdout.write(`  ${name}\n`);
     process.stdout.write(`    type: ${resolved.type}\n`);
     process.stdout.write(`    cwd:  ${relativeOrAbsolute(context.root, resolved.cwd)}\n`);
@@ -1934,6 +2130,7 @@ async function startDevWorkspace(context, targets) {
   const appNames = resolveDevWorkspaceTargets(context, targets.length > 0 ? targets : ['default']);
   for (const name of appNames) {
     const resolved = resolveDevApp(context, name, context.manifest.apps[name]);
+    applyStableBootstrapReceipt(context, resolved);
     const current = readPidFile(context, name);
     if (current && isProcessAlive(current.pid)) {
       process.stdout.write(`${name} is already running: pid=${current.pid}\n`);
@@ -2732,6 +2929,45 @@ function applyWorkspaceMavenRevision(context, app) {
   }
 }
 
+function applyStableBootstrapReceipt(context, app) {
+  if (
+    app.type !== 'spring-boot-maven' ||
+    (app.processMode || 'runtime') !== 'runtime' ||
+    app.lifecycleManaged ||
+    !usesMangoApplication(app)
+  ) {
+    return;
+  }
+  const workspace = ensureWorkspaceConfig(context.root);
+  const directories = resolveBootstrapReceiptDirectories(context, app);
+  try {
+    const receipt = readStableBootstrapReceipt({
+      directories,
+      workspaceRoot: context.root,
+      workspaceId: workspace.workspaceId,
+      databaseName: workspace.dbName,
+      expectedRevision: app.mavenRevision,
+    });
+    app.args = injectStableBootstrapIdentity(app.args, receipt);
+    app.bootstrapReceipt = receipt;
+  } catch (error) {
+    fail(`${app.name}: ${error.code || 'BOOTSTRAP_RUNTIME_RECEIPT_INVALID'} ${error.message}`);
+  }
+}
+
+function resolveBootstrapReceiptDirectories(context, app) {
+  const configured = app.bootstrapReceiptDirectory
+    ? [resolve(app.cwd, app.bootstrapReceiptDirectory)]
+    : [join(context.root, '.mango/bootstrap'), join(app.cwd, '.mango/bootstrap')];
+  const unique = [...new Set(configured.map((directory) => resolve(directory)))];
+  for (const directory of unique) {
+    if (!isPathInside(directory, context.root)) {
+      fail(`${app.name}: bootstrap receipt directory must stay inside the workspace: ${directory}`);
+    }
+  }
+  return unique;
+}
+
 function findMavenRevisionRootPom(workspaceRoot, app) {
   const candidates = [];
   const installPom = findMavenPomArgument(app.install?.args || []);
@@ -2805,10 +3041,18 @@ function resolveDevCommand(context, app, vars) {
     const goal = app.goal || DEFAULT_SPRING_BOOT_PLUGIN;
     const configuredSpringArgs = (app.args || []).map((arg) => interpolateValue(String(arg), vars)).filter(Boolean);
     const lifecycleManaged = app.mangoLifecycle === true || usesMangoApplication(app);
-    const springArgs =
-      lifecycleManaged && !isMangoLifecycleMode(configuredSpringArgs[0])
-        ? ['runtime', ...configuredSpringArgs]
-        : configuredSpringArgs;
+    const processMode = app.processMode || 'runtime';
+    const resolvedArgs = (app.args || []).map((arg) => interpolateValue(String(arg), vars)).filter(Boolean);
+    const modeArguments = configuredSpringArgs
+      .flatMap((arg) => arg.trim().split(/\s+/u))
+      .filter((arg) => arg === 'bootstrap' || arg === 'runtime');
+    if (modeArguments.length > 0) {
+      fail(
+        `${app.name}: process mode must be declared only through processMode; ` +
+          `remove ${modeArguments.join(', ')} from app.args`,
+      );
+    }
+    const springArgs = [processMode, ...configuredSpringArgs];
     return {
       command: 'mvn',
       args: ['-f', pom, `-Dspring-boot.run.arguments=${springArgs.join(' ')}`, goal],
@@ -3377,6 +3621,7 @@ function syncPmoBaseline(argv, { command = 'sync' } = {}) {
   const projectTemplatePlan = planPmoProjectTemplateSync(targetDir, baseline);
   const governanceWorkflowPlan = planPmoGovernanceWorkflowSync(targetDir, variables, options.adoptGovernance);
   const plan = [
+    ...(command === 'upgrade' ? planReleaseTupleUpgrade(targetDir, baseline) : []),
     ...planPmoBaselineSync(targetDir, baseline),
     ...planPmoSkillSync(targetDir, baseline),
     ...historicalPmoVersionPlan,
@@ -3408,35 +3653,65 @@ function syncPmoBaseline(argv, { command = 'sync' } = {}) {
         `mango pmo ${command} --project-dir . --adopt-governance`,
     );
   }
-  if (
-    plan.some(
-      (item) =>
-        ['pmo-bundle', 'project-pr-template', 'project-governance-workflow'].includes(item.scope) &&
-        !['skip', 'warn'].includes(item.action),
-    )
-  ) {
-    installPmoBundleAtomic(targetDir, baseline);
-  }
-  for (const item of plan) {
+  const snapshots = capturePmoUpgradeSnapshots(plan);
+  let pmoInstallResult = null;
+  let historicalPmoVersionResult;
+  let releaseTupleWriteCount = 0;
+  try {
     if (
-      item.scope === 'pmo-bundle' ||
-      item.scope === 'historical-pmo-version' ||
-      item.action === 'skip' ||
-      item.action === 'warn'
+      plan.some(
+        (item) =>
+          ['pmo-bundle', 'project-pr-template', 'project-governance-workflow'].includes(item.scope) &&
+          !['skip', 'warn'].includes(item.action),
+      )
     ) {
-      continue;
+      pmoInstallResult = installPmoBundleAtomic(targetDir, baseline);
     }
-    if (item.action === 'delete') {
-      rmSync(item.targetPath, { recursive: true, force: true });
-      continue;
+    for (const item of plan) {
+      if (
+        item.scope === 'pmo-bundle' ||
+        item.scope === 'historical-pmo-version' ||
+        item.action === 'skip' ||
+        item.action === 'warn'
+      ) {
+        continue;
+      }
+      if (item.action === 'delete') {
+        rmSync(item.targetPath, { recursive: true, force: true });
+      } else {
+        writePlannedFile(item);
+      }
+      if (item.scope === 'release-tuple') {
+        releaseTupleWriteCount += 1;
+        injectReleaseTupleWriteFailure(releaseTupleWriteCount);
+      }
     }
-    writePlannedFile(item);
-  }
-  const historicalPmoVersionResult =
-    command === 'upgrade' ? runHistoricalPmoVersionCompatibility(targetDir, baseline) : null;
-  const status = getPmoStatus(targetDir, { locked: true });
-  if (status.errors.length > 0 || status.warnings.length > 0) {
-    fail(`PMO baseline ${command} verification failed:\n${formatPmoStatusProblems(status)}`);
+    historicalPmoVersionResult =
+      command === 'upgrade' ? runHistoricalPmoVersionCompatibility(targetDir, baseline) : null;
+    const status = getPmoStatus(targetDir, { locked: true });
+    if (status.errors.length > 0 || status.warnings.length > 0) {
+      throw new Error(`PMO baseline ${command} verification failed:\n${formatPmoStatusProblems(status)}`);
+    }
+    if (command === 'upgrade') {
+      verifyReleaseTupleUpgrade(targetDir, baseline);
+    }
+  } catch (error) {
+    const recoveryFailures = [];
+    if (pmoInstallResult) {
+      attemptPmoRecovery(
+        () => restorePreviousPmoBundle(targetDir, pmoInstallResult),
+        'restore previous PMO bundle',
+        recoveryFailures,
+      );
+    }
+    restorePmoUpgradeSnapshots(snapshots, recoveryFailures);
+    const recovery =
+      recoveryFailures.length === 0
+        ? 'all managed project files restored byte-for-byte'
+        : `recovery incomplete: ${recoveryFailures.join('; ')}`;
+    throw new Error(`PMO baseline ${command} transaction failed (${recovery}): ${error.message}`, {
+      cause: error,
+    });
   }
   const synced = summary.add + summary.update;
   process.stdout.write(
@@ -3450,6 +3725,271 @@ function syncPmoBaseline(argv, { command = 'sync' } = {}) {
       `Historical PMO version baseline locked ${historicalPmoVersionResult.added.length} lifecycle document(s).\n`,
     );
   }
+}
+
+function planReleaseTupleUpgrade(targetDir, baseline) {
+  const tuple = resolveReleaseTuple(baseline);
+  const configPath = join(targetDir, 'mango.config.json');
+  if (!existsSync(configPath)) {
+    process.stdout.write('Release tuple: skipped because this PMO consumer has no mango.config.json\n');
+    return [];
+  }
+  const config = readJsonFile(configPath);
+  const backendRoot = resolveManagedProjectPath(targetDir, config.paths?.backend || 'backend', 'paths.backend');
+  const frontendRoot = resolveManagedProjectPath(targetDir, config.paths?.frontend || 'frontend', 'paths.frontend');
+  const pomPath = join(backendRoot, 'pom.xml');
+  const packagePath = join(frontendRoot, 'package.json');
+  if (!existsSync(pomPath) || !existsSync(packagePath)) {
+    fail(`release tuple requires ${relative(targetDir, pomPath)} and ${relative(targetDir, packagePath)}`);
+  }
+
+  const pom = readFileSync(pomPath, 'utf8');
+  const mangoVersionMatches = [...pom.matchAll(/<mango\.version>\s*([^<\s]+)\s*<\/mango\.version>/g)];
+  if (mangoVersionMatches.length !== 1) {
+    fail(`release tuple requires exactly one <mango.version> in ${relative(targetDir, pomPath)}`);
+  }
+  const currentMavenVersion = mangoVersionMatches[0][1];
+  if (config.mangoBackendVersion && config.mangoBackendVersion !== currentMavenVersion) {
+    fail(
+      `release tuple conflict: mango.config.json mangoBackendVersion=${config.mangoBackendVersion} ` +
+        `but ${relative(targetDir, pomPath)} uses ${currentMavenVersion}`,
+    );
+  }
+
+  const packageJson = readJsonFile(packagePath);
+  const packageLocations = collectManagedMangoPackageLocations(packageJson);
+  const cliLocation = packageLocations.find((entry) => entry.name === '@mango/cli');
+  if (!cliLocation) {
+    fail(`release tuple requires project-local @mango/cli in ${relative(targetDir, packagePath)}`);
+  }
+  const configuredFrontendVersions = config.mangoFrontendVersions || {};
+  if (!isPlainObject(configuredFrontendVersions)) {
+    fail('release tuple requires mango.config.json mangoFrontendVersions to be an object');
+  }
+  const managedPackageNames = new Set([
+    ...Object.keys(configuredFrontendVersions),
+    ...packageLocations.map((entry) => entry.name),
+  ]);
+  for (const name of managedPackageNames) {
+    if (!name.startsWith('@mango/')) {
+      fail(`release tuple found non-Mango package in mangoFrontendVersions: ${name}`);
+    }
+    if (!tuple.npm[name]) {
+      fail(`release-versions.json is missing managed package ${name}`);
+    }
+  }
+  for (const entry of packageLocations) {
+    const configured = configuredFrontendVersions[entry.name];
+    if (configured && configured !== entry.version) {
+      fail(
+        `release tuple conflict: mango.config.json ${entry.name}=${configured} ` +
+          `but ${relative(targetDir, packagePath)} ${entry.section}.${entry.name}=${entry.version}`,
+      );
+    }
+  }
+  if (config.mangoCliVersion && config.mangoCliVersion !== cliLocation.version) {
+    fail(
+      `release tuple conflict: mango.config.json mangoCliVersion=${config.mangoCliVersion} ` +
+        `but project-local @mango/cli=${cliLocation.version}`,
+    );
+  }
+  const installedLock = readPmoLock(targetDir);
+  const allowedConfiguredPmoVersions = new Set(
+    [installedLock?.packageVersion, tuple.npm['@mango/pmo']].filter(Boolean),
+  );
+  if (
+    config.mangoPmoVersion &&
+    installedLock?.packageVersion &&
+    !allowedConfiguredPmoVersions.has(config.mangoPmoVersion)
+  ) {
+    fail(
+      `release tuple conflict: mango.config.json mangoPmoVersion=${config.mangoPmoVersion} ` +
+        `matches neither installed pmo-lock.json packageVersion=${installedLock.packageVersion} ` +
+        `nor upgrade target=${tuple.npm['@mango/pmo']}`,
+    );
+  }
+
+  const nextConfig = structuredClone(config);
+  nextConfig.mangoBackendVersion = tuple.maven;
+  nextConfig.mangoCliVersion = tuple.npm['@mango/cli'];
+  nextConfig.mangoPmoVersion = tuple.npm['@mango/pmo'];
+  nextConfig.mangoFrontendVersions = { ...configuredFrontendVersions };
+  for (const name of managedPackageNames) {
+    if (name !== '@mango/cli' && name !== '@mango/pmo') {
+      nextConfig.mangoFrontendVersions[name] = tuple.npm[name];
+    }
+  }
+
+  const nextPackageJson = structuredClone(packageJson);
+  for (const entry of packageLocations) {
+    nextPackageJson[entry.section][entry.name] = tuple.npm[entry.name];
+  }
+  const nextPom = pom.replace(
+    /<mango\.version>\s*[^<\s]+\s*<\/mango\.version>/,
+    `<mango.version>${tuple.maven}</mango.version>`,
+  );
+  const plan = [
+    createReleaseTupleFilePlan(
+      targetDir,
+      configPath,
+      `${JSON.stringify(nextConfig, null, 2)}\n`,
+      'Mango version tuple',
+    ),
+    createReleaseTupleFilePlan(targetDir, pomPath, nextPom, `Maven ${currentMavenVersion} -> ${tuple.maven}`),
+    createReleaseTupleFilePlan(
+      targetDir,
+      packagePath,
+      `${JSON.stringify(nextPackageJson, null, 2)}\n`,
+      `${packageLocations.length} managed npm package(s)`,
+    ),
+  ];
+  process.stdout.write(
+    `Release tuple target: Maven ${tuple.maven}, CLI ${tuple.npm['@mango/cli']}, PMO ${tuple.npm['@mango/pmo']}, ` +
+      `${managedPackageNames.size} managed npm package(s)\n`,
+  );
+  return plan;
+}
+
+function resolveReleaseTuple(baseline) {
+  const mavenVersion = releaseVersions.maven?.mangoBackend;
+  const cliVersion = releaseVersions.npm?.['@mango/cli'];
+  const pmoVersion = releaseVersions.npm?.['@mango/pmo'];
+  if (!mavenVersion || !cliVersion || !pmoVersion) {
+    fail('release-versions.json must declare maven.mangoBackend, npm.@mango/cli, and npm.@mango/pmo');
+  }
+  if (baseline.manifest.packageVersion !== pmoVersion) {
+    fail(
+      `release tuple PMO ${pmoVersion} does not match selected @mango/pmo baseline ${baseline.manifest.packageVersion}`,
+    );
+  }
+  return { maven: mavenVersion, npm: releaseVersions.npm };
+}
+
+function resolveManagedProjectPath(targetDir, configuredPath, field) {
+  if (typeof configuredPath !== 'string' || !configuredPath.trim() || isAbsolute(configuredPath)) {
+    fail(`release tuple requires mango.config.json ${field} to be a non-empty project-relative path`);
+  }
+  const resolvedPath = resolve(targetDir, configuredPath);
+  const relativePath = relative(targetDir, resolvedPath);
+  if (
+    relativePath === '..' ||
+    relativePath.startsWith('../') ||
+    relativePath.startsWith('..\\') ||
+    isAbsolute(relativePath)
+  ) {
+    fail(`release tuple requires mango.config.json ${field} to stay inside the project directory`);
+  }
+  return resolvedPath;
+}
+
+function collectManagedMangoPackageLocations(packageJson) {
+  const result = [];
+  for (const section of ['dependencies', 'devDependencies', 'optionalDependencies', 'peerDependencies']) {
+    const dependencies = packageJson[section];
+    if (dependencies === undefined) continue;
+    if (!isPlainObject(dependencies)) {
+      fail(`release tuple requires frontend/package.json ${section} to be an object`);
+    }
+    for (const [name, version] of Object.entries(dependencies)) {
+      if (name.startsWith('@mango/')) {
+        result.push({ section, name, version });
+      }
+    }
+  }
+  return result;
+}
+
+function createReleaseTupleFilePlan(targetDir, targetPath, content, reason) {
+  const current = readFileSync(targetPath, 'utf8');
+  return {
+    action: current === content ? 'skip' : 'update',
+    path: toPosix(relative(targetDir, targetPath)),
+    targetPath,
+    content,
+    reason,
+    scope: 'release-tuple',
+  };
+}
+
+function verifyReleaseTupleUpgrade(targetDir, baseline) {
+  if (!existsSync(join(targetDir, 'mango.config.json'))) return;
+  const tuple = resolveReleaseTuple(baseline);
+  const config = readJsonFile(join(targetDir, 'mango.config.json'));
+  const backendRoot = resolveManagedProjectPath(targetDir, config.paths?.backend || 'backend', 'paths.backend');
+  const frontendRoot = resolveManagedProjectPath(targetDir, config.paths?.frontend || 'frontend', 'paths.frontend');
+  const pomVersion = readMangoVersionFromPom(backendRoot);
+  const packageJson = readJsonFile(join(frontendRoot, 'package.json'));
+  const failures = [];
+  if (config.mangoBackendVersion !== tuple.maven || pomVersion !== tuple.maven) {
+    failures.push(`Maven expected ${tuple.maven}, config=${config.mangoBackendVersion}, pom=${pomVersion}`);
+  }
+  if (config.mangoCliVersion !== tuple.npm['@mango/cli']) failures.push('mango.config.json CLI version mismatch');
+  if (config.mangoPmoVersion !== tuple.npm['@mango/pmo']) failures.push('mango.config.json PMO version mismatch');
+  for (const entry of collectManagedMangoPackageLocations(packageJson)) {
+    if (entry.version !== tuple.npm[entry.name]) {
+      failures.push(`${entry.section}.${entry.name} expected ${tuple.npm[entry.name]}, got ${entry.version}`);
+    }
+  }
+  const lock = readPmoLock(targetDir);
+  if (lock?.packageVersion !== tuple.npm['@mango/pmo']) {
+    failures.push(`pmo-lock.json expected ${tuple.npm['@mango/pmo']}, got ${lock?.packageVersion || '<missing>'}`);
+  }
+  if (failures.length > 0) throw new Error(`release tuple verification failed:\n${failures.join('\n')}`);
+}
+
+function capturePmoUpgradeSnapshots(plan) {
+  const snapshots = [];
+  const seen = new Set();
+  for (const item of plan) {
+    if (!item.targetPath || item.scope === 'pmo-bundle' || item.scope === 'historical-pmo-version') continue;
+    if (seen.has(item.targetPath)) continue;
+    seen.add(item.targetPath);
+    if (!existsSync(item.targetPath)) {
+      snapshots.push({ path: item.targetPath, existed: false });
+      continue;
+    }
+    if (!lstatSync(item.targetPath).isFile()) {
+      throw new Error(`cannot snapshot non-file PMO upgrade target: ${item.targetPath}`);
+    }
+    snapshots.push({
+      path: item.targetPath,
+      existed: true,
+      content: readFileSync(item.targetPath),
+      mode: statSync(item.targetPath).mode & 0o777,
+    });
+  }
+  return snapshots;
+}
+
+function restorePmoUpgradeSnapshots(snapshots, failures) {
+  for (const snapshot of snapshots) {
+    attemptPmoRecovery(
+      () => {
+        if (!snapshot.existed) {
+          rmSync(snapshot.path, { recursive: true, force: true });
+          return;
+        }
+        mkdirSync(dirname(snapshot.path), { recursive: true });
+        writeFileSync(snapshot.path, snapshot.content);
+        chmodSync(snapshot.path, snapshot.mode);
+        if (Buffer.compare(readFileSync(snapshot.path), snapshot.content) !== 0) {
+          throw new Error('byte verification failed');
+        }
+      },
+      `restore ${snapshot.path}`,
+      failures,
+    );
+  }
+}
+
+function injectReleaseTupleWriteFailure(writeCount) {
+  const configured = process.env.MANGO_CLI_TEST_FAIL_RELEASE_TUPLE_AFTER_WRITES;
+  if (!configured) return;
+  const expected = Number.parseInt(configured, 10);
+  if (!Number.isSafeInteger(expected) || expected < 1) {
+    throw new Error('invalid MANGO_CLI_TEST_FAIL_RELEASE_TUPLE_AFTER_WRITES test hook');
+  }
+  if (writeCount === expected) throw new Error(`injected release tuple write failure after ${writeCount} write(s)`);
 }
 
 function planHistoricalPmoVersionCompatibility(targetDir, baseline) {
@@ -4113,7 +4653,7 @@ function loadInstalledPmoBaseline(targetDir) {
   try {
     manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
   } catch (error) {
-    throw new Error(`cannot parse installed PMO manifest: ${error.message}`);
+    throw new Error(`cannot parse installed PMO manifest: ${error.message}`, { cause: error });
   }
   validatePmoManifest(manifest);
   return { root, manifest };
@@ -4664,7 +5204,7 @@ function installPmoBundleAtomic(targetDir, baseline) {
       recoveryFailures.length === 0
         ? 'previous project bundle restored'
         : `recovery incomplete: ${recoveryFailures.join('; ')}`;
-    throw new Error(`PMO bundle transaction failed (${recovery}): ${error.message}`);
+    throw new Error(`PMO bundle transaction failed (${recovery}): ${error.message}`, { cause: error });
   }
 
   rmSync(transactionRoot, { recursive: true, force: true });
@@ -4678,6 +5218,56 @@ function installPmoBundleAtomic(targetDir, baseline) {
     rmSync(backupRoot, { recursive: true, force: true });
   }
   prunePmoBackupDirectories(targetDir, 5);
+  return {
+    backupRoot,
+    movedBaseline,
+    movedLock,
+    movedSkillState,
+    movedSkillRoots,
+    projectionRoots: projection.roots,
+  };
+}
+
+function restorePreviousPmoBundle(targetDir, transaction) {
+  const previousBaselineRoot = join(transaction.backupRoot, 'baseline');
+  const previousManifestPath = join(previousBaselineRoot, 'baseline.json');
+  if (transaction.movedBaseline) {
+    if (!existsSync(previousManifestPath)) {
+      throw new Error(`previous PMO baseline backup is missing: ${previousManifestPath}`);
+    }
+    const previous = {
+      root: previousBaselineRoot,
+      manifest: JSON.parse(readFileSync(previousManifestPath, 'utf8')),
+    };
+    verifyPmoBundle(previous);
+    installPmoBundleAtomic(targetDir, previous);
+    return;
+  }
+
+  const liveSkillRoot = join(targetDir, '.agents/skills');
+  for (const root of transaction.projectionRoots || []) {
+    rmSync(join(liveSkillRoot, root), { recursive: true, force: true });
+  }
+  rmSync(join(targetDir, PMO_BASELINE_RELATIVE_PATH), { recursive: true, force: true });
+  rmSync(join(targetDir, PMO_LOCK_RELATIVE_PATH), { force: true });
+  rmSync(join(targetDir, PMO_SKILL_STATE_RELATIVE_PATH), { force: true });
+
+  for (const root of transaction.movedSkillRoots || []) {
+    const source = join(transaction.backupRoot, 'skills', root);
+    if (!existsSync(source)) throw new Error(`previous PMO skill backup is missing: ${source}`);
+    mkdirSync(liveSkillRoot, { recursive: true });
+    renameSync(source, join(liveSkillRoot, root));
+  }
+  if (transaction.movedSkillState) {
+    const source = join(transaction.backupRoot, 'skill-state.json');
+    mkdirSync(dirname(join(targetDir, PMO_SKILL_STATE_RELATIVE_PATH)), { recursive: true });
+    renameSync(source, join(targetDir, PMO_SKILL_STATE_RELATIVE_PATH));
+  }
+  if (transaction.movedLock) {
+    const source = join(transaction.backupRoot, 'pmo-lock.json');
+    mkdirSync(dirname(join(targetDir, PMO_LOCK_RELATIVE_PATH)), { recursive: true });
+    renameSync(source, join(targetDir, PMO_LOCK_RELATIVE_PATH));
+  }
 }
 
 function attemptPmoRecovery(action, label, failures) {
@@ -5337,7 +5927,7 @@ function ensureFrontendBusinessAppProvision(content) {
   const createCall = 'createMangoAdminApp({';
   const mountCall = '}).mount();';
   if (!content.includes(createCall) || !content.includes(mountCall)) {
-    fail('frontend/src/main.ts must create and mount Mango admin app before adding a business module');
+    throw new Error('frontend/src/main.ts must create and mount Mango admin app before adding a business module');
   }
   return content
     .replace(createCall, `const mangoAdminApp = ${createCall}`)
@@ -5408,7 +5998,7 @@ function appendBusinessFeatureRegistrar(content, registrarLine) {
   const startIndex = content.indexOf(start);
   const endIndex = content.indexOf(end);
   if (startIndex < 0 || endIndex < 0 || endIndex < startIndex) {
-    fail('managed block not found in frontend/src/main.ts: business-feature-registrars');
+    throw new Error('managed block not found in frontend/src/main.ts: business-feature-registrars');
   }
   const startLineEnd = content.indexOf('\n', startIndex);
   const endLineStart = content.lastIndexOf('\n', endIndex) + 1;
@@ -5454,7 +6044,7 @@ function appendManagedLine(content, name, line) {
   const startIndex = content.indexOf(start);
   const endIndex = content.indexOf(end);
   if (startIndex < 0 || endIndex < 0 || endIndex < startIndex) {
-    fail(`managed block not found: ${name}`);
+    throw new Error(`managed block not found: ${name}`);
   }
   const block = content.slice(startIndex + start.length, endIndex);
   if (block.includes(line)) {
@@ -5470,12 +6060,12 @@ function appendYamlManagedBlock(content, name, block) {
   const startIndex = content.indexOf(start);
   const endIndex = content.indexOf(end);
   if (startIndex < 0 || endIndex < 0 || endIndex < startIndex) {
-    fail(`managed block not found: ${name}`);
+    throw new Error(`managed block not found: ${name}`);
   }
   const startLineEnd = content.indexOf('\n', startIndex);
   const endLineStart = content.lastIndexOf('\n', endIndex) + 1;
   if (startLineEnd < 0 || endLineStart <= startLineEnd) {
-    fail(`invalid managed block: ${name}`);
+    throw new Error(`invalid managed block: ${name}`);
   }
   const currentBlock = content.slice(startLineEnd + 1, endLineStart);
   if (currentBlock.includes(block)) {
@@ -5491,7 +6081,7 @@ function replaceManagedBlock(content, name, replacement) {
   const startIndex = content.indexOf(start);
   const endIndex = content.indexOf(end);
   if (startIndex < 0 || endIndex < 0 || endIndex < startIndex) {
-    fail(`managed block not found in frontend/src/main.ts: ${name}`);
+    throw new Error(`managed block not found in frontend/src/main.ts: ${name}`);
   }
   return [content.slice(0, startIndex + start.length), '\n', replacement, '\n', content.slice(endIndex)].join('');
 }
@@ -5502,7 +6092,7 @@ function replaceXmlManagedBlock(content, name, replacement, fileLabel = 'backend
   const startIndex = content.indexOf(start);
   const endIndex = content.indexOf(end);
   if (startIndex < 0 || endIndex < 0 || endIndex < startIndex) {
-    fail(`managed block not found in ${fileLabel}: ${name}`);
+    throw new Error(`managed block not found in ${fileLabel}: ${name}`);
   }
   return [content.slice(0, startIndex + start.length), '\n', replacement, '\n', content.slice(endIndex)].join('');
 }
@@ -5641,6 +6231,7 @@ function renderBackendManagedDependencies(preset, selectedModules) {
     return renderDependencyXml(
       [
         { groupId: 'io.mango', artifactId: 'mango-admin-starter' },
+        { groupId: 'io.mango.infra.bootstrap', artifactId: 'mango-infra-bootstrap-starter' },
         ...BUSINESS_BACKEND_API_MANAGED_DEPENDENCIES,
         ...BUSINESS_BACKEND_MANAGED_DEPENDENCIES,
       ],
@@ -5662,7 +6253,14 @@ function renderBackendManagedDependencies(preset, selectedModules) {
 
 function renderBackendDependencies(preset, selectedModules) {
   if (preset === 'full') {
-    return renderDependencyXml([{ groupId: 'io.mango', artifactId: 'mango-admin-starter' }], false, 8);
+    return renderDependencyXml(
+      [
+        { groupId: 'io.mango', artifactId: 'mango-admin-starter' },
+        { groupId: 'io.mango.infra.bootstrap', artifactId: 'mango-infra-bootstrap-starter' },
+      ],
+      false,
+      8,
+    );
   }
   return renderDependencyXml(
     [...CORE_BACKEND_DEPENDENCIES, ...selectedModules.flatMap((module) => module.backend || [])],
@@ -5752,7 +6350,7 @@ function assertNoUnrenderedPlaceholders(targetDir, relativePaths) {
     for (const file of walkFiles(root)) {
       const rel = relative(targetDir, file);
       if (/\{\{[^}]+}}/.test(rel)) {
-        fail(`unrendered placeholder in path: ${rel}`);
+        throw new Error(`unrendered placeholder in path: ${rel}`);
       }
       if (!isTextFile(file)) {
         continue;
@@ -5760,7 +6358,7 @@ function assertNoUnrenderedPlaceholders(targetDir, relativePaths) {
       const content = readFileSync(file, 'utf8');
       const match = content.match(/\{\{[^}]+}}/);
       if (match) {
-        fail(`unrendered placeholder ${match[0]} in ${rel}`);
+        throw new Error(`unrendered placeholder ${match[0]} in ${rel}`);
       }
     }
   }
@@ -5944,6 +6542,14 @@ function toJavaSegment(value) {
     fail(`invalid Java package segment: ${value}`);
   }
   return segment;
+}
+
+function requireChineseDisplayName(value, optionName) {
+  const normalized = value.trim();
+  if (!normalized || !/\p{Script=Han}/u.test(normalized)) {
+    fail(`${optionName} must contain at least one Chinese character`);
+  }
+  return normalized;
 }
 
 function printNextSteps(targetDir, variables) {

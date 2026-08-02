@@ -1,0 +1,35 @@
+mango:
+  resource:
+    schema-version: 1
+    module-code: authorization
+    module-name: mango-system
+    declarations:
+      API_RESOURCE:
+        - id: "880428706160694323"
+          version: 1
+          biz-key: api.mango-system.GET.system.admin-branding.public
+          name: 后台品牌公共配置
+          target-module: authorization
+          fields:
+            moduleName: { type: STRING, value: mango-system }
+            httpMethod: { type: STRING, value: GET }
+            pathPattern: { type: STRING, value: /system/admin-branding/public }
+            resourceCode: { type: STRING, value: "GET:/system/admin-branding/public" }
+            accessMode: { type: STRING, value: PUBLIC }
+            handlerClass: { type: STRING, value: io.mango.system.starter.controller.AdminBrandingController }
+            handlerMethod: { type: STRING, value: publicConfig }
+            description: { type: STRING, value: 后台品牌公共配置 }
+        - id: "882449018853866699"
+          version: 1
+          biz-key: api.mango-system.GET.system.tenant.login-options
+          name: 登录机构选项
+          target-module: authorization
+          fields:
+            moduleName: { type: STRING, value: mango-system }
+            httpMethod: { type: STRING, value: GET }
+            pathPattern: { type: STRING, value: /system/tenant/login-options }
+            resourceCode: { type: STRING, value: "GET:/system/tenant/login-options" }
+            accessMode: { type: STRING, value: PUBLIC }
+            handlerClass: { type: STRING, value: io.mango.system.starter.controller.SysTenantController }
+            handlerMethod: { type: STRING, value: listLoginOptions }
+            description: { type: STRING, value: 登录机构选项 }

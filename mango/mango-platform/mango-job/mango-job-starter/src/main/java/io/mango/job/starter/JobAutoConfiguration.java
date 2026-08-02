@@ -13,7 +13,6 @@ import org.springframework.beans.factory.annotation.Value;
 import io.mango.job.support.handler.MangoJobHandler;
 import io.mango.job.support.service.MangoJobHandlerRegistry;
 import io.mango.job.starter.probe.MangoJobRuntimeProbeHandler;
-import io.mango.job.core.service.nativeengine.IMangoNativeJobRuntime;
 import io.mango.job.core.service.nativeengine.MangoJobIdempotencyKeys;
 import io.mango.job.core.service.nativeengine.MangoJobLeaseManager;
 import io.mango.job.support.nativeengine.InMemoryMangoJobWorkerTransport;
@@ -81,20 +80,6 @@ public class JobAutoConfiguration {
     @ConditionalOnMissingBean
     MangoJobLeaseManager mangoJobLeaseManager() {
         return new MangoJobLeaseManager();
-    }
-
-    @Bean
-    @ConditionalOnMissingBean
-    MangoNativeJobScheduler mangoNativeJobScheduler(IMangoNativeJobRuntime nativeJobRuntime,
-                                                    MangoNativeJobProperties properties) {
-        return new MangoNativeJobScheduler(nativeJobRuntime, properties);
-    }
-
-    @Bean
-    @ConditionalOnMissingBean
-    MangoEmbeddedWorkerRegistrar mangoEmbeddedWorkerRegistrar(IMangoNativeJobRuntime nativeJobRuntime,
-                                                              MangoNativeJobProperties properties) {
-        return new MangoEmbeddedWorkerRegistrar(nativeJobRuntime, properties);
     }
 
     @Bean

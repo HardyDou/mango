@@ -140,6 +140,8 @@ FileRecordVO zipFile = fileApi.packageFiles(command).getData();
 
 ## 8. 变更影响记录
 
+- 2026-08-02 Issue #690：文件上传、回显、预览、下载、ZIP/PDF 接口、fileId 持久化和租户权限合同不变。本次影响是应用初始化与制品消费边界：使用 Maven `1.0.30`/`1.0.3x` 的业务仓升级时按新 release tuple 成组更新，并验证 Boot JAR、Bootstrap receipt、File 资源声明和预览引擎注册结果；已有文件记录、业务附件关系和文件内容不重建。
+
 - 2026-07-30：`FilePreviewPanel` 新增默认关闭的 `fit-container` 容器填充模式。固定高度容器、`ElDialog` 或
   `MangoDialog` 正文可以直接传入该 prop，使 PDF、Office、图片和音视频随容器缩放，无需业务页面监听 resize
   或组合预览高度变量。未传入时继续使用自然高度；文件 ID 持久化、上传/预览/下载 API、权限、租户、文档转换

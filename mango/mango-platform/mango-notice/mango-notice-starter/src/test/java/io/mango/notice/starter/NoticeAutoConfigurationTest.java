@@ -15,7 +15,9 @@ import static org.mockito.Mockito.mock;
 class NoticeAutoConfigurationTest {
 
     private final ApplicationContextRunner runner = new ApplicationContextRunner()
-            .withConfiguration(AutoConfigurations.of(NoticeOutboxAutoConfiguration.class))
+            .withConfiguration(AutoConfigurations.of(
+                    NoticeOutboxAutoConfiguration.class,
+                    NoticeOutboxRuntimeAutoConfiguration.class))
             .withUserConfiguration(TestBeans.class);
 
     @Test

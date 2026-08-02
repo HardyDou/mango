@@ -1,5 +1,6 @@
 package io.mango.payment.starter.workflow;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.common.result.Require;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
@@ -12,22 +13,16 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
-import org.springframework.stereotype.Component;
 
 /**
  * Initializes payment-owned workflow definitions.
  */
 @Slf4j
-@Component
 @Order(Ordered.LOWEST_PRECEDENCE - 1)
-@RequiredArgsConstructor
-@ConditionalOnBean(PaymentRefundApprovalWorkflowPublisher.class)
-@ConditionalOnProperty(prefix = "mango.payment.workflow.refund-approval.initializer", name = "enabled",
-        havingValue = "true")
+@RequiredArgsConstructor(onConstructor_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+        justification = "Bound Spring configuration is intentionally retained for startup initialization"))
 public class PaymentRefundApprovalWorkflowDefinitionInitializer implements ApplicationRunner {
 
     private final PaymentRefundApprovalWorkflowPublisher workflowDefinitionService;

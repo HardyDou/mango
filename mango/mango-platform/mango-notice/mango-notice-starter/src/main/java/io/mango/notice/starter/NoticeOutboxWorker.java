@@ -2,6 +2,8 @@ package io.mango.notice.starter;
 
 import io.mango.infra.kv.api.IOutboxDispatcher;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -12,6 +14,10 @@ public class NoticeOutboxWorker implements AutoCloseable {
 
     private final IOutboxDispatcher dispatcher;
     private final ScheduledExecutorService executor;
+    private final long initialDelayMillis;
+    private final long fixedDelayMillis;
+    private boolean started;
+    private boolean closed;
 
     public NoticeOutboxWorker(IOutboxDispatcher dispatcher,
                               String workerId,
@@ -19,17 +25,23 @@ public class NoticeOutboxWorker implements AutoCloseable {
                               long fixedDelayMillis) {
         this.dispatcher = dispatcher;
         String safeWorkerId = workerId == null || workerId.isBlank() ? "notice-outbox-worker" : workerId.trim();
-        long safeInitialDelayMillis = Math.max(0L, initialDelayMillis);
-        long safeFixedDelayMillis = fixedDelayMillis <= 0L ? 1000L : fixedDelayMillis;
+        this.initialDelayMillis = Math.max(0L, initialDelayMillis);
+        this.fixedDelayMillis = fixedDelayMillis <= 0L ? 1000L : fixedDelayMillis;
         this.executor = Executors.newSingleThreadScheduledExecutor(r -> {
             Thread thread = new Thread(r, "notice-outbox-worker-" + safeWorkerId);
             thread.setDaemon(true);
             return thread;
         });
-        this.executor.scheduleWithFixedDelay(this::dispatchSafely,
-                safeInitialDelayMillis,
-                safeFixedDelayMillis,
-                TimeUnit.MILLISECONDS);
+    }
+
+    @EventListener(ApplicationReadyEvent.class)
+    public synchronized void startOnReady() {
+        if (started || closed) {
+            return;
+        }
+        started = true;
+        executor.scheduleWithFixedDelay(this::dispatchSafely,
+                initialDelayMillis, fixedDelayMillis, TimeUnit.MILLISECONDS);
     }
 
     public int dispatchOnce() {
@@ -37,7 +49,8 @@ public class NoticeOutboxWorker implements AutoCloseable {
     }
 
     @Override
-    public void close() {
+    public synchronized void close() {
+        closed = true;
         executor.shutdownNow();
     }
 

@@ -16,6 +16,7 @@ import { tmpdir } from 'node:os';
 import { join, relative, resolve } from 'node:path';
 import { spawn, spawnSync } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { assertPnpmLockfileFixtureInvocations, createPnpmLockfileFixture } from './support/pnpm-lockfile-fixture.mjs';
 
 const packageRoot = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const cli = join(packageRoot, 'src/index.mjs');
@@ -287,8 +288,36 @@ try {
     join(projectRoot, 'backend/app/src/main/java/com/example/acceptance/MangoFullAcceptanceApplication.java'),
     'utf8',
   );
+  const devManifestBackend = devManifest.apps[`${fullProjectName}-service`];
+  if (devManifestBackend?.processMode !== 'runtime') {
+    throw new Error('generated Spring Boot app must declare processMode=runtime');
+  }
+  if (devManifestBackend?.bootstrapReceiptDirectory !== '../.mango/bootstrap') {
+    throw new Error('generated Spring Boot app must read the workspace Bootstrap receipt directory');
+  }
   if (!appPom.includes('<artifactId>mango-admin-starter</artifactId>') || pom.includes('{{') || appPom.includes('{{')) {
     throw new Error('backend poms were not rendered as Mango full backend');
+  }
+  if (
+    !appPom.includes('<artifactId>mango-infra-bootstrap-starter</artifactId>') ||
+    !/<groupId>io\.mango\.infra\.bootstrap<\/groupId>\s*<artifactId>mango-infra-bootstrap-starter<\/artifactId>\s*<version>\$\{mango\.version\}<\/version>/u.test(
+      pom,
+    ) ||
+    !readFileSync(
+      join(projectRoot, 'backend/app/src/main/java/com/example/acceptance/MangoFullAcceptanceApplication.java'),
+      'utf8',
+    ).includes('MangoApplication.run(MangoFullAcceptanceApplication.class, args);')
+  ) {
+    throw new Error('generated backend app must route bootstrap/runtime commands through MangoApplication');
+  }
+  if (
+    !appPom.includes('<artifactId>spring-boot-maven-plugin</artifactId>') ||
+    !appPom.includes('<skip>false</skip>') ||
+    !appPom.includes('<id>repackage-production-jar</id>') ||
+    !appPom.includes('<phase>package</phase>') ||
+    !appPom.includes('<goal>repackage</goal>')
+  ) {
+    throw new Error('generated backend app must bind Spring Boot repackage to the package lifecycle');
   }
   if (!pom.includes(`<mango.version>${releaseVersions.maven.mangoBackend}</mango.version>`)) {
     throw new Error('generated backend parent pom must use the CLI-owned fixed Mango Maven version lock');
@@ -300,6 +329,22 @@ try {
     !architecturePom.includes('<version>${revision}</version>')
   ) {
     throw new Error('generated backend reactor must use the CI-friendly revision property');
+  }
+  if (
+    !pom.includes('<artifactId>flatten-maven-plugin</artifactId>') ||
+    !pom.includes('<version>1.7.3</version>') ||
+    !pom.includes('<flattenMode>resolveCiFriendliesOnly</flattenMode>') ||
+    !pom.includes('<phase>process-resources</phase>') ||
+    !pom.includes('<id>flatten.clean</id>')
+  ) {
+    throw new Error('generated backend reactor must flatten CI-friendly versions for external consumers');
+  }
+  const generatedApplicationYml = readFileSync(
+    join(projectRoot, 'backend/app/src/main/resources/application.yml'),
+    'utf8',
+  );
+  if (!/capability:\s*[\s\S]*?locker:\s*true/u.test(generatedApplicationYml)) {
+    throw new Error('generated full backend must enable the KV locker capability');
   }
   if (
     !pom.includes('<flyway.version>11.20.3</flyway.version>') ||
@@ -604,7 +649,8 @@ try {
       'org.springframework.boot:spring-boot-maven-plugin:3.5.14:run' ||
     devManifest.apps['mango-full-acceptance-service'].env?.MANGO_CRYPTO_SM4_SECRET_KEY !==
       '${env.MANGO_CRYPTO_SM4_SECRET_KEY}' ||
-    devManifest.apps['mango-full-acceptance-service'].args?.[0] !== 'runtime' ||
+    devManifest.apps['mango-full-acceptance-service'].processMode !== 'runtime' ||
+    devManifest.apps['mango-full-acceptance-service'].args?.[0] !== '--server.port=${port}' ||
     devManifest.apps['mango-full-acceptance-admin'].dependsOn[0] !== 'mango-full-acceptance-service'
   ) {
     throw new Error(
@@ -657,12 +703,13 @@ try {
   if (
     !planResult.stdout.includes('mango-full-acceptance-service') ||
     !/-Drevision=1\.0\.0-mango-[0-9]{3}-SNAPSHOT/u.test(planResult.stdout) ||
-    !planResult.stdout.includes('-Dspring-boot.run.arguments=runtime ') ||
+    !planResult.stdout.includes('-Dspring-boot.run.arguments=runtime --server.port=') ||
     !planResult.stdout.includes('org.springframework.boot:spring-boot-maven-plugin:3.5.14:run') ||
     !planResult.stdout.includes('mango-full-acceptance-admin')
   ) {
     throw new Error(`generated mango plan did not include resolved backend/frontend apps:\n${planResult.stdout}`);
   }
+  assertSpringBootProcessModeContract(projectRoot);
   if (process.platform !== 'win32') {
     if ((statSync(join(projectRoot, 'scripts/dev-workspace.sh')).mode & 0o111) === 0) {
       throw new Error('generated dev-workspace script must be executable');
@@ -747,6 +794,7 @@ try {
   }
   assertGeneratedBaselineLoadsDeliveryContractForPr(projectRoot);
   assertBusinessAcceptanceBaseline(projectRoot);
+  assertReleaseTupleUpgrade(tempRoot, projectRoot);
   assertPmoCommands(projectRoot);
   assertPmoSyncCommand(tempRoot);
   if (hasCommand('jar')) {
@@ -890,7 +938,7 @@ try {
   const businessReadmeBeforeAdd = '# business-owned readme\n';
   writeFileSync(businessReadmePath, businessReadmeBeforeAdd);
   const customPackageBeforeAdd = JSON.parse(readFileSync(join(customRoot, 'frontend/package.json'), 'utf8'));
-  customPackageBeforeAdd.dependencies['business-owned-package'] = '1.2.3';
+  customPackageBeforeAdd.dependencies['business-owned-package'] = 'npm:lodash-es@4.17.21';
   writeFileSync(join(customRoot, 'frontend/package.json'), `${JSON.stringify(customPackageBeforeAdd, null, 2)}\n`);
   writeFileSync(
     join(customRoot, 'frontend/src/main.ts'),
@@ -930,7 +978,11 @@ try {
     readReleasedPackageVersion('@mango/file'),
     'file peer dependency after add',
   );
-  assertEqual(addedPackage.dependencies['business-owned-package'], '1.2.3', 'business dependency after add');
+  assertEqual(
+    addedPackage.dependencies['business-owned-package'],
+    'npm:lodash-es@4.17.21',
+    'business dependency after add',
+  );
   const addedMain = readFileSync(join(customRoot, 'frontend/src/main.ts'), 'utf8');
   if (!addedMain.includes('registerMangoNoticeAdminPages') || !addedMain.includes('registerMangoNoticeAdminShell')) {
     throw new Error('add command did not update notice frontend registrars');
@@ -951,6 +1003,87 @@ try {
   assertEqual(readFileSync(businessReadmePath, 'utf8'), businessReadmeBeforeAdd, 'business-owned file after add');
   assertNoUnrenderedPlaceholders(customRoot);
 
+  const moduleAddPreflightFiles = [
+    'backend/pom.xml',
+    'backend/app/pom.xml',
+    'backend/app/src/main/resources/application.yml',
+    'frontend/package.json',
+    'frontend/src/main.ts',
+    'frontend/pnpm-lock.yaml',
+    'mango.config.json',
+  ];
+  const moduleAddPreflightSnapshot = new Map(
+    moduleAddPreflightFiles.map((file) => {
+      const filePath = join(customRoot, file);
+      return [file, existsSync(filePath) ? readFileSync(filePath) : null];
+    }),
+  );
+  for (const invalidCase of [
+    {
+      module: 'english-module-name',
+      aggregateName: '英文聚合',
+      moduleName: 'English Module Name',
+      expectedError: '--module-name must contain at least one Chinese character',
+    },
+    {
+      module: 'english-aggregate-name',
+      aggregateName: 'English Aggregate Name',
+      moduleName: '中文模块',
+      expectedError: '--aggregate-name must contain at least one Chinese character',
+    },
+  ]) {
+    const rejectedDisplayName = spawnSync(
+      process.execPath,
+      [
+        cli,
+        'module',
+        'add',
+        invalidCase.module,
+        '--aggregate',
+        'display-name-contract',
+        '--aggregate-name',
+        invalidCase.aggregateName,
+        '--module-name',
+        invalidCase.moduleName,
+        '--project-dir',
+        customRoot,
+      ],
+      {
+        cwd: tempRoot,
+        encoding: 'utf8',
+      },
+    );
+    if (rejectedDisplayName.status === 0 || !rejectedDisplayName.stderr.includes(invalidCase.expectedError)) {
+      throw new Error(
+        `module add should reject an invalid Chinese display name before writing files:\n${rejectedDisplayName.stdout}\n${rejectedDisplayName.stderr}`,
+      );
+    }
+    if (
+      existsSync(join(customRoot, 'backend/modules', invalidCase.module)) ||
+      existsSync(join(customRoot, 'frontend/packages', invalidCase.module)) ||
+      existsSync(join(customRoot, 'frontend/packages', `${invalidCase.module}-api`))
+    ) {
+      throw new Error(`module add invalid display name left generated directories: ${invalidCase.module}`);
+    }
+    for (const [file, expected] of moduleAddPreflightSnapshot) {
+      const filePath = join(customRoot, file);
+      if (expected === null) {
+        if (existsSync(filePath)) {
+          throw new Error(`module add invalid display name created an absent file: ${file}`);
+        }
+        continue;
+      }
+      const actual = readFileSync(filePath);
+      if (!expected.equals(actual)) {
+        throw new Error(`module add invalid display name changed ${file}`);
+      }
+    }
+  }
+
+  const moduleAddPnpmFixture = createPnpmLockfileFixture(join(tempRoot, 'module-add-lockfile'), [
+    'packages/contract',
+    'packages/contract-api',
+  ]);
   const moduleAddResult = spawnSync(
     process.execPath,
     [
@@ -970,11 +1103,17 @@ try {
     {
       cwd: tempRoot,
       encoding: 'utf8',
+      env: {
+        ...moduleAddPnpmFixture.env,
+        NPM_CONFIG_REGISTRY: 'http://127.0.0.1:9/unreachable-registry/',
+        npm_config_registry: 'http://127.0.0.1:9/unreachable-registry/',
+      },
     },
   );
   if (moduleAddResult.status !== 0) {
     throw new Error(`module add command failed:\n${moduleAddResult.stdout}\n${moduleAddResult.stderr}`);
   }
+  assertPnpmLockfileFixtureInvocations(moduleAddPnpmFixture.logPath);
   for (const file of [
     'backend/modules/contract/README.md',
     'backend/modules/contract/contract-api/src/main/java/com/example/custom/contract/api/ContractApi.java',
@@ -985,7 +1124,7 @@ try {
     'backend/modules/contract/contract-core/src/main/java/com/example/custom/contract/core/service/ISealService.java',
     'backend/modules/contract/contract-core/src/main/java/com/example/custom/contract/core/service/impl/SealService.java',
     'backend/modules/contract/contract-starter/src/main/java/com/example/custom/contract/starter/controller/ContractController.java',
-    'backend/modules/contract/contract-starter/src/main/resources/META-INF/mango/resource-manifest.json',
+    'backend/modules/contract/contract-starter/src/main/resources/META-INF/mango/resources/contract-common-menu.json',
     'backend/modules/contract/contract-starter-remote/src/main/java/com/example/custom/contract/starter/remote/ContractFeignClient.java',
     'frontend/packages/contract-api/src/api.ts',
     'frontend/packages/contract/style.css',
@@ -997,6 +1136,12 @@ try {
     }
   }
   assertGeneratedFrontendFormatting(customRoot);
+  const moduleLockfile = readFileSync(join(customRoot, 'frontend/pnpm-lock.yaml'), 'utf8');
+  for (const importer of ['packages/contract:', 'packages/contract-api:']) {
+    if (!moduleLockfile.includes(`  ${importer}`)) {
+      throw new Error(`module add lockfile missing importer: ${importer}`);
+    }
+  }
   const modulePom = readFileSync(join(customRoot, 'backend/pom.xml'), 'utf8');
   const moduleAppPom = readFileSync(join(customRoot, 'backend/app/pom.xml'), 'utf8');
   const moduleApplicationYml = readFileSync(join(customRoot, 'backend/app/src/main/resources/application.yml'), 'utf8');
@@ -1269,13 +1414,22 @@ try {
     readFileSync(
       join(
         customRoot,
-        'backend/modules/contract/contract-starter/src/main/resources/META-INF/mango/resource-manifest.json',
+        'backend/modules/contract/contract-starter/src/main/resources/META-INF/mango/resources/contract-common-menu.json',
       ),
       'utf8',
     ),
   );
-  const moduleRootMenu = moduleManifest.menus?.[0];
+  const moduleDeclaration = moduleManifest.mango?.resource?.declarations?.AUTH_MENU?.[0];
+  const moduleRootMenu = moduleDeclaration?.fields?.menus?.value?.[0];
   const moduleChildMenu = moduleRootMenu?.children?.[0];
+  if (
+    !/^269069\d{13}$/u.test(moduleDeclaration?.id || '') ||
+    moduleDeclaration?.version !== 1 ||
+    moduleDeclaration?.bizKey !== 'mango-custom-acceptance.contract.menu.internal-admin' ||
+    moduleDeclaration?.targetModule !== 'authorization'
+  ) {
+    throw new Error('module add did not generate a stable typed ResourceDeclaration identity');
+  }
   if (moduleRootMenu?.menuType !== 1 || moduleRootMenu?.redirect !== '/contract/seals') {
     throw new Error('module add did not configure directory menu redirect to first runnable child menu');
   }
@@ -1285,7 +1439,7 @@ try {
   if (moduleChildMenu?.menuName !== '合同印章管理') {
     throw new Error('module add did not render aggregate display name in menu metadata');
   }
-  const permissionCodes = new Set(moduleChildMenu?.permissions || []);
+  const permissionCodes = new Set(moduleChildMenu?.apiCodes || []);
   for (const permissionCode of [
     'contract:seal:create',
     'contract:seal:view',
@@ -1296,11 +1450,8 @@ try {
       throw new Error(`module add did not generate expected permission: ${permissionCode}`);
     }
   }
-  const permissionNames = new Set((moduleChildMenu?.permissionItems || []).map((item) => item.permissionName));
-  for (const permissionName of ['新增合同印章', '查看合同印章', '编辑合同印章', '删除合同印章']) {
-    if (!permissionNames.has(permissionName)) {
-      throw new Error(`module add did not generate expected permission name: ${permissionName}`);
-    }
+  if (moduleChildMenu?.permissions || moduleChildMenu?.permissionItems) {
+    throw new Error('module add must not generate legacy AUTH_MENU permissions or permissionItems');
   }
   const moduleApiJava = readFileSync(
     join(
@@ -1451,6 +1602,59 @@ try {
     }
   }
   assertNoUnrenderedPlaceholders(customRoot);
+  if (process.platform !== 'win32') {
+    const rollbackPaths = [
+      'backend/pom.xml',
+      'backend/app/pom.xml',
+      'backend/app/src/main/resources/application.yml',
+      'frontend/package.json',
+      'frontend/src/main.ts',
+      'frontend/pnpm-lock.yaml',
+      'mango.config.json',
+    ];
+    const rollbackBefore = new Map(rollbackPaths.map((path) => [path, readFileSync(join(customRoot, path))]));
+    const prettierConfigPath = join(customRoot, 'frontend/prettier.config.mjs');
+    const prettierConfigBefore = readFileSync(prettierConfigPath);
+    let rollbackResult;
+    try {
+      writeFileSync(prettierConfigPath, "throw new Error('intentional module add formatter failure');\n");
+      rollbackResult = spawnSync(
+        process.execPath,
+        [cli, 'module', 'add', 'rollback-check', '--aggregate', 'rollback-record', '--project-dir', customRoot],
+        {
+          cwd: tempRoot,
+          encoding: 'utf8',
+        },
+      );
+    } finally {
+      writeFileSync(prettierConfigPath, prettierConfigBefore);
+    }
+    if (
+      rollbackResult.status === 0 ||
+      !`${rollbackResult.stdout}\n${rollbackResult.stderr}`.includes(
+        'MODULE_ADD_TRANSACTION_FAILED stage=format; restored byte-for-byte',
+      )
+    ) {
+      throw new Error(
+        `module add formatter failure did not report a restored transaction:\n${rollbackResult.stdout}\n${rollbackResult.stderr}`,
+      );
+    }
+    for (const [path, before] of rollbackBefore) {
+      const after = readFileSync(join(customRoot, path));
+      if (!before.equals(after)) {
+        throw new Error(`module add formatter failure did not restore ${path} byte-for-byte`);
+      }
+    }
+    for (const path of [
+      'backend/modules/rollback-check',
+      'frontend/packages/rollback-check',
+      'frontend/packages/rollback-check-api',
+    ]) {
+      if (existsSync(join(customRoot, path))) {
+        throw new Error(`module add formatter failure left a partial path: ${path}`);
+      }
+    }
+  }
   if (process.platform !== 'win32') {
     assertDevWorkspaceRunnerScenarios(tempRoot);
   }
@@ -1655,6 +1859,17 @@ function assertPackedCliPullRequestTemplate(tempRoot) {
     throw new Error(`@mango/pmo tarball extraction failed:\n${pmoExtract.stdout}\n${pmoExtract.stderr}`);
   }
 
+  const packedCliPackage = JSON.parse(readFileSync(join(cliExtractRoot, 'package/package.json'), 'utf8'));
+  const packedPrettierVersion = packedCliPackage.dependencies?.prettier;
+  if (
+    !/^\d+\.\d+\.\d+$/u.test(packedPrettierVersion ?? '') ||
+    packedPrettierVersion !== cliPackage.dependencies?.prettier
+  ) {
+    throw new Error(
+      `packed @mango/cli must retain its exact Prettier runtime dependency, got ${packedPrettierVersion ?? 'missing'}`,
+    );
+  }
+
   const packedTemplate = join(cliExtractRoot, 'package/templates/full/.github/pull_request_template.md');
   const packedPmoBaseline = join(pmoExtractRoot, 'package/dist/baseline');
   const canonicalTemplate = join(packedPmoBaseline, 'templates/business-pull-request-template.md');
@@ -1815,6 +2030,54 @@ function assertCommandOk(args, cwd, label) {
     throw new Error(`${label} failed:\n${result.stdout}\n${result.stderr}`);
   }
   return result;
+}
+
+function assertSpringBootProcessModeContract(projectRoot) {
+  const manifestPath = join(projectRoot, 'mango.dev.json');
+  const original = readFileSync(manifestPath, 'utf8');
+  const manifest = JSON.parse(original);
+  const backendName = Object.keys(manifest.apps).find((name) => manifest.apps[name].type === 'spring-boot-maven');
+  if (!backendName) {
+    throw new Error('generated manifest does not contain a Spring Boot app');
+  }
+  try {
+    delete manifest.apps[backendName].processMode;
+    writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+    const legacyPlan = assertCommandOk([cli, 'plan', backendName], projectRoot, 'legacy processMode default');
+    if (!legacyPlan.stdout.includes('-Dspring-boot.run.arguments=runtime --server.port=')) {
+      throw new Error(`legacy manifest did not default processMode to runtime:\n${legacyPlan.stdout}`);
+    }
+
+    manifest.apps[backendName].processMode = 'bootstrap';
+    writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+    assertCommandFails(
+      [cli, 'validate'],
+      projectRoot,
+      'bootstrap processMode in dev manifest',
+      'mango dev requires processMode runtime',
+    );
+
+    manifest.apps[backendName].processMode = 'runtime';
+    manifest.apps[backendName].args.unshift('runtime');
+    writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+    assertCommandFails(
+      [cli, 'plan', backendName],
+      projectRoot,
+      'duplicate runtime process argument',
+      'process mode must be declared only through processMode',
+    );
+
+    manifest.apps[backendName].args[0] = 'bootstrap';
+    writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+    assertCommandFails(
+      [cli, 'plan', backendName],
+      projectRoot,
+      'conflicting bootstrap process argument',
+      'process mode must be declared only through processMode',
+    );
+  } finally {
+    writeFileSync(manifestPath, original);
+  }
 }
 
 function assertGeneratedDevWorkspaceUsesCliFallback(projectRoot) {
@@ -2093,10 +2356,12 @@ function assertDevWorkspaceAutoCreatesDatabase(projectRoot) {
   chmodExecutable(join(fakeBinDir, 'mvn'));
   rmSync(callLog, { force: true });
   rmSync(join(projectRoot, '.mango'), { recursive: true, force: true });
+  const workspaceRegistry = join(projectRoot, '.runtime/db-auto-create-workspaces.json');
+  prepareStableBootstrapReceipt(projectRoot, workspaceRegistry);
   const result = spawnSync(
     'env',
     [
-      `MANGO_WORKSPACE_REGISTRY=${join(projectRoot, '.runtime/db-auto-create-workspaces.json')}`,
+      `MANGO_WORKSPACE_REGISTRY=${workspaceRegistry}`,
       `PATH=${fakeBinDir}:/usr/bin:/bin:/usr/sbin:/sbin`,
       process.execPath,
       cli,
@@ -2113,7 +2378,7 @@ function assertDevWorkspaceAutoCreatesDatabase(projectRoot) {
   if (result.status === 0 || !output.includes('install command failed')) {
     throw new Error(`database auto-create scenario should stop at fake Maven install:\n${output}`);
   }
-  const calls = waitForCallLogLines(callLog, 3);
+  const calls = waitForCallLogLines(callLog, 2);
   const createCall = calls.find((line) =>
     line.includes('CREATE DATABASE IF NOT EXISTS `mango_dev_mango_full_acceptance_'),
   );
@@ -2121,7 +2386,6 @@ function assertDevWorkspaceAutoCreatesDatabase(projectRoot) {
     /mvn:-Drevision=1\.0\.0-mango-[0-9]{3}-SNAPSHOT -f pom\.xml -DskipTests install/u.test(line),
   );
   if (
-    !calls.some((line) => line.includes('SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA')) ||
     !createCall?.includes('mysql:--protocol=TCP') ||
     !createCall.includes('-h 127.0.0.1') ||
     !createCall.includes('-P 3306') ||
@@ -2162,10 +2426,12 @@ function assertDevWorkspaceStreamsLargeInstallOutput(projectRoot) {
   chmodExecutable(join(fakeBinDir, 'mvn'));
   rmSync(callLog, { force: true });
   rmSync(join(projectRoot, '.mango'), { recursive: true, force: true });
+  const workspaceRegistry = join(projectRoot, '.runtime/large-install-workspaces.json');
+  prepareStableBootstrapReceipt(projectRoot, workspaceRegistry);
   const result = spawnSync(
     'env',
     [
-      `MANGO_WORKSPACE_REGISTRY=${join(projectRoot, '.runtime/large-install-workspaces.json')}`,
+      `MANGO_WORKSPACE_REGISTRY=${workspaceRegistry}`,
       `PATH=${fakeBinDir}:/usr/bin:/bin:/usr/sbin:/sbin`,
       process.execPath,
       cli,
@@ -2193,6 +2459,8 @@ function assertDevWorkspaceStreamsLargeInstallOutput(projectRoot) {
     !mavenCalls.some((line) => /-Drevision=1\.0\.0-mango-[0-9]{3}-SNAPSHOT .*?-DskipTests install/u.test(line)) ||
     !mavenCalls[1]?.includes('-Dspring-boot.run.arguments=bootstrap apply') ||
     !mavenCalls[1]?.includes('--mango.bootstrap.strategy=cold') ||
+    !mavenCalls[1]?.includes('--mango.bootstrap.environment-key=local-mango_') ||
+    !mavenCalls[1]?.includes('--mango.release.generation=1') ||
     !mavenCalls[2]?.includes('-Dspring-boot.run.arguments=runtime') ||
     !mavenCalls[2]?.includes('spring-boot-maven-plugin')
   ) {
@@ -2423,10 +2691,12 @@ function assertDevWorkspaceReportsMissingMysql(projectRoot) {
   const fakeBinDir = join(projectRoot, '.runtime/db-missing-mysql-bin');
   mkdirSync(fakeBinDir, { recursive: true });
   rmSync(join(projectRoot, '.mango'), { recursive: true, force: true });
+  const workspaceRegistry = join(projectRoot, '.runtime/db-missing-mysql-workspaces.json');
+  prepareStableBootstrapReceipt(projectRoot, workspaceRegistry);
   const result = spawnSync(
     'env',
     [
-      `MANGO_WORKSPACE_REGISTRY=${join(projectRoot, '.runtime/db-missing-mysql-workspaces.json')}`,
+      `MANGO_WORKSPACE_REGISTRY=${workspaceRegistry}`,
       `PATH=${fakeBinDir}`,
       process.execPath,
       cli,
@@ -2447,6 +2717,45 @@ function assertDevWorkspaceReportsMissingMysql(projectRoot) {
   ) {
     throw new Error(`missing mysql should report the spawn failure reason:\n${output}`);
   }
+}
+
+function prepareStableBootstrapReceipt(projectRoot, workspaceRegistry, backendPom = 'backend/pom.xml') {
+  const initialized = spawnSync(process.execPath, [cli, 'workspace', 'init'], {
+    cwd: projectRoot,
+    encoding: 'utf8',
+    env: { ...process.env, MANGO_WORKSPACE_REGISTRY: workspaceRegistry },
+  });
+  if (initialized.status !== 0) {
+    throw new Error(`failed to initialize receipt test workspace:\n${initialized.stdout}\n${initialized.stderr}`);
+  }
+  const workspace = JSON.parse(readFileSync(join(projectRoot, '.mango/workspace.json'), 'utf8'));
+  const rootPom = readFileSync(join(projectRoot, backendPom), 'utf8');
+  const baseRevision = rootPom.match(/<revision>([^<]+)<\/revision>/u)?.[1];
+  if (!baseRevision) {
+    throw new Error('receipt fixture could not resolve the backend Maven revision');
+  }
+  const buildRevision = baseRevision.endsWith('-SNAPSHOT')
+    ? `${baseRevision.slice(0, -'-SNAPSHOT'.length)}-${workspace.mavenRevisionQualifier}-SNAPSHOT`
+    : `${baseRevision}-${workspace.mavenRevisionQualifier}`;
+  const directory = join(projectRoot, '.mango/bootstrap');
+  mkdirSync(directory, { recursive: true });
+  writeFileSync(
+    join(directory, `${workspace.workspaceId}.json`),
+    `${JSON.stringify(
+      {
+        schemaVersion: 1,
+        environmentKey: workspace.workspaceId,
+        databaseName: workspace.dbName,
+        releaseId: 'acceptance-release',
+        buildRevision,
+        stableGeneration: 1,
+        stableFingerprint: 'a'.repeat(64),
+        state: 'FINALIZED',
+      },
+      null,
+      2,
+    )}\n`,
+  );
 }
 
 function assertDevWorkspaceRestartUsesStopThenStart(projectRoot) {
@@ -3020,6 +3329,143 @@ function waitForCallLogLines(callLog, expectedCount) {
     return [];
   }
   return readFileSync(callLog, 'utf8').trim().split(/\r?\n/).filter(Boolean);
+}
+
+function assertReleaseTupleUpgrade(testRoot, generatedProjectRoot) {
+  const projectRoot = join(testRoot, 'release-tuple-upgrade');
+  cpSync(generatedProjectRoot, projectRoot, { recursive: true });
+  const configPath = join(projectRoot, 'mango.config.json');
+  const pomPath = join(projectRoot, 'backend/pom.xml');
+  const packagePath = join(projectRoot, 'frontend/package.json');
+  const oldVersion = '0.9.0';
+
+  const config = JSON.parse(readFileSync(configPath, 'utf8'));
+  config.mangoBackendVersion = oldVersion;
+  config.mangoCliVersion = oldVersion;
+  config.releaseTupleUserField = 'preserve-me';
+  for (const name of Object.keys(config.mangoFrontendVersions || {})) {
+    config.mangoFrontendVersions[name] = oldVersion;
+  }
+  writeFileSync(configPath, `${JSON.stringify(config, null, 2)}\n`);
+  writeFileSync(
+    pomPath,
+    readFileSync(pomPath, 'utf8').replace(
+      /<mango\.version>\s*[^<\s]+\s*<\/mango\.version>/,
+      `<mango.version>${oldVersion}</mango.version>`,
+    ),
+  );
+  const packageJson = JSON.parse(readFileSync(packagePath, 'utf8'));
+  packageJson.dependencies['release-tuple-user-package'] = '7.8.9';
+  for (const section of ['dependencies', 'devDependencies', 'optionalDependencies', 'peerDependencies']) {
+    for (const name of Object.keys(packageJson[section] || {})) {
+      if (name.startsWith('@mango/')) packageJson[section][name] = oldVersion;
+    }
+  }
+  writeFileSync(packagePath, `${JSON.stringify(packageJson, null, 2)}\n`);
+
+  const before = new Map(
+    [configPath, pomPath, packagePath, join(projectRoot, 'business-pmo/pmo-lock.json')].map((path) => [
+      path,
+      readFileSync(path),
+    ]),
+  );
+  const dryRun = assertCommandOk(
+    [cli, 'pmo', 'upgrade', '--project-dir', projectRoot, '--dry-run'],
+    projectRoot,
+    'release tuple dry-run',
+  );
+  for (const expected of [
+    `Release tuple target: Maven ${releaseVersions.maven.mangoBackend}`,
+    `CLI ${releaseVersions.npm['@mango/cli']}`,
+    `PMO ${releaseVersions.npm['@mango/pmo']}`,
+    'mango.config.json',
+    'backend/pom.xml',
+    'frontend/package.json',
+  ]) {
+    if (!dryRun.stdout.includes(expected)) {
+      throw new Error(`release tuple dry-run missing ${expected}:\n${dryRun.stdout}`);
+    }
+  }
+  for (const [path, content] of before) {
+    if (Buffer.compare(readFileSync(path), content) !== 0) {
+      throw new Error(`release tuple dry-run modified ${path}`);
+    }
+  }
+
+  const injected = spawnSync(process.execPath, [cli, 'pmo', 'upgrade', '--project-dir', projectRoot], {
+    cwd: projectRoot,
+    encoding: 'utf8',
+    env: { ...process.env, MANGO_CLI_TEST_FAIL_RELEASE_TUPLE_AFTER_WRITES: '2' },
+  });
+  if (
+    injected.status === 0 ||
+    !`${injected.stdout}\n${injected.stderr}`.includes('all managed project files restored byte-for-byte')
+  ) {
+    throw new Error(`release tuple injected write failure did not roll back:\n${injected.stdout}\n${injected.stderr}`);
+  }
+  for (const [path, content] of before) {
+    if (Buffer.compare(readFileSync(path), content) !== 0) {
+      throw new Error(`release tuple write failure did not restore ${path} byte-for-byte`);
+    }
+  }
+
+  const conflictConfig = JSON.parse(readFileSync(configPath, 'utf8'));
+  conflictConfig.mangoBackendVersion = '0.8.0';
+  writeFileSync(configPath, `${JSON.stringify(conflictConfig, null, 2)}\n`);
+  const conflict = spawnSync(process.execPath, [cli, 'pmo', 'upgrade', '--project-dir', projectRoot], {
+    cwd: projectRoot,
+    encoding: 'utf8',
+  });
+  if (conflict.status === 0 || !conflict.stderr.includes('release tuple conflict')) {
+    throw new Error(`release tuple conflict must fail closed:\n${conflict.stdout}\n${conflict.stderr}`);
+  }
+  writeFileSync(configPath, before.get(configPath));
+
+  const missingPackage = JSON.parse(readFileSync(packagePath, 'utf8'));
+  missingPackage.dependencies['@mango/not-in-release-manifest'] = oldVersion;
+  writeFileSync(packagePath, `${JSON.stringify(missingPackage, null, 2)}\n`);
+  const missing = spawnSync(process.execPath, [cli, 'pmo', 'upgrade', '--project-dir', projectRoot], {
+    cwd: projectRoot,
+    encoding: 'utf8',
+  });
+  if (missing.status === 0 || !missing.stderr.includes('release-versions.json is missing managed package')) {
+    throw new Error(`release tuple missing manifest entry must fail closed:\n${missing.stdout}\n${missing.stderr}`);
+  }
+  writeFileSync(packagePath, before.get(packagePath));
+
+  assertCommandOk([cli, 'pmo', 'upgrade', '--project-dir', projectRoot], projectRoot, 'release tuple apply');
+  const upgradedConfig = JSON.parse(readFileSync(configPath, 'utf8'));
+  const upgradedPackage = JSON.parse(readFileSync(packagePath, 'utf8'));
+  assertEqual(upgradedConfig.mangoBackendVersion, releaseVersions.maven.mangoBackend, 'tuple config Maven');
+  assertEqual(upgradedConfig.mangoCliVersion, releaseVersions.npm['@mango/cli'], 'tuple config CLI');
+  assertEqual(upgradedConfig.mangoPmoVersion, releaseVersions.npm['@mango/pmo'], 'tuple config PMO');
+  assertEqual(upgradedConfig.releaseTupleUserField, 'preserve-me', 'tuple project-owned config field');
+  assertEqual(
+    upgradedPackage.dependencies['release-tuple-user-package'],
+    '7.8.9',
+    'tuple project-owned npm dependency',
+  );
+  for (const section of ['dependencies', 'devDependencies', 'optionalDependencies', 'peerDependencies']) {
+    for (const [name, version] of Object.entries(upgradedPackage[section] || {})) {
+      if (name.startsWith('@mango/') && version !== releaseVersions.npm[name]) {
+        throw new Error(`release tuple did not upgrade ${section}.${name}: ${version}`);
+      }
+    }
+  }
+  if (!readFileSync(pomPath, 'utf8').includes(`<mango.version>${releaseVersions.maven.mangoBackend}</mango.version>`)) {
+    throw new Error('release tuple did not upgrade backend mango.version');
+  }
+
+  const reentry = assertCommandOk(
+    [cli, 'pmo', 'upgrade', '--project-dir', projectRoot, '--dry-run'],
+    projectRoot,
+    'release tuple reentry',
+  );
+  for (const path of ['mango.config.json', 'backend/pom.xml', 'frontend/package.json']) {
+    if (!reentry.stdout.includes(`skip   ${path}`)) {
+      throw new Error(`release tuple reentry should skip ${path}:\n${reentry.stdout}`);
+    }
+  }
 }
 
 function assertPmoCommands(projectRoot) {
@@ -3670,6 +4116,11 @@ function assertPmoSyncCommand(tempRoot) {
     );
   }
   assertCommandOk([cli, 'validate'], discoveredShellRoot, 'discovered mango validate');
+  prepareStableBootstrapReceipt(
+    discoveredShellRoot,
+    join(discoveredShellRoot, '.runtime/discovered-shell-workspaces.json'),
+    'baohan-backend/pom.xml',
+  );
   const discoveredPlan = assertCommandOk([cli, 'plan', 'frontend'], discoveredShellRoot, 'discovered frontend plan');
   const normalizedDiscoveredPlan = discoveredPlan.stdout.replace(/\\/gu, '/');
   if (

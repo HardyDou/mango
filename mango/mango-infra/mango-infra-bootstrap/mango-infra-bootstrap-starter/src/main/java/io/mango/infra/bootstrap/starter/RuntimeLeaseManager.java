@@ -45,6 +45,7 @@ final class RuntimeLeaseManager implements ApplicationRunner, DisposableBean, Or
     private ScheduledExecutorService heartbeatExecutor;
     private String instanceId;
     private String manifestFingerprint;
+    private boolean leaseRegistered;
 
     RuntimeLeaseManager(BootstrapProperties bootstrapProperties,
                         MangoReleaseProperties releaseProperties,
@@ -61,21 +62,14 @@ final class RuntimeLeaseManager implements ApplicationRunner, DisposableBean, Or
     }
 
     @Override
-    public void run(ApplicationArguments args) {
+    public synchronized void run(ApplicationArguments args) {
         if (bootstrapProperties.getMode() != BootstrapMode.RUNTIME) {
             return;
         }
-        BootstrapPlan plan = planBuilder.build(
-                releaseProperties.getId(), releaseProperties.getRevision(), contributors);
-        manifestFingerprint = plan.manifestFingerprint();
-        if (releaseProperties.getFingerprint() != null && !releaseProperties.getFingerprint().isBlank()
-                && !releaseProperties.getFingerprint().equals(manifestFingerprint)) {
-            throw new IllegalStateException("BOOTSTRAP_FINGERPRINT_MISMATCH: scope=artifact");
+        prepareRuntimeLease();
+        if (heartbeatExecutor != null) {
+            return;
         }
-        repository.assertRuntimeAllowed(bootstrapProperties.getEnvironmentKey(),
-                releaseProperties.getGeneration(), manifestFingerprint);
-        instanceId = resolveInstanceId();
-        heartbeat();
         Duration interval = positive(bootstrapProperties.getRuntimeHeartbeatInterval(), DEFAULT_HEARTBEAT_INTERVAL);
         heartbeatExecutor = Executors.newSingleThreadScheduledExecutor(Thread.ofPlatform()
                 .name("mango-runtime-lease-").daemon(true).factory());
@@ -85,13 +79,37 @@ final class RuntimeLeaseManager implements ApplicationRunner, DisposableBean, Or
                 instanceId, releaseProperties.getGeneration(), manifestFingerprint);
     }
 
+    synchronized void prepareRuntimeLease() {
+        if (bootstrapProperties.getMode() != BootstrapMode.RUNTIME || leaseRegistered) {
+            return;
+        }
+        BootstrapPlan plan = planBuilder.build(
+                releaseProperties.getId(), releaseProperties.getRevision(), contributors);
+        String resolvedFingerprint = plan.manifestFingerprint();
+        if (releaseProperties.getFingerprint() != null && !releaseProperties.getFingerprint().isBlank()
+                && !releaseProperties.getFingerprint().equals(resolvedFingerprint)) {
+            throw new IllegalStateException("BOOTSTRAP_FINGERPRINT_MISMATCH: scope=artifact, expected="
+                    + releaseProperties.getFingerprint() + ", actual=" + resolvedFingerprint);
+        }
+        repository.assertRuntimeAllowed(bootstrapProperties.getEnvironmentKey(),
+                releaseProperties.getGeneration(), resolvedFingerprint);
+        String resolvedInstanceId = resolveInstanceId();
+        repository.upsertRuntimeLease(resolvedInstanceId, bootstrapProperties.getEnvironmentKey(),
+                releaseProperties.getId(), releaseProperties.getGeneration(), resolvedFingerprint,
+                positive(bootstrapProperties.getRuntimeLeaseTtl(), DEFAULT_LEASE_TTL));
+        manifestFingerprint = resolvedFingerprint;
+        instanceId = resolvedInstanceId;
+        leaseRegistered = true;
+    }
+
     @Override
-    public void destroy() {
+    public synchronized void destroy() {
         if (heartbeatExecutor != null) {
             heartbeatExecutor.shutdownNow();
         }
         if (instanceId != null) {
             repository.removeRuntimeLease(instanceId, bootstrapProperties.getEnvironmentKey());
+            leaseRegistered = false;
         }
     }
 
@@ -101,7 +119,7 @@ final class RuntimeLeaseManager implements ApplicationRunner, DisposableBean, Or
     }
 
     @Override
-    public Optional<BootstrapWriteAuthority> currentWriteAuthority() {
+    public synchronized Optional<BootstrapWriteAuthority> currentWriteAuthority() {
         if (bootstrapProperties.getMode() != BootstrapMode.RUNTIME || manifestFingerprint == null) {
             return Optional.empty();
         }
@@ -117,7 +135,7 @@ final class RuntimeLeaseManager implements ApplicationRunner, DisposableBean, Or
                 manifestFingerprint, control.fencingToken()));
     }
 
-    private void safeHeartbeat() {
+    private synchronized void safeHeartbeat() {
         try {
             repository.assertRuntimeAllowed(bootstrapProperties.getEnvironmentKey(),
                     releaseProperties.getGeneration(), manifestFingerprint);

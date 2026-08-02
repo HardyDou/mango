@@ -26,14 +26,19 @@ public class MangoEmbeddedWorkerRegistrar {
 
     private final MangoNativeJobProperties properties;
 
+    private volatile boolean ready;
+
     @EventListener(ApplicationReadyEvent.class)
     public void registerOnReady() {
+        ready = true;
         register();
     }
 
     @Scheduled(fixedDelayString = "${mango.job.native.worker-heartbeat-interval-millis:15000}")
     public void heartbeat() {
-        register();
+        if (ready) {
+            register();
+        }
     }
 
     private void register() {

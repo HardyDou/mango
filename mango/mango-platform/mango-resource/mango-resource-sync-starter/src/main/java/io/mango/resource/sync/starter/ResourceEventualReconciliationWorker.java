@@ -62,7 +62,9 @@ final class ResourceEventualReconciliationWorker implements ApplicationRunner, D
                 .name("mango-resource-eventual-").daemon(true).factory());
         Duration interval = positive(properties.getEventualReconciliationInterval(),
                 DEFAULT_RECONCILIATION_INTERVAL);
-        executor.scheduleWithFixedDelay(this::reconcileOnce, 0, interval.toMillis(), TimeUnit.MILLISECONDS);
+        // Do not race synchronous startup registrars that write the same resource targets.
+        executor.scheduleWithFixedDelay(
+                this::reconcileOnce, interval.toMillis(), interval.toMillis(), TimeUnit.MILLISECONDS);
     }
 
     @Override

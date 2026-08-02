@@ -434,3 +434,9 @@ authorization_api_resource         API_RESOURCE 访问模式正确
 
 - [Resource Registry 设计方案](../../../mango-docs/designs/mango-resource-registry-design.md)
 - [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)
+
+## 16. Issue #690 资源声明迁移
+
+使用 Maven `1.0.30` 或其它 `1.0.3x` 组合的业务模块，升级到包含 #690 修复的新 tuple 时，将旧 `resource-manifest.json` 迁移为 `META-INF/mango/resources/<module>-common-*.json|yml|yaml` typed declaration，并按目标 handler 的 `ResourceHandlerSpec` 校验字段。正式内置资源默认 `BOOTSTRAP_REQUIRED`；需要非阻断对账的资源显式使用 `RUNTIME_EVENTUAL`。不要把历史 Flyway seed、demo 数据或用户可修改数据复制为正式 Resource 声明。
+
+升级验证至少检查空库 Resource/菜单、已有库不重建、依赖资源拓扑、manifest fingerprint 和 Runtime readiness。出现 handler 缺失、声明 schema 错误或 generation/fingerprint 不匹配时，保留同步日志和 Bootstrap receipt，修复声明或回滚候选 generation，不通过手工 SQL 绕过同步。

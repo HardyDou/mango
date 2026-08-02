@@ -3,6 +3,7 @@ package io.mango.plugin.architecture;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -23,11 +24,75 @@ import io.mango.architecture.ModuleRole;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.Dependency;
 import org.apache.maven.model.Build;
+import org.apache.maven.project.DependencyResolutionResult;
 import org.apache.maven.project.MavenProject;
+import org.apache.maven.project.ProjectDependenciesResolver;
+import org.eclipse.aether.RepositorySystemSession;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 class ArchitectureMojoTest {
+
+    @Test
+    void auxiliaryClasspathUsesReactorOutputAsTheOnlyReactorArtifactOwner(
+            @TempDir Path root) throws Exception {
+        Path reactorClasses = root.resolve("order-api/target/classes");
+        Path installedReactorJar = root.resolve("repository/order-api.jar");
+        Path externalJar = root.resolve("repository/mango-common.jar");
+        Files.createDirectories(reactorClasses);
+        Files.createDirectories(installedReactorJar.getParent());
+        Files.writeString(installedReactorJar, "reactor");
+        Files.writeString(externalJar, "external");
+
+        org.eclipse.aether.artifact.Artifact reactorArtifact =
+                mock(org.eclipse.aether.artifact.Artifact.class);
+        when(reactorArtifact.getGroupId()).thenReturn("com.example");
+        when(reactorArtifact.getArtifactId()).thenReturn("order-api");
+        when(reactorArtifact.getFile()).thenReturn(installedReactorJar.toFile());
+        org.eclipse.aether.artifact.Artifact externalArtifact =
+                mock(org.eclipse.aether.artifact.Artifact.class);
+        when(externalArtifact.getGroupId()).thenReturn("io.mango.common");
+        when(externalArtifact.getArtifactId()).thenReturn("mango-common");
+        when(externalArtifact.getFile()).thenReturn(externalJar.toFile());
+
+        MavenProject app = new MavenProject();
+        app.setGroupId("com.example");
+        app.setArtifactId("order-starter");
+        MavenProject api = new MavenProject();
+        api.setGroupId("com.example");
+        api.setArtifactId("order-api");
+        MavenSession session = mock(MavenSession.class);
+        when(session.getProjects()).thenReturn(List.of(app, api));
+        when(session.getRepositorySession()).thenReturn(mock(RepositorySystemSession.class));
+        DependencyResolutionResult resolution = mock(DependencyResolutionResult.class);
+        when(resolution.getResolvedDependencies())
+                .thenReturn(
+                        List.of(
+                                new org.eclipse.aether.graph.Dependency(
+                                        reactorArtifact, "compile"),
+                                new org.eclipse.aether.graph.Dependency(
+                                        externalArtifact, "compile")));
+        when(resolution.getUnresolvedDependencies()).thenReturn(List.of());
+        when(resolution.getCollectionErrors()).thenReturn(List.of());
+        ProjectDependenciesResolver resolver = mock(ProjectDependenciesResolver.class);
+        when(resolver.resolve(any())).thenReturn(resolution);
+
+        ArchitectureMojo mojo = new ArchitectureMojo();
+        setField(mojo, "session", session);
+        setField(mojo, "projectDependenciesResolver", resolver);
+        Method collect = ArchitectureMojo.class.getDeclaredMethod(
+                "collectAuxiliaryClasspath", java.util.Collection.class);
+        collect.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        Set<Path> classpath =
+                (Set<Path>) collect.invoke(mojo, List.of(reactorClasses));
+
+        assertEquals(
+                Set.of(
+                        reactorClasses.toAbsolutePath().normalize(),
+                        externalJar.toAbsolutePath().normalize()),
+                classpath);
+    }
 
     @Test
     void configurablePathsUseMavenBindableFileType() throws Exception {

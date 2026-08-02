@@ -158,14 +158,14 @@ final class MySqlBaselineStore {
         try (Connection connection = connect(database)) {
             DatabaseObjects objects = inspectObjects(connection, database);
             validateOwnership(objects, groupModules, ownership);
+            Map<String, TableSnapshot> tables = new TreeMap<>();
             Map<String, String> definitions = new TreeMap<>();
             Map<String, List<List<String>>> data = new TreeMap<>();
             for (Map.Entry<String, String> table : objects.tables().entrySet()) {
                 if (!groupModules.contains(ownership.tableOwner(table.getKey()))) {
                     continue;
                 }
-                definitions.put("table:" + table.getKey(),
-                        normalizeDefinition(showCreateTable(connection, table.getValue()), database));
+                tables.put(table.getKey(), tableSnapshot(connection, database, table.getValue()));
                 data.put(table.getKey(), readHexRows(
                         connection, database, table.getValue(), ignoredDataColumns));
             }
@@ -183,7 +183,8 @@ final class MySqlBaselineStore {
                 }
             }
             assertNoUnsupportedObjects(connection, database);
-            return new SchemaSnapshot(Map.copyOf(definitions), Map.copyOf(data));
+            return new SchemaSnapshot(
+                    Map.copyOf(tables), Map.copyOf(definitions), Map.copyOf(data));
         } catch (SQLException exception) {
             throw databaseFailure("read schema snapshot from " + database, exception);
         }
@@ -220,6 +221,326 @@ final class MySqlBaselineStore {
             }
         }
         return new DatabaseObjects(tables, views);
+    }
+
+    private static TableSnapshot tableSnapshot(
+            Connection connection,
+            String database,
+            String table) throws SQLException {
+        TableHeader header = tableHeader(connection, database, table);
+        return new TableSnapshot(
+                header.engine(),
+                header.characterSet(),
+                header.collation(),
+                header.rowFormat(),
+                header.createOptions(),
+                header.comment(),
+                tableColumns(connection, database, table),
+                tableIndexes(connection, database, table),
+                tableConstraints(connection, database, table));
+    }
+
+    private static TableHeader tableHeader(
+            Connection connection,
+            String database,
+            String table) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement("""
+                SELECT t.ENGINE,
+                       cca.CHARACTER_SET_NAME,
+                       t.TABLE_COLLATION,
+                       t.ROW_FORMAT,
+                       t.CREATE_OPTIONS,
+                       t.TABLE_COMMENT
+                FROM information_schema.TABLES t
+                LEFT JOIN information_schema.COLLATION_CHARACTER_SET_APPLICABILITY cca
+                  ON cca.COLLATION_NAME = t.TABLE_COLLATION
+                WHERE t.TABLE_SCHEMA = ?
+                  AND t.TABLE_NAME = ?
+                  AND t.TABLE_TYPE = 'BASE TABLE'
+                """)) {
+            statement.setString(1, database);
+            statement.setString(2, table);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (!resultSet.next()) {
+                    throw new SQLException("table metadata returned no row for " + table);
+                }
+                return new TableHeader(
+                        normalizeIdentifier(resultSet.getString("ENGINE")),
+                        normalizeIdentifier(resultSet.getString("CHARACTER_SET_NAME")),
+                        normalizeIdentifier(resultSet.getString("TABLE_COLLATION")),
+                        normalizeIdentifier(resultSet.getString("ROW_FORMAT")),
+                        normalizeOptions(resultSet.getString("CREATE_OPTIONS")),
+                        resultSet.getString("TABLE_COMMENT"));
+            }
+        }
+    }
+
+    private static Map<String, ColumnSnapshot> tableColumns(
+            Connection connection,
+            String database,
+            String table) throws SQLException {
+        Map<String, ColumnSnapshot> columns = new TreeMap<>();
+        try (PreparedStatement statement = connection.prepareStatement("""
+                SELECT ORDINAL_POSITION,
+                       COLUMN_NAME,
+                       COLUMN_TYPE,
+                       IS_NULLABLE,
+                       COLUMN_DEFAULT,
+                       EXTRA,
+                       GENERATION_EXPRESSION,
+                       CHARACTER_SET_NAME,
+                       COLLATION_NAME,
+                       COLUMN_COMMENT
+                FROM information_schema.COLUMNS
+                WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ?
+                ORDER BY ORDINAL_POSITION
+                """)) {
+            statement.setString(1, database);
+            statement.setString(2, table);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    String name = resultSet.getString("COLUMN_NAME");
+                    columns.put(name.toLowerCase(Locale.ROOT), new ColumnSnapshot(
+                            resultSet.getInt("ORDINAL_POSITION"),
+                            name,
+                            normalizeIdentifier(resultSet.getString("COLUMN_TYPE")),
+                            "YES".equalsIgnoreCase(resultSet.getString("IS_NULLABLE")),
+                            resultSet.getString("COLUMN_DEFAULT"),
+                            normalizeSqlFragment(resultSet.getString("EXTRA")),
+                            normalizeSqlFragment(resultSet.getString("GENERATION_EXPRESSION")),
+                            normalizeIdentifier(resultSet.getString("CHARACTER_SET_NAME")),
+                            normalizeIdentifier(resultSet.getString("COLLATION_NAME")),
+                            resultSet.getString("COLUMN_COMMENT")));
+                }
+            }
+        }
+        return Map.copyOf(columns);
+    }
+
+    private static Map<String, IndexSnapshot> tableIndexes(
+            Connection connection,
+            String database,
+            String table) throws SQLException {
+        Map<String, IndexHeader> headers = new TreeMap<>();
+        Map<String, List<IndexColumnSnapshot>> parts = new TreeMap<>();
+        try (PreparedStatement statement = connection.prepareStatement("""
+                SELECT INDEX_NAME,
+                       NON_UNIQUE,
+                       INDEX_TYPE,
+                       COMMENT,
+                       INDEX_COMMENT,
+                       IS_VISIBLE,
+                       SEQ_IN_INDEX,
+                       COLUMN_NAME,
+                       COLLATION,
+                       SUB_PART,
+                       NULLABLE,
+                       EXPRESSION
+                FROM information_schema.STATISTICS
+                WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ?
+                ORDER BY INDEX_NAME, SEQ_IN_INDEX
+                """)) {
+            statement.setString(1, database);
+            statement.setString(2, table);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    String name = resultSet.getString("INDEX_NAME");
+                    String key = name.toLowerCase(Locale.ROOT);
+                    headers.putIfAbsent(key, new IndexHeader(
+                            !resultSet.getBoolean("NON_UNIQUE"),
+                            normalizeIdentifier(resultSet.getString("INDEX_TYPE")),
+                            resultSet.getString("COMMENT"),
+                            resultSet.getString("INDEX_COMMENT"),
+                            "YES".equalsIgnoreCase(resultSet.getString("IS_VISIBLE"))));
+                    parts.computeIfAbsent(key, ignored -> new ArrayList<>()).add(
+                            new IndexColumnSnapshot(
+                                    resultSet.getInt("SEQ_IN_INDEX"),
+                                    resultSet.getString("COLUMN_NAME"),
+                                    normalizeIdentifier(resultSet.getString("COLLATION")),
+                                    nullableLong(resultSet, "SUB_PART"),
+                                    "YES".equalsIgnoreCase(resultSet.getString("NULLABLE")),
+                                    normalizeSqlFragment(resultSet.getString("EXPRESSION"))));
+                }
+            }
+        }
+        Map<String, IndexSnapshot> indexes = new TreeMap<>();
+        headers.forEach((name, header) -> indexes.put(name, new IndexSnapshot(
+                header.unique(),
+                header.type(),
+                header.comment(),
+                header.indexComment(),
+                header.visible(),
+                List.copyOf(parts.getOrDefault(name, List.of())))));
+        return Map.copyOf(indexes);
+    }
+
+    private static Map<String, ConstraintSnapshot> tableConstraints(
+            Connection connection,
+            String database,
+            String table) throws SQLException {
+        Map<String, ConstraintHeader> headers = constraintHeaders(connection, database, table);
+        Map<String, List<ConstraintColumnSnapshot>> columns =
+                constraintColumns(connection, database, table);
+        Map<String, ReferentialConstraintSnapshot> references =
+                referentialConstraints(connection, database, table);
+        Map<String, String> checkClauses = checkConstraints(connection, database, table);
+        Map<String, ConstraintSnapshot> constraints = new TreeMap<>();
+        headers.forEach((name, header) -> constraints.put(name, new ConstraintSnapshot(
+                header.type(),
+                header.enforced(),
+                List.copyOf(columns.getOrDefault(name, List.of())),
+                references.get(name),
+                checkClauses.get(name))));
+        return Map.copyOf(constraints);
+    }
+
+    private static Map<String, ConstraintHeader> constraintHeaders(
+            Connection connection,
+            String database,
+            String table) throws SQLException {
+        Map<String, ConstraintHeader> headers = new TreeMap<>();
+        try (PreparedStatement statement = connection.prepareStatement("""
+                SELECT CONSTRAINT_NAME, CONSTRAINT_TYPE, ENFORCED
+                FROM information_schema.TABLE_CONSTRAINTS
+                WHERE CONSTRAINT_SCHEMA = ? AND TABLE_NAME = ?
+                ORDER BY CONSTRAINT_NAME
+                """)) {
+            statement.setString(1, database);
+            statement.setString(2, table);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    headers.put(resultSet.getString("CONSTRAINT_NAME").toLowerCase(Locale.ROOT),
+                            new ConstraintHeader(
+                                    normalizeIdentifier(resultSet.getString("CONSTRAINT_TYPE")),
+                                    "YES".equalsIgnoreCase(resultSet.getString("ENFORCED"))));
+                }
+            }
+        }
+        return headers;
+    }
+
+    private static Map<String, List<ConstraintColumnSnapshot>> constraintColumns(
+            Connection connection,
+            String database,
+            String table) throws SQLException {
+        Map<String, List<ConstraintColumnSnapshot>> columns = new TreeMap<>();
+        try (PreparedStatement statement = connection.prepareStatement("""
+                SELECT CONSTRAINT_NAME,
+                       ORDINAL_POSITION,
+                       POSITION_IN_UNIQUE_CONSTRAINT,
+                       COLUMN_NAME,
+                       REFERENCED_TABLE_SCHEMA,
+                       REFERENCED_TABLE_NAME,
+                       REFERENCED_COLUMN_NAME
+                FROM information_schema.KEY_COLUMN_USAGE
+                WHERE CONSTRAINT_SCHEMA = ? AND TABLE_NAME = ?
+                ORDER BY CONSTRAINT_NAME, ORDINAL_POSITION
+                """)) {
+            statement.setString(1, database);
+            statement.setString(2, table);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    String key = resultSet.getString("CONSTRAINT_NAME").toLowerCase(Locale.ROOT);
+                    columns.computeIfAbsent(key, ignored -> new ArrayList<>()).add(
+                            new ConstraintColumnSnapshot(
+                                    resultSet.getInt("ORDINAL_POSITION"),
+                                    nullableLong(resultSet, "POSITION_IN_UNIQUE_CONSTRAINT"),
+                                    resultSet.getString("COLUMN_NAME"),
+                                    portableSchema(resultSet.getString("REFERENCED_TABLE_SCHEMA"), database),
+                                    resultSet.getString("REFERENCED_TABLE_NAME"),
+                                    resultSet.getString("REFERENCED_COLUMN_NAME")));
+                }
+            }
+        }
+        return columns;
+    }
+
+    private static Map<String, ReferentialConstraintSnapshot> referentialConstraints(
+            Connection connection,
+            String database,
+            String table) throws SQLException {
+        Map<String, ReferentialConstraintSnapshot> references = new TreeMap<>();
+        try (PreparedStatement statement = connection.prepareStatement("""
+                SELECT CONSTRAINT_NAME,
+                       UNIQUE_CONSTRAINT_SCHEMA,
+                       UNIQUE_CONSTRAINT_NAME,
+                       MATCH_OPTION,
+                       UPDATE_RULE,
+                       DELETE_RULE
+                FROM information_schema.REFERENTIAL_CONSTRAINTS
+                WHERE CONSTRAINT_SCHEMA = ? AND TABLE_NAME = ?
+                ORDER BY CONSTRAINT_NAME
+                """)) {
+            statement.setString(1, database);
+            statement.setString(2, table);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    references.put(resultSet.getString("CONSTRAINT_NAME").toLowerCase(Locale.ROOT),
+                            new ReferentialConstraintSnapshot(
+                                    portableSchema(resultSet.getString("UNIQUE_CONSTRAINT_SCHEMA"), database),
+                                    resultSet.getString("UNIQUE_CONSTRAINT_NAME"),
+                                    normalizeIdentifier(resultSet.getString("MATCH_OPTION")),
+                                    normalizeIdentifier(resultSet.getString("UPDATE_RULE")),
+                                    normalizeIdentifier(resultSet.getString("DELETE_RULE"))));
+                }
+            }
+        }
+        return references;
+    }
+
+    private static Map<String, String> checkConstraints(
+            Connection connection,
+            String database,
+            String table) throws SQLException {
+        Map<String, String> clauses = new TreeMap<>();
+        try (PreparedStatement statement = connection.prepareStatement("""
+                SELECT cc.CONSTRAINT_NAME, cc.CHECK_CLAUSE
+                FROM information_schema.CHECK_CONSTRAINTS cc
+                JOIN information_schema.TABLE_CONSTRAINTS tc
+                  ON tc.CONSTRAINT_SCHEMA = cc.CONSTRAINT_SCHEMA
+                 AND tc.CONSTRAINT_NAME = cc.CONSTRAINT_NAME
+                WHERE tc.CONSTRAINT_SCHEMA = ? AND tc.TABLE_NAME = ?
+                ORDER BY cc.CONSTRAINT_NAME
+                """)) {
+            statement.setString(1, database);
+            statement.setString(2, table);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    clauses.put(resultSet.getString(1).toLowerCase(Locale.ROOT),
+                            normalizeSqlFragment(resultSet.getString(2)));
+                }
+            }
+        }
+        return clauses;
+    }
+
+    private static Long nullableLong(ResultSet resultSet, String columnLabel) throws SQLException {
+        long value = resultSet.getLong(columnLabel);
+        return resultSet.wasNull() ? null : value;
+    }
+
+    private static String portableSchema(String schema, String database) {
+        return schema != null && schema.equalsIgnoreCase(database) ? "${schema}" : schema;
+    }
+
+    private static String normalizeIdentifier(String value) {
+        return value == null ? null : value.toLowerCase(Locale.ROOT);
+    }
+
+    private static String normalizeOptions(String value) {
+        if (value == null || value.isBlank()) {
+            return "";
+        }
+        List<String> options = new ArrayList<>(List.of(value.trim().split("\\s+")));
+        options.sort(String.CASE_INSENSITIVE_ORDER);
+        return String.join(" ", options).toLowerCase(Locale.ROOT);
+    }
+
+    private static String normalizeSqlFragment(String value) {
+        if (value == null || value.isBlank()) {
+            return "";
+        }
+        return value.replaceAll("\\s+", " ").trim();
     }
 
     private static void validateOwnership(
@@ -545,8 +866,97 @@ final class MySqlBaselineStore {
     }
 
     record SchemaSnapshot(
+            Map<String, TableSnapshot> tables,
             Map<String, String> definitions,
             Map<String, List<List<String>>> data) {
+    }
+
+    record TableSnapshot(
+            String engine,
+            String characterSet,
+            String collation,
+            String rowFormat,
+            String createOptions,
+            String comment,
+            Map<String, ColumnSnapshot> columns,
+            Map<String, IndexSnapshot> indexes,
+            Map<String, ConstraintSnapshot> constraints) {
+    }
+
+    record ColumnSnapshot(
+            int ordinal,
+            String name,
+            String type,
+            boolean nullable,
+            String defaultValue,
+            String extra,
+            String generationExpression,
+            String characterSet,
+            String collation,
+            String comment) {
+    }
+
+    record IndexSnapshot(
+            boolean unique,
+            String type,
+            String comment,
+            String indexComment,
+            boolean visible,
+            List<IndexColumnSnapshot> columns) {
+    }
+
+    record IndexColumnSnapshot(
+            int ordinal,
+            String name,
+            String collation,
+            Long prefixLength,
+            boolean nullable,
+            String expression) {
+    }
+
+    record ConstraintSnapshot(
+            String type,
+            boolean enforced,
+            List<ConstraintColumnSnapshot> columns,
+            ReferentialConstraintSnapshot reference,
+            String checkClause) {
+    }
+
+    record ConstraintColumnSnapshot(
+            int ordinal,
+            Long referencedOrdinal,
+            String name,
+            String referencedSchema,
+            String referencedTable,
+            String referencedColumn) {
+    }
+
+    record ReferentialConstraintSnapshot(
+            String uniqueConstraintSchema,
+            String uniqueConstraintName,
+            String matchOption,
+            String updateRule,
+            String deleteRule) {
+    }
+
+    private record TableHeader(
+            String engine,
+            String characterSet,
+            String collation,
+            String rowFormat,
+            String createOptions,
+            String comment) {
+    }
+
+    private record IndexHeader(
+            boolean unique,
+            String type,
+            String comment,
+            String indexComment,
+            boolean visible) {
+    }
+
+    private record ConstraintHeader(String type, boolean enforced) {
     }
 
     private record DatabaseObjects(Map<String, String> tables, Map<String, String> views) {

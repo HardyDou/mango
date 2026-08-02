@@ -134,6 +134,11 @@ public final class BootstrapOrchestrator {
         try {
             repository.beginFinalize(
                     request.environmentKey(), request.generation(), plan.manifestFingerprint(), token);
+        } catch (RuntimeException exception) {
+            repository.finishExecution(executionId, "FAILED", exception);
+            throw exception;
+        }
+        try {
             executePhase(executionId, request, plan, BootstrapPhase.FINALIZE, token, counts);
             repository.markFinalized(
                     request.environmentKey(), request.generation(), plan.manifestFingerprint(), token);

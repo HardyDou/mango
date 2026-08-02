@@ -47,6 +47,7 @@ import io.mango.resource.support.ResourceTypes;
 import io.mango.resource.support.builder.ResourceDeclarationBuilder;
 import io.mango.resource.support.config.ResourceRegistryProperties;
 import io.mango.resource.support.declaration.ResourceDeclarationCollector;
+import io.mango.resource.support.declaration.ResourceDeclarationCanonicalizer;
 import io.mango.resource.support.model.ResourceDeclaration;
 import io.mango.resource.sync.starter.ResourceBootstrapStepContributor;
 import io.mango.resource.sync.starter.ResourceManifestSerializer;
@@ -161,7 +162,7 @@ class BootstrapResourcePerformanceIntegrationTest {
                         foundationDeclarations, fileDeclarations, workflowDeclarations));
                 BootstrapOrchestrator orchestrator = bootstrapOrchestrator(
                         dataSource, context.getBean(JdbcBootstrapRepository.class),
-                        registryProperties, collector, registryService);
+                        registryProperties, collector, registryService, objectMapper);
                 BootstrapInvocation applyRequest = request(BootstrapAction.APPLY);
                 long coldStarted = System.nanoTime();
                 BootstrapOutcome coldOutcome = orchestrator.execute(applyRequest);
@@ -225,11 +226,13 @@ class BootstrapResourcePerformanceIntegrationTest {
             JdbcBootstrapRepository repository,
             ResourceRegistryProperties properties,
             ResourceDeclarationCollector collector,
-            ResourceRegistryService registryService) {
+            ResourceRegistryService registryService,
+            ObjectMapper objectMapper) {
         BootstrapManifestHasher hasher = new BootstrapManifestHasher();
         ResourceDeclarationApi declarationApi = command -> R.ok(registryService.registerDeclarations(command));
         ResourceBootstrapStepContributor resourceContributor = new ResourceBootstrapStepContributor(
-                properties, collector, declarationApi, new ResourceManifestSerializer(), "bootstrap-performance");
+                properties, collector, declarationApi, new ResourceManifestSerializer(),
+                new ResourceDeclarationCanonicalizer(objectMapper), "bootstrap-performance");
         List<BootstrapStepContributor> contributors = List.of(
                 () -> List.of(noOpFlywayExpandStep()), resourceContributor);
         return new BootstrapOrchestrator(

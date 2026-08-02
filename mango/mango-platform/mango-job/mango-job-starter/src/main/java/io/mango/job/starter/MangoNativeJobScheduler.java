@@ -5,6 +5,8 @@ import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.job.core.service.nativeengine.IMangoNativeJobRuntime;
 import io.mango.job.support.nativeengine.MangoNativeJobProperties;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.util.StringUtils;
 
@@ -20,9 +22,17 @@ public class MangoNativeJobScheduler {
 
     private final MangoNativeJobProperties properties;
 
+    private volatile boolean ready;
+
+    @EventListener(ApplicationReadyEvent.class)
+    public void startOnReady() {
+        ready = true;
+        tick();
+    }
+
     @Scheduled(fixedDelayString = "${mango.job.native.scan-interval-millis:5000}")
     public void tick() {
-        if (properties.isSchedulerEnabled()) {
+        if (ready && properties.isSchedulerEnabled()) {
             MangoContextSnapshot previous = MangoContextHolder.get();
             try {
                 MangoContextHolder.set(schedulerContext());

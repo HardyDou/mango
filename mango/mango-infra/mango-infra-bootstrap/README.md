@@ -145,3 +145,9 @@ java -jar app.jar bootstrap abort --mango.release.id=2026.07.27 \
 - [Persistence](../mango-infra-persistence/README.md)
 - [Resource](../../mango-platform/mango-resource/README.md)
 - [能力地图](../../../mango-docs/capabilities/README.md)
+
+## 13. Issue #690 升级与回滚合同
+
+Maven `1.0.30`/`1.0.3x` 业务仓升级必须消费包含 #690 修复的完整 release tuple，不得单独替换 Bootstrap 相关 jar。升级前保存 `.mango`、Bootstrap 四张审计表和应用日志；既有数据库不重建。
+
+既有环境按 `plan -> apply --strategy=rolling -> verify -> runtime -> finalize` 执行。`apply` 只写入候选 generation，确认新 Runtime receipt 的 environment、revision、generation、fingerprint 和 fencing token 一致且旧 lease 排空后才可 finalize。finalize 前失败使用 `abort`，它清除 candidate、恢复 stable 写权并递增 fencing token；finalize 开始后只能续跑 finalize。Runtime 不执行 Flyway、Resource 初始化或自动修复缺失回执。

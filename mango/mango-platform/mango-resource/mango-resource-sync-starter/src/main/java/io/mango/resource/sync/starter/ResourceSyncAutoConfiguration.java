@@ -9,6 +9,7 @@ import io.mango.resource.api.ResourceDeclarationApi;
 import io.mango.resource.support.config.ResourceRegistryProperties;
 import io.mango.resource.support.declaration.FileResourceProvider;
 import io.mango.resource.support.declaration.ResourceDeclarationCollector;
+import io.mango.resource.support.declaration.ResourceDeclarationCanonicalizer;
 import io.mango.resource.support.declaration.ResourceDeclarationLoader;
 import io.mango.resource.support.execution.DefaultResourceTargetExecutor;
 import io.mango.resource.support.execution.ResourceTargetExecutor;
@@ -19,6 +20,7 @@ import org.springframework.boot.availability.ApplicationAvailability;
 import org.springframework.boot.availability.ApplicationAvailabilityBean;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -32,6 +34,7 @@ import org.springframework.context.annotation.Import;
  * 资源声明扫描同步自动配置。
  */
 @AutoConfiguration
+@AutoConfigureAfter(name = "io.mango.resource.starter.ResourceRegistryAutoConfiguration")
 @EnableConfigurationProperties(ResourceRegistryProperties.class)
 @Import(ResourceTargetController.class)
 public class ResourceSyncAutoConfiguration {
@@ -41,6 +44,12 @@ public class ResourceSyncAutoConfiguration {
     public ResourceTargetExecutor resourceTargetExecutor(ObjectMapper objectMapper,
                                                          ObjectProvider<ResourceHandler> handlers) {
         return new DefaultResourceTargetExecutor(objectMapper, () -> handlers.orderedStream().toList());
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public ResourceDeclarationCanonicalizer resourceDeclarationCanonicalizer(ObjectMapper objectMapper) {
+        return new ResourceDeclarationCanonicalizer(objectMapper);
     }
 
     @Bean
@@ -76,9 +85,11 @@ public class ResourceSyncAutoConfiguration {
             ResourceDeclarationCollector collector,
             ResourceDeclarationApi resourceDeclarationApi,
             ResourceManifestSerializer manifestSerializer,
+            ResourceDeclarationCanonicalizer canonicalizer,
             @Value("${spring.application.name:}") String applicationName) {
         return new ResourceBootstrapStepContributor(
-                properties, collector, resourceDeclarationApi, manifestSerializer, applicationName);
+                properties, collector, resourceDeclarationApi, manifestSerializer,
+                canonicalizer, applicationName);
     }
 
     @Bean

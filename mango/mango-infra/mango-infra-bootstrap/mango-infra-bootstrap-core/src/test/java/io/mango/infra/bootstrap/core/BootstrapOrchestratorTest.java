@@ -22,6 +22,7 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -119,6 +120,30 @@ class BootstrapOrchestratorTest {
         assertThat(finalizeExecutions).hasValue(1);
         verify(repository, never()).prepareCandidate(any(), anyString());
         verify(repository).markFinalized("test", 2L, fingerprint, 9L);
+    }
+
+    @Test
+    void finalizePreconditionFailureKeepsExpandedCandidateRetryable() {
+        AtomicInteger finalizeExecutions = new AtomicInteger();
+        BootstrapStepContributor contributor = contributor(
+                step("FINALIZE", BootstrapPhase.FINALIZE, Set.of(), finalizeExecutions));
+        BootstrapOrchestrator orchestrator = orchestrator(List.of(contributor));
+        String fingerprint = new BootstrapPlanBuilder(hasher)
+                .build("release", "revision", List.of(contributor))
+                .manifestFingerprint();
+        when(repository.findControl("test")).thenReturn(java.util.Optional.of(
+                new BootstrapControl("test", 1, "stable", 2L, fingerprint, 2, "EXPANDED", 9)));
+        doThrow(new IllegalStateException("OLD_RUNTIME_INSTANCES_ACTIVE: count=1"))
+                .when(repository).beginFinalize("test", 2L, fingerprint, 9L);
+
+        assertThatThrownBy(() -> orchestrator.execute(
+                request(BootstrapAction.FINALIZE, BootstrapStrategy.ROLLING)))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("OLD_RUNTIME_INSTANCES_ACTIVE: count=1");
+
+        assertThat(finalizeExecutions).hasValue(0);
+        verify(repository, never()).markFailed("test", 2L, 9L);
+        verify(repository).finishExecution(anyString(), eq("FAILED"), any(IllegalStateException.class));
     }
 
     @Test

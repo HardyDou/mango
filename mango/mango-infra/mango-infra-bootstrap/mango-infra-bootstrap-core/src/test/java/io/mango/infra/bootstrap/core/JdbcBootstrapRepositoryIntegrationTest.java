@@ -51,6 +51,12 @@ class JdbcBootstrapRepositoryIntegrationTest {
         repository.beginFinalize(environmentKey, 1, "fingerprint-one", firstToken);
         repository.markFinalized(environmentKey, 1, "fingerprint-one", firstToken);
         repository.assertRuntimeAllowed(environmentKey, 1, "fingerprint-one");
+        repository.assertStableReleaseIdentity(
+                environmentKey, "release-1", "revision-1", 1, "fingerprint-one");
+        assertThatThrownBy(() -> repository.assertStableReleaseIdentity(
+                environmentKey, "release-1", "stale-revision", 1, "fingerprint-one"))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("BOOTSTRAP_STABLE_IDENTITY_MISMATCH");
 
         repository.upsertRuntimeLease("old-instance", environmentKey, "release-1", 1,
                 "fingerprint-one", Duration.ofMinutes(1));

@@ -1,5 +1,6 @@
 package io.mango.payment.starter;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.common.result.Require;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
@@ -7,6 +8,8 @@ import io.mango.payment.core.mapper.PaymentNotificationRecordMapper;
 import io.mango.payment.core.service.PaymentNotificationDispatcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.support.PeriodicTrigger;
 
@@ -23,8 +26,15 @@ public class PaymentNotificationDispatchScheduler implements AutoCloseable {
     private final PaymentNotificationDispatcher notificationService;
     private final int tenantLimit;
     private final int batchSize;
-    private final ScheduledFuture<?> future;
+    private final TaskScheduler taskScheduler;
+    private final long intervalMillis;
+    private final long initialDelayMillis;
+    private ScheduledFuture<?> future;
+    private boolean started;
+    private boolean closed;
 
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+            justification = "The Spring-managed dispatcher is intentionally retained as a shared service dependency")
     public PaymentNotificationDispatchScheduler(
             PaymentNotificationRecordMapper notificationRecordMapper,
             PaymentNotificationDispatcher notificationService,
@@ -42,8 +52,19 @@ public class PaymentNotificationDispatchScheduler implements AutoCloseable {
         Require.isTrue(batchSize > 0 && batchSize <= 100, "支付通知投递批次大小必须在 1 到 100 之间");
         this.notificationRecordMapper = notificationRecordMapper;
         this.notificationService = notificationService;
+        this.taskScheduler = taskScheduler;
+        this.intervalMillis = intervalMillis;
+        this.initialDelayMillis = initialDelayMillis;
         this.tenantLimit = tenantLimit;
         this.batchSize = batchSize;
+    }
+
+    @EventListener(ApplicationReadyEvent.class)
+    public synchronized void startOnReady() {
+        if (started || closed) {
+            return;
+        }
+        started = true;
         PeriodicTrigger trigger = new PeriodicTrigger(Duration.ofMillis(intervalMillis));
         trigger.setInitialDelay(Duration.ofMillis(initialDelayMillis));
         this.future = taskScheduler.schedule(this::dispatchSafely, trigger);
@@ -61,7 +82,8 @@ public class PaymentNotificationDispatchScheduler implements AutoCloseable {
     }
 
     @Override
-    public void close() {
+    public synchronized void close() {
+        closed = true;
         if (future != null) {
             future.cancel(false);
         }

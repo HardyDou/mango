@@ -36,16 +36,4 @@ public class NoticeOutboxAutoConfiguration {
                 outbox.getMaxAttempts());
     }
 
-    @Bean
-    @ConditionalOnBean(IOutboxDispatcher.class)
-    @ConditionalOnProperty(prefix = "mango.notice.outbox", name = "dispatch-enabled", havingValue = "true", matchIfMissing = true)
-    public NoticeOutboxWorker noticeOutboxWorker(IOutboxDispatcher noticeOutboxDispatcher,
-                                                 NoticeProperties properties) {
-        NoticeProperties.Outbox outbox = properties.getOutbox();
-        return new NoticeOutboxWorker(
-                noticeOutboxDispatcher,
-                outbox.getWorkerId(),
-                outbox.getInitialDelayMillis(),
-                outbox.getFixedDelayMillis());
-    }
 }

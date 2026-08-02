@@ -155,6 +155,34 @@ class BaselineGeneratorIntegrationTest {
     }
 
     @Test
+    void treatsImplicitAndExplicitColumnCharacterSetsAsEquivalent() throws Exception {
+        migration("alpha", "V1__init.sql", """
+                CREATE TABLE ACT_HI_COMMENT (
+                  ID_ varchar(64) not null,
+                  TYPE_ varchar(255),
+                  TIME_ datetime(3) not null,
+                  USER_ID_ varchar(255),
+                  TASK_ID_ varchar(64),
+                  PROC_INST_ID_ varchar(64),
+                  ACTION_ varchar(255),
+                  MESSAGE_ varchar(4000),
+                  FULL_MSG_ LONGBLOB,
+                  primary key (ID_)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_bin;
+                INSERT INTO ACT_HI_COMMENT (ID_, TIME_, MESSAGE_)
+                VALUES ('comment-1', '2026-08-02 12:00:00.000', 'Mango');
+                """);
+        String prefix = uniquePrefix("it_charset");
+        Path output = directory.resolve("target/generated-resources");
+
+        generator(prefix, output, List.of("alpha"), Map.of()).generate();
+
+        assertTrue(Files.exists(output.resolve("db/baseline/alpha/B1__baseline.sql")));
+        assertTrue(Files.exists(output.resolve("META-INF/mango/baseline-manifest.json")));
+        assertEquals(0, temporaryDatabaseCount(prefix));
+    }
+
+    @Test
     void rejectsNondeterministicNonAuditTimestampData() throws Exception {
         migration("alpha", "V1__init.sql", """
                 CREATE TABLE alpha_record (
