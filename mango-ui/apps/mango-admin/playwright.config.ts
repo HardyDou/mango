@@ -7,9 +7,11 @@ const baseURL = resolveE2EBaseURL({ uiRoot, defaultURL: 'http://127.0.0.1:7777' 
 const apiBaseURL = resolveE2EApiBaseURL({ uiRoot, defaultURL: 'http://127.0.0.1:5555' });
 const frontendURL = new URL(baseURL);
 const useExternalWebServer = process.env.PLAYWRIGHT_USE_EXTERNAL_WEBSERVER === 'true';
+const playwrightRuntimeRoot = resolve(__dirname, '../../../.runtime/playwright/mango-admin');
 
 export default defineConfig({
   testDir: './e2e',
+  outputDir: resolve(playwrightRuntimeRoot, 'artifacts'),
   timeout: 30 * 1000,
   expect: {
     timeout: 5000,
@@ -18,7 +20,7 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
-  reporter: 'html',
+  reporter: [['list'], ['html', { outputFolder: resolve(playwrightRuntimeRoot, 'report'), open: 'never' }]],
   use: {
     baseURL,
     trace: 'on-first-retry',

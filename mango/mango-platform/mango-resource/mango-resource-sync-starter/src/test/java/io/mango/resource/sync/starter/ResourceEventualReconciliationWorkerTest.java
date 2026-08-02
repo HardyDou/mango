@@ -14,6 +14,7 @@ import io.mango.resource.support.model.ResourceDeclaration;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.core.Ordered;
 
 import java.util.Iterator;
 import java.util.List;
@@ -30,6 +31,15 @@ class ResourceEventualReconciliationWorkerTest {
 
     private static final BootstrapWriteAuthority AUTHORITY = new BootstrapWriteAuthority(
             "test", 7L, "a".repeat(64), 11L);
+
+    @Test
+    @DisplayName("eventual reconciliation starts after synchronous startup registrars")
+    void runsAtTheEndOfStartup() {
+        ResourceEventualReconciliationWorker worker = worker(
+                () -> Optional.empty(), command -> R.ok(Boolean.TRUE));
+
+        assertThat(worker.getOrder()).isEqualTo(Ordered.LOWEST_PRECEDENCE);
+    }
 
     @Test
     @DisplayName("runtime without write authority must not mutate resources")

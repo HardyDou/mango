@@ -149,6 +149,7 @@
                             <cloneProjectsTo>${project.build.directory}/it</cloneProjectsTo>
                             <streamLogs>true</streamLogs>
                             <showErrors>true</showErrors>
+                            <postBuildHookScript>verify.groovy</postBuildHookScript>
                             <goals>
                                 <goal>clean</goal>
                                 <goal>package</goal>
@@ -162,6 +163,71 @@
                             <execution>
                                 <id>baseline-packaging-integration-test</id>
                                 <phase>install</phase>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <version>3.1.0</version>
+                        <executions>
+                            <execution>
+                                <id>verify-baseline-packaging-post-build-hook</id>
+                                <phase>install</phase>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                                <configuration>
+                                    <target>
+                                        <available
+                                                file="${project.build.directory}/it/baseline-boot-package/target/invoker-post-build-hook.success"
+                                                property="baselinePackagingHookExecuted"/>
+                                        <fail unless="baselinePackagingHookExecuted"
+                                              message="Baseline packaging Invoker post-build hook did not execute"/>
+                                    </target>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>baseline-packaging-negative-integration-test</id>
+            <activation>
+                <property>
+                    <name>mango.baseline.packaging.negative</name>
+                    <value>true</value>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-invoker-plugin</artifactId>
+                        <version>3.9.1</version>
+                        <configuration>
+                            <projectsDirectory>src/it-negative</projectsDirectory>
+                            <cloneProjectsTo>${project.build.directory}/it-negative</cloneProjectsTo>
+                            <streamLogs>true</streamLogs>
+                            <showErrors>true</showErrors>
+                            <postBuildHookScript>verify.groovy</postBuildHookScript>
+                            <goals>
+                                <goal>clean</goal>
+                                <goal>package</goal>
+                            </goals>
+                            <properties>
+                                <mango.plugin.version>${project.version}</mango.plugin.version>
+                                <spring.boot.version>${spring-boot.version}</spring.boot.version>
+                            </properties>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>baseline-packaging-missing-entry-negative-test</id>
+                                <phase>verify</phase>
                                 <goals>
                                     <goal>run</goal>
                                 </goals>

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { homedir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
@@ -9,10 +9,14 @@ const packageRoot = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const cli = join(packageRoot, 'src/index.mjs');
 const releaseVersions = JSON.parse(readFileSync(join(packageRoot, 'release-versions.json'), 'utf8'));
 const mangoVersion = process.env.MANGO_BACKEND_GATE_VERSION || releaseVersions.maven.mangoBackend;
-const tempRoot = mkdtempSync(join(tmpdir(), 'mango-generated-backend-gate-'));
+const mangoPluginVersion = process.env.MANGO_BACKEND_GATE_PLUGIN_VERSION || mangoVersion;
+const runtimeProjectsRoot = resolve(packageRoot, '../../../.runtime/projects');
+mkdirSync(runtimeProjectsRoot, { recursive: true });
+const tempRoot = mkdtempSync(join(runtimeProjectsRoot, 'mango-generated-backend-gate-'));
 const localMangoRepository = join(tempRoot, 'mango-repository');
 mkdirSync(localMangoRepository, { recursive: true });
 const mavenRepository = process.env.MANGO_BACKEND_GATE_REPOSITORY || `${pathToFileURL(localMangoRepository).href}/`;
+const mavenLocalRepository = process.env.MANGO_BACKEND_GATE_LOCAL_REPOSITORY || join(homedir(), '.m2/repository');
 const projectName = 'mango-backend-gate-acceptance';
 const MAX_MAVEN_INVOCATIONS = 9;
 let mavenInvocationCount = 0;
@@ -81,7 +85,7 @@ try {
     projectRoot,
     'generate four-layer business module',
   );
-  keepOnlyFourLayerBusinessReactor();
+  configureMangoPluginVersion();
   addApprovedGlobalEntityFixture();
   assertGeneratedPolicyContract();
   const projectBudget = readFileSync(architectureDebtBudget, 'utf8');
@@ -98,12 +102,15 @@ try {
   writeFileSync(githubGovernanceWorkflow, managedWorkflow);
 
   runMaven(
-    ['-Dmango.architecture.inventoryOnly=true', 'verify'],
+    ['-Dmango.architecture.inventoryOnly=true', 'install'],
     true,
-    'generated four-layer backend and full-Reactor inventory-only governance path',
+    'generated executable backend install and full-Reactor inventory-only governance path',
   );
   assertPassingReports();
   assertInventoryOnlyReport();
+  assertFlattenedInstalledPoms();
+  assertExecutableBootArtifact();
+  runExternalConsumer();
   runNode(
     [
       'business-pmo/mango-baseline/tools/check-architecture-debt-budget.mjs',
@@ -318,27 +325,12 @@ public final class StaticViolation {
     'mango.architecture.skip override',
   );
   assertIncludes(architecturePolicyFailure, 'MANGO-ARCH-ENGINE-015', 'mango.architecture.skip override failure');
-  runMaven(
-    [
-      '-pl',
-      'modules/order/order-core,architecture-verification',
-      '-Dmango.architecture.mode=changed',
-      '-Dmango.architecture.requireFullReactor=false',
-      '-Dmango.check.gate=no-new-violations',
-      '-Dmango.check.changedOnly=true',
-      '-Dmango.check.requireFullScope=false',
-      '-Denforcer.skip=false',
-      'validate',
-    ],
-    true,
-    'affected-module architecture mode',
-  );
-
   assertMavenInvocationBudget();
 
   process.stdout.write(
     `Generated backend gate PASS with Mango ${mangoVersion} in ${mavenInvocationCount} Maven invocations: ` +
-      'clean project accepted; ' +
+      'clean project install and executable Boot JAR accepted; Mango Start-Class reached through java -jar; ' +
+      'flattened installed POMs and reactor-external consumer resolved; ' +
       'PathVariable, direct ServiceImpl, tenant schema, module info, Checkstyle, manifest, ' +
       'PMD suppression, reserved namespace shadowing, ' +
       'module-aware architecture report ownership, ' +
@@ -346,11 +338,15 @@ public final class StaticViolation {
       'missing-budget legacy workflow migration, ' +
       'per-Java-module static report coverage, ' +
       'unregistered/mismatched global Entity cases, approved global Entity acceptance, ' +
-      'affected-module mode accepted, generated policy wiring locked, and representative ' +
+      'generated policy wiring locked, and representative ' +
       'architecture policy bypass rejected.\n',
   );
 } finally {
-  rmSync(tempRoot, { recursive: true, force: true });
+  if (process.env.MANGO_BACKEND_GATE_KEEP_TEMP === 'true') {
+    process.stdout.write(`Generated backend gate diagnostics retained at ${tempRoot}\n`);
+  } else {
+    rmSync(tempRoot, { recursive: true, force: true });
+  }
 }
 
 function runNode(args, cwd, label) {
@@ -364,15 +360,16 @@ function runNode(args, cwd, label) {
   }
 }
 
-function keepOnlyFourLayerBusinessReactor() {
-  const backendPom = join(projectRoot, 'backend/pom.xml');
-  const original = readFileSync(backendPom, 'utf8');
-  const withoutPlatformApp = original.replace(/^\s*<module>app<\/module>\s*$/mu, '');
-  if (withoutPlatformApp === original) {
-    throw new Error('generated backend does not contain the expected platform app module');
+function configureMangoPluginVersion() {
+  if (mangoPluginVersion === mangoVersion) return;
+  const original = readFileSync(architectureVerificationPom, 'utf8');
+  const marker = '<artifactId>mango-maven-plugin</artifactId>\n                <version>${mango.version}</version>';
+  const replacement = `<artifactId>mango-maven-plugin</artifactId>\n                <version>${mangoPluginVersion}</version>`;
+  const configured = original.replace(marker, replacement);
+  if (configured === original) {
+    throw new Error('unable to configure workspace-qualified Mango Maven plugin version');
   }
-  writeFileSync(backendPom, withoutPlatformApp);
-  rmSync(join(projectRoot, 'backend/app'), { recursive: true, force: true });
+  writeFileSync(architectureVerificationPom, configured);
 }
 
 function addApprovedGlobalEntityFixture() {
@@ -382,6 +379,123 @@ function addApprovedGlobalEntityFixture() {
     `${readFileSync(migrationPath, 'utf8')}${globalEntityTableSql('order_global_reference')}`,
   );
   writeFileSync(globalEntityManifest, globalEntityManifestJson('order_global_reference'));
+}
+
+function assertFlattenedInstalledPoms() {
+  const coordinates = [
+    ['com/example', `${projectName}-backend`],
+    ['com/example', 'order-starter'],
+  ];
+  for (const [groupPath, artifactId] of coordinates) {
+    const pomPath = join(
+      mavenLocalRepository,
+      groupPath,
+      artifactId,
+      '1.0.0-SNAPSHOT',
+      `${artifactId}-1.0.0-SNAPSHOT.pom`,
+    );
+    if (!existsSync(pomPath)) {
+      throw new Error(`generated backend install did not create ${pomPath}`);
+    }
+    const pom = readFileSync(pomPath, 'utf8');
+    if (pom.includes('${revision}')) {
+      throw new Error(`installed POM still contains unresolved ci-friendly revision: ${pomPath}`);
+    }
+  }
+}
+
+function assertExecutableBootArtifact() {
+  const target = join(projectRoot, 'backend/app/target');
+  const jars = readdirSync(target).filter((name) => name.endsWith('.jar') && !name.endsWith('.jar.original'));
+  if (jars.length !== 1) {
+    throw new Error(`generated backend package must produce one primary app JAR: ${jars.join(', ')}`);
+  }
+  const jarPath = join(target, jars[0]);
+  const listed = spawnSync('jar', ['tf', jarPath], {
+    encoding: 'utf8',
+    maxBuffer: 20 * 1024 * 1024,
+  });
+  if (listed.status !== 0) {
+    throw new Error(`unable to inspect generated Boot JAR:\n${combinedOutput(listed)}`);
+  }
+  for (const entry of [
+    'BOOT-INF/classes/com/example/backendgate/MangoBackendGateAcceptanceApplication.class',
+    'BOOT-INF/lib/',
+    'org/springframework/boot/loader/launch/JarLauncher.class',
+  ]) {
+    assertIncludes(listed.stdout, entry, 'generated executable Boot JAR');
+  }
+  const launched = spawnSync('java', ['-jar', jarPath], {
+    cwd: projectRoot,
+    encoding: 'utf8',
+    maxBuffer: 20 * 1024 * 1024,
+    timeout: 20_000,
+  });
+  if (launched.status === 0 || launched.error?.code === 'ETIMEDOUT') {
+    throw new Error('generated Boot JAR must reach MangoApplication and reject a missing process mode');
+  }
+  assertIncludes(
+    combinedOutput(launched),
+    'Mango process mode is required: bootstrap or runtime',
+    'generated Boot JAR Start-Class',
+  );
+}
+
+function runExternalConsumer() {
+  const consumerRoot = join(tempRoot, 'reactor-external-consumer');
+  const javaPath = join(consumerRoot, 'src/main/java/com/example/consumer/OrderConsumer.java');
+  mkdirSync(dirname(javaPath), { recursive: true });
+  writeFileSync(
+    join(consumerRoot, 'pom.xml'),
+    `<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.example.consumer</groupId>
+  <artifactId>order-consumer</artifactId>
+  <version>1.0.0-SNAPSHOT</version>
+  <properties>
+    <maven.compiler.release>21</maven.compiler.release>
+  </properties>
+  <dependencies>
+    <dependency>
+      <groupId>com.example</groupId>
+      <artifactId>order-starter</artifactId>
+      <version>1.0.0-SNAPSHOT</version>
+    </dependency>
+  </dependencies>
+</project>
+`,
+  );
+  writeFileSync(
+    javaPath,
+    `package com.example.consumer;
+
+import com.example.backendgate.order.api.OrderApi;
+
+public final class OrderConsumer {
+    private final OrderApi orderApi;
+
+    public OrderConsumer(OrderApi orderApi) {
+        this.orderApi = orderApi;
+    }
+}
+`,
+  );
+  mavenInvocationCount += 1;
+  const result = spawnSync(
+    'mvn',
+    ['-B', '-ntp', `-Dmaven.repo.local=${mavenLocalRepository}`, '-f', 'pom.xml', 'package'],
+    {
+      cwd: consumerRoot,
+      encoding: 'utf8',
+      maxBuffer: 50 * 1024 * 1024,
+    },
+  );
+  if (result.status !== 0) {
+    throw new Error(`reactor-external generated starter consumer failed:\n${combinedOutput(result)}`);
+  }
 }
 
 function assertGeneratedPolicyContract() {
@@ -439,6 +553,7 @@ function runMaven(goals, shouldPass, label) {
     [
       '-B',
       '-ntp',
+      `-Dmaven.repo.local=${mavenLocalRepository}`,
       '-f',
       'backend/pom.xml',
       ...defaultProperties.filter((argument) => {

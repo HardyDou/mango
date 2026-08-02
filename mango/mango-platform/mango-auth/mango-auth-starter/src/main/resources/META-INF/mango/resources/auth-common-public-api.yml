@@ -1,0 +1,105 @@
+mango:
+  resource:
+    schema-version: 1
+    module-code: authorization
+    module-name: mango-auth
+    declarations:
+      API_RESOURCE:
+        - id: "825551090668192482"
+          version: 1
+          biz-key: api.mango-auth.POST.auth.login
+          name: 用户登录
+          target-module: authorization
+          fields:
+            moduleName: { type: STRING, value: mango-auth }
+            httpMethod: { type: STRING, value: POST }
+            pathPattern: { type: STRING, value: /auth/login }
+            resourceCode: { type: STRING, value: "POST:/auth/login" }
+            accessMode: { type: STRING, value: PUBLIC }
+            handlerClass: { type: STRING, value: io.mango.auth.starter.controller.AuthController }
+            handlerMethod: { type: STRING, value: login }
+            description: { type: STRING, value: 用户登录 }
+        - id: "848974806537483978"
+          version: 1
+          biz-key: api.mango-auth.POST.auth.login-institutions
+          name: 查询账号可登录机构
+          target-module: authorization
+          fields:
+            moduleName: { type: STRING, value: mango-auth }
+            httpMethod: { type: STRING, value: POST }
+            pathPattern: { type: STRING, value: /auth/login-institutions }
+            resourceCode: { type: STRING, value: "POST:/auth/login-institutions" }
+            accessMode: { type: STRING, value: PUBLIC }
+            handlerClass: { type: STRING, value: io.mango.auth.starter.controller.AuthController }
+            handlerMethod: { type: STRING, value: loginInstitutions }
+            description: { type: STRING, value: 查询账号可登录机构 }
+        - id: "800546258425001288"
+          version: 1
+          biz-key: api.mango-auth.POST.auth.wecom.login
+          name: 企业微信扫码登录
+          target-module: authorization
+          fields:
+            moduleName: { type: STRING, value: mango-auth }
+            httpMethod: { type: STRING, value: POST }
+            pathPattern: { type: STRING, value: /auth/wecom/login }
+            resourceCode: { type: STRING, value: "POST:/auth/wecom/login" }
+            accessMode: { type: STRING, value: PUBLIC }
+            handlerClass: { type: STRING, value: io.mango.auth.starter.controller.AuthController }
+            handlerMethod: { type: STRING, value: wecomLogin }
+            description: { type: STRING, value: 企业微信扫码登录 }
+        - id: "870209361535199927"
+          version: 1
+          biz-key: api.mango-auth.GET.auth.wecom.login-config
+          name: 查询企业微信扫码登录配置
+          target-module: authorization
+          fields:
+            moduleName: { type: STRING, value: mango-auth }
+            httpMethod: { type: STRING, value: GET }
+            pathPattern: { type: STRING, value: /auth/wecom/login-config }
+            resourceCode: { type: STRING, value: "GET:/auth/wecom/login-config" }
+            accessMode: { type: STRING, value: PUBLIC }
+            handlerClass: { type: STRING, value: io.mango.auth.starter.controller.AuthController }
+            handlerMethod: { type: STRING, value: wecomLoginConfig }
+            description: { type: STRING, value: 查询企业微信扫码登录配置 }
+        - id: "870113993934476307"
+          version: 1
+          biz-key: api.mango-auth.POST.auth.password.change-required
+          name: 强制修改初始密码
+          target-module: authorization
+          fields:
+            moduleName: { type: STRING, value: mango-auth }
+            httpMethod: { type: STRING, value: POST }
+            pathPattern: { type: STRING, value: /auth/password/change-required }
+            resourceCode: { type: STRING, value: "POST:/auth/password/change-required" }
+            accessMode: { type: STRING, value: PUBLIC }
+            handlerClass: { type: STRING, value: io.mango.auth.starter.controller.AuthController }
+            handlerMethod: { type: STRING, value: changeRequiredPassword }
+            description: { type: STRING, value: 强制修改初始密码 }
+        - id: "873154473639535720"
+          version: 1
+          biz-key: api.mango-auth.POST.auth.refresh
+          name: 刷新访问令牌
+          target-module: authorization
+          fields:
+            moduleName: { type: STRING, value: mango-auth }
+            httpMethod: { type: STRING, value: POST }
+            pathPattern: { type: STRING, value: /auth/refresh }
+            resourceCode: { type: STRING, value: "POST:/auth/refresh" }
+            accessMode: { type: STRING, value: PUBLIC }
+            handlerClass: { type: STRING, value: io.mango.auth.starter.controller.AuthController }
+            handlerMethod: { type: STRING, value: refreshToken }
+            description: { type: STRING, value: 刷新访问令牌 }
+        - id: "838042068672312968"
+          version: 1
+          biz-key: api.mango-auth.POST.auth.captcha.send
+          name: 发送短信或邮件验证码
+          target-module: authorization
+          fields:
+            moduleName: { type: STRING, value: mango-auth }
+            httpMethod: { type: STRING, value: POST }
+            pathPattern: { type: STRING, value: /auth/captcha/send }
+            resourceCode: { type: STRING, value: "POST:/auth/captcha/send" }
+            accessMode: { type: STRING, value: PUBLIC }
+            handlerClass: { type: STRING, value: io.mango.auth.starter.controller.AuthController }
+            handlerMethod: { type: STRING, value: sendCaptcha }
+            description: { type: STRING, value: 发送短信或邮件验证码 }

@@ -27,7 +27,7 @@
 服务提供方接入：
 
 - 依赖 `<module>-starter`。
-- 通过 starter 暴露 Controller、AutoConfiguration、`module.properties` 和 `resource-manifest.json`。
+- 通过 starter 暴露 Controller、AutoConfiguration、`module.properties` 和 typed Resource declarations。
 - 执行本服务自己的 Flyway migration。
 - 同步菜单、权限和 API 资源。
 
@@ -87,7 +87,7 @@ mango module add order --aggregate sales-order --aggregate-name 销售订单 --m
 | `<module>-starter-remote` POM | `<module>-starter-remote` 依赖 | CLI 生成 | 调用方远程访问能力 | 引入 API 契约和 Feign starter | remote starter `pom.xml` |
 | `application.yml` | `<module>.enabled` | `true` | 业务 Flyway 模块开关 | 提供方启动时执行 migration | CLI managed block |
 | `module.properties` | `module-name`、`module-path` | module code | 模块元数据 | 资源发现和模块识别 | starter resources |
-| `resource-manifest.json` | `appCode`、`moduleCode`、`menus`、`permissions` | CLI 渲染 | 菜单权限资源 | 提供方资源同步 | starter resources |
+| typed Resource declaration | `appCode`、`moduleCode`、declarations | CLI 渲染 | 菜单权限资源 | 提供方 Bootstrap 资源同步 | `META-INF/mango/resources/` |
 | 调用方配置 | Feign、服务发现、超时、重试 | 项目自定 | 远程调用连接方式 | 影响 remote starter 调用 | 调用方 app 配置 |
 | 网关配置 | route、prefix、header 透传 | 项目自定 | 前端到服务路由 | 影响 API 可达性和鉴权 | 网关配置 |
 | 前端配置 | API base URL | 项目自定 | 后台请求入口 | 指向网关或统一 API 入口 | 前端 app 配置 |
@@ -100,7 +100,7 @@ mango module add order --aggregate sales-order --aggregate-name 销售订单 --m
 | `<module>-starter` | 必须依赖 | 禁止依赖 | Controller、AutoConfiguration、资源清单 |
 | `<module>-starter-remote` | 通常不依赖 | 必须依赖 | Feign client 和远程调用自动配置 |
 | 前端页面包 | 管理后台依赖 | 管理后台依赖 | 注册页面 component key |
-| resource manifest | 提供方同步 | 不同步 | 菜单、页面、按钮权限归提供方 |
+| typed Resource declaration | 提供方 Bootstrap 同步 | 不同步 | 菜单、页面、按钮权限归提供方 |
 
 ## 8. 数据与初始化
 | 类型 | 位置 | 初始化内容 | 幂等键 / 唯一键 | 生效时机 | 排查入口 |
@@ -116,7 +116,7 @@ mango module add order --aggregate sales-order --aggregate-name 销售订单 --m
 ## 9. 管理入口
 | 菜单 / 页面 | component key | 权限码 | 入库来源 | 默认套餐 / 角色 | 后端校验入口 |
 |-------------|---------------|--------|----------|-----------------|--------------|
-| 提供方业务页面 | `<module>/<aggregate>/index` | `<module>:<aggregate>:create`、`view`、`update`、`delete` | 提供方 `resource-manifest.json` | 模板不直接授予角色 | 提供方 Controller / Service |
+| 提供方业务页面 | `<module>/<aggregate>/index` | `<module>:<aggregate>:create`、`view`、`update`、`delete` | 提供方 typed Resource declaration | 模板不直接授予角色 | 提供方 Controller / Service |
 | 调用方页面 | 调用方自己登记 | 调用方自己定义 | 调用方资源清单 | 调用方授权流程 | 调用方 Controller / Service |
 
 微服务验收必须覆盖：
@@ -130,7 +130,7 @@ mango module add order --aggregate sales-order --aggregate-name 销售订单 --m
 1. 先设计服务边界、数据库归属和 API 契约。
 2. 生成业务模块，并把提供方 app 接入 `<module>-starter`。
 3. 调用方 app 接入 `<module>-starter-remote`，补服务发现、Feign 或网关配置。
-4. 提供方启动，确认 Flyway、模块元数据和 resource manifest 生效。
+4. 提供方启动，确认 Flyway、模块元数据和 typed Resource declarations 生效。
 5. 配置网关路由，确认前端 API base URL 指向网关。
 6. 做 remote 契约测试、网关链路测试、前端 E2E 和权限租户验收。
 7. 在业务模块 README 和交付台账中登记验证命令、证据和未覆盖风险。

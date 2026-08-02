@@ -14,11 +14,16 @@ import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
+import org.apache.maven.project.DefaultDependencyResolutionRequest;
+import org.apache.maven.project.DependencyResolutionException;
+import org.apache.maven.project.DependencyResolutionResult;
 import org.apache.maven.project.MavenProject;
+import org.apache.maven.project.ProjectDependenciesResolver;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.xml.sax.InputSource;
@@ -82,6 +87,8 @@ public final class ArchitectureMojo extends AbstractMojo {
 
     @Parameter(defaultValue = "${session}", readonly = true, required = true)
     private MavenSession session;
+
+    @Component private ProjectDependenciesResolver projectDependenciesResolver;
 
     @Parameter(
             defaultValue =
@@ -359,6 +366,7 @@ public final class ArchitectureMojo extends AbstractMojo {
         getLog().info("PMD Java language version: " + javaVersion);
         Set<Path> auxiliaryClasspath =
                 collectAuxiliaryClasspath(inputs.classDirectories().keySet());
+        getLog().info("PMD auxiliary classpath entries: " + auxiliaryClasspath.size());
         return new MangoPmdChecker()
                 .check(inputs.sourceDirectories(), javaVersion, auxiliaryClasspath);
     }
@@ -1491,14 +1499,27 @@ public final class ArchitectureMojo extends AbstractMojo {
             throws MojoExecutionException {
         Set<Path> classpath = new LinkedHashSet<>();
         classpath.addAll(reactorClassDirectories);
+        Set<String> reactorCoordinates =
+                session.getProjects().stream()
+                        .map(project -> project.getGroupId() + ":" + project.getArtifactId())
+                        .collect(Collectors.toCollection(LinkedHashSet::new));
         for (MavenProject reactorProject : session.getProjects()) {
-            Set<Artifact> artifacts = reactorProject.getArtifacts();
-            if (artifacts == null) {
-                continue;
-            }
-            for (Artifact artifact : artifacts) {
+            DependencyResolutionResult resolution = resolveDependencies(reactorProject);
+            for (org.eclipse.aether.graph.Dependency dependency :
+                    resolution.getResolvedDependencies()) {
+                if ("test".equals(dependency.getScope())) {
+                    continue;
+                }
+                org.eclipse.aether.artifact.Artifact artifact = dependency.getArtifact();
+                if (reactorCoordinates.contains(
+                        artifact.getGroupId() + ":" + artifact.getArtifactId())) {
+                    // Reactor bytecode has one canonical owner: the module output directory.
+                    // During install Maven repoints dependencies to the local repository, which
+                    // otherwise gives PMD a duplicate or stale class universe.
+                    continue;
+                }
                 if (artifact.getFile() == null) {
-                    if (!"pom".equals(artifact.getType())) {
+                    if (!"pom".equals(artifact.getExtension())) {
                         throw new MojoExecutionException(
                                 "MANGO-ARCH-ENGINE-010 unresolved PMD classpath artifact: "
                                         + artifact);
@@ -1515,6 +1536,36 @@ public final class ArchitectureMojo extends AbstractMojo {
             }
         }
         return classpath;
+    }
+
+    private DependencyResolutionResult resolveDependencies(MavenProject project)
+            throws MojoExecutionException {
+        if (projectDependenciesResolver == null) {
+            throw new MojoExecutionException(
+                    "MANGO-ARCH-ENGINE-010 Maven dependency resolver is unavailable");
+        }
+        try {
+            DependencyResolutionResult result =
+                    projectDependenciesResolver.resolve(
+                            new DefaultDependencyResolutionRequest(
+                                    project, session.getRepositorySession()));
+            if (!result.getCollectionErrors().isEmpty()
+                    || !result.getUnresolvedDependencies().isEmpty()) {
+                throw new MojoExecutionException(
+                        "MANGO-ARCH-ENGINE-010 unresolved PMD classpath for "
+                                + project.getArtifactId()
+                                + ": collectionErrors="
+                                + result.getCollectionErrors().size()
+                                + ", unresolvedDependencies="
+                                + result.getUnresolvedDependencies().size());
+            }
+            return result;
+        } catch (DependencyResolutionException exception) {
+            throw new MojoExecutionException(
+                    "MANGO-ARCH-ENGINE-010 failed to resolve PMD classpath for "
+                            + project.getArtifactId(),
+                    exception);
+        }
     }
 
     private ClassOwnership collectClassOwnership(

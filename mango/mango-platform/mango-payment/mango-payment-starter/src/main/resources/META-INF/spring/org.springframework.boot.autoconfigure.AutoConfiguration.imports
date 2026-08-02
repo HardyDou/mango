@@ -1,1 +1,2 @@
 io.mango.payment.starter.PaymentAutoConfiguration
+io.mango.payment.starter.PaymentRuntimeAutoConfiguration

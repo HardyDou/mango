@@ -456,7 +456,18 @@ mango:
             version: 2026072701
 ```
 
-制品生成器先在一次性 replay/determinism schema 各回放一次所有 V，确认结构和静态数据可复现；该确定性比较只忽略 `created_at`、`updated_at`、`published_at` 的运行时钟差异。生成的 B 保留这些审计列的真实值，并在独立 verify schema 连续执行两次后，对结构和全部 migration 静态行做全列等价比较。全部通过后才将 B 和 manifest 注册进 Maven resource。Bootstrap 消费制品时按逻辑数据源分组，并按数据源 key、模块 code 的稳定顺序执行。每个数据源必须是真正空库；允许存在的只有 Bootstrap 自身控制表。每个模块 SQL 成功后，框架以 `B<version>` 为该模块原有 Flyway history table 建立基线，并记录模块 SQL SHA-256；失败重入只复用同一 fingerprint 已完成的模块。
+制品生成器先在一次性 replay/determinism schema 各回放一次所有 V，确认结构和静态数据可复现；该确定性比较只忽略 `created_at`、`updated_at`、`published_at` 的运行时钟差异。生成的 B 保留这些审计列的真实值，并在独立 verify schema 连续执行两次后，对结构和全部 migration 静态行做全列等价比较。
+
+这里的结构等价是结构化语义比较，不是 `SHOW CREATE` 文本逐字比较。表、列、索引和约束的差异分别定位到 `table:<name>`、`table:<name>.column:<name>`、`table:<name>.index:<name>` 和 `table:<name>.constraint:<name>`；隐式继承与显式声明产生相同落库 charset/collation 时视为等价。视图和触发器按 canonical DDL 比较；静态数据按列转换为二进制十六进制值后比较。存储过程、函数或事件无法被当前快照完整证明，发现后直接 fail closed。
+
+全部验证通过后才将 B 和 manifest 注册进 Maven resource。Spring Boot 可执行 JAR 使用以下正式 entry；manifest 位于 JAR 根目录，不在 classes 层级：
+
+```text
+BOOT-INF/classes/db/baseline/<module>/B*__baseline.sql
+META-INF/mango/baseline-manifest.json
+```
+
+Bootstrap 消费制品时按逻辑数据源分组，并按数据源 key、模块 code 的稳定顺序执行。每个数据源必须是真正空库；允许存在的只有 Bootstrap 自身控制表。每个模块 SQL 成功后，框架以 `B<version>` 为该模块原有 Flyway history table 建立基线，并记录模块 SQL SHA-256；失败重入只复用同一 fingerprint 已完成的模块。
 
 | 数据库状态 | 执行路径 |
 |------------|----------|

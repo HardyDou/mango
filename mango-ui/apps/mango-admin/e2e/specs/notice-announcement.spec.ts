@@ -53,8 +53,10 @@ interface SiteMessage {
 
 interface TestState {
   announcements: Announcement[];
+  apiFallbackRequests: string[];
   messages: SiteMessage[];
   publishRequests: Array<{ id: string; targets?: AnnouncementTarget[] }>;
+  sourceApiModuleRequests: string[];
 }
 
 const evidenceDir = resolve(__dirname, '../../../../../mango-docs/evidence/2026-06-26-issue-260-notice-announcement');
@@ -105,6 +107,7 @@ function createState(): TestState {
   };
   return {
     announcements: [announcement],
+    apiFallbackRequests: [],
     messages: [
       {
         id: 'msg-ann-100',
@@ -121,6 +124,7 @@ function createState(): TestState {
       },
     ],
     publishRequests: [],
+    sourceApiModuleRequests: [],
   };
 }
 
@@ -204,7 +208,19 @@ async function setupRoutes(page: Page, state: TestState) {
     children: [],
   });
 
-  await page.route('**/api/**', (route) => fulfillJson(route, []));
+  page.on('request', (request) => {
+    const { pathname } = new URL(request.url());
+    if (!pathname.startsWith('/api/') && /\/api\/.*\.(?:ts|vue)$/.test(pathname)) {
+      state.sourceApiModuleRequests.push(request.url());
+    }
+  });
+  await page.route(
+    (url) => url.pathname.startsWith('/api/'),
+    (route) => {
+      state.apiFallbackRequests.push(route.request().url());
+      return fulfillJson(route, []);
+    },
+  );
   await page.route('**/api/system/tenant/login-options**', (route) =>
     fulfillJson(route, [{ tenantId: '1', tenantCode: 'mango', tenantName: '芒果集团' }]),
   );
@@ -684,6 +700,13 @@ test.describe('通知管理公告 E2E', () => {
 
     await assertNoRuntimeErrors(page, async () => {
       await login(page);
+      expect(state.sourceApiModuleRequests.length).toBeGreaterThan(0);
+      expect(state.apiFallbackRequests.every((requestUrl) => new URL(requestUrl).pathname.startsWith('/api/'))).toBe(
+        true,
+      );
+      expect(
+        state.sourceApiModuleRequests.filter((requestUrl) => state.apiFallbackRequests.includes(requestUrl)),
+      ).toEqual([]);
       await page.goto('/#/notice/announcement');
       await expect(page.getByRole('heading', { name: '公告管理' })).toBeVisible();
       await expect(page.locator('tr', { hasText: '端午值班安排' })).toContainText('已发布');

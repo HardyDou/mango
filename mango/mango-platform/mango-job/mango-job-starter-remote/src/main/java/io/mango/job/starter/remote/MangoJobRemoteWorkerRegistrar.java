@@ -18,7 +18,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 import java.lang.management.ManagementFactory;
@@ -29,7 +28,6 @@ import java.util.stream.Collectors;
 /**
  * 远程 Worker 向 JobCenter 注册自身能力。
  */
-@Component
 @RequiredArgsConstructor
 public class MangoJobRemoteWorkerRegistrar {
 
@@ -41,14 +39,19 @@ public class MangoJobRemoteWorkerRegistrar {
 
     private final MangoNativeJobProperties properties;
 
+    private volatile boolean ready;
+
     @EventListener(ApplicationReadyEvent.class)
     public void registerOnReady() {
+        ready = true;
         register();
     }
 
     @Scheduled(fixedDelayString = "${mango.job.native.worker-heartbeat-interval-millis:15000}")
     public void heartbeat() {
-        register();
+        if (ready) {
+            register();
+        }
     }
 
     public void register() {

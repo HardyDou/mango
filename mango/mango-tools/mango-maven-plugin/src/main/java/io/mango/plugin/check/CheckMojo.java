@@ -3734,7 +3734,15 @@ public class CheckMojo extends AbstractMojo {
         if (file == null) {
             return false;
         }
-        for (Path segmentPath : file.normalize()) {
+        Path inspected = file.normalize();
+        if (baseDir != null && !baseDir.isBlank()) {
+            Path scanRoot = Paths.get(baseDir).toAbsolutePath().normalize();
+            Path candidate = file.toAbsolutePath().normalize();
+            if (candidate.startsWith(scanRoot)) {
+                inspected = scanRoot.relativize(candidate);
+            }
+        }
+        for (Path segmentPath : inspected) {
             String segment = segmentPath.toString();
             if (IGNORED_SCAN_SEGMENTS.contains(segment)
                     || ".venv".equals(segment)

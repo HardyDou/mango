@@ -20,6 +20,7 @@ public class BootstrapProperties {
     private BootstrapStrategy strategy = BootstrapStrategy.ROLLING;
     private BootstrapPhase phase = BootstrapPhase.EXPAND;
     private String environmentKey = "default";
+    private String receiptDirectory = ".mango/bootstrap";
     private int lockTimeoutSeconds = DEFAULT_LOCK_TIMEOUT_SECONDS;
     private String instanceId;
     private Duration runtimeLeaseTtl = DEFAULT_RUNTIME_LEASE_TTL;
@@ -63,6 +64,14 @@ public class BootstrapProperties {
 
     public void setEnvironmentKey(String environmentKey) {
         this.environmentKey = environmentKey;
+    }
+
+    public String getReceiptDirectory() {
+        return receiptDirectory;
+    }
+
+    public void setReceiptDirectory(String receiptDirectory) {
+        this.receiptDirectory = receiptDirectory;
     }
 
     public int getLockTimeoutSeconds() {

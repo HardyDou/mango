@@ -31,6 +31,7 @@
 - 不提供独立的运行时种子初始化；平台默认数据由 Flyway 和 Resource Registry 写入，生产业务数据由业务流程维护。
 - 不允许前端 dev proxy 指向任意主机；模板只允许本机后端代理。
 - 不自动生成业务领域代码；业务模块需通过 `mango module add` 或人工开发。
+- `mango module add` 显式传入的 `--module-name`、`--aggregate-name` 是中文展示名，至少包含一个中文字符；CLI 在写入项目文件前校验，失败不留下半生成模块。
 
 ## 4. 模块入口
 模板负责生成可运行的业务项目骨架和默认 Mango 平台依赖。生成后：
@@ -202,7 +203,7 @@ PMO required check 会检查本次新增或修改的 `views/**/*.vue` 页面基�
 | 类型 | 位置 | 初始化内容 | 幂等键 / 唯一键 | 生效时机 | 排查入口 |
 |------|------|------------|-----------------|----------|----------|
 | 平台 Flyway module | `mango.persistence.flyway.modules.*.enabled` | system、domain、authorization、identity、org、captcha、file、template、workflow、job、kv、notice、calendar、numgen 等平台表和基础数据 | 各模块 migration version | 后端启动时 | 查 Flyway history 和后端日志 |
-| Resource Registry | 各平台模块和业务模块 `resource-manifest.json` | 菜单、权限、业务域、字典、系统参数、模板、编号规则等声明式资源 | resource code 和目标模块幂等键 | 模块启动同步时 | 查资源同步日志、目标表和模块 README |
+| Resource Registry | 各平台模块和业务模块 `META-INF/mango/resources/*.json` typed declarations | 菜单、权限、业务域、字典、系统参数、模板、编号规则等声明式资源 | declaration id、version、bizKey 和目标模块 | 模块启动同步时 | 查资源同步日志、目标表和模块 README |
 | 业务 Flyway module | `business-flyway-modules` managed block | `mango module add` 生成的业务模块 migration | 业务 module code 和 Flyway version | 后端启动时 | 查业务表和 Flyway history |
 | 业务开通 / 导入流程 | 业务后台、导入任务或开通 API | 租户、组织架构、账号、岗位、业务基础档案等生产数据 | 业务唯一键和租户边界 | 业务操作或任务执行时 | 查业务操作日志、导入结果和目标表 |
 | 文件本地存储 | `mango.file.local.root-path` | 上传文件落盘目录 | 文件 object key | 文件上传时 | 查 `data/files` 或自定义目录 |
@@ -211,12 +212,12 @@ PMO required check 会检查本次新增或修改的 `views/**/*.vue` 页面基�
 生产环境不得使用模板默认 JWT secret 或空数据库密码。
 
 ## 9. 管理入口
-full preset 会启用授权、身份、组织、系统等平台模块的 migration 和资源同步能力。菜单、权限和租户事实来自各平台模块及后续业务模块的 `resource-manifest.json` 或 migration。
+full preset 会启用授权、身份、组织、系统等平台模块的 migration 和资源同步能力。菜单、权限和租户事实来自各平台模块及后续业务模块的 typed resource declarations 或 migration。
 
 | 菜单 / 页面 | component key | 权限码 | 入库来源 | 默认套餐 / 角色 | 后端校验入口 |
 |-------------|---------------|--------|----------|-----------------|--------------|
-| Mango 平台页面 | 各 `@mango/*` 包登记 | 各平台模块定义 | 平台模块 migration 或 resource manifest | 平台模块资源声明或业务授权流程定义 | 各平台模块 Controller / Service |
-| 业务模块页面 | `mango module add` 生成的 component key | 业务 resource manifest 定义 | 业务 `<module>-starter` resource manifest | 业务授权流程定义 | 业务 Controller / Service |
+| Mango 平台页面 | 各 `@mango/*` 包登记 | 各平台模块定义 | 平台模块 migration 或 typed resource declaration | 平台模块资源声明或业务授权流程定义 | 各平台模块 Controller / Service |
+| 业务模块页面 | `mango module add` 生成的 component key | 业务 typed resource declaration 定义 | 业务 `<module>-starter` typed resource declaration | 业务授权流程定义 | 业务 Controller / Service |
 
 租户默认值来自 `mango.persistence.mybatis-plus.tenant.default-tenant-id`。业务模块如果继承 `TenantEntity`，必须验证当前租户上下文、查询条件和写入字段。
 
@@ -249,6 +250,14 @@ full preset 会启用授权、身份、组织、系统等平台模块的 migrati
 | 租户或管理员账号为空 | 业务开通、后台维护或导入流程未执行 | 执行业务初始化 runbook，并检查 identity、org、authorization 目标表 |
 
 ## 12. 相关文档
+
+### Issue #690 升级合同
+
+本模板随源码修复覆盖 CLI、Maven plugin、Bootstrap/runtime、Resource、BSQL、Boot JAR、前端生成物和真实业务回归。模板发布前不会生成新的制品版本；业务项目若曾使用 Maven `1.0.30` 或其它 `1.0.3x` 组合，必须等待发布说明中的完整 tuple，不能只替换一个 Maven 或 CLI 版本。
+
+升级顺序：备份项目与数据库，安装 tuple 指定的 `@mango/cli`，执行 `mango pmo upgrade --project-dir . --to <tuple.pmo> --sync-shell`，统一更新 `backend/pom.xml` 的 `<mango.version>`/`mango-bom`，在 `frontend` 执行 `pnpm install --frozen-lockfile` 和 `pnpm check`，再执行 `mango workspace init`、`mvn -f backend/pom.xml verify`、`mvn -f backend/pom.xml install`、`mango dev doctor` 和 `mango dev start`。既有数据库采用 `bootstrap plan -> apply --strategy=rolling -> verify -> runtime -> finalize`；首次空库才使用 `cold`。验收必须包含真实登录、菜单权限、CRUD、401、生产构建、Boot JAR、独立 Maven consumer 和 BSQL baseline。失败时保留 receipt/审计日志，停止候选 generation 并按 `bootstrap abort` 回滚，不手工删库。
+
+生成业务模块时，资源声明使用 `META-INF/mango/resources/*.json|yml|yaml`，由 Bootstrap 处理 `BOOTSTRAP_REQUIRED`，由 Runtime eventual worker 处理 `RUNTIME_EVENTUAL`；不要恢复旧的 `resource-manifest.json` 作为新模块模板。
 - [业务 PMO 入口](./business-pmo/README.md)
 - [业务 baseline](./business-pmo/mango-baseline/README.md)
 - [单体拓扑说明](./topologies/monolith/README.md)

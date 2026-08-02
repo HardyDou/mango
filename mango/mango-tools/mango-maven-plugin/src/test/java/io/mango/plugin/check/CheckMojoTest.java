@@ -3622,6 +3622,28 @@ class CheckMojoTest {
     }
 
     @Test
+    void scanRootInsideRuntimeDirectoryStillChecksItsOwnSources() throws Exception {
+        Path projectRoot = tempDir.resolve(".runtime/projects/generated/backend");
+        Path sourceDir = projectRoot.resolve(
+                "mango-demo-core/src/main/java/io/mango/demo/core/service/impl");
+        Files.createDirectories(sourceDir);
+        Files.writeString(sourceDir.resolve("DemoServiceImpl.java"), """
+                package io.mango.demo.core.service.impl;
+                import io.mango.common.result.R;
+                public class DemoServiceImpl {
+                    public R<String> invalid() { return R.ok("invalid"); }
+                }
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "api-contract");
+        setField(mojo, "baseDir", projectRoot.toString());
+        setField(mojo, "session", null);
+
+        assertThrows(MojoExecutionException.class, mojo::execute);
+    }
+
+    @Test
     void checkDependency_ignoresRuntimePomFiles() throws Exception {
         Path pomFile = tempDir.resolve(".runtime/generated/mango-demo-core/pom.xml");
         Files.createDirectories(pomFile.getParent());

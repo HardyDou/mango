@@ -43,6 +43,9 @@ class PaymentNotificationDispatchSchedulerTest {
                 20,
                 10);
 
+        assertThat(((TestTaskScheduler) taskScheduler).scheduled).isFalse();
+        scheduler.startOnReady();
+
         int count = scheduler.dispatchOnce();
         scheduler.close();
 
@@ -50,6 +53,7 @@ class PaymentNotificationDispatchSchedulerTest {
         assertThat(MangoContextHolder.get().isEmpty()).isTrue();
         assertThat(notificationService.tenantIds).containsExactly("1", "2");
         assertThat(notificationService.limits).containsExactly(10L, 10L);
+        assertThat(((TestTaskScheduler) taskScheduler).scheduled).isTrue();
         assertThat(future.cancelled).isTrue();
     }
 
@@ -143,6 +147,7 @@ class PaymentNotificationDispatchSchedulerTest {
     private static class TestTaskScheduler implements TaskScheduler {
 
         private final ScheduledFuture<?> future;
+        private boolean scheduled;
 
         TestTaskScheduler(ScheduledFuture<?> future) {
             this.future = future;
@@ -150,6 +155,7 @@ class PaymentNotificationDispatchSchedulerTest {
 
         @Override
         public ScheduledFuture<?> schedule(Runnable task, Trigger trigger) {
+            scheduled = true;
             return future;
         }
 

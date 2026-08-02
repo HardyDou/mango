@@ -1,7 +1,13 @@
 package io.mango.resource.sync.starter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.mango.infra.kv.api.ILeaseLocker;
+import io.mango.resource.api.ResourceDeclarationApi;
 import io.mango.resource.api.command.ExecuteResourceTargetCommand;
+import io.mango.resource.core.mapper.ResourceChangeLogMapper;
+import io.mango.resource.core.mapper.ResourceRegistryMapper;
+import io.mango.resource.core.mapper.ResourceSyncLogMapper;
+import io.mango.resource.starter.ResourceRegistryAutoConfiguration;
 import io.mango.resource.support.ResourceHandler;
 import io.mango.resource.support.execution.ResourceTargetExecutor;
 import io.mango.resource.support.model.ResourceDeclaration;
@@ -19,6 +25,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 
 class ResourceSyncAutoConfigurationTest {
 
@@ -37,6 +44,27 @@ class ResourceSyncAutoConfigurationTest {
             assertThat(context).hasSingleBean(ResourceTargetController.class);
             assertThat(context.getBean(ResourceTargetController.class).upsertBatch(command).isSuccess()).isTrue();
         });
+    }
+
+    @Test
+    void registryAndSyncAutoConfigurations_alwaysExposeBootstrapContributor() {
+        new ApplicationContextRunner()
+                .withConfiguration(AutoConfigurations.of(
+                        ResourceSyncAutoConfiguration.class,
+                        ResourceRegistryAutoConfiguration.class))
+                .withBean(ObjectMapper.class, () -> objectMapper)
+                .withBean("resourceRegistryMapper", ResourceRegistryMapper.class,
+                        () -> mock(ResourceRegistryMapper.class))
+                .withBean("resourceSyncLogMapper", ResourceSyncLogMapper.class,
+                        () -> mock(ResourceSyncLogMapper.class))
+                .withBean("resourceChangeLogMapper", ResourceChangeLogMapper.class,
+                        () -> mock(ResourceChangeLogMapper.class))
+                .withBean(ILeaseLocker.class, () -> mock(ILeaseLocker.class))
+                .run(context -> {
+                    assertThat(context).hasNotFailed();
+                    assertThat(context).hasSingleBean(ResourceDeclarationApi.class);
+                    assertThat(context).hasSingleBean(ResourceBootstrapStepContributor.class);
+                });
     }
 
     @Test

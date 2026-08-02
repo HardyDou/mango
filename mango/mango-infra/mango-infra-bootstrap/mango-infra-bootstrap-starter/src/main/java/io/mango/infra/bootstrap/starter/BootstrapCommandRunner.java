@@ -4,6 +4,7 @@ import io.mango.infra.bootstrap.api.BootstrapMode;
 import io.mango.infra.bootstrap.core.BootstrapOrchestrator;
 import io.mango.infra.bootstrap.core.BootstrapOutcome;
 import io.mango.infra.bootstrap.core.BootstrapInvocation;
+import io.mango.infra.bootstrap.core.JdbcBootstrapRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationArguments;
@@ -17,13 +18,19 @@ final class BootstrapCommandRunner implements ApplicationRunner, Ordered {
     private final BootstrapProperties bootstrapProperties;
     private final MangoReleaseProperties releaseProperties;
     private final BootstrapOrchestrator orchestrator;
+    private final JdbcBootstrapRepository repository;
+    private final BootstrapReceiptWriter receiptWriter;
 
     BootstrapCommandRunner(BootstrapProperties bootstrapProperties,
                            MangoReleaseProperties releaseProperties,
-                           BootstrapOrchestrator orchestrator) {
+                           BootstrapOrchestrator orchestrator,
+                           JdbcBootstrapRepository repository,
+                           BootstrapReceiptWriter receiptWriter) {
         this.bootstrapProperties = bootstrapProperties;
         this.releaseProperties = releaseProperties;
         this.orchestrator = orchestrator;
+        this.repository = repository;
+        this.receiptWriter = receiptWriter;
     }
 
     @Override
@@ -36,6 +43,16 @@ final class BootstrapCommandRunner implements ApplicationRunner, Ordered {
                 releaseProperties.getGeneration(), releaseProperties.getFingerprint(),
                 bootstrapProperties.getAction(), bootstrapProperties.getStrategy(), bootstrapProperties.getPhase(),
                 bootstrapProperties.getLockTimeoutSeconds()));
+        if ("FINALIZED".equals(outcome.state())) {
+            repository.assertStableReleaseIdentity(
+                    bootstrapProperties.getEnvironmentKey(), releaseProperties.getId(),
+                    releaseProperties.getRevision(), releaseProperties.getGeneration(),
+                    outcome.manifestFingerprint());
+            receiptWriter.write(new BootstrapStableReceipt(
+                    bootstrapProperties.getEnvironmentKey(), receiptWriter.databaseName(),
+                    releaseProperties.getId(), releaseProperties.getRevision(), releaseProperties.getGeneration(),
+                    outcome.manifestFingerprint(), outcome.state()));
+        }
         LOG.info("Mango bootstrap completed: executionId={}, generation={}, fingerprint={}, state={}, "
                         + "executedSteps={}, reusedSteps={}",
                 outcome.executionId(), releaseProperties.getGeneration(), outcome.manifestFingerprint(),

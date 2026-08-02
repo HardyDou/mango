@@ -531,6 +531,21 @@ final class BaselineGenerator {
     private static String snapshotDifference(
             MySqlBaselineStore.SchemaSnapshot expected,
             MySqlBaselineStore.SchemaSnapshot actual) {
+        Set<String> tableKeys = new LinkedHashSet<>(expected.tables().keySet());
+        tableKeys.addAll(actual.tables().keySet());
+        for (String tableKey : tableKeys) {
+            MySqlBaselineStore.TableSnapshot expectedTable = expected.tables().get(tableKey);
+            MySqlBaselineStore.TableSnapshot actualTable = actual.tables().get(tableKey);
+            String tablePath = "table:" + tableKey;
+            String difference = valueDifference(tablePath, expectedTable != null, actualTable != null);
+            if (difference != null) {
+                return difference;
+            }
+            difference = tableDifference(tablePath, expectedTable, actualTable);
+            if (difference != null) {
+                return difference;
+            }
+        }
         Set<String> definitionKeys = new LinkedHashSet<>(expected.definitions().keySet());
         definitionKeys.addAll(actual.definitions().keySet());
         for (String key : definitionKeys) {
@@ -552,6 +567,104 @@ final class BaselineGenerator {
             }
         }
         return "snapshot record differs without a field-level difference";
+    }
+
+    private static String tableDifference(
+            String path,
+            MySqlBaselineStore.TableSnapshot expected,
+            MySqlBaselineStore.TableSnapshot actual) {
+        String difference = valueDifference(path + ".engine", expected.engine(), actual.engine());
+        if (difference == null) {
+            difference = valueDifference(
+                    path + ".characterSet", expected.characterSet(), actual.characterSet());
+        }
+        if (difference == null) {
+            difference = valueDifference(path + ".collation", expected.collation(), actual.collation());
+        }
+        if (difference == null) {
+            difference = valueDifference(path + ".rowFormat", expected.rowFormat(), actual.rowFormat());
+        }
+        if (difference == null) {
+            difference = valueDifference(
+                    path + ".createOptions", expected.createOptions(), actual.createOptions());
+        }
+        if (difference == null) {
+            difference = valueDifference(path + ".comment", expected.comment(), actual.comment());
+        }
+        if (difference != null) {
+            return difference;
+        }
+        difference = columnDifference(path, expected.columns(), actual.columns());
+        if (difference != null) {
+            return difference;
+        }
+        difference = indexDifference(path, expected.indexes(), actual.indexes());
+        if (difference != null) {
+            return difference;
+        }
+        return constraintDifference(path, expected.constraints(), actual.constraints());
+    }
+
+    private static String columnDifference(
+            String tablePath,
+            Map<String, MySqlBaselineStore.ColumnSnapshot> expected,
+            Map<String, MySqlBaselineStore.ColumnSnapshot> actual) {
+        Set<String> keys = new LinkedHashSet<>(expected.keySet());
+        keys.addAll(actual.keySet());
+        for (String key : keys) {
+            MySqlBaselineStore.ColumnSnapshot expectedColumn = expected.get(key);
+            MySqlBaselineStore.ColumnSnapshot actualColumn = actual.get(key);
+            String path = tablePath + ".column:" + key;
+            String difference = valueDifference(path, expectedColumn, actualColumn);
+            if (difference != null) {
+                return difference;
+            }
+        }
+        return null;
+    }
+
+    private static String indexDifference(
+            String tablePath,
+            Map<String, MySqlBaselineStore.IndexSnapshot> expected,
+            Map<String, MySqlBaselineStore.IndexSnapshot> actual) {
+        Set<String> keys = new LinkedHashSet<>(expected.keySet());
+        keys.addAll(actual.keySet());
+        for (String key : keys) {
+            MySqlBaselineStore.IndexSnapshot expectedIndex = expected.get(key);
+            MySqlBaselineStore.IndexSnapshot actualIndex = actual.get(key);
+            String path = tablePath + ".index:" + key;
+            String difference = valueDifference(path, expectedIndex, actualIndex);
+            if (difference != null) {
+                return difference;
+            }
+        }
+        return null;
+    }
+
+    private static String constraintDifference(
+            String tablePath,
+            Map<String, MySqlBaselineStore.ConstraintSnapshot> expected,
+            Map<String, MySqlBaselineStore.ConstraintSnapshot> actual) {
+        Set<String> keys = new LinkedHashSet<>(expected.keySet());
+        keys.addAll(actual.keySet());
+        for (String key : keys) {
+            MySqlBaselineStore.ConstraintSnapshot expectedConstraint = expected.get(key);
+            MySqlBaselineStore.ConstraintSnapshot actualConstraint = actual.get(key);
+            String path = tablePath + ".constraint:" + key;
+            String difference = valueDifference(path, expectedConstraint, actualConstraint);
+            if (difference != null) {
+                return difference;
+            }
+        }
+        return null;
+    }
+
+    private static String valueDifference(String path, Object expected, Object actual) {
+        if (java.util.Objects.equals(expected, actual)) {
+            return null;
+        }
+        return path + " expected=" + abbreviate(String.valueOf(expected))
+                + " actual=" + abbreviate(String.valueOf(actual));
     }
 
     private static String abbreviate(String value) {

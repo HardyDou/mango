@@ -60,10 +60,18 @@ class PersistenceColdBaselinePerformanceIntegrationTest {
 
             assertThat(summary.moduleCount()).isEqualTo(MODULE_COUNT);
             assertThat(summary.migrationCount()).isEqualTo(MODULE_COUNT);
+            assertThat(summary.phase()).isEqualTo("COLD_BASELINE");
             assertThat(sqlBytes).isGreaterThanOrEqualTo(MINIMUM_SQL_BYTES);
             assertThat(applicationTableCount(jdbcTemplate)).isEqualTo(MODULE_COUNT * TABLES_PER_MODULE);
             assertThat(rowCount(jdbcTemplate, "perf_m00_t000")).isEqualTo(ROWS_PER_TABLE);
             assertThat(rowCount(jdbcTemplate, "perf_m04_t074")).isEqualTo(ROWS_PER_TABLE);
+            assertThat(completedControlCount(jdbcTemplate)).isOne();
+            assertThat(completedModuleCount(jdbcTemplate)).isEqualTo(MODULE_COUNT);
+            for (int moduleIndex = 0; moduleIndex < MODULE_COUNT; moduleIndex++) {
+                assertThat(baselines.get(moduleIndex).getFileName().toString())
+                        .isEqualTo("B1__baseline.sql");
+                assertThat(completedBaselineHistoryCount(jdbcTemplate, moduleIndex)).isOne();
+            }
             assertThat(elapsed).isLessThan(MAXIMUM_BASELINE_DURATION);
 
             System.out.printf(
@@ -78,6 +86,7 @@ class PersistenceColdBaselinePerformanceIntegrationTest {
 
     private static String[] properties(List<Path> baselines) {
         List<String> values = new ArrayList<>();
+        values.add("mango.bootstrap.mode=bootstrap");
         values.add("mango.persistence.flyway.upgrade-locations-enabled=false");
         values.add("mango.persistence.flyway.cold-baseline.enabled=true");
         for (String existingModule : EXISTING_TEST_MODULES) {
@@ -181,6 +190,35 @@ class PersistenceColdBaselinePerformanceIntegrationTest {
 
     private static int rowCount(JdbcTemplate jdbcTemplate, String tableName) {
         Integer count = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM " + tableName, Integer.class);
+        return count == null ? 0 : count;
+    }
+
+    private static int completedControlCount(JdbcTemplate jdbcTemplate) {
+        Integer count = jdbcTemplate.queryForObject("""
+                SELECT COUNT(*)
+                  FROM mango_cold_baseline_control
+                 WHERE status = 'COMPLETED'
+                """, Integer.class);
+        return count == null ? 0 : count;
+    }
+
+    private static int completedModuleCount(JdbcTemplate jdbcTemplate) {
+        Integer count = jdbcTemplate.queryForObject("""
+                SELECT COUNT(*)
+                  FROM mango_cold_baseline_module
+                 WHERE status = 'COMPLETED' AND baseline_version = '1'
+                """, Integer.class);
+        return count == null ? 0 : count;
+    }
+
+    private static int completedBaselineHistoryCount(
+            JdbcTemplate jdbcTemplate,
+            int moduleIndex) {
+        String historyTable = "flyway_schema_history_" + moduleCode(moduleIndex).replace('-', '_');
+        Integer count = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM " + historyTable
+                        + " WHERE version = '1' AND `type` = 'BASELINE' AND success = TRUE",
+                Integer.class);
         return count == null ? 0 : count;
     }
 

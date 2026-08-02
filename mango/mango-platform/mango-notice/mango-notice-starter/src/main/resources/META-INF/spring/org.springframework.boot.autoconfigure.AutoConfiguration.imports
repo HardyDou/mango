@@ -1,2 +1,3 @@
 io.mango.notice.starter.NoticeAutoConfiguration
 io.mango.notice.starter.NoticeOutboxAutoConfiguration
+io.mango.notice.starter.NoticeOutboxRuntimeAutoConfiguration

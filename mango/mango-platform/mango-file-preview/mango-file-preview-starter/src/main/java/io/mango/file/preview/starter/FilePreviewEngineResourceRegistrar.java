@@ -7,6 +7,7 @@ import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.core.Ordered;
 
 import java.util.List;
 
@@ -14,7 +15,7 @@ import java.util.List;
  * 注册预览引擎渲染页所需的公开资源。
  */
 @RequiredArgsConstructor
-public class FilePreviewEngineResourceRegistrar implements ApplicationRunner {
+public class FilePreviewEngineResourceRegistrar implements ApplicationRunner, Ordered {
 
     private static final String MODULE_NAME = "mango-file-preview";
     private static final String HANDLER_CLASS = "cn.keking.web.controller.OnlinePreviewController";
@@ -42,6 +43,12 @@ public class FilePreviewEngineResourceRegistrar implements ApplicationRunner {
                 publicGet("/static/**", "预览扩展静态资源"),
                 publicGet("/favicon.ico", "预览站点图标")
         )));
+    }
+
+    @Override
+    public int getOrder() {
+        // Finish direct startup registration before eventual resource workers can write.
+        return Ordered.LOWEST_PRECEDENCE - 100;
     }
 
     private static ApiResourceRegisterCommand publicGet(String pathPattern, String description) {

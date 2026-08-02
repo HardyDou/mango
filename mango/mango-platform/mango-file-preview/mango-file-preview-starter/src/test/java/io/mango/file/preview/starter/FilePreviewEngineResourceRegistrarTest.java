@@ -9,6 +9,7 @@ import io.mango.authorization.api.vo.ApiResourceAccessDecisionVO;
 import io.mango.authorization.api.vo.ApiResourceRegisterResultVO;
 import io.mango.common.result.R;
 import org.junit.jupiter.api.Test;
+import org.springframework.core.Ordered;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,6 +17,14 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class FilePreviewEngineResourceRegistrarTest {
+
+    @Test
+    void order_finishesDirectRegistrationBeforeEventualResourceWorkers() {
+        FilePreviewEngineResourceRegistrar registrar =
+                new FilePreviewEngineResourceRegistrar(new CapturingApiResourceApi());
+
+        assertThat(registrar.getOrder()).isLessThan(Ordered.LOWEST_PRECEDENCE);
+    }
 
     @Test
     void run_registersArchiveDirectoryEndpointAsPublicResource() {

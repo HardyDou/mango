@@ -33,8 +33,18 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <version>${spring-boot.version}</version>
                 <configuration>
+                    <skip>false</skip>
                     <mainClass>{{basePackage}}.{{projectPascal}}Application</mainClass>
                 </configuration>
+                <executions>
+                    <execution>
+                        <id>repackage-production-jar</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

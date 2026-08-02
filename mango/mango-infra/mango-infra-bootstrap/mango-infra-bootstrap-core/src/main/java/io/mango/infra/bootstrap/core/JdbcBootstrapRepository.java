@@ -189,6 +189,26 @@ public final class JdbcBootstrapRepository implements BootstrapGenerationFence {
                 + ", state=" + control.state());
     }
 
+    public void assertStableReleaseIdentity(String environmentKey, String releaseId, String buildRevision,
+                                            long generation, String fingerprint) {
+        Integer count = jdbcTemplate.queryForObject("""
+                        SELECT COUNT(*)
+                          FROM mango_bootstrap_control
+                         WHERE environment_key = ?
+                           AND release_id = ?
+                           AND build_revision = ?
+                           AND stable_generation = ?
+                           AND stable_fingerprint = ?
+                           AND candidate_generation IS NULL
+                           AND candidate_fingerprint IS NULL
+                           AND authoritative_generation = stable_generation
+                           AND state = 'FINALIZED'
+                        """, Integer.class, environmentKey, releaseId, buildRevision, generation, fingerprint);
+        if (count == null || count != 1) {
+            throw new IllegalStateException("BOOTSTRAP_STABLE_IDENTITY_MISMATCH");
+        }
+    }
+
     @Override
     public void assertAuthoritative(BootstrapWriteAuthority authority) {
         BootstrapControl control = findControl(authority.environmentKey())

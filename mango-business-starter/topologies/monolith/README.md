@@ -27,7 +27,7 @@
 后端边界：
 
 - 单体后端 app 依赖平台 starter 和业务 `<module>-starter`。
-- `<module>-starter` 聚合 API、core、Controller、AutoConfiguration、`module.properties` 和 `resource-manifest.json`。
+- `<module>-starter` 聚合 API、core、Controller、AutoConfiguration、`module.properties` 和 typed Resource declarations。
 - `<module>-core` 的 Entity、Mapper、Service 和 Flyway migration 只在本地 app 内执行。
 - `<module>-starter-remote` 只为未来微服务调用方准备，单体运行时不用。
 
@@ -83,7 +83,7 @@ mango module add order --aggregate sales-order --aggregate-name 销售订单 --m
 | 单体 app POM | `<module>-starter` 依赖 | CLI 生成 | 接入业务本地能力 | 暴露 Controller、Service、Flyway、资源清单 | CLI managed block |
 | `application.yml` | `<module>.enabled` | `true` | 业务 Flyway 模块开关 | 后端启动时执行业务 migration | CLI managed block |
 | `module.properties` | `module-name`、`module-path` | module code | 模块元数据 | 资源发现和模块识别 | starter resources |
-| `resource-manifest.json` | `appCode`、`moduleCode`、`menus`、`permissions` | CLI 渲染 | 菜单权限资源 | 资源同步时入库 | starter resources |
+| typed Resource declaration | `appCode`、`moduleCode`、declarations | CLI 渲染 | 菜单权限资源 | Bootstrap 资源同步时入库 | `META-INF/mango/resources/` |
 | 前端 app `package.json` | `@<project>/<module>` | project version | 业务页面包 | 后台 app 可注册页面 | app dependencies |
 | 前端 app `main.ts` | `register<Module>Pages()` | CLI 写入 | 页面注册 | 菜单 component key 能加载组件 | app entry |
 | 前端 app `vite.config.ts` | `server.port` | `5173` 或环境变量 | 本地前端端口 | 本地开发访问入口 | Vite config |
@@ -96,7 +96,7 @@ mango module add order --aggregate sales-order --aggregate-name 销售订单 --m
 | `<module>-core` | 被 starter 本地依赖 | Entity、Mapper、Service、Flyway |
 | `<module>-starter-remote` | 不接入 | 只给微服务调用方使用 |
 | 前端页面包 | app 直接依赖并注册 | 提供 component key |
-| resource manifest | 随 starter 被扫描 | 初始化菜单和权限资源 |
+| typed Resource declaration | 随 starter 被 Bootstrap 扫描 | 初始化菜单和权限资源 |
 
 ## 8. 数据与初始化
 | 类型 | 位置 | 初始化内容 | 幂等键 / 唯一键 | 生效时机 | 排查入口 |
@@ -112,7 +112,7 @@ mango module add order --aggregate sales-order --aggregate-name 销售订单 --m
 | 菜单 / 页面 | component key | 权限码 | 入库来源 | 默认套餐 / 角色 | 后端校验入口 |
 |-------------|---------------|--------|----------|-----------------|--------------|
 | 平台页面 | Mango 平台包登记 | 平台模块定义 | 平台 migration 或 resource manifest | 平台模块或 seed 定义 | 平台 Controller / Service |
-| 业务页面 | `<module>/<aggregate>/index` | `<module>:<aggregate>:create`、`view`、`update`、`delete` | 业务 `resource-manifest.json` | 模板不直接授予角色 | 业务 Controller / Service |
+| 业务页面 | `<module>/<aggregate>/index` | `<module>:<aggregate>:create`、`view`、`update`、`delete` | 业务 typed Resource declaration | 模板不直接授予角色 | 业务 Controller / Service |
 
 租户边界在单体 app 内统一处理。业务 Entity 继承租户基类时，要验证新增、查询、分页、详情、更新和删除都带当前租户上下文。
 
@@ -129,7 +129,7 @@ mango module add order --aggregate sales-order --aggregate-name 销售订单 --m
 | 问题 | 原因 | 处理方式 |
 |------|------|----------|
 | 单体 app 引入 remote starter | 混淆本地依赖和远程调用依赖 | app 改依赖 `<module>-starter` |
-| 页面菜单打开空白 | component key 与前端 registry 不一致 | 检查 resource manifest 和页面注册函数 |
+| 页面菜单打开空白 | component key 与前端 registry 不一致 | 检查 typed Resource declaration 和页面注册函数 |
 | API 404 | Controller path、前端 API base URL 或菜单路径不一致 | 用浏览器 network 和后端日志排查 |
 | 业务表没创建 | 业务 Flyway module 未启用 | 检查 `<module>.enabled: true` 和 migration 路径 |
 | 租户数据串租 | 只建了 `tenant_id` 字段，未验证查询过滤 | 补租户上下文测试和数据权限断言 |

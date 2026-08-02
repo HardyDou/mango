@@ -1,1 +1,2 @@
 io.mango.job.starter.remote.JobRemoteAutoConfiguration
+io.mango.job.starter.remote.JobRemoteRuntimeAutoConfiguration

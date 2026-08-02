@@ -14,6 +14,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.core.env.Environment;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import javax.sql.DataSource;
@@ -67,10 +68,19 @@ public class BootstrapAutoConfiguration {
     }
 
     @Bean
+    BootstrapReceiptWriter bootstrapReceiptWriter(BootstrapProperties bootstrapProperties,
+                                                   Environment environment) {
+        return new BootstrapReceiptWriter(bootstrapProperties, environment);
+    }
+
+    @Bean
     BootstrapCommandRunner bootstrapCommandRunner(BootstrapProperties bootstrapProperties,
                                                    MangoReleaseProperties releaseProperties,
-                                                   BootstrapOrchestrator orchestrator) {
-        return new BootstrapCommandRunner(bootstrapProperties, releaseProperties, orchestrator);
+                                                   BootstrapOrchestrator orchestrator,
+                                                   JdbcBootstrapRepository repository,
+                                                   BootstrapReceiptWriter receiptWriter) {
+        return new BootstrapCommandRunner(
+                bootstrapProperties, releaseProperties, orchestrator, repository, receiptWriter);
     }
 
     @Bean

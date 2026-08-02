@@ -62,12 +62,4 @@ public class JobRemoteAutoConfiguration {
         return new HttpInternalMangoJobWorkerTransport(dynamicHttpClient);
     }
 
-    @Bean
-    @ConditionalOnMissingBean
-    MangoJobRemoteWorkerRegistrar mangoJobRemoteWorkerRegistrar(MangoJobDynamicHttpClient dynamicHttpClient,
-                                                                MangoJobHandlerRegistry handlerRegistry,
-                                                                MangoNativeJobProperties properties) {
-        return new MangoJobRemoteWorkerRegistrar(dynamicHttpClient, handlerRegistry, properties);
-    }
-
 }

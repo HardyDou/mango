@@ -12,6 +12,7 @@ import io.mango.resource.api.enums.ResourceApplyMode;
 import io.mango.resource.support.ResourceProvider;
 import io.mango.resource.support.config.ResourceRegistryProperties;
 import io.mango.resource.support.declaration.ResourceDeclarationCollector;
+import io.mango.resource.support.declaration.ResourceDeclarationCanonicalizer;
 import io.mango.resource.support.model.ResourceDeclaration;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
@@ -40,7 +41,8 @@ class ResourceBootstrapStepContributorTest {
         };
         ResourceBootstrapStepContributor contributor = new ResourceBootstrapStepContributor(
                 properties, collector(() -> List.of(second, first)), api,
-                new ResourceManifestSerializer(), "fallback");
+                new ResourceManifestSerializer(),
+                new ResourceDeclarationCanonicalizer(objectMapper), "fallback");
 
         List<BootstrapStep> steps = contributor.contributeSteps();
 
@@ -76,19 +78,44 @@ class ResourceBootstrapStepContributorTest {
         disabled.setEnabled(false);
         ResourceBootstrapStepContributor disabledContributor = new ResourceBootstrapStepContributor(
                 disabled, collector(() -> List.of(declaration("resource-1", "module-a"))),
-                command -> R.ok(true), new ResourceManifestSerializer(), "app");
+                command -> R.ok(true), new ResourceManifestSerializer(),
+                new ResourceDeclarationCanonicalizer(objectMapper), "app");
         assertThat(disabledContributor.contributeSteps()).isEmpty();
 
         ResourceRegistryProperties enabled = new ResourceRegistryProperties();
         ResourceBootstrapStepContributor failingContributor = new ResourceBootstrapStepContributor(
                 enabled, collector(() -> List.of(declaration("resource-1", "module-a"))),
-                command -> R.fail("target unavailable"), new ResourceManifestSerializer(), "app");
+                command -> R.fail("target unavailable"), new ResourceManifestSerializer(),
+                new ResourceDeclarationCanonicalizer(objectMapper), "app");
         BootstrapStep required = failingContributor.contributeSteps().get(0);
 
         assertThatThrownBy(() -> required.execute(context(BootstrapPhase.EXPAND)))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("Resource bootstrap did not complete")
                 .hasMessageContaining("target unavailable");
+    }
+
+    @Test
+    void fingerprintUsesSemanticContentInsteadOfPhysicalResourceDescription() {
+        ResourceDeclaration exploded = declaration("resource-1", "module-a");
+        exploded.setSource("file [/workspace/target/classes/META-INF/mango/resources/module.yml]");
+        ResourceDeclaration nested = exploded.copy();
+        nested.setSource("URL [jar:nested:/app.jar/!BOOT-INF/lib/module.jar!/META-INF/mango/resources/module.yml]");
+
+        String explodedFingerprint = fingerprintMaterial(exploded);
+        String nestedFingerprint = fingerprintMaterial(nested);
+        nested.setName("changed");
+
+        assertThat(nestedFingerprint).isEqualTo(explodedFingerprint);
+        assertThat(fingerprintMaterial(nested)).isNotEqualTo(explodedFingerprint);
+    }
+
+    private String fingerprintMaterial(ResourceDeclaration declaration) {
+        ResourceRegistryProperties properties = new ResourceRegistryProperties();
+        ResourceBootstrapStepContributor contributor = new ResourceBootstrapStepContributor(
+                properties, collector(() -> List.of(declaration)), command -> R.ok(true), new ResourceManifestSerializer(),
+                new ResourceDeclarationCanonicalizer(objectMapper), "app");
+        return contributor.contributeSteps().get(0).fingerprintMaterial();
     }
 
     private static ResourceDeclarationCollector collector(ResourceProvider provider) {
