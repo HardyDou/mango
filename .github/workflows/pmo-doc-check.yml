@@ -147,6 +147,15 @@ jobs:
           node mango-ui/packages/mango-pmo/scripts/build-package.mjs
           node mango-ui/packages/mango-pmo/scripts/check-package.mjs
 
+      - name: Install CLI runtime dependencies from the frozen lockfile
+        if: needs.preflight_scope.outputs.distribution == 'true' && needs.preflight_scope.outputs.m11 == 'true'
+        run: >-
+          pnpm --dir mango-ui install
+          --frozen-lockfile
+          --filter @mango/cli...
+          --ignore-scripts
+          --registry=https://registry.npmjs.org/
+
       - name: Check canonical business starter and CLI projection
         if: needs.preflight_scope.outputs.projection == 'true' && needs.preflight_scope.outputs.m09 == 'true'
         run: |
