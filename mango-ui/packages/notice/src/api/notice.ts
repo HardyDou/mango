@@ -132,6 +132,10 @@ export function getBusinessTypes(params?: Record<string, unknown>) {
   return get<PageResult<NoticeBusinessType>>('/notice/business-types', { params });
 }
 
+export function getMyEnabledBusinessTypes(params?: Record<string, unknown>) {
+  return get<PageResult<NoticeBusinessType>>('/notice/site/business-types', { params });
+}
+
 export function getNoticeDomains() {
   return get<unknown[]>('/domain/domains/enabled-tree').then((list) =>
     (Array.isArray(list) ? list : []).map(normalizeDomainOption),
@@ -481,6 +485,7 @@ export const noticeApi = {
   sendNotice,
   sendSiteNotice,
   getBusinessTypes,
+  getMyEnabledBusinessTypes,
   createBusinessType,
   updateBusinessType,
   deleteBusinessType,

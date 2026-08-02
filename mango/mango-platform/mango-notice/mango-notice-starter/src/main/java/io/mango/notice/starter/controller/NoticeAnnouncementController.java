@@ -93,24 +93,24 @@ public class NoticeAnnouncementController implements NoticeAnnouncementApi {
 
     @Override
     @GetMapping("/site/my/announcements")
-    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:site:view")
-    @Operation(summary = "分页查询我的公告", description = "分页查询当前用户可见公告")
+    @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "分页查询当前用户公告")
+    @Operation(summary = "分页查询我的公告", description = "登录接口。分页查询当前用户可见公告")
     public R<PageResult<NoticeAnnouncementVO>> pageMyAnnouncements(@ParameterObject MyNoticeAnnouncementPageQuery query) {
         return R.ok(announcementService.pageMyAnnouncements(query));
     }
 
     @Override
     @GetMapping("/site/my/announcements/detail")
-    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:site:view")
-    @Operation(summary = "查询我的公告详情", description = "查询当前用户公告详情并标记已读")
+    @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "查询当前用户公告详情")
+    @Operation(summary = "查询我的公告详情", description = "登录接口。查询当前用户公告详情并标记已读")
     public R<NoticeAnnouncementVO> getMyAnnouncement(@ParameterObject NoticeAnnouncementIdQuery query) {
         return R.ok(announcementService.getMyAnnouncement(query.getId()));
     }
 
     @Override
     @PostMapping("/site/my/announcements/confirm")
-    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:site:edit")
-    @Operation(summary = "确认我的公告", description = "确认当前用户待确认公告")
+    @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "确认当前用户公告")
+    @Operation(summary = "确认我的公告", description = "登录接口。确认当前用户待确认公告")
     public R<Boolean> confirmMyAnnouncement(@RequestBody NoticeAnnouncementIdCommand command) {
         return R.ok(announcementService.confirmMyAnnouncement(command.getId()));
     }

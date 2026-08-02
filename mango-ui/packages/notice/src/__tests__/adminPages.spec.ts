@@ -3,7 +3,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const adminPagesMock = vi.hoisted(() => ({
   registerModulePages: vi.fn(),
 }));
-
 vi.mock('@mango/admin-pages/core', () => adminPagesMock);
 
 import { registerMangoNoticeAdminPages } from '../admin-pages';
@@ -13,7 +12,7 @@ describe('notice admin pages', () => {
     vi.clearAllMocks();
   });
 
-  it('注册旧站内信路径为指向当前页面的隐藏兼容入口', () => {
+  it('注册隐藏兼容入口', () => {
     registerMangoNoticeAdminPages();
 
     expect(adminPagesMock.registerModulePages).toHaveBeenCalledTimes(1);

@@ -5,11 +5,6 @@
     <el-card class="profile-shell" shadow="never">
       <div class="settings-layout">
         <aside class="settings-sidebar" data-surface="profile.navigation">
-          <div class="settings-sidebar__heading">
-            <span>个人中心</span>
-            <h2>账户设置</h2>
-          </div>
-
           <component :is="profileSlots.sidebarTop" v-if="profileSlots.sidebarTop" :user="profile" />
 
           <div class="sidebar-user">
@@ -23,40 +18,68 @@
           </div>
 
           <el-menu :default-active="activeSection" class="settings-menu" @select="handleSectionSelect">
+            <template v-for="group in messageCenterGroups" :key="group.label">
+              <div class="profile-menu-group__label">{{ group.label }}</div>
+              <el-menu-item
+                v-for="section in group.sections"
+                :key="section.key"
+                :index="section.key"
+                :data-action="`switch-${section.key}`"
+              >
+                <el-icon v-if="section.icon"><component :is="section.icon" /></el-icon>
+                <span>{{ section.label }}</span>
+              </el-menu-item>
+            </template>
+            <div class="profile-menu-group__label">基础设置</div>
             <el-menu-item index="profile" data-action="switch-profile">
               <el-icon><User /></el-icon>
               <span>个人资料</span>
-            </el-menu-item>
-            <el-menu-item index="security" data-action="switch-security">
-              <el-icon><Lock /></el-icon>
-              <span>账号安全</span>
-            </el-menu-item>
-            <el-menu-item index="authorization" data-action="switch-authorization">
-              <el-icon><Connection /></el-icon>
-              <span>第三方授权</span>
-            </el-menu-item>
-            <el-menu-item index="password" data-action="switch-password">
-              <el-icon><Key /></el-icon>
-              <span>修改密码</span>
             </el-menu-item>
             <el-menu-item v-if="profileSlots.theme" index="theme" data-action="switch-theme">
               <el-icon><Brush /></el-icon>
               <span>主题设置</span>
             </el-menu-item>
+            <div class="profile-menu-group__label">安全设置</div>
+            <el-menu-item index="security" data-action="switch-security">
+              <el-icon><Lock /></el-icon>
+              <span>账号安全</span>
+            </el-menu-item>
+            <el-menu-item index="password" data-action="switch-password">
+              <el-icon><Key /></el-icon>
+              <span>修改密码</span>
+            </el-menu-item>
+            <el-menu-item
+              v-for="section in securityProfileSections"
+              :key="section.key"
+              :index="section.key"
+              :data-action="`switch-${section.key}`"
+            >
+              <el-icon v-if="section.icon"><component :is="section.icon" /></el-icon>
+              <span>{{ section.label }}</span>
+            </el-menu-item>
+            <div class="profile-menu-group__label">账号关联</div>
+            <el-menu-item index="authorization" data-action="switch-authorization">
+              <el-icon><Connection /></el-icon>
+              <span>第三方授权</span>
+            </el-menu-item>
+            <template v-for="group in remainingExtensionGroups" :key="group.label">
+              <div class="profile-menu-group__label">{{ group.label }}</div>
+              <el-menu-item
+                v-for="section in group.sections"
+                :key="section.key"
+                :index="section.key"
+                :data-action="`switch-${section.key}`"
+              >
+                <el-icon v-if="section.icon"><component :is="section.icon" /></el-icon>
+                <span>{{ section.label }}</span>
+              </el-menu-item>
+            </template>
           </el-menu>
 
           <component :is="profileSlots.sidebarBottom" v-if="profileSlots.sidebarBottom" :user="profile" />
         </aside>
 
-        <main v-loading="loading" class="settings-content" :data-state="activeSection">
-          <header class="content-header">
-            <div>
-              <span class="content-eyebrow">账户设置</span>
-              <h1>{{ sectionTitle }}</h1>
-              <p>{{ sectionDescription }}</p>
-            </div>
-          </header>
-
+        <main ref="settingsContentRef" v-loading="loading" class="settings-content" :data-state="activeSection">
           <Transition name="content-fade" mode="out-in">
             <div v-if="activeSection === 'profile'" key="profile" data-surface="profile.details">
               <component :is="profileSlots.infoBefore" v-if="profileSlots.infoBefore" :form="form" :user="profile" />
@@ -258,6 +281,10 @@
               <PasswordView display-mode="embedded" />
             </div>
 
+            <div v-else-if="currentExtension" :key="currentExtension.key" data-surface="profile.extension">
+              <component :is="currentExtension.component" :form="form" :user="profile" embedded />
+            </div>
+
             <div v-else key="theme" data-surface="profile.theme">
               <component :is="profileSlots.theme" embedded />
             </div>
@@ -314,7 +341,7 @@
 </template>
 
 <script setup lang="ts" name="MangoAuthProfile">
-import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ElMessage, type UploadProps, type UploadUserFile } from 'element-plus';
 import { Brush, Connection, Iphone, Key, Lock, Message, Upload as UploadIcon, User } from '@element-plus/icons-vue';
@@ -322,6 +349,7 @@ import { downloadUploadedFile, fileToken, uploadImage } from '@mango/common/api/
 import { MangoDialog } from '@mango/common';
 import { Session } from '@mango/common/utils/storage';
 import { useAuthConfig } from '../composables/useAuthConfig';
+import { getMangoAuthProfileSections, type MangoAuthProfileSection } from '../config';
 import {
   getCurrentUserProfile,
   listCurrentExternalIdentities,
@@ -342,18 +370,20 @@ import {
 } from '../api/provider';
 import PasswordView from './password.vue';
 
-type ProfileSection = 'profile' | 'security' | 'authorization' | 'password' | 'theme';
+type ProfileSection = 'profile' | 'security' | 'authorization' | 'password' | 'theme' | string;
 
 const PROVIDER_RETURN_KEY = 'mango-auth:provider-return';
 const AVATAR_MAX_SIZE = 5 * 1024 * 1024;
 const AVATAR_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
 const authConfig = useAuthConfig();
+const registeredProfileSections = getMangoAuthProfileSections();
 const route = useRoute();
 const router = useRouter();
 const sessionUser = Session.get('userInfo') || {};
 const tenantId = String(sessionUser.tenantId || Session.get('tenantId') || '');
 const appCode = String(sessionUser.appCode || 'internal-admin');
-const activeSection = ref<ProfileSection>(normalizeProfileSection(route.query.tab));
+const activeSection = ref<ProfileSection>(typeof route.query.tab === 'string' ? route.query.tab : 'profile');
+const settingsContentRef = ref<HTMLElement>();
 const loading = ref(false);
 const saving = ref(false);
 const avatarUploading = ref(false);
@@ -387,6 +417,27 @@ const unbindPassword = ref('');
 const selectedBinding = ref<ExternalIdentityBinding>();
 
 const profileSlots = computed(() => authConfig.value.profile?.slots || {});
+const profileSections = computed(() => {
+  const sectionByKey = new Map<string, MangoAuthProfileSection>();
+  [...(authConfig.value.profile?.sections || []), ...registeredProfileSections.value].forEach((section) => {
+    sectionByKey.set(section.key, section);
+  });
+  return Array.from(sectionByKey.values());
+});
+const extensionGroups = computed(() => {
+  const groups = new Map<string, typeof profileSections.value>();
+  profileSections.value.forEach((section) => {
+    const label = section.group || '扩展功能';
+    groups.set(label, [...(groups.get(label) || []), section]);
+  });
+  return Array.from(groups, ([label, sections]) => ({ label, sections }));
+});
+const messageCenterGroups = computed(() => extensionGroups.value.filter((group) => group.label === '消息中心'));
+const securityProfileSections = computed(() => profileSections.value.filter((section) => section.group === '安全设置'));
+const remainingExtensionGroups = computed(() =>
+  extensionGroups.value.filter((group) => group.label !== '消息中心' && group.label !== '安全设置'),
+);
+const currentExtension = computed(() => profileSections.value.find((section) => section.key === activeSection.value));
 const displayName = computed(() => profile.value?.nickname || profile.value?.username || '用户');
 const roleLabel = computed(() => authConfig.value.profile?.roleLabel || sessionUser.roleName || '当前用户');
 const profileAvatar = computed(() => {
@@ -409,20 +460,6 @@ const documentNumberPlaceholder = computed(() =>
   existingDocumentNumber.value ? `已设置（${existingDocumentNumber.value}），留空不修改` : '请输入证件号码',
 );
 const contactDialogTitle = computed(() => (contactType.value === 'PHONE' ? '修改手机号' : '修改邮箱'));
-const sectionTitle = computed(() => {
-  if (activeSection.value === 'security') return '账号安全';
-  if (activeSection.value === 'authorization') return '第三方授权';
-  if (activeSection.value === 'password') return '修改密码';
-  if (activeSection.value === 'theme') return '主题设置';
-  return '个人资料';
-});
-const sectionDescription = computed(() => {
-  if (activeSection.value === 'security') return '管理用于登录验证和账号找回的联系方式。';
-  if (activeSection.value === 'authorization') return '查看并管理当前应用的第三方登录授权。';
-  if (activeSection.value === 'password') return '定期更新登录密码，保护当前账号安全。';
-  if (activeSection.value === 'theme') return '调整布局、颜色和界面显示偏好，设置会在当前浏览器生效。';
-  return '维护你的基础资料、头像和实名信息。';
-});
 const providerRows = computed(() =>
   (['WECOM', 'DINGTALK'] as ExternalAuthProvider[]).map((provider) => ({
     provider,
@@ -437,7 +474,12 @@ watch(
   (value) => {
     activeSection.value = normalizeProfileSection(value);
   },
+  { immediate: true },
 );
+
+watch(profileSections, () => {
+  activeSection.value = normalizeProfileSection(route.query.tab);
+});
 
 onMounted(() => {
   void Promise.all([loadProfile(), loadAuthorizations()]);
@@ -452,6 +494,7 @@ onBeforeUnmount(() => {
 });
 
 function normalizeProfileSection(value: unknown): ProfileSection {
+  if (typeof value === 'string' && profileSections.value.some((section) => section.key === value)) return value;
   if (value === 'authorization') return 'authorization';
   if (value === 'security') return 'security';
   if (value === 'password') return 'password';
@@ -462,6 +505,7 @@ function normalizeProfileSection(value: unknown): ProfileSection {
 function handleSectionSelect(index: string) {
   const section = normalizeProfileSection(index);
   activeSection.value = section;
+  void nextTick(() => settingsContentRef.value?.scrollIntoView({ block: 'start' }));
   const query = { ...route.query, tab: section === 'profile' ? undefined : section };
   void router.replace({ query });
 }
@@ -747,9 +791,11 @@ async function confirmUnbind() {
 
 <style scoped lang="scss">
 .profile-container {
+  width: 100%;
   max-width: 1240px;
   margin: 0 auto;
-  padding: clamp(12px, 2vw, 24px);
+  padding: 16px;
+  box-sizing: border-box;
 }
 
 .profile-shell {
@@ -770,23 +816,6 @@ async function confirmUnbind() {
   padding: 28px 20px;
   border-right: 1px solid var(--el-border-color-lighter);
   background: color-mix(in srgb, var(--el-fill-color-light) 62%, var(--el-bg-color));
-}
-
-.settings-sidebar__heading {
-  padding: 0 12px 20px;
-
-  span {
-    color: var(--el-text-color-secondary);
-    font-size: 12px;
-    letter-spacing: 0.08em;
-  }
-
-  h2 {
-    margin: 5px 0 0;
-    color: var(--el-text-color-primary);
-    font-size: 20px;
-    line-height: 1.35;
-  }
 }
 
 .sidebar-user {
@@ -844,39 +873,17 @@ async function confirmUnbind() {
   }
 }
 
-.settings-content {
-  min-width: 0;
-  padding: clamp(24px, 4vw, 48px);
-  background: var(--el-bg-color);
-}
-
-.content-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 24px;
-  padding-bottom: 28px;
-  border-bottom: 1px solid var(--el-border-color-lighter);
-
-  h1 {
-    margin: 5px 0 8px;
-    color: var(--el-text-color-primary);
-    font-size: clamp(24px, 3vw, 30px);
-    line-height: 1.25;
-  }
-
-  p {
-    margin: 0;
-    color: var(--el-text-color-secondary);
-    line-height: 1.7;
-  }
-}
-
-.content-eyebrow {
-  color: var(--el-color-primary);
+.profile-menu-group__label {
+  padding: 18px 12px 6px;
+  color: var(--el-text-color-secondary);
   font-size: 12px;
   font-weight: 600;
-  letter-spacing: 0.08em;
+}
+
+.settings-content {
+  min-width: 0;
+  padding: 16px;
+  background: var(--el-bg-color);
 }
 
 .profile-form {
@@ -1057,10 +1064,6 @@ async function confirmUnbind() {
     border-bottom: 1px solid var(--el-border-color-lighter);
   }
 
-  .settings-sidebar__heading {
-    padding: 0 0 16px;
-  }
-
   .sidebar-user {
     margin-bottom: 14px;
     padding: 12px 0;
@@ -1076,6 +1079,11 @@ async function confirmUnbind() {
       min-width: 0;
       margin: 0;
       padding: 0 10px;
+    }
+
+    .profile-menu-group__label {
+      grid-column: 1 / -1;
+      padding: 12px 4px 2px;
     }
   }
 
@@ -1103,10 +1111,6 @@ async function confirmUnbind() {
 
   .settings-content {
     padding: 22px 16px 28px;
-  }
-
-  .content-header {
-    padding-bottom: 22px;
   }
 
   .content-section {

@@ -1,4 +1,13 @@
-import { markRaw, reactive, toRaw, type App, type Component, type InjectionKey } from 'vue';
+import {
+  markRaw,
+  reactive,
+  shallowReadonly,
+  shallowRef,
+  toRaw,
+  type App,
+  type Component,
+  type InjectionKey,
+} from 'vue';
 
 export interface MangoAuthLoginBrandConfig {
   title?: string;
@@ -24,6 +33,16 @@ export interface MangoAuthProfileSlots {
   infoAfter?: Component;
   extraTabs?: Component;
   theme?: Component;
+}
+
+export interface MangoAuthProfileSection {
+  key: string;
+  label: string;
+  title?: string;
+  description?: string;
+  group?: string;
+  icon?: Component;
+  component: Component;
 }
 
 export interface MangoAuthPasswordSlots {
@@ -52,6 +71,7 @@ export interface MangoAuthConfig {
     roleLabel?: string;
     fields?: Array<'username' | 'nickname' | 'email' | 'phone' | string>;
     slots?: MangoAuthProfileSlots;
+    sections?: MangoAuthProfileSection[];
   };
   password?: {
     minLength?: number;
@@ -62,6 +82,19 @@ export interface MangoAuthConfig {
 export const mangoAuthConfigKey: InjectionKey<MangoAuthConfig> = Symbol('mangoAuthConfig');
 
 const globalMangoAuthConfig = reactive<MangoAuthConfig>({});
+const registeredProfileSections = shallowRef<MangoAuthProfileSection[]>([]);
+
+export function registerMangoAuthProfileSections(sections: MangoAuthProfileSection[]) {
+  const sectionByKey = new Map(registeredProfileSections.value.map((section) => [section.key, section]));
+  sections.forEach((section) => {
+    sectionByKey.set(section.key, normalizeProfileSection(section));
+  });
+  registeredProfileSections.value = Array.from(sectionByKey.values());
+}
+
+export function getMangoAuthProfileSections() {
+  return shallowReadonly(registeredProfileSections);
+}
 
 export function installMangoAuth(app?: App, config: MangoAuthConfig = {}) {
   Object.assign(globalMangoAuthConfig, mergeAuthConfig(globalMangoAuthConfig, config));
@@ -99,6 +132,7 @@ export function mergeAuthConfig(base: MangoAuthConfig, override: MangoAuthConfig
         ...base.profile?.slots,
         ...override.profile?.slots,
       }),
+      sections: normalizeProfileSections(override.profile?.sections || base.profile?.sections || []),
     },
     password: {
       ...base.password,
@@ -111,13 +145,26 @@ export function mergeAuthConfig(base: MangoAuthConfig, override: MangoAuthConfig
   };
 }
 
+function normalizeProfileSections(sections: MangoAuthProfileSection[]) {
+  return sections.map(normalizeProfileSection);
+}
+
+function normalizeProfileSection(section: MangoAuthProfileSection): MangoAuthProfileSection {
+  return {
+    ...section,
+    icon: normalizeComponent(section.icon),
+    component: normalizeComponent(section.component) as Component,
+  };
+}
+
 function normalizeSlotComponents<T extends Record<string, Component | undefined>>(slots: T): T {
   return Object.fromEntries(
-    Object.entries(slots).map(([name, component]) => [
-      name,
-      component && (typeof component === 'object' || typeof component === 'function')
-        ? markRaw(toRaw(component))
-        : component,
-    ]),
+    Object.entries(slots).map(([name, component]) => [name, normalizeComponent(component)]),
   ) as T;
+}
+
+function normalizeComponent(component?: Component) {
+  return component && (typeof component === 'object' || typeof component === 'function')
+    ? markRaw(toRaw(component))
+    : component;
 }

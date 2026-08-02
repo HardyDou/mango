@@ -35,6 +35,9 @@ import java.util.List;
 @RequiredArgsConstructor
 public class NoticeRecipientSettingService implements INoticeRecipientSettingService {
 
+    private static final int DEFAULT_MAX_RETRY = 3;
+    private static final int DEFAULT_RETENTION_DAYS = 180;
+
     private final NoticeRecipientAccountMapper recipientAccountMapper;
     private final NoticeReceivePreferenceMapper receivePreferenceMapper;
     private final NoticeSettingMapper settingMapper;
@@ -137,7 +140,7 @@ public class NoticeRecipientSettingService implements INoticeRecipientSettingSer
 
     @Override
     public List<NoticeReceivePreferenceVO> listReceivePreferences(NoticeReceivePreferenceQuery query) {
-        Long userId = resolveTargetUserId(currentUserId(), query == null ? null : query.getUserId());
+        Long userId = currentUserId();
         LambdaQueryWrapper<NoticeReceivePreferenceEntity> wrapper =
                 new LambdaQueryWrapper<NoticeReceivePreferenceEntity>()
                         .eq(NoticeReceivePreferenceEntity::getUserId, userId);
@@ -158,7 +161,7 @@ public class NoticeRecipientSettingService implements INoticeRecipientSettingSer
     @Override
     public NoticeReceivePreferenceVO saveReceivePreference(SaveNoticeReceivePreferenceCommand command) {
         Require.notNull(command, NoticeCode.NOTICE_BUSINESS_ERROR, "接收偏好不能为空");
-        Long userId = resolveTargetUserId(currentUserId(), command.getUserId());
+        Long userId = currentUserId();
         String scopeValue = normalizeScopeValue(command.getScopeValue());
         NoticeReceivePreferenceEntity entity = findPreference(
                 userId, command.getScopeType(), scopeValue, command.getChannelType());
@@ -227,8 +230,8 @@ public class NoticeRecipientSettingService implements INoticeRecipientSettingSer
         NoticeSettingsVO settings = new NoticeSettingsVO();
         settings.setSoundEnabled(true);
         settings.setDesktopEnabled(true);
-        settings.setMaxRetry(3);
-        settings.setRetentionDays(180);
+        settings.setMaxRetry(DEFAULT_MAX_RETRY);
+        settings.setRetentionDays(DEFAULT_RETENTION_DAYS);
         return settings;
     }
 

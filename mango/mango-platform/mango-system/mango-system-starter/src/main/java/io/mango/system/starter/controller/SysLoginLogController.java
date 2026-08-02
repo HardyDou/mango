@@ -39,6 +39,14 @@ public class SysLoginLogController implements SysLoginLogApi {
     }
 
     @Override
+    @GetMapping("/login/my/list")
+    @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "查询当前账号登录日志")
+    @Operation(summary = "分页查询当前账号登录日志", description = "仅返回当前租户中当前登录账号自己的登录记录")
+    public R<PageResult<SysLoginLogVO>> pageCurrentUser(@ParameterObject LoginLogPageQuery query) {
+        return R.ok(logService.pageCurrentUserLoginLogs(query));
+    }
+
+    @Override
     @GetMapping("/login/detail")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:log:login:query")
     @Operation(summary = "获取登录日志详情", description = "获取登录日志详情并返回处理结果")

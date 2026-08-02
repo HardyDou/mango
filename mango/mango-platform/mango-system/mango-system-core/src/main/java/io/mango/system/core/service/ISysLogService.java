@@ -12,6 +12,7 @@ import io.mango.system.api.vo.SysOperationLogVO;
 public interface ISysLogService {
     boolean record(RecordLoginLogCommand command);
     PageResult<SysLoginLogVO> pageLoginLogs(LoginLogPageQuery query);
+    PageResult<SysLoginLogVO> pageCurrentUserLoginLogs(LoginLogPageQuery query);
     SysLoginLogVO getLoginLog(Long id);
     Boolean cleanLoginLogs(Integer retentionDays);
     LoginStatisticsVO loginStatistics();

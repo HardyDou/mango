@@ -47,8 +47,14 @@ export interface PageResult<T> {
 }
 
 export const loginLogApi = {
-  list: (params?: LoginLogQuery) => get<any>('/system/log/login/list', { params: toBackendPageParams(params) })
-    .then((data) => fromBackendPageResult(data, fromBackendLoginLog, params)),
+  list: (params?: LoginLogQuery) =>
+    get<any>('/system/log/login/list', { params: toBackendPageParams(params) }).then((data) =>
+      fromBackendPageResult(data, fromBackendLoginLog, params),
+    ),
+  currentUserList: (params?: LoginLogQuery) =>
+    get<any>('/system/log/login/my/list', { params: toBackendPageParams(params) }).then((data) =>
+      fromBackendPageResult(data, fromBackendLoginLog, params),
+    ),
   detail: (id: ApiId) => {
     return get<any>('/system/log/login/detail', { params: { id } }).then(fromBackendLoginLog);
   },
@@ -99,8 +105,10 @@ export interface OperationLogQuery {
 }
 
 export const operationLogApi = {
-  list: (params?: OperationLogQuery) => get<any>('/system/log/operation/list', { params: toBackendPageParams(params) })
-    .then((data) => fromBackendPageResult(data, fromBackendOperationLog, params)),
+  list: (params?: OperationLogQuery) =>
+    get<any>('/system/log/operation/list', { params: toBackendPageParams(params) }).then((data) =>
+      fromBackendPageResult(data, fromBackendOperationLog, params),
+    ),
   detail: (id: ApiId) => {
     return get<any>('/system/log/operation/detail', { params: { id } }).then(fromBackendOperationLog);
   },
@@ -143,7 +151,7 @@ function pad(value: number): string {
   return String(value).padStart(2, '0');
 }
 
-function toBackendPageParams(params?: Record<string, any>) {
+function toBackendPageParams<T extends { pageNum?: number; pageSize?: number }>(params?: T) {
   if (!params) return params;
   const { pageNum, pageSize, ...rest } = params;
   return {

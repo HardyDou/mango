@@ -27,6 +27,7 @@
 | 失败处理 | 支持单条/批量重试、人工成功、忽略失败 | `/notice/records/**` |
 | 接收账户 | 维护用户手机号、邮箱、企业微信 ID 等接收账户 | `/notice/recipient-accounts/**` |
 | 接收偏好 | 维护用户或范围级渠道开关 | `/notice/receive-preferences` |
+| 个人可用消息类型 | 查询当前租户已启用的消息类型 | `/notice/site/business-types` |
 | 我的站内信 | 查询未读数、未读分类统计、分类列表、详情、已读和删除 | `/notice/site/my/**` |
 
 ## 3. 后端接入
@@ -144,12 +145,13 @@ registerMangoNoticeAdminShell();
 | 场景 | 访问模式 | 是否需要为角色/用户单独配置 |
 |------|----------|------------------------------|
 | 我的站内信、未读数、标记已读、删除我的消息 | `LOGIN` | 不需要。所有已登录用户默认可用通知铃铛和消息中心。 |
-| 我的接收账户、我的接收偏好 | `LOGIN` | 不需要。用户可维护自己的手机号、邮箱和接收偏好。 |
+| 我的公告、我的接收偏好、个人可用消息类型 | `LOGIN` | 不需要。接口只读取或修改当前登录人的数据。 |
+| 接收账户管理 | `PERMISSION` | 需要。接收账号绑定能力不在个人通知设置中提供。 |
 | 业务通知配置、渠道配置、任务、记录、重试、后台发送、全局设置 | `PERMISSION` | 需要。按通知管理员、运维或业务运营角色授权。 |
 
 `LOGIN` 只表示当前登录人可以操作自己的通知数据，不表示可以查看全租户通知任务或替其他用户管理配置。后台发送系统消息、维护渠道密钥、查看发送记录仍必须配置 `notice:*` 权限码。
 
-个人消息接口仍使用 `notice:site:view/edit` 和 `notice:receive-setting:view/edit` 做资源校验；接收设置为展示业务类型还需要只读的 `notice:business:view`。Notice 的菜单资源会把这些最小权限以及“我的消息”“系统公告”“接收配置”菜单绑定到内置 `ROLE_LOGIN`。授权中心会为每个已登录主体自动叠加该角色，业务项目不需要逐个角色重复授权。`ROLE_ANONYMOUS` 不包含个人消息或 Realtime 建连权限。
+个人站内信、个人公告、接收偏好和个人可用消息类型不校验 `notice:*` 权限码。接收偏好服务始终使用登录上下文中的用户 ID，即使客户端提交其它 `userId` 也不能读取或修改他人偏好。`ROLE_ANONYMOUS` 不包含个人消息或 Realtime 建连权限。
 
 ## 5. 快速开始
 
@@ -582,6 +584,7 @@ HTTP 根路径：`/notice`。
 | 发送 | `POST /notice/send` | `notice:task:create` | 按业务类型发送通知。 |
 | 站内信 | `POST /notice/site/messages` | `notice:site:create` | 快捷发送站内信。 |
 | 业务类型 | `/notice/business-types/**` | `notice:business:*` | 维护业务类型、配置版本和渠道模板。 |
+| 个人可用消息类型 | `GET /notice/site/business-types` | LOGIN | 查询当前租户已启用的消息类型。 |
 | 渠道配置 | `/notice/channels/**` | `notice:channel:*` | 查询、保存、删除渠道配置。 |
 | 内部配置 | `GET /notice/internal/wecom-login-config` | INTERNAL | 认证服务读取企微扫码登录配置。 |
 | 任务 | `GET /notice/tasks` | `notice:task:view` | 查询通知任务。 |
@@ -590,8 +593,8 @@ HTTP 根路径：`/notice`。
 | 设置 | `GET /notice/settings`、`PUT /notice/settings` | `notice:setting:*` | 读取和保存通知设置。 |
 | 接收账户 | `/notice/recipient-accounts/**` | `notice:receive-setting:*` | 维护接收账户。 |
 | 企业微信 | `POST /notice/wecom/users/sync` | `system:user:add` | 同步企微用户映射。 |
-| 接收偏好 | `GET /notice/receive-preferences`、`PUT /notice/receive-preferences` | `notice:receive-setting:*` | 维护接收偏好。 |
-| 我的站内信 | `/notice/site/my/**` | `notice:site:*` | 未读数、未读分类统计、分类列表、详情、已读和删除。 |
+| 接收偏好 | `GET /notice/receive-preferences`、`PUT /notice/receive-preferences` | LOGIN | 维护当前登录人的接收偏好。 |
+| 我的站内信和公告 | `/notice/site/my/**` | LOGIN | 当前用户的公告、未读数、未读分类统计、分类列表、详情、已读和删除。 |
 
 常用返回对象：
 

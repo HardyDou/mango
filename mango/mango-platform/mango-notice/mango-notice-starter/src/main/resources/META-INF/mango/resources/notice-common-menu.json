@@ -198,8 +198,9 @@
                     "path": "/message-center",
                     "icon": "Message",
                     "sort": 8,
+                    "visible": 0,
                     "redirect": "/message-center/site-message",
-                    "remark": "用户侧消息接收、公告阅读和确认入口",
+                    "remark": "兼容铃铛和旧链接的隐藏消息入口；用户菜单由个人中心内部导航承载",
                     "children": [
                       {
                         "menuType": 2,
@@ -229,7 +230,7 @@
                         "icon": "Message",
                         "component": "notice/site-message/index",
                         "sort": 1,
-                        "remark": "当前用户系统消息列表和接收设置入口",
+                        "remark": "当前用户站内信列表和通知设置入口",
                         "roleCodes": [
                           "ROLE_LOGIN"
                         ],
@@ -257,13 +258,13 @@
                       },
                       {
                         "menuType": 2,
-                        "menuName": "接收配置",
+                        "menuName": "通知设置",
                         "menuCode": "notice:receive-setting",
                         "path": "/message-center/receive-setting",
                         "icon": "Switch",
                         "component": "notice/receive-setting/index",
                         "sort": 3,
-                        "remark": "当前用户接收账户、渠道偏好和提醒方式配置入口",
+                        "remark": "当前用户渠道偏好和提醒方式配置入口；接收账号由个人中心第三方账户维护",
                         "roleCodes": [
                           "ROLE_LOGIN"
                         ],

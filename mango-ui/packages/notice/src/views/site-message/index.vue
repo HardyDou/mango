@@ -2,7 +2,6 @@
   <NoticeClientMessageCenter
     :category="messageCategory"
     :unread-only="unreadOnly"
-    @settings="goReceiveSetting"
     @announcement="goAnnouncement"
     @interaction="handleInteraction"
   />
@@ -30,12 +29,8 @@ function normalizeCategory(value: unknown): NoticeSiteMessageCategory | undefine
     : undefined;
 }
 
-function goReceiveSetting() {
-  openNamedTarget('notice:receive-setting');
-}
-
 function goAnnouncement(id: string) {
-  openNamedTarget('notice:announcement-user', { id });
+  void router.push({ path: '/profile', query: { tab: 'notice-announcement-user', id } });
 }
 
 async function handleInteraction(payload: NoticeInteractionPayload) {

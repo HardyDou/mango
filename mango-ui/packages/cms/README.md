@@ -10,18 +10,18 @@ The package does not implement the public site frontend. Public site application
 
 ## 2. 功能清单
 
-| Capability | Entry |
-|------------|-------|
-| Site management | `CmsSitesView`, `cmsApi.pageSites()` |
-| Site category management | `CmsSiteCategoriesView`, `cmsApi.treeSiteCategories()` |
-| Content category management | `CmsContentCategoriesView`, `cmsApi.treeContentCategories()` |
-| Content tag management | `CmsContentTagsView`, `cmsApi.pageContentTags()` |
-| Content pool management | `CmsContentsView`, `cmsApi.pageContents()` |
-| Content publish management | `CmsContentPublishesView`, `cmsApi.pagePublishes()` |
-| Navigation management | `CmsNavigationsView`, `cmsApi.pageNavigations()` |
-| Advertisement slot management | `CmsAdvertisementsView`, `cmsApi.pageAdvertisements()` |
-| Advertisement delivery management | `CmsAdDeliveriesView`, `cmsApi.pageAdDeliveries()` |
-| Inline advertisement rendering | `MAd` |
+| Capability                        | Entry                                                        |
+| --------------------------------- | ------------------------------------------------------------ |
+| Site management                   | `CmsSitesView`, `cmsApi.pageSites()`                         |
+| Site category management          | `CmsSiteCategoriesView`, `cmsApi.treeSiteCategories()`       |
+| Content category management       | `CmsContentCategoriesView`, `cmsApi.treeContentCategories()` |
+| Content tag management            | `CmsContentTagsView`, `cmsApi.pageContentTags()`             |
+| Content pool management           | `CmsContentsView`, `cmsApi.pageContents()`                   |
+| Content publish management        | `CmsContentPublishesView`, `cmsApi.pagePublishes()`          |
+| Navigation management             | `CmsNavigationsView`, `cmsApi.pageNavigations()`             |
+| Advertisement slot management     | `CmsAdvertisementsView`, `cmsApi.pageAdvertisements()`       |
+| Advertisement delivery management | `CmsAdDeliveriesView`, `cmsApi.pageAdDeliveries()`           |
+| Inline advertisement rendering    | `MAd`                                                        |
 
 ## 3. 接入方式
 
@@ -53,6 +53,8 @@ export function loadSites(runtime: MangoAppRuntime) {
 
 The registered CMS pages resolve the same client from the Mango runtime provider. The Wujie helper and Admin Shell provide one client per mounted instance, so token, tenant, refresh and request cancellation state do not cross instances. The historical `cmsApi` export remains for compatibility but is deprecated; new integration code should use `createCmsApi(httpClient)`.
 
+Router-mode hosts must provide `MANGO_HTTP_CLIENT_KEY` at the root application. The official `mango-admin` host creates a dedicated client from its current token and tenant, and destroys it when the application unmounts.
+
 Render an advertisement block from already loaded delivery data:
 
 ```vue
@@ -71,11 +73,11 @@ defineProps<{ items: MAdItem[] }>();
 
 This package has no standalone environment file. Runtime behavior comes from page registration, the backend `mango-cms` APIs, and the host application's request base URL.
 
-| Configuration | Default | Meaning |
-|---------------|---------|---------|
-| `registerMangoCmsAdminPages()` | Not called | Registers CMS page keys into the admin page registry. |
-| `@mango/cms/style.css` | Not imported by this package consumer | Loads CMS page and component styles. |
-| Host `HttpClient` | Required by registered pages | Determines base URL, token, tenant, refresh, cancellation and unauthorized handling for `/cms/**` requests. |
+| Configuration                  | Default                               | Meaning                                                                                                     |
+| ------------------------------ | ------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `registerMangoCmsAdminPages()` | Not called                            | Registers CMS page keys into the admin page registry.                                                       |
+| `@mango/cms/style.css`         | Not imported by this package consumer | Loads CMS page and component styles.                                                                        |
+| Host `HttpClient`              | Required by registered pages          | Determines base URL, token, tenant, refresh, cancellation and unauthorized handling for `/cms/**` requests. |
 
 For official Mango Admin full integration, `@mango/cms/style.css` is declared in `mango-ui/packages/admin/admin-packages.json` and generated into the admin style aggregation chain.
 
@@ -83,38 +85,38 @@ For official Mango Admin full integration, `@mango/cms/style.css` is declared in
 
 Page registration entry:
 
-| Export | Source | Purpose |
-|--------|--------|---------|
+| Export                         | Source                   | Purpose                                                      |
+| ------------------------------ | ------------------------ | ------------------------------------------------------------ |
 | `registerMangoCmsAdminPages()` | `@mango/cms/admin-pages` | Registers CMS admin page keys under module code `mango-cms`. |
 
 Registered page keys:
 
-| Page key | Export |
-|----------|--------|
-| `cms/sites/index` | `CmsSitesView` |
-| `cms/site-categories/index` | `CmsSiteCategoriesView` |
-| `cms/contents/index` | `CmsContentsView` |
+| Page key                       | Export                     |
+| ------------------------------ | -------------------------- |
+| `cms/sites/index`              | `CmsSitesView`             |
+| `cms/site-categories/index`    | `CmsSiteCategoriesView`    |
+| `cms/contents/index`           | `CmsContentsView`          |
 | `cms/content-categories/index` | `CmsContentCategoriesView` |
-| `cms/content-tags/index` | `CmsContentTagsView` |
-| `cms/content-publishes/index` | `CmsContentPublishesView` |
-| `cms/navigations/index` | `CmsNavigationsView` |
-| `cms/advertisements/index` | `CmsAdvertisementsView` |
-| `cms/ad-deliveries/index` | `CmsAdDeliveriesView` |
+| `cms/content-tags/index`       | `CmsContentTagsView`       |
+| `cms/content-publishes/index`  | `CmsContentPublishesView`  |
+| `cms/navigations/index`        | `CmsNavigationsView`       |
+| `cms/advertisements/index`     | `CmsAdvertisementsView`    |
+| `cms/ad-deliveries/index`      | `CmsAdDeliveriesView`      |
 
 Main API helper groups:
 
-| Group | Methods |
-|-------|---------|
-| Sites | `pageSites()`, `detailSite()`, `createSite()`, `updateSite()`, `updateSiteStatus()`, `deleteSite()` |
+| Group              | Methods                                                                                                                                                                                           |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Sites              | `pageSites()`, `detailSite()`, `createSite()`, `updateSite()`, `updateSiteStatus()`, `deleteSite()`                                                                                               |
 | Content categories | `pageContentCategories()`, `listContentCategories()`, `treeContentCategories()`, `createContentCategory()`, `updateContentCategory()`, `updateContentCategoryStatus()`, `deleteContentCategory()` |
-| Content tags | `pageContentTags()`, `listContentTags()`, `createContentTag()`, `updateContentTag()`, `updateContentTagStatus()`, `deleteContentTag()` |
-| Site categories | `treeSiteCategories()`, `createSiteCategory()`, `updateSiteCategory()`, `updateSiteCategoryStatus()`, `deleteSiteCategory()` |
-| Contents | `pageContents()`, `detailContent()`, `createContent()`, `updateContent()`, `submitContent()`, `approveContent()`, `rejectContent()`, `offlineContent()`, `deleteContent()` |
-| Publishes | `pagePublishes()`, `publishContents()`, `offlinePublish()`, `deletePublish()` |
-| Navigations | `pageNavigations()`, `createNavigation()`, `updateNavigation()`, `updateNavigationStatus()`, `deleteNavigation()` |
-| Advertisements | `pageAdvertisements()`, `createAdvertisement()`, `updateAdvertisement()`, `updateAdvertisementStatus()`, `deleteAdvertisement()` |
-| Ad deliveries | `pageAdDeliveries()`, `createAdDelivery()`, `updateAdDelivery()`, `updateAdDeliveryStatus()`, `deleteAdDelivery()` |
-| Site settings | `detailSiteSetting()`, `saveSiteSetting()` |
+| Content tags       | `pageContentTags()`, `listContentTags()`, `createContentTag()`, `updateContentTag()`, `updateContentTagStatus()`, `deleteContentTag()`                                                            |
+| Site categories    | `treeSiteCategories()`, `createSiteCategory()`, `updateSiteCategory()`, `updateSiteCategoryStatus()`, `deleteSiteCategory()`                                                                      |
+| Contents           | `pageContents()`, `detailContent()`, `createContent()`, `updateContent()`, `submitContent()`, `approveContent()`, `rejectContent()`, `offlineContent()`, `deleteContent()`                        |
+| Publishes          | `pagePublishes()`, `publishContents()`, `offlinePublish()`, `deletePublish()`                                                                                                                     |
+| Navigations        | `pageNavigations()`, `createNavigation()`, `updateNavigation()`, `updateNavigationStatus()`, `deleteNavigation()`                                                                                 |
+| Advertisements     | `pageAdvertisements()`, `createAdvertisement()`, `updateAdvertisement()`, `updateAdvertisementStatus()`, `deleteAdvertisement()`                                                                  |
+| Ad deliveries      | `pageAdDeliveries()`, `createAdDelivery()`, `updateAdDelivery()`, `updateAdDeliveryStatus()`, `deleteAdDelivery()`                                                                                |
+| Site settings      | `detailSiteSetting()`, `saveSiteSetting()`                                                                                                                                                        |
 
 Shared TypeScript types include `ApiId`, `PageResult`, `CmsSite`, `CmsContent`, `CmsContentPublish`, `CmsNavigation`, `CmsAdvertisement`, `CmsAdDelivery`, `CmsStatus`, and `CmsContentStatus`.
 
@@ -124,28 +126,28 @@ Shared TypeScript types include `ApiId`, `PageResult`, `CmsSite`, `CmsContent`, 
 
 This frontend package does not create database tables, menus, or default records.
 
-| Data | Source |
-|------|--------|
-| Sites, categories, content, navigation, advertisements, and publish relations | Backend `mango-cms` module. |
-| Menus and button permissions | Backend `mango-cms` resource file `META-INF/mango/resources/cms-common-menu.json`. |
-| File picker, image preview, and upload records | `@mango/file` and backend `mango-file`. |
-| Admin page registration | `registerMangoCmsAdminPages()` writes page loaders into `@mango/admin-pages`. |
+| Data                                                                          | Source                                                                             |
+| ----------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| Sites, categories, content, navigation, advertisements, and publish relations | Backend `mango-cms` module.                                                        |
+| Menus and button permissions                                                  | Backend `mango-cms` resource file `META-INF/mango/resources/cms-common-menu.json`. |
+| File picker, image preview, and upload records                                | `@mango/file` and backend `mango-file`.                                            |
+| Admin page registration                                                       | `registerMangoCmsAdminPages()` writes page loaders into `@mango/admin-pages`.      |
 
 ## 7. 管理入口
 
 The backend CMS menu components should match these page keys:
 
-| Menu component | Frontend page key |
-|----------------|-------------------|
-| `@/views/cms/sites/index.vue` | `cms/sites/index` |
-| `@/views/cms/site-categories/index.vue` | `cms/site-categories/index` |
-| `@/views/cms/contents/index.vue` | `cms/contents/index` |
+| Menu component                             | Frontend page key              |
+| ------------------------------------------ | ------------------------------ |
+| `@/views/cms/sites/index.vue`              | `cms/sites/index`              |
+| `@/views/cms/site-categories/index.vue`    | `cms/site-categories/index`    |
+| `@/views/cms/contents/index.vue`           | `cms/contents/index`           |
 | `@/views/cms/content-categories/index.vue` | `cms/content-categories/index` |
-| `@/views/cms/content-tags/index.vue` | `cms/content-tags/index` |
-| `@/views/cms/content-publishes/index.vue` | `cms/content-publishes/index` |
-| `@/views/cms/navigations/index.vue` | `cms/navigations/index` |
-| `@/views/cms/advertisements/index.vue` | `cms/advertisements/index` |
-| `@/views/cms/ad-deliveries/index.vue` | `cms/ad-deliveries/index` |
+| `@/views/cms/content-tags/index.vue`       | `cms/content-tags/index`       |
+| `@/views/cms/content-publishes/index.vue`  | `cms/content-publishes/index`  |
+| `@/views/cms/navigations/index.vue`        | `cms/navigations/index`        |
+| `@/views/cms/advertisements/index.vue`     | `cms/advertisements/index`     |
+| `@/views/cms/ad-deliveries/index.vue`      | `cms/ad-deliveries/index`      |
 
 Common permission codes use the `cms:*` prefix, for example `cms:site:list`, `cms:content:list`, `cms:content:approve`, `cms:navigation:list`, and `cms:advertisement:list`. Tenant and permission checks are enforced by the backend management APIs.
 

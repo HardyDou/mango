@@ -25,7 +25,7 @@
 | 公共路径           | `PublicPathView`、public path API                             | BFF permission / authorization        |
 | 地区               | `AreaView`、`areaApi`                                         | `mango-system`                        |
 | 业务域             | `DomainView`、`domainApi`、`DomainSelector`、`DomainSideTree` | `mango-domain`                        |
-| 登录日志和操作日志 | `LoginLogView`、`OperationLogView`、log API                   | `mango-system`                        |
+| 登录日志和操作日志 | `LoginLogView`、个人中心“登录日志”、log API                   | `mango-system`                        |
 | 系统事件 outbox    | `SystemEventView`、`systemEventApi`                           | `mango-infra-event`                   |
 | 参与人选择         | `ParticipantSelector`                                         | identity、org、authorization          |
 
@@ -163,7 +163,7 @@ import '@mango/system/style.css';
 | `areaApi`          | `/system/area/tree`、`/system/area/children`                         | 地区树、子节点、详情、维护。                       |
 | public path API    | `/bff/permission/public-path`                                        | 公共路径增删改查。                                 |
 | `domainApi`        | `/domain/domains/page`、`/domain/domains/enabled-tree`               | 业务域分页、树、启用树、详情、编码查询、状态切换。 |
-| `loginLogApi`      | `/system/log/login/list`                                             | 登录日志查询、详情、清理、统计。                   |
+| `loginLogApi`      | `/system/log/login/list`、`/system/log/login/my/list`                | 管理端日志查询，以及当前账号自己的登录日志分页。   |
 | `operationLogApi`  | `/system/log/operation/list`                                         | 操作日志查询、详情、清理。                         |
 | `systemEventApi`   | `/system/events`                                                     | 事件分页、详情和重新消费。                         |
 
@@ -225,6 +225,7 @@ import '@mango/system/style.css';
 | 租户                   | 可能影响租户状态和菜单授权。                                                                        |
 | 公共路径               | 可能绕过接口权限，必须严格授权。                                                                    |
 | 操作日志和登录日志清理 | 会删除审计数据。                                                                                    |
+| 个人中心登录日志       | 只允许读取当前租户、当前账号自己的记录，不使用管理员日志权限。                                      |
 | 系统事件重试           | 会触发消息重新消费，可能改变业务状态。                                                              |
 
 前端选择器返回 id 或 code 只是业务提交参数，最终仍由业务后端校验权限、租户和数据范围。
