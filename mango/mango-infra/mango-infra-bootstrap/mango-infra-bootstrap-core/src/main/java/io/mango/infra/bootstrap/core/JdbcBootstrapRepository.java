@@ -357,7 +357,8 @@ public final class JdbcBootstrapRepository implements BootstrapGenerationFence {
 
     private static void requireFingerprint(String expected, String actual, String scope) {
         if (expected == null || !expected.equals(actual)) {
-            throw new IllegalStateException("BOOTSTRAP_FINGERPRINT_MISMATCH: scope=" + scope);
+            throw new IllegalStateException("BOOTSTRAP_FINGERPRINT_MISMATCH: scope=" + scope
+                    + ", expected=" + expected + ", actual=" + actual);
         }
     }
 

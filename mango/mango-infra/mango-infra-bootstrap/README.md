@@ -102,6 +102,8 @@ MangoApplication.run(MyApplication.class, args);
 
 本地 Mango 主仓、CLI 新生成项目以及已迁移到 `MangoApplication.run` 的业务项目，使用 `mango dev start backend` 时由 `@mango/cli` 在当前 worktree 的 `mango_dev_*` 独立数据库中自动准备 bootstrap 回执并启动 runtime。存量 `SpringApplication.run` 项目继续走兼容直启，不会被 CLI 自动切换生命周期。CLI 的本地编排不替代测试、预发或生产发布流程；这些环境仍按下列命令显式管理 generation、策略和切流。
 
+Mango 源码仓或派生 CI 的选定模块安装使用 `-pl :mango-bom,<backend-module> -am`。Maven `-am` 不会仅因为后端 POM 导入 BOM 就自动把本地 `mango-bom` 放进 Reactor；缺少该 selector 时，CI-friendly revision 可能从远端解析到错误坐标。普通业务仓继续从发布仓库消费 BOM，不需要加入 Mango 源码模块。
+
 首次空库：
 
 ```bash
@@ -134,7 +136,7 @@ java -jar app.jar bootstrap abort --mango.release.id=2026.07.27 \
 |------|------|
 | 未传 `bootstrap`/`runtime` 即退出 | 最终应用已经使用强制生命周期入口，补充第一个进程参数。 |
 | `BOOTSTRAP_RECEIPT_MISSING` | 当前 generation 尚未成功执行 `bootstrap apply`。 |
-| `BOOTSTRAP_FINGERPRINT_MISMATCH` | 同 generation 的制品或步骤内容发生漂移；使用新 generation，不能覆盖旧回执。 |
+| `BOOTSTRAP_FINGERPRINT_MISMATCH` | 比较异常中的 expected/actual，确认源码、完整 release tuple、environment 和 generation。`1.0.31` 已隔离 Bootstrap/Runtime 的宿主 Jackson 差异；旧组合留下的不一致应升级完整 tuple 后使用新 generation 重新 plan/apply/verify，不能删库、覆盖旧回执或手工改审计表。 |
 | `OLD_RUNTIME_INSTANCES_ACTIVE` | 旧 generation lease 尚未排空，停止旧实例并等待 TTL 后再 finalize。 |
 | `CANDIDATE_RUNTIME_INSTANCES_ACTIVE` | 候选 generation 仍有活跃 lease，停止候选实例并等待 TTL 后再 abort。 |
 | Runtime 变为 `REFUSING_TRAFFIC` | 检查回执权威代、fingerprint 和 lease 续租；不要让 Runtime 自动补做初始化。 |
@@ -151,3 +153,5 @@ java -jar app.jar bootstrap abort --mango.release.id=2026.07.27 \
 Maven `1.0.30`/`1.0.3x` 业务仓升级必须消费 Maven `1.0.31`、`@mango/pmo@1.3.9`、`@mango/cli@1.0.96` 和匹配前端矩阵组成的完整 release tuple，不得单独替换 Bootstrap 相关 jar。升级前保存 `.mango`、Bootstrap 四张审计表和应用日志；既有数据库不重建。
 
 既有环境按 `plan -> apply --strategy=rolling -> verify -> runtime -> finalize` 执行。`apply` 只写入候选 generation，确认新 Runtime receipt 的 environment、revision、generation、fingerprint 和 fencing token 一致且旧 lease 排空后才可 finalize。finalize 前失败使用 `abort`，它清除 candidate、恢复 stable 写权并递增 fencing token；finalize 开始后只能续跑 finalize。Runtime 不执行 Flyway、Resource 初始化或自动修复缺失回执。
+
+Maven `1.0.31` 的 Resource 步骤 fingerprint 使用独立的 canonical JSON mapper，不再受 Bootstrap 非 Web 与 Runtime Web/HTTP Jackson 序列化差异影响。诊断时可开启 DEBUG 查看 Runtime 总 fingerprint、逐步骤 hash、Resource 模块数和声明数；日志不输出完整业务声明或敏感字段。

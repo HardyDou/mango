@@ -332,6 +332,8 @@ Flyway 路径：`mango-resource-core/src/main/resources/db/migration/resource`�
 
 Runtime 前由 `ResourceBootstrapStepContributor` 扫描并幂等同步 `BOOTSTRAP_REQUIRED` 声明；Runtime 中由 `ResourceEventualReconciliationWorker` 只对账 `RUNTIME_EVENTUAL` 声明。本地注册中心由 `ResourceRegistryService` 完成目标资源 upsert、disable 和 delete。
 
+声明 identity 与 Bootstrap 步骤 fingerprint 使用独立、确定性的 canonical JSON mapper，按稳定属性/Map key 顺序序列化，不继承宿主应用的 HTTP/Web Jackson module。相同 typed declaration 在非 Web Bootstrap 与 Web Runtime 中生成相同 hash，包括值类型为 `LONG` 且 Runtime 把 HTTP `Long` 输出为字符串的场景。DEBUG 诊断只记录模块、声明数量和逐步骤 hash，不打印完整声明内容。
+
 ## 10. 同步规则
 
 | 场景 | 行为 |
@@ -439,4 +441,4 @@ authorization_api_resource         API_RESOURCE 访问模式正确
 
 使用 Maven `1.0.30` 或其它 `1.0.3x` 组合的业务模块，升级到 Maven `1.0.31` / PMO `1.3.9` / CLI `1.0.96` 完整 tuple 时，将旧 `resource-manifest.json` 迁移为 `META-INF/mango/resources/<module>-common-*.json|yml|yaml` typed declaration，并按目标 handler 的 `ResourceHandlerSpec` 校验字段。正式内置资源默认 `BOOTSTRAP_REQUIRED`；需要非阻断对账的资源显式使用 `RUNTIME_EVENTUAL`。不要把历史 Flyway seed、demo 数据或用户可修改数据复制为正式 Resource 声明。
 
-升级验证至少检查空库 Resource/菜单、已有库不重建、依赖资源拓扑、manifest fingerprint 和 Runtime readiness。出现 handler 缺失、声明 schema 错误或 generation/fingerprint 不匹配时，保留同步日志和 Bootstrap receipt，修复声明或回滚候选 generation，不通过手工 SQL 绕过同步。
+升级验证至少检查空库 Resource/菜单、已有库不重建、依赖资源拓扑、manifest fingerprint 和 Runtime readiness。出现 handler 缺失、声明 schema 错误或 generation/fingerprint 不匹配时，保留同步日志和 Bootstrap receipt，确认完整 `1.0.31` tuple 后使用新 generation 重新 plan/apply/verify，修复声明或回滚候选 generation；不要删库、手工改 Bootstrap 审计表或通过手工 SQL 绕过同步。

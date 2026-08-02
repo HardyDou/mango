@@ -71,6 +71,16 @@ mvn -f backend/pom.xml clean verify
 
 生成项目仍使用固定非 `${revision}` 版本时，先用 CLI 同步当前模板；不要通过共享 SNAPSHOT 或跳过架构/静态门禁绕过 worktree 隔离检查。
 
+Mango 源码仓或派生 CI 若用 `-pl ... -am` 只安装选定后端，必须显式把本地 BOM 和后端模块放进同一个 Reactor。`-am` 不会因为业务 POM 使用 `scope=import` 自动加入 `mango-bom`：
+
+```bash
+mvn -f mango/pom.xml \
+  -pl :mango-bom,mango-app/monolith/mango-monolith-app \
+  -am -DskipTests install
+```
+
+普通业务仓从发布仓库消费 `io.mango:mango-bom:1.0.31`，不需要把 Mango 源码模块加入自己的 Reactor。
+
 ## 6. 更新前端
 
 聚合管理端项目至少把 `@mango/admin` 更新到 `1.0.61`；直接消费包的项目按“目标版本”表逐项更新实际依赖。更新项目内 CLI 到 `1.0.96`，重新生成 lockfile并检查没有旧 tuple 残留：
@@ -116,6 +126,8 @@ bootstrap finalize
 
 首次空库才使用 cold 策略。进入 finalize 前，核对 receipt 的 environment、revision、generation、fingerprint 和 fencing token，并确认旧 generation lease 已排空。finalize 前的候选失败可执行 abort；finalize 开始后保留证据并续跑 finalize，不手工改写审计表。
 
+`1.0.31` 使用独立、确定性的 Resource canonical JSON 生成 manifest fingerprint，Bootstrap 的非 Web Jackson 配置与 Runtime 的 Web/HTTP `Long` 序列化配置不会再改变同一声明的身份。若旧 `1.0.3x` 组合已经留下 `BOOTSTRAP_FINGERPRINT_MISMATCH`，保留 `.mango`、日志和四张 Bootstrap 审计表，升级完整 tuple 后使用新 generation 重新执行 `plan -> apply -> verify`；不要删库，也不要手工修改 fingerprint 或 generation。
+
 ## 8. 回归验收
 
 至少验证以下业务入口：
@@ -134,7 +146,7 @@ bootstrap finalize
 | 现象 | 处理 |
 | --- | --- |
 | 目标包无法从 consume registry 解析 | 停止升级，核对完整 tuple 发布状态；不要切回 workspace link 或本地 publish cache 冒充成功。 |
-| `BOOTSTRAP_RECEIPT_MISSING` / fingerprint 或 generation 不一致 | 保留 `.mango`、审计表和日志，停止候选 Runtime，修正源码/制品/环境匹配后重新 plan/verify。 |
+| `BOOTSTRAP_RECEIPT_MISSING` / fingerprint 或 generation 不一致 | 保留 `.mango`、审计表和日志，停止候选 Runtime，确认已升级完整 `1.0.31` tuple；比较异常中的 expected/actual，使用新 generation 重新 plan/apply/verify。不要删库或手工改审计表。 |
 | `OLD_RUNTIME_INSTANCES_ACTIVE` | 停止旧 generation 实例并等待 lease 过期，再继续 finalize。 |
 | Resource schema/handler 失败 | 修正 typed declaration 或 handler 依赖，不用手工 SQL 跳过同步。 |
 | 前端出现重复 Vue、样式缺失或页面 key 404 | 检查精确 package 矩阵、peer dependency、公开 `style.css` 和页面注册；不要只降级一个包。 |

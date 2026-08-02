@@ -2,6 +2,10 @@ package io.mango.resource.support.declaration;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.MapperFeature;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.json.JsonMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import io.mango.resource.api.enums.ResourceFieldType;
 import io.mango.resource.support.model.ResourceDeclaration;
 import io.mango.resource.support.model.ResourceField;
@@ -19,6 +23,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.TreeMap;
 
 /**
@@ -26,16 +31,28 @@ import java.util.TreeMap;
  */
 public final class ResourceDeclarationCanonicalizer {
 
-    private final ObjectMapper objectMapper;
+    private static final ObjectMapper CANONICAL_MAPPER = JsonMapper.builder()
+            .addModule(new JavaTimeModule())
+            .enable(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY)
+            .enable(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS)
+            .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
+            .build();
+
     private final ResourceLoader resourceLoader;
 
-    public ResourceDeclarationCanonicalizer(ObjectMapper objectMapper) {
-        this(objectMapper, new DefaultResourceLoader());
+    /**
+     * Creates a canonicalizer whose output is isolated from host HTTP/Jackson customizations.
+     *
+     * @param hostObjectMapper retained for source and binary compatibility; it is only validated because
+     *                         canonical identity must not depend on its serializers or formatting
+     */
+    public ResourceDeclarationCanonicalizer(ObjectMapper hostObjectMapper) {
+        this(hostObjectMapper, new DefaultResourceLoader());
     }
 
-    ResourceDeclarationCanonicalizer(ObjectMapper objectMapper, ResourceLoader resourceLoader) {
-        this.objectMapper = objectMapper;
-        this.resourceLoader = resourceLoader;
+    ResourceDeclarationCanonicalizer(ObjectMapper hostObjectMapper, ResourceLoader resourceLoader) {
+        Objects.requireNonNull(hostObjectMapper, "hostObjectMapper");
+        this.resourceLoader = Objects.requireNonNull(resourceLoader, "resourceLoader");
     }
 
     public byte[] canonicalBytes(ResourceDeclaration declaration) {
@@ -52,7 +69,7 @@ public final class ResourceDeclarationCanonicalizer {
             normalized.put("executionPhase", declaration.getExecutionPhase());
             normalized.put("status", declaration.getStatus());
             normalized.put("fields", normalizeFields(declaration.getFields()));
-            return objectMapper.writeValueAsBytes(normalized);
+            return CANONICAL_MAPPER.writeValueAsBytes(normalized);
         } catch (JsonProcessingException exception) {
             throw new IllegalStateException(
                     "Canonicalize resource declaration failed: " + declaration.getBizKey(), exception);
