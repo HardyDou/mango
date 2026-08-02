@@ -258,7 +258,7 @@ test('CI reruns when policy-resolved assurance selections change and keeps expli
   );
   assert.match(
     workflow,
-    /Build generated four-layer backend prerequisites[\s\S]*?:mango-infra-bootstrap-api[\s\S]*?:mango-infra-persistence-api[\s\S]*?:mango-infra-feign-starter[\s\S]*?install/,
+    /Build generated four-layer backend prerequisites[\s\S]*?:mango-infra-bootstrap-api[\s\S]*?:mango-infra-persistence-api[\s\S]*?:mango-infra-feign-starter[\s\S]*?:mango-admin-starter[\s\S]*?\n\s+-am \\[\s\S]*?install/,
   );
   const javaJob = workflow.match(/\n  java:\n[\s\S]*?(?=\n  docs:)/)?.[0] ?? '';
   assert.match(javaJob, /Set up pnpm for generated backend gates[\s\S]*?pnpm\/action-setup@v4/);
