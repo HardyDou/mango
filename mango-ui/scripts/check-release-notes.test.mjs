@@ -4,6 +4,7 @@ import test from 'node:test';
 import {
   addedWorkflowCheckers,
   extractWorkflowCheckers,
+  releaseSectionForTag,
   releaseSectionForVersion,
   validateRequiredCheckCoverage,
   validateRootReleaseNotes,
@@ -88,6 +89,60 @@ old
 `;
   assert.match(releaseSectionForVersion(changelog, '1.0.94'), /current/u);
   assert.match(releaseSectionForVersion(changelog, '1.0.9'), /old/u);
+});
+
+test('selects one mixed release section by exact tag for packages whose versions are not in the heading', () => {
+  const releaseTag = 'v2026.08.02-maven-1.0.31-pmo-1.3.9-cli-1.0.96-platform-release';
+  const changelog = `
+## ${releaseTag} - 2026-08-02
+
+@mango/admin 1.0.61
+
+### Published Packages
+### Upgrade Notes
+### Verification
+
+## v2026.08.01-maven-1.0.30-cli-1.0.95-release - 2026-08-01
+
+@mango/admin 1.0.60
+`;
+
+  assert.match(releaseSectionForTag(changelog, releaseTag), /@mango\/admin 1\.0\.61/u);
+  assert.deepEqual(
+    validateRootReleaseNotes(changelog, {
+      packageName: '@mango/admin',
+      version: '1.0.61',
+      releaseTag,
+    }),
+    [],
+  );
+});
+
+test('does not accept another release section when an exact tag is supplied', () => {
+  const changelog = `
+## v-current-release
+
+@mango/admin 1.0.60
+
+### Published Packages
+### Upgrade Notes
+### Verification
+
+## v-other-release
+
+@mango/admin 1.0.61
+
+### Published Packages
+### Upgrade Notes
+### Verification
+`;
+
+  const errors = validateRootReleaseNotes(changelog, {
+    packageName: '@mango/admin',
+    version: '1.0.61',
+    releaseTag: 'v-current-release',
+  });
+  assert.ok(errors.some((error) => error.includes('version 1.0.61')));
 });
 
 test('validates the target root release after a newer release is added', () => {

@@ -1,10 +1,10 @@
 {
   "packageName": "@mango/pmo",
-  "packageVersion": "1.3.8",
+  "packageVersion": "1.3.9",
   "schemaVersion": 2,
   "source": "mango-pmo",
-  "sourceCommit": "68afed1ec4866f67341bf51b3c34cd7557b3909b",
-  "bundleSha256": "08a07150a0a38b2458c676e7c555edf5e7297484154d45feace16b004e434d97",
+  "sourceCommit": "b8b9d86e08687b78729492b4c1fa9db19db69089",
+  "bundleSha256": "74015e291f2e3572970b172d38b0ebf104ffd1e092272831eb9918b3b61be185",
   "contracts": [
     {
       "contractId": "business-requirements",
@@ -49,11 +49,11 @@
   ],
   "plugin": {
     "path": "package-root",
-    "sha256": "245575df5b85b50fef97f1d46dedbd4f36ec950dcdf8f3b6f00ccdbe11c4deab",
+    "sha256": "e020c9b2a8c11aa0617c5bc0127b46b7bd9c80abb5cf0d2b7803217c2b24f60d",
     "files": [
       {
         "path": ".codex-plugin/plugin.json",
-        "sha256": "248be01f4d54127808adc3a49778ac054e97089b2a0f2dac32229c2312362b87",
+        "sha256": "901d5ba18e23293b0f3c52746bfcf93743db39ee6b67b1faf94a72ac7fa3e7c6",
         "size": 708,
         "kind": "plugin",
         "mode": "0644"
@@ -294,7 +294,7 @@
   "files": [
     {
       "path": "README.md",
-      "sha256": "567bf580af6a8f417bfc2779a635015b96580dfb5b8494820f2a033170f7275f",
+      "sha256": "8619a4dd981999cd883e7406decda5cfe6992cc3849d3d14e115d84bf549ce63",
       "size": 25205,
       "kind": "documentation",
       "mode": "0644"
@@ -364,8 +364,8 @@
     },
     {
       "path": "contracts/business-requirements.json",
-      "sha256": "2350876238e2e50f02e2e93f6cb0db7e86f3b9a699412d5448f6d5efcb083d9b",
-      "size": 10083,
+      "sha256": "69fc26634f1ac1dc7577a6f84680eb86832ae432f36bb0ec038439c0d014b20c",
+      "size": 10092,
       "kind": "contract",
       "mode": "0644"
     },
@@ -399,22 +399,22 @@
     },
     {
       "path": "contracts/implementation-plan.json",
-      "sha256": "2115adde09560ac47ea78d6e25f62140ba0f549d66673d35c9913d9caa21bda5",
-      "size": 10764,
+      "sha256": "52b03b485a1aa2d7a5f572c027964d905ba4b4db17242ca4f5738af604c08ae9",
+      "size": 10773,
       "kind": "contract",
       "mode": "0644"
     },
     {
       "path": "contracts/system-requirements.json",
-      "sha256": "01be4c6e47ba140b3474f4bfa4054de22819e18528920038395b616871adc80c",
-      "size": 11864,
+      "sha256": "f1522960d77cc9ff2240f6b15106d56848060002c0ee1c0cad06b8efb27a446d",
+      "size": 11873,
       "kind": "contract",
       "mode": "0644"
     },
     {
       "path": "contracts/technical-design.json",
-      "sha256": "e875b0dfbcaac5d7f510d1e927cbdccdb756cf1245c625e2ef6a3b6c708c7c26",
-      "size": 14198,
+      "sha256": "01ecde6a9d2c14cba43c7879ae768e2f5230c302fa2353a424762f8b874143f6",
+      "size": 14207,
       "kind": "contract",
       "mode": "0644"
     },
@@ -665,8 +665,8 @@
     },
     {
       "path": "rules/index.json",
-      "sha256": "3a472d52af0e32249868dd7b6d25dfdec89ee7a5e0d0140e3746bfcc0727d822",
-      "size": 26476,
+      "sha256": "b296d2f81e1fef792bcafdf872051b8e5fd13172f0824b7c86c0ec56d3281f36",
+      "size": 26481,
       "kind": "rule",
       "mode": "0644"
     },
@@ -721,8 +721,8 @@
     },
     {
       "path": "rules/product/05-document-lifecycle.md",
-      "sha256": "d202b1d71fcde4d5eed8fab8139cdacb780065b4de7095e104874b544649e275",
-      "size": 8158,
+      "sha256": "3c31f6f0bd020eef61115fc36a8b87fb0f2fd3eeab8edc277be48e9eb2b9f85e",
+      "size": 8168,
       "kind": "rule",
       "mode": "0644"
     },

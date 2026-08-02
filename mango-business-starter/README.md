@@ -274,6 +274,6 @@ Controller 使用 `BaseCrudController`，类级路径由 module 和 aggregate �
 
 ## 14. Issue #690 升级登记
 
-使用过 Mango Maven `1.0.30` 或其它 `1.0.3x` 组合的业务仓属于 #690 回归影响范围。当前 `@mango/cli@1.0.95`、`@mango/pmo@1.3.8`、Maven `1.0.30` 仍是历史已发布组合，不代表已包含本次源码修复；在新的完整 release tuple 发布前，这组三方版本不能作为本次修复的升级目标。升级按 [CLI 升级合同](../mango-ui/packages/mango-cli/README.md) 成组执行。
+使用过 Mango Maven `1.0.30` 或其它 `1.0.3x` 组合的业务仓属于 #690 回归影响范围。修复 tuple 是 Maven `1.0.31`、`@mango/pmo@1.3.9`、`@mango/cli@1.0.96` 和根 `CHANGELOG.md` 中列出的完整前端矩阵；旧 `1.0.30`/CLI `1.0.95`/PMO `1.3.8` 组合只作为升级来源。升级按 [CLI 升级合同](../mango-ui/packages/mango-cli/README.md) 和 [1.0.30 到 1.0.31 升级指南](../mango-docs/guides/business-integration/mango-1.0.30-to-1.0.31-upgrade.md) 成组执行。
 
 升级时保留数据库和工作区审计证据，先升级 CLI/PMO，再统一更新 `<mango.version>` 或 `mango-bom`，执行冻结安装、完整 Maven Reactor、前端检查、`workspace init`、Bootstrap receipt 校验和真实业务验收。已有数据库不重建、不删除业务数据；滚动升级在 `finalize` 前可用 `bootstrap abort` 撤回候选 generation。模块资源迁移到 `META-INF/mango/resources/*.json|yml|yaml` typed declarations，Flyway 只负责 DDL 和大 SQL。

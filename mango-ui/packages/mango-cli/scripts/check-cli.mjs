@@ -3709,14 +3709,17 @@ function assertHistoricalPmoVersionUpgrade(projectRoot) {
   const fixtureRoot = resolve(pmoPackageRoot, '../../../mango-pmo/tests/document-contract/fixtures/valid');
   const businessDocsRoot = join(projectRoot, 'business-docs');
   const reviewRoot = join(businessDocsRoot, 'review');
+  const currentPmoVersion = releaseVersions.npm['@mango/pmo'];
+  const currentBusinessRequirements = readFileSync(join(fixtureRoot, 'business-requirements.md'), 'utf8');
+  const currentVersionMarker = `pmoVersion: ${currentPmoVersion}`;
+  if (!currentBusinessRequirements.includes(currentVersionMarker)) {
+    throw new Error(`historical PMO upgrade fixture does not use the release lock ${currentVersionMarker}`);
+  }
   mkdirSync(reviewRoot, { recursive: true });
   cpSync(join(fixtureRoot, 'review/BRD-ANN-001.md'), join(reviewRoot, 'BRD-ANN-001.md'));
   writeFileSync(
     join(businessDocsRoot, 'historical-brd.md'),
-    readFileSync(join(fixtureRoot, 'business-requirements.md'), 'utf8').replace(
-      'pmoVersion: 1.3.8',
-      'pmoVersion: 1.3.6',
-    ),
+    currentBusinessRequirements.replace(currentVersionMarker, 'pmoVersion: 1.3.6'),
   );
 
   const beforeUpgrade = assertCommandFails(

@@ -103,6 +103,8 @@ POM 的现有 XML 配置和 `-Dmango.architecture.debtBaselineFile=<path>` 命�
 
 标准 partial PR 门禁把依赖准备和质量扫描分成两个阶段。干净 Runner 先对直接受影响模块执行带 `-am` 的跳过测试安装，把尚未发布的上游 SNAPSHOT 放入本地 Maven 仓库；随后质量阶段仍只选择直接受影响模块和外层架构验证模块，不带 `-am` 或 `-amd`。`mango:check` 委托 PMD、Checkstyle、SpotBugs 时只传入包含代码的 Reactor 模块，不把 `architecture-verification` 或 `mango-architecture-verification` 再次带入嵌套 Maven。PMD 和 Checkstyle 使用报告 goal 收集完整发现，再由 Mango 按 `all` 或 `no-new-violations` 统一判定；工具执行错误仍按 `mango.check.staticFailurePolicy` 处理，历史发现不会在新增问题分类前直接终止嵌套 Maven。外层 `mvn verify` 的架构检查不受影响。
 
+Mango Maven `1.0.31` 起，静态分析的嵌套 Maven 会继承外层已解析的本地仓库、存在的 user/global settings、offline/update 模式、active profiles，以及 `revision`、`sha1`、`changelist` 三个 CI-friendly 版本属性。任意其它用户属性都不会透传，避免把密码或 token 写入子进程参数和门禁日志。使用 `-Dmaven.repo.local=<isolated-repository>`、`-s <settings.xml>` 或私有镜像的业务构建因此与外层依赖解析保持一致。
+
 `mango:check` 委托 Checkstyle 时始终显式选择规则文件，不使用 Maven Checkstyle 插件的 Sun 默认规则。规则选择优先级如下：
 
 1. `-Dmango.check.checkstyleConfigLocation=<path>` 指定的业务规则。
@@ -255,6 +257,7 @@ scripts/publish-maven-batch.sh --all-non-app \
 - `mango:check` 报存量问题：PR 模式使用 `no-new-violations` 和 baseline，但不能把新增问题放进 baseline。
 - `no-new-violations` 在分类前被 PMD/Checkstyle 历史问题直接终止：升级到 Mango Maven `1.0.19` 或更高版本；不得通过 `skip`、`report` 策略或修改业务规则绕过。
 - partial PR 在干净 Runner 报上游 SNAPSHOT 找不到：确认 workflow 已先执行受影响模块的依赖安装阶段，并且 scope classifier 输出了非空 `maven_dependency_projects`；不要给后续质量命令追加 `-am`。
+- `mango:check` 的嵌套 Maven 在外层隔离仓库已安装依赖后仍转向默认仓库：升级到 Mango Maven `1.0.31` 或更高版本，并保留外层 `-Dmaven.repo.local`/`-s` 参数；不要把尚未验证的候选版本提前发布到远端来绕过本地门禁。
 - `mango:check` 的嵌套 Maven 报 `mango.architecture.skip` 等治理属性缺失：确认使用的 Mango Maven 插件已经包含治理聚合模块过滤；架构验证应由外层 `mvn verify` 执行，不应进入 PMD、Checkstyle、SpotBugs 的嵌套 Reactor。
 - 生成代码编译不过：脚手架只提供结构，业务字段、依赖和 mapper 仍要补齐。
 - 生成权限后页面仍无按钮：还需要菜单资源入库、角色授权和前端按钮权限接入。

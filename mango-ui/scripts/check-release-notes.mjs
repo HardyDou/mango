@@ -45,6 +45,7 @@ export function runReleaseNotesCheck(argv = process.argv.slice(2)) {
       ...validateRootReleaseNotes(rootChangelog, {
         packageName: args.packageName,
         version: args.version,
+        releaseTag: args.releaseTag,
         requiredPmoChecks,
       }),
     );
@@ -109,9 +110,22 @@ export function releaseSectionForVersion(changelog, version) {
   return releaseSections.find((section) => versionPattern.test(section.split('\n', 1)[0])) || '';
 }
 
-export function validateRootReleaseNotes(changelog, { packageName, version, requiredPmoChecks = [] }) {
+export function releaseSectionForTag(changelog, releaseTag) {
+  if (!releaseTag) return '';
+  const releaseSections = changelog.match(/^##\s+.+$(?:\n(?!##\s).*)*/gm) || [];
+  return (
+    releaseSections.find((section) => {
+      const heading = section.split('\n', 1)[0];
+      return new RegExp(`(?:^|\\s)${escapeRegExp(releaseTag)}(?:\\s|$)`, 'u').test(heading);
+    }) || ''
+  );
+}
+
+export function validateRootReleaseNotes(changelog, { packageName, version, releaseTag = '', requiredPmoChecks = [] }) {
   const label = `Root CHANGELOG.md ${packageName}@${version} release section`;
-  const section = releaseSectionForVersion(changelog, version);
+  const section = releaseTag
+    ? releaseSectionForTag(changelog, releaseTag)
+    : releaseSectionForVersion(changelog, version);
   return [
     ...validateReleaseSection(section, { label, packageName, version }),
     ...validateRequiredCheckCoverage(section, { label, checkers: requiredPmoChecks }),

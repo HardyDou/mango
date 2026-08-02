@@ -1,5 +1,34 @@
 # Mango PMO Changelog
 
+## 1.3.9 - 2026-08-02
+
+### Fixed
+
+- Resolve terminal Gitea pull-request body edits without constructing an invalid base/head diff after the PR is merged or closed; open PR edits continue to run the full trusted-diff gate.
+- Accept typed full-page baseline exceptions for genuinely inapplicable list, detail, form or dialog shells while continuing to reject untyped or explanation-free bypasses.
+- Keep generated business PMO scope classification, governance-intent checks and baseline manifests mechanically aligned with the current source bundle.
+- Advance lifecycle contracts to PMO `1.3.9` while accepting unchanged, upgrade-pinned PMO `1.3.8` documents as controlled historical inputs.
+
+### Changed
+
+- Ship the current Gitea event-mode resolver, frontend page-baseline behavior and synchronized generated-project workflow/tool projection in `@mango/pmo@1.3.9`.
+- Preserve stable `pr-contract-check` and `pmo-doc-check` identities; this release adds no new required-check filename beyond the PMO `1.3.8` set.
+
+### Upgrade Notes
+
+1. Install `@mango/pmo@1.3.9` before `@mango/cli@1.0.96`.
+2. Run `mango pmo upgrade --project-dir . --to 1.3.9 --sync-shell`, then review changes to GitHub/Gitea workflows, PMO tools, rules and the generated baseline manifest.
+3. Run `mango pmo check --project-dir . --locked`; for Gitea, verify both an open-PR body edit and a terminal merged/closed-PR body edit.
+4. Existing typed frontend page-baseline exceptions remain valid when their page kind and concrete reason still match the detected page; do not replace them with generic suppression text.
+5. Existing PMO `1.3.8` lifecycle documents are preserved only when the upgrade-generated path/SHA-256/version baseline still matches; new or modified lifecycle documents use `1.3.9`.
+
+### Verification
+
+- `node --test mango-pmo/tests/pmo-check-event-mode.test.mjs mango-pmo/tests/frontend-page-baseline.test.mjs mango-pmo/tests/pmo-check-scope.test.mjs`
+- `node mango-ui/packages/mango-pmo/scripts/build-package.mjs && node mango-ui/packages/mango-pmo/scripts/check-package.mjs`
+- `node mango-business-starter/scripts/sync-pmo-baseline.mjs --check`
+- `node mango-ui/packages/mango-cli/scripts/check-cli.mjs`
+
 ## 1.3.8 - 2026-08-01
 
 ### Fixed

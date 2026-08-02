@@ -272,3 +272,7 @@ pnpm -F @mango/admin-shell build
 ## 2026-08-02 Issue 643 第三方登录配置菜单影响
 
 - Issue 643 新增第三方登录配置页面 key `auth/provider-config/index`，由 auth 的 `AUTH_MENU` 资源声明同步并由 `@mango/admin-pages` 注册。个人中心的“个人资料、账号安全、第三方授权”是 `/profile` 页面内部导航，不进入框架菜单树。配置页出现 404 或菜单不可见时，按本指南检查 auth 资源同步、角色菜单授权、页面 key 注册和 `@mango/auth/style.css` 消费；原有菜单解析、租户应用绑定和其它业务页面排障流程不变。
+
+## 2026-08-03 Mango 1.0.31 发布影响
+
+- Mango `1.0.31` 不改变既有菜单树 API、`component` key、角色菜单授权、租户应用绑定或页面注册协议。使用 `1.0.30` 或其它 `1.0.3x` 版本的业务项目应按升级指南成组更新 Maven、前端包、CLI 和 PMO；升级后的菜单缺失应先确认独立 Bootstrap 的 Resource 与租户步骤回执成功，再继续按本指南核对资源声明、角色授权和页面 key，不能通过手工补表绕过初始化链路。

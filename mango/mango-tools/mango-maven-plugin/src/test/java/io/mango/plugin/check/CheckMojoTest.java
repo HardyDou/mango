@@ -2,6 +2,7 @@ package io.mango.plugin.check;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import org.apache.maven.execution.MavenExecutionRequest;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -18,6 +19,7 @@ import java.nio.file.Path;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -1629,6 +1631,62 @@ class CheckMojoTest {
         assertEquals(command.indexOf("compile") + 1, command.indexOf("pmd:check"));
         assertFalse(command.contains("-am"));
         assertFalse(command.contains("-amd"));
+    }
+
+    @Test
+    void invokeSingleGoal_propagatesOuterMavenResolutionContext() throws Exception {
+        // given
+        Files.writeString(tempDir.resolve("pom.xml"), "<project/>\n");
+        Path fakeMaven = tempDir.resolve("fake-mvn.sh");
+        Path commandFile = tempDir.resolve("command.txt");
+        Files.writeString(fakeMaven, """
+                #!/bin/sh
+                printf '%%s\n' "$@" > "%s"
+                """.formatted(commandFile));
+        assertTrue(fakeMaven.toFile().setExecutable(true));
+
+        Path localRepository = tempDir.resolve("isolated-repository");
+        Path userSettings = Files.writeString(tempDir.resolve("settings.xml"), "<settings/>\n");
+        Path globalSettings = Files.writeString(
+                tempDir.resolve("global-settings.xml"), "<settings/>\n");
+        MavenExecutionRequest request = mock(MavenExecutionRequest.class);
+        when(request.getLocalRepositoryPath()).thenReturn(localRepository.toFile());
+        when(request.getUserSettingsFile()).thenReturn(userSettings.toFile());
+        when(request.getGlobalSettingsFile()).thenReturn(globalSettings.toFile());
+        when(request.isOffline()).thenReturn(true);
+        when(request.isUpdateSnapshots()).thenReturn(true);
+        when(request.getActiveProfiles()).thenReturn(List.of("release", "!legacy"));
+        MavenSession mavenSession = mock(MavenSession.class);
+        when(mavenSession.getRequest()).thenReturn(request);
+        Properties userProperties = new Properties();
+        userProperties.setProperty("revision", "1.0.31");
+        userProperties.setProperty("registry.password", "must-not-propagate");
+        when(mavenSession.getUserProperties()).thenReturn(userProperties);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "staticTimeoutSeconds", 5L);
+        setField(mojo, "session", mavenSession);
+
+        Method method = CheckMojo.class.getDeclaredMethod(
+                "invokeSingleGoal", File.class, Path.class, String.class, List.class);
+        method.setAccessible(true);
+
+        // when
+        method.invoke(mojo, fakeMaven.toFile(), tempDir, "pmd:check", List.of());
+
+        // then
+        List<String> command = Files.readAllLines(commandFile);
+        assertTrue(command.contains("-Dmaven.repo.local=" + localRepository.toAbsolutePath()));
+        assertEquals(userSettings.toAbsolutePath().toString(),
+                command.get(command.indexOf("-s") + 1));
+        assertEquals(globalSettings.toAbsolutePath().toString(),
+                command.get(command.indexOf("-gs") + 1));
+        assertTrue(command.contains("-o"));
+        assertTrue(command.contains("-U"));
+        assertEquals("release,!legacy", command.get(command.indexOf("-P") + 1));
+        assertTrue(command.contains("-Drevision=1.0.31"));
+        assertFalse(command.stream().anyMatch(argument -> argument.contains("registry.password")));
+        assertFalse(command.stream().anyMatch(argument -> argument.contains("must-not-propagate")));
     }
 
     @Test

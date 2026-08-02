@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 
 import io.mango.plugin.architecture.GlobalEntityManifestLoader;
 
+import org.apache.maven.execution.MavenExecutionRequest;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
@@ -57,6 +58,14 @@ public class CheckMojo extends AbstractMojo {
     private static final String JSON_OUTPUT = "json";
     private static final String POM_FILE_NAME = "pom.xml";
     private static final String POM_PATH_SUFFIX = "/pom.xml";
+    private static final String MAVEN_REVISION_PROPERTY = "revision";
+    private static final String MAVEN_SHA1_PROPERTY = "sha1";
+    private static final String MAVEN_CHANGELIST_PROPERTY = "changelist";
+    private static final List<String> MAVEN_CI_FRIENDLY_PROPERTIES =
+            List.of(
+                    MAVEN_REVISION_PROPERTY,
+                    MAVEN_SHA1_PROPERTY,
+                    MAVEN_CHANGELIST_PROPERTY);
     private static final String MODULE_PROPERTIES_PATH =
             "src/main/resources/META-INF/mango/module.properties";
     private static final String MODULE_STARTER_ARTIFACT = "mango-infra-module-starter";
@@ -825,6 +834,7 @@ public class CheckMojo extends AbstractMojo {
         List<String> command = new ArrayList<>();
         command.add(mavenExecutable.getAbsolutePath());
         command.add("-q");
+        appendDelegatedMavenContext(command);
         command.add("-f");
         command.add(rootPath.resolve("pom.xml").toString());
         command.add("-DskipTests");
@@ -894,6 +904,46 @@ public class CheckMojo extends AbstractMojo {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new MojoExecutionException("Delegated static-analysis goals were interrupted", e);
+        }
+    }
+
+    private void appendDelegatedMavenContext(List<String> command) {
+        if (session == null || session.getRequest() == null) {
+            return;
+        }
+        MavenExecutionRequest request = session.getRequest();
+        File localRepository = request.getLocalRepositoryPath();
+        if (localRepository != null) {
+            command.add("-Dmaven.repo.local=" + localRepository.getAbsolutePath());
+        }
+        appendExistingMavenFileOption(command, "-s", request.getUserSettingsFile());
+        appendExistingMavenFileOption(command, "-gs", request.getGlobalSettingsFile());
+        if (request.isOffline()) {
+            command.add("-o");
+        }
+        if (request.isUpdateSnapshots()) {
+            command.add("-U");
+        }
+        List<String> activeProfiles = request.getActiveProfiles();
+        if (activeProfiles != null && !activeProfiles.isEmpty()) {
+            command.add("-P");
+            command.add(String.join(",", activeProfiles));
+        }
+        if (session.getUserProperties() != null) {
+            for (String property : MAVEN_CI_FRIENDLY_PROPERTIES) {
+                String value = session.getUserProperties().getProperty(property);
+                if (value != null && !value.isBlank()) {
+                    command.add("-D" + property + "=" + value);
+                }
+            }
+        }
+    }
+
+    private void appendExistingMavenFileOption(
+            List<String> command, String option, File candidate) {
+        if (candidate != null && candidate.isFile()) {
+            command.add(option);
+            command.add(candidate.getAbsolutePath());
         }
     }
 

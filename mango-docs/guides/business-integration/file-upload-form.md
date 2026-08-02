@@ -315,3 +315,7 @@ pnpm -F @mango/file test
 ## Issue #661 单 ZIP 大小控制影响
 
 - 文件模块新增可选的 `FileApi.packageFilesWithSizeControl` 和 `POST /file/files/package-size-control`，供业务后端以 AUTO 总目标或 MANUAL 逐文件目标生成单个 ZIP。普通上传表单的 fileId/fileIds 持久化、上传、回显、预览、下载、权限、租户和前端组件接入均不变。业务使用新入口时应验收 PDF/图片压缩、`compression=NONE`、Office 原样保留，以及目标不可达时仍返回实际 ZIP 和结构化未达标结果。
+
+## 2026-08-03 Mango 1.0.31 发布影响
+
+- Mango `1.0.31` 不改变文件上传、回显、预览、下载、ZIP/PDF API、fileId 持久化、权限或租户边界。使用 `1.0.30` 或其它 `1.0.3x` 版本的业务项目应成组升级 Maven、`@mango/file` 及其固定依赖、CLI 和 PMO，并在独立 Bootstrap 成功后复验上传到下载的完整闭环；已有文件记录、对象内容和业务附件关系无需重建，也不迁移为 URL 字段。
