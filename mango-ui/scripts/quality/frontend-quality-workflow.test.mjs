@@ -16,8 +16,16 @@ function job(id) {
 
 test('pull requests run the stable affected frontend gate without browser E2E', () => {
   const pullRequestJob = job('frontend-pr-quality');
+  const manifestValidation = pullRequestJob.indexOf('- name: Validate repository development manifest');
+  const dependencyInstall = pullRequestJob.indexOf('- name: Install locked frontend dependencies');
   assert.match(pullRequestJob, /name: frontend-pr-quality/u);
   assert.match(pullRequestJob, /if: github\.event_name == 'pull_request'/u);
+  assert.match(pullRequestJob, /node mango-ui\/packages\/mango-cli\/src\/index\.mjs plan mango-backend/u);
+  assert.ok(manifestValidation >= 0, 'missing repository development manifest validation step');
+  assert.ok(
+    dependencyInstall > manifestValidation,
+    'repository development manifest validation must run before dependency installation',
+  );
   assert.match(pullRequestJob, /pnpm check:pr -- --base="\$MANGO_BASE_SHA" --head="\$MANGO_HEAD_SHA"/u);
   assert.doesNotMatch(pullRequestJob, /test:e2e|playwright|Start real Mango backend/u);
 });

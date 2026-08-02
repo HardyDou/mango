@@ -38,6 +38,9 @@ jobs:
           cache: pnpm
           cache-dependency-path: mango-ui/pnpm-lock.yaml
 
+      - name: Validate repository development manifest
+        run: node mango-ui/packages/mango-cli/src/index.mjs plan mango-backend
+
       - name: Enforce current frontend page components
         env:
           MANGO_BASE_SHA: ${{ github.event.pull_request.base.sha }}
