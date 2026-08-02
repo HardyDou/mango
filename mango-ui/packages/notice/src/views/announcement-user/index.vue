@@ -55,7 +55,7 @@
       </template>
     </MangoListPanel>
 
-    <el-dialog v-model="detailVisible" title="公告详情" width="760px" destroy-on-close>
+    <MangoDialog v-model="detailVisible" title="公告详情" width="760px" destroy-on-close>
       <template v-if="current">
         <h2 class="detail-title">{{ current.title }}</h2>
         <div class="detail-meta">
@@ -77,7 +77,7 @@
           确认已读
         </el-button>
       </template>
-    </el-dialog>
+    </MangoDialog>
   </MangoListPage>
 </template>
 
@@ -85,7 +85,7 @@
 import { nextTick, onMounted, reactive, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import { ElMessage } from 'element-plus';
-import { MangoListPage, MangoListPanel, MangoSearchPanel, Pagination } from '@mango/common';
+import { MangoDialog, MangoListPage, MangoListPanel, MangoSearchPanel, Pagination } from '@mango/common';
 import { confirmMyAnnouncement, getMyAnnouncement, getMyAnnouncements } from '../../api/notice';
 import type { NoticeAnnouncement, NoticeAnnouncementConfirmStatus } from '../../types/notice';
 
