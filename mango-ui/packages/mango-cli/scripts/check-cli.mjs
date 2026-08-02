@@ -16,6 +16,7 @@ import { tmpdir } from 'node:os';
 import { join, relative, resolve } from 'node:path';
 import { spawn, spawnSync } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { assertPnpmLockfileFixtureInvocations, createPnpmLockfileFixture } from './support/pnpm-lockfile-fixture.mjs';
 
 const packageRoot = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const cli = join(packageRoot, 'src/index.mjs');
@@ -1079,6 +1080,10 @@ try {
     }
   }
 
+  const moduleAddPnpmFixture = createPnpmLockfileFixture(join(tempRoot, 'module-add-lockfile'), [
+    'packages/contract',
+    'packages/contract-api',
+  ]);
   const moduleAddResult = spawnSync(
     process.execPath,
     [
@@ -1099,7 +1104,7 @@ try {
       cwd: tempRoot,
       encoding: 'utf8',
       env: {
-        ...process.env,
+        ...moduleAddPnpmFixture.env,
         NPM_CONFIG_REGISTRY: 'http://127.0.0.1:9/unreachable-registry/',
         npm_config_registry: 'http://127.0.0.1:9/unreachable-registry/',
       },
@@ -1108,6 +1113,7 @@ try {
   if (moduleAddResult.status !== 0) {
     throw new Error(`module add command failed:\n${moduleAddResult.stdout}\n${moduleAddResult.stderr}`);
   }
+  assertPnpmLockfileFixtureInvocations(moduleAddPnpmFixture.logPath);
   for (const file of [
     'backend/modules/contract/README.md',
     'backend/modules/contract/contract-api/src/main/java/com/example/custom/contract/api/ContractApi.java',

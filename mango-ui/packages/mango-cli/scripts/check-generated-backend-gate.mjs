@@ -4,6 +4,7 @@ import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, 
 import { homedir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { assertPnpmLockfileFixtureInvocations, createPnpmLockfileFixture } from './support/pnpm-lockfile-fixture.mjs';
 
 const packageRoot = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const cli = join(packageRoot, 'src/index.mjs');
@@ -67,6 +68,10 @@ try {
     tempRoot,
     'generate acceptance project',
   );
+  const moduleAddPnpmFixture = createPnpmLockfileFixture(join(tempRoot, 'module-add-lockfile'), [
+    'packages/order',
+    'packages/order-api',
+  ]);
   runNode(
     [
       cli,
@@ -84,7 +89,9 @@ try {
     ],
     projectRoot,
     'generate four-layer business module',
+    moduleAddPnpmFixture.env,
   );
+  assertPnpmLockfileFixtureInvocations(moduleAddPnpmFixture.logPath);
   configureMangoPluginVersion();
   addApprovedGlobalEntityFixture();
   assertGeneratedPolicyContract();
@@ -349,11 +356,12 @@ public final class StaticViolation {
   }
 }
 
-function runNode(args, cwd, label) {
+function runNode(args, cwd, label, env = process.env) {
   const result = spawnSync(process.execPath, args, {
     cwd,
     encoding: 'utf8',
     maxBuffer: 20 * 1024 * 1024,
+    env,
   });
   if (result.status !== 0) {
     throw new Error(`${label} failed:\n${combinedOutput(result)}`);
