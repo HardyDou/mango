@@ -29,9 +29,26 @@ class NoticeFeignContractTest {
     }
 
     @Test
+    void feignClientDeclaresEveryPublicApiMethod() {
+        List<String> publicApiMethods =
+                Arrays.stream(NoticeApi.class.getDeclaredMethods())
+                        .map(NoticeFeignContractTest::methodSortKey)
+                        .sorted()
+                        .toList();
+        List<String> feignMethods =
+                Arrays.stream(NoticeFeignClient.class.getDeclaredMethods())
+                        .filter(method -> !method.isBridge() && !method.isSynthetic())
+                        .map(NoticeFeignContractTest::methodSortKey)
+                        .sorted()
+                        .toList();
+
+        assertThat(feignMethods).containsExactlyElementsOf(publicApiMethods);
+    }
+
+    @Test
     void feignEndpointsKeepVerbsPathsAndBindings() {
         assertThat(feignFingerprint())
-                .isEqualTo("d671d629e88a733c4a889387789df084a93885d8e3aaeaf7fda6352a1d164232");
+                .isEqualTo("68d6c02f2560646b031c014876aaa5d137d32005cb81070a4dafb3b022cc06a9");
     }
 
     private static String feignFingerprint() {
