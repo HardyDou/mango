@@ -1,20 +1,5 @@
 <template>
-  <div
-    v-if="!embedded"
-    class="layout-breadcrumb-settings"
-    aria-label="主题设置"
-    role="button"
-    tabindex="0"
-    @click="openThemePage"
-    @keydown.enter="openThemePage"
-    @keydown.space.prevent="openThemePage"
-  >
-    <el-icon :size="20">
-      <Setting />
-    </el-icon>
-  </div>
-
-  <div v-else class="layout-theme-page">
+  <div v-if="embedded" class="layout-theme-page">
     <el-scrollbar class="layout-breadcrumb-settings-bar">
       <!-- 布局切换 -->
       <el-divider content-position="left"> 布局切换 </el-divider>
@@ -352,12 +337,10 @@ import { useLayoutStore } from '../../../stores/layout';
 import { normalizeTagsStyle, usePreferencesStore } from '../../../stores/preferences';
 import { mittBus } from '@mango/common/utils/mitt';
 import { useChangeColor } from '@mango/common/utils/theme';
-import { Setting, RefreshRight } from '@element-plus/icons-vue';
-import { useRouter } from 'vue-router';
+import { RefreshRight } from '@element-plus/icons-vue';
 
 const { embedded = false } = defineProps<{ embedded?: boolean }>();
 
-const router = useRouter();
 const themeStore = useThemeStore();
 const layoutStore = useLayoutStore();
 const preferencesStore = usePreferencesStore();
@@ -531,11 +514,6 @@ const initLayoutChangeFun = () => {
   onBgColorPickerChange('columnsMenuBarColor');
 };
 
-// 主题配置统一进入个人中心页内设置，避免在顶栏叠加大型抽屉。
-const openThemePage = () => {
-  void router.push({ path: '/profile', query: { tab: 'theme' } });
-};
-
 // 存储配置到本地
 const setLocalThemeConfig = () => {
   preferencesStore.tagsStyle = normalizeTagsStyle(preferencesStore.tagsStyle);
@@ -597,20 +575,6 @@ const handleMobileResize = (res: { isMobile: boolean; windowWidth: number; layou
 </script>
 
 <style scoped lang="scss">
-.layout-breadcrumb-settings {
-  display: flex;
-  align-items: center;
-  padding: 0 12px;
-  height: 40px;
-  cursor: pointer;
-  color: var(--mango-color-top-bar);
-  transition: opacity 0.2s;
-
-  &:hover {
-    opacity: 0.8;
-  }
-}
-
 .layout-breadcrumb-settings-bar {
   height: auto;
   padding: 0;

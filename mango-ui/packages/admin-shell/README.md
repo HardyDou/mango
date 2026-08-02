@@ -133,7 +133,7 @@ const admin = createMangoAdminApp({
 | `configureMangoAdminShell(options)` | 合并 Shell 配置。                        |
 | `getMangoAdminShellOptions()`       | 读取当前 Shell 配置。                    |
 
-Shell 默认把 `MangoThemeSettings` 注入 `@mango/auth` 的个人中心“主题设置”子页。顶栏齿轮直接跳转 `/profile?tab=theme`，不再打开覆盖页面的大抽屉；主题、布局和界面偏好仍实时应用并保存在当前浏览器。
+Shell 默认把 `MangoThemeSettings` 注入 `@mango/auth` 的个人中心“主题设置”子页。顶栏不再单独显示设置齿轮，用户可从头像下拉菜单进入 `/profile?tab=theme`；主题、布局和界面偏好仍实时应用并保存在当前浏览器。
 
 子入口：
 

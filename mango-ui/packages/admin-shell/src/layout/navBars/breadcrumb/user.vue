@@ -1,7 +1,7 @@
 <!-- eslint-disable vue/multi-word-component-names -->
 <template>
   <el-dropdown trigger="click" popper-class="layout-breadcrumb-user-popper" @command="handleCommand">
-    <div class="layout-breadcrumb-user" :aria-label="`当前用户：${currentDisplayName}`">
+    <div class="layout-breadcrumb-user" :aria-label="`当前用户：${currentDisplayName}`" data-action="user-menu.open">
       <MangoAvatar :size="28" :source="currentUser.photo">
         <el-icon><User /></el-icon>
       </MangoAvatar>
@@ -16,7 +16,7 @@
       <el-dropdown-menu>
         <el-dropdown-item disabled class="account-summary-dropdown-item">
           <div class="account-summary" data-surface="current-user.summary">
-            <MangoAvatar :size="40" :source="currentUser.photo">
+            <MangoAvatar :size="44" :source="currentUser.photo">
               <el-icon><User /></el-icon>
             </MangoAvatar>
             <div class="account-summary__copy">
@@ -25,13 +25,17 @@
             </div>
           </div>
         </el-dropdown-item>
-        <el-dropdown-item divided command="profile">
+        <el-dropdown-item divided command="profile" data-action="profile.open">
           <el-icon><User /></el-icon>
           个人中心
         </el-dropdown-item>
-        <el-dropdown-item command="password">
+        <el-dropdown-item command="password" data-action="profile.password">
           <el-icon><Lock /></el-icon>
           修改密码
+        </el-dropdown-item>
+        <el-dropdown-item command="theme" data-action="profile.theme">
+          <el-icon><Brush /></el-icon>
+          主题设置
         </el-dropdown-item>
         <el-dropdown-item divided command="logout" data-action="auth.logout">
           <el-icon><SwitchButton /></el-icon>
@@ -43,7 +47,7 @@
 </template>
 
 <script setup lang="ts" name="breadcrumbUser">
-import { User, Lock, SwitchButton, ArrowDown } from '@element-plus/icons-vue';
+import { ArrowDown, Brush, Lock, SwitchButton, User } from '@element-plus/icons-vue';
 import { logout } from '@mango/auth';
 import { MangoAvatar } from '@mango/common';
 import { Session } from '@mango/common/utils/storage';
@@ -101,6 +105,9 @@ const handleCommand = (command: string) => {
     case 'password':
       router.push({ path: '/profile', query: { tab: 'password' } });
       break;
+    case 'theme':
+      router.push({ path: '/profile', query: { tab: 'theme' } });
+      break;
     case 'logout':
       void confirmLogout();
       break;
@@ -112,14 +119,17 @@ const handleCommand = (command: string) => {
 .layout-breadcrumb-user {
   display: flex;
   align-items: center;
-  padding: 0 12px;
   height: 40px;
+  padding: 0 8px;
+  border-radius: 4px;
   cursor: pointer;
   color: var(--mango-color-top-bar);
-  transition: color 0.2s;
+  transition:
+    background-color 0.18s ease,
+    opacity 0.18s ease;
 
   &:hover {
-    opacity: 0.85;
+    background: color-mix(in srgb, var(--mango-color-top-bar) 10%, transparent);
   }
 
   .username {
@@ -137,45 +147,72 @@ const handleCommand = (command: string) => {
   }
 }
 
-:global(.layout-breadcrumb-user-popper .el-dropdown-menu) {
-  min-width: 212px;
+:global(.layout-breadcrumb-user-popper.el-popper) {
+  padding: 0;
   background: var(--mango-bg-color);
   border: 1px solid var(--mango-border-color);
+  border-radius: 4px;
+  box-shadow: var(--mango-shadow-light);
+}
+
+:global(.layout-breadcrumb-user-popper .el-popper__arrow::before) {
+  background: var(--mango-bg-color);
+  border-color: var(--mango-border-color);
+}
+
+:global(.layout-breadcrumb-user-popper .el-dropdown-menu) {
+  min-width: 244px;
+  padding: 7px 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
 }
 
 :global(.layout-breadcrumb-user-popper .el-dropdown-menu__item) {
   height: 40px;
-  padding: 0 13px;
-  color: var(--mango-text-color-regular);
+  padding: 0 18px;
+  color: var(--mango-text-color);
+  font-size: 14px;
+  line-height: 40px;
+}
 
-  .el-icon {
-    margin-right: 10px;
-    font-size: 16px;
-  }
+:global(.layout-breadcrumb-user-popper .el-dropdown-menu__item .el-icon) {
+  margin-right: 12px;
+  color: inherit;
+  font-size: 18px;
+}
 
-  &:hover {
-    color: var(--mango-color-primary);
-    background: var(--mango-color-menu-hover);
-  }
+:global(.layout-breadcrumb-user-popper .el-dropdown-menu__item:not(.is-disabled):hover),
+:global(.layout-breadcrumb-user-popper .el-dropdown-menu__item:not(.is-disabled):focus) {
+  color: var(--mango-text-color);
+  background: var(--mango-color-menu-hover);
+}
+
+:global(.layout-breadcrumb-user-popper .el-dropdown-menu__item--divided) {
+  margin-top: 7px;
+  border-top-color: var(--mango-border-color);
 }
 
 :global(.layout-breadcrumb-user-popper .account-summary-dropdown-item) {
   height: auto;
-  padding: 10px 12px;
+  min-height: 68px;
+  padding: 11px 16px 12px;
   opacity: 1;
   cursor: default;
+  color: var(--mango-text-color);
+  background: transparent;
+}
 
-  &:hover {
-    color: var(--mango-text-color-primary);
-    background: transparent;
-  }
+:global(.layout-breadcrumb-user-popper .account-summary-dropdown-item:hover) {
+  color: var(--mango-text-color);
+  background: transparent;
 }
 
 .account-summary {
   display: grid;
-  grid-template-columns: 40px minmax(0, 1fr);
+  grid-template-columns: 44px minmax(0, 1fr);
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   width: 100%;
 }
 
@@ -192,14 +229,16 @@ const handleCommand = (command: string) => {
   }
 
   strong {
-    color: var(--mango-text-color-primary);
-    font-size: 14px;
+    color: var(--mango-text-color);
+    font-size: 15px;
     font-weight: 600;
+    line-height: 22px;
   }
 
   span {
-    color: var(--mango-text-color-secondary);
-    font-size: 12px;
+    color: var(--mango-text-color-regular);
+    font-size: 13px;
+    line-height: 20px;
   }
 }
 </style>
