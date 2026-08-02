@@ -188,6 +188,12 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Set up pnpm for generated backend gates
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.10.0
+          run_install: false
+
       - name: Set up Node.js for generated backend gates
         uses: actions/setup-node@v4
         with:
@@ -209,6 +215,18 @@ jobs:
           (needs.preflight_scope.outputs.generated_backend == 'true' ||
           needs.preflight_scope.outputs.backend_mode == 'governance')
         run: node mango-ui/packages/mango-pmo/scripts/build-package.mjs
+
+      - name: Install CLI runtime dependencies for generated backend acceptance
+        if: >-
+          needs.preflight_scope.outputs.m11 == 'true' &&
+          (needs.preflight_scope.outputs.generated_backend == 'true' ||
+          needs.preflight_scope.outputs.backend_mode == 'governance')
+        run: >-
+          pnpm --dir mango-ui install
+          --frozen-lockfile
+          --filter @mango/cli...
+          --ignore-scripts
+          --registry=https://registry.npmjs.org/
 
       - name: Build the architecture gate prerequisites
         run: |
