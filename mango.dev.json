@@ -23,6 +23,7 @@
   "apps": {
     "mango-backend": {
       "type": "spring-boot-maven",
+      "mangoLifecycle": true,
       "cwd": "mango",
       "pom": "mango-app/monolith/mango-monolith-app/pom.xml",
       "install": {

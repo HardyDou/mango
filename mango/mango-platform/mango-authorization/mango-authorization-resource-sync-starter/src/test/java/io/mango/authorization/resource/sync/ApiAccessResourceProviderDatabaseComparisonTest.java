@@ -150,7 +150,7 @@ class ApiAccessResourceProviderDatabaseComparisonTest {
     }
 
     @Test
-    void resourceProviderBatchSyncDoesNotOverrideManualApiResource() {
+    void resourceProviderBatchSyncDoesNotOverrideManuallyDisabledApiResource() {
         apiResourceHandler.upsertBatch(resourceProvider.provide());
         Long manualTargetId = jdbcTemplate.queryForObject("""
                 select id
@@ -161,7 +161,7 @@ class ApiAccessResourceProviderDatabaseComparisonTest {
                 """, Long.class);
         jdbcTemplate.update("""
                 update authorization_api_resource
-                set description = 'Manual login resource', status = 1
+                set description = 'Manual login resource', status = 0
                 where id = ?
                 """, manualTargetId);
 
@@ -179,7 +179,7 @@ class ApiAccessResourceProviderDatabaseComparisonTest {
                 .findFirst()
                 .orElseThrow();
         assertThat(manualRow.description()).isEqualTo("Manual login resource");
-        assertThat(manualRow.status()).isEqualTo(1);
+        assertThat(manualRow.status()).isZero();
         assertThat(apiResourceRows()).hasSize(9);
     }
 

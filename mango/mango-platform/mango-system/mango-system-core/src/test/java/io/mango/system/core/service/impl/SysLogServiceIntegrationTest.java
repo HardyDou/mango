@@ -2,9 +2,12 @@ package io.mango.system.core.service.impl;
 
 import com.baomidou.mybatisplus.autoconfigure.MybatisPlusAutoConfiguration;
 import io.mango.infra.context.api.MangoContextHolder;
+import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.infra.persistence.starter.PersistenceAuditAutoConfiguration;
 import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguration;
 import io.mango.system.api.command.RecordOperationLogCommand;
+import io.mango.system.api.query.LoginLogPageQuery;
+import io.mango.system.api.vo.SysLoginLogVO;
 import io.mango.system.core.mapper.SysOperationLogMapper;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -20,8 +23,10 @@ import org.springframework.test.context.TestPropertySource;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -54,6 +59,7 @@ class SysLogServiceIntegrationTest {
     void setUp() throws Exception {
         MangoContextHolder.clear();
         rebuildOperationLogTable();
+        rebuildLoginLogTable();
     }
 
     @AfterEach
@@ -79,6 +85,25 @@ class SysLogServiceIntegrationTest {
 
         assertThat(singleValue("tenant_id", "operation = '租户操作'"))
                 .isEqualTo("tenant-a");
+    }
+
+    @Test
+    void pageCurrentUserLoginLogsOnlyReturnsCurrentTenantAndUser() throws Exception {
+        insertLoginLog(1L, "tenant-a", 1001L, "127.0.0.1", "本机", "Mozilla/5.0 Chrome/140");
+        insertLoginLog(2L, "tenant-a", 2002L, "10.0.0.2", "内网", "Mozilla/5.0 Safari/18");
+        insertLoginLog(3L, "tenant-b", 1001L, "10.0.0.3", "上海", "Mozilla/5.0 Firefox/141");
+        MangoContextHolder.set(MangoContextSnapshot.empty().withSecurity(
+                1001L, "tenant-a", "admin", "INTERNAL", "INTERNAL_USER", "INTERNAL_ORG", 1L, "internal-admin"));
+
+        LoginLogPageQuery query = new LoginLogPageQuery();
+        query.setPage(1L);
+        query.setSize(10L);
+        List<SysLoginLogVO> records = logService.pageCurrentUserLoginLogs(query).getList();
+
+        assertThat(records).hasSize(1);
+        assertThat(records.get(0).getIp()).isEqualTo("127.0.0.1");
+        assertThat(records.get(0).getLocation()).isEqualTo("本机");
+        assertThat(records.get(0).getBrowser()).isEqualTo("Mozilla/5.0 Chrome/140");
     }
 
     private RecordOperationLogCommand operationLog(String tenantId, String operation) {
@@ -122,6 +147,55 @@ class SysLogServiceIntegrationTest {
                     updated_at timestamp not null
                 )
                 """);
+    }
+
+    private void rebuildLoginLogTable() throws Exception {
+        execute("drop table if exists sys_login_log");
+        execute("""
+                create table sys_login_log (
+                    id bigint not null primary key,
+                    user_id bigint,
+                    username varchar(64),
+                    login_type varchar(20),
+                    ip varchar(128),
+                    location varchar(255),
+                    browser varchar(128),
+                    os varchar(64),
+                    status tinyint,
+                    msg varchar(500),
+                    login_time timestamp,
+                    tenant_id varchar(64) not null,
+                    org_id bigint,
+                    created_by bigint,
+                    created_at timestamp not null,
+                    updated_by bigint,
+                    updated_at timestamp not null
+                )
+                """);
+    }
+
+    private void insertLoginLog(
+            long id, String tenantId, long userId, String ip, String location, String browser) throws Exception {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement statement = connection.prepareStatement("""
+                     insert into sys_login_log
+                         (id, user_id, username, login_type, ip, location, browser, os, status, msg, login_time,
+                          tenant_id, created_at, updated_at)
+                     values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, current_timestamp, ?, current_timestamp, current_timestamp)
+                     """)) {
+            statement.setLong(1, id);
+            statement.setLong(2, userId);
+            statement.setString(3, "admin");
+            statement.setString(4, "PASSWORD");
+            statement.setString(5, ip);
+            statement.setString(6, location);
+            statement.setString(7, browser);
+            statement.setString(8, "macOS");
+            statement.setInt(9, 1);
+            statement.setString(10, "成功");
+            statement.setString(11, tenantId);
+            statement.executeUpdate();
+        }
     }
 
     private void execute(String sql) throws Exception {

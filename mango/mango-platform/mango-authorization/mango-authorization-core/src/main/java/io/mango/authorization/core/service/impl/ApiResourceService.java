@@ -302,9 +302,7 @@ public class ApiResourceService implements IApiResourceService {
         entity.setHandlerClass(resource.getHandlerClass());
         entity.setHandlerMethod(resource.getHandlerMethod());
         entity.setDescription(resource.getDescription());
-        if (entity.getStatus() == null) {
-            entity.setStatus(1);
-        }
+        entity.setStatus(1);
     }
 
     private String defaultResourceCode(ApiResourceRegisterCommand resource) {

@@ -10,10 +10,29 @@ export async function openElementPlusSelect(scope: Locator | Page, label: string
   await selectInput.locator('xpath=ancestor::div[contains(@class, "el-select__wrapper")][1]').click();
 }
 
+/**
+ * 登录页机构选择器当前没有关联 label，且 Element Plus 的已选值会遮挡原生 combobox。
+ * 该组件内部兼容细节仅在 support 层处理，业务用例不依赖其 DOM 结构。
+ */
+export async function openUnlabelledElementPlusCombobox(scope: Locator | Page): Promise<void> {
+  const combobox = scope.getByRole('combobox');
+  await combobox.locator('xpath=ancestor::div[contains(@class, "el-select__wrapper")][1]').click();
+}
+
 export async function chooseElementPlusRadio(scope: Locator, name: string): Promise<void> {
   const radio = scope.getByRole('radio', { name });
   await radio.locator('xpath=ancestor::label[1]').click();
   await expect(radio).toBeChecked();
+}
+
+/** Element Plus 会隐藏 checkbox input；使用可点击的 label 保持真实用户交互。 */
+export async function setElementPlusCheckbox(scope: Locator | Page, name: string, checked: boolean): Promise<void> {
+  const checkbox = scope.getByRole('checkbox', { name, exact: true });
+  if ((await checkbox.isChecked()) !== checked) {
+    await checkbox.locator('xpath=ancestor::label[1]').click();
+  }
+  if (checked) await expect(checkbox).toBeChecked();
+  else await expect(checkbox).not.toBeChecked();
 }
 
 export async function setElementPlusSwitch(scope: Locator | Page, name: string, checked: boolean): Promise<void> {

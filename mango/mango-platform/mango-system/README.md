@@ -20,7 +20,7 @@
 | 机构 | 维护机构空间、机构类型、机构状态、机构套餐绑定，登录页读取启用机构选项 | `SysTenantApi`、`/system/tenant`、`tenantApi` |
 | 行政区划 | 查询省市区树、子级区划、adcode 详情和启用区划 | `SysAreaApi`、`/system/area`、`areaApi` |
 | 国际化 | 读取公开语言包、语言列表和指定国际化条目 | `SysI18nApi`、`/system/i18n` |
-| 登录日志 | 查询、统计、清理登录日志 | `SysLoginLogApi`、`/system/log/login/*`、`loginLogApi` |
+| 登录日志 | 管理端查询、统计、清理登录日志；个人中心查询当前账号记录 | `SysLoginLogApi`、`/system/log/login/*`、`loginLogApi` |
 | 操作日志 | 查询、清理操作日志 | `SysOperationLogApi`、`/system/log/operation/*`、`operationLogApi` |
 | 个人参数配置 | 按当前租户、当前用户保存页面偏好、筛选条件、提醒配置等个人配置 | `PersonalConfigApi`、`/system/personal-configs` |
 | 机构初始化扩展 | 新建机构后触发各模块写入默认数据，删除机构前汇总依赖阻断原因 | `TenantProvisioner`、`TenantDependencyChecker`、`TenantPackageBindingHandler` |
@@ -55,7 +55,7 @@
 | `SysTenantApi` | 机构列表、详情、新增、修改、删除和状态调整。 |
 | `SysAreaApi` | 行政区划树、子级、详情、adcode、启用区划读取。 |
 | `SysI18nApi` | 国际化语言包、语言列表、国际化键读取。 |
-| `SysLoginLogApi` | 登录日志分页、详情、记录、清理、统计。 |
+| `SysLoginLogApi` | 登录日志分页、详情、记录、清理、统计；`pageCurrentUser` 只返回当前租户、当前账号记录。 |
 | `SysOperationLogApi` | 操作日志分页、详情、记录、清理。 |
 | `PersonalConfigApi` | 当前用户个人参数配置查询、保存、删除。 |
 
@@ -111,6 +111,7 @@ import '@mango/system/style.css';
 6. 新建机构时必须选择 `packageId`，系统会触发机构初始化扩展点，并把机构绑定到套餐。
 7. 平台默认菜单和按钮权限来自 `system-common-menu.json` 的 `AUTH_MENU` 声明，不再通过 Flyway 菜单 DML 初始化。
 8. 应用启动时会在 Resource Registry 同步成功后对启用机构执行一次幂等基线对账；初次同步失败时不会提前执行最终对账，后续同步成功事件会自动触发，对账失败则按配置间隔重试。Resource 与机构对账全部完成前 readiness 保持拒绝流量，完成后转为接收流量；扩展点实现必须可安全重复执行。
+9. 个人中心“登录日志”使用 `GET /system/log/login/my/list`，只要求登录态，服务端固定按当前租户和当前账号过滤，不接受前端传入用户 ID。
 
 ## 6. 配置说明
 

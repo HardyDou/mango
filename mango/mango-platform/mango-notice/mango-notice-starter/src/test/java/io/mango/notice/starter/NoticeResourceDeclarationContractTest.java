@@ -81,7 +81,7 @@ class NoticeResourceDeclarationContractTest {
 
         JsonNode receiveSetting = findMenu(declaration, "notice:receive-setting");
         assertThat(receiveSetting).isNotNull();
-        assertThat(receiveSetting.path("menuName").asText()).isEqualTo("接收配置");
+        assertThat(receiveSetting.path("menuName").asText()).isEqualTo("通知设置");
         assertThat(receiveSetting.path("path").asText()).isEqualTo("/message-center/receive-setting");
         assertThat(receiveSetting.path("component").asText()).isEqualTo("notice/receive-setting/index");
         assertThat(receiveSetting.path("sort").asInt()).isEqualTo(3);

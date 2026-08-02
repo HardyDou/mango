@@ -137,7 +137,7 @@ public class NoticeRecipientSettingService implements INoticeRecipientSettingSer
 
     @Override
     public List<NoticeReceivePreferenceVO> listReceivePreferences(NoticeReceivePreferenceQuery query) {
-        Long userId = resolveTargetUserId(currentUserId(), query == null ? null : query.getUserId());
+        Long userId = currentUserId();
         LambdaQueryWrapper<NoticeReceivePreferenceEntity> wrapper =
                 new LambdaQueryWrapper<NoticeReceivePreferenceEntity>()
                         .eq(NoticeReceivePreferenceEntity::getUserId, userId);
@@ -158,7 +158,7 @@ public class NoticeRecipientSettingService implements INoticeRecipientSettingSer
     @Override
     public NoticeReceivePreferenceVO saveReceivePreference(SaveNoticeReceivePreferenceCommand command) {
         Require.notNull(command, NoticeCode.NOTICE_BUSINESS_ERROR, "接收偏好不能为空");
-        Long userId = resolveTargetUserId(currentUserId(), command.getUserId());
+        Long userId = currentUserId();
         String scopeValue = normalizeScopeValue(command.getScopeValue());
         NoticeReceivePreferenceEntity entity = findPreference(
                 userId, command.getScopeType(), scopeValue, command.getChannelType());
