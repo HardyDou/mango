@@ -1098,6 +1098,11 @@ try {
     {
       cwd: tempRoot,
       encoding: 'utf8',
+      env: {
+        ...process.env,
+        NPM_CONFIG_REGISTRY: 'http://127.0.0.1:9/unreachable-registry/',
+        npm_config_registry: 'http://127.0.0.1:9/unreachable-registry/',
+      },
     },
   );
   if (moduleAddResult.status !== 0) {
@@ -1602,15 +1607,22 @@ try {
       'mango.config.json',
     ];
     const rollbackBefore = new Map(rollbackPaths.map((path) => [path, readFileSync(join(customRoot, path))]));
-    const rollbackResult = spawnSync(
-      process.execPath,
-      [cli, 'module', 'add', 'rollback-check', '--aggregate', 'rollback-record', '--project-dir', customRoot],
-      {
-        cwd: tempRoot,
-        encoding: 'utf8',
-        env: { ...process.env, PATH: '/usr/bin:/bin' },
-      },
-    );
+    const prettierConfigPath = join(customRoot, 'frontend/prettier.config.mjs');
+    const prettierConfigBefore = readFileSync(prettierConfigPath);
+    let rollbackResult;
+    try {
+      writeFileSync(prettierConfigPath, "throw new Error('intentional module add formatter failure');\n");
+      rollbackResult = spawnSync(
+        process.execPath,
+        [cli, 'module', 'add', 'rollback-check', '--aggregate', 'rollback-record', '--project-dir', customRoot],
+        {
+          cwd: tempRoot,
+          encoding: 'utf8',
+        },
+      );
+    } finally {
+      writeFileSync(prettierConfigPath, prettierConfigBefore);
+    }
     if (
       rollbackResult.status === 0 ||
       !`${rollbackResult.stdout}\n${rollbackResult.stderr}`.includes(
@@ -1839,6 +1851,17 @@ function assertPackedCliPullRequestTemplate(tempRoot) {
   });
   if (pmoExtract.status !== 0) {
     throw new Error(`@mango/pmo tarball extraction failed:\n${pmoExtract.stdout}\n${pmoExtract.stderr}`);
+  }
+
+  const packedCliPackage = JSON.parse(readFileSync(join(cliExtractRoot, 'package/package.json'), 'utf8'));
+  const packedPrettierVersion = packedCliPackage.dependencies?.prettier;
+  if (
+    !/^\d+\.\d+\.\d+$/u.test(packedPrettierVersion ?? '') ||
+    packedPrettierVersion !== cliPackage.dependencies?.prettier
+  ) {
+    throw new Error(
+      `packed @mango/cli must retain its exact Prettier runtime dependency, got ${packedPrettierVersion ?? 'missing'}`,
+    );
   }
 
   const packedTemplate = join(cliExtractRoot, 'package/templates/full/.github/pull_request_template.md');

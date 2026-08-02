@@ -880,40 +880,29 @@ function formatBusinessModuleFrontend(targetDir, variables) {
   if (!/^\d+\.\d+\.\d+$/u.test(prettierVersion ?? '')) {
     throw new Error(`generated frontend must declare an exact Prettier version, got ${prettierVersion ?? 'missing'}`);
   }
-  const localPrettier = join(
-    frontendRoot,
-    'node_modules',
-    '.bin',
-    process.platform === 'win32' ? 'prettier.cmd' : 'prettier',
-  );
-  const cliWorkspacePrettier = resolve(
-    packageRoot,
-    '../..',
-    'node_modules',
-    '.bin',
-    process.platform === 'win32' ? 'prettier.cmd' : 'prettier',
-  );
+  let cliPrettierPackage;
+  let cliPrettier;
+  try {
+    cliPrettierPackage = requireFromCli.resolve('prettier/package.json');
+    cliPrettier = requireFromCli.resolve('prettier/bin/prettier.cjs');
+  } catch (error) {
+    throw new Error('the installed @mango/cli is missing its Prettier runtime dependency; reinstall @mango/cli', {
+      cause: error,
+    });
+  }
+  const cliPrettierVersion = JSON.parse(readFileSync(cliPrettierPackage, 'utf8')).version;
+  if (cliPrettierVersion !== prettierVersion) {
+    throw new Error(
+      `Prettier version mismatch: @mango/cli provides ${cliPrettierVersion}, generated frontend requires ${prettierVersion}`,
+    );
+  }
   const targets = [
     'package.json',
     'src/main.ts',
     `packages/${variables.moduleKebab}-api`,
     `packages/${variables.moduleKebab}`,
   ];
-  if (existsSync(localPrettier)) {
-    runBusinessModuleCommand(localPrettier, ['--write', ...targets], frontendRoot, 'Prettier');
-    return;
-  }
-  if (existsSync(cliWorkspacePrettier)) {
-    runBusinessModuleCommand(cliWorkspacePrettier, ['--write', ...targets], frontendRoot, 'Prettier');
-    return;
-  }
-  const pnpm = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm';
-  runBusinessModuleCommand(
-    pnpm,
-    ['dlx', `prettier@${prettierVersion}`, '--write', ...targets],
-    frontendRoot,
-    'Prettier',
-  );
+  runBusinessModuleCommand(process.execPath, [cliPrettier, '--write', ...targets], frontendRoot, 'Prettier');
 }
 
 function synchronizeBusinessModuleLockfile(targetDir, variables) {
