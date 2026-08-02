@@ -58,6 +58,14 @@ public class CheckMojo extends AbstractMojo {
     private static final String JSON_OUTPUT = "json";
     private static final String POM_FILE_NAME = "pom.xml";
     private static final String POM_PATH_SUFFIX = "/pom.xml";
+    private static final String MAVEN_REVISION_PROPERTY = "revision";
+    private static final String MAVEN_SHA1_PROPERTY = "sha1";
+    private static final String MAVEN_CHANGELIST_PROPERTY = "changelist";
+    private static final List<String> MAVEN_CI_FRIENDLY_PROPERTIES =
+            List.of(
+                    MAVEN_REVISION_PROPERTY,
+                    MAVEN_SHA1_PROPERTY,
+                    MAVEN_CHANGELIST_PROPERTY);
     private static final String MODULE_PROPERTIES_PATH =
             "src/main/resources/META-INF/mango/module.properties";
     private static final String MODULE_STARTER_ARTIFACT = "mango-infra-module-starter";
@@ -922,7 +930,7 @@ public class CheckMojo extends AbstractMojo {
             command.add(String.join(",", activeProfiles));
         }
         if (session.getUserProperties() != null) {
-            for (String property : List.of("revision", "sha1", "changelist")) {
+            for (String property : MAVEN_CI_FRIENDLY_PROPERTIES) {
                 String value = session.getUserProperties().getProperty(property);
                 if (value != null && !value.isBlank()) {
                     command.add("-D" + property + "=" + value);
