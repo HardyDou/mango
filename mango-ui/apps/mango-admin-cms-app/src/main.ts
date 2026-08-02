@@ -12,6 +12,7 @@ import { bindMangoRuntimeTheme, createMangoWujieVueApp } from '@mango/app-runtim
 import 'element-plus/dist/index.css';
 import '@mango/common/theme/index.scss';
 import '@mango/common/style.css';
+import '@mango/auth/style.css';
 import '@mango/file/style.css';
 import '@mango/cms/style.css';
 import RuntimeRoot from './App.vue';

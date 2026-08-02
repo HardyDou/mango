@@ -9,6 +9,10 @@ import lombok.Data;
 @Schema(description = "第三方登录身份查询")
 public class ExternalIdentityQuery {
 
+    @Size(max = 64, message = "应用编码最多64个字符")
+    @Schema(description = "应用编码")
+    private String appCode;
+
     @Size(max = 32, message = "身份提供方最多32个字符")
     @Schema(description = "身份提供方")
     private String provider;

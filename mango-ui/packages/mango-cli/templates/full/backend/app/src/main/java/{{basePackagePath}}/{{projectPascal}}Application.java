@@ -1,12 +1,12 @@
 package {{basePackage}};
 
-import org.springframework.boot.SpringApplication;
+import io.mango.infra.bootstrap.starter.MangoApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
 public class {{projectPascal}}Application {
 
     public static void main(String[] args) {
-        SpringApplication.run({{projectPascal}}Application.class, args);
+        MangoApplication.run({{projectPascal}}Application.class, args);
     }
 }

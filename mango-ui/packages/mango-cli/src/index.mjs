@@ -1429,6 +1429,7 @@ function defaultBusinessDevManifest(projectName) {
           MANGO_CRYPTO_SM4_SECRET_KEY: '${env.MANGO_CRYPTO_SM4_SECRET_KEY}',
         },
         args: [
+          'runtime',
           '--server.port=${port}',
           '--spring.datasource.url=jdbc:mysql://${env.MANGO_DB_HOST}:${env.MANGO_DB_PORT}/${env.MANGO_DB_NAME}?useUnicode=true&characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai',
           '--spring.datasource.username=${env.MANGO_DB_USERNAME}',
@@ -1624,6 +1625,7 @@ function buildSpringBootDevApp(cwd, index) {
       MANGO_CRYPTO_SM4_SECRET_KEY: '${env.MANGO_CRYPTO_SM4_SECRET_KEY}',
     },
     args: [
+      'runtime',
       '--server.port=${port}',
       '--spring.datasource.url=jdbc:mysql://${env.MANGO_DB_HOST}:${env.MANGO_DB_PORT}/${env.MANGO_DB_NAME}?useUnicode=true&characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai',
       '--spring.datasource.username=${env.MANGO_DB_USERNAME}',
@@ -2035,6 +2037,9 @@ function startDevApp(context, name, app) {
   } else if (app.install) {
     process.stdout.write(`${name}: skipped install command (MANGO_BACKEND_AUTO_INSTALL=false)\n`);
   }
+  if (app.lifecycleManaged) {
+    prepareManagedMangoLifecycle(context, name, app, logPath);
+  }
   requireCommand(app.command, name);
   const logFd = openSync(logPath, 'a');
   const child = spawn(app.command, app.args, {
@@ -2177,6 +2182,180 @@ function runMysqlStatement(dbEnv = {}, statement, options = {}) {
     fail(`${options.errorMessage || 'mysql command failed'}${reason}${logHint}`);
   }
   return result;
+}
+
+function prepareManagedMangoLifecycle(context, appName, app, logPath) {
+  assertManagedLifecycleWorkspaceDatabase(context, appName, app);
+  const lifecycle = buildLocalLifecycleIdentity(context, appName, app);
+  const control = readBootstrapGenerationState(context.env, lifecycle.environmentKey);
+  const highestGeneration = Math.max(control.stableGeneration, control.candidateGeneration);
+  let generation = control.stableGeneration;
+  if (control.stableGeneration > 0) {
+    const verifyLogOffset = existsSync(logPath) ? readFileSync(logPath, 'utf8').length : 0;
+    const verifyResult = runManagedMangoLifecycleCommand(
+      app,
+      buildManagedLifecycleSpringArgs(app.springArgs, 'bootstrap', lifecycle, generation, 'verify'),
+      logPath,
+      `${appName}: verifying bootstrap generation ${generation}`,
+    );
+    if (verifyResult.status !== 0) {
+      const failure = readFileSync(logPath, 'utf8').slice(verifyLogOffset);
+      if (!failure.includes('BOOTSTRAP_FINGERPRINT_MISMATCH')) {
+        fail(`${appName}: bootstrap verify failed, see ${relativeOrAbsolute(process.cwd(), logPath)}`);
+      }
+      generation = highestGeneration + 1;
+      runColdBootstrap(appName, app, lifecycle, generation, logPath, false);
+    }
+  } else {
+    generation = Math.max(1, control.candidateGeneration);
+    if (!runColdBootstrap(appName, app, lifecycle, generation, logPath, true)) {
+      generation = highestGeneration + 1;
+      runColdBootstrap(appName, app, lifecycle, generation, logPath, false);
+    }
+  }
+  app.springArgs = buildManagedLifecycleSpringArgs(app.springArgs, 'runtime', lifecycle, generation);
+  app.args = replaceSpringBootRunArguments(app.args, app.springArgs);
+  process.stdout.write(`${appName}: using Mango runtime generation ${generation}\n`);
+}
+
+function assertManagedLifecycleWorkspaceDatabase(context, appName, app) {
+  const workspaceDatabase = context.env.MANGO_DB_NAME || '';
+  if (!/^mango_dev_[a-zA-Z0-9_]+$/.test(workspaceDatabase)) {
+    fail(`${appName}: refuse to auto-bootstrap non-workspace database: ${workspaceDatabase || '<empty>'}`);
+  }
+  const datasourceDatabase = extractDatasourceDatabase(app.springArgs);
+  if (!datasourceDatabase) {
+    fail(`${appName}: managed local bootstrap requires an explicit MySQL spring.datasource.url`);
+  }
+  if (datasourceDatabase !== workspaceDatabase) {
+    fail(
+      `${appName}: refuse to auto-bootstrap datasource ${datasourceDatabase}; ` +
+        `expected workspace database ${workspaceDatabase}`,
+    );
+  }
+}
+
+function runColdBootstrap(appName, app, lifecycle, generation, logPath, allowFingerprintMismatch) {
+  const logOffset = existsSync(logPath) ? readFileSync(logPath, 'utf8').length : 0;
+  const result = runManagedMangoLifecycleCommand(
+    app,
+    buildManagedLifecycleSpringArgs(app.springArgs, 'bootstrap', lifecycle, generation, 'apply'),
+    logPath,
+    `${appName}: applying cold bootstrap generation ${generation}`,
+  );
+  if (result.status === 0) {
+    return true;
+  }
+  const failure = readFileSync(logPath, 'utf8').slice(logOffset);
+  if (allowFingerprintMismatch && failure.includes('BOOTSTRAP_FINGERPRINT_MISMATCH')) {
+    return false;
+  }
+  fail(`${appName}: bootstrap apply failed, see ${relativeOrAbsolute(process.cwd(), logPath)}`);
+}
+
+function runManagedMangoLifecycleCommand(app, springArgs, logPath, message) {
+  process.stdout.write(`${message}\n`);
+  appendFileSync(logPath, `\n--- ${new Date().toISOString()} ${message} ---\n`);
+  return runForegroundCommand(
+    app.cwd,
+    app.command,
+    replaceSpringBootRunArguments(app.args, springArgs),
+    app.env,
+    logPath,
+  );
+}
+
+function buildLocalLifecycleIdentity(context, appName, app) {
+  const workspaceId = context.env.MANGO_WORKSPACE_ID || ensureWorkspaceConfig(context.root).workspaceId;
+  const suffix = `${workspaceId}-${appName}`
+    .toLowerCase()
+    .replace(/[^a-z0-9_.-]+/gu, '-')
+    .replace(/^-+|-+$/gu, '');
+  return {
+    environmentKey: `local-${suffix}`,
+    releaseId: `local-${suffix}`,
+    revision: app.mavenRevision || context.env.MANGO_MAVEN_REVISION_QUALIFIER || workspaceId,
+  };
+}
+
+function readBootstrapGenerationState(dbEnv, environmentKey) {
+  const dbName = dbEnv.MANGO_DB_NAME || '';
+  if (!/^mango_dev_[a-zA-Z0-9_]+$/.test(dbName)) {
+    return { stableGeneration: 0, candidateGeneration: 0 };
+  }
+  const escapedEnvironmentKey = environmentKey.replace(/'/gu, "''");
+  const result = runMysqlStatement(
+    dbEnv,
+    `SELECT stable_generation, COALESCE(candidate_generation, 0) FROM \`${dbName}\`.mango_bootstrap_control ` +
+      `WHERE environment_key = '${escapedEnvironmentKey}' LIMIT 1;`,
+    {
+      cwd: process.cwd(),
+      capture: true,
+      allowFailure: true,
+    },
+  );
+  if (result.status !== 0) {
+    return { stableGeneration: 0, candidateGeneration: 0 };
+  }
+  const row = String(result.stdout || '')
+    .split(/\r?\n/u)
+    .map((line) =>
+      line
+        .trim()
+        .split(/\s+/u)
+        .map((value) => Number.parseInt(value, 10)),
+    )
+    .find((values) => values.length >= 2 && values.every((value) => Number.isInteger(value)));
+  return {
+    stableGeneration: Math.max(0, row?.[0] || 0),
+    candidateGeneration: Math.max(0, row?.[1] || 0),
+  };
+}
+
+function buildManagedLifecycleSpringArgs(configuredArgs, mode, lifecycle, generation, action = '') {
+  const remaining = [...configuredArgs];
+  if (isMangoLifecycleMode(remaining[0])) {
+    const configuredMode = remaining.shift();
+    if (configuredMode === 'bootstrap' && remaining[0] && !remaining[0].startsWith('--')) {
+      remaining.shift();
+    }
+  }
+  const filtered = remaining.filter(
+    (argument) =>
+      !argument.startsWith('--mango.release.id=') &&
+      !argument.startsWith('--mango.release.revision=') &&
+      !argument.startsWith('--mango.release.generation=') &&
+      !argument.startsWith('--mango.bootstrap.environment-key=') &&
+      !argument.startsWith('--mango.bootstrap.strategy='),
+  );
+  const prefix = mode === 'bootstrap' ? ['bootstrap', action] : ['runtime'];
+  if (mode === 'bootstrap' && action === 'apply') {
+    prefix.push('--mango.bootstrap.strategy=cold');
+  }
+  return [
+    ...prefix,
+    `--mango.bootstrap.environment-key=${lifecycle.environmentKey}`,
+    `--mango.release.id=${lifecycle.releaseId}`,
+    `--mango.release.revision=${lifecycle.revision}`,
+    `--mango.release.generation=${generation}`,
+    ...filtered,
+  ];
+}
+
+function replaceSpringBootRunArguments(commandArgs, springArgs) {
+  const property = `-Dspring-boot.run.arguments=${springArgs.join(' ')}`;
+  let replaced = false;
+  const nextArgs = commandArgs.map((argument) => {
+    if (argument.startsWith('-Dspring-boot.run.arguments=')) {
+      replaced = true;
+      return property;
+    }
+    return argument;
+  });
+  if (!replaced) {
+    throw new Error('Spring Boot Maven command is missing spring-boot.run.arguments');
+  }
+  return nextArgs;
 }
 
 function isTruthy(value) {
@@ -2513,6 +2692,8 @@ function resolveDevApp(context, name, app) {
   const commandSpec = resolveDevCommand(context, resolved, vars);
   resolved.command = commandSpec.command;
   resolved.args = commandSpec.args;
+  resolved.springArgs = commandSpec.springArgs || [];
+  resolved.lifecycleManaged = Boolean(commandSpec.lifecycleManaged);
   resolved.url = port ? `http://${host || '127.0.0.1'}:${port}` : '';
   resolved.healthUrl = resolved.health ? resolveHealthUrl(resolved.url, resolved.health) : '';
   if (app.install) {
@@ -2622,13 +2803,17 @@ function resolveDevCommand(context, app, vars) {
   if (app.type === 'spring-boot-maven') {
     const pom = app.pom || 'pom.xml';
     const goal = app.goal || DEFAULT_SPRING_BOOT_PLUGIN;
-    const springArgs = (app.args || [])
-      .map((arg) => interpolateValue(String(arg), vars))
-      .filter(Boolean)
-      .join(' ');
+    const configuredSpringArgs = (app.args || []).map((arg) => interpolateValue(String(arg), vars)).filter(Boolean);
+    const lifecycleManaged = app.mangoLifecycle === true || usesMangoApplication(app);
+    const springArgs =
+      lifecycleManaged && !isMangoLifecycleMode(configuredSpringArgs[0])
+        ? ['runtime', ...configuredSpringArgs]
+        : configuredSpringArgs;
     return {
       command: 'mvn',
-      args: ['-f', pom, `-Dspring-boot.run.arguments=${springArgs}`, goal],
+      args: ['-f', pom, `-Dspring-boot.run.arguments=${springArgs.join(' ')}`, goal],
+      springArgs,
+      lifecycleManaged,
     };
   }
   if (app.type === 'vite') {
@@ -2644,6 +2829,35 @@ function resolveDevCommand(context, app, vars) {
     fail(`${app.name}: command type requires command`);
   }
   fail(`${app.name}: unsupported app type ${app.type}`);
+}
+
+function isMangoLifecycleMode(value) {
+  return value === 'runtime' || value === 'bootstrap';
+}
+
+function usesMangoApplication(app) {
+  const pomPath = resolve(app.cwd, app.pom || 'pom.xml');
+  const sourceRoot = join(dirname(pomPath), 'src/main/java');
+  return directoryContainsText(sourceRoot, 'MangoApplication.run(', 10);
+}
+
+function directoryContainsText(directory, expected, remainingDepth) {
+  if (remainingDepth < 0 || !existsSync(directory)) {
+    return false;
+  }
+  for (const entry of readdirSync(directory, { withFileTypes: true })) {
+    const path = join(directory, entry.name);
+    if (entry.isDirectory()) {
+      if (directoryContainsText(path, expected, remainingDepth - 1)) {
+        return true;
+      }
+      continue;
+    }
+    if (entry.isFile() && entry.name.endsWith('.java') && readFileSync(path, 'utf8').includes(expected)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 function detectPackageManager(start, stopRoot = start) {

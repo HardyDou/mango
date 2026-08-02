@@ -283,6 +283,10 @@ try {
   const devWorkspaceScript = readFileSync(join(projectRoot, 'scripts/dev-workspace.sh'), 'utf8');
   const backendDevScript = readFileSync(join(projectRoot, 'scripts/backend-dev.sh'), 'utf8');
   const devManifest = JSON.parse(readFileSync(join(projectRoot, 'mango.dev.json'), 'utf8'));
+  const backendApplication = readFileSync(
+    join(projectRoot, 'backend/app/src/main/java/com/example/acceptance/MangoFullAcceptanceApplication.java'),
+    'utf8',
+  );
   if (!appPom.includes('<artifactId>mango-admin-starter</artifactId>') || pom.includes('{{') || appPom.includes('{{')) {
     throw new Error('backend poms were not rendered as Mango full backend');
   }
@@ -572,6 +576,7 @@ try {
     );
   }
   assertYamlFlywayModuleEnabled(applicationYml, 'domain');
+  assertYamlFlywayModuleEnabled(applicationYml, 'auth');
   assertYamlFlywayModuleEnabled(applicationYml, 'workflow');
   assertYamlFlywayModuleEnabled(applicationYml, 'resource');
   assertYamlFlywayModuleEnabled(applicationYml, 'home');
@@ -599,11 +604,15 @@ try {
       'org.springframework.boot:spring-boot-maven-plugin:3.5.14:run' ||
     devManifest.apps['mango-full-acceptance-service'].env?.MANGO_CRYPTO_SM4_SECRET_KEY !==
       '${env.MANGO_CRYPTO_SM4_SECRET_KEY}' ||
+    devManifest.apps['mango-full-acceptance-service'].args?.[0] !== 'runtime' ||
     devManifest.apps['mango-full-acceptance-admin'].dependsOn[0] !== 'mango-full-acceptance-service'
   ) {
     throw new Error(
       'generated mango.dev.json must describe backend/frontend startup with explicit Spring Boot plugin and SM4 env propagation',
     );
+  }
+  if (!backendApplication.includes('MangoApplication.run(') || backendApplication.includes('SpringApplication.run(')) {
+    throw new Error('generated backend application must use the explicit Mango bootstrap/runtime lifecycle entry');
   }
   if (
     !devWorkspaceScript.includes('scripts/dev-workspace.sh is deprecated') ||
@@ -631,6 +640,8 @@ try {
     assertDevWorkspaceRejectsNonCiFriendlyMavenPom(projectRoot);
     assertDevWorkspaceAutoCreatesDatabase(projectRoot);
     assertDevWorkspaceStreamsLargeInstallOutput(projectRoot);
+    assertManagedBootstrapAdvancesFailedCandidate(projectRoot);
+    assertLegacySpringApplicationSkipsManagedBootstrap(projectRoot);
     assertCommandDevWorkspaceAutoCreatesDatabase(projectRoot);
     assertDevWorkspaceReportsMissingMysql(projectRoot);
     assertDevWorkspaceRestartUsesStopThenStart(projectRoot);
@@ -646,6 +657,7 @@ try {
   if (
     !planResult.stdout.includes('mango-full-acceptance-service') ||
     !/-Drevision=1\.0\.0-mango-[0-9]{3}-SNAPSHOT/u.test(planResult.stdout) ||
+    !planResult.stdout.includes('-Dspring-boot.run.arguments=runtime ') ||
     !planResult.stdout.includes('org.springframework.boot:spring-boot-maven-plugin:3.5.14:run') ||
     !planResult.stdout.includes('mango-full-acceptance-admin')
   ) {
@@ -2138,6 +2150,9 @@ function assertDevWorkspaceStreamsLargeInstallOutput(projectRoot) {
       "    dd if=/dev/zero bs=1024 count=1280 2>/dev/null | tr '\\000' x",
       '    exit 0',
       '    ;;',
+      '  *"bootstrap apply"*)',
+      '    exit 0',
+      '    ;;',
       'esac',
       'exit 17',
       '',
@@ -2171,13 +2186,163 @@ function assertDevWorkspaceStreamsLargeInstallOutput(projectRoot) {
   ) {
     throw new Error(`large install output must stream to the app log before backend startup:\n${output}`);
   }
-  const calls = waitForCallLogLines(callLog, 4);
+  const calls = waitForCallLogLines(callLog, 5);
   const mavenCalls = calls.filter((line) => line.startsWith('mvn:'));
   if (
+    mavenCalls.length !== 3 ||
     !mavenCalls.some((line) => /-Drevision=1\.0\.0-mango-[0-9]{3}-SNAPSHOT .*?-DskipTests install/u.test(line)) ||
-    !mavenCalls.some((line) => /-Drevision=1\.0\.0-mango-[0-9]{3}-SNAPSHOT .*?spring-boot-maven-plugin/u.test(line))
+    !mavenCalls[1]?.includes('-Dspring-boot.run.arguments=bootstrap apply') ||
+    !mavenCalls[1]?.includes('--mango.bootstrap.strategy=cold') ||
+    !mavenCalls[2]?.includes('-Dspring-boot.run.arguments=runtime') ||
+    !mavenCalls[2]?.includes('spring-boot-maven-plugin')
   ) {
-    throw new Error(`large install output scenario must reach backend startup:\n${calls.join('\n')}`);
+    throw new Error(
+      `large install output scenario must install, bootstrap, then start Mango runtime:\n${calls.join('\n')}`,
+    );
+  }
+}
+
+function assertLegacySpringApplicationSkipsManagedBootstrap(projectRoot) {
+  const applicationPath = join(
+    projectRoot,
+    'backend/app/src/main/java/com/example/acceptance/MangoFullAcceptanceApplication.java',
+  );
+  const originalApplication = readFileSync(applicationPath, 'utf8');
+  const legacyApplication = originalApplication
+    .replace(
+      'import io.mango.infra.bootstrap.starter.MangoApplication;',
+      'import org.springframework.boot.SpringApplication;',
+    )
+    .replace('MangoApplication.run(', 'SpringApplication.run(');
+  const fakeBinDir = join(projectRoot, '.runtime/legacy-spring-application-bin');
+  const callLog = join(projectRoot, '.runtime/legacy-spring-application-calls.log');
+  mkdirSync(fakeBinDir, { recursive: true });
+  writeFileSync(
+    join(fakeBinDir, 'mysql'),
+    ['#!/usr/bin/env sh', `echo "mysql:$*" >> "${callLog}"`, 'exit 0', ''].join('\n'),
+  );
+  writeFileSync(
+    join(fakeBinDir, 'mvn'),
+    [
+      '#!/usr/bin/env sh',
+      `echo "mvn:$*" >> "${callLog}"`,
+      'case "$*" in',
+      '  *"-DskipTests install"*) exit 0 ;;',
+      'esac',
+      'exit 17',
+      '',
+    ].join('\n'),
+  );
+  chmodExecutable(join(fakeBinDir, 'mysql'));
+  chmodExecutable(join(fakeBinDir, 'mvn'));
+  writeFileSync(applicationPath, legacyApplication);
+  rmSync(callLog, { force: true });
+  rmSync(join(projectRoot, '.mango'), { recursive: true, force: true });
+  try {
+    const result = spawnSync(
+      'env',
+      [
+        `MANGO_WORKSPACE_REGISTRY=${join(projectRoot, '.runtime/legacy-spring-application-workspaces.json')}`,
+        `PATH=${fakeBinDir}:/usr/bin:/bin:/usr/sbin:/sbin`,
+        process.execPath,
+        cli,
+        'dev',
+        'start',
+        'mango-full-acceptance-service',
+      ],
+      {
+        cwd: projectRoot,
+        encoding: 'utf8',
+      },
+    );
+    const output = `${result.stdout}\n${result.stderr}`;
+    if (result.status === 0 || !output.includes('exited before becoming healthy')) {
+      throw new Error(`legacy SpringApplication scenario must reach the runtime command:\n${output}`);
+    }
+    const calls = waitForCallLogLines(callLog, 3);
+    const mavenCalls = calls.filter((line) => line.startsWith('mvn:'));
+    if (
+      mavenCalls.length !== 2 ||
+      !mavenCalls[0]?.includes('-DskipTests install') ||
+      !mavenCalls[1]?.includes('-Dspring-boot.run.arguments=runtime') ||
+      mavenCalls.some((line) => line.includes('bootstrap'))
+    ) {
+      throw new Error(`legacy SpringApplication must not receive managed bootstrap commands:\n${calls.join('\n')}`);
+    }
+  } finally {
+    writeFileSync(applicationPath, originalApplication);
+  }
+}
+
+function assertManagedBootstrapAdvancesFailedCandidate(projectRoot) {
+  const fakeBinDir = join(projectRoot, '.runtime/failed-bootstrap-candidate-bin');
+  const callLog = join(projectRoot, '.runtime/failed-bootstrap-candidate-calls.log');
+  mkdirSync(fakeBinDir, { recursive: true });
+  writeFileSync(
+    join(fakeBinDir, 'mysql'),
+    [
+      '#!/usr/bin/env sh',
+      `echo "mysql:$*" >> "${callLog}"`,
+      'case "$*" in',
+      '  *"mango_bootstrap_control"*) printf "0\\t1\\n" ;;',
+      'esac',
+      'exit 0',
+      '',
+    ].join('\n'),
+  );
+  writeFileSync(
+    join(fakeBinDir, 'mvn'),
+    [
+      '#!/usr/bin/env sh',
+      `echo "mvn:$*" >> "${callLog}"`,
+      'case "$*" in',
+      '  *"-DskipTests install"*) exit 0 ;;',
+      '  *"bootstrap apply"*"--mango.release.generation=1"*)',
+      '    echo "BOOTSTRAP_FINGERPRINT_MISMATCH: scope=candidate" >&2',
+      '    exit 1',
+      '    ;;',
+      '  *"bootstrap apply"*"--mango.release.generation=2"*) exit 0 ;;',
+      'esac',
+      'exit 17',
+      '',
+    ].join('\n'),
+  );
+  chmodExecutable(join(fakeBinDir, 'mysql'));
+  chmodExecutable(join(fakeBinDir, 'mvn'));
+  rmSync(callLog, { force: true });
+  rmSync(join(projectRoot, '.mango'), { recursive: true, force: true });
+  const result = spawnSync(
+    'env',
+    [
+      `MANGO_WORKSPACE_REGISTRY=${join(projectRoot, '.runtime/failed-bootstrap-candidate-workspaces.json')}`,
+      `PATH=${fakeBinDir}:/usr/bin:/bin:/usr/sbin:/sbin`,
+      process.execPath,
+      cli,
+      'dev',
+      'start',
+      'mango-full-acceptance-service',
+    ],
+    {
+      cwd: projectRoot,
+      encoding: 'utf8',
+    },
+  );
+  const output = `${result.stdout}\n${result.stderr}`;
+  if (result.status === 0 || !output.includes('exited before becoming healthy')) {
+    throw new Error(`failed bootstrap candidate scenario must reach generation 2 runtime:\n${output}`);
+  }
+  const calls = waitForCallLogLines(callLog, 6);
+  const mavenCalls = calls.filter((line) => line.startsWith('mvn:'));
+  if (
+    mavenCalls.length !== 4 ||
+    !mavenCalls[1]?.includes('-Dspring-boot.run.arguments=bootstrap apply') ||
+    !mavenCalls[1]?.includes('--mango.release.generation=1') ||
+    !mavenCalls[2]?.includes('-Dspring-boot.run.arguments=bootstrap apply') ||
+    !mavenCalls[2]?.includes('--mango.release.generation=2') ||
+    !mavenCalls[3]?.includes('-Dspring-boot.run.arguments=runtime') ||
+    !mavenCalls[3]?.includes('--mango.release.generation=2')
+  ) {
+    throw new Error(`fingerprint drift must advance a failed candidate generation:\n${calls.join('\n')}`);
   }
 }
 

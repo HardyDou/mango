@@ -5,6 +5,7 @@ import { Session } from '@mango/common/utils/storage';
 export const useUserInfo = defineStore('userInfo', {
   state: (): { userInfos: UserInfosState['userInfos'] } => ({
     userInfos: {
+      userId: '',
       username: '',
       nickname: '',
       photo: '',
@@ -40,6 +41,7 @@ export const useUserInfo = defineStore('userInfo', {
     },
     clearUserInfo() {
       this.userInfos = {
+        userId: '',
         username: '',
         nickname: '',
         photo: '',
@@ -64,6 +66,7 @@ export const useUserInfo = defineStore('userInfo', {
 
 export interface UserInfosState {
   userInfos: {
+    userId: string | number;
     username: string;
     nickname: string;
     photo: string;
@@ -75,6 +78,10 @@ export interface UserInfosState {
     tenantId: string;
     tenantCode: string;
     tenantName: string;
+    departmentName?: string;
+    deptName?: string;
+    orgName?: string;
+    companyName?: string;
     realm: string;
     actorType: string;
     partyType: string;

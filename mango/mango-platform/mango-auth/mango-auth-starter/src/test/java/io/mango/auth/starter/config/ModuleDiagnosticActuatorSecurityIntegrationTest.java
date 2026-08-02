@@ -35,13 +35,17 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
                 "mango.access.auth-enabled=true",
                 "mango.module.diagnostics.endpoint.enabled=true",
                 "management.endpoints.web.exposure.include=mangoModules",
+                "mango.crypto.sm4.secret-key=00112233445566778899aabbccddeeff",
                 "server.servlet.context-path=/",
                 "spring.application.name=diagnostic-actuator-test",
+                "spring.flyway.enabled=false",
                 "spring.autoconfigure.exclude="
+                        + "org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration,"
                         + "io.mango.auth.starter.AuthAutoConfiguration,"
                         + "io.mango.authorization.starter.AuthorizationAutoConfiguration,"
                         + "io.mango.authorization.starter.autoconfigure.SecurityAutoConfiguration,"
-                        + "io.mango.authorization.starter.autoconfigure.TokenAutoConfiguration"
+                        + "io.mango.authorization.starter.autoconfigure.TokenAutoConfiguration,"
+                        + "io.mango.infra.persistence.starter.PersistenceFlywayAutoConfiguration"
         })
 @AutoConfigureMockMvc
 class ModuleDiagnosticActuatorSecurityIntegrationTest {

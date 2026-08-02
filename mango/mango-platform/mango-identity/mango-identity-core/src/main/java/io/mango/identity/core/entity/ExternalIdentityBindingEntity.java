@@ -12,6 +12,8 @@ import java.time.LocalDateTime;
 @TableName("identity_external_binding")
 public class ExternalIdentityBindingEntity extends TenantEntity {
 
+    private String appCode;
+
     private Long userId;
 
     private String provider;

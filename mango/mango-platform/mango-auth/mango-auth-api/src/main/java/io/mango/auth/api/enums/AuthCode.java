@@ -34,6 +34,15 @@ public enum AuthCode implements BizCode {
     CAPTCHA_SERVICE_UNAVAILABLE(1503, "验证码服务不可用"),
     WECOM_ACCOUNT_UNBOUND(1404, "当前企业微信账号尚未绑定 Mango 用户，请联系管理员绑定后再登录"),
     WECOM_CONFIG_UNAVAILABLE(1501, "企业微信扫码登录配置不存在或未启用"),
+    PROVIDER_CONFIG_UNAVAILABLE(1501, "第三方登录配置不存在或未启用"),
+    PROVIDER_CONFIG_INVALID(1402, "第三方登录配置无效"),
+    PROVIDER_CONFIG_CONFLICT(1403, "第三方登录配置已存在"),
+    PROVIDER_SECRET_INVALID(1502, "第三方登录密钥不可用"),
+    PROVIDER_STATE_INVALID(1418, "第三方授权状态无效或已过期"),
+    PROVIDER_REDIRECT_INVALID(1419, "第三方授权回调地址无效"),
+    EXTERNAL_AUTH_FAILED(1504, "第三方授权失败"),
+    EXTERNAL_BINDING_CONFLICT(1420, "该第三方账号已绑定其他 Mango 账号"),
+    EXTERNAL_BIND_TICKET_INVALID(1421, "第三方账号绑定凭据无效或已过期"),
     AUTH_REQUEST_INVALID(400, "认证请求参数非法");
 
     private final int code;

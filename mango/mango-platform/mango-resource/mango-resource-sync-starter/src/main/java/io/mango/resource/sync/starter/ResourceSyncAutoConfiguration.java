@@ -63,16 +63,22 @@ public class ResourceSyncAutoConfiguration {
     }
 
     @Bean
+    @ConditionalOnMissingBean
+    public ResourceManifestSerializer resourceManifestSerializer() {
+        return new ResourceManifestSerializer();
+    }
+
+    @Bean
     @ConditionalOnBean(ResourceDeclarationApi.class)
     @ConditionalOnMissingBean
     public ResourceBootstrapStepContributor resourceBootstrapStepContributor(
             ResourceRegistryProperties properties,
             ResourceDeclarationCollector collector,
             ResourceDeclarationApi resourceDeclarationApi,
-            ObjectMapper objectMapper,
+            ResourceManifestSerializer manifestSerializer,
             @Value("${spring.application.name:}") String applicationName) {
         return new ResourceBootstrapStepContributor(
-                properties, collector, resourceDeclarationApi, objectMapper, applicationName);
+                properties, collector, resourceDeclarationApi, manifestSerializer, applicationName);
     }
 
     @Bean
@@ -82,11 +88,11 @@ public class ResourceSyncAutoConfiguration {
             ResourceRegistryProperties properties,
             ResourceDeclarationCollector collector,
             ResourceDeclarationApi resourceDeclarationApi,
-            ObjectMapper objectMapper,
+            ResourceManifestSerializer manifestSerializer,
             BootstrapRuntimeAuthorityProvider authorityProvider,
             @Value("${spring.application.name:}") String applicationName) {
         return new ResourceEventualReconciliationWorker(properties, collector, resourceDeclarationApi,
-                objectMapper, authorityProvider, applicationName);
+                manifestSerializer, authorityProvider, applicationName);
     }
 
     @Bean

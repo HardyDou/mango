@@ -1,14 +1,12 @@
+<!-- eslint-disable vue/multi-word-component-names -->
 <template>
-  <el-dropdown trigger="click" @command="handleCommand">
-    <div class="layout-breadcrumb-user">
-      <el-avatar :size="28">
+  <el-dropdown trigger="click" popper-class="layout-breadcrumb-user-popper" @command="handleCommand">
+    <div class="layout-breadcrumb-user" :aria-label="`当前用户：${currentDisplayName}`">
+      <MangoAvatar :size="28" :source="currentUser.photo">
         <el-icon><User /></el-icon>
-      </el-avatar>
+      </MangoAvatar>
       <span class="username" data-field="current-user.display-name">
-        {{ currentUser.nickname || currentUser.username || 'Admin' }}
-      </span>
-      <span v-if="institutionLabel" class="institution-context" :title="institutionLabel">
-        {{ institutionLabel }}
+        {{ currentDisplayName }}
       </span>
       <el-icon class="arrow-icon">
         <ArrowDown />
@@ -16,10 +14,18 @@
     </div>
     <template #dropdown>
       <el-dropdown-menu>
-        <el-dropdown-item v-if="institutionLabel" disabled class="institution-dropdown-item">
-          {{ institutionLabel }}
+        <el-dropdown-item disabled class="account-summary-dropdown-item">
+          <div class="account-summary" data-surface="current-user.summary">
+            <MangoAvatar :size="40" :source="currentUser.photo">
+              <el-icon><User /></el-icon>
+            </MangoAvatar>
+            <div class="account-summary__copy">
+              <strong>{{ currentDisplayName }}</strong>
+              <span :title="organizationLabel">{{ organizationLabel }}</span>
+            </div>
+          </div>
         </el-dropdown-item>
-        <el-dropdown-item command="profile">
+        <el-dropdown-item divided command="profile">
           <el-icon><User /></el-icon>
           个人中心
         </el-dropdown-item>
@@ -39,6 +45,7 @@
 <script setup lang="ts" name="breadcrumbUser">
 import { User, Lock, SwitchButton, ArrowDown } from '@element-plus/icons-vue';
 import { logout } from '@mango/auth';
+import { MangoAvatar } from '@mango/common';
 import { Session } from '@mango/common/utils/storage';
 import { computed } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
@@ -51,10 +58,14 @@ const router = useRouter();
 const storesUserInfo = useUserInfo();
 const storesTagsViewRoutes = useTagsViewRoutes();
 const currentUser = computed(() => storesUserInfo.userInfos);
+const currentDisplayName = computed(() => currentUser.value.nickname || currentUser.value.username || 'Admin');
 
-const institutionLabel = computed(() => {
+const organizationLabel = computed(() => {
   const info = currentUser.value;
-  return info.tenantName || info.tenantCode || (info.tenantId ? `机构 ${info.tenantId}` : '');
+  const departmentName = info.departmentName || info.deptName || info.orgName || '';
+  const companyName = info.companyName || info.tenantName || info.tenantCode || '';
+  const labels = [departmentName || '部门未设置', companyName || '公司未设置'];
+  return labels.join('｜');
 });
 
 async function confirmLogout() {
@@ -88,7 +99,7 @@ const handleCommand = (command: string) => {
       router.push('/profile');
       break;
     case 'password':
-      router.push('/password');
+      router.push({ path: '/profile', query: { tab: 'password' } });
       break;
     case 'logout':
       void confirmLogout();
@@ -112,21 +123,12 @@ const handleCommand = (command: string) => {
   }
 
   .username {
+    max-width: 120px;
     margin-left: 8px;
-    font-size: 13px;
-  }
-
-  .institution-context {
-    max-width: 96px;
-    margin-left: 8px;
-    padding-left: 8px;
     overflow: hidden;
-    color: var(--mango-color-top-bar);
-    font-size: 12px;
-    opacity: 0.75;
+    font-size: 13px;
     text-overflow: ellipsis;
     white-space: nowrap;
-    border-left: 1px solid currentColor;
   }
 
   .arrow-icon {
@@ -135,28 +137,69 @@ const handleCommand = (command: string) => {
   }
 }
 
-// 下拉菜单样式 - 修复在蓝色背景上的显示
-:deep(.el-dropdown-menu) {
+:global(.layout-breadcrumb-user-popper .el-dropdown-menu) {
+  min-width: 212px;
   background: var(--mango-bg-color);
   border: 1px solid var(--mango-border-color);
+}
 
-  .el-dropdown-menu__item {
-    color: var(--mango-text-color-regular);
-    &:hover {
-      color: var(--mango-color-primary);
-      background: var(--mango-color-menu-hover);
-    }
+:global(.layout-breadcrumb-user-popper .el-dropdown-menu__item) {
+  height: 40px;
+  padding: 0 13px;
+  color: var(--mango-text-color-regular);
+
+  .el-icon {
+    margin-right: 10px;
+    font-size: 16px;
   }
 
-  .institution-dropdown-item {
-    max-width: 180px;
-    overflow: hidden;
+  &:hover {
+    color: var(--mango-color-primary);
+    background: var(--mango-color-menu-hover);
+  }
+}
+
+:global(.layout-breadcrumb-user-popper .account-summary-dropdown-item) {
+  height: auto;
+  padding: 10px 12px;
+  opacity: 1;
+  cursor: default;
+
+  &:hover {
     color: var(--mango-text-color-primary);
-    font-weight: 600;
+    background: transparent;
+  }
+}
+
+.account-summary {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.account-summary__copy {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+
+  strong,
+  span {
+    overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    opacity: 1;
-    cursor: default;
+  }
+
+  strong {
+    color: var(--mango-text-color-primary);
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  span {
+    color: var(--mango-text-color-secondary);
+    font-size: 12px;
   }
 }
 </style>

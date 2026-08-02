@@ -13,9 +13,18 @@ export function getFrontEndRoutes(): RouteRecordRaw[] {
     {
       path: '/login',
       name: 'Login',
-      component: () => import('@mango/auth').then(m => m.LoginView),
+      component: () => import('@mango/auth').then((m) => m.LoginView),
       meta: {
         title: '登录',
+        isAffix: true,
+      },
+    },
+    {
+      path: '/provider-callback',
+      name: 'ProviderCallback',
+      component: () => import('@mango/auth').then((m) => m.ProviderCallbackView),
+      meta: {
+        title: '第三方授权',
         isAffix: true,
       },
     },

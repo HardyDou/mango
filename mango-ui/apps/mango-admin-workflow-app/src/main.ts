@@ -12,6 +12,7 @@ import { bindMangoRuntimeTheme, createMangoWujieVueApp } from '@mango/app-runtim
 import 'element-plus/dist/index.css';
 import '@mango/common/theme/index.scss';
 import '@mango/common/style.css';
+import '@mango/auth/style.css';
 import '@mango/file/style.css';
 import '@mango/workflow/style.css';
 import '@mango/workflow-business-example/style.css';
@@ -27,12 +28,14 @@ function installCommon(appInstance: VueApp) {
   }
   appInstance.use(ElementPlus, { locale: zhCn });
   appInstance.use(createPinia());
-  appInstance.use(createI18n({
-    legacy: false,
-    locale: 'zh-cn',
-    fallbackLocale: 'zh-cn',
-    messages: { 'zh-cn': {} },
-  }));
+  appInstance.use(
+    createI18n({
+      legacy: false,
+      locale: 'zh-cn',
+      fallbackLocale: 'zh-cn',
+      messages: { 'zh-cn': {} },
+    }),
+  );
 }
 
 createMangoWujieVueApp({

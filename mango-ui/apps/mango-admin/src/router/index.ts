@@ -1,12 +1,15 @@
 import { createRouter, createWebHashHistory } from 'vue-router';
 import { ref } from 'vue';
 import { mangoMessage, Session } from '@mango/common';
+import { captureProviderCallbackBeforeHashRouter } from '@mango/auth';
 import { useUserInfo } from '@/stores/userInfo';
 import { usePreferencesStore } from '@/stores/preferences';
 import { useRoutesList } from '@/stores/routesList';
 import { staticRoutes } from './route';
 import { initBackEndControlRoutes } from './backEnd';
 import { menuLoader } from '@/config/menuLoader';
+
+captureProviderCallbackBeforeHashRouter();
 
 const router = createRouter({
   // 使用 hash 模式
@@ -55,13 +58,22 @@ async function doInitRoutes(): Promise<void> {
   const useMock = import.meta.env.VITE_USE_MOCK === 'true';
   const isRequestRoutes = useMock || storesPreferences.isRequestRoutes;
 
-  if (import.meta.env.DEV) console.log('[Router] doInitRoutes called, isRequestRoutes:', isRequestRoutes, '(useMock:', useMock, ')');
-  if (import.meta.env.DEV) console.log('[Router] Current routes:', router.getRoutes().map(r => ({ path: r.path, name: r.name, children: r.children?.length })));
+  if (import.meta.env.DEV)
+    console.log('[Router] doInitRoutes called, isRequestRoutes:', isRequestRoutes, '(useMock:', useMock, ')');
+  if (import.meta.env.DEV)
+    console.log(
+      '[Router] Current routes:',
+      router.getRoutes().map((r) => ({ path: r.path, name: r.name, children: r.children?.length })),
+    );
 
   if (isRequestRoutes) {
     // 后端路由模式
     await initBackEndControlRoutes();
-    if (import.meta.env.DEV) console.log('[Router] After backEnd init:', router.getRoutes().map(r => ({ path: r.path, name: r.name, children: r.children?.length })));
+    if (import.meta.env.DEV)
+      console.log(
+        '[Router] After backEnd init:',
+        router.getRoutes().map((r) => ({ path: r.path, name: r.name, children: r.children?.length })),
+      );
   } else {
     // 前端路由模式 - 静态路由已在 staticRoutes 中，直接使用
     // 填充 routesList store 以供菜单使用
@@ -108,7 +120,7 @@ router.beforeEach(async (to, from, next) => {
   document.title = title ? `${title} - ${appTitle}` : appTitle;
 
   // 白名单路由直接放行
-  const whiteList = ['/login', '/404', '/401', '/payment/gateway-result'];
+  const whiteList = ['/login', '/provider-callback', '/404', '/401', '/payment/gateway-result'];
   if (whiteList.includes(to.path)) {
     next();
     return;

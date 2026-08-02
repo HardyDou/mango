@@ -6,6 +6,7 @@ import * as ElementPlusIconsVue from '@element-plus/icons-vue';
 import 'element-plus/dist/index.css';
 import '@mango/common/theme/index.scss';
 import '@mango/common/style.css';
+import '@mango/auth/style.css';
 import '@mango/file/style.css';
 import '@mango/template/style.css';
 import type { MangoAppRuntime } from '@mango/app-runtime';

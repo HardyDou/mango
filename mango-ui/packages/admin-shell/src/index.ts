@@ -104,6 +104,7 @@ export { default as MangoAdminShellApp } from './App.vue';
 export { default as MangoAdminShellView } from './ShellView.vue';
 export { default as MangoAdminLayout } from './layout/index.vue';
 export { default as MangoAdminParentView } from './layout/routerView/parent.vue';
+export { default as MangoThemeSettings } from './layout/navBars/breadcrumb/settings.vue';
 export { createMangoAdminRouter } from './router';
 export { getShellPinia, installAdminBrandingRuntime, installShellApp } from './appBootstrap';
 export { configureMangoAdminShell, getMangoAdminShellOptions };

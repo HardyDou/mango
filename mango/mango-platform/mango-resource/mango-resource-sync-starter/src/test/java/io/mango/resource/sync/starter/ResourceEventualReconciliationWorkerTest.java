@@ -1,6 +1,5 @@
 package io.mango.resource.sync.starter;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.common.result.R;
 import io.mango.infra.bootstrap.api.BootstrapRuntimeAuthorityProvider;
 import io.mango.infra.bootstrap.api.BootstrapWriteAuthority;
@@ -97,7 +96,8 @@ class ResourceEventualReconciliationWorkerTest {
         ResourceDeclarationCollector collector = new ResourceDeclarationCollector(
                 new ListObjectProvider<>(List.of(provider)));
         return new ResourceEventualReconciliationWorker(
-                properties, collector, declarationApi, new ObjectMapper(), authorityProvider, "resource-service");
+                properties, collector, declarationApi, new ResourceManifestSerializer(),
+                authorityProvider, "resource-service");
     }
 
     private static ResourceDeclaration eventualDeclaration(String id) {

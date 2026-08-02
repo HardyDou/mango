@@ -258,6 +258,11 @@ pnpm -F @mango/admin-shell build
 ## 2026-07-27 Bootstrap 生命周期影响
 
 - Mango 将 `API_RESOURCE`、`AUTH_MENU` 等启动前必需声明及租户授权对账迁入独立 Bootstrap。按钮 `permissionCode`、登录态权限集合、角色按钮授权、接口鉴权和租户隔离协议不变；业务升级后先确认 `bootstrap apply` 与 `bootstrap verify` 成功，再启动 Runtime 并刷新登录态。若按钮权限缺失，应先检查 Bootstrap 的 Resource 与租户步骤回执，再按本指南检查角色授权和前后端权限码，不能把 Runtime 已启动等同于初始化已完成。
+
 ## 2026-07-31 结构化通知发布影响
 
 - `v2026.07.31-maven-1.0.29-pmo-1.3.7-cli-1.0.93-notice-file-dialog-release` 调整通知详情、实时提醒和主操作跳转，并同步 `@mango/rbac`、`@mango/admin-shell` 等固定依赖版本；不新增或修改按钮 `permissionCode`、角色授权、登录态权限集合、后端接口鉴权和业务按钮展示规则。通知主操作是否可用由消息目标与已注册路由决定，与业务按钮权限无关。
+
+## 2026-08-02 Issue 643 第三方登录配置权限影响
+
+- Issue 643 的第三方登录配置页使用 `auth:provider-config:view` 查询权限和 `auth:provider-config:edit` 编辑权限；页面按钮与后端接口保持同一权限语义。个人中心资料、联系方式和本人第三方绑定由当前登录安全主体校验，不新增可分配的页面按钮权限。配置按钮不显示时按本指南检查角色授权、登录态权限刷新和 `v-auth`；本人资料或绑定失败时检查登录态、租户和应用归属，不通过补按钮权限绕过安全边界。

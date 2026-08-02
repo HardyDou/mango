@@ -41,6 +41,7 @@ export { default as MangoListPanel } from './components/MangoListPanel/index.vue
 export { default as MangoDetailPage } from './components/MangoDetailPage/index.vue';
 export { default as MangoFormPage } from './components/MangoFormPage/index.vue';
 export { default as MangoPageSection } from './components/MangoPageSection/index.vue';
+export { default as MangoAvatar } from './components/MangoAvatar/index.vue';
 export { default as IconSelector } from './components/IconSelector/index.vue';
 export { default as DictTag } from './components/DictTag/index.vue';
 export { default as DictSelect } from './components/DictSelect/index.vue';

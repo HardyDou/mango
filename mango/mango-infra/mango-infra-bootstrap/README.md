@@ -100,6 +100,8 @@ MangoApplication.run(MyApplication.class, args);
 
 ## 10. 快速开始
 
+本地 Mango 主仓、CLI 新生成项目以及已迁移到 `MangoApplication.run` 的业务项目，使用 `mango dev start backend` 时由 `@mango/cli` 在当前 worktree 的 `mango_dev_*` 独立数据库中自动准备 bootstrap 回执并启动 runtime。存量 `SpringApplication.run` 项目继续走兼容直启，不会被 CLI 自动切换生命周期。CLI 的本地编排不替代测试、预发或生产发布流程；这些环境仍按下列命令显式管理 generation、策略和切流。
+
 首次空库：
 
 ```bash

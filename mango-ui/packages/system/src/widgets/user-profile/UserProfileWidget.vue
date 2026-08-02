@@ -2,49 +2,29 @@
   <section class="mango-grid-widget-user-profile">
     <div class="mango-grid-widget-user-profile__header">
       <div class="mango-grid-widget-user-profile__main">
-        <el-avatar
-          :size="64"
-          :src="avatar"
-          class="mango-grid-widget-user-profile__avatar"
-        >
+        <MangoAvatar :size="64" :source="avatar" class="mango-grid-widget-user-profile__avatar">
           <el-icon><User /></el-icon>
-        </el-avatar>
+        </MangoAvatar>
 
         <div class="mango-grid-widget-user-profile__info">
-          <div
-            class="mango-grid-widget-user-profile__name"
-            :title="displayName"
-          >
+          <div class="mango-grid-widget-user-profile__name" :title="displayName">
             {{ displayName }}
           </div>
-          <div
-            class="mango-grid-widget-user-profile__meta"
-            :title="jobTitleText"
-          >
+          <div class="mango-grid-widget-user-profile__meta" :title="jobTitleText">
             {{ jobTitleText }}
           </div>
-          <div
-            class="mango-grid-widget-user-profile__tenant"
-            :title="organizationText"
-          >
+          <div class="mango-grid-widget-user-profile__tenant" :title="organizationText">
             {{ organizationText }}
           </div>
         </div>
       </div>
 
       <div class="mango-grid-widget-user-profile__actions">
-        <el-button
-          plain
-          type="primary"
-          @click="navigateToProfile"
-        >
+        <el-button plain type="primary" @click="navigateToProfile">
           <el-icon><User /></el-icon>
           <span>个人中心</span>
         </el-button>
-        <el-button
-          plain
-          @click="navigateToPassword"
-        >
+        <el-button plain @click="navigateToPassword">
           <el-icon><Lock /></el-icon>
           <span>修改密码</span>
         </el-button>
@@ -52,18 +32,11 @@
     </div>
 
     <div class="mango-grid-widget-user-profile__details">
-      <div
-        v-for="item in detailItems"
-        :key="item.label"
-        class="mango-grid-widget-user-profile__detail"
-      >
+      <div v-for="item in detailItems" :key="item.label" class="mango-grid-widget-user-profile__detail">
         <div class="mango-grid-widget-user-profile__detail-label">
           {{ item.label }}
         </div>
-        <div
-          class="mango-grid-widget-user-profile__detail-value"
-          :title="item.value"
-        >
+        <div class="mango-grid-widget-user-profile__detail-value" :title="item.value">
           {{ item.value }}
         </div>
       </div>
@@ -74,6 +47,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { Lock, User } from '@element-plus/icons-vue';
+import { MangoAvatar } from '@mango/common';
 import type { UserProfileWidgetProps } from '../types';
 
 defineOptions({

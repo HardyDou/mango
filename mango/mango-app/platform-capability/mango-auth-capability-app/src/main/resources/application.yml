@@ -6,6 +6,11 @@ spring:
     name: mango-auth-capability-app
 
 mango:
+  persistence:
+    flyway:
+      modules:
+        auth:
+          enabled: true
   module:
     module-service:
       modules:

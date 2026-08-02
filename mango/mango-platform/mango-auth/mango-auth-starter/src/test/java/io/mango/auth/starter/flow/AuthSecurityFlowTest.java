@@ -81,6 +81,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         classes = AuthSecurityFlowTest.TestApp.class,
         properties = {
                 "mango.access.auth-enabled=true",
+                "mango.crypto.enabled=false",
                 "mango.security.jwt.secret=mango-secret-key-for-jwt-token-generation-must-be-at-least-256-bits",
                 "spring.flyway.enabled=false",
                 "spring.autoconfigure.exclude="
@@ -184,7 +185,9 @@ class AuthSecurityFlowTest {
                         .header("Authorization", "Bearer " + accessToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.partyType").value("INTERNAL_ORG"))
-                .andExpect(jsonPath("$.data.partyId").value("42"));
+                .andExpect(jsonPath("$.data.partyId").value("42"))
+                .andExpect(jsonPath("$.data.departmentName").value("技术研发部"))
+                .andExpect(jsonPath("$.data.companyName").value("芒果集团"));
     }
 
     @Test
@@ -539,6 +542,28 @@ class AuthSecurityFlowTest {
         }
 
         @Bean
+        io.mango.auth.core.service.IAuthProviderConfigService authProviderConfigService() {
+            io.mango.auth.core.service.IAuthProviderConfigService service = org.mockito.Mockito.mock(
+                    io.mango.auth.core.service.IAuthProviderConfigService.class);
+            io.mango.auth.core.service.IAuthProviderConfigService.ResolvedProviderConfig config =
+                    new io.mango.auth.core.service.IAuthProviderConfigService.ResolvedProviderConfig(
+                            1L, "1", "internal-admin", io.mango.auth.api.enums.ExternalAuthProvider.WECOM,
+                            "mock-corp", "mock-corp", "1000003", "mock-secret",
+                            List.of("http://127.0.0.1:8550/login"));
+            org.mockito.Mockito.when(service.requireAvailable(
+                            org.mockito.ArgumentMatchers.anyString(),
+                            org.mockito.ArgumentMatchers.anyString(),
+                            org.mockito.ArgumentMatchers.eq(io.mango.auth.api.enums.ExternalAuthProvider.WECOM)))
+                    .thenReturn(config);
+            return service;
+        }
+
+        @Bean
+        io.mango.auth.core.service.IExternalAuthorizationService externalAuthorizationService() {
+            return org.mockito.Mockito.mock(io.mango.auth.core.service.IExternalAuthorizationService.class);
+        }
+
+        @Bean
         AuthUserProvider authUserProvider(TestUserStore userStore) {
             return new AuthUserProvider() {
                 @Override
@@ -568,6 +593,29 @@ class AuthSecurityFlowTest {
         @Bean
         IdentityUserApi identityUserApi() {
             return new IdentityUserApi() {
+                @Override
+                public R<io.mango.identity.api.vo.CurrentUserProfileVO> currentProfile() {
+                    return R.ok(null);
+                }
+
+                @Override
+                public R<io.mango.identity.api.vo.CurrentUserProfileVO> updateCurrentProfile(
+                        io.mango.identity.api.command.UpdateCurrentUserProfileCommand command) {
+                    return R.ok(null);
+                }
+
+                @Override
+                public R<io.mango.identity.api.vo.ContactCaptchaTicketVO> sendCurrentContactCaptcha(
+                        io.mango.identity.api.command.SendContactCaptchaCommand command) {
+                    return R.ok(null);
+                }
+
+                @Override
+                public R<io.mango.identity.api.vo.CurrentUserProfileVO> updateCurrentContact(
+                        io.mango.identity.api.command.UpdateCurrentUserContactCommand command) {
+                    return R.ok(null);
+                }
+
                 @Override
                 public R<io.mango.common.vo.PageResult<io.mango.identity.api.vo.IdentityUserVO>> page(
                         io.mango.identity.api.query.IdentityUserPageQuery query) {
@@ -671,6 +719,17 @@ class AuthSecurityFlowTest {
                     return R.ok(List.of());
                 }
 
+                @Override
+                public R<List<io.mango.identity.api.vo.ExternalIdentityBindingVO>> listCurrentExternalIdentities() {
+                    return R.ok(List.of());
+                }
+
+                @Override
+                public R<Boolean> unbindCurrentExternalIdentity(
+                        io.mango.identity.api.command.UnbindCurrentExternalIdentityCommand command) {
+                    return R.ok(true);
+                }
+
                 private IdentityUserInfoVO identityUser() {
                     IdentityUserInfoVO user = new IdentityUserInfoVO();
                     user.setUserId(1L);
@@ -682,6 +741,26 @@ class AuthSecurityFlowTest {
                     return user;
                 }
             };
+        }
+
+        @Bean
+        io.mango.identity.api.TenantMemberProvider tenantMemberProvider() {
+            io.mango.identity.api.TenantMemberProvider provider = org.mockito.Mockito.mock(
+                    io.mango.identity.api.TenantMemberProvider.class);
+            io.mango.identity.api.vo.TenantMemberVO member = new io.mango.identity.api.vo.TenantMemberVO();
+            member.setMemberId(1L);
+            member.setTenantId(1L);
+            member.setPrimaryOrgId(101L);
+            org.mockito.Mockito.when(provider.getMember(1L)).thenReturn(member);
+            return provider;
+        }
+
+        @Bean
+        io.mango.org.api.OrgReferenceProvider orgReferenceProvider() {
+            io.mango.org.api.OrgReferenceProvider provider = org.mockito.Mockito.mock(
+                    io.mango.org.api.OrgReferenceProvider.class);
+            org.mockito.Mockito.when(provider.resolveOrgName(1L, 101L)).thenReturn("技术研发部");
+            return provider;
         }
 
         @Bean

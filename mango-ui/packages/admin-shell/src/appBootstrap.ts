@@ -7,6 +7,7 @@ import { createI18n, type I18n } from 'vue-i18n';
 import { authAll, auths, canShowButton, type AuthRuleBindingValue } from '@mango/common/utils/authFunction';
 import { mangoMessage } from '@mango/common/utils/message';
 import { installMangoAuth } from '@mango/auth';
+import MangoThemeSettings from './layout/navBars/breadcrumb/settings.vue';
 import type { MangoAdminShellOptions } from './config';
 import { getMangoAdminShellOptions } from './config';
 import { DEFAULT_ADMIN_BRANDING, useAdminBrandingStore } from './stores/adminBranding';
@@ -107,6 +108,9 @@ export function installShellApp(app: VueApp, options: MangoAdminShellOptions = g
     },
     profile: {
       roleLabel: '超级管理员',
+      slots: {
+        theme: MangoThemeSettings,
+      },
     },
     password: {
       minLength: 6,

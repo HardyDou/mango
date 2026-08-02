@@ -1,5 +1,6 @@
 import { createRouter, createWebHashHistory } from 'vue-router';
 import { Session } from '@mango/common/utils/storage';
+import { captureProviderCallbackBeforeHashRouter } from '@mango/auth';
 import { getShellPinia } from './appBootstrap';
 import { getMangoAdminShellOptions } from './config';
 import { useTagsViewRoutes } from './stores/tagsViewRoutes';
@@ -25,6 +26,8 @@ function captureModuleDiagnosticFragmentBeforeHashRouter() {
 
 captureModuleDiagnosticFragmentBeforeHashRouter();
 
+captureProviderCallbackBeforeHashRouter();
+
 function resolveLoginRouteComponent() {
   return getMangoAdminShellOptions().login?.component || (() => import('@mango/auth').then((m) => m.LoginView));
 }
@@ -37,6 +40,11 @@ export function createMangoAdminRouter() {
         path: '/login',
         name: 'Login',
         component: resolveLoginRouteComponent(),
+      },
+      {
+        path: '/provider-callback',
+        name: 'ProviderCallback',
+        component: () => import('@mango/auth').then((m) => m.ProviderCallbackView),
       },
       {
         path: '/',
@@ -56,6 +64,9 @@ export function createMangoAdminRouter() {
   router.beforeEach((to) => {
     if (to.path === '/login') {
       useTagsViewRoutes(getShellPinia()).clearTagsView();
+      return true;
+    }
+    if (to.path === '/provider-callback') {
       return true;
     }
     if (!Session.getToken()) {

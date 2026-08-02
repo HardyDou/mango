@@ -13,8 +13,8 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Component
 public class DefaultWecomLoginClient implements WecomLoginClient {
@@ -24,13 +24,15 @@ public class DefaultWecomLoginClient implements WecomLoginClient {
     private static final Duration TIMEOUT = Duration.ofSeconds(10);
 
     private final HttpClient httpClient;
+    private final ObjectMapper objectMapper;
 
     public DefaultWecomLoginClient() {
-        this(HttpClient.newBuilder().connectTimeout(TIMEOUT).build());
+        this(HttpClient.newBuilder().connectTimeout(TIMEOUT).build(), new ObjectMapper());
     }
 
-    DefaultWecomLoginClient(HttpClient httpClient) {
+    DefaultWecomLoginClient(HttpClient httpClient, ObjectMapper objectMapper) {
         this.httpClient = httpClient;
+        this.objectMapper = objectMapper;
     }
 
     @Override
@@ -80,26 +82,21 @@ public class DefaultWecomLoginClient implements WecomLoginClient {
     }
 
     private int readErrCode(String json) {
-        String value = readNumber(json, "errcode");
-        return value == null ? 0 : Integer.parseInt(value);
+        JsonNode value = readJson(json).get("errcode");
+        return value == null ? 0 : value.asInt();
     }
 
     private String readString(String json, String key) {
-        if (!StringUtils.hasText(json)) {
-            return null;
-        }
-        Pattern pattern = Pattern.compile("\"" + Pattern.quote(key) + "\"\\s*:\\s*\"([^\"]*)\"");
-        Matcher matcher = pattern.matcher(json);
-        return matcher.find() ? matcher.group(1) : null;
+        JsonNode value = readJson(json).get(key);
+        return value == null || value.isNull() ? null : value.asText();
     }
 
-    private String readNumber(String json, String key) {
-        if (!StringUtils.hasText(json)) {
-            return null;
+    private JsonNode readJson(String json) {
+        try {
+            return objectMapper.readTree(json);
+        } catch (IOException exception) {
+            throw new BizException(1501, "企业微信响应格式无效", exception);
         }
-        Pattern pattern = Pattern.compile("\"" + Pattern.quote(key) + "\"\\s*:\\s*(-?\\d+)");
-        Matcher matcher = pattern.matcher(json);
-        return matcher.find() ? matcher.group(1) : null;
     }
 
     private String sanitizeError(String prefix, String responseBody) {

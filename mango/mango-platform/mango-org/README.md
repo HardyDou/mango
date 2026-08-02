@@ -145,6 +145,7 @@ module-path=/org,/post
 |------|------|
 | `OrgTenantProvisioner` | 新租户创建后初始化根组织和默认岗位 |
 | `TenantDependencyChecker` | 租户删除前检查组织和岗位数据，返回阻断原因 |
+| `OrgReferenceProvider` | 按租户解析组织、岗位引用；`resolveOrgName` 可为认证上下文提供主部门名称 |
 
 ## 8. 返回字段
 

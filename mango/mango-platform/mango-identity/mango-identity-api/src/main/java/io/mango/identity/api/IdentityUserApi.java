@@ -11,12 +11,18 @@ import io.mango.identity.api.command.UnbindExternalIdentityCommand;
 import io.mango.identity.api.command.UpdateIdentityUserCommand;
 import io.mango.identity.api.command.UpdateIdentityUserStatusCommand;
 import io.mango.identity.api.command.UnlockIdentityUserCommand;
+import io.mango.identity.api.command.SendContactCaptchaCommand;
+import io.mango.identity.api.command.UpdateCurrentUserContactCommand;
+import io.mango.identity.api.command.UpdateCurrentUserProfileCommand;
+import io.mango.identity.api.command.UnbindCurrentExternalIdentityCommand;
 import io.mango.identity.api.query.ExternalIdentityQuery;
 import io.mango.identity.api.query.IdentityUserPageQuery;
 import io.mango.identity.api.query.IdentityUserTargetQuery;
 import io.mango.identity.api.vo.ExternalIdentityBindingVO;
 import io.mango.identity.api.vo.IdentityUserInfoVO;
 import io.mango.identity.api.vo.IdentityUserVO;
+import io.mango.identity.api.vo.ContactCaptchaTicketVO;
+import io.mango.identity.api.vo.CurrentUserProfileVO;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -27,6 +33,14 @@ import java.util.List;
  * 身份用户资料 HTTP 契约。
  */
 public interface IdentityUserApi {
+
+    R<CurrentUserProfileVO> currentProfile();
+
+    R<CurrentUserProfileVO> updateCurrentProfile(@Valid UpdateCurrentUserProfileCommand command);
+
+    R<ContactCaptchaTicketVO> sendCurrentContactCaptcha(@Valid SendContactCaptchaCommand command);
+
+    R<CurrentUserProfileVO> updateCurrentContact(@Valid UpdateCurrentUserContactCommand command);
 
     /**
      * 分页查询当前租户成员。
@@ -100,5 +114,9 @@ public interface IdentityUserApi {
      * 查询成员的第三方登录身份绑定。
      */
     R<List<ExternalIdentityBindingVO>> listExternalIdentities(@NotNull Long userId);
+
+    R<List<ExternalIdentityBindingVO>> listCurrentExternalIdentities();
+
+    R<Boolean> unbindCurrentExternalIdentity(@Valid UnbindCurrentExternalIdentityCommand command);
 
 }

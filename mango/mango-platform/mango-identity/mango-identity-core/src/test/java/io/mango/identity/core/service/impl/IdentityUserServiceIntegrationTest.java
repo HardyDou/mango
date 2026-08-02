@@ -8,8 +8,15 @@ import io.mango.authorization.api.command.SubjectRoleBindingCommand;
 import io.mango.authorization.api.query.RoleLookupQuery;
 import io.mango.authorization.api.query.SubjectRoleBindingQuery;
 import io.mango.common.result.R;
+import io.mango.captcha.api.CaptchaApi;
+import io.mango.captcha.api.dto.CaptchaSendRequest;
+import io.mango.captcha.api.dto.CaptchaVerifyRequest;
 import io.mango.identity.api.command.BindExternalIdentityCommand;
 import io.mango.identity.api.command.BatchDeleteIdentityUserCommand;
+import io.mango.identity.api.command.SendContactCaptchaCommand;
+import io.mango.identity.api.command.UnbindCurrentExternalIdentityCommand;
+import io.mango.identity.api.command.UpdateCurrentUserContactCommand;
+import io.mango.identity.api.command.UpdateCurrentUserProfileCommand;
 import io.mango.identity.api.enums.IdentityUserTargetType;
 import io.mango.identity.api.query.IdentityUserTargetQuery;
 import io.mango.identity.core.entity.ExternalIdentityBindingEntity;
@@ -54,6 +61,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @SpringBootTest(classes = {
         DataSourceAutoConfiguration.class,
@@ -97,6 +110,12 @@ class IdentityUserServiceIntegrationTest {
     private IdentityUserService service;
 
     @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private CaptchaApi captchaApi;
+
+    @Autowired
     private IdentityTenantProvisioner tenantProvisioner;
 
     @Autowired
@@ -106,6 +125,7 @@ class IdentityUserServiceIntegrationTest {
     void setUp() {
         resetSchema();
         roleBindingApi.clear();
+        reset(captchaApi);
     }
 
     @AfterEach
@@ -277,8 +297,8 @@ class IdentityUserServiceIntegrationTest {
     }
 
     @Test
-    @DisplayName("绑定第三方身份时自动修复同租户缺失的成员关系")
-    void bindExternalIdentityShouldRepairMissingTenantMemberForSameTenantThroughRealMappers() {
+    @DisplayName("绑定第三方身份时要求目标用户已经是当前租户成员")
+    void bindExternalIdentityShouldRequireExistingTenantMember() {
         MangoContextHolder.set(MangoContextSnapshot.empty().withTenantId("1"));
         seedUser(1002L, "wecom_user", "企微用户", "1", 1);
         BindExternalIdentityCommand command = new BindExternalIdentityCommand();
@@ -289,33 +309,149 @@ class IdentityUserServiceIntegrationTest {
         command.setDisplayName("企微用户");
         command.setBindSource("SYNC");
 
-        var result = service.bindExternalIdentity(command);
+        assertThatThrownBy(() -> service.bindExternalIdentity(command))
+                .isInstanceOf(io.mango.common.exception.BizException.class);
+        assertThat(memberMapper.selectList(null)).isEmpty();
+        assertThat(externalBindingMapper.selectList(null)).isEmpty();
+    }
 
-        assertThat(result.getUserId()).isEqualTo(1002L);
-        List<TenantMemberEntity> members = memberMapper.selectList(null);
-        assertThat(members).hasSize(1);
-        assertThat(members.get(0).getTenantId()).isEqualTo("1");
-        assertThat(members.get(0).getUserId()).isEqualTo(1002L);
-        assertThat(members.get(0).getDisplayName()).isEqualTo("企微用户");
-        List<ExternalIdentityBindingEntity> bindings = externalBindingMapper.selectList(null);
-        assertThat(bindings).hasSize(1);
-        assertThat(bindings.get(0).getProvider()).isEqualTo("WECOM");
-        assertThat(bindings.get(0).getCorpId()).isEqualTo("corp");
-        assertThat(bindings.get(0).getExternalUserId()).isEqualTo("wecom_user");
-        assertThat(applicationEvents.stream(NoticeSendEventCommand.class).toList())
-                .singleElement()
-                .satisfies(event -> {
-                    assertThat(event.getTenantId()).isEqualTo("1");
-                    assertThat(event.getBizType()).isEqualTo("auth.wecom.login.bound");
-                    assertThat(event.getMessageSubject().getSubjectType()).isEqualTo("IDENTITY_USER");
-                    assertThat(event.getMessageSubject().getSubjectId()).isEqualTo("1002");
-                    assertThat(event.getMessageTarget().getTargetType()).isEqualTo(NoticeSiteMessageTargetType.ROUTE);
-                    assertThat(event.getMessageTarget().getTargetKey()).isEqualTo("account:profile");
-                    assertThat(event.getMessageActions()).singleElement().satisfies(action -> {
-                        assertThat(action.getActionCode()).isEqualTo("VIEW_PROFILE");
-                        assertThat(action.getInteractionType()).isEqualTo(NoticeSiteMessageActionInteractionType.ROUTE);
-                    });
-                });
+    @Test
+    @DisplayName("当前用户实名资料默认未认证且证件号码脱敏")
+    void currentProfileShouldDefaultToUnverifiedAndMaskDocumentNumber() {
+        setCurrentUser(1001L);
+        seedUser(1001L, "current", "当前用户", "1", 1);
+        seedMember(10L, 1L, 1001L, 1, null);
+        jdbcTemplate.update("""
+                update identity_user
+                   set real_name = '测试用户', document_type = 'ID_CARD', document_number = '110101199001011234'
+                 where id = 1001
+                """);
+
+        var profile = service.currentProfile();
+
+        assertThat(profile.getRealName()).isEqualTo("测试用户");
+        assertThat(profile.getDocumentType()).isEqualTo("ID_CARD");
+        assertThat(profile.getDocumentNumber()).isEqualTo("****1234");
+        assertThat(profile.getVerificationStatus()).isEqualTo("UNVERIFIED");
+        assertThat(profile.getVerificationSource()).isNull();
+    }
+
+    @Test
+    @DisplayName("脱敏证件号留空更新时保留原号码")
+    void updateCurrentProfileShouldPreserveExistingDocumentNumberWhenBlank() {
+        setCurrentUser(1001L);
+        seedUser(1001L, "current", "当前用户", "1", 1);
+        seedMember(10L, 1L, 1001L, 1, null);
+        jdbcTemplate.update("""
+                update identity_user
+                   set document_type = 'ID_CARD', document_number = '110101199001011234'
+                 where id = 1001
+                """);
+        UpdateCurrentUserProfileCommand command = new UpdateCurrentUserProfileCommand();
+        command.setNickname("新昵称");
+        command.setDocumentType("ID_CARD");
+
+        var profile = service.updateCurrentProfile(command);
+
+        assertThat(profile.getDocumentNumber()).isEqualTo("****1234");
+        assertThat(jdbcTemplate.queryForObject(
+                "select document_number from identity_user where id = 1001", String.class))
+                .isEqualTo("110101199001011234");
+    }
+
+    @Test
+    @DisplayName("当前用户清空实名和证件信息时应持久化空值")
+    void updateCurrentProfileShouldPersistClearedIdentityFields() {
+        setCurrentUser(1001L);
+        seedUser(1001L, "current", "当前用户", "1", 1);
+        seedMember(10L, 1L, 1001L, 1, null);
+        jdbcTemplate.update("""
+                update identity_user
+                   set real_name = '测试用户', document_type = 'ID_CARD', document_number = '110101199001011234'
+                 where id = 1001
+                """);
+
+        var profile = service.updateCurrentProfile(new UpdateCurrentUserProfileCommand());
+
+        assertThat(profile.getRealName()).isNull();
+        assertThat(profile.getDocumentType()).isNull();
+        assertThat(profile.getDocumentNumber()).isNull();
+        assertThat(jdbcTemplate.queryForObject("""
+                select count(*) from identity_user
+                 where id = 1001
+                   and real_name is null
+                   and document_type is null
+                   and document_number is null
+                """, Long.class)).isEqualTo(1L);
+    }
+
+    @Test
+    @DisplayName("修改联系方式同时要求当前密码和新值验证码")
+    void updateCurrentContactShouldRequirePasswordAndMatchingCaptcha() {
+        setCurrentUser(1001L);
+        seedUser(1001L, "current", "当前用户", "1", 1);
+        seedMember(10L, 1L, 1001L, 1, null);
+        jdbcTemplate.update("update identity_user set password = ? where id = 1001",
+                passwordEncoder.encode("current-password"));
+        when(captchaApi.send(any(CaptchaSendRequest.class)))
+                .thenReturn(R.ok("captcha:CHANGE_EMAIL:new@example.com"));
+        when(captchaApi.verify(any(CaptchaVerifyRequest.class))).thenReturn(R.ok(Boolean.TRUE));
+        SendContactCaptchaCommand send = new SendContactCaptchaCommand();
+        send.setContactType("EMAIL");
+        send.setTarget("new@example.com");
+
+        var ticket = service.sendCurrentContactCaptcha(send);
+        UpdateCurrentUserContactCommand wrongPassword = contactCommand(ticket.getKey(), "wrong-password");
+        assertThatThrownBy(() -> service.updateCurrentContact(wrongPassword))
+                .isInstanceOf(io.mango.common.exception.BizException.class);
+
+        var profile = service.updateCurrentContact(contactCommand(ticket.getKey(), "current-password"));
+
+        assertThat(ticket.getKey()).isEqualTo("CHANGE_EMAIL:new@example.com");
+        assertThat(profile.getEmail()).isEqualTo("n***@example.com");
+        assertThat(jdbcTemplate.queryForObject("select email from identity_user where id = 1001", String.class))
+                .isEqualTo("new@example.com");
+        verify(captchaApi).verify(any(CaptchaVerifyRequest.class));
+    }
+
+    @Test
+    @DisplayName("同一外部身份不能被另一个成员抢占")
+    void externalIdentityCannotBeClaimedByAnotherUser() {
+        MangoContextHolder.set(MangoContextSnapshot.empty().withTenantId("1"));
+        seedUser(1001L, "first", "用户一", "1", 1);
+        seedUser(1002L, "second", "用户二", "1", 1);
+        seedMember(10L, 1L, 1001L, 1, null);
+        seedMember(11L, 1L, 1002L, 1, null);
+
+        service.bindExternalIdentity(bindingCommand(1001L));
+
+        assertThatThrownBy(() -> service.bindExternalIdentity(bindingCommand(1002L)))
+                .isInstanceOf(io.mango.common.exception.BizException.class);
+        assertThat(externalBindingMapper.selectList(null)).singleElement()
+                .extracting(ExternalIdentityBindingEntity::getUserId)
+                .isEqualTo(1001L);
+    }
+
+    @Test
+    @DisplayName("当前用户只能使用密码解绑自己的第三方身份")
+    void currentUserUnbindShouldRequirePasswordAndOwnership() {
+        setCurrentUser(1001L);
+        seedUser(1001L, "current", "当前用户", "1", 1);
+        seedMember(10L, 1L, 1001L, 1, null);
+        jdbcTemplate.update("update identity_user set password = ? where id = 1001",
+                passwordEncoder.encode("current-password"));
+        var binding = service.bindExternalIdentity(bindingCommand(1001L));
+        UnbindCurrentExternalIdentityCommand command = new UnbindCurrentExternalIdentityCommand();
+        command.setBindingId(binding.getId());
+        command.setCurrentPassword("wrong-password");
+
+        assertThatThrownBy(() -> service.unbindCurrentExternalIdentity(command))
+                .isInstanceOf(io.mango.common.exception.BizException.class);
+        assertThat(externalBindingMapper.selectById(binding.getId())).isNotNull();
+
+        command.setCurrentPassword("current-password");
+        assertThat(service.unbindCurrentExternalIdentity(command)).isTrue();
+        assertThat(externalBindingMapper.selectById(binding.getId())).isNull();
     }
 
     private void resetSchema() {
@@ -338,6 +474,11 @@ class IdentityUserServiceIntegrationTest {
                     email varchar(128),
                     phone varchar(32),
                     avatar varchar(255),
+                    real_name varchar(100),
+                    document_type varchar(32),
+                    document_number varchar(128),
+                    verification_status varchar(32) not null default 'UNVERIFIED',
+                    verification_source varchar(64),
                     status tinyint not null default 1,
                     create_time timestamp not null default current_timestamp,
                     update_time timestamp not null default current_timestamp,
@@ -395,6 +536,7 @@ class IdentityUserServiceIntegrationTest {
                 create table identity_external_binding (
                     id bigint primary key,
                     tenant_id bigint not null,
+                    app_code varchar(64) not null default 'internal-admin',
                     user_id bigint not null,
                     provider varchar(32) not null,
                     corp_id varchar(128) not null,
@@ -457,6 +599,34 @@ class IdentityUserServiceIntegrationTest {
         return command;
     }
 
+    private void setCurrentUser(Long userId) {
+        MangoContextHolder.set(MangoContextSnapshot.empty()
+                .withSecurity(userId, "1", "current", "INTERNAL", "INTERNAL_USER", "INTERNAL_ORG", 1L,
+                        "internal-admin"));
+    }
+
+    private UpdateCurrentUserContactCommand contactCommand(String captchaKey, String password) {
+        UpdateCurrentUserContactCommand command = new UpdateCurrentUserContactCommand();
+        command.setContactType("EMAIL");
+        command.setTarget("new@example.com");
+        command.setCurrentPassword(password);
+        command.setCaptchaKey(captchaKey);
+        command.setCaptchaCode("123456");
+        return command;
+    }
+
+    private BindExternalIdentityCommand bindingCommand(Long userId) {
+        BindExternalIdentityCommand command = new BindExternalIdentityCommand();
+        command.setUserId(userId);
+        command.setAppCode("internal-admin");
+        command.setProvider("WECOM");
+        command.setCorpId("corp-id");
+        command.setExternalUserId("external-user");
+        command.setDisplayName("第三方用户");
+        command.setBindSource("SELF");
+        return command;
+    }
+
     @Configuration
     @MapperScan(basePackageClasses = IdentityUserMapper.class)
     @Import({
@@ -478,6 +648,11 @@ class IdentityUserServiceIntegrationTest {
         @Bean
         PasswordEncoder passwordEncoder() {
             return new BCryptPasswordEncoder();
+        }
+
+        @Bean
+        CaptchaApi captchaApi() {
+            return mock(CaptchaApi.class);
         }
 
         @Bean

@@ -16,6 +16,11 @@ export interface UploadResult {
   directDownloadUrl?: string;
 }
 
+export interface BinaryDownloadResponse {
+  data: Blob;
+  headers?: Record<string, string | undefined>;
+}
+
 interface UploadApiRecord {
   id?: unknown;
   url?: string;
@@ -121,14 +126,14 @@ export function importRemoteImage(input: ImportRemoteImageInput): Promise<Upload
   return post<UploadApiRecord>('/file/files/import-image', input).then(toUploadResult);
 }
 
-export async function downloadUploadedFile(id: FileId) {
+export async function downloadUploadedFile(id: FileId): Promise<BinaryDownloadResponse> {
   const response = await request.get('/file/files/download', {
     params: { id },
     responseType: 'blob',
     rawResponse: true,
   } as any);
   await assertBinaryDownloadResponse(response as any);
-  return response as any;
+  return response as BinaryDownloadResponse;
 }
 
 export async function createUploadedFileObjectUrl(id: FileId): Promise<string> {

@@ -2,7 +2,7 @@
 
 ## 1. 概览
 
-`mango-auth` 是 Mango 的认证模块，提供用户名密码登录、登录前机构选择、access token / refresh token 签发、刷新、注销、校验、当前登录用户信息、验证码发送入口和企业微信扫码登录入口。
+`mango-auth` 是 Mango 的认证模块，提供用户名密码登录、登录前机构选择、access token / refresh token 签发、刷新、注销、校验、当前登录用户信息、验证码发送，以及企业微信、钉钉第三方登录编排。
 
 它只生成和校验认证事实，不保存用户主数据，不维护菜单和权限。账号、密码哈希、成员和外部身份绑定来自 `mango-identity`；角色、菜单、权限和授权快照来自 `mango-authorization`；边界入口拦截通常由 `mango-access` 执行。
 
@@ -18,6 +18,8 @@
 | 当前用户信息 | 返回用户、机构、角色和权限列表 |
 | 强制首次改密 | 使用一次性密码重置票据完成首次登录改密并签发正式 token |
 | 企业微信登录 | 用企业微信 code 换取外部用户，按已绑定 Mango 用户签发 token |
+| 统一第三方登录 | 按 `tenant + app + provider` 管理企业微信、钉钉配置，支持登录、绑定当前账号和绑定已有账号 |
+| 第三方配置安全 | Secret 加密保存、查询只返回 `secretConfigured`，留空更新时保留已有密钥 |
 | 验证码入口 | 通过 `CaptchaApi` 发送短信或邮件验证码，登录请求可按路径要求验证码头 |
 | 防重放能力 | 支持时间戳、nonce、幂等键和可选签名校验 |
 | 远程调用契约 | 微服务可通过 `mango-auth-starter-remote` 使用 `AuthApi` Feign Client |
@@ -63,11 +65,11 @@
 | `IdentityUserApi` | `/auth/info` 和企业微信登录读取用户资料、外部身份绑定 |
 | `ITokenProvider` | 生成、刷新、校验 token，读取 token claim |
 | `IAuthorizationProvider` | 加载角色编码和权限编码，写入 `LoginVO` |
-| `NoticeApi` | 企业微信扫码登录读取通知中心企业微信渠道配置 |
+| `NoticeApi` | 可选，用于既有登录通知；不作为第三方登录配置来源 |
 | `CaptchaApi` | 验证码发送和登录验证码校验 |
 | `SysLoginLogApi` | 可选，记录登录日志 |
 | `IpLocationResolver` | 可选，登录日志解析 IP 位置 |
-| `IKvStore` | 可选，用于登录失败计数、refresh token replay、防重放 nonce 和幂等键 |
+| `IKvStore` | 用于登录失败计数、refresh token replay、防重放 nonce、幂等键，以及第三方 OAuth state/绑定票据的原子一次性消费 |
 
 ## 4. 前端接入
 
@@ -167,6 +169,13 @@ HTTP 接口前缀是 `/auth`。
 | POST | `/auth/login-institutions` | PUBLIC | 查询账号可登录机构 |
 | POST | `/auth/wecom/login` | PUBLIC | 企业微信 code 登录 |
 | GET | `/auth/wecom/login-config?tenantId=...` | PUBLIC | 查询企业微信扫码登录公开配置 |
+| GET | `/auth/providers?tenantId=...&appCode=...` | PUBLIC | 查询当前租户应用可用的企业微信、钉钉登录方式 |
+| POST | `/auth/providers/authorize` | PUBLIC/LOGIN | 发起登录或绑定当前账号授权，返回厂商授权地址 |
+| POST | `/auth/providers/complete` | PUBLIC | 原子消费 state、解析厂商身份，返回登录成功、绑定成功或需要绑定已有账号 |
+| POST | `/auth/providers/bind-existing` | PUBLIC | 用一次性绑定票据和已有账号密码完成绑定并登录 |
+| GET | `/auth/provider-configs?appCode=...` | `auth:provider-config:view` | 查询当前租户应用 Provider 配置，不返回 Secret |
+| POST | `/auth/provider-configs` | `auth:provider-config:edit` | 新建 Provider 配置 |
+| PUT | `/auth/provider-configs` | `auth:provider-config:edit` | 更新 Provider 配置；Secret 留空表示保留 |
 | POST | `/auth/password/change-required` | PUBLIC | 使用登录返回的一次性票据完成强制改密 |
 | POST | `/auth/refresh` | PUBLIC | 使用 refresh token 换发 token |
 | POST | `/auth/logout` | LOGIN | 注销 token，清理 Cookie |
@@ -238,6 +247,8 @@ R<LoginVO> response = authApi.login(command);
 | `tenantId` | 当前机构 ID |
 | `tenantCode` | 当前机构编码 |
 | `tenantName` | 当前机构名称 |
+| `departmentName` | 当前成员主部门名称；未装配组织能力或未设置主部门时为空 |
+| `companyName` | 当前公司名称；默认使用当前机构名称 |
 | `appCode` | 应用编码 |
 | `roles` | 角色编码列表 |
 | `permissions` | 权限编码列表 |
@@ -264,7 +275,7 @@ R<LoginVO> response = authApi.login(command);
 
 ## 10. 管理入口
 
-`mango-auth` 后端不提供独立管理菜单。
+`mango-auth` 声明“系统管理 / 第三方登录”菜单，查看和编辑分别使用 `auth:provider-config:view`、`auth:provider-config:edit`。
 
 相关前端页面来自 `@mango/auth`：
 
@@ -273,19 +284,21 @@ R<LoginVO> response = authApi.login(command);
 | 登录页 | `/login`，组件 `LoginView` | 账号密码、机构选择、企业微信登录 |
 | 个人中心 | `profile/index`，组件 `ProfileView` | 当前用户资料 |
 | 修改密码 | `password/index`，组件 `PasswordView` | 当前用户修改密码 |
+| 第三方登录配置 | `auth/provider-config/index`，组件 `ProviderConfigView` | 按租户应用配置企业微信、钉钉 |
+| 第三方授权回调 | `/provider-callback`，组件 `ProviderCallbackView` | 处理 OAuth 回调和未绑定账号确认 |
 
 登录日志如果启用了 `SysLoginLogApi`，管理入口在 `mango-system` 的登录日志页面。
 
 ## 11. 数据与初始化
 
-`mango-auth` 没有独立 Flyway migration。认证链路需要这些数据先存在：
+`mango-auth-core` 的 `db/migration/auth/V1__init_auth.sql` 创建 `auth_provider_config`，唯一范围是 `tenant_id + app_code + provider`，Secret 只保存加密密文。认证链路还需要这些数据先存在：
 
 | 数据 | 来源模块 | 用途 |
 |------|----------|------|
 | 用户、密码哈希、用户状态 | `mango-identity` | 登录校验 |
 | 可登录机构、成员 ID | `mango-org` / `mango-identity` 提供的 `LoginTenantProvider` | 解析登录机构上下文 |
 | 外部身份绑定 | `mango-identity` | 企业微信账号映射到 Mango 用户 |
-| 企业微信渠道配置 | `mango-notice` | 查询 CorpId、AgentId、Secret、RedirectUri |
+| 企业微信、钉钉配置 | `mango-auth.auth_provider_config` | 生成授权地址、交换外部身份；与 Notice 配置隔离 |
 | 应用、角色、菜单、权限、成员角色绑定 | `mango-authorization` | 登录响应返回 roles 和 permissions |
 | 登录日志 | `mango-system` | 可选，记录登录成功或失败 |
 | KV 数据 | `mango-infra-kv` | 可选，登录失败计数、token 撤销、防重放和幂等 |
