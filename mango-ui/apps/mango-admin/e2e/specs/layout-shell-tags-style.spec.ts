@@ -4,21 +4,19 @@ type LayoutName = 'defaults' | 'columns';
 
 async function login(page: Page) {
   await page.goto('/#/login');
-  const accountTenantsResponsePromise = page.waitForResponse((response) =>
-    response.url().includes('/api/auth/login-institutions') && response.status() === 200
+  const accountTenantsResponsePromise = page.waitForResponse(
+    (response) => response.url().includes('/api/auth/login-institutions') && response.status() === 200,
   );
-  await page.fill('input[placeholder="用户名"]', 'admin');
-  await page.fill('input[placeholder="密码"]', 'admin123');
-  await page.locator('input[placeholder="密码"]').blur();
+  await page.getByPlaceholder('请输入用户名').fill('admin');
+  await page.getByPlaceholder('请输入密码').fill('admin123');
+  await page.getByPlaceholder('请输入密码').blur();
   await accountTenantsResponsePromise;
   await page.locator('.tenant-select').click();
   await page.getByRole('option', { name: /芒果集团/ }).click();
 
   const menuResponsePromise = page.waitForResponse((response) => {
     const url = response.url();
-    return response.status() === 200
-      && url.includes('/api/authorization/menus/user')
-      && url.includes('fmt=tree');
+    return response.status() === 200 && url.includes('/api/authorization/menus/user') && url.includes('fmt=tree');
   });
   await page.locator('.login-btn').click();
   await page.waitForURL('**/#/home', { timeout: 10000 });
@@ -130,7 +128,8 @@ test.describe('布局固定 shell 与 TagsView 样式兼容', () => {
   test('设置面板展示新的 TagsView 样式选项', async ({ page }, testInfo) => {
     const consoleErrors = collectConsoleErrors(page);
     await login(page);
-    await page.locator('.layout-breadcrumb-settings').click();
+    await page.locator('[data-action="user-menu.open"]').click();
+    await page.locator('[data-action="profile.theme"]').click();
     await expect(page.getByText('Tagsview 样式')).toBeVisible({ timeout: 10000 });
     await page.locator('.layout-settings-item', { hasText: 'Tagsview 样式' }).locator('.el-select').click();
 

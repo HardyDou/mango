@@ -15,14 +15,20 @@ import io.mango.identity.api.command.BindExternalIdentityCommand;
 import io.mango.identity.api.command.CreateIdentityUserCommand;
 import io.mango.identity.api.command.RequireIdentityUserPasswordResetCommand;
 import io.mango.identity.api.command.ResetIdentityUserPasswordCommand;
+import io.mango.identity.api.command.SendContactCaptchaCommand;
+import io.mango.identity.api.command.UnbindCurrentExternalIdentityCommand;
 import io.mango.identity.api.command.UnbindExternalIdentityCommand;
 import io.mango.identity.api.command.UnlockIdentityUserCommand;
+import io.mango.identity.api.command.UpdateCurrentUserContactCommand;
+import io.mango.identity.api.command.UpdateCurrentUserProfileCommand;
 import io.mango.identity.api.command.UpdateIdentityUserCommand;
 import io.mango.identity.api.command.UpdateIdentityUserStatusCommand;
 import io.mango.identity.api.query.ExternalIdentityQuery;
 import io.mango.identity.api.query.IdentityUserPageQuery;
 import io.mango.identity.api.query.IdentityUserTargetQuery;
 import io.mango.identity.api.vo.ExternalIdentityBindingVO;
+import io.mango.identity.api.vo.ContactCaptchaTicketVO;
+import io.mango.identity.api.vo.CurrentUserProfileVO;
 import io.mango.identity.api.vo.IdentityUserInfoVO;
 import io.mango.identity.api.vo.IdentityUserVO;
 import io.mango.infra.context.api.MangoContextHolder;
@@ -1410,6 +1416,29 @@ class NoticeServiceIntegrationTest {
     static class TestIdentityUserApi implements IdentityUserApi {
         private final Map<Long, IdentityUserInfoVO> users = new HashMap<>();
 
+        @Override
+        public R<CurrentUserProfileVO> currentProfile() {
+            return R.ok(null);
+        }
+
+        @Override
+        public R<CurrentUserProfileVO> updateCurrentProfile(
+                UpdateCurrentUserProfileCommand command) {
+            return R.ok(null);
+        }
+
+        @Override
+        public R<ContactCaptchaTicketVO> sendCurrentContactCaptcha(
+                SendContactCaptchaCommand command) {
+            return R.ok(null);
+        }
+
+        @Override
+        public R<CurrentUserProfileVO> updateCurrentContact(
+                UpdateCurrentUserContactCommand command) {
+            return R.ok(null);
+        }
+
         void addUser(Long id, String nickname, String email, String phone) {
             IdentityUserInfoVO info = new IdentityUserInfoVO();
             info.setUserId(id);
@@ -1509,6 +1538,17 @@ class NoticeServiceIntegrationTest {
         @Override
         public R<List<ExternalIdentityBindingVO>> listExternalIdentities(Long userId) {
             return R.ok(List.of());
+        }
+
+        @Override
+        public R<List<ExternalIdentityBindingVO>> listCurrentExternalIdentities() {
+            return R.ok(List.of());
+        }
+
+        @Override
+        public R<Boolean> unbindCurrentExternalIdentity(
+                UnbindCurrentExternalIdentityCommand command) {
+            return R.ok(true);
         }
     }
 

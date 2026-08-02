@@ -17,12 +17,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 class WebAutoConfigurationTest {
 
     @Test
-    void nonWebBootstrapContext_doesNotCreateMvcOnlyInnerMappingScanner() {
+    void nonWebBootstrapContext_doesNotCreateServletWebConfiguration() {
         new ApplicationContextRunner()
                 .withConfiguration(AutoConfigurations.of(WebAutoConfiguration.class))
                 .withPropertyValues("spring.main.web-application-type=none")
                 .run(context -> {
                     assertThat(context).hasNotFailed();
+                    assertThat(context).doesNotHaveBean(WebAutoConfiguration.class);
                     assertThat(context).doesNotHaveBean(InnerMappingScanner.class);
                 });
     }

@@ -48,9 +48,10 @@ class OrgReferenceProviderAdapterIntegrationTest {
     void setUp() {
         jdbcTemplate.execute("drop table if exists org_post");
         jdbcTemplate.execute("drop table if exists sys_org");
-        jdbcTemplate.execute("create table sys_org (id bigint primary key, tenant_id bigint not null, org_code varchar(64))");
+        jdbcTemplate.execute("create table sys_org (id bigint primary key, tenant_id bigint not null, org_code varchar(64), org_name varchar(100))");
         jdbcTemplate.execute("create table org_post (id bigint primary key, tenant_id bigint not null, post_code varchar(64))");
-        jdbcTemplate.update("insert into sys_org (id, tenant_id, org_code) values (?, ?, ?)", 201L, 2L, "COMPANY_A_ROOT");
+        jdbcTemplate.update("insert into sys_org (id, tenant_id, org_code, org_name) values (?, ?, ?, ?)",
+                201L, 2L, "COMPANY_A_ROOT", "技术研发部");
         jdbcTemplate.update("insert into org_post (id, tenant_id, post_code) values (?, ?, ?)", 301L, 2L, "COMPANY_A_ADMIN");
     }
 
@@ -58,7 +59,9 @@ class OrgReferenceProviderAdapterIntegrationTest {
     void resolvesExplicitTenantReferencesOutsideCurrentTenant() {
         assertThat(provider.resolveOrgId(2L, " COMPANY_A_ROOT ")).isEqualTo(201L);
         assertThat(provider.resolvePostId(2L, " COMPANY_A_ADMIN ")).isEqualTo(301L);
+        assertThat(provider.resolveOrgName(2L, 201L)).isEqualTo("技术研发部");
         assertThat(provider.resolveOrgId(1L, "COMPANY_A_ROOT")).isNull();
+        assertThat(provider.resolveOrgName(1L, 201L)).isNull();
     }
 
     @Configuration

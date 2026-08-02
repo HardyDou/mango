@@ -59,7 +59,6 @@
         @settings="goNoticeReceiveSetting"
         @interaction="handleNoticeInteraction"
       />
-      <Settings />
       <User />
     </div>
   </div>
@@ -94,7 +93,6 @@ const Logo = defineAsyncComponent(() => import('../logo/index.vue'));
 const BreadcrumbIndex = defineAsyncComponent(() => import('./breadcrumb/breadcrumb.vue'));
 const CloseFull = defineAsyncComponent(() => import('./breadcrumb/closeFull.vue'));
 const User = defineAsyncComponent(() => import('./breadcrumb/user.vue'));
-const Settings = defineAsyncComponent(() => import('./breadcrumb/settings.vue'));
 
 const route = useRoute();
 const router = useRouter();

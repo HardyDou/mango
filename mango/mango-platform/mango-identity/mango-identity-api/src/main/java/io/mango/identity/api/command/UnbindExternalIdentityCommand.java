@@ -18,6 +18,10 @@ public class UnbindExternalIdentityCommand implements Serializable {
     @Schema(description = "Mango 用户ID")
     private Long userId;
 
+    @Size(max = 64, message = "应用编码最多64个字符")
+    @Schema(description = "应用编码，默认 internal-admin")
+    private String appCode;
+
     @NotBlank(message = "身份提供方不能为空")
     @Size(max = 32, message = "身份提供方最多32个字符")
     @Schema(description = "身份提供方，例如 WECOM")

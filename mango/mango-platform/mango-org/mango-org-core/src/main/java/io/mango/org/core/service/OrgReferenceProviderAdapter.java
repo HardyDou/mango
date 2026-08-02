@@ -29,4 +29,12 @@ public class OrgReferenceProviderAdapter implements OrgReferenceProvider {
         }
         return postMapper.selectIdByTenantAndCode(tenantId, postCode.trim());
     }
+
+    @Override
+    public String resolveOrgName(Long tenantId, Long orgId) {
+        if (tenantId == null || orgId == null) {
+            return null;
+        }
+        return orgMapper.selectNameByTenantAndId(tenantId, orgId);
+    }
 }

@@ -92,6 +92,8 @@ mango:
           out-of-order: true
         identity:
           enabled: true
+        auth:
+          enabled: true
         org:
           enabled: true
         captcha:

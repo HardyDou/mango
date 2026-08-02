@@ -37,6 +37,12 @@
         </dependency>
 
         <dependency>
+            <groupId>io.mango.platform.org</groupId>
+            <artifactId>mango-org-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
             <groupId>io.mango.platform.notice</groupId>
             <artifactId>mango-notice-api</artifactId>
             <version>${project.version}</version>
@@ -105,6 +111,20 @@
             <groupId>io.mango.infra.context</groupId>
             <artifactId>mango-infra-context-api</artifactId>
             <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.mango.infra.persistence</groupId>
+            <artifactId>mango-infra-persistence-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.mango.infra.crypto</groupId>
+            <artifactId>mango-infra-crypto</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
         </dependency>
 
         <!-- Lombok -->

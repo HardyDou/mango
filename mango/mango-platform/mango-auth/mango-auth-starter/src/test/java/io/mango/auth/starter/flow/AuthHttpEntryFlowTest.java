@@ -215,6 +215,16 @@ class AuthHttpEntryFlowTest {
         }
 
         @Bean
+        io.mango.auth.core.service.IAuthProviderConfigService authProviderConfigService() {
+            return org.mockito.Mockito.mock(io.mango.auth.core.service.IAuthProviderConfigService.class);
+        }
+
+        @Bean
+        io.mango.auth.core.service.IExternalAuthorizationService externalAuthorizationService() {
+            return org.mockito.Mockito.mock(io.mango.auth.core.service.IExternalAuthorizationService.class);
+        }
+
+        @Bean
         IKvStore kvStore() {
             return new InMemoryKvStore();
         }

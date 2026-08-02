@@ -1,87 +1,35 @@
 <template>
-  <div class="password-container">
+  <div class="password-container" :class="{ 'password-container--embedded': displayMode === 'embedded' }">
     <el-row justify="center">
-      <el-col
-        :xs="24"
-        :sm="18"
-        :md="10"
-        :lg="8"
-      >
-        <el-card>
+      <el-col :xs="24" :sm="18" :md="10" :lg="8">
+        <el-card :shadow="displayMode === 'embedded' ? 'never' : 'always'">
           <template #header>
-            <div class="password-card-header">
+            <div v-if="displayMode !== 'embedded'" class="password-card-header">
               <span>修改密码</span>
-              <component
-                :is="passwordSlots.headerExtra"
-                v-if="passwordSlots.headerExtra"
-              />
+              <component :is="passwordSlots.headerExtra" v-if="passwordSlots.headerExtra" />
             </div>
           </template>
-          <component
-            :is="passwordSlots.formBefore"
-            v-if="passwordSlots.formBefore"
-            :form="form"
-          />
-          <el-form
-            ref="formRef"
-            :model="form"
-            :rules="rules"
-            label-width="100px"
-          >
-            <el-form-item
-              label="旧密码"
-              prop="oldPassword"
-            >
-              <el-input
-                v-model="form.oldPassword"
-                type="password"
-                show-password
-              />
+          <component :is="passwordSlots.formBefore" v-if="passwordSlots.formBefore" :form="form" />
+          <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
+            <el-form-item label="旧密码" prop="oldPassword">
+              <el-input v-model="form.oldPassword" type="password" show-password />
             </el-form-item>
-            <el-form-item
-              label="新密码"
-              prop="newPassword"
-            >
-              <el-input
-                v-model="form.newPassword"
-                type="password"
-                show-password
-              />
+            <el-form-item label="新密码" prop="newPassword">
+              <el-input v-model="form.newPassword" type="password" show-password />
               <PasswordPolicyHint :password="form.newPassword" />
             </el-form-item>
-            <el-form-item
-              label="确认密码"
-              prop="confirmPassword"
-            >
-              <el-input
-                v-model="form.confirmPassword"
-                type="password"
-                show-password
-              />
+            <el-form-item label="确认密码" prop="confirmPassword">
+              <el-input v-model="form.confirmPassword" type="password" show-password />
             </el-form-item>
             <el-form-item>
-              <el-button
-                type="primary"
-                :loading="submitting"
-                :disabled="!canSubmit"
-                @click="handleSubmit"
-              >
+              <el-button type="primary" :loading="submitting" :disabled="!canSubmit" @click="handleSubmit">
                 提交
               </el-button>
-              <el-button @click="handleReset">
-                重置
-              </el-button>
+              <el-button @click="handleReset"> 重置 </el-button>
             </el-form-item>
           </el-form>
-          <component
-            :is="passwordSlots.formAfter"
-            v-if="passwordSlots.formAfter"
-            :form="form"
-          />
-          <component
-            :is="passwordSlots.footer"
-            v-if="passwordSlots.footer"
-          />
+          <component :is="passwordSlots.formAfter" v-if="passwordSlots.formAfter" :form="form" />
+          <component :is="passwordSlots.footer" v-if="passwordSlots.footer" />
         </el-card>
       </el-col>
     </el-row>
@@ -100,6 +48,8 @@ import {
 import { updatePassword } from '../api/sys';
 import { useAuthConfig } from '../composables/useAuthConfig';
 
+const { displayMode = 'page' } = defineProps<{ displayMode?: 'page' | 'embedded' }>();
+
 const authConfig = useAuthConfig();
 const formRef = ref();
 const submitting = ref(false);
@@ -110,10 +60,11 @@ const form = reactive({
 });
 const passwordSlots = computed(() => authConfig.value.password?.slots || {});
 const passwordPolicyMessage = getPasswordPolicyMessage(defaultPasswordPolicy);
-const canSubmit = computed(() =>
-  Boolean(form.oldPassword)
-  && isPasswordPolicyPassed(form.newPassword, defaultPasswordPolicy)
-  && form.confirmPassword === form.newPassword
+const canSubmit = computed(
+  () =>
+    Boolean(form.oldPassword) &&
+    isPasswordPolicyPassed(form.newPassword, defaultPasswordPolicy) &&
+    form.confirmPassword === form.newPassword,
 );
 
 const validateConfirm = (_rule: any, value: string, callback: any) => {
@@ -178,5 +129,30 @@ const handleReset = () => {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+}
+
+.password-container--embedded {
+  padding: 0;
+
+  :deep(.el-row) {
+    justify-content: flex-start;
+  }
+
+  :deep(.el-col) {
+    flex: 0 0 min(100%, 620px);
+    max-width: 620px;
+  }
+
+  :deep(.el-card) {
+    border: 0;
+  }
+
+  :deep(.el-card__body) {
+    padding: 0;
+  }
+
+  :deep(.el-form) {
+    padding-top: 4px;
+  }
 }
 </style>

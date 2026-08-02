@@ -13,8 +13,8 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Component
 public class DefaultWecomLoginClient implements WecomLoginClient {
@@ -22,15 +22,21 @@ public class DefaultWecomLoginClient implements WecomLoginClient {
     private static final String GET_TOKEN_URL = "https://qyapi.weixin.qq.com/cgi-bin/gettoken";
     private static final String GET_USER_INFO_URL = "https://qyapi.weixin.qq.com/cgi-bin/auth/getuserinfo";
     private static final Duration TIMEOUT = Duration.ofSeconds(10);
+    private static final int IDENTITY_ERROR_CODE = 1400;
+    private static final int SERVICE_ERROR_CODE = 1501;
+    private static final int HTTP_SUCCESS_MIN = 200;
+    private static final int HTTP_SUCCESS_MAX = 300;
 
     private final HttpClient httpClient;
+    private final ObjectMapper objectMapper;
 
     public DefaultWecomLoginClient() {
-        this(HttpClient.newBuilder().connectTimeout(TIMEOUT).build());
+        this(HttpClient.newBuilder().connectTimeout(TIMEOUT).build(), new ObjectMapper());
     }
 
-    DefaultWecomLoginClient(HttpClient httpClient) {
+    DefaultWecomLoginClient(HttpClient httpClient, ObjectMapper objectMapper) {
         this.httpClient = httpClient;
+        this.objectMapper = objectMapper;
     }
 
     @Override
@@ -40,11 +46,11 @@ public class DefaultWecomLoginClient implements WecomLoginClient {
         String body = sendGet(uri, "企业微信登录身份解析失败");
         int errCode = readErrCode(body);
         if (errCode != 0) {
-            throw new BizException(1400, sanitizeError("企业微信登录身份解析失败", body));
+            throw new BizException(IDENTITY_ERROR_CODE, sanitizeError("企业微信登录身份解析失败", body));
         }
         String userId = firstText(readString(body, "userid"), readString(body, "UserId"));
         if (!StringUtils.hasText(userId)) {
-            throw new BizException(1400, "企业微信登录未返回成员 userid，请确认扫码账号属于当前企业");
+            throw new BizException(IDENTITY_ERROR_CODE, "企业微信登录未返回成员 userid，请确认扫码账号属于当前企业");
         }
         return userId;
     }
@@ -54,11 +60,11 @@ public class DefaultWecomLoginClient implements WecomLoginClient {
         String body = sendGet(uri, "企业微信 access_token 获取失败");
         int errCode = readErrCode(body);
         if (errCode != 0) {
-            throw new BizException(1501, sanitizeError("企业微信 access_token 获取失败", body));
+            throw new BizException(SERVICE_ERROR_CODE, sanitizeError("企业微信 access_token 获取失败", body));
         }
         String token = readString(body, "access_token");
         if (!StringUtils.hasText(token)) {
-            throw new BizException(1501, "企业微信 access_token 响应为空");
+            throw new BizException(SERVICE_ERROR_CODE, "企业微信 access_token 响应为空");
         }
         return token;
     }
@@ -67,39 +73,34 @@ public class DefaultWecomLoginClient implements WecomLoginClient {
         HttpRequest request = HttpRequest.newBuilder(URI.create(uri)).timeout(TIMEOUT).GET().build();
         try {
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
-            if (response.statusCode() < 200 || response.statusCode() >= 300) {
-                throw new BizException(1501, message);
+            if (response.statusCode() < HTTP_SUCCESS_MIN || response.statusCode() >= HTTP_SUCCESS_MAX) {
+                throw new BizException(SERVICE_ERROR_CODE, message);
             }
             return response.body();
         } catch (IOException ex) {
-            throw new BizException(1501, message + "：网络异常", ex);
+            throw new BizException(SERVICE_ERROR_CODE, message + "：网络异常", ex);
         } catch (InterruptedException ex) {
             Thread.currentThread().interrupt();
-            throw new BizException(1501, message + "：请求被中断", ex);
+            throw new BizException(SERVICE_ERROR_CODE, message + "：请求被中断", ex);
         }
     }
 
     private int readErrCode(String json) {
-        String value = readNumber(json, "errcode");
-        return value == null ? 0 : Integer.parseInt(value);
+        JsonNode value = readJson(json).get("errcode");
+        return value == null ? 0 : value.asInt();
     }
 
     private String readString(String json, String key) {
-        if (!StringUtils.hasText(json)) {
-            return null;
-        }
-        Pattern pattern = Pattern.compile("\"" + Pattern.quote(key) + "\"\\s*:\\s*\"([^\"]*)\"");
-        Matcher matcher = pattern.matcher(json);
-        return matcher.find() ? matcher.group(1) : null;
+        JsonNode value = readJson(json).get(key);
+        return value == null || value.isNull() ? null : value.asText();
     }
 
-    private String readNumber(String json, String key) {
-        if (!StringUtils.hasText(json)) {
-            return null;
+    private JsonNode readJson(String json) {
+        try {
+            return objectMapper.readTree(json);
+        } catch (IOException exception) {
+            throw new BizException(SERVICE_ERROR_CODE, "企业微信响应格式无效", exception);
         }
-        Pattern pattern = Pattern.compile("\"" + Pattern.quote(key) + "\"\\s*:\\s*(-?\\d+)");
-        Matcher matcher = pattern.matcher(json);
-        return matcher.find() ? matcher.group(1) : null;
     }
 
     private String sanitizeError(String prefix, String responseBody) {

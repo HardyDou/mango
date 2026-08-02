@@ -16,7 +16,7 @@ class IdentityMigrationContractTest {
             Path.of("src/main/resources/db/migration/identity");
 
     @Test
-    void freshDatabaseMigrationShouldBeSingleDdlOnlyV1() throws IOException {
+    void migrationsShouldContainFreshSchemaAndIssue643Upgrade() throws IOException {
         List<Path> migrations;
         try (var files = Files.list(MIGRATION_DIRECTORY)) {
             migrations = files.filter(path -> path.getFileName().toString().endsWith(".sql"))
@@ -25,7 +25,7 @@ class IdentityMigrationContractTest {
         }
 
         assertThat(migrations).extracting(path -> path.getFileName().toString())
-                .containsExactly("V1__init_identity.sql");
+                .containsExactly("V1__init_identity.sql", "V2__add_real_name_and_binding_app.sql");
 
         String sql = Files.readString(migrations.getFirst()).toUpperCase(Locale.ROOT);
         assertThat(sql).contains("CREATE TABLE IF NOT EXISTS `IDENTITY_USER`")
@@ -34,6 +34,13 @@ class IdentityMigrationContractTest {
                 .contains("CREATE TABLE IF NOT EXISTS `IDENTITY_EXTERNAL_BINDING`")
                 .contains("`PASSWORD_RESET_REQUIRED`")
                 .contains("`LAST_FAILED_LOGIN_AT`");
-        assertThat(sql).doesNotContain("INSERT INTO", "UPDATE `", "DELETE FROM", "LOCK TABLES");
+        assertThat(sql).doesNotContain("`REAL_NAME`", "`VERIFICATION_STATUS`", "`APP_CODE`",
+                "INSERT INTO", "UPDATE `", "DELETE FROM", "LOCK TABLES");
+
+        String upgradeSql = Files.readString(migrations.get(1)).toUpperCase(Locale.ROOT);
+        assertThat(upgradeSql).contains("ADD COLUMN `REAL_NAME`")
+                .contains("ADD COLUMN `VERIFICATION_STATUS`")
+                .contains("ADD COLUMN `APP_CODE`")
+                .doesNotContain("INSERT INTO", "DELETE FROM", "LOCK TABLES");
     }
 }

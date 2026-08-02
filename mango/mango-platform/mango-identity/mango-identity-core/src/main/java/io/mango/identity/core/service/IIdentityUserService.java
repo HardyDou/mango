@@ -10,6 +10,10 @@ import io.mango.identity.api.command.UnbindExternalIdentityCommand;
 import io.mango.identity.api.command.UnlockIdentityUserCommand;
 import io.mango.identity.api.command.UpdateIdentityUserCommand;
 import io.mango.identity.api.command.UpdateIdentityUserStatusCommand;
+import io.mango.identity.api.command.SendContactCaptchaCommand;
+import io.mango.identity.api.command.UpdateCurrentUserContactCommand;
+import io.mango.identity.api.command.UpdateCurrentUserProfileCommand;
+import io.mango.identity.api.command.UnbindCurrentExternalIdentityCommand;
 import io.mango.identity.api.query.ExternalIdentityQuery;
 import io.mango.identity.api.query.IdentityUserPageQuery;
 import io.mango.identity.api.query.IdentityUserTargetQuery;
@@ -17,6 +21,8 @@ import io.mango.identity.api.vo.ExternalIdentityBindingVO;
 import io.mango.identity.core.entity.IdentityUserEntity;
 import io.mango.identity.api.vo.IdentityUserInfoVO;
 import io.mango.identity.api.vo.IdentityUserVO;
+import io.mango.identity.api.vo.ContactCaptchaTicketVO;
+import io.mango.identity.api.vo.CurrentUserProfileVO;
 import io.mango.infra.persistence.api.crud.MangoTypedCrudService;
 
 import java.util.List;
@@ -27,6 +33,14 @@ import java.util.List;
 public interface IIdentityUserService extends MangoTypedCrudService<
         IdentityUserEntity, CreateIdentityUserCommand, UpdateIdentityUserCommand,
         IdentityUserPageQuery, IdentityUserVO, Long> {
+
+    CurrentUserProfileVO currentProfile();
+
+    CurrentUserProfileVO updateCurrentProfile(UpdateCurrentUserProfileCommand command);
+
+    ContactCaptchaTicketVO sendCurrentContactCaptcha(SendContactCaptchaCommand command);
+
+    CurrentUserProfileVO updateCurrentContact(UpdateCurrentUserContactCommand command);
 
     /**
      * 分页查询当前租户可管理的身份用户。
@@ -108,5 +122,9 @@ public interface IIdentityUserService extends MangoTypedCrudService<
     ExternalIdentityBindingVO findExternalIdentity(ExternalIdentityQuery query);
 
     List<ExternalIdentityBindingVO> listExternalIdentities(Long userId);
+
+    List<ExternalIdentityBindingVO> listCurrentExternalIdentities();
+
+    Boolean unbindCurrentExternalIdentity(UnbindCurrentExternalIdentityCommand command);
 
 }

@@ -1,7 +1,5 @@
 package io.mango.resource.sync.starter;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.common.result.R;
 import io.mango.infra.bootstrap.api.BootstrapRuntimeAuthorityProvider;
 import io.mango.infra.bootstrap.api.BootstrapWriteAuthority;
@@ -36,7 +34,7 @@ final class ResourceEventualReconciliationWorker implements ApplicationRunner, D
     private final ResourceRegistryProperties properties;
     private final ResourceDeclarationCollector collector;
     private final ResourceDeclarationApi declarationApi;
-    private final ObjectMapper objectMapper;
+    private final ResourceManifestSerializer manifestSerializer;
     private final BootstrapRuntimeAuthorityProvider authorityProvider;
     private final String applicationName;
     private ScheduledExecutorService executor;
@@ -44,13 +42,13 @@ final class ResourceEventualReconciliationWorker implements ApplicationRunner, D
     ResourceEventualReconciliationWorker(ResourceRegistryProperties properties,
                                          ResourceDeclarationCollector collector,
                                          ResourceDeclarationApi declarationApi,
-                                         ObjectMapper objectMapper,
+                                         ResourceManifestSerializer manifestSerializer,
                                          BootstrapRuntimeAuthorityProvider authorityProvider,
                                          String applicationName) {
         this.properties = properties;
         this.collector = collector;
         this.declarationApi = declarationApi;
-        this.objectMapper = objectMapper;
+        this.manifestSerializer = manifestSerializer;
         this.authorityProvider = authorityProvider;
         this.applicationName = applicationName;
     }
@@ -112,11 +110,7 @@ final class ResourceEventualReconciliationWorker implements ApplicationRunner, D
         command.setAppCode(resolveCode(properties.getRemote().getAppCode()));
         command.setServiceCode(resolveCode(properties.getRemote().getServiceCode()));
         command.setModuleCodes(collector.managedModuleCodes(declarations).stream().sorted().toList());
-        try {
-            command.setDeclarations(objectMapper.writeValueAsString(declarations));
-        } catch (JsonProcessingException exception) {
-            throw new IllegalStateException("Serialize eventual resource declarations failed", exception);
-        }
+        command.setDeclarations(manifestSerializer.serialize(declarations));
         command.setEnvironmentKey(authority.environmentKey());
         command.setGeneration(authority.generation());
         command.setManifestFingerprint(authority.manifestFingerprint());

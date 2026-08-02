@@ -8,9 +8,17 @@ import io.mango.auth.api.command.RefreshTokenCommand;
 import io.mango.auth.api.command.SendAuthCaptchaCommand;
 import io.mango.auth.api.command.ValidateTokenCommand;
 import io.mango.auth.api.command.WecomLoginCommand;
+import io.mango.auth.api.command.SaveProviderConfigCommand;
+import io.mango.auth.api.command.StartProviderAuthorizationCommand;
+import io.mango.auth.api.command.CompleteProviderAuthorizationCommand;
+import io.mango.auth.api.command.BindExistingAccountCommand;
+import io.mango.auth.api.vo.AvailableProviderVO;
 import io.mango.auth.api.vo.LoginTenantVO;
 import io.mango.auth.api.vo.LoginVO;
 import io.mango.auth.api.vo.WecomLoginConfigVO;
+import io.mango.auth.api.vo.ProviderConfigVO;
+import io.mango.auth.api.vo.ProviderAuthorizationVO;
+import io.mango.auth.api.vo.ProviderAuthorizationResultVO;
 import io.mango.common.result.R;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -27,6 +35,23 @@ import java.util.List;
  */
 @Validated
 public interface AuthApi {
+
+    R<List<ProviderConfigVO>> listProviderConfigs(@NotBlank @Size(max = 64) String appCode);
+
+    R<ProviderConfigVO> createProviderConfig(@Valid SaveProviderConfigCommand command);
+
+    R<ProviderConfigVO> updateProviderConfig(@Valid SaveProviderConfigCommand command);
+
+    R<List<AvailableProviderVO>> listAvailableProviders(
+            @NotBlank @Size(max = 64) String tenantId,
+            @NotBlank @Size(max = 64) String appCode);
+
+    R<ProviderAuthorizationVO> startProviderAuthorization(@Valid StartProviderAuthorizationCommand command);
+
+    R<ProviderAuthorizationResultVO> completeProviderAuthorization(
+            @Valid CompleteProviderAuthorizationCommand command);
+
+    R<LoginVO> bindExistingProviderAccount(@Valid BindExistingAccountCommand command);
 
     /**
      * 用户登录。

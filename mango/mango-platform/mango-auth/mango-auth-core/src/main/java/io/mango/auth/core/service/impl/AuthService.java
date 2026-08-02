@@ -2,6 +2,7 @@ package io.mango.auth.core.service.impl;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.auth.api.enums.AuthCode;
+import io.mango.auth.api.enums.ExternalAuthProvider;
 import io.mango.auth.api.command.ChangeRequiredPasswordCommand;
 import io.mango.auth.api.command.SendAuthCaptchaCommand;
 import io.mango.auth.api.command.WecomLoginCommand;
@@ -17,12 +18,15 @@ import io.mango.auth.api.vo.WecomLoginConfigVO;
 import io.mango.common.result.CommonCode;
 import io.mango.common.result.Require;
 import io.mango.auth.core.service.IAuthService;
+import io.mango.auth.core.service.IAuthProviderConfigService;
 import io.mango.auth.core.store.TokenRevocationStore;
 import io.mango.auth.core.store.PasswordResetTicketStore;
 import io.mango.auth.core.service.WecomLoginClient;
+import io.mango.auth.core.service.ExternalAccountLoginService;
 import io.mango.identity.api.AuthIdentitySecurityProvider;
 import io.mango.identity.api.AuthUserProvider;
 import io.mango.identity.api.IdentityUserApi;
+import io.mango.identity.api.TenantMemberProvider;
 import io.mango.identity.api.query.ExternalIdentityQuery;
 import io.mango.identity.api.vo.ExternalIdentityBindingVO;
 import io.mango.identity.api.vo.AuthUserVO;
@@ -39,16 +43,17 @@ import io.mango.notice.api.command.NoticeSiteMessageTargetCommand;
 import io.mango.notice.api.enums.NoticePriority;
 import io.mango.notice.api.enums.NoticeSiteMessageActionInteractionType;
 import io.mango.notice.api.enums.NoticeSiteMessageTargetType;
-import io.mango.notice.api.vo.NoticeWecomLoginConfigVO;
 import io.mango.auth.core.support.AuthApiResponseAdapter;
 import io.mango.captcha.api.CaptchaApi;
 import io.mango.captcha.api.constant.CaptchaType;
 import io.mango.captcha.api.dto.CaptchaSendRequest;
 import io.mango.identity.api.vo.IdentityUserInfoVO;
+import io.mango.identity.api.vo.TenantMemberVO;
 import io.mango.infra.iplocation.api.IpLocation;
 import io.mango.infra.iplocation.api.IpLocationResolver;
 import io.mango.system.api.command.RecordLoginLogCommand;
 import io.mango.system.api.spi.LoginLogRecorder;
+import io.mango.org.api.OrgReferenceProvider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
@@ -75,7 +80,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 @SuppressFBWarnings(value = {"EI_EXPOSE_REP2", "NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE"},
         justification = "Dependencies are shared Spring beans and Require.notNull throws before dereference")
-public class AuthService implements IAuthService {
+public class AuthService implements IAuthService, ExternalAccountLoginService {
 
     private static final String DEFAULT_APP_CODE = "internal-admin";
     private static final String BEARER_PREFIX = "Bearer ";
@@ -89,9 +94,12 @@ public class AuthService implements IAuthService {
     private final PasswordResetTicketStore passwordResetTicketStore;
     private final LoginAttemptTracker loginAttemptTracker;
     private final ObjectProvider<LoginTenantProvider> loginTenantProvider;
+    private final ObjectProvider<TenantMemberProvider> tenantMemberProvider;
+    private final ObjectProvider<OrgReferenceProvider> orgReferenceProvider;
     private final ObjectProvider<TokenRevocationStore> tokenRevocationStoreProvider;
     private final IdentityUserApi identityUserApi;
     private final WecomLoginClient wecomLoginClient;
+    private final IAuthProviderConfigService authProviderConfigService;
     private final NoticeApi noticeApi;
     private final ObjectProvider<CaptchaApi> captchaApiProvider;
     private final ObjectProvider<LoginLogRecorder> loginLogRecorderProvider;
@@ -169,6 +177,50 @@ public class AuthService implements IAuthService {
     }
 
     @Override
+    public AuthUserVO verifyBindingAccount(BindingCredentials credentials) {
+        Require.notNull(credentials, AuthCode.LOGIN_ACCOUNT_OR_PASSWORD_INVALID);
+        String username = credentials.username();
+        Require.notBlank(username, AuthCode.LOGIN_ACCOUNT_OR_PASSWORD_INVALID);
+        AuthUserVO user = authUserProvider.getByUsernameForAuth(username, "INTERNAL");
+        Require.notNull(user, AuthCode.LOGIN_ACCOUNT_OR_PASSWORD_INVALID);
+        authIdentitySecurityProvider.assertLoginAllowed(user);
+        Require.isTrue(passwordEncoder.matches(credentials.password(), user.getPassword()),
+                AuthCode.LOGIN_ACCOUNT_OR_PASSWORD_INVALID);
+        Require.isTrue(user.getStatus() == 1, AuthCode.ACCOUNT_DISABLED);
+        Require.isFalse(Boolean.TRUE.equals(user.getPasswordResetRequired()),
+                AuthCode.LOGIN_ACCOUNT_OR_PASSWORD_INVALID);
+        resolveTenant(user.getUserId(), credentials.tenantId(), null);
+        return user;
+    }
+
+    @Override
+    public LoginVO loginExternalUser(ExternalLoginContext context) {
+        Require.notNull(context, AuthCode.AUTH_REQUEST_INVALID);
+        Long userId = context.userId();
+        AuthUserVO user = authUserProvider.getByIdForAuth(userId);
+        Require.notNull(user, AuthCode.CURRENT_USER_NOT_FOUND);
+        authIdentitySecurityProvider.assertLoginAllowed(user);
+        Require.isTrue(user.getStatus() == 1, AuthCode.ACCOUNT_DISABLED);
+        Require.isFalse(Boolean.TRUE.equals(user.getPasswordResetRequired()),
+                AuthCode.LOGIN_ACCOUNT_OR_PASSWORD_INVALID);
+        LoginCommand loginCommand = new LoginCommand();
+        loginCommand.setTenantId(context.tenantId());
+        loginCommand.setAppCode(firstText(context.appCode(), DEFAULT_APP_CODE));
+        loginCommand.setRealm(user.getRealm());
+        loginCommand.setActorType(user.getActorType());
+        loginCommand.setPartyType(user.getPartyType());
+        loginCommand.setPartyId(user.getPartyId());
+        IdentityContext identityContext = resolveIdentityContext(user, loginCommand);
+        Map<String, Object> claims = identityContext.toClaims(user.getUsername());
+        String accessToken = tokenService.generateAccessToken(user.getUserId(), user.getUsername(), claims);
+        String refreshToken = tokenService.generateRefreshToken(user.getUserId(), user.getUsername(), claims);
+        LoginVO response = buildLoginVO(user, identityContext, accessToken, refreshToken);
+        loadUserRolesAndPermissions(user.getUserId(), identityContext, response);
+        authIdentitySecurityProvider.recordLoginSuccess(user.getUserId());
+        return response;
+    }
+
+    @Override
     public LoginVO changeRequiredPassword(ChangeRequiredPasswordCommand command) {
         try {
             PasswordResetTicketStore.TicketPayload ticket = passwordResetTicketStore.peek(command.getPasswordResetTicket());
@@ -210,11 +262,15 @@ public class AuthService implements IAuthService {
         MangoContextSnapshot previous = MangoContextHolder.get();
         try {
             MangoContextHolder.update(current -> current.withTenantId(tenantId));
-            NoticeWecomLoginConfigVO loginConfig = resolveWecomLoginConfig(command.getChannelConfigId());
-            String wecomUserId = wecomLoginClient.getUserId(loginConfig.getCorpId(), loginConfig.getSecret(), command.getCode());
+            String appCode = firstText(command.getAppCode(), DEFAULT_APP_CODE);
+            IAuthProviderConfigService.ResolvedProviderConfig loginConfig =
+                    resolveWecomLoginConfig(tenantId, appCode, command.getChannelConfigId());
+            String wecomUserId = wecomLoginClient.getUserId(
+                    loginConfig.providerTenantId(), loginConfig.secret(), command.getCode());
             ExternalIdentityQuery query = new ExternalIdentityQuery();
+            query.setAppCode(appCode);
             query.setProvider("WECOM");
-            query.setCorpId(loginConfig.getCorpId());
+            query.setCorpId(loginConfig.providerTenantId());
             query.setExternalUserId(wecomUserId);
             ExternalIdentityBindingVO binding = AuthApiResponseAdapter.nullableData(
                     identityUserApi.findExternalIdentity(query));
@@ -233,7 +289,7 @@ public class AuthService implements IAuthService {
             loginContext.setActorType(user.getActorType());
             loginContext.setPartyType(user.getPartyType());
             loginContext.setPartyId(user.getPartyId());
-            loginContext.setAppCode(firstText(command.getAppCode(), DEFAULT_APP_CODE));
+            loginContext.setAppCode(appCode);
             IdentityContext identityContext = resolveIdentityContext(user, loginContext);
             Map<String, Object> claims = identityContext.toClaims(user.getUsername());
             String accessToken = tokenService.generateAccessToken(user.getUserId(), user.getUsername(), claims);
@@ -241,7 +297,7 @@ public class AuthService implements IAuthService {
             LoginVO response = buildLoginVO(user, identityContext, accessToken, refreshToken);
             loadUserRolesAndPermissions(user.getUserId(), identityContext, response);
             authIdentitySecurityProvider.recordLoginSuccess(user.getUserId());
-            log.info("User logged in by WeCom successfully: userId={}, wecomUserId={}", user.getUserId(), wecomUserId);
+            log.info("User logged in by WeCom successfully: userId={}", user.getUserId());
             return response;
         } finally {
             MangoContextHolder.set(previous);
@@ -255,12 +311,13 @@ public class AuthService implements IAuthService {
         MangoContextSnapshot previous = MangoContextHolder.get();
         try {
             MangoContextHolder.update(current -> current.withTenantId(normalizedTenantId));
-            NoticeWecomLoginConfigVO noticeConfig = resolveWecomLoginConfig(null);
+            IAuthProviderConfigService.ResolvedProviderConfig providerConfig =
+                    resolveWecomLoginConfig(normalizedTenantId, DEFAULT_APP_CODE, null);
             WecomLoginConfigVO config = new WecomLoginConfigVO();
-            config.setChannelConfigId(noticeConfig.getChannelConfigId());
-            config.setCorpId(noticeConfig.getCorpId());
-            config.setAgentId(noticeConfig.getAgentId());
-            config.setRedirectUri(noticeConfig.getRedirectUri());
+            config.setChannelConfigId(providerConfig.id());
+            config.setCorpId(providerConfig.providerTenantId());
+            config.setAgentId(providerConfig.agentId());
+            config.setRedirectUri(providerConfig.redirectUris().getFirst());
             return config;
         } finally {
             MangoContextHolder.set(previous);
@@ -281,8 +338,12 @@ public class AuthService implements IAuthService {
         return tenants;
     }
 
-    private NoticeWecomLoginConfigVO resolveWecomLoginConfig(Long channelConfigId) {
-        return AuthApiResponseAdapter.requireWecomConfig(noticeApi.getWecomLoginConfig(channelConfigId));
+    private IAuthProviderConfigService.ResolvedProviderConfig resolveWecomLoginConfig(
+            String tenantId, String appCode, Long configId) {
+        IAuthProviderConfigService.ResolvedProviderConfig config = authProviderConfigService.requireAvailable(
+                new IAuthProviderConfigService.ProviderSelection(tenantId, appCode, ExternalAuthProvider.WECOM));
+        Require.isTrue(configId == null || configId.equals(config.id()), AuthCode.WECOM_CONFIG_UNAVAILABLE);
+        return config;
     }
 
     @Override
@@ -364,6 +425,7 @@ public class AuthService implements IAuthService {
         response.setTenantCode(tokenService.getClaim(token, "tenantCode"));
         response.setTenantName(tokenService.getClaim(token, "tenantName"));
         response.setAppCode(appCode);
+        populateOrganizationLabels(response);
         Require.notNull(response.getMemberId(), AuthCode.INSTITUTION_MEMBER_REQUIRED);
         var snapshot = authorizationProvider.load(AuthorizationQuery.member(response.getMemberId())
                 .withTenantId(tenantId)
@@ -603,6 +665,7 @@ public class AuthService implements IAuthService {
         response.setTenantName(identityContext.tenantName());
         response.setAppCode(identityContext.appCode());
         response.setPasswordResetRequired(Boolean.FALSE);
+        populateOrganizationLabels(response);
         return response;
     }
 
@@ -623,6 +686,7 @@ public class AuthService implements IAuthService {
         response.setTenantId(tenant.getTenantId());
         response.setTenantCode(tenant.getTenantCode());
         response.setTenantName(tenant.getTenantName());
+        populateOrganizationLabels(response);
         response.setPasswordResetTicket(passwordResetTicketStore.issue(new PasswordResetTicketStore.TicketPayload(
                 user.getUserId(),
                 tenant.getTenantId(),
@@ -633,6 +697,24 @@ public class AuthService implements IAuthService {
                 response.getPartyType(),
                 response.getPartyId())));
         return response;
+    }
+
+    private void populateOrganizationLabels(LoginVO response) {
+        response.setCompanyName(response.getTenantName());
+        if (response.getMemberId() == null) {
+            return;
+        }
+        TenantMemberProvider memberProvider = tenantMemberProvider.getIfAvailable();
+        OrgReferenceProvider organizationProvider = orgReferenceProvider.getIfAvailable();
+        if (memberProvider == null || organizationProvider == null) {
+            return;
+        }
+        TenantMemberVO member = memberProvider.getMember(response.getMemberId());
+        if (member == null || member.getPrimaryOrgId() == null) {
+            return;
+        }
+        Long tenantId = resolveLong(response.getTenantId(), member.getTenantId());
+        response.setDepartmentName(organizationProvider.resolveOrgName(tenantId, member.getPrimaryOrgId()));
     }
 
     private IdentityContext resolveIdentityContext(AuthUserVO user, LoginCommand command) {

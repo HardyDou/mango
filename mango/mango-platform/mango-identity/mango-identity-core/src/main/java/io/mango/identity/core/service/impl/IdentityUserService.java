@@ -1,6 +1,7 @@
 package io.mango.identity.core.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -19,6 +20,10 @@ import io.mango.identity.api.command.UnbindExternalIdentityCommand;
 import io.mango.identity.api.command.UpdateIdentityUserCommand;
 import io.mango.identity.api.command.UpdateIdentityUserStatusCommand;
 import io.mango.identity.api.command.UnlockIdentityUserCommand;
+import io.mango.identity.api.command.SendContactCaptchaCommand;
+import io.mango.identity.api.command.UpdateCurrentUserContactCommand;
+import io.mango.identity.api.command.UpdateCurrentUserProfileCommand;
+import io.mango.identity.api.command.UnbindCurrentExternalIdentityCommand;
 import io.mango.identity.api.enums.IdentityCode;
 import io.mango.identity.api.query.ExternalIdentityQuery;
 import io.mango.identity.api.query.IdentityUserPageQuery;
@@ -26,6 +31,8 @@ import io.mango.identity.api.query.IdentityUserTargetQuery;
 import io.mango.identity.api.vo.ExternalIdentityBindingVO;
 import io.mango.identity.api.vo.IdentityUserInfoVO;
 import io.mango.identity.api.vo.IdentityUserVO;
+import io.mango.identity.api.vo.ContactCaptchaTicketVO;
+import io.mango.identity.api.vo.CurrentUserProfileVO;
 import io.mango.identity.core.entity.ExternalIdentityBindingEntity;
 import io.mango.identity.core.entity.IdentityUserEntity;
 import io.mango.identity.core.entity.TenantMemberEntity;
@@ -42,6 +49,10 @@ import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.persistence.api.crud.DeleteCommand;
 import io.mango.infra.persistence.api.crud.MangoCrudServiceImpl;
 import io.mango.infra.persistence.api.query.PersistencePageResult;
+import io.mango.captcha.api.CaptchaApi;
+import io.mango.captcha.api.constant.CaptchaType;
+import io.mango.captcha.api.dto.CaptchaSendRequest;
+import io.mango.captcha.api.dto.CaptchaVerifyRequest;
 import io.mango.notice.api.command.NoticeSiteMessageActionCommand;
 import io.mango.notice.api.command.NoticeSiteMessageSubjectCommand;
 import io.mango.notice.api.command.NoticeSiteMessageTargetCommand;
@@ -53,6 +64,7 @@ import io.mango.notice.api.command.NoticeSendEventCommand;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -82,6 +94,11 @@ public class IdentityUserService extends MangoCrudServiceImpl<IdentityUserMapper
     private static final String DEFAULT_PARTY_TYPE = "INTERNAL_ORG";
     private static final String DEFAULT_INITIAL_PASSWORD = "Mango@123456";
     private static final String STATUS_BOUND = "BOUND";
+    private static final String VERIFICATION_UNVERIFIED = "UNVERIFIED";
+    private static final String DEFAULT_APP_CODE = "internal-admin";
+    private static final long CONTACT_CAPTCHA_TTL_SECONDS = 300L;
+    private static final int MASK_SUFFIX_LENGTH = 4;
+    private static final int MASK_PHONE_PREFIX_LENGTH = 3;
 
     private final IdentityUserMapper identityUserMapper;
     private final TenantMemberMapper tenantMemberMapper;
@@ -93,6 +110,99 @@ public class IdentityUserService extends MangoCrudServiceImpl<IdentityUserMapper
     private final IIdentityPasswordPolicyService passwordPolicyService;
     private final IIdentitySecurityPolicyService securityPolicyService;
     private final IIdentityUserSecurityService identityUserSecurityService;
+    private final ObjectProvider<CaptchaApi> captchaApiProvider;
+
+    @Override
+    public CurrentUserProfileVO currentProfile() {
+        return toCurrentProfile(currentUser());
+    }
+
+    @Override
+    @Transactional
+    public CurrentUserProfileVO updateCurrentProfile(UpdateCurrentUserProfileCommand command) {
+        Require.notNull(command, IdentityCode.VALIDATION_ERROR, "当前用户资料命令不能为空");
+        IdentityUserEntity user = currentUser();
+        String documentType = trimToNull(command.getDocumentType());
+        String documentNumber = trimToNull(command.getDocumentNumber());
+        if (documentType != null && documentNumber == null
+                && documentType.equals(user.getDocumentType())
+                && StringUtils.hasText(user.getDocumentNumber())) {
+            documentNumber = user.getDocumentNumber();
+        }
+        Require.isTrue((documentType == null) == (documentNumber == null), IdentityCode.VALIDATION_ERROR,
+                "证件类型和证件号码必须同时填写或同时清空");
+        user.setNickname(trimToNull(command.getNickname()));
+        user.setAvatar(trimToNull(command.getAvatar()));
+        user.setRealName(trimToNull(command.getRealName()));
+        user.setDocumentType(documentType);
+        user.setDocumentNumber(documentNumber);
+        if (!StringUtils.hasText(user.getVerificationStatus())) {
+            user.setVerificationStatus(VERIFICATION_UNVERIFIED);
+        }
+        user.setUpdateTime(LocalDateTime.now());
+        LambdaUpdateWrapper<IdentityUserEntity> update = new LambdaUpdateWrapper<IdentityUserEntity>()
+                .eq(IdentityUserEntity::getId, user.getId())
+                .set(IdentityUserEntity::getNickname, user.getNickname())
+                .set(IdentityUserEntity::getAvatar, user.getAvatar())
+                .set(IdentityUserEntity::getRealName, user.getRealName())
+                .set(IdentityUserEntity::getDocumentType, user.getDocumentType())
+                .set(IdentityUserEntity::getDocumentNumber, user.getDocumentNumber())
+                .set(IdentityUserEntity::getVerificationStatus, user.getVerificationStatus())
+                .set(IdentityUserEntity::getUpdateTime, user.getUpdateTime());
+        Require.isTrue(identityUserMapper.update(null, update) > 0, IdentityCode.CONFLICT,
+                "当前用户资料更新失败");
+        return toCurrentProfile(user);
+    }
+
+    @Override
+    public ContactCaptchaTicketVO sendCurrentContactCaptcha(SendContactCaptchaCommand command) {
+        Require.notNull(command, IdentityCode.VALIDATION_ERROR, "联系方式验证码命令不能为空");
+        IdentityUserEntity user = currentUser();
+        Contact contact = validateContact(command.getContactType(), command.getTarget());
+        Require.isTrue(!contact.matches(user), IdentityCode.CONFLICT, "新联系方式不能与当前值相同");
+        requireContactAvailable(user.getUserId(), contact);
+        CaptchaApi captchaApi = Require.nonNull(captchaApiProvider.getIfAvailable(),
+                IdentityCode.CONTACT_CAPTCHA_UNAVAILABLE);
+        CaptchaSendRequest request = new CaptchaSendRequest();
+        request.setType(contact.captchaType());
+        request.setTarget(contact.value());
+        request.setBusinessType(contact.businessType());
+        request.setExpireSeconds(CONTACT_CAPTCHA_TTL_SECONDS);
+        String key = IdentityCaptchaResponse.requireSentKey(captchaApi.send(request));
+        if (key.startsWith("captcha:")) {
+            key = key.substring("captcha:".length());
+        }
+        return new ContactCaptchaTicketVO(key, maskContact(contact), CONTACT_CAPTCHA_TTL_SECONDS);
+    }
+
+    @Override
+    @Transactional
+    public CurrentUserProfileVO updateCurrentContact(UpdateCurrentUserContactCommand command) {
+        Require.notNull(command, IdentityCode.VALIDATION_ERROR, "联系方式更新命令不能为空");
+        IdentityUserEntity user = currentUser();
+        Require.isTrue(passwordEncoder.matches(command.getCurrentPassword(), user.getPassword()),
+                IdentityCode.CURRENT_PASSWORD_INVALID);
+        Contact contact = validateContact(command.getContactType(), command.getTarget());
+        Require.isTrue(!contact.matches(user), IdentityCode.CONFLICT, "新联系方式不能与当前值相同");
+        requireContactAvailable(user.getUserId(), contact);
+        String expectedKey = contact.businessType() + ":" + contact.value();
+        Require.isTrue(expectedKey.equals(command.getCaptchaKey()), IdentityCode.CONTACT_CAPTCHA_INVALID);
+        CaptchaApi captchaApi = Require.nonNull(captchaApiProvider.getIfAvailable(),
+                IdentityCode.CONTACT_CAPTCHA_UNAVAILABLE);
+        CaptchaVerifyRequest request = new CaptchaVerifyRequest();
+        request.setKey(expectedKey);
+        request.setType(contact.captchaType());
+        request.setCode(command.getCaptchaCode());
+        IdentityCaptchaResponse.requireVerified(captchaApi.verify(request));
+        if (contact.type() == ContactType.PHONE) {
+            user.setPhone(contact.value());
+        } else {
+            user.setEmail(contact.value());
+        }
+        user.setUpdateTime(LocalDateTime.now());
+        Require.isTrue(identityUserMapper.updateById(user) > 0, IdentityCode.CONFLICT, "联系方式更新失败");
+        return toCurrentProfile(user);
+    }
 
     @Override
     public PageResult<IdentityUserVO> pageResult(IdentityUserPageQuery query) {
@@ -363,10 +473,11 @@ public class IdentityUserService extends MangoCrudServiceImpl<IdentityUserMapper
     @Transactional
     public ExternalIdentityBindingVO bindExternalIdentity(BindExternalIdentityCommand command) {
         Require.notNull(command, IdentityCode.VALIDATION_ERROR, "外部身份绑定命令不能为空");
-        IdentityUserEntity user = getManageableUser(command.getUserId());
-        Require.notNull(user, IdentityCode.NOT_FOUND, "成员不存在或不可管理");
+        IdentityUserEntity user = getCurrentTenantUser(command.getUserId());
+        Require.notNull(user, IdentityCode.NOT_FOUND, "成员不存在或不属于当前租户");
         Long tenantId = currentTenantIdLong();
-        ExternalIdentityBindingEntity existing = findExternalBinding(command.getProvider(), command.getCorpId(),
+        String appCode = firstText(command.getAppCode(), DEFAULT_APP_CODE);
+        ExternalIdentityBindingEntity existing = findExternalBinding(appCode, command.getProvider(), command.getCorpId(),
                 command.getExternalUserId(), tenantId);
         Require.isTrue(existing == null || Objects.equals(existing.getUserId(), command.getUserId()),
                 IdentityCode.CONFLICT, "该企业微信用户已绑定其他成员");
@@ -375,6 +486,7 @@ public class IdentityUserService extends MangoCrudServiceImpl<IdentityUserMapper
             entity = new ExternalIdentityBindingEntity();
         }
         entity.setTenantId(String.valueOf(tenantId));
+        entity.setAppCode(appCode);
         entity.setUserId(command.getUserId());
         entity.setProvider(normalizeProvider(command.getProvider()));
         entity.setCorpId(command.getCorpId().trim());
@@ -390,7 +502,7 @@ public class IdentityUserService extends MangoCrudServiceImpl<IdentityUserMapper
         } else {
             externalIdentityBindingMapper.updateById(entity);
         }
-        publishExternalIdentityNotice(user, entity, "auth.wecom.login.bound", "bindTime");
+        publishExternalIdentityNotice(user, entity, "auth.external.login.bound", "bindTime");
         return toExternalIdentityVO(entity);
     }
 
@@ -399,7 +511,8 @@ public class IdentityUserService extends MangoCrudServiceImpl<IdentityUserMapper
     public Boolean unbindExternalIdentity(UnbindExternalIdentityCommand command) {
         Require.notNull(command, IdentityCode.VALIDATION_ERROR, "外部身份解绑命令不能为空");
         Long tenantId = currentTenantIdLong();
-        ExternalIdentityBindingEntity existing = findExternalBinding(command.getProvider(), command.getCorpId(),
+        String appCode = firstText(command.getAppCode(), DEFAULT_APP_CODE);
+        ExternalIdentityBindingEntity existing = findExternalBinding(appCode, command.getProvider(), command.getCorpId(),
                 command.getExternalUserId(), tenantId);
         if (existing == null || !Objects.equals(existing.getUserId(), command.getUserId())) {
             return false;
@@ -422,6 +535,8 @@ public class IdentityUserService extends MangoCrudServiceImpl<IdentityUserMapper
         }
         LambdaQueryWrapper<ExternalIdentityBindingEntity> wrapper = new LambdaQueryWrapper<ExternalIdentityBindingEntity>()
                 .eq(ExternalIdentityBindingEntity::getTenantId, tenantId);
+        wrapper.eq(StringUtils.hasText(query.getAppCode()), ExternalIdentityBindingEntity::getAppCode,
+                query.getAppCode().trim());
         wrapper.eq(StringUtils.hasText(query.getProvider()), ExternalIdentityBindingEntity::getProvider,
                 normalizeProvider(query.getProvider()));
         wrapper.eq(StringUtils.hasText(query.getCorpId()), ExternalIdentityBindingEntity::getCorpId, query.getCorpId());
@@ -445,6 +560,41 @@ public class IdentityUserService extends MangoCrudServiceImpl<IdentityUserMapper
                 .stream()
                 .map(this::toExternalIdentityVO)
                 .toList();
+    }
+
+    @Override
+    public List<ExternalIdentityBindingVO> listCurrentExternalIdentities() {
+        IdentityUserEntity user = currentUser();
+        String appCode = firstText(MangoContextHolder.appCode(), DEFAULT_APP_CODE);
+        return externalIdentityBindingMapper.selectList(new LambdaQueryWrapper<ExternalIdentityBindingEntity>()
+                .eq(ExternalIdentityBindingEntity::getUserId, user.getUserId())
+                .eq(ExternalIdentityBindingEntity::getAppCode, appCode)
+                .orderByAsc(ExternalIdentityBindingEntity::getProvider)
+                .orderByDesc(ExternalIdentityBindingEntity::getBindTime))
+                .stream()
+                .map(this::toMaskedExternalIdentityVO)
+                .toList();
+    }
+
+    @Override
+    @Transactional
+    public Boolean unbindCurrentExternalIdentity(UnbindCurrentExternalIdentityCommand command) {
+        Require.notNull(command, IdentityCode.VALIDATION_ERROR, "当前用户解绑命令不能为空");
+        IdentityUserEntity user = currentUser();
+        Require.isTrue(passwordEncoder.matches(command.getCurrentPassword(), user.getPassword()),
+                IdentityCode.CURRENT_PASSWORD_INVALID);
+        ExternalIdentityBindingEntity binding = Require.nonNull(
+                externalIdentityBindingMapper.selectById(command.getBindingId()),
+                IdentityCode.NOT_FOUND, "第三方授权不存在");
+        String appCode = firstText(MangoContextHolder.appCode(), DEFAULT_APP_CODE);
+        Require.isTrue(Objects.equals(binding.getUserId(), user.getUserId())
+                        && Objects.equals(binding.getTenantId(), currentTenantId())
+                        && appCode.equals(binding.getAppCode()),
+                IdentityCode.NOT_FOUND, "第三方授权不存在");
+        boolean deleted = externalIdentityBindingMapper.deleteById(binding.getId()) > 0;
+        Require.isTrue(deleted, IdentityCode.CONFLICT, "第三方授权解绑失败");
+        publishExternalIdentityNotice(user, binding, "auth.external.login.unbound", "unbindTime");
+        return true;
     }
 
     @Override
@@ -552,14 +702,14 @@ public class IdentityUserService extends MangoCrudServiceImpl<IdentityUserMapper
     private void publishExternalIdentityNotice(IdentityUserEntity user, ExternalIdentityBindingEntity binding,
                                                String bizType, String timeParam) {
         Map<String, Object> params = baseUserParams(user);
-        params.put("corpId", binding.getCorpId());
-        params.put("externalUserId", binding.getExternalUserId());
+        params.put("provider", binding.getProvider());
+        params.put("externalIdentity", maskIdentifier(binding.getExternalUserId()));
         params.put(timeParam, LocalDateTime.now().toString());
         NoticeSiteMessageTargetCommand target = routeTarget("account:profile", params);
         NoticeSendEventCommand event = new NoticeSendEventCommand();
         event.setTenantId(user.getTenantId());
         event.setBizType(bizType);
-        event.setBizId(user.getUserId() + ":" + binding.getProvider() + ":" + binding.getExternalUserId());
+        event.setBizId(user.getUserId() + ":" + binding.getProvider() + ":" + binding.getId());
         event.setUserId(user.getUserId());
         event.setParams(NoticeJsonRequest.of(params));
         event.setMessageScene(bizType);
@@ -568,7 +718,7 @@ public class IdentityUserService extends MangoCrudServiceImpl<IdentityUserMapper
         event.setMessageData(NoticeJsonRequest.of(params));
         event.setMessageActions(List.of(routeAction("VIEW_PROFILE", "查看资料", target)));
         event.setPriority(NoticePriority.NORMAL);
-        event.setIdempotentKey(bizType + ":" + user.getUserId() + ":" + binding.getExternalUserId());
+        event.setIdempotentKey(bizType + ":" + user.getUserId() + ":" + binding.getId());
         eventPublisher.publishEvent(event);
     }
 
@@ -658,6 +808,13 @@ public class IdentityUserService extends MangoCrudServiceImpl<IdentityUserMapper
         }
         log.warn("Tenant isolation violation: attempt to manage identity user {} by tenant {}", userId, currentTenantId());
         return null;
+    }
+
+    private IdentityUserEntity getCurrentTenantUser(Long userId) {
+        if (userId == null || currentTenantMember(userId) == null) {
+            return null;
+        }
+        return identityUserMapper.selectById(userId);
     }
 
     private boolean belongsToCurrentTenant(IdentityUserEntity user) {
@@ -871,14 +1028,15 @@ public class IdentityUserService extends MangoCrudServiceImpl<IdentityUserMapper
         tenantMemberMapper.insert(member);
     }
 
-    private ExternalIdentityBindingEntity findExternalBinding(String provider, String corpId, String externalUserId,
-                                                              Long tenantId) {
+    private ExternalIdentityBindingEntity findExternalBinding(String appCode, String provider, String corpId,
+                                                              String externalUserId, Long tenantId) {
         if (tenantId == null || !StringUtils.hasText(provider) || !StringUtils.hasText(corpId)
                 || !StringUtils.hasText(externalUserId)) {
             return null;
         }
         return externalIdentityBindingMapper.selectOne(new LambdaQueryWrapper<ExternalIdentityBindingEntity>()
                 .eq(ExternalIdentityBindingEntity::getTenantId, tenantId)
+                .eq(ExternalIdentityBindingEntity::getAppCode, firstText(appCode, DEFAULT_APP_CODE))
                 .eq(ExternalIdentityBindingEntity::getProvider, normalizeProvider(provider))
                 .eq(ExternalIdentityBindingEntity::getCorpId, corpId.trim())
                 .eq(ExternalIdentityBindingEntity::getExternalUserId, externalUserId.trim())
@@ -892,6 +1050,7 @@ public class IdentityUserService extends MangoCrudServiceImpl<IdentityUserMapper
         ExternalIdentityBindingVO vo = new ExternalIdentityBindingVO();
         vo.setId(entity.getId());
         vo.setUserId(entity.getUserId());
+        vo.setAppCode(entity.getAppCode());
         vo.setProvider(entity.getProvider());
         vo.setCorpId(entity.getCorpId());
         vo.setExternalUserId(entity.getExternalUserId());
@@ -901,6 +1060,132 @@ public class IdentityUserService extends MangoCrudServiceImpl<IdentityUserMapper
         vo.setBindTime(entity.getBindTime());
         vo.setLastLoginTime(entity.getLastLoginTime());
         return vo;
+    }
+
+    private ExternalIdentityBindingVO toMaskedExternalIdentityVO(ExternalIdentityBindingEntity entity) {
+        ExternalIdentityBindingVO vo = toExternalIdentityVO(entity);
+        if (vo == null) {
+            return null;
+        }
+        vo.setCorpId(maskIdentifier(vo.getCorpId()));
+        vo.setExternalUserId(maskIdentifier(vo.getExternalUserId()));
+        return vo;
+    }
+
+    private IdentityUserEntity currentUser() {
+        Long userId = Require.nonNull(MangoContextHolder.userId(), IdentityCode.NOT_FOUND,
+                "当前登录用户不存在");
+        IdentityUserEntity user = Require.nonNull(identityUserMapper.selectById(userId), IdentityCode.NOT_FOUND,
+                "当前登录用户不存在");
+        Require.notNull(currentTenantMember(userId), IdentityCode.NOT_FOUND, "当前用户不属于当前租户");
+        return user;
+    }
+
+    private CurrentUserProfileVO toCurrentProfile(IdentityUserEntity user) {
+        CurrentUserProfileVO vo = new CurrentUserProfileVO();
+        vo.setUserId(user.getUserId());
+        vo.setUsername(user.getUsername());
+        vo.setNickname(user.getNickname());
+        vo.setAvatar(user.getAvatar());
+        vo.setPhone(maskPhone(user.getPhone()));
+        vo.setEmail(maskEmail(user.getEmail()));
+        vo.setRealName(user.getRealName());
+        vo.setDocumentType(user.getDocumentType());
+        vo.setDocumentNumber(maskIdentifier(user.getDocumentNumber()));
+        vo.setVerificationStatus(firstText(user.getVerificationStatus(), VERIFICATION_UNVERIFIED));
+        vo.setVerificationSource(user.getVerificationSource());
+        return vo;
+    }
+
+    private Contact validateContact(String rawType, String rawTarget) {
+        ContactType type;
+        try {
+            type = ContactType.valueOf(rawType == null ? "" : rawType.trim().toUpperCase());
+        } catch (IllegalArgumentException exception) {
+            return Require.fail(IdentityCode.VALIDATION_ERROR, "联系方式类型无效", exception);
+        }
+        String target = trimToNull(rawTarget);
+        Require.notNull(target, IdentityCode.VALIDATION_ERROR, "新联系方式不能为空");
+        if (type == ContactType.PHONE) {
+            Require.isTrue(target.matches("^\\+?[0-9]{6,20}$"), IdentityCode.VALIDATION_ERROR,
+                    "手机号格式无效");
+        } else {
+            Require.isTrue(target.matches("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$"), IdentityCode.VALIDATION_ERROR,
+                    "邮箱格式无效");
+        }
+        return new Contact(type, target);
+    }
+
+    private void requireContactAvailable(Long userId, Contact contact) {
+        LambdaQueryWrapper<IdentityUserEntity> wrapper = new LambdaQueryWrapper<IdentityUserEntity>()
+                .ne(IdentityUserEntity::getId, userId);
+        if (contact.type() == ContactType.PHONE) {
+            wrapper.eq(IdentityUserEntity::getPhone, contact.value());
+        } else {
+            wrapper.eq(IdentityUserEntity::getEmail, contact.value());
+        }
+        Require.isTrue(identityUserMapper.selectCount(wrapper) == 0, IdentityCode.CONFLICT,
+                "该联系方式已被其他账号使用");
+    }
+
+    private String maskContact(Contact contact) {
+        return contact.type() == ContactType.PHONE ? maskPhone(contact.value()) : maskEmail(contact.value());
+    }
+
+    private String maskPhone(String value) {
+        if (!StringUtils.hasText(value) || value.length() <= MASK_SUFFIX_LENGTH) {
+            return value;
+        }
+        int visiblePrefix = Math.min(MASK_PHONE_PREFIX_LENGTH, value.length() - MASK_SUFFIX_LENGTH);
+        return value.substring(0, visiblePrefix) + "****"
+                + value.substring(value.length() - MASK_SUFFIX_LENGTH);
+    }
+
+    private String maskEmail(String value) {
+        if (!StringUtils.hasText(value)) {
+            return value;
+        }
+        int separator = value.indexOf('@');
+        if (separator <= 0) {
+            return maskIdentifier(value);
+        }
+        String local = value.substring(0, separator);
+        return local.substring(0, 1) + "***" + value.substring(separator);
+    }
+
+    private String maskIdentifier(String value) {
+        if (!StringUtils.hasText(value)) {
+            return value;
+        }
+        if (value.length() <= MASK_SUFFIX_LENGTH) {
+            return "****";
+        }
+        return "****" + value.substring(value.length() - MASK_SUFFIX_LENGTH);
+    }
+
+    private String trimToNull(String value) {
+        return StringUtils.hasText(value) ? value.trim() : null;
+    }
+
+    private enum ContactType {
+        PHONE,
+        EMAIL
+    }
+
+    private record Contact(ContactType type, String value) {
+        CaptchaType captchaType() {
+            return type == ContactType.PHONE ? CaptchaType.SMS : CaptchaType.EMAIL;
+        }
+
+        String businessType() {
+            return type == ContactType.PHONE ? "CHANGE_PHONE" : "CHANGE_EMAIL";
+        }
+
+        boolean matches(IdentityUserEntity user) {
+            return type == ContactType.PHONE
+                    ? value.equals(user.getPhone())
+                    : value.equalsIgnoreCase(user.getEmail());
+        }
     }
 
     private TenantMemberEntity currentTenantMember(Long userId) {

@@ -1,0 +1,88 @@
+{
+  "mango": {
+    "resource": {
+      "schemaVersion": 1,
+      "moduleCode": "auth",
+      "moduleName": "认证",
+      "declarations": {
+        "AUTH_MENU": [
+          {
+            "id": "2951300000000009701",
+            "version": 1,
+            "bizKey": "auth.menu.internal-admin",
+            "name": "认证管理菜单",
+            "targetModule": "authorization",
+            "fields": {
+              "appCode": {
+                "type": "STRING",
+                "value": "internal-admin"
+              },
+              "moduleCode": {
+                "type": "STRING",
+                "value": "mango-auth"
+              },
+              "moduleName": {
+                "type": "STRING",
+                "value": "认证管理"
+              },
+              "sort": {
+                "type": "INT",
+                "value": 10
+              },
+              "packageCodes": {
+                "type": "LIST",
+                "value": [
+                  "platform_admin"
+                ]
+              },
+              "roleCodes": {
+                "type": "LIST",
+                "value": []
+              },
+              "menus": {
+                "type": "LIST",
+                "value": [
+                  {
+                    "menuType": 2,
+                    "menuName": "第三方登录",
+                    "menuCode": "auth:provider-config",
+                    "parentCode": "system",
+                    "path": "/system/provider-configs",
+                    "icon": "Connection",
+                    "component": "auth/provider-config/index",
+                    "sort": 10,
+                    "remark": "按租户和应用配置企业微信、钉钉登录",
+                    "apiCodes": [
+                      "auth:provider-config:view",
+                      "auth:provider-config:edit"
+                    ],
+                    "children": [
+                      {
+                        "menuType": 3,
+                        "menuName": "查看第三方登录配置",
+                        "menuCode": "auth:provider-config:view",
+                        "sort": 1,
+                        "apiCodes": [
+                          "auth:provider-config:view"
+                        ]
+                      },
+                      {
+                        "menuType": 3,
+                        "menuName": "编辑第三方登录配置",
+                        "menuCode": "auth:provider-config:edit",
+                        "sort": 2,
+                        "apiCodes": [
+                          "auth:provider-config:edit"
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

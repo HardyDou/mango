@@ -1,7 +1,5 @@
 package io.mango.resource.sync.starter;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.common.result.R;
 import io.mango.infra.bootstrap.api.BootstrapExecutionContext;
@@ -27,7 +25,7 @@ public final class ResourceBootstrapStepContributor implements BootstrapStepCont
     private final ResourceRegistryProperties properties;
     private final ResourceDeclarationCollector collector;
     private final ResourceDeclarationApi declarationApi;
-    private final ObjectMapper objectMapper;
+    private final ResourceManifestSerializer manifestSerializer;
     private final String applicationName;
 
     @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
@@ -35,12 +33,12 @@ public final class ResourceBootstrapStepContributor implements BootstrapStepCont
     public ResourceBootstrapStepContributor(ResourceRegistryProperties properties,
                                             ResourceDeclarationCollector collector,
                                             ResourceDeclarationApi declarationApi,
-                                            ObjectMapper objectMapper,
+                                            ResourceManifestSerializer manifestSerializer,
                                             String applicationName) {
         this.properties = properties;
         this.collector = collector;
         this.declarationApi = declarationApi;
-        this.objectMapper = objectMapper;
+        this.manifestSerializer = manifestSerializer;
         this.applicationName = applicationName;
     }
 
@@ -61,12 +59,8 @@ public final class ResourceBootstrapStepContributor implements BootstrapStepCont
                 .sorted(Comparator.comparing(ResourceDeclaration::getId))
                 .toList();
         List<String> moduleCodes = collector.managedBootstrapModuleCodes(declarations).stream().sorted().toList();
-        try {
-            return new PreparedDeclarations(declarations, moduleCodes,
-                    objectMapper.writeValueAsString(declarations));
-        } catch (JsonProcessingException exception) {
-            throw new IllegalStateException("Serialize bootstrap resource declarations failed", exception);
-        }
+        return new PreparedDeclarations(declarations, moduleCodes,
+                manifestSerializer.serialize(declarations));
     }
 
     private String appCode() {

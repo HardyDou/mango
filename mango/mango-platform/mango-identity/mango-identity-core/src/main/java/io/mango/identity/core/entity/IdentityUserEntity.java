@@ -53,6 +53,21 @@ public class IdentityUserEntity extends TenantEntity {
     /** 头像地址。 */
     private String avatar;
 
+    /** 实名姓名。 */
+    private String realName;
+
+    /** 证件类型。 */
+    private String documentType;
+
+    /** 证件号码。 */
+    private String documentNumber;
+
+    /** 实名认证状态。 */
+    private String verificationStatus;
+
+    /** 实名认证来源。 */
+    private String verificationSource;
+
     /** 状态：0-禁用，1-启用。 */
     private Integer status;
 

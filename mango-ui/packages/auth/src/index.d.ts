@@ -25,6 +25,7 @@ export interface MangoAuthProfileSlots {
   infoBefore?: Component;
   infoAfter?: Component;
   extraTabs?: Component;
+  theme?: Component;
 }
 
 export interface MangoAuthPasswordSlots {
@@ -106,6 +107,8 @@ export interface MangoLoginInitializeResult {
 export declare const LoginView: Component;
 export declare const ProfileView: Component;
 export declare const PasswordView: Component;
+export declare const ProviderCallbackView: Component;
+export declare const ProviderConfigView: Component;
 export declare function installMangoAuth(app?: App, config?: MangoAuthConfig): void;
 export declare function getMangoAuthConfig(): MangoAuthConfig;
 export declare function mergeAuthConfig(base: MangoAuthConfig, override: MangoAuthConfig): MangoAuthConfig;
@@ -157,6 +160,9 @@ export declare function readWecomCallback(): {
   hasCallbackParams: boolean;
 };
 export declare function clearWecomCallbackUrl(): void;
+export declare function captureProviderCallbackBeforeHashRouter(): void;
 export * from './config';
 export * from './store/userInfo';
 export * from './api/sys';
+export * from './api/identity';
+export * from './api/provider';

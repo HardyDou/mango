@@ -18,6 +18,9 @@ public class ExternalIdentityBindingVO implements Serializable {
     @Schema(description = "用户ID")
     private Long userId;
 
+    @Schema(description = "应用编码")
+    private String appCode;
+
     @Schema(description = "身份提供方")
     private String provider;
 

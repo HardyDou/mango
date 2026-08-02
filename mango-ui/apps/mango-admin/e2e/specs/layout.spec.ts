@@ -3,12 +3,12 @@ import { test, expect } from '@playwright/test';
 test.describe('布局系统 E2E 测试', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/#/login');
-    await page.fill('input[placeholder="用户名"]', 'admin');
-    await page.fill('input[placeholder="密码"]', 'admin123');
-    const accountTenantsResponsePromise = page.waitForResponse((response) =>
-      response.url().includes('/api/auth/login-institutions') && response.status() === 200
+    await page.getByPlaceholder('请输入用户名').fill('admin');
+    await page.getByPlaceholder('请输入密码').fill('admin123');
+    const accountTenantsResponsePromise = page.waitForResponse(
+      (response) => response.url().includes('/api/auth/login-institutions') && response.status() === 200,
     );
-    await page.locator('input[placeholder="密码"]').blur();
+    await page.getByPlaceholder('请输入密码').blur();
     await accountTenantsResponsePromise;
     await page.locator('.tenant-select').click();
     await page.getByRole('option', { name: /芒果集团/ }).click();
@@ -41,8 +41,9 @@ test.describe('布局系统 E2E 测试', () => {
     await page.waitForTimeout(500);
 
     // 检查横向菜单是否存在（通过菜单容器判断）
-    const hasHorizontalMenu = await page.locator('.nav-menu-horizontal').count() > 0 ||
-                              await page.locator('.layout-navbars-container').count() > 0;
+    const hasHorizontalMenu =
+      (await page.locator('.nav-menu-horizontal').count()) > 0 ||
+      (await page.locator('.layout-navbars-container').count()) > 0;
     expect(hasHorizontalMenu).toBeTruthy();
   });
 
@@ -82,7 +83,7 @@ test.describe('布局系统 E2E 测试', () => {
     // 检查标签导航容器
     const tagsView = page.locator('.tags-view-container');
     // 如果标签导航存在则检查，否则跳过
-    if (await tagsView.count() > 0) {
+    if ((await tagsView.count()) > 0) {
       await expect(tagsView).toBeVisible();
     } else {
       // 标签导航关闭时允许隐藏
@@ -96,14 +97,14 @@ test.describe('布局系统 E2E 测试', () => {
 
     // 检查是否有标签可以右键
     const tagsViewItem = page.locator('.tags-view-item').first();
-    if (await tagsViewItem.count() > 0) {
+    if ((await tagsViewItem.count()) > 0) {
       // 右键点击标签
       await tagsViewItem.click({ button: 'right' });
       await page.waitForTimeout(300);
 
       // 检查上下文菜单
       const contextMenu = page.locator('.context-menu');
-      if (await contextMenu.count() > 0) {
+      if ((await contextMenu.count()) > 0) {
         await expect(contextMenu).toBeVisible();
       }
     }
@@ -116,12 +117,12 @@ test.describe('布局系统 E2E 测试', () => {
 
     // 检查面包屑容器
     const breadcrumb = page.locator('.layout-breadcrumb');
-    if (await breadcrumb.count() > 0) {
+    if ((await breadcrumb.count()) > 0) {
       await expect(breadcrumb).toBeVisible();
     }
   });
 
-  test('用户下拉菜单', async ({ page }) => {
+  test('用户下拉菜单', async ({ page }, testInfo) => {
     // 点击用户头像
     await page.click('.layout-breadcrumb-user');
     await page.waitForTimeout(500);
@@ -131,7 +132,26 @@ test.describe('布局系统 E2E 测试', () => {
     // 使用更精确的选择器
     await expect(page.getByText('个人中心').first()).toBeVisible();
     await expect(page.getByText('修改密码').first()).toBeVisible();
+    await expect(page.getByText('主题设置').first()).toBeVisible();
     await expect(page.getByText('退出登录').first()).toBeVisible();
+    await expect(page.getByRole('button', { name: '主题设置' })).toHaveCount(0);
+    const itemBackgrounds = await page
+      .locator(
+        '[data-action="profile.open"], [data-action="profile.password"], [data-action="profile.theme"], [data-action="auth.logout"]',
+      )
+      .evaluateAll((items) => items.map((item) => getComputedStyle(item).backgroundColor));
+    expect(itemBackgrounds).toEqual(['rgba(0, 0, 0, 0)', 'rgba(0, 0, 0, 0)', 'rgba(0, 0, 0, 0)', 'rgba(0, 0, 0, 0)']);
+    await page.locator('[data-action="profile.theme"]').hover();
+    const hoveredBackgrounds = await page
+      .locator(
+        '[data-action="profile.open"], [data-action="profile.password"], [data-action="profile.theme"], [data-action="auth.logout"]',
+      )
+      .evaluateAll((items) => items.map((item) => getComputedStyle(item).backgroundColor));
+    expect(hoveredBackgrounds[0]).toBe('rgba(0, 0, 0, 0)');
+    expect(hoveredBackgrounds[1]).toBe('rgba(0, 0, 0, 0)');
+    expect(hoveredBackgrounds[2]).not.toBe('rgba(0, 0, 0, 0)');
+    expect(hoveredBackgrounds[3]).toBe('rgba(0, 0, 0, 0)');
+    await page.screenshot({ path: testInfo.outputPath('user-dropdown.png') });
   });
 
   test('1000px 断点响应式', async ({ page }) => {

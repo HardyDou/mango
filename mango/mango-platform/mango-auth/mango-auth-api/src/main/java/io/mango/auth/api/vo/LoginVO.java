@@ -69,6 +69,12 @@ public class LoginVO {
     @Schema(description = "当前机构名称")
     private String tenantName;
 
+    @Schema(description = "当前成员主部门名称")
+    private String departmentName;
+
+    @Schema(description = "当前公司名称")
+    private String companyName;
+
     @Schema(description = "应用编码")
     private String appCode;
 

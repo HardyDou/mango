@@ -39,7 +39,8 @@ class ResourceBootstrapStepContributorTest {
             return R.ok(true);
         };
         ResourceBootstrapStepContributor contributor = new ResourceBootstrapStepContributor(
-                properties, collector(() -> List.of(second, first)), api, objectMapper, "fallback");
+                properties, collector(() -> List.of(second, first)), api,
+                new ResourceManifestSerializer(), "fallback");
 
         List<BootstrapStep> steps = contributor.contributeSteps();
 
@@ -75,13 +76,13 @@ class ResourceBootstrapStepContributorTest {
         disabled.setEnabled(false);
         ResourceBootstrapStepContributor disabledContributor = new ResourceBootstrapStepContributor(
                 disabled, collector(() -> List.of(declaration("resource-1", "module-a"))),
-                command -> R.ok(true), objectMapper, "app");
+                command -> R.ok(true), new ResourceManifestSerializer(), "app");
         assertThat(disabledContributor.contributeSteps()).isEmpty();
 
         ResourceRegistryProperties enabled = new ResourceRegistryProperties();
         ResourceBootstrapStepContributor failingContributor = new ResourceBootstrapStepContributor(
                 enabled, collector(() -> List.of(declaration("resource-1", "module-a"))),
-                command -> R.fail("target unavailable"), objectMapper, "app");
+                command -> R.fail("target unavailable"), new ResourceManifestSerializer(), "app");
         BootstrapStep required = failingContributor.contributeSteps().get(0);
 
         assertThatThrownBy(() -> required.execute(context(BootstrapPhase.EXPAND)))

@@ -49,6 +49,7 @@ import java.util.TimeZone;
  * Mango Infra Web 自动配置。
  */
 @AutoConfiguration(before = JacksonAutoConfiguration.class)
+@ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
 @EnableScheduling
 @EnableConfigurationProperties(MangoWebProperties.class)
 public class WebAutoConfiguration implements WebMvcConfigurer {

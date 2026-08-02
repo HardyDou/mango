@@ -15,6 +15,9 @@
 | 成员组织关系 | 维护成员和组织、岗位关系，支持按 USER、ORG、POST、ROLE 解析接收人 |
 | 认证事实查询 | 为 `mango-auth` 提供 `AuthUserProvider`，以及按用户名和用户 ID 查询认证事实的内部接口 |
 | 第三方身份绑定 | 保存企业微信等外部身份和 Mango 用户的绑定关系 |
+| 当前用户资料 | 读取和维护昵称、头像、姓名、证件类型、证件号码、认证状态和来源；证件号码只脱敏返回 |
+| 联系方式安全变更 | 当前用户使用当前密码和新手机号/邮箱验证码修改联系方式 |
+| 当前用户授权管理 | 按当前租户、应用和用户查看绑定，并在密码校验后解绑 |
 | 租户初始化 | 新建租户时为创建者补建管理员成员，并尝试绑定 `ROLE_ADMIN` |
 | 用户管理接口 | 提供用户分页、详情、新增、编辑、状态、重置密码、批量移除等接口 |
 | 资源声明 | 通过 Resource Registry 的 `IDENTITY_USER` 和 `ORG_MEMBER_BINDING` 注入 demo/bootstrap 用户和组织成员绑定 |
@@ -118,6 +121,12 @@ HTTP 接口前缀是 `/identity`。
 
 | 方法 | 路径 | 权限 | 用途 |
 |------|------|------|------|
+| GET | `/identity/me/profile` | LOGIN | 读取当前用户资料，联系方式和证件号码脱敏 |
+| PUT | `/identity/me/profile` | LOGIN | 更新当前用户基础资料和实名信息；认证状态、来源只读 |
+| POST | `/identity/me/contact-captcha` | LOGIN | 向新手机号或邮箱发送验证码 |
+| PUT | `/identity/me/contact` | LOGIN | 使用当前密码和新值验证码修改联系方式 |
+| GET | `/identity/me/external-identities` | LOGIN | 查询当前用户在当前应用的第三方授权 |
+| DELETE | `/identity/me/external-identities` | LOGIN | 使用当前密码解绑本人授权 |
 | GET | `/identity/users/page` | `system:user:list` | 分页查询当前租户可管理成员 |
 | GET | `/identity/users/detail` | `system:user:query` | 查询成员详情 |
 | POST | `/identity/users` | `system:user:add` | 新增当前租户成员账号 |
@@ -180,7 +189,9 @@ Java API：
 
 `LoginTenantProvider` 返回的 `LoginTenantVO` 会被 `mango-auth` 用于登录机构选择，关键字段是 `tenantId`、`tenantCode`、`tenantName`、`memberId`、`memberName`、`memberType`。
 
-`ExternalIdentityBindingVO` 用于第三方登录绑定，关键字段是 `tenantId`、`userId`、`provider`、`corpId`、`externalUserId`、`bindStatus`、`bindSource`。
+`ExternalIdentityBindingVO` 用于第三方登录绑定，关键字段是 `userId`、`appCode`、`provider`、`corpId`、`externalUserId`、`bindStatus`、`bindSource`；当前用户查询会掩码厂商租户标识和外部用户标识。
+
+`CurrentUserProfileVO` 返回姓名、证件类型、脱敏证件号码、认证状态和来源。新用户认证状态默认 `UNVERIFIED`，来源为空；本次不包含认证审核或资料锁定流程。
 
 ## 9. 管理入口
 
@@ -214,13 +225,14 @@ mango-identity-core/src/main/resources/db/migration/identity
 | `identity_user` | 全局账号和认证资料 | `uk_identity_user_realm_username(realm, username)` |
 | `tenant_member` | 账号在租户下的成员身份 | `uk_tenant_member_tenant_user(tenant_id, user_id)`、`uk_tenant_member_tenant_no(tenant_id, member_no)` |
 | `tenant_member_org` | 成员组织岗位关系 | `uk_tenant_member_org_member_org(tenant_id, member_id, org_id)` |
-| `identity_external_binding` | 第三方登录身份绑定 | `uk_external_binding_external(tenant_id, provider, corp_id, external_user_id)` |
+| `identity_external_binding` | 第三方登录身份绑定 | `uk_external_binding_external(tenant_id, app_code, provider, corp_id, external_user_id)` |
 
 初始化入口：
 
 | 入口 | 内容 |
 |------|------|
-| `V1__init_identity.sql` | 一次性创建 identity 最终态表、索引和约束，只包含 DDL |
+| `V1__init_identity.sql` | 新环境一次性创建 identity 最终态表、索引和约束，只包含 DDL |
+| `V2__add_real_name_and_binding_app.sql` | 存量环境增加实名字段和绑定 `app_code`，存量绑定默认回填 `internal-admin` |
 | `META-INF/mango/resources/identity-common-bootstrap.yml` | 默认加载必需的 `admin` 全局账号和租户 1 成员 |
 | `META-INF/mango/demo/identity-demo-members.yml` | 开启 demo 资源后加载租户 2、3、4 的演示成员和组织关系 |
 | `IdentityTenantProvisioner` | 新建租户时，如果当前上下文有创建者用户，则补建成员号 `ADMIN-<tenantId>-<userId>` 的机构管理员成员 |

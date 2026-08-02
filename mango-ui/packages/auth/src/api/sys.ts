@@ -9,6 +9,8 @@ export interface LoginResult {
   tenantId?: string | number;
   tenantCode?: string;
   tenantName?: string;
+  departmentName?: string;
+  companyName?: string;
   realm?: string;
   actorType?: string;
   partyType?: string;
@@ -71,11 +73,7 @@ export function getWecomLoginConfig(tenantId: string | number) {
   });
 }
 
-export function getAccountLoginTenantOptions(data: {
-  username: string;
-  realm?: string;
-  appCode?: string;
-}) {
+export function getAccountLoginTenantOptions(data: { username: string; realm?: string; appCode?: string }) {
   return post<LoginTenantOption[]>('/auth/login-institutions', data, { ignoreToken: true });
 }
 

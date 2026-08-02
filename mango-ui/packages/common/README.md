@@ -334,23 +334,43 @@ API 加密环境变量：
 
 组件导出：
 
-| 组件                                                    | 能力                                                               |
-| ------------------------------------------------------- | ------------------------------------------------------------------ |
-| `MangoListPage`                                         | 管理后台列表页外壳，按搜索区和列表区组织页面，不渲染额外页面标题。 |
-| `MangoSearchPanel`                                      | 列表页搜索面板，统一字段栅格、按钮位置、展开收起和查询/重置事件。  |
-| `MangoListPanel`                                        | 列表卡片，统一功能区、表格区和分页区位置。                         |
-| `MangoDetailPage`                                       | 详情页外壳，提供返回栏、内容区和底部操作栏。                       |
-| `MangoFormPage`                                         | 表单页外壳，提供返回栏、内容区和底部操作栏。                       |
-| `MangoPageSection`                                      | 详情页和表单页的业务分组容器。                                     |
-| `Pagination`                                            | 分页器。                                                           |
-| `MangoDialog`                                           | 管理端通用弹框外壳，统一标题区、关闭按钮、内容滚动区和底部按钮区。 |
-| `DictSelect`、`DictTag`                                 | 字典选择和展示。                                                   |
-| `OrgSelector`、`UserSelector`                           | 组织和用户选择。                                                   |
-| `CaptchaSelector`、各验证码组件                         | 验证码展示和交互。                                                 |
-| `ChinaArea`                                             | 行政区域选择。                                                     |
-| `IconSelector`、`TreeSelect`、`RightToolbar`            | 管理端通用选择和工具栏。                                           |
-| `FormCreate`、`Sign`、`CodeEditor`、`Editor`、`ECharts` | 表单、签名、代码、富文本和图表。                                   |
-| `SSE`、`Websocket`、`Chat`                              | 实时通信和聊天 UI。                                                |
+| 组件                                                    | 能力                                                                                           |
+| ------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `MangoListPage`                                         | 管理后台列表页外壳，按搜索区和列表区组织页面，不渲染额外页面标题。                             |
+| `MangoSearchPanel`                                      | 列表页搜索面板，统一字段栅格、按钮位置、展开收起和查询/重置事件。                              |
+| `MangoListPanel`                                        | 列表卡片，统一功能区、表格区和分页区位置。                                                     |
+| `MangoDetailPage`                                       | 详情页外壳，提供返回栏、内容区和底部操作栏。                                                   |
+| `MangoFormPage`                                         | 表单页外壳，提供返回栏、内容区和底部操作栏。                                                   |
+| `MangoPageSection`                                      | 详情页和表单页的业务分组容器。                                                                 |
+| `Pagination`                                            | 分页器。                                                                                       |
+| `MangoDialog`                                           | 管理端通用弹框外壳，统一标题区、关闭按钮、内容滚动区和底部按钮区。                             |
+| `MangoAvatar`                                           | 统一显示普通图片地址或 `mango-file:{id}` 文件标识，并负责受保护头像的下载回显和对象 URL 回收。 |
+| `DictSelect`、`DictTag`                                 | 字典选择和展示。                                                                               |
+| `OrgSelector`、`UserSelector`                           | 组织和用户选择。                                                                               |
+| `CaptchaSelector`、各验证码组件                         | 验证码展示和交互。                                                                             |
+| `ChinaArea`                                             | 行政区域选择。                                                                                 |
+| `IconSelector`、`TreeSelect`、`RightToolbar`            | 管理端通用选择和工具栏。                                                                       |
+| `FormCreate`、`Sign`、`CodeEditor`、`Editor`、`ECharts` | 表单、签名、代码、富文本和图表。                                                               |
+| `SSE`、`Websocket`、`Chat`                              | 实时通信和聊天 UI。                                                                            |
+
+`MangoAvatar` 使用示例：
+
+```vue
+<MangoAvatar :size="40" :source="user.photo">
+  <span>{{ user.nickname?.slice(0, 1) }}</span>
+</MangoAvatar>
+```
+
+| API       | 类型 / 默认值                     | 说明                                                                         |
+| --------- | --------------------------------- | ---------------------------------------------------------------------------- |
+| `source`  | `string / ''`                     | 支持普通 `http(s)`、站内、data、blob 图片地址或 `mango-file:{id}` 文件标识。 |
+| `size`    | `number \| string`                | 透传 Element Plus Avatar 尺寸。                                              |
+| `shape`   | `'circle' \| 'square' / 'circle'` | 头像形状。                                                                   |
+| `fit`     | CSS object-fit 值 / `cover`       | 图片填充方式。                                                               |
+| 默认 slot | -                                 | 图片为空或加载失败时的兜底内容。                                             |
+| `error`   | `(error: unknown) => void`        | 受保护文件下载或图片加载失败时触发。                                         |
+
+组件遇到 `mango-file:{id}` 时通过文件中心受保护下载接口生成临时对象 URL，并在来源变化或卸载时释放；不持久化下载地址。缺少文件标识或不支持的来源时保留默认 slot。
 
 `MangoSearchPanel` 折叠规则：
 

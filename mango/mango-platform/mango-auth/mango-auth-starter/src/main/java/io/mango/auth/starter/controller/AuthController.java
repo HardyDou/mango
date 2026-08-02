@@ -9,9 +9,19 @@ import io.mango.auth.api.command.RefreshTokenCommand;
 import io.mango.auth.api.command.SendAuthCaptchaCommand;
 import io.mango.auth.api.command.ValidateTokenCommand;
 import io.mango.auth.api.command.WecomLoginCommand;
+import io.mango.auth.api.command.SaveProviderConfigCommand;
+import io.mango.auth.api.command.StartProviderAuthorizationCommand;
+import io.mango.auth.api.command.CompleteProviderAuthorizationCommand;
+import io.mango.auth.api.command.BindExistingAccountCommand;
+import io.mango.auth.api.vo.AvailableProviderVO;
 import io.mango.auth.api.vo.LoginTenantVO;
 import io.mango.auth.api.vo.LoginVO;
 import io.mango.auth.api.vo.WecomLoginConfigVO;
+import io.mango.auth.api.vo.ProviderConfigVO;
+import io.mango.auth.api.vo.ProviderAuthorizationVO;
+import io.mango.auth.api.vo.ProviderAuthorizationResultVO;
+import io.mango.auth.core.service.IAuthProviderConfigService;
+import io.mango.auth.core.service.IExternalAuthorizationService;
 import io.mango.auth.core.service.IAuthService;
 import io.mango.authorization.api.annotation.ApiAccess;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
@@ -25,6 +35,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -46,6 +57,74 @@ import java.util.List;
 public class AuthController implements AuthApi {
 
     private final IAuthService authService;
+    private final IAuthProviderConfigService authProviderConfigService;
+    private final IExternalAuthorizationService externalAuthorizationService;
+
+    @Override
+    @GetMapping("/provider-configs")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "auth:provider-config:view")
+    @Operation(summary = "查询第三方登录配置", description = "查询当前租户指定应用的企业微信和钉钉登录配置")
+    public R<List<ProviderConfigVO>> listProviderConfigs(
+            @Parameter(description = "应用编码", required = true)
+            @RequestParam("appCode") String appCode) {
+        return R.ok(authProviderConfigService.listCurrentTenant(appCode));
+    }
+
+    @Override
+    @PostMapping("/provider-configs")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "auth:provider-config:edit")
+    @Operation(summary = "创建第三方登录配置", description = "为当前租户应用创建企业微信或钉钉登录配置")
+    public R<ProviderConfigVO> createProviderConfig(@RequestBody SaveProviderConfigCommand command) {
+        command.setId(null);
+        return R.ok(authProviderConfigService.save(command));
+    }
+
+    @Override
+    @PutMapping("/provider-configs")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "auth:provider-config:edit")
+    @Operation(summary = "更新第三方登录配置", description = "更新当前租户应用的企业微信或钉钉登录配置")
+    public R<ProviderConfigVO> updateProviderConfig(@RequestBody SaveProviderConfigCommand command) {
+        return R.ok(authProviderConfigService.save(command));
+    }
+
+    @Override
+    @GetMapping("/providers")
+    @ApiAccess(mode = ApiResourceAccessMode.PUBLIC, desc = "查询可用第三方登录方式")
+    @Operation(summary = "查询可用第三方登录方式", description = "查询指定租户和应用已启用且配置完整的第三方登录方式")
+    public R<List<AvailableProviderVO>> listAvailableProviders(
+            @Parameter(description = "租户标识", required = true)
+            @RequestParam("tenantId") String tenantId,
+            @Parameter(description = "应用编码", required = true)
+            @RequestParam("appCode") String appCode) {
+        return R.ok(authProviderConfigService.listAvailable(
+                new IAuthProviderConfigService.ProviderScope(tenantId, appCode)));
+    }
+
+    @Override
+    @PostMapping("/providers/authorize")
+    @ApiAccess(mode = ApiResourceAccessMode.PUBLIC, desc = "发起第三方授权")
+    @Operation(summary = "发起第三方授权", description = "校验第三方登录配置和回调地址后生成授权跳转地址")
+    public R<ProviderAuthorizationVO> startProviderAuthorization(
+            @RequestBody StartProviderAuthorizationCommand command) {
+        return R.ok(externalAuthorizationService.start(command));
+    }
+
+    @Override
+    @PostMapping("/providers/complete")
+    @ApiAccess(mode = ApiResourceAccessMode.PUBLIC, desc = "完成第三方授权")
+    @Operation(summary = "完成第三方授权", description = "消费第三方授权码并完成登录、绑定或返回账号绑定凭据")
+    public R<ProviderAuthorizationResultVO> completeProviderAuthorization(
+            @RequestBody CompleteProviderAuthorizationCommand command) {
+        return R.ok(externalAuthorizationService.complete(command));
+    }
+
+    @Override
+    @PostMapping("/providers/bind-existing")
+    @ApiAccess(mode = ApiResourceAccessMode.PUBLIC, desc = "绑定已有 Mango 账号")
+    @Operation(summary = "绑定已有 Mango 账号", description = "校验已有账号密码并将第三方身份绑定到该账号")
+    public R<LoginVO> bindExistingProviderAccount(@RequestBody BindExistingAccountCommand command) {
+        return R.ok(externalAuthorizationService.bindExisting(command));
+    }
 
     @Override
     @PostMapping("/login")

@@ -18,4 +18,11 @@
         LIMIT 1
         FOR UPDATE
     </select>
+    <select id="selectNameByTenantAndId" resultType="java.lang.String">
+        SELECT org_name
+        FROM sys_org
+        WHERE tenant_id = #{tenantId}
+          AND id = #{orgId}
+        LIMIT 1
+    </select>
 </mapper>

@@ -45,6 +45,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         classes = AuthSecurityIntegrationTest.TestApp.class,
         properties = {
                 "mango.access.auth-enabled=true",
+                "mango.crypto.enabled=false",
                 "mango.web.inner.secret=auth-internal-e2e-secret",
                 "mango.security.jwt.secret=mango-secret-key-for-jwt-token-generation-must-be-at-least-256-bits",
                 "spring.flyway.enabled=false",

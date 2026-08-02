@@ -76,13 +76,13 @@ const menuItems: MenuItem[] = [
     path: '/profile',
     name: 'Profile',
     meta: { title: '个人中心', icon: 'User' },
-    component: () => import('@mango/auth').then(m => m.ProfileView),
+    component: () => import('@mango/auth').then((m) => m.ProfileView),
   },
   {
     path: '/password',
     name: 'Password',
     meta: { title: '修改密码', icon: 'Lock' },
-    component: () => import('@mango/auth').then(m => m.PasswordView),
+    component: () => import('@mango/auth').then((m) => m.PasswordView),
   },
   ...(import.meta.env.DEV ? [createDevelopMenu()] : []),
 ];
@@ -95,8 +95,14 @@ export function generateStaticRoutes(): RouteRecordRaw[] {
     {
       path: '/login',
       name: 'Login',
-      component: () => import('@mango/auth').then(m => m.LoginView),
+      component: () => import('@mango/auth').then((m) => m.LoginView),
       meta: { title: '登录', isAffix: true },
+    },
+    {
+      path: '/provider-callback',
+      name: 'ProviderCallback',
+      component: () => import('@mango/auth').then((m) => m.ProviderCallbackView),
+      meta: { title: '第三方授权', isAffix: true },
     },
     {
       path: '/404',
@@ -121,11 +127,7 @@ export function generateStaticRoutes(): RouteRecordRaw[] {
       name: 'Layout',
       component: MangoAdminLayout,
       redirect: '/home',
-      children: [
-        ...menuItems.map((item) => menuItemToRoute(item)),
-        homeDetailRoute(),
-        paymentCashierRoute(),
-      ],
+      children: [...menuItems.map((item) => menuItemToRoute(item)), homeDetailRoute(), paymentCashierRoute()],
     },
   ];
 }

@@ -22,6 +22,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.mybatis.spring.annotation.MapperScan;
 
 import java.util.concurrent.Executors;
 
@@ -33,6 +34,7 @@ import java.util.concurrent.Executors;
 @AutoConfiguration
 @AutoConfigureBefore(name = "io.mango.authorization.starter.autoconfigure.SecurityAutoConfiguration")
 @EnableConfigurationProperties({AntiReplayProperties.class, AuthSecurityProperties.class})
+@MapperScan("io.mango.auth.core.mapper")
 @ComponentScan({
     "io.mango.auth.core.service",
     "io.mango.auth.core.service.impl",

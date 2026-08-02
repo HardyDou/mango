@@ -1,4 +1,4 @@
-import { reactive, type App, type Component, type InjectionKey } from 'vue';
+import { markRaw, reactive, toRaw, type App, type Component, type InjectionKey } from 'vue';
 
 export interface MangoAuthLoginBrandConfig {
   title?: string;
@@ -23,6 +23,7 @@ export interface MangoAuthProfileSlots {
   infoBefore?: Component;
   infoAfter?: Component;
   extraTabs?: Component;
+  theme?: Component;
 }
 
 export interface MangoAuthPasswordSlots {
@@ -82,10 +83,10 @@ export function mergeAuthConfig(base: MangoAuthConfig, override: MangoAuthConfig
         ...base.login?.brand,
         ...override.login?.brand,
       },
-      slots: {
+      slots: normalizeSlotComponents({
         ...base.login?.slots,
         ...override.login?.slots,
-      },
+      }),
       defaults: {
         ...base.login?.defaults,
         ...override.login?.defaults,
@@ -94,18 +95,29 @@ export function mergeAuthConfig(base: MangoAuthConfig, override: MangoAuthConfig
     profile: {
       ...base.profile,
       ...override.profile,
-      slots: {
+      slots: normalizeSlotComponents({
         ...base.profile?.slots,
         ...override.profile?.slots,
-      },
+      }),
     },
     password: {
       ...base.password,
       ...override.password,
-      slots: {
+      slots: normalizeSlotComponents({
         ...base.password?.slots,
         ...override.password?.slots,
-      },
+      }),
     },
   };
+}
+
+function normalizeSlotComponents<T extends Record<string, Component | undefined>>(slots: T): T {
+  return Object.fromEntries(
+    Object.entries(slots).map(([name, component]) => [
+      name,
+      component && (typeof component === 'object' || typeof component === 'function')
+        ? markRaw(toRaw(component))
+        : component,
+    ]),
+  ) as T;
 }

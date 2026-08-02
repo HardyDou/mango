@@ -1,3 +1,4 @@
+<!-- eslint-disable vue/multi-word-component-names -->
 <template>
   <div class="login-container">
     <div class="login-box">
@@ -13,7 +14,7 @@
       <div class="login-form">
         <component :is="loginSlots.formHeader" v-if="loginSlots.formHeader" :form="form" />
         <h2 class="form-title">
-          {{ loginBrand.panelTitle || $t('login.title') }}
+          {{ loginBrand.panelTitle || '登录' }}
         </h2>
         <component
           :is="loginSlots.formBefore"
@@ -46,18 +47,12 @@
             </el-select>
           </el-form-item>
           <el-form-item prop="username">
-            <el-input
-              v-model="form.username"
-              :placeholder="$t('login.username.placeholder')"
-              size="large"
-              prefix-icon="User"
-              clearable
-            />
+            <el-input v-model="form.username" placeholder="请输入用户名" size="large" prefix-icon="User" clearable />
           </el-form-item>
           <el-form-item prop="password">
             <el-input
               v-model="form.password"
-              :placeholder="$t('login.password.placeholder')"
+              placeholder="请输入密码"
               type="password"
               size="large"
               prefix-icon="Lock"
@@ -75,21 +70,26 @@
               class="login-btn"
               @click="handleLogin"
             >
-              {{ $t('login.btn') }}
-            </el-button>
-          </el-form-item>
-          <el-form-item>
-            <el-button
-              size="large"
-              class="wecom-login-btn"
-              :loading="wecomLoading"
-              :disabled="loading || wecomLoading || !form.tenantId"
-              @click="openWecomLogin"
-            >
-              企业微信扫码登录
+              登录
             </el-button>
           </el-form-item>
         </el-form>
+        <div v-if="providerLoading || availableProviders.length > 0" class="provider-login">
+          <el-divider>其他登录方式</el-divider>
+          <div class="provider-actions">
+            <el-button
+              v-for="provider in availableProviders"
+              :key="provider.provider"
+              size="large"
+              :data-provider="provider.provider"
+              :loading="authorizingProvider === provider.provider"
+              :disabled="loading || Boolean(authorizingProvider)"
+              @click="startExternalLogin(provider.provider)"
+            >
+              使用{{ provider.displayName }}登录
+            </el-button>
+          </div>
+        </div>
         <component
           :is="loginSlots.formAfter"
           v-if="loginSlots.formAfter"
@@ -99,27 +99,7 @@
         <component :is="loginSlots.footer" v-if="loginSlots.footer" />
       </div>
     </div>
-    <el-dialog v-model="wecomDialogVisible" title="企业微信扫码登录" width="420px">
-      <div class="wecom-login-panel">
-        <iframe v-if="wecomQrUrl" :src="wecomQrUrl" class="wecom-qr-frame" />
-        <div v-else class="wecom-login-placeholder">
-          请在通知管理的企业微信渠道配置中启用扫码登录，并补充 AgentId 和扫码回调地址；本地联调可输入授权 code。
-        </div>
-        <el-input v-model="wecomCode" placeholder="企业微信回调 code" clearable />
-      </div>
-      <template #footer>
-        <el-button @click="wecomDialogVisible = false"> 取消 </el-button>
-        <el-button
-          type="primary"
-          :loading="wecomLoading"
-          :disabled="!wecomCode.trim() || !form.tenantId"
-          @click="handleWecomLogin()"
-        >
-          登录
-        </el-button>
-      </template>
-    </el-dialog>
-    <el-dialog
+    <MangoDialog
       v-model="passwordResetDialogVisible"
       title="修改登录密码"
       width="420px"
@@ -164,16 +144,23 @@
           确定
         </el-button>
       </template>
-    </el-dialog>
+    </MangoDialog>
   </div>
 </template>
 
 <script setup lang="ts" name="Login">
-import { computed, nextTick, onMounted, ref } from 'vue';
+import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { type FormInstance, type FormRules } from 'element-plus';
-import { defaultPasswordPolicy, isPasswordPolicyPassed, PasswordPolicyHint } from '@mango/common';
+import { defaultPasswordPolicy, isPasswordPolicyPassed, MangoDialog, PasswordPolicyHint } from '@mango/common';
 import { useAuthConfig } from '../composables/useAuthConfig';
 import { useMangoLoginFlow } from '../composables/useMangoLoginFlow';
+import {
+  listAvailableProviders,
+  providerCallbackUri,
+  startProviderAuthorization,
+  type AvailableProvider,
+} from '../api/provider';
+import type { ExternalAuthProvider } from '../api/identity';
 
 const loginFormRef = ref();
 const passwordResetFormRef = ref<FormInstance>();
@@ -193,10 +180,7 @@ const {
   tenantOptions,
   tenantLoading,
   loading,
-  wecomLoading,
   passwordResetLoading,
-  wecomCode,
-  wecomQrUrl,
   canSubmitPasswordReset,
   passwordPolicyMessage,
 } = loginFlow;
@@ -208,8 +192,10 @@ const rules = {
   password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
 };
 
-const wecomDialogVisible = ref(false);
 const passwordResetDialogVisible = ref(false);
+const providerLoading = ref(false);
+const availableProviders = ref<AvailableProvider[]>([]);
+const authorizingProvider = ref<ExternalAuthProvider>();
 
 const passwordResetRules: FormRules = {
   newPassword: [
@@ -242,12 +228,17 @@ const passwordResetRules: FormRules = {
 
 onMounted(() => {
   void (async () => {
-    const result = await loginFlow.initializeLoginFlow();
-    if (result.shouldOpenWecomDialog) {
-      wecomDialogVisible.value = true;
-    }
+    await loginFlow.initializeLoginFlow();
+    await loadAvailableProviders();
   })();
 });
+
+watch(
+  () => form.tenantId,
+  () => {
+    void loadAvailableProviders();
+  },
+);
 
 async function handleChangeRequiredPassword() {
   if (!passwordResetFormRef.value || passwordResetLoading.value) {
@@ -260,20 +251,49 @@ async function handleChangeRequiredPassword() {
   }
 }
 
-async function openWecomLogin() {
-  const result = await loginFlow.prepareWecomLogin();
-  wecomDialogVisible.value = result.shouldOpenWecomDialog;
+async function loadAvailableProviders() {
+  if (!form.tenantId) {
+    availableProviders.value = [];
+    return;
+  }
+  providerLoading.value = true;
+  try {
+    availableProviders.value = await listAvailableProviders(
+      form.tenantId,
+      loginFlow.loginDefaults.value.appCode || 'internal-admin',
+    );
+  } catch (error) {
+    console.error('加载第三方登录方式失败:', error);
+    availableProviders.value = [];
+  } finally {
+    providerLoading.value = false;
+  }
 }
 
-async function handleWecomLogin() {
-  await loginFlow.submitWecomLogin();
+async function startExternalLogin(provider: ExternalAuthProvider) {
+  if (!form.tenantId || authorizingProvider.value) return;
+  authorizingProvider.value = provider;
+  try {
+    const authorization = await startProviderAuthorization({
+      tenantId: form.tenantId,
+      appCode: loginFlow.loginDefaults.value.appCode || 'internal-admin',
+      provider,
+      intent: 'LOGIN',
+      redirectUri: providerCallbackUri(),
+    });
+    window.sessionStorage.setItem('mango-auth:provider-return', loginFlow.resolveLoginRedirectPath());
+    window.location.assign(authorization.authorizationUrl);
+  } catch (error) {
+    console.error('发起第三方登录失败:', error);
+    authorizingProvider.value = undefined;
+  }
 }
 
 // 登录处理
 const handleLogin = async () => {
   if (!loginFormRef.value || loading.value) return;
 
-  await loginFormRef.value.validate(async (valid) => {
+  await loginFormRef.value.validate(async (valid: boolean) => {
     if (!valid) return;
     const result = await loginFlow.submitPasswordLogin();
     if (result.status === 'password-reset-required') {
@@ -298,10 +318,10 @@ const handleLogin = async () => {
 .login-box {
   display: flex;
   width: 900px;
-  height: 500px;
+  min-height: 500px;
   background: #fff;
   border-radius: 12px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 20px 60px rgb(0 0 0 / 30%);
   overflow: hidden;
 }
 
@@ -361,32 +381,17 @@ const handleLogin = async () => {
   .login-btn {
     width: 100%;
   }
+}
 
-  .wecom-login-btn {
+.provider-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+
+  .el-button {
     width: 100%;
+    margin: 0;
   }
-}
-
-.wecom-login-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.wecom-qr-frame {
-  width: 100%;
-  height: 260px;
-  border: 1px solid var(--el-border-color-light);
-  border-radius: 4px;
-}
-
-.wecom-login-placeholder {
-  padding: 24px;
-  color: var(--el-text-color-secondary);
-  line-height: 1.6;
-  background: var(--el-fill-color-lighter);
-  border: 1px solid var(--el-border-color-light);
-  border-radius: 4px;
 }
 
 :deep(.el-input__wrapper) {
@@ -401,5 +406,28 @@ const handleLogin = async () => {
   float: right;
   color: #909399;
   font-size: 12px;
+}
+
+@media (width <= 768px) {
+  .login-container {
+    align-items: flex-start;
+    padding: 20px;
+    overflow-y: auto;
+  }
+
+  .login-box {
+    width: 100%;
+    height: auto;
+    min-height: 0;
+  }
+
+  .login-left {
+    display: none;
+  }
+
+  .login-form {
+    width: 100%;
+    padding: 28px 20px;
+  }
 }
 </style>

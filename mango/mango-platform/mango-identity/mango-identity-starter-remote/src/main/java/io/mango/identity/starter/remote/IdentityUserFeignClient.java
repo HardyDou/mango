@@ -12,12 +12,18 @@ import io.mango.identity.api.command.UnbindExternalIdentityCommand;
 import io.mango.identity.api.command.UpdateIdentityUserCommand;
 import io.mango.identity.api.command.UpdateIdentityUserStatusCommand;
 import io.mango.identity.api.command.UnlockIdentityUserCommand;
+import io.mango.identity.api.command.SendContactCaptchaCommand;
+import io.mango.identity.api.command.UpdateCurrentUserContactCommand;
+import io.mango.identity.api.command.UpdateCurrentUserProfileCommand;
+import io.mango.identity.api.command.UnbindCurrentExternalIdentityCommand;
 import io.mango.identity.api.query.ExternalIdentityQuery;
 import io.mango.identity.api.query.IdentityUserPageQuery;
 import io.mango.identity.api.query.IdentityUserTargetQuery;
 import io.mango.identity.api.vo.ExternalIdentityBindingVO;
 import io.mango.identity.api.vo.IdentityUserInfoVO;
 import io.mango.identity.api.vo.IdentityUserVO;
+import io.mango.identity.api.vo.ContactCaptchaTicketVO;
+import io.mango.identity.api.vo.CurrentUserProfileVO;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.cloud.openfeign.SpringQueryMap;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -34,6 +40,22 @@ import java.util.List;
  */
 @FeignClient(name = "mango-identity", contextId = "identityUserFeignClient", path = "/identity")
 public interface IdentityUserFeignClient extends IdentityUserApi {
+
+    @Override
+    @GetMapping("/me/profile")
+    R<CurrentUserProfileVO> currentProfile();
+
+    @Override
+    @PutMapping("/me/profile")
+    R<CurrentUserProfileVO> updateCurrentProfile(@RequestBody UpdateCurrentUserProfileCommand command);
+
+    @Override
+    @PostMapping("/me/contact-captcha")
+    R<ContactCaptchaTicketVO> sendCurrentContactCaptcha(@RequestBody SendContactCaptchaCommand command);
+
+    @Override
+    @PutMapping("/me/contact")
+    R<CurrentUserProfileVO> updateCurrentContact(@RequestBody UpdateCurrentUserContactCommand command);
 
     @Override
     @GetMapping("/users/page")
@@ -102,5 +124,13 @@ public interface IdentityUserFeignClient extends IdentityUserApi {
     @Override
     @GetMapping("/users/external-identities")
     R<List<ExternalIdentityBindingVO>> listExternalIdentities(@RequestParam("userId") Long userId);
+
+    @Override
+    @GetMapping("/me/external-identities")
+    R<List<ExternalIdentityBindingVO>> listCurrentExternalIdentities();
+
+    @Override
+    @DeleteMapping("/me/external-identities")
+    R<Boolean> unbindCurrentExternalIdentity(@RequestBody UnbindCurrentExternalIdentityCommand command);
 
 }

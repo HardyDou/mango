@@ -12,6 +12,10 @@ import io.mango.identity.api.command.UnbindExternalIdentityCommand;
 import io.mango.identity.api.command.UpdateIdentityUserCommand;
 import io.mango.identity.api.command.UpdateIdentityUserStatusCommand;
 import io.mango.identity.api.command.UnlockIdentityUserCommand;
+import io.mango.identity.api.command.SendContactCaptchaCommand;
+import io.mango.identity.api.command.UpdateCurrentUserContactCommand;
+import io.mango.identity.api.command.UpdateCurrentUserProfileCommand;
+import io.mango.identity.api.command.UnbindCurrentExternalIdentityCommand;
 import io.mango.identity.api.query.ExternalIdentityQuery;
 import io.mango.identity.api.query.IdentityUserPageQuery;
 import io.mango.identity.api.query.IdentityUserTargetQuery;
@@ -20,6 +24,8 @@ import io.mango.identity.api.IdentityUserApi;
 import io.mango.identity.api.vo.ExternalIdentityBindingVO;
 import io.mango.identity.api.vo.IdentityUserInfoVO;
 import io.mango.identity.api.vo.IdentityUserVO;
+import io.mango.identity.api.vo.ContactCaptchaTicketVO;
+import io.mango.identity.api.vo.CurrentUserProfileVO;
 import io.mango.identity.core.service.IIdentityUserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -49,6 +55,38 @@ import java.util.List;
 public class IdentityUserController implements IdentityUserApi {
 
     private final IIdentityUserService identityUserService;
+
+    @Override
+    @GetMapping("/me/profile")
+    @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "读取当前用户资料")
+    @Operation(summary = "读取当前用户资料", description = "读取当前登录用户的基础资料、联系方式和实名认证信息")
+    public R<CurrentUserProfileVO> currentProfile() {
+        return R.ok(identityUserService.currentProfile());
+    }
+
+    @Override
+    @PutMapping("/me/profile")
+    @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "更新当前用户资料")
+    @Operation(summary = "更新当前用户资料", description = "更新当前登录用户的昵称、头像和实名认证信息")
+    public R<CurrentUserProfileVO> updateCurrentProfile(@RequestBody UpdateCurrentUserProfileCommand command) {
+        return R.ok(identityUserService.updateCurrentProfile(command));
+    }
+
+    @Override
+    @PostMapping("/me/contact-captcha")
+    @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "发送新联系方式验证码")
+    @Operation(summary = "发送新联系方式验证码", description = "向当前用户准备绑定的新手机号或邮箱发送验证码")
+    public R<ContactCaptchaTicketVO> sendCurrentContactCaptcha(@RequestBody SendContactCaptchaCommand command) {
+        return R.ok(identityUserService.sendCurrentContactCaptcha(command));
+    }
+
+    @Override
+    @PutMapping("/me/contact")
+    @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "更新当前用户联系方式")
+    @Operation(summary = "更新当前用户联系方式", description = "校验当前密码和验证码后更新手机号或邮箱")
+    public R<CurrentUserProfileVO> updateCurrentContact(@RequestBody UpdateCurrentUserContactCommand command) {
+        return R.ok(identityUserService.updateCurrentContact(command));
+    }
 
     @GetMapping("/users/page")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:user:list")
@@ -190,6 +228,22 @@ public class IdentityUserController implements IdentityUserApi {
     public R<List<ExternalIdentityBindingVO>> listExternalIdentities(
             @Parameter(description = "用户ID") @RequestParam("userId") Long userId) {
         return R.ok(identityUserService.listExternalIdentities(userId));
+    }
+
+    @Override
+    @GetMapping("/me/external-identities")
+    @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "查询当前用户第三方授权")
+    @Operation(summary = "查询当前用户第三方授权", description = "查询当前登录用户在当前应用下已绑定的第三方身份")
+    public R<List<ExternalIdentityBindingVO>> listCurrentExternalIdentities() {
+        return R.ok(identityUserService.listCurrentExternalIdentities());
+    }
+
+    @Override
+    @DeleteMapping("/me/external-identities")
+    @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "解绑当前用户第三方授权")
+    @Operation(summary = "解绑当前用户第三方授权", description = "校验当前密码后解除指定的第三方身份绑定")
+    public R<Boolean> unbindCurrentExternalIdentity(@RequestBody UnbindCurrentExternalIdentityCommand command) {
+        return R.ok(identityUserService.unbindCurrentExternalIdentity(command));
     }
 
 }
