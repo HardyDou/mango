@@ -1,5 +1,6 @@
 package io.mango.auth.core.service.impl;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.auth.api.command.BindExistingAccountCommand;
 import io.mango.auth.api.command.CompleteProviderAuthorizationCommand;
 import io.mango.auth.api.command.StartProviderAuthorizationCommand;
@@ -43,6 +44,8 @@ public class ExternalAuthorizationService implements IExternalAuthorizationServi
     private final ISecurityContextProvider securityContextProvider;
     private final Map<ExternalAuthProvider, ExternalAuthProviderAdapter> adapters;
 
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+            justification = "The service intentionally retains Spring-managed domain collaborators")
     public ExternalAuthorizationService(IAuthProviderConfigService configService,
                                         ProviderAuthorizationStore authorizationStore,
                                         IdentityUserApi identityUserApi,
@@ -62,7 +65,8 @@ public class ExternalAuthorizationService implements IExternalAuthorizationServi
     public ProviderAuthorizationVO start(StartProviderAuthorizationCommand command) {
         Require.notNull(command, AuthCode.AUTH_REQUEST_INVALID);
         IAuthProviderConfigService.ResolvedProviderConfig config = configService.requireAvailable(
-                command.getTenantId(), command.getAppCode(), command.getProvider());
+                new IAuthProviderConfigService.ProviderSelection(
+                        command.getTenantId(), command.getAppCode(), command.getProvider()));
         String redirectUri = command.getRedirectUri().trim();
         Require.isTrue(config.redirectUris().contains(redirectUri), AuthCode.PROVIDER_REDIRECT_INVALID);
         Long userId = null;
@@ -86,7 +90,8 @@ public class ExternalAuthorizationService implements IExternalAuthorizationServi
         Require.notNull(command, AuthCode.AUTH_REQUEST_INVALID);
         ProviderAuthorizationStore.StatePayload state = authorizationStore.consumeState(command.getState());
         IAuthProviderConfigService.ResolvedProviderConfig config = configService.requireAvailable(
-                state.tenantId(), state.appCode(), state.provider());
+                new IAuthProviderConfigService.ProviderSelection(
+                        state.tenantId(), state.appCode(), state.provider()));
         ExternalAuthProviderAdapter.ExternalAuthIdentity externalIdentity = requireAdapter(state.provider())
                 .exchange(config, command.getCode());
         MangoContextSnapshot previous = MangoContextHolder.get();
@@ -118,14 +123,15 @@ public class ExternalAuthorizationService implements IExternalAuthorizationServi
         Require.notNull(command, AuthCode.AUTH_REQUEST_INVALID);
         ProviderAuthorizationStore.BindingPayload ticket = authorizationStore.consumeBinding(
                 command.getBindingTicket());
-        AuthUserVO user = accountLoginService.verifyBindingAccount(command.getUsername(), command.getPassword(),
-                ticket.tenantId());
+        AuthUserVO user = accountLoginService.verifyBindingAccount(new ExternalAccountLoginService.BindingCredentials(
+                command.getUsername(), command.getPassword(), ticket.tenantId()));
         MangoContextSnapshot previous = MangoContextHolder.get();
         try {
             MangoContextHolder.update(current -> current.withRequest(null, null, ticket.tenantId(), ticket.appCode(), null));
             bind(user.getUserId(), ticket.appCode(), ticket.provider(), ticket.providerTenantId(),
                     ticket.externalUserId(), ticket.displayName());
-            return accountLoginService.loginExternalUser(user.getUserId(), ticket.tenantId(), ticket.appCode());
+            return accountLoginService.loginExternalUser(new ExternalAccountLoginService.ExternalLoginContext(
+                    user.getUserId(), ticket.tenantId(), ticket.appCode()));
         } finally {
             MangoContextHolder.set(previous);
         }
@@ -152,7 +158,8 @@ public class ExternalAuthorizationService implements IExternalAuthorizationServi
                                                       ProviderAuthorizationStore.StatePayload state) {
         ProviderAuthorizationResultVO result = new ProviderAuthorizationResultVO();
         result.setStatus(ProviderAuthorizationStatus.LOGIN_SUCCESS);
-        result.setLogin(accountLoginService.loginExternalUser(userId, state.tenantId(), state.appCode()));
+        result.setLogin(accountLoginService.loginExternalUser(new ExternalAccountLoginService.ExternalLoginContext(
+                userId, state.tenantId(), state.appCode())));
         return result;
     }
 

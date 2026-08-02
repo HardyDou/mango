@@ -13,14 +13,13 @@ import io.mango.auth.core.entity.AuthProviderConfigEntity;
 import io.mango.auth.core.mapper.AuthProviderConfigMapper;
 import io.mango.auth.core.service.AuthProviderSecretCodec;
 import io.mango.auth.core.service.IAuthProviderConfigService;
+import io.mango.auth.core.support.AuthApiResponseAdapter;
 import io.mango.authorization.api.TenantAppBindingApi;
 import io.mango.authorization.api.query.TenantAppBindingQuery;
 import io.mango.authorization.api.vo.TenantAppBindingVO;
-import io.mango.common.result.R;
 import io.mango.common.result.Require;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,7 +31,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
-@RequiredArgsConstructor
 public class AuthProviderConfigService implements IAuthProviderConfigService {
 
     private static final TypeReference<List<String>> STRING_LIST_TYPE = new TypeReference<>() { };
@@ -41,6 +39,16 @@ public class AuthProviderConfigService implements IAuthProviderConfigService {
     private final AuthProviderSecretCodec secretCodec;
     private final ObjectMapper objectMapper;
     private final ObjectProvider<TenantAppBindingApi> tenantAppBindingApiProvider;
+
+    public AuthProviderConfigService(AuthProviderConfigMapper mapper,
+                                     AuthProviderSecretCodec secretCodec,
+                                     ObjectMapper objectMapper,
+                                     ObjectProvider<TenantAppBindingApi> tenantAppBindingApiProvider) {
+        this.mapper = mapper;
+        this.secretCodec = secretCodec;
+        this.objectMapper = objectMapper.copy();
+        this.tenantAppBindingApiProvider = tenantAppBindingApiProvider;
+    }
 
     @Override
     public List<ProviderConfigVO> listCurrentTenant(String appCode) {
@@ -100,12 +108,13 @@ public class AuthProviderConfigService implements IAuthProviderConfigService {
     }
 
     @Override
-    public List<AvailableProviderVO> listAvailable(String tenantId, String appCode) {
+    public List<AvailableProviderVO> listAvailable(ProviderScope scope) {
+        Require.notNull(scope, AuthCode.PROVIDER_CONFIG_INVALID, "第三方登录范围不能为空");
         MangoContextSnapshot previous = MangoContextHolder.get();
         try {
-            MangoContextHolder.update(current -> current.withTenantId(requireText(tenantId, "租户不能为空")));
+            MangoContextHolder.update(current -> current.withTenantId(requireText(scope.tenantId(), "租户不能为空")));
             return mapper.selectList(new LambdaQueryWrapper<AuthProviderConfigEntity>()
-                            .eq(AuthProviderConfigEntity::getAppCode, requireText(appCode, "应用编码不能为空"))
+                            .eq(AuthProviderConfigEntity::getAppCode, requireText(scope.appCode(), "应用编码不能为空"))
                             .eq(AuthProviderConfigEntity::getEnabled, true)
                             .orderByAsc(AuthProviderConfigEntity::getProvider))
                     .stream()
@@ -119,12 +128,14 @@ public class AuthProviderConfigService implements IAuthProviderConfigService {
     }
 
     @Override
-    public ResolvedProviderConfig requireAvailable(String tenantId, String appCode, ExternalAuthProvider provider) {
+    public ResolvedProviderConfig requireAvailable(ProviderSelection selection) {
+        Require.notNull(selection, AuthCode.PROVIDER_CONFIG_INVALID, "第三方登录配置查询条件不能为空");
+        ExternalAuthProvider provider = selection.provider();
         Require.notNull(provider, AuthCode.PROVIDER_CONFIG_INVALID, "Provider 不能为空");
         MangoContextSnapshot previous = MangoContextHolder.get();
         try {
-            String normalizedTenant = requireText(tenantId, "租户不能为空");
-            String normalizedApp = requireText(appCode, "应用编码不能为空");
+            String normalizedTenant = requireText(selection.tenantId(), "租户不能为空");
+            String normalizedApp = requireText(selection.appCode(), "应用编码不能为空");
             MangoContextHolder.update(current -> current.withTenantId(normalizedTenant));
             AuthProviderConfigEntity entity = mapper.selectOne(new LambdaQueryWrapper<AuthProviderConfigEntity>()
                     .eq(AuthProviderConfigEntity::getAppCode, normalizedApp)
@@ -209,9 +220,8 @@ public class AuthProviderConfigService implements IAuthProviderConfigService {
         query.setTenantId(Long.valueOf(requireCurrentTenant()));
         query.setAppCode(appCode);
         query.setStatus(1);
-        R<List<TenantAppBindingVO>> response = api.list(query);
-        Require.isTrue(response != null && response.isSuccess() && response.getData() != null
-                        && response.getData().stream().anyMatch(binding -> appCode.equals(binding.getAppCode())),
+        List<TenantAppBindingVO> bindings = AuthApiResponseAdapter.requireProviderConfigData(api.list(query));
+        Require.isTrue(bindings.stream().anyMatch(binding -> appCode.equals(binding.getAppCode())),
                 AuthCode.PROVIDER_CONFIG_INVALID, "应用未向当前租户启用");
     }
 

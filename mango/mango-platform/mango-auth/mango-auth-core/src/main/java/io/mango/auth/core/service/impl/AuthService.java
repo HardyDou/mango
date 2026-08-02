@@ -177,36 +177,40 @@ public class AuthService implements IAuthService, ExternalAccountLoginService {
     }
 
     @Override
-    public AuthUserVO verifyBindingAccount(String username, String password, String tenantId) {
+    public AuthUserVO verifyBindingAccount(BindingCredentials credentials) {
+        Require.notNull(credentials, AuthCode.LOGIN_ACCOUNT_OR_PASSWORD_INVALID);
+        String username = credentials.username();
         Require.notBlank(username, AuthCode.LOGIN_ACCOUNT_OR_PASSWORD_INVALID);
         AuthUserVO user = authUserProvider.getByUsernameForAuth(username, "INTERNAL");
         Require.notNull(user, AuthCode.LOGIN_ACCOUNT_OR_PASSWORD_INVALID);
         authIdentitySecurityProvider.assertLoginAllowed(user);
-        Require.isTrue(passwordEncoder.matches(password, user.getPassword()),
+        Require.isTrue(passwordEncoder.matches(credentials.password(), user.getPassword()),
                 AuthCode.LOGIN_ACCOUNT_OR_PASSWORD_INVALID);
         Require.isTrue(user.getStatus() == 1, AuthCode.ACCOUNT_DISABLED);
         Require.isFalse(Boolean.TRUE.equals(user.getPasswordResetRequired()),
                 AuthCode.LOGIN_ACCOUNT_OR_PASSWORD_INVALID);
-        resolveTenant(user.getUserId(), tenantId, null);
+        resolveTenant(user.getUserId(), credentials.tenantId(), null);
         return user;
     }
 
     @Override
-    public LoginVO loginExternalUser(Long userId, String tenantId, String appCode) {
+    public LoginVO loginExternalUser(ExternalLoginContext context) {
+        Require.notNull(context, AuthCode.AUTH_REQUEST_INVALID);
+        Long userId = context.userId();
         AuthUserVO user = authUserProvider.getByIdForAuth(userId);
         Require.notNull(user, AuthCode.CURRENT_USER_NOT_FOUND);
         authIdentitySecurityProvider.assertLoginAllowed(user);
         Require.isTrue(user.getStatus() == 1, AuthCode.ACCOUNT_DISABLED);
         Require.isFalse(Boolean.TRUE.equals(user.getPasswordResetRequired()),
                 AuthCode.LOGIN_ACCOUNT_OR_PASSWORD_INVALID);
-        LoginCommand context = new LoginCommand();
-        context.setTenantId(tenantId);
-        context.setAppCode(firstText(appCode, DEFAULT_APP_CODE));
-        context.setRealm(user.getRealm());
-        context.setActorType(user.getActorType());
-        context.setPartyType(user.getPartyType());
-        context.setPartyId(user.getPartyId());
-        IdentityContext identityContext = resolveIdentityContext(user, context);
+        LoginCommand loginCommand = new LoginCommand();
+        loginCommand.setTenantId(context.tenantId());
+        loginCommand.setAppCode(firstText(context.appCode(), DEFAULT_APP_CODE));
+        loginCommand.setRealm(user.getRealm());
+        loginCommand.setActorType(user.getActorType());
+        loginCommand.setPartyType(user.getPartyType());
+        loginCommand.setPartyId(user.getPartyId());
+        IdentityContext identityContext = resolveIdentityContext(user, loginCommand);
         Map<String, Object> claims = identityContext.toClaims(user.getUsername());
         String accessToken = tokenService.generateAccessToken(user.getUserId(), user.getUsername(), claims);
         String refreshToken = tokenService.generateRefreshToken(user.getUserId(), user.getUsername(), claims);
@@ -337,7 +341,7 @@ public class AuthService implements IAuthService, ExternalAccountLoginService {
     private IAuthProviderConfigService.ResolvedProviderConfig resolveWecomLoginConfig(
             String tenantId, String appCode, Long configId) {
         IAuthProviderConfigService.ResolvedProviderConfig config = authProviderConfigService.requireAvailable(
-                tenantId, appCode, ExternalAuthProvider.WECOM);
+                new IAuthProviderConfigService.ProviderSelection(tenantId, appCode, ExternalAuthProvider.WECOM));
         Require.isTrue(configId == null || configId.equals(config.id()), AuthCode.WECOM_CONFIG_UNAVAILABLE);
         return config;
     }

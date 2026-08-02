@@ -13,12 +13,26 @@ public interface IAuthProviderConfigService {
 
     ProviderConfigVO save(SaveProviderConfigCommand command);
 
-    List<AvailableProviderVO> listAvailable(String tenantId, String appCode);
+    List<AvailableProviderVO> listAvailable(ProviderScope scope);
 
-    ResolvedProviderConfig requireAvailable(String tenantId, String appCode, ExternalAuthProvider provider);
+    ResolvedProviderConfig requireAvailable(ProviderSelection selection);
+
+    record ProviderScope(String tenantId, String appCode) {
+    }
+
+    record ProviderSelection(String tenantId, String appCode, ExternalAuthProvider provider) {
+    }
 
     record ResolvedProviderConfig(Long id, String tenantId, String appCode, ExternalAuthProvider provider,
                                   String clientId, String providerTenantId, String agentId, String secret,
                                   List<String> redirectUris) {
+        public ResolvedProviderConfig {
+            redirectUris = List.copyOf(redirectUris);
+        }
+
+        @Override
+        public List<String> redirectUris() {
+            return List.copyOf(redirectUris);
+        }
     }
 }

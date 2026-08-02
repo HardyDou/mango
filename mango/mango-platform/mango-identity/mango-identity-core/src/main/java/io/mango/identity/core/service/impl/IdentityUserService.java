@@ -97,6 +97,8 @@ public class IdentityUserService extends MangoCrudServiceImpl<IdentityUserMapper
     private static final String VERIFICATION_UNVERIFIED = "UNVERIFIED";
     private static final String DEFAULT_APP_CODE = "internal-admin";
     private static final long CONTACT_CAPTCHA_TTL_SECONDS = 300L;
+    private static final int MASK_SUFFIX_LENGTH = 4;
+    private static final int MASK_PHONE_PREFIX_LENGTH = 3;
 
     private final IdentityUserMapper identityUserMapper;
     private final TenantMemberMapper tenantMemberMapper;
@@ -166,10 +168,7 @@ public class IdentityUserService extends MangoCrudServiceImpl<IdentityUserMapper
         request.setTarget(contact.value());
         request.setBusinessType(contact.businessType());
         request.setExpireSeconds(CONTACT_CAPTCHA_TTL_SECONDS);
-        io.mango.common.result.R<String> response = captchaApi.send(request);
-        Require.isTrue(response != null && response.isSuccess() && StringUtils.hasText(response.getData()),
-                IdentityCode.CONTACT_CAPTCHA_UNAVAILABLE, "验证码发送失败");
-        String key = response.getData();
+        String key = IdentityCaptchaResponse.requireSentKey(captchaApi.send(request));
         if (key.startsWith("captcha:")) {
             key = key.substring("captcha:".length());
         }
@@ -194,9 +193,7 @@ public class IdentityUserService extends MangoCrudServiceImpl<IdentityUserMapper
         request.setKey(expectedKey);
         request.setType(contact.captchaType());
         request.setCode(command.getCaptchaCode());
-        io.mango.common.result.R<Boolean> response = captchaApi.verify(request);
-        Require.isTrue(response != null && response.isSuccess() && Boolean.TRUE.equals(response.getData()),
-                IdentityCode.CONTACT_CAPTCHA_INVALID);
+        IdentityCaptchaResponse.requireVerified(captchaApi.verify(request));
         if (contact.type() == ContactType.PHONE) {
             user.setPhone(contact.value());
         } else {
@@ -586,10 +583,11 @@ public class IdentityUserService extends MangoCrudServiceImpl<IdentityUserMapper
         IdentityUserEntity user = currentUser();
         Require.isTrue(passwordEncoder.matches(command.getCurrentPassword(), user.getPassword()),
                 IdentityCode.CURRENT_PASSWORD_INVALID);
-        ExternalIdentityBindingEntity binding = externalIdentityBindingMapper.selectById(command.getBindingId());
+        ExternalIdentityBindingEntity binding = Require.nonNull(
+                externalIdentityBindingMapper.selectById(command.getBindingId()),
+                IdentityCode.NOT_FOUND, "第三方授权不存在");
         String appCode = firstText(MangoContextHolder.appCode(), DEFAULT_APP_CODE);
-        Require.isTrue(binding != null
-                        && Objects.equals(binding.getUserId(), user.getUserId())
+        Require.isTrue(Objects.equals(binding.getUserId(), user.getUserId())
                         && Objects.equals(binding.getTenantId(), currentTenantId())
                         && appCode.equals(binding.getAppCode()),
                 IdentityCode.NOT_FOUND, "第三方授权不存在");
@@ -1135,11 +1133,12 @@ public class IdentityUserService extends MangoCrudServiceImpl<IdentityUserMapper
     }
 
     private String maskPhone(String value) {
-        if (!StringUtils.hasText(value) || value.length() <= 4) {
+        if (!StringUtils.hasText(value) || value.length() <= MASK_SUFFIX_LENGTH) {
             return value;
         }
-        int visiblePrefix = Math.min(3, value.length() - 4);
-        return value.substring(0, visiblePrefix) + "****" + value.substring(value.length() - 4);
+        int visiblePrefix = Math.min(MASK_PHONE_PREFIX_LENGTH, value.length() - MASK_SUFFIX_LENGTH);
+        return value.substring(0, visiblePrefix) + "****"
+                + value.substring(value.length() - MASK_SUFFIX_LENGTH);
     }
 
     private String maskEmail(String value) {
@@ -1158,10 +1157,10 @@ public class IdentityUserService extends MangoCrudServiceImpl<IdentityUserMapper
         if (!StringUtils.hasText(value)) {
             return value;
         }
-        if (value.length() <= 4) {
+        if (value.length() <= MASK_SUFFIX_LENGTH) {
             return "****";
         }
-        return "****" + value.substring(value.length() - 4);
+        return "****" + value.substring(value.length() - MASK_SUFFIX_LENGTH);
     }
 
     private String trimToNull(String value) {

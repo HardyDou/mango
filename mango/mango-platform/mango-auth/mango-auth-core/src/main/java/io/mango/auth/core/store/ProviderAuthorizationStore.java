@@ -2,12 +2,12 @@ package io.mango.auth.core.store;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.auth.api.enums.AuthCode;
 import io.mango.auth.api.enums.ExternalAuthProvider;
 import io.mango.auth.api.enums.ProviderAuthorizationIntent;
 import io.mango.common.result.Require;
 import io.mango.infra.kv.api.IKvStore;
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -15,12 +15,12 @@ import java.security.SecureRandom;
 import java.util.Base64;
 
 @Component
-@RequiredArgsConstructor
 public class ProviderAuthorizationStore {
 
     private static final SecureRandom RANDOM = new SecureRandom();
     private static final String STATE_PREFIX = "auth:provider:state:";
     private static final String BIND_PREFIX = "auth:provider:binding:";
+    private static final int TOKEN_RANDOM_BYTES = 32;
 
     private final IKvStore kvStore;
     private final ObjectMapper objectMapper;
@@ -30,6 +30,13 @@ public class ProviderAuthorizationStore {
 
     @Value("${mango.auth.provider-bind-ticket-ttl-seconds:600}")
     private long bindTicketTtlSeconds;
+
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+            justification = "The store intentionally retains shared Spring infrastructure collaborators")
+    public ProviderAuthorizationStore(IKvStore kvStore, ObjectMapper objectMapper) {
+        this.kvStore = kvStore;
+        this.objectMapper = objectMapper.copy();
+    }
 
     public String issueState(StatePayload payload) {
         return issue(STATE_PREFIX, payload, stateTtlSeconds);
@@ -56,7 +63,7 @@ public class ProviderAuthorizationStore {
     }
 
     private String issue(String prefix, Object payload, long ttl) {
-        byte[] bytes = new byte[32];
+        byte[] bytes = new byte[TOKEN_RANDOM_BYTES];
         RANDOM.nextBytes(bytes);
         String token = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
         String value;

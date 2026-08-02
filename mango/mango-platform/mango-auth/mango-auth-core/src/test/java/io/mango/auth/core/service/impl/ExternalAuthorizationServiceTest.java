@@ -66,7 +66,7 @@ class ExternalAuthorizationServiceTest {
     @Test
     void startsCurrentBindingFromCanonicalSecurityContext() {
         StartProviderAuthorizationCommand command = startCommand(ProviderAuthorizationIntent.BIND_CURRENT);
-        when(configService.requireAvailable("tenant-a", "admin-app", ExternalAuthProvider.WECOM))
+        when(configService.requireAvailable(providerSelection()))
                 .thenReturn(config());
         when(securityContextProvider.currentContext()).thenReturn(new SecurityContextVO(
                 7L, null, "tenant-a", true, "alice", null, null, null, null, "admin-app"));
@@ -89,7 +89,7 @@ class ExternalAuthorizationServiceTest {
     @Test
     void rejectsCurrentBindingOutsideAuthenticatedTenantAndApplication() {
         StartProviderAuthorizationCommand command = startCommand(ProviderAuthorizationIntent.BIND_CURRENT);
-        when(configService.requireAvailable("tenant-a", "admin-app", ExternalAuthProvider.WECOM))
+        when(configService.requireAvailable(providerSelection()))
                 .thenReturn(config());
         when(securityContextProvider.currentContext()).thenReturn(new SecurityContextVO(
                 7L, null, "tenant-b", true, "alice", null, null, null, null, "other-app"));
@@ -111,12 +111,12 @@ class ExternalAuthorizationServiceTest {
         LoginVO login = new LoginVO();
         login.setAccessToken("access-token");
         when(authorizationStore.consumeState("state")).thenReturn(state);
-        when(configService.requireAvailable("tenant-a", "admin-app", ExternalAuthProvider.WECOM))
+        when(configService.requireAvailable(providerSelection()))
                 .thenReturn(config());
         when(adapter.exchange(any(), eq("authorization-code")))
                 .thenReturn(new ExternalAuthProviderAdapter.ExternalAuthIdentity("corp-a", "external-a", "Alice"));
         when(identityUserApi.findExternalIdentity(any())).thenReturn(R.ok(binding));
-        when(accountLoginService.loginExternalUser(42L, "tenant-a", "admin-app")).thenReturn(login);
+        when(accountLoginService.loginExternalUser(externalLoginContext(42L))).thenReturn(login);
 
         ProviderAuthorizationResultVO result = service.complete(completeCommand());
 
@@ -129,7 +129,7 @@ class ExternalAuthorizationServiceTest {
     @Test
     void requiresExistingAccountBindingForUnboundExternalIdentity() {
         when(authorizationStore.consumeState("state")).thenReturn(loginState());
-        when(configService.requireAvailable("tenant-a", "admin-app", ExternalAuthProvider.WECOM))
+        when(configService.requireAvailable(providerSelection()))
                 .thenReturn(config());
         when(adapter.exchange(any(), eq("authorization-code")))
                 .thenReturn(new ExternalAuthProviderAdapter.ExternalAuthIdentity("corp-a", "external-a", "Alice"));
@@ -143,7 +143,7 @@ class ExternalAuthorizationServiceTest {
         assertThat(result.getBindingTicket()).isEqualTo("binding-ticket");
         assertThat(result.getProviderDisplayName()).isEqualTo("Alice");
         assertThat(result.getExpiresInSeconds()).isEqualTo(600L);
-        verify(accountLoginService, never()).loginExternalUser(any(), any(), any());
+        verify(accountLoginService, never()).loginExternalUser(any());
     }
 
     @Test
@@ -152,7 +152,7 @@ class ExternalAuthorizationServiceTest {
                 "tenant-a", "admin-app", ExternalAuthProvider.WECOM, ProviderAuthorizationIntent.BIND_CURRENT,
                 "https://admin.example.com/provider-callback", 7L);
         when(authorizationStore.consumeState("state")).thenReturn(state);
-        when(configService.requireAvailable("tenant-a", "admin-app", ExternalAuthProvider.WECOM))
+        when(configService.requireAvailable(providerSelection()))
                 .thenReturn(config());
         when(adapter.exchange(any(), eq("authorization-code")))
                 .thenReturn(new ExternalAuthProviderAdapter.ExternalAuthIdentity("corp-a", "external-a", "Alice"));
@@ -176,9 +176,10 @@ class ExternalAuthorizationServiceTest {
         command.setUsername("alice");
         command.setPassword("current-password");
         when(authorizationStore.consumeBinding("binding-ticket")).thenReturn(ticket);
-        when(accountLoginService.verifyBindingAccount("alice", "current-password", "tenant-a")).thenReturn(user);
+        when(accountLoginService.verifyBindingAccount(new ExternalAccountLoginService.BindingCredentials(
+                "alice", "current-password", "tenant-a"))).thenReturn(user);
         when(identityUserApi.bindExternalIdentity(any())).thenReturn(R.ok(binding(42L)));
-        when(accountLoginService.loginExternalUser(42L, "tenant-a", "admin-app")).thenReturn(login);
+        when(accountLoginService.loginExternalUser(externalLoginContext(42L))).thenReturn(login);
 
         assertThat(service.bindExisting(command)).isSameAs(login);
 
@@ -219,6 +220,15 @@ class ExternalAuthorizationServiceTest {
         return new IAuthProviderConfigService.ResolvedProviderConfig(1L, "tenant-a", "admin-app",
                 ExternalAuthProvider.WECOM, "client-id", "corp-a", "1000003", "secret",
                 List.of("https://admin.example.com/provider-callback"));
+    }
+
+    private IAuthProviderConfigService.ProviderSelection providerSelection() {
+        return new IAuthProviderConfigService.ProviderSelection(
+                "tenant-a", "admin-app", ExternalAuthProvider.WECOM);
+    }
+
+    private ExternalAccountLoginService.ExternalLoginContext externalLoginContext(Long userId) {
+        return new ExternalAccountLoginService.ExternalLoginContext(userId, "tenant-a", "admin-app");
     }
 
     private ExternalIdentityBindingVO binding(Long userId) {

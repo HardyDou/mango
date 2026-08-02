@@ -551,9 +551,8 @@ class AuthSecurityFlowTest {
                             "mock-corp", "mock-corp", "1000003", "mock-secret",
                             List.of("http://127.0.0.1:8550/login"));
             org.mockito.Mockito.when(service.requireAvailable(
-                            org.mockito.ArgumentMatchers.anyString(),
-                            org.mockito.ArgumentMatchers.anyString(),
-                            org.mockito.ArgumentMatchers.eq(io.mango.auth.api.enums.ExternalAuthProvider.WECOM)))
+                            org.mockito.ArgumentMatchers.any(
+                                    io.mango.auth.core.service.IAuthProviderConfigService.ProviderSelection.class)))
                     .thenReturn(config);
             return service;
         }

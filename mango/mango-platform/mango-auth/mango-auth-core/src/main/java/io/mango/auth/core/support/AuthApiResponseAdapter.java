@@ -44,6 +44,14 @@ public final class AuthApiResponseAdapter {
         return data;
     }
 
+    public static <T> T requireProviderConfigData(R<T> response) {
+        Require.notNull(response, AuthCode.PROVIDER_CONFIG_INVALID, "租户应用服务不可用");
+        Require.isTrue(response.isSuccess(), response.getCode(), response.getMsg());
+        T data = response.getData();
+        Require.notNull(data, AuthCode.PROVIDER_CONFIG_INVALID, "租户应用数据不可用");
+        return data;
+    }
+
     public static <T> T rethrow(BizException exception) {
         return Require.fail(exception.getCode(), exception.getMessage());
     }

@@ -5,7 +5,13 @@ import io.mango.identity.api.vo.AuthUserVO;
 
 public interface ExternalAccountLoginService {
 
-    AuthUserVO verifyBindingAccount(String username, String password, String tenantId);
+    AuthUserVO verifyBindingAccount(BindingCredentials credentials);
 
-    LoginVO loginExternalUser(Long userId, String tenantId, String appCode);
+    LoginVO loginExternalUser(ExternalLoginContext context);
+
+    record BindingCredentials(String username, String password, String tenantId) {
+    }
+
+    record ExternalLoginContext(Long userId, String tenantId, String appCode) {
+    }
 }

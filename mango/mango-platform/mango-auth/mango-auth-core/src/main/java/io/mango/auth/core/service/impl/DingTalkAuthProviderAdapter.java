@@ -7,6 +7,8 @@ import io.mango.auth.api.enums.ExternalAuthProvider;
 import io.mango.auth.core.service.ExternalAuthProviderAdapter;
 import io.mango.auth.core.service.IAuthProviderConfigService;
 import io.mango.common.exception.BizException;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -26,6 +28,8 @@ public class DingTalkAuthProviderAdapter implements ExternalAuthProviderAdapter 
     private static final Duration TIMEOUT = Duration.ofSeconds(10);
     private static final String TOKEN_URL = "https://api.dingtalk.com/v1.0/oauth2/userAccessToken";
     private static final String USER_URL = "https://api.dingtalk.com/v1.0/contact/users/me";
+    private static final int HTTP_SUCCESS_MIN = 200;
+    private static final int HTTP_SUCCESS_MAX = 300;
 
     private final ObjectMapper objectMapper;
     private final HttpClient httpClient;
@@ -80,7 +84,7 @@ public class DingTalkAuthProviderAdapter implements ExternalAuthProviderAdapter 
 
     private String writeTokenRequest(IAuthProviderConfigService.ResolvedProviderConfig config, String code) {
         try {
-            return objectMapper.writeValueAsString(new TokenRequest(config.clientId(), config.secret(), code,
+            return objectMapper.writeValueAsString(new TokenPayload(config.clientId(), config.secret(), code,
                     "authorization_code"));
         } catch (IOException exception) {
             throw new BizException(AuthCode.EXTERNAL_AUTH_FAILED.getCode(), "钉钉授权请求无法生成", exception);
@@ -91,7 +95,7 @@ public class DingTalkAuthProviderAdapter implements ExternalAuthProviderAdapter 
         try {
             HttpResponse<String> response = httpClient.send(request,
                     HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
-            if (response.statusCode() < 200 || response.statusCode() >= 300) {
+            if (response.statusCode() < HTTP_SUCCESS_MIN || response.statusCode() >= HTTP_SUCCESS_MAX) {
                 throw new BizException(AuthCode.EXTERNAL_AUTH_FAILED.getCode(), "钉钉授权请求失败");
             }
             return objectMapper.readTree(response.body());
@@ -116,6 +120,12 @@ public class DingTalkAuthProviderAdapter implements ExternalAuthProviderAdapter 
         return URLEncoder.encode(value, StandardCharsets.UTF_8);
     }
 
-    private record TokenRequest(String clientId, String clientSecret, String code, String grantType) {
+    @Getter
+    @AllArgsConstructor
+    private static final class TokenPayload {
+        private final String clientId;
+        private final String clientSecret;
+        private final String code;
+        private final String grantType;
     }
 }
