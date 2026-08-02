@@ -1,4 +1,5 @@
 <!-- eslint-disable vue/multi-word-component-names -->
+<!-- mango-page-baseline-exception list: 个人中心授权区仅展示固定登录提供方状态，不是独立分页业务列表。 -->
 <template>
   <div class="profile-container" data-page="account.profile">
     <el-card class="profile-shell" shadow="never">
@@ -269,7 +270,7 @@
       </div>
     </el-card>
 
-    <el-dialog v-model="contactDialogVisible" :title="contactDialogTitle" width="500px">
+    <MangoDialog v-model="contactDialogVisible" :title="contactDialogTitle" width="500px">
       <el-form label-width="104px">
         <el-form-item :label="contactType === 'PHONE' ? '新手机号' : '新邮箱'" required>
           <el-input v-model="contactForm.target" autocomplete="off" />
@@ -295,9 +296,9 @@
         <el-button @click="contactDialogVisible = false">取消</el-button>
         <el-button type="primary" :loading="contactSaving" @click="saveContact">确认修改</el-button>
       </template>
-    </el-dialog>
+    </MangoDialog>
 
-    <el-dialog v-model="unbindDialogVisible" title="解绑第三方账号" width="460px">
+    <MangoDialog v-model="unbindDialogVisible" title="解绑第三方账号" width="460px">
       <p class="dialog-description">解绑后将不能再用该第三方账号登录当前应用。</p>
       <el-form label-width="96px">
         <el-form-item label="当前密码" required>
@@ -308,7 +309,7 @@
         <el-button @click="unbindDialogVisible = false">取消</el-button>
         <el-button type="danger" :loading="unbinding" @click="confirmUnbind">确认解绑</el-button>
       </template>
-    </el-dialog>
+    </MangoDialog>
   </div>
 </template>
 
@@ -318,6 +319,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { ElMessage, type UploadProps, type UploadUserFile } from 'element-plus';
 import { Brush, Connection, Iphone, Key, Lock, Message, Upload as UploadIcon, User } from '@element-plus/icons-vue';
 import { downloadUploadedFile, fileToken, uploadImage } from '@mango/common/api/upload';
+import { MangoDialog } from '@mango/common';
 import { Session } from '@mango/common/utils/storage';
 import { useAuthConfig } from '../composables/useAuthConfig';
 import {

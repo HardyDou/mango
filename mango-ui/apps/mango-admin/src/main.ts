@@ -3,7 +3,11 @@ import { createPinia } from 'pinia';
 import piniaPluginPersist from 'pinia-plugin-persistedstate';
 import { mangoMessage, registerUnauthorizedHandler } from '@mango/common';
 import { installMangoAuth } from '@mango/auth';
-import { configureMangoAdminShell, installAdminBrandingRuntime, MangoThemeSettings } from '@mango/admin-shell';
+import {
+  configureMangoAdminShell,
+  getMangoAdminAuthProfileSlots,
+  installAdminBrandingRuntime,
+} from '@mango/admin-shell';
 import { mangoFullAdminFeatureRegistrars } from '@mango/admin/full';
 import { systemQuickEntryWidgets, systemUserProfileWidgets } from '@mango/system';
 import App from './App.vue';
@@ -79,9 +83,7 @@ installMangoAuth(app, {
   },
   profile: {
     roleLabel: '超级管理员',
-    slots: {
-      theme: MangoThemeSettings,
-    },
+    slots: getMangoAdminAuthProfileSlots(),
   },
   password: {
     minLength: 6,

@@ -1,3 +1,4 @@
+<!-- mango-page-baseline-exception list: 本页固定展示企业微信和钉钉两行配置矩阵，不存在分页领域数据。 -->
 <template>
   <div class="provider-config-page" data-surface="provider-config">
     <el-card shadow="never">
@@ -63,7 +64,7 @@
       </el-table>
     </el-card>
 
-    <el-dialog v-model="dialogVisible" :title="`${providerName(form.provider)}配置`" width="620px">
+    <MangoDialog v-model="dialogVisible" :title="`${providerName(form.provider)}配置`" width="620px">
       <el-form ref="formRef" :model="form" label-width="116px">
         <el-form-item label="应用编码" required>
           <el-input v-model="form.appCode" disabled />
@@ -108,13 +109,14 @@
         <el-button @click="dialogVisible = false">取消</el-button>
         <el-button type="primary" :loading="saving" @click="saveConfig">保存</el-button>
       </template>
-    </el-dialog>
+    </MangoDialog>
   </div>
 </template>
 
 <script setup lang="ts" name="MangoProviderConfig">
 import { computed, onMounted, reactive, ref } from 'vue';
 import { ElMessage } from 'element-plus';
+import { MangoDialog } from '@mango/common';
 import { Session } from '@mango/common/utils/storage';
 import { listProviderConfigs, saveProviderConfig, type ProviderConfig } from '../api/provider';
 import type { ExternalAuthProvider } from '../api/identity';

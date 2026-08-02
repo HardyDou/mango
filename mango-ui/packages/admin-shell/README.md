@@ -126,9 +126,9 @@ const admin = createMangoAdminApp({
 | `MangoAdminShellView`               | Shell 内容视图。                         |
 | `MangoAdminLayout`                  | 管理后台布局组件。                       |
 | `MangoAdminParentView`              | 父级路由占位组件。                       |
-| `MangoThemeSettings`                | 可嵌入个人中心的主题与布局设置组件。     |
 | `createMangoAdminRouter()`          | 创建 Shell 路由。                        |
 | `getShellPinia()`                   | 获取 Shell Pinia。                       |
+| `getMangoAdminAuthProfileSlots()`   | 获取个人中心所需的 Shell 内置页面插槽。  |
 | `installShellApp(app, options)`     | 安装 Shell 依赖和配置。                  |
 | `configureMangoAdminShell(options)` | 合并 Shell 配置。                        |
 | `getMangoAdminShellOptions()`       | 读取当前 Shell 配置。                    |

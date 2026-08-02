@@ -99,7 +99,7 @@
         <component :is="loginSlots.footer" v-if="loginSlots.footer" />
       </div>
     </div>
-    <el-dialog
+    <MangoDialog
       v-model="passwordResetDialogVisible"
       title="修改登录密码"
       width="420px"
@@ -144,14 +144,14 @@
           确定
         </el-button>
       </template>
-    </el-dialog>
+    </MangoDialog>
   </div>
 </template>
 
 <script setup lang="ts" name="Login">
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { type FormInstance, type FormRules } from 'element-plus';
-import { defaultPasswordPolicy, isPasswordPolicyPassed, PasswordPolicyHint } from '@mango/common';
+import { defaultPasswordPolicy, isPasswordPolicyPassed, MangoDialog, PasswordPolicyHint } from '@mango/common';
 import { useAuthConfig } from '../composables/useAuthConfig';
 import { useMangoLoginFlow } from '../composables/useMangoLoginFlow';
 import {
