@@ -570,7 +570,7 @@ CLI 不在运行时管理菜单、权限和租户，但会生成让业务模块�
 
 ### Issue #690：1.0.3x 业务升级与回归修复
 
-Issue #690 覆盖 CLI、Maven plugin、Bootstrap/runtime、Resource、BSQL、Boot JAR、前端生成物和真实业务链路的联合回归。本 PR 的源码修复尚未生成新的正式制品版本；当前已发布的 `@mango/cli@1.0.95`、`@mango/pmo@1.3.8`、Maven `1.0.30`（即 `1.0.3x` 受影响范围）不能被标记为“包含 #690 修复”。业务仓应等待发布说明中的新完整 release tuple，再执行升级。
+Issue #690 覆盖 CLI、Maven plugin、Bootstrap/runtime、Resource、BSQL、Boot JAR、前端生成物和真实业务链路的联合回归。Maven `1.0.30`、`@mango/cli@1.0.95`、`@mango/pmo@1.3.8` 及其 `1.0.3x` 混合组合属于受影响历史版本；修复版本是 Maven `1.0.31`、`@mango/pmo@1.3.9`、`@mango/cli@1.0.96` 和根 `CHANGELOG.md` 所列 24 个 npm 包组成的完整 tuple。
 
 不要只升级一个坐标。CLI、PMO、Maven 后端和前端包必须使用同一 release tuple 中的精确版本；不要把 `1.0.30` 与新 CLI 或任意 SNAPSHOT 混用。
 
@@ -580,11 +580,11 @@ Issue #690 覆盖 CLI、Maven plugin、Bootstrap/runtime、Resource、BSQL、Boo
 2. 安装发布说明指定的精确 CLI，并在业务仓根目录升级 PMO：
 
    ```bash
-   npm install -g @mango/cli@<tuple.cli> --registry "$MANGO_NPM_REGISTRY"
-   mango pmo upgrade --project-dir . --to <tuple.pmo> --sync-shell
+   npm install -g @mango/cli@1.0.96 --registry "$MANGO_NPM_REGISTRY"
+   mango pmo upgrade --project-dir . --to 1.3.9 --sync-shell
    ```
 
-3. 按 tuple 更新后端统一版本：继承 `mango-parent` 的项目修改 `<mango.version>`；自有 Parent 的项目导入同版本 `io.mango:mango-bom`。同步 `mango.config.json.mangoBackendVersion`，不要只改某个模块 POM。
+3. 把后端统一更新到 `1.0.31`：继承 `mango-parent` 的项目修改 `<mango.version>`；自有 Parent 的项目导入 `io.mango:mango-bom:1.0.31`。同步 `mango.config.json.mangoBackendVersion`，不要只改某个模块 POM。
 4. 在 `frontend` 冻结安装并确认所有 `@mango/*` 包来自同一矩阵：
 
    ```bash
@@ -617,6 +617,12 @@ Issue #690 覆盖 CLI、Maven plugin、Bootstrap/runtime、Resource、BSQL、Boo
 - 生成模板、模块 lockfile、Notice E2E、页面/API 路由和 Playwright reporter 纳入真实业务回归。
 
 若升级后出现 `BOOTSTRAP_RECEIPT_MISSING`、`BOOTSTRAP_FINGERPRINT_MISMATCH`、`OLD_RUNTIME_INSTANCES_ACTIVE`、固定 Maven 版本 POM 或 typed resource declaration 解析错误，先保留 `.mango`、Bootstrap 审计表和构建日志，再按对应模块 README 排障；不要降级单个组件掩盖 tuple 不一致。
+
+### 1.0.96 发布影响
+
+`@mango/cli@1.0.96` 精确依赖 `@mango/pmo@1.3.9`，并把生成和升级项目锁定到 Mango Maven `1.0.31` 与根 `CHANGELOG.md` 的完整前端版本矩阵。该批次包含 Identity provider/个人设置、消息中心入口、Bootstrap receipt 与 Resource typed declaration、文件 hash 恢复、Gitea PMO 终态事件和生成项目全链路修复。
+
+已使用 `1.0.30`/`1.0.3x` 的业务仓必须成组升级：先发布并回查全部制品，再升级 PMO/CLI、Maven BOM/Parent 和直接安装的 npm 包，最后执行 locked PMO、完整 Maven 验证、前端 typecheck/build、Bootstrap rolling 验证和真实业务回归。不要只替换 Bootstrap jar、CLI 或 `@mango/admin`。
 
 ### 1.0.95 发布影响
 

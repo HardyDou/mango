@@ -1,5 +1,71 @@
 # Mango Changelog
 
+## v2026.08.02-maven-1.0.31-pmo-1.3.9-cli-1.0.96-platform-identity-bootstrap-release - 2026-08-02
+
+Status: `PENDING`. This mixed release is prepared as one indivisible compatibility tuple from the protected `main` source that will be locked after the release-preparation PR merges. Immutable tag, GitHub Release, Maven/npm publication and documentation snapshot have not started.
+
+### Added
+
+- Add configurable third-party identity providers, provider authorization/binding, and complete personal settings for avatar, real name, phone, email, password and theme.
+- Add typed Resource declarations with Bootstrap-required and runtime-eventual reconciliation, stable Bootstrap receipts, generation fencing and explicit runtime ownership for generated and existing business applications.
+- Add personal-settings entries for the message center, receive preferences and login logs while preserving registered page keys and authorization boundaries.
+
+### Changed
+
+- Split Bootstrap, Workflow/Flowable, Job and Notice initialization from runtime workers so migration, reconciliation and runtime activation have one deterministic lifecycle order.
+- Package PMO `1.3.9` with terminal Gitea PR edit handling, typed full-page baseline exceptions and the synchronized business baseline; CLI `1.0.96` locks and installs that exact PMO version.
+- Advance the complete generated-project matrix to Maven `1.0.31`, PMO `1.3.9`, CLI `1.0.96` and the exact frontend package versions below.
+
+### Fixed
+
+- Recover deduplicated file uploads by content hash without returning a deleted logical file record, including concurrent save and upload-session paths.
+- Prevent database-dependent Flowable metadata, Resource handlers and runtime workers from starting before the Bootstrap-owned migration and reconciliation phases complete.
+- Make CLI generation, module formatting, backend-gate dependency installation, BSQL validation and executable Boot JAR checks independent of workspace links and incidental local registry state.
+- Keep delegated PMD, Checkstyle and SpotBugs Maven invocations on the outer build's resolved local repository, settings, profiles and CI-friendly version so isolated or custom-registry business builds do not fall back to a different repository context.
+- Keep generated Gitea PMO checks valid when a merged or closed PR body is edited, without manufacturing an invalid base/head diff.
+
+### Versions
+
+| Component | Previous | Release | Compatibility |
+| --- | ---: | ---: | --- |
+| Mango Maven non-app backend and `io.mango:mango-docs-bundle` | `1.0.30` | `1.0.31` | Patch release; all `io.mango` dependencies must move together through `mango-parent` or `mango-bom`. |
+| `@mango/pmo` | `1.3.8` | `1.3.9` | Current rules, contracts, tools, Agents, Skills and generated business baseline are one package; unchanged pinned `1.3.8` lifecycle documents remain supported. |
+| `@mango/cli` | `1.0.95` | `1.0.96` | Depends exactly on PMO `1.3.9` and generates Maven/frontend locks from this batch. |
+| Direct frontend changes | previous matrix | `@mango/common@1.0.24`, `@mango/auth@1.0.24`, `@mango/admin-pages@1.0.31`, `@mango/admin-shell@1.0.56`, `@mango/cms@1.0.21`, `@mango/notice@1.0.36`, `@mango/system@1.0.30` | Public package contracts remain patch-compatible; identity/profile and personal-settings behavior is added through existing extension points. |
+| Aggregate frontend | `@mango/admin@1.0.60` | `@mango/admin@1.0.61` | Exact dependency closure for the frontend packages in this batch. |
+| Dependency-propagated frontend packages | previous matrix | exact versions below | Patch republish prevents fixed workspace dependencies from mixing old and new package tuples. |
+
+### Published Packages
+
+| Order | Target | Version | Status |
+| ---: | --- | --- | --- |
+| 1 | Complete non-app `io.mango` Maven Reactor and `io.mango:mango-docs-bundle` | `1.0.31` | `PENDING` |
+| 2 | `@mango/pmo` | `1.3.9` | `PENDING` |
+| 3 | `@mango/common`, `@mango/grid-layout`, `@mango/grid-widgets`, `@mango/rbac`, `@mango/auth`, `@mango/system`, `@mango/admin-pages`, `@mango/file` | `1.0.24`, `1.0.15`, `1.0.21`, `1.0.22`, `1.0.24`, `1.0.30`, `1.0.31`, `1.0.32` | `PENDING` |
+| 4 | `@mango/calendar`, `@mango/cms`, `@mango/home`, `@mango/job`, `@mango/link`, `@mango/notice`, `@mango/numgen`, `@mango/payment`, `@mango/site-shell`, `@mango/template`, `@mango/workflow`, `@mango/workflow-business-example` | `1.0.32`, `1.0.21`, `1.0.13`, `1.0.24`, `1.0.18`, `1.0.36`, `1.0.32`, `1.0.24`, `1.0.11`, `1.0.32`, `1.0.38`, `1.0.37` | `PENDING` |
+| 5 | `@mango/admin-shell`, `@mango/admin` | `1.0.56`, `1.0.61` | `PENDING` |
+| 6 | `@mango/cli` | `1.0.96` | `PENDING` |
+| 7 | Git tag, GitHub Release, Latest docs and versioned docs snapshot | `v2026.08.02-maven-1.0.31-pmo-1.3.9-cli-1.0.96-platform-identity-bootstrap-release` | `PENDING` |
+
+Unchanged npm coordinates are `@mango/api-schema@1.0.3`, `@mango/app-runtime@1.0.6`, `@mango/http-client@1.0.0`, `@mango/link-openapi@1.0.4` and `@mango/link-page@1.0.7`; they are not republished.
+
+### Upgrade Notes
+
+1. Treat this release as one tuple. Do not combine Maven `1.0.30` or any other `1.0.3x` backend with CLI `1.0.96`, PMO `1.3.9` or only part of the frontend matrix.
+2. Parent consumers set the shared `mango.version` to `1.0.31`; projects with another parent import `io.mango:mango-bom:1.0.31` and omit versions from BOM-managed Mango dependencies. Existing databases upgrade in place and must not be rebuilt.
+3. Upgrade the frontend to the exact versions in `Published Packages`. Aggregate consumers use `@mango/admin@1.0.61`; direct consumers update every installed affected package rather than relying on transitive version mixing.
+4. Install `@mango/pmo@1.3.9` before `@mango/cli@1.0.96`. Then run `mango pmo upgrade --project-dir . --to 1.3.9 --sync-shell`, review the PMO/workflow diff, and run `mango pmo check --project-dir . --locked`.
+5. Re-run `mango workspace init`, then use the project-local CLI for `mango dev doctor` and the normal startup flow. Preserve `.mango`, the Bootstrap audit tables and application logs before upgrading an existing `1.0.30`/`1.0.3x` project.
+6. Modules with an old monolithic `resource-manifest.json` migrate to typed `META-INF/mango/resources/*-common-*.json|yml|yaml` declarations. Keep formal built-in resources `BOOTSTRAP_REQUIRED`; use `RUNTIME_EVENTUAL` only for explicitly non-blocking reconciliation.
+7. Projects with custom identity providers, login pages, personal settings, Notice routes or Shell composition must re-check provider secrets, callback URLs, permissions, tenant boundaries, page registration and package style imports after the tuple upgrade.
+
+### Verification
+
+- `pnpm -C mango-ui release:impact --base=4a959d2ac3906f1cfa14359eb3abf2cd652733b1 --head=HEAD` passes and identifies the exact 24-package npm publication closure.
+- `node mango-pmo/tools/workspace-layout-check.mjs --root .` passes in the isolated release worktree.
+- Release preparation must additionally pass PMO projection/package checks, CLI and generated-project gates, Maven/frontend affected gates, capability README audits, release-note checks, branch-protection comparison and target-version absence checks before any immutable action.
+- Publication will be verified from both publish and consume registries with Maven checksums, npm integrity, a clean generated business consumer, locked PMO, frontend typecheck/build, Maven consumer resolution, tag/source equality and Latest/versioned documentation HTTP checks.
+
 ## v2026.08.01-maven-1.0.30-cli-1.0.95-flyway-startup-order-release - 2026-08-01
 
 Status: `PUBLISHED_AND_VERIFIED`. This mixed patch release was published from source commit `4a959d2ac3906f1cfa14359eb3abf2cd652733b1` and tree `adecfa0f1befd2aafb2a517e3e33285573a0bbb9`; the exact-source bundle SHA-256 is `29f2407b9927958c8ef37a264d0dcad83ca4aa45afde507f1dc7618dfb071783`. The complete non-app `io.mango` Maven Reactor, matching `io.mango:mango-docs-bundle:1.0.30`, and `@mango/cli@1.0.95` resolve from both publish and consume registries. The tag and GitHub Release are `CREATED_AND_VERIFIED` and remain attached to the release source commit. The completed exact-source read-only manifest has SHA-256 `bb156cb7e52867885af4985acbbb2e444e3238710b13191abf9c95a0a3499b9f` and records all 17 release states as passed. `@mango/pmo` remains `1.3.8`; frontend runtime packages are unchanged and were not republished. The durable release summary is `mango-docs/evidence/governance/release-v2026.08.01-maven-1.0.30-cli-1.0.95-flyway-startup-order-release.json`.

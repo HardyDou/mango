@@ -1,5 +1,36 @@
 # @mango/cli Changelog
 
+## 1.0.96 - 2026-08-02
+
+### Added
+
+- Generate and validate stable Bootstrap/runtime receipts for the worktree-qualified Maven revision, source tree and lifecycle generation before a local runtime is started.
+- Generate the current typed Resource declarations and explicit Bootstrap/runtime application entry for full projects and added business modules.
+
+### Fixed
+
+- Make module formatting and lockfile verification independent of an incidental public npm registry response.
+- Install the generated backend dependency closure before the Java quality gate, and fail closed when BSQL or executable Boot JAR evidence is missing or belongs to a different source.
+- Keep PMO terminal Gitea body edits and frontend page-baseline exceptions synchronized in generated business projects.
+
+### Changed
+
+- Lock generated and upgraded projects to Maven `1.0.31`, `@mango/pmo@1.3.9` and the complete 24-package frontend publication matrix headed by `@mango/admin@1.0.61`.
+
+### Upgrade Notes
+
+1. Publish and verify Maven `1.0.31`, PMO `1.3.9` and every frontend coordinate in the release matrix before installing `@mango/cli@1.0.96`.
+2. Projects on Maven `1.0.30` or another `1.0.3x` combination must upgrade the whole tuple; do not mix the new CLI/PMO with old backend or frontend locks.
+3. Run `mango pmo upgrade --project-dir . --to 1.3.9 --sync-shell`, `mango pmo check --project-dir . --locked` and `mango workspace init` before using the project-local CLI for startup.
+4. Preserve existing databases and Bootstrap audit tables. Review generated entry points, lifecycle settings and typed Resource declarations instead of copying historical Flyway seeds or rebuilding the database.
+
+### Verification
+
+- `pnpm -C mango-ui --filter @mango/cli test`
+- `node mango-ui/packages/mango-cli/scripts/check-release-versions.mjs`
+- `MANGO_BACKEND_GATE_VERSION=1.0.31 node mango-ui/packages/mango-cli/scripts/check-generated-backend-gate.mjs`
+- Clean consume-registry installation, project generation, locked PMO, frontend typecheck/build and Maven consumer verification are required before release closeout.
+
 ## 1.0.95 - 2026-08-01
 
 ### Fixed

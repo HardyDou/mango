@@ -17,6 +17,7 @@
 
 | 场景 | 适合问题 | 主要能力 |
 |------|----------|----------|
+| [Mango 1.0.30 / 1.0.3x 到 1.0.31 升级](./mango-1.0.30-to-1.0.31-upgrade.md) | 已使用受影响旧 tuple，需要成组升级 Maven、npm、CLI、PMO、Resource 与 Bootstrap 生命周期 | Release、CLI、PMO、Bootstrap、Resource、Identity、Notice、File |
 | [Maven 1.0.21 到 1.0.22 Java API 升级](./maven-1.0.21-to-1.0.22-java-api-upgrade.md) | 升级后出现 `IdentityUserInfo`、`CmsAdminApi`、Resource/Job 等旧 Java 类型无法编译 | Identity、Access、Authorization、CMS、Job、Resource、Org、System |
 | [文件上传表单](./file-upload-form.md) | 业务表单上传附件、回显、预览、删除失败 | File、Fileproc、File Preview、Frontend File |
 | [业务审批接入](./workflow-business-approval.md) | 业务单据发起审批、处理审批结果、查看流程记录 | Workflow、Workflow Frontend、Workflow Example |
