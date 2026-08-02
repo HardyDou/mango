@@ -3713,9 +3713,7 @@ function assertHistoricalPmoVersionUpgrade(projectRoot) {
   const currentBusinessRequirements = readFileSync(join(fixtureRoot, 'business-requirements.md'), 'utf8');
   const currentVersionMarker = `pmoVersion: ${currentPmoVersion}`;
   if (!currentBusinessRequirements.includes(currentVersionMarker)) {
-    throw new Error(
-      `historical PMO upgrade fixture does not use the release lock ${currentVersionMarker}`,
-    );
+    throw new Error(`historical PMO upgrade fixture does not use the release lock ${currentVersionMarker}`);
   }
   mkdirSync(reviewRoot, { recursive: true });
   cpSync(join(fixtureRoot, 'review/BRD-ANN-001.md'), join(reviewRoot, 'BRD-ANN-001.md'));

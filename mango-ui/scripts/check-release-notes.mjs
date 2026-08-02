@@ -113,16 +113,15 @@ export function releaseSectionForVersion(changelog, version) {
 export function releaseSectionForTag(changelog, releaseTag) {
   if (!releaseTag) return '';
   const releaseSections = changelog.match(/^##\s+.+$(?:\n(?!##\s).*)*/gm) || [];
-  return releaseSections.find((section) => {
-    const heading = section.split('\n', 1)[0];
-    return new RegExp(`(?:^|\\s)${escapeRegExp(releaseTag)}(?:\\s|$)`, 'u').test(heading);
-  }) || '';
+  return (
+    releaseSections.find((section) => {
+      const heading = section.split('\n', 1)[0];
+      return new RegExp(`(?:^|\\s)${escapeRegExp(releaseTag)}(?:\\s|$)`, 'u').test(heading);
+    }) || ''
+  );
 }
 
-export function validateRootReleaseNotes(
-  changelog,
-  { packageName, version, releaseTag = '', requiredPmoChecks = [] },
-) {
+export function validateRootReleaseNotes(changelog, { packageName, version, releaseTag = '', requiredPmoChecks = [] }) {
   const label = `Root CHANGELOG.md ${packageName}@${version} release section`;
   const section = releaseTag
     ? releaseSectionForTag(changelog, releaseTag)
