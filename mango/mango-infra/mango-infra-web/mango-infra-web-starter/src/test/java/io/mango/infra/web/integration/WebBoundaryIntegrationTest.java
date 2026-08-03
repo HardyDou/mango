@@ -48,6 +48,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
         classes = WebBoundaryIntegrationTest.TestApplication.class,
         properties = {
                 "spring.main.banner-mode=off",
+                "spring.jackson.deserialization.fail-on-unknown-properties=true",
                 "mango.web.inner.secret=web-e2e-secret"
         })
 @ExtendWith(OutputCaptureExtension.class)
@@ -81,13 +82,51 @@ class WebBoundaryIntegrationTest {
         assertFailure("/test/web/system", HttpMethod.GET, null,
                 HttpStatus.INTERNAL_SERVER_ERROR, 500, "系统异常");
         assertFailure("/test/web/body", HttpMethod.POST, new HttpEntity<>("{broken", jsonHeaders()),
-                HttpStatus.BAD_REQUEST, 400, "请求体格式错误，请检查 JSON 字段类型和日期时间格式");
+                HttpStatus.BAD_REQUEST, 400, "请求体格式错误，请检查 JSON 语法和字段格式");
         assertFailure("/test/web/constraint?value=", HttpMethod.GET, null,
                 HttpStatus.BAD_REQUEST, 400, "测试参数不能为空");
         assertFailure("/test/web/value", HttpMethod.POST, null,
                 HttpStatus.METHOD_NOT_ALLOWED, 405, "不支持的请求方法: POST");
         assertFailure("/test/web/missing", HttpMethod.GET, null,
                 HttpStatus.NOT_FOUND, 404, "资源不存在");
+    }
+
+    @Test
+    void requestBody_unknownNestedField_reportsFullPathWithoutEchoingInput() {
+        String sensitiveValue = "customer-token-unknown-value";
+        String body = """
+                {"materials":[{"materialCode":"M-1","materialCategoryCode":"%s","quantity":1}],
+                 "submittedAt":"2026-08-03 12:30:00"}
+                """.formatted(sensitiveValue);
+
+        assertSafeBodyFailure(body, "请求字段 materials[0].materialCategoryCode 不受支持", sensitiveValue);
+    }
+
+    @Test
+    void requestBody_nestedArrayTypeMismatch_reportsSafeTypeCategory() {
+        String sensitiveValue = "customer-password-type-value";
+        String body = """
+                {"materials":[{"materialCode":"M-1","quantity":"%s"}],
+                 "submittedAt":"2026-08-03 12:30:00"}
+                """.formatted(sensitiveValue);
+
+        assertSafeBodyFailure(body, "请求字段 materials[0].quantity 类型不正确，期望 NUMBER", sensitiveValue);
+    }
+
+    @Test
+    void requestBody_invalidDateTime_reportsFieldWithoutEchoingInput() {
+        String sensitiveValue = "customer-token-invalid-date";
+        String body = """
+                {"materials":[{"materialCode":"M-1","quantity":1}],"submittedAt":"%s"}
+                """.formatted(sensitiveValue);
+
+        assertSafeBodyFailure(body, "请求字段 submittedAt 日期时间格式不正确", sensitiveValue);
+    }
+
+    @Test
+    void requestBody_malformedJson_returnsSafeTopLevelError() {
+        assertSafeBodyFailure("{\"materials\":[{\"materialCode\":\"secret-value\"}",
+                "请求体格式错误，请检查 JSON 语法和字段格式", "secret-value");
     }
 
     @Test
@@ -145,6 +184,21 @@ class WebBoundaryIntegrationTest {
         assertEquals(message, response.getBody().getMsg());
     }
 
+    private void assertSafeBodyFailure(String requestBody, String message, String sensitiveValue) {
+        ResponseEntity<R> response = restTemplate.exchange("/test/web/typed-body", HttpMethod.POST,
+                new HttpEntity<>(requestBody, jsonHeaders()), R.class);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertEquals(400, response.getBody().getCode());
+        assertFalse(response.getBody().isSuccess());
+        assertEquals(message, response.getBody().getMsg());
+        String responseText = response.getBody().toString();
+        assertFalse(responseText.contains(sensitiveValue));
+        assertFalse(responseText.contains("com.fasterxml.jackson"));
+        assertFalse(responseText.contains("GlobalExceptionHandler"));
+        assertFalse(responseText.contains("at io.mango"));
+    }
+
     private HttpHeaders jsonHeaders() {
         HttpHeaders headers = new HttpHeaders();
         headers.set("Content-Type", "application/json");
@@ -199,6 +253,11 @@ class WebBoundaryIntegrationTest {
             // Parsing the request body is the boundary contract under test.
         }
 
+        @PostMapping("/typed-body")
+        void typedBody(@RequestBody BoundaryRequest body) {
+            // Typed Jackson parsing is the boundary contract under test.
+        }
+
         @GetMapping("/constraint")
         void constraint(@RequestParam("value") @NotBlank(message = "测试参数不能为空") String value) {
             // Method validation is the boundary contract under test.
@@ -212,6 +271,12 @@ class WebBoundaryIntegrationTest {
     }
 
     record BoundaryValue(Long id, LocalDateTime createdAt) {
+    }
+
+    record BoundaryRequest(List<MaterialRequest> materials, LocalDateTime submittedAt) {
+    }
+
+    record MaterialRequest(String materialCode, Integer quantity) {
     }
 
     private static final class AtomicKvStore implements IKvStore {

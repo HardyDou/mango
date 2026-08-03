@@ -1,5 +1,45 @@
 # Mango Changelog
 
+## v2026.08.03-maven-1.0.33-baseline-web-errors-release - 2026-08-03
+
+Status: `PENDING`. This Maven-only patch is planned from protected `main` after the Issue #705 and #715 source PR passes all required checks. The complete non-app Maven Reactor and matching `io.mango:mango-docs-bundle:1.0.33` will be published and verified through the configured publish and consume registries before this status is closed. CLI, PMO and frontend npm coordinates are unchanged and will not be republished.
+
+### Fixed
+
+- Make `mango:baseline-generate` create replay, determinism and verification schemas with the explicit default `utf8mb4 / utf8mb4_unicode_ci` pair, so BSQL no longer captures a build machine's `utf8mb4_0900_ai_ci` server default. Explicit safe overrides remain supported and are recorded in the baseline manifest and fingerprint.
+- Map Jackson unknown-property, invalid-format and mismatched-input failures to safe full JSON paths such as `materials[0].materialCategoryCode`, stable target categories and a dedicated date-time message. Malformed JSON without a reliable path continues to return HTTP 400 with a safe top-level message.
+- Keep request-body error responses free of submitted values, complete request bodies, exception stacks and Java class names; preserve the host application's existing `FAIL_ON_UNKNOWN_PROPERTIES` choice instead of weakening unknown-field validation.
+
+### Versions
+
+| Component                                                    | Previous | Release | Compatibility |
+| ------------------------------------------------------------ | -------: | ------: | ------------- |
+| Mango Maven non-app backend and `io.mango:mango-docs-bundle` | `1.0.32` | `1.0.33` | Patch-compatible build determinism and HTTP error-diagnostic fixes; successful request contracts, database migrations and `R` response shape are unchanged. |
+| `@mango/cli`                                                 | `1.0.97` | unchanged | This Maven-only batch does not republish CLI; its generated-project default remains Maven `1.0.32`. Consumers opting into these fixes set Maven `1.0.33` explicitly. |
+| `@mango/pmo`                                                 | `1.3.9` | unchanged | No PMO rule, contract, Agent, Skill, template or packaged baseline changes. |
+| Frontend npm packages                                        | current published matrix | unchanged | No frontend code or npm package is published. |
+
+### Published Packages
+
+| Order | Target | Version | Status |
+| ----: | ------ | ------- | ------ |
+| 1 | Complete non-app `io.mango` Maven Reactor and `io.mango:mango-docs-bundle` | `1.0.33` | `PENDING` |
+| 2 | Git tag and GitHub Release | `v2026.08.03-maven-1.0.33-baseline-web-errors-release` | `PENDING` |
+
+### Upgrade Notes
+
+1. Upgrade all `io.mango` backend dependencies together through `mango-parent` or `mango-bom` `1.0.33`; do not mix individual `1.0.32` and `1.0.33` modules.
+2. Existing CLI `1.0.97` projects must set `mango.version=1.0.33` explicitly to consume this Maven-only patch. Keep `@mango/pmo@1.3.9` and the current frontend package matrix unchanged.
+3. Rebuild BSQL with `mango:baseline-generate`. The default target is `utf8mb4 / utf8mb4_unicode_ci`; deployments that override either value must use a valid matching pair and create the target business database with the same semantics.
+4. Applications that require unknown JSON fields to fail must retain their existing Jackson strict setting. No database migration, frontend change or PMO migration is required.
+
+### Verification
+
+- The Maven plugin unit and real-MySQL regression must prove replay, determinism and verification schemas use the configured charset/collation, manifest and fingerprint values match, and invalid combinations fail before schema creation.
+- The Web Starter random-port Tomcat suite must cover unknown nested fields, nested list type mismatch, date-time format errors, malformed JSON and sensitive-value non-disclosure.
+- The complete non-app Maven batch, documentation bundle, release-note checker, capability documentation gates and repository source checks must pass from the protected release commit.
+- Every Maven `1.0.33` coordinate must resolve from both publish and consume registries with matching checksums. A clean isolated Maven consumer must resolve the published BOM, Maven plugin and Web Starter without using the source workspace or shared local release cache.
+
 ## v2026.08.03-cli-1.0.97-release-matrix-sync-release - 2026-08-03
 
 Status: `PUBLISHED_AND_VERIFIED`. This CLI-only patch was published from protected `main` commit `ad19d298b1c2c9a13f61bb3875d783d554013f7f` and tree `ebc5b637f69ce99c39ecad48adae16dad5532917`; the exact-source bundle SHA-256 is `41677a9a26946ec4be6ab14365856437cdd9d6c38507cf8a09cbeda48074633b`. `@mango/cli@1.0.97`, the immutable tag, [GitHub Release](https://github.com/HardyDou/mango/releases/tag/v2026.08.03-cli-1.0.97-release-matrix-sync-release), both private registries and a clean generated-project consumer are verified. The completed read-only manifest SHA-256 is `a3754a5d454f86f9289dc36b4d055891d65df74ba704ae6765533266a95ff581`; the earlier publication manifest (`753dd5a29b3b81d2be616e3bd971446198156bb9c222eeb9f2a2664023d671a2`) is retained because its first consume verifier misread Nexus's flat `dist.integrity` keys after publication had already succeeded. No Maven, PMO or runtime frontend package was republished.
