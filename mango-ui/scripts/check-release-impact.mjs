@@ -75,7 +75,9 @@ for (const packageName of affectedPackages) {
 for (const packageName of affectedPackages) {
   const workspacePackage = packageIndex.get(packageName);
   for (const dependencyType of ['dependencies', 'peerDependencies', 'devDependencies']) {
-    for (const [dependencyName, declaredVersion] of Object.entries(workspacePackage.packageJson[dependencyType] ?? {})) {
+    for (const [dependencyName, declaredVersion] of Object.entries(
+      workspacePackage.packageJson[dependencyType] ?? {},
+    )) {
       if (!affectedPackages.has(dependencyName) || declaredVersion === 'workspace:*') {
         continue;
       }
@@ -96,7 +98,11 @@ for (const packageJsonPath of collectPackageJsonFiles([
   const packageJson = parsePackageJsonAllowingTemplates(packageJsonPath);
   for (const dependencyType of ['dependencies', 'peerDependencies', 'devDependencies']) {
     for (const [dependencyName, declaredVersion] of Object.entries(packageJson[dependencyType] ?? {})) {
-      if (!affectedPackages.has(dependencyName) || declaredVersion.includes('{{') || declaredVersion.startsWith('workspace:')) {
+      if (
+        !affectedPackages.has(dependencyName) ||
+        declaredVersion.includes('{{') ||
+        declaredVersion.startsWith('workspace:')
+      ) {
         continue;
       }
       const dependencyPackage = packageIndex.get(dependencyName);
@@ -110,7 +116,9 @@ for (const packageJsonPath of collectPackageJsonFiles([
 }
 
 if (mismatches.length > 0) {
-  console.error(`Release impact check failed for ${base}..${head}:\n${mismatches.map((item) => `- ${item}`).join('\n')}`);
+  console.error(
+    `Release impact check failed for ${base}..${head}:\n${mismatches.map((item) => `- ${item}`).join('\n')}`,
+  );
   process.exit(1);
 }
 
@@ -165,7 +173,12 @@ function isReleaseImpactFile(packageFile) {
   if (packageFile.startsWith('src/')) {
     return true;
   }
-  if (packageFile === 'package.json' || packageFile === 'vite.config.ts' || packageFile === 'README.md') {
+  if (
+    packageFile === 'package.json' ||
+    packageFile === 'release-versions.json' ||
+    packageFile === 'vite.config.ts' ||
+    packageFile === 'README.md'
+  ) {
     return true;
   }
   if (packageFile.startsWith('scripts/') || packageFile.startsWith('style')) {
@@ -175,11 +188,16 @@ function isReleaseImpactFile(packageFile) {
 }
 
 function isPublishedPmoSourceFile(file) {
-  return /^mango-pmo\/(agents|rules|templates|contracts|tools|skills|plugin-src)\//.test(file)
-    || file === 'mango-pmo/README.md';
+  return (
+    /^mango-pmo\/(agents|rules|templates|contracts|tools|skills|plugin-src)\//.test(file) ||
+    file === 'mango-pmo/README.md'
+  );
 }
 
 function runSelfTest() {
+  if (!isReleaseImpactFile('release-versions.json')) {
+    throw new Error('release-versions.json changes must require an @mango/cli version bump');
+  }
   const published = [
     'mango-pmo/rules/00-dev-flow.md',
     'mango-pmo/contracts/business-requirements.contract.json',
@@ -187,10 +205,7 @@ function runSelfTest() {
     'mango-pmo/plugin-src/.codex-plugin/plugin.json',
     'mango-pmo/README.md',
   ];
-  const ignored = [
-    'mango-pmo/baselines/mango-check/no-new-violations-baseline.json',
-    'mango-docs/plans/example.md',
-  ];
+  const ignored = ['mango-pmo/baselines/mango-check/no-new-violations-baseline.json', 'mango-docs/plans/example.md'];
   for (const file of published) {
     if (!isPublishedPmoSourceFile(file)) {
       throw new Error(`expected published PMO source impact: ${file}`);
