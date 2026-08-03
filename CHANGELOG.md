@@ -2,7 +2,7 @@
 
 ## v2026.08.03-maven-1.0.32-bootstrap-resource-fixes-release - 2026-08-03
 
-Status: `PENDING`. This Maven-only patch release is prepared from the protected `main` merge of Issue #684's complete Bootstrap API isolation fix. It publishes the complete non-app `io.mango` Maven Reactor and the matching `io.mango:mango-docs-bundle:1.0.32`; CLI, PMO and frontend npm coordinates remain unchanged.
+Status: `PUBLISHED_AND_VERIFIED`. This Maven-only patch release was published from protected `main` commit `3aa36ccb526469aaeb76bdf0b1b9c3adef430488` and tree `8d380430c7c5384de5536d71d48849f1a963cb81`. The exact-source bundle SHA-256 is `a6c9d3e89f7bfe6125f8c93a328fbb7f1c6d84e86f3f995542de3aa4cda1b42b`; all 188 Maven coordinates, the publish and consume registries, the Git tag, GitHub Release, Latest docs, versioned docs snapshot and a clean Maven consumer are verified. The completed release manifest has SHA-256 `1e2b1bdc1efbb6317feb5701ec1a01e1739c852396e66ee5fa525680fce1d7f8`; CLI, PMO and frontend npm coordinates remain unchanged.
 
 ### Fixed
 
@@ -24,9 +24,9 @@ Status: `PENDING`. This Maven-only patch release is prepared from the protected 
 
 | Order | Target | Version | Status |
 | ---: | --- | --- | --- |
-| 1 | Complete non-app `io.mango` Maven Reactor | `1.0.32` | `PENDING` |
-| 2 | `io.mango:mango-docs-bundle` | `1.0.32` | `PENDING` |
-| 3 | Git tag, GitHub Release, Latest docs and versioned docs snapshot | `v2026.08.03-maven-1.0.32-bootstrap-resource-fixes-release` | `PENDING` |
+| 1 | Complete non-app `io.mango` Maven Reactor | `1.0.32` | `PUBLISHED_AND_VERIFIED` |
+| 2 | `io.mango:mango-docs-bundle` | `1.0.32` | `PUBLISHED_AND_VERIFIED` |
+| 3 | Git tag, GitHub Release, Latest docs and versioned docs snapshot | `v2026.08.03-maven-1.0.32-bootstrap-resource-fixes-release` | `CREATED_AND_VERIFIED` |
 
 ### Upgrade Notes
 
@@ -43,6 +43,8 @@ Status: `PENDING`. This Maven-only patch release is prepared from the protected 
 - Backend test-double audit and deterministic test-quality checks pass with no block or warning.
 - Module README and source-fact audits pass. A local complete non-app Reactor install of `1.0.32-local-SNAPSHOT` completed 186/186 modules, and the installed Workflow starter contains the new isolation auto-configuration.
 - Per explicit user direction, no additional Mango-side local database, service-start, API, UI or browser test is part of the implementation gate; the business project may independently consume the local snapshot for empty-database verification, while protected-branch required checks and immutable release repository verification remain mandatory.
+- Formal release verification passed for all 188 coordinates in both `maven-releases` and `maven-public`; SHA-1 values match for 334 primary artifacts and POM files. A clean isolated Maven repository resolved the BOM plus the Workflow and CMS starters transitively, then verified the Bootstrap isolation class and all 22 ISO CMS demo timestamps.
+- The initial Maven adapter completed remote publication but exceeded the release runner's captured-output buffer. Both registries already contained 188/188 coordinates, so recovery used the same manifest's `verify-existing` adapter and did not republish any immutable artifact.
 
 ## v2026.08.02-maven-1.0.31-pmo-1.3.9-cli-1.0.96-platform-identity-bootstrap-release - 2026-08-02
 
