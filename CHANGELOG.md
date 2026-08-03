@@ -1,5 +1,49 @@
 # Mango Changelog
 
+## v2026.08.03-maven-1.0.32-bootstrap-resource-fixes-release - 2026-08-03
+
+Status: `PENDING`. This Maven-only patch release is prepared from the protected `main` merge of Issue #684's complete Bootstrap API isolation fix. It publishes the complete non-app `io.mango` Maven Reactor and the matching `io.mango:mango-docs-bundle:1.0.32`; CLI, PMO and frontend npm coordinates remain unchanged.
+
+### Fixed
+
+- Prevent a business starter that injects public `mango-workflow-api` contracts such as `WorkflowTaskRuntimeApi`, `WorkflowProcessApi` or `WorkflowBusinessApplyApi` from creating Workflow controllers, runtime services and Flowable during Bootstrap context refresh.
+- Preserve the lifecycle boundary: Bootstrap dependency injection uses deferred public API proxies, the Resource step can still create Workflow handlers and Flowable after migration, and Runtime continues to use the original controllers directly.
+- Keep `mango.workflow.enabled=false` unchanged and avoid the rejected workarounds of restoring `forceSync()`, pre-creating `ACT_GE_PROPERTY`, enabling Flowable automatic schema creation or injecting dummy services.
+- Correct all 22 non-null CMS demo `DATETIME` values from the non-ISO `2026-07-14 09:53:24` form to `2026-07-14T09:53:24`, so the CMS Resource Handler can deserialize demo content during empty-database Bootstrap without changing the shared date-time contract.
+
+### Versions
+
+| Component | Previous | Release | Compatibility |
+| --- | ---: | ---: | --- |
+| Mango Maven non-app backend and `io.mango:mango-docs-bundle` | `1.0.31` | `1.0.32` | Patch-compatible public Java and HTTP contracts; changes only Bootstrap-time local API resolution. |
+| `@mango/cli` | `1.0.96` | unchanged | Existing projects explicitly set `mango.version` to `1.0.32`; generated defaults remain unchanged in this urgent Maven-only batch. |
+| `@mango/pmo` | `1.3.9` | unchanged | No PMO source or packaged baseline changes. |
+| Frontend npm packages | current `1.0.31` release matrix | unchanged | No frontend source, route, page key or package lock changes. |
+
+### Published Packages
+
+| Order | Target | Version | Status |
+| ---: | --- | --- | --- |
+| 1 | Complete non-app `io.mango` Maven Reactor | `1.0.32` | `PENDING` |
+| 2 | `io.mango:mango-docs-bundle` | `1.0.32` | `PENDING` |
+| 3 | Git tag, GitHub Release, Latest docs and versioned docs snapshot | `v2026.08.03-maven-1.0.32-bootstrap-resource-fixes-release` | `PENDING` |
+
+### Upgrade Notes
+
+1. Upgrade all Mango backend dependencies together by setting the shared `mango.version` or imported `mango-bom` to `1.0.32`; do not mix individual `1.0.31` Workflow jars with the new starter.
+2. Keep business modules on the public `mango-workflow-api` boundary. No business source adaptation, `forceSync()` compatibility, Flowable switch or manual database DDL is required.
+3. Run the normal empty-database `bootstrap apply` before `runtime`. A Bootstrap context may inject public Workflow APIs, but it must not query `ACT_GE_PROPERTY` before Workflow migration.
+4. CLI `1.0.96`, PMO `1.3.9` and the existing frontend package matrix remain compatible and are not republished in this Maven-only patch.
+
+### Verification
+
+- Workflow starter L1 unit tests pass: 22 tests, 0 failures, 0 errors and 0 skipped.
+- CMS starter L1 unit tests pass: 16 tests, 0 failures, 0 errors and 0 skipped; the resource contract test now parses every non-null CMS demo `DATETIME` with `LocalDateTime.parse` instead of accepting the invalid space-separated format.
+- The regression test proves that a Bootstrap business consumer can inject `WorkflowTaskRuntimeApi` without creating `WorkflowTaskController`; the first API invocation resolves the original controller, while Runtime and disabled-Workflow modes do not register the Bootstrap proxy.
+- Backend test-double audit and deterministic test-quality checks pass with no block or warning.
+- Module README and source-fact audits pass. A local complete non-app Reactor install of `1.0.32-local-SNAPSHOT` completed 186/186 modules, and the installed Workflow starter contains the new isolation auto-configuration.
+- Per explicit user direction, no additional Mango-side local database, service-start, API, UI or browser test is part of the implementation gate; the business project may independently consume the local snapshot for empty-database verification, while protected-branch required checks and immutable release repository verification remain mandatory.
+
 ## v2026.08.02-maven-1.0.31-pmo-1.3.9-cli-1.0.96-platform-identity-bootstrap-release - 2026-08-02
 
 Status: `PUBLISHED_AND_VERIFIED`. This indivisible mixed release was published from protected `main` commit `50ad66fc14234b696b88edcd12f31f0715544b5d` and tree `2001eb07e3a84ed7d0bfabb51939837cc1eb8d4c`. The exact-source bundle SHA-256 is `f90d8e07767e172ba915da8a291a53912d684918d971bf1c5ec472897395df56`; Maven/npm publish and consume registries, the Git tag, GitHub Release, Latest docs, versioned docs snapshot and a clean generated business consumer are verified. The completed read-only release manifest has SHA-256 `0f0bc0339a2e5f622bc075a1b549fc42e83aca631f69fa3a404172139fda9db6` and records all 17 release states as passed.
