@@ -48,6 +48,7 @@ public class GlobalExceptionHandler {
     private static final int METHOD_NOT_ALLOWED_CODE = HttpStatus.METHOD_NOT_ALLOWED.value();
     private static final int INTERNAL_SERVER_ERROR_CODE = HttpStatus.INTERNAL_SERVER_ERROR.value();
     private static final int FILE_TOO_LARGE_CODE = 3406;
+    private static final int MAX_CAUSE_DEPTH = 16;
     private static final int MAX_JSON_PATH_LENGTH = 256;
     private static final Pattern SAFE_JSON_FIELD = Pattern.compile("[A-Za-z_][A-Za-z0-9_-]{0,63}");
     private static final String MALFORMED_JSON_MESSAGE = "请求体格式错误，请检查 JSON 语法和字段格式";
@@ -245,7 +246,7 @@ public class GlobalExceptionHandler {
 
     private <T extends Throwable> T findCause(Throwable throwable, Class<T> causeType) {
         Throwable current = throwable;
-        for (int depth = 0; current != null && depth < 16; depth++) {
+        for (int depth = 0; current != null && depth < MAX_CAUSE_DEPTH; depth++) {
             if (causeType.isInstance(current)) {
                 return causeType.cast(current);
             }
