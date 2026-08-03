@@ -24,7 +24,7 @@ Status: `PENDING`. This Maven-only patch is planned from protected `main` after 
 | Order | Target | Version | Status |
 | ----: | ------ | ------- | ------ |
 | 1 | Complete non-app `io.mango` Maven Reactor and `io.mango:mango-docs-bundle` | `1.0.33` | `PENDING` |
-| 2 | Git tag and GitHub Release | `v2026.08.03-maven-1.0.33-baseline-web-errors-release` | `PENDING` |
+| 2 | Git tag, GitHub Release, Latest docs and versioned docs snapshot | `v2026.08.03-maven-1.0.33-baseline-web-errors-release` | `PENDING` |
 
 ### Upgrade Notes
 

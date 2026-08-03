@@ -5,6 +5,11 @@
   },
   "versions": [
     {
+      "version": "v2026.08.03-maven-1.0.33-baseline-web-errors-release",
+      "label": "1.0.33",
+      "path": "/versions/v2026.08.03-maven-1.0.33-baseline-web-errors-release/"
+    },
+    {
       "version": "v2026.08.03-maven-1.0.32-bootstrap-resource-fixes-release",
       "label": "1.0.32",
       "path": "/versions/v2026.08.03-maven-1.0.32-bootstrap-resource-fixes-release/"
