@@ -254,6 +254,10 @@ function focusDialog() {
 </template>
 ```
 
+`MangoDialog` 会使用 `title` prop 作为弹框的可访问名称；只提供 `#title` slot 时，会通过
+`aria-labelledby` 关联可见标题。若同时提供 `title` prop 和 `#title` slot，slot 只覆盖视觉展示，
+辅助技术仍使用 `title` prop 识别弹框。
+
 部署时没有单独的 `@mango/common` 后端 starter。它调用的接口来自业务已经启用的后端模块，例如 file、captcha、org、system、auth。
 
 ## 4. 配置说明

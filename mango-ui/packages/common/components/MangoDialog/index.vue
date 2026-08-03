@@ -3,6 +3,7 @@
     ref="dialogRef"
     v-bind="forwardedAttrs"
     v-model="visible"
+    :title="title"
     :width="width"
     :show-close="false"
     :destroy-on-close="destroyOnClose"
@@ -28,9 +29,9 @@
     @close="handleClosing"
     @closed="handleClosed"
   >
-    <template #header>
+    <template #header="{ titleId }">
       <div v-if="showHeader" class="mango-dialog__header" @pointerdown="startDrag">
-        <div class="mango-dialog__title">
+        <div :id="titleId" class="mango-dialog__title">
           <slot name="title">
             {{ title }}
           </slot>
