@@ -57,12 +57,15 @@ class BaselineGeneratorIntegrationTest {
         String alpha = Files.readString(output.resolve("db/baseline/alpha/B2__baseline.sql"));
         assertTrue(alpha.startsWith("-- mango:baseline-idempotent\n"));
         assertTrue(alpha.contains("CREATE TABLE IF NOT EXISTS `alpha_record`"));
+        assertTrue(alpha.contains("DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"));
         assertTrue(alpha.contains("INSERT IGNORE INTO `alpha_record`"));
         assertTrue(alpha.contains("CREATE OR REPLACE ALGORITHM="));
         String beta = Files.readString(output.resolve("db/baseline/beta/B1__baseline.sql"));
         assertTrue(beta.contains("DROP TRIGGER IF EXISTS `beta_record_bi`"));
         String manifest = Files.readString(output.resolve("META-INF/mango/baseline-manifest.json"));
         assertTrue(manifest.contains("\"generationFingerprint\""));
+        assertTrue(manifest.contains("\"targetCharacterSet\" : \"utf8mb4\""));
+        assertTrue(manifest.contains("\"targetCollation\" : \"utf8mb4_unicode_ci\""));
         assertTrue(manifest.contains("\"datasourceGroup\" : \"archive\""));
         assertFalse(manifest.contains("jdbc:mysql"));
         assertEquals(0, temporaryDatabaseCount(prefix));
@@ -183,6 +186,53 @@ class BaselineGeneratorIntegrationTest {
     }
 
     @Test
+    void usesConfiguredSchemaDefaultsInsteadOfMysqlServerDefaults() throws Exception {
+        migration("alpha", "V1__init.sql", """
+                CREATE TABLE alpha_record (
+                  id bigint primary key,
+                  record_code varchar(64) NOT NULL,
+                  UNIQUE KEY uk_alpha_record_code (record_code)
+                );
+                """);
+        String prefix = uniquePrefix("it_collation");
+        Path output = directory.resolve("target/generated-resources");
+
+        generator(
+                prefix,
+                output,
+                List.of("alpha"),
+                Map.of(),
+                MySqlSchemaDefaults.from("utf8mb4", "utf8mb4_bin")).generate();
+
+        String baseline = Files.readString(output.resolve("db/baseline/alpha/B1__baseline.sql"));
+        String manifest = Files.readString(output.resolve("META-INF/mango/baseline-manifest.json"));
+        assertTrue(baseline.contains("DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin"));
+        assertTrue(manifest.contains("\"targetCollation\" : \"utf8mb4_bin\""));
+        assertEquals(0, temporaryDatabaseCount(prefix));
+    }
+
+    @Test
+    void rejectsUnsupportedSchemaDefaultsBeforeCreatingTemporaryDatabases() throws Exception {
+        migration("alpha", "V1__init.sql", "CREATE TABLE alpha_record (id bigint primary key);");
+        String prefix = uniquePrefix("it_bad_collation");
+        Path output = directory.resolve("target/generated-resources");
+
+        MojoExecutionException exception = assertThrows(
+                MojoExecutionException.class,
+                () -> generator(
+                        prefix,
+                        output,
+                        List.of("alpha"),
+                        Map.of(),
+                        MySqlSchemaDefaults.from("utf8mb4", "utf8mb4_not_a_collation"))
+                        .generate());
+
+        assertTrue(exception.getMessage().contains("MANGO-BASELINE-043"));
+        assertFalse(Files.exists(output.resolve("META-INF/mango/baseline-manifest.json")));
+        assertEquals(0, temporaryDatabaseCount(prefix));
+    }
+
+    @Test
     void rejectsNondeterministicNonAuditTimestampData() throws Exception {
         migration("alpha", "V1__init.sql", """
                 CREATE TABLE alpha_record (
@@ -218,6 +268,20 @@ class BaselineGeneratorIntegrationTest {
             Path output,
             List<String> moduleOrder,
             Map<String, String> groups) throws Exception {
+        return generator(
+                prefix,
+                output,
+                moduleOrder,
+                groups,
+                MySqlSchemaDefaults.cliStandard());
+    }
+
+    private BaselineGenerator generator(
+            String prefix,
+            Path output,
+            List<String> moduleOrder,
+            Map<String, String> groups,
+            MySqlSchemaDefaults schemaDefaults) throws Exception {
         BaselineMigrationCatalog catalog = BaselineMigrationCatalog.discover(
                 directory, new MavenProject(), Set.copyOf(moduleOrder));
         BaselineGenerationSettings settings = new BaselineGenerationSettings(
@@ -225,6 +289,7 @@ class BaselineGeneratorIntegrationTest {
                 environment("MANGO_BASELINE_TEST_DB_USERNAME", "root"),
                 environment("MANGO_BASELINE_TEST_DB_PASSWORD", ""),
                 prefix,
+                schemaDefaults,
                 output,
                 moduleOrder,
                 groups,

@@ -68,6 +68,7 @@ final class BaselineGenerator {
         try {
             MySqlBaselineStore.DatabaseIdentity databaseIdentity =
                     store.databaseIdentity(ADMIN_DATABASE);
+            store.validateSchemaDefaults(ADMIN_DATABASE, settings.schemaDefaults());
             prepareDatabases(groups, migrationExtraction, databases);
             List<ModuleManifest> modules = generateAndVerifyBaselines(groups, databases, staging);
             String generationFingerprint = generationFingerprint(databaseIdentity, modules);
@@ -94,9 +95,9 @@ final class BaselineGenerator {
         for (Map.Entry<String, List<String>> group : groups.entrySet()) {
             TemporaryDatabases temporary = temporaryDatabases(group.getKey());
             databases.put(group.getKey(), temporary);
-            store.createDatabase(ADMIN_DATABASE, temporary.replay());
-            store.createDatabase(ADMIN_DATABASE, temporary.determinism());
-            store.createDatabase(ADMIN_DATABASE, temporary.verify());
+            store.createDatabase(ADMIN_DATABASE, temporary.replay(), settings.schemaDefaults());
+            store.createDatabase(ADMIN_DATABASE, temporary.determinism(), settings.schemaDefaults());
+            store.createDatabase(ADMIN_DATABASE, temporary.verify(), settings.schemaDefaults());
             migrateVersions(group.getValue(), temporary.replay(), migrationExtraction);
             migrateVersions(group.getValue(), temporary.determinism(), migrationExtraction);
         }
@@ -345,6 +346,8 @@ final class BaselineGenerator {
         MessageDigest digest = digest();
         update(digest, "format=" + GENERATOR_FORMAT_VERSION);
         update(digest, "database=" + databaseIdentity.product() + ":" + databaseIdentity.version());
+        update(digest, "characterSet=" + settings.schemaDefaults().characterSet());
+        update(digest, "collation=" + settings.schemaDefaults().collation());
         for (ModuleManifest module : modules) {
             update(digest, module.module());
             update(digest, module.datasourceGroup());
@@ -366,6 +369,8 @@ final class BaselineGenerator {
         manifest.put("generator", "mango:baseline-generate");
         manifest.put("databaseProduct", databaseIdentity.product());
         manifest.put("databaseVersion", databaseIdentity.version());
+        manifest.put("targetCharacterSet", settings.schemaDefaults().characterSet());
+        manifest.put("targetCollation", settings.schemaDefaults().collation());
         manifest.put("generationFingerprint", fingerprint);
         manifest.put("datasourceGroups", groups);
         manifest.put("modules", modules);

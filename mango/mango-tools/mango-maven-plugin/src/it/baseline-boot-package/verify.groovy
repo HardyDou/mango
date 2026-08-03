@@ -13,6 +13,14 @@ new ZipFile(jar).withCloseable { zip ->
     expectedEntries.each { entry ->
         assert zip.getEntry(entry) != null: "Missing generated resource in Boot JAR: ${entry}"
     }
+    def alphaBaseline = zip.getInputStream(zip.getEntry(expectedEntries[0])).getText('UTF-8')
+    assert alphaBaseline.contains('DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'):
+            'Boot JAR baseline did not use the Mango CLI standard collation'
+    def manifest = zip.getInputStream(zip.getEntry(expectedEntries[2])).getText('UTF-8')
+    assert manifest.contains('"targetCharacterSet" : "utf8mb4"'):
+            'Boot JAR manifest did not record the target character set'
+    assert manifest.contains('"targetCollation" : "utf8mb4_unicode_ci"'):
+            'Boot JAR manifest did not record the target collation'
 }
 
 assert !new File(basedir, 'src/main/resources/db/baseline').exists()
