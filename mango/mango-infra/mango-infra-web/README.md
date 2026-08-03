@@ -2,6 +2,7 @@
 
 ## 1. 概览
 `mango-infra-web` 提供 Mango HTTP API 基础能力，覆盖内部接口标记、内部调用签名校验、请求上下文读取、MangoContext 写入、MDC trace、CORS、全局异常处理、Jackson 长整型字符串化和日期格式化。
+请求体无法反序列化时，全局异常处理会在不回显字段值或请求体的前提下，返回安全的 JSON 字段路径和错误类别。
 
 ## 2. 功能清单
 
@@ -113,7 +114,7 @@ mango:
 - `InternalCallFilter`：对内部路径校验内部调用头、HMAC 签名、时间戳和 nonce。
 - `MangoContextWebFilter`：把 request context 写入 `MangoContextHolder`，请求结束后清理。
 - `WebMdcFilter`：把 trace/request 信息写入 MDC。
-- `GlobalExceptionHandler`：统一异常响应。
+- `GlobalExceptionHandler`：统一异常响应；JSON 未知字段、类型不匹配和日期时间格式错误会返回完整的安全字段路径，畸形 JSON 返回顶层格式错误。
 - `WebKvContextContributor`：把 Web 请求上下文贡献给 infra-kv 表达式上下文。
 
 内部调用校验要求请求头：
@@ -140,7 +141,7 @@ mango:
 - API 测试覆盖请求上下文空值处理、Map 防御性复制和不可变语义。
 - Support 测试覆盖 Jackson Long/Java Time 契约，以及原始查询与 Feign 多值查询的统一签名规范。
 - Starter 测试覆盖内部路径发现、签名校验、并发重放、路径加载失败关闭、请求上下文与自动配置。
-- 随机端口 Tomcat E2E 覆盖异常响应、Long/时间序列化、`@Inner` 路径扫描、合法内部调用及重放拒绝。
+- 随机端口 Tomcat E2E 覆盖异常响应、JSON 嵌套字段路径和敏感值不回显、Long/时间序列化、`@Inner` 路径扫描、合法内部调用及重放拒绝。
 - Feign 消费测试使用同一 Maven reactor 构建当前 Web Support，并验证多值查询签名。
 
 定向回归命令：
@@ -163,6 +164,7 @@ mvn -f mango/pom.xml \
 - 所有内部接口都 403：检查 `inner.secret` 是否为空，调用方和接收方 secret 是否一致，服务时间是否同步。
 - 下游拿不到 MangoContext：检查 `request-context.enabled` 和 `context.enabled` 是否开启。
 - 前端 Long 精度问题：本模块会把 Long 序列化为字符串，前端不要再按 number 解析大 ID。
+- JSON 请求返回字段路径错误：未知字段失败行为由宿主 Jackson 的 `FAIL_ON_UNKNOWN_PROPERTIES` 决定；异常响应只返回白名单字段路径和 `STRING`、`NUMBER`、`BOOLEAN`、`ARRAY`、`OBJECT`、`ENUM` 等安全类型类别，不返回字段实际值。
 
 ## 12. 相关文档
 - [后端 API 规范](../../../mango-pmo/rules/backend/03-api.md)
