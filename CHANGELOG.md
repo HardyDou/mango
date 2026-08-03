@@ -1,5 +1,44 @@
 # Mango Changelog
 
+## v2026.08.03-cli-1.0.97-release-matrix-sync-release - 2026-08-03
+
+Status: `PENDING`. This CLI-only patch release corrects Issue #712 by publishing a new immutable `@mango/cli@1.0.97` coordinate whose packaged `release-versions.json` matches the already-published Mango Maven `1.0.32` backend and current frontend matrix. No Maven, PMO or runtime frontend package is republished.
+
+### Fixed
+
+- Replace the stale Maven `1.0.31` lock packaged in CLI `1.0.96` with the published Maven `1.0.32` backend.
+- Package the current frontend matrix headed by `@mango/admin@1.0.62` and `@mango/common@1.0.25` instead of letting consumers receive the older `1.0.61` / `1.0.24` tuple from CLI `1.0.96`.
+- Treat `release-versions.json` changes as CLI release impact so a matrix update requires a new CLI package version.
+
+### Versions
+
+| Component                   |                                                      Previous |                                       Release | Compatibility                                                                                         |
+| --------------------------- | ------------------------------------------------------------: | --------------------------------------------: | ----------------------------------------------------------------------------------------------------- |
+| `@mango/cli`                |                                                      `1.0.96` |                                      `1.0.97` | Patch-compatible version-lock correction; CLI commands and generated project structure are unchanged. |
+| Mango Maven backend         |                                          `1.0.31` in CLI lock |                                      `1.0.32` | References the already-published Maven release; no Maven artifact is republished.                     |
+| Frontend aggregate / common | `@mango/admin@1.0.61`, `@mango/common@1.0.24` in CLI `1.0.96` | `@mango/admin@1.0.62`, `@mango/common@1.0.25` | References the already-published 22-package dependency closure.                                       |
+| `@mango/pmo`                |                                                       `1.3.9` |                                     unchanged | No PMO source, baseline or package release.                                                           |
+
+### Published Packages
+
+| Order | Target                     | Version                                              | Status    |
+| ----: | -------------------------- | ---------------------------------------------------- | --------- |
+|     1 | `@mango/cli`               | `1.0.97`                                             | `PENDING` |
+|     2 | Git tag and GitHub Release | `v2026.08.03-cli-1.0.97-release-matrix-sync-release` | `PENDING` |
+
+### Upgrade Notes
+
+1. Install `@mango/cli@1.0.97` from `npm-group`; do not use `1.0.96` as the version source for a newly generated or upgraded business project.
+2. Align backend dependencies to Mango Maven `1.0.32` and frontend dependencies to the exact matrix in CLI `1.0.97`'s packaged `release-versions.json`.
+3. Keep `@mango/pmo@1.3.9`. Existing databases upgrade in place; no database rebuild, PMO migration or business source change is required by this patch.
+
+### Verification
+
+- Release-impact validation must identify `@mango/cli` when `release-versions.json` changes and reject an unchanged CLI version.
+- CLI tests, release-version checks, template projection checks and the Maven `1.0.32` generated-backend gate must pass.
+- After publication, `@mango/cli@1.0.97` must resolve from both `npm-hosted` and `npm-group` with matching integrity and shasum.
+- A clean consume-registry project must install the published CLI, verify its packaged matrix, generate a project locked to Maven `1.0.32` / PMO `1.3.9` / the current frontend tuple, and pass the applicable static consumer checks.
+
 ## v2026.08.03-common-1.0.25-dialog-accessibility-release - 2026-08-03
 
 Status: `PUBLISHED_AND_VERIFIED`. This npm-only patch release was published from protected `main` commit `66d825024e588353b387ef164cb1b485d086e449` and tree `727400929eed138842c72e4dcc0c6e2dab0d7be7`. The exact-source bundle SHA-256 is `81e5a90901c3d848334dc2514ff5dec8574a3a29c223e72e27aa110ea8465ff3`; all 22 npm coordinates, both private registries, the Git tag, [GitHub Release](https://github.com/HardyDou/mango/releases/tag/v2026.08.03-common-1.0.25-dialog-accessibility-release) and a clean runtime consumer are verified. The completed release manifest has SHA-256 `7cb0df4e075e1c953e36489e317b4491b41e0cc2b9cecc0e65e36d09b829995f`. Maven `1.0.32`, `@mango/pmo@1.3.9` and `@mango/cli@1.0.96` remain unchanged and were not republished.

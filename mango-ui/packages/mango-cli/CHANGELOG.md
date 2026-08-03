@@ -1,5 +1,26 @@
 # @mango/cli Changelog
 
+## 1.0.97 - 2026-08-03
+
+### Fixed
+
+- Lock new and upgraded business projects to the already-published Mango Maven `1.0.32` backend and the current frontend matrix headed by `@mango/admin@1.0.62` and `@mango/common@1.0.25`.
+- Treat changes to the packaged `release-versions.json` as CLI release impact, so a future matrix update cannot remain hidden behind an unchanged CLI version.
+
+### Upgrade Notes
+
+1. Install `@mango/cli@1.0.97`; do not rely on the stale matrix packaged in `1.0.96`.
+2. Keep `@mango/pmo@1.3.9`; align the backend to Maven `1.0.32` and the frontend to the exact versions in the packaged `release-versions.json`.
+3. Existing databases upgrade in place. No schema rebuild, PMO migration or application source change is required by this version-lock correction.
+
+### Verification
+
+- `pnpm -C mango-ui release:impact --base=origin/main --head=HEAD`
+- `pnpm -C mango-ui --filter @mango/cli test`
+- `node mango-ui/packages/mango-cli/scripts/check-release-versions.mjs`
+- `MANGO_BACKEND_GATE_VERSION=1.0.32 node mango-ui/packages/mango-cli/scripts/check-generated-backend-gate.mjs`
+- Clean consume-registry installation must verify the packaged matrix and generated-project Maven/frontend locks before release closeout.
+
 ## 1.0.96 - 2026-08-02
 
 ### Added

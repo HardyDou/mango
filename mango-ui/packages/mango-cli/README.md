@@ -618,6 +618,12 @@ Issue #690 覆盖 CLI、Maven plugin、Bootstrap/runtime、Resource、BSQL、Boo
 
 若升级后出现 `BOOTSTRAP_RECEIPT_MISSING`、`BOOTSTRAP_FINGERPRINT_MISMATCH`、`OLD_RUNTIME_INSTANCES_ACTIVE`、固定 Maven 版本 POM 或 typed resource declaration 解析错误，先保留 `.mango`、Bootstrap 审计表和构建日志，再按对应模块 README 排障；不要降级单个组件掩盖 tuple 不一致。
 
+### 1.0.97 发布影响
+
+`@mango/cli@1.0.97` 修正 `1.0.96` 随包版本锁滞后问题：生成和升级项目默认使用 Mango Maven `1.0.32`、`@mango/pmo@1.3.9`，以及 `@mango/admin@1.0.62`、`@mango/common@1.0.25` 所在的完整前端矩阵。CLI 命令、模板结构、PMO 合同、数据库 migration 和运行时 API 不变。
+
+业务项目安装 `1.0.97` 后按随包 `release-versions.json` 成组更新 Maven 和前端依赖；已有数据库原地升级，不重建数据库。发布影响检查会把 `release-versions.json` 变化视为 CLI 制品变化，后续矩阵更新不能再复用未升版的 CLI 坐标。
+
 ### 1.0.96 发布影响
 
 `@mango/cli@1.0.96` 精确依赖 `@mango/pmo@1.3.9`，并把生成和升级项目锁定到 Mango Maven `1.0.31` 与根 `CHANGELOG.md` 的完整前端版本矩阵。该批次包含 Identity provider/个人设置、消息中心入口、Bootstrap receipt 与 Resource typed declaration、文件 hash 恢复、Gitea PMO 终态事件和生成项目全链路修复。
