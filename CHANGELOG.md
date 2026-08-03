@@ -2,7 +2,7 @@
 
 ## v2026.08.03-cli-1.0.97-release-matrix-sync-release - 2026-08-03
 
-Status: `PENDING`. This CLI-only patch release corrects Issue #712 by publishing a new immutable `@mango/cli@1.0.97` coordinate whose packaged `release-versions.json` matches the already-published Mango Maven `1.0.32` backend and current frontend matrix. No Maven, PMO or runtime frontend package is republished.
+Status: `PUBLISHED_AND_VERIFIED`. This CLI-only patch was published from protected `main` commit `ad19d298b1c2c9a13f61bb3875d783d554013f7f` and tree `ebc5b637f69ce99c39ecad48adae16dad5532917`; the exact-source bundle SHA-256 is `41677a9a26946ec4be6ab14365856437cdd9d6c38507cf8a09cbeda48074633b`. `@mango/cli@1.0.97`, the immutable tag, [GitHub Release](https://github.com/HardyDou/mango/releases/tag/v2026.08.03-cli-1.0.97-release-matrix-sync-release), both private registries and a clean generated-project consumer are verified. The completed read-only manifest SHA-256 is `a3754a5d454f86f9289dc36b4d055891d65df74ba704ae6765533266a95ff581`; the earlier publication manifest (`753dd5a29b3b81d2be616e3bd971446198156bb9c222eeb9f2a2664023d671a2`) is retained because its first consume verifier misread Nexus's flat `dist.integrity` keys after publication had already succeeded. No Maven, PMO or runtime frontend package was republished.
 
 ### Fixed
 
@@ -21,10 +21,10 @@ Status: `PENDING`. This CLI-only patch release corrects Issue #712 by publishing
 
 ### Published Packages
 
-| Order | Target                     | Version                                              | Status    |
-| ----: | -------------------------- | ---------------------------------------------------- | --------- |
-|     1 | `@mango/cli`               | `1.0.97`                                             | `PENDING` |
-|     2 | Git tag and GitHub Release | `v2026.08.03-cli-1.0.97-release-matrix-sync-release` | `PENDING` |
+| Order | Target                     | Version                                              | Status                   |
+| ----: | -------------------------- | ---------------------------------------------------- | ------------------------ |
+|     1 | `@mango/cli`               | `1.0.97`                                             | `PUBLISHED_AND_VERIFIED` |
+|     2 | Git tag and GitHub Release | `v2026.08.03-cli-1.0.97-release-matrix-sync-release` | `CREATED_AND_VERIFIED`   |
 
 ### Upgrade Notes
 
@@ -38,6 +38,8 @@ Status: `PENDING`. This CLI-only patch release corrects Issue #712 by publishing
 - CLI tests, release-version checks, template projection checks and the Maven `1.0.32` generated-backend gate must pass.
 - After publication, `@mango/cli@1.0.97` must resolve from both `npm-hosted` and `npm-group` with matching integrity and shasum.
 - A clean consume-registry project must install the published CLI, verify its packaged matrix, generate a project locked to Maven `1.0.32` / PMO `1.3.9` / the current frontend tuple, and pass the applicable static consumer checks.
+- `npm-hosted` and `npm-group` returned matching integrity `sha512-9+drk7/oyZUJGaApr7EvcZxclqu2SGvZzWqs1C7+F2Yeb6LgH5SVvbjgWgwQ1u99+sA5Ne4MAswNm3Z66n+OzA==`, shasum `c274fb35d8989271add262f085f1b4bf6581d5d6` and publication time `2026-08-03T08:45:24.851Z`.
+- A clean `npm-group` consumer installed `@mango/cli@1.0.97`, verified the packaged Maven `1.0.32` / CLI `1.0.97` / Admin `1.0.62` / Common `1.0.25` / PMO `1.3.9` tuple, and generated a full project with the same backend and frontend locks.
 
 ## v2026.08.03-common-1.0.25-dialog-accessibility-release - 2026-08-03
 
