@@ -1,5 +1,47 @@
 # Mango Changelog
 
+## v2026.08.03-common-1.0.25-dialog-accessibility-release - 2026-08-03
+
+Status: `PENDING`. This npm-only patch release prepares the fixed frontend dependency closure for the `MangoDialog` accessible-name correction from Issue #707. Maven `1.0.32`, `@mango/pmo@1.3.9` and `@mango/cli@1.0.96` remain unchanged and are not republished.
+
+### Fixed
+
+- Give `MangoDialog` an accessible name automatically: a non-empty `title` prop becomes the dialog `aria-label`, while a title supplied only through `#title` is associated through `aria-labelledby`.
+- Keep custom visual titles, fallback titles and caller-provided Element Plus attributes compatible while allowing role-based queries such as `getByRole('dialog', { name: '批量识别企业资质' })` to identify the dialog.
+- Republish the complete fixed-version frontend dependency closure so downstream packages cannot mix `@mango/common@1.0.25` with stale exact workspace dependencies.
+
+### Versions
+
+| Component | Previous | Release | Compatibility |
+| --- | ---: | ---: | --- |
+| `@mango/common` | `1.0.24` | `1.0.25` | Patch-compatible accessibility correction; public component props, emits, slots and exposed methods are unchanged. |
+| Fixed-version frontend dependency closure | previous matrix | exact versions below | Patch republish updates only package versions and exact internal dependency pins. |
+| Mango Maven backend | `1.0.32` | unchanged | No Java, Maven or database artifact is published in this npm-only batch. |
+| `@mango/pmo` / `@mango/cli` | `1.3.9` / `1.0.96` | unchanged | No PMO, CLI, starter-generation behavior or packaged governance baseline is published. |
+
+### Published Packages
+
+| Order | Target | Version | Status |
+| ---: | --- | --- | --- |
+| 1 | `@mango/common`, `@mango/grid-layout`, `@mango/grid-widgets`, `@mango/rbac`, `@mango/auth`, `@mango/system`, `@mango/admin-pages`, `@mango/file` | `1.0.25`, `1.0.16`, `1.0.22`, `1.0.23`, `1.0.25`, `1.0.31`, `1.0.32`, `1.0.33` | `PENDING` |
+| 2 | `@mango/calendar`, `@mango/cms`, `@mango/home`, `@mango/job`, `@mango/link`, `@mango/notice`, `@mango/numgen`, `@mango/payment` | `1.0.33`, `1.0.22`, `1.0.14`, `1.0.25`, `1.0.19`, `1.0.37`, `1.0.33`, `1.0.25` | `PENDING` |
+| 3 | `@mango/site-shell`, `@mango/template`, `@mango/workflow`, `@mango/workflow-business-example` | `1.0.12`, `1.0.33`, `1.0.39`, `1.0.38` | `PENDING` |
+| 4 | `@mango/admin-shell`, `@mango/admin` | `1.0.57`, `1.0.62` | `PENDING` |
+| 5 | Git tag and GitHub Release | `v2026.08.03-common-1.0.25-dialog-accessibility-release` | `PENDING` |
+
+### Upgrade Notes
+
+1. Aggregate consumers upgrade to `@mango/admin@1.0.62`; direct consumers update every installed affected package to the exact versions in `Published Packages` instead of mixing older fixed internal dependency pins.
+2. Consumers that use `MangoDialog` do not need to add accessibility attributes for the normal `title` or `#title` cases. An explicit caller-provided accessible-name attribute remains available for specialized integrations.
+3. No backend, database, PMO or CLI migration is required. Keep Mango Maven `1.0.32`, `@mango/pmo@1.3.9` and `@mango/cli@1.0.96`.
+
+### Verification
+
+- PR #708 merged the Issue #707 implementation after required checks passed; focused `MangoDialog` tests cover prop titles, title slots, precedence and caller-provided accessible-name attributes.
+- Release-impact validation identifies the exact 22-package npm dependency closure and checks all fixed workspace dependency versions, starter templates and the CLI release lock.
+- Before publication, the release preparation PR must pass protected-branch required checks and the repository release gates. After publication, all 22 coordinates must resolve from both `npm-hosted` and `npm-group` with matching integrity and shasum.
+- A clean consume-registry-only frontend project must install the published packages, import public APIs and styles, pass typecheck and production build, and verify the published `MangoDialog` accessible name at runtime.
+
 ## v2026.08.03-maven-1.0.32-bootstrap-resource-fixes-release - 2026-08-03
 
 Status: `PUBLISHED_AND_VERIFIED`. This Maven-only patch release was published from protected `main` commit `3aa36ccb526469aaeb76bdf0b1b9c3adef430488` and tree `8d380430c7c5384de5536d71d48849f1a963cb81`. The exact-source bundle SHA-256 is `a6c9d3e89f7bfe6125f8c93a328fbb7f1c6d84e86f3f995542de3aa4cda1b42b`; all 188 Maven coordinates, the publish and consume registries, the Git tag, GitHub Release, Latest docs, versioned docs snapshot and a clean Maven consumer are verified. The completed release manifest has SHA-256 `1e2b1bdc1efbb6317feb5701ec1a01e1739c852396e66ee5fa525680fce1d7f8`; CLI, PMO and frontend npm coordinates remain unchanged.
