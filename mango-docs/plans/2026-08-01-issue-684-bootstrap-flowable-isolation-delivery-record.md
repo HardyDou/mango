@@ -70,3 +70,10 @@
 - 验证：`mvn -f mango/pom.xml -pl mango-platform/mango-workflow/mango-workflow-starter test` 完成 22 项 L1 单元测试，0 失败；测试质量、测试替身、模块 README 与 source-fact 检查通过；本地 `1.0.32-local-SNAPSHOT` 非 app Reactor 186/186 模块安装成功并回查 starter JAR 包含修复类。
 - 人工范围确认：用户在 2026-08-03 明确要求“只进行单元测试，L1 流程”，作为 `MODE_DOWNGRADE_CONFIRMED`。因此本轮不执行空库、服务启动、API、UI 或浏览器回归；该选择不能替代受保护主分支 required checks、发布仓库回查和干净消费端解析。
 - 发布范围：用户随后明确要求先发布，目标为完整非 app Maven Reactor 与 `io.mango:mango-docs-bundle:1.0.32`；CLI `1.0.96`、PMO `1.3.9` 和前端 npm 均不改变。
+
+## 9. 2026-08-03 CMS demo DATETIME 补充阻塞
+
+- 新事实：业务空库继续验证时，`mango-cms-starter` 的 22 个 demo `publishTime` 使用空格分隔时间，而 `CmsTableResourceHandler` 通过 Jackson 转换 `LocalDateTime` 时要求 ISO 本地日期时间，导致 demo Resource apply 失败；这不是业务数据问题。
+- 决定 `TD-005`：修正 CMS demo 资源生产端，统一为 `2026-07-14T09:53:24`；不放宽通用 Handler 接受旧格式，不修改本机 Maven JAR，也不把关闭 demo 开关视为 Mango 修复。
+- 自动化：`CmsResourceDeclarationContractTest` 对每个非空 `DATETIME` 直接执行 `LocalDateTime.parse`，避免错误格式再次被正则测试固化。
+- L1 结果：CMS starter 16 项和 Workflow starter 22 项单元测试全部通过；本地 `io.mango.platform.cms:mango-cms-starter:1.0.32-local-SNAPSHOT` 已重新安装并回查 JAR 中 ISO 值 22 处、旧值 0 处，供业务独立空库验证。

@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -17,6 +18,7 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 
 class CmsResourceDeclarationContractTest {
 
@@ -76,10 +78,11 @@ class CmsResourceDeclarationContractTest {
             assertThat(field.path("value").isNull()).as(resource.bizKey()).isTrue();
         }));
         demo.forEach(resource -> localDateTimeFields(resource.node()).forEach(field -> {
+            assertThat(field.path("type").asText()).as(resource.bizKey()).isEqualTo("DATETIME");
             if (!field.path("value").isNull()) {
-                assertThat(field.path("value").asText())
+                assertThatCode(() -> LocalDateTime.parse(field.path("value").asText()))
                         .as(resource.bizKey())
-                        .matches("\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}");
+                        .doesNotThrowAnyException();
             }
         }));
         demo.forEach(resource -> {

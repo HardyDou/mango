@@ -100,7 +100,7 @@
               },
               "publishTime": {
                 "type": "DATETIME",
-                "value": "2026-07-14 09:53:24"
+                "value": "2026-07-14T09:53:24"
               },
               "offlineTime": {
                 "type": "DATETIME",
@@ -206,7 +206,7 @@
               },
               "publishTime": {
                 "type": "DATETIME",
-                "value": "2026-07-14 09:53:24"
+                "value": "2026-07-14T09:53:24"
               },
               "offlineTime": {
                 "type": "DATETIME",
@@ -312,7 +312,7 @@
               },
               "publishTime": {
                 "type": "DATETIME",
-                "value": "2026-07-14 09:53:24"
+                "value": "2026-07-14T09:53:24"
               },
               "offlineTime": {
                 "type": "DATETIME",
@@ -418,7 +418,7 @@
               },
               "publishTime": {
                 "type": "DATETIME",
-                "value": "2026-07-14 09:53:24"
+                "value": "2026-07-14T09:53:24"
               },
               "offlineTime": {
                 "type": "DATETIME",
@@ -524,7 +524,7 @@
               },
               "publishTime": {
                 "type": "DATETIME",
-                "value": "2026-07-14 09:53:24"
+                "value": "2026-07-14T09:53:24"
               },
               "offlineTime": {
                 "type": "DATETIME",
@@ -630,7 +630,7 @@
               },
               "publishTime": {
                 "type": "DATETIME",
-                "value": "2026-07-14 09:53:24"
+                "value": "2026-07-14T09:53:24"
               },
               "offlineTime": {
                 "type": "DATETIME",
@@ -736,7 +736,7 @@
               },
               "publishTime": {
                 "type": "DATETIME",
-                "value": "2026-07-14 09:53:24"
+                "value": "2026-07-14T09:53:24"
               },
               "offlineTime": {
                 "type": "DATETIME",
@@ -842,7 +842,7 @@
               },
               "publishTime": {
                 "type": "DATETIME",
-                "value": "2026-07-14 09:53:24"
+                "value": "2026-07-14T09:53:24"
               },
               "offlineTime": {
                 "type": "DATETIME",
@@ -948,7 +948,7 @@
               },
               "publishTime": {
                 "type": "DATETIME",
-                "value": "2026-07-14 09:53:24"
+                "value": "2026-07-14T09:53:24"
               },
               "offlineTime": {
                 "type": "DATETIME",
@@ -1054,7 +1054,7 @@
               },
               "publishTime": {
                 "type": "DATETIME",
-                "value": "2026-07-14 09:53:24"
+                "value": "2026-07-14T09:53:24"
               },
               "offlineTime": {
                 "type": "DATETIME",
@@ -1160,7 +1160,7 @@
               },
               "publishTime": {
                 "type": "DATETIME",
-                "value": "2026-07-14 09:53:24"
+                "value": "2026-07-14T09:53:24"
               },
               "offlineTime": {
                 "type": "DATETIME",
