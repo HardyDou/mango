@@ -2,7 +2,7 @@
 
 ## v2026.08.03-common-1.0.25-dialog-accessibility-release - 2026-08-03
 
-Status: `PUBLISHED_AND_VERIFIED`. This npm-only patch release was published from protected `main` commit `66d825024e588353b387ef164cb1b485d086e449` and tree `727400929eed138842c72e4dcc0c6e2dab0d7be7`. The exact-source bundle SHA-256 is `81e5a90901c3d848334dc2514ff5dec8574a3a29c223e72e27aa110ea8465ff3`; all 22 npm coordinates, both private registries, the Git tag, GitHub Release and a clean runtime consumer are verified. The completed release manifest has SHA-256 `7cb0df4e075e1c953e36489e317b4491b41e0cc2b9cecc0e65e36d09b829995f`. Maven `1.0.32`, `@mango/pmo@1.3.9` and `@mango/cli@1.0.96` remain unchanged and were not republished.
+Status: `PUBLISHED_AND_VERIFIED`. This npm-only patch release was published from protected `main` commit `66d825024e588353b387ef164cb1b485d086e449` and tree `727400929eed138842c72e4dcc0c6e2dab0d7be7`. The exact-source bundle SHA-256 is `81e5a90901c3d848334dc2514ff5dec8574a3a29c223e72e27aa110ea8465ff3`; all 22 npm coordinates, both private registries, the Git tag, [GitHub Release](https://github.com/HardyDou/mango/releases/tag/v2026.08.03-common-1.0.25-dialog-accessibility-release) and a clean runtime consumer are verified. The completed release manifest has SHA-256 `7cb0df4e075e1c953e36489e317b4491b41e0cc2b9cecc0e65e36d09b829995f`. Maven `1.0.32`, `@mango/pmo@1.3.9` and `@mango/cli@1.0.96` remain unchanged and were not republished.
 
 ### Fixed
 
