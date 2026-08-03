@@ -2,7 +2,7 @@
 
 ## v2026.08.03-maven-1.0.33-baseline-web-errors-release - 2026-08-03
 
-Status: `PENDING`. This Maven-only patch is planned from protected `main` after the Issue #705 and #715 source PR passes all required checks. The complete non-app Maven Reactor and matching `io.mango:mango-docs-bundle:1.0.33` will be published and verified through the configured publish and consume registries before this status is closed. CLI, PMO and frontend npm coordinates are unchanged and will not be republished.
+Status: `PUBLISHED_AND_VERIFIED`. This Maven-only patch was published from protected `main` commit `19a9160a6f57e80b257418f4ca90a208c7cd958a` and tree `97df70447980438cd412ce0f869cc3c06f48f415`; the exact-source bundle SHA-256 is `edd3c2fb9a4e20e41ff6f91ec1ac288490047eb70a05815c8af32be100dbef2a`. The complete non-app Maven Reactor and `io.mango:mango-docs-bundle:1.0.33`, immutable tag, [GitHub Release](https://github.com/HardyDou/mango/releases/tag/v2026.08.03-maven-1.0.33-baseline-web-errors-release), both Maven registries and a clean isolated consumer are verified. The completed read-only verification manifest SHA-256 is `1cbc624b6d79e2664a894699a3ceb203ac21fde6122ec403e5fae1826ce02e97`; the publication manifest SHA-256 is `328c6095af718bd65a21e98043990286e2332b9856cec71bb056c5bd5f99c0cc` and is retained because its post-verifier exceeded Node's default output buffer while listing the 192 MB docs JAR after immutable publication had succeeded. No immutable artifact was republished. CLI `1.0.97`, PMO `1.3.9`, CLI's Maven `1.0.32` default and frontend npm coordinates remain unchanged.
 
 ### Fixed
 
@@ -23,8 +23,8 @@ Status: `PENDING`. This Maven-only patch is planned from protected `main` after 
 
 | Order | Target | Version | Status |
 | ----: | ------ | ------- | ------ |
-| 1 | Complete non-app `io.mango` Maven Reactor and `io.mango:mango-docs-bundle` | `1.0.33` | `PENDING` |
-| 2 | Git tag, GitHub Release, Latest docs and versioned docs snapshot | `v2026.08.03-maven-1.0.33-baseline-web-errors-release` | `PENDING` |
+| 1 | Complete non-app `io.mango` Maven Reactor and `io.mango:mango-docs-bundle` | `1.0.33` | `PUBLISHED_AND_VERIFIED` |
+| 2 | Git tag, GitHub Release, Latest docs and versioned docs snapshot | `v2026.08.03-maven-1.0.33-baseline-web-errors-release` | `CREATED_AND_VERIFIED` |
 
 ### Upgrade Notes
 
@@ -39,6 +39,8 @@ Status: `PENDING`. This Maven-only patch is planned from protected `main` after 
 - The Web Starter random-port Tomcat suite must cover unknown nested fields, nested list type mismatch, date-time format errors, malformed JSON and sensitive-value non-disclosure.
 - The complete non-app Maven batch, documentation bundle, release-note checker, capability documentation gates and repository source checks must pass from the protected release commit.
 - Every Maven `1.0.33` coordinate must resolve from both publish and consume registries with matching checksums. A clean isolated Maven consumer must resolve the published BOM, Maven plugin and Web Starter without using the source workspace or shared local release cache.
+- Publication verification confirmed 188 coordinates and 334 POM/JAR primary files in both `maven-releases` and `maven-public` with matching SHA-1 values. The isolated consumer also resolved `io.mango:mango-docs-bundle:1.0.33` and confirmed `MySqlSchemaDefaults.class`, `GlobalExceptionHandler.class` and the matching versioned documentation snapshot are present.
+- The immutable tag resolves to `19a9160a6f57e80b257418f4ca90a208c7cd958a`. The canonical verification and preserved publication manifests are recorded under `mango-docs/evidence/governance/`.
 
 ## v2026.08.03-cli-1.0.97-release-matrix-sync-release - 2026-08-03
 

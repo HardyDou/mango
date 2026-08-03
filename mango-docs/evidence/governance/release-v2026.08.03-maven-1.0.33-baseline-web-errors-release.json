@@ -1,0 +1,110 @@
+{
+  "schemaVersion": 1,
+  "release": "v2026.08.03-maven-1.0.33-baseline-web-errors-release",
+  "releaseKind": "maven",
+  "status": "PUBLISHED_AND_VERIFIED",
+  "scope": {
+    "issues": [705, 715],
+    "alreadyClosedIssue": 711,
+    "mergedPullRequests": [706, 716, 717]
+  },
+  "source": {
+    "commit": "19a9160a6f57e80b257418f4ca90a208c7cd958a",
+    "tree": "97df70447980438cd412ce0f869cc3c06f48f415",
+    "exactSourceBundleSha256": "edd3c2fb9a4e20e41ff6f91ec1ac288490047eb70a05815c8af32be100dbef2a",
+    "releaseBodySha256": "666adf2b1c4cb57cf6a0aad123705c1faa3880adc3011a95176fa533c8653ccc",
+    "requiredChecks": "passed",
+    "pagesRun": 30820077199,
+    "releaseTagMovedDuringCloseout": false
+  },
+  "versions": {
+    "maven": "1.0.33",
+    "docsBundle": "1.0.33",
+    "pmo": "1.3.9-unchanged-not-republished",
+    "cli": "1.0.97-unchanged-not-republished",
+    "cliDefaultMaven": "1.0.32-unchanged",
+    "npm": "unchanged-not-republished"
+  },
+  "manifests": {
+    "publication": {
+      "path": "mango-docs/evidence/governance/release-v2026.08.03-maven-1.0.33-baseline-web-errors-release-publication-manifest.json",
+      "sha256": "328c6095af718bd65a21e98043990286e2332b9856cec71bb056c5bd5f99c0cc",
+      "completed": false,
+      "role": "immutable publication audit history",
+      "terminalState": "post-verify failed because the verifier exceeded Node execFileSync's default output buffer while listing the 192 MB docs JAR; cleanup remained pending"
+    },
+    "canonicalVerification": {
+      "path": "mango-docs/evidence/governance/release-v2026.08.03-maven-1.0.33-baseline-web-errors-release-verification-manifest.json",
+      "sha256": "1cbc624b6d79e2664a894699a3ceb203ac21fde6122ec403e5fae1826ce02e97",
+      "completed": true,
+      "states": 17,
+      "passedStates": 15,
+      "notApplicableStates": 2,
+      "failedStates": 0,
+      "pendingStates": 0
+    }
+  },
+  "maven": {
+    "status": "PUBLISHED_AND_VERIFIED",
+    "coordinates": 188,
+    "primaryFiles": 334,
+    "version": "1.0.33",
+    "docsBundle": "io.mango:mango-docs-bundle:1.0.33",
+    "publishRegistry": "maven-releases",
+    "consumeRegistry": "maven-public",
+    "artifactChecksumAlgorithm": "SHA-1",
+    "publishConsumeChecksumsMatch": true,
+    "publishedAtEarliest": "2026-08-03T14:07:46Z",
+    "representativeChecksums": {
+      "io.mango:mango-bom:1.0.33:pom": "7c977c40e29dfee9b688030ad79696a02f113944",
+      "io.mango.tools.maven.plugin:mango-maven-plugin:1.0.33:jar": "a05b498c34b1fe40419601243801d14a5f8ff2ea",
+      "io.mango.infra.web:mango-infra-web-starter:1.0.33:jar": "fc1f53bd67b2aaea423a13f0bd802aa5ab6b8209",
+      "io.mango:mango-docs-bundle:1.0.33:jar": "99bd9f240f36bb8bd6545b06e731837a6c0758dc"
+    }
+  },
+  "githubRelease": {
+    "status": "CREATED_AND_VERIFIED",
+    "url": "https://github.com/HardyDou/mango/releases/tag/v2026.08.03-maven-1.0.33-baseline-web-errors-release",
+    "targetCommit": "19a9160a6f57e80b257418f4ca90a208c7cd958a",
+    "publishedAt": "2026-08-03T14:07:36Z",
+    "draft": false,
+    "prerelease": false
+  },
+  "documentation": {
+    "latest": {
+      "url": "https://hardydou.github.io/mango/",
+      "httpStatus": 200
+    },
+    "snapshot": {
+      "url": "https://hardydou.github.io/mango/versions/v2026.08.03-maven-1.0.33-baseline-web-errors-release/",
+      "httpStatus": 200
+    }
+  },
+  "releaseTests": {
+    "mysql": "MySQL 8.4 BaselineGeneratorIntegrationTest passed 9/9; MySqlSchemaDefaultsTest passed 2/2",
+    "mavenPlugin": "254 tests executed, 0 failures, 0 errors, 1 explicitly skipped performance test",
+    "webStarter": "36 tests passed, including 9 random-port WebBoundaryIntegrationTest cases",
+    "requiredPullRequests": "PR #706, #716 and #717 required checks passed",
+    "branchProtection": "live main protection matched .github/branch-protection-policy.json"
+  },
+  "cleanConsumer": {
+    "consumeRegistryOnly": true,
+    "isolatedLocalRepository": "passed",
+    "mavenBom": "io.mango:mango-bom:1.0.33",
+    "mavenPlugin": "io.mango.tools.maven.plugin:mango-maven-plugin:1.0.33",
+    "webStarter": "io.mango.infra.web:mango-infra-web-starter:1.0.33",
+    "docsBundle": "io.mango:mango-docs-bundle:1.0.33",
+    "transitiveWebResolution": "passed",
+    "mysqlSchemaDefaultsClass": "present",
+    "globalExceptionHandlerClass": "present",
+    "versionedDocsSnapshot": "present"
+  },
+  "recovery": {
+    "initialReleaseNotesFailure": "GitHub Release draft lacked literal #705 and #715 references before immutable publication began",
+    "publicationPostVerifyFailure": "Node execFileSync ENOBUFS while listing the full 192 MB docs JAR after all immutable publication states had passed",
+    "canonicalVerificationFirstAttempt": "one transient Nexus DNS ENOTFOUND during the 334-file HTTP matrix check",
+    "strategy": "preserve the publication manifest and complete a separate read-only verify manifest using exact-entry JAR inspection",
+    "immutableArtifactsRepublished": false,
+    "failedAttemptEvidencePreserved": true
+  }
+}
