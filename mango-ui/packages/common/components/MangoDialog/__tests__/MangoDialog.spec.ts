@@ -1,4 +1,5 @@
 import { mount } from '@vue/test-utils';
+import { ElDialog } from 'element-plus';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineComponent, h, nextTick, onMounted, ref } from 'vue';
 import MangoDialog from '../index.vue';
@@ -11,6 +12,10 @@ const ElDialogStub = defineComponent({
     modelValue: {
       type: Boolean,
       default: false,
+    },
+    title: {
+      type: String,
+      default: '',
     },
     width: {
       type: [String, Number],
@@ -39,6 +44,8 @@ const ElDialogStub = defineComponent({
   },
   emits: ['update:modelValue', 'open', 'opened', 'close', 'closed'],
   setup(props, { attrs, emit, slots, expose }) {
+    const titleId = 'el-dialog-title-test';
+
     expose({
       handleClose: () => {
         emit('update:modelValue', false);
@@ -55,11 +62,14 @@ const ElDialogStub = defineComponent({
         'section',
         {
           ...attrs,
+          'aria-label': props.title || undefined,
+          'aria-labelledby': props.title ? undefined : titleId,
           class: ['el-dialog', 'mango-dialog', attrs.class],
+          role: 'dialog',
           style: attrs.style,
         },
         [
-          h('header', { class: 'el-dialog__header' }, slots.header?.()),
+          h('header', { class: 'el-dialog__header' }, slots.header?.({ titleId })),
           h('main', { class: 'el-dialog__body' }, slots.default?.()),
           slots.footer ? h('footer', { class: 'el-dialog__footer' }, slots.footer()) : null,
         ],
@@ -87,7 +97,11 @@ const dialogStubs = {
   Close: CloseStub,
 };
 
-function mountDialog(props: Partial<MangoDialogProps> = {}, attrs: Record<string, unknown> = {}) {
+function mountDialog(
+  props: Partial<MangoDialogProps> = {},
+  attrs: Record<string, unknown> = {},
+  slots: Record<string, string> = {},
+) {
   return mount(MangoDialog, {
     props: {
       modelValue: true,
@@ -98,6 +112,7 @@ function mountDialog(props: Partial<MangoDialogProps> = {}, attrs: Record<string
     slots: {
       default: '<div class="content">Dialog content</div>',
       footer: '<button class="confirm-button">Confirm</button>',
+      ...slots,
     },
     global: {
       stubs: dialogStubs,
@@ -158,6 +173,65 @@ describe('MangoDialog', () => {
     expect(wrapper.find('.mango-dialog__title').text()).toBe('Mango Dialog');
     expect(wrapper.find('.content').text()).toBe('Dialog content');
     expect(wrapper.find('.confirm-button').exists()).toBe(true);
+  });
+
+  it('uses the title prop as the dialog accessible name', () => {
+    const wrapper = mountDialog({ title: '批量识别企业资质' });
+
+    expect(wrapper.get('[role="dialog"]').attributes('aria-label')).toBe('批量识别企业资质');
+  });
+
+  it('keeps the title prop as the accessible name when the title slot overrides the visible title', () => {
+    const wrapper = mountDialog({ title: '批量识别企业资质' }, {}, { title: '<span>自定义视觉标题</span>' });
+
+    expect(wrapper.get('.mango-dialog__title').text()).toBe('自定义视觉标题');
+    expect(wrapper.get('[role="dialog"]').attributes('aria-label')).toBe('批量识别企业资质');
+  });
+
+  it('labels the dialog from the visible title when only the title slot is provided', () => {
+    const wrapper = mountDialog({ title: '' }, {}, { title: '<span>批量识别企业资质</span>' });
+    const dialog = wrapper.get('[role="dialog"]');
+    const title = wrapper.get('.mango-dialog__title');
+
+    expect(dialog.attributes('aria-label')).toBeUndefined();
+    expect(dialog.attributes('aria-labelledby')).toBe(title.attributes('id'));
+    expect(title.text()).toBe('批量识别企业资质');
+  });
+
+  it('retains the title prop as the accessible name when the visual header is hidden', () => {
+    const wrapper = mountDialog({ showHeader: false, title: '批量识别企业资质' });
+
+    expect(wrapper.find('.mango-dialog__title').exists()).toBe(false);
+    expect(wrapper.get('[role="dialog"]').attributes('aria-label')).toBe('批量识别企业资质');
+  });
+
+  it('integrates with Element Plus accessible naming for a custom visible title', async () => {
+    const wrapper = mount(MangoDialog, {
+      props: {
+        modelValue: true,
+        title: '批量识别企业资质',
+      },
+      attrs: {
+        teleported: false,
+      },
+      slots: {
+        title: '<span>自定义视觉标题</span>',
+      },
+      global: {
+        components: {
+          ElDialog,
+        },
+        stubs: {
+          ElIcon: ElIconStub,
+        },
+      },
+    });
+
+    await nextTick();
+
+    const dialog = wrapper.get('[role="dialog"]');
+    expect(wrapper.get('.mango-dialog__title').text()).toBe('自定义视觉标题');
+    expect(dialog.attributes('aria-label')).toBe('批量识别企业资质');
   });
 
   it('supports close-only row when header is hidden', () => {
