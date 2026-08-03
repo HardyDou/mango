@@ -54,6 +54,7 @@ class BaselineGeneratorPerformanceIntegrationTest {
                 environment("MANGO_BASELINE_PERF_DB_USERNAME", "root"),
                 environment("MANGO_BASELINE_PERF_DB_PASSWORD", ""),
                 prefix,
+                MySqlSchemaDefaults.cliStandard(),
                 output,
                 modules,
                 Map.of(),

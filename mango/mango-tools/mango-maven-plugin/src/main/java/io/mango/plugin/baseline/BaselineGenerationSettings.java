@@ -10,6 +10,7 @@ final class BaselineGenerationSettings {
     private final String username;
     private final String password;
     private final String schemaPrefix;
+    private final MySqlSchemaDefaults schemaDefaults;
     private final Path outputDirectory;
     private final List<String> moduleOrder;
     private final Map<String, String> moduleGroups;
@@ -20,6 +21,7 @@ final class BaselineGenerationSettings {
             String username,
             String password,
             String schemaPrefix,
+            MySqlSchemaDefaults schemaDefaults,
             Path outputDirectory,
             List<String> moduleOrder,
             Map<String, String> moduleGroups,
@@ -28,6 +30,7 @@ final class BaselineGenerationSettings {
         this.username = username;
         this.password = password;
         this.schemaPrefix = schemaPrefix;
+        this.schemaDefaults = schemaDefaults;
         this.outputDirectory = outputDirectory;
         this.moduleOrder = List.copyOf(moduleOrder);
         this.moduleGroups = Map.copyOf(moduleGroups);
@@ -48,6 +51,10 @@ final class BaselineGenerationSettings {
 
     String schemaPrefix() {
         return schemaPrefix;
+    }
+
+    MySqlSchemaDefaults schemaDefaults() {
+        return schemaDefaults;
     }
 
     Path outputDirectory() {

@@ -220,13 +220,17 @@ META-INF
 | `mango.baseline.jdbcUrl` | 无 | 一次性 MySQL 服务器 JDBC URL；必填，URL 中原数据库名不会被使用。 |
 | `mango.baseline.username` | `root` | 一次性数据库账号。 |
 | `mango.baseline.passwordEnv` | `MANGO_BASELINE_DB_PASSWORD` | 保存密码的环境变量名；密码不进入 POM、manifest 或日志。 |
+| `mango.baseline.characterSet` | `utf8mb4` | replay、determinism 和 verify schema 使用的目标字符集；默认与 Mango CLI 创建的业务数据库一致。 |
+| `mango.baseline.collation` | `utf8mb4_unicode_ci` | 三类临时 schema 使用的目标排序规则；默认与 Mango CLI 创建的业务数据库一致。 |
 | `mango.baseline.includedModules` | 全部发现模块 | 当前 API 制品需要打包的模块清单。 |
 | `mango.baseline.moduleOrder` | 模块名稳定顺序 | 显式配置时必须恰好包含所有发现模块一次。 |
 | `mango.baseline.moduleGroups` | 全部为 `default` | `module=group` 列表；同组模块使用同一对临时 schema，不同组隔离。 |
 | `mango.baseline.outputDirectory` | `target/generated-resources` | 仅构建目录；不要指向 `src/main/resources`。 |
 | `mango.baseline.keepSchemas` | `false` | 诊断时保留临时 schema；正常 CI 保持关闭。 |
 
-生成过程使用 replay/determinism/verify 三套 schema。前两套独立回放 V 时，确定性比较只忽略标准运行审计时间列 `created_at`、`updated_at`、`published_at`；B SQL 仍保留 replay 中这些列的真实值，verify schema 连续执行 B 两次后仍按全部列比较结构和 migration 静态行。其它列中的 `UUID()`、当前时间等非确定值继续阻断构建。
+生成过程使用 replay/determinism/verify 三套 schema，三者都会显式使用 `mango.baseline.characterSet` 和 `mango.baseline.collation`，不继承构建机 MySQL 的 server 默认值。插件在创建临时 schema 前校验字符集与排序规则组合；未知组合或不安全的标识符会直接阻断构建。B SQL 和 manifest 分别固化实际表结构以及 `targetCharacterSet`、`targetCollation`，生成指纹也包含这两个目标值。业务项目如果覆盖默认值，目标空库必须使用相同字符集和排序规则，避免 B 之后新增的 V migration 重新继承另一套数据库语义。
+
+前两套 schema 独立回放 V 时，确定性比较只忽略标准运行审计时间列 `created_at`、`updated_at`、`published_at`；B SQL 仍保留 replay 中这些列的真实值，verify schema 连续执行 B 两次后仍按全部列比较结构和 migration 静态行。其它列中的 `UUID()`、当前时间等非确定值继续阻断构建。
 
 结构比较使用 MySQL 元数据的结构化语义快照，不按 `SHOW CREATE` 文本逐字比较。表、列、索引和约束的首个差异会定位到 `table:<name>`、`table:<name>.column:<name>`、`table:<name>.index:<name>` 或 `table:<name>.constraint:<name>`；隐式继承与显式声明只要落库后的 charset/collation 相同即视为等价。视图和触发器使用去除环境噪声后的 canonical DDL 比较。静态数据按列读取并用二进制十六进制值比较，因此字符集转换和不可见字节不会被字符串展示掩盖。存储过程、函数和事件当前 fail closed；重复版本、跨模块对象所有权、制品碰撞、缺失或被修改的 B、不可重入、结构或数据不等价都会使构建失败。安装新生成目录前保留上一次结果，安装异常时回滚。
 

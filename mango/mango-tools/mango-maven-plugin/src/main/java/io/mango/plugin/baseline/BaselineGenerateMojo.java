@@ -59,6 +59,16 @@ public final class BaselineGenerateMojo extends AbstractMojo {
     @Parameter(property = "mango.baseline.schemaPrefix", defaultValue = "mango_baseline")
     private String schemaPrefix;
 
+    @Parameter(
+            property = "mango.baseline.characterSet",
+            defaultValue = MySqlSchemaDefaults.DEFAULT_CHARACTER_SET)
+    private String characterSet;
+
+    @Parameter(
+            property = "mango.baseline.collation",
+            defaultValue = MySqlSchemaDefaults.DEFAULT_COLLATION)
+    private String collation;
+
     @Parameter(property = "mango.baseline.keepSchemas", defaultValue = "false")
     private boolean keepSchemas;
 
@@ -86,6 +96,7 @@ public final class BaselineGenerateMojo extends AbstractMojo {
                 searchDirectory.toPath(), project, includes);
         List<String> order = parseModuleList(moduleOrder, "moduleOrder");
         Map<String, String> groups = parseModuleGroups(moduleGroups);
+        MySqlSchemaDefaults schemaDefaults = MySqlSchemaDefaults.from(characterSet, collation);
         Path generatedResources = outputDirectory.toPath().toAbsolutePath().normalize();
         registerGeneratedResources(generatedResources);
 
@@ -94,6 +105,7 @@ public final class BaselineGenerateMojo extends AbstractMojo {
                 username.trim(),
                 password,
                 schemaPrefix.trim(),
+                schemaDefaults,
                 generatedResources,
                 order,
                 groups,

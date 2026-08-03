@@ -63,12 +63,40 @@ final class MySqlBaselineStore {
         }
     }
 
-    void createDatabase(String adminDatabase, String database) throws MojoExecutionException {
+    void validateSchemaDefaults(String adminDatabase, MySqlSchemaDefaults defaults)
+            throws MojoExecutionException {
+        try (Connection connection = connect(adminDatabase);
+                PreparedStatement statement = connection.prepareStatement("""
+                        SELECT COUNT(*)
+                        FROM information_schema.COLLATIONS
+                        WHERE CHARACTER_SET_NAME = ? AND COLLATION_NAME = ?
+                        """)) {
+            statement.setString(1, defaults.characterSet());
+            statement.setString(2, defaults.collation());
+            try (ResultSet resultSet = statement.executeQuery()) {
+                resultSet.next();
+                if (resultSet.getInt(1) != 1) {
+                    throw new MojoExecutionException(
+                            "MANGO-BASELINE-043 unsupported MySQL character set and collation"
+                                    + "; characterSet=" + defaults.characterSet()
+                                    + ", collation=" + defaults.collation());
+                }
+            }
+        } catch (SQLException exception) {
+            throw databaseFailure("validate target character set and collation", exception);
+        }
+    }
+
+    void createDatabase(
+            String adminDatabase,
+            String database,
+            MySqlSchemaDefaults defaults) throws MojoExecutionException {
         validateDatabaseName(database);
         try (Connection connection = connect(adminDatabase);
                 Statement statement = connection.createStatement()) {
             statement.execute("CREATE DATABASE " + quote(database)
-                    + " CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci");
+                    + " CHARACTER SET " + defaults.characterSet()
+                    + " COLLATE " + defaults.collation());
         } catch (SQLException exception) {
             throw databaseFailure("create temporary database " + database, exception);
         }
