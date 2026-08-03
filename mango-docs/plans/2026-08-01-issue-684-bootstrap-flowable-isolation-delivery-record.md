@@ -61,3 +61,12 @@
 - 独立未处理问题：`mango.dev.json` 中 `--server.port` 参数顺序问题未纳入本任务，未改变本次 bootstrap/runtime 验收结果。
 - 曾尝试完整 Reactor 诊断，但 `mango-platform-app` 阶段因本机磁盘空间不足失败；按照后端质量规则，本任务以四个直接修改模块 `mvn verify` 和真实业务回归作为有效证据，不声明全 Reactor 通过。
 - 本任务不执行 Maven 制品发布；提交、Push、PR、合并和 Issue 状态回读按用户本次明确授权执行。
+
+## 8. 2026-08-03 真实业务回归重开与补充修复
+
+- 回归事实：保函业务升级到 Maven `1.0.31` 后，空库 `bootstrap apply` 仍由普通业务定时 Bean 的依赖图触发 `WorkflowTaskRuntimeApi -> WorkflowTaskController -> WorkflowTaskRuntimeService -> Flowable`，在 migration 前查询不存在的 `ACT_GE_PROPERTY`。这证明原修复只覆盖 ResourceHandler、Runner、scheduler processor 和非 Web MVC，未覆盖公开 Workflow API 的依赖解析。
+- 补充决定 `TD-004`：Bootstrap 为 Workflow Controller 承载的全部公开 Java API 注册主候选延迟代理；依赖注入不解析 Controller，首次 API 调用才解析原 Controller。Runtime 不注册代理，`mango.workflow.enabled=false` 语义不变，migration 后的 ResourceHandler 与流程定义发布路径不变。
+- 补充实现：新增 `WorkflowBootstrapApiIsolationAutoConfiguration`、自动配置注册和 starter 单元测试；同步 Workflow README、业务审批指南、能力地图及 Maven `1.0.32` 发布说明。
+- 验证：`mvn -f mango/pom.xml -pl mango-platform/mango-workflow/mango-workflow-starter test` 完成 22 项 L1 单元测试，0 失败；测试质量、测试替身、模块 README 与 source-fact 检查通过；本地 `1.0.32-local-SNAPSHOT` 非 app Reactor 186/186 模块安装成功并回查 starter JAR 包含修复类。
+- 人工范围确认：用户在 2026-08-03 明确要求“只进行单元测试，L1 流程”，作为 `MODE_DOWNGRADE_CONFIRMED`。因此本轮不执行空库、服务启动、API、UI 或浏览器回归；该选择不能替代受保护主分支 required checks、发布仓库回查和干净消费端解析。
+- 发布范围：用户随后明确要求先发布，目标为完整非 app Maven Reactor 与 `io.mango:mango-docs-bundle:1.0.32`；CLI `1.0.96`、PMO `1.3.9` 和前端 npm 均不改变。
