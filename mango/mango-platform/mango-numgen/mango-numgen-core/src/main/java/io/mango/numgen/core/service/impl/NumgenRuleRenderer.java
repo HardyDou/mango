@@ -9,12 +9,14 @@ import io.mango.numgen.core.entity.NumgenRuleSegmentEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
+import java.time.Clock;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -23,6 +25,15 @@ import java.util.stream.Collectors;
 public class NumgenRuleRenderer {
 
     private static final Pattern TEXT_PARAM_PATTERN = Pattern.compile("\\$\\{([^}]+)}");
+    private final Clock clock;
+
+    public NumgenRuleRenderer() {
+        this(Clock.systemDefaultZone());
+    }
+
+    NumgenRuleRenderer(Clock clock) {
+        this.clock = Objects.requireNonNull(clock, "时钟不能为空");
+    }
 
     public NumgenRuleValidationVO validate(NumgenRuleEntity rule, List<NumgenRuleSegmentEntity> segments) {
         NumgenRuleValidationVO vo = new NumgenRuleValidationVO();
@@ -107,9 +118,7 @@ public class NumgenRuleRenderer {
                 }
             }
             case "DATE" -> {
-                if (!StringUtils.hasText(segment.getDateFormat())) {
-                    errors.add(segmentName(segment) + " 日期格式不能为空");
-                }
+                validateDateFormat(segment, errors);
             }
             case "PARAM" -> {
                 if (!StringUtils.hasText(segment.getVariableKey())) {
@@ -128,10 +137,22 @@ public class NumgenRuleRenderer {
         }
     }
 
+    private void validateDateFormat(NumgenRuleSegmentEntity segment, List<String> errors) {
+        if (!StringUtils.hasText(segment.getDateFormat())) {
+            errors.add(segmentName(segment) + " 日期格式不能为空");
+            return;
+        }
+        try {
+            DateTimeFormatter.ofPattern(segment.getDateFormat());
+        } catch (IllegalArgumentException exception) {
+            errors.add(segmentName(segment) + " 日期格式非法：" + segment.getDateFormat());
+        }
+    }
+
     private String renderSegment(NumgenRuleSegmentEntity segment, Map<String, ?> params, long sequenceValue) {
         return switch (segment.getSegmentType()) {
             case "TEXT", "EXPR" -> renderText(segment.getLiteralValue(), params);
-            case "DATE" -> LocalDateTime.now().format(DateTimeFormatter.ofPattern(segment.getDateFormat()));
+            case "DATE" -> LocalDateTime.now(clock).format(DateTimeFormatter.ofPattern(segment.getDateFormat()));
             case "PARAM" -> resolveParam(segment, params);
             case "SEQ" -> padSequence(sequenceValue, segment);
             default -> Require.fail(400, "不支持的片段类型：" + segment.getSegmentType());

@@ -4,13 +4,17 @@ import io.mango.numgen.core.entity.NumgenRuleEntity;
 import io.mango.numgen.core.entity.NumgenRuleSegmentEntity;
 import org.junit.jupiter.api.Test;
 
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 class NumgenRuleRendererTest {
 
-    private final NumgenRuleRenderer renderer = new NumgenRuleRenderer();
+    private final NumgenRuleRenderer renderer = new NumgenRuleRenderer(
+            Clock.fixed(Instant.parse("2026-05-23T14:30:59Z"), ZoneId.of("UTC")));
 
     @Test
     void validate_supportsFixedDateParamSeqRule() {
@@ -24,6 +28,25 @@ class NumgenRuleRendererTest {
         );
 
         assertThat(renderer.validate(rule, segments).isValid()).isTrue();
+    }
+
+    @Test
+    void validate_supportsMMddAndCustomDateFormats() {
+        List<NumgenRuleSegmentEntity> segments = List.of(
+                segment(1, "DATE", null, null, "MMdd", null, null),
+                segment(2, "DATE", null, null, "yyyy年MMdd日", null, null));
+
+        assertThat(renderer.validate(rule(), segments).isValid()).isTrue();
+        assertThat(renderer.render(segments, Map.of(), 1L)).isEqualTo("05232026年0523日");
+    }
+
+    @Test
+    void validate_rejectsInvalidDateFormatBeforeRendering() {
+        List<NumgenRuleSegmentEntity> segments = List.of(segment(1, "DATE", null, null, "yyyy'", null, null));
+
+        assertThat(renderer.validate(rule(), segments).isValid()).isFalse();
+        assertThat(renderer.validate(rule(), segments).getErrors())
+                .anyMatch(error -> error.contains("日期格式非法") && error.contains("yyyy'"));
     }
 
     @Test
@@ -97,6 +120,15 @@ class NumgenRuleRendererTest {
 
         assertThat(scopeKey).endsWith("|2:A1");
         assertThat(scopeKey).doesNotContain("0000");
+    }
+
+    @Test
+    void sequenceScopeKey_supportsYearAndMonthDayBoundaries() {
+        List<NumgenRuleSegmentEntity> segments = List.of(
+                scopedSegment(1, "DATE", null, null, "yyyy", null, null, 1),
+                scopedSegment(2, "DATE", null, null, "MMdd", null, null, 1));
+
+        assertThat(renderer.sequenceScopeKey(segments, Map.of())).isEqualTo("1:2026|2:0523");
     }
 
     @Test

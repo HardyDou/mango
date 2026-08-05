@@ -1,3 +1,4 @@
+<!-- mango-page-baseline-exception all: Existing numgen management page predates Mango standard page containers; Issue #730 only changes DATE segment editing and preview, so migrating the page shell is out of scope. -->
 <template>
   <div class="numgen-page">
     <section v-if="historyMode" class="numgen-rule-panel history-panel">
@@ -321,18 +322,23 @@
           <el-input v-model="segmentForm.literalValue" placeholder="例如 SO-${orgCode}-${bizType}" />
         </el-form-item>
         <el-form-item v-if="segmentForm.segmentType === 'DATE'" label="日期格式" prop="dateFormat">
-          <el-select
-            v-model="segmentForm.dateFormat"
-            filterable
-            allow-create
-            default-first-option
-            placeholder="选择或输入日期格式"
-          >
-            <el-option label="yyyyMMdd" value="yyyyMMdd" />
-            <el-option label="yyyyMM" value="yyyyMM" />
-            <el-option label="yyyy" value="yyyy" />
-            <el-option label="yyyyMMddHHmmss" value="yyyyMMddHHmmss" />
-          </el-select>
+          <div class="date-format-editor">
+            <el-input v-model="segmentForm.dateFormat" placeholder="例如 yyyyMMdd、MMdd 或 yyyy年MMdd日" />
+            <div class="date-format-presets" aria-label="常用日期格式">
+              <el-button
+                v-for="format in DATE_FORMAT_PRESETS"
+                :key="format"
+                size="small"
+                :type="segmentForm.dateFormat === format ? 'primary' : 'default'"
+                @click="segmentForm.dateFormat = format"
+              >
+                {{ format }}
+              </el-button>
+            </div>
+            <p class="date-format-help">
+              支持 Java DateTimeFormatter 格式。示例：{{ formatDateExample(segmentForm.dateFormat) || '未填写' }}
+            </p>
+          </div>
         </el-form-item>
         <el-form-item v-if="segmentForm.segmentType === 'PARAM'" label="参数Key" prop="variableKey">
           <el-select
@@ -448,6 +454,7 @@ import {
   type NumgenVersion,
   type NumgenVersionState,
 } from '../../api/numgen';
+import { DATE_FORMAT_PRESETS, dateExample as formatDateExample } from './dateFormat';
 
 interface SegmentTypeOption {
   value: SegmentEditorType;
@@ -1244,10 +1251,7 @@ function segmentExample(segment: EditableSegment) {
 }
 
 function dateExample(format?: string) {
-  if (format === 'yyyy') return '2026';
-  if (format === 'yyyyMM') return '202605';
-  if (format === 'yyyyMMddHHmmss') return '20260523143059';
-  return '20260523';
+  return formatDateExample(format);
 }
 
 function paramExample(key?: string) {
@@ -1610,6 +1614,24 @@ function segmentTypeLabel(type: SegmentEditorType) {
 }
 
 .scope-toggle-row span {
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.date-format-editor {
+  width: 100%;
+}
+
+.date-format-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.date-format-help {
+  margin: 6px 0 0;
   color: var(--el-text-color-secondary);
   font-size: 12px;
   line-height: 1.4;
