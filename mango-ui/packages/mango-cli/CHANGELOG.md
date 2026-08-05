@@ -1,5 +1,23 @@
 # @mango/cli Changelog
 
+## 1.0.98 - 2026-08-05
+
+### Fixed
+
+- Lock new and upgraded business projects to Mango Maven `1.0.35`, `@mango/numgen@1.0.34` and `@mango/admin@1.0.63`, including the configurable `MMdd` and custom DATE segment behavior from Issue #730.
+
+### Upgrade Notes
+
+1. Install `@mango/cli@1.0.98` and align the complete frontend matrix from its packaged `release-versions.json`.
+2. Existing databases upgrade in place; no schema rebuild or PMO migration is required.
+
+### Verification
+
+- `pnpm -C mango-ui release:impact --base=origin/main~1 --head=HEAD`
+- `node mango-ui/packages/mango-cli/scripts/check-release-versions.mjs`
+- `MANGO_BACKEND_GATE_VERSION=1.0.35 node mango-ui/packages/mango-cli/scripts/check-generated-backend-gate.mjs`
+- Clean Maven and npm consumers must resolve the exact published tuple before release closeout.
+
 ## 1.0.97 - 2026-08-03
 
 ### Fixed

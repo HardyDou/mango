@@ -1,6 +1,6 @@
 {
   "name": "@mango/cli",
-  "version": "1.0.97",
+  "version": "1.0.98",
   "private": false,
   "type": "module",
   "bin": {

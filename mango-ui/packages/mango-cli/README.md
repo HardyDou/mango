@@ -622,11 +622,11 @@ Issue #690 覆盖 CLI、Maven plugin、Bootstrap/runtime、Resource、BSQL、Boo
 
 业务项目不需要修改生成模板或在 `main.ts` 添加 `crypto.randomUUID` polyfill。修复由 `@mango/common` 和 Admin Shell 启动链提供；CLI 后续发布时必须把 `common -> admin-shell -> admin` 的匹配版本写入同一 `release-versions.json` 前端矩阵，业务项目整体升级该矩阵即可。该修复不改变 CLI 命令、模板结构、后端 Maven、菜单、权限或租户配置。
 
-### 1.0.97 发布影响
+### 1.0.98 发布影响
 
-`@mango/cli@1.0.97` 修正 `1.0.96` 随包版本锁滞后问题：生成和升级项目默认使用 Mango Maven `1.0.32`、`@mango/pmo@1.3.9`，以及 `@mango/admin@1.0.62`、`@mango/common@1.0.25` 所在的完整前端矩阵。CLI 命令、模板结构、PMO 合同、数据库 migration 和运行时 API 不变。
+`@mango/cli@1.0.98` 锁定 Mango Maven `1.0.35`、`@mango/pmo@1.3.9`，以及包含 `@mango/numgen@1.0.34`、`@mango/admin@1.0.63` 的完整前端矩阵。该批次发布编号管理页面日期格式配置能力；CLI 命令、模板结构、PMO 合同和数据库 migration 不变。
 
-业务项目安装 `1.0.97` 后按随包 `release-versions.json` 成组更新 Maven 和前端依赖；已有数据库原地升级，不重建数据库。发布影响检查会把 `release-versions.json` 变化视为 CLI 制品变化，后续矩阵更新不能再复用未升版的 CLI 坐标。
+业务项目安装 `1.0.98` 后按随包 `release-versions.json` 成组更新 Maven 和前端依赖；已有数据库原地升级，不重建数据库。发布影响检查会把 `release-versions.json` 变化视为 CLI 制品变化，后续矩阵更新不能再复用未升版的 CLI 坐标。
 
 ### 1.0.96 发布影响
 
