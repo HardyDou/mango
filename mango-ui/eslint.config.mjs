@@ -4,7 +4,8 @@ import vue from 'eslint-plugin-vue';
 import globals from 'globals';
 import typescript from 'typescript-eslint';
 
-const sourceFiles = ['**/*.{js,mjs,cjs,ts,tsx,vue}'];
+const sourceFiles = ['**/*.{js,mjs,cjs,ts,mts,cts,tsx,vue}'];
+const typedSourceFiles = ['**/*.{ts,mts,cts,tsx,vue}'];
 
 export default typescript.config(
   {
@@ -30,9 +31,9 @@ export default typescript.config(
       },
     },
   },
-  ...typescript.configs.recommended.map((config) => ({ ...config, files: ['**/*.{ts,tsx,vue}'] })),
+  ...typescript.configs.recommended.map((config) => ({ ...config, files: typedSourceFiles })),
   {
-    files: ['**/*.{ts,tsx,vue}'],
+    files: typedSourceFiles,
     languageOptions: {
       parserOptions: {
         tsconfigRootDir: import.meta.dirname,
@@ -68,7 +69,7 @@ export default typescript.config(
     },
   },
   {
-    files: ['**/*.{ts,tsx,vue}'],
+    files: typedSourceFiles,
     plugins: {
       '@typescript-eslint': typescript.plugin,
     },
