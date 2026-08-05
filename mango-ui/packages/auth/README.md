@@ -45,6 +45,12 @@ import '@mango/auth/style.css';
 import { LoginView, PasswordView, ProfileView, ProviderCallbackView, ProviderConfigView } from '@mango/auth';
 ```
 
+只需要认证配置和个人中心 section 注册能力时，使用轻量子入口，避免加载认证页面：
+
+```ts
+import { registerMangoAuthProfileSections } from '@mango/auth/config';
+```
+
 安装登录页配置：
 
 ```ts
@@ -106,13 +112,14 @@ await logout();
 | `profile`        | `avatarUrl`              | 个人中心未设置业务头像时的默认头像地址。                           |
 | `profile`        | `roleLabel`              | 个人中心角色标签展示值。                                           |
 | `profile`        | `fields`                 | 个人资料展示字段列表。                                             |
+| `profile`        | `sections`               | 个人中心扩展 section；能力包通常通过 Admin feature registrar 自动提供。 |
 | `profile.slots`  | `theme`                  | 可选主题设置组件；配置后作为个人中心“主题设置”子页展示。           |
 | `password`       | `minLength`              | 修改密码页新密码最小长度前端校验。                                 |
 | `slots`          | `brand`、`formHeader` 等 | 登录页、个人中心、修改密码页插槽组件。                             |
 
 请求 base URL、token、refresh token、401 处理和租户头由 `@mango/common` request 负责配置。
 
-`ProfileView` 在页面内容区提供“个人资料、账号安全、第三方授权、修改密码”内部导航；宿主配置 `profile.slots.theme` 后还会显示“主题设置”。这些入口不会增加 Mango 框架主菜单。个人资料头像通过图片选择器维护，支持 JPG、PNG、WebP，最大 5 MB；选择文件时只在本地预览，保存资料时上传到文件中心，业务资料只保存 `mango-file:{id}` 标识。顶部用户区和其它复用位置可通过 `@mango/common` 的 `MangoAvatar` 回显该标识，同时兼容历史普通图片地址。
+`ProfileView` 在页面内容区提供“个人资料、账号安全、第三方授权、修改密码”内部导航；宿主配置 `profile.slots.theme` 后还会显示“主题设置”。能力包可以通过 Admin feature registrar 返回 `profileSections`，由 Shell 自动合并为个人中心页内导航；业务宿主不需要重复硬编码 Notice/System 的 section。这些入口不会增加 Mango 框架主菜单。个人资料头像通过图片选择器维护，支持 JPG、PNG、WebP，最大 5 MB；选择文件时只在本地预览，保存资料时上传到文件中心，业务资料只保存 `mango-file:{id}` 标识。顶部用户区和其它复用位置可通过 `@mango/common` 的 `MangoAvatar` 回显该标识，同时兼容历史普通图片地址。
 
 ## 5. API 与扩展
 
@@ -133,6 +140,7 @@ await logout();
 | `installMangoAuth`   | 安装认证页面配置。                                  |
 | `getMangoAuthConfig` | 读取全局认证配置。                                  |
 | `mergeAuthConfig`    | 合并认证配置。                                      |
+| `registerMangoAuthProfileSections` | 通过 `@mango/auth/config` 注册个人中心扩展 section。 |
 | `useUserInfo`        | 用户信息 store。                                    |
 | `useMangoLoginFlow`  | 登录流程 hook，供默认登录页和业务自定义登录页复用。 |
 

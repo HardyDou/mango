@@ -1,5 +1,5 @@
 import type { Component } from 'vue';
-import type { MangoAuthConfig } from '@mango/auth';
+import type { MangoAuthConfig, MangoAuthProfileSection } from '@mango/auth/config';
 import type { MangoFrontendApp, MangoRuntimeConfig, MangoRuntimeConfigLoadOptions } from '@mango/app-runtime';
 import type { MangoAdminFeatureCode, MangoAdminFeatures } from '@mango/admin-pages/features';
 import type { MangoGridWidgetDefinition } from '@mango/grid-widgets';
@@ -13,6 +13,7 @@ export interface MangoAdminFeatureRegistration {
   /** @deprecated use businessDomainName. */
   moduleName?: string;
   widgets?: MangoGridWidgetDefinition[];
+  profileSections?: MangoAuthProfileSection[];
 }
 
 export type MangoAdminFeatureRegistrar = () =>

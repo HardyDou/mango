@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { getMangoAuthProfileSections } from '@mango/auth/config';
 import { configureMangoAdminShell } from '../config';
 import { ensureFeatureRegistrars, resetFeatureRegistrarsForTest } from '../runtime/featureRegistrars';
 import { getMangoAdminHomeWidgets, registerMangoAdminHomeWidgets } from '../runtime/homeWidgets';
@@ -41,6 +42,24 @@ describe('feature registrars', () => {
     expect(getMangoAdminHomeWidgets()[0]?.moduleCode).toBe('DEMO_DOMAIN');
     expect(getMangoAdminHomeWidgets()[0]?.groupName).toBe('工作台');
     expect(getMangoAdminHomeWidgets()[0]?.category).toBe('演示业务');
+  });
+
+  it('collects profile sections returned by feature registrars', async () => {
+    resetFeatureRegistrarsForTest();
+    const profileSection = {
+      key: 'business-demo-profile',
+      label: '业务资料',
+      group: '扩展功能',
+      component: {},
+    };
+    configureMangoAdminShell({
+      featureRegistrars: [() => ({ profileSections: [profileSection] })],
+      widgets: [],
+    });
+
+    await ensureFeatureRegistrars();
+
+    expect(getMangoAuthProfileSections().value).toContainEqual(profileSection);
   });
 
   it('uses feature business domain before widget module code when grouping widgets', async () => {
