@@ -6,6 +6,7 @@ const externalPackages = [
   '@mango/api-schema',
   '@mango/common',
   '@mango/common/api/captcha',
+  '@mango/common/api/upload',
   '@mango/common/utils/request',
   '@mango/common/utils/storage',
   'element-plus',
@@ -18,13 +19,18 @@ export default defineConfig({
   plugins: [vue()],
   build: {
     lib: {
-      entry: 'src/index.ts',
+      entry: {
+        index: 'src/index.ts',
+        config: 'src/config.ts',
+      },
       formats: ['es'],
       cssFileName: 'style',
-      fileName: () => 'index.js',
     },
     rollupOptions: {
       external: externalPackages,
+      output: {
+        entryFileNames: '[name].js',
+      },
     },
   },
 });

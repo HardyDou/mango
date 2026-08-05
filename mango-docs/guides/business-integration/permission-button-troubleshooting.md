@@ -86,6 +86,8 @@ pnpm -F @mango/admin-shell build
 
 ## 8. 变更影响记录
 
+- Issue #721 只让 Admin Shell 聚合 Notice、System registrar 返回的个人中心入口元数据；不改变按钮 `permissionCode`、登录态权限集合、角色授权、接口鉴权或按钮展示规则。若升级后“我的消息”“系统公告”“通知设置”或“登录日志”仍缺失，应先核对匹配的前端包版本和 feature registrar 注册链，按钮异常仍按本指南原路径排查。
+
 - Issue #606 调整的是 Workflow demo 默认管理员的列表数据范围和 `INIT_ONLY` 已有目标保护；不改变按钮 `permissionCode`、菜单 `apiCodes`、登录态权限集合、按钮展示规则或接口鉴权。按钮显示异常仍按本指南排查；只有流程定义管理页面能打开但返回空列表时，才进一步检查 `workflow:definition:list` 数据范围。
 
 - MySQL 8.4 告警治理仅规范 Authorization 空库 V1 的整数 DDL 写法；权限码、按钮可见性、接口授权计算和本指南排障步骤均不改变。既有数据库无需为该项调整权限数据。

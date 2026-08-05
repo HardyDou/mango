@@ -46,18 +46,18 @@ import '@mango/admin/style-full.css';
 
 `createMangoAdminApp()` 的配置来自 `@mango/admin-shell`：
 
-| 字段                | 默认值           | 含义                                           |
-| ------------------- | ---------------- | ---------------------------------------------- |
-| `mountTarget`       | `#app`           | 默认挂载节点。                                 |
-| `apiBaseUrl`        | `/api`           | 后端 API 基础地址。                            |
-| `title`             | `Mango Admin`    | 页面标题。                                     |
-| `contentMode`       | `runtime-outlet` | 内容渲染方式。                                 |
-| `login`             | 空               | 登录页品牌、默认值和 slot 配置。               |
-| `features`          | `core`           | 内置能力开关。                                 |
-| `featureRegistrars` | 空               | 额外能力注册函数，可注册页面并返回首页小组件。 |
-| `widgets`           | 空               | 宿主直接传入的首页业务小组件定义。             |
-| `modules`           | 空               | 模块运行时配置。                               |
-| `runtimeConfigUrl`  | 空               | 运行时配置地址。                               |
+| 字段                | 默认值           | 含义                                                             |
+| ------------------- | ---------------- | ---------------------------------------------------------------- |
+| `mountTarget`       | `#app`           | 默认挂载节点。                                                   |
+| `apiBaseUrl`        | `/api`           | 后端 API 基础地址。                                              |
+| `title`             | `Mango Admin`    | 页面标题。                                                       |
+| `contentMode`       | `runtime-outlet` | 内容渲染方式。                                                   |
+| `login`             | 空               | 登录页品牌、默认值和 slot 配置。                                 |
+| `features`          | `core`           | 内置能力开关。                                                   |
+| `featureRegistrars` | 空               | 额外能力注册函数，可注册页面并返回首页小组件或个人中心 section。 |
+| `widgets`           | 空               | 宿主直接传入的首页业务小组件定义。                               |
+| `modules`           | 空               | 模块运行时配置。                                                 |
+| `runtimeConfigUrl`  | 空               | 运行时配置地址。                                                 |
 
 ## 5. API 与扩展
 
@@ -123,7 +123,7 @@ import '@mango/admin/style-full.css';
 
 **某个可选能力页面打不开**
 
-`@mango/admin` 不会运行时扫描 `node_modules`。Mango CLI 生成的 app 会根据模块清单生成静态 imports、`featureRegistrars` 和样式 imports；手写宿主需要把对应业务 UI 包的 `registerMangoXxxAdminPages()` 放入 `featureRegistrars`，并确保后端菜单存在。业务 UI 包可以在同一个注册函数中返回 `businessDomainCode`、`businessDomainName`、可选 `groupName` 和首页 `widgets`，Shell 首页会自动把这些小组件加入组件库，并按“业务域 / 组名 / 组件名称”展示；未集成该 UI 包时，对应业务小组件不会注册，也不能被新增使用。
+`@mango/admin` 不会运行时扫描 `node_modules`。Mango CLI 生成的 app 会根据模块清单生成静态 imports、`featureRegistrars` 和样式 imports；手写宿主需要把对应业务 UI 包的 `registerMangoXxxAdminPages()` 放入 `featureRegistrars`，并确保后端菜单存在。业务 UI 包可以在同一个注册函数中返回 `businessDomainCode`、`businessDomainName`、可选 `groupName`、首页 `widgets` 和个人中心 `profileSections`；Shell 会统一完成聚合。未集成该 UI 包时，对应小组件和个人中心扩展入口不会注册。
 
 **包体过大**
 

@@ -87,14 +87,15 @@ stop();
 
 本包没有独立 YAML 配置。前端行为由页面注册、后端权限、后端业务配置和个人提醒设置共同决定。
 
-| 配置入口                        | 字段 / Key    | 默认值                | 含义                         |
-| ------------------------------- | ------------- | --------------------- | ---------------------------- |
-| `registerMangoNoticeAdminPages` | `moduleCode`  | `mango-notice`        | 页面归属模块。               |
-| 页面注册                        | component key | 多个 `notice/*/index` | 菜单打开具体通知页面。       |
-| `registerMangoNoticeAdminShell` | provider      | `NoticeBell`          | Shell 顶部铃铛 provider。    |
-| 个人提醒配置                    | `groupCode`   | `notice`              | 保存个人提醒设置的分组。     |
-| 个人提醒配置                    | `bizType`     | `client_reminder`     | 保存个人提醒设置的业务类型。 |
-| 个人提醒配置                    | `configKey`   | `reminder_setting`    | 保存个人提醒设置的配置 key。 |
+| 配置入口                        | 字段 / Key        | 默认值                | 含义                                               |
+| ------------------------------- | ----------------- | --------------------- | -------------------------------------------------- |
+| `registerMangoNoticeAdminPages` | `moduleCode`      | `mango-notice`        | 页面归属模块。                                     |
+| `registerMangoNoticeAdminPages` | `profileSections` | 三个消息中心 section  | 自动注册“我的消息、系统公告、通知设置”到个人中心。 |
+| 页面注册                        | component key     | 多个 `notice/*/index` | 菜单打开具体通知页面。                             |
+| `registerMangoNoticeAdminShell` | provider          | `NoticeBell`          | Shell 顶部铃铛 provider。                          |
+| 个人提醒配置                    | `groupCode`       | `notice`              | 保存个人提醒设置的分组。                           |
+| 个人提醒配置                    | `bizType`         | `client_reminder`     | 保存个人提醒设置的业务类型。                       |
+| 个人提醒配置                    | `configKey`       | `reminder_setting`    | 保存个人提醒设置的配置 key。                       |
 
 提醒设置字段：
 
@@ -188,7 +189,7 @@ stop();
 
 个人消息和接收设置接口使用权限码完成资源校验；接收设置展示业务类型还依赖只读权限 `notice:business:view`。这些最小权限由后端 Notice 菜单资源绑定到内置 `ROLE_LOGIN`，所有已登录用户无需额外业务角色即可使用；`ROLE_ANONYMOUS` 不包含个人消息或 Realtime 建连权限。
 
-工作台消息卡的“查看全部”默认进入 `/message-center/site-message`。消息中心已迁入个人中心，入口分别为 `/profile?tab=notice-site-message`、`/profile?tab=notice-announcement-user` 和 `/profile?tab=notice-receive-setting`；旧站内信路径 `/notice/site-message` 和旧通知设置路径 `/notice/receive-setting` 仅作为隐藏兼容入口保留。业务消息携带的其它 `targetKey` 可以是宿主已注册的命名 Vue 路由，也可以是经过校验且当前用户可访问的应用内绝对路径；未注册、越权或不安全的目标会显示“目标未注册或当前无权访问”。
+工作台消息卡的“查看全部”默认进入 `/message-center/site-message`。消息中心已迁入个人中心，入口分别为 `/profile?tab=notice-site-message`、`/profile?tab=notice-announcement-user` 和 `/profile?tab=notice-receive-setting`；执行 `registerMangoNoticeAdminPages()` 后，Shell 会从 registrar 返回的 `profileSections` 自动装配这三个入口。旧站内信路径 `/notice/site-message` 和旧通知设置路径 `/notice/receive-setting` 仅作为隐藏兼容入口保留。业务消息携带的其它 `targetKey` 可以是宿主已注册的命名 Vue 路由，也可以是经过校验且当前用户可访问的应用内绝对路径；未注册、越权或不安全的目标会显示“目标未注册或当前无权访问”。
 
 ### 7.4 站内信动作接入
 

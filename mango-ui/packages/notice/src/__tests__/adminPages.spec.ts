@@ -13,7 +13,7 @@ describe('notice admin pages', () => {
   });
 
   it('注册隐藏兼容入口', () => {
-    registerMangoNoticeAdminPages();
+    const registration = registerMangoNoticeAdminPages();
 
     expect(adminPagesMock.registerModulePages).toHaveBeenCalledTimes(1);
     expect(adminPagesMock.registerModulePages).toHaveBeenCalledWith(
@@ -28,5 +28,11 @@ describe('notice admin pages', () => {
         ]),
       }),
     );
+    expect(registration.profileSections.map((section) => section.key)).toEqual([
+      'notice-site-message',
+      'notice-announcement-user',
+      'notice-receive-setting',
+    ]);
+    expect(registration.profileSections.every((section) => section.group === '消息中心')).toBe(true);
   });
 });

@@ -1,5 +1,6 @@
 import { getMangoAdminShellOptions } from '../config';
 import type { MangoAdminFeatureRegistration } from '../config';
+import { registerMangoAuthProfileSections } from '@mango/auth/config';
 import { registerMangoAdminHomeWidgets, resetMangoAdminHomeWidgetsForTest } from './homeWidgets';
 
 let featureRegistrarsPromise: Promise<void> | undefined;
@@ -8,10 +9,9 @@ export function ensureFeatureRegistrars() {
   if (!featureRegistrarsPromise) {
     const options = getMangoAdminShellOptions();
     registerMangoAdminHomeWidgets(options.widgets || []);
-    const results = (options.featureRegistrars || [])
-      .map(async (registrar) => {
-        applyFeatureRegistration(await registrar());
-      });
+    const results = (options.featureRegistrars || []).map(async (registrar) => {
+      applyFeatureRegistration(await registrar());
+    });
     featureRegistrarsPromise = Promise.all(results).then(() => undefined);
   }
   return featureRegistrarsPromise;
@@ -26,6 +26,7 @@ function applyFeatureRegistration(registration: void | MangoAdminFeatureRegistra
   if (!registration) {
     return;
   }
+  registerMangoAuthProfileSections(registration.profileSections || []);
   registerMangoAdminHomeWidgets(registration.widgets || [], {
     businessDomainCode: registration.businessDomainCode,
     businessDomainName: registration.businessDomainName,

@@ -11,8 +11,7 @@ import {
   installAdminBrandingRuntime,
 } from '@mango/admin-shell';
 import { mangoFullAdminFeatureRegistrars } from '@mango/admin/full';
-import { PersonalLoginLogView, systemQuickEntryWidgets, systemUserProfileWidgets } from '@mango/system';
-import { NoticeAnnouncementUserView, NoticeReceiveSettingView, NoticeSiteMessageView } from '@mango/notice/admin';
+import { systemQuickEntryWidgets, systemUserProfileWidgets } from '@mango/system';
 import App from './App.vue';
 import router from './router';
 import { i18n } from './i18n';
@@ -95,36 +94,6 @@ installMangoAuth(app, {
   profile: {
     roleLabel: '超级管理员',
     slots: getMangoAdminAuthProfileSlots(),
-    sections: [
-      {
-        key: 'notice-site-message',
-        label: '我的消息',
-        group: '消息中心',
-        icon: ElementPlusIconsVue.Message,
-        component: NoticeSiteMessageView,
-      },
-      {
-        key: 'notice-announcement-user',
-        label: '系统公告',
-        group: '消息中心',
-        icon: ElementPlusIconsVue.Reading,
-        component: NoticeAnnouncementUserView,
-      },
-      {
-        key: 'notice-receive-setting',
-        label: '通知设置',
-        group: '消息中心',
-        icon: ElementPlusIconsVue.Bell,
-        component: NoticeReceiveSettingView,
-      },
-      {
-        key: 'login-log',
-        label: '登录日志',
-        group: '安全设置',
-        icon: ElementPlusIconsVue.Clock,
-        component: PersonalLoginLogView,
-      },
-    ],
   },
   password: {
     minLength: 6,

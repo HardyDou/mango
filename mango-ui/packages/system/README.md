@@ -234,7 +234,7 @@ import '@mango/system/style.css';
 
 1. 后端启用 `mango-system`，按需启用 `mango-domain`、`mango-infra-event`、identity、org、authorization。
 2. 前端安装 `@mango/system`，引入 `@mango/system/style.css`。
-3. 用 `@mango/admin-pages` 默认注册系统页面，或手工把页面 key 映射到导出组件。
+3. 调用 `registerMangoSystemAdminPages()` 注册系统能力；Shell 会同时装配系统小组件和个人中心“登录日志”section。按需宿主也可以手工映射页面 key。
 4. 业务页面通过 `dictDataApi.options()`、`configApi.list()`、`domainApi.enabledTree()` 读取基础数据。
 5. 需要按业务域集中管理配置时使用 `SystemConfigPanel`，传入一个或多个业务域编码。
 6. 需要维护 Admin 品牌时注册 `system/admin-branding/index`，并确保后端启用 `GET /system/admin-branding/public` 供登录页读取。

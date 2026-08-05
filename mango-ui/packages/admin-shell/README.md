@@ -153,7 +153,7 @@ Shell 默认把 `MangoThemeSettings` 注入 `@mango/auth` 的个人中心“主�
 
 ### Feature Registrars
 
-`featureRegistrars` 用于把能力包的页面和首页小组件注册到 Shell。推荐由业务入口集中传入，例如 `registerMangoWorkflowAdminPages`、`registerMangoFileAdminPages`。注册函数负责声明前端页面，也可以返回 `widgets`；不负责创建后端菜单，菜单仍以授权中心返回的数据为准。
+`featureRegistrars` 用于把能力包的页面、首页小组件和个人中心扩展 section 注册到 Shell。推荐由业务入口集中传入，例如 `registerMangoWorkflowAdminPages`、`registerMangoFileAdminPages`。注册函数负责声明前端页面，也可以返回 `widgets` 和 `profileSections`；不负责创建后端菜单，菜单仍以授权中心返回的数据为准。
 
 业务 UI 包的小组件应放在自己的包内，随模块注册函数一起暴露：
 
@@ -170,6 +170,7 @@ export function registerMangoRiskControlAdminPages() {
     businessDomainName: '风控',
     groupName: '工作台',
     widgets: riskControlWidgets,
+    profileSections: riskControlProfileSections,
   };
 }
 ```
@@ -182,7 +183,7 @@ createMangoAdminApp({
 });
 ```
 
-Shell 首页会自动把模块返回的 `widgets` 合并进组件库。`businessDomainCode` 必须使用系统中已经存在的业务域编码或本业务模块约定的稳定业务域编码，不能用 UI 包名临时造一个编码；`businessDomainName` 只用于展示业务域名称；`groupName` 是该业务域下的可选组件分组；组件名称来自每个 widget 的 `title`。组件库展示顺序是“业务域 / 组名 / 组件名称”。没有集成对应 UI 包时，该包的小组件不会注册，也不能被新增使用。若用户历史布局中保存了已移除业务包的小组件，查看态会隐藏该布局项；编辑布局时会显示“组件已失效，可删除后保存布局”。
+Shell 首页会自动把模块返回的 `widgets` 合并进组件库，个人中心会把 `profileSections` 按 `group` 合并到页内导航。`businessDomainCode` 必须使用系统中已经存在的业务域编码或本业务模块约定的稳定业务域编码，不能用 UI 包名临时造一个编码；`businessDomainName` 只用于展示业务域名称；`groupName` 是该业务域下的可选组件分组；组件名称来自每个 widget 的 `title`。没有集成对应 UI 包时，该包的小组件和个人中心 section 都不会注册。若用户历史布局中保存了已移除业务包的小组件，查看态会隐藏该布局项；编辑布局时会显示“组件已失效，可删除后保存布局”。
 
 ### Runtime Modules
 
