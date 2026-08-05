@@ -6,6 +6,7 @@ import * as ElementPlusIconsVue from '@element-plus/icons-vue';
 import { createI18n, type I18n } from 'vue-i18n';
 import { authAll, auths, canShowButton, type AuthRuleBindingValue } from '@mango/common/utils/authFunction';
 import { mangoMessage } from '@mango/common/utils/message';
+import { installWebCryptoRandomUUIDCompatibility } from '@mango/common/utils/webCrypto';
 import { installMangoAuth, type MangoAuthProfileSlots } from '@mango/auth';
 import MangoThemeSettings from './layout/navBars/breadcrumb/settings.vue';
 import type { MangoAdminShellOptions } from './config';
@@ -84,6 +85,7 @@ export function getMangoAdminAuthProfileSlots(): MangoAuthProfileSlots {
 }
 
 export function installShellApp(app: VueApp, options: MangoAdminShellOptions = getMangoAdminShellOptions()) {
+  installWebCryptoRandomUUIDCompatibility();
   const authLoginOptions = toMangoAuthLoginOptions(options.login);
   for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
     app.component(key, component);
