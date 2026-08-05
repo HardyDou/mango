@@ -58,7 +58,7 @@ target/generated-resources/META-INF/mango/baseline-manifest.json
 
 如果模块分属不同逻辑数据库，将相应模块映射到不同 group。一个 MySQL 实例可以承载多个随机 replay/determinism/verify schema，无需为每个 group 启动单独容器。
 
-`characterSet` 和 `collation` 的默认值分别是 `utf8mb4`、`utf8mb4_unicode_ci`，与 Mango CLI 创建的标准业务数据库一致。通常无需在 POM 重复声明；示例显式写出是为了让业务制品的数据库语义可审计。确需其它语义时可以覆盖，但正式目标空库必须使用相同组合。
+`characterSet` 和 `collation` 的默认值分别是 `utf8mb4`、`utf8mb4_unicode_ci`，与 Mango CLI 创建的标准业务数据库一致。通常无需在 POM 重复声明；示例显式写出是为了让业务制品的数据库语义可审计。正式目标空库的字符集组合及例外边界以 [数据库规范](../../../mango-pmo/rules/backend/04-db.md) 为准。
 
 ## 4. Jenkins 构建
 
