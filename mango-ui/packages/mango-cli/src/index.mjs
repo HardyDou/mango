@@ -47,14 +47,9 @@ const packageRoot = resolve(dirname(currentFile), '..');
 const repoRoot = resolve(packageRoot, '../../..');
 const templateRoot = resolve(packageRoot, 'templates/full');
 const bundledPmoPackageRoot = resolve(packageRoot, '../mango-pmo');
-const packagedCodeBaselineRoot = resolve(
-  bundledPmoPackageRoot,
-  'dist/baseline/code-templates/business-module',
-);
+const packagedCodeBaselineRoot = resolve(bundledPmoPackageRoot, 'dist/baseline/code-templates/business-module');
 const sourceCodeBaselineRoot = resolve(repoRoot, 'mango-pmo/code-templates/business-module');
-const businessStarterRoot = existsSync(packagedCodeBaselineRoot)
-  ? packagedCodeBaselineRoot
-  : sourceCodeBaselineRoot;
+const businessStarterRoot = existsSync(packagedCodeBaselineRoot) ? packagedCodeBaselineRoot : sourceCodeBaselineRoot;
 const releaseVersions = readReleaseVersions();
 const adminModulesManifest = readAdminModulesManifest();
 const DEFAULT_MAVEN_REPOSITORY = 'https://nexus.inner.yunxinbaokeji.com/repository/maven-public/';
@@ -4728,7 +4723,9 @@ function validatePmoManifest(manifest) {
       !Number.isInteger(file.size) ||
       file.size < 0 ||
       !['0644', '0755'].includes(file.mode) ||
-      !['agent', 'rule', 'template', 'code-template', 'contract', 'tool', 'skill', 'documentation', 'asset'].includes(file.kind)
+      !['agent', 'rule', 'template', 'code-template', 'contract', 'tool', 'skill', 'documentation', 'asset'].includes(
+        file.kind,
+      )
     ) {
       throw new Error(`invalid @mango/pmo manifest file descriptor: ${file.path}`);
     }

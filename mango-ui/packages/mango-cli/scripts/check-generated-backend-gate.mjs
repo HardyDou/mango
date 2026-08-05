@@ -356,14 +356,21 @@ public final class StaticViolation {
 
   if (summaryPath) {
     mkdirSync(dirname(summaryPath), { recursive: true });
-    writeFileSync(summaryPath, `${JSON.stringify({
-      schemaVersion: 1,
-      templateId: 'business-module@1',
-      mangoVersion,
-      mavenInvocationCount,
-      cleanQualityEvidence,
-      negativeControls,
-    }, null, 2)}\n`);
+    writeFileSync(
+      summaryPath,
+      `${JSON.stringify(
+        {
+          schemaVersion: 1,
+          templateId: 'business-module@1',
+          mangoVersion,
+          mavenInvocationCount,
+          cleanQualityEvidence,
+          negativeControls,
+        },
+        null,
+        2,
+      )}\n`,
+    );
   }
 
   process.stdout.write(

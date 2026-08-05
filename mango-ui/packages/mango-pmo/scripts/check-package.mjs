@@ -186,7 +186,18 @@ function validateManifestFile(file) {
     throw new Error(`invalid baseline manifest mode: ${file.path}`);
   }
   if (
-    !['agent', 'rule', 'template', 'code-template', 'contract', 'tool', 'skill', 'documentation', 'asset', 'plugin'].includes(file.kind)
+    ![
+      'agent',
+      'rule',
+      'template',
+      'code-template',
+      'contract',
+      'tool',
+      'skill',
+      'documentation',
+      'asset',
+      'plugin',
+    ].includes(file.kind)
   ) {
     throw new Error(`invalid baseline manifest kind: ${file.path}`);
   }
