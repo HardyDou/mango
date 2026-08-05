@@ -27,7 +27,13 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class NumgenSegmentService implements INumgenSegmentService {
 
-    private static final Set<String> SUPPORTED_TYPES = Set.of("TEXT", "DATE", "PARAM", "SEQ", "EXPR");
+    private static final String SEGMENT_TYPE_TEXT = "TEXT";
+    private static final String SEGMENT_TYPE_DATE = "DATE";
+    private static final String SEGMENT_TYPE_PARAM = "PARAM";
+    private static final String SEGMENT_TYPE_SEQ = "SEQ";
+    private static final String SEGMENT_TYPE_EXPR = "EXPR";
+    private static final Set<String> SUPPORTED_TYPES = Set.of(
+            SEGMENT_TYPE_TEXT, SEGMENT_TYPE_DATE, SEGMENT_TYPE_PARAM, SEGMENT_TYPE_SEQ, SEGMENT_TYPE_EXPR);
 
     private final NumgenRuleSegmentMapper segmentMapper;
     private final NumgenRuleMapper ruleMapper;
@@ -100,18 +106,18 @@ public class NumgenSegmentService implements INumgenSegmentService {
         Require.isTrue(SUPPORTED_TYPES.contains(command.getSegmentType()), NumgenCode.NUMGEN_SEGMENT_INVALID,
                 "不支持的片段类型：" + command.getSegmentType());
         Require.notBlank(command.getSegmentName(), NumgenCode.NUMGEN_SEGMENT_INVALID, "片段名称不能为空");
-        Require.isTrue(!"SEQ".equals(command.getSegmentType()) || !Integer.valueOf(1).equals(command.getSequenceScope()),
+        Require.isTrue(!SEGMENT_TYPE_SEQ.equals(command.getSegmentType()) || !Integer.valueOf(1).equals(command.getSequenceScope()),
                 NumgenCode.NUMGEN_SEGMENT_INVALID, "流水片段不能参与流水分组");
         String segmentType = command.getSegmentType();
-        if ("TEXT".equals(segmentType)) {
+        if (SEGMENT_TYPE_TEXT.equals(segmentType)) {
             Require.notBlank(command.getLiteralValue(), NumgenCode.NUMGEN_SEGMENT_INVALID, "字符串不能为空");
-        } else if ("EXPR".equals(segmentType)) {
+        } else if (SEGMENT_TYPE_EXPR.equals(segmentType)) {
             Require.notBlank(command.getLiteralValue(), NumgenCode.NUMGEN_SEGMENT_INVALID, "表达式不能为空");
-        } else if ("DATE".equals(segmentType)) {
+        } else if (SEGMENT_TYPE_DATE.equals(segmentType)) {
             validateDateFormat(command.getDateFormat());
-        } else if ("PARAM".equals(segmentType)) {
+        } else if (SEGMENT_TYPE_PARAM.equals(segmentType)) {
             Require.notBlank(command.getVariableKey(), NumgenCode.NUMGEN_SEGMENT_INVALID, "参数键不能为空");
-        } else if ("SEQ".equals(segmentType)) {
+        } else if (SEGMENT_TYPE_SEQ.equals(segmentType)) {
             Require.notNull(command.getSeqWidth(), NumgenCode.NUMGEN_SEGMENT_INVALID, "流水位数不能为空");
         } else {
             Require.fail(NumgenCode.NUMGEN_SEGMENT_INVALID, "不支持的片段类型：" + segmentType);
