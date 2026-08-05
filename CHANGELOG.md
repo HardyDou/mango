@@ -2,7 +2,9 @@
 
 ## v2026.08.05-maven-1.0.35-numgen-1.0.34-admin-1.0.63-cli-1.0.98-release - 2026-08-05
 
-Status: `PENDING`. Prepared from merged PR #731 (`1df74779d7d6a8cee422b1936d1b90850c3b9e6a`) for Mango Issue #730. The release state machine will publish and verify the Maven backend, the affected frontend package closure and the CLI lock as one compatibility batch.
+Status: `PUBLISHED_AND_VERIFIED`. Published from protected `main` source commit `ce9262beccad859a43299d7df554747e1b108b0a` (tree `4ec8532b59a3f4c377715b4e387cf6c814ee7f1e`) after Issue #730, implementation PR #731 and release PR #733 passed their required checks. The exact-source bundle SHA-256 is `3e22057b0af7c3e13f1bedf733952ae7c210a8bd85481c06ade0a558c7f91d41`. Maven `1.0.35`, `@mango/numgen@1.0.34`, `@mango/admin@1.0.63` and `@mango/cli@1.0.98` are `PUBLISHED_AND_VERIFIED`; the immutable tag and [GitHub Release](https://github.com/HardyDou/mango/releases/tag/v2026.08.05-maven-1.0.35-numgen-1.0.34-admin-1.0.63-cli-1.0.98-release) are `CREATED_AND_VERIFIED`.
+
+The completed read-only verification manifest SHA-256 is `d1021af285b1ed607db2ba210526e75a95ac544f26f6ca7b5cbf495cb2900c5a`. Audit evidence preserves the original failed publication manifest `603c16f59695e7544476f3ee8c7187257c6fc86e5f55dd1a74bbd5a87506e249`, artifact-recovery manifest `f9d8a1896107ff41e76c99717553241d2bbb7a6f8d67c555b8dee5dadc91d360` and final-recovery harness-failure manifest `f3b12104d9530d2b1c4c8b54e6cfc40ae85b3cb29810a925dd500cd184c55b9e`. The first Maven attempt's three partial Nexus components were deleted under receipt `d636161625fa55bd8d70ed4874389e79398723d7731f1b13b256e51db112d571` only after 668 publish/consume checks proved all 334 target paths absent (`9a52894b608442508e7bf03b49ae2549b07ad8949f7679c3a580bc893b299046`). The canonical Maven batch then ran once from the exact source; no passed immutable coordinate was republished during later recovery.
 
 ### Fixed
 
@@ -22,9 +24,12 @@ Status: `PENDING`. Prepared from merged PR #731 (`1df74779d7d6a8cee422b1936d1b90
 
 ### Published Packages
 
-1. Complete non-app Maven Reactor and `io.mango:mango-docs-bundle:1.0.35`.
-2. `@mango/numgen@1.0.34`, `@mango/admin@1.0.63`, then `@mango/cli@1.0.98`.
-3. Immutable tag, GitHub Release, Latest docs and versioned docs snapshot.
+| Order | Target | Version | Status |
+| ----: | ------ | ------- | ------ |
+| 1 | Complete non-app Maven Reactor and `io.mango:mango-docs-bundle` | `1.0.35` | `PUBLISHED_AND_VERIFIED` |
+| 2 | `@mango/numgen`, `@mango/admin`, `@mango/cli` | `1.0.34`, `1.0.63`, `1.0.98` | `PUBLISHED_AND_VERIFIED` |
+| 3 | Git tag and GitHub Release | `v2026.08.05-maven-1.0.35-numgen-1.0.34-admin-1.0.63-cli-1.0.98-release` | `CREATED_AND_VERIFIED` |
+| 4 | Latest docs and versioned docs snapshot | release tag above | `PUBLISHED_AND_VERIFIED` |
 
 ### Upgrade Notes
 
@@ -34,9 +39,12 @@ Status: `PENDING`. Prepared from merged PR #731 (`1df74779d7d6a8cee422b1936d1b90
 
 ### Verification
 
-- Core Maven tests: 26/26 passed; changed-only Java quality gate: `newIssueCount=0`.
-- Numgen frontend unit tests (3/3), build, E2E persistence flow and frontend baseline check passed in PR #731.
-- Release prechecks will verify package locks, capability READMEs, release notes, registry absence, Maven/npm publication, clean consumers and documentation snapshots.
+- Core Maven tests passed 26/26 with changed-only Java quality `newIssueCount=0`; numgen frontend unit tests passed 3/3 together with build, E2E persistence, page configuration and frontend baseline checks in PR #731.
+- Maven `1.0.35` and `io.mango:mango-docs-bundle:1.0.35` resolve from both publish and consume repositories. All Maven build and consumer commands used release-specific repositories under `.runtime`, never the shared `~/.m2/repository`.
+- Both npm registries returned and verified the published tarballs for `@mango/numgen@1.0.34`, `@mango/admin@1.0.63` and `@mango/cli@1.0.98`, including matching consume-registry versions and integrity values.
+- A clean npm-group consumer installed CLI `1.0.98`, generated a full monolith project with Maven `1.0.35` / PMO `1.3.9` / numgen `1.0.34` / admin `1.0.63`, passed locked PMO validation (142 files and 33 Skill files with no drift), frontend typecheck and production build, and the complete backend `mvn verify` using isolated `.runtime/release-m2-business-1.0.35`.
+- Pages run [31004400570](https://github.com/HardyDou/mango/actions/runs/31004400570) built and deployed from merged snapshot PR #735. The [versioned documentation snapshot](https://hardydou.github.io/mango/versions/v2026.08.05-maven-1.0.35-numgen-1.0.34-admin-1.0.63-cli-1.0.98-release/) returns HTTP 200.
+- The completed read-only state machine records every applicable state as `passed`, including source, required checks, tag, GitHub Release, Maven/npm dual-registry verification, documentation, clean consumer verification and cleanup. The release tag remains pinned to source commit `ce9262be...`; this closeout is documentation-only.
 
 ## v2026.08.05-maven-1.0.34-workflow-withdraw-release - 2026-08-05
 
