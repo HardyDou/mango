@@ -2,7 +2,9 @@
 
 ## v2026.08.05-maven-1.0.34-workflow-withdraw-release - 2026-08-05
 
-Status: `PENDING`. This Maven-only patch is planned from protected `main` after Issue #725 and its required checks have passed. The complete non-app Maven Reactor and matching `io.mango:mango-docs-bundle:1.0.34` will be published and verified through the configured publish and consume registries before this status is closed. CLI, PMO and frontend npm coordinates are unchanged and will not be republished.
+Status: `PUBLISHED_AND_VERIFIED`. Published from protected `main` commit `811cc642e04b3dacc5f12dd0255e81cf739afab1` (tree `6decfe773756d59c83b0b13c7d6f9ba27d573503`) after Issue #725 and its required checks passed. The exact-source bundle SHA-256 is `f31db99c094cb3810ab3f2e159608d910c35e2c7a8b90d82f95e671792bd717d`. The complete non-app Maven Reactor and matching `io.mango:mango-docs-bundle:1.0.34` are published and verified from both configured Maven repositories. CLI, PMO and frontend npm coordinates are unchanged and were not republished.
+
+The completed recovery publication manifest SHA-256 is `6a13c07ebc6dd10b4d92031b42fdb457a1619ba99a613bf64d0f97e38f7498ee`; the preserved first-attempt manifest SHA-256 is `0c6df7bd3baca910daccd2a2c3cdd39b88c9edd72091f373e39970b1b927773a`. The first attempt's isolated `io.mango.tools:mango-architecture-verification:1.0.34` component was removed after publish/consume back-checks proved it was the only partial remote mutation; no immutable coordinate was overwritten or republished. The completed state machine recorded all applicable states as `passed`, including clean consumer resolution. The release tag remains pinned to `811cc642...`; the CHANGELOG closeout commit is documentation-only.
 
 ### Fixed
 
@@ -24,8 +26,8 @@ Status: `PENDING`. This Maven-only patch is planned from protected `main` after 
 
 | Order | Target | Version | Status |
 | ----: | ------ | ------- | ------ |
-| 1 | Complete non-app `io.mango` Maven Reactor and `io.mango:mango-docs-bundle` | `1.0.34` | `PENDING` |
-| 2 | Git tag, GitHub Release, Latest docs and versioned docs snapshot | `v2026.08.05-maven-1.0.34-workflow-withdraw-release` | `PENDING` |
+| 1 | Complete non-app `io.mango` Maven Reactor and `io.mango:mango-docs-bundle` | `1.0.34` | `PUBLISHED_AND_VERIFIED` |
+| 2 | Git tag, GitHub Release, Latest docs and versioned docs snapshot | `v2026.08.05-maven-1.0.34-workflow-withdraw-release` | `CREATED_AND_VERIFIED` |
 
 ### Upgrade Notes
 
@@ -39,7 +41,9 @@ Status: `PENDING`. This Maven-only patch is planned from protected `main` after 
 - The Workflow API, core, starter and starter-remote gates must pass, including the withdrawal unit suite, H2 plus real Mapper state/audit/task-cleanup verification, HTTP/API surface contracts and Feign contracts.
 - The complete non-app Maven batch, documentation bundle, release-note checker, capability documentation gates and repository source checks must pass from the protected release commit.
 - Every Maven `1.0.34` coordinate and `io.mango:mango-docs-bundle:1.0.34` must resolve from both publish and consume registries with matching checksums. A clean isolated Maven consumer must resolve the published BOM, Workflow API, Workflow starter and docs bundle without using the source workspace or shared local release cache.
-- The immutable tag and GitHub Release must point to the protected source commit, and Latest docs plus the versioned docs snapshot must contain the withdrawal contract and integration guidance.
+- Publication and consume back-checks covered 120 Maven HTTP verification targets, including the complete non-app Reactor, `io.mango:mango-bom:1.0.34`, `io.mango.tools:mango-architecture-verification:1.0.34` and `io.mango:mango-docs-bundle:1.0.34`; publish and consume repositories returned matching versions and checksums.
+- A clean isolated Maven consumer used `.runtime/maven-consumer-1.0.34` and resolved `io.mango.platform.workflow:mango-workflow-api:1.0.34` (219,907 bytes), `io.mango.platform.workflow:mango-workflow-starter:1.0.34` (49,497 bytes) and `io.mango:mango-docs-bundle:1.0.34` (192,530,056 bytes) from `maven-public`.
+- The immutable tag resolves to `811cc642e04b3dacc5f12dd0255e81cf739afab1`, and the [GitHub Release](https://github.com/HardyDou/mango/releases/tag/v2026.08.05-maven-1.0.34-workflow-withdraw-release) is non-draft and non-prerelease. Latest docs and the [versioned docs snapshot](https://hardydou.github.io/mango/versions/v2026.08.05-maven-1.0.34-workflow-withdraw-release/) return HTTP 200 and contain the withdrawal contract and integration guidance.
 
 ## v2026.08.03-maven-1.0.33-baseline-web-errors-release - 2026-08-03
 
