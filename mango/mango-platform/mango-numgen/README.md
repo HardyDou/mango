@@ -261,7 +261,7 @@ mango:
 | 片段类型 | 常用字段 | 说明 |
 |----------|----------|------|
 | `TEXT` | `literalValue` | 固定前缀，例如 `PO`。 |
-| `DATE` | `dateFormat`、`sequenceScope` | 日期片段，例如 `yyyyMMdd`；参与流水分组后可按日期重置序列。 |
+| `DATE` | `dateFormat`、`sequenceScope` | 日期片段，支持 `yyyy`、`MMdd`、`yyyyMMdd`、`yyyyMMddHHmmss` 及自定义 Java `DateTimeFormatter` 格式；参与流水分组后按格式值隔离流水。 |
 | `PARAM` | `variableKey`、`sequenceScope` | 从取号请求 `params` 读取值。 |
 | `SEQ` | `seqWidth`、`padChar` | 流水号，例如 8 位补零。 |
 | `EXPR` | `literalValue` | 表达式文本，支持参数占位符。 |

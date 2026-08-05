@@ -165,6 +165,7 @@ test.describe('@numgen 编号管理 E2E', () => {
     await page.getByRole('button', { name: '添加片段' }).click();
     await segmentDialog.getByLabel('片段名称').fill('日期');
     await segmentDialog.getByRole('radio', { name: '时间' }).click();
+    await segmentDialog.getByLabel('日期格式').fill('MMdd');
     await segmentDialog.locator('.scope-toggle-row').getByText('不参与').click();
     await page.getByRole('button', { name: '保存片段' }).click();
     await expect(page.locator('.segment-chip', { hasText: '日期' })).toContainText('分组');
@@ -188,7 +189,7 @@ test.describe('@numgen 编号管理 E2E', () => {
 
     expect(segmentPayloads).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ segmentType: 'DATE', sequenceScope: 1 }),
+        expect.objectContaining({ segmentType: 'DATE', dateFormat: 'MMdd', sequenceScope: 1 }),
         expect.objectContaining({ segmentType: 'SEQ', sequenceScope: 0 }),
       ]),
     );

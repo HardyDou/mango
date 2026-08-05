@@ -18,6 +18,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -104,7 +105,14 @@ public class NumgenSegmentService implements INumgenSegmentService {
         switch (command.getSegmentType()) {
             case "TEXT" -> Require.notBlank(command.getLiteralValue(), NumgenCode.NUMGEN_SEGMENT_INVALID, "字符串不能为空");
             case "EXPR" -> Require.notBlank(command.getLiteralValue(), NumgenCode.NUMGEN_SEGMENT_INVALID, "表达式不能为空");
-            case "DATE" -> Require.notBlank(command.getDateFormat(), NumgenCode.NUMGEN_SEGMENT_INVALID, "日期格式不能为空");
+            case "DATE" -> {
+                Require.notBlank(command.getDateFormat(), NumgenCode.NUMGEN_SEGMENT_INVALID, "日期格式不能为空");
+                try {
+                    DateTimeFormatter.ofPattern(command.getDateFormat());
+                } catch (IllegalArgumentException exception) {
+                    Require.fail(NumgenCode.NUMGEN_SEGMENT_INVALID, "日期格式非法：" + command.getDateFormat());
+                }
+            }
             case "PARAM" -> Require.notBlank(command.getVariableKey(), NumgenCode.NUMGEN_SEGMENT_INVALID, "参数键不能为空");
             case "SEQ" -> Require.notNull(command.getSeqWidth(), NumgenCode.NUMGEN_SEGMENT_INVALID, "流水位数不能为空");
             default -> {
