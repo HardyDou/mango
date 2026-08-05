@@ -87,15 +87,15 @@ stop();
 
 本包没有独立 YAML 配置。前端行为由页面注册、后端权限、后端业务配置和个人提醒设置共同决定。
 
-| 配置入口                        | 字段 / Key    | 默认值                | 含义                         |
-| ------------------------------- | ------------- | --------------------- | ---------------------------- |
-| `registerMangoNoticeAdminPages` | `moduleCode`  | `mango-notice`        | 页面归属模块。               |
-| `registerMangoNoticeAdminPages` | `profileSections` | 三个消息中心 section | 自动注册“我的消息、系统公告、通知设置”到个人中心。 |
-| 页面注册                        | component key | 多个 `notice/*/index` | 菜单打开具体通知页面。       |
-| `registerMangoNoticeAdminShell` | provider      | `NoticeBell`          | Shell 顶部铃铛 provider。    |
-| 个人提醒配置                    | `groupCode`   | `notice`              | 保存个人提醒设置的分组。     |
-| 个人提醒配置                    | `bizType`     | `client_reminder`     | 保存个人提醒设置的业务类型。 |
-| 个人提醒配置                    | `configKey`   | `reminder_setting`    | 保存个人提醒设置的配置 key。 |
+| 配置入口                        | 字段 / Key        | 默认值                | 含义                                               |
+| ------------------------------- | ----------------- | --------------------- | -------------------------------------------------- |
+| `registerMangoNoticeAdminPages` | `moduleCode`      | `mango-notice`        | 页面归属模块。                                     |
+| `registerMangoNoticeAdminPages` | `profileSections` | 三个消息中心 section  | 自动注册“我的消息、系统公告、通知设置”到个人中心。 |
+| 页面注册                        | component key     | 多个 `notice/*/index` | 菜单打开具体通知页面。                             |
+| `registerMangoNoticeAdminShell` | provider          | `NoticeBell`          | Shell 顶部铃铛 provider。                          |
+| 个人提醒配置                    | `groupCode`       | `notice`              | 保存个人提醒设置的分组。                           |
+| 个人提醒配置                    | `bizType`         | `client_reminder`     | 保存个人提醒设置的业务类型。                       |
+| 个人提醒配置                    | `configKey`       | `reminder_setting`    | 保存个人提醒设置的配置 key。                       |
 
 提醒设置字段：
 

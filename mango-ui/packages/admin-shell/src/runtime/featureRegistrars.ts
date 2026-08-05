@@ -9,10 +9,9 @@ export function ensureFeatureRegistrars() {
   if (!featureRegistrarsPromise) {
     const options = getMangoAdminShellOptions();
     registerMangoAdminHomeWidgets(options.widgets || []);
-    const results = (options.featureRegistrars || [])
-      .map(async (registrar) => {
-        applyFeatureRegistration(await registrar());
-      });
+    const results = (options.featureRegistrars || []).map(async (registrar) => {
+      applyFeatureRegistration(await registrar());
+    });
     featureRegistrarsPromise = Promise.all(results).then(() => undefined);
   }
   return featureRegistrarsPromise;

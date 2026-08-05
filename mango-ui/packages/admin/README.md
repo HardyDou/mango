@@ -46,18 +46,18 @@ import '@mango/admin/style-full.css';
 
 `createMangoAdminApp()` 的配置来自 `@mango/admin-shell`：
 
-| 字段                | 默认值           | 含义                                           |
-| ------------------- | ---------------- | ---------------------------------------------- |
-| `mountTarget`       | `#app`           | 默认挂载节点。                                 |
-| `apiBaseUrl`        | `/api`           | 后端 API 基础地址。                            |
-| `title`             | `Mango Admin`    | 页面标题。                                     |
-| `contentMode`       | `runtime-outlet` | 内容渲染方式。                                 |
-| `login`             | 空               | 登录页品牌、默认值和 slot 配置。               |
-| `features`          | `core`           | 内置能力开关。                                 |
+| 字段                | 默认值           | 含义                                                             |
+| ------------------- | ---------------- | ---------------------------------------------------------------- |
+| `mountTarget`       | `#app`           | 默认挂载节点。                                                   |
+| `apiBaseUrl`        | `/api`           | 后端 API 基础地址。                                              |
+| `title`             | `Mango Admin`    | 页面标题。                                                       |
+| `contentMode`       | `runtime-outlet` | 内容渲染方式。                                                   |
+| `login`             | 空               | 登录页品牌、默认值和 slot 配置。                                 |
+| `features`          | `core`           | 内置能力开关。                                                   |
 | `featureRegistrars` | 空               | 额外能力注册函数，可注册页面并返回首页小组件或个人中心 section。 |
-| `widgets`           | 空               | 宿主直接传入的首页业务小组件定义。             |
-| `modules`           | 空               | 模块运行时配置。                               |
-| `runtimeConfigUrl`  | 空               | 运行时配置地址。                               |
+| `widgets`           | 空               | 宿主直接传入的首页业务小组件定义。                               |
+| `modules`           | 空               | 模块运行时配置。                                                 |
+| `runtimeConfigUrl`  | 空               | 运行时配置地址。                                                 |
 
 ## 5. API 与扩展
 

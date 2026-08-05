@@ -3,10 +3,7 @@ import { Clock } from '@element-plus/icons-vue';
 import { systemQuickEntryWidgets } from './widgets/quick-entry';
 import { systemUserProfileWidgets } from './widgets/user-profile';
 
-const systemWidgets = [
-  ...systemUserProfileWidgets,
-  ...systemQuickEntryWidgets,
-];
+const systemWidgets = [...systemUserProfileWidgets, ...systemQuickEntryWidgets];
 
 export function registerMangoSystemAdminPages() {
   return {

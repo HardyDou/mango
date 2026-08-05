@@ -97,25 +97,25 @@ await logout();
 
 `installMangoAuth(app, config)` 把配置注入 Vue，同时保存为全局配置。配置只影响前端页面展示和默认登录参数，不会创建后端应用、租户、角色或菜单。
 
-| 配置位置         | 字段                     | 含义                                                               |
-| ---------------- | ------------------------ | ------------------------------------------------------------------ |
-| `login.brand`    | `title`                  | 登录页品牌标题。                                                   |
-| `login.brand`    | `subtitle`               | 登录页副标题。                                                     |
-| `login.brand`    | `panelTitle`             | 登录表单面板标题。                                                 |
-| `login.defaults` | `tenantCode`             | 登录参数默认租户编码。                                             |
-| `login.defaults` | `realm`                  | 登录域。                                                           |
-| `login.defaults` | `actorType`              | 登录主体类型。                                                     |
-| `login.defaults` | `partyType`              | 登录参与方类型。                                                   |
-| `login.defaults` | `appCode`                | 登录应用编码，管理端通常是 `internal-admin`。                      |
-| `login.defaults` | `redirectPath`           | 登录成功后的默认跳转路径。                                         |
-| `login.defaults` | `redirectQueryKey`       | 登录页读取的回跳 query 参数名，默认 `redirect`；值必须是站内路径。 |
-| `profile`        | `avatarUrl`              | 个人中心未设置业务头像时的默认头像地址。                           |
-| `profile`        | `roleLabel`              | 个人中心角色标签展示值。                                           |
-| `profile`        | `fields`                 | 个人资料展示字段列表。                                             |
+| 配置位置         | 字段                     | 含义                                                                    |
+| ---------------- | ------------------------ | ----------------------------------------------------------------------- |
+| `login.brand`    | `title`                  | 登录页品牌标题。                                                        |
+| `login.brand`    | `subtitle`               | 登录页副标题。                                                          |
+| `login.brand`    | `panelTitle`             | 登录表单面板标题。                                                      |
+| `login.defaults` | `tenantCode`             | 登录参数默认租户编码。                                                  |
+| `login.defaults` | `realm`                  | 登录域。                                                                |
+| `login.defaults` | `actorType`              | 登录主体类型。                                                          |
+| `login.defaults` | `partyType`              | 登录参与方类型。                                                        |
+| `login.defaults` | `appCode`                | 登录应用编码，管理端通常是 `internal-admin`。                           |
+| `login.defaults` | `redirectPath`           | 登录成功后的默认跳转路径。                                              |
+| `login.defaults` | `redirectQueryKey`       | 登录页读取的回跳 query 参数名，默认 `redirect`；值必须是站内路径。      |
+| `profile`        | `avatarUrl`              | 个人中心未设置业务头像时的默认头像地址。                                |
+| `profile`        | `roleLabel`              | 个人中心角色标签展示值。                                                |
+| `profile`        | `fields`                 | 个人资料展示字段列表。                                                  |
 | `profile`        | `sections`               | 个人中心扩展 section；能力包通常通过 Admin feature registrar 自动提供。 |
-| `profile.slots`  | `theme`                  | 可选主题设置组件；配置后作为个人中心“主题设置”子页展示。           |
-| `password`       | `minLength`              | 修改密码页新密码最小长度前端校验。                                 |
-| `slots`          | `brand`、`formHeader` 等 | 登录页、个人中心、修改密码页插槽组件。                             |
+| `profile.slots`  | `theme`                  | 可选主题设置组件；配置后作为个人中心“主题设置”子页展示。                |
+| `password`       | `minLength`              | 修改密码页新密码最小长度前端校验。                                      |
+| `slots`          | `brand`、`formHeader` 等 | 登录页、个人中心、修改密码页插槽组件。                                  |
 
 请求 base URL、token、refresh token、401 处理和租户头由 `@mango/common` request 负责配置。
 
@@ -135,14 +135,14 @@ await logout();
 
 配置和状态导出：
 
-| 导出                 | 用途                                                |
-| -------------------- | --------------------------------------------------- |
-| `installMangoAuth`   | 安装认证页面配置。                                  |
-| `getMangoAuthConfig` | 读取全局认证配置。                                  |
-| `mergeAuthConfig`    | 合并认证配置。                                      |
+| 导出                               | 用途                                                 |
+| ---------------------------------- | ---------------------------------------------------- |
+| `installMangoAuth`                 | 安装认证页面配置。                                   |
+| `getMangoAuthConfig`               | 读取全局认证配置。                                   |
+| `mergeAuthConfig`                  | 合并认证配置。                                       |
 | `registerMangoAuthProfileSections` | 通过 `@mango/auth/config` 注册个人中心扩展 section。 |
-| `useUserInfo`        | 用户信息 store。                                    |
-| `useMangoLoginFlow`  | 登录流程 hook，供默认登录页和业务自定义登录页复用。 |
+| `useUserInfo`                      | 用户信息 store。                                     |
+| `useMangoLoginFlow`                | 登录流程 hook，供默认登录页和业务自定义登录页复用。  |
 
 自定义登录页可只消费登录逻辑，UI、布局、表单校验和按钮禁用由业务组件自己处理：
 
