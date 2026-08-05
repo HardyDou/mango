@@ -86,6 +86,8 @@ pnpm -F @mango/admin-shell build
 
 ## 8. 变更影响记录
 
+- Issue #722 只在 Admin Shell 启动阶段基于 `crypto.getRandomValues` 安全补齐缺少的 `randomUUID`；不改变按钮 `permissionCode`、登录态权限集合、角色授权、接口鉴权或按钮展示规则。旧环境启动异常应先核对匹配的前端包版本和安全上下文，按钮异常仍按本指南原路径排查。
+
 - Issue #721 只让 Admin Shell 聚合 Notice、System registrar 返回的个人中心入口元数据；不改变按钮 `permissionCode`、登录态权限集合、角色授权、接口鉴权或按钮展示规则。若升级后“我的消息”“系统公告”“通知设置”或“登录日志”仍缺失，应先核对匹配的前端包版本和 feature registrar 注册链，按钮异常仍按本指南原路径排查。
 
 - Issue #606 调整的是 Workflow demo 默认管理员的列表数据范围和 `INIT_ONLY` 已有目标保护；不改变按钮 `permissionCode`、菜单 `apiCodes`、登录态权限集合、按钮展示规则或接口鉴权。按钮显示异常仍按本指南排查；只有流程定义管理页面能打开但返回空列表时，才进一步检查 `workflow:definition:list` 数据范围。

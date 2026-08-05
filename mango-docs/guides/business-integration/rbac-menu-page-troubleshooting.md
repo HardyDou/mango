@@ -4,6 +4,8 @@
 
 > 2026-08-05 Issue #721：个人中心扩展入口由已集成能力包的 feature registrar 自动装配。Notice 提供“我的消息、系统公告、通知设置”，System 提供“登录日志”；这些仍是 `/profile` 页内导航，不进入框架菜单树。业务入口缺项时先检查对应 registrar 是否进入 `featureRegistrars`，无需在业务 `main.ts` 重复配置 `profile.sections`。
 
+> 2026-08-05 Issue #722：Admin Shell 统一补齐缺少的安全 Web Crypto `randomUUID`，只改变旧浏览器/WebView 的前端启动兼容性；不改变菜单树 API、`component` key、页面注册、角色授权、按钮权限或租户绑定。升级后仍出现 `randomUUID is not a function` 时应先核对完整前端包矩阵和安全上下文，菜单或页面异常继续按本指南原链路排查。
+
 ## 1. 适用场景
 
 用户登录后能看到菜单，但点击菜单出现空白页、404、组件加载失败或接口无权限。
