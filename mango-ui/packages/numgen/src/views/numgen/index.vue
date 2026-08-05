@@ -1,3 +1,4 @@
+<!-- mango-page-baseline-exception all: Existing numgen management page predates Mango standard page containers; Issue #730 only changes DATE segment editing and preview, so migrating the page shell is out of scope. -->
 <template>
   <div class="numgen-page">
     <section v-if="historyMode" class="numgen-rule-panel history-panel">
