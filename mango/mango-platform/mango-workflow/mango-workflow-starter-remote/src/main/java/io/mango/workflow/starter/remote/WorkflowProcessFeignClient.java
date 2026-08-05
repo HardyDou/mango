@@ -1,14 +1,16 @@
 package io.mango.workflow.starter.remote;
 
 import io.mango.common.result.R;
+import io.mango.common.vo.PageResult;
 import io.mango.workflow.api.WorkflowProcessApi;
 import io.mango.workflow.api.command.StartBusinessWorkflowCommand;
 import io.mango.workflow.api.command.StartWorkflowProcessCommand;
-import io.mango.workflow.api.vo.WorkflowProcessInstanceVO;
-import io.mango.workflow.api.vo.WorkflowStartResultVO;
-import io.mango.common.vo.PageResult;
+import io.mango.workflow.api.command.WithdrawWorkflowProcessCommand;
 import io.mango.workflow.api.query.WorkflowTaskPageQuery;
 import io.mango.workflow.api.vo.WorkflowProcessDetailVO;
+import io.mango.workflow.api.vo.WorkflowProcessInstanceVO;
+import io.mango.workflow.api.vo.WorkflowProcessWithdrawResultVO;
+import io.mango.workflow.api.vo.WorkflowStartResultVO;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.cloud.openfeign.SpringQueryMap;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -29,6 +31,10 @@ public interface WorkflowProcessFeignClient extends WorkflowProcessApi {
     @Override
     @PostMapping("/start-business")
     R<WorkflowStartResultVO> startBusinessWorkflow(@RequestBody StartBusinessWorkflowCommand command);
+
+    @Override
+    @PostMapping("/withdraw")
+    R<WorkflowProcessWithdrawResultVO> withdraw(@RequestBody WithdrawWorkflowProcessCommand command);
 
     @Override
     @GetMapping("/initiated")

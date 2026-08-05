@@ -13,6 +13,7 @@ public enum WorkflowInstanceStatus {
     RUNNING("运行中"),
     COMPLETED("已完成"),
     REJECTED("已驳回"),
+    WITHDRAWN("已撤回"),
     ENDED("已结束");
 
     private final String label;

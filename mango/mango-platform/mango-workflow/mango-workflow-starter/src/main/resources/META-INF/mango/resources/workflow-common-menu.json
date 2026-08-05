@@ -111,7 +111,8 @@
                             "remark": "当前用户发起的流程",
                             "apiCodes": [
                               "workflow:task:list",
-                              "workflow:process:detail"
+                              "workflow:process:detail",
+                              "workflow:process:withdraw"
                             ]
                           },
                           {
@@ -225,6 +226,7 @@
                         "apiCodes": [
                           "workflow:definition:list",
                           "workflow:process:start",
+                          "workflow:process:withdraw",
                           "workflow:business-apply:create",
                           "workflow:business-apply:list",
                           "workflow:business-apply:detail"

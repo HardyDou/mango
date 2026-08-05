@@ -192,6 +192,18 @@ public class WorkflowBusinessApplyService implements IWorkflowBusinessApplyServi
     }
 
     @Override
+    public WorkflowBusinessApplyVO lockWithdrawalTarget(Long applyId, String processInstanceId) {
+        LambdaQueryWrapper<WorkflowBusinessApplyEntity> wrapper = new LambdaQueryWrapper<>();
+        if (applyId != null) {
+            wrapper.eq(WorkflowBusinessApplyEntity::getId, applyId);
+        } else {
+            wrapper.eq(WorkflowBusinessApplyEntity::getProcessInstanceId, trim(processInstanceId));
+        }
+        WorkflowBusinessApplyEntity apply = applyMapper.selectOne(wrapper.last("limit 1 for update"));
+        return apply == null ? null : toVo(apply, tasksByApplyId(apply.getId()));
+    }
+
+    @Override
     public PageResult<WorkflowBusinessApplyVO> history(WorkflowBusinessApplyPageQuery query) {
         WorkflowBusinessApplyPageQuery resolved = query == null ? new WorkflowBusinessApplyPageQuery() : query;
         Require.notBlank(resolved.getBusinessType(), WorkflowCode.APPLY_INVALID, "业务类型不能为空");
@@ -370,6 +382,18 @@ public class WorkflowBusinessApplyService implements IWorkflowBusinessApplyServi
         updateCurrentTaskSummary(apply, List.of(), LocalDateTime.now());
         updateStatus(apply, WorkflowApplyStatus.TERMINATED, WorkflowApplyAction.TERMINATE,
                 context.comment(), context.taskId(), context.taskDefinitionKey());
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public WorkflowBusinessApplyVO markWithdrawn(String processInstanceId, String reason) {
+        WorkflowBusinessApplyEntity apply = applyByProcessInstanceId(processInstanceId);
+        Require.notNull(apply, WorkflowCode.APPLY_NOT_FOUND);
+        clearCurrentTasks(apply.getId());
+        updateCurrentTaskSummary(apply, List.of(), LocalDateTime.now());
+        updateStatus(apply, WorkflowApplyStatus.WITHDRAWN, WorkflowApplyAction.WITHDRAW,
+                trim(reason), null, null);
+        return findByProcessInstance(processInstanceId);
     }
 
     private LambdaQueryWrapper<WorkflowBusinessApplyEntity> wrapper(WorkflowBusinessApplyPageQuery query) {

@@ -53,6 +53,12 @@ public enum WorkflowCode implements BizCode {
     /** 业务申请参数非法。 */
     APPLY_INVALID(3642, "业务申请参数非法"),
 
+    /** 当前业务申请状态不允许撤回。 */
+    PROCESS_WITHDRAW_NOT_ALLOWED(3643, "当前流程状态不允许撤回"),
+
+    /** 当前用户无权撤回业务申请。 */
+    PROCESS_WITHDRAW_FORBIDDEN(3644, "当前用户无权撤回该流程"),
+
     /** 流程任务不存在。 */
     TASK_NOT_FOUND(3650, "流程任务不存在"),
 

@@ -1,13 +1,15 @@
 package io.mango.workflow.api;
 
 import io.mango.common.result.R;
+import io.mango.common.vo.PageResult;
 import io.mango.workflow.api.command.StartBusinessWorkflowCommand;
 import io.mango.workflow.api.command.StartWorkflowProcessCommand;
-import io.mango.workflow.api.vo.WorkflowProcessInstanceVO;
-import io.mango.workflow.api.vo.WorkflowStartResultVO;
-import io.mango.common.vo.PageResult;
+import io.mango.workflow.api.command.WithdrawWorkflowProcessCommand;
 import io.mango.workflow.api.query.WorkflowTaskPageQuery;
 import io.mango.workflow.api.vo.WorkflowProcessDetailVO;
+import io.mango.workflow.api.vo.WorkflowProcessInstanceVO;
+import io.mango.workflow.api.vo.WorkflowProcessWithdrawResultVO;
+import io.mango.workflow.api.vo.WorkflowStartResultVO;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 
@@ -31,6 +33,14 @@ public interface WorkflowProcessApi {
      * @return 启动结果
      */
     R<WorkflowStartResultVO> startBusinessWorkflow(@Valid StartBusinessWorkflowCommand command);
+
+    /**
+     * 撤回运行中的业务审批流程。
+     *
+     * @param command 撤回命令
+     * @return 撤回结果；重复撤回返回幂等成功
+     */
+    R<WorkflowProcessWithdrawResultVO> withdraw(@Valid WithdrawWorkflowProcessCommand command);
 
     R<PageResult<WorkflowProcessInstanceVO>> initiated(@Valid WorkflowTaskPageQuery query);
 

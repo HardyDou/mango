@@ -14,5 +14,6 @@ public interface WorkflowEventTypes {
     public static final String TASK_UNCLAIMED = "workflow.task.unclaimed";
     public static final String PROCESS_COMPLETED = "workflow.process.completed";
     public static final String PROCESS_REJECTED = "workflow.process.rejected";
+    public static final String PROCESS_WITHDRAWN = "workflow.process.withdrawn";
     public static final String PROCESS_ENDED = "workflow.process.ended";
 }

@@ -940,6 +940,11 @@ class WorkflowTaskRuntimeServiceImplIntegrationTest {
         }
 
         @Override
+        public WorkflowBusinessApplyVO lockWithdrawalTarget(Long applyId, String processInstanceId) {
+            return null;
+        }
+
+        @Override
         public void refreshCurrentTasks(String processInstanceId) {
             refreshedProcessInstanceIds.add(processInstanceId);
         }
@@ -961,6 +966,11 @@ class WorkflowTaskRuntimeServiceImplIntegrationTest {
 
         @Override
         public void markTerminated(WorkflowTaskStatusContext context) {
+        }
+
+        @Override
+        public WorkflowBusinessApplyVO markWithdrawn(String processInstanceId, String reason) {
+            return null;
         }
 
         private WorkflowBusinessApplyVO advancedApply() {
