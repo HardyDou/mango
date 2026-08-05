@@ -32,8 +32,9 @@
 1. 新建业务单据并保存为草稿。
 2. 发起审批后业务状态变为审批中。
 3. 审批人能在任务列表看到待办。
-4. 审批通过后业务状态变为通过。
-5. 业务详情页能看到流程实例和审批记录。
+4. 申请人可以在业务允许时撤回本人运行中的申请，业务状态同步变为已撤回。
+5. 审批通过后业务状态变为通过。
+6. 业务详情页能看到流程实例和审批记录。
 
 ## 5. 常见失败
 
@@ -45,6 +46,7 @@
 | 审批页打开空白 | 前端 workflow 包是否引入，页面 key 是否注册，接口是否 401/403 |
 | 驳回后业务不可再次提交 | 业务状态流转是否覆盖驳回到草稿或重新提交 |
 | 退回后业务侧仍显示原审批节点 | 业务侧是否使用 `POST /workflow/tasks/return` 响应或 `workflow.task.advanced` 同步刷新后的 `currentTasks` |
+| 撤回返回无权限或状态不允许 | 当前登录人是否为原申请人、租户是否一致、申请是否仍为 `IN_APPROVAL`、业务菜单是否声明 `workflow:process:withdraw` |
 | 多租户流程串数据 | 流程定义、实例、任务和业务表 tenantId 是否一致 |
 | 空库 `bootstrap apply` 在 migration 前查询 `ACT_GE_PROPERTY` | 调用链是否由业务 Bean 注入 `WorkflowTaskRuntimeApi` 等公开接口后提前创建 Controller；升级到包含 Bootstrap API 延迟代理的 Maven 版本，不要手工建 Flowable 表或恢复业务 `forceSync()` 兼容 |
 
@@ -62,6 +64,7 @@
 | 审计刚完成的任务和办理意见 | 订阅 `workflow.task.completed` |
 | 流程通过后回写业务通过状态 | 订阅 `workflow.process.completed` |
 | 流程驳回后回写业务驳回状态 | 订阅 `workflow.process.rejected` |
+| 申请人撤回后回写业务撤回状态 | 调用 `WorkflowProcessApi.withdraw()` 后同步处理结果，并订阅 `workflow.process.withdrawn` 做异步幂等回写 |
 
 `workflow.task.completed` 和 `workflow.task.advanced` 的差异：
 
@@ -71,6 +74,8 @@
 | `workflow.task.advanced` | 是 | 同步下一节点或退回目标节点、当前办理人和业务进度。 |
 
 `POST /workflow/tasks/return` 会把当前任务退回到最近一个已完成的不同用户任务节点，或退回到 `targetTaskDefinitionKey` 指定的历史节点。串行流程可以不传目标节点；并行、多实例、重复审批节点或业务语义固定的流程，应在流程节点动作配置或业务审批页中显式传入 `targetTaskDefinitionKey`。接口返回结构与 `complete-result` 一致，业务侧应使用返回的 `currentTasks` 或订阅 `workflow.task.advanced` 刷新业务单据当前节点和当前办理人；退回不会发布 `workflow.task.completed`，也不会把流程状态改为驳回。
+
+`POST /workflow/processes/withdraw` 与 `WorkflowProcessApi.withdraw()` 支持使用 `applyId` 或 `processInstanceId` 定位申请，`reason` 必填。后端同时校验 `workflow:process:withdraw` 权限、租户上下文和原申请人身份；仅运行中的 `IN_APPROVAL` 可首次撤回，已撤回请求按幂等成功返回，其它终态不会被改写。成功响应包含撤回前后状态、`withdrawn`、`idempotent`、`ended` 和原因，并发布 `workflow.process.withdrawn` 后再发布 `workflow.process.ended`。业务模块仍需先判断业务单据是否允许撤回，并用事件 ID 或业务主键幂等维护自身状态机、快照和通知；Workflow 不替代业务状态机。当前改动不提供新的前端撤回按钮，业务页面应按自身权限和状态决定是否展示操作入口。
 
 单体多实例、微服务或微服务多实例部署时，事件应按至少一次投递处理。业务订阅方使用 `eventId`、`processInstanceId + completedTaskId` 或业务主键构造幂等键，避免重复回写状态、重复发通知或重复生成待办摘要。
 

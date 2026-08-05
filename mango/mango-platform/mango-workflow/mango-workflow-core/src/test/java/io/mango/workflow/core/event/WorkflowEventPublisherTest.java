@@ -166,6 +166,45 @@ class WorkflowEventPublisherTest {
                 });
     }
 
+    @Test
+    void publishProcessWithdrawn_shouldIncludeTerminalBusinessAndOperatorSnapshot() {
+        WorkflowFormInstanceEntity formInstance = new WorkflowFormInstanceEntity();
+        formInstance.setBusinessKey("EXP-FORM-KEY");
+        WorkflowBusinessApplyVO businessApply = businessApply();
+        businessApply.setApplyStatus(WorkflowApplyStatus.WITHDRAWN);
+        businessApply.setApplyStatusName("已撤回");
+        businessApply.setCurrentTaskNames(null);
+        businessApply.setCurrentTaskDefinitionKeys(null);
+        businessApply.setCurrentAssigneeNames(null);
+        businessApply.setCurrentTasks(List.of());
+
+        publisher.publishProcessWithdrawn(
+                "PROC-1", formInstance, variables(), "申请资料有误", businessApply);
+
+        DomainEvent event = singleEvent();
+        assertThat(event.getEventType()).isEqualTo(WorkflowDomainEvents.PROCESS_WITHDRAWN);
+        assertThat(event.getBusinessType()).isEqualTo("EXPENSE_REIMBURSEMENT");
+        assertThat(event.getBusinessKey()).isEqualTo("EXP-FORM-KEY");
+        assertThat(event.getAggregateId()).isEqualTo("APPLY-1");
+        assertThat(event.getPayload())
+                .containsEntry("eventType", WorkflowDomainEvents.PROCESS_WITHDRAWN)
+                .containsEntry("processInstanceId", "PROC-1")
+                .containsEntry("tenantId", "1")
+                .containsEntry("appCode", "internal-admin")
+                .containsEntry("realm", "INTERNAL")
+                .containsEntry("applyId", 1001L)
+                .containsEntry("businessType", "EXPENSE_REIMBURSEMENT")
+                .containsEntry("businessKey", "EXP-20260516-001")
+                .containsEntry("applyStatus", WorkflowApplyStatus.WITHDRAWN.name())
+                .containsEntry("applyStatusName", "已撤回")
+                .containsEntry("applicantId", 1000L)
+                .containsEntry("applicantName", "申请人")
+                .containsEntry("reason", "申请资料有误")
+                .containsEntry("ended", true)
+                .containsEntry("claimStatus", "NONE")
+                .containsEntry("currentTasks", List.of());
+    }
+
     private DomainEvent singleEvent() {
         assertThat(events).hasSize(1);
         return events.get(0);

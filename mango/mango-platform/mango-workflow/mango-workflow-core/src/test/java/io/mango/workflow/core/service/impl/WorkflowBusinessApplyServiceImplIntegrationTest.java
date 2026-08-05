@@ -112,6 +112,54 @@ class WorkflowBusinessApplyServiceImplIntegrationTest {
         assertThat(detail.getViewPath()).isEqualTo("/expense/apply/detail");
     }
 
+    @Test
+    void markWithdrawnPersistsTerminalStateClearsTasksAndWritesAuditLogThroughRealMappers() {
+        MangoContextHolder.set(MangoContextSnapshot.empty()
+                .withSecurity(1001L, "1", "applicant", "default", "USER", "USER", 1L, "internal-admin"));
+        insertApply(20L, 1001L, "IN_APPROVAL");
+        jdbcTemplate.update("""
+                update workflow_business_apply
+                set process_instance_id = 'PROC-20',
+                    current_task_names = '财务审批',
+                    current_task_definition_keys = 'finance_approve',
+                    current_assignee_names = 'approver'
+                where id = 20
+                """);
+        insertCurrentTask(200L, 20L, "PROC-20");
+
+        var locked = service.lockWithdrawalTarget(20L, null);
+        var withdrawn = service.markWithdrawn("PROC-20", " 申请资料有误 ");
+
+        assertThat(locked.getApplyStatus().name()).isEqualTo("IN_APPROVAL");
+        assertThat(withdrawn.getApplyStatus().name()).isEqualTo("WITHDRAWN");
+        assertThat(withdrawn.getCurrentTasks()).isEmpty();
+        assertThat(jdbcTemplate.queryForObject("""
+                select apply_status from workflow_business_apply where id = 20
+                """, String.class)).isEqualTo("WITHDRAWN");
+        assertThat(jdbcTemplate.queryForMap("""
+                select current_task_names, current_task_definition_keys, current_assignee_names
+                from workflow_business_apply where id = 20
+                """)).allSatisfy((key, value) -> assertThat(value).isNull());
+        assertThat(jdbcTemplate.queryForObject("""
+                select count(*) from workflow_business_apply_current_task where apply_id = 20
+                """, Long.class)).isZero();
+        assertThat(jdbcTemplate.queryForMap("""
+                select tenant_id, apply_id, from_status, to_status, action, action_name,
+                       operator_id, operator_name, comment, process_instance_id
+                from workflow_business_apply_status_log where apply_id = 20
+                """))
+                .containsEntry("tenant_id", 1L)
+                .containsEntry("apply_id", 20L)
+                .containsEntry("from_status", "IN_APPROVAL")
+                .containsEntry("to_status", "WITHDRAWN")
+                .containsEntry("action", "WITHDRAW")
+                .containsEntry("action_name", "撤回")
+                .containsEntry("operator_id", 1001L)
+                .containsEntry("operator_name", "applicant")
+                .containsEntry("comment", "申请资料有误")
+                .containsEntry("process_instance_id", "PROC-20");
+    }
+
     private void rebuildTables() {
         jdbcTemplate.execute("drop table if exists workflow_business_apply_current_task");
         jdbcTemplate.execute("drop table if exists workflow_business_apply_status_log");
@@ -192,6 +240,22 @@ class WorkflowBusinessApplyServiceImplIntegrationTest {
                     tenant_id bigint,
                     org_id bigint,
                     apply_id bigint,
+                    from_status varchar(64),
+                    to_status varchar(64),
+                    action varchar(64),
+                    action_name varchar(128),
+                    operator_id bigint,
+                    operator_name varchar(128),
+                    comment varchar(1000),
+                    task_id varchar(128),
+                    task_definition_key varchar(128),
+                    process_instance_id varchar(128),
+                    created_by bigint,
+                    created_time timestamp,
+                    created_at timestamp,
+                    updated_by bigint,
+                    updated_time timestamp,
+                    updated_at timestamp,
                     primary key (id)
                 )
                 """);
@@ -204,6 +268,18 @@ class WorkflowBusinessApplyServiceImplIntegrationTest {
                     applicant_id, applicant_name, apply_status, latest_flag, created_at, updated_at
                 ) values (?, 1, ?, 'RESOURCE', ?, '资源申请', ?, '测试申请人', ?, true, ?, ?)
                 """, id, "APPLY-" + id, "BIZ-" + id, applicantId, status, LocalDateTime.now(), LocalDateTime.now());
+    }
+
+    private void insertCurrentTask(Long id, Long applyId, String processInstanceId) {
+        jdbcTemplate.update("""
+                insert into workflow_business_apply_current_task (
+                    id, tenant_id, apply_id, business_type, business_key, process_instance_id,
+                    task_id, task_definition_key, task_name, assignee_id, assignee_name,
+                    claim_status, arrived_at, created_at, updated_at
+                ) values (?, 1, ?, 'RESOURCE', ?, ?, ?, 'finance_approve', '财务审批',
+                          2001, 'approver', 'ASSIGNED', ?, ?, ?)
+                """, id, applyId, "BIZ-" + applyId, processInstanceId, "TASK-" + id,
+                LocalDateTime.now(), LocalDateTime.now(), LocalDateTime.now());
     }
 
     @Configuration

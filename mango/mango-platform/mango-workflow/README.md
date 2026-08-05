@@ -35,6 +35,7 @@
 | 流程模板 | `/workflow/templates` 接口和流程模板页面。 |
 | 业务申请 | `WorkflowBusinessApplyApi` 或 `/workflow/business-applies`。 |
 | 发起流程 | `WorkflowProcessApi.start()` 或 `/workflow/processes/start`。 |
+| 撤回流程 | `WorkflowProcessApi.withdraw()` 或 `/workflow/processes/withdraw`。 |
 | 待办和已办 | `/workflow/tasks/todo`、`/workflow/tasks/done`、任务列表页面。 |
 | 审批处理 | `/workflow/tasks/complete`、`/workflow/tasks/complete-result`、`/workflow/tasks/reject`、`/workflow/tasks/return`、`/workflow/tasks/save`、`/workflow/tasks/transfer`、`/workflow/tasks/add-sign`。 |
 | 抄送 | `/workflow/tasks/copied`、`/workflow/tasks/copied/read`。 |
@@ -87,6 +88,7 @@ module-path=/workflow
 | `WorkflowBusinessProcessApi.latestByBusinessKeys()` | 业务列表补充流程状态时使用的窄接口。 |
 | `WorkflowDefinitionApi.ensurePublished()` | 业务模块内置流程定义时，幂等确保流程已发布。 |
 | `WorkflowProcessApi.start()` | 发起流程实例。 |
+| `WorkflowProcessApi.withdraw()` | 申请人撤回本人运行中的业务审批流程。 |
 
 业务模块只能依赖 `mango-workflow-api` 暴露的 `XxxApi`、Command、Query、VO、Enum 和事件 payload 契约。禁止业务模块注入或调用 `mango-workflow-core` 的 `IWorkflow*Service`、`Workflow*ServiceImpl`、`WorkflowEventPublisher`、`WorkflowDomainEvents` 等内部实现；本地单体由 `mango-workflow-starter` 的 Controller 承载 API Bean，远程调用由 `mango-workflow-starter-remote` 的 Feign client 承载 API Bean。
 
@@ -151,6 +153,17 @@ start.setApplyId(applyId);
 start.setVariables(apply.getVariables());
 workflowProcessApi.start(start);
 ```
+
+撤回运行中的业务审批时，调用方传 `applyId` 或 `processInstanceId`，至少填写一个，并提供非空 `reason`：
+
+```java
+WithdrawWorkflowProcessCommand withdraw = new WithdrawWorkflowProcessCommand();
+withdraw.setApplyId(applyId);
+withdraw.setReason("申请资料有误，重新提交");
+WorkflowProcessWithdrawResultVO result = workflowProcessApi.withdraw(withdraw).getData();
+```
+
+撤回接口只允许当前租户内的原申请人操作，HTTP 权限码为 `workflow:process:withdraw`。只有 `IN_APPROVAL` 可以首次撤回；已是 `WITHDRAWN` 时返回 `idempotent=true` 的成功结果，不重复删除实例、写流水或发布事件；草稿、待提交、通过、驳回、取消和终止等状态返回明确失败。成功后 Flowable 运行实例结束，申请和表单实例状态改为 `WITHDRAWN`，当前任务快照清空，并依次发布 `workflow.process.withdrawn` 与 `workflow.process.ended`。Workflow 只维护审批申请状态，业务单据是否允许撤回、业务状态迁移、快照恢复和重复消费仍由业务模块负责。
 
 ### 3.1 业务模块使用指南
 
@@ -255,7 +268,8 @@ public class ExpenseWorkflowEventSubscriber implements DomainEventSubscriber {
 | 记录办理动作审计 | `workflow.task.completed` | 该事件只表示当前任务刚完成，不代表下一节点快照已刷新。 |
 | 回写业务通过状态 | `workflow.process.completed` | 流程正常结束后发布。 |
 | 回写业务驳回状态 | `workflow.process.rejected` | 流程被驳回后发布。 |
-| 做流程结束清理 | `workflow.process.ended` | 驳回或终止都会触发。 |
+| 回写业务撤回状态 | `workflow.process.withdrawn` | 申请人成功撤回运行中流程后发布，payload 包含撤回原因和 `ended=true`。 |
+| 做流程结束清理 | `workflow.process.ended` | 驳回、撤回或终止都会触发。 |
 
 事件订阅方应把 `eventId`、`processInstanceId + completedTaskId` 或 `businessType + businessKey + eventType` 作为幂等键，避免跨实例或跨服务投递时重复回写业务状态。
 
@@ -525,6 +539,7 @@ mango:
 | `WorkflowBusinessProcessVO` | 业务类型、业务主键、申请 ID、流程实例 ID、流程状态和当前任务摘要。 | 业务侧批量查询最新流程状态。 |
 | `WorkflowProcessInstanceVO` | 流程实例 ID、流程定义信息、业务主键、发起人、状态、开始时间。 | 发起流程后的结果回显。 |
 | `WorkflowStartResultVO` | 申请 ID、流程实例 ID、流程状态、当前任务、认领状态、候选用户/组。 | 业务侧一体化创建申请并发起流程后的结果回显。 |
+| `WorkflowProcessWithdrawResultVO` | 申请/实例 ID、撤回前后状态、是否撤回、是否幂等、是否结束和原因。 | 业务侧确认撤回结果并同步刷新。 |
 | `WorkflowTaskVO` | 任务 ID、流程实例、任务名称、办理人、候选信息、申请信息、创建时间。 | 待办、已办、抄送列表。 |
 | `WorkflowTaskActionResultVO` | 已处理任务、业务申请、流程状态、当前任务、认领状态、候选用户/组、是否结束。 | 驳回、暂存、认领和释放后立即刷新业务状态。 |
 | `WorkflowProcessDetailVO` | 流程实例、表单渲染配置、变量、审批记录，以及实例实际运行发布版本的 `designerJson`。 | 业务只读详情和流程轨迹渲染。 |
@@ -555,6 +570,7 @@ Workflow 参数校验约束统一由 `mango-workflow-api` 的 `XxxApi` 契约声
 |------|------|--------|
 | 发起流程 | `POST /workflow/processes/start` | `workflow:process:start` |
 | 创建业务申请并发起流程 | `POST /workflow/processes/start-business` | `workflow:process:start` |
+| 撤回运行中的业务审批 | `POST /workflow/processes/withdraw` | `workflow:process:withdraw`，且只能由原申请人操作 |
 | 我的发起 | `GET /workflow/processes/initiated` | `workflow:task:list` |
 | 流程详情 | `GET /workflow/processes/detail` | `LOGIN`，仅要求登录 |
 | 流程历史 | `GET /workflow/processes/history` | `workflow:process:detail` |
@@ -626,7 +642,8 @@ Workflow 参数校验约束统一由 `mango-workflow-api` 的 `XxxApi` 契约声
 | `workflow.task.unclaimed` | 候选任务释放并刷新当前任务快照后 | 同步待领取状态和候选人。 |
 | `workflow.process.completed` | 流程正常完成后 | 回写业务通过状态。 |
 | `workflow.process.rejected` | 流程被驳回后 | 回写业务驳回状态。 |
-| `workflow.process.ended` | 流程被驳回或终止后 | 做流程结束类清理。 |
+| `workflow.process.withdrawn` | 原申请人成功撤回运行中流程后 | 回写业务撤回状态；包含原因、申请人、操作人和 `ended=true`。 |
+| `workflow.process.ended` | 流程被驳回、撤回或终止后 | 做流程结束类清理。 |
 
 事件通过 `mango-infra-event` 的 `IDomainEventPublisher` 发布。单体单实例默认可使用内存总线；单体多实例、微服务或微服务多实例部署时，应启用 `mango.event.outbox.enabled=true`，跨进程分发再配置 `mango.event.transport=redis-stream`。事件是至少一次投递语义，订阅方必须按 `eventId`、`processInstanceId + completedTaskId` 或业务主键自做幂等。需要同步拿到刷新后快照的前端/业务调用，不要依赖异步事件回读，应使用 `complete-result` 或 `return` 响应。业务订阅方只使用 `mango-workflow-api` 中的 `WorkflowEventTypes` 和 `WorkflowEventPayloadVO` 作为契约，禁止引用 workflow core 事件实现类。
 
@@ -836,6 +853,7 @@ Bootstrap context 会为 `mango-workflow-api` 的本地公开 API 注入延迟�
 
 ```text
 workflow:process:start
+workflow:process:withdraw
 workflow:process:detail
 workflow:task:list
 workflow:task:detail

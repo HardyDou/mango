@@ -11,9 +11,11 @@ import io.mango.workflow.api.WorkflowTaskRuntimeApi;
 import io.mango.workflow.api.command.ClaimWorkflowTaskCommand;
 import io.mango.workflow.api.command.CompleteWorkflowTaskCommand;
 import io.mango.workflow.api.command.ReadWorkflowCopiedTaskCommand;
+import io.mango.workflow.api.command.WithdrawWorkflowProcessCommand;
 import io.mango.workflow.api.query.WorkflowTaskPageQuery;
 import io.mango.workflow.api.vo.WorkflowMyTaskSummaryVO;
 import io.mango.workflow.api.vo.WorkflowProcessDetailVO;
+import io.mango.workflow.api.vo.WorkflowProcessWithdrawResultVO;
 import io.mango.workflow.api.vo.WorkflowTaskCompleteResultVO;
 import io.mango.workflow.api.vo.WorkflowTaskDetailVO;
 import io.mango.workflow.api.vo.WorkflowTaskSummaryVO;
@@ -129,6 +131,24 @@ class WorkflowApiControllerContractTest {
         verify(runtimeService).claim(claim);
         verify(runtimeService).unclaim(claim);
         verify(runtimeService).readCopied(readCopied);
+    }
+
+    @Test
+    void withdrawDelegatesToProcessServiceAndRequiresDedicatedPermission() throws NoSuchMethodException {
+        WithdrawWorkflowProcessCommand command = new WithdrawWorkflowProcessCommand();
+        WorkflowProcessWithdrawResultVO result = new WorkflowProcessWithdrawResultVO();
+        when(processService.withdraw(command)).thenReturn(result);
+
+        R<WorkflowProcessWithdrawResultVO> response = processController.withdraw(command);
+
+        assertThat(response.getData()).isSameAs(result);
+        verify(processService).withdraw(same(command));
+        ApiAccess access = WorkflowProcessController.class
+                .getDeclaredMethod("withdraw", WithdrawWorkflowProcessCommand.class)
+                .getAnnotation(ApiAccess.class);
+        assertThat(access).isNotNull();
+        assertThat(access.mode()).isEqualTo(ApiResourceAccessMode.PERMISSION);
+        assertThat(access.permission()).isEqualTo("workflow:process:withdraw");
     }
 
     private void assertLoginAccess(Class<?> controllerType, String methodName) throws NoSuchMethodException {

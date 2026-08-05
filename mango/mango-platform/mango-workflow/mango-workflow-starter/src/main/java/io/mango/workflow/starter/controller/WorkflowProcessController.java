@@ -7,9 +7,11 @@ import io.mango.common.vo.PageResult;
 import io.mango.workflow.api.WorkflowProcessApi;
 import io.mango.workflow.api.command.StartBusinessWorkflowCommand;
 import io.mango.workflow.api.command.StartWorkflowProcessCommand;
+import io.mango.workflow.api.command.WithdrawWorkflowProcessCommand;
 import io.mango.workflow.api.query.WorkflowTaskPageQuery;
 import io.mango.workflow.api.vo.WorkflowProcessDetailVO;
 import io.mango.workflow.api.vo.WorkflowProcessInstanceVO;
+import io.mango.workflow.api.vo.WorkflowProcessWithdrawResultVO;
 import io.mango.workflow.api.vo.WorkflowStartResultVO;
 import io.mango.workflow.core.service.IWorkflowProcessService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -52,6 +54,14 @@ public class WorkflowProcessController implements WorkflowProcessApi {
     @Override
     public R<WorkflowStartResultVO> startBusinessWorkflow(@RequestBody StartBusinessWorkflowCommand command) {
         return R.ok(workflowProcessService.startBusinessWorkflow(command));
+    }
+
+    @PostMapping("/withdraw")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:process:withdraw")
+    @Operation(summary = "撤回业务审批流程", description = "申请人按业务申请ID或流程实例ID幂等撤回运行中的审批流程")
+    @Override
+    public R<WorkflowProcessWithdrawResultVO> withdraw(@RequestBody WithdrawWorkflowProcessCommand command) {
+        return R.ok(workflowProcessService.withdraw(command));
     }
 
     @GetMapping("/initiated")

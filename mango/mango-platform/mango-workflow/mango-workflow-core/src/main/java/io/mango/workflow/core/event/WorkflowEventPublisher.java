@@ -132,6 +132,20 @@ public class WorkflowEventPublisher {
         publish(WorkflowDomainEvents.PROCESS_REJECTED, businessKey(formInstance, variables), variables, payload);
     }
 
+    public void publishProcessWithdrawn(
+            String processInstanceId,
+            WorkflowFormInstanceEntity formInstance,
+            Map<String, Object> variables,
+            String reason,
+            WorkflowBusinessApplyVO businessApply) {
+        WorkflowEventPayloadVO payload = basePayload(
+                WorkflowDomainEvents.PROCESS_WITHDRAWN, processInstanceId, variables);
+        payload.setEnded(Boolean.TRUE);
+        payload.setReason(reason);
+        putBusinessApply(payload, businessApply);
+        publish(WorkflowDomainEvents.PROCESS_WITHDRAWN, businessKey(formInstance, variables), variables, payload);
+    }
+
     public void publishProcessEnded(
             String processInstanceId,
             WorkflowFormInstanceEntity formInstance,

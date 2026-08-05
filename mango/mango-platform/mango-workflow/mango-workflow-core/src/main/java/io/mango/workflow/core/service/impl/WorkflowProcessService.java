@@ -12,6 +12,7 @@ import io.mango.workflow.api.enums.WorkflowCode;
 import io.mango.workflow.api.command.CreateWorkflowBusinessApplyCommand;
 import io.mango.workflow.api.command.StartBusinessWorkflowCommand;
 import io.mango.workflow.api.command.StartWorkflowProcessCommand;
+import io.mango.workflow.api.command.WithdrawWorkflowProcessCommand;
 import io.mango.workflow.api.command.WorkflowJsonRequest;
 import io.mango.workflow.api.enums.WorkflowApplyStatus;
 import io.mango.workflow.api.enums.WorkflowDefinitionStatus;
@@ -25,6 +26,7 @@ import io.mango.workflow.api.vo.WorkflowBusinessProcessVO;
 import io.mango.workflow.api.vo.WorkflowBusinessApplyVO;
 import io.mango.workflow.api.vo.WorkflowProcessDetailVO;
 import io.mango.workflow.api.vo.WorkflowProcessInstanceVO;
+import io.mango.workflow.api.vo.WorkflowProcessWithdrawResultVO;
 import io.mango.workflow.api.vo.WorkflowStartResultVO;
 import io.mango.workflow.core.entity.WorkflowDefinitionEntity;
 import io.mango.workflow.core.entity.WorkflowFormInstanceEntity;
@@ -53,6 +55,7 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -183,6 +186,61 @@ public class WorkflowProcessService implements IWorkflowProcessService {
         return toStartResult(process, progress);
     }
 
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public WorkflowProcessWithdrawResultVO withdraw(WithdrawWorkflowProcessCommand command) {
+        Require.notNull(command, WorkflowCode.APPLY_INVALID);
+        Require.isTrue(command.getApplyId() != null || StringUtils.hasText(command.getProcessInstanceId()),
+                WorkflowCode.APPLY_INVALID, "业务申请ID和流程实例ID不能同时为空");
+        Require.notBlank(command.getReason(), WorkflowCode.APPLY_INVALID, "撤回原因不能为空");
+        Require.notBlank(MangoContextHolder.tenantId(), WorkflowCode.PROCESS_WITHDRAW_FORBIDDEN,
+                "缺少当前租户上下文");
+        Require.notNull(MangoContextHolder.userId(), WorkflowCode.PROCESS_WITHDRAW_FORBIDDEN,
+                "缺少当前用户上下文");
+
+        String requestedProcessInstanceId = trim(command.getProcessInstanceId());
+        WorkflowBusinessApplyVO apply = workflowBusinessApplyService.lockWithdrawalTarget(
+                command.getApplyId(), requestedProcessInstanceId);
+        Require.notNull(apply, WorkflowCode.APPLY_NOT_FOUND);
+        Require.isTrue(Objects.equals(MangoContextHolder.userId(), apply.getApplicantId()),
+                WorkflowCode.PROCESS_WITHDRAW_FORBIDDEN);
+        if (command.getApplyId() != null && requestedProcessInstanceId != null) {
+            Require.isTrue(Objects.equals(command.getApplyId(), apply.getId())
+                            && requestedProcessInstanceId.equals(apply.getProcessInstanceId()),
+                    WorkflowCode.APPLY_INVALID, "业务申请ID与流程实例ID不匹配");
+        }
+
+        WorkflowApplyStatus previousStatus = apply.getApplyStatus();
+        Require.notNull(previousStatus, WorkflowCode.PROCESS_WITHDRAW_NOT_ALLOWED, "业务申请状态无效");
+        String reason = command.getReason().trim();
+        if (previousStatus == WorkflowApplyStatus.WITHDRAWN) {
+            return toWithdrawResult(apply, previousStatus, reason, true);
+        }
+        Require.isTrue(previousStatus == WorkflowApplyStatus.IN_APPROVAL,
+                WorkflowCode.PROCESS_WITHDRAW_NOT_ALLOWED,
+                "当前申请状态为" + previousStatus.getLabel() + "，不能撤回");
+        Require.notBlank(apply.getProcessInstanceId(), WorkflowCode.PROCESS_INSTANCE_NOT_FOUND,
+                "业务申请未关联流程实例");
+
+        String processInstanceId = apply.getProcessInstanceId();
+        ProcessInstance runningInstance = runtimeService.createProcessInstanceQuery()
+                .processInstanceId(processInstanceId)
+                .singleResult();
+        Require.notNull(runningInstance, WorkflowCode.PROCESS_INSTANCE_NOT_FOUND,
+                "运行中的流程实例不存在");
+
+        WorkflowFormInstanceEntity formInstance = findFormInstance(processInstanceId);
+        Map<String, Object> variables = withdrawalVariables(formInstance, apply, processInstanceId);
+        runtimeService.deleteProcessInstance(processInstanceId, reason);
+        markFormInstanceWithdrawn(formInstance, variables);
+        WorkflowBusinessApplyVO withdrawnApply = workflowBusinessApplyService.markWithdrawn(processInstanceId, reason);
+        workflowEventPublisher.publishProcessWithdrawn(
+                processInstanceId, formInstance, variables, reason, withdrawnApply);
+        workflowEventPublisher.publishProcessEnded(
+                processInstanceId, formInstance, variables, reason, withdrawnApply);
+        return toWithdrawResult(withdrawnApply, previousStatus, reason, false);
+    }
+
     private WorkflowDefinitionEntity selectDefinition(StartWorkflowProcessCommand command) {
         if (command.getDefinitionId() != null) {
             return definitionMapper.selectById(command.getDefinitionId());
@@ -279,6 +337,62 @@ public class WorkflowProcessService implements IWorkflowProcessService {
         return runtimeService.createProcessInstanceQuery()
                 .processInstanceId(processInstanceId)
                 .singleResult() == null;
+    }
+
+    private WorkflowFormInstanceEntity findFormInstance(String processInstanceId) {
+        return formInstanceMapper.selectOne(new LambdaQueryWrapper<WorkflowFormInstanceEntity>()
+                .eq(WorkflowFormInstanceEntity::getProcessInstanceId, processInstanceId)
+                .last("limit 1"));
+    }
+
+    private Map<String, Object> withdrawalVariables(WorkflowFormInstanceEntity formInstance,
+                                                     WorkflowBusinessApplyVO apply,
+                                                     String processInstanceId) {
+        Map<String, Object> variables = new LinkedHashMap<>();
+        if (formInstance != null) {
+            variables.putAll(parseMap(formInstance.getVariablesJson()));
+        }
+        if (variables.isEmpty()) {
+            Map<String, Object> runtimeVariables = runtimeService.getVariables(processInstanceId);
+            if (runtimeVariables != null) {
+                variables.putAll(runtimeVariables);
+            }
+        }
+        variables.putIfAbsent(BUSINESS_TYPE_VAR, apply.getBusinessType());
+        variables.putIfAbsent(BUSINESS_KEY_VAR, apply.getBusinessKey());
+        variables.putIfAbsent(APPLY_ID_VAR, String.valueOf(apply.getId()));
+        return variables;
+    }
+
+    private void markFormInstanceWithdrawn(WorkflowFormInstanceEntity formInstance, Map<String, Object> variables) {
+        if (formInstance == null || WorkflowInstanceStatus.WITHDRAWN.name().equals(formInstance.getStatus())) {
+            return;
+        }
+        LocalDateTime now = LocalDateTime.now();
+        formInstance.setVariablesJson(toJson(variables));
+        formInstance.setStatus(WorkflowInstanceStatus.WITHDRAWN.name());
+        formInstance.setUpdatedBy(MangoContextHolder.userId());
+        formInstance.setUpdatedTime(now);
+        formInstance.setUpdatedAt(now);
+        formInstanceMapper.updateById(formInstance);
+    }
+
+    private WorkflowProcessWithdrawResultVO toWithdrawResult(WorkflowBusinessApplyVO apply,
+                                                              WorkflowApplyStatus previousStatus,
+                                                              String reason,
+                                                              boolean idempotent) {
+        WorkflowProcessWithdrawResultVO result = new WorkflowProcessWithdrawResultVO();
+        result.setApplyId(apply.getId());
+        result.setProcessInstanceId(apply.getProcessInstanceId());
+        result.setPreviousStatus(previousStatus);
+        WorkflowApplyStatus currentStatus = idempotent ? WorkflowApplyStatus.WITHDRAWN : apply.getApplyStatus();
+        result.setApplyStatus(currentStatus);
+        result.setApplyStatusName(currentStatus == null ? null : currentStatus.getLabel());
+        result.setWithdrawn(currentStatus == WorkflowApplyStatus.WITHDRAWN);
+        result.setIdempotent(idempotent);
+        result.setEnded(currentStatus == WorkflowApplyStatus.WITHDRAWN);
+        result.setReason(reason);
+        return result;
     }
 
     private void updateCompletedFormInstance(WorkflowFormInstanceEntity formInstance) {

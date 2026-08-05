@@ -45,6 +45,8 @@ public interface IWorkflowBusinessApplyService {
 
     WorkflowBusinessApplyVO findByProcessInstance(String processInstanceId);
 
+    WorkflowBusinessApplyVO lockWithdrawalTarget(Long applyId, String processInstanceId);
+
     void refreshCurrentTasks(String processInstanceId);
 
     WorkflowBusinessApplyVO refreshCurrentTasksAndReturn(String processInstanceId);
@@ -54,4 +56,6 @@ public interface IWorkflowBusinessApplyService {
     void markRejected(WorkflowTaskStatusContext context);
 
     void markTerminated(WorkflowTaskStatusContext context);
+
+    WorkflowBusinessApplyVO markWithdrawn(String processInstanceId, String reason);
 }
