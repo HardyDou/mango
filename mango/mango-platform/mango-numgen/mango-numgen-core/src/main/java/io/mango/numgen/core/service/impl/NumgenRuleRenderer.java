@@ -118,15 +118,7 @@ public class NumgenRuleRenderer {
                 }
             }
             case "DATE" -> {
-                if (!StringUtils.hasText(segment.getDateFormat())) {
-                    errors.add(segmentName(segment) + " 日期格式不能为空");
-                } else {
-                    try {
-                        DateTimeFormatter.ofPattern(segment.getDateFormat());
-                    } catch (IllegalArgumentException exception) {
-                        errors.add(segmentName(segment) + " 日期格式非法：" + segment.getDateFormat());
-                    }
-                }
+                validateDateFormat(segment, errors);
             }
             case "PARAM" -> {
                 if (!StringUtils.hasText(segment.getVariableKey())) {
@@ -142,6 +134,18 @@ public class NumgenRuleRenderer {
                 }
             }
             default -> errors.add("不支持的片段类型：" + segment.getSegmentType());
+        }
+    }
+
+    private void validateDateFormat(NumgenRuleSegmentEntity segment, List<String> errors) {
+        if (!StringUtils.hasText(segment.getDateFormat())) {
+            errors.add(segmentName(segment) + " 日期格式不能为空");
+            return;
+        }
+        try {
+            DateTimeFormatter.ofPattern(segment.getDateFormat());
+        } catch (IllegalArgumentException exception) {
+            errors.add(segmentName(segment) + " 日期格式非法：" + segment.getDateFormat());
         }
     }
 
