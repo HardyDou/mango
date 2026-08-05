@@ -5,6 +5,11 @@
   },
   "versions": [
     {
+      "version": "v2026.08.05-maven-1.0.35-numgen-1.0.34-admin-1.0.63-cli-1.0.98-release",
+      "label": "1.0.35",
+      "path": "/versions/v2026.08.05-maven-1.0.35-numgen-1.0.34-admin-1.0.63-cli-1.0.98-release/"
+    },
+    {
       "version": "v2026.08.05-maven-1.0.34-workflow-withdraw-release",
       "label": "1.0.34",
       "path": "/versions/v2026.08.05-maven-1.0.34-workflow-withdraw-release/"
