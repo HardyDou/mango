@@ -102,22 +102,28 @@ public class NumgenSegmentService implements INumgenSegmentService {
         Require.notBlank(command.getSegmentName(), NumgenCode.NUMGEN_SEGMENT_INVALID, "片段名称不能为空");
         Require.isTrue(!"SEQ".equals(command.getSegmentType()) || !Integer.valueOf(1).equals(command.getSequenceScope()),
                 NumgenCode.NUMGEN_SEGMENT_INVALID, "流水片段不能参与流水分组");
-        switch (command.getSegmentType()) {
-            case "TEXT" -> Require.notBlank(command.getLiteralValue(), NumgenCode.NUMGEN_SEGMENT_INVALID, "字符串不能为空");
-            case "EXPR" -> Require.notBlank(command.getLiteralValue(), NumgenCode.NUMGEN_SEGMENT_INVALID, "表达式不能为空");
-            case "DATE" -> {
-                Require.notBlank(command.getDateFormat(), NumgenCode.NUMGEN_SEGMENT_INVALID, "日期格式不能为空");
-                try {
-                    DateTimeFormatter.ofPattern(command.getDateFormat());
-                } catch (IllegalArgumentException exception) {
-                    Require.fail(NumgenCode.NUMGEN_SEGMENT_INVALID, "日期格式非法：" + command.getDateFormat());
-                }
-            }
-            case "PARAM" -> Require.notBlank(command.getVariableKey(), NumgenCode.NUMGEN_SEGMENT_INVALID, "参数键不能为空");
-            case "SEQ" -> Require.notNull(command.getSeqWidth(), NumgenCode.NUMGEN_SEGMENT_INVALID, "流水位数不能为空");
-            default -> {
-                Require.fail(NumgenCode.NUMGEN_SEGMENT_INVALID, "不支持的片段类型：" + command.getSegmentType());
-            }
+        String segmentType = command.getSegmentType();
+        if ("TEXT".equals(segmentType)) {
+            Require.notBlank(command.getLiteralValue(), NumgenCode.NUMGEN_SEGMENT_INVALID, "字符串不能为空");
+        } else if ("EXPR".equals(segmentType)) {
+            Require.notBlank(command.getLiteralValue(), NumgenCode.NUMGEN_SEGMENT_INVALID, "表达式不能为空");
+        } else if ("DATE".equals(segmentType)) {
+            validateDateFormat(command.getDateFormat());
+        } else if ("PARAM".equals(segmentType)) {
+            Require.notBlank(command.getVariableKey(), NumgenCode.NUMGEN_SEGMENT_INVALID, "参数键不能为空");
+        } else if ("SEQ".equals(segmentType)) {
+            Require.notNull(command.getSeqWidth(), NumgenCode.NUMGEN_SEGMENT_INVALID, "流水位数不能为空");
+        } else {
+            Require.fail(NumgenCode.NUMGEN_SEGMENT_INVALID, "不支持的片段类型：" + segmentType);
+        }
+    }
+
+    private void validateDateFormat(String dateFormat) {
+        Require.notBlank(dateFormat, NumgenCode.NUMGEN_SEGMENT_INVALID, "日期格式不能为空");
+        try {
+            DateTimeFormatter.ofPattern(dateFormat);
+        } catch (IllegalArgumentException exception) {
+            Require.fail(NumgenCode.NUMGEN_SEGMENT_INVALID, "日期格式非法：" + dateFormat);
         }
     }
 
