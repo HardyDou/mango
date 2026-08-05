@@ -1,5 +1,46 @@
 # Mango Changelog
 
+## v2026.08.05-maven-1.0.34-workflow-withdraw-release - 2026-08-05
+
+Status: `PENDING`. This Maven-only patch is planned from protected `main` after Issue #725 and its required checks have passed. The complete non-app Maven Reactor and matching `io.mango:mango-docs-bundle:1.0.34` will be published and verified through the configured publish and consume registries before this status is closed. CLI, PMO and frontend npm coordinates are unchanged and will not be republished.
+
+### Fixed
+
+- Add the public `WorkflowProcessApi.withdraw()` contract and `POST /workflow/processes/withdraw` endpoint for an original applicant to withdraw a running business approval by application ID or process instance ID.
+- Enforce tenant and applicant ownership, the `IN_APPROVAL` state boundary and the `workflow:process:withdraw` permission; repeated withdrawal is idempotent and other terminal states remain unchanged.
+- Terminate the Flowable runtime instance and current tasks, persist the `WITHDRAWN` application state and withdrawal audit action, and publish `workflow.process.withdrawn` before `workflow.process.ended`.
+- Keep local and remote starter contracts aligned and document the business-owned status-machine and event-consumption responsibilities.
+
+### Versions
+
+| Component                                                    | Previous | Release | Compatibility |
+| ------------------------------------------------------------ | -------: | ------: | ------------- |
+| Mango Maven non-app backend and `io.mango:mango-docs-bundle` | `1.0.33` | `1.0.34` | Patch-compatible Workflow API, withdrawal behavior and remote adapter additions; no database migration is required. |
+| `@mango/cli`                                                 | `1.0.97` | unchanged | This Maven-only batch does not republish CLI; generated-project defaults remain unchanged. |
+| `@mango/pmo`                                                 | `1.3.9` | unchanged | No PMO rule, contract, Agent, Skill or packaged baseline changes. |
+| Frontend npm packages                                        | current published matrix | unchanged | No frontend source or npm package is published. |
+
+### Published Packages
+
+| Order | Target | Version | Status |
+| ----: | ------ | ------- | ------ |
+| 1 | Complete non-app `io.mango` Maven Reactor and `io.mango:mango-docs-bundle` | `1.0.34` | `PENDING` |
+| 2 | Git tag, GitHub Release, Latest docs and versioned docs snapshot | `v2026.08.05-maven-1.0.34-workflow-withdraw-release` | `PENDING` |
+
+### Upgrade Notes
+
+1. Upgrade all `io.mango` backend dependencies together through `mango-parent` or `mango-bom` `1.0.34`; do not mix individual `1.0.33` and `1.0.34` modules.
+2. Existing CLI `1.0.97` projects must set `mango.version=1.0.34` explicitly to consume this Maven-only patch. Keep `@mango/pmo@1.3.9` and the current frontend package matrix unchanged.
+3. Business modules must decide whether a document is withdrawable in their own state machine, call the public Workflow API, and handle `workflow.process.withdrawn` idempotently; Workflow does not add a frontend withdrawal button or replace business-state ownership.
+4. Consumers using the remote starter must update the complete Maven matrix together so the API, controller and Feign contracts resolve at the same version.
+
+### Verification
+
+- The Workflow API, core, starter and starter-remote gates must pass, including the withdrawal unit suite, H2 plus real Mapper state/audit/task-cleanup verification, HTTP/API surface contracts and Feign contracts.
+- The complete non-app Maven batch, documentation bundle, release-note checker, capability documentation gates and repository source checks must pass from the protected release commit.
+- Every Maven `1.0.34` coordinate and `io.mango:mango-docs-bundle:1.0.34` must resolve from both publish and consume registries with matching checksums. A clean isolated Maven consumer must resolve the published BOM, Workflow API, Workflow starter and docs bundle without using the source workspace or shared local release cache.
+- The immutable tag and GitHub Release must point to the protected source commit, and Latest docs plus the versioned docs snapshot must contain the withdrawal contract and integration guidance.
+
 ## v2026.08.03-maven-1.0.33-baseline-web-errors-release - 2026-08-03
 
 Status: `PUBLISHED_AND_VERIFIED`. This Maven-only patch was published from protected `main` commit `19a9160a6f57e80b257418f4ca90a208c7cd958a` and tree `97df70447980438cd412ce0f869cc3c06f48f415`; the exact-source bundle SHA-256 is `edd3c2fb9a4e20e41ff6f91ec1ac288490047eb70a05815c8af32be100dbef2a`. The complete non-app Maven Reactor and `io.mango:mango-docs-bundle:1.0.33`, immutable tag, [GitHub Release](https://github.com/HardyDou/mango/releases/tag/v2026.08.03-maven-1.0.33-baseline-web-errors-release), both Maven registries and a clean isolated consumer are verified. The completed read-only verification manifest SHA-256 is `1cbc624b6d79e2664a894699a3ceb203ac21fde6122ec403e5fae1826ce02e97`; the publication manifest SHA-256 is `328c6095af718bd65a21e98043990286e2332b9856cec71bb056c5bd5f99c0cc` and is retained because its post-verifier exceeded Node's default output buffer while listing the 192 MB docs JAR after immutable publication had succeeded. No immutable artifact was republished. CLI `1.0.97`, PMO `1.3.9`, CLI's Maven `1.0.32` default and frontend npm coordinates remain unchanged.
