@@ -24,7 +24,7 @@ Before drafting, read these authoritative assets:
 - `$PMO_ROOT/rules/09-test-case-automation-flow.md`
 - `$PMO_ROOT/rules/product/05-document-lifecycle.md`
 
-Run PMO preflight with role `tech-lead` and phase `design`, then read every `Must read` file.
+Run PMO preflight with role `tech-lead` and phase `design`. Record selected code baselines and actual references in the design; do not bulk-read preflight references.
 
 ## Execute
 

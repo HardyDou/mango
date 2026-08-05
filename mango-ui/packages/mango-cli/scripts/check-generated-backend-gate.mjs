@@ -45,6 +45,19 @@ const githubGovernanceWorkflow = join(projectRoot, '.github/workflows/pmo-doc-ch
 const orderApiPom = join(projectRoot, 'backend/modules/order/order-api/pom.xml');
 const architectureVerificationPom = join(projectRoot, 'backend/architecture-verification/pom.xml');
 const globalReferenceEntity = join(coreJavaRoot, 'entity/GlobalReferenceEntity.java');
+const summaryPath = process.env.MANGO_BACKEND_GATE_SUMMARY_FILE
+  ? resolve(process.env.MANGO_BACKEND_GATE_SUMMARY_FILE)
+  : '';
+let cleanQualityEvidence;
+const negativeControls = {
+  missingStaticReportRejected: false,
+  architectureViolationsRejected: false,
+  reservedNamespaceRejected: false,
+  checkstyleViolationRejected: false,
+  mangoCheckViolationsRejected: false,
+  missingEntityManifestRejected: false,
+  architectureBypassRejected: false,
+};
 
 try {
   runNode(
@@ -113,7 +126,7 @@ try {
     true,
     'generated executable backend install and full-Reactor inventory-only governance path',
   );
-  assertPassingReports();
+  cleanQualityEvidence = assertPassingReports();
   assertInventoryOnlyReport();
   assertFlattenedInstalledPoms();
   assertExecutableBootArtifact();
@@ -165,6 +178,7 @@ try {
     'full-scope static report coverage failure',
   );
   assertIncludes(missingChildReportFailure, 'order-api', 'missing PMD report module identity');
+  negativeControls.missingStaticReportRejected = true;
   writeFileSync(orderApiPom, originalOrderApiPom);
 
   const badController = join(starterJavaRoot, 'BadController.java');
@@ -254,6 +268,7 @@ public class DirectServiceImpl extends ServiceImpl<SalesOrderMapper, SalesOrderE
   ]) {
     assertArchitectureRule(ruleId, architectureFailure);
   }
+  negativeControls.architectureViolationsRejected = true;
   for (const source of [
     badController,
     suppressedService,
@@ -281,6 +296,7 @@ public final class BusinessShadow {
   );
   const namespaceFailure = runMaven(['verify'], false, 'reserved namespace shadow');
   assertIncludes(namespaceFailure, 'MANGO-ARCH-ENGINE-017', 'reserved namespace failure');
+  negativeControls.reservedNamespaceRejected = true;
   removeJavaFixture(reservedNamespaceSource);
 
   const staticViolation = join(starterJavaRoot, 'StaticViolation.java');
@@ -298,6 +314,7 @@ public final class StaticViolation {
   );
   const staticFailure = runMaven(['verify'], false, 'generic Java style violation');
   assertStaticAnalysisFailure('checkstyle', staticFailure);
+  negativeControls.checkstyleViolationRejected = true;
   removeJavaFixture(staticViolation);
 
   const originalMigration = readFileSync(migrationPath, 'utf8');
@@ -311,6 +328,7 @@ public final class StaticViolation {
   runMaven(['verify'], false, 'combined project-quality violations');
   assertMangoCheckRule('PERSISTENCE_SCHEMA');
   assertMangoCheckRule('MODULE_INFO');
+  negativeControls.mangoCheckViolationsRejected = true;
   writeFileSync(migrationPath, originalMigration);
   rmSync(invalidApiResources, { recursive: true, force: true });
 
@@ -318,6 +336,7 @@ public final class StaticViolation {
   rmSync(globalEntityManifest);
   const manifestFailure = runMaven(['verify'], false, 'missing global entity manifest');
   assertIncludes(manifestFailure, 'MANGO-ARCH-ENGINE-014', 'missing global entity manifest failure');
+  negativeControls.missingEntityManifestRejected = true;
   writeFileSync(globalEntityManifest, originalManifest);
 
   const architecturePolicyFailure = runMaven(
@@ -332,7 +351,27 @@ public final class StaticViolation {
     'mango.architecture.skip override',
   );
   assertIncludes(architecturePolicyFailure, 'MANGO-ARCH-ENGINE-015', 'mango.architecture.skip override failure');
+  negativeControls.architectureBypassRejected = true;
   assertMavenInvocationBudget();
+
+  if (summaryPath) {
+    mkdirSync(dirname(summaryPath), { recursive: true });
+    writeFileSync(
+      summaryPath,
+      `${JSON.stringify(
+        {
+          schemaVersion: 1,
+          templateId: 'business-module@1',
+          mangoVersion,
+          mavenInvocationCount,
+          cleanQualityEvidence,
+          negativeControls,
+        },
+        null,
+        2,
+      )}\n`,
+    );
+  }
 
   process.stdout.write(
     `Generated backend gate PASS with Mango ${mangoVersion} in ${mavenInvocationCount} Maven invocations: ` +
@@ -631,6 +670,22 @@ function assertPassingReports() {
   ) {
     throw new Error(`generated backend quality report is not fail-closed: ${qualityPath}`);
   }
+  return {
+    architecture: {
+      mode: architecture.mode,
+      blockingIssueCount: (architecture.blockingIssues || []).length,
+      moduleCount: (architecture.modules || []).length,
+      reactorProjectCount: architecture.reactorProjectCount,
+    },
+    quality: {
+      gate: quality.gate,
+      passed: quality.passed,
+      totalIssueCount: quality.totalIssueCount ?? (quality.issues || []).length,
+      newIssueCount: quality.newIssueCount ?? (quality.newIssues || []).length,
+      toolFailureCount: quality.toolFailureCount,
+      issuesBySource: quality.issuesBySource || {},
+    },
+  };
 }
 
 function assertInventoryOnlyReport() {

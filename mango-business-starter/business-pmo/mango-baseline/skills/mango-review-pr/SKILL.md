@@ -13,7 +13,7 @@ Set `PMO_ROOT` to the first available source: the installed business baseline, M
 
 1. Require a PR number or URL. With none, return `ASK` and do not review a guessed branch.
 2. Read the PR base, head, latest commit, full changed-file list, diff, checks, review state, linked Issue, delivery artifacts, and `.github/branch-protection-policy.json` when present before forming findings.
-3. Run PMO preflight with phase `verify` and the actual changed paths; read every `Must read` file.
+3. Run PMO preflight with phase `verify` and the actual changed paths; consult individual references only when a finding or boundary cannot be resolved from the diff and checks.
 4. Select the expert perspectives required by the canonical PR gate, then review behavior, contracts, boundaries, tests, evidence, compatibility, and release impact from the diff. For Java architecture or debt-budget changes, require one complete Reactor report, exact module ownership, non-increasing module identities, and the global base -> PR -> current check; unchanged total count cannot hide a cross-module move.
 5. Lead with findings ordered by severity and grounded in file and line references. Separate blockers, non-blocking findings, open questions, and residual test risk.
 6. Apply the declared repository governance mode. `single-owner` requires the machine gates, resolved conversations, Owner authorization, and zero impossible self-approval requirements; `multi-maintainer` additionally requires the configured independent approval. Return `STOP` when the policy and live protection differ, a merge blocker exists, or a required gate is unverified. Return `NEXT` only when the merge conditions defined by the loaded rules are met.

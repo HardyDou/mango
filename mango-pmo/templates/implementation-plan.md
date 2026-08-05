@@ -16,6 +16,12 @@ upstreamDocumentHash: {{TDD_SHA256_OR_NONE}}
 
 # {{REQUIREMENT_NAME}} 实施计划
 
+## 0. 参考资料与代码基线
+
+| 类型 | 路径或模板ID | 版本或提交 | 用途 | 实际采用范围 |
+|---|---|---|---|---|
+| code-baseline | {{CODE_BASELINE_ID_OR_NONE}} | {{CODE_BASELINE_VERSION}} | {{BASELINE_PURPOSE}} | {{BASELINE_SCOPE}} |
+
 ## 1. 实施目标、范围与交付物
 
 | 交付物ID | 技术设计ID | 交付物 | 路径或模块 | 完成状态定义 | 验收来源 | 不处理边界 |

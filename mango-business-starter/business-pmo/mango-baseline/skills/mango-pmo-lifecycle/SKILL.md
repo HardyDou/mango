@@ -17,7 +17,7 @@ If neither exists, `STOP` and ask for PMO installation or synchronization. Never
 
 ## Load
 
-Read `$PMO_ROOT/agents/05-pmo-agent.md`, `$PMO_ROOT/rules/00-dev-flow.md`, `$PMO_ROOT/rules/09-test-case-automation-flow.md`, `$PMO_ROOT/rules/11-delivery-assurance.md`, `$PMO_ROOT/contracts/delivery-assurance.json`, `$PMO_ROOT/rules/product/05-document-lifecycle.md`, `$PMO_ROOT/contracts/document-lifecycle.json`, and `$PMO_ROOT/tools/check-lifecycle-handoff.mjs`. Run PMO preflight for the current phase and read every `Must read` file it returns.
+Run PMO preflight for the current phase. Use contract and checker output as the executable lifecycle source; consult only the specific returned reference needed to resolve an ambiguous handoff or failure.
 
 For every stage document, copy `pmoVersion` from that stage contract's `metadata.fixed.pmoVersion`. In a business project, also require `business-pmo/pmo-lock.json`, the installed baseline manifest, and the contract version to agree; otherwise `STOP` and repair or upgrade the PMO bundle.
 

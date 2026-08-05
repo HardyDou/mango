@@ -38,7 +38,7 @@ For implementation or diagnosis, locate the current Mango source root from the a
 - business component example: `mango-ui/packages/workflow-business-example/README.md`;
 - exact API/model/E2E sources identified in `references/source-map.md`.
 
-Do not use hardcoded user paths, decompile installed packages when source is available, or invent workflow schemas. Run PMO preflight before changing version-controlled files and read every returned `Must read` file.
+Do not use hardcoded user paths, decompile installed packages when source is available, or invent workflow schemas. Run PMO preflight before changing version-controlled files; use code baselines first and consult individual references only for unresolved boundaries.
 
 ## Execute
 

@@ -1,0 +1,36 @@
+{
+  "name": "@{{projectKebab}}/{{moduleKebab}}",
+  "version": "{{projectVersion}}",
+  "private": false,
+  "type": "module",
+  "main": "src/index.ts",
+  "style": "./style.css",
+  "exports": {
+    ".": "./src/index.ts",
+    "./style.css": "./style.css"
+  },
+  "mangoAdmin": {
+    "businessDomainCode": "{{moduleBusinessDomainCode}}",
+    "businessDomainName": "{{moduleName}}",
+    "groupName": "{{moduleName}}",
+    "style": "@{{projectKebab}}/{{moduleKebab}}/style.css",
+    "registrars": [
+      {
+        "name": "register{{modulePascal}}Pages",
+        "import": "@{{projectKebab}}/{{moduleKebab}}"
+      }
+    ]
+  },
+  "dependencies": {
+    "@{{projectKebab}}/{{moduleKebab}}-api": "workspace:{{projectVersion}}",
+    "@mango/admin-pages": "1.0.32",
+    "@mango/api-schema": "1.0.3",
+    "@mango/app-runtime": "{{mangoAppRuntimeVersion}}",
+    "@mango/common": "1.0.25",
+    "element-plus": "2.14.1"
+  },
+  "peerDependencies": {
+    "vue": "^3.5.13",
+    "vue-router": "^4.1.6"
+  }
+}

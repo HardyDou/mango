@@ -9,23 +9,24 @@ import { compareProjectionTrees } from '../scripts/check-business-module-templat
 const testRoot = dirname(fileURLToPath(import.meta.url));
 const cliRoot = resolve(testRoot, '..');
 const repoRoot = resolve(cliRoot, '../../..');
-const canonicalRoot = join(repoRoot, 'mango-business-starter/backend/modules/{{moduleKebab}}');
-const projectionRoot = join(cliRoot, 'templates/business-module/backend/modules/{{moduleKebab}}');
+const codeBaselineRoot = join(repoRoot, 'mango-pmo/code-templates/business-module');
+const canonicalRoot = join(codeBaselineRoot, 'backend/modules/{{moduleKebab}}');
+const projectionRoot = join(repoRoot, 'mango-business-starter/backend/modules/{{moduleKebab}}');
 
 const frontendProjectionCases = [
   {
     name: 'UI source',
-    canonical: join(repoRoot, 'mango-business-starter/frontend/packages/{{moduleKebab}}/src'),
-    projection: join(cliRoot, 'templates/business-module/frontend/packages/{{moduleKebab}}/src'),
+    canonical: join(codeBaselineRoot, 'frontend/packages/{{moduleKebab}}/src'),
+    projection: join(repoRoot, 'mango-business-starter/frontend/packages/{{moduleKebab}}/src'),
   },
   {
     name: 'API source',
-    canonical: join(repoRoot, 'mango-business-starter/frontend/packages/{{moduleKebab}}-api/src'),
-    projection: join(cliRoot, 'templates/business-module/frontend/packages/{{moduleKebab}}-api/src'),
+    canonical: join(codeBaselineRoot, 'frontend/packages/{{moduleKebab}}-api/src'),
+    projection: join(repoRoot, 'mango-business-starter/frontend/packages/{{moduleKebab}}-api/src'),
   },
 ];
 
-test('CLI business module backend is an exact canonical projection', () => {
+test('business starter backend is an exact code baseline projection', () => {
   const comparison = compareProjectionTrees(canonicalRoot, projectionRoot);
   assert.equal(comparison.equal, true, JSON.stringify(comparison, null, 2));
   assert.equal(comparison.fileCount > 0, true);
@@ -35,7 +36,7 @@ test('CLI business module backend is an exact canonical projection', () => {
 });
 
 for (const projectionCase of frontendProjectionCases) {
-  test(`CLI business module frontend ${projectionCase.name} is an exact canonical projection`, () => {
+  test(`business starter frontend ${projectionCase.name} is an exact code baseline projection`, () => {
     const comparison = compareProjectionTrees(projectionCase.canonical, projectionCase.projection);
     assert.equal(comparison.equal, true, JSON.stringify(comparison, null, 2));
     assert.equal(comparison.fileCount > 0, true);

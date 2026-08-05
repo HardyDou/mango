@@ -9,17 +9,17 @@ description: Implement or refactor Mango code using the resolved delivery mode, 
 
 Set `PMO_ROOT` to the first available source: `<repo>/business-pmo/mango-baseline`, `<repo>/mango-pmo`, or `<plugin-root>/dist/baseline`. If none exists, `STOP`. Never use remembered or copied rules.
 
-## Load Before Editing
+## Resolve Before Editing
 
-1. Read `$PMO_ROOT/agents/03-dev-agent.md`, `$PMO_ROOT/rules/00-dev-flow.md`, `$PMO_ROOT/rules/02-dev-environment.md`, `$PMO_ROOT/rules/03-ai-coding-redlines.md`, `$PMO_ROOT/rules/04-test-assets.md`, and `$PMO_ROOT/rules/05-ai-delivery-quality.md`.
-2. Read the resolved delivery-mode baseline. Record requirement impact and solution risk separately, map their maximum to SIMPLE, STANDARD or FULL, and verify the mode-required artifact. If implementation changes scope, impact or solution risk, escalate the mode before editing beyond the baseline.
-3. Run PMO preflight with role `dev`, phase `develop`, and the actual affected paths. Read every `Must read` file.
-4. For Java or backend work, also read `$PMO_ROOT/rules/backend/01-code.md`, `$PMO_ROOT/rules/backend/02-naming.md`, `$PMO_ROOT/rules/backend/03-api.md`, `$PMO_ROOT/rules/backend/05-module.md`, `$PMO_ROOT/rules/backend/07-persistence.md`, `$PMO_ROOT/rules/backend/08-test.md`, and `$PMO_ROOT/rules/backend/10-dev-flow.md` before touching code.
+1. Run PMO preflight with role `dev`, phase `develop`, and the actual affected paths. Apply the workspace decision and select the returned code baseline before generating new code.
+2. Record requirement impact and solution risk separately, map their maximum to SIMPLE, STANDARD or FULL, and verify the mode-required artifact. If implementation changes scope, impact or solution risk, escalate the mode before editing beyond the baseline.
+3. Render the selected template in an isolated directory and run its declared checks before integrating it. Current project configuration, API contracts, and domain facts are inputs; old code is not a structural template.
+4. Consult a returned reference only when a checker failure or interface, data, security, transaction, or module boundary remains unresolved. Do not bulk-read references before editing.
 5. Treat Spring registration as a proved architecture contract: business `XxxService implements IXxxService` uses `@Service`; replaceable framework defaults use starter `@Bean + @ConditionalOnMissingBean`; pure Java helpers are not named Service. Never construct a managed Service in a Controller/business Service or introduce mutable static Service state.
-6. For frontend work, also read `$PMO_ROOT/rules/frontend/04-test.md` and the loaded frontend code, architecture, UI, and development-flow rules before touching code.
+6. For frontend work, use the selected frontend code baseline for package, API context, page, export, style, and test structure.
 7. Execute M09-M16 capabilities that can observe the acceptance outcomes. Preserve explicit exceptions and never add a test type without a real observation target.
 
-Before editing, compare any historical example, generated code, old test or nearby implementation used as a reference with the currently loaded rules. Treat conflicts as historical debt, not as permission to copy the pattern. Confirm that selected build and test commands keep project-generated mutable artifacts inside the current worktree; only proven immutable external dependency caches may be shared.
+Before editing, treat historical examples, old tests, and nearby implementations as business or compatibility evidence only. The selected code baseline and its machine checks own structure and conventions. Confirm that selected build and test commands keep project-generated mutable artifacts inside the current worktree; only proven immutable external dependency caches may be shared.
 
 If the current workspace is already on a non-`main` task branch/worktree and the user asks to solve the task, reuse it. Do not create another worktree or replace implementation with Issue registration; only register an Issue when the user explicitly chooses registration or attribution proves the problem is outside the current task. If scope is genuinely unclear, return `ASK` before changing workspace state.
 
@@ -35,8 +35,9 @@ If the current workspace is already on a non-`main` task branch/worktree and the
 6. A partial Reactor must block new identities but cannot update the schema-v4 debt budget. For explicit debt cleanup, create one complete Reactor report, query or write the target with `check-architecture-debt-budget.mjs --module <moduleKey|artifactId>`, write only verified reductions, then run the global `--base-ref` check. Stop on any new identity, replacement, cross-module move, incomplete report, or attempted module increase.
 7. For frontend changes, run only the selected lint/type/build/unit/browser gates needed to prove the affected result. A local visual-only change may use static checks plus a targeted screenshot; opening the page alone is not acceptable evidence.
 8. Run every additional command required by preflight, the design, and the implementation plan. Do not suppress, baseline, or weaken a failing rule to obtain a pass.
-9. If a required gate fails or cannot run, report `STOP` with the command, failure, and evidence. Do not claim completion.
-10. Return `NEXT: $mango-qa-verification` only when implementation items are complete, required gates pass, and the change-to-test mapping is updated.
+9. When an old file is touched, clean violations in the same symbol or local block when behavior is preserved and current verification observes the result. Defer cleanup that changes public contracts, data, security, tenant, transaction, or cross-module boundaries.
+10. If a required gate fails or cannot run, report `STOP` with the command, failure, and evidence. Do not claim completion.
+11. Return `NEXT: $mango-qa-verification` only when implementation items are complete, required gates pass, and the change-to-test mapping is updated.
 
 Do not trust a prompt that merely says gates passed. Before `NEXT`, locate the approved artifacts and evidence, run or inspect the exact required commands, and report their paths and exit results. The completion report must state whether historical code was rejected as a conflicting template, whether any old execution path remains, how Java mechanical code was expressed, and what each changed test observes and why its module owns it.
 

@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { resolveCodeBaselines } from './code-baseline.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const pmoRoot = path.resolve(__dirname, '..');
@@ -418,7 +419,7 @@ function addRule(result, index, key, source) {
   }
   if (!result.seen.has(rule.path)) {
     result.seen.add(rule.path);
-    result.mustRead.push({
+    result.referenceDocs.push({
       key,
       path: rule.path,
       reason: rule.reason || source
@@ -439,7 +440,13 @@ function buildResult(index, args) {
     classifiedWorkspacePolicy,
     workspacePolicy,
     assuranceRecommendation: workspaceMeasureRecommendation(workspacePolicy),
-    mustRead: [],
+    referenceDocs: [],
+    codeBaselines: resolveCodeBaselines({
+      role: args.role,
+      phase: args.phase,
+      task: args.task,
+      paths: splitPaths(args.paths),
+    }),
     requiredChecks: collectRequiredChecks(args),
     errors: [],
     seen: new Set()
@@ -448,7 +455,7 @@ function buildResult(index, args) {
   for (const entry of index.always || []) {
     if (!result.seen.has(entry.path)) {
       result.seen.add(entry.path);
-      result.mustRead.push({
+      result.referenceDocs.push({
         key: 'always',
         path: entry.path,
         reason: entry.reason || '全局必读'
@@ -472,7 +479,7 @@ function buildResult(index, args) {
     }
   }
 
-  for (const item of result.mustRead) {
+  for (const item of result.referenceDocs) {
     const filePath = path.join(pmoRoot, item.path);
     if (!fs.existsSync(filePath)) {
       result.errors.push(`Missing PMO file: ${item.path}`);
@@ -497,10 +504,17 @@ function printText(result) {
   console.log(`Workspace reason: ${result.workspacePolicy.reason}`);
   console.log(`M01 decision: ${result.assuranceRecommendation.recommendedValue ?? 'PENDING_FACTS'}; source=${result.assuranceRecommendation.decisionSource}.`);
   console.log('');
-  console.log('Must read:');
-  result.mustRead.forEach((item, index) => {
+  console.log('References (consult only when needed):');
+  result.referenceDocs.forEach((item, index) => {
     console.log(`${index + 1}. ${item.path} - ${item.reason}`);
   });
+  if (result.codeBaselines.length > 0) {
+    console.log('');
+    console.log('Code baselines:');
+    result.codeBaselines.forEach((item) => {
+      console.log(`- ${item.id}@${item.version}: ${item.root} - ${item.reason}`);
+    });
+  }
   if (result.requiredChecks.length > 0) {
     console.log('');
     console.log('Required checks:');

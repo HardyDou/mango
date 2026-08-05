@@ -11,6 +11,8 @@
 
 ## 2. Preflight
 
+只读任务直接处理。治理变更执行：
+
 ```bash
 node tools/pmo-preflight.mjs \
   --role pmo \
@@ -18,3 +20,5 @@ node tools/pmo-preflight.mjs \
   --task "<用户任务>" \
   --paths "mango-pmo/**"
 ```
+
+`References` 是按需查阅入口，不要求批量阅读；涉及代码时优先使用 `Code baselines`。

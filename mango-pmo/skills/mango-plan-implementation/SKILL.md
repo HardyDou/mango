@@ -26,7 +26,7 @@ Before drafting, read these authoritative assets:
 - `$PMO_ROOT/rules/backend/01-code.md`
 - `$PMO_ROOT/rules/backend/08-test.md`
 
-Run PMO preflight with role `tech-lead` and phase `design`, then read every `Must read` file.
+Run PMO preflight with role `tech-lead` and phase `design`. Record selected code baselines and actual references in the plan; do not bulk-read preflight references.
 
 ## Execute
 

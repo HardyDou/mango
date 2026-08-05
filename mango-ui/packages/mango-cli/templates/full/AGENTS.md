@@ -28,9 +28,9 @@ node business-pmo/mango-baseline/tools/pmo-preflight.mjs \
   --paths "<影响路径，逗号分隔>"
 ```
 
-然后读取输出中 `Must read` 的每一个文件原文。
+`References` 只在边界不明确时定向查阅；代码生成和新增实现优先使用输出中的 `Code baselines`。
 
-涉及业务需求、设计、台账或验收时，还必须读取本次任务对应的 `business-docs/**` 文件；没有明确路径时先定位或要求补齐，不得只按 Mango baseline 自行推断需求。
+涉及业务需求、设计、台账或验收时，只定位并使用本次任务直接依赖的 `business-docs/**` 契约；没有明确路径时先定位或要求补齐，不批量阅读其它历史文档，也不得只按 Mango baseline 自行推断需求。
 
 发布、发布验证、发布恢复和发布收尾只使用项目内 `.agents/skills/mango-release`（规范源为 `business-pmo/mango-baseline/skills/mango-release`）。不要调用用户级、插件级或其它外部通用 release skill。
 
@@ -39,7 +39,7 @@ node business-pmo/mango-baseline/tools/pmo-preflight.mjs \
 最终回复必须包含：
 
 - 改动范围。
-- 实际加载的 Mango baseline 文件。
+- 实际采用的代码 baseline 及版本，以及为具体边界实际查阅的参考资料（未查阅时写“无”）。
 - 执行的验证命令。
 - 未验证项和风险。
 - PMO 例外说明；没有例外则写“无”。
