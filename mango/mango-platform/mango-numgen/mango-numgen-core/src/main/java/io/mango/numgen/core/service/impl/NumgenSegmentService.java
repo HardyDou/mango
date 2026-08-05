@@ -115,7 +115,9 @@ public class NumgenSegmentService implements INumgenSegmentService {
             }
             case "PARAM" -> Require.notBlank(command.getVariableKey(), NumgenCode.NUMGEN_SEGMENT_INVALID, "参数键不能为空");
             case "SEQ" -> Require.notNull(command.getSeqWidth(), NumgenCode.NUMGEN_SEGMENT_INVALID, "流水位数不能为空");
-            default -> Require.fail(NumgenCode.NUMGEN_SEGMENT_INVALID, "不支持的片段类型：" + command.getSegmentType());
+            default -> {
+                Require.fail(NumgenCode.NUMGEN_SEGMENT_INVALID, "不支持的片段类型：" + command.getSegmentType());
+            }
         }
     }
 
