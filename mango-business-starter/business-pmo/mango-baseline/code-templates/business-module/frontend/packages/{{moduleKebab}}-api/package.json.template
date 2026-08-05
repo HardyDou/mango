@@ -1,0 +1,10 @@
+{
+  "name": "@{{projectKebab}}/{{moduleKebab}}-api",
+  "version": "{{projectVersion}}",
+  "private": false,
+  "type": "module",
+  "main": "src/index.ts",
+  "dependencies": {
+    "@mango/api-schema": "1.0.3"
+  }
+}

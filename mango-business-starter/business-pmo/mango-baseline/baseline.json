@@ -3,8 +3,8 @@
   "packageVersion": "1.3.9",
   "schemaVersion": 2,
   "source": "mango-pmo",
-  "sourceCommit": "b8b9d86e08687b78729492b4c1fa9db19db69089",
-  "bundleSha256": "74015e291f2e3572970b172d38b0ebf104ffd1e092272831eb9918b3b61be185",
+  "sourceCommit": "7eecdf9ef79c789ed91663db488cddb106ca00e6",
+  "bundleSha256": "b2ec260e76905d1488c046417d0c7262575995fa6e3cd3c2de59054c57c5621b",
   "contracts": [
     {
       "contractId": "business-requirements",
@@ -49,7 +49,7 @@
   ],
   "plugin": {
     "path": "package-root",
-    "sha256": "e020c9b2a8c11aa0617c5bc0127b46b7bd9c80abb5cf0d2b7803217c2b24f60d",
+    "sha256": "aa0b2b4890c40b9e25edadfc7dc34005daa9913aab5490e0241e8413452dc8d6",
     "files": [
       {
         "path": ".codex-plugin/plugin.json",
@@ -60,8 +60,8 @@
       },
       {
         "path": "skills/mango-defect-fix/SKILL.md",
-        "sha256": "364e03f7d3932045e0f444bab2d2e13627f9a8acd0c06cdc35489d12b6aae444",
-        "size": 3346,
+        "sha256": "9cd28a1147b5367763ee64dd7652f28d55e42c747d5f4eec1eecb0b7a200faae",
+        "size": 3435,
         "kind": "plugin",
         "mode": "0644"
       },
@@ -74,8 +74,8 @@
       },
       {
         "path": "skills/mango-design-delivery-assurance/SKILL.md",
-        "sha256": "ef6356c903f6b016b09fb9ca41116804debde15d53c387fb10de60ea8d5f4fbd",
-        "size": 3946,
+        "sha256": "20e9bade50bf02f80a7a16aa9471ad715a7e200cf7462fc051068aa670f0e36f",
+        "size": 3937,
         "kind": "plugin",
         "mode": "0644"
       },
@@ -88,8 +88,8 @@
       },
       {
         "path": "skills/mango-design-technical/SKILL.md",
-        "sha256": "817d6694e2095be058e143c3939ab1fc7d95f31f3242562c4e78a9fd2de877bb",
-        "size": 3202,
+        "sha256": "ec18990fcaa7ad98729b268e1333f14489987c86efa3ad7aa584bff947e951e2",
+        "size": 3275,
         "kind": "plugin",
         "mode": "0644"
       },
@@ -102,8 +102,8 @@
       },
       {
         "path": "skills/mango-engineering/SKILL.md",
-        "sha256": "6796c6dd5b5406f4cd29aa926411bd661d8f2bbf456921d40c226b3a29854674",
-        "size": 6751,
+        "sha256": "d3d554f89211be26559931dd28c7fb4623163aa90210d36b0fd4b32e92638e18",
+        "size": 6802,
         "kind": "plugin",
         "mode": "0644"
       },
@@ -116,8 +116,8 @@
       },
       {
         "path": "skills/mango-issue-handle/SKILL.md",
-        "sha256": "0bafa96b6d7f3446f6a22d2bd2e13baac6c27a8e5fa5fd69d32de2a275808ad2",
-        "size": 2149,
+        "sha256": "e027ddb20b5cfbcc72d46425e3d1e76c2c7a9719acb56fb633a6fa83f65f1f24",
+        "size": 2201,
         "kind": "plugin",
         "mode": "0644"
       },
@@ -144,8 +144,8 @@
       },
       {
         "path": "skills/mango-module-development/SKILL.md",
-        "sha256": "63c5e996040be92240fa26c6a8c2c278f57fd5eb2c459a432ae9820c9ca2d065",
-        "size": 3510,
+        "sha256": "203ccf2f575c448095afd7b0d03019c15cfb3480bffb76e573be3b88979c197e",
+        "size": 3527,
         "kind": "plugin",
         "mode": "0644"
       },
@@ -158,8 +158,8 @@
       },
       {
         "path": "skills/mango-plan-implementation/SKILL.md",
-        "sha256": "1bb84b8efeb739ed87cad739a8eaa183504bb5bd6ffc2068d0caf3aa4a9f149f",
-        "size": 4015,
+        "sha256": "f0ccb30be9dc20b3b4d44aa91d6fb63f6168bbdfc8e9317e4628e1471515a735",
+        "size": 4086,
         "kind": "plugin",
         "mode": "0644"
       },
@@ -172,8 +172,8 @@
       },
       {
         "path": "skills/mango-pmo-lifecycle/SKILL.md",
-        "sha256": "2dc4e5ae1aa883b0527e1e9bbca78bd33f2efaf480a2b01e9065dcbb25efc86e",
-        "size": 3242,
+        "sha256": "adcaedf91e4761e32bf18adbb0441e94c3ff6c8ac9ee328e35fc7f7b0f48cec5",
+        "size": 2996,
         "kind": "plugin",
         "mode": "0644"
       },
@@ -186,8 +186,8 @@
       },
       {
         "path": "skills/mango-project-bootstrap/SKILL.md",
-        "sha256": "c0c642bcf64ad74e247c96a0d3abed9ed151384c4643153e70d9b4c6c941830b",
-        "size": 2327,
+        "sha256": "7ce52c6ece0a9afd59f693b54419c3481afeb714b93a128a0337f8c3a9a1dcff",
+        "size": 2135,
         "kind": "plugin",
         "mode": "0644"
       },
@@ -200,8 +200,8 @@
       },
       {
         "path": "skills/mango-qa-verification/SKILL.md",
-        "sha256": "2d14a6e1a28634425e5d00839fde0863db34d501a07488b5e806baf26b3dca18",
-        "size": 4251,
+        "sha256": "40592ea208bfd3a9c7f14b09122138304415f11b855e317bc23dee8e98ae96bd",
+        "size": 4329,
         "kind": "plugin",
         "mode": "0644"
       },
@@ -214,8 +214,8 @@
       },
       {
         "path": "skills/mango-release/SKILL.md",
-        "sha256": "aeed7ad50525033945cd190a9499d8c3cacd58ad8be696f598170c30767391e1",
-        "size": 8811,
+        "sha256": "2a650c4c2483cee4cfcb5902a259a1fbac1d2a98da84317f52ded5792a9d21aa",
+        "size": 8858,
         "kind": "plugin",
         "mode": "0644"
       },
@@ -228,8 +228,8 @@
       },
       {
         "path": "skills/mango-requirements-business/SKILL.md",
-        "sha256": "1e9383880cbaeb0e1cd69e2e88db29b5f95b61891309ea863c3ef73b55b87d9c",
-        "size": 2778,
+        "sha256": "261012115b724d93e3472e288e30212791351bd49733b69789ac4cdef484485b",
+        "size": 2849,
         "kind": "plugin",
         "mode": "0644"
       },
@@ -242,8 +242,8 @@
       },
       {
         "path": "skills/mango-requirements-system/SKILL.md",
-        "sha256": "4aa9f1b712b4715db1534e02016827e1527ec11461ec2ee2fa42bb8f8e9d4e49",
-        "size": 2793,
+        "sha256": "b869ded67a726ce42ce8a50924b3decab1e9b2fcc841d99ac634f40781e874c4",
+        "size": 2837,
         "kind": "plugin",
         "mode": "0644"
       },
@@ -256,8 +256,8 @@
       },
       {
         "path": "skills/mango-review-pr/SKILL.md",
-        "sha256": "28b4b51faf26716a66a423738275a77c4da922e6d8ecbeb9ebbc81c3b678a615",
-        "size": 2441,
+        "sha256": "a6ae15f9b0716ecb42722350d87e3ab41ca2a8944c556025bfbfce3b0970065a",
+        "size": 2519,
         "kind": "plugin",
         "mode": "0644"
       },
@@ -270,8 +270,8 @@
       },
       {
         "path": "skills/mango-workflow/SKILL.md",
-        "sha256": "03d8ee1e72c00222d79f75f2ef9d2edcfd12b3d2a0e6a67a6a575169c18cf84a",
-        "size": 4584,
+        "sha256": "6fc90aa6e138c6aeabca669677e9d48f9bde1b56d5f3dd58b9e975f22e43d93a",
+        "size": 4634,
         "kind": "plugin",
         "mode": "0644"
       },
@@ -294,8 +294,8 @@
   "files": [
     {
       "path": "README.md",
-      "sha256": "8619a4dd981999cd883e7406decda5cfe6992cc3849d3d14e115d84bf549ce63",
-      "size": 25205,
+      "sha256": "c25e0e0ca19efa1cacd386dad783830e8fa948e3632f2602879a4ada8576e6ad",
+      "size": 25218,
       "kind": "documentation",
       "mode": "0644"
     },
@@ -315,8 +315,8 @@
     },
     {
       "path": "agents/03-dev-agent.md",
-      "sha256": "eed06cfadbb175177fb0edacc1149f1a2d45c824f3a722868e462bf4ea60aee3",
-      "size": 1542,
+      "sha256": "b93e65d8d81ddcd5cce63706c49ee92c93272dbf9b128be94dc6eec55e218956",
+      "size": 2281,
       "kind": "agent",
       "mode": "0644"
     },
@@ -363,6 +363,265 @@
       "mode": "0644"
     },
     {
+      "path": "code-templates/README.md",
+      "sha256": "6898f42f81c589fe4387a9db542e09b233aff69a7b01b2f79246b20144a20595",
+      "size": 976,
+      "kind": "code-template",
+      "mode": "0644"
+    },
+    {
+      "path": "code-templates/business-module/backend/modules/{{moduleKebab}}/README.md",
+      "sha256": "e4046b4b9189a4c9a68cb131e18a66fa39fd6facfcf8b9b669c6c45203ca1197",
+      "size": 4471,
+      "kind": "code-template",
+      "mode": "0644"
+    },
+    {
+      "path": "code-templates/business-module/backend/modules/{{moduleKebab}}/pom.xml",
+      "sha256": "5a8376016878158e2576b80d29469b778a5aec286c09f9a617d6779039da99b5",
+      "size": 831,
+      "kind": "code-template",
+      "mode": "0644"
+    },
+    {
+      "path": "code-templates/business-module/backend/modules/{{moduleKebab}}/{{moduleKebab}}-api/pom.xml",
+      "sha256": "e144624446b7011d52f8b5cd78a0ca3ba4f39dc5bea8f464da6630b6e302563f",
+      "size": 1215,
+      "kind": "code-template",
+      "mode": "0644"
+    },
+    {
+      "path": "code-templates/business-module/backend/modules/{{moduleKebab}}/{{moduleKebab}}-api/src/main/java/{{basePackagePath}}/{{modulePackage}}/api/command/Create{{aggregatePascal}}Command.java",
+      "sha256": "a6572246da543b0778d47af7be3699c8359a2255276136992895467baf86eb27",
+      "size": 684,
+      "kind": "code-template",
+      "mode": "0644"
+    },
+    {
+      "path": "code-templates/business-module/backend/modules/{{moduleKebab}}/{{moduleKebab}}-api/src/main/java/{{basePackagePath}}/{{modulePackage}}/api/command/Update{{aggregatePascal}}Command.java",
+      "sha256": "9c995fc2898b3e9f73b51edf66b5c5b79e4442479ab7838273a88015c85dc83d",
+      "size": 960,
+      "kind": "code-template",
+      "mode": "0644"
+    },
+    {
+      "path": "code-templates/business-module/backend/modules/{{moduleKebab}}/{{moduleKebab}}-api/src/main/java/{{basePackagePath}}/{{modulePackage}}/api/enums/{{aggregatePascal}}Code.java",
+      "sha256": "083c47a78e170fd9781f7895bd7df28af3296949c3d19c591ef3bdd7057b82b0",
+      "size": 648,
+      "kind": "code-template",
+      "mode": "0644"
+    },
+    {
+      "path": "code-templates/business-module/backend/modules/{{moduleKebab}}/{{moduleKebab}}-api/src/main/java/{{basePackagePath}}/{{modulePackage}}/api/query/{{aggregatePascal}}PageQuery.java",
+      "sha256": "14e35eb9d8caa529f14e20cf8a9491730243a188ee8d5df335ace91906277fa9",
+      "size": 1537,
+      "kind": "code-template",
+      "mode": "0644"
+    },
+    {
+      "path": "code-templates/business-module/backend/modules/{{moduleKebab}}/{{moduleKebab}}-api/src/main/java/{{basePackagePath}}/{{modulePackage}}/api/vo/{{aggregatePascal}}VO.java",
+      "sha256": "7c13d46fde33ca0a9a279df3d50faa49484ba22880243ba99f08c7c41ecd5190",
+      "size": 741,
+      "kind": "code-template",
+      "mode": "0644"
+    },
+    {
+      "path": "code-templates/business-module/backend/modules/{{moduleKebab}}/{{moduleKebab}}-api/src/main/java/{{basePackagePath}}/{{modulePackage}}/api/{{modulePascal}}Api.java",
+      "sha256": "d6acccf330315a30cd9f8c38b1c18ddb3781b8d5b32b69ec7e6d6e12e45e50a7",
+      "size": 1050,
+      "kind": "code-template",
+      "mode": "0644"
+    },
+    {
+      "path": "code-templates/business-module/backend/modules/{{moduleKebab}}/{{moduleKebab}}-core/pom.xml",
+      "sha256": "0bd497d395e49a9e5bea3506af0d410d66a3b9540b4ae3733acb474049d0fa6f",
+      "size": 1105,
+      "kind": "code-template",
+      "mode": "0644"
+    },
+    {
+      "path": "code-templates/business-module/backend/modules/{{moduleKebab}}/{{moduleKebab}}-core/src/main/java/{{basePackagePath}}/{{modulePackage}}/core/entity/{{aggregatePascal}}Entity.java",
+      "sha256": "7cb1f392f041692aef56cfcbed83c3fb8ac56cdcd6d1f32b1c5a76bfbd1cba0b",
+      "size": 552,
+      "kind": "code-template",
+      "mode": "0644"
+    },
+    {
+      "path": "code-templates/business-module/backend/modules/{{moduleKebab}}/{{moduleKebab}}-core/src/main/java/{{basePackagePath}}/{{modulePackage}}/core/mapper/{{aggregatePascal}}Mapper.java",
+      "sha256": "5ba32d208e356e3cb59f88da0408ec62dc12fa47a7a7f553ab1fd7d0e4954aca",
+      "size": 380,
+      "kind": "code-template",
+      "mode": "0644"
+    },
+    {
+      "path": "code-templates/business-module/backend/modules/{{moduleKebab}}/{{moduleKebab}}-core/src/main/java/{{basePackagePath}}/{{modulePackage}}/core/service/I{{aggregatePascal}}Service.java",
+      "sha256": "995dec964b81c0d96cb04695a897954acd32cb5d4e8d1e7949385e88ea20ea0d",
+      "size": 858,
+      "kind": "code-template",
+      "mode": "0644"
+    },
+    {
+      "path": "code-templates/business-module/backend/modules/{{moduleKebab}}/{{moduleKebab}}-core/src/main/java/{{basePackagePath}}/{{modulePackage}}/core/service/impl/{{aggregatePascal}}Service.java",
+      "sha256": "aa5bc7906c1739af9717a1664c77b648951cad36e85c2117bf33306c90ec3b45",
+      "size": 3529,
+      "kind": "code-template",
+      "mode": "0644"
+    },
+    {
+      "path": "code-templates/business-module/backend/modules/{{moduleKebab}}/{{moduleKebab}}-core/src/main/resources/db/migration/{{moduleKebab}}/V1__init_{{moduleKebab}}.sql",
+      "sha256": "57118a2fb5d7b1f08d2269cc16f212decd7b2fa755995481d1badad9e2957051",
+      "size": 312,
+      "kind": "code-template",
+      "mode": "0644"
+    },
+    {
+      "path": "code-templates/business-module/backend/modules/{{moduleKebab}}/{{moduleKebab}}-starter-remote/pom.xml",
+      "sha256": "fefb762362bf1dd4b9ee4430f3389b308c00d1e5bd70892567eab7859ee14f06",
+      "size": 961,
+      "kind": "code-template",
+      "mode": "0644"
+    },
+    {
+      "path": "code-templates/business-module/backend/modules/{{moduleKebab}}/{{moduleKebab}}-starter-remote/src/main/java/{{basePackagePath}}/{{modulePackage}}/starter/remote/{{modulePascal}}FeignClient.java",
+      "sha256": "f2c278f2d6e76017d02bd9a1598fba46d7392f387eae1f9c0f55670d50daad34",
+      "size": 1851,
+      "kind": "code-template",
+      "mode": "0644"
+    },
+    {
+      "path": "code-templates/business-module/backend/modules/{{moduleKebab}}/{{moduleKebab}}-starter-remote/src/main/java/{{basePackagePath}}/{{modulePackage}}/starter/remote/{{modulePascal}}RemoteAutoConfiguration.java",
+      "sha256": "4fcd108baba7e1a23fb90eece5224a99b41b64b849a83c284be4a32ef52c0757",
+      "size": 411,
+      "kind": "code-template",
+      "mode": "0644"
+    },
+    {
+      "path": "code-templates/business-module/backend/modules/{{moduleKebab}}/{{moduleKebab}}-starter-remote/src/main/resources/META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports",
+      "sha256": "68a6e6f923d84775e0951236020e658da031ff691d4d817005e8f9884c65940a",
+      "size": 89,
+      "kind": "code-template",
+      "mode": "0644"
+    },
+    {
+      "path": "code-templates/business-module/backend/modules/{{moduleKebab}}/{{moduleKebab}}-starter/pom.xml",
+      "sha256": "0f8e4ae288b79676f104c5d3e9ffceaf604dbcdd4b4f6dd57c39ffc7447548d9",
+      "size": 1311,
+      "kind": "code-template",
+      "mode": "0644"
+    },
+    {
+      "path": "code-templates/business-module/backend/modules/{{moduleKebab}}/{{moduleKebab}}-starter/src/main/java/{{basePackagePath}}/{{modulePackage}}/starter/controller/{{modulePascal}}Controller.java",
+      "sha256": "c12f7b83909c2ea74e49722847cd13a08ec9d0f7004d6c2c6c63e1a6653784d7",
+      "size": 3536,
+      "kind": "code-template",
+      "mode": "0644"
+    },
+    {
+      "path": "code-templates/business-module/backend/modules/{{moduleKebab}}/{{moduleKebab}}-starter/src/main/java/{{basePackagePath}}/{{modulePackage}}/starter/{{modulePascal}}AutoConfiguration.java",
+      "sha256": "7ebd0ca8a517016adca8c46bcd7b7e3dc617dedc39f9307865ecc47eb2a8fb8a",
+      "size": 375,
+      "kind": "code-template",
+      "mode": "0644"
+    },
+    {
+      "path": "code-templates/business-module/backend/modules/{{moduleKebab}}/{{moduleKebab}}-starter/src/main/resources/META-INF/mango/module.properties",
+      "sha256": "04783144a610380e325b922c87fd84985459f5d5d29fb68c5ab1d8514ed0a6ba",
+      "size": 56,
+      "kind": "code-template",
+      "mode": "0644"
+    },
+    {
+      "path": "code-templates/business-module/backend/modules/{{moduleKebab}}/{{moduleKebab}}-starter/src/main/resources/META-INF/mango/resources/{{moduleKebab}}-common-menu.json",
+      "sha256": "fa91faa315202f29046d6584917a80cfa12d06978acfcb43ba2dce8007a58d4d",
+      "size": 2516,
+      "kind": "code-template",
+      "mode": "0644"
+    },
+    {
+      "path": "code-templates/business-module/backend/modules/{{moduleKebab}}/{{moduleKebab}}-starter/src/main/resources/META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports",
+      "sha256": "43c2e5d9adf6fb693b8b319b30352f96cf773de27c4d21ee8e90f39868636db7",
+      "size": 76,
+      "kind": "code-template",
+      "mode": "0644"
+    },
+    {
+      "path": "code-templates/business-module/frontend/packages/{{moduleKebab}}-api/package.json.template",
+      "sha256": "77f096c515d1312a3035a4fc536b8dcf9b983cab3e7aff36274a072bfaa037c6",
+      "size": 213,
+      "kind": "code-template",
+      "mode": "0644"
+    },
+    {
+      "path": "code-templates/business-module/frontend/packages/{{moduleKebab}}-api/src/api.ts",
+      "sha256": "c388037f7e418b1ee59c096218f917af28d07f68c82bebc1ad43fdd91e276224",
+      "size": 2081,
+      "kind": "code-template",
+      "mode": "0644"
+    },
+    {
+      "path": "code-templates/business-module/frontend/packages/{{moduleKebab}}-api/src/index.ts",
+      "sha256": "d71b03a09b1004e52c0fc61abd998b2d7ae25b8a694cecca17d643ed39ca4b1b",
+      "size": 48,
+      "kind": "code-template",
+      "mode": "0644"
+    },
+    {
+      "path": "code-templates/business-module/frontend/packages/{{moduleKebab}}-api/src/types.ts",
+      "sha256": "8dec581682e4e7a9d088892d663ec1e832a8959f0784cb2f7d98941df6788946",
+      "size": 568,
+      "kind": "code-template",
+      "mode": "0644"
+    },
+    {
+      "path": "code-templates/business-module/frontend/packages/{{moduleKebab}}/package.json.template",
+      "sha256": "39c1e24d7f486f21a307d84ab9c20efb28ab082d0533e1ed7892325070ab26a4",
+      "size": 988,
+      "kind": "code-template",
+      "mode": "0644"
+    },
+    {
+      "path": "code-templates/business-module/frontend/packages/{{moduleKebab}}/src/__tests__/api-context.spec.ts",
+      "sha256": "cae855f48964cf182d552ef06dd7ac7858a844dc578c89bb8ecc1f7dbdce18f2",
+      "size": 2091,
+      "kind": "code-template",
+      "mode": "0644"
+    },
+    {
+      "path": "code-templates/business-module/frontend/packages/{{moduleKebab}}/src/api-context.ts",
+      "sha256": "c104e5d8d5ce235d3dfaae0ea090f616853549dfc71262351cb2741e04119ac4",
+      "size": 815,
+      "kind": "code-template",
+      "mode": "0644"
+    },
+    {
+      "path": "code-templates/business-module/frontend/packages/{{moduleKebab}}/src/index.ts",
+      "sha256": "c4899c4b7493720c56f67ba14bd37640733a1f77b366add71aa1040da9933ca5",
+      "size": 680,
+      "kind": "code-template",
+      "mode": "0644"
+    },
+    {
+      "path": "code-templates/business-module/frontend/packages/{{moduleKebab}}/src/views/{{moduleKebab}}/{{aggregateKebab}}/index.vue",
+      "sha256": "c3c0ed1c43ba44dfbf31f47073818fe63b81648d05424d87397cb8c2973c03a9",
+      "size": 8741,
+      "kind": "code-template",
+      "mode": "0644"
+    },
+    {
+      "path": "code-templates/business-module/frontend/packages/{{moduleKebab}}/style.css",
+      "sha256": "71a4db21315cdd259f3e6c7f4b2918f9b208d023911db0606be1395f1f39d962",
+      "size": 92,
+      "kind": "code-template",
+      "mode": "0644"
+    },
+    {
+      "path": "code-templates/index.json",
+      "sha256": "e0f41932162be995de856ff584e51afd2a7e22ea537a898dfef640b390f04a25",
+      "size": 10874,
+      "kind": "code-template",
+      "mode": "0644"
+    },
+    {
       "path": "contracts/business-requirements.json",
       "sha256": "69fc26634f1ac1dc7577a6f84680eb86832ae432f36bb0ec038439c0d014b20c",
       "size": 10092,
@@ -399,8 +658,8 @@
     },
     {
       "path": "contracts/implementation-plan.json",
-      "sha256": "52b03b485a1aa2d7a5f572c027964d905ba4b4db17242ca4f5738af604c08ae9",
-      "size": 10773,
+      "sha256": "7bfe1477a322b898ccaac22ca1741150d3d8e71c1e6714a0a605b290245c1ea7",
+      "size": 11038,
       "kind": "contract",
       "mode": "0644"
     },
@@ -413,15 +672,15 @@
     },
     {
       "path": "contracts/technical-design.json",
-      "sha256": "01ecde6a9d2c14cba43c7879ae768e2f5230c302fa2353a424762f8b874143f6",
-      "size": 14207,
+      "sha256": "281f178d92dd7acf9bb0f408bdc2375c293fe19fd1cd1d86a9f4e96686380166",
+      "size": 14471,
       "kind": "contract",
       "mode": "0644"
     },
     {
       "path": "rules/00-dev-flow.md",
-      "sha256": "6386b0fb998018bd5c4bb496e2568c64e18ce5a04449c34fbeaa28fba38307bb",
-      "size": 15083,
+      "sha256": "50a3c2f84be876a55aca0c3ffeb5ee9835de78495899ab13a2450ba891cc796f",
+      "size": 15528,
       "kind": "rule",
       "mode": "0644"
     },
@@ -455,8 +714,8 @@
     },
     {
       "path": "rules/05-ai-delivery-quality.md",
-      "sha256": "b928f9552011785f2874d8a4e2ececd3747a5e4dd82c1402e84df211828dbc50",
-      "size": 15955,
+      "sha256": "9d8308104f5036d69f9cc1b4902e304886430b892fc5859b96f4433f1f2afca3",
+      "size": 16331,
       "kind": "rule",
       "mode": "0644"
     },
@@ -469,8 +728,8 @@
     },
     {
       "path": "rules/07-mango-issue-runbook.md",
-      "sha256": "931b34f4f67731f401152613391cbb40c77d6aadf087e39f340ccf849ba28a55",
-      "size": 4840,
+      "sha256": "c3f0c07624c18104eb5159436978dfeec1564e1d97c18ffb2b083b1458968a25",
+      "size": 4861,
       "kind": "rule",
       "mode": "0644"
     },
@@ -567,8 +826,8 @@
     },
     {
       "path": "rules/backend/10-dev-flow.md",
-      "sha256": "9c924ef802f47c05d5dcd3c485bbd2f71e996274b2ab5bc50ca7209f49935051",
-      "size": 3106,
+      "sha256": "7e64c2a4dce38b39f661db651c5e2ef85c2259b283bbfd3755b88286d12c967f",
+      "size": 3804,
       "kind": "rule",
       "mode": "0644"
     },
@@ -609,8 +868,8 @@
     },
     {
       "path": "rules/frontend/05-dev-flow.md",
-      "sha256": "d3d112c4eb02c9afeea996d2ffb6ed83775147838609b2d1b969fa92530b9676",
-      "size": 1247,
+      "sha256": "28869860e6c792a20d585f105ab2290571f95a1910da8f47d02541c5122f4cfa",
+      "size": 1880,
       "kind": "rule",
       "mode": "0644"
     },
@@ -665,8 +924,8 @@
     },
     {
       "path": "rules/index.json",
-      "sha256": "b296d2f81e1fef792bcafdf872051b8e5fd13172f0824b7c86c0ec56d3281f36",
-      "size": 26481,
+      "sha256": "d40f790fab940170e0d2af04df7d24ce4eed83595f3e3fff49003aa997f80848",
+      "size": 26158,
       "kind": "rule",
       "mode": "0644"
     },
@@ -707,15 +966,15 @@
     },
     {
       "path": "rules/product/03-technical-design.md",
-      "sha256": "ca6cdad7aa786fb4ed2c7808e314cccd31125ba06399fd3d446a9fe0255bab1a",
-      "size": 16319,
+      "sha256": "58bc8b2e9e14834221fb1660957509907159fa6651cf86117d6ff55a1b2fb230",
+      "size": 17015,
       "kind": "rule",
       "mode": "0644"
     },
     {
       "path": "rules/product/04-implementation-plan.md",
-      "sha256": "b27f5760a8593710491f30ef7d412e5e11ad494ca174bc5ac5c2cf2a01fa2f86",
-      "size": 11417,
+      "sha256": "2181d2b463948bb654909c8c115fa0c70a8e1205b4384b7573db824607c2b8fe",
+      "size": 12038,
       "kind": "rule",
       "mode": "0644"
     },
@@ -728,8 +987,8 @@
     },
     {
       "path": "skills/mango-defect-fix/SKILL.md",
-      "sha256": "364e03f7d3932045e0f444bab2d2e13627f9a8acd0c06cdc35489d12b6aae444",
-      "size": 3346,
+      "sha256": "9cd28a1147b5367763ee64dd7652f28d55e42c747d5f4eec1eecb0b7a200faae",
+      "size": 3435,
       "kind": "skill",
       "mode": "0644"
     },
@@ -742,8 +1001,8 @@
     },
     {
       "path": "skills/mango-design-delivery-assurance/SKILL.md",
-      "sha256": "ef6356c903f6b016b09fb9ca41116804debde15d53c387fb10de60ea8d5f4fbd",
-      "size": 3946,
+      "sha256": "20e9bade50bf02f80a7a16aa9471ad715a7e200cf7462fc051068aa670f0e36f",
+      "size": 3937,
       "kind": "skill",
       "mode": "0644"
     },
@@ -756,8 +1015,8 @@
     },
     {
       "path": "skills/mango-design-technical/SKILL.md",
-      "sha256": "817d6694e2095be058e143c3939ab1fc7d95f31f3242562c4e78a9fd2de877bb",
-      "size": 3202,
+      "sha256": "ec18990fcaa7ad98729b268e1333f14489987c86efa3ad7aa584bff947e951e2",
+      "size": 3275,
       "kind": "skill",
       "mode": "0644"
     },
@@ -770,8 +1029,8 @@
     },
     {
       "path": "skills/mango-engineering/SKILL.md",
-      "sha256": "6796c6dd5b5406f4cd29aa926411bd661d8f2bbf456921d40c226b3a29854674",
-      "size": 6751,
+      "sha256": "d3d554f89211be26559931dd28c7fb4623163aa90210d36b0fd4b32e92638e18",
+      "size": 6802,
       "kind": "skill",
       "mode": "0644"
     },
@@ -784,8 +1043,8 @@
     },
     {
       "path": "skills/mango-issue-handle/SKILL.md",
-      "sha256": "0bafa96b6d7f3446f6a22d2bd2e13baac6c27a8e5fa5fd69d32de2a275808ad2",
-      "size": 2149,
+      "sha256": "e027ddb20b5cfbcc72d46425e3d1e76c2c7a9719acb56fb633a6fa83f65f1f24",
+      "size": 2201,
       "kind": "skill",
       "mode": "0644"
     },
@@ -812,8 +1071,8 @@
     },
     {
       "path": "skills/mango-module-development/SKILL.md",
-      "sha256": "63c5e996040be92240fa26c6a8c2c278f57fd5eb2c459a432ae9820c9ca2d065",
-      "size": 3510,
+      "sha256": "203ccf2f575c448095afd7b0d03019c15cfb3480bffb76e573be3b88979c197e",
+      "size": 3527,
       "kind": "skill",
       "mode": "0644"
     },
@@ -826,8 +1085,8 @@
     },
     {
       "path": "skills/mango-plan-implementation/SKILL.md",
-      "sha256": "1bb84b8efeb739ed87cad739a8eaa183504bb5bd6ffc2068d0caf3aa4a9f149f",
-      "size": 4015,
+      "sha256": "f0ccb30be9dc20b3b4d44aa91d6fb63f6168bbdfc8e9317e4628e1471515a735",
+      "size": 4086,
       "kind": "skill",
       "mode": "0644"
     },
@@ -840,8 +1099,8 @@
     },
     {
       "path": "skills/mango-pmo-lifecycle/SKILL.md",
-      "sha256": "2dc4e5ae1aa883b0527e1e9bbca78bd33f2efaf480a2b01e9065dcbb25efc86e",
-      "size": 3242,
+      "sha256": "adcaedf91e4761e32bf18adbb0441e94c3ff6c8ac9ee328e35fc7f7b0f48cec5",
+      "size": 2996,
       "kind": "skill",
       "mode": "0644"
     },
@@ -854,8 +1113,8 @@
     },
     {
       "path": "skills/mango-project-bootstrap/SKILL.md",
-      "sha256": "c0c642bcf64ad74e247c96a0d3abed9ed151384c4643153e70d9b4c6c941830b",
-      "size": 2327,
+      "sha256": "7ce52c6ece0a9afd59f693b54419c3481afeb714b93a128a0337f8c3a9a1dcff",
+      "size": 2135,
       "kind": "skill",
       "mode": "0644"
     },
@@ -868,8 +1127,8 @@
     },
     {
       "path": "skills/mango-qa-verification/SKILL.md",
-      "sha256": "2d14a6e1a28634425e5d00839fde0863db34d501a07488b5e806baf26b3dca18",
-      "size": 4251,
+      "sha256": "40592ea208bfd3a9c7f14b09122138304415f11b855e317bc23dee8e98ae96bd",
+      "size": 4329,
       "kind": "skill",
       "mode": "0644"
     },
@@ -882,8 +1141,8 @@
     },
     {
       "path": "skills/mango-release/SKILL.md",
-      "sha256": "aeed7ad50525033945cd190a9499d8c3cacd58ad8be696f598170c30767391e1",
-      "size": 8811,
+      "sha256": "2a650c4c2483cee4cfcb5902a259a1fbac1d2a98da84317f52ded5792a9d21aa",
+      "size": 8858,
       "kind": "skill",
       "mode": "0644"
     },
@@ -896,8 +1155,8 @@
     },
     {
       "path": "skills/mango-requirements-business/SKILL.md",
-      "sha256": "1e9383880cbaeb0e1cd69e2e88db29b5f95b61891309ea863c3ef73b55b87d9c",
-      "size": 2778,
+      "sha256": "261012115b724d93e3472e288e30212791351bd49733b69789ac4cdef484485b",
+      "size": 2849,
       "kind": "skill",
       "mode": "0644"
     },
@@ -910,8 +1169,8 @@
     },
     {
       "path": "skills/mango-requirements-system/SKILL.md",
-      "sha256": "4aa9f1b712b4715db1534e02016827e1527ec11461ec2ee2fa42bb8f8e9d4e49",
-      "size": 2793,
+      "sha256": "b869ded67a726ce42ce8a50924b3decab1e9b2fcc841d99ac634f40781e874c4",
+      "size": 2837,
       "kind": "skill",
       "mode": "0644"
     },
@@ -924,8 +1183,8 @@
     },
     {
       "path": "skills/mango-review-pr/SKILL.md",
-      "sha256": "28b4b51faf26716a66a423738275a77c4da922e6d8ecbeb9ebbc81c3b678a615",
-      "size": 2441,
+      "sha256": "a6ae15f9b0716ecb42722350d87e3ab41ca2a8944c556025bfbfce3b0970065a",
+      "size": 2519,
       "kind": "skill",
       "mode": "0644"
     },
@@ -938,8 +1197,8 @@
     },
     {
       "path": "skills/mango-workflow/SKILL.md",
-      "sha256": "03d8ee1e72c00222d79f75f2ef9d2edcfd12b3d2a0e6a67a6a575169c18cf84a",
-      "size": 4584,
+      "sha256": "6fc90aa6e138c6aeabca669677e9d48f9bde1b56d5f3dd58b9e975f22e43d93a",
+      "size": 4634,
       "kind": "skill",
       "mode": "0644"
     },
@@ -1001,8 +1260,8 @@
     },
     {
       "path": "templates/implementation-plan.md",
-      "sha256": "0d67412efaeb56842fbcb91f266345dc15729a5ad7ba73359563b2df915df606",
-      "size": 3510,
+      "sha256": "9496ddb482993ee8224d73249ef0a0df50c3e76f4f8032d4168dea597d233c65",
+      "size": 3768,
       "kind": "template",
       "mode": "0644"
     },
@@ -1029,8 +1288,8 @@
     },
     {
       "path": "templates/standard-delivery-record.md",
-      "sha256": "f5c50bbd5a258952401d4bcbcb6c53fe4d789a92da4b156328128505aa511bc5",
-      "size": 834,
+      "sha256": "c72d2418d65831c747f5c3d311a52033237bee7bde4cecf4c802a0f9e6510099",
+      "size": 972,
       "kind": "template",
       "mode": "0644"
     },
@@ -1043,8 +1302,8 @@
     },
     {
       "path": "templates/technical-design.md",
-      "sha256": "ecca0feb982b3e065278c055ad152a2eff57a3f48c1581261c2a65870cf04d1f",
-      "size": 6651,
+      "sha256": "e325d8de2c44c9ba84650b8b47ba6756051e0e1a8ea6ecf61429c6346044f3ff",
+      "size": 6909,
       "kind": "template",
       "mode": "0644"
     },
@@ -1134,8 +1393,8 @@
     },
     {
       "path": "tools/check-governance-intent.mjs",
-      "sha256": "c5d3918ad00c3a7123e7df40efe1d84563efd4bb5753b2d5b00e33b1afc3f7b3",
-      "size": 13388,
+      "sha256": "29371c88bba2faebd38646502d9d77a911dc06535dcca289f28393e8cc63d893",
+      "size": 13054,
       "kind": "tool",
       "mode": "0644"
     },
@@ -1155,8 +1414,8 @@
     },
     {
       "path": "tools/check-pmo-preflight.mjs",
-      "sha256": "a5cdea189ea08b8e3e5b9df0fe6eca23c54a279bcc1dfd62bb41a3e5f7ece3b4",
-      "size": 7387,
+      "sha256": "4c5f2ccccb1761bc27aef68d9ff58cc3b10b3d988e9cca0c0f4c168bdc22957f",
+      "size": 7451,
       "kind": "tool",
       "mode": "0644"
     },
@@ -1192,6 +1451,13 @@
       "path": "tools/classify-pmo-check-scope.mjs",
       "sha256": "781762b5bf62a4e7193480b73f3b54248e13f8d1329bb59299715234d4a0b525",
       "size": 15044,
+      "kind": "tool",
+      "mode": "0644"
+    },
+    {
+      "path": "tools/code-baseline.mjs",
+      "sha256": "ff8fef4eeb2733b637d6311e5bb7b30adb9a984444740c83398828a5c4b94676",
+      "size": 11650,
       "kind": "tool",
       "mode": "0644"
     },
@@ -1245,6 +1511,13 @@
       "mode": "0644"
     },
     {
+      "path": "tools/evaluate-code-baseline.mjs",
+      "sha256": "bbfb2502139ede54adb4e3ea2716e06dc1784c9a0e3a891e88ac9c041a73f667",
+      "size": 14358,
+      "kind": "tool",
+      "mode": "0644"
+    },
+    {
       "path": "tools/pin-historical-pmo-version-documents.mjs",
       "sha256": "8e06e0f6ccb801bc35ba0e76a369355931004a18c68d64bd137e931c412a114f",
       "size": 5802,
@@ -1253,8 +1526,8 @@
     },
     {
       "path": "tools/pmo-preflight.mjs",
-      "sha256": "0855d9fa73f765687f9a3ed2c5f8bec41e9813c8d302233f6f0179c03609750b",
-      "size": 16351,
+      "sha256": "ee08bc51c8723100c0995f65f8b47915f3588699980c669615fb1a117faf6397",
+      "size": 16859,
       "kind": "tool",
       "mode": "0755"
     },

@@ -15,7 +15,7 @@
 
 ## 2. Preflight
 
-按 PMO 总流程判断是否执行 preflight。需要执行时使用：
+简单问答、只读解释、定位和状态查看直接处理。需要改变受版本控制文件或形成正式交付结论时使用：
 
 ```bash
 node mango-pmo/tools/pmo-preflight.mjs \
@@ -25,7 +25,7 @@ node mango-pmo/tools/pmo-preflight.mjs \
   --paths "<可能影响的路径，逗号分隔>"
 ```
 
-然后读取输出中 `Must read` 的每一个文件原文。
+`References` 只在边界不明确时定向查阅；开发优先采用输出中的 `Code baselines`，不做批量文档阅读。
 
 角色按任务自动推断；无法判断时按 PMO 总流程处理。
 

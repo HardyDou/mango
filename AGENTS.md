@@ -11,7 +11,7 @@
 
 ## 2. Preflight
 
-正式交付、验证、发布、提交、PR、规范治理或需要改变受版本控制文件时，先按 PMO 总流程判断是否执行 preflight。
+简单问答、只读解释、定位和状态查看直接处理，不运行 preflight。正式交付、验证、发布、提交、PR、规范治理或需要改变受版本控制文件时执行 preflight。
 
 ```bash
 node mango-pmo/tools/pmo-preflight.mjs \
@@ -22,7 +22,7 @@ node mango-pmo/tools/pmo-preflight.mjs \
   --reuseCurrentTask <true|false>
 ```
 
-只有当前非 main worktree 明确属于同一任务或同一 PR 时传 `true`；新任务传 `false`。该事实由 Agent 根据会话和任务分支直接判断，不逐次询问。执行后读取输出中 `Must read` 的每一个文件原文。
+只有当前非 main worktree 明确属于同一任务或同一 PR 时传 `true`；新任务传 `false`。该事实由 Agent 根据会话和任务分支直接判断，不逐次询问。输出中的 `References` 只用于边界不明确时定向查阅；开发优先采用 `Code baselines`，不做批量文档阅读。
 
 ## 3. 角色路由
 

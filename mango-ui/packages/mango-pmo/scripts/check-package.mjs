@@ -19,6 +19,7 @@ const requiredFiles = [
   'agents/03-dev-agent.md',
   'agents/05-pmo-agent.md',
   'tools/pmo-preflight.mjs',
+  'tools/code-baseline.mjs',
   'tools/check-document-set.mjs',
   'tools/pin-historical-pmo-version-documents.mjs',
   'tools/check-frontend-page-baseline.mjs',
@@ -39,6 +40,9 @@ const requiredFiles = [
   'skills/mango-requirements-system/SKILL.md',
   'skills/mango-design-technical/SKILL.md',
   'skills/mango-plan-implementation/SKILL.md',
+  'code-templates/index.json',
+  'code-templates/business-module/backend/modules/{{moduleKebab}}/pom.xml',
+  'code-templates/business-module/frontend/packages/{{moduleKebab}}/src/index.ts',
 ];
 
 if (!existsSync(manifestPath)) {
@@ -124,9 +128,9 @@ const preflight = spawnSync(
     '--phase',
     'develop',
     '--task',
-    '验证 @mango/pmo baseline package',
+    '新增业务模块并验证 @mango/pmo baseline package',
     '--paths',
-    'backend,frontend',
+    'backend/modules/order,frontend/packages/order',
   ],
   {
     cwd: baselineRoot,
@@ -137,11 +141,8 @@ const preflight = spawnSync(
 if (preflight.status !== 0) {
   throw new Error(`packaged baseline preflight failed:\n${preflight.stdout}\n${preflight.stderr}`);
 }
-if (
-  !preflight.stdout.includes('rules/00-dev-flow.md') ||
-  !preflight.stdout.includes('rules/03-ai-coding-redlines.md')
-) {
-  throw new Error(`packaged baseline preflight did not load baseline rules:\n${preflight.stdout}`);
+if (!preflight.stdout.includes('Code baselines:') || !preflight.stdout.includes('business-module@1')) {
+  throw new Error(`packaged baseline preflight did not resolve code baseline:\n${preflight.stdout}`);
 }
 
 validatePackedPackage(manifest);
@@ -185,7 +186,7 @@ function validateManifestFile(file) {
     throw new Error(`invalid baseline manifest mode: ${file.path}`);
   }
   if (
-    !['agent', 'rule', 'template', 'contract', 'tool', 'skill', 'documentation', 'asset', 'plugin'].includes(file.kind)
+    !['agent', 'rule', 'template', 'code-template', 'contract', 'tool', 'skill', 'documentation', 'asset', 'plugin'].includes(file.kind)
   ) {
     throw new Error(`invalid baseline manifest kind: ${file.path}`);
   }

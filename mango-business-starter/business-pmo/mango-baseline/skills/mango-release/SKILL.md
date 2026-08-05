@@ -23,7 +23,7 @@ Load this Skill only when the intended result changes or verifies an immutable M
 
 Set `PMO_ROOT` to `<repo>/mango-pmo`; a business baseline alone is insufficient for publishing Mango artifacts. Read `$PMO_ROOT/rules/00-dev-flow.md`, `$PMO_ROOT/rules/05-ai-delivery-quality.md`, `$PMO_ROOT/rules/08-capability-docs.md`, `$PMO_ROOT/rules/10-release-artifacts.md`, and, for npm packages, `$PMO_ROOT/rules/frontend/03-component-development.md` plus `$PMO_ROOT/rules/frontend/06-monorepo-architecture.md`.
 
-Run PMO preflight with `role=pmo`, `phase=release`, exact artifact paths, requested versions, registry roles, and release kind; read every `Must read` file. Read the current capability map and the README for each changed public artifact.
+Run PMO preflight with `role=pmo`, `phase=release`, exact artifact paths, requested versions, registry roles, and release kind. Consult returned references only for release boundaries that are not already resolved by the release manifest, checker output, or current artifact metadata.
 
 ## Readiness
 

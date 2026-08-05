@@ -482,12 +482,12 @@ CLI 绝不自动安装 Playwright、下载 Chromium或修改项目。缺少依�
 | `templates/full/mango.dev.json`              | 新项目开发工作区 manifest 模板                  | 历史业务项目执行 `pmo sync --sync-shell` 时优先按真实目录探测生成；业务项目可用 `.mango/dev-workspace.local.json` 本机覆盖 |
 | `release-versions.json`                      | 锁定 Mango 后端固定 Maven 版本和前端 NPM 包版本 | 修改发布版本后必须跑 release version 检查                                                                                  |
 | `scripts/check-cli.mjs`                      | CLI 生成契约自测                                | 会生成 full 和 custom 项目并校验关键文件                                                                                   |
-| `scripts/check-business-module-template.mjs` | canonical 业务模块投影检查                      | 比较路径、大小、SHA-256 和执行位，阻断 CLI 镜像漂移                                                                        |
+| `scripts/check-business-module-template.mjs` | canonical 业务模块投影检查                      | 比较路径、大小、SHA-256 和执行位，阻断 starter 与 PMO code baseline 漂移                                                    |
 | `scripts/check-generated-backend-gate.mjs`   | 生成后端门禁验收                                | 生成四层业务模块，正向执行 Maven verify，并反向验证 PathVariable、通用 Java 违规和 skip 绕过均被阻断                       |
 | `scripts/check-release-versions.mjs`         | 版本锁自测                                      | 可加 registry 检查已发布包                                                                                                 |
-| `templates/business-module`                  | 随 CLI 发布的业务模块模板                       | 后端目录必须与 `mango-business-starter` canonical 模板完全一致                                                             |
+| `@mango/pmo` code baseline                   | 随 PMO baseline 发布的业务模块模板               | 唯一源为 `mango-pmo/code-templates/business-module`                                                                         |
 
-已发布 CLI 直接从包内 `templates/business-module` 执行 `mango module add`，不依赖 Mango 源仓路径。后端镜像以 `mango-business-starter` 为 canonical 源，发布和测试前执行 `pnpm --filter @mango/cli run check:business-module-template`；路径集合或任一文件 hash 不一致时必须先同步模板。
+已发布 CLI 从依赖的 `@mango/pmo` code baseline 执行 `mango module add`。源仓开发使用同一 `mango-pmo/code-templates/business-module`；`mango-business-starter` 只是机械投影。发布和测试前执行 `pnpm --filter @mango/cli run check:business-module-template`，路径集合或任一文件 hash 不一致时先同步投影。
 
 ## 8. 数据与初始化
 
