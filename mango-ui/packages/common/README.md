@@ -23,6 +23,7 @@
 | Session     | `Session`                                                                                                                                                                                  | 保存 token、refresh token、过期时间、用户信息和租户。       |
 | API 加密    | `wrapRequest`、`sm2Encrypt`、`sm2Decrypt`                                                                                                                                                  | 按环境变量启用 SM2 或 BFF 透传。                            |
 | 菜单和权限  | `buildMenuTree`、权限函数、TagsView 工具                                                                                                                                                   | 给管理后台菜单、按钮权限和标签页使用。                      |
+| Web Crypto  | `installWebCryptoRandomUUIDCompatibility`、`createWebCryptoRandomUUID`、`generateRfc4122UuidV4`                                                                                            | 为缺少原生 `randomUUID` 的运行环境提供安全 UUID 兼容。      |
 | 公共 API    | `uploadFile`、captcha、org、area、dict API                                                                                                                                                 | 连接 file、captcha、org、system 后端。                      |
 | 通用组件    | `MangoListPage`、`MangoSearchPanel`、`MangoListPanel`、`MangoDetailPage`、`MangoFormPage`、`MangoPageSection`、`MangoDialog`、`Pagination`、`DictSelect`、`OrgSelector`、`UserSelector` 等 | 后台页面骨架和复用组件。                                    |
 | hooks       | `useTitle`、`useDict`、`useECharts`、`useLocale`                                                                                                                                           | 页面标题、字典、图表和语言相关能力。                        |
@@ -303,16 +304,19 @@ API 加密环境变量：
 
 请求和工具导出：
 
-| 导出                          | 用途                                          |
-| ----------------------------- | --------------------------------------------- |
-| `request`                     | axios 实例。                                  |
-| `get`、`post`、`put`、`del`   | 常用请求方法，默认返回后端包裹体中的 `data`。 |
-| `setRequestBaseUrl`           | 设置 API baseURL。                            |
-| `registerUnauthorizedHandler` | 注册未授权处理。                              |
-| `normalizeApiPayload`         | 把明确 ID 字段中的 number 兜底转成字符串。    |
-| `Session`                     | token、refresh token、用户信息和租户存储。    |
-| `mangoMessage`                | Element Plus 消息封装。                       |
-| `useRealtime`                 | 实时连接 hook。                               |
+| 导出                                      | 用途                                          |
+| ----------------------------------------- | --------------------------------------------- |
+| `request`                                 | axios 实例。                                  |
+| `get`、`post`、`put`、`del`               | 常用请求方法，默认返回后端包裹体中的 `data`。 |
+| `setRequestBaseUrl`                       | 设置 API baseURL。                            |
+| `registerUnauthorizedHandler`             | 注册未授权处理。                              |
+| `normalizeApiPayload`                     | 把明确 ID 字段中的 number 兜底转成字符串。    |
+| `Session`                                 | token、refresh token、用户信息和租户存储。    |
+| `mangoMessage`                            | Element Plus 消息封装。                       |
+| `useRealtime`                             | 实时连接 hook。                               |
+| `generateRfc4122UuidV4`                   | 使用调用方提供的安全随机字节生成 UUID v4。    |
+| `createWebCryptoRandomUUID`               | 优先原生方法，否则使用 `getRandomValues`。    |
+| `installWebCryptoRandomUUIDCompatibility` | 幂等补齐当前 Web Crypto 的 `randomUUID`。     |
 
 公共 API：
 
@@ -481,15 +485,16 @@ const toolbarKeys = ['bold', 'color', '|', 'numberedList', 'bulletedList', '|', 
 
 ## 9. 问题排查
 
-| 问题                 | 常见原因                                    | 处理方式                                      |
-| -------------------- | ------------------------------------------- | --------------------------------------------- |
-| 请求没有 token       | 未登录、Session 未写入或 `ignoreToken=true` | 检查登录保存逻辑和请求配置。                  |
-| 租户头缺失           | userInfo 和 Session 都没有 tenantId         | 登录后写入租户上下文。                        |
-| 401 后没有跳登录     | 没注册 unauthorized handler                 | 调用 `registerUnauthorizedHandler()`。        |
-| 文件下载拿到 JSON    | 后端返回业务错误而不是 blob                 | 看 JSON 中 `message` 或 `msg`，排查文件权限。 |
-| 字典、组织、地区为空 | 后端数据未初始化或权限不足                  | 分别检查 system、org 和接口权限。             |
-| 官网引入后体积过大   | 全量 common 带管理端组件和依赖              | 改为按子路径引入，或拆出站点专用轻量组件。    |
-| 大 ID 精度问题       | 业务把 id 当 number 继续运算                | ID 字段按字符串处理，使用 `ApiId`。           |
+| 问题                           | 常见原因                                               | 处理方式                                                                              |
+| ------------------------------ | ------------------------------------------------------ | ------------------------------------------------------------------------------------- |
+| 请求没有 token                 | 未登录、Session 未写入或 `ignoreToken=true`            | 检查登录保存逻辑和请求配置。                                                          |
+| 租户头缺失                     | userInfo 和 Session 都没有 tenantId                    | 登录后写入租户上下文。                                                                |
+| 401 后没有跳登录               | 没注册 unauthorized handler                            | 调用 `registerUnauthorizedHandler()`。                                                |
+| 文件下载拿到 JSON              | 后端返回业务错误而不是 blob                            | 看 JSON 中 `message` 或 `msg`，排查文件权限。                                         |
+| 字典、组织、地区为空           | 后端数据未初始化或权限不足                             | 分别检查 system、org 和接口权限。                                                     |
+| 官网引入后体积过大             | 全量 common 带管理端组件和依赖                         | 改为按子路径引入，或拆出站点专用轻量组件。                                            |
+| 大 ID 精度问题                 | 业务把 id 当 number 继续运算                           | ID 字段按字符串处理，使用 `ApiId`。                                                   |
+| `randomUUID is not a function` | 浏览器或 WebView 只有 `getRandomValues`，缺少原生 UUID | 使用匹配版本的 Admin Shell；Shell 启动时自动安装兼容方法，业务入口无需增加 polyfill。 |
 
 ## 10. 相关文档
 
@@ -501,6 +506,8 @@ const toolbarKeys = ['bold', 'color', '|', 'numberedList', 'bulletedList', '|', 
 - [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)
 
 ## 11. 变更影响记录
+
+- Issue #722 新增 Web Crypto UUID 兼容 API：原生 `randomUUID` 始终优先，缺失时只使用 `getRandomValues` 生成 RFC 4122 v4；完全没有安全 Web Crypto 时不会安装 `Math.random` 伪实现。`generateUUID()` 复用同一安全路径，并仅在普通非安全唯一标识语义下保留原有最终 fallback。
 
 - `@mango/common@1.0.23` 发布 `MangoDialogExpose.bringToFront()`。父组件可以通过类型安全的组件 ref 提升已打开实例；用户按下标题、内容或 footer 时也会自动置顶，关闭中、已关闭或销毁后的调用安全忽略。既有弹框 props、事件、拖拽、缩放、遮罩和默认层级行为保持兼容。
 

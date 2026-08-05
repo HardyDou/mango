@@ -11,6 +11,7 @@ import {
   resolveMangoFrontendMode,
 } from '../../build-config/mangoAliases';
 import { createMangoApiProxy } from '../../build-config/apiProxy';
+import { excludeMockServiceWorkerFromProductionBuild } from '../../build-config/mockServiceWorkerBuild.mjs';
 
 const ALLOWED_PROXY_HOSTS = ['127.0.0.1', 'localhost'];
 
@@ -19,7 +20,7 @@ function validateProxyTarget(target: string): string {
     const url = new URL(target);
     if (!ALLOWED_PROXY_HOSTS.includes(url.hostname)) {
       throw new Error(
-        `Proxy target hostname '${url.hostname}' not allowed. Allowed: ${ALLOWED_PROXY_HOSTS.join(', ')}`
+        `Proxy target hostname '${url.hostname}' not allowed. Allowed: ${ALLOWED_PROXY_HOSTS.join(', ')}`,
       );
     }
     return target;
@@ -99,6 +100,7 @@ const viteConfig = defineConfig((mode: ConfigEnv) => {
 
   return {
     plugins: [
+      excludeMockServiceWorkerFromProductionBuild(),
       paymentChannelCallbackAccessLogger(),
       vue(),
       // vueSetupExtend(), // Temporarily disabled due to TypeScript type import issue
@@ -109,13 +111,17 @@ const viteConfig = defineConfig((mode: ConfigEnv) => {
       createStyleImportPlugin({
         resolves: [VxeTableResolve()],
       }),
-      ...(enableCompression ? [viteCompression({
-        deleteOriginFile: false,
-      })] : []),
+      ...(enableCompression
+        ? [
+            viteCompression({
+              deleteOriginFile: false,
+            }),
+          ]
+        : []),
     ],
     root: process.cwd(),
     resolve: { alias },
-    base: isDev ? './' : (env.VITE_PUBLIC_PATH || '/'),
+    base: isDev ? './' : env.VITE_PUBLIC_PATH || '/',
     optimizeDeps: {
       entries: ['index.html', 'src/main.ts'],
       include: ['element-plus/es/locale/lang/zh-cn', 'element-plus/es/locale/lang/en'],
@@ -129,20 +135,22 @@ const viteConfig = defineConfig((mode: ConfigEnv) => {
       hmr: true,
       proxy: {
         // Mock 模式下跳过 /api/* 路径，由 MSW 处理
-        ...(env.VITE_USE_MOCK !== 'true' ? {
-          '/api': createMangoApiProxy(proxyTarget),
-          '/mango-message': {
-            target: proxyTarget,
-            ws: true,
-            changeOrigin: true,
-            rewrite: (path) => path.replace(/^\/mango-message/, ''),
-          },
-          '/ai': {
-            target: proxyTarget,
-            ws: true,
-            changeOrigin: true,
-          },
-        } : {}),
+        ...(env.VITE_USE_MOCK !== 'true'
+          ? {
+              '/api': createMangoApiProxy(proxyTarget),
+              '/mango-message': {
+                target: proxyTarget,
+                ws: true,
+                changeOrigin: true,
+                rewrite: (path) => path.replace(/^\/mango-message/, ''),
+              },
+              '/ai': {
+                target: proxyTarget,
+                ws: true,
+                changeOrigin: true,
+              },
+            }
+          : {}),
       },
     },
     build: {

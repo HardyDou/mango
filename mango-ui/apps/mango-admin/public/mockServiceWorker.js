@@ -5,12 +5,34 @@
  * Mock Service Worker.
  * @see https://github.com/mswjs/msw
  * - Please do NOT modify this file.
+ * - Mango compatibility patch: keep createMockRequestId when regenerating this worker.
  */
 
 const PACKAGE_VERSION = '2.13.3'
 const INTEGRITY_CHECKSUM = '4db4a41e972cec1b64cc569c66952d82'
 const IS_MOCKED_RESPONSE = Symbol('isMockedResponse')
 const activeClientIds = new Set()
+
+function createMockRequestId() {
+  if (typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID()
+  }
+  if (typeof crypto.getRandomValues !== 'function') {
+    throw new Error('Web Crypto getRandomValues is required to create an MSW request ID')
+  }
+
+  const bytes = crypto.getRandomValues(new Uint8Array(16))
+  bytes[6] = (bytes[6] & 0x0f) | 0x40
+  bytes[8] = (bytes[8] & 0x3f) | 0x80
+  const hex = Array.from(bytes, (value) => value.toString(16).padStart(2, '0'))
+  return [
+    hex.slice(0, 4).join(''),
+    hex.slice(4, 6).join(''),
+    hex.slice(6, 8).join(''),
+    hex.slice(8, 10).join(''),
+    hex.slice(10, 16).join(''),
+  ].join('-')
+}
 
 addEventListener('install', function () {
   self.skipWaiting()
@@ -112,7 +134,7 @@ addEventListener('fetch', function (event) {
     return
   }
 
-  const requestId = crypto.randomUUID()
+  const requestId = createMockRequestId()
   event.respondWith(handleRequest(event, requestId, requestInterceptedAt))
 })
 

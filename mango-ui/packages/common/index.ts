@@ -13,6 +13,7 @@ export * from './utils/theme';
 export * from './utils/formatTime';
 export * from './utils/mitt';
 export * from './utils/other';
+export * from './utils/webCrypto';
 export * from './utils/apiCrypto';
 export * from './utils/arrayOperation';
 export * from './utils/authFunction';

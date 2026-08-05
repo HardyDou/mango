@@ -25,6 +25,7 @@ const externalPackages = [
   '@mango/common/utils/tagsView',
   '@mango/common/utils/theme',
   '@mango/common/utils/menuTree',
+  '@mango/common/utils/webCrypto',
   '@mango/file',
   '@mango/grid-layout',
   '@mango/grid-widgets',

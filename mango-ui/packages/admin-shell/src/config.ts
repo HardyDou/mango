@@ -3,6 +3,7 @@ import type { MangoAuthConfig, MangoAuthProfileSection } from '@mango/auth/confi
 import type { MangoFrontendApp, MangoRuntimeConfig, MangoRuntimeConfigLoadOptions } from '@mango/app-runtime';
 import type { MangoAdminFeatureCode, MangoAdminFeatures } from '@mango/admin-pages/features';
 import type { MangoGridWidgetDefinition } from '@mango/grid-widgets';
+import { installWebCryptoRandomUUIDCompatibility } from '@mango/common/utils/webCrypto';
 
 export interface MangoAdminFeatureRegistration {
   businessDomainCode?: string;
@@ -81,6 +82,7 @@ let mangoAdminShellOptions: MangoAdminShellOptions = {
 };
 
 export function configureMangoAdminShell(options: MangoAdminShellOptions = {}) {
+  installWebCryptoRandomUUIDCompatibility();
   mangoAdminShellOptions = {
     ...mangoAdminShellOptions,
     ...options,

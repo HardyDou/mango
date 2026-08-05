@@ -30,7 +30,7 @@ configureMangoAdminShell({
 
 // MSW Mock 支持（开发环境且启用时）
 async function enableMock() {
-  if (import.meta.env.VITE_USE_MOCK === 'true') {
+  if (import.meta.env.DEV && import.meta.env.VITE_USE_MOCK === 'true') {
     const { startMockWorker } = await import('./mocks/browser');
     await startMockWorker();
     return;

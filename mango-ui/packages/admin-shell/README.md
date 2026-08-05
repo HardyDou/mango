@@ -18,6 +18,7 @@
 | 读取 Shell 配置  | `getMangoAdminShellOptions()`                                                                                    |
 | 创建路由         | `createMangoAdminRouter()`                                                                                       |
 | 安装 Shell 插件  | `installShellApp()`                                                                                              |
+| 运行时兼容       | 配置或安装 Shell 时自动补齐安全的 Web Crypto `randomUUID`，业务入口无需 polyfill                                 |
 | 菜单运行时       | `useMenuHost()`                                                                                                  |
 | 页面运行时       | `useRuntimeHost()`                                                                                               |
 | 运行时配置       | `loadShellRuntimeConfig()`                                                                                       |
@@ -318,6 +319,10 @@ Shell 自带首页、登录页、账户页和错误页。业务菜单来自后�
 
 Shell 会注册 unauthorized handler 并清理 session 后跳转 `/login`。检查 request 是否使用 `@mango/common` 的请求工具。
 
+**`window.crypto.randomUUID is not a function`**
+
+升级到包含 Issue #722 修复的匹配 `@mango/common`、`@mango/admin-shell`、`@mango/admin` 与 CLI 版本矩阵。Shell 会在 `configureMangoAdminShell()`、`createMangoAdminApp()` 或 `installShellApp()` 启动链内幂等安装基于 `getRandomValues` 的安全 fallback；业务不要在私有 `main.ts` 重复实现。完全缺少 `getRandomValues` 的环境需要升级浏览器/WebView 或改用安全上下文。
+
 **模块诊断一直是 UNKNOWN**
 
 确认 Shell 构建时显式启用了诊断、URL 使用 loopback IP literal、项目已安装 Playwright 和 Chromium。缺浏览器时 CLI 会明确返回 UNKNOWN/退出 3，且不会自动下载。
@@ -329,6 +334,8 @@ Shell 会注册 unauthorized handler 并清理 session 后跳转 `/login`。检�
 - [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)
 
 ## 11. 变更影响记录
+
+- Issue #722 将 Web Crypto UUID 兼容收口到 Shell 启动链：原生实现保持不变，旧环境由 `@mango/common` 安全补齐；不改变菜单、页面注册、登录态、权限、租户或后端接口合同。正式消费需要按 `common -> admin-shell -> admin -> CLI` 发布矩阵整体升级。
 
 - `@mango/admin-shell@1.0.55` 对齐 `@mango/notice@1.0.35`，承接未读分类筛选、结构化详情主操作和安全 fallback 导航。菜单加载、页面注册、登录态、权限、租户和其它运行时路由语义保持不变。
 
