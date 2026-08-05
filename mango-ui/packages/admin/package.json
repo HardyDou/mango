@@ -1,6 +1,6 @@
 {
   "name": "@mango/admin",
-  "version": "1.0.62",
+  "version": "1.0.63",
   "private": false,
   "type": "module",
   "main": "./dist/index.js",
@@ -55,7 +55,7 @@
     "@mango/calendar": "workspace:1.0.33",
     "@mango/file": "workspace:1.0.33",
     "@mango/notice": "workspace:1.0.37",
-    "@mango/numgen": "workspace:1.0.33",
+    "@mango/numgen": "workspace:1.0.34",
     "@mango/payment": "workspace:1.0.25",
     "@mango/template": "workspace:1.0.33",
     "@mango/workflow": "workspace:1.0.39",

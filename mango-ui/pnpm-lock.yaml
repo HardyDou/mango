@@ -755,7 +755,7 @@ importers:
         specifier: workspace:1.0.37
         version: link:../notice
       '@mango/numgen':
-        specifier: workspace:1.0.33
+        specifier: workspace:1.0.34
         version: link:../numgen
       '@mango/payment':
         specifier: workspace:1.0.25

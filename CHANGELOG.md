@@ -1,5 +1,43 @@
 # Mango Changelog
 
+## v2026.08.05-maven-1.0.35-numgen-1.0.34-admin-1.0.63-cli-1.0.98-release - 2026-08-05
+
+Status: `PENDING`. Prepared from merged PR #731 (`1df74779d7d6a8cee422b1936d1b90850c3b9e6a`) for Mango Issue #730. The release state machine will publish and verify the Maven backend, the affected frontend package closure and the CLI lock as one compatibility batch.
+
+### Fixed
+
+- Allow numgen DATE segments to use `MMdd` and arbitrary `DateTimeFormatter` patterns from the management page, with live preview and explicit validation errors.
+- Support daily and yearly sequence grouping needed by the business guarantee-number formats `YYYY年分离式字第XXMMDDNNNN号` and `AAA（YYYY）年第XXNNNN号`.
+- Keep the persisted frontend configuration, backend date validation and injected-clock tests aligned.
+
+### Versions
+
+| Component | Previous | Release | Compatibility |
+| --- | ---: | ---: | --- |
+| Mango Maven non-app backend and `io.mango:mango-docs-bundle` | `1.0.34` | `1.0.35` | Patch-compatible numgen rule validation and rendering; no database migration. |
+| `@mango/numgen` | `1.0.33` | `1.0.34` | Patch-compatible management-page configuration and preview behavior. |
+| `@mango/admin` | `1.0.62` | `1.0.63` | Republished aggregate closure for the fixed numgen package. |
+| `@mango/cli` | `1.0.97` | `1.0.98` | Locks Maven `1.0.35` and the matching frontend matrix. |
+| `@mango/pmo` | `1.3.9` | unchanged | No PMO source or packaged baseline change. |
+
+### Published Packages
+
+1. Complete non-app Maven Reactor and `io.mango:mango-docs-bundle:1.0.35`.
+2. `@mango/numgen@1.0.34`, `@mango/admin@1.0.63`, then `@mango/cli@1.0.98`.
+3. Immutable tag, GitHub Release, Latest docs and versioned docs snapshot.
+
+### Upgrade Notes
+
+1. Upgrade the complete Mango backend matrix to Maven `1.0.35`; do not mix Maven `1.0.34` modules with this batch.
+2. Install `@mango/cli@1.0.98` for new or upgraded projects so the packaged `release-versions.json` selects Maven `1.0.35`, `@mango/numgen@1.0.34` and `@mango/admin@1.0.63`.
+3. Existing numgen rules remain valid. Configure a DATE segment with `MMdd` or another `DateTimeFormatter` pattern, and set DATE `sequenceScope=1` when the sequence should reset by the rendered date group.
+
+### Verification
+
+- Core Maven tests: 26/26 passed; changed-only Java quality gate: `newIssueCount=0`.
+- Numgen frontend unit tests (3/3), build, E2E persistence flow and frontend baseline check passed in PR #731.
+- Release prechecks will verify package locks, capability READMEs, release notes, registry absence, Maven/npm publication, clean consumers and documentation snapshots.
+
 ## v2026.08.05-maven-1.0.34-workflow-withdraw-release - 2026-08-05
 
 Status: `PUBLISHED_AND_VERIFIED`. Published from protected `main` commit `811cc642e04b3dacc5f12dd0255e81cf739afab1` (tree `6decfe773756d59c83b0b13c7d6f9ba27d573503`) after Issue #725 and its required checks passed. The exact-source bundle SHA-256 is `f31db99c094cb3810ab3f2e159608d910c35e2c7a8b90d82f95e671792bd717d`. The complete non-app Maven Reactor and matching `io.mango:mango-docs-bundle:1.0.34` are published and verified from both configured Maven repositories. CLI, PMO and frontend npm coordinates are unchanged and were not republished.
