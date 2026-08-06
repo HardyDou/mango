@@ -1,5 +1,35 @@
 # Mango PMO Changelog
 
+## 1.3.10 - 2026-08-06
+
+### Added
+
+- Add the canonical `business-module` code baseline with backend API/core/starter/starter-remote modules, frontend API/page packages, Flyway/resources, public exports and focused tests.
+- Add manifest-driven rendering and evaluation through `code-baseline.mjs` and `evaluate-code-baseline.mjs`, including input/derived-variable validation, path safety, unresolved-placeholder rejection and projection hash checks.
+- Add explicit rule coverage, Mango Checkstyle and architecture quality profiles, and concrete template conventions for `XxxCode`, `Require`, typed CRUD, tenant persistence, Mapper/API/resource/migration and frontend patterns.
+
+### Changed
+
+- Route development toward selected code baselines and target repository source instead of mandatory bulk reference reading.
+- Require generated code to retain the canonical baseline shape even in legacy repositories, while limiting touched-file cleanup to behavior-preserving violations in the same symbol or local block.
+- Advance lifecycle document contracts to PMO `1.3.10` without changing schema revision `1`; unchanged PMO `1.3.9` documents remain supported only through the existing path/SHA/version historical baseline.
+- Ship the mechanically synchronized business-starter baseline, package-root Codex plugin and project Skills in `@mango/pmo@1.3.10`.
+
+### Upgrade Notes
+
+1. Publish and verify `@mango/pmo@1.3.10` before installing `@mango/cli@1.0.99`.
+2. Run `mango pmo upgrade --project-dir . --to 1.3.10 --dry-run`, review the projected rules, code templates, tools, Agents and Skills, then perform the upgrade and run `mango pmo check --project-dir . --locked`.
+3. Use the published `business-module` baseline for new module work. Existing modules are not automatically rewritten and should only receive locally verifiable cleanup when their code is otherwise being changed.
+4. Preserve historical PMO `1.3.9` lifecycle documents only when the upgrade-generated path, SHA-256 and version baseline remains valid; new or modified lifecycle documents use `1.3.10`.
+
+### Verification
+
+- `node --test mango-pmo/tests/code-baseline.test.mjs mango-pmo/tests/pmo-preflight.test.mjs mango-pmo/tests/document-contract/document-contract.test.mjs`
+- `node mango-ui/packages/mango-pmo/scripts/build-package.mjs && node mango-ui/packages/mango-pmo/scripts/check-package.mjs`
+- `node mango-business-starter/scripts/sync-pmo-baseline.mjs --check`
+- `node mango-ui/packages/mango-cli/scripts/check-business-module-template.mjs`
+- `node mango-ui/packages/mango-cli/scripts/check-cli.mjs`
+
 ## 1.3.9 - 2026-08-02
 
 ### Fixed

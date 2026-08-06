@@ -1,5 +1,30 @@
 # @mango/cli Changelog
 
+## 1.0.99 - 2026-08-06
+
+### Added
+
+- Consume PMO `1.3.10`'s canonical `business-module` code baseline for `mango module add`, including standard backend/frontend package structure, rule-to-template evidence, Checkstyle/architecture profiles and generated-project checks.
+
+### Changed
+
+- Prefer the published baseline and current target-repository contracts over copying non-standard legacy implementations when generating a new module.
+- Keep template variables such as `moduleKebab` validated and derive package/Pascal/camel/resource identifiers before writing managed files.
+
+### Upgrade Notes
+
+1. Install `@mango/cli@1.0.99` only after `@mango/pmo@1.3.10` resolves from the consume registry.
+2. Upgrade existing business baselines with `mango pmo upgrade --project-dir . --to 1.3.10 --dry-run`, review the diff, then run the real upgrade and `mango pmo check --project-dir . --locked`.
+3. Existing business modules are not rewritten. Use `mango module add` for new modules and keep Mango Maven `1.0.35` plus the unchanged frontend package matrix from the packaged `release-versions.json`.
+
+### Verification
+
+- `pnpm -C mango-ui release:impact --base=v2026.08.05-maven-1.0.35-numgen-1.0.34-admin-1.0.63-cli-1.0.98-release --head=HEAD`
+- `pnpm -C mango-ui --filter @mango/pmo check`
+- `pnpm -C mango-ui --filter @mango/cli test`
+- `node mango-business-starter/scripts/sync-pmo-baseline.mjs --check`
+- Clean consume-registry installation must verify PMO `1.3.10`, generate a full project and business module, and prove the rendered baseline contains no unresolved placeholders.
+
 ## 1.0.98 - 2026-08-05
 
 ### Fixed
