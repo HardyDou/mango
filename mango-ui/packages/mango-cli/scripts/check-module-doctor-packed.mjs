@@ -3,10 +3,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, writeFil
 import http from 'node:http';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
-import {
-  assertPnpmLockfileFixtureInvocations,
-  createPnpmLockfileFixture,
-} from './support/pnpm-lockfile-fixture.mjs';
+import { assertPnpmLockfileFixtureInvocations, createPnpmLockfileFixture } from './support/pnpm-lockfile-fixture.mjs';
 
 const cliPackageRoot = resolve(import.meta.dirname, '..');
 const uiRoot = resolve(cliPackageRoot, '../..');
