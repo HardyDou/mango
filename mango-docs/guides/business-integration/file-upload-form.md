@@ -308,6 +308,7 @@ pnpm -F @mango/file test
 ## 2026-07-27 Bootstrap 生命周期影响
 
 - 普通业务表单上传、回显、预览和下载 API、文件 ID 持久化、权限及租户边界保持不变。需要随业务制品预置的固定文件改用 `FILE_ASSET` Resource，由 Bootstrap 把 classpath 二进制发布到配置的 LOCAL/S3/OSS/COS/Qiniu 存储并写入稳定的 `file_record`、`file_object`；重入时按对象长度和 SHA-256 校验，内容漂移会重新发布。业务升级顺序调整为先完成 `bootstrap apply` 与 `bootstrap verify`，不再在 Runtime 启动代码中上传预置文件。
+
 ## 2026-07-31 文件预览容器适配影响
 
 - `v2026.07.31-maven-1.0.29-pmo-1.3.7-cli-1.0.93-notice-file-dialog-release` 为 `FilePreviewPanel` 增加可选的 `fitContainer`，用于让预览面板填满宿主容器；图片预览默认在预览舞台内使用嵌入式 Element Plus Viewer，不再依赖全屏遮罩交互。上传、文件 ID 持久化、回显、预览元数据、下载 API、权限和租户边界均不变。业务页面升级后应同时验证普通尺寸与 `fitContainer` 布局、图片缩放/切换/关闭，以及自定义 Viewer CSS 是否仍适配。
@@ -319,3 +320,7 @@ pnpm -F @mango/file test
 ## 2026-08-03 Mango 1.0.31 发布影响
 
 - Mango `1.0.31` 不改变文件上传、回显、预览、下载、ZIP/PDF API、fileId 持久化、权限或租户边界。使用 `1.0.30` 或其它 `1.0.3x` 版本的业务项目应成组升级 Maven、`@mango/file` 及其固定依赖、CLI 和 PMO，并在独立 Bootstrap 成功后复验上传到下载的完整闭环；已有文件记录、对象内容和业务附件关系无需重建，也不迁移为 URL 字段。
+
+## 2026-08-06 前端依赖批次发布影响
+
+- 本发布候选将 `@mango/file@1.0.34` 作为前端精确版本循环 cohort 的一员发布，用于保持 `admin-pages -> system -> file -> admin-pages` 的依赖一致性；不改变上传、回显、预览、下载、ZIP/PDF API、fileId 持久化、权限或租户边界。业务项目必须成组升级该批次，文件场景仍按本指南原闭环验收。

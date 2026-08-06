@@ -5,11 +5,11 @@
 ## 文档创建版本兼容性
 
 - **目的**：允许合同语义未变化时保留可追溯的历史文档版本，同时防止新文档借旧版本绕过当前合同。
-- **正向要求**：新建或迁移后的生命周期文档必须使用其合同 `metadata.fixed.pmoVersion`。单文档 checker 始终按该当前版本检查。文档集合 checker 仅可接受合同 `metadata.historicalPmoVersions` 中明确列出的同 schema 历史版本，且业务文档根目录的 `.mango-pmo-legacy-documents.json` 必须逐文件锁定相对路径、SHA-256、`pmoVersion` 和迁移原因；结构、审批、上游 ID 和 SHA-256 摘要检查仍全部执行。
-- **禁止项**：禁止把任意旧版本、未来版本或未在合同声明的版本视为历史兼容；禁止因为文档版本兼容而跳过生命周期阶段顺序、上游摘要或审批门禁；禁止为新建文档选择历史版本或手工伪造历史版本基线。
-- **正例**：PMO `1.3.10` 的合同仍使用 schema revision `1`，显式声明 `1.3.6`、`1.3.7`、`1.3.8` 与 `1.3.9` 为历史版本；`mango pmo upgrade` 为升级前已有且内容未变的历史 BRD/SRS/TDD/Plan 写入哈希版本基线，集合检查通过，模板和单文档 checker 则继续创建和校验 `1.3.10` 文档。
+- **正向要求**：新建或迁移后的生命周期文档必须使用其合同 `metadata.fixed.pmoVersion`。单文档 checker 始终按当前合同检查。文档集合 checker 仅可接受合同 `metadata.historicalPmoVersions` 中明确列出的同 schema 历史版本，且业务文档根目录的 `.mango-pmo-legacy-documents.json` 必须逐文件锁定相对路径、SHA-256、`pmoVersion` 和迁移原因。路径、内容摘要和版本全部匹配时，该文件视为不可变的历史审批快照，不再追溯应用当前合同后来增加的字段、章节、表格或审批格式；集合级重复 `documentId`、相邻阶段类型和上游 SHA-256 摘要仍必须检查。
+- **禁止项**：禁止把任意旧版本、未来版本或未在合同声明的版本视为历史兼容；禁止因为文档版本兼容而跳过集合级生命周期阶段顺序或上游摘要；禁止为新建文档选择历史版本、手工伪造历史版本基线，或修改已锁定正文后继续沿用旧摘要。
+- **正例**：PMO `1.3.11` 的合同仍使用 schema revision `1`，显式声明 `1.3.6` 至 `1.3.10` 为历史版本；`mango pmo upgrade` 为升级前已有且内容未变的 BRD/SRS/TDD/Plan 写入哈希版本基线。即使当前合同后来新增“参考资料与代码基线”章节，锁定快照仍按原文进入集合图检查；模板和单文档 checker 继续创建和校验 `1.3.11` 文档。
 - **反例**：把新 BRD 写成 `pmoVersion: 1.3.6` 却没有升级生成的基线，或把 `1.3.5` 当作历史兼容版本。错误原因：前者没有受控历史证据，后者未获得当前合同的兼容声明。
-- **机器判定**：`pin-historical-pmo-version-documents.mjs` 在升级前内容上生成历史版本基线；`check-document-set.mjs` 只在基线版本和 SHA-256 均匹配时开启合同声明的历史版本兼容，输出实际命中的历史版本文档；`check-*-requirements.mjs` 和模板继续要求当前合同版本。
+- **机器判定**：`pin-historical-pmo-version-documents.mjs` 在升级前内容上生成历史版本基线；`check-document-set.mjs` 只在路径、基线版本和 SHA-256 均匹配时跳过当前单文档合同复验，同时保留重复 ID、阶段链和上游摘要检查，并输出实际命中的历史版本文档；`check-*-requirements.mjs` 和模板继续要求当前合同版本。
 
 ## LIFE-RISK-001 L0-L3 风险分级
 

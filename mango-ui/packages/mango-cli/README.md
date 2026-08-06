@@ -622,6 +622,12 @@ Issue #690 覆盖 CLI、Maven plugin、Bootstrap/runtime、Resource、BSQL、Boo
 
 业务项目不需要修改生成模板或在 `main.ts` 添加 `crypto.randomUUID` polyfill。修复由 `@mango/common` 和 Admin Shell 启动链提供；CLI 后续发布时必须把 `common -> admin-shell -> admin` 的匹配版本写入同一 `release-versions.json` 前端矩阵，业务项目整体升级该矩阵即可。该修复不改变 CLI 命令、模板结构、后端 Maven、菜单、权限或租户配置。
 
+### 1.0.101 发布影响
+
+`@mango/cli@1.0.101` 精确依赖 `@mango/pmo@1.3.11`，锁定包含 Issue #721 个人中心扩展链的完整前端矩阵：Auth `1.0.26`、Notice `1.0.38`、System `1.0.32`、Admin Shell `1.0.58` 及其精确依赖闭包。业务项目必须整体升级 `release-versions.json` 中的版本，不能只替换 Notice 或 Shell；否则精确 workspace 依赖和运行时 chunk 可能仍落到旧制品。
+
+PMO `1.3.11` 保留路径、SHA-256、历史 `pmoVersion` 均匹配的不可变审批快照，不再用当前新增章节追溯重验正文；重复文档 ID、相邻阶段和上游摘要仍继续检查。先执行 `mango pmo upgrade --project-dir . --to 1.3.11 --dry-run`，审阅后升级并运行 locked check。Mango Maven 保持 `1.0.35`，本批次没有后端制品或数据库 migration。前端重建后应真实验收 `/profile` 的“我的消息、系统公告、通知设置、登录日志”。
+
 ### 1.0.100 发布影响
 
 `@mango/cli@1.0.100` 精确依赖 `@mango/pmo@1.3.10`，并通过 PMO bundle 的 canonical `business-module` code baseline 生成新业务模块。baseline 同时定义后端 API/core/starter/starter-remote、前端 API/page package、`moduleKebab` 等输入与派生变量、Mango Checkstyle/架构质量配置，以及 `XxxCode`、`Require`、typed CRUD、tenant、Mapper、资源、migration、页面注册和测试等规范证据。

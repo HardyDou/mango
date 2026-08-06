@@ -335,6 +335,8 @@ Shell 会注册 unauthorized handler 并清理 session 后跳转 `/login`。检�
 
 ## 11. 变更影响记录
 
+- `@mango/admin-shell@1.0.58` 在执行 feature registrars 后把返回的 `profileSections` 注册到 Auth 个人中心。与 Auth `1.0.26`、Notice `1.0.38`、System `1.0.32` 组合时，个人中心自动显示“我的消息、系统公告、通知设置、登录日志”；未集成对应能力包时不注入入口。菜单、权限和租户契约不变。
+
 - Issue #722 将 Web Crypto UUID 兼容收口到 Shell 启动链：原生实现保持不变，旧环境由 `@mango/common` 安全补齐；不改变菜单、页面注册、登录态、权限、租户或后端接口合同。正式消费需要按 `common -> admin-shell -> admin -> CLI` 发布矩阵整体升级。
 
 - `@mango/admin-shell@1.0.55` 对齐 `@mango/notice@1.0.35`，承接未读分类筛选、结构化详情主操作和安全 fallback 导航。菜单加载、页面注册、登录态、权限、租户和其它运行时路由语义保持不变。

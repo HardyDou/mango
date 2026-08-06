@@ -1,11 +1,7 @@
 {
   "npm": {
     "@mango/auth": {
-      "files": [
-        "dist/index.js",
-        "dist/index.d.ts",
-        "dist/style.css"
-      ],
+      "files": ["dist/config.js", "dist/config.d.ts", "dist/index.js", "dist/index.d.ts", "dist/style.css"],
       "contains": [
         {
           "path": "dist/index.js",
@@ -14,6 +10,27 @@
         {
           "path": "dist/index.d.ts",
           "text": "useMangoLoginFlow"
+        },
+        {
+          "path": "dist/config.js",
+          "text": "registerMangoAuthProfileSections"
+        },
+        {
+          "path": "dist/config.d.ts",
+          "text": "registerMangoAuthProfileSections"
+        }
+      ]
+    },
+    "@mango/admin-shell": {
+      "files": ["dist/index.js", "dist/index.d.ts", "dist/runtime.js", "dist/runtime.d.ts", "style.css"],
+      "containsMatching": [
+        {
+          "pattern": "dist/featureRegistrars-*.js",
+          "text": "registerMangoAuthProfileSections"
+        },
+        {
+          "pattern": "dist/featureRegistrars-*.js",
+          "text": "registration.profileSections"
         }
       ]
     },
@@ -28,11 +45,7 @@
       ]
     },
     "@mango/link-page": {
-      "files": [
-        "dist/index.js",
-        "dist/index.d.ts",
-        "dist/style.css"
-      ],
+      "files": ["dist/index.js", "dist/index.d.ts", "dist/style.css"],
       "contains": [
         {
           "path": "dist/index.d.ts",
@@ -44,12 +57,21 @@
         }
       ]
     },
+    "@mango/notice": {
+      "files": ["dist/admin-pages.js", "dist/admin-pages.d.ts"],
+      "contains": [
+        {
+          "path": "dist/admin-pages.js",
+          "text": "profileSections"
+        },
+        {
+          "path": "dist/admin-pages.d.ts",
+          "text": "profileSections"
+        }
+      ]
+    },
     "@mango/system": {
-      "files": [
-        "dist/index.js",
-        "dist/index.d.ts",
-        "dist/style.css"
-      ],
+      "files": ["dist/admin-pages.js", "dist/admin-pages.d.ts", "dist/index.js", "dist/index.d.ts", "dist/style.css"],
       "contains": [
         {
           "path": "dist/index.js",
@@ -58,6 +80,14 @@
         {
           "path": "dist/index.d.ts",
           "text": "SystemConfigPanel"
+        },
+        {
+          "path": "dist/admin-pages.js",
+          "text": "profileSections"
+        },
+        {
+          "path": "dist/admin-pages.d.ts",
+          "text": "profileSections"
         }
       ]
     }

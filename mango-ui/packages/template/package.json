@@ -1,6 +1,6 @@
 {
   "name": "@mango/template",
-  "version": "1.0.33",
+  "version": "1.0.34",
   "private": false,
   "type": "module",
   "main": "./dist/index.js",
@@ -26,10 +26,10 @@
   ],
   "dependencies": {
     "@element-plus/icons-vue": "2.3.2",
-    "@mango/admin-pages": "workspace:1.0.32",
-    "@mango/common": "workspace:1.0.25",
-    "@mango/file": "workspace:1.0.33",
-    "@mango/system": "workspace:1.0.31"
+    "@mango/admin-pages": "workspace:1.0.33",
+    "@mango/common": "workspace:1.0.26",
+    "@mango/file": "workspace:1.0.34",
+    "@mango/system": "workspace:1.0.32"
   },
   "peerDependencies": {
     "element-plus": ">=2.14.1 <3",

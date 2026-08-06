@@ -276,3 +276,7 @@ pnpm -F @mango/admin-shell build
 ## 2026-08-03 Mango 1.0.31 发布影响
 
 - Mango `1.0.31` 不改变既有按钮 `permissionCode`、角色授权、登录态权限集合、后端接口鉴权、租户隔离或 `v-auth` 展示语义。使用 `1.0.30` 或其它 `1.0.3x` 版本的业务项目成组升级后，应先确认 Bootstrap 的 `API_RESOURCE`、`AUTH_MENU` 与租户对账回执成功并重新登录刷新权限，再按本指南核对前后端权限码；手工写授权表或关闭鉴权不能证明升级成功。
+
+## 2026-08-06 个人中心前端制品发布影响
+
+- 本发布候选只把已实现的个人中心 section 注册逻辑纳入可消费 npm 制品并同步固定依赖，不新增或修改按钮 `permissionCode`、角色授权、登录态权限集合与后端接口鉴权。个人中心入口按当前登录用户能力展示，不通过业务按钮授权控制；若 `/profile` 内入口缺失，应核对 `@mango/auth`、`@mango/notice`、`@mango/system`、`@mango/admin-shell` 是否成组升级，而不是补写角色按钮权限。

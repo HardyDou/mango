@@ -256,6 +256,8 @@ API 封装：
 
 ## 11. 变更影响记录
 
+- `@mango/auth@1.0.26` 公开 `@mango/auth/config` 中的 `registerMangoAuthProfileSections()`，供 Admin Shell 在 feature registrar 执行后集中装配个人中心扩展。登录、用户资料、权限、租户和既有 `ProfileView` 路由保持兼容。
+
 - Issue 643 为个人中心增加页面内部设置导航，并把头像地址输入改为图片选择、保存时上传和受保护文件回显。修改密码已经收敛为个人中心内置子页；Admin Shell 通过 `profile.slots.theme` 注入页内主题设置，并保留独立 `PasswordView` 和 `/password` 兼容入口。`ProfileView` 的公开导出和路由 key 不变；新增 `MangoAvatar` 供宿主顶部用户区、System 用户组件及业务消费者统一回显文件头像。该变化不新增框架主菜单，不把对象存储地址或临时下载地址写入身份资料。
 - 本次新增登录首次强制改密、密码复杂度提示和弱密码提交拦截；`LoginView` 和 `PasswordView` 都会展示密码规则，并按统一密码策略校验。登录成功后若后端返回 `passwordResetRequired=true` 或 `loginAction=CHANGE_PASSWORD`，前端会切换到改密弹窗而不是直接进入后台。该变更不改变 `login()`、`logout()`、`getUserInfo()`、`getLoginTenantOptions()`、`wecomLogin()` 和 `updatePassword()` 的接口路径。
 - 本次新增 `useMangoLoginFlow()` 登录流程 hook，默认 `LoginView` 已改为复用该 hook。业务项目如需完全自定义登录页，可在自己的 `/login` 组件中调用 hook；页面 UI、布局和表单校验仍由业务组件负责。

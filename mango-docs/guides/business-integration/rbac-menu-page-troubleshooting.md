@@ -282,3 +282,7 @@ pnpm -F @mango/admin-shell build
 ## 2026-08-03 Mango 1.0.31 发布影响
 
 - Mango `1.0.31` 不改变既有菜单树 API、`component` key、角色菜单授权、租户应用绑定或页面注册协议。使用 `1.0.30` 或其它 `1.0.3x` 版本的业务项目应按升级指南成组更新 Maven、前端包、CLI 和 PMO；升级后的菜单缺失应先确认独立 Bootstrap 的 Resource 与租户步骤回执成功，再继续按本指南核对资源声明、角色授权和页面 key，不能通过手工补表绕过初始化链路。
+
+## 2026-08-06 个人中心前端制品发布影响
+
+- 本发布候选将个人中心已有的“我的消息、系统公告、通知设置、登录日志”section 注册逻辑交付到 `@mango/auth@1.0.26`、`@mango/notice@1.0.38`、`@mango/system@1.0.32` 和 `@mango/admin-shell@1.0.58`，并成组更新相关前端依赖。它不新增菜单 `component` key、角色菜单关系、按钮权限码或租户应用绑定；这些入口属于 `/profile` 内部导航。普通菜单仍按本指南排查，只有个人中心入口缺失时才额外核对四个包是否来自同一发布批次且 Admin Shell 已执行 profile-section 聚合。
