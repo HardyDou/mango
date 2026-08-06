@@ -1,5 +1,55 @@
 # Mango Changelog
 
+## v2026.08.06-pmo-1.3.10-cli-1.0.99-code-baseline-release - 2026-08-06
+
+Status: `PENDING`. Release PR and immutable publication are not complete. The approved npm-only batch publishes `@mango/pmo@1.3.10` before `@mango/cli@1.0.99`; Mango Maven remains `1.0.35` and is not republished. The target tag and GitHub Release are `v2026.08.06-pmo-1.3.10-cli-1.0.99-code-baseline-release`.
+
+### Added
+
+- Add the canonical `business-module` code baseline, covering the backend API/core/starter/starter-remote module and package structure, Flyway/resources, frontend API/page packages, public exports and focused tests.
+- Add typed template inputs such as `moduleKebab`, derived names, manifest-declared outputs, rule coverage, template self-checks and generated-project checks.
+- Bind concrete Mango conventions to template evidence, including `XxxCode implements BizCode`, `Require`, typed CRUD services, tenant entities, Mapper/API/resource/migration patterns, frontend registration and tests.
+- Bind generated Java to Mango Checkstyle and architecture rule profiles so templates demonstrate each governed code rule through executable code and machine checks.
+
+### Changed
+
+- Make code baselines and target repository source the default development inputs; references are directed lookups instead of a mandatory bulk-reading stage.
+- Require newly generated code to follow the selected baseline even when surrounding legacy code is non-standard, while limiting cleanup of touched legacy code to behavior-preserving, locally verifiable violations in the same symbol or code block.
+- Package the canonical code templates, renderer/evaluator, development routing and synchronized business-starter projection in PMO `1.3.10`; CLI `1.0.99` consumes that exact PMO version for project generation and `mango module add`.
+
+### Versions
+
+| Component | Previous | Release | Compatibility |
+| --- | ---: | ---: | --- |
+| `@mango/pmo` | `1.3.9` | `1.3.10` | Patch-compatible baseline and workflow update; lifecycle contract schema remains revision `1`, with `1.3.9` admitted only through the existing controlled historical-document baseline. |
+| `@mango/cli` | `1.0.98` | `1.0.99` | Patch-compatible CLI/template release that exactly depends on PMO `1.3.10`; command names and existing generated project runtime behavior remain compatible. |
+| Canonical business-module code baseline, starter/module templates and Skills | PMO `1.3.9` / CLI `1.0.98` bundle | PMO `1.3.10` / CLI `1.0.99` bundle | New module generation uses the canonical template; existing business source is not rewritten automatically. |
+| Mango Maven backend | `1.0.35` | unchanged | No Java runtime, Maven artifact or database migration is published. |
+| Other frontend npm packages | current `release-versions.json` matrix | unchanged | No runtime frontend package is republished. |
+
+### Published Packages
+
+| Order | Target | Version | Status |
+| ----: | ------ | ------- | ------ |
+| 1 | `@mango/pmo` | `1.3.10` | `PENDING` |
+| 2 | `@mango/cli` | `1.0.99` | `PENDING` |
+| 3 | Git tag and GitHub Release | `v2026.08.06-pmo-1.3.10-cli-1.0.99-code-baseline-release` | `PENDING` |
+| 4 | Latest documentation | release tag above | `PENDING`; npm-only batch does not create a Maven versioned docs snapshot |
+
+### Upgrade Notes
+
+1. Install `@mango/cli@1.0.99` from the configured consume registry only after both PMO and CLI coordinates resolve there.
+2. In an existing business repository, run `mango pmo upgrade --project-dir . --to 1.3.10 --dry-run`, review the baseline, code-template, Agent and Skill changes, then run the upgrade with the project's normal shell-sync choice and finish with `mango pmo check --project-dir . --locked`.
+3. Use `mango module add` for new modules so generation starts from the published canonical business-module baseline. Existing modules are not bulk-rewritten; clean only behavior-preserving violations in the exact legacy symbol or block touched by a future change.
+4. Keep Mango Maven `1.0.35` and every non-target npm coordinate at the versions packaged in CLI `1.0.99`. No database rebuild or migration is required by this release.
+
+### Verification
+
+- PR #737 passed `pr-contract-check`, `pmo-doc-check`, `frontend-pr-quality` and the underlying PMO, CLI/JavaScript, Java and documentation gates before merge.
+- Release preparation must pass PMO package build/pack verification, CLI tests, code-baseline tests, template projection checks, release-impact/version checks, generated backend gate, admin style checks and capability-document audits from the protected release commit.
+- Before publication, `@mango/pmo@1.3.10` and `@mango/cli@1.0.99` must be absent from both `npm-hosted` and `npm-group`; publication then runs in PMO-to-CLI dependency order through `mango release publish` only.
+- Release closeout requires matching version, integrity, shasum and publication time from both registries plus a clean `npm-group` consumer that installs CLI `1.0.99`, generates a full project, verifies PMO `1.3.10`, renders a business module without unresolved placeholders, and passes locked baseline/template checks.
+
 ## v2026.08.05-maven-1.0.35-numgen-1.0.34-admin-1.0.63-cli-1.0.98-release - 2026-08-05
 
 Status: `PUBLISHED_AND_VERIFIED`. Published from protected `main` source commit `ce9262beccad859a43299d7df554747e1b108b0a` (tree `4ec8532b59a3f4c377715b4e387cf6c814ee7f1e`) after Issue #730, implementation PR #731 and release PR #733 passed their required checks. The exact-source bundle SHA-256 is `3e22057b0af7c3e13f1bedf733952ae7c210a8bd85481c06ade0a558c7f91d41`. Maven `1.0.35`, `@mango/numgen@1.0.34`, `@mango/admin@1.0.63` and `@mango/cli@1.0.98` are `PUBLISHED_AND_VERIFIED`; the immutable tag and [GitHub Release](https://github.com/HardyDou/mango/releases/tag/v2026.08.05-maven-1.0.35-numgen-1.0.34-admin-1.0.63-cli-1.0.98-release) are `CREATED_AND_VERIFIED`.

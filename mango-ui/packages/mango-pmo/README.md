@@ -17,6 +17,7 @@
 | 业务同步          | `mango pmo sync/upgrade`                                                    | CLI 从本包安装业务仓 baseline，并同步 canonical PR 风险合同区段                    |
 | 影响驱动门禁      | `dist/baseline/tools/risk-verification.mjs`、`classify-pmo-check-scope.mjs` | 校验需求/方案风险，并把 Java PR 限定到受影响 Maven 模块                            |
 | 前端页面基线      | `dist/baseline/tools/check-frontend-page-baseline.mjs`                      | 检查新增或修改页面的默认骨架，并支持带可复核原因的按类型或整页例外                 |
+| 标准代码基线      | PMO baseline manifest 与 code-baseline tools                                | 为新增业务模块提供模块/包结构、规范实现样例、变量渲染和机器自检                    |
 
 ## 3. 接入方式
 
@@ -30,12 +31,12 @@ pnpm -F @mango/pmo check
 业务项目使用：
 
 ```bash
-npm view @mango/pmo@1.3.9 version --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
-npm view @mango/cli@1.0.94 version --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
-npm install -g @mango/cli@1.0.94 --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
+npm view @mango/pmo@1.3.10 version --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
+npm view @mango/cli@1.0.99 version --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
+npm install -g @mango/cli@1.0.99 --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
 mango pmo status --project-dir .
-mango pmo upgrade --project-dir . --to 1.3.9 --dry-run
-mango pmo upgrade --project-dir . --to 1.3.9 --sync-shell
+mango pmo upgrade --project-dir . --to 1.3.10 --dry-run
+mango pmo upgrade --project-dir . --to 1.3.10 --sync-shell
 mango pmo check --project-dir . --locked
 ```
 

@@ -1,6 +1,6 @@
 {
   "name": "@mango/pmo",
-  "version": "1.3.9",
+  "version": "1.3.10",
   "private": false,
   "type": "module",
   "description": "Versioned Mango PMO baseline, document contracts, and lifecycle skills.",
