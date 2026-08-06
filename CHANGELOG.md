@@ -2,7 +2,9 @@
 
 ## v2026.08.06-pmo-1.3.11-cli-1.0.101-profile-sections-release - 2026-08-06
 
-Status: `PENDING`. Issues #721 and #744 are prepared on the protected-release path. The source commit, Git tree, exact-source checksum, PR, tag, GitHub Release, Nexus publication metadata, state-machine manifest and clean business-consumer evidence will be filled from the merged `origin/main` source before this section can become `PUBLISHED_AND_VERIFIED`.
+Status: `PUBLISHED_AND_VERIFIED`. PR #745 passed the protected required checks and merged as source commit `4592e70ac31cb6e8c57709da027c963e50b9ab80` (tree `b75611a455f354093898b2961ada8ded25197f74`). The exact-source archive is 1,755,463,680 bytes with SHA-256 `2f708650d6d22b426efea1dfe904e2fefbdb9ff6261a6cd2622b4683615f11e8`. All 24 npm coordinates, the immutable tag, [GitHub Release](https://github.com/HardyDou/mango/releases/tag/v2026.08.06-pmo-1.3.11-cli-1.0.101-profile-sections-release) and Latest documentation are published and verified; Mango Maven `1.0.35` was verified and not republished.
+
+The canonical publication manifest SHA-256 is `37de973286f36a3199425346e97a67eb599612db2c7061d8bf6be5726870d8a7`. Its failed post-verify attempt is preserved because the original harness incorrectly required every published package at a non-full admin consumer root after immutable publication had succeeded. No immutable state was retried. The completed read-only recovery manifest SHA-256 is `53e4b2ab50bcf3a4194a50636b04d659bb2de9676b04885a162c3b48755c224c`.
 
 ### Fixed
 
@@ -29,18 +31,18 @@ Status: `PENDING`. Issues #721 and #744 are prepared on the protected-release pa
 
 | Order | Target | Version | Status |
 | ----: | ------ | ------- | ------ |
-| 1 | `@mango/common` | `1.0.26` | `PENDING` |
-| 2 | `@mango/auth`, `@mango/rbac`, `@mango/grid-layout`, `@mango/home`, `@mango/site-shell` | `1.0.26`, `1.0.24`, `1.0.17`, `1.0.15`, `1.0.13` | `PENDING` |
-| 3 | `@mango/grid-widgets` | `1.0.23` | `PENDING` |
-| 4 | Exact cyclic cohort: `@mango/admin-pages`, `@mango/file`, `@mango/system` | `1.0.33`, `1.0.34`, `1.0.32` | `PENDING`; publish all before consume verification |
-| 5 | `@mango/calendar`, `@mango/cms`, `@mango/job`, `@mango/link`, `@mango/notice`, `@mango/numgen`, `@mango/payment`, `@mango/template`, `@mango/workflow` | `1.0.34`, `1.0.23`, `1.0.26`, `1.0.20`, `1.0.38`, `1.0.35`, `1.0.26`, `1.0.34`, `1.0.40` | `PENDING` |
-| 6 | `@mango/workflow-business-example` | `1.0.39` | `PENDING` |
-| 7 | `@mango/admin-shell` | `1.0.58` | `PENDING` |
-| 8 | `@mango/admin` | `1.0.64` | `PENDING` |
-| 9 | `@mango/pmo` | `1.3.11` | `PENDING` |
-| 10 | `@mango/cli` | `1.0.101` | `PENDING` |
-| 11 | Git tag and GitHub Release | `v2026.08.06-pmo-1.3.11-cli-1.0.101-profile-sections-release` | `PENDING` |
-| 12 | Latest documentation | release source above | `PENDING`; npm-only batch, versioned docs snapshot not applicable |
+| 1 | `@mango/common` | `1.0.26` | `PUBLISHED_AND_VERIFIED` |
+| 2 | `@mango/auth`, `@mango/rbac`, `@mango/grid-layout`, `@mango/home`, `@mango/site-shell` | `1.0.26`, `1.0.24`, `1.0.17`, `1.0.15`, `1.0.13` | `PUBLISHED_AND_VERIFIED` |
+| 3 | `@mango/grid-widgets` | `1.0.23` | `PUBLISHED_AND_VERIFIED` |
+| 4 | Exact cyclic cohort: `@mango/admin-pages`, `@mango/file`, `@mango/system` | `1.0.33`, `1.0.34`, `1.0.32` | `PUBLISHED_AND_VERIFIED` |
+| 5 | `@mango/calendar`, `@mango/cms`, `@mango/job`, `@mango/link`, `@mango/notice`, `@mango/numgen`, `@mango/payment`, `@mango/template`, `@mango/workflow` | `1.0.34`, `1.0.23`, `1.0.26`, `1.0.20`, `1.0.38`, `1.0.35`, `1.0.26`, `1.0.34`, `1.0.40` | `PUBLISHED_AND_VERIFIED` |
+| 6 | `@mango/workflow-business-example` | `1.0.39` | `PUBLISHED_AND_VERIFIED` |
+| 7 | `@mango/admin-shell` | `1.0.58` | `PUBLISHED_AND_VERIFIED` |
+| 8 | `@mango/admin` | `1.0.64` | `PUBLISHED_AND_VERIFIED` |
+| 9 | `@mango/pmo` | `1.3.11` | `PUBLISHED_AND_VERIFIED` |
+| 10 | `@mango/cli` | `1.0.101` | `PUBLISHED_AND_VERIFIED` |
+| 11 | Git tag and GitHub Release | `v2026.08.06-pmo-1.3.11-cli-1.0.101-profile-sections-release` | `CREATED_AND_VERIFIED` |
+| 12 | Latest documentation | release source above | `PUBLISHED_AND_VERIFIED`; npm-only batch, versioned docs snapshot not applicable |
 
 ### Upgrade Notes
 
@@ -51,10 +53,11 @@ Status: `PENDING`. Issues #721 and #744 are prepared on the protected-release pa
 
 ### Verification
 
-- `PENDING`: protected PR required checks, exact source commit/tree/archive checksum and branch-protection comparison.
-- PMO document-contract suite currently passes 43/43; the real guarantee project document-set regression passes all 58 lifecycle documents, including seven pinned historical documents, with the previous 66 retroactive findings removed.
-- Local Node `22.23.1` builds contain `registerMangoAuthProfileSections`, Notice/System `profileSections` and Admin Shell aggregation in the expected fixed files and generated runtime chunk; packed tarball and dual-registry verification remain pending.
-- `PENDING`: release impact/version lock, PMO projection/package, CLI generated-project, affected frontend tests/builds, admin styles, exports, consumer typecheck, Nexus hosted/group back-check, clean installation and real business `/profile` acceptance.
+- PR #745 passed `pr-contract-check`, `pmo-doc-check`, `frontend-pr-quality` and the underlying PMO, CLI, package, documentation and frontend gates. Live branch protection matched `.github/branch-protection-policy.json` before publication.
+- All 24 coordinates resolve from npm-hosted and npm-group with identical versions, integrity, shasum and publication timestamps. Every tarball contract passed and each immutable coordinate was published exactly once. CLI release lock matches all 29 local package versions and keeps Maven `1.0.35`.
+- Git tag and GitHub Release point to source commit `4592e70a...`; Pages run `31083471251` published and verified Latest documentation from the same source.
+- A clean npm-group consumer installed CLI `1.0.101` and PMO `1.3.11`, passed locked PMO validation, generated a module from the published code baseline, passed `vue-tsc` and produced a production build. The real guarantee project also resolved Admin `1.0.64`, Admin Shell `1.0.58`, Notice `1.0.38` and System `1.0.32`, passed its 11/11 upgrade contract, PMO document-set regression, typecheck, production build and runtime health check against database `mango_dev_baohan_system_upgrade_latest_mango_006`.
+- The guarantee application's authenticated `/profile` click-through screenshot and console/network capture remain a business UI acceptance follow-up because the verification session had no controllable browser instance. This does not weaken the completed immutable publication, dual-registry verification, package contracts or clean-consumer build evidence.
 
 ## v2026.08.06-cli-1.0.100-code-baseline-consumer-fix - 2026-08-06
 
