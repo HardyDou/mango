@@ -1,8 +1,12 @@
 import { spawn, spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import http from 'node:http';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
+import {
+  assertPnpmLockfileFixtureInvocations,
+  createPnpmLockfileFixture,
+} from './support/pnpm-lockfile-fixture.mjs';
 
 const cliPackageRoot = resolve(import.meta.dirname, '..');
 const uiRoot = resolve(cliPackageRoot, '../..');
@@ -36,10 +40,73 @@ writeFileSync(
 );
 runChecked('pnpm', ['add', '--offline', '--ignore-scripts', pmoTarball, cliTarball], consumerDirectory);
 
+const command = join(consumerDirectory, 'node_modules', '.bin', 'mango');
+const moduleProjectName = 'packed-module-project';
+const moduleProjectRoot = join(consumerDirectory, moduleProjectName);
+runChecked(command, ['init', moduleProjectName, '--preset', 'custom', '--modules', 'none'], consumerDirectory);
+const lockfileFixture = createPnpmLockfileFixture(join(temporaryRoot, 'module-add-lockfile'), [
+  'packages/quality-center',
+  'packages/quality-center-api',
+]);
+runChecked(
+  command,
+  [
+    'module',
+    'add',
+    'quality-center',
+    '--aggregate',
+    'review-record',
+    '--aggregate-name',
+    '评审记录',
+    '--module-name',
+    '质量中心',
+    '--project-dir',
+    moduleProjectRoot,
+  ],
+  consumerDirectory,
+  {
+    env: {
+      ...lockfileFixture.env,
+      NPM_CONFIG_REGISTRY: 'http://127.0.0.1:9/unreachable-registry/',
+      npm_config_registry: 'http://127.0.0.1:9/unreachable-registry/',
+    },
+  },
+);
+assertPnpmLockfileFixtureInvocations(lockfileFixture.logPath);
+runChecked(command, ['pmo', 'check', '--project-dir', moduleProjectRoot, '--locked'], consumerDirectory);
+const generatedModuleRoot = join(moduleProjectRoot, 'backend/modules/quality-center');
+const code = readFileSync(
+  join(
+    generatedModuleRoot,
+    'quality-center-api/src/main/java/com/example/mango/qualityCenter/api/enums/ReviewRecordCode.java',
+  ),
+  'utf8',
+);
+const service = readFileSync(
+  join(
+    generatedModuleRoot,
+    'quality-center-core/src/main/java/com/example/mango/qualityCenter/core/service/impl/ReviewRecordService.java',
+  ),
+  'utf8',
+);
+if (!code.includes('implements BizCode') || !service.includes('Require.notNull')) {
+  throw new Error('packed CLI module add did not render the published code-baseline conventions');
+}
+for (const root of [
+  generatedModuleRoot,
+  join(moduleProjectRoot, 'frontend/packages/quality-center-api'),
+  join(moduleProjectRoot, 'frontend/packages/quality-center'),
+]) {
+  for (const file of walkFiles(root)) {
+    if (/\{\{[^}]+\}\}/u.test(file) || /\{\{[^}]+\}\}/u.test(readFileSync(file, 'utf8'))) {
+      throw new Error(`packed CLI module add left an unresolved placeholder: ${file}`);
+    }
+  }
+}
+
 const requests = [];
 const backend = await startBackendServer(requests);
 try {
-  const command = join(consumerDirectory, 'node_modules', '.bin', 'mango');
   const result = await run(command, [
     'module',
     'doctor',
@@ -94,7 +161,7 @@ try {
 }
 
 process.stdout.write(
-  'Packed @mango/cli consumer returned UNKNOWN (exit 3) without Playwright, browser downloads, token leakage, or protocol drift.\n',
+  'Packed @mango/cli consumer generated a baseline module and returned UNKNOWN (exit 3) without Playwright, browser downloads, token leakage, or protocol drift.\n',
 );
 
 function pack(packageRoot) {
@@ -109,11 +176,21 @@ function findTarball(prefix) {
   return join(packDirectory, name);
 }
 
-function runChecked(command, args, cwd) {
-  const result = spawnSync(command, args, { cwd, encoding: 'utf8' });
+function runChecked(command, args, cwd, options = {}) {
+  const result = spawnSync(command, args, { cwd, encoding: 'utf8', env: options.env ?? process.env });
   if (result.status !== 0) {
     throw new Error(`${command} ${args.join(' ')} failed:\n${result.stdout}\n${result.stderr}`);
   }
+}
+
+function walkFiles(root) {
+  const files = [];
+  for (const entry of readdirSync(root, { withFileTypes: true })) {
+    const path = join(root, entry.name);
+    if (entry.isDirectory()) files.push(...walkFiles(path));
+    else if (entry.isFile()) files.push(path);
+  }
+  return files;
 }
 
 function run(command, args) {

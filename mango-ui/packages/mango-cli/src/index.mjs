@@ -46,7 +46,7 @@ const currentFile = fileURLToPath(import.meta.url);
 const packageRoot = resolve(dirname(currentFile), '..');
 const repoRoot = resolve(packageRoot, '../../..');
 const templateRoot = resolve(packageRoot, 'templates/full');
-const bundledPmoPackageRoot = resolve(packageRoot, '../mango-pmo');
+const bundledPmoPackageRoot = resolveBundledPmoPackageRoot();
 const packagedCodeBaselineRoot = resolve(bundledPmoPackageRoot, 'dist/baseline/code-templates/business-module');
 const sourceCodeBaselineRoot = resolve(repoRoot, 'mango-pmo/code-templates/business-module');
 const businessStarterRoot = existsSync(packagedCodeBaselineRoot) ? packagedCodeBaselineRoot : sourceCodeBaselineRoot;
@@ -55,6 +55,25 @@ const adminModulesManifest = readAdminModulesManifest();
 const DEFAULT_MAVEN_REPOSITORY = 'https://nexus.inner.yunxinbaokeji.com/repository/maven-public/';
 const DOCS_BUNDLE_GROUP_ID = 'io.mango';
 const DOCS_BUNDLE_ARTIFACT_ID = 'mango-docs-bundle';
+
+function resolveBundledPmoPackageRoot() {
+  try {
+    let candidate = dirname(requireFromCli.resolve('@mango/pmo'));
+    while (dirname(candidate) !== candidate) {
+      const manifestPath = join(candidate, 'package.json');
+      if (existsSync(manifestPath)) {
+        const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
+        if (manifest.name === '@mango/pmo') {
+          return candidate;
+        }
+      }
+      candidate = dirname(candidate);
+    }
+  } catch {
+    // Source checkouts can run before the workspace dependency is installed.
+  }
+  return resolve(packageRoot, '../mango-pmo');
+}
 
 const defaultVersions = {
   mangoBackend: releaseVersions.maven?.mangoBackend || '1.0.0-SNAPSHOT',

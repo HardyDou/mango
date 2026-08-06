@@ -1,5 +1,24 @@
 # @mango/cli Changelog
 
+## 1.0.100 - 2026-08-06
+
+### Fixed
+
+- Resolve `@mango/pmo` through its public package entry and locate the owning package root before loading the canonical business-module code baseline.
+- Support npm, pnpm virtual-store and workspace-link layouts without falling back to the source-only `mango-pmo` sibling when the installed package blocks its `package.json` subpath export.
+- Add a packed tarball consumer regression that runs project initialization, kebab-case `mango module add`, locked PMO validation, convention evidence checks and unresolved-placeholder checks outside the monorepo.
+
+### Upgrade Notes
+
+1. Replace `@mango/cli@1.0.99` with `@mango/cli@1.0.100`; keep the already published `@mango/pmo@1.3.10` and Mango Maven `1.0.35`.
+2. Retry any `mango module add` command that failed before template rendering. Existing generated source does not require rewriting.
+
+### Verification
+
+- `pnpm -C mango-ui --filter @mango/cli test`
+- `pnpm -C mango-ui --filter @mango/cli test:packed-doctor`
+- Clean consume-registry installation must generate `quality-center/review-record`, pass all baseline convention assertions and leave no unresolved placeholders.
+
 ## 1.0.99 - 2026-08-06
 
 ### Added

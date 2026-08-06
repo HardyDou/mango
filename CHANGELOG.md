@@ -1,8 +1,50 @@
 # Mango Changelog
 
+## v2026.08.06-cli-1.0.100-code-baseline-consumer-fix - 2026-08-06
+
+Status: `PENDING`. This npm-only corrective batch publishes only `@mango/cli@1.0.100`. It reuses the already published and verified `@mango/pmo@1.3.10` code baseline and Mango Maven `1.0.35`; neither coordinate is republished.
+
+### Fixed
+
+- Resolve the installed `@mango/pmo` package through its public entry and locate its owning package root before reading `dist/baseline/code-templates/business-module`.
+- Support npm, pnpm virtual-store and workspace-link layouts without assuming the source-only sibling directory name `mango-pmo`.
+- Add a packed tarball consumer regression that installs PMO/CLI outside the monorepo, generates a project, runs `mango module add` with `moduleKebab=quality-center` and `aggregateKebab=review-record`, checks baseline convention evidence and rejects unresolved placeholders.
+
+### Versions
+
+| Component | Previous | Release | Compatibility |
+| --- | ---: | ---: | --- |
+| `@mango/cli` | `1.0.99` | `1.0.100` | Corrective patch for installed-package code-baseline resolution; command syntax, generated module contract and release matrix are unchanged. |
+| `@mango/pmo` | `1.3.10` | unchanged | Already published and verified; supplies the canonical code baseline consumed by CLI `1.0.100`. |
+| Mango Maven backend | `1.0.35` | unchanged | No Maven artifact, runtime code or database migration is published. |
+| Other frontend npm packages | CLI `release-versions.json` matrix | unchanged | No runtime frontend package is republished. |
+
+### Published Packages
+
+| Order | Target | Version | Status |
+| ----: | ------ | ------- | ------ |
+| 1 | Existing prerequisite `@mango/pmo` | `1.3.10` | `PUBLISHED_AND_VERIFIED`; not republished |
+| 2 | `@mango/cli` | `1.0.100` | `PENDING` |
+| 3 | Git tag and GitHub Release | `v2026.08.06-cli-1.0.100-code-baseline-consumer-fix` | `PENDING` |
+| 4 | Latest documentation | release tag above | `PENDING`; npm-only batch does not create a Maven versioned docs snapshot |
+
+### Upgrade Notes
+
+1. Do not use `@mango/cli@1.0.99` for `mango module add`; that immutable coordinate resolves PMO correctly for project initialization but uses a source-only path for module templates.
+2. Install `@mango/cli@1.0.100` from the consume registry with `@mango/pmo@1.3.10`, then run `mango pmo check --project-dir . --locked`.
+3. Existing generated projects and modules do not require rewriting. Retry only the failed `mango module add` command after upgrading the project-local CLI.
+4. Keep Mango Maven `1.0.35` and all non-target npm coordinates at the versions in CLI `1.0.100`.
+
+### Verification
+
+- The fix PR must pass CLI full tests, the packed tarball `init`/`module add`/locked-PMO regression, release-impact/version-lock checks, generated backend gate and protected required checks.
+- Before publication, `@mango/cli@1.0.100` must be absent from both `npm-hosted` and `npm-group`; `@mango/pmo@1.3.10` must resolve identically from both and must not be republished.
+- Closeout requires matching CLI integrity, shasum and publication time from both registries plus a clean isolated-cache `npm-group` consumer that renders all 11 code-baseline convention assertions with no unresolved placeholders.
+- The preserved `1.0.99` failed publication manifest SHA-256 is `1501a6dbc47d05954aad61da3f779b13aa79def68a6fde1516c0c640cf47e89c`; no successful immutable state from that batch may be repeated.
+
 ## v2026.08.06-pmo-1.3.10-cli-1.0.99-code-baseline-release - 2026-08-06
 
-Status: `PENDING`. Release PR and immutable publication are not complete. The approved npm-only batch publishes `@mango/pmo@1.3.10` before `@mango/cli@1.0.99`; Mango Maven remains `1.0.35` and is not republished. The target tag and GitHub Release are `v2026.08.06-pmo-1.3.10-cli-1.0.99-code-baseline-release`.
+Status: `PUBLISHED_WITH_FAILED_POST_VERIFY`. Source commit `d22c5dde80c52c83f50b7b65f172dad38d6168c3` (tree `05167e2e1712fa42107758e8a6168f9bf91ae341`) published `@mango/pmo@1.3.10` and `@mango/cli@1.0.99`, tag and GitHub Release `v2026.08.06-pmo-1.3.10-cli-1.0.99-code-baseline-release`, and Latest docs. The exact-source bundle SHA-256 is `f9d4e17ba0abb1549ce10776c080de7899aae02b3efb7d84a22963fb53c28b5e`. Dual-registry package verification passed, but the clean consumer proved CLI `1.0.99` resolves module templates through a source-only path and fails `mango module add`; the failed manifest SHA-256 is `1501a6dbc47d05954aad61da3f779b13aa79def68a6fde1516c0c640cf47e89c`. Do not republish or declare this batch complete.
 
 ### Added
 
@@ -31,14 +73,14 @@ Status: `PENDING`. Release PR and immutable publication are not complete. The ap
 
 | Order | Target | Version | Status |
 | ----: | ------ | ------- | ------ |
-| 1 | `@mango/pmo` | `1.3.10` | `PENDING` |
-| 2 | `@mango/cli` | `1.0.99` | `PENDING` |
-| 3 | Git tag and GitHub Release | `v2026.08.06-pmo-1.3.10-cli-1.0.99-code-baseline-release` | `PENDING` |
-| 4 | Latest documentation | release tag above | `PENDING`; npm-only batch does not create a Maven versioned docs snapshot |
+| 1 | `@mango/pmo` | `1.3.10` | `PUBLISHED_AND_VERIFIED` |
+| 2 | `@mango/cli` | `1.0.99` | `PUBLISHED_BUT_CONSUMER_FAILED`; superseded by planned `1.0.100` |
+| 3 | Git tag and GitHub Release | `v2026.08.06-pmo-1.3.10-cli-1.0.99-code-baseline-release` | `CREATED_AND_VERIFIED` |
+| 4 | Latest documentation | release tag above | `PUBLISHED_AND_VERIFIED`; no Maven versioned docs snapshot |
 
 ### Upgrade Notes
 
-1. Install `@mango/cli@1.0.99` from the configured consume registry only after both PMO and CLI coordinates resolve there.
+1. Do not install `@mango/cli@1.0.99` for module generation; use the corrective CLI `1.0.100` with the already published PMO `1.3.10`.
 2. In an existing business repository, run `mango pmo upgrade --project-dir . --to 1.3.10 --dry-run`, review the baseline, code-template, Agent and Skill changes, then run the upgrade with the project's normal shell-sync choice and finish with `mango pmo check --project-dir . --locked`.
 3. Use `mango module add` for new modules so generation starts from the published canonical business-module baseline. Existing modules are not bulk-rewritten; clean only behavior-preserving violations in the exact legacy symbol or block touched by a future change.
 4. Keep Mango Maven `1.0.35` and every non-target npm coordinate at the versions packaged in CLI `1.0.99`. No database rebuild or migration is required by this release.
@@ -46,9 +88,9 @@ Status: `PENDING`. Release PR and immutable publication are not complete. The ap
 ### Verification
 
 - PR #737 passed `pr-contract-check`, `pmo-doc-check`, `frontend-pr-quality` and the underlying PMO, CLI/JavaScript, Java and documentation gates before merge.
-- Release preparation must pass PMO package build/pack verification, CLI tests, code-baseline tests, template projection checks, release-impact/version checks, generated backend gate, admin style checks and capability-document audits from the protected release commit.
-- Before publication, `@mango/pmo@1.3.10` and `@mango/cli@1.0.99` must be absent from both `npm-hosted` and `npm-group`; publication then runs in PMO-to-CLI dependency order through `mango release publish` only.
-- Release closeout requires matching version, integrity, shasum and publication time from both registries plus a clean `npm-group` consumer that installs CLI `1.0.99`, generates a full project, verifies PMO `1.3.10`, renders a business module without unresolved placeholders, and passes locked baseline/template checks.
+- PMO package build/pack verification, CLI tests, code-baseline tests, template projection checks, release-impact/version checks, generated backend gate, admin style checks and capability-document audits passed from the protected release commit.
+- Both packages were absent before publication. Hosted/group returned matching metadata after publication: PMO integrity `sha512-MP6+bXOlWWlVC46mIX4zl5hQkWKZyZM0iZXmHVYMyHDCx6NXyk+5I2E85QPArfRqR3kAGV+Wh86cIxDidastCA==`, shasum `80554aa93dec2316160b2483cb2fa72be23c62ad`, published `2026-08-06T02:47:38.897Z`; CLI integrity `sha512-N0fpZjfLZuAS5vTmmLnBtSPNPscsLm43iXilg2AZ+mzEFJM/PSS1LDpK8uiu3I3Fc9Ka8XTysyUJrmjena0AwQ==`, shasum `ca4a6288c65e0860a8ac14b55064ac5587b8c8d5`, published `2026-08-06T02:47:54.892Z`.
+- Clean `npm-group` installation and full project generation succeeded, but `mango module add quality-center --aggregate review-record` failed before rendering because CLI looked for `mango-pmo/code-templates/business-module` beside its pnpm store package instead of resolving installed `@mango/pmo`. This is a release-blocking consumer failure, not a verification exception.
 
 ## v2026.08.05-maven-1.0.35-numgen-1.0.34-admin-1.0.63-cli-1.0.98-release - 2026-08-05
 
