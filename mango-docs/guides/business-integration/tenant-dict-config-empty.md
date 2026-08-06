@@ -277,4 +277,4 @@ pnpm -F @mango/admin-shell build
 
 ## 2026-08-06 个人中心前端制品发布影响
 
-- 本发布候选不发布 Maven、不新增 migration，也不改变租户、字典、组织、用户、登录日志或通知设置的数据模型、初始化顺序与隔离语义；它只更新前端 npm 制品、CLI 和 PMO。个人中心入口缺失应从前端包批次和 profile-section 注册链排查，不应重建数据库、补租户 seed 或重放历史 migration。
+- 本发布候选不发布 Maven、不新增 migration，也不改变租户、字典、组织、用户、登录日志或通知设置的数据模型、初始化顺序与隔离语义；它只更新前端 npm 制品、CLI 和 PMO。个人中心入口缺失可从前端包批次和 profile-section 注册链排查，无需重建数据库、补租户 seed 或重放历史 migration。

@@ -323,4 +323,4 @@ pnpm -F @mango/file test
 
 ## 2026-08-06 前端依赖批次发布影响
 
-- 本发布候选将 `@mango/file@1.0.34` 作为前端精确版本循环 cohort 的一员发布，用于保持 `admin-pages -> system -> file -> admin-pages` 的依赖一致性；不改变上传、回显、预览、下载、ZIP/PDF API、fileId 持久化、权限或租户边界。业务项目必须成组升级该批次，文件场景仍按本指南原闭环验收。
+- 本发布候选将 `@mango/file@1.0.34` 作为前端精确版本循环 cohort 的一员发布，用于保持 `admin-pages -> system -> file -> admin-pages` 的依赖一致性；不改变上传、回显、预览、下载、ZIP/PDF API、fileId 持久化、权限或租户边界。业务项目成组升级该批次后，文件场景仍按本指南原闭环验收。
