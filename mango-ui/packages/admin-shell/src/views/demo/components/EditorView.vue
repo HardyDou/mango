@@ -1,8 +1,9 @@
+<!-- mango-page-baseline-exception list: 本页表格仅展示固定的组件 API 元数据，不是可搜索、分页的领域列表。 -->
 <template>
   <DemoDocLayout
     class="editor-view"
     title="富文本编辑器"
-    subtitle="基于 WangEditor 的富文本编辑组件，支持完整工具栏、简洁工具栏、只读状态和内容方法调用。"
+    subtitle="基于 WangEditor 的富文本编辑组件，支持图片与附件的工具栏、粘贴、拖拽上传及按文件 ID 回显。"
     content-box
     :toc-items="tocItems"
   >
@@ -39,10 +40,10 @@
 
     <section id="readonly" class="doc-section">
       <h2>只读状态</h2>
-      <p>disabled 用于详情页或审批查看场景，保留内容展示但禁止编辑。</p>
+      <p>RichTextViewer 用于详情页或审批查看场景，并按文件 ID 解析最新预览地址。</p>
       <div class="demo-block">
         <div class="demo-source">
-          <Editor v-model="readonlyContent" height="200px" disabled />
+          <RichTextViewer :content="readonlyContent" />
         </div>
         <div class="op-btns" @click="toggleCode('readonly')">
           <el-icon><component :is="codeVisible.readonly ? ArrowUp : ArrowDown" /></el-icon>
@@ -57,13 +58,7 @@
       <p>toolbar-keys 可只展示业务需要的按钮；图片上传会调用文件中心接口，image-value-type 控制图片写入 HTML 的值。</p>
       <div class="demo-block">
         <div class="demo-source">
-          <Editor
-            v-model="customContent"
-            :toolbar-keys="compactToolbarKeys"
-            image-value-type="token"
-            paste-image-mode="upload"
-            height="240px"
-          />
+          <Editor v-model="customContent" :toolbar-keys="compactToolbarKeys" height="240px" />
           <div class="result-note">当前示例图片写入：mango-file:&lt;id&gt;</div>
         </div>
         <div class="op-btns" @click="toggleCode('custom')">
@@ -75,30 +70,12 @@
     </section>
 
     <section id="toolbar-actions" class="doc-section">
-      <h2>工具栏附件上传插槽</h2>
-      <p>toolbar-actions 用于组合业务按钮，例如在富文本编辑器工具栏旁挂接文件中心的附件上传。</p>
+      <h2>内置附件上传</h2>
+      <p>工具栏回形针按钮支持选择一个或多个附件；也可直接粘贴或拖入图片和普通文件。</p>
       <div class="demo-block">
         <div class="demo-source">
-          <Editor
-            v-model="attachmentContent"
-            :toolbar-keys="compactToolbarKeys"
-            image-value-type="token"
-            paste-image-mode="upload"
-            height="240px"
-          >
-            <template #toolbar-actions>
-              <MUpload
-                v-model="attachmentValue"
-                value-type="id"
-                purpose="attachment"
-                access-level="PRIVATE"
-                :count="3"
-                size="20MB"
-                data-testid="mango-editor-attachment-upload"
-              />
-            </template>
-          </Editor>
-          <div class="result-note">附件 v-model 仅保存文件标识，不写入图片地址或预览地址</div>
+          <Editor v-model="attachmentContent" :toolbar-keys="compactToolbarKeys" height="240px" />
+          <div class="result-note">图片和附件编辑态使用实时地址，v-model 中只保存 mango-file:&lt;id&gt;</div>
         </div>
         <div class="op-btns" @click="toggleCode('toolbarActions')">
           <el-icon><component :is="codeVisible.toolbarActions ? ArrowUp : ArrowDown" /></el-icon>
@@ -172,8 +149,7 @@
 import { ref } from 'vue';
 import { ElMessage } from 'element-plus';
 import { ArrowDown, ArrowUp } from '@element-plus/icons-vue';
-import { Editor } from '@mango/common';
-import { MUpload } from '@mango/file';
+import { Editor, RichTextViewer } from '@mango/common';
 import DemoCodeBlock from './DemoCodeBlock.vue';
 import DemoDocLayout from './DemoDocLayout.vue';
 
@@ -197,8 +173,7 @@ const basicContent = ref(
 const simpleContent = ref('<p>简洁模式适合备注、评论等轻量内容。</p>');
 const readonlyContent = ref('<p><strong>审批说明：</strong>当前内容为只读展示，不能修改。</p>');
 const customContent = ref('<p>当前工具栏只保留加粗、文字颜色、列表和图片上传。</p>');
-const attachmentContent = ref('<p>在工具栏右侧选择附件，该 slot 不会改变编辑器的内容合同。</p>');
-const attachmentValue = ref<string[]>([]);
+const attachmentContent = ref('<p>使用工具栏回形针按钮选择附件，或将文件直接拖入编辑区。</p>');
 const methodContent = ref('<p>通过 ref 调用组件暴露的方法。</p>');
 const compactToolbarKeys = ['bold', 'color', '|', 'numberedList', 'bulletedList', '|', 'uploadImage'];
 const codeVisible = ref<Record<string, boolean>>({
@@ -222,11 +197,7 @@ const simpleCode = `<Editor
   placeholder="请输入备注内容"
 />`;
 
-const readonlyCode = `<Editor
-  v-model="detail"
-  height="200px"
-  disabled
-/>`;
+const readonlyCode = `<RichTextViewer :content="detail" />`;
 
 const customCode = `<script setup lang="ts">
 const toolbarKeys = [
@@ -244,27 +215,11 @@ ${'</scr'}ipt>
   <Editor
     v-model="content"
     :toolbar-keys="toolbarKeys"
-    image-value-type="token"
-    paste-image-mode="upload"
     height="240px"
   />
 </template>`;
 
-const toolbarActionsCode = `<Editor
-  v-model="content"
-  image-value-type="token"
-  paste-image-mode="upload"
->
-  <template #toolbar-actions>
-    <MUpload
-      v-model="attachmentIds"
-      value-type="id"
-      purpose="attachment"
-      access-level="PRIVATE"
-      :count="3"
-    />
-  </template>
-</Editor>`;
+const toolbarActionsCode = `<Editor v-model="content" attachment-accept=".pdf,.doc,.docx,.xlsx" />`;
 
 const methodsCode = `<template>
   <Editor ref="editorRef" v-model="content" mode="simple" />
@@ -310,15 +265,21 @@ const propsTable = [
   },
   {
     name: 'imageValueType',
-    description: '图片上传成功后写入 HTML 的值；url 用于即时可见，id/token 用于业务长期保存文件标识后自行解析预览',
+    description: '图片上传成功后写入 HTML 的值；默认 token 在编辑态预览、保存时只保留文件标识，url/id 为兼容模式',
     type: "'url' | 'id' | 'token'",
-    defaultValue: 'url',
+    defaultValue: 'token',
   },
   {
     name: 'pasteImageMode',
     description: '粘贴图片处理模式；upload 会把本地图片及受控远程图片托管到文件中心',
     type: "'default' | 'upload'",
-    defaultValue: 'default',
+    defaultValue: 'upload',
+  },
+  {
+    name: 'attachmentAccept',
+    description: '内置附件选择按钮传给原生 file input 的 accept 值；留空表示不限制类型',
+    type: 'string',
+    defaultValue: "''",
   },
 ];
 
@@ -329,6 +290,9 @@ const slotsTable = [
 const eventsTable = [
   { name: 'update:modelValue', description: 'HTML 内容变化时触发，用于 v-model 双向绑定', payload: 'string' },
   { name: 'change', description: 'HTML 内容变化时触发', payload: 'string' },
+  { name: 'asset-error', description: '图片或附件上传、解析、序列化失败时触发', payload: 'EditorAssetError' },
+  { name: 'image-error', description: '图片错误兼容事件', payload: 'EditorImageError' },
+  { name: 'uploading-change', description: '任一上传开始或全部上传结束时触发', payload: 'boolean' },
   { name: 'getEditor', description: '暴露方法，获取 WangEditor 实例', payload: '() => EditorInstance' },
   { name: 'getText', description: '暴露方法，获取纯文本内容', payload: '() => string' },
   { name: 'getHtml', description: '暴露方法，获取 HTML 内容', payload: '() => string' },
@@ -341,7 +305,7 @@ const valueTable = [
   {
     field: '图片 src',
     type: 'string',
-    description: '默认写入上传返回的 url；imageValueType="id" 写入文件 ID；imageValueType="token" 写入 mango-file:<id>',
+    description: '默认写入 mango-file:<id>；编辑态按 ID 解析为实时预览地址，显式 url/id 可保留旧行为',
   },
   { field: 'getText()', type: 'string', description: '返回去除 HTML 标签后的纯文本，适合摘要、字数统计或检索字段' },
   { field: 'getHtml()', type: 'string', description: '返回当前 HTML 内容，和 v-model 当前值保持一致' },
