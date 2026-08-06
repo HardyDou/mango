@@ -8,6 +8,7 @@ import { assertPnpmLockfileFixtureInvocations, createPnpmLockfileFixture } from 
 const cliPackageRoot = resolve(import.meta.dirname, '..');
 const uiRoot = resolve(cliPackageRoot, '../..');
 const pmoPackageRoot = join(uiRoot, 'packages/mango-pmo');
+const prettierPackageRoot = join(uiRoot, 'node_modules/prettier');
 const temporaryRoot = mkdtempSync(join(tmpdir(), 'mango-cli-packed-doctor-'));
 const packDirectory = join(temporaryRoot, 'pack');
 const consumerDirectory = join(temporaryRoot, 'consumer');
@@ -16,8 +17,10 @@ const token = 'packed-consumer-token';
 mkdirSync(packDirectory, { recursive: true });
 mkdirSync(consumerDirectory, { recursive: true });
 pack(pmoPackageRoot);
+pack(prettierPackageRoot);
 pack(cliPackageRoot);
 const pmoTarball = findTarball('mango-pmo-');
+const prettierTarball = findTarball('prettier-');
 const cliTarball = findTarball('mango-cli-');
 writeFileSync(
   join(consumerDirectory, 'package.json'),
@@ -33,9 +36,13 @@ writeFileSync(
 );
 writeFileSync(
   join(consumerDirectory, 'pnpm-workspace.yaml'),
-  `packages:\n  - .\noverrides:\n  '@mango/pmo': file:${pmoTarball}\n`,
+  `packages:\n  - .\noverrides:\n  '@mango/pmo': file:${pmoTarball}\n  prettier: file:${prettierTarball}\n`,
 );
-runChecked('pnpm', ['add', '--offline', '--ignore-scripts', pmoTarball, cliTarball], consumerDirectory);
+runChecked(
+  'pnpm',
+  ['add', '--offline', '--ignore-scripts', pmoTarball, prettierTarball, cliTarball],
+  consumerDirectory,
+);
 
 const command = join(consumerDirectory, 'node_modules', '.bin', 'mango');
 const moduleProjectName = 'packed-module-project';
