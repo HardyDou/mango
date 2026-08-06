@@ -342,24 +342,24 @@ API 加密环境变量：
 
 组件导出：
 
-| 组件                                                    | 能力                                                                                           |
-| ------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| `MangoListPage`                                         | 管理后台列表页外壳，按搜索区和列表区组织页面，不渲染额外页面标题。                             |
-| `MangoSearchPanel`                                      | 列表页搜索面板，统一字段栅格、按钮位置、展开收起和查询/重置事件。                              |
-| `MangoListPanel`                                        | 列表卡片，统一功能区、表格区和分页区位置。                                                     |
-| `MangoDetailPage`                                       | 详情页外壳，提供返回栏、内容区和底部操作栏。                                                   |
-| `MangoFormPage`                                         | 表单页外壳，提供返回栏、内容区和底部操作栏。                                                   |
-| `MangoPageSection`                                      | 详情页和表单页的业务分组容器。                                                                 |
-| `Pagination`                                            | 分页器。                                                                                       |
-| `MangoDialog`                                           | 管理端通用弹框外壳，统一标题区、关闭按钮、内容滚动区和底部按钮区。                             |
-| `MangoAvatar`                                           | 统一显示普通图片地址或 `mango-file:{id}` 文件标识，并负责受保护头像的下载回显和对象 URL 回收。 |
-| `DictSelect`、`DictTag`                                 | 字典选择和展示。                                                                               |
-| `OrgSelector`、`UserSelector`                           | 组织和用户选择。                                                                               |
-| `CaptchaSelector`、各验证码组件                         | 验证码展示和交互。                                                                             |
-| `ChinaArea`                                             | 行政区域选择。                                                                                 |
-| `IconSelector`、`TreeSelect`、`RightToolbar`            | 管理端通用选择和工具栏。                                                                       |
-| `FormCreate`、`Sign`、`CodeEditor`、`Editor`、`ECharts` | 表单、签名、代码、富文本和图表。                                                               |
-| `SSE`、`Websocket`、`Chat`                              | 实时通信和聊天 UI。                                                                            |
+| 组件                                                                      | 能力                                                                                           |
+| ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `MangoListPage`                                                           | 管理后台列表页外壳，按搜索区和列表区组织页面，不渲染额外页面标题。                             |
+| `MangoSearchPanel`                                                        | 列表页搜索面板，统一字段栅格、按钮位置、展开收起和查询/重置事件。                              |
+| `MangoListPanel`                                                          | 列表卡片，统一功能区、表格区和分页区位置。                                                     |
+| `MangoDetailPage`                                                         | 详情页外壳，提供返回栏、内容区和底部操作栏。                                                   |
+| `MangoFormPage`                                                           | 表单页外壳，提供返回栏、内容区和底部操作栏。                                                   |
+| `MangoPageSection`                                                        | 详情页和表单页的业务分组容器。                                                                 |
+| `Pagination`                                                              | 分页器。                                                                                       |
+| `MangoDialog`                                                             | 管理端通用弹框外壳，统一标题区、关闭按钮、内容滚动区和底部按钮区。                             |
+| `MangoAvatar`                                                             | 统一显示普通图片地址或 `mango-file:{id}` 文件标识，并负责受保护头像的下载回显和对象 URL 回收。 |
+| `DictSelect`、`DictTag`                                                   | 字典选择和展示。                                                                               |
+| `OrgSelector`、`UserSelector`                                             | 组织和用户选择。                                                                               |
+| `CaptchaSelector`、各验证码组件                                           | 验证码展示和交互。                                                                             |
+| `ChinaArea`                                                               | 行政区域选择。                                                                                 |
+| `IconSelector`、`TreeSelect`、`RightToolbar`                              | 管理端通用选择和工具栏。                                                                       |
+| `FormCreate`、`Sign`、`CodeEditor`、`Editor`、`RichTextViewer`、`ECharts` | 表单、签名、代码、富文本编辑/预览和图表。                                                      |
+| `SSE`、`Websocket`、`Chat`                                                | 实时通信和聊天 UI。                                                                            |
 
 `MangoAvatar` 使用示例：
 
@@ -379,7 +379,6 @@ API 加密环境变量：
 | `error`   | `(error: unknown) => void`        | 受保护文件下载或图片加载失败时触发。                                         |
 
 组件遇到 `mango-file:{id}` 时通过文件中心受保护下载接口生成临时对象 URL，并在来源变化或卸载时释放；不持久化下载地址。缺少文件标识或不支持的来源时保留默认 slot。
-
 `MangoSearchPanel` 折叠规则：
 
 | 属性                            | 默认值                             | 说明                                                                                   |
@@ -426,10 +425,14 @@ API 加密环境变量：
 
 `Editor` 富文本组件：
 
-| 类型  | 名称             | 说明                                                                                                   |
-| ----- | ---------------- | ------------------------------------------------------------------------------------------------------ |
-| props | `toolbarKeys`    | 自定义 WangEditor 工具栏按钮；不传时沿用 `mode` 对应的默认工具栏。                                     |
-| props | `imageValueType` | 图片上传成功后写入 HTML 的值。`url` 为默认兼容模式，`id` 写入文件 ID，`token` 写入 `mango-file:<id>`。 |
+| 类型  | 名称               | 说明                                                                                                              |
+| ----- | ------------------ | ----------------------------------------------------------------------------------------------------------------- |
+| props | `toolbarKeys`      | 自定义 WangEditor 工具栏按钮；不传时沿用 `mode` 对应的默认工具栏。                                                |
+| props | `imageValueType`   | 图片上传写入策略。默认 `token`，编辑态使用实时地址，`v-model` 保存 `mango-file:<id>`；`url/id` 仅用于旧业务兼容。 |
+| props | `pasteImageMode`   | 粘贴图片处理策略。默认 `upload` 并托管剪贴板图片；显式 `default` 可恢复 WangEditor 原行为。                       |
+| props | `attachmentAccept` | 内置回形针附件按钮的文件类型限制，格式与原生 `input[accept]` 一致；默认不限制。                                   |
+| emits | `asset-error`      | 图片或附件上传、解析或序列化失败。图片错误同时继续触发兼容事件 `image-error`。                                    |
+| emits | `uploading-change` | 首个文件开始上传时发送 `true`，并发上传全部结束后发送 `false`。                                                   |
 
 只保留加粗、文字颜色、有序列表、无序列表和图片上传时：
 
@@ -439,13 +442,19 @@ const toolbarKeys = ['bold', 'color', '|', 'numberedList', 'bulletedList', '|', 
 </script>
 
 <template>
-  <Editor v-model="content" :toolbar-keys="toolbarKeys" image-value-type="token" />
+  <Editor v-model="content" :toolbar-keys="toolbarKeys" />
 </template>
 ```
 
-图片上传调用 `uploadImage(file)`，即 `POST /file/files` 且 `purpose=image`。消费项目如果选择 `id` 或 `token`，展示富文本时需要把保存的文件标识解析为可预览地址；例如官网预览场景可把 `mango-file:<id>` 替换为后端提供的公开预览地址。
+图片调用 `uploadImage(file)`（`purpose=image`），普通附件调用 `uploadFile(file)`（`purpose=attachment`）。工具栏图片按钮、内置附件按钮、复制粘贴和拖拽都使用同一托管节点协议。图片保存为 `img[data-file-id]`，附件保存为 `a[data-file-id]`，两者的 `src/href` 最终均为 `mango-file:<id>`；附件文本为文件名，并带 `target="_blank" rel="noopener noreferrer"`。
 
-富文本托管图片约定：`imageValueType="token"` 时编辑态使用文件详情返回的 `previewUrl` 回显，对外 `v-model` 只输出 `mango-file:<id>`；不持久化 Base64、Blob URL、预览 URL、下载 URL 或第三方图片 URL。复制粘贴托管通过 `pasteImageMode="upload"` 开启，支持本地图片和受控远程图片导入，失败图片会触发 `image-error`，上传状态通过 `uploading-change` 通知消费方。`toolbar-actions` slot 与工具栏处于同一 flex 流，可组合 `MUpload` 等附件控件，附件值应使用 `id` 或 `token`。
+只处理组件主动上传且带 `data-file-id` 或 `mango-file:` 的托管节点。用户自行写入的 Base64、Blob URL、签名地址、第三方图片和普通链接不转换、不删除。重新编辑时 `Editor` 会按文件 ID 调用详情接口获取最新地址；只读场景使用 `RichTextViewer`：
+
+```vue
+<RichTextViewer :content="content" />
+```
+
+`RichTextViewer` 默认调用 `getUploadedFileDetail(id)`。匿名站点可通过 `:resolve-file="publicResolver"` 注入公开预览接口。展示侧会移除 `script`、事件属性和 `javascript:` 地址，但保留用户自带的 Data/Blob/第三方资源地址。`toolbar-actions` slot 仍可用于其它业务动作，不再需要借助 slot 才能上传附件。
 
 ## 6. 数据与初始化
 

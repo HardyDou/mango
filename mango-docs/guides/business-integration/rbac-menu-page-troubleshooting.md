@@ -6,6 +6,8 @@
 
 > 2026-08-05 Issue #722：Admin Shell 统一补齐缺少的安全 Web Crypto `randomUUID`，只改变旧浏览器/WebView 的前端启动兼容性；不改变菜单树 API、`component` key、页面注册、角色授权、按钮权限或租户绑定。升级后仍出现 `randomUUID is not a function` 时应先核对完整前端包矩阵和安全上下文，菜单或页面异常继续按本指南原链路排查。
 
+> 2026-08-06 富文本托管资源影响：本次只扩展 `@mango/common` Editor、只读预览组件及 Admin Shell 开发中心示例，不改变菜单树 API、`component` key、页面注册、角色授权、菜单权限、租户绑定或本指南排障步骤。
+
 ## 1. 适用场景
 
 用户登录后能看到菜单，但点击菜单出现空白页、404、组件加载失败或接口无权限。

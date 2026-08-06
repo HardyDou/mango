@@ -307,6 +307,24 @@
         "requiredSections": ["概览", "接入方式", "API 与扩展", "问题排查"]
       },
       "testEvidence": ["components/MangoListPage/__tests__/MangoPageLayout.spec.ts"]
+    },
+    {
+      "name": "RichTextViewer",
+      "exportKey": ".",
+      "exportName": "RichTextViewer",
+      "level": "C4",
+      "hostProfile": "host-agnostic",
+      "environmentProfile": "browser-only",
+      "distribution": ["npm"],
+      "deploymentModes": ["monolith", "microfrontend"],
+      "stability": "stable",
+      "ownerRole": "Frontend Standards Owner",
+      "styleExportKeys": ["./style.css", "./theme/index.css"],
+      "docs": {
+        "path": "README.md",
+        "requiredSections": ["概览", "接入方式", "API 与扩展", "问题排查"]
+      },
+      "testEvidence": ["components/RichTextViewer/__tests__/RichTextViewer.spec.ts"]
     }
   ],
   "legacyComponentExports": [

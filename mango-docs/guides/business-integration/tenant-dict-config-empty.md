@@ -4,6 +4,8 @@
 
 > 2026-08-02 Issue #690 影响说明：租户字典和系统配置查询 API、权限、租户隔离及已有数据不变；初始化入口统一为 `META-INF/mango/resources/` typed declarations。Maven `1.0.31` 的声明 identity 使用独立 canonical mapper，非 Web Bootstrap 与 Web Runtime 的 `Long`/Java Time Jackson 配置不会改变同一 Resource fingerprint。使用 Maven `1.0.30`/`1.0.3x` 的业务仓升级后，排障时同时核对完整 release tuple、Bootstrap stable receipt 的 environment/generation/fingerprint、Resource 同步日志和目标 handler 结果；旧 fingerprint 不一致应升级完整 tuple 后使用新 generation 重新 plan/apply/verify，不重建已有业务库、手工修改 Bootstrap 审计表或用手工 SQL 绕过声明同步。
 
+> 2026-08-06 富文本托管资源影响：本次只扩展 `@mango/common` Editor、只读预览组件及 Admin Shell 开发中心示例，不新增或修改租户、字典、组织、用户、系统配置及 Resource 声明数据，也不改变查询 API、权限、租户隔离或本指南排障步骤。
+
 ## 1. 适用场景
 
 业务页面中的字典、下拉、组织、用户、岗位、系统配置或初始化数据为空，且问题只在部分租户或部分账号出现。

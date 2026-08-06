@@ -1,18 +1,24 @@
 import { describe, expect, it } from 'vitest';
-import { managedImageToken, renderManagedHtml, serializeManagedHtml } from '../managedImages';
+import {
+  collectManagedFileIds,
+  managedAttachmentHtml,
+  managedImageToken,
+  renderManagedHtml,
+  serializeManagedHtml,
+} from '../managedImages';
 
 describe('managedImages', () => {
-  it('对外只序列化为 mango-file token，并移除非托管图片', () => {
+  it('只序列化托管节点，并保留用户写入的图片地址', () => {
     const result = serializeManagedHtml(
       '<p><img src="https://preview.example/image.png" data-file-id="123"></p>' +
         '<img src="data:image/png;base64,abc">' +
         '<img src="https://third-party.example/image.png">',
     );
 
-    expect(result.invalidImageCount).toBe(2);
+    expect(result.invalidAssetCount).toBe(0);
     expect(result.html).toContain('src="mango-file:123"');
-    expect(result.html).not.toContain('data:image');
-    expect(result.html).not.toContain('third-party.example');
+    expect(result.html).toContain('data:image');
+    expect(result.html).toContain('third-party.example');
   });
 
   it('拒绝 data-file-id 与 token 不一致的图片', () => {
@@ -32,5 +38,31 @@ describe('managedImages', () => {
 
     expect(html).toContain('src="https://preview.example/image.png"');
     expect(serializeManagedHtml(html, previewIds).html).toContain('src="mango-file:123"');
+  });
+
+  it('附件编辑态使用预览地址，持久化时只保存文件 token', () => {
+    const html = managedAttachmentHtml('456', '/api/file/files/preview-content?id=456', '报告.pdf');
+    const serialized = serializeManagedHtml(html).html;
+
+    expect(serialized).toContain('href="mango-file:456"');
+    expect(serialized).toContain('data-file-kind="attachment"');
+    expect(serialized).toContain('target="_blank"');
+    expect(serialized).toContain('报告.pdf');
+    expect(collectManagedFileIds(serialized)).toEqual(['456']);
+
+    const rendered = renderManagedHtml(
+      serialized,
+      new Map([
+        [
+          '456',
+          {
+            url: '/api/file/files/download?id=456',
+            previewUrl: '/api/file/files/preview-content?id=456',
+            downloadUrl: '/api/file/files/download?id=456',
+          },
+        ],
+      ]),
+    );
+    expect(rendered).toContain('href="/api/file/files/preview-content?id=456"');
   });
 });
