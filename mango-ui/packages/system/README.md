@@ -267,5 +267,7 @@ import '@mango/system/style.css';
 
 ## 11. 变更影响记录
 
+- `@mango/system@1.0.32` 的 `registerMangoSystemAdminPages()` 随页面注册结果返回个人中心“登录日志”section，使用 `/system/log/login/my/list` 读取当前租户、当前账号自己的记录。配套 Admin Shell `1.0.58` 自动装配入口；管理员日志页面、权限和既有页面 key 保持兼容。
+
 - `@mango/system@1.0.19` 将可选 `@mango/file` peer 精确版本升级到 `1.0.21`；系统 API、页面 key、组件、权限、
   租户和运行时行为相对 `1.0.18` 不变。

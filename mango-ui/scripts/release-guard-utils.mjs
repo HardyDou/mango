@@ -174,6 +174,22 @@ export function verifyPackageTree(packageName, packageRoot, sourcePackageJson, o
       );
     }
   }
+
+  const packageFiles = options.contract?.containsMatching?.length ? listPackageFiles(packageRoot) : [];
+  for (const check of options.contract?.containsMatching ?? []) {
+    const matcher = releaseContractPattern(check.pattern);
+    const matchingFiles = packageFiles.filter((file) => matcher.test(file));
+    if (matchingFiles.length === 0) {
+      throw new Error(
+        `Published tarball for ${packageName} does not contain a file matching release contract pattern: ${check.pattern}`,
+      );
+    }
+    if (!matchingFiles.some((file) => readFileSync(join(packageRoot, file), 'utf8').includes(check.text))) {
+      throw new Error(
+        `Published tarball for ${packageName} files matching ${check.pattern} do not contain required text: ${check.text}`,
+      );
+    }
+  }
 }
 
 export function verifyPublishedPackage(packageName, version, foundPackage, options = {}) {
@@ -261,4 +277,25 @@ function verifyPublishedStyleContent(packageName, stylePath) {
 
 function stripDotSlash(path) {
   return path.replace(/^\.\//, '');
+}
+
+function listPackageFiles(root, relativeRoot = '') {
+  const files = [];
+  for (const entry of readdirSync(join(root, relativeRoot), { withFileTypes: true })) {
+    const relativePath = relativeRoot ? `${relativeRoot}/${entry.name}` : entry.name;
+    if (entry.isDirectory()) {
+      files.push(...listPackageFiles(root, relativePath));
+    } else if (entry.isFile()) {
+      files.push(relativePath);
+    }
+  }
+  return files;
+}
+
+function releaseContractPattern(pattern) {
+  if (typeof pattern !== 'string' || pattern.length === 0 || pattern.startsWith('/') || pattern.includes('..')) {
+    throw new Error(`Invalid release contract file pattern: ${pattern || '<missing>'}`);
+  }
+  const escaped = pattern.replace(/[.+^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(`^${escaped.replaceAll('*', '[^/]*').replaceAll('?', '[^/]')}$`, 'u');
 }

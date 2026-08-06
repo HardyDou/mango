@@ -407,6 +407,8 @@ executeMySiteMessageAction(messageId, actionCode, input);
 
 ## 12. 变更影响记录
 
+- `@mango/notice@1.0.38` 的 `registerMangoNoticeAdminPages()` 随页面注册结果返回个人中心“我的消息、系统公告、通知设置”三个 `profileSections`。配套 Admin Shell `1.0.58` 会自动装配这些页内入口；旧消息中心路由继续保留兼容，权限和租户边界不变。
+
 - `@mango/notice@1.0.35` 发布结构化消息详情和实时提醒、安全富文本展示、上下文主操作、未读超过 10 条时的审批/系统/业务分类聚合，以及统一的目标导航与安全降级。新增未读分类统计和分页分类参数；既有站内信 ID、页面 key、权限码、租户边界和历史消息数据保持兼容。
 
 - `@mango/notice@1.0.31` 将工作台消息卡默认入口对齐到 `/message-center/site-message`，并把旧路径

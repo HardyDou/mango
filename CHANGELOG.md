@@ -1,5 +1,61 @@
 # Mango Changelog
 
+## v2026.08.06-pmo-1.3.11-cli-1.0.101-profile-sections-release - 2026-08-06
+
+Status: `PENDING`. Issues #721 and #744 are prepared on the protected-release path. The source commit, Git tree, exact-source checksum, PR, tag, GitHub Release, Nexus publication metadata, state-machine manifest and clean business-consumer evidence will be filled from the merged `origin/main` source before this section can become `PUBLISHED_AND_VERIFIED`.
+
+### Fixed
+
+- Publish the actual Auth, Notice, System and Admin Shell runtime code required to aggregate “我的消息、系统公告、通知设置、登录日志” under `/profile`; the previous Nexus coordinates contained documentation but omitted part of this runtime chain.
+- Treat path/SHA-256/version-pinned historical lifecycle documents as immutable approval snapshots, so a newer PMO chapter contract no longer produces retroactive failures. Duplicate document IDs, adjacent lifecycle stages and upstream SHA-256 digests remain enforced.
+- Verify fixed entry files and Admin Shell's generated `featureRegistrars-*.js` chunk inside packed and published tarballs, preventing source-only fixes from passing release verification.
+
+### Changed
+
+- Publish the complete exact-dependency frontend closure selected by release impact, then publish PMO `1.3.11` and CLI `1.0.101`. Mango Maven remains `1.0.35`; this npm-only batch contains no Java artifact, database migration or versioned Maven documentation snapshot.
+- Keep new module generation on the canonical code baseline and update its frontend dependency pins to the same release matrix.
+
+### Versions
+
+| Component | Previous | Release | Compatibility |
+| --- | ---: | ---: | --- |
+| `@mango/pmo` | `1.3.10` | `1.3.11` | Schema revision remains `1`; unchanged `1.3.10` lifecycle documents require the generated path/SHA/version baseline. |
+| `@mango/cli` | `1.0.100` | `1.0.101` | Locks PMO `1.3.11`, Maven `1.0.35` and the complete frontend matrix below. |
+| Profile runtime chain | Auth `1.0.25`, Notice `1.0.37`, System `1.0.31`, Admin Shell `1.0.57` | Auth `1.0.26`, Notice `1.0.38`, System `1.0.32`, Admin Shell `1.0.58` | Patch-compatible public registrars and Shell aggregation; existing menu, permission and tenant contracts remain unchanged. |
+| Remaining frontend closure | last published versions | exact versions below | Patch bumps preserve exact internal dependency alignment; no backend or database change. |
+| Mango Maven backend | `1.0.35` | unchanged | Verified prerequisite only; not republished. |
+
+### Published Packages
+
+| Order | Target | Version | Status |
+| ----: | ------ | ------- | ------ |
+| 1 | `@mango/common` | `1.0.26` | `PENDING` |
+| 2 | `@mango/auth`, `@mango/rbac`, `@mango/grid-layout`, `@mango/home`, `@mango/site-shell` | `1.0.26`, `1.0.24`, `1.0.17`, `1.0.15`, `1.0.13` | `PENDING` |
+| 3 | `@mango/grid-widgets` | `1.0.23` | `PENDING` |
+| 4 | Exact cyclic cohort: `@mango/admin-pages`, `@mango/file`, `@mango/system` | `1.0.33`, `1.0.34`, `1.0.32` | `PENDING`; publish all before consume verification |
+| 5 | `@mango/calendar`, `@mango/cms`, `@mango/job`, `@mango/link`, `@mango/notice`, `@mango/numgen`, `@mango/payment`, `@mango/template`, `@mango/workflow` | `1.0.34`, `1.0.23`, `1.0.26`, `1.0.20`, `1.0.38`, `1.0.35`, `1.0.26`, `1.0.34`, `1.0.40` | `PENDING` |
+| 6 | `@mango/workflow-business-example` | `1.0.39` | `PENDING` |
+| 7 | `@mango/admin-shell` | `1.0.58` | `PENDING` |
+| 8 | `@mango/admin` | `1.0.64` | `PENDING` |
+| 9 | `@mango/pmo` | `1.3.11` | `PENDING` |
+| 10 | `@mango/cli` | `1.0.101` | `PENDING` |
+| 11 | Git tag and GitHub Release | `v2026.08.06-pmo-1.3.11-cli-1.0.101-profile-sections-release` | `PENDING` |
+| 12 | Latest documentation | release source above | `PENDING`; npm-only batch, versioned docs snapshot not applicable |
+
+### Upgrade Notes
+
+1. Wait until all listed npm coordinates resolve from the configured consume registry. Do not combine the new Notice or Shell package with the old exact-dependency matrix.
+2. Install `@mango/cli@1.0.101`, run `mango pmo upgrade --project-dir . --to 1.3.11 --dry-run`, review the projected baseline, then perform the upgrade and run `mango pmo check --project-dir . --locked`.
+3. Keep Mango Maven `1.0.35`. Reinstall the frontend with a clean/frozen lock, rebuild the business application, and do not rewrite approved historical documents merely to add a section introduced by PMO `1.3.10` or `1.3.11`.
+4. Log in to the real business application and verify `/profile` exposes “我的消息、系统公告、通知设置、登录日志”; exercise each entry with the current account and confirm browser console/network contain no unexplained failures.
+
+### Verification
+
+- `PENDING`: protected PR required checks, exact source commit/tree/archive checksum and branch-protection comparison.
+- PMO document-contract suite currently passes 43/43; the real guarantee project document-set regression passes all 58 lifecycle documents, including seven pinned historical documents, with the previous 66 retroactive findings removed.
+- Local Node `22.23.1` builds contain `registerMangoAuthProfileSections`, Notice/System `profileSections` and Admin Shell aggregation in the expected fixed files and generated runtime chunk; packed tarball and dual-registry verification remain pending.
+- `PENDING`: release impact/version lock, PMO projection/package, CLI generated-project, affected frontend tests/builds, admin styles, exports, consumer typecheck, Nexus hosted/group back-check, clean installation and real business `/profile` acceptance.
+
 ## v2026.08.06-cli-1.0.100-code-baseline-consumer-fix - 2026-08-06
 
 Status: `PUBLISHED_AND_VERIFIED`. Source commit `d7cca37c49d70de531b21a33bab3719ddf0ee939` (tree `1a03266a0847b848bb343d48b1ea7b99baa43def`) published only `@mango/cli@1.0.100`, tag and GitHub Release `v2026.08.06-cli-1.0.100-code-baseline-consumer-fix`, and verified Latest documentation. The exact-source bundle SHA-256 is `f52c841f7078707710a3b200823c84294bebb5b68b0b7610a958674d2dada3af`. Existing `@mango/pmo@1.3.10` and Mango Maven `1.0.35` were verified and not republished.

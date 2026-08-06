@@ -1,5 +1,27 @@
 # @mango/cli Changelog
 
+## 1.0.101 - 2026-08-06
+
+### Fixed
+
+- Lock the complete frontend publication closure that carries Issue #721 into real npm runtime artifacts: Auth profile-section registration, Notice message sections, System login logs and Admin Shell aggregation.
+- Upgrade PMO to `1.3.11`, where path/SHA/version-pinned historical lifecycle documents are no longer revalidated against sections added by a newer contract.
+- Add tarball release contracts for the fixed Auth, Notice and System entry files and Admin Shell's generated `featureRegistrars-*.js` runtime chunk.
+
+### Upgrade Notes
+
+1. Install `@mango/cli@1.0.101` only after `@mango/pmo@1.3.11` and every exact frontend coordinate in `release-versions.json` resolve from the consume registry.
+2. Run `mango pmo upgrade --project-dir . --to 1.3.11 --dry-run`, review the baseline, then perform the upgrade and run `mango pmo check --project-dir . --locked`.
+3. Replace the complete frontend matrix rather than upgrading only Notice or Admin Shell. Mango Maven remains `1.0.35`; this batch publishes no backend artifact or database migration.
+4. Rebuild the business frontend and verify `/profile` contains “我的消息、系统公告、通知设置、登录日志”.
+
+### Verification
+
+- `pnpm -C mango-ui release:impact --base=ce9262beccad859a43299d7df554747e1b108b0a --head=HEAD`
+- `node mango-ui/packages/mango-cli/scripts/check-release-versions.mjs`
+- `node mango-ui/packages/mango-cli/scripts/check-generated-backend-gate.mjs`
+- PMO package, CLI, affected frontend tests/builds, packed tarball contracts and clean consume-registry business validation.
+
 ## 1.0.100 - 2026-08-06
 
 ### Fixed

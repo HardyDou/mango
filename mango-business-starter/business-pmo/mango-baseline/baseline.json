@@ -1,10 +1,10 @@
 {
   "packageName": "@mango/pmo",
-  "packageVersion": "1.3.10",
+  "packageVersion": "1.3.11",
   "schemaVersion": 2,
   "source": "mango-pmo",
-  "sourceCommit": "7fc75038339360c8a3c90f1aaaa1b5732911b959",
-  "bundleSha256": "567cb310b73657b35a8e838a7fda529cf9a5274aa933fefa02544421cc062cef",
+  "sourceCommit": "a37f878edf4cbd97c311881ef4c37e5112dc8985",
+  "bundleSha256": "7feff161dd91deb9fe4852f3105af582581965ba9df56eeb28c2e442e7eda586",
   "contracts": [
     {
       "contractId": "business-requirements",
@@ -49,11 +49,11 @@
   ],
   "plugin": {
     "path": "package-root",
-    "sha256": "0cc6516db13bf73fbf056ffe902f26eccbcaacc6591153b55ffa10920cb6feb7",
+    "sha256": "fa42b2a6335c7d4771d700221d5596d87d4b41ee5e7e72c4f98802056f6094f2",
     "files": [
       {
         "path": ".codex-plugin/plugin.json",
-        "sha256": "b7ed025b33d946cff9e90a7407b3d36138d4895874a8210d9a9ab45bfcaae572",
+        "sha256": "b941bc3abe44939d89d7ab55018a146fbeb1e69fb58484297c72c59270f188b7",
         "size": 709,
         "kind": "plugin",
         "mode": "0644"
@@ -294,7 +294,7 @@
   "files": [
     {
       "path": "README.md",
-      "sha256": "46bb9905902faf851848be8ddc93acdc9496d4aa7eb3c0ac9493040eec9bb84a",
+      "sha256": "9ce02e6cf46dff552a56dec49e4717ec99c1558180dd099d283e0db23c93578b",
       "size": 25557,
       "kind": "documentation",
       "mode": "0644"
@@ -574,7 +574,7 @@
     },
     {
       "path": "code-templates/business-module/frontend/packages/{{moduleKebab}}/package.json.template",
-      "sha256": "39c1e24d7f486f21a307d84ab9c20efb28ab082d0533e1ed7892325070ab26a4",
+      "sha256": "ddcc09e47d02768306335968375c980ca3fb3e4e9f4e519e725baae7c6e7b3d8",
       "size": 988,
       "kind": "code-template",
       "mode": "0644"
@@ -623,8 +623,8 @@
     },
     {
       "path": "contracts/business-requirements.json",
-      "sha256": "13070aea3b87dfddedad832f2f518dd954e448c473505c5d57eeb55ee525ee6c",
-      "size": 10102,
+      "sha256": "bc75ca2d23b4955e978283b26dffbcf5085d6858f0835100f1a25bc6fb225b35",
+      "size": 10112,
       "kind": "contract",
       "mode": "0644"
     },
@@ -658,22 +658,22 @@
     },
     {
       "path": "contracts/implementation-plan.json",
-      "sha256": "ecb4ff517e9e302f55207b93fdd7df6f5e00e2364fd44b4c2dd9e948b17fa148",
-      "size": 11048,
+      "sha256": "5d437a74dc98c6b13ace38497989852fc18df41baaf5574abe740e20d893ec77",
+      "size": 11058,
       "kind": "contract",
       "mode": "0644"
     },
     {
       "path": "contracts/system-requirements.json",
-      "sha256": "868f4cc1e7fe850377db96711bb15bfecfe134940e39df93e225e23021c91a57",
-      "size": 11883,
+      "sha256": "3c57987d848107775c3b4e3fd338fd6a5dd63528d05e88061d732f9ce0979762",
+      "size": 11893,
       "kind": "contract",
       "mode": "0644"
     },
     {
       "path": "contracts/technical-design.json",
-      "sha256": "1ad43e0d4b8d1da6059d1f57cf6b9cf64b2ba0a469f57476a640dc02af946754",
-      "size": 14481,
+      "sha256": "c90100a96d80a1261d6e804a87968a171b325ab48ea23ab74617bc2c81a0aaa9",
+      "size": 14491,
       "kind": "contract",
       "mode": "0644"
     },
@@ -924,8 +924,8 @@
     },
     {
       "path": "rules/index.json",
-      "sha256": "0441c548823d7a0ee988f199f541f6f7b635ac17281c61b9bbc70726a1b4fd3b",
-      "size": 26159,
+      "sha256": "b3dbab3780b28231417d5ecd36c5df7b582cfe82f240d19e16b162511e44f437",
+      "size": 26162,
       "kind": "rule",
       "mode": "0644"
     },
@@ -980,8 +980,8 @@
     },
     {
       "path": "rules/product/05-document-lifecycle.md",
-      "sha256": "3db4af93d26bfefb2267ec44b513bd84ed934e8f0f17c34d95d6bc9e1fefbbbe",
-      "size": 8180,
+      "sha256": "10ed4aca05e09aa0c1bb679b80cac9711461254075175d21a2abe7af380d959f",
+      "size": 8560,
       "kind": "rule",
       "mode": "0644"
     },
@@ -1379,8 +1379,8 @@
     },
     {
       "path": "tools/check-document-set.mjs",
-      "sha256": "d80e4a60ab9e4f9a25e49728440f01135bb169a4e5ef14ced7a9bcdfc83a6b9e",
-      "size": 11373,
+      "sha256": "3b52a133b9dd767a971eac4efc6fccf2a80f74e0b8566fcec129d037f27525d4",
+      "size": 11852,
       "kind": "tool",
       "mode": "0644"
     },

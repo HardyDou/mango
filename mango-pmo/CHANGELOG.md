@@ -1,5 +1,31 @@
 # Mango PMO Changelog
 
+## 1.3.11 - 2026-08-06
+
+### Fixed
+
+- Stop applying newly added lifecycle document sections and approval-format rules retroactively to immutable historical documents whose path, SHA-256 and historical `pmoVersion` all match the upgrade-generated baseline.
+- Keep collection-level duplicate document ID, adjacent lifecycle stage and upstream SHA-256 checks active for those historical snapshots, so compatibility does not weaken the document graph.
+
+### Changed
+
+- Advance lifecycle document contracts to PMO `1.3.11` without changing schema revision `1`; unchanged PMO `1.3.10` documents join the existing historical version set only through the path/SHA/version baseline.
+- Ship the synchronized rules, contracts, checker tests, business-starter projection and package-root Codex plugin in `@mango/pmo@1.3.11`.
+
+### Upgrade Notes
+
+1. Publish and verify `@mango/pmo@1.3.11` before installing `@mango/cli@1.0.101`.
+2. Run `mango pmo upgrade --project-dir . --to 1.3.11 --dry-run`, review the projected changes, then perform the upgrade and run `mango pmo check --project-dir . --locked`.
+3. Do not rewrite approved historical TDD/Plan files merely to add sections introduced by a newer PMO contract. Preserve their generated path/SHA/version entries; modified or new lifecycle documents must use `1.3.11`.
+4. If a historical document changes or its upstream digest is stale, repair and reapprove the affected lifecycle chain instead of editing the baseline to hide the drift.
+
+### Verification
+
+- `node --test mango-pmo/tests/document-contract/document-contract.test.mjs`
+- `node mango-ui/packages/mango-pmo/scripts/build-package.mjs && node mango-ui/packages/mango-pmo/scripts/check-package.mjs`
+- `node mango-business-starter/scripts/sync-pmo-baseline.mjs --check`
+- Business document-set regression against the 58-document guarantee project, including seven path/SHA/version-pinned historical documents.
+
 ## 1.3.10 - 2026-08-06
 
 ### Added

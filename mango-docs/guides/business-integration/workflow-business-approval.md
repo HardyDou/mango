@@ -226,3 +226,7 @@ pnpm -F @mango/workflow-business-example build
 ## 2026-08-03 Mango 1.0.31 发布影响
 
 - Mango `1.0.31` 不改变审批发起、任务处理、回调、状态回写、流程页面 key、公开 API、菜单、权限或租户隔离语义。使用 `1.0.30` 或其它 `1.0.3x` 版本的业务项目应成组升级完整 release tuple，先通过独立 Bootstrap 验证 Workflow 相关 Resource 声明，再复验“发起 -> 办理 -> 终态回写 -> 通知跳转”闭环；直接读取 workflow 表或混装旧版单包都不属于该发布矩阵的受支持消费方式。
+
+## 2026-08-06 前端依赖批次发布影响
+
+- 本发布候选成组更新 `@mango/workflow@1.0.40`、`@mango/workflow-business-example@1.0.39` 及其固定前端依赖，但不发布 Maven，也不改变审批发起、任务处理、回调、状态回写、流程页面 key、API、菜单、权限或租户隔离语义。业务项目升级完整 npm 批次后，继续按本指南复验既有审批闭环，不能混装本批次的新旧单包。
