@@ -1,10 +1,14 @@
-import { flushPromises, mount } from '@vue/test-utils';
+import { config, enableAutoUnmount, flushPromises, mount } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import Editor from '../index.vue';
-import { getUploadedFileDetail, importRemoteImage, uploadImage } from '../../../api/upload';
+import { getUploadedFileDetail, importRemoteImage, uploadFile, uploadImage } from '../../../api/upload';
 
-const { editorState, fakeEditor } = vi.hoisted(() => ({
+const { editorState, fakeEditor, editorPlugin } = vi.hoisted(() => ({
   editorState: { html: '<p>content</p>' },
+  editorPlugin: {
+    value: undefined as undefined | ((editor: { insertData: (data: DataTransfer) => void }) => unknown),
+    applied: false,
+  },
   fakeEditor: {
     getHtml: vi.fn(() => editorState.html),
     getText: vi.fn(() => 'content'),
@@ -16,16 +20,27 @@ const { editorState, fakeEditor } = vi.hoisted(() => ({
     disable: vi.fn(),
     destroy: vi.fn(),
     blur: vi.fn(),
+    insertData: vi.fn(),
   },
 }));
+
+config.global.stubs = {
+  ElTooltip: { template: '<span><slot /></span>' },
+  ElButton: { emits: ['click'], template: '<button type="button" @click="$emit(\'click\')"></button>' },
+};
+enableAutoUnmount(afterEach);
 
 vi.mock('@wangeditor/editor-for-vue', () => ({
   Editor: {
     name: 'Editor',
     props: ['modelValue', 'defaultConfig', 'mode', 'disabled'],
-    emits: ['on-created', 'on-change', 'update:modelValue'],
+    emits: ['on-created', 'on-change', 'update:modelValue', 'customPaste'],
     template: '<div class="editor-content"></div>',
     mounted() {
+      if (!editorPlugin.applied && editorPlugin.value) {
+        editorPlugin.value(fakeEditor);
+        editorPlugin.applied = true;
+      }
       this.$emit('on-created', fakeEditor);
     },
   },
@@ -36,10 +51,21 @@ vi.mock('@wangeditor/editor-for-vue', () => ({
   },
 }));
 
+vi.mock('@wangeditor/editor', () => ({
+  Boot: {
+    simpleToolbarConfig: {},
+    registerMenu: vi.fn(),
+    registerPlugin: vi.fn((plugin) => {
+      editorPlugin.value = plugin;
+    }),
+  },
+}));
+
 vi.mock('../../../api/upload', () => ({
   fileToken: (id?: string) => (id ? `mango-file:${id}` : ''),
   getUploadedFileDetail: vi.fn(),
   importRemoteImage: vi.fn(),
+  uploadFile: vi.fn(),
   uploadImage: vi.fn(),
 }));
 
@@ -59,6 +85,8 @@ describe('Editor 组件单元测试', () => {
 
   beforeEach(() => {
     editorState.html = '<p>content</p>';
+    editorPlugin.applied = false;
+    fakeEditor.insertData = vi.fn();
     vi.mocked(uploadImage).mockResolvedValue({
       id: '1935600000000000001',
       url: 'https://example.com/image.png',
@@ -79,6 +107,14 @@ describe('Editor 组件单元测试', () => {
       fileName: 'existing.png',
       fileSize: 512,
     });
+    vi.mocked(uploadFile).mockResolvedValue({
+      id: '1935600000000000005',
+      url: '/api/file/files/preview-content?id=1935600000000000005',
+      previewUrl: '/api/file/files/preview-content?id=1935600000000000005',
+      downloadUrl: '/api/file/files/download?id=1935600000000000005',
+      fileName: '报告.pdf',
+      fileSize: 4096,
+    });
   });
 
   afterEach(() => {
@@ -92,7 +128,9 @@ describe('Editor 组件单元测试', () => {
     const toolbar = wrapper.findComponent({ name: 'Toolbar' });
 
     expect(toolbar.props('defaultConfig').toolbarKeys).toContain('bold');
-    expect(toolbar.props('defaultConfig').toolbarKeys).toContain('insertImage');
+    expect(toolbar.props('defaultConfig').toolbarKeys).toContain('uploadImage');
+    expect(toolbar.props('defaultConfig').toolbarKeys).toContain('uploadAttachment');
+    expect(toolbar.props('defaultConfig').toolbarKeys).not.toContain('insertImage');
     expect(toolbar.props('defaultConfig').toolbarKeys).toContain('fullScreen');
   });
 
@@ -120,10 +158,10 @@ describe('Editor 组件单元测试', () => {
     await wrapper.vm.$nextTick();
     const toolbar = wrapper.findComponent({ name: 'Toolbar' });
 
-    expect(toolbar.props('defaultConfig')).toEqual({ toolbarKeys });
+    expect(toolbar.props('defaultConfig')).toEqual({ toolbarKeys: [...toolbarKeys, 'uploadAttachment'] });
   });
 
-  it('图片上传默认写入可访问 URL', async () => {
+  it('图片上传默认在编辑态写入预览地址，并在保存时转为 token', async () => {
     const insertFn = vi.fn();
     const wrapper = mount(Editor);
     const config = wrapper.findComponent({ name: 'Editor' }).props('defaultConfig');
@@ -131,6 +169,16 @@ describe('Editor 组件单元测试', () => {
     await config.MENU_CONF.uploadImage.customUpload(new File(['image'], 'image.png'), insertFn);
 
     expect(uploadImage).toHaveBeenCalled();
+    expect(insertFn).toHaveBeenCalledWith('https://example.com/image.png', 'image.png', '');
+  });
+
+  it('显式 url 模式继续写入可访问 URL', async () => {
+    const insertFn = vi.fn();
+    const wrapper = mount(Editor, { props: { imageValueType: 'url' } });
+    const config = wrapper.findComponent({ name: 'Editor' }).props('defaultConfig');
+
+    await config.MENU_CONF.uploadImage.customUpload(new File(['image'], 'image.png'), insertFn);
+
     expect(insertFn).toHaveBeenCalledWith(
       'https://example.com/image.png',
       'image.png',
@@ -166,15 +214,15 @@ describe('Editor 组件单元测试', () => {
     expect(insertFn).toHaveBeenCalledWith('https://example.com/image.png', 'image.png', '');
   });
 
-  it('pasteImageMode 默认模式不拦截浏览器粘贴', () => {
+  it('显式 default 粘贴模式不拦截浏览器粘贴', () => {
     const wrapper = mount(Editor, {
-      props: { imageValueType: 'token' },
+      props: { imageValueType: 'token', pasteImageMode: 'default' },
     });
-    const config = wrapper.findComponent({ name: 'Editor' }).props('defaultConfig');
     const callback = vi.fn();
     const preventDefault = vi.fn();
 
-    config.customPaste(
+    wrapper.findComponent({ name: 'Editor' }).vm.$emit(
+      'customPaste',
       fakeEditor,
       {
         clipboardData: {
@@ -191,19 +239,19 @@ describe('Editor 组件单元测试', () => {
     expect(uploadImage).not.toHaveBeenCalled();
   });
 
-  it('托管粘贴上传 File 和 Data URI，并复用已有 token', async () => {
+  it('托管粘贴上传剪贴板图片且不重复上传，并复用已有 token', async () => {
     const wrapper = mount(Editor, {
       props: {
         imageValueType: 'token',
         pasteImageMode: 'upload',
       },
     });
-    const config = wrapper.findComponent({ name: 'Editor' }).props('defaultConfig');
     const callback = vi.fn();
     const preventDefault = vi.fn();
     const clipboardFile = new File(['clipboard'], 'clipboard.png', { type: 'image/png' });
 
-    config.customPaste(
+    wrapper.findComponent({ name: 'Editor' }).vm.$emit(
+      'customPaste',
       fakeEditor,
       {
         clipboardData: {
@@ -219,12 +267,12 @@ describe('Editor 组件单元测试', () => {
 
     expect(callback).toHaveBeenCalledWith(false);
     expect(preventDefault).toHaveBeenCalledOnce();
-    expect(uploadImage).toHaveBeenCalledTimes(2);
+    expect(uploadImage).toHaveBeenCalledTimes(1);
     expect(getUploadedFileDetail).toHaveBeenCalledWith('1935600000000000003');
     expect(importRemoteImage).not.toHaveBeenCalled();
     const emitted = wrapper.emitted('update:modelValue')?.at(-1)?.[0] as string;
     expect(emitted).toContain('保留文字');
-    expect(emitted.match(/mango-file:/g)).toHaveLength(3);
+    expect(emitted.match(/mango-file:/g)).toHaveLength(2);
     expect(emitted).not.toContain('data:image');
     expect(emitted).not.toContain('example.com');
   });
@@ -245,9 +293,8 @@ describe('Editor 组件单元测试', () => {
         pasteImageMode: 'upload',
       },
     });
-    const config = wrapper.findComponent({ name: 'Editor' }).props('defaultConfig');
-
-    config.customPaste(
+    wrapper.findComponent({ name: 'Editor' }).vm.$emit(
+      'customPaste',
       fakeEditor,
       {
         clipboardData: {
@@ -267,7 +314,22 @@ describe('Editor 组件单元测试', () => {
     expect(emitted).toContain('href="/detail"');
     expect(emitted).toContain('<li>列表</li>');
     expect(emitted).toContain('mango-file:1935600000000000004');
-    expect(emitted).not.toContain('public.example');
+    expect(emitted).toContain('https://public.example/fail.png');
     expect(wrapper.emitted('image-error')).toBeTruthy();
+  });
+
+  it('拖拽普通文件会上传并插入可新标签打开的附件 token', async () => {
+    const wrapper = mount(Editor);
+    await wrapper.vm.$nextTick();
+    const file = new File(['pdf'], '报告.pdf', { type: 'application/pdf' });
+
+    fakeEditor.insertData({ files: [file] } as unknown as DataTransfer);
+    await flushPromises();
+
+    expect(uploadFile).toHaveBeenCalledWith(file);
+    const emitted = wrapper.emitted('update:modelValue')?.at(-1)?.[0] as string;
+    expect(emitted).toContain('href="mango-file:1935600000000000005"');
+    expect(emitted).toContain('target="_blank"');
+    expect(emitted).toContain('报告.pdf');
   });
 });

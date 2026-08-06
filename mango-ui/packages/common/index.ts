@@ -108,5 +108,13 @@ export type {
 export { default as CodeEditor } from './components/CodeEditor/index.vue';
 export { default as ECharts } from './components/ECharts/index.vue';
 export { default as Editor } from './components/Editor/index.vue';
+export type {
+  EditorAssetError,
+  EditorAssetErrorSource,
+  EditorAssetKind,
+  EditorImageError,
+} from './components/Editor/types';
+export { default as RichTextViewer } from './components/RichTextViewer/index.vue';
+export type { RichTextAssetResolver, RichTextViewerResolveError } from './components/RichTextViewer/types';
 export { default as SSE } from './components/SSE/index.vue';
 export { default as Websocket } from './components/Websocket/index.vue';

@@ -89,19 +89,7 @@ export function uploadExcel(file: File): Promise<ExcelUploadResult> {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
-  }).then((record) => ({
-    id: record.id,
-    url: uploadAccessUrl(record),
-    previewUrl: record.previewUrl || record.url,
-    downloadUrl: record.downloadUrl,
-    fileName: record.fileName,
-    fileSize: Number(record.fileSize ?? 0),
-    contentType: record.contentType,
-    objectName: record.objectName,
-    directPreviewUrl: record.directPreviewUrl,
-    directDownloadUrl: record.directDownloadUrl,
-    data: [],
-  }));
+  }).then((record) => ({ ...toUploadResult(record), data: [] }));
 }
 
 export function uploadMultiple(files: File[]): Promise<UploadResult[]> {
@@ -142,45 +130,45 @@ export async function createUploadedFileObjectUrl(id: FileId): Promise<string> {
 
 function toUploadResult(record: UploadApiRecord): UploadResult {
   const id = normalizeId(record.id);
+  const previewUrl = firstFileUrl(record.previewUrl, record.directPreviewUrl, record.url);
+  const downloadUrl = firstFileUrl(record.downloadUrl, record.directDownloadUrl);
   return {
     id,
-    url: uploadAccessUrl(record),
-    previewUrl: record.previewUrl || record.url,
-    downloadUrl: record.downloadUrl,
+    url: previewUrl || downloadUrl || fileToken(id),
+    previewUrl: previewUrl || undefined,
+    downloadUrl: downloadUrl || undefined,
     fileName: record.fileName,
     fileSize: Number(record.fileSize ?? 0),
     contentType: record.contentType,
     objectName: record.objectName,
-    directPreviewUrl: record.directPreviewUrl,
-    directDownloadUrl: record.directDownloadUrl,
+    directPreviewUrl: normalizeFileAccessUrl(record.directPreviewUrl) || undefined,
+    directDownloadUrl: normalizeFileAccessUrl(record.directDownloadUrl) || undefined,
   };
 }
 
 function toUploadedFileDetail(record: UploadApiRecord): UploadResult {
-  return {
-    ...toUploadResult(record),
-    previewUrl: directUrl(record?.previewUrl) || undefined,
-  };
+  return toUploadResult(record);
 }
 
 export function fileToken(id?: FileId): string {
   return id ? `mango-file:${id}` : '';
 }
 
-function uploadAccessUrl(record: UploadApiRecord): string {
-  const id = normalizeId(record?.id);
-  return (
-    directUrl(record?.directPreviewUrl) ||
-    directUrl(record?.url) ||
-    directUrl(record?.directDownloadUrl) ||
-    directUrl(record?.downloadUrl) ||
-    fileToken(id)
-  );
+function firstFileUrl(...values: Array<string | undefined>) {
+  for (const value of values) {
+    const normalized = normalizeFileAccessUrl(value);
+    if (normalized) return normalized;
+  }
+  return '';
 }
 
-function directUrl(value?: string): string {
-  if (!value) return '';
-  if (/^(https?:)?\/\//i.test(value) || /^(blob|data):/i.test(value)) return value;
+export function normalizeFileAccessUrl(value?: string): string {
+  const normalized = String(value || '').trim();
+  if (!normalized) return '';
+  if (/^(https?:)?\/\//i.test(normalized) || /^(blob|data):/i.test(normalized)) return normalized;
+  if (normalized.startsWith('/api/')) return normalized;
+  if (normalized.startsWith('/file/')) return `/api${normalized}`;
+  if (normalized.startsWith('file/')) return `/api/${normalized}`;
   return '';
 }
 
