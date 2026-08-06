@@ -2,7 +2,7 @@
 
 ## v2026.08.06-cli-1.0.100-code-baseline-consumer-fix - 2026-08-06
 
-Status: `PENDING`. This npm-only corrective batch publishes only `@mango/cli@1.0.100`. It reuses the already published and verified `@mango/pmo@1.3.10` code baseline and Mango Maven `1.0.35`; neither coordinate is republished.
+Status: `PUBLISHED_AND_VERIFIED`. Source commit `d7cca37c49d70de531b21a33bab3719ddf0ee939` (tree `1a03266a0847b848bb343d48b1ea7b99baa43def`) published only `@mango/cli@1.0.100`, tag and GitHub Release `v2026.08.06-cli-1.0.100-code-baseline-consumer-fix`, and verified Latest documentation. The exact-source bundle SHA-256 is `f52c841f7078707710a3b200823c84294bebb5b68b0b7610a958674d2dada3af`. Existing `@mango/pmo@1.3.10` and Mango Maven `1.0.35` were verified and not republished.
 
 ### Fixed
 
@@ -24,9 +24,9 @@ Status: `PENDING`. This npm-only corrective batch publishes only `@mango/cli@1.0
 | Order | Target | Version | Status |
 | ----: | ------ | ------- | ------ |
 | 1 | Existing prerequisite `@mango/pmo` | `1.3.10` | `PUBLISHED_AND_VERIFIED`; not republished |
-| 2 | `@mango/cli` | `1.0.100` | `PENDING` |
-| 3 | Git tag and GitHub Release | `v2026.08.06-cli-1.0.100-code-baseline-consumer-fix` | `PENDING` |
-| 4 | Latest documentation | release tag above | `PENDING`; npm-only batch does not create a Maven versioned docs snapshot |
+| 2 | `@mango/cli` | `1.0.100` | `PUBLISHED_AND_VERIFIED` |
+| 3 | Git tag and GitHub Release | `v2026.08.06-cli-1.0.100-code-baseline-consumer-fix` | `CREATED_AND_VERIFIED` |
+| 4 | Latest documentation | release source above | `PUBLISHED_AND_VERIFIED`; npm-only batch did not create a Maven versioned docs snapshot |
 
 ### Upgrade Notes
 
@@ -37,10 +37,10 @@ Status: `PENDING`. This npm-only corrective batch publishes only `@mango/cli@1.0
 
 ### Verification
 
-- The fix PR must pass CLI full tests, the packed tarball `init`/`module add`/locked-PMO regression, release-impact/version-lock checks, generated backend gate and protected required checks.
-- Before publication, `@mango/cli@1.0.100` must be absent from both `npm-hosted` and `npm-group`; `@mango/pmo@1.3.10` must resolve identically from both and must not be republished.
-- Closeout requires matching CLI integrity, shasum and publication time from both registries plus a clean isolated-cache `npm-group` consumer that renders all 11 code-baseline convention assertions with no unresolved placeholders.
-- The preserved `1.0.99` failed publication manifest SHA-256 is `1501a6dbc47d05954aad61da3f779b13aa79def68a6fde1516c0c640cf47e89c`; no successful immutable state from that batch may be repeated.
+- PR #742 passed the protected required checks. PMO/starter projection checks, CLI full tests, the offline packed-tarball regression, release-impact/version-lock checks, generated backend gate, admin styles and documentation audits passed from the protected release source.
+- Before publication, both registries proved `@mango/cli@1.0.100` absent and returned identical existing PMO metadata. After publication, hosted/group returned CLI integrity `sha512-UWkwDCi0gpHmlldzByCp6Ws81ZBJ5FrelbhpPSAeFxTwvlSwmJT+ykJwY/y/8IIdIRazrg5ORoWPS1BYi5UmLQ==`, shasum `dd5ebe57b22028a85229d8be06809b390173ea86` and publication time `2026-08-06T04:29:52.947Z`.
+- A clean isolated-cache `npm-group` consumer installed remote CLI `1.0.100` and PMO `1.3.10`, initialized a full project, generated `quality-center/review-record`, passed locked PMO validation, proved all 11 code-baseline conventions and found zero unresolved placeholders.
+- The completed recovery manifest SHA-256 is `e5cef422ac6feeb423896e0d41ef962912b94951c6baff9217fbe2c89560ff4a`. The preserved pre-immutable failed manifest SHA-256 is `1299751530902e2b12a2a312d9f2c9a8297c4dd79d3dbde03ea47d94babab9e0`; it failed only on an invalid release-impact base before Tag, Release or npm mutation. The earlier `1.0.99` failed post-verify manifest remains `1501a6dbc47d05954aad61da3f779b13aa79def68a6fde1516c0c640cf47e89c`.
 
 ## v2026.08.06-pmo-1.3.10-cli-1.0.99-code-baseline-release - 2026-08-06
 
