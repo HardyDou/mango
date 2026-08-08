@@ -9,7 +9,7 @@ const fixture = JSON.parse(readFileSync(join(testRoot, 'delivery-assurance-recom
 const contract = JSON.parse(readFileSync(join(pmoRoot, 'contracts/delivery-assurance.json'), 'utf8'));
 
 assert(contract.contractSchema === 2, 'delivery assurance contract schema must be 2');
-assert(contract.schemaRevision === 6, 'delivery assurance schema revision must be 6');
+assert(contract.schemaRevision === 7, 'delivery assurance schema revision must be 7');
 assert(contract.selectionAuthority === 'policy-with-human-exceptions', 'selection authority drifted');
 assert(contract.workspacePolicy.trackedChangeOnPrimary === 'CREATE', 'primary tracked changes must CREATE');
 assert(contract.workspacePolicy.existingTaskWorktree === 'REUSE', 'existing task worktree must REUSE');

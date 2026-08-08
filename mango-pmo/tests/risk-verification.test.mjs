@@ -127,6 +127,48 @@ test('a human CONFIRMED baseline remains valid during the trusted-base contract 
   assert.deepEqual(result.failures, []);
 });
 
+
+test('trusted-base schema migration temporarily accepts legacy FULL as L3', () => {
+  const result = validateRiskVerification(body({
+    requirement: 'L3 - repository-wide governance contract changes',
+    solution: 'L3 - trusted contract and packaged projections change together',
+    finalRisk: 'L3',
+    deliveryMode: 'FULL',
+    baseline: 'RESOLVED - trusted-base schema migration from the current main branch',
+  }));
+  assert.deepEqual(result.failures, []);
+  assert.equal(result.assessment.deliveryMode, 'FULL');
+  assert.equal(result.assessment.effectiveDeliveryMode, 'L3');
+});
+
+test('legacy delivery modes remain blocked outside the exact trusted-base migration', () => {
+  const missingMarker = validateRiskVerification(body({
+    requirement: 'L3 - repository-wide governance contract changes',
+    solution: 'L3 - packaged projections change together',
+    finalRisk: 'L3',
+    deliveryMode: 'FULL',
+  }));
+  assert.match(missingMarker.failures.join('\n'), /trusted-base schema migration/);
+
+  const wrongRisk = validateRiskVerification(body({
+    requirement: 'L4 - cross-service governance contract changes',
+    solution: 'L4 - packaged projections change together',
+    finalRisk: 'L4',
+    deliveryMode: 'FULL',
+    baseline: 'RESOLVED - trusted-base schema migration from the current main branch',
+  }));
+  assert.match(wrongRisk.failures.join('\n'), /trusted-base schema migration/);
+
+  const standard = validateRiskVerification(body({
+    requirement: 'L2 - bounded governance contract change',
+    solution: 'L2 - local checker change',
+    finalRisk: 'L2',
+    deliveryMode: 'STANDARD',
+    baseline: 'RESOLVED - trusted-base schema migration from the current main branch',
+  }));
+  assert.match(standard.failures.join('\n'), /trusted-base schema migration/);
+});
+
 test('release-only PR bypasses the delivery catalog and stays in the release workflow', () => {
   const result = validateRiskVerification(body({
     deliveryMode: 'NOT_APPLICABLE',

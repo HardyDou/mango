@@ -11,6 +11,7 @@ const DELIVERY_ASSURANCE_CONTRACT = JSON.parse(fs.readFileSync(
 ));
 const ASSURANCE_VALUES = new Map(DELIVERY_ASSURANCE_CONTRACT.measures.map(measure => [measure.id, measure.allowedValues]));
 const DOWNWARD_POLICY = DELIVERY_ASSURANCE_CONTRACT.downwardModeOverride;
+const TRUSTED_BASE_MODE_MIGRATION = DELIVERY_ASSURANCE_CONTRACT.trustedBaseModeMigration;
 const NON_DOWNGRADABLE_FACTS = new Map(DOWNWARD_POLICY.nonDowngradableFacts.map(fact => [fact.id, fact.keywords]));
 const PR_BODY_CONTRACT = DELIVERY_ASSURANCE_CONTRACT.pullRequestBody;
 const PR_BODY_FIELDS = new Map(PR_BODY_CONTRACT.fields.map(field => [field.key, field.label]));
@@ -117,6 +118,15 @@ function hasHumanActor(value) {
   return /(?:owner|maintainer|human|user|负责人|维护者|用户)/iu.test(value);
 }
 
+function isTrustedBaseModeMigration({ baseline, deliveryMode, finalRisk }) {
+  if (!TRUSTED_BASE_MODE_MIGRATION) return false;
+  return deliveryMode === TRUSTED_BASE_MODE_MIGRATION.legacyMode
+    && finalRisk === TRUSTED_BASE_MODE_MIGRATION.finalRisk
+    && TRUSTED_BASE_MODE_MIGRATION.requiredBaselineMarkers.every(marker =>
+      baseline.toLowerCase().includes(marker.toLowerCase()),
+    );
+}
+
 export function validateRiskVerification(markdown) {
   const failures = [];
   const section = sectionText(markdown, PR_BODY_CONTRACT.sectionHeading);
@@ -136,11 +146,21 @@ export function validateRiskVerification(markdown) {
   const evidence = parseEvidence(fieldValue(section, fieldLabel('assuranceEvidence')));
   const residualRisks = fieldValue(section, fieldLabel('residualRisks'));
   const releaseOnly = /^NOT_APPLICABLE\s*[-:：]\s*.+release/iu.test(baseline);
+  const trustedBaseModeMigration = !releaseOnly && isTrustedBaseModeMigration({
+    baseline,
+    deliveryMode,
+    finalRisk,
+  });
+  const effectiveDeliveryMode = trustedBaseModeMigration
+    ? TRUSTED_BASE_MODE_MIGRATION.mappedMode
+    : deliveryMode;
 
   if (!requirement) failures.push('"Requirement impact" must use "L0-L5 - concrete impact facts"');
   if (!solution) failures.push('"Solution risk" must use "L0-L5 - concrete implementation and recovery facts"');
   if (!RISK_LEVELS.includes(finalRisk)) failures.push('"Final risk" must be one of L0, L1, L2, L3, L4, L5');
-  if (!releaseOnly && !DELIVERY_MODES.includes(deliveryMode)) failures.push('"Delivery mode" must be one of SIMPLE, L2, L3, L4, L5');
+  if (!releaseOnly && !DELIVERY_MODES.includes(deliveryMode) && !trustedBaseModeMigration) {
+    failures.push('"Delivery mode" must be one of SIMPLE, L2, L3, L4, L5; trusted-base schema migration may temporarily use FULL with final risk L3');
+  }
   if (releaseOnly && deliveryMode !== 'NOT_APPLICABLE') failures.push('release-only PR must set "Delivery mode" to NOT_APPLICABLE');
   if (!['CREATE', 'REUSE', 'MAIN_EXCEPTION'].includes(workspaceDecision)) failures.push('"Workspace decision" must be CREATE, REUSE, or MAIN_EXCEPTION');
   if (!declaredNonDowngradableFacts) failures.push('"Non-downgradable facts" must be None or a comma-separated contract fact list');
@@ -158,8 +178,8 @@ export function validateRiskVerification(markdown) {
       failures.push(`"Final risk" must equal max(requirement impact, solution risk): expected ${expected}, got ${finalRisk}`);
     }
     const expectedMode = RISK_TO_MODE.get(finalRisk);
-    const isDownward = DELIVERY_MODES.includes(deliveryMode)
-      && DELIVERY_MODES.indexOf(deliveryMode) < DELIVERY_MODES.indexOf(expectedMode);
+    const isDownward = DELIVERY_MODES.includes(effectiveDeliveryMode)
+      && DELIVERY_MODES.indexOf(effectiveDeliveryMode) < DELIVERY_MODES.indexOf(expectedMode);
     const detectedFacts = detectNonDowngradableFacts(requirement.evidence, solution.evidence);
     const undeclaredFacts = detectedFacts.filter(fact => !declaredNonDowngradableFacts?.includes(fact));
     if (!releaseOnly && undeclaredFacts.length > 0) {
@@ -216,6 +236,7 @@ export function validateRiskVerification(markdown) {
           solutionRisk: solution,
           finalRisk,
           deliveryMode,
+          effectiveDeliveryMode,
           workspaceDecision,
           nonDowngradableFacts: declaredNonDowngradableFacts || [],
           assuranceBaseline: baseline,

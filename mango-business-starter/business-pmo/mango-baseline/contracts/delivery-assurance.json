@@ -1,10 +1,16 @@
 {
   "contractSchema": 2,
   "contractId": "delivery-assurance",
-  "schemaRevision": 6,
+  "schemaRevision": 7,
   "ruleSource": "mango-pmo/rules/11-delivery-assurance.md",
   "selectionAuthority": "policy-with-human-exceptions",
   "legacyBaselinePrefixes": ["CONFIRMED"],
+  "trustedBaseModeMigration": {
+    "legacyMode": "FULL",
+    "mappedMode": "L3",
+    "finalRisk": "L3",
+    "requiredBaselineMarkers": ["trusted-base", "schema"]
+  },
   "releaseIncluded": false,
   "pullRequestBody": {
     "sectionHeading": "Risk / Verification",
