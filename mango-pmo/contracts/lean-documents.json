@@ -1,19 +1,20 @@
 {
   "contractSchema": 1,
   "contractId": "lean-documents",
-  "schemaRevision": 1,
+  "schemaRevision": 2,
   "ruleSource": "mango-pmo/rules/11-delivery-assurance.md",
   "a4EquivalentContentUnits": 1800,
   "forcedL5Facts": ["NEW_MODULE", "NEW_SYSTEM", "MAJOR_ARCHITECTURE_REPLACEMENT", "CORE_MIGRATION", "IRREVERSIBLE_DATA", "CROSS_SYSTEM_MAIN_CHAIN"],
   "questionTopics": ["BUSINESS_GOAL", "ROLE_NEEDS", "BUSINESS_RULES", "STATE_DATA_SEMANTICS", "SYSTEM_BOUNDARY", "PUBLIC_CONTRACT", "DATA", "SECURITY", "TENANT", "COMPATIBILITY", "ROLLBACK", "DESTRUCTIVE_ACTION", "EXTERNAL_WRITE", "LEVEL_OVERRIDE"],
   "levels": {
-    "L0": {"artifactPolicy": "NONE"},
-    "L1": {"artifactPolicy": "NONE"},
-    "L2": {"artifactPolicy": "SINGLE", "template": "mango-pmo/templates/delivery-l2.md", "maxA4Pages": 1},
-    "L3": {"artifactPolicy": "SINGLE", "template": "mango-pmo/templates/delivery-l3.md", "maxA4Pages": 3},
-    "L4": {"artifactPolicy": "SINGLE", "template": "mango-pmo/templates/delivery-l4.md", "maxA4Pages": 5},
+    "L0": {"artifactPolicy": "NONE", "documentVersion": "直接做"},
+    "L1": {"artifactPolicy": "NONE", "documentVersion": "直接做"},
+    "L2": {"artifactPolicy": "SINGLE", "documentVersion": "一页纸", "template": "mango-pmo/templates/delivery-l2.md", "maxA4Pages": 1},
+    "L3": {"artifactPolicy": "SINGLE", "documentVersion": "标准版", "template": "mango-pmo/templates/delivery-l3.md", "maxA4Pages": 3},
+    "L4": {"artifactPolicy": "SINGLE", "documentVersion": "详细版", "template": "mango-pmo/templates/delivery-l4.md", "maxA4Pages": 5},
     "L5": {
       "artifactPolicy": "INDEPENDENT_DOCUMENTS",
+      "documentVersion": "四文档",
       "templates": [
         "mango-pmo/templates/l5-business-requirements.md",
         "mango-pmo/templates/l5-system-requirements.md",

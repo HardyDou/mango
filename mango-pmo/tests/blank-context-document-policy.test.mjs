@@ -26,6 +26,14 @@ test('空白上下文场景清单满足数量、等级和 ASK 覆盖要求', () 
   assert.ok(fixture.cases.filter(item => item.expect.finalLevel === 'L5').length >= 8);
 });
 
+test('空白上下文的最终等级都返回对应中文文档版本', () => {
+  const names = { L0: '直接做', L1: '直接做', L2: '一页纸', L3: '标准版', L4: '详细版', L5: '四文档' };
+  for (const item of fixture.cases.filter(item => ['DIRECT', 'WRITE'].includes(item.expect.action))) {
+    const result = resolveLeanDocumentPolicy(item.facts);
+    assert.equal(result.documentVersion, names[result.finalLevel], item.id);
+  }
+});
+
 for (const item of fixture.cases) {
   test(`${item.id} ${item.prompt}`, () => {
     const result = resolveLeanDocumentPolicy(item.facts);

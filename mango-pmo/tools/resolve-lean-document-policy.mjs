@@ -81,6 +81,7 @@ export function resolveLeanDocumentPolicy(facts = {}) {
   return {
     action: levelPolicy.artifactPolicy === 'NONE' ? 'DIRECT' : 'WRITE',
     finalLevel,
+    documentVersion: levelPolicy.documentVersion,
     artifactPolicy: levelPolicy.artifactPolicy,
     templates,
     documentCount: templates.length,
