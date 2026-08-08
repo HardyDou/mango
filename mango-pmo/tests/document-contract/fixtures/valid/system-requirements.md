@@ -1,7 +1,7 @@
 ---
 documentId: SRS-ANN-001
 documentType: system-requirements
-pmoVersion: 1.3.11
+pmoVersion: 1.3.12
 schemaRevision: 1
 riskLevel: L2
 riskAssessmentEvidence: BRD-ANN-001 risk assessment

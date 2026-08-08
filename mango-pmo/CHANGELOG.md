@@ -1,5 +1,37 @@
 # Mango PMO Changelog
 
+## 1.3.12 - 2026-08-08
+
+### Fixed
+
+- 发布 `check-worktree-delivery-integrity.mjs` 的 `start`、`commit`、`deliver`、`cleanup` 四阶段检查，阻断跨任务 worktree 复用、部分提交、未跟踪文件、未同步 upstream 和未合并清理。
+- 收紧 `mango-engineering` 与交付保障 Skill：任务 worktree 身份只能来自当前会话、Issue 或 PR 记录，不能仅按当前分支名称自行推断。
+- 保留精确并行脏 worktree 的人工确认入口，同时禁止把已合并但仍有本地改动的 worktree 当作并行任务豁免。
+
+### Changed
+
+- 将 PMO package、Codex plugin、四类生命周期合同和业务 starter 投影同步到 `1.3.12`；合同 schema revision 保持 `1`。
+- 人类可读的工程 Skill 和门禁输出统一为中文，命令、字段和机器状态值保持稳定。
+
+### PMO Required Checks
+
+- `check-worktree-delivery-integrity.mjs`
+  - Migration: 业务项目升级 PMO baseline 后逐个核对 active worktree；已有项目另行补充正常构建产物的 `.gitignore` 模式。
+  - Exception: `start` 只接受用户确认的精确并行 worktree 路径；当前任务 worktree 的未提交、未跟踪、未 Push 或未合并状态不能豁免。
+  - Verify: 执行 24 个工具场景、Skill 空白上下文评测、CLI 69 项测试和真实 tarball 业务项目提交/构建/交付链路。
+
+### Upgrade Notes
+
+1. 等待 `@mango/pmo@1.3.12` 从消费仓可见后，执行 `mango pmo upgrade --project-dir . --to 1.3.12 --dry-run`。
+2. 审阅规则、Skill、工具和 PR 模板变化后执行实际升级，再运行 `mango pmo check --project-dir . --locked`。
+3. 对每个 active worktree 分别执行 `start` 检查；提交前逐项暂存任务文件并运行 `commit`，Push 后运行 `deliver`，合并后运行 `cleanup`。
+
+### Verification
+
+- `node --test mango-pmo/tests/worktree-delivery-integrity.test.mjs`
+- `node mango-pmo/tools/check-worktree-delivery-integrity.mjs --mode <start|commit|deliver|cleanup>` 的真实仓库与空白业务仓场景。
+- PMO package build/check、business starter 精确投影、Skill eval、治理意图和文档合同门禁。
+
 ## 1.3.11 - 2026-08-06
 
 ### Fixed

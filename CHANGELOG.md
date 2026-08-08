@@ -1,5 +1,60 @@
 # Mango Changelog
 
+## v2026.08.08-pmo-1.3.12-cli-1.0.102-worktree-integrity-release - 2026-08-08
+
+Status: `PENDING`. 本批次计划发布 `@mango/pmo@1.3.12` 与 `@mango/cli@1.0.102`，Mango Maven `1.0.35` 仅作为已发布前置版本验证，不重新发布。发布源、双仓校验和、GitHub Release 与完成状态将在不可变发布验证后回填。
+
+### Fixed
+
+- 新增 worktree 交付完整性门禁，在任务开始、提交、Push/PR 和清理阶段阻断跨任务复用、漏暂存、未跟踪文件、未 Push 提交和未合并清理。
+- 修复 full 业务项目在正常执行 Maven 与前端生产构建后遗留 `.flattened-pom.xml` 和 `frontend/build-reports/`，导致干净 worktree 被交付门禁阻断的问题。
+- 为 CLI 生成项目验收增加验证产物忽略规则回归，避免模板后续丢失这两个模式。
+
+### Changed
+
+- 发布同步后的 PMO 规则、中文工程 Skill、业务 baseline、交付保障流程和检查工具；CLI 精确依赖 PMO `1.3.12`。
+- 保持全部 27 个非目标 npm 坐标和 Mango Maven `1.0.35` 不变；本批次不包含 Java 制品、数据库 migration 或 Maven 文档快照。
+
+### Versions
+
+| Component | Previous | Release | Compatibility |
+| --- | ---: | ---: | --- |
+| `@mango/pmo` | `1.3.11` | `1.3.12` | 文档合同 schema revision 保持 `1`；新增 worktree 任务身份和提交完整性治理。 |
+| `@mango/cli` | `1.0.101` | `1.0.102` | 精确依赖 PMO `1.3.12`；full 模板新增两项构建产物忽略规则。 |
+| Mango Maven backend | `1.0.35` | unchanged | 已发布前置版本，仅验证，不重新发布。 |
+| Other npm packages | `release-versions.json` current matrix | unchanged | 不重新发布，继续使用 CLI 锁定的既有坐标。 |
+
+### Published Packages
+
+| Order | Target | Version | Status |
+| ----: | ------ | ------- | ------ |
+| 1 | `@mango/pmo` | `1.3.12` | `PENDING` |
+| 2 | `@mango/cli` | `1.0.102` | `PENDING` |
+| 3 | Git tag and GitHub Release | `v2026.08.08-pmo-1.3.12-cli-1.0.102-worktree-integrity-release` | `PENDING` |
+| 4 | Latest documentation | release source above | `PENDING`; npm-only 批次不创建 Maven 文档快照 |
+
+### PMO Required Checks
+
+- `check-worktree-delivery-integrity.mjs`
+  - Migration: 已有业务项目升级到 PMO `1.3.12`，逐个处理 active worktree，并把 `.flattened-pom.xml` 与 `frontend/build-reports/` 加入项目根 `.gitignore`。
+  - Exception: 只有用户明确确认的精确并行脏 worktree 可在 `start` 阶段保留；提交、交付和清理阶段不允许以例外隐藏当前任务遗漏。
+  - Verify: 运行工具单测、CLI 69 项测试，并从本地 tarball 生成空白业务项目，验证未暂存阻断、完整暂存提交、前后端构建和构建后干净交付。
+
+### Upgrade Notes
+
+1. 等待 `@mango/pmo@1.3.12` 和 `@mango/cli@1.0.102` 均从 npm-group 返回精确版本后再升级。
+2. 安装 CLI `1.0.102`，先执行 `mango pmo upgrade --project-dir . --to 1.3.12 --dry-run`，审阅后执行实际升级和 `mango pmo check --project-dir . --locked`。
+3. 已有业务项目在根 `.gitignore` 增加 `.flattened-pom.xml` 与 `frontend/build-reports/`；新生成的 full 项目已自动包含。
+4. 升级后按 `start -> commit -> deliver -> cleanup` 使用交付完整性门禁。`commit` 前必须让当前任务的修改和新文件全部完成提交、忽略或清理取舍。
+5. Mango Maven 保持 `1.0.35`，其它前端包保持 CLI `release-versions.json` 中的现有版本。
+
+### Verification
+
+- `@mango/cli` 69 项测试、PMO package build/check、business starter 投影、admin 样式、workspace 布局和 9 次 Maven 生成后端正反向门禁均通过。
+- 两轮真实业务项目验证均通过；第二轮从全新 tarball 消费目录生成 full 项目和四层业务模块，前端格式/静态检查/类型/4 项单测/生产构建与后端 8 模块 Maven verify 均成功。
+- 实际构建生成 `.flattened-pom.xml` 和三份 `frontend/build-reports` 后，Git 正确忽略这些文件，`deliver` 门禁仍为 PASS。
+- 发布 PR required checks、合并源证据、双 registry 回查、发布后空白消费者、Tag、GitHub Release 和 Latest 文档验证待发布阶段完成。
+
 ## v2026.08.06-pmo-1.3.11-cli-1.0.101-profile-sections-release - 2026-08-06
 
 Status: `PUBLISHED_AND_VERIFIED`. PR #745 passed the protected required checks and merged as source commit `4592e70ac31cb6e8c57709da027c963e50b9ab80` (tree `b75611a455f354093898b2961ada8ded25197f74`). The exact-source archive is 1,755,463,680 bytes with SHA-256 `2f708650d6d22b426efea1dfe904e2fefbdb9ff6261a6cd2622b4683615f11e8`. All 24 npm coordinates, the immutable tag, [GitHub Release](https://github.com/HardyDou/mango/releases/tag/v2026.08.06-pmo-1.3.11-cli-1.0.101-profile-sections-release) and Latest documentation are published and verified; Mango Maven `1.0.35` was verified and not republished.
