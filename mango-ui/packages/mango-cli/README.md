@@ -18,17 +18,17 @@
 
 ## 2. 功能清单
 
-| 能力                            | 命令入口                                                                                                          | 改动范围                                                               |
-| ------------------------------- | ----------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| 新建 Mango 业务项目             | `mango init <project> --preset full`、`mango init <project> --preset custom`                                      | 新项目目录                                                             |
-| custom 项目追加 Mango 可选能力  | `mango add file workflow --project-dir <dir>`                                                                     | 前端依赖、页面注册、runtime config、后端 POM、`mango.config.json`      |
-| 生成业务模块骨架                | `mango module add order --aggregate sales-order --project-dir <dir>`                                              | `backend/modules`、`frontend/packages`、POM、Flyway 模块开关、业务配置 |
-| 选择、检查和同步业务 PMO bundle | `mango pmo 选择`、`mango pmo status/check/sync/upgrade/rollback`                                                  | 选择器不改业务文件；其它命令按各自合同处理                             |
-| 初始化和启动本地开发工作区      | `mango workspace init`、`mango workspace status`、`mango workspace doctor`、`mango dev doctor`、`mango dev start` | `.mango/workspace.json`、`.mango/dev-workspace.env`、`.mango/run`      |
-| 拉取当前 Mango 版本文档包       | `mango docs pull`、`mango docs status`、`mango docs path`                                                         | `.mango/docs/<mango.version>`                                          |
-| 编排可审计发布状态机            | `mango release publish/status/verify/repair`、`mango release registry doctor`                                     | `.mango/releases/<version>/manifest.json` 或项目配置的证据目录         |
-| 聚合模块真实运行态              | `mango module doctor mango-link`                                                                                  | loopback Actuator、Admin Shell、项目 Playwright                        |
-| 查看发布说明                    | `mango changelog`                                                                                                 | 不改文件                                                               |
+| 能力                            | 命令入口                                                                                                             | 改动范围                                                               |
+| ------------------------------- | -------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| 新建 Mango 业务项目             | `mango init <project> --preset full`、`mango init <project> --preset custom`                                         | 新项目目录                                                             |
+| custom 项目追加 Mango 可选能力  | `mango add file workflow --project-dir <dir>`                                                                        | 前端依赖、页面注册、runtime config、后端 POM、`mango.config.json`      |
+| 生成业务模块骨架                | `mango module add order --aggregate sales-order --project-dir <dir>`                                                 | `backend/modules`、`frontend/packages`、POM、Flyway 模块开关、业务配置 |
+| 选择、检查和同步业务 PMO bundle | `mango pmo 选择`、`mango pmo status`、`mango pmo check`、`mango pmo sync`、`mango pmo upgrade`、`mango pmo rollback` | 选择器不改业务文件；其它命令按各自合同处理                             |
+| 初始化和启动本地开发工作区      | `mango workspace init`、`mango workspace status`、`mango workspace doctor`、`mango dev doctor`、`mango dev start`    | `.mango/workspace.json`、`.mango/dev-workspace.env`、`.mango/run`      |
+| 拉取当前 Mango 版本文档包       | `mango docs pull`、`mango docs status`、`mango docs path`                                                            | `.mango/docs/<mango.version>`                                          |
+| 编排可审计发布状态机            | `mango release publish/status/verify/repair`、`mango release registry doctor`                                        | `.mango/releases/<version>/manifest.json` 或项目配置的证据目录         |
+| 聚合模块真实运行态              | `mango module doctor mango-link`                                                                                     | loopback Actuator、Admin Shell、项目 Playwright                        |
+| 查看发布说明                    | `mango changelog`                                                                                                    | 不改文件                                                               |
 
 ## 3. 能力边界
 
