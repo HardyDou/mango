@@ -44,6 +44,7 @@ const requiredFiles = [
   'templates/l5-implementation-plan.md',
   'tools/check-lean-document.mjs',
   'tools/resolve-lean-document-policy.mjs',
+  'tools/select-delivery-assurance.mjs',
   'examples/lean-documents/delivery-l2-json-error.md',
   'examples/lean-documents/delivery-l3-workflow-withdraw.md',
   'examples/lean-documents/delivery-l4-third-party-login.md',

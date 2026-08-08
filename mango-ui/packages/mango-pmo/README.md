@@ -18,6 +18,7 @@
 | 影响驱动门禁      | `dist/baseline/tools/risk-verification.mjs`、`classify-pmo-check-scope.mjs` | 校验需求/方案风险，并把 Java PR 限定到受影响 Maven 模块                            |
 | 精简文档          | `contracts/lean-documents.json`、`check-lean-document.mjs`                  | 校验 L2-L4 页数、L5 四文档、直接追踪、精确引用和无效填充                           |
 | 空白上下文路由    | `resolve-lean-document-policy.mjs`                                          | 根据 L0-L5、强制 L5 事实和关键未知项返回 DIRECT、WRITE、ASK 或 STOP                |
+| 中文批量选择      | `select-delivery-assurance.mjs`                                             | 同一终端界面选择文档版本、勾选 M01-M16 并一次确认                                  |
 | 前端页面基线      | `dist/baseline/tools/check-frontend-page-baseline.mjs`                      | 检查新增或修改页面的默认骨架，并支持带可复核原因的按类型或整页例外                 |
 | 标准代码基线      | PMO baseline manifest 与 code-baseline tools                                | 为新增业务模块提供模块/包结构、规范实现样例、变量渲染和机器自检                    |
 

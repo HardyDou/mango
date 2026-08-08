@@ -326,6 +326,7 @@ Usage:
   mango docs path [--project-dir <dir>]
   mango pmo status --project-dir <dir> [--locked]
   mango pmo check --project-dir <dir> [--locked]
+  mango pmo 选择 [--项目目录 <目录>]
   mango pmo sync --project-dir <dir> [--dry-run] [--write-agents] [--sync-shell] [--adopt-governance]
   mango pmo upgrade --project-dir <dir> [--to <version>] [--dry-run] [--write-agents] [--sync-shell] [--adopt-governance]
   mango pmo rollback --project-dir <dir> [--to <version>] [--dry-run]
@@ -3581,6 +3582,10 @@ const DELIVERY_ASSURANCE_CONTRACT_ID = 'delivery-assurance';
 const PROJECT_PR_TEMPLATE_MINIMUM_REVISION = 5;
 
 function runPmoCommand(command, argv) {
+  if (command === 'select' || command === '选择') {
+    runPmoSelector(argv);
+    return;
+  }
   if (command === 'status') {
     const options = parsePmoArgs(argv);
     const targetDir = resolve(process.cwd(), options.projectDir);
@@ -3607,6 +3612,40 @@ function runPmoCommand(command, argv) {
     return;
   }
   fail(`unknown pmo command: ${command || ''}`);
+}
+
+function runPmoSelector(argv) {
+  let projectDir = '.';
+  const selectorArgs = [];
+  for (let index = 0; index < argv.length; index += 1) {
+    const arg = argv[index];
+    if (arg === '--project-dir' || arg === '--项目目录') {
+      const next = argv[index + 1];
+      if (!next || next.startsWith('--')) fail('missing value for --project-dir');
+      projectDir = next;
+      index += 1;
+    } else if (arg.startsWith('--project-dir=') || arg.startsWith('--项目目录=')) {
+      projectDir = arg.slice(arg.indexOf('=') + 1);
+      if (!projectDir) fail('missing value for --project-dir');
+    } else selectorArgs.push(arg);
+  }
+  const targetDir = resolve(process.cwd(), projectDir);
+  const candidates = [
+    join(targetDir, PMO_BASELINE_RELATIVE_PATH, 'tools/select-delivery-assurance.mjs'),
+    join(repoRoot, 'mango-pmo/tools/select-delivery-assurance.mjs'),
+    join(bundledPmoPackageRoot, 'dist/baseline/tools/select-delivery-assurance.mjs'),
+    join(packageRoot, 'node_modules/@mango/pmo/dist/baseline/tools/select-delivery-assurance.mjs'),
+  ];
+  const selectorPath = candidates.find((candidate) => existsSync(candidate));
+  if (!selectorPath) {
+    fail('PMO 交付选择器不存在；请升级 @mango/pmo 并执行 mango pmo sync。');
+  }
+  const result = spawnSync(process.execPath, [selectorPath, ...selectorArgs], {
+    cwd: targetDir,
+    stdio: 'inherit',
+  });
+  if (result.error) fail(`无法启动 PMO 交付选择器：${result.error.message}`);
+  process.exitCode = result.status ?? 1;
 }
 
 function syncPmoBaseline(argv, { command = 'sync' } = {}) {
@@ -5642,7 +5681,11 @@ function buildFilePlanItem(path, targetPath, content) {
 function writePlannedFile(item) {
   mkdirSync(dirname(item.targetPath), { recursive: true });
   writeFileSync(item.targetPath, item.content);
-  if (item.path.endsWith('/tools/pmo-preflight.mjs') || item.path.endsWith('/tools/acceptance-evidence-check.mjs')) {
+  if (
+    item.path.endsWith('/tools/pmo-preflight.mjs') ||
+    item.path.endsWith('/tools/acceptance-evidence-check.mjs') ||
+    item.path.endsWith('/tools/select-delivery-assurance.mjs')
+  ) {
     chmodSync(item.targetPath, 0o755);
   }
   if (item.path === 'scripts/dev-workspace.sh' || item.path === 'scripts/backend-dev.sh') {

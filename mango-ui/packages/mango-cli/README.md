@@ -23,7 +23,7 @@
 | 新建 Mango 业务项目            | `mango init <project> --preset full`、`mango init <project> --preset custom`                                      | 新项目目录                                                                    |
 | custom 项目追加 Mango 可选能力 | `mango add file workflow --project-dir <dir>`                                                                     | 前端依赖、页面注册、runtime config、后端 POM、`mango.config.json`             |
 | 生成业务模块骨架               | `mango module add order --aggregate sales-order --project-dir <dir>`                                              | `backend/modules`、`frontend/packages`、POM、Flyway 模块开关、业务配置        |
-| 检查和同步业务 PMO bundle      | `mango pmo status`、`mango pmo check`、`mango pmo sync`、`mango pmo upgrade`、`mango pmo rollback`                | `business-pmo`、`.agents/skills`、部分 `business-docs`、`AGENTS.md`、兼容脚本 |
+| 选择、检查和同步业务 PMO bundle | `mango pmo 选择`、`mango pmo status/check/sync/upgrade/rollback`                                                | 选择器不改业务文件；其它命令按各自合同处理                               |
 | 初始化和启动本地开发工作区     | `mango workspace init`、`mango workspace status`、`mango workspace doctor`、`mango dev doctor`、`mango dev start` | `.mango/workspace.json`、`.mango/dev-workspace.env`、`.mango/run`             |
 | 拉取当前 Mango 版本文档包      | `mango docs pull`、`mango docs status`、`mango docs path`                                                         | `.mango/docs/<mango.version>`                                                 |
 | 编排可审计发布状态机           | `mango release publish/status/verify/repair`、`mango release registry doctor`                                     | `.mango/releases/<version>/manifest.json` 或项目配置的证据目录                |
@@ -118,6 +118,7 @@ mango module add order --aggregate sales-order --aggregate-name 销售订单 --m
 mango pmo status --project-dir demo-custom
 mango pmo check --project-dir demo-custom
 mango pmo check --project-dir demo-custom --locked
+mango pmo 选择 --帮助
 mango pmo sync --project-dir demo-custom --dry-run
 mango pmo sync --project-dir demo-custom
 mango pmo upgrade --project-dir demo-custom --to 1.3.8
@@ -394,6 +395,7 @@ mango release repair --version 1.0.16 --project-dir . --authorize
 | `mango docs pull`                | 拉取当前 Mango 版本文档包                                                                   | `--project-dir`、`--version`、`--maven-repository`、`--force`                                | `.mango/docs/<version>`、`.mango/docs/current.json`                                                    |
 | `mango docs status`              | 查看当前 Mango 版本文档包状态                                                               | `--project-dir`                                                                              | 不改文件                                                                                               |
 | `mango docs path`                | 输出本地文档包目录                                                                          | `--project-dir`                                                                              | 不改文件                                                                                               |
+| `mango pmo 选择`                 | 中文选择文档版本，在同一界面勾选 M01-M16 并一次确认                                          | `--项目目录`；推荐事实由交付保障 Skill 传入                                                    | 不改业务文件；输出确认结果                                                                               |
 | `mango pmo sync`                 | 按 `pmo-lock.json` 修复 PMO baseline、项目 Skill 和治理 workflow                            | `--project-dir`、`--dry-run`、`--write-agents`、`--sync-shell`、`--adopt-governance`         | `business-pmo`、`.agents/skills`、GitHub/Gitea workflow、部分 `business-docs`、`AGENTS.md`、兼容脚本   |
 | `mango pmo status`               | 查看当前可用包或项目锁对应的 PMO 状态                                                       | `--project-dir`、`--locked`                                                                  | 不改文件                                                                                               |
 | `mango pmo check`                | 校验当前可用包或项目锁对应的 PMO baseline、manifest 和项目 Skill                            | `--project-dir`、`--locked`                                                                  | 不改文件                                                                                               |

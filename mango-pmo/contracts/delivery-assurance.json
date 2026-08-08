@@ -1,7 +1,7 @@
 {
   "contractSchema": 2,
   "contractId": "delivery-assurance",
-  "schemaRevision": 7,
+  "schemaRevision": 8,
   "ruleSource": "mango-pmo/rules/11-delivery-assurance.md",
   "selectionAuthority": "policy-with-human-exceptions",
   "legacyBaselinePrefixes": ["CONFIRMED"],
@@ -108,8 +108,24 @@
       "validationPolicy": "MAPPED_BY_OBSERVABLE_OUTCOME"
     }
   ],
+  "selectionUi": {
+    "language": "zh-CN",
+    "confirmationMode": "SINGLE_BATCH",
+    "checkedMeaning": "ADOPTED",
+    "uncheckedHumanOutput": "OMIT",
+    "keys": {"previous":"UP","next":"DOWN","toggle":"SPACE","confirm":"ENTER","restore":"R","cancel":"ESC"},
+    "documentVersions": [
+      {"id":"DIRECT","label":"直接做","deliveryMode":"SIMPLE","riskLevels":["L0","L1"],"description":"不创建交付文档，直接实施并保留代码和验证证据。"},
+      {"id":"ONE_PAGE","label":"一页纸","deliveryMode":"L2","riskLevels":["L2"],"description":"一份精简文档，最多一张 A4，只写目标、用户故事、实现方式和验证。"},
+      {"id":"STANDARD","label":"标准版","deliveryMode":"L3","riskLevels":["L3"],"description":"一份标准文档，最多三张 A4，补充角色、流程、字典、实施和风险。"},
+      {"id":"DETAILED","label":"详细版","deliveryMode":"L4","riskLevels":["L4"],"description":"一份详细文档，最多五张 A4，写清跨模块边界、数据、安全、兼容和回滚。"},
+      {"id":"FOUR_DOCUMENTS","label":"四文档","deliveryMode":"L5","riskLevels":["L5"],"description":"分别编写业务需求、系统需求、技术设计、实施与验证计划。"}
+    ]
+  },
   "questionPolicy": {
     "fixedMeasureQuestionnaire": false,
+    "batchSelectionRequired": true,
+    "batchSelectionMeasures": "M01-M16",
     "askOnlyFor": [
       "MATERIAL_UNKNOWN",
       "MAIN_EXCEPTION",
@@ -123,21 +139,21 @@
     "batchMaterialQuestions": true
   },
   "measures": [
-    {"id":"M01","name":"Worktree 隔离","allowedValues":["CREATE","REUSE","MAIN_EXCEPTION","DO_NOT_CREATE"],"activation":"WORKSPACE_POLICY","triggerFact":"需要修改受版本控制文件","value":"默认隔离主工作区；复用同一任务 worktree。"},
-    {"id":"M02","name":"数据库重建","allowedValues":["REBUILD","DO_NOT_REBUILD"],"activation":"FACT_AND_DESTRUCTIVE_CONFIRMATION","triggerFact":"涉及数据库结构、初始化数据、空库启动或数据库验收","value":"证明数据库可从受管输入形成预期状态。"},
-    {"id":"M03","name":"业务需求","allowedValues":["ENABLE","DISABLE"],"activation":"DELIVERY_LEVEL","triggerFact":"业务目标、范围、角色诉求、规则或业务验收变化","value":"L2-L4 合并登记；L5 使用独立业务需求文档。"},
-    {"id":"M04","name":"系统需求","allowedValues":["ENABLE","DISABLE"],"activation":"DELIVERY_LEVEL","triggerFact":"可观察行为、状态、输入输出或失败语义变化","value":"L2-L4 合并登记；L5 使用独立系统需求文档。"},
-    {"id":"M05","name":"技术设计","allowedValues":["ENABLE","DISABLE"],"activation":"DELIVERY_LEVEL","triggerFact":"接口、数据、安全、架构、兼容性或关键技术取舍","value":"L2-L4 合并登记；L5 使用独立技术设计文档。"},
-    {"id":"M06","name":"实施计划","allowedValues":["ENABLE","DISABLE"],"activation":"DELIVERY_LEVEL","triggerFact":"实施顺序、多人协作、跨模块依赖或复杂步骤","value":"L2-L4 合并登记；L5 使用独立实施计划。"},
-    {"id":"M07","name":"治理决策记录","allowedValues":["ENABLE","DISABLE"],"activation":"FACT","triggerFact":"长期 PR、CI、权限、审批责任或仓库治理语义变化","value":"保存治理意图和责任边界。"},
-    {"id":"M08","name":"能力说明","allowedValues":["ENABLE","DISABLE"],"activation":"FACT","triggerFact":"公开能力、配置、接入、使用或验收方式变化","value":"保持消费者说明与实现一致。"},
-    {"id":"M09","name":"静态验证","allowedValues":["ENABLE","DISABLE"],"activation":"OBSERVABLE_FACT","triggerFact":"目标可由结构、格式、配置、代码规则或编译证明","value":"低成本证明静态约束。"},
-    {"id":"M10","name":"单元测试","allowedValues":["ENABLE","DISABLE"],"activation":"OBSERVABLE_FACT","triggerFact":"独立规则、算法、状态转换或函数行为变化","value":"隔离验证局部决策和边界。"},
-    {"id":"M11","name":"集成测试","allowedValues":["ENABLE","DISABLE"],"activation":"OBSERVABLE_FACT","triggerFact":"结果依赖模块、数据库、框架装配或组件协作","value":"证明真实协作和持久化边界。"},
-    {"id":"M12","name":"API 验证","allowedValues":["ENABLE","DISABLE"],"activation":"OBSERVABLE_FACT","triggerFact":"API 或服务入口行为变化","value":"从服务入口证明契约、权限、数据和失败行为。"},
-    {"id":"M13","name":"UI 验证","allowedValues":["ENABLE","DISABLE"],"activation":"OBSERVABLE_FACT","triggerFact":"用户界面或浏览器交互变化","value":"从用户入口证明可见结果和交互。"},
-    {"id":"M14","name":"专家复核","allowedValues":["ENABLE","DISABLE"],"activation":"FACT","triggerFact":"专业不确定性、高影响决定或治理系统修改自身","value":"使用独立视角发现盲区和自证偏差。"},
-    {"id":"M15","name":"外部状态回读","allowedValues":["ENABLE","DISABLE"],"activation":"FACT","triggerFact":"当前目标涉及 GitHub、Gitea 等外部平台状态","value":"证明真实外部状态并发现漂移。"},
-    {"id":"M16","name":"人工验收","allowedValues":["ENABLE","DISABLE"],"activation":"FACT","triggerFact":"自动化不足以证明实际目标","value":"由责任人确认自动化无法覆盖的结果。"}
+    {"id":"M01","name":"任务工作区隔离","allowedValues":["CREATE","REUSE","MAIN_EXCEPTION","DO_NOT_CREATE"],"selectedValue":"CREATE","unselectedValue":"DO_NOT_CREATE","activation":"WORKSPACE_POLICY","triggerFact":"需要修改受版本控制文件","selectionDescription":"创建或复用当前任务工作区"},
+    {"id":"M02","name":"数据库重建","allowedValues":["REBUILD","DO_NOT_REBUILD"],"selectedValue":"REBUILD","unselectedValue":"DO_NOT_REBUILD","activation":"FACT_AND_DESTRUCTIVE_CONFIRMATION","triggerFact":"涉及数据库结构、初始化数据、空库启动或数据库验收","selectionDescription":"重建数据库并验证空库初始化"},
+    {"id":"M03","name":"业务需求","allowedValues":["ENABLE","DISABLE"],"selectedValue":"ENABLE","unselectedValue":"DISABLE","activation":"DELIVERY_LEVEL","triggerFact":"业务目标、范围、角色诉求、规则或业务验收变化","selectionDescription":"说明背景、角色诉求、用户故事和业务验收"},
+    {"id":"M04","name":"系统需求","allowedValues":["ENABLE","DISABLE"],"selectedValue":"ENABLE","unselectedValue":"DISABLE","activation":"DELIVERY_LEVEL","triggerFact":"可观察行为、状态、输入输出或失败语义变化","selectionDescription":"统一名称术语，说明系统如何满足业务需求"},
+    {"id":"M05","name":"技术设计","allowedValues":["ENABLE","DISABLE"],"selectedValue":"ENABLE","unselectedValue":"DISABLE","activation":"DELIVERY_LEVEL","triggerFact":"接口、数据、安全、架构、兼容性或关键技术取舍","selectionDescription":"说明技术如何支撑系统需求并记录技术字典"},
+    {"id":"M06","name":"实施计划","allowedValues":["ENABLE","DISABLE"],"selectedValue":"ENABLE","unselectedValue":"DISABLE","activation":"DELIVERY_LEVEL","triggerFact":"实施顺序、多人协作、跨模块依赖或复杂步骤","selectionDescription":"拆分任务、依赖、完成标准、验证和回滚"},
+    {"id":"M07","name":"治理决策记录","allowedValues":["ENABLE","DISABLE"],"selectedValue":"ENABLE","unselectedValue":"DISABLE","activation":"FACT","triggerFact":"长期 PR、CI、权限、审批责任或仓库治理语义变化","selectionDescription":"记录长期规则、例外和责任边界"},
+    {"id":"M08","name":"能力说明","allowedValues":["ENABLE","DISABLE"],"selectedValue":"ENABLE","unselectedValue":"DISABLE","activation":"FACT","triggerFact":"公开能力、配置、接入、使用或验收方式变化","selectionDescription":"同步能力入口和使用说明"},
+    {"id":"M09","name":"静态验证","allowedValues":["ENABLE","DISABLE"],"selectedValue":"ENABLE","unselectedValue":"DISABLE","activation":"OBSERVABLE_FACT","triggerFact":"目标可由结构、格式、配置、代码规则或编译证明","selectionDescription":"检查格式、结构、合同、引用和代码规则"},
+    {"id":"M10","name":"单元测试","allowedValues":["ENABLE","DISABLE"],"selectedValue":"ENABLE","unselectedValue":"DISABLE","activation":"OBSERVABLE_FACT","triggerFact":"独立规则、算法、状态转换或函数行为变化","selectionDescription":"验证独立规则、状态转换和边界条件"},
+    {"id":"M11","name":"集成测试","allowedValues":["ENABLE","DISABLE"],"selectedValue":"ENABLE","unselectedValue":"DISABLE","activation":"OBSERVABLE_FACT","triggerFact":"结果依赖模块、数据库、框架装配或组件协作","selectionDescription":"验证模块、数据库和组件真实协作"},
+    {"id":"M12","name":"接口验证","allowedValues":["ENABLE","DISABLE"],"selectedValue":"ENABLE","unselectedValue":"DISABLE","activation":"OBSERVABLE_FACT","triggerFact":"API 或服务入口行为变化","selectionDescription":"从服务入口验证契约、权限和失败结果"},
+    {"id":"M13","name":"页面验证","allowedValues":["ENABLE","DISABLE"],"selectedValue":"ENABLE","unselectedValue":"DISABLE","activation":"OBSERVABLE_FACT","triggerFact":"用户界面或浏览器交互变化","selectionDescription":"从用户入口验证页面结果和交互"},
+    {"id":"M14","name":"专家复核","allowedValues":["ENABLE","DISABLE"],"selectedValue":"ENABLE","unselectedValue":"DISABLE","activation":"FACT","triggerFact":"专业不确定性、高影响决定或治理系统修改自身","selectionDescription":"使用独立视角检查设计和治理风险"},
+    {"id":"M15","name":"外部状态回读","allowedValues":["ENABLE","DISABLE"],"selectedValue":"ENABLE","unselectedValue":"DISABLE","activation":"FACT","triggerFact":"当前目标涉及 GitHub、Gitea 等外部平台状态","selectionDescription":"回读 GitHub、Gitea 或部署平台真实状态"},
+    {"id":"M16","name":"人工验收","allowedValues":["ENABLE","DISABLE"],"selectedValue":"ENABLE","unselectedValue":"DISABLE","activation":"FACT","triggerFact":"自动化不足以证明实际目标","selectionDescription":"确认自动化无法覆盖的实际结果"}
   ]
 }
