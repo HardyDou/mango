@@ -68,7 +68,7 @@
     },
     "process.mangoIssueRunbook": {
       "path": "rules/07-mango-issue-runbook.md",
-      "reason": "Mango Issue 登记与处理 Runbook"
+      "reason": "Mango Issue 登记、处理、修复验收证据评论与状态更新流程"
     },
     "process.capabilityDocs": {
       "path": "rules/08-capability-docs.md",
