@@ -99,6 +99,7 @@ jobs:
             mango-pmo/tests/risk-verification.test.mjs \
             mango-pmo/tests/standard-delivery-record.test.mjs \
             mango-pmo/tests/test-quality-check.test.mjs \
+            mango-pmo/tests/worktree-delivery-integrity.test.mjs \
             mango-pmo/tests/workspace-layout-check.test.mjs
           node mango-pmo/tests/skills/check-skill-evals.mjs
           node mango-pmo/tests/skills/check-delivery-mode-history-cases.mjs

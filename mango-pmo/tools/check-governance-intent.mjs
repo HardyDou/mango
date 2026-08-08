@@ -295,6 +295,26 @@ assertIncludes('mango-pmo/rules/05-ai-delivery-quality.md', [
   'required check 成功'
 ], failures);
 
+assertIncludes('mango-pmo/rules/00-dev-flow.md', [
+  'check-worktree-delivery-integrity.mjs --mode start',
+  'check-worktree-delivery-integrity.mjs --mode commit',
+  '--mode deliver --require-upstream false',
+  '--mode deliver --require-upstream true',
+  'check-worktree-delivery-integrity.mjs --mode cleanup'
+], failures);
+assertIncludes('mango-pmo/skills/mango-engineering/SKILL.md', [
+  'check-worktree-delivery-integrity.mjs --mode start',
+  'check-worktree-delivery-integrity.mjs --mode commit',
+  '--mode deliver --require-upstream false',
+  '--require-upstream true',
+  '--mode cleanup'
+], failures);
+assertIncludes('mango-pmo/skills/mango-design-delivery-assurance/SKILL.md', [
+  'check-worktree-delivery-integrity.mjs --mode start',
+  '--expected-branch',
+  '--allow-dirty-worktree <path>'
+], failures);
+
 const branchProtectionPolicy = JSON.parse(read('.github/branch-protection-policy.json'));
 for (const failure of validateBranchProtectionPolicy(branchProtectionPolicy)) {
   failures.push(`.github/branch-protection-policy.json: ${failure}`);

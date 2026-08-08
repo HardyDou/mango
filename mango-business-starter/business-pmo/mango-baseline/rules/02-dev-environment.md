@@ -16,6 +16,9 @@
 - 当前已位于非 `main` 分支或非主工作区时，用户明确要求解决的问题必须在当前工作区处理，禁止为该问题再次创建 worktree。
 - 验收返工、Review 修改、CI 修复和 PR 门禁修复必须复用该任务或 PR 的既有 worktree。
 - 新建 worktree 前，Agent 必须先执行 `git worktree list`，确认是否已有同一任务分支或 PR 分支对应的 worktree。
+- 新建或复用前必须执行 `tools/check-worktree-delivery-integrity.mjs --mode start`；复用所需的期望分支必须来自既有任务或 PR 证据，不能只读取当前分支后自行认定。
+- 当前非 main worktree 有未提交内容且新请求属于另一任务时，禁止创建新 worktree；先完成、提交或取得用户对明确处理方式的决定。
+- 发现其它脏 worktree 时默认停止；只有用户明确确认精确路径属于并行任务后才能保留。已合并 worktree 中的本地改动禁止豁免、复用或直接清理。
 - 当前位于主工作区、属于新独立任务且没有可复用任务 worktree时，preflight 自动决定创建新的 worktree。
 - 用户表达无法确定为“当前解决”还是“登记 Issue”时，必须先询问，不得用新 worktree 代替确认。
 - 原 worktree 丢失或损坏时，必须基于原任务分支重建 worktree，不得另起无关联分支。
@@ -101,6 +104,7 @@
 - 删除开发 worktree 必须先使用 `mango dev stop` 停止服务，再使用 `mango workspace release --workspace <path>` 释放本机注册。
 - 任务 PR 合并前禁止删除对应 worktree，除非用户明确取消该任务或要求重建 worktree。
 - PR 合并后必须清理对应 worktree；需要保留本地开发数据库时显式追加 `--keep-db`。
+- 删除前必须同步 base，并通过 `tools/check-worktree-delivery-integrity.mjs --mode cleanup` 证明任务 worktree 无本地改动、无未推送提交且 HEAD 已合入 base。
 - 删除 worktree 前必须按目标 worktree 的 `.mango/workspace.json` 和 `.mango/dev-workspace.env` 停止对应端口上的前后端服务。
 - `mango workspace release --workspace <path>` 默认删除当前 workspace 拥有的本地开发数据库。
 - 只有显式传入 `--keep-db` 时才允许保留数据库。
