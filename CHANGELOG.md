@@ -2,7 +2,9 @@
 
 ## v2026.08.08-pmo-1.3.12-cli-1.0.102-worktree-integrity-release - 2026-08-08
 
-Status: `PENDING`. 本批次计划发布 `@mango/pmo@1.3.12` 与 `@mango/cli@1.0.102`，Mango Maven `1.0.35` 仅作为已发布前置版本验证，不重新发布。发布源、双仓校验和、GitHub Release 与完成状态将在不可变发布验证后回填。
+Status: `PUBLISHED_AND_VERIFIED`. 发布 PR #753 通过受保护分支 required checks，并以 source commit `695e87ea1e0339db25257d207fa4d5fccaa02e0b`（tree `9bb99388cc297618740a937d9e56ed337ddd8f98`）合并。精确源 bundle 为 447,764,912 字节，SHA-256 为 `a27db0ddd672d54c8213e573e4f26017f5f6946f6222eda4a84c324abf5cb9f2`。`@mango/pmo@1.3.12`、`@mango/cli@1.0.102`、Tag、[GitHub Release](https://github.com/HardyDou/mango/releases/tag/v2026.08.08-pmo-1.3.12-cli-1.0.102-worktree-integrity-release) 与 Latest 文档均已发布并验证；Mango Maven `1.0.35` 只验证、未重新发布。
+
+首次发布 manifest SHA-256 为 `bff7d575e42eeb8dcb87eeef0cacd4041c0a03ddc6b1b19f8c6f2e53d181cf2f`，其中不可变状态均已成功，因 Latest 校验器错误要求页面展示内部脚本文件名而停在 `docs-latest`。第一次只读恢复 manifest SHA-256 为 `1bb4843bcd256f12c34f7feff714e407fe93e18bdd43e62ae14cb250d5eb267f`，它进一步暴露消费者脚本错误复用父仓库 Git 上下文。两份失败证据均保留，未重发任何不可变对象。修正语义校验和消费者隔离后，完整只读恢复 manifest SHA-256 为 `1c236c30d9cb81e5116602968f9139b100059a52d16c42f0c7f0a5d6a953b8c3`。
 
 ### Fixed
 
@@ -17,21 +19,21 @@ Status: `PENDING`. 本批次计划发布 `@mango/pmo@1.3.12` 与 `@mango/cli@1.0
 
 ### Versions
 
-| Component | Previous | Release | Compatibility |
-| --- | ---: | ---: | --- |
-| `@mango/pmo` | `1.3.11` | `1.3.12` | 文档合同 schema revision 保持 `1`；新增 worktree 任务身份和提交完整性治理。 |
-| `@mango/cli` | `1.0.101` | `1.0.102` | 精确依赖 PMO `1.3.12`；full 模板新增两项构建产物忽略规则。 |
-| Mango Maven backend | `1.0.35` | unchanged | 已发布前置版本，仅验证，不重新发布。 |
-| Other npm packages | `release-versions.json` current matrix | unchanged | 不重新发布，继续使用 CLI 锁定的既有坐标。 |
+| Component           |                               Previous |   Release | Compatibility                                                               |
+| ------------------- | -------------------------------------: | --------: | --------------------------------------------------------------------------- |
+| `@mango/pmo`        |                               `1.3.11` |  `1.3.12` | 文档合同 schema revision 保持 `1`；新增 worktree 任务身份和提交完整性治理。 |
+| `@mango/cli`        |                              `1.0.101` | `1.0.102` | 精确依赖 PMO `1.3.12`；full 模板新增两项构建产物忽略规则。                  |
+| Mango Maven backend |                               `1.0.35` | unchanged | 已发布前置版本，仅验证，不重新发布。                                        |
+| Other npm packages  | `release-versions.json` current matrix | unchanged | 不重新发布，继续使用 CLI 锁定的既有坐标。                                   |
 
 ### Published Packages
 
-| Order | Target | Version | Status |
-| ----: | ------ | ------- | ------ |
-| 1 | `@mango/pmo` | `1.3.12` | `PENDING` |
-| 2 | `@mango/cli` | `1.0.102` | `PENDING` |
-| 3 | Git tag and GitHub Release | `v2026.08.08-pmo-1.3.12-cli-1.0.102-worktree-integrity-release` | `PENDING` |
-| 4 | Latest documentation | release source above | `PENDING`; npm-only 批次不创建 Maven 文档快照 |
+| Order | Target                     | Version                                                         | Status                                                                                                                                                                                                |
+| ----: | -------------------------- | --------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+|     1 | `@mango/pmo`               | `1.3.12`                                                        | `PUBLISHED_AND_VERIFIED`; hosted/group integrity `sha512-j5FYZ1EJDw9+1Mnkl7X8j8uOS4scPZ134Yc8a+pxwZYwIzvHkzZsvHQsavmp8cbySDCdKYfjy2wgBrKjRtVY/w==`; shasum `53d6df3f29a1dea069427435048feba8822b95a1` |
+|     2 | `@mango/cli`               | `1.0.102`                                                       | `PUBLISHED_AND_VERIFIED`; hosted/group integrity `sha512-GBb7lVHnd0XmTXrWi174xELH0FMutFnCiOFJb9YSvIH/QJpvnDSNf25iEWFhYfvTyHU6r84Hp8g1WM6o0iWKHA==`; shasum `7b6405e52ba900a5b0fcb7b247e10913a924c6b6` |
+|     3 | Git tag and GitHub Release | `v2026.08.08-pmo-1.3.12-cli-1.0.102-worktree-integrity-release` | `CREATED_AND_VERIFIED`; 均指向 source commit `695e87ea1e0339db25257d207fa4d5fccaa02e0b`                                                                                                               |
+|     4 | Latest documentation       | release source above                                            | `PUBLISHED_AND_VERIFIED`; [GitHub Pages run 31253215592](https://github.com/HardyDou/mango/actions/runs/31253215592)；npm-only 批次未创建 Maven 文档快照                                              |
 
 ### PMO Required Checks
 
@@ -53,7 +55,10 @@ Status: `PENDING`. 本批次计划发布 `@mango/pmo@1.3.12` 与 `@mango/cli@1.0
 - `@mango/cli` 69 项测试、PMO package build/check、business starter 投影、admin 样式、workspace 布局和 9 次 Maven 生成后端正反向门禁均通过。
 - 两轮真实业务项目验证均通过；第二轮从全新 tarball 消费目录生成 full 项目和四层业务模块，前端格式/静态检查/类型/4 项单测/生产构建与后端 8 模块 Maven verify 均成功。
 - 实际构建生成 `.flattened-pom.xml` 和三份 `frontend/build-reports` 后，Git 正确忽略这些文件，`deliver` 门禁仍为 PASS。
-- 发布 PR required checks、合并源证据、双 registry 回查、发布后空白消费者、Tag、GitHub Release 和 Latest 文档验证待发布阶段完成。
+- hosted 与 group 对两个 npm 坐标返回一致的 version、integrity、shasum 和发布时间；PMO 发布时间为 `2026-08-08T10:56:46.530Z`，CLI 为 `2026-08-08T10:56:56.505Z`。
+- 仓库外全新消费者从 npm-group 安装 CLI `1.0.102` 与 PMO `1.3.12`，显式初始化 Git 后创建真实 task worktree；模块生成产生 43 个任务文件，未暂存门禁先阻断，完整暂存后通过并提交。
+- 消费者前端格式、ESLint、Stylelint、类型检查、4 项单测和生产构建通过；后端 8 模块 Maven verify 通过；实际生成的 8 个 `.flattened-pom.xml` 与 `frontend/build-reports/frontend-build-report.json` 均被忽略，最终 `deliver` 与 `git status --porcelain` 为空。
+- Tag、GitHub Release、Latest 文档和完整只读恢复 manifest 均已验证；发布 Tag 保持指向制品 source commit，不移动到本次 CHANGELOG 收尾提交。
 
 ## v2026.08.06-pmo-1.3.11-cli-1.0.101-profile-sections-release - 2026-08-06
 
@@ -74,30 +79,30 @@ The canonical publication manifest SHA-256 is `37de973286f36a3199425346e97a67eb5
 
 ### Versions
 
-| Component | Previous | Release | Compatibility |
-| --- | ---: | ---: | --- |
-| `@mango/pmo` | `1.3.10` | `1.3.11` | Schema revision remains `1`; unchanged `1.3.10` lifecycle documents require the generated path/SHA/version baseline. |
-| `@mango/cli` | `1.0.100` | `1.0.101` | Locks PMO `1.3.11`, Maven `1.0.35` and the complete frontend matrix below. |
-| Profile runtime chain | Auth `1.0.25`, Notice `1.0.37`, System `1.0.31`, Admin Shell `1.0.57` | Auth `1.0.26`, Notice `1.0.38`, System `1.0.32`, Admin Shell `1.0.58` | Patch-compatible public registrars and Shell aggregation; existing menu, permission and tenant contracts remain unchanged. |
-| Remaining frontend closure | last published versions | exact versions below | Patch bumps preserve exact internal dependency alignment; no backend or database change. |
-| Mango Maven backend | `1.0.35` | unchanged | Verified prerequisite only; not republished. |
+| Component                  |                                                              Previous |                                                               Release | Compatibility                                                                                                              |
+| -------------------------- | --------------------------------------------------------------------: | --------------------------------------------------------------------: | -------------------------------------------------------------------------------------------------------------------------- |
+| `@mango/pmo`               |                                                              `1.3.10` |                                                              `1.3.11` | Schema revision remains `1`; unchanged `1.3.10` lifecycle documents require the generated path/SHA/version baseline.       |
+| `@mango/cli`               |                                                             `1.0.100` |                                                             `1.0.101` | Locks PMO `1.3.11`, Maven `1.0.35` and the complete frontend matrix below.                                                 |
+| Profile runtime chain      | Auth `1.0.25`, Notice `1.0.37`, System `1.0.31`, Admin Shell `1.0.57` | Auth `1.0.26`, Notice `1.0.38`, System `1.0.32`, Admin Shell `1.0.58` | Patch-compatible public registrars and Shell aggregation; existing menu, permission and tenant contracts remain unchanged. |
+| Remaining frontend closure |                                               last published versions |                                                  exact versions below | Patch bumps preserve exact internal dependency alignment; no backend or database change.                                   |
+| Mango Maven backend        |                                                              `1.0.35` |                                                             unchanged | Verified prerequisite only; not republished.                                                                               |
 
 ### Published Packages
 
-| Order | Target | Version | Status |
-| ----: | ------ | ------- | ------ |
-| 1 | `@mango/common` | `1.0.26` | `PUBLISHED_AND_VERIFIED` |
-| 2 | `@mango/auth`, `@mango/rbac`, `@mango/grid-layout`, `@mango/home`, `@mango/site-shell` | `1.0.26`, `1.0.24`, `1.0.17`, `1.0.15`, `1.0.13` | `PUBLISHED_AND_VERIFIED` |
-| 3 | `@mango/grid-widgets` | `1.0.23` | `PUBLISHED_AND_VERIFIED` |
-| 4 | Exact cyclic cohort: `@mango/admin-pages`, `@mango/file`, `@mango/system` | `1.0.33`, `1.0.34`, `1.0.32` | `PUBLISHED_AND_VERIFIED` |
-| 5 | `@mango/calendar`, `@mango/cms`, `@mango/job`, `@mango/link`, `@mango/notice`, `@mango/numgen`, `@mango/payment`, `@mango/template`, `@mango/workflow` | `1.0.34`, `1.0.23`, `1.0.26`, `1.0.20`, `1.0.38`, `1.0.35`, `1.0.26`, `1.0.34`, `1.0.40` | `PUBLISHED_AND_VERIFIED` |
-| 6 | `@mango/workflow-business-example` | `1.0.39` | `PUBLISHED_AND_VERIFIED` |
-| 7 | `@mango/admin-shell` | `1.0.58` | `PUBLISHED_AND_VERIFIED` |
-| 8 | `@mango/admin` | `1.0.64` | `PUBLISHED_AND_VERIFIED` |
-| 9 | `@mango/pmo` | `1.3.11` | `PUBLISHED_AND_VERIFIED` |
-| 10 | `@mango/cli` | `1.0.101` | `PUBLISHED_AND_VERIFIED` |
-| 11 | Git tag and GitHub Release | `v2026.08.06-pmo-1.3.11-cli-1.0.101-profile-sections-release` | `CREATED_AND_VERIFIED` |
-| 12 | Latest documentation | release source above | `PUBLISHED_AND_VERIFIED`; npm-only batch, versioned docs snapshot not applicable |
+| Order | Target                                                                                                                                                 | Version                                                                                  | Status                                                                           |
+| ----: | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+|     1 | `@mango/common`                                                                                                                                        | `1.0.26`                                                                                 | `PUBLISHED_AND_VERIFIED`                                                         |
+|     2 | `@mango/auth`, `@mango/rbac`, `@mango/grid-layout`, `@mango/home`, `@mango/site-shell`                                                                 | `1.0.26`, `1.0.24`, `1.0.17`, `1.0.15`, `1.0.13`                                         | `PUBLISHED_AND_VERIFIED`                                                         |
+|     3 | `@mango/grid-widgets`                                                                                                                                  | `1.0.23`                                                                                 | `PUBLISHED_AND_VERIFIED`                                                         |
+|     4 | Exact cyclic cohort: `@mango/admin-pages`, `@mango/file`, `@mango/system`                                                                              | `1.0.33`, `1.0.34`, `1.0.32`                                                             | `PUBLISHED_AND_VERIFIED`                                                         |
+|     5 | `@mango/calendar`, `@mango/cms`, `@mango/job`, `@mango/link`, `@mango/notice`, `@mango/numgen`, `@mango/payment`, `@mango/template`, `@mango/workflow` | `1.0.34`, `1.0.23`, `1.0.26`, `1.0.20`, `1.0.38`, `1.0.35`, `1.0.26`, `1.0.34`, `1.0.40` | `PUBLISHED_AND_VERIFIED`                                                         |
+|     6 | `@mango/workflow-business-example`                                                                                                                     | `1.0.39`                                                                                 | `PUBLISHED_AND_VERIFIED`                                                         |
+|     7 | `@mango/admin-shell`                                                                                                                                   | `1.0.58`                                                                                 | `PUBLISHED_AND_VERIFIED`                                                         |
+|     8 | `@mango/admin`                                                                                                                                         | `1.0.64`                                                                                 | `PUBLISHED_AND_VERIFIED`                                                         |
+|     9 | `@mango/pmo`                                                                                                                                           | `1.3.11`                                                                                 | `PUBLISHED_AND_VERIFIED`                                                         |
+|    10 | `@mango/cli`                                                                                                                                           | `1.0.101`                                                                                | `PUBLISHED_AND_VERIFIED`                                                         |
+|    11 | Git tag and GitHub Release                                                                                                                             | `v2026.08.06-pmo-1.3.11-cli-1.0.101-profile-sections-release`                            | `CREATED_AND_VERIFIED`                                                           |
+|    12 | Latest documentation                                                                                                                                   | release source above                                                                     | `PUBLISHED_AND_VERIFIED`; npm-only batch, versioned docs snapshot not applicable |
 
 ### Upgrade Notes
 
@@ -126,21 +131,21 @@ Status: `PUBLISHED_AND_VERIFIED`. Source commit `d7cca37c49d70de531b21a33bab3719
 
 ### Versions
 
-| Component | Previous | Release | Compatibility |
-| --- | ---: | ---: | --- |
-| `@mango/cli` | `1.0.99` | `1.0.100` | Corrective patch for installed-package code-baseline resolution; command syntax, generated module contract and release matrix are unchanged. |
-| `@mango/pmo` | `1.3.10` | unchanged | Already published and verified; supplies the canonical code baseline consumed by CLI `1.0.100`. |
-| Mango Maven backend | `1.0.35` | unchanged | No Maven artifact, runtime code or database migration is published. |
-| Other frontend npm packages | CLI `release-versions.json` matrix | unchanged | No runtime frontend package is republished. |
+| Component                   |                           Previous |   Release | Compatibility                                                                                                                                |
+| --------------------------- | ---------------------------------: | --------: | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@mango/cli`                |                           `1.0.99` | `1.0.100` | Corrective patch for installed-package code-baseline resolution; command syntax, generated module contract and release matrix are unchanged. |
+| `@mango/pmo`                |                           `1.3.10` | unchanged | Already published and verified; supplies the canonical code baseline consumed by CLI `1.0.100`.                                              |
+| Mango Maven backend         |                           `1.0.35` | unchanged | No Maven artifact, runtime code or database migration is published.                                                                          |
+| Other frontend npm packages | CLI `release-versions.json` matrix | unchanged | No runtime frontend package is republished.                                                                                                  |
 
 ### Published Packages
 
-| Order | Target | Version | Status |
-| ----: | ------ | ------- | ------ |
-| 1 | Existing prerequisite `@mango/pmo` | `1.3.10` | `PUBLISHED_AND_VERIFIED`; not republished |
-| 2 | `@mango/cli` | `1.0.100` | `PUBLISHED_AND_VERIFIED` |
-| 3 | Git tag and GitHub Release | `v2026.08.06-cli-1.0.100-code-baseline-consumer-fix` | `CREATED_AND_VERIFIED` |
-| 4 | Latest documentation | release source above | `PUBLISHED_AND_VERIFIED`; npm-only batch did not create a Maven versioned docs snapshot |
+| Order | Target                             | Version                                              | Status                                                                                  |
+| ----: | ---------------------------------- | ---------------------------------------------------- | --------------------------------------------------------------------------------------- |
+|     1 | Existing prerequisite `@mango/pmo` | `1.3.10`                                             | `PUBLISHED_AND_VERIFIED`; not republished                                               |
+|     2 | `@mango/cli`                       | `1.0.100`                                            | `PUBLISHED_AND_VERIFIED`                                                                |
+|     3 | Git tag and GitHub Release         | `v2026.08.06-cli-1.0.100-code-baseline-consumer-fix` | `CREATED_AND_VERIFIED`                                                                  |
+|     4 | Latest documentation               | release source above                                 | `PUBLISHED_AND_VERIFIED`; npm-only batch did not create a Maven versioned docs snapshot |
 
 ### Upgrade Notes
 
@@ -175,22 +180,22 @@ Status: `PUBLISHED_WITH_FAILED_POST_VERIFY`. Source commit `d22c5dde80c52c83f50b
 
 ### Versions
 
-| Component | Previous | Release | Compatibility |
-| --- | ---: | ---: | --- |
-| `@mango/pmo` | `1.3.9` | `1.3.10` | Patch-compatible baseline and workflow update; lifecycle contract schema remains revision `1`, with `1.3.9` admitted only through the existing controlled historical-document baseline. |
-| `@mango/cli` | `1.0.98` | `1.0.99` | Patch-compatible CLI/template release that exactly depends on PMO `1.3.10`; command names and existing generated project runtime behavior remain compatible. |
-| Canonical business-module code baseline, starter/module templates and Skills | PMO `1.3.9` / CLI `1.0.98` bundle | PMO `1.3.10` / CLI `1.0.99` bundle | New module generation uses the canonical template; existing business source is not rewritten automatically. |
-| Mango Maven backend | `1.0.35` | unchanged | No Java runtime, Maven artifact or database migration is published. |
-| Other frontend npm packages | current `release-versions.json` matrix | unchanged | No runtime frontend package is republished. |
+| Component                                                                    |                               Previous |                            Release | Compatibility                                                                                                                                                                           |
+| ---------------------------------------------------------------------------- | -------------------------------------: | ---------------------------------: | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@mango/pmo`                                                                 |                                `1.3.9` |                           `1.3.10` | Patch-compatible baseline and workflow update; lifecycle contract schema remains revision `1`, with `1.3.9` admitted only through the existing controlled historical-document baseline. |
+| `@mango/cli`                                                                 |                               `1.0.98` |                           `1.0.99` | Patch-compatible CLI/template release that exactly depends on PMO `1.3.10`; command names and existing generated project runtime behavior remain compatible.                            |
+| Canonical business-module code baseline, starter/module templates and Skills |      PMO `1.3.9` / CLI `1.0.98` bundle | PMO `1.3.10` / CLI `1.0.99` bundle | New module generation uses the canonical template; existing business source is not rewritten automatically.                                                                             |
+| Mango Maven backend                                                          |                               `1.0.35` |                          unchanged | No Java runtime, Maven artifact or database migration is published.                                                                                                                     |
+| Other frontend npm packages                                                  | current `release-versions.json` matrix |                          unchanged | No runtime frontend package is republished.                                                                                                                                             |
 
 ### Published Packages
 
-| Order | Target | Version | Status |
-| ----: | ------ | ------- | ------ |
-| 1 | `@mango/pmo` | `1.3.10` | `PUBLISHED_AND_VERIFIED` |
-| 2 | `@mango/cli` | `1.0.99` | `PUBLISHED_BUT_CONSUMER_FAILED`; superseded by planned `1.0.100` |
-| 3 | Git tag and GitHub Release | `v2026.08.06-pmo-1.3.10-cli-1.0.99-code-baseline-release` | `CREATED_AND_VERIFIED` |
-| 4 | Latest documentation | release tag above | `PUBLISHED_AND_VERIFIED`; no Maven versioned docs snapshot |
+| Order | Target                     | Version                                                   | Status                                                           |
+| ----: | -------------------------- | --------------------------------------------------------- | ---------------------------------------------------------------- |
+|     1 | `@mango/pmo`               | `1.3.10`                                                  | `PUBLISHED_AND_VERIFIED`                                         |
+|     2 | `@mango/cli`               | `1.0.99`                                                  | `PUBLISHED_BUT_CONSUMER_FAILED`; superseded by planned `1.0.100` |
+|     3 | Git tag and GitHub Release | `v2026.08.06-pmo-1.3.10-cli-1.0.99-code-baseline-release` | `CREATED_AND_VERIFIED`                                           |
+|     4 | Latest documentation       | release tag above                                         | `PUBLISHED_AND_VERIFIED`; no Maven versioned docs snapshot       |
 
 ### Upgrade Notes
 
@@ -220,22 +225,22 @@ The completed read-only verification manifest SHA-256 is `d1021af285b1ed607db2ba
 
 ### Versions
 
-| Component | Previous | Release | Compatibility |
-| --- | ---: | ---: | --- |
-| Mango Maven non-app backend and `io.mango:mango-docs-bundle` | `1.0.34` | `1.0.35` | Patch-compatible numgen rule validation and rendering; no database migration. |
-| `@mango/numgen` | `1.0.33` | `1.0.34` | Patch-compatible management-page configuration and preview behavior. |
-| `@mango/admin` | `1.0.62` | `1.0.63` | Republished aggregate closure for the fixed numgen package. |
-| `@mango/cli` | `1.0.97` | `1.0.98` | Locks Maven `1.0.35` and the matching frontend matrix. |
-| `@mango/pmo` | `1.3.9` | unchanged | No PMO source or packaged baseline change. |
+| Component                                                    | Previous |   Release | Compatibility                                                                 |
+| ------------------------------------------------------------ | -------: | --------: | ----------------------------------------------------------------------------- |
+| Mango Maven non-app backend and `io.mango:mango-docs-bundle` | `1.0.34` |  `1.0.35` | Patch-compatible numgen rule validation and rendering; no database migration. |
+| `@mango/numgen`                                              | `1.0.33` |  `1.0.34` | Patch-compatible management-page configuration and preview behavior.          |
+| `@mango/admin`                                               | `1.0.62` |  `1.0.63` | Republished aggregate closure for the fixed numgen package.                   |
+| `@mango/cli`                                                 | `1.0.97` |  `1.0.98` | Locks Maven `1.0.35` and the matching frontend matrix.                        |
+| `@mango/pmo`                                                 |  `1.3.9` | unchanged | No PMO source or packaged baseline change.                                    |
 
 ### Published Packages
 
-| Order | Target | Version | Status |
-| ----: | ------ | ------- | ------ |
-| 1 | Complete non-app Maven Reactor and `io.mango:mango-docs-bundle` | `1.0.35` | `PUBLISHED_AND_VERIFIED` |
-| 2 | `@mango/numgen`, `@mango/admin`, `@mango/cli` | `1.0.34`, `1.0.63`, `1.0.98` | `PUBLISHED_AND_VERIFIED` |
-| 3 | Git tag and GitHub Release | `v2026.08.05-maven-1.0.35-numgen-1.0.34-admin-1.0.63-cli-1.0.98-release` | `CREATED_AND_VERIFIED` |
-| 4 | Latest docs and versioned docs snapshot | release tag above | `PUBLISHED_AND_VERIFIED` |
+| Order | Target                                                          | Version                                                                  | Status                   |
+| ----: | --------------------------------------------------------------- | ------------------------------------------------------------------------ | ------------------------ |
+|     1 | Complete non-app Maven Reactor and `io.mango:mango-docs-bundle` | `1.0.35`                                                                 | `PUBLISHED_AND_VERIFIED` |
+|     2 | `@mango/numgen`, `@mango/admin`, `@mango/cli`                   | `1.0.34`, `1.0.63`, `1.0.98`                                             | `PUBLISHED_AND_VERIFIED` |
+|     3 | Git tag and GitHub Release                                      | `v2026.08.05-maven-1.0.35-numgen-1.0.34-admin-1.0.63-cli-1.0.98-release` | `CREATED_AND_VERIFIED`   |
+|     4 | Latest docs and versioned docs snapshot                         | release tag above                                                        | `PUBLISHED_AND_VERIFIED` |
 
 ### Upgrade Notes
 
@@ -267,19 +272,19 @@ The completed recovery publication manifest SHA-256 is `6a13c07ebc6dd10b4d92031b
 
 ### Versions
 
-| Component                                                    | Previous | Release | Compatibility |
-| ------------------------------------------------------------ | -------: | ------: | ------------- |
-| Mango Maven non-app backend and `io.mango:mango-docs-bundle` | `1.0.33` | `1.0.34` | Patch-compatible Workflow API, withdrawal behavior and remote adapter additions; no database migration is required. |
-| `@mango/cli`                                                 | `1.0.97` | unchanged | This Maven-only batch does not republish CLI; generated-project defaults remain unchanged. |
-| `@mango/pmo`                                                 | `1.3.9` | unchanged | No PMO rule, contract, Agent, Skill or packaged baseline changes. |
-| Frontend npm packages                                        | current published matrix | unchanged | No frontend source or npm package is published. |
+| Component                                                    |                 Previous |   Release | Compatibility                                                                                                       |
+| ------------------------------------------------------------ | -----------------------: | --------: | ------------------------------------------------------------------------------------------------------------------- |
+| Mango Maven non-app backend and `io.mango:mango-docs-bundle` |                 `1.0.33` |  `1.0.34` | Patch-compatible Workflow API, withdrawal behavior and remote adapter additions; no database migration is required. |
+| `@mango/cli`                                                 |                 `1.0.97` | unchanged | This Maven-only batch does not republish CLI; generated-project defaults remain unchanged.                          |
+| `@mango/pmo`                                                 |                  `1.3.9` | unchanged | No PMO rule, contract, Agent, Skill or packaged baseline changes.                                                   |
+| Frontend npm packages                                        | current published matrix | unchanged | No frontend source or npm package is published.                                                                     |
 
 ### Published Packages
 
-| Order | Target | Version | Status |
-| ----: | ------ | ------- | ------ |
-| 1 | Complete non-app `io.mango` Maven Reactor and `io.mango:mango-docs-bundle` | `1.0.34` | `PUBLISHED_AND_VERIFIED` |
-| 2 | Git tag, GitHub Release, Latest docs and versioned docs snapshot | `v2026.08.05-maven-1.0.34-workflow-withdraw-release` | `CREATED_AND_VERIFIED` |
+| Order | Target                                                                     | Version                                              | Status                   |
+| ----: | -------------------------------------------------------------------------- | ---------------------------------------------------- | ------------------------ |
+|     1 | Complete non-app `io.mango` Maven Reactor and `io.mango:mango-docs-bundle` | `1.0.34`                                             | `PUBLISHED_AND_VERIFIED` |
+|     2 | Git tag, GitHub Release, Latest docs and versioned docs snapshot           | `v2026.08.05-maven-1.0.34-workflow-withdraw-release` | `CREATED_AND_VERIFIED`   |
 
 ### Upgrade Notes
 
@@ -309,19 +314,19 @@ Status: `PUBLISHED_AND_VERIFIED`. This Maven-only patch was published from prote
 
 ### Versions
 
-| Component                                                    | Previous | Release | Compatibility |
-| ------------------------------------------------------------ | -------: | ------: | ------------- |
-| Mango Maven non-app backend and `io.mango:mango-docs-bundle` | `1.0.32` | `1.0.33` | Patch-compatible build determinism and HTTP error-diagnostic fixes; successful request contracts, database migrations and `R` response shape are unchanged. |
-| `@mango/cli`                                                 | `1.0.97` | unchanged | This Maven-only batch does not republish CLI; its generated-project default remains Maven `1.0.32`. Consumers opting into these fixes set Maven `1.0.33` explicitly. |
-| `@mango/pmo`                                                 | `1.3.9` | unchanged | No PMO rule, contract, Agent, Skill, template or packaged baseline changes. |
-| Frontend npm packages                                        | current published matrix | unchanged | No frontend code or npm package is published. |
+| Component                                                    |                 Previous |   Release | Compatibility                                                                                                                                                        |
+| ------------------------------------------------------------ | -----------------------: | --------: | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Mango Maven non-app backend and `io.mango:mango-docs-bundle` |                 `1.0.32` |  `1.0.33` | Patch-compatible build determinism and HTTP error-diagnostic fixes; successful request contracts, database migrations and `R` response shape are unchanged.          |
+| `@mango/cli`                                                 |                 `1.0.97` | unchanged | This Maven-only batch does not republish CLI; its generated-project default remains Maven `1.0.32`. Consumers opting into these fixes set Maven `1.0.33` explicitly. |
+| `@mango/pmo`                                                 |                  `1.3.9` | unchanged | No PMO rule, contract, Agent, Skill, template or packaged baseline changes.                                                                                          |
+| Frontend npm packages                                        | current published matrix | unchanged | No frontend code or npm package is published.                                                                                                                        |
 
 ### Published Packages
 
-| Order | Target | Version | Status |
-| ----: | ------ | ------- | ------ |
-| 1 | Complete non-app `io.mango` Maven Reactor and `io.mango:mango-docs-bundle` | `1.0.33` | `PUBLISHED_AND_VERIFIED` |
-| 2 | Git tag, GitHub Release, Latest docs and versioned docs snapshot | `v2026.08.03-maven-1.0.33-baseline-web-errors-release` | `CREATED_AND_VERIFIED` |
+| Order | Target                                                                     | Version                                                | Status                   |
+| ----: | -------------------------------------------------------------------------- | ------------------------------------------------------ | ------------------------ |
+|     1 | Complete non-app `io.mango` Maven Reactor and `io.mango:mango-docs-bundle` | `1.0.33`                                               | `PUBLISHED_AND_VERIFIED` |
+|     2 | Git tag, GitHub Release, Latest docs and versioned docs snapshot           | `v2026.08.03-maven-1.0.33-baseline-web-errors-release` | `CREATED_AND_VERIFIED`   |
 
 ### Upgrade Notes
 
