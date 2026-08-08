@@ -1,6 +1,6 @@
 interface:
   display_name: "Mango Existing Issue Handler"
-  short_description: "Reproduce and route an existing Mango GitHub Issue"
-  default_prompt: "Use $mango-issue-handle to inspect and handle this existing Mango Issue from current evidence."
+  short_description: "Complete Mango Issue fixes with evidence and status updates"
+  default_prompt: "Use $mango-issue-handle to handle this Mango Issue through fix, evidence comment, and final state update."
 policy:
   allow_implicit_invocation: true
