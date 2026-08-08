@@ -1,6 +1,6 @@
 {
   "name": "@mango/cli",
-  "version": "1.0.101",
+  "version": "1.0.102",
   "private": false,
   "type": "module",
   "bin": {
@@ -27,7 +27,7 @@
     "test": "pnpm run check:business-module-template && pnpm run check:release-versions && node scripts/check-cli.mjs && pnpm run test:packed-doctor && node --test tests/*.test.mjs"
   },
   "dependencies": {
-    "@mango/pmo": "workspace:1.3.11",
+    "@mango/pmo": "workspace:1.3.12",
     "prettier": "3.9.5"
   },
   "mangoArchitecture": {

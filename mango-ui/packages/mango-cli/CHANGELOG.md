@@ -1,5 +1,34 @@
 # @mango/cli Changelog
 
+## 1.0.102 - 2026-08-08
+
+### Fixed
+
+- 精确依赖 `@mango/pmo@1.3.12`，向生成和升级后的业务项目交付 worktree 任务身份、提交完整性、upstream 同步和合并后清理门禁。
+- full 项目的根 `.gitignore` 新增 `.flattened-pom.xml` 与 `frontend/build-reports/`，正常执行 Maven Flatten Plugin 和前端生产构建后不再产生干扰交付门禁的未跟踪文件。
+- CLI 生成项目验收直接检查两个忽略模式，防止模板回归。
+
+### PMO Required Checks
+
+- `check-worktree-delivery-integrity.mjs`
+  - Migration: 已有项目升级 PMO `1.3.12`，并在项目根 `.gitignore` 增加 `.flattened-pom.xml` 与 `frontend/build-reports/`。
+  - Exception: 只允许用户确认的精确并行脏 worktree 通过 `start`；不允许跳过当前任务的提交、交付和清理检查。
+  - Verify: CLI 69 项测试和全新 tarball 消费项目覆盖 full init、module add、未暂存阻断、完整提交、前后端构建及构建后 deliver PASS。
+
+### Upgrade Notes
+
+1. 等待 `@mango/pmo@1.3.12` 发布并完成双仓回查后，再安装 `@mango/cli@1.0.102`。
+2. 执行 `mango pmo upgrade --project-dir . --to 1.3.12 --dry-run`，审阅后升级并运行 locked check。
+3. 已有业务项目补充两个 `.gitignore` 模式；新生成 full 项目无需手工修改。
+4. Mango Maven 保持 `1.0.35`，其它 npm 坐标保持 `release-versions.json` 当前矩阵。
+
+### Verification
+
+- `pnpm -C mango-ui --filter @mango/cli test`
+- `pnpm -C mango-ui release:impact --base=65072d33e --head=HEAD`
+- `node mango-ui/packages/mango-cli/scripts/check-generated-backend-gate.mjs`
+- 从本地 PMO/CLI tarball 新建消费者并完成 full 项目、业务模块、前端生产构建、后端 Maven verify 与 worktree deliver 检查。
+
 ## 1.0.101 - 2026-08-06
 
 ### Fixed

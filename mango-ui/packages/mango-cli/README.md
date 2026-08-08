@@ -624,6 +624,12 @@ Issue #690 覆盖 CLI、Maven plugin、Bootstrap/runtime、Resource、BSQL、Boo
 
 业务项目不需要修改生成模板或在 `main.ts` 添加 `crypto.randomUUID` polyfill。修复由 `@mango/common` 和 Admin Shell 启动链提供；CLI 后续发布时必须把 `common -> admin-shell -> admin` 的匹配版本写入同一 `release-versions.json` 前端矩阵，业务项目整体升级该矩阵即可。该修复不改变 CLI 命令、模板结构、后端 Maven、菜单、权限或租户配置。
 
+### 1.0.102 发布影响
+
+`@mango/cli@1.0.102` 精确依赖 `@mango/pmo@1.3.12`。升级后的业务 baseline 提供 `check-worktree-delivery-integrity.mjs`，在任务开始、提交、Push/PR 和清理阶段分别检查任务分支身份、全部任务文件是否完成取舍、upstream 是否同步以及 HEAD 是否已合入 base。门禁只检查并报告，不会自动暂存、删除或修改文件。
+
+新生成的 full 项目会忽略 Maven Flatten Plugin 产生的任意层级 `.flattened-pom.xml`，以及前端生产构建产生的 `frontend/build-reports/`。已有业务项目升级 PMO baseline 后，还应把这两个模式加入项目根 `.gitignore`，再运行前后端验证和 `deliver` 门禁。Mango Maven 保持 `1.0.35`，其它前端包保持 `release-versions.json` 中的现有版本。
+
 ### 1.0.101 发布影响
 
 `@mango/cli@1.0.101` 精确依赖 `@mango/pmo@1.3.11`，锁定包含 Issue #721 个人中心扩展链的完整前端矩阵：Auth `1.0.26`、Notice `1.0.38`、System `1.0.32`、Admin Shell `1.0.58` 及其精确依赖闭包。业务项目必须整体升级 `release-versions.json` 中的版本，不能只替换 Notice 或 Shell；否则精确 workspace 依赖和运行时 chunk 可能仍落到旧制品。

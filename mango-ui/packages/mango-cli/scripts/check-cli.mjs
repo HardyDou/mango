@@ -129,6 +129,12 @@ try {
       throw new Error(`missing generated file: ${file}`);
     }
   }
+  const generatedGitignore = readFileSync(join(projectRoot, '.gitignore'), 'utf8');
+  for (const generatedArtifact of ['.flattened-pom.xml', 'frontend/build-reports/']) {
+    if (!generatedGitignore.split(/\r?\n/u).includes(generatedArtifact)) {
+      throw new Error(`generated .gitignore does not ignore verification artifact: ${generatedArtifact}`);
+    }
+  }
   assertGeneratedFrontendFormatting(projectRoot);
 
   const globalEntityManifest = JSON.parse(

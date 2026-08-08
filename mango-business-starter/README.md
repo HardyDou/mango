@@ -39,7 +39,7 @@
 
 模板默认生成的是一个业务聚合的 CRUD 管理页面，不是完整业务系统。
 
-`@mango/pmo@1.3.11` 发布 canonical `business-module` code baseline，精确依赖它的 `@mango/cli@1.0.101` 负责项目初始化、PMO 升级和 `mango module add`。不要使用 CLI `1.0.99` 生成业务模块；该不可变版本不能在安装后的 npm/pnpm 布局中定位 PMO code baseline。模板 manifest 同时定义模块/包结构、`moduleKebab` 等输入与派生变量、Mango Checkstyle 和架构规则源，以及 `XxxCode`、`Require`、typed CRUD、tenant、Mapper、资源、migration、前端导出和测试等可执行规范证据。升级只同步受管 baseline/template/Skill，不会批量重写已有业务模块；路径、SHA-256 和历史 PMO 版本均锁定的审批文档不会被当前新增章节追溯改写。
+`@mango/pmo@1.3.12` 发布 canonical `business-module` code baseline 和 worktree 交付完整性门禁，精确依赖它的 `@mango/cli@1.0.102` 负责项目初始化、PMO 升级和 `mango module add`。不要使用 CLI `1.0.99` 生成业务模块；该不可变版本不能在安装后的 npm/pnpm 布局中定位 PMO code baseline。模板 manifest 同时定义模块/包结构、`moduleKebab` 等输入与派生变量、Mango Checkstyle 和架构规则源，以及 `XxxCode`、`Require`、typed CRUD、tenant、Mapper、资源、migration、前端导出和测试等可执行规范证据。升级只同步受管 baseline/template/Skill，不会批量重写已有业务模块；路径、SHA-256 和历史 PMO 版本均锁定的审批文档不会被当前新增章节追溯改写。
 
 `business-pmo/mango-baseline` 是 canonical `mango-pmo` 的构建投影，维护边界遵循
 [文档资产规范](../mango-pmo/rules/06-document-assets.md)。更新 PMO 后执行：

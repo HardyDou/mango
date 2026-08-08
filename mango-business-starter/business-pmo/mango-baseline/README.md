@@ -25,6 +25,7 @@
 | CI 事件模式判定        | `tools/resolve-pmo-check-event-mode.mjs`                                                                        | 将需要真实 diff 的事件与终态 PR 正文编辑分流，避免使用合并后失效的 base/head 范围                                                                   |
 | 前端页面基线           | `tools/check-frontend-page-baseline.mjs`、`rules/frontend/07-admin-ui-common.md`                                 | 检查新增或修改页面的默认骨架；特殊页面可填写可复核原因后按类型或整页例外                                                                           |
 | 标准代码基线           | `code-templates/index.json`、`tools/code-baseline.mjs`、`tools/evaluate-code-baseline.mjs`                       | 为新增代码选择并渲染标准模块/包结构，校验变量、规范覆盖、Checkstyle/架构配置和生成结果                                                             |
+| Worktree 交付完整性    | `tools/check-worktree-delivery-integrity.mjs`                                                                   | 在任务开始、提交、交付和清理阶段阻断跨任务复用、部分提交、未跟踪文件、未 Push 提交和未合并清理                                                    |
 | 业务 PR 风险合同       | `contracts/delivery-assurance.json`、`templates/business-pull-request-template.md`、`tools/risk-verification.mjs` | 同一 schema 定义字段、canonical 模板、PR 正文校验和模板结构校验                                                                                    |
 | 模块架构债务预算       | `tools/check-architecture-debt-budget.mjs`                                                                      | 比较完整 Reactor 报告与 Git 基准，阻断新增、替换、跨模块迁移和预算回升，并支持按模块查询、递减及存量模块两 PR 受控首次纳管                           |
 | 专项 Agent             | `agents/*-requirements-agent.md`、`agents/technical-design-agent.md`、`agents/implementation-plan-agent.md`     | 一个生命周期模板对应一个撰写 Agent                                                                                                                  |
@@ -39,9 +40,9 @@ Skill 按实际能力命名，而不是按发布包命名：只有治理编排�
 业务项目通过 `@mango/cli` 提供的 `mango pmo ...` 命令管理 baseline。全局 CLI 只用于创建项目、历史项目升级和临时诊断：
 
 ```bash
-npm view @mango/pmo@1.3.11 version --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
-npm view @mango/cli@1.0.101 version --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
-npm install -g @mango/cli@1.0.101 --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
+npm view @mango/pmo@1.3.12 version --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
+npm view @mango/cli@1.0.102 version --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
+npm install -g @mango/cli@1.0.102 --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
 ```
 
 两个 `npm view` 都返回精确版本后再执行安装。返回 404 表示该批次仍未发布，源码仓可见不等于业务项目已经可消费。
@@ -55,8 +56,8 @@ npm install -g @mango/cli@1.0.101 --registry http://nexus.inner.yunxinbaokeji.co
 ```bash
 mango pmo status --project-dir .
 mango pmo check --project-dir .
-mango pmo upgrade --project-dir . --to 1.3.11 --dry-run
-mango pmo upgrade --project-dir . --to 1.3.11 --sync-shell
+mango pmo upgrade --project-dir . --to 1.3.12 --dry-run
+mango pmo upgrade --project-dir . --to 1.3.12 --sync-shell
 mango pmo check --project-dir . --locked
 ```
 

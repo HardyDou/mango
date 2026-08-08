@@ -1,6 +1,7 @@
 node_modules/
 dist/
 target/
+.flattened-pom.xml
 .runtime/
 .mango/
 .pnpm-store/
@@ -9,4 +10,5 @@ target/
 
 frontend/node_modules/
 frontend/dist/
+frontend/build-reports/
 backend/target/
