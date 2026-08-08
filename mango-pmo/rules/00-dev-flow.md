@@ -89,10 +89,12 @@ PMO preflight 输出工作区事实和 M01 策略决策。只要需要修改受�
 
 工作区判定顺序：
 
-1. 先读取当前分支和 `git worktree list --porcelain`，再判断是否需要创建工作区；只有会话和分支事实证明属于同一任务时向 preflight 传 `--reuseCurrentTask true`。
+1. 先执行 `node mango-pmo/tools/check-worktree-delivery-integrity.mjs --mode start`，再判断是否创建或复用；只有会话、Issue 或 PR 中已记录的任务分支与当前分支一致时，才传 `--reuse-current-task true --expected-branch <任务分支>` 和 preflight 的 `--reuseCurrentTask true`，禁止仅根据当前分支反推同一任务。
 2. 当前已在非 `main` 分支或非主工作区时，用户明确要求解决的问题必须在当前工作区处理；不得再次创建 worktree，也不得改为登记 Issue 来规避处理。
 3. 用户明确要求登记 Issue 时只登记；用户没有说明是当前修复还是登记，且范围确实无法判断时，必须先询问用户。
 4. 当前位于主工作区、属于新的独立任务且没有可复用任务 worktree 时，preflight 直接决策 `CREATE` 并创建新 worktree。
+5. 当前非 main worktree 仍有未提交、未跟踪或冲突文件时，禁止把另一任务转移到新 worktree 后遗留这些改动；先完成当前任务或取得用户对明确处理方式的决定。
+6. 其它脏 worktree 默认阻断新任务；用户明确确认精确路径属于并行任务时才允许保留。已合并 worktree 中的本地改动始终阻断，不能作为并行任务豁免。
 
 以下事实使策略决定 `M01=CREATE`：
 
@@ -211,19 +213,20 @@ PMO preflight 输出工作区事实和 M01 策略决策。只要需要修改受�
 1. 在用户确认的工作区内完成已启用验证
 2. 使用任务分支时，提交前先将最新 `main` 合并到任务分支，并处理冲突
 3. 合并 `main` 后重新执行已启用且受影响的验证
-4. 提交代码
-5. 用户授权 Push 时 Push 任务分支
-6. 用户授权创建 PR 时使用 `gh` 创建 PR
-7. 说明改动范围
-8. 说明验证结果
-9. 说明遗留问题
-10. 用户已启用结构化交付记录时，说明总项、完成项和例外项
+4. 逐项审阅并暂存任务文件，执行 `check-worktree-delivery-integrity.mjs --mode commit --expected-branch <任务分支>`；仍有未暂存、未跟踪或冲突文件时禁止提交
+5. 提交代码后执行 `--mode deliver --require-upstream false`，确认当前 worktree 完全干净
+6. 用户授权 Push 时 Push 任务分支；Push 后执行 `--mode deliver --require-upstream true`，确认本地与 upstream 一致
+7. 用户授权创建、更新或合并 PR 时，必须使用同一任务 worktree，并再次通过 `deliver` 门禁
+8. 说明改动范围
+9. 说明验证结果
+10. 说明遗留问题和其它仍有本地改动的 worktree
+11. 用户已启用结构化交付记录时，说明总项、完成项和例外项
 
 PR 要求：
 
 - 禁止绕过 PR 直接把任务分支合并到 `main`。
 - 用户确认 `M01=CREATE` 且 PR 已创建时，必须保留任务 worktree，直到 PR 已合并。
-- 用户确认 `M01=CREATE` 且 PR 合并后，必须使用开发环境规范中的 worktree 删除脚本清理任务 worktree。
+- 用户确认 `M01=CREATE` 且 PR 合并后，必须先同步 base 并通过 `check-worktree-delivery-integrity.mjs --mode cleanup`，再使用开发环境规范中的 worktree 删除脚本清理任务 worktree。
 
 产出：
 

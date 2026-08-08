@@ -1,6 +1,6 @@
 interface:
-  display_name: "Mango Engineer"
-  short_description: "Implement approved Mango designs behind mandatory gates"
-  default_prompt: "Use $mango-engineering to implement the approved Mango design and plan with all required code gates."
+  display_name: "Mango 工程实施"
+  short_description: "实施并完整提交任务 worktree 中的 Mango 变更"
+  default_prompt: "使用 $mango-engineering 按任务 worktree、提交完整性和代码门禁实施并交付已批准的 Mango 变更。"
 policy:
   allow_implicit_invocation: true

@@ -17,6 +17,8 @@ description: 在实施前或关键事实变化时，推荐并让用户一次确�
 
 只读使用 `NO_WORKTREE`；同任务非 main worktree 使用 `REUSE`；从 main/主工作区修改受版本控制文件使用 `CREATE`，无需询问。只有用户明确要求并确认风险后使用 `MAIN_EXCEPTION`。同一任务不得创建第二个 worktree。
 
+在确定 `CREATE/REUSE` 前运行 `tools/check-worktree-delivery-integrity.mjs --mode start`。`REUSE` 必须携带从既有任务、Issue 或 PR 证据取得的 `--expected-branch`；禁止只看当前分支后自行宣称同一任务。当前非 main worktree 有未提交内容而请求属于另一任务时 `STOP`，不得先新建 worktree 再遗忘旧改动。发现其它脏 worktree 时集中列出；只有用户明确确认精确路径属于需保留的并行任务后，才可传 `--allow-dirty-worktree <path>` 继续。已合并 worktree 残留本地改动不得豁免或复用。
+
 ## 推荐文档版本
 
 1. 明确目标、成功结果、范围、不处理范围、角色、可观察行为、系统边界、数据/安全/租户/兼容影响、回滚、代码基线和关键未知项。

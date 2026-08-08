@@ -53,6 +53,8 @@ node mango-business-starter/scripts/check-template.mjs
 
 当前 PMO baseline 先按事实推荐文档版本，再由用户在同一中文界面选择“直接做、一页纸、标准版、详细版、四文档”，勾选 M01-M16，并用一次回车确认全部。人类摘要只列已勾选项；主工作区例外、破坏性数据库动作和外部写入仍需单独授权。发布、版本和发布恢复继续使用独立发布流程。
 
+业务项目升级到本版本 baseline 后，可在任务开始、提交、Push/PR 和清理阶段分别运行 `business-pmo/mango-baseline/tools/check-worktree-delivery-integrity.mjs` 的 `start`、`commit`、`deliver`、`cleanup` 模式。工具只读取 Git worktree、文件和 upstream 状态：发现跨任务复用、部分暂存、未跟踪文件、未 Push 提交或未合并清理时返回非零退出码，并输出具体 worktree、分支与变更计数；不会自动暂存、删除或修改其它任务文件。
+
 delivery-assurance schema revision 5 起，PMO baseline 同时携带 canonical 业务 PR 模板。项目内 `mango pmo sync/upgrade` 在模板缺失时创建文件，在模板存在时只托管 `## Risk / Verification` 区段；`mango pmo check --locked` 会阻断缺失或漂移，区段外业务说明保持不变。该能力由 `@mango/pmo@1.3.4` 与 `@mango/cli@1.0.88` 提供。
 
 能力与 Skill 路由统一由项目 `AGENTS.md` 和 PMO preflight 决定；不要从普通技术术语推断无关能力。完整分类边界见[能力说明维护规范](../mango-pmo/rules/08-capability-docs.md)。
