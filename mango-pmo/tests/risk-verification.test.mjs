@@ -53,9 +53,9 @@ test('canonical business PR template accepts CRLF line endings', () => {
 test('template validation rejects legacy fields and missing current fields', () => {
   const legacyTemplate = `## Risk / Verification
 
-- Requirement impact: L0-L3 - facts
-- Solution risk: L0-L3 - facts
-- Final risk: L0-L3
+- Requirement impact: L0-L5 - facts
+- Solution risk: L0-L5 - facts
+- Final risk: L0-L5
 - Selected verification: STATIC, UNIT, API, UI
 - Why sufficient:
 - Skipped verification: None
@@ -166,7 +166,7 @@ test('risk level must map to the declared delivery mode', () => {
     finalRisk: 'L2',
     deliveryMode: 'SIMPLE',
   }));
-  assert.match(result.failures.join('\n'), /minimum STANDARD, got SIMPLE/);
+  assert.match(result.failures.join('\n'), /minimum L2, got SIMPLE/);
 });
 
 test('a higher delivery mode is allowed without weakening the risk baseline', () => {
@@ -174,7 +174,7 @@ test('a higher delivery mode is allowed without weakening the risk baseline', ()
     requirement: 'L1 - local behavior change',
     solution: 'L1 - reversible implementation',
     finalRisk: 'L1',
-    deliveryMode: 'FULL',
+    deliveryMode: 'L5',
   }));
   assert.deepEqual(result.failures, []);
 });
@@ -209,7 +209,7 @@ test('detected non-downgradable facts must be declared', () => {
     requirement: 'L3 - cross-tenant access changes',
     solution: 'L3 - tenant isolation implementation',
     finalRisk: 'L3',
-    deliveryMode: 'FULL',
+    deliveryMode: 'L3',
     nonDowngradableFacts: 'None',
   }));
   assert.match(result.failures.join('\n'), /omits detected facts: TENANT/);

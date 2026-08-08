@@ -2,9 +2,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-export const RISK_LEVELS = ['L0', 'L1', 'L2', 'L3'];
-export const DELIVERY_MODES = ['SIMPLE', 'STANDARD', 'FULL'];
-const RISK_TO_MODE = new Map([['L0', 'SIMPLE'], ['L1', 'SIMPLE'], ['L2', 'STANDARD'], ['L3', 'FULL']]);
+export const RISK_LEVELS = ['L0', 'L1', 'L2', 'L3', 'L4', 'L5'];
+export const DELIVERY_MODES = ['SIMPLE', 'L2', 'L3', 'L4', 'L5'];
+const RISK_TO_MODE = new Map([['L0', 'SIMPLE'], ['L1', 'SIMPLE'], ['L2', 'L2'], ['L3', 'L3'], ['L4', 'L4'], ['L5', 'L5']]);
 const DELIVERY_ASSURANCE_CONTRACT = JSON.parse(fs.readFileSync(
   path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../contracts/delivery-assurance.json'),
   'utf8',
@@ -64,7 +64,7 @@ function isPlaceholder(value) {
 }
 
 function parseAssessedLevel(value) {
-  const match = /^(L[0-3])\s*[-:：]\s*(.+)$/u.exec(value);
+  const match = /^(L[0-5])\s*[-:：]\s*(.+)$/u.exec(value);
   if (!match || isPlaceholder(match[2])) return null;
   return { level: match[1], evidence: match[2].trim() };
 }
@@ -137,10 +137,10 @@ export function validateRiskVerification(markdown) {
   const residualRisks = fieldValue(section, fieldLabel('residualRisks'));
   const releaseOnly = /^NOT_APPLICABLE\s*[-:：]\s*.+release/iu.test(baseline);
 
-  if (!requirement) failures.push('"Requirement impact" must use "L0-L3 - concrete impact facts"');
-  if (!solution) failures.push('"Solution risk" must use "L0-L3 - concrete implementation and recovery facts"');
-  if (!RISK_LEVELS.includes(finalRisk)) failures.push('"Final risk" must be one of L0, L1, L2, L3');
-  if (!releaseOnly && !DELIVERY_MODES.includes(deliveryMode)) failures.push('"Delivery mode" must be one of SIMPLE, STANDARD, FULL');
+  if (!requirement) failures.push('"Requirement impact" must use "L0-L5 - concrete impact facts"');
+  if (!solution) failures.push('"Solution risk" must use "L0-L5 - concrete implementation and recovery facts"');
+  if (!RISK_LEVELS.includes(finalRisk)) failures.push('"Final risk" must be one of L0, L1, L2, L3, L4, L5');
+  if (!releaseOnly && !DELIVERY_MODES.includes(deliveryMode)) failures.push('"Delivery mode" must be one of SIMPLE, L2, L3, L4, L5');
   if (releaseOnly && deliveryMode !== 'NOT_APPLICABLE') failures.push('release-only PR must set "Delivery mode" to NOT_APPLICABLE');
   if (!['CREATE', 'REUSE', 'MAIN_EXCEPTION'].includes(workspaceDecision)) failures.push('"Workspace decision" must be CREATE, REUSE, or MAIN_EXCEPTION');
   if (!declaredNonDowngradableFacts) failures.push('"Non-downgradable facts" must be None or a comma-separated contract fact list');

@@ -13,7 +13,7 @@ import { validateContractRuleLinks } from './contract-loader.mjs';
 
 const STATUSES = new Set(['DRAFT', 'IN_REVIEW', 'APPROVED', 'BLOCKED', 'STALE']);
 const ACTIONS = new Set(['STOP', 'ASK', 'WRITE', 'NEXT']);
-const RISKS = new Set(['L0', 'L1', 'L2', 'L3']);
+const RISKS = new Set(['L0', 'L1', 'L2', 'L3', 'L4', 'L5']);
 const NON_HUMAN_APPROVER = /(?:\bai\b|agent|codex|claude|gpt|模型|机器人|自动审批)/iu;
 const INVALID_APPROVAL_EVIDENCE = /(?:invented|self[-_ ]?check|ai[-_ ]?generated|agent[-_ ]?generated|自评|自动生成)/iu;
 const UPSTREAM_DOCUMENT_PREFIX = {
@@ -71,7 +71,7 @@ function validateMetadata(ast, contract, findings, options) {
     addFinding(findings, ruleId, `documentId 必须是 ${contract.documentIdPrefix}-... 格式`);
   }
   if (!isSemver(values.pmoVersion)) addFinding(findings, ruleId, 'pmoVersion 必须是三段数字版本，例如 2.3.0');
-  if (!RISKS.has(values.riskLevel)) addFinding(findings, ruleId, 'riskLevel 必须是 L0、L1、L2 或 L3');
+  if (!RISKS.has(values.riskLevel)) addFinding(findings, ruleId, 'riskLevel 必须是 L0、L1、L2、L3、L4 或 L5');
   if (!STATUSES.has(values.status)) addFinding(findings, ruleId, `status 非法：${values.status ?? '<缺失>'}`);
   if (!ACTIONS.has(values.action)) addFinding(findings, ruleId, `action 非法：${values.action ?? '<缺失>'}`);
 

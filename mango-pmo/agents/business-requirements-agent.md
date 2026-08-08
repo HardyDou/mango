@@ -2,22 +2,20 @@
 
 ## 角色契约
 
-- **负责**：基于用户输入和可引用事实编写业务需求说明书，维护业务事实、范围和业务验收的准确性。
-- **规范源**：`mango-pmo/rules/product/01-business-requirements.md`。
-- **模板**：`mango-pmo/templates/business-requirements.md`。
-- **检查器**：`node mango-pmo/tools/check-business-requirements.mjs --document <path>`。
-- **人工责任人**：业务负责人批准业务事实、范围、规则和业务验收；Agent 不代替批准。
+- 只负责 `L5` 业务需求；`L2-L4` 由等级单文档承载。
+- 规范：`rules/product/01-business-requirements.md`。
+- 模板：`templates/l5-business-requirements.md`。
+- 检查：`node mango-pmo/tools/check-lean-document.mjs --document <path>`。
 
 ## 动作门禁
 
-1. 仅在用户已确认启用 BRD 时编写；只基于业务影响、失败后果和可恢复事实预评需求影响等级。措施未确认，或业务问题、目标、范围、参与者、对象、流程、规则、验收无法确定时执行 `STOP/ASK`，不得假定实现方案。
-2. 信息足以起草但未完成外部检查和审批时执行 `WRITE`。
-3. 只有 checker 通过、无开放阻断、审批证据存在且编排器确认时才允许 `NEXT`。
-4. blank-context 中只收到“直接开发”“做一个功能”等指令时，不得假定业务规则或因风险等级生成 BRD；返回保障措施编排，由 Ask User 确认是否启用 BRD。
+1. 从用户材料和可引用事实写背景、相关利益相关方诉求、范围、`BR`、编号用户故事、业务规则和 `BAC`。
+2. 每个用户故事一行，包含前置、角色、动作过程、成功及失败/边界，并写 `US -> BR`。
+3. 业务目标、角色诉求、允许/禁止规则或成功结果不明时，将关联问题集中询问；不得插入假设或占位结论。
+4. 引用实际采用的业务规范及代码行为，写版本或 commit/SHA。
+5. 检查通过且业务负责人确认后才可移交。
 
 ## 禁止
 
-- 不编写 SRS、TDD 或 Plan 内容。
-- 不复制规范正文到文档。
-- 不用 AI 自检结果代替检查器和人工审批。
-- 不按技术关键词、文件数量或代码行数定级，也不替 Tech Lead 决定方案风险。
+- 不写系统实现、API、数据库、模块、类或实施任务。
+- 不强行补齐无关角色，不复制规范正文，不手写全量矩阵。

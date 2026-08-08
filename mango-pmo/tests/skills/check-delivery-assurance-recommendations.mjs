@@ -9,15 +9,20 @@ const fixture = JSON.parse(readFileSync(join(testRoot, 'delivery-assurance-recom
 const contract = JSON.parse(readFileSync(join(pmoRoot, 'contracts/delivery-assurance.json'), 'utf8'));
 
 assert(contract.contractSchema === 2, 'delivery assurance contract schema must be 2');
-assert(contract.schemaRevision === 5, 'delivery assurance schema revision must be 5');
+assert(contract.schemaRevision === 6, 'delivery assurance schema revision must be 6');
 assert(contract.selectionAuthority === 'policy-with-human-exceptions', 'selection authority drifted');
 assert(contract.workspacePolicy.trackedChangeOnPrimary === 'CREATE', 'primary tracked changes must CREATE');
 assert(contract.workspacePolicy.existingTaskWorktree === 'REUSE', 'existing task worktree must REUSE');
 assert(contract.workspacePolicy.mainException === 'MAIN_EXCEPTION', 'main exception value drifted');
 assert(contract.workspacePolicy.defaultHumanConfirmationRequired === false, 'default M01 confirmation must stay disabled');
-assert(JSON.stringify(contract.riskToMode) === JSON.stringify({ L0: 'SIMPLE', L1: 'SIMPLE', L2: 'STANDARD', L3: 'FULL' }), 'risk-to-mode mapping drifted');
-assert(contract.deliveryModes.map(mode => mode.id).join(',') === 'SIMPLE,STANDARD,FULL', 'delivery mode catalog drifted');
-assert(contract.deliveryModes.find(mode => mode.id === 'STANDARD')?.artifactPolicy === 'SINGLE_DELIVERY_RECORD', 'STANDARD must use one record');
+assert(JSON.stringify(contract.riskToMode) === JSON.stringify({ L0: 'SIMPLE', L1: 'SIMPLE', L2: 'L2', L3: 'L3', L4: 'L4', L5: 'L5' }), 'risk-to-mode mapping drifted');
+assert(contract.deliveryModes.map(mode => mode.id).join(',') === 'SIMPLE,L2,L3,L4,L5', 'delivery mode catalog drifted');
+assert(contract.deliveryModes.find(mode => mode.id === 'L2')?.artifactPolicy === 'SINGLE_ONE_PAGE', 'L2 must use one page');
+assert(contract.deliveryModes.find(mode => mode.id === 'L3')?.artifactPolicy === 'SINGLE_THREE_PAGES', 'L3 must use three pages');
+assert(contract.deliveryModes.find(mode => mode.id === 'L4')?.artifactPolicy === 'SINGLE_FIVE_PAGES', 'L4 must use five pages');
+assert(contract.deliveryModes.find(mode => mode.id === 'L5')?.templates?.length === 4, 'L5 must use four independent documents');
+assert(contract.questionPolicy.autoResolutionAllowed === true, 'derivable facts must resolve automatically');
+assert(contract.questionPolicy.batchMaterialQuestions === true, 'material questions must be grouped');
 
 const catalog = new Map(contract.measures.map(measure => [measure.id, measure]));
 const catalogIds = [...catalog.keys()];
@@ -57,7 +62,7 @@ for (const item of fixture.cases) {
 }
 assert(nonTrigger >= 15, 'need at least 15 non-trigger cases');
 
-process.stdout.write(`Delivery assurance contract PASS: schema=2, modes=SIMPLE/STANDARD/FULL, cases=${fixture.cases.length}.\n`);
+process.stdout.write(`Delivery assurance contract PASS: schema=2, modes=SIMPLE/L2/L3/L4/L5, cases=${fixture.cases.length}.\n`);
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);

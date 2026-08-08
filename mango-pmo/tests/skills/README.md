@@ -11,5 +11,5 @@
 
 - 结构检查由 `node mango-pmo/tests/skills/check-skill-evals.mjs` 执行，负责 Skill 文件、触发类型、claim-only、生命周期阶段枚举、worktree 和发布矩阵覆盖。
 - 语义检查由未继承实现上下文的独立 Agent 执行，逐 case 判断 Skill、动作、`requiredAssertions`、禁止输出和 NEXT 证据是否符合 Skill 原文；动作相同但理由不符合断言仍为失败。
-- 风险等级必须映射到 SIMPLE、STANDARD、FULL；评测必须证明 SIMPLE 直接做、STANDARD 只写一个交付记录、FULL 走适用完整流程，同时验证类型仍由真实观察面决定。main 默认自动隔离，只有 MAIN_EXCEPTION 询问用户。
+- 风险等级必须映射到 `L0/L1` 无文档、`L2-L4` 对应精简单文档、`L5` 四份独立文档；验证类型仍由真实观察面决定。main 默认自动隔离，只有关键未知项、例外、破坏性动作和外部写入询问用户。
 - 评测结果写入 `mango-docs/evidence/baselines/pmo-skill-evals/latest/report.json`，不能用结构检查通过代替语义通过。
