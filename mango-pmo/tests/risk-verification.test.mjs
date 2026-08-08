@@ -53,9 +53,9 @@ test('canonical business PR template accepts CRLF line endings', () => {
 test('template validation rejects legacy fields and missing current fields', () => {
   const legacyTemplate = `## Risk / Verification
 
-- Requirement impact: L0-L3 - facts
-- Solution risk: L0-L3 - facts
-- Final risk: L0-L3
+- Requirement impact: L0-L5 - facts
+- Solution risk: L0-L5 - facts
+- Final risk: L0-L5
 - Selected verification: STATIC, UNIT, API, UI
 - Why sufficient:
 - Skipped verification: None
@@ -127,6 +127,48 @@ test('a human CONFIRMED baseline remains valid during the trusted-base contract 
   assert.deepEqual(result.failures, []);
 });
 
+
+test('trusted-base schema migration temporarily accepts legacy FULL as L3', () => {
+  const result = validateRiskVerification(body({
+    requirement: 'L3 - repository-wide governance contract changes',
+    solution: 'L3 - trusted contract and packaged projections change together',
+    finalRisk: 'L3',
+    deliveryMode: 'FULL',
+    baseline: 'RESOLVED - trusted-base schema migration from the current main branch',
+  }));
+  assert.deepEqual(result.failures, []);
+  assert.equal(result.assessment.deliveryMode, 'FULL');
+  assert.equal(result.assessment.effectiveDeliveryMode, 'L3');
+});
+
+test('legacy delivery modes remain blocked outside the exact trusted-base migration', () => {
+  const missingMarker = validateRiskVerification(body({
+    requirement: 'L3 - repository-wide governance contract changes',
+    solution: 'L3 - packaged projections change together',
+    finalRisk: 'L3',
+    deliveryMode: 'FULL',
+  }));
+  assert.match(missingMarker.failures.join('\n'), /trusted-base schema migration/);
+
+  const wrongRisk = validateRiskVerification(body({
+    requirement: 'L4 - cross-service governance contract changes',
+    solution: 'L4 - packaged projections change together',
+    finalRisk: 'L4',
+    deliveryMode: 'FULL',
+    baseline: 'RESOLVED - trusted-base schema migration from the current main branch',
+  }));
+  assert.match(wrongRisk.failures.join('\n'), /trusted-base schema migration/);
+
+  const standard = validateRiskVerification(body({
+    requirement: 'L2 - bounded governance contract change',
+    solution: 'L2 - local checker change',
+    finalRisk: 'L2',
+    deliveryMode: 'STANDARD',
+    baseline: 'RESOLVED - trusted-base schema migration from the current main branch',
+  }));
+  assert.match(standard.failures.join('\n'), /trusted-base schema migration/);
+});
+
 test('release-only PR bypasses the delivery catalog and stays in the release workflow', () => {
   const result = validateRiskVerification(body({
     deliveryMode: 'NOT_APPLICABLE',
@@ -166,7 +208,7 @@ test('risk level must map to the declared delivery mode', () => {
     finalRisk: 'L2',
     deliveryMode: 'SIMPLE',
   }));
-  assert.match(result.failures.join('\n'), /minimum STANDARD, got SIMPLE/);
+  assert.match(result.failures.join('\n'), /minimum L2, got SIMPLE/);
 });
 
 test('a higher delivery mode is allowed without weakening the risk baseline', () => {
@@ -174,7 +216,7 @@ test('a higher delivery mode is allowed without weakening the risk baseline', ()
     requirement: 'L1 - local behavior change',
     solution: 'L1 - reversible implementation',
     finalRisk: 'L1',
-    deliveryMode: 'FULL',
+    deliveryMode: 'L5',
   }));
   assert.deepEqual(result.failures, []);
 });
@@ -209,7 +251,7 @@ test('detected non-downgradable facts must be declared', () => {
     requirement: 'L3 - cross-tenant access changes',
     solution: 'L3 - tenant isolation implementation',
     finalRisk: 'L3',
-    deliveryMode: 'FULL',
+    deliveryMode: 'L3',
     nonDowngradableFacts: 'None',
   }));
   assert.match(result.failures.join('\n'), /omits detected facts: TENANT/);

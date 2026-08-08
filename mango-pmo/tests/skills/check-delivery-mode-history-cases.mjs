@@ -5,15 +5,15 @@ import { fileURLToPath } from 'node:url';
 
 const root = dirname(fileURLToPath(import.meta.url));
 const fixture = JSON.parse(readFileSync(join(root, 'delivery-mode-history-cases.json'), 'utf8'));
-const modeByRisk = { L0: 'SIMPLE', L1: 'SIMPLE', L2: 'STANDARD', L3: 'FULL' };
-const artifactByMode = { SIMPLE: 'NONE', STANDARD: 'SINGLE_DELIVERY_RECORD', FULL: 'APPLICABLE_FULL_LIFECYCLE' };
+const modeByRisk = { L0: 'SIMPLE', L1: 'SIMPLE', L2: 'L2', L3: 'L3', L4: 'L4', L5: 'L5' };
+const artifactByMode = { SIMPLE: 'NONE', L2: 'SINGLE_ONE_PAGE', L3: 'SINGLE_THREE_PAGES', L4: 'SINGLE_FIVE_PAGES', L5: 'INDEPENDENT_DOCUMENTS' };
 
 assert(fixture.schemaVersion === 1, 'unsupported schema version');
 assert(fixture.source === 'paraphrased-and-sanitized-codex-user-history', 'history source declaration is required');
 assert(Array.isArray(fixture.cases) && fixture.cases.length >= 30, 'at least 30 historical cases are required');
 
 const ids = new Set();
-const counts = new Map([['NONE', 0], ['SIMPLE', 0], ['STANDARD', 0], ['FULL', 0]]);
+const counts = new Map([['NONE', 0], ['SIMPLE', 0], ['L2', 0], ['L3', 0], ['L4', 0], ['L5', 0]]);
 for (const item of fixture.cases) {
   assert(/^dm-hist-\d{3}$/u.test(item.id), `${item.id}: invalid id`);
   assert(!ids.has(item.id), `${item.id}: duplicate id`);
@@ -35,13 +35,15 @@ for (const item of fixture.cases) {
 
 const deliveryCount = fixture.cases.length - counts.get('NONE');
 assert(counts.get('SIMPLE') / deliveryCount >= 0.5, 'SIMPLE must represent the majority of delivery history');
-assert(counts.get('STANDARD') >= 8, 'STANDARD needs at least 8 cases');
-assert(counts.get('FULL') >= 4 && counts.get('FULL') / deliveryCount <= 0.2, 'FULL must be present but remain a minority');
+assert(counts.get('L2') >= 2, 'L2 needs bounded-change history cases');
+assert(counts.get('L3') >= 2, 'L3 needs complete-feature history cases');
+assert(counts.get('L4') >= 5, 'L4 needs contract/data/governance history cases');
+assert(counts.get('L5') >= 2, 'L5 needs major replacement and cross-system history cases');
 assert(fixture.cases.some(item => item.workspace === 'MAIN_EXCEPTION'), 'main exception boundary is missing');
-assert(fixture.cases.some(item => item.tags.includes('simple-to-standard')), 'simple-to-standard escalation is missing');
-assert(fixture.cases.some(item => item.tags.includes('standard-to-full')), 'standard-to-full escalation is missing');
+assert(fixture.cases.some(item => item.tags.includes('simple-to-l4')), 'simple-to-L4 escalation is missing');
+assert(fixture.cases.some(item => item.tags.includes('l2-to-l4')), 'L2-to-L4 escalation is missing');
 
-process.stdout.write(`Delivery mode history cases PASS: total=${fixture.cases.length}, SIMPLE=${counts.get('SIMPLE')}, STANDARD=${counts.get('STANDARD')}, FULL=${counts.get('FULL')}, read-only=${counts.get('NONE')}.\n`);
+process.stdout.write(`Delivery level history cases PASS: total=${fixture.cases.length}, SIMPLE=${counts.get('SIMPLE')}, L2=${counts.get('L2')}, L3=${counts.get('L3')}, L4=${counts.get('L4')}, L5=${counts.get('L5')}, read-only=${counts.get('NONE')}.\n`);
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);

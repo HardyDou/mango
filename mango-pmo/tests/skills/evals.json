@@ -285,9 +285,9 @@
     {
       "id": "delivery-assurance-next",
       "kind": "next",
-      "prompt": "Fresh-session trusted fixture: task goal and scope are recorded in assurance report=business-docs/evidence/assurance/task-17.json; requirement impact=L3, solution risk=L3, final risk=L3, delivery mode=FULL; repository policy records M01=CREATE and facts activate M07, M09 and M14; no main exception, destructive database action or release scope exists; the normalized goal, scope, facts and decisions match baselineId=sha256:abc123 and status=RESOLVED. Route to the selected governed work.",
-      "context": { "baselineStatus": "RESOLVED", "deliveryMode": "FULL", "releaseScope": false },
-      "expect": { "skill": "mango-design-delivery-assurance", "action": "NEXT", "requiredAssertions": ["preserve the resolved FULL mode", "do not add unrelated product documents", "route active capabilities to matching specialized Skills"] }
+      "prompt": "Fresh-session trusted fixture: task goal and scope are recorded in assurance report=business-docs/evidence/assurance/task-17.json; requirement impact=L3, solution risk=L3, final risk=L3, delivery mode=L3; repository policy records M01=CREATE and facts activate M07, M09 and M14; no main exception, destructive database action or release scope exists; the normalized goal, scope, facts and decisions match baselineId=sha256:abc123 and status=RESOLVED. Route to the selected governed work.",
+      "context": { "baselineStatus": "RESOLVED", "deliveryMode": "L3", "releaseScope": false },
+      "expect": { "skill": "mango-design-delivery-assurance", "action": "NEXT", "requiredAssertions": ["preserve the resolved L3 one-document mode", "do not add unrelated product documents", "route active capabilities to matching specialized Skills"] }
     }
   ]
 }

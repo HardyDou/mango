@@ -1,41 +1,28 @@
 ---
 name: mango-design-technical
-description: Create or review a user-enabled Mango Technical Design Document from approved system input or a confirmed assurance baseline. Use for architecture, module boundaries, API contracts, persistence, security, migration, and verification design; do not use for selecting safeguards, business discovery, system requirement authoring, implementation scheduling, coding, or acceptance execution.
+description: 创建或评审 L5 Mango 技术设计，追踪技术如何支撑系统需求，记录采用的规范和代码基线、实现决定、统一字典、验证与回滚；不做需求发现和任务执行。
 ---
 
-# Mango Technical Design
+# Mango L5 技术设计
 
-## Resolve Sources
+## 加载
 
-Set `PMO_ROOT` to the first available source: `<repo>/business-pmo/mango-baseline`, `<repo>/mango-pmo`, or `<plugin-root>/dist/baseline`. If none exists, `STOP`. Never use remembered or copied rules.
+解析 `PMO_ROOT`，以 `tech-lead/design` 执行 preflight，然后读取：
 
-## Load
+- `agents/technical-design-agent.md`
+- `rules/product/03-technical-design.md`
+- `contracts/lean-documents.json`
+- `templates/l5-technical-design.md`
+- `tools/check-lean-document.mjs`
+- preflight 选中的技术规范和代码基线
 
-Before drafting, read these authoritative assets:
+本 Skill 只用于 `L5`，并要求已有确认的系统需求。
 
-- `$PMO_ROOT/agents/technical-design-agent.md`
-- `$PMO_ROOT/rules/product/03-technical-design.md`
-- `$PMO_ROOT/contracts/technical-design.json`
-- `$PMO_ROOT/templates/technical-design.md`
-- `$PMO_ROOT/tools/check-technical-design.mjs`
-- `$PMO_ROOT/tools/check-lifecycle-handoff.mjs`
-- `$PMO_ROOT/rules/backend/03-api.md`
-- `$PMO_ROOT/rules/backend/05-module.md`
-- `$PMO_ROOT/rules/09-test-case-automation-flow.md`
-- `$PMO_ROOT/rules/product/05-document-lifecycle.md`
+## 执行
 
-Run PMO preflight with role `tech-lead` and phase `design`. Record selected code baselines and actual references in the design; do not bulk-read preflight references.
-
-## Execute
-
-1. Read the resolved delivery-mode baseline. Continue for a standalone TDD only in FULL flow or an explicit higher-mode request. SIMPLE keeps design in the implementation reasoning; STANDARD writes technical decisions in its single record. Reassess solution risk and escalate mode when needed.
-2. Choose one action:
-   - `STOP`: upstream requirements are absent, unapproved, invalid, or the request asks this stage to invent business scope.
-   - `ASK`: a design decision cannot be derived from approved requirements, repository facts, or loaded Mango rules.
-   - `WRITE`: inputs satisfy the rule; fill the official template and trace every design decision to upstream requirements.
-3. Set `pmoVersion` to the contract's exact `metadata.fixed.pmoVersion`, then run `node "$PMO_ROOT/tools/check-technical-design.mjs" --document <document-path>`.
-4. Validate every API design against the loaded backend API/module rules, including the path-variable ban, protocol-model boundary and api/core/starter/starter-remote ownership.
-5. Map acceptance outcomes only to user-enabled verification measures, record why each selected type proves the result and preserve the residual risk of disabled triggered measures. Run the lifecycle checker for the enabled TDD and applicable upstream; require valid hashes, applicable risk relations, trace coverage, `APPROVED/NEXT`, a human approver, approval evidence and no open blocker.
-6. Return `NEXT: $mango-pmo-lifecycle` only when the dedicated checker, applicable lifecycle handoff, specialized design checks, gate table and human approval all pass. Let the coordinator choose the next enabled measure; do not assume Plan follows.
-
-With an empty context, return `ASK` for M05 confirmation and the technical decision source. When a confirmed TDD lacks an applicable approved source, return `STOP` and identify it. Do not infer documents from L2/L3.
+1. 重新评估方案风险。每项 `TD -> SR` 写清设计怎样支撑系统需求。
+2. 采用的技术规范写精确版本；代码示例/基线写路径和 commit/SHA。
+3. 只展开实际适用的模块、契约、事件、持久化、权限/租户、事务/并发、兼容、迁移和回滚决定。
+4. 新模块/新系统建立完整公共枚举、状态、字段、错误、权限、配置、事件和映射字典；其他场景只写变更字典，未改项引用代码源。
+5. 公共契约、数据、安全、租户、兼容或回滚决定无法推导时，一次集中询问；不得自行决定或复制冲突的历史代码。
+6. 使用 `VAL -> SR` 映射可观察断言。运行 `node "$PMO_ROOT/tools/check-lean-document.mjs" --document <path>`，检查通过且 Tech Lead 确认后返回。

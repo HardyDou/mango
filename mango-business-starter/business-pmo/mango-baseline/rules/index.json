@@ -1,5 +1,5 @@
 {
-  "version": 14,
+  "version": 15,
   "always": [],
   "rules": {
     "agent.pm": {
@@ -80,7 +80,7 @@
     },
     "process.deliveryAssurance": {
       "path": "rules/11-delivery-assurance.md",
-      "reason": "SIMPLE、STANDARD、FULL 三档交付模式、默认 worktree 隔离、单文件标准记录和事实驱动验证治理"
+      "reason": "L0-L5 交付等级、默认 worktree 隔离、L2-L4 精简单文档、L5 四文档和事实驱动验证治理"
     },
     "backend.code": {
       "path": "rules/backend/01-code.md",
@@ -357,31 +357,38 @@
       "keywords": ["开发环境", "本地环境", "启动", "端口", "工作区", "worktree", "workspace", "mango workspace", "mango dev", "mango frontend", "dev-workspace", "前后端", "数据库名称", "清理", "workspace release", "keep-db"],
       "include": ["process.devEnvironment", "process.aiDeliveryQuality"]
     },
+    "leanDeliveryDocument": {
+      "roles": ["pm", "tech-lead", "dev", "qa", "pmo"],
+      "phases": ["requirement", "design", "develop", "verify", "governance"],
+      "paths": ["**/delivery-l2*.md", "**/delivery-l3*.md", "**/delivery-l4*.md", "mango-pmo/templates/delivery-l2.md", "mango-pmo/templates/delivery-l3.md", "mango-pmo/templates/delivery-l4.md", "mango-pmo/contracts/lean-documents.json"],
+      "keywords": ["L2 文档", "L3 文档", "L4 文档", "精简单文档", "A4 等效内容", "直接追踪"],
+      "include": ["agent.pm", "agent.techLead", "product.documentLifecycle", "process.deliveryAssurance", "process.testCaseAutomation"]
+    },
     "businessRequirementsDocument": {
       "roles": ["pm", "tech-lead", "pmo"],
       "phases": ["requirement", "governance"],
-      "paths": ["**/business-requirements*.md", "**/brd-*.md", "mango-pmo/templates/business-requirements.md", "mango-pmo/contracts/business-requirements.json"],
+      "paths": ["**/business-requirements*.md", "**/brd-*.md", "mango-pmo/templates/l5-business-requirements.md", "mango-pmo/contracts/lean-documents.json"],
       "keywords": ["业务需求说明书", "业务需求文档", "BRD", "business requirements"],
       "include": ["agent.businessRequirements", "product.businessRequirements", "product.documentLifecycle", "process.testCaseAutomation"]
     },
     "systemRequirementsDocument": {
       "roles": ["pm", "tech-lead", "qa", "pmo"],
       "phases": ["requirement", "design", "verify", "governance"],
-      "paths": ["**/system-requirements*.md", "**/srs-*.md", "mango-pmo/templates/system-requirements.md", "mango-pmo/contracts/system-requirements.json"],
+      "paths": ["**/system-requirements*.md", "**/srs-*.md", "mango-pmo/templates/l5-system-requirements.md", "mango-pmo/contracts/lean-documents.json"],
       "keywords": ["系统需求规格说明书", "系统需求文档", "SRS", "system requirements specification"],
       "include": ["agent.systemRequirements", "product.systemRequirements", "product.documentLifecycle", "process.testCaseAutomation"]
     },
     "technicalDesignDocument": {
       "roles": ["tech-lead", "dev", "qa", "pmo"],
       "phases": ["design", "develop", "verify", "governance"],
-      "paths": ["**/technical-design*.md", "**/tdd-*.md", "mango-pmo/templates/technical-design.md", "mango-pmo/contracts/technical-design.json"],
+      "paths": ["**/technical-design*.md", "**/tdd-*.md", "mango-pmo/templates/l5-technical-design.md", "mango-pmo/contracts/lean-documents.json"],
       "keywords": ["技术设计文档", "技术设计说明书", "TDD", "technical design document"],
       "include": ["agent.technicalDesign", "product.technicalDesign", "product.documentLifecycle", "process.testCaseAutomation"]
     },
     "implementationPlanDocument": {
       "roles": ["pm", "tech-lead", "dev", "qa", "pmo"],
       "phases": ["design", "develop", "verify", "release", "governance"],
-      "paths": ["**/implementation-plan*.md", "**/plan-*.md", "mango-pmo/templates/implementation-plan.md", "mango-pmo/contracts/implementation-plan.json"],
+      "paths": ["**/implementation-plan*.md", "**/plan-*.md", "mango-pmo/templates/l5-implementation-plan.md", "mango-pmo/contracts/lean-documents.json"],
       "keywords": ["实施计划", "交付实施计划", "implementation plan"],
       "include": ["agent.implementationPlan", "product.implementationPlan", "product.documentLifecycle", "process.testCaseAutomation", "process.aiDeliveryQuality"]
     },
