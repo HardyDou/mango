@@ -59,10 +59,6 @@ test('合同固定 L0/L1 无文档、L2-L4 单文档和 L5 四文档', () => {
   );
   assert.equal(contract.levels.L5.artifactPolicy, 'INDEPENDENT_DOCUMENTS');
   assert.equal(contract.levels.L5.templates.length, 4);
-  assert.deepEqual(
-    ['L0', 'L1', 'L2', 'L3', 'L4', 'L5'].map(level => contract.levels[level].documentVersion),
-    ['直接做', '直接做', '一页纸', '标准版', '详细版', '四文档'],
-  );
 });
 
 test('未知文档类型和错误等级被阻断', () => {

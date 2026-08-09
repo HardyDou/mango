@@ -28,7 +28,6 @@
 | 验收证据检查 | `acceptance-evidence-check.mjs` | 校验验收证据表和弱表达。 |
 | 精简文档门禁 | `check-lean-document.mjs` | 校验 L2-L4 单文档及 L5 四文档的结构、页数、引用、追踪和空话。 |
 | 空白上下文路由 | `resolve-lean-document-policy.mjs` | 根据 L0-L5、强制 L5 事实和关键未知项确定文档形态或集中 ASK。 |
-| 中文批量选择 | `mango pmo 选择` | 同一界面选择文档版本、勾选 M01-M16，并用一次回车确认。 |
 | 历史文档读取 | `check-document-set.mjs` | 只读取和校验已锁定的旧 BRD、SRS、TDD、实施计划。 |
 | baseline 快照 | `mango-baseline/rules`、`agents`、`templates` | 业务仓脱离 Mango 源码后仍能读取规则。 |
 | baseline 同步 | `mango pmo sync` | 从锁定 PMO bundle 同步 baseline、Risk / Verification 区段、入口和兼容脚本。 |
@@ -81,12 +80,6 @@ node business-pmo/mango-baseline/tools/pmo-preflight.mjs \
 ```bash
 node business-pmo/mango-baseline/tools/check-lean-document.mjs \
   --document business-docs/delivery/task-17.md
-```
-
-查看中文批量选择器：
-
-```bash
-mango pmo 选择 --帮助
 ```
 
 交付台账检查：
@@ -164,7 +157,7 @@ node business-pmo/mango-baseline/tools/acceptance-evidence-check.mjs \
 
 ## 10. 快速开始
 1. 正式变更前执行 preflight，选择 Code baselines；只在边界不明确时查阅具体 Reference。
-2. 在同一界面选择文档版本、勾选 M01-M16 并一次确认；按“直接做/一页纸/标准版/详细版/四文档”创建对应文档，并用 `check-lean-document.mjs` 检查。
+2. 按 L0-L5 创建无文档、L2-L4 单文档或 L5 四文档，并用 `check-lean-document.mjs` 检查。
 3. 开发和验证过程中把证据写入 `business-docs/evidence`。
 4. 验证阶段执行 `acceptance-evidence-check.mjs`，避免只写“接口 200”“页面正常”。
 5. 交付前执行 `delivery-contract-check.mjs --mode verify`，确认台账状态为 `DONE` 或有明确 `EXCEPTION`。

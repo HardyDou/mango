@@ -80,7 +80,7 @@
     },
     "process.deliveryAssurance": {
       "path": "rules/11-delivery-assurance.md",
-      "reason": "L0-L5 内部等级、中文文档版本、默认 worktree 隔离、M01-M16 一次确认和事实驱动验证治理"
+      "reason": "L0-L5 交付等级、默认 worktree 隔离、L2-L4 精简单文档、L5 四文档和事实驱动验证治理"
     },
     "backend.code": {
       "path": "rules/backend/01-code.md",
@@ -360,8 +360,8 @@
     "leanDeliveryDocument": {
       "roles": ["pm", "tech-lead", "dev", "qa", "pmo"],
       "phases": ["requirement", "design", "develop", "verify", "governance"],
-      "paths": ["**/delivery-l2*.md", "**/delivery-l3*.md", "**/delivery-l4*.md", "mango-pmo/templates/delivery-l2.md", "mango-pmo/templates/delivery-l3.md", "mango-pmo/templates/delivery-l4.md", "mango-pmo/contracts/lean-documents.json", "mango-pmo/contracts/delivery-assurance.json", "mango-pmo/tools/select-delivery-assurance.mjs"],
-      "keywords": ["L2 文档", "L3 文档", "L4 文档", "直接做", "一页纸", "标准版", "详细版", "四文档", "M01-M16", "批量选择", "精简单文档", "A4 等效内容", "直接追踪"],
+      "paths": ["**/delivery-l2*.md", "**/delivery-l3*.md", "**/delivery-l4*.md", "mango-pmo/templates/delivery-l2.md", "mango-pmo/templates/delivery-l3.md", "mango-pmo/templates/delivery-l4.md", "mango-pmo/contracts/lean-documents.json"],
+      "keywords": ["L2 文档", "L3 文档", "L4 文档", "精简单文档", "A4 等效内容", "直接追踪"],
       "include": ["agent.pm", "agent.techLead", "product.documentLifecycle", "process.deliveryAssurance", "process.testCaseAutomation"]
     },
     "businessRequirementsDocument": {

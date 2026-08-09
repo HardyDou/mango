@@ -283,25 +283,11 @@
       "expect": { "skill": "mango-design-delivery-assurance", "action": "ASK", "requiredAssertions": ["do not trust a claim-only baseline", "require requirement and solution risk facts", "resolve delivery mode and workspace decision", "bind the baseline to goal and scope"], "forbid": ["NEXT", "fabricated decision evidence"] }
     },
     {
-      "id": "delivery-assurance-batch-selector-boundary",
-      "kind": "boundary",
-      "prompt": "The task facts resolve to L3. Recommend M01=REUSE, M03, M04, M05, M09 and M12, then let me confirm the document version and all M01-M16 choices.",
-      "context": { "taskFactsKnown": true, "finalLevel": "L3", "currentTaskWorktree": true },
-      "expect": { "skill": "mango-design-delivery-assurance", "action": "SELECT_BATCH", "requiredAssertions": ["show 标准版 with its three-page description", "use one terminal selector for document version and M01-M16", "treat checked boxes as adopted", "confirm everything with one Enter", "keep REUSE as the exact M01 machine value"], "forbid": ["sixteen sequential questions", "启用 / 不启用", "separate document-version questionnaire"] }
-    },
-    {
-      "id": "delivery-assurance-ambiguous-facts-before-selector",
-      "kind": "blank-context",
-      "prompt": "做一个供应商功能，文档和措施你看着选。",
-      "context": { "roleNeedsKnown": false, "systemBoundaryKnown": false },
-      "expect": { "skill": "mango-design-delivery-assurance", "action": "ASK", "requiredAssertions": ["ask one grouped set for role needs and system boundary", "do not guess a document version", "show the batch selector only after material facts are resolved"], "forbid": ["fabricated user stories", "sixteen sequential questions"] }
-    },
-    {
       "id": "delivery-assurance-next",
       "kind": "next",
-      "prompt": "Fresh-session trusted fixture: task goal and scope are recorded in assurance report=business-docs/evidence/assurance/task-17.json; requirement impact=L3, solution risk=L3, final risk=L3; the single-batch selector result records documentVersion=标准版, deliveryMode=L3 and checked measures M01=CREATE, M07=ENABLE, M09=ENABLE, M14=ENABLE; M02-M06, M08, M10-M13 and M15-M16 are absent from the human summary and retained only as stable machine values; no main exception, destructive database action or release scope exists; the normalized goal, scope, facts and user-confirmed decisions match baselineId=sha256:abc123 and status=RESOLVED. Route to the selected governed work.",
-      "context": { "baselineStatus": "RESOLVED", "deliveryMode": "L3", "documentVersion": "标准版", "batchConfirmed": true, "releaseScope": false },
-      "expect": { "skill": "mango-design-delivery-assurance", "action": "NEXT", "requiredAssertions": ["preserve 标准版 as the resolved L3 one-document mode", "only route checked measures M01, M07, M09 and M14", "do not add unrelated product documents or skipped-measure prose", "route adopted capabilities to matching specialized Skills"] }
+      "prompt": "Fresh-session trusted fixture: task goal and scope are recorded in assurance report=business-docs/evidence/assurance/task-17.json; requirement impact=L3, solution risk=L3, final risk=L3, delivery mode=L3; repository policy records M01=CREATE and facts activate M07, M09 and M14; no main exception, destructive database action or release scope exists; the normalized goal, scope, facts and decisions match baselineId=sha256:abc123 and status=RESOLVED. Route to the selected governed work.",
+      "context": { "baselineStatus": "RESOLVED", "deliveryMode": "L3", "releaseScope": false },
+      "expect": { "skill": "mango-design-delivery-assurance", "action": "NEXT", "requiredAssertions": ["preserve the resolved L3 one-document mode", "do not add unrelated product documents", "route active capabilities to matching specialized Skills"] }
     }
   ]
 }
