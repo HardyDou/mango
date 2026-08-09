@@ -6,6 +6,7 @@
 
 - 精确依赖 `@mango/pmo@1.3.13`，向业务项目投影回退后的 PMO 规则、合同、Agent、Skill 和检查工具。
 - 恢复 CLI 包内 `templates/business-module` 作为 `mango module add` 的生成来源，移除从已安装 PMO 包解析 canonical code baseline 的路径。
+- 将模块元数据模板保存为 `module.properties.template` 并在生成时输出 `module.properties`，避免模板占位符被仓库架构扫描误判，生成项目运行时行为不变。
 - 撤回 PMO 1.3.10 至 1.3.12 的精简文档、批量选择器和 worktree 完整性相关 CLI 合同与测试入口。
 
 ### Upgrade Notes

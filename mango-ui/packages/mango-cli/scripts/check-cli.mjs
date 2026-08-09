@@ -1130,6 +1130,7 @@ try {
     'backend/modules/contract/contract-core/src/main/java/com/example/custom/contract/core/service/ISealService.java',
     'backend/modules/contract/contract-core/src/main/java/com/example/custom/contract/core/service/impl/SealService.java',
     'backend/modules/contract/contract-starter/src/main/java/com/example/custom/contract/starter/controller/ContractController.java',
+    'backend/modules/contract/contract-starter/src/main/resources/META-INF/mango/module.properties',
     'backend/modules/contract/contract-starter/src/main/resources/META-INF/mango/resources/contract-common-menu.json',
     'backend/modules/contract/contract-starter-remote/src/main/java/com/example/custom/contract/starter/remote/ContractFeignClient.java',
     'frontend/packages/contract-api/src/api.ts',
@@ -1213,6 +1214,17 @@ try {
   }
   if (!moduleApplicationYml.includes('        contract:\n          enabled: true')) {
     throw new Error('module add did not enable business Flyway migration');
+  }
+  const modulePropertiesPath = join(
+    customRoot,
+    'backend/modules/contract/contract-starter/src/main/resources/META-INF/mango/module.properties',
+  );
+  const moduleProperties = readFileSync(modulePropertiesPath, 'utf8');
+  if (moduleProperties !== 'module-name=contract\nmodule-path=contract\n') {
+    throw new Error(`module add generated invalid module metadata:\n${moduleProperties}`);
+  }
+  if (existsSync(`${modulePropertiesPath}.template`)) {
+    throw new Error('module add must render module.properties.template as module.properties');
   }
   const moduleServiceInterface = readFileSync(
     join(

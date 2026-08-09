@@ -487,7 +487,7 @@ CLI 绝不自动安装 Playwright、下载 Chromium或修改项目。缺少依�
 | `scripts/check-release-versions.mjs`         | 版本锁自测                                      | 可加 registry 检查已发布包                                                                                                 |
 | `templates/business-module`                  | 随 CLI 发布的业务模块模板                       | 后端目录必须与 `mango-business-starter` canonical 模板完全一致                                                             |
 
-已发布 CLI 直接从包内 `templates/business-module` 执行 `mango module add`，不依赖 Mango 源仓路径。后端镜像以 `mango-business-starter` 为 canonical 源，发布和测试前执行 `pnpm --filter @mango/cli run check:business-module-template`；路径集合或任一文件 hash 不一致时必须先同步模板。
+已发布 CLI 直接从包内 `templates/business-module` 执行 `mango module add`，不依赖 Mango 源仓路径。后端镜像以 `mango-business-starter` 为 canonical 源，发布和测试前执行 `pnpm --filter @mango/cli run check:business-module-template`；路径集合或任一文件 hash 不一致时必须先同步模板。模板源码中的 `module.properties.template` 会生成真实的 `module.properties`，避免源码占位符被仓库架构扫描误判；生成项目的模块发现、菜单、权限、租户和运行时行为不变。
 
 ## 8. 数据与初始化
 
@@ -624,7 +624,7 @@ Issue #690 覆盖 CLI、Maven plugin、Bootstrap/runtime、Resource、BSQL、Boo
 
 ### 1.0.103 发布影响
 
-`@mango/cli@1.0.103` 精确依赖 `@mango/pmo@1.3.13`，撤回 PMO 1.3.10 至 1.3.12 的治理升级，并恢复 CLI 包内 `templates/business-module` 作为 `mango module add` 的生成来源。已发布旧版本保持不可变，Mango Maven `1.0.35` 与其它业务 npm 坐标不降级。
+`@mango/cli@1.0.103` 精确依赖 `@mango/pmo@1.3.13`，撤回 PMO 1.3.10 至 1.3.12 的治理升级，并恢复 CLI 包内 `templates/business-module` 作为 `mango module add` 的生成来源。模板源码以 `module.properties.template` 保存占位符，生成项目仍得到真实的 `module.properties`。已发布旧版本保持不可变，Mango Maven `1.0.35` 与其它业务 npm 坐标不降级。
 
 业务项目先执行 `mango pmo upgrade --project-dir . --to 1.3.13 --dry-run`，确认 code baseline、精简文档、批量选择器和 worktree 门禁投影将被移除，再执行实际升级与 locked check。已有业务代码不会被自动重写。
 

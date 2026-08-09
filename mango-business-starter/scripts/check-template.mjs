@@ -86,7 +86,7 @@ const requiredFiles = [
   "backend/modules/{{moduleKebab}}/{{moduleKebab}}-core/src/main/resources/db/migration/{{moduleKebab}}/V1__init_{{moduleKebab}}.sql",
   "backend/modules/{{moduleKebab}}/{{moduleKebab}}-starter/pom.xml",
   "backend/modules/{{moduleKebab}}/{{moduleKebab}}-starter/src/main/java/{{basePackagePath}}/{{modulePackage}}/starter/controller/{{modulePascal}}Controller.java",
-  "backend/modules/{{moduleKebab}}/{{moduleKebab}}-starter/src/main/resources/META-INF/mango/module.properties",
+  "backend/modules/{{moduleKebab}}/{{moduleKebab}}-starter/src/main/resources/META-INF/mango/module.properties.template",
   "backend/modules/{{moduleKebab}}/{{moduleKebab}}-starter/src/main/resources/META-INF/mango/resources/{{moduleKebab}}-common-menu.json",
   "backend/modules/{{moduleKebab}}/{{moduleKebab}}-starter-remote/pom.xml",
   "backend/modules/{{moduleKebab}}/{{moduleKebab}}-starter-remote/src/main/java/{{basePackagePath}}/{{modulePackage}}/starter/remote/{{modulePascal}}FeignClient.java",
@@ -194,7 +194,7 @@ const contentChecks = [
     patterns: ["extends PageQuery", "@QueryField(type = QueryType.LIKE)"],
   },
   {
-    file: "backend/modules/{{moduleKebab}}/{{moduleKebab}}-starter/src/main/resources/META-INF/mango/module.properties",
+    file: "backend/modules/{{moduleKebab}}/{{moduleKebab}}-starter/src/main/resources/META-INF/mango/module.properties.template",
     patterns: ["module-name={{moduleKebab}}", "module-path={{moduleKebab}}"],
   },
   {

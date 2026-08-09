@@ -148,10 +148,13 @@ mango dev start
 | `application.yml`        | `<module>.enabled`                       | `true`                                 | 业务 Flyway 模块启用开关 | 后端启动时纳入业务模块 migration | `updateBackendBusinessFlywayConfig` |
 | typed Resource declaration | `appCode`                              | `internal-admin`                       | 菜单权限归属应用         | Bootstrap 资源同步时归入内部管理端 | `META-INF/mango/resources/*.json`   |
 | typed Resource declaration | `moduleCode`                           | `{{moduleKebab}}`                      | 菜单权限归属模块         | 菜单、权限唯一归属               | `META-INF/mango/resources/*.json`   |
-| `module.properties`      | `module-name`                            | `{{moduleKebab}}`                      | Mango 模块名             | 模块资源发现                     | `module.properties`                 |
-| `module.properties`      | `module-path`                            | `{{moduleKebab}}`                      | Mango 模块路径           | 模块资源发现                     | `module.properties`                 |
+| `module.properties`      | `module-name`                            | `{{moduleKebab}}`                      | Mango 模块名             | 模块资源发现                     | `module.properties.template`        |
+| `module.properties`      | `module-path`                            | `{{moduleKebab}}`                      | Mango 模块路径           | 模块资源发现                     | `module.properties.template`        |
 
 生成后把模板默认字段改成真实业务字段，避免只保留 `name` 示例字段交付。
+
+模板源码使用 `module.properties.template`，CLI 生成时会移除 `.template` 后缀并输出真实的
+`META-INF/mango/module.properties`；生成后的模块发现、菜单、权限、租户和运行时行为不变。
 
 ## 7. API 与扩展
 

@@ -8,6 +8,7 @@ Status: `PENDING`. 本批次以新的不可变版本撤回 PR #737、#742、#745
 
 - 恢复 PR #737 合并前的 PMO 开发、文档与交付语义，移除 canonical code baseline、历史审批快照放宽、Issue 强制证据闭环、L0-L5 精简文档、中文批量选择器和 worktree 四阶段完整性门禁。
 - CLI 恢复从自身 `templates/business-module` 生成业务模块，不再从已安装 PMO 包解析 code baseline。
+- 业务模块元数据模板改用 `.template` 源文件并继续生成真实 `module.properties`，避免模板占位符被仓库 Java 架构门禁当作模块身份扫描，生成结果与运行时行为不变。
 - PMO 合同 schema revision 保持 `1`，当前版本前移到 1.3.13；Mango Maven `1.0.35` 与全部无关业务 npm 坐标保持不变。
 
 ### Versions
