@@ -52,21 +52,21 @@ function readFixture(relativePath) {
   return fs.readFileSync(path.join(FIXTURES, relativePath), "utf8");
 }
 
-function hydrateLifecycle(levels = {}, pmoVersion = "1.3.11") {
+function hydrateLifecycle(levels = {}, pmoVersion = "1.3.10") {
   const brd = readFixture("valid/business-requirements.md")
     .replace("riskLevel: L2", `riskLevel: ${levels.brd ?? "L2"}`)
-    .replace("pmoVersion: 1.3.11", `pmoVersion: ${pmoVersion}`);
+    .replace("pmoVersion: 1.3.10", `pmoVersion: ${pmoVersion}`);
   const srs = readFixture("valid/system-requirements.md")
     .replace("riskLevel: L2", `riskLevel: ${levels.srs ?? "L2"}`)
-    .replace("pmoVersion: 1.3.11", `pmoVersion: ${pmoVersion}`)
+    .replace("pmoVersion: 1.3.10", `pmoVersion: ${pmoVersion}`)
     .replace("0".repeat(64), sha256(brd));
   const tdd = readFixture("valid/technical-design.md")
     .replace("riskLevel: L2", `riskLevel: ${levels.tdd ?? "L2"}`)
-    .replace("pmoVersion: 1.3.11", `pmoVersion: ${pmoVersion}`)
+    .replace("pmoVersion: 1.3.10", `pmoVersion: ${pmoVersion}`)
     .replace("0".repeat(64), sha256(srs));
   const plan = readFixture("valid/implementation-plan.md")
     .replace("riskLevel: L2", `riskLevel: ${levels.plan ?? "L2"}`)
-    .replace("pmoVersion: 1.3.11", `pmoVersion: ${pmoVersion}`)
+    .replace("pmoVersion: 1.3.10", `pmoVersion: ${pmoVersion}`)
     .replace("0".repeat(64), sha256(tdd));
   return {
     brd: {
@@ -101,13 +101,6 @@ function writeHydratedDocumentSet(t, { pmoVersion } = {}) {
     fs.writeFileSync(path.join(root, `${key}.md`), document.source);
   }
   return root;
-}
-
-function removeReferenceBaselineSection(source) {
-  return source.replace(
-    /\n## 0\. 参考资料与代码基线\n[\s\S]*?(?=\n## 1\.)/u,
-    "",
-  );
 }
 
 for (const stage of STAGES) {
@@ -154,7 +147,7 @@ test("文档 pmoVersion 必须与版本化合同一致", () => {
     "mango-pmo/contracts/business-requirements.json",
   );
   const source = readFixture("valid/business-requirements.md").replace(
-    "pmoVersion: 1.3.11",
+    "pmoVersion: 1.3.10",
     "pmoVersion: 9.9.9",
   );
   const result = validateDocument(source, contract);
@@ -162,12 +155,12 @@ test("文档 pmoVersion 必须与版本化合同一致", () => {
     result.findings.some(
       (finding) =>
         finding.ruleId === "BRD-META-001" &&
-        finding.message.includes("pmoVersion 必须为 1.3.11"),
+        finding.message.includes("pmoVersion 必须为 1.3.10"),
     ),
   );
   const historical = validateDocument(
     readFixture("valid/business-requirements.md").replace(
-      "pmoVersion: 1.3.11",
+      "pmoVersion: 1.3.10",
       "pmoVersion: 1.3.6",
     ),
     contract,
@@ -176,7 +169,7 @@ test("文档 pmoVersion 必须与版本化合同一致", () => {
     historical.findings.some(
       (finding) =>
         finding.ruleId === "BRD-META-001" &&
-        finding.message.includes("pmoVersion 必须为 1.3.11"),
+        finding.message.includes("pmoVersion 必须为 1.3.10"),
     ),
   );
 });
@@ -432,64 +425,6 @@ test("业务文档集合允许合同声明的历史 PMO 版本", (t) => {
   );
 });
 
-test("哈希锁定的历史文档不追溯应用当前新增章节合同", (t) => {
-  const root = writeHydratedDocumentSet(t, { pmoVersion: "1.3.10" });
-  const tddPath = path.join(root, "tdd.md");
-  const planPath = path.join(root, "plan.md");
-  const historicalTdd = removeReferenceBaselineSection(
-    fs.readFileSync(tddPath, "utf8"),
-  );
-  const historicalPlan = removeReferenceBaselineSection(
-    fs.readFileSync(planPath, "utf8"),
-  ).replace(/^upstreamDocumentHash: .*$/mu, `upstreamDocumentHash: ${sha256(historicalTdd)}`);
-  fs.writeFileSync(tddPath, historicalTdd);
-  fs.writeFileSync(planPath, historicalPlan);
-
-  const beforePinning = checkDocumentSet(root);
-  assert.ok(
-    beforePinning.findings.some(
-      (finding) =>
-        finding.ruleId === "TDD-REF-005" &&
-        finding.message.includes("参考资料与代码基线"),
-    ),
-  );
-  assert.ok(
-    beforePinning.findings.some(
-      (finding) =>
-        finding.ruleId === "PLAN-REF-005" &&
-        finding.message.includes("参考资料与代码基线"),
-    ),
-  );
-
-  const pinned = pinHistoricalPmoVersionDocuments(root);
-  assert.equal(pinned.added.length, 4);
-  const result = checkDocumentSet(root);
-  assert.deepEqual(result.findings, []);
-  assert.equal(result.historicalPmoVersionDocuments.length, 4);
-});
-
-test("哈希锁定不放宽历史文档之间的上游摘要", (t) => {
-  const root = writeHydratedDocumentSet(t, { pmoVersion: "1.3.10" });
-  const planPath = path.join(root, "plan.md");
-  fs.writeFileSync(
-    planPath,
-    fs
-      .readFileSync(planPath, "utf8")
-      .replace(/^upstreamDocumentHash: .*$/mu, `upstreamDocumentHash: ${"f".repeat(64)}`),
-  );
-  pinHistoricalPmoVersionDocuments(root);
-
-  const result = checkDocumentSet(root);
-  assert.ok(
-    result.findings.some(
-      (finding) =>
-        finding.ruleId === "LIFE-HASH-020" &&
-        finding.file === planPath &&
-        finding.message.includes("上游摘要已失效"),
-    ),
-  );
-});
-
 test("业务文档集合拒绝合同未声明的历史 PMO 版本", (t) => {
   const root = writeHydratedDocumentSet(t, { pmoVersion: "1.3.5" });
   const pinned = pinHistoricalPmoVersionDocuments(root);
@@ -499,7 +434,7 @@ test("业务文档集合拒绝合同未声明的历史 PMO 版本", (t) => {
     result.findings.some(
       (finding) =>
         finding.ruleId === "BRD-META-001" &&
-        finding.message.includes("pmoVersion 必须为 1.3.11"),
+        finding.message.includes("pmoVersion 必须为 1.3.10"),
     ),
   );
 });
