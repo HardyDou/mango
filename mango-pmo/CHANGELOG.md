@@ -1,5 +1,30 @@
 # Mango PMO Changelog
 
+## 1.3.13 - 2026-08-09
+
+### Fixed
+
+- 撤回 PMO 1.3.10 至 1.3.12 引入且验证失败的治理升级，恢复 PR #737 合并前的开发、文档和交付语义。
+- 移除 canonical `business-module` code baseline、L0-L5 精简文档、中文批量交付选择器、Issue 强制证据闭环和 worktree 四阶段完整性门禁。
+- 恢复历史生命周期文档的完整合同复验；路径、SHA-256 和历史版本基线不再跳过当前合同结构与审批检查。
+
+### Changed
+
+- 生命周期合同前移到 PMO `1.3.13`，schema revision 保持 `1`；PMO `1.3.6` 至 `1.3.12` 文档仅可通过既有路径、SHA-256 和版本基线进入兼容检查。
+- 保留 1.3.10 至 1.3.12、对应 Tag 和 GitHub Release 的不可变发布历史，由 1.3.13 明确替代，不删除或覆盖旧制品。
+
+### Upgrade Notes
+
+1. 安装 `@mango/cli@1.0.103` 后执行 `mango pmo upgrade --project-dir . --to 1.3.13 --dry-run`。
+2. 审阅将被移除的 code baseline、精简文档、选择器和 worktree 门禁投影，再执行实际升级和 `mango pmo check --project-dir . --locked`。
+3. 已有业务代码、无关业务包和 Mango Maven 版本不回退；仅替换 PMO baseline、Skill、合同和 CLI 模板消费方式。
+
+### Verification
+
+- PMO Node 测试、文档合同测试、Skill eval 与治理意图检查。
+- `@mango/pmo` build/check、Business Starter 精确投影和 `@mango/cli` 全量测试。
+- 本地 tarball 消费者执行 PMO 升级、full 项目初始化和 CLI 自带业务模块模板生成。
+
 ## 1.3.12 - 2026-08-08
 
 ### Fixed
