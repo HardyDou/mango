@@ -16,13 +16,13 @@ const cases = [
     name: 'pmo test process governance uses an isolated worktree and loads test automation',
     args: ['--role', 'pmo', '--phase', 'governance', '--task', '完善测试用例自动化测试流程规范', '--paths', 'mango-pmo/rules/09-test-case-automation-flow.md,mango-pmo/templates/delivery-contract.md'],
     mode: 'worktree-required',
-    references: ['rules/09-test-case-automation-flow.md']
+    mustRead: ['rules/09-test-case-automation-flow.md']
   },
   {
     name: 'backend code requires worktree',
     args: ['--role', 'dev', '--phase', 'develop', '--task', '修复后端代码', '--paths', 'mango/mango-platform/mango-job/mango-job-core/src/main/java'],
     mode: 'worktree-required',
-    mustNotReference: ['rules/08-capability-docs.md']
+    mustRead: ['rules/08-capability-docs.md']
   },
   {
     name: 'frontend page requires worktree',
@@ -43,31 +43,31 @@ const cases = [
     name: 'pr review loads delivery contract',
     args: ['--role', 'dev', '--phase', 'develop', '--task', '评审 PR #151 并提交 PR 修复', '--paths', 'mango-ui/packages/mango-cli'],
     mode: 'worktree-required',
-    references: ['rules/01-delivery-contract.md']
+    mustRead: ['rules/01-delivery-contract.md']
   },
   {
     name: 'module README change loads capability docs',
     args: ['--role', 'dev', '--phase', 'develop', '--task', '更新 Job 模块 README 能力说明', '--paths', 'mango/mango-platform/mango-job/README.md'],
     mode: 'worktree-required',
-    references: ['rules/08-capability-docs.md', 'rules/06-document-assets.md']
+    mustRead: ['rules/08-capability-docs.md', 'rules/06-document-assets.md']
   },
   {
     name: 'capability map governance loads capability docs',
     args: ['--role', 'pmo', '--phase', 'governance', '--task', '优化 Mango 能力地图', '--paths', 'mango-docs/capabilities/README.md'],
     mode: 'worktree-required',
-    references: ['rules/08-capability-docs.md', 'rules/06-document-assets.md']
+    mustRead: ['rules/08-capability-docs.md', 'rules/06-document-assets.md']
   },
   {
     name: 'agent entry governance loads PMO docs',
     args: ['--role', 'pmo', '--phase', 'governance', '--task', '优化 Agent 入口 PMO 触发边界', '--paths', 'AGENTS.md'],
     mode: 'worktree-required',
-    references: ['agents/05-pmo-agent.md', 'rules/06-document-assets.md']
+    mustRead: ['agents/05-pmo-agent.md', 'rules/06-document-assets.md']
   },
   {
     name: 'nested src glob loads capability docs',
     args: ['--role', 'dev', '--phase', 'develop', '--task', '调整模块实现', '--paths', 'mango/mango-platform/mango-job/mango-job-core/src/main/java/com/example/Job.java'],
     mode: 'worktree-required',
-    mustNotReference: ['rules/08-capability-docs.md']
+    mustRead: ['rules/08-capability-docs.md']
   },
   {
     name: 'frontend admin module style changes require style governance checks',
@@ -76,40 +76,40 @@ const cases = [
     requiredChecks: ['pnpm admin:styles:check', 'pnpm admin:module-styles:check']
   },
   {
-    name: 'design phase keeps generic references lean',
+    name: 'design phase loads test case automation flow',
     args: ['--role', 'tech-lead', '--phase', 'design', '--task', '设计订单管理', '--paths', ''],
     mode: 'needs-human-check',
-    mustNotReference: ['rules/09-test-case-automation-flow.md']
+    mustRead: ['rules/09-test-case-automation-flow.md']
   },
   {
     name: 'current plans path loads delivery contract',
     args: ['--role', 'dev', '--phase', 'develop', '--task', '按 Sprint 计划开发', '--paths', 'mango-docs/plans/2026-07-03-plan.md'],
     mode: 'worktree-required',
-    references: ['rules/01-delivery-contract.md']
+    mustRead: ['rules/01-delivery-contract.md']
   },
   {
     name: 'current evidence path loads delivery contract',
     args: ['--role', 'dev', '--phase', 'develop', '--task', '按交付记录验证', '--paths', 'mango-docs/evidence/2026-07-03-issue-372-home-management/report.md'],
     mode: 'worktree-required',
-    references: ['rules/01-delivery-contract.md']
+    mustRead: ['rules/01-delivery-contract.md']
   },
   {
     name: 'frontend e2e task loads test case automation flow',
     args: ['--role', 'qa', '--phase', 'verify', '--task', '验证 Playwright E2E 自动化测试', '--paths', 'mango-ui/apps/mango-admin/e2e/specs/menu-management.spec.ts'],
     mode: 'worktree-required',
-    references: ['rules/09-test-case-automation-flow.md']
+    mustRead: ['rules/09-test-case-automation-flow.md']
   },
   {
     name: 'negative unchanged facts do not activate unrelated backend bundles',
     args: ['--role', 'pm', '--phase', 'requirement', '--task', '只修改内部页面按钮文案，行为、API、数据库、数据、菜单、权限都不变', '--paths', ''],
     mode: 'worktree-required',
-    mustNotReference: ['rules/backend/04-db.md', 'rules/backend/07-persistence.md', 'rules/backend/11-module-menu.md']
+    mustNotRead: ['rules/backend/04-db.md', 'rules/backend/07-persistence.md', 'rules/backend/11-module-menu.md']
   },
   {
     name: 'a changed API is not negated by later unchanged data facts',
     args: ['--role', 'dev', '--phase', 'develop', '--task', '修改 API，数据和权限不变', '--paths', ''],
     mode: 'worktree-required',
-    references: ['rules/backend/03-api.md']
+    mustRead: ['rules/backend/03-api.md']
   }
 ];
 
@@ -128,16 +128,16 @@ for (const item of cases) {
   if (output.classifiedWorkspacePolicy?.mode !== item.mode) {
     failures.push(`${item.name}: expected ${item.mode}, got ${output.classifiedWorkspacePolicy?.mode || '<missing>'}`);
   }
-  for (const expectedPath of item.references || []) {
-    const hasPath = (output.referenceDocs || []).some((entry) => entry.path === expectedPath);
+  for (const expectedPath of item.mustRead || []) {
+    const hasPath = (output.mustRead || []).some((entry) => entry.path === expectedPath);
     if (!hasPath) {
-      failures.push(`${item.name}: expected reference ${expectedPath}`);
+      failures.push(`${item.name}: expected mustRead ${expectedPath}`);
     }
   }
-  for (const unexpectedPath of item.mustNotReference || []) {
-    const hasPath = (output.referenceDocs || []).some((entry) => entry.path === unexpectedPath);
+  for (const unexpectedPath of item.mustNotRead || []) {
+    const hasPath = (output.mustRead || []).some((entry) => entry.path === unexpectedPath);
     if (hasPath) {
-      failures.push(`${item.name}: unexpected reference ${unexpectedPath}`);
+      failures.push(`${item.name}: unexpected mustRead ${unexpectedPath}`);
     }
   }
   for (const expectedCommand of item.requiredChecks || []) {

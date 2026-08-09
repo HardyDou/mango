@@ -27,10 +27,10 @@
     ],
     "fixed": {
       "documentType": "technical-design",
-      "pmoVersion": "1.3.12",
+      "pmoVersion": "1.3.13",
       "schemaRevision": "1"
     },
-    "historicalPmoVersions": ["1.3.6", "1.3.7", "1.3.8", "1.3.9", "1.3.10"]
+    "historicalPmoVersions": ["1.3.6", "1.3.7", "1.3.8", "1.3.9", "1.3.10", "1.3.11", "1.3.12"]
   },
   "localPrefixes": [
     "DEC",
@@ -58,16 +58,6 @@
     "SAC"
   ],
   "sections": [
-    {
-      "ruleId": "TDD-REF-005",
-      "title": "参考资料与代码基线",
-      "tables": [
-        {
-          "headers": ["类型", "路径或模板ID", "版本或提交", "用途", "实际采用范围"],
-          "minRows": 1
-        }
-      ]
-    },
     {
       "ruleId": "TDD-STRUCT-010",
       "title": "设计输入、约束与决策",

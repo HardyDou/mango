@@ -10,22 +10,20 @@
 
 | 能力                   | 入口                                                                                                            | 说明                                                                                                                                                |
 | ---------------------- | --------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| PMO preflight          | `tools/pmo-preflight.mjs`                                                                                       | 根据 role、phase、task、paths 输出 References、Code baselines、工作区策略和检查命令                                                                  |
+| PMO preflight          | `tools/pmo-preflight.mjs`                                                                                       | 根据 role、phase、task、paths 输出 Must read 文件                                                                                                   |
 | 交付契约检查           | `tools/delivery-contract-check.mjs`                                                                             | 校验设计说明和交付台账                                                                                                                              |
 | 验收证据检查           | `tools/acceptance-evidence-check.mjs`                                                                           | 校验验收证据表和弱表达                                                                                                                              |
 | 规则路由               | rules index JSON                                                                                                | 维护规则、角色、阶段和 bundle 映射                                                                                                                  |
 | 角色定义               | `agents/**`                                                                                                     | PM、Tech Lead、Dev、QA、PMO 的职责说明                                                                                                              |
-| 模板资产               | `templates/**`                                                                                                  | L2-L4 精简单文档、L5 四文档、交付契约和验收证据模板                                                                                                 |
-| 交付等级与批量选择     | `rules/11-delivery-assurance.md`、`contracts/delivery-assurance.json`、`tools/select-delivery-assurance.mjs`、`skills/mango-design-delivery-assurance` | 自动隔离工作区；用“直接做/一页纸/标准版/详细版/四文档”和 M01-M16 一次确认；发布独立                                           |
-| 文档生命周期           | `contracts/lean-documents.json`、`tools/check-lean-document.mjs`                                                 | 校验页数、结构、直接追踪、规范/代码引用和无效填充；旧阶段合同只用于历史兼容                                                                         |
-| 文档集合门禁           | `tools/check-document-set.mjs`                                                                                  | 扫描业务文档目录，阻断漏类型、未知类型、重复 ID、断链和失效摘要；路径、SHA-256 和版本均锁定的同 schema 历史文档不追溯应用当前章节合同             |
+| 模板资产               | `templates/**`                                                                                                  | PRD、详细设计、交付契约、验收证据模板                                                                                                               |
+| 交付模式               | `rules/11-delivery-assurance.md`、`contracts/delivery-assurance.json`、`skills/mango-design-delivery-assurance` | 自动隔离工作区，按 L0-L3 路由 SIMPLE、STANDARD、FULL；发布独立                                                                                      |
+| 文档生命周期           | `contracts/*.json`、`tools/check-*-requirements.mjs`                                                            | STANDARD 检查单文件，FULL 对适用 BRD、SRS、TDD、实施计划执行结构、追踪和审批门禁                                                                    |
+| 文档集合门禁           | `tools/check-document-set.mjs`                                                                                  | 扫描业务文档目录，阻断漏类型、未知类型、重复 ID、断链和失效摘要；合同声明的同 schema 历史 `pmoVersion` 必须由升级生成的路径、SHA-256 和版本基线锁定 |
 | 风险与保障基线门禁     | `tools/risk-verification.mjs`                                                                                   | 校验需求影响、方案风险、二者最大值、人工确认的 M01-M16 精确值和已启用措施证据；不补固定套餐                                                         |
 | CI 措施选择            | `tools/assurance-ci-scope.mjs`                                                                                  | 从已解析模式基线读取 M01-M16；CI 只执行事实启用且适用于 CI 的能力                                                                                   |
 | CI 影响范围分类        | `tools/classify-pmo-check-scope.mjs`                                                                            | 按 Git 改动裁剪已启用检查的 PMO、Java、投影和 README 影响范围；只缩小范围，不替用户选择措施                                                         |
 | CI 事件模式判定        | `tools/resolve-pmo-check-event-mode.mjs`                                                                        | 将需要真实 diff 的事件与终态 PR 正文编辑分流，避免使用合并后失效的 base/head 范围                                                                   |
 | 前端页面基线           | `tools/check-frontend-page-baseline.mjs`、`rules/frontend/07-admin-ui-common.md`                                 | 检查新增或修改页面的默认骨架；特殊页面可填写可复核原因后按类型或整页例外                                                                           |
-| 标准代码基线           | `code-templates/index.json`、`tools/code-baseline.mjs`、`tools/evaluate-code-baseline.mjs`                       | 为新增代码选择并渲染标准模块/包结构，校验变量、规范覆盖、Checkstyle/架构配置和生成结果                                                             |
-| Worktree 交付完整性    | `tools/check-worktree-delivery-integrity.mjs`                                                                   | 在任务开始、提交、交付和清理阶段阻断跨任务复用、部分提交、未跟踪文件、未 Push 提交和未合并清理                                                    |
 | 业务 PR 风险合同       | `contracts/delivery-assurance.json`、`templates/business-pull-request-template.md`、`tools/risk-verification.mjs` | 同一 schema 定义字段、canonical 模板、PR 正文校验和模板结构校验                                                                                    |
 | 模块架构债务预算       | `tools/check-architecture-debt-budget.mjs`                                                                      | 比较完整 Reactor 报告与 Git 基准，阻断新增、替换、跨模块迁移和预算回升，并支持按模块查询、递减及存量模块两 PR 受控首次纳管                           |
 | 专项 Agent             | `agents/*-requirements-agent.md`、`agents/technical-design-agent.md`、`agents/implementation-plan-agent.md`     | 一个生命周期模板对应一个撰写 Agent                                                                                                                  |
@@ -40,9 +38,9 @@ Skill 按实际能力命名，而不是按发布包命名：只有治理编排�
 业务项目通过 `@mango/cli` 提供的 `mango pmo ...` 命令管理 baseline。全局 CLI 只用于创建项目、历史项目升级和临时诊断：
 
 ```bash
-npm view @mango/pmo@1.3.12 version --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
-npm view @mango/cli@1.0.102 version --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
-npm install -g @mango/cli@1.0.102 --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
+npm view @mango/pmo@1.3.13 version --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
+npm view @mango/cli@1.0.103 version --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
+npm install -g @mango/cli@1.0.103 --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
 ```
 
 两个 `npm view` 都返回精确版本后再执行安装。返回 404 表示该批次仍未发布，源码仓可见不等于业务项目已经可消费。
@@ -56,8 +54,8 @@ npm install -g @mango/cli@1.0.102 --registry http://nexus.inner.yunxinbaokeji.co
 ```bash
 mango pmo status --project-dir .
 mango pmo check --project-dir .
-mango pmo upgrade --project-dir . --to 1.3.12 --dry-run
-mango pmo upgrade --project-dir . --to 1.3.12 --sync-shell
+mango pmo upgrade --project-dir . --to 1.3.13 --dry-run
+mango pmo upgrade --project-dir . --to 1.3.13 --sync-shell
 mango pmo check --project-dir . --locked
 ```
 
@@ -102,7 +100,7 @@ node business-pmo/mango-baseline/tools/pmo-preflight.mjs \
 
 | API / 扩展点                         | 输入                                                        | 输出                                                                                          |
 | ------------------------------------ | ----------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| `pmo-preflight.mjs`                  | role、phase、task、paths                                    | References、Code baselines、workspace policy、required checks                                  |
+| `pmo-preflight.mjs`                  | role、phase、task、paths                                    | Must read、workspace policy、required checks                                                  |
 | `delivery-contract-check.mjs`        | design、ledger、mode                                        | 台账覆盖和状态检查结果                                                                        |
 | `acceptance-evidence-check.mjs`      | evidence、min rows                                          | 验收证据表检查结果                                                                            |
 | `check-document-set.mjs`             | business docs root                                          | 自动发现并检查目录内生命周期文档及其上游关系                                                  |

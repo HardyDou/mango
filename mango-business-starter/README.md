@@ -8,7 +8,7 @@
 - 业务 PMO baseline：业务仓库内可独立执行的 preflight、交付契约检查、角色规则和示例台账。
 - 拓扑说明：单体和微服务模式下业务模块依赖、远程调用和菜单页面接入方式。
 
-`@mango/cli` 使用本目录的方式有边界：`mango init --preset full` 读取 CLI 包内 `templates/full`；`mango module add` 从 `@mango/pmo` 的 `code-templates/business-module` 生成，本目录只保留经过哈希检查的机械投影。
+`@mango/cli` 使用本目录的方式有边界：`mango init --preset full` 读取 CLI 包内 `templates/full`；`mango module add` 会优先读取 CLI 包内 `templates/business-module`，当前该目录不存在时回退到本目录。
 
 ## 2. 功能清单
 
@@ -39,7 +39,7 @@
 
 模板默认生成的是一个业务聚合的 CRUD 管理页面，不是完整业务系统。
 
-`@mango/pmo@1.3.12` 发布 canonical `business-module` code baseline 和 worktree 交付完整性门禁，精确依赖它的 `@mango/cli@1.0.102` 负责项目初始化、PMO 升级和 `mango module add`。不要使用 CLI `1.0.99` 生成业务模块；该不可变版本不能在安装后的 npm/pnpm 布局中定位 PMO code baseline。模板 manifest 同时定义模块/包结构、`moduleKebab` 等输入与派生变量、Mango Checkstyle 和架构规则源，以及 `XxxCode`、`Require`、typed CRUD、tenant、Mapper、资源、migration、前端导出和测试等可执行规范证据。升级只同步受管 baseline/template/Skill，不会批量重写已有业务模块；路径、SHA-256 和历史 PMO 版本均锁定的审批文档不会被当前新增章节追溯改写。
+`@mango/pmo@1.3.13` 与精确依赖它的 `@mango/cli@1.0.103` 撤回 PMO 1.3.10 至 1.3.12 引入的 canonical code baseline、精简文档、批量选择器和 worktree 完整性门禁，恢复由 CLI 自带业务模块模板生成代码及原有 PMO 流程。已发布旧版本继续作为不可变历史保留；业务项目升级到 1.3.13 后以新的 baseline、合同和 Skill 为准。
 
 `business-pmo/mango-baseline` 是 canonical `mango-pmo` 的构建投影，维护边界遵循
 [文档资产规范](../mango-pmo/rules/06-document-assets.md)。更新 PMO 后执行：
@@ -51,9 +51,7 @@ node mango-business-starter/scripts/check-template.mjs
 
 当前 PMO 投影中的架构债务预算检查器支持读取超过 1 MiB 的 Git 基线，并在完整写出 JSON 结果后再按检查结论退出。该投影修复不改变业务项目的公开 API、配置、菜单、权限、租户、页面、启动、验收和运行时行为。
 
-当前 PMO baseline 先按事实推荐文档版本，再由用户在同一中文界面选择“直接做、一页纸、标准版、详细版、四文档”，勾选 M01-M16，并用一次回车确认全部。人类摘要只列已勾选项；主工作区例外、破坏性数据库动作和外部写入仍需单独授权。发布、版本和发布恢复继续使用独立发布流程。
-
-业务项目升级到本版本 baseline 后，可在任务开始、提交、Push/PR 和清理阶段分别运行 `business-pmo/mango-baseline/tools/check-worktree-delivery-integrity.mjs` 的 `start`、`commit`、`deliver`、`cleanup` 模式。工具只读取 Git worktree、文件和 upstream 状态：发现跨任务复用、部分暂存、未跟踪文件、未 Push 提交或未合并清理时返回非零退出码，并输出具体 worktree、分支与变更计数；不会自动暂存、删除或修改其它任务文件。
+当前 PMO baseline 按风险事实选择三档交付模式：L0/L1 使用 SIMPLE 并直接实现，L2 使用 STANDARD 单文件记录，L3 使用 FULL 适用流程。M01 默认自动创建或复用隔离 worktree，只有 main 例外、模式降级、破坏性数据库动作和外部写入等事实需要人工确认；M09-M16 仍按真实观察面选择。发布、版本和发布恢复继续使用独立发布流程。
 
 delivery-assurance schema revision 5 起，PMO baseline 同时携带 canonical 业务 PR 模板。项目内 `mango pmo sync/upgrade` 在模板缺失时创建文件，在模板存在时只托管 `## Risk / Verification` 区段；`mango pmo check --locked` 会阻断缺失或漂移，区段外业务说明保持不变。该能力由 `@mango/pmo@1.3.4` 与 `@mango/cli@1.0.88` 提供。
 
@@ -150,10 +148,13 @@ mango dev start
 | `application.yml`        | `<module>.enabled`                       | `true`                                 | 业务 Flyway 模块启用开关 | 后端启动时纳入业务模块 migration | `updateBackendBusinessFlywayConfig` |
 | typed Resource declaration | `appCode`                              | `internal-admin`                       | 菜单权限归属应用         | Bootstrap 资源同步时归入内部管理端 | `META-INF/mango/resources/*.json`   |
 | typed Resource declaration | `moduleCode`                           | `{{moduleKebab}}`                      | 菜单权限归属模块         | 菜单、权限唯一归属               | `META-INF/mango/resources/*.json`   |
-| `module.properties`      | `module-name`                            | `{{moduleKebab}}`                      | Mango 模块名             | 模块资源发现                     | `module.properties`                 |
-| `module.properties`      | `module-path`                            | `{{moduleKebab}}`                      | Mango 模块路径           | 模块资源发现                     | `module.properties`                 |
+| `module.properties`      | `module-name`                            | `{{moduleKebab}}`                      | Mango 模块名             | 模块资源发现                     | `module.properties.template`        |
+| `module.properties`      | `module-path`                            | `{{moduleKebab}}`                      | Mango 模块路径           | 模块资源发现                     | `module.properties.template`        |
 
 生成后把模板默认字段改成真实业务字段，避免只保留 `name` 示例字段交付。
+
+模板源码使用 `module.properties.template`，CLI 生成时会移除 `.template` 后缀并输出真实的
+`META-INF/mango/module.properties`；生成后的模块发现、菜单、权限、租户和运行时行为不变。
 
 ## 7. API 与扩展
 

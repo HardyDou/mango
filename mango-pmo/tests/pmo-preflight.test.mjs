@@ -115,37 +115,6 @@ test('governance files no longer receive an implicit main-worktree exception', (
   }
 });
 
-test('preflight returns advisory references without a mandatory reading field', () => {
-  const root = createRepository();
-  try {
-    const result = runPreflightAs(root, 'pmo', 'governance', '调整 Agent 入口', 'AGENTS.md');
-    assert.equal(Array.isArray(result.referenceDocs), true);
-    assert.equal(Object.hasOwn(result, 'mustRead'), false);
-    assert.equal(result.referenceDocs.length <= 3, true, JSON.stringify(result.referenceDocs, null, 2));
-    const references = new Set(result.referenceDocs.map(item => item.path));
-    assert.equal(references.has('rules/product/05-document-lifecycle.md'), false);
-    assert.equal(references.has('rules/08-capability-docs.md'), false);
-    assert.equal(references.has('rules/07-mango-issue-runbook.md'), false);
-  } finally {
-    fs.rmSync(root, { recursive: true, force: true });
-  }
-});
-
-test('business module development resolves the canonical code baseline', () => {
-  const root = createRepository();
-  try {
-    const result = runPreflight(
-      root,
-      '新增订单业务模块',
-      'backend/modules/order,frontend/packages/order',
-    );
-    assert.deepEqual(result.codeBaselines.map(item => item.id), ['business-module']);
-    assert.equal(result.codeBaselines[0].root, 'code-templates/business-module');
-  } finally {
-    fs.rmSync(root, { recursive: true, force: true });
-  }
-});
-
 test('main exception is accepted only through an explicit confirmed argument', () => {
   const root = createRepository();
   try {
@@ -179,9 +148,9 @@ test('release phase loads artifact version synchronization instead of domain ver
       '发布 Maven npm CLI starter PMO 批次',
       'mango/**,mango-ui/**,mango-pmo/**',
     );
-    const references = new Set(result.referenceDocs.map(item => item.path));
-    assert.equal(references.has('rules/10-release-artifacts.md'), true);
-    assert.equal(references.has('rules/backend/09-versioning.md'), false);
+    const mustRead = new Set(result.mustRead.map(item => item.path));
+    assert.equal(mustRead.has('rules/10-release-artifacts.md'), true);
+    assert.equal(mustRead.has('rules/backend/09-versioning.md'), false);
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
   }
@@ -197,8 +166,8 @@ test('CLI and Skill release paths load artifact version synchronization during g
       '同步 CLI、Skill 与 PMO 发布矩阵',
       'mango-ui/packages/mango-cli/release-versions.json,mango-pmo/skills/**',
     );
-    const references = new Set(result.referenceDocs.map(item => item.path));
-    assert.equal(references.has('rules/10-release-artifacts.md'), true);
+    const mustRead = new Set(result.mustRead.map(item => item.path));
+    assert.equal(mustRead.has('rules/10-release-artifacts.md'), true);
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
   }
@@ -214,11 +183,11 @@ test('negative unchanged facts do not load unrelated domain bundles', () => {
       '只修改内部页面按钮文案，行为、API、数据库、数据、菜单、权限都不变',
       '',
     );
-    const references = new Set(result.referenceDocs.map(item => item.path));
-    assert.equal(references.has('rules/11-delivery-assurance.md'), true);
-    assert.equal(references.has('rules/backend/04-db.md'), false);
-    assert.equal(references.has('rules/backend/07-persistence.md'), false);
-    assert.equal(references.has('rules/backend/11-module-menu.md'), false);
+    const mustRead = new Set(result.mustRead.map(item => item.path));
+    assert.equal(mustRead.has('rules/11-delivery-assurance.md'), true);
+    assert.equal(mustRead.has('rules/backend/04-db.md'), false);
+    assert.equal(mustRead.has('rules/backend/07-persistence.md'), false);
+    assert.equal(mustRead.has('rules/backend/11-module-menu.md'), false);
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
   }
@@ -228,8 +197,8 @@ test('an API change before a comma is not negated by later unchanged facts', () 
   const root = createRepository();
   try {
     const result = runPreflightAs(root, 'dev', 'develop', '修改 API，数据和权限不变', '');
-    const references = new Set(result.referenceDocs.map(item => item.path));
-    assert.equal(references.has('rules/backend/03-api.md'), true);
+    const mustRead = new Set(result.mustRead.map(item => item.path));
+    assert.equal(mustRead.has('rules/backend/03-api.md'), true);
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
   }

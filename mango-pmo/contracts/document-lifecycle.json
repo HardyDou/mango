@@ -1,14 +1,14 @@
 {
   "contractSchema": 1,
   "contractId": "document-lifecycle",
-  "schemaRevision": 6,
+  "schemaRevision": 5,
   "ruleSource": "mango-pmo/rules/product/05-document-lifecycle.md",
   "rules": {
-    "levelRoute": {"ruleId": "LIFE-001"},
-    "directTrace": {"ruleId": "LIFE-002"},
-    "action": {"ruleId": "LIFE-003"},
-    "historicalCompatibility": {"ruleId": "LIFE-004"},
-    "handoffOwnership": {"ruleId": "LIFE-005"}
+    "risk": {"ruleId": "LIFE-RISK-001"},
+    "order": {"ruleId": "LIFE-ORDER-010"},
+    "hash": {"ruleId": "LIFE-HASH-020"},
+    "trace": {"ruleId": "LIFE-TRACE-030"},
+    "gate": {"ruleId": "LIFE-GATE-040"}
   },
   "stages": [
     {"key": "brd", "documentType": "business-requirements", "contract": "mango-pmo/contracts/business-requirements.json"},
@@ -16,25 +16,9 @@
     {"key": "tdd", "documentType": "technical-design", "contract": "mango-pmo/contracts/technical-design.json"},
     {"key": "plan", "documentType": "implementation-plan", "contract": "mango-pmo/contracts/implementation-plan.json"}
   ],
-  "stagesAreLegacy": true,
-  "riskLevels": ["L0", "L1", "L2", "L3", "L4", "L5"],
-  "deliveryModes": ["SIMPLE", "L2", "L3", "L4", "L5"],
-  "riskToMode": {"L0": "SIMPLE", "L1": "SIMPLE", "L2": "L2", "L3": "L3", "L4": "L4", "L5": "L5"},
-  "currentDocumentContract": "mango-pmo/contracts/lean-documents.json",
-  "currentArtifacts": {
-    "L0": [],
-    "L1": [],
-    "L2": ["mango-pmo/templates/delivery-l2.md"],
-    "L3": ["mango-pmo/templates/delivery-l3.md"],
-    "L4": ["mango-pmo/templates/delivery-l4.md"],
-    "L5": [
-      "mango-pmo/templates/l5-business-requirements.md",
-      "mango-pmo/templates/l5-system-requirements.md",
-      "mango-pmo/templates/l5-technical-design.md",
-      "mango-pmo/templates/l5-implementation-plan.md"
-    ]
-  },
-  "legacyStageContracts": true,
+  "riskLevels": ["L0", "L1", "L2", "L3"],
+  "deliveryModes": ["SIMPLE", "STANDARD", "FULL"],
+  "riskToMode": {"L0": "SIMPLE", "L1": "SIMPLE", "L2": "STANDARD", "L3": "FULL"},
   "applicabilityEvidence": {
     "requiredForExplicitStageReduction": true,
     "mustBeExistingRegularFile": true,

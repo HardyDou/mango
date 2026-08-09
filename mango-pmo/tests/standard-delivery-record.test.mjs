@@ -1,26 +1,28 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
+import path from 'node:path';
 
 import { validateStandardDeliveryRecord } from '../tools/check-standard-delivery-record.mjs';
 
-const pmoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const lifecycle = JSON.parse(fs.readFileSync(path.join(pmoRoot, 'contracts/document-lifecycle.json'), 'utf8'));
-const template = fs.readFileSync(path.join(pmoRoot, 'templates/standard-delivery-record.md'), 'utf8');
-const historicalRecord = template
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const template = fs.readFileSync(path.join(root, 'templates/standard-delivery-record.md'), 'utf8');
+const valid = template
   .replace('- 任务 ID：', '- 任务 ID：TASK-17')
   .replace('- 需求影响：L2 -', '- 需求影响：L2 - API failure semantics change')
   .replace('- 方案风险：L2 -', '- 方案风险：L2 - shared persistence update with reversible migration')
   .replace('- 工作区决策：CREATE / REUSE / MAIN_EXCEPTION', '- 工作区决策：CREATE');
 
-test('历史 STANDARD 记录仍可由旧检查器读取', () => {
-  assert.deepEqual(validateStandardDeliveryRecord(historicalRecord).failures, []);
-  assert.equal(lifecycle.stagesAreLegacy, true);
+test('complete STANDARD record passes', () => {
+  assert.deepEqual(validateStandardDeliveryRecord(valid).failures, []);
 });
 
-test('当前 L2 路由到精简一页模板而不是历史 STANDARD 模板', () => {
-  assert.deepEqual(lifecycle.currentArtifacts.L2, ['mango-pmo/templates/delivery-l2.md']);
-  assert.equal(lifecycle.currentArtifacts.L2.includes('mango-pmo/templates/standard-delivery-record.md'), false);
+test('missing observable requirements and evidence mapping fail', () => {
+  const invalid = valid
+    .replace('## 3. 可观察系统要求', '## removed')
+    .replace('| 要求 ID | 验证方式 | 命令或步骤 | 结果 | 证据 |', '| removed |');
+  const failures = validateStandardDeliveryRecord(invalid).failures.join('\n');
+  assert.match(failures, /可观察系统要求/);
+  assert.match(failures, /acceptance mapping/);
 });

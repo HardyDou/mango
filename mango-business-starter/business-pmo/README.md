@@ -9,11 +9,10 @@
 |-------------|------|
 | `mango-baseline` | Mango PMO baseline 快照，包含规则、Agent、工具和模板 |
 | `mango-baseline/rules/index.json` | preflight 路由索引 |
-| `mango-baseline/tools/pmo-preflight.mjs` | 按 role、phase、task、paths 输出 References 与 Code baselines |
+| `mango-baseline/tools/pmo-preflight.mjs` | 按 role、phase、task、paths 输出 Must read |
 | `mango-baseline/tools/delivery-contract-check.mjs` | 校验设计和交付台账 |
 | `mango-baseline/tools/acceptance-evidence-check.mjs` | 校验验收证据表 |
-| `mango-baseline/tools/check-lean-document.mjs` | 校验当前 L2-L5 精简文档、直接追踪、引用和页数 |
-| `mango-baseline/tools/check-document-set.mjs` | 读取哈希锁定的历史生命周期文档 |
+| `mango-baseline/tools/check-document-set.mjs` | 扫描四类生命周期文档及其上游关系 |
 | `architecture-debt-budget.json` | 项目自有的 schema v4 架构债务预算和不可变首次纳管审计；初始为空 |
 | `global-entity-exceptions.json` | 业务架构门禁显式读取的全局 Entity 例外清单，初始为空 |
 | 项目根 `.github/pull_request_template.md` | 业务仓自有 PR 说明；其中 Risk / Verification 区段由锁定 PMO 合同同步和检查 |
@@ -23,13 +22,10 @@
 
 | 能力 | 使用入口 | 说明 |
 |------|----------|------|
-| 规则路由 | `mango-baseline/tools/pmo-preflight.mjs` | 按 role、phase、task、paths 输出按需参考与代码 baseline。 |
+| 规则路由 | `mango-baseline/tools/pmo-preflight.mjs` | 按 role、phase、task、paths 输出 Must read。 |
 | 交付契约检查 | `delivery-contract-check.mjs` | 校验设计说明和交付台账。 |
 | 验收证据检查 | `acceptance-evidence-check.mjs` | 校验验收证据表和弱表达。 |
-| 精简文档门禁 | `check-lean-document.mjs` | 校验 L2-L4 单文档及 L5 四文档的结构、页数、引用、追踪和空话。 |
-| 空白上下文路由 | `resolve-lean-document-policy.mjs` | 根据 L0-L5、强制 L5 事实和关键未知项确定文档形态或集中 ASK。 |
-| 中文批量选择 | `mango pmo 选择` | 同一界面选择文档版本、勾选 M01-M16，并用一次回车确认。 |
-| 历史文档读取 | `check-document-set.mjs` | 只读取和校验已锁定的旧 BRD、SRS、TDD、实施计划。 |
+| 文档集合门禁 | `check-document-set.mjs` | 自动识别 BRD、SRS、TDD、实施计划并阻断合同或链路错误。 |
 | baseline 快照 | `mango-baseline/rules`、`agents`、`templates` | 业务仓脱离 Mango 源码后仍能读取规则。 |
 | baseline 同步 | `mango pmo sync` | 从锁定 PMO bundle 同步 baseline、Risk / Verification 区段、入口和兼容脚本。 |
 
@@ -51,7 +47,7 @@
 - workflow 缺失时由 CLI 安装；历史标准 hash 或 Mango 托管文件可安全升级，未知定制默认拒绝覆盖，只有显式 `--adopt-governance` 才会备份并接管。
 - 项目 PR 模板区段外内容由业务仓维护；`mango pmo sync/upgrade` 只托管 `## Risk / Verification`，重复区段必须人工合并。
 - 业务需求的设计、台账、验收证据放到 `business-docs`。
-- Agent 使用 preflight 输出的代码 baseline；References 只在边界不明确时定向查阅。
+- Agent 每次正式交付前读取 preflight 输出的 Must read 文件原文。
 - 交付异常要写在业务交付记录中，不在 baseline 规则里临时改规则绕过。
 
 ## 5. 接入方式
@@ -76,17 +72,11 @@ node business-pmo/mango-baseline/tools/pmo-preflight.mjs \
   --json
 ```
 
-当前精简文档检查：
+业务文档集合检查：
 
 ```bash
-node business-pmo/mango-baseline/tools/check-lean-document.mjs \
-  --document business-docs/delivery/task-17.md
-```
-
-查看中文批量选择器：
-
-```bash
-mango pmo 选择 --帮助
+node business-pmo/mango-baseline/tools/check-document-set.mjs \
+  --root business-docs
 ```
 
 交付台账检查：
@@ -153,7 +143,7 @@ node business-pmo/mango-baseline/tools/acceptance-evidence-check.mjs \
 
 | 类型 | 位置 | 初始化内容 | 幂等键 / 唯一键 | 生效时机 | 排查入口 |
 |------|------|------------|-----------------|----------|----------|
-| PMO baseline | `business-pmo/mango-baseline` | 规则、Agent、工具、代码模板 | 文件路径 | `mango init` 或 `mango pmo sync` | preflight 能输出 References 与 Code baselines |
+| PMO baseline | `business-pmo/mango-baseline` | 规则、Agent、工具、模板 | 文件路径 | `mango init` 或 `mango pmo sync` | preflight 能输出 Must read |
 | 业务计划示例 | `business-docs/plans` | example contract 和 ledger | 文件路径 | `mango init`；sync 时已有文件不覆盖 | delivery contract check |
 | Agent 入口 | 项目根 `AGENTS.md` | 规则路由入口 | 文件路径 | `mango init` 或带参数 sync | 人工检查入口指向本仓 baseline |
 | PR 风险合同 | 项目根 `.github/pull_request_template.md` | Risk / Verification 字段和填写提示 | 二级标题 | `mango init` 或 `mango pmo sync/upgrade` | `mango pmo check --locked` 报缺失或漂移 |
@@ -163,8 +153,8 @@ node business-pmo/mango-baseline/tools/acceptance-evidence-check.mjs \
 本目录不提供菜单、权限资源或租户数据。涉及菜单、权限和租户时，preflight 会根据任务和路径命中后端模块、数据库、安全或菜单规则；实际资源应在业务模块的 migration、resource manifest、授权配置和测试证据中登记。
 
 ## 10. 快速开始
-1. 正式变更前执行 preflight，选择 Code baselines；只在边界不明确时查阅具体 Reference。
-2. 在同一界面选择文档版本、勾选 M01-M16 并一次确认；按“直接做/一页纸/标准版/详细版/四文档”创建对应文档，并用 `check-lean-document.mjs` 检查。
+1. 需求开始前执行 preflight，按输出读取 Must read 文件原文。
+2. 设计或交付任务创建 design 和 ledger，并用 `delivery-contract-check.mjs --mode plan` 检查列和覆盖项。
 3. 开发和验证过程中把证据写入 `business-docs/evidence`。
 4. 验证阶段执行 `acceptance-evidence-check.mjs`，避免只写“接口 200”“页面正常”。
 5. 交付前执行 `delivery-contract-check.mjs --mode verify`，确认台账状态为 `DONE` 或有明确 `EXCEPTION`。
@@ -184,7 +174,7 @@ node business-pmo/mango-baseline/tools/acceptance-evidence-check.mjs \
 ## 11. 问题排查
 | 问题 | 原因 | 处理方式 |
 |------|------|----------|
-| Code baselines 为空或不符合预期 | `--task` 和 `--paths` 太空泛，或尚无对应模板 | 写清任务关键词和影响路径，必要时补充标准模板 |
+| Must read 为空或不符合预期 | `--task` 和 `--paths` 太空泛 | 写清任务关键词和影响路径 |
 | preflight 报 Missing PMO file | `rules/index.json` 指向不存在文件 | 通过 baseline 同步修复 |
 | verify 模式台账失败 | 台账状态仍是待处理或进行中 | 完成验收后改为 `DONE`，例外写 `EXCEPTION` 和证据 |
 | 禁用词扫描失败 | 代码或文档仍有临时实现标记 | 删除临时实现或登记明确例外 |

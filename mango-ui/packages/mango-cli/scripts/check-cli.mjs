@@ -795,11 +795,8 @@ try {
   if (!baselinePreflight.stdout.includes('rules/frontend/01-vue-code.md')) {
     throw new Error(`generated PMO preflight did not include frontend rules:\n${baselinePreflight.stdout}`);
   }
-  if (
-    !baselinePreflight.stdout.includes('References (consult only when needed):') ||
-    baselinePreflight.stdout.includes('rules/frontend/04-test.md')
-  ) {
-    throw new Error(`generated PMO preflight did not keep generic references lean:\n${baselinePreflight.stdout}`);
+  if (!baselinePreflight.stdout.includes('rules/frontend/04-test.md')) {
+    throw new Error(`generated PMO preflight did not include frontend test rules:\n${baselinePreflight.stdout}`);
   }
   assertGeneratedBaselineLoadsDeliveryContractForPr(projectRoot);
   assertBusinessAcceptanceBaseline(projectRoot);
@@ -1133,6 +1130,7 @@ try {
     'backend/modules/contract/contract-core/src/main/java/com/example/custom/contract/core/service/ISealService.java',
     'backend/modules/contract/contract-core/src/main/java/com/example/custom/contract/core/service/impl/SealService.java',
     'backend/modules/contract/contract-starter/src/main/java/com/example/custom/contract/starter/controller/ContractController.java',
+    'backend/modules/contract/contract-starter/src/main/resources/META-INF/mango/module.properties',
     'backend/modules/contract/contract-starter/src/main/resources/META-INF/mango/resources/contract-common-menu.json',
     'backend/modules/contract/contract-starter-remote/src/main/java/com/example/custom/contract/starter/remote/ContractFeignClient.java',
     'frontend/packages/contract-api/src/api.ts',
@@ -1216,6 +1214,17 @@ try {
   }
   if (!moduleApplicationYml.includes('        contract:\n          enabled: true')) {
     throw new Error('module add did not enable business Flyway migration');
+  }
+  const modulePropertiesPath = join(
+    customRoot,
+    'backend/modules/contract/contract-starter/src/main/resources/META-INF/mango/module.properties',
+  );
+  const moduleProperties = readFileSync(modulePropertiesPath, 'utf8');
+  if (moduleProperties !== 'module-name=contract\nmodule-path=contract\n') {
+    throw new Error(`module add generated invalid module metadata:\n${moduleProperties}`);
+  }
+  if (existsSync(`${modulePropertiesPath}.template`)) {
+    throw new Error('module add must render module.properties.template as module.properties');
   }
   const moduleServiceInterface = readFileSync(
     join(
@@ -2856,9 +2865,9 @@ function assertGeneratedBaselineLoadsDeliveryContractForPr(projectRoot) {
     throw new Error(`generated PMO PR preflight failed:\n${result.stdout}\n${result.stderr}`);
   }
   const output = JSON.parse(result.stdout);
-  const references = output.referenceDocs || [];
-  if (!references.some((entry) => entry.path === 'rules/01-delivery-contract.md')) {
-    throw new Error(`generated PMO PR preflight must reference delivery contract:\n${result.stdout}`);
+  const mustRead = output.mustRead || [];
+  if (!mustRead.some((entry) => entry.path === 'rules/01-delivery-contract.md')) {
+    throw new Error(`generated PMO PR preflight must load delivery contract:\n${result.stdout}`);
   }
 }
 
@@ -4000,8 +4009,7 @@ function assertPmoSyncCommand(tempRoot) {
   }
   if (
     !baselinePreflight.stdout.includes('rules/backend/10-dev-flow.md') ||
-    !baselinePreflight.stdout.includes('rules/frontend/05-dev-flow.md') ||
-    baselinePreflight.stdout.includes('rules/frontend/04-test.md')
+    !baselinePreflight.stdout.includes('rules/frontend/04-test.md')
   ) {
     throw new Error(`synced PMO preflight did not include expected rules:\n${baselinePreflight.stdout}`);
   }

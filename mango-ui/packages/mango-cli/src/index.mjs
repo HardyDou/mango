@@ -46,34 +46,16 @@ const currentFile = fileURLToPath(import.meta.url);
 const packageRoot = resolve(dirname(currentFile), '..');
 const repoRoot = resolve(packageRoot, '../../..');
 const templateRoot = resolve(packageRoot, 'templates/full');
-const bundledPmoPackageRoot = resolveBundledPmoPackageRoot();
-const packagedCodeBaselineRoot = resolve(bundledPmoPackageRoot, 'dist/baseline/code-templates/business-module');
-const sourceCodeBaselineRoot = resolve(repoRoot, 'mango-pmo/code-templates/business-module');
-const businessStarterRoot = existsSync(packagedCodeBaselineRoot) ? packagedCodeBaselineRoot : sourceCodeBaselineRoot;
+const bundledPmoPackageRoot = resolve(packageRoot, '../mango-pmo');
+const businessModuleTemplateRoot = resolve(packageRoot, 'templates/business-module');
+const businessStarterRoot = existsSync(businessModuleTemplateRoot)
+  ? businessModuleTemplateRoot
+  : resolve(repoRoot, 'mango-business-starter');
 const releaseVersions = readReleaseVersions();
 const adminModulesManifest = readAdminModulesManifest();
 const DEFAULT_MAVEN_REPOSITORY = 'https://nexus.inner.yunxinbaokeji.com/repository/maven-public/';
 const DOCS_BUNDLE_GROUP_ID = 'io.mango';
 const DOCS_BUNDLE_ARTIFACT_ID = 'mango-docs-bundle';
-
-function resolveBundledPmoPackageRoot() {
-  try {
-    let candidate = dirname(requireFromCli.resolve('@mango/pmo'));
-    while (dirname(candidate) !== candidate) {
-      const manifestPath = join(candidate, 'package.json');
-      if (existsSync(manifestPath)) {
-        const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
-        if (manifest.name === '@mango/pmo') {
-          return candidate;
-        }
-      }
-      candidate = dirname(candidate);
-    }
-  } catch {
-    // Source checkouts can run before the workspace dependency is installed.
-  }
-  return resolve(packageRoot, '../mango-pmo');
-}
 
 const defaultVersions = {
   mangoBackend: releaseVersions.maven?.mangoBackend || '1.0.0-SNAPSHOT',
@@ -326,7 +308,6 @@ Usage:
   mango docs path [--project-dir <dir>]
   mango pmo status --project-dir <dir> [--locked]
   mango pmo check --project-dir <dir> [--locked]
-  mango pmo 选择 [--项目目录 <目录>]
   mango pmo sync --project-dir <dir> [--dry-run] [--write-agents] [--sync-shell] [--adopt-governance]
   mango pmo upgrade --project-dir <dir> [--to <version>] [--dry-run] [--write-agents] [--sync-shell] [--adopt-governance]
   mango pmo rollback --project-dir <dir> [--to <version>] [--dry-run]
@@ -3582,10 +3563,6 @@ const DELIVERY_ASSURANCE_CONTRACT_ID = 'delivery-assurance';
 const PROJECT_PR_TEMPLATE_MINIMUM_REVISION = 5;
 
 function runPmoCommand(command, argv) {
-  if (command === 'select' || command === '选择') {
-    runPmoSelector(argv);
-    return;
-  }
   if (command === 'status') {
     const options = parsePmoArgs(argv);
     const targetDir = resolve(process.cwd(), options.projectDir);
@@ -3612,40 +3589,6 @@ function runPmoCommand(command, argv) {
     return;
   }
   fail(`unknown pmo command: ${command || ''}`);
-}
-
-function runPmoSelector(argv) {
-  let projectDir = '.';
-  const selectorArgs = [];
-  for (let index = 0; index < argv.length; index += 1) {
-    const arg = argv[index];
-    if (arg === '--project-dir' || arg === '--项目目录') {
-      const next = argv[index + 1];
-      if (!next || next.startsWith('--')) fail('missing value for --project-dir');
-      projectDir = next;
-      index += 1;
-    } else if (arg.startsWith('--project-dir=') || arg.startsWith('--项目目录=')) {
-      projectDir = arg.slice(arg.indexOf('=') + 1);
-      if (!projectDir) fail('missing value for --project-dir');
-    } else selectorArgs.push(arg);
-  }
-  const targetDir = resolve(process.cwd(), projectDir);
-  const candidates = [
-    join(targetDir, PMO_BASELINE_RELATIVE_PATH, 'tools/select-delivery-assurance.mjs'),
-    join(repoRoot, 'mango-pmo/tools/select-delivery-assurance.mjs'),
-    join(bundledPmoPackageRoot, 'dist/baseline/tools/select-delivery-assurance.mjs'),
-    join(packageRoot, 'node_modules/@mango/pmo/dist/baseline/tools/select-delivery-assurance.mjs'),
-  ];
-  const selectorPath = candidates.find((candidate) => existsSync(candidate));
-  if (!selectorPath) {
-    fail('PMO 交付选择器不存在；请升级 @mango/pmo 并执行 mango pmo sync。');
-  }
-  const result = spawnSync(process.execPath, [selectorPath, ...selectorArgs], {
-    cwd: targetDir,
-    stdio: 'inherit',
-  });
-  if (result.error) fail(`无法启动 PMO 交付选择器：${result.error.message}`);
-  process.exitCode = result.status ?? 1;
 }
 
 function syncPmoBaseline(argv, { command = 'sync' } = {}) {
@@ -4781,9 +4724,7 @@ function validatePmoManifest(manifest) {
       !Number.isInteger(file.size) ||
       file.size < 0 ||
       !['0644', '0755'].includes(file.mode) ||
-      !['agent', 'rule', 'template', 'code-template', 'contract', 'tool', 'skill', 'documentation', 'asset'].includes(
-        file.kind,
-      )
+      !['agent', 'rule', 'template', 'contract', 'tool', 'skill', 'documentation', 'asset'].includes(file.kind)
     ) {
       throw new Error(`invalid @mango/pmo manifest file descriptor: ${file.path}`);
     }
@@ -5681,11 +5622,7 @@ function buildFilePlanItem(path, targetPath, content) {
 function writePlannedFile(item) {
   mkdirSync(dirname(item.targetPath), { recursive: true });
   writeFileSync(item.targetPath, item.content);
-  if (
-    item.path.endsWith('/tools/pmo-preflight.mjs') ||
-    item.path.endsWith('/tools/acceptance-evidence-check.mjs') ||
-    item.path.endsWith('/tools/select-delivery-assurance.mjs')
-  ) {
+  if (item.path.endsWith('/tools/pmo-preflight.mjs') || item.path.endsWith('/tools/acceptance-evidence-check.mjs')) {
     chmodSync(item.targetPath, 0o755);
   }
   if (item.path === 'scripts/dev-workspace.sh' || item.path === 'scripts/backend-dev.sh') {

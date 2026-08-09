@@ -18,17 +18,17 @@
 
 ## 2. 功能清单
 
-| 能力                            | 命令入口                                                                                                             | 改动范围                                                               |
-| ------------------------------- | -------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| 新建 Mango 业务项目             | `mango init <project> --preset full`、`mango init <project> --preset custom`                                         | 新项目目录                                                             |
-| custom 项目追加 Mango 可选能力  | `mango add file workflow --project-dir <dir>`                                                                        | 前端依赖、页面注册、runtime config、后端 POM、`mango.config.json`      |
-| 生成业务模块骨架                | `mango module add order --aggregate sales-order --project-dir <dir>`                                                 | `backend/modules`、`frontend/packages`、POM、Flyway 模块开关、业务配置 |
-| 选择、检查和同步业务 PMO bundle | `mango pmo 选择`、`mango pmo status`、`mango pmo check`、`mango pmo sync`、`mango pmo upgrade`、`mango pmo rollback` | 选择器不改业务文件；其它命令按各自合同处理                             |
-| 初始化和启动本地开发工作区      | `mango workspace init`、`mango workspace status`、`mango workspace doctor`、`mango dev doctor`、`mango dev start`    | `.mango/workspace.json`、`.mango/dev-workspace.env`、`.mango/run`      |
-| 拉取当前 Mango 版本文档包       | `mango docs pull`、`mango docs status`、`mango docs path`                                                            | `.mango/docs/<mango.version>`                                          |
-| 编排可审计发布状态机            | `mango release publish/status/verify/repair`、`mango release registry doctor`                                        | `.mango/releases/<version>/manifest.json` 或项目配置的证据目录         |
-| 聚合模块真实运行态              | `mango module doctor mango-link`                                                                                     | loopback Actuator、Admin Shell、项目 Playwright                        |
-| 查看发布说明                    | `mango changelog`                                                                                                    | 不改文件                                                               |
+| 能力                           | 命令入口                                                                                                          | 改动范围                                                                      |
+| ------------------------------ | ----------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| 新建 Mango 业务项目            | `mango init <project> --preset full`、`mango init <project> --preset custom`                                      | 新项目目录                                                                    |
+| custom 项目追加 Mango 可选能力 | `mango add file workflow --project-dir <dir>`                                                                     | 前端依赖、页面注册、runtime config、后端 POM、`mango.config.json`             |
+| 生成业务模块骨架               | `mango module add order --aggregate sales-order --project-dir <dir>`                                              | `backend/modules`、`frontend/packages`、POM、Flyway 模块开关、业务配置        |
+| 检查和同步业务 PMO bundle      | `mango pmo status`、`mango pmo check`、`mango pmo sync`、`mango pmo upgrade`、`mango pmo rollback`                | `business-pmo`、`.agents/skills`、部分 `business-docs`、`AGENTS.md`、兼容脚本 |
+| 初始化和启动本地开发工作区     | `mango workspace init`、`mango workspace status`、`mango workspace doctor`、`mango dev doctor`、`mango dev start` | `.mango/workspace.json`、`.mango/dev-workspace.env`、`.mango/run`             |
+| 拉取当前 Mango 版本文档包      | `mango docs pull`、`mango docs status`、`mango docs path`                                                         | `.mango/docs/<mango.version>`                                                 |
+| 编排可审计发布状态机           | `mango release publish/status/verify/repair`、`mango release registry doctor`                                     | `.mango/releases/<version>/manifest.json` 或项目配置的证据目录                |
+| 聚合模块真实运行态             | `mango module doctor mango-link`                                                                                  | loopback Actuator、Admin Shell、项目 Playwright                               |
+| 查看发布说明                   | `mango changelog`                                                                                                 | 不改文件                                                                      |
 
 ## 3. 能力边界
 
@@ -118,7 +118,6 @@ mango module add order --aggregate sales-order --aggregate-name 销售订单 --m
 mango pmo status --project-dir demo-custom
 mango pmo check --project-dir demo-custom
 mango pmo check --project-dir demo-custom --locked
-mango pmo 选择 --帮助
 mango pmo sync --project-dir demo-custom --dry-run
 mango pmo sync --project-dir demo-custom
 mango pmo upgrade --project-dir demo-custom --to 1.3.8
@@ -395,7 +394,6 @@ mango release repair --version 1.0.16 --project-dir . --authorize
 | `mango docs pull`                | 拉取当前 Mango 版本文档包                                                                   | `--project-dir`、`--version`、`--maven-repository`、`--force`                                | `.mango/docs/<version>`、`.mango/docs/current.json`                                                    |
 | `mango docs status`              | 查看当前 Mango 版本文档包状态                                                               | `--project-dir`                                                                              | 不改文件                                                                                               |
 | `mango docs path`                | 输出本地文档包目录                                                                          | `--project-dir`                                                                              | 不改文件                                                                                               |
-| `mango pmo 选择`                 | 中文选择文档版本，在同一界面勾选 M01-M16 并一次确认                                         | `--项目目录`；推荐事实由交付保障 Skill 传入                                                  | 不改业务文件；输出确认结果                                                                             |
 | `mango pmo sync`                 | 按 `pmo-lock.json` 修复 PMO baseline、项目 Skill 和治理 workflow                            | `--project-dir`、`--dry-run`、`--write-agents`、`--sync-shell`、`--adopt-governance`         | `business-pmo`、`.agents/skills`、GitHub/Gitea workflow、部分 `business-docs`、`AGENTS.md`、兼容脚本   |
 | `mango pmo status`               | 查看当前可用包或项目锁对应的 PMO 状态                                                       | `--project-dir`、`--locked`                                                                  | 不改文件                                                                                               |
 | `mango pmo check`                | 校验当前可用包或项目锁对应的 PMO baseline、manifest 和项目 Skill                            | `--project-dir`、`--locked`                                                                  | 不改文件                                                                                               |
@@ -484,12 +482,12 @@ CLI 绝不自动安装 Playwright、下载 Chromium或修改项目。缺少依�
 | `templates/full/mango.dev.json`              | 新项目开发工作区 manifest 模板                  | 历史业务项目执行 `pmo sync --sync-shell` 时优先按真实目录探测生成；业务项目可用 `.mango/dev-workspace.local.json` 本机覆盖 |
 | `release-versions.json`                      | 锁定 Mango 后端固定 Maven 版本和前端 NPM 包版本 | 修改发布版本后必须跑 release version 检查                                                                                  |
 | `scripts/check-cli.mjs`                      | CLI 生成契约自测                                | 会生成 full 和 custom 项目并校验关键文件                                                                                   |
-| `scripts/check-business-module-template.mjs` | canonical 业务模块投影检查                      | 比较路径、大小、SHA-256 和执行位，阻断 starter 与 PMO code baseline 漂移                                                   |
+| `scripts/check-business-module-template.mjs` | canonical 业务模块投影检查                      | 比较路径、大小、SHA-256 和执行位，阻断 CLI 镜像漂移                                                                        |
 | `scripts/check-generated-backend-gate.mjs`   | 生成后端门禁验收                                | 生成四层业务模块，正向执行 Maven verify，并反向验证 PathVariable、通用 Java 违规和 skip 绕过均被阻断                       |
 | `scripts/check-release-versions.mjs`         | 版本锁自测                                      | 可加 registry 检查已发布包                                                                                                 |
-| `@mango/pmo` code baseline                   | 随 PMO baseline 发布的业务模块模板              | 唯一源为 `mango-pmo/code-templates/business-module`                                                                        |
+| `templates/business-module`                  | 随 CLI 发布的业务模块模板                       | 后端目录必须与 `mango-business-starter` canonical 模板完全一致                                                             |
 
-已发布 CLI 从依赖的 `@mango/pmo` code baseline 执行 `mango module add`。源仓开发使用同一 `mango-pmo/code-templates/business-module`；`mango-business-starter` 只是机械投影。发布和测试前执行 `pnpm --filter @mango/cli run check:business-module-template`，路径集合或任一文件 hash 不一致时先同步投影。
+已发布 CLI 直接从包内 `templates/business-module` 执行 `mango module add`，不依赖 Mango 源仓路径。后端镜像以 `mango-business-starter` 为 canonical 源，发布和测试前执行 `pnpm --filter @mango/cli run check:business-module-template`；路径集合或任一文件 hash 不一致时必须先同步模板。模板源码中的 `module.properties.template` 会生成真实的 `module.properties`，避免源码占位符被仓库架构扫描误判；生成项目的模块发现、菜单、权限、租户和运行时行为不变。
 
 ## 8. 数据与初始化
 
@@ -624,23 +622,17 @@ Issue #690 覆盖 CLI、Maven plugin、Bootstrap/runtime、Resource、BSQL、Boo
 
 业务项目不需要修改生成模板或在 `main.ts` 添加 `crypto.randomUUID` polyfill。修复由 `@mango/common` 和 Admin Shell 启动链提供；CLI 后续发布时必须把 `common -> admin-shell -> admin` 的匹配版本写入同一 `release-versions.json` 前端矩阵，业务项目整体升级该矩阵即可。该修复不改变 CLI 命令、模板结构、后端 Maven、菜单、权限或租户配置。
 
-### 1.0.102 发布影响
+### 1.0.103 发布影响
 
-`@mango/cli@1.0.102` 精确依赖 `@mango/pmo@1.3.12`。升级后的业务 baseline 提供 `check-worktree-delivery-integrity.mjs`，在任务开始、提交、Push/PR 和清理阶段分别检查任务分支身份、全部任务文件是否完成取舍、upstream 是否同步以及 HEAD 是否已合入 base。门禁只检查并报告，不会自动暂存、删除或修改文件。
+`@mango/cli@1.0.103` 精确依赖 `@mango/pmo@1.3.13`，撤回 PMO 1.3.10 至 1.3.12 的治理升级，并恢复 CLI 包内 `templates/business-module` 作为 `mango module add` 的生成来源。模板源码以 `module.properties.template` 保存占位符，生成项目仍得到真实的 `module.properties`。已发布旧版本保持不可变，Mango Maven `1.0.35` 与其它业务 npm 坐标不降级。
 
-新生成的 full 项目会忽略 Maven Flatten Plugin 产生的任意层级 `.flattened-pom.xml`，以及前端生产构建产生的 `frontend/build-reports/`。已有业务项目升级 PMO baseline 后，还应把这两个模式加入项目根 `.gitignore`，再运行前后端验证和 `deliver` 门禁。Mango Maven 保持 `1.0.35`，其它前端包保持 `release-versions.json` 中的现有版本。
+业务项目先执行 `mango pmo upgrade --project-dir . --to 1.3.13 --dry-run`，确认 code baseline、精简文档、批量选择器和 worktree 门禁投影将被移除，再执行实际升级与 locked check。已有业务代码不会被自动重写。
 
-### 1.0.101 发布影响
+### 1.0.99 发布影响
 
-`@mango/cli@1.0.101` 精确依赖 `@mango/pmo@1.3.11`，锁定包含 Issue #721 个人中心扩展链的完整前端矩阵：Auth `1.0.26`、Notice `1.0.38`、System `1.0.32`、Admin Shell `1.0.58` 及其精确依赖闭包。业务项目必须整体升级 `release-versions.json` 中的版本，不能只替换 Notice 或 Shell；否则精确 workspace 依赖和运行时 chunk 可能仍落到旧制品。
+`@mango/cli@1.0.99` 精确依赖 `@mango/pmo@1.3.10`，并通过 PMO bundle 的 canonical `business-module` code baseline 生成新业务模块。baseline 同时定义后端 API/core/starter/starter-remote、前端 API/page package、`moduleKebab` 等输入与派生变量、Mango Checkstyle/架构质量配置，以及 `XxxCode`、`Require`、typed CRUD、tenant、Mapper、资源、migration、页面注册和测试等规范证据。
 
-PMO `1.3.11` 保留路径、SHA-256、历史 `pmoVersion` 均匹配的不可变审批快照，不再用当前新增章节追溯重验正文；重复文档 ID、相邻阶段和上游摘要仍继续检查。先执行 `mango pmo upgrade --project-dir . --to 1.3.11 --dry-run`，审阅后升级并运行 locked check。Mango Maven 保持 `1.0.35`，本批次没有后端制品或数据库 migration。前端重建后应真实验收 `/profile` 的“我的消息、系统公告、通知设置、登录日志”。
-
-### 1.0.100 发布影响
-
-`@mango/cli@1.0.100` 精确依赖 `@mango/pmo@1.3.10`，并通过 PMO bundle 的 canonical `business-module` code baseline 生成新业务模块。baseline 同时定义后端 API/core/starter/starter-remote、前端 API/page package、`moduleKebab` 等输入与派生变量、Mango Checkstyle/架构质量配置，以及 `XxxCode`、`Require`、typed CRUD、tenant、Mapper、资源、migration、页面注册和测试等规范证据。
-
-`1.0.100` 修复已安装 CLI 在 npm/pnpm 布局中把 `@mango/pmo` 错误回退为源码 sibling `mango-pmo` 的问题；不要使用 `1.0.99` 执行 `mango module add`。业务项目先执行 `mango pmo upgrade --project-dir . --to 1.3.10 --dry-run` 并审阅 baseline/template/Skill 变化，再执行实际升级和 `mango pmo check --project-dir . --locked`。`mango module add` 生成的新模块以发布 baseline 为准，不复制周边旧代码的非标准写法；已有模块不会自动改写。Mango Maven 保持 `1.0.35`，其它前端包保持随包 `release-versions.json` 的现有矩阵。
+业务项目先执行 `mango pmo upgrade --project-dir . --to 1.3.10 --dry-run` 并审阅 baseline/template/Skill 变化，再执行实际升级和 `mango pmo check --project-dir . --locked`。`mango module add` 生成的新模块以发布 baseline 为准，不复制周边旧代码的非标准写法；已有模块不会自动改写。Mango Maven 保持 `1.0.35`，其它前端包保持随包 `release-versions.json` 的现有矩阵。
 
 ### 1.0.98 发布影响
 

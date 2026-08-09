@@ -7,9 +7,8 @@ import { fileURLToPath } from 'node:url';
 const currentFile = fileURLToPath(import.meta.url);
 const cliRoot = resolve(dirname(currentFile), '..');
 const repoRoot = resolve(cliRoot, '../../..');
-const codeBaselineRoot = join(repoRoot, 'mango-pmo/code-templates/business-module');
-const defaultSourceRoot = join(codeBaselineRoot, 'backend/modules/{{moduleKebab}}');
-const defaultProjectionRoot = join(repoRoot, 'mango-business-starter/backend/modules/{{moduleKebab}}');
+const defaultSourceRoot = join(repoRoot, 'mango-business-starter/backend/modules/{{moduleKebab}}');
+const defaultProjectionRoot = join(cliRoot, 'templates/business-module/backend/modules/{{moduleKebab}}');
 const defaultProjectionPairs = [
   {
     name: 'backend',
@@ -18,13 +17,13 @@ const defaultProjectionPairs = [
   },
   {
     name: 'frontend-ui-source',
-    sourceRoot: join(codeBaselineRoot, 'frontend/packages/{{moduleKebab}}/src'),
-    projectionRoot: join(repoRoot, 'mango-business-starter/frontend/packages/{{moduleKebab}}/src'),
+    sourceRoot: join(repoRoot, 'mango-business-starter/frontend/packages/{{moduleKebab}}/src'),
+    projectionRoot: join(cliRoot, 'templates/business-module/frontend/packages/{{moduleKebab}}/src'),
   },
   {
     name: 'frontend-api-source',
-    sourceRoot: join(codeBaselineRoot, 'frontend/packages/{{moduleKebab}}-api/src'),
-    projectionRoot: join(repoRoot, 'mango-business-starter/frontend/packages/{{moduleKebab}}-api/src'),
+    sourceRoot: join(repoRoot, 'mango-business-starter/frontend/packages/{{moduleKebab}}-api/src'),
+    projectionRoot: join(cliRoot, 'templates/business-module/frontend/packages/{{moduleKebab}}-api/src'),
   },
 ];
 

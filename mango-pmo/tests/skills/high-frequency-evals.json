@@ -283,18 +283,18 @@
       }
     },
     {
-      "id": "engineer-l0-l5-selection",
+      "id": "engineer-l0-l3-selection",
       "kind": "gate",
-      "prompt": "Implement the approved cross-module Java and frontend plan and state which L0-L5 delivery level applies before editing.",
+      "prompt": "Implement the approved cross-module Java and frontend plan and state which L0-L3 verification level applies before editing.",
       "context": { "approvedTechnicalDesign": true, "approvedImplementationPlan": true },
-      "expect": { "skill": "mango-engineering", "references": ["rules/04-test-assets.md", "rules/05-ai-delivery-quality.md", "rules/backend/08-test.md", "rules/frontend/04-test.md"], "mustRecord": ["L0-L5 delivery level", "evidence requirements"] }
+      "expect": { "skill": "mango-engineering", "mustRead": ["rules/04-test-assets.md", "rules/05-ai-delivery-quality.md", "rules/backend/08-test.md", "rules/frontend/04-test.md"], "mustRecord": ["L0-L3 verification level", "evidence requirements"] }
     },
     {
-      "id": "qa-l0-l5-blank-entry",
+      "id": "qa-l0-l3-blank-entry",
       "kind": "blank-context",
-      "prompt": "Accept the change at the appropriate L0-L5 level.",
+      "prompt": "Accept the change at the appropriate L0-L3 level.",
       "context": {},
-      "expect": { "skill": "mango-qa-verification", "action": "STOP", "references": ["rules/04-test-assets.md", "rules/05-ai-delivery-quality.md", "rules/backend/08-test.md", "rules/frontend/04-test.md"], "missing": "acceptance mapping and implementation evidence" }
+      "expect": { "skill": "mango-qa-verification", "action": "STOP", "mustRead": ["rules/04-test-assets.md", "rules/05-ai-delivery-quality.md", "rules/backend/08-test.md", "rules/frontend/04-test.md"], "missing": "acceptance mapping and implementation evidence" }
     },
     {
       "id": "lifecycle-claim-only-ask",
@@ -637,85 +637,20 @@
       }
     },
     {
-      "id": "lifecycle-l2-lean-single-document",
+      "id": "lifecycle-l2-standard-single-record",
       "kind": "boundary",
-      "prompt": "Fresh-session trusted fixture for $mango-pmo-lifecycle: add a field path to the existing JSON parse error. Requirement impact=L2, solution risk=L2, final risk=L2, M01=CREATE. Route the task using exactly one L2 document with observable requirements, one technical change, references and acceptance evidence, limited to one A4-equivalent page.",
-      "context": { "requirementImpact": "L2", "solutionRisk": "L2", "finalRisk": "L2", "deliveryMode": "L2" },
+      "prompt": "Fresh-session trusted fixture for $mango-pmo-lifecycle: enhance an import flow with one new field, first-sheet selection, visible progress, persisted import history and mapped API/UI verification. Requirement impact=L2, solution risk=L2, final risk=L2, M01=CREATE. Route the task using exactly one STANDARD delivery record with observable requirements, technical decisions, implementation items and acceptance evidence.",
+      "context": { "requirementImpact": "L2", "solutionRisk": "L2", "finalRisk": "L2", "deliveryMode": "STANDARD" },
       "expect": {
         "skill": "mango-pmo-lifecycle",
         "action": "NEXT",
         "nextSkill": "mango-engineering",
         "requiredAssertions": [
-          "delivery level is L2",
-          "exactly one L2 document carries the user story, system satisfaction, technical change and acceptance mapping",
-          "the document is limited to one A4-equivalent page",
+          "delivery mode is STANDARD",
+          "exactly one standard delivery record carries SRS, design, plan and acceptance mapping",
           "separate BRD, SRS, TDD and Plan files are not created"
         ],
         "forbid": ["four-document package", "sixteen-item questionnaire"]
-      }
-    },
-    {
-      "id": "lifecycle-l3-lean-single-document",
-      "kind": "boundary",
-      "prompt": "Fresh-session trusted fixture for $mango-pmo-lifecycle: add workflow withdrawal for the initiator before any approval task is processed. Multiple roles and states are involved, the existing architecture remains, and rollback is clear. Requirement impact=L3, solution risk=L3. Route the fresh task.",
-      "context": { "requirementImpact": "L3", "solutionRisk": "L3", "finalRisk": "L3" },
-      "expect": {
-        "skill": "mango-pmo-lifecycle",
-        "action": "SELECT_L3",
-        "requiredAssertions": [
-          "exactly one L3 document is created",
-          "the document is limited to three A4-equivalent pages",
-          "numbered user stories, system satisfaction, an applicable state or flow diagram, changed dictionaries and direct trace are included"
-        ],
-        "forbid": ["four independent documents", "FULL", "STANDARD"]
-      }
-    },
-    {
-      "id": "lifecycle-l4-lean-single-document",
-      "kind": "boundary",
-      "prompt": "Fresh-session trusted fixture for $mango-pmo-lifecycle: add per-tenant OIDC login across the authentication service, tenant configuration, encrypted client secret storage and login UI. Public contracts, tenant isolation, security and compatibility are affected. Requirement impact=L4, solution risk=L4. Route the fresh task.",
-      "context": { "requirementImpact": "L4", "solutionRisk": "L4", "finalRisk": "L4" },
-      "expect": {
-        "skill": "mango-pmo-lifecycle",
-        "action": "SELECT_L4",
-        "requiredAssertions": [
-          "exactly one L4 document is created",
-          "the document is limited to five A4-equivalent pages",
-          "tenant, security, public contract, compatibility, changed dictionaries and real API/UI assertions are explicit"
-        ],
-        "forbid": ["four independent documents", "unrelated test types"]
-      }
-    },
-    {
-      "id": "lifecycle-l5-new-system-four-documents",
-      "kind": "boundary",
-      "prompt": "Fresh-session trusted fixture for $mango-pmo-lifecycle: build a new supplier onboarding system. Business goals, company and user needs, system boundaries, states, public dictionaries, technical baseline and rollout facts are all confirmed. New system is an explicit fact. Route the fresh task.",
-      "context": { "triggerFact": "NEW_SYSTEM", "finalRisk": "L5" },
-      "expect": {
-        "skill": "mango-pmo-lifecycle",
-        "action": "SELECT_L5",
-        "requiredAssertions": [
-          "new system is fixed at L5",
-          "four independent documents are required: business requirements, system requirements, technical design, and implementation/verification plan",
-          "direct trace is US to BR, SR to US or BR, TD to SR, TASK to TD, and VAL to SR or TASK"
-        ],
-        "forbid": ["single combined document", "downgrade because the first release is small"]
-      }
-    },
-    {
-      "id": "lifecycle-l5-missing-role-and-state-ask",
-      "kind": "blank-context",
-      "prompt": "Use $mango-pmo-lifecycle for a new supplier system, but company goals, manager needs, system-user roles, allowed state transitions and external responsibility are not provided.",
-      "context": { "triggerFact": "NEW_SYSTEM", "materialUnknowns": true },
-      "expect": {
-        "skill": "mango-pmo-lifecycle",
-        "action": "ASK",
-        "requiredAssertions": [
-          "preserve L5 because this is a new system",
-          "ask one grouped set covering business goal, role needs, state semantics and system boundary",
-          "do not invent missing facts"
-        ],
-        "forbid": ["generic four-document draft", "one question per template field"]
       }
     },
     {
@@ -729,7 +664,7 @@
         "requiredAssertions": [
           "solution A final risk is L1",
           "solution B final risk is L2",
-          "solution B maps to L2 and records the shared-layout decision and review in one one-page delivery document"
+          "solution B maps to STANDARD and records the shared-layout decision and review in one delivery record"
         ]
       }
     },
@@ -752,7 +687,7 @@
     {
       "id": "qa-backend-l3-no-forced-ui",
       "kind": "gate",
-      "prompt": "Verify an L3 backend-only concurrency and transaction change whose real consumer entry is an HTTP API and which has no browser page. Require all verification types merely because the level is L3.",
+      "prompt": "Verify an L3 backend-only concurrency and transaction change whose real consumer entry is an HTTP API and which has no browser page. Require all four verification types because L3 is highest risk.",
       "context": { "finalRisk": "L3", "browserEntry": false, "apiEntry": true },
       "expect": {
         "skill": "mango-qa-verification",
@@ -784,13 +719,13 @@
       "id": "lifecycle-cross-tenant-measures-ask",
       "kind": "boundary",
       "prompt": "Use $mango-pmo-lifecycle for a cross-service tenant authorization rule change. The business allow/deny rule, user-visible forbidden result, security boundary and real API/database behavior will change. No delivery-assurance measures have been confirmed yet. Decide what to do before coding.",
-      "context": { "riskLevel": "L4", "deliveryMode": "L4", "baselineResolved": true },
+      "context": { "riskLevel": "L3", "deliveryMode": "FULL", "baselineResolved": true },
       "expect": {
         "skill": "mango-pmo-lifecycle",
-        "action": "SELECT_L4",
+        "action": "SELECT_FULL",
         "requiredAssertions": [
-          "final risk is L4 because cross-service tenant authorization changes public security boundaries",
-          "exactly one L4 document is required, limited to five A4-equivalent pages",
+          "final risk L3 maps to FULL",
+          "the applicable product BRD, SRS, TDD and Plan chain is required",
           "real integration and API tenant-boundary evidence is required",
           "no UI verification is invented unless a browser outcome exists"
         ],
@@ -800,14 +735,14 @@
     {
       "id": "lifecycle-l3-governance-no-four-docs",
       "kind": "boundary",
-      "prompt": "Use $mango-pmo-lifecycle to change this repository from mandatory self-approval to single-owner governance while preserving required checks, resolved conversations and force-push protection. This PMO core-gate change is L4, changes long-lived governance semantics, and requires live GitHub configuration readback.",
-      "context": { "riskLevel": "L4", "deliveryMode": "L4", "baselineResolved": true },
+      "prompt": "Use $mango-pmo-lifecycle to change this repository from mandatory self-approval to single-owner governance while preserving required checks, resolved conversations and force-push protection. This PMO core-gate change is L3, changes long-lived governance semantics, and requires live GitHub configuration readback. No measures have been confirmed yet.",
+      "context": { "riskLevel": "L3", "deliveryMode": "FULL", "baselineResolved": true },
       "expect": {
         "skill": "mango-pmo-lifecycle",
-        "action": "SELECT_L4",
+        "action": "SELECT_FULL",
         "requiredAssertions": [
-          "L4 governance uses one bounded governance delivery document without fabricated product documents",
-          "require M07 governance decision record, M09 static verification, M14 expert review and M15 external state readback",
+          "L3 maps to FULL governance flow without fabricated product documents",
+          "require M07 governance decision record, implementation plan, M09 static verification, M14 expert review and M15 external state readback",
           "workspace isolation is resolved by policy without an M01 question",
           "preserve required checks and remote protection invariants"
         ],
@@ -922,35 +857,35 @@
     {
       "id": "workflow-next",
       "kind": "next",
-      "prompt": "Fresh-session trusted fixture: explicit package=@mango/workflow and backend module=mango-workflow-api; current source mapping and public API contracts were read; approved definition is PUBLISHED; process start, todo task, complete/reject, business progress, tenant/data permissions, and business-state idempotency checks pass; browser and API evidence is recorded at mango-docs/evidence/workflow/order-approval.md; PMO preflight completed and the references actually needed for unresolved boundaries were recorded. Return the governed action.",
+      "prompt": "Fresh-session trusted fixture: explicit package=@mango/workflow and backend module=mango-workflow-api; current source mapping and public API contracts were read; approved definition is PUBLISHED; process start, todo task, complete/reject, business progress, tenant/data permissions, and business-state idempotency checks pass; browser and API evidence is recorded at mango-docs/evidence/workflow/order-approval.md; PMO preflight completed and every Must read file was read. Return the governed action.",
       "context": { "sourceMapped": true, "requiredGatesExitCode": 0, "evidencePresent": true },
       "expect": { "skill": "mango-workflow", "action": "NEXT" }
     },
     {
       "id": "handle-issue-next",
       "kind": "next",
-      "prompt": "Fresh-session trusted fixture: existing Issue URL=https://github.com/HardyDou/mango/issues/306 was read with title, body, labels=bug/P1, state=OPEN, comments, linked PRs, and latest relevant commits=abc1234/def5678; reproduction and main comparison are recorded at mango-docs/evidence/issues/306.md; attribution=Mango CLI; disposition=fix in current non-main task worktree; affected artifacts=mango-ui/packages/mango-cli; PMO preflight role=dev phase=develop task=Issue-306-fix paths=mango-ui/packages/mango-cli completed and only boundary-relevant references were consulted; follow-up=$mango-defect-fix. Return the governed action.",
+      "prompt": "Fresh-session trusted fixture: existing Issue URL=https://github.com/HardyDou/mango/issues/306 was read with title, body, labels=bug/P1, state=OPEN, comments, linked PRs, and latest relevant commits=abc1234/def5678; reproduction and main comparison are recorded at mango-docs/evidence/issues/306.md; attribution=Mango CLI; disposition=fix in current non-main task worktree; affected artifacts=mango-ui/packages/mango-cli; PMO preflight role=dev phase=develop task=Issue-306-fix paths=mango-ui/packages/mango-cli completed and every Must read file was read; follow-up=$mango-defect-fix. Return the governed action.",
       "context": { "issueLoaded": true, "dispositionRecorded": true, "evidencePresent": true },
       "expect": { "skill": "mango-issue-handle", "action": "NEXT" }
     },
     {
       "id": "register-issue-next",
       "kind": "next",
-      "prompt": "Fresh-session trusted fixture: attribution proves a new Mango starter defect outside the current business task; exact versions are @mango/cli=1.0.68, @mango/pmo=1.1.0 and Maven=1.0.16; sanitized reproduction evidence and steps are at business-docs/evidence/mango-starter-defect.md; actual result, expected behavior and P1 impact are recorded; current business task=TASK-42; created Issue URL=https://github.com/HardyDou/mango/issues/512 in canonical repo HardyDou/mango with canonical title=`P1: starter generated backend rejects current manifest`, priority=P1, label=bug and every runbook body field; PMO preflight role=pmo phase=governance task=register-starter-defect paths=business-docs/tasks/TASK-42.md completed and consulted references were recorded only where used; blocking state=BLOCKED_BY_MANGO_ISSUE; back-reference was written to business-docs/tasks/TASK-42.md. Return the governed action without implementing it.",
+      "prompt": "Fresh-session trusted fixture: attribution proves a new Mango starter defect outside the current business task; exact versions are @mango/cli=1.0.68, @mango/pmo=1.1.0 and Maven=1.0.16; sanitized reproduction evidence and steps are at business-docs/evidence/mango-starter-defect.md; actual result, expected behavior and P1 impact are recorded; current business task=TASK-42; created Issue URL=https://github.com/HardyDou/mango/issues/512 in canonical repo HardyDou/mango with canonical title=`P1: starter generated backend rejects current manifest`, priority=P1, label=bug and every runbook body field; PMO preflight role=pmo phase=governance task=register-starter-defect paths=business-docs/tasks/TASK-42.md completed and every Must read file was read; blocking state=BLOCKED_BY_MANGO_ISSUE; back-reference was written to business-docs/tasks/TASK-42.md. Return the governed action without implementing it.",
       "context": { "issueUrlPresent": true, "taskBackReferencePresent": true },
       "expect": { "skill": "mango-issue-register", "action": "NEXT" }
     },
     {
       "id": "new-project-next",
       "kind": "next",
-      "prompt": "Fresh-session trusted fixture: project identity=acme-order, topology=monolith, target=.runtime/projects/acme-order, group=com.acme, package=com.acme.order, modules=order, Maven=1.0.16, @mango/cli=1.0.68, @mango/pmo=1.1.0; release matrix is published and compatible; new system fixes final risk=L5 and delivery mode=L5; repository policy resolves M01=CREATE and facts activate M03/M04/M05/M06/M09/M11/M12; business requirements, system requirements, technical design and implementation/verification plan each pass check-lean-document.mjs with direct trace; CLI generation, PMO baseline, workspace, Maven architecture verify, startup, docs, and first-run evidence gates all exit=0; evidence=.runtime/projects/acme-order/business-docs/evidence/first-run.md. Return the governed action.",
+      "prompt": "Fresh-session trusted fixture: project identity=acme-order, topology=monolith, target=.runtime/projects/acme-order, group=com.acme, package=com.acme.order, modules=order, Maven=1.0.16, @mango/cli=1.0.68, @mango/pmo=1.1.0; release matrix is published and compatible; final risk=L3, delivery mode=FULL, repository policy resolves M01=CREATE and facts activate M03/M04/M05/M06/M09/M11/M12; each required document checker and handoff exits 0; CLI generation, PMO baseline, workspace, Maven architecture verify, startup, docs, and first-run evidence gates all exit=0; evidence=.runtime/projects/acme-order/business-docs/evidence/first-run.md. Return the governed action.",
       "context": { "requiredGatesExitCode": 0, "versionEvidencePresent": true },
       "expect": { "skill": "mango-project-bootstrap", "action": "NEXT" }
     },
     {
       "id": "new-module-next",
       "kind": "next",
-      "prompt": "Fresh-session trusted fixture: current non-main worktree is reused; new module payment-reconciliation is L5; approved business requirements, system requirements, technical design and implementation/verification plan pass check-lean-document.mjs and direct trace; module paths are recorded; structure, API/Controller/Feign/Service/Mapper/Entity architecture, exports, migration, menu/permission initialization, README, capability mapping, Maven verify and frontend tests all exit=0; evidence=business-docs/evidence/payment-reconciliation.md. Route to QA.",
+      "prompt": "Fresh-session trusted fixture: current non-main worktree is reused; approved TDD=business-docs/designs/tdd-payment-reconciliation.md and Plan=business-docs/plans/plan-payment-reconciliation.md pass dedicated and lifecycle checkers; module=payment-reconciliation paths are recorded; structure, API/Controller/Feign/Service/Mapper/Entity architecture, exports, migration, menu/permission initialization, README, capability mapping, Maven verify, frontend tests, and traceability gates all exit=0; evidence=business-docs/evidence/payment-reconciliation.md. Route to QA.",
       "context": { "requiredGatesExitCode": 0, "traceabilityComplete": true },
       "expect": { "skill": "mango-module-development", "action": "NEXT", "nextSkill": "mango-qa-verification" }
     },
@@ -964,7 +899,7 @@
     {
       "id": "release-next",
       "kind": "next",
-      "prompt": "Fresh-session trusted fixture with release authorization: source state is clean and internally consistent; scope and compatibility matrix compare result=PASS for Maven io.mango=1.0.16, all 28 exact npm coordinates from release-versions.json including @mango/pmo=1.1.0 and @mango/cli=1.0.68, starter/template bundleSha256=a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1, and matching Skill set; unique version sources, current/target versions, dependency edges, registry targets=Nexus Maven/npm, upgrade audience=existing and new business projects, coordinates, checksums and timestamps are recorded in release evidence=mango-docs/evidence/releases/mango-2026.07.md; PMO preflight role=pmo phase=release used the exact Maven/npm/CLI/starter/template/PMO/Skill/doc paths and requested versions, and only references needed to resolve a concrete boundary were consulted; `mango release registry doctor` passes after validating releaseKind=mixed, Maven/npm mode=private-registry, four distinct Maven/npm publish/consume URL roles, Maven serverId and npm tokenEnv reference without secret values; the persisted release manifest records every fixed state as passed or reasoned not_applicable with no pending/failed state, and every state evidence contains a non-empty reason, exact command, exit code, timestamp and redacted output; one batch publishes source contracts/runtime, Maven/npm foundations, aggregators, CLI/starter/template, then PMO/Skills/docs; release-versions.json and template POM use Maven 1.0.16; exact commands `pnpm -C mango-ui release:impact --base abc1234 --head def5678`, `node mango-business-starter/scripts/sync-pmo-baseline.mjs --check`, `node mango-ui/packages/mango-cli/scripts/check-release-versions.mjs`, and `MANGO_BACKEND_GATE_VERSION=1.0.16 node mango-ui/packages/mango-cli/scripts/check-generated-backend-gate.mjs` all exit=0; repository back-check commands `mvn dependency:get -Dartifact=io.mango.tools.maven.plugin:mango-maven-plugin:1.0.16 -Dmaven.repo.local=/tmp/mango-release-check` and `npm view @mango/pmo@1.1.0 dist.integrity` plus `npm view @mango/cli@1.0.68 dist.integrity` all exit=0; clean consumer install, changelog, upgrade guide, capability docs, and GitHub Release pass and identify batch mango-2026.07; the release evidence lists every exact command, coordinate, checksum, registry and time. Return the governed action.",
+      "prompt": "Fresh-session trusted fixture with release authorization: source state is clean and internally consistent; scope and compatibility matrix compare result=PASS for Maven io.mango=1.0.16, all 28 exact npm coordinates from release-versions.json including @mango/pmo=1.1.0 and @mango/cli=1.0.68, starter/template bundleSha256=a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1, and matching Skill set; unique version sources, current/target versions, dependency edges, registry targets=Nexus Maven/npm, upgrade audience=existing and new business projects, coordinates, checksums and timestamps are recorded in release evidence=mango-docs/evidence/releases/mango-2026.07.md; PMO preflight role=pmo phase=release used the exact Maven/npm/CLI/starter/template/PMO/Skill/doc paths and requested versions, and every Must read file was read; `mango release registry doctor` passes after validating releaseKind=mixed, Maven/npm mode=private-registry, four distinct Maven/npm publish/consume URL roles, Maven serverId and npm tokenEnv reference without secret values; the persisted release manifest records every fixed state as passed or reasoned not_applicable with no pending/failed state, and every state evidence contains a non-empty reason, exact command, exit code, timestamp and redacted output; one batch publishes source contracts/runtime, Maven/npm foundations, aggregators, CLI/starter/template, then PMO/Skills/docs; release-versions.json and template POM use Maven 1.0.16; exact commands `pnpm -C mango-ui release:impact --base abc1234 --head def5678`, `node mango-business-starter/scripts/sync-pmo-baseline.mjs --check`, `node mango-ui/packages/mango-cli/scripts/check-release-versions.mjs`, and `MANGO_BACKEND_GATE_VERSION=1.0.16 node mango-ui/packages/mango-cli/scripts/check-generated-backend-gate.mjs` all exit=0; repository back-check commands `mvn dependency:get -Dartifact=io.mango.tools.maven.plugin:mango-maven-plugin:1.0.16 -Dmaven.repo.local=/tmp/mango-release-check` and `npm view @mango/pmo@1.1.0 dist.integrity` plus `npm view @mango/cli@1.0.68 dist.integrity` all exit=0; clean consumer install, changelog, upgrade guide, capability docs, and GitHub Release pass and identify batch mango-2026.07; the release evidence lists every exact command, coordinate, checksum, registry and time. Return the governed action.",
       "context": { "releaseGatesExitCode": 0, "releaseEvidenceComplete": true },
       "expect": {
         "skill": "mango-release",
@@ -981,58 +916,9 @@
     {
       "id": "pr-review-next",
       "kind": "next",
-      "prompt": "Fresh-session trusted fixture: PR URL=https://github.com/HardyDou/mango/pull/155; base=main; head=pmo-update; latest commit=abc1234; full changed-file list, full diff, linked Issue, review state, checks and delivery artifacts were read; PMO preflight phase=verify used the actual changed paths and only references needed to resolve review findings were consulted; PMO, Java architecture, QA and release expert perspectives recorded no blockers; every required check passes; verification results and residual risks are in review report=mango-docs/evidence/reviews/pr-155.md. Return the governed action without modifying code.",
+      "prompt": "Fresh-session trusted fixture: PR URL=https://github.com/HardyDou/mango/pull/155; base=main; head=pmo-update; latest commit=abc1234; full changed-file list, full diff, linked Issue, review state, checks and delivery artifacts were read; PMO preflight phase=verify used the actual changed paths and every returned Must read file was read; PMO, Java architecture, QA and release expert perspectives recorded no blockers; every required check passes; verification results and residual risks are in review report=mango-docs/evidence/reviews/pr-155.md. Return the governed action without modifying code.",
       "context": { "blockerCount": 0, "requiredGatesExitCode": 0 },
       "expect": { "skill": "mango-review-pr", "action": "NEXT" }
-    },
-    {
-      "id": "worktree-new-task-dirty-current-stop",
-      "kind": "boundary",
-      "prompt": "当前位于订单任务的非 main worktree，里面还有未提交和未跟踪文件。现在开始一个无关的新需求，并为它再创建一个 worktree。",
-      "context": { "currentTaskDifferent": true, "currentWorktreeDirty": true },
-      "expect": {
-        "skill": "mango-design-delivery-assurance",
-        "action": "STOP",
-        "requiredAssertions": [
-          "执行 start worktree 完整性门禁",
-          "当前不同任务仍有本地改动时禁止创建第二个 worktree",
-          "列出准确的已暂存、未暂存、未跟踪和冲突数量"
-        ],
-        "forbid": ["新 worktree", "静默遗留"]
-      }
-    },
-    {
-      "id": "worktree-old-dirty-reuse-stop",
-      "kind": "boundary",
-      "prompt": "复用一个旧 worktree 开始新需求。旧 PR 已合并，但目录里还有本地修改；只看当前分支名就当作同一任务继续。",
-      "context": { "oldPrMerged": true, "worktreeDirty": true, "recordedTaskBranchMatches": false },
-      "expect": {
-        "skill": "mango-design-delivery-assurance",
-        "action": "STOP",
-        "requiredAssertions": [
-          "期望分支必须来自既有任务、Issue 或 PR 证据",
-          "已合并的脏 worktree 不得复用或豁免",
-          "禁止只根据当前分支推断同一任务身份"
-        ],
-        "forbid": ["REUSE", "allow-dirty-worktree 豁免"]
-      }
-    },
-    {
-      "id": "engineering-partial-commit-stop",
-      "kind": "boundary",
-      "prompt": "实现已经完成。我只暂存了主要源码，worktree 还保留未暂存测试和一个未跟踪配置文件；先提交、Push 并创建 PR，剩下的以后再说。",
-      "context": { "staged": 4, "unstaged": 2, "untracked": 1 },
-      "expect": {
-        "skill": "mango-engineering",
-        "action": "STOP",
-        "requiredAssertions": [
-          "使用已记录期望分支执行 commit worktree 完整性门禁",
-          "仍有未暂存、未跟踪或冲突文件时阻断",
-          "逐项审阅并暂存任务文件，不使用宽泛自动暂存",
-          "用户授权 Push 后重新执行带 upstream 验证的 deliver 门禁"
-        ],
-        "forbid": ["部分提交", "Push", "创建 PR"]
-      }
     }
   ]
 }

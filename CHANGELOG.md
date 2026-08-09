@@ -1,5 +1,44 @@
 # Mango Changelog
 
+## v2026.08.09-pmo-1.3.13-cli-1.0.103-pmo-rollback-release - 2026-08-09
+
+Status: `PENDING`. 本批次以新的不可变版本撤回 PR #737、#742、#745 的 PMO 部分及 #749-#752 引入的 PMO 升级；已发布的 PMO 1.3.10 至 1.3.12、CLI 1.0.99 至 1.0.102、Tag 和 GitHub Release 保留为审计历史，不删除、不移动、不重新发布。
+
+### Changed
+
+- 恢复 PR #737 合并前的 PMO 开发、文档与交付语义，移除 canonical code baseline、历史审批快照放宽、Issue 强制证据闭环、L0-L5 精简文档、中文批量选择器和 worktree 四阶段完整性门禁。
+- CLI 恢复从自身 `templates/business-module` 生成业务模块，不再从已安装 PMO 包解析 code baseline。
+- 业务模块元数据模板改用 `.template` 源文件并继续生成真实 `module.properties`，避免模板占位符被仓库 Java 架构门禁当作模块身份扫描，生成结果与运行时行为不变。
+- PMO 合同 schema revision 保持 `1`，当前版本前移到 1.3.13；Mango Maven `1.0.35` 与全部无关业务 npm 坐标保持不变。
+
+### Versions
+
+| 对象          | 旧版本    | 新版本    | 说明                                                    |
+| ------------- | --------- | --------- | ------------------------------------------------------- |
+| `@mango/pmo`  | `1.3.12`  | `1.3.13`  | 以新版本发布回退后的规则、合同、Skill 和 baseline。     |
+| `@mango/cli`  | `1.0.102` | `1.0.103` | 精确依赖 PMO 1.3.13，并恢复 CLI 自带业务模块模板。      |
+| Mango Maven   | `1.0.35`  | unchanged | 本批次不修改、不重新发布 Maven 制品。                   |
+
+### Published Packages
+
+| 顺序 | 对象                       | 版本                                                         | 状态      |
+| ----: | -------------------------- | ------------------------------------------------------------ | --------- |
+|     1 | `@mango/pmo`               | `1.3.13`                                                     | `PENDING` |
+|     2 | `@mango/cli`               | `1.0.103`                                                    | `PENDING` |
+|     3 | Git tag and GitHub Release | `v2026.08.09-pmo-1.3.13-cli-1.0.103-pmo-rollback-release`    | `PENDING` |
+
+### Upgrade Notes
+
+1. 等待 `@mango/pmo@1.3.13` 和 `@mango/cli@1.0.103` 均从消费仓返回精确版本后再升级。
+2. 安装 CLI 1.0.103，运行 `mango pmo upgrade --project-dir . --to 1.3.13 --dry-run`，确认将撤回的 PMO 文件后执行实际升级和 `mango pmo check --project-dir . --locked`。
+3. 不降级业务代码、前端业务包或 Mango Maven；旧 PMO/CLI 版本只作为升级来源和审计记录保留。
+
+### Verification
+
+- PMO Node 测试、文档合同、Skill eval、治理意图与 workspace layout 检查。
+- `@mango/pmo` build/check、Business Starter 精确投影、CLI 全量测试和 release-impact/release-notes 门禁。
+- 本地 tarball 干净消费者完成 PMO 升级、full 项目初始化、locked check 与 CLI 自带业务模块模板生成。
+
 ## v2026.08.08-pmo-1.3.12-cli-1.0.102-worktree-integrity-release - 2026-08-08
 
 Status: `PUBLISHED_AND_VERIFIED`. 发布 PR #753 通过受保护分支 required checks，并以 source commit `695e87ea1e0339db25257d207fa4d5fccaa02e0b`（tree `9bb99388cc297618740a937d9e56ed337ddd8f98`）合并。精确源 bundle 为 447,764,912 字节，SHA-256 为 `a27db0ddd672d54c8213e573e4f26017f5f6946f6222eda4a84c324abf5cb9f2`。`@mango/pmo@1.3.12`、`@mango/cli@1.0.102`、Tag、[GitHub Release](https://github.com/HardyDou/mango/releases/tag/v2026.08.08-pmo-1.3.12-cli-1.0.102-worktree-integrity-release) 与 Latest 文档均已发布并验证；Mango Maven `1.0.35` 只验证、未重新发布。

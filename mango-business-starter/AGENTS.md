@@ -1,6 +1,6 @@
 # Business Agent Entry
 
-本文件是 Mango 业务项目 Agent 入口。生成项目依赖 Mango 进行业务开发时，以随项目带出的 Mango baseline 和当前业务 PMO 作为规范与代码模板来源。
+本文件是 Mango 业务项目 Agent 入口。生成项目依赖 Mango 进行业务开发时，必须同时加载随项目带出的 Mango baseline 和当前业务 PMO。
 
 ## 1. 规范来源
 
@@ -18,8 +18,8 @@
 2. 建立交付台账。
 3. 执行 `mango pmo check --project-dir .`，确认本仓 baseline 没有漂移。
 4. 执行 Mango baseline preflight。
-5. `References` 只在边界不明确时定向查阅；代码生成和新增实现优先使用 preflight 输出中的 `Code baselines`。
-6. 只按任务事实读取本次直接使用的业务契约和设计；不要批量阅读 `business-pmo/**` 或 `business-docs/**`。
+5. 按任务类型读取 preflight 输出中的所有 `Must read` 文件原文。
+6. 读取本业务 `business-pmo/README.md`、相关领域规则和本次任务对应的 `business-docs/**` 文件。
 7. 执行 `git worktree list`，同一任务返工必须复用已有任务 worktree。
 8. 在任务 worktree 或任务分支内开发。
 9. 执行后端、前端和台账验证。
@@ -84,8 +84,8 @@ mango dev start
 正式交付的最终报告必须包含：
 
 - 改动范围。
-- 实际采用的代码 baseline 及版本。
-- 为解决具体边界而实际查阅的 Mango/业务参考资料（未查阅时写“无”）。
+- 实际加载的 Mango baseline 文件。
+- 实际加载的业务 PMO 文件。
 - 执行的验证命令。
 - 未验证项和风险。
 - PMO 例外说明。

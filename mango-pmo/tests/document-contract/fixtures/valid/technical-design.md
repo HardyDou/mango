@@ -1,7 +1,7 @@
 ---
 documentId: TDD-ANN-001
 documentType: technical-design
-pmoVersion: 1.3.12
+pmoVersion: 1.3.13
 schemaRevision: 1
 riskLevel: L2
 riskAssessmentEvidence: SRS-ANN-001 risk assessment
@@ -15,12 +15,6 @@ upstreamDocumentHash: 0000000000000000000000000000000000000000000000000000000000
 ---
 
 # 公告审核技术设计文档
-
-## 0. 参考资料与代码基线
-
-| 类型          | 路径或模板ID     | 版本或提交 | 用途         | 实际采用范围                     |
-| ------------- | ---------------- | ---------- | ------------ | -------------------------------- |
-| code-baseline | business-module  | 1          | 新增模块结构 | API、core、starter 和前端包结构 |
 
 ## 1. 设计输入、约束与决策
 

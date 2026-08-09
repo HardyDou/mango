@@ -1,5 +1,27 @@
 # @mango/cli Changelog
 
+## 1.0.103 - 2026-08-09
+
+### Fixed
+
+- 精确依赖 `@mango/pmo@1.3.13`，向业务项目投影回退后的 PMO 规则、合同、Agent、Skill 和检查工具。
+- 恢复 CLI 包内 `templates/business-module` 作为 `mango module add` 的生成来源，移除从已安装 PMO 包解析 canonical code baseline 的路径。
+- 将模块元数据模板保存为 `module.properties.template` 并在生成时输出 `module.properties`，避免模板占位符被仓库架构扫描误判，生成项目运行时行为不变。
+- packed consumer 验证显式打包并覆盖 CLI 的 Prettier 运行时依赖，避免干净 CI 的离线安装依赖 pnpm registry metadata 缓存。
+- 撤回 PMO 1.3.10 至 1.3.12 的精简文档、批量选择器和 worktree 完整性相关 CLI 合同与测试入口。
+
+### Upgrade Notes
+
+1. 等待 `@mango/pmo@1.3.13` 从消费仓可见后安装 `@mango/cli@1.0.103`。
+2. 执行 `mango pmo upgrade --project-dir . --to 1.3.13 --dry-run`，审阅后升级并运行 locked check。
+3. Mango Maven `1.0.35` 和其它 npm 坐标保持 `release-versions.json` 当前矩阵，不随本次 PMO 回退降级。
+
+### Verification
+
+- `pnpm -C mango-ui --filter @mango/cli test`
+- `node mango-ui/packages/mango-cli/scripts/check-release-versions.mjs`
+- 本地 PMO/CLI tarball 消费项目完成 full init、PMO locked check 和 `mango module add`。
+
 ## 1.0.102 - 2026-08-08
 
 ### Fixed

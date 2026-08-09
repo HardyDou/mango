@@ -32,8 +32,6 @@ const sourceRoots = [
   { path: 'contracts', required: true },
   { path: 'tools', required: true },
   { path: 'skills', required: true },
-  { path: 'code-templates', required: true },
-  { path: 'examples', required: true },
 ];
 
 if (!existsSync(sourceRoot)) {
@@ -222,8 +220,6 @@ function classifyFile(path) {
       contracts: 'contract',
       tools: 'tool',
       skills: 'skill',
-      'code-templates': 'code-template',
-      examples: 'asset',
     }[root] || (basename(path) === 'README.md' ? 'documentation' : 'asset')
   );
 }

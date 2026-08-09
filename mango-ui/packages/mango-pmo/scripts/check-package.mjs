@@ -19,7 +19,6 @@ const requiredFiles = [
   'agents/03-dev-agent.md',
   'agents/05-pmo-agent.md',
   'tools/pmo-preflight.mjs',
-  'tools/code-baseline.mjs',
   'tools/check-document-set.mjs',
   'tools/pin-historical-pmo-version-documents.mjs',
   'tools/check-frontend-page-baseline.mjs',
@@ -29,38 +28,17 @@ const requiredFiles = [
   'templates/acceptance-evidence.md',
   'templates/business-pull-request-template.md',
   'contracts/delivery-assurance.json',
-  'contracts/lean-documents.json',
   'contracts/business-requirements.json',
   'contracts/system-requirements.json',
   'contracts/technical-design.json',
   'contracts/implementation-plan.json',
   'contracts/document-lifecycle.json',
-  'templates/delivery-l2.md',
-  'templates/delivery-l3.md',
-  'templates/delivery-l4.md',
-  'templates/l5-business-requirements.md',
-  'templates/l5-system-requirements.md',
-  'templates/l5-technical-design.md',
-  'templates/l5-implementation-plan.md',
-  'tools/check-lean-document.mjs',
-  'tools/resolve-lean-document-policy.mjs',
-  'tools/select-delivery-assurance.mjs',
-  'examples/lean-documents/delivery-l2-json-error.md',
-  'examples/lean-documents/delivery-l3-workflow-withdraw.md',
-  'examples/lean-documents/delivery-l4-third-party-login.md',
-  'examples/lean-documents/l5-supplier-business-requirements.md',
-  'examples/lean-documents/l5-supplier-system-requirements.md',
-  'examples/lean-documents/l5-supplier-technical-design.md',
-  'examples/lean-documents/l5-supplier-implementation-plan.md',
   'tools/risk-verification.mjs',
   'skills/mango-pmo-lifecycle/SKILL.md',
   'skills/mango-requirements-business/SKILL.md',
   'skills/mango-requirements-system/SKILL.md',
   'skills/mango-design-technical/SKILL.md',
   'skills/mango-plan-implementation/SKILL.md',
-  'code-templates/index.json',
-  'code-templates/business-module/backend/modules/{{moduleKebab}}/pom.xml',
-  'code-templates/business-module/frontend/packages/{{moduleKebab}}/src/index.ts',
 ];
 
 if (!existsSync(manifestPath)) {
@@ -146,9 +124,9 @@ const preflight = spawnSync(
     '--phase',
     'develop',
     '--task',
-    '新增业务模块并验证 @mango/pmo baseline package',
+    '验证 @mango/pmo baseline package',
     '--paths',
-    'backend/modules/order,frontend/packages/order',
+    'backend,frontend',
   ],
   {
     cwd: baselineRoot,
@@ -159,8 +137,11 @@ const preflight = spawnSync(
 if (preflight.status !== 0) {
   throw new Error(`packaged baseline preflight failed:\n${preflight.stdout}\n${preflight.stderr}`);
 }
-if (!preflight.stdout.includes('Code baselines:') || !preflight.stdout.includes('business-module@1')) {
-  throw new Error(`packaged baseline preflight did not resolve code baseline:\n${preflight.stdout}`);
+if (
+  !preflight.stdout.includes('rules/00-dev-flow.md') ||
+  !preflight.stdout.includes('rules/03-ai-coding-redlines.md')
+) {
+  throw new Error(`packaged baseline preflight did not load baseline rules:\n${preflight.stdout}`);
 }
 
 validatePackedPackage(manifest);
@@ -204,18 +185,7 @@ function validateManifestFile(file) {
     throw new Error(`invalid baseline manifest mode: ${file.path}`);
   }
   if (
-    ![
-      'agent',
-      'rule',
-      'template',
-      'code-template',
-      'contract',
-      'tool',
-      'skill',
-      'documentation',
-      'asset',
-      'plugin',
-    ].includes(file.kind)
+    !['agent', 'rule', 'template', 'contract', 'tool', 'skill', 'documentation', 'asset', 'plugin'].includes(file.kind)
   ) {
     throw new Error(`invalid baseline manifest kind: ${file.path}`);
   }
@@ -358,7 +328,6 @@ function validateContracts(value, files) {
   }
   for (const contractId of [
     'delivery-assurance',
-    'lean-documents',
     'business-requirements',
     'system-requirements',
     'technical-design',

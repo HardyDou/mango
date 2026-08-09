@@ -145,44 +145,22 @@ assert(
   'missing L0 lightweight lifecycle eval',
 );
 assert(
-  cases.some(item => item.id === 'lifecycle-l2-lean-single-document'
+  cases.some(item => item.id === 'lifecycle-l2-standard-single-record'
     && item.expect.action === 'NEXT'
-    && item.expect.requiredAssertions?.some(assertion => assertion.includes('exactly one L2 document'))),
-  'missing L2 lean single-document eval',
+    && item.expect.requiredAssertions?.some(assertion => assertion.includes('exactly one standard delivery record'))),
+  'missing L2 STANDARD single-record eval',
 );
 assert(
   cases.some(item => item.id === 'lifecycle-cross-tenant-measures-ask'
-    && item.expect.action === 'SELECT_L4'
-    && item.expect.requiredAssertions?.some(assertion => assertion.includes('one L4 document'))),
-  'missing cross-tenant L4 eval',
+    && item.expect.action === 'SELECT_FULL'
+    && item.expect.requiredAssertions?.some(assertion => assertion.includes('FULL'))),
+  'missing cross-tenant FULL-mode eval',
 );
 assert(
   cases.some(item => item.id === 'lifecycle-l3-governance-no-four-docs'
-    && item.expect.action === 'SELECT_L4'
+    && item.expect.action === 'SELECT_FULL'
     && item.expect.requiredAssertions?.some(assertion => assertion.includes('without fabricated product documents'))),
-  'missing L4 governance eval',
-);
-assert(
-  cases.some(item => item.id === 'lifecycle-l3-lean-single-document'
-    && item.expect.action === 'SELECT_L3'),
-  'missing L3 lean single-document eval',
-);
-assert(
-  cases.some(item => item.id === 'lifecycle-l4-lean-single-document'
-    && item.expect.action === 'SELECT_L4'),
-  'missing L4 lean single-document eval',
-);
-assert(
-  cases.some(item => item.id === 'lifecycle-l5-new-system-four-documents'
-    && item.expect.action === 'SELECT_L5'
-    && item.expect.requiredAssertions?.some(assertion => assertion.includes('four independent documents'))),
-  'missing L5 new-system four-document eval',
-);
-assert(
-  cases.some(item => item.id === 'lifecycle-l5-missing-role-and-state-ask'
-    && item.expect.action === 'ASK'
-    && item.expect.requiredAssertions?.some(assertion => assertion.includes('one grouped set'))),
-  'missing grouped ASK eval for L5 unknown facts',
+  'missing L3 FULL governance eval',
 );
 assert(
   cases.some(item => item.id === 'technical-same-requirement-different-solution-risk'
@@ -342,24 +320,6 @@ assert(
     && item.expect.action === 'USE_SINGLE_OWNER_POLICY'
     && item.expect.requiredAssertions?.length >= 3),
   'missing single-owner PR review eval',
-);
-assert(
-  cases.some(item => item.id === 'worktree-new-task-dirty-current-stop'
-    && item.expect.action === 'STOP'
-    && item.expect.requiredAssertions?.length >= 3),
-  'missing dirty current worktree versus new task eval',
-);
-assert(
-  cases.some(item => item.id === 'worktree-old-dirty-reuse-stop'
-    && item.expect.action === 'STOP'
-    && item.expect.forbid?.includes('REUSE')),
-  'missing merged dirty worktree reuse eval',
-);
-assert(
-  cases.some(item => item.id === 'engineering-partial-commit-stop'
-    && item.expect.action === 'STOP'
-    && item.expect.forbid?.includes('创建 PR')),
-  'missing partial commit worktree integrity eval',
 );
 assert(
   cases.some(item => item.id === 'release-next'

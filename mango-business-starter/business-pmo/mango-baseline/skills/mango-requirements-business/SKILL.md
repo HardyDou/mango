@@ -1,27 +1,39 @@
 ---
 name: mango-requirements-business
-description: 创建或评审 L5 Mango 业务需求文档，覆盖背景、相关利益方诉求、范围、编号用户故事、业务规则、验收和实际引用；不写系统或技术设计。
+description: Create or review a Mango Business Requirements Document from business goals, actors, objects, flows, rules, and acceptance outcomes. Use for business requirement discovery only; do not use for system behavior, UI specifications, APIs, database design, technical design, implementation tasks, or coding.
 ---
 
-# Mango L5 业务需求
+# Mango Business Requirements
 
-## 加载
+## Resolve Sources
 
-解析 `PMO_ROOT`，以 `pm/requirement` 执行 preflight，然后读取：
+Set `PMO_ROOT` to the first available source: `<repo>/business-pmo/mango-baseline`, `<repo>/mango-pmo`, or `<plugin-root>/dist/baseline`. If none exists, `STOP`. Never use remembered or copied rules.
 
-- `agents/business-requirements-agent.md`
-- `rules/product/01-business-requirements.md`
-- `contracts/lean-documents.json`
-- `templates/l5-business-requirements.md`
-- `tools/check-lean-document.mjs`
+## Load
 
-本 Skill 只用于 `L5`。`L0/L1` 无文档，`L2-L4` 使用对应单文档。
+Before drafting, read these authoritative assets:
 
-## 执行
+- `$PMO_ROOT/agents/business-requirements-agent.md`
+- `$PMO_ROOT/rules/product/01-business-requirements.md`
+- `$PMO_ROOT/contracts/business-requirements.json`
+- `$PMO_ROOT/templates/business-requirements.md`
+- `$PMO_ROOT/tools/check-business-requirements.mjs`
+- `$PMO_ROOT/tools/check-lifecycle-handoff.mjs`
+- `$PMO_ROOT/rules/09-test-case-automation-flow.md`
+- `$PMO_ROOT/rules/product/05-document-lifecycle.md`
 
-1. 从用户材料和可引用事实提取背景、问题证据、目标、范围，以及实际相关的公司、高管/管理者、系统用户诉求。
-2. 编写 `BR`、业务规则、`BAC` 和编号用户故事。每个故事一行，包含前置、角色、动作过程、成功及失败/边界。
-3. 只维护 `US -> BR`。实际采用的规范写精确版本，代码行为/示例写路径和 commit/SHA。
-4. 目标、角色诉求、允许/禁止行为或成功结果无法确定时，一次集中询问关联问题；不得插入占位结论或推测业务事实。
-5. 不写页面、API、表结构、模块或实现选择。
-6. 运行 `node "$PMO_ROOT/tools/check-lean-document.mjs" --document <path>`。不得削弱检查器。检查通过且业务负责人确认关键事实后，返回 `$mango-pmo-lifecycle`。
+Run PMO preflight with role `pm` and phase `requirement`, then read every `Must read` file.
+
+## Execute
+
+1. Read repository facts, user sources and the resolved delivery-mode baseline. Continue for a standalone BRD only in FULL product flow or when the user explicitly requests a higher-mode artifact. SIMPLE creates no BRD; STANDARD writes the business section in its single record.
+2. Choose one action:
+   - `STOP`: requested content crosses the stage boundary, authoritative assets disagree, or a required source is unavailable.
+   - `ASK`: a required business fact cannot be established. Ask one focused question and do not insert placeholders or invented facts.
+   - `WRITE`: inputs satisfy the rule; fill the official template with business content only and preserve required trace identifiers.
+3. Set `pmoVersion` to the contract's exact `metadata.fixed.pmoVersion`, then run `node "$PMO_ROOT/tools/check-business-requirements.mjs" --document <document-path>`.
+4. Fix failures without weakening the checker or moving forbidden downstream content into the document.
+5. Run the lifecycle checker for the user-enabled BRD; disabled future documents are not required. The BRD must be `APPROVED/NEXT`, name a human approver, contain verifiable approval evidence, and have no open blocker.
+6. Return `NEXT: $mango-pmo-lifecycle` only when the dedicated checker, applicable lifecycle handoff, gate table and human approval all pass. Let the coordinator choose the next enabled measure; do not assume SRS follows.
+
+With an empty context, return `ASK` for the business problem, affected actors, expected outcome and M03 confirmation. Do not generate a generic document or infer BRD from L2/L3.
