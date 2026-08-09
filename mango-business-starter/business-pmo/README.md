@@ -12,8 +12,7 @@
 | `mango-baseline/tools/pmo-preflight.mjs` | 按 role、phase、task、paths 输出 References 与 Code baselines |
 | `mango-baseline/tools/delivery-contract-check.mjs` | 校验设计和交付台账 |
 | `mango-baseline/tools/acceptance-evidence-check.mjs` | 校验验收证据表 |
-| `mango-baseline/tools/check-lean-document.mjs` | 校验当前 L2-L5 精简文档、直接追踪、引用和页数 |
-| `mango-baseline/tools/check-document-set.mjs` | 读取哈希锁定的历史生命周期文档 |
+| `mango-baseline/tools/check-document-set.mjs` | 扫描四类生命周期文档及其上游关系 |
 | `architecture-debt-budget.json` | 项目自有的 schema v4 架构债务预算和不可变首次纳管审计；初始为空 |
 | `global-entity-exceptions.json` | 业务架构门禁显式读取的全局 Entity 例外清单，初始为空 |
 | 项目根 `.github/pull_request_template.md` | 业务仓自有 PR 说明；其中 Risk / Verification 区段由锁定 PMO 合同同步和检查 |
@@ -26,9 +25,7 @@
 | 规则路由 | `mango-baseline/tools/pmo-preflight.mjs` | 按 role、phase、task、paths 输出按需参考与代码 baseline。 |
 | 交付契约检查 | `delivery-contract-check.mjs` | 校验设计说明和交付台账。 |
 | 验收证据检查 | `acceptance-evidence-check.mjs` | 校验验收证据表和弱表达。 |
-| 精简文档门禁 | `check-lean-document.mjs` | 校验 L2-L4 单文档及 L5 四文档的结构、页数、引用、追踪和空话。 |
-| 空白上下文路由 | `resolve-lean-document-policy.mjs` | 根据 L0-L5、强制 L5 事实和关键未知项确定文档形态或集中 ASK。 |
-| 历史文档读取 | `check-document-set.mjs` | 只读取和校验已锁定的旧 BRD、SRS、TDD、实施计划。 |
+| 文档集合门禁 | `check-document-set.mjs` | 自动识别 BRD、SRS、TDD、实施计划并阻断合同或链路错误。 |
 | baseline 快照 | `mango-baseline/rules`、`agents`、`templates` | 业务仓脱离 Mango 源码后仍能读取规则。 |
 | baseline 同步 | `mango pmo sync` | 从锁定 PMO bundle 同步 baseline、Risk / Verification 区段、入口和兼容脚本。 |
 
@@ -75,11 +72,11 @@ node business-pmo/mango-baseline/tools/pmo-preflight.mjs \
   --json
 ```
 
-当前精简文档检查：
+业务文档集合检查：
 
 ```bash
-node business-pmo/mango-baseline/tools/check-lean-document.mjs \
-  --document business-docs/delivery/task-17.md
+node business-pmo/mango-baseline/tools/check-document-set.mjs \
+  --root business-docs
 ```
 
 交付台账检查：
@@ -157,7 +154,7 @@ node business-pmo/mango-baseline/tools/acceptance-evidence-check.mjs \
 
 ## 10. 快速开始
 1. 正式变更前执行 preflight，选择 Code baselines；只在边界不明确时查阅具体 Reference。
-2. 按 L0-L5 创建无文档、L2-L4 单文档或 L5 四文档，并用 `check-lean-document.mjs` 检查。
+2. 设计或交付任务创建 design 和 ledger，并用 `delivery-contract-check.mjs --mode plan` 检查列和覆盖项。
 3. 开发和验证过程中把证据写入 `business-docs/evidence`。
 4. 验证阶段执行 `acceptance-evidence-check.mjs`，避免只写“接口 200”“页面正常”。
 5. 交付前执行 `delivery-contract-check.mjs --mode verify`，确认台账状态为 `DONE` 或有明确 `EXCEPTION`。

@@ -12,7 +12,7 @@ Set `PMO_ROOT` to the first available source: `<repo>/business-pmo/mango-baselin
 ## Resolve Before Editing
 
 1. Run PMO preflight with role `dev`, phase `develop`, and the actual affected paths. Apply the workspace decision and select the returned code baseline before generating new code.
-2. Record requirement impact and solution risk separately, map their maximum to `L0-L5`, and verify the level-required lean artifact. If implementation changes scope, impact or solution risk, escalate the level before editing beyond the baseline.
+2. Record requirement impact and solution risk separately, map their maximum to SIMPLE, STANDARD or FULL, and verify the mode-required artifact. If implementation changes scope, impact or solution risk, escalate the mode before editing beyond the baseline.
 3. Render the selected template in an isolated directory and run its declared checks before integrating it. Current project configuration, API contracts, and domain facts are inputs; old code is not a structural template.
 4. Consult a returned reference only when a checker failure or interface, data, security, transaction, or module boundary remains unresolved. Do not bulk-read references before editing.
 5. Treat Spring registration as a proved architecture contract: business `XxxService implements IXxxService` uses `@Service`; replaceable framework defaults use starter `@Bean + @ConditionalOnMissingBean`; pure Java helpers are not named Service. Never construct a managed Service in a Controller/business Service or introduce mutable static Service state.
@@ -27,7 +27,7 @@ If the current workspace is already on a non-`main` task branch/worktree and the
 
 ## Implement And Gate
 
-1. Implement only the resolved scope. `L0/L1` proceed directly, `L2-L4` follow the matching single document, and `L5` follows the approved technical design and implementation plan with direct trace identifiers.
+1. Implement only the resolved scope. SIMPLE proceeds directly, STANDARD follows its one-file checklist, and FULL follows the applicable approved plan and trace identifiers.
 2. When the approved scope says rewrite or replace, make the new implementation the only execution path. Remove the old implementation, calls, configuration and fallback, then search their identifiers and fallback conditions. A compatibility path is allowed only when the approved scope separately identifies its consumer, deadline, exit condition and verification.
 3. For Java changes, inspect new or modified getters, setters and constructors. Use the Lombok form required by the backend rule for mechanical code; keep handwritten code only when it carries named validation, normalization, defensive-copying, visibility, lazy-loading or framework semantics. Do not introduce blanket `@Data` where it changes model semantics.
 4. For every new or modified test, record the observed rule, state, failure, side effect or integration boundary and prove that the target really executes. Place business behavior in `core`, keep mechanical contract tests out of `api`, keep business unit tests out of `starter-remote`, and retain in `starter` only tests with a real runtime or integration observation target.

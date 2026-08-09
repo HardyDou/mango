@@ -12,7 +12,7 @@ Resolve `PMO_ROOT` from the installed business baseline, Mango source repository
 ## Execute
 
 1. Return `ASK` until project identity, topology, target directory, package coordinates, required modules, and release versions are explicit.
-2. 读取已解析的交付等级。新项目、新系统或新模块固定为 `L5`，要求业务需求、系统需求、技术设计、实施与验证计划及其直接追踪有效；只有事实证明任务是已有系统的有限扩展时，才按 `L2-L4` 对应单文档处理。
+2. Read the resolved delivery-mode baseline. A new project is normally FULL; require its applicable approved requirements, design and plan artifacts and lifecycle handoff. Use STANDARD only when facts prove a bounded L2 extension rather than project bootstrap.
 3. Use the released Mango CLI and its canonical project-generation entry; do not hand-copy starter files.
 4. Run the PMO baseline, workspace, dependency, startup, documentation, acceptance, Maven architecture, and generated-backend gates required by the loaded rules and generated project.
 5. Return `STOP` on version drift, baseline drift, workspace collision, failed startup, missing real data path, failed architecture verification, or failed acceptance evidence. Do not replace failed commands with a hand-built shortcut.

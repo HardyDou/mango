@@ -16,8 +16,6 @@
 | Codex plugin 投影 | `.codex-plugin`、`skills`                                                   | npm 包根可安装插件；版本由 build 从 package metadata 生成                          |
 | 业务同步          | `mango pmo sync/upgrade`                                                    | CLI 从本包安装业务仓 baseline，并同步 canonical PR 风险合同区段                    |
 | 影响驱动门禁      | `dist/baseline/tools/risk-verification.mjs`、`classify-pmo-check-scope.mjs` | 校验需求/方案风险，并把 Java PR 限定到受影响 Maven 模块                            |
-| 精简文档          | `contracts/lean-documents.json`、`check-lean-document.mjs`                  | 校验 L2-L4 页数、L5 四文档、直接追踪、精确引用和无效填充                           |
-| 空白上下文路由    | `resolve-lean-document-policy.mjs`                                          | 根据 L0-L5、强制 L5 事实和关键未知项返回 DIRECT、WRITE、ASK 或 STOP                |
 | 前端页面基线      | `dist/baseline/tools/check-frontend-page-baseline.mjs`                      | 检查新增或修改页面的默认骨架，并支持带可复核原因的按类型或整页例外                 |
 | 标准代码基线      | PMO baseline manifest 与 code-baseline tools                                | 为新增业务模块提供模块/包结构、规范实现样例、变量渲染和机器自检                    |
 
@@ -63,15 +61,15 @@ mango pmo check --project-dir . --locked
 
 ## 5. API 与扩展
 
-| API / 扩展点                | 输入                            | 输出                                                            |
-| --------------------------- | ------------------------------- | --------------------------------------------------------------- |
-| `scripts/build-package.mjs` | `mango-pmo/**`                  | `dist/baseline/**`、manifest、包根 plugin/skills 和最佳示例投影 |
-| `scripts/check-package.mjs` | `dist/baseline/**`              | 校验结果                                                        |
-| `exports["."]`              | npm import                      | `dist/baseline.json`                                            |
-| `exports["./baseline/*"]`   | npm package path                | baseline 文件                                                   |
-| `exports["./plugin.json"]`  | npm package path                | package-root Codex plugin manifest                              |
-| `exports["./skills/*"]`     | npm package path                | package-root 交付 Skill 投影                                    |
-| npm package root            | `.codex-plugin/**`、`skills/**` | Codex plugin 安装投影                                           |
+| API / 扩展点                | 输入                            | 输出                                                  |
+| --------------------------- | ------------------------------- | ----------------------------------------------------- |
+| `scripts/build-package.mjs` | `mango-pmo/**`                  | `dist/baseline/**`、manifest、包根 plugin/skills 投影 |
+| `scripts/check-package.mjs` | `dist/baseline/**`              | 校验结果                                              |
+| `exports["."]`              | npm import                      | `dist/baseline.json`                                  |
+| `exports["./baseline/*"]`   | npm package path                | baseline 文件                                         |
+| `exports["./plugin.json"]`  | npm package path                | package-root Codex plugin manifest                    |
+| `exports["./skills/*"]`     | npm package path                | package-root 交付 Skill 投影                          |
+| npm package root            | `.codex-plugin/**`、`skills/**` | Codex plugin 安装投影                                 |
 
 ## 6. 数据与初始化
 

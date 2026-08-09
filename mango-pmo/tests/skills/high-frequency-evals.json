@@ -283,16 +283,16 @@
       }
     },
     {
-      "id": "engineer-l0-l5-selection",
+      "id": "engineer-l0-l3-selection",
       "kind": "gate",
-      "prompt": "Implement the approved cross-module Java and frontend plan and state which L0-L5 delivery level applies before editing.",
+      "prompt": "Implement the approved cross-module Java and frontend plan and state which L0-L3 verification level applies before editing.",
       "context": { "approvedTechnicalDesign": true, "approvedImplementationPlan": true },
-      "expect": { "skill": "mango-engineering", "references": ["rules/04-test-assets.md", "rules/05-ai-delivery-quality.md", "rules/backend/08-test.md", "rules/frontend/04-test.md"], "mustRecord": ["L0-L5 delivery level", "evidence requirements"] }
+      "expect": { "skill": "mango-engineering", "references": ["rules/04-test-assets.md", "rules/05-ai-delivery-quality.md", "rules/backend/08-test.md", "rules/frontend/04-test.md"], "mustRecord": ["L0-L3 verification level", "evidence requirements"] }
     },
     {
-      "id": "qa-l0-l5-blank-entry",
+      "id": "qa-l0-l3-blank-entry",
       "kind": "blank-context",
-      "prompt": "Accept the change at the appropriate L0-L5 level.",
+      "prompt": "Accept the change at the appropriate L0-L3 level.",
       "context": {},
       "expect": { "skill": "mango-qa-verification", "action": "STOP", "references": ["rules/04-test-assets.md", "rules/05-ai-delivery-quality.md", "rules/backend/08-test.md", "rules/frontend/04-test.md"], "missing": "acceptance mapping and implementation evidence" }
     },
@@ -637,85 +637,20 @@
       }
     },
     {
-      "id": "lifecycle-l2-lean-single-document",
+      "id": "lifecycle-l2-standard-single-record",
       "kind": "boundary",
-      "prompt": "Fresh-session trusted fixture for $mango-pmo-lifecycle: add a field path to the existing JSON parse error. Requirement impact=L2, solution risk=L2, final risk=L2, M01=CREATE. Route the task using exactly one L2 document with observable requirements, one technical change, references and acceptance evidence, limited to one A4-equivalent page.",
-      "context": { "requirementImpact": "L2", "solutionRisk": "L2", "finalRisk": "L2", "deliveryMode": "L2" },
+      "prompt": "Fresh-session trusted fixture for $mango-pmo-lifecycle: enhance an import flow with one new field, first-sheet selection, visible progress, persisted import history and mapped API/UI verification. Requirement impact=L2, solution risk=L2, final risk=L2, M01=CREATE. Route the task using exactly one STANDARD delivery record with observable requirements, technical decisions, implementation items and acceptance evidence.",
+      "context": { "requirementImpact": "L2", "solutionRisk": "L2", "finalRisk": "L2", "deliveryMode": "STANDARD" },
       "expect": {
         "skill": "mango-pmo-lifecycle",
         "action": "NEXT",
         "nextSkill": "mango-engineering",
         "requiredAssertions": [
-          "delivery level is L2",
-          "exactly one L2 document carries the user story, system satisfaction, technical change and acceptance mapping",
-          "the document is limited to one A4-equivalent page",
+          "delivery mode is STANDARD",
+          "exactly one standard delivery record carries SRS, design, plan and acceptance mapping",
           "separate BRD, SRS, TDD and Plan files are not created"
         ],
         "forbid": ["four-document package", "sixteen-item questionnaire"]
-      }
-    },
-    {
-      "id": "lifecycle-l3-lean-single-document",
-      "kind": "boundary",
-      "prompt": "Fresh-session trusted fixture for $mango-pmo-lifecycle: add workflow withdrawal for the initiator before any approval task is processed. Multiple roles and states are involved, the existing architecture remains, and rollback is clear. Requirement impact=L3, solution risk=L3. Route the fresh task.",
-      "context": { "requirementImpact": "L3", "solutionRisk": "L3", "finalRisk": "L3" },
-      "expect": {
-        "skill": "mango-pmo-lifecycle",
-        "action": "SELECT_L3",
-        "requiredAssertions": [
-          "exactly one L3 document is created",
-          "the document is limited to three A4-equivalent pages",
-          "numbered user stories, system satisfaction, an applicable state or flow diagram, changed dictionaries and direct trace are included"
-        ],
-        "forbid": ["four independent documents", "FULL", "STANDARD"]
-      }
-    },
-    {
-      "id": "lifecycle-l4-lean-single-document",
-      "kind": "boundary",
-      "prompt": "Fresh-session trusted fixture for $mango-pmo-lifecycle: add per-tenant OIDC login across the authentication service, tenant configuration, encrypted client secret storage and login UI. Public contracts, tenant isolation, security and compatibility are affected. Requirement impact=L4, solution risk=L4. Route the fresh task.",
-      "context": { "requirementImpact": "L4", "solutionRisk": "L4", "finalRisk": "L4" },
-      "expect": {
-        "skill": "mango-pmo-lifecycle",
-        "action": "SELECT_L4",
-        "requiredAssertions": [
-          "exactly one L4 document is created",
-          "the document is limited to five A4-equivalent pages",
-          "tenant, security, public contract, compatibility, changed dictionaries and real API/UI assertions are explicit"
-        ],
-        "forbid": ["four independent documents", "unrelated test types"]
-      }
-    },
-    {
-      "id": "lifecycle-l5-new-system-four-documents",
-      "kind": "boundary",
-      "prompt": "Fresh-session trusted fixture for $mango-pmo-lifecycle: build a new supplier onboarding system. Business goals, company and user needs, system boundaries, states, public dictionaries, technical baseline and rollout facts are all confirmed. New system is an explicit fact. Route the fresh task.",
-      "context": { "triggerFact": "NEW_SYSTEM", "finalRisk": "L5" },
-      "expect": {
-        "skill": "mango-pmo-lifecycle",
-        "action": "SELECT_L5",
-        "requiredAssertions": [
-          "new system is fixed at L5",
-          "four independent documents are required: business requirements, system requirements, technical design, and implementation/verification plan",
-          "direct trace is US to BR, SR to US or BR, TD to SR, TASK to TD, and VAL to SR or TASK"
-        ],
-        "forbid": ["single combined document", "downgrade because the first release is small"]
-      }
-    },
-    {
-      "id": "lifecycle-l5-missing-role-and-state-ask",
-      "kind": "blank-context",
-      "prompt": "Use $mango-pmo-lifecycle for a new supplier system, but company goals, manager needs, system-user roles, allowed state transitions and external responsibility are not provided.",
-      "context": { "triggerFact": "NEW_SYSTEM", "materialUnknowns": true },
-      "expect": {
-        "skill": "mango-pmo-lifecycle",
-        "action": "ASK",
-        "requiredAssertions": [
-          "preserve L5 because this is a new system",
-          "ask one grouped set covering business goal, role needs, state semantics and system boundary",
-          "do not invent missing facts"
-        ],
-        "forbid": ["generic four-document draft", "one question per template field"]
       }
     },
     {
@@ -729,7 +664,7 @@
         "requiredAssertions": [
           "solution A final risk is L1",
           "solution B final risk is L2",
-          "solution B maps to L2 and records the shared-layout decision and review in one one-page delivery document"
+          "solution B maps to STANDARD and records the shared-layout decision and review in one delivery record"
         ]
       }
     },
@@ -752,7 +687,7 @@
     {
       "id": "qa-backend-l3-no-forced-ui",
       "kind": "gate",
-      "prompt": "Verify an L3 backend-only concurrency and transaction change whose real consumer entry is an HTTP API and which has no browser page. Require all verification types merely because the level is L3.",
+      "prompt": "Verify an L3 backend-only concurrency and transaction change whose real consumer entry is an HTTP API and which has no browser page. Require all four verification types because L3 is highest risk.",
       "context": { "finalRisk": "L3", "browserEntry": false, "apiEntry": true },
       "expect": {
         "skill": "mango-qa-verification",
@@ -784,13 +719,13 @@
       "id": "lifecycle-cross-tenant-measures-ask",
       "kind": "boundary",
       "prompt": "Use $mango-pmo-lifecycle for a cross-service tenant authorization rule change. The business allow/deny rule, user-visible forbidden result, security boundary and real API/database behavior will change. No delivery-assurance measures have been confirmed yet. Decide what to do before coding.",
-      "context": { "riskLevel": "L4", "deliveryMode": "L4", "baselineResolved": true },
+      "context": { "riskLevel": "L3", "deliveryMode": "FULL", "baselineResolved": true },
       "expect": {
         "skill": "mango-pmo-lifecycle",
-        "action": "SELECT_L4",
+        "action": "SELECT_FULL",
         "requiredAssertions": [
-          "final risk is L4 because cross-service tenant authorization changes public security boundaries",
-          "exactly one L4 document is required, limited to five A4-equivalent pages",
+          "final risk L3 maps to FULL",
+          "the applicable product BRD, SRS, TDD and Plan chain is required",
           "real integration and API tenant-boundary evidence is required",
           "no UI verification is invented unless a browser outcome exists"
         ],
@@ -800,14 +735,14 @@
     {
       "id": "lifecycle-l3-governance-no-four-docs",
       "kind": "boundary",
-      "prompt": "Use $mango-pmo-lifecycle to change this repository from mandatory self-approval to single-owner governance while preserving required checks, resolved conversations and force-push protection. This PMO core-gate change is L4, changes long-lived governance semantics, and requires live GitHub configuration readback.",
-      "context": { "riskLevel": "L4", "deliveryMode": "L4", "baselineResolved": true },
+      "prompt": "Use $mango-pmo-lifecycle to change this repository from mandatory self-approval to single-owner governance while preserving required checks, resolved conversations and force-push protection. This PMO core-gate change is L3, changes long-lived governance semantics, and requires live GitHub configuration readback. No measures have been confirmed yet.",
+      "context": { "riskLevel": "L3", "deliveryMode": "FULL", "baselineResolved": true },
       "expect": {
         "skill": "mango-pmo-lifecycle",
-        "action": "SELECT_L4",
+        "action": "SELECT_FULL",
         "requiredAssertions": [
-          "L4 governance uses one bounded governance delivery document without fabricated product documents",
-          "require M07 governance decision record, M09 static verification, M14 expert review and M15 external state readback",
+          "L3 maps to FULL governance flow without fabricated product documents",
+          "require M07 governance decision record, implementation plan, M09 static verification, M14 expert review and M15 external state readback",
           "workspace isolation is resolved by policy without an M01 question",
           "preserve required checks and remote protection invariants"
         ],
@@ -943,14 +878,14 @@
     {
       "id": "new-project-next",
       "kind": "next",
-      "prompt": "Fresh-session trusted fixture: project identity=acme-order, topology=monolith, target=.runtime/projects/acme-order, group=com.acme, package=com.acme.order, modules=order, Maven=1.0.16, @mango/cli=1.0.68, @mango/pmo=1.1.0; release matrix is published and compatible; new system fixes final risk=L5 and delivery mode=L5; repository policy resolves M01=CREATE and facts activate M03/M04/M05/M06/M09/M11/M12; business requirements, system requirements, technical design and implementation/verification plan each pass check-lean-document.mjs with direct trace; CLI generation, PMO baseline, workspace, Maven architecture verify, startup, docs, and first-run evidence gates all exit=0; evidence=.runtime/projects/acme-order/business-docs/evidence/first-run.md. Return the governed action.",
+      "prompt": "Fresh-session trusted fixture: project identity=acme-order, topology=monolith, target=.runtime/projects/acme-order, group=com.acme, package=com.acme.order, modules=order, Maven=1.0.16, @mango/cli=1.0.68, @mango/pmo=1.1.0; release matrix is published and compatible; final risk=L3, delivery mode=FULL, repository policy resolves M01=CREATE and facts activate M03/M04/M05/M06/M09/M11/M12; each required document checker and handoff exits 0; CLI generation, PMO baseline, workspace, Maven architecture verify, startup, docs, and first-run evidence gates all exit=0; evidence=.runtime/projects/acme-order/business-docs/evidence/first-run.md. Return the governed action.",
       "context": { "requiredGatesExitCode": 0, "versionEvidencePresent": true },
       "expect": { "skill": "mango-project-bootstrap", "action": "NEXT" }
     },
     {
       "id": "new-module-next",
       "kind": "next",
-      "prompt": "Fresh-session trusted fixture: current non-main worktree is reused; new module payment-reconciliation is L5; approved business requirements, system requirements, technical design and implementation/verification plan pass check-lean-document.mjs and direct trace; module paths are recorded; structure, API/Controller/Feign/Service/Mapper/Entity architecture, exports, migration, menu/permission initialization, README, capability mapping, Maven verify and frontend tests all exit=0; evidence=business-docs/evidence/payment-reconciliation.md. Route to QA.",
+      "prompt": "Fresh-session trusted fixture: current non-main worktree is reused; approved TDD=business-docs/designs/tdd-payment-reconciliation.md and Plan=business-docs/plans/plan-payment-reconciliation.md pass dedicated and lifecycle checkers; module=payment-reconciliation paths are recorded; structure, API/Controller/Feign/Service/Mapper/Entity architecture, exports, migration, menu/permission initialization, README, capability mapping, Maven verify, frontend tests, and traceability gates all exit=0; evidence=business-docs/evidence/payment-reconciliation.md. Route to QA.",
       "context": { "requiredGatesExitCode": 0, "traceabilityComplete": true },
       "expect": { "skill": "mango-module-development", "action": "NEXT", "nextSkill": "mango-qa-verification" }
     },

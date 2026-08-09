@@ -21,10 +21,10 @@
 
 ## Risk / Verification
 
-- Requirement impact: L0-L5 - concrete affected users, contracts, data, security, or workflow facts
-- Solution risk: L0-L5 - concrete implementation scope, coupling, recovery, and uncertainty facts
-- Final risk: L0-L5
-- Delivery mode: SIMPLE / L2 / L3 / L4 / L5 / NOT_APPLICABLE (release-only)
+- Requirement impact: L0-L3 - concrete affected users, contracts, data, security, or workflow facts
+- Solution risk: L0-L3 - concrete implementation scope, coupling, recovery, and uncertainty facts
+- Final risk: L0-L3
+- Delivery mode: SIMPLE / STANDARD / FULL / NOT_APPLICABLE (release-only)
 - Workspace decision: CREATE / REUSE / MAIN_EXCEPTION
 - Non-downgradable facts: None / SECURITY, TENANT, AUTHORIZATION, FUNDS, DESTRUCTIVE_DATA, IRREVERSIBLE_RELEASE
 - Assurance baseline: RESOLVED / NOT_APPLICABLE - policy facts and any human `MODE_DOWNGRADE_CONFIRMED` or `MAIN_EXCEPTION_CONFIRMED` evidence; NOT_APPLICABLE is only for release-only PRs

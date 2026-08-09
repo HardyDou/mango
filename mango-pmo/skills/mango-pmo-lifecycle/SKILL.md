@@ -1,25 +1,37 @@
 ---
 name: mango-pmo-lifecycle
-description: 用户明确调用时协调 Mango L0-L5 需求到验收流程，路由单文档或 L5 四阶段；协调器不代写专项阶段。
+description: Coordinate the complete Mango requirement-to-acceptance lifecycle only when explicitly invoked. Route work across business requirements, system requirements, technical design, implementation planning, engineering, and QA; do not use for drafting one stage directly.
 ---
 
-# Mango PMO 生命周期
+# Mango PMO Lifecycle
 
-## 解析规范源
+## Resolve Sources
 
-按顺序选择首个存在的 `PMO_ROOT`：`<repo>/business-pmo/mango-baseline`、`<repo>/mango-pmo`、`<plugin-root>/dist/baseline`。均不存在时 `STOP`。执行 preflight，读取 `contracts/delivery-assurance.json`、`contracts/lean-documents.json`、`tools/resolve-lean-document-policy.mjs`、`rules/11-delivery-assurance.md` 和 `rules/product/05-document-lifecycle.md`。
+Set `PMO_ROOT` to the first existing directory:
 
-## 路由
+1. `<repo>/business-pmo/mango-baseline` in a Mango business project.
+2. `<repo>/mango-pmo` in the Mango source repository.
+3. `<plugin-root>/dist/baseline` in an installed `@mango/pmo` plugin package.
 
-1. 确定目标、成功结果、范围、工作区、需求影响、方案风险及二者最大值 `L0-L5`。
-2. `L0/L1` 直接进入工程；`L2-L4` 使用一份对应模板，依次完成撰写、`check-lean-document.mjs`、实施和验证；`L5` 按顺序路由四个专项 Skill。
-3. 只选择一个动作：
-   - `STOP`：规范源冲突、必要直接上游缺失或请求越过必要边界。
-   - `ASK`：关键目标、角色诉求、业务规则、状态/数据语义、系统边界、技术决定、文档位置或确认状态无法确定。
-   - `WRITE`：可编写当前文档，但尚不能移交。
-   - `NEXT`：精简检查通过、直接追踪有效、关键决定已由责任人确认且无阻断。
-4. 问题按业务、系统和技术主题集中提出；能从规范或代码确定的事实不问，不臆造缺失事实。
-5. 只维护直接追踪：`US -> BR`、`SR -> US/BR`、`TD -> SR`、`TASK -> TD`、`VAL -> SR/TASK`。
-6. M09-M16 按可观察验收事实选择，不按等级选择；发布保持独立。
+If neither exists, `STOP` and ask for PMO installation or synchronization. Never reconstruct rules from memory.
 
-旧阶段合同、模板和检查器仅用于历史兼容，不得用于创建新文档。
+## Load
+
+Run PMO preflight for the current phase. Use contract and checker output as the executable lifecycle source; consult only the specific returned reference needed to resolve an ambiguous handoff or failure.
+
+For every stage document, copy `pmoVersion` from that stage contract's `metadata.fixed.pmoVersion`. In a business project, also require `business-pmo/pmo-lock.json`, the installed baseline manifest, and the contract version to agree; otherwise `STOP` and repair or upgrade the PMO bundle.
+
+## Route
+
+1. Establish the objective, success conditions, scope and repository facts. Resolve workspace policy automatically: CREATE on main/primary, REUSE in the same task worktree, and ask only for a requested MAIN_EXCEPTION.
+2. Record requirement impact and solution risk separately, calculate their maximum, and map L0/L1 to SIMPLE, L2 to STANDARD, and L3 to FULL. Resolve solution risk before editing.
+3. Select exactly one action:
+   - `STOP`: PMO assets are missing or inconsistent, an upstream stage is absent or unapproved, or the request attempts to skip a required stage.
+   - `ASK`: the objective, material fact, requested exception, current stage, artifact location, or approval state cannot be established.
+   - `NEXT`: the current artifact passes its dedicated checker, staged lifecycle handoff and human approval gate, with no blocking unresolved decision.
+4. SIMPLE routes directly to engineering with no delivery document. STANDARD routes through one standard delivery record and its checker. FULL routes through the applicable complete product or specialist lifecycle; do not fabricate product documents for governance-only work.
+5. Select M09-M16 by observable acceptance facts, not by level alone. Route to exactly one specialized Skill; release stays separate.
+6. Do not draft an enabled artifact inside this coordinator. The selected specialized Skill owns writing and validation, then returns here for the next enabled measure.
+7. Do not declare completion until the mode-required artifacts pass, selected verification proves each acceptance outcome, trace links close, and every exception has explicit evidence and residual risk.
+
+With an empty context, return `ASK` for the business objective and source material. Do not guess a current stage.
