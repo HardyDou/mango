@@ -16,12 +16,6 @@ upstreamDocumentHash: {{SRS_SHA256_OR_NONE}}
 
 # {{REQUIREMENT_NAME}} 技术设计文档
 
-## 0. 参考资料与代码基线
-
-| 类型 | 路径或模板ID | 版本或提交 | 用途 | 实际采用范围 |
-|---|---|---|---|---|
-| code-baseline | {{CODE_BASELINE_ID_OR_NONE}} | {{CODE_BASELINE_VERSION}} | {{BASELINE_PURPOSE}} | {{BASELINE_SCOPE}} |
-
 ## 1. 设计输入、约束与决策
 
 | 决策ID | 问题 | 候选方案 | 选择 | 理由 | 来源ID或路径 | 是否推断 | 影响 | 风险 | 回退条件 |

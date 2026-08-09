@@ -7,7 +7,7 @@ description: Resolve a Mango task's workspace policy, L0-L3 risk, SIMPLE/STANDAR
 
 ## Resolve Sources
 
-Set `PMO_ROOT` to the first existing directory: `<repo>/business-pmo/mango-baseline`, `<repo>/mango-pmo`, or `<plugin-root>/dist/baseline`. If none exists, `STOP`. Run PMO preflight for the actual task and paths, use the delivery-assurance contract and checker as executable inputs, and consult references only for unresolved decisions.
+Set `PMO_ROOT` to the first existing directory: `<repo>/business-pmo/mango-baseline`, `<repo>/mango-pmo`, or `<plugin-root>/dist/baseline`. If none exists, `STOP`. Read `$PMO_ROOT/rules/11-delivery-assurance.md` and `$PMO_ROOT/contracts/delivery-assurance.json`, run PMO preflight for the actual task and paths, then read every `Must read` file.
 
 ## Keep Release Separate
 

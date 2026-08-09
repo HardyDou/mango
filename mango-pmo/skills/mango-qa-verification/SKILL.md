@@ -14,7 +14,7 @@ Set `PMO_ROOT` to the first available source: `<repo>/business-pmo/mango-baselin
 1. Read `$PMO_ROOT/agents/04-qa-agent.md`, `$PMO_ROOT/rules/00-dev-flow.md`, `$PMO_ROOT/rules/02-dev-environment.md`, `$PMO_ROOT/rules/03-ai-coding-redlines.md`, `$PMO_ROOT/rules/04-test-assets.md`, `$PMO_ROOT/rules/05-ai-delivery-quality.md`, `$PMO_ROOT/rules/09-test-case-automation-flow.md`, `$PMO_ROOT/rules/backend/01-code.md`, `$PMO_ROOT/rules/backend/08-test.md`, and `$PMO_ROOT/rules/frontend/04-test.md`.
 2. Read the resolved mode baseline, requirement impact, solution risk and final maximum. SIMPLE uses direct acceptance facts, STANDARD uses its single record, and FULL uses applicable lifecycle artifacts.
 3. Read `$PMO_ROOT/templates/acceptance-evidence.md`, `$PMO_ROOT/tools/acceptance-evidence-check.mjs`, and `$PMO_ROOT/tools/delivery-contract-check.mjs`.
-4. Run PMO preflight with role `qa`, phase `verify`, and the actual affected paths. Use executable test contracts and consult individual references only for unresolved acceptance boundaries.
+4. Run PMO preflight with role `qa`, phase `verify`, and the actual affected paths. Read every `Must read` file.
 
 `STOP` when acceptance criteria are not mapped to test cases, implementation gates failed, required test assets are missing, or evidence cannot be tied to the tested version. Use `ASK` for missing environment, data, account, tenant, permission, or evidence-location facts; never infer them.
 

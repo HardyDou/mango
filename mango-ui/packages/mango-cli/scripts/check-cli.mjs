@@ -795,11 +795,8 @@ try {
   if (!baselinePreflight.stdout.includes('rules/frontend/01-vue-code.md')) {
     throw new Error(`generated PMO preflight did not include frontend rules:\n${baselinePreflight.stdout}`);
   }
-  if (
-    !baselinePreflight.stdout.includes('References (consult only when needed):') ||
-    baselinePreflight.stdout.includes('rules/frontend/04-test.md')
-  ) {
-    throw new Error(`generated PMO preflight did not keep generic references lean:\n${baselinePreflight.stdout}`);
+  if (!baselinePreflight.stdout.includes('rules/frontend/04-test.md')) {
+    throw new Error(`generated PMO preflight did not include frontend test rules:\n${baselinePreflight.stdout}`);
   }
   assertGeneratedBaselineLoadsDeliveryContractForPr(projectRoot);
   assertBusinessAcceptanceBaseline(projectRoot);
@@ -2856,9 +2853,9 @@ function assertGeneratedBaselineLoadsDeliveryContractForPr(projectRoot) {
     throw new Error(`generated PMO PR preflight failed:\n${result.stdout}\n${result.stderr}`);
   }
   const output = JSON.parse(result.stdout);
-  const references = output.referenceDocs || [];
-  if (!references.some((entry) => entry.path === 'rules/01-delivery-contract.md')) {
-    throw new Error(`generated PMO PR preflight must reference delivery contract:\n${result.stdout}`);
+  const mustRead = output.mustRead || [];
+  if (!mustRead.some((entry) => entry.path === 'rules/01-delivery-contract.md')) {
+    throw new Error(`generated PMO PR preflight must load delivery contract:\n${result.stdout}`);
   }
 }
 
@@ -4000,8 +3997,7 @@ function assertPmoSyncCommand(tempRoot) {
   }
   if (
     !baselinePreflight.stdout.includes('rules/backend/10-dev-flow.md') ||
-    !baselinePreflight.stdout.includes('rules/frontend/05-dev-flow.md') ||
-    baselinePreflight.stdout.includes('rules/frontend/04-test.md')
+    !baselinePreflight.stdout.includes('rules/frontend/04-test.md')
   ) {
     throw new Error(`synced PMO preflight did not include expected rules:\n${baselinePreflight.stdout}`);
   }

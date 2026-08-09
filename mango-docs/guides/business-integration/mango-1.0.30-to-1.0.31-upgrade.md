@@ -71,7 +71,7 @@ mvn -f backend/pom.xml clean verify
 
 生成项目仍使用固定非 `${revision}` 版本时，先用 CLI 同步当前模板；不要通过共享 SNAPSHOT 或跳过架构/静态门禁绕过 worktree 隔离检查。
 
-Mango 源码仓或派生 CI 若用 `-pl ... -am` 只安装选定后端，应按 [发布制品与版本同步规范](../../../mango-pmo/rules/10-release-artifacts.md) 把本地 BOM 和后端模块放进同一个 Reactor。`-am` 不会因为业务 POM 使用 `scope=import` 自动加入 `mango-bom`：
+Mango 源码仓或派生 CI 若用 `-pl ... -am` 只安装选定后端，必须显式把本地 BOM 和后端模块放进同一个 Reactor。`-am` 不会因为业务 POM 使用 `scope=import` 自动加入 `mango-bom`：
 
 ```bash
 mvn -f mango/pom.xml \

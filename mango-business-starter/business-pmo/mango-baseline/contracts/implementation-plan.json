@@ -48,16 +48,6 @@
   ],
   "sections": [
     {
-      "ruleId": "PLAN-REF-005",
-      "title": "参考资料与代码基线",
-      "tables": [
-        {
-          "headers": ["类型", "路径或模板ID", "版本或提交", "用途", "实际采用范围"],
-          "minRows": 1
-        }
-      ]
-    },
-    {
       "ruleId": "PLAN-STRUCT-010",
       "title": "实施目标、范围与交付物",
       "tables": [

@@ -368,7 +368,7 @@ const contentChecks = [
     file: "AGENTS.md",
     patterns: [
       "business-pmo/mango-baseline/tools/pmo-preflight.mjs",
-      "Code baselines",
+      "实际加载的 Mango baseline 文件",
     ],
   },
   {
@@ -407,6 +407,7 @@ const contentChecks = [
       '"backend/**"',
       '"frontend/**"',
       '"business-docs/**"',
+      '"business-pmo/**"',
     ],
   },
   {

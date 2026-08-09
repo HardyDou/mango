@@ -10,7 +10,7 @@
 
 | 能力                   | 入口                                                                                                            | 说明                                                                                                                                                |
 | ---------------------- | --------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| PMO preflight          | `tools/pmo-preflight.mjs`                                                                                       | 根据 role、phase、task、paths 输出 References、Code baselines、工作区策略和检查命令                                                                  |
+| PMO preflight          | `tools/pmo-preflight.mjs`                                                                                       | 根据 role、phase、task、paths 输出 Must read 文件                                                                                                   |
 | 交付契约检查           | `tools/delivery-contract-check.mjs`                                                                             | 校验设计说明和交付台账                                                                                                                              |
 | 验收证据检查           | `tools/acceptance-evidence-check.mjs`                                                                           | 校验验收证据表和弱表达                                                                                                                              |
 | 规则路由               | rules index JSON                                                                                                | 维护规则、角色、阶段和 bundle 映射                                                                                                                  |
@@ -101,7 +101,7 @@ node business-pmo/mango-baseline/tools/pmo-preflight.mjs \
 
 | API / 扩展点                         | 输入                                                        | 输出                                                                                          |
 | ------------------------------------ | ----------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| `pmo-preflight.mjs`                  | role、phase、task、paths                                    | References、Code baselines、workspace policy、required checks                                  |
+| `pmo-preflight.mjs`                  | role、phase、task、paths                                    | Must read、workspace policy、required checks                                                  |
 | `delivery-contract-check.mjs`        | design、ledger、mode                                        | 台账覆盖和状态检查结果                                                                        |
 | `acceptance-evidence-check.mjs`      | evidence、min rows                                          | 验收证据表检查结果                                                                            |
 | `check-document-set.mjs`             | business docs root                                          | 自动发现并检查目录内生命周期文档及其上游关系                                                  |

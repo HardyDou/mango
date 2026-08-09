@@ -96,7 +96,7 @@ node business-pmo/mango-baseline/tools/pmo-preflight.mjs \
   --paths "<影响路径，逗号分隔>"
 ```
 
-`References` 只在边界不明确时定向查阅；代码生成优先使用 `Code baselines`。当前已经位于非 `main` 任务 worktree 时，preflight 会要求复用当前 worktree。
+Agent 读取输出中 `Must read` 的每一个文件原文。当前已经位于非 `main` 任务 worktree 时，preflight 会要求复用当前 worktree。
 
 ## 5. 文档检查与移交
 

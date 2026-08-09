@@ -1,6 +1,15 @@
 {
-  "version": 14,
-  "always": [],
+  "version": 13,
+  "always": [
+    {
+      "path": "rules/00-dev-flow.md",
+      "reason": "全局研发流程、当前规范优先级与历史债务不扩张"
+    },
+    {
+      "path": "rules/03-ai-coding-redlines.md",
+      "reason": "AI 编码红线、重写唯一执行路径与兼容迁移边界"
+    }
+  ],
   "rules": {
     "agent.pm": {
       "path": "agents/01-pm-agent.md",
@@ -196,19 +205,19 @@
     }
   },
   "roles": {
-    "pm": ["agent.pm"],
-    "tech-lead": ["agent.techLead"],
-    "dev": ["agent.dev", "process.aiCodingRedlines"],
-    "qa": ["agent.qa"],
-    "pmo": ["agent.pmo"]
+    "pm": ["agent.pm", "product.documentLifecycle"],
+    "tech-lead": ["agent.techLead", "product.documentLifecycle", "process.testCaseAutomation"],
+    "dev": ["agent.dev", "process.devEnvironment", "process.testAssets", "process.testCaseAutomation", "process.aiDeliveryQuality"],
+    "qa": ["agent.qa", "process.testAssets", "process.testCaseAutomation", "process.aiDeliveryQuality"],
+    "pmo": ["agent.pmo", "product.documentLifecycle", "process.aiDeliveryQuality", "process.documentAssets", "process.capabilityDocs"]
   },
   "phases": {
-    "requirement": ["process.deliveryAssurance"],
-    "design": ["process.deliveryAssurance"],
-    "develop": ["process.deliveryAssurance"],
-    "verify": ["process.deliveryAssurance", "process.aiDeliveryQuality"],
-    "release": ["process.releaseArtifacts"],
-    "governance": ["process.deliveryAssurance", "process.documentAssets"]
+    "requirement": ["process.deliveryAssurance", "product.documentLifecycle", "process.testCaseAutomation"],
+    "design": ["agent.techLead", "process.deliveryAssurance", "product.documentLifecycle", "process.testCaseAutomation"],
+    "develop": ["agent.dev", "process.deliveryAssurance", "process.devEnvironment", "process.testCaseAutomation", "process.aiDeliveryQuality"],
+    "verify": ["agent.qa", "process.deliveryAssurance", "process.testAssets", "process.testCaseAutomation", "process.aiDeliveryQuality"],
+    "release": ["process.testCaseAutomation", "process.aiDeliveryQuality", "process.releaseArtifacts"],
+    "governance": ["agent.pmo", "process.deliveryAssurance", "process.aiDeliveryQuality", "process.documentAssets", "process.capabilityDocs"]
   },
   "bundles": {
     "deliveryContract": {
@@ -224,7 +233,7 @@
     },
     "mangoIssueRegistration": {
       "roles": ["pm", "tech-lead", "dev", "qa", "pmo"],
-      "paths": [],
+      "paths": ["business-pmo/**", "mango-pmo/**"],
       "keywords": ["Mango Issue", "GitHub Issue", "Issue #", "issue #", "issue：", "issue:", "处理 Issue", "处理 issue", "修复 Issue", "修复 issue", "关闭 Issue", "关闭 issue", "提交ISSUE", "提交 Issue", "登记 Issue", "mango缺陷", "Mango缺陷", "框架问题", "业务消费 Mango"],
       "include": ["process.mangoIssueRunbook"]
     },
@@ -280,41 +289,17 @@
       "roles": ["tech-lead", "dev", "qa"],
       "paths": ["mango-ui/**", "frontend", "frontend/**", "apps/**", "packages/**"],
       "keywords": ["前端", "Vue", "TypeScript", "路由", "页面"],
-      "include": ["frontend.devFlow", "frontend.vue"]
+      "include": ["frontend.devFlow", "frontend.vue", "frontend.test", "frontend.businessApi"]
     },
     "frontendUi": {
       "roles": ["tech-lead", "dev", "qa"],
       "paths": ["mango-ui/apps/**/views/**", "mango-ui/packages/**/views/**", "frontend/apps/**/views/**", "frontend/packages/**/views/**"],
       "keywords": ["UI", "Element Plus", "列表", "搜索", "表格", "表单", "弹窗", "抽屉", "状态标签", "下拉", "筛选", "详情", "详情页", "编辑页", "配置页", "删除确认", "底部操作栏"],
-      "include": ["frontend.elementPlusUi", "frontend.adminUiCommon"]
-    },
-    "frontendListPage": {
-      "roles": ["tech-lead", "dev", "qa"],
-      "paths": [],
-      "keywords": ["列表页", "列表页面", "表格列表", "搜索列表"],
-      "include": ["frontend.listPage"]
-    },
-    "frontendDetailPage": {
-      "roles": ["tech-lead", "dev", "qa"],
-      "paths": [],
-      "keywords": ["详情页", "详情页面"],
-      "include": ["frontend.detailPage"]
-    },
-    "frontendFormPage": {
-      "roles": ["tech-lead", "dev", "qa"],
-      "paths": [],
-      "keywords": ["表单页", "编辑页", "配置页"],
-      "include": ["frontend.formPage"]
-    },
-    "frontendDialogDrawer": {
-      "roles": ["tech-lead", "dev", "qa"],
-      "paths": [],
-      "keywords": ["弹窗", "弹框", "对话框", "抽屉"],
-      "include": ["frontend.dialogDrawer"]
+      "include": ["frontend.elementPlusUi", "frontend.adminUiCommon", "frontend.listPage", "frontend.detailPage", "frontend.formPage", "frontend.dialogDrawer"]
     },
     "frontendComponent": {
       "roles": ["tech-lead", "dev", "qa"],
-      "paths": ["mango-ui/packages/**/src/components/**", "mango-ui/packages/**/src/index.ts", "mango-ui/packages/**/package.json", "mango-ui/packages/*/style.css", "frontend/packages/**/src/components/**", "frontend/packages/**/src/index.ts", "frontend/packages/**/package.json", "packages/**/src/components/**", "packages/**/src/index.ts", "packages/**/package.json"],
+      "paths": ["mango-ui/packages/**", "frontend/packages/**", "packages/**"],
       "keywords": ["组件开发", "公共组件", "业务组件", "选择组件", "npm", "独立消费", "私有仓库", "公开仓库", "微前端", "单体", "组件发布", "官方模块", "admin full", "@mango/admin/full", "样式聚合", "CLI 模块", "模块样式"],
       "include": ["frontend.componentDevelopment", "frontend.monorepo", "frontend.businessApi"]
     },
@@ -339,7 +324,7 @@
     "pmo": {
       "paths": ["mango-pmo/**", "rules/**", "agents/**"],
       "keywords": ["PMO", "规范治理", "规则治理", "Agent 入口", "Agent入口", "流程规范", "规范源", "文档归档", "归档边界"],
-      "include": ["agent.pmo", "process.documentAssets"]
+      "include": ["agent.pmo", "process.aiDeliveryQuality", "process.documentAssets"]
     },
     "documentAssets": {
       "paths": ["mango-docs/**", "mango-pmo/rules/**", "README.md", "**/README.md"],
@@ -348,7 +333,7 @@
     },
     "capabilityDocs": {
       "roles": ["pm", "tech-lead", "dev", "qa", "pmo"],
-      "paths": ["mango-docs/capabilities/**", "mango/**/README.md", "mango-ui/packages/**/README.md", "mango-business-starter/**/README.md"],
+      "paths": ["mango-docs/capabilities/**", "mango/**/README.md", "mango-ui/packages/**/README.md", "mango-business-starter/**/README.md", "mango/**/src", "mango/**/src/**", "mango-ui/packages/**/src", "mango-ui/packages/**/src/**", "mango-business-starter/**", "mango-ui/packages/mango-cli/**"],
       "keywords": ["能力说明", "能力地图", "模块 README", "capability", "capabilities", "README", "starter", "模板", "CLI", "公开能力", "接入方式", "配置项", "菜单", "权限", "排障入口", "生效确认", "@mango/workflow", "mango-workflow-api", "mango-workflow-starter", "designerJson", "formJson", "/workflow/", "流程定义发布", "发起审批", "任务办理"],
       "include": ["process.capabilityDocs", "process.documentAssets"]
     },

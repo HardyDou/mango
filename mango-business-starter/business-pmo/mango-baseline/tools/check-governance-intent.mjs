@@ -323,11 +323,17 @@ const index = JSON.parse(read('mango-pmo/rules/index.json'));
 if (!index.rules?.['process.capabilityDocs']) {
   failures.push('mango-pmo/rules/index.json: missing process.capabilityDocs');
 }
+if (!index.roles?.pmo?.includes('process.capabilityDocs')) {
+  failures.push('mango-pmo/rules/index.json: pmo role must include process.capabilityDocs');
+}
+if (!index.phases?.governance?.includes('process.capabilityDocs')) {
+  failures.push('mango-pmo/rules/index.json: governance phase must include process.capabilityDocs');
+}
 const capabilityBundle = index.bundles?.capabilityDocs;
 if (!capabilityBundle) {
   failures.push('mango-pmo/rules/index.json: missing capabilityDocs bundle');
 } else {
-  for (const expectedPath of ['mango-docs/capabilities/**', 'mango/**/README.md', 'mango-ui/packages/**/README.md', 'mango-business-starter/**/README.md']) {
+  for (const expectedPath of ['mango-docs/capabilities/**', 'mango/**/README.md', 'mango/**/src/**', 'mango-ui/packages/**/src/**', 'mango-business-starter/**']) {
     if (!capabilityBundle.paths?.includes(expectedPath)) {
       failures.push(`mango-pmo/rules/index.json: capabilityDocs bundle missing path ${expectedPath}`);
     }

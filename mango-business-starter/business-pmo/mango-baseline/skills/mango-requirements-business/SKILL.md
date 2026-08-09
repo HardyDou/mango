@@ -22,7 +22,7 @@ Before drafting, read these authoritative assets:
 - `$PMO_ROOT/rules/09-test-case-automation-flow.md`
 - `$PMO_ROOT/rules/product/05-document-lifecycle.md`
 
-Run PMO preflight with role `pm` and phase `requirement`; consult individual references only when requirement ownership or a contract boundary remains unresolved.
+Run PMO preflight with role `pm` and phase `requirement`, then read every `Must read` file.
 
 ## Execute
 

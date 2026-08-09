@@ -12,7 +12,7 @@ Set `PMO_ROOT` to the first available source: `<repo>/business-pmo/mango-baselin
 1. Require an Issue number or URL. With no identifier, return `ASK` and do nothing else.
 2. Read the Issue title, body, labels, state, comments, linked PRs, and latest relevant commits before running preflight or changing files.
 3. Read `$PMO_ROOT/rules/07-mango-issue-runbook.md`, `$PMO_ROOT/rules/00-dev-flow.md`, and `$PMO_ROOT/rules/05-ai-delivery-quality.md`.
-4. If a repository change or formal conclusion is required, run PMO preflight with the role, phase, task, and paths established from the Issue; consult individual references only when attribution or scope remains unresolved.
+4. If a repository change or formal conclusion is required, run PMO preflight with the role, phase, task, and paths established from the Issue; read every `Must read` file.
 
 ## Execute
 

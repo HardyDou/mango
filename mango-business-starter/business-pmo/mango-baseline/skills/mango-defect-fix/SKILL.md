@@ -9,7 +9,7 @@ description: Reproduce, attribute, minimally repair, and regress a Mango defect 
 
 Set `PMO_ROOT` to the first available source: the installed business baseline, Mango source PMO, or `<plugin-root>/dist/baseline`. Read `$PMO_ROOT/agents/03-dev-agent.md`, `$PMO_ROOT/rules/00-dev-flow.md`, `$PMO_ROOT/rules/03-ai-coding-redlines.md`, `$PMO_ROOT/rules/04-test-assets.md`, `$PMO_ROOT/rules/05-ai-delivery-quality.md`, and `$PMO_ROOT/rules/07-mango-issue-runbook.md`.
 
-Run PMO preflight with role `dev`, phase `develop`, and the affected paths after the failure is understood. Use selected code baselines for replacement code and consult references only when the failure boundary is unresolved.
+Run PMO preflight with role `dev`, phase `develop`, and the affected paths after the failure is understood; read every `Must read` file.
 
 For Java/backend defects, read `$PMO_ROOT/rules/backend/01-code.md` and `$PMO_ROOT/rules/backend/08-test.md` plus the other preflight-selected canonical backend rules and the resolved delivery-mode baseline. SIMPLE fixes proceed directly, STANDARD uses one record, and FULL uses the applicable lifecycle. If reproduction changes impact or solution risk, escalate the mode before continuing. Reuse the current non-main task worktree. Nearby historical fixes are evidence only; reject any pattern that conflicts with the loaded current rules.
 
