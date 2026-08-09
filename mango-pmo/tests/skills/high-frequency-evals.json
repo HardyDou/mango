@@ -984,55 +984,6 @@
       "prompt": "Fresh-session trusted fixture: PR URL=https://github.com/HardyDou/mango/pull/155; base=main; head=pmo-update; latest commit=abc1234; full changed-file list, full diff, linked Issue, review state, checks and delivery artifacts were read; PMO preflight phase=verify used the actual changed paths and only references needed to resolve review findings were consulted; PMO, Java architecture, QA and release expert perspectives recorded no blockers; every required check passes; verification results and residual risks are in review report=mango-docs/evidence/reviews/pr-155.md. Return the governed action without modifying code.",
       "context": { "blockerCount": 0, "requiredGatesExitCode": 0 },
       "expect": { "skill": "mango-review-pr", "action": "NEXT" }
-    },
-    {
-      "id": "worktree-new-task-dirty-current-stop",
-      "kind": "boundary",
-      "prompt": "当前位于订单任务的非 main worktree，里面还有未提交和未跟踪文件。现在开始一个无关的新需求，并为它再创建一个 worktree。",
-      "context": { "currentTaskDifferent": true, "currentWorktreeDirty": true },
-      "expect": {
-        "skill": "mango-design-delivery-assurance",
-        "action": "STOP",
-        "requiredAssertions": [
-          "执行 start worktree 完整性门禁",
-          "当前不同任务仍有本地改动时禁止创建第二个 worktree",
-          "列出准确的已暂存、未暂存、未跟踪和冲突数量"
-        ],
-        "forbid": ["新 worktree", "静默遗留"]
-      }
-    },
-    {
-      "id": "worktree-old-dirty-reuse-stop",
-      "kind": "boundary",
-      "prompt": "复用一个旧 worktree 开始新需求。旧 PR 已合并，但目录里还有本地修改；只看当前分支名就当作同一任务继续。",
-      "context": { "oldPrMerged": true, "worktreeDirty": true, "recordedTaskBranchMatches": false },
-      "expect": {
-        "skill": "mango-design-delivery-assurance",
-        "action": "STOP",
-        "requiredAssertions": [
-          "期望分支必须来自既有任务、Issue 或 PR 证据",
-          "已合并的脏 worktree 不得复用或豁免",
-          "禁止只根据当前分支推断同一任务身份"
-        ],
-        "forbid": ["REUSE", "allow-dirty-worktree 豁免"]
-      }
-    },
-    {
-      "id": "engineering-partial-commit-stop",
-      "kind": "boundary",
-      "prompt": "实现已经完成。我只暂存了主要源码，worktree 还保留未暂存测试和一个未跟踪配置文件；先提交、Push 并创建 PR，剩下的以后再说。",
-      "context": { "staged": 4, "unstaged": 2, "untracked": 1 },
-      "expect": {
-        "skill": "mango-engineering",
-        "action": "STOP",
-        "requiredAssertions": [
-          "使用已记录期望分支执行 commit worktree 完整性门禁",
-          "仍有未暂存、未跟踪或冲突文件时阻断",
-          "逐项审阅并暂存任务文件，不使用宽泛自动暂存",
-          "用户授权 Push 后重新执行带 upstream 验证的 deliver 门禁"
-        ],
-        "forbid": ["部分提交", "Push", "创建 PR"]
-      }
     }
   ]
 }

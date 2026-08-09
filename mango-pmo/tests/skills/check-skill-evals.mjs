@@ -344,24 +344,6 @@ assert(
   'missing single-owner PR review eval',
 );
 assert(
-  cases.some(item => item.id === 'worktree-new-task-dirty-current-stop'
-    && item.expect.action === 'STOP'
-    && item.expect.requiredAssertions?.length >= 3),
-  'missing dirty current worktree versus new task eval',
-);
-assert(
-  cases.some(item => item.id === 'worktree-old-dirty-reuse-stop'
-    && item.expect.action === 'STOP'
-    && item.expect.forbid?.includes('REUSE')),
-  'missing merged dirty worktree reuse eval',
-);
-assert(
-  cases.some(item => item.id === 'engineering-partial-commit-stop'
-    && item.expect.action === 'STOP'
-    && item.expect.forbid?.includes('创建 PR')),
-  'missing partial commit worktree integrity eval',
-);
-assert(
   cases.some(item => item.id === 'release-next'
     && item.expect.action === 'NEXT'
     && item.expect.requiredAssertions?.length >= 5),

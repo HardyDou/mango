@@ -3,8 +3,8 @@
   "packageVersion": "1.3.12",
   "schemaVersion": 2,
   "source": "mango-pmo",
-  "sourceCommit": "87abde1cde29736f9278b56815e98930ae0fec66",
-  "bundleSha256": "a027c22656d181eea7c087e6e13edd70f6805a008b78bfaf556dcd80a79bc897",
+  "sourceCommit": "29dfa3742b5a3200ee9a3b9c558ddc6c80ca6957",
+  "bundleSha256": "6a7eff437148979985ca423d5020f6fc8232b5a2004ad0cbe75f1a92bda8ebd7",
   "contracts": [
     {
       "contractId": "business-requirements",
@@ -54,7 +54,7 @@
   ],
   "plugin": {
     "path": "package-root",
-    "sha256": "bdcd71033a015e207c98ea7607172ab336cce43b1b9ea3c9f1e2b1dd35fad8f5",
+    "sha256": "d2bfba7e4557e541677416ad4b8ed39a084ae6b8b43e45ec0a30f26d22ee580a",
     "files": [
       {
         "path": ".codex-plugin/plugin.json",
@@ -79,8 +79,8 @@
       },
       {
         "path": "skills/mango-design-delivery-assurance/SKILL.md",
-        "sha256": "acea0727907525404f081d05f10f6e8b9e770cca009e32f347b1980b5c45f0a2",
-        "size": 4471,
+        "sha256": "2da275729cf4c90b7a5dce4bbdd00d7bfb6f0a6a46ab5662a65f09b0773c08ac",
+        "size": 3875,
         "kind": "plugin",
         "mode": "0644"
       },
@@ -107,15 +107,15 @@
       },
       {
         "path": "skills/mango-engineering/SKILL.md",
-        "sha256": "d7ed4667eb850a52a97ded2e4a05e8de7fe5d859726a385a8535b54910ba68f4",
-        "size": 7515,
+        "sha256": "776a8ed9d3c1ce611ad90ca3e403bc70dd4a1c447a39794db4a9832c928e1dec",
+        "size": 6829,
         "kind": "plugin",
         "mode": "0644"
       },
       {
         "path": "skills/mango-engineering/agents/openai.yaml",
-        "sha256": "456b7dec8c7acf602c8a96bee1f583f170def1fc6a908bbdbcb75ba4804accc5",
-        "size": 311,
+        "sha256": "af81995a4cd027f102ea21d75a1ad13a3a5e9244ff6aca9553e6ddd736940c0e",
+        "size": 286,
         "kind": "plugin",
         "mode": "0644"
       },
@@ -740,8 +740,8 @@
     },
     {
       "path": "rules/00-dev-flow.md",
-      "sha256": "b4be4147df9728f7342ed6f7d68222aa6bbfdd539bf32fafcf5d51e81d99e76f",
-      "size": 16683,
+      "sha256": "e9a3023aeb52018186c07c0ea4f7975de1a47badf6ca409138c56518bc8a4802",
+      "size": 15539,
       "kind": "rule",
       "mode": "0644"
     },
@@ -754,8 +754,8 @@
     },
     {
       "path": "rules/02-dev-environment.md",
-      "sha256": "16bc3158a85dda4b44317b284ce6cd746160e232c4ccdeff613d099a8e588a20",
-      "size": 13777,
+      "sha256": "b15ea39631c63ad1b2dafbd3edfafc522371dfd5f3f69aa8be42f80bde1a0e9f",
+      "size": 13015,
       "kind": "rule",
       "mode": "0644"
     },
@@ -775,8 +775,8 @@
     },
     {
       "path": "rules/05-ai-delivery-quality.md",
-      "sha256": "4b959cf59ac0bca00ed068d664b6ad227c5d16159ce4e03e260552447dd9a352",
-      "size": 16471,
+      "sha256": "3880bb88a3374425b0e0b5cd7d9bf88da2a1d0fe7c4a659fc078e7f87d2001c2",
+      "size": 16337,
       "kind": "rule",
       "mode": "0644"
     },
@@ -817,8 +817,8 @@
     },
     {
       "path": "rules/11-delivery-assurance.md",
-      "sha256": "d720b21b83e564e40a434ce7530f32918bb4e8666b0b53a954f80b887bacc4aa",
-      "size": 7323,
+      "sha256": "8f60165597a603d9bdda1dfb7574c3b5c4c3e360ebac1f0e560566671151c740",
+      "size": 6869,
       "kind": "rule",
       "mode": "0644"
     },
@@ -985,8 +985,8 @@
     },
     {
       "path": "rules/index.json",
-      "sha256": "f4ad2f827c4af431be00d50033d4da815e11ae56ed8115c1525cbeb54c4dea20",
-      "size": 27128,
+      "sha256": "41073e87b68f70976f9a115170cfd467def952346e50f99ee069d693c5c91c83",
+      "size": 27038,
       "kind": "rule",
       "mode": "0644"
     },
@@ -1062,8 +1062,8 @@
     },
     {
       "path": "skills/mango-design-delivery-assurance/SKILL.md",
-      "sha256": "acea0727907525404f081d05f10f6e8b9e770cca009e32f347b1980b5c45f0a2",
-      "size": 4471,
+      "sha256": "2da275729cf4c90b7a5dce4bbdd00d7bfb6f0a6a46ab5662a65f09b0773c08ac",
+      "size": 3875,
       "kind": "skill",
       "mode": "0644"
     },
@@ -1090,15 +1090,15 @@
     },
     {
       "path": "skills/mango-engineering/SKILL.md",
-      "sha256": "d7ed4667eb850a52a97ded2e4a05e8de7fe5d859726a385a8535b54910ba68f4",
-      "size": 7515,
+      "sha256": "776a8ed9d3c1ce611ad90ca3e403bc70dd4a1c447a39794db4a9832c928e1dec",
+      "size": 6829,
       "kind": "skill",
       "mode": "0644"
     },
     {
       "path": "skills/mango-engineering/agents/openai.yaml",
-      "sha256": "456b7dec8c7acf602c8a96bee1f583f170def1fc6a908bbdbcb75ba4804accc5",
-      "size": 311,
+      "sha256": "af81995a4cd027f102ea21d75a1ad13a3a5e9244ff6aca9553e6ddd736940c0e",
+      "size": 286,
       "kind": "skill",
       "mode": "0644"
     },
@@ -1503,8 +1503,8 @@
     },
     {
       "path": "tools/check-governance-intent.mjs",
-      "sha256": "451b7604bb5fc863fbf50ff74d8f5798af1b3c922db9c1cfeabf1b01e5069ab4",
-      "size": 13868,
+      "sha256": "29371c88bba2faebd38646502d9d77a911dc06535dcca289f28393e8cc63d893",
+      "size": 13054,
       "kind": "tool",
       "mode": "0644"
     },
@@ -1561,13 +1561,6 @@
       "path": "tools/check-technical-design.mjs",
       "sha256": "edeac20d182081d88273e1f75a848d1d85e12f47b8473d21898667cfa236b75c",
       "size": 220,
-      "kind": "tool",
-      "mode": "0644"
-    },
-    {
-      "path": "tools/check-worktree-delivery-integrity.mjs",
-      "sha256": "0901d9e377fee1d48e2e3c53842c7548b3fc2dbb016c45ea350cf1062a60708e",
-      "size": 11527,
       "kind": "tool",
       "mode": "0644"
     },
