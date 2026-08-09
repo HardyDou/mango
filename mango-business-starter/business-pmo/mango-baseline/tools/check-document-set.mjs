@@ -153,16 +153,10 @@ export function checkDocumentSet(rootPath) {
         file,
       ));
     }
-    // A pinned historical document is an immutable, previously approved
-    // snapshot. Its path, content hash and PMO contract version are the
-    // compatibility boundary. Revalidating that snapshot with the current
-    // contract would make every newly added section or table retroactive and
-    // force consumers to rewrite approved history. Keep the parsed metadata
-    // in the lifecycle graph below, but apply the current document contract
-    // only to current documents.
-    const result = hasPinnedHistoricalPmoVersion
-      ? { ast, findings: [] }
-      : validateDocument(source, contract, { documentPath: file });
+    const result = validateDocument(source, contract, {
+      documentPath: file,
+      allowHistoricalPmoVersions: hasPinnedHistoricalPmoVersion,
+    });
     const document = { file, source, type, contract, result, meta: result.ast.frontmatter.values };
     documents.push(document);
     if (hasPinnedHistoricalPmoVersion) {
