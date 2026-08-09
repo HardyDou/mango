@@ -2,7 +2,9 @@
 
 ## v2026.08.09-pmo-1.3.13-cli-1.0.103-pmo-rollback-release - 2026-08-09
 
-Status: `PENDING`. 本批次以新的不可变版本撤回 PR #737、#742、#745 的 PMO 部分及 #749-#752 引入的 PMO 升级；已发布的 PMO 1.3.10 至 1.3.12、CLI 1.0.99 至 1.0.102、Tag 和 GitHub Release 保留为审计历史，不删除、不移动、不重新发布。
+Status: `PUBLISHED_AND_VERIFIED`. 本批次从受保护 `main` 的 source commit `80bd147ab4525b581aa5711799d096e8f73ee06d`（tree `8827aa55e82f0d149cf123cefe3bb31f40a1ffeb`）发布，以新的不可变版本撤回 PR #737、#742、#745 的 PMO 部分及 #749-#752 引入的 PMO 升级。精确源码 archive 为 1,755,248,640 字节，SHA-256 为 `2ad9915f1a0914dd053746983b8aa30da960010880418ea8f93d17d75aab1a82`。`@mango/pmo@1.3.13`、`@mango/cli@1.0.103`、Tag、[GitHub Release](https://github.com/HardyDou/mango/releases/tag/v2026.08.09-pmo-1.3.13-cli-1.0.103-pmo-rollback-release) 与 Latest 文档均已发布并验证；Mango Maven `1.0.35` 未修改、未重新发布。旧 PMO/CLI 制品、Tag 和 GitHub Release 保留为不可变审计历史，不删除、不移动、不覆盖。
+
+最终 canonical release manifest 位于 `.mango/releases/pmo-1.3.13-cli-1.0.103-pmo-rollback/manifest.json`，SHA-256 为 `857435a0bfaee49e37704e1e121028c17b2cd2a5f22180800f5030bb09974d73`，`completed=true`。同一 manifest 保留了两次只读验证器失败及恢复证据：第一次错误解析 `npm view` 的扁平字段，第二次错误假设 pnpm 会把 PMO 提升到顶层 `node_modules`；两次均发生在不可变发布成功之后，修正语义验证器后只通过 `mango release repair` 继续验证，没有重发 Tag、Release 或 npm 坐标。
 
 ### Changed
 
@@ -21,11 +23,12 @@ Status: `PENDING`. 本批次以新的不可变版本撤回 PR #737、#742、#745
 
 ### Published Packages
 
-| 顺序 | 对象                       | 版本                                                         | 状态      |
-| ----: | -------------------------- | ------------------------------------------------------------ | --------- |
-|     1 | `@mango/pmo`               | `1.3.13`                                                     | `PENDING` |
-|     2 | `@mango/cli`               | `1.0.103`                                                    | `PENDING` |
-|     3 | Git tag and GitHub Release | `v2026.08.09-pmo-1.3.13-cli-1.0.103-pmo-rollback-release`    | `PENDING` |
+| 顺序 | 对象                       | 版本                                                      | 状态                                                                                                                                                                                                                       |
+| ----: | -------------------------- | --------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+|     1 | `@mango/pmo`               | `1.3.13`                                                  | `PUBLISHED_AND_VERIFIED`; hosted/group integrity `sha512-L/ULGDRq0WVxLaJ5q9S6rdI1UX65DVbBx6QeZpjZyyiAILBwLGwk9cZRdsL13xcL4+1XOLTnIkFCjLKvaiC5fQ==`; shasum `a5d990227fe880c66f00b9e9a1749792687b00b8` |
+|     2 | `@mango/cli`               | `1.0.103`                                                 | `PUBLISHED_AND_VERIFIED`; hosted/group integrity `sha512-6XYmMEZz+O1LaBe1lC/fMPgfCe4ZIVpCCmn2CyIppgc9Qg2fpOMeYOawULhnFepp2km6+ut9YYwoDTQs8YygIA==`; shasum `45d0c6a069bcf02ed8b8f02e5d47f5b637eb7274` |
+|     3 | Git tag and GitHub Release | `v2026.08.09-pmo-1.3.13-cli-1.0.103-pmo-rollback-release` | `CREATED_AND_VERIFIED`; annotated Tag 与 Release 均绑定 source commit `80bd147ab4525b581aa5711799d096e8f73ee06d`                                                                                                   |
+|     4 | Latest documentation       | release source above                                      | `PUBLISHED_AND_VERIFIED`; [GitHub Pages run 31321858786](https://github.com/HardyDou/mango/actions/runs/31321858786)；npm-only 批次未创建 Maven 文档快照                                                        |
 
 ### Upgrade Notes
 
@@ -35,9 +38,10 @@ Status: `PENDING`. 本批次以新的不可变版本撤回 PR #737、#742、#745
 
 ### Verification
 
-- PMO Node 测试、文档合同、Skill eval、治理意图与 workspace layout 检查。
-- `@mango/pmo` build/check、Business Starter 精确投影、CLI 全量测试和 release-impact/release-notes 门禁。
-- 本地 tarball 干净消费者完成 PMO 升级、full 项目初始化、locked check 与 CLI 自带业务模块模板生成。
+- PR #756 的 `frontend-pr-quality`、`pmo-doc-check`、`pr-contract-check` required checks 全绿；发布状态机再次执行 PMO package check、Business Starter 142 文件精确投影、CLI 全量测试、README 审计和 release-notes 门禁。
+- hosted 与 group 对两个坐标返回完全一致的 version、integrity、shasum 和发布时间；CLI release lock 同时匹配 29 个 npm 坐标，Maven 保持 `1.0.35`。
+- 干净消费者只从 npm group 安装 CLI 1.0.103 与其精确依赖的 PMO 1.3.13，完成 full 单体项目初始化、142 文件 locked check、业务模块生成、前端 typecheck、Vite production build 和后端八模块 Maven validate。
+- annotated Tag 和 GitHub Release 指向 source commit `80bd147ab4525b581aa5711799d096e8f73ee06d`；Latest 文档页面展示 PMO 1.3.13 / CLI 1.0.103，并由同一 source commit 的 GitHub Pages 成功运行证明。
 
 ## v2026.08.08-pmo-1.3.12-cli-1.0.102-worktree-integrity-release - 2026-08-08
 
