@@ -1,35 +1,7 @@
 <template>
-  <div class="file-container">
-    <aside class="directory-panel">
-      <div class="directory-header">
-        <span>目录</span>
-        <div class="directory-actions">
-          <el-button v-auth="'file:directories:add'" link type="primary" @click="handleAddDirectory"> 新建 </el-button>
-          <el-dropdown v-if="selectedDirectoryId !== '0'" trigger="click" @command="handleDirectoryCommand">
-            <el-button link type="primary"> 更多 </el-button>
-            <template #dropdown>
-              <el-dropdown-menu>
-                <el-dropdown-item v-auth="'file:directories:edit'" command="edit"> 重命名 </el-dropdown-item>
-                <el-dropdown-item v-auth="'file:directories:delete'" command="delete"> 删除 </el-dropdown-item>
-              </el-dropdown-menu>
-            </template>
-          </el-dropdown>
-        </div>
-      </div>
-      <el-tree
-        v-loading="directoryLoading"
-        :data="directoryTree"
-        node-key="id"
-        :props="{ label: 'directoryName', children: 'children' }"
-        :current-node-key="selectedDirectoryId"
-        default-expand-all
-        highlight-current
-        @node-click="handleDirectoryClick"
-      />
-    </aside>
-
-    <el-card class="file-main">
-      <el-form :inline="true" class="search-form">
+  <MangoListPage class="file-page" data-page="file.files">
+    <template #search>
+      <MangoSearchPanel :model="query" @search="handleSearch" @reset="handleReset">
         <el-form-item label="关键词">
           <el-input v-model="query.keyword" placeholder="搜索文件名/业务信息" clearable />
         </el-form-item>
@@ -42,16 +14,49 @@
         <el-form-item>
           <el-checkbox v-model="query.includeArchived"> 包含归档 </el-checkbox>
         </el-form-item>
-        <el-form-item>
-          <el-button v-auth="'file:files:list'" type="primary" @click="handleSearch"> 查询 </el-button>
-          <el-button v-auth="'file:files:list'" @click="handleReset"> 重置 </el-button>
-        </el-form-item>
-      </el-form>
+        <template #actions>
+          <el-button v-auth="'file:files:list'" type="primary" :icon="Search" @click="handleSearch"> 查询 </el-button>
+          <el-button v-auth="'file:files:list'" :icon="Refresh" @click="handleReset"> 重置 </el-button>
+        </template>
+      </MangoSearchPanel>
+    </template>
 
-      <div class="action-toolbar">
-        <div class="toolbar-left">
+    <div class="file-workspace">
+      <aside class="directory-panel">
+        <div class="directory-header">
+          <span>目录</span>
+          <div class="directory-actions">
+            <el-button v-auth="'file:directories:add'" link type="primary" @click="handleAddDirectory">
+              新建
+            </el-button>
+            <el-dropdown v-if="selectedDirectoryId !== '0'" trigger="click" @command="handleDirectoryCommand">
+              <el-button link type="primary"> 更多 </el-button>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item v-auth="'file:directories:edit'" command="edit"> 重命名 </el-dropdown-item>
+                  <el-dropdown-item v-auth="'file:directories:delete'" command="delete"> 删除 </el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
+          </div>
+        </div>
+        <el-tree
+          v-loading="directoryLoading"
+          :data="directoryTree"
+          node-key="id"
+          :props="{ label: 'directoryName', children: 'children' }"
+          :current-node-key="selectedDirectoryId"
+          default-expand-all
+          highlight-current
+          @node-click="handleDirectoryClick"
+        />
+      </aside>
+
+      <MangoListPanel class="file-main">
+        <template #actions>
           <span class="current-directory">{{ currentDirectoryName }}</span>
           <MUpload
+            class="file-upload-action"
             :count="20"
             :size="uploadSize"
             :fmt="uploadFormats"
@@ -59,121 +64,119 @@
             :biz-meta="{ source: 'file-center' }"
             button-text="上传文件"
             @success="handleUploadSuccess"
-          />
+          >
+            <template #trigger>
+              <el-button type="primary" plain :icon="Upload"> 上传文件 </el-button>
+            </template>
+          </MUpload>
           <el-button
             v-auth="'file:files:delete'"
             type="danger"
+            plain
             :disabled="!selectedRows.length"
             @click="handleBatchDelete"
           >
             批量删除
           </el-button>
-        </div>
-      </div>
+        </template>
 
-      <el-table v-loading="loading" :data="tableData" stripe row-key="id" @selection-change="handleSelectionChange">
-        <el-table-column type="selection" width="48" :selectable="isSelectableFile" />
-        <el-table-column prop="fileName" label="文件名" min-width="220" show-overflow-tooltip />
-        <el-table-column prop="purpose" label="用途" width="120" />
-        <el-table-column prop="bizId" label="业务ID" min-width="130" show-overflow-tooltip />
-        <el-table-column prop="accessLevel" label="访问级别" width="110">
-          <template #default="{ row }">
-            <DictTag
-              dict-code="file_access_level"
-              :value="row.accessLevel"
-              :type="accessLevelType(row.accessLevel)"
-              size="small"
-            />
-          </template>
-        </el-table-column>
-        <el-table-column prop="fileSize" label="大小" width="110">
-          <template #default="{ row }">
-            {{ formatSize(row.fileSize) }}
-          </template>
-        </el-table-column>
-        <el-table-column prop="contentType" label="类型" min-width="150" show-overflow-tooltip />
-        <el-table-column prop="createdBy" label="上传账号" width="110" />
-        <el-table-column prop="status" label="状态" width="90">
-          <template #default="{ row }">
-            <el-tag size="small" :type="row.archived === 1 ? 'info' : 'success'">
-              {{ row.archived === 1 ? '已归档' : '可用' }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="createdTime" label="创建时间" width="180" />
-        <el-table-column label="操作" width="230" fixed="right">
-          <template #default="{ row }">
-            <el-button link type="primary" size="small" @click="handlePreview(row)"> 预览 </el-button>
-            <el-button link type="primary" size="small" @click="handleDownload(row)"> 下载 </el-button>
-            <el-button
-              v-auth="'file:files:archive'"
-              v-if="row.archived !== 1"
-              link
-              type="danger"
-              size="small"
-              @click="handleArchive(row)"
-            >
-              归档
-            </el-button>
-            <el-button
-              v-auth="'file:files:delete'"
-              v-if="row.archived !== 1"
-              link
-              type="danger"
-              size="small"
-              @click="handleDelete(row)"
-            >
-              删除
-            </el-button>
-          </template>
-        </el-table-column>
-      </el-table>
+        <el-table v-loading="loading" :data="tableData" stripe row-key="id" @selection-change="handleSelectionChange">
+          <el-table-column type="selection" width="48" :selectable="isSelectableFile" />
+          <el-table-column prop="fileName" label="文件名" min-width="220" show-overflow-tooltip />
+          <el-table-column prop="purpose" label="用途" width="120" />
+          <el-table-column prop="bizId" label="业务ID" min-width="130" show-overflow-tooltip />
+          <el-table-column prop="accessLevel" label="访问级别" width="110">
+            <template #default="{ row }">
+              <DictTag
+                dict-code="file_access_level"
+                :value="row.accessLevel"
+                :type="accessLevelType(row.accessLevel)"
+                size="small"
+              />
+            </template>
+          </el-table-column>
+          <el-table-column prop="fileSize" label="大小" width="110">
+            <template #default="{ row }">
+              {{ formatSize(row.fileSize) }}
+            </template>
+          </el-table-column>
+          <el-table-column prop="contentType" label="类型" min-width="150" show-overflow-tooltip />
+          <el-table-column prop="createdBy" label="上传账号" width="110" />
+          <el-table-column prop="status" label="状态" width="90">
+            <template #default="{ row }">
+              <el-tag size="small" :type="row.archived === 1 ? 'info' : 'success'">
+                {{ row.archived === 1 ? '已归档' : '可用' }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column prop="createdTime" label="创建时间" width="180" />
+          <el-table-column label="操作" width="230" fixed="right">
+            <template #default="{ row }">
+              <el-button link type="primary" size="small" @click="handlePreview(row)"> 预览 </el-button>
+              <el-button link type="primary" size="small" @click="handleDownload(row)"> 下载 </el-button>
+              <el-button
+                v-auth="'file:files:archive'"
+                v-if="row.archived !== 1"
+                link
+                type="danger"
+                size="small"
+                @click="handleArchive(row)"
+              >
+                归档
+              </el-button>
+              <el-button
+                v-auth="'file:files:delete'"
+                v-if="row.archived !== 1"
+                link
+                type="danger"
+                size="small"
+                @click="handleDelete(row)"
+              >
+                删除
+              </el-button>
+            </template>
+          </el-table-column>
+        </el-table>
 
-      <Pagination
-        v-model:current-page="query.pageNum"
-        v-model:page-size="query.pageSize"
-        :total="total"
-        @change="loadData"
-      />
-    </el-card>
+        <template #pagination>
+          <Pagination
+            v-model:page="query.pageNum"
+            v-model:limit="query.pageSize"
+            :total="total"
+            @pagination="loadData"
+          />
+        </template>
+      </MangoListPanel>
+    </div>
 
-    <el-dialog
+    <MangoDialog
       v-model="previewVisible"
       :title="previewDialogTitle"
       width="1080px"
       class="file-preview-dialog"
-      :show-close="false"
       destroy-on-close
     >
-      <template #header>
-        <div class="preview-dialog-header">
-          <span class="preview-dialog-title">{{ previewDialogTitle }}</span>
-          <div class="preview-dialog-actions">
-            <el-tooltip content="新窗口预览" placement="bottom">
-              <el-button
-                text
-                circle
-                :icon="Position"
-                :disabled="!previewActions.canOpenInNewWindow"
-                aria-label="新窗口预览"
-                @click="handleOpenPreviewWindow"
-              />
-            </el-tooltip>
-            <el-tooltip content="下载" placement="bottom">
-              <el-button
-                text
-                circle
-                :icon="Download"
-                :disabled="!previewActions.canDownload"
-                aria-label="下载"
-                @click="handlePreviewDownload"
-              />
-            </el-tooltip>
-            <el-tooltip content="关闭" placement="bottom">
-              <el-button text circle :icon="Close" aria-label="关闭" @click="previewVisible = false" />
-            </el-tooltip>
-          </div>
-        </div>
+      <template #headerExtra>
+        <el-tooltip content="新窗口预览" placement="bottom">
+          <el-button
+            text
+            circle
+            :icon="Position"
+            :disabled="!previewActions.canOpenInNewWindow"
+            aria-label="新窗口预览"
+            @click="handleOpenPreviewWindow"
+          />
+        </el-tooltip>
+        <el-tooltip content="下载" placement="bottom">
+          <el-button
+            text
+            circle
+            :icon="Download"
+            :disabled="!previewActions.canDownload"
+            aria-label="下载"
+            @click="handlePreviewDownload"
+          />
+        </el-tooltip>
       </template>
       <FilePreviewPanel
         ref="previewPanelRef"
@@ -185,9 +188,9 @@
         fit-container
         @actions-change="handlePreviewActionsChange"
       />
-    </el-dialog>
+    </MangoDialog>
 
-    <el-dialog v-model="directoryDialogVisible" :title="directoryDialogTitle" width="420px" destroy-on-close>
+    <MangoDialog v-model="directoryDialogVisible" :title="directoryDialogTitle" width="420px" destroy-on-close>
       <el-form :model="directoryForm" label-width="90px">
         <el-form-item label="父目录">
           <el-input :model-value="currentDirectoryName" disabled />
@@ -205,15 +208,23 @@
         <el-button @click="directoryDialogVisible = false">取消</el-button>
         <el-button type="primary" :loading="directorySaving" @click="handleSaveDirectory">保存</el-button>
       </template>
-    </el-dialog>
-  </div>
+    </MangoDialog>
+  </MangoListPage>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { Close, Download, Position } from '@element-plus/icons-vue';
-import { DictSelect, DictTag, Pagination } from '@mango/common';
+import { Download, Position, Refresh, Search, Upload } from '@element-plus/icons-vue';
+import {
+  DictSelect,
+  DictTag,
+  MangoDialog,
+  MangoListPage,
+  MangoListPanel,
+  MangoSearchPanel,
+  Pagination,
+} from '@mango/common';
 import { downloadFileRecord, fileApi, type FilePreview, type FileQuery, type FileRecord } from '../../api/file';
 import { fileDirectoryApi, rootDirectory, type FileDirectory } from '../../api/fileDirectory';
 import { defaultFileSettings, fileSettingsApi, formatBytes, type FileSettings } from '../../api/fileSettings';
@@ -390,8 +401,9 @@ async function handleDeleteDirectory() {
   const directory = findDirectory(directoryTree.value, selectedDirectoryId.value);
   if (!directory || selectedDirectoryId.value === '0') return;
   await ElMessageBox.confirm(`确认删除目录“${directory.directoryName}”？只能删除空目录。`, '提示', {
-    confirmButtonText: '确定',
+    confirmButtonText: '确认删除',
     cancelButtonText: '取消',
+    confirmButtonClass: 'el-button--danger',
     type: 'warning',
   });
   await fileDirectoryApi.delete(directory.id);
@@ -444,8 +456,9 @@ function handleArchive(row: FileRecord) {
 
 async function handleDelete(row: FileRecord) {
   await ElMessageBox.confirm(`确认删除文件“${row.fileName}”？删除后将不再出现在文件列表中。`, '提示', {
-    confirmButtonText: '确定',
+    confirmButtonText: '确认删除',
     cancelButtonText: '取消',
+    confirmButtonClass: 'el-button--danger',
     type: 'warning',
   });
   await fileApi.delete([row.id]);
@@ -457,8 +470,9 @@ async function handleBatchDelete() {
   const ids = selectedRows.value.map((row) => row.id);
   if (!ids.length) return;
   await ElMessageBox.confirm(`确认删除选中的 ${ids.length} 个文件？删除后将不再出现在文件列表中。`, '提示', {
-    confirmButtonText: '确定',
+    confirmButtonText: '确认删除',
     cancelButtonText: '取消',
+    confirmButtonClass: 'el-button--danger',
     type: 'warning',
   });
   await fileApi.delete(ids);
@@ -497,11 +511,14 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.file-container {
+.file-page {
+  min-width: 0;
+}
+
+.file-workspace {
   display: grid;
   grid-template-columns: 240px minmax(0, 1fr);
   gap: 16px;
-  padding: 0;
 }
 
 .directory-panel {
@@ -530,75 +547,36 @@ onMounted(() => {
   min-width: 0;
 }
 
-.card-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.search-form {
-  margin-bottom: 16px;
-}
-
 .current-directory {
-  margin-right: 12px;
   font-weight: 600;
   color: var(--el-text-color-primary);
 }
 
-.preview-dialog-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  min-width: 0;
-  min-height: 32px;
+.file-upload-action {
+  width: auto;
 }
 
-.preview-dialog-title {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-weight: 600;
-  color: var(--el-text-color-primary);
+.file-upload-action :deep(.el-upload-list),
+.file-upload-action :deep(.upload-empty) {
+  display: none;
 }
 
-.preview-dialog-actions {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  flex-shrink: 0;
-}
+:deep(.file-preview-dialog.mango-dialog.el-dialog) {
+  --mango-dialog-max-width: calc(100vw - 48px);
+  --mango-dialog-max-height: min(760px, calc(100vh - 64px));
+  --mango-dialog-footer-min-height: 0px;
+  --mango-dialog-body-padding: 12px 16px 16px;
 
-:deep(.file-preview-dialog.el-dialog) {
-  width: 1080px;
-  max-width: calc(100vw - 48px);
   height: min(760px, calc(100vh - 64px));
-  margin: 32px auto 0;
-  display: flex;
-  flex-direction: column;
 }
 
-:deep(.file-preview-dialog .el-dialog__header) {
-  flex: 0 0 auto;
-  margin-right: 0;
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--el-border-color-lighter);
-}
-
-:deep(.file-preview-dialog .el-dialog__body) {
-  flex: 1 1 auto;
-  min-height: 0;
-  padding: 12px 16px 16px;
+:deep(.file-preview-dialog .mango-dialog__body) {
   display: flex;
   overflow: hidden;
 }
 
 @media (width <= 960px) {
-  .file-container {
+  .file-workspace {
     grid-template-columns: 1fr;
   }
 
@@ -606,10 +584,11 @@ onMounted(() => {
     min-height: auto;
   }
 
-  :deep(.file-preview-dialog.el-dialog) {
-    max-width: calc(100vw - 24px);
+  :deep(.file-preview-dialog.mango-dialog.el-dialog) {
+    --mango-dialog-max-width: calc(100vw - 24px);
+    --mango-dialog-max-height: calc(100vh - 32px);
+
     height: calc(100vh - 32px);
-    margin-top: 16px;
   }
 }
 </style>
