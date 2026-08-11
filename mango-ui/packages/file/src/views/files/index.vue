@@ -143,6 +143,7 @@
       width="1080px"
       class="file-preview-dialog"
       :show-close="false"
+      destroy-on-close
     >
       <template #header>
         <div class="preview-dialog-header">
@@ -176,7 +177,7 @@
       </template>
       <FilePreviewPanel
         ref="previewPanelRef"
-        :file-id="preview?.id"
+        :file-id="previewFileId"
         :preview="preview"
         :preview-provider-url="settings.previewProviderUrl"
         :preview-external-extensions="settings.previewExternalExtensions"
@@ -228,6 +229,8 @@ const selectedRows = ref<FileRecord[]>([]);
 const previewVisible = ref(false);
 const directoryDialogVisible = ref(false);
 const preview = ref<FilePreview | null>(null);
+const previewFileId = ref<FileRecord['id'] | null>(null);
+const previewFileName = ref('');
 const previewPanelRef = ref<InstanceType<typeof FilePreviewPanel>>();
 const previewActions = reactive({
   canDownload: false,
@@ -258,7 +261,7 @@ const currentDirectoryName = computed(() => {
 });
 const uploadSize = computed(() => `${Math.floor(settings.maxSize / 1024 / 1024)}MB`);
 const uploadFormats = computed(() => (settings.allowedExtensions.length ? settings.allowedExtensions : undefined));
-const previewDialogTitle = computed(() => preview.value?.fileName || '文件预览');
+const previewDialogTitle = computed(() => preview.value?.fileName || previewFileName.value || '文件预览');
 
 async function loadData() {
   loading.value = true;
@@ -399,9 +402,11 @@ async function handleDeleteDirectory() {
   await loadData();
 }
 
-async function handlePreview(row: FileRecord) {
-  preview.value = await fileApi.preview(row.id);
-  previewActions.canDownload = Boolean(preview.value?.id);
+function handlePreview(row: FileRecord) {
+  preview.value = null;
+  previewFileId.value = row.id;
+  previewFileName.value = row.fileName;
+  previewActions.canDownload = false;
   previewActions.canOpenInNewWindow = false;
   previewVisible.value = true;
 }
@@ -592,7 +597,7 @@ onMounted(() => {
   overflow: hidden;
 }
 
-@media (max-width: 960px) {
+@media (width <= 960px) {
   .file-container {
     grid-template-columns: 1fr;
   }
