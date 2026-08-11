@@ -1,6 +1,7 @@
 <template>
-  <div class="file-preview-panel" :class="{ 'file-preview-panel--fit-container': fitContainer }">
-    <el-skeleton v-if="loading" class="preview-loading" :rows="4" animated />
+  <div v-loading="loading" class="file-preview-panel" :class="{ 'file-preview-panel--fit-container': fitContainer }">
+    <div v-if="loading && !preview" class="preview-stage preview-loading-stage" />
+    <el-empty v-else-if="previewError && !preview" class="preview-empty" :description="previewError" />
     <el-empty v-else-if="!preview" class="preview-empty" description="暂无文件" />
     <template v-else>
       <div v-if="showActions" class="preview-actions">
@@ -14,7 +15,11 @@
       </div>
 
       <div class="preview-stage">
-        <div v-if="isImage && inlinePreviewUrl" class="preview-image-viewer">
+        <div v-if="previewError" class="preview-error-state">
+          <el-icon><Document /></el-icon>
+          <div>{{ previewError }}</div>
+        </div>
+        <div v-else-if="isImage && inlinePreviewUrl" class="preview-image-viewer">
           <el-image-viewer
             :url-list="[inlinePreviewUrl]"
             :infinite="false"
@@ -57,12 +62,17 @@ const emit = defineEmits<{
   (event: 'actions-change', value: PreviewActionsState): void;
 }>();
 
-const loading = ref(false);
+const metadataLoading = ref(false);
+const contentLoading = ref(false);
+const previewError = ref('');
 const loadedPreview = ref<FilePreview | null>(null);
 const inlinePreviewUrl = ref('');
 const externalPreviewUrl = ref('');
 const inlinePreviewObjectUrl = ref('');
 let previewLoadSequence = 0;
+let metadataLoadSequence = 0;
+
+const loading = computed(() => metadataLoading.value || contentLoading.value);
 
 const preview = computed(() => props.preview || loadedPreview.value);
 const resolvedFileId = computed(() => normalizeFileId(props.file || props.fileId));
@@ -126,45 +136,73 @@ const canOpenInNewWindow = computed(() => Boolean(previewTargetUrl.value));
 const canDownload = computed(() => Boolean(preview.value?.id));
 
 async function loadPreview() {
+  const loadSequence = ++metadataLoadSequence;
+  previewError.value = '';
   if (props.preview || !resolvedFileId.value) {
     loadedPreview.value = null;
+    metadataLoading.value = false;
     return;
   }
-  loading.value = true;
+  loadedPreview.value = null;
+  metadataLoading.value = true;
   try {
-    loadedPreview.value = await fileApi.preview(resolvedFileId.value);
+    const result = await fileApi.preview(resolvedFileId.value);
+    if (loadSequence === metadataLoadSequence) {
+      loadedPreview.value = result;
+    }
+  } catch {
+    if (loadSequence === metadataLoadSequence) {
+      previewError.value = '文件预览加载失败';
+    }
   } finally {
-    loading.value = false;
+    if (loadSequence === metadataLoadSequence) {
+      metadataLoading.value = false;
+    }
   }
 }
 
 async function loadInlinePreview() {
   const loadSequence = ++previewLoadSequence;
+  contentLoading.value = true;
+  previewError.value = '';
   revokeInlinePreviewObjectUrl();
   inlinePreviewUrl.value = '';
   externalPreviewUrl.value = '';
   const item = preview.value;
   if (!item) {
+    contentLoading.value = false;
     return;
   }
-  if (isImage.value || isPdf.value || isVideo.value || isAudio.value) {
-    const directUrl = resolveInlinePreviewUrl(item);
-    if (directUrl) {
-      inlinePreviewUrl.value = directUrl;
+  try {
+    if (isImage.value || isPdf.value || isVideo.value || isAudio.value) {
+      const directUrl = resolveInlinePreviewUrl(item);
+      if (directUrl) {
+        if (loadSequence === previewLoadSequence) {
+          inlinePreviewUrl.value = directUrl;
+        }
+        return;
+      }
+      const objectUrl = await resolveInlinePreviewObjectUrl(item);
+      if (loadSequence !== previewLoadSequence) {
+        URL.revokeObjectURL(objectUrl);
+        return;
+      }
+      inlinePreviewObjectUrl.value = objectUrl;
+      inlinePreviewUrl.value = objectUrl;
       return;
     }
-    const objectUrl = await resolveInlinePreviewObjectUrl(item);
-    if (loadSequence !== previewLoadSequence) {
-      URL.revokeObjectURL(objectUrl);
-      return;
+    const previewUrl = await resolveExternalPreviewUrl(item);
+    if (loadSequence === previewLoadSequence) {
+      externalPreviewUrl.value = previewUrl;
     }
-    inlinePreviewObjectUrl.value = objectUrl;
-    inlinePreviewUrl.value = objectUrl;
-    return;
-  }
-  const previewUrl = await resolveExternalPreviewUrl(item);
-  if (loadSequence === previewLoadSequence) {
-    externalPreviewUrl.value = previewUrl;
+  } catch {
+    if (loadSequence === previewLoadSequence) {
+      previewError.value = '文件预览加载失败';
+    }
+  } finally {
+    if (loadSequence === previewLoadSequence) {
+      contentLoading.value = false;
+    }
   }
 }
 
@@ -257,6 +295,9 @@ watch(
 onMounted(loadPreview);
 onBeforeUnmount(() => {
   previewLoadSequence += 1;
+  metadataLoadSequence += 1;
+  metadataLoading.value = false;
+  contentLoading.value = false;
   revokeInlinePreviewObjectUrl();
   inlinePreviewUrl.value = '';
 });
@@ -288,6 +329,10 @@ defineExpose({
   overflow: hidden;
   display: flex;
   align-items: stretch;
+}
+
+.preview-loading-stage {
+  flex: 1 1 auto;
 }
 
 .preview-actions {
@@ -357,6 +402,24 @@ defineExpose({
   padding: 24px;
 }
 
+.preview-error-state {
+  flex: 1 1 auto;
+  min-height: var(--mango-file-preview-stage-min-height, 220px);
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: var(--el-color-danger);
+  text-align: center;
+  padding: 24px;
+}
+
+.preview-error-state .el-icon {
+  font-size: 42px;
+}
+
 .preview-placeholder .el-icon {
   font-size: 42px;
   color: var(--el-color-primary);
@@ -415,9 +478,14 @@ defineExpose({
   min-height: var(--mango-file-preview-stage-min-height, 0);
 }
 
-.file-preview-panel--fit-container > .preview-loading,
 .file-preview-panel--fit-container > .preview-empty {
   flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+}
+
+.file-preview-panel--fit-container > .preview-loading-stage {
   width: 100%;
   min-width: 0;
   min-height: 0;

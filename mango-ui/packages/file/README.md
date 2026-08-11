@@ -37,7 +37,7 @@
 
 - `MUpload` 负责选择文件、前端预检查、调用文件上传接口并回写文件 ID、token 或完整记录。
 - `MUpload` 上传和回显只要求文件 ID、`previewUrl`、`downloadUrl` 这些业务字段；需要图片缩略图时，组件会按文件 ID 获取预览元数据，或通过鉴权下载生成临时 `blob:` 地址，不会把预览地址写入业务表单值。
-- `FilePreviewPanel` 负责按文件 ID 或文件记录加载预览元数据，并展示预览、下载和新窗口预览操作；图片默认直接使用无蒙层的内嵌 Element Plus Image Viewer，进入预览区即可缩放、旋转、切换适应模式和拖拽，不会要求用户再次点击图片打开覆盖层。预览区域只使用有效 `previewUrl`、预览元数据中的临时展示地址或文档预览服务地址，`downloadUrl` 和 `fileApi.downloadUrl(id)` 只用于下载动作。
+- `FilePreviewPanel` 负责按文件 ID 或文件记录加载预览元数据，并展示预览、下载和新窗口预览操作；元数据、受保护内容和文档预览地址加载期间使用 Element Plus 默认 loading，加载失败时在预览区域展示失败状态。图片默认直接使用无蒙层的内嵌 Element Plus Image Viewer，进入预览区即可缩放、旋转、切换适应模式和拖拽，不会要求用户再次点击图片打开覆盖层。预览区域只使用有效 `previewUrl`、预览元数据中的临时展示地址或文档预览服务地址，`downloadUrl` 和 `fileApi.downloadUrl(id)` 只用于下载动作。
 
 `api-client`：
 

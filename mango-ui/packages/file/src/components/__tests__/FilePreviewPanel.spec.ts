@@ -72,18 +72,18 @@ function createPreview(overrides: Partial<FilePreview> = {}): FilePreview {
 
 async function mountPanel(
   preview: FilePreview | null,
-  options: { fitContainer?: boolean; showActions?: boolean } = {},
+  options: { fileId?: string; fitContainer?: boolean; showActions?: boolean } = {},
 ) {
   const host = document.createElement('div');
   document.body.appendChild(host);
   const app = createApp(FilePreviewPanel, {
+    fileId: options.fileId,
     preview,
     showActions: options.showActions ?? true,
     fitContainer: options.fitContainer ?? false,
   });
   app.component('ElButton', ElButtonStub);
   app.component('ElTag', ElTagStub);
-  app.component('ElSkeleton', defineComponent({ setup: () => () => h('div') }));
   app.component('ElEmpty', defineComponent({ setup: () => () => h('div') }));
   app.component('ElImageViewer', ElImageViewerStub);
   app.component(
@@ -95,6 +95,14 @@ async function mountPanel(
           h('span', slots.default?.()),
     }),
   );
+  app.directive('loading', {
+    mounted: (element, binding) => {
+      element.setAttribute('data-loading', String(Boolean(binding.value)));
+    },
+    updated: (element, binding) => {
+      element.setAttribute('data-loading', String(Boolean(binding.value)));
+    },
+  });
   app.mount(host);
   mountedApps.push(app);
   await nextTick();
@@ -128,6 +136,72 @@ afterEach(() => {
 });
 
 describe('FilePreviewPanel', () => {
+  it('shows the default loading state while preview metadata is loading', async () => {
+    let resolvePreview!: (value: FilePreview) => void;
+    const previewRequest = vi.spyOn(fileApi, 'preview').mockReturnValue(
+      new Promise((resolve) => {
+        resolvePreview = resolve;
+      }),
+    );
+    const host = await mountPanel(null, { fileId: '1' });
+    const panel = host.querySelector('.file-preview-panel');
+
+    await vi.waitFor(() => expect(previewRequest).toHaveBeenCalledWith('1'));
+    expect(panel?.getAttribute('data-loading')).toBe('true');
+
+    resolvePreview(createPreview({ directPreviewUrl: '/preview/report.pdf' }));
+    await vi.waitFor(() => {
+      expect(panel?.getAttribute('data-loading')).toBe('false');
+      expect(host.querySelector('.preview-stage')).not.toBeNull();
+    });
+  });
+
+  it('keeps the default loading state while authenticated preview content is loading', async () => {
+    let resolveContent!: (value: { data: Blob; headers: { 'content-type': string } }) => void;
+    vi.spyOn(fileApi, 'previewContent').mockReturnValue(
+      new Promise((resolve) => {
+        resolveContent = resolve;
+      }),
+    );
+    const host = await mountPanel(
+      createPreview({
+        fileName: 'diagram.png',
+        fileExt: 'png',
+        contentType: 'image/png',
+      }),
+    );
+    const panel = host.querySelector('.file-preview-panel');
+
+    expect(panel?.getAttribute('data-loading')).toBe('true');
+
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:preview-image');
+    resolveContent({
+      data: new Blob(['preview-content'], { type: 'image/png' }),
+      headers: { 'content-type': 'image/png' },
+    });
+    await vi.waitFor(() => {
+      expect(panel?.getAttribute('data-loading')).toBe('false');
+      expect(host.querySelector('.preview-image-viewer')).not.toBeNull();
+    });
+  });
+
+  it('stops loading and shows the failure state when preview content loading fails', async () => {
+    vi.spyOn(fileApi, 'previewContent').mockRejectedValue(new Error('preview failed'));
+    const host = await mountPanel(
+      createPreview({
+        fileName: 'diagram.png',
+        fileExt: 'png',
+        contentType: 'image/png',
+      }),
+    );
+    const panel = host.querySelector('.file-preview-panel');
+
+    await vi.waitFor(() => {
+      expect(panel?.getAttribute('data-loading')).toBe('false');
+      expect(host.querySelector('.preview-error-state')?.textContent).toContain('文件预览加载失败');
+    });
+  });
+
   it('keeps the natural-height mode by default', async () => {
     const host = await mountPanel(createPreview({ directPreviewUrl: '/preview/report.pdf' }));
 
