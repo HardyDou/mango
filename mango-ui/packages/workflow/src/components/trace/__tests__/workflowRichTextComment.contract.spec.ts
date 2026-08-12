@@ -26,7 +26,15 @@ describe('workflow approval comments', () => {
       props: {
         node: { id: 'review', nodeName: '审核', nodeType: 'APPROVAL' },
         currentNodeKey: 'review',
-        records: [{ taskDefinitionKey: 'review', action: 'REJECT', actionName: '退回', comment: '<p>补充材料</p>' }],
+        records: [
+          {
+            processInstanceId: 'process-1',
+            taskDefinitionKey: 'review',
+            action: 'REJECT',
+            actionName: '退回',
+            comment: '<p>补充材料</p>',
+          },
+        ],
       },
       global: { stubs },
     });
@@ -36,7 +44,16 @@ describe('workflow approval comments', () => {
 
   it('renders approval timeline comments through the shared rich-text viewer', () => {
     const wrapper = mount(WorkflowApprovalTimeline, {
-      props: { records: [{ action: 'REJECT', actionName: '退回', comment: '<p>补充材料</p>' }] },
+      props: {
+        records: [
+          {
+            processInstanceId: 'process-1',
+            action: 'REJECT',
+            actionName: '退回',
+            comment: '<p>补充材料</p>',
+          },
+        ],
+      },
       global: { stubs },
     });
 
