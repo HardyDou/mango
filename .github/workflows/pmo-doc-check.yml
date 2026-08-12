@@ -2,10 +2,10 @@ name: PMO Documentation Checks
 
 on:
   pull_request:
-    types: [opened, edited, synchronize, reopened]
+    types: [opened, synchronize, reopened]
 
 concurrency:
-  group: pmo-doc-check-${{ github.event.pull_request.number }}
+  group: pmo-doc-check-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
