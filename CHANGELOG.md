@@ -1,5 +1,15 @@
 # Mango Changelog
 
+## Unreleased
+
+### Added
+
+- Add `office.xlsx.web.buttons.enabled` with `KK_OFFICE_XLSX_WEB_BUTTONS_ENABLED` override to control the XLS/XLSX Web preview “跳转 HTML 预览” and “打印” entries. The compatibility default is `true`; disabling it removes the button region and lets Luckysheet fill the page from the top without changing other preview types, download behavior, or `@mango/file`.
+
+### Release Notes
+
+- This change is delivered by the Mango Maven `mango-file-preview-engine` artifact. Include it in the next Mango Maven release and upgrade backend consumers as one aligned Maven matrix. No standalone `@mango/file` npm release is required for this capability.
+
 ## v2026.08.09-pmo-1.3.13-cli-1.0.103-pmo-rollback-release - 2026-08-09
 
 Status: `PUBLISHED_AND_VERIFIED`. 本批次从受保护 `main` 的 source commit `80bd147ab4525b581aa5711799d096e8f73ee06d`（tree `8827aa55e82f0d149cf123cefe3bb31f40a1ffeb`）发布，以新的不可变版本撤回 PR #737、#742、#745 的 PMO 部分及 #749-#752 引入的 PMO 升级。精确源码 archive 为 1,755,248,640 字节，SHA-256 为 `2ad9915f1a0914dd053746983b8aa30da960010880418ea8f93d17d75aab1a82`。`@mango/pmo@1.3.13`、`@mango/cli@1.0.103`、Tag、[GitHub Release](https://github.com/HardyDou/mango/releases/tag/v2026.08.09-pmo-1.3.13-cli-1.0.103-pmo-rollback-release) 与 Latest 文档均已发布并验证；Mango Maven `1.0.35` 未修改、未重新发布。旧 PMO/CLI 制品、Tag 和 GitHub Release 保留为不可变审计历史，不删除、不移动、不覆盖。

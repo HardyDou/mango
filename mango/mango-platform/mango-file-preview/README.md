@@ -124,6 +124,22 @@ Office 转换后的 PDF 由 PDF.js 通过同源 `/file-preview/generated?token=.
 | `mango.file-preview.engine.port` | `8012` | 预览引擎端口 |
 | `MANGO_FILE_PREVIEW_ENGINE_PORT` | 无 | 环境变量形式的引擎端口 |
 | `KK_SERVER_PORT` | 无 | kkFileView 兼容环境变量 |
+| `office.xlsx.web.buttons.enabled` | `true` | 是否在 XLS/XLSX Web 预览页显示“跳转 HTML 预览”和“打印”按钮；关闭时 Luckysheet 从页面顶部铺满 |
+| `KK_OFFICE_XLSX_WEB_BUTTONS_ENABLED` | 无 | `office.xlsx.web.buttons.enabled` 的环境变量形式 |
+
+隐藏 XLS/XLSX Web 预览页的两个外部入口时，配置预览引擎：
+
+```properties
+office.xlsx.web.buttons.enabled=false
+```
+
+容器部署也可以使用环境变量：
+
+```bash
+KK_OFFICE_XLSX_WEB_BUTTONS_ENABLED=false
+```
+
+配置缺失时默认值为 `true`，保留升级前的按钮和 `20px` 顶部区域。设置为 `false` 后，模板不渲染按钮区域，Luckysheet 使用 `top: 0`；该配置只作用于 `officeweb.ftl` 的 XLS/XLSX Web 预览，不改变 PDF、图片、视频、音频、普通文档、下载或新窗口预览行为。
 
 ## 8. 接口/API 使用
 

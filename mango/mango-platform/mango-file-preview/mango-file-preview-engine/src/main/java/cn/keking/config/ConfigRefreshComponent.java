@@ -158,6 +158,10 @@ public class ConfigRefreshComponent {
         ConfigConstants.setOfficePreviewTypeValue(getProperty(properties, "office.preview.type", ConfigConstants.DEFAULT_OFFICE_PREVIEW_TYPE));
         ConfigConstants.setOfficePreviewSwitchDisabledValue(getProperty(properties, "office.preview.switch.disabled", ConfigConstants.DEFAULT_OFFICE_PREVIEW_SWITCH_DISABLED));
         ConfigConstants.setOfficeTypeWebValue(getProperty(properties, "office.type.web", ConfigConstants.DEFAULT_OFFICE_TYPE_WEB));
+        ConfigConstants.setOfficeXlsxWebButtonsEnabledValue(Boolean.parseBoolean(getProperty(
+                properties,
+                "office.xlsx.web.buttons.enabled",
+                ConfigConstants.DEFAULT_OFFICE_XLSX_WEB_BUTTONS_ENABLED)));
         ConfigConstants.setOfficePageRangeValue(getProperty(properties, "office.pagerange", ConfigConstants.DEFAULT_OFFICE_PAQERANQE));
         ConfigConstants.setOfficeWatermarkValue(getProperty(properties, "office.watermark", ConfigConstants.DEFAULT_OFFICE_WATERMARK));
         ConfigConstants.setOfficeQualityValue(getProperty(properties, "office.quality", ConfigConstants.DEFAULT_OFFICE_QUALITY));

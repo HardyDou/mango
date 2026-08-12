@@ -60,6 +60,7 @@ public class ConfigConstants {
     public static final String DEFAULT_OFFICE_PREVIEW_TYPE = "image";
     public static final String DEFAULT_OFFICE_PREVIEW_SWITCH_DISABLED = "false";
     public static final String DEFAULT_OFFICE_TYPE_WEB = "web";
+    public static final String DEFAULT_OFFICE_XLSX_WEB_BUTTONS_ENABLED = "true";
     public static final String DEFAULT_OFFICE_PAQERANQE = "false";
     public static final String DEFAULT_OFFICE_WATERMARK = "false";
     public static final String DEFAULT_OFFICE_QUALITY = "80";
@@ -178,6 +179,7 @@ public class ConfigConstants {
     private static String officePreviewType;
     private static String officePreviewSwitchDisabled;
     private static String officeTypeWeb;
+    private static boolean officeXlsxWebButtonsEnabled;
     private static String officePageRange;
     private static String officeWatermark;
     private static String officeQuality;
@@ -321,6 +323,7 @@ public class ConfigConstants {
     public static String getOfficePreviewType() { return officePreviewType; }
     public static String getOfficePreviewSwitchDisabled() { return officePreviewSwitchDisabled; }
     public static String getOfficeTypeWeb() { return officeTypeWeb; }
+    public static boolean isOfficeXlsxWebButtonsEnabled() { return officeXlsxWebButtonsEnabled; }
     public static String getOfficePageRange() { return officePageRange; }
     public static String getOfficeWatermark() { return officeWatermark; }
     public static String getOfficeQuality() { return officeQuality; }
@@ -510,6 +513,14 @@ public class ConfigConstants {
     @Value("${office.type.web:web}")
     public void setOfficeTypeWeb(String officeTypeWeb) { setOfficeTypeWebValue(officeTypeWeb); }
     public static void setOfficeTypeWebValue(String officeTypeWeb) { ConfigConstants.officeTypeWeb = officeTypeWeb; }
+
+    @Value("${office.xlsx.web.buttons.enabled:true}")
+    public void setOfficeXlsxWebButtonsEnabled(String enabled) {
+        setOfficeXlsxWebButtonsEnabledValue(Boolean.parseBoolean(enabled));
+    }
+    public static void setOfficeXlsxWebButtonsEnabledValue(boolean enabled) {
+        ConfigConstants.officeXlsxWebButtonsEnabled = enabled;
+    }
 
     @Value("${office.pagerange:false}")
     public void setOfficePageRange(String officePageRange) { setOfficePageRangeValue(officePageRange); }

@@ -328,3 +328,7 @@ pnpm -F @mango/file test
 ## 2026-08-11 文件预览加载态影响
 
 - `FilePreviewPanel` 在加载预览元数据、受保护文件内容或文档预览地址期间显示 Element Plus 默认 loading，加载失败时在预览区域显示失败态；文件 ID 持久化、上传/预览/下载 API、权限、租户、菜单页面入口和业务表字段不变。业务项目升级后应确认图片预览的 loading、完成态和失败态不会遮挡文件名、操作区或预览内容。
+
+## 2026-08-12 XLS/XLSX Web 预览按钮配置
+
+- `mango-file-preview-engine` 新增 `office.xlsx.web.buttons.enabled`，环境变量为 `KK_OFFICE_XLSX_WEB_BUTTONS_ENABLED`，默认 `true`。业务部署设置为 `false` 后，XLS/XLSX Web 预览页不再渲染“跳转 HTML 预览”和“打印”，Luckysheet 同步铺满顶部；上传、下载、文件权限、租户、`@mango/file` 组件和其它文件类型预览均不变。业务项目不应通过 CSS、iframe DOM 注入或遮挡方式实现该行为。
