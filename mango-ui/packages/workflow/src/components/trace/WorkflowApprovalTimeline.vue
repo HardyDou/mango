@@ -11,16 +11,21 @@
         <div class="approval-record">
           <div class="approval-record-title">
             <strong>{{ record.taskName || '流程节点' }}</strong>
-            <el-tag :type="actionTagType(record)" size="small" effect="plain">{{ record.actionName || record.action || '-' }}</el-tag>
+            <el-tag :type="actionTagType(record)" size="small" effect="plain">{{
+              record.actionName || record.action || '-'
+            }}</el-tag>
           </div>
           <div class="approval-record-meta">
             <span>{{ record.operatorName || '-' }}</span>
             <span v-if="record.taskDefinitionKey">{{ record.taskDefinitionKey }}</span>
           </div>
-          <div v-if="record.comment" class="approval-record-comment">{{ record.comment }}</div>
+          <RichTextViewer v-if="record.comment" class="approval-record-comment" :content="record.comment" />
           <slot name="record-extra" :record="record" />
           <el-collapse v-if="showVariables && hasVariables(record)" class="approval-record-vars">
-            <el-collapse-item title="节点提交内容" :name="record.id || record.createdTime || record.taskId || record.action">
+            <el-collapse-item
+              title="节点提交内容"
+              :name="record.id || record.createdTime || record.taskId || record.action"
+            >
               <pre>{{ formatVariables(record.variables) }}</pre>
             </el-collapse-item>
           </el-collapse>
@@ -33,18 +38,22 @@
 
 <script setup lang="ts">
 import type { WorkflowTaskRecord } from '../../api/workflow';
+import { RichTextViewer } from '@mango/common';
 
 defineOptions({ name: 'WorkflowApprovalTimeline' });
 
-withDefaults(defineProps<{
-  records?: WorkflowTaskRecord[];
-  emptyText?: string;
-  showVariables?: boolean;
-}>(), {
-  records: () => [],
-  emptyText: '暂无审批记录',
-  showVariables: true,
-});
+withDefaults(
+  defineProps<{
+    records?: WorkflowTaskRecord[];
+    emptyText?: string;
+    showVariables?: boolean;
+  }>(),
+  {
+    records: () => [],
+    emptyText: '暂无审批记录',
+    showVariables: true,
+  },
+);
 
 type TimelineType = '' | 'primary' | 'success' | 'warning' | 'danger' | 'info';
 type TagType = '' | 'primary' | 'success' | 'warning' | 'danger' | 'info';
@@ -52,7 +61,8 @@ type TagType = '' | 'primary' | 'success' | 'warning' | 'danger' | 'info';
 function actionTagType(record: WorkflowTaskRecord): TagType {
   const action = String(record.action || record.actionName || '').toUpperCase();
   if (action.includes('REJECT') || action.includes('拒') || action.includes('驳回')) return 'danger';
-  if (action.includes('COMPLETE') || action.includes('PASS') || action.includes('APPROVE') || action.includes('通过')) return 'success';
+  if (action.includes('COMPLETE') || action.includes('PASS') || action.includes('APPROVE') || action.includes('通过'))
+    return 'success';
   if (action.includes('TRANSFER') || action.includes('转办')) return 'warning';
   return 'info';
 }
