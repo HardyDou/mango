@@ -32,6 +32,11 @@ vi.mock('element-plus', async () => {
 });
 
 vi.mock('@mango/common', () => ({
+  RichTextViewer: {
+    name: 'RichTextViewer',
+    props: ['content'],
+    template: '<div class="mock-rich-text-viewer">{{ content }}</div>',
+  },
   UserSelector: {
     name: 'UserSelector',
     props: {
