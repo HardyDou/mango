@@ -8,7 +8,6 @@ import org.springframework.stereotype.Component;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import java.io.BufferedReader;
-import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.*;
 import java.util.Properties;
@@ -98,8 +97,8 @@ public class ConfigRefreshComponent {
             return;
         }
 
-        if (kind == StandardWatchEventKinds.ENTRY_MODIFY ||
-                kind == StandardWatchEventKinds.ENTRY_CREATE) {
+        if (kind == StandardWatchEventKinds.ENTRY_MODIFY
+                || kind == StandardWatchEventKinds.ENTRY_CREATE) {
             synchronized (lock) {
                 if (scheduledReloadTask != null && !scheduledReloadTask.isDone()) {
                     scheduledReloadTask.cancel(false);
@@ -127,7 +126,7 @@ public class ConfigRefreshComponent {
                     return;
                 }
 
-                try (BufferedReader bufferedReader = new BufferedReader(new FileReader(configFilePath))) {
+                try (BufferedReader bufferedReader = Files.newBufferedReader(configPath)) {
                     properties.load(bufferedReader);
                     ConfigUtils.restorePropertiesFromEnvFormat(properties);
                     updateConfigConstants(properties);
@@ -158,6 +157,10 @@ public class ConfigRefreshComponent {
         ConfigConstants.setOfficePreviewTypeValue(getProperty(properties, "office.preview.type", ConfigConstants.DEFAULT_OFFICE_PREVIEW_TYPE));
         ConfigConstants.setOfficePreviewSwitchDisabledValue(getProperty(properties, "office.preview.switch.disabled", ConfigConstants.DEFAULT_OFFICE_PREVIEW_SWITCH_DISABLED));
         ConfigConstants.setOfficeTypeWebValue(getProperty(properties, "office.type.web", ConfigConstants.DEFAULT_OFFICE_TYPE_WEB));
+        OfficeXlsxWebButtonsConfig.setEnabledValue(Boolean.parseBoolean(getProperty(
+                properties,
+                "office.xlsx.web.buttons.enabled",
+                OfficeXlsxWebButtonsConfig.DEFAULT_ENABLED)));
         ConfigConstants.setOfficePageRangeValue(getProperty(properties, "office.pagerange", ConfigConstants.DEFAULT_OFFICE_PAQERANQE));
         ConfigConstants.setOfficeWatermarkValue(getProperty(properties, "office.watermark", ConfigConstants.DEFAULT_OFFICE_WATERMARK));
         ConfigConstants.setOfficeQualityValue(getProperty(properties, "office.quality", ConfigConstants.DEFAULT_OFFICE_QUALITY));
