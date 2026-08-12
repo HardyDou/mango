@@ -8,7 +8,6 @@ import org.springframework.stereotype.Component;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import java.io.BufferedReader;
-import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.*;
 import java.util.Properties;
@@ -127,7 +126,7 @@ public class ConfigRefreshComponent {
                     return;
                 }
 
-                try (BufferedReader bufferedReader = new BufferedReader(new FileReader(configFilePath))) {
+                try (BufferedReader bufferedReader = Files.newBufferedReader(configPath)) {
                     properties.load(bufferedReader);
                     ConfigUtils.restorePropertiesFromEnvFormat(properties);
                     updateConfigConstants(properties);
