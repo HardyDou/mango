@@ -19,7 +19,7 @@ class XlsxWebPreviewConfigurationTest {
 
     @AfterEach
     void restoreCompatibilityDefault() {
-        ConfigConstants.setOfficeXlsxWebButtonsEnabledValue(true);
+        OfficeXlsxWebButtonsConfig.setEnabledValue(true);
     }
 
     @Test
@@ -30,7 +30,7 @@ class XlsxWebPreviewConfigurationTest {
 
         ReflectionTestUtils.invokeMethod(refreshComponent, "updateConfigConstants", properties);
 
-        assertThat(ConfigConstants.isOfficeXlsxWebButtonsEnabled()).isTrue();
+        assertThat(OfficeXlsxWebButtonsConfig.isEnabled()).isTrue();
     }
 
     @Test
@@ -41,12 +41,12 @@ class XlsxWebPreviewConfigurationTest {
         ReflectionTestUtils.invokeMethod(refreshComponent, "updateConfigConstants", properties);
 
         MockHttpServletRequest request = new MockHttpServletRequest();
-        new cn.keking.web.filter.AttributeSetFilter().doFilter(
+        new cn.keking.web.filter.OfficeXlsxWebButtonsAttributeFilter().doFilter(
                 request,
                 new MockHttpServletResponse(),
                 new MockFilterChain());
 
-        assertThat(ConfigConstants.isOfficeXlsxWebButtonsEnabled()).isFalse();
+        assertThat(OfficeXlsxWebButtonsConfig.isEnabled()).isFalse();
         assertThat(request.getAttribute("officeXlsxWebButtonsEnabled")).isEqualTo(false);
     }
 
