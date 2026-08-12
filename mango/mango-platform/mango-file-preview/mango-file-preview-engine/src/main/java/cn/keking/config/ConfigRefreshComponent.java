@@ -98,8 +98,8 @@ public class ConfigRefreshComponent {
             return;
         }
 
-        if (kind == StandardWatchEventKinds.ENTRY_MODIFY ||
-                kind == StandardWatchEventKinds.ENTRY_CREATE) {
+        if (kind == StandardWatchEventKinds.ENTRY_MODIFY
+                || kind == StandardWatchEventKinds.ENTRY_CREATE) {
             synchronized (lock) {
                 if (scheduledReloadTask != null && !scheduledReloadTask.isDone()) {
                     scheduledReloadTask.cancel(false);
