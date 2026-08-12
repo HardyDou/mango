@@ -24,7 +24,8 @@
               >
                 <div class="node-record-line">
                   <strong>{{ record.actionName || record.action || '-' }}：</strong>
-                  <span class="node-record-comment">{{ record.comment || '无审批意见' }}</span>
+                  <RichTextViewer v-if="record.comment" class="node-record-comment" :content="record.comment" />
+                  <span v-else class="node-record-comment">无审批意见</span>
                 </div>
                 <div class="node-record-operator">处理人：{{ record.operatorName || '-' }}</div>
               </div>
@@ -40,22 +41,26 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
+import { RichTextViewer } from '@mango/common';
 import type { WorkflowDesignerNode, WorkflowTaskRecord } from '../../api/workflow';
 
 defineOptions({ name: 'WorkflowNodeTimeline' });
 
-const props = withDefaults(defineProps<{
-  node?: WorkflowDesignerNode | null;
-  currentNodeKey?: string;
-  visitedNodeKeys?: string[];
-  status?: string;
-  records?: WorkflowTaskRecord[];
-}>(), {
-  currentNodeKey: '',
-  visitedNodeKeys: () => [],
-  status: '',
-  records: () => [],
-});
+const props = withDefaults(
+  defineProps<{
+    node?: WorkflowDesignerNode | null;
+    currentNodeKey?: string;
+    visitedNodeKeys?: string[];
+    status?: string;
+    records?: WorkflowTaskRecord[];
+  }>(),
+  {
+    currentNodeKey: '',
+    visitedNodeKeys: () => [],
+    status: '',
+    records: () => [],
+  },
+);
 
 type NodeState = 'done' | 'active' | 'pending' | 'rejected';
 
@@ -70,14 +75,24 @@ interface TimelineNodeItem {
 
 const completed = computed(() => ['已通过', '已结束', 'APPROVED', 'COMPLETED'].includes(props.status));
 const rejected = computed(() => ['已驳回', '已拒绝', 'REJECTED'].includes(props.status));
-const currentKeySet = computed(() => new Set(String(props.currentNodeKey || '')
-  .split(',')
-  .map(item => item.trim())
-  .filter(Boolean)));
-const visitedKeySet = computed(() => new Set((props.visitedNodeKeys || [])
-  .flatMap(key => String(key).split(','))
-  .map(key => key.trim())
-  .filter(Boolean)));
+const currentKeySet = computed(
+  () =>
+    new Set(
+      String(props.currentNodeKey || '')
+        .split(',')
+        .map((item) => item.trim())
+        .filter(Boolean),
+    ),
+);
+const visitedKeySet = computed(
+  () =>
+    new Set(
+      (props.visitedNodeKeys || [])
+        .flatMap((key) => String(key).split(','))
+        .map((key) => key.trim())
+        .filter(Boolean),
+    ),
+);
 const recordMap = computed(() => {
   const map = new Map<string, WorkflowTaskRecord[]>();
   (props.records || []).forEach((record) => {
@@ -87,13 +102,18 @@ const recordMap = computed(() => {
   });
   return map;
 });
-const firstRecordTime = computed(() => (props.records || [])
-  .map(record => record.createdTime)
-  .filter(Boolean)
-  .sort()[0] || '');
+const firstRecordTime = computed(
+  () =>
+    (props.records || [])
+      .map((record) => record.createdTime)
+      .filter(Boolean)
+      .sort()[0] || '',
+);
 
 const timelineItems = computed<TimelineNodeItem[]>(() => {
-  const started = Boolean(props.node && (currentKeySet.value.size || visitedKeySet.value.size || completed.value || rejected.value));
+  const started = Boolean(
+    props.node && (currentKeySet.value.size || visitedKeySet.value.size || completed.value || rejected.value),
+  );
   const items: TimelineNodeItem[] = [
     {
       key: '__start',
@@ -142,7 +162,11 @@ function flattenNode(node: WorkflowDesignerNode): WorkflowDesignerNode[] {
 function nodeState(node: WorkflowDesignerNode): NodeState {
   if (rejected.value && isRejectedNode(node)) return 'rejected';
   if (!completed.value && !rejected.value && currentKeySet.value.has(node.id)) return 'active';
-  if (node.nodeType === 'ROOT' && (visitedKeySet.value.size || currentKeySet.value.size || completed.value || rejected.value)) return 'done';
+  if (
+    node.nodeType === 'ROOT' &&
+    (visitedKeySet.value.size || currentKeySet.value.size || completed.value || rejected.value)
+  )
+    return 'done';
   if (visitedKeySet.value.has(node.id)) return 'done';
   if (hasVisitedDescendant(node)) return 'done';
   return 'pending';
@@ -155,19 +179,24 @@ function isRejectedNode(node: WorkflowDesignerNode) {
 }
 
 function hasVisitedDescendant(node: WorkflowDesignerNode): boolean {
-  if (node.childNode && (visitedKeySet.value.has(node.childNode.id) || currentKeySet.value.has(node.childNode.id) || hasVisitedDescendant(node.childNode))) {
+  if (
+    node.childNode &&
+    (visitedKeySet.value.has(node.childNode.id) ||
+      currentKeySet.value.has(node.childNode.id) ||
+      hasVisitedDescendant(node.childNode))
+  ) {
     return true;
   }
-  return (node.conditionNodes || []).some(branch =>
-    visitedKeySet.value.has(branch.id)
-    || currentKeySet.value.has(branch.id)
-    || hasVisitedDescendant(branch),
+  return (node.conditionNodes || []).some(
+    (branch) =>
+      visitedKeySet.value.has(branch.id) || currentKeySet.value.has(branch.id) || hasVisitedDescendant(branch),
   );
 }
 
 function nodeTypeLabel(node: WorkflowDesignerNode) {
   if (node.nodeType === 'ROOT') return '发起人';
-  if (node.nodeType === 'APPROVAL' || node.executionType === 'USER_TASK' || node.bpmnType === 'userTask') return '人工审批';
+  if (node.nodeType === 'APPROVAL' || node.executionType === 'USER_TASK' || node.bpmnType === 'userTask')
+    return '人工审批';
   if (node.nodeType === 'CC') return '抄送';
   if (node.nodeType === 'EXCLUSIVE_GATEWAY') return '条件分支';
   if (node.nodeType === 'PARALLEL_GATEWAY') return '并行分支';
@@ -199,7 +228,7 @@ function stateTimelineType(state: NodeState) {
 }
 
 function nodeTimeText(item: TimelineNodeItem) {
-  const firstTime = item.records.find(record => record.createdTime)?.createdTime;
+  const firstTime = item.records.find((record) => record.createdTime)?.createdTime;
   if (firstTime) return firstTime;
   if (item.key === '__start') return firstRecordTime.value || '-';
   return '-';
@@ -211,7 +240,6 @@ function emptyTextOf(state: NodeState) {
   if (state === 'rejected') return '流程在该节点驳回或结束';
   return '流程尚未到达该节点';
 }
-
 </script>
 
 <style scoped>
@@ -232,7 +260,9 @@ function emptyTextOf(state: NodeState) {
 }
 
 .node-timeline-list :deep(.el-timeline-item__node) {
-  box-shadow: 0 0 0 4px var(--el-bg-color), 0 0 0 5px var(--el-border-color-lighter);
+  box-shadow:
+    0 0 0 4px var(--el-bg-color),
+    0 0 0 5px var(--el-border-color-lighter);
 }
 
 .node-timeline-list :deep(.el-timeline-item__wrapper) {
