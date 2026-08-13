@@ -33,6 +33,10 @@ vi.mock('element-plus', async () => {
 });
 
 vi.mock('@mango/common', () => ({
+  MangoDialog: {
+    name: 'MangoDialog',
+    template: '<div><slot /><slot name="footer" /></div>',
+  },
   RichTextViewer: {
     name: 'RichTextViewer',
     props: ['content'],
