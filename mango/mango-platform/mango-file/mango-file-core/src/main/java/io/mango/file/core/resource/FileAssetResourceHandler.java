@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.file.api.enums.FileObjectStatus;
 import io.mango.file.api.enums.FileRecordStatus;
+import io.mango.file.core.config.FileProperties;
 import io.mango.file.core.entity.FileObjectEntity;
 import io.mango.file.core.entity.FileRecordEntity;
 import io.mango.file.core.entity.FileStorageConfigEntity;
@@ -20,6 +21,7 @@ import io.mango.resource.support.model.ResourceField;
 import io.mango.resource.support.model.ResourceHandlerSpec;
 import io.mango.resource.support.model.ResourceSyncResult;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Component;
@@ -29,6 +31,9 @@ import org.springframework.util.StringUtils;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
+import java.nio.file.Path;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -39,7 +44,7 @@ import java.util.Locale;
 import java.util.Objects;
 
 /**
- * 将业务模块随 Jar 发布的二进制资产幂等写入文件服务。
+ * 将业务模块声明的 classpath 或外部二进制资产幂等写入文件服务。
  */
 @Component
 @RequiredArgsConstructor(onConstructor_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
@@ -48,6 +53,7 @@ public class FileAssetResourceHandler implements ResourceHandler {
 
     private static final String TARGET_TABLE = "file_record";
     private static final String ASSET_CLASSPATH_PREFIX = "classpath:META-INF/mango/assets/";
+    private static final String EXTERNAL_ASSET_PREFIX = "asset:";
     private static final String MANAGED_OBJECT_PREFIX = "mango-assets/";
     private static final String STAGING_PREFIX = ".mango-staging/resources/";
     private static final long DEFAULT_TENANT_ID = 1L;
@@ -60,6 +66,7 @@ public class FileAssetResourceHandler implements ResourceHandler {
     private final FileRecordMapper fileRecordMapper;
     private final FileStorageRouter fileStorageRouter;
     private final ResourceLoader resourceLoader;
+    private final FileProperties fileProperties;
 
     @Override
     public String resourceType() {
@@ -86,8 +93,8 @@ public class FileAssetResourceHandler implements ResourceHandler {
                 .fieldDescription("storageConfigId", "目标文件存储配置稳定 ID。")
                 .fieldDescription("objectName", "mango-assets/ 前缀下的稳定对象位置。")
                 .fieldDescription("fileName", "对业务展示的原始文件名。")
-                .fieldDescription("sha256", "classpath 制品的 SHA-256。")
-                .fieldDescription("content", "FILE 类型的 classpath 二进制制品。")
+                .fieldDescription("sha256", "classpath 或外部资产的 SHA-256。")
+                .fieldDescription("content", "FILE 类型的 classpath: 或 asset: 二进制资产。")
                 .fieldDescription("purpose", "文件用途，默认 managed-asset。")
                 .fieldDescription("accessLevel", "访问级别，默认 INTERNAL。")
                 .fieldDescription("bizType", "业务类型，默认 MANGO_RESOURCE。")
@@ -99,7 +106,7 @@ public class FileAssetResourceHandler implements ResourceHandler {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public ResourceSyncResult upsert(ResourceDeclaration declaration) {
-        AssetPayload payload = AssetPayload.from(declaration, resourceLoader);
+        AssetPayload payload = AssetPayload.from(declaration, resourceLoader, fileProperties);
         FileStorageConfigEntity storageConfig = requireStorageConfig(payload);
         FileRecordEntity record = fileRecordMapper.selectById(payload.fileId());
         validateStableIdentity(record, payload);
@@ -319,7 +326,8 @@ public class FileAssetResourceHandler implements ResourceHandler {
                                 String contentType, String purpose, String accessLevel, String bizType,
                                 String bizId, String bizMeta) {
 
-        private static AssetPayload from(ResourceDeclaration declaration, ResourceLoader resourceLoader) {
+        private static AssetPayload from(ResourceDeclaration declaration, ResourceLoader resourceLoader,
+                                         FileProperties fileProperties) {
             Long tenantId = fieldLong(declaration, "tenantId", false, DEFAULT_TENANT_ID);
             Long fileId = fieldLong(declaration, "fileId", true, null);
             Long storageConfigId = fieldLong(declaration, "storageConfigId", true, null);
@@ -329,7 +337,7 @@ public class FileAssetResourceHandler implements ResourceHandler {
             String fileName = validatedFileName(declaration);
             String sha256 = validatedSha256(declaration);
             ResourceField contentField = requiredContentField(declaration);
-            Resource content = readableContent(resourceLoader, contentField);
+            Resource content = readableContent(resourceLoader, fileProperties, contentField);
             long contentLength = contentLength(content);
             String actualHash = sha256(content);
             if (!sha256.equals(actualHash)) {
@@ -388,21 +396,92 @@ public class FileAssetResourceHandler implements ResourceHandler {
         private static ResourceField requiredContentField(ResourceDeclaration declaration) {
             ResourceField contentField = declaration.getFields().get("content");
             if (contentField == null || contentField.getType() != ResourceFieldType.FILE
-                    || !StringUtils.hasText(contentField.getLocation())
-                    || !contentField.getLocation().startsWith(ASSET_CLASSPATH_PREFIX)
-                    || contentField.getLocation().contains("..")) {
-                throw new IllegalStateException("FILE_ASSET content must use " + ASSET_CLASSPATH_PREFIX);
+                    || !StringUtils.hasText(contentField.getLocation())) {
+                throw new IllegalStateException("FILE_ASSET content must use " + ASSET_CLASSPATH_PREFIX
+                        + " or " + EXTERNAL_ASSET_PREFIX + "<relative-path>");
             }
             return contentField;
         }
 
-        private static Resource readableContent(ResourceLoader resourceLoader, ResourceField contentField) {
-            Resource content = resourceLoader.getResource(contentField.getLocation());
+        private static Resource readableContent(ResourceLoader resourceLoader, FileProperties fileProperties,
+                                                ResourceField contentField) {
+            String location = contentField.getLocation().trim();
+            Resource content;
+            if (location.startsWith(ASSET_CLASSPATH_PREFIX) && !location.contains("..")) {
+                content = resourceLoader.getResource(location);
+            } else if (location.startsWith(EXTERNAL_ASSET_PREFIX)) {
+                content = externalAsset(fileProperties, location);
+            } else {
+                throw new IllegalStateException("FILE_ASSET content must use " + ASSET_CLASSPATH_PREFIX
+                        + " or " + EXTERNAL_ASSET_PREFIX + "<relative-path>");
+            }
             if (!content.exists() || !content.isReadable()) {
                 throw new IllegalStateException("FILE_ASSET content is not readable: "
-                        + contentField.getLocation());
+                        + location);
             }
             return content;
+        }
+
+        private static Resource externalAsset(FileProperties fileProperties, String location) {
+            String configuredRoot = fileProperties.getAssetRoot();
+            if (!StringUtils.hasText(configuredRoot)) {
+                throw new IllegalStateException("FILE_ASSET asset-root is not configured for " + location);
+            }
+            String relativeValue = location.substring(EXTERNAL_ASSET_PREFIX.length());
+            Path relativePath = relativeAssetPath(relativeValue, location);
+            try {
+                Path root = Path.of(configuredRoot.trim()).toRealPath();
+                if (!Files.isDirectory(root) || !Files.isReadable(root)) {
+                    throw new IllegalStateException("FILE_ASSET asset-root is not a readable directory: "
+                            + configuredRoot);
+                }
+                Path candidate = root.resolve(relativePath).normalize();
+                if (!candidate.startsWith(root)) {
+                    throw unsafeAssetPath(location);
+                }
+                Path resolved = candidate.toRealPath();
+                if (!resolved.startsWith(root)) {
+                    throw new IllegalStateException("FILE_ASSET asset path escapes asset-root: " + location);
+                }
+                if (!Files.isRegularFile(resolved) || !Files.isReadable(resolved)) {
+                    throw new IllegalStateException("FILE_ASSET content is not a readable file: " + location);
+                }
+                return new FileSystemResource(resolved);
+            } catch (IOException e) {
+                throw new IllegalStateException("FILE_ASSET external content is not readable: " + location, e);
+            } catch (InvalidPathException e) {
+                throw unsafeAssetPath(location, e);
+            }
+        }
+
+        private static Path relativeAssetPath(String relativeValue, String location) {
+            if (!StringUtils.hasText(relativeValue) || relativeValue.contains("\\")
+                    || relativeValue.matches("^[A-Za-z]:/.*")) {
+                throw unsafeAssetPath(location);
+            }
+            try {
+                Path path = Path.of(relativeValue);
+                if (path.isAbsolute()) {
+                    throw unsafeAssetPath(location);
+                }
+                for (Path segment : path) {
+                    if ("..".equals(segment.toString())) {
+                        throw unsafeAssetPath(location);
+                    }
+                }
+                return path.normalize();
+            } catch (InvalidPathException e) {
+                throw unsafeAssetPath(location, e);
+            }
+        }
+
+        private static IllegalStateException unsafeAssetPath(String location) {
+            return new IllegalStateException("FILE_ASSET asset location must be a safe relative path: " + location);
+        }
+
+        private static IllegalStateException unsafeAssetPath(String location, RuntimeException cause) {
+            return new IllegalStateException("FILE_ASSET asset location must be a safe relative path: " + location,
+                    cause);
         }
 
         private static String validatedAccessLevel(ResourceDeclaration declaration) {

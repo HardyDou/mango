@@ -33,7 +33,7 @@
 | 逻辑目录 | 管理文件中心目录树 | `/file/directories/**` |
 | 存储配置 | 配置本地、MinIO、S3、OSS、COS、七牛等存储 | `/file/storage-configs/**` |
 | 文件配置 | 配置大小、扩展名、MIME、秒传、直传、访问、预览、归档策略 | `GET/PUT /file/settings` |
-| 预置文件资产 | 在 Bootstrap 中把业务 Jar 内二进制写入当前环境文件存储，并生成稳定 `fileId` | `FILE_ASSET` Resource |
+| 预置文件资产 | 在 Bootstrap 中把业务 Jar 内或外部资产根目录中的二进制写入当前环境文件存储，并生成稳定 `fileId` | `FILE_ASSET` Resource |
 
 下载入口支持图片/PDF 下载副本压缩。压缩只影响本次下载或 ZIP 内条目内容，不覆盖原始文件记录。
 
@@ -718,7 +718,7 @@ mango-file-starter/src/main/resources/META-INF/mango/resources/file-common-stora
 
 ### 8.3 FILE_ASSET
 
-业务模块需要预置工作流附件、打印模板或其它二进制时，把文件放在本模块 Jar 的 `META-INF/mango/assets/<module>/`，再声明 `FILE_ASSET`。不要在 Runtime 启动代码中读取 classpath 后调用普通上传 API。
+业务模块需要预置工作流附件、打印模板或其它二进制时，使用 `FILE_ASSET` 声明稳定 `fileId`、目标对象位置、内容位置和 SHA-256。小型资产可以放在业务 Jar 的 `META-INF/mango/assets/<module>/` 并使用 `classpath:`；不适合打入 Jar 的 ZIP、DOCX、PDF 等资产使用环境无关的 `asset:<relative-path>`，再由部署环境通过 `mango.file.asset-root` 提供外部根目录。不要在 Runtime 启动代码中读取文件后调用普通上传 API。
 
 ```yaml
 mango:
@@ -756,10 +756,54 @@ mango:
 | `storageConfigId` | 是 | 必须先由 `FILE_STORAGE_CONFIG` 创建且启用。 |
 | `objectName` | 是 | 固定在 `mango-assets/` 前缀下，不允许 `..` 或反斜杠。 |
 | `fileName` | 是 | 业务展示名，最长 255。 |
-| `sha256` | 是 | classpath 制品的 64 位小写 SHA-256。 |
-| `content` | 是 | `FILE` 类型，且只能读取 `classpath:META-INF/mango/assets/`。 |
+| `sha256` | 是 | `classpath:` 或 `asset:` 内容的 64 位小写 SHA-256。 |
+| `content` | 是 | `FILE` 类型；支持 `classpath:META-INF/mango/assets/` 或 `asset:<relative-path>`。 |
 
 Handler 流式校验内容后先写 `.mango-staging/resources/`，再发布到固定 `objectName`，支持 LOCAL、S3/MinIO、OSS、COS 和七牛实现。对象已存在但数据库事务未提交时，重入会按 `objectName + sha256` 补齐记录；数据库记录存在但对象丢失时会重新发布。相同 `fileId` 不允许改变 tenant、存储配置或对象位置；缺失声明只归档记录，默认不物理删除可能被历史业务引用的对象。
+
+外部资产声明只保存相对路径：
+
+```yaml
+mango:
+  file:
+    asset-root: ${MANGO_FILE_ASSET_ROOT:./bootstrap-assets}
+  resource:
+    declarations:
+      FILE_ASSET:
+        - id: "840000000000000002"
+          version: 1
+          biz-key: guarantee.document.application
+          name: 保函申请书模板
+          target-module: file
+          sync-mode: INIT_ONLY
+          fields:
+            tenantId: { type: LONG, value: 1 }
+            fileId: { type: LONG, value: 840000000000000102 }
+            storageConfigId: { type: LONG, value: 1 }
+            objectName: { type: STRING, value: mango-assets/guarantee/application.docx }
+            fileName: { type: STRING, value: application.docx }
+            sha256: { type: STRING, value: "<64 位小写 SHA-256>" }
+            content:
+              type: FILE
+              location: asset:guarantee/application.docx
+              mediaType: application/vnd.openxmlformats-officedocument.wordprocessingml.document
+```
+
+开发环境可以把 `MANGO_FILE_ASSET_ROOT` 指向项目外或模块内未打包的资产目录；声明中的 `asset:guarantee/application.docx` 不随环境变化。Docker 镜像可以把同一目录复制到镜像内固定目录，并把该目录注入 `MANGO_FILE_ASSET_ROOT`：
+
+```dockerfile
+ARG FILE_ASSET_ROOT
+COPY bootstrap-assets/ ${FILE_ASSET_ROOT}/
+ENV MANGO_FILE_ASSET_ROOT=${FILE_ASSET_ROOT}
+```
+
+`asset:` 后必须是非空相对路径。绝对路径、反斜杠、任意 `..` 路径段、目录、不可读文件和解析后越过根目录的符号链接都会在 Bootstrap 上传前失败；未配置 `mango.file.asset-root` 时，只有 `asset:` 声明失败，现有 `classpath:` 声明不受影响。迁移时只需把原 `content.location` 改成 `asset:<relative-path>`、把二进制移到对应根目录并配置环境变量；`fileId`、`objectName`、SHA-256 和目标存储配置保持不变。
+
+外部资产根目录属于 starter 配置，不写入 Resource Declaration：
+
+| 配置项 | 默认值 | 含义 |
+|---|---|---|
+| `mango.file.asset-root` | 未配置 | `asset:` 声明解析的外部根目录；未配置时使用 `asset:` 的 FILE_ASSET 会明确失败。 |
 
 ## 9. 运行时配置字段
 
@@ -882,7 +926,7 @@ Flyway 路径：`mango-file-core/src/main/resources/db/migration/file`。
 - 预览只能下载不能打开：检查 `previewProviderUrl`、`previewExternalExtensions`，Office 类文件还需要 `mango-file-preview` 和 `mango-infra-fileproc`。
 - 页面空白或按钮不可见：检查 authorization 菜单 component 是否是 `file/files/index`、`file/storage-configs/index`、`file/settings/index`，并确认账号拥有对应 `file:*` 权限码。
 - 业务表里出现对象存储地址：应改为保存 `fileId` 或业务附件关系；`previewUrl`、`downloadUrl` 只用于当前页面即时展示。
-- 预置文件只有数据库记录没有物理对象：检查 `FILE_ASSET` 的 `storageConfigId`、classpath 路径和 SHA-256；修正声明并用相同 generation/fingerprint 重入 Bootstrap，不要手工伪造 `file_record`。
+- 预置文件只有数据库记录没有物理对象：检查 `FILE_ASSET` 的 `storageConfigId`、`classpath:` / `asset:` 路径和 SHA-256；使用 `asset:` 时同时检查 `mango.file.asset-root` 是否映射到当前环境的可读目录。修正声明或部署配置后用相同 generation/fingerprint 重入 Bootstrap，不要手工伪造 `file_record`。
 
 ## 14. 相关文档
 
