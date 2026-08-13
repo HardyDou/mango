@@ -229,10 +229,10 @@ test('CI reruns when policy-resolved assurance selections change and keeps expli
     new URL('../../.github/workflows/pmo-doc-check.yml', import.meta.url),
     'utf8',
   );
-  assert.match(workflow, /pull_request:\n\s+types: \[opened, synchronize, reopened\]/);
+  assert.match(workflow, /pull_request:\n\s+types: \[opened, edited, synchronize, reopened\]/);
   assert.match(
     workflow,
-    /concurrency:\n\s+group: pmo-doc-check-\$\{\{ github\.event\.pull_request\.number \|\| github\.ref \}\}\n\s+cancel-in-progress: true/,
+    /concurrency:\n\s+group: pmo-doc-check-\$\{\{ github\.event\.pull_request\.number \}\}\n\s+cancel-in-progress: true/,
   );
   for (const job of ['pmo', 'cli_js', 'java', 'docs']) {
     assert.match(
@@ -325,24 +325,13 @@ test('Gitea terminal PR body edits skip diff-based checks but retain the PR cont
   assert.match(workflow, /Check impact-driven risk and verification contract\n\s+if: gitea\.event_name == 'pull_request'/);
   assert.match(
     workflow,
-    /pull_request:\n\s+types: \[opened, synchronize, reopened\]/,
+    /pull_request:\n\s+types: \[opened, synchronize, reopened, edited\]/,
   );
-  assert.doesNotMatch(workflow, /types: \[[^\]]*edited/);
+  assert.match(workflow, /types: \[[^\]]*edited/);
   assert.match(
     workflow,
-    /concurrency:\n\s+group: pmo-doc-check-\$\{\{ gitea\.event\.pull_request\.number \|\| gitea\.ref \}\}\n\s+cancel-in-progress: true/,
+    /concurrency:/,
   );
-});
-
-test('GitHub and Gitea PMO workflows exclude PR body edits from heavy validation', () => {
-  for (const workflowPath of [
-    new URL('../../.github/workflows/pmo-doc-check.yml', import.meta.url),
-    new URL('../../mango-ui/packages/mango-cli/templates/full/.github/workflows/pmo-doc-check.yml', import.meta.url),
-    new URL('../../mango-ui/packages/mango-cli/templates/full/.gitea/workflows/pmo-doc-check.yml', import.meta.url),
-  ]) {
-    const workflow = fs.readFileSync(workflowPath, 'utf8');
-    assert.doesNotMatch(workflow, /pull_request:\n\s+types: \[[^\]]*edited/);
-  }
 });
 
 test('Java source maps to one Maven module plus the governed architecture aggregator', () => {

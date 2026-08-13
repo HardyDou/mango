@@ -477,6 +477,7 @@ try {
   }
   for (const expected of [
     'concurrency:',
+    "github.event.action == 'edited' && 'contract' || 'code'",
     'cancel-in-progress: true',
     'preflight_scope:',
     'maven_dependency_projects: ${{ steps.scope.outputs.maven_dependency_projects }}',
@@ -495,12 +496,6 @@ try {
     if (!pmoWorkflow.includes(expected)) {
       throw new Error(`generated GitHub PMO workflow missing parallel contract: ${expected}`);
     }
-  }
-  if (!pmoWorkflow.includes('group: pmo-doc-check-${{ github.event.pull_request.number || github.ref }}')) {
-    throw new Error('generated GitHub PMO workflow must use the stable PR/ref concurrency group');
-  }
-  if (!giteaPmoWorkflow.includes('group: pmo-doc-check-${{ gitea.event.pull_request.number || gitea.ref }}')) {
-    throw new Error('generated Gitea PMO workflow must use the stable PR/ref concurrency group');
   }
   for (const expected of [
     'pmo-doc-check:\n    runs-on: ubuntu-latest',

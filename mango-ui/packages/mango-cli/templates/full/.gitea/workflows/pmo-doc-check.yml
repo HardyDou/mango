@@ -3,15 +3,11 @@ name: PMO Documentation Checks
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened]
+    types: [opened, synchronize, reopened, edited]
   push:
     branches:
       - main
   workflow_dispatch:
-
-concurrency:
-  group: pmo-doc-check-${{ gitea.event.pull_request.number || gitea.ref }}
-  cancel-in-progress: true
 
 permissions:
   contents: read

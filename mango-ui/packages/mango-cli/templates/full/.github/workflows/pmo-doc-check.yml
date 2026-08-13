@@ -3,14 +3,14 @@ name: PMO Documentation Checks
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened]
+    types: [opened, synchronize, reopened, edited]
   push:
     branches:
       - main
   workflow_dispatch:
 
 concurrency:
-  group: pmo-doc-check-${{ github.event.pull_request.number || github.ref }}
+  group: pmo-doc-check-${{ github.event.pull_request.number || github.ref }}-${{ github.event.action == 'edited' && 'contract' || 'code' }}
   cancel-in-progress: true
 
 permissions:
