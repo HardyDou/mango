@@ -30,6 +30,28 @@ export function findMenuByPath<T extends MangoMenuTreeNode>(menus: T[], path: st
   return undefined;
 }
 
+/**
+ * Resolve the visible menu item that owns the current route.
+ * Detail and edit routes without their own menu item keep their parent menu active.
+ */
+export function resolveActiveMenuPath<T extends MangoMenuTreeNode>(menus: T[], path: string): string {
+  let activePath = '';
+
+  const visit = (menu: T) => {
+    if (menu.path && isSameOrChildPath(menu.path, path) && menu.path.length >= activePath.length) {
+      activePath = menu.path;
+    }
+    for (const child of (menu.children || []) as T[]) {
+      visit(child);
+    }
+  };
+
+  for (const menu of menus) {
+    visit(menu);
+  }
+  return activePath;
+}
+
 export function findTopMenuByPath<T extends MangoMenuTreeNode>(menus: T[], path: string): T | undefined {
   return menus.find(menu => containsMenuPath(menu, path));
 }

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   containsMenuPath,
   findTopMenuByPath,
+  resolveActiveMenuPath,
   resolveFirstMenuPath,
   type MangoMenuTreeNode,
 } from '../menuTree';
@@ -39,5 +40,13 @@ describe('menuTree', () => {
 
   it('resolves the first route by redirect before walking children', () => {
     expect(resolveFirstMenuPath(menus[1])).toBe('/components/editor');
+  });
+
+  it('keeps the owning menu active on a detail route without its own menu item', () => {
+    expect(resolveActiveMenuPath(menus, '/components/upload/detail/123')).toBe('/components/upload');
+  });
+
+  it('does not treat a sibling route with the same prefix as a child route', () => {
+    expect(resolveActiveMenuPath(menus, '/components/uploader')).toBe('');
   });
 });

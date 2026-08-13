@@ -1,7 +1,7 @@
 <template>
   <el-menu
     router
-    :default-active="state.defaultActive"
+    :default-active="activeMenuPath"
     background-color="transparent"
     :collapse="props.disableCollapse ? false : layoutStore.isCollapse"
     :unique-opened="layoutStore.isUniqueOpened"
@@ -47,10 +47,11 @@
 </template>
 
 <script setup lang="ts" name="navMenuVertical">
-import { defineAsyncComponent, reactive, watch } from 'vue';
+import { computed, defineAsyncComponent } from 'vue';
 import { useRoute } from 'vue-router';
 import { useLayoutStore } from '../../stores/layout';
 import { iconMap } from '@mango/common/utils/iconConfig';
+import { resolveActiveMenuPath } from '@mango/common/utils/menuTree';
 
 const SubItem = defineAsyncComponent(() => import('./subItem.vue'));
 
@@ -69,17 +70,7 @@ const props = defineProps<{
 const route = useRoute();
 const layoutStore = useLayoutStore();
 
-const state = reactive({
-  defaultActive: route.path,
-  isCollapse: false,
-});
-
-watch(
-  () => route.path,
-  () => {
-    state.defaultActive = route.path;
-  }
-);
+const activeMenuPath = computed(() => resolveActiveMenuPath(props.menuList, route.path) || route.path);
 </script>
 
 <style scoped lang="scss">
