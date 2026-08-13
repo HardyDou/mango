@@ -111,7 +111,7 @@ describe('workflow task detail', () => {
           customConfig: { approvePageKey: 'workflow.test.approve' },
         }),
         renderConfig: {},
-      }) as any,
+      }) as unknown as WorkflowTaskDetail,
     );
     vi.mocked(workflowApi.businessApplyByProcessInstance).mockRejectedValueOnce(new Error('no apply'));
 
@@ -281,7 +281,7 @@ describe('workflow task detail', () => {
     routeQuery.returnPath = '/guarantee/risk/reviews';
     routeQuery.returnQuery = 'scope=TODO&tab=pending';
     routeQuery.from = 'done';
-    vi.mocked(workflowApi.taskDetail).mockResolvedValueOnce(taskDetail() as any);
+    vi.mocked(workflowApi.taskDetail).mockResolvedValueOnce(taskDetail() as unknown as WorkflowTaskDetail);
     vi.mocked(workflowApi.businessApplyByProcessInstance).mockRejectedValue(new Error('no apply'));
 
     const { el, unmount } = await mountTaskDetail();

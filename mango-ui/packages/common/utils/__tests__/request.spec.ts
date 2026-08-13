@@ -72,9 +72,11 @@ describe('request utilities', () => {
     const response = {
       config: { silentError: true },
       data: { code: 3651, success: false, msg: '不能转办给自己', data: null },
-    } as any;
+    };
 
-    const error = await responseInterceptor().fulfilled(response).catch((reason: unknown) => reason);
+    const error = await responseInterceptor()
+      .fulfilled(response)
+      .catch((reason: unknown) => reason);
 
     expect(mangoMessage.error).not.toHaveBeenCalled();
     expect(isErrorHandled(error)).toBe(false);
@@ -85,9 +87,11 @@ describe('request utilities', () => {
       config: {},
       response: { status: 500, data: { message: '服务暂不可用' } },
       message: 'Request failed',
-    } as any;
+    };
 
-    const rejected = await responseInterceptor().rejected(error).catch((reason: unknown) => reason);
+    const rejected = await responseInterceptor()
+      .rejected(error)
+      .catch((reason: unknown) => reason);
 
     expect(rejected).toBe(error);
     expect(mangoMessage.error).toHaveBeenCalledWith('服务暂不可用');
@@ -108,11 +112,15 @@ describe('request utilities', () => {
 
     const config = await requestInterceptor().fulfilled({ url: '/workflow/tasks/todo', headers: {} });
 
-    expect(mocks.service.post).toHaveBeenCalledWith('/auth/refresh', { refreshToken: 'refresh-token' }, expect.objectContaining({
-      ignoreToken: true,
-      skipRefreshToken: true,
-      silentError: true,
-    }));
+    expect(mocks.service.post).toHaveBeenCalledWith(
+      '/auth/refresh',
+      { refreshToken: 'refresh-token' },
+      expect.objectContaining({
+        ignoreToken: true,
+        skipRefreshToken: true,
+        silentError: true,
+      }),
+    );
     expect(Session.getToken()).toBe('new-token');
     expect(Session.getRefreshToken()).toBe('new-refresh-token');
     expect(config.headers.Authorization).toBe('Bearer new-token');
@@ -136,16 +144,22 @@ describe('request utilities', () => {
     } as any;
 
     await expect(responseInterceptor().fulfilled(response)).resolves.toEqual({ ok: true });
-    expect(mocks.service.post).toHaveBeenCalledWith('/auth/refresh', { refreshToken: 'refresh-token' }, expect.objectContaining({
-      ignoreToken: true,
-      skipRefreshToken: true,
-      silentError: true,
-    }));
-    expect(mocks.service).toHaveBeenCalledWith(expect.objectContaining({
-      url: '/auth/userinfo',
-      _retry: true,
-      headers: expect.objectContaining({ Authorization: 'Bearer new-token' }),
-    }));
+    expect(mocks.service.post).toHaveBeenCalledWith(
+      '/auth/refresh',
+      { refreshToken: 'refresh-token' },
+      expect.objectContaining({
+        ignoreToken: true,
+        skipRefreshToken: true,
+        silentError: true,
+      }),
+    );
+    expect(mocks.service).toHaveBeenCalledWith(
+      expect.objectContaining({
+        url: '/auth/userinfo',
+        _retry: true,
+        headers: expect.objectContaining({ Authorization: 'Bearer new-token' }),
+      }),
+    );
   });
 
   it('resolves HTTP errors from backend message before fallback status text', () => {
@@ -155,9 +169,9 @@ describe('request utilities', () => {
 });
 
 function requestInterceptor() {
-  return mocks.handlers.find(item => item.type === 'request');
+  return mocks.handlers.find((item) => item.type === 'request');
 }
 
 function responseInterceptor() {
-  return mocks.handlers.find(item => item.type === 'response');
+  return mocks.handlers.find((item) => item.type === 'response');
 }
