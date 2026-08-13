@@ -1,6 +1,7 @@
 {
   "schemaVersion": 1,
   "releaseKind": "mixed",
+  "tag": "v2026.08.14-maven-1.0.36-notice-1.0.39-admin-1.0.65-cli-1.0.104-inbound-release",
   "artifacts": {
     "maven": {
       "mode": "private-registry",
@@ -22,6 +23,32 @@
     }
   },
   "stateAdapters": {
+    "tag": {
+      "publish": {
+        "command": "git",
+        "args": ["tag", "-a", "{tag}", "-m", "Mango notice inbound release {version}"]
+      },
+      "verify": {
+        "command": "git",
+        "args": ["rev-parse", "--verify", "refs/tags/{tag}"]
+      },
+      "repair": { "kind": "verify-existing" }
+    },
+    "github-release": {
+      "publish": {
+        "command": "gh",
+        "args": [
+          "release", "create", "{tag}", "--verify-tag",
+          "--title", "Mango notice inbound release {version}",
+          "--notes", "## Fixed\n\nInbound notice storage and broadcast integration.\n\n## Versions\n\nMaven 1.0.36; @mango/notice 1.0.39; @mango/admin-shell 1.0.59; @mango/admin 1.0.65; @mango/cli 1.0.104; @mango/pmo 1.3.13.\n\n## Published Packages\n\nMaven platform artifacts and the four npm packages above.\n\n## Upgrade Notes\n\nUpdate Mango Maven and npm coordinates together; CLI full templates consume the locked versions.\n\n## Verification\n\nRelease gates, registry back-checks, consumer verification, and post-release checks are recorded in the release manifest."
+        ]
+      },
+      "verify": {
+        "command": "gh",
+        "args": ["release", "view", "{tag}", "--json", "url,tagName"]
+      },
+      "repair": { "kind": "verify-existing" }
+    },
     "maven": {
       "publish": {
         "command": "scripts/publish-maven-batch.sh",
