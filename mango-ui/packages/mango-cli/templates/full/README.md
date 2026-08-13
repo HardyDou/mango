@@ -66,7 +66,7 @@ npm install -g @mango/cli@{{mangoCliVersion}} --registry {{npmRegistry}}
 
 生成项目的后端 Mango jar 版本由 `backend/pom.xml` 中的 `<mango.version>{{mangoBackendVersion}}</mango.version>` 统一锁定。默认值来自生成时使用的 `@mango/cli@{{mangoCliVersion}}` 内置 `release-versions.json`；业务项目升级后端平台能力时，应成组升级 CLI 或在重新生成/迁移时显式指定 `--mango-version <version>`，不要长期使用 `*-SNAPSHOT` 作为业务默认依赖。
 
-业务后端自身版本使用 Maven CI-friendly `${revision}`。`mango workspace init` 为当前 worktree 分配稳定的 `mango-<NNN>` 限定符；`mango dev plan/start` 会把它加入 install 和 Spring Boot run 的 `-Drevision`，使本项目 SNAPSHOT 在共享 Maven repository 中使用不同 GAV，同时继续复用第三方依赖与插件缓存。旧项目升级时必须把 reactor 根版本、子模块 parent 和内部模块依赖改为 `${revision}`；CLI 检测到固定版本 POM 会在执行 Maven 前明确失败。
+业务后端自身版本使用 Maven CI-friendly `${revision}`。`mango workspace init` 为当前 worktree 分配稳定的 `mango-<NNN>` 限定符；`mango dev plan/start` 从 reactor 根 POM 选择目标 app，执行 `-pl :<app-artifactId> -am -DskipTests compile spring-boot:run`，并注入限定的 `-Drevision`，不安装 app fat JAR 到共享 Maven repository。`.m2` 仅复用第三方依赖和插件缓存。旧项目升级时必须把 reactor 根版本、子模块 parent 和内部模块依赖改为 `${revision}`，并配置根/parent Boot plugin `<skip>true</skip>`、app `<skip>false</skip>`；CLI 检测到不满足契约的 POM 会在执行 Maven 前明确失败。
 
 后端健康检查：
 
@@ -115,7 +115,7 @@ npm --prefix frontend run build
 | `.mango/workspace.json` | `frontendPort` | `30NNN` | 前端端口 | 写入 `MANGO_FRONTEND_PORT` | `mango workspace init` |
 | `.mango/workspace.json` | `dbName` | `mango_dev_<projectSlug>_<NNN>` | 数据库名 | 写入 `MANGO_DB_NAME` | `mango workspace init` |
 | `.mango/dev-workspace.env` | `MANGO_BACKEND_PORT` | 来自 `.mango/workspace.json` | 后端端口 | 注入 `server.port` | Mango CLI |
-| `.mango/dev-workspace.env` | `MANGO_MAVEN_REVISION_QUALIFIER` | 来自 `.mango/workspace.json` | Maven 版本限定符 | 派生 install/run 的 `-Drevision` | Mango CLI |
+| `.mango/dev-workspace.env` | `MANGO_MAVEN_REVISION_QUALIFIER` | 来自 `.mango/workspace.json` | Maven 版本限定符 | 派生 Reactor compile/run 的 `-Drevision` | Mango CLI |
 | `.mango/dev-workspace.env` | `MANGO_FRONTEND_PORT` | 来自 `.mango/workspace.json` | 前端端口 | 注入 Vite `VITE_PORT` | Mango CLI |
 | `.mango/dev-workspace.env` | `MANGO_FRONTEND_HOST` | `127.0.0.1` | 前端 host | 注入 Vite `VITE_HOST` | Mango CLI |
 | `.mango/dev-workspace.env` | `MANGO_FRONTEND_MODE` | `source` | 前端模式 | source 模式启动源码，package 模式要求已构建包 | Mango CLI |

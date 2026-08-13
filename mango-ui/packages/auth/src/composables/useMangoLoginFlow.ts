@@ -7,18 +7,17 @@ import {
   changeRequiredPassword,
   getAccountLoginTenantOptions,
   getLoginTenantOptions,
-  getWecomLoginConfig,
   login,
-  wecomLogin,
   type LoginResult,
   type LoginTenantOption,
-  type WecomLoginConfig,
 } from '../api/sys';
 import { useUserInfo, type UserInfosState } from '../store/userInfo';
+import { providerCallbackUri, startProviderAuthorization } from '../api/provider';
 import type { MangoAuthConfig } from '../config';
 import { useAuthConfig } from './useAuthConfig';
 
 const MANGO_AUTH_LOGIN_SUCCESS_EVENT = 'mango-auth:login-success';
+const PROVIDER_RETURN_KEY = 'mango-auth:provider-return';
 
 export interface MangoLoginForm {
   tenantId: string;
@@ -40,11 +39,6 @@ export interface MangoLoginFlowOptions {
   autoRedirect?: boolean;
 }
 
-export interface MangoWecomCallbackState {
-  tenantId?: string;
-  channelConfigId?: string;
-}
-
 export type MangoLoginActionStatus = 'success' | 'password-reset-required' | 'failed' | 'ignored';
 
 export interface MangoLoginActionResult {
@@ -55,12 +49,6 @@ export interface MangoLoginActionResult {
 
 export interface MangoWecomActionResult extends MangoLoginActionResult {
   shouldOpenWecomDialog: boolean;
-}
-
-export interface MangoLoginInitializeResult {
-  hasWecomCallback: boolean;
-  shouldOpenWecomDialog: boolean;
-  result?: MangoWecomActionResult;
 }
 
 interface MangoLoginContextFallback {
@@ -110,34 +98,20 @@ export function useMangoLoginFlow(options: MangoLoginFlowOptions = {}) {
   const wecomLoading = ref(false);
   const passwordResetLoading = ref(false);
   const tenantOptions = ref<LoginTenantOption[]>([]);
-  const wecomCode = ref('');
-  const wecomLoginConfig = ref<WecomLoginConfig>();
+  const wecomAuthorizationUrl = ref('');
   const passwordResetRequired = ref(false);
   const passwordResetTicket = ref('');
   const passwordResetFallback = ref<MangoLoginContextFallback>({});
   const lastError = ref<unknown>();
 
   const selectedTenant = computed(() => tenantOptions.value.find((tenant) => tenant.tenantId === form.tenantId));
+  const wecomQrUrl = computed(() => wecomAuthorizationUrl.value);
   const passwordPolicyMessage = computed(() => getPasswordPolicyMessage(defaultPasswordPolicy));
   const canSubmitPasswordReset = computed(
     () =>
       isPasswordPolicyPassed(passwordResetForm.newPassword, defaultPasswordPolicy) &&
       passwordResetForm.confirmPassword === passwordResetForm.newPassword,
   );
-  const wecomQrUrl = computed(() => {
-    const config = wecomLoginConfig.value;
-    if (!config?.corpId || !config.agentId || !config.redirectUri) {
-      return '';
-    }
-    const params = new URLSearchParams({
-      appid: config.corpId,
-      agentid: String(config.agentId),
-      redirect_uri: config.redirectUri,
-      state: buildWecomState(config),
-    });
-    return `https://open.work.weixin.qq.com/wwopen/sso/qrConnect?${params.toString()}`;
-  });
-
   function notify(type: 'success' | 'warning' | 'error', message: string) {
     if (!showMessage.value) {
       return;
@@ -365,116 +339,26 @@ export function useMangoLoginFlow(options: MangoLoginFlowOptions = {}) {
     wecomLoading.value = true;
     lastError.value = undefined;
     try {
-      wecomLoginConfig.value = await getWecomLoginConfig(form.tenantId);
-    } catch (error) {
-      lastError.value = error;
-      wecomLoginConfig.value = undefined;
-      notify('warning', '未读取到企业微信扫码登录配置');
-    } finally {
-      wecomLoading.value = false;
-    }
-    return { status: 'success', shouldOpenWecomDialog: true };
-  }
-
-  async function submitWecomLogin(code = wecomCode.value): Promise<MangoWecomActionResult> {
-    const authorizationCode = code.trim();
-    if (!authorizationCode) {
-      notify('warning', '请输入企业微信授权 code');
-      return { status: 'failed', shouldOpenWecomDialog: true };
-    }
-    if (!form.tenantId) {
-      notify('warning', '企业微信回调缺少机构信息，请重新扫码');
-      return { status: 'failed', shouldOpenWecomDialog: true };
-    }
-    wecomCode.value = authorizationCode;
-    wecomLoading.value = true;
-    lastError.value = undefined;
-    try {
-      const loginData = {
-        code: authorizationCode,
-        channelConfigId: wecomLoginConfig.value?.channelConfigId,
+      const authorization = await startProviderAuthorization({
         tenantId: form.tenantId,
-        tenantCode: selectedTenant.value?.tenantCode,
         appCode: loginDefaults.value.appCode || 'internal-admin',
-      };
-      const res = await wecomLogin(loginData);
-      persistLoginResult(res, {
-        tenantId: form.tenantId,
-        tenantCode: selectedTenant.value?.tenantCode,
-        tenantName: selectedTenant.value?.tenantName,
-        appCode: loginData.appCode,
+        provider: 'WECOM',
+        intent: 'LOGIN',
+        redirectUri: providerCallbackUri(),
       });
-      notify('success', '登录成功');
-      await redirectAfterLogin();
-      return { status: 'success', result: res, shouldOpenWecomDialog: true };
+      wecomAuthorizationUrl.value = authorization.authorizationUrl;
+      if (typeof window !== 'undefined') {
+        window.sessionStorage.setItem(PROVIDER_RETURN_KEY, resolveLoginRedirectPath());
+      }
+      return { status: 'success', shouldOpenWecomDialog: true };
     } catch (error) {
       lastError.value = error;
-      console.error('企业微信登录失败:', error);
-      notify('error', '企业微信登录失败，请确认账号已绑定');
-      return { status: 'failed', error, shouldOpenWecomDialog: true };
+      wecomAuthorizationUrl.value = '';
+      notify('warning', '未读取到企业微信登录配置');
+      return { status: 'failed', error, shouldOpenWecomDialog: false };
     } finally {
       wecomLoading.value = false;
     }
-  }
-
-  async function handleWecomCallback(code: string, state: MangoWecomCallbackState): Promise<MangoWecomActionResult> {
-    wecomCode.value = code;
-    if (!state.tenantId) {
-      notify('warning', '企业微信回调缺少机构信息，请重新扫码');
-      return { status: 'failed', shouldOpenWecomDialog: true };
-    }
-    setTenantId(state.tenantId);
-    if (!form.tenantId) {
-      notify('warning', '企业微信回调缺少机构信息，请重新选择机构后登录');
-      return { status: 'failed', shouldOpenWecomDialog: true };
-    }
-    if (tenantOptions.value.length > 0 && !tenantOptions.value.some((tenant) => tenant.tenantId === form.tenantId)) {
-      notify('warning', '企业微信回调机构不可用，请重新选择机构后登录');
-      return { status: 'failed', shouldOpenWecomDialog: true };
-    }
-
-    wecomLoginConfig.value = state.channelConfigId ? { channelConfigId: state.channelConfigId } : undefined;
-    if (!wecomLoginConfig.value?.channelConfigId) {
-      try {
-        wecomLoginConfig.value = await getWecomLoginConfig(form.tenantId);
-      } catch (error) {
-        console.warn('恢复企业微信扫码登录配置失败:', error);
-      }
-    }
-    return submitWecomLogin(code);
-  }
-
-  async function initializeLoginFlow(): Promise<MangoLoginInitializeResult> {
-    const callback = readWecomCallback();
-    if (callback.state.tenantId) {
-      setTenantId(callback.state.tenantId);
-    }
-    if (callback.hasCallbackParams) {
-      clearWecomCallbackUrl();
-    }
-
-    await loadLoginTenants();
-    if (!callback.code) {
-      return {
-        hasWecomCallback: callback.hasCallbackParams,
-        shouldOpenWecomDialog: false,
-      };
-    }
-
-    const result = await handleWecomCallback(callback.code, callback.state);
-    return {
-      hasWecomCallback: true,
-      shouldOpenWecomDialog: result.shouldOpenWecomDialog,
-      result,
-    };
-  }
-
-  function buildWecomState(config: WecomLoginConfig) {
-    const state = {
-      t: String(form.tenantId || ''),
-      c: config.channelConfigId == null ? '' : String(config.channelConfigId),
-    };
-    return `mwc.${base64UrlEncode(JSON.stringify(state))}`;
   }
 
   return {
@@ -486,8 +370,6 @@ export function useMangoLoginFlow(options: MangoLoginFlowOptions = {}) {
     passwordResetLoading,
     tenantOptions,
     selectedTenant,
-    wecomCode,
-    wecomLoginConfig,
     wecomQrUrl,
     passwordResetRequired,
     passwordResetTicket,
@@ -506,10 +388,6 @@ export function useMangoLoginFlow(options: MangoLoginFlowOptions = {}) {
     submitPasswordLogin,
     submitRequiredPasswordChange,
     prepareWecomLogin,
-    submitWecomLogin,
-    handleWecomCallback,
-    initializeLoginFlow,
-    buildWecomState,
   };
 }
 
@@ -527,95 +405,6 @@ export function normalizeLoginRedirect(value: unknown): string {
     return '';
   }
   return target;
-}
-
-export function parseWecomState(rawState: string | null): MangoWecomCallbackState {
-  if (!rawState) {
-    return {};
-  }
-  if (rawState.startsWith('tenant:')) {
-    return { tenantId: rawState.slice('tenant:'.length) || undefined };
-  }
-  const statePrefix = rawState.startsWith('mango-wecom.') ? 'mango-wecom.' : 'mwc.';
-  if (!rawState.startsWith(statePrefix)) {
-    return {};
-  }
-  try {
-    const decoded = JSON.parse(base64UrlDecode(rawState.slice(statePrefix.length))) as Record<string, unknown>;
-    return {
-      tenantId: decoded.t ? String(decoded.t) : undefined,
-      channelConfigId: decoded.c ? String(decoded.c) : undefined,
-    };
-  } catch (error) {
-    console.warn('解析企业微信登录 state 失败:', error);
-    return {};
-  }
-}
-
-export function readWecomCallback() {
-  if (typeof window === 'undefined') {
-    return {
-      code: '',
-      state: {},
-      hasCallbackParams: false,
-    };
-  }
-  const params = new URLSearchParams(window.location.search);
-  const hashQueryStart = window.location.hash.indexOf('?');
-  if (hashQueryStart >= 0) {
-    const hashParams = new URLSearchParams(window.location.hash.slice(hashQueryStart + 1));
-    hashParams.forEach((value, key) => {
-      if (!params.has(key)) {
-        params.set(key, value);
-      }
-    });
-  }
-  const code = params.get('code')?.trim() || '';
-  const state = params.get('state');
-  return {
-    code,
-    state: parseWecomState(state),
-    hasCallbackParams: Boolean(code || state),
-  };
-}
-
-export function clearWecomCallbackUrl() {
-  if (typeof window === 'undefined') {
-    return;
-  }
-  const url = new URL(window.location.href);
-  url.search = removeParams(url.search, ['code', 'state']);
-  const hashQueryStart = url.hash.indexOf('?');
-  if (hashQueryStart >= 0) {
-    const hashPath = url.hash.slice(0, hashQueryStart);
-    const hashSearch = removeParams(url.hash.slice(hashQueryStart), ['code', 'state']);
-    url.hash = `${hashPath}${hashSearch}`;
-  }
-  window.history.replaceState(window.history.state, document.title, `${url.pathname}${url.search}${url.hash}`);
-}
-
-function removeParams(search: string, names: string[]) {
-  const params = new URLSearchParams(search);
-  names.forEach((name) => params.delete(name));
-  const next = params.toString();
-  return next ? `?${next}` : '';
-}
-
-function base64UrlEncode(value: string) {
-  const bytes = new TextEncoder().encode(value);
-  let binary = '';
-  bytes.forEach((byte) => {
-    binary += String.fromCharCode(byte);
-  });
-  return window.btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
-}
-
-function base64UrlDecode(value: string) {
-  const normalized = value.replace(/-/g, '+').replace(/_/g, '/');
-  const padded = normalized.padEnd(normalized.length + ((4 - (normalized.length % 4)) % 4), '=');
-  const binary = window.atob(padded);
-  const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
-  return new TextDecoder().decode(bytes);
 }
 
 async function waitForMinLoading(startedAt: number, minMs: number) {

@@ -307,7 +307,7 @@ pnpm -F @mango/file test
 
 ## 2026-07-27 Bootstrap 生命周期影响
 
-- 普通业务表单上传、回显、预览和下载 API、文件 ID 持久化、权限及租户边界保持不变。需要随业务制品预置的固定文件改用 `FILE_ASSET` Resource，由 Bootstrap 把 classpath 二进制发布到配置的 LOCAL/S3/OSS/COS/Qiniu 存储并写入稳定的 `file_record`、`file_object`；重入时按对象长度和 SHA-256 校验，内容漂移会重新发布。业务升级顺序调整为先完成 `bootstrap apply` 与 `bootstrap verify`，不再在 Runtime 启动代码中上传预置文件。
+- 普通业务表单上传、回显、预览和下载 API、文件 ID 持久化、权限及租户边界保持不变。需要随业务版本预置的固定文件改用 `FILE_ASSET` Resource：小型资产可使用 `classpath:META-INF/mango/assets/`，不适合打入 Jar 的大型二进制使用 `asset:<relative-path>`，并通过 `mango.file.asset-root` 或 `MANGO_FILE_ASSET_ROOT` 映射开发、Docker 等环境的外部根目录。Bootstrap 把内容发布到配置的 LOCAL/S3/OSS/COS/Qiniu 存储并写入稳定的 `file_record`、`file_object`；重入时按对象长度和 SHA-256 校验，内容漂移会重新发布。`asset:` 拒绝绝对路径、`..`、反斜杠和越过根目录的符号链接；根目录或文件不可读时 Bootstrap 明确失败。业务升级顺序调整为先完成 `bootstrap apply` 与 `bootstrap verify`，不再在 Runtime 启动代码中上传预置文件。
 
 ## 2026-07-31 文件预览容器适配影响
 
@@ -328,3 +328,7 @@ pnpm -F @mango/file test
 ## 2026-08-11 文件预览加载态影响
 
 - `FilePreviewPanel` 在加载预览元数据、受保护文件内容或文档预览地址期间显示 Element Plus 默认 loading，加载失败时在预览区域显示失败态；文件 ID 持久化、上传/预览/下载 API、权限、租户、菜单页面入口和业务表字段不变。业务项目升级后应确认图片预览的 loading、完成态和失败态不会遮挡文件名、操作区或预览内容。
+
+## 2026-08-12 XLS/XLSX Web 预览按钮配置
+
+- `mango-file-preview-engine` 新增 `office.xlsx.web.buttons.enabled`，环境变量为 `KK_OFFICE_XLSX_WEB_BUTTONS_ENABLED`，默认 `true`。业务部署设置为 `false` 后，XLS/XLSX Web 预览页不再渲染“跳转 HTML 预览”和“打印”，Luckysheet 同步铺满顶部；上传、下载、文件权限、租户、`@mango/file` 组件和其它文件类型预览均不变。该开关是业务项目控制按钮展示的接入入口，无需增加 CSS、iframe DOM 注入或遮挡逻辑；长期实现边界见[前端开发流程](../../../mango-pmo/rules/frontend/05-dev-flow.md)。

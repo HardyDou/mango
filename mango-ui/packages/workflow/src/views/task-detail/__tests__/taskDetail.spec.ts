@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
   push: vi.fn(),
   messageWarning: vi.fn(),
   messageError: vi.fn(),
+  confirm: vi.fn(() => Promise.resolve()),
 }));
 
 vi.mock('vue-router', () => ({
@@ -26,12 +27,16 @@ vi.mock('element-plus', async () => {
       success: vi.fn(),
     },
     ElMessageBox: {
-      confirm: vi.fn(() => Promise.resolve()),
+      confirm: mocks.confirm,
     },
   };
 });
 
 vi.mock('@mango/common', () => ({
+  MangoDialog: {
+    name: 'MangoDialog',
+    template: '<div><slot /><slot name="footer" /></div>',
+  },
   RichTextViewer: {
     name: 'RichTextViewer',
     props: ['content'],
@@ -63,6 +68,7 @@ vi.mock('../../../api/workflow', async () => {
       definitionDetail: vi.fn(),
       definitionsPage: vi.fn(),
       completeTask: vi.fn(() => Promise.resolve(true)),
+      rejectTask: vi.fn(() => Promise.resolve(true)),
       returnTask: vi.fn(() =>
         Promise.resolve({
           processInstanceId: 'proc-1',
@@ -81,6 +87,7 @@ vi.mock('../../../api/workflow', async () => {
 describe('workflow task detail', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.confirm.mockResolvedValue(undefined);
     routeQuery.taskId = 'task-1';
     delete routeQuery.processInstanceId;
     delete routeQuery.mode;
@@ -108,7 +115,7 @@ describe('workflow task detail', () => {
           customConfig: { approvePageKey: 'workflow.test.approve' },
         }),
         renderConfig: {},
-      }) as any,
+      }) as unknown as WorkflowTaskDetail,
     );
     vi.mocked(workflowApi.businessApplyByProcessInstance).mockRejectedValueOnce(new Error('no apply'));
 
@@ -278,7 +285,7 @@ describe('workflow task detail', () => {
     routeQuery.returnPath = '/guarantee/risk/reviews';
     routeQuery.returnQuery = 'scope=TODO&tab=pending';
     routeQuery.from = 'done';
-    vi.mocked(workflowApi.taskDetail).mockResolvedValueOnce(taskDetail() as any);
+    vi.mocked(workflowApi.taskDetail).mockResolvedValueOnce(taskDetail() as unknown as WorkflowTaskDetail);
     vi.mocked(workflowApi.businessApplyByProcessInstance).mockRejectedValue(new Error('no apply'));
 
     const { el, unmount } = await mountTaskDetail();
@@ -339,6 +346,53 @@ describe('workflow task detail', () => {
       path: '/guarantee/risk/reviews',
       query: { scope: 'TODO' },
     });
+    unmount();
+  });
+
+  it.each([
+    ['通过', 'cancel'],
+    ['通过', 'close'],
+    ['驳回', 'cancel'],
+    ['驳回', 'close'],
+  ])('ends the %s task action when confirmation rejects with %s', async (actionLabel, reason) => {
+    mocks.confirm.mockImplementation(() => Promise.reject(reason));
+    vi.mocked(workflowApi.taskDetail).mockResolvedValueOnce(
+      taskDetail({
+        renderConfig: {
+          nodeActions: {
+            reject: { enabled: true, label: '驳回', requireComment: false, danger: true, order: 40 },
+          },
+        },
+      }) as any,
+    );
+    vi.mocked(workflowApi.businessApplyByProcessInstance).mockRejectedValue(new Error('no apply'));
+
+    const { el, errorHandler, unmount } = await mountTaskDetail();
+    clickButton(el, actionLabel);
+    await flushPromises();
+
+    expect(mocks.confirm).toHaveBeenCalled();
+    expect(workflowApi.completeTask).not.toHaveBeenCalled();
+    expect(workflowApi.rejectTask).not.toHaveBeenCalled();
+    expect(mocks.push).not.toHaveBeenCalled();
+    expect(mocks.messageError).not.toHaveBeenCalled();
+    expect(errorHandler).not.toHaveBeenCalled();
+    unmount();
+  });
+
+  it('keeps unexpected confirmation failures visible to the global error boundary', async () => {
+    const error = new Error('confirmation unavailable');
+    mocks.confirm.mockImplementation(() => Promise.reject(error));
+    vi.mocked(workflowApi.taskDetail).mockResolvedValueOnce(taskDetail() as any);
+    vi.mocked(workflowApi.businessApplyByProcessInstance).mockRejectedValue(new Error('no apply'));
+
+    const { el, errorHandler, unmount } = await mountTaskDetail();
+    clickButton(el, '通过');
+    await flushPromises();
+
+    expect(mocks.confirm).toHaveBeenCalled();
+    expect(workflowApi.completeTask).not.toHaveBeenCalled();
+    expect(errorHandler).toHaveBeenCalledWith(error, expect.anything(), expect.any(String));
     unmount();
   });
 
@@ -556,11 +610,14 @@ async function mountTaskDetail() {
   const host = document.createElement('div');
   document.body.appendChild(host);
   const app = createApp(TaskDetail);
+  const errorHandler = vi.fn();
+  app.config.errorHandler = errorHandler;
   registerElementStubs(app);
   app.mount(host);
   await flushPromises();
   return {
     el: host,
+    errorHandler,
     unmount: () => {
       app.unmount();
       host.remove();

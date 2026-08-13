@@ -1,5 +1,6 @@
 package io.mango.file.core.resource;
 
+import io.mango.file.core.config.FileProperties;
 import io.mango.file.core.entity.FileObjectEntity;
 import io.mango.file.core.entity.FileRecordEntity;
 import io.mango.file.core.entity.FileStorageConfigEntity;
@@ -14,12 +15,15 @@ import io.mango.resource.support.builder.ResourceDeclarationBuilder;
 import io.mango.resource.support.model.ResourceDeclaration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.springframework.core.io.DefaultResourceLoader;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
@@ -44,7 +48,11 @@ class FileAssetResourceHandlerTest {
     private final AtomicReference<FileObjectEntity> objectState = new AtomicReference<>();
     private final AtomicReference<FileRecordEntity> recordState = new AtomicReference<>();
     private final InMemoryFileStorage storage = new InMemoryFileStorage();
+    private final FileProperties fileProperties = new FileProperties();
     private FileAssetResourceHandler handler;
+
+    @TempDir
+    Path temporaryDirectory;
 
     @BeforeEach
     void setUp() {
@@ -77,7 +85,7 @@ class FileAssetResourceHandlerTest {
             return 1;
         }).when(fileRecordMapper).updateById(any(FileRecordEntity.class));
         handler = new FileAssetResourceHandler(storageConfigMapper, fileObjectMapper, fileRecordMapper,
-                new FileStorageRouter(java.util.List.of(storage)), new DefaultResourceLoader());
+                new FileStorageRouter(java.util.List.of(storage)), new DefaultResourceLoader(), fileProperties);
     }
 
     @Test
@@ -140,7 +148,117 @@ class FileAssetResourceHandlerTest {
         assertThat(storage.objects).containsKey(OBJECT_NAME);
     }
 
+    @Test
+    void publishesExternalAssetFromConfiguredRoot() throws Exception {
+        Path asset = temporaryDirectory.resolve("documents/sample.txt");
+        Files.createDirectories(asset.getParent());
+        Files.writeString(asset, "mango-file-asset\n", StandardCharsets.UTF_8);
+        fileProperties.setAssetRoot(temporaryDirectory.toString());
+
+        handler.upsert(externalDeclaration("asset:documents/sample.txt", SHA256));
+
+        assertThat(storage.objects.get(OBJECT_NAME))
+                .isEqualTo("mango-file-asset\n".getBytes(StandardCharsets.UTF_8));
+        assertThat(recordState.get().getFileHash()).isEqualTo(SHA256);
+    }
+
+    @Test
+    void keepsClasspathAssetCompatibility() {
+        handler.upsert(declaration(OBJECT_NAME, SHA256));
+
+        assertThat(storage.objects).containsKey(OBJECT_NAME);
+        assertThat(storage.putCount).isOne();
+    }
+
+    @Test
+    void rejectsExternalAssetWhenRootIsNotConfigured() {
+        assertThatThrownBy(() -> handler.upsert(externalDeclaration("asset:documents/sample.txt", SHA256)))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("asset-root is not configured");
+        assertThat(storage.putCount).isZero();
+    }
+
+    @Test
+    void rejectsAbsoluteExternalAssetPath() {
+        fileProperties.setAssetRoot(temporaryDirectory.toString());
+
+        assertThatThrownBy(() -> handler.upsert(externalDeclaration("asset:/etc/passwd", SHA256)))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("safe relative path");
+        assertThat(storage.putCount).isZero();
+    }
+
+    @Test
+    void rejectsWindowsAbsoluteExternalAssetPath() {
+        fileProperties.setAssetRoot(temporaryDirectory.toString());
+
+        assertThatThrownBy(() -> handler.upsert(externalDeclaration("asset:C:/bootstrap-assets/sample.txt",
+                SHA256)))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("safe relative path");
+        assertThat(storage.putCount).isZero();
+    }
+
+    @Test
+    void rejectsParentTraversalExternalAssetPath() {
+        fileProperties.setAssetRoot(temporaryDirectory.toString());
+
+        assertThatThrownBy(() -> handler.upsert(externalDeclaration("asset:documents/../sample.txt", SHA256)))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("safe relative path");
+        assertThat(storage.putCount).isZero();
+    }
+
+    @Test
+    void rejectsMissingExternalAsset() {
+        fileProperties.setAssetRoot(temporaryDirectory.toString());
+
+        assertThatThrownBy(() -> handler.upsert(externalDeclaration("asset:documents/missing.txt", SHA256)))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("external content is not readable");
+        assertThat(storage.putCount).isZero();
+    }
+
+    @Test
+    void rejectsExternalAssetChecksumMismatchBeforeUpload() throws Exception {
+        Path asset = temporaryDirectory.resolve("documents/sample.txt");
+        Files.createDirectories(asset.getParent());
+        Files.writeString(asset, "mango-file-asset\n", StandardCharsets.UTF_8);
+        fileProperties.setAssetRoot(temporaryDirectory.toString());
+
+        assertThatThrownBy(() -> handler.upsert(externalDeclaration("asset:documents/sample.txt",
+                "0".repeat(64))))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("sha256 mismatch");
+        assertThat(storage.putCount).isZero();
+    }
+
+    @Test
+    void rejectsSymbolicLinkEscapingExternalAssetRoot() throws Exception {
+        Path outside = Files.createTempFile("mango-file-asset-outside", ".txt");
+        Path link = temporaryDirectory.resolve("outside.txt");
+        Files.createSymbolicLink(link, outside);
+        fileProperties.setAssetRoot(temporaryDirectory.toString());
+
+        try {
+            assertThatThrownBy(() -> handler.upsert(externalDeclaration("asset:outside.txt", SHA256)))
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessageContaining("escapes asset-root");
+            assertThat(storage.putCount).isZero();
+        } finally {
+            Files.deleteIfExists(outside);
+        }
+    }
+
     private ResourceDeclaration declaration(String objectName, String sha256) {
+        return declaration(objectName, sha256, "classpath:META-INF/mango/assets/test/sample.txt");
+    }
+
+    private ResourceDeclaration externalDeclaration(String location, String sha256) {
+        return declaration(OBJECT_NAME, sha256, location);
+    }
+
+    private ResourceDeclaration declaration(String objectName, String sha256, String location) {
         return ResourceDeclarationBuilder.create(ResourceTypes.FILE_ASSET)
                 .id("service-a.sample-file")
                 .version(1)
@@ -151,7 +269,7 @@ class FileAssetResourceHandlerTest {
                 .string("objectName", objectName)
                 .string("fileName", "sample.txt")
                 .string("sha256", sha256)
-                .file("content", "classpath:META-INF/mango/assets/test/sample.txt", null, "text/plain")
+                .file("content", location, null, "text/plain")
                 .build();
     }
 

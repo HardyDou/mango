@@ -695,8 +695,7 @@ try {
     assertGeneratedDevWorkspaceCreatesLocalSecretKey(projectRoot);
     assertGeneratedDevWorkspaceBackfillsLocalSecretKey(projectRoot);
     assertDevWorkspaceRejectsNonCiFriendlyMavenPom(projectRoot);
-    assertDevWorkspaceAutoCreatesDatabase(projectRoot);
-    assertDevWorkspaceStreamsLargeInstallOutput(projectRoot);
+    assertDevWorkspaceUsesMavenReactor(projectRoot);
     assertManagedBootstrapAdvancesFailedCandidate(projectRoot);
     assertLegacySpringApplicationSkipsManagedBootstrap(projectRoot);
     assertCommandDevWorkspaceAutoCreatesDatabase(projectRoot);
@@ -2419,6 +2418,59 @@ function assertDevWorkspaceAutoCreatesDatabase(projectRoot) {
   }
 }
 
+function assertDevWorkspaceUsesMavenReactor(projectRoot) {
+  const fakeBinDir = join(projectRoot, '.runtime/reactor-bin');
+  const callLog = join(projectRoot, '.runtime/reactor-calls.log');
+  mkdirSync(fakeBinDir, { recursive: true });
+  writeFileSync(
+    join(fakeBinDir, 'mysql'),
+    ['#!/usr/bin/env sh', `echo "mysql:$*" >> "${callLog}"`, 'exit 0', ''].join('\n'),
+  );
+  writeFileSync(
+    join(fakeBinDir, 'mvn'),
+    ['#!/usr/bin/env sh', `echo "mvn:$*" >> "${callLog}"`, 'exit 17', ''].join('\n'),
+  );
+  chmodExecutable(join(fakeBinDir, 'mysql'));
+  chmodExecutable(join(fakeBinDir, 'mvn'));
+  rmSync(callLog, { force: true });
+  rmSync(join(projectRoot, '.mango'), { recursive: true, force: true });
+  const workspaceRegistry = join(projectRoot, '.runtime/reactor-workspaces.json');
+  prepareStableBootstrapReceipt(projectRoot, workspaceRegistry);
+  const result = spawnSync(
+    'env',
+    [
+      `MANGO_WORKSPACE_REGISTRY=${workspaceRegistry}`,
+      `PATH=${fakeBinDir}:/usr/bin:/bin:/usr/sbin:/sbin`,
+      process.execPath,
+      cli,
+      'dev',
+      'start',
+      'mango-full-acceptance-service',
+    ],
+    { cwd: projectRoot, encoding: 'utf8' },
+  );
+  const output = `${result.stdout}\n${result.stderr}`;
+  if (result.status === 0 || output.includes('install command failed')) {
+    throw new Error(`mango dev start must fail from the Reactor command, not install:\n${output}`);
+  }
+  const calls = waitForCallLogLines(callLog, 2);
+  const mavenCall = calls.find((line) => line.startsWith('mvn:')) || '';
+  if (
+    !mavenCall.includes('-f pom.xml') ||
+    !mavenCall.includes('-pl :mango-full-acceptance-app') ||
+    !mavenCall.includes('-am') ||
+    !mavenCall.includes('-DskipTests') ||
+    !mavenCall.includes(' compile ') ||
+    !mavenCall.includes('spring-boot-maven-plugin') ||
+    /(?:^|\s)(?:clean|package|install)(?:\s|$)/u.test(mavenCall) ||
+    mavenCall.includes(' -cp ')
+  ) {
+    throw new Error(
+      `mango dev start must use the Maven Reactor without install or manual classpath:\n${calls.join('\n')}`,
+    );
+  }
+}
+
 function assertDevWorkspaceStreamsLargeInstallOutput(projectRoot) {
   const fakeBinDir = join(projectRoot, '.runtime/large-install-bin');
   const callLog = join(projectRoot, '.runtime/large-install-calls.log');
@@ -2518,7 +2570,7 @@ function assertLegacySpringApplicationSkipsManagedBootstrap(projectRoot) {
       '#!/usr/bin/env sh',
       `echo "mvn:$*" >> "${callLog}"`,
       'case "$*" in',
-      '  *"-DskipTests install"*) exit 0 ;;',
+      '  *"-Dspring-boot.run.arguments=bootstrap apply"*) exit 0 ;;',
       'esac',
       'exit 17',
       '',
@@ -2553,9 +2605,8 @@ function assertLegacySpringApplicationSkipsManagedBootstrap(projectRoot) {
     const calls = waitForCallLogLines(callLog, 3);
     const mavenCalls = calls.filter((line) => line.startsWith('mvn:'));
     if (
-      mavenCalls.length !== 2 ||
-      !mavenCalls[0]?.includes('-DskipTests install') ||
-      !mavenCalls[1]?.includes('-Dspring-boot.run.arguments=runtime') ||
+      mavenCalls.length !== 1 ||
+      !mavenCalls[0]?.includes('-Dspring-boot.run.arguments=runtime') ||
       mavenCalls.some((line) => line.includes('bootstrap'))
     ) {
       throw new Error(`legacy SpringApplication must not receive managed bootstrap commands:\n${calls.join('\n')}`);
@@ -2587,7 +2638,7 @@ function assertManagedBootstrapAdvancesFailedCandidate(projectRoot) {
       '#!/usr/bin/env sh',
       `echo "mvn:$*" >> "${callLog}"`,
       'case "$*" in',
-      '  *"-DskipTests install"*) exit 0 ;;',
+      '  *"-Dspring-boot.run.arguments=bootstrap apply"*"--mango.release.generation=2"*) exit 0 ;;',
       '  *"bootstrap apply"*"--mango.release.generation=1"*)',
       '    echo "BOOTSTRAP_FINGERPRINT_MISMATCH: scope=candidate" >&2',
       '    exit 1',
@@ -2625,13 +2676,13 @@ function assertManagedBootstrapAdvancesFailedCandidate(projectRoot) {
   const calls = waitForCallLogLines(callLog, 6);
   const mavenCalls = calls.filter((line) => line.startsWith('mvn:'));
   if (
-    mavenCalls.length !== 4 ||
+    mavenCalls.length !== 3 ||
+    !mavenCalls[0]?.includes('-Dspring-boot.run.arguments=bootstrap apply') ||
+    !mavenCalls[0]?.includes('--mango.release.generation=1') ||
     !mavenCalls[1]?.includes('-Dspring-boot.run.arguments=bootstrap apply') ||
-    !mavenCalls[1]?.includes('--mango.release.generation=1') ||
-    !mavenCalls[2]?.includes('-Dspring-boot.run.arguments=bootstrap apply') ||
-    !mavenCalls[2]?.includes('--mango.release.generation=2') ||
-    !mavenCalls[3]?.includes('-Dspring-boot.run.arguments=runtime') ||
-    !mavenCalls[3]?.includes('--mango.release.generation=2')
+    !mavenCalls[1]?.includes('--mango.release.generation=2') ||
+    !mavenCalls[2]?.includes('-Dspring-boot.run.arguments=runtime') ||
+    !mavenCalls[2]?.includes('--mango.release.generation=2')
   ) {
     throw new Error(`fingerprint drift must advance a failed candidate generation:\n${calls.join('\n')}`);
   }
@@ -4059,6 +4110,7 @@ function assertPmoSyncCommand(tempRoot) {
       '  <packaging>pom</packaging>',
       '  <properties><revision>1.0.0-SNAPSHOT</revision></properties>',
       '  <modules><module>apps/baohan-api</module></modules>',
+      '  <build><plugins><plugin><groupId>org.springframework.boot</groupId><artifactId>spring-boot-maven-plugin</artifactId><configuration><skip>true</skip></configuration></plugin></plugins></build>',
       '</project>',
     ].join('\n'),
   );
@@ -4066,6 +4118,7 @@ function assertPmoSyncCommand(tempRoot) {
     join(discoveredShellRoot, 'baohan-backend/apps/baohan-api/pom.xml'),
     [
       '<project>',
+      '  <artifactId>baohan-api</artifactId>',
       '  <dependencies>',
       '    <dependency>',
       '      <groupId>org.springframework.boot</groupId>',
@@ -4075,6 +4128,7 @@ function assertPmoSyncCommand(tempRoot) {
       '  <build><plugins><plugin>',
       '    <groupId>org.springframework.boot</groupId>',
       '    <artifactId>spring-boot-maven-plugin</artifactId>',
+      '    <configuration><skip>false</skip></configuration>',
       '  </plugin></plugins></build>',
       '</project>',
     ].join('\n'),

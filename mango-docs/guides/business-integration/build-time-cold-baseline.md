@@ -110,7 +110,7 @@ Runtime 不生成 B、不执行 migration，也不访问构建数据库。
 
 cold baseline 只快照 V 最终产生的数据库结构和 migration 静态行。菜单、权限、流程发布、租户资源以及运行时可维护配置仍由 Resource Registry 的 Bootstrap 步骤处理。
 
-预置文件使用 `FILE_ASSET` Resource：声明中保留稳定 file ID、目标配置和 classpath 资源摘要；Bootstrap File handler 把二进制写入配置的文件存储层，再写入/校验文件元数据。B 可以包含 V 历史形成的数据库元数据，但不包含文件二进制，也不替代对象存储上传。这样固定 ID、数据库记录和存储对象由同一 generation/fingerprint 验证，业务不再需要在 Runtime 启动时自行上传 classpath 文件。
+预置文件使用 `FILE_ASSET` Resource：声明中保留稳定 file ID、目标配置、`classpath:` 或 `asset:` 内容位置和资源摘要；不适合进入 Jar 的大型二进制使用 `asset:<relative-path>`，由各环境通过 `mango.file.asset-root` 映射外部根目录。Bootstrap File handler 把二进制写入配置的文件存储层，再写入/校验文件元数据。B 可以包含 V 历史形成的数据库元数据，但不包含文件二进制，也不替代对象存储上传。这样固定 ID、数据库记录和存储对象由同一 generation/fingerprint 验证，业务不再需要在 Runtime 启动时自行上传文件。
 
 Workflow 定义同理：B 只负责相关表结构和 V 静态行，流程部署与版本回执由 `BOOTSTRAP_REQUIRED` Resource/Workflow handler 完成。
 
