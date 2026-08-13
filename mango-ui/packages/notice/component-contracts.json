@@ -40,6 +40,13 @@
     },
     {
       "exportKey": "./admin",
+      "exportName": "NoticeInboundView",
+      "ownerRole": "Frontend Standards Owner",
+      "targetPhase": "PR-2H-N",
+      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
+    },
+    {
+      "exportKey": "./admin",
       "exportName": "NoticeMessageDefinitionView",
       "ownerRole": "Frontend Standards Owner",
       "targetPhase": "PR-2H-N",
