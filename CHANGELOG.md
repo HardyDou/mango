@@ -10,6 +10,47 @@
 
 - This change is delivered by the Mango Maven `mango-file-preview-engine` artifact. Include it in the next Mango Maven release and upgrade backend consumers as one aligned Maven matrix. No standalone `@mango/file` npm release is required for this capability.
 
+## v2026.08.14-maven-1.0.36-notice-1.0.39-admin-1.0.65-cli-1.0.104-inbound-release - 2026-08-14
+
+Status: `PENDING`. Release source is the merged Notice inbound implementation from PR #772 plus this release metadata change. No immutable artifact, tag, GitHub Release, or documentation snapshot is considered published until all preflight, registry, consumer, and post-publication checks pass.
+
+### Fixed
+
+- Add Notice inbound message storage and query support for email polling/interface push and anonymous WeCom webhook verification/message delivery.
+- Persist message bodies separately from large payloads, send attachments to File service storage, and expose attachment preview metadata and processing state in the admin UI.
+- Keep existing email, in-app message, SMS, and WeCom outbound delivery paths unchanged while adding the explicit channel capability mode (`仅发送`、`仅接收`、`收发一体`).
+
+### Versions
+
+| Component | Previous | Release | Compatibility |
+| --- | ---: | ---: | --- |
+| Mango Maven backend and `io.mango:mango-docs-bundle` | `1.0.35` | `1.0.36` | Inbound Notice API, persistence, File integration, and channel adapters. |
+| `@mango/notice` | `1.0.38` | `1.0.39` | Inbound message management UI and public Notice API exports. |
+| `@mango/admin-shell` | `1.0.58` | `1.0.59` | Consumes the Notice inbound page registration. |
+| `@mango/admin` | `1.0.64` | `1.0.65` | Aggregates the matching Admin Shell and Notice versions. |
+| `@mango/cli` | `1.0.103` | `1.0.104` | Locks Maven `1.0.36` and the exact frontend matrix. |
+| `@mango/pmo` | `1.3.13` | unchanged | No PMO rule, contract, Agent, or Skill source changed. |
+
+### Published Packages
+
+1. Publish and verify the complete non-app Maven batch and `io.mango:mango-docs-bundle:1.0.36`.
+2. Publish and verify `@mango/notice@1.0.39`, `@mango/admin-shell@1.0.59`, `@mango/admin@1.0.65`, and `@mango/cli@1.0.104` to the private npm registry.
+3. Create and verify the immutable tag and GitHub Release against the merged source commit.
+
+### Upgrade Notes
+
+1. Upgrade Maven consumers to `1.0.36` before installing `@mango/cli@1.0.104`.
+2. Upgrade the frontend package closure together; do not install only Notice or only Admin Shell.
+3. Configure email inbound polling/interface push and WeCom token/aesKey webhook settings. Keep the callback URI anonymously accessible so WeCom signature verification can run before authentication.
+4. Configure File service storage for inbound attachments. Message body/HTML remains in the message record; large attachment content does not enter the message broadcast payload.
+5. Keep `@mango/pmo@1.3.13` unchanged and run the locked PMO check after upgrading.
+
+### Verification
+
+- Required checks on PR #772 passed: Java gates, documentation gates, `pmo-doc-check`, `frontend-pr-quality`, preflight/scope, and `pr-contract-check`.
+- Release gates: release-impact, CLI release-version lock, Business Starter PMO baseline projection, generated backend gate, admin styles, Notice/Admin Shell tests, Maven/npm registry doctor, and clean-consumer verification.
+- Post-publication evidence must include exact versions, registry coordinates, checksums/integrity, tag/Release source SHA, and the Maven documentation snapshot back-check.
+
 ## v2026.08.09-pmo-1.3.13-cli-1.0.103-pmo-rollback-release - 2026-08-09
 
 Status: `PUBLISHED_AND_VERIFIED`. 本批次从受保护 `main` 的 source commit `80bd147ab4525b581aa5711799d096e8f73ee06d`（tree `8827aa55e82f0d149cf123cefe3bb31f40a1ffeb`）发布，以新的不可变版本撤回 PR #737、#742、#745 的 PMO 部分及 #749-#752 引入的 PMO 升级。精确源码 archive 为 1,755,248,640 字节，SHA-256 为 `2ad9915f1a0914dd053746983b8aa30da960010880418ea8f93d17d75aab1a82`。`@mango/pmo@1.3.13`、`@mango/cli@1.0.103`、Tag、[GitHub Release](https://github.com/HardyDou/mango/releases/tag/v2026.08.09-pmo-1.3.13-cli-1.0.103-pmo-rollback-release) 与 Latest 文档均已发布并验证；Mango Maven `1.0.35` 未修改、未重新发布。旧 PMO/CLI 制品、Tag 和 GitHub Release 保留为不可变审计历史，不删除、不移动、不覆盖。

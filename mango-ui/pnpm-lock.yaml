@@ -719,7 +719,7 @@ importers:
         specifier: workspace:1.0.33
         version: link:../admin-pages
       '@mango/admin-shell':
-        specifier: workspace:1.0.58
+        specifier: workspace:1.0.59
         version: link:../admin-shell
       '@mango/app-runtime':
         specifier: workspace:1.0.6
@@ -752,7 +752,7 @@ importers:
         specifier: workspace:1.0.20
         version: link:../link
       '@mango/notice':
-        specifier: workspace:1.0.38
+        specifier: workspace:1.0.39
         version: link:../notice
       '@mango/numgen':
         specifier: workspace:1.0.35
@@ -865,7 +865,7 @@ importers:
         specifier: workspace:1.0.26
         version: link:../job
       '@mango/notice':
-        specifier: workspace:1.0.38
+        specifier: workspace:1.0.39
         version: link:../notice
       '@mango/rbac':
         specifier: workspace:1.0.24
