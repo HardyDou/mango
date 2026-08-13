@@ -32,22 +32,6 @@ public class InboundNoticeMessageRequest {
     @Schema(description = "附件列表") @Valid @NotNull private final List<InboundNoticeAttachmentRequest> attachments;
     @Schema(description = "接收时间") @NotNull private final Instant receivedAt;
 
-    public String tenantId() { return tenantId; }
-    public Long channelConfigId() { return channelConfigId; }
-    public NoticeChannelType channelType() { return channelType; }
-    public String providerCode() { return providerCode; }
-    public NoticeInboundProtocol protocol() { return protocol; }
-    public String sourceKey() { return sourceKey; }
-    public String messageId() { return messageId; }
-    public String subject() { return subject; }
-    public String fromAddress() { return fromAddress; }
-    public List<String> toAddresses() { return toAddresses; }
-    public String bodyText() { return bodyText; }
-    public String bodyHtml() { return bodyHtml; }
-    public List<InboundNoticeHeaderRequest> headers() { return headers; }
-    public List<InboundNoticeAttachmentRequest> attachments() { return attachments; }
-    public Instant receivedAt() { return receivedAt; }
-
     public InboundNoticeMessageRequest(String tenantId, Long channelConfigId, NoticeChannelType channelType,
             String providerCode, NoticeInboundProtocol protocol, String sourceKey, String messageId,
             String subject, String fromAddress, List<String> toAddresses, String bodyText, String bodyHtml,
@@ -67,5 +51,65 @@ public class InboundNoticeMessageRequest {
         this.headers = headers == null ? List.of() : List.copyOf(headers);
         this.attachments = attachments == null ? List.of() : List.copyOf(attachments);
         this.receivedAt = receivedAt == null ? Instant.now() : receivedAt;
+    }
+
+    public String tenantId() {
+        return tenantId;
+    }
+
+    public Long channelConfigId() {
+        return channelConfigId;
+    }
+
+    public NoticeChannelType channelType() {
+        return channelType;
+    }
+
+    public String providerCode() {
+        return providerCode;
+    }
+
+    public NoticeInboundProtocol protocol() {
+        return protocol;
+    }
+
+    public String sourceKey() {
+        return sourceKey;
+    }
+
+    public String messageId() {
+        return messageId;
+    }
+
+    public String subject() {
+        return subject;
+    }
+
+    public String fromAddress() {
+        return fromAddress;
+    }
+
+    public List<String> toAddresses() {
+        return toAddresses;
+    }
+
+    public String bodyText() {
+        return bodyText;
+    }
+
+    public String bodyHtml() {
+        return bodyHtml;
+    }
+
+    public List<InboundNoticeHeaderRequest> headers() {
+        return headers;
+    }
+
+    public List<InboundNoticeAttachmentRequest> attachments() {
+        return attachments;
+    }
+
+    public Instant receivedAt() {
+        return receivedAt;
     }
 }

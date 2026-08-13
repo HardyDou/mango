@@ -20,7 +20,15 @@ public class NoticeInboundMailCursorPollCommand {
         this.protocol = protocol;
         this.nextPollAt = nextPollAt;
     }
-    public Long channelConfigId() { return channelConfigId; }
-    public NoticeInboundProtocol protocol() { return protocol; }
-    public LocalDateTime nextPollAt() { return nextPollAt; }
+    public Long channelConfigId() {
+        return channelConfigId;
+    }
+
+    public NoticeInboundProtocol protocol() {
+        return protocol;
+    }
+
+    public LocalDateTime nextPollAt() {
+        return nextPollAt;
+    }
 }

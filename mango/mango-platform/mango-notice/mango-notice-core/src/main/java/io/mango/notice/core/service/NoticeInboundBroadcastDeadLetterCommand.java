@@ -18,7 +18,15 @@ public class NoticeInboundBroadcastDeadLetterCommand {
         this.messageId = messageId;
         this.reason = reason;
     }
-    public String tenantId() { return tenantId; }
-    public Long messageId() { return messageId; }
-    public String reason() { return reason; }
+    public String tenantId() {
+        return tenantId;
+    }
+
+    public Long messageId() {
+        return messageId;
+    }
+
+    public String reason() {
+        return reason;
+    }
 }

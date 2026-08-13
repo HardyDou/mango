@@ -16,12 +16,29 @@ public class NoticeInboundMailCursorAdvanceCommand {
     @Schema(description = "下次轮询时间") @NotNull private final LocalDateTime nextPollAt;
     public NoticeInboundMailCursorAdvanceCommand(Long channelConfigId, NoticeInboundProtocol protocol,
             String cursorValue, String cursorVersion, LocalDateTime nextPollAt) {
-        this.channelConfigId = channelConfigId; this.protocol = protocol; this.cursorValue = cursorValue;
-        this.cursorVersion = cursorVersion; this.nextPollAt = nextPollAt;
+        this.channelConfigId = channelConfigId;
+        this.protocol = protocol;
+        this.cursorValue = cursorValue;
+        this.cursorVersion = cursorVersion;
+        this.nextPollAt = nextPollAt;
     }
-    public Long channelConfigId() { return channelConfigId; }
-    public NoticeInboundProtocol protocol() { return protocol; }
-    public String cursorValue() { return cursorValue; }
-    public String cursorVersion() { return cursorVersion; }
-    public LocalDateTime nextPollAt() { return nextPollAt; }
+    public Long channelConfigId() {
+        return channelConfigId;
+    }
+
+    public NoticeInboundProtocol protocol() {
+        return protocol;
+    }
+
+    public String cursorValue() {
+        return cursorValue;
+    }
+
+    public String cursorVersion() {
+        return cursorVersion;
+    }
+
+    public LocalDateTime nextPollAt() {
+        return nextPollAt;
+    }
 }

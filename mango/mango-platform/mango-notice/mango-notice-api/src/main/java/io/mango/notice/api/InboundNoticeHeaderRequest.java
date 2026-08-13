@@ -24,6 +24,11 @@ public class InboundNoticeHeaderRequest {
         this.value = value;
     }
 
-    public String name() { return name; }
-    public String value() { return value; }
+    public String name() {
+        return name;
+    }
+
+    public String value() {
+        return value;
+    }
 }

@@ -25,11 +25,25 @@ public class InboundNoticeAttachmentRequest implements AutoCloseable {
     @Schema(description = "文件内容流")
     private final InputStream content;
 
-    public int index() { return index; }
-    public String fileName() { return fileName; }
-    public String contentType() { return contentType; }
-    public long fileSize() { return fileSize; }
-    public InputStream content() { return content; }
+    public int index() {
+        return index;
+    }
+
+    public String fileName() {
+        return fileName;
+    }
+
+    public String contentType() {
+        return contentType;
+    }
+
+    public long fileSize() {
+        return fileSize;
+    }
+
+    public InputStream content() {
+        return content;
+    }
 
     @Override
     public void close() throws IOException {

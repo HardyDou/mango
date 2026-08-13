@@ -17,12 +17,29 @@ public class NoticeInboundMailCursorFailureCommand {
     @Schema(description = "下次轮询时间") @NotNull private final LocalDateTime nextPollAt;
     public NoticeInboundMailCursorFailureCommand(Long channelConfigId, NoticeInboundProtocol protocol,
             String failureCode, String failureReason, LocalDateTime nextPollAt) {
-        this.channelConfigId = channelConfigId; this.protocol = protocol; this.failureCode = failureCode;
-        this.failureReason = failureReason; this.nextPollAt = nextPollAt;
+        this.channelConfigId = channelConfigId;
+        this.protocol = protocol;
+        this.failureCode = failureCode;
+        this.failureReason = failureReason;
+        this.nextPollAt = nextPollAt;
     }
-    public Long channelConfigId() { return channelConfigId; }
-    public NoticeInboundProtocol protocol() { return protocol; }
-    public String failureCode() { return failureCode; }
-    public String failureReason() { return failureReason; }
-    public LocalDateTime nextPollAt() { return nextPollAt; }
+    public Long channelConfigId() {
+        return channelConfigId;
+    }
+
+    public NoticeInboundProtocol protocol() {
+        return protocol;
+    }
+
+    public String failureCode() {
+        return failureCode;
+    }
+
+    public String failureReason() {
+        return failureReason;
+    }
+
+    public LocalDateTime nextPollAt() {
+        return nextPollAt;
+    }
 }

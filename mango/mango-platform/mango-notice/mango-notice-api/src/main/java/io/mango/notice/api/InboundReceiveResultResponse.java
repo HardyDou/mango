@@ -14,8 +14,19 @@ public class InboundReceiveResultResponse {
     @Schema(description = "是否重复") private final boolean duplicate;
     @Schema(description = "是否接受") private final boolean accepted;
 
-    public Long messageId() { return messageId; }
-    public String eventId() { return eventId; }
-    public boolean duplicate() { return duplicate; }
-    public boolean accepted() { return accepted; }
+    public Long messageId() {
+        return messageId;
+    }
+
+    public String eventId() {
+        return eventId;
+    }
+
+    public boolean duplicate() {
+        return duplicate;
+    }
+
+    public boolean accepted() {
+        return accepted;
+    }
 }
