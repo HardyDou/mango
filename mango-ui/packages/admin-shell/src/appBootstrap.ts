@@ -5,13 +5,13 @@ import zhCn from 'element-plus/es/locale/lang/zh-cn';
 import * as ElementPlusIconsVue from '@element-plus/icons-vue';
 import { createI18n, type I18n } from 'vue-i18n';
 import { authAll, auths, canShowButton, type AuthRuleBindingValue } from '@mango/common/utils/authFunction';
-import { mangoMessage } from '@mango/common/utils/message';
 import { installWebCryptoRandomUUIDCompatibility } from '@mango/common/utils/webCrypto';
 import { installMangoAuth, type MangoAuthProfileSlots } from '@mango/auth';
 import MangoThemeSettings from './layout/navBars/breadcrumb/settings.vue';
 import type { MangoAdminShellOptions } from './config';
 import { getMangoAdminShellOptions } from './config';
 import { DEFAULT_ADMIN_BRANDING, useAdminBrandingStore } from './stores/adminBranding';
+import { reportUnhandledError } from './errorHandling';
 
 let shellPinia: Pinia | undefined;
 let shellI18n: I18n | undefined;
@@ -127,10 +127,7 @@ export function installShellApp(app: VueApp, options: MangoAdminShellOptions = g
     console.error('[mango-shell] Vue error:', err);
     console.error('[mango-shell] component:', instance);
     console.error('[mango-shell] info:', info);
-    if (err && typeof err === 'object' && 'response' in err) {
-      return;
-    }
-    mangoMessage.error('系统错误，请刷新页面');
+    reportUnhandledError(err);
   };
 }
 

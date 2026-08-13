@@ -18,6 +18,7 @@ export * from './utils/apiCrypto';
 export * from './utils/arrayOperation';
 export * from './utils/authFunction';
 export * from './utils/errorCode';
+export * from './utils/errorHandling';
 export * from './utils/getStyleSheets';
 export * from './utils/toolsValidate';
 export * from './utils/menuTree';

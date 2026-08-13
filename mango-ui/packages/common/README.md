@@ -29,6 +29,7 @@
 | hooks       | `useTitle`、`useDict`、`useECharts`、`useLocale`                                                                                                                                           | 页面标题、字典、图表和语言相关能力。                        |
 | 实时通信    | `useRealtime`、`SSE`、`Websocket`                                                                                                                                                          | SSE/WebSocket client 和组件。                               |
 | 主题和消息  | `mangoMessage`、theme 工具、主题 CSS                                                                                                                                                       | 管理端统一提示和主题样式。                                  |
+| 错误归属标记 | `markErrorHandled`、`isErrorHandled`、`claimUnhandledError`                                                                                                                               | 在请求层、业务层和全局兜底之间共享异常处理状态，避免同一异常重复提示。 |
 
 ## 3. 接入方式
 
@@ -313,6 +314,9 @@ API 加密环境变量：
 | `normalizeApiPayload`                     | 把明确 ID 字段中的 number 兜底转成字符串。    |
 | `Session`                                 | token、refresh token、用户信息和租户存储。    |
 | `mangoMessage`                            | Element Plus 消息封装。                       |
+| `markErrorHandled(error)`                | 标记异常已由请求层或业务层处理，阻止全局兜底重复提示。 |
+| `isErrorHandled(error)`                  | 查询异常是否已被标记为已处理。                |
+| `claimUnhandledError(error)`             | 原子声明异常由当前全局处理器接管；已处理异常返回 `false`。 |
 | `useRealtime`                             | 实时连接 hook。                               |
 | `generateRfc4122UuidV4`                   | 使用调用方提供的安全随机字节生成 UUID v4。    |
 | `createWebCryptoRandomUUID`               | 优先原生方法，否则使用 `getRandomValues`。    |

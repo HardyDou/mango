@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Session } from '../storage';
 import { resolveHttpErrorMessage } from '../request';
 import { mangoMessage } from '../message';
+import { isErrorHandled } from '../errorHandling';
 
 const mocks = vi.hoisted(() => ({
   handlers: [] as any[],
@@ -57,11 +58,40 @@ describe('request utilities', () => {
       data: { code: 3651, success: false, msg: '不能转办给自己', data: null },
     } as any;
 
-    await expect(interceptor.fulfilled(response)).rejects.toMatchObject({
+    const error = await interceptor.fulfilled(response).catch((reason: unknown) => reason);
+
+    expect(error).toMatchObject({
       message: '不能转办给自己',
       code: 3651,
     });
     expect(mangoMessage.error).toHaveBeenCalledWith('不能转办给自己');
+    expect(isErrorHandled(error)).toBe(true);
+  });
+
+  it('leaves silent business errors unhandled for the caller', async () => {
+    const response = {
+      config: { silentError: true },
+      data: { code: 3651, success: false, msg: '不能转办给自己', data: null },
+    } as any;
+
+    const error = await responseInterceptor().fulfilled(response).catch((reason: unknown) => reason);
+
+    expect(mangoMessage.error).not.toHaveBeenCalled();
+    expect(isErrorHandled(error)).toBe(false);
+  });
+
+  it('marks an automatically displayed HTTP error as handled', async () => {
+    const error = {
+      config: {},
+      response: { status: 500, data: { message: '服务暂不可用' } },
+      message: 'Request failed',
+    } as any;
+
+    const rejected = await responseInterceptor().rejected(error).catch((reason: unknown) => reason);
+
+    expect(rejected).toBe(error);
+    expect(mangoMessage.error).toHaveBeenCalledWith('服务暂不可用');
+    expect(isErrorHandled(error)).toBe(true);
   });
 
   it('refreshes an expiring access token once and continues the original request', async () => {

@@ -118,6 +118,10 @@ const admin = createMangoAdminApp({
 
 ## 5. API 与扩展
 
+### 全局异常兜底
+
+`reportUnhandledError(error)` 是 Shell 提供的统一全局异常入口。它只对尚未被请求层或业务层处理的异常显示“系统错误，请刷新页面”；已经由下层提示过的同一个异常不会再次提示。业务需要自行展示接口错误时，将请求配置为 `silentError: true`，在业务 `catch` 中完成提示和收口，不要在已处理后再次抛出。
+
 主入口导出：
 
 | 导出                                | 作用                                     |
@@ -131,6 +135,7 @@ const admin = createMangoAdminApp({
 | `getShellPinia()`                   | 获取 Shell Pinia。                       |
 | `getMangoAdminAuthProfileSlots()`   | 获取个人中心所需的 Shell 内置页面插槽。  |
 | `installShellApp(app, options)`     | 安装 Shell 依赖和配置。                  |
+| `reportUnhandledError(error)`      | 仅对未被下层处理的异常显示一次全局兜底提示。 |
 | `configureMangoAdminShell(options)` | 合并 Shell 配置。                        |
 | `getMangoAdminShellOptions()`       | 读取当前 Shell 配置。                    |
 

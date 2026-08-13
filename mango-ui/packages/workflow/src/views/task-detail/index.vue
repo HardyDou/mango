@@ -391,7 +391,10 @@ async function submitAction(action: WorkflowTaskActionKey) {
   if (extraPayload === false) {
     return;
   }
-  await ElMessageBox.confirm(actionConfig.confirmText || `确认${actionName}当前任务？`, `审批${actionName}`, { type: action === 'reject' ? 'error' : 'warning' });
+  const confirmed = await confirmTaskAction(actionConfig.confirmText || `确认${actionName}当前任务？`, `审批${actionName}`, action);
+  if (!confirmed) {
+    return;
+  }
   submitting.value = true;
   submittingAction.value = action;
   try {
@@ -416,6 +419,18 @@ async function submitAction(action: WorkflowTaskActionKey) {
   } finally {
     submitting.value = false;
     submittingAction.value = '';
+  }
+}
+
+async function confirmTaskAction(message: string, title: string, action: WorkflowTaskActionKey) {
+  try {
+    await ElMessageBox.confirm(message, title, { type: action === 'reject' ? 'error' : 'warning' });
+    return true;
+  } catch (error) {
+    if (error === 'cancel' || error === 'close') {
+      return false;
+    }
+    throw error;
   }
 }
 

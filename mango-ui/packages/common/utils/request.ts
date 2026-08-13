@@ -2,6 +2,7 @@ import axios, { AxiosHeaders, AxiosInstance, AxiosRequestConfig, AxiosResponse, 
 import type { ApiId } from '@mango/api-schema';
 import { Session } from './storage';
 import { mangoMessage } from './message';
+import { markErrorHandled } from './errorHandling';
 
 // 环境变量（当前未使用，预留）
 // const VITE_ADMIN_PROXY_PATH = import.meta.env.VITE_ADMIN_PROXY_PATH || 'http://127.0.0.1:5555';
@@ -273,15 +274,21 @@ service.interceptors.response.use(
       if (!config.ignoreToken) {
         void handleUnauthorized(message || '登录已过期，请重新登录');
       }
-      return Promise.reject(createRequestError(message || '登录已过期', code, response));
+      const requestError = createRequestError(message || '登录已过期', code, response);
+      if (!config.ignoreToken) {
+        markErrorHandled(requestError);
+      }
+      return Promise.reject(requestError);
     }
 
     // 其他错误
     const errorMessage = resolveBusinessErrorMessage(code, message);
+    const requestError = createRequestError(errorMessage, code, response);
     if (!config.silentError) {
       mangoMessage.error(errorMessage);
+      markErrorHandled(requestError);
     }
-    return Promise.reject(createRequestError(errorMessage, code, response));
+    return Promise.reject(requestError);
   },
   async (error) => {
     hideLoading();
@@ -304,9 +311,11 @@ service.interceptors.response.use(
       }
       if (!config.ignoreToken) {
         void handleUnauthorized('登录已过期，请重新登录');
+        markErrorHandled(error);
       }
     } else if (!config.silentError) {
       mangoMessage.error(message);
+      markErrorHandled(error);
     }
 
     return Promise.reject(error);
