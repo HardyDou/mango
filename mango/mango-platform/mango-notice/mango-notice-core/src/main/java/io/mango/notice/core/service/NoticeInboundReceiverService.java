@@ -42,11 +42,9 @@ import java.util.function.Supplier;
 
 /** Persists inbound messages, stores attachments in Mango File, and emits the stable event. */
 @Service
-@RequiredArgsConstructor
+@RequiredArgsConstructor(onConstructor_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+        justification = "Spring-managed collaborators are injected and intentionally shared"))
 @Slf4j
-@SuppressFBWarnings(value = {"EI_EXPOSE_REP2", "NP_NULL_ON_SOME_PATH",
-        "NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE"},
-        justification = "Spring-managed collaborators and transactionally claimed rows are validated by Require")
 public class NoticeInboundReceiverService implements NoticeInboundReceiver {
     public static final String EVENT_TYPE = "notice.message.received";
     private static final int MAX_ATTACHMENT_ATTEMPTS = 5;
@@ -172,17 +170,17 @@ public class NoticeInboundReceiverService implements NoticeInboundReceiver {
             if (entity != null && entity.getStatus() == NoticeInboundAttachmentStatus.SAVED) {
                 continue;
             }
-            Require.notNull(entity, "入站附件元数据不存在");
-            if (!claimAttachment(entity.getId())) {
+            NoticeInboundAttachmentEntity checkedEntity = Require.nonNull(entity, "入站附件元数据不存在");
+            if (!claimAttachment(checkedEntity.getId())) {
                 throw new InboundReceiveRetryableException("入站附件正在被其它请求处理");
             }
             try {
                 FileRecordVO file = fileContentProvider.save(fileCommand(message.getId(), attachment));
                 Require.notNull(file, "入站附件保存结果不能为空");
                 Require.notNull(file.getId(), "入站附件 fileId 不能为空");
-                markAttachmentSaved(entity.getId(), file.getId());
+                markAttachmentSaved(checkedEntity.getId(), file.getId());
             } catch (RuntimeException failure) {
-                NoticeInboundAttachmentStatus attachmentStatus = markAttachmentFailed(entity.getId(), failure);
+                NoticeInboundAttachmentStatus attachmentStatus = markAttachmentFailed(checkedEntity.getId(), failure);
                 markMessageStatus(message.getId(), attachmentStatus == NoticeInboundAttachmentStatus.DEAD_LETTER
                                 ? NoticeInboundMessageStatus.DEAD_LETTER
                                 : NoticeInboundMessageStatus.RETRYABLE_FAILED,
@@ -268,14 +266,15 @@ public class NoticeInboundReceiverService implements NoticeInboundReceiver {
     }
 
     private boolean claimAttachment(Long attachmentId) {
-        return transaction().execute(status -> attachmentMapper.update(null,
+        Integer updated = transaction().execute(status -> attachmentMapper.update(null,
                 new LambdaUpdateWrapper<NoticeInboundAttachmentEntity>()
                         .eq(NoticeInboundAttachmentEntity::getId, attachmentId)
                         .in(NoticeInboundAttachmentEntity::getStatus,
                                 NoticeInboundAttachmentStatus.PENDING,
                                 NoticeInboundAttachmentStatus.RETRYABLE_FAILED)
                         .set(NoticeInboundAttachmentEntity::getStatus, NoticeInboundAttachmentStatus.PROCESSING)
-                        .setSql("attempt_count = attempt_count + 1"))) == 1;
+                        .setSql("attempt_count = attempt_count + 1")));
+        return Require.nonNull(updated, "入站附件申领结果不能为空") == 1;
     }
 
     private void markAttachmentSaved(Long attachmentId, Long fileId) {

@@ -31,6 +31,7 @@ public class DefaultWecomInboundMessageAdapter implements WecomInboundMessageAda
     private static final int AES_BLOCK_SIZE = 16;
     private static final int MAX_PADDING_BYTES = 32;
     private static final int BYTE_MASK = 0xff;
+    private static final int RANDOM_BYTES = AES_BLOCK_SIZE;
 
     @Override
     public String verifyUrl(WecomInboundRequest request, WecomInboundConfig config) {
@@ -79,7 +80,7 @@ public class DefaultWecomInboundMessageAdapter implements WecomInboundMessageAda
             byte[] padded = cipher.doFinal(Base64.getDecoder().decode(encrypted));
             byte[] plain = unpad(padded);
             ByteBuffer buffer = ByteBuffer.wrap(plain);
-            byte[] random = new byte[16];
+            byte[] random = new byte[RANDOM_BYTES];
             buffer.get(random);
             int length = buffer.getInt();
             if (length < 0 || length > buffer.remaining()) {
@@ -154,7 +155,9 @@ public class DefaultWecomInboundMessageAdapter implements WecomInboundMessageAda
 
     private String firstText(String... values) {
         for (String value : values) {
-            if (value != null && !value.isBlank()) return value.trim();
+            if (value != null && !value.isBlank()) {
+                return value.trim();
+            }
         }
         return null;
     }

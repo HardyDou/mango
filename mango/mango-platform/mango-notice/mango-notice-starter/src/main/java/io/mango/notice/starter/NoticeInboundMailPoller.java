@@ -1,5 +1,6 @@
 package io.mango.notice.starter;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -35,6 +36,7 @@ import java.util.Map;
 @ConditionalOnProperty(prefix = "mango.notice.inbound", name = "enabled", havingValue = "true")
 @RequiredArgsConstructor
 @Slf4j
+@SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "Spring-managed collaborators are injected")
 public class NoticeInboundMailPoller {
 
     private static final long DEFAULT_POLL_INTERVAL_SECONDS = 60L;

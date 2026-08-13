@@ -94,14 +94,7 @@ public final class NoticeChannelCapabilityPolicy {
         return switch (channelType) {
             case SITE -> true;
             case EMAIL -> isSendEmailComplete(providerCode, config);
-            case SMS -> "TENCENT_SMS".equalsIgnoreCase(providerCode)
-                    ? hasAny(config, "secretId")
-                            && hasAny(config, "secretKey")
-                            && hasAny(config, "smsSdkAppId", "appId")
-                            && hasAny(config, "signName", "sign")
-                    : hasAny(config, "accessKeyId", "accessKey", "secretId")
-                            && hasAny(config, "accessKeySecret", "accessSecret", "secretKey")
-                            && hasAny(config, "signName", "sign");
+            case SMS -> isSendSmsComplete(providerCode, config);
             case WECHAT_OFFICIAL -> hasAny(config, "appId") && hasAny(config, "appSecret", "secret");
             case WECOM -> hasAny(config, "corpId")
                     && hasAny(config, "agentId", "webhookUrl")
@@ -110,6 +103,18 @@ public final class NoticeChannelCapabilityPolicy {
                     && hasAny(config, "appSecret", "webhookUrl");
             default -> throw new IllegalArgumentException("不支持的通知渠道: " + channelType);
         };
+    }
+
+    private static boolean isSendSmsComplete(String providerCode, Map<String, Object> config) {
+        if ("TENCENT_SMS".equalsIgnoreCase(providerCode)) {
+            return hasAny(config, "secretId")
+                    && hasAny(config, "secretKey")
+                    && hasAny(config, "smsSdkAppId", "appId")
+                    && hasAny(config, "signName", "sign");
+        }
+        return hasAny(config, "accessKeyId", "accessKey", "secretId")
+                && hasAny(config, "accessKeySecret", "accessSecret", "secretKey")
+                && hasAny(config, "signName", "sign");
     }
 
     private static boolean isSendEmailComplete(String providerCode, Map<String, Object> config) {

@@ -246,7 +246,9 @@ public class JakartaMailInboundClient implements NoticeInboundMailClient {
     }
 
     private long cursorLong(String cursor) {
-        if (cursor == null || cursor.isBlank()) return 0L;
+        if (cursor == null || cursor.isBlank()) {
+            return 0L;
+        }
         try {
             return Math.max(0L, Long.parseLong(cursor));
         } catch (NumberFormatException ex) {

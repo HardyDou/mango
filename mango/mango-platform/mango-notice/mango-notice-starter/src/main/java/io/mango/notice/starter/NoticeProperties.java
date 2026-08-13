@@ -2,11 +2,11 @@ package io.mango.notice.starter;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @Data
-@SuppressFBWarnings(value = {"EI_EXPOSE_REP", "EI_EXPOSE_REP2"},
-        justification = "Spring Boot configuration binding requires mutable nested properties")
 @ConfigurationProperties(prefix = "mango.notice")
 public class NoticeProperties {
 
@@ -23,8 +23,16 @@ public class NoticeProperties {
     private static final long DEFAULT_INBOUND_WORKER_FIXED_DELAY_MILLIS = 5000L;
     private static final long DEFAULT_INBOUND_LOCK_TTL_SECONDS = 120L;
 
+    @Getter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP",
+            justification = "Nested Spring configuration is exposed for property binding"))
+    @Setter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+            justification = "Nested Spring configuration is accepted during property binding"))
     private Outbox outbox = new Outbox();
 
+    @Getter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP",
+            justification = "Nested Spring configuration is exposed for property binding"))
+    @Setter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+            justification = "Nested Spring configuration is accepted during property binding"))
     private Inbound inbound = new Inbound();
 
     @Data
