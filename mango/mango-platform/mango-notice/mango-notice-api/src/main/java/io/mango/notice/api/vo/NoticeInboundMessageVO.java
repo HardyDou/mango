@@ -64,13 +64,13 @@ public class NoticeInboundMessageVO {
     private LocalDateTime processedAt;
 
     @Schema(description = "附件，仅详情返回")
-    private List<NoticeInboundAttachmentVO> attachments = List.of();
+    private List<NoticeInboundAttachmentVO> attachments;
 
     public List<NoticeInboundAttachmentVO> getAttachments() {
         return attachments;
     }
 
     public void setAttachments(List<NoticeInboundAttachmentVO> attachments) {
-        this.attachments = attachments == null ? List.of() : List.copyOf(attachments);
+        this.attachments = attachments == null ? null : List.copyOf(attachments);
     }
 }

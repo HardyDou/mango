@@ -88,6 +88,8 @@ public class NoticeInboundQueryService implements INoticeInboundQueryService {
         result.setAttemptCount(entity.getAttemptCount());
         result.setReceivedAt(entity.getReceivedAt());
         result.setProcessedAt(entity.getProcessedAt());
+        // List responses intentionally omit attachment details; the detail endpoint loads them.
+        result.setAttachments(null);
         return result;
     }
 
