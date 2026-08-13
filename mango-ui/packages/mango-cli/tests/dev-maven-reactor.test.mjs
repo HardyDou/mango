@@ -45,7 +45,7 @@ test('reactor resolution selects one app and validates the boot skip contract', 
   );
 });
 
-test('reactor startup command contains no install, package, clean, or manual classpath', () => {
+test('reactor startup command cleans before compile without install, package, or manual classpath', () => {
   const args = buildSpringBootReactorArgs({
     rootPom: '/tmp/backend/pom.xml',
     selector: ':fixture-app',
@@ -62,11 +62,12 @@ test('reactor startup command contains no install, package, clean, or manual cla
     '-DskipTests',
     '-Drevision=1.0.0-mango-001-SNAPSHOT',
     '-Dspring-boot.run.arguments=runtime --server.port=5555',
+    'clean',
     'compile',
     'org.springframework.boot:spring-boot-maven-plugin:3.5.14:run',
   ]);
   assert.equal(
-    args.some((arg) => /(?:install|package|clean|(^|\s)-cp(?:=|$))/u.test(arg)),
+    args.some((arg) => /(?:install|package|(^|\s)-cp(?:=|$))/u.test(arg)),
     false,
   );
 });

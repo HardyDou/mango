@@ -55,6 +55,7 @@ export function buildSpringBootReactorArgs({ rootPom, selector, revision, spring
     '-DskipTests',
     `-Drevision=${revision}`,
     `-Dspring-boot.run.arguments=${springArgs.join(' ')}`,
+    'clean',
     'compile',
     goal,
   ];

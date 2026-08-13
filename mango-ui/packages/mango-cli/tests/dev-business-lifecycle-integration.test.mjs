@@ -49,8 +49,8 @@ test(
       assert.match(plan.stdout, new RegExp(`-pl :${appArtifactId}`, 'u'));
       assert.match(plan.stdout, /-am/u);
       assert.match(plan.stdout, /-DskipTests/u);
-      assert.match(plan.stdout, / compile org\.springframework\.boot:spring-boot-maven-plugin:3\.5\.14:run/u);
-      assert.doesNotMatch(plan.stdout, /(?:^|\s)(?:clean|package|install)(?:\s|$)/u);
+      assert.match(plan.stdout, / clean compile org\.springframework\.boot:spring-boot-maven-plugin:3\.5\.14:run/u);
+      assert.doesNotMatch(plan.stdout, /(?:^|\s)(?:package|install)(?:\s|$)/u);
       assert.doesNotMatch(plan.stdout, /(?:^|\s)-cp(?:\s|$)/u);
 
       const started = runCli(['dev', 'start', 'backend'], 120_000);

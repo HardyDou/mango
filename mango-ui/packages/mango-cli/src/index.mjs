@@ -2449,13 +2449,15 @@ function runColdBootstrap(appName, app, lifecycle, generation, logPath, allowFin
 function runManagedMangoLifecycleCommand(app, springArgs, logPath, message) {
   process.stdout.write(`${message}\n`);
   appendFileSync(logPath, `\n--- ${new Date().toISOString()} ${message} ---\n`);
-  return runForegroundCommand(
+  const result = runForegroundCommand(
     app.runCwd || app.cwd,
     app.command,
     replaceSpringBootRunArguments(app.args, springArgs),
     app.env,
     logPath,
   );
+  app.args = app.args.filter((argument) => argument !== 'clean');
+  return result;
 }
 
 function buildLocalLifecycleIdentity(context, appName, app) {
