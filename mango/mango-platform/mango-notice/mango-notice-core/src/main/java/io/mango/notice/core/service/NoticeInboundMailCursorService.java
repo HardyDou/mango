@@ -19,6 +19,8 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 public class NoticeInboundMailCursorService {
 
+    private static final int MAX_FAILURE_REASON_LENGTH = 1000;
+
     private final NoticeInboundReceiveCursorMapper cursorMapper;
 
     public NoticeInboundReceiveCursorEntity find(Long channelConfigId) {
@@ -117,6 +119,7 @@ public class NoticeInboundMailCursorService {
         if (value == null || value.isBlank()) {
             return null;
         }
-        return value.length() <= 1000 ? value : value.substring(0, 1000);
+        return value.length() <= MAX_FAILURE_REASON_LENGTH
+                ? value : value.substring(0, MAX_FAILURE_REASON_LENGTH);
     }
 }

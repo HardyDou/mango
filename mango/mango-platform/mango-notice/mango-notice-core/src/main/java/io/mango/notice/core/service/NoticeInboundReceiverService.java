@@ -1,5 +1,6 @@
 package io.mango.notice.core.service;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.toolkit.IdWorker;
@@ -43,9 +44,14 @@ import java.util.function.Supplier;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@SuppressFBWarnings(value = {"EI_EXPOSE_REP2", "NP_NULL_ON_SOME_PATH",
+        "NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE"},
+        justification = "Spring-managed collaborators and transactionally claimed rows are validated by Require")
 public class NoticeInboundReceiverService implements NoticeInboundReceiver {
     public static final String EVENT_TYPE = "notice.message.received";
     private static final int MAX_ATTACHMENT_ATTEMPTS = 5;
+    private static final int MAX_FAILURE_REASON_LENGTH = 1000;
+    private static final int BROADCAST_RETRY_DELAY_SECONDS = 30;
 
     private final NoticeInboundMessageMapper messageMapper;
     private final NoticeInboundAttachmentMapper attachmentMapper;
@@ -322,7 +328,8 @@ public class NoticeInboundReceiverService implements NoticeInboundReceiver {
                         .set(NoticeInboundMessageEntity::getStatus, NoticeInboundMessageStatus.READY_TO_BROADCAST)
                         .set(NoticeInboundMessageEntity::getFailureCode, "NOTICE_INBOUND_BROADCAST_FAILED")
                         .set(NoticeInboundMessageEntity::getFailureReason, failureMessage(failure))
-                        .set(NoticeInboundMessageEntity::getNextRetryAt, LocalDateTime.now().plusSeconds(30))
+                        .set(NoticeInboundMessageEntity::getNextRetryAt,
+                                LocalDateTime.now().plusSeconds(BROADCAST_RETRY_DELAY_SECONDS))
                         .setSql("attempt_count = attempt_count + 1")));
     }
 
@@ -450,7 +457,8 @@ public class NoticeInboundReceiverService implements NoticeInboundReceiver {
         if (message == null || message.isBlank()) {
             return failure.getClass().getSimpleName();
         }
-        return message.length() <= 1000 ? message : message.substring(0, 1000);
+        return message.length() <= MAX_FAILURE_REASON_LENGTH
+                ? message : message.substring(0, MAX_FAILURE_REASON_LENGTH);
     }
 
     /** Signals the source to retry without acknowledging an incomplete receive. */

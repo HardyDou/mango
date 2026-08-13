@@ -28,6 +28,10 @@ import java.util.Map;
 @Component
 public class DefaultWecomInboundMessageAdapter implements WecomInboundMessageAdapter {
 
+    private static final int AES_BLOCK_SIZE = 16;
+    private static final int MAX_PADDING_BYTES = 32;
+    private static final int BYTE_MASK = 0xff;
+
     @Override
     public String verifyUrl(WecomInboundRequest request, WecomInboundConfig config) {
         requireSignature(request.signature(), config.token(), request.timestamp(), request.nonce(), request.echoString());
@@ -70,7 +74,8 @@ public class DefaultWecomInboundMessageAdapter implements WecomInboundMessageAda
         try {
             byte[] key = Base64.getDecoder().decode(config.encodingAesKey() + "=");
             Cipher cipher = Cipher.getInstance("AES/CBC/NoPadding");
-            cipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec(key, "AES"), new IvParameterSpec(key, 0, 16));
+            cipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec(key, "AES"),
+                    new IvParameterSpec(key, 0, AES_BLOCK_SIZE));
             byte[] padded = cipher.doFinal(Base64.getDecoder().decode(encrypted));
             byte[] plain = unpad(padded);
             ByteBuffer buffer = ByteBuffer.wrap(plain);
@@ -97,12 +102,12 @@ public class DefaultWecomInboundMessageAdapter implements WecomInboundMessageAda
     }
 
     private byte[] unpad(byte[] value) {
-        int padding = value[value.length - 1] & 0xff;
-        if (padding < 1 || padding > 32 || padding > value.length) {
+        int padding = value[value.length - 1] & BYTE_MASK;
+        if (padding < 1 || padding > MAX_PADDING_BYTES || padding > value.length) {
             throw new WecomInboundException("企业微信回调填充非法");
         }
         for (int index = value.length - padding; index < value.length; index++) {
-            if ((value[index] & 0xff) != padding) {
+            if ((value[index] & BYTE_MASK) != padding) {
                 throw new WecomInboundException("企业微信回调填充非法");
             }
         }
@@ -110,7 +115,9 @@ public class DefaultWecomInboundMessageAdapter implements WecomInboundMessageAda
     }
 
     private String element(String xml, String name) {
-        if (xml == null || xml.isBlank()) return null;
+        if (xml == null || xml.isBlank()) {
+            return null;
+        }
         try {
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
             factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);

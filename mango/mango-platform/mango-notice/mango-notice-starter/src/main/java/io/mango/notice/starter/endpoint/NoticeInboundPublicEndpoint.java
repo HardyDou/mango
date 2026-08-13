@@ -1,5 +1,6 @@
 package io.mango.notice.starter.endpoint;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -31,6 +32,8 @@ import java.util.Map;
 @Component
 @RequiredArgsConstructor
 @Slf4j
+@SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+        justification = "Spring-managed collaborators are immutable dependency references")
 public class NoticeInboundPublicEndpoint {
 
     private static final int MAX_CALLBACK_BYTES = 2 * 1024 * 1024;

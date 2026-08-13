@@ -16,6 +16,8 @@ import java.time.LocalDateTime;
 @Schema(description = "入站消息分页查询")
 public class NoticeInboundMessagePageQuery implements Serializable {
 
+    private static final long DEFAULT_PAGE_SIZE = 10L;
+
     private static final long serialVersionUID = 1L;
 
     @Positive
@@ -24,7 +26,7 @@ public class NoticeInboundMessagePageQuery implements Serializable {
 
     @Positive
     @Schema(description = "每页数量")
-    private long pageSize = 10;
+    private long pageSize = DEFAULT_PAGE_SIZE;
 
     @NotNull(groups = NoticeOptionalValidation.class)
     @Schema(description = "接收渠道")

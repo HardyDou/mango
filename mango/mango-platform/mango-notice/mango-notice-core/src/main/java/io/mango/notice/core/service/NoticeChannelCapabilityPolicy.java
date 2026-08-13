@@ -85,6 +85,7 @@ public final class NoticeChannelCapabilityPolicy {
                     addIfMissing(config, missing, "appSecret", "appSecret", "secret", "webhookUrl");
             case WECOM ->
                     addIfMissing(config, missing, "secret", "secret", "corpSecret", "webhookUrl");
+            default -> throw new IllegalArgumentException("不支持的通知渠道: " + channelType);
         }
     }
 
@@ -107,6 +108,7 @@ public final class NoticeChannelCapabilityPolicy {
                     && hasAny(config, "secret", "corpSecret", "webhookUrl");
             case DINGTALK -> hasAny(config, "appKey", "webhookUrl")
                     && hasAny(config, "appSecret", "webhookUrl");
+            default -> throw new IllegalArgumentException("不支持的通知渠道: " + channelType);
         };
     }
 

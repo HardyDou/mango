@@ -37,6 +37,7 @@ import java.util.Properties;
 @Component
 public class JakartaMailInboundClient implements NoticeInboundMailClient {
     private static final long MAX_MESSAGE_BYTES = 25L * 1024 * 1024;
+    private static final int READ_BUFFER_BYTES = 8192;
 
     @Override
     public boolean supports(NoticeInboundProtocol protocol) {
@@ -184,7 +185,7 @@ public class JakartaMailInboundClient implements NoticeInboundMailClient {
 
     private byte[] readLimited(Part part) throws MessagingException, IOException {
         try (var input = part.getInputStream(); var output = new ByteArrayOutputStream()) {
-            byte[] buffer = new byte[8192];
+            byte[] buffer = new byte[READ_BUFFER_BYTES];
             long total = 0;
             int read;
             while ((read = input.read(buffer)) >= 0) {
@@ -216,14 +217,20 @@ public class JakartaMailInboundClient implements NoticeInboundMailClient {
 
     private String from(Message message) throws MessagingException {
         Address[] values = message.getFrom();
-        if (values == null || values.length == 0) return null;
-        if (values[0] instanceof InternetAddress address) return address.getAddress();
+        if (values == null || values.length == 0) {
+            return null;
+        }
+        if (values[0] instanceof InternetAddress address) {
+            return address.getAddress();
+        }
         return values[0].toString();
     }
 
     private List<String> addresses(Message message) throws MessagingException {
         Address[] values = message.getAllRecipients();
-        if (values == null) return List.of();
+        if (values == null) {
+            return List.of();
+        }
         List<String> result = new ArrayList<>(values.length);
         for (Address value : values) {
             result.add(value instanceof InternetAddress address ? address.getAddress() : value.toString());

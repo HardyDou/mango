@@ -37,6 +37,13 @@ import java.util.Map;
 @Slf4j
 public class NoticeInboundMailPoller {
 
+    private static final long DEFAULT_POLL_INTERVAL_SECONDS = 60L;
+    private static final int IMAP_SSL_PORT = 993;
+    private static final int IMAP_PLAIN_PORT = 143;
+    private static final int POP3_SSL_PORT = 995;
+    private static final int POP3_PLAIN_PORT = 110;
+    private static final int MAX_PORT = 65535;
+
     private final NoticeChannelConfigMapper channelConfigMapper;
     private final NoticeChannelSecretMaterializer secretMaterializer;
     private final NoticeInboundMailCursorService cursorService;
@@ -79,7 +86,7 @@ public class NoticeInboundMailPoller {
     }
 
     private void pollAccount(NoticeInboundMailAccount account, Map<String, String> values) {
-        long intervalSeconds = positiveLong(values.get("inboundPollIntervalSeconds"), 60L);
+        long intervalSeconds = positiveLong(values.get("inboundPollIntervalSeconds"), DEFAULT_POLL_INTERVAL_SECONDS);
         LocalDateTime nextPollAt = LocalDateTime.now().plusSeconds(intervalSeconds);
         NoticeInboundReceiveCursorEntity cursor = cursorService.find(account.channelConfigId());
         if (cursor != null && cursor.getNextPollAt() != null && cursor.getNextPollAt().isAfter(LocalDateTime.now())) {
@@ -126,7 +133,7 @@ public class NoticeInboundMailPoller {
         String password = required(values, "inboundPassword");
         String clientName = optional(values, "inboundClientName");
         int port = positiveInt(values.get("inboundPort"), protocol == NoticeInboundProtocol.IMAP
-                ? (ssl ? 993 : 143) : (ssl ? 995 : 110));
+                ? (ssl ? IMAP_SSL_PORT : IMAP_PLAIN_PORT) : (ssl ? POP3_SSL_PORT : POP3_PLAIN_PORT));
         return new NoticeInboundMailAccount(config.getTenantId(), config.getId(), config.getConfigCode(),
                 host, port, ssl, username, password, protocol, clientName);
     }
@@ -159,7 +166,7 @@ public class NoticeInboundMailPoller {
             return defaultValue;
         }
         int parsed = Integer.parseInt(value);
-        Require.isTrue(parsed > 0 && parsed <= 65535, "邮箱端口配置非法");
+        Require.isTrue(parsed > 0 && parsed <= MAX_PORT, "邮箱端口配置非法");
         return parsed;
     }
 

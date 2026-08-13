@@ -1,11 +1,27 @@
 package io.mango.notice.starter;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @Data
+@SuppressFBWarnings(value = {"EI_EXPOSE_REP", "EI_EXPOSE_REP2"},
+        justification = "Spring Boot configuration binding requires mutable nested properties")
 @ConfigurationProperties(prefix = "mango.notice")
 public class NoticeProperties {
+
+    private static final int DEFAULT_OUTBOX_BATCH_SIZE = 50;
+    private static final int DEFAULT_OUTBOX_MAX_ATTEMPTS = 3;
+    private static final long DEFAULT_OUTBOX_RETRY_DELAY_SECONDS = 60L;
+    private static final long DEFAULT_OUTBOX_INITIAL_DELAY_MILLIS = 1000L;
+    private static final long DEFAULT_OUTBOX_FIXED_DELAY_MILLIS = 1000L;
+    private static final int DEFAULT_INBOUND_BATCH_SIZE = 20;
+    private static final int DEFAULT_INBOUND_MAX_ATTEMPTS = 5;
+    private static final long DEFAULT_INBOUND_POLL_INITIAL_DELAY_MILLIS = 5000L;
+    private static final long DEFAULT_INBOUND_POLL_FIXED_DELAY_MILLIS = 60000L;
+    private static final long DEFAULT_INBOUND_WORKER_INITIAL_DELAY_MILLIS = 3000L;
+    private static final long DEFAULT_INBOUND_WORKER_FIXED_DELAY_MILLIS = 5000L;
+    private static final long DEFAULT_INBOUND_LOCK_TTL_SECONDS = 120L;
 
     private Outbox outbox = new Outbox();
 
@@ -20,15 +36,15 @@ public class NoticeProperties {
 
         private String workerId = "notice-outbox-worker";
 
-        private int batchSize = 50;
+        private int batchSize = DEFAULT_OUTBOX_BATCH_SIZE;
 
-        private int maxAttempts = 3;
+        private int maxAttempts = DEFAULT_OUTBOX_MAX_ATTEMPTS;
 
-        private long retryDelaySeconds = 60L;
+        private long retryDelaySeconds = DEFAULT_OUTBOX_RETRY_DELAY_SECONDS;
 
-        private long initialDelayMillis = 1000L;
+        private long initialDelayMillis = DEFAULT_OUTBOX_INITIAL_DELAY_MILLIS;
 
-        private long fixedDelayMillis = 1000L;
+        private long fixedDelayMillis = DEFAULT_OUTBOX_FIXED_DELAY_MILLIS;
     }
 
     @Data
@@ -36,19 +52,19 @@ public class NoticeProperties {
 
         private boolean enabled = false;
 
-        private int batchSize = 20;
+        private int batchSize = DEFAULT_INBOUND_BATCH_SIZE;
 
-        private int maxAttempts = 5;
+        private int maxAttempts = DEFAULT_INBOUND_MAX_ATTEMPTS;
 
-        private long pollInitialDelayMillis = 5000L;
+        private long pollInitialDelayMillis = DEFAULT_INBOUND_POLL_INITIAL_DELAY_MILLIS;
 
-        private long pollFixedDelayMillis = 60000L;
+        private long pollFixedDelayMillis = DEFAULT_INBOUND_POLL_FIXED_DELAY_MILLIS;
 
-        private long workerInitialDelayMillis = 3000L;
+        private long workerInitialDelayMillis = DEFAULT_INBOUND_WORKER_INITIAL_DELAY_MILLIS;
 
-        private long workerFixedDelayMillis = 5000L;
+        private long workerFixedDelayMillis = DEFAULT_INBOUND_WORKER_FIXED_DELAY_MILLIS;
 
-        private long lockTtlSeconds = 120L;
+        private long lockTtlSeconds = DEFAULT_INBOUND_LOCK_TTL_SECONDS;
 
         private String workerId = "notice-inbound-worker";
     }
