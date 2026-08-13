@@ -100,6 +100,8 @@ mango dev start
 
 只启动后端或前端时使用 `mango dev start backend`、`mango dev start frontend`；`scripts/dev-workspace.sh` 只作为旧命令兼容 shim。
 
+Spring Boot 本地启动由 Mango CLI 从后端 Maven reactor 根 POM 执行 `-pl :<app-artifactId> -am -DskipTests compile spring-boot:run`。它会增量编译当前 worktree 的上游模块，不执行开发期 `install`、`package` 或 `clean`，也不把 app fat JAR 写入共享 `~/.m2`；classpath 由 Spring Boot Maven Plugin 管理。可复用库/starter 需要提供给其它仓库时走正式 `deploy`，app 仍作为部署制品，不进入默认 Maven 发布清单。
+
 命令会生成：
 
 | 生成位置                                           | 内容                                                     | 业务开发下一步                                                                            |

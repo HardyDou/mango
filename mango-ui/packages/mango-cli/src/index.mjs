@@ -29,10 +29,10 @@ import { fileURLToPath } from 'node:url';
 import { inspectProjectPullRequestTemplate, synchronizeProjectPullRequestTemplate } from './pmo-project-template.mjs';
 import { resolveHealthPollIntervalMs } from './dev-health-policy.mjs';
 import { shouldRunDevInstall } from './dev-install-policy.mjs';
+import { buildSpringBootReactorArgs, resolveSpringBootMavenReactor } from './dev-maven-reactor.mjs';
 import { injectStableBootstrapIdentity, readStableBootstrapReceipt } from './dev-bootstrap-receipt.mjs';
 import {
   buildWorkspaceMavenRevisionQualifier,
-  injectMavenRevisionArgs,
   isMavenCommand,
   qualifyWorkspaceMavenRevision,
   readCiFriendlyMavenRevision,
@@ -1346,7 +1346,6 @@ function defaultDevWorkspaceEnv(root, workspace = ensureWorkspaceConfig(root)) {
     'MANGO_FRONTEND_HOST=127.0.0.1',
     'MANGO_FRONTEND_OPEN=false',
     'MANGO_FRONTEND_AUTO_INSTALL=true',
-    'MANGO_BACKEND_AUTO_INSTALL=true',
     'MANGO_FRONTEND_MODE=source',
     `MANGO_DB_NAME=${workspace.dbName}`,
     'MANGO_DB_HOST=127.0.0.1',
@@ -1600,10 +1599,6 @@ function defaultBusinessDevManifest(projectName) {
         processMode: 'runtime',
         cwd: 'backend',
         pom: 'app/pom.xml',
-        install: {
-          command: 'mvn',
-          args: ['-f', 'pom.xml', '-DskipTests', 'install'],
-        },
         portEnv: 'MANGO_BACKEND_PORT',
         port: 5555,
         health: '/actuator/health',
@@ -2012,6 +2007,11 @@ function validateDevWorkspace(context, { verbose }) {
       errors.push(`${name}: use explicit Spring Boot Maven plugin coordinate instead of spring-boot:run`);
     }
     if (app.type === 'spring-boot-maven') {
+      if (app.command) {
+        errors.push(
+          `${name}: spring-boot-maven command overrides are unsupported; configure pom, goal and args instead`,
+        );
+      }
       const processMode = app.processMode || 'runtime';
       if (!['bootstrap', 'runtime'].includes(processMode)) {
         errors.push(`${name}: unsupported Mango processMode ${processMode}; expected bootstrap or runtime`);
@@ -2232,7 +2232,9 @@ function startDevApp(context, name, app) {
       fail(`${name}: install command failed, see ${relativeOrAbsolute(process.cwd(), logPath)}`);
     }
   } else if (app.install) {
-    process.stdout.write(`${name}: skipped install command (MANGO_BACKEND_AUTO_INSTALL=false)\n`);
+    process.stdout.write(
+      `${name}: ignored legacy install command; Spring Boot development now runs from the Maven reactor\n`,
+    );
   }
   if (app.lifecycleManaged) {
     prepareManagedMangoLifecycle(context, name, app, logPath);
@@ -2240,7 +2242,7 @@ function startDevApp(context, name, app) {
   requireCommand(app.command, name);
   const logFd = openSync(logPath, 'a');
   const child = spawn(app.command, app.args, {
-    cwd: app.cwd,
+    cwd: app.runCwd || app.cwd,
     env: { ...process.env, ...app.env },
     detached: true,
     stdio: ['ignore', logFd, logFd],
@@ -2262,7 +2264,7 @@ function startDevApp(context, name, app) {
     pid: child.pid,
     pgid: child.pid,
     startedAt: new Date().toISOString(),
-    cwd: app.cwd,
+    cwd: app.runCwd || app.cwd,
     command: app.command,
     args: app.args,
     logPath,
@@ -2279,13 +2281,7 @@ function shouldEnsureWorkspaceDatabase(context, app) {
     return true;
   }
   const dbName = context.env.MANGO_DB_NAME || '';
-  const values = [
-    app.command,
-    ...(app.args || []),
-    ...Object.values(app.env || {}),
-    app.install?.command,
-    ...(app.install?.args || []),
-  ].filter(Boolean);
+  const values = [app.command, ...(app.args || []), ...Object.values(app.env || {})].filter(Boolean);
   return values.some((value) => {
     const text = String(value);
     return text.includes('MANGO_DB_NAME') || (dbName && text.includes(dbName));
@@ -2454,7 +2450,7 @@ function runManagedMangoLifecycleCommand(app, springArgs, logPath, message) {
   process.stdout.write(`${message}\n`);
   appendFileSync(logPath, `\n--- ${new Date().toISOString()} ${message} ---\n`);
   return runForegroundCommand(
-    app.cwd,
+    app.runCwd || app.cwd,
     app.command,
     replaceSpringBootRunArguments(app.args, springArgs),
     app.env,
@@ -2905,28 +2901,32 @@ function resolveDevApp(context, name, app) {
 
 function applyWorkspaceMavenRevision(context, app) {
   const runUsesMaven = isMavenCommand(app.command);
-  const installUsesMaven = app.install && isMavenCommand(app.install.command);
-  if (app.type !== 'spring-boot-maven' || (!runUsesMaven && !installUsesMaven)) {
+  if (app.type !== 'spring-boot-maven' || !runUsesMaven) {
     return;
   }
-  const rootPom = findMavenRevisionRootPom(context.root, app);
-  if (!rootPom) {
-    fail(
-      `${app.name}: Maven project does not use CI-friendly \${revision}. ` +
-        'Upgrade the reactor root POM to <version>${revision}</version> with a concrete <revision> value before mango dev start.',
-    );
+  let reactor;
+  try {
+    reactor = resolveSpringBootMavenReactor({
+      workspaceRoot: context.root,
+      appPomPath: resolve(app.cwd, app.pom || 'pom.xml'),
+    });
+  } catch (error) {
+    fail(`${app.name}: ${error.message}`);
   }
+  const rootPom = reactor.rootPom;
   const baseRevision = readCiFriendlyMavenRevision(readFileSync(rootPom, 'utf8'));
   const qualifier = ensureWorkspaceConfig(context.root).mavenRevisionQualifier;
   const revision = qualifyWorkspaceMavenRevision(baseRevision, qualifier);
   app.mavenRevision = revision;
   app.mavenRevisionPom = rootPom;
-  if (runUsesMaven) {
-    app.args = injectMavenRevisionArgs(app.args, revision);
-  }
-  if (installUsesMaven) {
-    app.install.args = injectMavenRevisionArgs(app.install.args, revision);
-  }
+  app.runCwd = reactor.cwd;
+  app.args = buildSpringBootReactorArgs({
+    rootPom,
+    selector: reactor.selector,
+    revision,
+    springArgs: app.springArgs,
+    goal: app.goal || DEFAULT_SPRING_BOOT_PLUGIN,
+  });
 }
 
 function applyStableBootstrapReceipt(context, app) {
@@ -2966,34 +2966,6 @@ function resolveBootstrapReceiptDirectories(context, app) {
     }
   }
   return unique;
-}
-
-function findMavenRevisionRootPom(workspaceRoot, app) {
-  const candidates = [];
-  const installPom = findMavenPomArgument(app.install?.args || []);
-  if (installPom) {
-    candidates.push(resolve(app.cwd, installPom));
-  }
-  candidates.push(resolve(app.cwd, app.pom || 'pom.xml'));
-  for (const candidate of candidates) {
-    let directory = dirname(candidate);
-    while (isPathInside(directory, workspaceRoot)) {
-      const pomPath = join(directory, 'pom.xml');
-      if (existsSync(pomPath) && readCiFriendlyMavenRevision(readFileSync(pomPath, 'utf8'))) {
-        return pomPath;
-      }
-      if (resolve(directory) === resolve(workspaceRoot) || dirname(directory) === directory) {
-        break;
-      }
-      directory = dirname(directory);
-    }
-  }
-  return '';
-}
-
-function findMavenPomArgument(args) {
-  const index = args.findIndex((arg) => arg === '-f' || arg === '--file');
-  return index >= 0 ? args[index + 1] || '' : '';
 }
 
 function isPathInside(path, root) {

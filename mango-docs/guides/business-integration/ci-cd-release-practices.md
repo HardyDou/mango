@@ -154,6 +154,8 @@ org.opencontainers.image.source
 
 ## 6. 构建 Pipeline
 
+Mango CLI 的本地 `mango dev start backend` 使用 Maven Reactor 的 `compile + spring-boot:run`，不先把业务 app 安装到共享本地 Maven repository。这个开发入口不替代 CI/CD 构建：流水线仍按项目 Dockerfile 或 Maven 生命周期执行测试、`package` 和镜像构建；发布可复用 Maven 库时直接执行 `deploy`，不要求预先执行本地 `install`。BOM、parent、API、core 和 starter 等消费者制品需要按同一版本批次发布，业务 app 是否作为 Maven 制品发布由部署模型决定。
+
 ### 6.1 默认参数
 
 | 参数 | 类型 | 用途 |

@@ -53,7 +53,7 @@
     },
     "process.devEnvironment": {
       "path": "rules/02-dev-environment.md",
-      "reason": "开发环境、本地启动、worktree 项目产出隔离、Mango CLI 项目内锁定版本与 workspace/dev start/frontend 入口规范"
+      "reason": "开发环境、本地启动、Maven Reactor 源码运行与非 install 边界、worktree 项目产出隔离、Mango CLI 项目内锁定版本及 workspace/dev start/frontend 入口规范"
     },
     "process.aiCodingRedlines": {
       "path": "rules/03-ai-coding-redlines.md",

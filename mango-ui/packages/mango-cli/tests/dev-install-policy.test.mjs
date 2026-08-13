@@ -7,14 +7,14 @@ const backendApp = {
   install: { command: 'mvn', args: ['install'] },
 };
 
-test('backend install remains enabled by default', () => {
-  assert.equal(shouldRunDevInstall(backendApp), true);
-  assert.equal(shouldRunDevInstall(backendApp, { MANGO_BACKEND_AUTO_INSTALL: 'true' }), true);
-  assert.equal(shouldRunDevInstall(backendApp, { MANGO_BACKEND_AUTO_INSTALL: 'unexpected' }), true);
+test('spring boot development never executes the legacy install command', () => {
+  assert.equal(shouldRunDevInstall(backendApp), false);
+  assert.equal(shouldRunDevInstall(backendApp, { MANGO_BACKEND_AUTO_INSTALL: 'true' }), false);
+  assert.equal(shouldRunDevInstall(backendApp, { MANGO_BACKEND_AUTO_INSTALL: 'unexpected' }), false);
 });
 
-test('backend install is skipped only for an explicit false value', () => {
-  for (const value of ['false', 'FALSE', '0', 'no', 'off']) {
+test('legacy backend install is ignored regardless of the old environment switch', () => {
+  for (const value of ['false', 'FALSE', '0', 'no', 'off', 'true']) {
     assert.equal(shouldRunDevInstall(backendApp, { MANGO_BACKEND_AUTO_INSTALL: value }), false);
   }
 });
