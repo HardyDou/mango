@@ -135,7 +135,13 @@
       width="900px"
       destroy-on-close
     >
-      <FilePreviewPanel v-if="previewAttachment?.fileId" :file-id="previewAttachment.fileId" fit-container />
+      <div v-if="previewAttachment?.fileId" class="notice-inbound-page__file-preview">
+        <iframe
+          :src="filePreviewUrl(previewAttachment.fileId)"
+          :title="previewAttachment.fileName || '附件预览'"
+          class="notice-inbound-page__file-preview-frame"
+        />
+      </div>
       <el-empty v-else description="暂无可预览文件" />
       <template #footer>
         <el-button @click="previewVisible = false">关闭</el-button>
@@ -157,7 +163,6 @@ import {
   Pagination,
   RichTextViewer,
 } from '@mango/common';
-import { FilePreviewPanel } from '@mango/file';
 import { getInboundMessage, getInboundMessages } from '../../api/notice';
 import type {
   NoticeChannelType,
@@ -260,6 +265,10 @@ function openAttachmentPreview(attachment: NoticeInboundAttachment) {
   if (!attachment.fileId) return;
   previewAttachment.value = attachment;
   previewVisible.value = true;
+}
+
+function filePreviewUrl(fileId: string) {
+  return `/api/file/files/preview-content?id=${encodeURIComponent(fileId)}`;
 }
 
 function bodyContent(message: NoticeInboundMessage) {
