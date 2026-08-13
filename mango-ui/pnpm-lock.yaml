@@ -736,9 +736,6 @@ importers:
       '@mango/common':
         specifier: workspace:1.0.26
         version: link:../common
-      '@mango/file':
-        specifier: workspace:1.0.34
-        version: link:../file
       '@mango/grid-layout':
         specifier: workspace:1.0.17
         version: link:../grid-layout

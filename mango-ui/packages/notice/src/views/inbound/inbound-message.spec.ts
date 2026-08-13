@@ -13,10 +13,10 @@ describe('notice inbound detail', () => {
     expect(source).toContain('escapeHtml(message.bodyText)');
   });
 
-  it('previews attachments through FilePreviewPanel using the file id', () => {
-    expect(source).toContain("import { FilePreviewPanel } from '@mango/file';");
+  it('previews attachments through the File service using the file id', () => {
     expect(source).toContain('@click="openAttachmentPreview(row)"');
-    expect(source).toContain('<FilePreviewPanel v-if="previewAttachment?.fileId" :file-id="previewAttachment.fileId"');
+    expect(source).toContain(':src="filePreviewUrl(previewAttachment.fileId)"');
+    expect(source).toContain('`/api/file/files/preview-content?id=');
     expect(source).toContain('if (!attachment.fileId) return;');
   });
 
