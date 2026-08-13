@@ -39,6 +39,9 @@ public class FileProperties {
     /** 文件代理访问外部基准地址，例如 https://example.com/api。 */
     private String publicBaseUrl;
 
+    /** FILE_ASSET 的外部资产根目录；仅在声明使用 asset: 协议时读取。 */
+    private String assetRoot;
+
     /** 本地存储配置。 */
     @Getter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP",
             justification = "Nested Spring configuration is exposed for property binding"))

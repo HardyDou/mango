@@ -36,6 +36,8 @@
 
 ## 3.1 近期能力变更
 
+- 2026-08-13，Issue #759 为 `FILE_ASSET` 增加外部资产根目录契约：Resource Declaration 可使用环境无关的 `asset:<relative-path>`，由 `mango.file.asset-root` 在开发或容器环境映射实际目录；绝对路径、`..`、反斜杠和越根符号链接会在上传前拒绝，现有 `classpath:META-INF/mango/assets/` 保持兼容。配置、迁移和 Docker 示例见 [File README](../../mango/mango-platform/mango-file/README.md)，实施与验证见 [STANDARD 交付记录](../plans/2026-08-13-issue-759-external-file-asset-delivery-record.md)。
+
 - 2026-08-13，Issue #764 将 `@mango/auth` 企业微信登录收敛到统一 Provider 授权链路：前端包移除旧企微配置读取、手工 code 登录和 `mwc.` state 生成/解析入口；默认及自定义登录页使用 `/auth/providers/authorize`，公开回调页使用 `/auth/providers/complete`。接入与迁移说明见 [Auth 前端 README](../../mango-ui/packages/auth/README.md) 和 [Auth Views README](../../mango-ui/packages/auth/src/views/README.md)，实施边界见 [STANDARD 交付记录](../plans/2026-08-13-issue-764-wecom-provider-login-delivery-record.md)。
 
 - 2026-08-12，File Preview 新增 XLS/XLSX Web 预览按钮开关：`office.xlsx.web.buttons.enabled` / `KK_OFFICE_XLSX_WEB_BUTTONS_ENABLED` 默认 `true` 以保持兼容；设置为 `false` 时不渲染“跳转 HTML 预览”和“打印”，Luckysheet 同步取消 `20px` 顶部占位。该能力只属于 `mango-file-preview-engine`，不要求业务项目修改 `@mango/file`、注入 iframe DOM 或覆盖预览页样式。配置与升级说明见 [File Preview README](../../mango/mango-platform/mango-file-preview/README.md)，实施与验证见 [STANDARD 交付记录](../plans/2026-08-12-file-preview-xlsx-web-buttons-delivery-record.md)。
