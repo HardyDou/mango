@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="io.mango.notice.core.mapper.NoticeChannelConfigMapper">
+
+    <select id="selectInboundConfigById" resultType="io.mango.notice.core.entity.NoticeChannelConfigEntity">
+        select *
+        from notice_channel_config
+        where id = #{id}
+        limit 1
+    </select>
+
+    <select id="selectInboundConfigByCode" resultType="io.mango.notice.core.entity.NoticeChannelConfigEntity">
+        select *
+        from notice_channel_config
+        where config_code = #{configCode}
+        limit 1
+    </select>
+
+    <select id="selectEnabledEmailConfigs" resultType="io.mango.notice.core.entity.NoticeChannelConfigEntity">
+        select *
+        from notice_channel_config
+        where channel_type = 'EMAIL'
+          and enabled = 1
+          and capability_mode in ('RECEIVE', 'BOTH')
+          and config_status = 'COMPLETE'
+    </select>
+</mapper>

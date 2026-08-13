@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="io.mango.notice.core.mapper.NoticeInboundMessageMapper">
+
+    <select id="selectDueBroadcasts" resultType="io.mango.notice.core.entity.NoticeInboundMessageEntity">
+        select *
+        from notice_inbound_message
+        where status = 'READY_TO_BROADCAST'
+          and (next_retry_at is null or next_retry_at &lt;= current_timestamp)
+        order by received_at asc
+        limit #{limit}
+    </select>
+</mapper>

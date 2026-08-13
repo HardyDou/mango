@@ -16,6 +16,7 @@ export type NoticeSendStatus =
 export type NoticeTemplateVersionStatus = 'DRAFT' | 'ACTIVE' | 'HISTORY';
 export type NoticeSyncStatus = 'SYNCED' | 'PENDING_PUBLISH';
 export type NoticeChannelConfigStatus = 'COMPLETE' | 'INCOMPLETE';
+export type NoticeChannelCapabilityMode = 'SEND' | 'RECEIVE' | 'BOTH';
 export type NoticeChannelSendHealthStatus = 'NONE' | 'SUCCESS' | 'FAILED';
 export type NoticeChannelRouteMode = 'EXACT' | 'TAG' | 'AUTO';
 export type NoticeChannelSecretStatus = 'NOT_REQUIRED' | 'COMPLETE' | 'INCOMPLETE';
@@ -337,6 +338,7 @@ export interface NoticeChannelConfig {
   id: string;
   configCode: string;
   channelType: NoticeChannelType;
+  capabilityMode: NoticeChannelCapabilityMode;
   providerCode?: string;
   configName?: string;
   configJson?: string;
@@ -426,6 +428,42 @@ export interface NoticeSendRecord {
   failReason?: string;
   retryCount: number;
   sentAt?: string;
+}
+
+export type NoticeInboundMessageStatus =
+  'RECEIVED' | 'ATTACHMENT_PROCESSING' | 'READY_TO_BROADCAST' | 'BROADCASTED' | 'RETRYABLE_FAILED' | 'DEAD_LETTER';
+
+export type NoticeInboundAttachmentStatus = 'PENDING' | 'PROCESSING' | 'SAVED' | 'RETRYABLE_FAILED' | 'DEAD_LETTER';
+
+export interface NoticeInboundAttachment {
+  id: string;
+  fileId?: string;
+  fileName: string;
+  contentType?: string;
+  fileSize: number;
+  status: NoticeInboundAttachmentStatus;
+  failureReason?: string;
+}
+
+export interface NoticeInboundMessage {
+  id: string;
+  channelConfigId: string;
+  channelType: NoticeChannelType;
+  providerCode?: string;
+  messageId?: string;
+  subject?: string;
+  fromAddress?: string;
+  toAddressesJson?: string;
+  bodyText?: string;
+  bodyHtml?: string;
+  status: NoticeInboundMessageStatus;
+  eventId: string;
+  failureCode?: string;
+  failureReason?: string;
+  attemptCount: number;
+  receivedAt: string;
+  processedAt?: string;
+  attachments?: NoticeInboundAttachment[];
 }
 
 export interface NoticeSendResult {

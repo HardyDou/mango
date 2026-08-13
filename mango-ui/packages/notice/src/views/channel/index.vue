@@ -1,4 +1,6 @@
 <template>
+  <!-- mango-page-baseline-exception list: Existing outbound routing table layout is retained because this task only adds explicit receive capability fields and must preserve established send management behavior. -->
+  <!-- mango-page-baseline-exception dialog: Existing outbound channel editor is retained because replacing its dialog in this task would expand scope and risk the established email, SMS, site, and WeCom send flows. -->
   <div class="notice-channel-page" data-surface="notice.channel.routing">
     <el-card shadow="never" class="channel-main page-card">
       <div class="list-page-header">
@@ -32,6 +34,15 @@
         <el-table-column prop="configCode" label="配置编码" min-width="170" show-overflow-tooltip />
         <el-table-column label="渠道类型" width="120">
           <template #default="{ row }">{{ channelLabel(row.channelType) }}</template>
+        </el-table-column>
+        <el-table-column label="用途" width="110" data-field="notice.channel.capability-mode">
+          <template #default="{ row }">
+            <el-tag
+              :type="row.capabilityMode === 'BOTH' ? 'primary' : row.capabilityMode === 'RECEIVE' ? 'warning' : 'info'"
+            >
+              {{ capabilityModeLabel(row.capabilityMode) }}
+            </el-tag>
+          </template>
         </el-table-column>
         <el-table-column prop="configName" label="通道名称" min-width="170" show-overflow-tooltip />
         <el-table-column label="接入平台" width="140">
@@ -143,6 +154,23 @@
                 >
                   <el-option
                     v-for="item in providerOptions(form.channelType || 'EMAIL')"
+                    :key="item.value"
+                    :label="item.label"
+                    :value="item.value"
+                  />
+                </el-select>
+              </el-form-item>
+            </el-col>
+            <el-col :xs="24" :sm="12">
+              <el-form-item label="用途" required data-field="notice.channel.capability-mode">
+                <el-select
+                  v-model="form.capabilityMode"
+                  :disabled="isResourceManaged"
+                  class="form-control"
+                  @change="handleCapabilityModeChange"
+                >
+                  <el-option
+                    v-for="item in capabilityModeOptions"
                     :key="item.value"
                     :label="item.label"
                     :value="item.value"
@@ -402,32 +430,37 @@
               </template>
               <template v-else-if="form.channelType === 'EMAIL' && form.providerCode === 'CUSTOM_SMTP'">
                 <el-row :gutter="16">
-                  <el-col :xs="24" :sm="12">
+                  <el-col v-if="supportsSendMode" :span="24"
+                    ><div class="config-group-title" data-surface="notice.channel.send-config">
+                      发送配置（SMTP）
+                    </div></el-col
+                  >
+                  <el-col v-if="supportsSendMode" :xs="24" :sm="12">
                     <el-form-item label="SMTP" required>
                       <el-input v-model="channelConfig.host" placeholder="smtp.example.com" />
                     </el-form-item>
                   </el-col>
-                  <el-col :xs="24" :sm="12">
+                  <el-col v-if="supportsSendMode" :xs="24" :sm="12">
                     <el-form-item label="端口" required>
                       <el-input-number v-model="channelConfig.port" :min="1" :max="65535" class="number-control" />
                     </el-form-item>
                   </el-col>
-                  <el-col :xs="24" :sm="12">
+                  <el-col v-if="supportsSendMode" :xs="24" :sm="12">
                     <el-form-item label="账号" required>
                       <el-input v-model="channelConfig.username" autocomplete="off" />
                     </el-form-item>
                   </el-col>
-                  <el-col :xs="24" :sm="12">
+                  <el-col v-if="supportsSendMode" :xs="24" :sm="12">
                     <el-form-item label="密码" required>
                       <el-input v-model="channelConfig.password" show-password autocomplete="new-password" />
                     </el-form-item>
                   </el-col>
-                  <el-col :xs="24" :sm="12">
+                  <el-col v-if="supportsSendMode" :xs="24" :sm="12">
                     <el-form-item label="发件人" required>
                       <el-input v-model="channelConfig.from" placeholder="notice@example.com" />
                     </el-form-item>
                   </el-col>
-                  <el-col :xs="24" :sm="12">
+                  <el-col v-if="supportsSendMode" :xs="24" :sm="12">
                     <el-form-item label="SSL">
                       <el-switch v-model="channelConfig.ssl" />
                     </el-form-item>
@@ -436,32 +469,37 @@
               </template>
               <template v-else-if="form.channelType === 'EMAIL' && form.providerCode === 'ALIYUN_DM'">
                 <el-row :gutter="16">
-                  <el-col :xs="24" :sm="12">
+                  <el-col v-if="supportsSendMode" :span="24"
+                    ><div class="config-group-title" data-surface="notice.channel.send-config">
+                      发送配置（阿里云邮件推送）
+                    </div></el-col
+                  >
+                  <el-col v-if="supportsSendMode" :xs="24" :sm="12">
                     <el-form-item label="AccessKey" required>
                       <el-input v-model="channelConfig.accessKeyId" autocomplete="off" />
                     </el-form-item>
                   </el-col>
-                  <el-col :xs="24" :sm="12">
+                  <el-col v-if="supportsSendMode" :xs="24" :sm="12">
                     <el-form-item label="Secret" required>
                       <el-input v-model="channelConfig.accessKeySecret" show-password autocomplete="new-password" />
                     </el-form-item>
                   </el-col>
-                  <el-col :xs="24" :sm="12">
+                  <el-col v-if="supportsSendMode" :xs="24" :sm="12">
                     <el-form-item label="区域" required>
                       <el-input v-model="channelConfig.regionId" placeholder="cn-hangzhou" />
                     </el-form-item>
                   </el-col>
-                  <el-col :xs="24" :sm="12">
+                  <el-col v-if="supportsSendMode" :xs="24" :sm="12">
                     <el-form-item label="Endpoint" required>
                       <el-input v-model="channelConfig.endpoint" placeholder="dm.aliyuncs.com" />
                     </el-form-item>
                   </el-col>
-                  <el-col :xs="24" :sm="12">
+                  <el-col v-if="supportsSendMode" :xs="24" :sm="12">
                     <el-form-item label="发信地址" required>
                       <el-input v-model="channelConfig.accountName" placeholder="notice@example.com" />
                     </el-form-item>
                   </el-col>
-                  <el-col :xs="24" :sm="12">
+                  <el-col v-if="supportsSendMode" :xs="24" :sm="12">
                     <el-form-item label="地址类型">
                       <el-select v-model="channelConfig.addressType" class="form-control">
                         <el-option label="随机账号" :value="0" />
@@ -469,12 +507,12 @@
                       </el-select>
                     </el-form-item>
                   </el-col>
-                  <el-col :xs="24" :sm="12">
+                  <el-col v-if="supportsSendMode" :xs="24" :sm="12">
                     <el-form-item label="发信别名">
                       <el-input v-model="channelConfig.fromAlias" placeholder="芒果通知" />
                     </el-form-item>
                   </el-col>
-                  <el-col :xs="24" :sm="12">
+                  <el-col v-if="supportsSendMode" :xs="24" :sm="12">
                     <el-form-item label="回信地址">
                       <el-input v-model="channelConfig.replyToAddress" placeholder="reply@example.com" />
                     </el-form-item>
@@ -505,24 +543,54 @@
               </template>
               <template v-else-if="form.channelType === 'WECOM'">
                 <el-row :gutter="16">
-                  <el-col :xs="24" :sm="12">
+                  <el-col v-if="supportsSendMode" :span="24"
+                    ><div class="config-group-title" data-surface="notice.channel.send-config">
+                      发送配置（HTTPS API / Webhook，无需回调加密参数）
+                    </div></el-col
+                  >
+                  <el-col v-if="supportsSendMode" :xs="24" :sm="12">
                     <el-form-item label="企业ID">
                       <el-input v-model="channelConfig.corpId" />
                     </el-form-item>
                   </el-col>
-                  <el-col :xs="24" :sm="12">
+                  <el-col v-if="supportsSendMode" :xs="24" :sm="12">
                     <el-form-item label="AgentId">
                       <el-input v-model="channelConfig.agentId" />
                     </el-form-item>
                   </el-col>
-                  <el-col :xs="24" :sm="12">
+                  <el-col v-if="supportsSendMode" :xs="24" :sm="12">
                     <el-form-item label="Secret">
                       <el-input v-model="channelConfig.secret" show-password autocomplete="new-password" />
                     </el-form-item>
                   </el-col>
-                  <el-col :xs="24" :sm="12">
+                  <el-col v-if="supportsSendMode" :xs="24" :sm="12">
                     <el-form-item label="Webhook">
                       <el-input v-model="channelConfig.webhookUrl" />
+                    </el-form-item>
+                  </el-col>
+                  <el-col v-if="supportsReceiveMode" :span="24"
+                    ><div class="config-group-title" data-surface="notice.channel.receive-config">
+                      接收配置（回调验签与 AES 解密）
+                    </div></el-col
+                  >
+                  <el-col v-if="supportsReceiveMode" :xs="24" :sm="12">
+                    <el-form-item label="回调 Token">
+                      <el-input
+                        v-model="channelConfig.callbackToken"
+                        show-password
+                        autocomplete="new-password"
+                        placeholder="企业微信消息接收 Token"
+                      />
+                    </el-form-item>
+                  </el-col>
+                  <el-col v-if="supportsReceiveMode" :xs="24" :sm="12">
+                    <el-form-item label="EncodingAESKey">
+                      <el-input
+                        v-model="channelConfig.encodingAesKey"
+                        show-password
+                        autocomplete="new-password"
+                        placeholder="43 位消息加密密钥"
+                      />
                     </el-form-item>
                   </el-col>
                   <el-col :xs="24" :sm="12">
@@ -562,6 +630,56 @@
                       <el-input v-model="channelConfig.webhookUrl" />
                     </el-form-item>
                   </el-col>
+                </el-row>
+              </template>
+              <template v-if="form.channelType === 'EMAIL' && supportsReceiveMode">
+                <el-row :gutter="16" data-surface="notice.channel.receive-config">
+                  <el-col :span="24"><div class="config-group-title">接收配置（定时拉取 IMAP / POP3）</div></el-col>
+                  <el-col :xs="24" :sm="12">
+                    <el-form-item label="接收协议" required>
+                      <el-select v-model="channelConfig.inboundProtocol" class="form-control">
+                        <el-option label="IMAP" value="IMAP" />
+                        <el-option label="POP3" value="POP3" />
+                      </el-select>
+                    </el-form-item>
+                  </el-col>
+                  <el-col :xs="24" :sm="12"
+                    ><el-form-item label="接收服务器" required
+                      ><el-input v-model="channelConfig.inboundHost" placeholder="imap.example.com" /></el-form-item
+                  ></el-col>
+                  <el-col :xs="24" :sm="12"
+                    ><el-form-item label="接收端口"
+                      ><el-input-number
+                        v-model="channelConfig.inboundPort"
+                        :min="1"
+                        :max="65535"
+                        class="number-control" /></el-form-item
+                  ></el-col>
+                  <el-col :xs="24" :sm="12"
+                    ><el-form-item label="接收账号" required
+                      ><el-input v-model="channelConfig.inboundUsername" autocomplete="off" /></el-form-item
+                  ></el-col>
+                  <el-col :xs="24" :sm="12"
+                    ><el-form-item label="接收授权码" required
+                      ><el-input
+                        v-model="channelConfig.inboundPassword"
+                        show-password
+                        autocomplete="new-password" /></el-form-item
+                  ></el-col>
+                  <el-col :xs="24" :sm="12"
+                    ><el-form-item label="SSL"><el-switch v-model="channelConfig.inboundSsl" /></el-form-item
+                  ></el-col>
+                  <el-col :xs="24" :sm="12"
+                    ><el-form-item label="客户端名称"
+                      ><el-input v-model="channelConfig.inboundClientName" placeholder="mango" /></el-form-item
+                  ></el-col>
+                  <el-col :xs="24" :sm="12"
+                    ><el-form-item label="拉取周期(秒)"
+                      ><el-input-number
+                        v-model="channelConfig.inboundPollIntervalSeconds"
+                        :min="1"
+                        class="number-control" /></el-form-item
+                  ></el-col>
                 </el-row>
               </template>
             </el-tab-pane>
@@ -656,6 +774,11 @@
                 <el-form-item label="渠道类型">
                   <el-input :model-value="channelLabel(current.channelType)" readonly />
                 </el-form-item>
+              </el-col>
+              <el-col :xs="24" :sm="12">
+                <el-form-item label="用途"
+                  ><el-input :model-value="capabilityModeLabel(current.capabilityMode)" readonly
+                /></el-form-item>
               </el-col>
               <el-col :xs="24" :sm="12">
                 <el-form-item label="接入平台">
@@ -767,6 +890,7 @@ import {
   saveNoticeRouteTag,
 } from '../../api/notice';
 import type {
+  NoticeChannelCapabilityMode,
   NoticeChannelConfig,
   NoticeChannelSendHealthStatus,
   NoticeChannelType,
@@ -786,6 +910,11 @@ const channelLabels: Record<NoticeChannelType, string> = {
   WECOM: '企业微信',
   DINGTALK: '钉钉',
 };
+const capabilityModes: Array<{ label: string; value: NoticeChannelCapabilityMode }> = [
+  { label: '仅发送', value: 'SEND' },
+  { label: '仅接收', value: 'RECEIVE' },
+  { label: '收发一体', value: 'BOTH' },
+];
 const providers: Record<NoticeChannelType, Array<{ label: string; value: string }>> = {
   SITE: [{ label: '系统内置', value: 'INTERNAL' }],
   SMS: [
@@ -824,6 +953,13 @@ const rateLimitJsonPreview = computed(() => JSON.stringify(compactObject(rateLim
 const availableRouteTags = computed(() => routeTags.value.filter((item) => item.channelType === form.channelType));
 const isResourceManaged = computed(() => form.resourceSource === 'RESOURCE');
 const resourceSecretFields = computed(() => secretFields(form.channelType || 'EMAIL', form.providerCode));
+const supportsSendMode = computed(() => form.capabilityMode !== 'RECEIVE');
+const supportsReceiveMode = computed(() => form.capabilityMode === 'RECEIVE' || form.capabilityMode === 'BOTH');
+const capabilityModeOptions = computed(() =>
+  form.channelType === 'EMAIL' || form.channelType === 'WECOM'
+    ? capabilityModes
+    : capabilityModes.filter((item) => item.value === 'SEND'),
+);
 
 async function load() {
   loading.value = true;
@@ -842,6 +978,7 @@ function openCreate() {
     id: undefined,
     configCode: '',
     channelType: 'EMAIL',
+    capabilityMode: 'SEND',
     providerCode: 'CUSTOM_SMTP',
     configName: '',
     enabled: true,
@@ -899,9 +1036,14 @@ function isBuiltinSiteChannel(row: NoticeChannelConfig) {
 
 function handleChannelTypeChange() {
   const channelType = form.channelType || 'EMAIL';
+  if (channelType !== 'EMAIL' && channelType !== 'WECOM') form.capabilityMode = 'SEND';
   form.providerCode = providerOptions(channelType)[0]?.value;
   form.routeTagCodes = [];
   resetChannelConfig();
+}
+
+function handleCapabilityModeChange() {
+  resetSecretValues();
 }
 
 function resetChannelConfig() {
@@ -931,7 +1073,12 @@ function secretFields(channelType: NoticeChannelType, providerCode?: string) {
       : [{ key: 'accessKeySecret', label: 'AccessKey Secret' }];
   }
   if (channelType === 'WECHAT_OFFICIAL') return [{ key: 'appSecret', label: 'AppSecret' }];
-  if (channelType === 'WECOM') return [{ key: 'secret', label: 'Secret' }];
+  if (channelType === 'WECOM')
+    return [
+      { key: 'secret', label: '应用 Secret' },
+      { key: 'callbackToken', label: '回调 Token' },
+      { key: 'encodingAesKey', label: 'EncodingAESKey' },
+    ];
   return [
     { key: 'appSecret', label: 'AppSecret' },
     { key: 'webhookUrl', label: 'Webhook Secret URL' },
@@ -965,7 +1112,16 @@ function defaultConfig(channelType: NoticeChannelType): ChannelConfigForm {
   if (channelType === 'EMAIL') return defaultEmailConfig(form.providerCode);
   if (channelType === 'WECHAT_OFFICIAL') return { appId: '', appSecret: '' };
   if (channelType === 'WECOM') {
-    return { corpId: '', agentId: '', secret: '', webhookUrl: '', loginEnabled: false, loginRedirectUri: '' };
+    return {
+      corpId: '',
+      agentId: '',
+      secret: '',
+      webhookUrl: '',
+      callbackToken: '',
+      encodingAesKey: '',
+      loginEnabled: false,
+      loginRedirectUri: '',
+    };
   }
   return { appKey: '', appSecret: '', agentId: '', webhookUrl: '' };
 }
@@ -995,6 +1151,16 @@ function defaultSmsConfig(providerCode?: string): ChannelConfigForm {
 }
 
 function defaultEmailConfig(providerCode?: string): ChannelConfigForm {
+  const inbound = {
+    inboundProtocol: 'IMAP',
+    inboundHost: '',
+    inboundPort: 993,
+    inboundUsername: '',
+    inboundPassword: '',
+    inboundSsl: true,
+    inboundClientName: 'mango',
+    inboundPollIntervalSeconds: 60,
+  };
   if (providerCode === 'ALIYUN_DM') {
     return {
       accessKeyId: '',
@@ -1005,9 +1171,10 @@ function defaultEmailConfig(providerCode?: string): ChannelConfigForm {
       addressType: 1,
       fromAlias: '',
       replyToAddress: '',
+      ...inbound,
     };
   }
-  return { host: '', port: 465, username: '', password: '', from: '', ssl: true };
+  return { host: '', port: 465, username: '', password: '', from: '', ssl: true, ...inbound };
 }
 
 function configFieldLabels(channelType: NoticeChannelType, providerCode?: string) {
@@ -1057,6 +1224,9 @@ function configFieldLabels(channelType: NoticeChannelType, providerCode?: string
       { key: 'addressType', label: '地址类型' },
       { key: 'fromAlias', label: '发信别名' },
       { key: 'replyToAddress', label: '回信地址' },
+      { key: 'inboundProtocol', label: '接收协议' },
+      { key: 'inboundHost', label: '接收服务器' },
+      { key: 'inboundUsername', label: '接收账号' },
     ];
   }
   if (channelType === 'EMAIL') {
@@ -1067,6 +1237,14 @@ function configFieldLabels(channelType: NoticeChannelType, providerCode?: string
       { key: 'password', label: '密码' },
       { key: 'from', label: '发件人' },
       { key: 'ssl', label: 'SSL' },
+      { key: 'inboundProtocol', label: '接收协议' },
+      { key: 'inboundHost', label: '接收服务器' },
+      { key: 'inboundPort', label: '接收端口' },
+      { key: 'inboundUsername', label: '接收账号' },
+      { key: 'inboundPassword', label: '接收授权码' },
+      { key: 'inboundSsl', label: '接收 SSL' },
+      { key: 'inboundClientName', label: '客户端名称' },
+      { key: 'inboundPollIntervalSeconds', label: '拉取周期(秒)' },
     ];
   }
   if (channelType === 'WECHAT_OFFICIAL')
@@ -1080,6 +1258,8 @@ function configFieldLabels(channelType: NoticeChannelType, providerCode?: string
       { key: 'agentId', label: 'AgentId' },
       { key: 'secret', label: 'Secret' },
       { key: 'webhookUrl', label: 'Webhook' },
+      { key: 'callbackToken', label: '回调 Token' },
+      { key: 'encodingAesKey', label: 'EncodingAESKey' },
       { key: 'loginEnabled', label: '扫码登录' },
       { key: 'loginRedirectUri', label: '扫码回调' },
     ];
@@ -1177,6 +1357,10 @@ function sendStatusTag(status?: NoticeChannelSendHealthStatus) {
   return 'info';
 }
 
+function capabilityModeLabel(mode?: NoticeChannelCapabilityMode) {
+  return capabilityModes.find((item) => item.value === (mode || 'SEND'))?.label || '仅发送';
+}
+
 function formatJson(value?: string) {
   if (!value) return '{}';
   try {
@@ -1228,6 +1412,7 @@ async function save() {
     id: form.id,
     configCode: form.configCode,
     channelType: form.channelType,
+    capabilityMode: form.capabilityMode,
     providerCode: form.providerCode,
     configName: form.configName,
     enabled: form.enabled,
@@ -1277,6 +1462,9 @@ function isSensitiveKey(key: string) {
       'secretkey',
       'smtppassword',
       'corpsecret',
+      'callbacktoken',
+      'encodingaeskey',
+      'callbackencodingaeskey',
     ].includes(normalized) ||
     normalized.endsWith('password') ||
     normalized.endsWith('token')
@@ -1377,6 +1565,16 @@ onMounted(load);
   display: flex;
   min-height: calc(100vh - var(--mango-header-height) - var(--mango-tags-view-height) - 32px);
   padding: 0;
+}
+
+.config-group-title {
+  margin: 8px 0 14px;
+  padding: 8px 12px;
+  color: var(--el-text-color-primary);
+  font-weight: 600;
+  background: var(--el-fill-color-light);
+  border-left: 3px solid var(--el-color-primary);
+  border-radius: 4px;
 }
 
 .channel-main {

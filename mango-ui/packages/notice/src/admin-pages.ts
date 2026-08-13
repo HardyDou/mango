@@ -49,6 +49,7 @@ export function registerMangoNoticeAdminPages() {
         'notice/channel/index': () => import('./admin').then((m) => m.NoticeChannelView),
         'notice/task/index': () => import('./admin').then((m) => m.NoticeTaskView),
         'notice/record/index': () => import('./admin').then((m) => m.NoticeRecordView),
+        'notice/inbound/index': () => import('./admin').then((m) => m.NoticeInboundView),
         'notice/site-message/index': () => import('./admin').then((m) => m.NoticeSiteMessageView),
         'notice/site/messages/index': () => import('./admin').then((m) => m.NoticeSiteMessageView),
         'notice/setting/index': () => import('./admin').then((m) => m.NoticeSettingView),

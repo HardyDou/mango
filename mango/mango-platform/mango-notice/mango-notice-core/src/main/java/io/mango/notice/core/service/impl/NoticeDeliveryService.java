@@ -17,6 +17,7 @@ import io.mango.notice.api.command.NoticeSiteMessageSubjectCommand;
 import io.mango.notice.api.command.NoticeSiteMessageTargetCommand;
 import io.mango.notice.api.command.SendNoticeCommand;
 import io.mango.notice.api.enums.NoticeChannelConfigStatus;
+import io.mango.notice.core.service.NoticeChannelCapabilityPolicy;
 import io.mango.notice.api.enums.NoticeChannelRouteMode;
 import io.mango.notice.api.enums.NoticeChannelSendHealthStatus;
 import io.mango.notice.api.enums.NoticeChannelType;
@@ -1054,7 +1055,8 @@ public class NoticeDeliveryService implements INoticeDeliveryService {
                     channelConfigMapper.selectById(template.getChannelConfigId());
             if (config == null
                     || config.getChannelType() != template.getChannelType()
-                    || !Boolean.TRUE.equals(config.getEnabled())) {
+                    || !Boolean.TRUE.equals(config.getEnabled())
+                    || !NoticeChannelCapabilityPolicy.normalize(config.getCapabilityMode()).supportsSend()) {
                 return Collections.emptyList();
             }
             if (config.getConfigStatus() == NoticeChannelConfigStatus.INCOMPLETE) {
@@ -1106,6 +1108,9 @@ public class NoticeDeliveryService implements INoticeDeliveryService {
             wrapper.in(NoticeChannelConfigEntity::getId, taggedConfigIds);
         }
         List<NoticeChannelConfigEntity> configs = channelConfigMapper.selectList(wrapper);
+        configs = configs.stream()
+                .filter(config -> NoticeChannelCapabilityPolicy.normalize(config.getCapabilityMode()).supportsSend())
+                .toList();
         if (configs.isEmpty()) {
             return Collections.emptyList();
         }

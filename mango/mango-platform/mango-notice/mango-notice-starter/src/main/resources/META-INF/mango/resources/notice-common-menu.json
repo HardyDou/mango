@@ -8,7 +8,7 @@
         "AUTH_MENU": [
           {
             "id": "2951300000000009301",
-            "version": 5,
+            "version": 6,
             "bizKey": "notice.menu.internal-admin",
             "name": "通知管理菜单",
             "targetModule": "authorization",
@@ -136,12 +136,29 @@
                       },
                       {
                         "menuType": 2,
+                        "menuName": "接收消息",
+                        "menuCode": "notice:inbound",
+                        "path": "/notice/inbound",
+                        "icon": "MessageBox",
+                        "component": "notice/inbound/index",
+                        "sort": 5,
+                        "remark": "管理员查看邮件和企业微信接收消息、附件及广播状态",
+                        "packageCodes": [
+                          "platform_admin",
+                          "institution_collaboration"
+                        ],
+                        "apiCodes": [
+                          "notice:inbound:view"
+                        ]
+                      },
+                      {
+                        "menuType": 2,
                         "menuName": "发送记录",
                         "menuCode": "notice:record",
                         "path": "/notice/record",
                         "icon": "Tickets",
                         "component": "notice/record/index",
-                        "sort": 5,
+                        "sort": 6,
                         "remark": "消息发送历史、渲染内容、渠道响应和失败原因",
                         "packageCodes": [
                           "platform_admin",
@@ -158,7 +175,7 @@
                         "path": "/notice/retry",
                         "icon": "RefreshRight",
                         "component": "notice/retry/index",
-                        "sort": 6,
+                        "sort": 7,
                         "remark": "失败发送记录和重试处理入口",
                         "packageCodes": [
                           "platform_admin",

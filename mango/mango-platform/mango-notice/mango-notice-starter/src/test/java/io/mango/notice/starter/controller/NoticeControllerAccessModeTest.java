@@ -10,6 +10,7 @@ import io.mango.notice.api.command.SaveNoticeRecipientAccountCommand;
 import io.mango.notice.api.query.MyNoticeAnnouncementPageQuery;
 import io.mango.notice.api.query.NoticeAnnouncementIdQuery;
 import io.mango.notice.api.query.NoticeBusinessTypePageQuery;
+import io.mango.notice.api.query.NoticeInboundMessagePageQuery;
 import io.mango.notice.api.query.NoticeReceivePreferenceQuery;
 import io.mango.notice.api.query.NoticeRecipientAccountQuery;
 import io.mango.notice.api.query.NoticeSiteMessagePageQuery;
@@ -20,6 +21,12 @@ import java.lang.reflect.Method;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class NoticeControllerAccessModeTest {
+
+    @Test
+    void inboundMessageAdministrationShouldRequireExplicitPermission() throws NoSuchMethodException {
+        assertPermission("listInboundMessages", "notice:inbound:view", NoticeInboundMessagePageQuery.class);
+        assertPermission("getInboundMessage", "notice:inbound:view", Long.class);
+    }
 
     @Test
     void recipientAccountAdministrationShouldKeepExplicitPermissions() throws NoSuchMethodException {
