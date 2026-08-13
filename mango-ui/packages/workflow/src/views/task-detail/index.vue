@@ -106,6 +106,7 @@
       </WorkflowLayout>
     </el-card>
 
+    <!-- mango-page-baseline-exception dialog: task-detail uses this transient user-selector dialog for transfer/add-sign actions; migrating it to MangoDialog is outside issue 760 and would change existing selector lifecycle. -->
     <el-dialog
       v-model="selectorDialog.visible"
       :title="selectorDialog.action === 'transfer' ? '选择转办人员' : '选择加签人员'"
