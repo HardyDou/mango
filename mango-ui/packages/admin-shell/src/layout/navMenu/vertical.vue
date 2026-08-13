@@ -1,43 +1,25 @@
 <template>
   <el-menu
     router
-    :default-active="state.defaultActive"
+    :default-active="activeMenuPath"
     background-color="transparent"
     :collapse="props.disableCollapse ? false : layoutStore.isCollapse"
     :unique-opened="layoutStore.isUniqueOpened"
     :collapse-transition="false"
     class="nav-menu-vertical"
   >
-    <template
-      v-for="val in menuList"
-      :key="val.path"
-    >
-      <el-sub-menu
-        v-if="val.children && val.children.length > 0"
-        :index="val.path"
-      >
+    <template v-for="val in menuList" :key="val.path">
+      <el-sub-menu v-if="val.children && val.children.length > 0" :index="val.path">
         <template #title>
-          <el-icon
-            v-if="val.meta?.icon"
-            class="menu-icon"
-          >
+          <el-icon v-if="val.meta?.icon" class="menu-icon">
             <component :is="iconMap[val.meta.icon]" />
           </el-icon>
           <span>{{ val.meta?.title || val.name }}</span>
         </template>
-        <SubItem
-          :chil="val.children"
-          :level="2"
-        />
+        <SubItem :chil="val.children" :level="2" />
       </el-sub-menu>
-      <el-menu-item
-        v-else
-        :index="val.path"
-      >
-        <el-icon
-          v-if="val.meta?.icon"
-          class="menu-icon"
-        >
+      <el-menu-item v-else :index="val.path">
+        <el-icon v-if="val.meta?.icon" class="menu-icon">
           <component :is="iconMap[val.meta.icon]" />
         </el-icon>
         <span>{{ val.meta?.title || val.name }}</span>
@@ -47,10 +29,11 @@
 </template>
 
 <script setup lang="ts" name="navMenuVertical">
-import { defineAsyncComponent, reactive, watch } from 'vue';
+import { computed, defineAsyncComponent } from 'vue';
 import { useRoute } from 'vue-router';
 import { useLayoutStore } from '../../stores/layout';
 import { iconMap } from '@mango/common/utils/iconConfig';
+import { resolveActiveMenuPath } from '@mango/common/utils/menuTree';
 
 const SubItem = defineAsyncComponent(() => import('./subItem.vue'));
 
@@ -69,17 +52,7 @@ const props = defineProps<{
 const route = useRoute();
 const layoutStore = useLayoutStore();
 
-const state = reactive({
-  defaultActive: route.path,
-  isCollapse: false,
-});
-
-watch(
-  () => route.path,
-  () => {
-    state.defaultActive = route.path;
-  }
-);
+const activeMenuPath = computed(() => resolveActiveMenuPath(props.menuList, route.path) || route.path);
 </script>
 
 <style scoped lang="scss">
