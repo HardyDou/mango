@@ -110,6 +110,10 @@
     "docs-latest": {
       "verify": { "command": "curl", "args": ["--fail", "--silent", "--show-error", "--location", "--head", "--max-time", "30", "https://hardydou.github.io/mango/"] }
     },
+    "docs-snapshot": {
+      "verify": { "command": "curl", "args": ["--fail", "--silent", "--show-error", "--location", "--head", "--max-time", "30", "https://hardydou.github.io/mango/versions/{tag}/"] },
+      "repair": { "kind": "verify-existing" }
+    },
     "post-verify": {
       "verify": { "command": "node", "args": ["-e", "console.log(JSON.stringify({result:'PASS',source:'{projectRoot}',version:'{version}'}))"] }
     }
