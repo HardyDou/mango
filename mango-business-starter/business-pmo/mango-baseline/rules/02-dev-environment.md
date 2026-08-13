@@ -81,7 +81,7 @@
 - 诊断当前工作区使用 `mango dev doctor`。
 - 前端 source 模式准备使用 `mango frontend prepare`。
 - Mango CLI 必须从 `.mango/workspace.json` 和 `.mango/dev-workspace.env` 读取端口、数据库名和数据库连接信息。
-- Mango CLI 解析每个 `spring-boot-maven` app 时，必须从对应 reactor 根 POM 读取基础 revision 和唯一 artifactId，使用根 POM 执行 `-pl :<app-artifactId> -am -DskipTests compile org.springframework.boot:spring-boot-maven-plugin:<version>:run`，并注入 workspace qualifier 形成的最终 `-Drevision`；同一 workspace 重复初始化必须保持限定符不变。
+- Mango CLI 解析每个 `spring-boot-maven` app 时，必须从对应 reactor 根 POM 读取基础 revision 和唯一 artifactId，使用根 POM 执行 `-pl :<app-artifactId> -am -DskipTests clean compile org.springframework.boot:spring-boot-maven-plugin:<version>:run`，并注入 workspace qualifier 形成的最终 `-Drevision`；每次后端启动或重启先清理 Reactor 构建输出，防止已删除的 class 和资源残留，同一 workspace 重复初始化必须保持限定符不变。
 - Reactor 根或 parent 的 Spring Boot Maven Plugin 默认必须配置 `<skip>true</skip>`，目标 app 显式配置 `<skip>false</skip>`；非目标模块不得在 `-am` 编译期间执行 Boot goal。
 - CLI 不得手工展开或拼接运行时 classpath；classpath 由 Spring Boot Maven Plugin 管理。只有复现真实平台命令长度失败后，才可单独引入 Java `@argfile` 兜底。
 - 开发环境默认关闭 Office 转换插件；需要本地调试文件预览转换时，显式将 `MANGO_OFFICE_PLUGIN_ENABLED=true` 并配置本机 Office 组件。

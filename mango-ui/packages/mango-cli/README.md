@@ -201,7 +201,7 @@ CLI 从当前目录向上查找 `mango.dev.json`。本地工作区分配事实�
 
 `mango workspace init` 还会在路径不存在时创建 .mango/m2/repository，并把它链接到用户公共仓库 ~/.m2/repository。第三方依赖和 Maven 插件因此不会在各 worktree 重复下载；若该路径已经是真实目录或指向其它位置的链接，CLI 只提示并保留现状，继续支持完整 repository 隔离。
 
-开发 Spring Boot app 使用当前 Maven reactor 直接启动：CLI 从 reactor 根 POM 读取基础 `<revision>` 和 app artifactId，并执行 `-pl :<app-artifactId> -am -DskipTests compile org.springframework.boot:spring-boot-maven-plugin:<version>:run`，同时注入 workspace 限定的 `-Drevision`。开发启动不执行 `install`、`package` 或 fat JAR 安装；`.m2` 仅缓存第三方依赖、插件和正式发布的外部制品。新生成项目的根版本、子模块 parent 和内部模块依赖统一使用 `${revision}`。旧项目 POM 尚未采用 CI-friendly `${revision}` 或 Boot skip 契约时，`mango dev plan/start` 会明确失败并提示升级，不会回退到可能覆盖其它 worktree 的固定 GAV。发布命令不经过该开发注入链。
+开发 Spring Boot app 使用当前 Maven reactor 直接启动：CLI 从 reactor 根 POM 读取基础 `<revision>` 和 app artifactId，并执行 `-pl :<app-artifactId> -am -DskipTests clean compile org.springframework.boot:spring-boot-maven-plugin:<version>:run`，同时注入 workspace 限定的 `-Drevision`。每次后端启动或重启先清理当前 Reactor 的构建输出，避免已删除的 class、Mapper XML 或其它资源残留在 `target/classes`；开发启动不执行 `install`、`package` 或 fat JAR 安装，`.m2` 仅缓存第三方依赖、插件和正式发布的外部制品。新生成项目的根版本、子模块 parent 和内部模块依赖统一使用 `${revision}`。旧项目 POM 尚未采用 CI-friendly `${revision}` 或 Boot skip 契约时，`mango dev plan/start` 会明确失败并提示升级，不会回退到可能覆盖其它 worktree 的固定 GAV。发布命令不经过该开发注入链。
 
 新项目模板会生成固定的 `backend`、`frontend` 开发清单。历史业务项目执行 `mango pmo sync --sync-shell` 或缺少清单时执行 `mango workspace init`，CLI 会先扫描项目结构再生成 `mango.dev.json`：
 

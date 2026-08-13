@@ -66,7 +66,7 @@ npm install -g @mango/cli@{{mangoCliVersion}} --registry {{npmRegistry}}
 
 生成项目的后端 Mango jar 版本由 `backend/pom.xml` 中的 `<mango.version>{{mangoBackendVersion}}</mango.version>` 统一锁定。默认值来自生成时使用的 `@mango/cli@{{mangoCliVersion}}` 内置 `release-versions.json`；业务项目升级后端平台能力时，应成组升级 CLI 或在重新生成/迁移时显式指定 `--mango-version <version>`，不要长期使用 `*-SNAPSHOT` 作为业务默认依赖。
 
-业务后端自身版本使用 Maven CI-friendly `${revision}`。`mango workspace init` 为当前 worktree 分配稳定的 `mango-<NNN>` 限定符；`mango dev plan/start` 从 reactor 根 POM 选择目标 app，执行 `-pl :<app-artifactId> -am -DskipTests compile spring-boot:run`，并注入限定的 `-Drevision`，不安装 app fat JAR 到共享 Maven repository。`.m2` 仅复用第三方依赖和插件缓存。旧项目升级时必须把 reactor 根版本、子模块 parent 和内部模块依赖改为 `${revision}`，并配置根/parent Boot plugin `<skip>true</skip>`、app `<skip>false</skip>`；CLI 检测到不满足契约的 POM 会在执行 Maven 前明确失败。
+业务后端自身版本使用 Maven CI-friendly `${revision}`。`mango workspace init` 为当前 worktree 分配稳定的 `mango-<NNN>` 限定符；`mango dev plan/start` 从 reactor 根 POM 选择目标 app，执行 `-pl :<app-artifactId> -am -DskipTests clean compile spring-boot:run`，并注入限定的 `-Drevision`。每次后端启动或重启会先清理 Reactor 构建输出，避免已删除资源残留；不会安装 app fat JAR 到共享 Maven repository，`.m2` 仅复用第三方依赖和插件缓存。旧项目升级时必须把 reactor 根版本、子模块 parent 和内部模块依赖改为 `${revision}`，并配置根/parent Boot plugin `<skip>true</skip>`、app `<skip>false</skip>`；CLI 检测到不满足契约的 POM 会在执行 Maven 前明确失败。
 
 后端健康检查：
 
