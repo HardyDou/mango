@@ -2,20 +2,12 @@ import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync } 
 import { dirname, join, relative } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
+import { commandForPlatform, shouldUseShellForCommand } from './platform-command.mjs';
+
+export { commandForPlatform, shouldUseShellForCommand } from './platform-command.mjs';
 
 export const HOSTED_REGISTRY = process.env.MANGO_NPM_PUBLISH_REGISTRY || '';
 export const GROUP_REGISTRY = process.env.MANGO_NPM_CONSUME_REGISTRY || '';
-
-export function commandForPlatform(command) {
-  if (process.platform === 'win32' && ['npm', 'pnpm', 'npx'].includes(command)) {
-    return `${command}.cmd`;
-  }
-  return command;
-}
-
-export function shouldUseShellForCommand(command) {
-  return process.platform === 'win32' && /\.cmd$/iu.test(command);
-}
 
 export function readJson(path) {
   return JSON.parse(readFileSync(path, 'utf8'));

@@ -2460,9 +2460,10 @@ function assertDevWorkspaceUsesMavenReactor(projectRoot) {
     !mavenCall.includes('-pl :mango-full-acceptance-app') ||
     !mavenCall.includes('-am') ||
     !mavenCall.includes('-DskipTests') ||
+    !mavenCall.includes(' clean ') ||
     !mavenCall.includes(' compile ') ||
     !mavenCall.includes('spring-boot-maven-plugin') ||
-    /(?:^|\s)(?:clean|package|install)(?:\s|$)/u.test(mavenCall) ||
+    /(?:^|\s)(?:package|install)(?:\s|$)/u.test(mavenCall) ||
     mavenCall.includes(' -cp ')
   ) {
     throw new Error(

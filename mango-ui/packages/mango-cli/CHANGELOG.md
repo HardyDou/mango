@@ -1,5 +1,11 @@
 # @mango/cli Changelog
 
+## Unreleased
+
+### Fixed
+
+- Spring Boot 本地启动和重启统一执行 Reactor `clean compile + spring-boot:run`，清除 `target/classes` 中已从源码删除的 class、Mapper XML 和其它资源；继续禁止开发期 `install`、`package` 和 app fat JAR 写入共享 `.m2`。
+
 ## 1.0.103 - 2026-08-09
 
 ### Fixed

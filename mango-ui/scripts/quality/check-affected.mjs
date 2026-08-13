@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { resolveCommandForPlatform } from '../platform-command.mjs';
 import { readAffectedWorkspaces, selectAffectedWorkspaces } from './affected-selector-lib.mjs';
 import { createQualityCommandPlan } from './quality-command-plan-lib.mjs';
 
@@ -14,8 +15,13 @@ const head = process.argv.find((value) => value.startsWith('--head='))?.slice('-
 const profile = process.argv.find((value) => value.startsWith('--profile='))?.slice('--profile='.length) || 'deep';
 let report;
 
+function spawn(command, arguments_, options = {}) {
+  const resolved = resolveCommandForPlatform(command);
+  return spawnSync(resolved.command, arguments_, { ...options, shell: resolved.shell });
+}
+
 function git(arguments_) {
-  return spawnSync('git', arguments_, { cwd: repositoryRoot, encoding: 'utf8' });
+  return spawn('git', arguments_, { cwd: repositoryRoot, encoding: 'utf8' });
 }
 
 function resolveChanges() {
@@ -37,7 +43,7 @@ function resolveChanges() {
 }
 
 function run(command, arguments_) {
-  const result = spawnSync(command, arguments_, { cwd: uiRoot, stdio: 'inherit' });
+  const result = spawn(command, arguments_, { cwd: uiRoot, stdio: 'inherit' });
   if (result.status !== 0)
     throw new Error(`command failed (${result.status ?? 'signal'}): ${command} ${arguments_.join(' ')}`);
 }
@@ -46,7 +52,7 @@ try {
   const records = readAffectedWorkspaces(uiRoot);
   const changes = resolveChanges();
   const selection = selectAffectedWorkspaces(records, changes.changedPaths || [], changes);
-  const pnpmVersion = spawnSync('pnpm', ['--version'], { cwd: uiRoot, encoding: 'utf8' });
+  const pnpmVersion = spawn('pnpm', ['--version'], { cwd: uiRoot, encoding: 'utf8' });
   if (pnpmVersion.status !== 0) throw new Error('cannot resolve the active pnpm version');
   report = {
     schemaVersion: 1,
