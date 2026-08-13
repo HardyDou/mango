@@ -57,6 +57,17 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <groupId>io.mango.platform.file</groupId>
+            <artifactId>mango-file-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.mango.platform.file</groupId>
+            <artifactId>mango-file-core</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>io.mango.infra.event</groupId>
             <artifactId>mango-infra-event-api</artifactId>
             <version>${project.version}</version>
@@ -126,6 +137,11 @@
             <groupId>io.mango.infra.persistence</groupId>
             <artifactId>mango-infra-persistence-starter</artifactId>
             <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

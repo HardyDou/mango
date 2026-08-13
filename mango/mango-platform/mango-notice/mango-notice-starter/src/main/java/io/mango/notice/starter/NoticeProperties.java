@@ -9,6 +9,8 @@ public class NoticeProperties {
 
     private Outbox outbox = new Outbox();
 
+    private Inbound inbound = new Inbound();
+
     @Data
     public static class Outbox {
 
@@ -27,5 +29,27 @@ public class NoticeProperties {
         private long initialDelayMillis = 1000L;
 
         private long fixedDelayMillis = 1000L;
+    }
+
+    @Data
+    public static class Inbound {
+
+        private boolean enabled = false;
+
+        private int batchSize = 20;
+
+        private int maxAttempts = 5;
+
+        private long pollInitialDelayMillis = 5000L;
+
+        private long pollFixedDelayMillis = 60000L;
+
+        private long workerInitialDelayMillis = 3000L;
+
+        private long workerFixedDelayMillis = 5000L;
+
+        private long lockTtlSeconds = 120L;
+
+        private String workerId = "notice-inbound-worker";
     }
 }

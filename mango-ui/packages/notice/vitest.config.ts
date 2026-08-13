@@ -15,6 +15,7 @@ export default defineConfig({
     alias: {
       '@mango/admin-pages/core': resolve(repoRoot, 'packages/admin-pages/src/core.ts'),
       '@mango/common': resolve(repoRoot, 'packages/common'),
+      '@mango/file': resolve(repoRoot, 'packages/file/src/index.ts'),
       '@mango/http-client': resolve(repoRoot, 'packages/http-client/src/index.ts'),
       '@mango/notice/admin': resolve(repoRoot, 'packages/notice/src/admin.ts'),
       '@mango/notice/client': resolve(repoRoot, 'packages/notice/src/client.ts'),

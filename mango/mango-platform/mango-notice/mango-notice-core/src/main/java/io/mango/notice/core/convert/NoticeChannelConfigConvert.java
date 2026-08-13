@@ -20,7 +20,10 @@ public final class NoticeChannelConfigConvert {
                     "appSecret",
                     "accessKey",
                     "secretKey",
-                    "smtpPassword");
+                    "smtpPassword",
+                    "callbackToken",
+                    "encodingAesKey",
+                    "callbackEncodingAesKey");
 
     private NoticeChannelConfigConvert() {}
 
@@ -29,6 +32,7 @@ public final class NoticeChannelConfigConvert {
         vo.setId(entity.getId());
         vo.setConfigCode(entity.getConfigCode());
         vo.setChannelType(entity.getChannelType());
+        vo.setCapabilityMode(entity.getCapabilityMode());
         vo.setProviderCode(entity.getProviderCode());
         vo.setConfigName(entity.getConfigName());
         vo.setConfigJson(mask(entity.getConfigJson()));

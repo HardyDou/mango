@@ -23,6 +23,7 @@ import io.mango.notice.api.enums.NoticeChannelType;
 import io.mango.notice.api.query.NoticeBusinessTypePageQuery;
 import io.mango.notice.api.query.NoticeChannelConfigPageQuery;
 import io.mango.notice.api.query.NoticeChannelReferenceImpactQuery;
+import io.mango.notice.api.query.NoticeInboundMessagePageQuery;
 import io.mango.notice.api.query.NoticeReceivePreferenceQuery;
 import io.mango.notice.api.query.NoticeRecipientAccountQuery;
 import io.mango.notice.api.query.NoticeRouteTagQuery;
@@ -34,6 +35,7 @@ import io.mango.notice.api.vo.NoticeBusinessTypeVO;
 import io.mango.notice.api.vo.NoticeChannelConfigVO;
 import io.mango.notice.api.vo.NoticeChannelReferenceImpactVO;
 import io.mango.notice.api.vo.NoticeChannelTemplateVO;
+import io.mango.notice.api.vo.NoticeInboundMessageVO;
 import io.mango.notice.api.vo.NoticeReceivePreferenceVO;
 import io.mango.notice.api.vo.NoticeRecipientAccountVO;
 import io.mango.notice.api.vo.NoticeRouteTagVO;
@@ -115,6 +117,10 @@ public interface NoticeApi {
     R<PageResult<NoticeTaskVO>> listTasks(@Valid NoticeTaskPageQuery query);
 
     R<PageResult<NoticeSendRecordVO>> listSendRecords(@Valid NoticeSendRecordPageQuery query);
+
+    R<PageResult<NoticeInboundMessageVO>> listInboundMessages(@Valid NoticeInboundMessagePageQuery query);
+
+    R<NoticeInboundMessageVO> getInboundMessage(@Positive Long id);
 
     R<Boolean> retrySendRecord(@Positive Long id);
 

@@ -28,6 +28,7 @@ import io.mango.notice.api.enums.NoticeChannelType;
 import io.mango.notice.api.query.NoticeBusinessTypePageQuery;
 import io.mango.notice.api.query.NoticeChannelConfigPageQuery;
 import io.mango.notice.api.query.NoticeChannelReferenceImpactQuery;
+import io.mango.notice.api.query.NoticeInboundMessagePageQuery;
 import io.mango.notice.api.query.NoticeReceivePreferenceQuery;
 import io.mango.notice.api.query.NoticeRecipientAccountQuery;
 import io.mango.notice.api.query.NoticeRouteTagQuery;
@@ -39,6 +40,7 @@ import io.mango.notice.api.vo.NoticeBusinessTypeVO;
 import io.mango.notice.api.vo.NoticeChannelConfigVO;
 import io.mango.notice.api.vo.NoticeChannelReferenceImpactVO;
 import io.mango.notice.api.vo.NoticeChannelTemplateVO;
+import io.mango.notice.api.vo.NoticeInboundMessageVO;
 import io.mango.notice.api.vo.NoticeReceivePreferenceVO;
 import io.mango.notice.api.vo.NoticeRecipientAccountVO;
 import io.mango.notice.api.vo.NoticeRouteTagVO;
@@ -327,6 +329,24 @@ public class NoticeController implements NoticeApi {
     public R<PageResult<NoticeSendRecordVO>> listSendRecords(
             @ParameterObject NoticeSendRecordPageQuery query) {
         return R.ok(noticeService.listSendRecords(query));
+    }
+
+    @Override
+    @GetMapping("/inbound-messages")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:inbound:view")
+    @Operation(summary = "查询接收消息", description = "管理端分页查询邮件和企业微信入站消息")
+    public R<PageResult<NoticeInboundMessageVO>> listInboundMessages(
+            @ParameterObject NoticeInboundMessagePageQuery query) {
+        return R.ok(noticeService.listInboundMessages(query));
+    }
+
+    @Override
+    @GetMapping("/inbound-messages/detail")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:inbound:view")
+    @Operation(summary = "查询接收消息详情", description = "管理端查询入站消息正文、广播状态和附件文件引用")
+    public R<NoticeInboundMessageVO> getInboundMessage(
+            @Parameter(description = "入站消息ID", required = true) @RequestParam("id") Long id) {
+        return R.ok(noticeService.getInboundMessage(id));
     }
 
     @Override

@@ -5,6 +5,7 @@ import type {
   NoticeAnnouncementStats,
   NoticeBusinessType,
   NoticeDomainOption,
+  NoticeInboundMessage,
   NoticeChannelConfig,
   NoticeChannelTemplate,
   NoticeChannelType,
@@ -258,6 +259,14 @@ export function getNoticeTasks(params?: Record<string, unknown>) {
 
 export function getSendRecords(params?: Record<string, unknown>) {
   return get<PageResult<NoticeSendRecord>>('/notice/records', { params });
+}
+
+export function getInboundMessages(params?: Record<string, unknown>) {
+  return get<PageResult<NoticeInboundMessage>>('/notice/inbound-messages', { params });
+}
+
+export function getInboundMessage(id: string) {
+  return get<NoticeInboundMessage>('/notice/inbound-messages/detail', { params: { id } });
 }
 
 export function retrySendRecord(id: string) {

@@ -17,6 +17,7 @@ import io.mango.notice.api.command.SaveNoticeChannelTemplateCommand;
 import io.mango.notice.api.command.SaveNoticeRouteTagCommand;
 import io.mango.notice.api.command.UpdateNoticeBusinessTypeCommand;
 import io.mango.notice.api.enums.NoticeChannelConfigStatus;
+import io.mango.notice.api.enums.NoticeChannelCapabilityMode;
 import io.mango.notice.api.enums.NoticeChannelRouteMode;
 import io.mango.notice.api.enums.NoticeChannelSecretStatus;
 import io.mango.notice.api.enums.NoticeChannelSendHealthStatus;
@@ -57,6 +58,7 @@ import io.mango.notice.core.mapper.NoticeChannelRouteTagMapper;
 import io.mango.notice.core.mapper.NoticeTaskMapper;
 import io.mango.notice.core.service.INoticeConfigurationService;
 import io.mango.notice.core.service.NoticeChannelSecretMaterializer;
+import io.mango.notice.core.service.NoticeChannelCapabilityPolicy;
 
 import lombok.RequiredArgsConstructor;
 
@@ -98,7 +100,10 @@ public class NoticeConfigurationService implements INoticeConfigurationService {
                     "accesssecret",
                     "secretkey",
                     "smtppassword",
-                    "corpsecret");
+                    "corpsecret",
+                    "callbacktoken",
+                    "encodingaeskey",
+                    "callbackencodingaeskey");
 
     private final NoticeBusinessTypeMapper businessTypeMapper;
     private final NoticeBusinessConfigVersionMapper businessConfigVersionMapper;
@@ -491,6 +496,13 @@ public class NoticeConfigurationService implements INoticeConfigurationService {
     public NoticeChannelConfigVO saveChannelConfig(SaveNoticeChannelConfigCommand command) {
         Require.notNull(command, NoticeCode.NOTICE_BUSINESS_ERROR, "渠道配置不能为空");
         Require.notNull(command.getChannelType(), NoticeCode.NOTICE_BUSINESS_ERROR, "渠道类型不能为空");
+        NoticeChannelCapabilityMode capabilityMode =
+                NoticeChannelCapabilityPolicy.normalize(command.getCapabilityMode());
+        Require.isTrue(
+                NoticeChannelCapabilityPolicy.supportsMode(command.getChannelType(), capabilityMode),
+                NoticeCode.NOTICE_BUSINESS_ERROR,
+                "当前渠道仅支持发送用途");
+        command.setCapabilityMode(capabilityMode);
         NoticeChannelConfigEntity entity = loadChannelConfig(command.getId());
         boolean resourceManaged = isResourceManaged(entity);
         initializeOrValidateConfigIdentity(entity, command.getConfigCode());
@@ -549,6 +561,15 @@ public class NoticeConfigurationService implements INoticeConfigurationService {
                     NoticeCode.NOTICE_BUSINESS_ERROR,
                     "渠道已被消息配置引用，不能停用");
         }
+        if (!resourceManaged
+                && entity.getId() != null
+                && NoticeChannelCapabilityPolicy.normalize(entity.getCapabilityMode()).supportsSend()
+                && !NoticeChannelCapabilityPolicy.normalize(command.getCapabilityMode()).supportsSend()) {
+            Require.isTrue(
+                    referencingTemplatesForConfig(entity.getId()).isEmpty(),
+                    NoticeCode.NOTICE_BUSINESS_ERROR,
+                    "渠道已被消息配置引用，不能改为仅接收");
+        }
         if (command.getRouteTagCodes() != null && entity.getId() != null) {
             validateRouteTagRemovals(entity, command.getRouteTagCodes());
         }
@@ -563,6 +584,7 @@ public class NoticeConfigurationService implements INoticeConfigurationService {
             return;
         }
         entity.setChannelType(command.getChannelType());
+        entity.setCapabilityMode(command.getCapabilityMode());
         entity.setProviderCode(command.getProviderCode());
         entity.setConfigName(command.getConfigName());
         entity.setConfigJson(toJson(submittedConfig));
@@ -593,11 +615,12 @@ public class NoticeConfigurationService implements INoticeConfigurationService {
         Map<String, Object> effectiveConfig = effectiveConfig(entity);
         entity.setSecretStatus(
                 resolveSecretStatus(
-                        entity.getChannelType(), entity.getProviderCode(), effectiveConfig));
+                        entity.getChannelType(), entity.getProviderCode(), entity.getCapabilityMode(), effectiveConfig));
         entity.setConfigStatus(
                 resolveConfigStatus(
                         entity.getChannelType(),
                         entity.getProviderCode(),
+                        entity.getCapabilityMode(),
                         toJson(effectiveConfig)));
         if (entity.getLastSendStatus() == null) {
             entity.setLastSendStatus(NoticeChannelSendHealthStatus.NONE);
@@ -846,6 +869,10 @@ public class NoticeConfigurationService implements INoticeConfigurationService {
                     config.getConfigStatus() == NoticeChannelConfigStatus.COMPLETE,
                     NoticeCode.NOTICE_BUSINESS_ERROR,
                     "所选渠道账号配置不完整");
+            Require.isTrue(
+                    NoticeChannelCapabilityPolicy.normalize(config.getCapabilityMode()).supportsSend(),
+                    NoticeCode.NOTICE_BUSINESS_ERROR,
+                    "所选渠道账号用途不允许发送");
             return;
         }
         Require.isTrue(
@@ -1035,55 +1062,23 @@ public class NoticeConfigurationService implements INoticeConfigurationService {
     private NoticeChannelSecretStatus resolveSecretStatus(
             NoticeChannelType channelType,
             String providerCode,
+            NoticeChannelCapabilityMode capabilityMode,
             Map<String, Object> effectiveConfig) {
         if (channelType == NoticeChannelType.SITE) {
             return NoticeChannelSecretStatus.NOT_REQUIRED;
         }
-        return missingSecretKeys(channelType, providerCode, effectiveConfig).isEmpty()
+        return missingSecretKeys(channelType, providerCode, capabilityMode, effectiveConfig).isEmpty()
                 ? NoticeChannelSecretStatus.COMPLETE
                 : NoticeChannelSecretStatus.INCOMPLETE;
     }
 
     private List<String> missingSecretKeys(
-            NoticeChannelType channelType, String providerCode, Map<String, Object> config) {
-        List<String> missing = new ArrayList<>();
-        if (channelType == NoticeChannelType.SITE) {
-            return missing;
-        }
-        switch (channelType) {
-            case EMAIL -> {
-                if ("ALIYUN_DM".equals(providerCode)) {
-                    if (!hasAnyText(config, "accessKeySecret", "accessSecret")) {
-                        missing.add("accessKeySecret");
-                    }
-                } else if (!hasAnyText(config, "password", "smtpPassword")) {
-                    missing.add("password");
-                }
-            }
-            case SMS -> {
-                if ("TENCENT_SMS".equals(providerCode)) {
-                    if (!hasAnyText(config, "secretKey")) {
-                        missing.add("secretKey");
-                    }
-                } else if (!hasAnyText(config, "accessKeySecret", "accessSecret")) {
-                    missing.add("accessKeySecret");
-                }
-            }
-            case WECHAT_OFFICIAL, DINGTALK -> {
-                if (!hasAnyText(config, "appSecret", "secret", "webhookUrl")) {
-                    missing.add("appSecret");
-                }
-            }
-            case WECOM -> {
-                if (!hasAnyText(config, "secret", "corpSecret", "webhookUrl")) {
-                    missing.add("secret");
-                }
-            }
-            default ->
-                    Require.isTrue(
-                            false, NoticeCode.NOTICE_BUSINESS_ERROR, "不支持的通知渠道类型：" + channelType);
-        }
-        return missing;
+            NoticeChannelType channelType,
+            String providerCode,
+            NoticeChannelCapabilityMode capabilityMode,
+            Map<String, Object> config) {
+        return NoticeChannelCapabilityPolicy.missingSecretKeys(
+                channelType, providerCode, capabilityMode, config);
     }
 
     private void replaceConfigRouteTags(
@@ -1122,7 +1117,11 @@ public class NoticeConfigurationService implements INoticeConfigurationService {
         NoticeChannelConfigVO vo = NoticeChannelConfigConvert.toVO(entity);
         Map<String, Object> effective = effectiveConfig(entity);
         vo.setMissingSecretKeys(
-                missingSecretKeys(entity.getChannelType(), entity.getProviderCode(), effective));
+                missingSecretKeys(
+                        entity.getChannelType(),
+                        entity.getProviderCode(),
+                        entity.getCapabilityMode(),
+                        effective));
         List<NoticeChannelConfigRouteTagEntity> relations =
                 configRouteTagMapper.selectList(
                         new LambdaQueryWrapper<NoticeChannelConfigRouteTagEntity>()
@@ -1259,7 +1258,10 @@ public class NoticeConfigurationService implements INoticeConfigurationService {
     }
 
     private NoticeChannelConfigStatus resolveConfigStatus(
-            NoticeChannelType channelType, String providerCode, String configJson) {
+            NoticeChannelType channelType,
+            String providerCode,
+            NoticeChannelCapabilityMode capabilityMode,
+            String configJson) {
         if (channelType == NoticeChannelType.SITE) {
             return NoticeChannelConfigStatus.COMPLETE;
         }
@@ -1267,14 +1269,9 @@ public class NoticeConfigurationService implements INoticeConfigurationService {
         if (config.isEmpty()) {
             return NoticeChannelConfigStatus.INCOMPLETE;
         }
-        return switch (channelType) {
-            case SMS -> resolveSmsConfigStatus(providerCode, config);
-            case EMAIL -> resolveEmailConfigStatus(providerCode, config);
-            case WECHAT_OFFICIAL -> resolveWechatOfficialConfigStatus(config);
-            case WECOM -> resolveWecomConfigStatus(config);
-            case DINGTALK -> resolveDingtalkConfigStatus(config);
-            case SITE -> NoticeChannelConfigStatus.COMPLETE;
-        };
+        return configStatus(
+                NoticeChannelCapabilityPolicy.isConfigComplete(
+                        channelType, providerCode, capabilityMode, config));
     }
 
     private NoticeChannelConfigStatus resolveWechatOfficialConfigStatus(

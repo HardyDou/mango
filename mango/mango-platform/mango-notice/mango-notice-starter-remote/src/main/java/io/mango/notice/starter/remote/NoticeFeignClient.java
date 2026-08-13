@@ -24,6 +24,7 @@ import io.mango.notice.api.enums.NoticeChannelType;
 import io.mango.notice.api.query.NoticeBusinessTypePageQuery;
 import io.mango.notice.api.query.NoticeChannelConfigPageQuery;
 import io.mango.notice.api.query.NoticeChannelReferenceImpactQuery;
+import io.mango.notice.api.query.NoticeInboundMessagePageQuery;
 import io.mango.notice.api.query.NoticeReceivePreferenceQuery;
 import io.mango.notice.api.query.NoticeRecipientAccountQuery;
 import io.mango.notice.api.query.NoticeRouteTagQuery;
@@ -35,6 +36,7 @@ import io.mango.notice.api.vo.NoticeBusinessTypeVO;
 import io.mango.notice.api.vo.NoticeChannelConfigVO;
 import io.mango.notice.api.vo.NoticeChannelReferenceImpactVO;
 import io.mango.notice.api.vo.NoticeChannelTemplateVO;
+import io.mango.notice.api.vo.NoticeInboundMessageVO;
 import io.mango.notice.api.vo.NoticeReceivePreferenceVO;
 import io.mango.notice.api.vo.NoticeRecipientAccountVO;
 import io.mango.notice.api.vo.NoticeRouteTagVO;
@@ -183,6 +185,15 @@ public interface NoticeFeignClient extends NoticeApi {
     @GetMapping("/records")
     R<PageResult<NoticeSendRecordVO>> listSendRecords(
             @SpringQueryMap NoticeSendRecordPageQuery query);
+
+    @Override
+    @GetMapping("/inbound-messages")
+    R<PageResult<NoticeInboundMessageVO>> listInboundMessages(
+            @SpringQueryMap NoticeInboundMessagePageQuery query);
+
+    @Override
+    @GetMapping("/inbound-messages/detail")
+    R<NoticeInboundMessageVO> getInboundMessage(@RequestParam("id") Long id);
 
     @Override
     @PostMapping("/records/retry")

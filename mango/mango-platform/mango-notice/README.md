@@ -29,6 +29,25 @@
 | 接收偏好 | 维护用户或范围级渠道开关 | `/notice/receive-preferences` |
 | 个人可用消息类型 | 查询当前租户已启用的消息类型 | `/notice/site/business-types` |
 | 我的站内信 | 查询未读数、未读分类统计、分类列表、详情、已读和删除 | `/notice/site/my/**` |
+| 消息接收 | 邮箱 IMAP/POP3 定时拉取、企业微信回调，以及可扩展的邮箱 provider Webhook SPI | `GET/POST /notice/inbound-callbacks/public?channelConfigId={id}`、`POST /notice/inbound-mail-callbacks/public?channelConfigId={id}` |
+
+### 2.1 消息接收（Issue #765 首版）
+
+接收能力归属 Notice 的 inbound core：渠道适配器只负责验真、解密或读取协议并产出
+`InboundNoticeMessage`，接收服务负责 Inbox 幂等、附件归档和广播。正式接收完成后发布
+`notice.message.received` 领域事件，下游服务按 `eventId` 幂等消费；事件 payload 包含轻量消息元数据
+和附件 `fileIds`，不包含正文、HTML、附件二进制、对象 URL、预签名地址或 Secret。
+
+首版邮箱账号按配置选择一种协议：IMAP（UIDVALIDITY + UID 游标）或 POP3（UIDL 游标）。
+网易 126/163 等服务要求 IMAP ID 客户端身份声明；配置邮箱账号时可选设置 `inboundClientName`，
+客户端会同时发送 name、vendor、version 和 contact-address，避免被服务器判定为 Unsafe Login。
+轮询只在消息已写入 Inbox、附件已通过 `mango-file` 保存并取得 fileId 后推进游标；任一步骤失败
+都会保留可重试状态，不向邮箱或 provider 返回伪成功。企业微信 GET 验证只返回解密后的
+`echostr` 且不写业务表，POST 才进入统一接收链路。
+
+公网回调通过 `channelConfigId` 映射已启用的租户渠道配置，租户不接受请求参数传入。邮箱
+Webhook 保留 `NoticeInboundWebhookProvider` SPI；未注册经过验真的真实收件适配器时明确拒绝。
+当前阿里云、腾讯云仅在取得官方真实收件契约并实现适配器后启用，发送回执不能冒充收件能力。
 
 ## 3. 后端接入
 
@@ -432,6 +451,148 @@ Resource 的 `configJson` 禁止明文 Secret，`secretRefs` 首批支持 `env:N
 
 通知 outbox 写入 `topic=notice`、`eventType=notice.send`，后台 worker 只通过 `claimByTopic(..., OutboxTopics.NOTICE, ...)` 获取通知发送任务。历史无 topic 的 `notice.send` 消息会被 KV outbox 推断为通知消息，升级时不需要额外数据迁移。
 
+### 7.5 入站消息总开关
+
+邮件定时拉取和入站消息广播 worker 默认关闭。部署 Notice 接收能力时启用：
+
+```yaml
+mango:
+  notice:
+    inbound:
+      enabled: true
+      batch-size: 20
+      max-attempts: 5
+      poll-initial-delay-millis: 5000
+      poll-fixed-delay-millis: 60000
+      worker-initial-delay-millis: 3000
+      worker-fixed-delay-millis: 5000
+      lock-ttl-seconds: 120
+      worker-id: notice-inbound-worker
+```
+
+`poll-fixed-delay-millis` 是调度器扫描渠道账号的周期；单个邮箱账号还可以通过
+`inboundPollIntervalSeconds` 设置自己的最小轮询间隔。多实例部署时由租约锁按租户和
+`channelConfigId` 避免并发拉取同一账号。
+
+### 7.6 企业微信消息接收
+
+先在“平台能力 -> 通知管理 -> 渠道配置”创建 `WECOM` 渠道，保存后取得渠道配置 ID。
+回调接收所需字段如下：
+
+| 字段 | 保存位置 | 含义 |
+|---|---|---|
+| `corpId` | 非敏感配置 | 企业 ID；配置后会校验密文尾部的接收方 ID |
+| `callbackToken` | Secret | 企业微信消息推送页面填写的 Token |
+| `encodingAesKey` | Secret | 企业微信消息推送页面填写的 43 位 EncodingAESKey |
+| `agentId` / `secret` | 非敏感配置 / Secret | 同一渠道还承担应用消息发送时填写；只接收回调时不参与验签解密 |
+
+管理页面填写 `callbackToken` 和 `encodingAesKey` 后会把它们从 `configJson` 分离到
+Secret 存储，查询和详情不回显原值。Resource 声明也可以通过 Secret 引用配置：
+
+```json
+{
+  "configJson": {
+    "corpId": "ww_example_corp_id"
+  },
+  "secretRefs": {
+    "callbackToken": "env:MANGO_WECOM_CALLBACK_TOKEN",
+    "encodingAesKey": "env:MANGO_WECOM_CALLBACK_AES_KEY"
+  }
+}
+```
+
+企业微信后台的回调地址不能填写域名根路径。将公网反向代理转发到 Notice 后端后，填写：
+
+```text
+https://<公网域名>/notice/inbound-callbacks/public?channelConfigId=<渠道配置ID>
+```
+
+例如当前公网域名对应的路径形式是：
+
+```text
+https://oauth.yuanfenghangdanbao.com/notice/inbound-callbacks/public?channelConfigId=<渠道配置ID>
+```
+
+该路径的 GET 和 POST 都是 `PUBLIC` 资源，不要求登录态。`PUBLIC` 只表示不经过用户登录认证：
+服务仍会按 `channelConfigId` 加载已启用的租户渠道配置，校验 SHA-1 签名、AES-CBC 密文、
+PKCS#7 填充和可选 `corpId`。GET 验证成功后返回解密的 `echostr`，不保存消息；POST 验签、
+解密和可靠接收完成后返回纯文本 `success`。
+
+企业微信后台保存失败时依次检查：公网路径是否仍落到 `/`、反向代理是否把 query string
+原样转发、渠道 ID 是否存在且启用、Token/EncodingAESKey 是否与企业微信后台完全一致、
+`corpId` 是否与密文接收方一致。不要只依据 HTTP 200 判断成功；当前统一异常处理可能把业务
+错误包装为 HTTP 200，需要同时检查响应体是否为解密明文或 `success`。
+
+### 7.7 邮箱消息接收
+
+邮箱拉取复用 `EMAIL` 渠道账号。发送配置和接收配置可以保存在同一渠道；接收密码使用
+`inboundPassword`，不会因 SMTP 密码不同而混用。管理页面切换到 JSON 模式补充非敏感字段，
+密码字段由页面自动拆入 Secret 存储。
+
+渠道用途由渠道配置顶层字段 `capabilityMode` 显式决定：`SEND` 为仅发送、`RECEIVE` 为仅接收、
+`BOTH` 为收发一体。历史配置迁移后默认为 `SEND`；系统不会根据是否填写 IMAP、Token 或
+EncodingAESKey 猜测用途。当前只有 `EMAIL` 和 `WECOM` 支持接收，其它渠道只能选择 `SEND`。
+
+IMAP 示例：
+
+```json
+{
+  "host": "smtp.example.com",
+  "port": 465,
+  "username": "mailbox@example.com",
+  "from": "mailbox@example.com",
+  "ssl": true,
+  "inboundProtocol": "IMAP",
+  "inboundHost": "imap.example.com",
+  "inboundPort": 993,
+  "inboundSsl": true,
+  "inboundUsername": "mailbox@example.com",
+  "inboundClientName": "mango",
+  "inboundPollIntervalSeconds": 60
+}
+```
+
+POP3 只需要把协议和服务器改为对应值，例如：
+
+```json
+{
+  "inboundProtocol": "POP3",
+  "inboundHost": "pop.example.com",
+  "inboundPort": 995,
+  "inboundSsl": true,
+  "inboundUsername": "mailbox@example.com",
+  "inboundPollIntervalSeconds": 60
+}
+```
+
+Secret 通过管理页面分别填写 `password`（SMTP）和 `inboundPassword`（IMAP/POP3 客户端授权码），
+或者在 Resource 的 `secretRefs` 中引用：
+
+```json
+{
+  "password": "env:MANGO_MAIL_SMTP_PASSWORD",
+  "inboundPassword": "env:MANGO_MAIL_INBOUND_PASSWORD"
+}
+```
+
+同一个邮箱账号选择 IMAP 或 POP3 其中一种作为正式拉取协议，避免双协议重复扫描。IMAP 使用
+`UIDVALIDITY + UID` 游标，POP3 使用 UIDL 游标；游标只在 Inbox 和附件 File ID 可靠保存后推进。
+阿里云、腾讯云邮箱 Webhook 只有注册了实现验真和标准化的 `NoticeInboundWebhookProvider` 后才可用，
+发送、退信、打开或点击回执不会被当作收件消息。
+
+### 7.8 入站验收入口
+
+管理人员登录 Mango Admin 后，从“平台能力 -> 通知管理”进入：
+
+| 验收位置 | 页面路径 | 权限 | 检查内容 |
+|---|---|---|---|
+| 渠道配置 | `/#/notice/channel` | `notice:channel:view`、`notice:channel:create`、`notice:channel:edit` | 渠道 ID、启用状态、非敏感参数和 Secret 完整性 |
+| 接收消息 | `/#/notice/inbound` | `notice:inbound:view` | 邮件/企业微信列表、状态、详情、附件 File 下载和广播结果 |
+
+列表接口为 `GET /notice/inbound-messages`，详情接口为
+`GET /notice/inbound-messages/detail?id=<消息ID>`。列表不返回正文和附件，详情才返回正文与附件
+File ID；页面按文本显示 HTML 正文，不执行邮件 HTML。接收消息是管理员运营数据，不进入个人消息中心。
+
 ## 8. 资源注入
 
 通知中心内置站内信渠道通过 `mango-resource` 注入。通知模块也会声明自己的业务域，业务模块可用同一资源协议向通知中心注入消息模板。资源文件放在：
@@ -661,6 +822,7 @@ notice:announcement:offline
 | 消息配置 | `/notice/message-definition` | `notice/message-definition/index` | 是 |
 | 发送任务 | `/notice/send-message` | `notice/send-message/index` | 是 |
 | 渠道配置 | `/notice/channel` | `notice/channel/index` | 是 |
+| 接收消息 | `/notice/inbound` | `notice/inbound/index` | 是 |
 | 发送记录 | `/notice/record` | `notice/record/index` | 是 |
 | 失败重试 | `/notice/retry` | `notice/retry/index` | 是 |
 | 接收配置 | `/message-center/receive-setting` | `notice/receive-setting/index` | 是 |
@@ -684,7 +846,7 @@ Flyway 路径为 `mango-notice-core/src/main/resources/db/migration/notice`。`V
 
 Notice 当前不提供演示数据。以后新增示例业务或示例账号时，必须放入 `mango-notice-starter/src/main/resources/META-INF/mango/demo/`，文件使用 `notice-demo-` 前缀并采用 `INIT_ONLY`；只有显式设置 `mango.resource.registry.demo-enabled=true` 才能加载，禁止写回 Flyway 或正式资源目录。
 
-核心表包括 `notice_announcement`、`notice_announcement_recipient`、`notice_announcement_target`、`notice_audit_log`、`notice_business_channel_template`、`notice_business_config_version`、`notice_business_type`、`notice_callback_log`、`notice_channel_config`、`notice_channel_route_tag`、`notice_channel_config_route_tag`、`notice_receive_preference`、`notice_recipient`、`notice_recipient_account`、`notice_retry_log`、`notice_send_record`、`notice_setting`、`notice_site_message`、`notice_site_message_action`、`notice_site_message_action_request`、`notice_task`、`notice_wecom_sync_mapping`。
+核心表包括 `notice_announcement`、`notice_announcement_recipient`、`notice_announcement_target`、`notice_audit_log`、`notice_business_channel_template`、`notice_business_config_version`、`notice_business_type`、`notice_callback_log`、`notice_channel_config`、`notice_channel_route_tag`、`notice_channel_config_route_tag`、`notice_inbound_message`、`notice_inbound_attachment`、`notice_inbound_receive_cursor`、`notice_receive_preference`、`notice_recipient`、`notice_recipient_account`、`notice_retry_log`、`notice_send_record`、`notice_setting`、`notice_site_message`、`notice_site_message_action`、`notice_site_message_action_request`、`notice_task`、`notice_wecom_sync_mapping`。
 
 通知异步分发依赖 `mango-infra-kv` outbox。部署时要确认 outbox 存储可用，否则任务可能创建成功但不会被后台 worker 分发。
 

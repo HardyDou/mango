@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.notice.api.enums.NoticeChannelConfigStatus;
+import io.mango.notice.api.enums.NoticeChannelCapabilityMode;
 import io.mango.notice.api.enums.NoticeChannelSecretStatus;
 import io.mango.notice.api.enums.NoticeChannelSendHealthStatus;
 import io.mango.notice.api.enums.NoticeChannelType;
@@ -17,6 +18,7 @@ import io.mango.notice.core.entity.NoticeChannelRouteTagEntity;
 import io.mango.notice.core.mapper.NoticeChannelConfigMapper;
 import io.mango.notice.core.mapper.NoticeChannelConfigRouteTagMapper;
 import io.mango.notice.core.mapper.NoticeChannelRouteTagMapper;
+import io.mango.notice.core.service.NoticeChannelCapabilityPolicy;
 import io.mango.resource.support.ResourceHandler;
 import io.mango.resource.support.ResourceTypes;
 import io.mango.resource.support.model.ResourceDeclaration;
@@ -57,7 +59,10 @@ public class NoticeChannelResourceHandler implements ResourceHandler {
                     "accesssecret",
                     "secretkey",
                     "smtppassword",
-                    "corpsecret");
+                    "corpsecret",
+                    "callbacktoken",
+                    "encodingaeskey",
+                    "callbackencodingaeskey");
 
     private final NoticeChannelConfigMapper channelConfigMapper;
     private final NoticeChannelRouteTagMapper routeTagMapper;
@@ -80,6 +85,7 @@ public class NoticeChannelResourceHandler implements ResourceHandler {
                 .fieldDescription("configCode", "通知渠道配置稳定编码；同租户唯一，发布后不可变。")
                 .fieldDescription(
                         "channelType", "渠道类型：SITE、SMS、EMAIL、WECHAT_OFFICIAL、WECOM、DINGTALK。")
+                .fieldDescription("capabilityMode", "渠道用途：SEND、RECEIVE 或 BOTH；默认 SEND。")
                 .fieldDescription("providerCode", "渠道服务商编码，同一租户同一渠道内唯一。")
                 .fieldDescription("configName", "渠道配置名称。")
                 .fieldDescription("configJson", "非敏感渠道配置 JSON；出现明文 Secret 将拒绝同步。")
@@ -101,6 +107,10 @@ public class NoticeChannelResourceHandler implements ResourceHandler {
     }
 
     private ResourceSyncResult upsertInTenant(ChannelPayload payload) {
+        if (!NoticeChannelCapabilityPolicy.supportsMode(
+                payload.channelType(), payload.capabilityMode())) {
+            throw new IllegalStateException("MESSAGE_CHANNEL capabilityMode only supports SEND for this channel");
+        }
         NoticeChannelConfigEntity entity = find(payload.tenantId(), payload.configCode());
         if (entity == null) {
             entity = new NoticeChannelConfigEntity();
@@ -175,6 +185,7 @@ public class NoticeChannelResourceHandler implements ResourceHandler {
     private void apply(NoticeChannelConfigEntity entity, ChannelPayload payload) {
         LocalDateTime now = LocalDateTime.now();
         entity.setChannelType(payload.channelType());
+        entity.setCapabilityMode(payload.capabilityMode());
         entity.setConfigCode(payload.configCode());
         entity.setProviderCode(payload.providerCode());
         entity.setConfigName(payload.configName());
@@ -188,6 +199,7 @@ public class NoticeChannelResourceHandler implements ResourceHandler {
                 toJson(
                         List.of(
                                 "channelType",
+                                "capabilityMode",
                                 "providerCode",
                                 "configName",
                                 "configJson",
@@ -202,6 +214,7 @@ public class NoticeChannelResourceHandler implements ResourceHandler {
                 resolveSecretStatus(
                         payload.channelType(),
                         payload.providerCode(),
+                        payload.capabilityMode(),
                         payload.configJson(),
                         payload.secretRefs(),
                         manualSecrets));
@@ -212,6 +225,7 @@ public class NoticeChannelResourceHandler implements ResourceHandler {
                 resolveConfigStatus(
                         payload.channelType(),
                         payload.providerCode(),
+                        payload.capabilityMode(),
                         payload.configJson(),
                         payload.secretRefs(),
                         manualSecrets));
@@ -381,6 +395,7 @@ public class NoticeChannelResourceHandler implements ResourceHandler {
     private static NoticeChannelSecretStatus resolveSecretStatus(
             NoticeChannelType channelType,
             String providerCode,
+            NoticeChannelCapabilityMode capabilityMode,
             String configJson,
             Map<String, String> refs,
             Map<String, String> manualSecrets) {
@@ -391,11 +406,49 @@ public class NoticeChannelResourceHandler implements ResourceHandler {
                 new LinkedHashMap<>(objectMap(configJson, "Invalid channel config"));
         refs.keySet().forEach(key -> effective.put(key, "referenced"));
         manualSecrets.forEach(effective::putIfAbsent);
-        boolean complete = isSecretComplete(channelType, providerCode, effective);
+        NoticeChannelCapabilityMode mode = NoticeChannelCapabilityPolicy.normalize(capabilityMode);
+        boolean complete = (!mode.supportsSend()
+                        || isSendSecretComplete(channelType, providerCode, effective))
+                && (!mode.supportsReceive()
+                        || NoticeChannelCapabilityPolicy.missingSecretKeys(
+                                        channelType,
+                                        providerCode,
+                                        NoticeChannelCapabilityMode.RECEIVE,
+                                        effective)
+                                .isEmpty());
         return complete ? NoticeChannelSecretStatus.COMPLETE : NoticeChannelSecretStatus.INCOMPLETE;
     }
 
-    private static boolean isSecretComplete(
+    private static NoticeChannelConfigStatus resolveConfigStatus(
+            NoticeChannelType channelType,
+            String providerCode,
+            NoticeChannelCapabilityMode capabilityMode,
+            String configJson,
+            Map<String, String> refs,
+            Map<String, String> manualSecrets) {
+        if (channelType == NoticeChannelType.SITE) {
+            return NoticeChannelConfigStatus.COMPLETE;
+        }
+        Map<String, Object> config =
+                new LinkedHashMap<>(objectMap(configJson, "Invalid channel config"));
+        refs.keySet().forEach(key -> config.put(key, "referenced"));
+        manualSecrets.forEach(config::putIfAbsent);
+        if (config.isEmpty()) {
+            return NoticeChannelConfigStatus.INCOMPLETE;
+        }
+        NoticeChannelCapabilityMode mode = NoticeChannelCapabilityPolicy.normalize(capabilityMode);
+        boolean complete = (!mode.supportsSend()
+                        || isSendConfigComplete(channelType, providerCode, config))
+                && (!mode.supportsReceive()
+                        || NoticeChannelCapabilityPolicy.isConfigComplete(
+                                channelType,
+                                providerCode,
+                                NoticeChannelCapabilityMode.RECEIVE,
+                                config));
+        return complete ? NoticeChannelConfigStatus.COMPLETE : NoticeChannelConfigStatus.INCOMPLETE;
+    }
+
+    private static boolean isSendSecretComplete(
             NoticeChannelType channelType, String providerCode, Map<String, Object> config) {
         return switch (channelType) {
             case EMAIL ->
@@ -413,30 +466,10 @@ public class NoticeChannelResourceHandler implements ResourceHandler {
         };
     }
 
-    private static NoticeChannelConfigStatus resolveConfigStatus(
-            NoticeChannelType channelType,
-            String providerCode,
-            String configJson,
-            Map<String, String> refs,
-            Map<String, String> manualSecrets) {
-        if (channelType == NoticeChannelType.SITE) {
-            return NoticeChannelConfigStatus.COMPLETE;
-        }
-        Map<String, Object> config =
-                new LinkedHashMap<>(objectMap(configJson, "Invalid channel config"));
-        refs.keySet().forEach(key -> config.put(key, "referenced"));
-        manualSecrets.forEach(config::putIfAbsent);
-        if (config.isEmpty()) {
-            return NoticeChannelConfigStatus.INCOMPLETE;
-        }
-        boolean complete = isConfigComplete(channelType, providerCode, config);
-        return complete ? NoticeChannelConfigStatus.COMPLETE : NoticeChannelConfigStatus.INCOMPLETE;
-    }
-
-    private static boolean isConfigComplete(
+    private static boolean isSendConfigComplete(
             NoticeChannelType channelType, String providerCode, Map<String, Object> config) {
         return switch (channelType) {
-            case EMAIL -> isEmailConfigComplete(providerCode, config);
+            case EMAIL -> isSendEmailConfigComplete(providerCode, config);
             case SMS ->
                     hasAny(config, "accessKeyId", "accessKey", "secretId")
                             && hasAny(config, "accessKeySecret", "accessSecret", "secretKey")
@@ -454,7 +487,8 @@ public class NoticeChannelResourceHandler implements ResourceHandler {
         };
     }
 
-    private static boolean isEmailConfigComplete(String providerCode, Map<String, Object> config) {
+    private static boolean isSendEmailConfigComplete(
+            String providerCode, Map<String, Object> config) {
         if ("ALIYUN_DM".equalsIgnoreCase(providerCode)) {
             return hasAny(config, "accessKeyId", "accessKey")
                     && hasAny(config, "accessKeySecret", "accessSecret")
@@ -468,7 +502,8 @@ public class NoticeChannelResourceHandler implements ResourceHandler {
 
     private static boolean hasAny(Map<String, Object> config, String... keys) {
         for (String key : keys) {
-            if (config.get(key) != null && StringUtils.hasText(String.valueOf(config.get(key)))) {
+            Object value = config.get(key);
+            if (value != null && StringUtils.hasText(String.valueOf(value))) {
                 return true;
             }
         }
@@ -529,6 +564,7 @@ public class NoticeChannelResourceHandler implements ResourceHandler {
             String tenantId,
             String configCode,
             NoticeChannelType channelType,
+            NoticeChannelCapabilityMode capabilityMode,
             String providerCode,
             String configName,
             String configJson,
@@ -554,6 +590,10 @@ public class NoticeChannelResourceHandler implements ResourceHandler {
                             NoticeChannelType.class,
                             fieldText(resource, "channelType", true),
                             null),
+                    parseEnum(
+                            NoticeChannelCapabilityMode.class,
+                            fieldText(resource, "capabilityMode", false),
+                            NoticeChannelCapabilityMode.SEND),
                     requiredText(
                                     fieldValue(resource, "providerCode", true),
                                     "MESSAGE_CHANNEL providerCode is required")

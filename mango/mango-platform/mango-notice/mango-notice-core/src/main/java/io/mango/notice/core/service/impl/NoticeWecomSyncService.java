@@ -13,6 +13,7 @@ import io.mango.identity.api.vo.IdentityUserVO;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.notice.api.command.SyncWecomUsersCommand;
 import io.mango.notice.api.enums.NoticeChannelConfigStatus;
+import io.mango.notice.core.service.NoticeChannelCapabilityPolicy;
 import io.mango.notice.api.enums.NoticeChannelType;
 import io.mango.notice.api.enums.NoticeCode;
 import io.mango.notice.api.enums.NoticeRecipientAccountStatus;
@@ -154,11 +155,15 @@ public class NoticeWecomSyncService implements INoticeWecomSyncService {
         if (channelConfigId == null) {
             return defaultWecomChannelConfig();
         }
-        return channelConfigMapper.selectById(channelConfigId);
+        NoticeChannelConfigEntity config = channelConfigMapper.selectById(channelConfigId);
+        return config != null
+                        && NoticeChannelCapabilityPolicy.normalize(config.getCapabilityMode()).supportsSend()
+                ? config
+                : null;
     }
 
     private NoticeChannelConfigEntity defaultWecomChannelConfig() {
-        return channelConfigMapper.selectOne(
+        List<NoticeChannelConfigEntity> configs = channelConfigMapper.selectList(
                 new LambdaQueryWrapper<NoticeChannelConfigEntity>()
                         .eq(NoticeChannelConfigEntity::getChannelType, NoticeChannelType.WECOM)
                         .eq(NoticeChannelConfigEntity::getEnabled, true)
@@ -166,8 +171,11 @@ public class NoticeWecomSyncService implements INoticeWecomSyncService {
                                 NoticeChannelConfigEntity::getConfigStatus,
                                 NoticeChannelConfigStatus.COMPLETE)
                         .orderByDesc(NoticeChannelConfigEntity::getPriority)
-                        .orderByAsc(NoticeChannelConfigEntity::getId)
-                        .last("LIMIT 1"));
+                        .orderByAsc(NoticeChannelConfigEntity::getId));
+        return configs.stream()
+                .filter(config -> NoticeChannelCapabilityPolicy.normalize(config.getCapabilityMode()).supportsSend())
+                .findFirst()
+                .orElse(null);
     }
 
     private void syncWecomDepartments(
