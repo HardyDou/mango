@@ -16,7 +16,6 @@ const externalPackages = [
   '@mango/auth/config',
   '@mango/common',
   '@mango/common/utils/authFunction',
-  '@mango/common/utils/errorHandling',
   '@mango/common/utils/iconConfig',
   '@mango/common/utils/message',
   '@mango/common/utils/mitt',

@@ -94,8 +94,7 @@
       </WorkflowLayout>
     </el-card>
 
-    <!-- mango-page-baseline-exception dialog: task-detail uses this transient user-selector dialog for transfer/add-sign actions; migrating it to MangoDialog is outside issue 760 and would change existing selector lifecycle. -->
-    <el-dialog
+    <MangoDialog
       v-model="selectorDialog.visible"
       :title="selectorDialog.action === 'transfer' ? '选择转办人员' : '选择加签人员'"
       width="520px"
@@ -122,7 +121,7 @@
         <el-button @click="cancelUserSelection">取消</el-button>
         <el-button type="primary" @click="confirmUserSelection">确认</el-button>
       </template>
-    </el-dialog>
+    </MangoDialog>
   </div>
 </template>
 
@@ -130,7 +129,7 @@
 import { computed, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { UserSelector } from '@mango/common';
+import { MangoDialog, UserSelector } from '@mango/common';
 import {
   parseDesignerJson,
   workflowApi,

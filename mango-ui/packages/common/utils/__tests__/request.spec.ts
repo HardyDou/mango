@@ -2,7 +2,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Session } from '../storage';
 import { resolveHttpErrorMessage } from '../request';
 import { mangoMessage } from '../message';
-import { isErrorHandled } from '../errorHandling';
 
 const mocks = vi.hoisted(() => ({
   handlers: [] as any[],
@@ -58,44 +57,11 @@ describe('request utilities', () => {
       data: { code: 3651, success: false, msg: '不能转办给自己', data: null },
     } as any;
 
-    const error = await interceptor.fulfilled(response).catch((reason: unknown) => reason);
-
-    expect(error).toMatchObject({
+    await expect(interceptor.fulfilled(response)).rejects.toMatchObject({
       message: '不能转办给自己',
       code: 3651,
     });
     expect(mangoMessage.error).toHaveBeenCalledWith('不能转办给自己');
-    expect(isErrorHandled(error)).toBe(true);
-  });
-
-  it('leaves silent business errors unhandled for the caller', async () => {
-    const response = {
-      config: { silentError: true },
-      data: { code: 3651, success: false, msg: '不能转办给自己', data: null },
-    };
-
-    const error = await responseInterceptor()
-      .fulfilled(response)
-      .catch((reason: unknown) => reason);
-
-    expect(mangoMessage.error).not.toHaveBeenCalled();
-    expect(isErrorHandled(error)).toBe(false);
-  });
-
-  it('marks an automatically displayed HTTP error as handled', async () => {
-    const error = {
-      config: {},
-      response: { status: 500, data: { message: '服务暂不可用' } },
-      message: 'Request failed',
-    };
-
-    const rejected = await responseInterceptor()
-      .rejected(error)
-      .catch((reason: unknown) => reason);
-
-    expect(rejected).toBe(error);
-    expect(mangoMessage.error).toHaveBeenCalledWith('服务暂不可用');
-    expect(isErrorHandled(error)).toBe(true);
   });
 
   it('refreshes an expiring access token once and continues the original request', async () => {
@@ -112,15 +78,11 @@ describe('request utilities', () => {
 
     const config = await requestInterceptor().fulfilled({ url: '/workflow/tasks/todo', headers: {} });
 
-    expect(mocks.service.post).toHaveBeenCalledWith(
-      '/auth/refresh',
-      { refreshToken: 'refresh-token' },
-      expect.objectContaining({
-        ignoreToken: true,
-        skipRefreshToken: true,
-        silentError: true,
-      }),
-    );
+    expect(mocks.service.post).toHaveBeenCalledWith('/auth/refresh', { refreshToken: 'refresh-token' }, expect.objectContaining({
+      ignoreToken: true,
+      skipRefreshToken: true,
+      silentError: true,
+    }));
     expect(Session.getToken()).toBe('new-token');
     expect(Session.getRefreshToken()).toBe('new-refresh-token');
     expect(config.headers.Authorization).toBe('Bearer new-token');
@@ -144,22 +106,16 @@ describe('request utilities', () => {
     } as any;
 
     await expect(responseInterceptor().fulfilled(response)).resolves.toEqual({ ok: true });
-    expect(mocks.service.post).toHaveBeenCalledWith(
-      '/auth/refresh',
-      { refreshToken: 'refresh-token' },
-      expect.objectContaining({
-        ignoreToken: true,
-        skipRefreshToken: true,
-        silentError: true,
-      }),
-    );
-    expect(mocks.service).toHaveBeenCalledWith(
-      expect.objectContaining({
-        url: '/auth/userinfo',
-        _retry: true,
-        headers: expect.objectContaining({ Authorization: 'Bearer new-token' }),
-      }),
-    );
+    expect(mocks.service.post).toHaveBeenCalledWith('/auth/refresh', { refreshToken: 'refresh-token' }, expect.objectContaining({
+      ignoreToken: true,
+      skipRefreshToken: true,
+      silentError: true,
+    }));
+    expect(mocks.service).toHaveBeenCalledWith(expect.objectContaining({
+      url: '/auth/userinfo',
+      _retry: true,
+      headers: expect.objectContaining({ Authorization: 'Bearer new-token' }),
+    }));
   });
 
   it('resolves HTTP errors from backend message before fallback status text', () => {
@@ -169,9 +125,9 @@ describe('request utilities', () => {
 });
 
 function requestInterceptor() {
-  return mocks.handlers.find((item) => item.type === 'request');
+  return mocks.handlers.find(item => item.type === 'request');
 }
 
 function responseInterceptor() {
-  return mocks.handlers.find((item) => item.type === 'response');
+  return mocks.handlers.find(item => item.type === 'response');
 }

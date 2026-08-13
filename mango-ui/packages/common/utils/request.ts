@@ -1,14 +1,7 @@
-import axios, {
-  AxiosHeaders,
-  AxiosInstance,
-  AxiosRequestConfig,
-  AxiosResponse,
-  InternalAxiosRequestConfig,
-} from 'axios';
+import axios, { AxiosHeaders, AxiosInstance, AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 import type { ApiId } from '@mango/api-schema';
 import { Session } from './storage';
 import { mangoMessage } from './message';
-import { markErrorHandled } from './errorHandling';
 
 // 环境变量（当前未使用，预留）
 // const VITE_ADMIN_PROXY_PATH = import.meta.env.VITE_ADMIN_PROXY_PATH || 'http://127.0.0.1:5555';
@@ -148,12 +141,11 @@ function refreshAccessToken(): Promise<string | null> {
   if (!refreshToken) {
     return Promise.resolve(null);
   }
-  refreshPromise = service
-    .post('/auth/refresh', { refreshToken }, {
-      ignoreToken: true,
-      skipRefreshToken: true,
-      silentError: true,
-    } as RequestConfig)
+  refreshPromise = service.post('/auth/refresh', { refreshToken }, {
+    ignoreToken: true,
+    skipRefreshToken: true,
+    silentError: true,
+  } as RequestConfig)
     .then((data: any) => persistLoginSession(data))
     .catch(() => null)
     .finally(() => {
@@ -215,6 +207,7 @@ function handleTenantId(config: InternalAxiosRequestConfig): InternalAxiosReques
   return config;
 }
 
+
 /**
  * 请求拦截器
  */
@@ -243,7 +236,7 @@ service.interceptors.request.use(
   (error) => {
     hideLoading();
     return Promise.reject(error);
-  },
+  }
 );
 
 /**
@@ -280,21 +273,15 @@ service.interceptors.response.use(
       if (!config.ignoreToken) {
         void handleUnauthorized(message || '登录已过期，请重新登录');
       }
-      const requestError = createRequestError(message || '登录已过期', code, response);
-      if (!config.ignoreToken) {
-        markErrorHandled(requestError);
-      }
-      return Promise.reject(requestError);
+      return Promise.reject(createRequestError(message || '登录已过期', code, response));
     }
 
     // 其他错误
     const errorMessage = resolveBusinessErrorMessage(code, message);
-    const requestError = createRequestError(errorMessage, code, response);
     if (!config.silentError) {
       mangoMessage.error(errorMessage);
-      markErrorHandled(requestError);
     }
-    return Promise.reject(requestError);
+    return Promise.reject(createRequestError(errorMessage, code, response));
   },
   async (error) => {
     hideLoading();
@@ -317,15 +304,13 @@ service.interceptors.response.use(
       }
       if (!config.ignoreToken) {
         void handleUnauthorized('登录已过期，请重新登录');
-        markErrorHandled(error);
       }
     } else if (!config.silentError) {
       mangoMessage.error(message);
-      markErrorHandled(error);
     }
 
     return Promise.reject(error);
-  },
+  }
 );
 
 /**
@@ -372,13 +357,17 @@ function isAuthExpiredCode(code?: number): boolean {
 export function resolveHttpErrorMessage(
   status?: number,
   responseData?: Record<string, any>,
-  fallbackMessage?: string,
+  fallbackMessage?: string
 ): string {
-  const responseMessage = responseData?.message || responseData?.msg || responseData?.error;
+  const responseMessage = responseData?.message
+    || responseData?.msg
+    || responseData?.error;
   if (responseMessage) {
     return String(responseMessage);
   }
-  return (status ? errorCodeMessage[status] : undefined) || fallbackMessage || '网络错误';
+  return (status ? errorCodeMessage[status] : undefined)
+    || fallbackMessage
+    || '网络错误';
 }
 
 function createRequestError(message: string, code?: number, response?: AxiosResponse): RequestError & Error {
@@ -398,7 +387,7 @@ export function normalizeApiPayload<T>(payload: T): T {
 
 function normalizeValue(value: unknown, key: string): unknown {
   if (Array.isArray(value)) {
-    return value.map((item) => normalizeValue(item, singularKey(key)));
+    return value.map(item => normalizeValue(item, singularKey(key)));
   }
   if (value && typeof value === 'object') {
     const record = value as JsonRecord;

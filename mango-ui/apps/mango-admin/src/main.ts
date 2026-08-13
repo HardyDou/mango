@@ -1,7 +1,7 @@
 import { createApp } from 'vue';
 import { createPinia } from 'pinia';
 import piniaPluginPersist from 'pinia-plugin-persistedstate';
-import { registerUnauthorizedHandler, Session } from '@mango/common';
+import { mangoMessage, registerUnauthorizedHandler, Session } from '@mango/common';
 import { MANGO_HTTP_CLIENT_KEY } from '@mango/app-runtime';
 import { createMangoHttpClient } from '@mango/http-client';
 import { installMangoAuth } from '@mango/auth';
@@ -9,7 +9,6 @@ import {
   configureMangoAdminShell,
   getMangoAdminAuthProfileSlots,
   installAdminBrandingRuntime,
-  reportUnhandledError,
 } from '@mango/admin-shell';
 import { mangoFullAdminFeatureRegistrars } from '@mango/admin/full';
 import { systemQuickEntryWidgets, systemUserProfileWidgets } from '@mango/system';
@@ -67,16 +66,11 @@ app.config.errorHandler = (err, instance, info) => {
   console.error('Vue 错误:', err);
   console.error('组件:', instance);
   console.error('错误信息:', info);
-  reportUnhandledError(err);
+  if (err && typeof err === 'object' && 'response' in err) {
+    return;
+  }
+  mangoMessage.error('系统错误，请刷新页面');
 };
-
-const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
-  console.error('Unhandled promise rejection:', event.reason);
-  event.preventDefault();
-  reportUnhandledError(event.reason);
-};
-window.addEventListener('unhandledrejection', handleUnhandledRejection);
-app.onUnmount(() => window.removeEventListener('unhandledrejection', handleUnhandledRejection));
 
 app.use(createPinia().use(piniaPluginPersist));
 app.use(router);

@@ -111,7 +111,6 @@ export {
   installAdminBrandingRuntime,
   installShellApp,
 } from './appBootstrap';
-export { reportUnhandledError } from './errorHandling';
 export { configureMangoAdminShell, getMangoAdminShellOptions };
 export { ensureFeatureRegistrars };
 export type {
