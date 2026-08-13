@@ -11,9 +11,7 @@ const menus: MangoMenuTreeNode[] = [
   {
     path: '/system',
     redirect: '/system/menu-package',
-    children: [
-      { path: '/system/menu-package' },
-    ],
+    children: [{ path: '/system/menu-package' }],
   },
   {
     path: '/develop',
@@ -21,11 +19,7 @@ const menus: MangoMenuTreeNode[] = [
     children: [
       {
         path: '/develop/components',
-        children: [
-          { path: '/components/editor' },
-          { path: '/components/upload' },
-          { path: '/components/chat' },
-        ],
+        children: [{ path: '/components/editor' }, { path: '/components/upload' }, { path: '/components/chat' }],
       },
     ],
   },

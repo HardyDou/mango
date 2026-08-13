@@ -8,36 +8,18 @@
     :collapse-transition="false"
     class="nav-menu-vertical"
   >
-    <template
-      v-for="val in menuList"
-      :key="val.path"
-    >
-      <el-sub-menu
-        v-if="val.children && val.children.length > 0"
-        :index="val.path"
-      >
+    <template v-for="val in menuList" :key="val.path">
+      <el-sub-menu v-if="val.children && val.children.length > 0" :index="val.path">
         <template #title>
-          <el-icon
-            v-if="val.meta?.icon"
-            class="menu-icon"
-          >
+          <el-icon v-if="val.meta?.icon" class="menu-icon">
             <component :is="iconMap[val.meta.icon]" />
           </el-icon>
           <span>{{ val.meta?.title || val.name }}</span>
         </template>
-        <SubItem
-          :chil="val.children"
-          :level="2"
-        />
+        <SubItem :chil="val.children" :level="2" />
       </el-sub-menu>
-      <el-menu-item
-        v-else
-        :index="val.path"
-      >
-        <el-icon
-          v-if="val.meta?.icon"
-          class="menu-icon"
-        >
+      <el-menu-item v-else :index="val.path">
+        <el-icon v-if="val.meta?.icon" class="menu-icon">
           <component :is="iconMap[val.meta.icon]" />
         </el-icon>
         <span>{{ val.meta?.title || val.name }}</span>
