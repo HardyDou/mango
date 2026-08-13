@@ -3,20 +3,12 @@
     <el-card v-loading="loading" class="task-detail-shell">
       <el-empty v-if="!detail" description="暂无流程详情" />
 
-      <WorkflowLayout
-        v-else
-        :title="detail.process.processName || '流程详情'"
-        @back="backToList"
-      >
+      <WorkflowLayout v-else :title="detail.process.processName || '流程详情'" @back="backToList">
         <section class="task-section">
           <div class="section-header compact">
             <h3>{{ businessComponent ? '业务审批信息' : '业务表单信息' }}</h3>
           </div>
-          <component
-            :is="businessComponent"
-            v-if="businessComponent && businessContext"
-            :context="businessContext"
-          />
+          <component :is="businessComponent" v-if="businessComponent && businessContext" :context="businessContext" />
           <RuntimeFormRenderer
             v-else-if="shouldRenderDynamicForm && runtimeFields.length"
             :fields="runtimeFields"
@@ -94,11 +86,7 @@
                   <h3>审批信息</h3>
                   <span>{{ detail.records.length }} 条</span>
                 </div>
-                <component
-                  :is="customRecordPanelComponent"
-                  v-if="businessContext"
-                  :context="businessContext"
-                />
+                <component :is="customRecordPanelComponent" v-if="businessContext" :context="businessContext" />
               </div>
             </template>
           </WorkflowSidebar>
@@ -106,7 +94,7 @@
       </WorkflowLayout>
     </el-card>
 
-    <el-dialog
+    <MangoDialog
       v-model="selectorDialog.visible"
       :title="selectorDialog.action === 'transfer' ? '选择转办人员' : '选择加签人员'"
       width="520px"
@@ -133,7 +121,7 @@
         <el-button @click="cancelUserSelection">取消</el-button>
         <el-button type="primary" @click="confirmUserSelection">确认</el-button>
       </template>
-    </el-dialog>
+    </MangoDialog>
   </div>
 </template>
 
@@ -141,8 +129,16 @@
 import { computed, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { UserSelector } from '@mango/common';
-import { parseDesignerJson, workflowApi, type WorkflowBusinessApply, type WorkflowDesignerNode, type WorkflowProcessDetail, type WorkflowTaskActionKey, type WorkflowTaskDetail } from '../../api/workflow';
+import { MangoDialog, UserSelector } from '@mango/common';
+import {
+  parseDesignerJson,
+  workflowApi,
+  type WorkflowBusinessApply,
+  type WorkflowDesignerNode,
+  type WorkflowProcessDetail,
+  type WorkflowTaskActionKey,
+  type WorkflowTaskDetail,
+} from '../../api/workflow';
 import {
   applyIdOf,
   businessPermissionsOf,
@@ -185,37 +181,55 @@ const selectorDialog = ref({
 });
 
 const readonlyMode = computed(() => route.query.mode === 'view' || !route.query.taskId);
-const detail = computed(() => taskDetail.value || (processDetail.value ? {
-  task: null,
-  process: processDetail.value.process,
-  formCode: processDetail.value.formCode,
-  formJson: processDetail.value.formJson,
-  designerJson: processDetail.value.designerJson,
-  variables: processDetail.value.variables,
-  records: processDetail.value.records,
-  formPermissions: processDetail.value.renderConfig?.formPermissions || {},
-  renderConfig: processDetail.value.renderConfig,
-} as unknown as WorkflowTaskDetail : null));
-const currentTaskDefinitionKey = computed(() =>
-  detail.value?.task?.taskDefinitionKey || (detail.value?.task?.id ? firstCurrentTaskDefinitionKey() : latestTaskDefinitionKey()),
+const detail = computed(
+  () =>
+    taskDetail.value ||
+    (processDetail.value
+      ? ({
+          task: null,
+          process: processDetail.value.process,
+          formCode: processDetail.value.formCode,
+          formJson: processDetail.value.formJson,
+          designerJson: processDetail.value.designerJson,
+          variables: processDetail.value.variables,
+          records: processDetail.value.records,
+          formPermissions: processDetail.value.renderConfig?.formPermissions || {},
+          renderConfig: processDetail.value.renderConfig,
+        } as unknown as WorkflowTaskDetail)
+      : null),
+);
+const currentTaskDefinitionKey = computed(
+  () =>
+    detail.value?.task?.taskDefinitionKey ||
+    (detail.value?.task?.id ? firstCurrentTaskDefinitionKey() : latestTaskDefinitionKey()),
 );
 const renderConfig = computed(() => detail.value?.renderConfig);
-const businessType = computed(() => renderConfig.value?.businessType || businessApply.value?.businessType || businessTypeOf(detail.value?.variables));
-const formConfig = computed(() => parseWorkflowFormConfig(detail.value?.formJson));
-const renderMode = computed(() => formConfig.value.mode === 'CUSTOM_PAGE'
-  ? 'CUSTOM_PAGE'
-  : renderConfig.value?.renderMode || businessApply.value?.renderMode || 'DYNAMIC_FORM');
-const approvePageKey = computed(() =>
-  String(renderConfig.value?.nodeExtension?.approvePageKey || renderConfig.value?.approvePageKey || formConfig.value.customConfig.approvePageKey || '').trim(),
+const businessType = computed(
+  () =>
+    renderConfig.value?.businessType || businessApply.value?.businessType || businessTypeOf(detail.value?.variables),
 );
-const businessRegistration = computed(() => renderMode.value === 'CUSTOM_PAGE'
-  ? resolveBusinessApprovalRegistration(approvePageKey.value)
-  : null);
+const formConfig = computed(() => parseWorkflowFormConfig(detail.value?.formJson));
+const renderMode = computed(() =>
+  formConfig.value.mode === 'CUSTOM_PAGE'
+    ? 'CUSTOM_PAGE'
+    : renderConfig.value?.renderMode || businessApply.value?.renderMode || 'DYNAMIC_FORM',
+);
+const approvePageKey = computed(() =>
+  String(
+    renderConfig.value?.nodeExtension?.approvePageKey ||
+      renderConfig.value?.approvePageKey ||
+      formConfig.value.customConfig.approvePageKey ||
+      '',
+  ).trim(),
+);
+const businessRegistration = computed(() =>
+  renderMode.value === 'CUSTOM_PAGE' ? resolveBusinessApprovalRegistration(approvePageKey.value) : null,
+);
 const businessComponent = computed(() => businessRegistration.value?.component || null);
 const recordPanelMode = computed(() => businessRegistration.value?.recordPanelMode || 'DEFAULT');
-const customRecordPanelComponent = computed(() => recordPanelMode.value === 'CUSTOM'
-  ? businessRegistration.value?.recordPanelComponent || null
-  : null);
+const customRecordPanelComponent = computed(() =>
+  recordPanelMode.value === 'CUSTOM' ? businessRegistration.value?.recordPanelComponent || null : null,
+);
 const showRecordPanel = computed(() => recordPanelMode.value !== 'HIDDEN');
 const isCustomRenderMode = computed(() => renderMode.value === 'CUSTOM_PAGE');
 const shouldRenderDynamicForm = computed(() => !isCustomRenderMode.value);
@@ -230,9 +244,10 @@ const effectiveFormPermissions = computed(() => {
 const commentMode = computed(() => businessRegistration.value?.commentMode || 'ACTION_BAR');
 const showActionCommentInput = computed(() => commentMode.value === 'ACTION_BAR');
 const visibleNodeActions = computed(() => {
-  const overrides = businessContext.value && businessRegistration.value?.getActionOverrides
-    ? businessRegistration.value.getActionOverrides(businessContext.value)
-    : {};
+  const overrides =
+    businessContext.value && businessRegistration.value?.getActionOverrides
+      ? businessRegistration.value.getActionOverrides(businessContext.value)
+      : {};
   const task = detail.value?.task;
   const candidateOverrides = {
     ...overrides,
@@ -261,7 +276,14 @@ const businessContext = computed<BusinessApprovalContext | null>(() => {
   const variables = detail.value.variables || {};
   return {
     businessType: businessType.value,
-    businessKey: String(renderConfig.value?.businessKey || businessApply.value?.businessKey || variables.businessKey || detail.value.process.businessKey || detail.value.task?.businessKey || ''),
+    businessKey: String(
+      renderConfig.value?.businessKey ||
+        businessApply.value?.businessKey ||
+        variables.businessKey ||
+        detail.value.process.businessKey ||
+        detail.value.task?.businessKey ||
+        '',
+    ),
     applyId: String(renderConfig.value?.applyId || businessApply.value?.id || applyIdOf(variables)),
     processInstanceId: detail.value.process.processInstanceId,
     taskId: detail.value.task?.id,
@@ -270,7 +292,8 @@ const businessContext = computed<BusinessApprovalContext | null>(() => {
     nodeExtension: renderConfig.value?.nodeExtension || {},
     readonly: readonlyMode.value,
     variables,
-    permissions: renderConfig.value?.businessPermissions || businessPermissionsOf(variables, currentTaskDefinitionKey.value),
+    permissions:
+      renderConfig.value?.businessPermissions || businessPermissionsOf(variables, currentTaskDefinitionKey.value),
     records: detail.value.records || [],
   };
 });
@@ -284,11 +307,19 @@ const workflowSummary = computed(() => ({
 const workflowDefinitionNodeComputed = computed(() => workflowDefinitionNode.value);
 const workflowCurrentNodeKey = computed(() => currentTaskDefinitionKey.value);
 const workflowVisitedNodeKeys = computed(() => {
-  const keys = detail.value?.records?.map(record => record.taskDefinitionKey).filter(Boolean) as string[] | undefined;
+  const keys = detail.value?.records?.map((record) => record.taskDefinitionKey).filter(Boolean) as string[] | undefined;
   return Array.from(new Set(keys || []));
 });
 const workflowStatus = computed(() => detail.value?.process.status || '');
-const workflowBusinessKey = computed(() => String(renderConfig.value?.businessKey || businessApply.value?.businessKey || detail.value?.process.businessKey || detail.value?.task?.businessKey || ''));
+const workflowBusinessKey = computed(() =>
+  String(
+    renderConfig.value?.businessKey ||
+      businessApply.value?.businessKey ||
+      detail.value?.process.businessKey ||
+      detail.value?.task?.businessKey ||
+      '',
+  ),
+);
 const sidebarMode = computed(() => {
   if (!showRecordPanel.value) return 'HIDDEN';
   if (customRecordPanelComponent.value) return 'CUSTOM';
@@ -368,7 +399,7 @@ async function submitAction(action: WorkflowTaskActionKey) {
     ElMessage.warning('缺少任务ID');
     return;
   }
-  const actionConfig = visibleNodeActions.value.find(item => item.key === action);
+  const actionConfig = visibleNodeActions.value.find((item) => item.key === action);
   if (!actionConfig || actionConfig.disabled) {
     if (actionConfig?.tooltip) ElMessage.warning(actionConfig.tooltip);
     return;
@@ -391,7 +422,14 @@ async function submitAction(action: WorkflowTaskActionKey) {
   if (extraPayload === false) {
     return;
   }
-  await ElMessageBox.confirm(actionConfig.confirmText || `确认${actionName}当前任务？`, `审批${actionName}`, { type: action === 'reject' ? 'error' : 'warning' });
+  const confirmed = await confirmTaskAction(
+    actionConfig.confirmText || `确认${actionName}当前任务？`,
+    `审批${actionName}`,
+    action,
+  );
+  if (!confirmed) {
+    return;
+  }
   submitting.value = true;
   submittingAction.value = action;
   try {
@@ -419,7 +457,22 @@ async function submitAction(action: WorkflowTaskActionKey) {
   }
 }
 
-async function collectExtraActionPayload(action: WorkflowTaskActionKey, actionConfig: { targetTaskDefinitionKey?: string }) {
+async function confirmTaskAction(message: string, title: string, action: WorkflowTaskActionKey) {
+  try {
+    await ElMessageBox.confirm(message, title, { type: action === 'reject' ? 'error' : 'warning' });
+    return true;
+  } catch (error) {
+    if (error === 'cancel' || error === 'close') {
+      return false;
+    }
+    throw error;
+  }
+}
+
+async function collectExtraActionPayload(
+  action: WorkflowTaskActionKey,
+  actionConfig: { targetTaskDefinitionKey?: string },
+) {
   if (action === 'transfer') {
     const targetUserId = await pickTransferUser();
     return targetUserId ? { targetUserId } : false;
@@ -475,7 +528,7 @@ function confirmUserSelection() {
     pendingUserResolve = null;
     return;
   }
-  const targets = selectorDialog.value.targetUserIds.map(item => item.trim()).filter(Boolean);
+  const targets = selectorDialog.value.targetUserIds.map((item) => item.trim()).filter(Boolean);
   if (!targets.length) {
     ElMessage.warning('请选择加签人');
     return;
@@ -494,15 +547,18 @@ async function executeTaskAction(
 ) {
   if (action === 'complete') return workflowApi.completeTask({ taskId, comment, variables });
   if (action === 'reject') return workflowApi.rejectTask({ taskId, comment, variables });
-  if (action === 'returnTask') return workflowApi.returnTask({
-    taskId,
-    comment,
-    variables,
-    targetTaskDefinitionKey: extraPayload.targetTaskDefinitionKey || undefined,
-  });
+  if (action === 'returnTask')
+    return workflowApi.returnTask({
+      taskId,
+      comment,
+      variables,
+      targetTaskDefinitionKey: extraPayload.targetTaskDefinitionKey || undefined,
+    });
   if (action === 'save') return workflowApi.saveTask({ taskId, comment, variables });
-  if (action === 'transfer') return workflowApi.transferTask({ taskId, comment, targetUserId: extraPayload.targetUserId });
-  if (action === 'addSign') return workflowApi.addSignTask({ taskId, comment, targetUserIds: extraPayload.targetUserIds });
+  if (action === 'transfer')
+    return workflowApi.transferTask({ taskId, comment, targetUserId: extraPayload.targetUserId });
+  if (action === 'addSign')
+    return workflowApi.addSignTask({ taskId, comment, targetUserIds: extraPayload.targetUserIds });
   if (action === 'claim') return workflowApi.claimTask(taskId);
   if (action === 'unclaim') return workflowApi.unclaimTask(taskId);
   throw new Error(`Unsupported workflow action: ${action}`);
@@ -539,15 +595,20 @@ function collectActionComment(action: WorkflowTaskActionKey) {
   if (commentMode.value === 'NONE') {
     return '';
   }
-  return collectBusinessApprovalComment(businessRegistration.value, businessContext.value, action, actionForm.value.comment);
+  return collectBusinessApprovalComment(
+    businessRegistration.value,
+    businessContext.value,
+    action,
+    actionForm.value.comment,
+  );
 }
 
 function returnTargetTaskDefinitionKey(actionConfig: { targetTaskDefinitionKey?: string }) {
   return String(
-    actionConfig.targetTaskDefinitionKey
-    || renderConfig.value?.nodeExtension?.returnTargetTaskDefinitionKey
-    || renderConfig.value?.nodeExtension?.returnTargetNodeKey
-    || '',
+    actionConfig.targetTaskDefinitionKey ||
+      renderConfig.value?.nodeExtension?.returnTargetTaskDefinitionKey ||
+      renderConfig.value?.nodeExtension?.returnTargetNodeKey ||
+      '',
   ).trim();
 }
 
@@ -620,24 +681,20 @@ function formatJson(value: any) {
 }
 
 function firstCurrentTaskDefinitionKey() {
-  return String(detail.value?.records?.find(record => record.taskDefinitionKey)?.taskDefinitionKey || '');
+  return String(detail.value?.records?.find((record) => record.taskDefinitionKey)?.taskDefinitionKey || '');
 }
 
 function latestTaskDefinitionKey() {
   const records = detail.value?.records || [];
-  return String([...records].reverse().find(record => record.taskDefinitionKey)?.taskDefinitionKey || '');
+  return String([...records].reverse().find((record) => record.taskDefinitionKey)?.taskDefinitionKey || '');
 }
 
 function latestTaskName() {
   const records = detail.value?.records || [];
-  return String([...records].reverse().find(record => record.taskName)?.taskName || '');
+  return String([...records].reverse().find((record) => record.taskName)?.taskName || '');
 }
 
-watch(
-  () => [route.query.taskId, route.query.processInstanceId, route.query.mode],
-  loadDetail,
-  { immediate: true },
-);
+watch(() => [route.query.taskId, route.query.processInstanceId, route.query.mode], loadDetail, { immediate: true });
 </script>
 
 <style scoped>
