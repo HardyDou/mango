@@ -587,11 +587,11 @@ Secret 通过管理页面分别填写 `password`（SMTP）和 `inboundPassword`�
 | 验收位置 | 页面路径 | 权限 | 检查内容 |
 |---|---|---|---|
 | 渠道配置 | `/#/notice/channel` | `notice:channel:view`、`notice:channel:create`、`notice:channel:edit` | 渠道 ID、启用状态、非敏感参数和 Secret 完整性 |
-| 接收消息 | `/#/notice/inbound` | `notice:inbound:view` | 邮件/企业微信列表、状态、详情、附件 File 下载和广播结果 |
+| 接收消息 | `/#/notice/inbound` | `notice:inbound:view` | 邮件/企业微信列表、富文本正文、附件 File 预览/下载、处理状态和广播结果 |
 
 列表接口为 `GET /notice/inbound-messages`，详情接口为
 `GET /notice/inbound-messages/detail?id=<消息ID>`。列表不返回正文和附件，详情才返回正文与附件
-File ID；页面按文本显示 HTML 正文，不执行邮件 HTML。接收消息是管理员运营数据，不进入个人消息中心。
+File ID；页面使用安全富文本查看器渲染正文，并通过 File 服务按 `fileId` 预览或下载附件，不在 Notice/KV 中保存附件二进制、对象 URL 或预签名地址。接收消息是管理员运营数据，不进入个人消息中心。
 
 ## 8. 资源注入
 
