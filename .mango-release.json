@@ -23,6 +23,29 @@
     }
   },
   "stateAdapters": {
+    "versions": {
+      "verify": [
+        { "command": "pnpm", "cwd": "mango-ui", "args": ["release:impact", "--base=origin/main", "--head=HEAD"] },
+        { "command": "node", "args": ["mango-ui/packages/mango-cli/scripts/check-release-versions.mjs"] }
+      ]
+    },
+    "changelog": {
+      "verify": [
+        { "command": "node", "args": ["mango-ui/scripts/check-release-notes.mjs", "--package=@mango/notice", "--version=1.0.39", "--tag={tag}"] },
+        { "command": "node", "args": ["mango-ui/scripts/check-release-notes.mjs", "--package=@mango/cli", "--version=1.0.104", "--tag={tag}"] }
+      ]
+    },
+    "readmes": {
+      "verify": { "command": "node", "args": ["mango-pmo/tools/audit-module-readmes.mjs"] }
+    },
+    "tests": {
+      "verify": [
+        { "command": "pnpm", "cwd": "mango-ui", "args": ["-F", "@mango/notice", "test"] },
+        { "command": "pnpm", "cwd": "mango-ui", "args": ["-F", "@mango/admin-shell", "test"] },
+        { "command": "pnpm", "cwd": "mango-ui", "args": ["admin:styles:check"] },
+        { "command": "pnpm", "cwd": "mango-ui", "args": ["admin:module-styles:check"] }
+      ]
+    },
     "tag": {
       "publish": {
         "command": "git",
@@ -74,6 +97,21 @@
         { "command": "pnpm", "cwd": "mango-ui", "args": ["publish:pkg", "cli", "--verify-only", "--release-tag={tag}", "--publish-registry={npmPublishRegistry}", "--consume-registry={npmConsumeRegistry}" ] }
       ],
       "repair": { "kind": "verify-existing" }
+    },
+    "cli-lock": {
+      "verify": { "command": "node", "args": ["mango-ui/packages/mango-cli/scripts/check-release-versions.mjs"] }
+    },
+    "private-registry-consume-verify": {
+      "verify": [
+        { "command": "scripts/publish-maven-batch.sh", "args": ["--all-non-app", "--release-version", "{version}", "--verify-only", "--verify-base-url", "{mavenConsumeRegistry}"] },
+        { "command": "pnpm", "cwd": "mango-ui", "args": ["publish:pkg", "notice", "--verify-only", "--release-tag={tag}", "--publish-registry={npmPublishRegistry}", "--consume-registry={npmConsumeRegistry}"] }
+      ]
+    },
+    "docs-latest": {
+      "verify": { "command": "curl", "args": ["--fail", "--silent", "--show-error", "--location", "--head", "--max-time", "30", "https://hardydou.github.io/mango/"] }
+    },
+    "post-verify": {
+      "verify": { "command": "node", "args": ["-e", "console.log(JSON.stringify({result:'PASS',source:'{projectRoot}',version:'{version}'}))"] }
     }
   },
   "notApplicable": {
