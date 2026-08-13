@@ -28,6 +28,7 @@ export default defineConfig({
         '@mango/common/utils/realtime',
         '@mango/common/utils/realtime/types',
         '@mango/common/utils/request',
+        '@mango/file',
         '@mango/grid-widgets',
         '@mango/system',
         'element-plus',

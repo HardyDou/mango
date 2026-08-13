@@ -3,6 +3,7 @@ package io.mango.notice.core.entity;
 import com.baomidou.mybatisplus.annotation.TableName;
 
 import io.mango.notice.api.enums.NoticeChannelConfigStatus;
+import io.mango.notice.api.enums.NoticeChannelCapabilityMode;
 import io.mango.notice.api.enums.NoticeChannelSecretStatus;
 import io.mango.notice.api.enums.NoticeChannelSendHealthStatus;
 import io.mango.notice.api.enums.NoticeChannelType;
@@ -19,6 +20,8 @@ public class NoticeChannelConfigEntity extends NoticeBaseEntity {
     private String configCode;
 
     private NoticeChannelType channelType;
+
+    private NoticeChannelCapabilityMode capabilityMode;
 
     private String providerCode;
 

@@ -26,6 +26,7 @@ import io.mango.notice.api.enums.NoticeCode;
 import io.mango.notice.api.query.NoticeBusinessTypePageQuery;
 import io.mango.notice.api.query.NoticeChannelConfigPageQuery;
 import io.mango.notice.api.query.NoticeChannelReferenceImpactQuery;
+import io.mango.notice.api.query.NoticeInboundMessagePageQuery;
 import io.mango.notice.api.query.NoticeReceivePreferenceQuery;
 import io.mango.notice.api.query.NoticeRecipientAccountQuery;
 import io.mango.notice.api.query.NoticeRouteTagQuery;
@@ -37,6 +38,7 @@ import io.mango.notice.api.vo.NoticeBusinessTypeVO;
 import io.mango.notice.api.vo.NoticeChannelConfigVO;
 import io.mango.notice.api.vo.NoticeChannelReferenceImpactVO;
 import io.mango.notice.api.vo.NoticeChannelTemplateVO;
+import io.mango.notice.api.vo.NoticeInboundMessageVO;
 import io.mango.notice.api.vo.NoticeReceivePreferenceVO;
 import io.mango.notice.api.vo.NoticeRecipientAccountVO;
 import io.mango.notice.api.vo.NoticeRouteTagVO;
@@ -52,6 +54,7 @@ import io.mango.notice.api.vo.NoticeWecomLoginConfigVO;
 import io.mango.notice.api.vo.WecomUserSyncResultVO;
 import io.mango.notice.core.service.INoticeConfigurationService;
 import io.mango.notice.core.service.INoticeDeliveryService;
+import io.mango.notice.core.service.INoticeInboundQueryService;
 import io.mango.notice.core.service.INoticeRecipientSettingService;
 import io.mango.notice.core.service.INoticeRecordOperationService;
 import io.mango.notice.core.service.INoticeService;
@@ -73,6 +76,7 @@ public class NoticeService implements INoticeService {
     private final INoticeDeliveryService deliveryService;
     private final INoticeConfigurationService configurationService;
     private final INoticeRecordOperationService recordOperationService;
+    private final INoticeInboundQueryService inboundQueryService;
     private final INoticeRecipientSettingService recipientSettingService;
     private final INoticeSiteMessageService siteMessageService;
     private final INoticeWecomSyncService wecomSyncService;
@@ -263,6 +267,18 @@ public class NoticeService implements INoticeService {
     public PageResult<NoticeSendRecordVO> listSendRecords(NoticeSendRecordPageQuery query) {
         Require.notNull(query, NoticeCode.NOTICE_BUSINESS_ERROR, "查询条件不能为空");
         return recordOperationService.listSendRecords(query);
+    }
+
+    @Override
+    public PageResult<NoticeInboundMessageVO> listInboundMessages(NoticeInboundMessagePageQuery query) {
+        Require.notNull(query, NoticeCode.NOTICE_BUSINESS_ERROR, "入站消息查询条件不能为空");
+        return inboundQueryService.listInboundMessages(query);
+    }
+
+    @Override
+    public NoticeInboundMessageVO getInboundMessage(Long id) {
+        Require.notNull(id, NoticeCode.NOTICE_BUSINESS_ERROR, "入站消息ID不能为空");
+        return inboundQueryService.getInboundMessage(id);
     }
 
     @Override

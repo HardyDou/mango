@@ -45,7 +45,10 @@ class NoticeMigrationCharacterizationTest {
                     "notice_site_message_action",
                     "notice_site_message_action_request",
                     "notice_task",
-                    "notice_wecom_sync_mapping");
+                    "notice_wecom_sync_mapping",
+                    "notice_inbound_message",
+                    "notice_inbound_attachment",
+                    "notice_inbound_receive_cursor");
 
     @Test
     void migrationsDescribeTheCompleteCurrentNoticeSchema() throws IOException, URISyntaxException {
@@ -53,15 +56,22 @@ class NoticeMigrationCharacterizationTest {
         assertThat(migrations)
                 .extracting(path -> path.getFileName().toString())
                 .containsExactly(
-                        "V1__init_notice.sql", "V2__notice_channel_resource_route_and_secret.sql");
+                        "V1__init_notice.sql", "V2__notice_channel_resource_route_and_secret.sql",
+                        "V3__notice_inbound.sql", "V4__notice_channel_capability_mode.sql");
 
         String sql = read(migrations.getFirst());
         String upgradeSql = read(migrations.get(1));
+        String inboundSql = read(migrations.get(2));
+        String capabilityModeSql = read(migrations.get(3));
 
         Matcher matcher = CREATE_TABLE.matcher(sql);
         Set<String> tables = new TreeSet<>();
         while (matcher.find()) {
             tables.add(matcher.group(1));
+        }
+        Matcher inboundMatcher = CREATE_TABLE.matcher(inboundSql);
+        while (inboundMatcher.find()) {
+            tables.add(inboundMatcher.group(1));
         }
 
         assertThat(tables).containsExactlyElementsOf(new TreeSet<>(EXPECTED_TABLES));
@@ -84,6 +94,16 @@ class NoticeMigrationCharacterizationTest {
                 .contains("information_schema.statistics")
                 .contains("CONCAT('LEGACY_', `id`)")
                 .contains("WHEN `channel_config_id` IS NULL THEN 'AUTO' ELSE 'EXACT'");
+        assertThat(DML.matcher(inboundSql).find()).isFalse();
+        assertThat(inboundSql)
+                .contains("notice_inbound_message")
+                .contains("notice_inbound_attachment")
+                .contains("notice_inbound_receive_cursor")
+                .contains("uk_notice_inbound_message_source")
+                .contains("file_id");
+        assertThat(capabilityModeSql)
+                .contains("capability_mode")
+                .contains("DEFAULT 'SEND'");
     }
 
     private List<Path> migrations() throws IOException, URISyntaxException {

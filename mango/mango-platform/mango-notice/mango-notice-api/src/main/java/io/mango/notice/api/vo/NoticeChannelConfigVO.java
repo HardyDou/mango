@@ -1,6 +1,7 @@
 package io.mango.notice.api.vo;
 
 import io.mango.notice.api.enums.NoticeChannelConfigStatus;
+import io.mango.notice.api.enums.NoticeChannelCapabilityMode;
 import io.mango.notice.api.enums.NoticeChannelSecretStatus;
 import io.mango.notice.api.enums.NoticeChannelSendHealthStatus;
 import io.mango.notice.api.enums.NoticeChannelType;
@@ -25,6 +26,9 @@ public class NoticeChannelConfigVO implements Serializable {
 
     @Schema(description = "渠道类型")
     private NoticeChannelType channelType;
+
+    @Schema(description = "渠道用途：SEND 仅发送、RECEIVE 仅接收、BOTH 收发一体")
+    private NoticeChannelCapabilityMode capabilityMode;
 
     @Schema(description = "供应商编码")
     private String providerCode;

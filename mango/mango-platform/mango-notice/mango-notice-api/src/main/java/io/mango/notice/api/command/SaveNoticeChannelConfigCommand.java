@@ -1,6 +1,7 @@
 package io.mango.notice.api.command;
 
 import io.mango.notice.api.enums.NoticeChannelType;
+import io.mango.notice.api.enums.NoticeChannelCapabilityMode;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import jakarta.validation.Valid;
@@ -28,6 +29,10 @@ public class SaveNoticeChannelConfigCommand implements Serializable {
     @Schema(description = "渠道类型")
     @NotNull(message = "渠道类型不能为空")
     private NoticeChannelType channelType;
+
+    @Schema(description = "渠道用途：SEND 仅发送、RECEIVE 仅接收、BOTH 收发一体")
+    @NotNull(message = "渠道用途不能为空")
+    private NoticeChannelCapabilityMode capabilityMode = NoticeChannelCapabilityMode.SEND;
 
     @Schema(description = "供应商编码")
     @jakarta.validation.constraints.Size(max = 65535)
