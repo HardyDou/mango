@@ -1384,9 +1384,6 @@ importers:
       '@mango/common':
         specifier: workspace:1.0.26
         version: link:../common
-      '@mango/file':
-        specifier: workspace:1.0.34
-        version: link:../file
       '@mango/grid-widgets':
         specifier: workspace:1.0.23
         version: link:../grid-widgets
