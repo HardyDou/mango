@@ -431,19 +431,9 @@ export interface NoticeSendRecord {
 }
 
 export type NoticeInboundMessageStatus =
-  | 'RECEIVED'
-  | 'ATTACHMENT_PROCESSING'
-  | 'READY_TO_BROADCAST'
-  | 'BROADCASTED'
-  | 'RETRYABLE_FAILED'
-  | 'DEAD_LETTER';
+  'RECEIVED' | 'ATTACHMENT_PROCESSING' | 'READY_TO_BROADCAST' | 'BROADCASTED' | 'RETRYABLE_FAILED' | 'DEAD_LETTER';
 
-export type NoticeInboundAttachmentStatus =
-  | 'PENDING'
-  | 'PROCESSING'
-  | 'SAVED'
-  | 'RETRYABLE_FAILED'
-  | 'DEAD_LETTER';
+export type NoticeInboundAttachmentStatus = 'PENDING' | 'PROCESSING' | 'SAVED' | 'RETRYABLE_FAILED' | 'DEAD_LETTER';
 
 export interface NoticeInboundAttachment {
   id: string;

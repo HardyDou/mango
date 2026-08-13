@@ -37,7 +37,9 @@
         </el-table-column>
         <el-table-column label="用途" width="110" data-field="notice.channel.capability-mode">
           <template #default="{ row }">
-            <el-tag :type="row.capabilityMode === 'BOTH' ? 'primary' : row.capabilityMode === 'RECEIVE' ? 'warning' : 'info'">
+            <el-tag
+              :type="row.capabilityMode === 'BOTH' ? 'primary' : row.capabilityMode === 'RECEIVE' ? 'warning' : 'info'"
+            >
               {{ capabilityModeLabel(row.capabilityMode) }}
             </el-tag>
           </template>
@@ -161,8 +163,18 @@
             </el-col>
             <el-col :xs="24" :sm="12">
               <el-form-item label="用途" required data-field="notice.channel.capability-mode">
-                <el-select v-model="form.capabilityMode" :disabled="isResourceManaged" class="form-control" @change="handleCapabilityModeChange">
-                  <el-option v-for="item in capabilityModeOptions" :key="item.value" :label="item.label" :value="item.value" />
+                <el-select
+                  v-model="form.capabilityMode"
+                  :disabled="isResourceManaged"
+                  class="form-control"
+                  @change="handleCapabilityModeChange"
+                >
+                  <el-option
+                    v-for="item in capabilityModeOptions"
+                    :key="item.value"
+                    :label="item.label"
+                    :value="item.value"
+                  />
                 </el-select>
               </el-form-item>
             </el-col>
@@ -418,7 +430,11 @@
               </template>
               <template v-else-if="form.channelType === 'EMAIL' && form.providerCode === 'CUSTOM_SMTP'">
                 <el-row :gutter="16">
-                  <el-col v-if="supportsSendMode" :span="24"><div class="config-group-title" data-surface="notice.channel.send-config">发送配置（SMTP）</div></el-col>
+                  <el-col v-if="supportsSendMode" :span="24"
+                    ><div class="config-group-title" data-surface="notice.channel.send-config">
+                      发送配置（SMTP）
+                    </div></el-col
+                  >
                   <el-col v-if="supportsSendMode" :xs="24" :sm="12">
                     <el-form-item label="SMTP" required>
                       <el-input v-model="channelConfig.host" placeholder="smtp.example.com" />
@@ -453,7 +469,11 @@
               </template>
               <template v-else-if="form.channelType === 'EMAIL' && form.providerCode === 'ALIYUN_DM'">
                 <el-row :gutter="16">
-                  <el-col v-if="supportsSendMode" :span="24"><div class="config-group-title" data-surface="notice.channel.send-config">发送配置（阿里云邮件推送）</div></el-col>
+                  <el-col v-if="supportsSendMode" :span="24"
+                    ><div class="config-group-title" data-surface="notice.channel.send-config">
+                      发送配置（阿里云邮件推送）
+                    </div></el-col
+                  >
                   <el-col v-if="supportsSendMode" :xs="24" :sm="12">
                     <el-form-item label="AccessKey" required>
                       <el-input v-model="channelConfig.accessKeyId" autocomplete="off" />
@@ -523,7 +543,11 @@
               </template>
               <template v-else-if="form.channelType === 'WECOM'">
                 <el-row :gutter="16">
-                  <el-col v-if="supportsSendMode" :span="24"><div class="config-group-title" data-surface="notice.channel.send-config">发送配置（HTTPS API / Webhook，无需回调加密参数）</div></el-col>
+                  <el-col v-if="supportsSendMode" :span="24"
+                    ><div class="config-group-title" data-surface="notice.channel.send-config">
+                      发送配置（HTTPS API / Webhook，无需回调加密参数）
+                    </div></el-col
+                  >
                   <el-col v-if="supportsSendMode" :xs="24" :sm="12">
                     <el-form-item label="企业ID">
                       <el-input v-model="channelConfig.corpId" />
@@ -544,7 +568,11 @@
                       <el-input v-model="channelConfig.webhookUrl" />
                     </el-form-item>
                   </el-col>
-                  <el-col v-if="supportsReceiveMode" :span="24"><div class="config-group-title" data-surface="notice.channel.receive-config">接收配置（回调验签与 AES 解密）</div></el-col>
+                  <el-col v-if="supportsReceiveMode" :span="24"
+                    ><div class="config-group-title" data-surface="notice.channel.receive-config">
+                      接收配置（回调验签与 AES 解密）
+                    </div></el-col
+                  >
                   <el-col v-if="supportsReceiveMode" :xs="24" :sm="12">
                     <el-form-item label="回调 Token">
                       <el-input
@@ -615,13 +643,43 @@
                       </el-select>
                     </el-form-item>
                   </el-col>
-                  <el-col :xs="24" :sm="12"><el-form-item label="接收服务器" required><el-input v-model="channelConfig.inboundHost" placeholder="imap.example.com" /></el-form-item></el-col>
-                  <el-col :xs="24" :sm="12"><el-form-item label="接收端口"><el-input-number v-model="channelConfig.inboundPort" :min="1" :max="65535" class="number-control" /></el-form-item></el-col>
-                  <el-col :xs="24" :sm="12"><el-form-item label="接收账号" required><el-input v-model="channelConfig.inboundUsername" autocomplete="off" /></el-form-item></el-col>
-                  <el-col :xs="24" :sm="12"><el-form-item label="接收授权码" required><el-input v-model="channelConfig.inboundPassword" show-password autocomplete="new-password" /></el-form-item></el-col>
-                  <el-col :xs="24" :sm="12"><el-form-item label="SSL"><el-switch v-model="channelConfig.inboundSsl" /></el-form-item></el-col>
-                  <el-col :xs="24" :sm="12"><el-form-item label="客户端名称"><el-input v-model="channelConfig.inboundClientName" placeholder="mango" /></el-form-item></el-col>
-                  <el-col :xs="24" :sm="12"><el-form-item label="拉取周期(秒)"><el-input-number v-model="channelConfig.inboundPollIntervalSeconds" :min="1" class="number-control" /></el-form-item></el-col>
+                  <el-col :xs="24" :sm="12"
+                    ><el-form-item label="接收服务器" required
+                      ><el-input v-model="channelConfig.inboundHost" placeholder="imap.example.com" /></el-form-item
+                  ></el-col>
+                  <el-col :xs="24" :sm="12"
+                    ><el-form-item label="接收端口"
+                      ><el-input-number
+                        v-model="channelConfig.inboundPort"
+                        :min="1"
+                        :max="65535"
+                        class="number-control" /></el-form-item
+                  ></el-col>
+                  <el-col :xs="24" :sm="12"
+                    ><el-form-item label="接收账号" required
+                      ><el-input v-model="channelConfig.inboundUsername" autocomplete="off" /></el-form-item
+                  ></el-col>
+                  <el-col :xs="24" :sm="12"
+                    ><el-form-item label="接收授权码" required
+                      ><el-input
+                        v-model="channelConfig.inboundPassword"
+                        show-password
+                        autocomplete="new-password" /></el-form-item
+                  ></el-col>
+                  <el-col :xs="24" :sm="12"
+                    ><el-form-item label="SSL"><el-switch v-model="channelConfig.inboundSsl" /></el-form-item
+                  ></el-col>
+                  <el-col :xs="24" :sm="12"
+                    ><el-form-item label="客户端名称"
+                      ><el-input v-model="channelConfig.inboundClientName" placeholder="mango" /></el-form-item
+                  ></el-col>
+                  <el-col :xs="24" :sm="12"
+                    ><el-form-item label="拉取周期(秒)"
+                      ><el-input-number
+                        v-model="channelConfig.inboundPollIntervalSeconds"
+                        :min="1"
+                        class="number-control" /></el-form-item
+                  ></el-col>
                 </el-row>
               </template>
             </el-tab-pane>
@@ -718,7 +776,9 @@
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :sm="12">
-                <el-form-item label="用途"><el-input :model-value="capabilityModeLabel(current.capabilityMode)" readonly /></el-form-item>
+                <el-form-item label="用途"
+                  ><el-input :model-value="capabilityModeLabel(current.capabilityMode)" readonly
+                /></el-form-item>
               </el-col>
               <el-col :xs="24" :sm="12">
                 <el-form-item label="接入平台">
