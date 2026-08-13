@@ -21,7 +21,7 @@
 | 顶部铃铛     | 未读不超过 10 条时展示最近消息；超过 10 条时按审批、系统、业务分类聚合。  |
 | 消息中心     | 展示当前用户站内信列表。                                                  |
 | 接收设置     | 用户维护接收账户、渠道偏好和提醒方式。                                    |
-| 接收消息     | 管理人员查询邮件和企业微信入站消息、处理状态、详情与附件 File 下载。       |
+| 接收消息     | 管理人员查询邮件和企业微信入站消息、处理状态、详情与附件 File 下载。      |
 | 实时提醒     | 订阅通知实时事件，触发弹窗、桌面通知、声音或语音。                        |
 | API 封装     | 导出通知发送、业务配置、渠道、任务、记录、站内信和接收偏好的请求函数。    |
 
@@ -82,10 +82,10 @@ stop();
 
 入站消息验收使用两个独立页面：
 
-| 页面 | 管理端地址 | component key | 后端权限 |
-|---|---|---|---|
+| 页面     | 管理端地址          | component key          | 后端权限                                                              |
+| -------- | ------------------- | ---------------------- | --------------------------------------------------------------------- |
 | 渠道配置 | `/#/notice/channel` | `notice/channel/index` | `notice:channel:view`、`notice:channel:create`、`notice:channel:edit` |
-| 接收消息 | `/#/notice/inbound` | `notice/inbound/index` | `notice:inbound:view` |
+| 接收消息 | `/#/notice/inbound` | `notice/inbound/index` | `notice:inbound:view`                                                 |
 
 企业微信和邮箱的服务端配置字段、Secret 引用、公网回调 URL 与协议游标说明见
 [mango-notice README](../../../mango/mango-platform/mango-notice/README.md#76-企业微信消息接收)。
@@ -193,7 +193,7 @@ stop();
 | 配置版本   | `getBusinessConfigVersions`、`saveBusinessConfigDraft`、`publishBusinessConfigDraft`、`activateBusinessConfigVersion`                         |
 | 渠道模板   | `getChannelTemplates`、`saveChannelTemplate`、`publishChannelTemplate`                                                                        |
 | 渠道配置   | `getChannelConfigs`、`saveChannelConfig`、`deleteChannelConfig`                                                                               |
-| 接收消息   | `getInboundMessages`、`getInboundMessage`                                                                                                      |
+| 接收消息   | `getInboundMessages`、`getInboundMessage`                                                                                                     |
 | 路由标签   | `getNoticeRouteTags`、`saveNoticeRouteTag`、`deleteNoticeRouteTag`、`getNoticeChannelReferenceImpact`                                         |
 | 任务和记录 | `getNoticeTasks`、`getSendRecords`、`retrySendRecord`、`markSendRecordManualSuccess`、`ignoreSendRecord`                                      |
 | 站内信     | `getMySiteMessages`、`getMySiteMessageDetail`、`getMyUnreadCount`、`getMyUnreadCategoryStats`、`markMySiteMessageRead`、`deleteMySiteMessage` |
