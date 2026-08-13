@@ -1,5 +1,5 @@
 import type { App, Component, ComputedRef, Ref } from 'vue';
-import type { LoginResult, LoginTenantOption, WecomLoginConfig } from './api/sys';
+import type { LoginResult, LoginTenantOption } from './api/sys';
 import type { UserInfosState } from './store/userInfo';
 
 export interface MangoAuthLoginBrandConfig {
@@ -81,11 +81,6 @@ export interface MangoLoginFlowOptions {
   autoRedirect?: boolean;
 }
 
-export interface MangoWecomCallbackState {
-  tenantId?: string;
-  channelConfigId?: string;
-}
-
 export type MangoLoginActionStatus = 'success' | 'password-reset-required' | 'failed' | 'ignored';
 
 export interface MangoLoginActionResult {
@@ -96,12 +91,6 @@ export interface MangoLoginActionResult {
 
 export interface MangoWecomActionResult extends MangoLoginActionResult {
   shouldOpenWecomDialog: boolean;
-}
-
-export interface MangoLoginInitializeResult {
-  hasWecomCallback: boolean;
-  shouldOpenWecomDialog: boolean;
-  result?: MangoWecomActionResult;
 }
 
 export declare const LoginView: Component;
@@ -128,8 +117,6 @@ export declare function useMangoLoginFlow(options?: MangoLoginFlowOptions): {
   passwordResetLoading: Ref<boolean>;
   tenantOptions: Ref<LoginTenantOption[]>;
   selectedTenant: ComputedRef<LoginTenantOption | undefined>;
-  wecomCode: Ref<string>;
-  wecomLoginConfig: Ref<WecomLoginConfig | undefined>;
   wecomQrUrl: ComputedRef<string>;
   passwordResetRequired: Ref<boolean>;
   passwordResetTicket: Ref<string>;
@@ -147,19 +134,8 @@ export declare function useMangoLoginFlow(options?: MangoLoginFlowOptions): {
   submitPasswordLogin(): Promise<MangoLoginActionResult>;
   submitRequiredPasswordChange(): Promise<MangoLoginActionResult>;
   prepareWecomLogin(): Promise<MangoWecomActionResult>;
-  submitWecomLogin(code?: string): Promise<MangoWecomActionResult>;
-  handleWecomCallback(code: string, state: MangoWecomCallbackState): Promise<MangoWecomActionResult>;
-  initializeLoginFlow(): Promise<MangoLoginInitializeResult>;
-  buildWecomState(config: WecomLoginConfig): string;
 };
 export declare function normalizeLoginRedirect(value: unknown): string;
-export declare function parseWecomState(rawState: string | null): MangoWecomCallbackState;
-export declare function readWecomCallback(): {
-  code: string;
-  state: MangoWecomCallbackState;
-  hasCallbackParams: boolean;
-};
-export declare function clearWecomCallbackUrl(): void;
 export declare function captureProviderCallbackBeforeHashRouter(): void;
 export * from './config';
 export * from './store/userInfo';
