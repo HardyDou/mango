@@ -6,7 +6,7 @@ export { default as NoticeAnnouncementUserView } from './views/announcement-user
 export { default as NoticeChannelView } from './views/channel/index.vue';
 export { default as NoticeTaskView } from './views/task/index.vue';
 export { default as NoticeRecordView } from './views/record/index.vue';
-export { default as NoticeInboundView } from './views/inbound/index.vue';
+export { default as NoticeInboundView } from './views/inbound/inbound-message.vue';
 export { default as NoticeSiteMessageView } from './views/site-message/index.vue';
 export { default as NoticeSettingView } from './views/setting/index.vue';
 export { default as NoticeReceiveSettingView } from './views/receive-setting/index.vue';

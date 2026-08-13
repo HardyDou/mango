@@ -3,7 +3,7 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
-const source = readFileSync(resolve(dirname(fileURLToPath(import.meta.url)), 'index.vue'), 'utf8');
+const source = readFileSync(resolve(dirname(fileURLToPath(import.meta.url)), 'inbound-message.vue'), 'utf8');
 
 describe('notice inbound detail', () => {
   it('uses the shared sanitized rich text viewer for message bodies', () => {
