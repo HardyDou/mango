@@ -1,4 +1,6 @@
 <template>
+  <!-- mango-page-baseline-exception list: Existing outbound routing table layout is retained because this task only adds explicit receive capability fields and must preserve established send management behavior. -->
+  <!-- mango-page-baseline-exception dialog: Existing outbound channel editor is retained because replacing its dialog in this task would expand scope and risk the established email, SMS, site, and WeCom send flows. -->
   <div class="notice-channel-page" data-surface="notice.channel.routing">
     <el-card shadow="never" class="channel-main page-card">
       <div class="list-page-header">
