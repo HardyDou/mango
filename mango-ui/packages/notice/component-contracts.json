@@ -1,7 +1,26 @@
 {
   "schemaVersion": 1,
   "packageName": "@mango/notice",
-  "components": [],
+  "components": [
+    {
+      "name": "NoticeInboundView",
+      "exportKey": "./admin",
+      "exportName": "NoticeInboundView",
+      "level": "C4",
+      "hostProfile": "mango-runtime",
+      "environmentProfile": "browser-only",
+      "distribution": ["npm"],
+      "deploymentModes": ["monolith", "microfrontend"],
+      "stability": "stable",
+      "ownerRole": "Frontend Standards Owner",
+      "styleExportKeys": ["./style.css"],
+      "docs": {
+        "path": "README.md",
+        "requiredSections": ["概览", "接入方式", "API 与扩展", "问题排查"]
+      },
+      "testEvidence": ["src/views/inbound/inbound-message.spec.ts"]
+    }
+  ],
   "legacyComponentExports": [
     {
       "exportKey": ".",
@@ -34,13 +53,6 @@
     {
       "exportKey": "./admin",
       "exportName": "NoticeChannelView",
-      "ownerRole": "Frontend Standards Owner",
-      "targetPhase": "PR-2H-N",
-      "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
-    },
-    {
-      "exportKey": "./admin",
-      "exportName": "NoticeInboundView",
       "ownerRole": "Frontend Standards Owner",
       "targetPhase": "PR-2H-N",
       "exitCriteria": "Classify as C1-C4, satisfy the target level contract, and remove this exact legacy identity."
