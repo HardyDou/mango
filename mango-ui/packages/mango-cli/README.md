@@ -535,6 +535,8 @@ CLI 不在运行时管理菜单、权限和租户，但会生成让业务模块�
 5. 执行 `mango dev start`，或用 `mango dev start <group|app>` 启动指定分组 / 应用；需要重启时执行 `mango dev restart [group|app...]`；通过 `mango dev status`、`mango dev logs <app>` 查看状态。
 6. 需要新增业务能力时执行 `mango module add`，然后补充业务领域代码、菜单权限、租户字段、测试和 README。
 
+Windows PowerShell 下无需在 `mango.dev.json` 手工覆盖 Maven 命令。CLI 会让 doctor、install、managed bootstrap 和 runtime 共用平台命令解析：标准 Maven 的 `mvn` 自动通过 `mvn.cmd` 执行，npm/pnpm/yarn 等命令也使用对应的 Windows shim；macOS/Linux 保持原命令名和参数不变。
+
 已有业务项目同步：
 
 1. 在项目根目录确认有 `mango.config.json` 和 `mango.dev.json`。
@@ -557,6 +559,7 @@ CLI 不在运行时管理菜单、权限和租户，但会生成让业务模块�
 | `unknown module`                                                              | module code 不在可选模块矩阵                                                   | 使用 `file`、`template`、`notice`、`numgen`、`calendar`、`workflow`、`workflow-example`                                                                                                              |
 | `managed block not found`                                                     | 业务项目删除了 `mango-cli` marker                                              | 按模板恢复 marker，或人工合并依赖和入口                                                                                                                                                              |
 | `use explicit Spring Boot Maven plugin coordinate instead of spring-boot:run` | `mango.dev.json` 使用了简写 goal                                               | 改成 `org.springframework.boot:spring-boot-maven-plugin:<version>:run`                                                                                                                               |
+| Windows 下 `mango dev doctor` 报 `missing mvn`                                | Maven 未安装，或 Maven `bin` 未加入当前 PowerShell 的 `PATH`                   | 先在同一终端执行 `mvn.cmd --version`；成功后重新执行项目内 `pnpm exec mango dev doctor`。不需要把 manifest 的 Maven 命令改成 `mvn.cmd`                                                               |
 | 端口被占用                                                                    | 当前 worktree 分配的端口已被其他进程占用                                       | 先用 `mango dev status` 查看 owner，停止对应 worktree 或执行 `mango workspace release --workspace <path>` 后重试                                                                                     |
 | 后端启动卡在 health，且数据库 `mango_dev_*` 不存在                            | 自动建库前置条件不满足，或 CLI 未按预期执行建库                                | 先查 `command -v mysql`、`MANGO_DB_AUTO_CREATE=true`、MySQL 连接配置和 `mango dev logs <backend>`；如果没有 `ensured database` 或 `failed to auto-create database` 输出，按 Mango issue runbook 登记 |
 | Vite app 启动后立即退出并提示 `vite: command not found`                       | 当前 worktree 前端依赖未安装，或 manifest 绕过了 package script 直接执行二进制 | 先执行 `pnpm -C <frontend-root> install --frozen-lockfile`；manifest 中 Vite app 优先使用 `dev -- --host <host> --port <port>`                                                                       |
