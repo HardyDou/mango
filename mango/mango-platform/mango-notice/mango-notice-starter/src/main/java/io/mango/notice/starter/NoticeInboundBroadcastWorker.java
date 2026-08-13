@@ -3,6 +3,7 @@ package io.mango.notice.starter;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.notice.core.entity.NoticeInboundMessageEntity;
 import io.mango.notice.core.service.NoticeInboundReceiverService;
+import io.mango.notice.core.service.NoticeInboundBroadcastDeadLetterCommand;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -28,8 +29,8 @@ public class NoticeInboundBroadcastWorker {
         NoticeProperties.Inbound inbound = properties.getInbound();
         for (NoticeInboundMessageEntity message : receiverService.dueBroadcasts(inbound.getBatchSize())) {
             if (message.getAttemptCount() != null && message.getAttemptCount() >= inbound.getMaxAttempts()) {
-                receiverService.deadLetterBroadcast(
-                        message.getTenantId(), message.getId(), "入站广播重试次数已耗尽");
+                receiverService.deadLetterBroadcast(new NoticeInboundBroadcastDeadLetterCommand(
+                        message.getTenantId(), message.getId(), "入站广播重试次数已耗尽"));
                 continue;
             }
             try {

@@ -11,6 +11,6 @@ public interface NoticeInboundWebhookProvider {
 
     boolean supports(Map<String, String> headers, Map<String, String> parameters, String body);
 
-    InboundNoticeMessage parse(Map<String, String> headers, Map<String, String> parameters, String body,
+    InboundNoticeMessageRequest parse(Map<String, String> headers, Map<String, String> parameters, String body,
                                String materializedConfigJson, String tenantId, Long channelConfigId);
 }

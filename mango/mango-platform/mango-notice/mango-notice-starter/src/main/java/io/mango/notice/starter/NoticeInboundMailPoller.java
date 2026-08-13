@@ -9,7 +9,7 @@ import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.infra.kv.api.ILeaseLocker;
 import io.mango.infra.kv.api.LockLease;
-import io.mango.notice.api.InboundReceiveResult;
+import io.mango.notice.api.InboundReceiveResultResponse;
 import io.mango.notice.api.NoticeInboundReceiver;
 import io.mango.notice.api.enums.NoticeInboundProtocol;
 import io.mango.notice.core.entity.NoticeChannelConfigEntity;
@@ -17,6 +17,9 @@ import io.mango.notice.core.entity.NoticeInboundReceiveCursorEntity;
 import io.mango.notice.core.mapper.NoticeChannelConfigMapper;
 import io.mango.notice.core.service.NoticeChannelSecretMaterializer;
 import io.mango.notice.core.service.NoticeInboundMailCursorService;
+import io.mango.notice.core.service.NoticeInboundMailCursorAdvanceCommand;
+import io.mango.notice.core.service.NoticeInboundMailCursorFailureCommand;
+import io.mango.notice.core.service.NoticeInboundMailCursorPollCommand;
 import io.mango.notice.support.channel.NoticeInboundMailAccount;
 import io.mango.notice.support.channel.NoticeInboundMailClient;
 import io.mango.notice.support.channel.NoticeInboundMailItem;
@@ -109,20 +112,21 @@ public class NoticeInboundMailPoller {
                 if (processed >= properties.getInbound().getBatchSize()) {
                     break;
                 }
-                InboundReceiveResult result = receiver.receive(item.message());
+                InboundReceiveResultResponse result = receiver.receive(item.message());
                 if (!result.accepted()) {
                     throw new IllegalStateException("邮箱消息未完成可靠接收");
                 }
-                cursorService.advance(account.channelConfigId(), account.protocol(),
-                        item.cursorValue(), item.cursorVersion(), nextPollAt);
+                cursorService.advance(new NoticeInboundMailCursorAdvanceCommand(account.channelConfigId(),
+                        account.protocol(), item.cursorValue(), item.cursorVersion(), nextPollAt));
                 processed++;
             }
             if (processed == 0) {
-                cursorService.recordPoll(account.channelConfigId(), account.protocol(), nextPollAt);
+                cursorService.recordPoll(new NoticeInboundMailCursorPollCommand(
+                        account.channelConfigId(), account.protocol(), nextPollAt));
             }
         } catch (RuntimeException failure) {
-            cursorService.recordFailure(account.channelConfigId(), account.protocol(),
-                    failure.getClass().getSimpleName(), failure.getMessage(), nextPollAt);
+            cursorService.recordFailure(new NoticeInboundMailCursorFailureCommand(account.channelConfigId(),
+                    account.protocol(), failure.getClass().getSimpleName(), failure.getMessage(), nextPollAt));
             throw failure;
         }
     }

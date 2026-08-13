@@ -24,10 +24,12 @@ import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.infra.event.api.DomainEvent;
 import io.mango.infra.event.api.IDomainEventPublisher;
 import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguration;
-import io.mango.notice.api.InboundNoticeAttachment;
-import io.mango.notice.api.InboundNoticeMessage;
-import io.mango.notice.api.InboundReceiveResult;
+import io.mango.notice.api.InboundNoticeAttachmentRequest;
+import io.mango.notice.api.InboundNoticeMessageRequest;
+import io.mango.notice.api.InboundNoticeHeaderRequest;
+import io.mango.notice.api.InboundReceiveResultResponse;
 import io.mango.notice.api.enums.NoticeChannelType;
+import io.mango.notice.api.enums.NoticeInboundProtocol;
 import io.mango.notice.api.enums.NoticeInboundMessageStatus;
 import io.mango.notice.core.entity.NoticeInboundAttachmentEntity;
 import io.mango.notice.core.entity.NoticeInboundMessageEntity;
@@ -59,7 +61,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
-import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -111,7 +112,7 @@ class NoticeInboundReceiverFileIntegrationTest {
     @Test
     void receivePersistsNoticeAndRealFileRecordThenReadsAttachmentFromLocalStorage() throws Exception {
         byte[] content = "IT_765_REAL_FILE_ATTACHMENT".getBytes(StandardCharsets.UTF_8);
-        InboundReceiveResult result = receiver.receive(message(content));
+        InboundReceiveResultResponse result = receiver.receive(message(content));
 
         NoticeInboundMessageEntity notice = messageMapper.selectById(result.messageId());
         NoticeInboundAttachmentEntity attachment = attachmentMapper.selectList(null).getFirst();
@@ -156,12 +157,12 @@ class NoticeInboundReceiverFileIntegrationTest {
         return result;
     }
 
-    private InboundNoticeMessage message(byte[] content) {
-        return new InboundNoticeMessage(
-                String.valueOf(TENANT_ID), 765L, NoticeChannelType.EMAIL, "STANDARD_MAIL", null,
+    private InboundNoticeMessageRequest message(byte[] content) {
+        return new InboundNoticeMessageRequest(
+                String.valueOf(TENANT_ID), 765L, NoticeChannelType.EMAIL, "STANDARD_MAIL", NoticeInboundProtocol.IMAP,
                 "IT_765_REAL_FILE", "mail-765", "Real file integration", "yunxinbaokeji@126.com",
-                List.of("yunxinbaokeji@126.com"), "body", null, Map.of("Message-ID", "mail-765"),
-                List.of(new InboundNoticeAttachment(0, "IT_765_attachment.txt", "text/plain", content.length,
+                List.of("yunxinbaokeji@126.com"), "body", "", List.of(new InboundNoticeHeaderRequest("Message-ID", "mail-765")),
+                List.of(new InboundNoticeAttachmentRequest(0, "IT_765_attachment.txt", "text/plain", content.length,
                         new ByteArrayInputStream(content))), Instant.parse("2026-08-13T04:00:00Z"));
     }
 

@@ -5,7 +5,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.common.result.Require;
-import io.mango.notice.api.InboundNoticeMessage;
+import io.mango.notice.api.InboundNoticeMessageRequest;
 import io.mango.notice.api.NoticeInboundReceiver;
 import io.mango.notice.api.NoticeInboundWebhookProvider;
 import io.mango.notice.api.enums.NoticeChannelType;
@@ -57,7 +57,7 @@ public class NoticeInboundPublicEndpoint {
             String echo = wecomAdapter.verifyUrl(inboundRequest, wecomConfig);
             return ServerResponse.ok().contentType(MediaType.TEXT_PLAIN).body(echo);
         }
-        InboundNoticeMessage message = wecomAdapter.parseMessage(
+        InboundNoticeMessageRequest message = wecomAdapter.parseMessage(
                 inboundRequest, wecomConfig, config.tenantId(), config.id());
         receiver.receive(message);
         return ServerResponse.ok().contentType(MediaType.TEXT_PLAIN).body("success");
@@ -77,7 +77,7 @@ public class NoticeInboundPublicEndpoint {
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException(
                         "邮箱服务商未提供经过验真的真实入站收件适配器: " + config.providerCode()));
-        InboundNoticeMessage message = provider.parse(
+        InboundNoticeMessageRequest message = provider.parse(
                 headers, parameters, body, config.materializedConfigJson(), config.tenantId(), config.id());
         receiver.receive(message);
         return ServerResponse.ok().contentType(MediaType.TEXT_PLAIN).body("success");

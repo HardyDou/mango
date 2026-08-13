@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.toolkit.IdWorker;
 import io.mango.common.result.Require;
 import io.mango.infra.context.api.MangoContextHolder;
+import io.mango.notice.api.enums.NoticeCode;
 import io.mango.notice.api.enums.NoticeInboundProtocol;
 import io.mango.notice.core.entity.NoticeInboundReceiveCursorEntity;
 import io.mango.notice.core.mapper.NoticeInboundReceiveCursorMapper;
@@ -17,25 +18,26 @@ import java.time.LocalDateTime;
 /** Transactional cursor access; callers enter the account tenant before invoking it. */
 @Service
 @RequiredArgsConstructor
-public class NoticeInboundMailCursorService {
+public class NoticeInboundMailCursorService implements INoticeInboundMailCursorService {
 
     private static final int MAX_FAILURE_REASON_LENGTH = 1000;
 
     private final NoticeInboundReceiveCursorMapper cursorMapper;
 
     public NoticeInboundReceiveCursorEntity find(Long channelConfigId) {
-        Require.notNull(channelConfigId, "邮箱渠道配置 ID 不能为空");
+        Require.notNull(channelConfigId, NoticeCode.NOTICE_BUSINESS_ERROR, "邮箱渠道配置 ID 不能为空");
         return cursorMapper.selectOne(new LambdaQueryWrapper<NoticeInboundReceiveCursorEntity>()
                 .eq(NoticeInboundReceiveCursorEntity::getChannelConfigId, channelConfigId));
     }
 
     @Transactional
-    public void advance(
-            Long channelConfigId,
-            NoticeInboundProtocol protocol,
-            String cursorValue,
-            String cursorVersion,
-            LocalDateTime nextPollAt) {
+    public void advance(NoticeInboundMailCursorAdvanceCommand command) {
+        Require.notNull(command, NoticeCode.NOTICE_BUSINESS_ERROR, "邮箱游标推进参数不能为空");
+        Long channelConfigId = command.channelConfigId();
+        NoticeInboundProtocol protocol = command.protocol();
+        String cursorValue = command.cursorValue();
+        String cursorVersion = command.cursorVersion();
+        LocalDateTime nextPollAt = command.nextPollAt();
         NoticeInboundReceiveCursorEntity entity = find(channelConfigId);
         if (entity == null) {
             entity = new NoticeInboundReceiveCursorEntity();
@@ -61,11 +63,14 @@ public class NoticeInboundMailCursorService {
     }
 
     @Transactional
-    public void recordPoll(
-            Long channelConfigId, NoticeInboundProtocol protocol, LocalDateTime nextPollAt) {
+    public void recordPoll(NoticeInboundMailCursorPollCommand command) {
+        Require.notNull(command, NoticeCode.NOTICE_BUSINESS_ERROR, "邮箱轮询游标参数不能为空");
+        Long channelConfigId = command.channelConfigId();
+        NoticeInboundProtocol protocol = command.protocol();
+        LocalDateTime nextPollAt = command.nextPollAt();
         NoticeInboundReceiveCursorEntity entity = find(channelConfigId);
         if (entity == null) {
-            advance(channelConfigId, protocol, null, null, nextPollAt);
+            advance(new NoticeInboundMailCursorAdvanceCommand(channelConfigId, protocol, null, null, nextPollAt));
             return;
         }
         entity.setProtocol(protocol);
@@ -75,12 +80,13 @@ public class NoticeInboundMailCursorService {
     }
 
     @Transactional
-    public void recordFailure(
-            Long channelConfigId,
-            NoticeInboundProtocol protocol,
-            String failureCode,
-            String failureReason,
-            LocalDateTime nextPollAt) {
+    public void recordFailure(NoticeInboundMailCursorFailureCommand command) {
+        Require.notNull(command, NoticeCode.NOTICE_BUSINESS_ERROR, "邮箱游标失败参数不能为空");
+        Long channelConfigId = command.channelConfigId();
+        NoticeInboundProtocol protocol = command.protocol();
+        String failureCode = command.failureCode();
+        String failureReason = command.failureReason();
+        LocalDateTime nextPollAt = command.nextPollAt();
         NoticeInboundReceiveCursorEntity entity = find(channelConfigId);
         if (entity == null) {
             entity = new NoticeInboundReceiveCursorEntity();

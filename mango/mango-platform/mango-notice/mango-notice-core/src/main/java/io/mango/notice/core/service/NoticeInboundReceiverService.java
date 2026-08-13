@@ -14,10 +14,11 @@ import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.infra.event.api.DomainEvent;
 import io.mango.infra.event.api.IDomainEventPublisher;
-import io.mango.notice.api.InboundNoticeAttachment;
-import io.mango.notice.api.InboundNoticeMessage;
-import io.mango.notice.api.InboundReceiveResult;
+import io.mango.notice.api.InboundNoticeAttachmentRequest;
+import io.mango.notice.api.InboundNoticeMessageRequest;
+import io.mango.notice.api.InboundReceiveResultResponse;
 import io.mango.notice.api.NoticeInboundReceiver;
+import io.mango.notice.api.enums.NoticeCode;
 import io.mango.notice.api.enums.NoticeInboundAttachmentStatus;
 import io.mango.notice.api.enums.NoticeInboundMessageStatus;
 import io.mango.notice.core.entity.NoticeInboundAttachmentEntity;
@@ -45,7 +46,7 @@ import java.util.function.Supplier;
 @RequiredArgsConstructor(onConstructor_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
         justification = "Spring-managed collaborators are injected and intentionally shared"))
 @Slf4j
-public class NoticeInboundReceiverService implements NoticeInboundReceiver {
+public class NoticeInboundReceiverService implements NoticeInboundReceiver, INoticeInboundReceiverService {
     public static final String EVENT_TYPE = "notice.message.received";
     private static final int MAX_ATTACHMENT_ATTEMPTS = 5;
     private static final int MAX_FAILURE_REASON_LENGTH = 1000;
@@ -59,11 +60,11 @@ public class NoticeInboundReceiverService implements NoticeInboundReceiver {
     private final PlatformTransactionManager transactionManager;
 
     @Override
-    public InboundReceiveResult receive(InboundNoticeMessage candidate) {
-        InboundNoticeMessage message = Require.nonNull(candidate, "入站消息不能为空");
-        Require.notBlank(message.sourceKey(), "入站消息 sourceKey 不能为空");
-        Require.notBlank(message.tenantId(), "入站消息 tenantId 不能为空");
-        Require.notNull(message.channelConfigId(), "入站消息渠道配置不能为空");
+    public InboundReceiveResultResponse receive(InboundNoticeMessageRequest candidate) {
+        InboundNoticeMessageRequest message = Require.nonNull(candidate, NoticeCode.NOTICE_BUSINESS_ERROR, "入站消息不能为空");
+        Require.notBlank(message.sourceKey(), NoticeCode.NOTICE_BUSINESS_ERROR, "入站消息 sourceKey 不能为空");
+        Require.notBlank(message.tenantId(), NoticeCode.NOTICE_BUSINESS_ERROR, "入站消息 tenantId 不能为空");
+        Require.notNull(message.channelConfigId(), NoticeCode.NOTICE_BUSINESS_ERROR, "入站消息渠道配置不能为空");
         validateAttachments(message.attachments());
         try {
             return withTenant(message.tenantId(), () -> receiveInTenant(message));
@@ -72,7 +73,7 @@ public class NoticeInboundReceiverService implements NoticeInboundReceiver {
         }
     }
 
-    private InboundReceiveResult receiveInTenant(InboundNoticeMessage message) {
+    private InboundReceiveResultResponse receiveInTenant(InboundNoticeMessageRequest message) {
         NoticeInboundMessageEntity entity = find(message.channelConfigId(), message.sourceKey());
         boolean duplicate = entity != null;
         if (entity == null) {
@@ -84,23 +85,23 @@ public class NoticeInboundReceiverService implements NoticeInboundReceiver {
         persistAttachmentMetadata(entity.getId(), message.attachments());
         saveAttachments(entity, message.attachments());
         publishWhenReady(entity.getId());
-        NoticeInboundMessageEntity accepted = Require.nonNull(messageMapper.selectById(entity.getId()),
+        NoticeInboundMessageEntity accepted = Require.nonNull(messageMapper.selectById(entity.getId()), NoticeCode.NOTICE_BUSINESS_ERROR,
                 "入站消息保存后不存在");
         return result(accepted, duplicate);
     }
 
-    private NoticeInboundMessageEntity createOrReadWinner(InboundNoticeMessage message) {
+    private NoticeInboundMessageEntity createOrReadWinner(InboundNoticeMessageRequest message) {
         NoticeInboundMessageEntity entity = newMessage(message);
         try {
             transaction().executeWithoutResult(status -> messageMapper.insert(entity));
             return entity;
         } catch (DuplicateKeyException duplicate) {
             NoticeInboundMessageEntity winner = find(message.channelConfigId(), message.sourceKey());
-            return Require.nonNull(winner, "并发入站消息未找到幂等记录");
+            return Require.nonNull(winner, NoticeCode.NOTICE_BUSINESS_ERROR, "并发入站消息未找到幂等记录");
         }
     }
 
-    private NoticeInboundMessageEntity newMessage(InboundNoticeMessage message) {
+    private NoticeInboundMessageEntity newMessage(InboundNoticeMessageRequest message) {
         NoticeInboundMessageEntity entity = new NoticeInboundMessageEntity();
         entity.setId(IdWorker.getId());
         // The callback/poller enters the resolved tenant context before this method is called.
@@ -125,9 +126,9 @@ public class NoticeInboundReceiverService implements NoticeInboundReceiver {
         return entity;
     }
 
-    private void persistAttachmentMetadata(Long messageId, List<InboundNoticeAttachment> attachments) {
+    private void persistAttachmentMetadata(Long messageId, List<InboundNoticeAttachmentRequest> attachments) {
         transaction().executeWithoutResult(status -> {
-            for (InboundNoticeAttachment attachment : attachments) {
+            for (InboundNoticeAttachmentRequest attachment : attachments) {
                 NoticeInboundAttachmentEntity existing = findAttachment(messageId, attachment.index());
                 if (existing != null) {
                     continue;
@@ -152,32 +153,32 @@ public class NoticeInboundReceiverService implements NoticeInboundReceiver {
         });
     }
 
-    private void saveAttachments(NoticeInboundMessageEntity message, List<InboundNoticeAttachment> attachments) {
+    private void saveAttachments(NoticeInboundMessageEntity message, List<InboundNoticeAttachmentRequest> attachments) {
         if (attachments.isEmpty()) {
             // A duplicate delivery may not carry the original streams. Never turn a
             // partially processed message into a broadcastable one just because this
             // retry has no attachments; the persisted attachment rows remain the source
             // of truth and the source must retry with the streams when they are missing.
             if (!allAttachmentsSaved(message.getId())) {
-                throw new InboundReceiveRetryableException("入站消息附件尚未全部提供");
+                Require.rethrow(new InboundReceiveRetryableException("入站消息附件尚未全部提供"));
             }
             markReady(message.getId());
             return;
         }
         markMessageStatus(message.getId(), NoticeInboundMessageStatus.ATTACHMENT_PROCESSING, null, null);
-        for (InboundNoticeAttachment attachment : attachments) {
+        for (InboundNoticeAttachmentRequest attachment : attachments) {
             NoticeInboundAttachmentEntity entity = findAttachment(message.getId(), attachment.index());
             if (entity != null && entity.getStatus() == NoticeInboundAttachmentStatus.SAVED) {
                 continue;
             }
-            NoticeInboundAttachmentEntity checkedEntity = Require.nonNull(entity, "入站附件元数据不存在");
+            NoticeInboundAttachmentEntity checkedEntity = Require.nonNull(entity, NoticeCode.NOTICE_BUSINESS_ERROR, "入站附件元数据不存在");
             if (!claimAttachment(checkedEntity.getId())) {
-                throw new InboundReceiveRetryableException("入站附件正在被其它请求处理");
+                Require.rethrow(new InboundReceiveRetryableException("入站附件正在被其它请求处理"));
             }
             try {
                 FileRecordVO file = fileContentProvider.save(fileCommand(message.getId(), attachment));
-                Require.notNull(file, "入站附件保存结果不能为空");
-                Require.notNull(file.getId(), "入站附件 fileId 不能为空");
+                Require.notNull(file, NoticeCode.NOTICE_BUSINESS_ERROR, "入站附件保存结果不能为空");
+                Require.notNull(file.getId(), NoticeCode.NOTICE_BUSINESS_ERROR, "入站附件 fileId 不能为空");
                 markAttachmentSaved(checkedEntity.getId(), file.getId());
             } catch (RuntimeException failure) {
                 NoticeInboundAttachmentStatus attachmentStatus = markAttachmentFailed(checkedEntity.getId(), failure);
@@ -185,7 +186,7 @@ public class NoticeInboundReceiverService implements NoticeInboundReceiver {
                                 ? NoticeInboundMessageStatus.DEAD_LETTER
                                 : NoticeInboundMessageStatus.RETRYABLE_FAILED,
                         "NOTICE_INBOUND_ATTACHMENT_FAILED", failureMessage(failure));
-                throw new InboundReceiveRetryableException("入站附件保存失败", failure);
+                Require.rethrow(new InboundReceiveRetryableException("入站附件保存失败", failure));
             }
         }
         if (allAttachmentsSaved(message.getId())) {
@@ -194,9 +195,9 @@ public class NoticeInboundReceiverService implements NoticeInboundReceiver {
     }
 
     private void publishWhenReady(Long messageId) {
-        NoticeInboundMessageEntity entity = Require.nonNull(messageMapper.selectById(messageId), "入站消息不存在");
+        NoticeInboundMessageEntity entity = Require.nonNull(messageMapper.selectById(messageId), NoticeCode.NOTICE_BUSINESS_ERROR, "入站消息不存在");
         if (entity.getStatus() != NoticeInboundMessageStatus.READY_TO_BROADCAST) {
-            throw new InboundReceiveRetryableException("入站消息附件尚未全部保存");
+            Require.rethrow(new InboundReceiveRetryableException("入站消息附件尚未全部保存"));
         }
         List<Long> fileIds = attachmentMapper.selectList(new LambdaQueryWrapper<NoticeInboundAttachmentEntity>()
                         .eq(NoticeInboundAttachmentEntity::getMessageId, messageId)
@@ -217,14 +218,14 @@ public class NoticeInboundReceiverService implements NoticeInboundReceiver {
                             .set(NoticeInboundMessageEntity::getProcessedAt, LocalDateTime.now())));
         } catch (RuntimeException failure) {
             markBroadcastFailed(messageId, failure);
-            throw new InboundReceiveRetryableException("入站消息广播暂未受理", failure);
+            Require.rethrow(new InboundReceiveRetryableException("入站消息广播暂未受理", failure));
         }
     }
 
     /** Retries a persisted message whose source payload is no longer needed. */
     public void retryBroadcast(String tenantId, Long messageId) {
-        Require.notBlank(tenantId, "租户不能为空");
-        Require.notNull(messageId, "入站消息 ID 不能为空");
+        Require.notBlank(tenantId, NoticeCode.NOTICE_BUSINESS_ERROR, "租户不能为空");
+        Require.notNull(messageId, NoticeCode.NOTICE_BUSINESS_ERROR, "入站消息 ID 不能为空");
         withTenant(tenantId, () -> {
             publishWhenReady(messageId);
             return null;
@@ -232,11 +233,18 @@ public class NoticeInboundReceiverService implements NoticeInboundReceiver {
     }
 
     public List<NoticeInboundMessageEntity> dueBroadcasts(int limit) {
-        Require.isTrue(limit > 0, "广播重试批次必须大于 0");
+        Require.isTrue(limit > 0, NoticeCode.NOTICE_BUSINESS_ERROR, "广播重试批次必须大于 0");
         return messageMapper.selectDueBroadcasts(limit);
     }
 
-    public void deadLetterBroadcast(String tenantId, Long messageId, String reason) {
+    public void deadLetterBroadcast(NoticeInboundBroadcastDeadLetterCommand command) {
+        Require.notNull(command, NoticeCode.NOTICE_BUSINESS_ERROR, "入站广播死信参数不能为空");
+        Require.notBlank(command.tenantId(), NoticeCode.NOTICE_BUSINESS_ERROR, "租户不能为空");
+        Require.notNull(command.messageId(), NoticeCode.NOTICE_BUSINESS_ERROR, "入站消息 ID 不能为空");
+        Require.notBlank(command.reason(), NoticeCode.NOTICE_BUSINESS_ERROR, "死信原因不能为空");
+        String tenantId = command.tenantId();
+        Long messageId = command.messageId();
+        String reason = command.reason();
         withTenant(tenantId, () -> {
             markMessageStatus(messageId, NoticeInboundMessageStatus.DEAD_LETTER,
                     "NOTICE_INBOUND_BROADCAST_EXHAUSTED", reason);
@@ -274,7 +282,7 @@ public class NoticeInboundReceiverService implements NoticeInboundReceiver {
                                 NoticeInboundAttachmentStatus.RETRYABLE_FAILED)
                         .set(NoticeInboundAttachmentEntity::getStatus, NoticeInboundAttachmentStatus.PROCESSING)
                         .setSql("attempt_count = attempt_count + 1")));
-        return Require.nonNull(updated, "入站附件申领结果不能为空") == 1;
+        return Require.nonNull(updated, NoticeCode.NOTICE_BUSINESS_ERROR, "入站附件申领结果不能为空") == 1;
     }
 
     private void markAttachmentSaved(Long attachmentId, Long fileId) {
@@ -290,7 +298,7 @@ public class NoticeInboundReceiverService implements NoticeInboundReceiver {
 
     private NoticeInboundAttachmentStatus markAttachmentFailed(Long attachmentId, RuntimeException failure) {
         NoticeInboundAttachmentEntity entity = Require.nonNull(
-                attachmentMapper.selectById(attachmentId), "入站附件不存在");
+                attachmentMapper.selectById(attachmentId), NoticeCode.NOTICE_BUSINESS_ERROR, "入站附件不存在");
         NoticeInboundAttachmentStatus status = entity.getAttemptCount() != null
                 && entity.getAttemptCount() >= MAX_ATTACHMENT_ATTEMPTS
                 ? NoticeInboundAttachmentStatus.DEAD_LETTER
@@ -353,15 +361,15 @@ public class NoticeInboundReceiverService implements NoticeInboundReceiver {
 
     private String messageTenantId(Long messageId) {
         String tenantId = Require.nonNull(
-                messageMapper.selectById(messageId), "入站消息不存在").getTenantId();
-        Require.notBlank(tenantId, "入站消息租户不存在");
+                messageMapper.selectById(messageId), NoticeCode.NOTICE_BUSINESS_ERROR, "入站消息不存在").getTenantId();
+        Require.notBlank(tenantId, NoticeCode.NOTICE_BUSINESS_ERROR, "入站消息租户不存在");
         return tenantId;
     }
 
-    private SaveFileCommand fileCommand(Long messageId, InboundNoticeAttachment attachment) {
+    private SaveFileCommand fileCommand(Long messageId, InboundNoticeAttachmentRequest attachment) {
         SaveFileCommand command = new SaveFileCommand();
-        command.setInputStream(Require.nonNull(attachment.content(), "入站附件流不能为空"));
-        command.setFileName(Require.nonNull(attachment.fileName(), "入站附件名不能为空"));
+        command.setInputStream(Require.nonNull(attachment.content(), NoticeCode.NOTICE_BUSINESS_ERROR, "入站附件流不能为空"));
+        command.setFileName(Require.nonNull(attachment.fileName(), NoticeCode.NOTICE_BUSINESS_ERROR, "入站附件名不能为空"));
         command.setFileSize(attachment.fileSize());
         command.setContentType(attachment.contentType());
         command.setPurpose("notice-inbound-attachment");
@@ -371,31 +379,31 @@ public class NoticeInboundReceiverService implements NoticeInboundReceiver {
         return command;
     }
 
-    private InboundReceiveResult result(NoticeInboundMessageEntity entity, boolean duplicate) {
-        return new InboundReceiveResult(entity.getId(), entity.getEventId(), duplicate,
+    private InboundReceiveResultResponse result(NoticeInboundMessageEntity entity, boolean duplicate) {
+        return new InboundReceiveResultResponse(entity.getId(), entity.getEventId(), duplicate,
                 entity.getStatus() == NoticeInboundMessageStatus.BROADCASTED);
     }
 
-    private String stableEventId(InboundNoticeMessage message) {
+    private String stableEventId(InboundNoticeMessageRequest message) {
         String identity = message.tenantId() + "|" + message.channelConfigId() + "|" + message.sourceKey();
         return UUID.nameUUIDFromBytes(identity.getBytes(StandardCharsets.UTF_8)).toString();
     }
 
-    private void validateAttachments(List<InboundNoticeAttachment> attachments) {
+    private void validateAttachments(List<InboundNoticeAttachmentRequest> attachments) {
         HashSet<Integer> indexes = new HashSet<>();
-        for (InboundNoticeAttachment attachment : attachments) {
-            InboundNoticeAttachment checked = Require.nonNull(attachment, "入站附件不能为空");
-            Require.isTrue(checked.index() >= 0, "入站附件序号不能小于 0");
-            Require.isTrue(indexes.add(checked.index()), "入站附件序号不能重复");
-            Require.notBlank(checked.fileName(), "入站附件名不能为空");
-            Require.isTrue(checked.fileSize() > 0L, "入站附件大小必须大于 0");
-            Require.notNull(checked.content(), "入站附件流不能为空");
+        for (InboundNoticeAttachmentRequest attachment : attachments) {
+            InboundNoticeAttachmentRequest checked = Require.nonNull(attachment, NoticeCode.NOTICE_BUSINESS_ERROR, "入站附件不能为空");
+            Require.isTrue(checked.index() >= 0, NoticeCode.NOTICE_BUSINESS_ERROR, "入站附件序号不能小于 0");
+            Require.isTrue(indexes.add(checked.index()), NoticeCode.NOTICE_BUSINESS_ERROR, "入站附件序号不能重复");
+            Require.notBlank(checked.fileName(), NoticeCode.NOTICE_BUSINESS_ERROR, "入站附件名不能为空");
+            Require.isTrue(checked.fileSize() > 0L, NoticeCode.NOTICE_BUSINESS_ERROR, "入站附件大小必须大于 0");
+            Require.notNull(checked.content(), NoticeCode.NOTICE_BUSINESS_ERROR, "入站附件流不能为空");
         }
     }
 
-    private void closeAttachments(List<InboundNoticeAttachment> attachments) {
+    private void closeAttachments(List<InboundNoticeAttachmentRequest> attachments) {
         List<IOException> failures = new ArrayList<>();
-        for (InboundNoticeAttachment attachment : attachments) {
+        for (InboundNoticeAttachmentRequest attachment : attachments) {
             if (attachment == null) {
                 continue;
             }
@@ -438,7 +446,7 @@ public class NoticeInboundReceiverService implements NoticeInboundReceiver {
         try {
             return objectMapper.writeValueAsString(value);
         } catch (JsonProcessingException failure) {
-            throw new IllegalArgumentException("入站消息 JSON 无法序列化", failure);
+            return Require.rethrow(new IllegalArgumentException("入站消息 JSON 无法序列化", failure));
         }
     }
 

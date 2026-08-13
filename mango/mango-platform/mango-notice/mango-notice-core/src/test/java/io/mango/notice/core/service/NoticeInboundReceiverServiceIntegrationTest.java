@@ -11,9 +11,10 @@ import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.infra.event.api.DomainEvent;
 import io.mango.infra.event.api.IDomainEventPublisher;
 import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguration;
-import io.mango.notice.api.InboundNoticeAttachment;
-import io.mango.notice.api.InboundNoticeMessage;
-import io.mango.notice.api.InboundReceiveResult;
+import io.mango.notice.api.InboundNoticeAttachmentRequest;
+import io.mango.notice.api.InboundNoticeMessageRequest;
+import io.mango.notice.api.InboundNoticeHeaderRequest;
+import io.mango.notice.api.InboundReceiveResultResponse;
 import io.mango.notice.api.enums.NoticeChannelType;
 import io.mango.notice.api.enums.NoticeInboundMessageStatus;
 import io.mango.notice.api.enums.NoticeInboundProtocol;
@@ -49,7 +50,6 @@ import java.io.ByteArrayInputStream;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -96,7 +96,7 @@ class NoticeInboundReceiverServiceIntegrationTest {
 
     @Test
     void receivePersistsInboxStoresAttachmentAndBroadcastsStableFileId() {
-        InboundReceiveResult result = receiver.receive(message("IT_765_SOURCE", "payload.txt"));
+        InboundReceiveResultResponse result = receiver.receive(message("IT_765_SOURCE", "payload.txt"));
 
         NoticeInboundMessageEntity stored = messageMapper.selectById(result.messageId());
         NoticeInboundAttachmentEntity attachment = attachmentMapper.selectList(null).getFirst();
@@ -119,8 +119,8 @@ class NoticeInboundReceiverServiceIntegrationTest {
 
     @Test
     void duplicateSourceKeepsSingleInboxAndStableEventIdentity() {
-        InboundReceiveResult first = receiver.receive(message("IT_765_DUP", "first.txt"));
-        InboundReceiveResult second = receiver.receive(message("IT_765_DUP", "second.txt"));
+        InboundReceiveResultResponse first = receiver.receive(message("IT_765_DUP", "first.txt"));
+        InboundReceiveResultResponse second = receiver.receive(message("IT_765_DUP", "second.txt"));
 
         assertThat(second.duplicate()).isTrue();
         assertThat(second.messageId()).isEqualTo(first.messageId());
@@ -132,7 +132,7 @@ class NoticeInboundReceiverServiceIntegrationTest {
 
     @Test
     void receivedMessageIsAvailableToAdministratorListAndDetail() {
-        InboundReceiveResult received = receiver.receive(message("IT_765_ADMIN_LIST", "admin-list.txt"));
+        InboundReceiveResultResponse received = receiver.receive(message("IT_765_ADMIN_LIST", "admin-list.txt"));
 
         NoticeInboundMessagePageQuery query = new NoticeInboundMessagePageQuery();
         query.setChannelType(NoticeChannelType.EMAIL);
@@ -178,11 +178,11 @@ class NoticeInboundReceiverServiceIntegrationTest {
     @Test
     void successfulMailPollClearsPreviousCursorFailureState() {
         java.time.LocalDateTime nextPollAt = java.time.LocalDateTime.parse("2026-08-13T12:00:00");
-        cursorService.recordFailure(765L, NoticeInboundProtocol.POP3,
-                "InboundReceiveRetryableException", "入站消息广播暂未受理", nextPollAt);
+        cursorService.recordFailure(new NoticeInboundMailCursorFailureCommand(765L, NoticeInboundProtocol.POP3,
+                "InboundReceiveRetryableException", "入站消息广播暂未受理", nextPollAt));
 
-        cursorService.advance(765L, NoticeInboundProtocol.POP3,
-                "uidl-2222", "version-2222", nextPollAt.plusMinutes(1));
+        cursorService.advance(new NoticeInboundMailCursorAdvanceCommand(765L, NoticeInboundProtocol.POP3,
+                "uidl-2222", "version-2222", nextPollAt.plusMinutes(1)));
 
         NoticeInboundReceiveCursorEntity cursor = cursorMapper.selectOne(null);
         assertThat(cursor.getCursorValue()).isEqualTo("uidl-2222");
@@ -191,13 +191,13 @@ class NoticeInboundReceiverServiceIntegrationTest {
         assertThat(cursor.getLastFailureReason()).isNull();
     }
 
-    private InboundNoticeMessage message(String sourceKey, String fileName) {
+    private InboundNoticeMessageRequest message(String sourceKey, String fileName) {
         byte[] bytes = "IT_765_ATTACHMENT".getBytes(java.nio.charset.StandardCharsets.UTF_8);
-        return new InboundNoticeMessage(
-                "tenant-765", 765L, NoticeChannelType.EMAIL, "STANDARD_MAIL", null,
+        return new InboundNoticeMessageRequest(
+                "tenant-765", 765L, NoticeChannelType.EMAIL, "STANDARD_MAIL", NoticeInboundProtocol.IMAP,
                 sourceKey, "message-765", "Inbound test", "sender@example.com",
-                List.of("yunxinbaokeji@126.com"), "body", null, Map.of("Message-ID", "message-765"),
-                List.of(new InboundNoticeAttachment(
+                List.of("yunxinbaokeji@126.com"), "body", "", List.of(new InboundNoticeHeaderRequest("Message-ID", "message-765")),
+                List.of(new InboundNoticeAttachmentRequest(
                         0, fileName, "text/plain", bytes.length, new ByteArrayInputStream(bytes))),
                 Instant.parse("2026-08-13T04:00:00Z"));
     }

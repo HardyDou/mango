@@ -1,6 +1,6 @@
 package io.mango.notice.channel.wecom;
 
-import io.mango.notice.api.InboundNoticeMessage;
+import io.mango.notice.api.InboundNoticeMessageRequest;
 import org.junit.jupiter.api.Test;
 
 import javax.crypto.Cipher;
@@ -46,7 +46,7 @@ class DefaultWecomInboundMessageAdapterTest {
         WecomInboundRequest request = new WecomInboundRequest(
                 signature(encrypted), "1786590252", "1786018586", null, body);
 
-        InboundNoticeMessage message = adapter.parseMessage(request, config, "tenant-765", 765L);
+        InboundNoticeMessageRequest message = adapter.parseMessage(request, config, "tenant-765", 765L);
 
         assertThat(message.sourceKey()).isEqualTo("WECOM:msg-765");
         assertThat(message.bodyText()).isEqualTo("hello inbound");

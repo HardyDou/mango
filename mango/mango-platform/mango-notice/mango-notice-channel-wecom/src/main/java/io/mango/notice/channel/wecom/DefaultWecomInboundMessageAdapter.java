@@ -1,7 +1,9 @@
 package io.mango.notice.channel.wecom;
 
-import io.mango.notice.api.InboundNoticeMessage;
+import io.mango.notice.api.InboundNoticeMessageRequest;
+import io.mango.notice.api.InboundNoticeHeaderRequest;
 import io.mango.notice.api.enums.NoticeChannelType;
+import io.mango.notice.api.enums.NoticeInboundProtocol;
 import org.springframework.stereotype.Component;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -22,7 +24,6 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.HexFormat;
 import java.util.List;
-import java.util.Map;
 
 /** Official WeCom callback algorithm implemented outside the public endpoint. */
 @Component
@@ -40,7 +41,7 @@ public class DefaultWecomInboundMessageAdapter implements WecomInboundMessageAda
     }
 
     @Override
-    public InboundNoticeMessage parseMessage(WecomInboundRequest request, WecomInboundConfig config,
+    public InboundNoticeMessageRequest parseMessage(WecomInboundRequest request, WecomInboundConfig config,
                                              String tenantId, Long channelConfigId) {
         String encrypted = element(request.body(), "Encrypt");
         requireSignature(request.signature(), config.token(), request.timestamp(), request.nonce(), encrypted);
@@ -53,9 +54,11 @@ public class DefaultWecomInboundMessageAdapter implements WecomInboundMessageAda
         String msgType = element(plainXml, "MsgType");
         String sourceKey = "WECOM:" + firstText(messageId,
                 sha256(from + "|" + to + "|" + msgType + "|" + plainXml));
-        return new InboundNoticeMessage(tenantId, channelConfigId, NoticeChannelType.WECOM, "WECOM", null,
+        return new InboundNoticeMessageRequest(tenantId, channelConfigId, NoticeChannelType.WECOM, "WECOM",
+                NoticeInboundProtocol.WEBHOOK,
                 sourceKey, messageId, msgType, from, to == null ? List.of() : List.of(to),
-                content, null, Map.of("msgType", firstText(msgType, "unknown")), List.of(), Instant.now());
+                content, "", List.of(new InboundNoticeHeaderRequest("msgType", firstText(msgType, "unknown"))),
+                List.of(), Instant.now());
     }
 
     private void requireSignature(String signature, String token, String timestamp, String nonce, String encrypted) {

@@ -1,7 +1,8 @@
 package io.mango.notice.channel.email;
 
-import io.mango.notice.api.InboundNoticeAttachment;
-import io.mango.notice.api.InboundNoticeMessage;
+import io.mango.notice.api.InboundNoticeAttachmentRequest;
+import io.mango.notice.api.InboundNoticeMessageRequest;
+import io.mango.notice.api.InboundNoticeHeaderRequest;
 import io.mango.notice.api.enums.NoticeChannelType;
 import io.mango.notice.api.enums.NoticeInboundProtocol;
 import io.mango.notice.support.channel.NoticeInboundMailAccount;
@@ -28,7 +29,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -64,6 +64,7 @@ public class JakartaMailInboundClient implements NoticeInboundMailClient {
                 return switch (account.protocol()) {
                     case IMAP -> fetchImap(account, inbox, cursorValue, cursorVersion);
                     case POP3 -> fetchPop3(account, inbox, cursorValue);
+                    case WEBHOOK -> throw new InboundMailException("邮箱客户端不支持 WEBHOOK 协议", null);
                 };
             } finally {
                 if (inbox.isOpen()) {
@@ -144,14 +145,14 @@ public class JakartaMailInboundClient implements NoticeInboundMailClient {
         return List.copyOf(result);
     }
 
-    private InboundNoticeMessage parse(
+    private InboundNoticeMessageRequest parse(
             NoticeInboundMailAccount account, Message source, String sourceKey)
             throws MessagingException, IOException {
         MimeMessage message = (MimeMessage) source;
         ParsedContent content = new ParsedContent();
         parsePart(message, content);
         String messageId = header(message, "Message-ID");
-        return new InboundNoticeMessage(
+        return new InboundNoticeMessageRequest(
                 account.tenantId(), account.channelConfigId(), NoticeChannelType.EMAIL, "STANDARD_MAIL",
                 account.protocol(), sourceKey, messageId, message.getSubject(), from(message), addresses(message),
                 content.text.toString(), content.html.toString(), safeHeaders(message), content.attachments,
@@ -161,7 +162,7 @@ public class JakartaMailInboundClient implements NoticeInboundMailClient {
     private void parsePart(Part part, ParsedContent target) throws MessagingException, IOException {
         if (Part.ATTACHMENT.equalsIgnoreCase(part.getDisposition()) || part.getFileName() != null) {
             byte[] bytes = readLimited(part);
-            target.attachments.add(new InboundNoticeAttachment(target.attachments.size(),
+            target.attachments.add(new InboundNoticeAttachmentRequest(target.attachments.size(),
                     firstText(part.getFileName(), "attachment-" + target.attachments.size()),
                     part.getContentType(), bytes.length, new ByteArrayInputStream(bytes)));
             return;
@@ -199,15 +200,15 @@ public class JakartaMailInboundClient implements NoticeInboundMailClient {
         }
     }
 
-    private Map<String, String> safeHeaders(Message message) throws MessagingException {
-        Map<String, String> headers = new LinkedHashMap<>();
+    private List<InboundNoticeHeaderRequest> safeHeaders(Message message) throws MessagingException {
+        List<InboundNoticeHeaderRequest> headers = new ArrayList<>();
         for (String name : List.of("Message-ID", "In-Reply-To", "References", "Date", "Reply-To")) {
             String value = header(message, name);
             if (value != null) {
-                headers.put(name, value);
+                headers.add(new InboundNoticeHeaderRequest(name, value));
             }
         }
-        return Map.copyOf(headers);
+        return List.copyOf(headers);
     }
 
     private String header(Message message, String name) throws MessagingException {
@@ -242,6 +243,7 @@ public class JakartaMailInboundClient implements NoticeInboundMailClient {
         return switch (protocol) {
             case IMAP -> ssl ? "imaps" : "imap";
             case POP3 -> ssl ? "pop3s" : "pop3";
+            case WEBHOOK -> throw new InboundMailException("邮箱客户端不支持 WEBHOOK 协议", null);
         };
     }
 
@@ -263,7 +265,7 @@ public class JakartaMailInboundClient implements NoticeInboundMailClient {
     private static final class ParsedContent {
         private final StringBuilder text = new StringBuilder();
         private final StringBuilder html = new StringBuilder();
-        private final List<InboundNoticeAttachment> attachments = new ArrayList<>();
+        private final List<InboundNoticeAttachmentRequest> attachments = new ArrayList<>();
     }
 
     public static final class InboundMailException extends RuntimeException {

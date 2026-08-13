@@ -1,7 +1,7 @@
 package io.mango.notice.starter.endpoint;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.mango.notice.api.InboundNoticeMessage;
+import io.mango.notice.api.InboundNoticeMessageRequest;
 import io.mango.notice.api.NoticeInboundReceiver;
 import io.mango.notice.api.NoticeInboundWebhookProvider;
 import io.mango.notice.api.enums.NoticeChannelType;
@@ -119,9 +119,9 @@ class NoticeInboundPublicEndpointTest {
                 .andExpect(content().contentType("text/plain"))
                 .andExpect(content().string("success"));
 
-        ArgumentCaptor<InboundNoticeMessage> captor = ArgumentCaptor.forClass(InboundNoticeMessage.class);
+        ArgumentCaptor<InboundNoticeMessageRequest> captor = ArgumentCaptor.forClass(InboundNoticeMessageRequest.class);
         verify(receiver).receive(captor.capture());
-        InboundNoticeMessage message = captor.getValue();
+        InboundNoticeMessageRequest message = captor.getValue();
         assertThat(message.tenantId()).isEqualTo(TENANT_ID);
         assertThat(message.channelConfigId()).isEqualTo(CHANNEL_CONFIG_ID);
         assertThat(message.sourceKey()).isEqualTo("WECOM:msg-765");
