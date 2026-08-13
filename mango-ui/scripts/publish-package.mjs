@@ -15,6 +15,7 @@ import {
   shouldUseShellForCommand,
   verifyPublishedPackage,
 } from './release-guard-utils.mjs';
+import { classifyNpmBatchRecovery } from './npm-batch-recovery.mjs';
 
 function usage() {
   console.log(`Usage: pnpm publish:pkg <package|short-name> --publish-registry=<url> --consume-registry=<url> [--dry-run] [--skip-shared-gates]
@@ -277,6 +278,8 @@ const args = process.argv.slice(2);
 const dryRun = args.includes('--dry-run');
 const verifyOnly = args.includes('--verify-only');
 const skipSharedGates = args.includes('--skip-shared-gates');
+const batchResume = verifyOnly && process.env.MANGO_RELEASE_BATCH_RESUME === '1';
+const sharedGatePackage = process.env.MANGO_RELEASE_SHARED_GATE_PACKAGE || '';
 const releaseTagArg = args.find((arg) => arg.startsWith('--release-tag='));
 const releaseTag = releaseTagArg?.slice('--release-tag='.length) || '';
 const verifyPmoPackageRootArg = args.find((arg) => arg.startsWith('--verify-pmo-package-root='));
@@ -349,7 +352,12 @@ if (packageName === '@mango/cli') {
     ]);
   }
 }
-if (verifyOnly) {
+if (batchResume && packageName === sharedGatePackage) {
+  console.log('Checking generated business consumer vue-tsc once for npm batch recovery');
+  run(pnpmCommand, ['run', 'package-consumer:typecheck', '--', `--registry=${consumeRegistry}`]);
+  console.log('Shared npm batch recovery gates passed');
+}
+if (verifyOnly && !batchResume) {
   try {
     verifyPublishedRelease(packageName, version, found, releaseContracts, {
       publish: publishRegistry,
@@ -362,7 +370,32 @@ if (verifyOnly) {
     process.exit(1);
   }
 }
-if (skipSharedGates) {
+if (batchResume) {
+  const publishResult = npmView(`${packageName}@${version}`, publishRegistry);
+  const consumeResult = npmView(`${packageName}@${version}`, consumeRegistry);
+  const recovery = classifyNpmBatchRecovery(publishResult, consumeResult, version);
+  if (recovery === 'verify-existing') {
+    try {
+      verifyPublishedRelease(packageName, version, found, releaseContracts, {
+        publish: publishRegistry,
+        consume: consumeRegistry,
+      });
+      console.log(`Verified existing package during npm batch recovery: ${packageName}@${version}`);
+      process.exit(0);
+    } catch (error) {
+      console.error(error.message);
+      process.exit(1);
+    }
+  }
+  if (recovery !== 'publish-absent') {
+    console.error(
+      `Registry state for ${packageName}@${version} is inconsistent or unknown; refusing immutable publish.`,
+    );
+    process.exit(1);
+  }
+  console.log(`Both registries confirm ${packageName}@${version} is absent; continuing exact first publish`);
+}
+if (skipSharedGates || batchResume) {
   console.log('Skipping shared publish gates because the release batch gates already passed');
 } else {
   console.log('Checking generated business consumer vue-tsc before publish');
