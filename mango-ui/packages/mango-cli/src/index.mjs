@@ -18,7 +18,7 @@ import {
   symlinkSync,
   writeFileSync,
 } from 'node:fs';
-import { spawn, spawnSync } from 'node:child_process';
+import { spawnSync } from 'node:child_process';
 import { createHash, randomBytes } from 'node:crypto';
 import http from 'node:http';
 import https from 'node:https';
@@ -38,6 +38,7 @@ import {
   readCiFriendlyMavenRevision,
 } from './dev-maven-revision.mjs';
 import { isProcessAlive, isProcessGroupAlive, stopProcessGroup } from './process-control.mjs';
+import { isCommandAvailable, spawnCommand, spawnCommandSync } from './platform-command.mjs';
 import { runReleaseCli } from './release-command.mjs';
 import { runModuleDoctorCli } from './module-doctor.mjs';
 
@@ -907,15 +908,14 @@ function formatBusinessModuleFrontend(targetDir, variables) {
 
 function synchronizeBusinessModuleLockfile(targetDir, variables) {
   const frontendRoot = join(targetDir, 'frontend');
-  const pnpm = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm';
   runBusinessModuleCommand(
-    pnpm,
+    'pnpm',
     ['install', '--lockfile-only', '--ignore-scripts'],
     frontendRoot,
     'pnpm lockfile update',
   );
   runBusinessModuleCommand(
-    pnpm,
+    'pnpm',
     ['install', '--frozen-lockfile', '--lockfile-only', '--ignore-scripts'],
     frontendRoot,
     'pnpm frozen lockfile verification',
@@ -933,11 +933,10 @@ function synchronizeBusinessModuleLockfile(targetDir, variables) {
 }
 
 function runBusinessModuleCommand(command, args, cwd, label) {
-  const result = spawnSync(command, args, {
+  const result = spawnCommandSync(command, args, {
     cwd,
     encoding: 'utf8',
     maxBuffer: 50 * 1024 * 1024,
-    shell: process.platform === 'win32' && command.endsWith('.cmd'),
   });
   if (result.error) {
     throw new Error(`${label} could not start: ${result.error.message}`);
@@ -2064,7 +2063,7 @@ function doctorDevWorkspace(context) {
       process.stdout.write(`ok      node ${process.version}\n`);
       continue;
     }
-    const result = spawnSync(command, ['--version'], { encoding: 'utf8' });
+    const result = spawnCommandSync(command, ['--version'], { encoding: 'utf8' });
     if (result.status === 0) {
       const firstLine = `${result.stdout || result.stderr}`.split(/\r?\n/).find(Boolean) || 'available';
       process.stdout.write(`ok      ${label} ${firstLine}\n`);
@@ -2072,7 +2071,7 @@ function doctorDevWorkspace(context) {
       process.stdout.write(`missing ${label}\n`);
     }
   }
-  const globalMango = spawnSync('mango', ['--version'], { encoding: 'utf8' });
+  const globalMango = spawnCommandSync('mango', ['--version'], { encoding: 'utf8' });
   if (globalMango.status === 0) {
     const firstLine = `${globalMango.stdout || globalMango.stderr}`.split(/\r?\n/).find(Boolean) || 'available';
     process.stdout.write(`ok      global mango ${firstLine}\n`);
@@ -2241,7 +2240,7 @@ function startDevApp(context, name, app) {
   }
   requireCommand(app.command, name);
   const logFd = openSync(logPath, 'a');
-  const child = spawn(app.command, app.args, {
+  const child = spawnCommand(app.command, app.args, {
     cwd: app.runCwd || app.cwd,
     env: { ...process.env, ...app.env },
     detached: true,
@@ -2568,8 +2567,7 @@ function requireCommand(command, appName) {
     }
     return;
   }
-  const result = spawnSync('sh', ['-c', `command -v "$1" >/dev/null 2>&1`, 'sh', command], { stdio: 'ignore' });
-  if (result.status !== 0) {
+  if (!isCommandAvailable(command)) {
     fail(`${appName}: command not found: ${command}`);
   }
 }
@@ -2577,7 +2575,7 @@ function requireCommand(command, appName) {
 function runForegroundCommand(cwd, command, args, env, logPath) {
   const logFd = openSync(logPath, 'a');
   try {
-    return spawnSync(command, args, {
+    return spawnCommandSync(command, args, {
       cwd,
       env: { ...process.env, ...env },
       stdio: ['ignore', logFd, logFd],
@@ -2779,7 +2777,7 @@ function requiredAdminSourceModeArtifacts(uiRoot) {
 function runCheckedCommand(cwd, command, args, label) {
   requireCommand(command, label);
   process.stdout.write(`${label}: ${command} ${args.join(' ')}\n`);
-  const result = spawnSync(command, args, {
+  const result = spawnCommandSync(command, args, {
     cwd,
     stdio: 'inherit',
     env: { ...process.env },
