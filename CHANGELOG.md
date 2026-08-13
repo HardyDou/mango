@@ -12,7 +12,7 @@
 
 ## v2026.08.14-maven-1.0.36-notice-1.0.39-admin-1.0.65-cli-1.0.104-inbound-release - 2026-08-14
 
-Status: `PENDING`. Release source is the merged Notice inbound implementation from PR #772 plus this release metadata change. No immutable artifact, tag, GitHub Release, or documentation snapshot is considered published until all preflight, registry, consumer, and post-publication checks pass.
+Status: `PUBLISHED_AND_VERIFIED`. Release source is the merged Notice inbound implementation from PR #772 at source commit `8843c0049de68747ba443ccc9a31e7010a43b4a8` (tree `27b42763b392a199dc7d43e994d27b7ea406b735`). The immutable tag, GitHub Release, Maven/npm artifacts, Latest documentation, versioned documentation snapshot, registry back-checks, and clean consumer verification all passed. The canonical publication manifest remains preserved as failed audit evidence; the completed read-only recovery manifest is recorded below.
 
 ### Fixed
 
@@ -33,9 +33,15 @@ Status: `PENDING`. Release source is the merged Notice inbound implementation fr
 
 ### Published Packages
 
-1. Publish and verify the complete non-app Maven batch and `io.mango:mango-docs-bundle:1.0.36`.
-2. Publish and verify `@mango/notice@1.0.39`, `@mango/admin-shell@1.0.59`, `@mango/admin@1.0.65`, and `@mango/cli@1.0.104` to the private npm registry.
-3. Create and verify the immutable tag and GitHub Release against the merged source commit.
+| Order | Target | Version | Status |
+| ---: | --- | --- | --- |
+| 1 | Complete non-app Maven batch and `io.mango:mango-docs-bundle` | `1.0.36` | `PUBLISHED_AND_VERIFIED`; Maven consume registry back-check passed. |
+| 2 | `@mango/notice` | `1.0.39` | `PUBLISHED_AND_VERIFIED`; hosted/group shasum `90fdcfedc6788236b8079a014720b0b5212777f0`, integrity `sha512-INOsJcIw8nuLHvn4uAOsQjJNTAdM9OxgAVpgDPLz6TyNDfUXnxZR6dwtwOIwxNw0d84YqMJibzDdSL+3JzdWbg==`. |
+| 3 | `@mango/admin-shell` | `1.0.59` | `PUBLISHED_AND_VERIFIED`; hosted/group shasum `08b3b836a45cef47e79b71ef1e86da3dc052d3f1`, integrity `sha512-Snb6gliAX+3besVrhlReZMwCy9klukgy3lr1b2iD1C5cmvsAVBvHyCOJ2f45GkWaF51ysaV/qp7mU972oDZ3pw==`. |
+| 4 | `@mango/admin` | `1.0.65` | `PUBLISHED_AND_VERIFIED`; hosted/group shasum `f38244a2984f7328baf3007a485bcf04de3dacfa`, integrity `sha512-D2GGe8NjDymA0ov2YJ0Ssl6yLVzbvh8GPnuuG1K9zn6IO+eokwHPamwKoRJG6f/iiLwgzu6n4ErCk9x4BnQMYw==`. |
+| 5 | `@mango/cli` | `1.0.104` | `PUBLISHED_AND_VERIFIED`; hosted/group shasum `933e202a7837b274d0c2df09d2a423282d02488d`, integrity `sha512-G01CtciMF0SK0xgqg8yBJL9aif/cJm6XWbWc2A8Tau+vNpXQZr2RAFoumVhxnjk93kGxACXDrmu98YDikBTMfg==`. |
+| 6 | Immutable tag and GitHub Release | `v2026.08.14-maven-1.0.36-notice-1.0.39-admin-1.0.65-cli-1.0.104-inbound-release` | `CREATED_AND_VERIFIED`; tag resolves to source commit `8843c0049de68747ba443ccc9a31e7010a43b4a8`. |
+| 7 | Latest and versioned documentation | Pages | `PUBLISHED_AND_VERIFIED`; Pages workflow `31754309218`, both URLs returned HTTP 200. |
 
 ### Upgrade Notes
 
@@ -49,7 +55,8 @@ Status: `PENDING`. Release source is the merged Notice inbound implementation fr
 
 - Required checks on PR #772 passed: Java gates, documentation gates, `pmo-doc-check`, `frontend-pr-quality`, preflight/scope, and `pr-contract-check`.
 - Release gates: release-impact, CLI release-version lock, Business Starter PMO baseline projection, generated backend gate, admin styles, Notice/Admin Shell tests, Maven/npm registry doctor, and clean-consumer verification.
-- Post-publication evidence must include exact versions, registry coordinates, checksums/integrity, tag/Release source SHA, and the Maven documentation snapshot back-check.
+- Completed read-only recovery manifest: `.runtime/release-1.0.36-readonly/manifests/1.0.36/manifest.json`, SHA-256 `12812201c42d29a742998f2aaf40e6f4d0373f413b412c4fbfb43df38906f998`, `completed=true`. It verifies source, versions, release notes, README audit, tests, PR #780, tag, GitHub Release, Maven, all four npm packages from hosted/group, CLI lock, private-registry consume, Latest docs, versioned docs, post-verify, and cleanup without republishing an immutable coordinate.
+- Preserved original failed publication manifest: `.mango/releases/1.0.36/manifest.json`, SHA-256 `43abe9197636a347e8d01d8b1a45abb071f07f765b31fdc254c3c3319c48d837`; it records only the superseded docs-snapshot verifier failure and remains unchanged for audit.
 
 ## v2026.08.09-pmo-1.3.13-cli-1.0.103-pmo-rollback-release - 2026-08-09
 
