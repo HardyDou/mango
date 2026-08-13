@@ -36,6 +36,8 @@
 
 ## 3.1 近期能力变更
 
+- 2026-08-13，Issue #769 将业务项目 Spring Boot 本地启动改为 Maven Reactor 源码运行：Mango CLI 从 reactor 根选择目标 app，执行 `-pl :<app-artifactId> -am -DskipTests compile spring-boot:run`，继续注入 workspace revision、数据库、端口和应用参数，但不再执行开发期 `install`、`package` 或安装 app fat JAR；正式 CI/CD 打包和 `deploy` 不经过该开发链。使用与升级说明见 [CLI README](../../mango-ui/packages/mango-cli/README.md)、[Business Starter README](../../mango-business-starter/README.md) 和 [CI/CD 发布实践](../guides/business-integration/ci-cd-release-practices.md)，实施与验证见 [STANDARD 交付记录](../plans/2026-08-13-issue-769-maven-workspace-artifacts-delivery-record.md)。
+
 - 2026-08-13，Issue #759 为 `FILE_ASSET` 增加外部资产根目录契约：Resource Declaration 可使用环境无关的 `asset:<relative-path>`，由 `mango.file.asset-root` 在开发或容器环境映射实际目录；绝对路径、`..`、反斜杠和越根符号链接会在上传前拒绝，现有 `classpath:META-INF/mango/assets/` 保持兼容。配置、迁移和 Docker 示例见 [File README](../../mango/mango-platform/mango-file/README.md)，实施与验证见 [STANDARD 交付记录](../plans/2026-08-13-issue-759-external-file-asset-delivery-record.md)。
 
 - 2026-08-13，Issue #764 将 `@mango/auth` 企业微信登录收敛到统一 Provider 授权链路：前端包移除旧企微配置读取、手工 code 登录和 `mwc.` state 生成/解析入口；默认及自定义登录页使用 `/auth/providers/authorize`，公开回调页使用 `/auth/providers/complete`。接入与迁移说明见 [Auth 前端 README](../../mango-ui/packages/auth/README.md) 和 [Auth Views README](../../mango-ui/packages/auth/src/views/README.md)，实施边界见 [STANDARD 交付记录](../plans/2026-08-13-issue-764-wecom-provider-login-delivery-record.md)。

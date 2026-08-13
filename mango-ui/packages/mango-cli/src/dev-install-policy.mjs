@@ -1,18 +1,13 @@
-const FALSE_VALUES = new Set(['0', 'false', 'no', 'off']);
-
 /**
  * Decides whether a development app should execute its configured install command.
- * Backend installs remain enabled unless the workspace explicitly opts out.
+ * Spring Boot apps always run from their Maven reactor and never install workspace artifacts.
  */
-export function shouldRunDevInstall(app, env = {}) {
+export function shouldRunDevInstall(app) {
   if (!app?.install) {
     return false;
   }
   if (app.type !== 'spring-boot-maven') {
     return true;
   }
-  const configured = String(env.MANGO_BACKEND_AUTO_INSTALL ?? 'true')
-    .trim()
-    .toLowerCase();
-  return !FALSE_VALUES.has(configured);
+  return false;
 }
