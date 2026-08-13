@@ -47,7 +47,7 @@ import '@mango/auth/style.css';
 ];
 ```
 
-页面组件不对外定义 props 或事件。业务项目需要完全自定义登录页时，应自行实现 `/login` 页面 UI，并通过 `useMangoLoginFlow()` 复用登录机构、账号密码登录、企微登录、强制改密、登录态持久化和 redirect 逻辑。
+页面组件不对外定义 props 或事件。业务项目需要完全自定义登录页时，应自行实现 `/login` 页面 UI，并通过 `useMangoLoginFlow()` 复用登录机构、账号密码登录、强制改密、登录态持久化和 redirect 逻辑；第三方登录使用 `startProviderAuthorization()` 跳转后端生成的授权地址，不显示手工 code 输入框，也不自行生成 state。
 
 `ProfileView` 的头像不是 URL 文本字段。选择 JPG、PNG、WebP 图片后只生成本地预览，点击保存时才上传文件中心并把 `mango-file:{id}` 写入个人资料；移除头像同样通过保存资料生效。页面内部导航属于个人中心内容，不修改宿主框架左侧主菜单。
 
@@ -69,6 +69,7 @@ import '@mango/auth/style.css';
 ## 6. 问题排查
 
 - 登录页租户为空时，检查 `/system/tenant/login-options`。
+- 企业微信扫码后提示授权状态无效时，确认登录入口调用 `/auth/providers/authorize`，授权地址中的 state 由后端生成，而不是前端生成的 `mwc.` state。
 - 验证码不显示时，检查 captcha 后端和 kv store。
 - 登录成功但菜单为空时，继续检查 authorization/access/admin-shell 闭环。
 - 头像 token 未回显时，确认消费位置使用 `@mango/common` 的 `MangoAvatar`，并检查受保护文件下载请求。

@@ -162,15 +162,33 @@ if (result.status === 'password-reset-required') {
 }
 ```
 
-`useMangoLoginFlow()` 会处理登录机构加载、账号密码登录、企业微信登录、强制改密、token/user/tenant 持久化和安全 redirect。它会暴露 `loading`、`tenantLoading`、`wecomLoading`、`passwordResetLoading` 等状态，业务组件自行决定按钮禁用、loading 展示和错误区域。
+`useMangoLoginFlow()` 会处理登录机构加载、账号密码登录、强制改密、token/user/tenant 持久化和安全 redirect。它会暴露 `loading`、`tenantLoading`、`passwordResetLoading` 等状态，业务组件自行决定按钮禁用、loading 展示和错误区域。
+
+自定义登录页发起企业微信或钉钉登录时，使用统一 Provider API，并直接跳转后端返回的授权地址：
+
+```ts
+import { providerCallbackUri, startProviderAuthorization } from '@mango/auth';
+
+const authorization = await startProviderAuthorization({
+  tenantId: selectedTenantId,
+  appCode: 'internal-admin',
+  provider: 'WECOM',
+  intent: 'LOGIN',
+  redirectUri: providerCallbackUri(),
+});
+
+window.location.assign(authorization.authorizationUrl);
+```
+
+`providerCallbackUri()` 返回当前前端入口的 `origin + pathname`。公开的 `ProviderCallbackView` 消费厂商返回的 `code/state` 并调用 `/auth/providers/complete`；业务页面不需要显示手工 code 输入框，也不需要自行生成 state 或拼接企业微信二维码地址。
+
+已有自定义二维码弹窗可以继续调用 `loginFlow.prepareWecomLogin()`，并用只读的 `loginFlow.wecomQrUrl` 渲染二维码。刷新按钮重新调用 `prepareWecomLogin()` 获取新的后端 state；弹窗只保留二维码、刷新和取消，不再绑定 `wecomCode` 或 `submitWecomLogin()`。
 
 API 封装：
 
 | 函数                                                        | HTTP 接口                                 | 说明                               |
 | ----------------------------------------------------------- | ----------------------------------------- | ---------------------------------- |
 | `login(data)`                                               | `POST /auth/login`                        | 账号密码登录。                     |
-| `wecomLogin(data)`                                          | `POST /auth/wecom/login`                  | 企微登录。                         |
-| `getWecomLoginConfig(tenantId)`                             | `GET /auth/wecom/login-config`            | 读取企微登录配置。                 |
 | `getAccountLoginTenantOptions(data)`                        | `POST /auth/login-institutions`           | 按账号密码查询可登录租户。         |
 | `getLoginTenantOptions()`                                   | `GET /system/tenant/login-options`        | 读取登录租户选项。                 |
 | `getUserInfo()`                                             | `GET /auth/info`                          | 获取当前登录用户。                 |
@@ -192,11 +210,11 @@ API 封装：
 
 常用返回字段：
 
-| 数据     | 字段                                                                    |
-| -------- | ----------------------------------------------------------------------- |
-| 登录用户 | `tenantId`、`tenantCode`、`tenantName`、`departmentName`、`companyName` |
-| 企微配置 | `channelConfigId`、`corpId`、`agentId`、`redirectUri`                   |
-| 验证码   | `key`、`type`、`image`、`expireTime`                                    |
+| 数据          | 字段                                                                    |
+| ------------- | ----------------------------------------------------------------------- |
+| 登录用户      | `tenantId`、`tenantCode`、`tenantName`、`departmentName`、`companyName` |
+| Provider 授权 | `authorizationUrl`、`expiresInSeconds`                                  |
+| 验证码        | `key`、`type`、`image`、`expireTime`                                    |
 
 ## 6. 数据与初始化
 
@@ -256,8 +274,9 @@ API 封装：
 
 ## 11. 变更影响记录
 
+- Issue #764 将管理端企业微信登录收敛到统一 Provider 授权链路。`prepareWecomLogin()` 和 `wecomQrUrl` 改为消费 `/auth/providers/authorize` 返回的授权地址；`@mango/auth` 前端包不再导出 `/auth/wecom/login-config`、`/auth/wecom/login`、`mwc.` state、手工 code 登录或旧回调解析能力。回调统一由 `ProviderCallbackView` 完成，后端 `/auth/wecom/*` 兼容接口不在本次前端改动范围内。
 - `@mango/auth@1.0.26` 公开 `@mango/auth/config` 中的 `registerMangoAuthProfileSections()`，供 Admin Shell 在 feature registrar 执行后集中装配个人中心扩展。登录、用户资料、权限、租户和既有 `ProfileView` 路由保持兼容。
 
 - Issue 643 为个人中心增加页面内部设置导航，并把头像地址输入改为图片选择、保存时上传和受保护文件回显。修改密码已经收敛为个人中心内置子页；Admin Shell 通过 `profile.slots.theme` 注入页内主题设置，并保留独立 `PasswordView` 和 `/password` 兼容入口。`ProfileView` 的公开导出和路由 key 不变；新增 `MangoAvatar` 供宿主顶部用户区、System 用户组件及业务消费者统一回显文件头像。该变化不新增框架主菜单，不把对象存储地址或临时下载地址写入身份资料。
-- 本次新增登录首次强制改密、密码复杂度提示和弱密码提交拦截；`LoginView` 和 `PasswordView` 都会展示密码规则，并按统一密码策略校验。登录成功后若后端返回 `passwordResetRequired=true` 或 `loginAction=CHANGE_PASSWORD`，前端会切换到改密弹窗而不是直接进入后台。该变更不改变 `login()`、`logout()`、`getUserInfo()`、`getLoginTenantOptions()`、`wecomLogin()` 和 `updatePassword()` 的接口路径。
+- 本次新增登录首次强制改密、密码复杂度提示和弱密码提交拦截；`LoginView` 和 `PasswordView` 都会展示密码规则，并按统一密码策略校验。登录成功后若后端返回 `passwordResetRequired=true` 或 `loginAction=CHANGE_PASSWORD`，前端会切换到改密弹窗而不是直接进入后台。该变更不改变 `login()`、`logout()`、`getUserInfo()`、`getLoginTenantOptions()` 和 `updatePassword()` 的接口路径。
 - 本次新增 `useMangoLoginFlow()` 登录流程 hook，默认 `LoginView` 已改为复用该 hook。业务项目如需完全自定义登录页，可在自己的 `/login` 组件中调用 hook；页面 UI、布局和表单校验仍由业务组件负责。

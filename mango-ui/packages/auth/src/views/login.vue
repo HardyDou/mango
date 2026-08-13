@@ -228,7 +228,7 @@ const passwordResetRules: FormRules = {
 
 onMounted(() => {
   void (async () => {
-    await loginFlow.initializeLoginFlow();
+    await loginFlow.loadLoginTenants();
     await loadAvailableProviders();
   })();
 });
