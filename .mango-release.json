@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "releaseKind": "mixed",
+  "artifacts": {
+    "maven": {
+      "mode": "private-registry",
+      "serverId": "yunxin-nexus"
+    },
+    "npm": {
+      "mode": "private-registry",
+      "npmConfig": "~/.npmrc"
+    }
+  },
+  "registries": {
+    "maven": {
+      "publish": "http://nexus.inner.yunxinbaokeji.com/repository/maven-releases/",
+      "consume": "http://nexus.inner.yunxinbaokeji.com/repository/maven-public/"
+    },
+    "npm": {
+      "publish": "http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/",
+      "consume": "http://nexus.inner.yunxinbaokeji.com/repository/npm-group/"
+    }
+  },
+  "stateAdapters": {
+    "maven": {
+      "publish": {
+        "command": "scripts/publish-maven-batch.sh",
+        "args": ["--all-non-app", "--release-version", "{version}", "--verify-base-url", "{mavenConsumeRegistry}"]
+      },
+      "verify": {
+        "command": "scripts/publish-maven-batch.sh",
+        "args": ["--all-non-app", "--release-version", "{version}", "--verify-only", "--verify-base-url", "{mavenConsumeRegistry}"]
+      },
+      "repair": { "kind": "verify-existing" }
+    },
+    "npm": {
+      "publish": [
+        { "command": "pnpm", "cwd": "mango-ui", "args": ["publish:pkg", "notice", "--release-tag={tag}", "--publish-registry={npmPublishRegistry}", "--consume-registry={npmConsumeRegistry}" ] },
+        { "command": "pnpm", "cwd": "mango-ui", "args": ["publish:pkg", "admin-shell", "--release-tag={tag}", "--publish-registry={npmPublishRegistry}", "--consume-registry={npmConsumeRegistry}" ] },
+        { "command": "pnpm", "cwd": "mango-ui", "args": ["publish:pkg", "admin", "--release-tag={tag}", "--publish-registry={npmPublishRegistry}", "--consume-registry={npmConsumeRegistry}" ] },
+        { "command": "pnpm", "cwd": "mango-ui", "args": ["publish:pkg", "cli", "--release-tag={tag}", "--publish-registry={npmPublishRegistry}", "--consume-registry={npmConsumeRegistry}" ] }
+      ],
+      "verify": [
+        { "command": "pnpm", "cwd": "mango-ui", "args": ["publish:pkg", "notice", "--verify-only", "--release-tag={tag}", "--publish-registry={npmPublishRegistry}", "--consume-registry={npmConsumeRegistry}" ] },
+        { "command": "pnpm", "cwd": "mango-ui", "args": ["publish:pkg", "admin-shell", "--verify-only", "--release-tag={tag}", "--publish-registry={npmPublishRegistry}", "--consume-registry={npmConsumeRegistry}" ] },
+        { "command": "pnpm", "cwd": "mango-ui", "args": ["publish:pkg", "admin", "--verify-only", "--release-tag={tag}", "--publish-registry={npmPublishRegistry}", "--consume-registry={npmConsumeRegistry}" ] },
+        { "command": "pnpm", "cwd": "mango-ui", "args": ["publish:pkg", "cli", "--verify-only", "--release-tag={tag}", "--publish-registry={npmPublishRegistry}", "--consume-registry={npmConsumeRegistry}" ] }
+      ],
+      "repair": { "kind": "verify-existing" }
+    }
+  },
+  "notApplicable": {
+    "pr": "Source implementation is already merged by PR #772; release metadata is validated against that merged source before publication."
+  }
+}

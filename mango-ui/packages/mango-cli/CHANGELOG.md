@@ -6,6 +6,23 @@
 
 - Spring Boot 本地启动和重启统一执行 Reactor `clean compile + spring-boot:run`，清除 `target/classes` 中已从源码删除的 class、Mapper XML 和其它资源；继续禁止开发期 `install`、`package` 和 app fat JAR 写入共享 `.m2`。
 
+## 1.0.104 - 2026-08-14
+
+### Added
+
+- 锁定 Notice 入站消息、邮件轮询/推送和企业微信回调能力对应的 Mango Maven `1.0.36`、`@mango/notice@1.0.39`、`@mango/admin-shell@1.0.59` 与 `@mango/admin@1.0.65`。
+
+### Upgrade Notes
+
+1. 先升级 Mango Maven 到 `1.0.36`，再安装 `@mango/cli@1.0.104` 并按 CLI 内置 `release-versions.json` 更新前端依赖。
+2. Notice 入站附件由 File 服务保存，业务项目需完成对应 File 服务配置；企业微信回调 URI 按 Notice 入站配置登记为匿名入口并保留 token/aesKey 配置。
+3. `@mango/pmo@1.3.13` 保持不变，本批次没有 PMO 规范或 Skill 变更。
+
+### Verification
+
+- `pnpm -C mango-ui release:impact --base=09bfbd91de4fef22224c8a980bc7075e774fde57 --head=HEAD`
+- CLI release lock、Business Starter 投影、admin styles、受影响 Notice/Admin Shell 测试和发布后干净消费者验证。
+
 ## 1.0.103 - 2026-08-09
 
 ### Fixed

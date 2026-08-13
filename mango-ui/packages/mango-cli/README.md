@@ -625,6 +625,10 @@ Issue #690 覆盖 CLI、Maven plugin、Bootstrap/runtime、Resource、BSQL、Boo
 
 业务项目不需要修改生成模板或在 `main.ts` 添加 `crypto.randomUUID` polyfill。修复由 `@mango/common` 和 Admin Shell 启动链提供；CLI 后续发布时必须把 `common -> admin-shell -> admin` 的匹配版本写入同一 `release-versions.json` 前端矩阵，业务项目整体升级该矩阵即可。该修复不改变 CLI 命令、模板结构、后端 Maven、菜单、权限或租户配置。
 
+### 1.0.104 发布影响
+
+`@mango/cli@1.0.104` 锁定 Notice 入站消息能力发布矩阵：Mango Maven `1.0.36`、`@mango/notice@1.0.39`、`@mango/admin-shell@1.0.59`、`@mango/admin@1.0.65` 和 `@mango/pmo@1.3.13`。邮件支持定时拉取与接口推送，企业微信支持匿名回调验签与消息接收；附件由 File 服务保存。业务项目升级时必须按该完整矩阵更新，不要只升级 CLI 或单个前端包。
+
 ### 1.0.103 发布影响
 
 `@mango/cli@1.0.103` 精确依赖 `@mango/pmo@1.3.13`，撤回 PMO 1.3.10 至 1.3.12 的治理升级，并恢复 CLI 包内 `templates/business-module` 作为 `mango module add` 的生成来源。模板源码以 `module.properties.template` 保存占位符，生成项目仍得到真实的 `module.properties`。已发布旧版本保持不可变，Mango Maven `1.0.35` 与其它业务 npm 坐标不降级。
