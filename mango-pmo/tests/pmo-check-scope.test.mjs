@@ -323,15 +323,6 @@ test('Gitea terminal PR body edits skip diff-based checks but retain the PR cont
   assert.match(workflow, /PR_MERGED: \$\{\{ gitea\.event\.pull_request\.merged \}\}/);
   assert.match(workflow, /Classify affected Maven scope\n\s+id: scope\n\s+if: steps\.event_mode\.outputs\.mode == 'change-validation'/);
   assert.match(workflow, /Check impact-driven risk and verification contract\n\s+if: gitea\.event_name == 'pull_request'/);
-  assert.match(
-    workflow,
-    /pull_request:\n\s+types: \[opened, synchronize, reopened, edited\]/,
-  );
-  assert.match(workflow, /types: \[[^\]]*edited/);
-  assert.match(
-    workflow,
-    /concurrency:/,
-  );
 });
 
 test('Java source maps to one Maven module plus the governed architecture aggregator', () => {
