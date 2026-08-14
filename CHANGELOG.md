@@ -10,9 +10,50 @@
 
 - This change is delivered by the Mango Maven `mango-file-preview-engine` artifact. Include it in the next Mango Maven release and upgrade backend consumers as one aligned Maven matrix. No standalone `@mango/file` npm release is required for this capability.
 
+## v2026.08.14-pmo-1.3.14-cli-1.0.106-historical-document-compat-release - 2026-08-14
+
+Status: `PENDING`. This npm-only governance patch publishes `@mango/pmo@1.3.14` and the exact dependent `@mango/cli@1.0.106`; Mango Maven `1.0.36` and all other npm coordinates remain unchanged.
+
+### Fixed
+
+- Fix [Issue #786](https://github.com/HardyDou/mango/issues/786): path/SHA-256/`pmoVersion`-pinned PMO 1.3.10 through 1.3.12 TDD/Plan documents retain the historical “参考资料与代码基线” section required by their original contract instead of being rejected by the current H2 whitelist.
+- Keep historical compatibility exact and fail closed. Current documents, changed or unpinned historical documents, unknown sections, duplicate titles, invalid insertion points and malformed historical tables remain blocked.
+- Preserve all existing metadata, structure, table, ID, approval, traceability, blocking, dependency, forbidden-content and upstream-summary checks.
+
+### Versions
+
+| Component | Previous | Release | Compatibility |
+| --- | ---: | ---: | --- |
+| `@mango/pmo` | `1.3.13` | `1.3.14` | Adds exact historical TDD/Plan section variants and advances current lifecycle contracts without changing schema revision `1`. |
+| `@mango/cli` | `1.0.105` | `1.0.106` | Exact dependency and business-project release lock for PMO `1.3.14`. |
+| Mango Maven | `1.0.36` | unchanged | No Maven artifact is published by this npm-only patch. |
+| Other npm packages | current release matrix | unchanged | Notice, Admin, File and all runtime frontend packages are not republished. |
+
+### Published Packages
+
+| Order | Target | Version | Status |
+| ---: | --- | --- | --- |
+| 1 | `@mango/pmo` | `1.3.14` | `PENDING` publication and hosted/group verification. |
+| 2 | `@mango/cli` | `1.0.106` | `PENDING` after PMO hosted/group verification. |
+| 3 | Immutable tag and GitHub Release | `v2026.08.14-pmo-1.3.14-cli-1.0.106-historical-document-compat-release` | `PENDING`. |
+| 4 | Latest documentation | Pages | `PENDING`; npm-only release does not create a Maven documentation snapshot. |
+
+### Upgrade Notes
+
+1. Wait until both `@mango/pmo@1.3.14` and `@mango/cli@1.0.106` resolve from the company npm group registry, then install CLI `1.0.106`.
+2. Run `mango pmo upgrade --project-dir . --to 1.3.14 --dry-run` and review the managed PMO changes.
+3. Run the upgrade without `--dry-run`, then execute `mango pmo check --project-dir . --locked`.
+4. Do not delete historical sections, rewrite approved lifecycle documents, hand-edit `baseline.json`, or change `.mango-pmo-legacy-documents.json` hashes to force acceptance.
+
+### Verification
+
+- The document-contract suite must cover pinned 1.3.10/1.3.11/1.3.12 positive cases, a pinned 1.3.13 no-variant case, and current-version, unpinned, unknown-section and malformed-table negative cases.
+- The real Baohan set of 82 lifecycle documents must pass without modifying its seven path/SHA/version-pinned historical documents.
+- PMO and CLI package checks, Business Starter projection, release impact, README/capability audits, workspace layout, branch protection, required checks, hosted/group back-checks and a clean published Baohan consumer upgrade must pass before completion.
+
 ## v2026.08.14-cli-1.0.105-pmo-manifest-compat-release - 2026-08-14
 
-Status: `PENDING`. This npm-only patch publishes `@mango/cli@1.0.105`; Mango Maven `1.0.36`, `@mango/pmo@1.3.13`, and all other npm coordinates remain unchanged.
+Status: `PUBLISHED_AND_VERIFIED`. This npm-only patch published `@mango/cli@1.0.105` from source commit `d62f553699df77c900f230ae1b345564e142cdb5` (tree `31e35d530a8194b4a19b42a4931f0090b41689c0`); Mango Maven `1.0.36`, `@mango/pmo@1.3.13`, and all other npm coordinates remained unchanged. The completed canonical manifest is `.mango/releases/1.0.105/manifest.json`, SHA-256 `2d548eb0426cc4bb05765b2f0d1005f7290a7b05e886cb7642630d03f7cd357a`, with `completed=true`.
 
 ### Fixed
 
@@ -33,9 +74,9 @@ Status: `PENDING`. This npm-only patch publishes `@mango/cli@1.0.105`; Mango Mav
 
 | Order | Target | Version | Status |
 | ---: | --- | --- | --- |
-| 1 | `@mango/cli` | `1.0.105` | `PENDING` publication and hosted/group verification. |
-| 2 | Immutable tag and GitHub Release | `v2026.08.14-cli-1.0.105-pmo-manifest-compat-release` | `PENDING`. |
-| 3 | Latest documentation | Pages | `PENDING`; npm-only release does not create a Maven documentation snapshot. |
+| 1 | `@mango/cli` | `1.0.105` | `PUBLISHED_AND_VERIFIED`; hosted/group shasum `5f7b824dd583652402edbdaedade7935d69852e0`, integrity `sha512-Mfof0ucyXd120nES/2VszLq5b73YphoOIfqa5EGpVwn2d/cxllWB2MflfcbU72Y4a8i72qOfpYe4iEuz2VaPmw==`. |
+| 2 | Immutable tag and GitHub Release | `v2026.08.14-cli-1.0.105-pmo-manifest-compat-release` | `CREATED_AND_VERIFIED`; annotated tag resolves to source commit `d62f553699df77c900f230ae1b345564e142cdb5`. |
+| 3 | Latest documentation | Pages | `PUBLISHED_AND_VERIFIED`; npm-only release did not create a Maven documentation snapshot. |
 
 ### Upgrade Notes
 
@@ -47,7 +88,7 @@ Status: `PENDING`. This npm-only patch publishes `@mango/cli@1.0.105`; Mango Mav
 ### Verification
 
 - Regression test reproduces the exact `invalid @mango/pmo manifest file descriptor: code-templates/README.md` failure against a valid historical schema v2 descriptor, then proves the fixed transaction removes the obsolete file.
-- Required CLI tests, packed consumer verification, release lock, PMO/Business Starter projection, workspace layout, README/capability audits, admin style gates, branch protection read-back, and a real Baohan consumer upgrade must pass before publication.
+- Required CLI tests, packed and clean registry consumer verification, release lock, PMO/Business Starter projection, workspace layout, README/capability audits, admin style gates, branch protection read-back, required checks and the real Baohan PMO upgrade all passed.
 
 ## v2026.08.14-maven-1.0.36-notice-1.0.39-admin-1.0.65-cli-1.0.104-inbound-release - 2026-08-14
 

@@ -52,21 +52,21 @@ function readFixture(relativePath) {
   return fs.readFileSync(path.join(FIXTURES, relativePath), "utf8");
 }
 
-function hydrateLifecycle(levels = {}, pmoVersion = "1.3.13") {
+function hydrateLifecycle(levels = {}, pmoVersion = "1.3.14") {
   const brd = readFixture("valid/business-requirements.md")
     .replace("riskLevel: L2", `riskLevel: ${levels.brd ?? "L2"}`)
-    .replace("pmoVersion: 1.3.13", `pmoVersion: ${pmoVersion}`);
+    .replace("pmoVersion: 1.3.14", `pmoVersion: ${pmoVersion}`);
   const srs = readFixture("valid/system-requirements.md")
     .replace("riskLevel: L2", `riskLevel: ${levels.srs ?? "L2"}`)
-    .replace("pmoVersion: 1.3.13", `pmoVersion: ${pmoVersion}`)
+    .replace("pmoVersion: 1.3.14", `pmoVersion: ${pmoVersion}`)
     .replace("0".repeat(64), sha256(brd));
   const tdd = readFixture("valid/technical-design.md")
     .replace("riskLevel: L2", `riskLevel: ${levels.tdd ?? "L2"}`)
-    .replace("pmoVersion: 1.3.13", `pmoVersion: ${pmoVersion}`)
+    .replace("pmoVersion: 1.3.14", `pmoVersion: ${pmoVersion}`)
     .replace("0".repeat(64), sha256(srs));
   const plan = readFixture("valid/implementation-plan.md")
     .replace("riskLevel: L2", `riskLevel: ${levels.plan ?? "L2"}`)
-    .replace("pmoVersion: 1.3.13", `pmoVersion: ${pmoVersion}`)
+    .replace("pmoVersion: 1.3.14", `pmoVersion: ${pmoVersion}`)
     .replace("0".repeat(64), sha256(tdd));
   return {
     brd: {
@@ -100,6 +100,44 @@ function writeHydratedDocumentSet(t, { pmoVersion } = {}) {
   for (const [key, document] of Object.entries(documents)) {
     fs.writeFileSync(path.join(root, `${key}.md`), document.source);
   }
+  return root;
+}
+
+const HISTORICAL_REFERENCE_SECTION = `## 0. 参考资料与代码基线
+
+| 类型 | 路径或模板ID | 版本或提交 | 用途 | 实际采用范围 |
+| --- | --- | --- | --- | --- |
+| code-baseline | business-module-v1 | main@abc1234 | 保留已审批代码基线 | 后端业务模块 |
+
+`;
+
+function addSectionBeforeFirstContractSection(source, section) {
+  return source.replace(/\n## 1\. /u, `\n${section}## 1. `);
+}
+
+function writeHistoricalSectionDocumentSet(t, {
+  pmoVersion = "1.3.11",
+  extraTddSection = "",
+  malformedReferenceTable = false,
+} = {}) {
+  const root = writeHydratedDocumentSet(t, { pmoVersion });
+  const tddPath = path.join(root, "tdd.md");
+  const planPath = path.join(root, "plan.md");
+  let referenceSection = HISTORICAL_REFERENCE_SECTION;
+  if (malformedReferenceTable) {
+    referenceSection = referenceSection.replace("实际采用范围", "未声明列");
+  }
+  const tdd = addSectionBeforeFirstContractSection(
+    fs.readFileSync(tddPath, "utf8"),
+    `${referenceSection}${extraTddSection}`,
+  );
+  fs.writeFileSync(tddPath, tdd);
+  const plan = addSectionBeforeFirstContractSection(
+    fs.readFileSync(planPath, "utf8")
+      .replace(/^upstreamDocumentHash: [a-f0-9]{64}$/mu, `upstreamDocumentHash: ${sha256(tdd)}`),
+    referenceSection,
+  );
+  fs.writeFileSync(planPath, plan);
   return root;
 }
 
@@ -147,7 +185,7 @@ test("文档 pmoVersion 必须与版本化合同一致", () => {
     "mango-pmo/contracts/business-requirements.json",
   );
   const source = readFixture("valid/business-requirements.md").replace(
-    "pmoVersion: 1.3.13",
+    "pmoVersion: 1.3.14",
     "pmoVersion: 9.9.9",
   );
   const result = validateDocument(source, contract);
@@ -155,12 +193,12 @@ test("文档 pmoVersion 必须与版本化合同一致", () => {
     result.findings.some(
       (finding) =>
         finding.ruleId === "BRD-META-001" &&
-        finding.message.includes("pmoVersion 必须为 1.3.13"),
+        finding.message.includes("pmoVersion 必须为 1.3.14"),
     ),
   );
   const historical = validateDocument(
     readFixture("valid/business-requirements.md").replace(
-      "pmoVersion: 1.3.13",
+      "pmoVersion: 1.3.14",
       "pmoVersion: 1.3.6",
     ),
     contract,
@@ -169,7 +207,7 @@ test("文档 pmoVersion 必须与版本化合同一致", () => {
     historical.findings.some(
       (finding) =>
         finding.ruleId === "BRD-META-001" &&
-        finding.message.includes("pmoVersion 必须为 1.3.13"),
+        finding.message.includes("pmoVersion 必须为 1.3.14"),
     ),
   );
 });
@@ -425,6 +463,69 @@ test("业务文档集合允许合同声明的历史 PMO 版本", (t) => {
   );
 });
 
+for (const historicalPmoVersion of ["1.3.10", "1.3.11", "1.3.12"]) {
+  test(`业务文档集合按精确历史章节变体检查已锁定的 ${historicalPmoVersion} 文档`, (t) => {
+    const root = writeHistoricalSectionDocumentSet(t, { pmoVersion: historicalPmoVersion });
+    const pinned = pinHistoricalPmoVersionDocuments(root);
+    assert.equal(pinned.added.length, 4);
+
+    const result = checkDocumentSet(root);
+    assert.deepEqual(result.findings, []);
+    assert.equal(result.historicalPmoVersionDocuments.length, 4);
+  });
+}
+
+test("业务文档集合允许已锁定的 1.3.13 文档但不附加历史章节变体", (t) => {
+  const root = writeHydratedDocumentSet(t, { pmoVersion: "1.3.13" });
+  const pinned = pinHistoricalPmoVersionDocuments(root);
+  assert.equal(pinned.added.length, 4);
+
+  const result = checkDocumentSet(root);
+  assert.deepEqual(result.findings, []);
+  assert.equal(result.historicalPmoVersionDocuments.length, 4);
+});
+
+test("业务文档集合拒绝已锁定历史文档中的未知额外章节", (t) => {
+  const root = writeHistoricalSectionDocumentSet(t, {
+    extraTddSection: "## 0.1 未声明历史章节\n\n不得被历史兼容放行。\n\n",
+  });
+  pinHistoricalPmoVersionDocuments(root);
+
+  const result = checkDocumentSet(root);
+  assert.ok(result.findings.some((finding) =>
+    finding.message.includes("出现合同未定义的 H2 章节")));
+});
+
+test("业务文档集合拒绝未锁定历史文档使用历史章节变体", (t) => {
+  const root = writeHistoricalSectionDocumentSet(t);
+  const result = checkDocumentSet(root);
+
+  assert.ok(result.findings.some((finding) => finding.ruleId === "LIFE-HASH-020"));
+  assert.ok(result.findings.some((finding) =>
+    finding.message.includes("出现合同未定义的 H2 章节：参考资料与代码基线")));
+});
+
+test("业务文档集合拒绝当前版本文档使用历史章节变体", (t) => {
+  const root = writeHistoricalSectionDocumentSet(t, { pmoVersion: "1.3.14" });
+  const pinned = pinHistoricalPmoVersionDocuments(root);
+  assert.equal(pinned.added.length, 0);
+
+  const result = checkDocumentSet(root);
+  assert.ok(result.findings.some((finding) =>
+    finding.message.includes("出现合同未定义的 H2 章节：参考资料与代码基线")));
+});
+
+test("业务文档集合拒绝历史章节变体中的合同外表格", (t) => {
+  const root = writeHistoricalSectionDocumentSet(t, { malformedReferenceTable: true });
+  pinHistoricalPmoVersionDocuments(root);
+
+  const result = checkDocumentSet(root);
+  assert.ok(result.findings.some((finding) =>
+    finding.message.includes("章节“参考资料与代码基线”缺少表格")));
+  assert.ok(result.findings.some((finding) =>
+    finding.message.includes("章节“参考资料与代码基线”出现合同外表格")));
+});
+
 test("业务文档集合拒绝合同未声明的历史 PMO 版本", (t) => {
   const root = writeHydratedDocumentSet(t, { pmoVersion: "1.3.5" });
   const pinned = pinHistoricalPmoVersionDocuments(root);
@@ -434,7 +535,7 @@ test("业务文档集合拒绝合同未声明的历史 PMO 版本", (t) => {
     result.findings.some(
       (finding) =>
         finding.ruleId === "BRD-META-001" &&
-        finding.message.includes("pmoVersion 必须为 1.3.13"),
+        finding.message.includes("pmoVersion 必须为 1.3.14"),
     ),
   );
 });

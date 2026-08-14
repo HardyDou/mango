@@ -1,5 +1,30 @@
 # Mango PMO Changelog
 
+## 1.3.14 - 2026-08-14
+
+### Fixed
+
+- Validate path/SHA-256/`pmoVersion`-pinned PMO 1.3.10 through 1.3.12 TDD/Plan documents against their exact historical “参考资料与代码基线” section contract instead of rejecting that formerly required section with the current H2 whitelist.
+- Preserve fail-closed behavior for current documents, changed or unpinned historical documents, unknown sections, duplicate titles and malformed historical tables.
+
+### Changed
+
+- Replace the broad historical-version boolean passed to the validator with the exact pinned historical `pmoVersion`.
+- Add contract-owned `historicalSectionVariants` for the only verified 1.3.10 through 1.3.12 TDD/Plan structure difference; all other metadata, structure, table, ID, approval, traceability and upstream-summary checks remain active.
+- Advance lifecycle contracts to PMO `1.3.14` with schema revision `1`; unchanged PMO `1.3.13` documents join the version baseline without gaining any extra section variant.
+
+### Upgrade Notes
+
+1. Install `@mango/cli@1.0.106` after `@mango/pmo@1.3.14` resolves from the company npm group registry.
+2. Run `mango pmo upgrade --project-dir . --to 1.3.14 --dry-run`, review the projection, then run the actual upgrade and `mango pmo check --project-dir . --locked`.
+3. Preserve approved historical documents and their generated path/SHA/version baseline. Modified documents must be reapproved against the current 1.3.14 contract.
+
+### Verification
+
+- `node --test mango-pmo/tests/document-contract/document-contract.test.mjs`
+- `node mango-pmo/tools/check-document-set.mjs --root /Users/hardy/Work/Yunxin/baohan-system-upgrade-notice/docs`
+- `pnpm -F @mango/pmo check`, `pnpm -F @mango/cli test`, Business Starter projection and full repository release gates.
+
 ## 1.3.13 - 2026-08-09
 
 ### Fixed
