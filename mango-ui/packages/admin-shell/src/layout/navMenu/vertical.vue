@@ -33,7 +33,7 @@ import { computed, defineAsyncComponent } from 'vue';
 import { useRoute } from 'vue-router';
 import { useLayoutStore } from '../../stores/layout';
 import { iconMap } from '@mango/common/utils/iconConfig';
-import { resolveActiveMenuPath } from '@mango/common/utils/menuTree';
+import { resolveActiveMenuPath } from './activeMenuPath';
 
 const SubItem = defineAsyncComponent(() => import('./subItem.vue'));
 

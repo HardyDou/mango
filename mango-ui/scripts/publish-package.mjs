@@ -30,7 +30,7 @@ Examples:
   MANGO_SHARED_PUBLISH_GATES_PASSED=1 pnpm publish:pkg cli --release-tag=v2026.06.12-mango-platform-release --skip-shared-gates
 
 Use --skip-shared-gates only after the release batch has already run shared gates such as
-package-consumer:typecheck once for the full batch.
+package-consumer:typecheck --release-candidate-matrix once for the full batch.
 Registry values may also come from MANGO_NPM_PUBLISH_REGISTRY and MANGO_NPM_CONSUME_REGISTRY.
 `);
 }
@@ -62,6 +62,17 @@ function checkReleaseNotes(packageName, version, options = {}) {
     args.push('--check-github-release');
   }
   run('node', args);
+}
+
+function checkReleaseCandidateMatrix(consumeRegistry, phase) {
+  console.log(`${phase}: checking local candidate tarballs against unchanged consume-registry packages`);
+  run(pnpmCommand, [
+    'run',
+    'package-consumer:typecheck',
+    '--',
+    '--release-candidate-matrix',
+    `--registry=${consumeRegistry}`,
+  ]);
 }
 
 function verifyPublishedCliLocks(packageRoot, foundPackage) {
@@ -353,8 +364,7 @@ if (packageName === '@mango/cli') {
   }
 }
 if (batchResume && packageName === sharedGatePackage) {
-  console.log('Checking generated business consumer vue-tsc once for npm batch recovery');
-  run(pnpmCommand, ['run', 'package-consumer:typecheck', '--', `--registry=${consumeRegistry}`]);
+  checkReleaseCandidateMatrix(consumeRegistry, 'npm batch recovery');
   console.log('Shared npm batch recovery gates passed');
 }
 if (verifyOnly && !batchResume) {
@@ -363,6 +373,9 @@ if (verifyOnly && !batchResume) {
       publish: publishRegistry,
       consume: consumeRegistry,
     });
+    if (packageName === '@mango/cli') {
+      checkReleaseCandidateMatrix(consumeRegistry, 'post-publish pure registry verification');
+    }
     console.log(`Verified published package without republishing: ${packageName}@${version}`);
     process.exit(0);
   } catch (error) {
@@ -380,6 +393,9 @@ if (batchResume) {
         publish: publishRegistry,
         consume: consumeRegistry,
       });
+      if (packageName === '@mango/cli') {
+        checkReleaseCandidateMatrix(consumeRegistry, 'recovery pure registry verification');
+      }
       console.log(`Verified existing package during npm batch recovery: ${packageName}@${version}`);
       process.exit(0);
     } catch (error) {
@@ -398,8 +414,7 @@ if (batchResume) {
 if (skipSharedGates || batchResume) {
   console.log('Skipping shared publish gates because the release batch gates already passed');
 } else {
-  console.log('Checking generated business consumer vue-tsc before publish');
-  run(pnpmCommand, ['run', 'package-consumer:typecheck', '--', `--registry=${consumeRegistry}`]);
+  checkReleaseCandidateMatrix(consumeRegistry, 'pre-publish mixed matrix verification');
 }
 if (found.packageJson.scripts?.build) {
   console.log(`Building ${packageName} before publish`);
@@ -442,6 +457,9 @@ if (!dryRun) {
       publish: publishRegistry,
       consume: consumeRegistry,
     });
+    if (packageName === '@mango/cli') {
+      checkReleaseCandidateMatrix(consumeRegistry, 'post-publish pure registry verification');
+    }
   } catch (error) {
     console.error(error.message);
     process.exit(1);

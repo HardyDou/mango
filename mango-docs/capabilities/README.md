@@ -36,6 +36,8 @@
 
 ## 3.1 近期能力变更
 
+- 2026-08-14，[Issue #791](https://github.com/HardyDou/mango/issues/791) 由 `@mango/admin-shell@1.0.60`、`@mango/admin@1.0.66` 和 `@mango/cli@1.0.107` 修复 Admin 发布矩阵兼容问题：父菜单高亮算法收回 Shell 私有实现，继续兼容不变的 `@mango/common@1.0.26`。发布门禁会用本地未发布候选 tarball 组合消费私服中的未变包，并在 CLI 发布后验证纯私服安装、类型检查和生产构建。公开 API、菜单、权限、租户、数据库和运行时配置不变。升级入口见 [Admin Shell README](../../mango-ui/packages/admin-shell/README.md)、[Admin README](../../mango-ui/packages/admin/README.md) 和 [CLI README](../../mango-ui/packages/mango-cli/README.md)。
+
 - 2026-08-14，[Issue #786](https://github.com/HardyDou/mango/issues/786) 由 `@mango/pmo@1.3.14` / `@mango/cli@1.0.106` 修复已锁定历史生命周期文档的精确章节合同兼容：PMO 1.3.10 至 1.3.12 的 TDD/Plan 可保留当时合同定义的“参考资料与代码基线”章节，但仅在路径、SHA-256、`pmoVersion` 三重锁全部匹配时启用；当前文档、内容变更、未知章节和错误表头继续 fail closed。Mango Maven 保持 `1.0.36`，其它 npm 坐标不变。升级与验证入口见 [PMO README](../../mango-pmo/README.md) 和 [CLI README](../../mango-ui/packages/mango-cli/README.md)。
 
 - 2026-08-14，[Issue #784](https://github.com/HardyDou/mango/issues/784) 由 `@mango/cli@1.0.105` 恢复 PMO manifest schema v2 历史 `code-template` 描述符兼容：锁定 `@mango/pmo@1.3.11` 的业务项目可以原子升级到 `1.3.13`，目标 manifest 已移除的 `code-templates/README.md` 会作为受管旧文件删除；路径、hash、size、mode、bundle 摘要和事务回滚校验保持不变。升级步骤见 [CLI README](../../mango-ui/packages/mango-cli/README.md)。Mango Maven 保持 `1.0.36`，PMO 保持 `1.3.13`。

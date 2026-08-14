@@ -7,6 +7,7 @@ import {
   indexWorkspacePackages,
   parsePackageJsonAllowingTemplates,
   readJson,
+  readReleaseContracts,
   relativePath,
   run,
 } from './release-guard-utils.mjs';
@@ -50,8 +51,19 @@ for (const file of changedFiles) {
   impactPackageNames.add(workspacePackage.packageJson.name);
 }
 
-const affectedPackages = resolveAffectedPackages(impactPackageNames);
 const releaseVersions = existsSync(releaseVersionsPath) ? readJson(releaseVersionsPath) : {};
+const releaseContracts = readReleaseContracts(workspaceRoot);
+const restoredPackages = [];
+
+for (const packageName of impactPackageNames) {
+  const workspacePackage = packageIndex.get(packageName);
+  if (matchesPublishedSourceBaseline(workspacePackage, releaseContracts[packageName]?.sourceBaseline)) {
+    impactPackageNames.delete(packageName);
+    restoredPackages.push(packageName);
+  }
+}
+
+const affectedPackages = resolveAffectedPackages(impactPackageNames);
 
 for (const packageName of affectedPackages) {
   const workspacePackage = packageIndex.get(packageName);
@@ -128,6 +140,9 @@ if (affectedPackages.size === 0) {
   console.log(`Release impact check passed for ${base}..${head}.`);
   console.log(`Affected npm packages: ${[...affectedPackages].join(', ')}`);
 }
+if (restoredPackages.length > 0) {
+  console.log(`Restored published source baselines: ${restoredPackages.join(', ')}`);
+}
 
 function readArg(name) {
   const arg = args.find((item) => item.startsWith(`${name}=`));
@@ -170,7 +185,10 @@ function normalizeChangedFile(file) {
 }
 
 function isReleaseImpactFile(packageFile) {
-  if (packageFile.startsWith('src/')) {
+  if (/^(?:src|utils|components|hooks|api|types|views)\//u.test(packageFile)) {
+    if (/(?:^|\/)__tests__\//u.test(packageFile) || /(?:\.spec|\.test)\.[^/]+$/u.test(packageFile)) {
+      return false;
+    }
     return true;
   }
   if (
@@ -197,6 +215,9 @@ function isPublishedPmoSourceFile(file) {
 function runSelfTest() {
   if (!isReleaseImpactFile('release-versions.json')) {
     throw new Error('release-versions.json changes must require an @mango/cli version bump');
+  }
+  if (!isReleaseImpactFile('utils/menuTree.ts') || isReleaseImpactFile('utils/__tests__/menuTree.spec.ts')) {
+    throw new Error('published utility source must require impact while utility tests remain non-release changes');
   }
   const published = [
     'mango-pmo/rules/00-dev-flow.md',
@@ -225,6 +246,63 @@ function runSelfTest() {
   if (!hasFixedDependencyOnAffected({ dependencies: { '@mango/base': 'workspace:1.2.3' } }, new Set(['@mango/base']))) {
     throw new Error('workspace-exact dependencies must cascade release impact');
   }
+  if (
+    !isSourceBaselineDescriptor({ version: '1.2.3', gitCommit: 'a'.repeat(40) }) ||
+    isSourceBaselineDescriptor({ version: '1.2.3', gitCommit: 'not-a-commit' })
+  ) {
+    throw new Error('published source baseline descriptors require an exact version and full Git commit');
+  }
+  if (!hasGitPathEntries('utils/new-source.ts\n') || hasGitPathEntries('\n')) {
+    throw new Error('published source baseline comparison must detect untracked package files');
+  }
+}
+
+function matchesPublishedSourceBaseline(workspacePackage, descriptor) {
+  if (!isSourceBaselineDescriptor(descriptor) || descriptor.version !== workspacePackage.packageJson.version) {
+    return false;
+  }
+  const packagePath = `mango-ui/packages/${workspacePackage.dir}`;
+  const baselinePackageJson = run('git', ['show', `${descriptor.gitCommit}:${packagePath}/package.json`], {
+    capture: true,
+  });
+  if (baselinePackageJson.status !== 0) {
+    throw new Error(`${workspacePackage.packageJson.name}: cannot read source baseline ${descriptor.gitCommit}`);
+  }
+  const baselinePackage = JSON.parse(baselinePackageJson.stdout);
+  if (baselinePackage.name !== workspacePackage.packageJson.name || baselinePackage.version !== descriptor.version) {
+    throw new Error(
+      `${workspacePackage.packageJson.name}: source baseline identity does not match ${descriptor.version}`,
+    );
+  }
+  const untracked = run('git', ['ls-files', '--others', '--exclude-standard', '--', packagePath], { capture: true });
+  if (untracked.status !== 0) {
+    throw new Error(`${workspacePackage.packageJson.name}: cannot inspect untracked source baseline files`);
+  }
+  if (hasGitPathEntries(untracked.stdout)) {
+    return false;
+  }
+  const diff = run('git', ['diff', '--quiet', descriptor.gitCommit, '--', packagePath], { capture: true });
+  if (diff.status === 0) {
+    return true;
+  }
+  if (diff.status === 1) {
+    return false;
+  }
+  throw new Error(`${workspacePackage.packageJson.name}: cannot compare source baseline ${descriptor.gitCommit}`);
+}
+
+function hasGitPathEntries(output) {
+  return output.split(/\r?\n/u).some((entry) => entry.trim().length > 0);
+}
+
+function isSourceBaselineDescriptor(descriptor) {
+  return (
+    descriptor &&
+    typeof descriptor.version === 'string' &&
+    /^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/u.test(descriptor.version) &&
+    typeof descriptor.gitCommit === 'string' &&
+    /^[0-9a-f]{40}$/u.test(descriptor.gitCommit)
+  );
 }
 
 function resolveAffectedPackages(initialPackageNames) {

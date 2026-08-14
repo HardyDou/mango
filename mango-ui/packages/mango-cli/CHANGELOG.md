@@ -2,6 +2,24 @@
 
 ## Unreleased
 
+## 1.0.107 - 2026-08-14
+
+### Fixed
+
+- Lock `@mango/admin-shell@1.0.60` and `@mango/admin@1.0.66` with the unchanged `@mango/common@1.0.26`, replacing the incompatible Admin tuple that imported a symbol absent from the published Common tarball.
+- Add release-candidate consumer verification that combines local unpublished tarballs with unchanged packages from the consume registry, then verifies the pure registry tuple after CLI publication.
+
+### Upgrade Notes
+
+1. Install `@mango/cli@1.0.107` after Admin Shell `1.0.60` and Admin `1.0.66` resolve from the company npm group registry.
+2. Apply the complete `release-versions.json` matrix. Do not republish Common `1.0.26` or retain Admin Shell `1.0.59`.
+3. Keep Mango Maven `1.0.36` and PMO `1.3.14`; no database, menu, permission, tenant, API, or runtime configuration migration is required.
+
+### Verification
+
+- The old pure-registry matrix reproduces the missing export during the Vite production build.
+- Admin Shell unit tests, release impact, CLI lock, package exports, mixed candidate/registry consumer build and post-publish pure-registry build cover the corrected tuple.
+
 ## 1.0.106 - 2026-08-14
 
 ### Fixed

@@ -137,6 +137,8 @@ import '@mango/admin/style-full.css';
 
 ## 11. 变更影响记录
 
+- `@mango/admin@1.0.66` 聚合 `@mango/admin-shell@1.0.60`，修复 Shell 与 Common 1.0.26 的发布物兼容问题。默认入口、`full` 子入口、样式、菜单、权限、租户和运行时配置保持不变；按 `@mango/cli@1.0.107` 的完整矩阵升级。
+
 - `@mango/admin@1.0.56` 聚合 `@mango/admin-shell@1.0.51` 和 `@mango/notice@1.0.31` 的消息卡路由修复；
   默认入口、`full` 子入口、样式入口和页面注册方式保持兼容。
 
