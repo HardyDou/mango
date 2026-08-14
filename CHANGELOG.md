@@ -10,6 +10,45 @@
 
 - This change is delivered by the Mango Maven `mango-file-preview-engine` artifact. Include it in the next Mango Maven release and upgrade backend consumers as one aligned Maven matrix. No standalone `@mango/file` npm release is required for this capability.
 
+## v2026.08.14-cli-1.0.105-pmo-manifest-compat-release - 2026-08-14
+
+Status: `PENDING`. This npm-only patch publishes `@mango/cli@1.0.105`; Mango Maven `1.0.36`, `@mango/pmo@1.3.13`, and all other npm coordinates remain unchanged.
+
+### Fixed
+
+- Fix [Issue #784](https://github.com/HardyDou/mango/issues/784) by restoring compatibility with the PMO manifest schema v2 historical `code-template` file kind used by `@mango/pmo@1.3.11`.
+- Preserve full path, hash, size, mode, duplicate-path and bundle-hash validation while allowing the atomic upgrade transaction to remove files that are absent from the target `@mango/pmo@1.3.13` manifest.
+- Include the already merged CLI local-development cleanup fix so backend start and restart remove stale Reactor output before `compile + spring-boot:run`.
+
+### Versions
+
+| Component | Previous | Release | Compatibility |
+| --- | ---: | ---: | --- |
+| `@mango/cli` | `1.0.104` | `1.0.105` | Upgrades PMO 1.3.11 business baselines to the unchanged PMO 1.3.13 bundle. |
+| `@mango/pmo` | `1.3.13` | unchanged | No PMO rule, contract, Agent, Skill, or package content changes. |
+| Mango Maven | `1.0.36` | unchanged | No Maven artifact is published by this npm-only patch. |
+| Other npm packages | current release matrix | unchanged | No Notice, Admin, File, or other npm package is republished. |
+
+### Published Packages
+
+| Order | Target | Version | Status |
+| ---: | --- | --- | --- |
+| 1 | `@mango/cli` | `1.0.105` | `PENDING` publication and hosted/group verification. |
+| 2 | Immutable tag and GitHub Release | `v2026.08.14-cli-1.0.105-pmo-manifest-compat-release` | `PENDING`. |
+| 3 | Latest documentation | Pages | `PENDING`; npm-only release does not create a Maven documentation snapshot. |
+
+### Upgrade Notes
+
+1. Install `@mango/cli@1.0.105` from the company npm group registry; keep Mango Maven at `1.0.36` and `@mango/pmo` at `1.3.13`.
+2. Run `mango pmo upgrade --project-dir . --to 1.3.13 --dry-run` and review the managed deletion of obsolete PMO files.
+3. Run the same command without `--dry-run`, then execute `mango pmo check --project-dir . --locked`.
+4. Do not manually create `business-pmo/mango-baseline/code-templates/README.md`, edit `baseline.json`, or bypass the transaction.
+
+### Verification
+
+- Regression test reproduces the exact `invalid @mango/pmo manifest file descriptor: code-templates/README.md` failure against a valid historical schema v2 descriptor, then proves the fixed transaction removes the obsolete file.
+- Required CLI tests, packed consumer verification, release lock, PMO/Business Starter projection, workspace layout, README/capability audits, admin style gates, branch protection read-back, and a real Baohan consumer upgrade must pass before publication.
+
 ## v2026.08.14-maven-1.0.36-notice-1.0.39-admin-1.0.65-cli-1.0.104-inbound-release - 2026-08-14
 
 Status: `PUBLISHED_AND_VERIFIED`. Release source is the merged Notice inbound implementation from PR #772 at source commit `8843c0049de68747ba443ccc9a31e7010a43b4a8` (tree `27b42763b392a199dc7d43e994d27b7ea406b735`). The immutable tag, GitHub Release, Maven/npm artifacts, Latest documentation, versioned documentation snapshot, registry back-checks, and clean consumer verification all passed. The canonical publication manifest remains preserved as failed audit evidence; the completed read-only recovery manifest is recorded below.

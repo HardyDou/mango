@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "releaseKind": "mixed",
-  "tag": "v2026.08.14-maven-1.0.36-notice-1.0.39-admin-1.0.65-cli-1.0.104-inbound-release",
+  "releaseKind": "npm-only",
+  "tag": "v2026.08.14-cli-1.0.105-pmo-manifest-compat-release",
   "artifacts": {
     "maven": {
-      "mode": "private-registry",
-      "serverId": "yunxin-nexus"
+      "mode": "disabled",
+      "disabledReason": "CLI compatibility patch does not change or republish Mango Maven 1.0.36"
     },
     "npm": {
       "mode": "private-registry",
@@ -13,10 +13,6 @@
     }
   },
   "registries": {
-    "maven": {
-      "publish": "http://nexus.inner.yunxinbaokeji.com/repository/maven-releases/",
-      "consume": "http://nexus.inner.yunxinbaokeji.com/repository/maven-public/"
-    },
     "npm": {
       "publish": "http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/",
       "consume": "http://nexus.inner.yunxinbaokeji.com/repository/npm-group/"
@@ -25,31 +21,82 @@
   "stateAdapters": {
     "versions": {
       "verify": [
-        { "command": "pnpm", "cwd": "mango-ui", "args": ["release:impact", "--base=origin/main", "--head=HEAD"] },
-        { "command": "node", "args": ["mango-ui/packages/mango-cli/scripts/check-release-versions.mjs"] }
+        {
+          "command": "pnpm",
+          "cwd": "mango-ui",
+          "args": ["release:impact", "--base=origin/main", "--head=HEAD"]
+        },
+        {
+          "command": "node",
+          "args": [
+            "mango-ui/packages/mango-cli/scripts/check-release-versions.mjs"
+          ]
+        },
+        {
+          "command": "node",
+          "args": [
+            "mango-business-starter/scripts/sync-pmo-baseline.mjs",
+            "--check"
+          ]
+        }
       ]
     },
     "changelog": {
-      "verify": [
-        { "command": "node", "args": ["mango-ui/scripts/check-release-notes.mjs", "--package=@mango/notice", "--version=1.0.39", "--tag={tag}"] },
-        { "command": "node", "args": ["mango-ui/scripts/check-release-notes.mjs", "--package=@mango/cli", "--version=1.0.104", "--tag={tag}"] }
-      ]
+      "verify": {
+        "command": "node",
+        "args": [
+          "mango-ui/scripts/check-release-notes.mjs",
+          "--package=@mango/cli",
+          "--version=1.0.105",
+          "--tag={tag}"
+        ]
+      }
     },
     "readmes": {
-      "verify": { "command": "node", "args": ["mango-pmo/tools/audit-module-readmes.mjs"] }
+      "verify": [
+        {
+          "command": "node",
+          "args": ["mango-pmo/tools/audit-module-readmes.mjs"]
+        },
+        {
+          "command": "node",
+          "args": ["mango-pmo/tools/audit-readme-source-facts.mjs"]
+        }
+      ]
     },
     "tests": {
       "verify": [
-        { "command": "pnpm", "cwd": "mango-ui", "args": ["-F", "@mango/notice", "test"] },
-        { "command": "pnpm", "cwd": "mango-ui", "args": ["-F", "@mango/admin-shell", "test"] },
-        { "command": "pnpm", "cwd": "mango-ui", "args": ["admin:styles:check"] },
-        { "command": "pnpm", "cwd": "mango-ui", "args": ["admin:module-styles:check"] }
+        {
+          "command": "pnpm",
+          "cwd": "mango-ui",
+          "args": ["-F", "@mango/cli", "test"]
+        },
+        {
+          "command": "pnpm",
+          "cwd": "mango-ui",
+          "args": ["admin:styles:check"]
+        },
+        {
+          "command": "pnpm",
+          "cwd": "mango-ui",
+          "args": ["admin:module-styles:check"]
+        },
+        {
+          "command": "node",
+          "args": ["mango-pmo/tools/workspace-layout-check.mjs", "--root", "."]
+        }
       ]
     },
     "tag": {
       "publish": {
         "command": "git",
-        "args": ["tag", "-a", "{tag}", "-m", "Mango notice inbound release {version}"]
+        "args": [
+          "tag",
+          "-a",
+          "{tag}",
+          "-m",
+          "Mango CLI PMO manifest compatibility release {version}"
+        ]
       },
       "verify": {
         "command": "git",
@@ -61,9 +108,14 @@
       "publish": {
         "command": "gh",
         "args": [
-          "release", "create", "{tag}", "--verify-tag",
-          "--title", "Mango notice inbound release {version}",
-          "--notes", "## Fixed\n\nInbound notice storage and broadcast integration.\n\n## Versions\n\nMaven 1.0.36; @mango/notice 1.0.39; @mango/admin-shell 1.0.59; @mango/admin 1.0.65; @mango/cli 1.0.104; @mango/pmo 1.3.13.\n\n## Published Packages\n\nMaven platform artifacts and the four npm packages above.\n\n## Upgrade Notes\n\nUpdate Mango Maven and npm coordinates together; CLI full templates consume the locked versions.\n\n## Verification\n\nRelease gates, registry back-checks, consumer verification, and post-release checks are recorded in the release manifest."
+          "release",
+          "create",
+          "{tag}",
+          "--verify-tag",
+          "--title",
+          "Mango CLI 1.0.105 PMO manifest compatibility release",
+          "--notes",
+          "## Fixed\n\nRestore PMO manifest schema v2 historical code-template descriptor compatibility so business projects locked to PMO 1.3.11 can upgrade atomically to PMO 1.3.13. Obsolete files absent from the target manifest are removed while path, hash, size, mode and bundle validation remain enforced.\n\n## Versions\n\n@mango/cli 1.0.105; @mango/pmo remains 1.3.13; Mango Maven remains 1.0.36; all other npm packages remain unchanged.\n\n## Published Packages\n\n@mango/cli@1.0.105 only.\n\n## Upgrade Notes\n\nInstall @mango/cli@1.0.105, run mango pmo upgrade --project-dir . --to 1.3.13 --dry-run, review the plan, run the upgrade without --dry-run, then run mango pmo check --project-dir . --locked. Do not manually add code-templates/README.md or edit baseline.json.\n\n## Verification\n\nCLI tests, packed and clean registry consumers, PMO 1.3.11 to 1.3.13 upgrade regression, repository gates, required checks and Baohan consumer verification."
         ]
       },
       "verify": {
@@ -72,53 +124,78 @@
       },
       "repair": { "kind": "verify-existing" }
     },
-    "maven": {
+    "npm": {
       "publish": {
-        "command": "scripts/publish-maven-batch.sh",
-        "args": ["--all-non-app", "--release-version", "{version}", "--verify-base-url", "{mavenConsumeRegistry}"]
+        "command": "pnpm",
+        "cwd": "mango-ui",
+        "args": [
+          "publish:pkg",
+          "cli",
+          "--release-tag={tag}",
+          "--publish-registry={npmPublishRegistry}",
+          "--consume-registry={npmConsumeRegistry}"
+        ]
       },
       "verify": {
-        "command": "scripts/publish-maven-batch.sh",
-        "args": ["--all-non-app", "--release-version", "{version}", "--verify-only", "--verify-base-url", "{mavenConsumeRegistry}"]
+        "command": "pnpm",
+        "cwd": "mango-ui",
+        "args": [
+          "publish:pkg",
+          "cli",
+          "--verify-only",
+          "--release-tag={tag}",
+          "--publish-registry={npmPublishRegistry}",
+          "--consume-registry={npmConsumeRegistry}"
+        ]
       },
-      "repair": { "kind": "verify-existing" }
-    },
-    "npm": {
-      "publish": [
-        { "command": "pnpm", "cwd": "mango-ui", "args": ["publish:pkg", "notice", "--release-tag={tag}", "--publish-registry={npmPublishRegistry}", "--consume-registry={npmConsumeRegistry}" ] },
-        { "command": "pnpm", "cwd": "mango-ui", "args": ["publish:pkg", "admin-shell", "--release-tag={tag}", "--publish-registry={npmPublishRegistry}", "--consume-registry={npmConsumeRegistry}" ] },
-        { "command": "pnpm", "cwd": "mango-ui", "args": ["publish:pkg", "admin", "--release-tag={tag}", "--publish-registry={npmPublishRegistry}", "--consume-registry={npmConsumeRegistry}" ] },
-        { "command": "pnpm", "cwd": "mango-ui", "args": ["publish:pkg", "cli", "--release-tag={tag}", "--publish-registry={npmPublishRegistry}", "--consume-registry={npmConsumeRegistry}" ] }
-      ],
-      "verify": [
-        { "command": "pnpm", "cwd": "mango-ui", "args": ["publish:pkg", "notice", "--verify-only", "--release-tag={tag}", "--publish-registry={npmPublishRegistry}", "--consume-registry={npmConsumeRegistry}" ] },
-        { "command": "pnpm", "cwd": "mango-ui", "args": ["publish:pkg", "admin-shell", "--verify-only", "--release-tag={tag}", "--publish-registry={npmPublishRegistry}", "--consume-registry={npmConsumeRegistry}" ] },
-        { "command": "pnpm", "cwd": "mango-ui", "args": ["publish:pkg", "admin", "--verify-only", "--release-tag={tag}", "--publish-registry={npmPublishRegistry}", "--consume-registry={npmConsumeRegistry}" ] },
-        { "command": "pnpm", "cwd": "mango-ui", "args": ["publish:pkg", "cli", "--verify-only", "--release-tag={tag}", "--publish-registry={npmPublishRegistry}", "--consume-registry={npmConsumeRegistry}" ] }
-      ],
       "repair": { "kind": "verify-existing" }
     },
     "cli-lock": {
-      "verify": { "command": "node", "args": ["mango-ui/packages/mango-cli/scripts/check-release-versions.mjs"] }
+      "verify": {
+        "command": "node",
+        "args": [
+          "mango-ui/packages/mango-cli/scripts/check-release-versions.mjs"
+        ]
+      }
     },
     "private-registry-consume-verify": {
-      "verify": [
-        { "command": "scripts/publish-maven-batch.sh", "args": ["--all-non-app", "--release-version", "{version}", "--verify-only", "--verify-base-url", "{mavenConsumeRegistry}"] },
-        { "command": "pnpm", "cwd": "mango-ui", "args": ["publish:pkg", "notice", "--verify-only", "--release-tag={tag}", "--publish-registry={npmPublishRegistry}", "--consume-registry={npmConsumeRegistry}"] }
-      ]
+      "verify": {
+        "command": "pnpm",
+        "cwd": "mango-ui",
+        "args": [
+          "publish:pkg",
+          "cli",
+          "--verify-only",
+          "--release-tag={tag}",
+          "--publish-registry={npmPublishRegistry}",
+          "--consume-registry={npmConsumeRegistry}"
+        ]
+      }
     },
     "docs-latest": {
-      "verify": { "command": "curl", "args": ["--fail", "--silent", "--show-error", "--location", "--head", "--max-time", "30", "https://hardydou.github.io/mango/"] }
-    },
-    "docs-snapshot": {
-      "verify": { "command": "curl", "args": ["--fail", "--silent", "--show-error", "--location", "--head", "--max-time", "30", "https://hardydou.github.io/mango/versions/{tag}/"] },
-      "repair": { "kind": "verify-existing" }
+      "verify": {
+        "command": "curl",
+        "args": [
+          "--fail",
+          "--silent",
+          "--show-error",
+          "--location",
+          "--head",
+          "--max-time",
+          "30",
+          "https://hardydou.github.io/mango/"
+        ]
+      }
     },
     "post-verify": {
-      "verify": { "command": "node", "args": ["-e", "console.log(JSON.stringify({result:'PASS',source:'{projectRoot}',version:'{version}'}))"] }
+      "verify": {
+        "command": "node",
+        "args": [
+          "mango-ui/packages/mango-cli/scripts/check-published-pmo-upgrade.mjs",
+          "--version=1.0.105",
+          "--registry={npmConsumeRegistry}"
+        ]
+      }
     }
-  },
-  "notApplicable": {
-    "pr": "Source implementation is already merged by PR #772; release metadata is validated against that merged source before publication."
   }
 }
