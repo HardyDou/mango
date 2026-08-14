@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
   "releaseKind": "npm-only",
-  "tag": "v2026.08.14-pmo-1.3.14-cli-1.0.106-historical-document-compat-release",
-  "pr": 789,
+  "tag": "v2026.08.14-admin-shell-1.0.60-admin-1.0.66-cli-1.0.107-compat-release",
+  "pr": 792,
   "artifacts": {
     "maven": {
       "mode": "disabled",
-      "disabledReason": "PMO and CLI historical document compatibility patch does not change or republish Mango Maven 1.0.36"
+      "disabledReason": "Admin compatibility patch does not change or republish Mango Maven 1.0.36"
     },
     "npm": {
       "mode": "private-registry",
@@ -25,7 +25,11 @@
         {
           "command": "pnpm",
           "cwd": "mango-ui",
-          "args": ["release:impact", "--base=d62f553699df77c900f230ae1b345564e142cdb5", "--head=HEAD"]
+          "args": [
+            "release:impact",
+            "--base=6edea03dd483007182c07e93855dd2e480f3f47b",
+            "--head=HEAD"
+          ]
         },
         {
           "command": "node",
@@ -48,8 +52,17 @@
           "command": "node",
           "args": [
             "mango-ui/scripts/check-release-notes.mjs",
-            "--package=@mango/pmo",
-            "--version=1.3.14",
+            "--package=@mango/admin-shell",
+            "--version=1.0.60",
+            "--tag={tag}"
+          ]
+        },
+        {
+          "command": "node",
+          "args": [
+            "mango-ui/scripts/check-release-notes.mjs",
+            "--package=@mango/admin",
+            "--version=1.0.66",
             "--tag={tag}"
           ]
         },
@@ -58,7 +71,7 @@
           "args": [
             "mango-ui/scripts/check-release-notes.mjs",
             "--package=@mango/cli",
-            "--version=1.0.106",
+            "--version=1.0.107",
             "--tag={tag}"
           ]
         }
@@ -81,23 +94,12 @@
         {
           "command": "pnpm",
           "cwd": "mango-ui",
-          "args": ["-F", "@mango/pmo", "build"]
-        },
-        {
-          "command": "pnpm",
-          "cwd": "mango-ui",
-          "args": ["-F", "@mango/pmo", "check"]
+          "args": ["-F", "@mango/admin-shell", "test"]
         },
         {
           "command": "pnpm",
           "cwd": "mango-ui",
           "args": ["-F", "@mango/cli", "test"]
-        },
-        {
-          "command": "node",
-          "args": [
-            "mango-ui/packages/mango-cli/scripts/check-generated-backend-gate.mjs"
-          ]
         },
         {
           "command": "pnpm",
@@ -108,6 +110,17 @@
           "command": "pnpm",
           "cwd": "mango-ui",
           "args": ["admin:module-styles:check"]
+        },
+        {
+          "command": "pnpm",
+          "cwd": "mango-ui",
+          "args": [
+            "package-consumer:typecheck",
+            "--",
+            "--release-candidate-matrix",
+            "--registry={npmConsumeRegistry}"
+          ],
+          "timeoutMs": 3600000
         },
         {
           "command": "node",
@@ -124,7 +137,7 @@
             "-a",
             "{tag}",
             "-m",
-            "Mango PMO 1.3.14 and CLI 1.0.106 historical document compatibility release"
+            "Mango Admin compatibility release 1.0.60 / 1.0.66 / 1.0.107"
           ]
         },
         {
@@ -147,9 +160,9 @@
           "{tag}",
           "--verify-tag",
           "--title",
-          "Mango PMO 1.3.14 and CLI 1.0.106 historical document compatibility release",
+          "Mango Admin compatibility release 1.0.60 / 1.0.66 / 1.0.107",
           "--notes",
-          "## Fixed\n\nAllow only path, SHA-256 and pmoVersion pinned PMO 1.3.10 through 1.3.12 TDD and Plan documents to retain the exact historical Reference Materials and Code Baseline section required by their original contract. Current, changed, unpinned, unknown-section and malformed-table documents remain fail closed.\n\n## Versions\n\n@mango/pmo 1.3.14; @mango/cli 1.0.106; Mango Maven remains 1.0.36; all other npm packages remain unchanged.\n\n## Published Packages\n\n@mango/pmo@1.3.14, followed by @mango/cli@1.0.106.\n\n## Upgrade Notes\n\nAfter both packages resolve from the company npm group registry, install @mango/cli@1.0.106, run mango pmo upgrade --project-dir . --to 1.3.14 --dry-run, review the plan, run the upgrade without --dry-run, then run mango pmo check --project-dir . --locked. Do not rewrite approved historical documents, remove historical sections, edit baseline.json, or change legacy document hashes.\n\n## Verification\n\nDocument-contract 1.3.10 through 1.3.13 compatibility matrix, PMO and CLI package gates, Business Starter projection, release lock, repository required checks, hosted/group back-checks and a clean published Baohan consumer upgrade."
+          "## Fixed\n\nReplace the incompatible Admin tuple whose Shell imported a symbol absent from the published Common 1.0.26 tarball. Active parent-menu resolution remains private to Admin Shell, and Common 1.0.26 remains unchanged.\n\n## Versions\n\n@mango/admin-shell 1.0.60; @mango/admin 1.0.66; @mango/cli 1.0.107. Mango Maven remains 1.0.36, @mango/common remains 1.0.26, @mango/pmo remains 1.3.14, and all other npm packages remain unchanged.\n\n## Published Packages\n\n@mango/admin-shell@1.0.60, followed by @mango/admin@1.0.66 and @mango/cli@1.0.107.\n\n## Upgrade Notes\n\nAfter all three packages resolve from the company npm group registry, install @mango/cli@1.0.107 and apply its complete release-versions.json matrix. Do not retain Admin Shell 1.0.59 or republish Common 1.0.26. No Maven, PMO, API, database, menu, permission, tenant, or runtime configuration migration is required.\n\n## Verification\n\nRequired checks, release impact, CLI lock, Admin Shell tests, CLI tests, Admin style gates, mixed candidate/private-registry consumer build, hosted/group tarball verification, and a final pure private-registry install, typecheck, and production build."
         ]
       },
       "verify": {
@@ -165,7 +178,49 @@
           "cwd": "mango-ui",
           "args": [
             "publish:pkg",
-            "pmo",
+            "admin-shell",
+            "--skip-shared-gates",
+            "--release-tag={tag}",
+            "--publish-registry={npmPublishRegistry}",
+            "--consume-registry={npmConsumeRegistry}"
+          ],
+          "env": { "MANGO_SHARED_PUBLISH_GATES_PASSED": "1" }
+        },
+        {
+          "command": "pnpm",
+          "cwd": "mango-ui",
+          "args": [
+            "publish:pkg",
+            "admin",
+            "--skip-shared-gates",
+            "--release-tag={tag}",
+            "--publish-registry={npmPublishRegistry}",
+            "--consume-registry={npmConsumeRegistry}"
+          ],
+          "env": { "MANGO_SHARED_PUBLISH_GATES_PASSED": "1" }
+        },
+        {
+          "command": "pnpm",
+          "cwd": "mango-ui",
+          "args": [
+            "publish:pkg",
+            "cli",
+            "--skip-shared-gates",
+            "--release-tag={tag}",
+            "--publish-registry={npmPublishRegistry}",
+            "--consume-registry={npmConsumeRegistry}"
+          ],
+          "env": { "MANGO_SHARED_PUBLISH_GATES_PASSED": "1" }
+        }
+      ],
+      "verify": [
+        {
+          "command": "pnpm",
+          "cwd": "mango-ui",
+          "args": [
+            "publish:pkg",
+            "admin-shell",
+            "--verify-only",
             "--release-tag={tag}",
             "--publish-registry={npmPublishRegistry}",
             "--consume-registry={npmConsumeRegistry}"
@@ -176,20 +231,7 @@
           "cwd": "mango-ui",
           "args": [
             "publish:pkg",
-            "cli",
-            "--release-tag={tag}",
-            "--publish-registry={npmPublishRegistry}",
-            "--consume-registry={npmConsumeRegistry}"
-          ]
-        }
-      ],
-      "verify": [
-        {
-          "command": "pnpm",
-          "cwd": "mango-ui",
-          "args": [
-            "publish:pkg",
-            "pmo",
+            "admin",
             "--verify-only",
             "--release-tag={tag}",
             "--publish-registry={npmPublishRegistry}",
@@ -226,7 +268,19 @@
           "cwd": "mango-ui",
           "args": [
             "publish:pkg",
-            "pmo",
+            "admin-shell",
+            "--verify-only",
+            "--release-tag={tag}",
+            "--publish-registry={npmPublishRegistry}",
+            "--consume-registry={npmConsumeRegistry}"
+          ]
+        },
+        {
+          "command": "pnpm",
+          "cwd": "mango-ui",
+          "args": [
+            "publish:pkg",
+            "admin",
             "--verify-only",
             "--release-tag={tag}",
             "--publish-registry={npmPublishRegistry}",
@@ -263,14 +317,27 @@
       }
     },
     "post-verify": {
-      "verify": {
-        "command": "node",
-        "args": [
-          "mango-ui/packages/mango-cli/scripts/check-published-pmo-upgrade.mjs",
-          "--version=1.0.106",
-          "--registry={npmConsumeRegistry}"
-        ]
-      }
+      "verify": [
+        {
+          "command": "pnpm",
+          "cwd": "mango-ui",
+          "args": [
+            "package-consumer:typecheck",
+            "--",
+            "--release-candidate-matrix",
+            "--registry={npmConsumeRegistry}"
+          ],
+          "timeoutMs": 3600000
+        },
+        {
+          "command": "node",
+          "args": [
+            "mango-ui/packages/mango-cli/scripts/check-release-versions.mjs",
+            "--check-registry",
+            "--registry={npmConsumeRegistry}"
+          ]
+        }
+      ]
     }
   }
 }
