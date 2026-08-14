@@ -2,6 +2,7 @@
   "schemaVersion": 1,
   "releaseKind": "npm-only",
   "tag": "v2026.08.14-pmo-1.3.14-cli-1.0.106-historical-document-compat-release",
+  "pr": 788,
   "artifacts": {
     "maven": {
       "mode": "disabled",
