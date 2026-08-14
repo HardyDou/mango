@@ -635,6 +635,10 @@ Issue #690 覆盖 CLI、Maven plugin、Bootstrap/runtime、Resource、BSQL、Boo
 
 业务项目先执行 `mango pmo upgrade --project-dir . --to 1.3.13 --dry-run`，确认 code baseline、精简文档、批量选择器和 worktree 门禁投影将被移除，再执行实际升级与 locked check。已有业务代码不会被自动重写。
 
+`@mango/cli@1.0.105` 修复从 `@mango/pmo@1.3.11` 升级到 `1.3.13` 时的历史 manifest 兼容问题。PMO schema v2 曾使用 `code-template` 文件类型；新 PMO bundle 不再携带这些文件时，CLI 会先完整校验旧 bundle 的路径、hash、size、mode 和总摘要，再通过原子事务安装目标 manifest 并删除目标不再声明的文件。业务项目不需要也不应手工补回 `code-templates/README.md`。
+
+升级时先安装 `@mango/cli@1.0.105`，执行 `mango pmo upgrade --project-dir . --to 1.3.13 --dry-run` 查看删除项，再执行正式升级和 `mango pmo check --project-dir . --locked`。Mango Maven 保持 `1.0.36`，`@mango/pmo` 保持 `1.3.13`，其它 npm 坐标保持 CLI 随包 `release-versions.json` 的当前矩阵。
+
 ### 1.0.99 发布影响
 
 `@mango/cli@1.0.99` 精确依赖 `@mango/pmo@1.3.10`，并通过 PMO bundle 的 canonical `business-module` code baseline 生成新业务模块。baseline 同时定义后端 API/core/starter/starter-remote、前端 API/page package、`moduleKebab` 等输入与派生变量、Mango Checkstyle/架构质量配置，以及 `XxxCode`、`Require`、typed CRUD、tenant、Mapper、资源、migration、页面注册和测试等规范证据。

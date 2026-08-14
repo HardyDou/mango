@@ -2,9 +2,23 @@
 
 ## Unreleased
 
+## 1.0.105 - 2026-08-14
+
 ### Fixed
 
+- Restore the PMO manifest schema v2 `code-template` descriptor as a valid historical kind. Business projects locked to `@mango/pmo@1.3.11` can now upgrade atomically to `@mango/pmo@1.3.13`; files such as `code-templates/README.md` that are absent from the target manifest are removed by the managed baseline replacement.
 - Spring Boot 本地启动和重启统一执行 Reactor `clean compile + spring-boot:run`，清除 `target/classes` 中已从源码删除的 class、Mapper XML 和其它资源；继续禁止开发期 `install`、`package` 和 app fat JAR 写入共享 `.m2`。
+
+### Upgrade Notes
+
+1. Install `@mango/cli@1.0.105` from the company npm group registry. Mango Maven remains `1.0.36`, and `@mango/pmo` remains `1.3.13`.
+2. Run `mango pmo upgrade --project-dir . --to 1.3.13 --dry-run`, review the managed deletions, then run the same command without `--dry-run`.
+3. Finish with `mango pmo check --project-dir . --locked`. Do not manually add the removed `code-templates/README.md` or edit the installed manifest.
+
+### Verification
+
+- PMO bundle regression covers an installed schema v2 manifest with `kind: code-template`, validates the atomic upgrade, and proves the obsolete file is deleted.
+- CLI package tests, packed consumer checks, release-version lock, Business Starter projection, workspace layout, admin style gates, and a real Baohan `1.3.11 -> 1.3.13` consumer transaction.
 
 ## 1.0.104 - 2026-08-14
 

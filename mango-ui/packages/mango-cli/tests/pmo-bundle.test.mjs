@@ -1,7 +1,17 @@
 import assert from 'node:assert/strict';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { chmodSync, copyFileSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  chmodSync,
+  copyFileSync,
+  cpSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import test from 'node:test';
@@ -38,36 +48,60 @@ test('PMO bundle install, locked repair, stale cleanup, and rollback', () => {
     assert.ok(skillState.roots.includes('mango-pmo-lifecycle'));
     assert.ok(existsSync(join(projectRoot, '.agents/skills/mango-pmo-lifecycle/SKILL.md')));
 
+    const legacyCodeTemplatePath = join(projectRoot, 'business-pmo/mango-baseline/code-templates/README.md');
+    const legacyCodeTemplateContent = '# Legacy code templates\n';
+    mkdirSync(dirname(legacyCodeTemplatePath), { recursive: true });
+    writeFileSync(legacyCodeTemplatePath, legacyCodeTemplateContent);
+    const legacyCodeTemplateManifest = readJson(manifestPath);
+    legacyCodeTemplateManifest.packageVersion = '1.3.11';
+    legacyCodeTemplateManifest.files.push({
+      path: 'code-templates/README.md',
+      sha256: createHash('sha256').update(legacyCodeTemplateContent).digest('hex'),
+      size: Buffer.byteLength(legacyCodeTemplateContent),
+      kind: 'code-template',
+      mode: '0644',
+    });
+    legacyCodeTemplateManifest.bundleSha256 = createHash('sha256')
+      .update(
+        JSON.stringify({
+          files: legacyCodeTemplateManifest.files,
+          contracts: legacyCodeTemplateManifest.contracts,
+          plugin: legacyCodeTemplateManifest.plugin ?? null,
+        }),
+      )
+      .digest('hex');
+    writeFileSync(manifestPath, `${JSON.stringify(legacyCodeTemplateManifest, null, 2)}\n`);
+    const legacyCodeTemplateLock = readJson(lockPath);
+    legacyCodeTemplateLock.packageVersion = legacyCodeTemplateManifest.packageVersion;
+    legacyCodeTemplateLock.bundleSha256 = legacyCodeTemplateManifest.bundleSha256;
+    writeFileSync(lockPath, `${JSON.stringify(legacyCodeTemplateLock, null, 2)}\n`);
+    run([cli, 'pmo', 'upgrade', '--project-dir', projectRoot, '--to', manifest.packageVersion], projectRoot);
+    assert.equal(existsSync(legacyCodeTemplatePath), false);
+    assert.equal(readJson(manifestPath).packageVersion, manifest.packageVersion);
+
     const currentLifecycleSkill = join(projectRoot, '.agents/skills/mango-pmo-lifecycle');
     const legacyLifecycleSkill = join(projectRoot, '.agents/skills/mango-pm-lifecycle');
     cpSync(currentLifecycleSkill, legacyLifecycleSkill, { recursive: true });
     rmSync(currentLifecycleSkill, { recursive: true, force: true });
     const legacyManifest = readJson(manifestPath);
-    legacyManifest.files = legacyManifest.files.map(file => ({
+    legacyManifest.files = legacyManifest.files.map((file) => ({
       ...file,
-      path: file.path.replace(
-        'skills/mango-pmo-lifecycle/',
-        'skills/mango-pm-lifecycle/',
-      ),
+      path: file.path.replace('skills/mango-pmo-lifecycle/', 'skills/mango-pm-lifecycle/'),
     }));
-    legacyManifest.bundleSha256 = createHash('sha256').update(JSON.stringify({
-      files: legacyManifest.files,
-      contracts: legacyManifest.contracts,
-      plugin: legacyManifest.plugin ?? null,
-    })).digest('hex');
+    legacyManifest.bundleSha256 = createHash('sha256')
+      .update(
+        JSON.stringify({
+          files: legacyManifest.files,
+          contracts: legacyManifest.contracts,
+          plugin: legacyManifest.plugin ?? null,
+        }),
+      )
+      .digest('hex');
     writeFileSync(manifestPath, `${JSON.stringify(legacyManifest, null, 2)}\n`);
     const legacyLock = readJson(lockPath);
     legacyLock.bundleSha256 = legacyManifest.bundleSha256;
     writeFileSync(lockPath, `${JSON.stringify(legacyLock, null, 2)}\n`);
-    run([
-      cli,
-      'pmo',
-      'upgrade',
-      '--project-dir',
-      projectRoot,
-      '--to',
-      manifest.packageVersion,
-    ], projectRoot);
+    run([cli, 'pmo', 'upgrade', '--project-dir', projectRoot, '--to', manifest.packageVersion], projectRoot);
     assert.equal(existsSync(legacyLifecycleSkill), false);
     assert.ok(existsSync(join(currentLifecycleSkill, 'SKILL.md')));
 
@@ -78,15 +112,7 @@ test('PMO bundle install, locked repair, stale cleanup, and rollback', () => {
     const refusedSync = runFailure([cli, 'pmo', 'sync', '--project-dir', projectRoot], projectRoot);
     assert.match(refusedSync.stderr, /sync repairs the locked/);
     assert.equal(readJson(lockPath).bundleSha256, mismatchedLock.bundleSha256);
-    run([
-      cli,
-      'pmo',
-      'upgrade',
-      '--project-dir',
-      projectRoot,
-      '--to',
-      manifest.packageVersion,
-    ], projectRoot);
+    run([cli, 'pmo', 'upgrade', '--project-dir', projectRoot, '--to', manifest.packageVersion], projectRoot);
     assert.equal(readJson(lockPath).bundleSha256, manifest.bundleSha256);
 
     const businessSkillPath = join(projectRoot, '.agents/skills/business-owned/SKILL.md');
@@ -101,34 +127,10 @@ test('PMO bundle install, locked repair, stale cleanup, and rollback', () => {
     const previousVersion = '0.9.0-test';
     setInstalledPmoVersion(projectRoot, previousVersion);
     run([cli, 'pmo', 'check', '--project-dir', projectRoot, '--locked'], projectRoot);
-    run([
-      cli,
-      'pmo',
-      'upgrade',
-      '--project-dir',
-      projectRoot,
-      '--to',
-      manifest.packageVersion,
-    ], projectRoot);
-    run([
-      cli,
-      'pmo',
-      'rollback',
-      '--project-dir',
-      projectRoot,
-      '--to',
-      previousVersion,
-    ], projectRoot);
+    run([cli, 'pmo', 'upgrade', '--project-dir', projectRoot, '--to', manifest.packageVersion], projectRoot);
+    run([cli, 'pmo', 'rollback', '--project-dir', projectRoot, '--to', previousVersion], projectRoot);
     assert.equal(readJson(lockPath).packageVersion, previousVersion);
-    run([
-      cli,
-      'pmo',
-      'upgrade',
-      '--project-dir',
-      projectRoot,
-      '--to',
-      manifest.packageVersion,
-    ], projectRoot);
+    run([cli, 'pmo', 'upgrade', '--project-dir', projectRoot, '--to', manifest.packageVersion], projectRoot);
 
     const stalePath = join(projectRoot, 'business-pmo/mango-baseline/rules/stale-rule.md');
     writeFileSync(stalePath, '# stale\n');
@@ -147,27 +149,17 @@ test('PMO bundle install, locked repair, stale cleanup, and rollback', () => {
     assert.equal(readFileSync(skillPath, 'utf8'), originalSkill);
 
     const beforeUnavailableUpgrade = readJson(lockPath);
-    const unavailable = runFailure([
-      cli,
-      'pmo',
-      'upgrade',
-      '--project-dir',
+    const unavailable = runFailure(
+      [cli, 'pmo', 'upgrade', '--project-dir', projectRoot, '--to', '0.0.0-test'],
       projectRoot,
-      '--to',
-      '0.0.0-test',
-    ], projectRoot);
+    );
     assert.match(unavailable.stderr, /is not available to this CLI/);
     assert.deepEqual(readJson(lockPath), beforeUnavailableUpgrade);
 
-    const rollback = run([
-      cli,
-      'pmo',
-      'rollback',
-      '--project-dir',
+    const rollback = run(
+      [cli, 'pmo', 'rollback', '--project-dir', projectRoot, '--to', manifest.packageVersion],
       projectRoot,
-      '--to',
-      manifest.packageVersion,
-    ], projectRoot);
+    );
     assert.match(rollback.stdout, /PMO rollback complete/);
     run([cli, 'pmo', 'check', '--project-dir', projectRoot, '--locked'], projectRoot);
   } finally {
@@ -193,6 +185,31 @@ test('PMO bundle install refuses an unowned project skill collision without part
   }
 });
 
+test('PMO manifest compatibility remains fail-closed for unknown file kinds', () => {
+  execFileSync(process.execPath, ['scripts/build-package.mjs'], { cwd: pmoRoot, stdio: 'pipe' });
+  const tempRoot = mkdtempSync(join(tmpdir(), 'mango-pmo-kind-validation-'));
+  const projectRoot = join(tempRoot, 'project');
+  try {
+    run([cli, 'init', 'project', '--preset', 'custom', '--modules', 'none'], tempRoot);
+    const manifestPath = join(projectRoot, 'business-pmo/mango-baseline/baseline.json');
+    const lockPath = join(projectRoot, 'business-pmo/pmo-lock.json');
+    const manifest = readJson(manifestPath);
+    manifest.files[0].kind = 'unknown-kind';
+    manifest.bundleSha256 = createHash('sha256')
+      .update(JSON.stringify({ files: manifest.files, contracts: manifest.contracts, plugin: manifest.plugin ?? null }))
+      .digest('hex');
+    writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+    const lock = readJson(lockPath);
+    lock.bundleSha256 = manifest.bundleSha256;
+    writeFileSync(lockPath, `${JSON.stringify(lock, null, 2)}\n`);
+
+    const result = runFailure([cli, 'pmo', 'check', '--project-dir', projectRoot, '--locked'], projectRoot);
+    assert.match(result.stdout, /invalid @mango\/pmo manifest file descriptor/);
+  } finally {
+    rmSync(tempRoot, { recursive: true, force: true });
+  }
+});
+
 test('published PMO package exports plugin Skills and rejects a tampered bundle', () => {
   execFileSync(process.execPath, ['scripts/build-package.mjs'], { cwd: pmoRoot, stdio: 'pipe' });
   run([packageExportsCheck, '--package=@mango/pmo'], uiRoot);
@@ -209,19 +226,13 @@ test('published PMO package exports plugin Skills and rejects a tampered bundle'
     const skillPath = join(packageRoot, 'skills/mango-pmo-lifecycle/SKILL.md');
     const originalSkill = readFileSync(skillPath, 'utf8');
     writeFileSync(skillPath, `${originalSkill}\ntampered\n`);
-    const tampered = runFailure([
-      publishPackage,
-      `--verify-pmo-package-root=${packageRoot}`,
-    ], uiRoot);
+    const tampered = runFailure([publishPackage, `--verify-pmo-package-root=${packageRoot}`], uiRoot);
     assert.match(tampered.stderr, /plugin file differs from its manifest/);
 
     if (process.platform !== 'win32') {
       writeFileSync(skillPath, originalSkill);
       chmodSync(join(packageRoot, 'dist/baseline/tools/pmo-preflight.mjs'), 0o644);
-      const wrongMode = runFailure([
-        publishPackage,
-        `--verify-pmo-package-root=${packageRoot}`,
-      ], uiRoot);
+      const wrongMode = runFailure([publishPackage, `--verify-pmo-package-root=${packageRoot}`], uiRoot);
       assert.match(wrongMode.stderr, /baseline file differs from its manifest/);
     }
   } finally {

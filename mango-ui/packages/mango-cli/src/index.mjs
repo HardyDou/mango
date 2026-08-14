@@ -4696,7 +4696,9 @@ function validatePmoManifest(manifest) {
       !Number.isInteger(file.size) ||
       file.size < 0 ||
       !['0644', '0755'].includes(file.mode) ||
-      !['agent', 'rule', 'template', 'contract', 'tool', 'skill', 'documentation', 'asset'].includes(file.kind)
+      !['agent', 'rule', 'template', 'code-template', 'contract', 'tool', 'skill', 'documentation', 'asset'].includes(
+        file.kind,
+      )
     ) {
       throw new Error(`invalid @mango/pmo manifest file descriptor: ${file.path}`);
     }
