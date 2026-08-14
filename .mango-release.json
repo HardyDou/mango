@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "releaseKind": "npm-only",
   "tag": "v2026.08.14-pmo-1.3.14-cli-1.0.106-historical-document-compat-release",
-  "pr": 788,
+  "pr": 789,
   "artifacts": {
     "maven": {
       "mode": "disabled",
@@ -116,16 +116,22 @@
       ]
     },
     "tag": {
-      "publish": {
-        "command": "git",
-        "args": [
-          "tag",
-          "-a",
-          "{tag}",
-          "-m",
-          "Mango PMO 1.3.14 and CLI 1.0.106 historical document compatibility release"
-        ]
-      },
+      "publish": [
+        {
+          "command": "git",
+          "args": [
+            "tag",
+            "-a",
+            "{tag}",
+            "-m",
+            "Mango PMO 1.3.14 and CLI 1.0.106 historical document compatibility release"
+          ]
+        },
+        {
+          "command": "git",
+          "args": ["push", "origin", "refs/tags/{tag}"]
+        }
+      ],
       "verify": {
         "command": "git",
         "args": ["rev-parse", "--verify", "refs/tags/{tag}"]
