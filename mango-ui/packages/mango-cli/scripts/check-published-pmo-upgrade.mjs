@@ -38,6 +38,11 @@ try {
   if (cliPackage.version !== options.version) {
     throw new Error(`installed CLI version mismatch: expected ${options.version}, got ${cliPackage.version}`);
   }
+  const releaseVersions = readJson(join(cliRoot, 'release-versions.json'));
+  const targetPmoVersion = releaseVersions.npm?.['@mango/pmo'];
+  if (!/^\d+\.\d+\.\d+$/.test(targetPmoVersion ?? '')) {
+    throw new Error('installed CLI release-versions.json must declare a semantic npm.@mango/pmo version');
+  }
   const cli = join(cliRoot, 'src/index.mjs');
   run(
     process.execPath,
@@ -74,16 +79,18 @@ try {
 
   run(
     process.execPath,
-    [cli, 'pmo', 'upgrade', '--project-dir', projectRoot, '--to', '1.3.13'],
+    [cli, 'pmo', 'upgrade', '--project-dir', projectRoot, '--to', targetPmoVersion],
     projectRoot,
-    'upgrade historical PMO manifest',
+    `upgrade historical PMO manifest to ${targetPmoVersion}`,
   );
   if (existsSync(legacyPath)) {
     throw new Error('obsolete code-templates/README.md remains after PMO upgrade');
   }
   const upgradedManifest = readJson(manifestPath);
-  if (upgradedManifest.packageVersion !== '1.3.13') {
-    throw new Error(`upgraded PMO version mismatch: ${upgradedManifest.packageVersion}`);
+  if (upgradedManifest.packageVersion !== targetPmoVersion) {
+    throw new Error(
+      `upgraded PMO version mismatch: expected ${targetPmoVersion}, got ${upgradedManifest.packageVersion}`,
+    );
   }
   run(
     process.execPath,
@@ -92,7 +99,7 @@ try {
     'verify upgraded PMO lock',
   );
   process.stdout.write(
-    `${JSON.stringify({ result: 'PASS', cliVersion: cliPackage.version, pmoVersion: upgradedManifest.packageVersion })}\n`,
+    `${JSON.stringify({ result: 'PASS', cliVersion: cliPackage.version, pmoVersion: targetPmoVersion })}\n`,
   );
 } finally {
   rmSync(tempRoot, { recursive: true, force: true });
