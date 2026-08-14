@@ -126,7 +126,7 @@ function selectCandidatePackages(packageRoots) {
     try {
       state = classifyRegistryVersionResult(result, packageJson.version);
     } catch (error) {
-      throw new Error(`${coordinate}: ${error instanceof Error ? error.message : error}`);
+      throw new Error(`${coordinate}: ${error instanceof Error ? error.message : error}`, { cause: error });
     }
     if (state === 'candidate') {
       candidates.push(packageRoot);
