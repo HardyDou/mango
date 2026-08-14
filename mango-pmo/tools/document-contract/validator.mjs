@@ -46,9 +46,48 @@ function findSection(ast, title) {
 function matchesFixedMetadataValue(key, value, expected, contract, options) {
   if (value === expected) return true;
   return key === 'pmoVersion'
-    && options.allowHistoricalPmoVersions === true
+    && options.historicalPmoVersion === value
     && Array.isArray(contract.metadata.historicalPmoVersions)
     && contract.metadata.historicalPmoVersions.includes(value);
+}
+
+function resolveHistoricalStructure(contract, options, findings) {
+  const pmoVersion = String(options.historicalPmoVersion ?? '').trim();
+  if (!pmoVersion) return contract;
+
+  const variants = (contract.historicalSectionVariants ?? [])
+    .filter((variant) => variant.pmoVersions?.includes(pmoVersion) === true);
+  if (variants.length === 0) return contract;
+  if (variants.length > 1) {
+    addFinding(findings, 'CONTRACT-ASSET-001', `历史 PMO ${pmoVersion} 命中多个章节变体`);
+    return contract;
+  }
+
+  const variant = variants[0];
+  const insertBefore = String(variant.insertBefore ?? '').trim();
+  const insertionIndex = contract.sections.findIndex((section) => section.title === insertBefore);
+  if (insertionIndex < 0 || !Array.isArray(variant.sections) || variant.sections.length === 0) {
+    addFinding(findings, 'CONTRACT-ASSET-001', `历史 PMO ${pmoVersion} 章节变体配置无效`);
+    return contract;
+  }
+
+  const titles = new Set(contract.sections.map((section) => section.title));
+  for (const section of variant.sections) {
+    if (!section?.title || titles.has(section.title)) {
+      addFinding(findings, 'CONTRACT-ASSET-001', `历史 PMO ${pmoVersion} 章节变体包含缺失或重复标题`);
+      return contract;
+    }
+    titles.add(section.title);
+  }
+
+  return {
+    ...contract,
+    sections: [
+      ...contract.sections.slice(0, insertionIndex),
+      ...variant.sections,
+      ...contract.sections.slice(insertionIndex),
+    ],
+  };
 }
 
 function validateMetadata(ast, contract, findings, options) {
@@ -453,20 +492,21 @@ export function validateDocument(source, contract, options = {}) {
   const ast = parseMarkdown(source);
   const findings = [];
   if (options.checkAssets !== false) findings.push(...validateContractRuleLinks(contract));
+  const validationContract = resolveHistoricalStructure(contract, options, findings);
   for (const error of ast.errors) addFinding(findings, contract.metadata.ruleId, error.message, error.line);
-  validateMetadata(ast, contract, findings, options);
-  validatePlaceholders(ast, contract, findings);
-  validateStructure(ast, contract, findings);
-  const entries = materializeTables(ast, contract);
+  validateMetadata(ast, validationContract, findings, options);
+  validatePlaceholders(ast, validationContract, findings);
+  validateStructure(ast, validationContract, findings);
+  const entries = materializeTables(ast, validationContract);
   validateTables(entries, findings);
-  validateColumnRules(entries, contract, findings);
-  const definitions = collectDefinitions(entries, contract, findings);
-  validateReferences(entries, contract, definitions, findings);
-  validateTraceability(ast, contract, definitions, findings);
-  validateBlocking(ast, contract, findings);
-  validateDependencyGraph(ast, contract, findings);
-  validateGate(ast, contract, findings);
-  validateForbidden(ast, contract, findings);
+  validateColumnRules(entries, validationContract, findings);
+  const definitions = collectDefinitions(entries, validationContract, findings);
+  validateReferences(entries, validationContract, definitions, findings);
+  validateTraceability(ast, validationContract, definitions, findings);
+  validateBlocking(ast, validationContract, findings);
+  validateDependencyGraph(ast, validationContract, findings);
+  validateGate(ast, validationContract, findings);
+  validateForbidden(ast, validationContract, findings);
   return { ast, definitions, findings };
 }
 

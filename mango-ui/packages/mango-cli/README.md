@@ -625,6 +625,18 @@ Issue #690 覆盖 CLI、Maven plugin、Bootstrap/runtime、Resource、BSQL、Boo
 
 业务项目不需要修改生成模板或在 `main.ts` 添加 `crypto.randomUUID` polyfill。修复由 `@mango/common` 和 Admin Shell 启动链提供；CLI 后续发布时必须把 `common -> admin-shell -> admin` 的匹配版本写入同一 `release-versions.json` 前端矩阵，业务项目整体升级该矩阵即可。该修复不改变 CLI 命令、模板结构、后端 Maven、菜单、权限或租户配置。
 
+### 1.0.106 发布影响
+
+`@mango/cli@1.0.106` 精确依赖 `@mango/pmo@1.3.14`，修复 PMO 1.3.10 至 1.3.12 已锁定 TDD/Plan 被当前合同误拒绝的问题。只有业务文档根目录历史基线中路径、SHA-256 和 `pmoVersion` 全部匹配的文件，才会按对应历史合同接受“参考资料与代码基线”章节；当前文档、被修改文档、未知章节、错误表头和未锁定文档仍然失败。
+
+业务项目安装 `@mango/cli@1.0.106` 后，先执行 `mango pmo upgrade --project-dir . --to 1.3.14 --dry-run`，确认 PMO baseline 升级范围，再执行正式升级和 `mango pmo check --project-dir . --locked`。不要删除历史章节、改写已审批文档或修改 `.mango-pmo-legacy-documents.json` 中的 SHA-256。Mango Maven 保持 `1.0.36`，其它 npm 坐标保持当前矩阵。
+
+### 1.0.105 发布影响
+
+`@mango/cli@1.0.105` 修复从 `@mango/pmo@1.3.11` 升级到 `1.3.13` 时的历史 manifest 兼容问题。PMO schema v2 曾使用 `code-template` 文件类型；新 PMO bundle 不再携带这些文件时，CLI 会先完整校验旧 bundle 的路径、hash、size、mode 和总摘要，再通过原子事务安装目标 manifest 并删除目标不再声明的文件。业务项目不需要也不应手工补回 `code-templates/README.md`。
+
+升级时先安装 `@mango/cli@1.0.105`，执行 `mango pmo upgrade --project-dir . --to 1.3.13 --dry-run` 查看删除项，再执行正式升级和 `mango pmo check --project-dir . --locked`。Mango Maven 保持 `1.0.36`，`@mango/pmo` 保持 `1.3.13`，其它 npm 坐标保持 CLI 随包 `release-versions.json` 的当前矩阵。
+
 ### 1.0.104 发布影响
 
 `@mango/cli@1.0.104` 锁定 Notice 入站消息能力发布矩阵：Mango Maven `1.0.36`、`@mango/notice@1.0.39`、`@mango/admin-shell@1.0.59`、`@mango/admin@1.0.65` 和 `@mango/pmo@1.3.13`。邮件支持定时拉取与接口推送，企业微信支持匿名回调验签与消息接收；附件由 File 服务保存。业务项目升级时必须按该完整矩阵更新，不要只升级 CLI 或单个前端包。
@@ -634,10 +646,6 @@ Issue #690 覆盖 CLI、Maven plugin、Bootstrap/runtime、Resource、BSQL、Boo
 `@mango/cli@1.0.103` 精确依赖 `@mango/pmo@1.3.13`，撤回 PMO 1.3.10 至 1.3.12 的治理升级，并恢复 CLI 包内 `templates/business-module` 作为 `mango module add` 的生成来源。模板源码以 `module.properties.template` 保存占位符，生成项目仍得到真实的 `module.properties`。已发布旧版本保持不可变，Mango Maven `1.0.35` 与其它业务 npm 坐标不降级。
 
 业务项目先执行 `mango pmo upgrade --project-dir . --to 1.3.13 --dry-run`，确认 code baseline、精简文档、批量选择器和 worktree 门禁投影将被移除，再执行实际升级与 locked check。已有业务代码不会被自动重写。
-
-`@mango/cli@1.0.105` 修复从 `@mango/pmo@1.3.11` 升级到 `1.3.13` 时的历史 manifest 兼容问题。PMO schema v2 曾使用 `code-template` 文件类型；新 PMO bundle 不再携带这些文件时，CLI 会先完整校验旧 bundle 的路径、hash、size、mode 和总摘要，再通过原子事务安装目标 manifest 并删除目标不再声明的文件。业务项目不需要也不应手工补回 `code-templates/README.md`。
-
-升级时先安装 `@mango/cli@1.0.105`，执行 `mango pmo upgrade --project-dir . --to 1.3.13 --dry-run` 查看删除项，再执行正式升级和 `mango pmo check --project-dir . --locked`。Mango Maven 保持 `1.0.36`，`@mango/pmo` 保持 `1.3.13`，其它 npm 坐标保持 CLI 随包 `release-versions.json` 的当前矩阵。
 
 ### 1.0.99 发布影响
 

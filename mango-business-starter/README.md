@@ -41,6 +41,8 @@
 
 `@mango/pmo@1.3.13` 与精确依赖它的 `@mango/cli@1.0.103` 撤回 PMO 1.3.10 至 1.3.12 引入的 canonical code baseline、精简文档、批量选择器和 worktree 完整性门禁，恢复由 CLI 自带业务模块模板生成代码及原有 PMO 流程。已发布旧版本继续作为不可变历史保留；业务项目升级到 1.3.13 后以新的 baseline、合同和 Skill 为准。
 
+`@mango/pmo@1.3.14` 与 `@mango/cli@1.0.106` 在上述当前流程上增加精确的历史文档章节变体：只有路径、SHA-256 和 `pmoVersion` 三重锁定的 PMO 1.3.10 至 1.3.12 TDD/Plan 可以保留当时的“参考资料与代码基线”章节；新文档、已变更历史文档和其它合同外章节继续 fail closed。
+
 `business-pmo/mango-baseline` 是 canonical `mango-pmo` 的构建投影，维护边界遵循
 [文档资产规范](../mango-pmo/rules/06-document-assets.md)。更新 PMO 后执行：
 

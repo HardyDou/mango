@@ -155,7 +155,7 @@ export function checkDocumentSet(rootPath) {
     }
     const result = validateDocument(source, contract, {
       documentPath: file,
-      allowHistoricalPmoVersions: hasPinnedHistoricalPmoVersion,
+      historicalPmoVersion: hasPinnedHistoricalPmoVersion ? pmoVersion : null,
     });
     const document = { file, source, type, contract, result, meta: result.ast.frontmatter.values };
     documents.push(document);

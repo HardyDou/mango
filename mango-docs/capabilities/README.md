@@ -36,6 +36,8 @@
 
 ## 3.1 近期能力变更
 
+- 2026-08-14，[Issue #786](https://github.com/HardyDou/mango/issues/786) 由 `@mango/pmo@1.3.14` / `@mango/cli@1.0.106` 修复已锁定历史生命周期文档的精确章节合同兼容：PMO 1.3.10 至 1.3.12 的 TDD/Plan 可保留当时合同定义的“参考资料与代码基线”章节，但仅在路径、SHA-256、`pmoVersion` 三重锁全部匹配时启用；当前文档、内容变更、未知章节和错误表头继续 fail closed。Mango Maven 保持 `1.0.36`，其它 npm 坐标不变。升级与验证入口见 [PMO README](../../mango-pmo/README.md) 和 [CLI README](../../mango-ui/packages/mango-cli/README.md)。
+
 - 2026-08-14，[Issue #784](https://github.com/HardyDou/mango/issues/784) 由 `@mango/cli@1.0.105` 恢复 PMO manifest schema v2 历史 `code-template` 描述符兼容：锁定 `@mango/pmo@1.3.11` 的业务项目可以原子升级到 `1.3.13`，目标 manifest 已移除的 `code-templates/README.md` 会作为受管旧文件删除；路径、hash、size、mode、bundle 摘要和事务回滚校验保持不变。升级步骤见 [CLI README](../../mango-ui/packages/mango-cli/README.md)。Mango Maven 保持 `1.0.36`，PMO 保持 `1.3.13`。
 
 - 2026-08-13，Issue #739 将业务项目 Spring Boot 本地启动从 Reactor `compile + spring-boot:run` 调整为 `clean + compile + spring-boot:run`：每次后端启动或重启先清理当前 worktree 的构建输出，避免源码已删除的 class、Mapper XML 或其它资源继续残留在 `target/classes`；仍不执行 `install`、`package` 或安装 app fat JAR，正式 CI/CD 和 `deploy` 流程不变。使用说明见 [CLI README](../../mango-ui/packages/mango-cli/README.md)、[Business Starter README](../../mango-business-starter/README.md) 和 [CI/CD 发布实践](../guides/business-integration/ci-cd-release-practices.md)。

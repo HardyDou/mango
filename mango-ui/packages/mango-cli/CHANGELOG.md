@@ -2,6 +2,25 @@
 
 ## Unreleased
 
+## 1.0.106 - 2026-08-14
+
+### Fixed
+
+- Lock `@mango/pmo@1.3.14`, whose document-set checker applies exact historical TDD/Plan section variants only to path/SHA-256/`pmoVersion`-pinned PMO 1.3.10 through 1.3.12 documents.
+- Keep current, modified, unpinned, unknown-section and malformed-table documents fail closed; no CLI command syntax or Mango runtime dependency changes.
+
+### Upgrade Notes
+
+1. Install `@mango/cli@1.0.106` from the company npm group registry after `@mango/pmo@1.3.14` is available.
+2. Run `mango pmo upgrade --project-dir . --to 1.3.14 --dry-run`, review the managed PMO changes, then run the upgrade without `--dry-run`.
+3. Finish with `mango pmo check --project-dir . --locked`; do not rewrite approved historical documents or edit their hash baseline.
+
+### Verification
+
+- PMO document-contract tests cover the exact 1.3.10/1.3.11/1.3.12 historical section matrix, a 1.3.13 no-variant case, and current, unpinned, unknown-section and malformed-table negative cases.
+- The real Baohan set of 82 lifecycle documents passes with seven hash-pinned historical documents and without modifying approved content.
+- PMO/CLI package checks, Business Starter projection, release lock, repository gates and clean published consumer upgrade.
+
 ## 1.0.105 - 2026-08-14
 
 ### Fixed
