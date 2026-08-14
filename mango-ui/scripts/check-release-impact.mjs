@@ -269,19 +269,12 @@ function matchesPublishedSourceBaseline(workspacePackage, descriptor) {
     throw new Error(`${workspacePackage.packageJson.name}: cannot read source baseline ${descriptor.gitCommit}`);
   }
   const baselinePackage = JSON.parse(baselinePackageJson.stdout);
-  if (
-    baselinePackage.name !== workspacePackage.packageJson.name ||
-    baselinePackage.version !== descriptor.version
-  ) {
+  if (baselinePackage.name !== workspacePackage.packageJson.name || baselinePackage.version !== descriptor.version) {
     throw new Error(
       `${workspacePackage.packageJson.name}: source baseline identity does not match ${descriptor.version}`,
     );
   }
-  const untracked = run(
-    'git',
-    ['ls-files', '--others', '--exclude-standard', '--', packagePath],
-    { capture: true },
-  );
+  const untracked = run('git', ['ls-files', '--others', '--exclude-standard', '--', packagePath], { capture: true });
   if (untracked.status !== 0) {
     throw new Error(`${workspacePackage.packageJson.name}: cannot inspect untracked source baseline files`);
   }

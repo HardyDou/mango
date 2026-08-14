@@ -339,9 +339,7 @@ try {
     candidatePackages.map((packageRoot) => readJson(join(packageRoot, 'package.json')).name),
   );
   const cli =
-    releaseCandidateMatrix && !candidatePackageNames.has('@mango/cli')
-      ? installPublishedCliRunner()
-      : sourceCli;
+    releaseCandidateMatrix && !candidatePackageNames.has('@mango/cli') ? installPublishedCliRunner() : sourceCli;
 
   if (!reuseBuild) {
     console.log('Generating package styles before packing');

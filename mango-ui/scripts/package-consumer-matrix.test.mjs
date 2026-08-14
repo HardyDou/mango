@@ -4,10 +4,7 @@ import test from 'node:test';
 import { classifyRegistryVersionResult } from './package-consumer-matrix.mjs';
 
 test('classifies an exact registry version as published', () => {
-  assert.equal(
-    classifyRegistryVersionResult({ status: 0, stdout: '1.0.59\n', stderr: '' }, '1.0.59'),
-    'published',
-  );
+  assert.equal(classifyRegistryVersionResult({ status: 0, stdout: '1.0.59\n', stderr: '' }, '1.0.59'), 'published');
 });
 
 test('classifies only an explicit registry 404 as an unpublished candidate', () => {
