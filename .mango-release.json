@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "releaseKind": "npm-only",
   "tag": "v2026.08.14-admin-shell-1.0.60-admin-1.0.66-cli-1.0.107-compat-release",
-  "pr": 792,
+  "pr": 793,
   "artifacts": {
     "maven": {
       "mode": "disabled",
