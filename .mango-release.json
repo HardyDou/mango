@@ -1,11 +1,12 @@
 {
   "schemaVersion": 1,
   "releaseKind": "npm-only",
-  "tag": "v2026.08.14-cli-1.0.105-pmo-manifest-compat-release",
+  "tag": "v2026.08.14-pmo-1.3.14-cli-1.0.106-historical-document-compat-release",
+  "pr": 788,
   "artifacts": {
     "maven": {
       "mode": "disabled",
-      "disabledReason": "CLI compatibility patch does not change or republish Mango Maven 1.0.36"
+      "disabledReason": "PMO and CLI historical document compatibility patch does not change or republish Mango Maven 1.0.36"
     },
     "npm": {
       "mode": "private-registry",
@@ -24,7 +25,7 @@
         {
           "command": "pnpm",
           "cwd": "mango-ui",
-          "args": ["release:impact", "--base=origin/main", "--head=HEAD"]
+          "args": ["release:impact", "--base=d62f553699df77c900f230ae1b345564e142cdb5", "--head=HEAD"]
         },
         {
           "command": "node",
@@ -42,15 +43,26 @@
       ]
     },
     "changelog": {
-      "verify": {
-        "command": "node",
-        "args": [
-          "mango-ui/scripts/check-release-notes.mjs",
-          "--package=@mango/cli",
-          "--version=1.0.105",
-          "--tag={tag}"
-        ]
-      }
+      "verify": [
+        {
+          "command": "node",
+          "args": [
+            "mango-ui/scripts/check-release-notes.mjs",
+            "--package=@mango/pmo",
+            "--version=1.3.14",
+            "--tag={tag}"
+          ]
+        },
+        {
+          "command": "node",
+          "args": [
+            "mango-ui/scripts/check-release-notes.mjs",
+            "--package=@mango/cli",
+            "--version=1.0.106",
+            "--tag={tag}"
+          ]
+        }
+      ]
     },
     "readmes": {
       "verify": [
@@ -69,7 +81,23 @@
         {
           "command": "pnpm",
           "cwd": "mango-ui",
+          "args": ["-F", "@mango/pmo", "build"]
+        },
+        {
+          "command": "pnpm",
+          "cwd": "mango-ui",
+          "args": ["-F", "@mango/pmo", "check"]
+        },
+        {
+          "command": "pnpm",
+          "cwd": "mango-ui",
           "args": ["-F", "@mango/cli", "test"]
+        },
+        {
+          "command": "node",
+          "args": [
+            "mango-ui/packages/mango-cli/scripts/check-generated-backend-gate.mjs"
+          ]
         },
         {
           "command": "pnpm",
@@ -95,7 +123,7 @@
           "-a",
           "{tag}",
           "-m",
-          "Mango CLI PMO manifest compatibility release {version}"
+          "Mango PMO 1.3.14 and CLI 1.0.106 historical document compatibility release"
         ]
       },
       "verify": {
@@ -113,9 +141,9 @@
           "{tag}",
           "--verify-tag",
           "--title",
-          "Mango CLI 1.0.105 PMO manifest compatibility release",
+          "Mango PMO 1.3.14 and CLI 1.0.106 historical document compatibility release",
           "--notes",
-          "## Fixed\n\nRestore PMO manifest schema v2 historical code-template descriptor compatibility so business projects locked to PMO 1.3.11 can upgrade atomically to PMO 1.3.13. Obsolete files absent from the target manifest are removed while path, hash, size, mode and bundle validation remain enforced.\n\n## Versions\n\n@mango/cli 1.0.105; @mango/pmo remains 1.3.13; Mango Maven remains 1.0.36; all other npm packages remain unchanged.\n\n## Published Packages\n\n@mango/cli@1.0.105 only.\n\n## Upgrade Notes\n\nInstall @mango/cli@1.0.105, run mango pmo upgrade --project-dir . --to 1.3.13 --dry-run, review the plan, run the upgrade without --dry-run, then run mango pmo check --project-dir . --locked. Do not manually add code-templates/README.md or edit baseline.json.\n\n## Verification\n\nCLI tests, packed and clean registry consumers, PMO 1.3.11 to 1.3.13 upgrade regression, repository gates, required checks and Baohan consumer verification."
+          "## Fixed\n\nAllow only path, SHA-256 and pmoVersion pinned PMO 1.3.10 through 1.3.12 TDD and Plan documents to retain the exact historical Reference Materials and Code Baseline section required by their original contract. Current, changed, unpinned, unknown-section and malformed-table documents remain fail closed.\n\n## Versions\n\n@mango/pmo 1.3.14; @mango/cli 1.0.106; Mango Maven remains 1.0.36; all other npm packages remain unchanged.\n\n## Published Packages\n\n@mango/pmo@1.3.14, followed by @mango/cli@1.0.106.\n\n## Upgrade Notes\n\nAfter both packages resolve from the company npm group registry, install @mango/cli@1.0.106, run mango pmo upgrade --project-dir . --to 1.3.14 --dry-run, review the plan, run the upgrade without --dry-run, then run mango pmo check --project-dir . --locked. Do not rewrite approved historical documents, remove historical sections, edit baseline.json, or change legacy document hashes.\n\n## Verification\n\nDocument-contract 1.3.10 through 1.3.13 compatibility matrix, PMO and CLI package gates, Business Starter projection, release lock, repository required checks, hosted/group back-checks and a clean published Baohan consumer upgrade."
         ]
       },
       "verify": {
@@ -125,29 +153,56 @@
       "repair": { "kind": "verify-existing" }
     },
     "npm": {
-      "publish": {
-        "command": "pnpm",
-        "cwd": "mango-ui",
-        "args": [
-          "publish:pkg",
-          "cli",
-          "--release-tag={tag}",
-          "--publish-registry={npmPublishRegistry}",
-          "--consume-registry={npmConsumeRegistry}"
-        ]
-      },
-      "verify": {
-        "command": "pnpm",
-        "cwd": "mango-ui",
-        "args": [
-          "publish:pkg",
-          "cli",
-          "--verify-only",
-          "--release-tag={tag}",
-          "--publish-registry={npmPublishRegistry}",
-          "--consume-registry={npmConsumeRegistry}"
-        ]
-      },
+      "publish": [
+        {
+          "command": "pnpm",
+          "cwd": "mango-ui",
+          "args": [
+            "publish:pkg",
+            "pmo",
+            "--release-tag={tag}",
+            "--publish-registry={npmPublishRegistry}",
+            "--consume-registry={npmConsumeRegistry}"
+          ]
+        },
+        {
+          "command": "pnpm",
+          "cwd": "mango-ui",
+          "args": [
+            "publish:pkg",
+            "cli",
+            "--release-tag={tag}",
+            "--publish-registry={npmPublishRegistry}",
+            "--consume-registry={npmConsumeRegistry}"
+          ]
+        }
+      ],
+      "verify": [
+        {
+          "command": "pnpm",
+          "cwd": "mango-ui",
+          "args": [
+            "publish:pkg",
+            "pmo",
+            "--verify-only",
+            "--release-tag={tag}",
+            "--publish-registry={npmPublishRegistry}",
+            "--consume-registry={npmConsumeRegistry}"
+          ]
+        },
+        {
+          "command": "pnpm",
+          "cwd": "mango-ui",
+          "args": [
+            "publish:pkg",
+            "cli",
+            "--verify-only",
+            "--release-tag={tag}",
+            "--publish-registry={npmPublishRegistry}",
+            "--consume-registry={npmConsumeRegistry}"
+          ]
+        }
+      ],
       "repair": { "kind": "verify-existing" }
     },
     "cli-lock": {
@@ -159,18 +214,32 @@
       }
     },
     "private-registry-consume-verify": {
-      "verify": {
-        "command": "pnpm",
-        "cwd": "mango-ui",
-        "args": [
-          "publish:pkg",
-          "cli",
-          "--verify-only",
-          "--release-tag={tag}",
-          "--publish-registry={npmPublishRegistry}",
-          "--consume-registry={npmConsumeRegistry}"
-        ]
-      }
+      "verify": [
+        {
+          "command": "pnpm",
+          "cwd": "mango-ui",
+          "args": [
+            "publish:pkg",
+            "pmo",
+            "--verify-only",
+            "--release-tag={tag}",
+            "--publish-registry={npmPublishRegistry}",
+            "--consume-registry={npmConsumeRegistry}"
+          ]
+        },
+        {
+          "command": "pnpm",
+          "cwd": "mango-ui",
+          "args": [
+            "publish:pkg",
+            "cli",
+            "--verify-only",
+            "--release-tag={tag}",
+            "--publish-registry={npmPublishRegistry}",
+            "--consume-registry={npmConsumeRegistry}"
+          ]
+        }
+      ]
     },
     "docs-latest": {
       "verify": {
@@ -192,7 +261,7 @@
         "command": "node",
         "args": [
           "mango-ui/packages/mango-cli/scripts/check-published-pmo-upgrade.mjs",
-          "--version=1.0.105",
+          "--version=1.0.106",
           "--registry={npmConsumeRegistry}"
         ]
       }
