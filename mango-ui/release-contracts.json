@@ -1,5 +1,11 @@
 {
   "npm": {
+    "@mango/common": {
+      "sourceBaseline": {
+        "version": "1.0.26",
+        "gitCommit": "e6596192a16414652b8e1f477ae17987e30db611"
+      }
+    },
     "@mango/auth": {
       "files": ["dist/config.js", "dist/config.d.ts", "dist/index.js", "dist/index.d.ts", "dist/style.css"],
       "contains": [

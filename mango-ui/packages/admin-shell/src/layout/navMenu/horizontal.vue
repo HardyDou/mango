@@ -19,7 +19,7 @@
 <script setup lang="ts" name="navMenuHorizontal">
 import { computed } from 'vue';
 import { useRoute } from 'vue-router';
-import { resolveActiveMenuPath } from '@mango/common/utils/menuTree';
+import { resolveActiveMenuPath } from './activeMenuPath';
 
 const props = defineProps<{
   menuList: HorizontalMenuItem[];

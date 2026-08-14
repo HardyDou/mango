@@ -43,6 +43,8 @@
 
 `@mango/pmo@1.3.14` 与 `@mango/cli@1.0.106` 在上述当前流程上增加精确的历史文档章节变体：只有路径、SHA-256 和 `pmoVersion` 三重锁定的 PMO 1.3.10 至 1.3.12 TDD/Plan 可以保留当时的“参考资料与代码基线”章节；新文档、已变更历史文档和其它合同外章节继续 fail closed。
 
+`@mango/cli@1.0.107` 保持 PMO `1.3.14` 和 Maven `1.0.36` 不变，并把生成项目的管理端矩阵更新为 `@mango/admin-shell@1.0.60`、`@mango/admin@1.0.66` 与 `@mango/common@1.0.26`。模板公开 API、配置、菜单、权限、租户、页面、启动方式和运行时行为不变；已有项目应应用 CLI 的完整版本矩阵，不要单独替换 Shell。
+
 `business-pmo/mango-baseline` 是 canonical `mango-pmo` 的构建投影，维护边界遵循
 [文档资产规范](../mango-pmo/rules/06-document-assets.md)。更新 PMO 后执行：
 

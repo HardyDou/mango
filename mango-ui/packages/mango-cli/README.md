@@ -625,6 +625,12 @@ Issue #690 覆盖 CLI、Maven plugin、Bootstrap/runtime、Resource、BSQL、Boo
 
 业务项目不需要修改生成模板或在 `main.ts` 添加 `crypto.randomUUID` polyfill。修复由 `@mango/common` 和 Admin Shell 启动链提供；CLI 后续发布时必须把 `common -> admin-shell -> admin` 的匹配版本写入同一 `release-versions.json` 前端矩阵，业务项目整体升级该矩阵即可。该修复不改变 CLI 命令、模板结构、后端 Maven、菜单、权限或租户配置。
 
+### 1.0.107 发布影响
+
+`@mango/cli@1.0.107` 将前端矩阵更新为 `@mango/admin-shell@1.0.60`、`@mango/admin@1.0.66` 与不变的 `@mango/common@1.0.26`，修复旧矩阵在 Admin 生产构建时导入 Common 不存在导出的错误。Mango Maven 保持 `1.0.36`，`@mango/pmo` 保持 `1.3.14`，其它 npm 坐标不变。
+
+升级时安装 CLI `1.0.107` 并应用随包完整 `release-versions.json`，不要只替换 Admin Shell，也不要覆盖或重发 Common 1.0.26。该修复不改变 CLI 命令、模板结构、公开前端 API、数据库、菜单、权限、租户和运行时配置。
+
 ### 1.0.106 发布影响
 
 `@mango/cli@1.0.106` 精确依赖 `@mango/pmo@1.3.14`，修复 PMO 1.3.10 至 1.3.12 已锁定 TDD/Plan 被当前合同误拒绝的问题。只有业务文档根目录历史基线中路径、SHA-256 和 `pmoVersion` 全部匹配的文件，才会按对应历史合同接受“参考资料与代码基线”章节；当前文档、被修改文档、未知章节、错误表头和未锁定文档仍然失败。

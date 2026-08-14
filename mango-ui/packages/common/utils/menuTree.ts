@@ -14,7 +14,7 @@ export function containsMenuPath<T extends MangoMenuTreeNode>(menu: T, path: str
   if (isSameOrChildPath(menu.path, path)) {
     return true;
   }
-  return Boolean(menu.children?.some((child) => containsMenuPath(child, path)));
+  return Boolean(menu.children?.some(child => containsMenuPath(child, path)));
 }
 
 export function findMenuByPath<T extends MangoMenuTreeNode>(menus: T[], path: string): T | undefined {
@@ -30,35 +30,13 @@ export function findMenuByPath<T extends MangoMenuTreeNode>(menus: T[], path: st
   return undefined;
 }
 
-/**
- * Resolve the visible menu item that owns the current route.
- * Detail and edit routes without their own menu item keep their parent menu active.
- */
-export function resolveActiveMenuPath<T extends MangoMenuTreeNode>(menus: T[], path: string): string {
-  let activePath = '';
-
-  const visit = (menu: T) => {
-    if (menu.path && isSameOrChildPath(menu.path, path) && menu.path.length >= activePath.length) {
-      activePath = menu.path;
-    }
-    for (const child of (menu.children || []) as T[]) {
-      visit(child);
-    }
-  };
-
-  for (const menu of menus) {
-    visit(menu);
-  }
-  return activePath;
-}
-
 export function findTopMenuByPath<T extends MangoMenuTreeNode>(menus: T[], path: string): T | undefined {
-  return menus.find((menu) => containsMenuPath(menu, path));
+  return menus.find(menu => containsMenuPath(menu, path));
 }
 
 export function resolveFirstMenu<T extends MangoMenuTreeNode>(
   menu?: T,
-  isRunnable: MangoMenuRunnablePredicate<T> = defaultIsRunnableMenu,
+  isRunnable: MangoMenuRunnablePredicate<T> = defaultIsRunnableMenu
 ): T | undefined {
   if (!menu) {
     return undefined;
@@ -77,7 +55,7 @@ export function resolveFirstMenu<T extends MangoMenuTreeNode>(
 
 export function resolveFirstMenuPath<T extends MangoMenuTreeNode>(
   menu?: T,
-  isRunnable?: MangoMenuRunnablePredicate<T>,
+  isRunnable?: MangoMenuRunnablePredicate<T>
 ): string {
   if (!menu) {
     return '';
@@ -89,7 +67,7 @@ export function resolveFirstMenuPath<T extends MangoMenuTreeNode>(
 }
 
 export function filterVisibleMenus<T extends MangoMenuTreeNode>(menus: T[]): T[] {
-  return menus.filter((menu) => !menu.meta?.isHide);
+  return menus.filter(menu => !menu.meta?.isHide);
 }
 
 function defaultIsRunnableMenu<T extends MangoMenuTreeNode>(menu: T): boolean {

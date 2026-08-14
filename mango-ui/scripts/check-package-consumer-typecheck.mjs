@@ -5,10 +5,11 @@ import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { assertPackedPackageBoundary as assertPackedPackageFiles } from './quality/packed-package-boundary.mjs';
+import { classifyRegistryVersionResult } from './package-consumer-matrix.mjs';
 
 const currentFile = fileURLToPath(import.meta.url);
 const uiRoot = resolve(dirname(currentFile), '..');
-const cli = join(uiRoot, 'packages/mango-cli/src/index.mjs');
+const sourceCli = join(uiRoot, 'packages/mango-cli/src/index.mjs');
 const runId = Date.now().toString(36);
 const runtimeBase = process.env.MANGO_PACKAGE_CONSUMER_RUNTIME_BASE
   ? resolve(process.env.MANGO_PACKAGE_CONSUMER_RUNTIME_BASE)
@@ -22,8 +23,10 @@ const registry = registryArg?.slice('--registry='.length) || 'https://registry.n
 const keepTemp = process.argv.includes('--keep-temp');
 const offline = process.argv.includes('--offline') || process.env.MANGO_PACKAGE_CONSUMER_OFFLINE === '1';
 const reuseBuild = process.argv.includes('--reuse-build');
+const releaseCandidateMatrix = process.argv.includes('--release-candidate-matrix');
 const consumerStoreDir = process.env.MANGO_PACKAGE_CONSUMER_STORE_DIR;
 const pnpmCommand = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm';
+const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 const governedPackageManager = readJson(join(uiRoot, 'package.json')).packageManager;
 
 function shouldUseShellForCommand(command) {
@@ -94,7 +97,7 @@ function listPackableMangoPackages() {
     });
 }
 
-function mapPackedMangoTarballs(frontendRoot) {
+function mapPackedMangoTarballs(frontendRoot, packageNames) {
   const mappings = new Map();
   for (const file of readdirSync(packageStore)) {
     if (!file.endsWith('.tgz')) {
@@ -103,11 +106,72 @@ function mapPackedMangoTarballs(frontendRoot) {
     const tarballPath = join(packageStore, file);
     assertPackedPackageBoundary(tarballPath);
     const packageJson = readPackedPackageJson(tarballPath);
-    if (packageJson.name?.startsWith('@mango/')) {
+    if (packageJson.name?.startsWith('@mango/') && packageNames.has(packageJson.name)) {
       mappings.set(packageJson.name, `file:${toPackageRelativePath(frontendRoot, tarballPath)}`);
     }
   }
   return mappings;
+}
+
+function selectCandidatePackages(packageRoots) {
+  if (!releaseCandidateMatrix) {
+    return packageRoots;
+  }
+  const candidates = [];
+  for (const packageRoot of packageRoots) {
+    const packageJson = readJson(join(packageRoot, 'package.json'));
+    const coordinate = `${packageJson.name}@${packageJson.version}`;
+    const result = run(npmCommand, ['view', coordinate, 'version', `--registry=${registry}`], { capture: true });
+    let state;
+    try {
+      state = classifyRegistryVersionResult(result, packageJson.version);
+    } catch (error) {
+      throw new Error(`${coordinate}: ${error instanceof Error ? error.message : error}`);
+    }
+    if (state === 'candidate') {
+      candidates.push(packageRoot);
+      console.log(`Candidate tarball: ${coordinate} is absent from the consume registry`);
+    } else {
+      console.log(`Registry dependency: ${coordinate}`);
+    }
+  }
+  return candidates;
+}
+
+function installPublishedCliRunner() {
+  const cliPackageJson = readJson(join(uiRoot, 'packages/mango-cli/package.json'));
+  const runnerRoot = join(runtimeRoot, 'published-cli');
+  mkdirSync(runnerRoot, { recursive: true });
+  writeJson(join(runnerRoot, 'package.json'), {
+    name: 'mango-published-cli-consumer-runner',
+    private: true,
+    packageManager: governedPackageManager,
+    dependencies: {
+      '@mango/cli': cliPackageJson.version,
+    },
+  });
+  writeFileSync(join(runnerRoot, '.npmrc'), `registry=${registry}\n`);
+  run(
+    pnpmCommand,
+    [
+      'install',
+      ...(offline ? ['--offline'] : []),
+      ...(consumerStoreDir ? [`--store-dir=${consumerStoreDir}`] : []),
+      `--registry=${registry}`,
+    ],
+    {
+      cwd: runnerRoot,
+      env: {
+        npm_config_registry: registry,
+        NPM_CONFIG_REGISTRY: registry,
+      },
+    },
+  );
+  const publishedCli = join(runnerRoot, 'node_modules/@mango/cli/src/index.mjs');
+  if (!existsSync(publishedCli)) {
+    throw new Error(`Published Mango CLI entry not found: ${publishedCli}`);
+  }
+  return publishedCli;
 }
 
 function hasPublishedTypes(value) {
@@ -174,15 +238,19 @@ function applyTarballMappings(frontendRoot, mappings) {
   if (/^overrides:/mu.test(workspace)) {
     throw new Error('Generated pnpm workspace unexpectedly contains overrides before consumer mapping');
   }
-  writeFileSync(
-    workspacePath,
-    [
-      workspace,
-      'overrides:',
-      ...[...mappings].map(([dependency, tarball]) => `  "${dependency}": "${tarball}"`),
-      '',
-    ].join('\n'),
-  );
+  if (mappings.size > 0) {
+    writeFileSync(
+      workspacePath,
+      [
+        workspace,
+        'overrides:',
+        ...[...mappings].map(([dependency, tarball]) => `  "${dependency}": "${tarball}"`),
+        '',
+      ].join('\n'),
+    );
+  } else {
+    writeFileSync(workspacePath, `${workspace}\n`);
+  }
   writeFileSync(join(frontendRoot, '.npmrc'), `registry=${registry}\n`);
 }
 
@@ -259,11 +327,21 @@ function cleanup() {
 }
 
 try {
-  if (!existsSync(cli)) {
-    throw new Error(`Mango CLI source not found: ${cli}`);
+  if (!existsSync(sourceCli)) {
+    throw new Error(`Mango CLI source not found: ${sourceCli}`);
   }
   mkdirSync(projectRoot, { recursive: true });
   mkdirSync(packageStore, { recursive: true });
+
+  const packablePackages = listPackableMangoPackages();
+  const candidatePackages = selectCandidatePackages(packablePackages);
+  const candidatePackageNames = new Set(
+    candidatePackages.map((packageRoot) => readJson(join(packageRoot, 'package.json')).name),
+  );
+  const cli =
+    releaseCandidateMatrix && !candidatePackageNames.has('@mango/cli')
+      ? installPublishedCliRunner()
+      : sourceCli;
 
   if (!reuseBuild) {
     console.log('Generating package styles before packing');
@@ -288,16 +366,20 @@ try {
     console.log('Reusing existing package build outputs for consumer typecheck');
   }
 
-  console.log('Checking Mango package exports before packing');
-  run(pnpmCommand, ['package-exports:check']);
+  if (!releaseCandidateMatrix || candidatePackages.length > 0) {
+    console.log('Checking Mango package exports before packing');
+    run(pnpmCommand, ['package-exports:check']);
 
-  console.log('Packing Mango frontend packages for consumer typecheck');
-  for (const packageRoot of listPackableMangoPackages()) {
-    // Every package was built and its exports were checked immediately above.
-    // Avoid re-running lifecycle builds once per tarball during this publication-boundary check.
-    run(pnpmCommand, ['--config.ignore-scripts=true', 'pack', '--pack-destination', packageStore], {
-      cwd: packageRoot,
-    });
+    console.log('Packing Mango frontend packages for consumer typecheck');
+    for (const packageRoot of candidatePackages) {
+      // Every candidate package was built and its exports were checked immediately above.
+      // Avoid re-running lifecycle builds once per tarball during this publication-boundary check.
+      run(pnpmCommand, ['--config.ignore-scripts=true', 'pack', '--pack-destination', packageStore], {
+        cwd: packageRoot,
+      });
+    }
+  } else {
+    console.log('All locked Mango versions already exist; testing the pure consume-registry matrix');
   }
 
   console.log('Generating temporary Mango business frontend consumer');
@@ -322,8 +404,8 @@ try {
   if (!existsSync(join(frontendRoot, 'package.json'))) {
     throw new Error(`Generated frontend package.json not found: ${frontendRoot}`);
   }
-  const mappings = mapPackedMangoTarballs(frontendRoot);
-  if (mappings.size === 0) {
+  const mappings = mapPackedMangoTarballs(frontendRoot, candidatePackageNames);
+  if (!releaseCandidateMatrix && mappings.size === 0) {
     throw new Error(`No packed @mango/* tarballs found in ${packageStore}`);
   }
   applyTarballMappings(frontendRoot, mappings);
@@ -331,7 +413,8 @@ try {
   writePackageTypeSmoke(frontendRoot, typedPackages);
 
   console.log(
-    `Installing generated consumer dependencies with ${mappings.size} local Mango tarballs; ` +
+    `Installing generated consumer dependencies with ${mappings.size} local candidate tarballs and ` +
+      `${releaseCandidateMatrix ? 'published registry dependencies' : 'local package overrides'}; ` +
       `${typedPackages.length} public type contracts are included in vue-tsc`,
   );
   run(

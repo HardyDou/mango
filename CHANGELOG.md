@@ -10,6 +10,48 @@
 
 - This change is delivered by the Mango Maven `mango-file-preview-engine` artifact. Include it in the next Mango Maven release and upgrade backend consumers as one aligned Maven matrix. No standalone `@mango/file` npm release is required for this capability.
 
+## v2026.08.14-admin-shell-1.0.60-admin-1.0.66-cli-1.0.107-compat-release - 2026-08-14
+
+Status: `PENDING`. This npm-only compatibility patch replaces the broken Admin release tuple with new immutable coordinates. Mango Maven remains `1.0.36`, `@mango/common` remains `1.0.26`, and `@mango/pmo` remains `1.3.14`.
+
+### Fixed
+
+- Fix [Issue #791](https://github.com/HardyDou/mango/issues/791): `@mango/admin-shell@1.0.59` imported `resolveActiveMenuPath` from the already-published `@mango/common@1.0.26`, whose tarball does not export that symbol, so a clean Admin production build failed.
+- Keep active parent-menu selection inside Admin Shell, restore the Common menu-tree source to the exact `1.0.26` release baseline, and leave all existing immutable package versions unchanged.
+- Add a release-candidate consumer matrix: unpublished candidate packages use local tarballs while unchanged packages and the published CLI resolve from the consume registry. After the CLI is published, the same gate verifies a pure consume-registry install, typecheck and production build.
+
+### Versions
+
+| Component | Previous | Release | Compatibility |
+| --- | ---: | ---: | --- |
+| `@mango/admin-shell` | `1.0.59` | `1.0.60` | Keeps active-menu resolution private to the Shell and remains compatible with Common `1.0.26`. |
+| `@mango/admin` | `1.0.65` | `1.0.66` | Aggregates Admin Shell `1.0.60`; public Admin API and styles remain unchanged. |
+| `@mango/cli` | `1.0.106` | `1.0.107` | Locks the corrected Admin tuple and carries the unchanged PMO `1.3.14` and Maven `1.0.36` coordinates. |
+| `@mango/common` | `1.0.26` | unchanged | Not republished; source is restored to its released baseline. |
+| Other npm packages | current release matrix | unchanged | Not republished. |
+
+### Published Packages
+
+| Order | Target | Version | Status |
+| ---: | --- | --- | --- |
+| 1 | `@mango/admin-shell` | `1.0.60` | `PENDING` publication and hosted/group verification. |
+| 2 | `@mango/admin` | `1.0.66` | `PENDING` after Admin Shell verification. |
+| 3 | `@mango/cli` | `1.0.107` | `PENDING` after the corrected Admin matrix is available. |
+| 4 | Immutable tag and GitHub Release | `v2026.08.14-admin-shell-1.0.60-admin-1.0.66-cli-1.0.107-compat-release` | `PENDING`. |
+| 5 | Latest documentation | Pages | `PENDING`; npm-only release does not create a Maven documentation snapshot. |
+
+### Upgrade Notes
+
+1. Wait until Admin Shell `1.0.60`, Admin `1.0.66`, and CLI `1.0.107` all resolve from the company npm group registry.
+2. Install CLI `1.0.107` and apply its complete `release-versions.json` matrix; do not keep Admin Shell `1.0.59` or republish Common `1.0.26`.
+3. Keep Mango Maven at `1.0.36` and PMO at `1.3.14`. No API, database, menu, permission, tenant, or runtime configuration migration is required.
+
+### Verification
+
+- The old pure-registry tuple must reproduce the missing `resolveActiveMenuPath` export during the Admin Vite production build.
+- Admin Shell unit tests must cover parent-route ownership and sibling-prefix rejection; Common source must match its `1.0.26` release baseline.
+- Release-impact, CLI release lock, Admin styles, package exports, release-candidate mixed matrix, post-publish pure-registry matrix, PMO documentation gates, and required checks must pass before publication is complete.
+
 ## v2026.08.14-pmo-1.3.14-cli-1.0.106-historical-document-compat-release - 2026-08-14
 
 Status: `PENDING`. This npm-only governance patch publishes `@mango/pmo@1.3.14` and the exact dependent `@mango/cli@1.0.106`; Mango Maven `1.0.36` and all other npm coordinates remain unchanged.
