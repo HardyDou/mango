@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-08-15T01:42:06.373Z",
+  "generatedAt": "2026-08-15T01:51:53.256Z",
   "releaseKind": "npm-only",
   "release": {
-    "tag": "v2026.08.15-pmo-1.3.15-admin-shell-1.0.60-admin-1.0.66-cli-1.0.107-local-first-release",
-    "title": "Mango local-first release: PMO 1.3.15 / Admin 1.0.66 / CLI 1.0.107",
+    "tag": "v2026.08.15-pmo-1.3.15-job-1.0.27-admin-shell-1.0.60-admin-1.0.66-cli-1.0.107-local-first-release",
+    "title": "Mango local-first release: PMO 1.3.15 / Job 1.0.27 / Admin 1.0.66 / CLI 1.0.107",
     "notesFile": ".changeset/release-notes.txt",
-    "notesSha256": "f3731197be795bb62acbe9a1db614fba9d4120795d32cce2ca0c408849b19852"
+    "notesSha256": "e4a3ce661fe1188ec0ab5f1bab8b93d95e4102c772c74ebc44b50ba8b1ebbc6a"
   },
   "baseline": {
     "kind": "legacy-release",
@@ -31,6 +31,7 @@
     "@mango/admin",
     "@mango/admin-shell",
     "@mango/cli",
+    "@mango/job",
     "@mango/pmo"
   ],
   "classifiedFiles": [
@@ -170,6 +171,51 @@
       "reason": "published-package-path"
     },
     {
+      "file": "mango-ui/packages/job/package.json",
+      "packageName": "@mango/job",
+      "reason": "published-package-path"
+    },
+    {
+      "file": "mango-ui/packages/job/README.md",
+      "packageName": "@mango/job",
+      "reason": "published-package-path"
+    },
+    {
+      "file": "mango-ui/packages/job/src/api/job.ts",
+      "packageName": "@mango/job",
+      "reason": "published-package-path"
+    },
+    {
+      "file": "mango-ui/packages/job/src/views/alarm/index.vue",
+      "packageName": "@mango/job",
+      "reason": "published-package-path"
+    },
+    {
+      "file": "mango-ui/packages/job/src/views/definition/index.vue",
+      "packageName": "@mango/job",
+      "reason": "published-package-path"
+    },
+    {
+      "file": "mango-ui/packages/job/src/views/definition/JobParamEditor.vue",
+      "packageName": "@mango/job",
+      "reason": "published-package-path"
+    },
+    {
+      "file": "mango-ui/packages/job/src/views/instance/index.vue",
+      "packageName": "@mango/job",
+      "reason": "published-package-path"
+    },
+    {
+      "file": "mango-ui/packages/job/src/views/worker/index.vue",
+      "packageName": "@mango/job",
+      "reason": "published-package-path"
+    },
+    {
+      "file": "mango-ui/packages/job/vitest.config.ts",
+      "packageName": "@mango/job",
+      "reason": "published-package-path"
+    },
+    {
       "file": "mango-ui/packages/mango-cli/package.json",
       "packageName": "@mango/cli",
       "reason": "published-package-path"
@@ -190,6 +236,11 @@
       "reason": "published-package-path"
     },
     {
+      "file": "mango-ui/packages/mango-cli/scripts/check-module-doctor-packed.mjs",
+      "packageName": "@mango/cli",
+      "reason": "published-package-path"
+    },
+    {
       "file": "mango-ui/packages/mango-cli/scripts/check-published-pmo-upgrade.mjs",
       "packageName": "@mango/cli",
       "reason": "published-package-path"
@@ -200,7 +251,22 @@
       "reason": "published-package-path"
     },
     {
+      "file": "mango-ui/packages/mango-cli/src/platform-command.mjs",
+      "packageName": "@mango/cli",
+      "reason": "published-package-path"
+    },
+    {
+      "file": "mango-ui/packages/mango-cli/src/process-control.mjs",
+      "packageName": "@mango/cli",
+      "reason": "published-package-path"
+    },
+    {
       "file": "mango-ui/packages/mango-cli/src/release-command.mjs",
+      "packageName": "@mango/cli",
+      "reason": "published-package-path"
+    },
+    {
+      "file": "mango-ui/packages/mango-cli/src/windows-command-runner.mjs",
       "packageName": "@mango/cli",
       "reason": "published-package-path"
     },
@@ -242,6 +308,22 @@
   ],
   "packages": [
     {
+      "name": "@mango/job",
+      "directory": "packages/job",
+      "sourceVersion": "1.0.26",
+      "targetVersion": "1.0.27",
+      "type": "patch",
+      "direct": true,
+      "generated": false,
+      "reasons": [
+        {
+          "source": "legacy:legacy-admin-compat-2026-08-15",
+          "summary": "Issue #43 and PR #795 restore complete Job list pagination and CLI cross-platform command compatibility"
+        }
+      ],
+      "releaseDependencies": []
+    },
+    {
       "name": "@mango/admin-shell",
       "directory": "packages/admin-shell",
       "sourceVersion": "1.0.59",
@@ -255,7 +337,9 @@
           "summary": "Issue #791 removes an import that is absent from the published Common 1.0.26 tarball"
         }
       ],
-      "releaseDependencies": []
+      "releaseDependencies": [
+        "@mango/job"
+      ]
     },
     {
       "name": "@mango/admin",
@@ -272,7 +356,8 @@
         }
       ],
       "releaseDependencies": [
-        "@mango/admin-shell"
+        "@mango/admin-shell",
+        "@mango/job"
       ]
     },
     {
@@ -308,16 +393,18 @@
       "releaseDependencies": [
         "@mango/admin",
         "@mango/admin-shell",
+        "@mango/job",
         "@mango/pmo"
       ]
     }
   ],
   "order": [
+    "@mango/job",
     "@mango/admin-shell",
     "@mango/admin",
     "@mango/pmo",
     "@mango/cli"
   ],
   "maven": null,
-  "planDigest": "53a1abf3e1dae945da3b233ac44ae603f7c0be1ae2a3154259e6d8e84c52c15b"
+  "planDigest": "41a3ee05f6ca06031e4760ff0eed4bda0a2ce48f502f51c0d95c0fe207826fee"
 }

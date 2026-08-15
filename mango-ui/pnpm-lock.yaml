@@ -750,7 +750,7 @@ importers:
         specifier: workspace:1.0.23
         version: link:../grid-widgets
       '@mango/job':
-        specifier: workspace:1.0.26
+        specifier: workspace:1.0.27
         version: link:../job
       '@mango/link':
         specifier: workspace:1.0.20
@@ -866,7 +866,7 @@ importers:
         specifier: workspace:1.0.0
         version: link:../http-client
       '@mango/job':
-        specifier: workspace:1.0.26
+        specifier: workspace:1.0.27
         version: link:../job
       '@mango/notice':
         specifier: workspace:1.0.39

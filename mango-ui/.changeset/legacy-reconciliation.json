@@ -13,7 +13,7 @@
   },
   "finalReleasePlan": {
     "file": ".changeset/release-plan.json",
-    "planDigest": "53a1abf3e1dae945da3b233ac44ae603f7c0be1ae2a3154259e6d8e84c52c15b",
+    "planDigest": "41a3ee05f6ca06031e4760ff0eed4bda0a2ce48f502f51c0d95c0fe207826fee",
     "treeBinding": "The clean Git tree is recorded by mango release prepare after the Release PR source is committed."
   },
   "releases": [
@@ -30,6 +30,13 @@
       "fromVersion": "1.0.65",
       "toVersion": "1.0.66",
       "reason": "exact dependency follows Admin Shell 1.0.60"
+    },
+    {
+      "name": "@mango/job",
+      "type": "patch",
+      "fromVersion": "1.0.26",
+      "toVersion": "1.0.27",
+      "reason": "Issue #43 and PR #795 restore complete Job list pagination and CLI cross-platform command compatibility"
     },
     {
       "name": "@mango/pmo",
@@ -53,6 +60,6 @@
       "gitCommit": "e6596192a16414652b8e1f477ae17987e30db611"
     }
   ],
-  "issues": [791, 794],
+  "issues": [43, 791, 794],
   "exitCondition": "remove this record after the first new-workflow release is published and its successful source baseline is recorded"
 }

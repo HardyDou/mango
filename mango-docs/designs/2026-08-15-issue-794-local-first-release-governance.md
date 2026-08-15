@@ -55,7 +55,7 @@ Changesets 接入前的空档只允许迁移一次：
 - 最后成功 Release：`v2026.08.14-pmo-1.3.14-cli-1.0.106-historical-document-compat-release`。
 - 起点提交：`6ee5334f75b1fe190b5677c684efa6652166cf12`。
 - 首批实现前候选提交：`8642714232d5c7e378c38fc136ca9658aec8c9c4`；最终发布 tree 由 Release PR 的机器计划和 prepare manifest 绑定，不沿用该旧 tree。
-- 累计业务修复影响：`@mango/admin-shell`、`@mango/admin`、`@mango/cli`；本次治理修改发布 Skill 和规则后，机器范围新增 `@mango/pmo@1.3.15`，不得为保持原三包而排除。
+- 累计业务修复影响：`@mango/admin-shell`、`@mango/admin`、`@mango/cli`；合入最新 `main` 后，Issue #43 / PR #795 的 Job 分页修复新增 `@mango/job@1.0.27`，本次治理修改发布 Skill 和规则新增 `@mango/pmo@1.3.15`。机器范围以完整累计差异为准，不为保持旧包数排除后续已合并变化。
 - `@mango/common` 当前源码与已发布 1.0.26 源基线一致，不进入首批发布。
 
 迁移生成带 `legacy-reconciliation` 标识的合成 Changeset，并记录起点 Tag、起止 tree、影响包和恢复基线。首批成功发布后写入新基线并永久关闭该迁移入口。后续缺 Changeset 必须失败，不能再次选择任意 Git base 补登记。
@@ -76,7 +76,7 @@ Changesets 接入前的空档只允许迁移一次：
 |---|---|
 | REL-PLAN-001 | 多个 PR 的未发布 Changesets 被一次汇总，发布范围不依赖最近一次提交或人工 base。 |
 | REL-PLAN-002 | 源码变化缺 Changeset、Changeset 错包、未知归属、版本或拓扑冲突均 fail closed。 |
-| REL-LEGACY-001 | 首次迁移从最后成功 Release 累计得到 Admin 三包，并把本次治理新增 PMO 纳入最终四包计划；Common 识别为已恢复发布基线。 |
+| REL-LEGACY-001 | 首次迁移从最后成功 Release 累计得到 Admin 三包，并把本次治理新增 PMO、随后合并的 Job 修复纳入最终五包计划；Common 识别为已恢复发布基线。 |
 | REL-PREP-001 | 目标制品只构建一次，计划、候选验证和封存清单绑定同一 Git tree；本地 prepare 失败证据可归档后在同一 tree 重试。 |
 | REL-CONSUME-001 | 发布前混合 tuple 和发布后纯 group tuple 各只运行一次干净消费者验证。 |
 | REL-PUBLISH-001 | publish 使用 prepare 生成的精确制品；tree 或 SHA 不一致时拒绝。 |

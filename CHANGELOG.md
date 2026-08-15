@@ -10,9 +10,9 @@
 
 - This change is delivered by the Mango Maven `mango-file-preview-engine` artifact. Include it in the next Mango Maven release and upgrade backend consumers as one aligned Maven matrix. No standalone `@mango/file` npm release is required for this capability.
 
-## v2026.08.15-pmo-1.3.15-admin-shell-1.0.60-admin-1.0.66-cli-1.0.107-local-first-release - 2026-08-15
+## v2026.08.15-pmo-1.3.15-job-1.0.27-admin-shell-1.0.60-admin-1.0.66-cli-1.0.107-local-first-release - 2026-08-15
 
-Status: `PENDING`. This npm-only batch replaces the broken Admin tuple and introduces the local-first Mango release workflow. Mango Maven remains `1.0.36` and `@mango/common` remains `1.0.26`.
+Status: `PENDING`. This npm-only batch replaces the broken Admin tuple, includes the subsequently merged Job pagination fix, and introduces the local-first Mango release workflow. Mango Maven remains `1.0.36` and `@mango/common` remains `1.0.26`.
 
 ### Fixed
 
@@ -22,12 +22,14 @@ Status: `PENDING`. This npm-only batch replaces the broken Admin tuple and intro
 - Replace the manual package list and seventeen-state adapter workflow with Changesets intent, Git impact reconciliation, dependency/CLI closure, a machine-generated plan and one set of SHA-256 sealed artifacts. Tag and GitHub Release now wait for pure consume-registry verification.
 - Keep Maven in the same release owner: production-source impact requires an explicit Maven target, automatically advances the CLI matrix, deploys the non-app reactor once into a sealed local repository, and publishes or repairs only the recorded POM/JAR hashes.
 - Add repository-only `mango-release` distribution isolation and the shared `mango-submit-pr` submission Skill. Every required Runner check must have a local equivalent; Push and PR creation wait for a clean final-head local pass, and Runner is only an independent verification surface.
+- Include Issue #43 / PR #795: restore Job list pagination totals, page-size propagation and page controls, plus the associated CLI cross-platform command compatibility changes merged before this release candidate was sealed.
 
 ### Versions
 
 | Component | Previous | Release | Compatibility |
 | --- | ---: | ---: | --- |
 | `@mango/admin-shell` | `1.0.59` | `1.0.60` | Keeps active-menu resolution private to the Shell and remains compatible with Common `1.0.26`. |
+| `@mango/job` | `1.0.26` | `1.0.27` | Restores complete pagination behavior on Job management lists. |
 | `@mango/admin` | `1.0.65` | `1.0.66` | Aggregates Admin Shell `1.0.60`; public Admin API and styles remain unchanged. |
 | `@mango/pmo` | `1.3.14` | `1.3.15` | Delivers the canonical local-first release Skill and release artifact governance. |
 | `@mango/cli` | `1.0.106` | `1.0.107` | Locks the corrected Admin tuple and PMO `1.3.15`, and exposes `release plan/prepare/publish/status/repair`. |
@@ -38,16 +40,17 @@ Status: `PENDING`. This npm-only batch replaces the broken Admin tuple and intro
 
 | Order | Target | Version | Status |
 | ---: | --- | --- | --- |
-| 1 | `@mango/admin-shell` | `1.0.60` | `PENDING` publication and hosted/group verification. |
-| 2 | `@mango/admin` | `1.0.66` | `PENDING` after Admin Shell verification. |
-| 3 | `@mango/pmo` | `1.3.15` | `PENDING` canonical release workflow bundle. |
-| 4 | `@mango/cli` | `1.0.107` | `PENDING` after the corrected Admin and PMO matrix is available. |
-| 5 | Immutable tag and GitHub Release | `v2026.08.15-pmo-1.3.15-admin-shell-1.0.60-admin-1.0.66-cli-1.0.107-local-first-release` | `PENDING` until pure consume-registry verification passes. |
-| 6 | Latest documentation | Pages | `PENDING`; npm-only release does not create a Maven documentation snapshot. |
+| 1 | `@mango/job` | `1.0.27` | `PENDING` publication and hosted/group verification. |
+| 2 | `@mango/admin-shell` | `1.0.60` | `PENDING` publication and hosted/group verification. |
+| 3 | `@mango/admin` | `1.0.66` | `PENDING` after Job and Admin Shell verification. |
+| 4 | `@mango/pmo` | `1.3.15` | `PENDING` canonical release workflow bundle. |
+| 5 | `@mango/cli` | `1.0.107` | `PENDING` after the corrected Job, Admin and PMO matrix is available. |
+| 6 | Immutable tag and GitHub Release | `v2026.08.15-pmo-1.3.15-job-1.0.27-admin-shell-1.0.60-admin-1.0.66-cli-1.0.107-local-first-release` | `PENDING` until pure consume-registry verification passes. |
+| 7 | Latest documentation | Pages | `PENDING`; npm-only release does not create a Maven documentation snapshot. |
 
 ### Upgrade Notes
 
-1. Wait until Admin Shell `1.0.60`, Admin `1.0.66`, PMO `1.3.15`, and CLI `1.0.107` all resolve from the company npm group registry.
+1. Wait until Job `1.0.27`, Admin Shell `1.0.60`, Admin `1.0.66`, PMO `1.3.15`, and CLI `1.0.107` all resolve from the company npm group registry.
 2. Install CLI `1.0.107` and apply its complete `release-versions.json` matrix; do not keep Admin Shell `1.0.59` or republish Common `1.0.26`.
 3. Keep Mango Maven at `1.0.36`. Upgrade business governance with `mango pmo upgrade --project-dir . --to 1.3.15 --dry-run`, then apply and run the locked check. No API, database, menu, permission, tenant, or runtime configuration migration is required.
 
@@ -55,6 +58,7 @@ Status: `PENDING`. This npm-only batch replaces the broken Admin tuple and intro
 
 - The old pure-registry tuple must reproduce the missing `resolveActiveMenuPath` export during the Admin Vite production build.
 - Admin Shell unit tests must cover parent-route ownership and sibling-prefix rejection; Common source must match its `1.0.26` release baseline.
+- Job API and view tests must cover backend totals, page/size forwarding, page-size changes and all affected management list pagination controls.
 - Changeset/Git impact, machine plan, CLI release lock, Admin styles, package exports, sealed release-candidate matrix, post-publish pure-registry matrix, PMO package/document gates, Runner classification and required checks must pass before publication is complete.
 - The single `pnpm -C mango-ui release:local-check -- --base=<base> --head=HEAD` entry must reproduce the applicable PMO, CLI, frontend, release-plan, projection, workspace and capability-document Runner checks locally before the Release PR is pushed.
 

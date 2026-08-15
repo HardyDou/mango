@@ -11,10 +11,11 @@
 - Lock `@mango/pmo@1.3.15` and expose the local-first `release plan/prepare/publish/status/repair` workflow. Release scope is generated from Changesets, Git impact, runtime dependency closure and the CLI matrix; publication and recovery reuse the prepared SHA-256 tarballs.
 - Keep Maven under the same workflow: Maven production-source impact requires a target version, seals one non-app reactor deploy as exact POM/JAR files, publishes Maven before dependent npm packages, and repairs only coordinates whose publish/consume state is proven.
 - Add the single local heavy-check entry used before Release PR submission and route mechanical PR submission to `mango-submit-pr`; business projects receive the PR Skill but no longer receive the repository-only `mango-release` Skill.
+- Lock `@mango/job@1.0.27` from Issue #43 / PR #795 so the first accumulated release includes the Job pagination and cross-platform CLI fixes merged before candidate sealing.
 
 ### Upgrade Notes
 
-1. Install `@mango/cli@1.0.107` after PMO `1.3.15`, Admin Shell `1.0.60` and Admin `1.0.66` resolve from the company npm group registry.
+1. Install `@mango/cli@1.0.107` after PMO `1.3.15`, Job `1.0.27`, Admin Shell `1.0.60` and Admin `1.0.66` resolve from the company npm group registry.
 2. Apply the complete `release-versions.json` matrix. Do not republish Common `1.0.26` or retain Admin Shell `1.0.59`.
 3. Keep Mango Maven `1.0.36`; no database, menu, permission, tenant, API, or runtime configuration migration is required.
 

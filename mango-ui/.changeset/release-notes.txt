@@ -1,18 +1,18 @@
 ## Fixed
 
-Replace the incompatible Admin tuple whose Shell imported a symbol absent from the published Common 1.0.26 tarball, and deliver the local-first Mango release workflow. Active parent-menu resolution remains private to Admin Shell, Common 1.0.26 remains unchanged, and the new repository-only release owner retains npm plus Maven/JAR sealing and recovery without exposing that Skill to business projects.
+Replace the incompatible Admin tuple whose Shell imported a symbol absent from the published Common 1.0.26 tarball, restore complete Job list pagination from Issue #43 / PR #795, and deliver the local-first Mango release workflow. Active parent-menu resolution remains private to Admin Shell, Common 1.0.26 remains unchanged, and the new repository-only release owner retains npm plus Maven/JAR sealing and recovery without exposing that Skill to business projects.
 
 ## Versions
 
-@mango/admin-shell 1.0.60; @mango/admin 1.0.66; @mango/pmo 1.3.15; @mango/cli 1.0.107. Mango Maven remains 1.0.36, @mango/common remains 1.0.26, and all other npm packages remain unchanged.
+@mango/admin-shell 1.0.60; @mango/job 1.0.27; @mango/admin 1.0.66; @mango/pmo 1.3.15; @mango/cli 1.0.107. Mango Maven remains 1.0.36, @mango/common remains 1.0.26, and all other npm packages remain unchanged.
 
 ## Published Packages
 
-@mango/admin-shell@1.0.60, @mango/admin@1.0.66, @mango/pmo@1.3.15, then @mango/cli@1.0.107 in the machine-generated topology.
+The machine plan publishes @mango/admin-shell@1.0.60 and @mango/job@1.0.27 before @mango/admin@1.0.66, then @mango/pmo@1.3.15 and @mango/cli@1.0.107.
 
 ## Upgrade Notes
 
-After all four packages resolve from the company npm group registry, install @mango/cli@1.0.107 and apply its complete release-versions.json matrix. Upgrade PMO to 1.3.15 through the CLI, do not retain Admin Shell 1.0.59, and do not republish Common 1.0.26. Business projects gain mango-submit-pr and remove any PMO-managed mango-release copy. No Maven, API, database, menu, permission, tenant, or application runtime migration is required.
+After all five packages resolve from the company npm group registry, install @mango/cli@1.0.107 and apply its complete release-versions.json matrix. Upgrade PMO to 1.3.15 through the CLI, upgrade Job to 1.0.27, do not retain Admin Shell 1.0.59, and do not republish Common 1.0.26. Business projects gain mango-submit-pr and remove any PMO-managed mango-release copy. No Maven, database, menu, permission, tenant, or application runtime migration is required.
 
 ## Verification
 
