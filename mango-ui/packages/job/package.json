@@ -17,7 +17,8 @@
     "./style.css": "./dist/style.css"
   },
   "scripts": {
-    "build": "vite build && node ../../scripts/generate-package-types.mjs"
+    "build": "vite build && node ../../scripts/generate-package-types.mjs",
+    "test": "vitest run --config vitest.config.ts"
   },
   "files": [
     "dist",
@@ -35,8 +36,10 @@
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^4.0.0",
+    "@vue/compiler-sfc": "3.5.13",
     "typescript": "^5.9.3",
-    "vite": "^4.3.3"
+    "vite": "^4.3.3",
+    "vitest": "4.1.10"
   },
   "publishConfig": {
     "registry": "http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/"

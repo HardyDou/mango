@@ -16,6 +16,7 @@ import { tmpdir } from 'node:os';
 import { join, relative, resolve } from 'node:path';
 import { spawn, spawnSync } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { spawnCommandSync } from '../src/platform-command.mjs';
 import { assertPnpmLockfileFixtureInvocations, createPnpmLockfileFixture } from './support/pnpm-lockfile-fixture.mjs';
 
 const packageRoot = resolve(fileURLToPath(new URL('..', import.meta.url)));
@@ -1853,14 +1854,14 @@ function assertPackedCliPullRequestTemplate(tempRoot) {
   mkdirSync(cliExtractRoot, { recursive: true });
   mkdirSync(pmoExtractRoot, { recursive: true });
 
-  const cliPack = spawnSync('pnpm', ['pack', '--pack-destination', cliPackRoot], {
+  const cliPack = spawnCommandSync('pnpm', ['pack', '--pack-destination', cliPackRoot], {
     cwd: packageRoot,
     encoding: 'utf8',
   });
   if (cliPack.status !== 0) {
     throw new Error(`@mango/cli pack failed:\n${cliPack.stdout}\n${cliPack.stderr}`);
   }
-  const pmoPack = spawnSync('pnpm', ['pack', '--pack-destination', pmoPackRoot], {
+  const pmoPack = spawnCommandSync('pnpm', ['pack', '--pack-destination', pmoPackRoot], {
     cwd: pmoPackageRoot,
     encoding: 'utf8',
   });

@@ -5,6 +5,14 @@ function toPosix(value) {
   return value.split(path.sep).join('/');
 }
 
+export function resolveTypecheckCommand(uiRoot, platform = process.platform) {
+  const windows = platform === 'win32';
+  return {
+    executable: path.join(uiRoot, 'node_modules', '.bin', windows ? 'vue-tsc.cmd' : 'vue-tsc'),
+    shell: windows,
+  };
+}
+
 export function discoverTypecheckTargets(uiRoot) {
   const targets = [];
   const skipped = [];

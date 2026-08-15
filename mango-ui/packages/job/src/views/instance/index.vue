@@ -1,3 +1,4 @@
+<!-- mango-page-baseline-exception list: 执行实例是运行诊断页，同页承载远程任务检索、实例同步、原生日志轮询和日志抽屉 -->
 <template>
   <div class="job-page">
     <section class="job-toolbar">
@@ -7,7 +8,9 @@
           <p>按任务查看每次触发后的运行状态、批次号、耗时和日志。</p>
         </div>
         <div class="job-toolbar-actions">
-          <el-button v-auth="'job:instance:sync'" :icon="Refresh" :loading="syncing" @click="syncRows">同步实例</el-button>
+          <el-button v-auth="'job:instance:sync'" :icon="Refresh" :loading="syncing" @click="syncRows"
+            >同步实例</el-button
+          >
           <el-button v-auth="'job:instance:list'" :icon="Refresh" @click="loadRows">刷新</el-button>
         </div>
       </div>
@@ -38,7 +41,12 @@
         </el-form-item>
         <el-form-item label="状态" class="job-search-item job-search-item-small">
           <el-select v-model="query.status" clearable placeholder="全部">
-            <el-option v-for="item in instanceStatusOptions" :key="item.value" :label="item.label" :value="item.value" />
+            <el-option
+              v-for="item in instanceStatusOptions"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            />
           </el-select>
         </el-form-item>
         <el-form-item label="触发类型" class="job-search-item">
@@ -108,7 +116,7 @@
       </el-table>
 
       <div class="job-pagination">
-        <Pagination v-model:current-page="query.pageNum" v-model:page-size="query.pageSize" :total="total" @change="loadRows" />
+        <Pagination v-model:page="query.pageNum" v-model:limit="query.pageSize" :total="total" @pagination="loadRows" />
       </div>
     </section>
 
@@ -116,7 +124,9 @@
       <el-alert v-if="logError" class="job-error" type="error" :closable="false" show-icon>
         <template #title>
           {{ logError }}
-          <el-button v-if="selectedInstance" link type="primary" @click="openInstanceLogs(selectedInstance)">重试</el-button>
+          <el-button v-if="selectedInstance" link type="primary" @click="openInstanceLogs(selectedInstance)"
+            >重试</el-button
+          >
         </template>
       </el-alert>
 
@@ -180,6 +190,7 @@
 
 <script setup lang="ts">
 import { Document, Refresh, Search } from '@element-plus/icons-vue';
+import { Pagination } from '@mango/common';
 import { onMounted, reactive, ref } from 'vue';
 import {
   instanceStatusOptions,
@@ -299,11 +310,11 @@ async function loadInstanceLogUntilReadable(instanceId: ApiId, token: number) {
   logDetail.value = latest;
   logLoading.value = false;
   while (
-    token === logLoadToken
-    && logVisible.value
-    && !nativeLogContent(latest)
-    && latest.logFetchStatus === 'UNAVAILABLE'
-    && Date.now() - startedAt < 180_000
+    token === logLoadToken &&
+    logVisible.value &&
+    !nativeLogContent(latest) &&
+    latest.logFetchStatus === 'UNAVAILABLE' &&
+    Date.now() - startedAt < 180_000
   ) {
     logPolling.value = true;
     await wait(3000);
@@ -317,7 +328,7 @@ async function loadInstanceLogUntilReadable(instanceId: ApiId, token: number) {
 }
 
 function wait(ms: number) {
-  return new Promise(resolve => window.setTimeout(resolve, ms));
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
 
 function definitionOptionLabel(item: JobDefinition) {

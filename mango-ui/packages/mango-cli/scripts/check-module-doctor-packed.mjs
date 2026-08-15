@@ -1,8 +1,8 @@
-import { spawn, spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, writeFileSync } from 'node:fs';
 import http from 'node:http';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
+import { spawnCommand, spawnCommandSync } from '../src/platform-command.mjs';
 
 const cliPackageRoot = resolve(import.meta.dirname, '..');
 const uiRoot = resolve(cliPackageRoot, '../..');
@@ -46,7 +46,7 @@ runChecked(
 const requests = [];
 const backend = await startBackendServer(requests);
 try {
-  const command = join(consumerDirectory, 'node_modules', '.bin', 'mango');
+  const command = join(consumerDirectory, 'node_modules', '.bin', process.platform === 'win32' ? 'mango.cmd' : 'mango');
   const result = await run(command, [
     'module',
     'doctor',
@@ -117,7 +117,7 @@ function findTarball(prefix) {
 }
 
 function runChecked(command, args, cwd) {
-  const result = spawnSync(command, args, { cwd, encoding: 'utf8' });
+  const result = spawnCommandSync(command, args, { cwd, encoding: 'utf8' });
   if (result.status !== 0) {
     throw new Error(`${command} ${args.join(' ')} failed:\n${result.stdout}\n${result.stderr}`);
   }
@@ -125,7 +125,7 @@ function runChecked(command, args, cwd) {
 
 function run(command, args) {
   return new Promise((resolveRun, rejectRun) => {
-    const child = spawn(command, args, {
+    const child = spawnCommand(command, args, {
       cwd: consumerDirectory,
       env: {
         ...process.env,

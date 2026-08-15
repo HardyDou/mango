@@ -6,24 +6,24 @@
 
 这个包的集成形态是 `admin-pages`：
 
-| 标识 | 说明 |
-|------|------|
-| 适合 | Mango Admin、内部运营后台、业务管理后台 |
-| 不适合 | 官网、营销站、C 端站点、非 Mango Admin Shell 的独立站点 |
-| 原因 | 依赖 `@mango/admin-pages` 页面注册、`@mango/common` 请求封装、Element Plus、后端权限和租户上下文 |
+| 标识   | 说明                                                                                             |
+| ------ | ------------------------------------------------------------------------------------------------ |
+| 适合   | Mango Admin、内部运营后台、业务管理后台                                                          |
+| 不适合 | 官网、营销站、C 端站点、非 Mango Admin Shell 的独立站点                                          |
+| 原因   | 依赖 `@mango/admin-pages` 页面注册、`@mango/common` 请求封装、Element Plus、后端权限和租户上下文 |
 
 ## 2. 功能清单
 
-| 能力 | 说明 |
-|------|------|
-| 页面注册 | 通过 `registerMangoJobAdminPages()` 注册 `mango-job` 模块页面 |
-| 任务定义页面 | 新建、编辑、启停、删除和手动触发任务 |
-| 执行实例页面 | 查询实例、同步实例、查看实例 native 日志 |
-| Worker 页面 | 查询 Worker、手动登记远程 Worker、调整 Worker 状态 |
-| 告警规则页面 | 新增、编辑、启停和删除失败告警规则 |
-| 运行状态页面 | 查看 native 引擎同步状态汇总 |
-| API 封装 | 导出 `jobApi`、请求类型、返回类型和枚举选项 |
-| 分页兼容 | 兼容后端分页结构中的 `list`、`records`、`rows`、`data` |
+| 能力         | 说明                                                                                                               |
+| ------------ | ------------------------------------------------------------------------------------------------------------------ |
+| 页面注册     | 通过 `registerMangoJobAdminPages()` 注册 `mango-job` 模块页面                                                      |
+| 任务定义页面 | 新建、编辑、启停、删除和手动触发任务                                                                               |
+| 执行实例页面 | 查询实例、同步实例、查看实例 native 日志                                                                           |
+| Worker 页面  | 查询 Worker、手动登记远程 Worker、调整 Worker 状态                                                                 |
+| 告警规则页面 | 新增、编辑、启停和删除失败告警规则                                                                                 |
+| 运行状态页面 | 查看 native 引擎同步状态汇总                                                                                       |
+| API 封装     | 导出 `jobApi`、请求类型、返回类型和枚举选项                                                                        |
+| 分页兼容     | 调用方使用 `pageNum/pageSize`，请求转换为后端 `page/size`，并兼容 `list`、`records`、`rows`、`data` 等响应列表字段 |
 
 ## 3. 接入方式
 
@@ -50,13 +50,13 @@ registerMangoJobAdminPages();
 
 宿主应用必须已经具备这些能力：
 
-| 宿主能力 | 来源 |
-|----------|------|
-| Vue 3 和 Element Plus | peer dependency |
+| 宿主能力                          | 来源                                     |
+| --------------------------------- | ---------------------------------------- |
+| Vue 3 和 Element Plus             | peer dependency                          |
 | 请求基地址、鉴权 header、错误处理 | `@mango/common/utils/request` 的宿主配置 |
-| 页面注册容器 | `@mango/admin-pages` |
-| 菜单数据和 component key | 后端 authorization 菜单资源 |
-| `/job/**` 接口 | 后端 `mango-platform/mango-job` |
+| 页面注册容器                      | `@mango/admin-pages`                     |
+| 菜单数据和 component key          | 后端 authorization 菜单资源              |
+| `/job/**` 接口                    | 后端 `mango-platform/mango-job`          |
 
 ## 4. 快速开始
 
@@ -70,24 +70,24 @@ registerMangoJobAdminPages();
 
 本包没有独立运行时配置文件，不会自己设置后端地址、token、租户或菜单。它读取宿主 Admin 已经配置好的请求封装和页面注册能力。
 
-| 配置来源 | 影响 |
-|----------|------|
+| 配置来源                      | 影响                                                             |
+| ----------------------------- | ---------------------------------------------------------------- |
 | `@mango/common/utils/request` | 决定 `/job/**` 请求基地址、鉴权 header、错误处理和租户上下文传递 |
-| `@mango/admin-pages` | 决定页面 key 如何挂载到 Admin Shell |
-| 后端 authorization 菜单资源 | 决定左侧菜单、按钮权限和 component key |
-| `@mango/job/style.css` | 提供本包页面样式 |
+| `@mango/admin-pages`          | 决定页面 key 如何挂载到 Admin Shell                              |
+| 后端 authorization 菜单资源   | 决定左侧菜单、按钮权限和 component key                           |
+| `@mango/job/style.css`        | 提供本包页面样式                                                 |
 
 ## 6. 管理入口
 
 页面 key 来自 `src/admin-pages.ts`：
 
-| 页面 key | 页面组件 | 后端菜单 |
-|----------|----------|----------|
-| `job/definition/index` | `JobDefinitionView` | 任务定义 |
-| `job/instance/index` | `JobInstanceView` | 执行实例 |
-| `job/worker/index` | `JobWorkerView` | Worker 节点 |
-| `job/alarm/index` | `JobAlarmView` | 告警规则 |
-| `job/engine/index` | `JobEngineView` | 运行状态 |
+| 页面 key               | 页面组件            | 后端菜单    |
+| ---------------------- | ------------------- | ----------- |
+| `job/definition/index` | `JobDefinitionView` | 任务定义    |
+| `job/instance/index`   | `JobInstanceView`   | 执行实例    |
+| `job/worker/index`     | `JobWorkerView`     | Worker 节点 |
+| `job/alarm/index`      | `JobAlarmView`      | 告警规则    |
+| `job/engine/index`     | `JobEngineView`     | 运行状态    |
 
 后端 `mango-job-starter/src/main/resources/META-INF/mango/resources/job-common-menu.json`
 会把这些 key 写入菜单 `component` 字段。前端只负责注册页面 key，菜单入库和角色授权由
@@ -96,6 +96,8 @@ registerMangoJobAdminPages();
 ## 7. API 与扩展
 
 `jobApi` 统一使用 `@mango/common/utils/request` 的 `get`、`post`、`put`、`del`，接口前缀固定为 `/job`。
+
+分页方法对外保持 `pageNum/pageSize` 查询参数和 `PageResult.pageNum/pageSize` 返回结构；请求发送前会转换为后端的 `page/size`，响应中的 `page/size` 也会映射回公开返回结构。调用方不应直接传输后端字段。
 
 任务定义：
 
@@ -168,60 +170,60 @@ await jobApi.createAlarmRule({
 
 ### 7.1 API 清单
 
-| 方法 | HTTP | 用途 |
-|------|------|------|
-| `pageDefinitions(params)` | `GET /job/definitions/page` | 任务定义分页 |
-| `detailDefinition(id)` | `GET /job/definitions/detail` | 任务定义详情 |
-| `createDefinition(data)` | `POST /job/definitions` | 新增任务定义 |
-| `updateDefinition(data)` | `PUT /job/definitions` | 修改任务定义 |
-| `updateDefinitionStatus(id, status)` | `PUT /job/definitions/status` | 调整任务状态 |
-| `deleteDefinition(id)` | `DELETE /job/definitions` | 删除任务 |
-| `triggerDefinition(data)` | `POST /job/definitions/trigger` | 手动触发 |
-| `pageInstances(params)` | `GET /job/instances/page` | 执行实例分页 |
-| `syncInstances(params)` | `POST /job/instances/sync` | 同步实例 |
-| `detailInstanceLog(instanceId)` | `GET /job/instances/logs/detail?instanceId=...` | 实例 native 日志 |
-| `pageLogs(params)` | `GET /job/logs/page` | 日志索引分页 |
-| `detailLog(id)` | `GET /job/logs/detail` | 日志详情 |
-| `pageWorkers(params)` | `GET /job/workers/page` | Worker 分页 |
-| `createWorker(data)` | `POST /job/workers` | 手动登记 Worker |
-| `updateWorkerStatus(data)` | `PUT /job/workers/status` | 调整 Worker 状态 |
-| `listHandlers()` | `GET /job/handlers` | 当前应用 handler 清单 |
-| `pageAlarmRules(params)` | `GET /job/alarm-rules/page` | 告警规则分页 |
-| `detailAlarmRule(id)` | `GET /job/alarm-rules/detail` | 告警详情 |
-| `createAlarmRule(data)` | `POST /job/alarm-rules` | 新增告警 |
-| `updateAlarmRule(data)` | `PUT /job/alarm-rules` | 修改告警 |
-| `updateAlarmRuleStatus(data)` | `PUT /job/alarm-rules/status` | 启停告警 |
-| `deleteAlarmRule(id)` | `DELETE /job/alarm-rules` | 删除告警 |
-| `listEngineStatus()` | `GET /job/engines/status` | 引擎同步状态 |
+| 方法                                 | HTTP                                            | 用途                  |
+| ------------------------------------ | ----------------------------------------------- | --------------------- |
+| `pageDefinitions(params)`            | `GET /job/definitions/page`                     | 任务定义分页          |
+| `detailDefinition(id)`               | `GET /job/definitions/detail`                   | 任务定义详情          |
+| `createDefinition(data)`             | `POST /job/definitions`                         | 新增任务定义          |
+| `updateDefinition(data)`             | `PUT /job/definitions`                          | 修改任务定义          |
+| `updateDefinitionStatus(id, status)` | `PUT /job/definitions/status`                   | 调整任务状态          |
+| `deleteDefinition(id)`               | `DELETE /job/definitions`                       | 删除任务              |
+| `triggerDefinition(data)`            | `POST /job/definitions/trigger`                 | 手动触发              |
+| `pageInstances(params)`              | `GET /job/instances/page`                       | 执行实例分页          |
+| `syncInstances(params)`              | `POST /job/instances/sync`                      | 同步实例              |
+| `detailInstanceLog(instanceId)`      | `GET /job/instances/logs/detail?instanceId=...` | 实例 native 日志      |
+| `pageLogs(params)`                   | `GET /job/logs/page`                            | 日志索引分页          |
+| `detailLog(id)`                      | `GET /job/logs/detail`                          | 日志详情              |
+| `pageWorkers(params)`                | `GET /job/workers/page`                         | Worker 分页           |
+| `createWorker(data)`                 | `POST /job/workers`                             | 手动登记 Worker       |
+| `updateWorkerStatus(data)`           | `PUT /job/workers/status`                       | 调整 Worker 状态      |
+| `listHandlers()`                     | `GET /job/handlers`                             | 当前应用 handler 清单 |
+| `pageAlarmRules(params)`             | `GET /job/alarm-rules/page`                     | 告警规则分页          |
+| `detailAlarmRule(id)`                | `GET /job/alarm-rules/detail`                   | 告警详情              |
+| `createAlarmRule(data)`              | `POST /job/alarm-rules`                         | 新增告警              |
+| `updateAlarmRule(data)`              | `PUT /job/alarm-rules`                          | 修改告警              |
+| `updateAlarmRuleStatus(data)`        | `PUT /job/alarm-rules/status`                   | 启停告警              |
+| `deleteAlarmRule(id)`                | `DELETE /job/alarm-rules`                       | 删除告警              |
+| `listEngineStatus()`                 | `GET /job/engines/status`                       | 引擎同步状态          |
 
 ## 8. 类型和枚举
 
 主要前端类型：
 
-| 类型 | 用途 |
-|------|------|
-| `JobDefinition`、`SaveJobDefinitionPayload`、`JobDefinitionQuery` | 任务定义 |
-| `JobInstance`、`JobInstanceQuery`、`TriggerJobPayload` | 执行实例和手动触发 |
-| `JobLogIndex`、`JobLogDetail`、`JobLogQuery` | 执行日志 |
-| `JobWorkerSnapshot`、`CreateJobWorkerPayload`、`JobWorkerHandlerPayload` | Worker 管理 |
-| `JobHandler`、`JobEngineStatus` | handler 清单和运行状态 |
-| `JobAlarmRule`、`SaveJobAlarmRulePayload`、`JobAlarmRuleQuery` | 告警规则 |
+| 类型                                                                     | 用途                   |
+| ------------------------------------------------------------------------ | ---------------------- |
+| `JobDefinition`、`SaveJobDefinitionPayload`、`JobDefinitionQuery`        | 任务定义               |
+| `JobInstance`、`JobInstanceQuery`、`TriggerJobPayload`                   | 执行实例和手动触发     |
+| `JobLogIndex`、`JobLogDetail`、`JobLogQuery`                             | 执行日志               |
+| `JobWorkerSnapshot`、`CreateJobWorkerPayload`、`JobWorkerHandlerPayload` | Worker 管理            |
+| `JobHandler`、`JobEngineStatus`                                          | handler 清单和运行状态 |
+| `JobAlarmRule`、`SaveJobAlarmRulePayload`、`JobAlarmRuleQuery`           | 告警规则               |
 
 枚举值：
 
-| 类型 | 值 |
-|------|----|
-| `JobDefinitionStatus` | `DRAFT`、`ENABLED`、`DISABLED`、`PAUSED` |
-| `JobEngineType` | `MANGO_NATIVE` |
-| `JobType` | `BUILTIN` |
-| `JobScheduleType` | `CRON`、`FIXED_RATE`、`ONE_TIME`、`MANUAL` |
-| `JobSyncStatus` | `PENDING`、`SYNCED`、`FAILED` |
-| `JobTransportType` | `IN_MEMORY`、`HTTP_INTERNAL` |
-| `JobWorkerRegisterSource` | `EMBEDDED_AUTO`、`REMOTE_AUTO`、`MANUAL` |
-| `JobInstanceStatus` | `CREATED`、`WAITING`、`DISPATCHED`、`RUNNING`、`RETRY_WAITING`、`SUCCESS`、`FAILED`、`TIMEOUT`、`CANCELED` |
-| `JobTriggerType` | `SCHEDULED`、`MANUAL`、`RETRY`、`API` |
-| `JobAlarmType` | `INSTANCE_FAILED` |
-| `JobWorkerStatus` | `REGISTERED`、`ONLINE`、`DRAINING`、`OFFLINE`、`EXPIRED`、`DISABLED`、`UNKNOWN` |
+| 类型                      | 值                                                                                                         |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `JobDefinitionStatus`     | `DRAFT`、`ENABLED`、`DISABLED`、`PAUSED`                                                                   |
+| `JobEngineType`           | `MANGO_NATIVE`                                                                                             |
+| `JobType`                 | `BUILTIN`                                                                                                  |
+| `JobScheduleType`         | `CRON`、`FIXED_RATE`、`ONE_TIME`、`MANUAL`                                                                 |
+| `JobSyncStatus`           | `PENDING`、`SYNCED`、`FAILED`                                                                              |
+| `JobTransportType`        | `IN_MEMORY`、`HTTP_INTERNAL`                                                                               |
+| `JobWorkerRegisterSource` | `EMBEDDED_AUTO`、`REMOTE_AUTO`、`MANUAL`                                                                   |
+| `JobInstanceStatus`       | `CREATED`、`WAITING`、`DISPATCHED`、`RUNNING`、`RETRY_WAITING`、`SUCCESS`、`FAILED`、`TIMEOUT`、`CANCELED` |
+| `JobTriggerType`          | `SCHEDULED`、`MANUAL`、`RETRY`、`API`                                                                      |
+| `JobAlarmType`            | `INSTANCE_FAILED`                                                                                          |
+| `JobWorkerStatus`         | `REGISTERED`、`ONLINE`、`DRAINING`、`OFFLINE`、`EXPIRED`、`DISABLED`、`UNKNOWN`                            |
 
 前端还导出 `jobDefinitionStatusOptions`、`scheduleTypeOptions`、`engineTypeOptions`、`instanceStatusOptions`、`workerStatusOptions`、`transportTypeOptions`、`workerRegisterSourceOptions`、`alarmTypeOptions`、`enabledOptions` 等选项数组，用于表单和状态标签展示。
 
@@ -229,23 +231,23 @@ await jobApi.createAlarmRule({
 
 本包不包含数据库 migration，也不会初始化菜单或权限。
 
-| 数据 | 来源 |
-|------|------|
-| 任务定义、实例、日志、Worker、告警规则 | 后端 `mango-platform/mango-job` |
-| 菜单和按钮权限 | 后端 `mango-job-starter` 的资源 manifest，经 `mango-authorization` 同步入库 |
-| 页面 component key | 本包 `registerMangoJobAdminPages()` 注册 |
+| 数据                                   | 来源                                                                        |
+| -------------------------------------- | --------------------------------------------------------------------------- |
+| 任务定义、实例、日志、Worker、告警规则 | 后端 `mango-platform/mango-job`                                             |
+| 菜单和按钮权限                         | 后端 `mango-job-starter` 的资源 manifest，经 `mango-authorization` 同步入库 |
+| 页面 component key                     | 本包 `registerMangoJobAdminPages()` 注册                                    |
 
 ## 10. 问题排查
 
-| 现象 | 排查点 |
-|------|--------|
-| 菜单点击后空白 | 检查是否调用 `registerMangoJobAdminPages()`，以及页面 key 是否和后端 manifest 一致 |
-| 页面样式缺失 | 检查宿主入口是否引入 `@mango/job/style.css` |
-| 接口 404 | 检查后端是否启用 `mango-job-starter`，网关是否转发 `/job` |
-| 接口 401/403 | 检查登录态、租户上下文、菜单权限和按钮权限 |
-| Worker 页面为空 | 检查后端内嵌 Worker 或远程 Worker 是否注册成功 |
-| 固定频率保存失败 | `FIXED_RATE` 的表达式应填毫秒数字符串，例如 `5000` |
-| 触发后看不到日志 | 检查实例是否进入执行阶段，Worker 是否在线，handler 是否输出日志 |
+| 现象             | 排查点                                                                             |
+| ---------------- | ---------------------------------------------------------------------------------- |
+| 菜单点击后空白   | 检查是否调用 `registerMangoJobAdminPages()`，以及页面 key 是否和后端 manifest 一致 |
+| 页面样式缺失     | 检查宿主入口是否引入 `@mango/job/style.css`                                        |
+| 接口 404         | 检查后端是否启用 `mango-job-starter`，网关是否转发 `/job`                          |
+| 接口 401/403     | 检查登录态、租户上下文、菜单权限和按钮权限                                         |
+| Worker 页面为空  | 检查后端内嵌 Worker 或远程 Worker 是否注册成功                                     |
+| 固定频率保存失败 | `FIXED_RATE` 的表达式应填毫秒数字符串，例如 `5000`                                 |
+| 触发后看不到日志 | 检查实例是否进入执行阶段，Worker 是否在线，handler 是否输出日志                    |
 
 ## 11. 相关文档
 
@@ -256,5 +258,6 @@ await jobApi.createAlarmRule({
 
 ## 12. 变更影响记录
 
+- baohan-open Issue #43 修复任务管理页面分页组件解析和 `page/size` 请求契约；源码修复尚未发布，业务项目需要等待新版本发布后再升级依赖。
 - `@mango/job@1.0.13` 将 `@mango/admin-pages` 精确依赖升级到 `1.0.20`；任务 API、页面 key、权限、租户和
   运行时行为相对 `1.0.12` 不变。
