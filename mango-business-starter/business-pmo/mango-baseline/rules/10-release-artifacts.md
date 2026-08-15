@@ -1,5 +1,11 @@
 # Mango 发布制品与版本同步规范
 
+## 0. 严格适用边界
+
+- **正向要求**：本规范只适用于 Mango 主仓发布 Mango 平台自身的 npm、Maven、CLI、starter、模板、PMO、Skill、文档快照、Tag 和 GitHub Release 等不可变组件制品。仓库内 `mango-release` 是 Mango 主仓维护者能力，只存在于 Mango 主仓，不进入 `@mango/pmo` 插件、Business Starter baseline 或业务项目 `.agents/skills`。
+- **禁止项**：禁止把本规范或 `mango-release` 用于 Mango 普通开发/缺陷/治理/Review/提交 PR，禁止用于业务项目 PR、业务应用构建、打包、部署、上线、流量、回滚或业务项目自己的制品发布。Mango 组件 PR 携带 Changeset 只登记未来发布意图，不表示该 PR 进入发布状态机。
+- **机器判定**：`@mango/pmo` package、Codex plugin 投影、Business Starter baseline 和 CLI 生成/升级后的项目 Skill 均不得包含 `mango-release`；从旧 PMO bundle 升级时必须原子删除此前由该 bundle 托管的项目级 `mango-release`。正向测试只允许 Mango 主仓精确组件坐标触发，反向测试必须覆盖 Mango 普通 PR、业务 PR 和业务发布。
+
 ## 1. 适用范围与版本事实源
 
 - **正向要求**：发布 npm、Maven、CLI、starter、模板、PMO、Skill 或文档快照时，必须先列出本批次全部制品、当前版本、目标版本、依赖方、消费入口和唯一版本事实源；`mango-ui/packages/mango-cli/release-versions.json` 只能引用已发布或在同一批次内先发布并完成回查的版本。
@@ -45,11 +51,11 @@
 
 ## 7. 统一发布状态机
 
-- **正向要求**：Mango 发布只使用仓库内 `mango-pmo/skills/mango-release`，禁止用外部通用 release skill 补充或替代。正式批次统一使用 `mango release publish/status/verify/repair --version <version>` 和 `mango release registry doctor`；状态固定为 `source`、`versions`、`changelog`、`readmes`、`tests`、`pr`、`tag`、`github-release`、`maven`、`npm`、`cli-lock`、`private-registry-publish`、`private-registry-consume-verify`、`docs-latest`、`docs-snapshot`、`post-verify`、`cleanup`。每项只能是 `passed/failed/pending/not_applicable`，必须记录非空原因；适用且已执行的状态必须逐次记录命令、工作目录、退出码、开始/完成时间和非空脱敏输出。`not_applicable` 因未执行命令，只记录明确原因和判定时间。
-- **禁止项**：禁止绕过状态机直接声明整批发布完成；禁止把未执行状态写成 passed；禁止 `repair` 重发已经成功的不可变 Maven/npm/tag/Release/文档快照；禁止在项目或用户配置中持久化发布授权、token、password 或 URL userinfo。
-- **正例**：npm 发布成功但消费仓库回查失败，manifest 保留 npm passed 和 consume-verify failed；修复缓存后 `repair` 只运行 consume verify 和后续状态，不重新执行 npm publish。
-- **反例**：第二次执行整套脚本试图覆盖发布。错误原因：不可变版本可能已经存在，且无法区分发布失败与回查失败。
-- **机器判定**：`publish/repair` 只接受本次 `--authorize` 或 `MANGO_RELEASE_AUTHORIZED=1`；配置优先级为 CLI > 环境变量 > 用户配置 > 项目配置；Maven/npm 分别显式选择 `private-registry/public-registry/artifact-only/disabled`，disabled 必须有原因，缺模式或 registry 时 doctor 和 publish 失败。completed 必须同时满足所有状态关闭、状态 applicability 与配置一致和全部适用状态 evidence 结构完整；必需状态禁止篡改为 `not_applicable`。`repair` 遇到从未尝试的 pending 不可变状态时必须执行该状态的首次 publish；只有已经尝试过且可能形成远端对象的不可变状态才使用精确的 `{kind: verify-existing}` 引用同状态 verify adapter。若失败证据明确发生在远端写入前，publish/consume 双侧均证明精确坐标不存在，可由同一状态机保留原失败证据后重试一次精确 publish adapter；禁止 raw publisher、整批重发、独立 repair 命令、空数组或额外字段。
+- **正向要求**：Mango 发布只使用仓库内 `mango-pmo/skills/mango-release`。正式 npm 批次统一执行 `mango release plan -> prepare -> publish/status/repair` 和 `mango release registry doctor`；正常状态固定为 `PREPARED`、`CANDIDATE_VERIFIED`、`PUBLISHED`、`CONSUMER_VERIFIED`、`COMPLETED`，异常状态只允许 `FAILED`、`VERIFY_PENDING`、`PARTIALLY_PUBLISHED`。计划、候选验证、发布和恢复绑定同一 Git tree、计划摘要和制品 SHA-256。
+- **禁止项**：禁止人工维护发布包清单；禁止以最近一次提交代替累计 Changesets；禁止 prepare 后重新构建；禁止 hosted 已存在时重发；禁止消费验证前创建 Tag/GitHub Release；禁止持久化授权或凭据。
+- **正例**：npm hosted 已有精确坐标且 SHA-256 与封存 tarball 一致、group 尚未可见时进入 `VERIFY_PENDING`；`repair` 只读等待 group，随后继续纯消费仓验证。
+- **反例**：发布失败后重新运行构建和整套逐包脚本，或把未登记的包凭记忆追加到 `.mango-release.json`。错误原因：候选与发布物不再同源，且不可变坐标可能被重复尝试。
+- **机器判定**：功能 PR 的 Git 影响与 Changeset 声明必须一致；Release PR 的计划由机器重算，只有版本、依赖、CHANGELOG、Changeset 消费和计划投影时才走轻量检查，混入源码自动回到普通门禁。`publish/repair` 只接受当前回合 `--authorize` 或 `MANGO_RELEASE_AUTHORIZED=1`；首次写入前 publish/consume 双侧必须证明坐标不存在，任一未知状态立即停止。
 
 ### 7.1 Registry 抽象与文档策略
 
@@ -60,6 +66,8 @@
 
 ### 7.2 发布说明与收尾
 
-- **正向要求**：不可变动作前，平台 CHANGELOG 和 GitHub Release 预稿必须覆盖版本、发布制品、升级步骤和验证；GitHub Release 正文至少包含适用的 `Versions`、`Published Packages`、`Upgrade Notes`、`Verification`，并在发布适配器执行前通过同一 release-notes checker。结构化验证应解析 YAML/JSON/manifest 语义，禁止把引号、缩进等非契约格式写成发布成败条件。
+- **正向要求**：不可变动作前，平台 CHANGELOG、制品 changelog 和 GitHub Release 预稿必须从上次成功发布基线覆盖到候选的完整实际发布 PR；每个 PR 按 `Fixed`、`Added` 或 `Changed` 分类并映射精确发布包和业务适配。被取代、恢复或仅供审计的 PR 必须单独标记，不得冒充本批次新增能力。
+- **正向要求**：发布正文必须包含非空的 `Pull Requests`、至少一个 `Fixed/Added/Changed`、`Versions`、`Published Packages`、`Business Impact`、`Upgrade Estimate`、`Upgrade Notes`、`Verification` 和 `Rollback`。`Upgrade Estimate` 必须分别说明升级对象、工程工作量、执行窗口、服务停机、回退工作量和估算前提；估算必须区分适用消费形态，不能用一个无前提数字代替。
+- **机器判定**：`mango release prepare` 和 GitHub Release 创建前使用同一个 release-notes checker 检查章节存在且非空、PR 编号、PR 到分类/制品/业务适配的映射、估价字段和未替换占位符；`.changeset/release-notes-template.md` 是发布人填写结构，机器计划和 prepare 不得自动编造业务影响或估价。结构化验证应解析 YAML/JSON/manifest 语义，禁止把引号、缩进等非契约格式写成发布成败条件。
 - **正向要求**：发布完成后必须通过 PR 把平台 CHANGELOG 的 `PENDING` 回填为真实发布状态和完整 manifest 证据，再停止服务、释放任务 workspace/数据库、清理已合并 worktree 与分支、同步 `main` 并证明 `HEAD == origin/main`。发布 tag 保持指向制品源码提交，不移动到仅含收尾文档的提交。
-- **禁止项**：禁止 GitHub Release 正文缺发布制品章节时进入 npm/Maven publish；禁止制品已发布后因验证脚本格式误判而重发；禁止保留 `PENDING`、未清理发布 worktree 或未同步 main 却声明整批收尾完成。
+- **禁止项**：禁止缺 PR 清单、制品映射、业务影响、估价、升级、验证、回退或存在占位符时进入 npm/Maven publish；禁止制品已发布后因验证脚本格式误判而重发；禁止保留 `PENDING`、未清理发布 worktree 或未同步 main 却声明整批收尾完成。

@@ -1,6 +1,6 @@
 ---
 name: mango-design-delivery-assurance
-description: Resolve a Mango task's workspace policy, L0-L3 risk, SIMPLE/STANDARD/FULL delivery mode, artifacts, and observable verification capabilities before implementation or when material facts change. Excludes release and publishing work.
+description: Resolve a Mango task's workspace policy, L0-L3 risk, SIMPLE/STANDARD/FULL delivery mode, artifacts, and observable verification capabilities before implementation or when material facts change. Mango platform component publication is separate; business application release and deployment remain governed by the business repository's own delivery runbook.
 ---
 
 # Mango Delivery Mode
@@ -11,7 +11,7 @@ Set `PMO_ROOT` to the first existing directory: `<repo>/business-pmo/mango-basel
 
 ## Keep Release Separate
 
-Do not authorize or execute publishing, versions, registries, tags, releases, or release recovery. Route those actions to `$mango-release`.
+Do not authorize external mutations through this Skill. Only an actual Mango platform component release from the Mango source repository routes to its repository-local `$mango-release`. A Mango development PR does not route there merely because it carries a Changeset. Business-project PRs, packages, application releases, deployments, traffic changes and rollbacks stay in the business repository's own delivery and deployment process; never search for or invoke `$mango-release` for them.
 
 ## Resolve Workspace
 

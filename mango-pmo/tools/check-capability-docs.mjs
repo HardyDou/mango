@@ -391,6 +391,19 @@ function runSelfTest() {
       valid: true
     },
     {
+      name: 'package manifest dependency projection does not require a business guide',
+      files: ['mango-ui/packages/admin-shell/package.json', 'mango-ui/packages/admin-shell/README.md'],
+      body: filledPrBody(),
+      valid: true
+    },
+    {
+      name: 'package runtime source still requires its mapped business guides',
+      files: ['mango-ui/packages/admin-shell/src/index.ts', 'mango-ui/packages/admin-shell/README.md'],
+      body: filledPrBody(),
+      valid: false,
+      expectedFailure: 'rbac-menu-page-troubleshooting.md'
+    },
+    {
       name: 'standalone not applicable reason does not allow missing business guide',
       files: ['mango/mango-platform/mango-file/mango-file-api/src/main/java/io/mango/file/api/FileApi.java', 'mango/mango-platform/mango-file/README.md'],
       body: filledPrBody({ forbiddenReason: 'runtime behavior is unchanged' }),
@@ -572,6 +585,10 @@ function isCapabilityAffectingFile(file) {
   );
 }
 
+function isBusinessGuideAffectingFile(file) {
+  return isCapabilityAffectingFile(file) && !/^mango-ui\/packages\/[^/]+\/package\.json$/.test(file);
+}
+
 function moduleReadmeFor(file) {
   const uiPackage = file.match(/^(mango-ui\/packages\/[^/]+)\//);
   if (uiPackage) {
@@ -613,7 +630,7 @@ function checkCapabilityDocCoverage(files, failures) {
   }
 
   const affectedGuides = new Set();
-  for (const file of files.filter(isCapabilityAffectingFile)) {
+  for (const file of files.filter(isBusinessGuideAffectingFile)) {
     for (const mapping of businessGuideMappings) {
       if (mapping.matches.some((pattern) => pattern.test(file))) {
         affectedGuides.add(mapping.guide);

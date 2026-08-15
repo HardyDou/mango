@@ -1,0 +1,67 @@
+import assert from 'node:assert/strict';
+import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import test from 'node:test';
+import {
+  decideMavenCoordinateAction,
+  hasMavenReleaseImpact,
+  inspectStagedMavenRepository,
+  verifyStagedMavenRepository,
+} from './release-maven-lib.mjs';
+
+test('Maven impact includes production reactor files but excludes tests', () => {
+  assert.equal(hasMavenReleaseImpact(['mango/mango-common/src/main/java/io/mango/A.java']), true);
+  assert.equal(hasMavenReleaseImpact(['mango/mango-common/pom.xml']), true);
+  assert.equal(hasMavenReleaseImpact(['mango/mango-common/src/test/java/io/mango/ATest.java']), false);
+  assert.equal(hasMavenReleaseImpact(['mango/mango-common/README.md']), false);
+  assert.equal(hasMavenReleaseImpact(['mango-docs/capabilities/README.md']), false);
+});
+
+test('staged Maven repository is sealed by exact POM and JAR hashes', () => {
+  const root = mkdtempSync(join(tmpdir(), 'mango-maven-stage-'));
+  try {
+    const directory = join(root, 'io/mango/sample/1.2.3');
+    mkdirSync(directory, { recursive: true });
+    writeFileSync(join(directory, 'sample-1.2.3.pom'), '<project/>');
+    writeFileSync(join(directory, 'sample-1.2.3.jar'), 'jar-bytes');
+    const descriptor = inspectStagedMavenRepository(root, '1.2.3');
+    assert.equal(descriptor.coordinateCount, 1);
+    assert.equal(descriptor.coordinates[0].coordinate, 'io.mango:sample:1.2.3');
+    assert.equal(descriptor.coordinates[0].packaging, 'jar');
+    assert.equal(verifyStagedMavenRepository(root, descriptor).repositorySha256, descriptor.repositorySha256);
+    writeFileSync(join(directory, 'sample-1.2.3.jar'), 'changed');
+    assert.throws(() => verifyStagedMavenRepository(root, descriptor), /digest mismatch/u);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('Maven recovery publishes only when both roles prove absence', () => {
+  const expected = [
+    { path: 'x.pom', sha256: 'a'.repeat(64) },
+    { path: 'x.jar', sha256: 'b'.repeat(64) },
+  ];
+  const absent = expected.map((entry) => ({ path: entry.path, state: 'absent' }));
+  const present = expected.map((entry) => ({ ...entry, state: 'present' }));
+  assert.equal(
+    decideMavenCoordinateAction({ publishFiles: absent, consumeFiles: absent, expectedFiles: expected }).action,
+    'PUBLISH',
+  );
+  assert.equal(
+    decideMavenCoordinateAction({ publishFiles: present, consumeFiles: absent, expectedFiles: expected }).action,
+    'VERIFY_PENDING',
+  );
+  assert.equal(
+    decideMavenCoordinateAction({ publishFiles: present, consumeFiles: present, expectedFiles: expected }).action,
+    'VERIFIED',
+  );
+  assert.equal(
+    decideMavenCoordinateAction({
+      publishFiles: [present[0], absent[1]],
+      consumeFiles: absent,
+      expectedFiles: expected,
+    }).action,
+    'STOP',
+  );
+});

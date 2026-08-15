@@ -1,6 +1,0 @@
-interface:
-  display_name: "Mango Release"
-  short_description: "Publish and verify actual Mango artifact releases"
-  default_prompt: "Use the repository-local $mango-release to plan, publish, recover, verify, and close this actual Mango artifact release; keep standards adoption and traffic rollout outside this workflow."
-policy:
-  allow_implicit_invocation: true

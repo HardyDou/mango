@@ -43,7 +43,7 @@
 
 `@mango/pmo@1.3.14` 与 `@mango/cli@1.0.106` 在上述当前流程上增加精确的历史文档章节变体：只有路径、SHA-256 和 `pmoVersion` 三重锁定的 PMO 1.3.10 至 1.3.12 TDD/Plan 可以保留当时的“参考资料与代码基线”章节；新文档、已变更历史文档和其它合同外章节继续 fail closed。
 
-`@mango/cli@1.0.107` 保持 PMO `1.3.14` 和 Maven `1.0.36` 不变，并把生成项目的管理端矩阵更新为 `@mango/admin-shell@1.0.60`、`@mango/admin@1.0.66` 与 `@mango/common@1.0.26`。模板公开 API、配置、菜单、权限、租户、页面、启动方式和运行时行为不变；已有项目应应用 CLI 的完整版本矩阵，不要单独替换 Shell。
+`@mango/cli@1.0.107` 将 PMO 升级到 `1.3.15`，保持 Maven `1.0.36` 不变，并把生成项目的管理端矩阵更新为 `@mango/job@1.0.27`、`@mango/admin-shell@1.0.60`、`@mango/admin@1.0.66` 与 `@mango/common@1.0.26`。已有项目应应用 CLI 的完整版本矩阵，不要单独替换 Shell 或 Job。
 
 `business-pmo/mango-baseline` 是 canonical `mango-pmo` 的构建投影，维护边界遵循
 [文档资产规范](../mango-pmo/rules/06-document-assets.md)。更新 PMO 后执行：
@@ -271,6 +271,7 @@ Controller 使用 `BaseCrudController`，类级路径由 module 和 aggregate �
 
 ## 13. 补充资料
 
+- v2026.08.15 候选将业务项目 PR 提交统一到 `mango-submit-pr`，负责明确授权后的精确暂存、Commit、Push、创建或更新 PR 和远端回读；每个 required Runner check 先通过项目内同源本地入口，最终 head 本地全绿后再进入 Push。Mango 主仓专用 `mango-release` 从业务 baseline、项目 Skill 和 `@mango/pmo` plugin 投影中移除，升级会原子清理此前由 PMO bundle 托管的项目级副本。业务 PR、业务应用发布和部署不再路由到 Mango 组件发布流程。
 - v2026.07.21 发布候选将业务 PMO baseline 对齐到 `@mango/pmo@1.3.4` 和 `@mango/cli@1.0.88`，同步 delivery-assurance schema revision 5、canonical PR 模板、文档合同 fixture、plugin manifest 投影和 release package 元数据；业务项目升级后只影响 PMO 检查、preflight、文档合同和发布治理物料，不改变业务 API、菜单、权限、租户、页面、启动方式或运行时业务逻辑。
 - v2026.07.19 本地候选将业务 API 改为 `createXxxApi(HttpClient)`，host 使用 `@mango/http-client@1.0.0` 注入，页面传递取消信号且不再引用 Axios/全局 request；真实 CMS 页面和 Wujie 多实例宿主链路已纳入验证，候选锁为 `@mango/pmo@1.3.2`、`@mango/cli@1.0.84` 和同批前端包。当前未发布，业务项目只能在本地 tarball/candidate 验证后试用。
 - v2026.07.18 将项目治理锁更新到 `@mango/pmo@1.3.1` 和 `@mango/cli@1.0.82`；Mango 发布只路由到项目内 `mango-release` Skill，并补齐发布说明预检、不可变制品恢复、CHANGELOG 回填和环境清理。Mango Maven、运行时前端包、菜单、权限、租户和业务逻辑不变。

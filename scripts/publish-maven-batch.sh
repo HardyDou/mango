@@ -43,6 +43,11 @@ Options:
   --verify-transitive   Resolve transitive dependencies during Maven verification
   --verify-repo <path>  Shared verification local repo; default is
                         .runtime/maven-publish-verify-batch
+  --repository-id <id>  Override distributionManagement repository id. Used by
+                        release prepare to deploy once into a local file repository
+  --repository-url <url>
+                        Override distributionManagement repository URL. Pair with
+                        --repository-id; supports file:// staging and HTTP(S) publish
   --dry-run             Print commands without running them
   -h, --help            Show help
 
@@ -69,6 +74,8 @@ verify_repo="${MANGO_MAVEN_VERIFY_REPO:-${REPO_ROOT}/.runtime/maven-publish-veri
 verify_work_dir="${MANGO_MAVEN_VERIFY_WORK_DIR:-${REPO_ROOT}/.runtime/maven-publish-verify-work}"
 verify_base_url="${MANGO_MAVEN_VERIFY_BASE_URL:-}"
 verify_only=false
+repository_id_override="${MANGO_MAVEN_REPOSITORY_ID:-}"
+repository_url_override="${MANGO_MAVEN_REPOSITORY_URL:-}"
 
 validate_revision() {
   local value="$1"
@@ -175,6 +182,30 @@ while [[ $# -gt 0 ]]; do
     --verify-repo=*)
       verify_repo="${1#--verify-repo=}"
       ;;
+    --repository-id)
+      if [[ $# -lt 2 || "$2" == -* ]]; then
+        echo "Missing value for --repository-id." >&2
+        usage
+        exit 1
+      fi
+      repository_id_override="$2"
+      shift
+      ;;
+    --repository-id=*)
+      repository_id_override="${1#--repository-id=}"
+      ;;
+    --repository-url)
+      if [[ $# -lt 2 || "$2" == -* ]]; then
+        echo "Missing value for --repository-url." >&2
+        usage
+        exit 1
+      fi
+      repository_url_override="$2"
+      shift
+      ;;
+    --repository-url=*)
+      repository_url_override="${1#--repository-url=}"
+      ;;
     --dry-run)
       dry_run=true
       ;;
@@ -205,6 +236,18 @@ if [[ "${all_non_app}" != "true" && ${#targets[@]} -eq 0 ]]; then
   exit 1
 fi
 validate_revision "${revision}"
+if [[ -n "${repository_id_override}" || -n "${repository_url_override}" ]]; then
+  if [[ -z "${repository_id_override}" || -z "${repository_url_override}" ]]; then
+    echo "--repository-id and --repository-url must be supplied together." >&2
+    exit 1
+  fi
+  if [[ "${repository_url_override}" != file://* \
+    && "${repository_url_override}" != http://* \
+    && "${repository_url_override}" != https://* ]]; then
+    echo "Unsupported repository URL: ${repository_url_override}" >&2
+    exit 1
+  fi
+fi
 if [[ "${verify_mode}" != "http" && "${verify_mode}" != "maven" ]]; then
   echo "Invalid verification mode: ${verify_mode}" >&2
   echo "Use --verify-mode http or --verify-mode maven." >&2
@@ -243,14 +286,14 @@ deploy_architecture_verification_pom() {
     group_id="resolved-project.groupId"
     artifact_id="mango-architecture-verification"
     packaging="pom"
-    repository_id="resolved-distribution-repository-id"
-    repository_url="resolved-distribution-repository-url"
+    repository_id="${repository_id_override:-resolved-distribution-repository-id}"
+    repository_url="${repository_url_override:-resolved-distribution-repository-url}"
   else
     group_id="$(mvn_eval "${pom_file}" project.groupId)"
     artifact_id="$(mvn_eval "${pom_file}" project.artifactId)"
     packaging="$(mvn_eval "${pom_file}" project.packaging)"
-    repository_id="$(mvn_eval "${pom_file}" project.distributionManagement.repository.id)"
-    repository_url="$(mvn_eval "${pom_file}" project.distributionManagement.repository.url)"
+    repository_id="${repository_id_override:-$(mvn_eval "${pom_file}" project.distributionManagement.repository.id)}"
+    repository_url="${repository_url_override:-$(mvn_eval "${pom_file}" project.distributionManagement.repository.url)}"
     if [[ -z "${group_id}" || -z "${artifact_id}" || "${packaging}" != "pom" \
       || -z "${repository_id}" || -z "${repository_url}" ]]; then
       echo "Unable to resolve architecture verification POM publication coordinates." >&2
@@ -303,11 +346,11 @@ deploy_docs_bundle() {
   local deploy_args
 
   if [[ "${dry_run}" == "true" ]]; then
-    repository_id="resolved-distribution-repository-id"
-    repository_url="resolved-distribution-repository-url"
+    repository_id="${repository_id_override:-resolved-distribution-repository-id}"
+    repository_url="${repository_url_override:-resolved-distribution-repository-url}"
   else
-    repository_id="$(mvn_eval "${MAVEN_ROOT}/pom.xml" project.distributionManagement.repository.id)"
-    repository_url="$(mvn_eval "${MAVEN_ROOT}/pom.xml" project.distributionManagement.repository.url)"
+    repository_id="${repository_id_override:-$(mvn_eval "${MAVEN_ROOT}/pom.xml" project.distributionManagement.repository.id)}"
+    repository_url="${repository_url_override:-$(mvn_eval "${MAVEN_ROOT}/pom.xml" project.distributionManagement.repository.url)}"
     if [[ ! -d "${DOCS_BUNDLE_SOURCE_DIR}" || -z "${repository_id}" || -z "${repository_url}" ]]; then
       echo "Unable to resolve Mango docs bundle source or publication repository." >&2
       exit 1
@@ -475,6 +518,9 @@ done
 declare -a mvn_args=()
 if [[ -n "${deploy_project_list}" ]]; then
   mvn_args=(-pl "${deploy_project_list}" -am deploy "-Drevision=${revision}")
+  if [[ -n "${repository_id_override}" ]]; then
+    mvn_args+=("-DaltDeploymentRepository=${repository_id_override}::default::${repository_url_override}")
+  fi
   if [[ "${skip_tests}" == "true" ]]; then
     mvn_args+=(-DskipTests)
   fi
@@ -492,6 +538,10 @@ echo "Revision: ${revision}"
 echo "Allow SNAPSHOT: ${allow_snapshot}"
 echo "Include app artifacts: ${include_apps}"
 echo "Include docs bundle: ${include_docs_bundle}"
+if [[ -n "${repository_id_override}" ]]; then
+  echo "Repository override id: ${repository_id_override}"
+  echo "Repository override URL: ${repository_url_override}"
+fi
 if [[ "${verify_only}" == "true" ]]; then
   echo "Mode: verification only; deploy is skipped"
 else

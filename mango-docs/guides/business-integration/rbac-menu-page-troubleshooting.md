@@ -288,3 +288,7 @@ pnpm -F @mango/admin-shell build
 ## 2026-08-06 个人中心前端制品发布影响
 
 - 本发布候选将个人中心已有的“我的消息、系统公告、通知设置、登录日志”section 注册逻辑交付到 `@mango/auth@1.0.26`、`@mango/notice@1.0.38`、`@mango/system@1.0.32` 和 `@mango/admin-shell@1.0.58`，并成组更新相关前端依赖。它不新增菜单 `component` key、角色菜单关系、按钮权限码或租户应用绑定；这些入口属于 `/profile` 内部导航。普通菜单仍按本指南排查，只有个人中心入口缺失时才额外核对四个包是否来自同一发布批次且 Admin Shell 已执行 profile-section 聚合。
+
+## 2026-08-15 Admin 兼容批次影响
+
+- `@mango/admin-shell@1.0.60`、`@mango/admin@1.0.66` 与 `@mango/cli@1.0.107` 仅修复 Admin 发布物和既有 `@mango/common@1.0.26` 的组合兼容，并同步发布矩阵；不改变菜单 `component` key、菜单树接口、页面注册方式、角色菜单授权、租户应用绑定或本场景排障步骤。业务项目应按 CLI 完整矩阵成组升级，不要单独替换 Admin Shell。

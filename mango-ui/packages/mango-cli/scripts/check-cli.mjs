@@ -119,6 +119,8 @@ try {
     'business-pmo/pmo-lock.json',
     '.agents/skills/.mango-pmo.json',
     '.agents/skills/mango-pmo-lifecycle/SKILL.md',
+    '.agents/skills/mango-submit-pr/SKILL.md',
+    'business-pmo/mango-baseline/rules/12-pr-submission.md',
     'business-pmo/mango-baseline/tools/acceptance-evidence-check.mjs',
     'business-pmo/mango-baseline/templates/acceptance-evidence.md',
     'topologies/monolith/README.md',
@@ -742,10 +744,20 @@ try {
     'git worktree list',
     'mango workspace status',
     'business-docs',
+    '.agents/skills/mango-submit-pr',
   ]) {
     if (!businessAgents.includes(expected)) {
       throw new Error(`generated AGENTS.md should mention governance workflow: ${expected}`);
     }
+  }
+  if (businessAgents.includes('.agents/skills/mango-release')) {
+    throw new Error('generated business AGENTS.md must not route to repository-only mango-release');
+  }
+  if (
+    existsSync(join(projectRoot, '.agents/skills/mango-release')) ||
+    existsSync(join(projectRoot, 'business-pmo/mango-baseline/skills/mango-release'))
+  ) {
+    throw new Error('generated business project must not contain repository-only mango-release');
   }
   const generatedBaselineManifest = JSON.parse(
     readFileSync(join(projectRoot, 'business-pmo/mango-baseline/baseline.json'), 'utf8'),
@@ -3548,6 +3560,10 @@ function assertPmoCommands(projectRoot) {
   assertEqual(lock.packageVersion, installedManifest.packageVersion, 'PMO lock package version');
   assertEqual(lock.bundleSha256, installedManifest.bundleSha256, 'PMO lock bundle hash');
   assertIncludes(skillState.roots, 'mango-pmo-lifecycle', 'project PMO skill roots');
+  assertIncludes(skillState.roots, 'mango-submit-pr', 'project PMO PR submission skill roots');
+  if (skillState.roots.includes('mango-release')) {
+    throw new Error('business PMO skill projection must exclude repository-only mango-release');
+  }
   const architectureBudgetPath = join(projectRoot, 'business-pmo/architecture-debt-budget.json');
   const projectOwnedBudget = JSON.parse(readFileSync(architectureBudgetPath, 'utf8'));
   projectOwnedBudget.generatedAt = '2026-07-22T12:34:56.000Z';
@@ -4000,6 +4016,8 @@ function assertPmoSyncCommand(tempRoot) {
     'business-pmo/pmo-lock.json',
     '.agents/skills/.mango-pmo.json',
     '.agents/skills/mango-pmo-lifecycle/SKILL.md',
+    '.agents/skills/mango-submit-pr/SKILL.md',
+    'business-pmo/mango-baseline/rules/12-pr-submission.md',
     'business-pmo/mango-baseline/tools/pmo-preflight.mjs',
     'business-pmo/mango-baseline/rules/backend/07-persistence.md',
     'business-docs/plans/example-contract.md',

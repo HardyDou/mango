@@ -1,11 +1,12 @@
 #!/usr/bin/env node
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { dirname, join, relative, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { assertPackedPackageBoundary as assertPackedPackageFiles } from './quality/packed-package-boundary.mjs';
 import { classifyRegistryVersionResult } from './package-consumer-matrix.mjs';
+import { toCanonicalRelativePath } from './release/consumer-tarball-paths.mjs';
 
 const currentFile = fileURLToPath(import.meta.url);
 const uiRoot = resolve(dirname(currentFile), '..');
@@ -16,14 +17,17 @@ const runtimeBase = process.env.MANGO_PACKAGE_CONSUMER_RUNTIME_BASE
   : join(tmpdir(), 'mango-package-consumer');
 const runtimeRoot = join(runtimeBase, runId);
 const projectRoot = join(runtimeRoot, 'p');
-const packageStore = join(runtimeRoot, 's');
 const consumerName = 'mango-package-consumer-typecheck';
 const registryArg = process.argv.find((arg) => arg.startsWith('--registry='));
 const registry = registryArg?.slice('--registry='.length) || 'https://registry.npmjs.org/';
+const candidateDirectoryArg = process.argv.find((arg) => arg.startsWith('--candidate-dir='));
+const candidateDirectory = candidateDirectoryArg ? resolve(candidateDirectoryArg.slice('--candidate-dir='.length)) : '';
+const packageStore = candidateDirectory || join(runtimeRoot, 's');
 const keepTemp = process.argv.includes('--keep-temp');
 const offline = process.argv.includes('--offline') || process.env.MANGO_PACKAGE_CONSUMER_OFFLINE === '1';
 const reuseBuild = process.argv.includes('--reuse-build');
 const releaseCandidateMatrix = process.argv.includes('--release-candidate-matrix');
+const pureRegistry = process.argv.includes('--pure-registry');
 const consumerStoreDir = process.env.MANGO_PACKAGE_CONSUMER_STORE_DIR;
 const pnpmCommand = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm';
 const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
@@ -113,7 +117,22 @@ function mapPackedMangoTarballs(frontendRoot, packageNames) {
   return mappings;
 }
 
+function packedPackageIndex() {
+  const mappings = new Map();
+  for (const file of readdirSync(packageStore)) {
+    if (!file.endsWith('.tgz')) continue;
+    const tarballPath = join(packageStore, file);
+    assertPackedPackageBoundary(tarballPath);
+    const packageJson = readPackedPackageJson(tarballPath);
+    if (!packageJson.name?.startsWith('@mango/')) continue;
+    if (mappings.has(packageJson.name)) throw new Error(`Duplicate candidate tarball for ${packageJson.name}`);
+    mappings.set(packageJson.name, tarballPath);
+  }
+  return mappings;
+}
+
 function selectCandidatePackages(packageRoots) {
+  if (pureRegistry) return [];
   if (!releaseCandidateMatrix) {
     return packageRoots;
   }
@@ -136,6 +155,31 @@ function selectCandidatePackages(packageRoots) {
     }
   }
   return candidates;
+}
+
+function installCandidateCliRunner(candidateTarballs) {
+  const cliTarball = candidateTarballs.get('@mango/cli');
+  if (!cliTarball) throw new Error('Candidate CLI tarball is missing');
+  const runnerRoot = join(runtimeRoot, 'candidate-cli');
+  mkdirSync(runnerRoot, { recursive: true });
+  writeJson(join(runnerRoot, 'package.json'), {
+    name: 'mango-candidate-cli-consumer-runner',
+    private: true,
+    packageManager: governedPackageManager,
+    dependencies: { '@mango/cli': `file:${cliTarball}` },
+  });
+  const pmoTarball = candidateTarballs.get('@mango/pmo');
+  writeFileSync(
+    join(runnerRoot, 'pnpm-workspace.yaml'),
+    ['packages:', '  - .', ...(pmoTarball ? ['overrides:', `  "@mango/pmo": "file:${pmoTarball}"`] : []), ''].join(
+      '\n',
+    ),
+  );
+  writeFileSync(join(runnerRoot, '.npmrc'), `registry=${registry}\n`);
+  run(pnpmCommand, ['install', `--registry=${registry}`], { cwd: runnerRoot });
+  const candidateCli = join(runnerRoot, 'node_modules/@mango/cli/src/index.mjs');
+  if (!existsSync(candidateCli)) throw new Error(`Candidate Mango CLI entry not found: ${candidateCli}`);
+  return candidateCli;
 }
 
 function installPublishedCliRunner() {
@@ -202,7 +246,7 @@ function listTypedPackedPackages() {
 }
 
 function toPackageRelativePath(fromRoot, targetPath) {
-  return relative(fromRoot, targetPath).split('\\').join('/');
+  return toCanonicalRelativePath(fromRoot, targetPath);
 }
 
 function applyTarballMappings(frontendRoot, mappings) {
@@ -331,17 +375,24 @@ try {
     throw new Error(`Mango CLI source not found: ${sourceCli}`);
   }
   mkdirSync(projectRoot, { recursive: true });
+  if (candidateDirectory && !existsSync(candidateDirectory)) {
+    throw new Error(`Candidate tarball directory does not exist: ${candidateDirectory}`);
+  }
   mkdirSync(packageStore, { recursive: true });
 
   const packablePackages = listPackableMangoPackages();
-  const candidatePackages = selectCandidatePackages(packablePackages);
-  const candidatePackageNames = new Set(
-    candidatePackages.map((packageRoot) => readJson(join(packageRoot, 'package.json')).name),
-  );
-  const cli =
-    releaseCandidateMatrix && !candidatePackageNames.has('@mango/cli') ? installPublishedCliRunner() : sourceCli;
+  const candidateTarballs = candidateDirectory ? packedPackageIndex() : new Map();
+  const candidatePackages = candidateDirectory ? [] : selectCandidatePackages(packablePackages);
+  const candidatePackageNames = candidateDirectory
+    ? new Set(candidateTarballs.keys())
+    : new Set(candidatePackages.map((packageRoot) => readJson(join(packageRoot, 'package.json')).name));
+  const cli = candidatePackageNames.has('@mango/cli')
+    ? installCandidateCliRunner(candidateTarballs)
+    : releaseCandidateMatrix
+      ? installPublishedCliRunner()
+      : sourceCli;
 
-  if (!reuseBuild) {
+  if (!reuseBuild && !candidateDirectory) {
     console.log('Generating package styles before packing');
     run(pnpmCommand, ['admin:styles']);
 
@@ -364,7 +415,7 @@ try {
     console.log('Reusing existing package build outputs for consumer typecheck');
   }
 
-  if (!releaseCandidateMatrix || candidatePackages.length > 0) {
+  if (!candidateDirectory && (!releaseCandidateMatrix || candidatePackages.length > 0)) {
     console.log('Checking Mango package exports before packing');
     run(pnpmCommand, ['package-exports:check']);
 
@@ -376,8 +427,10 @@ try {
         cwd: packageRoot,
       });
     }
-  } else {
+  } else if (!candidateDirectory) {
     console.log('All locked Mango versions already exist; testing the pure consume-registry matrix');
+  } else {
+    console.log(`Using ${candidateTarballs.size} prebuilt candidate tarball(s) from ${candidateDirectory}`);
   }
 
   console.log('Generating temporary Mango business frontend consumer');

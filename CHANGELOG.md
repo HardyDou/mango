@@ -10,47 +10,94 @@
 
 - This change is delivered by the Mango Maven `mango-file-preview-engine` artifact. Include it in the next Mango Maven release and upgrade backend consumers as one aligned Maven matrix. No standalone `@mango/file` npm release is required for this capability.
 
-## v2026.08.14-admin-shell-1.0.60-admin-1.0.66-cli-1.0.107-compat-release - 2026-08-14
+## v2026.08.15-pmo-1.3.15-job-1.0.27-admin-shell-1.0.60-admin-1.0.66-cli-1.0.107-local-first-release - 2026-08-15
 
-Status: `PENDING`. This npm-only compatibility patch replaces the broken Admin release tuple with new immutable coordinates. Mango Maven remains `1.0.36`, `@mango/common` remains `1.0.26`, and `@mango/pmo` remains `1.3.14`.
+Status: `PENDING`. This npm-only batch replaces the broken Admin tuple, includes the subsequently merged Job pagination fix, and introduces the local-first Mango release workflow. Mango Maven remains `1.0.36` and `@mango/common` remains `1.0.26`.
+
+### Pull Requests
+
+- [PR #792](https://github.com/HardyDou/mango/pull/792) Fixed the Admin release compatibility regression. Packages: `@mango/admin-shell@1.0.60`, `@mango/admin@1.0.66`. Business Adaptation: aggregated consumers upgrade Admin; direct consumers align Admin Shell while keeping Common `1.0.26`.
+- [PR #795](https://github.com/HardyDou/mango/pull/795) Fixed Job management-list pagination and CLI cross-platform command handling. Packages: `@mango/job@1.0.27`, `@mango/cli@1.0.107`. Business Adaptation: Job consumers verify totals, page number, page size and navigation; CLI consumers use the project-pinned `1.0.107` path.
+- [PR #796](https://github.com/HardyDou/mango/pull/796) Added the local-first Mango component release flow and shared PR submission flow. Packages: `@mango/pmo@1.3.15`, `@mango/cli@1.0.107`. Business Adaptation: business repositories upgrade PMO, use `mango-submit-pr`, remove the PMO-managed project copy of `mango-release`, and retain their own business release/deployment process.
 
 ### Fixed
 
 - Fix [Issue #791](https://github.com/HardyDou/mango/issues/791): `@mango/admin-shell@1.0.59` imported `resolveActiveMenuPath` from the already-published `@mango/common@1.0.26`, whose tarball does not export that symbol, so a clean Admin production build failed.
 - Keep active parent-menu selection inside Admin Shell, restore the Common menu-tree source to the exact `1.0.26` release baseline, and leave all existing immutable package versions unchanged.
 - Add a release-candidate consumer matrix: unpublished candidate packages use local tarballs while unchanged packages and the published CLI resolve from the consume registry. After the CLI is published, the same gate verifies a pure consume-registry install, typecheck and production build.
+- Replace the manual package list and seventeen-state adapter workflow with Changesets intent, Git impact reconciliation, dependency/CLI closure, a machine-generated plan and one set of SHA-256 sealed artifacts. Tag and GitHub Release now wait for pure consume-registry verification.
+- Keep Maven in the same release owner: production-source impact requires an explicit Maven target, automatically advances the CLI matrix, deploys the non-app reactor once into a sealed local repository, and publishes or repairs only the recorded POM/JAR hashes.
+- Add repository-only `mango-release` distribution isolation and the shared `mango-submit-pr` submission Skill. Every required Runner check must have a local equivalent; Push and PR creation wait for a clean final-head local pass, and Runner is only an independent verification surface.
+- Preserve a local-only verified candidate as `superseded` audit evidence when the Release PR final HEAD changes, then rebuild the canonical candidate for the new commit/tree; candidates with remote writes remain immutable and cannot be replaced automatically.
+- Include Issue #43 / PR #795: restore Job list pagination totals, page-size propagation and page controls, plus the associated CLI cross-platform command compatibility changes merged before this release candidate was sealed.
 
 ### Versions
 
-| Component | Previous | Release | Compatibility |
-| --- | ---: | ---: | --- |
-| `@mango/admin-shell` | `1.0.59` | `1.0.60` | Keeps active-menu resolution private to the Shell and remains compatible with Common `1.0.26`. |
-| `@mango/admin` | `1.0.65` | `1.0.66` | Aggregates Admin Shell `1.0.60`; public Admin API and styles remain unchanged. |
-| `@mango/cli` | `1.0.106` | `1.0.107` | Locks the corrected Admin tuple and carries the unchanged PMO `1.3.14` and Maven `1.0.36` coordinates. |
-| `@mango/common` | `1.0.26` | unchanged | Not republished; source is restored to its released baseline. |
-| Other npm packages | current release matrix | unchanged | Not republished. |
+| Component            |               Previous |   Release | Compatibility                                                                                               |
+| -------------------- | ---------------------: | --------: | ----------------------------------------------------------------------------------------------------------- |
+| `@mango/admin-shell` |               `1.0.59` |  `1.0.60` | Keeps active-menu resolution private to the Shell and remains compatible with Common `1.0.26`.              |
+| `@mango/job`         |               `1.0.26` |  `1.0.27` | Restores complete pagination behavior on Job management lists.                                              |
+| `@mango/admin`       |               `1.0.65` |  `1.0.66` | Aggregates Admin Shell `1.0.60`; public Admin API and styles remain unchanged.                              |
+| `@mango/pmo`         |               `1.3.14` |  `1.3.15` | Delivers the canonical local-first release Skill and release artifact governance.                           |
+| `@mango/cli`         |              `1.0.106` | `1.0.107` | Locks the corrected Admin tuple and PMO `1.3.15`, and exposes `release plan/prepare/publish/status/repair`. |
+| `@mango/common`      |               `1.0.26` | unchanged | Not republished; source is restored to its released baseline.                                               |
+| Mango Maven          |               `1.0.36` | unchanged | This is an npm-only batch; no Maven coordinate is published.                                                |
+| Other npm packages   | current release matrix | unchanged | Not republished.                                                                                            |
 
 ### Published Packages
 
-| Order | Target | Version | Status |
-| ---: | --- | --- | --- |
-| 1 | `@mango/admin-shell` | `1.0.60` | `PENDING` publication and hosted/group verification. |
-| 2 | `@mango/admin` | `1.0.66` | `PENDING` after Admin Shell verification. |
-| 3 | `@mango/cli` | `1.0.107` | `PENDING` after the corrected Admin matrix is available. |
-| 4 | Immutable tag and GitHub Release | `v2026.08.14-admin-shell-1.0.60-admin-1.0.66-cli-1.0.107-compat-release` | `PENDING`. |
-| 5 | Latest documentation | Pages | `PENDING`; npm-only release does not create a Maven documentation snapshot. |
+| Order | Target                           | Version                                                                                             | Status                                                                      |
+| ----: | -------------------------------- | --------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+|     1 | `@mango/job`                     | `1.0.27`                                                                                            | `PENDING` publication and hosted/group verification.                        |
+|     2 | `@mango/admin-shell`             | `1.0.60`                                                                                            | `PENDING` publication and hosted/group verification.                        |
+|     3 | `@mango/admin`                   | `1.0.66`                                                                                            | `PENDING` after Job and Admin Shell verification.                           |
+|     4 | `@mango/pmo`                     | `1.3.15`                                                                                            | `PENDING` canonical release workflow bundle.                                |
+|     5 | `@mango/cli`                     | `1.0.107`                                                                                           | `PENDING` after the corrected Job, Admin and PMO matrix is available.       |
+|     6 | Immutable tag and GitHub Release | `v2026.08.15-pmo-1.3.15-job-1.0.27-admin-shell-1.0.60-admin-1.0.66-cli-1.0.107-local-first-release` | `PENDING` until pure consume-registry verification passes.                  |
+|     7 | Latest documentation             | Pages                                                                                               | `PENDING`; npm-only release does not create a Maven documentation snapshot. |
+
+### Business Impact
+
+- Aggregated Admin consumers upgrade `@mango/admin` to `1.0.66`; direct or modular consumers align the complete CLI matrix, especially Job `1.0.27`, Admin Shell `1.0.60` and Admin `1.0.66`.
+- Job users regain correct totals, page number, page size and navigation on the definition, instance, Worker and alarm-rule lists. API URLs, permissions, tenants, menus, database schema and runtime configuration do not change.
+- PMO upgrades install `mango-submit-pr` and remove any PMO-managed business-project copy of `mango-release`. Business PR, build, deployment and application-release processes remain separate from the Mango component release state machine.
+- `@mango/common@1.0.26`, Mango Maven `1.0.36` and all other npm coordinates remain unchanged and are not republished.
+
+### Upgrade Estimate
+
+- Audience: owners of business repositories consuming Job, Admin/Admin Shell, or the PMO/CLI toolchain; repositories consuming none of these coordinates require no change.
+- Engineering Effort: approximately 0.5 person-day for an aggregated Admin consumer, 0.5 to 1 person-day for a direct or modular consumer, and 0.25 to 0.5 person-day for a PMO-only repository.
+- Execution Window: approximately 30 to 90 minutes for dependency and PMO changes plus 30 to 60 minutes for repository-specific typecheck, production build and focused acceptance; normal deployment-pipeline time is additional.
+- Service Downtime: no Mango-mandated downtime or database maintenance window; only the business system's normal redeployment window applies.
+- Rollback Effort: approximately 15 to 30 minutes to revert the business upgrade commit and lockfile, plus the repository's normal build and deployment-pipeline time.
+- Assumptions: the business repository has a clean dependency lock, no private package patch, consume-registry access and a repeatable build/deployment pipeline; custom forks or unrelated dependency conflicts require a separate estimate.
 
 ### Upgrade Notes
 
-1. Wait until Admin Shell `1.0.60`, Admin `1.0.66`, and CLI `1.0.107` all resolve from the company npm group registry.
-2. Install CLI `1.0.107` and apply its complete `release-versions.json` matrix; do not keep Admin Shell `1.0.59` or republish Common `1.0.26`.
-3. Keep Mango Maven at `1.0.36` and PMO at `1.3.14`. No API, database, menu, permission, tenant, or runtime configuration migration is required.
+1. Confirm `@mango/pmo@1.3.15` and `@mango/cli@1.0.107` resolve from the company npm group registry, then install the exact CLI `1.0.107`.
+2. Run `mango pmo status --project-dir .`, `mango pmo upgrade --project-dir . --to 1.3.15 --dry-run`, `mango pmo upgrade --project-dir . --to 1.3.15 --sync-shell`, and `mango pmo check --project-dir . --locked`.
+3. Aggregated Admin consumers upgrade `@mango/admin` to `1.0.66`; direct or modular consumers align their declared packages with the complete `release-versions.json` matrix.
+4. Keep `@mango/common@1.0.26` and Mango Maven `1.0.36`; do not republish either unchanged coordinate. No API, database, menu, permission, tenant, or runtime configuration migration is required.
 
 ### Verification
 
 - The old pure-registry tuple must reproduce the missing `resolveActiveMenuPath` export during the Admin Vite production build.
 - Admin Shell unit tests must cover parent-route ownership and sibling-prefix rejection; Common source must match its `1.0.26` release baseline.
-- Release-impact, CLI release lock, Admin styles, package exports, release-candidate mixed matrix, post-publish pure-registry matrix, PMO documentation gates, and required checks must pass before publication is complete.
+- Job API and view tests must cover backend totals, page/size forwarding, page-size changes and all affected management list pagination controls.
+- Changeset/Git impact, machine plan, CLI release lock, Admin styles, package exports, sealed release-candidate matrix, post-publish pure-registry matrix, PMO package/document gates, Runner classification and required checks must pass before publication is complete.
+- The single `pnpm -C mango-ui release:local-check -- --base=origin/main --head=HEAD` entry must reproduce the applicable PMO, CLI, frontend, release-plan, projection, workspace and capability-document Runner checks locally before the Release PR is pushed.
+
+### Rollback
+
+1. Revert the business repository dependency/PMO upgrade commit and lockfile, then rebuild and redeploy through that repository's normal pipeline.
+2. For PMO state, run `mango pmo rollback --project-dir . --dry-run`, review the managed changes, then run the rollback and the locked PMO check.
+3. Do not change the database or Maven version; this npm-only batch has no corresponding migration.
+4. Never delete, overwrite or republish an immutable npm coordinate. An artifact defect requires a new patch version and release batch.
+
+### Audit History
+
+- PR #790 belongs to the earlier CLI `1.0.106` / PMO `1.3.14` release recovery and is not a new capability in this batch.
+- PR #793 was the superseded Admin release configuration; PR #796 and the one-time reconciliation record own the final batch scope.
 
 ## v2026.08.14-pmo-1.3.14-cli-1.0.106-historical-document-compat-release - 2026-08-14
 

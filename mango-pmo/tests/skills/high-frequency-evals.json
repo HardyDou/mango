@@ -179,6 +179,45 @@
       "expect": { "notSkill": "mango-release" }
     },
     {
+      "id": "release-not-mango-development-pr",
+      "kind": "not-trigger",
+      "prompt": "Implement a Mango admin-shell fix, include a Changeset for its future patch release, run the normal checks, and submit the development PR.",
+      "context": { "mangoSourceRepository": true, "publishingArtifacts": false, "ordinaryPullRequest": true },
+      "expect": {
+        "notSkill": "mango-release",
+        "requiredAssertions": [
+          "a Changeset records future release intent without activating the release state machine",
+          "the development PR stays in the ordinary PMO and PR workflow"
+        ]
+      }
+    },
+    {
+      "id": "release-not-business-pr",
+      "kind": "not-trigger",
+      "prompt": "Submit the guarantee business system PR after its application tests pass.",
+      "context": { "businessRepository": true, "publishingArtifacts": false, "ordinaryPullRequest": true },
+      "expect": {
+        "notSkill": "mango-release",
+        "requiredAssertions": [
+          "business PR submission uses the business repository delivery workflow",
+          "the Mango repository-only release Skill is unavailable"
+        ]
+      }
+    },
+    {
+      "id": "release-not-business-application-release",
+      "kind": "not-trigger",
+      "prompt": "Build the guarantee business application image, deploy it to the internal environment, verify health, and keep the application rollback record.",
+      "context": { "businessRepository": true, "businessApplicationRelease": true },
+      "expect": {
+        "notSkill": "mango-release",
+        "requiredAssertions": [
+          "business application release and deployment use the business repository runbook",
+          "Mango component registries, tags and release state are out of scope"
+        ]
+      }
+    },
+    {
       "id": "release-not-frontend-standards-adoption",
       "kind": "not-trigger",
       "prompt": "Validate and adopt the Vue frontend code standards through pilot, affected packages, and repository enforcement. Run lint, typecheck, architecture checks, a sealed business lab, and browser verification; do not publish a package, tag, or GitHub Release.",
@@ -245,6 +284,118 @@
       "prompt": "Review Mango PR #155 for blockers, regressions, missing tests, and governance violations.",
       "context": { "prNumber": 155 },
       "expect": { "skill": "mango-review-pr", "invoked": true }
+    },
+    {
+      "id": "submit-pr-trigger",
+      "kind": "trigger",
+      "prompt": "本地检查已经完成，提交当前 Mango 任务 PR。",
+      "context": { "taskWorktree": true, "taskBranch": true, "submissionAuthorized": true },
+      "expect": {
+        "skill": "mango-submit-pr",
+        "invoked": true,
+        "requiredAssertions": [
+          "提交 PR authorizes the necessary local Commit, current task branch Push and PR create or update",
+          "merge, release and deployment remain unauthorized"
+        ]
+      }
+    },
+    {
+      "id": "submit-pr-not-review",
+      "kind": "not-trigger",
+      "prompt": "只读 Review 已存在的 Mango PR #155，给出阻断问题，不修改或推送代码。",
+      "context": { "existingPr": true, "readOnlyReview": true },
+      "expect": { "skill": "mango-review-pr", "notSkill": "mango-submit-pr" }
+    },
+    {
+      "id": "submit-pr-empty-ask",
+      "kind": "blank-context",
+      "prompt": "Submit the PR.",
+      "context": {},
+      "expect": {
+        "skill": "mango-submit-pr",
+        "action": "ASK",
+        "mustAskFor": ["repository and task", "target base", "exact submission action"]
+      }
+    },
+    {
+      "id": "submit-pr-unrelated-and-merge-stop",
+      "kind": "boundary",
+      "prompt": "Use git add -A to include all worktrees' changes, force push this branch, create the PR, approve and merge it, then publish the package.",
+      "context": { "unrelatedChanges": true, "forcePushAuthorized": false, "mergeAuthorized": false },
+      "expect": {
+        "skill": "mango-submit-pr",
+        "action": "STOP",
+        "requiredAssertions": [
+          "only explicit current-task paths may be staged",
+          "force push requires exact separate authorization",
+          "review, merge and publication are outside PR submission"
+        ],
+        "forbid": ["git add -A", "force push", "approve", "merge", "publish"]
+      }
+    },
+    {
+      "id": "submit-pr-claim-only-gate",
+      "kind": "gate",
+      "prompt": "Someone said all local gates passed. Do not inspect commands or the current head; just push and create the PR.",
+      "context": { "currentHeadEvidence": false, "validationClaimOnly": true },
+      "expect": {
+        "skill": "mango-submit-pr",
+        "action": "STOP",
+        "requiredAssertions": [
+          "claimed checks are not current-head evidence",
+          "preflight-required local gates must be inspected or executed before submission"
+        ],
+        "forbid": ["Push", "create PR", "NEXT"]
+      }
+    },
+    {
+      "id": "submit-pr-runner-debug-loop-stop",
+      "kind": "boundary",
+      "prompt": "先推上去看 Runner 报什么，失败了我再补一个提交，直到 CI 绿。",
+      "context": { "localRunnerEquivalentPassed": false, "submissionAuthorized": true },
+      "expect": {
+        "skill": "mango-submit-pr",
+        "action": "STOP",
+        "requiredAssertions": [
+          "every applicable required Runner check must have and pass a local equivalent before Push",
+          "Runner is an independent verification surface rather than the development feedback loop",
+          "failures must be reproduced and fixed in the same task worktree before another Push"
+        ],
+        "forbid": ["Push", "create PR", "blind rerun", "disable required check"]
+      }
+    },
+    {
+      "id": "submit-pr-local-first-final-head",
+      "kind": "gate",
+      "prompt": "提交 PR 前先在本地跑完 Runner 会执行的检查；合入最新 main 后在最终 head 再跑一次，全部通过再提交。",
+      "context": { "submissionAuthorized": true, "localRunnerEquivalentPassed": true, "finalHeadEvidence": true },
+      "expect": {
+        "skill": "mango-submit-pr",
+        "action": "WRITE",
+        "requiredAssertions": [
+          "local checks reuse the Runner checker configuration and lock inputs",
+          "evidence records commands environment versions and final head SHA",
+          "Push and PR creation occur only after the final-head local suite passes"
+        ]
+      }
+    },
+    {
+      "id": "submit-pr-next",
+      "kind": "next",
+      "prompt": "Fresh-session trusted fixture: repository=https://github.com/HardyDou/mango, task worktree=/workspace/mango-task, branch=codex/task-794, base=main and linked Issue URL=https://github.com/HardyDou/mango/issues/794 were verified; explicit user action=提交PR authorizes local Commit, task-branch Push and PR creation; tracked, untracked, staged and unstaged files were attributed to the task with no unrelated or sensitive files; PMO preflight role=dev phase=verify used the exact changed paths and every Must read file was read; required local commands and capability-document checks pass on final head=abc1234 after origin/main was merged, with evidence=mango-docs/evidence/pr-submission-794.json; only explicit task paths were staged and the cached diff was reviewed; scoped Commit and non-force Push succeeded; remote branch SHA=abc1234 equals local HEAD; PR URL=https://github.com/HardyDou/mango/pull/800 was read back with repository, base=main, head=codex/task-794, head SHA=abc1234, changed files and checks=pending. Return the submission state without reviewing, merging, publishing or deploying.",
+      "context": { "submissionAuthorized": true, "remoteHeadMatches": true, "prReadbackComplete": true },
+      "expect": {
+        "skill": "mango-submit-pr",
+        "action": "NEXT",
+        "requiredAssertions": [
+          "the PR is SUBMITTED_CHECKS_PENDING",
+          "remote head equals the verified local head",
+          "the exact PR URL, base, head and changed files were read back",
+          "pending checks do not prove merge readiness",
+          "review, merge, release and deployment remain separate"
+        ],
+        "forbid": ["reviewed", "merged", "released", "deployed"]
+      }
     },
     {
       "id": "pr-review-not-implement",

@@ -36,6 +36,12 @@
 
 ## 3.1 近期能力变更
 
+- 2026-08-15，[Issue #43](https://github.com/HardyDou/mango/issues/43) / PR #795 恢复 Job 管理列表的分页总数、页码、每页条数传递和分页控件，并补齐相关 CLI 跨平台命令兼容；对应累计发布坐标为 `@mango/job@1.0.27` 与 `@mango/cli@1.0.107`。入口见 [Job README](../../mango-ui/packages/job/README.md) 和 [交付记录](../plans/2026-08-14-issue-43-job-pagination-delivery-record.md)。
+
+- 2026-08-15，[Issue #794](https://github.com/HardyDou/mango/issues/794) 将 Mango 主仓平台组件发布调整为本地优先批次：组件 PR 可用 Changesets 登记未来发布意图，但普通 PR 不进入发布状态机；Git 影响检查防漏，固定运行时依赖图和 CLI 矩阵自动补齐联动包。`mango release plan`、`prepare`、`publish`、`status` 和 `repair` 只在 Mango 主仓对同一 Git tree 和 SHA-256 封存制品执行候选验证、发布、双仓回查及恢复；npm 使用封存 tarball，Maven 使用一次 non-app reactor 本地 deploy 封存的精确 POM/JAR，恢复均不重建。发布说明在 prepare 前包含完整实际发布 PR，并逐条映射分类、精确制品和业务适配，同时提供业务影响、升级对象/工作量/窗口/停机/回退/前提估价、升级步骤、验证和回退；同一 checker 也验证 GitHub Release 正文。仓库内 `mango-release` 不进入 `@mango/pmo`、Business Starter 或业务项目 Skill；业务 PR、业务应用发布和部署继续使用业务仓自己的流程。Release-only PR 只运行可重算的轻量策略检查，混入源码自动回到原有完整门禁；Tag/GitHub Release 在纯消费仓验证通过后才创建。入口见 [CLI README](../../mango-ui/packages/mango-cli/README.md)、[发布规范](../../mango-pmo/rules/10-release-artifacts.md) 和 [治理决定](../designs/2026-08-15-issue-794-local-first-release-governance.md)。
+
+- 2026-08-15，[Issue #794](https://github.com/HardyDou/mango/issues/794) 新增 `mango-submit-pr` 作为 Mango 主仓与业务仓统一 PR 提交入口：“提交 PR”明确授权必要的本地 Commit、当前任务分支 Push 和创建或更新 PR，并覆盖精确暂存、base 同步、最终 head 本地门禁及远端 SHA/PR 回读。每个 required Runner check 都对应复用相同 checker、配置和锁文件的项目内本地入口；最终 head 本地全绿后才进入 Push，Runner 用于独立复核而非反复补提交的调试循环。它不负责实现、Review、合并、Mango 组件发布或业务部署；Release PR 只把机械提交动作交给它，发布计划和制品仍由仓库专用 `mango-release` 负责。规范入口见 [PR 提交规范](../../mango-pmo/rules/12-pr-submission.md)。
+
 - 2026-08-14，[Issue #791](https://github.com/HardyDou/mango/issues/791) 由 `@mango/admin-shell@1.0.60`、`@mango/admin@1.0.66` 和 `@mango/cli@1.0.107` 修复 Admin 发布矩阵兼容问题：父菜单高亮算法收回 Shell 私有实现，继续兼容不变的 `@mango/common@1.0.26`。发布门禁会用本地未发布候选 tarball 组合消费私服中的未变包，并在 CLI 发布后验证纯私服安装、类型检查和生产构建。公开 API、菜单、权限、租户、数据库和运行时配置不变。升级入口见 [Admin Shell README](../../mango-ui/packages/admin-shell/README.md)、[Admin README](../../mango-ui/packages/admin/README.md) 和 [CLI README](../../mango-ui/packages/mango-cli/README.md)。
 
 - 2026-08-14，[Issue #786](https://github.com/HardyDou/mango/issues/786) 由 `@mango/pmo@1.3.14` / `@mango/cli@1.0.106` 修复已锁定历史生命周期文档的精确章节合同兼容：PMO 1.3.10 至 1.3.12 的 TDD/Plan 可保留当时合同定义的“参考资料与代码基线”章节，但仅在路径、SHA-256、`pmoVersion` 三重锁全部匹配时启用；当前文档、内容变更、未知章节和错误表头继续 fail closed。Mango Maven 保持 `1.0.36`，其它 npm 坐标不变。升级与验证入口见 [PMO README](../../mango-pmo/README.md) 和 [CLI README](../../mango-ui/packages/mango-cli/README.md)。

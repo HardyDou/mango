@@ -1,5 +1,61 @@
 # Mango PMO Changelog
 
+## 1.3.15 - 2026-08-15
+
+### Pull Requests
+
+- [PR #796](https://github.com/HardyDou/mango/pull/796) Changed Mango component release and shared PR submission governance. Packages: `@mango/pmo@1.3.15`, `@mango/cli@1.0.107`. Business Adaptation: business repositories upgrade PMO, receive `mango-submit-pr`, and remove the PMO-managed project copy of repository-only `mango-release`.
+
+### Changed
+
+- Replace manual multi-package release lists and the seventeen-state adapter workflow with Changesets intent, Git impact reconciliation, dependency closure and a machine-generated release plan.
+- Require one local `prepare` build whose exact source archive and npm tarballs are sealed by SHA-256, reused for mixed candidate verification, publication and recovery.
+- Move Tag and GitHub Release creation after pure consume-registry verification; hosted/group propagation delay now enters `VERIFY_PENDING` without republishing.
+- Keep the stable frontend required check identity while allowing machine-generated Release PRs to run a lightweight, reproducible plan check and routing any source-bearing PR back to the normal gate.
+- Mark `mango-release` as repository-only so PMO packaging and business upgrades remove the old project copy, and add `mango-submit-pr` for Mango and business task PR Commit/Push/create/readback without Review, merge, release or deployment authority.
+- Require local equivalents for every applicable Runner check and a final-head local pass before Push; Runner failures return to the same worktree and cannot become a speculative commit loop.
+- Preserve Maven/JAR releases in the same local-first owner through explicit Git-impact version planning, one local repository deploy, exact POM/JAR sealing, dual-registry hash checks and resumable publication.
+- Require release notes to map the complete actual PR set to change category, exact packages and business adaptation, and to provide business impact, a structured upgrade estimate, verification and rollback before prepare.
+
+### Versions
+
+- `@mango/pmo` advances from `1.3.14` to `1.3.15`; exact dependent CLI advances from `1.0.106` to `1.0.107`.
+- Mango Maven remains `1.0.36`; PMO governance does not cause unrelated runtime package publication.
+
+### Published Packages
+
+- The full batch publishes PMO `1.3.15` before CLI `1.0.107`, after the corrected Job/Admin packages. Repository-only `mango-release` source is not projected as a business-project Skill.
+
+### Business Impact
+
+- Business repositories gain local-first PR submission governance but do not gain Mango component release authority. Existing business PR, build, deployment and application-release processes remain unchanged.
+- The PMO upgrade changes managed rules, Skills and templates only; it does not change APIs, databases, menus, permissions, tenants, Maven coordinates or application runtime configuration.
+
+### Upgrade Estimate
+
+- Audience: business repositories upgrading their PMO baseline to `1.3.15`.
+- Engineering Effort: approximately 0.25 to 0.5 person-day per repository before any separate runtime-package upgrade.
+- Execution Window: approximately 30 to 60 minutes for dry-run, review, upgrade and locked check.
+- Service Downtime: none; PMO is development governance and does not run in the business application.
+- Rollback Effort: approximately 15 to 30 minutes using the validated PMO backup and locked check.
+- Assumptions: the repository has no unreviewed edits to PMO-managed files and uses a supported prior PMO bundle.
+
+### Upgrade Notes
+
+1. Install `@mango/cli@1.0.107` after `@mango/pmo@1.3.15` and the complete Admin tuple resolve from the company consume registry.
+2. Run `mango pmo upgrade --project-dir . --to 1.3.15 --dry-run`, review the release governance update, then apply it and run the locked PMO check.
+3. Mango Maven remains `1.0.36`; no API, database, menu, permission, tenant or application runtime migration is required.
+
+### Verification
+
+- Release scope, plan digest, npm/Maven topology, legacy reconciliation and closeout baseline, Runner classification and five-state CLI tests.
+- PMO document contract, package projection, CLI full test, sealed candidate consumer and pure consume-registry consumer.
+- `mango-submit-pr` trigger, non-trigger, empty-context, final-head, Runner-debug-loop and authorization-boundary evals.
+
+### Rollback
+
+- Run `mango pmo rollback --project-dir . --dry-run`, review managed changes, apply the rollback and rerun `mango pmo check --project-dir . --locked`; revert any accompanying dependency commit separately and never overwrite a published PMO coordinate.
+
 ## 1.3.14 - 2026-08-14
 
 ### Fixed

@@ -31,7 +31,6 @@ const sourceRoots = [
   { path: 'templates', required: true },
   { path: 'contracts', required: true },
   { path: 'tools', required: true },
-  { path: 'skills', required: true },
 ];
 
 if (!existsSync(sourceRoot)) {
@@ -53,6 +52,7 @@ for (const root of sourceRoots) {
   }
   copyTree(source, join(baselineRoot, root.path));
 }
+copyProjectSkills(join(sourceRoot, 'skills'), join(baselineRoot, 'skills'));
 copyRegularFile(join(sourceRoot, 'README.md'), join(baselineRoot, 'README.md'));
 
 if (!existsSync(pluginSourceRoot)) {
@@ -127,6 +127,45 @@ function copyTree(source, target) {
     }
     copyRegularFile(sourcePath, targetPath);
   }
+}
+
+function copyProjectSkills(source, target) {
+  if (!existsSync(source)) {
+    throw new Error(`required PMO source directory missing: ${source}`);
+  }
+  mkdirSync(target, { recursive: true });
+  const entries = readdirSync(source, { withFileTypes: true }).sort((left, right) =>
+    compareText(left.name, right.name),
+  );
+  for (const entry of entries) {
+    const sourcePath = join(source, entry.name);
+    if (!entry.isDirectory()) {
+      throw new Error(`PMO skills root may contain only Skill directories: ${sourcePath}`);
+    }
+    const distribution = readSkillDistribution(sourcePath);
+    if (distribution === 'repository-only') {
+      continue;
+    }
+    copyTree(sourcePath, join(target, entry.name));
+  }
+}
+
+function readSkillDistribution(skillRoot) {
+  const skillPath = join(skillRoot, 'SKILL.md');
+  if (!existsSync(skillPath)) {
+    throw new Error(`PMO Skill is missing SKILL.md: ${skillRoot}`);
+  }
+  const content = readFileSync(skillPath, 'utf8');
+  const frontmatter = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/u.exec(content);
+  if (!frontmatter) {
+    throw new Error(`PMO Skill is missing YAML frontmatter: ${skillPath}`);
+  }
+  const match = /^distribution:\s*([a-z-]+)\s*$/mu.exec(frontmatter[1]);
+  const distribution = match?.[1] || 'project';
+  if (!['project', 'repository-only'].includes(distribution)) {
+    throw new Error(`unsupported PMO Skill distribution ${distribution}: ${skillPath}`);
+  }
+  return distribution;
 }
 
 function copyRegularFile(source, target) {

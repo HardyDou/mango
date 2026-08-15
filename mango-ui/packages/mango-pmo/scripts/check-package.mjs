@@ -7,6 +7,7 @@ import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 
 const packageRoot = resolve(fileURLToPath(new URL('..', import.meta.url)));
+const sourceSkillsRoot = resolve(packageRoot, '../../../mango-pmo/skills');
 const distRoot = join(packageRoot, 'dist');
 const baselineRoot = join(distRoot, 'baseline');
 const manifestPath = join(distRoot, 'baseline.json');
@@ -16,6 +17,7 @@ const requiredFiles = [
   'README.md',
   'rules/03-ai-coding-redlines.md',
   'rules/index.json',
+  'rules/12-pr-submission.md',
   'agents/03-dev-agent.md',
   'agents/05-pmo-agent.md',
   'tools/pmo-preflight.mjs',
@@ -39,6 +41,7 @@ const requiredFiles = [
   'skills/mango-requirements-system/SKILL.md',
   'skills/mango-design-technical/SKILL.md',
   'skills/mango-plan-implementation/SKILL.md',
+  'skills/mango-submit-pr/SKILL.md',
 ];
 
 if (!existsSync(manifestPath)) {
@@ -100,6 +103,7 @@ for (const file of manifest.files) {
 validateContracts(manifest, manifestFiles);
 validatePullRequestTemplate(manifest);
 validatePluginProjection(manifest, manifestFiles);
+validateRepositoryOnlySkillsExcluded(manifest, manifestFiles);
 validatePublishExecutableFiles(manifest);
 const expectedBundleSha = sha256(
   Buffer.from(
@@ -236,6 +240,42 @@ function validatePluginProjection(value, baselineFiles) {
     const projected = files.get(path);
     if (!projected || projected.sha256 !== file.sha256 || projected.size !== file.size) {
       throw new Error(`Codex plugin skill projection differs from baseline: ${path}`);
+    }
+  }
+}
+
+function validateRepositoryOnlySkillsExcluded(value, baselineFiles) {
+  for (const entry of readdirSync(sourceSkillsRoot, { withFileTypes: true }).sort((left, right) =>
+    compareText(left.name, right.name),
+  )) {
+    if (!entry.isDirectory()) {
+      throw new Error(`PMO skills root may contain only Skill directories: ${entry.name}`);
+    }
+    const skillPath = join(sourceSkillsRoot, entry.name, 'SKILL.md');
+    if (!existsSync(skillPath)) {
+      throw new Error(`PMO Skill is missing SKILL.md: ${entry.name}`);
+    }
+    const content = readFileSync(skillPath, 'utf8');
+    const frontmatter = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/u.exec(content);
+    if (!frontmatter) {
+      throw new Error(`PMO Skill is missing YAML frontmatter: ${entry.name}`);
+    }
+    const distribution = /^distribution:\s*([a-z-]+)\s*$/mu.exec(frontmatter[1])?.[1] || 'project';
+    if (!['project', 'repository-only'].includes(distribution)) {
+      throw new Error(`unsupported PMO Skill distribution ${distribution}: ${entry.name}`);
+    }
+    if (distribution !== 'repository-only') {
+      continue;
+    }
+    const prefix = `skills/${entry.name}/`;
+    if ([...baselineFiles.keys()].some((path) => path.startsWith(prefix))) {
+      throw new Error(`repository-only PMO Skill leaked into baseline: ${entry.name}`);
+    }
+    if ((value.plugin.files || []).some((file) => file.path.startsWith(prefix))) {
+      throw new Error(`repository-only PMO Skill leaked into plugin projection: ${entry.name}`);
+    }
+    if (existsSync(join(packageRoot, 'skills', entry.name))) {
+      throw new Error(`repository-only PMO Skill leaked into package root: ${entry.name}`);
     }
   }
 }

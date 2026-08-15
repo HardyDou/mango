@@ -47,6 +47,58 @@ test('PMO bundle install, locked repair, stale cleanup, and rollback', () => {
     assert.equal(lock.contracts.length, manifest.contracts.length);
     assert.ok(skillState.roots.includes('mango-pmo-lifecycle'));
     assert.ok(existsSync(join(projectRoot, '.agents/skills/mango-pmo-lifecycle/SKILL.md')));
+    assert.equal(skillState.roots.includes('mango-release'), false);
+    assert.equal(existsSync(join(projectRoot, '.agents/skills/mango-release')), false);
+    assert.equal(existsSync(join(projectRoot, 'business-pmo/mango-baseline/skills/mango-release')), false);
+
+    const legacyReleaseSkillContent = readFileSync(
+      resolve(cliRoot, '../../../mango-pmo/skills/mango-release/SKILL.md'),
+      'utf8',
+    );
+    const legacyReleaseBaselinePath = join(projectRoot, 'business-pmo/mango-baseline/skills/mango-release/SKILL.md');
+    const legacyReleaseProjectPath = join(projectRoot, '.agents/skills/mango-release/SKILL.md');
+    mkdirSync(dirname(legacyReleaseBaselinePath), { recursive: true });
+    mkdirSync(dirname(legacyReleaseProjectPath), { recursive: true });
+    writeFileSync(legacyReleaseBaselinePath, legacyReleaseSkillContent);
+    writeFileSync(legacyReleaseProjectPath, legacyReleaseSkillContent);
+    const legacyReleaseManifest = readJson(manifestPath);
+    const legacyReleaseFile = {
+      path: 'skills/mango-release/SKILL.md',
+      sha256: createHash('sha256').update(legacyReleaseSkillContent).digest('hex'),
+      size: Buffer.byteLength(legacyReleaseSkillContent),
+      kind: 'skill',
+      mode: '0644',
+    };
+    legacyReleaseManifest.files.push(legacyReleaseFile);
+    legacyReleaseManifest.bundleSha256 = createHash('sha256')
+      .update(
+        JSON.stringify({
+          files: legacyReleaseManifest.files,
+          contracts: legacyReleaseManifest.contracts,
+          plugin: legacyReleaseManifest.plugin ?? null,
+        }),
+      )
+      .digest('hex');
+    writeFileSync(manifestPath, `${JSON.stringify(legacyReleaseManifest, null, 2)}\n`);
+    const legacyReleaseLock = readJson(lockPath);
+    legacyReleaseLock.bundleSha256 = legacyReleaseManifest.bundleSha256;
+    writeFileSync(lockPath, `${JSON.stringify(legacyReleaseLock, null, 2)}\n`);
+    const legacyReleaseState = readJson(skillStatePath);
+    legacyReleaseState.bundleSha256 = legacyReleaseManifest.bundleSha256;
+    legacyReleaseState.roots.push('mango-release');
+    legacyReleaseState.roots.sort();
+    legacyReleaseState.files.push({
+      path: 'mango-release/SKILL.md',
+      sha256: legacyReleaseFile.sha256,
+      size: legacyReleaseFile.size,
+      mode: legacyReleaseFile.mode,
+    });
+    legacyReleaseState.files.sort((left, right) => left.path.localeCompare(right.path));
+    writeFileSync(skillStatePath, `${JSON.stringify(legacyReleaseState, null, 2)}\n`);
+    run([cli, 'pmo', 'upgrade', '--project-dir', projectRoot, '--to', manifest.packageVersion], projectRoot);
+    assert.equal(existsSync(legacyReleaseProjectPath), false);
+    assert.equal(existsSync(legacyReleaseBaselinePath), false);
+    assert.equal(readJson(skillStatePath).roots.includes('mango-release'), false);
 
     const legacyCodeTemplatePath = join(projectRoot, 'business-pmo/mango-baseline/code-templates/README.md');
     const legacyCodeTemplateContent = '# Legacy code templates\n';
