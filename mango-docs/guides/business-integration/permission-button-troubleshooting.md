@@ -282,3 +282,7 @@ pnpm -F @mango/admin-shell build
 ## 2026-08-06 个人中心前端制品发布影响
 
 - 本发布候选只把已实现的个人中心 section 注册逻辑纳入可消费 npm 制品并同步固定依赖，不新增或修改按钮 `permissionCode`、角色授权、登录态权限集合与后端接口鉴权。个人中心入口按当前登录用户能力展示，不通过业务按钮授权控制；若 `/profile` 内入口缺失，应核对 `@mango/auth`、`@mango/notice`、`@mango/system`、`@mango/admin-shell` 是否成组升级，而不是补写角色按钮权限。
+
+## 2026-08-15 Admin 兼容批次影响
+
+- `@mango/admin-shell@1.0.60`、`@mango/admin@1.0.66` 与 `@mango/cli@1.0.107` 只修复发布物组合兼容并同步完整版本矩阵；不新增或修改按钮 `permissionCode`、角色授权、登录态权限集合、后端接口鉴权、租户边界或本场景排障步骤。按钮异常仍按既有权限资源、角色授权和重新登录刷新权限集合的链路定位。

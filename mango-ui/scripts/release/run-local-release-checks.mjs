@@ -39,6 +39,19 @@ const assurance = parseKeyValues(
 
 const checks = [
   command('git', ['diff', '--check', base, head], repoRoot),
+  command(
+    'node',
+    [
+      'mango-ui/scripts/release/run-trusted-pr-contract-check.mjs',
+      '--base',
+      base,
+      '--head',
+      head,
+      '--pr-body',
+      prBodyPath,
+    ],
+    repoRoot,
+  ),
   command('node', ['mango-pmo/tools/assurance-ci-scope.mjs', '--body', prBodyPath], repoRoot),
   command('node', ['mango-pmo/tools/risk-verification.mjs'], repoRoot, { env: prBodyEnv }),
   command(
