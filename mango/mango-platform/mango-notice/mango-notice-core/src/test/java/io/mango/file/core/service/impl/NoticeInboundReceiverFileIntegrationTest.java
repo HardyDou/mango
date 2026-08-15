@@ -142,8 +142,16 @@ class NoticeInboundReceiverFileIntegrationTest {
                 .filter(Files::isRegularFile)
                 .findAny()).isPresent();
         assertThat(eventPublisher.events).singleElement().satisfies(event -> {
-            assertThat(event.getPayload()).containsEntry("fileIds", List.of(attachment.getFileId()));
-            assertThat(event.getPayload().toString()).doesNotContain("url", "http");
+            assertThat(event.getPayload())
+                    .containsOnlyKeys("messageId", "eventId", "channelType", "providerCode", "sourceMessageId", "status")
+                    .containsEntry("messageId", result.messageId())
+                    .containsEntry("eventId", result.eventId())
+                    .containsEntry("channelType", "EMAIL")
+                    .containsEntry("providerCode", "STANDARD_MAIL")
+                    .containsEntry("sourceMessageId", "mail-765")
+                    .containsEntry("status", "BROADCASTED")
+                    .doesNotContainKeys("subject", "fromAddress", "toAddresses", "fileIds", "bodyText", "bodyHtml",
+                            "attachments");
         });
     }
 

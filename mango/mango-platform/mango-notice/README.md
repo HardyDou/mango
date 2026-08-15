@@ -35,8 +35,10 @@
 
 接收能力归属 Notice 的 inbound core：渠道适配器只负责验真、解密或读取协议并产出
 `InboundNoticeMessage`，接收服务负责 Inbox 幂等、附件归档和广播。正式接收完成后发布
-`notice.message.received` 领域事件，下游服务按 `eventId` 幂等消费；事件 payload 包含轻量消息元数据
-和附件 `fileIds`，不包含正文、HTML、附件二进制、对象 URL、预签名地址或 Secret。
+`notice.message.received` 领域事件，下游服务按 `eventId` 幂等消费。事件 payload 严格只包含
+`messageId`、`eventId`、`channelType`、`providerCode`、`sourceMessageId` 和固定值
+`status=BROADCASTED`；不包含主题、收发件地址、正文、HTML、附件标识或附件内容。消费者需要正文或
+附件时，以 `messageId` 调用 Notice 入站详情查询，再通过返回的 `fileId` 使用 Mango File API 访问附件。
 
 首版邮箱账号按配置选择一种协议：IMAP（UIDVALIDITY + UID 游标）或 POP3（UIDL 游标）。
 网易 126/163 等服务要求 IMAP ID 客户端身份声明；配置邮箱账号时可选设置 `inboundClientName`，

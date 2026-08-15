@@ -199,12 +199,8 @@ public class NoticeInboundReceiverService implements NoticeInboundReceiver, INot
         if (entity.getStatus() != NoticeInboundMessageStatus.READY_TO_BROADCAST) {
             Require.rethrow(new InboundReceiveRetryableException("入站消息附件尚未全部保存"));
         }
-        List<Long> fileIds = attachmentMapper.selectList(new LambdaQueryWrapper<NoticeInboundAttachmentEntity>()
-                        .eq(NoticeInboundAttachmentEntity::getMessageId, messageId)
-                        .orderByAsc(NoticeInboundAttachmentEntity::getAttachmentIndex))
-                .stream().map(NoticeInboundAttachmentEntity::getFileId).toList();
         try {
-            domainEventPublisher.publish(event(entity, fileIds));
+            domainEventPublisher.publish(event(entity));
             transaction().executeWithoutResult(status -> messageMapper.update(null,
                     new LambdaUpdateWrapper<NoticeInboundMessageEntity>()
                             .eq(NoticeInboundMessageEntity::getId, messageId)
@@ -252,7 +248,7 @@ public class NoticeInboundReceiverService implements NoticeInboundReceiver, INot
         });
     }
 
-    private DomainEvent event(NoticeInboundMessageEntity entity, List<Long> fileIds) {
+    private DomainEvent event(NoticeInboundMessageEntity entity) {
         return DomainEvent.builder()
                 .eventId(entity.getEventId())
                 .eventType(EVENT_TYPE)
@@ -266,10 +262,7 @@ public class NoticeInboundReceiverService implements NoticeInboundReceiver, INot
                 .payload("channelType", entity.getChannelType().name())
                 .payload("providerCode", entity.getProviderCode())
                 .payload("sourceMessageId", entity.getMessageId())
-                .payload("subject", entity.getSubject())
-                .payload("fromAddress", entity.getFromAddress())
-                .payload("toAddresses", readJson(entity.getToAddressesJson()))
-                .payload("fileIds", fileIds)
+                .payload("status", NoticeInboundMessageStatus.BROADCASTED.name())
                 .build();
     }
 
@@ -447,15 +440,6 @@ public class NoticeInboundReceiverService implements NoticeInboundReceiver, INot
             return objectMapper.writeValueAsString(value);
         } catch (JsonProcessingException failure) {
             return Require.rethrow(new IllegalArgumentException("入站消息 JSON 无法序列化", failure));
-        }
-    }
-
-    private Object readJson(String value) {
-        try {
-            return objectMapper.readTree(value == null ? "[]" : value);
-        } catch (JsonProcessingException failure) {
-            log.warn("Inbound recipient JSON cannot be read: message={}", failure.getOriginalMessage());
-            return List.of();
         }
     }
 

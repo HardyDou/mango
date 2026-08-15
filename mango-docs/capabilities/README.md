@@ -36,6 +36,8 @@
 
 ## 3.1 近期能力变更
 
+- 2026-08-16，[Issue #798](https://github.com/HardyDou/mango/issues/798) 收窄 Notice 入站事件 `notice.message.received` 的公开 payload：仅保留 `messageId`、`eventId`、`channelType`、`providerCode`、`sourceMessageId` 和固定值 `status=BROADCASTED`，不再广播主题、收发件地址或附件 `fileIds`。正文与附件继续按 `messageId` 查询 Notice 入站详情，附件内容通过 Mango File API 访问。入口见 [Notice README](../../mango/mango-platform/mango-notice/README.md) 和 [STANDARD 交付记录](../plans/2026-08-16-issue-798-notice-event-contract-delivery-record.md)。
+
 - 2026-08-15，[Issue #43](https://github.com/HardyDou/mango/issues/43) / PR #795 恢复 Job 管理列表的分页总数、页码、每页条数传递和分页控件，并补齐相关 CLI 跨平台命令兼容；对应累计发布坐标为 `@mango/job@1.0.27` 与 `@mango/cli@1.0.107`。入口见 [Job README](../../mango-ui/packages/job/README.md) 和 [交付记录](../plans/2026-08-14-issue-43-job-pagination-delivery-record.md)。
 
 - 2026-08-15，[Issue #794](https://github.com/HardyDou/mango/issues/794) 将 Mango 主仓平台组件发布调整为本地优先批次：组件 PR 可用 Changesets 登记未来发布意图，但普通 PR 不进入发布状态机；Git 影响检查防漏，固定运行时依赖图和 CLI 矩阵自动补齐联动包。`mango release plan`、`prepare`、`publish`、`status` 和 `repair` 只在 Mango 主仓对同一 Git tree 和 SHA-256 封存制品执行候选验证、发布、双仓回查及恢复；npm 使用封存 tarball，Maven 使用一次 non-app reactor 本地 deploy 封存的精确 POM/JAR，恢复均不重建。发布说明在 prepare 前包含完整实际发布 PR，并逐条映射分类、精确制品和业务适配，同时提供业务影响、升级对象/工作量/窗口/停机/回退/前提估价、升级步骤、验证和回退；同一 checker 也验证 GitHub Release 正文。仓库内 `mango-release` 不进入 `@mango/pmo`、Business Starter 或业务项目 Skill；业务 PR、业务应用发布和部署继续使用业务仓自己的流程。Release-only PR 只运行可重算的轻量策略检查，混入源码自动回到原有完整门禁；Tag/GitHub Release 在纯消费仓验证通过后才创建。入口见 [CLI README](../../mango-ui/packages/mango-cli/README.md)、[发布规范](../../mango-pmo/rules/10-release-artifacts.md) 和 [治理决定](../designs/2026-08-15-issue-794-local-first-release-governance.md)。

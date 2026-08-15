@@ -95,7 +95,7 @@ class NoticeInboundReceiverServiceIntegrationTest {
     }
 
     @Test
-    void receivePersistsInboxStoresAttachmentAndBroadcastsStableFileId() {
+    void receivePersistsInboxStoresAttachmentAndBroadcastsMinimalEventContract() {
         InboundReceiveResultResponse result = receiver.receive(message("IT_765_SOURCE", "payload.txt"));
 
         NoticeInboundMessageEntity stored = messageMapper.selectById(result.messageId());
@@ -111,8 +111,7 @@ class NoticeInboundReceiverServiceIntegrationTest {
         assertThat(eventPublisher.events).singleElement().satisfies(event -> {
             assertThat(event.getEventType()).isEqualTo(NoticeInboundReceiverService.EVENT_TYPE);
             assertThat(event.getHeaders()).containsEntry("tenantId", "tenant-765");
-            assertThat(event.getPayload()).containsEntry("fileIds", List.of(9001L));
-            assertThat(event.getPayload().toString()).doesNotContain("url", "http");
+            assertBroadcastPayload(event, result.messageId(), result.eventId());
         });
         assertThat(MangoContextHolder.tenantId()).isEqualTo("public-default");
     }
@@ -173,6 +172,8 @@ class NoticeInboundReceiverServiceIntegrationTest {
         assertThat(broadcasted.getFailureCode()).isNull();
         assertThat(broadcasted.getFailureReason()).isNull();
         assertThat(broadcasted.getNextRetryAt()).isNull();
+        assertThat(eventPublisher.events).singleElement().satisfies(event ->
+                assertBroadcastPayload(event, failed.getId(), failed.getEventId()));
     }
 
     @Test
@@ -200,6 +201,19 @@ class NoticeInboundReceiverServiceIntegrationTest {
                 List.of(new InboundNoticeAttachmentRequest(
                         0, fileName, "text/plain", bytes.length, new ByteArrayInputStream(bytes))),
                 Instant.parse("2026-08-13T04:00:00Z"));
+    }
+
+    private void assertBroadcastPayload(DomainEvent event, Long messageId, String eventId) {
+        assertThat(event.getPayload())
+                .containsOnlyKeys("messageId", "eventId", "channelType", "providerCode", "sourceMessageId", "status")
+                .containsEntry("messageId", messageId)
+                .containsEntry("eventId", eventId)
+                .containsEntry("channelType", "EMAIL")
+                .containsEntry("providerCode", "STANDARD_MAIL")
+                .containsEntry("sourceMessageId", "message-765")
+                .containsEntry("status", "BROADCASTED")
+                .doesNotContainKeys("subject", "fromAddress", "toAddresses", "fileIds", "bodyText", "bodyHtml",
+                        "attachments");
     }
 
     private void resetSchema() {
