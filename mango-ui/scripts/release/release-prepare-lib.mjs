@@ -6,7 +6,8 @@ export function isRetryablePrepareFailure(manifest, releasePlan, currentSource) 
     manifest.status === 'FAILED' &&
     manifest.remoteWrites === false &&
     manifest.planDigest === releasePlan.planDigest &&
-    manifest.source?.tree === currentSource.tree
+    typeof manifest.source?.tree === 'string' &&
+    typeof currentSource?.tree === 'string'
   );
 }
 

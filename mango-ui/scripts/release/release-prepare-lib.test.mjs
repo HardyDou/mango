@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import test from 'node:test';
 import { archiveFailedPrepare, isRetryablePrepareFailure } from './release-prepare-lib.mjs';
 
-test('only a same-tree local prepare failure is retryable', () => {
+test('a same-plan local prepare failure without remote writes is retryable after a source fix', () => {
   const plan = { planDigest: 'plan-a' };
   const source = { tree: 'tree-a' };
   const failed = {
@@ -16,9 +16,10 @@ test('only a same-tree local prepare failure is retryable', () => {
     source: { tree: 'tree-a' },
   };
   assert.equal(isRetryablePrepareFailure(failed, plan, source), true);
+  assert.equal(isRetryablePrepareFailure({ ...failed, source: { tree: 'tree-b' } }, plan, source), true);
   assert.equal(isRetryablePrepareFailure({ ...failed, remoteWrites: true }, plan, source), false);
   assert.equal(isRetryablePrepareFailure({ ...failed, planDigest: 'plan-b' }, plan, source), false);
-  assert.equal(isRetryablePrepareFailure({ ...failed, source: { tree: 'tree-b' } }, plan, source), false);
+  assert.equal(isRetryablePrepareFailure({ ...failed, source: {} }, plan, source), false);
 });
 
 test('failed local prepare evidence is archived instead of overwritten', () => {
