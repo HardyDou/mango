@@ -24,6 +24,15 @@ test('source mixed into a release PR falls back to normal gates', () => {
   assert.deepEqual(result.disallowed, ['mango-ui/packages/admin/src/index.ts']);
 });
 
+test('release notes template governance uses normal gates', () => {
+  const result = classifyReleasePullRequest([
+    'mango-ui/.changeset/release-plan.json',
+    'mango-ui/.changeset/release-notes-template.md',
+  ]);
+  assert.equal(result.releaseOnly, false);
+  assert.deepEqual(result.disallowed, ['mango-ui/.changeset/release-notes-template.md']);
+});
+
 test('version-shaped changes without a machine plan are not release-only', () => {
   const result = classifyReleasePullRequest(['mango-ui/packages/admin/package.json']);
   assert.equal(result.releaseOnly, false);

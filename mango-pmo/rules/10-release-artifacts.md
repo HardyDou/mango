@@ -66,6 +66,8 @@
 
 ### 7.2 发布说明与收尾
 
-- **正向要求**：不可变动作前，平台 CHANGELOG 和 GitHub Release 预稿必须覆盖版本、发布制品、升级步骤和验证；GitHub Release 正文至少包含适用的 `Versions`、`Published Packages`、`Upgrade Notes`、`Verification`，并在发布适配器执行前通过同一 release-notes checker。结构化验证应解析 YAML/JSON/manifest 语义，禁止把引号、缩进等非契约格式写成发布成败条件。
+- **正向要求**：不可变动作前，平台 CHANGELOG、制品 changelog 和 GitHub Release 预稿必须从上次成功发布基线覆盖到候选的完整实际发布 PR；每个 PR 按 `Fixed`、`Added` 或 `Changed` 分类并映射精确发布包和业务适配。被取代、恢复或仅供审计的 PR 必须单独标记，不得冒充本批次新增能力。
+- **正向要求**：发布正文必须包含非空的 `Pull Requests`、至少一个 `Fixed/Added/Changed`、`Versions`、`Published Packages`、`Business Impact`、`Upgrade Estimate`、`Upgrade Notes`、`Verification` 和 `Rollback`。`Upgrade Estimate` 必须分别说明升级对象、工程工作量、执行窗口、服务停机、回退工作量和估算前提；估算必须区分适用消费形态，不能用一个无前提数字代替。
+- **机器判定**：`mango release prepare` 和 GitHub Release 创建前使用同一个 release-notes checker 检查章节存在且非空、PR 编号、PR 到分类/制品/业务适配的映射、估价字段和未替换占位符；`.changeset/release-notes-template.md` 是发布人填写结构，机器计划和 prepare 不得自动编造业务影响或估价。结构化验证应解析 YAML/JSON/manifest 语义，禁止把引号、缩进等非契约格式写成发布成败条件。
 - **正向要求**：发布完成后必须通过 PR 把平台 CHANGELOG 的 `PENDING` 回填为真实发布状态和完整 manifest 证据，再停止服务、释放任务 workspace/数据库、清理已合并 worktree 与分支、同步 `main` 并证明 `HEAD == origin/main`。发布 tag 保持指向制品源码提交，不移动到仅含收尾文档的提交。
-- **禁止项**：禁止 GitHub Release 正文缺发布制品章节时进入 npm/Maven publish；禁止制品已发布后因验证脚本格式误判而重发；禁止保留 `PENDING`、未清理发布 worktree 或未同步 main 却声明整批收尾完成。
+- **禁止项**：禁止缺 PR 清单、制品映射、业务影响、估价、升级、验证、回退或存在占位符时进入 npm/Maven publish；禁止制品已发布后因验证脚本格式误判而重发；禁止保留 `PENDING`、未清理发布 worktree 或未同步 main 却声明整批收尾完成。

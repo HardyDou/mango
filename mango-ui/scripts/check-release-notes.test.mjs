@@ -7,6 +7,7 @@ import {
   releaseSectionForTag,
   releaseSectionForVersion,
   validateRequiredCheckCoverage,
+  validateReleaseDocument,
   validateRootReleaseNotes,
 } from './check-release-notes.mjs';
 
@@ -19,6 +20,51 @@ const completeEntry = `
   - Exception: record a typed and reviewable exception reason.
   - Verify: \`node business-pmo/mango-baseline/tools/${frontendChecker} --base base --head head\`.
 `;
+
+function completeReleaseDocument({ packageName = '@mango/admin', version = '1.0.61', level = '##' } = {}) {
+  return `
+${level} Pull Requests
+
+- [PR #123] Fixed consumer compatibility. Packages: ${packageName}@${version}. Business Adaptation: upgrade the declared dependency and run the consumer build.
+
+${level} Fixed
+
+- Restore the published consumer contract for ${packageName}@${version}.
+
+${level} Versions
+
+- ${packageName}@${version}; unchanged dependencies remain pinned.
+
+${level} Published Packages
+
+- ${packageName}@${version} is published in machine-plan order.
+
+${level} Business Impact
+
+- Consumers of ${packageName} must align the declared version; APIs and persistence are unchanged.
+
+${level} Upgrade Estimate
+
+- Audience: repositories that consume ${packageName}.
+- Engineering Effort: 0.5 person-day per repository.
+- Execution Window: 30 to 60 minutes plus the existing deployment pipeline.
+- Service Downtime: no framework-required downtime.
+- Rollback Effort: 15 to 30 minutes plus the existing deployment pipeline.
+- Assumptions: the repository has no private patch against the package.
+
+${level} Upgrade Notes
+
+- Upgrade ${packageName} to ${version} and run the locked install.
+
+${level} Verification
+
+- Run typecheck and the production consumer build.
+
+${level} Rollback
+
+- Revert the consumer dependency commit and lockfile; never overwrite the immutable package.
+`;
+}
 
 test('extracts required-check tools from generated PMO workflows', () => {
   const workflow = `
@@ -98,13 +144,12 @@ test('selects one mixed release section by exact tag for packages whose versions
 
 @mango/admin 1.0.61
 
-### Published Packages
-### Upgrade Notes
-### Verification
+${completeReleaseDocument({ level: '###' })}
 
 ## v2026.08.01-maven-1.0.30-cli-1.0.95-release - 2026-08-01
 
 @mango/admin 1.0.60
+${completeReleaseDocument({ packageName: '@mango/admin', version: '1.0.60', level: '###' })}
 `;
 
   assert.match(releaseSectionForTag(changelog, releaseTag), /@mango\/admin 1\.0\.61/u);
@@ -124,17 +169,13 @@ test('does not accept another release section when an exact tag is supplied', ()
 
 @mango/admin 1.0.60
 
-### Published Packages
-### Upgrade Notes
-### Verification
+${completeReleaseDocument({ packageName: '@mango/admin', version: '1.0.60', level: '###' })}
 
 ## v-other-release
 
 @mango/admin 1.0.61
 
-### Published Packages
-### Upgrade Notes
-### Verification
+${completeReleaseDocument({ packageName: '@mango/admin', version: '1.0.61', level: '###' })}
 `;
 
   const errors = validateRootReleaseNotes(changelog, {
@@ -151,18 +192,14 @@ test('validates the target root release after a newer release is added', () => {
 
 @mango/cli 1.0.95
 
-### Published Packages
-### Upgrade Notes
-### Verification
+${completeReleaseDocument({ packageName: '@mango/cli', version: '1.0.95', level: '###' })}
 
 ## v2026.08.01-pmo-1.3.8-cli-1.0.94-release
 
 @mango/cli 1.0.94
 
-### Published Packages
+${completeReleaseDocument({ packageName: '@mango/cli', version: '1.0.94', level: '###' })}
 ${completeEntry}
-### Upgrade Notes
-### Verification
 `;
   assert.deepEqual(
     validateRootReleaseNotes(changelog, {
@@ -172,4 +209,59 @@ ${completeEntry}
     }),
     [],
   );
+});
+
+test('accepts a complete standalone release document', () => {
+  assert.deepEqual(
+    validateReleaseDocument(completeReleaseDocument(), {
+      label: 'release notes fixture',
+      packageName: '@mango/admin',
+      version: '1.0.61',
+    }),
+    [],
+  );
+});
+
+test('fails when a required release section is empty or missing', () => {
+  const document = completeReleaseDocument().replace(
+    /## Business Impact[\s\S]*?(?=\n## Upgrade Estimate)/u,
+    '## Business Impact\n\n',
+  );
+  const errors = validateReleaseDocument(document, {
+    label: 'release notes fixture',
+    packageName: '@mango/admin',
+    version: '1.0.61',
+  });
+  assert.ok(errors.some((error) => error.includes('non-empty "Business Impact"')));
+});
+
+test('fails unresolved placeholders before prepare', () => {
+  const errors = validateReleaseDocument(`${completeReleaseDocument()}\n<!-- REQUIRED: replace this -->`, {
+    label: 'release notes fixture',
+    packageName: '@mango/admin',
+    version: '1.0.61',
+  });
+  assert.ok(errors.some((error) => error.includes('unresolved placeholder')));
+});
+
+test('fails a PR entry without type, package mapping or business adaptation', () => {
+  const document = completeReleaseDocument().replace(/- \[PR #123\].*/u, '- [PR #123] consumer compatibility.');
+  const errors = validateReleaseDocument(document, {
+    label: 'release notes fixture',
+    packageName: '@mango/admin',
+    version: '1.0.61',
+  });
+  assert.ok(errors.some((error) => error.includes('classify the PR')));
+  assert.ok(errors.some((error) => error.includes('Packages mapping')));
+  assert.ok(errors.some((error) => error.includes('Business Adaptation')));
+});
+
+test('fails when the structured estimate omits a required field', () => {
+  const document = completeReleaseDocument().replace(/^- Rollback Effort:.*\n/mu, '');
+  const errors = validateReleaseDocument(document, {
+    label: 'release notes fixture',
+    packageName: '@mango/admin',
+    version: '1.0.61',
+  });
+  assert.ok(errors.some((error) => error.includes('"Rollback Effort"')));
 });

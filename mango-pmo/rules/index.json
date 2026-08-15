@@ -85,7 +85,7 @@
     },
     "process.releaseArtifacts": {
       "path": "rules/10-release-artifacts.md",
-      "reason": "仓库内 mango-release 唯一入口、npm/Maven/CLI/PMO/Skill 批次、发布说明预检、不可变制品恢复、CHANGELOG 回填与环境收尾规范"
+      "reason": "仓库内 mango-release 唯一入口、npm/Maven/CLI/PMO/Skill 批次、PR到制品映射、业务升级估价与发布说明预检、不可变制品恢复、CHANGELOG 回填和环境收尾规范"
     },
     "process.deliveryAssurance": {
       "path": "rules/11-delivery-assurance.md",

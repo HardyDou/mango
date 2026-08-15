@@ -18,6 +18,26 @@ const generatedWorkflowPaths = [
   'mango-ui/packages/mango-cli/templates/full/.github/workflows/pmo-doc-check.yml',
   'mango-ui/packages/mango-cli/templates/full/.gitea/workflows/pmo-doc-check.yml',
 ];
+const requiredReleaseHeadings = [
+  'Pull Requests',
+  'Versions',
+  'Published Packages',
+  'Business Impact',
+  'Upgrade Estimate',
+  'Upgrade Notes',
+  'Verification',
+  'Rollback',
+];
+const changeReleaseHeadings = ['Fixed', 'Added', 'Changed'];
+const estimateFields = [
+  'Audience',
+  'Engineering Effort',
+  'Execution Window',
+  'Service Downtime',
+  'Rollback Effort',
+  'Assumptions',
+];
+const placeholderPattern = /(?:<[^>\n]+>|\b(?:TODO|TBD|PLACEHOLDER)\b|待补充|待确认|稍后补充)/iu;
 
 export function runReleaseNotesCheck(argv = process.argv.slice(2)) {
   const args = parseArgs(argv);
@@ -35,6 +55,21 @@ export function runReleaseNotesCheck(argv = process.argv.slice(2)) {
     requiredPmoChecks = checkCliPmoReleaseNotes(args.version, errors);
   } else if (args.packageName === '@mango/pmo' && args.version) {
     requiredPmoChecks = checkPmoReleaseNotes(args.version, errors);
+  }
+
+  if (args.notesFile) {
+    const notesPath = resolve(workspaceRoot, args.notesFile);
+    if (!existsSync(notesPath)) {
+      errors.push(`Release notes file is missing: ${args.notesFile}.`);
+    } else {
+      errors.push(
+        ...validateReleaseDocument(readFileSync(notesPath, 'utf8'), {
+          label: `Release notes file ${args.notesFile}`,
+          packageName: args.packageName,
+          version: args.version,
+        }),
+      );
+    }
   }
 
   if (!existsSync(rootChangelogPath)) {
@@ -73,26 +108,110 @@ function parseArgs(argv) {
     packageName: readArg('--package'),
     version: readArg('--version'),
     releaseTag: readArg('--tag'),
+    notesFile: readArg('--notes-file'),
     checkGithubRelease: argv.includes('--check-github-release'),
     help: argv.includes('--help') || argv.includes('-h'),
   };
 }
 
 export function validateReleaseSection(section, { label, packageName, version }) {
+  return validateReleaseDocument(section, { label, packageName, version });
+}
+
+export function validateReleaseDocument(document, { label, packageName, version }) {
   const errors = [];
-  if (!section) {
+  if (!document) {
     errors.push(`${label} is missing.`);
     return errors;
   }
-  if (packageName && !section.includes(packageName)) {
+  if (packageName && !document.includes(packageName)) {
     errors.push(`${label} does not mention ${packageName}.`);
   }
-  if (version && !section.includes(version)) {
+  if (version && !document.includes(version)) {
     errors.push(`${label} does not mention version ${version}.`);
   }
-  for (const requiredHeading of ['Published Packages', 'Upgrade Notes', 'Verification']) {
-    if (!section.includes(`### ${requiredHeading}`)) {
-      errors.push(`${label} must contain "### ${requiredHeading}".`);
+
+  if (placeholderPattern.test(document)) {
+    errors.push(`${label} contains an unresolved placeholder.`);
+  }
+
+  const sections = markdownSections(document);
+  for (const requiredHeading of requiredReleaseHeadings) {
+    const content = meaningfulSectionContent(sections.get(requiredHeading));
+    if (!content) {
+      errors.push(`${label} must contain a non-empty "${requiredHeading}" section.`);
+    }
+  }
+
+  const populatedChangeHeadings = changeReleaseHeadings.filter((heading) =>
+    meaningfulSectionContent(sections.get(heading)),
+  );
+  if (populatedChangeHeadings.length === 0) {
+    errors.push(`${label} must contain at least one non-empty Fixed, Added, or Changed section.`);
+  }
+
+  errors.push(...validatePullRequestCoverage(sections.get('Pull Requests'), label));
+  errors.push(...validateUpgradeEstimate(sections.get('Upgrade Estimate'), label));
+  return errors;
+}
+
+function markdownSections(document) {
+  const lines = document.split(/\r?\n/u);
+  const headings = [];
+  for (let index = 0; index < lines.length; index += 1) {
+    const match = lines[index].match(/^(#{2,4})\s+(.+?)\s*#*\s*$/u);
+    if (!match) continue;
+    headings.push({ index, level: match[1].length, title: match[2].trim() });
+  }
+  const sections = new Map();
+  for (let position = 0; position < headings.length; position += 1) {
+    const heading = headings[position];
+    let end = lines.length;
+    for (let next = position + 1; next < headings.length; next += 1) {
+      if (headings[next].level <= heading.level) {
+        end = headings[next].index;
+        break;
+      }
+    }
+    sections.set(heading.title, lines.slice(heading.index + 1, end).join('\n'));
+  }
+  return sections;
+}
+
+function meaningfulSectionContent(content = '') {
+  return content.replace(/<!--[\s\S]*?-->/gu, '').trim();
+}
+
+function validatePullRequestCoverage(content = '', label) {
+  const errors = [];
+  const entries = content
+    .split(/\r?\n/u)
+    .map((line) => line.trim())
+    .filter((line) => /^[-*]\s+/u.test(line) && /(?:#\d+|\/pull\/\d+)/u.test(line));
+  if (entries.length === 0) {
+    errors.push(`${label} Pull Requests must list at least one PR number or /pull/<number> link.`);
+    return errors;
+  }
+  for (const entry of entries) {
+    if (!/\b(?:Fixed|Added|Changed)\b/u.test(entry)) {
+      errors.push(`${label} Pull Requests entry must classify the PR as Fixed, Added, or Changed: ${entry}`);
+    }
+    if (!/\bPackages:\s+\S/iu.test(entry)) {
+      errors.push(`${label} Pull Requests entry must contain a non-empty Packages mapping: ${entry}`);
+    }
+    if (!/\bBusiness Adaptation:\s+\S/iu.test(entry)) {
+      errors.push(`${label} Pull Requests entry must contain non-empty Business Adaptation guidance: ${entry}`);
+    }
+  }
+  return errors;
+}
+
+function validateUpgradeEstimate(content = '', label) {
+  const errors = [];
+  for (const field of estimateFields) {
+    const pattern = new RegExp(`^\\s*[-*]\\s+${escapeRegExp(field)}:\\s+\\S`, 'imu');
+    if (!pattern.test(content)) {
+      errors.push(`${label} Upgrade Estimate must contain a non-empty "${field}" item.`);
     }
   }
   return errors;
@@ -318,14 +437,13 @@ function checkRelease(args, requiredPmoChecks, errors) {
   }
   const release = JSON.parse(result.stdout);
   const body = release.body || '';
-  if (!body.includes(args.packageName) || !body.includes(args.version)) {
-    errors.push(`GitHub Release ${args.releaseTag} does not mention ${args.packageName}@${args.version}.`);
-  }
-  for (const requiredHeading of ['Published Packages', 'Upgrade Notes', 'Verification']) {
-    if (!body.includes(requiredHeading)) {
-      errors.push(`GitHub Release ${args.releaseTag} must contain ${requiredHeading}.`);
-    }
-  }
+  errors.push(
+    ...validateReleaseDocument(body, {
+      label: `GitHub Release ${args.releaseTag}`,
+      packageName: args.packageName,
+      version: args.version,
+    }),
+  );
   errors.push(
     ...validateRequiredCheckCoverage(body, {
       label: `GitHub Release ${args.releaseTag}`,
@@ -352,11 +470,12 @@ function compareText(left, right) {
 }
 
 function usage() {
-  console.log(`Usage: node scripts/check-release-notes.mjs --package=<name> --version=<version> [--tag=<tag> --check-github-release]
+  console.log(`Usage: node scripts/check-release-notes.mjs --package=<name> --version=<version> [--notes-file=<path>] [--tag=<tag> --check-github-release]
 
 Checks that the platform and package changelogs cover the target release. CLI checks also compare
 the locked PMO version with the previous PMO release and require migration, exception, and verification
-notes for every newly added PMO required-check tool.`);
+notes for every newly added PMO required-check tool. Release notes must also carry the full PR-to-package
+mapping, business impact, structured upgrade estimate, upgrade, verification, and rollback contract.`);
 }
 
 const isDirectExecution = process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.meta.url;

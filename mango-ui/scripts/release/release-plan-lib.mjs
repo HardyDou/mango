@@ -53,7 +53,7 @@ export function readPendingChangesets(workspaceRoot) {
   const root = join(workspaceRoot, '.changeset');
   if (!existsSync(root)) return [];
   return readdirSync(root)
-    .filter((file) => file.endsWith('.md') && file !== 'README.md')
+    .filter(isPendingChangesetFile)
     .sort()
     .map((file) => {
       const content = readFileSync(join(root, file), 'utf8');
@@ -64,6 +64,10 @@ export function readPendingChangesets(workspaceRoot) {
         ...parseChangeset(content, `.changeset/${file}`),
       };
     });
+}
+
+export function isPendingChangesetFile(file) {
+  return file.endsWith('.md') && !['README.md', 'release-notes-template.md'].includes(file);
 }
 
 export function buildReleasePlan({

@@ -11,6 +11,7 @@ import {
   topologicalReleaseOrder,
   validateDeclaredReleaseSet,
 } from './release-scope-lib.mjs';
+import { isPendingChangesetFile } from './release-plan-lib.mjs';
 
 const scriptRoot = dirname(fileURLToPath(import.meta.url));
 const workspaceRoot = resolve(scriptRoot, '../..');
@@ -115,12 +116,12 @@ function readChangedChangesets(baseRef, headRef, includeWorking) {
   if (includeWorking) {
     for (const file of runGit(['status', '--porcelain', '--', 'mango-ui/.changeset']).stdout.split(/\r?\n/u)) {
       const path = file.slice(3).trim();
-      if (path.endsWith('.md') && !path.endsWith('/README.md')) files.add(path);
+      if (isPendingChangesetFile(path.slice(path.lastIndexOf('/') + 1))) files.add(path);
     }
   }
   const declared = new Set();
   for (const file of files) {
-    if (file.endsWith('/README.md')) continue;
+    if (!isPendingChangesetFile(file.slice(file.lastIndexOf('/') + 1))) continue;
     const absolutePath = join(repoRoot, file);
     if (!existsSync(absolutePath)) continue;
     for (const release of parseChangeset(readFileSync(absolutePath, 'utf8'), file).releases) declared.add(release.name);

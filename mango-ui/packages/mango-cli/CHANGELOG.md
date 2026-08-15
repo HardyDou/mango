@@ -4,6 +4,12 @@
 
 ## 1.0.107 - 2026-08-14
 
+### Pull Requests
+
+- [PR #792](https://github.com/HardyDou/mango/pull/792) Fixed the Admin release matrix consumed by CLI. Packages: `@mango/admin-shell@1.0.60`, `@mango/admin@1.0.66`, `@mango/cli@1.0.107`. Business Adaptation: apply the complete CLI matrix and keep Common `1.0.26`.
+- [PR #795](https://github.com/HardyDou/mango/pull/795) Fixed Job pagination and cross-platform CLI commands. Packages: `@mango/job@1.0.27`, `@mango/cli@1.0.107`. Business Adaptation: upgrade Job consumers and use the project-pinned CLI command path.
+- [PR #796](https://github.com/HardyDou/mango/pull/796) Added local-first Mango component release commands and PR submission governance. Packages: `@mango/pmo@1.3.15`, `@mango/cli@1.0.107`. Business Adaptation: upgrade PMO, use `mango-submit-pr`, and keep business application release flows separate.
+
 ### Fixed
 
 - Lock `@mango/admin-shell@1.0.60` and `@mango/admin@1.0.66` with the unchanged `@mango/common@1.0.26`, replacing the incompatible Admin tuple that imported a symbol absent from the published Common tarball.
@@ -12,6 +18,29 @@
 - Keep Maven under the same workflow: Maven production-source impact requires a target version, seals one non-app reactor deploy as exact POM/JAR files, publishes Maven before dependent npm packages, and repairs only coordinates whose publish/consume state is proven.
 - Add the single local heavy-check entry used before Release PR submission and route mechanical PR submission to `mango-submit-pr`; business projects receive the PR Skill but no longer receive the repository-only `mango-release` Skill.
 - Lock `@mango/job@1.0.27` from Issue #43 / PR #795 so the first accumulated release includes the Job pagination and cross-platform CLI fixes merged before candidate sealing.
+
+### Versions
+
+- `@mango/cli` advances from `1.0.106` to `1.0.107`; it locks PMO `1.3.15`, Job `1.0.27`, Admin Shell `1.0.60` and Admin `1.0.66`.
+- Common remains `1.0.26`, Mango Maven remains `1.0.36`, and all other coordinates remain at the exact `release-versions.json` values.
+
+### Published Packages
+
+- This batch publishes Job `1.0.27`, Admin Shell `1.0.60`, Admin `1.0.66`, PMO `1.3.15` and CLI `1.0.107` in machine-plan order; Common and Maven are consume-registry dependencies, not publication targets.
+
+### Business Impact
+
+- Business repositories receive the corrected Job/Admin matrix, PMO `1.3.15`, local final-head PR checks and `mango-submit-pr`; the project-level `mango-release` copy is removed.
+- No database, Maven, API, menu, permission, tenant or runtime configuration migration is introduced.
+
+### Upgrade Estimate
+
+- Audience: business repositories using the Mango CLI or consuming the changed Job/Admin matrix.
+- Engineering Effort: 0.25 to 0.5 person-day for PMO-only use, 0.5 person-day for aggregated Admin, or 0.5 to 1 person-day for direct/module consumers.
+- Execution Window: 30 to 90 minutes for upgrade work plus 30 to 60 minutes for focused validation; deployment-pipeline time is additional.
+- Service Downtime: no CLI- or PMO-mandated downtime; normal business redeployment rules apply.
+- Rollback Effort: 15 to 30 minutes to revert the upgrade commit and lockfile plus the normal pipeline.
+- Assumptions: a clean dependency lock, consume-registry access, no private package patch and a repeatable build pipeline.
 
 ### Upgrade Notes
 
@@ -25,6 +54,10 @@
 - Admin Shell unit tests, release impact, CLI lock, package exports, mixed candidate/registry consumer build and post-publish pure-registry build cover the corrected tuple.
 - Release scope/plan, npm and Maven sealing/recovery, one-time legacy closeout, Runner lightweight classification and sealed candidate/pure-registry consumer tests cover the publication path.
 - PMO bundle upgrade tests prove the old managed `mango-release` project Skill is deleted atomically and `mango-submit-pr` is installed.
+
+### Rollback
+
+- Revert the business dependency/PMO upgrade commit and lockfile. Use `mango pmo rollback --project-dir . --dry-run` before the actual PMO rollback, then rerun the locked check; never overwrite an immutable npm coordinate.
 
 ## 1.0.106 - 2026-08-14
 

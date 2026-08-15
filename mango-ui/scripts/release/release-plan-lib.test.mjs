@@ -1,6 +1,9 @@
 import assert from 'node:assert/strict';
+import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import test from 'node:test';
-import { assertReleasePlanShape, buildReleasePlan, bumpVersion } from './release-plan-lib.mjs';
+import { assertReleasePlanShape, buildReleasePlan, bumpVersion, readPendingChangesets } from './release-plan-lib.mjs';
 
 function packages() {
   return new Map([
@@ -51,6 +54,22 @@ test('semver bump rejects non-release versions', () => {
   assert.equal(bumpVersion('1.2.3', 'patch'), '1.2.4');
   assert.equal(bumpVersion('1.2.3', 'major'), '2.0.0');
   assert.throws(() => bumpVersion('1.2.3-SNAPSHOT', 'patch'), /unsupported release version/u);
+});
+
+test('release notes template is reserved documentation rather than a Changeset', (t) => {
+  const workspaceRoot = mkdtempSync(join(tmpdir(), 'mango-release-plan-'));
+  t.after(() => rmSync(workspaceRoot, { recursive: true, force: true }));
+  const changesetRoot = join(workspaceRoot, '.changeset');
+  mkdirSync(changesetRoot, { recursive: true });
+  writeFileSync(join(changesetRoot, 'README.md'), '# Changesets\n');
+  writeFileSync(join(changesetRoot, 'release-notes-template.md'), '# Release Notes Template\n');
+  writeFileSync(join(changesetRoot, 'base-fix.md'), '---\n"@mango/base": patch\n---\n\nFix base.\n');
+
+  const changesets = readPendingChangesets(workspaceRoot);
+  assert.deepEqual(
+    changesets.map((entry) => entry.file),
+    ['.changeset/base-fix.md'],
+  );
 });
 
 test('Maven source impact requires an explicit version and adds the managed CLI', () => {

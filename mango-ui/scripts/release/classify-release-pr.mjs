@@ -25,7 +25,8 @@ export function isReleaseOnlyFile(file) {
     file === 'mango-ui/pnpm-lock.yaml' ||
     file === 'mango-ui/.changeset/release-plan.json' ||
     file === 'mango-ui/.changeset/release-notes.txt' ||
-    /^mango-ui\/\.changeset\/[a-z0-9-]+\.md$/u.test(file) ||
+    (/^mango-ui\/\.changeset\/[a-z0-9-]+\.md$/u.test(file) &&
+      file !== 'mango-ui/.changeset/release-notes-template.md') ||
     /^mango-ui\/packages\/[^/]+\/(?:package\.json|CHANGELOG\.md)$/u.test(file) ||
     file === 'mango-ui/packages/mango-cli/release-versions.json' ||
     /^mango-ui\/packages\/mango-cli\/templates\/.+\/package\.json\.template$/u.test(file) ||

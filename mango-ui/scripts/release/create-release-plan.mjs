@@ -235,7 +235,7 @@ function resolveReleaseMetadata(existingPlan, changesets) {
 function generatedNotes(changesets) {
   const summaries =
     changesets.map((entry) => `- ${entry.summary}`).join('\n') || '- Release the reconciled package tuple.';
-  return `## Changed\n\n${summaries}\n\n## Versions\n\nVersions are recorded in the machine-generated release plan.\n\n## Published Packages\n\nPackages are published in the exact topological order recorded by the release plan.\n\n## Upgrade Notes\n\nInstall the complete CLI release matrix after every coordinate resolves from the consume registry.\n\n## Verification\n\nThe sealed candidate tuple and the pure consume-registry tuple must both pass.\n`;
+  return `## Pull Requests\n\n<!-- Add every release-bearing PR using the required template entry format. -->\n\n## Changed\n\n${summaries}\n\n## Versions\n\n<!-- Record every changed and explicitly unchanged compatibility coordinate. -->\n\n## Published Packages\n\n<!-- Record the machine-plan topology and exact coordinates. -->\n\n## Business Impact\n\n<!-- State affected and unaffected consumers, contracts, data, configuration, and operations. -->\n\n## Upgrade Estimate\n\n- Audience:\n- Engineering Effort:\n- Execution Window:\n- Service Downtime:\n- Rollback Effort:\n- Assumptions:\n\n## Upgrade Notes\n\n<!-- Give executable consumer upgrade and adaptation steps. -->\n\n## Verification\n\n<!-- Give consumer-visible assertions and exact validation entry points. -->\n\n## Rollback\n\n<!-- Give reversible consumer rollback steps without mutating immutable release coordinates. -->\n`;
 }
 
 function readJson(path) {

@@ -193,6 +193,7 @@ function verifyReleaseNotes(releasePlan) {
       `--package=${entry.name}`,
       `--version=${entry.targetVersion}`,
       `--tag=${releasePlan.release.tag}`,
+      `--notes-file=${releasePlan.release.notesFile}`,
     ];
     const started = new Date().toISOString();
     const result = runCaptured(process.execPath, commandArgs, repoRoot);
