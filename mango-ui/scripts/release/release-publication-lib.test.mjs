@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { decideRegistryAction } from './release-publication-lib.mjs';
+import { decideRegistryAction, markRemoteWriteIntent, recoverRemoteWriteAudit } from './release-publication-lib.mjs';
 
 const hash = 'a'.repeat(64);
 const absent = { state: 'absent' };
@@ -35,4 +35,41 @@ test('unknown, reversed and hash-mismatched registry states stop', () => {
     }).action,
     'STOP',
   );
+});
+
+test('remote write intent is persisted before an immutable command runs', () => {
+  const manifest = { remoteWrites: false };
+  markRemoteWriteIntent(manifest, {
+    kind: 'npm-publish',
+    target: '@mango/example@1.0.0',
+    recordedAt: '2026-08-15T00:00:00.000Z',
+  });
+  assert.equal(manifest.remoteWrites, true);
+  assert.deepEqual(manifest.remoteWriteAudit, [
+    {
+      kind: 'npm-publish',
+      target: '@mango/example@1.0.0',
+      recordedAt: '2026-08-15T00:00:00.000Z',
+    },
+  ]);
+});
+
+test('published attempt evidence repairs a missing remote write audit flag', () => {
+  const manifest = {
+    remoteWrites: false,
+    packagePublications: {
+      '@mango/example': { attempts: [{ exitCode: 0 }] },
+    },
+  };
+  assert.equal(recoverRemoteWriteAudit(manifest, { recordedAt: '2026-08-15T00:01:00.000Z' }), true);
+  assert.equal(manifest.remoteWrites, true);
+  assert.equal(manifest.remoteWriteAudit[0].kind, 'recovered-publication-audit');
+  assert.equal(recoverRemoteWriteAudit(manifest), false);
+});
+
+test('audit recovery remains read-only without publication attempt evidence', () => {
+  const manifest = { remoteWrites: false, packagePublications: { '@mango/example': { attempts: [] } } };
+  assert.equal(recoverRemoteWriteAudit(manifest), false);
+  assert.equal(manifest.remoteWrites, false);
+  assert.equal(manifest.remoteWriteAudit, undefined);
 });

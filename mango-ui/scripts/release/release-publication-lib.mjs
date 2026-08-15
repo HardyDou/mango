@@ -19,3 +19,29 @@ export function decideRegistryAction({ hosted, consume, expectedSha256 }) {
   }
   return { action: 'PUBLISH', reason: 'both registry roles prove the coordinate is absent' };
 }
+
+export function markRemoteWriteIntent(manifest, { kind, target, recordedAt = new Date().toISOString() }) {
+  if (!manifest || typeof manifest !== 'object') throw new Error('release manifest is required');
+  if (!kind || !target) throw new Error('remote write kind and target are required');
+  manifest.remoteWrites = true;
+  manifest.remoteWriteAudit ??= [];
+  manifest.remoteWriteAudit.push({ kind, target, recordedAt });
+  return manifest;
+}
+
+export function recoverRemoteWriteAudit(manifest, { recordedAt = new Date().toISOString() } = {}) {
+  if (!manifest || typeof manifest !== 'object') throw new Error('release manifest is required');
+  if (manifest.remoteWrites === true) return false;
+  const publications = [
+    ...Object.values(manifest.packagePublications ?? {}),
+    ...Object.values(manifest.mavenPublications ?? {}),
+  ];
+  const hasAttemptEvidence = publications.some((entry) => Array.isArray(entry.attempts) && entry.attempts.length > 0);
+  if (!hasAttemptEvidence) return false;
+  markRemoteWriteIntent(manifest, {
+    kind: 'recovered-publication-audit',
+    target: 'manifest-attempt-evidence',
+    recordedAt,
+  });
+  return true;
+}

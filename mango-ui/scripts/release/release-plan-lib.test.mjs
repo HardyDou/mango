@@ -3,7 +3,13 @@ import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
-import { assertReleasePlanShape, buildReleasePlan, bumpVersion, readPendingChangesets } from './release-plan-lib.mjs';
+import {
+  assertCompletedReleaseBaseline,
+  assertReleasePlanShape,
+  buildReleasePlan,
+  bumpVersion,
+  readPendingChangesets,
+} from './release-plan-lib.mjs';
 
 function packages() {
   return new Map([
@@ -105,4 +111,44 @@ test('Maven source impact requires an explicit version and adds the managed CLI'
   assert.equal(plan.releaseKind, 'mixed');
   assert.equal(plan.maven.targetVersion, '1.0.37');
   assert.deepEqual(plan.order, ['@mango/cli']);
+});
+
+test('completed release baseline is bound to the immutable plan tuple', () => {
+  const plan = buildReleasePlan({
+    packageIndex: packages(),
+    managedVersions: { '@mango/base': '1.2.3', '@mango/app': '2.0.0' },
+    changedFiles: ['mango-ui/packages/base/src/index.ts'],
+    changesets: [
+      {
+        id: 'base-fix',
+        file: '.changeset/base-fix.md',
+        sha256: 'a'.repeat(64),
+        summary: 'Fix base.',
+        releases: [{ name: '@mango/base', type: 'patch' }],
+      },
+    ],
+    baseline: { kind: 'successful-release', commit: 'base', tree: 'tree' },
+    release: { tag: 'v-test', title: 'test', notesFile: '.changeset/release-notes.txt', notesSha256: 'b'.repeat(64) },
+    generatedAt: '2026-08-15T00:00:00.000Z',
+  });
+  const baseline = {
+    schemaVersion: 1,
+    tag: 'v-test',
+    commit: '1'.repeat(40),
+    tree: '2'.repeat(40),
+    planDigest: plan.planDigest,
+    packages: Object.fromEntries(plan.packages.map((entry) => [entry.name, entry.targetVersion])),
+    maven: null,
+  };
+
+  assert.doesNotThrow(() => assertCompletedReleaseBaseline(plan, baseline));
+  assert.throws(
+    () =>
+      assertCompletedReleaseBaseline(plan, {
+        ...baseline,
+        packages: { ...baseline.packages, '@mango/base': '9.9.9' },
+      }),
+    /package tuple differs/u,
+  );
+  assert.throws(() => assertCompletedReleaseBaseline(plan, { ...baseline, tag: 'v-other' }), /tag differs/u);
 });

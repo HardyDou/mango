@@ -4,7 +4,13 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { indexPublishedPackages } from './release-scope-lib.mjs';
-import { assertReleasePlanShape, buildReleasePlan, readPendingChangesets, sha256 } from './release-plan-lib.mjs';
+import {
+  assertCompletedReleaseBaseline,
+  assertReleasePlanShape,
+  buildReleasePlan,
+  readPendingChangesets,
+  sha256,
+} from './release-plan-lib.mjs';
 import { gitChangedFiles, resolveBaseline, restoredPublishedBaselines } from './release-repository-lib.mjs';
 
 const workspaceRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
@@ -32,6 +38,15 @@ const restored = restoredPublishedBaselines({
   includeWorkingTree,
 });
 const pendingChangesets = readPendingChangesets(workspaceRoot);
+if (checkOnly && storedPlan && successfulBaseline?.planDigest === storedPlan.planDigest) {
+  if (pendingChangesets.length > 0) {
+    throw new Error('completed release plan cannot cover pending Changesets; create the next release plan');
+  }
+  assertCompletedReleaseBaseline(storedPlan, successfulBaseline);
+  verifyPlanProjection(storedPlan, packageIndex, managedVersions);
+  console.log(`Completed release plan check PASS ${storedPlan.planDigest}`);
+  process.exit(0);
+}
 const releaseMetadata = resolveReleaseMetadata(previousPlan, pendingChangesets);
 const mavenTargetVersion = valueArg('--maven-version') || previousPlan?.maven?.targetVersion || '';
 const plan = buildReleasePlan({

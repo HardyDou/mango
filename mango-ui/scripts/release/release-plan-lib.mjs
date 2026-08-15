@@ -214,6 +214,23 @@ export function assertReleasePlanShape(plan) {
   }
 }
 
+export function assertCompletedReleaseBaseline(plan, baseline) {
+  assertReleasePlanShape(plan);
+  if (baseline?.schemaVersion !== 1) throw new Error('release baseline schemaVersion must be 1');
+  if (baseline.planDigest !== plan.planDigest) throw new Error('release baseline plan digest differs from the plan');
+  if (baseline.tag !== plan.release?.tag) throw new Error('release baseline tag differs from the plan');
+  if (!/^[0-9a-f]{40}$/u.test(baseline.commit ?? '')) throw new Error('release baseline commit is invalid');
+  if (!/^[0-9a-f]{40}$/u.test(baseline.tree ?? '')) throw new Error('release baseline tree is invalid');
+
+  const expectedPackages = Object.fromEntries(plan.packages.map((entry) => [entry.name, entry.targetVersion]));
+  if (JSON.stringify(canonicalJson(baseline.packages ?? {})) !== JSON.stringify(canonicalJson(expectedPackages))) {
+    throw new Error('release baseline package tuple differs from the plan');
+  }
+  const expectedMaven = plan.maven?.targetVersion ?? null;
+  if ((baseline.maven ?? null) !== expectedMaven)
+    throw new Error('release baseline Maven version differs from the plan');
+}
+
 function groupDeclarations(entries) {
   const grouped = new Map();
   for (const entry of entries) {
