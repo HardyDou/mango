@@ -4,7 +4,7 @@ Copy this file to `.changeset/release-notes.txt` when a new Mango component batc
 
 ## Pull Requests
 
-<!-- One bullet per actual release-bearing PR. Required format: - [PR #123](URL) Fixed|Added|Changed summary. Packages: exact coordinates. Business Adaptation: consumer action. Keep superseded or audit-only PRs in Audit History instead. -->
+<!-- One bullet per actual release-bearing PR. Required format: - PR #123 Fixed|Added|Changed summary. Packages: exact coordinates. Business Adaptation: consumer action. Keep superseded or audit-only PRs in Audit History instead. -->
 
 ## Fixed
 
