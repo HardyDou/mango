@@ -4,13 +4,18 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, writeFile
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
+import { resolveRepositoryInputPath } from './release-repository-lib.mjs';
 
 const workspaceRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const repoRoot = resolve(workspaceRoot, '..');
 const args = process.argv.slice(2);
 const base = valueArg('--base') || 'origin/main';
 const head = valueArg('--head') || 'HEAD';
-const prBodyPath = resolve(valueArg('--pr-body') || join(repoRoot, '.runtime/mango-release/pr-body.md'));
+const prBodyPath = resolveRepositoryInputPath(
+  repoRoot,
+  valueArg('--pr-body'),
+  '.runtime/mango-release/pr-body.md',
+);
 const cliTests = readdirSync(join(workspaceRoot, 'packages/mango-cli/tests'))
   .filter((file) => file.endsWith('.test.mjs'))
   .sort()

@@ -1,6 +1,6 @@
 import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { isAbsolute, join, resolve } from 'node:path';
 
 export function runGit(repoRoot, args, { allowFailure = false } = {}) {
   const result = spawnSync('git', args, { cwd: repoRoot, encoding: 'utf8' });
@@ -29,6 +29,11 @@ export function gitChangedFiles(repoRoot, baseRef, headRef = 'HEAD', includeWork
     }
   }
   return [...files].sort();
+}
+
+export function resolveRepositoryInputPath(repoRoot, input, fallback) {
+  const value = input || fallback;
+  return isAbsolute(value) ? value : resolve(repoRoot, value);
 }
 
 export function resolveBaseline(repoRoot, workspaceRoot, legacy = null) {
