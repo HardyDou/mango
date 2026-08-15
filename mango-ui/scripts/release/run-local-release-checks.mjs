@@ -11,11 +11,7 @@ const repoRoot = resolve(workspaceRoot, '..');
 const args = process.argv.slice(2);
 const base = valueArg('--base') || 'origin/main';
 const head = valueArg('--head') || 'HEAD';
-const prBodyPath = resolveRepositoryInputPath(
-  repoRoot,
-  valueArg('--pr-body'),
-  '.runtime/mango-release/pr-body.md',
-);
+const prBodyPath = resolveRepositoryInputPath(repoRoot, valueArg('--pr-body'), '.runtime/mango-release/pr-body.md');
 const cliTests = readdirSync(join(workspaceRoot, 'packages/mango-cli/tests'))
   .filter((file) => file.endsWith('.test.mjs'))
   .sort()

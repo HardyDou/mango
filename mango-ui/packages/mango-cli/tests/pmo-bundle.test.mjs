@@ -55,10 +55,7 @@ test('PMO bundle install, locked repair, stale cleanup, and rollback', () => {
       resolve(cliRoot, '../../../mango-pmo/skills/mango-release/SKILL.md'),
       'utf8',
     );
-    const legacyReleaseBaselinePath = join(
-      projectRoot,
-      'business-pmo/mango-baseline/skills/mango-release/SKILL.md',
-    );
+    const legacyReleaseBaselinePath = join(projectRoot, 'business-pmo/mango-baseline/skills/mango-release/SKILL.md');
     const legacyReleaseProjectPath = join(projectRoot, '.agents/skills/mango-release/SKILL.md');
     mkdirSync(dirname(legacyReleaseBaselinePath), { recursive: true });
     mkdirSync(dirname(legacyReleaseProjectPath), { recursive: true });

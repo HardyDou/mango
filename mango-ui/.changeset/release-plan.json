@@ -27,13 +27,7 @@
       "gitCommit": "e6596192a16414652b8e1f477ae17987e30db611"
     }
   ],
-  "directPackages": [
-    "@mango/admin",
-    "@mango/admin-shell",
-    "@mango/cli",
-    "@mango/job",
-    "@mango/pmo"
-  ],
+  "directPackages": ["@mango/admin", "@mango/admin-shell", "@mango/cli", "@mango/job", "@mango/pmo"],
   "classifiedFiles": [
     {
       "file": "mango-business-starter/frontend/apps/{{projectKebab}}-admin/package.json",
@@ -337,9 +331,7 @@
           "summary": "Issue #791 removes an import that is absent from the published Common 1.0.26 tarball"
         }
       ],
-      "releaseDependencies": [
-        "@mango/job"
-      ]
+      "releaseDependencies": ["@mango/job"]
     },
     {
       "name": "@mango/admin",
@@ -355,10 +347,7 @@
           "summary": "exact dependency follows Admin Shell 1.0.60"
         }
       ],
-      "releaseDependencies": [
-        "@mango/admin-shell",
-        "@mango/job"
-      ]
+      "releaseDependencies": ["@mango/admin-shell", "@mango/job"]
     },
     {
       "name": "@mango/pmo",
@@ -390,21 +379,10 @@
           "summary": "the managed release matrix follows Admin Shell, Admin and PMO 1.3.15"
         }
       ],
-      "releaseDependencies": [
-        "@mango/admin",
-        "@mango/admin-shell",
-        "@mango/job",
-        "@mango/pmo"
-      ]
+      "releaseDependencies": ["@mango/admin", "@mango/admin-shell", "@mango/job", "@mango/pmo"]
     }
   ],
-  "order": [
-    "@mango/job",
-    "@mango/admin-shell",
-    "@mango/admin",
-    "@mango/pmo",
-    "@mango/cli"
-  ],
+  "order": ["@mango/job", "@mango/admin-shell", "@mango/admin", "@mango/pmo", "@mango/cli"],
   "maven": null,
   "planDigest": "41a3ee05f6ca06031e4760ff0eed4bda0a2ce48f502f51c0d95c0fe207826fee"
 }

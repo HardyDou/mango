@@ -22,14 +22,21 @@ const includeWorkingTree = args.includes('--include-working-tree');
 const packageIndex = indexPublishedPackages(workspaceRoot);
 const managedVersions = readJson(join(workspaceRoot, 'packages/mango-cli/release-versions.json')).npm ?? {};
 const legacyPath = join(workspaceRoot, '.changeset/legacy-reconciliation.json');
-const legacyChanged = changedPathStatus(base, head, 'mango-ui/.changeset/legacy-reconciliation.json', includeWorkingTree);
+const legacyChanged = changedPathStatus(
+  base,
+  head,
+  'mango-ui/.changeset/legacy-reconciliation.json',
+  includeWorkingTree,
+);
 const legacy = legacyChanged && existsSync(legacyPath) ? readJson(legacyPath) : null;
 const impactBase = legacy?.from?.commit || base;
 const changedFiles = gitChangedFiles(impactBase, head, includeWorkingTree);
 const impact = directPackageImpact(changedFiles, packageIndex);
 const restored = removeRestoredPublishedBaselines(impact.direct, packageIndex, legacy, head, includeWorkingTree);
 const expected = resolveReleaseClosure(impact.direct, packageIndex, managedVersions);
-const declared = legacy ? new Set(legacy.releases.map((entry) => entry.name)) : readChangedChangesets(base, head, includeWorkingTree);
+const declared = legacy
+  ? new Set(legacy.releases.map((entry) => entry.name))
+  : readChangedChangesets(base, head, includeWorkingTree);
 const errors = validateDeclaredReleaseSet({ direct: impact.direct, expected, declared });
 if (legacy) {
   for (const packageName of expected) {
@@ -72,7 +79,11 @@ function runGit(gitArgs, allowFailure = false) {
 
 function gitChangedFiles(baseRef, headRef, includeWorking) {
   const mergeBase = runGit(['merge-base', baseRef, headRef]).stdout.trim();
-  const files = new Set(runGit(['diff', '--name-only', `${mergeBase}..${headRef}`]).stdout.split(/\r?\n/u).filter(Boolean));
+  const files = new Set(
+    runGit(['diff', '--name-only', `${mergeBase}..${headRef}`])
+      .stdout.split(/\r?\n/u)
+      .filter(Boolean),
+  );
   if (includeWorking) {
     for (const command of [
       ['diff', '--name-only'],
@@ -94,8 +105,12 @@ function changedPathStatus(baseRef, headRef, path, includeWorking) {
 
 function readChangedChangesets(baseRef, headRef, includeWorking) {
   const files = new Set(
-    runGit(['diff', '--name-only', '--diff-filter=AM', `${baseRef}..${headRef}`, '--', 'mango-ui/.changeset/*.md'], true)
-      .stdout.split(/\r?\n/u).filter(Boolean),
+    runGit(
+      ['diff', '--name-only', '--diff-filter=AM', `${baseRef}..${headRef}`, '--', 'mango-ui/.changeset/*.md'],
+      true,
+    )
+      .stdout.split(/\r?\n/u)
+      .filter(Boolean),
   );
   if (includeWorking) {
     for (const file of runGit(['status', '--porcelain', '--', 'mango-ui/.changeset']).stdout.split(/\r?\n/u)) {
@@ -122,7 +137,9 @@ function removeRestoredPublishedBaselines(direct, packages, legacyRecord, headRe
     const packagePath = `mango-ui/packages/${entry.dir}`;
     const diff = runGit(['diff', '--quiet', descriptor.gitCommit, headRef, '--', packagePath], true);
     const workingDiff = includeWorking ? runGit(['diff', '--quiet', '--', packagePath], true) : { status: 0 };
-    const untracked = includeWorking ? runGit(['ls-files', '--others', '--exclude-standard', '--', packagePath]).stdout.trim() : '';
+    const untracked = includeWorking
+      ? runGit(['ls-files', '--others', '--exclude-standard', '--', packagePath]).stdout.trim()
+      : '';
     if (diff.status === 0 && workingDiff.status === 0 && !untracked) {
       direct.delete(descriptor.name);
       restored.push(descriptor.name);

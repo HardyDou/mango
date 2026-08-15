@@ -17,7 +17,9 @@ export function gitValue(repoRoot, args) {
 export function gitChangedFiles(repoRoot, baseRef, headRef = 'HEAD', includeWorkingTree = false) {
   const mergeBase = gitValue(repoRoot, ['merge-base', baseRef, headRef]);
   const files = new Set(
-    runGit(repoRoot, ['diff', '--name-only', `${mergeBase}..${headRef}`]).stdout.split(/\r?\n/u).filter(Boolean),
+    runGit(repoRoot, ['diff', '--name-only', `${mergeBase}..${headRef}`])
+      .stdout.split(/\r?\n/u)
+      .filter(Boolean),
   );
   if (includeWorkingTree) {
     for (const args of [
@@ -58,7 +60,13 @@ export function resolveBaseline(repoRoot, workspaceRoot, legacy = null) {
   return { kind: 'successful-release', ...baseline };
 }
 
-export function restoredPublishedBaselines({ repoRoot, packageIndex, legacy, headRef = 'HEAD', includeWorkingTree = false }) {
+export function restoredPublishedBaselines({
+  repoRoot,
+  packageIndex,
+  legacy,
+  headRef = 'HEAD',
+  includeWorkingTree = false,
+}) {
   const restored = [];
   for (const descriptor of legacy?.restoredPublishedBaselines ?? []) {
     const entry = packageIndex.get(descriptor.name);

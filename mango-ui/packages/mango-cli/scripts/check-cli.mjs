@@ -754,8 +754,8 @@ try {
     throw new Error('generated business AGENTS.md must not route to repository-only mango-release');
   }
   if (
-    existsSync(join(projectRoot, '.agents/skills/mango-release'))
-    || existsSync(join(projectRoot, 'business-pmo/mango-baseline/skills/mango-release'))
+    existsSync(join(projectRoot, '.agents/skills/mango-release')) ||
+    existsSync(join(projectRoot, 'business-pmo/mango-baseline/skills/mango-release'))
   ) {
     throw new Error('generated business project must not contain repository-only mango-release');
   }

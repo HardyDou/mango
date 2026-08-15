@@ -20,9 +20,7 @@ const consumerName = 'mango-package-consumer-typecheck';
 const registryArg = process.argv.find((arg) => arg.startsWith('--registry='));
 const registry = registryArg?.slice('--registry='.length) || 'https://registry.npmjs.org/';
 const candidateDirectoryArg = process.argv.find((arg) => arg.startsWith('--candidate-dir='));
-const candidateDirectory = candidateDirectoryArg
-  ? resolve(candidateDirectoryArg.slice('--candidate-dir='.length))
-  : '';
+const candidateDirectory = candidateDirectoryArg ? resolve(candidateDirectoryArg.slice('--candidate-dir='.length)) : '';
 const packageStore = candidateDirectory || join(runtimeRoot, 's');
 const keepTemp = process.argv.includes('--keep-temp');
 const offline = process.argv.includes('--offline') || process.env.MANGO_PACKAGE_CONSUMER_OFFLINE === '1';
@@ -172,12 +170,9 @@ function installCandidateCliRunner(candidateTarballs) {
   const pmoTarball = candidateTarballs.get('@mango/pmo');
   writeFileSync(
     join(runnerRoot, 'pnpm-workspace.yaml'),
-    [
-      'packages:',
-      '  - .',
-      ...(pmoTarball ? ['overrides:', `  "@mango/pmo": "file:${pmoTarball}"`] : []),
-      '',
-    ].join('\n'),
+    ['packages:', '  - .', ...(pmoTarball ? ['overrides:', `  "@mango/pmo": "file:${pmoTarball}"`] : []), ''].join(
+      '\n',
+    ),
   );
   writeFileSync(join(runnerRoot, '.npmrc'), `registry=${registry}\n`);
   run(pnpmCommand, ['install', `--registry=${registry}`], { cwd: runnerRoot });
@@ -390,12 +385,11 @@ try {
   const candidatePackageNames = candidateDirectory
     ? new Set(candidateTarballs.keys())
     : new Set(candidatePackages.map((packageRoot) => readJson(join(packageRoot, 'package.json')).name));
-  const cli =
-    candidatePackageNames.has('@mango/cli')
-      ? installCandidateCliRunner(candidateTarballs)
-      : releaseCandidateMatrix
-        ? installPublishedCliRunner()
-        : sourceCli;
+  const cli = candidatePackageNames.has('@mango/cli')
+    ? installCandidateCliRunner(candidateTarballs)
+    : releaseCandidateMatrix
+      ? installPublishedCliRunner()
+      : sourceCli;
 
   if (!reuseBuild && !candidateDirectory) {
     console.log('Generating package styles before packing');

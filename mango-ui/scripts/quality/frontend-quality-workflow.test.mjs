@@ -30,8 +30,14 @@ test('pull requests run the stable affected frontend gate without browser E2E', 
   assert.match(pullRequestJob, /id: release-scope/u);
   assert.match(pullRequestJob, /classify-release-pr\.mjs/u);
   assert.match(pullRequestJob, /check-release-changes\.mjs/u);
-  assert.match(pullRequestJob, /if: steps\.release-scope\.outputs\.release_only != 'true'[\s\S]*?pnpm install --frozen-lockfile/u);
-  assert.match(pullRequestJob, /if: steps\.release-scope\.outputs\.release_only == 'true'[\s\S]*?pnpm release:pr-check/u);
+  assert.match(
+    pullRequestJob,
+    /if: steps\.release-scope\.outputs\.release_only != 'true'[\s\S]*?pnpm install --frozen-lockfile/u,
+  );
+  assert.match(
+    pullRequestJob,
+    /if: steps\.release-scope\.outputs\.release_only == 'true'[\s\S]*?pnpm release:pr-check/u,
+  );
   assert.doesNotMatch(pullRequestJob, /test:e2e|playwright|Start real Mango backend/u);
 });
 

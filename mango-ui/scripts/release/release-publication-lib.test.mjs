@@ -18,10 +18,7 @@ test('hosted present and group absent is read-only verify pending', () => {
 });
 
 test('matching hosted and group copies skip immutable publication', () => {
-  assert.equal(
-    decideRegistryAction({ hosted: present, consume: present, expectedSha256: hash }).action,
-    'VERIFIED',
-  );
+  assert.equal(decideRegistryAction({ hosted: present, consume: present, expectedSha256: hash }).action, 'VERIFIED');
 });
 
 test('unknown, reversed and hash-mismatched registry states stop', () => {
@@ -29,12 +26,13 @@ test('unknown, reversed and hash-mismatched registry states stop', () => {
     decideRegistryAction({ hosted: { state: 'unknown' }, consume: absent, expectedSha256: hash }).action,
     'STOP',
   );
+  assert.equal(decideRegistryAction({ hosted: absent, consume: present, expectedSha256: hash }).action, 'STOP');
   assert.equal(
-    decideRegistryAction({ hosted: absent, consume: present, expectedSha256: hash }).action,
-    'STOP',
-  );
-  assert.equal(
-    decideRegistryAction({ hosted: { state: 'present', sha256: 'b'.repeat(64) }, consume: absent, expectedSha256: hash }).action,
+    decideRegistryAction({
+      hosted: { state: 'present', sha256: 'b'.repeat(64) },
+      consume: absent,
+      expectedSha256: hash,
+    }).action,
     'STOP',
   );
 });

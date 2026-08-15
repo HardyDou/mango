@@ -5,10 +5,13 @@ import { assertReleasePlanShape, buildReleasePlan, bumpVersion } from './release
 function packages() {
   return new Map([
     ['@mango/base', { dir: 'base', packageJson: { name: '@mango/base', version: '1.2.3' } }],
-    ['@mango/app', {
-      dir: 'app',
-      packageJson: { name: '@mango/app', version: '2.0.0', dependencies: { '@mango/base': 'workspace:1.2.3' } },
-    }],
+    [
+      '@mango/app',
+      {
+        dir: 'app',
+        packageJson: { name: '@mango/app', version: '2.0.0', dependencies: { '@mango/base': 'workspace:1.2.3' } },
+      },
+    ],
     ['@mango/cli', { dir: 'mango-cli', packageJson: { name: '@mango/cli', version: '3.0.0' } }],
   ]);
 }
@@ -18,10 +21,15 @@ test('plan combines direct intent with dependency and CLI closure', () => {
     packageIndex: packages(),
     managedVersions: { '@mango/base': '1.2.3', '@mango/app': '2.0.0' },
     changedFiles: ['mango-ui/packages/base/src/index.ts'],
-    changesets: [{
-      id: 'base-fix', file: '.changeset/base-fix.md', sha256: 'a'.repeat(64), summary: 'Fix base.',
-      releases: [{ name: '@mango/base', type: 'minor' }],
-    }],
+    changesets: [
+      {
+        id: 'base-fix',
+        file: '.changeset/base-fix.md',
+        sha256: 'a'.repeat(64),
+        summary: 'Fix base.',
+        releases: [{ name: '@mango/base', type: 'minor' }],
+      },
+    ],
     baseline: { kind: 'successful-release', commit: 'base', tree: 'tree' },
     release: { tag: 'v-test', title: 'test', notesFile: '.changeset/release-notes.txt', notesSha256: 'b'.repeat(64) },
     generatedAt: '2026-08-15T00:00:00.000Z',
@@ -46,15 +54,24 @@ test('semver bump rejects non-release versions', () => {
 });
 
 test('Maven source impact requires an explicit version and adds the managed CLI', () => {
-  assert.throws(() => buildReleasePlan({
-    packageIndex: packages(),
-    managedVersions: {},
-    mavenSourceVersion: '1.0.36',
-    changedFiles: ['mango/mango-common/src/main/java/io/mango/A.java'],
-    changesets: [],
-    baseline: { kind: 'successful-release', commit: 'base', tree: 'tree' },
-    release: { tag: 'v-test', title: 'test', notesFile: '.changeset/release-notes.txt', notesSha256: 'b'.repeat(64) },
-  }), /requires --maven-version/u);
+  assert.throws(
+    () =>
+      buildReleasePlan({
+        packageIndex: packages(),
+        managedVersions: {},
+        mavenSourceVersion: '1.0.36',
+        changedFiles: ['mango/mango-common/src/main/java/io/mango/A.java'],
+        changesets: [],
+        baseline: { kind: 'successful-release', commit: 'base', tree: 'tree' },
+        release: {
+          tag: 'v-test',
+          title: 'test',
+          notesFile: '.changeset/release-notes.txt',
+          notesSha256: 'b'.repeat(64),
+        },
+      }),
+    /requires --maven-version/u,
+  );
   const plan = buildReleasePlan({
     packageIndex: packages(),
     managedVersions: {},

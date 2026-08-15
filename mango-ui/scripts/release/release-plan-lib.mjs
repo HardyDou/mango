@@ -113,7 +113,11 @@ export function buildReleasePlan({
     if (!packageIndex.has(name)) errors.push(`unknown published Mango package: ${name}`);
   }
   if (errors.length > 0) throw new Error(errors.join('\n'));
-  const maven = resolveMavenRelease({ mavenImpact, sourceVersion: mavenSourceVersion, targetVersion: mavenTargetVersion });
+  const maven = resolveMavenRelease({
+    mavenImpact,
+    sourceVersion: mavenSourceVersion,
+    targetVersion: mavenTargetVersion,
+  });
 
   const order = topologicalReleaseOrder(expected, packageIndex, managedVersions);
   const previousByName = new Map((previousPlan?.packages ?? []).map((entry) => [entry.name, entry]));
@@ -124,7 +128,8 @@ export function buildReleasePlan({
     const legacyDeclaration = legacy?.releases.find((entry) => entry.name === name);
     const type = strongestType(declarations.map((entry) => entry.type)) || 'patch';
     const previous = previousByName.get(name);
-    const sourceVersion = legacyDeclaration?.fromVersion || previous?.sourceVersion || workspacePackage.packageJson.version;
+    const sourceVersion =
+      legacyDeclaration?.fromVersion || previous?.sourceVersion || workspacePackage.packageJson.version;
     const targetVersion = legacyDeclaration?.toVersion || previous?.targetVersion || bumpVersion(sourceVersion, type);
     if (bumpVersion(sourceVersion, type) !== targetVersion) {
       throw new Error(`${name}: ${sourceVersion} + ${type} must produce ${targetVersion}`);
@@ -175,7 +180,8 @@ function resolveMavenRelease({ mavenImpact, sourceVersion, targetVersion }) {
   if (!releasePattern.test(targetVersion) || targetVersion.toUpperCase().endsWith('-SNAPSHOT')) {
     throw new Error(`unsupported Maven release version: ${targetVersion}`);
   }
-  if (sourceVersion === targetVersion) throw new Error('Maven target version must differ from the published source version');
+  if (sourceVersion === targetVersion)
+    throw new Error('Maven target version must differ from the published source version');
   return {
     sourceVersion,
     targetVersion,
@@ -190,7 +196,8 @@ export function assertReleasePlanShape(plan) {
   if (!/^[0-9a-f]{64}$/u.test(plan.planDigest ?? '')) throw new Error('release plan digest is invalid');
   const actual = digestJson({ ...plan, generatedAt: undefined, planDigest: undefined });
   if (actual !== plan.planDigest) throw new Error(`release plan digest mismatch: expected ${actual}`);
-  if (!Array.isArray(plan.packages) || !Array.isArray(plan.order)) throw new Error('release plan package list is missing');
+  if (!Array.isArray(plan.packages) || !Array.isArray(plan.order))
+    throw new Error('release plan package list is missing');
   if (new Set(plan.order).size !== plan.order.length) throw new Error('release plan order contains duplicates');
   if (plan.packages.map((entry) => entry.name).join('\n') !== plan.order.join('\n')) {
     throw new Error('release plan packages must follow the generated topological order');
@@ -221,7 +228,12 @@ function releaseDependencies(name, releases, packageIndex, managedVersions) {
   const packageJson = packageIndex.get(name)?.packageJson ?? {};
   for (const section of ['dependencies', 'optionalDependencies', 'peerDependencies']) {
     for (const [dependency, value] of Object.entries(packageJson[section] ?? {})) {
-      if (releases.has(dependency) && typeof value === 'string' && value.startsWith('workspace:') && value !== 'workspace:*') {
+      if (
+        releases.has(dependency) &&
+        typeof value === 'string' &&
+        value.startsWith('workspace:') &&
+        value !== 'workspace:*'
+      ) {
         dependencies.push(dependency);
       }
     }

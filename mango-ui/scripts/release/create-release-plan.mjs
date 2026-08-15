@@ -5,11 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { indexPublishedPackages } from './release-scope-lib.mjs';
 import { assertReleasePlanShape, buildReleasePlan, readPendingChangesets, sha256 } from './release-plan-lib.mjs';
-import {
-  gitChangedFiles,
-  resolveBaseline,
-  restoredPublishedBaselines,
-} from './release-repository-lib.mjs';
+import { gitChangedFiles, resolveBaseline, restoredPublishedBaselines } from './release-repository-lib.mjs';
 
 const workspaceRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const repoRoot = resolve(workspaceRoot, '..');
@@ -64,19 +60,28 @@ if (checkOnly) {
   assertEquivalentPlan(previousPlan, plan);
   verifyPlanProjection(previousPlan, packageIndex, managedVersions);
   console.log(`Release plan check PASS ${previousPlan.planDigest}`);
-  console.log(previousPlan.order.map((name) => `${name}@${previousPlan.packages.find((entry) => entry.name === name).targetVersion}`).join(' -> '));
+  console.log(
+    previousPlan.order
+      .map((name) => `${name}@${previousPlan.packages.find((entry) => entry.name === name).targetVersion}`)
+      .join(' -> '),
+  );
   process.exit(0);
 }
 
 applyPlanProjection(plan, packageIndex);
 applyExternalManagedDependencies(plan);
-writeJson(join(workspaceRoot, 'packages/mango-cli/release-versions.json'), projectedManagedVersions(plan, managedVersions));
+writeJson(
+  join(workspaceRoot, 'packages/mango-cli/release-versions.json'),
+  projectedManagedVersions(plan, managedVersions),
+);
 writeFileSync(join(workspaceRoot, releaseMetadata.notesFile), releaseMetadata.notes);
 writeJson(planPath, plan);
 if (!skipLockfile) runLockfileUpdate();
 console.log(`Release plan written: ${planPath}`);
 console.log(`Plan digest: ${plan.planDigest}`);
-console.log(plan.order.map((name) => `${name}@${plan.packages.find((entry) => entry.name === name).targetVersion}`).join(' -> '));
+console.log(
+  plan.order.map((name) => `${name}@${plan.packages.find((entry) => entry.name === name).targetVersion}`).join(' -> '),
+);
 
 function applyPlanProjection(releasePlan, packages) {
   const targets = new Map(releasePlan.packages.map((entry) => [entry.name, entry.targetVersion]));
@@ -153,16 +158,22 @@ function verifyPlanProjection(releasePlan, packages, currentManagedVersions) {
   const targetVersions = new Map(releasePlan.packages.map((entry) => [entry.name, entry.targetVersion]));
   const currentReleaseVersions = readJson(join(workspaceRoot, 'packages/mango-cli/release-versions.json'));
   if (releasePlan.maven && currentReleaseVersions.maven?.mangoBackend !== releasePlan.maven.targetVersion) {
-    throw new Error(`Maven CLI release matrix ${currentReleaseVersions.maven?.mangoBackend ?? '<missing>'} != plan ${releasePlan.maven.targetVersion}`);
+    throw new Error(
+      `Maven CLI release matrix ${currentReleaseVersions.maven?.mangoBackend ?? '<missing>'} != plan ${releasePlan.maven.targetVersion}`,
+    );
   }
   for (const entry of releasePlan.packages) {
     const packageJson = packages.get(entry.name)?.packageJson;
     if (packageJson?.version !== entry.targetVersion) {
-      throw new Error(`${entry.name}: package version ${packageJson?.version ?? '<missing>'} != plan ${entry.targetVersion}`);
+      throw new Error(
+        `${entry.name}: package version ${packageJson?.version ?? '<missing>'} != plan ${entry.targetVersion}`,
+      );
     }
     if (entry.name === '@mango/cli' || Object.hasOwn(currentManagedVersions, entry.name)) {
       if (currentManagedVersions[entry.name] !== entry.targetVersion) {
-        throw new Error(`${entry.name}: CLI release matrix ${currentManagedVersions[entry.name]} != plan ${entry.targetVersion}`);
+        throw new Error(
+          `${entry.name}: CLI release matrix ${currentManagedVersions[entry.name]} != plan ${entry.targetVersion}`,
+        );
       }
     }
     for (const section of ['dependencies', 'optionalDependencies', 'peerDependencies']) {
@@ -217,14 +228,13 @@ function resolveReleaseMetadata(existingPlan, changesets) {
   const title = valueArg('--title') || existing?.title || `Mango release ${tag}`;
   const notesFile = existing?.notesFile || '.changeset/release-notes.txt';
   const existingNotesPath = join(workspaceRoot, notesFile);
-  const notes = existsSync(existingNotesPath)
-    ? readFileSync(existingNotesPath, 'utf8')
-    : generatedNotes(changesets);
+  const notes = existsSync(existingNotesPath) ? readFileSync(existingNotesPath, 'utf8') : generatedNotes(changesets);
   return { tag, title, notesFile, notesSha256: sha256(Buffer.from(notes, 'utf8')), notes };
 }
 
 function generatedNotes(changesets) {
-  const summaries = changesets.map((entry) => `- ${entry.summary}`).join('\n') || '- Release the reconciled package tuple.';
+  const summaries =
+    changesets.map((entry) => `- ${entry.summary}`).join('\n') || '- Release the reconciled package tuple.';
   return `## Changed\n\n${summaries}\n\n## Versions\n\nVersions are recorded in the machine-generated release plan.\n\n## Published Packages\n\nPackages are published in the exact topological order recorded by the release plan.\n\n## Upgrade Notes\n\nInstall the complete CLI release matrix after every coordinate resolves from the consume registry.\n\n## Verification\n\nThe sealed candidate tuple and the pure consume-registry tuple must both pass.\n`;
 }
 
@@ -251,5 +261,5 @@ function valueArg(name) {
   const inline = args.find((arg) => arg.startsWith(`${name}=`));
   if (inline) return inline.slice(name.length + 1);
   const index = args.indexOf(name);
-  return index >= 0 ? args[index + 1] ?? '' : '';
+  return index >= 0 ? (args[index + 1] ?? '') : '';
 }

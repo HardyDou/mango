@@ -49,7 +49,11 @@ test('release-impact classification ignores tests but includes all other package
 
 test('direct package impact maps package and PMO source paths', () => {
   const impact = directPackageImpact(
-    ['mango-ui/packages/base/src/index.ts', 'mango-ui/packages/base/src/index.test.ts', 'mango-pmo/skills/mango-release/SKILL.md'],
+    [
+      'mango-ui/packages/base/src/index.ts',
+      'mango-ui/packages/base/src/index.test.ts',
+      'mango-pmo/skills/mango-release/SKILL.md',
+    ],
     packageIndex(),
   );
   assert.deepEqual([...impact.direct].sort(), ['@mango/base', '@mango/pmo']);

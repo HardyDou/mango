@@ -2,13 +2,7 @@ import { existsSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 
-export const RELEASE_STATES = [
-  'PREPARED',
-  'CANDIDATE_VERIFIED',
-  'PUBLISHED',
-  'CONSUMER_VERIFIED',
-  'COMPLETED',
-];
+export const RELEASE_STATES = ['PREPARED', 'CANDIDATE_VERIFIED', 'PUBLISHED', 'CONSUMER_VERIFIED', 'COMPLETED'];
 
 const RELEASE_COMMAND_SCRIPTS = {
   plan: 'create-release-plan.mjs',
@@ -21,7 +15,11 @@ const RELEASE_COMMAND_SCRIPTS = {
 export function redactReleaseText(value, env = process.env) {
   let redacted = String(value || '');
   for (const [key, secret] of Object.entries(env)) {
-    if (!/token|password|secret|credential|private_key/iu.test(key) || typeof secret !== 'string' || secret.length < 4) {
+    if (
+      !/token|password|secret|credential|private_key/iu.test(key) ||
+      typeof secret !== 'string' ||
+      secret.length < 4
+    ) {
       continue;
     }
     redacted = redacted.split(secret).join('[REDACTED]');
@@ -71,10 +69,14 @@ export function findMangoRepository(start) {
 function runRegistryDoctor(argv, runtime, env) {
   const publishRegistry = argument(argv, '--publish-registry') || env.MANGO_RELEASE_NPM_PUBLISH_REGISTRY || '';
   const consumeRegistry = argument(argv, '--consume-registry') || env.MANGO_RELEASE_NPM_CONSUME_REGISTRY || '';
-  const mavenPublishRegistry = argument(argv, '--maven-publish-registry') || env.MANGO_RELEASE_MAVEN_PUBLISH_REGISTRY || '';
-  const mavenConsumeRegistry = argument(argv, '--maven-consume-registry') || env.MANGO_RELEASE_MAVEN_CONSUME_REGISTRY || '';
-  const mavenPublishServerId = argument(argv, '--maven-publish-server-id') || env.MANGO_RELEASE_MAVEN_PUBLISH_SERVER_ID || '';
-  const mavenConsumeServerId = argument(argv, '--maven-consume-server-id') || env.MANGO_RELEASE_MAVEN_CONSUME_SERVER_ID || '';
+  const mavenPublishRegistry =
+    argument(argv, '--maven-publish-registry') || env.MANGO_RELEASE_MAVEN_PUBLISH_REGISTRY || '';
+  const mavenConsumeRegistry =
+    argument(argv, '--maven-consume-registry') || env.MANGO_RELEASE_MAVEN_CONSUME_REGISTRY || '';
+  const mavenPublishServerId =
+    argument(argv, '--maven-publish-server-id') || env.MANGO_RELEASE_MAVEN_PUBLISH_SERVER_ID || '';
+  const mavenConsumeServerId =
+    argument(argv, '--maven-consume-server-id') || env.MANGO_RELEASE_MAVEN_CONSUME_SERVER_ID || '';
   const errors = [];
   for (const [label, value] of [
     ['npm publish registry', publishRegistry],
@@ -89,8 +91,9 @@ function runRegistryDoctor(argv, runtime, env) {
       errors.push(`${label} must be an absolute URL`);
     }
   }
-  const mavenConfigured = [mavenPublishRegistry, mavenConsumeRegistry, mavenPublishServerId, mavenConsumeServerId]
-    .some((value) => Boolean(value));
+  const mavenConfigured = [mavenPublishRegistry, mavenConsumeRegistry, mavenPublishServerId, mavenConsumeServerId].some(
+    (value) => Boolean(value),
+  );
   if (mavenConfigured) {
     for (const [label, value] of [
       ['Maven publish registry', mavenPublishRegistry],
@@ -111,13 +114,24 @@ function runRegistryDoctor(argv, runtime, env) {
   const checks = [];
   if (errors.length === 0) {
     checks.push(runCheck('npm', ['whoami', `--registry=${publishRegistry}`], runtime.cwd || process.cwd(), env));
-    checks.push(runCheck('npm', ['view', '@mango/cli', 'version', `--registry=${consumeRegistry}`], runtime.cwd || process.cwd(), env));
+    checks.push(
+      runCheck(
+        'npm',
+        ['view', '@mango/cli', 'version', `--registry=${consumeRegistry}`],
+        runtime.cwd || process.cwd(),
+        env,
+      ),
+    );
     for (const check of checks) {
       if (check.exitCode !== 0) errors.push(`${check.command} failed: ${check.output}`);
     }
     if (mavenConfigured) {
-      checks.push(runCheck('curl', ['-fsIL', '--max-time', '20', mavenPublishRegistry], runtime.cwd || process.cwd(), env));
-      checks.push(runCheck('curl', ['-fsIL', '--max-time', '20', mavenConsumeRegistry], runtime.cwd || process.cwd(), env));
+      checks.push(
+        runCheck('curl', ['-fsIL', '--max-time', '20', mavenPublishRegistry], runtime.cwd || process.cwd(), env),
+      );
+      checks.push(
+        runCheck('curl', ['-fsIL', '--max-time', '20', mavenConsumeRegistry], runtime.cwd || process.cwd(), env),
+      );
       for (const check of checks.slice(-2)) {
         if (check.exitCode !== 0) errors.push(`${check.command} failed: ${check.output}`);
       }
@@ -128,12 +142,14 @@ function runRegistryDoctor(argv, runtime, env) {
     passed: errors.length === 0,
     publishRegistry,
     consumeRegistry,
-    maven: mavenConfigured ? {
-      publishRegistry: mavenPublishRegistry,
-      consumeRegistry: mavenConsumeRegistry,
-      publishServerId: mavenPublishServerId,
-      consumeServerId: mavenConsumeServerId,
-    } : null,
+    maven: mavenConfigured
+      ? {
+          publishRegistry: mavenPublishRegistry,
+          consumeRegistry: mavenConsumeRegistry,
+          publishServerId: mavenPublishServerId,
+          consumeServerId: mavenConsumeServerId,
+        }
+      : null,
     checks,
     errors,
   };

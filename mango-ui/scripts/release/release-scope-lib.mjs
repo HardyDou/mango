@@ -154,10 +154,7 @@ export function isPublishedPmoSourceFile(file) {
 }
 
 export function isPublishedCliProjectionFile(file) {
-  return (
-    /^mango-business-starter\/frontend\//u.test(file) ||
-    file === 'mango-business-starter/README.md'
-  );
+  return /^mango-business-starter\/frontend\//u.test(file) || file === 'mango-business-starter/README.md';
 }
 
 export function isExactWorkspaceVersion(value) {
