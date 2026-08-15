@@ -46,10 +46,14 @@ if (plan.order.length > 0) {
   assertRegistryUrl(publishRegistry, 'npm publish registry');
   assertRegistryUrl(consumeRegistry, 'npm consume registry');
 }
-const mavenPublishRegistry = valueArg('--maven-publish-registry') || process.env.MANGO_RELEASE_MAVEN_PUBLISH_REGISTRY || '';
-const mavenConsumeRegistry = valueArg('--maven-consume-registry') || process.env.MANGO_RELEASE_MAVEN_CONSUME_REGISTRY || '';
-const mavenPublishServerId = valueArg('--maven-publish-server-id') || process.env.MANGO_RELEASE_MAVEN_PUBLISH_SERVER_ID || '';
-const mavenConsumeServerId = valueArg('--maven-consume-server-id') || process.env.MANGO_RELEASE_MAVEN_CONSUME_SERVER_ID || 'mango-release-consume';
+const mavenPublishRegistry =
+  valueArg('--maven-publish-registry') || process.env.MANGO_RELEASE_MAVEN_PUBLISH_REGISTRY || '';
+const mavenConsumeRegistry =
+  valueArg('--maven-consume-registry') || process.env.MANGO_RELEASE_MAVEN_CONSUME_REGISTRY || '';
+const mavenPublishServerId =
+  valueArg('--maven-publish-server-id') || process.env.MANGO_RELEASE_MAVEN_PUBLISH_SERVER_ID || '';
+const mavenConsumeServerId =
+  valueArg('--maven-consume-server-id') || process.env.MANGO_RELEASE_MAVEN_CONSUME_SERVER_ID || 'mango-release-consume';
 if (manifest.maven) {
   assertRegistryUrl(mavenPublishRegistry, 'Maven publish registry');
   assertRegistryUrl(mavenConsumeRegistry, 'Maven consume registry');
@@ -116,7 +120,10 @@ for (const packageName of plan.order) {
   if (!groupReady) {
     publication.status = 'VERIFY_PENDING';
     manifest.status = 'VERIFY_PENDING';
-    manifest.states.PUBLISHED = releaseState('pending', `${coordinate} is published but not yet visible from consume registry`);
+    manifest.states.PUBLISHED = releaseState(
+      'pending',
+      `${coordinate} is published but not yet visible from consume registry`,
+    );
     writeManifest();
     throw new Error(`${coordinate} is awaiting consume-registry visibility; run repair without republishing`);
   }
@@ -137,21 +144,22 @@ writeManifest();
 
 if (manifest.states.CONSUMER_VERIFIED.status !== 'passed') {
   const startedAt = new Date().toISOString();
-  const npmConsumer = plan.order.length > 0
-    ? runCaptured(
-        'pnpm',
-        [
-          'package-consumer:typecheck',
-          '--',
-          '--release-candidate-matrix',
-          '--pure-registry',
-          '--reuse-build',
-          `--registry=${consumeRegistry}`,
-        ],
-        workspaceRoot,
-        60 * 60 * 1000,
-      )
-    : null;
+  const npmConsumer =
+    plan.order.length > 0
+      ? runCaptured(
+          'pnpm',
+          [
+            'package-consumer:typecheck',
+            '--',
+            '--release-candidate-matrix',
+            '--pure-registry',
+            '--reuse-build',
+            `--registry=${consumeRegistry}`,
+          ],
+          workspaceRoot,
+          60 * 60 * 1000,
+        )
+      : null;
   const mavenConsumer = manifest.maven ? verifyMavenConsumer() : [];
   manifest.evidence.consumer = {
     npm: npmConsumer ? commandEvidence(npmConsumer, startedAt, workspaceRoot) : null,
@@ -164,13 +172,19 @@ if (manifest.states.CONSUMER_VERIFIED.status !== 'passed') {
     throw new Error(`pure consume-registry consumer failed; immutable packages remain published: ${manifestPath}`);
   }
   manifest.status = 'CONSUMER_VERIFIED';
-  manifest.states.CONSUMER_VERIFIED = releaseState('passed', 'clean consumer installed only the consume-registry tuple');
+  manifest.states.CONSUMER_VERIFIED = releaseState(
+    'passed',
+    'clean consumer installed only the consume-registry tuple',
+  );
   writeManifest();
 }
 
 completeTagAndRelease();
 manifest.status = 'COMPLETED';
-manifest.states.COMPLETED = releaseState('passed', `tag and GitHub Release verified after consumer success: ${plan.release.tag}`);
+manifest.states.COMPLETED = releaseState(
+  'passed',
+  `tag and GitHub Release verified after consumer success: ${plan.release.tag}`,
+);
 manifest.nextBaseline = {
   schemaVersion: 1,
   tag: plan.release.tag,
@@ -217,16 +231,15 @@ function publishMavenBatch() {
     const publishFiles = coordinate.files.map((file) => remoteMavenFileState(mavenPublishRegistry, file));
     const consumeFiles = coordinate.files.map((file) => remoteMavenFileState(mavenConsumeRegistry, file));
     const decision = decideMavenCoordinateAction({ publishFiles, consumeFiles, expectedFiles: coordinate.files });
-    if (decision.action === 'STOP') failMavenPublication(coordinate.coordinate, decision.reason, publishFiles, consumeFiles);
+    if (decision.action === 'STOP')
+      failMavenPublication(coordinate.coordinate, decision.reason, publishFiles, consumeFiles);
     if (decision.action === 'VERIFIED') {
       publication.status = 'PUBLISHED';
     } else if (decision.action === 'VERIFY_PENDING') {
       publication.status = 'VERIFY_PENDING';
     } else {
       const pom = coordinate.files.find((file) => file.path.endsWith('.pom'));
-      const main = coordinate.packaging === 'jar'
-        ? coordinate.files.find((file) => file.path.endsWith('.jar'))
-        : pom;
+      const main = coordinate.packaging === 'jar' ? coordinate.files.find((file) => file.path.endsWith('.jar')) : pom;
       const startedAt = new Date().toISOString();
       const result = runCaptured(
         'mvn',
@@ -262,16 +275,26 @@ function publishMavenBatch() {
         expectedFiles: coordinate.files,
       });
       if (!['VERIFY_PENDING', 'VERIFIED'].includes(hostedDecision.action)) {
-        failMavenPublication(coordinate.coordinate, 'published Maven files differ from the sealed coordinate', hostedAfter, []);
+        failMavenPublication(
+          coordinate.coordinate,
+          'published Maven files differ from the sealed coordinate',
+          hostedAfter,
+          [],
+        );
       }
       publication.status = 'VERIFY_PENDING';
     }
     if (publication.status !== 'PUBLISHED' && !waitForMavenConsume(coordinate)) {
       publication.status = 'VERIFY_PENDING';
       manifest.status = 'VERIFY_PENDING';
-      manifest.states.PUBLISHED = releaseState('pending', `${coordinate.coordinate} is awaiting Maven consume-registry visibility`);
+      manifest.states.PUBLISHED = releaseState(
+        'pending',
+        `${coordinate.coordinate} is awaiting Maven consume-registry visibility`,
+      );
       writeManifest();
-      throw new Error(`${coordinate.coordinate} is awaiting Maven consume-registry visibility; run repair without rebuilding`);
+      throw new Error(
+        `${coordinate.coordinate} is awaiting Maven consume-registry visibility; run repair without rebuilding`,
+      );
     }
     publication.status = 'PUBLISHED';
     publication.updatedAt = new Date().toISOString();
@@ -284,7 +307,12 @@ function remoteMavenFileState(registry, file) {
   try {
     const destination = join(temporary, 'artifact');
     const url = `${registry.replace(/\/$/u, '')}/${file.path}`;
-    const result = runCaptured('curl', ['-sS', '-L', '--max-time', '60', '-o', destination, '-w', '%{http_code}', url], repoRoot, 70_000);
+    const result = runCaptured(
+      'curl',
+      ['-sS', '-L', '--max-time', '60', '-o', destination, '-w', '%{http_code}', url],
+      repoRoot,
+      70_000,
+    );
     const statusCode = result.stdout.trim().slice(-3);
     if (result.status !== 0) return { path: file.path, state: 'unknown', output: result.stderr.trim() };
     if (statusCode === '404') return { path: file.path, state: 'absent' };
@@ -297,7 +325,7 @@ function remoteMavenFileState(registry, file) {
 
 function waitForMavenConsume(coordinate) {
   const deadline = Date.now() + visibilityTimeoutSeconds * 1000;
-  do {
+  for (;;) {
     const consumeFiles = coordinate.files.map((file) => remoteMavenFileState(mavenConsumeRegistry, file));
     const decision = decideMavenCoordinateAction({
       publishFiles: coordinate.files.map((file) => ({ ...file, state: 'present' })),
@@ -308,7 +336,7 @@ function waitForMavenConsume(coordinate) {
     if (decision.action === 'STOP') throw new Error(`${coordinate.coordinate}: ${decision.reason}`);
     if (Date.now() >= deadline) return false;
     Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, visibilityPollSeconds * 1000);
-  } while (true);
+  }
 }
 
 function verifyMavenConsumer() {
@@ -320,7 +348,8 @@ function verifyMavenConsumer() {
       const result = runCaptured(
         'mvn',
         [
-          '-q', '-U',
+          '-q',
+          '-U',
           'org.apache.maven.plugins:maven-dependency-plugin:3.8.1:get',
           `-Dmaven.repo.local=${localRepository}`,
           `-DremoteRepositories=${mavenConsumeServerId}::default::${mavenConsumeRegistry}`,
@@ -359,10 +388,9 @@ function applyCloseoutProjection() {
   const baselinePath = join(workspaceRoot, '.changeset/release-baseline.json');
   writeJson(baselinePath, manifest.nextBaseline);
   const removed = [];
-  for (const file of [
-    plan.legacyReconciliation?.file,
-    ...(plan.changesets ?? []).map((entry) => entry.file),
-  ].filter(Boolean)) {
+  for (const file of [plan.legacyReconciliation?.file, ...(plan.changesets ?? []).map((entry) => entry.file)].filter(
+    Boolean,
+  )) {
     const path = resolve(workspaceRoot, file.replace(/^\.changeset\//u, '.changeset/'));
     if (!path.startsWith(`${join(workspaceRoot, '.changeset')}/`)) {
       throw new Error(`closeout path escapes .changeset: ${file}`);
@@ -382,21 +410,27 @@ function applyCloseoutProjection() {
 
 function waitForConsumeRegistry(coordinate, expectedHash) {
   const deadline = Date.now() + visibilityTimeoutSeconds * 1000;
-  do {
+  for (;;) {
     const state = registryVersion(coordinate, consumeRegistry);
     if (state.state === 'unknown') throw new Error(`${coordinate}: consume registry state is unknown`);
     if (state.state === 'present') {
       const hash = registryTarballSha256(coordinate, consumeRegistry);
-      if (hash !== expectedHash) throw new Error(`${coordinate}: consume registry tarball hash differs from sealed artifact`);
+      if (hash !== expectedHash)
+        throw new Error(`${coordinate}: consume registry tarball hash differs from sealed artifact`);
       return true;
     }
     if (Date.now() >= deadline) return false;
     Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, visibilityPollSeconds * 1000);
-  } while (true);
+  }
 }
 
 function registryVersion(coordinate, registry) {
-  const result = runCaptured('npm', ['view', coordinate, 'version', `--registry=${registry}`, '--json'], repoRoot, 60_000);
+  const result = runCaptured(
+    'npm',
+    ['view', coordinate, 'version', `--registry=${registry}`, '--json'],
+    repoRoot,
+    60_000,
+  );
   const output = `${result.stdout}\n${result.stderr}`;
   if (result.status === 0) {
     const value = JSON.parse(result.stdout);
@@ -410,10 +444,16 @@ function registryVersion(coordinate, registry) {
 function registryTarballSha256(coordinate, registry) {
   const temporary = mkdtempSync(join(tmpdir(), 'mango-release-registry-'));
   try {
-    const result = runCaptured('npm', ['pack', coordinate, `--registry=${registry}`, '--pack-destination', temporary], repoRoot, 120_000);
+    const result = runCaptured(
+      'npm',
+      ['pack', coordinate, `--registry=${registry}`, '--pack-destination', temporary],
+      repoRoot,
+      120_000,
+    );
     if (result.status !== 0) throw new Error(`cannot download ${coordinate} from ${registry}: ${result.stderr}`);
     const tarballs = readdirSync(temporary).filter((file) => file.endsWith('.tgz'));
-    if (tarballs.length !== 1) throw new Error(`expected one downloaded tarball for ${coordinate}, found ${tarballs.length}`);
+    if (tarballs.length !== 1)
+      throw new Error(`expected one downloaded tarball for ${coordinate}, found ${tarballs.length}`);
     return sha256File(join(temporary, tarballs[0]));
   } finally {
     rmSync(temporary, { recursive: true, force: true });
@@ -435,12 +475,22 @@ function completeTagAndRelease() {
   if (release.status !== 0) {
     runChecked(
       'gh',
-      ['release', 'create', tag, '--verify-tag', '--title', plan.release.title, '--notes-file', join(workspaceRoot, plan.release.notesFile)],
+      [
+        'release',
+        'create',
+        tag,
+        '--verify-tag',
+        '--title',
+        plan.release.title,
+        '--notes-file',
+        join(workspaceRoot, plan.release.notesFile),
+      ],
       repoRoot,
     );
   }
   const verified = runCaptured('gh', ['release', 'view', tag, '--json', 'tagName,url'], repoRoot);
-  if (verified.status !== 0 || JSON.parse(verified.stdout).tagName !== tag) throw new Error(`GitHub Release verification failed: ${tag}`);
+  if (verified.status !== 0 || JSON.parse(verified.stdout).tagName !== tag)
+    throw new Error(`GitHub Release verification failed: ${tag}`);
 }
 
 function failPublication(packageName, reason, hosted = null, group = null) {
@@ -526,7 +576,7 @@ function valueArg(name) {
   const inline = args.find((arg) => arg.startsWith(`${name}=`));
   if (inline) return inline.slice(name.length + 1);
   const index = args.indexOf(name);
-  return index >= 0 ? args[index + 1] ?? '' : '';
+  return index >= 0 ? (args[index + 1] ?? '') : '';
 }
 
 function resolveArg(name, fallback) {
