@@ -10,9 +10,13 @@
 
 - This change is delivered by the Mango Maven `mango-file-preview-engine` artifact. Include it in the next Mango Maven release and upgrade backend consumers as one aligned Maven matrix. No standalone `@mango/file` npm release is required for this capability.
 
+### Fixed
+
+- Persist `remoteWrites=true` before every immutable registry, Tag or GitHub Release command, and let completed-batch `repair` recover a missing audit flag only after read-only hosted/group, Tag and Release verification. This prevents a process interruption from making a remotely written batch look replaceable.
+
 ## v2026.08.15-pmo-1.3.15-job-1.0.27-admin-shell-1.0.60-admin-1.0.66-cli-1.0.107-local-first-release - 2026-08-15
 
-Status: `PENDING`. This npm-only batch replaces the broken Admin tuple, includes the subsequently merged Job pagination fix, and introduces the local-first Mango release workflow. Mango Maven remains `1.0.36` and `@mango/common` remains `1.0.26`.
+Status: `PUBLISHED_AND_VERIFIED`. All five sealed npm tarballs match in npm-hosted and npm-group, the pure consume-registry consumer passed typecheck and production build, and the GitHub Release is `CREATED_AND_VERIFIED`. Canonical manifest `363855d6a488231eff129b0541e69e1ce916ea20d0c1c3bbf8e757f08100bce9` is `COMPLETED`. Mango Maven remains `1.0.36` and `@mango/common` remains `1.0.26`.
 
 ### Pull Requests
 
@@ -48,13 +52,13 @@ Status: `PENDING`. This npm-only batch replaces the broken Admin tuple, includes
 
 | Order | Target                           | Version                                                                                             | Status                                                                      |
 | ----: | -------------------------------- | --------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
-|     1 | `@mango/job`                     | `1.0.27`                                                                                            | `PENDING` publication and hosted/group verification.                        |
-|     2 | `@mango/admin-shell`             | `1.0.60`                                                                                            | `PENDING` publication and hosted/group verification.                        |
-|     3 | `@mango/admin`                   | `1.0.66`                                                                                            | `PENDING` after Job and Admin Shell verification.                           |
-|     4 | `@mango/pmo`                     | `1.3.15`                                                                                            | `PENDING` canonical release workflow bundle.                                |
-|     5 | `@mango/cli`                     | `1.0.107`                                                                                           | `PENDING` after the corrected Job, Admin and PMO matrix is available.       |
-|     6 | Immutable tag and GitHub Release | `v2026.08.15-pmo-1.3.15-job-1.0.27-admin-shell-1.0.60-admin-1.0.66-cli-1.0.107-local-first-release` | `PENDING` until pure consume-registry verification passes.                  |
-|     7 | Latest documentation             | Pages                                                                                               | `PENDING`; npm-only release does not create a Maven documentation snapshot. |
+|     1 | `@mango/job`                     | `1.0.27`                                                                                            | `PUBLISHED_AND_VERIFIED`; hosted/group SHA-256 matches the sealed tarball. |
+|     2 | `@mango/admin-shell`             | `1.0.60`                                                                                            | `PUBLISHED_AND_VERIFIED`; hosted/group SHA-256 matches the sealed tarball. |
+|     3 | `@mango/admin`                   | `1.0.66`                                                                                            | `PUBLISHED_AND_VERIFIED`; hosted/group SHA-256 matches the sealed tarball. |
+|     4 | `@mango/pmo`                     | `1.3.15`                                                                                            | `PUBLISHED_AND_VERIFIED`; hosted/group SHA-256 matches the sealed tarball. |
+|     5 | `@mango/cli`                     | `1.0.107`                                                                                           | `PUBLISHED_AND_VERIFIED`; hosted/group SHA-256 matches the sealed tarball. |
+|     6 | Immutable tag and GitHub Release | `v2026.08.15-pmo-1.3.15-job-1.0.27-admin-shell-1.0.60-admin-1.0.66-cli-1.0.107-local-first-release` | `CREATED_AND_VERIFIED` after the pure consume-registry consumer passed.   |
+|     7 | Latest documentation             | Pages                                                                                               | `NOT_APPLICABLE`; npm-only release creates no Maven documentation snapshot. |
 
 ### Business Impact
 

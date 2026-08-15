@@ -15,7 +15,7 @@ import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { assertReleasePlanShape, sha256 } from './release-plan-lib.mjs';
-import { decideRegistryAction } from './release-publication-lib.mjs';
+import { decideRegistryAction, markRemoteWriteIntent, recoverRemoteWriteAudit } from './release-publication-lib.mjs';
 import { decideMavenCoordinateAction, verifyStagedMavenRepository } from './release-maven-lib.mjs';
 import { assertCleanWorktree, gitValue } from './release-repository-lib.mjs';
 
@@ -62,6 +62,15 @@ if (manifest.maven) {
 const visibilityTimeoutSeconds = numericArg('--visibility-timeout', 300, 0, 300);
 const visibilityPollSeconds = numericArg('--visibility-poll', 5, 1, 30);
 
+if (action === 'repair' && manifest.status === 'COMPLETED') {
+  verifyCompletedReleaseReadOnly();
+  if (recoverRemoteWriteAudit(manifest)) writeManifest();
+  printStatus(manifest);
+  process.exit(0);
+}
+
+if (recoverRemoteWriteAudit(manifest)) writeManifest();
+
 assertCleanWorktree(repoRoot);
 runChecked(process.execPath, [join(workspaceRoot, 'scripts/release/check-release-plan.mjs')], repoRoot);
 verifySourceAndArtifacts();
@@ -92,6 +101,8 @@ for (const packageName of plan.order) {
   } else {
     const artifactPath = resolveArtifactPath(artifact);
     const startedAt = new Date().toISOString();
+    markRemoteWriteIntent(manifest, { kind: 'npm-publish', target: coordinate, recordedAt: startedAt });
+    writeManifest();
     const result = runCaptured(
       'npm',
       ['publish', artifactPath, `--registry=${publishRegistry}`, '--access=public'],
@@ -241,6 +252,12 @@ function publishMavenBatch() {
       const pom = coordinate.files.find((file) => file.path.endsWith('.pom'));
       const main = coordinate.packaging === 'jar' ? coordinate.files.find((file) => file.path.endsWith('.jar')) : pom;
       const startedAt = new Date().toISOString();
+      markRemoteWriteIntent(manifest, {
+        kind: 'maven-deploy',
+        target: coordinate.coordinate,
+        recordedAt: startedAt,
+      });
+      writeManifest();
       const result = runCaptured(
         'mvn',
         [
@@ -470,9 +487,15 @@ function completeTagAndRelease() {
     runChecked('git', ['tag', '-a', tag, intendedCommit, '-m', plan.release.title], repoRoot);
   }
   const remoteTag = runCaptured('git', ['ls-remote', '--tags', 'origin', `refs/tags/${tag}^{}`], repoRoot);
-  if (!remoteTag.stdout.trim()) runChecked('git', ['push', 'origin', `refs/tags/${tag}`], repoRoot);
+  if (!remoteTag.stdout.trim()) {
+    markRemoteWriteIntent(manifest, { kind: 'git-tag-push', target: tag });
+    writeManifest();
+    runChecked('git', ['push', 'origin', `refs/tags/${tag}`], repoRoot);
+  }
   const release = runCaptured('gh', ['release', 'view', tag, '--json', 'tagName,url'], repoRoot);
   if (release.status !== 0) {
+    markRemoteWriteIntent(manifest, { kind: 'github-release-create', target: tag });
+    writeManifest();
     runChecked(
       'gh',
       [
@@ -491,6 +514,40 @@ function completeTagAndRelease() {
   const verified = runCaptured('gh', ['release', 'view', tag, '--json', 'tagName,url'], repoRoot);
   if (verified.status !== 0 || JSON.parse(verified.stdout).tagName !== tag)
     throw new Error(`GitHub Release verification failed: ${tag}`);
+}
+
+function verifyCompletedReleaseReadOnly() {
+  for (const artifact of manifest.artifacts) {
+    const coordinate = `${artifact.name}@${artifact.version}`;
+    const hosted = registryVersion(coordinate, publishRegistry);
+    const consume = registryVersion(coordinate, consumeRegistry);
+    if (hosted.state === 'present') hosted.sha256 = registryTarballSha256(coordinate, publishRegistry);
+    if (consume.state === 'present') consume.sha256 = registryTarballSha256(coordinate, consumeRegistry);
+    const decision = decideRegistryAction({ hosted, consume, expectedSha256: artifact.sha256 });
+    if (decision.action !== 'VERIFIED') {
+      throw new Error(`${coordinate}: completed release registry verification failed: ${decision.reason}`);
+    }
+  }
+  if (manifest.maven) {
+    for (const coordinate of manifest.maven.coordinates) {
+      const publishFiles = coordinate.files.map((file) => remoteMavenFileState(mavenPublishRegistry, file));
+      const consumeFiles = coordinate.files.map((file) => remoteMavenFileState(mavenConsumeRegistry, file));
+      const decision = decideMavenCoordinateAction({ publishFiles, consumeFiles, expectedFiles: coordinate.files });
+      if (decision.action !== 'VERIFIED') {
+        throw new Error(`${coordinate.coordinate}: completed Maven release verification failed: ${decision.reason}`);
+      }
+    }
+  }
+  const tag = plan.release.tag;
+  const intendedCommit = manifest.source.mergedCommit || manifest.source.commit;
+  const remoteTag = runCaptured('git', ['ls-remote', '--tags', 'origin', `refs/tags/${tag}^{}`], repoRoot);
+  if (remoteTag.status !== 0 || remoteTag.stdout.trim().split(/\s+/u)[0] !== intendedCommit) {
+    throw new Error(`completed release tag verification failed: ${tag}`);
+  }
+  const release = runCaptured('gh', ['release', 'view', tag, '--json', 'tagName,url'], repoRoot);
+  if (release.status !== 0 || JSON.parse(release.stdout).tagName !== tag) {
+    throw new Error(`completed GitHub Release verification failed: ${tag}`);
+  }
 }
 
 function failPublication(packageName, reason, hosted = null, group = null) {
