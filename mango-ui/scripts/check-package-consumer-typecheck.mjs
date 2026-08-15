@@ -1,11 +1,12 @@
 #!/usr/bin/env node
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { dirname, join, relative, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { assertPackedPackageBoundary as assertPackedPackageFiles } from './quality/packed-package-boundary.mjs';
 import { classifyRegistryVersionResult } from './package-consumer-matrix.mjs';
+import { toCanonicalRelativePath } from './release/consumer-tarball-paths.mjs';
 
 const currentFile = fileURLToPath(import.meta.url);
 const uiRoot = resolve(dirname(currentFile), '..');
@@ -245,7 +246,7 @@ function listTypedPackedPackages() {
 }
 
 function toPackageRelativePath(fromRoot, targetPath) {
-  return relative(fromRoot, targetPath).split('\\').join('/');
+  return toCanonicalRelativePath(fromRoot, targetPath);
 }
 
 function applyTarballMappings(frontendRoot, mappings) {
