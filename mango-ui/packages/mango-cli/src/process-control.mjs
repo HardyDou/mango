@@ -14,6 +14,9 @@ export function isProcessAlive(pid) {
   } catch {
     return false;
   }
+  if (process.platform === 'win32') {
+    return true;
+  }
   const stat = spawnSync('ps', ['-o', 'stat=', '-p', String(numericPid)], { encoding: 'utf8' });
   if (stat.error?.code === 'ENOENT') {
     return true;
@@ -45,6 +48,9 @@ export async function stopProcessGroup(pid, options = {}) {
   const graceMs = positiveDuration(options.graceMs, DEFAULT_STOP_GRACE_MS);
   const killWaitMs = positiveDuration(options.killWaitMs, DEFAULT_KILL_WAIT_MS);
   const pollIntervalMs = positiveDuration(options.pollIntervalMs, DEFAULT_POLL_INTERVAL_MS);
+  if (process.platform === 'win32') {
+    return stopWindowsProcessTree(numericPid, graceMs, killWaitMs, pollIntervalMs);
+  }
   const signalScope = sendSignal(numericPid, 'SIGTERM');
   if (signalScope === null) {
     return { stopped: true, forced: false };
@@ -55,6 +61,26 @@ export async function stopProcessGroup(pid, options = {}) {
   }
   sendSignal(numericPid, 'SIGKILL', signalScope);
   const stopped = await waitUntilStopped(() => isAlive(numericPid), killWaitMs, pollIntervalMs);
+  return { stopped, forced: true };
+}
+
+async function stopWindowsProcessTree(pid, graceMs, killWaitMs, pollIntervalMs) {
+  const graceful = spawnSync('taskkill', ['/PID', String(pid), '/T'], {
+    stdio: 'ignore',
+    windowsHide: true,
+  });
+  if (graceful.status === 0) {
+    if (await waitUntilStopped(() => isProcessAlive(pid), graceMs, pollIntervalMs)) {
+      return { stopped: true, forced: false };
+    }
+  } else if (!isProcessAlive(pid)) {
+    return { stopped: true, forced: false };
+  }
+  spawnSync('taskkill', ['/PID', String(pid), '/T', '/F'], {
+    stdio: 'ignore',
+    windowsHide: true,
+  });
+  const stopped = await waitUntilStopped(() => isProcessAlive(pid), killWaitMs, pollIntervalMs);
   return { stopped, forced: true };
 }
 

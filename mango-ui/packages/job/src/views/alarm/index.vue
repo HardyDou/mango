@@ -32,7 +32,12 @@
         </el-form-item>
         <el-form-item label="状态" class="job-search-item job-search-item-small">
           <el-select v-model="query.enabled" clearable placeholder="全部">
-            <el-option v-for="item in enabledOptions" :key="String(item.value)" :label="item.label" :value="item.value" />
+            <el-option
+              v-for="item in enabledOptions"
+              :key="String(item.value)"
+              :label="item.label"
+              :value="item.value"
+            />
           </el-select>
         </el-form-item>
         <el-form-item class="job-search-actions">
@@ -89,22 +94,32 @@
         <el-table-column label="操作" width="230" fixed="right">
           <template #default="{ row }">
             <div class="job-actions">
-              <el-button v-auth="'job:alarm:edit'" link type="primary" :icon="Edit" @click="openEditor(row)">编辑</el-button>
+              <el-button v-auth="'job:alarm:edit'" link type="primary" :icon="Edit" @click="openEditor(row)"
+                >编辑</el-button
+              >
               <el-button v-auth="'job:alarm:status'" link type="primary" @click="toggleEnabled(row)">
                 {{ row.enabled ? '停用' : '启用' }}
               </el-button>
-              <el-button v-auth="'job:alarm:delete'" link type="danger" :icon="Delete" @click="deleteRow(row)">删除</el-button>
+              <el-button v-auth="'job:alarm:delete'" link type="danger" :icon="Delete" @click="deleteRow(row)"
+                >删除</el-button
+              >
             </div>
           </template>
         </el-table-column>
       </el-table>
 
       <div class="job-pagination">
-        <Pagination v-model:current-page="query.pageNum" v-model:page-size="query.pageSize" :total="total" @change="loadRows" />
+        <Pagination v-model:page="query.pageNum" v-model:limit="query.pageSize" :total="total" @pagination="loadRows" />
       </div>
     </section>
 
-    <el-dialog v-model="editorVisible" :title="form.id ? '编辑告警规则' : '新增告警规则'" width="760px" destroy-on-close append-to-body>
+    <el-dialog
+      v-model="editorVisible"
+      :title="form.id ? '编辑告警规则' : '新增告警规则'"
+      width="760px"
+      destroy-on-close
+      append-to-body
+    >
       <el-form ref="formRef" :model="form" :rules="rules" label-width="118px">
         <div class="job-form-section-title">匹配范围</div>
         <el-row :gutter="14">
@@ -168,7 +183,12 @@
           </el-col>
           <el-col :span="24">
             <el-form-item label="多个用户">
-              <el-input v-model="form.userIdsText" type="textarea" :rows="3" placeholder="多个用户 ID 使用逗号或换行分隔" />
+              <el-input
+                v-model="form.userIdsText"
+                type="textarea"
+                :rows="3"
+                placeholder="多个用户 ID 使用逗号或换行分隔"
+              />
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -188,6 +208,7 @@
 
 <script setup lang="ts">
 import { Delete, Edit, Plus, Refresh, Search } from '@element-plus/icons-vue';
+import { Pagination } from '@mango/common';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
 import { onMounted, reactive, ref } from 'vue';
 import {
@@ -322,7 +343,7 @@ async function searchJobs(keyword = '') {
 }
 
 async function ensureJobOptions(alarmRules: JobAlarmRule[]) {
-  const missing = alarmRules.some(rule => rule.jobId && !jobOptions.value.some(item => item.id === rule.jobId));
+  const missing = alarmRules.some((rule) => rule.jobId && !jobOptions.value.some((item) => item.id === rule.jobId));
   if (missing || jobOptions.value.length === 0) {
     await searchJobs('');
   }
@@ -330,12 +351,12 @@ async function ensureJobOptions(alarmRules: JobAlarmRule[]) {
 
 function mergeJobOptions(current: JobDefinition[], incoming: JobDefinition[]) {
   const map = new Map<ApiId, JobDefinition>();
-  current.forEach(item => {
+  current.forEach((item) => {
     if (item.id) {
       map.set(item.id, item);
     }
   });
-  incoming.forEach(item => {
+  incoming.forEach((item) => {
     if (item.id) {
       map.set(item.id, item);
     }
@@ -440,7 +461,7 @@ function buildNoticeParams() {
   }
   const userIds = form.userIdsText
     .split(/[\n,，]+/)
-    .map(item => item.trim())
+    .map((item) => item.trim())
     .filter(Boolean)
     .map(normalizeId);
   if (userIds.length > 0) {
@@ -458,11 +479,9 @@ async function toggleEnabled(row: JobAlarmRule) {
     return;
   }
   const nextEnabled = !row.enabled;
-  await ElMessageBox.confirm(
-    `确认${nextEnabled ? '启用' : '停用'}告警规则「${row.ruleName}」？`,
-    '更新告警规则状态',
-    { type: 'warning' },
-  );
+  await ElMessageBox.confirm(`确认${nextEnabled ? '启用' : '停用'}告警规则「${row.ruleName}」？`, '更新告警规则状态', {
+    type: 'warning',
+  });
   try {
     await jobApi.updateAlarmRuleStatus({ id: row.id, enabled: nextEnabled });
     ElMessage.success(nextEnabled ? '告警规则已启用' : '告警规则已停用');

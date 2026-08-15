@@ -21,7 +21,12 @@
         </el-form-item>
         <el-form-item label="状态" class="job-search-item job-search-item-small">
           <el-select v-model="query.status" clearable placeholder="全部">
-            <el-option v-for="item in jobDefinitionStatusOptions" :key="item.value" :label="item.label" :value="item.value" />
+            <el-option
+              v-for="item in jobDefinitionStatusOptions"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            />
           </el-select>
         </el-form-item>
         <el-form-item class="job-search-actions">
@@ -43,7 +48,12 @@
           </el-form-item>
           <el-form-item label="调度类型" class="job-search-item">
             <el-select v-model="query.scheduleType" clearable placeholder="全部">
-              <el-option v-for="item in scheduleTypeOptions" :key="item.value" :label="item.label" :value="item.value" />
+              <el-option
+                v-for="item in scheduleTypeOptions"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value"
+              />
             </el-select>
           </el-form-item>
           <el-form-item label="引擎" class="job-search-item job-search-item-small">
@@ -110,7 +120,9 @@
         <el-table-column label="操作" width="310" fixed="right">
           <template #default="{ row }">
             <div class="job-actions">
-              <el-button v-auth="'job:definition:edit'" link type="primary" :icon="Edit" @click="openEditor(row)">编辑</el-button>
+              <el-button v-auth="'job:definition:edit'" link type="primary" :icon="Edit" @click="openEditor(row)"
+                >编辑</el-button
+              >
               <el-button
                 v-for="action in statusActions(row.status)"
                 :key="action.status"
@@ -121,19 +133,41 @@
               >
                 {{ action.label }}
               </el-button>
-              <el-button v-auth="'job:definition:trigger'" link type="success" :icon="VideoPlay" :disabled="row.status === 'DRAFT' || row.status === 'DISABLED'" @click="openTrigger(row)">触发</el-button>
-              <el-button v-auth="'job:definition:delete'" link type="danger" :icon="Delete" :disabled="row.status !== 'DRAFT'" @click="deleteRow(row)">删除</el-button>
+              <el-button
+                v-auth="'job:definition:trigger'"
+                link
+                type="success"
+                :icon="VideoPlay"
+                :disabled="row.status === 'DRAFT' || row.status === 'DISABLED'"
+                @click="openTrigger(row)"
+                >触发</el-button
+              >
+              <el-button
+                v-auth="'job:definition:delete'"
+                link
+                type="danger"
+                :icon="Delete"
+                :disabled="row.status !== 'DRAFT'"
+                @click="deleteRow(row)"
+                >删除</el-button
+              >
             </div>
           </template>
         </el-table-column>
       </el-table>
 
       <div class="job-pagination">
-        <Pagination v-model:current-page="query.pageNum" v-model:page-size="query.pageSize" :total="total" @change="loadRows" />
+        <Pagination v-model:page="query.pageNum" v-model:limit="query.pageSize" :total="total" @pagination="loadRows" />
       </div>
     </section>
 
-    <el-dialog v-model="editorVisible" :title="form.id ? '编辑任务' : '新增任务'" width="780px" destroy-on-close append-to-body>
+    <el-dialog
+      v-model="editorVisible"
+      :title="form.id ? '编辑任务' : '新增任务'"
+      width="780px"
+      destroy-on-close
+      append-to-body
+    >
       <el-form ref="formRef" :model="form" :rules="rules" label-width="112px">
         <div class="job-form-section-title">基本信息</div>
         <el-row :gutter="14">
@@ -165,7 +199,12 @@
           <el-col :span="12">
             <el-form-item label="底层引擎" prop="engineType">
               <el-select v-model="form.engineType" style="width: 100%">
-                <el-option v-for="item in engineTypeOptions" :key="item.value" :label="item.label" :value="item.value" />
+                <el-option
+                  v-for="item in engineTypeOptions"
+                  :key="item.value"
+                  :label="item.label"
+                  :value="item.value"
+                />
               </el-select>
             </el-form-item>
           </el-col>
@@ -187,13 +226,21 @@
           <el-col :span="12">
             <el-form-item label="调度类型" prop="scheduleType">
               <el-select v-model="form.scheduleType" style="width: 100%">
-                <el-option v-for="item in scheduleTypeOptions" :key="item.value" :label="item.label" :value="item.value" />
+                <el-option
+                  v-for="item in scheduleTypeOptions"
+                  :key="item.value"
+                  :label="item.label"
+                  :value="item.value"
+                />
               </el-select>
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="调度表达式" prop="scheduleExpression">
-              <el-input v-model="form.scheduleExpression" :placeholder="form.scheduleType === 'MANUAL' ? '手动任务可为空' : 'Cron/秒/时间表达式'" />
+              <el-input
+                v-model="form.scheduleExpression"
+                :placeholder="form.scheduleType === 'MANUAL' ? '手动任务可为空' : 'Cron/秒/时间表达式'"
+              />
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -262,6 +309,7 @@
 
 <script setup lang="ts">
 import { ArrowDown, Delete, Edit, Plus, Refresh, Search, VideoPlay } from '@element-plus/icons-vue';
+import { Pagination } from '@mango/common';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
 import { onMounted, reactive, ref } from 'vue';
 import {
@@ -421,24 +469,40 @@ async function saveRow() {
 
 function statusActions(status?: JobDefinitionStatus) {
   if (status === 'DRAFT') {
-    return [{ label: '启用', status: 'ENABLED' as JobDefinitionStatus }, { label: '禁用', status: 'DISABLED' as JobDefinitionStatus }];
+    return [
+      { label: '启用', status: 'ENABLED' as JobDefinitionStatus },
+      { label: '禁用', status: 'DISABLED' as JobDefinitionStatus },
+    ];
   }
   if (status === 'ENABLED') {
-    return [{ label: '暂停', status: 'PAUSED' as JobDefinitionStatus }, { label: '禁用', status: 'DISABLED' as JobDefinitionStatus }];
+    return [
+      { label: '暂停', status: 'PAUSED' as JobDefinitionStatus },
+      { label: '禁用', status: 'DISABLED' as JobDefinitionStatus },
+    ];
   }
   if (status === 'PAUSED') {
-    return [{ label: '启用', status: 'ENABLED' as JobDefinitionStatus }, { label: '禁用', status: 'DISABLED' as JobDefinitionStatus }];
+    return [
+      { label: '启用', status: 'ENABLED' as JobDefinitionStatus },
+      { label: '禁用', status: 'DISABLED' as JobDefinitionStatus },
+    ];
   }
   if (status === 'DISABLED') {
-    return [{ label: '启用', status: 'ENABLED' as JobDefinitionStatus }, { label: '退回草稿', status: 'DRAFT' as JobDefinitionStatus }];
+    return [
+      { label: '启用', status: 'ENABLED' as JobDefinitionStatus },
+      { label: '退回草稿', status: 'DRAFT' as JobDefinitionStatus },
+    ];
   }
   return [];
 }
 
 async function changeStatus(row: JobDefinition, status: JobDefinitionStatus) {
-  await ElMessageBox.confirm(`确认将任务「${row.jobName}」调整为「${optionLabel(jobDefinitionStatusOptions, status)}」？`, '调整状态', {
-    type: 'warning',
-  });
+  await ElMessageBox.confirm(
+    `确认将任务「${row.jobName}」调整为「${optionLabel(jobDefinitionStatusOptions, status)}」？`,
+    '调整状态',
+    {
+      type: 'warning',
+    },
+  );
   await jobApi.updateDefinitionStatus(row.id!, status);
   ElMessage.success('状态已更新');
   await loadRows();

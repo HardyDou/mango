@@ -3,7 +3,23 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
-import { discoverTypecheckTargets, parseTypeScriptDiagnostics } from './typecheck-runner-lib.mjs';
+import {
+  discoverTypecheckTargets,
+  parseTypeScriptDiagnostics,
+  resolveTypecheckCommand,
+} from './typecheck-runner-lib.mjs';
+
+test('resolves the platform-specific vue-tsc executable', () => {
+  const root = path.resolve('/repo/mango-ui');
+  assert.deepEqual(resolveTypecheckCommand(root, 'win32'), {
+    executable: path.join(root, 'node_modules', '.bin', 'vue-tsc.cmd'),
+    shell: true,
+  });
+  assert.deepEqual(resolveTypecheckCommand(root, 'linux'), {
+    executable: path.join(root, 'node_modules', '.bin', 'vue-tsc'),
+    shell: false,
+  });
+});
 
 test('discovers workspace tsconfig files and reports missing configurations', () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'mango-typecheck-targets-'));
