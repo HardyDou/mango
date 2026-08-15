@@ -59,6 +59,7 @@
 | 全部                      | M10/M11 CLI 回归 | `pnpm -C mango-ui --filter @mango/cli test`                                                                                                                                             | PASS            | 80 项中 78 项通过、2 项 Unix-only 在 Windows 跳过；覆盖打包、命令参数、真实 Maven Reactor、后台日志、重启和进程树停止  |
 | 全部                      | M10 runner 回归  | `node --test mango-ui/scripts/quality/typecheck-runner.test.mjs mango-ui/packages/mango-cli/tests/platform-command.test.mjs mango-ui/packages/mango-cli/tests/process-control.test.mjs` | PASS            | 17 项中 15 项通过、2 项 Unix-only 在 Windows 跳过                                                                      |
 | 全部                      | M09 样式治理     | `pnpm -C mango-ui admin:styles:check`；`pnpm -C mango-ui admin:module-styles:check`                                                                                                     | PASS            | 18 个 package 样式导出和 12 个官方模块治理检查通过                                                                     |
+| REQ-001、REQ-002          | M09 页面基线     | `node mango-pmo/tools/check-frontend-page-baseline.mjs --base origin/main --head HEAD --frontend-root mango-ui`                                                                         | PASS            | 检查 5 个变更 view 文件（四个列表页与参数编辑器）；按页面领域语义登记窄范围 list/dialog 例外                           |
 | REQ-001、REQ-002          | M13 页面验证     | Mango CLI 启动 workspace `mango_070`，浏览器登录后检查四个 Job 页面并切换任务定义每页数量                                                                                               | PASS            | 四页均显示分页器；任务定义 10→20 条/页成功；实例/告警空态正常；Worker 数据正常；console error 0，Pagination 解析错误 0 |
 
 ### 6.1 验证环境与数据边界
@@ -94,6 +95,6 @@
 - 隔离库数据未超过一页，真实“下一页”按钮按边界保持禁用；页面容量切换已通过，页码/容量请求和响应映射由定向单测覆盖。发布后建议在下游含多页数据的环境补一次非阻断验收。
 - 公共 `Pagination` 当前会输出 Element Plus `small` 属性将在 3.0 废弃的 warning；四个 Job 页面没有 console error 或组件解析错误，本任务不扩大到公共组件迁移。
 - Windows 下首次 Mango CLI 冷启动需要执行完整 Maven Reactor bootstrap/verify，耗时约 4 分钟；已验证前后端最终健康，但仍属于本地启动成本。
-- `check-frontend-page-baseline.mjs --base origin/main --head HEAD` 返回 PASS，但当前改动未提交，脚本报告 `0 changed view files checked`，不作为有效页面验收证据。
+- 四个 Job 页面保留现有领域操作台布局，没有在本 PR 迁移 `MangoListPage`/`MangoSearchPanel`/`MangoListPanel`；任务定义、Worker 和告警编辑弹框也保留领域联合表单。源码已按具体页面语义登记 `mango-page-baseline-exception`，后续若统一页面骨架需重新执行完整 UI 验收。
 - `npm ci` 报告 VitePress 依赖树存在 2 个 moderate、3 个 high 漏洞；属于当前文档站依赖基线，本任务未升级依赖，文档构建仍通过。
 - npm 发布和 `baohan-open` 依赖升级不在本次代码修复授权范围内，源码修复完成后仍需独立发布流程才能进入业务环境。

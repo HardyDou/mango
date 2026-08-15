@@ -1,3 +1,5 @@
+<!-- mango-page-baseline-exception list: Worker 节点是运行时运维页，同页承载节点排空、下线、禁用和处理器联合登记 -->
+<!-- mango-page-baseline-exception dialog: Worker 登记同时编辑节点身份、通信信息与处理器参数 Schema，属于运维联合登记表单 -->
 <template>
   <div class="job-page">
     <section class="job-toolbar">

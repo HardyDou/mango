@@ -1,3 +1,5 @@
+<!-- mango-page-baseline-exception list: 任务定义是调度编排操作台，同页承载高级筛选、状态机动作、手动触发和结构化参数编辑 -->
+<!-- mango-page-baseline-exception dialog: 任务编辑与手动触发包含调度联动和递归结构化参数编辑器，超出标准短表单弹框合同 -->
 <template>
   <div class="job-page">
     <section class="job-toolbar">

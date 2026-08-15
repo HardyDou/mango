@@ -1,3 +1,4 @@
+<!-- mango-page-baseline-exception list: 执行实例是运行诊断页，同页承载远程任务检索、实例同步、原生日志轮询和日志抽屉 -->
 <template>
   <div class="job-page">
     <section class="job-toolbar">

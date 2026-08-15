@@ -1,3 +1,5 @@
+<!-- mango-page-baseline-exception list: 告警规则页同时呈现应用级与任务级匹配优先级、远程任务选择和通知目标规则 -->
+<!-- mango-page-baseline-exception dialog: 告警编辑同时配置匹配优先级、通知模板和动态收件人规则数组，超出标准短表单弹框合同 -->
 <template>
   <div class="job-page">
     <section class="job-toolbar">
