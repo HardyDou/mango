@@ -62,6 +62,7 @@ test(
       assert.match(runningStatus.stdout, /running\s+business-app/u);
       assert.match(runningStatus.stdout, new RegExp(`http://127.0.0.1:${workspace.backendPort}`, 'u'));
 
+      await waitForLogText('BUSINESS_VALUE=BUSINESS_SOURCE_V1');
       const firstLogs = runCli(['dev', 'logs', 'business-app']);
       assert.match(firstLogs.stdout, /BUSINESS_VALUE=BUSINESS_SOURCE_V1/u);
 
@@ -70,6 +71,7 @@ test(
       assert.match(restarted.stdout, /business-app: stopped/u);
       assert.match(restarted.stdout, /business-app: ready/u);
       assert.equal(await readBusinessValue(appUrl), 'BUSINESS_SOURCE_V2');
+      await waitForLogText('BUSINESS_VALUE=BUSINESS_SOURCE_V2');
       const restartedLogs = runCli(['dev', 'logs', 'business-app']);
       assert.match(restartedLogs.stdout, /BUSINESS_VALUE=BUSINESS_SOURCE_V2/u);
 
@@ -126,6 +128,19 @@ test(
         return [];
       }
       return JSON.parse(readFileSync(registry, 'utf8'));
+    }
+
+    async function waitForLogText(expected, timeoutMs = 3000) {
+      const logPath = join(root, '.mango/run/logs/business-app.log');
+      const deadline = Date.now() + timeoutMs;
+      while (Date.now() < deadline) {
+        if (existsSync(logPath) && readFileSync(logPath, 'utf8').includes(expected)) {
+          return;
+        }
+        await new Promise((resolvePromise) => setTimeout(resolvePromise, 50));
+      }
+      const actual = existsSync(logPath) ? readFileSync(logPath, 'utf8') : '<missing>';
+      assert.fail(`business app log did not contain ${expected}:\n${actual}`);
     }
 
     function writeFixtureProject() {

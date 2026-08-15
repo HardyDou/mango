@@ -3,8 +3,8 @@ import test from 'node:test';
 import { existsSync, mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { spawnSync } from 'node:child_process';
 import { buildSpringBootReactorArgs, resolveSpringBootMavenReactor } from '../src/dev-maven-reactor.mjs';
+import { spawnCommandSync } from '../src/platform-command.mjs';
 
 test(
   'real Maven reactor cleans stale upstream resources without installing workspace artifacts',
@@ -49,7 +49,7 @@ test(
 
     try {
       const reactor = resolveSpringBootMavenReactor({ workspaceRoot: root, appPomPath: join(root, 'app/pom.xml') });
-      const initialCompile = spawnSync(
+      const initialCompile = spawnCommandSync(
         'mvn',
         ['-q', '-f', 'pom.xml', '-pl', reactor.selector, '-am', '-DskipTests', `-Drevision=${revision}`, 'compile'],
         { cwd: reactor.cwd, encoding: 'utf8', timeout: 110_000 },
@@ -65,7 +65,11 @@ test(
         springArgs: [],
         goal: 'org.springframework.boot:spring-boot-maven-plugin:3.5.14:run',
       });
-      const result = spawnSync('mvn', ['-q', ...args], { cwd: reactor.cwd, encoding: 'utf8', timeout: 110_000 });
+      const result = spawnCommandSync('mvn', ['-q', ...args], {
+        cwd: reactor.cwd,
+        encoding: 'utf8',
+        timeout: 110_000,
+      });
       assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
       assert.match(`${result.stdout}\n${result.stderr}`, /REACTOR_SOURCE_V2/u);
       assert.match(`${result.stdout}\n${result.stderr}`, /STALE_RESOURCE=false/u);

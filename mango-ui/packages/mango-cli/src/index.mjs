@@ -2240,7 +2240,12 @@ function startDevApp(context, name, app) {
   }
   requireCommand(app.command, name);
   const logFd = openSync(logPath, 'a');
-  const child = spawnCommand(app.command, app.args, {
+  const startCommand = process.platform === 'win32' ? process.execPath : app.command;
+  const startArgs =
+    process.platform === 'win32'
+      ? [join(packageRoot, 'src/windows-command-runner.mjs'), app.command, JSON.stringify(app.args)]
+      : app.args;
+  const child = spawnCommand(startCommand, startArgs, {
     cwd: app.runCwd || app.cwd,
     env: { ...process.env, ...app.env },
     detached: true,

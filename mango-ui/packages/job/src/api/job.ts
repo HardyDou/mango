@@ -16,6 +16,7 @@ interface BackendPageResult<T> {
   data?: T[];
   total?: string | number;
   totalCount?: string | number;
+  page?: string | number;
   pageNum?: string | number;
   current?: string | number;
   pageSize?: string | number;
@@ -30,25 +31,10 @@ export type JobSyncStatus = 'PENDING' | 'SYNCED' | 'FAILED';
 export type JobTransportType = 'IN_MEMORY' | 'HTTP_INTERNAL';
 export type JobWorkerRegisterSource = 'EMBEDDED_AUTO' | 'REMOTE_AUTO' | 'MANUAL';
 export type JobInstanceStatus =
-  | 'CREATED'
-  | 'WAITING'
-  | 'DISPATCHED'
-  | 'RUNNING'
-  | 'RETRY_WAITING'
-  | 'SUCCESS'
-  | 'FAILED'
-  | 'TIMEOUT'
-  | 'CANCELED';
+  'CREATED' | 'WAITING' | 'DISPATCHED' | 'RUNNING' | 'RETRY_WAITING' | 'SUCCESS' | 'FAILED' | 'TIMEOUT' | 'CANCELED';
 export type JobTriggerType = 'SCHEDULED' | 'MANUAL' | 'RETRY' | 'API';
 export type JobAlarmType = 'INSTANCE_FAILED';
-export type JobWorkerStatus =
-  | 'REGISTERED'
-  | 'ONLINE'
-  | 'DRAINING'
-  | 'OFFLINE'
-  | 'EXPIRED'
-  | 'DISABLED'
-  | 'UNKNOWN';
+export type JobWorkerStatus = 'REGISTERED' | 'ONLINE' | 'DRAINING' | 'OFFLINE' | 'EXPIRED' | 'DISABLED' | 'UNKNOWN';
 
 export interface JobDefinition {
   id?: ApiId;
@@ -329,8 +315,9 @@ export interface UpdateJobAlarmRuleStatusPayload {
 
 export const jobApi = {
   pageDefinitions: (params?: JobDefinitionQuery) =>
-    get<BackendPageResult<JobDefinition>>('/job/definitions/page', { params: normalizeParams(params) })
-      .then(data => fromBackendPageResult<JobDefinition>(data, params)),
+    get<BackendPageResult<JobDefinition>>('/job/definitions/page', { params: toBackendPageParams(params) }).then(
+      (data) => fromBackendPageResult<JobDefinition>(data, params),
+    ),
   detailDefinition: (id: ApiId) => get<JobDefinition>('/job/definitions/detail', { params: { id } }),
   createDefinition: (data: SaveJobDefinitionPayload) => post<ApiId>('/job/definitions', normalizeParams(data)),
   updateDefinition: (data: SaveJobDefinitionPayload) => put<boolean>('/job/definitions', normalizeParams(data)),
@@ -340,25 +327,31 @@ export const jobApi = {
   triggerDefinition: (data: TriggerJobPayload) => post<ApiId>('/job/definitions/trigger', normalizeParams(data)),
 
   pageInstances: (params?: JobInstanceQuery) =>
-    get<BackendPageResult<JobInstance>>('/job/instances/page', { params: normalizeParams(params) })
-      .then(data => fromBackendPageResult<JobInstance>(data, params)),
+    get<BackendPageResult<JobInstance>>('/job/instances/page', { params: toBackendPageParams(params) }).then((data) =>
+      fromBackendPageResult<JobInstance>(data, params),
+    ),
   syncInstances: (params?: SyncJobInstancePayload) => post<boolean>('/job/instances/sync', normalizeParams(params)),
-  detailInstanceLog: (instanceId: ApiId) => get<JobLogDetail>('/job/instances/logs/detail', {
-    params: { instanceId },
-  }),
+  detailInstanceLog: (instanceId: ApiId) =>
+    get<JobLogDetail>('/job/instances/logs/detail', {
+      params: { instanceId },
+    }),
   pageLogs: (params?: JobLogQuery) =>
-    get<BackendPageResult<JobLogIndex>>('/job/logs/page', { params: normalizeParams(params) })
-      .then(data => fromBackendPageResult<JobLogIndex>(data, params)),
+    get<BackendPageResult<JobLogIndex>>('/job/logs/page', { params: toBackendPageParams(params) }).then((data) =>
+      fromBackendPageResult<JobLogIndex>(data, params),
+    ),
   detailLog: (id: ApiId) => get<JobLogDetail>('/job/logs/detail', { params: { id } }),
   pageWorkers: (params?: JobWorkerQuery) =>
-    get<BackendPageResult<JobWorkerSnapshot>>('/job/workers/page', { params: normalizeParams(params) })
-      .then(data => fromBackendPageResult<JobWorkerSnapshot>(data, params)),
+    get<BackendPageResult<JobWorkerSnapshot>>('/job/workers/page', { params: toBackendPageParams(params) }).then(
+      (data) => fromBackendPageResult<JobWorkerSnapshot>(data, params),
+    ),
   createWorker: (data: CreateJobWorkerPayload) => post<ApiId>('/job/workers', normalizeParams(data)),
-  updateWorkerStatus: (data: UpdateJobWorkerStatusPayload) => put<boolean>('/job/workers/status', normalizeParams(data)),
+  updateWorkerStatus: (data: UpdateJobWorkerStatusPayload) =>
+    put<boolean>('/job/workers/status', normalizeParams(data)),
   listHandlers: () => get<JobHandler[]>('/job/handlers'),
   pageAlarmRules: (params?: JobAlarmRuleQuery) =>
-    get<BackendPageResult<JobAlarmRule>>('/job/alarm-rules/page', { params: normalizeParams(params) })
-      .then(data => fromBackendPageResult<JobAlarmRule>(data, params)),
+    get<BackendPageResult<JobAlarmRule>>('/job/alarm-rules/page', { params: toBackendPageParams(params) }).then(
+      (data) => fromBackendPageResult<JobAlarmRule>(data, params),
+    ),
   detailAlarmRule: (id: ApiId) => get<JobAlarmRule>('/job/alarm-rules/detail', { params: { id } }),
   createAlarmRule: (data: SaveJobAlarmRulePayload) => post<ApiId>('/job/alarm-rules', normalizeParams(data)),
   updateAlarmRule: (data: SaveJobAlarmRulePayload) => put<boolean>('/job/alarm-rules', normalizeParams(data)),
@@ -381,17 +374,29 @@ function normalizeParams<T extends object | undefined>(params: T): T {
   return normalized as T;
 }
 
+function toBackendPageParams<T extends { pageNum?: number; pageSize?: number } | undefined>(params: T) {
+  if (!params) {
+    return params;
+  }
+  const { pageNum, pageSize, ...rest } = params;
+  return normalizeParams({
+    ...rest,
+    page: pageNum,
+    size: pageSize,
+  });
+}
+
 function fromBackendPageResult<T>(
   data: BackendPageResult<T> | unknown,
-  params?: { pageNum?: number; pageSize?: number }
+  params?: { pageNum?: number; pageSize?: number },
 ): PageResult<T> {
   const page = isRecord(data) ? (data as BackendPageResult<T>) : {};
   const records = page.list ?? page.records ?? page.rows ?? page.data ?? [];
   return {
     list: Array.isArray(records) ? records : [],
     total: Number(page.total ?? page.totalCount ?? 0),
-    pageNum: Number(page.pageNum ?? page.current ?? params?.pageNum ?? 1),
-    pageSize: Number(page.pageSize ?? page.size ?? params?.pageSize ?? 10),
+    pageNum: Number(page.page ?? page.pageNum ?? page.current ?? params?.pageNum ?? 1),
+    pageSize: Number(page.size ?? page.pageSize ?? params?.pageSize ?? 10),
   };
 }
 
@@ -416,9 +421,7 @@ export const jobDefinitionStatusOptions = [
   { label: '已禁用', value: 'DISABLED', type: 'danger' },
 ] as const;
 
-export const jobTypeOptions = [
-  { label: '内置处理器', value: 'BUILTIN' },
-] as const;
+export const jobTypeOptions = [{ label: '内置处理器', value: 'BUILTIN' }] as const;
 
 export const scheduleTypeOptions = [
   { label: 'Cron', value: 'CRON' },
@@ -427,9 +430,7 @@ export const scheduleTypeOptions = [
   { label: '手动', value: 'MANUAL' },
 ] as const;
 
-export const engineTypeOptions = [
-  { label: 'Mango 原生', value: 'MANGO_NATIVE' },
-] as const;
+export const engineTypeOptions = [{ label: 'Mango 原生', value: 'MANGO_NATIVE' }] as const;
 
 export const syncStatusOptions = [
   { label: '待同步', value: 'PENDING', type: 'warning' },
@@ -477,9 +478,7 @@ export const workerRegisterSourceOptions = [
   { label: '手动登记', value: 'MANUAL', type: 'info' },
 ] as const;
 
-export const alarmTypeOptions = [
-  { label: '实例失败', value: 'INSTANCE_FAILED', type: 'danger' },
-] as const;
+export const alarmTypeOptions = [{ label: '实例失败', value: 'INSTANCE_FAILED', type: 'danger' }] as const;
 
 export const enabledOptions = [
   { label: '启用', value: true, type: 'success' },
@@ -487,23 +486,23 @@ export const enabledOptions = [
 ] as const;
 
 export function optionLabel(options: readonly { label: string; value: string }[], value?: string) {
-  return options.find(item => item.value === value)?.label || value || '-';
+  return options.find((item) => item.value === value)?.label || value || '-';
 }
 
 export function booleanOptionLabel(options: readonly { label: string; value: boolean }[], value?: boolean) {
-  return options.find(item => item.value === value)?.label || (value === undefined ? '-' : String(value));
+  return options.find((item) => item.value === value)?.label || (value === undefined ? '-' : String(value));
 }
 
 export function optionTagType(
   options: readonly { value: string; type?: string }[],
   value?: string,
 ): '' | 'success' | 'info' | 'warning' | 'danger' {
-  return (options.find(item => item.value === value)?.type || '') as '' | 'success' | 'info' | 'warning' | 'danger';
+  return (options.find((item) => item.value === value)?.type || '') as '' | 'success' | 'info' | 'warning' | 'danger';
 }
 
 export function booleanOptionTagType(
   options: readonly { value: boolean; type?: string }[],
   value?: boolean,
 ): '' | 'success' | 'info' | 'warning' | 'danger' {
-  return (options.find(item => item.value === value)?.type || '') as '' | 'success' | 'info' | 'warning' | 'danger';
+  return (options.find((item) => item.value === value)?.type || '') as '' | 'success' | 'info' | 'warning' | 'danger';
 }

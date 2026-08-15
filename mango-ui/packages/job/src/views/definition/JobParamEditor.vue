@@ -13,14 +13,7 @@
       show-icon
       :title="schemaError"
     />
-    <el-alert
-      v-if="jsonError"
-      class="job-param-alert"
-      type="error"
-      :closable="false"
-      show-icon
-      :title="jsonError"
-    />
+    <el-alert v-if="jsonError" class="job-param-alert" type="error" :closable="false" show-icon :title="jsonError" />
 
     <el-form v-if="mode === 'FORM' && schemaFields.length > 0" class="job-param-form" label-width="120px">
       <el-row :gutter="14">
@@ -32,7 +25,7 @@
               clearable
               :placeholder="field.description || '请选择'"
               style="width: 100%"
-              @update:model-value="value => updateField(field, value)"
+              @update:model-value="updateField(field, $event)"
             >
               <el-option
                 v-for="option in field.enumValues"
@@ -44,7 +37,7 @@
             <el-switch
               v-else-if="field.inputType === 'boolean'"
               :model-value="Boolean(formState[field.key])"
-              @update:model-value="value => updateField(field, value)"
+              @update:model-value="updateField(field, $event)"
             />
             <el-input-number
               v-else-if="field.inputType === 'number'"
@@ -52,7 +45,7 @@
               :min="field.minimum"
               :max="field.maximum"
               style="width: 100%"
-              @update:model-value="value => updateField(field, value)"
+              @update:model-value="updateField(field, $event)"
             />
             <el-date-picker
               v-else-if="field.inputType === 'date'"
@@ -61,7 +54,7 @@
               value-format="YYYY-MM-DD"
               placeholder="选择日期"
               style="width: 100%"
-              @update:model-value="value => updateField(field, value || '')"
+              @update:model-value="updateField(field, $event)"
             />
             <el-date-picker
               v-else-if="field.inputType === 'datetime'"
@@ -70,14 +63,14 @@
               value-format="YYYY-MM-DD HH:mm:ss"
               placeholder="选择时间"
               style="width: 100%"
-              @update:model-value="value => updateField(field, value || '')"
+              @update:model-value="updateField(field, $event)"
             />
             <el-input
               v-else
               :model-value="stringValue(formState[field.key])"
               clearable
               :placeholder="field.description || '请输入'"
-              @update:model-value="value => updateField(field, value)"
+              @update:model-value="updateField(field, $event)"
             />
             <div v-if="field.description" class="job-param-help">{{ field.description }}</div>
           </el-form-item>
@@ -103,7 +96,10 @@ import { computed, reactive, ref, watch } from 'vue';
 
 type EditorMode = 'FORM' | 'JSON';
 type JsonValue = string | number | boolean | null | JsonObject | JsonValue[];
-type JsonObject = Record<string, JsonValue>;
+
+interface JsonObject {
+  [key: string]: JsonValue;
+}
 
 interface JsonSchemaProperty {
   type?: string | string[];
@@ -134,17 +130,20 @@ interface SchemaField {
   maximum?: number;
 }
 
-const props = withDefaults(defineProps<{
-  schemaText?: string;
-  modelValue?: string;
-  rows?: number;
-  placeholder?: string;
-}>(), {
-  schemaText: '',
-  modelValue: '',
-  rows: 4,
-  placeholder: 'JSON，可为空',
-});
+const props = withDefaults(
+  defineProps<{
+    schemaText?: string;
+    modelValue?: string;
+    rows?: number;
+    placeholder?: string;
+  }>(),
+  {
+    schemaText: '',
+    modelValue: '',
+    rows: 4,
+    placeholder: 'JSON，可为空',
+  },
+);
 
 const emit = defineEmits<{
   (event: 'update:modelValue', value: string): void;
@@ -196,7 +195,7 @@ function syncFromProps() {
 }
 
 function clearRemovedFields() {
-  const keys = new Set(schemaFields.value.map(field => field.key));
+  const keys = new Set(schemaFields.value.map((field) => field.key));
   Object.keys(formState).forEach((key) => {
     if (!keys.has(key)) {
       delete formState[key];
@@ -209,7 +208,7 @@ function clearRemovedFields() {
   });
 }
 
-function updateField(field: SchemaField, value: JsonValue) {
+function updateField(field: SchemaField, value: unknown) {
   formState[field.key] = normalizeFieldValue(field, value);
   delete fieldErrors[field.key];
   emitObjectValue();
@@ -243,7 +242,7 @@ function updateJsonText(value: string) {
 
 function validate() {
   jsonError.value = '';
-  Object.keys(fieldErrors).forEach(key => delete fieldErrors[key]);
+  Object.keys(fieldErrors).forEach((key) => delete fieldErrors[key]);
   if (mode.value === 'JSON' || schemaFields.value.length === 0) {
     if (!jsonText.value.trim()) {
       return true;
@@ -309,7 +308,7 @@ function toSchemaField(key: string, property: JsonSchemaProperty, required: bool
     required,
     inputType,
     enumValues: Array.isArray(property.enum)
-      ? property.enum.map(value => ({ label: String(value), value }))
+      ? property.enum.map((value) => ({ label: String(value), value }))
       : undefined,
     defaultValue: property.default,
     minimum: property.minimum,
@@ -319,7 +318,7 @@ function toSchemaField(key: string, property: JsonSchemaProperty, required: bool
 
 function resolveType(property: JsonSchemaProperty) {
   if (Array.isArray(property.type)) {
-    return property.type.find(item => item !== 'null') || 'string';
+    return property.type.find((item) => item !== 'null') || 'string';
   }
   return property.type || 'string';
 }
@@ -346,7 +345,7 @@ function parseObjectValue(value?: string): JsonObject {
   }
   try {
     const parsed = JSON.parse(value);
-    return isRecord(parsed) ? parsed as JsonObject : {};
+    return isRecord(parsed) ? (parsed as JsonObject) : {};
   } catch {
     return {};
   }

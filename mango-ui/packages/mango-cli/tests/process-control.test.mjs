@@ -5,6 +5,11 @@ import test from 'node:test';
 import { isProcessAlive, isProcessGroupAlive, stopProcessGroup } from '../src/process-control.mjs';
 
 const unixOnly = process.platform === 'win32' ? test.skip : test;
+const windowsOnly = process.platform === 'win32' ? test : test.skip;
+
+test('isProcessAlive recognizes the current process', () => {
+  assert.equal(isProcessAlive(process.pid), true);
+});
 
 test('stopProcessGroup rejects unsafe process ids before signal handling', async () => {
   const invalidProcessIds = [0, -1, Number.NaN, 1.5, 'not-a-pid'];
@@ -83,6 +88,45 @@ unixOnly('stopProcessGroup reports graceful termination without SIGKILL', async 
 
   assert.deepEqual(outcome, { stopped: true, forced: false });
   assert.equal(isProcessGroupAlive(child.pid), false);
+});
+
+windowsOnly('stopProcessGroup forces a Windows process tree immediately when graceful taskkill fails', async () => {
+  const leader = spawn(
+    process.execPath,
+    [
+      '-e',
+      [
+        "const { spawn } = require('node:child_process');",
+        "const child = spawn(process.execPath, ['-e', 'setInterval(() => {}, 1000)'], { stdio: 'ignore' });",
+        'console.log(child.pid);',
+        'setInterval(() => {}, 1000);',
+      ].join(' '),
+    ],
+    { detached: true, stdio: ['ignore', 'pipe', 'ignore'] },
+  );
+  const childPid = Number((await readFirstLine(leader.stdout)).trim());
+  const startedAt = Date.now();
+
+  try {
+    const outcome = await stopProcessGroup(leader.pid, {
+      graceMs: 60_000,
+      killWaitMs: 3000,
+      pollIntervalMs: 25,
+    });
+
+    assert.deepEqual(outcome, { stopped: true, forced: true });
+    assert.ok(Date.now() - startedAt < 5000, 'failed graceful taskkill should not consume the grace period');
+    assert.equal(isProcessAlive(leader.pid), false);
+    assert.equal(isProcessAlive(childPid), false);
+  } finally {
+    if (isProcessAlive(leader.pid)) {
+      const cleanup = spawn('taskkill', ['/PID', String(leader.pid), '/T', '/F'], {
+        stdio: 'ignore',
+        windowsHide: true,
+      });
+      await once(cleanup, 'exit');
+    }
+  }
 });
 
 async function readFirstLine(stream) {

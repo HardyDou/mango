@@ -4,7 +4,11 @@ import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { discoverTypecheckTargets, parseTypeScriptDiagnostics } from './typecheck-runner-lib.mjs';
+import {
+  discoverTypecheckTargets,
+  parseTypeScriptDiagnostics,
+  resolveTypecheckCommand,
+} from './typecheck-runner-lib.mjs';
 
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
 const defaultUiRoot = path.resolve(scriptDirectory, '../..');
@@ -18,7 +22,7 @@ function option(name, fallback) {
 const uiRoot = path.resolve(option('root', defaultUiRoot));
 const outputFile = path.resolve(option('out', path.join(uiRoot, '../.runtime/frontend-quality/typecheck.json')));
 const strict = process.argv.includes('--strict');
-const executable = path.join(uiRoot, 'node_modules', '.bin', 'vue-tsc');
+const { executable, shell } = resolveTypecheckCommand(uiRoot);
 const { targets, skipped } = discoverTypecheckTargets(uiRoot);
 
 if (targets.length === 0) {
@@ -38,6 +42,7 @@ for (const target of targets) {
     encoding: 'utf8',
     env: { ...process.env, FORCE_COLOR: '0' },
     maxBuffer: 64 * 1024 * 1024,
+    shell,
   });
   const output = `${child.stdout || ''}${child.stderr || ''}`;
   const diagnostics = parseTypeScriptDiagnostics(output, uiRoot, target.workspace);

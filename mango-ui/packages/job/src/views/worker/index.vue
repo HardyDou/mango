@@ -1,3 +1,5 @@
+<!-- mango-page-baseline-exception list: Worker 节点是运行时运维页，同页承载节点排空、下线、禁用和处理器联合登记 -->
+<!-- mango-page-baseline-exception dialog: Worker 登记同时编辑节点身份、通信信息与处理器参数 Schema，属于运维联合登记表单 -->
 <template>
   <div class="job-page">
     <section class="job-toolbar">
@@ -7,7 +9,9 @@
           <p>查看任务执行节点地址、所属应用、通信方式和在线状态。</p>
         </div>
         <div class="job-toolbar-actions">
-          <el-button v-auth="'job:worker:add'" type="primary" :icon="Plus" @click="openCreateDialog">登记 Worker</el-button>
+          <el-button v-auth="'job:worker:add'" type="primary" :icon="Plus" @click="openCreateDialog"
+            >登记 Worker</el-button
+          >
           <el-button v-auth="'job:worker:list'" :icon="Refresh" @click="loadRows">刷新</el-button>
         </div>
       </div>
@@ -59,9 +63,7 @@
         <el-table-column prop="workerAddress" label="Worker 地址" min-width="240" fixed="left" show-overflow-tooltip />
         <el-table-column prop="appCode" label="应用" min-width="140" show-overflow-tooltip />
         <el-table-column label="服务/组" min-width="190" show-overflow-tooltip>
-          <template #default="{ row }">
-            {{ row.serviceCode || '-' }} / {{ row.workerGroup || '-' }}
-          </template>
+          <template #default="{ row }"> {{ row.serviceCode || '-' }} / {{ row.workerGroup || '-' }} </template>
         </el-table-column>
         <el-table-column label="状态" width="92">
           <template #default="{ row }">
@@ -90,13 +92,31 @@
         <el-table-column prop="lastHeartbeatAt" label="最近心跳" width="170" show-overflow-tooltip />
         <el-table-column label="操作" width="220" fixed="right">
           <template #default="{ row }">
-            <el-button v-auth="'job:worker:status'" link type="primary" :disabled="row.status === 'DRAINING'" @click="updateStatus(row, 'DRAINING')">
+            <el-button
+              v-auth="'job:worker:status'"
+              link
+              type="primary"
+              :disabled="row.status === 'DRAINING'"
+              @click="updateStatus(row, 'DRAINING')"
+            >
               排空
             </el-button>
-            <el-button v-auth="'job:worker:status'" link type="warning" :disabled="row.status === 'OFFLINE'" @click="updateStatus(row, 'OFFLINE')">
+            <el-button
+              v-auth="'job:worker:status'"
+              link
+              type="warning"
+              :disabled="row.status === 'OFFLINE'"
+              @click="updateStatus(row, 'OFFLINE')"
+            >
               下线
             </el-button>
-            <el-button v-if="row.status !== 'DISABLED'" v-auth="'job:worker:status'" link type="danger" @click="updateStatus(row, 'DISABLED')">
+            <el-button
+              v-if="row.status !== 'DISABLED'"
+              v-auth="'job:worker:status'"
+              link
+              type="danger"
+              @click="updateStatus(row, 'DISABLED')"
+            >
               禁用
             </el-button>
             <el-button v-else v-auth="'job:worker:status'" link type="success" @click="updateStatus(row, 'ONLINE')">
@@ -107,7 +127,7 @@
       </el-table>
 
       <div class="job-pagination">
-        <Pagination v-model:current-page="query.pageNum" v-model:page-size="query.pageSize" :total="total" @change="loadRows" />
+        <Pagination v-model:page="query.pageNum" v-model:limit="query.pageSize" :total="total" @pagination="loadRows" />
       </div>
     </section>
 
@@ -132,7 +152,7 @@
           <el-input v-model="createForm.handlerName" placeholder="mangoJobRuntimeProbeHandler" />
         </el-form-item>
         <el-form-item label="参数 Schema">
-          <el-input v-model="createForm.paramSchema" type="textarea" :rows="4" placeholder="{ &quot;type&quot;: &quot;object&quot; }" />
+          <el-input v-model="createForm.paramSchema" type="textarea" :rows="4" placeholder='{ "type": "object" }' />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -145,6 +165,7 @@
 
 <script setup lang="ts">
 import { Plus, Refresh, Search } from '@element-plus/icons-vue';
+import { Pagination } from '@mango/common';
 import type { FormInstance, FormRules } from 'element-plus';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { onMounted, reactive, ref } from 'vue';
@@ -257,14 +278,16 @@ async function submitCreate() {
       workerAddress: createForm.workerAddress.trim(),
       transportType: 'HTTP_INTERNAL',
       workerInstanceId: createForm.workerInstanceId.trim() || undefined,
-      handlers: [{
-        appCode: createForm.appCode.trim(),
-        serviceCode: createForm.serviceCode.trim() || undefined,
-        workerGroup: createForm.workerGroup.trim() || undefined,
-        handlerName: createForm.handlerName.trim(),
-        jobType: 'BUILTIN',
-        paramSchema: createForm.paramSchema.trim() || undefined,
-      }],
+      handlers: [
+        {
+          appCode: createForm.appCode.trim(),
+          serviceCode: createForm.serviceCode.trim() || undefined,
+          workerGroup: createForm.workerGroup.trim() || undefined,
+          handlerName: createForm.handlerName.trim(),
+          jobType: 'BUILTIN',
+          paramSchema: createForm.paramSchema.trim() || undefined,
+        },
+      ],
     };
     await jobApi.createWorker(payload);
     ElMessage.success('Worker 已登记');
