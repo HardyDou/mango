@@ -6,7 +6,12 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { assertReleasePlanShape } from './release-plan-lib.mjs';
 import { inspectStagedMavenRepository, verifyStagedMavenRepository } from './release-maven-lib.mjs';
-import { archiveFailedPrepare, isRetryablePrepareFailure } from './release-prepare-lib.mjs';
+import {
+  archiveFailedPrepare,
+  archiveSupersededPrepare,
+  isRetryablePrepareFailure,
+  isSupersededLocalCandidate,
+} from './release-prepare-lib.mjs';
 import { assertCleanWorktree, gitValue } from './release-repository-lib.mjs';
 
 const workspaceRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
@@ -36,6 +41,9 @@ if (existsSync(manifestPath)) {
   if (isRetryablePrepareFailure(existing, plan, source)) {
     const archived = archiveFailedPrepare(releaseRoot);
     console.log(`Archived failed local prepare evidence: ${archived}`);
+  } else if (isSupersededLocalCandidate(existing, plan, source)) {
+    const archived = archiveSupersededPrepare(releaseRoot);
+    console.log(`Archived superseded local candidate evidence: ${archived}`);
   } else {
     verifyPreparedManifest(existing, plan, source, artifactRoot);
     if (['CANDIDATE_VERIFIED', 'PUBLISHED', 'CONSUMER_VERIFIED', 'COMPLETED'].includes(existing.status)) {

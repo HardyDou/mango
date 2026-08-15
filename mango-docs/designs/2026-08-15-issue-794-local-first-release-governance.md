@@ -66,7 +66,7 @@ Changesets 接入前的空档只允许迁移一次：
 - 同一批共享门禁只执行一次；逐包只执行构建、发布和精确回读。
 - 候选验证使用“本批封存制品 + 消费仓未变化精确版本”；发布后验证只使用消费仓。
 - 测试、发布和恢复必须使用同一 SHA-256 制品。
-- prepare 在任何远端写入前失败时记录 `FAILED`，同一 plan/source tree 重试前归档原失败目录；不同 tree、不同计划或无法证明无远端写入的失败不自动复用。
+- prepare 在任何远端写入前失败时记录 `FAILED` 并在重试前归档原失败目录；Release PR 最终提交变化后，同一计划下从未远端写入的旧 `CANDIDATE_VERIFIED` 候选按 `superseded` 归档，再由最终 commit/tree 重建 canonical 候选。不同计划或无法证明无远端写入的候选不自动换代。
 - hosted 已存在而 group 暂不可见时进入 `VERIFY_PENDING`，只读重试，不重发。
 - npm 批次目标 15-25 分钟；平台混合批次目标 30-45 分钟；单次仓库可见性等待不超过 5 分钟。
 
@@ -77,7 +77,7 @@ Changesets 接入前的空档只允许迁移一次：
 | REL-PLAN-001 | 多个 PR 的未发布 Changesets 被一次汇总，发布范围不依赖最近一次提交或人工 base。 |
 | REL-PLAN-002 | 源码变化缺 Changeset、Changeset 错包、未知归属、版本或拓扑冲突均 fail closed。 |
 | REL-LEGACY-001 | 首次迁移从最后成功 Release 累计得到 Admin 三包，并把本次治理新增 PMO、随后合并的 Job 修复纳入最终五包计划；Common 识别为已恢复发布基线。 |
-| REL-PREP-001 | 目标制品只构建一次，计划、候选验证和封存清单绑定同一 Git tree；本地 prepare 失败证据可归档后在同一 tree 重试。 |
+| REL-PREP-001 | 目标制品只构建一次，计划、候选验证和封存清单绑定同一 Git commit/tree；本地失败或未远端写入但已被最终 HEAD 替代的候选证据可审计归档，canonical 候选只保留最终 HEAD。 |
 | REL-CONSUME-001 | 发布前混合 tuple 和发布后纯 group tuple 各只运行一次干净消费者验证。 |
 | REL-PUBLISH-001 | publish 使用 prepare 生成的精确制品；tree 或 SHA 不一致时拒绝。 |
 | REL-RECOVER-001 | 部分发布后跳过已存在坐标，从首个未发布坐标继续；不重建、不重发。 |

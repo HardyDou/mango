@@ -22,6 +22,7 @@ Status: `PENDING`. This npm-only batch replaces the broken Admin tuple, includes
 - Replace the manual package list and seventeen-state adapter workflow with Changesets intent, Git impact reconciliation, dependency/CLI closure, a machine-generated plan and one set of SHA-256 sealed artifacts. Tag and GitHub Release now wait for pure consume-registry verification.
 - Keep Maven in the same release owner: production-source impact requires an explicit Maven target, automatically advances the CLI matrix, deploys the non-app reactor once into a sealed local repository, and publishes or repairs only the recorded POM/JAR hashes.
 - Add repository-only `mango-release` distribution isolation and the shared `mango-submit-pr` submission Skill. Every required Runner check must have a local equivalent; Push and PR creation wait for a clean final-head local pass, and Runner is only an independent verification surface.
+- Preserve a local-only verified candidate as `superseded` audit evidence when the Release PR final HEAD changes, then rebuild the canonical candidate for the new commit/tree; candidates with remote writes remain immutable and cannot be replaced automatically.
 - Include Issue #43 / PR #795: restore Job list pagination totals, page-size propagation and page controls, plus the associated CLI cross-platform command compatibility changes merged before this release candidate was sealed.
 
 ### Versions

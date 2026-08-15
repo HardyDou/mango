@@ -15,7 +15,7 @@
 | P1 治理与冻结 | 登记 Issue、记录决定、冻结旧批次不可变发布 | Issue #794 和本计划可追踪；旧 manifest 无新增不可变尝试 | Git/manifest 状态回读 |
 | P2 范围治理 | 接入 Changesets；实现源码差异防漏、依赖拓扑和版本矩阵生成 | 发布集合由机器生成；集合不一致失败 | 正例、漏登、错包、依赖联动、未知路径单测 |
 | P3 历史迁移 | 从最后成功 Release 到当前 tree 生成一次性存量对账 | 得到 Shell/Admin/CLI，并由本次治理新增 PMO、最新主干新增 Job；Common 不发布；迁移入口有退出条件 | Git tag/tree、Nexus 坐标和源基线对账 |
-| P4 本地准备 | 实现 `release plan/prepare`、一次构建封存、候选组合验证和无远端写入失败归档重试 | `.runtime` 生成计划、制品和证据；tree/计划/制品摘要绑定；失败证据不覆盖且不阻塞同 tree 修复重试 | 包清单、SHA、失败恢复、混合消费者集成测试 |
+| P4 本地准备 | 实现 `release plan/prepare`、一次构建封存、候选组合验证，以及无远端写入失败或旧本地候选的审计归档 | `.runtime` 生成计划、制品和证据；commit/tree/计划/制品摘要绑定；失败证据不覆盖，最终 HEAD 可换代同计划且未远端写入的旧候选 | 包清单、SHA、失败恢复、候选换代、混合消费者集成测试 |
 | P5 发布恢复 | 精简五状态 publish/repair，发布封存制品，有限双仓回读，Tag/Release 后移 | 支持 `PREPARED/CANDIDATE_VERIFIED/PUBLISHED/CONSUMER_VERIFIED/COMPLETED` 和失败状态 | 状态转换、部分发布、group pending、禁止重发单测 |
 | P6 轻量 CI | Release PR 运行轻量策略检查；其它 PR 保持受影响门禁 | release-only PR 不安装依赖或重复构建；源码混入时回到普通门禁 | Workflow 结构和分类器测试 |
 | P6A 本地提交门禁 | 新增 `mango-submit-pr`，让 Mango/业务 PR 在 Push 前执行所有 Runner 同源本地入口 | 最终 head 全绿才可提交；Runner 不作为调试循环；远端新失败先补本地复现 | Skill 正反例、边界和 final-head eval |

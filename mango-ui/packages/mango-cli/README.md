@@ -304,7 +304,7 @@ mango release repair \
 
 Git 影响命中 `mango/**` 生产源码时，`plan` 还要求显式 `--maven-version <version>`，固定选择 all-non-app reactor 和同版本 `mango-docs-bundle`，并自动把 CLI 纳入版本矩阵；没有 Maven 源码影响时传入 Maven 版本会失败，当前 npm-only 批次不会误发 Maven。
 
-`prepare` 要求 clean worktree，执行一次构建并封存精确 tarball 和源码 archive，记录 Git tree、计划摘要和 SHA-256；随后用“封存 tarball + 消费仓未变坐标”运行一次混合消费者。Release PR 合并后，`publish` 只接受与 `origin/main` 相同的 prepared tree，按拓扑发布这些文件，不再构建。
+`prepare` 要求 clean worktree，执行一次构建并封存精确 tarball 和源码 archive，记录 Git commit/tree、计划摘要和 SHA-256；随后用“封存 tarball + 消费仓未变坐标”运行一次混合消费者。Release PR 最终 HEAD 变化时，同一计划下从未远端写入的旧 `CANDIDATE_VERIFIED` 目录会以 `superseded` 后缀保留审计证据，再重建 canonical 候选；已发生远端写入的批次绝不自动换代。Release PR 合并后，`publish` 只接受与 `origin/main` 相同的 prepared tree，按拓扑发布这些文件，不再构建。
 
 Maven 批次的 `prepare` 调用同一个 batch 入口，把 non-app reactor 只 deploy 一次到 `.runtime` 内的 file repository，并封存每个 POM/JAR 的 SHA-256。`publish/repair` 通过 `--maven-publish-registry`、`--maven-consume-registry` 和 Maven settings server ID 发布这些文件；坐标部分存在、内容不同或仓库状态未知都会停止。
 
