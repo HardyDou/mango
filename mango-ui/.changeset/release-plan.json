@@ -1,0 +1,323 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-15T01:42:06.373Z",
+  "releaseKind": "npm-only",
+  "release": {
+    "tag": "v2026.08.15-pmo-1.3.15-admin-shell-1.0.60-admin-1.0.66-cli-1.0.107-local-first-release",
+    "title": "Mango local-first release: PMO 1.3.15 / Admin 1.0.66 / CLI 1.0.107",
+    "notesFile": ".changeset/release-notes.txt",
+    "notesSha256": "f3731197be795bb62acbe9a1db614fba9d4120795d32cce2ca0c408849b19852"
+  },
+  "baseline": {
+    "kind": "legacy-release",
+    "tag": "v2026.08.14-pmo-1.3.14-cli-1.0.106-historical-document-compat-release",
+    "commit": "6ee5334f75b1fe190b5677c684efa6652166cf12",
+    "tree": "15fcfa00a354233a2019aab283c9a29b50fc20fd"
+  },
+  "changesets": [],
+  "legacyReconciliation": {
+    "id": "legacy-admin-compat-2026-08-15",
+    "oneTime": true,
+    "file": ".changeset/legacy-reconciliation.json"
+  },
+  "restoredPublishedBaselines": [
+    {
+      "name": "@mango/common",
+      "version": "1.0.26",
+      "gitCommit": "e6596192a16414652b8e1f477ae17987e30db611"
+    }
+  ],
+  "directPackages": [
+    "@mango/admin",
+    "@mango/admin-shell",
+    "@mango/cli",
+    "@mango/pmo"
+  ],
+  "classifiedFiles": [
+    {
+      "file": "mango-business-starter/frontend/apps/{{projectKebab}}-admin/package.json",
+      "packageName": "@mango/cli",
+      "reason": "published-cli-projection"
+    },
+    {
+      "file": "mango-business-starter/README.md",
+      "packageName": "@mango/cli",
+      "reason": "published-cli-projection"
+    },
+    {
+      "file": "mango-pmo/contracts/business-requirements.json",
+      "packageName": "@mango/pmo",
+      "reason": "published-pmo-source"
+    },
+    {
+      "file": "mango-pmo/contracts/implementation-plan.json",
+      "packageName": "@mango/pmo",
+      "reason": "published-pmo-source"
+    },
+    {
+      "file": "mango-pmo/contracts/system-requirements.json",
+      "packageName": "@mango/pmo",
+      "reason": "published-pmo-source"
+    },
+    {
+      "file": "mango-pmo/contracts/technical-design.json",
+      "packageName": "@mango/pmo",
+      "reason": "published-pmo-source"
+    },
+    {
+      "file": "mango-pmo/plugin-src/.codex-plugin/plugin.json",
+      "packageName": "@mango/pmo",
+      "reason": "published-pmo-source"
+    },
+    {
+      "file": "mango-pmo/README.md",
+      "packageName": "@mango/pmo",
+      "reason": "published-pmo-source"
+    },
+    {
+      "file": "mango-pmo/rules/00-dev-flow.md",
+      "packageName": "@mango/pmo",
+      "reason": "published-pmo-source"
+    },
+    {
+      "file": "mango-pmo/rules/01-delivery-contract.md",
+      "packageName": "@mango/pmo",
+      "reason": "published-pmo-source"
+    },
+    {
+      "file": "mango-pmo/rules/10-release-artifacts.md",
+      "packageName": "@mango/pmo",
+      "reason": "published-pmo-source"
+    },
+    {
+      "file": "mango-pmo/rules/11-delivery-assurance.md",
+      "packageName": "@mango/pmo",
+      "reason": "published-pmo-source"
+    },
+    {
+      "file": "mango-pmo/rules/12-pr-submission.md",
+      "packageName": "@mango/pmo",
+      "reason": "published-pmo-source"
+    },
+    {
+      "file": "mango-pmo/rules/index.json",
+      "packageName": "@mango/pmo",
+      "reason": "published-pmo-source"
+    },
+    {
+      "file": "mango-pmo/rules/product/05-document-lifecycle.md",
+      "packageName": "@mango/pmo",
+      "reason": "published-pmo-source"
+    },
+    {
+      "file": "mango-pmo/skills/mango-design-delivery-assurance/SKILL.md",
+      "packageName": "@mango/pmo",
+      "reason": "published-pmo-source"
+    },
+    {
+      "file": "mango-pmo/skills/mango-release/SKILL.md",
+      "packageName": "@mango/pmo",
+      "reason": "published-pmo-source"
+    },
+    {
+      "file": "mango-pmo/skills/mango-submit-pr/agents/openai.yaml",
+      "packageName": "@mango/pmo",
+      "reason": "published-pmo-source"
+    },
+    {
+      "file": "mango-pmo/skills/mango-submit-pr/SKILL.md",
+      "packageName": "@mango/pmo",
+      "reason": "published-pmo-source"
+    },
+    {
+      "file": "mango-ui/packages/admin-shell/package.json",
+      "packageName": "@mango/admin-shell",
+      "reason": "published-package-path"
+    },
+    {
+      "file": "mango-ui/packages/admin-shell/README.md",
+      "packageName": "@mango/admin-shell",
+      "reason": "published-package-path"
+    },
+    {
+      "file": "mango-ui/packages/admin-shell/src/layout/navMenu/activeMenuPath.ts",
+      "packageName": "@mango/admin-shell",
+      "reason": "published-package-path"
+    },
+    {
+      "file": "mango-ui/packages/admin-shell/src/layout/navMenu/horizontal.vue",
+      "packageName": "@mango/admin-shell",
+      "reason": "published-package-path"
+    },
+    {
+      "file": "mango-ui/packages/admin-shell/src/layout/navMenu/vertical.vue",
+      "packageName": "@mango/admin-shell",
+      "reason": "published-package-path"
+    },
+    {
+      "file": "mango-ui/packages/admin/package.json",
+      "packageName": "@mango/admin",
+      "reason": "published-package-path"
+    },
+    {
+      "file": "mango-ui/packages/admin/README.md",
+      "packageName": "@mango/admin",
+      "reason": "published-package-path"
+    },
+    {
+      "file": "mango-ui/packages/common/utils/menuTree.ts",
+      "packageName": "@mango/common",
+      "reason": "published-package-path"
+    },
+    {
+      "file": "mango-ui/packages/mango-cli/package.json",
+      "packageName": "@mango/cli",
+      "reason": "published-package-path"
+    },
+    {
+      "file": "mango-ui/packages/mango-cli/README.md",
+      "packageName": "@mango/cli",
+      "reason": "published-package-path"
+    },
+    {
+      "file": "mango-ui/packages/mango-cli/release-versions.json",
+      "packageName": "@mango/cli",
+      "reason": "published-package-path"
+    },
+    {
+      "file": "mango-ui/packages/mango-cli/scripts/check-cli.mjs",
+      "packageName": "@mango/cli",
+      "reason": "published-package-path"
+    },
+    {
+      "file": "mango-ui/packages/mango-cli/scripts/check-published-pmo-upgrade.mjs",
+      "packageName": "@mango/cli",
+      "reason": "published-package-path"
+    },
+    {
+      "file": "mango-ui/packages/mango-cli/src/index.mjs",
+      "packageName": "@mango/cli",
+      "reason": "published-package-path"
+    },
+    {
+      "file": "mango-ui/packages/mango-cli/src/release-command.mjs",
+      "packageName": "@mango/cli",
+      "reason": "published-package-path"
+    },
+    {
+      "file": "mango-ui/packages/mango-cli/templates/full/AGENTS.md",
+      "packageName": "@mango/cli",
+      "reason": "published-package-path"
+    },
+    {
+      "file": "mango-ui/packages/mango-cli/templates/full/frontend/package.json.template",
+      "packageName": "@mango/cli",
+      "reason": "published-package-path"
+    },
+    {
+      "file": "mango-ui/packages/mango-cli/templates/full/README.md",
+      "packageName": "@mango/cli",
+      "reason": "published-package-path"
+    },
+    {
+      "file": "mango-ui/packages/mango-pmo/package.json",
+      "packageName": "@mango/pmo",
+      "reason": "published-package-path"
+    },
+    {
+      "file": "mango-ui/packages/mango-pmo/README.md",
+      "packageName": "@mango/pmo",
+      "reason": "published-package-path"
+    },
+    {
+      "file": "mango-ui/packages/mango-pmo/scripts/build-package.mjs",
+      "packageName": "@mango/pmo",
+      "reason": "published-package-path"
+    },
+    {
+      "file": "mango-ui/packages/mango-pmo/scripts/check-package.mjs",
+      "packageName": "@mango/pmo",
+      "reason": "published-package-path"
+    }
+  ],
+  "packages": [
+    {
+      "name": "@mango/admin-shell",
+      "directory": "packages/admin-shell",
+      "sourceVersion": "1.0.59",
+      "targetVersion": "1.0.60",
+      "type": "patch",
+      "direct": true,
+      "generated": false,
+      "reasons": [
+        {
+          "source": "legacy:legacy-admin-compat-2026-08-15",
+          "summary": "Issue #791 removes an import that is absent from the published Common 1.0.26 tarball"
+        }
+      ],
+      "releaseDependencies": []
+    },
+    {
+      "name": "@mango/admin",
+      "directory": "packages/admin",
+      "sourceVersion": "1.0.65",
+      "targetVersion": "1.0.66",
+      "type": "patch",
+      "direct": true,
+      "generated": false,
+      "reasons": [
+        {
+          "source": "legacy:legacy-admin-compat-2026-08-15",
+          "summary": "exact dependency follows Admin Shell 1.0.60"
+        }
+      ],
+      "releaseDependencies": [
+        "@mango/admin-shell"
+      ]
+    },
+    {
+      "name": "@mango/pmo",
+      "directory": "packages/mango-pmo",
+      "sourceVersion": "1.3.14",
+      "targetVersion": "1.3.15",
+      "type": "patch",
+      "direct": true,
+      "generated": false,
+      "reasons": [
+        {
+          "source": "legacy:legacy-admin-compat-2026-08-15",
+          "summary": "Issue #794 changes the canonical Mango release Skill and release artifact governance"
+        }
+      ],
+      "releaseDependencies": []
+    },
+    {
+      "name": "@mango/cli",
+      "directory": "packages/mango-cli",
+      "sourceVersion": "1.0.106",
+      "targetVersion": "1.0.107",
+      "type": "patch",
+      "direct": true,
+      "generated": false,
+      "reasons": [
+        {
+          "source": "legacy:legacy-admin-compat-2026-08-15",
+          "summary": "the managed release matrix follows Admin Shell, Admin and PMO 1.3.15"
+        }
+      ],
+      "releaseDependencies": [
+        "@mango/admin",
+        "@mango/admin-shell",
+        "@mango/pmo"
+      ]
+    }
+  ],
+  "order": [
+    "@mango/admin-shell",
+    "@mango/admin",
+    "@mango/pmo",
+    "@mango/cli"
+  ],
+  "maven": null,
+  "planDigest": "53a1abf3e1dae945da3b233ac44ae603f7c0be1ae2a3154259e6d8e84c52c15b"
+}

@@ -308,6 +308,18 @@ assert(
     && item.expect.requiredAssertions?.length >= 3),
   'missing frontend standards adoption non-release eval',
 );
+for (const id of [
+  'release-not-mango-development-pr',
+  'release-not-business-pr',
+  'release-not-business-application-release',
+]) {
+  assert(
+    cases.some(item => item.id === id
+      && item.expect.notSkill === 'mango-release'
+      && item.expect.requiredAssertions?.length >= 2),
+    `missing repository-only release boundary eval: ${id}`,
+  );
+}
 assert(
   cases.some(item => item.id === 'release-exact-source-no-traffic-boundary'
     && item.expect.skill === 'mango-release'
@@ -315,6 +327,14 @@ assert(
     && item.expect.requiredAssertions?.length >= 4),
   'missing exact-source and no-traffic artifact release boundary eval',
 );
+for (const id of ['submit-pr-runner-debug-loop-stop', 'submit-pr-local-first-final-head']) {
+  assert(
+    cases.some(item => item.id === id
+      && item.expect.skill === 'mango-submit-pr'
+      && item.expect.requiredAssertions?.length >= 3),
+    `missing local-first PR submission eval: ${id}`,
+  );
+}
 assert(
   cases.some(item => item.id === 'pr-review-single-owner-policy'
     && item.expect.action === 'USE_SINGLE_OWNER_POLICY'

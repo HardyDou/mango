@@ -1,5 +1,5 @@
 {
-  "version": 13,
+  "version": 15,
   "always": [
     {
       "path": "rules/00-dev-flow.md",
@@ -90,6 +90,10 @@
     "process.deliveryAssurance": {
       "path": "rules/11-delivery-assurance.md",
       "reason": "SIMPLE、STANDARD、FULL 三档交付模式、默认 worktree 隔离、单文件标准记录和事实驱动验证治理"
+    },
+    "process.prSubmission": {
+      "path": "rules/12-pr-submission.md",
+      "reason": "Mango 主仓与业务仓统一 PR 提交、授权、精确暂存、Push、创建或更新 PR 和远端回读规范"
     },
     "backend.code": {
       "path": "rules/backend/01-code.md",
@@ -222,8 +226,15 @@
   "bundles": {
     "deliveryContract": {
       "paths": ["mango-docs/designs/**", "mango-docs/plans/**", "mango-docs/evidence/**", "business-docs/**"],
-      "keywords": ["交付契约", "设计文档", "设计说明书", "基于设计", "按设计", "按照设计", "交付台账", "交付物料", "E2E", "e2e", "测试结果基线", "结果基线", "验收证据", "delivery-ledger", "delivery-contract", "创建PR", "评审PR", "提交PR", "合并PR", "创建 PR", "评审 PR", "提交 PR", "合并 PR", "Pull Request", "验收", "正式交付"],
+      "keywords": ["交付契约", "设计文档", "设计说明书", "基于设计", "按设计", "按照设计", "交付台账", "交付物料", "E2E", "e2e", "测试结果基线", "结果基线", "验收证据", "delivery-ledger", "delivery-contract", "评审PR", "合并PR", "评审 PR", "合并 PR", "验收", "正式交付"],
       "include": ["process.deliveryContract", "process.aiDeliveryQuality"]
+    },
+    "pullRequestSubmission": {
+      "roles": ["dev", "qa", "pmo"],
+      "phases": ["develop", "verify", "release", "governance"],
+      "paths": ["AGENTS.md", ".github/pull_request_template.md", ".github/workflows/**", ".gitea/workflows/**"],
+      "keywords": ["提交PR", "创建PR", "提交 PR", "创建 PR", "submit PR", "create PR", "open PR", "Push并创建PR", "Push 并创建 PR", "推送分支并创建PR", "推送分支并创建 PR"],
+      "include": ["process.prSubmission", "process.aiDeliveryQuality", "process.capabilityDocs"]
     },
     "backendFlow": {
       "roles": ["tech-lead", "dev", "qa"],

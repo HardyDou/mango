@@ -26,7 +26,7 @@
 | 检查和同步业务 PMO bundle      | `mango pmo status`、`mango pmo check`、`mango pmo sync`、`mango pmo upgrade`、`mango pmo rollback`                | `business-pmo`、`.agents/skills`、部分 `business-docs`、`AGENTS.md`、兼容脚本 |
 | 初始化和启动本地开发工作区     | `mango workspace init`、`mango workspace status`、`mango workspace doctor`、`mango dev doctor`、`mango dev start` | `.mango/workspace.json`、`.mango/dev-workspace.env`、`.mango/run`             |
 | 拉取当前 Mango 版本文档包      | `mango docs pull`、`mango docs status`、`mango docs path`                                                         | `.mango/docs/<mango.version>`                                                 |
-| 编排可审计发布状态机           | `mango release publish/status/verify/repair`、`mango release registry doctor`                                     | `.mango/releases/<version>/manifest.json` 或项目配置的证据目录                |
+| 编排本地优先发布批次           | `mango release plan`、`prepare`、`publish`、`status`、`repair` 与 `mango release registry doctor`                   | `.changeset/release-plan.json`、`.runtime/mango-release/<planDigest>`         |
 | 聚合模块真实运行态             | `mango module doctor mango-link`                                                                                  | loopback Actuator、Admin Shell、项目 Playwright                               |
 | 查看发布说明                   | `mango changelog`                                                                                                 | 不改文件                                                                      |
 
@@ -37,6 +37,7 @@
 - 不在 full preset 项目里追加 Mango 可选能力；full preset 已包含全部可选能力，`mango add` 会拒绝执行。
 - 不负责生产部署。`mango dev start` 面向本地开发，生产运行应使用业务项目自己的部署脚本、镜像或进程管理。
 - 不自动覆盖业务已经接管的 PMO 文档、`AGENTS.md`、`mango.dev.json` 和业务代码。
+- `mango release` 只允许在 Mango 主仓内编排 Mango 平台组件发布，不用于 Mango 普通 PR、业务 PR、业务应用打包、部署或发布；业务项目安装 CLI 后也不会获得项目级 `mango-release` Skill。
 
 ## 4. 模块入口
 
@@ -275,111 +276,39 @@ Unix 停服按整个进程组等待，而不是只观察 Maven leader。默认�
 
 ### 6.5 可审计发布状态机
 
-`mango release` 固定维护 `source`、`versions`、`changelog`、`readmes`、`tests`、`pr`、`tag`、`github-release`、`maven`、`npm`、`cli-lock`、`private-registry-publish`、`private-registry-consume-verify`、`docs-latest`、`docs-snapshot`、`post-verify`、`cleanup`。每个状态只能是 `passed`、`failed`、`pending` 或 `not_applicable`，并必须有非空原因。适用且已执行的状态还必须逐次记录命令、工作目录、开始/完成时间、退出码和非空脱敏输出；`not_applicable` 因没有执行命令，只记录不适用原因和时间。
+`mango release` 仅在 Mango 主仓中使用 Changesets 表达 Mango 平台组件的直接发布意图，再由 Git 影响检查、固定运行时依赖图和 CLI 版本矩阵补齐完整批次。普通 Mango PR 携带 Changeset 不会自动进入发布状态机；业务项目 PR 和业务应用发布不使用该命令。正常状态固定为 `PREPARED`、`CANDIDATE_VERIFIED`、`PUBLISHED`、`CONSUMER_VERIFIED`、`COMPLETED`；失败或仓库可见性等待使用 `FAILED`、`VERIFY_PENDING`、`PARTIALLY_PUBLISHED`。
 
 ```bash
-mango release registry doctor --project-dir .
-mango release status --version 1.0.16 --project-dir .
-mango release verify --version 1.0.16 --project-dir .
-mango release publish --version 1.0.16 --project-dir . --authorize
-mango release repair --version 1.0.16 --project-dir . --authorize
+mango release plan --tag v2026.08.15-example-release
+mango release prepare --consume-registry https://nexus.example/repository/npm-group/
+pnpm -C mango-ui release:local-check -- --base=origin/main --head=HEAD
+mango release registry doctor \
+  --publish-registry https://nexus.example/repository/npm-hosted/ \
+  --consume-registry https://nexus.example/repository/npm-group/ \
+  --maven-publish-registry https://nexus.example/repository/maven-releases/ \
+  --maven-consume-registry https://nexus.example/repository/maven-public/ \
+  --maven-publish-server-id mango-releases \
+  --maven-consume-server-id mango-public
+mango release status
+mango release publish \
+  --publish-registry https://nexus.example/repository/npm-hosted/ \
+  --consume-registry https://nexus.example/repository/npm-group/ \
+  --authorize
+mango release repair \
+  --publish-registry https://nexus.example/repository/npm-hosted/ \
+  --consume-registry https://nexus.example/repository/npm-group/ \
+  --authorize
 ```
 
-配置优先级固定为 CLI 参数、环境变量、用户配置 `~/.config/mango/release.json`、项目配置 `.mango-release.json`。`publish` 和 `repair` 的授权只能来自本次 `--authorize` 或 `MANGO_RELEASE_AUTHORIZED=1`，不能持久化到配置。Maven/npm 必须分别显式选择 `private-registry`、`public-registry`、`artifact-only` 或带原因的 `disabled`；没有隐式发布模式和 registry。
+`plan` 汇总上次成功发布以来的全部未发布 Changesets，生成版本、依赖顺序、CLI 矩阵和 Release Notes 摘要；Release PR 不允许人工维护包列表。首次接入 Changesets 时，只允许使用仓库登记的一次性 `legacy-reconciliation.json` 对账，首次发布收尾后删除该入口。
 
-项目配置中的 adapter 使用结构化命令，不经过 shell 字符串解释。下面示例复用已有 Maven/npm 发布与只读回查入口：
+Git 影响命中 `mango/**` 生产源码时，`plan` 还要求显式 `--maven-version <version>`，固定选择 all-non-app reactor 和同版本 `mango-docs-bundle`，并自动把 CLI 纳入版本矩阵；没有 Maven 源码影响时传入 Maven 版本会失败，当前 npm-only 批次不会误发 Maven。
 
-```json
-{
-  "schemaVersion": 1,
-  "releaseKind": "mixed",
-  "artifacts": {
-    "maven": { "mode": "private-registry", "serverId": "mango-releases" },
-    "npm": { "mode": "private-registry", "tokenEnv": "MANGO_NPM_TOKEN" }
-  },
-  "stateAdapters": {
-    "maven": {
-      "publish": {
-        "command": "scripts/publish-maven-batch.sh",
-        "args": ["--all-non-app", "--release-version", "{version}", "--verify-base-url", "{mavenConsumeRegistry}"]
-      },
-      "verify": {
-        "command": "scripts/publish-maven-batch.sh",
-        "args": [
-          "--all-non-app",
-          "--release-version",
-          "{version}",
-          "--verify-only",
-          "--verify-base-url",
-          "{mavenConsumeRegistry}"
-        ]
-      }
-    },
-    "npm": {
-      "publish": [
-        {
-          "command": "pnpm",
-          "cwd": "mango-ui",
-          "args": [
-            "publish:pkg",
-            "pmo",
-            "--release-tag={tag}",
-            "--publish-registry={npmPublishRegistry}",
-            "--consume-registry={npmConsumeRegistry}"
-          ]
-        },
-        {
-          "command": "pnpm",
-          "cwd": "mango-ui",
-          "args": [
-            "publish:pkg",
-            "cli",
-            "--release-tag={tag}",
-            "--publish-registry={npmPublishRegistry}",
-            "--consume-registry={npmConsumeRegistry}"
-          ]
-        }
-      ],
-      "verify": [
-        {
-          "command": "pnpm",
-          "cwd": "mango-ui",
-          "args": [
-            "publish:pkg",
-            "pmo",
-            "--verify-only",
-            "--release-tag={tag}",
-            "--publish-registry={npmPublishRegistry}",
-            "--consume-registry={npmConsumeRegistry}"
-          ]
-        },
-        {
-          "command": "pnpm",
-          "cwd": "mango-ui",
-          "args": [
-            "publish:pkg",
-            "cli",
-            "--verify-only",
-            "--release-tag={tag}",
-            "--publish-registry={npmPublishRegistry}",
-            "--consume-registry={npmConsumeRegistry}"
-          ]
-        }
-      ]
-    }
-  }
-}
-```
+`prepare` 要求 clean worktree，执行一次构建并封存精确 tarball 和源码 archive，记录 Git tree、计划摘要和 SHA-256；随后用“封存 tarball + 消费仓未变坐标”运行一次混合消费者。Release PR 合并后，`publish` 只接受与 `origin/main` 相同的 prepared tree，按拓扑发布这些文件，不再构建。
 
-| 场景            | 模式与地址示例                                                 | 认证引用                                                         |
-| --------------- | -------------------------------------------------------------- | ---------------------------------------------------------------- |
-| Nexus           | publish 指向 hosted/releases，consume 指向 group/public        | Maven `settings.xml` 的 `serverId`；npm token 环境变量名         |
-| Artifactory     | publish 指向 local repository，consume 指向 virtual repository | Maven `settings.xml` server ID；npm token 环境变量或 `npmConfig` |
-| GitHub Packages | `public-registry`，四类 URL 指向组织 package endpoint          | CI secret 注入 token，配置只记录引用名                           |
-| 只产出文件      | `artifact-only`                                                | 不要求 registry 或凭据，adapter 只构建和校验制品                 |
-| 禁用某类制品    | `disabled` + `disabledReason`                                  | 对应状态为 `not_applicable`，禁止空原因                          |
+Maven 批次的 `prepare` 调用同一个 batch 入口，把 non-app reactor 只 deploy 一次到 `.runtime` 内的 file repository，并封存每个 POM/JAR 的 SHA-256。`publish/repair` 通过 `--maven-publish-registry`、`--maven-consume-registry` 和 Maven settings server ID 发布这些文件；坐标部分存在、内容不同或仓库状态未知都会停止。
 
-四类 registry 地址分别用 `MANGO_RELEASE_MAVEN_PUBLISH_REGISTRY`、`MANGO_RELEASE_MAVEN_CONSUME_REGISTRY`、`MANGO_RELEASE_NPM_PUBLISH_REGISTRY`、`MANGO_RELEASE_NPM_CONSUME_REGISTRY` 注入。`repair` 跳过所有已 `passed` 状态；从未尝试的 pending 不可变状态会执行一次原 `publish` adapter，不能用 verify-only 冒充已发布。Maven、npm、tag、GitHub Release、文档快照已经尝试后，只允许精确对象 `{"kind":"verify-existing"}` 调用同状态已审核的 `verify` adapter，禁止自动重发，也不接受独立 repair 命令、空数组或额外字段。adapter 输出进入 manifest 前会脱敏 token、password、Bearer、URL userinfo 和凭据环境变量值；缺任何必需 evidence 字段、applicability 与配置不一致或 completed 标记与状态不一致时，`status/verify/repair` 都拒绝读取 manifest。
+发布后只运行一次纯消费仓消费者。通过后才创建 Tag 和 GitHub Release。hosted 已有同 SHA-256 制品而 group 暂不可见时进入 `VERIFY_PENDING`，`repair` 只读等待并跳过已发布坐标；任一 registry 状态未知、内容 hash 不同或 prepared tree 漂移都会停止。`publish` 和 `repair` 的授权只能来自当前回合 `--authorize` 或 `MANGO_RELEASE_AUTHORIZED=1`，不能写入仓库或用户配置。
 
 ## 7. API 与扩展
 
@@ -399,11 +328,13 @@ mango release repair --version 1.0.16 --project-dir . --authorize
 | `mango pmo check`                | 校验当前可用包或项目锁对应的 PMO baseline、manifest 和项目 Skill                            | `--project-dir`、`--locked`                                                                  | 不改文件                                                                                               |
 | `mango pmo upgrade`              | 原子升级到 CLI 精确依赖的 `@mango/pmo` bundle，并锁定升级前已有的受支持历史生命周期文档版本 | `--project-dir`、`--to`、`--dry-run`、`--write-agents`、`--sync-shell`、`--adopt-governance` | PMO bundle、项目 Skill、GitHub/Gitea workflow、历史文档版本基线、兼容资产和 `.mango` 备份目录          |
 | `mango pmo rollback`             | 原子恢复已校验的本地 PMO 备份                                                               | `--project-dir`、`--to`、`--dry-run`                                                         | PMO bundle、项目 Skill、PR 模板、GitHub/Gitea workflow 和 `.mango` 备份目录；不覆盖项目预算            |
-| `mango release publish`          | 按固定状态顺序执行发布并逐状态写证据                                                        | `--version`、`--tag`、`--pr`、`--authorize`、registry/mode 参数                              | release manifest、配置声明的外部制品                                                                   |
-| `mango release status`           | 只读展示全部发布状态和原因                                                                  | `--version`、`--project-dir`、`--json`                                                       | 不改文件                                                                                               |
-| `mango release verify`           | 通过只读 adapter 重新验证状态                                                               | `--version`、registry/mode 参数                                                              | release manifest；不发布制品                                                                           |
-| `mango release repair`           | 从失败/待执行状态恢复，跳过已成功不可变制品                                                 | `--version`、`--authorize`                                                                   | release manifest、缺失的发布动作                                                                       |
-| `mango release registry doctor`  | 校验 artifact mode、四类 registry 角色和认证引用                                            | registry/mode 参数、`--json`                                                                 | 不改文件                                                                                               |
+| `mango release plan`             | 汇总 Changesets、Git 影响、依赖闭包和 CLI 矩阵，生成 Release PR 计划                        | `--tag`、`--title`                                                                           | 版本/依赖投影、release plan、release notes                                                              |
+| `mango release prepare`          | 一次构建并封存精确制品，运行混合候选消费者                                                  | `--consume-registry`、`--runtime-dir`                                                        | `.runtime/mango-release/<planDigest>`                                                                   |
+| `mango release publish`          | 发布封存制品，双仓回查，运行纯消费仓消费者，通过后创建 Tag/Release                          | `--publish-registry`、`--consume-registry`、`--authorize`                                    | registry、Tag、GitHub Release、batch manifest                                                           |
+| `mango release status`           | 只读展示批次及逐包状态                                                                      | `--plan`、`--runtime-dir`                                                                    | 不改文件                                                                                               |
+| `mango release repair`           | 回读并恢复 `VERIFY_PENDING/PARTIALLY_PUBLISHED`，不重建、不重发已存在坐标                    | publish/consume registry、`--authorize`                                                      | batch manifest、尚未执行的精确发布动作                                                                 |
+| `mango release registry doctor`  | 校验 npm/Maven publish/consume registry 地址、npm 发布身份、Maven settings server ID 和消费可达性 | npm/Maven 双角色 registry、Maven publish/consume server ID、`--json`                           | 不改文件                                                                                               |
+| `pnpm release:local-check`        | 在最终候选提交本地一次执行 Release PR 所需 PMO、CLI、前端、计划、投影、文档和 workspace 重型门禁 | `--base`、`--head`                                                                            | `.runtime/mango-release/local-checks.json`；不 Push、不创建 PR                                          |
 | `mango workspace init`           | 初始化本地开发工作区                                                                        | 无                                                                                           | `.mango/workspace.json`、`.mango/dev-workspace.env`、.mango/m2/repository，缺失时创建 `mango.dev.json` |
 | `mango workspace status`         | 打印 workspace、数据库、初始化来源、应用和端口                                              | 无                                                                                           | 不改文件                                                                                               |
 | `mango workspace list`           | 查看本机 workspace registry                                                                 | 无                                                                                           | 不改文件                                                                                               |
@@ -627,7 +558,7 @@ Issue #690 覆盖 CLI、Maven plugin、Bootstrap/runtime、Resource、BSQL、Boo
 
 ### 1.0.107 发布影响
 
-`@mango/cli@1.0.107` 将前端矩阵更新为 `@mango/admin-shell@1.0.60`、`@mango/admin@1.0.66` 与不变的 `@mango/common@1.0.26`，修复旧矩阵在 Admin 生产构建时导入 Common 不存在导出的错误。Mango Maven 保持 `1.0.36`，`@mango/pmo` 保持 `1.3.14`，其它 npm 坐标不变。
+`@mango/cli@1.0.107` 将前端矩阵更新为 `@mango/admin-shell@1.0.60`、`@mango/admin@1.0.66` 与不变的 `@mango/common@1.0.26`，修复旧矩阵在 Admin 生产构建时导入 Common 不存在导出的错误。Mango Maven 保持 `1.0.36`，`@mango/pmo` 升级到 `1.3.15`，其它 npm 坐标不变。
 
 升级时安装 CLI `1.0.107` 并应用随包完整 `release-versions.json`，不要只替换 Admin Shell，也不要覆盖或重发 Common 1.0.26。该修复不改变 CLI 命令、模板结构、公开前端 API、数据库、菜单、权限、租户和运行时配置。
 

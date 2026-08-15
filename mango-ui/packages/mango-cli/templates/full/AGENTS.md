@@ -32,7 +32,9 @@ node business-pmo/mango-baseline/tools/pmo-preflight.mjs \
 
 涉及业务需求、设计、台账或验收时，还必须读取本次任务对应的 `business-docs/**` 文件；没有明确路径时先定位或要求补齐，不得只按 Mango baseline 自行推断需求。
 
-发布、发布验证、发布恢复和发布收尾只使用项目内 `.agents/skills/mango-release`（规范源为 `business-pmo/mango-baseline/skills/mango-release`）。不要调用用户级、插件级或其它外部通用 release skill。
+本业务项目不分发、安装或调用 Mango 主仓的 `mango-release` Skill。业务 PR、业务应用构建、打包、部署、发布、流量和回滚按本业务仓自己的交付契约及发布 runbook 执行；只有在 Mango 主仓发布 Mango 平台组件时才使用 Mango 主仓仓库内的 `mango-release`。
+
+本业务仓的 Commit、Push、创建或更新 PR 使用项目内 `.agents/skills/mango-submit-pr`（规范源为 `business-pmo/mango-baseline/rules/12-pr-submission.md`）。该 Skill 不负责 PR Review、合并、业务发布或部署。
 
 ## 3. 交付报告
 

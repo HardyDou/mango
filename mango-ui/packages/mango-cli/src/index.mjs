@@ -312,10 +312,11 @@ Usage:
   mango pmo sync --project-dir <dir> [--dry-run] [--write-agents] [--sync-shell] [--adopt-governance]
   mango pmo upgrade --project-dir <dir> [--to <version>] [--dry-run] [--write-agents] [--sync-shell] [--adopt-governance]
   mango pmo rollback --project-dir <dir> [--to <version>] [--dry-run]
-  mango release publish --version <version> [--authorize]
-  mango release status --version <version>
-  mango release verify --version <version>
-  mango release repair --version <version> [--authorize]
+  mango release plan [--tag <tag>]
+  mango release prepare --consume-registry <url>
+  mango release publish --publish-registry <url> --consume-registry <url> [--authorize]
+  mango release status
+  mango release repair --publish-registry <url> --consume-registry <url> [--authorize]
   mango release registry doctor
   mango module doctor mango-link --app <app> --backend-url <url> --frontend-url <url> [--project-dir <dir>] [--json] [--strict]
   mango module add <module> --aggregate <name> [--aggregate-name <name>] [options]

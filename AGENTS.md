@@ -36,4 +36,5 @@ node mango-pmo/tools/pmo-preflight.mjs \
 
 ## 4. Skill 路由
 
-- Mango 制品发布、发布验证、发布恢复和发布收尾只使用仓库内 [mango-release](./mango-pmo/skills/mango-release/SKILL.md)。不要调用用户级、插件级或其它外部通用 release skill。
+- Mango 主仓与业务仓的 Commit、Push、创建或更新 PR 使用项目级 `mango-submit-pr`；本仓入口为 [mango-submit-pr](./mango-pmo/skills/mango-submit-pr/SKILL.md)。它不负责 Review、合并、发布或部署。
+- 仅 Mango 主仓平台组件的发布、发布验证、发布恢复和发布收尾使用仓库内 [mango-release](./mango-pmo/skills/mango-release/SKILL.md)。Mango 普通 PR、业务 PR、业务应用发布以及用户级、插件级或其它外部通用 release skill 均不在该入口的适用范围内。

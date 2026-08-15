@@ -1,5 +1,29 @@
 # Mango PMO Changelog
 
+## 1.3.15 - 2026-08-15
+
+### Changed
+
+- Replace manual multi-package release lists and the seventeen-state adapter workflow with Changesets intent, Git impact reconciliation, dependency closure and a machine-generated release plan.
+- Require one local `prepare` build whose exact source archive and npm tarballs are sealed by SHA-256, reused for mixed candidate verification, publication and recovery.
+- Move Tag and GitHub Release creation after pure consume-registry verification; hosted/group propagation delay now enters `VERIFY_PENDING` without republishing.
+- Keep the stable frontend required check identity while allowing machine-generated Release PRs to run a lightweight, reproducible plan check and routing any source-bearing PR back to the normal gate.
+- Mark `mango-release` as repository-only so PMO packaging and business upgrades remove the old project copy, and add `mango-submit-pr` for Mango and business task PR Commit/Push/create/readback without Review, merge, release or deployment authority.
+- Require local equivalents for every applicable Runner check and a final-head local pass before Push; Runner failures return to the same worktree and cannot become a speculative commit loop.
+- Preserve Maven/JAR releases in the same local-first owner through explicit Git-impact version planning, one local repository deploy, exact POM/JAR sealing, dual-registry hash checks and resumable publication.
+
+### Upgrade Notes
+
+1. Install `@mango/cli@1.0.107` after `@mango/pmo@1.3.15` and the complete Admin tuple resolve from the company consume registry.
+2. Run `mango pmo upgrade --project-dir . --to 1.3.15 --dry-run`, review the release governance update, then apply it and run the locked PMO check.
+3. Mango Maven remains `1.0.36`; no API, database, menu, permission, tenant or application runtime migration is required.
+
+### Verification
+
+- Release scope, plan digest, npm/Maven topology, legacy reconciliation and closeout baseline, Runner classification and five-state CLI tests.
+- PMO document contract, package projection, CLI full test, sealed candidate consumer and pure consume-registry consumer.
+- `mango-submit-pr` trigger, non-trigger, empty-context, final-head, Runner-debug-loop and authorization-boundary evals.
+
 ## 1.3.14 - 2026-08-14
 
 ### Fixed

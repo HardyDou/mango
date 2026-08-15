@@ -2,7 +2,9 @@
 
 ## 1. 概览
 
-`@mango/pmo` 是 Mango PMO baseline 和交付 Skills 的 npm 发布包。长期规则仍维护在仓库根目录 `mango-pmo`，本包把规则、角色、模板、文档契约、工具和 Skill 构建成一个可校验快照。包名表示发布与治理归属，不代表所有 Skill 都由产品经理执行。
+`@mango/pmo` 是 Mango PMO baseline 和业务项目交付 Skills 的 npm 发布包。长期规则仍维护在仓库根目录 `mango-pmo`，本包把面向业务项目的规则、角色、模板、文档契约、工具和 Skill 构建成一个可校验快照。包名表示发布与治理归属，不代表所有 Skill 都由产品经理执行。
+
+Mango 主仓的 `mango-release` 标记为 `distribution: repository-only`，只服务 Mango 平台组件发布；它不会进入本包的 baseline、Codex plugin 投影或业务项目 `.agents/skills`。业务 PR、业务应用发布和部署使用业务仓自己的流程。
 
 业务项目通过 `@mango/cli` 消费本包，不直接依赖包内脚本作为运行时代码。
 
@@ -17,6 +19,7 @@
 | 业务同步          | `mango pmo sync/upgrade`                                                    | CLI 从本包安装业务仓 baseline，并同步 canonical PR 风险合同区段                    |
 | 影响驱动门禁      | `dist/baseline/tools/risk-verification.mjs`、`classify-pmo-check-scope.mjs` | 校验需求/方案风险，并把 Java PR 限定到受影响 Maven 模块                            |
 | 前端页面基线      | `dist/baseline/tools/check-frontend-page-baseline.mjs`                      | 检查新增或修改页面的默认骨架，并支持带可复核原因的按类型或整页例外                 |
+| PR 提交 Skill     | `skills/mango-submit-pr`                                                    | Mango 主仓与业务仓共用；最终 head 的 Runner 同源本地检查通过后执行 Commit、Push、创建或更新 PR 与远端回读，不负责合并或发布 |
 
 ## 3. 接入方式
 
@@ -30,12 +33,12 @@ pnpm -F @mango/pmo check
 业务项目使用：
 
 ```bash
-npm view @mango/pmo@1.3.14 version --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
-npm view @mango/cli@1.0.106 version --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
-npm install -g @mango/cli@1.0.106 --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
+npm view @mango/pmo@1.3.15 version --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
+npm view @mango/cli@1.0.107 version --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
+npm install -g @mango/cli@1.0.107 --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
 mango pmo status --project-dir .
-mango pmo upgrade --project-dir . --to 1.3.14 --dry-run
-mango pmo upgrade --project-dir . --to 1.3.14 --sync-shell
+mango pmo upgrade --project-dir . --to 1.3.15 --dry-run
+mango pmo upgrade --project-dir . --to 1.3.15 --sync-shell
 mango pmo check --project-dir . --locked
 ```
 
@@ -88,7 +91,7 @@ mango pmo check --project-dir . --locked
 | -------- | ----------------------------------- |
 | 构建包   | `pnpm -F @mango/pmo build`          |
 | 校验包   | `pnpm -F @mango/pmo check`          |
-| 发布包   | `pnpm publish:pkg pmo --dry-run`    |
+| 准备批次 | `mango release plan`、`mango release prepare` |
 | 业务升级 | `mango pmo upgrade --project-dir .` |
 
 ## 8. 快速开始

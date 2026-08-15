@@ -10,15 +10,18 @@
 
 - This change is delivered by the Mango Maven `mango-file-preview-engine` artifact. Include it in the next Mango Maven release and upgrade backend consumers as one aligned Maven matrix. No standalone `@mango/file` npm release is required for this capability.
 
-## v2026.08.14-admin-shell-1.0.60-admin-1.0.66-cli-1.0.107-compat-release - 2026-08-14
+## v2026.08.15-pmo-1.3.15-admin-shell-1.0.60-admin-1.0.66-cli-1.0.107-local-first-release - 2026-08-15
 
-Status: `PENDING`. This npm-only compatibility patch replaces the broken Admin release tuple with new immutable coordinates. Mango Maven remains `1.0.36`, `@mango/common` remains `1.0.26`, and `@mango/pmo` remains `1.3.14`.
+Status: `PENDING`. This npm-only batch replaces the broken Admin tuple and introduces the local-first Mango release workflow. Mango Maven remains `1.0.36` and `@mango/common` remains `1.0.26`.
 
 ### Fixed
 
 - Fix [Issue #791](https://github.com/HardyDou/mango/issues/791): `@mango/admin-shell@1.0.59` imported `resolveActiveMenuPath` from the already-published `@mango/common@1.0.26`, whose tarball does not export that symbol, so a clean Admin production build failed.
 - Keep active parent-menu selection inside Admin Shell, restore the Common menu-tree source to the exact `1.0.26` release baseline, and leave all existing immutable package versions unchanged.
 - Add a release-candidate consumer matrix: unpublished candidate packages use local tarballs while unchanged packages and the published CLI resolve from the consume registry. After the CLI is published, the same gate verifies a pure consume-registry install, typecheck and production build.
+- Replace the manual package list and seventeen-state adapter workflow with Changesets intent, Git impact reconciliation, dependency/CLI closure, a machine-generated plan and one set of SHA-256 sealed artifacts. Tag and GitHub Release now wait for pure consume-registry verification.
+- Keep Maven in the same release owner: production-source impact requires an explicit Maven target, automatically advances the CLI matrix, deploys the non-app reactor once into a sealed local repository, and publishes or repairs only the recorded POM/JAR hashes.
+- Add repository-only `mango-release` distribution isolation and the shared `mango-submit-pr` submission Skill. Every required Runner check must have a local equivalent; Push and PR creation wait for a clean final-head local pass, and Runner is only an independent verification surface.
 
 ### Versions
 
@@ -26,7 +29,8 @@ Status: `PENDING`. This npm-only compatibility patch replaces the broken Admin r
 | --- | ---: | ---: | --- |
 | `@mango/admin-shell` | `1.0.59` | `1.0.60` | Keeps active-menu resolution private to the Shell and remains compatible with Common `1.0.26`. |
 | `@mango/admin` | `1.0.65` | `1.0.66` | Aggregates Admin Shell `1.0.60`; public Admin API and styles remain unchanged. |
-| `@mango/cli` | `1.0.106` | `1.0.107` | Locks the corrected Admin tuple and carries the unchanged PMO `1.3.14` and Maven `1.0.36` coordinates. |
+| `@mango/pmo` | `1.3.14` | `1.3.15` | Delivers the canonical local-first release Skill and release artifact governance. |
+| `@mango/cli` | `1.0.106` | `1.0.107` | Locks the corrected Admin tuple and PMO `1.3.15`, and exposes `release plan/prepare/publish/status/repair`. |
 | `@mango/common` | `1.0.26` | unchanged | Not republished; source is restored to its released baseline. |
 | Other npm packages | current release matrix | unchanged | Not republished. |
 
@@ -36,21 +40,23 @@ Status: `PENDING`. This npm-only compatibility patch replaces the broken Admin r
 | ---: | --- | --- | --- |
 | 1 | `@mango/admin-shell` | `1.0.60` | `PENDING` publication and hosted/group verification. |
 | 2 | `@mango/admin` | `1.0.66` | `PENDING` after Admin Shell verification. |
-| 3 | `@mango/cli` | `1.0.107` | `PENDING` after the corrected Admin matrix is available. |
-| 4 | Immutable tag and GitHub Release | `v2026.08.14-admin-shell-1.0.60-admin-1.0.66-cli-1.0.107-compat-release` | `PENDING`. |
-| 5 | Latest documentation | Pages | `PENDING`; npm-only release does not create a Maven documentation snapshot. |
+| 3 | `@mango/pmo` | `1.3.15` | `PENDING` canonical release workflow bundle. |
+| 4 | `@mango/cli` | `1.0.107` | `PENDING` after the corrected Admin and PMO matrix is available. |
+| 5 | Immutable tag and GitHub Release | `v2026.08.15-pmo-1.3.15-admin-shell-1.0.60-admin-1.0.66-cli-1.0.107-local-first-release` | `PENDING` until pure consume-registry verification passes. |
+| 6 | Latest documentation | Pages | `PENDING`; npm-only release does not create a Maven documentation snapshot. |
 
 ### Upgrade Notes
 
-1. Wait until Admin Shell `1.0.60`, Admin `1.0.66`, and CLI `1.0.107` all resolve from the company npm group registry.
+1. Wait until Admin Shell `1.0.60`, Admin `1.0.66`, PMO `1.3.15`, and CLI `1.0.107` all resolve from the company npm group registry.
 2. Install CLI `1.0.107` and apply its complete `release-versions.json` matrix; do not keep Admin Shell `1.0.59` or republish Common `1.0.26`.
-3. Keep Mango Maven at `1.0.36` and PMO at `1.3.14`. No API, database, menu, permission, tenant, or runtime configuration migration is required.
+3. Keep Mango Maven at `1.0.36`. Upgrade business governance with `mango pmo upgrade --project-dir . --to 1.3.15 --dry-run`, then apply and run the locked check. No API, database, menu, permission, tenant, or runtime configuration migration is required.
 
 ### Verification
 
 - The old pure-registry tuple must reproduce the missing `resolveActiveMenuPath` export during the Admin Vite production build.
 - Admin Shell unit tests must cover parent-route ownership and sibling-prefix rejection; Common source must match its `1.0.26` release baseline.
-- Release-impact, CLI release lock, Admin styles, package exports, release-candidate mixed matrix, post-publish pure-registry matrix, PMO documentation gates, and required checks must pass before publication is complete.
+- Changeset/Git impact, machine plan, CLI release lock, Admin styles, package exports, sealed release-candidate matrix, post-publish pure-registry matrix, PMO package/document gates, Runner classification and required checks must pass before publication is complete.
+- The single `pnpm -C mango-ui release:local-check -- --base=<base> --head=HEAD` entry must reproduce the applicable PMO, CLI, frontend, release-plan, projection, workspace and capability-document Runner checks locally before the Release PR is pushed.
 
 ## v2026.08.14-pmo-1.3.14-cli-1.0.106-historical-document-compat-release - 2026-08-14
 

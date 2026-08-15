@@ -65,3 +65,28 @@ test('all-non-app discovery excludes nested Maven test fixtures', () => {
   assert.match(result.stdout, /Publish scope: all non-app Maven modules/);
   assert.doesNotMatch(result.stdout, /src\/test\/resources\/architecture-path-binding/);
 });
+
+test('release prepare can deploy the batch once into an explicit file repository', () => {
+  const result = spawnSync(
+    path.join(root, 'scripts/publish-maven-batch.sh'),
+    [
+      'mango-tools/mango-architecture-verification',
+      '--include-docs-bundle',
+      '--release-version',
+      '1.0.21',
+      '--repository-id',
+      'mango-release-stage',
+      '--repository-url',
+      'file:///tmp/mango-release-stage',
+      '--skip-verify',
+      '--dry-run'
+    ],
+    { cwd: root, encoding: 'utf8' }
+  );
+
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+  assert.match(result.stdout, /Repository override id: mango-release-stage/);
+  assert.match(result.stdout, /Repository override URL: file:\/\/\/tmp\/mango-release-stage/);
+  assert.match(result.stdout, /-DrepositoryId=mango-release-stage/);
+  assert.match(result.stdout, /-Durl=file:\/\/\/tmp\/mango-release-stage/);
+});

@@ -27,6 +27,11 @@ test('pull requests run the stable affected frontend gate without browser E2E', 
     'repository development manifest validation must run before dependency installation',
   );
   assert.match(pullRequestJob, /pnpm check:pr -- --base="\$MANGO_BASE_SHA" --head="\$MANGO_HEAD_SHA"/u);
+  assert.match(pullRequestJob, /id: release-scope/u);
+  assert.match(pullRequestJob, /classify-release-pr\.mjs/u);
+  assert.match(pullRequestJob, /check-release-changes\.mjs/u);
+  assert.match(pullRequestJob, /if: steps\.release-scope\.outputs\.release_only != 'true'[\s\S]*?pnpm install --frozen-lockfile/u);
+  assert.match(pullRequestJob, /if: steps\.release-scope\.outputs\.release_only == 'true'[\s\S]*?pnpm release:pr-check/u);
   assert.doesNotMatch(pullRequestJob, /test:e2e|playwright|Start real Mango backend/u);
 });
 
