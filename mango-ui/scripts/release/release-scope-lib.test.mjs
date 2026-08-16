@@ -9,6 +9,7 @@ import {
   isReleaseImpactFile,
   parseChangeset,
   resolveReleaseClosure,
+  selectReleaseIntentHead,
   topologicalReleaseOrder,
   validateDeclaredReleaseSet,
 } from './release-scope-lib.mjs';
@@ -111,6 +112,51 @@ test('direct declarations do not have to duplicate graph-generated dependents', 
     declared: new Set(['@mango/base']),
   });
   assert.deepEqual(errors, []);
+});
+
+test('mixed release intent stops at the plan source before machine projections', () => {
+  assert.equal(
+    selectReleaseIntentHead({
+      head: 'final-head',
+      planChanged: true,
+      sourceCommit: 'source-head',
+      sourceIsAncestor: true,
+      projectionReleaseOnly: true,
+    }),
+    'source-head',
+  );
+  assert.equal(
+    selectReleaseIntentHead({
+      head: 'ordinary-head',
+      planChanged: false,
+      sourceCommit: '',
+      sourceIsAncestor: false,
+      projectionReleaseOnly: false,
+    }),
+    'ordinary-head',
+  );
+  assert.throws(
+    () =>
+      selectReleaseIntentHead({
+        head: 'final-head',
+        planChanged: true,
+        sourceCommit: 'source-head',
+        sourceIsAncestor: false,
+        projectionReleaseOnly: true,
+      }),
+    /not an ancestor/u,
+  );
+  assert.throws(
+    () =>
+      selectReleaseIntentHead({
+        head: 'final-head',
+        planChanged: true,
+        sourceCommit: 'source-head',
+        sourceIsAncestor: true,
+        projectionReleaseOnly: false,
+      }),
+    /non-release changes/u,
+  );
 });
 
 test('the complete published Mango package graph has a deterministic release order', () => {

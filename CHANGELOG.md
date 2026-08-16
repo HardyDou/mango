@@ -21,6 +21,7 @@
 - Project the unresolved full frontend template's exact CLI development dependency from the machine plan without parsing its placeholders, then reject every other template change against the source snapshot.
 - Use the Runner's trusted Release-only classifier in `release:local-check`, selecting `release:pr-check` for machine projections and retaining ordinary Changeset/plan checks for mixed source changes.
 - Retain high-volume Maven and npm output with an explicit release-command buffer so a healthy `mango release prepare` run is not terminated before its candidate manifest is written.
+- Validate Changeset intent for a mixed Release through the plan's committed source snapshot, leaving final dependency-closure version projections to the independent plan check.
 
 ### Added
 

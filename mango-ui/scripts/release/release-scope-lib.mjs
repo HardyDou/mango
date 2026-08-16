@@ -140,6 +140,22 @@ export function validateDeclaredReleaseSet({ direct, expected, declared }) {
   return errors;
 }
 
+export function selectReleaseIntentHead({
+  head,
+  planChanged,
+  sourceCommit,
+  sourceIsAncestor,
+  projectionReleaseOnly,
+}) {
+  if (!planChanged) return head;
+  if (!sourceCommit) throw new Error('changed release plan is missing its source commit');
+  if (!sourceIsAncestor) throw new Error('release plan source commit is not an ancestor of the final head');
+  if (!projectionReleaseOnly) {
+    throw new Error('final head contains non-release changes after the release plan source commit');
+  }
+  return sourceCommit;
+}
+
 export function normalizeRepositoryPath(file) {
   const normalized = file.replaceAll('\\', '/').replace(/^\.\//u, '');
   if (normalized.startsWith('packages/')) return `mango-ui/${normalized}`;
