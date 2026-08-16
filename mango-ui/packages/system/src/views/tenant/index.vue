@@ -1,3 +1,4 @@
+<!-- mango-page-baseline-exception all: 机构维护联合套餐绑定、菜单树授权和生命周期状态操作，弹框不是标准短表单。 -->
 <template>
   <div class="tenant-container">
     <el-card>

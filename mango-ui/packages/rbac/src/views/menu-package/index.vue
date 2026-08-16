@@ -1,3 +1,4 @@
+<!-- mango-page-baseline-exception all: 菜单套餐维护联合套餐列表、层级菜单树和权限范围配置，不能映射为独立的标准列表与短表单弹框。 -->
 <template>
   <div class="menu-package-container">
     <el-card>

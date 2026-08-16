@@ -1,3 +1,4 @@
+<!-- mango-page-baseline-exception all: 菜单维护编辑层级路由资源树及动态组件配置，不是平铺领域列表或标准短表单弹框。 -->
 <template>
   <div class="menu-container">
     <el-card>

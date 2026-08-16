@@ -1,3 +1,4 @@
+<!-- mango-page-baseline-exception all: 行政区域维护以层级树和父子区域联动为核心，不是平铺领域列表或标准短表单弹框。 -->
 <template>
   <div class="area-container">
     <el-card>

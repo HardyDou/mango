@@ -1,3 +1,4 @@
+<!-- mango-page-baseline-exception all: 组织维护是树形主从工作台，左侧组织树、右侧详情和直属下级表格共同构成一个联动页面。 -->
 <template>
   <div class="org-container">
     <el-row :gutter="16">

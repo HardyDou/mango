@@ -1,3 +1,4 @@
+<!-- mango-page-baseline-exception all: 角色工作台联合菜单授权、数据范围和成员关系配置，不是单一实体的标准列表与短表单弹框。 -->
 <template>
   <div class="role-container">
     <el-card>

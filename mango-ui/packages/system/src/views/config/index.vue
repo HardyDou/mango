@@ -1,3 +1,4 @@
+<!-- mango-page-baseline-exception all: 系统配置页联合分组筛选、配置项维护和运行时值管理，不是单一领域对象的标准列表与短表单。 -->
 <template>
   <div class="config-container">
     <template v-if="viewMode === 'list'">

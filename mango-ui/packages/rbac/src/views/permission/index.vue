@@ -1,3 +1,4 @@
+<!-- mango-page-baseline-exception all: 权限工作台联合菜单、接口资源、角色授权和数据规则配置，不是单一实体的标准列表与短表单弹框。 -->
 <template>
   <div class="permission-container">
     <el-card>

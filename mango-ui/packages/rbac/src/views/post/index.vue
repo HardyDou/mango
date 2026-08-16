@@ -1,3 +1,4 @@
+<!-- mango-page-baseline-exception all: 岗位维护联合组织上下文、岗位成员关系和状态操作，弹框承担关联配置而非标准短表单。 -->
 <template>
   <div class="post-container">
     <el-card>

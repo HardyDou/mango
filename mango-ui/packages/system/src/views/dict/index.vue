@@ -1,3 +1,4 @@
+<!-- mango-page-baseline-exception all: 字典页由类型列表与数据列表组成同步主从工作台，两个编辑弹框依赖当前类型上下文。 -->
 <template>
   <div class="dict-container">
     <div class="dict-layout">

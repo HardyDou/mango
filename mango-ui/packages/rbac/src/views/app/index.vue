@@ -1,3 +1,4 @@
+<!-- mango-page-baseline-exception all: 应用登记、模块绑定、密钥管理和运行策略在同一工作台联动，页面不是单一列表与短表单弹框。 -->
 <template>
   <div class="app-container">
     <el-card>

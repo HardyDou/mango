@@ -1,3 +1,4 @@
+<!-- mango-page-baseline-exception list: 本页合并展示企业与个人链接分类投影，编辑入口分散在独立路由，不是单一领域对象的标准 CRUD 列表。 -->
 <template>
   <div class="link-page" data-page="link-company">
     <section class="link-toolbar">
