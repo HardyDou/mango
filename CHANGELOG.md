@@ -12,7 +12,87 @@
 
 ### Fixed
 
-- Persist `remoteWrites=true` before every immutable registry, Tag or GitHub Release command, and let completed-batch `repair` recover a missing audit flag only after read-only hosted/group, Tag and Release verification. This prevents a process interruption from making a remotely written batch look replaceable.
+- Remove the Admin Pages/System/File package cycle by extracting the singleton page, feature and Notice provider contracts to FE1 `@mango/admin-extension`; keep Admin Pages compatibility re-exports for the migration window.
+- Preserve `@mango/cms/admin-pages` as an external Admin dependency so all CMS registrars share the Shell registry, and enable the domain-event Outbox in newly generated full projects so the system-event menu matches its controller condition.
+- Register the hidden Notice settings route, ship a real favicon, normalize numeric strings, migrate affected Element Plus props, and narrow Notice inbound broadcasts to identifiers/status while keeping message bodies in Notice and files in File.
+- Preserve the published Maven source version when an in-progress plan is recalculated and validate both Maven registry roles with the same exact historical BOM coordinate.
+- Bind the release plan to the exact committed source snapshot and reject source, tree or file-set drift while accepting machine-generated dependency-closure version projection.
+- Project the CLI README current version, exact query and installation examples from the machine plan, then reject every other README change against the source snapshot.
+- Project the unresolved full frontend template's exact CLI development dependency from the machine plan without parsing its placeholders, then reject every other template change against the source snapshot.
+- Use the Runner's trusted Release-only classifier in `release:local-check`, selecting `release:pr-check` for machine projections and retaining ordinary Changeset/plan checks for mixed source changes.
+- Retain high-volume Maven and npm output with an explicit release-command buffer so a healthy `mango release prepare` run is not terminated before its candidate manifest is written.
+
+### Added
+
+- Add `@mango/admin-extension@1.0.1`, sealed candidate release contracts, and the configurable XLS/XLSX Web preview control flag.
+
+### Changed
+
+- Publish all generated exact-version dependents in machine-generated topological order; do not infer the batch from the latest commit or maintain a manual package list.
+- New registrars import from `@mango/admin-extension`; old Admin Pages subpath imports resolve the same implementation until the documented next-major removal point.
+- Persist `remoteWrites=true` before immutable writes and allow completed-batch repair to recover the audit flag only after read-only hosted/group, Tag and Release verification.
+- Treat a non-browsable Maven hosted root as neutral and fail closed on the exact `io.mango:mango-bom:1.0.36` probe instead.
+
+### Versions
+
+| Component group | Previous | Release | Compatibility |
+| --- | --- | --- | --- |
+| Mango Maven non-app reactor and docs bundle | `1.0.36` | `1.0.37` | Notice event contract and pending File Preview configuration. |
+| Foundation | Common `1.0.26`; Admin Extension `1.0.0`; Auth `1.0.26`; File `1.0.34`; Grid Layout `1.0.17`; Grid Widgets `1.0.23`; Home `1.0.15` | Common `1.0.27`; Admin Extension `1.0.1`; Auth `1.0.27`; File `1.0.35`; Grid Layout `1.0.18`; Grid Widgets `1.0.24`; Home `1.0.16` | New FE1 contract and exact dependency closure. |
+| Platform core | RBAC `1.0.24`; Site Shell `1.0.13`; System `1.0.32`; Admin Pages `1.0.33` | RBAC `1.0.25`; Site Shell `1.0.14`; System `1.0.33`; Admin Pages `1.0.34` | Element Plus fixes and singleton compatibility exports. |
+| Domain packages | Calendar `1.0.34`; CMS `1.0.23`; Job `1.0.27`; Link `1.0.20`; Notice `1.0.39`; Numgen `1.0.35`; Payment `1.0.26`; Template `1.0.34`; Workflow `1.0.40` | Calendar `1.0.35`; CMS `1.0.24`; Job `1.0.28`; Link `1.0.21`; Notice `1.0.40`; Numgen `1.0.36`; Payment `1.0.27`; Template `1.0.35`; Workflow `1.0.41` | Generated exact dependency closure. |
+| Aggregates and CLI | Admin Shell `1.0.60`; Workflow Example `1.0.39`; Admin `1.0.66`; CLI `1.0.107` | Admin Shell `1.0.61`; Workflow Example `1.0.40`; Admin `1.0.67`; CLI `1.0.108` | Full aggregate and generated-project tuple. |
+| `@mango/pmo` | `1.3.15` | unchanged | No distributed PMO source change. |
+
+### Published Packages
+
+1. Mango Maven non-app reactor and `io.mango:mango-docs-bundle:1.0.37`.
+2. `@mango/common@1.0.27` -> `@mango/admin-extension@1.0.1` -> `@mango/auth@1.0.27` -> `@mango/file@1.0.35` -> `@mango/grid-layout@1.0.18` -> `@mango/grid-widgets@1.0.24` -> `@mango/home@1.0.16` -> `@mango/rbac@1.0.25` -> `@mango/site-shell@1.0.14` -> `@mango/system@1.0.33` -> `@mango/admin-pages@1.0.34` -> `@mango/calendar@1.0.35` -> `@mango/cms@1.0.24` -> `@mango/job@1.0.28` -> `@mango/link@1.0.21` -> `@mango/notice@1.0.40` -> `@mango/numgen@1.0.36` -> `@mango/payment@1.0.27` -> `@mango/template@1.0.35` -> `@mango/workflow@1.0.41` -> `@mango/admin-shell@1.0.61` -> `@mango/workflow-business-example@1.0.40` -> `@mango/admin@1.0.67` -> `@mango/cli@1.0.108`.
+3. `@mango/pmo@1.3.15` is unchanged and is not republished.
+
+### Business Impact
+
+- Full/aggregated consumers must upgrade the complete CLI matrix. Direct consumers add `@mango/admin-extension@1.0.1`; existing Admin Pages imports remain compatible but new code uses Admin Extension.
+- Existing projects exposing system events set `mango.event.outbox.enabled=true`. No Issue #805 database migration is introduced.
+- Notice event consumers migrate removed content/address/attachment fields to the authorized `messageId` detail lookup and File `fileId` retrieval.
+- XLS/XLSX Web preview controls remain enabled by default; only consumers wanting the reduced toolbar add the new flag.
+- PMO and business PR/application release processes are unchanged.
+
+### Upgrade Estimate
+
+- Audience: full/aggregated Mango Admin projects, direct frontend consumers, Notice event consumers, and Maven File Preview/Notice consumers.
+- Engineering Effort: 0.5 to 1 person-day for standard aggregate consumers; 1 to 2 person-days for custom modular pins; add 0.5 to 1 person-day for custom Notice event consumers.
+- Execution Window: 1 to 3 hours for alignment, configuration review, build and focused acceptance, plus the business repository's normal deployment pipeline.
+- Service Downtime: no database window; normal backend restart and frontend redeployment only.
+- Rollback Effort: 0.5 to 1 person-day to restore the prior tuple and lockfile; custom event consumers may require one additional person-day.
+- Assumptions: company registry access, a clean lockfile, no private package forks or conflicting overrides, and repeatable build/deployment pipelines.
+
+### Upgrade Notes
+
+1. Keep PMO `1.3.15`; upgrade Maven/BOM to `1.0.37` and install CLI `1.0.108`.
+2. Apply the entire `release-versions.json` matrix; do not upgrade Admin, Common or Notice alone. Direct consumers add Admin Extension `1.0.1`.
+3. Use Admin Extension subpaths for new registrars; enable `mango.event.outbox.enabled=true` where the system-event menu is present.
+4. Migrate Notice event consumers to detail-by-`messageId` and File-by-`fileId`; optionally configure XLS/XLSX Web buttons.
+5. Run frozen frontend install/typecheck/tests/build, Maven `clean verify`, login, real CRUD and every actually authorized menu before business deployment.
+
+### Verification
+
+- The plan must reproduce Maven `1.0.37`, the exact 24-package topology, zero package SCCs and CLI `1.0.108` on the final Release PR head.
+- Registry doctor must read `io.mango:mango-bom:1.0.36` successfully through both Maven publish and consume roles without relying on repository-root status.
+- Preparation builds once, seals Maven/npm files with SHA-256, validates packed contracts and runs one mixed candidate/consume-registry consumer.
+- A fresh full consumer must pass installation, typecheck, production build, fresh database startup, authentication, real CRUD and all authorized pages with zero route, HTTP, page, console or Element Plus failures.
+- Publication must verify hosted and group content for every coordinate and pass a pure consume-registry consumer before creating the Tag and GitHub Release.
+
+### Rollback
+
+1. Revert the business upgrade/configuration commit, restore Maven `1.0.36`, CLI `1.0.107` and the previous exact npm matrix, then rebuild and redeploy normally.
+2. No Issue #805 database migration requires reversal; handle any queued Outbox events according to the business runbook before disabling it.
+3. Never delete, overwrite or republish immutable Maven/npm coordinates. Fix release defects with a new patch batch.
+
+### Audit History
+
+- PR #796 and its successful 2026-08-15 tag are the accumulated release baseline, not a new capability in this batch.
+- PR #797 changes repository release audit behavior only and does not introduce a standalone business-consumable coordinate.
 
 ## v2026.08.15-pmo-1.3.15-job-1.0.27-admin-shell-1.0.60-admin-1.0.66-cli-1.0.107-local-first-release - 2026-08-15
 

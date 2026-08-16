@@ -6,9 +6,17 @@
 
 ## Fixed
 
-- Replace the incompatible Admin tuple whose Shell imported a symbol absent from the published Common `1.0.26` tarball. Active parent-menu resolution is private to Admin Shell, Common `1.0.26` remains unchanged, and clean consumers no longer depend on an unpublished Common export.
-- Restore Job definition, instance, Worker and alarm-rule pagination, including `pageNum/pageSize` to backend `page/size` conversion, response mapping, totals and page controls.
-- Fix the CLI Windows typecheck command path, quoting, background log handling and process-tree stop behavior included by PR #795.
+- Remove the `@mango/admin-pages -> @mango/system -> @mango/file -> @mango/admin-pages` cycle by moving the neutral page, feature and Notice provider contracts into FE1 `@mango/admin-extension` while preserving same-instance compatibility re-exports from Admin Pages.
+- Keep `@mango/cms/admin-pages` external in the Admin aggregate so CMS registrars and Admin Shell resolve the same page registry; all nine CMS management routes can be registered in a clean full consumer.
+- Enable the domain-event Outbox in newly generated full projects so the default system-event menu and `/api/system/events` controller configuration agree.
+- Register `/notice/setting` as a hidden Notice route, include a real favicon in the full template, normalize backend numeric strings before passing them to Element Plus, and migrate affected radio/pagination/tag props away from deprecated or invalid values.
+- Narrow `notice.message.received` to identifiers and status. Message bodies remain in Notice storage, attachments remain in File storage, and broadcast payloads no longer carry body, address or attachment identifier lists.
+- Preserve Maven `sourceVersion=1.0.36` when the in-progress mixed plan is recalculated, and probe `io.mango:mango-bom:1.0.36` through both Maven registry roles so a non-browsable hosted root cannot cause a false preflight failure.
+- Bind the release plan to the exact committed source snapshot and reject source, tree or file-set drift after planning while accepting the machine-generated dependency-closure version projection in the final Release-only commit.
+- Project the CLI README current version, exact query and installation examples from the machine plan, then reject every other README change against the source snapshot.
+- Project the unresolved full frontend template's exact CLI development dependency from the machine plan without parsing its placeholders, then reject every other template change against the source snapshot.
+- Use the Runner's trusted Release-only classifier in `release:local-check`, selecting `release:pr-check` for machine projections and retaining ordinary Changeset/plan checks for mixed source changes.
+- Retain high-volume Maven and npm output from `mango release prepare` with an explicit 64 MiB child-process buffer, preventing Node's default output limit from terminating a healthy candidate build before its manifest is written.
 
 ## Added
 
@@ -23,16 +31,34 @@
 
 ## Versions
 
-| Component            |               Previous |   Release | Compatibility                                                                                          |
-| -------------------- | ---------------------: | --------: | ------------------------------------------------------------------------------------------------------ |
-| `@mango/job`         |               `1.0.26` |  `1.0.27` | Restores complete Job management-list pagination.                                                      |
-| `@mango/admin-shell` |               `1.0.59` |  `1.0.60` | Uses private active-menu resolution and remains compatible with Common `1.0.26`.                       |
-| `@mango/admin`       |               `1.0.65` |  `1.0.66` | Aggregates Admin Shell `1.0.60`; public Admin exports and styles remain compatible.                    |
-| `@mango/pmo`         |               `1.3.14` |  `1.3.15` | Delivers current PMO governance and `mango-submit-pr`; excludes repository-only `mango-release`.       |
-| `@mango/cli`         |              `1.0.106` | `1.0.107` | Locks the complete corrected frontend/PMO matrix and exposes Mango source-repository release commands. |
-| `@mango/common`      |               `1.0.26` | unchanged | Deliberately not republished; all candidate packages resolve this existing coordinate.                 |
-| Mango Maven          |               `1.0.36` | unchanged | This is an npm-only batch; no Maven coordinate is published.                                           |
-| Other npm packages   | current release matrix | unchanged | Not republished.                                                                                       |
+| Component | Previous | Release | Reason |
+| --- | ---: | ---: | --- |
+| Mango Maven non-app reactor and docs bundle | `1.0.36` | `1.0.37` | Notice event contract and pending File Preview configuration. |
+| `@mango/common` | `1.0.26` | `1.0.27` | Pagination compatibility behavior and root of the exact dependency closure. |
+| `@mango/admin-extension` | `1.0.0` | `1.0.1` | New neutral Admin extension contract. |
+| `@mango/auth` | `1.0.26` | `1.0.27` | Exact Common dependency closure. |
+| `@mango/file` | `1.0.34` | `1.0.35` | Registrar migration and settings warning fix. |
+| `@mango/grid-layout` | `1.0.17` | `1.0.18` | Exact Common dependency closure. |
+| `@mango/grid-widgets` | `1.0.23` | `1.0.24` | Exact Grid Layout dependency closure. |
+| `@mango/home` | `1.0.15` | `1.0.16` | Exact Common dependency closure. |
+| `@mango/rbac` | `1.0.24` | `1.0.25` | Element Plus compatibility and numeric page normalization. |
+| `@mango/site-shell` | `1.0.13` | `1.0.14` | Exact Common dependency closure. |
+| `@mango/system` | `1.0.32` | `1.0.33` | Element Plus statistics and management-page compatibility. |
+| `@mango/admin-pages` | `1.0.33` | `1.0.34` | Compatibility re-exports backed by Admin Extension. |
+| `@mango/calendar` | `1.0.34` | `1.0.35` | Exact Admin Pages/Common/Grid Widgets closure. |
+| `@mango/cms` | `1.0.23` | `1.0.24` | Exact Admin Pages/Common/File closure. |
+| `@mango/job` | `1.0.27` | `1.0.28` | Exact Admin Pages/Common closure. |
+| `@mango/link` | `1.0.20` | `1.0.21` | Valid Element Plus tag type and exact dependency closure. |
+| `@mango/notice` | `1.0.39` | `1.0.40` | Hidden settings route and exact dependency closure. |
+| `@mango/numgen` | `1.0.35` | `1.0.36` | Exact Admin Pages/Common/System closure. |
+| `@mango/payment` | `1.0.26` | `1.0.27` | Exact Admin Pages/Common/File closure. |
+| `@mango/template` | `1.0.34` | `1.0.35` | Exact Admin Pages/Common/File/System closure. |
+| `@mango/workflow` | `1.0.40` | `1.0.41` | Exact shared runtime dependency closure. |
+| `@mango/admin-shell` | `1.0.60` | `1.0.61` | Exact shell runtime dependency closure. |
+| `@mango/workflow-business-example` | `1.0.39` | `1.0.40` | Exact Admin Pages/Workflow closure. |
+| `@mango/admin` | `1.0.66` | `1.0.67` | Full aggregate with CMS registrar and aligned modules. |
+| `@mango/cli` | `1.0.107` | `1.0.108` | Full template and package matrix, Maven `1.0.37` lock, stable plan recalculation, exact-coordinate registry preflight and high-volume release output handling. |
+| `@mango/pmo` | `1.3.15` | unchanged | No PMO rule, contract, Agent or distributed Skill changed. |
 
 ## Published Packages
 

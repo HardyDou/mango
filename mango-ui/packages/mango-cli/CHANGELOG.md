@@ -2,6 +2,69 @@
 
 ## Unreleased
 
+## 1.0.108 - 2026-08-16
+
+### Pull Requests
+
+- [PR #809](https://github.com/HardyDou/mango/pull/809) Fixed the full-consumer release graph, templates and exact version matrix. Packages: `@mango/cli@1.0.108` and the 23 runtime npm dependencies recorded in `release-versions.json`. Business Adaptation: upgrade the complete matrix, add `@mango/admin-extension@1.0.1` for direct registrar consumers, and do not mix it with the previous Admin tuple.
+- [PR #808](https://github.com/HardyDou/mango/pull/808) Fixed the Notice inbound broadcast contract carried by the aligned backend. Packages: Mango Maven `1.0.37` and `@mango/cli@1.0.108`. Business Adaptation: upgrade Maven first and migrate Notice event consumers to detail lookup by `messageId`.
+- [PR #810](https://github.com/HardyDou/mango/pull/810) Fixed mixed-release plan recalculation and Maven registry preflight. Packages: `@mango/cli@1.0.108`. Business Adaptation: no business runtime adaptation; release operators keep four explicit registry roles and verify Maven with the exact published BOM POM.
+- [PR #811](https://github.com/HardyDou/mango/pull/811) Fixed final Release-only HEAD verification by binding the machine plan to the committed source commit, Git tree and complete source file set. Packages: `@mango/cli@1.0.108`. Business Adaptation: no business runtime API, database, menu, permission, tenant or configuration change; release operators regenerate the plan after source drift, while machine-generated dependency-closure version projection no longer requires fake Changesets.
+- [PR #812](https://github.com/HardyDou/mango/pull/812) Fixed CLI README version projection in the final Release-only HEAD. Packages: `@mango/cli@1.0.108`. Business Adaptation: no business runtime change; release operators no longer edit the CLI version, query and install examples manually, and any additional README drift is rejected against the source snapshot.
+- [PR #813](https://github.com/HardyDou/mango/pull/813) Fixed CLI version projection in the unresolved full frontend template. Packages: `@mango/cli@1.0.108`. Business Adaptation: no business runtime API, database, menu, permission, tenant or configuration change; newly generated full projects receive the exact CLI development dependency from the release plan, and any additional template drift is rejected against the source snapshot.
+- [PR #814](https://github.com/HardyDou/mango/pull/814) Fixed local Release-only verification so it uses the same trusted classifier and plan gate as the Runner. Packages: `@mango/cli@1.0.108`. Business Adaptation: no business runtime change; release operators run the final-head gate locally without adding fake Changesets for machine-generated dependency-closure projections.
+
+### Fixed
+
+- Generate full projects with the domain-event Outbox enabled, a real favicon, the aligned Maven `1.0.37` coordinate and the complete frontend package closure.
+- Generate new business registrars against `@mango/admin-extension/core` instead of reintroducing the Admin Pages/File/System dependency cycle.
+- Verify the generated README uses the exact PMO `1.3.15` lock and reject candidate packages whose sealed files violate the release contract before consumer installation.
+- Preserve Maven `sourceVersion=1.0.36` while recalculating the in-progress plan, and probe the same exact historical BOM POM through Maven publish and consume roles instead of treating a hosted-root 404 as unavailable.
+- Bind the release plan to the exact committed source snapshot and reject source, tree or file-set drift while accepting machine-generated dependency-closure version projection.
+- Project the CLI README current version, exact query and installation examples from the machine plan, then reject every other README change against the source snapshot.
+- Project the unresolved full frontend template's exact CLI development dependency from the machine plan without parsing its placeholders, then reject every other template change against the source snapshot.
+- Use the Runner's trusted Release-only classifier in `release:local-check`, selecting `release:pr-check` for machine projections and retaining ordinary Changeset/plan checks for mixed source changes.
+- Prevent high-volume Maven and npm output from exceeding Node's default child-process buffer and terminating `mango release prepare` before the candidate manifest is written.
+
+### Versions
+
+- `@mango/cli` advances from `1.0.107` to `1.0.108`; Mango Maven advances from `1.0.36` to `1.0.37`; PMO remains `1.3.15`.
+- The CLI lock contains the exact 24-package npm batch from Common `1.0.27` and Admin Extension `1.0.1` through Admin `1.0.67` and CLI `1.0.108`.
+
+### Published Packages
+
+- Publish Maven `1.0.37`, then the machine-plan npm topology ending with `@mango/admin@1.0.67` and `@mango/cli@1.0.108`; do not republish `@mango/pmo@1.3.15`.
+
+### Business Impact
+
+- New full projects receive working CMS/system-event/Notice settings routes and the corrected package graph without source compensation.
+- Existing aggregate consumers align the full lock; direct consumers install Admin Extension and migrate new registrar imports. Existing projects exposing system events enable `mango.event.outbox.enabled=true`.
+
+### Upgrade Estimate
+
+- Audience: full/aggregated Mango projects, direct module consumers and Notice inbound event consumers.
+- Engineering Effort: 0.5 to 1 person-day for standard aggregate consumers and 1 to 2 person-days for custom modular pins or event adaptations.
+- Execution Window: 1 to 3 hours for dependency/configuration alignment and validation plus normal deployment-pipeline time.
+- Service Downtime: no database window; normal backend restart and frontend redeployment only.
+- Rollback Effort: 0.5 to 1 person-day to restore the previous matrix and lockfile.
+- Assumptions: internal registry access, no private package forks or conflicting overrides, and repeatable build/deployment pipelines.
+
+### Upgrade Notes
+
+1. Keep PMO `1.3.15`, upgrade Maven to `1.0.37`, install CLI `1.0.108`, and apply every coordinate in its `release-versions.json`.
+2. Direct consumers add `@mango/admin-extension@1.0.1`; existing projects with the system-event menu enable the domain-event Outbox.
+3. Run frozen install, typecheck, tests, production build, Maven verify, login, CRUD and actual authorized-menu acceptance.
+
+### Verification
+
+- Machine plan, package exports, package SCC, release contracts, mixed sealed consumer and pure consume-registry consumer must pass for the exact tuple.
+- Registry doctor must resolve `io.mango:mango-bom:1.0.36` from both Maven roles without depending on repository-root browsing.
+- A fresh full project must build, start, authenticate and pass every authorized leaf page without route, HTTP, page, console or Element Plus failures.
+
+### Rollback
+
+- Revert the business upgrade commit, restore Maven `1.0.36`, CLI `1.0.107` and the previous exact npm lock, rebuild and redeploy; never overwrite immutable coordinates.
+
 ## 1.0.107 - 2026-08-14
 
 ### Pull Requests
