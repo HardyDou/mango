@@ -509,9 +509,7 @@
           "summary": "Fix the Issue #805 full-consumer regressions and make the Mango npm release graph acyclic. The release adds the FE1 `@mango/admin-extension` contract, keeps the published Admin Pages subpaths as same-instance compatibility re-exports, moves File and newly generated business registrars off the FE3 dependency, restores CMS, system-event, and hidden Notice settings routes in full projects, removes the confirmed frontend warnings, and adds candidate-package consumer contracts."
         }
       ],
-      "releaseDependencies": [
-        "@mango/common"
-      ]
+      "releaseDependencies": ["@mango/common"]
     },
     {
       "name": "@mango/auth",
@@ -527,9 +525,7 @@
           "summary": "exact runtime dependency follows @mango/common"
         }
       ],
-      "releaseDependencies": [
-        "@mango/common"
-      ]
+      "releaseDependencies": ["@mango/common"]
     },
     {
       "name": "@mango/file",
@@ -545,10 +541,7 @@
           "summary": "Fix the Issue #805 full-consumer regressions and make the Mango npm release graph acyclic. The release adds the FE1 `@mango/admin-extension` contract, keeps the published Admin Pages subpaths as same-instance compatibility re-exports, moves File and newly generated business registrars off the FE3 dependency, restores CMS, system-event, and hidden Notice settings routes in full projects, removes the confirmed frontend warnings, and adds candidate-package consumer contracts."
         }
       ],
-      "releaseDependencies": [
-        "@mango/admin-extension",
-        "@mango/common"
-      ]
+      "releaseDependencies": ["@mango/admin-extension", "@mango/common"]
     },
     {
       "name": "@mango/grid-layout",
@@ -564,9 +557,7 @@
           "summary": "exact runtime dependency follows @mango/common"
         }
       ],
-      "releaseDependencies": [
-        "@mango/common"
-      ]
+      "releaseDependencies": ["@mango/common"]
     },
     {
       "name": "@mango/grid-widgets",
@@ -582,9 +573,7 @@
           "summary": "exact runtime dependency follows @mango/grid-layout"
         }
       ],
-      "releaseDependencies": [
-        "@mango/grid-layout"
-      ]
+      "releaseDependencies": ["@mango/grid-layout"]
     },
     {
       "name": "@mango/home",
@@ -600,9 +589,7 @@
           "summary": "exact runtime dependency follows @mango/common"
         }
       ],
-      "releaseDependencies": [
-        "@mango/common"
-      ]
+      "releaseDependencies": ["@mango/common"]
     },
     {
       "name": "@mango/rbac",
@@ -618,9 +605,7 @@
           "summary": "Fix the Issue #805 full-consumer regressions and make the Mango npm release graph acyclic. The release adds the FE1 `@mango/admin-extension` contract, keeps the published Admin Pages subpaths as same-instance compatibility re-exports, moves File and newly generated business registrars off the FE3 dependency, restores CMS, system-event, and hidden Notice settings routes in full projects, removes the confirmed frontend warnings, and adds candidate-package consumer contracts."
         }
       ],
-      "releaseDependencies": [
-        "@mango/common"
-      ]
+      "releaseDependencies": ["@mango/common"]
     },
     {
       "name": "@mango/site-shell",
@@ -636,9 +621,7 @@
           "summary": "exact runtime dependency follows @mango/common"
         }
       ],
-      "releaseDependencies": [
-        "@mango/common"
-      ]
+      "releaseDependencies": ["@mango/common"]
     },
     {
       "name": "@mango/system",
@@ -654,12 +637,7 @@
           "summary": "Fix the Issue #805 full-consumer regressions and make the Mango npm release graph acyclic. The release adds the FE1 `@mango/admin-extension` contract, keeps the published Admin Pages subpaths as same-instance compatibility re-exports, moves File and newly generated business registrars off the FE3 dependency, restores CMS, system-event, and hidden Notice settings routes in full projects, removes the confirmed frontend warnings, and adds candidate-package consumer contracts."
         }
       ],
-      "releaseDependencies": [
-        "@mango/common",
-        "@mango/file",
-        "@mango/grid-widgets",
-        "@mango/rbac"
-      ]
+      "releaseDependencies": ["@mango/common", "@mango/file", "@mango/grid-widgets", "@mango/rbac"]
     },
     {
       "name": "@mango/admin-pages",
@@ -675,13 +653,7 @@
           "summary": "Fix the Issue #805 full-consumer regressions and make the Mango npm release graph acyclic. The release adds the FE1 `@mango/admin-extension` contract, keeps the published Admin Pages subpaths as same-instance compatibility re-exports, moves File and newly generated business registrars off the FE3 dependency, restores CMS, system-event, and hidden Notice settings routes in full projects, removes the confirmed frontend warnings, and adds candidate-package consumer contracts."
         }
       ],
-      "releaseDependencies": [
-        "@mango/admin-extension",
-        "@mango/auth",
-        "@mango/common",
-        "@mango/rbac",
-        "@mango/system"
-      ]
+      "releaseDependencies": ["@mango/admin-extension", "@mango/auth", "@mango/common", "@mango/rbac", "@mango/system"]
     },
     {
       "name": "@mango/calendar",
@@ -697,11 +669,7 @@
           "summary": "exact runtime dependency follows @mango/admin-pages, @mango/common, @mango/grid-widgets"
         }
       ],
-      "releaseDependencies": [
-        "@mango/admin-pages",
-        "@mango/common",
-        "@mango/grid-widgets"
-      ]
+      "releaseDependencies": ["@mango/admin-pages", "@mango/common", "@mango/grid-widgets"]
     },
     {
       "name": "@mango/cms",
@@ -717,11 +685,7 @@
           "summary": "exact runtime dependency follows @mango/admin-pages, @mango/common, @mango/file"
         }
       ],
-      "releaseDependencies": [
-        "@mango/admin-pages",
-        "@mango/common",
-        "@mango/file"
-      ]
+      "releaseDependencies": ["@mango/admin-pages", "@mango/common", "@mango/file"]
     },
     {
       "name": "@mango/job",
@@ -737,10 +701,7 @@
           "summary": "exact runtime dependency follows @mango/admin-pages, @mango/common"
         }
       ],
-      "releaseDependencies": [
-        "@mango/admin-pages",
-        "@mango/common"
-      ]
+      "releaseDependencies": ["@mango/admin-pages", "@mango/common"]
     },
     {
       "name": "@mango/link",
@@ -756,11 +717,7 @@
           "summary": "Fix the Issue #805 full-consumer regressions and make the Mango npm release graph acyclic. The release adds the FE1 `@mango/admin-extension` contract, keeps the published Admin Pages subpaths as same-instance compatibility re-exports, moves File and newly generated business registrars off the FE3 dependency, restores CMS, system-event, and hidden Notice settings routes in full projects, removes the confirmed frontend warnings, and adds candidate-package consumer contracts."
         }
       ],
-      "releaseDependencies": [
-        "@mango/admin-pages",
-        "@mango/common",
-        "@mango/grid-widgets"
-      ]
+      "releaseDependencies": ["@mango/admin-pages", "@mango/common", "@mango/grid-widgets"]
     },
     {
       "name": "@mango/notice",
@@ -776,12 +733,7 @@
           "summary": "Fix the Issue #805 full-consumer regressions and make the Mango npm release graph acyclic. The release adds the FE1 `@mango/admin-extension` contract, keeps the published Admin Pages subpaths as same-instance compatibility re-exports, moves File and newly generated business registrars off the FE3 dependency, restores CMS, system-event, and hidden Notice settings routes in full projects, removes the confirmed frontend warnings, and adds candidate-package consumer contracts."
         }
       ],
-      "releaseDependencies": [
-        "@mango/admin-pages",
-        "@mango/common",
-        "@mango/grid-widgets",
-        "@mango/system"
-      ]
+      "releaseDependencies": ["@mango/admin-pages", "@mango/common", "@mango/grid-widgets", "@mango/system"]
     },
     {
       "name": "@mango/numgen",
@@ -797,11 +749,7 @@
           "summary": "exact runtime dependency follows @mango/admin-pages, @mango/common, @mango/system"
         }
       ],
-      "releaseDependencies": [
-        "@mango/admin-pages",
-        "@mango/common",
-        "@mango/system"
-      ]
+      "releaseDependencies": ["@mango/admin-pages", "@mango/common", "@mango/system"]
     },
     {
       "name": "@mango/payment",
@@ -817,11 +765,7 @@
           "summary": "exact runtime dependency follows @mango/admin-pages, @mango/common, @mango/file"
         }
       ],
-      "releaseDependencies": [
-        "@mango/admin-pages",
-        "@mango/common",
-        "@mango/file"
-      ]
+      "releaseDependencies": ["@mango/admin-pages", "@mango/common", "@mango/file"]
     },
     {
       "name": "@mango/template",
@@ -837,12 +781,7 @@
           "summary": "exact runtime dependency follows @mango/admin-pages, @mango/common, @mango/file, @mango/system"
         }
       ],
-      "releaseDependencies": [
-        "@mango/admin-pages",
-        "@mango/common",
-        "@mango/file",
-        "@mango/system"
-      ]
+      "releaseDependencies": ["@mango/admin-pages", "@mango/common", "@mango/file", "@mango/system"]
     },
     {
       "name": "@mango/workflow",
@@ -908,10 +847,7 @@
           "summary": "exact runtime dependency follows @mango/admin-pages, @mango/workflow"
         }
       ],
-      "releaseDependencies": [
-        "@mango/admin-pages",
-        "@mango/workflow"
-      ]
+      "releaseDependencies": ["@mango/admin-pages", "@mango/workflow"]
     },
     {
       "name": "@mango/admin",
