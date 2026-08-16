@@ -4,6 +4,7 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, writeFile
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
+import { releaseScopeCheckCommands } from './local-release-checks-lib.mjs';
 import { resolveRepositoryInputPath } from './release-repository-lib.mjs';
 
 const workspaceRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
@@ -33,6 +34,11 @@ const scope = JSON.parse(
 );
 const assurance = parseKeyValues(
   run('node', ['mango-pmo/tools/assurance-ci-scope.mjs', '--body', prBodyPath], repoRoot, {
+    capture: true,
+  }).stdout,
+);
+const releaseClassification = JSON.parse(
+  run('node', ['mango-ui/scripts/release/classify-release-pr.mjs', '--base', base, '--head', head], repoRoot, {
     capture: true,
   }).stdout,
 );
@@ -88,8 +94,9 @@ const checks = [
 appendJavaRunnerChecks(checks, scope, assurance);
 checks.push(
   command('pnpm', ['release:test'], workspaceRoot),
-  command('pnpm', ['release:change-check', '--', `--base=${base}`, `--head=${head}`], workspaceRoot),
-  command('pnpm', ['release:plan:check'], workspaceRoot),
+  ...releaseScopeCheckCommands({ releaseOnly: releaseClassification.releaseOnly, base, head }).map((check) =>
+    command(check.executable, check.args, workspaceRoot),
+  ),
   command('node', ['mango-ui/scripts/quality/check-repository-dev-manifest.mjs'], repoRoot),
   command(
     'node',
@@ -121,6 +128,7 @@ const evidence = {
   prBodySha256: createHash('sha256').update(readFileSync(prBodyPath)).digest('hex'),
   scope,
   assurance,
+  releaseClassification,
   startedAt: new Date().toISOString(),
   checks: [],
 };
