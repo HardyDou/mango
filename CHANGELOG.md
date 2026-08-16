@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+## v2026.08.16-issue-805-release-consumer-fix - 2026-08-16
+
+Status: `PENDING`. The exact Maven `1.0.37`, 24-package npm and CLI `1.0.108` candidate must pass sealed preparation, Release PR checks, registry publication and pure consume-registry verification before this status can be closed.
+
+### Pull Requests
+
+- [PR #797](https://github.com/HardyDou/mango/pull/797) Changed immutable-write audit recovery and completed-batch closeout checks. Packages: Mango release tooling (source-only; no standalone coordinate). Business Adaptation: none; business dependency, API, configuration and deployment contracts are unchanged.
+- [PR #808](https://github.com/HardyDou/mango/pull/808) Fixed the Notice inbound broadcast contract so events carry identifiers and status instead of message bodies or attachment lists. Packages: `io.mango:mango-notice-core:1.0.37`. Business Adaptation: event consumers query Notice detail by `messageId`, then retrieve attachments from File by `fileId`.
+- [PR #809](https://github.com/HardyDou/mango/pull/809) Fixed the full-consumer package cycle, CMS/system-event routes, Notice settings route and affected frontend compatibility issues. Packages: `@mango/admin-extension@1.0.1`, `@mango/admin-pages@1.0.34`, `@mango/admin@1.0.67`, `@mango/common@1.0.27`, `@mango/file@1.0.35`, `@mango/link@1.0.21`, `@mango/notice@1.0.40`, `@mango/rbac@1.0.25`, `@mango/system@1.0.33`, `@mango/cli@1.0.108`. Business Adaptation: align the full CLI matrix, add Admin Extension for direct consumers, enable the Outbox where system events are exposed, and verify all authorized routes.
+- [PR #810](https://github.com/HardyDou/mango/pull/810) Fixed mixed-plan Maven source retention and exact-coordinate registry preflight. Packages: `@mango/cli@1.0.108` and Mango release tooling. Business Adaptation: no runtime migration; release operators configure distinct publish/consume roles and probe the published BOM coordinate.
+- [PR #811](https://github.com/HardyDou/mango/pull/811) Changed release planning to bind the candidate to an exact committed source snapshot. Packages: `@mango/cli@1.0.108` and Mango release tooling. Business Adaptation: none; business projects continue to consume the exact published tuple.
+- [PR #812](https://github.com/HardyDou/mango/pull/812) Fixed machine projection of the public CLI README version. Packages: `@mango/cli@1.0.108`. Business Adaptation: install and query the exact CLI `1.0.108` coordinate shown in the published README.
+- [PR #813](https://github.com/HardyDou/mango/pull/813) Fixed machine projection of the full frontend template CLI dependency. Packages: `@mango/cli@1.0.108`. Business Adaptation: newly generated full projects use the same CLI version as the release matrix.
+- [PR #814](https://github.com/HardyDou/mango/pull/814) Fixed local Release-only checks so they match the trusted Runner classifier. Packages: `@mango/cli@1.0.108` and Mango release tooling. Business Adaptation: none; this changes Mango maintainer verification, not business PR or application-release behavior.
+
 ### Added
 
 - Add `office.xlsx.web.buttons.enabled` with `KK_OFFICE_XLSX_WEB_BUTTONS_ENABLED` override to control the XLS/XLSX Web preview “跳转 HTML 预览” and “打印” entries. The compatibility default is `true`; disabling it removes the button region and lets Luckysheet fill the page from the top without changing other preview types, download behavior, or `@mango/file`.
@@ -36,14 +51,14 @@
 
 ### Versions
 
-| Component group | Previous | Release | Compatibility |
-| --- | --- | --- | --- |
-| Mango Maven non-app reactor and docs bundle | `1.0.36` | `1.0.37` | Notice event contract and pending File Preview configuration. |
-| Foundation | Common `1.0.26`; Admin Extension `1.0.0`; Auth `1.0.26`; File `1.0.34`; Grid Layout `1.0.17`; Grid Widgets `1.0.23`; Home `1.0.15` | Common `1.0.27`; Admin Extension `1.0.1`; Auth `1.0.27`; File `1.0.35`; Grid Layout `1.0.18`; Grid Widgets `1.0.24`; Home `1.0.16` | New FE1 contract and exact dependency closure. |
-| Platform core | RBAC `1.0.24`; Site Shell `1.0.13`; System `1.0.32`; Admin Pages `1.0.33` | RBAC `1.0.25`; Site Shell `1.0.14`; System `1.0.33`; Admin Pages `1.0.34` | Element Plus fixes and singleton compatibility exports. |
-| Domain packages | Calendar `1.0.34`; CMS `1.0.23`; Job `1.0.27`; Link `1.0.20`; Notice `1.0.39`; Numgen `1.0.35`; Payment `1.0.26`; Template `1.0.34`; Workflow `1.0.40` | Calendar `1.0.35`; CMS `1.0.24`; Job `1.0.28`; Link `1.0.21`; Notice `1.0.40`; Numgen `1.0.36`; Payment `1.0.27`; Template `1.0.35`; Workflow `1.0.41` | Generated exact dependency closure. |
-| Aggregates and CLI | Admin Shell `1.0.60`; Workflow Example `1.0.39`; Admin `1.0.66`; CLI `1.0.107` | Admin Shell `1.0.61`; Workflow Example `1.0.40`; Admin `1.0.67`; CLI `1.0.108` | Full aggregate and generated-project tuple. |
-| `@mango/pmo` | `1.3.15` | unchanged | No distributed PMO source change. |
+| Component group                             | Previous                                                                                                                                               | Release                                                                                                                                                | Compatibility                                                 |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------- |
+| Mango Maven non-app reactor and docs bundle | `1.0.36`                                                                                                                                               | `1.0.37`                                                                                                                                               | Notice event contract and pending File Preview configuration. |
+| Foundation                                  | Common `1.0.26`; Admin Extension `1.0.0`; Auth `1.0.26`; File `1.0.34`; Grid Layout `1.0.17`; Grid Widgets `1.0.23`; Home `1.0.15`                     | Common `1.0.27`; Admin Extension `1.0.1`; Auth `1.0.27`; File `1.0.35`; Grid Layout `1.0.18`; Grid Widgets `1.0.24`; Home `1.0.16`                     | New FE1 contract and exact dependency closure.                |
+| Platform core                               | RBAC `1.0.24`; Site Shell `1.0.13`; System `1.0.32`; Admin Pages `1.0.33`                                                                              | RBAC `1.0.25`; Site Shell `1.0.14`; System `1.0.33`; Admin Pages `1.0.34`                                                                              | Element Plus fixes and singleton compatibility exports.       |
+| Domain packages                             | Calendar `1.0.34`; CMS `1.0.23`; Job `1.0.27`; Link `1.0.20`; Notice `1.0.39`; Numgen `1.0.35`; Payment `1.0.26`; Template `1.0.34`; Workflow `1.0.40` | Calendar `1.0.35`; CMS `1.0.24`; Job `1.0.28`; Link `1.0.21`; Notice `1.0.40`; Numgen `1.0.36`; Payment `1.0.27`; Template `1.0.35`; Workflow `1.0.41` | Generated exact dependency closure.                           |
+| Aggregates and CLI                          | Admin Shell `1.0.60`; Workflow Example `1.0.39`; Admin `1.0.66`; CLI `1.0.107`                                                                         | Admin Shell `1.0.61`; Workflow Example `1.0.40`; Admin `1.0.67`; CLI `1.0.108`                                                                         | Full aggregate and generated-project tuple.                   |
+| `@mango/pmo`                                | `1.3.15`                                                                                                                                               | unchanged                                                                                                                                              | No distributed PMO source change.                             |
 
 ### Published Packages
 
@@ -133,12 +148,12 @@ Status: `PUBLISHED_AND_VERIFIED`. All five sealed npm tarballs match in npm-host
 
 | Order | Target                           | Version                                                                                             | Status                                                                      |
 | ----: | -------------------------------- | --------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
-|     1 | `@mango/job`                     | `1.0.27`                                                                                            | `PUBLISHED_AND_VERIFIED`; hosted/group SHA-256 matches the sealed tarball. |
-|     2 | `@mango/admin-shell`             | `1.0.60`                                                                                            | `PUBLISHED_AND_VERIFIED`; hosted/group SHA-256 matches the sealed tarball. |
-|     3 | `@mango/admin`                   | `1.0.66`                                                                                            | `PUBLISHED_AND_VERIFIED`; hosted/group SHA-256 matches the sealed tarball. |
-|     4 | `@mango/pmo`                     | `1.3.15`                                                                                            | `PUBLISHED_AND_VERIFIED`; hosted/group SHA-256 matches the sealed tarball. |
-|     5 | `@mango/cli`                     | `1.0.107`                                                                                           | `PUBLISHED_AND_VERIFIED`; hosted/group SHA-256 matches the sealed tarball. |
-|     6 | Immutable tag and GitHub Release | `v2026.08.15-pmo-1.3.15-job-1.0.27-admin-shell-1.0.60-admin-1.0.66-cli-1.0.107-local-first-release` | `CREATED_AND_VERIFIED` after the pure consume-registry consumer passed.   |
+|     1 | `@mango/job`                     | `1.0.27`                                                                                            | `PUBLISHED_AND_VERIFIED`; hosted/group SHA-256 matches the sealed tarball.  |
+|     2 | `@mango/admin-shell`             | `1.0.60`                                                                                            | `PUBLISHED_AND_VERIFIED`; hosted/group SHA-256 matches the sealed tarball.  |
+|     3 | `@mango/admin`                   | `1.0.66`                                                                                            | `PUBLISHED_AND_VERIFIED`; hosted/group SHA-256 matches the sealed tarball.  |
+|     4 | `@mango/pmo`                     | `1.3.15`                                                                                            | `PUBLISHED_AND_VERIFIED`; hosted/group SHA-256 matches the sealed tarball.  |
+|     5 | `@mango/cli`                     | `1.0.107`                                                                                           | `PUBLISHED_AND_VERIFIED`; hosted/group SHA-256 matches the sealed tarball.  |
+|     6 | Immutable tag and GitHub Release | `v2026.08.15-pmo-1.3.15-job-1.0.27-admin-shell-1.0.60-admin-1.0.66-cli-1.0.107-local-first-release` | `CREATED_AND_VERIFIED` after the pure consume-registry consumer passed.     |
 |     7 | Latest documentation             | Pages                                                                                               | `NOT_APPLICABLE`; npm-only release creates no Maven documentation snapshot. |
 
 ### Business Impact
@@ -196,21 +211,21 @@ Status: `PENDING`. This npm-only governance patch publishes `@mango/pmo@1.3.14` 
 
 ### Versions
 
-| Component | Previous | Release | Compatibility |
-| --- | ---: | ---: | --- |
-| `@mango/pmo` | `1.3.13` | `1.3.14` | Adds exact historical TDD/Plan section variants and advances current lifecycle contracts without changing schema revision `1`. |
-| `@mango/cli` | `1.0.105` | `1.0.106` | Exact dependency and business-project release lock for PMO `1.3.14`. |
-| Mango Maven | `1.0.36` | unchanged | No Maven artifact is published by this npm-only patch. |
-| Other npm packages | current release matrix | unchanged | Notice, Admin, File and all runtime frontend packages are not republished. |
+| Component          |               Previous |   Release | Compatibility                                                                                                                  |
+| ------------------ | ---------------------: | --------: | ------------------------------------------------------------------------------------------------------------------------------ |
+| `@mango/pmo`       |               `1.3.13` |  `1.3.14` | Adds exact historical TDD/Plan section variants and advances current lifecycle contracts without changing schema revision `1`. |
+| `@mango/cli`       |              `1.0.105` | `1.0.106` | Exact dependency and business-project release lock for PMO `1.3.14`.                                                           |
+| Mango Maven        |               `1.0.36` | unchanged | No Maven artifact is published by this npm-only patch.                                                                         |
+| Other npm packages | current release matrix | unchanged | Notice, Admin, File and all runtime frontend packages are not republished.                                                     |
 
 ### Published Packages
 
-| Order | Target | Version | Status |
-| ---: | --- | --- | --- |
-| 1 | `@mango/pmo` | `1.3.14` | `PENDING` publication and hosted/group verification. |
-| 2 | `@mango/cli` | `1.0.106` | `PENDING` after PMO hosted/group verification. |
-| 3 | Immutable tag and GitHub Release | `v2026.08.14-pmo-1.3.14-cli-1.0.106-historical-document-compat-release` | `PENDING`. |
-| 4 | Latest documentation | Pages | `PENDING`; npm-only release does not create a Maven documentation snapshot. |
+| Order | Target                           | Version                                                                 | Status                                                                      |
+| ----: | -------------------------------- | ----------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+|     1 | `@mango/pmo`                     | `1.3.14`                                                                | `PENDING` publication and hosted/group verification.                        |
+|     2 | `@mango/cli`                     | `1.0.106`                                                               | `PENDING` after PMO hosted/group verification.                              |
+|     3 | Immutable tag and GitHub Release | `v2026.08.14-pmo-1.3.14-cli-1.0.106-historical-document-compat-release` | `PENDING`.                                                                  |
+|     4 | Latest documentation             | Pages                                                                   | `PENDING`; npm-only release does not create a Maven documentation snapshot. |
 
 ### Upgrade Notes
 
@@ -237,20 +252,20 @@ Status: `PUBLISHED_AND_VERIFIED`. This npm-only patch published `@mango/cli@1.0.
 
 ### Versions
 
-| Component | Previous | Release | Compatibility |
-| --- | ---: | ---: | --- |
-| `@mango/cli` | `1.0.104` | `1.0.105` | Upgrades PMO 1.3.11 business baselines to the unchanged PMO 1.3.13 bundle. |
-| `@mango/pmo` | `1.3.13` | unchanged | No PMO rule, contract, Agent, Skill, or package content changes. |
-| Mango Maven | `1.0.36` | unchanged | No Maven artifact is published by this npm-only patch. |
-| Other npm packages | current release matrix | unchanged | No Notice, Admin, File, or other npm package is republished. |
+| Component          |               Previous |   Release | Compatibility                                                              |
+| ------------------ | ---------------------: | --------: | -------------------------------------------------------------------------- |
+| `@mango/cli`       |              `1.0.104` | `1.0.105` | Upgrades PMO 1.3.11 business baselines to the unchanged PMO 1.3.13 bundle. |
+| `@mango/pmo`       |               `1.3.13` | unchanged | No PMO rule, contract, Agent, Skill, or package content changes.           |
+| Mango Maven        |               `1.0.36` | unchanged | No Maven artifact is published by this npm-only patch.                     |
+| Other npm packages | current release matrix | unchanged | No Notice, Admin, File, or other npm package is republished.               |
 
 ### Published Packages
 
-| Order | Target | Version | Status |
-| ---: | --- | --- | --- |
-| 1 | `@mango/cli` | `1.0.105` | `PUBLISHED_AND_VERIFIED`; hosted/group shasum `5f7b824dd583652402edbdaedade7935d69852e0`, integrity `sha512-Mfof0ucyXd120nES/2VszLq5b73YphoOIfqa5EGpVwn2d/cxllWB2MflfcbU72Y4a8i72qOfpYe4iEuz2VaPmw==`. |
-| 2 | Immutable tag and GitHub Release | `v2026.08.14-cli-1.0.105-pmo-manifest-compat-release` | `CREATED_AND_VERIFIED`; annotated tag resolves to source commit `d62f553699df77c900f230ae1b345564e142cdb5`. |
-| 3 | Latest documentation | Pages | `PUBLISHED_AND_VERIFIED`; npm-only release did not create a Maven documentation snapshot. |
+| Order | Target                           | Version                                               | Status                                                                                                                                                                                                 |
+| ----: | -------------------------------- | ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+|     1 | `@mango/cli`                     | `1.0.105`                                             | `PUBLISHED_AND_VERIFIED`; hosted/group shasum `5f7b824dd583652402edbdaedade7935d69852e0`, integrity `sha512-Mfof0ucyXd120nES/2VszLq5b73YphoOIfqa5EGpVwn2d/cxllWB2MflfcbU72Y4a8i72qOfpYe4iEuz2VaPmw==`. |
+|     2 | Immutable tag and GitHub Release | `v2026.08.14-cli-1.0.105-pmo-manifest-compat-release` | `CREATED_AND_VERIFIED`; annotated tag resolves to source commit `d62f553699df77c900f230ae1b345564e142cdb5`.                                                                                            |
+|     3 | Latest documentation             | Pages                                                 | `PUBLISHED_AND_VERIFIED`; npm-only release did not create a Maven documentation snapshot.                                                                                                              |
 
 ### Upgrade Notes
 
@@ -276,26 +291,26 @@ Status: `PUBLISHED_AND_VERIFIED`. Release source is the merged Notice inbound im
 
 ### Versions
 
-| Component | Previous | Release | Compatibility |
-| --- | ---: | ---: | --- |
-| Mango Maven backend and `io.mango:mango-docs-bundle` | `1.0.35` | `1.0.36` | Inbound Notice API, persistence, File integration, and channel adapters. |
-| `@mango/notice` | `1.0.38` | `1.0.39` | Inbound message management UI and public Notice API exports. |
-| `@mango/admin-shell` | `1.0.58` | `1.0.59` | Consumes the Notice inbound page registration. |
-| `@mango/admin` | `1.0.64` | `1.0.65` | Aggregates the matching Admin Shell and Notice versions. |
-| `@mango/cli` | `1.0.103` | `1.0.104` | Locks Maven `1.0.36` and the exact frontend matrix. |
-| `@mango/pmo` | `1.3.13` | unchanged | No PMO rule, contract, Agent, or Skill source changed. |
+| Component                                            |  Previous |   Release | Compatibility                                                            |
+| ---------------------------------------------------- | --------: | --------: | ------------------------------------------------------------------------ |
+| Mango Maven backend and `io.mango:mango-docs-bundle` |  `1.0.35` |  `1.0.36` | Inbound Notice API, persistence, File integration, and channel adapters. |
+| `@mango/notice`                                      |  `1.0.38` |  `1.0.39` | Inbound message management UI and public Notice API exports.             |
+| `@mango/admin-shell`                                 |  `1.0.58` |  `1.0.59` | Consumes the Notice inbound page registration.                           |
+| `@mango/admin`                                       |  `1.0.64` |  `1.0.65` | Aggregates the matching Admin Shell and Notice versions.                 |
+| `@mango/cli`                                         | `1.0.103` | `1.0.104` | Locks Maven `1.0.36` and the exact frontend matrix.                      |
+| `@mango/pmo`                                         |  `1.3.13` | unchanged | No PMO rule, contract, Agent, or Skill source changed.                   |
 
 ### Published Packages
 
-| Order | Target | Version | Status |
-| ---: | --- | --- | --- |
-| 1 | Complete non-app Maven batch and `io.mango:mango-docs-bundle` | `1.0.36` | `PUBLISHED_AND_VERIFIED`; Maven consume registry back-check passed. |
-| 2 | `@mango/notice` | `1.0.39` | `PUBLISHED_AND_VERIFIED`; hosted/group shasum `90fdcfedc6788236b8079a014720b0b5212777f0`, integrity `sha512-INOsJcIw8nuLHvn4uAOsQjJNTAdM9OxgAVpgDPLz6TyNDfUXnxZR6dwtwOIwxNw0d84YqMJibzDdSL+3JzdWbg==`. |
-| 3 | `@mango/admin-shell` | `1.0.59` | `PUBLISHED_AND_VERIFIED`; hosted/group shasum `08b3b836a45cef47e79b71ef1e86da3dc052d3f1`, integrity `sha512-Snb6gliAX+3besVrhlReZMwCy9klukgy3lr1b2iD1C5cmvsAVBvHyCOJ2f45GkWaF51ysaV/qp7mU972oDZ3pw==`. |
-| 4 | `@mango/admin` | `1.0.65` | `PUBLISHED_AND_VERIFIED`; hosted/group shasum `f38244a2984f7328baf3007a485bcf04de3dacfa`, integrity `sha512-D2GGe8NjDymA0ov2YJ0Ssl6yLVzbvh8GPnuuG1K9zn6IO+eokwHPamwKoRJG6f/iiLwgzu6n4ErCk9x4BnQMYw==`. |
-| 5 | `@mango/cli` | `1.0.104` | `PUBLISHED_AND_VERIFIED`; hosted/group shasum `933e202a7837b274d0c2df09d2a423282d02488d`, integrity `sha512-G01CtciMF0SK0xgqg8yBJL9aif/cJm6XWbWc2A8Tau+vNpXQZr2RAFoumVhxnjk93kGxACXDrmu98YDikBTMfg==`. |
-| 6 | Immutable tag and GitHub Release | `v2026.08.14-maven-1.0.36-notice-1.0.39-admin-1.0.65-cli-1.0.104-inbound-release` | `CREATED_AND_VERIFIED`; tag resolves to source commit `8843c0049de68747ba443ccc9a31e7010a43b4a8`. |
-| 7 | Latest and versioned documentation | Pages | `PUBLISHED_AND_VERIFIED`; Pages workflow `31754309218`, both URLs returned HTTP 200. |
+| Order | Target                                                        | Version                                                                           | Status                                                                                                                                                                                                 |
+| ----: | ------------------------------------------------------------- | --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+|     1 | Complete non-app Maven batch and `io.mango:mango-docs-bundle` | `1.0.36`                                                                          | `PUBLISHED_AND_VERIFIED`; Maven consume registry back-check passed.                                                                                                                                    |
+|     2 | `@mango/notice`                                               | `1.0.39`                                                                          | `PUBLISHED_AND_VERIFIED`; hosted/group shasum `90fdcfedc6788236b8079a014720b0b5212777f0`, integrity `sha512-INOsJcIw8nuLHvn4uAOsQjJNTAdM9OxgAVpgDPLz6TyNDfUXnxZR6dwtwOIwxNw0d84YqMJibzDdSL+3JzdWbg==`. |
+|     3 | `@mango/admin-shell`                                          | `1.0.59`                                                                          | `PUBLISHED_AND_VERIFIED`; hosted/group shasum `08b3b836a45cef47e79b71ef1e86da3dc052d3f1`, integrity `sha512-Snb6gliAX+3besVrhlReZMwCy9klukgy3lr1b2iD1C5cmvsAVBvHyCOJ2f45GkWaF51ysaV/qp7mU972oDZ3pw==`. |
+|     4 | `@mango/admin`                                                | `1.0.65`                                                                          | `PUBLISHED_AND_VERIFIED`; hosted/group shasum `f38244a2984f7328baf3007a485bcf04de3dacfa`, integrity `sha512-D2GGe8NjDymA0ov2YJ0Ssl6yLVzbvh8GPnuuG1K9zn6IO+eokwHPamwKoRJG6f/iiLwgzu6n4ErCk9x4BnQMYw==`. |
+|     5 | `@mango/cli`                                                  | `1.0.104`                                                                         | `PUBLISHED_AND_VERIFIED`; hosted/group shasum `933e202a7837b274d0c2df09d2a423282d02488d`, integrity `sha512-G01CtciMF0SK0xgqg8yBJL9aif/cJm6XWbWc2A8Tau+vNpXQZr2RAFoumVhxnjk93kGxACXDrmu98YDikBTMfg==`. |
+|     6 | Immutable tag and GitHub Release                              | `v2026.08.14-maven-1.0.36-notice-1.0.39-admin-1.0.65-cli-1.0.104-inbound-release` | `CREATED_AND_VERIFIED`; tag resolves to source commit `8843c0049de68747ba443ccc9a31e7010a43b4a8`.                                                                                                      |
+|     7 | Latest and versioned documentation                            | Pages                                                                             | `PUBLISHED_AND_VERIFIED`; Pages workflow `31754309218`, both URLs returned HTTP 200.                                                                                                                   |
 
 ### Upgrade Notes
 
@@ -327,20 +342,20 @@ Status: `PUBLISHED_AND_VERIFIED`. 本批次从受保护 `main` 的 source commit
 
 ### Versions
 
-| 对象          | 旧版本    | 新版本    | 说明                                                    |
-| ------------- | --------- | --------- | ------------------------------------------------------- |
-| `@mango/pmo`  | `1.3.12`  | `1.3.13`  | 以新版本发布回退后的规则、合同、Skill 和 baseline。     |
-| `@mango/cli`  | `1.0.102` | `1.0.103` | 精确依赖 PMO 1.3.13，并恢复 CLI 自带业务模块模板。      |
-| Mango Maven   | `1.0.35`  | unchanged | 本批次不修改、不重新发布 Maven 制品。                   |
+| 对象         | 旧版本    | 新版本    | 说明                                                |
+| ------------ | --------- | --------- | --------------------------------------------------- |
+| `@mango/pmo` | `1.3.12`  | `1.3.13`  | 以新版本发布回退后的规则、合同、Skill 和 baseline。 |
+| `@mango/cli` | `1.0.102` | `1.0.103` | 精确依赖 PMO 1.3.13，并恢复 CLI 自带业务模块模板。  |
+| Mango Maven  | `1.0.35`  | unchanged | 本批次不修改、不重新发布 Maven 制品。               |
 
 ### Published Packages
 
-| 顺序 | 对象                       | 版本                                                      | 状态                                                                                                                                                                                                                       |
-| ----: | -------------------------- | --------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-|     1 | `@mango/pmo`               | `1.3.13`                                                  | `PUBLISHED_AND_VERIFIED`; hosted/group integrity `sha512-L/ULGDRq0WVxLaJ5q9S6rdI1UX65DVbBx6QeZpjZyyiAILBwLGwk9cZRdsL13xcL4+1XOLTnIkFCjLKvaiC5fQ==`; shasum `a5d990227fe880c66f00b9e9a1749792687b00b8` |
-|     2 | `@mango/cli`               | `1.0.103`                                                 | `PUBLISHED_AND_VERIFIED`; hosted/group integrity `sha512-6XYmMEZz+O1LaBe1lC/fMPgfCe4ZIVpCCmn2CyIppgc9Qg2fpOMeYOawULhnFepp2km6+ut9YYwoDTQs8YygIA==`; shasum `45d0c6a069bcf02ed8b8f02e5d47f5b637eb7274` |
-|     3 | Git tag and GitHub Release | `v2026.08.09-pmo-1.3.13-cli-1.0.103-pmo-rollback-release` | `CREATED_AND_VERIFIED`; annotated Tag 与 Release 均绑定 source commit `80bd147ab4525b581aa5711799d096e8f73ee06d`                                                                                                   |
-|     4 | Latest documentation       | release source above                                      | `PUBLISHED_AND_VERIFIED`; [GitHub Pages run 31321858786](https://github.com/HardyDou/mango/actions/runs/31321858786)；npm-only 批次未创建 Maven 文档快照                                                        |
+| 顺序 | 对象                       | 版本                                                      | 状态                                                                                                                                                                                                  |
+| ---: | -------------------------- | --------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+|    1 | `@mango/pmo`               | `1.3.13`                                                  | `PUBLISHED_AND_VERIFIED`; hosted/group integrity `sha512-L/ULGDRq0WVxLaJ5q9S6rdI1UX65DVbBx6QeZpjZyyiAILBwLGwk9cZRdsL13xcL4+1XOLTnIkFCjLKvaiC5fQ==`; shasum `a5d990227fe880c66f00b9e9a1749792687b00b8` |
+|    2 | `@mango/cli`               | `1.0.103`                                                 | `PUBLISHED_AND_VERIFIED`; hosted/group integrity `sha512-6XYmMEZz+O1LaBe1lC/fMPgfCe4ZIVpCCmn2CyIppgc9Qg2fpOMeYOawULhnFepp2km6+ut9YYwoDTQs8YygIA==`; shasum `45d0c6a069bcf02ed8b8f02e5d47f5b637eb7274` |
+|    3 | Git tag and GitHub Release | `v2026.08.09-pmo-1.3.13-cli-1.0.103-pmo-rollback-release` | `CREATED_AND_VERIFIED`; annotated Tag 与 Release 均绑定 source commit `80bd147ab4525b581aa5711799d096e8f73ee06d`                                                                                      |
+|    4 | Latest documentation       | release source above                                      | `PUBLISHED_AND_VERIFIED`; [GitHub Pages run 31321858786](https://github.com/HardyDou/mango/actions/runs/31321858786)；npm-only 批次未创建 Maven 文档快照                                              |
 
 ### Upgrade Notes
 
