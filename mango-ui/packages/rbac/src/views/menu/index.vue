@@ -182,7 +182,7 @@
         </el-form-item>
         <el-form-item label="菜单类型" prop="menuType">
           <el-radio-group v-model="form.menuType">
-            <el-radio v-for="item in menuTypeOptions" :key="item.value" :label="Number(item.value)">
+            <el-radio v-for="item in menuTypeOptions" :key="item.value" :value="Number(item.value)">
               {{ item.label }}
             </el-radio>
           </el-radio-group>
@@ -262,7 +262,7 @@
         </el-form-item>
         <el-form-item label="状态" prop="status">
           <el-radio-group v-model="form.status">
-            <el-radio v-for="item in statusOptions" :key="item.value" :label="Number(item.value)">
+            <el-radio v-for="item in statusOptions" :key="item.value" :value="Number(item.value)">
               {{ item.label }}
             </el-radio>
           </el-radio-group>

@@ -306,7 +306,7 @@ const contentChecks = [
   {
     file: "frontend/packages/{{moduleKebab}}/src/index.ts",
     patterns: [
-      "from '@mango/admin-pages/core'",
+      "from '@mango/admin-extension/core'",
       "registerModulePages",
       "'{{moduleKebab}}/{{aggregateKebab}}/index'",
     ],

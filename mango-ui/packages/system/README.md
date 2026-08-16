@@ -267,6 +267,8 @@ import '@mango/system/style.css';
 
 ## 11. 变更影响记录
 
+- Issue #805 待发布修复在登录日志 API 边界将后端统计 numeric string 转为 number，并将已确认的 Element Plus Radio value 用法迁移到 `value`。`LoginStatistics` 公开类型、日志 API 路径、页面 key、菜单、权限和租户语义不变。
+
 - `@mango/system@1.0.32` 的 `registerMangoSystemAdminPages()` 随页面注册结果返回个人中心“登录日志”section，使用 `/system/log/login/my/list` 读取当前租户、当前账号自己的记录。配套 Admin Shell `1.0.58` 自动装配入口；管理员日志页面、权限和既有页面 key 保持兼容。
 
 - `@mango/system@1.0.19` 将可选 `@mango/file` peer 精确版本升级到 `1.0.21`；系统 API、页面 key、组件、权限、

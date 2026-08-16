@@ -292,3 +292,7 @@ pnpm -F @mango/admin-shell build
 ## 2026-08-15 Admin 兼容批次影响
 
 - `@mango/admin-shell@1.0.60`、`@mango/admin@1.0.66` 与 `@mango/cli@1.0.107` 仅修复 Admin 发布物和既有 `@mango/common@1.0.26` 的组合兼容，并同步发布矩阵；不改变菜单 `component` key、菜单树接口、页面注册方式、角色菜单授权、租户应用绑定或本场景排障步骤。业务项目应按 CLI 完整矩阵成组升级，不要单独替换 Admin Shell。
+
+## 2026-08-16 Issue #805 full-consumer 兼容性说明
+
+- Issue #805 通过新增 `@mango/admin-extension` 承接中立页面注册契约，解除 Admin Pages、System 与 File 的循环依赖；既有菜单 `component` key、菜单树接口、角色菜单授权、租户应用绑定和业务排障步骤保持不变。业务项目升级时应按发布闭包成组消费，并用生成的全新消费者复验菜单页面；无需改业务菜单或手工补注册表。

@@ -1,25 +1,14 @@
 <template>
   <div class="org-container">
     <el-row :gutter="16">
-      <el-col
-        :xs="24"
-        :lg="8"
-      >
+      <el-col :xs="24" :lg="8">
         <el-card class="org-panel">
           <div class="panel-toolbar">
             <div class="panel-toolbar-left">
               <span class="panel-title">组织架构</span>
-              <el-form
-                v-if="showTypeFilter"
-                class="filter-form"
-              >
+              <el-form v-if="showTypeFilter" class="filter-form">
                 <el-form-item label="组织类型">
-                  <el-select
-                    v-model="query.type"
-                    placeholder="全部类型"
-                    clearable
-                    @change="loadTree"
-                  >
+                  <el-select v-model="query.type" placeholder="全部类型" clearable @change="loadTree">
                     <el-option
                       v-for="item in orgTypeOptions"
                       :key="item.value"
@@ -31,15 +20,9 @@
               </el-form>
             </div>
             <div class="header-actions">
-              <el-button @click="expandAll">
-                展开
-              </el-button>
-              <el-button @click="collapseAll">
-                折叠
-              </el-button>
-              <el-button @click="loadTree">
-                刷新
-              </el-button>
+              <el-button @click="expandAll"> 展开 </el-button>
+              <el-button @click="collapseAll"> 折叠 </el-button>
+              <el-button @click="loadTree"> 刷新 </el-button>
             </div>
           </div>
 
@@ -58,10 +41,7 @@
             <template #default="{ data }">
               <span class="tree-node">
                 <span class="tree-name">{{ data.orgName }}</span>
-                <el-tag
-                  size="small"
-                  effect="plain"
-                >
+                <el-tag size="small" effect="plain">
                   {{ orgTypeLabel(data.orgType) }}
                 </el-tag>
               </span>
@@ -70,54 +50,28 @@
         </el-card>
       </el-col>
 
-      <el-col
-        :xs="24"
-        :lg="16"
-      >
+      <el-col :xs="24" :lg="16">
         <el-card class="org-panel">
           <template #header>
             <div class="card-header">
               <span>组织详情</span>
-              <div
-                v-if="currentOrg"
-                class="header-actions"
-              >
-                <el-button
-                  type="primary"
-                  @click="handleAddChild(currentOrg)"
-                >
-                  新增下级
-                </el-button>
-                <el-button @click="handleEdit(currentOrg)">
-                  编辑
-                </el-button>
-                <el-button
-                  type="danger"
-                  :disabled="isRootOrg(currentOrg)"
-                  @click="handleDelete(currentOrg)"
-                >
+              <div v-if="currentOrg" class="header-actions">
+                <el-button type="primary" @click="handleAddChild(currentOrg)"> 新增下级 </el-button>
+                <el-button @click="handleEdit(currentOrg)"> 编辑 </el-button>
+                <el-button type="danger" :disabled="isRootOrg(currentOrg)" @click="handleDelete(currentOrg)">
                   删除
                 </el-button>
-                <el-tag
-                  :type="currentOrg.orgStatus === '1' ? 'success' : 'danger'"
-                  effect="light"
-                >
+                <el-tag :type="currentOrg.orgStatus === '1' ? 'success' : 'danger'" effect="light">
                   {{ currentOrg.orgStatus === '1' ? '启用' : '禁用' }}
                 </el-tag>
               </div>
             </div>
           </template>
 
-          <el-empty
-            v-if="!currentOrg"
-            description="请选择左侧组织"
-          />
+          <el-empty v-if="!currentOrg" description="请选择左侧组织" />
 
           <template v-else>
-            <el-descriptions
-              :column="2"
-              border
-            >
+            <el-descriptions :column="2" border>
               <el-descriptions-item label="组织名称">
                 {{ currentOrg.orgName }}
               </el-descriptions-item>
@@ -140,88 +94,30 @@
 
             <div class="section-header">
               <span>直属下级</span>
-              <el-button
-                link
-                type="primary"
-                @click="loadChildren(currentOrg.id)"
-              >
-                刷新下级
-              </el-button>
+              <el-button link type="primary" @click="loadChildren(currentOrg.id)"> 刷新下级 </el-button>
             </div>
 
-            <el-table
-              v-loading="childrenLoading"
-              :data="childrenData"
-              stripe
-              row-key="id"
-            >
-              <el-table-column
-                prop="orgName"
-                label="组织名称"
-                min-width="160"
-              />
-              <el-table-column
-                prop="orgCode"
-                label="组织编码"
-                min-width="140"
-              />
-              <el-table-column
-                prop="orgType"
-                label="类型"
-                width="100"
-              >
+            <el-table v-loading="childrenLoading" :data="childrenData" stripe row-key="id">
+              <el-table-column prop="orgName" label="组织名称" min-width="160" />
+              <el-table-column prop="orgCode" label="组织编码" min-width="140" />
+              <el-table-column prop="orgType" label="类型" width="100">
                 <template #default="{ row }">
                   {{ orgTypeLabel(row.orgType) }}
                 </template>
               </el-table-column>
-              <el-table-column
-                prop="orgStatus"
-                label="状态"
-                width="100"
-              >
+              <el-table-column prop="orgStatus" label="状态" width="100">
                 <template #default="{ row }">
-                  <el-tag
-                    :type="row.orgStatus === '1' ? 'success' : 'danger'"
-                    size="small"
-                  >
+                  <el-tag :type="row.orgStatus === '1' ? 'success' : 'danger'" size="small">
                     {{ row.orgStatus === '1' ? '启用' : '禁用' }}
                   </el-tag>
                 </template>
               </el-table-column>
-              <el-table-column
-                prop="orgSort"
-                label="排序"
-                width="90"
-              />
-              <el-table-column
-                label="操作"
-                width="180"
-                fixed="right"
-              >
+              <el-table-column prop="orgSort" label="排序" width="90" />
+              <el-table-column label="操作" width="180" fixed="right">
                 <template #default="{ row }">
-                  <el-button
-                    link
-                    type="primary"
-                    size="small"
-                    @click="handleAddChild(row)"
-                  >
-                    新增下级
-                  </el-button>
-                  <el-button
-                    link
-                    type="primary"
-                    size="small"
-                    @click="handleEdit(row)"
-                  >
-                    编辑
-                  </el-button>
-                  <el-button
-                    link
-                    type="danger"
-                    size="small"
-                    :disabled="isRootOrg(row)"
-                    @click="handleDelete(row)"
-                  >
+                  <el-button link type="primary" size="small" @click="handleAddChild(row)"> 新增下级 </el-button>
+                  <el-button link type="primary" size="small" @click="handleEdit(row)"> 编辑 </el-button>
+                  <el-button link type="danger" size="small" :disabled="isRootOrg(row)" @click="handleDelete(row)">
                     删除
                   </el-button>
                 </template>
@@ -232,31 +128,16 @@
       </el-col>
     </el-row>
 
-    <el-dialog
-      v-model="dialogVisible"
-      :title="form.id ? '编辑组织' : '新增组织'"
-      width="560px"
-    >
-      <el-form
-        ref="formRef"
-        :model="form"
-        :rules="rules"
-        label-width="100px"
-      >
-        <el-form-item
-          label="父级组织"
-          prop="pid"
-        >
+    <el-dialog v-model="dialogVisible" :title="form.id ? '编辑组织' : '新增组织'" width="560px">
+      <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
+        <el-form-item label="父级组织" prop="pid">
           <el-select
             v-model="form.pid"
             placeholder="请选择父级组织"
             filterable
             :disabled="form.id ? isRootOrg(form as SysOrg) : false"
           >
-            <el-option
-              label="根节点"
-              value="0"
-            />
+            <el-option label="根节点" value="0" />
             <el-option
               v-for="item in flatOrgOptions"
               :key="item.id"
@@ -266,79 +147,30 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item
-          label="组织名称"
-          prop="orgName"
-        >
-          <el-input
-            v-model="form.orgName"
-            placeholder="请输入组织名称"
-          />
+        <el-form-item label="组织名称" prop="orgName">
+          <el-input v-model="form.orgName" placeholder="请输入组织名称" />
         </el-form-item>
-        <el-form-item
-          label="组织编码"
-          prop="orgCode"
-        >
-          <el-input
-            v-model="form.orgCode"
-            placeholder="请输入组织编码"
-            :disabled="!!form.id"
-          />
+        <el-form-item label="组织编码" prop="orgCode">
+          <el-input v-model="form.orgCode" placeholder="请输入组织编码" :disabled="!!form.id" />
         </el-form-item>
-        <el-form-item
-          label="组织类型"
-          prop="orgType"
-        >
-          <el-select
-            v-model="form.orgType"
-            placeholder="请选择组织类型"
-          >
-            <el-option
-              v-for="item in orgTypeOptions"
-              :key="item.value"
-              :label="item.label"
-              :value="item.value"
-            />
+        <el-form-item label="组织类型" prop="orgType">
+          <el-select v-model="form.orgType" placeholder="请选择组织类型">
+            <el-option v-for="item in orgTypeOptions" :key="item.value" :label="item.label" :value="item.value" />
           </el-select>
         </el-form-item>
-        <el-form-item
-          label="状态"
-          prop="orgStatus"
-        >
-          <el-radio-group
-            v-model="form.orgStatus"
-            :disabled="form.id ? isRootOrg(form as SysOrg) : false"
-          >
-            <el-radio label="1">
-              启用
-            </el-radio>
-            <el-radio label="0">
-              禁用
-            </el-radio>
+        <el-form-item label="状态" prop="orgStatus">
+          <el-radio-group v-model="form.orgStatus" :disabled="form.id ? isRootOrg(form as SysOrg) : false">
+            <el-radio value="1"> 启用 </el-radio>
+            <el-radio value="0"> 禁用 </el-radio>
           </el-radio-group>
         </el-form-item>
-        <el-form-item
-          label="排序"
-          prop="orgSort"
-        >
-          <el-input-number
-            v-model="form.orgSort"
-            :min="0"
-            :max="9999"
-          />
+        <el-form-item label="排序" prop="orgSort">
+          <el-input-number v-model="form.orgSort" :min="0" :max="9999" />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="dialogVisible = false">
-          取消
-        </el-button>
-        <el-button
-          type="primary"
-          :loading="submitLoading"
-          @click="handleSubmit"
-        >
-          确定
-        </el-button>
+        <el-button @click="dialogVisible = false"> 取消 </el-button>
+        <el-button type="primary" :loading="submitLoading" @click="handleSubmit"> 确定 </el-button>
       </template>
     </el-dialog>
   </div>
@@ -392,12 +224,12 @@ const rules: FormRules = {
 
 const flatOrgOptions = computed(() => flattenTree(treeData.value));
 const showTypeFilter = computed(() => {
-  const rootTypes = Array.from(new Set(treeData.value.map(item => Number(item.orgType)).filter(Boolean)));
+  const rootTypes = Array.from(new Set(treeData.value.map((item) => Number(item.orgType)).filter(Boolean)));
   return rootTypes.length > 1;
 });
 
 function orgTypeLabel(type?: number) {
-  return orgTypeOptions.find(item => item.value === Number(type))?.label || '-';
+  return orgTypeOptions.find((item) => item.value === Number(type))?.label || '-';
 }
 
 async function loadTree() {
@@ -497,15 +329,17 @@ function handleDelete(row: SysOrg) {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
     type: 'warning',
-  }).then(async () => {
-    await orgApi.delete(row.id);
-    ElMessage.success('删除成功');
-    if (currentOrg.value?.id === row.id) {
-      currentOrg.value = undefined;
-      childrenData.value = [];
-    }
-    await loadTree();
-  }).catch(() => {});
+  })
+    .then(async () => {
+      await orgApi.delete(row.id);
+      ElMessage.success('删除成功');
+      if (currentOrg.value?.id === row.id) {
+        currentOrg.value = undefined;
+        childrenData.value = [];
+      }
+      await loadTree();
+    })
+    .catch(() => {});
 }
 
 function isRootOrg(row: Partial<SysOrg>) {
@@ -519,10 +353,7 @@ function nextOrgType(type?: number) {
 function flattenTree(items: SysOrg[], level = 0): Array<SysOrg & { label: string }> {
   return items.flatMap((item) => {
     const label = `${'　'.repeat(level)}${item.orgName}`;
-    return [
-      { ...item, label },
-      ...flattenTree(item.children || [], level + 1),
-    ];
+    return [{ ...item, label }, ...flattenTree(item.children || [], level + 1)];
   });
 }
 

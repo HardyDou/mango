@@ -53,6 +53,7 @@ try {
   assertNoWorkspacePackageJsonInTemplates();
   assertQualityConfigsMatchPluginSources();
   assertPackagedAdminModules();
+  assertCliReadmeReleaseTuple();
 
   const result = spawnSync(
     process.execPath,
@@ -97,6 +98,7 @@ try {
     'frontend/src/mango-admin-modular.d.ts',
     'frontend/tsconfig.app.json',
     'frontend/public/runtime-config.json',
+    'frontend/public/favicon.ico',
     'scripts/dev-workspace.sh',
     'scripts/backend-dev.sh',
     'backend/pom.xml',
@@ -201,6 +203,16 @@ try {
   }
   if (mainTs.includes('{{')) {
     throw new Error('frontend entry contains unrendered placeholders');
+  }
+  const generatedReadme = readFileSync(join(projectRoot, 'README.md'), 'utf8');
+  const expectedPmoVersion = releaseVersions.npm['@mango/pmo'];
+  if (
+    !generatedReadme.includes(`@mango/pmo@${expectedPmoVersion}`) ||
+    !generatedReadme.includes(`--to ${expectedPmoVersion} --dry-run`) ||
+    generatedReadme.includes('@mango/pmo@1.3.14') ||
+    generatedReadme.includes('--to 1.3.14 --dry-run')
+  ) {
+    throw new Error('generated README must use the exact PMO version from release-versions.json');
   }
 
   const frontendPackage = JSON.parse(readFileSync(join(projectRoot, 'frontend/package.json'), 'utf8'));
@@ -354,6 +366,9 @@ try {
   );
   if (!/capability:\s*[\s\S]*?locker:\s*true/u.test(generatedApplicationYml)) {
     throw new Error('generated full backend must enable the KV locker capability');
+  }
+  if (!/event:\s*[\s\S]*?outbox:\s*[\s\S]*?enabled:\s*true/u.test(generatedApplicationYml)) {
+    throw new Error('generated full backend must enable the domain event outbox for the system event menu');
   }
   if (
     !pom.includes('<flyway.version>11.20.3</flyway.version>') ||
@@ -1583,6 +1598,8 @@ try {
   if (
     businessUiPackageJson.style !== './style.css' ||
     businessUiPackageJson.exports?.['./style.css'] !== './style.css' ||
+    businessUiPackageJson.dependencies?.['@mango/admin-extension'] !== releaseVersions.npm['@mango/admin-extension'] ||
+    businessUiPackageJson.dependencies?.['@mango/admin-pages'] !== undefined ||
     businessUiPackageJson.dependencies?.['@mango/app-runtime'] !== releaseVersions.npm['@mango/app-runtime'] ||
     businessUiPackageJson.mangoAdmin?.businessDomainCode !== 'CONTRACT' ||
     businessUiPackageJson.mangoAdmin?.businessDomainName !== '合同管理' ||
@@ -1595,6 +1612,9 @@ try {
     throw new Error('module add did not generate business UI package style entry');
   }
   const businessUiIndex = readFileSync(join(customRoot, 'frontend/packages/contract/src/index.ts'), 'utf8');
+  if (!businessUiIndex.includes("from '@mango/admin-extension/core'")) {
+    throw new Error('module add must register business pages through the FE1 admin extension contract');
+  }
   for (const expected of ["businessDomainCode: 'CONTRACT'", "businessDomainName: '合同管理'", 'widgets: []']) {
     if (!businessUiIndex.includes(expected)) {
       throw new Error(`module add did not generate feature registration metadata: ${expected}`);
@@ -1795,6 +1815,18 @@ function extractNamedWorkflowStep(workflow, name) {
 function assertIncludes(values, expected, field) {
   if (!values.includes(expected)) {
     throw new Error(`${field} expected to include ${expected}`);
+  }
+}
+
+function assertCliReadmeReleaseTuple() {
+  const readme = readFileSync(join(packageRoot, 'README.md'), 'utf8');
+  const cliVersion = releaseVersions.npm['@mango/cli'];
+  if (
+    !readme.includes(`| 当前发布版本  | \`${cliVersion}\``) ||
+    !readme.includes(`npm view @mango/cli@${cliVersion} version`) ||
+    !readme.includes(`npm install -g @mango/cli@${cliVersion}`)
+  ) {
+    throw new Error('CLI README must use the exact @mango/cli version from release-versions.json');
   }
 }
 

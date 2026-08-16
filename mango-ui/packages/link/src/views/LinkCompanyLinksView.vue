@@ -23,7 +23,7 @@
         <el-table-column prop="name" label="分类名称" min-width="220" show-overflow-tooltip />
         <el-table-column prop="sourceLabel" label="范围" width="130">
           <template #default="{ row }">
-            <el-tag :type="row.scope === 'PERSONAL' ? 'warning' : ''">{{ row.sourceLabel }}</el-tag>
+            <el-tag :type="row.scope === 'PERSONAL' ? 'warning' : undefined">{{ row.sourceLabel }}</el-tag>
           </template>
         </el-table-column>
         <el-table-column prop="remark" label="说明" min-width="220" show-overflow-tooltip />
@@ -55,7 +55,7 @@ function normalizeKeyword() {
 
 function buildCompanyCategories(items: LinkItem[]) {
   const map = new Map<string, VisibleCategoryRow>();
-  items.forEach(item => {
+  items.forEach((item) => {
     const categoryId = item.categoryId;
     if (!categoryId) {
       return;
@@ -80,22 +80,25 @@ function buildCompanyCategories(items: LinkItem[]) {
 
 function buildPersonalCategories(personalItems: LinkItem[]) {
   const countMap = new Map<string, number>();
-  personalItems.forEach(item => {
+  personalItems.forEach((item) => {
     if (!item.categoryId) {
       return;
     }
     const categoryId = String(item.categoryId);
     countMap.set(categoryId, (countMap.get(categoryId) || 0) + 1);
   });
-  return linkApi.listPersonalCategories().then(items =>
-    items.map(item => ({
-      ...item,
-      scope: 'PERSONAL',
-      sourceLabel: '个人',
-      linkCount: item.id ? countMap.get(String(item.id)) || 0 : 0,
-      remark: item.remark || '-',
-      name: item.name || '-',
-    } as VisibleCategoryRow))
+  return linkApi.listPersonalCategories().then((items) =>
+    items.map(
+      (item) =>
+        ({
+          ...item,
+          scope: 'PERSONAL',
+          sourceLabel: '个人',
+          linkCount: item.id ? countMap.get(String(item.id)) || 0 : 0,
+          remark: item.remark || '-',
+          name: item.name || '-',
+        }) as VisibleCategoryRow,
+    ),
   );
 }
 
@@ -104,9 +107,8 @@ function filterByKeyword(rows: VisibleCategoryRow[]) {
   if (!keyword) {
     return rows;
   }
-  return rows.filter((row) =>
-    (row.name || '').toLowerCase().includes(keyword) ||
-    (row.remark || '').toLowerCase().includes(keyword)
+  return rows.filter(
+    (row) => (row.name || '').toLowerCase().includes(keyword) || (row.remark || '').toLowerCase().includes(keyword),
   );
 }
 
@@ -116,7 +118,7 @@ function sortRows(rows: VisibleCategoryRow[]) {
     if (scopeCompare !== 0) {
       return scopeCompare;
     }
-    return (a.name || '').localeCompare((b.name || ''));
+    return (a.name || '').localeCompare(b.name || '');
   });
 }
 
@@ -129,10 +131,7 @@ async function loadRows() {
       linkApi.pagePersonalItems({ pageNum: 1, pageSize: 500, keyword: query.keyword }),
     ]);
     const personalCategories = await buildPersonalCategories(personalPage.list as LinkItem[]);
-    rows.value = filterByKeyword(sortRows([
-      ...buildCompanyCategories(links),
-      ...personalCategories,
-    ]));
+    rows.value = filterByKeyword(sortRows([...buildCompanyCategories(links), ...personalCategories]));
   } catch (error) {
     errorMessage.value = requestErrorMessage(error, '分类列表加载失败');
   } finally {

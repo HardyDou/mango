@@ -3,125 +3,44 @@
     <el-card>
       <div class="action-toolbar">
         <div class="toolbar-left">
-          <el-button
-            type="primary"
-            @click="handleAdd"
-          >
-            新增角色
-          </el-button>
+          <el-button type="primary" @click="handleAdd"> 新增角色 </el-button>
         </div>
       </div>
-      <el-table
-        v-loading="loading"
-        :data="tableData"
-        stripe
-      >
-        <el-table-column
-          prop="roleName"
-          label="角色名称"
-        />
-        <el-table-column
-          prop="roleCode"
-          label="角色编码"
-        />
-        <el-table-column
-          prop="realm"
-          label="登录域"
-          width="120"
-        >
+      <el-table v-loading="loading" :data="tableData" stripe>
+        <el-table-column prop="roleName" label="角色名称" />
+        <el-table-column prop="roleCode" label="角色编码" />
+        <el-table-column prop="realm" label="登录域" width="120">
           <template #default="{ row }">
-            <DictTag
-              dict-code="auth_realm"
-              :value="row.realm"
-              size="small"
-            />
+            <DictTag dict-code="auth_realm" :value="row.realm" size="small" />
           </template>
         </el-table-column>
-        <el-table-column
-          prop="actorType"
-          label="操作者类型"
-          width="140"
-        >
+        <el-table-column prop="actorType" label="操作者类型" width="140">
           <template #default="{ row }">
-            <DictTag
-              dict-code="auth_actor_type"
-              :value="row.actorType"
-              size="small"
-            />
+            <DictTag dict-code="auth_actor_type" :value="row.actorType" size="small" />
           </template>
         </el-table-column>
-        <el-table-column
-          prop="roleType"
-          label="类型"
-          width="100"
-        >
+        <el-table-column prop="roleType" label="类型" width="100">
           <template #default="{ row }">
-            <DictTag
-              dict-code="authorization_role_type"
-              :value="row.roleType"
-              size="small"
-            />
+            <DictTag dict-code="authorization_role_type" :value="row.roleType" size="small" />
           </template>
         </el-table-column>
-        <el-table-column
-          prop="remark"
-          label="备注"
-        />
-        <el-table-column
-          prop="status"
-          label="状态"
-        >
+        <el-table-column prop="remark" label="备注" />
+        <el-table-column prop="status" label="状态">
           <template #default="{ row }">
-            <DictTag
-              dict-code="sys_normal_disable"
-              :value="row.status"
-            />
+            <DictTag dict-code="sys_normal_disable" :value="row.status" />
           </template>
         </el-table-column>
-        <el-table-column
-          prop="createTime"
-          label="创建时间"
-        >
+        <el-table-column prop="createTime" label="创建时间">
           <template #default="{ row }">
             {{ formatDate(row.createTime) }}
           </template>
         </el-table-column>
-        <el-table-column
-          label="操作"
-          width="260"
-        >
+        <el-table-column label="操作" width="260">
           <template #default="{ row }">
-            <el-button
-              link
-              type="primary"
-              size="small"
-              @click="handleAssignMenus(row)"
-            >
-              分配权限
-            </el-button>
-            <el-button
-              link
-              type="primary"
-              size="small"
-              @click="handleDataScopes(row)"
-            >
-              数据权限
-            </el-button>
-            <el-button
-              link
-              type="primary"
-              size="small"
-              @click="handleEdit(row)"
-            >
-              编辑
-            </el-button>
-            <el-button
-              link
-              type="danger"
-              size="small"
-              :disabled="row.roleId === 1"
-              @click="handleDelete(row)"
-            >
+            <el-button link type="primary" size="small" @click="handleAssignMenus(row)"> 分配权限 </el-button>
+            <el-button link type="primary" size="small" @click="handleDataScopes(row)"> 数据权限 </el-button>
+            <el-button link type="primary" size="small" @click="handleEdit(row)"> 编辑 </el-button>
+            <el-button link type="danger" size="small" :disabled="row.roleId === 1" @click="handleDelete(row)">
               删除
             </el-button>
           </template>
@@ -129,17 +48,8 @@
       </el-table>
     </el-card>
 
-    <el-dialog
-      v-model="dialogVisible"
-      :title="form.roleId ? '编辑角色' : '新增角色'"
-      width="560px"
-    >
-      <el-form
-        ref="formRef"
-        :model="form"
-        :rules="rules"
-        label-width="100px"
-      >
+    <el-dialog v-model="dialogVisible" :title="form.roleId ? '编辑角色' : '新增角色'" width="560px">
+      <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="应用编码" prop="appCode">
           <el-select
             v-model="form.appCode"
@@ -176,73 +86,39 @@
           <el-input v-model="form.roleName" />
         </el-form-item>
         <el-form-item label="角色编码" prop="roleCode">
-          <el-input
-            v-model="form.roleCode"
-            :disabled="!!form.roleId"
-          />
+          <el-input v-model="form.roleCode" :disabled="!!form.roleId" />
         </el-form-item>
         <el-form-item label="角色类型" prop="roleType">
           <el-radio-group v-model="form.roleType">
-            <el-radio
-              v-for="item in roleTypeOptions"
-              :key="item.value"
-              :label="Number(item.value)"
-            >
+            <el-radio v-for="item in roleTypeOptions" :key="item.value" :value="Number(item.value)">
               {{ item.label }}
             </el-radio>
           </el-radio-group>
         </el-form-item>
         <el-form-item label="状态" prop="status">
           <el-radio-group v-model="form.status">
-            <el-radio
-              v-for="item in statusOptions"
-              :key="item.value"
-              :label="Number(item.value)"
-            >
+            <el-radio v-for="item in statusOptions" :key="item.value" :value="Number(item.value)">
               {{ item.label }}
             </el-radio>
           </el-radio-group>
         </el-form-item>
         <el-form-item label="排序" prop="sort">
-          <el-input-number
-            v-model="form.sort"
-            :min="0"
-            :max="9999"
-          />
+          <el-input-number v-model="form.sort" :min="0" :max="9999" />
         </el-form-item>
         <el-form-item label="备注" prop="remark">
-          <el-input
-            v-model="form.remark"
-            type="textarea"
-            :rows="3"
-          />
+          <el-input v-model="form.remark" type="textarea" :rows="3" />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="dialogVisible = false">
-          取消
-        </el-button>
-        <el-button
-          type="primary"
-          :loading="submitLoading"
-          @click="handleSubmit"
-        >
-          确定
-        </el-button>
+        <el-button @click="dialogVisible = false"> 取消 </el-button>
+        <el-button type="primary" :loading="submitLoading" @click="handleSubmit"> 确定 </el-button>
       </template>
     </el-dialog>
 
-    <el-dialog
-      v-model="assignDialogVisible"
-      title="分配角色权限"
-      width="640px"
-    >
+    <el-dialog v-model="assignDialogVisible" title="分配角色权限" width="640px">
       <div class="assign-header">
         <span>{{ currentRole?.roleName }}</span>
-        <el-tag
-          v-if="currentRole?.roleCode"
-          effect="plain"
-        >
+        <el-tag v-if="currentRole?.roleCode" effect="plain">
           {{ currentRole.roleCode }}
         </el-tag>
       </div>
@@ -258,52 +134,27 @@
         <template #default="{ data }">
           <span class="assign-tree-node">
             <span>{{ data.menuName }}</span>
-            <el-tag
-              v-if="shouldShowButtonType(data)"
-              size="small"
-              type="info"
-              effect="plain"
-            >
+            <el-tag v-if="shouldShowButtonType(data)" size="small" type="info" effect="plain">
               {{ buttonTypeLabel(data.buttonType) }}
             </el-tag>
           </span>
         </template>
       </el-tree>
       <template #footer>
-        <el-button @click="assignDialogVisible = false">
-          取消
-        </el-button>
-        <el-button
-          type="primary"
-          :loading="assignSubmitLoading"
-          @click="handleAssignSubmit"
-        >
-          确定
-        </el-button>
+        <el-button @click="assignDialogVisible = false"> 取消 </el-button>
+        <el-button type="primary" :loading="assignSubmitLoading" @click="handleAssignSubmit"> 确定 </el-button>
       </template>
     </el-dialog>
 
-    <el-dialog
-      v-model="dataScopeDialogVisible"
-      title="角色数据权限"
-      width="920px"
-    >
+    <el-dialog v-model="dataScopeDialogVisible" title="角色数据权限" width="920px">
       <div class="assign-header">
         <span>{{ currentRole?.roleName }}</span>
-        <el-tag
-          v-if="currentRole?.roleCode"
-          effect="plain"
-        >
+        <el-tag v-if="currentRole?.roleCode" effect="plain">
           {{ currentRole.roleCode }}
         </el-tag>
       </div>
       <div class="data-scope-toolbar">
-        <el-button
-          type="primary"
-          plain
-          :disabled="!!editingDataScopeKey"
-          @click="addDataScope"
-        >
+        <el-button type="primary" plain :disabled="!!editingDataScopeKey" @click="addDataScope">
           新增数据权限
         </el-button>
       </div>
@@ -315,11 +166,7 @@
         :row-key="dataScopeRowKey"
         class="data-scope-table"
       >
-        <el-table-column
-          prop="resourceCode"
-          label="数据资源"
-          min-width="340"
-        >
+        <el-table-column prop="resourceCode" label="数据资源" min-width="340">
           <template #default="{ row }">
             <el-tree-select
               v-if="isEditingDataScope(row) && isNewDataScopeRow(row)"
@@ -336,19 +183,12 @@
               placeholder="请选择数据资源"
               data-test="data-scope-resource-tree"
             />
-            <div
-              v-else
-              class="data-resource-cell"
-            >
+            <div v-else class="data-resource-cell">
               <span>{{ dataScopeResourceName(row.resourceCode) }}</span>
             </div>
           </template>
         </el-table-column>
-        <el-table-column
-          prop="scopeMode"
-          label="范围"
-          width="170"
-        >
+        <el-table-column prop="scopeMode" label="范围" width="170">
           <template #default="{ row }">
             <el-select
               v-if="isEditingDataScope(row)"
@@ -369,11 +209,7 @@
             </span>
           </template>
         </el-table-column>
-        <el-table-column
-          prop="scopeValues"
-          label="范围值"
-          min-width="220"
-        >
+        <el-table-column prop="scopeValues" label="范围值" min-width="220">
           <template #default="{ row }">
             <el-tree-select
               v-if="isEditingDataScope(row) && dataScopeEditRow.scopeMode === 'ORG'"
@@ -388,19 +224,13 @@
               class="form-select"
               placeholder="请选择组织范围"
             />
-            <span v-else-if="isEditingDataScope(row)">
-              -
-            </span>
+            <span v-else-if="isEditingDataScope(row)"> - </span>
             <span v-else>
               {{ dataScopeValueLabel(row) }}
             </span>
           </template>
         </el-table-column>
-        <el-table-column
-          prop="status"
-          label="状态"
-          width="120"
-        >
+        <el-table-column prop="status" label="状态" width="120">
           <template #default="{ row }">
             <el-switch
               v-if="isEditingDataScope(row)"
@@ -410,18 +240,10 @@
               active-text="启用"
               inactive-text="停用"
             />
-            <DictTag
-              v-else
-              dict-code="sys_normal_disable"
-              :value="row.status"
-            />
+            <DictTag v-else dict-code="sys_normal_disable" :value="row.status" />
           </template>
         </el-table-column>
-        <el-table-column
-          label="操作"
-          width="130"
-          fixed="right"
-        >
+        <el-table-column label="操作" width="130" fixed="right">
           <template #default="{ row }">
             <template v-if="isEditingDataScope(row)">
               <el-button
@@ -434,23 +256,12 @@
               >
                 保存
               </el-button>
-              <el-button
-                link
-                size="small"
-                :disabled="dataScopeSubmitLoading"
-                @click="cancelDataScopeEdit"
-              >
+              <el-button link size="small" :disabled="dataScopeSubmitLoading" @click="cancelDataScopeEdit">
                 取消
               </el-button>
             </template>
             <template v-else>
-              <el-button
-                link
-                type="primary"
-                size="small"
-                :disabled="!!editingDataScopeKey"
-                @click="editDataScope(row)"
-              >
+              <el-button link type="primary" size="small" :disabled="!!editingDataScopeKey" @click="editDataScope(row)">
                 编辑
               </el-button>
               <el-button
@@ -467,9 +278,7 @@
         </el-table-column>
       </el-table>
       <template #footer>
-        <el-button @click="dataScopeDialogVisible = false">
-          关闭
-        </el-button>
+        <el-button @click="dataScopeDialogVisible = false"> 关闭 </el-button>
       </template>
     </el-dialog>
   </div>
@@ -566,9 +375,7 @@ function buttonTypeLabel(type?: string) {
 }
 
 function shouldShowButtonType(menu: SysMenuVO) {
-  return menu.menuType === 3
-    && Boolean(menu.buttonType)
-    && !menu.menuName?.includes('列表');
+  return menu.menuType === 3 && Boolean(menu.buttonType) && !menu.menuName?.includes('列表');
 }
 
 const form = reactive<RoleVO>({
@@ -616,10 +423,7 @@ const dataScopeTableRows = computed<DataScopeTableRow[]>(() => {
 async function loadData() {
   loading.value = true;
   try {
-    const [roles, apps] = await Promise.all([
-      roleApi.list(),
-      loadAppOptions(),
-    ]);
+    const [roles, apps] = await Promise.all([roleApi.list(), loadAppOptions()]);
     tableData.value = roles;
     appOptions.value = apps;
   } catch (error) {
@@ -656,19 +460,23 @@ async function loadAppOptions() {
     console.warn('应用列表不可访问，使用当前登录应用上下文:', error);
   }
   const userInfo = Session.get('userInfo') || {};
-  return [{
-    appCode: userInfo.appCode || 'internal-admin',
-    appName: '当前应用',
-    status: 1,
-    loginContexts: [{
+  return [
+    {
       appCode: userInfo.appCode || 'internal-admin',
-      realm: userInfo.realm || 'INTERNAL',
-      actorType: userInfo.actorType || 'INTERNAL_USER',
-      defaultFlag: 1,
+      appName: '当前应用',
       status: 1,
-      sort: 0,
-    }],
-  }];
+      loginContexts: [
+        {
+          appCode: userInfo.appCode || 'internal-admin',
+          realm: userInfo.realm || 'INTERNAL',
+          actorType: userInfo.actorType || 'INTERNAL_USER',
+          defaultFlag: 1,
+          status: 1,
+          sort: 0,
+        },
+      ],
+    },
+  ];
 }
 
 const handleAdd = () => {
@@ -758,15 +566,17 @@ const handleDelete = (row: RoleVO) => {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
     type: 'warning',
-  }).then(async () => {
-    try {
-      await roleApi.delete(row.roleId!);
-      ElMessage.success('删除成功');
-      await loadData();
-    } catch (error) {
-      console.error('删除角色失败:', error);
-    }
-  }).catch(() => {});
+  })
+    .then(async () => {
+      try {
+        await roleApi.delete(row.roleId!);
+        ElMessage.success('删除成功');
+        await loadData();
+      } catch (error) {
+        console.error('删除角色失败:', error);
+      }
+    })
+    .catch(() => {});
 };
 
 async function handleAssignMenus(row: RoleVO) {
@@ -810,11 +620,7 @@ async function handleDataScopes(row: RoleVO) {
   currentRole.value = row;
   dataScopeDialogVisible.value = true;
   resetDataScopeEditRow();
-  await Promise.all([
-    loadDataScopes(),
-    loadDataScopeResources(row.appCode),
-    loadOrgTree(),
-  ]);
+  await Promise.all([loadDataScopes(), loadDataScopeResources(row.appCode), loadOrgTree()]);
 }
 
 async function loadDataScopes() {
@@ -881,8 +687,9 @@ function buildDataScopeResourceTree(menus: SysMenuVO[] = []): DataScopeResourceT
     return items
       .map((item) => {
         const children = buildNodes(item.children || []);
-        const listResourceCode = splitPermissions(item.apiCodes)
-          .find((code) => isListResourceCode(code) && !usedResourceCodes.has(code));
+        const listResourceCode = splitPermissions(item.apiCodes).find(
+          (code) => isListResourceCode(code) && !usedResourceCodes.has(code),
+        );
         if (listResourceCode) {
           usedResourceCodes.add(listResourceCode);
         }
@@ -1035,9 +842,7 @@ function dataScopeValueLabel(row: RoleDataScopeVO) {
     return '-';
   }
   const orgNameMap = buildOrgNameMap(orgTreeData.value);
-  return row.scopeValues
-    .map((value) => orgNameMap.get(String(value)) || String(value))
-    .join(', ');
+  return row.scopeValues.map((value) => orgNameMap.get(String(value)) || String(value)).join(', ');
 }
 
 function buildOrgNameMap(orgs: SysOrg[]) {

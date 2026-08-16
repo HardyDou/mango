@@ -181,7 +181,7 @@
         </el-form-item>
         <el-form-item label="状态" prop="status">
           <el-radio-group v-model="form.status">
-            <el-radio v-for="item in statusOptions" :key="item.value" :label="Number(item.value)">
+            <el-radio v-for="item in statusOptions" :key="item.value" :value="Number(item.value)">
               {{ item.label }}
             </el-radio>
           </el-radio-group>
@@ -238,9 +238,9 @@
       <el-divider content-position="left"> 模块运行策略 </el-divider>
       <div class="strategy-toolbar">
         <el-radio-group v-model="strategyProfile" size="small" @change="loadRuntimeStrategies">
-          <el-radio-button label="monolith"> 单体 </el-radio-button>
-          <el-radio-button label="hybrid"> 混合 </el-radio-button>
-          <el-radio-button label="micro"> 微前端 </el-radio-button>
+          <el-radio-button value="monolith"> 单体 </el-radio-button>
+          <el-radio-button value="hybrid"> 混合 </el-radio-button>
+          <el-radio-button value="micro"> 微前端 </el-radio-button>
         </el-radio-group>
       </div>
       <el-table v-loading="strategyLoading" :data="runtimeStrategies" stripe>

@@ -27,6 +27,67 @@
         }
       ]
     },
+    "@mango/admin": {
+      "files": ["dist/full.js", "dist/full.d.ts"],
+      "contains": [
+        {
+          "path": "dist/full.js",
+          "text": "@mango/cms/admin-pages"
+        }
+      ]
+    },
+    "@mango/admin-extension": {
+      "files": [
+        "dist/index.js",
+        "dist/index.d.ts",
+        "dist/core.js",
+        "dist/core.d.ts",
+        "dist/features.js",
+        "dist/features.d.ts",
+        "dist/notice.js",
+        "dist/notice.d.ts"
+      ],
+      "contains": [
+        {
+          "path": "dist/core.js",
+          "text": "registerModulePages"
+        },
+        {
+          "path": "dist/core.d.ts",
+          "text": "probeRegisteredPage"
+        },
+        {
+          "path": "dist/notice.js",
+          "text": "registerMangoNoticeBellProvider"
+        }
+      ]
+    },
+    "@mango/admin-pages": {
+      "files": [
+        "dist/index.js",
+        "dist/index.d.ts",
+        "dist/core.js",
+        "dist/core.d.ts",
+        "dist/features.js",
+        "dist/features.d.ts",
+        "dist/notice.js",
+        "dist/notice.d.ts"
+      ],
+      "contains": [
+        {
+          "path": "dist/core.js",
+          "text": "@mango/admin-extension/core"
+        },
+        {
+          "path": "dist/features.js",
+          "text": "@mango/admin-extension/features"
+        },
+        {
+          "path": "dist/notice.js",
+          "text": "@mango/admin-extension/notice"
+        }
+      ]
+    },
     "@mango/admin-shell": {
       "files": ["dist/index.js", "dist/index.d.ts", "dist/runtime.js", "dist/runtime.d.ts", "style.css"],
       "containsMatching": [
@@ -73,6 +134,19 @@
         {
           "path": "dist/admin-pages.d.ts",
           "text": "profileSections"
+        }
+      ]
+    },
+    "@mango/file": {
+      "files": ["dist/index.js", "dist/index.d.ts", "dist/admin-pages.js", "dist/admin-pages.d.ts", "dist/style.css"],
+      "contains": [
+        {
+          "path": "dist/admin-pages.js",
+          "text": "@mango/admin-extension/core"
+        },
+        {
+          "path": "dist/admin-pages.d.ts",
+          "text": "registerMangoFileAdminPages"
         }
       ]
     },

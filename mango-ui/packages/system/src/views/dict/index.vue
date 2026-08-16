@@ -26,15 +26,8 @@
                 <el-icon><Search /></el-icon>
               </template>
             </el-input>
-            <el-button
-              type="primary"
-              @click="handleAddType"
-            >
-              新增类型
-            </el-button>
-            <el-button @click="handleTypeReset">
-              重置
-            </el-button>
+            <el-button type="primary" @click="handleAddType"> 新增类型 </el-button>
+            <el-button @click="handleTypeReset"> 重置 </el-button>
           </div>
 
           <!-- 类型列表 -->
@@ -52,33 +45,12 @@
                 <span class="type-domain">{{ item.domainCode || 'COMMON' }}</span>
               </div>
               <div class="type-actions">
-                <DictTag
-                  dict-code="sys_normal_disable"
-                  :value="item.status"
-                  size="small"
-                />
-                <el-button
-                  link
-                  type="primary"
-                  size="small"
-                  @click.stop="handleEditType(item)"
-                >
-                  编辑
-                </el-button>
-                <el-button
-                  link
-                  type="danger"
-                  size="small"
-                  @click.stop="handleDeleteType(item)"
-                >
-                  删除
-                </el-button>
+                <DictTag dict-code="sys_normal_disable" :value="item.status" size="small" />
+                <el-button link type="primary" size="small" @click.stop="handleEditType(item)"> 编辑 </el-button>
+                <el-button link type="danger" size="small" @click.stop="handleDeleteType(item)"> 删除 </el-button>
               </div>
             </div>
-            <el-empty
-              v-if="typeList.length === 0"
-              description="暂无数据"
-            />
+            <el-empty v-if="typeList.length === 0" description="暂无数据" />
           </div>
         </el-card>
       </section>
@@ -86,28 +58,13 @@
       <!-- 右侧：字典数据列表 -->
       <section class="dict-data-panel">
         <el-card class="data-card">
-          <el-form
-            :inline="true"
-            class="search-form"
-          >
+          <el-form :inline="true" class="search-form">
             <el-form-item label="关键词">
-              <el-input
-                v-model="dataKeyword"
-                placeholder="搜索标签/值"
-                clearable
-                @keyup.enter="handleDataSearch"
-              />
+              <el-input v-model="dataKeyword" placeholder="搜索标签/值" clearable @keyup.enter="handleDataSearch" />
             </el-form-item>
             <el-form-item>
-              <el-button
-                type="primary"
-                @click="handleDataSearch"
-              >
-                查询
-              </el-button>
-              <el-button @click="handleDataReset">
-                重置
-              </el-button>
+              <el-button type="primary" @click="handleDataSearch"> 查询 </el-button>
+              <el-button @click="handleDataReset"> 重置 </el-button>
             </el-form-item>
           </el-form>
 
@@ -115,78 +72,28 @@
             <div class="toolbar-left">
               <span class="current-type">{{ currentType ? `当前字典：${currentType.name}` : '请选择字典类型' }}</span>
             </div>
-            <el-button
-              type="primary"
-              :disabled="!currentType"
-              @click="handleAddData"
-            >
-              新增数据
-            </el-button>
+            <el-button type="primary" :disabled="!currentType" @click="handleAddData"> 新增数据 </el-button>
           </div>
 
           <!-- 数据表格 -->
-          <el-table
-            v-loading="dataLoading"
-            :data="dataList"
-            stripe
-          >
-            <el-table-column
-              prop="label"
-              label="标签"
-            />
-            <el-table-column
-              prop="value"
-              label="值"
-            />
-            <el-table-column
-              prop="sort"
-              label="排序"
-              width="80"
-            />
-            <el-table-column
-              prop="status"
-              label="状态"
-              width="80"
-            >
+          <el-table v-loading="dataLoading" :data="dataList" stripe>
+            <el-table-column prop="label" label="标签" />
+            <el-table-column prop="value" label="值" />
+            <el-table-column prop="sort" label="排序" width="80" />
+            <el-table-column prop="status" label="状态" width="80">
               <template #default="{ row }">
-                <DictTag
-                  dict-code="sys_normal_disable"
-                  :value="row.status"
-                  size="small"
-                />
+                <DictTag dict-code="sys_normal_disable" :value="row.status" size="small" />
               </template>
             </el-table-column>
-            <el-table-column
-              prop="createTime"
-              label="创建时间"
-              width="180"
-            >
+            <el-table-column prop="createTime" label="创建时间" width="180">
               <template #default="{ row }">
                 {{ formatDate(row.createTime) }}
               </template>
             </el-table-column>
-            <el-table-column
-              label="操作"
-              width="150"
-              fixed="right"
-            >
+            <el-table-column label="操作" width="150" fixed="right">
               <template #default="{ row }">
-                <el-button
-                  link
-                  type="primary"
-                  size="small"
-                  @click="handleEditData(row)"
-                >
-                  编辑
-                </el-button>
-                <el-button
-                  link
-                  type="danger"
-                  size="small"
-                  @click="handleDeleteData(row)"
-                >
-                  删除
-                </el-button>
+                <el-button link type="primary" size="small" @click="handleEditData(row)"> 编辑 </el-button>
+                <el-button link type="danger" size="small" @click="handleDeleteData(row)"> 删除 </el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -203,174 +110,66 @@
     </div>
 
     <!-- 字典类型编辑弹窗 -->
-    <el-dialog
-      v-model="typeDialogVisible"
-      :title="typeForm.id ? '编辑类型' : '新增类型'"
-      width="500px"
-    >
-      <el-form
-        ref="typeFormRef"
-        :model="typeForm"
-        :rules="typeRules"
-        label-width="100px"
-      >
-        <el-form-item
-          label="类型名称"
-          prop="name"
-        >
-          <el-input
-            v-model="typeForm.name"
-            placeholder="请输入类型名称"
-          />
+    <el-dialog v-model="typeDialogVisible" :title="typeForm.id ? '编辑类型' : '新增类型'" width="500px">
+      <el-form ref="typeFormRef" :model="typeForm" :rules="typeRules" label-width="100px">
+        <el-form-item label="类型名称" prop="name">
+          <el-input v-model="typeForm.name" placeholder="请输入类型名称" />
         </el-form-item>
-        <el-form-item
-          label="类型编码"
-          prop="code"
-        >
-          <el-input
-            v-model="typeForm.code"
-            placeholder="请输入类型编码"
-            :disabled="!!typeForm.id"
-          />
+        <el-form-item label="类型编码" prop="code">
+          <el-input v-model="typeForm.code" placeholder="请输入类型编码" :disabled="!!typeForm.id" />
         </el-form-item>
-        <el-form-item
-          label="业务域"
-          prop="domainCode"
-        >
-          <DomainSelector
-            v-model="typeForm.domainCode"
-            placeholder="请选择业务域"
-          />
+        <el-form-item label="业务域" prop="domainCode">
+          <DomainSelector v-model="typeForm.domainCode" placeholder="请选择业务域" />
         </el-form-item>
-        <el-form-item
-          label="描述"
-          prop="description"
-        >
-          <el-input
-            v-model="typeForm.description"
-            type="textarea"
-            placeholder="请输入描述"
-          />
+        <el-form-item label="描述" prop="description">
+          <el-input v-model="typeForm.description" type="textarea" placeholder="请输入描述" />
         </el-form-item>
-        <el-form-item
-          label="排序"
-          prop="sort"
-        >
-          <el-input-number
-            v-model="typeForm.sort"
-            :min="0"
-            :max="9999"
-          />
+        <el-form-item label="排序" prop="sort">
+          <el-input-number v-model="typeForm.sort" :min="0" :max="9999" />
         </el-form-item>
-        <el-form-item
-          label="状态"
-          prop="status"
-        >
+        <el-form-item label="状态" prop="status">
           <el-radio-group v-model="typeForm.status">
-            <el-radio
-              v-for="item in statusOptions"
-              :key="item.value"
-              :label="Number(item.value)"
-            >
+            <el-radio v-for="item in statusOptions" :key="item.value" :value="Number(item.value)">
               {{ item.label }}
             </el-radio>
           </el-radio-group>
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="typeDialogVisible = false">
-          取消
-        </el-button>
-        <el-button
-          type="primary"
-          @click="handleTypeSubmit"
-        >
-          确定
-        </el-button>
+        <el-button @click="typeDialogVisible = false"> 取消 </el-button>
+        <el-button type="primary" @click="handleTypeSubmit"> 确定 </el-button>
       </template>
     </el-dialog>
 
     <!-- 字典数据编辑弹窗 -->
-    <el-dialog
-      v-model="dataDialogVisible"
-      :title="dataForm.id ? '编辑数据' : '新增数据'"
-      width="500px"
-    >
-      <el-form
-        ref="dataFormRef"
-        :model="dataForm"
-        :rules="dataRules"
-        label-width="100px"
-      >
+    <el-dialog v-model="dataDialogVisible" :title="dataForm.id ? '编辑数据' : '新增数据'" width="500px">
+      <el-form ref="dataFormRef" :model="dataForm" :rules="dataRules" label-width="100px">
         <el-form-item label="所属类型">
-          <el-input
-            :value="currentType?.name"
-            disabled
-          />
+          <el-input :value="currentType?.name" disabled />
         </el-form-item>
-        <el-form-item
-          label="标签"
-          prop="label"
-        >
-          <el-input
-            v-model="dataForm.label"
-            placeholder="请输入显示标签"
-          />
+        <el-form-item label="标签" prop="label">
+          <el-input v-model="dataForm.label" placeholder="请输入显示标签" />
         </el-form-item>
-        <el-form-item
-          label="值"
-          prop="value"
-        >
-          <el-input
-            v-model="dataForm.value"
-            placeholder="请输入值"
-          />
+        <el-form-item label="值" prop="value">
+          <el-input v-model="dataForm.value" placeholder="请输入值" />
         </el-form-item>
-        <el-form-item
-          label="排序"
-          prop="sort"
-        >
-          <el-input-number
-            v-model="dataForm.sort"
-            :min="0"
-            :max="9999"
-          />
+        <el-form-item label="排序" prop="sort">
+          <el-input-number v-model="dataForm.sort" :min="0" :max="9999" />
         </el-form-item>
-        <el-form-item
-          label="状态"
-          prop="status"
-        >
+        <el-form-item label="状态" prop="status">
           <el-radio-group v-model="dataForm.status">
-            <el-radio
-              v-for="item in statusOptions"
-              :key="item.value"
-              :label="Number(item.value)"
-            >
+            <el-radio v-for="item in statusOptions" :key="item.value" :value="Number(item.value)">
               {{ item.label }}
             </el-radio>
           </el-radio-group>
         </el-form-item>
-        <el-form-item
-          label="扩展数据"
-          prop="extra"
-        >
-          <el-input
-            v-model="dataForm.extra"
-            type="textarea"
-            placeholder="请输入扩展数据(JSON)"
-          />
+        <el-form-item label="扩展数据" prop="extra">
+          <el-input v-model="dataForm.extra" type="textarea" placeholder="请输入扩展数据(JSON)" />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="dataDialogVisible = false">
-          取消
-        </el-button>
-        <el-button
-          type="primary"
-          @click="handleDataSubmit"
-        >
-          确定
-        </el-button>
+        <el-button @click="dataDialogVisible = false"> 取消 </el-button>
+        <el-button type="primary" @click="handleDataSubmit"> 确定 </el-button>
       </template>
     </el-dialog>
   </div>
@@ -517,20 +316,22 @@ function handleDeleteType(row: DictType) {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
     type: 'warning',
-  }).then(async () => {
-    try {
-      await dictTypeApi.delete(row.id!);
-      ElMessage.success('删除成功');
-      if (currentType.value?.id === row.id) {
-        currentType.value = null;
-        dataList.value = [];
-        dataTotal.value = 0;
+  })
+    .then(async () => {
+      try {
+        await dictTypeApi.delete(row.id!);
+        ElMessage.success('删除成功');
+        if (currentType.value?.id === row.id) {
+          currentType.value = null;
+          dataList.value = [];
+          dataTotal.value = 0;
+        }
+        await loadTypeList();
+      } catch (error) {
+        console.error('删除失败:', error);
       }
-      await loadTypeList();
-    } catch (error) {
-      console.error('删除失败:', error);
-    }
-  }).catch(() => {});
+    })
+    .catch(() => {});
 }
 
 // ==================== 字典数据列表 ====================
@@ -663,15 +464,17 @@ function handleDeleteData(row: DictData) {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
     type: 'warning',
-  }).then(async () => {
-    try {
-      await dictDataApi.delete(row.id!);
-      ElMessage.success('删除成功');
-      loadDataList();
-    } catch (error) {
-      console.error('删除失败:', error);
-    }
-  }).catch(() => {});
+  })
+    .then(async () => {
+      try {
+        await dictDataApi.delete(row.id!);
+        ElMessage.success('删除成功');
+        loadDataList();
+      } catch (error) {
+        console.error('删除失败:', error);
+      }
+    })
+    .catch(() => {});
 }
 
 // ==================== 生命周期 ====================

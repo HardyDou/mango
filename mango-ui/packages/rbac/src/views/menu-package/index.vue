@@ -73,8 +73,8 @@
           <el-col :span="12">
             <el-form-item label="状态" prop="status">
               <el-radio-group v-model="form.status">
-                <el-radio :label="1">启用</el-radio>
-                <el-radio :label="0">禁用</el-radio>
+                <el-radio :value="1">启用</el-radio>
+                <el-radio :value="0">禁用</el-radio>
               </el-radio-group>
             </el-form-item>
           </el-col>
@@ -201,7 +201,9 @@ async function applyCheckedMenuIds(menuIds: ApiId[]) {
 }
 
 function collectCheckedKeys(tree: any) {
-  return Array.from(new Set([...(tree?.getCheckedKeys?.() || []), ...(tree?.getHalfCheckedKeys?.() || [])].map(String))) as ApiId[];
+  return Array.from(
+    new Set([...(tree?.getCheckedKeys?.() || []), ...(tree?.getHalfCheckedKeys?.() || [])].map(String)),
+  ) as ApiId[];
 }
 
 function handleTreeCheck() {

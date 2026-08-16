@@ -63,12 +63,12 @@ export const loginLogApi = {
   },
   statistics: (params?: { startTime?: string; endTime?: string }) => {
     return get<any>('/system/log/login/statistics', { params }).then((data) => ({
-      totalCount: data.totalCount ?? 0,
-      successCount: data.successCount ?? 0,
-      failCount: data.failCount ?? 0,
-      todayCount: data.todayCount ?? 0,
-      weekCount: data.weekCount,
-      monthCount: data.monthCount,
+      totalCount: Number(data.totalCount ?? 0),
+      successCount: Number(data.successCount ?? 0),
+      failCount: Number(data.failCount ?? 0),
+      todayCount: Number(data.todayCount ?? 0),
+      weekCount: data.weekCount == null ? undefined : Number(data.weekCount),
+      monthCount: data.monthCount == null ? undefined : Number(data.monthCount),
     }));
   },
 };

@@ -516,6 +516,8 @@ const toolbarKeys = ['bold', 'color', '|', 'numberedList', 'bulletedList', '|', 
 
 ## 11. 变更影响记录
 
+- Issue #805 待发布修复保留 `Pagination.small?: boolean` 公开入参，内部改为向 Element Plus 传递 `size="small" | "default"`，消除废弃 `small` prop 告警。页码、每页数、总数、双向绑定和 `pagination` 事件保持兼容。
+
 - Issue #722 新增 Web Crypto UUID 兼容 API：原生 `randomUUID` 始终优先，缺失时只使用 `getRandomValues` 生成 RFC 4122 v4；完全没有安全 Web Crypto 时不会安装 `Math.random` 伪实现。`generateUUID()` 复用同一安全路径，并仅在普通非安全唯一标识语义下保留原有最终 fallback。
 
 - `@mango/common@1.0.23` 发布 `MangoDialogExpose.bringToFront()`。父组件可以通过类型安全的组件 ref 提升已打开实例；用户按下标题、内容或 footer 时也会自动置顶，关闭中、已关闭或销毁后的调用安全忽略。既有弹框 props、事件、拖拽、缩放、遮罩和默认层级行为保持兼容。

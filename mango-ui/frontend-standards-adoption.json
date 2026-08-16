@@ -25,15 +25,19 @@
   },
   "dependencyRecovery": {
     "@mango/admin": {
-      "version": "1.0.59",
+      "version": "1.0.66",
       "action": "pin"
     },
+    "@mango/admin-extension": {
+      "version": null,
+      "action": "remove"
+    },
     "@mango/admin-pages": {
-      "version": "1.0.29",
+      "version": "1.0.33",
       "action": "pin"
     },
     "@mango/admin-shell": {
-      "version": "1.0.54",
+      "version": "1.0.60",
       "action": "pin"
     },
     "@mango/api-schema": {
@@ -45,39 +49,39 @@
       "action": "pin"
     },
     "@mango/auth": {
-      "version": "1.0.22",
+      "version": "1.0.26",
       "action": "pin"
     },
     "@mango/calendar": {
-      "version": "1.0.30",
+      "version": "1.0.34",
       "action": "pin"
     },
     "@mango/cli": {
-      "version": "1.0.92",
+      "version": "1.0.107",
       "action": "pin"
     },
     "@mango/cms": {
-      "version": "1.0.19",
+      "version": "1.0.23",
       "action": "pin"
     },
     "@mango/common": {
-      "version": "1.0.22",
+      "version": "1.0.26",
       "action": "pin"
     },
     "@mango/file": {
-      "version": "1.0.30",
+      "version": "1.0.34",
       "action": "pin"
     },
     "@mango/grid-layout": {
-      "version": "1.0.13",
+      "version": "1.0.17",
       "action": "pin"
     },
     "@mango/grid-widgets": {
-      "version": "1.0.19",
+      "version": "1.0.23",
       "action": "pin"
     },
     "@mango/home": {
-      "version": "1.0.11",
+      "version": "1.0.15",
       "action": "pin"
     },
     "@mango/http-client": {
@@ -85,11 +89,11 @@
       "action": "pin"
     },
     "@mango/job": {
-      "version": "1.0.22",
+      "version": "1.0.27",
       "action": "pin"
     },
     "@mango/link": {
-      "version": "1.0.16",
+      "version": "1.0.20",
       "action": "pin"
     },
     "@mango/link-openapi": {
@@ -101,43 +105,43 @@
       "action": "pin"
     },
     "@mango/notice": {
-      "version": "1.0.34",
+      "version": "1.0.39",
       "action": "pin"
     },
     "@mango/numgen": {
-      "version": "1.0.30",
+      "version": "1.0.35",
       "action": "pin"
     },
     "@mango/payment": {
-      "version": "1.0.22",
+      "version": "1.0.26",
       "action": "pin"
     },
     "@mango/pmo": {
-      "version": "1.3.7",
+      "version": "1.3.15",
       "action": "pin"
     },
     "@mango/rbac": {
-      "version": "1.0.20",
+      "version": "1.0.24",
       "action": "pin"
     },
     "@mango/site-shell": {
-      "version": "1.0.9",
+      "version": "1.0.13",
       "action": "pin"
     },
     "@mango/system": {
-      "version": "1.0.28",
+      "version": "1.0.32",
       "action": "pin"
     },
     "@mango/template": {
-      "version": "1.0.30",
+      "version": "1.0.34",
       "action": "pin"
     },
     "@mango/workflow": {
-      "version": "1.0.36",
+      "version": "1.0.40",
       "action": "pin"
     },
     "@mango/workflow-business-example": {
-      "version": "1.0.35",
+      "version": "1.0.39",
       "action": "pin"
     }
   }

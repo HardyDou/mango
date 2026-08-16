@@ -1,23 +1,12 @@
 <template>
   <div class="post-container">
     <el-card>
-      <el-form
-        :inline="true"
-        class="search-form"
-      >
+      <el-form :inline="true" class="search-form">
         <el-form-item label="岗位名称">
-          <el-input
-            v-model="query.postName"
-            placeholder="请输入岗位名称"
-            clearable
-          />
+          <el-input v-model="query.postName" placeholder="请输入岗位名称" clearable />
         </el-form-item>
         <el-form-item label="岗位编码">
-          <el-input
-            v-model="query.postCode"
-            placeholder="请输入岗位编码"
-            clearable
-          />
+          <el-input v-model="query.postCode" placeholder="请输入岗位编码" clearable />
         </el-form-item>
         <el-form-item label="状态">
           <DictSelect
@@ -29,187 +18,68 @@
           />
         </el-form-item>
         <el-form-item>
-          <el-button
-            type="primary"
-            @click="handleSearch"
-          >
-            查询
-          </el-button>
-          <el-button @click="handleReset">
-            重置
-          </el-button>
+          <el-button type="primary" @click="handleSearch"> 查询 </el-button>
+          <el-button @click="handleReset"> 重置 </el-button>
         </el-form-item>
       </el-form>
 
       <div class="action-toolbar">
         <div class="toolbar-left">
-          <el-button
-            type="primary"
-            @click="handleAdd"
-          >
-            新增岗位
-          </el-button>
+          <el-button type="primary" @click="handleAdd"> 新增岗位 </el-button>
         </div>
       </div>
 
-      <el-table
-        v-loading="loading"
-        :data="tableData"
-        stripe
-      >
-        <el-table-column
-          prop="postName"
-          label="岗位名称"
-          min-width="160"
-        />
-        <el-table-column
-          prop="postCode"
-          label="岗位编码"
-          min-width="160"
-        />
-        <el-table-column
-          prop="postSort"
-          label="排序"
-          width="90"
-        />
-        <el-table-column
-          prop="postStatus"
-          label="状态"
-          width="90"
-        >
+      <el-table v-loading="loading" :data="tableData" stripe>
+        <el-table-column prop="postName" label="岗位名称" min-width="160" />
+        <el-table-column prop="postCode" label="岗位编码" min-width="160" />
+        <el-table-column prop="postSort" label="排序" width="90" />
+        <el-table-column prop="postStatus" label="状态" width="90">
           <template #default="{ row }">
-            <DictTag
-              dict-code="sys_normal_disable"
-              :value="row.postStatus"
-              size="small"
-            />
+            <DictTag dict-code="sys_normal_disable" :value="row.postStatus" size="small" />
           </template>
         </el-table-column>
-        <el-table-column
-          prop="remark"
-          label="备注"
-          show-overflow-tooltip
-        />
-        <el-table-column
-          prop="createTime"
-          label="创建时间"
-          width="180"
-        >
+        <el-table-column prop="remark" label="备注" show-overflow-tooltip />
+        <el-table-column prop="createTime" label="创建时间" width="180">
           <template #default="{ row }">
             {{ formatTime(row.createTime) }}
           </template>
         </el-table-column>
-        <el-table-column
-          label="操作"
-          width="150"
-          fixed="right"
-        >
+        <el-table-column label="操作" width="150" fixed="right">
           <template #default="{ row }">
-            <el-button
-              link
-              type="primary"
-              size="small"
-              @click="handleEdit(row)"
-            >
-              编辑
-            </el-button>
-            <el-button
-              link
-              type="danger"
-              size="small"
-              @click="handleDelete(row)"
-            >
-              删除
-            </el-button>
+            <el-button link type="primary" size="small" @click="handleEdit(row)"> 编辑 </el-button>
+            <el-button link type="danger" size="small" @click="handleDelete(row)"> 删除 </el-button>
           </template>
         </el-table-column>
       </el-table>
 
-      <Pagination
-        v-model:page="query.pageNum"
-        v-model:limit="query.pageSize"
-        :total="total"
-        @pagination="loadData"
-      />
+      <Pagination v-model:page="query.pageNum" v-model:limit="query.pageSize" :total="total" @pagination="loadData" />
     </el-card>
 
-    <el-dialog
-      v-model="dialogVisible"
-      :title="form.id ? '编辑岗位' : '新增岗位'"
-      width="560px"
-    >
-      <el-form
-        ref="formRef"
-        :model="form"
-        :rules="rules"
-        label-width="100px"
-      >
-        <el-form-item
-          label="岗位名称"
-          prop="postName"
-        >
-          <el-input
-            v-model="form.postName"
-            placeholder="请输入岗位名称"
-          />
+    <el-dialog v-model="dialogVisible" :title="form.id ? '编辑岗位' : '新增岗位'" width="560px">
+      <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
+        <el-form-item label="岗位名称" prop="postName">
+          <el-input v-model="form.postName" placeholder="请输入岗位名称" />
         </el-form-item>
-        <el-form-item
-          label="岗位编码"
-          prop="postCode"
-        >
-          <el-input
-            v-model="form.postCode"
-            placeholder="请输入岗位编码"
-            :disabled="!!form.id"
-          />
+        <el-form-item label="岗位编码" prop="postCode">
+          <el-input v-model="form.postCode" placeholder="请输入岗位编码" :disabled="!!form.id" />
         </el-form-item>
-        <el-form-item
-          label="状态"
-          prop="postStatus"
-        >
+        <el-form-item label="状态" prop="postStatus">
           <el-radio-group v-model="form.postStatus">
-            <el-radio
-              v-for="item in statusOptions"
-              :key="item.value"
-              :label="String(item.value)"
-            >
+            <el-radio v-for="item in statusOptions" :key="item.value" :value="String(item.value)">
               {{ item.label }}
             </el-radio>
           </el-radio-group>
         </el-form-item>
-        <el-form-item
-          label="排序"
-          prop="postSort"
-        >
-          <el-input-number
-            v-model="form.postSort"
-            :min="0"
-            :max="9999"
-          />
+        <el-form-item label="排序" prop="postSort">
+          <el-input-number v-model="form.postSort" :min="0" :max="9999" />
         </el-form-item>
-        <el-form-item
-          label="备注"
-          prop="remark"
-        >
-          <el-input
-            v-model="form.remark"
-            type="textarea"
-            :rows="3"
-            placeholder="请输入备注"
-          />
+        <el-form-item label="备注" prop="remark">
+          <el-input v-model="form.remark" type="textarea" :rows="3" placeholder="请输入备注" />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="dialogVisible = false">
-          取消
-        </el-button>
-        <el-button
-          type="primary"
-          :loading="submitLoading"
-          @click="handleSubmit"
-        >
-          确定
-        </el-button>
+        <el-button @click="dialogVisible = false"> 取消 </el-button>
+        <el-button type="primary" :loading="submitLoading" @click="handleSubmit"> 确定 </el-button>
       </template>
     </el-dialog>
   </div>
@@ -326,11 +196,13 @@ function handleDelete(row: PostVO) {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
     type: 'warning',
-  }).then(async () => {
-    await postApi.delete(row.id!);
-    ElMessage.success('删除成功');
-    await loadData();
-  }).catch(() => {});
+  })
+    .then(async () => {
+      await postApi.delete(row.id!);
+      ElMessage.success('删除成功');
+      await loadData();
+    })
+    .catch(() => {});
 }
 
 function formatTime(value?: string) {

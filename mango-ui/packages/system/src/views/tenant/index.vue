@@ -1,16 +1,9 @@
 <template>
   <div class="tenant-container">
     <el-card>
-      <el-form
-        :inline="true"
-        class="search-form"
-      >
+      <el-form :inline="true" class="search-form">
         <el-form-item label="关键词">
-          <el-input
-            v-model="query.keyword"
-            placeholder="搜索机构名称/编码"
-            clearable
-          />
+          <el-input v-model="query.keyword" placeholder="搜索机构名称/编码" clearable />
         </el-form-item>
         <el-form-item label="状态">
           <DictSelect
@@ -23,81 +16,34 @@
           />
         </el-form-item>
         <el-form-item>
-          <el-button
-            type="primary"
-            @click="handleSearch"
-          >
-            查询
-          </el-button>
-          <el-button @click="handleReset">
-            重置
-          </el-button>
+          <el-button type="primary" @click="handleSearch"> 查询 </el-button>
+          <el-button @click="handleReset"> 重置 </el-button>
         </el-form-item>
       </el-form>
 
       <div class="action-toolbar">
         <div class="toolbar-left">
-          <el-button
-            type="primary"
-            @click="handleAdd"
-          >
-            新增机构
-          </el-button>
+          <el-button type="primary" @click="handleAdd"> 新增机构 </el-button>
         </div>
       </div>
 
-      <el-table
-        v-loading="loading"
-        :data="tableData"
-        stripe
-      >
-        <el-table-column
-          prop="tenantName"
-          label="机构名称"
-        />
-        <el-table-column
-          prop="tenantCode"
-          label="机构编码"
-        />
-        <el-table-column
-          prop="institutionType"
-          label="机构类型"
-          width="120"
-        >
+      <el-table v-loading="loading" :data="tableData" stripe>
+        <el-table-column prop="tenantName" label="机构名称" />
+        <el-table-column prop="tenantCode" label="机构编码" />
+        <el-table-column prop="institutionType" label="机构类型" width="120">
           <template #default="{ row }">
-            <DictTag
-              dict-code="institution_type"
-              :value="row.institutionType"
-              size="small"
-            />
+            <DictTag dict-code="institution_type" :value="row.institutionType" size="small" />
           </template>
         </el-table-column>
-        <el-table-column
-          prop="packageId"
-          label="绑定套餐"
-          min-width="180"
-        >
+        <el-table-column prop="packageId" label="绑定套餐" min-width="180">
           <template #default="{ row }">
             <span>{{ packageNameMap.get(row.packageId || '0') || '未绑定套餐' }}</span>
           </template>
         </el-table-column>
-        <el-table-column
-          prop="contactName"
-          label="联系人"
-        />
-        <el-table-column
-          prop="contactPhone"
-          label="联系电话"
-        />
-        <el-table-column
-          prop="contactEmail"
-          label="联系邮箱"
-        />
-        <el-table-column
-          prop="status"
-          label="状态"
-          width="90"
-        >
+        <el-table-column prop="contactName" label="联系人" />
+        <el-table-column prop="contactPhone" label="联系电话" />
+        <el-table-column prop="contactEmail" label="联系邮箱" />
+        <el-table-column prop="status" label="状态" width="90">
           <template #default="{ row }">
             <DictTag
               dict-code="institution_status"
@@ -107,125 +53,44 @@
             />
           </template>
         </el-table-column>
-        <el-table-column
-          prop="createTime"
-          label="创建时间"
-          width="180"
-        >
+        <el-table-column prop="createTime" label="创建时间" width="180">
           <template #default="{ row }">
             {{ formatDate(row.createTime) }}
           </template>
         </el-table-column>
-        <el-table-column
-          label="操作"
-          width="260"
-          fixed="right"
-        >
+        <el-table-column label="操作" width="260" fixed="right">
           <template #default="{ row }">
-            <el-button
-              link
-              type="primary"
-              size="small"
-              @click="handleEdit(row)"
-            >
-              编辑
-            </el-button>
-            <el-button
-              link
-              type="warning"
-              size="small"
-              @click="handleToggleStatus(row)"
-            >
+            <el-button link type="primary" size="small" @click="handleEdit(row)"> 编辑 </el-button>
+            <el-button link type="warning" size="small" @click="handleToggleStatus(row)">
               {{ row.status === 1 ? '禁用' : '启用' }}
             </el-button>
-            <el-button
-              v-if="row.status !== 2"
-              link
-              type="warning"
-              size="small"
-              @click="handleUpdateStatus(row, 2)"
-            >
+            <el-button v-if="row.status !== 2" link type="warning" size="small" @click="handleUpdateStatus(row, 2)">
               冻结
             </el-button>
-            <el-button
-              v-if="row.status !== 9"
-              link
-              type="info"
-              size="small"
-              @click="handleUpdateStatus(row, 9)"
-            >
+            <el-button v-if="row.status !== 9" link type="info" size="small" @click="handleUpdateStatus(row, 9)">
               归档
             </el-button>
-            <el-button
-              link
-              type="danger"
-              size="small"
-              @click="handleDelete(row)"
-            >
-              删除
-            </el-button>
+            <el-button link type="danger" size="small" @click="handleDelete(row)"> 删除 </el-button>
           </template>
         </el-table-column>
       </el-table>
 
-      <Pagination
-        v-model:page="query.pageNum"
-        v-model:limit="query.pageSize"
-        :total="total"
-        @pagination="loadData"
-      />
+      <Pagination v-model:page="query.pageNum" v-model:limit="query.pageSize" :total="total" @pagination="loadData" />
     </el-card>
 
-    <el-dialog
-      v-model="dialogVisible"
-      :title="form.id ? '编辑机构' : '新增机构'"
-      width="600px"
-    >
-      <el-form
-        ref="formRef"
-        :model="form"
-        :rules="rules"
-        label-width="100px"
-      >
-        <el-form-item
-          label="机构名称"
-          prop="tenantName"
-        >
-          <el-input
-            v-model="form.tenantName"
-            placeholder="请输入机构名称"
-          />
+    <el-dialog v-model="dialogVisible" :title="form.id ? '编辑机构' : '新增机构'" width="600px">
+      <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
+        <el-form-item label="机构名称" prop="tenantName">
+          <el-input v-model="form.tenantName" placeholder="请输入机构名称" />
         </el-form-item>
-        <el-form-item
-          label="机构编码"
-          prop="tenantCode"
-        >
-          <el-input
-            v-model="form.tenantCode"
-            placeholder="请输入机构编码"
-            :disabled="!!form.id"
-          />
+        <el-form-item label="机构编码" prop="tenantCode">
+          <el-input v-model="form.tenantCode" placeholder="请输入机构编码" :disabled="!!form.id" />
         </el-form-item>
-        <el-form-item
-          label="机构类型"
-          prop="institutionType"
-        >
-          <DictSelect
-            v-model="form.institutionType"
-            dict-type="institution_type"
-            placeholder="请选择机构类型"
-          />
+        <el-form-item label="机构类型" prop="institutionType">
+          <DictSelect v-model="form.institutionType" dict-type="institution_type" placeholder="请选择机构类型" />
         </el-form-item>
-        <el-form-item
-          label="机构套餐"
-          prop="packageId"
-        >
-          <el-select
-            v-model="form.packageId"
-            placeholder="请选择机构套餐"
-            filterable
-            @change="handlePackageChange"
-          >
+        <el-form-item label="机构套餐" prop="packageId">
+          <el-select v-model="form.packageId" placeholder="请选择机构套餐" filterable @change="handlePackageChange">
             <el-option
               v-for="item in packageOptions"
               :key="item.packageId"
@@ -245,58 +110,26 @@
             :props="treeProps"
           />
         </el-form-item>
-        <el-form-item
-          label="联系人"
-          prop="contactName"
-        >
-          <el-input
-            v-model="form.contactName"
-            placeholder="请输入联系人"
-          />
+        <el-form-item label="联系人" prop="contactName">
+          <el-input v-model="form.contactName" placeholder="请输入联系人" />
         </el-form-item>
-        <el-form-item
-          label="联系电话"
-          prop="contactPhone"
-        >
-          <el-input
-            v-model="form.contactPhone"
-            placeholder="请输入联系电话"
-          />
+        <el-form-item label="联系电话" prop="contactPhone">
+          <el-input v-model="form.contactPhone" placeholder="请输入联系电话" />
         </el-form-item>
-        <el-form-item
-          label="联系邮箱"
-          prop="contactEmail"
-        >
-          <el-input
-            v-model="form.contactEmail"
-            placeholder="请输入联系邮箱"
-          />
+        <el-form-item label="联系邮箱" prop="contactEmail">
+          <el-input v-model="form.contactEmail" placeholder="请输入联系邮箱" />
         </el-form-item>
-        <el-form-item
-          label="状态"
-          prop="status"
-        >
+        <el-form-item label="状态" prop="status">
           <el-radio-group v-model="form.status">
-            <el-radio
-              v-for="item in statusOptions"
-              :key="item.value"
-              :label="Number(item.value)"
-            >
+            <el-radio v-for="item in statusOptions" :key="item.value" :value="Number(item.value)">
               {{ item.label }}
             </el-radio>
           </el-radio-group>
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="dialogVisible = false">
-          取消
-        </el-button>
-        <el-button
-          type="primary"
-          @click="handleSubmit"
-        >
-          确定
-        </el-button>
+        <el-button @click="dialogVisible = false"> 取消 </el-button>
+        <el-button type="primary" @click="handleSubmit"> 确定 </el-button>
       </template>
     </el-dialog>
   </div>
@@ -326,7 +159,9 @@ const total = ref(0);
 const packageOptions = ref<MenuPackageVO[]>([]);
 const packageMenuTree = ref<SysMenuVO[]>([]);
 const packageTreeRef = ref();
-const packageNameMap = computed(() => new Map(packageOptions.value.map(item => [item.packageId || '0', item.packageName])));
+const packageNameMap = computed(
+  () => new Map(packageOptions.value.map((item) => [item.packageId || '0', item.packageName])),
+);
 const treeProps = {
   label: 'menuName',
   children: 'children',
@@ -451,9 +286,10 @@ async function handleToggleStatus(row: SysTenant) {
 
 async function handleUpdateStatus(row: SysTenant, status: number) {
   const action = statusActions[status] || '修改状态';
-  const confirmMessage = status === 1
-    ? `确认启用机构“${row.tenantName}”？`
-    : `确认将机构“${row.tenantName}”${action}？非启用状态下，该机构成员不能登录或继续访问系统。`;
+  const confirmMessage =
+    status === 1
+      ? `确认启用机构“${row.tenantName}”？`
+      : `确认将机构“${row.tenantName}”${action}？非启用状态下，该机构成员不能登录或继续访问系统。`;
   try {
     await ElMessageBox.confirm(confirmMessage, '提示', {
       confirmButtonText: '确定',
@@ -475,15 +311,17 @@ function handleDelete(row: SysTenant) {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
     type: 'warning',
-  }).then(async () => {
-    try {
-      await tenantApi.delete(row.id!);
-      ElMessage.success('删除成功');
-      loadData();
-    } catch (error) {
-      console.error('删除失败:', error);
-    }
-  }).catch(() => {});
+  })
+    .then(async () => {
+      try {
+        await tenantApi.delete(row.id!);
+        ElMessage.success('删除成功');
+        loadData();
+      } catch (error) {
+        console.error('删除失败:', error);
+      }
+    })
+    .catch(() => {});
 }
 
 function statusTagType(status?: number) {

@@ -15,15 +15,8 @@
         />
 
         <section class="config-main">
-          <el-card
-            class="config-search"
-            shadow="never"
-          >
-            <el-form
-              :inline="true"
-              :model="query"
-              class="config-search__form"
-            >
+          <el-card class="config-search" shadow="never">
+            <el-form :inline="true" :model="query" class="config-search__form">
               <el-form-item label="关键词">
                 <el-input
                   v-model="query.keyword"
@@ -34,12 +27,7 @@
                 />
               </el-form-item>
               <el-form-item label="参数分类">
-                <el-select
-                  v-model="query.configGroup"
-                  placeholder="不限"
-                  clearable
-                  @change="handleSearch"
-                >
+                <el-select v-model="query.configGroup" placeholder="不限" clearable @change="handleSearch">
                   <el-option
                     v-for="item in configTypeOptions"
                     :key="item.value"
@@ -49,12 +37,7 @@
                 </el-select>
               </el-form-item>
               <el-form-item label="展示类型">
-                <el-select
-                  v-model="query.valueType"
-                  placeholder="不限"
-                  clearable
-                  @change="handleSearch"
-                >
+                <el-select v-model="query.valueType" placeholder="不限" clearable @change="handleSearch">
                   <el-option
                     v-for="item in valueTypeOptions"
                     :key="item.value"
@@ -64,12 +47,7 @@
                 </el-select>
               </el-form-item>
               <el-form-item label="状态">
-                <el-select
-                  v-model="query.status"
-                  placeholder="不限"
-                  clearable
-                  @change="handleSearch"
-                >
+                <el-select v-model="query.status" placeholder="不限" clearable @change="handleSearch">
                   <el-option
                     v-for="item in statusOptions"
                     :key="item.value"
@@ -79,62 +57,25 @@
                 </el-select>
               </el-form-item>
               <el-form-item>
-                <el-button
-                  type="primary"
-                  @click="handleSearch"
-                >
-                  查询
-                </el-button>
-                <el-button @click="handleReset">
-                  重置
-                </el-button>
+                <el-button type="primary" @click="handleSearch"> 查询 </el-button>
+                <el-button @click="handleReset"> 重置 </el-button>
               </el-form-item>
             </el-form>
           </el-card>
 
-          <el-card
-            class="config-table-card"
-            shadow="never"
-          >
+          <el-card class="config-table-card" shadow="never">
             <div class="config-toolbar">
               <div class="config-toolbar__left">
-                <el-button
-                  type="primary"
-                  plain
-                  @click="handleAdd"
-                >
-                  新增参数
-                </el-button>
-                <el-button
-                  plain
-                  @click="openOperationPanel"
-                >
-                  操作面板
-                </el-button>
+                <el-button type="primary" plain @click="handleAdd"> 新增参数 </el-button>
+                <el-button plain @click="openOperationPanel"> 操作面板 </el-button>
               </div>
               <div class="config-toolbar__right">
-                <el-button
-                  plain
-                  :loading="listLoading"
-                  @click="loadConfigList"
-                >
-                  刷新
-                </el-button>
+                <el-button plain :loading="listLoading" @click="loadConfigList"> 刷新 </el-button>
               </div>
             </div>
 
-            <el-table
-              v-loading="listLoading"
-              :data="pagedConfigs"
-              stripe
-              row-key="id"
-            >
-              <el-table-column
-                prop="configName"
-                label="参数定义"
-                min-width="190"
-                show-overflow-tooltip
-              >
+            <el-table v-loading="listLoading" :data="pagedConfigs" stripe row-key="id">
+              <el-table-column prop="configName" label="参数定义" min-width="190" show-overflow-tooltip>
                 <template #default="{ row }">
                   <div class="config-name-cell">
                     <span>{{ row.configName || row.configKey }}</span>
@@ -142,158 +83,76 @@
                   </div>
                 </template>
               </el-table-column>
-              <el-table-column
-                prop="domainCode"
-                label="业务域"
-                width="160"
-                show-overflow-tooltip
-              >
+              <el-table-column prop="domainCode" label="业务域" width="160" show-overflow-tooltip>
                 <template #default="{ row }">
                   {{ domainDisplayName(row.domainCode) }}
                 </template>
               </el-table-column>
-              <el-table-column
-                prop="valueType"
-                label="展示类型"
-                width="110"
-              >
+              <el-table-column prop="valueType" label="展示类型" width="110">
                 <template #default="{ row }">
                   {{ valueTypeLabel(row.valueType) }}
                 </template>
               </el-table-column>
-              <el-table-column
-                prop="defaultValue"
-                label="默认值"
-                min-width="150"
-                show-overflow-tooltip
-              >
+              <el-table-column prop="defaultValue" label="默认值" min-width="150" show-overflow-tooltip>
                 <template #default="{ row }">
                   {{ displayValue(row.defaultValue) }}
                 </template>
               </el-table-column>
-              <el-table-column
-                prop="options"
-                label="可选择的值"
-                min-width="180"
-                show-overflow-tooltip
-              >
+              <el-table-column prop="options" label="可选择的值" min-width="180" show-overflow-tooltip>
                 <template #default="{ row }">
                   {{ displayOptions(row) }}
                 </template>
               </el-table-column>
-              <el-table-column
-                prop="optionSource"
-                label="选项来源"
-                width="120"
-              >
+              <el-table-column prop="optionSource" label="选项来源" width="120">
                 <template #default="{ row }">
                   {{ optionSourceLabel(row.optionSource) }}
                 </template>
               </el-table-column>
-              <el-table-column
-                prop="dictType"
-                label="绑定字典"
-                min-width="130"
-                show-overflow-tooltip
-              >
+              <el-table-column prop="dictType" label="绑定字典" min-width="130" show-overflow-tooltip>
                 <template #default="{ row }">
                   {{ dictTypeLabel(row.dictType) }}
                 </template>
               </el-table-column>
-              <el-table-column
-                prop="configValue"
-                label="当前值"
-                min-width="160"
-                show-overflow-tooltip
-              >
+              <el-table-column prop="configValue" label="当前值" min-width="160" show-overflow-tooltip>
                 <template #default="{ row }">
                   {{ displayValue(row.configValue) }}
                 </template>
               </el-table-column>
-              <el-table-column
-                prop="editable"
-                label="可编辑"
-                width="100"
-              >
+              <el-table-column prop="editable" label="可编辑" width="100">
                 <template #default="{ row }">
-                  <el-tag
-                    :type="row.editable === false ? 'warning' : 'success'"
-                    effect="plain"
-                    size="small"
-                  >
+                  <el-tag :type="row.editable === false ? 'warning' : 'success'" effect="plain" size="small">
                     {{ row.editable === false ? '只读' : '可编辑' }}
                   </el-tag>
                 </template>
               </el-table-column>
-              <el-table-column
-                prop="status"
-                label="状态"
-                width="90"
-              >
+              <el-table-column prop="status" label="状态" width="90">
                 <template #default="{ row }">
-                  <el-tag
-                    :type="row.status === 0 ? 'info' : 'success'"
-                    effect="plain"
-                    size="small"
-                  >
+                  <el-tag :type="row.status === 0 ? 'info' : 'success'" effect="plain" size="small">
                     {{ row.status === 0 ? '禁用' : '启用' }}
                   </el-tag>
                 </template>
               </el-table-column>
-              <el-table-column
-                label="操作"
-                width="190"
-                fixed="right"
-              >
+              <el-table-column label="操作" width="190" fixed="right">
                 <template #default="{ row }">
-                  <el-button
-                    link
-                    type="primary"
-                    @click="handleView(row)"
-                  >
-                    详情
-                  </el-button>
-                  <el-button
-                    link
-                    type="primary"
-                    @click="handleEdit(row)"
-                  >
-                    编辑
-                  </el-button>
-                  <el-button
-                    link
-                    type="danger"
-                    @click="handleDelete(row)"
-                  >
-                    删除
-                  </el-button>
+                  <el-button link type="primary" @click="handleView(row)"> 详情 </el-button>
+                  <el-button link type="primary" @click="handleEdit(row)"> 编辑 </el-button>
+                  <el-button link type="danger" @click="handleDelete(row)"> 删除 </el-button>
                 </template>
               </el-table-column>
             </el-table>
 
-            <Pagination
-              v-model:page="query.pageNum"
-              v-model:limit="query.pageSize"
-              :total="filteredConfigs.length"
-            />
+            <Pagination v-model:page="query.pageNum" v-model:limit="query.pageSize" :total="filteredConfigs.length" />
           </el-card>
         </section>
       </div>
     </template>
 
     <template v-else>
-      <el-card
-        class="config-panel-card"
-        shadow="never"
-      >
+      <el-card class="config-panel-card" shadow="never">
         <div class="config-panel-toolbar">
           <div>
-            <el-button @click="backToList">
-              返回列表
-            </el-button>
-            <span class="config-panel-toolbar__title">
-              操作面板
-            </span>
+            <el-button @click="backToList"> 返回列表 </el-button>
+            <span class="config-panel-toolbar__title"> 操作面板 </span>
           </div>
         </div>
 
@@ -309,16 +168,8 @@
       </el-card>
     </template>
 
-    <el-dialog
-      v-model="detailVisible"
-      title="参数详情"
-      width="720px"
-    >
-      <el-descriptions
-        v-if="detailConfig"
-        :column="2"
-        border
-      >
+    <el-dialog v-model="detailVisible" title="参数详情" width="720px">
+      <el-descriptions v-if="detailConfig" :column="2" border>
         <el-descriptions-item label="参数定义">
           {{ detailConfig.configName || detailConfig.configKey }}
         </el-descriptions-item>
@@ -350,16 +201,14 @@
           {{ detailConfig.status === 0 ? '禁用' : '启用' }}
         </el-descriptions-item>
         <el-descriptions-item label="可编辑">
-          {{ detailConfig.editable === false ? (detailConfig.editableReason || '只读') : '可编辑' }}
+          {{ detailConfig.editable === false ? detailConfig.editableReason || '只读' : '可编辑' }}
         </el-descriptions-item>
         <el-descriptions-item label="配置介绍">
           {{ detailConfig.description || detailConfig.remark || '-' }}
         </el-descriptions-item>
       </el-descriptions>
       <template #footer>
-        <el-button @click="detailVisible = false">
-          关闭
-        </el-button>
+        <el-button @click="detailVisible = false"> 关闭 </el-button>
       </template>
     </el-dialog>
 
@@ -369,41 +218,20 @@
       width="760px"
       :close-on-click-modal="false"
     >
-      <el-form
-        ref="formRef"
-        :model="form"
-        :rules="rules"
-        label-width="110px"
-      >
+      <el-form ref="formRef" :model="form" :rules="rules" label-width="110px">
         <el-row :gutter="16">
           <el-col :span="12">
-            <el-form-item
-              label="参数键"
-              prop="configKey"
-            >
-              <el-input
-                v-model="form.configKey"
-                placeholder="请输入参数键"
-                :disabled="!!form.id"
-              />
+            <el-form-item label="参数键" prop="configKey">
+              <el-input v-model="form.configKey" placeholder="请输入参数键" :disabled="!!form.id" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item
-              label="参数名称"
-              prop="configName"
-            >
-              <el-input
-                v-model="form.configName"
-                placeholder="请输入参数名称"
-              />
+            <el-form-item label="参数名称" prop="configName">
+              <el-input v-model="form.configName" placeholder="请输入参数名称" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item
-              label="业务域"
-              prop="domainCode"
-            >
+            <el-form-item label="业务域" prop="domainCode">
               <el-tree-select
                 v-model="form.domainCode"
                 :data="domainTree"
@@ -419,14 +247,8 @@
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item
-              label="参数分类"
-              prop="configGroup"
-            >
-              <el-select
-                v-model="form.configGroup"
-                placeholder="请选择参数分类"
-              >
+            <el-form-item label="参数分类" prop="configGroup">
+              <el-select v-model="form.configGroup" placeholder="请选择参数分类">
                 <el-option
                   v-for="item in configTypeOptions"
                   :key="item.value"
@@ -437,34 +259,16 @@
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item
-              label="展示类型"
-              prop="valueType"
-            >
-              <el-select
-                v-model="form.valueType"
-                placeholder="请选择展示类型"
-              >
-                <el-option
-                  v-for="item in valueTypeOptions"
-                  :key="item.value"
-                  :label="item.label"
-                  :value="item.value"
-                />
+            <el-form-item label="展示类型" prop="valueType">
+              <el-select v-model="form.valueType" placeholder="请选择展示类型">
+                <el-option v-for="item in valueTypeOptions" :key="item.value" :label="item.label" :value="item.value" />
               </el-select>
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item
-              label="状态"
-              prop="status"
-            >
+            <el-form-item label="状态" prop="status">
               <el-radio-group v-model="form.status">
-                <el-radio
-                  v-for="item in statusOptions"
-                  :key="item.value"
-                  :label="Number(item.value)"
-                >
+                <el-radio v-for="item in statusOptions" :key="item.value" :value="Number(item.value)">
                   {{ item.label }}
                 </el-radio>
               </el-radio-group>
@@ -477,51 +281,29 @@
           </el-col>
           <el-col :span="12">
             <el-form-item label="分组编码">
-              <el-input
-                v-model="form.groupCode"
-                placeholder="可选"
-              />
+              <el-input v-model="form.groupCode" placeholder="可选" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="分组名称">
-              <el-input
-                v-model="form.groupName"
-                placeholder="可选"
-              />
+              <el-input v-model="form.groupName" placeholder="可选" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="默认值">
-              <el-input
-                v-model="form.defaultValue"
-                placeholder="请输入默认值"
-              />
+              <el-input v-model="form.defaultValue" placeholder="请输入默认值" />
             </el-form-item>
           </el-col>
-          <el-col
-            v-if="usesOptions(form.valueType)"
-            :span="12"
-          >
+          <el-col v-if="usesOptions(form.valueType)" :span="12">
             <el-form-item label="选项来源">
               <el-radio-group v-model="form.optionSource">
-                <el-radio label="CUSTOM">
-                  自定义
-                </el-radio>
-                <el-radio label="DICT">
-                  字典
-                </el-radio>
+                <el-radio value="CUSTOM"> 自定义 </el-radio>
+                <el-radio value="DICT"> 字典 </el-radio>
               </el-radio-group>
             </el-form-item>
           </el-col>
-          <el-col
-            v-if="usesOptions(form.valueType) && form.optionSource === 'DICT'"
-            :span="12"
-          >
-            <el-form-item
-              label="绑定字典"
-              prop="dictType"
-            >
+          <el-col v-if="usesOptions(form.valueType) && form.optionSource === 'DICT'" :span="12">
+            <el-form-item label="绑定字典" prop="dictType">
               <el-select
                 v-model="form.dictType"
                 :loading="dictTypeLoading"
@@ -539,62 +321,40 @@
             </el-form-item>
           </el-col>
           <el-col :span="24">
-            <el-form-item
-              label="当前值"
-              prop="configValue"
-            >
+            <el-form-item label="当前值" prop="configValue">
               <el-input
                 v-model="form.configValue"
                 type="textarea"
                 :rows="3"
-                placeholder="日期区间使用 JSON 数组，例如：[&quot;2026-06-01&quot;,&quot;2026-06-23&quot;]"
+                placeholder='日期区间使用 JSON 数组，例如：["2026-06-01","2026-06-23"]'
               />
             </el-form-item>
           </el-col>
-          <el-col
-            v-if="usesOptions(form.valueType) && form.optionSource !== 'DICT'"
-            :span="24"
-          >
+          <el-col v-if="usesOptions(form.valueType) && form.optionSource !== 'DICT'" :span="24">
             <el-form-item label="可选择的值">
               <el-input
                 v-model="form.options"
                 type="textarea"
                 :rows="2"
-                placeholder="使用 JSON 数组，例如：[{&quot;label&quot;:&quot;高&quot;,&quot;value&quot;:&quot;high&quot;}]"
+                placeholder='使用 JSON 数组，例如：[{"label":"高","value":"high"}]'
               />
             </el-form-item>
           </el-col>
           <el-col :span="24">
             <el-form-item label="参数介绍">
-              <el-input
-                v-model="form.description"
-                type="textarea"
-                :rows="2"
-                placeholder="请输入参数介绍"
-              />
+              <el-input v-model="form.description" type="textarea" :rows="2" placeholder="请输入参数介绍" />
             </el-form-item>
           </el-col>
           <el-col :span="24">
             <el-form-item label="不可编辑原因">
-              <el-input
-                v-model="form.editableReason"
-                placeholder="参数不可编辑时展示"
-              />
+              <el-input v-model="form.editableReason" placeholder="参数不可编辑时展示" />
             </el-form-item>
           </el-col>
         </el-row>
       </el-form>
       <template #footer>
-        <el-button @click="dialogVisible = false">
-          取消
-        </el-button>
-        <el-button
-          type="primary"
-          :loading="submitLoading"
-          @click="handleSubmit"
-        >
-          保存
-        </el-button>
+        <el-button @click="dialogVisible = false"> 取消 </el-button>
+        <el-button type="primary" :loading="submitLoading" @click="handleSubmit"> 保存 </el-button>
       </template>
     </el-dialog>
   </div>
@@ -675,13 +435,13 @@ const optionSourceOptions: Array<{ label: string; value: ConfigOptionSource }> =
 const filteredConfigs = computed(() => {
   const keyword = query.keyword.trim().toLowerCase();
   return configList.value.filter((config) => {
-    const keywordMatched = !keyword
-      || [
-        config.configName,
-        config.configKey,
-        config.description,
-        config.remark,
-      ].some((value) => String(value || '').toLowerCase().includes(keyword));
+    const keywordMatched =
+      !keyword ||
+      [config.configName, config.configKey, config.description, config.remark].some((value) =>
+        String(value || '')
+          .toLowerCase()
+          .includes(keyword),
+      );
     const valueTypeMatched = !query.valueType || config.valueType === query.valueType;
     const statusMatched = query.status === undefined || config.status === query.status;
     return keywordMatched && valueTypeMatched && statusMatched;
@@ -706,12 +466,10 @@ const operationPanelDomains = computed(() => {
   if (selectedDomainCode.value) {
     return [selectedDomainCode.value];
   }
-  const configuredCodes = new Set(configList.value
-    .map((config) => config.domainCode)
-    .filter((code): code is string => Boolean(code)));
-  const domainCodes = flatDomains.value
-    .map((domain) => domain.domainCode)
-    .filter((code) => configuredCodes.has(code));
+  const configuredCodes = new Set(
+    configList.value.map((config) => config.domainCode).filter((code): code is string => Boolean(code)),
+  );
+  const domainCodes = flatDomains.value.map((domain) => domain.domainCode).filter((code) => configuredCodes.has(code));
   const sortedCodes = [
     ...domainCodes.filter((code) => code !== 'COMMON'),
     ...domainCodes.filter((code) => code === 'COMMON'),
@@ -755,16 +513,18 @@ const rules: FormRules = {
   configGroup: [{ required: true, message: '请选择参数分类', trigger: 'change' }],
   domainCode: [{ required: true, message: '请选择业务域', trigger: 'change' }],
   valueType: [{ required: true, message: '请选择展示类型', trigger: 'change' }],
-  dictType: [{
-    validator: (_rule, value, callback) => {
-      if (usesOptions(form.valueType) && form.optionSource === 'DICT' && !value) {
-        callback(new Error('请选择绑定字典'));
-        return;
-      }
-      callback();
+  dictType: [
+    {
+      validator: (_rule, value, callback) => {
+        if (usesOptions(form.valueType) && form.optionSource === 'DICT' && !value) {
+          callback(new Error('请选择绑定字典'));
+          return;
+        }
+        callback();
+      },
+      trigger: 'change',
     },
-    trigger: 'change',
-  }],
+  ],
 };
 
 onMounted(() => {
@@ -889,7 +649,7 @@ async function handleSubmit() {
       ...form,
       configGroup: form.configGroup || 'system',
       type: form.type || String(form.configGroup || 'system').toUpperCase(),
-      optionSource: usesOptions(form.valueType) ? (form.optionSource || 'CUSTOM') : 'CUSTOM',
+      optionSource: usesOptions(form.valueType) ? form.optionSource || 'CUSTOM' : 'CUSTOM',
       dictType: usesOptions(form.valueType) && form.optionSource === 'DICT' ? form.dictType : '',
       options: usesOptions(form.valueType) && form.optionSource !== 'DICT' ? form.options : '',
       description: form.description,
@@ -934,10 +694,7 @@ function resetForm(source?: Partial<SysConfig>) {
 }
 
 function flattenDomains(domains: DomainItem[]): DomainItem[] {
-  return domains.flatMap((domain) => [
-    domain,
-    ...flattenDomains(domain.children || []),
-  ]);
+  return domains.flatMap((domain) => [domain, ...flattenDomains(domain.children || [])]);
 }
 
 function firstDomainCode() {
@@ -996,9 +753,7 @@ function displayOptions(config?: SysConfig) {
     if (!Array.isArray(parsed)) {
       return config.options;
     }
-    return parsed
-      .map((item) => `${item.label || item.value}: ${item.value}`)
-      .join('，') || '-';
+    return parsed.map((item) => `${item.label || item.value}: ${item.value}`).join('，') || '-';
   } catch {
     return config.options;
   }

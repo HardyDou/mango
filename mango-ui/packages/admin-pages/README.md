@@ -1,10 +1,10 @@
 # @mango/admin-pages
 
-`@mango/admin-pages` 是 Mango 管理后台的本地页面注册表。菜单从后端返回 `moduleCode` 和 `component` 后，Admin Shell 通过这个包找到对应 Vue 页面并渲染。
+`@mango/admin-pages` 是 Mango 管理后台的默认页面组装包。菜单从后端返回 `moduleCode` 和 `component` 后，Admin Shell 通过共享的扩展契约找到对应 Vue 页面并渲染。
 
 ## 1. 概览
 
-这个包属于 `admin-shell` 配套能力，不是业务页面组件库。业务模块要把自己的管理页面接入 Mango Admin 时，通常写一个 `admin-pages` 子入口，并调用这里的 `registerModulePages()`。
+这个包属于 `admin-shell` 配套能力，不是业务页面组件库。页面注册表、功能集合和通知 provider 的唯一实现位于 FE1 `@mango/admin-extension`；本包负责默认系统页面组装，并为已发布消费者保留旧子路径的同实例 re-export。
 
 ## 2. 功能清单
 
@@ -27,7 +27,7 @@
 业务前端包通常提供一个 `admin-pages` 子入口：
 
 ```ts
-import { registerModulePages } from '@mango/admin-pages/core';
+import { registerModulePages } from '@mango/admin-extension/core';
 
 let registered = false;
 
@@ -54,6 +54,8 @@ registerExampleAdminPages();
 ```
 
 后端菜单的 `component` 可以写成 `@/views/system/dict/index.vue`、`views/system/dict/index.vue` 或 `system/dict/index`。注册表会归一化为 `system/dict/index`。
+
+现有仓外代码可以继续从 `@mango/admin-pages/core`、`features` 和 `notice` 导入；新建的领域包使用 `@mango/admin-extension` 的对应子路径。兼容子路径保留到下一个主版本，并只在仓外消费者迁移和发布说明完成后删除。
 
 ## 4. 配置说明
 
@@ -124,8 +126,8 @@ registerExampleAdminPages();
 
 ## 8. 快速开始
 
-1. 在业务前端包中新增 `admin-pages` 子入口。
-2. 调用 `registerModulePages()` 注册页面 key。
+1. 在业务前端包中新增页面 registrar 入口。
+2. 从 `@mango/admin-extension/core` 导入并调用 `registerModulePages()` 注册页面 key。
 3. 确保后端菜单 `moduleCode` 和 `component` 能匹配注册项。
 4. 在 Shell 启动时调用业务包注册函数。
 5. 打开菜单时，Shell 会用 `getPageLoader()` 加载页面。
@@ -147,10 +149,14 @@ registerExampleAdminPages();
 ## 10. 相关文档
 
 - [Admin Shell README](../admin-shell/README.md)
+- [Admin Extension README](../admin-extension/README.md)
 - [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)
 
 ## 11. 变更影响记录
 
+- Issue #805 将页面注册表、功能集合和通知 provider 的实现下沉到 `@mango/admin-extension`；
+  `@mango/admin-pages/core|features|notice` 继续 re-export 同一实例，现有仓外 import 和页面 key 不变。新建 FE2 包改为依赖 FE1
+  扩展契约，避免形成 `admin-pages -> system -> file -> admin-pages` 运行时环。
 - `@mango/admin-pages@1.0.20` 向前发布当前页面注册实现和完整 README，不回退
   `demo/components/SearchPanelView` 开发中心页面描述；运行时行为与 `1.0.19` 一致。
 - v2026.07.11-npm-lock-sync-release 新增开发中心搜索面板页面描述：`demo/components/SearchPanelView` 对应
