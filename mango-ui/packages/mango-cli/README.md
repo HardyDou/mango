@@ -300,7 +300,7 @@ mango release repair \
   --authorize
 ```
 
-`plan` 汇总上次成功发布以来的全部未发布 Changesets，生成版本、依赖顺序、CLI 矩阵和 Release Notes 摘要，并把用于影响计算的源码 commit、Git tree 与完整文件清单写入计划摘要；Release PR 不允许人工维护包列表。最终 Release-only HEAD 校验会从成功发布 baseline 到该源码快照重算影响，只允许源码快照之后追加机器版本投影，并继续核对最终包版本、依赖、CLI 矩阵、Release Notes 与 lockfile；源码快照漂移、文件清单不一致或混入新的普通源码都会停止。发布人仍必须按 `.changeset/release-notes-template.md` 补齐完整 PR 到分类/制品/业务适配映射、业务影响、升级估价、升级步骤、验证和回退；`prepare` 会拒绝空章节、占位符和缺失估价字段。首次接入 Changesets 时，只允许使用仓库登记的一次性 `legacy-reconciliation.json` 对账，首次发布收尾后删除该入口。
+`plan` 汇总上次成功发布以来的全部未发布 Changesets，生成版本、依赖顺序、CLI 矩阵和 Release Notes 摘要，并把用于影响计算的源码 commit、Git tree 与完整文件清单写入计划摘要；Release PR 不允许人工维护包列表。最终 Release-only HEAD 校验会从成功发布 baseline 到该源码快照重算影响，只允许源码快照之后追加机器版本投影，并继续核对最终包版本、依赖、CLI 矩阵、Release Notes 与 lockfile；源码快照漂移、文件清单不一致或混入新的普通源码都会停止。本地 `release:local-check` 使用与 Runner 相同的 Release-only 分类：机器投影执行 `release:pr-check`，不会把版本闭包重复当作普通源码 Changeset；混入源码时仍执行普通 Changeset 和计划检查。发布人仍必须按 `.changeset/release-notes-template.md` 补齐完整 PR 到分类/制品/业务适配映射、业务影响、升级估价、升级步骤、验证和回退；`prepare` 会拒绝空章节、占位符和缺失估价字段。首次接入 Changesets 时，只允许使用仓库登记的一次性 `legacy-reconciliation.json` 对账，首次发布收尾后删除该入口。
 
 Git 影响命中 `mango/**` 生产源码时，`plan` 还要求显式 `--maven-version <version>`，固定选择 all-non-app reactor 和同版本 `mango-docs-bundle`，并自动把 CLI 纳入版本矩阵；没有 Maven 源码影响时传入 Maven 版本会失败，当前 npm-only 批次不会误发 Maven。
 
