@@ -2,10 +2,16 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import {
+  businessCapabilityReadmes,
+  resolveReadmeAuditScope
+} from './lib/readme-audit-scope.mjs';
 
-const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const args = process.argv.slice(2);
 const selfTest = args.includes('--self-test');
+const scriptPath = fileURLToPath(import.meta.url);
+const scope = resolveScope();
+const root = scope.root;
 
 const requiredSectionGroups = [
   { name: '概览', anyOf: ['概览'] },
@@ -42,13 +48,11 @@ const managementViewSectionGroups = [
   { name: '相关文档', anyOf: ['相关文档'] }
 ];
 
-const moduleRoots = [
-  'mango/mango-platform',
-  'mango/mango-infra',
-  'mango-ui/packages'
-];
+const moduleRoots = scope.kind === 'mango-source'
+  ? ['mango/mango-platform', 'mango/mango-infra', 'mango-ui/packages']
+  : [scope.paths.backend, `${scope.paths.frontend}/packages`];
 
-const topLevelReadmes = [
+const sourceTopLevelReadmes = [
   'mango/mango-admin-starter/README.md',
   'mango/mango-app/README.md',
   'mango/mango-common/README.md',
@@ -61,6 +65,11 @@ const topLevelReadmes = [
   'mango-business-starter/topologies/microservice/README.md',
   'mango-business-starter/topologies/monolith/README.md'
 ];
+
+const topLevelReadmes = scope.kind === 'mango-source' ? sourceTopLevelReadmes : [];
+const frontendPackagesRoot = scope.kind === 'mango-source'
+  ? 'mango-ui/packages'
+  : `${scope.paths.frontend}/packages`;
 
 const ignoredDirs = new Set(['node_modules', 'target', 'dist', 'templates']);
 const ignoredReadmePathSegments = [
@@ -106,7 +115,7 @@ function priorityFor(readmePath) {
   ) {
     return 'A';
   }
-  if (readmePath.startsWith('mango/mango-platform') || readmePath.startsWith('mango/mango-infra') || readmePath.startsWith('mango-ui/packages')) {
+  if (moduleRoots.some((moduleRoot) => readmePath.startsWith(`${moduleRoot}/`))) {
     return 'B';
   }
   return 'C';
@@ -188,7 +197,7 @@ function anchorSlug(heading) {
 }
 
 function packageScriptExists(packageName, scriptName) {
-  const packagesRoot = path.join(root, 'mango-ui/packages');
+  const packagesRoot = path.join(root, frontendPackagesRoot);
   if (!fs.existsSync(packagesRoot)) {
     return true;
   }
@@ -220,6 +229,9 @@ function packageScriptIssues(text) {
 }
 
 function requiredSectionGroupsFor(readmePath) {
+  if (scope.kind === 'business-consumer') {
+    return [];
+  }
   if (isDetailedFrontendEntryReadme(readmePath)) {
     return frontendEntrySectionGroups;
   }
@@ -240,17 +252,20 @@ function docTypeFor(readmePath) {
 }
 
 function isDetailedFrontendEntryReadme(readmePath) {
-  return readmePath.startsWith('mango-ui/packages/') && readmePath.endsWith('/src/components/README.md');
+  return readmePath.startsWith(`${frontendPackagesRoot}/`) && readmePath.endsWith('/src/components/README.md');
 }
 
 function isManagementViewReadme(readmePath) {
-  return readmePath.startsWith('mango-ui/packages/') && readmePath.endsWith('/src/views/README.md');
+  return readmePath.startsWith(`${frontendPackagesRoot}/`) && readmePath.endsWith('/src/views/README.md');
 }
 
 function auditText(readmePath, text) {
   const missing = requiredSectionGroupsFor(readmePath)
     .filter((group) => !group.anyOf.some((section) => hasSection(text, section)))
     .map((group) => group.name);
+  if (scope.kind === 'business-consumer' && isEffectivelyEmpty(text)) {
+    missing.push('README content');
+  }
   const hasPlaceholder = placeholderPattern.test(text);
   const commandFormatIssues = [...text.matchAll(backtickedCommandPattern)].map((match) => match[0]);
   const missingPackageScripts = packageScriptIssues(text);
@@ -270,7 +285,7 @@ function auditText(readmePath, text) {
       href.startsWith('rules/') ||
       href.includes('mango-docs/');
   });
-  const missingRelatedLinks = relatedLinks.length === 0;
+  const missingRelatedLinks = scope.kind === 'mango-source' && relatedLinks.length === 0;
   const brokenLinks = markdownLinks(text).filter((href) => !linkTargetExists(readmePath, href));
   const sourceRegistrationIssues = registrationIssues(readmePath, text);
   return {
@@ -337,6 +352,9 @@ function isEffectivelyEmpty(text) {
 
 function registrationIssues(readmePath, text) {
   const issues = [];
+  if (scope.kind === 'business-consumer') {
+    return issues;
+  }
   if (docTypeFor(readmePath) === 'management-view') {
     const capabilities = extractSection(text, '功能清单');
     const pageEntrypoints = extractSection(text, '页面入口');
@@ -353,7 +371,7 @@ function registrationIssues(readmePath, text) {
     return issues;
   }
 
-  if (!readmePath.startsWith('mango/mango-platform/') && !readmePath.startsWith('mango/mango-infra/')) {
+  if (!isBackendReadme(readmePath)) {
     return issues;
   }
 
@@ -383,11 +401,21 @@ function registrationIssues(readmePath, text) {
 }
 
 function moduleRootForBackendReadme(readmePath) {
+  if (scope.kind === 'business-consumer') {
+    return isBackendReadme(readmePath) ? path.posix.dirname(readmePath) : null;
+  }
   const segments = readmePath.split('/');
   if (segments.length < 4 || segments[3] !== 'README.md') {
     return null;
   }
   return segments.slice(0, 3).join('/');
+}
+
+function isBackendReadme(readmePath) {
+  if (scope.kind === 'mango-source') {
+    return readmePath.startsWith('mango/mango-platform/') || readmePath.startsWith('mango/mango-infra/');
+  }
+  return readmePath.startsWith(`${scope.paths.backend}/`) && readmePath.endsWith('/README.md');
 }
 
 function collectModuleSource(moduleRoot) {
@@ -579,13 +607,16 @@ if (selfTest) {
 }
 
 function managedModuleReadmes() {
+  if (scope.kind === 'business-consumer') {
+    return businessCapabilityReadmes(scope).moduleReadmes;
+  }
   const readmes = new Set(topLevelReadmes);
   for (const moduleRoot of moduleRoots) {
     if (!fs.existsSync(path.join(root, moduleRoot))) {
       continue;
     }
     for (const entry of fs.readdirSync(path.join(root, moduleRoot), { withFileTypes: true })) {
-      if (entry.isDirectory() && !ignoredDirs.has(entry.name)) {
+      if (scope.kind === 'mango-source' && entry.isDirectory() && !ignoredDirs.has(entry.name)) {
         readmes.add(path.join(moduleRoot, entry.name, 'README.md'));
       }
     }
@@ -593,10 +624,27 @@ function managedModuleReadmes() {
   for (const discovered of moduleRoots.flatMap((moduleRoot) => walk(path.join(root, moduleRoot)))) {
     readmes.add(discovered);
   }
-  return [...readmes].sort();
+  const result = [...readmes].sort();
+  return result;
 }
 
-const readmes = managedModuleReadmes();
+function resolveScope() {
+  try {
+    return resolveReadmeAuditScope({ argv: args, scriptPath });
+  } catch (error) {
+    console.error(`Module README audit scope failed: ${error.message}`);
+    process.exit(1);
+  }
+}
+
+let readmes;
+try {
+  readmes = managedModuleReadmes();
+} catch (error) {
+  console.error(`Module README audit scope failed: ${error.message}`);
+  process.exit(1);
+}
+console.log(`Module README audit scope: ${scope.kind} ${root}`);
 const rows = readmes.map(auditReadme);
 printRows(rows);
 
