@@ -1,11 +1,17 @@
 #!/usr/bin/env node
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { homedir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { assertReleasePlanShape } from './release-plan-lib.mjs';
-import { inspectStagedMavenRepository, verifyStagedMavenRepository } from './release-maven-lib.mjs';
+import {
+  createCandidateMavenConsumerPom,
+  createCandidateMavenSettings,
+  inspectStagedMavenRepository,
+  verifyStagedMavenRepository,
+} from './release-maven-lib.mjs';
 import {
   archiveFailedPrepare,
   archiveSupersededPrepare,
@@ -288,28 +294,53 @@ function stageMavenRelease(releasePlan, destination) {
 }
 
 function verifyMavenCandidate(descriptor, destination) {
+  const repositoryId = 'mango-release-stage';
   const repository = join(destination, 'maven-repository');
   const localRepository = join(releaseRoot, 'maven-candidate-local-repository');
+  const outputDirectory = join(releaseRoot, 'maven-candidate-resolved-artifacts');
+  const consumerPom = join(releaseRoot, 'maven-candidate-consumer.pom.xml');
+  const candidateSettings = join(releaseRoot, 'maven-candidate-settings.xml');
+  const userSettings = resolve(process.env.MANGO_RELEASE_MAVEN_SETTINGS || join(homedir(), '.m2/settings.xml'));
   mkdirSync(localRepository, { recursive: true });
-  return descriptor.coordinates.map((entry) => {
-    const coordinate = entry.packaging === 'pom' ? `${entry.coordinate}:pom` : entry.coordinate;
+  mkdirSync(outputDirectory, { recursive: true });
+  writeFileSync(
+    consumerPom,
+    createCandidateMavenConsumerPom(descriptor.coordinates, repositoryId, pathToFileURL(repository).href),
+    { mode: 0o600 },
+  );
+  writeFileSync(
+    candidateSettings,
+    createCandidateMavenSettings(existsSync(userSettings) ? readFileSync(userSettings, 'utf8') : '', repositoryId),
+    { mode: 0o600 },
+  );
+  try {
     const startedAt = new Date().toISOString();
     const result = runCaptured(
       'mvn',
       [
         '-q',
         '-U',
-        'org.apache.maven.plugins:maven-dependency-plugin:3.8.1:get',
+        ...(existsSync(userSettings) ? ['-gs', userSettings] : []),
+        '-s',
+        candidateSettings,
+        '-f',
+        consumerPom,
+        'org.apache.maven.plugins:maven-dependency-plugin:3.8.1:copy-dependencies',
         `-Dmaven.repo.local=${localRepository}`,
-        `-DremoteRepositories=mango-release-stage::default::${pathToFileURL(repository).href}`,
-        `-Dartifact=${coordinate}`,
-        '-Dtransitive=false',
+        '-DexcludeTransitive=true',
+        '-Dmdep.useRepositoryLayout=true',
+        `-DoutputDirectory=${outputDirectory}`,
       ],
       repoRoot,
       20 * 60 * 1000,
     );
-    return evidence(result, startedAt, repoRoot);
-  });
+    return [evidence(result, startedAt, repoRoot)];
+  } finally {
+    rmSync(candidateSettings, { force: true });
+    rmSync(consumerPom, { force: true });
+    rmSync(localRepository, { recursive: true, force: true });
+    rmSync(outputDirectory, { recursive: true, force: true });
+  }
 }
 
 function state(status, started, reason) {

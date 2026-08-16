@@ -36,6 +36,7 @@ Status: `PENDING`. The exact Maven `1.0.37`, 24-package npm and CLI `1.0.108` ca
 - Project the unresolved full frontend template's exact CLI development dependency from the machine plan without parsing its placeholders, then reject every other template change against the source snapshot.
 - Use the Runner's trusted Release-only classifier in `release:local-check`, selecting `release:pr-check` for machine projections and retaining ordinary Changeset/plan checks for mixed source changes.
 - Retain high-volume Maven and npm output with an explicit release-command buffer so a healthy `mango release prepare` run is not terminated before its candidate manifest is written.
+- Exclude the sealed local Maven staging repository from user-configured wildcard mirrors and resolve all 188 candidate coordinates through one generated consumer POM, preventing pre-publication lookups from being redirected to the consume registry while removing the per-coordinate Maven process loop.
 - Validate Changeset intent for a mixed Release through the plan's committed source snapshot, leaving final dependency-closure version projections to the independent plan check.
 
 ### Added

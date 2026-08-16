@@ -4,6 +4,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
 import {
+  createCandidateMavenConsumerPom,
+  createCandidateMavenSettings,
   decideMavenCoordinateAction,
   hasMavenReleaseImpact,
   inspectStagedMavenRepository,
@@ -35,6 +37,44 @@ test('staged Maven repository is sealed by exact POM and JAR hashes', () => {
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
+});
+
+test('candidate Maven settings preserve configured mirrors but exclude the sealed file repository', () => {
+  const source = `<?xml version="1.0" encoding="UTF-8"?>
+<settings>
+  <servers>
+    <server><id>private</id><password>must-not-be-copied</password></server>
+  </servers>
+  <mirrors>
+    <mirror>
+      <id>company-group</id>
+      <mirrorOf>*</mirrorOf>
+      <url>https://repo.example.test/maven-public/</url>
+    </mirror>
+  </mirrors>
+</settings>`;
+  const settings = createCandidateMavenSettings(source, 'mango-release-stage');
+  assert.match(settings, /<id>company-group<\/id>/u);
+  assert.match(settings, /<mirrorOf>\*,!mango-release-stage<\/mirrorOf>/u);
+  assert.match(settings, /https:\/\/repo\.example\.test\/maven-public\//u);
+  assert.doesNotMatch(settings, /must-not-be-copied/u);
+  const secondPass = createCandidateMavenSettings(settings, 'mango-release-stage');
+  assert.equal((secondPass.match(/!mango-release-stage/gu) ?? []).length, 1);
+});
+
+test('candidate Maven consumer declares every sealed coordinate in one repository-backed project', () => {
+  const pom = createCandidateMavenConsumerPom(
+    [
+      { coordinate: 'io.mango:mango-bom:1.0.37', packaging: 'pom' },
+      { coordinate: 'io.mango.common:mango-common:1.0.37', packaging: 'jar' },
+    ],
+    'mango-release-stage',
+    'file:///tmp/mango-release-stage/',
+  );
+  assert.match(pom, /<id>mango-release-stage<\/id>/u);
+  assert.match(pom, /<artifactId>mango-bom<\/artifactId>[\s\S]*?<type>pom<\/type>/u);
+  assert.match(pom, /<artifactId>mango-common<\/artifactId>[\s\S]*?<type>jar<\/type>/u);
+  assert.equal((pom.match(/<dependency>/gu) ?? []).length, 2);
 });
 
 test('Maven recovery publishes only when both roles prove absence', () => {
