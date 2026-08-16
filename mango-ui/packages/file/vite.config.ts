@@ -15,7 +15,7 @@ export default defineConfig({
     rollupOptions: {
       external: [
         '@element-plus/icons-vue',
-        '@mango/admin-pages/core',
+        '@mango/admin-extension/core',
         '@mango/common',
         '@mango/common/utils/request',
         'element-plus',

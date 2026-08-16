@@ -1,3 +1,4 @@
+<!-- mango-page-baseline-exception all: 菜单维护编辑层级路由资源树及动态组件配置，不是平铺领域列表或标准短表单弹框。 -->
 <template>
   <div class="menu-container">
     <el-card>
@@ -182,7 +183,7 @@
         </el-form-item>
         <el-form-item label="菜单类型" prop="menuType">
           <el-radio-group v-model="form.menuType">
-            <el-radio v-for="item in menuTypeOptions" :key="item.value" :label="Number(item.value)">
+            <el-radio v-for="item in menuTypeOptions" :key="item.value" :value="Number(item.value)">
               {{ item.label }}
             </el-radio>
           </el-radio-group>
@@ -262,7 +263,7 @@
         </el-form-item>
         <el-form-item label="状态" prop="status">
           <el-radio-group v-model="form.status">
-            <el-radio v-for="item in statusOptions" :key="item.value" :label="Number(item.value)">
+            <el-radio v-for="item in statusOptions" :key="item.value" :value="Number(item.value)">
               {{ item.label }}
             </el-radio>
           </el-radio-group>

@@ -38,15 +38,6 @@
       "expiresAt": "2027-01-18"
     },
     {
-      "from": "@mango/file",
-      "to": "@mango/admin-pages",
-      "reason": "Legacy FE2 registrar consumes the FE3 admin extension implementation pending @mango/admin-extension extraction.",
-      "ownerRole": "Frontend Standards Owner",
-      "adr": "ADR-FE-005",
-      "decisionEvidence": "mango-docs/designs/2026-07-18-frontend-standards-enforcement-design.md",
-      "expiresAt": "2027-01-18"
-    },
-    {
       "from": "@mango/job",
       "to": "@mango/admin-pages",
       "reason": "Legacy FE2 registrar consumes the FE3 admin extension implementation pending @mango/admin-extension extraction.",
@@ -236,96 +227,5 @@
       "expiresAt": "2027-01-18"
     }
   ],
-  "legacySccs": [
-    {
-      "id": "admin-pages-file-system-manifest",
-      "graphKind": "manifest",
-      "members": ["@mango/admin-pages", "@mango/file", "@mango/system"],
-      "edges": [
-        {
-          "from": "@mango/admin-pages",
-          "to": "@mango/system",
-          "kind": "dependencies"
-        },
-        {
-          "from": "@mango/file",
-          "to": "@mango/admin-pages",
-          "kind": "dependencies"
-        },
-        {
-          "from": "@mango/system",
-          "to": "@mango/file",
-          "kind": "peerDependencies"
-        }
-      ],
-      "ownerRole": "Frontend Standards Owner",
-      "adr": "ADR-FE-005",
-      "targetPhase": 2
-    },
-    {
-      "id": "admin-pages-file-system-source-runtime",
-      "graphKind": "source-runtime",
-      "members": ["@mango/admin-pages", "@mango/file", "@mango/system"],
-      "edges": [
-        {
-          "from": "@mango/admin-pages",
-          "to": "@mango/system",
-          "kind": "runtime"
-        },
-        {
-          "from": "@mango/file",
-          "to": "@mango/admin-pages",
-          "kind": "runtime"
-        },
-        {
-          "from": "@mango/system",
-          "to": "@mango/file",
-          "kind": "runtime"
-        }
-      ],
-      "ownerRole": "Frontend Standards Owner",
-      "adr": "ADR-FE-005",
-      "targetPhase": 2
-    },
-    {
-      "id": "admin-pages-file-system-combined",
-      "graphKind": "combined",
-      "members": ["@mango/admin-pages", "@mango/file", "@mango/system"],
-      "edges": [
-        {
-          "from": "@mango/admin-pages",
-          "to": "@mango/system",
-          "kind": "dependencies"
-        },
-        {
-          "from": "@mango/admin-pages",
-          "to": "@mango/system",
-          "kind": "runtime"
-        },
-        {
-          "from": "@mango/file",
-          "to": "@mango/admin-pages",
-          "kind": "dependencies"
-        },
-        {
-          "from": "@mango/file",
-          "to": "@mango/admin-pages",
-          "kind": "runtime"
-        },
-        {
-          "from": "@mango/system",
-          "to": "@mango/file",
-          "kind": "peerDependencies"
-        },
-        {
-          "from": "@mango/system",
-          "to": "@mango/file",
-          "kind": "runtime"
-        }
-      ],
-      "ownerRole": "Frontend Standards Owner",
-      "adr": "ADR-FE-005",
-      "targetPhase": 2
-    }
-  ]
+  "legacySccs": []
 }

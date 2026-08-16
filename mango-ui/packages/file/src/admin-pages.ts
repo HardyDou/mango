@@ -1,4 +1,4 @@
-import { registerModulePages } from '@mango/admin-pages/core';
+import { registerModulePages } from '@mango/admin-extension/core';
 
 let registered = false;
 
@@ -10,9 +10,9 @@ export function registerMangoFileAdminPages() {
   registerModulePages({
     moduleCode: 'mango-file',
     pages: {
-      'file/files/index': () => import('./index').then(m => m.FileView),
-      'file/storage-configs/index': () => import('./index').then(m => m.FileStorageView),
-      'file/settings/index': () => import('./index').then(m => m.FileSettingsView),
+      'file/files/index': () => import('./index').then((m) => m.FileView),
+      'file/storage-configs/index': () => import('./index').then((m) => m.FileStorageView),
+      'file/settings/index': () => import('./index').then((m) => m.FileSettingsView),
     },
   });
 }

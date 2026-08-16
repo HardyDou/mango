@@ -1,7 +1,10 @@
 import assert from 'node:assert/strict';
+import { dirname, resolve } from 'node:path';
 import test from 'node:test';
+import { fileURLToPath } from 'node:url';
 import {
   directPackageImpact,
+  indexPublishedPackages,
   isExactWorkspaceVersion,
   isReleaseImpactFile,
   parseChangeset,
@@ -9,6 +12,8 @@ import {
   topologicalReleaseOrder,
   validateDeclaredReleaseSet,
 } from './release-scope-lib.mjs';
+
+const workspaceRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 
 function packageIndex() {
   return new Map([
@@ -106,4 +111,15 @@ test('direct declarations do not have to duplicate graph-generated dependents', 
     declared: new Set(['@mango/base']),
   });
   assert.deepEqual(errors, []);
+});
+
+test('the complete published Mango package graph has a deterministic release order', () => {
+  const packages = indexPublishedPackages(workspaceRoot);
+  const releases = new Set(packages.keys());
+  const managedVersions = Object.fromEntries([...packages].map(([name, entry]) => [name, entry.packageJson.version]));
+
+  const order = topologicalReleaseOrder(releases, packages, managedVersions);
+
+  assert.equal(order.length, releases.size);
+  assert.deepEqual([...order].sort(), [...releases].sort());
 });

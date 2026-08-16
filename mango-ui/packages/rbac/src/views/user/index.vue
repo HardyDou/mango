@@ -1,3 +1,4 @@
+<!-- mango-page-baseline-exception all: 用户维护联合组织树筛选、角色分配、状态控制和凭据操作，不是单一标准列表与短表单弹框。 -->
 <template>
   <div class="user-container">
     <div class="user-page-layout">
@@ -270,7 +271,7 @@
         </el-form-item>
         <el-form-item label="状态" prop="status">
           <el-radio-group v-model="form.status">
-            <el-radio v-for="item in statusOptions" :key="item.value" :label="Number(item.value)">
+            <el-radio v-for="item in statusOptions" :key="item.value" :value="Number(item.value)">
               {{ item.label }}
             </el-radio>
           </el-radio-group>

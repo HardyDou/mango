@@ -58,6 +58,13 @@ export function registerMangoNoticeAdminPages() {
       },
       routes: [
         {
+          path: '/notice/setting',
+          component: 'notice/setting/index',
+          menuName: '全局设置',
+          menuCode: 'notice:setting',
+          visible: 0,
+        },
+        {
           path: '/notice/site-message',
           component: 'notice/site-message/index',
           menuName: '我的消息（兼容入口）',

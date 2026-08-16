@@ -45,6 +45,8 @@
 
 `@mango/cli@1.0.107` 将 PMO 升级到 `1.3.15`，保持 Maven `1.0.36` 不变，并把生成项目的管理端矩阵更新为 `@mango/job@1.0.27`、`@mango/admin-shell@1.0.60`、`@mango/admin@1.0.66` 与 `@mango/common@1.0.26`。已有项目应应用 CLI 的完整版本矩阵，不要单独替换 Shell 或 Job。
 
+Issue #805 的下一 full 模板候选会显式启用 `mango.event.outbox.enabled=true`，使默认系统事件菜单可直接访问 `/system/events`，并为前端生成真实 `favicon.ico`。这些变更属于 CLI 内置 full 项目模板，不改变本目录的业务模块回退模板；已生成项目需按最终发布 tuple 手工同步对应配置或品牌资产。
+
 `business-pmo/mango-baseline` 是 canonical `mango-pmo` 的构建投影，维护边界遵循
 [文档资产规范](../mango-pmo/rules/06-document-assets.md)。更新 PMO 后执行：
 
@@ -108,19 +110,19 @@ Spring Boot 本地启动由 Mango CLI 从后端 Maven reactor 根 POM 执行 `-p
 
 命令会生成：
 
-| 生成位置                                           | 内容                                                     | 业务开发下一步                                                                            |
-| -------------------------------------------------- | -------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| `backend/modules/<module>/<module>-api`            | API 接口、Command、Query、VO                             | 明确字段、参数校验、返回模型和接口语义                                                    |
-| `backend/modules/<module>/<module>-core`           | Entity、Mapper、Service、Flyway SQL                      | 设计表结构、索引、租户字段、查询条件和业务逻辑                                            |
-| `backend/modules/<module>/<module>-starter`        | Controller、自动配置、module metadata、resource manifest | 接入 Web、菜单权限资源和模块启动                                                          |
-| `backend/modules/<module>/<module>-starter-remote` | Feign client 自动配置                                    | 微服务调用方按需依赖                                                                      |
-| `frontend/packages/<module>-api`                   | 只依赖 `@mango/api-schema` 的业务 API 工厂和 TS 类型     | 按[前端 Monorepo 规范](../mango-pmo/rules/frontend/06-monorepo-architecture.md)维护契约   |
-| `frontend/packages/<module>`                       | 页面注册、API 组合层和 Element Plus CRUD 页面            | 页面只管理交互状态；卸载时取消未完成请求                                                  |
+| 生成位置                                           | 内容                                                     | 业务开发下一步                                                                                                   |
+| -------------------------------------------------- | -------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `backend/modules/<module>/<module>-api`            | API 接口、Command、Query、VO                             | 明确字段、参数校验、返回模型和接口语义                                                                           |
+| `backend/modules/<module>/<module>-core`           | Entity、Mapper、Service、Flyway SQL                      | 设计表结构、索引、租户字段、查询条件和业务逻辑                                                                   |
+| `backend/modules/<module>/<module>-starter`        | Controller、自动配置、module metadata、resource manifest | 接入 Web、菜单权限资源和模块启动                                                                                 |
+| `backend/modules/<module>/<module>-starter-remote` | Feign client 自动配置                                    | 微服务调用方按需依赖                                                                                             |
+| `frontend/packages/<module>-api`                   | 只依赖 `@mango/api-schema` 的业务 API 工厂和 TS 类型     | 按[前端 Monorepo 规范](../mango-pmo/rules/frontend/06-monorepo-architecture.md)维护契约                          |
+| `frontend/packages/<module>`                       | 页面注册、API 组合层和 Element Plus CRUD 页面            | 页面只管理交互状态；卸载时取消未完成请求                                                                         |
 | `frontend/src/main.ts`                             | host 请求实例和业务页面注册                              | 每个 app 创建 `@mango/http-client`，通过 `app.provide(MANGO_HTTP_CLIENT_KEY, client)` 注入；页面注册函数保持无参 |
-| `backend/pom.xml`                                  | 业务模块 Maven module                                    | 确认 `business-modules` managed block 已追加                                              |
-| `backend/app/pom.xml`                              | app 依赖业务 starter                                     | 确认 `business-dependencies` managed block 已追加                                         |
-| `backend/app/src/main/resources/application.yml`   | 业务 Flyway 模块开关                                     | 确认 `<module>.enabled: true` 已追加                                                      |
-| `mango.config.json`                                | `businessModules` 登记                                   | 确认 module、aggregate、displayName 已登记                                                |
+| `backend/pom.xml`                                  | 业务模块 Maven module                                    | 确认 `business-modules` managed block 已追加                                                                     |
+| `backend/app/pom.xml`                              | app 依赖业务 starter                                     | 确认 `business-dependencies` managed block 已追加                                                                |
+| `backend/app/src/main/resources/application.yml`   | 业务 Flyway 模块开关                                     | 确认 `<module>.enabled: true` 已追加                                                                             |
+| `mango.config.json`                                | `businessModules` 登记                                   | 确认 module、aggregate、displayName 已登记                                                                       |
 
 模板变量由 CLI 渲染：
 
@@ -144,18 +146,18 @@ Spring Boot 本地启动由 Mango CLI 从后端 Maven reactor 根 POM 执行 `-p
 
 本目录自身没有运行时配置类。它通过模板变量、生成项目配置和 CLI managed block 生效。
 
-| 配置入口                 | 字段 / Key                               | 默认值                                 | 含义                     | 影响行为                         | 源码入口                            |
-| ------------------------ | ---------------------------------------- | -------------------------------------- | ------------------------ | -------------------------------- | ----------------------------------- |
-| `mango.config.json`      | `businessModules[].module`               | CLI 参数 `<module>`                    | 业务模块 code            | 记录已生成业务模块               | `updateBusinessConfig`              |
-| `mango.config.json`      | `businessModules[].aggregate`            | `--aggregate`                          | 聚合 code                | 记录模块默认聚合                 | `updateBusinessConfig`              |
-| `mango.config.json`      | `businessModules[].package`              | module camel case                      | Java package segment     | 生成模块源码路径和包名           | `toJavaSegment`                     |
-| `mango.config.json`      | `businessModules[].displayName`          | `<Module>模块` 或 `--module-name`      | 模块中文名               | 菜单模块名、OpenAPI tag          | `addBusinessModule`                 |
-| `mango.config.json`      | `businessModules[].aggregateDisplayName` | aggregate Pascal 或 `--aggregate-name` | 聚合中文名               | 页面文案、菜单名、权限名         | `addBusinessModule`                 |
-| `application.yml`        | `<module>.enabled`                       | `true`                                 | 业务 Flyway 模块启用开关 | 后端启动时纳入业务模块 migration | `updateBackendBusinessFlywayConfig` |
-| typed Resource declaration | `appCode`                              | `internal-admin`                       | 菜单权限归属应用         | Bootstrap 资源同步时归入内部管理端 | `META-INF/mango/resources/*.json`   |
-| typed Resource declaration | `moduleCode`                           | `{{moduleKebab}}`                      | 菜单权限归属模块         | 菜单、权限唯一归属               | `META-INF/mango/resources/*.json`   |
-| `module.properties`      | `module-name`                            | `{{moduleKebab}}`                      | Mango 模块名             | 模块资源发现                     | `module.properties.template`        |
-| `module.properties`      | `module-path`                            | `{{moduleKebab}}`                      | Mango 模块路径           | 模块资源发现                     | `module.properties.template`        |
+| 配置入口                   | 字段 / Key                               | 默认值                                 | 含义                     | 影响行为                           | 源码入口                            |
+| -------------------------- | ---------------------------------------- | -------------------------------------- | ------------------------ | ---------------------------------- | ----------------------------------- |
+| `mango.config.json`        | `businessModules[].module`               | CLI 参数 `<module>`                    | 业务模块 code            | 记录已生成业务模块                 | `updateBusinessConfig`              |
+| `mango.config.json`        | `businessModules[].aggregate`            | `--aggregate`                          | 聚合 code                | 记录模块默认聚合                   | `updateBusinessConfig`              |
+| `mango.config.json`        | `businessModules[].package`              | module camel case                      | Java package segment     | 生成模块源码路径和包名             | `toJavaSegment`                     |
+| `mango.config.json`        | `businessModules[].displayName`          | `<Module>模块` 或 `--module-name`      | 模块中文名               | 菜单模块名、OpenAPI tag            | `addBusinessModule`                 |
+| `mango.config.json`        | `businessModules[].aggregateDisplayName` | aggregate Pascal 或 `--aggregate-name` | 聚合中文名               | 页面文案、菜单名、权限名           | `addBusinessModule`                 |
+| `application.yml`          | `<module>.enabled`                       | `true`                                 | 业务 Flyway 模块启用开关 | 后端启动时纳入业务模块 migration   | `updateBackendBusinessFlywayConfig` |
+| typed Resource declaration | `appCode`                                | `internal-admin`                       | 菜单权限归属应用         | Bootstrap 资源同步时归入内部管理端 | `META-INF/mango/resources/*.json`   |
+| typed Resource declaration | `moduleCode`                             | `{{moduleKebab}}`                      | 菜单权限归属模块         | 菜单、权限唯一归属                 | `META-INF/mango/resources/*.json`   |
+| `module.properties`        | `module-name`                            | `{{moduleKebab}}`                      | Mango 模块名             | 模块资源发现                       | `module.properties.template`        |
+| `module.properties`        | `module-path`                            | `{{moduleKebab}}`                      | Mango 模块路径           | 模块资源发现                       | `module.properties.template`        |
 
 生成后把模板默认字段改成真实业务字段，避免只保留 `name` 示例字段交付。
 
@@ -187,11 +189,11 @@ Controller 使用 `BaseCrudController`，类级路径由 module 和 aggregate �
 
 ### 7.2 前端包
 
-| 包             | 导出                                                                                                    | 依赖                                                                                     | 适用场景                     |
-| -------------- | ------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- | ---------------------------- |
-| `<module>-api` | TS 类型、`create<Aggregate>Api(HttpClient)` CRUD 工厂                                                   | `@mango/api-schema`                                                                      | 页面包、其他业务前端调用 API |
-| `<module>`     | `{{moduleCamel}}PageRegistry`、`register{{modulePascal}}Pages()`、API re-export、公开样式入口 | `<module>-api`、`@mango/admin-pages`、`@mango/api-schema`、`@mango/common`、Element Plus | 管理后台页面注册             |
-| admin app      | `createMangoAdminApp()` 调用和业务页面注册                                                              | `@mango/admin`                                                                           | 业务后台入口                 |
+| 包             | 导出                                                                                          | 依赖                                                                                         | 适用场景                     |
+| -------------- | --------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- | ---------------------------- |
+| `<module>-api` | TS 类型、`create<Aggregate>Api(HttpClient)` CRUD 工厂                                         | `@mango/api-schema`                                                                          | 页面包、其他业务前端调用 API |
+| `<module>`     | `{{moduleCamel}}PageRegistry`、`register{{modulePascal}}Pages()`、API re-export、公开样式入口 | `<module>-api`、`@mango/admin-extension`、`@mango/api-schema`、`@mango/common`、Element Plus | 管理后台页面注册             |
+| admin app      | `createMangoAdminApp()` 调用和业务页面注册                                                    | `@mango/admin`                                                                               | 业务后台入口                 |
 
 页面默认使用 `@mango/common` 的 `MangoListPage`、`MangoSearchPanel`、`MangoListPanel` 和 `Pagination` 组织查询、功能区、表格区和分页区，短表单使用 `MangoDialog`，列表上下文中的短详情继续使用 Element Plus Drawer。独立详情页使用 `MangoDetailPage` 和 `MangoPageSection`，独立表单页使用 `MangoFormPage` 和 `MangoPageSection`。搜索区默认启用常用项折叠，业务把高频条件放在前面，展开后显示全部条件。业务交付时应补齐真实字段、权限控制、空状态、错误态和 E2E。
 
@@ -201,12 +203,12 @@ Controller 使用 `BaseCrudController`，类级路径由 module 和 aggregate �
 
 模板生成一个 Flyway migration 起点和一个菜单权限资源清单。
 
-| 类型             | 位置                                                                                                    | 初始化内容                                                                      | 幂等键 / 唯一键                                       | 生效时机                                    | 排查入口                             |
-| ---------------- | ------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- | ----------------------------------------------------- | ------------------------------------------- | ------------------------------------ |
-| Flyway migration | `backend/modules/<module>/<module>-core/src/main/resources/db/migration/<module>/V1__init_<module>.sql` | `<module>_<aggregate>` 业务表示例，字段包含 `id`、`name`、`tenant_id`、审计字段 | 由表主键和 Flyway version 控制                        | 后端应用启动，且业务 Flyway 模块启用        | Flyway history、业务表、后端启动日志 |
-| Flyway 模块开关  | `backend/app/src/main/resources/application.yml`                                                        | `<module>.enabled: true`                                                        | module code                                           | `mango module add` 写入后，下次应用启动生效 | application.yml managed block        |
-| 资源声明         | `<module>-starter/src/main/resources/META-INF/mango/resources/<module>-common-menu.json`              | 模块菜单、聚合列表页、create/view/update/delete 权限                            | declaration id、version、bizKey 和目标模块 | Bootstrap `BOOTSTRAP_REQUIRED` 处理 | 菜单树、权限码、资源同步日志         |
-| 模块元数据       | `<module>-starter/src/main/resources/META-INF/mango/module.properties`                                  | `module-name`、`module-path`                                                    | module name                                           | 模块资源发现阶段                            | 打包产物和模块扫描日志               |
+| 类型             | 位置                                                                                                    | 初始化内容                                                                      | 幂等键 / 唯一键                            | 生效时机                                    | 排查入口                             |
+| ---------------- | ------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- | ------------------------------------------ | ------------------------------------------- | ------------------------------------ |
+| Flyway migration | `backend/modules/<module>/<module>-core/src/main/resources/db/migration/<module>/V1__init_<module>.sql` | `<module>_<aggregate>` 业务表示例，字段包含 `id`、`name`、`tenant_id`、审计字段 | 由表主键和 Flyway version 控制             | 后端应用启动，且业务 Flyway 模块启用        | Flyway history、业务表、后端启动日志 |
+| Flyway 模块开关  | `backend/app/src/main/resources/application.yml`                                                        | `<module>.enabled: true`                                                        | module code                                | `mango module add` 写入后，下次应用启动生效 | application.yml managed block        |
+| 资源声明         | `<module>-starter/src/main/resources/META-INF/mango/resources/<module>-common-menu.json`                | 模块菜单、聚合列表页、create/view/update/delete 权限                            | declaration id、version、bizKey 和目标模块 | Bootstrap `BOOTSTRAP_REQUIRED` 处理         | 菜单树、权限码、资源同步日志         |
+| 模块元数据       | `<module>-starter/src/main/resources/META-INF/mango/module.properties`                                  | `module-name`、`module-path`                                                    | module name                                | 模块资源发现阶段                            | 打包产物和模块扫描日志               |
 
 默认 Entity 继承 `TenantEntity`，默认 SQL 也包含 `tenant_id`。生成后如果业务不使用租户隔离，要明确删除或解释；如果使用租户隔离，要把查询、写入、测试和数据权限补齐。
 
@@ -214,8 +216,8 @@ Controller 使用 `BaseCrudController`，类级路径由 module 和 aggregate �
 
 模板默认资源清单：
 
-| 菜单 / 页面 | component key                              | 权限码                                                                  | 入库来源                 | 默认套餐 / 角色                  | 后端校验入口                               |
-| ----------- | ------------------------------------------ | ----------------------------------------------------------------------- | ------------------------ | -------------------------------- | ------------------------------------------ |
+| 菜单 / 页面 | component key                              | 权限码                                                                  | 入库来源                   | 默认套餐 / 角色                  | 后端校验入口                               |
+| ----------- | ------------------------------------------ | ----------------------------------------------------------------------- | -------------------------- | -------------------------------- | ------------------------------------------ |
 | 模块目录    | 无                                         | 无                                                                      | typed Resource declaration | 由授权模块资源同步和角色授权决定 | 无直接 Controller                          |
 | 聚合管理页  | `{{moduleKebab}}/{{aggregateKebab}}/index` | `{{moduleKebab}}:{{aggregateKebab}}:create`、`view`、`update`、`delete` | typed Resource declaration | 模板不直接授予角色               | `{{modulePascal}}Controller`、业务 Service |
 
@@ -247,19 +249,19 @@ Controller 使用 `BaseCrudController`，类级路径由 module 和 aggregate �
 
 ## 11. 问题排查
 
-| 问题                                           | 原因                                                                                              | 处理方式                                                                                                                      |
-| ---------------------------------------------- | ------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| 生成后菜单打不开                               | 前端页面 key、resource manifest component、注册函数或请求实例注入不一致                           | 检查 `register<Module>Pages()`、host 的 `app.provide(MANGO_HTTP_CLIENT_KEY, client)` 和 component key                          |
-| 后端启动没有建业务表                           | Flyway 模块未启用或 migration 路径不在扫描范围                                                    | 检查 `application.yml` 的 `<module>.enabled: true` 和 migration 路径                                                          |
-| 页面有按钮但权限不生效                         | 模板页面默认没有按钮级权限判断                                                                    | 接入前端权限指令或组件，并在后端接口补权限校验                                                                                |
-| 数据跨租户可见                                 | 模板只提供 `tenant_id` 起点，业务未补查询和写入约束                                               | 检查 `TenantEntity`、当前租户上下文、Mapper 查询和测试数据                                                                    |
-| 微服务调用方依赖了 core                        | 混淆了提供方和调用方依赖                                                                          | 调用方改依赖 `<module>-starter-remote`                                                                                        |
-| 模板校验通过但业务链路失败                     | `check-template.mjs` 只校验模板静态契约                                                           | 生成项目后继续跑 Maven、前端构建、后端启动和 E2E                                                                              |
-| partial PR 报 Mango 上游 SNAPSHOT 找不到       | Runner 本地仓库为空，旧 workflow 直接进入质量阶段                                                 | 升级业务 PMO baseline，确认依赖准备步骤使用 `maven_dependency_projects` 和 `-am install`，质量步骤仍不带 `-am`                |
-| 嵌套静态分析报架构治理属性缺失                 | 旧版 Mango Maven 插件把 `architecture-verification` 带入了 PMD、Checkstyle、SpotBugs 的二次 Maven | 升级到包含治理聚合模块过滤的 Mango Maven 插件；外层 `mvn verify` 继续保留架构门禁                                             |
-| 纯升级 PR 被旧实施计划缺少 `documentType` 阻断 | PMO 合同启用前的历史计划尚未迁移                                                                  | 使用 PMO 1.2.5+，将每份存量文档按路径和当前 SHA-256 登记到 `.mango-pmo-legacy-documents.json`；内容变化后需迁移或重新审批基线 |
-| PR required check 因 Risk / Verification 缺失或旧字段失败 | 业务仓缺少 PR 模板，或模板未随 delivery-assurance 合同升级 | 安装包含 schema revision 5 的 PMO/CLI 补丁版后执行项目内 `mango pmo upgrade` 或 `sync`；已创建 PR 直接编辑正文 |
-| 已生成项目升级模板困难                         | 业务代码已经改过，不能直接覆盖                                                                    | 用 CLI managed block 同步可管理部分，其余人工迁移                                                                             |
+| 问题                                                      | 原因                                                                                              | 处理方式                                                                                                                      |
+| --------------------------------------------------------- | ------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| 生成后菜单打不开                                          | 前端页面 key、resource manifest component、注册函数或请求实例注入不一致                           | 检查 `register<Module>Pages()`、host 的 `app.provide(MANGO_HTTP_CLIENT_KEY, client)` 和 component key                         |
+| 后端启动没有建业务表                                      | Flyway 模块未启用或 migration 路径不在扫描范围                                                    | 检查 `application.yml` 的 `<module>.enabled: true` 和 migration 路径                                                          |
+| 页面有按钮但权限不生效                                    | 模板页面默认没有按钮级权限判断                                                                    | 接入前端权限指令或组件，并在后端接口补权限校验                                                                                |
+| 数据跨租户可见                                            | 模板只提供 `tenant_id` 起点，业务未补查询和写入约束                                               | 检查 `TenantEntity`、当前租户上下文、Mapper 查询和测试数据                                                                    |
+| 微服务调用方依赖了 core                                   | 混淆了提供方和调用方依赖                                                                          | 调用方改依赖 `<module>-starter-remote`                                                                                        |
+| 模板校验通过但业务链路失败                                | `check-template.mjs` 只校验模板静态契约                                                           | 生成项目后继续跑 Maven、前端构建、后端启动和 E2E                                                                              |
+| partial PR 报 Mango 上游 SNAPSHOT 找不到                  | Runner 本地仓库为空，旧 workflow 直接进入质量阶段                                                 | 升级业务 PMO baseline，确认依赖准备步骤使用 `maven_dependency_projects` 和 `-am install`，质量步骤仍不带 `-am`                |
+| 嵌套静态分析报架构治理属性缺失                            | 旧版 Mango Maven 插件把 `architecture-verification` 带入了 PMD、Checkstyle、SpotBugs 的二次 Maven | 升级到包含治理聚合模块过滤的 Mango Maven 插件；外层 `mvn verify` 继续保留架构门禁                                             |
+| 纯升级 PR 被旧实施计划缺少 `documentType` 阻断            | PMO 合同启用前的历史计划尚未迁移                                                                  | 使用 PMO 1.2.5+，将每份存量文档按路径和当前 SHA-256 登记到 `.mango-pmo-legacy-documents.json`；内容变化后需迁移或重新审批基线 |
+| PR required check 因 Risk / Verification 缺失或旧字段失败 | 业务仓缺少 PR 模板，或模板未随 delivery-assurance 合同升级                                        | 安装包含 schema revision 5 的 PMO/CLI 补丁版后执行项目内 `mango pmo upgrade` 或 `sync`；已创建 PR 直接编辑正文                |
+| 已生成项目升级模板困难                                    | 业务代码已经改过，不能直接覆盖                                                                    | 用 CLI managed block 同步可管理部分，其余人工迁移                                                                             |
 
 ## 12. 相关文档
 

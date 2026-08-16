@@ -1,28 +1,13 @@
+<!-- mango-page-baseline-exception all: 行政区域维护以层级树和父子区域联动为核心，不是平铺领域列表或标准短表单弹框。 -->
 <template>
   <div class="area-container">
     <el-card>
-      <el-breadcrumb
-        class="area-breadcrumb"
-        separator="/"
-      >
+      <el-breadcrumb class="area-breadcrumb" separator="/">
         <el-breadcrumb-item>
-          <el-button
-            link
-            type="primary"
-            @click="loadRoot"
-          >
-            全国
-          </el-button>
+          <el-button link type="primary" @click="loadRoot"> 全国 </el-button>
         </el-breadcrumb-item>
-        <el-breadcrumb-item
-          v-for="item in pathStack"
-          :key="item.id"
-        >
-          <el-button
-            link
-            type="primary"
-            @click="loadChildren(item, true)"
-          >
+        <el-breadcrumb-item v-for="item in pathStack" :key="item.id">
+          <el-button link type="primary" @click="loadChildren(item, true)">
             {{ item.name }}
           </el-button>
         </el-breadcrumb-item>
@@ -33,90 +18,33 @@
           <span class="current-level">当前层级：{{ currentLevelLabel }}</span>
         </div>
         <div class="toolbar-right">
-          <el-button @click="loadRoot">
-            返回省级
-          </el-button>
-          <el-button
-            type="primary"
-            @click="handleAdd"
-          >
-            新增区划
-          </el-button>
+          <el-button @click="loadRoot"> 返回省级 </el-button>
+          <el-button type="primary" @click="handleAdd"> 新增区划 </el-button>
         </div>
       </div>
 
-      <el-table
-        v-loading="loading"
-        :data="tableData"
-        stripe
-        row-key="id"
-      >
-        <el-table-column
-          prop="name"
-          label="区划名称"
-          min-width="160"
-        />
-        <el-table-column
-          prop="adcode"
-          label="区划编码"
-          width="130"
-        />
-        <el-table-column
-          prop="areaType"
-          label="层级"
-          width="110"
-        >
+      <el-table v-loading="loading" :data="tableData" stripe row-key="id">
+        <el-table-column prop="name" label="区划名称" min-width="160" />
+        <el-table-column prop="adcode" label="区划编码" width="130" />
+        <el-table-column prop="areaType" label="层级" width="110">
           <template #default="{ row }">
             {{ areaTypeLabel(row.areaType) }}
           </template>
         </el-table-column>
-        <el-table-column
-          prop="cityCode"
-          label="城市编码"
-          width="110"
-        />
-        <el-table-column
-          prop="location"
-          label="经纬度"
-          min-width="150"
-          show-overflow-tooltip
-        />
-        <el-table-column
-          prop="hot"
-          label="热门"
-          width="90"
-        >
+        <el-table-column prop="cityCode" label="城市编码" width="110" />
+        <el-table-column prop="location" label="经纬度" min-width="150" show-overflow-tooltip />
+        <el-table-column prop="hot" label="热门" width="90">
           <template #default="{ row }">
-            <DictTag
-              dict-code="sys_yes_no"
-              :value="row.hot"
-              size="small"
-            />
+            <DictTag dict-code="sys_yes_no" :value="row.hot" size="small" />
           </template>
         </el-table-column>
-        <el-table-column
-          prop="areaStatus"
-          label="状态"
-          width="90"
-        >
+        <el-table-column prop="areaStatus" label="状态" width="90">
           <template #default="{ row }">
-            <DictTag
-              dict-code="sys_normal_disable"
-              :value="row.areaStatus"
-              size="small"
-            />
+            <DictTag dict-code="sys_normal_disable" :value="row.areaStatus" size="small" />
           </template>
         </el-table-column>
-        <el-table-column
-          prop="areaSort"
-          label="排序"
-          width="90"
-        />
-        <el-table-column
-          label="操作"
-          width="230"
-          fixed="right"
-        >
+        <el-table-column prop="areaSort" label="排序" width="90" />
+        <el-table-column label="操作" width="230" fixed="right">
           <template #default="{ row }">
             <el-button
               link
@@ -127,141 +55,58 @@
             >
               下级
             </el-button>
-            <el-button
-              link
-              type="primary"
-              size="small"
-              @click="handleEdit(row)"
-            >
-              编辑
-            </el-button>
-            <el-button
-              link
-              type="danger"
-              size="small"
-              @click="handleDelete(row)"
-            >
-              删除
-            </el-button>
+            <el-button link type="primary" size="small" @click="handleEdit(row)"> 编辑 </el-button>
+            <el-button link type="danger" size="small" @click="handleDelete(row)"> 删除 </el-button>
           </template>
         </el-table-column>
       </el-table>
     </el-card>
 
-    <el-dialog
-      v-model="dialogVisible"
-      :title="form.id ? '编辑区划' : '新增区划'"
-      width="620px"
-    >
-      <el-form
-        ref="formRef"
-        :model="form"
-        :rules="rules"
-        label-width="110px"
-      >
+    <el-dialog v-model="dialogVisible" :title="form.id ? '编辑区划' : '新增区划'" width="620px">
+      <el-form ref="formRef" :model="form" :rules="rules" label-width="110px">
         <el-form-item label="上级区划">
-          <el-input
-            :model-value="parentLabel"
-            disabled
-          />
+          <el-input :model-value="parentLabel" disabled />
         </el-form-item>
-        <el-form-item
-          label="区划名称"
-          prop="name"
-        >
-          <el-input
-            v-model="form.name"
-            placeholder="请输入区划名称"
-          />
+        <el-form-item label="区划名称" prop="name">
+          <el-input v-model="form.name" placeholder="请输入区划名称" />
         </el-form-item>
-        <el-form-item
-          label="区划编码"
-          prop="adcode"
-        >
-          <el-input-number
-            v-model="form.adcode"
-            :min="0"
-            :controls="false"
-            class="full-input"
-          />
+        <el-form-item label="区划编码" prop="adcode">
+          <el-input-number v-model="form.adcode" :min="0" :controls="false" class="full-input" />
         </el-form-item>
-        <el-form-item
-          label="层级"
-          prop="areaType"
-        >
-          <el-select
-            v-model="form.areaType"
-            placeholder="请选择层级"
-          >
-            <el-option
-              v-for="item in areaTypeOptions"
-              :key="item.value"
-              :label="item.label"
-              :value="item.value"
-            />
+        <el-form-item label="层级" prop="areaType">
+          <el-select v-model="form.areaType" placeholder="请选择层级">
+            <el-option v-for="item in areaTypeOptions" :key="item.value" :label="item.label" :value="item.value" />
           </el-select>
         </el-form-item>
         <el-form-item label="城市编码">
-          <el-input
-            v-model="form.cityCode"
-            placeholder="请输入城市编码"
-          />
+          <el-input v-model="form.cityCode" placeholder="请输入城市编码" />
         </el-form-item>
         <el-form-item label="首字母">
-          <el-input
-            v-model="form.letter"
-            placeholder="请输入首字母"
-          />
+          <el-input v-model="form.letter" placeholder="请输入首字母" />
         </el-form-item>
         <el-form-item label="经纬度">
-          <el-input
-            v-model="form.location"
-            placeholder="如：116.4074,39.9042"
-          />
+          <el-input v-model="form.location" placeholder="如：116.4074,39.9042" />
         </el-form-item>
         <el-form-item label="热门">
           <el-radio-group v-model="form.hot">
-            <el-radio label="1">
-              是
-            </el-radio>
-            <el-radio label="0">
-              否
-            </el-radio>
+            <el-radio value="1"> 是 </el-radio>
+            <el-radio value="0"> 否 </el-radio>
           </el-radio-group>
         </el-form-item>
-        <el-form-item
-          label="状态"
-          prop="areaStatus"
-        >
+        <el-form-item label="状态" prop="areaStatus">
           <el-radio-group v-model="form.areaStatus">
-            <el-radio
-              v-for="item in statusOptions"
-              :key="item.value"
-              :label="String(item.value)"
-            >
+            <el-radio v-for="item in statusOptions" :key="item.value" :value="String(item.value)">
               {{ item.label }}
             </el-radio>
           </el-radio-group>
         </el-form-item>
         <el-form-item label="排序">
-          <el-input-number
-            v-model="form.areaSort"
-            :min="0"
-            :max="9999"
-          />
+          <el-input-number v-model="form.areaSort" :min="0" :max="9999" />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="dialogVisible = false">
-          取消
-        </el-button>
-        <el-button
-          type="primary"
-          :loading="submitLoading"
-          @click="handleSubmit"
-        >
-          确定
-        </el-button>
+        <el-button @click="dialogVisible = false"> 取消 </el-button>
+        <el-button type="primary" :loading="submitLoading" @click="handleSubmit"> 确定 </el-button>
       </template>
     </el-dialog>
   </div>
@@ -402,11 +247,13 @@ function handleDelete(row: SysArea) {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
     type: 'warning',
-  }).then(async () => {
-    await areaApi.delete(row.id!);
-    ElMessage.success('删除成功');
-    await reloadCurrentLevel();
-  }).catch(() => {});
+  })
+    .then(async () => {
+      await areaApi.delete(row.id!);
+      ElMessage.success('删除成功');
+      await reloadCurrentLevel();
+    })
+    .catch(() => {});
 }
 
 async function reloadCurrentLevel() {

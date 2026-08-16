@@ -74,6 +74,7 @@ import '@mango/admin/style-full.css';
 | 导出                                             | 作用                     |
 | ------------------------------------------------ | ------------------------ |
 | `registerMangoCalendarAdminPages`                | 注册 calendar 页面。     |
+| `registerMangoCmsAdminPages`                     | 注册 CMS 管理页面。      |
 | `registerMangoFileAdminPages`                    | 注册 file 页面。         |
 | `registerMangoJobAdminPages`                     | 注册 job 页面。          |
 | `registerMangoNoticeAdminPages`                  | 注册 notice 页面。       |
@@ -125,6 +126,8 @@ import '@mango/admin/style-full.css';
 
 `@mango/admin` 不会运行时扫描 `node_modules`。Mango CLI 生成的 app 会根据模块清单生成静态 imports、`featureRegistrars` 和样式 imports；手写宿主需要把对应业务 UI 包的 `registerMangoXxxAdminPages()` 放入 `featureRegistrars`，并确保后端菜单存在。业务 UI 包可以在同一个注册函数中返回 `businessDomainCode`、`businessDomainName`、可选 `groupName`、首页 `widgets` 和个人中心 `profileSections`；Shell 会统一完成聚合。未集成该 UI 包时，对应小组件和个人中心扩展入口不会注册。
 
+若 full 宿主只有 CMS 菜单进入 404，检查发布包 `dist/full.js` 是否保留对 `@mango/cms/admin-pages` 的 external import。registrar 被内联时可能同时内联私有页面注册表，造成注册写入和 Shell 读取不在同一个 `@mango/admin-pages` 实例。
+
 **包体过大**
 
 如果只使用 Shell 基础能力，改为直接依赖 `@mango/admin-shell` 和需要的能力包。
@@ -136,6 +139,8 @@ import '@mango/admin/style-full.css';
 - [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)
 
 ## 11. 变更影响记录
+
+- Issue #805 待发布修复会让 `@mango/admin/full` 保留 `@mango/cms/admin-pages` external import，确保 CMS 九个页面与 Admin Shell 共享唯一页面注册表。`full` 子入口、页面 key、CMS API、菜单、权限和租户语义不变；业务项目需使用最终发布计划解析的精确 Admin/CLI tuple，不要单独替换一个包。
 
 - `@mango/admin@1.0.66` 聚合 `@mango/admin-shell@1.0.60`，修复 Shell 与 Common 1.0.26 的发布物兼容问题。默认入口、`full` 子入口、样式、菜单、权限、租户和运行时配置保持不变；按 `@mango/cli@1.0.107` 的完整矩阵升级。
 

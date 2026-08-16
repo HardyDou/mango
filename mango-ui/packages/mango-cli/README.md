@@ -9,7 +9,7 @@
 | 项目          | 值                                                                                                             |
 | ------------- | -------------------------------------------------------------------------------------------------------------- |
 | NPM 包        | `@mango/cli`                                                                                                   |
-| 当前发布版本  | `1.0.95`                                                                                                       |
+| 当前发布版本  | `1.0.107`                                                                                                      |
 | bin 命令      | `mango`、`mango-cli`                                                                                           |
 | 命令入口      | `src/index.mjs`                                                                                                |
 | 发布 registry | 由发布配置或 `MANGO_RELEASE_NPM_PUBLISH_REGISTRY` 注入                                                         |
@@ -71,8 +71,8 @@ CLI 不负责：
 
 ```bash
 npm view @mango/pmo@1.3.8 version --registry "$MANGO_NPM_REGISTRY"
-npm view @mango/cli@1.0.95 version --registry "$MANGO_NPM_REGISTRY"
-npm install -g @mango/cli@1.0.95 --registry "$MANGO_NPM_REGISTRY"
+npm view @mango/cli@1.0.107 version --registry "$MANGO_NPM_REGISTRY"
+npm install -g @mango/cli@1.0.107 --registry "$MANGO_NPM_REGISTRY"
 ```
 
 两个查询都返回精确版本后，该批次才可供业务项目安装。PMO 升级会整体同步 baseline、Agent 入口和 `.agents/skills`，不需要逐个安装 Skill。
@@ -558,6 +558,12 @@ Issue #690 覆盖 CLI、Maven plugin、Bootstrap/runtime、Resource、BSQL、Boo
 ### Issue #722 待发布影响
 
 业务项目不需要修改生成模板或在 `main.ts` 添加 `crypto.randomUUID` polyfill。修复由 `@mango/common` 和 Admin Shell 启动链提供；CLI 后续发布时必须把 `common -> admin-shell -> admin` 的匹配版本写入同一 `release-versions.json` 前端矩阵，业务项目整体升级该矩阵即可。该修复不改变 CLI 命令、模板结构、后端 Maven、菜单、权限或租户配置。
+
+### Issue #805 待发布影响
+
+full preset 会在生成的 `application.yml` 中显式启用 `mango.event.outbox.enabled=true`，使默认可见的系统事件菜单与 `/system/events` Controller 装配状态一致；同时生成真实 `favicon.ico`，并将 CLI README、生成 README 与 `release-versions.json` 的 CLI/PMO tuple 纳入自检。新建 full 项目不需额外启动参数。
+
+已有项目不会被 `mango init` 自动改写；若展示系统事件菜单，需在已有配置中显式启用该开关并确认 KV Outbox 存储可用。最终升级应使用发布计划解析的完整精确 tuple，不要把当前 `1.0.107` 与未发布候选源码混用。发布候选门禁会在安装前检查 Admin full 是否保留 CMS registrar external import，发布后还需用纯消费仓和全新缓存完成 full + monolith 运行验收。
 
 ### 1.0.107 发布影响
 

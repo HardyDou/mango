@@ -1,4 +1,4 @@
-import { registerModulePages } from '@mango/admin-pages/core';
+import { registerModulePages } from '@mango/admin-extension/core';
 
 export const {{moduleCamel}}PageRegistry = {
   moduleCode: '{{moduleKebab}}',

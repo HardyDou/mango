@@ -61,6 +61,7 @@ const DOCS_BUNDLE_ARTIFACT_ID = 'mango-docs-bundle';
 const defaultVersions = {
   mangoBackend: releaseVersions.maven?.mangoBackend || '1.0.0-SNAPSHOT',
   mangoAdmin: readReleasedMangoPackageVersion('admin', '1.0.11'),
+  mangoAdminExtension: readReleasedMangoPackageVersion('admin-extension', '1.0.0'),
   mangoAdminPages: readReleasedMangoPackageVersion('admin-pages', '1.0.5'),
   mangoAdminShell: readReleasedMangoPackageVersion('admin-shell', '1.0.10'),
   mangoAppRuntime: readReleasedMangoPackageVersion('app-runtime', '1.0.2'),
@@ -569,6 +570,7 @@ function buildVariables(options) {
     frontendVersions,
     mangoBackendVersion: options.mangoVersion,
     mangoAdminVersion: defaultVersions.mangoAdmin,
+    mangoAdminExtensionVersion: defaultVersions.mangoAdminExtension,
     mangoAdminPagesVersion: defaultVersions.mangoAdminPages,
     mangoAdminShellVersion: defaultVersions.mangoAdminShell,
     mangoAppRuntimeVersion: defaultVersions.mangoAppRuntime,

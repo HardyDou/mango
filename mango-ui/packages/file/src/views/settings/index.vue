@@ -182,8 +182,8 @@
             <el-col :xs="24" :md="12">
               <el-form-item label="文件访问方式">
                 <el-radio-group v-model="form.accessMode">
-                  <el-radio-button label="PROXY">Java代理</el-radio-button>
-                  <el-radio-button label="DIRECT">存储直连</el-radio-button>
+                  <el-radio-button value="PROXY">Java代理</el-radio-button>
+                  <el-radio-button value="DIRECT">存储直连</el-radio-button>
                 </el-radio-group>
               </el-form-item>
             </el-col>

@@ -30,6 +30,7 @@
 `admin-pages`：
 
 - 从 `@mango/file` 的 `admin-pages` 子入口导入 `registerMangoFileAdminPages()`。
+- 包内 registrar 通过 FE1 `@mango/admin-extension/core` 写入共享页面注册表；公开调用方式不变。
 - 注册模块码是 `mango-file`。
 - 页面 key 是 `file/files/index`、`file/storage-configs/index`、`file/settings/index`。
 
@@ -291,6 +292,8 @@ import { FilePreviewPanel } from '@mango/file';
 
 ## 12. 变更影响记录
 
+- Issue #805 将文件管理页 registrar 的内部依赖从 FE3 `@mango/admin-pages/core` 迁移到 FE1
+  `@mango/admin-extension/core`，解除发布闭包循环。`registerMangoFileAdminPages()`、页面 key、文件 API、权限和组件用法不变。
 - `@mango/file@1.0.31` 发布 `FilePreviewPanel.fitContainer` 容器填充模式，并把图片预览由点击 `ElImage` 再打开覆盖层，调整为默认直接展示无蒙层的内嵌
   Element Plus Image Viewer。缩放、旋转、适应模式、原始尺寸和拖拽能力保持使用 Element Plus 原生实现，Viewer 只占用
   `preview-stage`，并随 `fit-container` 和外层弹框尺寸变化。该 prop 默认关闭；普通流式页面和现有 CSS 变量入口保持兼容，

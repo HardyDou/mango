@@ -7,7 +7,7 @@
     :layout="layout"
     :background="background"
     :pager-count="pagerCount"
-    :small="small"
+    :size="small ? 'small' : 'default'"
     :disabled="disabled"
     @update:current-page="handleCurrentPageUpdate"
     @update:page-size="handlePageSizeUpdate"
@@ -39,7 +39,7 @@ const props = withDefaults(
     pagerCount: 5,
     small: false,
     disabled: false,
-  }
+  },
 );
 
 const emit = defineEmits(['update:page', 'update:limit', 'pagination']);

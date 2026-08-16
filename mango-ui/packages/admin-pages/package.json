@@ -45,6 +45,7 @@
     "package.json"
   ],
   "dependencies": {
+    "@mango/admin-extension": "workspace:1.0.0",
     "@mango/auth": "workspace:1.0.26",
     "@mango/common": "workspace:1.0.26",
     "@mango/rbac": "workspace:1.0.24",

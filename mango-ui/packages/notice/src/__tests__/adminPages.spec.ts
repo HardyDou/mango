@@ -30,6 +30,11 @@ describe('notice admin pages', () => {
             component: 'notice/site-message/index',
             visible: 0,
           }),
+          expect.objectContaining({
+            path: '/notice/setting',
+            component: 'notice/setting/index',
+            visible: 0,
+          }),
         ]),
         pages: expect.objectContaining({
           'notice/inbound/index': expect.any(Function),

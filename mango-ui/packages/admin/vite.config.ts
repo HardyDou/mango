@@ -5,6 +5,7 @@ const externalPackages = [
   '@mango/admin-pages',
   '@mango/auth',
   '@mango/calendar/admin-pages',
+  '@mango/cms/admin-pages',
   '@mango/common',
   '@mango/file/admin-pages',
   '@mango/grid-layout',

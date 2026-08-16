@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
@@ -7,6 +7,7 @@ import { spawnSync } from 'node:child_process';
 import { assertPackedPackageBoundary as assertPackedPackageFiles } from './quality/packed-package-boundary.mjs';
 import { classifyRegistryVersionResult } from './package-consumer-matrix.mjs';
 import { toCanonicalRelativePath } from './release/consumer-tarball-paths.mjs';
+import { readReleaseContracts, verifyPackageTree } from './release-guard-utils.mjs';
 
 const currentFile = fileURLToPath(import.meta.url);
 const uiRoot = resolve(dirname(currentFile), '..');
@@ -32,6 +33,7 @@ const consumerStoreDir = process.env.MANGO_PACKAGE_CONSUMER_STORE_DIR;
 const pnpmCommand = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm';
 const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 const governedPackageManager = readJson(join(uiRoot, 'package.json')).packageManager;
+const releaseContracts = readReleaseContracts(uiRoot);
 
 function shouldUseShellForCommand(command) {
   return process.platform === 'win32' && /\.cmd$/iu.test(command);
@@ -85,6 +87,17 @@ function assertPackedPackageBoundary(tarballPath) {
   const packageJson = readPackedPackageJson(tarballPath);
   const files = listTarballFiles(tarballPath);
   assertPackedPackageFiles(packageJson, files);
+  const contract = releaseContracts[packageJson.name];
+  if (!contract) {
+    return;
+  }
+  const extractionRoot = mkdtempSync(join(tmpdir(), 'mango-candidate-contract-'));
+  try {
+    run('tar', ['-xzf', tarballPath, '-C', extractionRoot]);
+    verifyPackageTree(packageJson.name, join(extractionRoot, 'package'), packageJson, { contract });
+  } finally {
+    rmSync(extractionRoot, { recursive: true, force: true });
+  }
 }
 
 function listPackableMangoPackages() {
@@ -176,7 +189,16 @@ function installCandidateCliRunner(candidateTarballs) {
     ),
   );
   writeFileSync(join(runnerRoot, '.npmrc'), `registry=${registry}\n`);
-  run(pnpmCommand, ['install', `--registry=${registry}`], { cwd: runnerRoot });
+  run(
+    pnpmCommand,
+    [
+      'install',
+      ...(offline ? ['--offline'] : []),
+      ...(consumerStoreDir ? [`--store-dir=${consumerStoreDir}`] : []),
+      `--registry=${registry}`,
+    ],
+    { cwd: runnerRoot },
+  );
   const candidateCli = join(runnerRoot, 'node_modules/@mango/cli/src/index.mjs');
   if (!existsSync(candidateCli)) throw new Error(`Candidate Mango CLI entry not found: ${candidateCli}`);
   return candidateCli;

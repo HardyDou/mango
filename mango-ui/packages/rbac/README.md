@@ -6,26 +6,26 @@
 
 集成形态：
 
-| 标识 | 说明 |
-|------|------|
+| 标识          | 说明                                                                   |
+| ------------- | ---------------------------------------------------------------------- |
 | `admin-pages` | 授权、用户、组织和岗位管理页面，通常由 `@mango/admin-pages` 默认注册。 |
-| `api-client` | authorization、identity、org、post 相关 API 封装。 |
+| `api-client`  | authorization、identity、org、post 相关 API 封装。                     |
 
 它不做后端鉴权判定，也不会初始化菜单、角色、用户或组织。前端只展示和提交管理操作，最终权限、租户和数据范围由后端校验。
 
 ## 2. 功能清单
 
-| 能力 | 使用入口 | 后端依赖 |
-|------|----------|----------|
-| 应用管理 | `AppView`、`appApi` | `mango-authorization` |
-| 应用模块绑定和运行策略 | `appModuleApi` | `mango-authorization`、`@mango/app-runtime` |
-| 菜单和按钮资源 | `MenuView`、`menuApi` | `mango-authorization` |
-| 菜单包 | `MenuPackageView`、`menuPackageApi` | `mango-authorization` |
-| 角色、菜单/按钮授权和数据权限 | `RoleView`、`roleApi` | `mango-authorization` |
-| 用户管理 | `UserView`、`userApi` | `mango-identity` |
-| 组织和成员 | `OrgView`、`orgApi` | `mango-org` |
-| 岗位管理 | `PostView`、`postApi` | `mango-org` |
-| 权限资源查看 | `PermissionView` | `mango-authorization` |
+| 能力                          | 使用入口                            | 后端依赖                                    |
+| ----------------------------- | ----------------------------------- | ------------------------------------------- |
+| 应用管理                      | `AppView`、`appApi`                 | `mango-authorization`                       |
+| 应用模块绑定和运行策略        | `appModuleApi`                      | `mango-authorization`、`@mango/app-runtime` |
+| 菜单和按钮资源                | `MenuView`、`menuApi`               | `mango-authorization`                       |
+| 菜单包                        | `MenuPackageView`、`menuPackageApi` | `mango-authorization`                       |
+| 角色、菜单/按钮授权和数据权限 | `RoleView`、`roleApi`               | `mango-authorization`                       |
+| 用户管理                      | `UserView`、`userApi`               | `mango-identity`                            |
+| 组织和成员                    | `OrgView`、`orgApi`                 | `mango-org`                                 |
+| 岗位管理                      | `PostView`、`postApi`               | `mango-org`                                 |
+| 权限资源查看                  | `PermissionView`                    | `mango-authorization`                       |
 
 ## 3. 接入方式
 
@@ -72,64 +72,64 @@ const users = await userApi.page({ pageNum: 1, pageSize: 20 });
 
 `@mango/rbac` 没有独立运行时配置文件。主要行为由宿主请求配置、菜单 component key、API 参数和后端数据决定。
 
-| 配置位置 | 字段 | 含义 |
-|----------|------|------|
-| 宿主应用 | API baseURL / 代理 | 决定 `/authorization/**`、`/identity/**`、`/org/**`、`/post/**` 请求转发目标。 |
-| authorization 应用 | `appCode` | 应用授权边界，管理端通常是 `internal-admin`。 |
-| 菜单数据 | `component` | 必须匹配前端页面 key，Shell 才能打开页面。 |
-| 菜单数据 | `menuType` | 区分目录、菜单、按钮。 |
-| 角色数据 | `realm`、`actorType` | 角色作用域。 |
-| 用户数据 | `realm`、`actorType`、`partyType`、`partyId` | 登录身份上下文。 |
-| 组织查询 | `parentId`、`type`、`includeDisabled` | 组织树过滤条件。 |
+| 配置位置           | 字段                                         | 含义                                                                           |
+| ------------------ | -------------------------------------------- | ------------------------------------------------------------------------------ |
+| 宿主应用           | API baseURL / 代理                           | 决定 `/authorization/**`、`/identity/**`、`/org/**`、`/post/**` 请求转发目标。 |
+| authorization 应用 | `appCode`                                    | 应用授权边界，管理端通常是 `internal-admin`。                                  |
+| 菜单数据           | `component`                                  | 必须匹配前端页面 key，Shell 才能打开页面。                                     |
+| 菜单数据           | `menuType`                                   | 区分目录、菜单、按钮。                                                         |
+| 角色数据           | `realm`、`actorType`                         | 角色作用域。                                                                   |
+| 用户数据           | `realm`、`actorType`、`partyType`、`partyId` | 登录身份上下文。                                                               |
+| 组织查询           | `parentId`、`type`、`includeDisabled`        | 组织树过滤条件。                                                               |
 
 ## 5. API 与扩展
 
 页面导出：
 
-| 导出 | 默认页面 key | 管理能力 |
-|------|--------------|----------|
-| `AppView` | `system/app/index` | 应用管理。 |
-| `MenuView` | `system/menu/index` | 菜单和按钮资源管理。 |
-| `MenuPackageView` | `system/menu-package/index` | 菜单包管理。 |
-| `RoleView` | `system/role/index` | 角色和菜单/按钮授权。 |
-| `UserView` | `system/user/index` | 用户、企微同步、外部身份绑定。 |
-| `OrgView` | `system/org/index` | 组织树和组织成员。 |
-| `PostView` | `system/post/index` | 岗位管理。 |
-| `PermissionView` | `system/permission/index` | 权限资源查看。 |
+| 导出              | 默认页面 key                | 管理能力                       |
+| ----------------- | --------------------------- | ------------------------------ |
+| `AppView`         | `system/app/index`          | 应用管理。                     |
+| `MenuView`        | `system/menu/index`         | 菜单和按钮资源管理。           |
+| `MenuPackageView` | `system/menu-package/index` | 菜单包管理。                   |
+| `RoleView`        | `system/role/index`         | 角色和菜单/按钮授权。          |
+| `UserView`        | `system/user/index`         | 用户、企微同步、外部身份绑定。 |
+| `OrgView`         | `system/org/index`          | 组织树和组织成员。             |
+| `PostView`        | `system/post/index`         | 岗位管理。                     |
+| `PermissionView`  | `system/permission/index`   | 权限资源查看。                 |
 
 主要 API：
 
-| API | 主要接口 | 能力 |
-|-----|----------|------|
-| `appApi` | `/authorization/apps` | 应用列表、详情、创建、更新、删除、运行时应用。 |
-| `appModuleApi` | `/authorization/app-modules` | 应用模块绑定、同步菜单、运行策略。 |
-| `menuApi` | `/authorization/menus` | 用户菜单、菜单树、详情、创建、更新、删除。 |
-| `menuPackageApi` | `/authorization/menu-packages` | 菜单包 CRUD。 |
-| `roleApi` | `/authorization/roles`、`/authorization/data-scopes` | 角色 CRUD、角色菜单、可分配菜单、主体角色绑定、角色数据权限。 |
-| `userApi` | `/identity/users/page` | 用户分页、详情、创建、更新、删除、重置密码、企微同步、外部身份绑定。 |
-| `orgApi` | `/org/tree` | 组织树、子节点、详情、成员、负责人。 |
-| `postApi` | `/post/page` | 岗位分页、详情、创建、更新、删除。 |
+| API              | 主要接口                                             | 能力                                                                 |
+| ---------------- | ---------------------------------------------------- | -------------------------------------------------------------------- |
+| `appApi`         | `/authorization/apps`                                | 应用列表、详情、创建、更新、删除、运行时应用。                       |
+| `appModuleApi`   | `/authorization/app-modules`                         | 应用模块绑定、同步菜单、运行策略。                                   |
+| `menuApi`        | `/authorization/menus`                               | 用户菜单、菜单树、详情、创建、更新、删除。                           |
+| `menuPackageApi` | `/authorization/menu-packages`                       | 菜单包 CRUD。                                                        |
+| `roleApi`        | `/authorization/roles`、`/authorization/data-scopes` | 角色 CRUD、角色菜单、可分配菜单、主体角色绑定、角色数据权限。        |
+| `userApi`        | `/identity/users/page`                               | 用户分页、详情、创建、更新、删除、重置密码、企微同步、外部身份绑定。 |
+| `orgApi`         | `/org/tree`                                          | 组织树、子节点、详情、成员、负责人。                                 |
+| `postApi`        | `/post/page`                                         | 岗位分页、详情、创建、更新、删除。                                   |
 
 常用返回字段：
 
-| 数据 | 字段 |
-|------|------|
-| 应用 | `appCode`、`appName`、`appType`、`deployMode`、`entryUrl` |
+| 数据 | 字段                                                                     |
+| ---- | ------------------------------------------------------------------------ |
+| 应用 | `appCode`、`appName`、`appType`、`deployMode`、`entryUrl`                |
 | 菜单 | `id`、`parentId`、`menuType`、`path`、`component`、`perms`、`moduleCode` |
-| 角色 | `id`、`roleName`、`roleCode`、`appCode`、`realm`、`actorType` |
-| 用户 | `userId`、`username`、`nickname`、`status`、`tenantId` |
-| 组织 | `id`、`name`、`parentId`、`sort`、`children` |
-| 岗位 | `id`、`postCode`、`postName`、`sort`、`status` |
+| 角色 | `id`、`roleName`、`roleCode`、`appCode`、`realm`、`actorType`            |
+| 用户 | `userId`、`username`、`nickname`、`status`、`tenantId`                   |
+| 组织 | `id`、`name`、`parentId`、`sort`、`children`                             |
+| 岗位 | `id`、`postCode`、`postName`、`sort`、`status`                           |
 
 角色数据权限页面行为：
 
-| 操作 | 说明 |
-|------|------|
-| 入口 | 角色管理列表行操作“数据权限” |
-| 新增/编辑 | 在弹窗表格内直接新增、编辑、保存或删除 |
-| 数据资源 | 使用树形选择器，只展示 list 类资源，通常对应业务查询权限码 |
-| 范围模式 | 支持 `ALL`、`SELF`、`SELF_ORG`、`SELF_ORG_AND_CHILDREN`、`ORG` |
-| 用户生效 | “本人部门”类范围按成员管理里的主部门动态生效 |
+| 操作      | 说明                                                           |
+| --------- | -------------------------------------------------------------- |
+| 入口      | 角色管理列表行操作“数据权限”                                   |
+| 新增/编辑 | 在弹窗表格内直接新增、编辑、保存或删除                         |
+| 数据资源  | 使用树形选择器，只展示 list 类资源，通常对应业务查询权限码     |
+| 范围模式  | 支持 `ALL`、`SELF`、`SELF_ORG`、`SELF_ORG_AND_CHILDREN`、`ORG` |
+| 用户生效  | “本人部门”类范围按成员管理里的主部门动态生效                   |
 
 给部门管理员配置数据权限时，不需要为每个部门创建不同角色。维护一个部门管理员角色，数据范围选“本人部门”或“本人部门及下级”；再到成员管理给用户设置主部门并分配这个角色即可。
 
@@ -137,14 +137,14 @@ const users = await userApi.page({ pageNum: 1, pageSize: 20 });
 
 `@mango/rbac` 不包含 migration。接入前要确认：
 
-| 数据 | 来源 | 前端消费 |
-|------|------|----------|
-| 应用 | `mango-authorization` | 应用管理、登录授权边界。 |
-| 菜单和按钮 | authorization resource manifest 或初始化脚本 | 菜单管理、Shell 菜单、按钮权限。 |
-| 菜单包 | `mango-authorization` | 租户授权和菜单套餐。 |
-| 角色和授权 | `mango-authorization` | 角色管理、角色菜单、主体角色、角色数据权限。 |
-| 用户和身份 | `mango-identity` | 用户管理、登录、外部身份绑定。 |
-| 组织和岗位 | `mango-org` | 组织管理、岗位管理、用户组织关系。 |
+| 数据       | 来源                                         | 前端消费                                     |
+| ---------- | -------------------------------------------- | -------------------------------------------- |
+| 应用       | `mango-authorization`                        | 应用管理、登录授权边界。                     |
+| 菜单和按钮 | authorization resource manifest 或初始化脚本 | 菜单管理、Shell 菜单、按钮权限。             |
+| 菜单包     | `mango-authorization`                        | 租户授权和菜单套餐。                         |
+| 角色和授权 | `mango-authorization`                        | 角色管理、角色菜单、主体角色、角色数据权限。 |
+| 用户和身份 | `mango-identity`                             | 用户管理、登录、外部身份绑定。               |
+| 组织和岗位 | `mango-org`                                  | 组织管理、岗位管理、用户组织关系。           |
 
 业务模块菜单和权限应该由对应模块的 resource manifest 或后端初始化流程入库，不应该在前端手工补假数据。
 
@@ -156,9 +156,9 @@ const users = await userApi.page({ pageNum: 1, pageSize: 20 });
 
 访问控制分两层：
 
-| 层级 | 说明 |
-|------|------|
-| 前端展示 | Shell 根据用户菜单和按钮权限决定显示哪些入口。 |
+| 层级     | 说明                                                                                                       |
+| -------- | ---------------------------------------------------------------------------------------------------------- |
+| 前端展示 | Shell 根据用户菜单和按钮权限决定显示哪些入口。                                                             |
 | 后端校验 | 每个 `/authorization/**`、`/identity/**`、`/org/**`、`/post/**` 接口继续校验登录态、租户、角色和数据范围。 |
 
 ## 8. 快速开始
@@ -172,15 +172,15 @@ const users = await userApi.page({ pageNum: 1, pageSize: 20 });
 
 ## 9. 问题排查
 
-| 问题 | 常见原因 | 处理方式 |
-|------|----------|----------|
-| 菜单为空 | 应用、菜单、角色授权或用户角色缺失 | 查 `/authorization/menus/user`。 |
-| 页面空白 | 页面未注册或 component key 不一致 | 对照默认页面 key 和注册入口。 |
-| 用户列表为空 | identity 没有用户或当前账号无权限 | 查 `/identity/users/page` 和接口权限。 |
-| 组织树为空 | org 数据未初始化或租户过滤无数据 | 查 `/org/tree`。 |
-| 授权后不生效 | 用户仍使用旧 token 或旧菜单缓存 | 重新登录并刷新菜单。 |
+| 问题                       | 常见原因                                                   | 处理方式                                                         |
+| -------------------------- | ---------------------------------------------------------- | ---------------------------------------------------------------- |
+| 菜单为空                   | 应用、菜单、角色授权或用户角色缺失                         | 查 `/authorization/menus/user`。                                 |
+| 页面空白                   | 页面未注册或 component key 不一致                          | 对照默认页面 key 和注册入口。                                    |
+| 用户列表为空               | identity 没有用户或当前账号无权限                          | 查 `/identity/users/page` 和接口权限。                           |
+| 组织树为空                 | org 数据未初始化或租户过滤无数据                           | 查 `/org/tree`。                                                 |
+| 授权后不生效               | 用户仍使用旧 token 或旧菜单缓存                            | 重新登录并刷新菜单。                                             |
 | 角色授权弹框看不到按钮节点 | 后端可分配菜单树未返回按钮节点，或按钮资源未挂到对应菜单下 | 查 `roleApi.getAssignableMenus` 对应接口返回和按钮资源父子关系。 |
-| 按钮隐藏但接口还能调 | 只做了前端隐藏，没有后端权限 | 检查后端 authorization 资源和接口鉴权。 |
+| 按钮隐藏但接口还能调       | 只做了前端隐藏，没有后端权限                               | 检查后端 authorization 资源和接口鉴权。                          |
 
 ## 10. 相关文档
 
@@ -192,5 +192,7 @@ const users = await userApi.page({ pageNum: 1, pageSize: 20 });
 - [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)
 
 ## 11. 变更影响记录
+
+- Issue #805 待发布修复在 `postApi` 边界将后端分页字段 `total`、`current`、`size` 的 numeric string 转为 number，并将已确认的 Element Plus Radio value 用法从废弃 `label` 迁移到 `value`。后端大 ID 仍按字符串传递；岗位分页 API、表单值、页面 key、菜单、权限和租户语义不变。
 
 - 本次用户管理页新增锁定状态、密码状态、解锁按钮常驻展示、重置密码弹窗和首次登录密码提示。用户列表仍使用 `userApi` 既有接口，只是把重置密码从 prompt 改成完整表单并统一接入密码策略提示；`system:user:unlock` 需要后端权限资源和角色授权同时生效，未授权时按钮会禁用或接口会返回无权限。该变更不改变用户列表、角色授权、组织和岗位页面的 component key、页面注册方式和接口路径。
