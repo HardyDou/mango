@@ -9,6 +9,7 @@ import {
   assertReleasePlanShape,
   buildReleasePlan,
   readPendingChangesets,
+  resolveReleaseMavenSourceVersion,
   sha256,
 } from './release-plan-lib.mjs';
 import { gitChangedFiles, resolveBaseline, restoredPublishedBaselines } from './release-repository-lib.mjs';
@@ -52,7 +53,7 @@ const mavenTargetVersion = valueArg('--maven-version') || previousPlan?.maven?.t
 const plan = buildReleasePlan({
   packageIndex,
   managedVersions,
-  mavenSourceVersion: releaseVersions.maven?.mangoBackend || '',
+  mavenSourceVersion: resolveReleaseMavenSourceVersion(previousPlan, releaseVersions.maven?.mangoBackend),
   mavenTargetVersion,
   changedFiles,
   changesets: pendingChangesets,

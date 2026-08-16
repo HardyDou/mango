@@ -49,6 +49,10 @@ export function bumpVersion(version, type) {
   return `${major}.${minor}.${patch}`;
 }
 
+export function resolveReleaseMavenSourceVersion(previousPlan, managedVersion = '') {
+  return previousPlan?.maven?.sourceVersion || managedVersion;
+}
+
 export function readPendingChangesets(workspaceRoot) {
   const root = join(workspaceRoot, '.changeset');
   if (!existsSync(root)) return [];

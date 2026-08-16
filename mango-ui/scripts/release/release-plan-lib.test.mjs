@@ -9,6 +9,7 @@ import {
   buildReleasePlan,
   bumpVersion,
   readPendingChangesets,
+  resolveReleaseMavenSourceVersion,
 } from './release-plan-lib.mjs';
 
 function packages() {
@@ -111,6 +112,18 @@ test('Maven source impact requires an explicit version and adds the managed CLI'
   assert.equal(plan.releaseKind, 'mixed');
   assert.equal(plan.maven.targetVersion, '1.0.37');
   assert.deepEqual(plan.order, ['@mango/cli']);
+});
+
+test('an in-progress Maven plan keeps its published source after the CLI matrix is projected', () => {
+  const previousPlan = {
+    maven: {
+      sourceVersion: '1.0.36',
+      targetVersion: '1.0.37',
+    },
+  };
+
+  assert.equal(resolveReleaseMavenSourceVersion(previousPlan, '1.0.37'), '1.0.36');
+  assert.equal(resolveReleaseMavenSourceVersion(null, '1.0.36'), '1.0.36');
 });
 
 test('completed release baseline is bound to the immutable plan tuple', () => {
