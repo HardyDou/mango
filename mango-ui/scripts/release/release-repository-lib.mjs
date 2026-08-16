@@ -40,6 +40,10 @@ export function resolveGitSource(repoRoot, ref = 'HEAD') {
   };
 }
 
+export function readGitFile(repoRoot, ref, path) {
+  return runGit(repoRoot, ['show', `${ref}:${path}`]).stdout;
+}
+
 export function verifyReleasePlanSource({ repoRoot, baselineCommit, source, sourceFiles, headRef = 'HEAD' }) {
   if (!/^[0-9a-f]{40}$/u.test(source?.commit ?? '') || !/^[0-9a-f]{40}$/u.test(source?.tree ?? '')) {
     throw new Error('release plan source commit/tree is missing or invalid');

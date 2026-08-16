@@ -6,6 +6,7 @@ import { spawnSync } from 'node:child_process';
 import test from 'node:test';
 import {
   gitChangedFiles,
+  readGitFile,
   resolveGitSource,
   resolveRepositoryInputPath,
   verifyReleasePlanSource,
@@ -39,6 +40,10 @@ test('binds source files to a committed source snapshot while returning the fina
   write(repoRoot, 'mango-ui/packages/base/src/index.ts', 'export const value = 1;\n');
   commit(repoRoot, 'source');
   const source = resolveGitSource(repoRoot);
+  assert.equal(
+    readGitFile(repoRoot, source.commit, 'mango-ui/packages/base/src/index.ts'),
+    'export const value = 1;\n',
+  );
   const sourceFiles = gitChangedFiles(repoRoot, baselineCommit, source.commit);
   write(repoRoot, 'mango-ui/.changeset/release-plan.json', '{}\n');
   write(repoRoot, 'mango-ui/packages/base/package.json', '{"name":"@mango/base","version":"1.0.1"}\n');
