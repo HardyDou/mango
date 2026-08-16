@@ -3,19 +3,26 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import {
+  businessCapabilityReadmes,
+  resolveReadmeAuditScope
+} from './lib/readme-audit-scope.mjs';
 
-const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const args = process.argv.slice(2);
 const selfTest = args.includes('--self-test');
+const scriptPath = fileURLToPath(import.meta.url);
+const scope = resolveScope();
+const root = scope.root;
 
 const ignoredDirs = new Set(['.git', 'node_modules', 'target', 'dist', 'coverage', '.turbo']);
 const sourceExtensions = new Set(['.java', '.kt', '.ts', '.tsx', '.js', '.jsx', '.vue', '.json', '.yml', '.yaml', '.properties', '.xml', '.sql']);
 
-const moduleRoots = [
-  'mango/mango-platform',
-  'mango/mango-infra',
-  'mango-ui/packages'
-];
+const moduleRoots = scope.kind === 'mango-source'
+  ? ['mango/mango-platform', 'mango/mango-infra', 'mango-ui/packages']
+  : [scope.paths.backend, `${scope.paths.frontend}/packages`];
+const frontendPackagesRoot = scope.kind === 'mango-source'
+  ? 'mango-ui/packages'
+  : `${scope.paths.frontend}/packages`;
 
 const topLevelReadmes = [
   'mango/mango-admin-starter/README.md',
@@ -67,6 +74,10 @@ function relative(file) {
 }
 
 function managedReadmes(base = root) {
+  if (scope.kind === 'business-consumer' && base === root) {
+    const businessReadmes = businessCapabilityReadmes(scope);
+    return [...businessReadmes.moduleReadmes, businessReadmes.capabilityMap].sort();
+  }
   const readmes = new Set([...topLevelReadmes, ...frontendEntryReadmes, ...docsReadmes]);
   for (const moduleRoot of moduleRoots) {
     const absoluteRoot = path.join(base, moduleRoot);
@@ -112,7 +123,10 @@ function sourceIndex(base = root) {
   const configKeys = new Set();
   const sourceTextChunks = [];
 
-  const pomFiles = walkFiles(base, (file) => path.basename(file) === 'pom.xml');
+  const pomSearchRoot = scope.kind === 'business-consumer' && base === root
+    ? path.join(base, scope.paths.backend)
+    : base;
+  const pomFiles = walkFiles(pomSearchRoot, (file) => path.basename(file) === 'pom.xml');
   for (const file of pomFiles) {
     const text = fs.readFileSync(file, 'utf8');
     sourceTextChunks.push(text);
@@ -121,7 +135,10 @@ function sourceIndex(base = root) {
     }
   }
 
-  const packageJsonFiles = walkFiles(path.join(base, 'mango-ui/packages'), (file) => path.basename(file) === 'package.json');
+  const packageSearchRoot = scope.kind === 'business-consumer' && base === root
+    ? path.join(base, scope.paths.frontend)
+    : path.join(base, 'mango-ui/packages');
+  const packageJsonFiles = walkFiles(packageSearchRoot, (file) => path.basename(file) === 'package.json');
   for (const file of packageJsonFiles) {
     const text = fs.readFileSync(file, 'utf8');
     sourceTextChunks.push(text);
@@ -130,12 +147,28 @@ function sourceIndex(base = root) {
       if (typeof parsed.name === 'string' && parsed.name.startsWith('@mango/')) {
         packageNames.add(parsed.name);
       }
+      for (const dependencyGroup of ['dependencies', 'devDependencies', 'peerDependencies', 'optionalDependencies']) {
+        for (const packageName of Object.keys(parsed[dependencyGroup] ?? {})) {
+          if (packageName.startsWith('@mango/')) packageNames.add(packageName);
+        }
+      }
     } catch {
       // package JSON validity is checked by package tooling; this audit only indexes usable metadata.
     }
   }
 
-  const sourceRoots = ['mango', 'mango-ui/packages', 'mango-business-starter'];
+  if (scope.kind === 'business-consumer' && base === root) {
+    const configText = fs.readFileSync(path.join(base, 'mango.config.json'), 'utf8');
+    sourceTextChunks.push(configText);
+    const config = JSON.parse(configText);
+    for (const packageName of Object.keys(config.mangoFrontendVersions ?? {})) {
+      if (packageName.startsWith('@mango/')) packageNames.add(packageName);
+    }
+  }
+
+  const sourceRoots = scope.kind === 'business-consumer' && base === root
+    ? [scope.paths.backend, scope.paths.frontend]
+    : ['mango', 'mango-ui/packages', 'mango-business-starter'];
   for (const sourceRoot of sourceRoots) {
     for (const file of walkFiles(path.join(base, sourceRoot), (candidate) => sourceExtensions.has(path.extname(candidate)))) {
       const text = fs.readFileSync(file, 'utf8');
@@ -233,7 +266,7 @@ function extractApiPaths(text) {
   const cleaned = stripMarkdownLinks(text);
   const values = [];
   for (const span of markdownCodeSpans(cleaned)) {
-    for (const match of span.matchAll(/(?:GET|POST|PUT|DELETE|PATCH)?\s*(\/[a-z][a-z0-9-]*(?:\/[a-z0-9:_{}.-]+)+)/gi)) {
+    for (const match of span.matchAll(/\b(?:GET|POST|PUT|DELETE|PATCH)\s+(\/[a-z][a-z0-9-]*(?:\/[a-z0-9:_{}.-]+)+)/gi)) {
       if (!shouldSkipApiPath(match[1])) values.push(match[1]);
     }
   }
@@ -271,7 +304,7 @@ function extractConfigKeys(text) {
   return unique([...text.matchAll(/\bmango(?:\.[a-z][a-z0-9-]*){1,8}\b/g)]
     .map((match) => match[0])
     .filter((value) => !value.startsWith('mango.docs') && !value.startsWith('mango.pmo'))
-    .filter((value) => !/\.(json|yml|yaml|xml|md|ts|tsx|java|sql)$/.test(value)));
+    .filter((value) => !/(^|\.)(json|yml|yaml|xml|md|ts|tsx|java|sql)(\.|$)/.test(value)));
 }
 
 function extractPackageNames(text) {
@@ -305,9 +338,10 @@ function hasApiPath(index, value) {
 
 function hasPageKey(readmePath, index, value) {
   if (index.sourceText.includes(value)) return true;
-  if (!readmePath.startsWith('mango-ui/packages/')) return false;
+  if (!readmePath.startsWith(`${frontendPackagesRoot}/`)) return false;
   const segments = readmePath.split('/');
-  const packageRoot = path.join(root, segments.slice(0, 3).join('/'));
+  const packagesRootSegments = frontendPackagesRoot.split('/').length;
+  const packageRoot = path.join(root, segments.slice(0, packagesRootSegments + 1).join('/'));
   const viewPath = path.join(packageRoot, 'src/views', value.replace(/^[^/]+\//, ''), '.vue');
   const normalizedViewPath = viewPath.replace('/.vue', '.vue');
   return fs.existsSync(normalizedViewPath);
@@ -334,7 +368,9 @@ function auditText(readmePath, text, index) {
     packageNames,
     pageKeys,
     issues: [
-      ...missingArtifacts.filter((value) => !artifactLooksLikeRepoPath(value)).map((value) => `artifact:${value}`),
+      ...(scope.kind === 'mango-source'
+        ? missingArtifacts.filter((value) => !artifactLooksLikeRepoPath(value)).map((value) => `artifact:${value}`)
+        : []),
       ...missingApiPaths.map((value) => `api:${value}`),
       ...missingConfigKeys.map((value) => `config:${value}`),
       ...missingPackageNames.map((value) => `package:${value}`),
@@ -408,8 +444,25 @@ if (selfTest) {
   process.exit(0);
 }
 
+function resolveScope() {
+  try {
+    return resolveReadmeAuditScope({ argv: args, scriptPath });
+  } catch (error) {
+    console.error(`README source facts audit scope failed: ${error.message}`);
+    process.exit(1);
+  }
+}
+
 const index = sourceIndex(root);
-const rows = managedReadmes(root).map((readmePath) => auditText(readmePath, read(readmePath), index));
+let readmes;
+try {
+  readmes = managedReadmes(root);
+} catch (error) {
+  console.error(`README source facts audit scope failed: ${error.message}`);
+  process.exit(1);
+}
+console.log(`README source facts audit scope: ${scope.kind} ${root}`);
+const rows = readmes.map((readmePath) => auditText(readmePath, read(readmePath), index));
 printRows(rows);
 
 const failures = rows.filter((row) => row.issues.length > 0);

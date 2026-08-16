@@ -10,16 +10,17 @@ Mango 主仓的 `mango-release` 标记为 `distribution: repository-only`，只�
 
 ## 2. 功能清单
 
-| 能力              | 入口                                                                        | 说明                                                                                                                        |
-| ----------------- | --------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| 构建 baseline     | `pnpm -F @mango/pmo build`                                                  | 复制 `mango-pmo` 到 `dist/baseline`                                                                                         |
-| 校验 baseline     | `pnpm -F @mango/pmo check`                                                  | 校验必备文件、manifest、preflight 及真实 `pnpm pack` 的 hash、size、mode                                                    |
-| 发布 manifest     | `dist/baseline.json`                                                        | 记录 package version、source commit、bundle hash、contract revision 和逐文件元数据                                          |
-| Codex plugin 投影 | `.codex-plugin`、`skills`                                                   | npm 包根可安装插件；版本由 build 从 package metadata 生成                                                                   |
-| 业务同步          | `mango pmo sync/upgrade`                                                    | CLI 从本包安装业务仓 baseline，并同步 canonical PR 风险合同区段                                                             |
-| 影响驱动门禁      | `dist/baseline/tools/risk-verification.mjs`、`classify-pmo-check-scope.mjs` | 校验需求/方案风险，并把 Java PR 限定到受影响 Maven 模块                                                                     |
-| 前端页面基线      | `dist/baseline/tools/check-frontend-page-baseline.mjs`                      | 检查新增或修改页面的默认骨架，并支持带可复核原因的按类型或整页例外                                                          |
-| PR 提交 Skill     | `skills/mango-submit-pr`                                                    | Mango 主仓与业务仓共用；最终 head 的 Runner 同源本地检查通过后执行 Commit、Push、创建或更新 PR 与远端回读，不负责合并或发布 |
+| 能力              | 入口                                                                            | 说明                                                                                                                        |
+| ----------------- | ------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| 构建 baseline     | `pnpm -F @mango/pmo build`                                                      | 复制 `mango-pmo` 到 `dist/baseline`                                                                                         |
+| 校验 baseline     | `pnpm -F @mango/pmo check`                                                      | 校验必备文件、manifest、preflight 及真实 `pnpm pack` 的 hash、size、mode                                                    |
+| 发布 manifest     | `dist/baseline.json`                                                            | 记录 package version、source commit、bundle hash、contract revision 和逐文件元数据                                          |
+| Codex plugin 投影 | `.codex-plugin`、`skills`                                                       | npm 包根可安装插件；版本由 build 从 package metadata 生成                                                                   |
+| 业务同步          | `mango pmo sync/upgrade`                                                        | CLI 从本包安装业务仓 baseline，并同步 canonical PR 风险合同区段                                                             |
+| 影响驱动门禁      | `dist/baseline/tools/risk-verification.mjs`、`classify-pmo-check-scope.mjs`     | 校验需求/方案风险，并把 Java PR 限定到受影响 Maven 模块                                                                     |
+| 前端页面基线      | `dist/baseline/tools/check-frontend-page-baseline.mjs`                          | 检查新增或修改页面的默认骨架，并支持带可复核原因的按类型或整页例外                                                          |
+| README 作用域审计 | `dist/baseline/tools/audit-module-readmes.mjs`、`audit-readme-source-facts.mjs` | 在源仓保留固定 Mango README 门禁，在业务仓按项目配置和能力地图审计仓库自有说明与源码事实                                    |
+| PR 提交 Skill     | `skills/mango-submit-pr`                                                        | Mango 主仓与业务仓共用；最终 head 的 Runner 同源本地检查通过后执行 Commit、Push、创建或更新 PR 与远端回读，不负责合并或发布 |
 
 ## 3. 接入方式
 
@@ -45,6 +46,15 @@ mango pmo check --project-dir . --locked
 升级会原子同步 `business-pmo/mango-baseline`、`business-pmo/pmo-lock.json`、项目 Agent 入口和 `.agents/skills`。项目级 Skill 与 PMO bundle 使用同一 manifest/hash，不需要逐个安装；用户级 Codex plugin 是独立的可选安装面，不由业务项目升级命令修改。
 
 页面基线误判或特殊页面可以在对应 `.vue` 文件登记例外。按类型使用 `<!-- mango-page-baseline-exception <list|detail|form|dialog>: <具体、可复核的原因> -->`；整个页面均不适用默认骨架时使用 `<!-- mango-page-baseline-exception all: <具体、可复核的原因> -->`。CI 失败输出也会显示这两种写法。
+
+业务仓启用 M08 时从项目根执行：
+
+```bash
+node business-pmo/mango-baseline/tools/audit-module-readmes.mjs
+node business-pmo/mango-baseline/tools/audit-readme-source-facts.mjs
+```
+
+工具从 `mango.config.json.paths` 解析实际后端、前端和业务文档目录，要求 `<businessDocs>/capabilities/README.md` 至少引用一个配置目录内的本仓 README。它不会要求业务仓存在 `mango/`、`mango-ui/` 或 `mango-business-starter/` 源码目录，也不会以空审计集合返回成功。
 
 ## 4. 配置说明
 
@@ -87,12 +97,14 @@ mango pmo check --project-dir . --locked
 
 ## 7. 管理入口
 
-| 任务     | 命令                                          |
-| -------- | --------------------------------------------- |
-| 构建包   | `pnpm -F @mango/pmo build`                    |
-| 校验包   | `pnpm -F @mango/pmo check`                    |
-| 准备批次 | `mango release plan`、`mango release prepare` |
-| 业务升级 | `mango pmo upgrade --project-dir .`           |
+| 任务                 | 命令                                                                   |
+| -------------------- | ---------------------------------------------------------------------- |
+| 构建包               | `pnpm -F @mango/pmo build`                                             |
+| 校验包               | `pnpm -F @mango/pmo check`                                             |
+| 准备批次             | `mango release plan`、`mango release prepare`                          |
+| 业务升级             | `mango pmo upgrade --project-dir .`                                    |
+| 业务 README 审计     | `node business-pmo/mango-baseline/tools/audit-module-readmes.mjs`      |
+| 业务 README 事实核对 | `node business-pmo/mango-baseline/tools/audit-readme-source-facts.mjs` |
 
 ## 8. 快速开始
 

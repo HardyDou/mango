@@ -96,6 +96,7 @@ jobs:
             mango-pmo/tests/frontend-page-baseline.test.mjs \
             mango-pmo/tests/pmo-check-scope.test.mjs \
             mango-pmo/tests/pmo-preflight.test.mjs \
+            mango-pmo/tests/readme-audit-scope.test.mjs \
             mango-pmo/tests/risk-verification.test.mjs \
             mango-pmo/tests/standard-delivery-record.test.mjs \
             mango-pmo/tests/test-quality-check.test.mjs \

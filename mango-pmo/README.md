@@ -13,6 +13,7 @@
 | PMO preflight          | `tools/pmo-preflight.mjs`                                                                                       | 根据 role、phase、task、paths 输出 Must read 文件                                                                                                   |
 | 交付契约检查           | `tools/delivery-contract-check.mjs`                                                                             | 校验设计说明和交付台账                                                                                                                              |
 | 验收证据检查           | `tools/acceptance-evidence-check.mjs`                                                                           | 校验验收证据表和弱表达                                                                                                                              |
+| README 作用域审计      | `tools/audit-module-readmes.mjs`、`tools/audit-readme-source-facts.mjs`                                         | 源仓审计固定 Mango 资产；业务 baseline 按 `mango.config.json.paths` 和业务能力地图审计仓库自有 README 与源码事实                                      |
 | 规则路由               | rules index JSON                                                                                                | 维护规则、角色、阶段和 bundle 映射                                                                                                                  |
 | 角色定义               | `agents/**`                                                                                                     | PM、Tech Lead、Dev、QA、PMO 的职责说明                                                                                                              |
 | 模板资产               | `templates/**`                                                                                                  | PRD、详细设计、交付契约、验收证据模板                                                                                                               |
@@ -84,6 +85,15 @@ node business-pmo/mango-baseline/tools/pmo-preflight.mjs \
   --paths "backend,frontend,business-docs"
 ```
 
+业务仓启用 M08 时执行锁定 baseline 内的 README 审计，不调用 Mango 源仓路径：
+
+```bash
+node business-pmo/mango-baseline/tools/audit-module-readmes.mjs
+node business-pmo/mango-baseline/tools/audit-readme-source-facts.mjs
+```
+
+审计从脚本所在仓库解析项目根，并读取 `mango.config.json.paths`。业务能力地图固定为 `<businessDocs>/capabilities/README.md`；它必须引用至少一个位于配置后端或前端目录内的本仓 README。错误根目录、越界路径、缺少能力地图或空审计集合都会直接失败。
+
 ## 4. 配置说明
 
 | 配置入口                                           | 字段                                                    | 含义                                                                     |
@@ -137,6 +147,8 @@ node business-pmo/mango-baseline/tools/pmo-preflight.mjs \
 | 输出任务规则          | `node business-pmo/mango-baseline/tools/pmo-preflight.mjs ...`                             |
 | 检查交付台账          | `node business-pmo/mango-baseline/tools/delivery-contract-check.mjs ...`                   |
 | 检查全部业务文档      | `node business-pmo/mango-baseline/tools/check-document-set.mjs --root business-docs`       |
+| 检查业务能力 README   | `node business-pmo/mango-baseline/tools/audit-module-readmes.mjs`                          |
+| 核对业务 README 事实  | `node business-pmo/mango-baseline/tools/audit-readme-source-facts.mjs`                     |
 | 检查全局架构债务预算  | `node mango-pmo/tools/check-architecture-debt-budget.mjs --base-ref <base-sha>`            |
 | 检查单个模块债务      | `node mango-pmo/tools/check-architecture-debt-budget.mjs --module <moduleKey\|artifactId>` |
 | 首次纳管存量模块      | 先用完整 Reactor 和 `-Dmango.architecture.inventoryOnly=true` 生成报告，再执行 `node mango-pmo/tools/check-architecture-debt-budget.mjs --onboard-module <moduleKey-prefix> --module-properties <path> --base-ref <base-sha> --reason "<reason>" --write` |
@@ -231,6 +243,7 @@ PMO 升级需要恢复时先执行 `mango pmo rollback --project-dir . --dry-run
 | `pmo check --locked` 报 PR template missing / differs | 项目缺少 PR 模板或 Risk 区段与锁定合同漂移 | 使用项目内 CLI 执行 `mango pmo sync --project-dir .`；重复区段先人工合并 |
 | preflight Missing PMO file   | rules index JSON 指向不存在文件              | 修复 `mango-pmo` 源并重新发布 baseline                         |
 | 业务路径未命中规则           | rules index JSON bundle paths 不覆盖业务目录 | 在 mango-pmo rules index 补充路径                              |
+| 业务 README 审计误报源仓路径  | 使用了旧 PMO baseline，或从脚本安装目录推断项目根 | 升级到包含 Issue #806 修复的 PMO/CLI tuple，执行业务 baseline 内的两条审计命令 |
 | 首次纳管提示 `onboarding-report-required` | required check 只执行了 `--baseline-only` | 在独立纳管 PR 的可信 CI 中现场生成完整 Reactor 报告，并执行普通 `--base-ref` 检查 |
 | 初始化预算提示 `initial-budget-report-required` | 首次项目预算只跑了 baseline-only | 用只含预算文件的独立治理 PR，在可信 CI 现场生成完整 Reactor 报告并复验 |
 | 历史项目仍引用主仓路径       | 旧 `AGENTS.md` 未升级                        | 执行 `mango pmo upgrade --project-dir . --write-agents`        |

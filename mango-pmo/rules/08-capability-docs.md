@@ -87,13 +87,22 @@ M08=`ENABLE` 且正式提交 PR 前必须完成以下检查；M08 未触发或�
 - 受影响能力缺少门禁要求的模块 README、能力地图或业务指南时必须直接失败；逐字段不适用说明不能代替应更新的文档。
 - 对外能力变更时，PR body 必须说明 E2E 脚本和测试结果基线是否更新；未更新时说明不适用原因或交付台账中的 `EXCEPTION` 依据。
 
-M08=`ENABLE` 且进入独立发布流程后必须执行：
+M08=`ENABLE` 且进入独立发布流程后，Mango 源仓必须执行：
 
 ```bash
 node mango-pmo/tools/audit-module-readmes.mjs
 node mango-pmo/tools/audit-readme-source-facts.mjs
 PR_BODY_FILE=/path/to/pr-body.md node mango-pmo/tools/check-capability-docs.mjs --base origin/main --head HEAD
 ```
+
+业务消费仓使用已锁定 PMO baseline 的正式入口：
+
+```bash
+node business-pmo/mango-baseline/tools/audit-module-readmes.mjs
+node business-pmo/mango-baseline/tools/audit-readme-source-facts.mjs
+```
+
+两条审计必须从脚本所在仓库解析项目根。Mango 源仓继续审计固定平台 README 和源码事实，缺少固定 README 时失败；业务消费仓从 `mango.config.json.paths` 解析后端、前端和业务文档目录，只审计业务能力地图明确引用且位于配置目录内的本仓 README，并校验本仓拥有的 API、配置、前端依赖和页面事实。业务能力地图缺失、没有引用本仓 README、配置路径越界或错误根目录时必须失败，禁止以空集合通过，也禁止要求业务仓伪造 Mango 源仓目录。外部 Mango Maven/npm 坐标由锁定版本和发布物料验证，不得因业务仓不包含平台源码而报告为本仓事实缺失。
 
 ## 5.2 M08=`ENABLE` 时的 README 验收门禁
 
@@ -113,12 +122,7 @@ PR_BODY_FILE=/path/to/pr-body.md node mango-pmo/tools/check-capability-docs.mjs 
 - 纯管理页面入口可以轻量说明具体管理能力、页面 key、依赖接口、菜单和权限关系。
 - 公共组件、公开 API、页面注册入口和运行时扩展点必须详细说明参数、默认值、事件、slot、示例、后端依赖、权限边界和常见排障入口。
 
-M08=`ENABLE` 时 README 验收必须执行：
-
-```bash
-node mango-pmo/tools/audit-module-readmes.mjs
-node mango-pmo/tools/audit-readme-source-facts.mjs
-```
+M08=`ENABLE` 时 README 验收按仓库形态执行上一节对应的两条审计命令；禁止在业务仓继续调用不存在的 `mango-pmo/tools/**` 源仓路径。
 
 ## 6. 禁止事项
 

@@ -3,8 +3,8 @@
   "packageVersion": "1.3.15",
   "schemaVersion": 2,
   "source": "mango-pmo",
-  "sourceCommit": "abe81c22aba2c1ed962fc014da49811e4b98732b",
-  "bundleSha256": "0a861f505d44b5cec11f74058fcd470f5b645fdeed8abf10ee7badc95ae50906",
+  "sourceCommit": "e19f1104383fa04fa50531054039cc7d7e6f32cc",
+  "bundleSha256": "72c3ceaa1e3ff0aed90a2494cd6e390d13c1a650df70fed199267ea1d07668e8",
   "contracts": [
     {
       "contractId": "business-requirements",
@@ -294,8 +294,8 @@
   "files": [
     {
       "path": "README.md",
-      "sha256": "f64b4d570c20227d5b012c3675c4828bf0312bb68beac2208b1264e89f9ba603",
-      "size": 25661,
+      "sha256": "d9719ef1aec1fc3554cc0e3dcfdf1c8db2974ab4219734efd12a2768659e89cb",
+      "size": 27030,
       "kind": "documentation",
       "mode": "0644"
     },
@@ -476,8 +476,8 @@
     },
     {
       "path": "rules/08-capability-docs.md",
-      "sha256": "e562386da68c92a05ae031175c61ee9a01e82758ae6b956546b35aba548c007b",
-      "size": 9105,
+      "sha256": "951a3b516a29d0e1e5264fbf76a35066eef56c261b103b75fafb9c41d32c90ed",
+      "size": 10067,
       "kind": "rule",
       "mode": "0644"
     },
@@ -672,8 +672,8 @@
     },
     {
       "path": "rules/index.json",
-      "sha256": "1251e30b1533e06ab31dca1f168a0b47687c0e7b6fdd6fdaa94c95443b0d1403",
-      "size": 27317,
+      "sha256": "a6f278c7cb6e7f38e8715117c1ffebde1a400361f6363bac3633ec160deba77c",
+      "size": 27367,
       "kind": "rule",
       "mode": "0644"
     },
@@ -1078,15 +1078,15 @@
     },
     {
       "path": "tools/audit-module-readmes.mjs",
-      "sha256": "c187dc1ae23fa09a2744334a56d28116b4462a6b67e96c99262490ec456b5f13",
-      "size": 21473,
+      "sha256": "0f71ece03e3d0460ac37f2a8304b57910db76d855dc2638c49ff6b2617b6ad73",
+      "size": 23048,
       "kind": "tool",
       "mode": "0644"
     },
     {
       "path": "tools/audit-readme-source-facts.mjs",
-      "sha256": "88eaa18c7fea304b6da518893a3724448aa240f153a5fd6092ab35bd90b320bf",
-      "size": 16349,
+      "sha256": "964a9e3fa066e6d5ff53e93c9e9e1e76b6f10d413ffef81d41d07ae4944d98d6",
+      "size": 18607,
       "kind": "tool",
       "mode": "0644"
     },
@@ -1248,6 +1248,13 @@
       "path": "tools/document-contract/validator.mjs",
       "sha256": "f4a21f15b560e1a3f902f1f6ab9a091b1d39bbb9d5775cd8cbb3a0e5bbe99fc6",
       "size": 23888,
+      "kind": "tool",
+      "mode": "0644"
+    },
+    {
+      "path": "tools/lib/readme-audit-scope.mjs",
+      "sha256": "e22620f0f2bf13f81a134c4a5763fe464bf7d0b3d770793f476ff39114b25aba",
+      "size": 7594,
       "kind": "tool",
       "mode": "0644"
     },
