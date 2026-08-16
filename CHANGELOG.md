@@ -2,6 +2,65 @@
 
 ## Unreleased
 
+## v2026.08.17-issue-806-business-readme-audit-scope - 2026-08-17
+
+Status: `PENDING`. This npm-only batch publishes the Issue #806 README audit correction as `@mango/pmo@1.3.16` and exact dependent `@mango/cli@1.0.109`; Mango Maven `1.0.37` and all other npm coordinates remain unchanged.
+
+### Pull Requests
+
+- [PR #818](https://github.com/HardyDou/mango/pull/818) Fixed business-consumer README audit root and scope resolution. Packages: `@mango/pmo@1.3.16`, `@mango/cli@1.0.109`. Business Adaptation: upgrade the exact PMO/CLI tuple, rerun the locked PMO upgrade/check and both M08 README audits, and repair only genuine business-owned README findings.
+
+### Fixed
+
+- Resolve business audit roots from the actual project root and `mango.config.json.paths`, audit only capability-map-owned business documents, and fail closed on invalid roots, empty scope, path escape or symlink escape.
+- Preserve the fixed Mango source README/source-facts gates and exclude `mango.config.json.paths` from runtime configuration facts.
+
+### Versions
+
+- `@mango/pmo` advances from `1.3.15` to `1.3.16`; exact dependent `@mango/cli` advances from `1.0.108` to `1.0.109`.
+- Mango Maven remains `1.0.37`; all other npm coordinates remain unchanged.
+
+### Published Packages
+
+1. `@mango/pmo@1.3.16`.
+2. `@mango/cli@1.0.109`.
+3. No Maven or other npm package is published.
+
+### Business Impact
+
+- Packaged PMO checks now audit a business repository's configured backend, frontend and business documentation roots instead of requiring Mango source-only README paths.
+- No API, database, menu, permission, tenant, message, file, frontend runtime or application configuration migration is introduced.
+
+### Upgrade Estimate
+
+- Audience: business repositories using Mango PMO README/source-facts audits.
+- Engineering Effort: 15 to 30 minutes for a clean repository; up to 1 hour when genuine business README links need repair.
+- Execution Window: 20 to 60 minutes for dry-run, upgrade, locked check and M08 audits.
+- Service Downtime: none; this is development-governance tooling only.
+- Rollback Effort: 10 to 20 minutes using the PMO backup and prior CLI/PMO tuple.
+- Assumptions: company npm-group access, a clean business worktree and valid `mango.config.json.paths`.
+
+### Upgrade Notes
+
+1. Install `@mango/cli@1.0.109`, which locks `@mango/pmo@1.3.16`.
+2. Run `mango pmo upgrade --project-dir . --to 1.3.16 --dry-run`, apply the reviewed upgrade, then run `mango pmo check --project-dir . --locked`.
+3. Run both packaged M08 audits from the business project root and repair genuine business-owned README findings without adding Mango source directories.
+
+### Verification
+
+- The machine plan must reproduce `@mango/pmo@1.3.16 -> @mango/cli@1.0.109` with no Maven or unrelated npm targets.
+- Candidate preparation seals both tarballs once and passes a mixed PMO upgrade/audit consumer; publication must match both tarballs through hosted/group and pass the pure consume-registry consumer.
+
+### Rollback
+
+- Revert the business PMO upgrade commit, restore CLI `1.0.108` and PMO `1.3.15` using the validated PMO backup, then rerun the locked check.
+- Never overwrite an immutable npm coordinate; correct any release defect with a new patch batch.
+
+### Audit History
+
+- PR #815 and tag `v2026.08.16-issue-805-release-consumer-fix` are the successful release baseline.
+- PR #816 is prior-batch closeout evidence and is not counted as a release-bearing change here.
+
 ## v2026.08.16-issue-805-release-consumer-fix - 2026-08-16
 
 Status: `PUBLISHED_AND_VERIFIED`. Canonical manifest `127cdcdf8d08b95ae6dee13fed2edb6a0838d1b4c586258757d016c3bb4c30d8` is `COMPLETED`: all 24 sealed npm tarballs and 188 Maven coordinates match in their publish and consume registries, the pure consume-registry consumer passed, and the GitHub Release is `CREATED_AND_VERIFIED`.

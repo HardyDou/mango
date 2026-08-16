@@ -1,391 +1,171 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-08-16T07:12:46.275Z",
-  "releaseKind": "mixed",
+  "generatedAt": "2026-08-16T23:55:36.575Z",
+  "releaseKind": "npm-only",
   "release": {
-    "tag": "v2026.08.16-issue-805-release-consumer-fix",
-    "title": "Mango release v2026.08.16-issue-805-release-consumer-fix",
+    "tag": "v2026.08.17-issue-806-business-readme-audit-scope",
+    "title": "Mango Issue #806 business README audit scope fix",
     "notesFile": ".changeset/release-notes.txt",
-    "notesSha256": "1bc5fc1920610e9120358b895205c906952ca24faeb49ecb3b5919f1401cc792"
+    "notesSha256": "20afe06ae25aa22c4cec848bc2127831295a2bd28dc72c4fea2891fa5633aa5d"
   },
   "baseline": {
     "kind": "successful-release",
     "schemaVersion": 1,
-    "tag": "v2026.08.15-pmo-1.3.15-job-1.0.27-admin-shell-1.0.60-admin-1.0.66-cli-1.0.107-local-first-release",
-    "commit": "b9d8dec833243ae4406934896453df83270aba36",
-    "tree": "9ab9f76b5246281178db1426172f31e66feaa954",
-    "planDigest": "363855d6a488231eff129b0541e69e1ce916ea20d0c1c3bbf8e757f08100bce9",
+    "tag": "v2026.08.16-issue-805-release-consumer-fix",
+    "commit": "18f25662645702eee21946347149c075c0ae365d",
+    "tree": "b5f8fd12555a1c858f7ba8a9a982975ac54373bf",
+    "planDigest": "127cdcdf8d08b95ae6dee13fed2edb6a0838d1b4c586258757d016c3bb4c30d8",
     "packages": {
-      "@mango/job": "1.0.27",
-      "@mango/admin-shell": "1.0.60",
-      "@mango/admin": "1.0.66",
-      "@mango/pmo": "1.3.15",
-      "@mango/cli": "1.0.107"
+      "@mango/common": "1.0.27",
+      "@mango/admin-extension": "1.0.1",
+      "@mango/auth": "1.0.27",
+      "@mango/file": "1.0.35",
+      "@mango/grid-layout": "1.0.18",
+      "@mango/grid-widgets": "1.0.24",
+      "@mango/home": "1.0.16",
+      "@mango/rbac": "1.0.25",
+      "@mango/site-shell": "1.0.14",
+      "@mango/system": "1.0.33",
+      "@mango/admin-pages": "1.0.34",
+      "@mango/calendar": "1.0.35",
+      "@mango/cms": "1.0.24",
+      "@mango/job": "1.0.28",
+      "@mango/link": "1.0.21",
+      "@mango/notice": "1.0.40",
+      "@mango/numgen": "1.0.36",
+      "@mango/payment": "1.0.27",
+      "@mango/template": "1.0.35",
+      "@mango/workflow": "1.0.41",
+      "@mango/admin-shell": "1.0.61",
+      "@mango/workflow-business-example": "1.0.40",
+      "@mango/admin": "1.0.67",
+      "@mango/cli": "1.0.108"
     },
-    "maven": null
+    "maven": "1.0.37"
   },
   "source": {
-    "commit": "00f1b54f11a29eea8bf558455f47251639ccd2d9",
-    "tree": "888fbd0dbcd6c7019a12d8af5cbb310d48ae6787"
+    "commit": "3155c06bfbf950bedcac64b4b15d656de897454c",
+    "tree": "47836c279cb9d09beb37413341967ccd9048d974"
   },
   "sourceFiles": [
+    ".github/workflows/pmo-doc-check.yml",
     "CHANGELOG.md",
-    "mango-business-starter/README.md",
-    "mango-business-starter/frontend/packages/{{moduleKebab}}/package.json",
-    "mango-business-starter/frontend/packages/{{moduleKebab}}/src/index.ts",
-    "mango-business-starter/scripts/check-template.mjs",
+    "mango-business-starter/business-pmo/mango-baseline/README.md",
+    "mango-business-starter/business-pmo/mango-baseline/baseline.json",
+    "mango-business-starter/business-pmo/mango-baseline/contracts/business-requirements.json",
+    "mango-business-starter/business-pmo/mango-baseline/contracts/implementation-plan.json",
+    "mango-business-starter/business-pmo/mango-baseline/contracts/system-requirements.json",
+    "mango-business-starter/business-pmo/mango-baseline/contracts/technical-design.json",
+    "mango-business-starter/business-pmo/mango-baseline/rules/08-capability-docs.md",
+    "mango-business-starter/business-pmo/mango-baseline/rules/index.json",
+    "mango-business-starter/business-pmo/mango-baseline/rules/product/05-document-lifecycle.md",
+    "mango-business-starter/business-pmo/mango-baseline/tools/audit-module-readmes.mjs",
+    "mango-business-starter/business-pmo/mango-baseline/tools/audit-readme-source-facts.mjs",
+    "mango-business-starter/business-pmo/mango-baseline/tools/lib/readme-audit-scope.mjs",
     "mango-docs/capabilities/README.md",
-    "mango-docs/designs/2026-08-16-issue-805-release-consumer-remediation.md",
-    "mango-docs/designs/issue-805-release-consumer/review/APPROVAL.md",
-    "mango-docs/guides/business-integration/file-upload-form.md",
-    "mango-docs/guides/business-integration/permission-button-troubleshooting.md",
-    "mango-docs/guides/business-integration/rbac-menu-page-troubleshooting.md",
-    "mango-docs/guides/business-integration/tenant-dict-config-empty.md",
-    "mango-docs/plans/2026-08-16-issue-798-notice-event-contract-delivery-record.md",
-    "mango-docs/plans/2026-08-16-issue-805-release-consumer-implementation-plan.md",
+    "mango-docs/plans/2026-08-17-issue-806-business-readme-audit-scope-governance.md",
+    "mango-pmo/CHANGELOG.md",
+    "mango-pmo/README.md",
+    "mango-pmo/contracts/business-requirements.json",
+    "mango-pmo/contracts/implementation-plan.json",
+    "mango-pmo/contracts/system-requirements.json",
+    "mango-pmo/contracts/technical-design.json",
+    "mango-pmo/plugin-src/.codex-plugin/plugin.json",
+    "mango-pmo/rules/08-capability-docs.md",
+    "mango-pmo/rules/index.json",
+    "mango-pmo/rules/product/05-document-lifecycle.md",
+    "mango-pmo/tests/document-contract/document-contract.test.mjs",
+    "mango-pmo/tests/document-contract/fixtures/valid/business-requirements.md",
+    "mango-pmo/tests/document-contract/fixtures/valid/implementation-plan.md",
+    "mango-pmo/tests/document-contract/fixtures/valid/system-requirements.md",
+    "mango-pmo/tests/document-contract/fixtures/valid/technical-design.md",
+    "mango-pmo/tests/readme-audit-scope.test.mjs",
+    "mango-pmo/tools/audit-module-readmes.mjs",
+    "mango-pmo/tools/audit-readme-source-facts.mjs",
+    "mango-pmo/tools/lib/readme-audit-scope.mjs",
+    "mango-ui/.changeset/fix-business-readme-audit-scope.md",
     "mango-ui/.changeset/issue-805-local-release-check.md",
     "mango-ui/.changeset/issue-805-release-consumer.md",
     "mango-ui/.changeset/issue-805-release-output-buffer.md",
     "mango-ui/.changeset/issue-805-release-source-snapshot.md",
     "mango-ui/.changeset/issue-805-release-tooling.md",
-    "mango-ui/.changeset/legacy-reconciliation.json",
     "mango-ui/.changeset/release-baseline.json",
-    "mango-ui/.changeset/release-notes.txt",
-    "mango-ui/architecture-exceptions.json",
-    "mango-ui/frontend-standards-adoption.json",
-    "mango-ui/packages/admin-extension/README.md",
-    "mango-ui/packages/admin-extension/package.json",
-    "mango-ui/packages/admin-extension/src/core.spec.ts",
-    "mango-ui/packages/admin-extension/src/core.ts",
-    "mango-ui/packages/admin-extension/src/features.ts",
-    "mango-ui/packages/admin-extension/src/index.ts",
-    "mango-ui/packages/admin-extension/src/notice.ts",
-    "mango-ui/packages/admin-extension/tsconfig.json",
-    "mango-ui/packages/admin-extension/vite.config.ts",
-    "mango-ui/packages/admin-pages/README.md",
-    "mango-ui/packages/admin-pages/package.json",
-    "mango-ui/packages/admin-pages/src/compatibility.spec.ts",
-    "mango-ui/packages/admin-pages/src/core.ts",
-    "mango-ui/packages/admin-pages/src/features.ts",
-    "mango-ui/packages/admin-pages/src/notice.ts",
-    "mango-ui/packages/admin-pages/vite.config.ts",
-    "mango-ui/packages/admin/README.md",
-    "mango-ui/packages/admin/build-style-deps.mjs",
-    "mango-ui/packages/admin/vite.config.ts",
-    "mango-ui/packages/common/README.md",
-    "mango-ui/packages/common/components/Pagination/__tests__/Pagination.spec.ts",
-    "mango-ui/packages/common/components/Pagination/index.vue",
-    "mango-ui/packages/file/README.md",
-    "mango-ui/packages/file/package.json",
-    "mango-ui/packages/file/src/admin-pages.ts",
-    "mango-ui/packages/file/src/views/settings/index.spec.ts",
-    "mango-ui/packages/file/src/views/settings/index.vue",
-    "mango-ui/packages/file/vite.config.ts",
-    "mango-ui/packages/file/vitest.config.ts",
-    "mango-ui/packages/link/README.md",
-    "mango-ui/packages/link/src/views/LinkCompanyLinksView.vue",
-    "mango-ui/packages/mango-cli/CHANGELOG.md",
-    "mango-ui/packages/mango-cli/README.md",
-    "mango-ui/packages/mango-cli/release-versions.json",
-    "mango-ui/packages/mango-cli/scripts/check-cli.mjs",
-    "mango-ui/packages/mango-cli/src/index.mjs",
-    "mango-ui/packages/mango-cli/src/release-command.mjs",
-    "mango-ui/packages/mango-cli/templates/business-module/frontend/packages/{{moduleKebab}}/package.json.template",
-    "mango-ui/packages/mango-cli/templates/business-module/frontend/packages/{{moduleKebab}}/src/index.ts",
     "mango-ui/packages/mango-cli/templates/full/README.md",
-    "mango-ui/packages/mango-cli/templates/full/backend/app/src/main/resources/application.yml",
-    "mango-ui/packages/mango-cli/templates/full/frontend/public/favicon.ico",
-    "mango-ui/packages/mango-cli/tests/release-command.test.mjs",
-    "mango-ui/packages/notice/src/__tests__/adminPages.spec.ts",
-    "mango-ui/packages/notice/src/admin-pages.ts",
-    "mango-ui/packages/rbac/README.md",
-    "mango-ui/packages/rbac/src/api/__tests__/post.spec.ts",
-    "mango-ui/packages/rbac/src/api/post.ts",
-    "mango-ui/packages/rbac/src/views/app/index.vue",
-    "mango-ui/packages/rbac/src/views/menu-package/index.vue",
-    "mango-ui/packages/rbac/src/views/menu/index.vue",
-    "mango-ui/packages/rbac/src/views/org/index.vue",
-    "mango-ui/packages/rbac/src/views/permission/index.vue",
-    "mango-ui/packages/rbac/src/views/post/index.vue",
-    "mango-ui/packages/rbac/src/views/role/index.vue",
-    "mango-ui/packages/rbac/src/views/user/index.vue",
-    "mango-ui/packages/system/README.md",
-    "mango-ui/packages/system/src/api/__tests__/log.spec.ts",
-    "mango-ui/packages/system/src/api/log.ts",
-    "mango-ui/packages/system/src/views/area/index.vue",
-    "mango-ui/packages/system/src/views/config/index.vue",
-    "mango-ui/packages/system/src/views/dict/index.vue",
-    "mango-ui/packages/system/src/views/tenant/index.vue",
-    "mango-ui/pnpm-lock.yaml",
-    "mango-ui/pnpm-workspace.yaml",
-    "mango-ui/release-contracts.json",
-    "mango-ui/scripts/check-package-consumer-typecheck.mjs",
-    "mango-ui/scripts/release/candidate-consumer-contract.test.mjs",
-    "mango-ui/scripts/release/check-release-changes.mjs",
-    "mango-ui/scripts/release/classify-release-pr.mjs",
-    "mango-ui/scripts/release/classify-release-pr.test.mjs",
-    "mango-ui/scripts/release/create-release-plan.mjs",
-    "mango-ui/scripts/release/local-release-checks-lib.mjs",
-    "mango-ui/scripts/release/local-release-checks-lib.test.mjs",
-    "mango-ui/scripts/release/prepare-release.mjs",
-    "mango-ui/scripts/release/publish-prepared-release.mjs",
-    "mango-ui/scripts/release/release-cli-readme-lib.mjs",
-    "mango-ui/scripts/release/release-cli-readme-lib.test.mjs",
-    "mango-ui/scripts/release/release-cli-template-lib.mjs",
-    "mango-ui/scripts/release/release-cli-template-lib.test.mjs",
-    "mango-ui/scripts/release/release-maven-lib.mjs",
-    "mango-ui/scripts/release/release-maven-lib.test.mjs",
-    "mango-ui/scripts/release/release-plan-lib.mjs",
-    "mango-ui/scripts/release/release-plan-lib.test.mjs",
-    "mango-ui/scripts/release/release-publication-lib.mjs",
-    "mango-ui/scripts/release/release-publication-lib.test.mjs",
-    "mango-ui/scripts/release/release-repository-lib.mjs",
-    "mango-ui/scripts/release/release-repository-lib.test.mjs",
-    "mango-ui/scripts/release/release-scope-lib.mjs",
-    "mango-ui/scripts/release/release-scope-lib.test.mjs",
-    "mango-ui/scripts/release/run-local-release-checks.mjs",
-    "mango/mango-infra/mango-infra-event/README.md",
-    "mango/mango-platform/mango-notice/README.md",
-    "mango/mango-platform/mango-notice/mango-notice-core/src/main/java/io/mango/notice/core/service/NoticeInboundReceiverService.java",
-    "mango/mango-platform/mango-notice/mango-notice-core/src/test/java/io/mango/file/core/service/impl/NoticeInboundReceiverFileIntegrationTest.java",
-    "mango/mango-platform/mango-notice/mango-notice-core/src/test/java/io/mango/notice/core/service/NoticeInboundReceiverServiceIntegrationTest.java"
+    "mango-ui/packages/mango-pmo/README.md"
   ],
   "changesets": [
     {
-      "id": "issue-805-local-release-check",
-      "file": ".changeset/issue-805-local-release-check.md",
-      "sha256": "5e1ab2ced348d2a9f82dab787b7e2774257d1400b647e41ee359c9cb3e52cc28"
-    },
-    {
-      "id": "issue-805-release-consumer",
-      "file": ".changeset/issue-805-release-consumer.md",
-      "sha256": "23341dbe5763975dfe453c5af67edb2bd0bc44a323b0717f37dde488f335efc0"
-    },
-    {
-      "id": "issue-805-release-output-buffer",
-      "file": ".changeset/issue-805-release-output-buffer.md",
-      "sha256": "3f0d90f94f97e5ddf8de5effa53607ebbce0f0c7f16b3dac11941fb545efe438"
-    },
-    {
-      "id": "issue-805-release-source-snapshot",
-      "file": ".changeset/issue-805-release-source-snapshot.md",
-      "sha256": "3c81c9cfe0833ba4e95c2a865f249f6d390a6c933d392ed72788560cfdbb7049"
-    },
-    {
-      "id": "issue-805-release-tooling",
-      "file": ".changeset/issue-805-release-tooling.md",
-      "sha256": "183f9d218bfcb87cdaaa87a6ab76f15684bb3e7e01a84fbcc5bacb5484148fcf"
+      "id": "fix-business-readme-audit-scope",
+      "file": ".changeset/fix-business-readme-audit-scope.md",
+      "sha256": "feeca9986d2af8bc938294dce7674b31b7d8b4ed7677cbf2200486c706deabfe"
     }
   ],
   "legacyReconciliation": null,
   "restoredPublishedBaselines": [],
   "directPackages": [
-    "@mango/admin",
-    "@mango/admin-extension",
-    "@mango/admin-pages",
     "@mango/cli",
-    "@mango/common",
-    "@mango/file",
-    "@mango/link",
-    "@mango/notice",
-    "@mango/rbac",
-    "@mango/system"
+    "@mango/pmo"
   ],
   "classifiedFiles": [
     {
-      "file": "mango-business-starter/frontend/packages/{{moduleKebab}}/package.json",
-      "packageName": "@mango/cli",
-      "reason": "published-cli-projection"
+      "file": "mango-pmo/contracts/business-requirements.json",
+      "packageName": "@mango/pmo",
+      "reason": "published-pmo-source"
     },
     {
-      "file": "mango-business-starter/frontend/packages/{{moduleKebab}}/src/index.ts",
-      "packageName": "@mango/cli",
-      "reason": "published-cli-projection"
+      "file": "mango-pmo/contracts/implementation-plan.json",
+      "packageName": "@mango/pmo",
+      "reason": "published-pmo-source"
     },
     {
-      "file": "mango-business-starter/README.md",
-      "packageName": "@mango/cli",
-      "reason": "published-cli-projection"
+      "file": "mango-pmo/contracts/system-requirements.json",
+      "packageName": "@mango/pmo",
+      "reason": "published-pmo-source"
     },
     {
-      "file": "mango-ui/packages/admin-extension/package.json",
-      "packageName": "@mango/admin-extension",
-      "reason": "published-package-path"
+      "file": "mango-pmo/contracts/technical-design.json",
+      "packageName": "@mango/pmo",
+      "reason": "published-pmo-source"
     },
     {
-      "file": "mango-ui/packages/admin-extension/README.md",
-      "packageName": "@mango/admin-extension",
-      "reason": "published-package-path"
+      "file": "mango-pmo/plugin-src/.codex-plugin/plugin.json",
+      "packageName": "@mango/pmo",
+      "reason": "published-pmo-source"
     },
     {
-      "file": "mango-ui/packages/admin-extension/src/core.ts",
-      "packageName": "@mango/admin-extension",
-      "reason": "published-package-path"
+      "file": "mango-pmo/README.md",
+      "packageName": "@mango/pmo",
+      "reason": "published-pmo-source"
     },
     {
-      "file": "mango-ui/packages/admin-extension/src/features.ts",
-      "packageName": "@mango/admin-extension",
-      "reason": "published-package-path"
+      "file": "mango-pmo/rules/08-capability-docs.md",
+      "packageName": "@mango/pmo",
+      "reason": "published-pmo-source"
     },
     {
-      "file": "mango-ui/packages/admin-extension/src/index.ts",
-      "packageName": "@mango/admin-extension",
-      "reason": "published-package-path"
+      "file": "mango-pmo/rules/index.json",
+      "packageName": "@mango/pmo",
+      "reason": "published-pmo-source"
     },
     {
-      "file": "mango-ui/packages/admin-extension/src/notice.ts",
-      "packageName": "@mango/admin-extension",
-      "reason": "published-package-path"
+      "file": "mango-pmo/rules/product/05-document-lifecycle.md",
+      "packageName": "@mango/pmo",
+      "reason": "published-pmo-source"
     },
     {
-      "file": "mango-ui/packages/admin-extension/tsconfig.json",
-      "packageName": "@mango/admin-extension",
-      "reason": "published-package-path"
+      "file": "mango-pmo/tools/audit-module-readmes.mjs",
+      "packageName": "@mango/pmo",
+      "reason": "published-pmo-source"
     },
     {
-      "file": "mango-ui/packages/admin-extension/vite.config.ts",
-      "packageName": "@mango/admin-extension",
-      "reason": "published-package-path"
+      "file": "mango-pmo/tools/audit-readme-source-facts.mjs",
+      "packageName": "@mango/pmo",
+      "reason": "published-pmo-source"
     },
     {
-      "file": "mango-ui/packages/admin-pages/package.json",
-      "packageName": "@mango/admin-pages",
-      "reason": "published-package-path"
-    },
-    {
-      "file": "mango-ui/packages/admin-pages/README.md",
-      "packageName": "@mango/admin-pages",
-      "reason": "published-package-path"
-    },
-    {
-      "file": "mango-ui/packages/admin-pages/src/core.ts",
-      "packageName": "@mango/admin-pages",
-      "reason": "published-package-path"
-    },
-    {
-      "file": "mango-ui/packages/admin-pages/src/features.ts",
-      "packageName": "@mango/admin-pages",
-      "reason": "published-package-path"
-    },
-    {
-      "file": "mango-ui/packages/admin-pages/src/notice.ts",
-      "packageName": "@mango/admin-pages",
-      "reason": "published-package-path"
-    },
-    {
-      "file": "mango-ui/packages/admin-pages/vite.config.ts",
-      "packageName": "@mango/admin-pages",
-      "reason": "published-package-path"
-    },
-    {
-      "file": "mango-ui/packages/admin/build-style-deps.mjs",
-      "packageName": "@mango/admin",
-      "reason": "published-package-path"
-    },
-    {
-      "file": "mango-ui/packages/admin/README.md",
-      "packageName": "@mango/admin",
-      "reason": "published-package-path"
-    },
-    {
-      "file": "mango-ui/packages/admin/vite.config.ts",
-      "packageName": "@mango/admin",
-      "reason": "published-package-path"
-    },
-    {
-      "file": "mango-ui/packages/common/components/Pagination/index.vue",
-      "packageName": "@mango/common",
-      "reason": "published-package-path"
-    },
-    {
-      "file": "mango-ui/packages/common/README.md",
-      "packageName": "@mango/common",
-      "reason": "published-package-path"
-    },
-    {
-      "file": "mango-ui/packages/file/package.json",
-      "packageName": "@mango/file",
-      "reason": "published-package-path"
-    },
-    {
-      "file": "mango-ui/packages/file/README.md",
-      "packageName": "@mango/file",
-      "reason": "published-package-path"
-    },
-    {
-      "file": "mango-ui/packages/file/src/admin-pages.ts",
-      "packageName": "@mango/file",
-      "reason": "published-package-path"
-    },
-    {
-      "file": "mango-ui/packages/file/src/views/settings/index.vue",
-      "packageName": "@mango/file",
-      "reason": "published-package-path"
-    },
-    {
-      "file": "mango-ui/packages/file/vite.config.ts",
-      "packageName": "@mango/file",
-      "reason": "published-package-path"
-    },
-    {
-      "file": "mango-ui/packages/file/vitest.config.ts",
-      "packageName": "@mango/file",
-      "reason": "published-package-path"
-    },
-    {
-      "file": "mango-ui/packages/link/README.md",
-      "packageName": "@mango/link",
-      "reason": "published-package-path"
-    },
-    {
-      "file": "mango-ui/packages/link/src/views/LinkCompanyLinksView.vue",
-      "packageName": "@mango/link",
-      "reason": "published-package-path"
-    },
-    {
-      "file": "mango-ui/packages/mango-cli/README.md",
-      "packageName": "@mango/cli",
-      "reason": "published-package-path"
-    },
-    {
-      "file": "mango-ui/packages/mango-cli/release-versions.json",
-      "packageName": "@mango/cli",
-      "reason": "published-package-path"
-    },
-    {
-      "file": "mango-ui/packages/mango-cli/scripts/check-cli.mjs",
-      "packageName": "@mango/cli",
-      "reason": "published-package-path"
-    },
-    {
-      "file": "mango-ui/packages/mango-cli/src/index.mjs",
-      "packageName": "@mango/cli",
-      "reason": "published-package-path"
-    },
-    {
-      "file": "mango-ui/packages/mango-cli/src/release-command.mjs",
-      "packageName": "@mango/cli",
-      "reason": "published-package-path"
-    },
-    {
-      "file": "mango-ui/packages/mango-cli/templates/business-module/frontend/packages/{{moduleKebab}}/package.json.template",
-      "packageName": "@mango/cli",
-      "reason": "published-package-path"
-    },
-    {
-      "file": "mango-ui/packages/mango-cli/templates/business-module/frontend/packages/{{moduleKebab}}/src/index.ts",
-      "packageName": "@mango/cli",
-      "reason": "published-package-path"
-    },
-    {
-      "file": "mango-ui/packages/mango-cli/templates/full/backend/app/src/main/resources/application.yml",
-      "packageName": "@mango/cli",
-      "reason": "published-package-path"
-    },
-    {
-      "file": "mango-ui/packages/mango-cli/templates/full/frontend/public/favicon.ico",
-      "packageName": "@mango/cli",
-      "reason": "published-package-path"
+      "file": "mango-pmo/tools/lib/readme-audit-scope.mjs",
+      "packageName": "@mango/pmo",
+      "reason": "published-pmo-source"
     },
     {
       "file": "mango-ui/packages/mango-cli/templates/full/README.md",
@@ -393,587 +173,51 @@
       "reason": "published-package-path"
     },
     {
-      "file": "mango-ui/packages/notice/src/admin-pages.ts",
-      "packageName": "@mango/notice",
-      "reason": "published-package-path"
-    },
-    {
-      "file": "mango-ui/packages/rbac/README.md",
-      "packageName": "@mango/rbac",
-      "reason": "published-package-path"
-    },
-    {
-      "file": "mango-ui/packages/rbac/src/api/post.ts",
-      "packageName": "@mango/rbac",
-      "reason": "published-package-path"
-    },
-    {
-      "file": "mango-ui/packages/rbac/src/views/app/index.vue",
-      "packageName": "@mango/rbac",
-      "reason": "published-package-path"
-    },
-    {
-      "file": "mango-ui/packages/rbac/src/views/menu-package/index.vue",
-      "packageName": "@mango/rbac",
-      "reason": "published-package-path"
-    },
-    {
-      "file": "mango-ui/packages/rbac/src/views/menu/index.vue",
-      "packageName": "@mango/rbac",
-      "reason": "published-package-path"
-    },
-    {
-      "file": "mango-ui/packages/rbac/src/views/org/index.vue",
-      "packageName": "@mango/rbac",
-      "reason": "published-package-path"
-    },
-    {
-      "file": "mango-ui/packages/rbac/src/views/permission/index.vue",
-      "packageName": "@mango/rbac",
-      "reason": "published-package-path"
-    },
-    {
-      "file": "mango-ui/packages/rbac/src/views/post/index.vue",
-      "packageName": "@mango/rbac",
-      "reason": "published-package-path"
-    },
-    {
-      "file": "mango-ui/packages/rbac/src/views/role/index.vue",
-      "packageName": "@mango/rbac",
-      "reason": "published-package-path"
-    },
-    {
-      "file": "mango-ui/packages/rbac/src/views/user/index.vue",
-      "packageName": "@mango/rbac",
-      "reason": "published-package-path"
-    },
-    {
-      "file": "mango-ui/packages/system/README.md",
-      "packageName": "@mango/system",
-      "reason": "published-package-path"
-    },
-    {
-      "file": "mango-ui/packages/system/src/api/log.ts",
-      "packageName": "@mango/system",
-      "reason": "published-package-path"
-    },
-    {
-      "file": "mango-ui/packages/system/src/views/area/index.vue",
-      "packageName": "@mango/system",
-      "reason": "published-package-path"
-    },
-    {
-      "file": "mango-ui/packages/system/src/views/config/index.vue",
-      "packageName": "@mango/system",
-      "reason": "published-package-path"
-    },
-    {
-      "file": "mango-ui/packages/system/src/views/dict/index.vue",
-      "packageName": "@mango/system",
-      "reason": "published-package-path"
-    },
-    {
-      "file": "mango-ui/packages/system/src/views/tenant/index.vue",
-      "packageName": "@mango/system",
+      "file": "mango-ui/packages/mango-pmo/README.md",
+      "packageName": "@mango/pmo",
       "reason": "published-package-path"
     }
   ],
   "packages": [
     {
-      "name": "@mango/common",
-      "directory": "packages/common",
-      "sourceVersion": "1.0.26",
-      "targetVersion": "1.0.27",
+      "name": "@mango/pmo",
+      "directory": "packages/mango-pmo",
+      "sourceVersion": "1.3.15",
+      "targetVersion": "1.3.16",
       "type": "patch",
       "direct": true,
       "generated": false,
       "reasons": [
         {
-          "source": "changeset:issue-805-release-consumer",
-          "summary": "Fix the Issue #805 full-consumer regressions and make the Mango npm release graph acyclic. The release adds the FE1 `@mango/admin-extension` contract, keeps the published Admin Pages subpaths as same-instance compatibility re-exports, moves File and newly generated business registrars off the FE3 dependency, restores CMS, system-event, and hidden Notice settings routes in full projects, removes the confirmed frontend warnings, and adds candidate-package consumer contracts."
+          "source": "changeset:fix-business-readme-audit-scope",
+          "summary": "Fix packaged README audits so Mango source checkouts retain their fixed platform README gate while business consumers resolve `mango.config.json.paths`, audit capability-map-owned repository documents, and fail closed on wrong roots or empty scopes. Align the generated full-project README with the exact PMO, CLI and Maven release tuple."
         }
       ],
       "releaseDependencies": []
     },
     {
-      "name": "@mango/admin-extension",
-      "directory": "packages/admin-extension",
-      "sourceVersion": "1.0.0",
-      "targetVersion": "1.0.1",
-      "type": "patch",
-      "direct": true,
-      "generated": false,
-      "reasons": [
-        {
-          "source": "changeset:issue-805-release-consumer",
-          "summary": "Fix the Issue #805 full-consumer regressions and make the Mango npm release graph acyclic. The release adds the FE1 `@mango/admin-extension` contract, keeps the published Admin Pages subpaths as same-instance compatibility re-exports, moves File and newly generated business registrars off the FE3 dependency, restores CMS, system-event, and hidden Notice settings routes in full projects, removes the confirmed frontend warnings, and adds candidate-package consumer contracts."
-        }
-      ],
-      "releaseDependencies": ["@mango/common"]
-    },
-    {
-      "name": "@mango/auth",
-      "directory": "packages/auth",
-      "sourceVersion": "1.0.26",
-      "targetVersion": "1.0.27",
-      "type": "patch",
-      "direct": false,
-      "generated": true,
-      "reasons": [
-        {
-          "source": "dependency-closure",
-          "summary": "exact runtime dependency follows @mango/common"
-        }
-      ],
-      "releaseDependencies": ["@mango/common"]
-    },
-    {
-      "name": "@mango/file",
-      "directory": "packages/file",
-      "sourceVersion": "1.0.34",
-      "targetVersion": "1.0.35",
-      "type": "patch",
-      "direct": true,
-      "generated": false,
-      "reasons": [
-        {
-          "source": "changeset:issue-805-release-consumer",
-          "summary": "Fix the Issue #805 full-consumer regressions and make the Mango npm release graph acyclic. The release adds the FE1 `@mango/admin-extension` contract, keeps the published Admin Pages subpaths as same-instance compatibility re-exports, moves File and newly generated business registrars off the FE3 dependency, restores CMS, system-event, and hidden Notice settings routes in full projects, removes the confirmed frontend warnings, and adds candidate-package consumer contracts."
-        }
-      ],
-      "releaseDependencies": ["@mango/admin-extension", "@mango/common"]
-    },
-    {
-      "name": "@mango/grid-layout",
-      "directory": "packages/grid-layout",
-      "sourceVersion": "1.0.17",
-      "targetVersion": "1.0.18",
-      "type": "patch",
-      "direct": false,
-      "generated": true,
-      "reasons": [
-        {
-          "source": "dependency-closure",
-          "summary": "exact runtime dependency follows @mango/common"
-        }
-      ],
-      "releaseDependencies": ["@mango/common"]
-    },
-    {
-      "name": "@mango/grid-widgets",
-      "directory": "packages/grid-widgets",
-      "sourceVersion": "1.0.23",
-      "targetVersion": "1.0.24",
-      "type": "patch",
-      "direct": false,
-      "generated": true,
-      "reasons": [
-        {
-          "source": "dependency-closure",
-          "summary": "exact runtime dependency follows @mango/grid-layout"
-        }
-      ],
-      "releaseDependencies": ["@mango/grid-layout"]
-    },
-    {
-      "name": "@mango/home",
-      "directory": "packages/home",
-      "sourceVersion": "1.0.15",
-      "targetVersion": "1.0.16",
-      "type": "patch",
-      "direct": false,
-      "generated": true,
-      "reasons": [
-        {
-          "source": "dependency-closure",
-          "summary": "exact runtime dependency follows @mango/common"
-        }
-      ],
-      "releaseDependencies": ["@mango/common"]
-    },
-    {
-      "name": "@mango/rbac",
-      "directory": "packages/rbac",
-      "sourceVersion": "1.0.24",
-      "targetVersion": "1.0.25",
-      "type": "patch",
-      "direct": true,
-      "generated": false,
-      "reasons": [
-        {
-          "source": "changeset:issue-805-release-consumer",
-          "summary": "Fix the Issue #805 full-consumer regressions and make the Mango npm release graph acyclic. The release adds the FE1 `@mango/admin-extension` contract, keeps the published Admin Pages subpaths as same-instance compatibility re-exports, moves File and newly generated business registrars off the FE3 dependency, restores CMS, system-event, and hidden Notice settings routes in full projects, removes the confirmed frontend warnings, and adds candidate-package consumer contracts."
-        }
-      ],
-      "releaseDependencies": ["@mango/common"]
-    },
-    {
-      "name": "@mango/site-shell",
-      "directory": "packages/site-shell",
-      "sourceVersion": "1.0.13",
-      "targetVersion": "1.0.14",
-      "type": "patch",
-      "direct": false,
-      "generated": true,
-      "reasons": [
-        {
-          "source": "dependency-closure",
-          "summary": "exact runtime dependency follows @mango/common"
-        }
-      ],
-      "releaseDependencies": ["@mango/common"]
-    },
-    {
-      "name": "@mango/system",
-      "directory": "packages/system",
-      "sourceVersion": "1.0.32",
-      "targetVersion": "1.0.33",
-      "type": "patch",
-      "direct": true,
-      "generated": false,
-      "reasons": [
-        {
-          "source": "changeset:issue-805-release-consumer",
-          "summary": "Fix the Issue #805 full-consumer regressions and make the Mango npm release graph acyclic. The release adds the FE1 `@mango/admin-extension` contract, keeps the published Admin Pages subpaths as same-instance compatibility re-exports, moves File and newly generated business registrars off the FE3 dependency, restores CMS, system-event, and hidden Notice settings routes in full projects, removes the confirmed frontend warnings, and adds candidate-package consumer contracts."
-        }
-      ],
-      "releaseDependencies": ["@mango/common", "@mango/file", "@mango/grid-widgets", "@mango/rbac"]
-    },
-    {
-      "name": "@mango/admin-pages",
-      "directory": "packages/admin-pages",
-      "sourceVersion": "1.0.33",
-      "targetVersion": "1.0.34",
-      "type": "patch",
-      "direct": true,
-      "generated": false,
-      "reasons": [
-        {
-          "source": "changeset:issue-805-release-consumer",
-          "summary": "Fix the Issue #805 full-consumer regressions and make the Mango npm release graph acyclic. The release adds the FE1 `@mango/admin-extension` contract, keeps the published Admin Pages subpaths as same-instance compatibility re-exports, moves File and newly generated business registrars off the FE3 dependency, restores CMS, system-event, and hidden Notice settings routes in full projects, removes the confirmed frontend warnings, and adds candidate-package consumer contracts."
-        }
-      ],
-      "releaseDependencies": ["@mango/admin-extension", "@mango/auth", "@mango/common", "@mango/rbac", "@mango/system"]
-    },
-    {
-      "name": "@mango/calendar",
-      "directory": "packages/calendar",
-      "sourceVersion": "1.0.34",
-      "targetVersion": "1.0.35",
-      "type": "patch",
-      "direct": false,
-      "generated": true,
-      "reasons": [
-        {
-          "source": "dependency-closure",
-          "summary": "exact runtime dependency follows @mango/admin-pages, @mango/common, @mango/grid-widgets"
-        }
-      ],
-      "releaseDependencies": ["@mango/admin-pages", "@mango/common", "@mango/grid-widgets"]
-    },
-    {
-      "name": "@mango/cms",
-      "directory": "packages/cms",
-      "sourceVersion": "1.0.23",
-      "targetVersion": "1.0.24",
-      "type": "patch",
-      "direct": false,
-      "generated": true,
-      "reasons": [
-        {
-          "source": "dependency-closure",
-          "summary": "exact runtime dependency follows @mango/admin-pages, @mango/common, @mango/file"
-        }
-      ],
-      "releaseDependencies": ["@mango/admin-pages", "@mango/common", "@mango/file"]
-    },
-    {
-      "name": "@mango/job",
-      "directory": "packages/job",
-      "sourceVersion": "1.0.27",
-      "targetVersion": "1.0.28",
-      "type": "patch",
-      "direct": false,
-      "generated": true,
-      "reasons": [
-        {
-          "source": "dependency-closure",
-          "summary": "exact runtime dependency follows @mango/admin-pages, @mango/common"
-        }
-      ],
-      "releaseDependencies": ["@mango/admin-pages", "@mango/common"]
-    },
-    {
-      "name": "@mango/link",
-      "directory": "packages/link",
-      "sourceVersion": "1.0.20",
-      "targetVersion": "1.0.21",
-      "type": "patch",
-      "direct": true,
-      "generated": false,
-      "reasons": [
-        {
-          "source": "changeset:issue-805-release-consumer",
-          "summary": "Fix the Issue #805 full-consumer regressions and make the Mango npm release graph acyclic. The release adds the FE1 `@mango/admin-extension` contract, keeps the published Admin Pages subpaths as same-instance compatibility re-exports, moves File and newly generated business registrars off the FE3 dependency, restores CMS, system-event, and hidden Notice settings routes in full projects, removes the confirmed frontend warnings, and adds candidate-package consumer contracts."
-        }
-      ],
-      "releaseDependencies": ["@mango/admin-pages", "@mango/common", "@mango/grid-widgets"]
-    },
-    {
-      "name": "@mango/notice",
-      "directory": "packages/notice",
-      "sourceVersion": "1.0.39",
-      "targetVersion": "1.0.40",
-      "type": "patch",
-      "direct": true,
-      "generated": false,
-      "reasons": [
-        {
-          "source": "changeset:issue-805-release-consumer",
-          "summary": "Fix the Issue #805 full-consumer regressions and make the Mango npm release graph acyclic. The release adds the FE1 `@mango/admin-extension` contract, keeps the published Admin Pages subpaths as same-instance compatibility re-exports, moves File and newly generated business registrars off the FE3 dependency, restores CMS, system-event, and hidden Notice settings routes in full projects, removes the confirmed frontend warnings, and adds candidate-package consumer contracts."
-        }
-      ],
-      "releaseDependencies": ["@mango/admin-pages", "@mango/common", "@mango/grid-widgets", "@mango/system"]
-    },
-    {
-      "name": "@mango/numgen",
-      "directory": "packages/numgen",
-      "sourceVersion": "1.0.35",
-      "targetVersion": "1.0.36",
-      "type": "patch",
-      "direct": false,
-      "generated": true,
-      "reasons": [
-        {
-          "source": "dependency-closure",
-          "summary": "exact runtime dependency follows @mango/admin-pages, @mango/common, @mango/system"
-        }
-      ],
-      "releaseDependencies": ["@mango/admin-pages", "@mango/common", "@mango/system"]
-    },
-    {
-      "name": "@mango/payment",
-      "directory": "packages/payment",
-      "sourceVersion": "1.0.26",
-      "targetVersion": "1.0.27",
-      "type": "patch",
-      "direct": false,
-      "generated": true,
-      "reasons": [
-        {
-          "source": "dependency-closure",
-          "summary": "exact runtime dependency follows @mango/admin-pages, @mango/common, @mango/file"
-        }
-      ],
-      "releaseDependencies": ["@mango/admin-pages", "@mango/common", "@mango/file"]
-    },
-    {
-      "name": "@mango/template",
-      "directory": "packages/template",
-      "sourceVersion": "1.0.34",
-      "targetVersion": "1.0.35",
-      "type": "patch",
-      "direct": false,
-      "generated": true,
-      "reasons": [
-        {
-          "source": "dependency-closure",
-          "summary": "exact runtime dependency follows @mango/admin-pages, @mango/common, @mango/file, @mango/system"
-        }
-      ],
-      "releaseDependencies": ["@mango/admin-pages", "@mango/common", "@mango/file", "@mango/system"]
-    },
-    {
-      "name": "@mango/workflow",
-      "directory": "packages/workflow",
-      "sourceVersion": "1.0.40",
-      "targetVersion": "1.0.41",
-      "type": "patch",
-      "direct": false,
-      "generated": true,
-      "reasons": [
-        {
-          "source": "dependency-closure",
-          "summary": "exact runtime dependency follows @mango/admin-pages, @mango/common, @mango/file, @mango/grid-widgets, @mango/system"
-        }
-      ],
-      "releaseDependencies": [
-        "@mango/admin-pages",
-        "@mango/common",
-        "@mango/file",
-        "@mango/grid-widgets",
-        "@mango/system"
-      ]
-    },
-    {
-      "name": "@mango/admin-shell",
-      "directory": "packages/admin-shell",
-      "sourceVersion": "1.0.60",
-      "targetVersion": "1.0.61",
-      "type": "patch",
-      "direct": false,
-      "generated": true,
-      "reasons": [
-        {
-          "source": "dependency-closure",
-          "summary": "exact runtime dependency follows @mango/admin-pages, @mango/auth, @mango/common, @mango/file, @mango/grid-layout, @mango/grid-widgets, @mango/home, @mango/job, @mango/notice, @mango/rbac, @mango/workflow"
-        }
-      ],
-      "releaseDependencies": [
-        "@mango/admin-pages",
-        "@mango/auth",
-        "@mango/common",
-        "@mango/file",
-        "@mango/grid-layout",
-        "@mango/grid-widgets",
-        "@mango/home",
-        "@mango/job",
-        "@mango/notice",
-        "@mango/rbac",
-        "@mango/workflow"
-      ]
-    },
-    {
-      "name": "@mango/workflow-business-example",
-      "directory": "packages/workflow-business-example",
-      "sourceVersion": "1.0.39",
-      "targetVersion": "1.0.40",
-      "type": "patch",
-      "direct": false,
-      "generated": true,
-      "reasons": [
-        {
-          "source": "dependency-closure",
-          "summary": "exact runtime dependency follows @mango/admin-pages, @mango/workflow"
-        }
-      ],
-      "releaseDependencies": ["@mango/admin-pages", "@mango/workflow"]
-    },
-    {
-      "name": "@mango/admin",
-      "directory": "packages/admin",
-      "sourceVersion": "1.0.66",
-      "targetVersion": "1.0.67",
-      "type": "patch",
-      "direct": true,
-      "generated": false,
-      "reasons": [
-        {
-          "source": "changeset:issue-805-release-consumer",
-          "summary": "Fix the Issue #805 full-consumer regressions and make the Mango npm release graph acyclic. The release adds the FE1 `@mango/admin-extension` contract, keeps the published Admin Pages subpaths as same-instance compatibility re-exports, moves File and newly generated business registrars off the FE3 dependency, restores CMS, system-event, and hidden Notice settings routes in full projects, removes the confirmed frontend warnings, and adds candidate-package consumer contracts."
-        }
-      ],
-      "releaseDependencies": [
-        "@mango/admin-pages",
-        "@mango/admin-shell",
-        "@mango/auth",
-        "@mango/calendar",
-        "@mango/cms",
-        "@mango/common",
-        "@mango/file",
-        "@mango/grid-layout",
-        "@mango/grid-widgets",
-        "@mango/job",
-        "@mango/link",
-        "@mango/notice",
-        "@mango/numgen",
-        "@mango/payment",
-        "@mango/rbac",
-        "@mango/system",
-        "@mango/template",
-        "@mango/workflow",
-        "@mango/workflow-business-example"
-      ]
-    },
-    {
       "name": "@mango/cli",
       "directory": "packages/mango-cli",
-      "sourceVersion": "1.0.107",
-      "targetVersion": "1.0.108",
+      "sourceVersion": "1.0.108",
+      "targetVersion": "1.0.109",
       "type": "patch",
       "direct": true,
       "generated": false,
       "reasons": [
         {
-          "source": "changeset:issue-805-local-release-check",
-          "summary": "Make the final-head local release gate reuse the Runner's Release-only classification, so deterministic version projections run the release plan check without requiring duplicate fake Changesets while ordinary source changes retain the full Changeset intent check."
-        },
-        {
-          "source": "changeset:issue-805-release-consumer",
-          "summary": "Fix the Issue #805 full-consumer regressions and make the Mango npm release graph acyclic. The release adds the FE1 `@mango/admin-extension` contract, keeps the published Admin Pages subpaths as same-instance compatibility re-exports, moves File and newly generated business registrars off the FE3 dependency, restores CMS, system-event, and hidden Notice settings routes in full projects, removes the confirmed frontend warnings, and adds candidate-package consumer contracts."
-        },
-        {
-          "source": "changeset:issue-805-release-output-buffer",
-          "summary": "Allow Mango release commands to retain high-volume Maven and npm build output without terminating candidate preparation at Node's default child-process buffer, validate mixed Release Changeset intent against the plan's committed source boundary instead of its machine-generated version projections, and verify all sealed Maven coordinates in one mirror-isolated candidate consumer instead of launching one Maven process per coordinate."
-        },
-        {
-          "source": "changeset:issue-805-release-source-snapshot",
-          "summary": "Bind each generated release plan to the exact committed source snapshot and complete baseline-to-source file list, so final Release-only version projections are verified without being misclassified as new direct package changes while any later source drift still fails closed."
-        },
-        {
-          "source": "changeset:issue-805-release-tooling",
-          "summary": "Keep the published Maven source version stable when an in-progress release plan is recalculated, and make registry doctor probe the same exact published Mango BOM POM through the Maven publish and consume roles instead of treating a non-browsable repository root as unavailable."
+          "source": "changeset:fix-business-readme-audit-scope",
+          "summary": "Fix packaged README audits so Mango source checkouts retain their fixed platform README gate while business consumers resolve `mango.config.json.paths`, audit capability-map-owned repository documents, and fail closed on wrong roots or empty scopes. Align the generated full-project README with the exact PMO, CLI and Maven release tuple."
         }
       ],
       "releaseDependencies": [
-        "@mango/admin",
-        "@mango/admin-extension",
-        "@mango/admin-pages",
-        "@mango/admin-shell",
-        "@mango/auth",
-        "@mango/calendar",
-        "@mango/cms",
-        "@mango/common",
-        "@mango/file",
-        "@mango/grid-layout",
-        "@mango/grid-widgets",
-        "@mango/home",
-        "@mango/job",
-        "@mango/link",
-        "@mango/notice",
-        "@mango/numgen",
-        "@mango/payment",
-        "@mango/rbac",
-        "@mango/site-shell",
-        "@mango/system",
-        "@mango/template",
-        "@mango/workflow",
-        "@mango/workflow-business-example"
+        "@mango/pmo"
       ]
     }
   ],
   "order": [
-    "@mango/common",
-    "@mango/admin-extension",
-    "@mango/auth",
-    "@mango/file",
-    "@mango/grid-layout",
-    "@mango/grid-widgets",
-    "@mango/home",
-    "@mango/rbac",
-    "@mango/site-shell",
-    "@mango/system",
-    "@mango/admin-pages",
-    "@mango/calendar",
-    "@mango/cms",
-    "@mango/job",
-    "@mango/link",
-    "@mango/notice",
-    "@mango/numgen",
-    "@mango/payment",
-    "@mango/template",
-    "@mango/workflow",
-    "@mango/admin-shell",
-    "@mango/workflow-business-example",
-    "@mango/admin",
+    "@mango/pmo",
     "@mango/cli"
   ],
-  "maven": {
-    "sourceVersion": "1.0.36",
-    "targetVersion": "1.0.37",
-    "scope": "all-non-app",
-    "docsBundle": true,
-    "reason": "Git impact includes Mango Maven production sources"
-  },
-  "planDigest": "127cdcdf8d08b95ae6dee13fed2edb6a0838d1b4c586258757d016c3bb4c30d8"
+  "maven": null,
+  "planDigest": "8c21dcba0576d6b0b01f1afa3bbdd2b7ba9032dea0e2b5f8a2ba47ae9139d699"
 }

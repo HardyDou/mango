@@ -2,6 +2,50 @@
 
 ## Unreleased
 
+## 1.0.109 - 2026-08-17
+
+### Pull Requests
+
+- [PR #818](https://github.com/HardyDou/mango/pull/818) Fixed business-consumer README audit root and scope resolution. Packages: `@mango/pmo@1.3.16`, `@mango/cli@1.0.109`. Business Adaptation: upgrade the exact tuple, apply the PMO upgrade and rerun the locked check plus both M08 audits.
+
+### Fixed
+
+- Lock and distribute PMO `1.3.16`, whose README audits resolve business-owned paths without requiring Mango source-only README files and fail closed on invalid or escaped scopes.
+
+### Versions
+
+- `@mango/cli` advances from `1.0.108` to `1.0.109` and locks `@mango/pmo@1.3.16`; Maven remains `1.0.37` and all other npm coordinates remain unchanged.
+
+### Published Packages
+
+- Publish `@mango/pmo@1.3.16` followed by `@mango/cli@1.0.109`; publish no Maven or unrelated npm package.
+
+### Business Impact
+
+- Business repositories can upgrade PMO without being required to contain Mango source-tree README paths. No runtime API, database, menu, permission, tenant or configuration changes.
+
+### Upgrade Estimate
+
+- Audience: business repositories using Mango PMO checks.
+- Engineering Effort: 15 to 30 minutes normally; up to 1 hour for genuine README repairs.
+- Execution Window: 20 to 60 minutes for upgrade and validation.
+- Service Downtime: none.
+- Rollback Effort: 10 to 20 minutes.
+- Assumptions: clean worktree, registry access and valid project path configuration.
+
+### Upgrade Notes
+
+1. Install CLI `1.0.109`, dry-run and apply the PMO `1.3.16` upgrade, then run the locked check.
+2. Run both packaged M08 audits from the business project root and repair only genuine project-owned findings.
+
+### Verification
+
+- Verify the exact two-package machine topology, sealed mixed consumer, hosted/group integrity and pure consume-registry PMO upgrade/audit consumer.
+
+### Rollback
+
+- Restore CLI `1.0.108` and PMO `1.3.15` through the business upgrade rollback; never overwrite an immutable npm coordinate.
+
 ## 1.0.108 - 2026-08-16
 
 ### Pull Requests
