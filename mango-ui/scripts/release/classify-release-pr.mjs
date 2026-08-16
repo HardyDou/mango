@@ -4,6 +4,10 @@ import { spawnSync } from 'node:child_process';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { assertCliReadmeProjection, CLI_README_PATH } from './release-cli-readme-lib.mjs';
+import {
+  assertCliFullFrontendTemplateProjection,
+  CLI_FULL_FRONTEND_PACKAGE_TEMPLATE_PATH,
+} from './release-cli-template-lib.mjs';
 import { readGitFile } from './release-repository-lib.mjs';
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
@@ -49,6 +53,12 @@ export function assertReleaseOnlyContent(headRef = 'HEAD') {
   assertCliReadmeProjection({
     sourceContent: readGitFile(repoRoot, plan.source?.commit, CLI_README_PATH),
     projectedContent: readGitFile(repoRoot, headRef, CLI_README_PATH),
+    sourceVersion: cli.sourceVersion,
+    targetVersion: cli.targetVersion,
+  });
+  assertCliFullFrontendTemplateProjection({
+    sourceContent: readGitFile(repoRoot, plan.source?.commit, CLI_FULL_FRONTEND_PACKAGE_TEMPLATE_PATH),
+    projectedContent: readGitFile(repoRoot, headRef, CLI_FULL_FRONTEND_PACKAGE_TEMPLATE_PATH),
     sourceVersion: cli.sourceVersion,
     targetVersion: cli.targetVersion,
   });
