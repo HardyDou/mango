@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 
@@ -111,15 +111,26 @@ function runRegistryDoctor(argv, runtime, env) {
     if (!mavenPublishServerId) errors.push('Maven publish settings.xml server id is required');
     if (!mavenConsumeServerId) errors.push('Maven consume settings.xml server id is required');
   }
+  let mavenProbe = null;
+  if (mavenConfigured && errors.length === 0) {
+    try {
+      mavenProbe = resolveMavenRegistryProbe(runtime.cwd || process.cwd());
+    } catch (error) {
+      errors.push(error instanceof Error ? error.message : String(error));
+    }
+  }
   const checks = [];
   if (errors.length === 0) {
-    checks.push(runCheck('npm', ['whoami', `--registry=${publishRegistry}`], runtime.cwd || process.cwd(), env));
+    checks.push(
+      runCheck('npm', ['whoami', `--registry=${publishRegistry}`], runtime.cwd || process.cwd(), env, runtime),
+    );
     checks.push(
       runCheck(
         'npm',
         ['view', '@mango/cli', 'version', `--registry=${consumeRegistry}`],
         runtime.cwd || process.cwd(),
         env,
+        runtime,
       ),
     );
     for (const check of checks) {
@@ -127,10 +138,36 @@ function runRegistryDoctor(argv, runtime, env) {
     }
     if (mavenConfigured) {
       checks.push(
-        runCheck('curl', ['-fsIL', '--max-time', '20', mavenPublishRegistry], runtime.cwd || process.cwd(), env),
+        runCheck(
+          'curl',
+          [
+            '-fsSL',
+            '--max-time',
+            '20',
+            '--output',
+            '/dev/null',
+            `${mavenPublishRegistry.replace(/\/$/u, '')}/${mavenProbe.path}`,
+          ],
+          runtime.cwd || process.cwd(),
+          env,
+          runtime,
+        ),
       );
       checks.push(
-        runCheck('curl', ['-fsIL', '--max-time', '20', mavenConsumeRegistry], runtime.cwd || process.cwd(), env),
+        runCheck(
+          'curl',
+          [
+            '-fsSL',
+            '--max-time',
+            '20',
+            '--output',
+            '/dev/null',
+            `${mavenConsumeRegistry.replace(/\/$/u, '')}/${mavenProbe.path}`,
+          ],
+          runtime.cwd || process.cwd(),
+          env,
+          runtime,
+        ),
       );
       for (const check of checks.slice(-2)) {
         if (check.exitCode !== 0) errors.push(`${check.command} failed: ${check.output}`);
@@ -148,6 +185,7 @@ function runRegistryDoctor(argv, runtime, env) {
           consumeRegistry: mavenConsumeRegistry,
           publishServerId: mavenPublishServerId,
           consumeServerId: mavenConsumeServerId,
+          probe: mavenProbe,
         }
       : null,
     checks,
@@ -163,8 +201,28 @@ function runRegistryDoctor(argv, runtime, env) {
   return output;
 }
 
-function runCheck(command, args, cwd, env) {
-  const result = spawnSync(command, args, { cwd, env, encoding: 'utf8', timeout: 60_000 });
+export function resolveMavenRegistryProbe(start) {
+  const projectRoot = findMangoRepository(start);
+  const plan = readJsonIfPresent(join(projectRoot, 'mango-ui/.changeset/release-plan.json'));
+  const versions = readJsonIfPresent(join(projectRoot, 'mango-ui/packages/mango-cli/release-versions.json'));
+  const version = plan?.maven?.sourceVersion || versions?.maven?.mangoBackend || '';
+  if (!/^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/u.test(version)) {
+    throw new Error('cannot resolve a published Maven baseline version for registry doctor');
+  }
+  return {
+    coordinate: `io.mango:mango-bom:${version}`,
+    path: `io/mango/mango-bom/${version}/mango-bom-${version}.pom`,
+  };
+}
+
+function readJsonIfPresent(file) {
+  if (!existsSync(file)) return null;
+  return JSON.parse(readFileSync(file, 'utf8'));
+}
+
+function runCheck(command, args, cwd, env, runtime = {}) {
+  const execute = runtime.spawnSync || spawnSync;
+  const result = execute(command, args, { cwd, env, encoding: 'utf8', timeout: 60_000 });
   return {
     command: [command, ...args].join(' '),
     exitCode: result.status ?? 1,

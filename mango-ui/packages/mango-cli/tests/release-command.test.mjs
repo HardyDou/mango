@@ -3,7 +3,13 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
-import { RELEASE_STATES, findMangoRepository, redactReleaseText, runReleaseCli } from '../src/release-command.mjs';
+import {
+  RELEASE_STATES,
+  findMangoRepository,
+  redactReleaseText,
+  resolveMavenRegistryProbe,
+  runReleaseCli,
+} from '../src/release-command.mjs';
 
 test('release lifecycle uses the five local-first states', () => {
   assert.deepEqual(RELEASE_STATES, ['PREPARED', 'CANDIDATE_VERIFIED', 'PUBLISHED', 'CONSUMER_VERIFIED', 'COMPLETED']);
@@ -77,4 +83,39 @@ test('registry doctor requires the complete Maven role tuple when any Maven role
   assert.match(stderr, /Maven consume registry/u);
   assert.match(stderr, /Maven publish settings\.xml server id/u);
   assert.match(stderr, /Maven consume settings\.xml server id/u);
+});
+
+test('registry doctor probes an exact published Maven coordinate when repository roots return 404', async () => {
+  const repository = path.resolve(import.meta.dirname, '../../../..');
+  const probe = resolveMavenRegistryProbe(repository);
+  const commands = [];
+  const output = await runReleaseCli(['registry', 'doctor', '--json'], {
+    cwd: repository,
+    env: {
+      MANGO_RELEASE_NPM_PUBLISH_REGISTRY: 'https://registry.example/npm-hosted/',
+      MANGO_RELEASE_NPM_CONSUME_REGISTRY: 'https://registry.example/npm-group/',
+      MANGO_RELEASE_MAVEN_PUBLISH_REGISTRY: 'https://registry.example/maven-releases/',
+      MANGO_RELEASE_MAVEN_CONSUME_REGISTRY: 'https://registry.example/maven-public/',
+      MANGO_RELEASE_MAVEN_PUBLISH_SERVER_ID: 'mango-releases',
+      MANGO_RELEASE_MAVEN_CONSUME_SERVER_ID: 'mango-public',
+    },
+    spawnSync(command, args) {
+      commands.push([command, ...args]);
+      const url = args.at(-1) || '';
+      if (command === 'curl' && /\/repository\/(?:maven-releases|maven-public)\/$/u.test(url)) {
+        return { status: 22, stdout: '', stderr: 'HTTP 404' };
+      }
+      return { status: 0, stdout: command === 'npm' ? 'ok\n' : '', stderr: '' };
+    },
+    stdout: { write() {} },
+    stderr: { write() {} },
+  });
+
+  assert.equal(output.passed, true);
+  assert.deepEqual(output.maven.probe, probe);
+  const curlUrls = commands.filter(([command]) => command === 'curl').map((command) => command.at(-1));
+  assert.deepEqual(curlUrls, [
+    `https://registry.example/maven-releases/${probe.path}`,
+    `https://registry.example/maven-public/${probe.path}`,
+  ]);
 });
