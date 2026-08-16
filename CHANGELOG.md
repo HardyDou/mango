@@ -4,7 +4,7 @@
 
 ## v2026.08.16-issue-805-release-consumer-fix - 2026-08-16
 
-Status: `PENDING`. The exact Maven `1.0.37`, 24-package npm and CLI `1.0.108` candidate must pass sealed preparation, Release PR checks, registry publication and pure consume-registry verification before this status can be closed.
+Status: `PUBLISHED_AND_VERIFIED`. Canonical manifest `127cdcdf8d08b95ae6dee13fed2edb6a0838d1b4c586258757d016c3bb4c30d8` is `COMPLETED`: all 24 sealed npm tarballs and 188 Maven coordinates match in their publish and consume registries, the pure consume-registry consumer passed, and the GitHub Release is `CREATED_AND_VERIFIED`.
 
 ### Pull Requests
 
@@ -63,9 +63,10 @@ Status: `PENDING`. The exact Maven `1.0.37`, 24-package npm and CLI `1.0.108` ca
 
 ### Published Packages
 
-1. Mango Maven non-app reactor and `io.mango:mango-docs-bundle:1.0.37`.
-2. `@mango/common@1.0.27` -> `@mango/admin-extension@1.0.1` -> `@mango/auth@1.0.27` -> `@mango/file@1.0.35` -> `@mango/grid-layout@1.0.18` -> `@mango/grid-widgets@1.0.24` -> `@mango/home@1.0.16` -> `@mango/rbac@1.0.25` -> `@mango/site-shell@1.0.14` -> `@mango/system@1.0.33` -> `@mango/admin-pages@1.0.34` -> `@mango/calendar@1.0.35` -> `@mango/cms@1.0.24` -> `@mango/job@1.0.28` -> `@mango/link@1.0.21` -> `@mango/notice@1.0.40` -> `@mango/numgen@1.0.36` -> `@mango/payment@1.0.27` -> `@mango/template@1.0.35` -> `@mango/workflow@1.0.41` -> `@mango/admin-shell@1.0.61` -> `@mango/workflow-business-example@1.0.40` -> `@mango/admin@1.0.67` -> `@mango/cli@1.0.108`.
-3. `@mango/pmo@1.3.15` is unchanged and is not republished.
+1. Mango Maven non-app reactor and `io.mango:mango-docs-bundle:1.0.37` — `PUBLISHED_AND_VERIFIED`; all 188 coordinates and 334 sealed repository files match through Maven releases/public.
+2. `@mango/common@1.0.27` -> `@mango/admin-extension@1.0.1` -> `@mango/auth@1.0.27` -> `@mango/file@1.0.35` -> `@mango/grid-layout@1.0.18` -> `@mango/grid-widgets@1.0.24` -> `@mango/home@1.0.16` -> `@mango/rbac@1.0.25` -> `@mango/site-shell@1.0.14` -> `@mango/system@1.0.33` -> `@mango/admin-pages@1.0.34` -> `@mango/calendar@1.0.35` -> `@mango/cms@1.0.24` -> `@mango/job@1.0.28` -> `@mango/link@1.0.21` -> `@mango/notice@1.0.40` -> `@mango/numgen@1.0.36` -> `@mango/payment@1.0.27` -> `@mango/template@1.0.35` -> `@mango/workflow@1.0.41` -> `@mango/admin-shell@1.0.61` -> `@mango/workflow-business-example@1.0.40` -> `@mango/admin@1.0.67` -> `@mango/cli@1.0.108` — `PUBLISHED_AND_VERIFIED`; hosted/group content matches every sealed tarball.
+3. `@mango/pmo@1.3.15` is unchanged and was not republished.
+4. Tag and GitHub Release `v2026.08.16-issue-805-release-consumer-fix` — `CREATED_AND_VERIFIED` after pure consume-registry verification.
 
 ### Business Impact
 
@@ -94,11 +95,11 @@ Status: `PENDING`. The exact Maven `1.0.37`, 24-package npm and CLI `1.0.108` ca
 
 ### Verification
 
-- The plan must reproduce Maven `1.0.37`, the exact 24-package topology, zero package SCCs and CLI `1.0.108` on the final Release PR head.
-- Registry doctor must read `io.mango:mango-bom:1.0.36` successfully through both Maven publish and consume roles without relying on repository-root status.
-- Preparation builds once, seals Maven/npm files with SHA-256, validates packed contracts and runs one mixed candidate/consume-registry consumer.
-- A fresh full consumer must pass installation, typecheck, production build, fresh database startup, authentication, real CRUD and all authorized pages with zero route, HTTP, page, console or Element Plus failures.
-- Publication must verify hosted and group content for every coordinate and pass a pure consume-registry consumer before creating the Tag and GitHub Release.
+- The final Release PR tree `b5f8fd12555a1c858f7ba8a9a982975ac54373bf` matched the sealed candidate tree exactly; PR #815 passed all required checks before merge.
+- Registry doctor successfully read `io.mango:mango-bom:1.0.36` through both Maven publish and consume roles and validated the four configured registry roles.
+- Preparation sealed source archive SHA-256 `069515e72d4087466ff649ade132be996b376eb562a59246f0f38752504ff67e`, 24 npm tarballs and 188 Maven coordinates, then passed the mixed candidate consumer.
+- Publication matched every sealed npm and Maven artifact through hosted/group and releases/public; no app fat JAR or PMO coordinate was published.
+- The pure consume-registry consumer passed before tag and GitHub Release creation; manifest states `PUBLISHED`, `CONSUMER_VERIFIED` and `COMPLETED` all passed on 2026-08-16.
 
 ### Rollback
 
