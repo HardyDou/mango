@@ -7,12 +7,20 @@ import { indexPublishedPackages } from './release-scope-lib.mjs';
 import {
   assertCompletedReleaseBaseline,
   assertReleasePlanShape,
+  assertReleasePlanSourceShape,
   buildReleasePlan,
   readPendingChangesets,
   resolveReleaseMavenSourceVersion,
   sha256,
 } from './release-plan-lib.mjs';
-import { gitChangedFiles, resolveBaseline, restoredPublishedBaselines } from './release-repository-lib.mjs';
+import { classifyReleasePullRequest } from './classify-release-pr.mjs';
+import {
+  gitChangedFiles,
+  resolveBaseline,
+  resolveGitSource,
+  restoredPublishedBaselines,
+  verifyReleasePlanSource,
+} from './release-repository-lib.mjs';
 
 const workspaceRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const repoRoot = resolve(workspaceRoot, '..');
@@ -31,7 +39,7 @@ const packageIndex = indexPublishedPackages(workspaceRoot);
 const releaseVersions = readJson(join(workspaceRoot, 'packages/mango-cli/release-versions.json'));
 const managedVersions = releaseVersions.npm ?? {};
 const baseline = resolveBaseline(repoRoot, workspaceRoot, legacy);
-const changedFiles = gitChangedFiles(repoRoot, baseline.commit, 'HEAD', includeWorkingTree);
+const planInput = resolvePlanInput();
 const restored = restoredPublishedBaselines({
   repoRoot,
   packageIndex,
@@ -55,7 +63,8 @@ const plan = buildReleasePlan({
   managedVersions,
   mavenSourceVersion: resolveReleaseMavenSourceVersion(previousPlan, releaseVersions.maven?.mangoBackend),
   mavenTargetVersion,
-  changedFiles,
+  source: planInput.source,
+  sourceFiles: planInput.sourceFiles,
   changesets: pendingChangesets,
   legacy,
   restoredPublishedBaselines: restored,
@@ -226,6 +235,35 @@ function assertEquivalentPlan(expected, actual) {
     throw new Error('release plan is stale; regenerate it from the current Changesets and source impact');
   }
   if (expected.planDigest !== actual.planDigest) throw new Error('release plan digest is stale');
+}
+
+function resolvePlanInput() {
+  if (!checkOnly || !previousPlan) {
+    const source = resolveGitSource(repoRoot);
+    const committedFiles = gitChangedFiles(repoRoot, baseline.commit, source.commit);
+    if (includeWorkingTree) {
+      const filesWithWorkingTree = gitChangedFiles(repoRoot, baseline.commit, source.commit, true);
+      if (JSON.stringify(filesWithWorkingTree) !== JSON.stringify(committedFiles)) {
+        throw new Error('release plan source must be committed before planning; working-tree source cannot be sealed');
+      }
+    }
+    return { source, sourceFiles: committedFiles };
+  }
+
+  assertReleasePlanSourceShape(previousPlan);
+  const verified = verifyReleasePlanSource({
+    repoRoot,
+    baselineCommit: baseline.commit,
+    source: previousPlan.source,
+    sourceFiles: previousPlan.sourceFiles,
+  });
+  if (verified.projectionFiles.length > 0) {
+    const classification = classifyReleasePullRequest(verified.projectionFiles);
+    if (!classification.releaseOnly) {
+      throw new Error(`final HEAD contains non-release changes after the planned source: ${classification.reason}`);
+    }
+  }
+  return { source: verified.source, sourceFiles: verified.sourceFiles };
 }
 
 function runLockfileUpdate() {

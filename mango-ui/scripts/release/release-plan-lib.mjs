@@ -79,7 +79,8 @@ export function buildReleasePlan({
   managedVersions,
   mavenSourceVersion = '',
   mavenTargetVersion = '',
-  changedFiles,
+  source,
+  sourceFiles,
   changesets = [],
   legacy = null,
   restoredPublishedBaselines = [],
@@ -89,8 +90,9 @@ export function buildReleasePlan({
   release = null,
   generatedAt = new Date().toISOString(),
 }) {
-  const impact = directPackageImpact(changedFiles, packageIndex);
-  const mavenImpact = hasMavenReleaseImpact(changedFiles);
+  assertReleasePlanSourceShape({ source, sourceFiles });
+  const impact = directPackageImpact(sourceFiles, packageIndex);
+  const mavenImpact = hasMavenReleaseImpact(sourceFiles);
   for (const name of ignoredDirectPackages) impact.direct.delete(name);
   const releaseDeclarations = legacy
     ? legacy.releases.map((entry) => ({
@@ -164,6 +166,8 @@ export function buildReleasePlan({
     releaseKind: maven ? (packages.length > 0 ? 'mixed' : 'maven-only') : 'npm-only',
     release,
     baseline,
+    source,
+    sourceFiles,
     changesets: changesets.map(({ id, file, sha256: hash }) => ({ id, file, sha256: hash })),
     legacyReconciliation: legacy
       ? { id: legacy.id, oneTime: legacy.oneTime === true, file: '.changeset/legacy-reconciliation.json' }
@@ -215,6 +219,22 @@ export function assertReleasePlanShape(plan) {
       throw new Error('release plan Maven descriptor is invalid');
     }
     if (!plan.order.includes('@mango/cli')) throw new Error('a Maven release must include the managed CLI matrix');
+  }
+}
+
+export function assertReleasePlanSourceShape(plan) {
+  if (!/^[0-9a-f]{40}$/u.test(plan?.source?.commit ?? '')) {
+    throw new Error('release plan source commit is missing or invalid');
+  }
+  if (!/^[0-9a-f]{40}$/u.test(plan?.source?.tree ?? '')) {
+    throw new Error('release plan source tree is missing or invalid');
+  }
+  if (!Array.isArray(plan.sourceFiles) || plan.sourceFiles.some((file) => typeof file !== 'string' || !file)) {
+    throw new Error('release plan sourceFiles is missing or invalid');
+  }
+  const normalized = [...new Set(plan.sourceFiles)].sort();
+  if (JSON.stringify(normalized) !== JSON.stringify(plan.sourceFiles)) {
+    throw new Error('release plan sourceFiles must be unique and sorted');
   }
 }
 

@@ -33,6 +33,49 @@ export function gitChangedFiles(repoRoot, baseRef, headRef = 'HEAD', includeWork
   return [...files].sort();
 }
 
+export function resolveGitSource(repoRoot, ref = 'HEAD') {
+  return {
+    commit: gitValue(repoRoot, ['rev-parse', `${ref}^{commit}`]),
+    tree: gitValue(repoRoot, ['rev-parse', `${ref}^{tree}`]),
+  };
+}
+
+export function verifyReleasePlanSource({ repoRoot, baselineCommit, source, sourceFiles, headRef = 'HEAD' }) {
+  if (!/^[0-9a-f]{40}$/u.test(source?.commit ?? '') || !/^[0-9a-f]{40}$/u.test(source?.tree ?? '')) {
+    throw new Error('release plan source commit/tree is missing or invalid');
+  }
+  if (!Array.isArray(sourceFiles) || sourceFiles.some((file) => typeof file !== 'string' || !file)) {
+    throw new Error('release plan sourceFiles is missing or invalid');
+  }
+  const normalizedSourceFiles = [...new Set(sourceFiles)].sort();
+  if (JSON.stringify(normalizedSourceFiles) !== JSON.stringify(sourceFiles)) {
+    throw new Error('release plan sourceFiles must be unique and sorted');
+  }
+
+  let actualSource;
+  try {
+    actualSource = resolveGitSource(repoRoot, source.commit);
+  } catch {
+    throw new Error(`release plan source commit does not exist: ${source.commit}`);
+  }
+  if (actualSource.commit !== source.commit || actualSource.tree !== source.tree) {
+    throw new Error('release plan source commit/tree does not match the repository');
+  }
+  assertAncestor(repoRoot, baselineCommit, source.commit, 'release baseline is not an ancestor of the plan source');
+  assertAncestor(repoRoot, source.commit, headRef, 'release plan source is not an ancestor of the final HEAD');
+
+  const actualSourceFiles = gitChangedFiles(repoRoot, baselineCommit, source.commit);
+  if (JSON.stringify(actualSourceFiles) !== JSON.stringify(sourceFiles)) {
+    throw new Error('release plan sourceFiles does not match the baseline-to-source Git diff');
+  }
+  const finalCommit = resolveGitSource(repoRoot, headRef).commit;
+  const projectionFiles = runGit(repoRoot, ['diff', '--name-only', `${source.commit}..${finalCommit}`])
+    .stdout.split(/\r?\n/u)
+    .filter(Boolean)
+    .sort();
+  return { source: actualSource, sourceFiles: actualSourceFiles, projectionFiles };
+}
+
 export function resolveRepositoryInputPath(repoRoot, input, fallback) {
   const value = input || fallback;
   return isAbsolute(value) ? value : resolve(repoRoot, value);
@@ -89,4 +132,9 @@ export function restoredPublishedBaselines({
 export function assertCleanWorktree(repoRoot) {
   const dirty = gitValue(repoRoot, ['status', '--porcelain']);
   if (dirty) throw new Error(`release preparation requires a clean worktree:\n${dirty}`);
+}
+
+function assertAncestor(repoRoot, ancestor, descendant, message) {
+  const result = runGit(repoRoot, ['merge-base', '--is-ancestor', ancestor, descendant], { allowFailure: true });
+  if (result.status !== 0) throw new Error(message);
 }
