@@ -16,6 +16,11 @@ import {
 import { classifyReleasePullRequest } from './classify-release-pr.mjs';
 import { assertCliReadmeProjection, CLI_README_PATH, projectCliReadmeVersion } from './release-cli-readme-lib.mjs';
 import {
+  assertCliFullFrontendTemplateProjection,
+  CLI_FULL_FRONTEND_PACKAGE_TEMPLATE_PATH,
+  projectCliFullFrontendTemplateVersion,
+} from './release-cli-template-lib.mjs';
+import {
   gitChangedFiles,
   readGitFile,
   resolveBaseline,
@@ -97,6 +102,7 @@ if (checkOnly) {
 
 applyPlanProjection(plan, packageIndex);
 applyCliReadmeProjection(plan);
+applyCliFullFrontendTemplateProjection(plan);
 applyExternalManagedDependencies(plan);
 writeJson(
   join(workspaceRoot, 'packages/mango-cli/release-versions.json'),
@@ -134,6 +140,14 @@ function applyCliReadmeProjection(releasePlan) {
   const sourceContent = readGitFile(repoRoot, releasePlan.source.commit, CLI_README_PATH);
   const projectedContent = projectCliReadmeVersion(sourceContent, cli.sourceVersion, cli.targetVersion);
   writeFileSync(join(repoRoot, CLI_README_PATH), projectedContent);
+}
+
+function applyCliFullFrontendTemplateProjection(releasePlan) {
+  const cli = releasePlan.packages.find((entry) => entry.name === '@mango/cli');
+  if (!cli) return;
+  const sourceContent = readGitFile(repoRoot, releasePlan.source.commit, CLI_FULL_FRONTEND_PACKAGE_TEMPLATE_PATH);
+  const projectedContent = projectCliFullFrontendTemplateVersion(sourceContent, cli.sourceVersion, cli.targetVersion);
+  writeFileSync(join(repoRoot, CLI_FULL_FRONTEND_PACKAGE_TEMPLATE_PATH), projectedContent);
 }
 
 function projectedManagedVersions(releasePlan, current) {
@@ -193,6 +207,7 @@ function verifyPlanProjection(releasePlan, packages, currentManagedVersions) {
   if (notesHash !== releasePlan.release.notesSha256) throw new Error('release notes do not match the machine plan');
   const targetVersions = new Map(releasePlan.packages.map((entry) => [entry.name, entry.targetVersion]));
   verifyCliReadmeProjection(releasePlan);
+  verifyCliFullFrontendTemplateProjection(releasePlan);
   const currentReleaseVersions = readJson(join(workspaceRoot, 'packages/mango-cli/release-versions.json'));
   if (releasePlan.maven && currentReleaseVersions.maven?.mangoBackend !== releasePlan.maven.targetVersion) {
     throw new Error(
@@ -246,6 +261,17 @@ function verifyCliReadmeProjection(releasePlan) {
   assertCliReadmeProjection({
     sourceContent: readGitFile(repoRoot, releasePlan.source.commit, CLI_README_PATH),
     projectedContent: readFileSync(join(repoRoot, CLI_README_PATH), 'utf8'),
+    sourceVersion: cli.sourceVersion,
+    targetVersion: cli.targetVersion,
+  });
+}
+
+function verifyCliFullFrontendTemplateProjection(releasePlan) {
+  const cli = releasePlan.packages.find((entry) => entry.name === '@mango/cli');
+  if (!cli) return;
+  assertCliFullFrontendTemplateProjection({
+    sourceContent: readGitFile(repoRoot, releasePlan.source.commit, CLI_FULL_FRONTEND_PACKAGE_TEMPLATE_PATH),
+    projectedContent: readFileSync(join(repoRoot, CLI_FULL_FRONTEND_PACKAGE_TEMPLATE_PATH), 'utf8'),
     sourceVersion: cli.sourceVersion,
     targetVersion: cli.targetVersion,
   });
