@@ -3,6 +3,7 @@ import { dirname, join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 
 export const RELEASE_STATES = ['PREPARED', 'CANDIDATE_VERIFIED', 'PUBLISHED', 'CONSUMER_VERIFIED', 'COMPLETED'];
+export const RELEASE_COMMAND_MAX_BUFFER_BYTES = 64 * 1024 * 1024;
 
 const RELEASE_COMMAND_SCRIPTS = {
   plan: 'create-release-plan.mjs',
@@ -45,10 +46,12 @@ export async function runReleaseCli(argv, runtime = {}) {
   if (!script) throw new Error(`unknown release command: ${command}`);
   const projectRoot = findMangoRepository(runtime.cwd || process.cwd());
   const scriptArgs = ['plan', 'prepare'].includes(command) ? argv.slice(1) : argv;
-  const result = spawnSync(process.execPath, [join(projectRoot, 'mango-ui/scripts/release', script), ...scriptArgs], {
+  const execute = runtime.spawnSync || spawnSync;
+  const result = execute(process.execPath, [join(projectRoot, 'mango-ui/scripts/release', script), ...scriptArgs], {
     cwd: projectRoot,
     env,
     encoding: 'utf8',
+    maxBuffer: RELEASE_COMMAND_MAX_BUFFER_BYTES,
   });
   writeResult(result, runtime, env);
   if (result.status !== 0) throw new Error(`mango release ${command} failed with exit code ${result.status ?? 1}`);

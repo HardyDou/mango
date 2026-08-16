@@ -1,6 +1,6 @@
 {
   "name": "@mango/calendar",
-  "version": "1.0.34",
+  "version": "1.0.35",
   "private": false,
   "type": "module",
   "main": "./dist/index.js",
@@ -42,10 +42,10 @@
   ],
   "dependencies": {
     "@element-plus/icons-vue": "2.3.2",
-    "@mango/admin-pages": "workspace:1.0.33",
+    "@mango/admin-pages": "workspace:1.0.34",
     "@mango/api-schema": "workspace:1.0.3",
-    "@mango/common": "workspace:1.0.26",
-    "@mango/grid-widgets": "workspace:1.0.23"
+    "@mango/common": "workspace:1.0.27",
+    "@mango/grid-widgets": "workspace:1.0.24"
   },
   "peerDependencies": {
     "element-plus": ">=2.14.1 <3",

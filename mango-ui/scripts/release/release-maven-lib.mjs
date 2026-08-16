@@ -45,6 +45,84 @@ export function verifyStagedMavenRepository(repositoryRoot, descriptor) {
   return actual;
 }
 
+export function createCandidateMavenSettings(sourceSettings, excludedRepositoryId) {
+  assertRepositoryId(excludedRepositoryId);
+  const mirrorBlocks = String(sourceSettings || '').match(/<mirror\b[^>]*>[\s\S]*?<\/mirror>/gu) ?? [];
+  const mirrors = mirrorBlocks.map((block) => {
+    const urlMatch = block.match(/<url>\s*([\s\S]*?)\s*<\/url>/u);
+    if (urlMatch) {
+      const url = new URL(decodeXmlText(urlMatch[1].trim()));
+      if (url.username || url.password) throw new Error('Maven mirror URL must not contain credentials');
+    }
+    return block.replace(/<mirrorOf>\s*([\s\S]*?)\s*<\/mirrorOf>/u, (_match, expression) => {
+      const patterns = expression
+        .split(',')
+        .map((entry) => entry.trim())
+        .filter(Boolean);
+      const exclusion = `!${excludedRepositoryId}`;
+      if (!patterns.includes(exclusion)) patterns.push(exclusion);
+      return `<mirrorOf>${escapeXmlText(patterns.join(','))}</mirrorOf>`;
+    });
+  });
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<settings xmlns="http://maven.apache.org/SETTINGS/1.2.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.2.0 https://maven.apache.org/xsd/settings-1.2.0.xsd">
+  <mirrors>
+${mirrors.map((block) => indentXml(block.trim(), 4)).join('\n')}
+  </mirrors>
+</settings>
+`;
+}
+
+export function createCandidateMavenConsumerPom(coordinates, repositoryId, repositoryUrl) {
+  assertRepositoryId(repositoryId);
+  const url = new URL(repositoryUrl);
+  if (url.protocol !== 'file:' || url.username || url.password) {
+    throw new Error('candidate Maven repository must be a credential-free file URL');
+  }
+  if (!Array.isArray(coordinates) || coordinates.length === 0) {
+    throw new Error('candidate Maven consumer requires at least one coordinate');
+  }
+  const dependencies = coordinates.map((entry) => {
+    if (!entry || !['jar', 'pom'].includes(entry.packaging)) {
+      throw new Error(`unsupported candidate Maven packaging: ${entry?.packaging ?? '<missing>'}`);
+    }
+    const parts = String(entry.coordinate || '').split(':');
+    if (parts.length !== 3 || parts.some((part) => !part)) {
+      throw new Error(`invalid candidate Maven coordinate: ${entry?.coordinate ?? '<missing>'}`);
+    }
+    const [groupId, artifactId, version] = parts.map(escapeXmlText);
+    return `    <dependency>
+      <groupId>${groupId}</groupId>
+      <artifactId>${artifactId}</artifactId>
+      <version>${version}</version>
+      <type>${entry.packaging}</type>
+    </dependency>`;
+  });
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>io.mango.release</groupId>
+  <artifactId>candidate-consumer</artifactId>
+  <version>1</version>
+  <repositories>
+    <repository>
+      <id>${escapeXmlText(repositoryId)}</id>
+      <url>${escapeXmlText(url.href)}</url>
+      <releases><enabled>true</enabled></releases>
+      <snapshots><enabled>false</enabled></snapshots>
+    </repository>
+  </repositories>
+  <dependencies>
+${dependencies.join('\n')}
+  </dependencies>
+</project>
+`;
+}
+
 export function decideMavenCoordinateAction({ publishFiles, consumeFiles, expectedFiles }) {
   const publish = summarizeRole(publishFiles, expectedFiles);
   const consume = summarizeRole(consumeFiles, expectedFiles);
@@ -139,4 +217,34 @@ function digestFileList(files) {
 
 function sha256File(path) {
   return createHash('sha256').update(readFileSync(path)).digest('hex');
+}
+
+function assertRepositoryId(value) {
+  if (!/^[A-Za-z0-9_.-]+$/u.test(String(value || ''))) throw new Error(`invalid Maven repository id: ${value}`);
+}
+
+function escapeXmlText(value) {
+  return String(value)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&apos;');
+}
+
+function decodeXmlText(value) {
+  return String(value)
+    .replaceAll('&apos;', "'")
+    .replaceAll('&quot;', '"')
+    .replaceAll('&gt;', '>')
+    .replaceAll('&lt;', '<')
+    .replaceAll('&amp;', '&');
+}
+
+function indentXml(value, spaces) {
+  const prefix = ' '.repeat(spaces);
+  return value
+    .split(/\r?\n/u)
+    .map((line) => `${prefix}${line}`)
+    .join('\n');
 }

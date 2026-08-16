@@ -4,12 +4,36 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import {
+  RELEASE_COMMAND_MAX_BUFFER_BYTES,
   RELEASE_STATES,
   findMangoRepository,
   redactReleaseText,
   resolveMavenRegistryProbe,
   runReleaseCli,
 } from '../src/release-command.mjs';
+
+test('release commands retain complete high-volume build output', async () => {
+  const repository = path.resolve(import.meta.dirname, '../../../..');
+  const largeOutput = 'x'.repeat(2 * 1024 * 1024);
+  let spawnOptions;
+  let written = '';
+
+  await runReleaseCli(['prepare', '--consume-registry', 'https://registry.example/npm-group/'], {
+    cwd: repository,
+    spawnSync(_command, _args, options) {
+      spawnOptions = options;
+      return { status: 0, stdout: largeOutput, stderr: '' };
+    },
+    stdout: {
+      write(chunk) {
+        written += chunk;
+      },
+    },
+  });
+
+  assert.equal(spawnOptions.maxBuffer, RELEASE_COMMAND_MAX_BUFFER_BYTES);
+  assert.equal(written.length, largeOutput.length);
+});
 
 test('release lifecycle uses the five local-first states', () => {
   assert.deepEqual(RELEASE_STATES, ['PREPARED', 'CANDIDATE_VERIFIED', 'PUBLISHED', 'CONSUMER_VERIFIED', 'COMPLETED']);

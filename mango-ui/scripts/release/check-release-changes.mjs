@@ -8,10 +8,12 @@ import {
   indexPublishedPackages,
   parseChangeset,
   resolveReleaseClosure,
+  selectReleaseIntentHead,
   topologicalReleaseOrder,
   validateDeclaredReleaseSet,
 } from './release-scope-lib.mjs';
 import { isPendingChangesetFile } from './release-plan-lib.mjs';
+import { classifyReleasePullRequest } from './classify-release-pr.mjs';
 
 const scriptRoot = dirname(fileURLToPath(import.meta.url));
 const workspaceRoot = resolve(scriptRoot, '../..');
@@ -20,24 +22,39 @@ const args = process.argv.slice(2);
 const base = readArg('--base') || 'origin/main';
 const head = readArg('--head') || 'HEAD';
 const includeWorkingTree = args.includes('--include-working-tree');
+const releasePlanPath = 'mango-ui/.changeset/release-plan.json';
+const planChanged = changedPathStatus(base, head, releasePlanPath, false);
+const plan = planChanged ? readJsonAtRef(head, releasePlanPath) : null;
+const planSourceCommit = plan?.source?.commit || '';
+const sourceIsAncestor = planSourceCommit
+  ? runGit(['merge-base', '--is-ancestor', planSourceCommit, head], true).status === 0
+  : false;
+const projectionFiles = sourceIsAncestor ? gitChangedFiles(planSourceCommit, head, false) : [];
+const impactHead = selectReleaseIntentHead({
+  head,
+  planChanged,
+  sourceCommit: planSourceCommit,
+  sourceIsAncestor,
+  projectionReleaseOnly: sourceIsAncestor && classifyReleasePullRequest(projectionFiles).releaseOnly,
+});
 const packageIndex = indexPublishedPackages(workspaceRoot);
 const managedVersions = readJson(join(workspaceRoot, 'packages/mango-cli/release-versions.json')).npm ?? {};
 const legacyPath = join(workspaceRoot, '.changeset/legacy-reconciliation.json');
 const legacyChanged = changedPathStatus(
   base,
-  head,
+  impactHead,
   'mango-ui/.changeset/legacy-reconciliation.json',
   includeWorkingTree,
 );
 const legacy = legacyChanged && existsSync(legacyPath) ? readJson(legacyPath) : null;
 const impactBase = legacy?.from?.commit || base;
-const changedFiles = gitChangedFiles(impactBase, head, includeWorkingTree);
+const changedFiles = gitChangedFiles(impactBase, impactHead, includeWorkingTree);
 const impact = directPackageImpact(changedFiles, packageIndex);
-const restored = removeRestoredPublishedBaselines(impact.direct, packageIndex, legacy, head, includeWorkingTree);
+const restored = removeRestoredPublishedBaselines(impact.direct, packageIndex, legacy, impactHead, includeWorkingTree);
 const expected = resolveReleaseClosure(impact.direct, packageIndex, managedVersions);
 const declared = legacy
   ? new Set(legacy.releases.map((entry) => entry.name))
-  : readChangedChangesets(base, head, includeWorkingTree);
+  : readChangedChangesets(base, impactHead, includeWorkingTree);
 const errors = validateDeclaredReleaseSet({ direct: impact.direct, expected, declared });
 if (legacy) {
   for (const packageName of expected) {
@@ -58,6 +75,7 @@ const order = topologicalReleaseOrder(expected, packageIndex, managedVersions);
 console.log('Release change check PASS');
 console.log(`Direct packages: ${[...impact.direct].sort().join(', ') || '<none>'}`);
 console.log(`Release closure: ${order.join(' -> ') || '<none>'}`);
+if (impactHead !== head) console.log(`Release intent source: ${impactHead}`);
 if (restored.length > 0) console.log(`Restored published baselines: ${restored.join(', ')}`);
 if (legacy) console.log(`Legacy reconciliation: ${legacy.id}`);
 
@@ -68,6 +86,11 @@ function readArg(name) {
 
 function readJson(path) {
   return JSON.parse(readFileSync(path, 'utf8'));
+}
+
+function readJsonAtRef(ref, path) {
+  const result = runGit(['show', `${ref}:${path}`]);
+  return JSON.parse(result.stdout);
 }
 
 function runGit(gitArgs, allowFailure = false) {
