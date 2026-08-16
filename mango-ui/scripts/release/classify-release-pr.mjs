@@ -1,6 +1,13 @@
 #!/usr/bin/env node
 import { appendFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { assertCliReadmeProjection, CLI_README_PATH } from './release-cli-readme-lib.mjs';
+import { readGitFile } from './release-repository-lib.mjs';
+
+const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
+const releasePlanPath = 'mango-ui/.changeset/release-plan.json';
 
 export function classifyReleasePullRequest(files) {
   const normalized = [...new Set(files)].sort();
@@ -29,9 +36,22 @@ export function isReleaseOnlyFile(file) {
       file !== 'mango-ui/.changeset/release-notes-template.md') ||
     /^mango-ui\/packages\/[^/]+\/(?:package\.json|CHANGELOG\.md)$/u.test(file) ||
     file === 'mango-ui/packages/mango-cli/release-versions.json' ||
+    file === 'mango-ui/packages/mango-cli/README.md' ||
     /^mango-ui\/packages\/mango-cli\/templates\/.+\/package\.json\.template$/u.test(file) ||
     /^mango-business-starter\/.+\/package\.json$/u.test(file)
   );
+}
+
+export function assertReleaseOnlyContent(headRef = 'HEAD') {
+  const plan = JSON.parse(readGitFile(repoRoot, headRef, releasePlanPath));
+  const cli = plan.packages?.find((entry) => entry.name === '@mango/cli');
+  if (!cli) return;
+  assertCliReadmeProjection({
+    sourceContent: readGitFile(repoRoot, plan.source?.commit, CLI_README_PATH),
+    projectedContent: readGitFile(repoRoot, headRef, CLI_README_PATH),
+    sourceVersion: cli.sourceVersion,
+    targetVersion: cli.targetVersion,
+  });
 }
 
 if (process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).href) {
@@ -41,6 +61,7 @@ if (process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).
   const result = spawnSync('git', ['diff', '--name-only', `${base}..${head}`], { encoding: 'utf8' });
   if (result.status !== 0) throw new Error(`cannot classify release PR: ${result.stderr}`);
   const classification = classifyReleasePullRequest(result.stdout.split(/\r?\n/u).filter(Boolean));
+  if (classification.releaseOnly) assertReleaseOnlyContent(head);
   const output = process.env.GITHUB_OUTPUT;
   if (output) {
     appendFileSync(output, `release_only=${classification.releaseOnly}\n`);

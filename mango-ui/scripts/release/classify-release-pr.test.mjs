@@ -9,10 +9,20 @@ test('machine-generated version projection is release-only', () => {
     'mango-ui/packages/admin/package.json',
     'mango-ui/packages/admin/CHANGELOG.md',
     'mango-ui/packages/mango-cli/release-versions.json',
+    'mango-ui/packages/mango-cli/README.md',
     'mango-ui/pnpm-lock.yaml',
   ]);
   assert.equal(result.releaseOnly, true);
   assert.deepEqual(result.disallowed, []);
+});
+
+test('other package READMEs still require normal gates', () => {
+  const result = classifyReleasePullRequest([
+    'mango-ui/.changeset/release-plan.json',
+    'mango-ui/packages/admin/README.md',
+  ]);
+  assert.equal(result.releaseOnly, false);
+  assert.deepEqual(result.disallowed, ['mango-ui/packages/admin/README.md']);
 });
 
 test('source mixed into a release PR falls back to normal gates', () => {

@@ -14,8 +14,10 @@ import {
   sha256,
 } from './release-plan-lib.mjs';
 import { classifyReleasePullRequest } from './classify-release-pr.mjs';
+import { assertCliReadmeProjection, CLI_README_PATH, projectCliReadmeVersion } from './release-cli-readme-lib.mjs';
 import {
   gitChangedFiles,
+  readGitFile,
   resolveBaseline,
   resolveGitSource,
   restoredPublishedBaselines,
@@ -94,6 +96,7 @@ if (checkOnly) {
 }
 
 applyPlanProjection(plan, packageIndex);
+applyCliReadmeProjection(plan);
 applyExternalManagedDependencies(plan);
 writeJson(
   join(workspaceRoot, 'packages/mango-cli/release-versions.json'),
@@ -123,6 +126,14 @@ function applyPlanProjection(releasePlan, packages) {
     }
     writeJson(workspacePackage.packageJsonPath, packageJson);
   }
+}
+
+function applyCliReadmeProjection(releasePlan) {
+  const cli = releasePlan.packages.find((entry) => entry.name === '@mango/cli');
+  if (!cli) return;
+  const sourceContent = readGitFile(repoRoot, releasePlan.source.commit, CLI_README_PATH);
+  const projectedContent = projectCliReadmeVersion(sourceContent, cli.sourceVersion, cli.targetVersion);
+  writeFileSync(join(repoRoot, CLI_README_PATH), projectedContent);
 }
 
 function projectedManagedVersions(releasePlan, current) {
@@ -181,6 +192,7 @@ function verifyPlanProjection(releasePlan, packages, currentManagedVersions) {
   const notesHash = sha256(Buffer.from(readFileSync(notesPath, 'utf8'), 'utf8'));
   if (notesHash !== releasePlan.release.notesSha256) throw new Error('release notes do not match the machine plan');
   const targetVersions = new Map(releasePlan.packages.map((entry) => [entry.name, entry.targetVersion]));
+  verifyCliReadmeProjection(releasePlan);
   const currentReleaseVersions = readJson(join(workspaceRoot, 'packages/mango-cli/release-versions.json'));
   if (releasePlan.maven && currentReleaseVersions.maven?.mangoBackend !== releasePlan.maven.targetVersion) {
     throw new Error(
@@ -226,6 +238,17 @@ function verifyPlanProjection(releasePlan, packages, currentManagedVersions) {
       }
     }
   }
+}
+
+function verifyCliReadmeProjection(releasePlan) {
+  const cli = releasePlan.packages.find((entry) => entry.name === '@mango/cli');
+  if (!cli) return;
+  assertCliReadmeProjection({
+    sourceContent: readGitFile(repoRoot, releasePlan.source.commit, CLI_README_PATH),
+    projectedContent: readFileSync(join(repoRoot, CLI_README_PATH), 'utf8'),
+    sourceVersion: cli.sourceVersion,
+    targetVersion: cli.targetVersion,
+  });
 }
 
 function assertEquivalentPlan(expected, actual) {
