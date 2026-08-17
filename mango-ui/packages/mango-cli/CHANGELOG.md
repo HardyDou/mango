@@ -2,51 +2,6 @@
 
 ## Unreleased
 
-## 1.0.110 - 2026-08-17
-
-### Pull Requests
-
-- [PR #822](https://github.com/HardyDou/mango/pull/822) Fixed anonymous `@mango/link-page` public queries so an explicit `tenantId` is forwarded while authenticated queries retain the existing visible-link path. Packages: `@mango/link-page@1.0.8`, `@mango/cli@1.0.110`. Business Adaptation: public link consumers may pass `tenantId`; no CLI command or backend migration is required.
-
-### Fixed
-
-- Project the released `@mango/link-page@1.0.8` coordinate into the CLI managed package matrix.
-
-### Versions
-
-- `@mango/cli` advances from `1.0.109` to `1.0.110` and locks `@mango/link-page@1.0.8`.
-- Mango Maven remains `1.0.37`; every other npm coordinate remains unchanged.
-
-### Published Packages
-
-- Publish `@mango/link-page@1.0.8` followed by `@mango/cli@1.0.110`; publish no Maven or unrelated npm package.
-
-### Business Impact
-
-- CLI-managed consumers resolve the corrected link-page package. No command, database, permission or deployment contract changes.
-
-### Upgrade Estimate
-
-- Audience: CLI-managed Mango frontend consumers.
-- Engineering Effort: 5 to 15 minutes when tenant-scoped public links are used; zero code changes otherwise.
-- Execution Window: 10 to 20 minutes for frozen install and frontend build.
-- Service Downtime: none.
-- Rollback Effort: 5 to 10 minutes to restore the prior matrix and lockfile.
-- Assumptions: consume-registry access and no private package fork.
-
-### Upgrade Notes
-
-1. Install `@mango/cli@1.0.110` or update the generated release matrix.
-2. Pass `tenantId` only when rendering anonymous public link pages.
-
-### Verification
-
-- Verify the generated matrix contains link-page `1.0.8`, then run the consumer frozen install and frontend build.
-
-### Rollback
-
-- Restore CLI `1.0.109` and link-page `1.0.7`; never overwrite immutable npm coordinates.
-
 ## 1.0.109 - 2026-08-17
 
 ### Pull Requests

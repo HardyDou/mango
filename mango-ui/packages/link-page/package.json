@@ -1,6 +1,6 @@
 {
   "name": "@mango/link-page",
-  "version": "1.0.8",
+  "version": "1.0.7",
   "private": false,
   "type": "module",
   "main": "./dist/index.js",
