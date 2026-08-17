@@ -1,34 +1,12 @@
 {
   "schemaVersion": 1,
-  "tag": "v2026.08.16-issue-805-release-consumer-fix",
-  "commit": "18f25662645702eee21946347149c075c0ae365d",
-  "tree": "b5f8fd12555a1c858f7ba8a9a982975ac54373bf",
-  "planDigest": "127cdcdf8d08b95ae6dee13fed2edb6a0838d1b4c586258757d016c3bb4c30d8",
+  "tag": "v2026.08.17-issue-806-business-readme-audit-scope",
+  "commit": "876b4c45577ec8e802e2beeae360553d7407d0c4",
+  "tree": "f8c3e99fb4e3554aa678d9d19acc1c096696136f",
+  "planDigest": "8c21dcba0576d6b0b01f1afa3bbdd2b7ba9032dea0e2b5f8a2ba47ae9139d699",
   "packages": {
-    "@mango/common": "1.0.27",
-    "@mango/admin-extension": "1.0.1",
-    "@mango/auth": "1.0.27",
-    "@mango/file": "1.0.35",
-    "@mango/grid-layout": "1.0.18",
-    "@mango/grid-widgets": "1.0.24",
-    "@mango/home": "1.0.16",
-    "@mango/rbac": "1.0.25",
-    "@mango/site-shell": "1.0.14",
-    "@mango/system": "1.0.33",
-    "@mango/admin-pages": "1.0.34",
-    "@mango/calendar": "1.0.35",
-    "@mango/cms": "1.0.24",
-    "@mango/job": "1.0.28",
-    "@mango/link": "1.0.21",
-    "@mango/notice": "1.0.40",
-    "@mango/numgen": "1.0.36",
-    "@mango/payment": "1.0.27",
-    "@mango/template": "1.0.35",
-    "@mango/workflow": "1.0.41",
-    "@mango/admin-shell": "1.0.61",
-    "@mango/workflow-business-example": "1.0.40",
-    "@mango/admin": "1.0.67",
-    "@mango/cli": "1.0.108"
+    "@mango/pmo": "1.3.16",
+    "@mango/cli": "1.0.109"
   },
-  "maven": "1.0.37"
+  "maven": null
 }
