@@ -55,6 +55,7 @@ import '@mango/link-page/style.css';
 | 名称 | 类型 | 默认值 | 说明 |
 | --- | --- | --- | --- |
 | `baseUrl` | `string` | `''` | Open API 前缀，例如 `/api`。 |
+| `tenantId` | `string \| number` | - | 匿名公开导航查询使用的租户 ID；登录查询仍以认证上下文为准。 |
 | `headers` | `HeadersInit \| () => HeadersInit \| Promise<HeadersInit>` | - | 请求头，宿主可传租户、认证等上下文。 |
 | `credentials` | `RequestCredentials` | `same-origin` | fetch credentials。 |
 | `title` | `string` | `保函业务导航` | 页面标题兜底值。 |
@@ -69,9 +70,9 @@ import '@mango/link-page/style.css';
 
 | 能力 | 后端路径 | 说明 |
 |------|----------|------|
-| 匿名查询导航数据 | `GET /link/open/public-links/list` | `authenticated=false` 时调用。 |
+| 匿名查询导航数据 | `GET /link/open/public-links/list` | `authenticated=false` 时调用；可通过 `tenantId` 显式指定公开站点租户。 |
 | 登录查询导航数据 | `GET /link/visible-links/list` | `authenticated=true` 时调用，包含公司、收藏和个人网址。 |
-| 关键词筛选 | 对应查询接口追加 `?keyword=...` | 搜索时调用，后端按名称、地址、简介、标签匹配。 |
+| 关键词筛选 | 对应查询接口追加 `?keyword=...` | 搜索时调用，后端按名称、地址、简介、标签匹配；匿名查询继续携带 `tenantId`。 |
 | 系统跳转与访问统计 | `GET /link/open/jump?url=...`、`GET /link/visible-links/jump?url=...` | 匿名和登录数据使用不同安全模式。 |
 
 页面打开地址优先级为 `redirectUrl || url`。当前版本点击后统一使用新标签页打开。

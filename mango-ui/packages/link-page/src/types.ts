@@ -18,6 +18,8 @@ export interface LinkPageLoginInput {
 
 export interface LinkPageProps {
   baseUrl?: string;
+  /** Tenant context used only for anonymous public-link queries. */
+  tenantId?: string | number;
   headers?: HeadersInit | (() => HeadersInit | Promise<HeadersInit>);
   credentials?: RequestCredentials;
   headline?: string;

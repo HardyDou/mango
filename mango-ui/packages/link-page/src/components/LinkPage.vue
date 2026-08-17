@@ -256,8 +256,10 @@ async function searchByKeyword(term: string) {
 }
 
 function listLinks(query: { keyword?: string }) {
-  const loader = props.authenticated ? listVisibleLinks : listPublicLinks;
-  return loader(query, requestOptions.value);
+  if (props.authenticated) {
+    return listVisibleLinks(query, requestOptions.value);
+  }
+  return listPublicLinks({ tenantId: props.tenantId, ...query }, requestOptions.value);
 }
 
 function clearSearch() {
