@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
-  "tag": "v2026.08.17-issue-806-business-readme-audit-scope",
-  "commit": "876b4c45577ec8e802e2beeae360553d7407d0c4",
-  "tree": "f8c3e99fb4e3554aa678d9d19acc1c096696136f",
-  "planDigest": "8c21dcba0576d6b0b01f1afa3bbdd2b7ba9032dea0e2b5f8a2ba47ae9139d699",
+  "tag": "v2026.08.17-issue-817-link-page-tenant-id-release",
+  "commit": "da2bb1d4c6a4ec8754d823ba1e9eb25b90b85e56",
+  "tree": "1438f48aba9e1b06804489843876964c07b126d2",
+  "planDigest": "e9f06a730d474766a8ccf415045edb1be256efadb114ea19a836a7d00f63fc73",
   "packages": {
-    "@mango/pmo": "1.3.16",
-    "@mango/cli": "1.0.109"
+    "@mango/link-page": "1.0.8",
+    "@mango/cli": "1.0.110"
   },
   "maven": null
 }

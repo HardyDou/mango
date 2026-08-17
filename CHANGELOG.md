@@ -4,7 +4,7 @@
 
 ## v2026.08.17-issue-817-link-page-tenant-id-release - 2026-08-17
 
-Status: `PENDING`. This npm-only batch publishes the anonymous tenant forwarding fix and its generated CLI matrix projection.
+Status: `PUBLISHED_AND_VERIFIED`. Canonical manifest `e9f06a730d474766a8ccf415045edb1be256efadb114ea19a836a7d00f63fc73` is `COMPLETED`: both sealed npm tarballs match in npm-hosted and npm-group, the pure consume-registry consumer passed, and GitHub Release `v2026.08.17-issue-817-link-page-tenant-id-release` is `CREATED_AND_VERIFIED`. Mango Maven remains `1.0.37`; every other npm coordinate remains unchanged.
 
 ### Pull Requests
 
@@ -49,8 +49,9 @@ Status: `PENDING`. This npm-only batch publishes the anonymous tenant forwarding
 
 ### Verification
 
-- Link-page tenant contract test, package build, admin style gates, release-version lock and workspace layout checks pass before preparation.
-- Preparation seals both tarballs once; publication must verify npm-hosted/npm-group integrity and a pure consume-registry install before Tag/Release.
+- Link-page tenant contract tests, the package build, admin style gates, release-version lock, workspace layout checks, the full local release gate and all required PR checks passed before preparation.
+- Candidate preparation sealed `@mango/link-page@1.0.8` as SHA-256 `d810c96c10ef6e3f85480b0ee4244d71d953defb41c90912dba4c44c07b2bdd0` and `@mango/cli@1.0.110` as SHA-256 `0707b0605892b0f8b3d130dee45190beada849be7ab3d6a53c48c60b2d688746` from source commit `da2bb1d4c6a4ec8754d823ba1e9eb25b90b85e56`.
+- Both exact hashes were read back from npm-hosted and npm-group; the pure consume-registry consumer passed before the Tag and GitHub Release were created and verified.
 
 ### Rollback
 
@@ -60,6 +61,7 @@ Status: `PENDING`. This npm-only batch publishes the anonymous tenant forwarding
 ### Audit History
 
 - Issue #817 is fixed by PR #822. The prior successful release baseline is tag `v2026.08.17-issue-806-business-readme-audit-scope`.
+- The first completion attempt created the Tag but received HTTP 503 from the GitHub Releases API. Same-manifest `repair` reverified both immutable npm coordinates without republishing, created the GitHub Release and advanced the canonical manifest to `COMPLETED`.
 
 ## v2026.08.17-issue-806-business-readme-audit-scope - 2026-08-17
 
