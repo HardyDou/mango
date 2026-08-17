@@ -263,7 +263,10 @@ function listLinks(query: { keyword?: string }) {
   if (props.authenticated) {
     return listVisibleLinks(query, requestOptions.value);
   }
-  return listPublicLinks({ tenantId: props.tenantId, ...query }, requestOptions.value);
+  return listPublicLinks(
+    { tenantId: props.tenantId == null ? undefined : String(props.tenantId), ...query },
+    requestOptions.value,
+  );
 }
 
 function clearSearch() {

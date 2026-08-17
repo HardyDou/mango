@@ -16,7 +16,7 @@ test('link-page exposes tenantId and forwards it only for anonymous public queri
   assert.match(typeSource, /tenantId\?: string \| number;/);
   assert.match(
     componentSource,
-    /if \(props\.authenticated\)\s*\{[\s\S]*?return listVisibleLinks\(query, requestOptions\.value\);[\s\S]*?\}\s*return listPublicLinks\(\{ tenantId: props\.tenantId, \.\.\.query \}/,
+    /if \(props\.authenticated\)\s*\{[\s\S]*?return listVisibleLinks\(query, requestOptions\.value\);[\s\S]*?\}\s*return listPublicLinks\([\s\S]*?tenantId: props\.tenantId == null \? undefined : String\(props\.tenantId\),[\s\S]*?\.\.\.query/,
   );
   assert.match(readmeSource, /`tenantId`.*匿名公开导航查询使用的租户 ID/u);
   assert.equal(packageJson.version, releaseVersions.npm['@mango/link-page']);
