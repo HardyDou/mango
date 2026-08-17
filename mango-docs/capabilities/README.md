@@ -36,7 +36,7 @@
 
 ## 3.1 近期能力变更
 
-- 2026-08-17，[Issue #806](https://github.com/HardyDou/mango/issues/806) 修复 PMO README 审计在业务消费仓中按脚本安装位置误判仓库根的问题：Mango 源仓继续检查固定平台 README，业务 baseline 改为从 `mango.config.json.paths` 和业务能力地图解析仓库自有 README，并核对业务仓实际拥有的 API、配置、前端依赖与页面事实；缺少能力地图、空审计集合、错误根目录和越界配置均明确失败。正式入口与排障见 [PMO README](../../mango-pmo/README.md) 和 [@mango/pmo README](../../mango-ui/packages/mango-pmo/README.md)。
+- 2026-08-17，[Issue #806](https://github.com/HardyDou/mango/issues/806) 修复 PMO README 审计在业务消费仓中按脚本安装位置误判仓库根的问题：Mango 源仓继续检查固定平台 README，业务 baseline 改为从 `mango.config.json.paths` 和业务能力地图解析仓库自有 README，并核对业务仓实际拥有的 API、配置、前端依赖与页面事实；缺少能力地图、空审计集合、错误根目录和越界配置均明确失败。目标发布 tuple 为 `@mango/pmo@1.3.16` 与 `@mango/cli@1.0.109`，Mango Maven `1.0.37` 和其它 npm 坐标保持不变。正式入口与排障见 [PMO README](../../mango-pmo/README.md) 和 [@mango/pmo README](../../mango-ui/packages/mango-pmo/README.md)。
 
 - 2026-08-16，[Issue #798](https://github.com/HardyDou/mango/issues/798) 收窄 Notice 入站事件 `notice.message.received` 的公开 payload：仅保留 `messageId`、`eventId`、`channelType`、`providerCode`、`sourceMessageId` 和固定值 `status=BROADCASTED`，不再广播主题、收发件地址或附件 `fileIds`。正文与附件继续按 `messageId` 查询 Notice 入站详情，附件内容通过 Mango File API 访问。入口见 [Notice README](../../mango/mango-platform/mango-notice/README.md) 和 [STANDARD 交付记录](../plans/2026-08-16-issue-798-notice-event-contract-delivery-record.md)。
 

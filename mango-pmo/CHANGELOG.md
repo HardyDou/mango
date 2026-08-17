@@ -1,5 +1,55 @@
 # Mango PMO Changelog
 
+## 1.3.16 - 2026-08-17
+
+### Pull Requests
+
+- [PR #818](https://github.com/HardyDou/mango/pull/818) Fixed business-consumer README audit root and scope resolution. Packages: `@mango/pmo@1.3.16`, `@mango/cli@1.0.109`. Business Adaptation: upgrade the exact PMO/CLI tuple, rerun the locked PMO upgrade/check and both M08 audits, and repair only genuine business-owned README findings.
+
+### Fixed
+
+- Resolve business repository audit scope from the actual project root and `mango.config.json.paths`, limiting checks to capability-map-owned business README files.
+- Fail closed on invalid roots, empty audit sets, path escapes and symlink escapes while preserving Mango source-repository gates.
+- Exclude project path routing fields from runtime configuration fact auditing.
+
+### Versions
+
+- `@mango/pmo` advances from `1.3.15` to `1.3.16`; exact dependent CLI advances from `1.0.108` to `1.0.109`.
+- Mango Maven remains `1.0.37`; all other npm coordinates remain unchanged.
+
+### Published Packages
+
+- Publish `@mango/pmo@1.3.16` before `@mango/cli@1.0.109`; no Maven or unrelated npm package is published.
+
+### Business Impact
+
+- Business projects receive repository-owned README audits instead of Mango source-only README requirements.
+- No application API, database, menu, permission, tenant, runtime configuration or deployment contract changes.
+
+### Upgrade Estimate
+
+- Audience: business repositories using Mango PMO README/source-facts audits.
+- Engineering Effort: 15 to 30 minutes normally; up to 1 hour for genuine business README repairs.
+- Execution Window: 20 to 60 minutes for upgrade and focused validation.
+- Service Downtime: none.
+- Rollback Effort: 10 to 20 minutes using the PMO backup and prior tuple.
+- Assumptions: clean worktree, company registry access and valid `mango.config.json.paths`.
+
+### Upgrade Notes
+
+1. Install CLI `1.0.109`, dry-run and apply the PMO upgrade to `1.3.16`, then run the locked check.
+2. Run both packaged M08 README audits from the business project root.
+3. Repair genuine business README findings; do not create Mango source directories to satisfy business checks.
+
+### Verification
+
+- Seven scope regression cases cover source/business roots, configured paths, empty scopes, path escapes and symlink escapes.
+- PMO workflow-equivalent tests, package build/check, Business Starter projection and mixed/pure registry consumers cover the published bundle.
+
+### Rollback
+
+- Revert the business PMO upgrade commit, restore PMO `1.3.15` and CLI `1.0.108`, then rerun the locked check; never overwrite an immutable coordinate.
+
 ## 1.3.15 - 2026-08-15
 
 ### Pull Requests
