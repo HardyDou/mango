@@ -44,9 +44,7 @@
   ],
   "legacyReconciliation": null,
   "restoredPublishedBaselines": [],
-  "directPackages": [
-    "@mango/link-page"
-  ],
+  "directPackages": ["@mango/link-page"],
   "classifiedFiles": [
     {
       "file": "mango-ui/packages/link-page/README.md",
@@ -95,15 +93,10 @@
           "summary": "CLI release matrix follows the managed package tuple"
         }
       ],
-      "releaseDependencies": [
-        "@mango/link-page"
-      ]
+      "releaseDependencies": ["@mango/link-page"]
     }
   ],
-  "order": [
-    "@mango/link-page",
-    "@mango/cli"
-  ],
+  "order": ["@mango/link-page", "@mango/cli"],
   "maven": null,
   "planDigest": "93a3de720cb6010d49a34b900cc39278b5934486768d0153da287114f49888db"
 }
