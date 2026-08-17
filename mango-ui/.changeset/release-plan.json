@@ -102,10 +102,7 @@
   ],
   "legacyReconciliation": null,
   "restoredPublishedBaselines": [],
-  "directPackages": [
-    "@mango/cli",
-    "@mango/pmo"
-  ],
+  "directPackages": ["@mango/cli", "@mango/pmo"],
   "classifiedFiles": [
     {
       "file": "mango-pmo/contracts/business-requirements.json",
@@ -209,15 +206,10 @@
           "summary": "Fix packaged README audits so Mango source checkouts retain their fixed platform README gate while business consumers resolve `mango.config.json.paths`, audit capability-map-owned repository documents, and fail closed on wrong roots or empty scopes. Align the generated full-project README with the exact PMO, CLI and Maven release tuple."
         }
       ],
-      "releaseDependencies": [
-        "@mango/pmo"
-      ]
+      "releaseDependencies": ["@mango/pmo"]
     }
   ],
-  "order": [
-    "@mango/pmo",
-    "@mango/cli"
-  ],
+  "order": ["@mango/pmo", "@mango/cli"],
   "maven": null,
   "planDigest": "8c21dcba0576d6b0b01f1afa3bbdd2b7ba9032dea0e2b5f8a2ba47ae9139d699"
 }
