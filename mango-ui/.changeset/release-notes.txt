@@ -1,56 +1,56 @@
 ## Pull Requests
 
-- [PR #818](https://github.com/HardyDou/mango/pull/818) Fixed business-consumer README audit root and scope resolution. Packages: `@mango/pmo@1.3.16`, `@mango/cli@1.0.109`. Business Adaptation: upgrade the exact PMO/CLI tuple, rerun the locked PMO upgrade/check and the two M08 README audits; repair only genuine business-owned README findings.
+- [PR #822](https://github.com/HardyDou/mango/pull/822) Fixed anonymous `@mango/link-page` public queries so an explicit `tenantId` is forwarded while authenticated queries retain the existing visible-link path. Packages: `@mango/link-page@1.0.8`, `@mango/cli@1.0.110` (matrix projection). Business Adaptation: consumers using public links may pass the tenant ID; no backend or database change.
 
 ## Fixed
 
-- Resolve business README audit roots from the actual project root and `mango.config.json.paths`, audit only capability-map-owned business documents, and fail closed on invalid roots, empty scope, path escape or symlink escape.
-- Preserve the fixed Mango source-repository README/source-facts gates and stop treating `mango.config.json.paths` as a runtime configuration fact.
+- Add the typed `tenantId` prop to `@mango/link-page`.
+- Forward `tenantId` only on anonymous public-link queries; authenticated queries continue to use `listVisibleLinks`.
+- Document the public-link tenant contract and add a regression contract test.
 
 ## Versions
 
-- `@mango/pmo`: `1.3.15` to `1.3.16`.
-- `@mango/cli`: `1.0.108` to `1.0.109`, with an exact dependency on PMO `1.3.16`.
+- `@mango/link-page`: `1.0.7` to `1.0.8`.
+- `@mango/cli`: `1.0.109` to `1.0.110`, carrying the generated release matrix entry for link-page `1.0.8`.
 - Mango Maven remains `1.0.37`; every other npm coordinate remains unchanged.
 
 ## Published Packages
 
-1. `@mango/pmo@1.3.16`.
-2. `@mango/cli@1.0.109`.
+1. `@mango/link-page@1.0.8`.
+2. `@mango/cli@1.0.110` (required matrix projection).
 3. No Maven or other npm package is published in this batch.
 
 ## Business Impact
 
-- Business repositories using packaged PMO checks no longer receive false failures for Mango source-only README paths; checks apply to their configured backend, frontend and business documentation roots.
-- No API, database, menu, permission, tenant, message, file, frontend runtime or application configuration contract changes.
+- Public link-page consumers that serve multiple tenants can provide `tenantId` without changing backend APIs.
+- Authenticated navigation behavior is unchanged. No database, permission, message, file or deployment migration is introduced.
 
 ## Upgrade Estimate
 
-- Audience: business repositories using Mango PMO README/source-facts audits.
-- Engineering Effort: 15 to 30 minutes for a clean repository; up to 1 hour when genuine business README links need repair.
-- Execution Window: 20 to 60 minutes for dry-run, upgrade, locked check and M08 audits.
-- Service Downtime: none; this is development-governance tooling only.
-- Rollback Effort: 10 to 20 minutes using the PMO backup and the prior CLI/PMO tuple.
-- Assumptions: company npm-group access, a clean business worktree and valid `mango.config.json.paths`.
+- Audience: Mango consumers importing `@mango/link-page` or the generated CLI matrix.
+- Engineering Effort: 5 to 15 minutes for consumers that need tenant-scoped public links; zero code changes otherwise.
+- Execution Window: 10 to 20 minutes for install, focused test and frontend build.
+- Service Downtime: none.
+- Rollback Effort: 5 to 10 minutes to restore the prior npm matrix and lockfile.
+- Assumptions: consume-registry access, clean lockfile and no private fork of link-page.
 
 ## Upgrade Notes
 
-1. Install `@mango/cli@1.0.109` from the company consume registry; it locks `@mango/pmo@1.3.16`.
-2. Run `mango pmo upgrade --project-dir . --to 1.3.16 --dry-run`, review the managed projection, apply the upgrade, then run `mango pmo check --project-dir . --locked`.
-3. Run `node business-pmo/mango-baseline/tools/audit-module-readmes.mjs --root .` and `node business-pmo/mango-baseline/tools/audit-readme-source-facts.mjs --root .`; repair genuine business-owned README findings without adding Mango source directories.
+1. Install `@mango/cli@1.0.110` or update the managed matrix, which resolves `@mango/link-page@1.0.8`.
+2. For anonymous public links, pass `tenantId` to `LinkPage`; authenticated consumers do not need to change.
+3. Run the consumer frozen install, focused link-page test and frontend build.
 
 ## Verification
 
-- Reproduce the machine plan `@mango/pmo@1.3.16 -> @mango/cli@1.0.109` with no Maven or unrelated npm targets.
-- Build and seal both tarballs once, then pass the mixed candidate/consume-registry PMO upgrade and README audit consumer.
-- After publication, verify hosted/group integrity for both exact coordinates and repeat the upgrade/audits using only the consume registry.
+- Link-page tenant contract test passes for anonymous and authenticated branches.
+- Link-page package build, admin style gates, release-version lock and workspace layout checks pass before preparation.
+- Preparation will seal both tarballs once; publication must verify npm-hosted/npm-group integrity and a pure consume-registry install before Tag/Release.
 
 ## Rollback
 
-- Revert the business PMO upgrade commit, run the validated PMO rollback to `1.3.15`, restore CLI `1.0.108`, and rerun the locked check.
-- Do not delete, overwrite or republish either immutable coordinate; any release defect receives a new patch version.
+- Restore the previous lockfile and `@mango/cli@1.0.109` / `@mango/link-page@1.0.7` tuple.
+- Never overwrite or republish immutable coordinates; a release defect requires a new patch version.
 
 ## Audit History
 
-- PR #815 and tag `v2026.08.16-issue-805-release-consumer-fix` are the successful release baseline, not new capability in this batch.
-- PR #816 only closed the prior batch's audit record and is not a release-bearing change in this batch.
+- Issue #817 is fixed by PR #822. The prior successful release baseline is tag `v2026.08.17-issue-806-business-readme-audit-scope`.

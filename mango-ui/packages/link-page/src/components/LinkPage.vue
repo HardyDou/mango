@@ -41,7 +41,12 @@
               <h2>搜索结果</h2>
               <p>关键词：{{ searchQuery }}</p>
             </div>
-            <button class="mango-link-page__text-button" type="button" data-action="link.clear-search" @click="clearSearch">
+            <button
+              class="mango-link-page__text-button"
+              type="button"
+              data-action="link.clear-search"
+              @click="clearSearch"
+            >
               清空搜索
             </button>
           </div>
@@ -83,12 +88,7 @@
         </section>
 
         <section v-if="hasAnyGroupItem" class="mango-link-page__groups" data-surface="link.groups">
-          <section
-            v-for="group in groups"
-            :key="group.name"
-            class="mango-link-page__group"
-            :data-group="group.name"
-          >
+          <section v-for="group in groups" :key="group.name" class="mango-link-page__group" :data-group="group.name">
             <div class="mango-link-page__section-head">
               <div>
                 <h2>{{ group.name }}</h2>
@@ -123,7 +123,11 @@
                   <strong>{{ item.name || '-' }}</strong>
                   <span v-if="item.recommended || visibleTags(item).length > 0" class="mango-link-page__meta">
                     <span v-if="item.recommended" class="mango-link-page__tag is-recommended">推荐</span>
-                    <span v-for="tag in visibleTags(item)" :key="`${itemKey(item)}:${tag}`" class="mango-link-page__tag">
+                    <span
+                      v-for="tag in visibleTags(item)"
+                      :key="`${itemKey(item)}:${tag}`"
+                      class="mango-link-page__tag"
+                    >
                       {{ tag }}
                     </span>
                   </span>
@@ -200,13 +204,13 @@ const requestOptions = computed<LinkOpenApiClientOptions>(() => ({
 }));
 const visibleLinks = computed(() => normalizeItems(links.value));
 const searchResults = computed(() => normalizeItems(searchItems.value));
-const groups = computed<LinkGroup[]>(() => categoryNames.map(name => ({
-  name,
-  items: visibleLinks.value
-    .filter(item => item.categoryName === name)
-    .sort(itemComparator),
-})));
-const hasAnyGroupItem = computed(() => groups.value.some(group => group.items.length > 0));
+const groups = computed<LinkGroup[]>(() =>
+  categoryNames.map((name) => ({
+    name,
+    items: visibleLinks.value.filter((item) => item.categoryName === name).sort(itemComparator),
+  })),
+);
+const hasAnyGroupItem = computed(() => groups.value.some((group) => group.items.length > 0));
 
 onMounted(() => {
   void loadLinks();
@@ -256,8 +260,13 @@ async function searchByKeyword(term: string) {
 }
 
 function listLinks(query: { keyword?: string }) {
-  const loader = props.authenticated ? listVisibleLinks : listPublicLinks;
-  return loader(query, requestOptions.value);
+  if (props.authenticated) {
+    return listVisibleLinks(query, requestOptions.value);
+  }
+  return listPublicLinks(
+    { tenantId: props.tenantId == null ? undefined : String(props.tenantId), ...query },
+    requestOptions.value,
+  );
 }
 
 function clearSearch() {
@@ -281,8 +290,8 @@ function normalizeItems(items: LinkPublicItem[]) {
 }
 
 function itemComparator(left: LinkPublicItem, right: LinkPublicItem) {
-  const leftCategoryIndex = categoryNames.indexOf(left.categoryName as typeof categoryNames[number]);
-  const rightCategoryIndex = categoryNames.indexOf(right.categoryName as typeof categoryNames[number]);
+  const leftCategoryIndex = categoryNames.indexOf(left.categoryName as (typeof categoryNames)[number]);
+  const rightCategoryIndex = categoryNames.indexOf(right.categoryName as (typeof categoryNames)[number]);
   if (leftCategoryIndex !== rightCategoryIndex) {
     return leftCategoryIndex - rightCategoryIndex;
   }
