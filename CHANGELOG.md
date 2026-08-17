@@ -4,7 +4,7 @@
 
 ## v2026.08.17-issue-806-business-readme-audit-scope - 2026-08-17
 
-Status: `PENDING`. This npm-only batch publishes the Issue #806 README audit correction as `@mango/pmo@1.3.16` and exact dependent `@mango/cli@1.0.109`; Mango Maven `1.0.37` and all other npm coordinates remain unchanged.
+Status: `PUBLISHED_AND_VERIFIED`. Canonical manifest `8c21dcba0576d6b0b01f1afa3bbdd2b7ba9032dea0e2b5f8a2ba47ae9139d699` is `COMPLETED`: both sealed npm tarballs match in npm-hosted and npm-group, the pure consume-registry consumer passed, and GitHub Release `v2026.08.17-issue-806-business-readme-audit-scope` is `CREATED_AND_VERIFIED`. Mango Maven `1.0.37` and all other npm coordinates remain unchanged.
 
 ### Pull Requests
 
@@ -48,8 +48,9 @@ Status: `PENDING`. This npm-only batch publishes the Issue #806 README audit cor
 
 ### Verification
 
-- The machine plan must reproduce `@mango/pmo@1.3.16 -> @mango/cli@1.0.109` with no Maven or unrelated npm targets.
-- Candidate preparation seals both tarballs once and passes a mixed PMO upgrade/audit consumer; publication must match both tarballs through hosted/group and pass the pure consume-registry consumer.
+- PR #819 passed all required checks before merge; `origin/main` tree `f8c3e99fb4e3554aa678d9d19acc1c096696136f` matched the sealed candidate tree exactly.
+- Candidate preparation sealed `@mango/pmo@1.3.16` as SHA-256 `064866af5eac9962895122f10ac977cfddf359d14fd587f3f7e6a47b77099b2c` and `@mango/cli@1.0.109` as SHA-256 `dd312175c6fe8ed1ba946e07cd773fa227c8a53eb6ce82774a38e44145a29503` after the mixed PMO upgrade/audit consumer passed.
+- Both exact hashes were read back from npm-hosted and npm-group; the pure consume-registry typecheck and production build passed before the Tag and GitHub Release were created.
 
 ### Rollback
 
@@ -60,6 +61,7 @@ Status: `PENDING`. This npm-only batch publishes the Issue #806 README audit cor
 
 - PR #815 and tag `v2026.08.16-issue-805-release-consumer-fix` are the successful release baseline.
 - PR #816 is prior-batch closeout evidence and is not counted as a release-bearing change here.
+- PR #819 is the machine-projected Release PR; its merge tree equals the sealed candidate, and the release tag remains on source commit `876b4c45577ec8e802e2beeae360553d7407d0c4` rather than this documentation-only closeout.
 
 ## v2026.08.16-issue-805-release-consumer-fix - 2026-08-16
 
