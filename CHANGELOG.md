@@ -2,6 +2,65 @@
 
 ## Unreleased
 
+## v2026.08.17-issue-817-link-page-tenant-id-release - 2026-08-17
+
+Status: `PENDING`. This npm-only batch publishes the anonymous tenant forwarding fix and its generated CLI matrix projection.
+
+### Pull Requests
+
+- [PR #822](https://github.com/HardyDou/mango/pull/822) Fixed anonymous `@mango/link-page` public queries so an explicit `tenantId` is forwarded while authenticated queries retain the existing visible-link path. Packages: `@mango/link-page@1.0.8`, `@mango/cli@1.0.110` (matrix projection). Business Adaptation: consumers using public links may pass the tenant ID; no backend or database change.
+
+### Fixed
+
+- Add the typed `tenantId` prop to `@mango/link-page` and forward it only on anonymous public-link queries; authenticated queries continue to use `listVisibleLinks`.
+- Document the public-link tenant contract and add a regression contract test.
+
+### Versions
+
+- `@mango/link-page`: `1.0.7` to `1.0.8`.
+- `@mango/cli`: `1.0.109` to `1.0.110`, carrying the generated release matrix entry for link-page `1.0.8`.
+- Mango Maven remains `1.0.37`; every other npm coordinate remains unchanged.
+
+### Published Packages
+
+1. `@mango/link-page@1.0.8`.
+2. `@mango/cli@1.0.110` (required matrix projection).
+3. No Maven or other npm package is published in this batch.
+
+### Business Impact
+
+- Public link-page consumers that serve multiple tenants can provide `tenantId` without changing backend APIs.
+- Authenticated navigation behavior is unchanged. No database, permission, message, file or deployment migration is introduced.
+
+### Upgrade Estimate
+
+- Audience: Mango consumers importing `@mango/link-page` or the generated CLI matrix.
+- Engineering Effort: 5 to 15 minutes for consumers that need tenant-scoped public links; zero code changes otherwise.
+- Execution Window: 10 to 20 minutes for install, focused test and frontend build.
+- Service Downtime: none.
+- Rollback Effort: 5 to 10 minutes to restore the prior npm matrix and lockfile.
+- Assumptions: consume-registry access, clean lockfile and no private fork of link-page.
+
+### Upgrade Notes
+
+1. Install `@mango/cli@1.0.110` or update the managed matrix, which resolves `@mango/link-page@1.0.8`.
+2. For anonymous public links, pass `tenantId` to `LinkPage`; authenticated consumers do not need to change.
+3. Run the consumer frozen install, focused link-page test and frontend build.
+
+### Verification
+
+- Link-page tenant contract test, package build, admin style gates, release-version lock and workspace layout checks pass before preparation.
+- Preparation seals both tarballs once; publication must verify npm-hosted/npm-group integrity and a pure consume-registry install before Tag/Release.
+
+### Rollback
+
+- Restore the previous lockfile and `@mango/cli@1.0.109` / `@mango/link-page@1.0.7` tuple.
+- Never overwrite or republish immutable coordinates; a release defect requires a new patch version.
+
+### Audit History
+
+- Issue #817 is fixed by PR #822. The prior successful release baseline is tag `v2026.08.17-issue-806-business-readme-audit-scope`.
+
 ## v2026.08.17-issue-806-business-readme-audit-scope - 2026-08-17
 
 Status: `PUBLISHED_AND_VERIFIED`. Canonical manifest `8c21dcba0576d6b0b01f1afa3bbdd2b7ba9032dea0e2b5f8a2ba47ae9139d699` is `COMPLETED`: both sealed npm tarballs match in npm-hosted and npm-group, the pure consume-registry consumer passed, and GitHub Release `v2026.08.17-issue-806-business-readme-audit-scope` is `CREATED_AND_VERIFIED`. Mango Maven `1.0.37` and all other npm coordinates remain unchanged.
