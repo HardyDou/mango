@@ -1,193 +1,82 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-08-16T23:55:36.575Z",
+  "generatedAt": "2026-08-17T14:11:49.673Z",
   "releaseKind": "npm-only",
   "release": {
-    "tag": "v2026.08.17-issue-806-business-readme-audit-scope",
-    "title": "Mango Issue #806 business README audit scope fix",
+    "tag": "v2026.08.17-issue-817-link-page-tenant-id-release",
+    "title": "Mango Issue #817 link-page tenant forwarding",
     "notesFile": ".changeset/release-notes.txt",
-    "notesSha256": "20afe06ae25aa22c4cec848bc2127831295a2bd28dc72c4fea2891fa5633aa5d"
+    "notesSha256": "c6b676e307a15298ca1556018670be338d0123f52ca00976cd56b4b2989fcf82"
   },
   "baseline": {
     "kind": "successful-release",
     "schemaVersion": 1,
-    "tag": "v2026.08.16-issue-805-release-consumer-fix",
-    "commit": "18f25662645702eee21946347149c075c0ae365d",
-    "tree": "b5f8fd12555a1c858f7ba8a9a982975ac54373bf",
-    "planDigest": "127cdcdf8d08b95ae6dee13fed2edb6a0838d1b4c586258757d016c3bb4c30d8",
+    "tag": "v2026.08.17-issue-806-business-readme-audit-scope",
+    "commit": "876b4c45577ec8e802e2beeae360553d7407d0c4",
+    "tree": "f8c3e99fb4e3554aa678d9d19acc1c096696136f",
+    "planDigest": "8c21dcba0576d6b0b01f1afa3bbdd2b7ba9032dea0e2b5f8a2ba47ae9139d699",
     "packages": {
-      "@mango/common": "1.0.27",
-      "@mango/admin-extension": "1.0.1",
-      "@mango/auth": "1.0.27",
-      "@mango/file": "1.0.35",
-      "@mango/grid-layout": "1.0.18",
-      "@mango/grid-widgets": "1.0.24",
-      "@mango/home": "1.0.16",
-      "@mango/rbac": "1.0.25",
-      "@mango/site-shell": "1.0.14",
-      "@mango/system": "1.0.33",
-      "@mango/admin-pages": "1.0.34",
-      "@mango/calendar": "1.0.35",
-      "@mango/cms": "1.0.24",
-      "@mango/job": "1.0.28",
-      "@mango/link": "1.0.21",
-      "@mango/notice": "1.0.40",
-      "@mango/numgen": "1.0.36",
-      "@mango/payment": "1.0.27",
-      "@mango/template": "1.0.35",
-      "@mango/workflow": "1.0.41",
-      "@mango/admin-shell": "1.0.61",
-      "@mango/workflow-business-example": "1.0.40",
-      "@mango/admin": "1.0.67",
-      "@mango/cli": "1.0.108"
+      "@mango/pmo": "1.3.16",
+      "@mango/cli": "1.0.109"
     },
-    "maven": "1.0.37"
+    "maven": null
   },
   "source": {
-    "commit": "3155c06bfbf950bedcac64b4b15d656de897454c",
-    "tree": "47836c279cb9d09beb37413341967ccd9048d974"
+    "commit": "bdd2d315a80ea5f98d3f53a1e2714e87bafcfb2f",
+    "tree": "1ab3c0feefb3ce805615729664594ccd0eb8c8bd"
   },
   "sourceFiles": [
-    ".github/workflows/pmo-doc-check.yml",
     "CHANGELOG.md",
-    "mango-business-starter/business-pmo/mango-baseline/README.md",
-    "mango-business-starter/business-pmo/mango-baseline/baseline.json",
-    "mango-business-starter/business-pmo/mango-baseline/contracts/business-requirements.json",
-    "mango-business-starter/business-pmo/mango-baseline/contracts/implementation-plan.json",
-    "mango-business-starter/business-pmo/mango-baseline/contracts/system-requirements.json",
-    "mango-business-starter/business-pmo/mango-baseline/contracts/technical-design.json",
-    "mango-business-starter/business-pmo/mango-baseline/rules/08-capability-docs.md",
-    "mango-business-starter/business-pmo/mango-baseline/rules/index.json",
-    "mango-business-starter/business-pmo/mango-baseline/rules/product/05-document-lifecycle.md",
-    "mango-business-starter/business-pmo/mango-baseline/tools/audit-module-readmes.mjs",
-    "mango-business-starter/business-pmo/mango-baseline/tools/audit-readme-source-facts.mjs",
-    "mango-business-starter/business-pmo/mango-baseline/tools/lib/readme-audit-scope.mjs",
-    "mango-docs/capabilities/README.md",
-    "mango-docs/plans/2026-08-17-issue-806-business-readme-audit-scope-governance.md",
-    "mango-pmo/CHANGELOG.md",
-    "mango-pmo/README.md",
-    "mango-pmo/contracts/business-requirements.json",
-    "mango-pmo/contracts/implementation-plan.json",
-    "mango-pmo/contracts/system-requirements.json",
-    "mango-pmo/contracts/technical-design.json",
-    "mango-pmo/plugin-src/.codex-plugin/plugin.json",
-    "mango-pmo/rules/08-capability-docs.md",
-    "mango-pmo/rules/index.json",
-    "mango-pmo/rules/product/05-document-lifecycle.md",
-    "mango-pmo/tests/document-contract/document-contract.test.mjs",
-    "mango-pmo/tests/document-contract/fixtures/valid/business-requirements.md",
-    "mango-pmo/tests/document-contract/fixtures/valid/implementation-plan.md",
-    "mango-pmo/tests/document-contract/fixtures/valid/system-requirements.md",
-    "mango-pmo/tests/document-contract/fixtures/valid/technical-design.md",
-    "mango-pmo/tests/readme-audit-scope.test.mjs",
-    "mango-pmo/tools/audit-module-readmes.mjs",
-    "mango-pmo/tools/audit-readme-source-facts.mjs",
-    "mango-pmo/tools/lib/readme-audit-scope.mjs",
     "mango-ui/.changeset/fix-business-readme-audit-scope.md",
-    "mango-ui/.changeset/issue-805-local-release-check.md",
-    "mango-ui/.changeset/issue-805-release-consumer.md",
-    "mango-ui/.changeset/issue-805-release-output-buffer.md",
-    "mango-ui/.changeset/issue-805-release-source-snapshot.md",
-    "mango-ui/.changeset/issue-805-release-tooling.md",
+    "mango-ui/.changeset/quiet-links-tenant.md",
     "mango-ui/.changeset/release-baseline.json",
-    "mango-ui/packages/mango-cli/templates/full/README.md",
-    "mango-ui/packages/mango-pmo/README.md"
+    "mango-ui/packages/link-page/README.md",
+    "mango-ui/packages/link-page/src/__tests__/tenant-id-contract.test.mjs",
+    "mango-ui/packages/link-page/src/components/LinkPage.vue",
+    "mango-ui/packages/link-page/src/types.ts"
   ],
   "changesets": [
     {
-      "id": "fix-business-readme-audit-scope",
-      "file": ".changeset/fix-business-readme-audit-scope.md",
-      "sha256": "feeca9986d2af8bc938294dce7674b31b7d8b4ed7677cbf2200486c706deabfe"
+      "id": "quiet-links-tenant",
+      "file": ".changeset/quiet-links-tenant.md",
+      "sha256": "18f7dd58a9423898aa193bb06881b79673bf00f65454139b31225707074481c6"
     }
   ],
   "legacyReconciliation": null,
   "restoredPublishedBaselines": [],
-  "directPackages": ["@mango/cli", "@mango/pmo"],
+  "directPackages": [
+    "@mango/link-page"
+  ],
   "classifiedFiles": [
     {
-      "file": "mango-pmo/contracts/business-requirements.json",
-      "packageName": "@mango/pmo",
-      "reason": "published-pmo-source"
-    },
-    {
-      "file": "mango-pmo/contracts/implementation-plan.json",
-      "packageName": "@mango/pmo",
-      "reason": "published-pmo-source"
-    },
-    {
-      "file": "mango-pmo/contracts/system-requirements.json",
-      "packageName": "@mango/pmo",
-      "reason": "published-pmo-source"
-    },
-    {
-      "file": "mango-pmo/contracts/technical-design.json",
-      "packageName": "@mango/pmo",
-      "reason": "published-pmo-source"
-    },
-    {
-      "file": "mango-pmo/plugin-src/.codex-plugin/plugin.json",
-      "packageName": "@mango/pmo",
-      "reason": "published-pmo-source"
-    },
-    {
-      "file": "mango-pmo/README.md",
-      "packageName": "@mango/pmo",
-      "reason": "published-pmo-source"
-    },
-    {
-      "file": "mango-pmo/rules/08-capability-docs.md",
-      "packageName": "@mango/pmo",
-      "reason": "published-pmo-source"
-    },
-    {
-      "file": "mango-pmo/rules/index.json",
-      "packageName": "@mango/pmo",
-      "reason": "published-pmo-source"
-    },
-    {
-      "file": "mango-pmo/rules/product/05-document-lifecycle.md",
-      "packageName": "@mango/pmo",
-      "reason": "published-pmo-source"
-    },
-    {
-      "file": "mango-pmo/tools/audit-module-readmes.mjs",
-      "packageName": "@mango/pmo",
-      "reason": "published-pmo-source"
-    },
-    {
-      "file": "mango-pmo/tools/audit-readme-source-facts.mjs",
-      "packageName": "@mango/pmo",
-      "reason": "published-pmo-source"
-    },
-    {
-      "file": "mango-pmo/tools/lib/readme-audit-scope.mjs",
-      "packageName": "@mango/pmo",
-      "reason": "published-pmo-source"
-    },
-    {
-      "file": "mango-ui/packages/mango-cli/templates/full/README.md",
-      "packageName": "@mango/cli",
+      "file": "mango-ui/packages/link-page/README.md",
+      "packageName": "@mango/link-page",
       "reason": "published-package-path"
     },
     {
-      "file": "mango-ui/packages/mango-pmo/README.md",
-      "packageName": "@mango/pmo",
+      "file": "mango-ui/packages/link-page/src/components/LinkPage.vue",
+      "packageName": "@mango/link-page",
+      "reason": "published-package-path"
+    },
+    {
+      "file": "mango-ui/packages/link-page/src/types.ts",
+      "packageName": "@mango/link-page",
       "reason": "published-package-path"
     }
   ],
   "packages": [
     {
-      "name": "@mango/pmo",
-      "directory": "packages/mango-pmo",
-      "sourceVersion": "1.3.15",
-      "targetVersion": "1.3.16",
+      "name": "@mango/link-page",
+      "directory": "packages/link-page",
+      "sourceVersion": "1.0.7",
+      "targetVersion": "1.0.8",
       "type": "patch",
       "direct": true,
       "generated": false,
       "reasons": [
         {
-          "source": "changeset:fix-business-readme-audit-scope",
-          "summary": "Fix packaged README audits so Mango source checkouts retain their fixed platform README gate while business consumers resolve `mango.config.json.paths`, audit capability-map-owned repository documents, and fail closed on wrong roots or empty scopes. Align the generated full-project README with the exact PMO, CLI and Maven release tuple."
+          "source": "changeset:quiet-links-tenant",
+          "summary": "Allow anonymous link-page consumers to pass an explicit tenantId to public-link queries."
         }
       ],
       "releaseDependencies": []
@@ -195,21 +84,26 @@
     {
       "name": "@mango/cli",
       "directory": "packages/mango-cli",
-      "sourceVersion": "1.0.108",
-      "targetVersion": "1.0.109",
+      "sourceVersion": "1.0.109",
+      "targetVersion": "1.0.110",
       "type": "patch",
-      "direct": true,
-      "generated": false,
+      "direct": false,
+      "generated": true,
       "reasons": [
         {
-          "source": "changeset:fix-business-readme-audit-scope",
-          "summary": "Fix packaged README audits so Mango source checkouts retain their fixed platform README gate while business consumers resolve `mango.config.json.paths`, audit capability-map-owned repository documents, and fail closed on wrong roots or empty scopes. Align the generated full-project README with the exact PMO, CLI and Maven release tuple."
+          "source": "dependency-closure",
+          "summary": "CLI release matrix follows the managed package tuple"
         }
       ],
-      "releaseDependencies": ["@mango/pmo"]
+      "releaseDependencies": [
+        "@mango/link-page"
+      ]
     }
   ],
-  "order": ["@mango/pmo", "@mango/cli"],
+  "order": [
+    "@mango/link-page",
+    "@mango/cli"
+  ],
   "maven": null,
-  "planDigest": "8c21dcba0576d6b0b01f1afa3bbdd2b7ba9032dea0e2b5f8a2ba47ae9139d699"
+  "planDigest": "93a3de720cb6010d49a34b900cc39278b5934486768d0153da287114f49888db"
 }
