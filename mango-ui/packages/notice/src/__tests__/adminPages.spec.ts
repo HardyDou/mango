@@ -61,6 +61,17 @@ describe('notice admin pages', () => {
     expect(source).toContain('secretValues: Object.entries');
   });
 
+  it('JSON 形式回显加密字段掩码并复用逐字段明文查看控件', () => {
+    const source = readFileSync(resolve(packageRoot, 'src/views/channel/index.vue'), 'utf-8');
+
+    expect(source).toContain('data-surface="notice.channel.json-secrets"');
+    expect(source).toContain('v-for="item in jsonSecretFields"');
+    expect(source).toContain(':secret-key="item.key"');
+    expect(source).toContain('configJsonText.value = configJsonEditorPreview()');
+    expect(source).toContain("if (!storedKey) config[key] = '****'");
+    expect(source).toContain("return ['***', '****'].includes");
+  });
+
   it('渠道页面显式展示并提交收发用途', () => {
     const source = readFileSync(resolve(packageRoot, 'src/views/channel/index.vue'), 'utf-8');
 
