@@ -745,6 +745,33 @@
               </template>
             </el-tab-pane>
             <el-tab-pane label="JSON 形式" name="JSON">
+              <el-alert
+                v-if="jsonSecretFields.length"
+                title="加密字段在 JSON 中默认显示为 ****；可通过下方对应字段的小眼睛临时查看明文。"
+                type="info"
+                :closable="false"
+                show-icon
+              />
+              <el-row
+                v-if="jsonSecretFields.length"
+                :gutter="16"
+                class="json-secret-grid"
+                data-surface="notice.channel.json-secrets"
+              >
+                <el-col v-for="item in jsonSecretFields" :key="item.key" :xs="24" :sm="12">
+                  <el-form-item :label="item.label">
+                    <NoticeSecretInput
+                      v-model="secretValues[item.key]"
+                      :channel-config-id="form.id"
+                      :secret-key="item.key"
+                      :configured="isSecretConfigured(item.key)"
+                      :referenced="isSecretReferenced(item.key)"
+                      :reset-token="secretResetToken"
+                      placeholder="留空表示保留原值"
+                    />
+                  </el-form-item>
+                </el-col>
+              </el-row>
               <el-input
                 v-model="configJsonText"
                 class="json-editor"
@@ -1018,6 +1045,14 @@ const isResourceManaged = computed(() => form.resourceSource === 'RESOURCE');
 const resourceSecretFields = computed(() =>
   secretFields(form.channelType || 'EMAIL', form.providerCode, form.capabilityMode),
 );
+const jsonSecretFields = computed(() => {
+  const fields = new Map(resourceSecretFields.value.map((item) => [item.key.toLowerCase(), item]));
+  [...(form.configuredSecretKeys || []), ...(form.referencedSecretKeys || [])].forEach((key) => {
+    const normalized = key.toLowerCase();
+    if (!fields.has(normalized)) fields.set(normalized, { key, label: key });
+  });
+  return [...fields.values()];
+});
 const supportsSendMode = computed(() => form.capabilityMode !== 'RECEIVE');
 const supportsReceiveMode = computed(() => form.capabilityMode === 'RECEIVE' || form.capabilityMode === 'BOTH');
 const capabilityModeOptions = computed(() =>
@@ -1069,7 +1104,7 @@ function openEdit(row: NoticeChannelConfig) {
   resetRateLimit();
   parseConfig(row.rateLimitConfig, rateLimit, defaultRateLimit());
   resetSecretValues();
-  configJsonText.value = configJsonPreview.value;
+  configJsonText.value = configJsonEditorPreview();
   configEditMode.value = 'FORM';
   visible.value = true;
 }
@@ -1180,7 +1215,7 @@ function isSecretReferenced(key: string) {
 function clearPersistedSecretsFromConfig(row: NoticeChannelConfig) {
   row.configuredSecretKeys?.forEach((key) => {
     const storedKey = Object.keys(channelConfig).find((item) => item.toLowerCase() === key.toLowerCase());
-    if (storedKey) channelConfig[storedKey] = '';
+    if (storedKey && isMaskedSecretValue(channelConfig[storedKey])) channelConfig[storedKey] = '';
   });
 }
 
@@ -1413,15 +1448,30 @@ function parseConfig(
 
 function handleConfigModeChange(tabName: string | number) {
   if (tabName === 'JSON') {
-    configJsonText.value = configJsonPreview.value;
+    configJsonText.value = configJsonEditorPreview();
     return;
   }
   try {
     parseConfig(configJsonText.value, channelConfig, defaultConfig(form.channelType || 'EMAIL'));
+    clearPersistedSecretsFromConfig(form as NoticeChannelConfig);
   } catch {
     ElMessage.error('JSON 格式错误，请修正后再切换');
     configEditMode.value = 'JSON';
   }
+}
+
+function configJsonEditorPreview() {
+  const config = { ...compactObject(channelConfig) };
+  jsonSecretFields.value.forEach(({ key }) => {
+    if (!isSecretConfigured(key) && !isSecretReferenced(key)) return;
+    const storedKey = Object.keys(config).find((item) => item.toLowerCase() === key.toLowerCase());
+    if (!storedKey) config[key] = '****';
+  });
+  return JSON.stringify(config, null, 2);
+}
+
+function isMaskedSecretValue(value: unknown) {
+  return ['***', '****'].includes(String(value ?? '').trim());
 }
 
 function channelLabel(channel: NoticeChannelType) {
