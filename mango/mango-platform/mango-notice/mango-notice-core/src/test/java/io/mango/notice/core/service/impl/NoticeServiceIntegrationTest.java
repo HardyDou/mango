@@ -95,7 +95,6 @@ import io.mango.notice.core.mapper.NoticeTaskMapper;
 import io.mango.notice.core.outbox.NoticeOutboxMessageFactory;
 import io.mango.notice.core.service.DefaultNoticeChannelSecretResolver;
 import io.mango.notice.core.service.NoticeChannelSecretMaterializer;
-import io.mango.notice.core.service.NoticeChannelSecretAuditService;
 import io.mango.notice.core.service.NoticeChannelSecretCodec;
 import io.mango.notice.core.service.NoticeRecipientResolver;
 import io.mango.notice.support.channel.ChannelSendResult;

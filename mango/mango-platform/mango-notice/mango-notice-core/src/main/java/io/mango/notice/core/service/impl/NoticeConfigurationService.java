@@ -60,7 +60,8 @@ import io.mango.notice.core.mapper.NoticeChannelRouteTagMapper;
 import io.mango.notice.core.mapper.NoticeTaskMapper;
 import io.mango.notice.core.service.INoticeConfigurationService;
 import io.mango.notice.core.service.NoticeChannelSecretMaterializer;
-import io.mango.notice.core.service.NoticeChannelSecretAuditService;
+import io.mango.notice.core.service.INoticeChannelSecretAuditService;
+import io.mango.notice.core.service.INoticeChannelSecretAuditService.AuditEntry;
 import io.mango.notice.core.service.NoticeChannelSecretCodec;
 import io.mango.notice.core.service.NoticeChannelCapabilityPolicy;
 
@@ -119,7 +120,7 @@ public class NoticeConfigurationService implements INoticeConfigurationService {
     private final ObjectMapper objectMapper;
     private final NoticeChannelSecretMaterializer secretMaterializer;
     private final NoticeChannelSecretCodec secretCodec;
-    private final NoticeChannelSecretAuditService secretAuditService;
+    private final INoticeChannelSecretAuditService secretAuditService;
 
     @Override
     public PageResult<NoticeBusinessTypeVO> listBusinessTypes(NoticeBusinessTypePageQuery query) {
@@ -602,12 +603,12 @@ public class NoticeConfigurationService implements INoticeConfigurationService {
                         NoticeCode.NOTICE_CHANNEL_SECRET_INVALID,
                         "存量 Secret 加密迁移失败");
             }
-            secretAuditService.record(entity.getId(), secretKey, source, "SUCCESS");
+            secretAuditService.record(new AuditEntry(entity.getId(), secretKey, source, "SUCCESS"));
             return new NoticeChannelSecretVO(entity.getId(), secretKey, plaintext);
         } catch (RuntimeException exception) {
             secretAuditService.record(
-                    query.getChannelConfigId(), requestedKey, source, "FAILED");
-            throw exception;
+                    new AuditEntry(query.getChannelConfigId(), requestedKey, source, "FAILED"));
+            return Require.rethrow(exception);
         }
     }
 

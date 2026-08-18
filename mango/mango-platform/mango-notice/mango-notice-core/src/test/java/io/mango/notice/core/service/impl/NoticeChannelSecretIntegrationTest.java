@@ -23,7 +23,6 @@ import io.mango.notice.api.query.NoticeChannelSecretQuery;
 import io.mango.notice.api.vo.NoticeChannelConfigVO;
 import io.mango.notice.core.entity.NoticeChannelConfigEntity;
 import io.mango.notice.core.mapper.NoticeChannelConfigMapper;
-import io.mango.notice.core.service.NoticeChannelSecretAuditService;
 import io.mango.notice.core.service.NoticeChannelSecretCodec;
 import io.mango.notice.core.service.NoticeChannelSecretMaterializer;
 
