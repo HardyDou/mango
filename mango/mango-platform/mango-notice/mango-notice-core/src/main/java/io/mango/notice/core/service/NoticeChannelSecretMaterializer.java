@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import io.mango.notice.core.entity.NoticeChannelConfigEntity;
+import io.mango.notice.core.mapper.NoticeChannelConfigMapper;
 import io.mango.notice.support.channel.NoticeChannelSecretResolver;
 
 import lombok.RequiredArgsConstructor;
@@ -27,23 +28,56 @@ import java.util.Map;
 public class NoticeChannelSecretMaterializer {
     private final ObjectMapper objectMapper;
     private final List<NoticeChannelSecretResolver> resolvers;
+    private final NoticeChannelSecretCodec secretCodec;
+    private final NoticeChannelConfigMapper channelConfigMapper;
 
     public String materialize(NoticeChannelConfigEntity entity) {
         Map<String, Object> config = new LinkedHashMap<>(readMap(entity.getConfigJson()));
         Map<String, Object> refs = readMap(entity.getSecretRefsJson());
-        Map<String, Object> manual = readMap(entity.getSecretConfigJson());
+        Map<String, Object> manual = new LinkedHashMap<>(readMap(entity.getSecretConfigJson()));
+        boolean migrated = encryptLegacyValues(manual);
         manual.forEach(
                 (key, value) -> {
                     if (!refs.containsKey(key)) {
-                        config.put(key, value);
+                        config.put(key, decryptStoredValue(value));
                     }
                 });
         refs.forEach((key, value) -> config.put(key, resolve(key, value)));
         try {
+            if (migrated && entity.getId() != null) {
+                entity.setSecretConfigJson(objectMapper.writeValueAsString(manual));
+                channelConfigMapper.updateById(entity);
+            }
             return objectMapper.writeValueAsString(config);
         } catch (JsonProcessingException ex) {
             throw new NoticeChannelSecretResolutionException("渠道配置无法物化");
         }
+    }
+
+    private boolean encryptLegacyValues(Map<String, Object> values) {
+        boolean migrated = false;
+        for (Map.Entry<String, Object> entry : values.entrySet()) {
+            Object value = entry.getValue();
+            if (value instanceof Map<?, ?> nested) {
+                migrated |= encryptLegacyValues((Map<String, Object>) nested);
+            } else if (value != null) {
+                String stored = String.valueOf(value);
+                if (!secretCodec.isEncrypted(stored)) {
+                    entry.setValue(secretCodec.encrypt(stored));
+                    migrated = true;
+                }
+            }
+        }
+        return migrated;
+    }
+
+    private Object decryptStoredValue(Object value) {
+        if (value instanceof Map<?, ?> nested) {
+            Map<String, Object> decrypted = new LinkedHashMap<>();
+            nested.forEach((key, nestedValue) -> decrypted.put(String.valueOf(key), decryptStoredValue(nestedValue)));
+            return decrypted;
+        }
+        return value == null ? null : secretCodec.decryptCompatible(String.valueOf(value));
     }
 
     private String resolve(String key, Object value) {

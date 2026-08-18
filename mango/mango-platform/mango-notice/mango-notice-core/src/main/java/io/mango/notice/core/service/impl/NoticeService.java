@@ -26,6 +26,7 @@ import io.mango.notice.api.enums.NoticeCode;
 import io.mango.notice.api.query.NoticeBusinessTypePageQuery;
 import io.mango.notice.api.query.NoticeChannelConfigPageQuery;
 import io.mango.notice.api.query.NoticeChannelReferenceImpactQuery;
+import io.mango.notice.api.query.NoticeChannelSecretQuery;
 import io.mango.notice.api.query.NoticeInboundMessagePageQuery;
 import io.mango.notice.api.query.NoticeReceivePreferenceQuery;
 import io.mango.notice.api.query.NoticeRecipientAccountQuery;
@@ -37,6 +38,7 @@ import io.mango.notice.api.vo.NoticeBusinessConfigVersionVO;
 import io.mango.notice.api.vo.NoticeBusinessTypeVO;
 import io.mango.notice.api.vo.NoticeChannelConfigVO;
 import io.mango.notice.api.vo.NoticeChannelReferenceImpactVO;
+import io.mango.notice.api.vo.NoticeChannelSecretVO;
 import io.mango.notice.api.vo.NoticeChannelTemplateVO;
 import io.mango.notice.api.vo.NoticeInboundMessageVO;
 import io.mango.notice.api.vo.NoticeReceivePreferenceVO;
@@ -221,6 +223,12 @@ public class NoticeService implements INoticeService {
     public NoticeChannelConfigVO saveChannelConfig(SaveNoticeChannelConfigCommand command) {
         Require.notNull(command, NoticeCode.NOTICE_BUSINESS_ERROR, "渠道配置不能为空");
         return configurationService.saveChannelConfig(command);
+    }
+
+    @Override
+    public NoticeChannelSecretVO revealChannelSecret(NoticeChannelSecretQuery query) {
+        Require.notNull(query, NoticeCode.NOTICE_CHANNEL_SECRET_INVALID, "Secret 查看参数不能为空");
+        return configurationService.revealChannelSecret(query);
     }
 
     @Override

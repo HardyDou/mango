@@ -57,6 +57,12 @@ public class NoticeChannelConfigVO implements Serializable {
     @Schema(description = "缺失的 Secret 键")
     private List<String> missingSecretKeys;
 
+    @Schema(description = "已配置的 Secret 键，仅返回键名，不返回值")
+    private List<String> configuredSecretKeys;
+
+    @Schema(description = "由 Resource 或环境引用管理的 Secret 键")
+    private List<String> referencedSecretKeys;
+
     @Schema(description = "绑定的路由标签编码")
     private List<String> routeTagCodes;
 
@@ -96,6 +102,24 @@ public class NoticeChannelConfigVO implements Serializable {
 
     public void setMissingSecretKeys(List<String> missingSecretKeys) {
         this.missingSecretKeys = missingSecretKeys == null ? null : List.copyOf(missingSecretKeys);
+    }
+
+    public List<String> getConfiguredSecretKeys() {
+        return configuredSecretKeys == null ? null : List.copyOf(configuredSecretKeys);
+    }
+
+    public void setConfiguredSecretKeys(List<String> configuredSecretKeys) {
+        this.configuredSecretKeys =
+                configuredSecretKeys == null ? null : List.copyOf(configuredSecretKeys);
+    }
+
+    public List<String> getReferencedSecretKeys() {
+        return referencedSecretKeys == null ? null : List.copyOf(referencedSecretKeys);
+    }
+
+    public void setReferencedSecretKeys(List<String> referencedSecretKeys) {
+        this.referencedSecretKeys =
+                referencedSecretKeys == null ? null : List.copyOf(referencedSecretKeys);
     }
 
     public List<String> getRouteTagCodes() {

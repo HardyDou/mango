@@ -28,6 +28,7 @@ import io.mango.notice.api.enums.NoticeChannelType;
 import io.mango.notice.api.query.NoticeBusinessTypePageQuery;
 import io.mango.notice.api.query.NoticeChannelConfigPageQuery;
 import io.mango.notice.api.query.NoticeChannelReferenceImpactQuery;
+import io.mango.notice.api.query.NoticeChannelSecretQuery;
 import io.mango.notice.api.query.NoticeInboundMessagePageQuery;
 import io.mango.notice.api.query.NoticeReceivePreferenceQuery;
 import io.mango.notice.api.query.NoticeRecipientAccountQuery;
@@ -39,6 +40,7 @@ import io.mango.notice.api.vo.NoticeBusinessConfigVersionVO;
 import io.mango.notice.api.vo.NoticeBusinessTypeVO;
 import io.mango.notice.api.vo.NoticeChannelConfigVO;
 import io.mango.notice.api.vo.NoticeChannelReferenceImpactVO;
+import io.mango.notice.api.vo.NoticeChannelSecretVO;
 import io.mango.notice.api.vo.NoticeChannelTemplateVO;
 import io.mango.notice.api.vo.NoticeInboundMessageVO;
 import io.mango.notice.api.vo.NoticeReceivePreferenceVO;
@@ -261,6 +263,17 @@ public class NoticeController implements NoticeApi {
     }
 
     @Override
+    @GetMapping("/channels/secret")
+    @ApiAccess(
+            mode = ApiResourceAccessMode.PERMISSION,
+            permission = "notice:channel:secret:view")
+    @Operation(summary = "查看单个渠道 Secret", description = "按需解密单个字段，响应禁止缓存并写入安全审计")
+    public R<NoticeChannelSecretVO> revealChannelSecret(
+            @ParameterObject NoticeChannelSecretQuery query) {
+        return R.ok(noticeService.revealChannelSecret(query));
+    }
+
+    @Override
     @GetMapping("/channel-route-tags")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:channel:view")
     @Operation(summary = "查询渠道路由标签", description = "按渠道类型和关键词查询路由标签及候选账号摘要")
@@ -440,7 +453,7 @@ public class NoticeController implements NoticeApi {
     @Override
     @PostMapping("/wecom/users/sync")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:user:add")
-    @Operation(summary = "同步企业微信用户", description = "从企业微信通讯录同步成员，并绑定企业微信通知接收账户")
+    @Operation(summary = "同步企业微信用户", description = "从企业微信通讯录同步成员，并维护 Identity 企业微信第三方身份")
     public R<WecomUserSyncResultVO> syncWecomUsers(@RequestBody SyncWecomUsersCommand command) {
         return R.ok(noticeService.syncWecomUsers(command));
     }

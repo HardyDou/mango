@@ -34,13 +34,13 @@ class NoticeApiSurfaceContractTest {
     @Test
     void publicApisKeepMethodsParametersValidationAndReturns() {
         assertThat(apiFingerprint())
-                .isEqualTo("57d880fb7af2e905fcb0772bb4a734c733f0d7d0423671c577d41995cc3a690f");
+                .isEqualTo("e078cdd8df85ad2dfbf559d39d018614b830d225550c11a9a5ce2eacce3ffd16");
     }
 
     @Test
     void httpEndpointsKeepVerbsPathsBindingsReturnsAndPermissions() {
         assertThat(httpFingerprint())
-                .isEqualTo("f00f63e355524346ddc448451ff55c1ef56406c2bba2d691f8376bae314e714e");
+                .isEqualTo("5af97397df9e7b34c043574345c0bf451b5259e7444e48ff65d9bde39b967ae4");
     }
 
     @Test

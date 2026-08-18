@@ -8,6 +8,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
+import java.util.LinkedHashSet;
 
 /** Shared completeness policy for the explicitly selected channel capability mode. */
 public final class NoticeChannelCapabilityPolicy {
@@ -58,6 +60,64 @@ public final class NoticeChannelCapabilityPolicy {
         NoticeChannelCapabilityMode normalized = normalize(mode);
         return (!normalized.supportsSend() || isSendConfigComplete(channelType, providerCode, config))
                 && (!normalized.supportsReceive() || isReceiveConfigComplete(channelType, config));
+    }
+
+    public static Set<String> supportedSecretKeys(
+            NoticeChannelType channelType, String providerCode, NoticeChannelCapabilityMode mode) {
+        LinkedHashSet<String> keys = new LinkedHashSet<>();
+        secretKeyGroups(channelType, providerCode, mode)
+                .forEach(group -> keys.add(group.getFirst()));
+        return Set.copyOf(keys);
+    }
+
+    public static List<String> secretKeyAliases(
+            NoticeChannelType channelType,
+            String providerCode,
+            NoticeChannelCapabilityMode mode,
+            String canonicalKey) {
+        return secretKeyGroups(channelType, providerCode, mode).stream()
+                .filter(group -> group.getFirst().equalsIgnoreCase(canonicalKey))
+                .findFirst()
+                .map(List::copyOf)
+                .orElseGet(List::of);
+    }
+
+    private static List<List<String>> secretKeyGroups(
+            NoticeChannelType channelType, String providerCode, NoticeChannelCapabilityMode mode) {
+        List<List<String>> groups = new ArrayList<>();
+        NoticeChannelCapabilityMode normalized = normalize(mode);
+        if (normalized.supportsSend()) {
+            switch (channelType) {
+                case SITE -> { }
+                case EMAIL -> {
+                    if ("ALIYUN_DM".equalsIgnoreCase(providerCode)) {
+                        groups.add(List.of("accessKeySecret", "accessSecret"));
+                    } else {
+                        groups.add(List.of("password", "smtpPassword"));
+                    }
+                }
+                case SMS -> {
+                    if ("TENCENT_SMS".equalsIgnoreCase(providerCode)) {
+                        groups.add(List.of("secretKey"));
+                    } else {
+                        groups.add(List.of("accessKeySecret", "accessSecret", "secretKey"));
+                    }
+                }
+                case WECHAT_OFFICIAL -> groups.add(List.of("appSecret", "secret"));
+                case WECOM -> groups.add(List.of("secret", "corpSecret"));
+                case DINGTALK -> groups.add(List.of("appSecret", "secret"));
+                default -> throw new IllegalArgumentException("不支持的通知渠道: " + channelType);
+            }
+        }
+        if (normalized.supportsReceive()) {
+            if (channelType == NoticeChannelType.EMAIL) {
+                groups.add(List.of("inboundPassword"));
+            } else if (channelType == NoticeChannelType.WECOM) {
+                groups.add(List.of("callbackToken"));
+                groups.add(List.of("encodingAesKey", "callbackEncodingAesKey"));
+            }
+        }
+        return List.copyOf(groups);
     }
 
     private static void addMissingSendSecrets(
