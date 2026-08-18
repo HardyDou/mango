@@ -11,11 +11,13 @@ import io.mango.notice.api.enums.NoticeChannelType;
 import io.mango.notice.api.query.NoticeBusinessTypePageQuery;
 import io.mango.notice.api.query.NoticeChannelConfigPageQuery;
 import io.mango.notice.api.query.NoticeChannelReferenceImpactQuery;
+import io.mango.notice.api.query.NoticeChannelSecretQuery;
 import io.mango.notice.api.query.NoticeRouteTagQuery;
 import io.mango.notice.api.vo.NoticeBusinessConfigVersionVO;
 import io.mango.notice.api.vo.NoticeBusinessTypeVO;
 import io.mango.notice.api.vo.NoticeChannelConfigVO;
 import io.mango.notice.api.vo.NoticeChannelReferenceImpactVO;
+import io.mango.notice.api.vo.NoticeChannelSecretVO;
 import io.mango.notice.api.vo.NoticeChannelTemplateVO;
 import io.mango.notice.api.vo.NoticeRouteTagVO;
 import io.mango.notice.api.vo.NoticeWecomLoginConfigVO;
@@ -55,6 +57,8 @@ public interface INoticeConfigurationService {
     PageResult<NoticeChannelConfigVO> listChannelConfigs(NoticeChannelConfigPageQuery query);
 
     NoticeChannelConfigVO saveChannelConfig(SaveNoticeChannelConfigCommand command);
+
+    NoticeChannelSecretVO revealChannelSecret(NoticeChannelSecretQuery query);
 
     List<NoticeRouteTagVO> listRouteTags(NoticeRouteTagQuery query);
 

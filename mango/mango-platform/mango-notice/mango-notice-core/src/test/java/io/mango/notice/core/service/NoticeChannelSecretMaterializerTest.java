@@ -7,12 +7,18 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.mango.notice.core.entity.NoticeChannelConfigEntity;
+import io.mango.notice.core.mapper.NoticeChannelConfigMapper;
 import io.mango.notice.support.channel.NoticeChannelSecretResolver;
+import io.mango.infra.crypto.impl.ICryptoService;
 
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Map;
+
+import org.springframework.beans.factory.support.StaticListableBeanFactory;
+
+import static org.mockito.Mockito.mock;
 
 class NoticeChannelSecretMaterializerTest {
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -25,7 +31,9 @@ class NoticeChannelSecretMaterializerTest {
                         objectMapper,
                         List.of(
                                 new MapSecretResolver(
-                                        Map.of("property:mail.password", "from-reference"))));
+                                        Map.of("property:mail.password", "from-reference"))),
+                        codec(),
+                        mock(NoticeChannelConfigMapper.class));
         NoticeChannelConfigEntity entity =
                 entity(
                         "{\"host\":\"smtp.example.com\",\"password\":\"unsafe-config-value\"}",
@@ -43,7 +51,10 @@ class NoticeChannelSecretMaterializerTest {
     void materializeRejectsUnsupportedOrUnresolvedReferenceWithoutLeakingReferenceValue() {
         NoticeChannelSecretMaterializer materializer =
                 new NoticeChannelSecretMaterializer(
-                        objectMapper, List.of(new MapSecretResolver(Map.of())));
+                        objectMapper,
+                        List.of(new MapSecretResolver(Map.of())),
+                        codec(),
+                        mock(NoticeChannelConfigMapper.class));
 
         assertThatThrownBy(
                         () ->
@@ -67,6 +78,34 @@ class NoticeChannelSecretMaterializerTest {
         entity.setSecretRefsJson(refs);
         entity.setSecretConfigJson(manual);
         return entity;
+    }
+
+    private static NoticeChannelSecretCodec codec() {
+        StaticListableBeanFactory beanFactory = new StaticListableBeanFactory();
+        beanFactory.addBean("cryptoService", new TestCryptoService());
+        return new NoticeChannelSecretCodec(beanFactory.getBeanProvider(ICryptoService.class));
+    }
+
+    private static final class TestCryptoService implements ICryptoService {
+        @Override
+        public String encrypt(String plaintext) {
+            return new StringBuilder(plaintext).reverse().toString();
+        }
+
+        @Override
+        public String encrypt(String plaintext, String iv) {
+            return encrypt(plaintext);
+        }
+
+        @Override
+        public String decrypt(String ciphertext) {
+            return new StringBuilder(ciphertext).reverse().toString();
+        }
+
+        @Override
+        public String decrypt(String ciphertext, String iv) {
+            return decrypt(ciphertext);
+        }
     }
 
     private record MapSecretResolver(Map<String, String> values)

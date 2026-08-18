@@ -10,6 +10,7 @@ import io.mango.notice.api.command.SaveNoticeRecipientAccountCommand;
 import io.mango.notice.api.query.MyNoticeAnnouncementPageQuery;
 import io.mango.notice.api.query.NoticeAnnouncementIdQuery;
 import io.mango.notice.api.query.NoticeBusinessTypePageQuery;
+import io.mango.notice.api.query.NoticeChannelSecretQuery;
 import io.mango.notice.api.query.NoticeInboundMessagePageQuery;
 import io.mango.notice.api.query.NoticeReceivePreferenceQuery;
 import io.mango.notice.api.query.NoticeRecipientAccountQuery;
@@ -34,6 +35,14 @@ class NoticeControllerAccessModeTest {
         assertPermission("saveRecipientAccount", "notice:receive-setting:edit", SaveNoticeRecipientAccountCommand.class);
         assertPermission("disableRecipientAccount", "notice:receive-setting:edit", Long.class, Long.class);
         assertPermission("setDefaultRecipientAccount", "notice:receive-setting:edit", Long.class, Long.class);
+    }
+
+    @Test
+    void channelSecretRevealShouldRequireDedicatedPermission() throws NoSuchMethodException {
+        assertPermission(
+                "revealChannelSecret",
+                "notice:channel:secret:view",
+                NoticeChannelSecretQuery.class);
     }
 
     @Test

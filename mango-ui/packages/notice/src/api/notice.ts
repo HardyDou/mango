@@ -7,6 +7,7 @@ import type {
   NoticeDomainOption,
   NoticeInboundMessage,
   NoticeChannelConfig,
+  NoticeChannelSecret,
   NoticeChannelTemplate,
   NoticeChannelType,
   NoticeRouteTag,
@@ -227,6 +228,13 @@ export function getChannelConfigs(params?: Record<string, unknown>, options?: { 
 
 export function saveChannelConfig(data: Partial<NoticeChannelConfig>) {
   return post<NoticeChannelConfig>('/notice/channels', data);
+}
+
+export function getChannelSecret(channelConfigId: string, secretKey: string, signal?: AbortSignal) {
+  return get<NoticeChannelSecret>('/notice/channels/secret', {
+    params: { channelConfigId, secretKey },
+    signal,
+  });
 }
 
 export function deleteChannelConfig(id: string) {
