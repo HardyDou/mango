@@ -86,16 +86,16 @@ const users = await userApi.page({ pageNum: 1, pageSize: 20 });
 
 页面导出：
 
-| 导出              | 默认页面 key                | 管理能力                       |
-| ----------------- | --------------------------- | ------------------------------ |
-| `AppView`         | `system/app/index`          | 应用管理。                     |
-| `MenuView`        | `system/menu/index`         | 菜单和按钮资源管理。           |
-| `MenuPackageView` | `system/menu-package/index` | 菜单包管理。                   |
-| `RoleView`        | `system/role/index`         | 角色和菜单/按钮授权。          |
+| 导出              | 默认页面 key                | 管理能力                                                                                                  |
+| ----------------- | --------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `AppView`         | `system/app/index`          | 应用管理。                                                                                                |
+| `MenuView`        | `system/menu/index`         | 菜单和按钮资源管理。                                                                                      |
+| `MenuPackageView` | `system/menu-package/index` | 菜单包管理。                                                                                              |
+| `RoleView`        | `system/role/index`         | 角色和菜单/按钮授权。                                                                                     |
 | `UserView`        | `system/user/index`         | 用户、企微同步、Identity 外部身份绑定；手工绑定要求企业微信完整昵称，企微同步不维护 Notice 独立接收账户。 |
-| `OrgView`         | `system/org/index`          | 组织树和组织成员。             |
-| `PostView`        | `system/post/index`         | 岗位管理。                     |
-| `PermissionView`  | `system/permission/index`   | 权限资源查看。                 |
+| `OrgView`         | `system/org/index`          | 组织树和组织成员。                                                                                        |
+| `PostView`        | `system/post/index`         | 岗位管理。                                                                                                |
+| `PermissionView`  | `system/permission/index`   | 权限资源查看。                                                                                            |
 
 主要 API：
 
