@@ -89,7 +89,7 @@ jobs:
       - name: Validate machine-generated release plan without dependency install
         if: steps.release-scope.outputs.release_only == 'true'
         working-directory: mango-ui
-        run: pnpm release:pr-check
+        run: pnpm release:pr-check --registry=https://registry.npmjs.org/
 
       - name: Upload pull request frontend quality evidence
         if: always()
