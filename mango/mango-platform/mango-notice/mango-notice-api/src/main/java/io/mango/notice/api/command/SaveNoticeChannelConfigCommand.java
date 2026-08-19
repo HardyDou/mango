@@ -46,7 +46,7 @@ public class SaveNoticeChannelConfigCommand implements Serializable {
     @jakarta.validation.constraints.Size(max = 65535)
     private String configJson;
 
-    @Schema(description = "Secret 补录值，只写不回显；空值不覆盖已有值")
+    @Schema(description = "Secret 补录值；空值不覆盖已有值，普通查询不返回内容")
     @Valid
     @jakarta.validation.constraints.Size(max = 64, message = "Secret 补录项不能超过64个")
     private List<NoticeChannelSecretValueCommand> secretValues;

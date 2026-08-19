@@ -30,11 +30,13 @@ import io.mango.notice.api.enums.NoticeTemplateVersionStatus;
 import io.mango.notice.api.query.NoticeBusinessTypePageQuery;
 import io.mango.notice.api.query.NoticeChannelConfigPageQuery;
 import io.mango.notice.api.query.NoticeChannelReferenceImpactQuery;
+import io.mango.notice.api.query.NoticeChannelSecretQuery;
 import io.mango.notice.api.query.NoticeRouteTagQuery;
 import io.mango.notice.api.vo.NoticeBusinessConfigVersionVO;
 import io.mango.notice.api.vo.NoticeBusinessTypeVO;
 import io.mango.notice.api.vo.NoticeChannelConfigVO;
 import io.mango.notice.api.vo.NoticeChannelReferenceImpactVO;
+import io.mango.notice.api.vo.NoticeChannelSecretVO;
 import io.mango.notice.api.vo.NoticeChannelTemplateVO;
 import io.mango.notice.api.vo.NoticeRouteTagVO;
 import io.mango.notice.api.vo.NoticeWecomLoginConfigVO;
@@ -58,6 +60,9 @@ import io.mango.notice.core.mapper.NoticeChannelRouteTagMapper;
 import io.mango.notice.core.mapper.NoticeTaskMapper;
 import io.mango.notice.core.service.INoticeConfigurationService;
 import io.mango.notice.core.service.NoticeChannelSecretMaterializer;
+import io.mango.notice.core.service.INoticeChannelSecretAuditService;
+import io.mango.notice.core.service.INoticeChannelSecretAuditService.AuditEntry;
+import io.mango.notice.core.service.NoticeChannelSecretCodec;
 import io.mango.notice.core.service.NoticeChannelCapabilityPolicy;
 
 import lombok.RequiredArgsConstructor;
@@ -85,7 +90,7 @@ import java.util.stream.Collectors;
         value = "EI_EXPOSE_REP2",
         justification = "Spring singleton collaborators are injected and intentionally shared")
 public class NoticeConfigurationService implements INoticeConfigurationService {
-    private static final String MASKED_VALUE = "***";
+    private static final Set<String> MASKED_VALUES = Set.of("***", "****");
     private static final String SITE_INTERNAL_PROVIDER = "INTERNAL";
     private static final String MANUAL_RESOURCE_SOURCE = "MANUAL";
     private static final String MANAGED_RESOURCE_SOURCE = "RESOURCE";
@@ -114,6 +119,8 @@ public class NoticeConfigurationService implements INoticeConfigurationService {
     private final NoticeTaskMapper taskMapper;
     private final ObjectMapper objectMapper;
     private final NoticeChannelSecretMaterializer secretMaterializer;
+    private final NoticeChannelSecretCodec secretCodec;
+    private final INoticeChannelSecretAuditService secretAuditService;
 
     @Override
     public PageResult<NoticeBusinessTypeVO> listBusinessTypes(NoticeBusinessTypePageQuery query) {
@@ -522,6 +529,128 @@ public class NoticeConfigurationService implements INoticeConfigurationService {
         return toChannelConfigVO(entity);
     }
 
+    @Override
+    public NoticeChannelSecretVO revealChannelSecret(NoticeChannelSecretQuery query) {
+        Require.notNull(query, NoticeCode.NOTICE_CHANNEL_SECRET_INVALID, "Secret 查看参数不能为空");
+        Require.notNull(
+                query.getChannelConfigId(),
+                NoticeCode.NOTICE_CHANNEL_SECRET_INVALID,
+                "渠道配置 ID 不能为空");
+        Require.notBlank(
+                query.getSecretKey(),
+                NoticeCode.NOTICE_CHANNEL_SECRET_INVALID,
+                "Secret 字段不能为空");
+        String requestedKey = query.getSecretKey().trim();
+        String source = "UNKNOWN";
+        try {
+            NoticeChannelConfigEntity entity =
+                    channelConfigMapper.selectById(query.getChannelConfigId());
+            Require.notNull(
+                    entity, NoticeCode.NOTICE_CHANNEL_SECRET_INVALID, "渠道配置不存在或无权访问");
+            String secretKey = requireSupportedSecretKey(entity, requestedKey);
+
+            Map<String, Object> references = fromJson(entity.getSecretRefsJson());
+            String referencedKey = findEquivalentSecretKey(references, entity, secretKey);
+            if (referencedKey != null) {
+                source = "REFERENCE";
+                return Require.fail(
+                        NoticeCode.NOTICE_CHANNEL_SECRET_INVALID,
+                        "该 Secret 由引用管理，不支持在页面查看明文");
+            }
+
+            Map<String, Object> manualSecrets =
+                    new LinkedHashMap<>(fromJson(entity.getSecretConfigJson()));
+            String storedKey = findEquivalentSecretKey(manualSecrets, entity, secretKey);
+            Map<String, Object> legacyConfig = null;
+            if (storedKey == null) {
+                legacyConfig = new LinkedHashMap<>(fromJson(entity.getConfigJson()));
+                storedKey = findEquivalentSecretKey(legacyConfig, entity, secretKey);
+                source = "LEGACY_CONFIG";
+            } else {
+                source = "MANUAL";
+            }
+            Require.notNull(
+                    storedKey, NoticeCode.NOTICE_CHANNEL_SECRET_INVALID, "该 Secret 尚未配置");
+            Object storedValue =
+                    legacyConfig == null
+                            ? manualSecrets.get(storedKey)
+                            : legacyConfig.get(storedKey);
+            Require.isTrue(
+                    !(storedValue instanceof Map<?, ?>) && storedValue != null,
+                    NoticeCode.NOTICE_CHANNEL_SECRET_INVALID,
+                    "该 Secret 不能按单字段查看");
+            String storedText = String.valueOf(storedValue);
+            String plaintext = secretCodec.decryptCompatible(storedText);
+            Require.notBlank(
+                    plaintext, NoticeCode.NOTICE_CHANNEL_SECRET_INVALID, "该 Secret 尚未配置");
+
+            if (legacyConfig != null
+                    || !secretCodec.isEncrypted(storedText)
+                    || !storedKey.equals(secretKey)) {
+                manualSecrets.remove(storedKey);
+                manualSecrets.put(
+                        secretKey,
+                        secretCodec.isEncrypted(storedText)
+                                ? storedText
+                                : secretCodec.encrypt(plaintext));
+                if (legacyConfig != null) {
+                    legacyConfig.remove(storedKey);
+                    entity.setConfigJson(toJson(legacyConfig));
+                }
+                entity.setSecretConfigJson(toJson(manualSecrets));
+                Require.isTrue(
+                        channelConfigMapper.updateById(entity) > 0,
+                        NoticeCode.NOTICE_CHANNEL_SECRET_INVALID,
+                        "存量 Secret 加密迁移失败");
+            }
+            secretAuditService.record(new AuditEntry(entity.getId(), secretKey, source, "SUCCESS"));
+            return new NoticeChannelSecretVO(entity.getId(), secretKey, plaintext);
+        } catch (RuntimeException exception) {
+            secretAuditService.record(
+                    new AuditEntry(query.getChannelConfigId(), requestedKey, source, "FAILED"));
+            return Require.rethrow(exception);
+        }
+    }
+
+    private String requireSupportedSecretKey(
+            NoticeChannelConfigEntity entity, String requestedKey) {
+        return NoticeChannelCapabilityPolicy.supportedSecretKeys(
+                        entity.getChannelType(),
+                        entity.getProviderCode(),
+                        entity.getCapabilityMode())
+                .stream()
+                .filter(candidate -> candidate.equalsIgnoreCase(requestedKey))
+                .findFirst()
+                .orElseGet(
+                        () ->
+                                Require.fail(
+                                        NoticeCode.NOTICE_CHANNEL_SECRET_INVALID,
+                                        "当前渠道不支持查看该 Secret 字段"));
+    }
+
+    private String findKeyIgnoreCase(Map<String, Object> values, String requestedKey) {
+        return values.keySet().stream()
+                .filter(key -> key.equalsIgnoreCase(requestedKey))
+                .findFirst()
+                .orElse(null);
+    }
+
+    private String findEquivalentSecretKey(
+            Map<String, Object> values,
+            NoticeChannelConfigEntity entity,
+            String canonicalKey) {
+        return NoticeChannelCapabilityPolicy.secretKeyAliases(
+                        entity.getChannelType(),
+                        entity.getProviderCode(),
+                        entity.getCapabilityMode(),
+                        canonicalKey)
+                .stream()
+                .map(alias -> findKeyIgnoreCase(values, alias))
+                .filter(java.util.Objects::nonNull)
+                .findFirst()
+                .orElse(null);
+    }
+
     private NoticeChannelConfigEntity loadChannelConfig(Long id) {
         NoticeChannelConfigEntity entity =
                 id == null ? new NoticeChannelConfigEntity() : channelConfigMapper.selectById(id);
@@ -608,7 +737,19 @@ public class NoticeConfigurationService implements INoticeConfigurationService {
         legacySecrets.forEach(secrets::putIfAbsent);
         secrets.putAll(extractedSecrets);
         mergeSecretValues(secrets, command.getSecretValues());
+        encryptSecretValues(secrets);
         entity.setSecretConfigJson(secrets.isEmpty() ? null : toJson(secrets));
+    }
+
+    private void encryptSecretValues(Map<String, Object> values) {
+        for (Map.Entry<String, Object> entry : values.entrySet()) {
+            Object value = entry.getValue();
+            if (value instanceof Map<?, ?> nested) {
+                encryptSecretValues((Map<String, Object>) nested);
+            } else if (value != null) {
+                entry.setValue(secretCodec.encryptIfNecessary(String.valueOf(value)));
+            }
+        }
     }
 
     private void refreshChannelConfigStatus(NoticeChannelConfigEntity entity) {
@@ -1017,7 +1158,7 @@ public class NoticeConfigurationService implements INoticeConfigurationService {
             Object value = config.get(key);
             if (isSensitiveConfigKey(key)) {
                 config.remove(key);
-                if (value != null && !MASKED_VALUE.equals(String.valueOf(value))) {
+                if (value != null && !isMaskedValue(value)) {
                     secrets.put(key, value);
                 }
             } else if (value instanceof Map<?, ?> nested) {
@@ -1043,7 +1184,7 @@ public class NoticeConfigurationService implements INoticeConfigurationService {
                     if (item != null
                             && StringUtils.hasText(item.getKey())
                             && StringUtils.hasText(item.getValue())
-                            && !MASKED_VALUE.equals(item.getValue())) {
+                            && !isMaskedValue(item.getValue())) {
                         target.put(item.getKey().trim(), item.getValue());
                     }
                 });
@@ -1122,6 +1263,34 @@ public class NoticeConfigurationService implements INoticeConfigurationService {
                         entity.getProviderCode(),
                         entity.getCapabilityMode(),
                         effective));
+        Set<String> supportedSecretKeys =
+                NoticeChannelCapabilityPolicy.supportedSecretKeys(
+                        entity.getChannelType(),
+                        entity.getProviderCode(),
+                        entity.getCapabilityMode());
+        Map<String, Object> manualSecrets = fromJson(entity.getSecretConfigJson());
+        Map<String, Object> referencedSecrets = fromJson(entity.getSecretRefsJson());
+        Map<String, Object> legacyConfig = fromJson(entity.getConfigJson());
+        vo.setConfiguredSecretKeys(
+                supportedSecretKeys.stream()
+                        .filter(
+                                key ->
+                                        findEquivalentSecretKey(manualSecrets, entity, key) != null
+                                                || findEquivalentSecretKey(
+                                                                referencedSecrets, entity, key)
+                                                        != null
+                                                || findEquivalentSecretKey(legacyConfig, entity, key)
+                                                        != null)
+                        .sorted()
+                        .toList());
+        vo.setReferencedSecretKeys(
+                supportedSecretKeys.stream()
+                        .filter(
+                                key ->
+                                        findEquivalentSecretKey(referencedSecrets, entity, key)
+                                                != null)
+                        .sorted()
+                        .toList());
         List<NoticeChannelConfigRouteTagEntity> relations =
                 configRouteTagMapper.selectList(
                         new LambdaQueryWrapper<NoticeChannelConfigRouteTagEntity>()
@@ -1194,7 +1363,11 @@ public class NoticeConfigurationService implements INoticeConfigurationService {
 
     private boolean shouldKeepOriginalConfigValue(String key, Object value) {
         return isSensitiveConfigKey(key)
-                && (value == null || MASKED_VALUE.equals(String.valueOf(value)));
+                && (value == null || isMaskedValue(value));
+    }
+
+    private boolean isMaskedValue(Object value) {
+        return value != null && MASKED_VALUES.contains(String.valueOf(value));
     }
 
     private boolean isSensitiveConfigKey(String key) {

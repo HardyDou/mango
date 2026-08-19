@@ -349,6 +349,8 @@ export interface NoticeChannelConfig {
   resourceSource?: 'MANUAL' | 'RESOURCE';
   secretStatus?: NoticeChannelSecretStatus;
   missingSecretKeys?: string[];
+  configuredSecretKeys?: string[];
+  referencedSecretKeys?: string[];
   routeTagCodes?: string[];
   enabled: boolean;
   priority: number;
@@ -364,6 +366,12 @@ export interface NoticeChannelConfig {
 
 export interface NoticeChannelSecretValue {
   key: string;
+  value: string;
+}
+
+export interface NoticeChannelSecret {
+  channelConfigId: string;
+  secretKey: string;
   value: string;
 }
 

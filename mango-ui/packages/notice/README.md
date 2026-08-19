@@ -82,15 +82,15 @@ stop();
 
 入站消息验收使用两个独立页面：
 
-| 页面     | 管理端地址          | component key          | 后端权限                                                              |
-| -------- | ------------------- | ---------------------- | --------------------------------------------------------------------- |
-| 渠道配置 | `/#/notice/channel` | `notice/channel/index` | `notice:channel:view`、`notice:channel:create`、`notice:channel:edit` |
-| 接收消息 | `/#/notice/inbound` | `notice/inbound/index` | `notice:inbound:view`                                                 |
+| 页面     | 管理端地址          | component key          | 后端权限                                                                                            |
+| -------- | ------------------- | ---------------------- | --------------------------------------------------------------------------------------------------- |
+| 渠道配置 | `/#/notice/channel` | `notice/channel/index` | `notice:channel:view`、`notice:channel:create`、`notice:channel:edit`、`notice:channel:secret:view` |
+| 接收消息 | `/#/notice/inbound` | `notice/inbound/index` | `notice:inbound:view`                                                                               |
 
 企业微信和邮箱的服务端配置字段、Secret 引用、公网回调 URL 与协议游标说明见
 [mango-notice README](../../../mango/mango-platform/mango-notice/README.md#76-企业微信消息接收)。
 
-渠道页会展示稳定 `configCode`、Resource 来源和版本、路由标签、Secret 完整性、优先级、权重及健康状态。Resource 管理账号的非敏感字段只读，管理员只能补录 Secret 和维护标签；Secret 输入只写不回显。删除或停用账号、删除标签前会展示引用影响，存在模板引用时后端拒绝破坏性操作。
+渠道页会展示稳定 `configCode`、Resource 来源和版本、路由标签、Secret 完整性、优先级、权重及健康状态。编辑时 Webhook、扫码登录开关、扫码回调等非敏感字段按 `configJson` 完整恢复；表单形式和 JSON 形式都会将已配置的人工 Secret 回显为 `****`，JSON 文本保留对应 Secret 键，并在独立字段提供小眼睛。点击后才调用单字段接口显示明文，再次点击、关闭对话框、切换渠道/provider 或 60 秒超时都会清除明文。未修改掩码直接保存不会覆盖原 Secret，也不会把 `****` 作为值提交。Resource/环境引用显示为“由引用管理”，不在页面解析明文。删除或停用账号、删除标签前会展示引用影响，存在模板引用时后端拒绝破坏性操作。
 
 消息配置页的渠道路由三选一：指定账号（`EXACT`）、路由标签（`TAG`）或自动轮换（`AUTO`）。TAG 会展示当前候选账号数量和名称；零候选标签不能保存为已启用模板，运行时也不会回退到 AUTO。
 
@@ -192,7 +192,7 @@ stop();
 | 业务类型   | `getBusinessTypes`、`createBusinessType`、`updateBusinessType`、`deleteBusinessType`                                                          |
 | 配置版本   | `getBusinessConfigVersions`、`saveBusinessConfigDraft`、`publishBusinessConfigDraft`、`activateBusinessConfigVersion`                         |
 | 渠道模板   | `getChannelTemplates`、`saveChannelTemplate`、`publishChannelTemplate`                                                                        |
-| 渠道配置   | `getChannelConfigs`、`saveChannelConfig`、`deleteChannelConfig`                                                                               |
+| 渠道配置   | `getChannelConfigs`、`getChannelSecret`、`saveChannelConfig`、`deleteChannelConfig`                                                           |
 | 接收消息   | `getInboundMessages`、`getInboundMessage`                                                                                                     |
 | 路由标签   | `getNoticeRouteTags`、`saveNoticeRouteTag`、`deleteNoticeRouteTag`、`getNoticeChannelReferenceImpact`                                         |
 | 任务和记录 | `getNoticeTasks`、`getSendRecords`、`retrySendRecord`、`markSendRecordManualSuccess`、`ignoreSendRecord`                                      |

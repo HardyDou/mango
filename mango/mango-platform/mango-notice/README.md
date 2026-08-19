@@ -365,7 +365,7 @@ noticeApi.send(command);
 
 ## 6. 配置说明
 
-YAML 只配置通知 outbox 分发行为。渠道账号的非敏感运行参数保存在 `notice_channel_config.config_json`；Resource Secret 引用和环境人工补录值分别保存在 `secret_refs_json`、`secret_config_json`，查询接口不会返回解析值或人工 Secret。模板 ID、路由模式和标签通过通知管理页面或 API 维护。
+YAML 只配置通知 outbox 分发行为。渠道账号的非敏感运行参数保存在 `notice_channel_config.config_json`；Resource Secret 引用和环境人工补录值分别保存在 `secret_refs_json`、`secret_config_json`。人工 Secret 使用 Mango Crypto 以 `enc:` 密文落库，普通查询只返回已配置/引用管理的字段名，不返回解析值、密文或明文。模板 ID、路由模式和标签通过通知管理页面或 API 维护。
 
 ```yaml
 mango:
@@ -456,6 +456,10 @@ EMAIL 渠道会消费 `attachmentFileIds`，通过 Mango File 服务读取当前
 候选账号必须启用且 `configStatus=COMPLETE`，按较小 `priority`、健康状态、`weight` 和发送记录 ID 稳定轮换。单账号可重试失败达到上限后切换下一账号；不可重试错误立即停止，避免误用其它发送身份。
 
 Resource 的 `configJson` 禁止明文 Secret，`secretRefs` 首批支持 `env:NAME` 和 `property:path.to.secret`。运行时优先使用引用解析值，其次使用没有被引用管理的人工 Secret，最后合并非敏感配置。Resource 重放不会清空人工 Secret。
+
+人工 Secret 的保存、运行物化和按需查看依赖 `mango.crypto.sm4.secret-key`。新提交值始终加密；历史 `secret_config_json` 明文只作为升级兼容输入，在当前租户的该渠道被保存、运行或成功查看时惰性改写为密文，不执行跨租户全库扫描。加密能力缺失、密文损坏或迁移写回失败时请求失败关闭，不降级为明文写入。
+
+渠道列表通过 `configuredSecretKeys` 和 `referencedSecretKeys` 告知管理端字段状态。具有独立权限 `notice:channel:secret:view` 的管理员可以调用 `GET /notice/channels/secret?channelConfigId=<id>&secretKey=<key>` 查看一个人工维护字段；接口按当前租户加载渠道，只接受该渠道/provider 定义允许的 Secret key，响应带 `Cache-Control: no-store`，并向 `notice_audit_log` 写入操作人、租户、渠道、字段、来源和结果。审计快照不包含明文、密文或引用内容。Resource/环境引用不通过该接口解析到页面。
 
 ### 7.4 Outbox Topic
 
@@ -756,7 +760,7 @@ HTTP 根路径：`/notice`。
 | 站内信 | `POST /notice/site/messages` | `notice:site:create` | 快捷发送站内信。 |
 | 业务类型 | `/notice/business-types/**` | `notice:business:*` | 维护业务类型、配置版本和渠道模板。 |
 | 个人可用消息类型 | `GET /notice/site/business-types` | LOGIN | 查询当前租户已启用的消息类型。 |
-| 渠道配置 | `/notice/channels/**` | `notice:channel:*` | 查询、保存、删除渠道配置。 |
+| 渠道配置 | `/notice/channels/**` | `notice:channel:*` | 查询、保存、删除渠道配置；单字段 Secret 查看另需 `notice:channel:secret:view`。 |
 | 内部配置 | `GET /notice/internal/wecom-login-config` | INTERNAL | 认证服务读取企微扫码登录配置。 |
 | 任务 | `GET /notice/tasks` | `notice:task:view` | 查询通知任务。 |
 | 发送记录 | `GET /notice/records` | `notice:record:view` | 查询发送记录。 |

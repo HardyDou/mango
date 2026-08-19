@@ -150,7 +150,7 @@
                   v-model="form.providerCode"
                   :disabled="isResourceManaged"
                   class="form-control"
-                  @change="resetChannelConfig"
+                  @change="handleProviderChange"
                 >
                   <el-option
                     v-for="item in providerOptions(form.channelType || 'EMAIL')"
@@ -283,10 +283,13 @@
             <el-row :gutter="16" class="resource-secret-grid">
               <el-col v-for="item in resourceSecretFields" :key="item.key" :xs="24" :sm="12">
                 <el-form-item :label="item.label">
-                  <el-input
+                  <NoticeSecretInput
                     v-model="secretValues[item.key]"
-                    show-password
-                    autocomplete="new-password"
+                    :channel-config-id="form.id"
+                    :secret-key="item.key"
+                    :configured="isSecretConfigured(item.key)"
+                    :referenced="isSecretReferenced(item.key)"
+                    :reset-token="secretResetToken"
                     :placeholder="form.missingSecretKeys?.includes(item.key) ? '必填，当前缺失' : '留空表示保留原值'"
                   />
                 </el-form-item>
@@ -370,7 +373,14 @@
                     </el-col>
                     <el-col :xs="24" :sm="12">
                       <el-form-item label="SecretKey" required>
-                        <el-input v-model="channelConfig.secretKey" show-password autocomplete="new-password" />
+                        <NoticeSecretInput
+                          v-model="channelConfig.secretKey"
+                          :channel-config-id="form.id"
+                          secret-key="secretKey"
+                          :configured="isSecretConfigured('secretKey')"
+                          :referenced="isSecretReferenced('secretKey')"
+                          :reset-token="secretResetToken"
+                        />
                       </el-form-item>
                     </el-col>
                     <el-col :xs="24" :sm="12">
@@ -392,7 +402,14 @@
                     </el-col>
                     <el-col :xs="24" :sm="12">
                       <el-form-item label="Secret" required>
-                        <el-input v-model="channelConfig.accessKeySecret" show-password autocomplete="new-password" />
+                        <NoticeSecretInput
+                          v-model="channelConfig.accessKeySecret"
+                          :channel-config-id="form.id"
+                          secret-key="accessKeySecret"
+                          :configured="isSecretConfigured('accessKeySecret')"
+                          :referenced="isSecretReferenced('accessKeySecret')"
+                          :reset-token="secretResetToken"
+                        />
                       </el-form-item>
                     </el-col>
                   </template>
@@ -452,7 +469,14 @@
                   </el-col>
                   <el-col v-if="supportsSendMode" :xs="24" :sm="12">
                     <el-form-item label="密码" required>
-                      <el-input v-model="channelConfig.password" show-password autocomplete="new-password" />
+                      <NoticeSecretInput
+                        v-model="channelConfig.password"
+                        :channel-config-id="form.id"
+                        secret-key="password"
+                        :configured="isSecretConfigured('password')"
+                        :referenced="isSecretReferenced('password')"
+                        :reset-token="secretResetToken"
+                      />
                     </el-form-item>
                   </el-col>
                   <el-col v-if="supportsSendMode" :xs="24" :sm="12">
@@ -481,7 +505,14 @@
                   </el-col>
                   <el-col v-if="supportsSendMode" :xs="24" :sm="12">
                     <el-form-item label="Secret" required>
-                      <el-input v-model="channelConfig.accessKeySecret" show-password autocomplete="new-password" />
+                      <NoticeSecretInput
+                        v-model="channelConfig.accessKeySecret"
+                        :channel-config-id="form.id"
+                        secret-key="accessKeySecret"
+                        :configured="isSecretConfigured('accessKeySecret')"
+                        :referenced="isSecretReferenced('accessKeySecret')"
+                        :reset-token="secretResetToken"
+                      />
                     </el-form-item>
                   </el-col>
                   <el-col v-if="supportsSendMode" :xs="24" :sm="12">
@@ -536,7 +567,14 @@
                   </el-col>
                   <el-col :xs="24" :sm="12">
                     <el-form-item label="Secret" required>
-                      <el-input v-model="channelConfig.appSecret" show-password autocomplete="new-password" />
+                      <NoticeSecretInput
+                        v-model="channelConfig.appSecret"
+                        :channel-config-id="form.id"
+                        secret-key="appSecret"
+                        :configured="isSecretConfigured('appSecret')"
+                        :referenced="isSecretReferenced('appSecret')"
+                        :reset-token="secretResetToken"
+                      />
                     </el-form-item>
                   </el-col>
                 </el-row>
@@ -560,7 +598,14 @@
                   </el-col>
                   <el-col v-if="supportsSendMode" :xs="24" :sm="12">
                     <el-form-item label="Secret">
-                      <el-input v-model="channelConfig.secret" show-password autocomplete="new-password" />
+                      <NoticeSecretInput
+                        v-model="channelConfig.secret"
+                        :channel-config-id="form.id"
+                        secret-key="secret"
+                        :configured="isSecretConfigured('secret')"
+                        :referenced="isSecretReferenced('secret')"
+                        :reset-token="secretResetToken"
+                      />
                     </el-form-item>
                   </el-col>
                   <el-col v-if="supportsSendMode" :xs="24" :sm="12">
@@ -575,20 +620,26 @@
                   >
                   <el-col v-if="supportsReceiveMode" :xs="24" :sm="12">
                     <el-form-item label="回调 Token">
-                      <el-input
+                      <NoticeSecretInput
                         v-model="channelConfig.callbackToken"
-                        show-password
-                        autocomplete="new-password"
+                        :channel-config-id="form.id"
+                        secret-key="callbackToken"
+                        :configured="isSecretConfigured('callbackToken')"
+                        :referenced="isSecretReferenced('callbackToken')"
+                        :reset-token="secretResetToken"
                         placeholder="企业微信消息接收 Token"
                       />
                     </el-form-item>
                   </el-col>
                   <el-col v-if="supportsReceiveMode" :xs="24" :sm="12">
                     <el-form-item label="EncodingAESKey">
-                      <el-input
+                      <NoticeSecretInput
                         v-model="channelConfig.encodingAesKey"
-                        show-password
-                        autocomplete="new-password"
+                        :channel-config-id="form.id"
+                        secret-key="encodingAesKey"
+                        :configured="isSecretConfigured('encodingAesKey')"
+                        :referenced="isSecretReferenced('encodingAesKey')"
+                        :reset-token="secretResetToken"
                         placeholder="43 位消息加密密钥"
                       />
                     </el-form-item>
@@ -617,7 +668,14 @@
                   </el-col>
                   <el-col :xs="24" :sm="12">
                     <el-form-item label="应用Secret">
-                      <el-input v-model="channelConfig.appSecret" show-password autocomplete="new-password" />
+                      <NoticeSecretInput
+                        v-model="channelConfig.appSecret"
+                        :channel-config-id="form.id"
+                        secret-key="appSecret"
+                        :configured="isSecretConfigured('appSecret')"
+                        :referenced="isSecretReferenced('appSecret')"
+                        :reset-token="secretResetToken"
+                      />
                     </el-form-item>
                   </el-col>
                   <el-col :xs="24" :sm="12">
@@ -661,10 +719,13 @@
                   ></el-col>
                   <el-col :xs="24" :sm="12"
                     ><el-form-item label="接收授权码" required
-                      ><el-input
+                      ><NoticeSecretInput
                         v-model="channelConfig.inboundPassword"
-                        show-password
-                        autocomplete="new-password" /></el-form-item
+                        :channel-config-id="form.id"
+                        secret-key="inboundPassword"
+                        :configured="isSecretConfigured('inboundPassword')"
+                        :referenced="isSecretReferenced('inboundPassword')"
+                        :reset-token="secretResetToken" /></el-form-item
                   ></el-col>
                   <el-col :xs="24" :sm="12"
                     ><el-form-item label="SSL"><el-switch v-model="channelConfig.inboundSsl" /></el-form-item
@@ -684,6 +745,33 @@
               </template>
             </el-tab-pane>
             <el-tab-pane label="JSON 形式" name="JSON">
+              <el-alert
+                v-if="jsonSecretFields.length"
+                title="加密字段在 JSON 中默认显示为 ****；可通过下方对应字段的小眼睛临时查看明文。"
+                type="info"
+                :closable="false"
+                show-icon
+              />
+              <el-row
+                v-if="jsonSecretFields.length"
+                :gutter="16"
+                class="json-secret-grid"
+                data-surface="notice.channel.json-secrets"
+              >
+                <el-col v-for="item in jsonSecretFields" :key="item.key" :xs="24" :sm="12">
+                  <el-form-item :label="item.label">
+                    <NoticeSecretInput
+                      v-model="secretValues[item.key]"
+                      :channel-config-id="form.id"
+                      :secret-key="item.key"
+                      :configured="isSecretConfigured(item.key)"
+                      :referenced="isSecretReferenced(item.key)"
+                      :reset-token="secretResetToken"
+                      placeholder="留空表示保留原值"
+                    />
+                  </el-form-item>
+                </el-col>
+              </el-row>
               <el-input
                 v-model="configJsonText"
                 class="json-editor"
@@ -877,9 +965,10 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue';
+import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { Plus } from '@element-plus/icons-vue';
+import NoticeSecretInput from './components/NoticeSecretInput.vue';
 import {
   deleteChannelConfig,
   deleteNoticeRouteTag,
@@ -946,13 +1035,24 @@ const channelConfig = reactive<ChannelConfigForm>({});
 const secretValues = reactive<Record<string, string>>({});
 const rateLimit = reactive({ maxPerMinute: 0, timeoutSeconds: 10, concurrentLimit: 0 });
 const configJsonText = ref('{}');
+const secretResetToken = ref(0);
 
 const dialogTitle = computed(() => (form.id ? '编辑渠道' : '新增渠道'));
 const configJsonPreview = computed(() => JSON.stringify(compactObject(channelConfig), null, 2));
 const rateLimitJsonPreview = computed(() => JSON.stringify(compactObject(rateLimit), null, 2));
 const availableRouteTags = computed(() => routeTags.value.filter((item) => item.channelType === form.channelType));
 const isResourceManaged = computed(() => form.resourceSource === 'RESOURCE');
-const resourceSecretFields = computed(() => secretFields(form.channelType || 'EMAIL', form.providerCode));
+const resourceSecretFields = computed(() =>
+  secretFields(form.channelType || 'EMAIL', form.providerCode, form.capabilityMode),
+);
+const jsonSecretFields = computed(() => {
+  const fields = new Map(resourceSecretFields.value.map((item) => [item.key.toLowerCase(), item]));
+  [...(form.configuredSecretKeys || []), ...(form.referencedSecretKeys || [])].forEach((key) => {
+    const normalized = key.toLowerCase();
+    if (!fields.has(normalized)) fields.set(normalized, { key, label: key });
+  });
+  return [...fields.values()];
+});
 const supportsSendMode = computed(() => form.capabilityMode !== 'RECEIVE');
 const supportsReceiveMode = computed(() => form.capabilityMode === 'RECEIVE' || form.capabilityMode === 'BOTH');
 const capabilityModeOptions = computed(() =>
@@ -1000,10 +1100,11 @@ function openEdit(row: NoticeChannelConfig) {
   form.providerCode = normalizeProviderCode(row.channelType, row.providerCode);
   resetChannelConfig();
   parseConfig(row.configJson, channelConfig, defaultConfig(row.channelType));
+  clearPersistedSecretsFromConfig(row);
   resetRateLimit();
   parseConfig(row.rateLimitConfig, rateLimit, defaultRateLimit());
   resetSecretValues();
-  configJsonText.value = configJsonPreview.value;
+  configJsonText.value = configJsonEditorPreview();
   configEditMode.value = 'FORM';
   visible.value = true;
 }
@@ -1040,10 +1141,19 @@ function handleChannelTypeChange() {
   form.providerCode = providerOptions(channelType)[0]?.value;
   form.routeTagCodes = [];
   resetChannelConfig();
+  resetSecretValues();
+  secretResetToken.value += 1;
+}
+
+function handleProviderChange() {
+  resetChannelConfig();
+  resetSecretValues();
+  secretResetToken.value += 1;
 }
 
 function handleCapabilityModeChange() {
   resetSecretValues();
+  secretResetToken.value += 1;
 }
 
 function resetChannelConfig() {
@@ -1059,13 +1169,23 @@ function resetSecretValues() {
   });
 }
 
-function secretFields(channelType: NoticeChannelType, providerCode?: string) {
+function secretFields(
+  channelType: NoticeChannelType,
+  providerCode?: string,
+  capabilityMode: NoticeChannelCapabilityMode = 'SEND',
+) {
   const provider = normalizeProviderCode(channelType, providerCode);
+  const supportsSend = capabilityMode !== 'RECEIVE';
+  const supportsReceive = capabilityMode === 'RECEIVE' || capabilityMode === 'BOTH';
   if (channelType === 'SITE') return [];
   if (channelType === 'EMAIL') {
-    return provider === 'ALIYUN_DM'
-      ? [{ key: 'accessKeySecret', label: 'AccessKey Secret' }]
-      : [{ key: 'password', label: 'SMTP 密码' }];
+    const fields = supportsSend
+      ? provider === 'ALIYUN_DM'
+        ? [{ key: 'accessKeySecret', label: 'AccessKey Secret' }]
+        : [{ key: 'password', label: 'SMTP 密码' }]
+      : [];
+    if (supportsReceive) fields.push({ key: 'inboundPassword', label: '接收授权码' });
+    return fields;
   }
   if (channelType === 'SMS') {
     return provider === 'TENCENT_SMS'
@@ -1073,16 +1193,30 @@ function secretFields(channelType: NoticeChannelType, providerCode?: string) {
       : [{ key: 'accessKeySecret', label: 'AccessKey Secret' }];
   }
   if (channelType === 'WECHAT_OFFICIAL') return [{ key: 'appSecret', label: 'AppSecret' }];
-  if (channelType === 'WECOM')
-    return [
-      { key: 'secret', label: '应用 Secret' },
-      { key: 'callbackToken', label: '回调 Token' },
-      { key: 'encodingAesKey', label: 'EncodingAESKey' },
-    ];
-  return [
-    { key: 'appSecret', label: 'AppSecret' },
-    { key: 'webhookUrl', label: 'Webhook Secret URL' },
-  ];
+  if (channelType === 'WECOM') {
+    const fields = supportsSend ? [{ key: 'secret', label: '应用 Secret' }] : [];
+    if (supportsReceive) {
+      fields.push({ key: 'callbackToken', label: '回调 Token' });
+      fields.push({ key: 'encodingAesKey', label: 'EncodingAESKey' });
+    }
+    return fields;
+  }
+  return [{ key: 'appSecret', label: 'AppSecret' }];
+}
+
+function isSecretConfigured(key: string) {
+  return form.configuredSecretKeys?.some((item) => item.toLowerCase() === key.toLowerCase()) ?? false;
+}
+
+function isSecretReferenced(key: string) {
+  return form.referencedSecretKeys?.some((item) => item.toLowerCase() === key.toLowerCase()) ?? false;
+}
+
+function clearPersistedSecretsFromConfig(row: NoticeChannelConfig) {
+  row.configuredSecretKeys?.forEach((key) => {
+    const storedKey = Object.keys(channelConfig).find((item) => item.toLowerCase() === key.toLowerCase());
+    if (storedKey && isMaskedSecretValue(channelConfig[storedKey])) channelConfig[storedKey] = '';
+  });
 }
 
 function resetRateLimit() {
@@ -1314,15 +1448,30 @@ function parseConfig(
 
 function handleConfigModeChange(tabName: string | number) {
   if (tabName === 'JSON') {
-    configJsonText.value = configJsonPreview.value;
+    configJsonText.value = configJsonEditorPreview();
     return;
   }
   try {
     parseConfig(configJsonText.value, channelConfig, defaultConfig(form.channelType || 'EMAIL'));
+    clearPersistedSecretsFromConfig(form as NoticeChannelConfig);
   } catch {
     ElMessage.error('JSON 格式错误，请修正后再切换');
     configEditMode.value = 'JSON';
   }
+}
+
+function configJsonEditorPreview() {
+  const config = { ...compactObject(channelConfig) };
+  jsonSecretFields.value.forEach(({ key }) => {
+    if (!isSecretConfigured(key) && !isSecretReferenced(key)) return;
+    const storedKey = Object.keys(config).find((item) => item.toLowerCase() === key.toLowerCase());
+    if (!storedKey) config[key] = '****';
+  });
+  return JSON.stringify(config, null, 2);
+}
+
+function isMaskedSecretValue(value: unknown) {
+  return ['***', '****'].includes(String(value ?? '').trim());
 }
 
 function channelLabel(channel: NoticeChannelType) {
@@ -1437,7 +1586,7 @@ function splitSensitiveConfig(configJson: string) {
   Object.keys(config).forEach((key) => {
     if (!isSensitiveKey(key)) return;
     const value = config[key];
-    if (value !== undefined && value !== null && String(value).trim()) {
+    if (value !== undefined && value !== null && String(value).trim() && !['***', '****'].includes(String(value))) {
       extractedSecrets[key] = String(value);
     }
     delete config[key];
@@ -1556,6 +1705,15 @@ async function removeChannel(row: NoticeChannelConfig) {
     // request 层已经展示接口错误，这里避免再触发 Vue 全局系统错误。
   }
 }
+
+watch(visible, (value) => {
+  if (value) return;
+  secretResetToken.value += 1;
+  secretFields(form.channelType || 'EMAIL', form.providerCode, form.capabilityMode).forEach((item) => {
+    delete channelConfig[item.key];
+    delete secretValues[item.key];
+  });
+});
 
 onMounted(load);
 </script>

@@ -8,7 +8,7 @@
         "AUTH_MENU": [
           {
             "id": "2951300000000009301",
-            "version": 6,
+            "version": 7,
             "bizKey": "notice.menu.internal-admin",
             "name": "通知管理菜单",
             "targetModule": "authorization",
@@ -131,6 +131,7 @@
                           "notice:channel:view",
                           "notice:channel:create",
                           "notice:channel:edit",
+                          "notice:channel:secret:view",
                           "notice:channel:delete"
                         ]
                       },

@@ -256,6 +256,7 @@ class NoticeChannelResourceHandlerIntegrationTest {
                     id bigint not null,
                     config_code varchar(64) not null,
                     channel_type varchar(32) not null,
+                    capability_mode varchar(16) default 'SEND' not null,
                     provider_code varchar(64),
                     config_name varchar(128),
                     config_json clob,

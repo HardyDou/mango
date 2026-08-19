@@ -16,14 +16,15 @@ public final class NoticeChannelConfigConvert {
                     "secret",
                     "password",
                     "token",
-                    "key",
-                    "appSecret",
-                    "accessKey",
-                    "secretKey",
-                    "smtpPassword",
-                    "callbackToken",
-                    "encodingAesKey",
-                    "callbackEncodingAesKey");
+                    "appsecret",
+                    "accesskeysecret",
+                    "accesssecret",
+                    "secretkey",
+                    "smtppassword",
+                    "corpsecret",
+                    "callbacktoken",
+                    "encodingaeskey",
+                    "callbackencodingaeskey");
 
     private NoticeChannelConfigConvert() {}
 
@@ -81,10 +82,9 @@ public final class NoticeChannelConfigConvert {
     }
 
     private static boolean isSecretKey(String key) {
-        return SECRET_KEYS.stream()
-                .anyMatch(
-                        secretKey ->
-                                secretKey.equalsIgnoreCase(key)
-                                        || key.toLowerCase().contains(secretKey.toLowerCase()));
+        String normalized = key.toLowerCase(java.util.Locale.ROOT);
+        return SECRET_KEYS.contains(normalized)
+                || normalized.endsWith("password")
+                || normalized.endsWith("token");
     }
 }

@@ -12,6 +12,9 @@ public enum NoticeCode implements BizCode {
     /** Notice business precondition failed; detailed callers keep the original message. */
     NOTICE_BUSINESS_ERROR(400, "通知业务校验失败"),
 
+    /** Channel secret is unavailable, invalid or cannot be decrypted safely. */
+    NOTICE_CHANNEL_SECRET_INVALID(400, "渠道 Secret 不可查看"),
+
     /** Requested site message is not visible to the current user. */
     NOTICE_SITE_MESSAGE_NOT_FOUND(404, "系统消息不存在");
 

@@ -103,4 +103,14 @@ class NoticeChannelCapabilityPolicyTest {
                         NoticeChannelType.EMAIL, NoticeChannelCapabilityMode.BOTH))
                 .isTrue();
     }
+
+    @Test
+    void dingtalkOnlyAllowsTheConfiguredAppSecretFieldToBeRevealed() {
+        assertThat(
+                        NoticeChannelCapabilityPolicy.supportedSecretKeys(
+                                NoticeChannelType.DINGTALK,
+                                "DINGTALK",
+                                NoticeChannelCapabilityMode.SEND))
+                .containsExactly("appSecret");
+    }
 }
