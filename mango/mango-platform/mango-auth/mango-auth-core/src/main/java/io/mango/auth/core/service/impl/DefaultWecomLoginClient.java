@@ -28,6 +28,9 @@ public class DefaultWecomLoginClient implements WecomLoginClient {
     private static final int SERVICE_ERROR_CODE = 1501;
     private static final int HTTP_SUCCESS_MIN = 200;
     private static final int HTTP_SUCCESS_MAX = 300;
+    private static final int WECOM_PROFILE_PERMISSION_DENIED = 48002;
+    private static final int WECOM_TRUSTED_IP_MISSING = 60020;
+    private static final int WECOM_MEMBER_NOT_FOUND = 60111;
 
     private final HttpClient httpClient;
     private final ObjectMapper objectMapper;
@@ -131,9 +134,9 @@ public class DefaultWecomLoginClient implements WecomLoginClient {
 
     private String profileError(int errCode, String responseBody) {
         return switch (errCode) {
-            case 48002 -> "企业微信应用没有成员资料读取权限";
-            case 60020 -> "企业微信应用未配置当前服务器可信 IP";
-            case 60111 -> "企业微信成员不存在或不在当前应用可见范围内";
+            case WECOM_PROFILE_PERMISSION_DENIED -> "企业微信应用没有成员资料读取权限";
+            case WECOM_TRUSTED_IP_MISSING -> "企业微信应用未配置当前服务器可信 IP";
+            case WECOM_MEMBER_NOT_FOUND -> "企业微信成员不存在或不在当前应用可见范围内";
             default -> sanitizeError("企业微信成员资料获取失败（" + errCode + "）", responseBody);
         };
     }

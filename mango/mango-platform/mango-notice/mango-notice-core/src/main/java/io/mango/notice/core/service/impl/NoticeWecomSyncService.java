@@ -633,34 +633,69 @@ public class NoticeWecomSyncService implements INoticeWecomSyncService {
         }
         ExternalIdentityBindingVO existing = findWecomLoginIdentity(userId, wecomUser, config);
         Long previousAvatarFileId = existing == null ? null : existing.getAvatarFileId();
-        Long importedAvatarFileId = null;
+        WecomAvatarSnapshot avatar = resolveWecomAvatarSnapshot(
+                userId, wecomUser, previousAvatarFileId, refreshAvatar);
+        BindExternalIdentityCommand bind = createWecomIdentityBind(userId, wecomUser, config, avatar);
+        bindWecomIdentity(bind, avatar.importedAvatarFileId());
+        deleteReplacedAvatar(previousAvatarFileId, avatar, bind);
+    }
+
+    private WecomAvatarSnapshot resolveWecomAvatarSnapshot(
+            Long userId,
+            WecomDirectoryUser wecomUser,
+            Long previousAvatarFileId,
+            boolean refreshAvatar) {
         boolean hasRemoteAvatar = StringUtils.hasText(wecomUser.avatar());
-        if (hasRemoteAvatar
-                && (refreshAvatar || previousAvatarFileId == null)) {
-            importedAvatarFileId = importWecomAvatar(userId, wecomUser);
-        }
+        Long importedAvatarFileId = hasRemoteAvatar && (refreshAvatar || previousAvatarFileId == null)
+                ? importWecomAvatar(userId, wecomUser)
+                : null;
         Long avatarFileId = refreshAvatar && !hasRemoteAvatar
                 ? null
                 : importedAvatarFileId == null ? previousAvatarFileId : importedAvatarFileId;
+        boolean replaceAvatarFile = (refreshAvatar && !hasRemoteAvatar) || importedAvatarFileId != null;
+        return new WecomAvatarSnapshot(importedAvatarFileId, avatarFileId, replaceAvatarFile);
+    }
+
+    private BindExternalIdentityCommand createWecomIdentityBind(
+            Long userId,
+            WecomDirectoryUser wecomUser,
+            WecomChannelConfig config,
+            WecomAvatarSnapshot avatar) {
         BindExternalIdentityCommand bind = new BindExternalIdentityCommand();
         bind.setUserId(userId);
         bind.setProvider("WECOM");
         bind.setCorpId(config.corpId());
         bind.setExternalUserId(wecomUser.userId());
         bind.setDisplayName(StringUtils.hasText(wecomUser.name()) ? wecomUser.name().trim() : null);
-        bind.setAvatarFileId(avatarFileId);
-        bind.setReplaceAvatarFile((refreshAvatar && !hasRemoteAvatar) || importedAvatarFileId != null);
+        bind.setAvatarFileId(avatar.avatarFileId());
+        bind.setReplaceAvatarFile(avatar.replaceAvatarFile());
         bind.setBindSource("SYNC");
+        return bind;
+    }
+
+    private void bindWecomIdentity(BindExternalIdentityCommand bind, Long importedAvatarFileId) {
         NoticeRemoteResult<?> response = identityGateway.bindExternalIdentity(bind);
         if (!response.isSuccess()) {
             deleteImportedAvatar(importedAvatarFileId);
             Require.fail(NoticeCode.NOTICE_BUSINESS_ERROR, response.messageOr("绑定企微登录身份失败"));
         }
+    }
+
+    private void deleteReplacedAvatar(
+            Long previousAvatarFileId,
+            WecomAvatarSnapshot avatar,
+            BindExternalIdentityCommand bind) {
         if (Boolean.TRUE.equals(bind.getReplaceAvatarFile())
                 && previousAvatarFileId != null
-                && !Objects.equals(avatarFileId, previousAvatarFileId)) {
+                && !Objects.equals(avatar.avatarFileId(), previousAvatarFileId)) {
             deleteImportedAvatar(previousAvatarFileId);
         }
+    }
+
+    private record WecomAvatarSnapshot(
+            Long importedAvatarFileId,
+            Long avatarFileId,
+            boolean replaceAvatarFile) {
     }
 
     private ExternalIdentityBindingVO findWecomLoginIdentity(

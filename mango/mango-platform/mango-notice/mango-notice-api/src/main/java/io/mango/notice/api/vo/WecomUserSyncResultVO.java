@@ -52,10 +52,15 @@ public class WecomUserSyncResultVO implements Serializable {
     @Schema(description = "失败或跳过明细")
     private List<String> messages = new ArrayList<>();
 
+    public List<String> getMessages() {
+        return List.copyOf(messages);
+    }
+
+    public void setMessages(List<String> messages) {
+        this.messages = messages == null ? new ArrayList<>() : new ArrayList<>(messages);
+    }
+
     public void addMessage(String message) {
-        if (messages == null) {
-            messages = new ArrayList<>();
-        }
         messages.add(message);
     }
 }

@@ -274,11 +274,14 @@ public class ExternalAuthorizationService implements IExternalAuthorizationServi
         command.setReplaceAvatarFile(Boolean.TRUE);
         command.setBindSource("SELF");
         ExternalIdentityBindingVO updated;
+        boolean avatarCommitted = false;
         try {
             updated = AuthApiResponseAdapter.requireIdentityData(identityUserApi.bindExternalIdentity(command));
-        } catch (RuntimeException exception) {
-            externalIdentityAvatarService.deleteAvatar(importedAvatarFileId);
-            throw exception;
+            avatarCommitted = true;
+        } finally {
+            if (!avatarCommitted) {
+                externalIdentityAvatarService.deleteAvatar(importedAvatarFileId);
+            }
         }
         if (binding.getAvatarFileId() != null
                 && !Objects.equals(binding.getAvatarFileId(), importedAvatarFileId)) {
