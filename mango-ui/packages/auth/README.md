@@ -186,27 +186,28 @@ window.location.assign(authorization.authorizationUrl);
 
 API 封装：
 
-| 函数                                                        | HTTP 接口                                 | 说明                               |
-| ----------------------------------------------------------- | ----------------------------------------- | ---------------------------------- |
-| `login(data)`                                               | `POST /auth/login`                        | 账号密码登录。                     |
-| `getAccountLoginTenantOptions(data)`                        | `POST /auth/login-institutions`           | 按账号密码查询可登录租户。         |
-| `getLoginTenantOptions()`                                   | `GET /system/tenant/login-options`        | 读取登录租户选项。                 |
-| `getUserInfo()`                                             | `GET /auth/info`                          | 获取当前登录用户。                 |
-| `logout()`                                                  | `POST /auth/logout`                       | 退出登录。                         |
-| `getCaptcha()`                                              | `GET /captcha/arithmetic`                 | 获取算术验证码。                   |
-| `updatePassword(data)`                                      | `POST /user/password`                     | 修改当前用户密码。                 |
-| `getSystemConfig()`                                         | `GET /system/config/type`                 | 读取系统配置。                     |
-| `getCurrentUserProfile()`                                   | `GET /identity/me/profile`                | 读取真实个人资料。                 |
-| `updateCurrentUserProfile(data)`                            | `PUT /identity/me/profile`                | 保存基础和实名资料。               |
-| `sendCurrentContactCaptcha(data)`                           | `POST /identity/me/contact-captcha`       | 发送新联系方式验证码。             |
-| `updateCurrentUserContact(data)`                            | `PUT /identity/me/contact`                | 使用当前密码和验证码修改联系方式。 |
-| `listCurrentExternalIdentities()`                           | `GET /identity/me/external-identities`    | 查询本人第三方绑定。               |
-| `unbindCurrentExternalIdentity(data)`                       | `DELETE /identity/me/external-identities` | 使用当前密码解绑。                 |
-| `listAvailableProviders(tenantId, appCode)`                 | `GET /auth/providers`                     | 查询可用企业微信、钉钉。           |
-| `startProviderAuthorization(data)`                          | `POST /auth/providers/authorize`          | 发起登录或当前账号绑定。           |
-| `completeProviderAuthorization(data)`                       | `POST /auth/providers/complete`           | 完成一次性回调。                   |
-| `bindExistingProviderAccount(data)`                         | `POST /auth/providers/bind-existing`      | 匿名用户绑定已有账号并登录。       |
-| `listProviderConfigs(appCode)` / `saveProviderConfig(data)` | `/auth/provider-configs`                  | 管理当前租户应用配置。             |
+| 函数                                                        | HTTP 接口                                    | 说明                                         |
+| ----------------------------------------------------------- | -------------------------------------------- | -------------------------------------------- |
+| `login(data)`                                               | `POST /auth/login`                           | 账号密码登录。                               |
+| `getAccountLoginTenantOptions(data)`                        | `POST /auth/login-institutions`              | 按账号密码查询可登录租户。                   |
+| `getLoginTenantOptions()`                                   | `GET /system/tenant/login-options`           | 读取登录租户选项。                           |
+| `getUserInfo()`                                             | `GET /auth/info`                             | 获取当前登录用户。                           |
+| `logout()`                                                  | `POST /auth/logout`                          | 退出登录。                                   |
+| `getCaptcha()`                                              | `GET /captcha/arithmetic`                    | 获取算术验证码。                             |
+| `updatePassword(data)`                                      | `POST /user/password`                        | 修改当前用户密码。                           |
+| `getSystemConfig()`                                         | `GET /system/config/type`                    | 读取系统配置。                               |
+| `getCurrentUserProfile()`                                   | `GET /identity/me/profile`                   | 读取真实个人资料。                           |
+| `updateCurrentUserProfile(data)`                            | `PUT /identity/me/profile`                   | 保存基础和实名资料。                         |
+| `sendCurrentContactCaptcha(data)`                           | `POST /identity/me/contact-captcha`          | 发送新联系方式验证码。                       |
+| `updateCurrentUserContact(data)`                            | `PUT /identity/me/contact`                   | 使用当前密码和验证码修改联系方式。           |
+| `listCurrentExternalIdentities()`                           | `GET /identity/me/external-identities`       | 查询本人第三方绑定。                         |
+| `refreshCurrentWecomProfile()`                              | `POST /auth/providers/wecom/profile/refresh` | 仅刷新本人当前企业微信绑定的昵称和头像快照。 |
+| `unbindCurrentExternalIdentity(data)`                       | `DELETE /identity/me/external-identities`    | 使用当前密码解绑。                           |
+| `listAvailableProviders(tenantId, appCode)`                 | `GET /auth/providers`                        | 查询可用企业微信、钉钉。                     |
+| `startProviderAuthorization(data)`                          | `POST /auth/providers/authorize`             | 发起登录或当前账号绑定。                     |
+| `completeProviderAuthorization(data)`                       | `POST /auth/providers/complete`              | 完成一次性回调。                             |
+| `bindExistingProviderAccount(data)`                         | `POST /auth/providers/bind-existing`         | 匿名用户绑定已有账号并登录。                 |
+| `listProviderConfigs(appCode)` / `saveProviderConfig(data)` | `/auth/provider-configs`                     | 管理当前租户应用配置。                       |
 
 常用返回字段：
 
@@ -228,6 +229,8 @@ API 封装：
 | 角色和菜单     | `mango-authorization` | 登录后 Shell 能加载菜单。                           |
 | 验证码         | `mango-captcha`       | 登录页验证码能生成和校验。                          |
 | Provider 配置  | `mango-auth`          | 按租户应用启用企业微信、钉钉，Secret 加密且不回传。 |
+
+个人中心的第三方绑定列表优先展示企业微信完整昵称和 32px 头像；资料未同步时不使用 Mango 昵称冒充企业微信昵称，仅显示未同步说明和脱敏账号尾号。点击资料后的同步按钮只查询当前登录人的当前企业微信成员资料，成功后覆盖昵称、头像快照，失败时保留已有快照并展示权限、成员可见范围、可信 IP 或厂商错误；该动作不会同步企业微信部门、组织、岗位或角色。
 
 ## 7. 管理入口
 
