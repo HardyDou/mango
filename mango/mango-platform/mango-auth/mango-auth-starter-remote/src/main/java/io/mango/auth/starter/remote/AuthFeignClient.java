@@ -68,6 +68,10 @@ public interface AuthFeignClient extends AuthApi {
     R<LoginVO> bindExistingProviderAccount(@RequestBody BindExistingAccountCommand command);
 
     @Override
+    @PostMapping("/providers/wecom/profile/refresh")
+    R<Boolean> refreshCurrentWecomProfile();
+
+    @Override
     @PostMapping("/login")
     R<LoginVO> login(@RequestBody LoginCommand command);
 

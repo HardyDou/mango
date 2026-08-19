@@ -1,5 +1,6 @@
 package io.mango.auth.core.service.impl;
 
+import io.mango.auth.api.enums.AuthCode;
 import io.mango.auth.core.service.WecomLoginClient;
 import io.mango.common.exception.BizException;
 import org.springframework.stereotype.Component;
@@ -21,11 +22,15 @@ public class DefaultWecomLoginClient implements WecomLoginClient {
 
     private static final String GET_TOKEN_URL = "https://qyapi.weixin.qq.com/cgi-bin/gettoken";
     private static final String GET_USER_INFO_URL = "https://qyapi.weixin.qq.com/cgi-bin/auth/getuserinfo";
+    private static final String GET_USER_PROFILE_URL = "https://qyapi.weixin.qq.com/cgi-bin/user/get";
     private static final Duration TIMEOUT = Duration.ofSeconds(10);
     private static final int IDENTITY_ERROR_CODE = 1400;
     private static final int SERVICE_ERROR_CODE = 1501;
     private static final int HTTP_SUCCESS_MIN = 200;
     private static final int HTTP_SUCCESS_MAX = 300;
+    private static final int WECOM_PROFILE_PERMISSION_DENIED = 48002;
+    private static final int WECOM_TRUSTED_IP_MISSING = 60020;
+    private static final int WECOM_MEMBER_NOT_FOUND = 60111;
 
     private final HttpClient httpClient;
     private final ObjectMapper objectMapper;
@@ -53,6 +58,25 @@ public class DefaultWecomLoginClient implements WecomLoginClient {
             throw new BizException(IDENTITY_ERROR_CODE, "企业微信登录未返回成员 userid，请确认扫码账号属于当前企业");
         }
         return userId;
+    }
+
+    @Override
+    public WecomUserProfile getUserProfile(String corpId, String secret, String userId) {
+        String accessToken = fetchAccessToken(corpId, secret);
+        String uri = GET_USER_PROFILE_URL + "?access_token=" + encode(accessToken) + "&userid=" + encode(userId);
+        String body = sendGet(uri, "企业微信成员资料获取失败");
+        int errCode = readErrCode(body);
+        if (errCode != 0) {
+            throw new BizException(AuthCode.WECOM_PROFILE_SYNC_FAILED.getCode(), profileError(errCode, body));
+        }
+        String displayName = readString(body, "name");
+        if (!StringUtils.hasText(displayName)) {
+            throw new BizException(AuthCode.WECOM_PROFILE_SYNC_FAILED.getCode(),
+                    "企业微信未返回成员昵称，请检查应用的成员可见范围和资料读取权限");
+        }
+        String responseUserId = firstText(readString(body, "userid"), userId);
+        String avatarUrl = firstText(readString(body, "avatar"), readString(body, "thumb_avatar"));
+        return new WecomUserProfile(responseUserId, displayName.trim(), avatarUrl);
     }
 
     private String fetchAccessToken(String corpId, String secret) {
@@ -106,6 +130,15 @@ public class DefaultWecomLoginClient implements WecomLoginClient {
     private String sanitizeError(String prefix, String responseBody) {
         String errmsg = readString(responseBody, "errmsg");
         return StringUtils.hasText(errmsg) ? prefix + "：" + errmsg : prefix;
+    }
+
+    private String profileError(int errCode, String responseBody) {
+        return switch (errCode) {
+            case WECOM_PROFILE_PERMISSION_DENIED -> "企业微信应用没有成员资料读取权限";
+            case WECOM_TRUSTED_IP_MISSING -> "企业微信应用未配置当前服务器可信 IP";
+            case WECOM_MEMBER_NOT_FOUND -> "企业微信成员不存在或不在当前应用可见范围内";
+            default -> sanitizeError("企业微信成员资料获取失败（" + errCode + "）", responseBody);
+        };
     }
 
     private String firstText(String preferred, String fallback) {

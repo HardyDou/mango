@@ -37,8 +37,8 @@ public class WecomUserSyncResultVO implements Serializable {
     @Schema(description = "更新成员资料数量")
     private int updatedCount;
 
-    @Schema(description = "绑定企业微信接收账户数量")
-    private int boundAccountCount;
+    @Schema(description = "绑定或更新企业微信第三方身份数量")
+    private int boundIdentityCount;
 
     @Schema(description = "跳过数量")
     private int skippedCount;
@@ -52,10 +52,15 @@ public class WecomUserSyncResultVO implements Serializable {
     @Schema(description = "失败或跳过明细")
     private List<String> messages = new ArrayList<>();
 
+    public List<String> getMessages() {
+        return List.copyOf(messages);
+    }
+
+    public void setMessages(List<String> messages) {
+        this.messages = messages == null ? new ArrayList<>() : new ArrayList<>(messages);
+    }
+
     public void addMessage(String message) {
-        if (messages == null) {
-            messages = new ArrayList<>();
-        }
         messages.add(message);
     }
 }

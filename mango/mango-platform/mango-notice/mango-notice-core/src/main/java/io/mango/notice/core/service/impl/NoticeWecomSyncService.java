@@ -4,20 +4,21 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 
 import io.mango.common.result.Require;
 import io.mango.common.vo.PageResult;
+import io.mango.file.api.command.ImportRemoteImageCommand;
+import io.mango.file.api.vo.FileRecordVO;
 import io.mango.identity.api.command.BindExternalIdentityCommand;
 import io.mango.identity.api.command.CreateIdentityUserCommand;
 import io.mango.identity.api.command.UpdateIdentityUserCommand;
+import io.mango.identity.api.query.ExternalIdentityQuery;
 import io.mango.identity.api.query.IdentityUserPageQuery;
+import io.mango.identity.api.vo.ExternalIdentityBindingVO;
 import io.mango.identity.api.vo.IdentityUserInfoVO;
 import io.mango.identity.api.vo.IdentityUserVO;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.notice.api.command.SyncWecomUsersCommand;
 import io.mango.notice.api.enums.NoticeChannelConfigStatus;
-import io.mango.notice.core.service.NoticeChannelCapabilityPolicy;
 import io.mango.notice.api.enums.NoticeChannelType;
 import io.mango.notice.api.enums.NoticeCode;
-import io.mango.notice.api.enums.NoticeRecipientAccountStatus;
-import io.mango.notice.api.enums.NoticeRecipientAccountType;
 import io.mango.notice.api.vo.WecomUserSyncResultVO;
 import io.mango.notice.channel.wecom.WecomApiException;
 import io.mango.notice.channel.wecom.WecomChannelConfig;
@@ -25,15 +26,15 @@ import io.mango.notice.channel.wecom.WecomDepartment;
 import io.mango.notice.channel.wecom.WecomDirectoryClient;
 import io.mango.notice.channel.wecom.WecomDirectoryUser;
 import io.mango.notice.core.entity.NoticeChannelConfigEntity;
-import io.mango.notice.core.entity.NoticeRecipientAccountEntity;
 import io.mango.notice.core.entity.NoticeWecomSyncMappingEntity;
+import io.mango.notice.core.integration.NoticeFileGateway;
 import io.mango.notice.core.integration.NoticeIdentityGateway;
 import io.mango.notice.core.integration.NoticeOrgGateway;
 import io.mango.notice.core.integration.NoticeRemoteResult;
 import io.mango.notice.core.mapper.NoticeChannelConfigMapper;
-import io.mango.notice.core.mapper.NoticeRecipientAccountMapper;
 import io.mango.notice.core.mapper.NoticeWecomSyncMappingMapper;
 import io.mango.notice.core.service.INoticeWecomSyncService;
+import io.mango.notice.core.service.NoticeChannelCapabilityPolicy;
 import io.mango.org.api.command.AddOrgMemberCommand;
 import io.mango.org.api.command.CreateSysOrgCommand;
 import io.mango.org.api.command.UpdateSysOrgCommand;
@@ -41,6 +42,7 @@ import io.mango.org.api.query.SysOrgTreeQuery;
 import io.mango.org.api.vo.SysOrgVO;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -60,6 +62,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class NoticeWecomSyncService implements INoticeWecomSyncService {
 
     private static final String WECOM_SYNC_TYPE_DEPARTMENT = "DEPARTMENT";
@@ -72,8 +75,8 @@ public class NoticeWecomSyncService implements INoticeWecomSyncService {
     private static final String INTERNAL_ORG_PARTY_TYPE = "INTERNAL_ORG";
 
     private final NoticeChannelConfigMapper channelConfigMapper;
-    private final NoticeRecipientAccountMapper recipientAccountMapper;
     private final NoticeWecomSyncMappingMapper wecomSyncMappingMapper;
+    private final NoticeFileGateway fileGateway;
     private final NoticeIdentityGateway identityGateway;
     private final NoticeOrgGateway orgGateway;
     private final WecomDirectoryClient wecomDirectoryClient;
@@ -531,7 +534,7 @@ public class NoticeWecomSyncService implements INoticeWecomSyncService {
         NoticeWecomSyncMappingEntity mapping =
                 findWecomSyncMapping(WECOM_SYNC_TYPE_USER, wecomUser.userId());
         if (isUnchangedMapping(command, mapping, dataHash)) {
-            handleUnchangedUser(command, result, wecomUser, config, primaryOrgId, mapping);
+            handleUnchangedUser(result, wecomUser, config, primaryOrgId, mapping);
             return;
         }
         IdentityUserVO user = resolveIdentityUser(mapping, wecomUser, result);
@@ -541,8 +544,7 @@ public class NoticeWecomSyncService implements INoticeWecomSyncService {
             result.addMessage("未匹配成员：" + wecomUser.userId());
             return;
         }
-        persistSyncedUser(
-                command, result, wecomUser, config, primaryOrgId, dataHash, mapping, user);
+        persistSyncedUser(result, wecomUser, config, primaryOrgId, dataHash, mapping, user);
     }
 
     private boolean isUnchangedMapping(
@@ -553,16 +555,14 @@ public class NoticeWecomSyncService implements INoticeWecomSyncService {
     }
 
     private void handleUnchangedUser(
-            SyncWecomUsersCommand command,
             WecomUserSyncResultVO result,
             WecomDirectoryUser wecomUser,
             WecomChannelConfig config,
             Long primaryOrgId,
             NoticeWecomSyncMappingEntity mapping) {
         ensureWecomUserOrgRelation(mapping.getLocalId(), primaryOrgId);
-        if (Boolean.TRUE.equals(command.getBindLoginIdentity())) {
-            bindWecomLoginIdentity(mapping.getLocalId(), wecomUser, config);
-        }
+        bindWecomLoginIdentity(mapping.getLocalId(), wecomUser, config, false);
+        result.setBoundIdentityCount(result.getBoundIdentityCount() + 1);
         result.setSkippedCount(result.getSkippedCount() + 1);
         result.setUnchangedCount(result.getUnchangedCount() + 1);
     }
@@ -604,7 +604,6 @@ public class NoticeWecomSyncService implements INoticeWecomSyncService {
     }
 
     private void persistSyncedUser(
-            SyncWecomUsersCommand command,
             WecomUserSyncResultVO result,
             WecomDirectoryUser wecomUser,
             WecomChannelConfig config,
@@ -620,30 +619,124 @@ public class NoticeWecomSyncService implements INoticeWecomSyncService {
                 user.getUserId(),
                 dataHash,
                 firstText(wecomUser.name(), wecomUser.userId()));
-        if (Boolean.TRUE.equals(command.getBindLoginIdentity())) {
-            bindWecomLoginIdentity(user.getUserId(), wecomUser, config);
-        }
-        if (Boolean.TRUE.equals(command.getBindNoticeAccount())) {
-            upsertWecomRecipientAccount(user.getUserId(), wecomUser);
-            result.setBoundAccountCount(result.getBoundAccountCount() + 1);
-        }
+        bindWecomLoginIdentity(user.getUserId(), wecomUser, config, true);
+        result.setBoundIdentityCount(result.getBoundIdentityCount() + 1);
     }
 
     private void bindWecomLoginIdentity(
-            Long userId, WecomDirectoryUser wecomUser, WecomChannelConfig config) {
+            Long userId,
+            WecomDirectoryUser wecomUser,
+            WecomChannelConfig config,
+            boolean refreshAvatar) {
         if (userId == null || wecomUser == null || !StringUtils.hasText(wecomUser.userId())) {
             return;
         }
+        ExternalIdentityBindingVO existing = findWecomLoginIdentity(userId, wecomUser, config);
+        Long previousAvatarFileId = existing == null ? null : existing.getAvatarFileId();
+        WecomAvatarSnapshot avatar = resolveWecomAvatarSnapshot(
+                userId, wecomUser, previousAvatarFileId, refreshAvatar);
+        BindExternalIdentityCommand bind = createWecomIdentityBind(userId, wecomUser, config, avatar);
+        bindWecomIdentity(bind, avatar.importedAvatarFileId());
+        deleteReplacedAvatar(previousAvatarFileId, avatar, bind);
+    }
+
+    private WecomAvatarSnapshot resolveWecomAvatarSnapshot(
+            Long userId,
+            WecomDirectoryUser wecomUser,
+            Long previousAvatarFileId,
+            boolean refreshAvatar) {
+        boolean hasRemoteAvatar = StringUtils.hasText(wecomUser.avatar());
+        Long importedAvatarFileId = hasRemoteAvatar && (refreshAvatar || previousAvatarFileId == null)
+                ? importWecomAvatar(userId, wecomUser)
+                : null;
+        Long avatarFileId = refreshAvatar && !hasRemoteAvatar
+                ? null
+                : importedAvatarFileId == null ? previousAvatarFileId : importedAvatarFileId;
+        boolean replaceAvatarFile = (refreshAvatar && !hasRemoteAvatar) || importedAvatarFileId != null;
+        return new WecomAvatarSnapshot(importedAvatarFileId, avatarFileId, replaceAvatarFile);
+    }
+
+    private BindExternalIdentityCommand createWecomIdentityBind(
+            Long userId,
+            WecomDirectoryUser wecomUser,
+            WecomChannelConfig config,
+            WecomAvatarSnapshot avatar) {
         BindExternalIdentityCommand bind = new BindExternalIdentityCommand();
         bind.setUserId(userId);
         bind.setProvider("WECOM");
         bind.setCorpId(config.corpId());
         bind.setExternalUserId(wecomUser.userId());
-        bind.setDisplayName(firstText(wecomUser.name(), wecomUser.userId()));
+        bind.setDisplayName(StringUtils.hasText(wecomUser.name()) ? wecomUser.name().trim() : null);
+        bind.setAvatarFileId(avatar.avatarFileId());
+        bind.setReplaceAvatarFile(avatar.replaceAvatarFile());
         bind.setBindSource("SYNC");
+        return bind;
+    }
+
+    private void bindWecomIdentity(BindExternalIdentityCommand bind, Long importedAvatarFileId) {
         NoticeRemoteResult<?> response = identityGateway.bindExternalIdentity(bind);
         if (!response.isSuccess()) {
+            deleteImportedAvatar(importedAvatarFileId);
             Require.fail(NoticeCode.NOTICE_BUSINESS_ERROR, response.messageOr("绑定企微登录身份失败"));
+        }
+    }
+
+    private void deleteReplacedAvatar(
+            Long previousAvatarFileId,
+            WecomAvatarSnapshot avatar,
+            BindExternalIdentityCommand bind) {
+        if (Boolean.TRUE.equals(bind.getReplaceAvatarFile())
+                && previousAvatarFileId != null
+                && !Objects.equals(avatar.avatarFileId(), previousAvatarFileId)) {
+            deleteImportedAvatar(previousAvatarFileId);
+        }
+    }
+
+    private record WecomAvatarSnapshot(
+            Long importedAvatarFileId,
+            Long avatarFileId,
+            boolean replaceAvatarFile) {
+    }
+
+    private ExternalIdentityBindingVO findWecomLoginIdentity(
+            Long userId, WecomDirectoryUser wecomUser, WecomChannelConfig config) {
+        ExternalIdentityQuery query = new ExternalIdentityQuery();
+        query.setUserId(userId);
+        query.setProvider("WECOM");
+        query.setCorpId(config.corpId());
+        query.setExternalUserId(wecomUser.userId());
+        NoticeRemoteResult<ExternalIdentityBindingVO> response = identityGateway.findExternalIdentity(query);
+        return response.isSuccess() ? response.getData() : null;
+    }
+
+    private Long importWecomAvatar(Long userId, WecomDirectoryUser wecomUser) {
+        ImportRemoteImageCommand command = new ImportRemoteImageCommand();
+        command.setSourceUrl(wecomUser.avatar().trim());
+        command.setBizType("identity-external-avatar");
+        command.setBizId(String.valueOf(userId));
+        try {
+            NoticeRemoteResult<FileRecordVO> response = fileGateway.importImage(command);
+            if (response.isSuccess() && response.getData() != null && response.getData().getId() != null) {
+                return response.getData().getId();
+            }
+            log.warn("企业微信头像导入失败，继续同步昵称: userId={}", userId);
+        } catch (RuntimeException ex) {
+            log.warn("企业微信头像导入异常，继续同步昵称: userId={}", userId, ex);
+        }
+        return null;
+    }
+
+    private void deleteImportedAvatar(Long fileId) {
+        if (fileId == null) {
+            return;
+        }
+        try {
+            NoticeRemoteResult<Boolean> response = fileGateway.delete(fileId);
+            if (!response.isSuccess() || !Boolean.TRUE.equals(response.getData())) {
+                log.warn("企业微信旧头像文件清理失败: fileId={}", fileId);
+            }
+        } catch (RuntimeException ex) {
+            log.warn("企业微信旧头像文件清理异常: fileId={}", fileId, ex);
         }
     }
 
@@ -749,7 +842,6 @@ public class NoticeWecomSyncService implements INoticeWecomSyncService {
         }
         create.setPhone(trimToNull(wecomUser.mobile()));
         create.setEmail(trimToNull(firstText(wecomUser.email(), wecomUser.bizMail())));
-        create.setAvatar(trimToNull(wecomUser.avatar()));
         create.setStatus(userStatus(wecomUser));
         create.setRemark("企业微信同步");
         NoticeRemoteResult<Long> response = identityGateway.create(create);
@@ -762,7 +854,6 @@ public class NoticeWecomSyncService implements INoticeWecomSyncService {
         user.setNickname(create.getNickname());
         user.setPhone(create.getPhone());
         user.setEmail(create.getEmail());
-        user.setAvatar(create.getAvatar());
         user.setPartyType(create.getPartyType());
         user.setPartyId(create.getPartyId());
         user.setStatus(create.getStatus());
@@ -778,7 +869,6 @@ public class NoticeWecomSyncService implements INoticeWecomSyncService {
         update.setPhone(firstText(wecomUser.mobile(), user.getPhone()));
         update.setEmail(
                 firstText(firstText(wecomUser.email(), wecomUser.bizMail()), user.getEmail()));
-        update.setAvatar(firstText(wecomUser.avatar(), user.getAvatar()));
         update.setStatus(userStatus(wecomUser));
         update.setRemark(user.getRemark());
         NoticeRemoteResult<Boolean> response = identityGateway.update(update);
@@ -879,40 +969,6 @@ public class NoticeWecomSyncService implements INoticeWecomSyncService {
         return firstText(MangoContextHolder.tenantId(), "default");
     }
 
-    private NoticeRecipientAccountEntity upsertWecomRecipientAccount(
-            Long userId, WecomDirectoryUser wecomUser) {
-        NoticeRecipientAccountEntity account =
-                recipientAccountMapper.selectOne(
-                        new LambdaQueryWrapper<NoticeRecipientAccountEntity>()
-                                .eq(NoticeRecipientAccountEntity::getUserId, userId)
-                                .eq(NoticeRecipientAccountEntity::getTenantId, tenantId())
-                                .eq(
-                                        NoticeRecipientAccountEntity::getAccountType,
-                                        NoticeRecipientAccountType.WECOM)
-                                .eq(
-                                        NoticeRecipientAccountEntity::getAccountValue,
-                                        wecomUser.userId())
-                                .last("LIMIT 1"));
-        if (account == null) {
-            account = new NoticeRecipientAccountEntity();
-            account.setUserId(userId);
-            account.setAccountType(NoticeRecipientAccountType.WECOM);
-            account.setAccountValue(wecomUser.userId());
-        }
-        account.setDisplayName(firstText(wecomUser.name(), wecomUser.userId()));
-        account.setVerifiedStatus(NoticeRecipientAccountStatus.VERIFIED);
-        account.setDefaultAccount(true);
-        account.setEnabled(true);
-        account.setTenantId(tenantId());
-        clearDefaultAccount(userId, NoticeRecipientAccountType.WECOM);
-        if (account.getId() == null) {
-            recipientAccountMapper.insert(account);
-        } else {
-            recipientAccountMapper.updateById(account);
-        }
-        return account;
-    }
-
     private boolean wecomActive(WecomDirectoryUser wecomUser) {
         return wecomUser.status() == null || Integer.valueOf(1).equals(wecomUser.status());
     }
@@ -936,17 +992,6 @@ public class NoticeWecomSyncService implements INoticeWecomSyncService {
             return null;
         }
         return value.trim();
-    }
-
-    private void clearDefaultAccount(Long userId, NoticeRecipientAccountType accountType) {
-        NoticeRecipientAccountEntity update = new NoticeRecipientAccountEntity();
-        update.setDefaultAccount(false);
-        recipientAccountMapper.update(
-                update,
-                new LambdaQueryWrapper<NoticeRecipientAccountEntity>()
-                        .eq(NoticeRecipientAccountEntity::getUserId, userId)
-                        .eq(NoticeRecipientAccountEntity::getAccountType, accountType)
-                        .eq(NoticeRecipientAccountEntity::getDefaultAccount, true));
     }
 
     private String firstText(String first, String second) {

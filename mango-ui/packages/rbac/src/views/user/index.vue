@@ -356,12 +356,6 @@
         <el-form-item label="更新已匹配成员">
           <el-switch v-model="wecomSyncForm.updateMatchedUsers" />
         </el-form-item>
-        <el-form-item label="绑定通知账户">
-          <el-switch v-model="wecomSyncForm.bindNoticeAccount" />
-        </el-form-item>
-        <el-form-item label="绑定登录身份">
-          <el-switch v-model="wecomSyncForm.bindLoginIdentity" />
-        </el-form-item>
       </el-form>
       <div v-if="wecomSyncResult" class="sync-result">
         <el-descriptions :column="4" border size="small">
@@ -389,8 +383,8 @@
           <el-descriptions-item label="更新">
             {{ wecomSyncResult.updatedCount }}
           </el-descriptions-item>
-          <el-descriptions-item label="绑定">
-            {{ wecomSyncResult.boundAccountCount }}
+          <el-descriptions-item label="身份绑定">
+            {{ wecomSyncResult.boundIdentityCount }}
           </el-descriptions-item>
           <el-descriptions-item label="跳过">
             {{ wecomSyncResult.skippedCount }}
@@ -425,12 +419,13 @@
         <el-form-item label="企微Userid">
           <el-input v-model="externalIdentityForm.externalUserId" placeholder="请输入企业微信 userid" />
         </el-form-item>
-        <el-form-item label="显示名称">
-          <el-input v-model="externalIdentityForm.displayName" placeholder="可选" />
+        <el-form-item label="企业微信昵称" required>
+          <el-input v-model="externalIdentityForm.displayName" placeholder="请输入企业微信完整昵称" />
         </el-form-item>
       </el-form>
       <el-table :data="externalIdentities" size="small" class="external-identity-table">
         <el-table-column prop="corpId" label="企业ID" min-width="140" />
+        <el-table-column prop="displayName" label="企业微信昵称" min-width="140" />
         <el-table-column prop="externalUserId" label="企微Userid" min-width="140" />
         <el-table-column prop="bindSource" label="来源" width="90" />
         <el-table-column label="操作" width="90">
@@ -637,8 +632,6 @@ const wecomSyncForm = reactive({
   skipUnchanged: true,
   createMissingUsers: true,
   updateMatchedUsers: true,
-  bindNoticeAccount: true,
-  bindLoginIdentity: true,
 });
 
 const passwordPolicyMessage = getPasswordPolicyMessage(defaultPasswordPolicy);
@@ -828,8 +821,6 @@ async function handleWecomSync() {
       skipUnchanged: wecomSyncForm.skipUnchanged,
       createMissingUsers: wecomSyncForm.createMissingUsers,
       updateMatchedUsers: wecomSyncForm.updateMatchedUsers,
-      bindNoticeAccount: wecomSyncForm.bindNoticeAccount,
-      bindLoginIdentity: wecomSyncForm.bindLoginIdentity,
     });
     ElMessage.success('同步完成');
     await loadData();
@@ -868,15 +859,19 @@ async function handleExternalIdentity(row: IdentityUserVO) {
   currentUser.value = row;
   externalIdentityForm.corpId = '';
   externalIdentityForm.externalUserId = '';
-  externalIdentityForm.displayName = row.nickname || row.username;
+  externalIdentityForm.displayName = '';
   externalIdentityDialogVisible.value = true;
   externalIdentities.value = await userApi.listExternalIdentities(row.userId);
 }
 
 async function handleBindExternalIdentity() {
   if (!currentUser.value?.userId) return;
-  if (!externalIdentityForm.corpId.trim() || !externalIdentityForm.externalUserId.trim()) {
-    ElMessage.warning('请填写企业ID和企微Userid');
+  if (
+    !externalIdentityForm.corpId.trim() ||
+    !externalIdentityForm.externalUserId.trim() ||
+    !externalIdentityForm.displayName.trim()
+  ) {
+    ElMessage.warning('请填写企业ID、企微Userid和企业微信昵称');
     return;
   }
   externalIdentityLoading.value = true;

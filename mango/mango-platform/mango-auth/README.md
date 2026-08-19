@@ -19,6 +19,7 @@
 | 强制首次改密 | 使用一次性密码重置票据完成首次登录改密并签发正式 token |
 | 企业微信登录 | 用企业微信 code 换取外部用户，按已绑定 Mango 用户签发 token |
 | 统一第三方登录 | 按 `tenant + app + provider` 管理企业微信、钉钉配置，支持登录、绑定当前账号和绑定已有账号 |
+| 企业微信单账号资料刷新 | 自助绑定后按需读取当前成员昵称头像；登录用户可在个人中心手动刷新自己的当前绑定，不启动通讯录同步 |
 | 第三方配置安全 | Secret 加密保存、查询只返回 `secretConfigured`，留空更新时保留已有密钥 |
 | 验证码入口 | 通过 `CaptchaApi` 发送短信或邮件验证码，登录请求可按路径要求验证码头 |
 | 防重放能力 | 支持时间戳、nonce、幂等键和可选签名校验 |
@@ -62,7 +63,8 @@
 |----------|------|
 | `AuthUserProvider` | 按 `realm + username` 或 userId 读取认证用户、密码哈希、状态和主体信息 |
 | `LoginTenantProvider` | 返回用户可登录机构，登录时解析 `memberId`、`tenantId`、`tenantCode`、`tenantName` |
-| `IdentityUserApi` | `/auth/info` 和企业微信登录读取用户资料、外部身份绑定 |
+| `IdentityUserApi` | `/auth/info`、企业微信登录和单账号资料刷新读取用户资料、外部身份绑定 |
+| `FileImportApi` / `FileApi` | 将企业微信头像导入 Mango 文件中心，快照更新失败时清理新文件，成功替换后清理旧文件 |
 | `ITokenProvider` | 生成、刷新、校验 token，读取 token claim |
 | `IAuthorizationProvider` | 加载角色编码和权限编码，写入 `LoginVO` |
 | `NoticeApi` | 可选，用于既有登录通知；不作为第三方登录配置来源 |

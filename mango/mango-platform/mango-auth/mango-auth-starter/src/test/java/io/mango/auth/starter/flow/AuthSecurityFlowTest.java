@@ -11,6 +11,7 @@ import io.mango.authorization.api.IAuthorizationProvider;
 import io.mango.auth.core.service.impl.AuthService;
 import io.mango.auth.core.store.TokenRevocationStore;
 import io.mango.auth.core.service.WecomLoginClient;
+import io.mango.auth.core.service.IExternalAuthorizationService;
 import io.mango.auth.core.service.impl.LoginAttemptTracker;
 import io.mango.auth.core.store.PasswordResetTicketStore;
 import io.mango.auth.starter.config.AuthSecurityConfig;
@@ -116,10 +117,14 @@ class AuthSecurityFlowTest {
     @Resource
     private ApplicationEvents applicationEvents;
 
+    @Resource
+    private IExternalAuthorizationService externalAuthorizationService;
+
     @BeforeEach
     void setUp() {
         testUserStore.reset();
         testCaptchaApi.reset();
+        org.mockito.Mockito.reset(externalAuthorizationService);
     }
 
     @Test
@@ -188,6 +193,36 @@ class AuthSecurityFlowTest {
                 .andExpect(jsonPath("$.data.partyId").value("42"))
                 .andExpect(jsonPath("$.data.departmentName").value("技术研发部"))
                 .andExpect(jsonPath("$.data.companyName").value("芒果集团"));
+    }
+
+    @Test
+    @DisplayName("WeCom profile refresh should require login and use the current account")
+    void wecomProfileRefreshShouldRequireLogin() throws Exception {
+        mockMvc.perform(post("/auth/providers/wecom/profile/refresh"))
+                .andExpect(status().isUnauthorized());
+
+        org.mockito.Mockito.when(externalAuthorizationService.refreshCurrentWecomProfile()).thenReturn(true);
+        MvcResult loginResult = mockMvc.perform(post("/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "username": "admin",
+                                  "password": "admin123",
+                                  "tenantId": "1"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andReturn();
+        String accessToken = objectMapper.readTree(loginResult.getResponse().getContentAsString())
+                .path("data").path("accessToken").asText();
+
+        mockMvc.perform(post("/auth/providers/wecom/profile/refresh")
+                        .header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data").value(true));
+
+        org.mockito.Mockito.verify(externalAuthorizationService).refreshCurrentWecomProfile();
     }
 
     @Test
@@ -783,7 +818,17 @@ class AuthSecurityFlowTest {
 
         @Bean
         WecomLoginClient wecomLoginClient() {
-            return (corpId, secret, code) -> "mock-wecom-code".equals(code) ? "wecom-admin" : null;
+            return new WecomLoginClient() {
+                @Override
+                public String getUserId(String corpId, String secret, String code) {
+                    return "mock-wecom-code".equals(code) ? "wecom-admin" : null;
+                }
+
+                @Override
+                public WecomUserProfile getUserProfile(String corpId, String secret, String userId) {
+                    return new WecomUserProfile(userId, "企业微信管理员", null);
+                }
+            };
         }
 
         @Bean

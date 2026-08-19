@@ -93,10 +93,17 @@ Resource Registry 基线注入可用于 demo、样例租户和初始化数据：
 
 绑定企业微信登录身份：
 
-1. 在 notice 中配置当前租户的企业微信登录渠道。
+1. 在 auth 中配置当前租户和应用的企业微信登录方式。
 2. 调用 `/identity/users/external-identities` 绑定 `provider=WECOM`、`corpId`、`externalUserId` 和 Mango `userId`。
 3. 前端调用 `/auth/wecom/login-config` 获取企微扫码配置。
 4. 前端拿到企微 code 后调用 `/auth/wecom/login`。
+
+外部身份的 `displayName` 只保存第三方平台实际返回的完整显示名称，不使用 Mango 用户昵称或用户名补值。
+可选的 `avatarFileId` 只保存已经导入 Mango 文件中心的头像文件 ID，不保存第三方头像 URL；同步方需要显式
+设置 `replaceAvatarFile=true` 才能用本次快照替换或清空已有头像。第三方未返回显示名称时保持为空，当前用户
+查询接口返回掩码后的 `externalUserId`，前端只能将它显示为账号尾号辅助信息，不能将其作为账号名称。
+
+Auth 的企业微信自助绑定会按需查询当前成员昵称头像，个人中心也可手动刷新当前登录人的单条 WECOM 绑定。该路径只更新 `displayName` 和 `avatarFileId`，不启动通讯录同步，不修改部门、组织、岗位或角色。成功覆盖快照，失败保留旧快照。
 
 ## 6. 配置说明
 

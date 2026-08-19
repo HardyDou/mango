@@ -14,4 +14,6 @@ public interface IExternalAuthorizationService {
     ProviderAuthorizationResultVO complete(CompleteProviderAuthorizationCommand command);
 
     LoginVO bindExisting(BindExistingAccountCommand command);
+
+    Boolean refreshCurrentWecomProfile();
 }

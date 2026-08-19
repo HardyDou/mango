@@ -25,7 +25,7 @@
 | 渠道配置 | 保存第三方账号、Webhook、Secret、签名等配置 | `/notice/channels/**` |
 | 任务和发送记录 | 查询任务、每个接收人每个渠道的发送结果 | `/notice/tasks`、`/notice/records` |
 | 失败处理 | 支持单条/批量重试、人工成功、忽略失败 | `/notice/records/**` |
-| 接收账户 | 维护用户手机号、邮箱、企业微信 ID 等接收账户 | `/notice/recipient-accounts/**` |
+| 接收账户 | 维护用户手机号、邮箱等通知接收地址；WECOM 身份统一来自 Identity 第三方绑定 | `/notice/recipient-accounts/**` |
 | 接收偏好 | 维护用户或范围级渠道开关 | `/notice/receive-preferences` |
 | 个人可用消息类型 | 查询当前租户已启用的消息类型 | `/notice/site/business-types` |
 | 我的站内信 | 查询未读数、未读分类统计、分类列表、详情、已读和删除 | `/notice/site/my/**` |
@@ -183,6 +183,14 @@ registerMangoNoticeAdminShell();
 5. 保存渠道模板，例如站内信标题、站内信内容、邮件标题、邮件内容。
 6. 保存渠道配置，例如站内信内置渠道、邮件账号、短信 provider 配置。
 7. 业务后端调用 `NoticeApi.send`，传入 `bizType`、`bizId`、接收人和 `params`。
+
+向企业微信真实用户发送时，业务只传 Mango `userId`。Notice 在选定具体 WECOM 渠道后，按当前租户、
+渠道 `CorpID`、`provider=WECOM` 和 `bindStatus=BOUND` 查询 Identity 第三方绑定，并使用其中的
+`externalUserId` 作为企业微信 `userid`。WECOM 不读取或回退到 `notice_recipient_account`；通讯录同步也
+只创建或更新 Identity WECOM 绑定。同步保存企业微信完整昵称；企业微信返回头像时，通过 FileImportApi
+导入 Mango 文件中心并只把 `avatarFileId` 写入 Identity，不持久化外部头像 URL。头像导入失败不阻断昵称
+同步；新头像绑定失败会清理新文件，替换或清空头像成功后尝试清理旧文件。手机号、邮箱等其它通知接收地址
+继续使用接收账户模型。
 8. 在任务、发送记录、站内信列表里确认发送结果。
 
 ### 5.1 站内信动作协议
@@ -727,7 +735,7 @@ mango-notice-starter/src/main/resources/META-INF/mango/resources/notice-common-d
 | 配置版本 | 业务类型的草稿、生效和历史配置。 |
 | 渠道模板 | 每个渠道的标题模板、内容模板和发布状态。 |
 | 渠道配置 | provider、账号、Secret、Webhook、签名、模板 ID、限流等 JSON 配置。 |
-| 接收账户 | 用户手机号、邮箱、企微 ID、钉钉 ID 等接收地址。 |
+| 接收账户 | 用户手机号、邮箱、钉钉 ID 等接收地址；企微身份由 Identity 第三方绑定统一维护。 |
 | 接收偏好 | 用户或范围级渠道开关。 |
 
 ### 9.4 站内信分类
@@ -759,7 +767,7 @@ HTTP 根路径：`/notice`。
 | 失败处理 | `/notice/records/**` | `notice:retry:edit` | 重试、人工成功、忽略失败。 |
 | 设置 | `GET /notice/settings`、`PUT /notice/settings` | `notice:setting:*` | 读取和保存通知设置。 |
 | 接收账户 | `/notice/recipient-accounts/**` | `notice:receive-setting:*` | 维护接收账户。 |
-| 企业微信 | `POST /notice/wecom/users/sync` | `system:user:add` | 同步企微用户映射。 |
+| 企业微信 | `POST /notice/wecom/users/sync` | `system:user:add` | 同步企微组织、成员、映射和 Identity WECOM 第三方绑定。 |
 | 接收偏好 | `GET /notice/receive-preferences`、`PUT /notice/receive-preferences` | LOGIN | 维护当前登录人的接收偏好。 |
 | 我的站内信和公告 | `/notice/site/my/**` | LOGIN | 当前用户的公告、未读数、未读分类统计、分类列表、详情、已读和删除。 |
 

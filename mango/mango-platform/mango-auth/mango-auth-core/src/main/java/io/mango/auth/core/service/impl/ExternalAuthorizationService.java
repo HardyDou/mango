@@ -14,11 +14,14 @@ import io.mango.auth.api.vo.ProviderAuthorizationVO;
 import io.mango.auth.core.service.ExternalAccountLoginService;
 import io.mango.auth.core.service.ExternalAuthProviderAdapter;
 import io.mango.auth.core.service.IAuthProviderConfigService;
+import io.mango.auth.core.service.IExternalIdentityAvatarService;
 import io.mango.auth.core.service.IExternalAuthorizationService;
+import io.mango.auth.core.service.WecomLoginClient;
 import io.mango.auth.core.store.ProviderAuthorizationStore;
 import io.mango.auth.core.support.AuthApiResponseAdapter;
 import io.mango.authorization.api.ISecurityContextProvider;
 import io.mango.authorization.api.vo.SecurityContextVO;
+import io.mango.common.exception.BizException;
 import io.mango.common.result.Require;
 import io.mango.identity.api.IdentityUserApi;
 import io.mango.identity.api.command.BindExternalIdentityCommand;
@@ -27,13 +30,16 @@ import io.mango.identity.api.vo.AuthUserVO;
 import io.mango.identity.api.vo.ExternalIdentityBindingVO;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
+@Slf4j
 @Service
 public class ExternalAuthorizationService implements IExternalAuthorizationService {
 
@@ -42,6 +48,8 @@ public class ExternalAuthorizationService implements IExternalAuthorizationServi
     private final IdentityUserApi identityUserApi;
     private final ExternalAccountLoginService accountLoginService;
     private final ISecurityContextProvider securityContextProvider;
+    private final WecomLoginClient wecomLoginClient;
+    private final IExternalIdentityAvatarService externalIdentityAvatarService;
     private final Map<ExternalAuthProvider, ExternalAuthProviderAdapter> adapters;
 
     @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
@@ -51,12 +59,16 @@ public class ExternalAuthorizationService implements IExternalAuthorizationServi
                                         IdentityUserApi identityUserApi,
                                         ExternalAccountLoginService accountLoginService,
                                         ISecurityContextProvider securityContextProvider,
+                                        WecomLoginClient wecomLoginClient,
+                                        IExternalIdentityAvatarService externalIdentityAvatarService,
                                         List<ExternalAuthProviderAdapter> adapters) {
         this.configService = configService;
         this.authorizationStore = authorizationStore;
         this.identityUserApi = identityUserApi;
         this.accountLoginService = accountLoginService;
         this.securityContextProvider = securityContextProvider;
+        this.wecomLoginClient = wecomLoginClient;
+        this.externalIdentityAvatarService = externalIdentityAvatarService;
         this.adapters = new EnumMap<>(ExternalAuthProvider.class);
         adapters.forEach(adapter -> this.adapters.put(adapter.provider(), adapter));
     }
@@ -99,7 +111,7 @@ public class ExternalAuthorizationService implements IExternalAuthorizationServi
             MangoContextHolder.update(current -> current.withRequest(null, null, state.tenantId(), state.appCode(), null));
             ExternalIdentityBindingVO existing = findBinding(state, externalIdentity);
             if (state.intent() == ProviderAuthorizationIntent.BIND_CURRENT) {
-                return completeCurrentBinding(state, externalIdentity, existing);
+                return completeCurrentBinding(state, config, externalIdentity, existing);
             }
             if (existing != null) {
                 return loginResult(existing.getUserId(), state);
@@ -128,8 +140,12 @@ public class ExternalAuthorizationService implements IExternalAuthorizationServi
         MangoContextSnapshot previous = MangoContextHolder.get();
         try {
             MangoContextHolder.update(current -> current.withRequest(null, null, ticket.tenantId(), ticket.appCode(), null));
-            bind(user.getUserId(), ticket.appCode(), ticket.provider(), ticket.providerTenantId(),
-                    ticket.externalUserId(), ticket.displayName());
+            ExternalIdentityBindingVO binding = bind(user.getUserId(), ticket.appCode(), ticket.provider(),
+                    ticket.providerTenantId(), ticket.externalUserId(), ticket.displayName());
+            IAuthProviderConfigService.ResolvedProviderConfig config = configService.requireAvailable(
+                    new IAuthProviderConfigService.ProviderSelection(
+                            ticket.tenantId(), ticket.appCode(), ticket.provider()));
+            refreshProfileAfterBinding(user.getUserId(), config, binding);
             return accountLoginService.loginExternalUser(new ExternalAccountLoginService.ExternalLoginContext(
                     user.getUserId(), ticket.tenantId(), ticket.appCode()));
         } finally {
@@ -137,20 +153,41 @@ public class ExternalAuthorizationService implements IExternalAuthorizationServi
         }
     }
 
+    @Override
+    public Boolean refreshCurrentWecomProfile() {
+        SecurityContextVO context = securityContextProvider.currentContext();
+        Require.isTrue(context.authenticated(), AuthCode.ACCESS_TOKEN_INVALID);
+        Long userId = Require.nonNull(context.userId(), AuthCode.ACCESS_TOKEN_INVALID);
+        String tenantId = Require.nonNull(context.tenantId(), AuthCode.INSTITUTION_REQUIRED);
+        String appCode = Require.nonNull(context.appCode(), AuthCode.AUTH_REQUEST_INVALID,
+                "当前登录上下文缺少应用编码");
+        IAuthProviderConfigService.ResolvedProviderConfig config = configService.requireAvailable(
+                new IAuthProviderConfigService.ProviderSelection(
+                        tenantId, appCode, ExternalAuthProvider.WECOM));
+        ExternalIdentityBindingVO binding = Require.nonNull(findCurrentWecomBinding(userId, appCode, config),
+                AuthCode.WECOM_PROFILE_SYNC_FAILED, "当前账号没有可同步的企业微信绑定");
+        refreshWecomProfile(userId, config, binding);
+        return Boolean.TRUE;
+    }
+
     private ProviderAuthorizationResultVO completeCurrentBinding(
             ProviderAuthorizationStore.StatePayload state,
+            IAuthProviderConfigService.ResolvedProviderConfig config,
             ExternalAuthProviderAdapter.ExternalAuthIdentity externalIdentity,
             ExternalIdentityBindingVO existing) {
         Long userId = Require.nonNull(state.userId(), AuthCode.ACCESS_TOKEN_INVALID);
+        ExternalIdentityBindingVO binding;
         if (existing != null) {
             Require.isTrue(userId.equals(existing.getUserId()), AuthCode.EXTERNAL_BINDING_CONFLICT);
+            binding = existing;
         } else {
-            bind(userId, state.appCode(), state.provider(), externalIdentity.providerTenantId(),
+            binding = bind(userId, state.appCode(), state.provider(), externalIdentity.providerTenantId(),
                     externalIdentity.externalUserId(), externalIdentity.displayName());
         }
+        binding = refreshProfileAfterBinding(userId, config, binding);
         ProviderAuthorizationResultVO result = new ProviderAuthorizationResultVO();
         result.setStatus(ProviderAuthorizationStatus.BIND_SUCCESS);
-        result.setProviderDisplayName(externalIdentity.displayName());
+        result.setProviderDisplayName(binding.getDisplayName());
         return result;
     }
 
@@ -184,6 +221,73 @@ public class ExternalAuthorizationService implements IExternalAuthorizationServi
         command.setDisplayName(displayName);
         command.setBindSource("SELF");
         return AuthApiResponseAdapter.requireIdentityData(identityUserApi.bindExternalIdentity(command));
+    }
+
+    private ExternalIdentityBindingVO findCurrentWecomBinding(
+            Long userId, String appCode, IAuthProviderConfigService.ResolvedProviderConfig config) {
+        ExternalIdentityQuery query = new ExternalIdentityQuery();
+        query.setUserId(userId);
+        query.setAppCode(appCode);
+        query.setProvider(ExternalAuthProvider.WECOM.name());
+        query.setCorpId(config.providerTenantId());
+        return AuthApiResponseAdapter.nullableData(identityUserApi.findExternalIdentity(query));
+    }
+
+    private ExternalIdentityBindingVO refreshProfileAfterBinding(
+            Long userId,
+            IAuthProviderConfigService.ResolvedProviderConfig config,
+            ExternalIdentityBindingVO binding) {
+        if (config.provider() != ExternalAuthProvider.WECOM) {
+            return binding;
+        }
+        try {
+            return refreshWecomProfile(userId, config, binding);
+        } catch (RuntimeException exception) {
+            Integer errorCode = exception instanceof BizException bizException ? bizException.getCode() : null;
+            log.warn("企业微信自助绑定资料同步失败，保留绑定关系: tenantId={}, appCode={}, userId={}, code={}, type={}",
+                    config.tenantId(), config.appCode(), userId, errorCode,
+                    exception.getClass().getSimpleName());
+            return binding;
+        }
+    }
+
+    private ExternalIdentityBindingVO refreshWecomProfile(
+            Long userId,
+            IAuthProviderConfigService.ResolvedProviderConfig config,
+            ExternalIdentityBindingVO binding) {
+        WecomLoginClient.WecomUserProfile profile = wecomLoginClient.getUserProfile(
+                config.providerTenantId(), config.secret(), binding.getExternalUserId());
+        Require.isTrue(binding.getExternalUserId().equals(profile.userId()),
+                AuthCode.WECOM_PROFILE_SYNC_FAILED, "企业微信返回的成员身份与当前绑定不一致");
+        Long importedAvatarFileId = null;
+        if (StringUtils.hasText(profile.avatarUrl())) {
+            importedAvatarFileId = externalIdentityAvatarService.importAvatar(userId, profile.avatarUrl().trim());
+        }
+        BindExternalIdentityCommand command = new BindExternalIdentityCommand();
+        command.setUserId(userId);
+        command.setAppCode(config.appCode());
+        command.setProvider(ExternalAuthProvider.WECOM.name());
+        command.setCorpId(config.providerTenantId());
+        command.setExternalUserId(binding.getExternalUserId());
+        command.setDisplayName(profile.displayName());
+        command.setAvatarFileId(importedAvatarFileId);
+        command.setReplaceAvatarFile(Boolean.TRUE);
+        command.setBindSource("SELF");
+        ExternalIdentityBindingVO updated;
+        boolean avatarCommitted = false;
+        try {
+            updated = AuthApiResponseAdapter.requireIdentityData(identityUserApi.bindExternalIdentity(command));
+            avatarCommitted = true;
+        } finally {
+            if (!avatarCommitted) {
+                externalIdentityAvatarService.deleteAvatar(importedAvatarFileId);
+            }
+        }
+        if (binding.getAvatarFileId() != null
+                && !Objects.equals(binding.getAvatarFileId(), importedAvatarFileId)) {
+            externalIdentityAvatarService.deleteAvatar(binding.getAvatarFileId());
+        }
+        return updated;
     }
 
     private ExternalAuthProviderAdapter requireAdapter(ExternalAuthProvider provider) {

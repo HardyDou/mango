@@ -3,6 +3,7 @@ package io.mango.identity.api.command;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
@@ -38,8 +39,15 @@ public class BindExternalIdentityCommand implements Serializable {
     private String externalUserId;
 
     @Size(max = 128, message = "显示名称最多128个字符")
-    @Schema(description = "显示名称快照")
+    @Schema(description = "第三方平台返回的完整显示名称")
     private String displayName;
+
+    @Positive(message = "头像文件ID必须大于0")
+    @Schema(description = "已导入 Mango 文件中心的第三方头像文件ID")
+    private Long avatarFileId;
+
+    @Schema(description = "是否用本次头像快照替换已有头像；为 true 时允许将头像清空")
+    private Boolean replaceAvatarFile;
 
     @Size(max = 32, message = "绑定来源最多32个字符")
     @Schema(description = "绑定来源：SYNC/ADMIN/SELF")

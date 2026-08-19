@@ -237,9 +237,42 @@
                       <span :data-provider="row.provider">{{ row.displayName }}</span>
                     </template>
                   </el-table-column>
-                  <el-table-column label="绑定账号" min-width="180">
+                  <el-table-column label="绑定账号" min-width="280">
                     <template #default="{ row }">
-                      {{ row.binding?.displayName || row.binding?.externalUserId || '-' }}
+                      <div v-if="row.binding" class="external-identity-summary">
+                        <el-avatar
+                          v-if="bindingAvatarUrl(row.binding)"
+                          :size="32"
+                          :src="bindingAvatarUrl(row.binding)"
+                          fit="cover"
+                        />
+                        <div class="external-identity-summary__copy">
+                          <strong :class="{ 'is-unsynced': externalIdentityNeedsSync(row.binding) }">
+                            {{ externalIdentityLabel(row.binding) }}
+                          </strong>
+                          <span v-if="externalIdentityNeedsSync(row.binding)" class="external-identity-summary__sync">
+                            {{ externalIdentitySyncMessage(row.binding) }}
+                          </span>
+                          <span v-else-if="externalIdentityHint(row.binding)">
+                            {{ externalIdentityHint(row.binding) }}
+                          </span>
+                        </div>
+                        <el-button
+                          v-if="row.provider === 'WECOM'"
+                          class="external-identity-summary__sync-button"
+                          link
+                          type="primary"
+                          title="同步企业微信资料"
+                          aria-label="同步企业微信资料"
+                          data-action="sync-wecom-profile"
+                          :loading="syncingExternalIdentityId === bindingKey(row.binding)"
+                          :disabled="Boolean(syncingExternalIdentityId)"
+                          @click="syncWecomProfile(row.binding)"
+                        >
+                          <el-icon><Refresh /></el-icon>
+                        </el-button>
+                      </div>
+                      <span v-else>-</span>
                     </template>
                   </el-table-column>
                   <el-table-column label="状态" width="110">
@@ -327,6 +360,22 @@
 
     <MangoDialog v-model="unbindDialogVisible" title="解绑第三方账号" width="460px">
       <p class="dialog-description">解绑后将不能再用该第三方账号登录当前应用。</p>
+      <div v-if="selectedBinding" class="unbind-identity" data-field="unbind-external-identity">
+        <el-avatar
+          v-if="bindingAvatarUrl(selectedBinding)"
+          :size="32"
+          :src="bindingAvatarUrl(selectedBinding)"
+          fit="cover"
+        />
+        <div>
+          <span>即将解绑</span>
+          <strong>{{ externalIdentityLabel(selectedBinding) }}</strong>
+          <small v-if="externalIdentityHint(selectedBinding)">{{ externalIdentityHint(selectedBinding) }}</small>
+          <small v-if="externalIdentityNeedsSync(selectedBinding)" class="is-unsynced">
+            {{ externalIdentitySyncMessage(selectedBinding) }}
+          </small>
+        </div>
+      </div>
       <el-form label-width="96px">
         <el-form-item label="当前密码" required>
           <el-input v-model="unbindPassword" type="password" show-password autocomplete="current-password" />
@@ -344,7 +393,17 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ElMessage, type UploadProps, type UploadUserFile } from 'element-plus';
-import { Brush, Connection, Iphone, Key, Lock, Message, Upload as UploadIcon, User } from '@element-plus/icons-vue';
+import {
+  Brush,
+  Connection,
+  Iphone,
+  Key,
+  Lock,
+  Message,
+  Refresh,
+  Upload as UploadIcon,
+  User,
+} from '@element-plus/icons-vue';
 import { downloadUploadedFile, fileToken, uploadImage } from '@mango/common/api/upload';
 import { MangoDialog } from '@mango/common';
 import { Session } from '@mango/common/utils/storage';
@@ -365,9 +424,16 @@ import {
 import {
   listAvailableProviders,
   providerCallbackUri,
+  refreshCurrentWecomProfile,
   startProviderAuthorization,
   type AvailableProvider,
 } from '../api/provider';
+import {
+  externalIdentityHint,
+  externalIdentityLabel,
+  externalIdentityNeedsSync,
+  externalIdentitySyncMessage,
+} from '../utils/externalIdentity';
 import PasswordView from './password.vue';
 
 type ProfileSection = 'profile' | 'security' | 'authorization' | 'password' | 'theme' | string;
@@ -389,9 +455,11 @@ const saving = ref(false);
 const avatarUploading = ref(false);
 const authorizationLoading = ref(false);
 const bindingProvider = ref<ExternalAuthProvider>();
+const syncingExternalIdentityId = ref('');
 const profile = ref<CurrentUserProfile>();
 const availableProviders = ref<AvailableProvider[]>([]);
 const bindings = ref<ExternalIdentityBinding[]>([]);
+const bindingAvatarUrls = ref<Record<string, string>>({});
 const form = reactive({ nickname: '', avatar: '', realName: '', documentType: '', documentNumber: '' });
 const existingDocumentNumber = ref('');
 
@@ -402,6 +470,7 @@ const savedAvatarPreviewUrl = ref('');
 const savedAvatarObjectUrl = ref('');
 const avatarCleared = ref(false);
 let avatarPreviewRequestId = 0;
+let bindingAvatarRequestId = 0;
 
 const contactDialogVisible = ref(false);
 const contactType = ref<ContactType>('PHONE');
@@ -491,6 +560,7 @@ onBeforeUnmount(() => {
   }
   clearPendingAvatarPreview();
   revokeSavedAvatarObjectUrl();
+  clearBindingAvatarUrls();
 });
 
 function normalizeProfileSection(value: unknown): ProfileSection {
@@ -735,11 +805,60 @@ async function loadAuthorizations() {
     ]);
     availableProviders.value = available;
     bindings.value = currentBindings;
+    await resolveBindingAvatars(currentBindings);
   } catch (error) {
     console.error('加载第三方授权失败:', error);
   } finally {
     authorizationLoading.value = false;
   }
+}
+
+function bindingKey(binding: ExternalIdentityBinding) {
+  return String(binding.id);
+}
+
+function bindingAvatarUrl(binding?: ExternalIdentityBinding) {
+  return binding ? bindingAvatarUrls.value[bindingKey(binding)] || '' : '';
+}
+
+async function resolveBindingAvatars(currentBindings: ExternalIdentityBinding[]) {
+  const requestId = ++bindingAvatarRequestId;
+  clearBindingAvatarUrls(false);
+  const nextUrls: Record<string, string> = {};
+  await Promise.all(
+    currentBindings.map(async (binding) => {
+      const fileId = String(binding.avatarFileId || '').trim();
+      if (!/^[1-9]\d*$/u.test(fileId)) return;
+      try {
+        const response = await downloadUploadedFile(fileId);
+        const blob =
+          response.data instanceof Blob
+            ? response.data
+            : new Blob([response.data], { type: response.headers?.['content-type'] || 'application/octet-stream' });
+        const objectUrl = URL.createObjectURL(blob);
+        if (requestId !== bindingAvatarRequestId) {
+          URL.revokeObjectURL(objectUrl);
+          return;
+        }
+        nextUrls[bindingKey(binding)] = objectUrl;
+      } catch (error) {
+        console.warn('加载第三方账号头像失败，继续显示账号昵称:', error);
+      }
+    }),
+  );
+  if (requestId !== bindingAvatarRequestId) {
+    Object.values(nextUrls).forEach((url) => URL.revokeObjectURL(url));
+    return;
+  }
+  bindingAvatarUrls.value = nextUrls;
+}
+
+function clearBindingAvatarUrls(invalidateRequest = true) {
+  if (invalidateRequest) {
+    bindingAvatarRequestId += 1;
+  }
+  Object.values(bindingAvatarUrls.value).forEach((url) => URL.revokeObjectURL(url));
+  bindingAvatarUrls.value = {};
 }
 
 async function bindProvider(provider: ExternalAuthProvider) {
@@ -758,6 +877,20 @@ async function bindProvider(provider: ExternalAuthProvider) {
   } catch (error) {
     console.error('发起第三方绑定失败:', error);
     bindingProvider.value = undefined;
+  }
+}
+
+async function syncWecomProfile(binding: ExternalIdentityBinding) {
+  if (binding.provider !== 'WECOM' || syncingExternalIdentityId.value) return;
+  syncingExternalIdentityId.value = bindingKey(binding);
+  try {
+    await refreshCurrentWecomProfile();
+    ElMessage.success('企业微信资料同步成功');
+    await loadAuthorizations();
+  } catch {
+    // 统一请求拦截器已展示后端返回的具体失败原因。
+  } finally {
+    syncingExternalIdentityId.value = '';
   }
 }
 
@@ -1025,6 +1158,80 @@ async function confirmUnbind() {
 .dialog-description {
   margin: 0 0 20px;
   color: var(--el-text-color-secondary);
+}
+
+.external-identity-summary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 48px;
+}
+
+.external-identity-summary__copy {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+
+  strong,
+  span {
+    overflow-wrap: anywhere;
+  }
+
+  strong {
+    color: var(--el-text-color-primary);
+    font-size: 14px;
+    line-height: 1.45;
+  }
+
+  span {
+    color: var(--el-text-color-secondary);
+    font-size: 12px;
+    line-height: 1.45;
+  }
+
+  .is-unsynced,
+  .external-identity-summary__sync {
+    color: var(--el-color-warning);
+  }
+}
+
+.external-identity-summary__sync-button {
+  flex: none;
+  margin-left: 2px;
+  padding: 4px;
+  font-size: 16px;
+}
+
+.unbind-identity {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 20px;
+  padding: 12px;
+  border-radius: var(--el-border-radius-base);
+  background: var(--el-fill-color-light);
+
+  > div {
+    display: grid;
+    min-width: 0;
+    gap: 3px;
+  }
+
+  span,
+  small {
+    color: var(--el-text-color-secondary);
+    font-size: 12px;
+  }
+
+  strong {
+    overflow-wrap: anywhere;
+    color: var(--el-text-color-primary);
+    font-size: 14px;
+  }
+
+  .is-unsynced {
+    color: var(--el-color-warning);
+  }
 }
 
 .profile-extension {

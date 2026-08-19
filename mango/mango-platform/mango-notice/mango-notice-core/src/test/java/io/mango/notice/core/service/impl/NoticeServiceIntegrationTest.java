@@ -9,6 +9,17 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.mango.common.result.R;
 import io.mango.common.vo.PageResult;
+import io.mango.file.api.FileApi;
+import io.mango.file.api.FileImportApi;
+import io.mango.file.api.command.FileDeleteCommand;
+import io.mango.file.api.command.FileMergePdfCommand;
+import io.mango.file.api.command.FilePackageCommand;
+import io.mango.file.api.command.FilePackageSizeControlCommand;
+import io.mango.file.api.command.ImportRemoteImageCommand;
+import io.mango.file.api.query.FileRecordPageQuery;
+import io.mango.file.api.vo.FilePackageResultVO;
+import io.mango.file.api.vo.FilePreviewVO;
+import io.mango.file.api.vo.FileRecordVO;
 import io.mango.identity.api.IdentityUserApi;
 import io.mango.identity.api.command.BatchDeleteIdentityUserCommand;
 import io.mango.identity.api.command.BindExternalIdentityCommand;
@@ -52,6 +63,7 @@ import io.mango.notice.api.command.SaveNoticeBusinessConfigCommand;
 import io.mango.notice.api.command.SaveNoticeChannelConfigCommand;
 import io.mango.notice.api.command.SaveNoticeReceivePreferenceCommand;
 import io.mango.notice.api.command.SendNoticeCommand;
+import io.mango.notice.api.command.SyncWecomUsersCommand;
 import io.mango.notice.api.enums.NoticeChannelConfigStatus;
 import io.mango.notice.api.enums.NoticeChannelRouteMode;
 import io.mango.notice.api.enums.NoticeChannelSendHealthStatus;
@@ -80,6 +92,7 @@ import io.mango.notice.core.entity.NoticeSiteMessageActionEntity;
 import io.mango.notice.core.entity.NoticeSiteMessageActionRequestEntity;
 import io.mango.notice.core.entity.NoticeSiteMessageEntity;
 import io.mango.notice.core.entity.NoticeTaskEntity;
+import io.mango.notice.core.integration.NoticeFileGateway;
 import io.mango.notice.core.integration.NoticeIdentityGateway;
 import io.mango.notice.core.integration.NoticeOrgGateway;
 import io.mango.notice.core.mapper.NoticeBusinessChannelTemplateMapper;
@@ -187,6 +200,12 @@ class NoticeServiceIntegrationTest {
 
     @Autowired private TestEmailChannelSender emailChannelSender;
 
+    @Autowired private TestWecomChannelSender wecomChannelSender;
+
+    @Autowired private TestWecomDirectoryClient wecomDirectoryClient;
+
+    @Autowired private TestFileImportApi fileImportApi;
+
     @BeforeEach
     void setUp() {
         MangoContextHolder.set(
@@ -199,6 +218,9 @@ class NoticeServiceIntegrationTest {
         domainEventPublisher.clear();
         identityUserApi.clear();
         emailChannelSender.clear();
+        wecomChannelSender.clear();
+        wecomDirectoryClient.clear();
+        fileImportApi.clear();
         identityUserApi.addUser(1L, "张三", "zhangsan@example.com", "13800000001");
         identityUserApi.addUser(2L, "李四", "lisi@example.com", "13800000002");
     }
@@ -703,6 +725,126 @@ class NoticeServiceIntegrationTest {
         assertThat(emailChannelSender.configIds).containsExactly(41L);
         assertThat(emailRecord().getStatus()).isEqualTo(NoticeSendStatus.FAILED);
         assertThat(emailRecord().getChannelConfigId()).isEqualTo(41L);
+    }
+
+    @Test
+    void wecomDeliveryUsesIdentityBindingWithoutLegacyRecipientAccount() {
+        seedBusinessType();
+        seedActiveWecomTemplate(50L, NoticeChannelRouteMode.EXACT, 61L);
+        insertWecomChannelConfig(61L, "corp-a", 0);
+        identityUserApi.addExternalIdentity(1L, "corp-a", "wecom-user-1", "BOUND");
+        SendNoticeCommand command = sendCommand();
+        command.setUserIds(List.of(1L));
+        command.setChannelTypes(List.of(NoticeChannelType.WECOM));
+
+        noticeService.send(command);
+        noticeService.executeTask(singleTask().getId());
+
+        assertThat(wecomChannelSender.commands).singleElement().satisfies(sent -> {
+            assertThat(sent.getUserId()).isEqualTo(1L);
+            assertThat(sent.getWecomUserId()).isEqualTo("wecom-user-1");
+            assertThat(sent.getChannelConfigId()).isEqualTo(61L);
+        });
+        assertThat(wecomRecord().getStatus()).isEqualTo(NoticeSendStatus.SUCCESS);
+        assertThat(jdbcTemplate.queryForObject(
+                "select count(*) from notice_recipient_account", Long.class)).isZero();
+    }
+
+    @Test
+    void wecomDeliverySkipsChannelWithMismatchedCorpId() {
+        seedBusinessType();
+        seedActiveWecomTemplate(50L, NoticeChannelRouteMode.AUTO, null);
+        insertWecomChannelConfig(61L, "corp-b", 0);
+        insertWecomChannelConfig(62L, "corp-a", 1);
+        identityUserApi.addExternalIdentity(1L, "corp-a", "wecom-user-1", "BOUND");
+        SendNoticeCommand command = sendCommand();
+        command.setUserIds(List.of(1L));
+        command.setChannelTypes(List.of(NoticeChannelType.WECOM));
+
+        noticeService.send(command);
+        noticeService.executeTask(singleTask().getId());
+
+        assertThat(wecomChannelSender.commands).singleElement()
+                .extracting(NoticeChannelMessage::getChannelConfigId)
+                .isEqualTo(62L);
+        assertThat(wecomRecord().getStatus()).isEqualTo(NoticeSendStatus.SUCCESS);
+    }
+
+    @Test
+    void wecomDeliveryRejectsInactiveIdentityBinding() {
+        seedBusinessType();
+        seedActiveWecomTemplate(50L, NoticeChannelRouteMode.EXACT, 61L);
+        insertWecomChannelConfig(61L, "corp-a", 0);
+        identityUserApi.addExternalIdentity(1L, "corp-a", "wecom-user-1", "UNBOUND");
+        SendNoticeCommand command = sendCommand();
+        command.setUserIds(List.of(1L));
+        command.setChannelTypes(List.of(NoticeChannelType.WECOM));
+
+        noticeService.send(command);
+        noticeService.executeTask(singleTask().getId());
+
+        assertThat(wecomChannelSender.commands).isEmpty();
+        assertThat(wecomRecord().getStatus()).isEqualTo(NoticeSendStatus.FAILED);
+        assertThat(wecomRecord().getFailCode()).isEqualTo("RECIPIENT_INVALID");
+        assertThat(wecomRecord().getFailReason()).contains("有效企业微信绑定");
+    }
+
+    @Test
+    void wecomSyncOnlyWritesIdentityAndRepairsMissingBindingWhenUserIsUnchanged() {
+        wecomDirectoryClient.users.add(new WecomDirectoryUser(
+                "wecom-user-1", "企业微信张三", List.of(), "工程师", null, null,
+                null, null, "https://work.weixin.qq.com/avatar/zhangsan.png", null, 1));
+        SyncWecomUsersCommand command = new SyncWecomUsersCommand();
+        command.setCorpId("corp-a");
+        command.setSecret("directory-secret");
+        command.setSyncDepartments(false);
+        command.setSyncUsers(true);
+        command.setSkipUnchanged(true);
+
+        var first = noticeService.syncWecomUsers(command);
+        identityUserApi.externalIdentities.clear();
+        var second = noticeService.syncWecomUsers(command);
+
+        assertThat(first.getBoundIdentityCount()).isEqualTo(1);
+        assertThat(second.getUnchangedCount()).isEqualTo(1);
+        assertThat(second.getBoundIdentityCount()).isEqualTo(1);
+        assertThat(identityUserApi.externalIdentities).singleElement().satisfies(binding -> {
+            assertThat(binding.getCorpId()).isEqualTo("corp-a");
+            assertThat(binding.getExternalUserId()).isEqualTo("wecom-user-1");
+            assertThat(binding.getDisplayName()).isEqualTo("企业微信张三");
+            assertThat(binding.getAvatarFileId()).isNotNull();
+        });
+        assertThat(fileImportApi.sourceUrls).hasSize(2)
+                .allMatch("https://work.weixin.qq.com/avatar/zhangsan.png"::equals);
+        assertThat(identityUserApi.lastCreatedUser.getAvatar()).isNull();
+        assertThat(jdbcTemplate.queryForObject(
+                "select count(*) from notice_recipient_account", Long.class)).isZero();
+    }
+
+    @Test
+    void wecomSyncClearsImportedAvatarWhenDirectoryProfileRemovesIt() {
+        wecomDirectoryClient.users.add(new WecomDirectoryUser(
+                "wecom-user-1", "企业微信张三", List.of(), "工程师", null, null,
+                null, null, "https://work.weixin.qq.com/avatar/zhangsan.png", null, 1));
+        SyncWecomUsersCommand command = new SyncWecomUsersCommand();
+        command.setCorpId("corp-a");
+        command.setSecret("directory-secret");
+        command.setSyncDepartments(false);
+        command.setSyncUsers(true);
+        command.setSkipUnchanged(true);
+
+        noticeService.syncWecomUsers(command);
+        wecomDirectoryClient.users.clear();
+        wecomDirectoryClient.users.add(new WecomDirectoryUser(
+                "wecom-user-1", "企业微信张三", List.of(), "工程师", null, null,
+                null, null, null, null, 1));
+        noticeService.syncWecomUsers(command);
+
+        assertThat(identityUserApi.externalIdentities).singleElement()
+                .extracting(ExternalIdentityBindingVO::getAvatarFileId)
+                .isNull();
+        assertThat(fileImportApi.sourceUrls).containsExactly(
+                "https://work.weixin.qq.com/avatar/zhangsan.png");
     }
 
     private SendNoticeCommand sendCommand() {
@@ -1245,6 +1387,23 @@ class NoticeServiceIntegrationTest {
                 routeTagCode);
     }
 
+    private void seedActiveWecomTemplate(
+            Long id, NoticeChannelRouteMode routeMode, Long configId) {
+        jdbcTemplate.update(
+                """
+                insert into notice_business_channel_template
+                (id, business_type_id, biz_type, channel_type, template_name, title_template, content_template,
+                 version, version_status, enabled, channel_config_id, route_mode,
+                 publish_time, created_at, updated_at)
+                values (?, 1, ?, 'WECOM', '企微模板', '作业 {{ jobName }} 失败', '错误码 {{errorCode}}',
+                 1, 'ACTIVE', true, ?, ?, current_timestamp, current_timestamp, current_timestamp)
+                """,
+                id,
+                BIZ_TYPE,
+                configId,
+                routeMode.name());
+    }
+
     private void seedSiteChannelConfig(Long id) {
         jdbcTemplate.update(
                 """
@@ -1294,6 +1453,22 @@ class NoticeServiceIntegrationTest {
                 configJson);
     }
 
+    private void insertWecomChannelConfig(Long id, String corpId, int priority) {
+        jdbcTemplate.update(
+                """
+                insert into notice_channel_config
+                (id, config_code, channel_type, capability_mode, provider_code, config_name, config_json,
+                 resource_source, secret_status, enabled, priority, weight, config_status, last_send_status,
+                 created_at, updated_at)
+                values (?, concat('WECOM_', ?), 'WECOM', 'BOTH', 'WECOM_APP', '企业微信', ?, 'MANUAL',
+                 'COMPLETE', true, ?, 100, 'COMPLETE', 'NONE', current_timestamp, current_timestamp)
+                """,
+                id,
+                id,
+                "{\"corpId\":\"" + corpId + "\",\"agentId\":\"1000001\",\"secret\":\"secret\"}",
+                priority);
+    }
+
     private void insertSiteMessage(
             Long id, Long userId, NoticeReadStatus readStatus, NoticeDeleteStatus deleteStatus) {
         insertSiteMessage(id, userId, readStatus, deleteStatus, BIZ_TYPE);
@@ -1337,6 +1512,15 @@ class NoticeServiceIntegrationTest {
                         .last("limit 1"));
     }
 
+    private io.mango.notice.core.entity.NoticeSendRecordEntity wecomRecord() {
+        return sendRecordMapper.selectOne(
+                new LambdaQueryWrapper<io.mango.notice.core.entity.NoticeSendRecordEntity>()
+                        .eq(
+                                io.mango.notice.core.entity.NoticeSendRecordEntity::getChannelType,
+                                NoticeChannelType.WECOM)
+                        .last("limit 1"));
+    }
+
     private List<NoticeBusinessConfigVersionEntity> configVersionsByStatus(
             NoticeTemplateVersionStatus status) {
         return businessConfigVersionMapper.selectList(
@@ -1361,6 +1545,7 @@ class NoticeServiceIntegrationTest {
         NoticeSiteMessageService.class,
         NoticeWecomSyncService.class,
         NoticeSiteMessageWriterImpl.class,
+        NoticeFileGateway.class,
         NoticeIdentityGateway.class,
         NoticeOrgGateway.class
     })
@@ -1406,8 +1591,18 @@ class NoticeServiceIntegrationTest {
         }
 
         @Bean
-        WecomDirectoryClient wecomDirectoryClient() {
-            return new NoopWecomDirectoryClient();
+        TestWecomDirectoryClient wecomDirectoryClient() {
+            return new TestWecomDirectoryClient();
+        }
+
+        @Bean
+        TestFileImportApi fileImportApi() {
+            return new TestFileImportApi();
+        }
+
+        @Bean
+        FileApi fileApi() {
+            return new TestFileApi();
         }
 
         @Bean
@@ -1418,6 +1613,11 @@ class NoticeServiceIntegrationTest {
         @Bean
         TestEmailChannelSender emailChannelSender() {
             return new TestEmailChannelSender();
+        }
+
+        @Bean
+        TestWecomChannelSender wecomChannelSender() {
+            return new TestWecomChannelSender();
         }
     }
 
@@ -1483,6 +1683,25 @@ class NoticeServiceIntegrationTest {
         void clear() {
             configIds.clear();
             results.clear();
+        }
+    }
+
+    static class TestWecomChannelSender implements NoticeChannelSender {
+        private final List<NoticeChannelMessage> commands = new ArrayList<>();
+
+        @Override
+        public NoticeChannelType channelType() {
+            return NoticeChannelType.WECOM;
+        }
+
+        @Override
+        public ChannelSendResult send(NoticeChannelMessage command) {
+            commands.add(command);
+            return ChannelSendResult.providerSuccess("wecom-message", "{\"errcode\":0}");
+        }
+
+        void clear() {
+            commands.clear();
         }
     }
 
@@ -1554,6 +1773,8 @@ class NoticeServiceIntegrationTest {
 
     static class TestIdentityUserApi implements IdentityUserApi {
         private final Map<Long, IdentityUserInfoVO> users = new HashMap<>();
+        private final List<ExternalIdentityBindingVO> externalIdentities = new ArrayList<>();
+        private CreateIdentityUserCommand lastCreatedUser;
 
         @Override
         public R<CurrentUserProfileVO> currentProfile() {
@@ -1591,6 +1812,18 @@ class NoticeServiceIntegrationTest {
 
         void clear() {
             users.clear();
+            externalIdentities.clear();
+            lastCreatedUser = null;
+        }
+
+        void addExternalIdentity(Long userId, String corpId, String externalUserId, String bindStatus) {
+            ExternalIdentityBindingVO binding = new ExternalIdentityBindingVO();
+            binding.setUserId(userId);
+            binding.setProvider("WECOM");
+            binding.setCorpId(corpId);
+            binding.setExternalUserId(externalUserId);
+            binding.setBindStatus(bindStatus);
+            externalIdentities.add(binding);
         }
 
         @Override
@@ -1605,6 +1838,7 @@ class NoticeServiceIntegrationTest {
 
         @Override
         public R<Long> create(CreateIdentityUserCommand command) {
+            lastCreatedUser = command;
             return R.ok(1L);
         }
 
@@ -1661,7 +1895,29 @@ class NoticeServiceIntegrationTest {
         @Override
         public R<ExternalIdentityBindingVO> bindExternalIdentity(
                 BindExternalIdentityCommand command) {
-            return R.ok(null);
+            ExternalIdentityBindingVO existingBinding = externalIdentities.stream()
+                    .filter(existing -> existing.getUserId().equals(command.getUserId())
+                            && existing.getProvider().equals(command.getProvider())
+                            && existing.getCorpId().equals(command.getCorpId()))
+                    .findFirst()
+                    .orElse(null);
+            ExternalIdentityBindingVO binding = new ExternalIdentityBindingVO();
+            binding.setUserId(command.getUserId());
+            binding.setProvider(command.getProvider());
+            binding.setCorpId(command.getCorpId());
+            binding.setExternalUserId(command.getExternalUserId());
+            binding.setDisplayName(command.getDisplayName());
+            binding.setAvatarFileId(Boolean.TRUE.equals(command.getReplaceAvatarFile())
+                    || command.getAvatarFileId() != null
+                    ? command.getAvatarFileId()
+                    : existingBinding == null ? null : existingBinding.getAvatarFileId());
+            binding.setBindStatus("BOUND");
+            externalIdentities.removeIf(existing ->
+                    existing.getUserId().equals(binding.getUserId())
+                            && existing.getProvider().equals(binding.getProvider())
+                            && existing.getCorpId().equals(binding.getCorpId()));
+            externalIdentities.add(binding);
+            return R.ok(binding);
         }
 
         @Override
@@ -1671,7 +1927,17 @@ class NoticeServiceIntegrationTest {
 
         @Override
         public R<ExternalIdentityBindingVO> findExternalIdentity(ExternalIdentityQuery query) {
-            return R.ok(null);
+            return R.ok(externalIdentities.stream()
+                    .filter(binding -> query.getUserId() == null
+                            || query.getUserId().equals(binding.getUserId()))
+                    .filter(binding -> query.getProvider() == null
+                            || query.getProvider().equals(binding.getProvider()))
+                    .filter(binding -> query.getCorpId() == null
+                            || query.getCorpId().equals(binding.getCorpId()))
+                    .filter(binding -> query.getExternalUserId() == null
+                            || query.getExternalUserId().equals(binding.getExternalUserId()))
+                    .findFirst()
+                    .orElse(null));
         }
 
         @Override
@@ -1748,22 +2014,88 @@ class NoticeServiceIntegrationTest {
         }
     }
 
-    static class NoopWecomDirectoryClient implements WecomDirectoryClient {
+    static class TestWecomDirectoryClient implements WecomDirectoryClient {
+        private final List<WecomDirectoryUser> users = new ArrayList<>();
+
         @Override
         public List<WecomDirectoryUser> listUsers(String corpId, String secret) {
-            return List.of();
+            return List.copyOf(users);
         }
 
         @Override
         public List<WecomDirectoryUser> listUsers(
                 String corpId, String secret, Long departmentId, boolean fetchChild) {
-            return List.of();
+            return List.copyOf(users);
         }
 
         @Override
         public List<WecomDepartment> listDepartments(
                 String corpId, String secret, Long departmentId) {
             return List.of();
+        }
+
+        void clear() {
+            users.clear();
+        }
+    }
+
+    static class TestFileImportApi implements FileImportApi {
+        private final List<String> sourceUrls = new ArrayList<>();
+        private long nextId = 7000L;
+
+        @Override
+        public R<FileRecordVO> importImage(ImportRemoteImageCommand command) {
+            sourceUrls.add(command.getSourceUrl());
+            FileRecordVO file = new FileRecordVO();
+            file.setId(++nextId);
+            return R.ok(file);
+        }
+
+        void clear() {
+            sourceUrls.clear();
+            nextId = 7000L;
+        }
+    }
+
+    static class TestFileApi implements FileApi {
+        @Override
+        public R<PageResult<FileRecordVO>> page(FileRecordPageQuery query) {
+            return R.ok(PageResult.of(List.of(), 0, query.getPage(), query.getSize()));
+        }
+
+        @Override
+        public R<FileRecordVO> get(Long id) {
+            return R.ok(null);
+        }
+
+        @Override
+        public R<FilePreviewVO> preview(Long id) {
+            return R.ok(null);
+        }
+
+        @Override
+        public R<FileRecordVO> packageFiles(FilePackageCommand command) {
+            return R.ok(null);
+        }
+
+        @Override
+        public R<FilePackageResultVO> packageFilesWithSizeControl(FilePackageSizeControlCommand command) {
+            return R.ok(null);
+        }
+
+        @Override
+        public R<FileRecordVO> mergeToPdf(FileMergePdfCommand command) {
+            return R.ok(null);
+        }
+
+        @Override
+        public R<Boolean> archive(Long id, String reason) {
+            return R.ok(true);
+        }
+
+        @Override
+        public R<Boolean> delete(FileDeleteCommand command) {
+            return R.ok(true);
         }
     }
 }

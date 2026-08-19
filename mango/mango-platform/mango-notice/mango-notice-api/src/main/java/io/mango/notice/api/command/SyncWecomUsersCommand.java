@@ -60,11 +60,4 @@ public class SyncWecomUsersCommand implements Serializable {
     @jakarta.validation.constraints.NotNull(groups = io.mango.notice.api.validation.NoticeOptionalValidation.class)
     private Boolean updateMatchedUsers = true;
 
-    @Schema(description = "是否绑定企业微信通知接收账户")
-    @jakarta.validation.constraints.NotNull(groups = io.mango.notice.api.validation.NoticeOptionalValidation.class)
-    private Boolean bindNoticeAccount = true;
-
-    @Schema(description = "是否绑定企业微信登录身份")
-    @jakarta.validation.constraints.NotNull(groups = io.mango.notice.api.validation.NoticeOptionalValidation.class)
-    private Boolean bindLoginIdentity = true;
 }

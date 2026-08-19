@@ -1,5 +1,7 @@
 package io.mango.identity.core.entity;
 
+import com.baomidou.mybatisplus.annotation.FieldStrategy;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
 import io.mango.infra.persistence.api.entity.TenantEntity;
 import lombok.Data;
@@ -22,7 +24,11 @@ public class ExternalIdentityBindingEntity extends TenantEntity {
 
     private String externalUserId;
 
+    @TableField(updateStrategy = FieldStrategy.ALWAYS)
     private String displayName;
+
+    @TableField(updateStrategy = FieldStrategy.ALWAYS)
+    private Long avatarFileId;
 
     private String bindSource;
 

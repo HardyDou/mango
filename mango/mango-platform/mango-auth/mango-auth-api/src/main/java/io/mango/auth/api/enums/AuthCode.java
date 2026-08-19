@@ -41,6 +41,7 @@ public enum AuthCode implements BizCode {
     PROVIDER_STATE_INVALID(1418, "第三方授权状态无效或已过期"),
     PROVIDER_REDIRECT_INVALID(1419, "第三方授权回调地址无效"),
     EXTERNAL_AUTH_FAILED(1504, "第三方授权失败"),
+    WECOM_PROFILE_SYNC_FAILED(1505, "企业微信资料同步失败"),
     EXTERNAL_BINDING_CONFLICT(1420, "该第三方账号已绑定其他 Mango 账号"),
     EXTERNAL_BIND_TICKET_INVALID(1421, "第三方账号绑定凭据无效或已过期"),
     AUTH_REQUEST_INVALID(400, "认证请求参数非法");

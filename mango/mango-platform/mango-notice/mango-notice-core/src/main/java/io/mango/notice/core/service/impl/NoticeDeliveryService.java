@@ -8,6 +8,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import io.mango.common.result.Require;
+import io.mango.identity.api.query.ExternalIdentityQuery;
+import io.mango.identity.api.vo.ExternalIdentityBindingVO;
 import io.mango.infra.kv.api.IOutboxStore;
 import io.mango.notice.api.command.NoticeJsonRequest;
 import io.mango.notice.api.command.NoticeRecipientCommand;
@@ -17,7 +19,6 @@ import io.mango.notice.api.command.NoticeSiteMessageSubjectCommand;
 import io.mango.notice.api.command.NoticeSiteMessageTargetCommand;
 import io.mango.notice.api.command.SendNoticeCommand;
 import io.mango.notice.api.enums.NoticeChannelConfigStatus;
-import io.mango.notice.core.service.NoticeChannelCapabilityPolicy;
 import io.mango.notice.api.enums.NoticeChannelRouteMode;
 import io.mango.notice.api.enums.NoticeChannelSendHealthStatus;
 import io.mango.notice.api.enums.NoticeChannelType;
@@ -35,6 +36,7 @@ import io.mango.notice.api.enums.NoticeSiteMessageTargetType;
 import io.mango.notice.api.enums.NoticeTaskStatus;
 import io.mango.notice.api.enums.NoticeTemplateVersionStatus;
 import io.mango.notice.api.vo.NoticeSendResultVO;
+import io.mango.notice.channel.wecom.WecomChannelConfig;
 import io.mango.notice.core.entity.NoticeBusinessChannelTemplateEntity;
 import io.mango.notice.core.entity.NoticeBusinessTypeEntity;
 import io.mango.notice.core.entity.NoticeChannelConfigEntity;
@@ -45,6 +47,8 @@ import io.mango.notice.core.entity.NoticeRecipientAccountEntity;
 import io.mango.notice.core.entity.NoticeRecipientEntity;
 import io.mango.notice.core.entity.NoticeSendRecordEntity;
 import io.mango.notice.core.entity.NoticeTaskEntity;
+import io.mango.notice.core.integration.NoticeIdentityGateway;
+import io.mango.notice.core.integration.NoticeRemoteResult;
 import io.mango.notice.core.mapper.NoticeBusinessChannelTemplateMapper;
 import io.mango.notice.core.mapper.NoticeBusinessTypeMapper;
 import io.mango.notice.core.mapper.NoticeChannelConfigMapper;
@@ -57,6 +61,7 @@ import io.mango.notice.core.mapper.NoticeSendRecordMapper;
 import io.mango.notice.core.mapper.NoticeTaskMapper;
 import io.mango.notice.core.outbox.NoticeOutboxMessageFactory;
 import io.mango.notice.core.service.INoticeDeliveryService;
+import io.mango.notice.core.service.NoticeChannelCapabilityPolicy;
 import io.mango.notice.core.service.NoticeChannelSecretMaterializer;
 import io.mango.notice.core.service.NoticeChannelSecretResolutionException;
 import io.mango.notice.core.service.NoticeRecipientResolver;
@@ -115,6 +120,7 @@ public class NoticeDeliveryService implements INoticeDeliveryService {
     private final IOutboxStore outboxStore;
     private final NoticeRecipientResolver recipientResolver;
     private final NoticeChannelSecretMaterializer secretMaterializer;
+    private final NoticeIdentityGateway identityGateway;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -764,6 +770,13 @@ public class NoticeDeliveryService implements INoticeDeliveryService {
         if (channelType == NoticeChannelType.SITE) {
             return AccountMatch.allowed(null);
         }
+        if (channelType == NoticeChannelType.WECOM) {
+            if (recipient.getUserId() != null || canSendToRecipient(channelType, recipient)) {
+                return AccountMatch.allowed(null);
+            }
+            return AccountMatch.canceled(
+                    NoticeSendCancelCode.RECIPIENT_ACCOUNT_MISSING, "缺少有效企业微信绑定");
+        }
         NoticeRecipientAccountType accountType = accountType(channelType);
         if (accountType == null || recipient.getUserId() == null) {
             return canSendToRecipient(channelType, recipient)
@@ -823,8 +836,6 @@ public class NoticeDeliveryService implements INoticeDeliveryService {
             recipient.setEmail(account.getAccountValue());
         } else if (channelType == NoticeChannelType.WECHAT_OFFICIAL) {
             recipient.setWechatOpenid(account.getAccountValue());
-        } else if (channelType == NoticeChannelType.WECOM) {
-            recipient.setWecomUserId(account.getAccountValue());
         } else if (channelType == NoticeChannelType.DINGTALK) {
             recipient.setDingtalkUserId(account.getAccountValue());
         }
@@ -836,7 +847,7 @@ public class NoticeDeliveryService implements INoticeDeliveryService {
             case SMS -> NoticeRecipientAccountType.MOBILE;
             case EMAIL -> NoticeRecipientAccountType.EMAIL;
             case WECHAT_OFFICIAL -> NoticeRecipientAccountType.WECHAT;
-            case WECOM -> NoticeRecipientAccountType.WECOM;
+            case WECOM -> null;
             case DINGTALK -> NoticeRecipientAccountType.DINGTALK;
             case SITE -> null;
         };
@@ -958,7 +969,16 @@ public class NoticeDeliveryService implements INoticeDeliveryService {
                     NoticeFailureCode.CHANNEL_UNAVAILABLE.name(), "没有可用通知通道", true);
         }
         ChannelSendResult lastResult = null;
+        ChannelSendResult identityFailure = null;
         for (NoticeChannelConfigEntity config : configs) {
+            if (template.getChannelType() == NoticeChannelType.WECOM
+                    && recipient.getUserId() != null) {
+                WecomIdentityResolution resolution = resolveWecomIdentity(recipient, config);
+                if (!resolution.resolved()) {
+                    identityFailure = resolution.failure();
+                    continue;
+                }
+            }
             for (int attempt = 1; attempt <= MAX_CHANNEL_ATTEMPTS; attempt++) {
                 ChannelSendResult result;
                 try {
@@ -983,10 +1003,50 @@ public class NoticeDeliveryService implements INoticeDeliveryService {
                 }
             }
         }
-        return lastResult == null
-                ? ChannelSendResult.failed(
-                        NoticeFailureCode.CHANNEL_UNAVAILABLE.name(), "没有可用通知通道", true)
-                : lastResult;
+        if (lastResult != null) {
+            return lastResult;
+        }
+        if (identityFailure != null) {
+            return identityFailure;
+        }
+        return ChannelSendResult.failed(
+                NoticeFailureCode.CHANNEL_UNAVAILABLE.name(), "没有可用通知通道", true);
+    }
+
+    private WecomIdentityResolution resolveWecomIdentity(
+            NoticeRecipientEntity recipient, NoticeChannelConfigEntity config) {
+        String corpId;
+        try {
+            corpId = WecomChannelConfig.fromJson(config.getConfigJson()).corpId();
+        } catch (RuntimeException ex) {
+            return WecomIdentityResolution.failed(ChannelSendResult.failed(
+                    NoticeFailureCode.CHANNEL_CONFIG_INVALID.name(), "企业微信渠道 CorpID 配置无效", false));
+        }
+        if (!StringUtils.hasText(corpId)) {
+            return WecomIdentityResolution.failed(ChannelSendResult.failed(
+                    NoticeFailureCode.CHANNEL_CONFIG_INVALID.name(), "企业微信渠道缺少 CorpID", false));
+        }
+        ExternalIdentityQuery query = new ExternalIdentityQuery();
+        query.setUserId(recipient.getUserId());
+        query.setProvider("WECOM");
+        query.setCorpId(corpId.trim());
+        NoticeRemoteResult<ExternalIdentityBindingVO> response = identityGateway.findExternalIdentity(query);
+        if (!response.isSuccess()) {
+            return WecomIdentityResolution.failed(ChannelSendResult.failed(
+                    NoticeFailureCode.RECIPIENT_INVALID.name(),
+                    response.messageOr("企业微信接收身份查询失败"), false));
+        }
+        ExternalIdentityBindingVO binding = response.getData();
+        if (binding == null
+                || !"BOUND".equals(binding.getBindStatus())
+                || !StringUtils.hasText(binding.getExternalUserId())) {
+            return WecomIdentityResolution.failed(ChannelSendResult.failed(
+                    NoticeFailureCode.RECIPIENT_INVALID.name(),
+                    "用户缺少与渠道 CorpID 匹配的有效企业微信绑定", false));
+        }
+        recipient.setWecomUserId(binding.getExternalUserId().trim());
+        recipientMapper.updateById(recipient);
+        return WecomIdentityResolution.success();
     }
 
     private NoticeSendStatus recordStatus(ChannelSendResult result) {
@@ -1280,6 +1340,16 @@ public class NoticeDeliveryService implements INoticeDeliveryService {
 
         static AccountMatch canceled(NoticeSendCancelCode cancelCode, String cancelReason) {
             return new AccountMatch(false, null, cancelCode, cancelReason);
+        }
+    }
+
+    private record WecomIdentityResolution(boolean resolved, ChannelSendResult failure) {
+        static WecomIdentityResolution success() {
+            return new WecomIdentityResolution(true, null);
+        }
+
+        static WecomIdentityResolution failed(ChannelSendResult failure) {
+            return new WecomIdentityResolution(false, failure);
         }
     }
 
