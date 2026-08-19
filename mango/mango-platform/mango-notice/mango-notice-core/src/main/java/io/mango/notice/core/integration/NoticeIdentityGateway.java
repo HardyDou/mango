@@ -5,6 +5,7 @@ import io.mango.identity.api.IdentityUserApi;
 import io.mango.identity.api.command.BindExternalIdentityCommand;
 import io.mango.identity.api.command.CreateIdentityUserCommand;
 import io.mango.identity.api.command.UpdateIdentityUserCommand;
+import io.mango.identity.api.query.ExternalIdentityQuery;
 import io.mango.identity.api.query.IdentityUserPageQuery;
 import io.mango.identity.api.vo.ExternalIdentityBindingVO;
 import io.mango.identity.api.vo.IdentityUserInfoVO;
@@ -44,4 +45,8 @@ public class NoticeIdentityGateway {
         return NoticeRemoteResult.from(identityUserApi.bindExternalIdentity(command));
     }
 
+    public NoticeRemoteResult<ExternalIdentityBindingVO> findExternalIdentity(
+            ExternalIdentityQuery query) {
+        return NoticeRemoteResult.from(identityUserApi.findExternalIdentity(query));
+    }
 }

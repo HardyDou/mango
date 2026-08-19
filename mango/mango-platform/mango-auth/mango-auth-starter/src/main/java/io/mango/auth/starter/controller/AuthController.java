@@ -127,6 +127,14 @@ public class AuthController implements AuthApi {
     }
 
     @Override
+    @PostMapping("/providers/wecom/profile/refresh")
+    @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "同步当前用户企业微信资料")
+    @Operation(summary = "同步当前用户企业微信资料", description = "按当前登录上下文读取本人企业微信昵称和头像快照")
+    public R<Boolean> refreshCurrentWecomProfile() {
+        return R.ok(externalAuthorizationService.refreshCurrentWecomProfile());
+    }
+
+    @Override
     @PostMapping("/login")
     @ApiAccess(mode = ApiResourceAccessMode.PUBLIC, desc = "用户登录")
     @Operation(summary = "用户登录", description = "使用用户名、密码、机构和验证码登录")

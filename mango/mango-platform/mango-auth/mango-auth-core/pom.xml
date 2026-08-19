@@ -37,6 +37,12 @@
         </dependency>
 
         <dependency>
+            <groupId>io.mango.platform.file</groupId>
+            <artifactId>mango-file-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
             <groupId>io.mango.platform.org</groupId>
             <artifactId>mango-org-api</artifactId>
             <version>${project.version}</version>

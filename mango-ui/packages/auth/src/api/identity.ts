@@ -38,6 +38,7 @@ export interface ExternalIdentityBinding {
   corpId?: string;
   externalUserId?: string;
   displayName?: string;
+  avatarFileId?: string | number;
   bindSource?: string;
   bindStatus?: string;
   bindTime?: string;

@@ -76,6 +76,10 @@ export function bindExistingProviderAccount(data: { bindingTicket: string; usern
   return post<LoginResult>('/auth/providers/bind-existing', data, { ignoreToken: true });
 }
 
+export function refreshCurrentWecomProfile() {
+  return post<boolean>('/auth/providers/wecom/profile/refresh');
+}
+
 export function listProviderConfigs(appCode: string) {
   return get<ProviderConfig[]>('/auth/provider-configs', { params: { appCode } });
 }

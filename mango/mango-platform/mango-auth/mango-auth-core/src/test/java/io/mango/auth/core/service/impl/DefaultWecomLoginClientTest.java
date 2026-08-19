@@ -2,6 +2,7 @@ package io.mango.auth.core.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.common.exception.BizException;
+import io.mango.auth.core.service.WecomLoginClient;
 import org.junit.jupiter.api.Test;
 
 import java.net.http.HttpClient;
@@ -43,6 +44,43 @@ class DefaultWecomLoginClientTest {
         assertThatThrownBy(() -> client.getUserId("corp", "secret", "code"))
                 .isInstanceOf(BizException.class)
                 .hasMessageContaining("响应格式无效");
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void readsCurrentMemberNameAndAvatarWithoutListingTheDirectory() throws Exception {
+        HttpClient httpClient = mock(HttpClient.class);
+        HttpResponse<String> tokenResponse = response(
+                "{\"access_token\":\"access-token\",\"errcode\":0}");
+        HttpResponse<String> profileResponse = response(
+                "{\"errcode\":0,\"userid\":\"specified-user\",\"name\":\"企业微信张三\","
+                        + "\"avatar\":\"https://wework.qpic.cn/avatar.png\"}");
+        when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
+                .thenReturn(tokenResponse, profileResponse);
+        DefaultWecomLoginClient client = new DefaultWecomLoginClient(httpClient, new ObjectMapper());
+
+        WecomLoginClient.WecomUserProfile profile = client.getUserProfile("corp", "secret", "specified-user");
+
+        assertThat(profile.userId()).isEqualTo("specified-user");
+        assertThat(profile.displayName()).isEqualTo("企业微信张三");
+        assertThat(profile.avatarUrl()).isEqualTo("https://wework.qpic.cn/avatar.png");
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void explainsMissingMemberProfilePermission() throws Exception {
+        HttpClient httpClient = mock(HttpClient.class);
+        HttpResponse<String> tokenResponse = response(
+                "{\"access_token\":\"access-token\",\"errcode\":0}");
+        HttpResponse<String> profileResponse = response(
+                "{\"errcode\":48002,\"errmsg\":\"api forbidden\"}");
+        when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
+                .thenReturn(tokenResponse, profileResponse);
+        DefaultWecomLoginClient client = new DefaultWecomLoginClient(httpClient, new ObjectMapper());
+
+        assertThatThrownBy(() -> client.getUserProfile("corp", "secret", "specified-user"))
+                .isInstanceOf(BizException.class)
+                .hasMessageContaining("没有成员资料读取权限");
     }
 
     @SuppressWarnings("unchecked")

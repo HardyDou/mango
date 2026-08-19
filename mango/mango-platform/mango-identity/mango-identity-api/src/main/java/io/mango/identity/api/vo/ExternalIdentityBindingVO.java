@@ -33,6 +33,9 @@ public class ExternalIdentityBindingVO implements Serializable {
     @Schema(description = "显示名称快照")
     private String displayName;
 
+    @Schema(description = "第三方头像文件ID")
+    private Long avatarFileId;
+
     @Schema(description = "绑定来源")
     private String bindSource;
 

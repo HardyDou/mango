@@ -74,8 +74,6 @@ export interface WecomUserSyncCommand {
   skipUnchanged?: boolean;
   createMissingUsers?: boolean;
   updateMatchedUsers?: boolean;
-  bindNoticeAccount?: boolean;
-  bindLoginIdentity?: boolean;
 }
 
 export interface WecomUserSyncResult {
@@ -87,7 +85,7 @@ export interface WecomUserSyncResult {
   matchedCount: number;
   createdCount: number;
   updatedCount: number;
-  boundAccountCount: number;
+  boundIdentityCount: number;
   skippedCount: number;
   unchangedCount: number;
   failedCount: number;
@@ -101,6 +99,7 @@ export interface ExternalIdentityBindingVO {
   corpId: string;
   externalUserId: string;
   displayName?: string;
+  avatarFileId?: ApiId;
   bindSource?: string;
   bindStatus?: string;
   bindTime?: string;
@@ -113,15 +112,29 @@ export interface BindExternalIdentityCommand {
   corpId: string;
   externalUserId: string;
   displayName?: string;
+  avatarFileId?: ApiId;
+  replaceAvatarFile?: boolean;
   bindSource?: string;
 }
 
-type CreateUserCommand = Pick<IdentityUserVO,
-  'username' | 'password' | 'nickname' | 'realm' | 'actorType' | 'partyType' | 'partyId' |
-  'email' | 'phone' | 'avatar' | 'status' | 'remark'
+type CreateUserCommand = Pick<
+  IdentityUserVO,
+  | 'username'
+  | 'password'
+  | 'nickname'
+  | 'realm'
+  | 'actorType'
+  | 'partyType'
+  | 'partyId'
+  | 'email'
+  | 'phone'
+  | 'avatar'
+  | 'status'
+  | 'remark'
 >;
 
-type UpdateUserCommand = Pick<IdentityUserVO,
+type UpdateUserCommand = Pick<
+  IdentityUserVO,
   'userId' | 'nickname' | 'partyType' | 'partyId' | 'email' | 'phone' | 'avatar' | 'status' | 'remark'
 >;
 
@@ -138,8 +151,9 @@ interface BackendPageResult<T> {
 
 export const userApi = {
   page(params?: UserQuery) {
-    return get<BackendPageResult<IdentityUserVO>>('/identity/users/page', { params: toBackendQuery(params) })
-      .then((data) => toPageResult(data, params));
+    return get<BackendPageResult<IdentityUserVO>>('/identity/users/page', { params: toBackendQuery(params) }).then(
+      (data) => toPageResult(data, params),
+    );
   },
   detail: (userId: ApiId) => get<IdentityUserVO>('/identity/users/detail', { params: { userId } }),
   create: (data: IdentityUserVO) => post<ApiId>('/identity/users', toCreateCommand(data)),
@@ -147,18 +161,17 @@ export const userApi = {
   delete: (userId: ApiId) => del<boolean>('/identity/users', { params: { userId } }),
   deleteBatch: (userIds: ApiId[]) => post<number>('/identity/users/delete-batch', { userIds }),
   updateStatus: (userId: ApiId, status: number) => put<boolean>('/identity/users/status', { userId, status }),
-  resetPassword: (userId: ApiId, password: string) => put<boolean>('/identity/users/password/reset', { userId, password }),
+  resetPassword: (userId: ApiId, password: string) =>
+    put<boolean>('/identity/users/password/reset', { userId, password }),
   unlock: (userId: ApiId) => put<boolean>('/identity/users/unlock', { userId }),
   requirePasswordReset: (userId: ApiId) => put<boolean>('/identity/users/password/reset-required', { userId }),
   syncWecomUsers: (data: WecomUserSyncCommand) => post<WecomUserSyncResult>('/notice/wecom/users/sync', data),
-  listExternalIdentities: (userId: ApiId) => get<ExternalIdentityBindingVO[]>('/identity/users/external-identities', { params: { userId } }),
-  bindExternalIdentity: (data: BindExternalIdentityCommand) => post<ExternalIdentityBindingVO>('/identity/users/external-identities', data),
-  unbindExternalIdentity: (data: {
-    userId: ApiId;
-    provider: string;
-    corpId: string;
-    externalUserId: string;
-  }) => del<boolean>('/identity/users/external-identities', { data }),
+  listExternalIdentities: (userId: ApiId) =>
+    get<ExternalIdentityBindingVO[]>('/identity/users/external-identities', { params: { userId } }),
+  bindExternalIdentity: (data: BindExternalIdentityCommand) =>
+    post<ExternalIdentityBindingVO>('/identity/users/external-identities', data),
+  unbindExternalIdentity: (data: { userId: ApiId; provider: string; corpId: string; externalUserId: string }) =>
+    del<boolean>('/identity/users/external-identities', { data }),
 };
 
 function toBackendQuery(params?: UserQuery) {

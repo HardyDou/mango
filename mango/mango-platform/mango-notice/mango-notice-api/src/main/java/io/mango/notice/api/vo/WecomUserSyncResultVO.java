@@ -37,8 +37,8 @@ public class WecomUserSyncResultVO implements Serializable {
     @Schema(description = "更新成员资料数量")
     private int updatedCount;
 
-    @Schema(description = "绑定企业微信接收账户数量")
-    private int boundAccountCount;
+    @Schema(description = "绑定或更新企业微信第三方身份数量")
+    private int boundIdentityCount;
 
     @Schema(description = "跳过数量")
     private int skippedCount;

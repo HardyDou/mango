@@ -440,7 +440,7 @@ public class NoticeController implements NoticeApi {
     @Override
     @PostMapping("/wecom/users/sync")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:user:add")
-    @Operation(summary = "同步企业微信用户", description = "从企业微信通讯录同步成员，并绑定企业微信通知接收账户")
+    @Operation(summary = "同步企业微信用户", description = "从企业微信通讯录同步成员，并维护 Identity 企业微信第三方身份")
     public R<WecomUserSyncResultVO> syncWecomUsers(@RequestBody SyncWecomUsersCommand command) {
         return R.ok(noticeService.syncWecomUsers(command));
     }

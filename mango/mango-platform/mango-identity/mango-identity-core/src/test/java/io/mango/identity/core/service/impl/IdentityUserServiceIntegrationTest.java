@@ -18,6 +18,7 @@ import io.mango.identity.api.command.UnbindCurrentExternalIdentityCommand;
 import io.mango.identity.api.command.UpdateCurrentUserContactCommand;
 import io.mango.identity.api.command.UpdateCurrentUserProfileCommand;
 import io.mango.identity.api.enums.IdentityUserTargetType;
+import io.mango.identity.api.query.ExternalIdentityQuery;
 import io.mango.identity.api.query.IdentityUserTargetQuery;
 import io.mango.identity.core.entity.ExternalIdentityBindingEntity;
 import io.mango.identity.core.entity.IdentityUserEntity;
@@ -316,6 +317,123 @@ class IdentityUserServiceIntegrationTest {
     }
 
     @Test
+    @DisplayName("第三方未返回显示名时不得回退 Mango 昵称")
+    void bindExternalIdentityShouldKeepMissingProviderDisplayNameEmpty() {
+        setCurrentUser(1001L);
+        seedUser(1001L, "Administrator", "Mango 管理员", "1", 1);
+        seedMember(10L, 1L, 1001L, 1, null);
+        BindExternalIdentityCommand command = bindingCommand(1001L);
+        command.setExternalUserId("wecom-user-4826");
+        command.setDisplayName(null);
+
+        var binding = service.bindExternalIdentity(command);
+        var currentBindings = service.listCurrentExternalIdentities();
+
+        assertThat(binding.getDisplayName()).isNull();
+        assertThat(currentBindings).singleElement().satisfies(current -> {
+            assertThat(current.getDisplayName()).isNull();
+            assertThat(current.getExternalUserId()).isEqualTo("****4826");
+        });
+    }
+
+    @Test
+    @DisplayName("当前用户外部身份返回完整第三方昵称和头像文件")
+    void listCurrentExternalIdentitiesShouldReturnProviderProfile() {
+        setCurrentUser(1001L);
+        seedUser(1001L, "Administrator", "Mango 管理员", "1", 1);
+        seedMember(10L, 1L, 1001L, 1, null);
+        BindExternalIdentityCommand command = bindingCommand(1001L);
+        command.setExternalUserId("wecom-user-4826");
+        command.setDisplayName("企业微信张三");
+        command.setAvatarFileId(7001L);
+
+        var binding = service.bindExternalIdentity(command);
+        var currentBindings = service.listCurrentExternalIdentities();
+
+        assertThat(binding.getDisplayName()).isEqualTo("企业微信张三");
+        assertThat(binding.getAvatarFileId()).isEqualTo(7001L);
+        assertThat(currentBindings).singleElement().satisfies(current -> {
+            assertThat(current.getDisplayName()).isEqualTo("企业微信张三");
+            assertThat(current.getAvatarFileId()).isEqualTo(7001L);
+            assertThat(current.getExternalUserId()).isEqualTo("****4826");
+        });
+    }
+
+    @Test
+    @DisplayName("仅显式头像快照允许清空已有第三方头像")
+    void bindExternalIdentityShouldOnlyClearAvatarForExplicitSnapshot() {
+        setCurrentUser(1001L);
+        seedUser(1001L, "Administrator", "Mango 管理员", "1", 1);
+        seedMember(10L, 1L, 1001L, 1, null);
+        BindExternalIdentityCommand initial = bindingCommand(1001L);
+        initial.setAvatarFileId(7001L);
+        service.bindExternalIdentity(initial);
+
+        var preserved = service.bindExternalIdentity(bindingCommand(1001L));
+        BindExternalIdentityCommand clearedSnapshot = bindingCommand(1001L);
+        clearedSnapshot.setReplaceAvatarFile(true);
+        var cleared = service.bindExternalIdentity(clearedSnapshot);
+        var persisted = service.listCurrentExternalIdentities();
+
+        assertThat(preserved.getAvatarFileId()).isEqualTo(7001L);
+        assertThat(cleared.getAvatarFileId()).isNull();
+        assertThat(persisted).singleElement().satisfies(binding ->
+                assertThat(binding.getAvatarFileId()).isNull());
+    }
+
+    @Test
+    @DisplayName("企业微信资料缺少昵称时清空已持久化的旧昵称")
+    void bindExternalIdentity_existingDisplayNameMissing_persistsEmpty() {
+        setCurrentUser(1001L);
+        seedUser(1001L, "Administrator", "Mango 管理员", "1", 1);
+        seedMember(10L, 1L, 1001L, 1, null);
+        service.bindExternalIdentity(bindingCommand(1001L));
+
+        BindExternalIdentityCommand missingDisplayName = bindingCommand(1001L);
+        missingDisplayName.setDisplayName(null);
+        var cleared = service.bindExternalIdentity(missingDisplayName);
+        var persisted = service.listCurrentExternalIdentities();
+
+        assertThat(cleared.getDisplayName()).isNull();
+        assertThat(persisted).singleElement().satisfies(binding ->
+                assertThat(binding.getDisplayName()).isNull());
+    }
+
+    @Test
+    @DisplayName("第三方显示名与 Mango 昵称不同时保留第三方显示名")
+    void bindExternalIdentityShouldPreserveProviderDisplayName() {
+        MangoContextHolder.set(MangoContextSnapshot.empty().withTenantId("1"));
+        seedUser(1001L, "Administrator", "Mango 管理员", "1", 1);
+        seedMember(10L, 1L, 1001L, 1, null);
+        BindExternalIdentityCommand command = bindingCommand(1001L);
+        command.setProvider("DINGTALK");
+        command.setExternalUserId("dingtalk-union-id");
+        command.setDisplayName("钉钉张三");
+
+        var binding = service.bindExternalIdentity(command);
+
+        assertThat(binding.getDisplayName()).isEqualTo("钉钉张三");
+    }
+
+    @Test
+    @DisplayName("查询外部身份时只返回有效绑定")
+    void findExternalIdentityShouldIgnoreInactiveBinding() {
+        MangoContextHolder.set(MangoContextSnapshot.empty().withTenantId("1"));
+        seedUser(1001L, "Administrator", "Mango 管理员", "1", 1);
+        seedMember(10L, 1L, 1001L, 1, null);
+        var binding = service.bindExternalIdentity(bindingCommand(1001L));
+        ExternalIdentityBindingEntity inactive = externalBindingMapper.selectById(binding.getId());
+        inactive.setBindStatus("UNBOUND");
+        externalBindingMapper.updateById(inactive);
+        ExternalIdentityQuery query = new ExternalIdentityQuery();
+        query.setUserId(1001L);
+        query.setProvider("WECOM");
+        query.setCorpId("corp-id");
+
+        assertThat(service.findExternalIdentity(query)).isNull();
+    }
+
+    @Test
     @DisplayName("当前用户实名资料默认未认证且证件号码脱敏")
     void currentProfileShouldDefaultToUnverifiedAndMaskDocumentNumber() {
         setCurrentUser(1001L);
@@ -542,6 +660,7 @@ class IdentityUserServiceIntegrationTest {
                     corp_id varchar(128) not null,
                     external_user_id varchar(128) not null,
                     display_name varchar(100),
+                    avatar_file_id bigint,
                     bind_source varchar(32),
                     bind_status varchar(32),
                     bind_time timestamp,

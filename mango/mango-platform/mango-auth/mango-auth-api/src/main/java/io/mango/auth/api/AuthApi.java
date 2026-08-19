@@ -53,6 +53,8 @@ public interface AuthApi {
 
     R<LoginVO> bindExistingProviderAccount(@Valid BindExistingAccountCommand command);
 
+    R<Boolean> refreshCurrentWecomProfile();
+
     /**
      * 用户登录。
      *

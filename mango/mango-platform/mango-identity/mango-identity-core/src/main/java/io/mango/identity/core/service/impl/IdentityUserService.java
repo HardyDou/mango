@@ -491,7 +491,12 @@ public class IdentityUserService extends MangoCrudServiceImpl<IdentityUserMapper
         entity.setProvider(normalizeProvider(command.getProvider()));
         entity.setCorpId(command.getCorpId().trim());
         entity.setExternalUserId(command.getExternalUserId().trim());
-        entity.setDisplayName(firstText(command.getDisplayName(), user.getNickname()));
+        entity.setDisplayName(normalizeOptionalText(command.getDisplayName()));
+        if (Boolean.TRUE.equals(command.getReplaceAvatarFile())) {
+            entity.setAvatarFileId(command.getAvatarFileId());
+        } else if (command.getAvatarFileId() != null) {
+            entity.setAvatarFileId(command.getAvatarFileId());
+        }
         entity.setBindSource(firstText(command.getBindSource(), "SYNC"));
         entity.setBindStatus(STATUS_BOUND);
         if (entity.getBindTime() == null) {
@@ -536,13 +541,15 @@ public class IdentityUserService extends MangoCrudServiceImpl<IdentityUserMapper
         LambdaQueryWrapper<ExternalIdentityBindingEntity> wrapper = new LambdaQueryWrapper<ExternalIdentityBindingEntity>()
                 .eq(ExternalIdentityBindingEntity::getTenantId, tenantId);
         wrapper.eq(StringUtils.hasText(query.getAppCode()), ExternalIdentityBindingEntity::getAppCode,
-                query.getAppCode().trim());
+                normalizeOptionalText(query.getAppCode()));
         wrapper.eq(StringUtils.hasText(query.getProvider()), ExternalIdentityBindingEntity::getProvider,
                 normalizeProvider(query.getProvider()));
-        wrapper.eq(StringUtils.hasText(query.getCorpId()), ExternalIdentityBindingEntity::getCorpId, query.getCorpId());
+        wrapper.eq(StringUtils.hasText(query.getCorpId()), ExternalIdentityBindingEntity::getCorpId,
+                normalizeOptionalText(query.getCorpId()));
         wrapper.eq(StringUtils.hasText(query.getExternalUserId()), ExternalIdentityBindingEntity::getExternalUserId,
-                query.getExternalUserId());
+                normalizeOptionalText(query.getExternalUserId()));
         wrapper.eq(query.getUserId() != null, ExternalIdentityBindingEntity::getUserId, query.getUserId());
+        wrapper.eq(ExternalIdentityBindingEntity::getBindStatus, STATUS_BOUND);
         wrapper.last("LIMIT 1");
         return toExternalIdentityVO(externalIdentityBindingMapper.selectOne(wrapper));
     }
@@ -556,6 +563,7 @@ public class IdentityUserService extends MangoCrudServiceImpl<IdentityUserMapper
         return externalIdentityBindingMapper.selectList(new LambdaQueryWrapper<ExternalIdentityBindingEntity>()
                 .eq(ExternalIdentityBindingEntity::getTenantId, tenantId)
                 .eq(ExternalIdentityBindingEntity::getUserId, userId)
+                .eq(ExternalIdentityBindingEntity::getBindStatus, STATUS_BOUND)
                 .orderByDesc(ExternalIdentityBindingEntity::getBindTime))
                 .stream()
                 .map(this::toExternalIdentityVO)
@@ -567,8 +575,10 @@ public class IdentityUserService extends MangoCrudServiceImpl<IdentityUserMapper
         IdentityUserEntity user = currentUser();
         String appCode = firstText(MangoContextHolder.appCode(), DEFAULT_APP_CODE);
         return externalIdentityBindingMapper.selectList(new LambdaQueryWrapper<ExternalIdentityBindingEntity>()
+                .eq(ExternalIdentityBindingEntity::getTenantId, currentTenantIdLong())
                 .eq(ExternalIdentityBindingEntity::getUserId, user.getUserId())
                 .eq(ExternalIdentityBindingEntity::getAppCode, appCode)
+                .eq(ExternalIdentityBindingEntity::getBindStatus, STATUS_BOUND)
                 .orderByAsc(ExternalIdentityBindingEntity::getProvider)
                 .orderByDesc(ExternalIdentityBindingEntity::getBindTime))
                 .stream()
@@ -1055,6 +1065,7 @@ public class IdentityUserService extends MangoCrudServiceImpl<IdentityUserMapper
         vo.setCorpId(entity.getCorpId());
         vo.setExternalUserId(entity.getExternalUserId());
         vo.setDisplayName(entity.getDisplayName());
+        vo.setAvatarFileId(entity.getAvatarFileId());
         vo.setBindSource(entity.getBindSource());
         vo.setBindStatus(entity.getBindStatus());
         vo.setBindTime(entity.getBindTime());
@@ -1205,6 +1216,10 @@ public class IdentityUserService extends MangoCrudServiceImpl<IdentityUserMapper
             return preferred.trim();
         }
         return fallback;
+    }
+
+    private String normalizeOptionalText(String value) {
+        return StringUtils.hasText(value) ? value.trim() : null;
     }
 
     private String normalizeRealm(String realm) {
