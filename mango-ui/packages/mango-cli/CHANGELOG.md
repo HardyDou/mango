@@ -2,6 +2,56 @@
 
 ## Unreleased
 
+## 1.0.111 - 2026-08-19
+
+### Pull Requests
+
+- PR #827 Fixed Notice channel secret storage, masking and authorized reveal. Packages: Mango Maven `1.0.38`, `@mango/notice@1.0.41`, dependency closure and `@mango/cli@1.0.111`. Business Adaptation: upgrade the aligned tuple and verify Crypto, permission and channel behavior.
+- PR #828 Fixed Notice JSON-mode secret masking. Packages: `@mango/notice@1.0.41`, dependency closure and `@mango/cli@1.0.111`. Business Adaptation: verify both form and JSON channel editing.
+- PR #829 Changed WeCom profile/synchronization/delivery identity ownership. Packages: Mango Maven `1.0.38`, Auth `1.0.28`, RBAC `1.0.26`, Notice `1.0.41`, dependency closure and CLI `1.0.111`. Business Adaptation: upgrade the complete tuple, apply bounded Identity migrations and run an authorized provider smoke test.
+
+### Fixed
+
+- Lock the complete frontend matrix containing the Notice secret and WeCom identity corrections.
+
+### Changed
+
+- Advance the managed Mango Maven version to `1.0.38` and every exact npm dependent selected by the machine release plan.
+
+### Versions
+
+- `@mango/cli` advances from `1.0.110` to `1.0.111`, locks Mango Maven `1.0.38`, Auth `1.0.28`, RBAC `1.0.26`, Notice `1.0.41`, and the generated exact dependency closure. PMO remains `1.3.16`.
+
+### Published Packages
+
+- Publish the Maven `1.0.38` batch, all 17 npm packages in plan order, and CLI `1.0.111` last.
+
+### Business Impact
+
+- Generated and upgraded consumers receive a compatible backend/frontend tuple for the Notice secret and WeCom identity changes; direct consumers must use the same exact versions.
+
+### Upgrade Estimate
+
+- Audience: CLI-managed full Mango consumers.
+- Engineering Effort: 1 to 2 hours normally; 2 to 4 hours for custom integrations.
+- Execution Window: 1 to 3 hours including migration and provider smoke test.
+- Service Downtime: none required by the CLI; follow the application's database migration window.
+- Rollback Effort: 30 to 90 minutes.
+- Assumptions: registry access, database backup, Crypto configuration and authorized WeCom test settings.
+
+### Upgrade Notes
+
+1. Install CLI `1.0.111`, apply the exact frontend matrix and set backend Mango version to `1.0.38`.
+2. Apply Identity V3/V4 and verify Notice secret access plus an authorized WeCom smoke test before deployment.
+
+### Verification
+
+- Verify the generated matrix, candidate consumer, both registry roles and clean published consumer before Tag/Release creation.
+
+### Rollback
+
+- Restore CLI `1.0.110`, Maven `1.0.37` and the prior npm matrix; never overwrite immutable coordinates.
+
 ## 1.0.110 - 2026-08-17
 
 ### Pull Requests

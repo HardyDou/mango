@@ -1,89 +1,498 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-08-17T14:37:26.878Z",
-  "releaseKind": "npm-only",
+  "generatedAt": "2026-08-19T11:32:04.746Z",
+  "releaseKind": "mixed",
   "release": {
-    "tag": "v2026.08.17-issue-817-link-page-tenant-id-release",
-    "title": "Mango release v2026.08.17-issue-817-link-page-tenant-id-release",
+    "tag": "v2026.08.19-maven-1.0.38-wecom-identity-notice-security-release",
+    "title": "Mango Maven 1.0.38 WeCom identity and Notice security release",
     "notesFile": ".changeset/release-notes.txt",
-    "notesSha256": "c6b676e307a15298ca1556018670be338d0123f52ca00976cd56b4b2989fcf82"
+    "notesSha256": "0712df2b7260e29f0d61c613658e85ab0bb75daefadb1373efba0d1aa4cd1ca7"
   },
   "baseline": {
     "kind": "successful-release",
     "schemaVersion": 1,
-    "tag": "v2026.08.17-issue-806-business-readme-audit-scope",
-    "commit": "876b4c45577ec8e802e2beeae360553d7407d0c4",
-    "tree": "f8c3e99fb4e3554aa678d9d19acc1c096696136f",
-    "planDigest": "8c21dcba0576d6b0b01f1afa3bbdd2b7ba9032dea0e2b5f8a2ba47ae9139d699",
+    "tag": "v2026.08.17-issue-817-link-page-tenant-id-release",
+    "commit": "da2bb1d4c6a4ec8754d823ba1e9eb25b90b85e56",
+    "tree": "1438f48aba9e1b06804489843876964c07b126d2",
+    "planDigest": "e9f06a730d474766a8ccf415045edb1be256efadb114ea19a836a7d00f63fc73",
     "packages": {
-      "@mango/pmo": "1.3.16",
-      "@mango/cli": "1.0.109"
+      "@mango/link-page": "1.0.8",
+      "@mango/cli": "1.0.110"
     },
     "maven": null
   },
   "source": {
-    "commit": "104843e044cdbfe1ace3dfd95dcfb6048b32cbd8",
-    "tree": "ac8438dceec0e017819e920e61171d38d36513bc"
+    "commit": "6bd36107503fc450eea244e1eb8ca035758061e0",
+    "tree": "44b3cb3612043fe46cc4fba8798af74c614c8a34"
   },
   "sourceFiles": [
+    ".github/workflows/frontend-quality.yml",
     "CHANGELOG.md",
-    "mango-ui/.changeset/fix-business-readme-audit-scope.md",
+    "mango-docs/capabilities/README.md",
+    "mango-docs/designs/issues-824-826/business-requirements.md",
+    "mango-docs/designs/issues-824-826/implementation-plan.md",
+    "mango-docs/designs/issues-824-826/review/APPROVAL.md",
+    "mango-docs/designs/issues-824-826/system-requirements.md",
+    "mango-docs/designs/issues-824-826/technical-design.md",
+    "mango-docs/guides/business-integration/permission-button-troubleshooting.md",
+    "mango-docs/guides/business-integration/rbac-menu-page-troubleshooting.md",
+    "mango-docs/guides/business-integration/tenant-dict-config-empty.md",
+    "mango-docs/plans/2026-08-18-issue-825-notice-channel-secret-reveal-delivery-record.md",
+    "mango-ui/.changeset/calm-wecom-identities-824-826.md",
     "mango-ui/.changeset/quiet-links-tenant.md",
+    "mango-ui/.changeset/quiet-ravens-notice-825.md",
     "mango-ui/.changeset/release-baseline.json",
-    "mango-ui/packages/link-page/README.md",
-    "mango-ui/packages/link-page/src/__tests__/tenant-id-contract.test.mjs",
-    "mango-ui/packages/link-page/src/components/LinkPage.vue",
-    "mango-ui/packages/link-page/src/types.ts"
+    "mango-ui/packages/auth/README.md",
+    "mango-ui/packages/auth/src/__tests__/externalIdentity.spec.ts",
+    "mango-ui/packages/auth/src/api/identity.ts",
+    "mango-ui/packages/auth/src/api/provider.ts",
+    "mango-ui/packages/auth/src/utils/externalIdentity.ts",
+    "mango-ui/packages/auth/src/views/profile.vue",
+    "mango-ui/packages/notice/README.md",
+    "mango-ui/packages/notice/src/__tests__/adminPages.spec.ts",
+    "mango-ui/packages/notice/src/api/notice.ts",
+    "mango-ui/packages/notice/src/types/notice.ts",
+    "mango-ui/packages/notice/src/views/channel/components/NoticeSecretInput.spec.ts",
+    "mango-ui/packages/notice/src/views/channel/components/NoticeSecretInput.vue",
+    "mango-ui/packages/notice/src/views/channel/index.vue",
+    "mango-ui/packages/rbac/README.md",
+    "mango-ui/packages/rbac/src/api/user.ts",
+    "mango-ui/packages/rbac/src/views/user/index.vue",
+    "mango/mango-platform/mango-auth/README.md",
+    "mango/mango-platform/mango-auth/mango-auth-api/src/main/java/io/mango/auth/api/AuthApi.java",
+    "mango/mango-platform/mango-auth/mango-auth-api/src/main/java/io/mango/auth/api/enums/AuthCode.java",
+    "mango/mango-platform/mango-auth/mango-auth-core/pom.xml",
+    "mango/mango-platform/mango-auth/mango-auth-core/src/main/java/io/mango/auth/core/service/IExternalAuthorizationService.java",
+    "mango/mango-platform/mango-auth/mango-auth-core/src/main/java/io/mango/auth/core/service/IExternalIdentityAvatarService.java",
+    "mango/mango-platform/mango-auth/mango-auth-core/src/main/java/io/mango/auth/core/service/WecomLoginClient.java",
+    "mango/mango-platform/mango-auth/mango-auth-core/src/main/java/io/mango/auth/core/service/impl/DefaultWecomLoginClient.java",
+    "mango/mango-platform/mango-auth/mango-auth-core/src/main/java/io/mango/auth/core/service/impl/ExternalAuthorizationService.java",
+    "mango/mango-platform/mango-auth/mango-auth-core/src/main/java/io/mango/auth/core/service/impl/ExternalIdentityAvatarService.java",
+    "mango/mango-platform/mango-auth/mango-auth-core/src/main/java/io/mango/auth/core/support/ExternalIdentityAvatarGateway.java",
+    "mango/mango-platform/mango-auth/mango-auth-core/src/test/java/io/mango/auth/core/service/impl/DefaultWecomLoginClientTest.java",
+    "mango/mango-platform/mango-auth/mango-auth-core/src/test/java/io/mango/auth/core/service/impl/ExternalAuthorizationServiceTest.java",
+    "mango/mango-platform/mango-auth/mango-auth-core/src/test/java/io/mango/auth/core/service/impl/ExternalIdentityAvatarServiceTest.java",
+    "mango/mango-platform/mango-auth/mango-auth-starter-remote/src/main/java/io/mango/auth/starter/remote/AuthFeignClient.java",
+    "mango/mango-platform/mango-auth/mango-auth-starter/src/main/java/io/mango/auth/starter/controller/AuthController.java",
+    "mango/mango-platform/mango-auth/mango-auth-starter/src/test/java/io/mango/auth/starter/flow/AuthSecurityFlowTest.java",
+    "mango/mango-platform/mango-identity/README.md",
+    "mango/mango-platform/mango-identity/mango-identity-api/src/main/java/io/mango/identity/api/command/BindExternalIdentityCommand.java",
+    "mango/mango-platform/mango-identity/mango-identity-api/src/main/java/io/mango/identity/api/vo/ExternalIdentityBindingVO.java",
+    "mango/mango-platform/mango-identity/mango-identity-core/src/main/java/io/mango/identity/core/entity/ExternalIdentityBindingEntity.java",
+    "mango/mango-platform/mango-identity/mango-identity-core/src/main/java/io/mango/identity/core/service/impl/IdentityUserService.java",
+    "mango/mango-platform/mango-identity/mango-identity-core/src/main/resources/db/migration/identity/V3__clear_legacy_wecom_display_name_fallback.sql",
+    "mango/mango-platform/mango-identity/mango-identity-core/src/main/resources/db/migration/identity/V4__add_external_identity_avatar_file.sql",
+    "mango/mango-platform/mango-identity/mango-identity-core/src/test/java/io/mango/identity/core/service/impl/IdentityUserServiceIntegrationTest.java",
+    "mango/mango-platform/mango-notice/README.md",
+    "mango/mango-platform/mango-notice/mango-notice-api/src/main/java/io/mango/notice/api/NoticeApi.java",
+    "mango/mango-platform/mango-notice/mango-notice-api/src/main/java/io/mango/notice/api/command/SaveNoticeChannelConfigCommand.java",
+    "mango/mango-platform/mango-notice/mango-notice-api/src/main/java/io/mango/notice/api/command/SyncWecomUsersCommand.java",
+    "mango/mango-platform/mango-notice/mango-notice-api/src/main/java/io/mango/notice/api/enums/NoticeCode.java",
+    "mango/mango-platform/mango-notice/mango-notice-api/src/main/java/io/mango/notice/api/query/NoticeChannelSecretQuery.java",
+    "mango/mango-platform/mango-notice/mango-notice-api/src/main/java/io/mango/notice/api/vo/NoticeChannelConfigVO.java",
+    "mango/mango-platform/mango-notice/mango-notice-api/src/main/java/io/mango/notice/api/vo/NoticeChannelSecretVO.java",
+    "mango/mango-platform/mango-notice/mango-notice-api/src/main/java/io/mango/notice/api/vo/WecomUserSyncResultVO.java",
+    "mango/mango-platform/mango-notice/mango-notice-core/pom.xml",
+    "mango/mango-platform/mango-notice/mango-notice-core/src/main/java/io/mango/notice/core/convert/NoticeChannelConfigConvert.java",
+    "mango/mango-platform/mango-notice/mango-notice-core/src/main/java/io/mango/notice/core/entity/NoticeAuditLogEntity.java",
+    "mango/mango-platform/mango-notice/mango-notice-core/src/main/java/io/mango/notice/core/integration/NoticeFileGateway.java",
+    "mango/mango-platform/mango-notice/mango-notice-core/src/main/java/io/mango/notice/core/integration/NoticeIdentityGateway.java",
+    "mango/mango-platform/mango-notice/mango-notice-core/src/main/java/io/mango/notice/core/mapper/NoticeAuditLogMapper.java",
+    "mango/mango-platform/mango-notice/mango-notice-core/src/main/java/io/mango/notice/core/service/INoticeChannelSecretAuditService.java",
+    "mango/mango-platform/mango-notice/mango-notice-core/src/main/java/io/mango/notice/core/service/INoticeConfigurationService.java",
+    "mango/mango-platform/mango-notice/mango-notice-core/src/main/java/io/mango/notice/core/service/INoticeService.java",
+    "mango/mango-platform/mango-notice/mango-notice-core/src/main/java/io/mango/notice/core/service/NoticeChannelCapabilityPolicy.java",
+    "mango/mango-platform/mango-notice/mango-notice-core/src/main/java/io/mango/notice/core/service/NoticeChannelSecretCodec.java",
+    "mango/mango-platform/mango-notice/mango-notice-core/src/main/java/io/mango/notice/core/service/NoticeChannelSecretMaterializer.java",
+    "mango/mango-platform/mango-notice/mango-notice-core/src/main/java/io/mango/notice/core/service/impl/NoticeChannelSecretAuditService.java",
+    "mango/mango-platform/mango-notice/mango-notice-core/src/main/java/io/mango/notice/core/service/impl/NoticeConfigurationService.java",
+    "mango/mango-platform/mango-notice/mango-notice-core/src/main/java/io/mango/notice/core/service/impl/NoticeDeliveryService.java",
+    "mango/mango-platform/mango-notice/mango-notice-core/src/main/java/io/mango/notice/core/service/impl/NoticeService.java",
+    "mango/mango-platform/mango-notice/mango-notice-core/src/main/java/io/mango/notice/core/service/impl/NoticeWecomSyncService.java",
+    "mango/mango-platform/mango-notice/mango-notice-core/src/test/java/io/mango/notice/core/convert/NoticeChannelConfigConvertTest.java",
+    "mango/mango-platform/mango-notice/mango-notice-core/src/test/java/io/mango/notice/core/resource/NoticeChannelResourceHandlerIntegrationTest.java",
+    "mango/mango-platform/mango-notice/mango-notice-core/src/test/java/io/mango/notice/core/service/NoticeChannelCapabilityPolicyTest.java",
+    "mango/mango-platform/mango-notice/mango-notice-core/src/test/java/io/mango/notice/core/service/NoticeChannelSecretCodecTest.java",
+    "mango/mango-platform/mango-notice/mango-notice-core/src/test/java/io/mango/notice/core/service/NoticeChannelSecretMaterializerTest.java",
+    "mango/mango-platform/mango-notice/mango-notice-core/src/test/java/io/mango/notice/core/service/impl/NoticeChannelSecretIntegrationTest.java",
+    "mango/mango-platform/mango-notice/mango-notice-core/src/test/java/io/mango/notice/core/service/impl/NoticeServiceIntegrationTest.java",
+    "mango/mango-platform/mango-notice/mango-notice-starter-remote/src/main/java/io/mango/notice/starter/remote/NoticeFeignClient.java",
+    "mango/mango-platform/mango-notice/mango-notice-starter-remote/src/test/java/io/mango/notice/starter/remote/NoticeFeignContractTest.java",
+    "mango/mango-platform/mango-notice/mango-notice-starter/pom.xml",
+    "mango/mango-platform/mango-notice/mango-notice-starter/src/main/java/io/mango/notice/starter/controller/NoticeController.java",
+    "mango/mango-platform/mango-notice/mango-notice-starter/src/main/java/io/mango/notice/starter/filter/NoticeChannelSecretNoStoreFilter.java",
+    "mango/mango-platform/mango-notice/mango-notice-starter/src/main/resources/META-INF/mango/resources/notice-common-menu.json",
+    "mango/mango-platform/mango-notice/mango-notice-starter/src/test/java/io/mango/notice/starter/controller/NoticeApiSurfaceContractTest.java",
+    "mango/mango-platform/mango-notice/mango-notice-starter/src/test/java/io/mango/notice/starter/controller/NoticeControllerAccessModeTest.java",
+    "mango/mango-platform/mango-notice/mango-notice-starter/src/test/java/io/mango/notice/starter/filter/NoticeChannelSecretNoStoreFilterTest.java"
   ],
   "changesets": [
     {
-      "id": "quiet-links-tenant",
-      "file": ".changeset/quiet-links-tenant.md",
-      "sha256": "18f7dd58a9423898aa193bb06881b79673bf00f65454139b31225707074481c6"
+      "id": "calm-wecom-identities-824-826",
+      "file": ".changeset/calm-wecom-identities-824-826.md",
+      "sha256": "1c4c6f433445dc3368c3d76ef38e98915f98a2a330a416b89a5201f7084390ab"
+    },
+    {
+      "id": "quiet-ravens-notice-825",
+      "file": ".changeset/quiet-ravens-notice-825.md",
+      "sha256": "78d1143865409d388f019d848cf11fe0f8a5beb8f30918bdbb5688b5e2ab138b"
     }
   ],
   "legacyReconciliation": null,
   "restoredPublishedBaselines": [],
-  "directPackages": ["@mango/link-page"],
+  "directPackages": ["@mango/auth", "@mango/notice", "@mango/rbac"],
   "classifiedFiles": [
     {
-      "file": "mango-ui/packages/link-page/README.md",
-      "packageName": "@mango/link-page",
+      "file": "mango-ui/packages/auth/README.md",
+      "packageName": "@mango/auth",
       "reason": "published-package-path"
     },
     {
-      "file": "mango-ui/packages/link-page/src/components/LinkPage.vue",
-      "packageName": "@mango/link-page",
+      "file": "mango-ui/packages/auth/src/api/identity.ts",
+      "packageName": "@mango/auth",
       "reason": "published-package-path"
     },
     {
-      "file": "mango-ui/packages/link-page/src/types.ts",
-      "packageName": "@mango/link-page",
+      "file": "mango-ui/packages/auth/src/api/provider.ts",
+      "packageName": "@mango/auth",
+      "reason": "published-package-path"
+    },
+    {
+      "file": "mango-ui/packages/auth/src/utils/externalIdentity.ts",
+      "packageName": "@mango/auth",
+      "reason": "published-package-path"
+    },
+    {
+      "file": "mango-ui/packages/auth/src/views/profile.vue",
+      "packageName": "@mango/auth",
+      "reason": "published-package-path"
+    },
+    {
+      "file": "mango-ui/packages/notice/README.md",
+      "packageName": "@mango/notice",
+      "reason": "published-package-path"
+    },
+    {
+      "file": "mango-ui/packages/notice/src/api/notice.ts",
+      "packageName": "@mango/notice",
+      "reason": "published-package-path"
+    },
+    {
+      "file": "mango-ui/packages/notice/src/types/notice.ts",
+      "packageName": "@mango/notice",
+      "reason": "published-package-path"
+    },
+    {
+      "file": "mango-ui/packages/notice/src/views/channel/components/NoticeSecretInput.vue",
+      "packageName": "@mango/notice",
+      "reason": "published-package-path"
+    },
+    {
+      "file": "mango-ui/packages/notice/src/views/channel/index.vue",
+      "packageName": "@mango/notice",
+      "reason": "published-package-path"
+    },
+    {
+      "file": "mango-ui/packages/rbac/README.md",
+      "packageName": "@mango/rbac",
+      "reason": "published-package-path"
+    },
+    {
+      "file": "mango-ui/packages/rbac/src/api/user.ts",
+      "packageName": "@mango/rbac",
+      "reason": "published-package-path"
+    },
+    {
+      "file": "mango-ui/packages/rbac/src/views/user/index.vue",
+      "packageName": "@mango/rbac",
       "reason": "published-package-path"
     }
   ],
   "packages": [
     {
-      "name": "@mango/link-page",
-      "directory": "packages/link-page",
-      "sourceVersion": "1.0.7",
-      "targetVersion": "1.0.8",
+      "name": "@mango/auth",
+      "directory": "packages/auth",
+      "sourceVersion": "1.0.27",
+      "targetVersion": "1.0.28",
       "type": "patch",
       "direct": true,
       "generated": false,
       "reasons": [
         {
-          "source": "changeset:quiet-links-tenant",
-          "summary": "Allow anonymous link-page consumers to pass an explicit tenantId to public-link queries."
+          "source": "changeset:calm-wecom-identities-824-826",
+          "summary": "修复第三方授权账号展示与企业微信身份同步：个人中心显示完整昵称和可选头像，支持当前绑定资料单次刷新；用户管理同步统一维护 Identity 企业微信绑定。"
         }
       ],
       "releaseDependencies": []
     },
     {
+      "name": "@mango/rbac",
+      "directory": "packages/rbac",
+      "sourceVersion": "1.0.25",
+      "targetVersion": "1.0.26",
+      "type": "patch",
+      "direct": true,
+      "generated": false,
+      "reasons": [
+        {
+          "source": "changeset:calm-wecom-identities-824-826",
+          "summary": "修复第三方授权账号展示与企业微信身份同步：个人中心显示完整昵称和可选头像，支持当前绑定资料单次刷新；用户管理同步统一维护 Identity 企业微信绑定。"
+        }
+      ],
+      "releaseDependencies": []
+    },
+    {
+      "name": "@mango/system",
+      "directory": "packages/system",
+      "sourceVersion": "1.0.33",
+      "targetVersion": "1.0.34",
+      "type": "patch",
+      "direct": false,
+      "generated": true,
+      "reasons": [
+        {
+          "source": "dependency-closure",
+          "summary": "exact runtime dependency follows @mango/rbac"
+        }
+      ],
+      "releaseDependencies": ["@mango/rbac"]
+    },
+    {
+      "name": "@mango/admin-pages",
+      "directory": "packages/admin-pages",
+      "sourceVersion": "1.0.34",
+      "targetVersion": "1.0.35",
+      "type": "patch",
+      "direct": false,
+      "generated": true,
+      "reasons": [
+        {
+          "source": "dependency-closure",
+          "summary": "exact runtime dependency follows @mango/auth, @mango/rbac, @mango/system"
+        }
+      ],
+      "releaseDependencies": ["@mango/auth", "@mango/rbac", "@mango/system"]
+    },
+    {
+      "name": "@mango/calendar",
+      "directory": "packages/calendar",
+      "sourceVersion": "1.0.35",
+      "targetVersion": "1.0.36",
+      "type": "patch",
+      "direct": false,
+      "generated": true,
+      "reasons": [
+        {
+          "source": "dependency-closure",
+          "summary": "exact runtime dependency follows @mango/admin-pages"
+        }
+      ],
+      "releaseDependencies": ["@mango/admin-pages"]
+    },
+    {
+      "name": "@mango/cms",
+      "directory": "packages/cms",
+      "sourceVersion": "1.0.24",
+      "targetVersion": "1.0.25",
+      "type": "patch",
+      "direct": false,
+      "generated": true,
+      "reasons": [
+        {
+          "source": "dependency-closure",
+          "summary": "exact runtime dependency follows @mango/admin-pages"
+        }
+      ],
+      "releaseDependencies": ["@mango/admin-pages"]
+    },
+    {
+      "name": "@mango/job",
+      "directory": "packages/job",
+      "sourceVersion": "1.0.28",
+      "targetVersion": "1.0.29",
+      "type": "patch",
+      "direct": false,
+      "generated": true,
+      "reasons": [
+        {
+          "source": "dependency-closure",
+          "summary": "exact runtime dependency follows @mango/admin-pages"
+        }
+      ],
+      "releaseDependencies": ["@mango/admin-pages"]
+    },
+    {
+      "name": "@mango/link",
+      "directory": "packages/link",
+      "sourceVersion": "1.0.21",
+      "targetVersion": "1.0.22",
+      "type": "patch",
+      "direct": false,
+      "generated": true,
+      "reasons": [
+        {
+          "source": "dependency-closure",
+          "summary": "exact runtime dependency follows @mango/admin-pages"
+        }
+      ],
+      "releaseDependencies": ["@mango/admin-pages"]
+    },
+    {
+      "name": "@mango/notice",
+      "directory": "packages/notice",
+      "sourceVersion": "1.0.40",
+      "targetVersion": "1.0.41",
+      "type": "patch",
+      "direct": true,
+      "generated": false,
+      "reasons": [
+        {
+          "source": "changeset:quiet-ravens-notice-825",
+          "summary": "修复通知渠道编辑回显，并在表单与 JSON 两种模式下为已配置 Secret 增加默认掩码、单字段授权查看和关闭后明文清理。"
+        }
+      ],
+      "releaseDependencies": ["@mango/admin-pages", "@mango/system"]
+    },
+    {
+      "name": "@mango/numgen",
+      "directory": "packages/numgen",
+      "sourceVersion": "1.0.36",
+      "targetVersion": "1.0.37",
+      "type": "patch",
+      "direct": false,
+      "generated": true,
+      "reasons": [
+        {
+          "source": "dependency-closure",
+          "summary": "exact runtime dependency follows @mango/admin-pages, @mango/system"
+        }
+      ],
+      "releaseDependencies": ["@mango/admin-pages", "@mango/system"]
+    },
+    {
+      "name": "@mango/payment",
+      "directory": "packages/payment",
+      "sourceVersion": "1.0.27",
+      "targetVersion": "1.0.28",
+      "type": "patch",
+      "direct": false,
+      "generated": true,
+      "reasons": [
+        {
+          "source": "dependency-closure",
+          "summary": "exact runtime dependency follows @mango/admin-pages"
+        }
+      ],
+      "releaseDependencies": ["@mango/admin-pages"]
+    },
+    {
+      "name": "@mango/template",
+      "directory": "packages/template",
+      "sourceVersion": "1.0.35",
+      "targetVersion": "1.0.36",
+      "type": "patch",
+      "direct": false,
+      "generated": true,
+      "reasons": [
+        {
+          "source": "dependency-closure",
+          "summary": "exact runtime dependency follows @mango/admin-pages, @mango/system"
+        }
+      ],
+      "releaseDependencies": ["@mango/admin-pages", "@mango/system"]
+    },
+    {
+      "name": "@mango/workflow",
+      "directory": "packages/workflow",
+      "sourceVersion": "1.0.41",
+      "targetVersion": "1.0.42",
+      "type": "patch",
+      "direct": false,
+      "generated": true,
+      "reasons": [
+        {
+          "source": "dependency-closure",
+          "summary": "exact runtime dependency follows @mango/admin-pages, @mango/system"
+        }
+      ],
+      "releaseDependencies": ["@mango/admin-pages", "@mango/system"]
+    },
+    {
+      "name": "@mango/admin-shell",
+      "directory": "packages/admin-shell",
+      "sourceVersion": "1.0.61",
+      "targetVersion": "1.0.62",
+      "type": "patch",
+      "direct": false,
+      "generated": true,
+      "reasons": [
+        {
+          "source": "dependency-closure",
+          "summary": "exact runtime dependency follows @mango/admin-pages, @mango/auth, @mango/job, @mango/notice, @mango/rbac, @mango/workflow"
+        }
+      ],
+      "releaseDependencies": [
+        "@mango/admin-pages",
+        "@mango/auth",
+        "@mango/job",
+        "@mango/notice",
+        "@mango/rbac",
+        "@mango/workflow"
+      ]
+    },
+    {
+      "name": "@mango/workflow-business-example",
+      "directory": "packages/workflow-business-example",
+      "sourceVersion": "1.0.40",
+      "targetVersion": "1.0.41",
+      "type": "patch",
+      "direct": false,
+      "generated": true,
+      "reasons": [
+        {
+          "source": "dependency-closure",
+          "summary": "exact runtime dependency follows @mango/admin-pages, @mango/workflow"
+        }
+      ],
+      "releaseDependencies": ["@mango/admin-pages", "@mango/workflow"]
+    },
+    {
+      "name": "@mango/admin",
+      "directory": "packages/admin",
+      "sourceVersion": "1.0.67",
+      "targetVersion": "1.0.68",
+      "type": "patch",
+      "direct": false,
+      "generated": true,
+      "reasons": [
+        {
+          "source": "dependency-closure",
+          "summary": "exact runtime dependency follows @mango/admin-pages, @mango/admin-shell, @mango/auth, @mango/calendar, @mango/cms, @mango/job, @mango/link, @mango/notice, @mango/numgen, @mango/payment, @mango/rbac, @mango/system, @mango/template, @mango/workflow, @mango/workflow-business-example"
+        }
+      ],
+      "releaseDependencies": [
+        "@mango/admin-pages",
+        "@mango/admin-shell",
+        "@mango/auth",
+        "@mango/calendar",
+        "@mango/cms",
+        "@mango/job",
+        "@mango/link",
+        "@mango/notice",
+        "@mango/numgen",
+        "@mango/payment",
+        "@mango/rbac",
+        "@mango/system",
+        "@mango/template",
+        "@mango/workflow",
+        "@mango/workflow-business-example"
+      ]
+    },
+    {
       "name": "@mango/cli",
       "directory": "packages/mango-cli",
-      "sourceVersion": "1.0.109",
-      "targetVersion": "1.0.110",
+      "sourceVersion": "1.0.110",
+      "targetVersion": "1.0.111",
       "type": "patch",
       "direct": false,
       "generated": true,
@@ -93,10 +502,51 @@
           "summary": "CLI release matrix follows the managed package tuple"
         }
       ],
-      "releaseDependencies": ["@mango/link-page"]
+      "releaseDependencies": [
+        "@mango/admin",
+        "@mango/admin-pages",
+        "@mango/admin-shell",
+        "@mango/auth",
+        "@mango/calendar",
+        "@mango/cms",
+        "@mango/job",
+        "@mango/link",
+        "@mango/notice",
+        "@mango/numgen",
+        "@mango/payment",
+        "@mango/rbac",
+        "@mango/system",
+        "@mango/template",
+        "@mango/workflow",
+        "@mango/workflow-business-example"
+      ]
     }
   ],
-  "order": ["@mango/link-page", "@mango/cli"],
-  "maven": null,
-  "planDigest": "e9f06a730d474766a8ccf415045edb1be256efadb114ea19a836a7d00f63fc73"
+  "order": [
+    "@mango/auth",
+    "@mango/rbac",
+    "@mango/system",
+    "@mango/admin-pages",
+    "@mango/calendar",
+    "@mango/cms",
+    "@mango/job",
+    "@mango/link",
+    "@mango/notice",
+    "@mango/numgen",
+    "@mango/payment",
+    "@mango/template",
+    "@mango/workflow",
+    "@mango/admin-shell",
+    "@mango/workflow-business-example",
+    "@mango/admin",
+    "@mango/cli"
+  ],
+  "maven": {
+    "sourceVersion": "1.0.37",
+    "targetVersion": "1.0.38",
+    "scope": "all-non-app",
+    "docsBundle": true,
+    "reason": "Git impact includes Mango Maven production sources"
+  },
+  "planDigest": "bbcca39610b04bdd51b5e9d1e20dad2da0e5ef7fd5ac331985c920f846c37f5a"
 }
