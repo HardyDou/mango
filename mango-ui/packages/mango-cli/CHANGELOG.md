@@ -2,6 +2,63 @@
 
 ## Unreleased
 
+## 1.0.111 - 2026-08-19
+
+### Pull Requests
+
+- [PR #827](https://github.com/HardyDou/mango/pull/827) Fixed Notice channel secret masking, authorized reveal and audited configuration handling. Packages: Mango Maven `1.0.38`, `@mango/notice@1.0.41`, exact runtime dependents, and `@mango/cli@1.0.111`. Business Adaptation: upgrade the complete aligned backend/frontend matrix and configure Mango Crypto before saving manual secrets.
+- [PR #828](https://github.com/HardyDou/mango/pull/828) Fixed Notice JSON editing to use the same secret mask and one-field reveal semantics as form editing. Packages: `@mango/notice@1.0.41`, exact runtime dependents, and `@mango/cli@1.0.111`. Business Adaptation: verify both Notice editing modes after upgrading the exact tuple.
+- [PR #829](https://github.com/HardyDou/mango/pull/829) Changed WeCom identity display, synchronization and Notice delivery to use Identity binding snapshots. Packages: Mango Maven `1.0.38`, `@mango/auth@1.0.28`, `@mango/rbac@1.0.26`, `@mango/notice@1.0.41`, exact runtime dependents, and `@mango/cli@1.0.111`. Business Adaptation: apply the bounded Identity migrations and validate an authorized WeCom test flow.
+- [PR #830](https://github.com/HardyDou/mango/pull/830) Changed the WeCom profile guide to document the runtime ownership boundary. Packages: `io.mango:mango-docs-bundle:1.0.38` and `@mango/cli@1.0.111` matrix. Business Adaptation: use the corrected guide during profile refresh validation.
+- [PR #832](https://github.com/HardyDou/mango/pull/832) Changed the outer Release-only registry route. Packages: release tooling source only and `@mango/cli@1.0.111` release matrix. Business Adaptation: none.
+- [PR #834](https://github.com/HardyDou/mango/pull/834) Fixed nested pnpm registry propagation in the protected Release-only check. Packages: release tooling source only and `@mango/cli@1.0.111` release matrix. Business Adaptation: none.
+
+### Fixed
+
+- Carry the exact release-plan frontend dependency matrix and Maven `1.0.38` coordinate in `@mango/cli@1.0.111`.
+- Preserve Notice secret masking/reveal and WeCom Identity binding behavior in CLI-managed generated consumers.
+
+### Changed
+
+- Generate the aligned package tuple ending at `@mango/cli@1.0.111`; PMO remains `1.3.16`.
+- Include the corrected WeCom guide in the Maven documentation bundle at `1.0.38`.
+
+### Versions
+
+- `@mango/cli`: `1.0.110` to `1.0.111`.
+- Maven non-app reactor and docs bundle: `1.0.37` to `1.0.38`; the CLI matrix records the exact npm dependency closure.
+
+### Published Packages
+
+- Publish the Maven `1.0.38` non-app reactor and docs bundle, then the exact 17-package npm topology ending with `@mango/cli@1.0.111`.
+
+### Business Impact
+
+- CLI-managed consumers receive the aligned Notice/Identity behavior and must upgrade the complete tuple; no CLI command contract changes.
+
+### Upgrade Estimate
+
+- Audience: CLI-managed Mango consumers using Auth, RBAC, Notice, WeCom or the full generated matrix.
+- Engineering Effort: 1 to 2 hours for generated consumers; 2 to 4 hours for custom integrations.
+- Execution Window: 1 to 3 hours for backup, upgrade, migrations and checks.
+- Service Downtime: no framework-mandated downtime.
+- Rollback Effort: 30 to 90 minutes to restore the prior exact tuple and build.
+- Assumptions: registry access, clean lockfile, configured Mango Crypto, database backup and authorized WeCom test configuration.
+
+### Upgrade Notes
+
+1. Install `@mango/cli@1.0.111` and regenerate or upgrade the complete exact package matrix.
+2. Apply Identity migrations through the normal application startup and verify Notice masks/reveal audit behavior.
+3. Run the generated consumer frozen install and production build before business deployment.
+
+### Verification
+
+- Verify the generated release matrix, packed CLI contract, Maven/npm registry back-checks and a clean pure consume-registry consumer.
+
+### Rollback
+
+- Restore `@mango/cli@1.0.110`, Maven `1.0.37` and the previous exact npm matrix; never overwrite immutable coordinates.
+
 ## 1.0.110 - 2026-08-17
 
 ### Pull Requests
