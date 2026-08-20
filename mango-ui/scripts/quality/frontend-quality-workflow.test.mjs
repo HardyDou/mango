@@ -36,8 +36,9 @@ test('pull requests run the stable affected frontend gate without browser E2E', 
   );
   assert.match(
     pullRequestJob,
-    /if: steps\.release-scope\.outputs\.release_only == 'true'[\s\S]*?pnpm release:pr-check/u,
+    /if: steps\.release-scope\.outputs\.release_only == 'true'[\s\S]*?PNPM_CONFIG_REGISTRY: https:\/\/registry\.npmjs\.org\/[\s\S]*?run: pnpm release:pr-check/u,
   );
+  assert.doesNotMatch(pullRequestJob, /pnpm release:pr-check --registry=/u);
   assert.doesNotMatch(pullRequestJob, /test:e2e|playwright|Start real Mango backend/u);
 });
 
