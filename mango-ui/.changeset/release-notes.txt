@@ -1,56 +1,102 @@
 ## Pull Requests
 
-- [PR #822](https://github.com/HardyDou/mango/pull/822) Fixed anonymous `@mango/link-page` public queries so an explicit `tenantId` is forwarded while authenticated queries retain the existing visible-link path. Packages: `@mango/link-page@1.0.8`, `@mango/cli@1.0.110` (matrix projection). Business Adaptation: consumers using public links may pass the tenant ID; no backend or database change.
+- [PR #827](https://github.com/HardyDou/mango/pull/827) Fixed Notice channel configuration so non-secret values round-trip while manually configured secrets are encrypted, masked by default, revealed only through an authorized single-field API, and audited. Packages: Mango Maven `1.0.38`, `@mango/notice@1.0.41`, exact runtime dependents, and `@mango/cli@1.0.111`. Business Adaptation: upgrade the aligned backend/frontend matrix, grant `notice:channel:secret:view` only to authorized administrators, configure Mango Crypto before saving manual secrets, and verify existing channels through the management page.
+- [PR #828](https://github.com/HardyDou/mango/pull/828) Fixed the Notice JSON editor so configured secret fields retain the same mask and one-field reveal semantics as form mode. Packages: `@mango/notice@1.0.41`, exact runtime dependents, and `@mango/cli@1.0.111`. Business Adaptation: direct Notice consumers must upgrade the complete frontend tuple and verify both form and JSON channel editing modes.
+- [PR #829](https://github.com/HardyDou/mango/pull/829) Changed WeCom identity ownership so profile display and delivery use the Identity binding snapshot, profile refresh updates only the current binding, and administrative synchronization maintains Identity bindings instead of a parallel Notice account source. Packages: Mango Maven `1.0.38`, `@mango/auth@1.0.28`, `@mango/rbac@1.0.26`, `@mango/notice@1.0.41`, exact runtime dependents, and `@mango/cli@1.0.111`. Business Adaptation: upgrade Maven and the complete npm tuple together, back up the database, let Flyway apply Identity V3/V4, configure WeCom member-read visibility and trusted IPs where refresh is enabled, and validate delivery against authorized test credentials.
+- [PR #830](https://github.com/HardyDou/mango/pull/830) Changed the WeCom profile guide from a misplaced long-term restriction to a factual runtime-boundary description. Packages: `io.mango:mango-docs-bundle:1.0.38`. Business Adaptation: no code or configuration change; use the corrected guide when validating profile refresh ownership.
+- [PR #832](https://github.com/HardyDou/mango/pull/832) Changed the Release-only required check to request the public registry on its outer pnpm command; the next protected Release PR proved that nested pnpm did not inherit the argument. Packages: Mango release tooling source only; no standalone package coordinate. Business Adaptation: none; this affects Mango maintainer release verification, not business runtime behavior.
+- [PR #834](https://github.com/HardyDou/mango/pull/834) Fixed the Release-only required check by propagating `PNPM_CONFIG_REGISTRY` to nested pnpm processes and added a workflow contract regression that rejects the ineffective outer-only argument. Packages: Mango release tooling source only; no standalone package coordinate. Business Adaptation: none; business runtime behavior and published package contents are unchanged.
 
 ## Fixed
 
-- Add the typed `tenantId` prop to `@mango/link-page`.
-- Forward `tenantId` only on anonymous public-link queries; authenticated queries continue to use `listVisibleLinks`.
-- Document the public-link tenant contract and add a regression contract test.
+- Preserve non-sensitive Notice channel configuration values while preventing ordinary configuration reads from returning secret plaintext.
+- Encrypt manually entered secrets with Mango Crypto, display `****` by default, authorize and audit one-field reveal, apply `no-store`, and keep Resource/environment references unresolved in the browser.
+- Apply the same secret mask and reveal behavior in form and JSON editing modes.
+- Show the complete WeCom identity nickname and optional avatar in the profile, and refresh only the currently bound account without overwriting a previously valid snapshot when the provider query fails.
+- Propagate the public registry to nested pnpm processes so the Release-only frozen lockfile check runs on GitHub-hosted runners without weakening its blocking behavior.
+
+## Changed
+
+- Treat Identity external bindings as the single WeCom user identity source for profile display, administrative synchronization, and Notice delivery.
+- Add Identity migrations V3 and V4 to clear only the legacy self-filled WeCom display-name fallback and add the nullable avatar file reference.
+- Remove the duplicate Notice recipient-account synchronization path for WeCom while preserving other notification channels and existing tenant, authorization, file, and audit boundaries.
+- Publish the exact-version frontend dependency closure and CLI release matrix generated by `mango release plan`; packages without direct source changes advance only to retain immutable dependency compatibility.
+- Ship the corrected WeCom profile refresh boundary in the Maven documentation bundle.
 
 ## Versions
 
-- `@mango/link-page`: `1.0.7` to `1.0.8`.
-- `@mango/cli`: `1.0.109` to `1.0.110`, carrying the generated release matrix entry for link-page `1.0.8`.
-- Mango Maven remains `1.0.37`; every other npm coordinate remains unchanged.
+- Mango Maven non-app reactor and `io.mango:mango-docs-bundle`: `1.0.37` to `1.0.38`.
+- Direct npm packages: `@mango/auth` `1.0.27` to `1.0.28`; `@mango/rbac` `1.0.25` to `1.0.26`; `@mango/notice` `1.0.40` to `1.0.41`.
+- Exact dependency closure: `@mango/system` `1.0.33` to `1.0.34`; `@mango/admin-pages` `1.0.34` to `1.0.35`; `@mango/calendar` `1.0.35` to `1.0.36`; `@mango/cms` `1.0.24` to `1.0.25`; `@mango/job` `1.0.28` to `1.0.29`; `@mango/link` `1.0.21` to `1.0.22`; `@mango/numgen` `1.0.36` to `1.0.37`; `@mango/payment` `1.0.27` to `1.0.28`; `@mango/template` `1.0.35` to `1.0.36`; `@mango/workflow` `1.0.41` to `1.0.42`; `@mango/admin-shell` `1.0.61` to `1.0.62`; `@mango/workflow-business-example` `1.0.40` to `1.0.41`; `@mango/admin` `1.0.67` to `1.0.68`.
+- CLI: `@mango/cli` `1.0.110` to `1.0.111`, locking Maven `1.0.38` and the complete npm tuple.
+- `@mango/pmo` remains `1.3.16`; all npm packages absent from the machine plan remain unchanged.
 
 ## Published Packages
 
-1. `@mango/link-page@1.0.8`.
-2. `@mango/cli@1.0.110` (required matrix projection).
-3. No Maven or other npm package is published in this batch.
+1. Mango Maven `1.0.38` complete non-app reactor and `io.mango:mango-docs-bundle:1.0.38`.
+2. `@mango/auth@1.0.28`.
+3. `@mango/rbac@1.0.26`.
+4. `@mango/system@1.0.34`.
+5. `@mango/admin-pages@1.0.35`.
+6. `@mango/calendar@1.0.36`.
+7. `@mango/cms@1.0.25`.
+8. `@mango/job@1.0.29`.
+9. `@mango/link@1.0.22`.
+10. `@mango/notice@1.0.41`.
+11. `@mango/numgen@1.0.37`.
+12. `@mango/payment@1.0.28`.
+13. `@mango/template@1.0.36`.
+14. `@mango/workflow@1.0.42`.
+15. `@mango/admin-shell@1.0.62`.
+16. `@mango/workflow-business-example@1.0.41`.
+17. `@mango/admin@1.0.68`.
+18. `@mango/cli@1.0.111`.
 
 ## Business Impact
 
-- Public link-page consumers that serve multiple tenants can provide `tenantId` without changing backend APIs.
-- Authenticated navigation behavior is unchanged. No database, permission, message, file or deployment migration is introduced.
+- Administrators gain a safer Notice channel edit path: secret material is masked by default and revealing one field requires explicit permission and produces an audit record. Existing manual plaintext is migrated lazily when the affected channel is saved, used, or explicitly revealed.
+- WeCom-bound users receive provider nickname/avatar snapshots through Identity, and Notice delivery resolves WeCom recipients from the same binding source. Other providers and non-WeCom notification channels keep their existing behavior.
+- Existing databases upgrade in place through Flyway. Identity V3 affects only `WECOM + SELF` bindings whose display name exactly equals the Mango nickname; V4 adds a nullable avatar file ID. A database backup and target-row count/sample are required before production rollout.
+- Consumers must not mix Maven `1.0.38` with the previous frontend tuple. Direct frontend consumers must install every exact dependency version in this release; CLI-managed consumers use `@mango/cli@1.0.111`.
+- No Mango application fat JAR, business application deployment, production configuration mutation, production database operation, or real WeCom call is performed by this artifact release.
 
 ## Upgrade Estimate
 
-- Audience: Mango consumers importing `@mango/link-page` or the generated CLI matrix.
-- Engineering Effort: 5 to 15 minutes for consumers that need tenant-scoped public links; zero code changes otherwise.
-- Execution Window: 10 to 20 minutes for install, focused test and frontend build.
-- Service Downtime: none.
-- Rollback Effort: 5 to 10 minutes to restore the prior npm matrix and lockfile.
-- Assumptions: consume-registry access, clean lockfile and no private fork of link-page.
+- Audience: Mango business applications using Auth/Identity, RBAC, Notice channel management, WeCom login or WeCom notification delivery; CLI-managed full frontend consumers.
+- Engineering Effort: 1 to 2 hours for a standard generated consumer; 2 to 4 hours for direct/custom consumers that own dependency pins, permissions, Crypto configuration, or WeCom integration settings.
+- Execution Window: 1 to 3 hours including backup, dependency upgrade, Flyway migration, focused API/UI verification, frontend production build, and an authorized WeCom smoke test when credentials are available.
+- Service Downtime: no framework-mandated downtime; applications that do not run Flyway during rolling startup should reserve their normal database migration window.
+- Rollback Effort: 30 to 90 minutes to restore the prior Maven/npm tuple and application build; restore the database backup only if business validation proves the bounded V3/V4 migration must be reversed.
+- Assumptions: publish/consume registry access, a clean dependency lock, Mango Crypto configured for manual channel secrets, a database backup, and authorized WeCom application permissions/visibility/trusted IPs for provider-level acceptance.
 
 ## Upgrade Notes
 
-1. Install `@mango/cli@1.0.110` or update the managed matrix, which resolves `@mango/link-page@1.0.8`.
-2. For anonymous public links, pass `tenantId` to `LinkPage`; authenticated consumers do not need to change.
-3. Run the consumer frozen install, focused link-page test and frontend build.
+1. Back up the business database. Count and sample Identity rows matching `provider_code=WECOM`, `profile_source=SELF`, and `display_name` equal to the Mango nickname before applying migrations.
+2. Upgrade all backend Mango dependencies together to Maven `1.0.38`; do not select individual Auth, Identity, Notice, File, Crypto, or starter JAR versions.
+3. Install `@mango/cli@1.0.111` or apply its exact release matrix. Direct consumers must pin the complete npm tuple listed above and refresh the lockfile.
+4. Ensure Mango Crypto is configured before creating or updating manual Notice channel secrets. Grant `notice:channel:secret:view` only to administrators who require temporary plaintext reveal.
+5. Let Flyway apply Identity V3/V4, then verify the bounded legacy display-name rows are cleared, unrelated providers/sources are unchanged, and `avatar_file_id` accepts null and valid Mango File IDs.
+6. Verify Notice channel editing in both form and JSON modes: non-secret fields round-trip, secrets remain masked, reveal is permission-checked/audited/no-store, and Resource/environment references remain unresolved in the browser.
+7. In an authorized WeCom test tenant, verify profile refresh with member-read permission, visibility and trusted-IP configuration, then send one real test notification to the synchronized Identity binding before business deployment.
 
 ## Verification
 
-- Link-page tenant contract test passes for anonymous and authenticated branches.
-- Link-page package build, admin style gates, release-version lock and workspace layout checks pass before preparation.
-- Preparation will seal both tarballs once; publication must verify npm-hosted/npm-group integrity and a pure consume-registry install before Tag/Release.
+- The Release PR must pass the repository branch-protection required checks and the machine plan/Changeset impact check without source or plan drift.
+- `mango release prepare` must run the full mixed candidate gate, seal one Maven non-app repository plus all 17 npm tarballs, and pass the candidate consumer without workspace links or rebuilt artifacts.
+- Backend tests must cover Auth provider/member lookup, identity snapshot/avatar persistence, bounded Flyway behavior, Notice secret encryption/materialization/audit/access filtering, WeCom synchronization/delivery, Feign/API contracts, authorization failures, and no-store responses.
+- Frontend tests must cover Auth identity presentation/refresh, RBAC WeCom synchronization, Notice form/JSON masks and reveal cleanup, then pass affected package builds, admin style checks, typecheck and production consumer build.
+- Publication must read every exact Maven/npm coordinate from both publish and consume registries with matching checksums/integrity, then pass a clean pure consume-registry project before Tag and GitHub Release creation.
+- Real WeCom provider calls remain a business-environment acceptance step because repository release verification has no authority to use production credentials; failure of that acceptance blocks business deployment, not artifact immutability.
 
 ## Rollback
 
-- Restore the previous lockfile and `@mango/cli@1.0.109` / `@mango/link-page@1.0.7` tuple.
-- Never overwrite or republish immutable coordinates; a release defect requires a new patch version.
+- Restore the prior application build using Maven `1.0.37`, `@mango/cli@1.0.110`, and the prior exact npm matrix; never mix old aggregators with newly published exact dependencies.
+- Revoke `notice:channel:secret:view` if reveal access was granted incorrectly and rotate any exposed provider secret through the provider and channel configuration process.
+- If the bounded Identity migration produced an unacceptable production result, stop the application and restore the database backup under the business deployment runbook; do not attempt an ad hoc reverse mutation during component publication.
+- Never delete, overwrite, move, or republish Maven/npm `1.0.38`/`1.0.111` coordinates or the release tag. Correct an artifact defect with a new patch release.
 
 ## Audit History
 
-- Issue #817 is fixed by PR #822. The prior successful release baseline is tag `v2026.08.17-issue-806-business-readme-audit-scope`.
+- PR #822 and PR #823 belong to the completed Link Page `1.0.8` / CLI `1.0.110` batch and are not release-bearing changes in this batch.
+- Release PR #831 and its r2 manifest were superseded after PR #832 changed the source tree; no registry coordinate, Tag, or GitHub Release was written from that candidate.
+- Release PR #833 and its r3 manifest were stopped after its required check proved #832 did not propagate the public registry to nested pnpm; PR #834 fixed the gate, and the r3 manifest retained `remoteWrites=false` with no registry coordinate, Tag, or GitHub Release written.
