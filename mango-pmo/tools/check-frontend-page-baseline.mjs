@@ -3,6 +3,7 @@ import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { readProjectPmoChecks } from './lib/project-pmo-checks.mjs';
 
 const currentFile = fileURLToPath(import.meta.url);
 const toolDirectory = path.dirname(currentFile);
@@ -142,10 +143,19 @@ export function checkChangedFrontendPages({ repositoryRoot, base, head, frontend
   return { records, failures };
 }
 
-export function runFrontendPageBaselineCli(argv = process.argv.slice(2)) {
+export function runFrontendPageBaselineCli(
+  argv = process.argv.slice(2),
+  { repositoryRoot = resolveRepositoryRoot() } = {},
+) {
   try {
     const args = parseArgs(argv);
-    const repositoryRoot = resolveRepositoryRoot();
+    const projectPmoChecks = readProjectPmoChecks(repositoryRoot);
+    if (!projectPmoChecks.frontendPageBaseline) {
+      process.stdout.write(
+        'Frontend page baseline SKIP: disabled by mango.config.json pmoChecks.frontendPageBaseline=false.\n',
+      );
+      return 0;
+    }
     const frontendRoot = args.frontendRoot || readConfiguredFrontendRoot(repositoryRoot);
     const result = checkChangedFrontendPages({ repositoryRoot, ...args, frontendRoot });
     if (result.failures.length > 0) {

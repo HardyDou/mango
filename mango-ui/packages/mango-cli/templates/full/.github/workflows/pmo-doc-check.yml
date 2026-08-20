@@ -23,6 +23,7 @@ jobs:
     outputs:
       backend: ${{ steps.scope.outputs.backend }}
       frontend: ${{ steps.scope.outputs.frontend }}
+      frontend_page_baseline_enabled: ${{ steps.scope.outputs.frontend_page_baseline_enabled }}
       backend_mode: ${{ steps.scope.outputs.backend_mode }}
       maven_projects: ${{ steps.scope.outputs.maven_projects }}
       maven_dependency_projects: ${{ steps.scope.outputs.maven_dependency_projects }}
@@ -102,7 +103,8 @@ jobs:
     needs: preflight_scope
     if: >-
       (github.event_name != 'pull_request' || github.event.action != 'edited') &&
-      needs.preflight_scope.outputs.frontend == 'true'
+      needs.preflight_scope.outputs.frontend == 'true' &&
+      needs.preflight_scope.outputs.frontend_page_baseline_enabled == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

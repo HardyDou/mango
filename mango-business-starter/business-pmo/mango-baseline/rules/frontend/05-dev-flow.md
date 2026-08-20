@@ -33,7 +33,7 @@
 - `pnpm build`
 - `pnpm test`
 - `pnpm playwright test`
-- `node business-pmo/mango-baseline/tools/check-frontend-page-baseline.mjs --base <base> --head <head>`（业务项目页面变更）
+- `node business-pmo/mango-baseline/tools/check-frontend-page-baseline.mjs --base <base> --head <head>`（业务项目页面变更；`mango.config.json.pmoChecks.frontendPageBaseline=false` 时仅该项可审计跳过）
 
 ## 5. 提交要求
 

@@ -97,7 +97,7 @@ node business-pmo/mango-baseline/tools/acceptance-evidence-check.mjs \
 ```
 
 ## 6. 配置说明
-`business-pmo` 没有运行时配置。工具参数就是配置入口。
+`business-pmo` 没有应用运行时配置。项目级 PMO 门禁配置位于项目根 `mango.config.json`：`pmoChecks.frontendPageBaseline` 默认 `true`，仅显式布尔 `false` 跳过前端页面基线；其它值和配置读取失败会阻断，其它 PMO 门禁与稳定汇总保持启用。
 
 ### 6.1 preflight 参数
 

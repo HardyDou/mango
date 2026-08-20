@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { readProjectPmoChecks } from './lib/project-pmo-checks.mjs';
 
 const toolDirectory = path.dirname(fileURLToPath(import.meta.url));
 const root = resolveRepositoryRoot(toolDirectory);
@@ -322,9 +323,11 @@ export function runScopeClassifierCli(argv = process.argv.slice(2)) {
     const maven = resolveMavenScope(files);
     const mavenDependencyProjects = resolveMavenDependencyProjects(maven);
     const projectPaths = resolveProjectPaths(root);
+    const projectPmoChecks = readProjectPmoChecks(root);
     if (args.output) {
       const lines = [
         ...Object.entries(scope).map(([key, value]) => `${key}=${value}`),
+        `frontend_page_baseline_enabled=${projectPmoChecks.frontendPageBaseline}`,
         `backend_mode=${maven.mode}`,
         `maven_projects=${maven.projects.join(',')}`,
         `maven_dependency_projects=${mavenDependencyProjects.join(',')}`,
@@ -335,7 +338,7 @@ export function runScopeClassifierCli(argv = process.argv.slice(2)) {
       ].join('\n');
       fs.appendFileSync(args.output, `${lines}\n`);
     }
-    process.stdout.write(`${JSON.stringify({ files, scope, maven }, null, 2)}\n`);
+    process.stdout.write(`${JSON.stringify({ files, scope, maven, pmoChecks: projectPmoChecks }, null, 2)}\n`);
     return 0;
   } catch (error) {
     process.stderr.write(`${error.message}\n`);

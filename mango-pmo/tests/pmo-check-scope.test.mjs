@@ -9,6 +9,10 @@ import {
   resolveMavenDependencyProjects,
   resolveMavenScope,
 } from '../tools/classify-pmo-check-scope.mjs';
+import {
+  readProjectPmoChecks,
+  resolveProjectPmoChecks,
+} from '../tools/lib/project-pmo-checks.mjs';
 
 test('frontend-only button layout avoids Java, PMO, CLI and starter suites', () => {
   assert.deepEqual(
@@ -209,6 +213,40 @@ test('business repositories resolve custom paths from mango.config.json', t => {
     resolveMavenScope(['business-pmo/architecture-debt-budget.json'], project),
     { mode: 'governance', projects: [] },
   );
+});
+
+test('project PMO checks default on and preserve an explicit boolean toggle', t => {
+  const project = fs.mkdtempSync(path.join(os.tmpdir(), 'mango-project-pmo-checks-'));
+  t.after(() => fs.rmSync(project, { recursive: true, force: true }));
+
+  assert.deepEqual(readProjectPmoChecks(project), { frontendPageBaseline: true });
+  assert.deepEqual(resolveProjectPmoChecks({}), { frontendPageBaseline: true });
+  assert.deepEqual(
+    resolveProjectPmoChecks({ pmoChecks: { frontendPageBaseline: false } }),
+    { frontendPageBaseline: false },
+  );
+
+  fs.writeFileSync(path.join(project, 'mango.config.json'), JSON.stringify({
+    pmoChecks: { frontendPageBaseline: false },
+  }));
+  assert.deepEqual(readProjectPmoChecks(project), { frontendPageBaseline: false });
+});
+
+test('project PMO checks fail closed on invalid configuration', t => {
+  const project = fs.mkdtempSync(path.join(os.tmpdir(), 'mango-invalid-pmo-checks-'));
+  t.after(() => fs.rmSync(project, { recursive: true, force: true }));
+
+  for (const config of [
+    { pmoChecks: false },
+    { pmoChecks: [] },
+    { pmoChecks: { frontendPageBaseline: 'false' } },
+    { pmoChecks: { frontendPageBaseline: 0 } },
+  ]) {
+    assert.throws(() => resolveProjectPmoChecks(config), /pmoChecks/u);
+  }
+
+  fs.writeFileSync(path.join(project, 'mango.config.json'), '{invalid');
+  assert.throws(() => readProjectPmoChecks(project), /Cannot read mango\.config\.json PMO checks/u);
 });
 
 test('configured backend paths fail closed when their root POM is absent', t => {

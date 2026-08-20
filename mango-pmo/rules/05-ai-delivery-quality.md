@@ -106,6 +106,7 @@ PMO 治理使用以下稳定检查身份：
 - 修改 workflow `name`、job ID、job `name` 或触发事件时，必须在同一变更中同步 branch protection/ruleset 和本节；旧 required check 不得因改名永久 pending。
 - `pr-contract-check` 必须从受信任的 base SHA 读取合同 checker，只检出必需脚本并校验 PR body；禁止在该 Workflow 启动 pnpm、Java、Maven 或生成项目验证。
 - 业务项目的 `pmo-doc-check` 必须对每个 PR 运行，不得配置会跳过整个 workflow 的 `paths`/`paths-ignore`；文档或后端没有变化时可以在 job 内执行可审计的轻量判定，但稳定 check-run 必须产生结果。
+- 业务项目只能通过 `mango.config.json.pmoChecks.frontendPageBaseline=false` 显式关闭前端页面基线；缺失时默认启用，非布尔值或配置读取失败必须阻断。GitHub/Gitea 只能跳过该单项检查，风险合同、业务文档、后端质量和稳定 `pmo-doc-check` 汇总必须继续执行。
 - 业务项目的同一 `pmo-doc-check` 必须从 `mango.config.json.paths` 读取后端、前端和业务文档根目录，并对 `paths.businessDocs` 执行 `check-document-set.mjs`；缺失配置时使用 `backend`、`frontend`、`business-docs` 默认值，配置存在但后端 POM 不存在时必须失败，禁止静默跳过。有后端影响时，质量门禁只对直接修改的 Maven 模块执行 `mvn verify`，依赖构建和消费者兼容性另行验证；根 POM、全局 parent、架构规则/插件或门禁变化才执行完整 Reactor。四类生命周期文档遗漏 `documentType`、使用未知类型、重复 ID、上游断链或摘要失效时必须失败。PMO 合同启用前形成的历史生命周期文档只能登记在业务文档根目录的 `.mango-pmo-legacy-documents.json`，逐文件记录相对路径、内容 SHA-256 和迁移原因；内容变化、路径失效、重复或越界时必须失败，新文档不得登记为历史基线。
 - `mango-pmo` 规则、合同、Agent、Skill、模板、Java 架构 checker、PMO workflow、业务模板和 PMO/CLI 发布脚本必须由 `.github/CODEOWNERS` 覆盖。
 - required check 成功只证明机器门禁通过，不能替代业务、架构、QA 或发布结论；`multi-maintainer` 还必须取得独立 Code Owner 结论，`single-owner` 由 Owner 的 PR 合并动作承担最终人工授权并保留 PR 记录。
