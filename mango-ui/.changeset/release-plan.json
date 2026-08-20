@@ -141,11 +141,7 @@
   ],
   "legacyReconciliation": null,
   "restoredPublishedBaselines": [],
-  "directPackages": [
-    "@mango/auth",
-    "@mango/notice",
-    "@mango/rbac"
-  ],
+  "directPackages": ["@mango/auth", "@mango/notice", "@mango/rbac"],
   "classifiedFiles": [
     {
       "file": "mango-ui/packages/auth/README.md",
@@ -260,9 +256,7 @@
           "summary": "exact runtime dependency follows @mango/rbac"
         }
       ],
-      "releaseDependencies": [
-        "@mango/rbac"
-      ]
+      "releaseDependencies": ["@mango/rbac"]
     },
     {
       "name": "@mango/admin-pages",
@@ -278,11 +272,7 @@
           "summary": "exact runtime dependency follows @mango/auth, @mango/rbac, @mango/system"
         }
       ],
-      "releaseDependencies": [
-        "@mango/auth",
-        "@mango/rbac",
-        "@mango/system"
-      ]
+      "releaseDependencies": ["@mango/auth", "@mango/rbac", "@mango/system"]
     },
     {
       "name": "@mango/calendar",
@@ -298,9 +288,7 @@
           "summary": "exact runtime dependency follows @mango/admin-pages"
         }
       ],
-      "releaseDependencies": [
-        "@mango/admin-pages"
-      ]
+      "releaseDependencies": ["@mango/admin-pages"]
     },
     {
       "name": "@mango/cms",
@@ -316,9 +304,7 @@
           "summary": "exact runtime dependency follows @mango/admin-pages"
         }
       ],
-      "releaseDependencies": [
-        "@mango/admin-pages"
-      ]
+      "releaseDependencies": ["@mango/admin-pages"]
     },
     {
       "name": "@mango/job",
@@ -334,9 +320,7 @@
           "summary": "exact runtime dependency follows @mango/admin-pages"
         }
       ],
-      "releaseDependencies": [
-        "@mango/admin-pages"
-      ]
+      "releaseDependencies": ["@mango/admin-pages"]
     },
     {
       "name": "@mango/link",
@@ -352,9 +336,7 @@
           "summary": "exact runtime dependency follows @mango/admin-pages"
         }
       ],
-      "releaseDependencies": [
-        "@mango/admin-pages"
-      ]
+      "releaseDependencies": ["@mango/admin-pages"]
     },
     {
       "name": "@mango/notice",
@@ -370,10 +352,7 @@
           "summary": "修复通知渠道编辑回显，并在表单与 JSON 两种模式下为已配置 Secret 增加默认掩码、单字段授权查看和关闭后明文清理。"
         }
       ],
-      "releaseDependencies": [
-        "@mango/admin-pages",
-        "@mango/system"
-      ]
+      "releaseDependencies": ["@mango/admin-pages", "@mango/system"]
     },
     {
       "name": "@mango/numgen",
@@ -389,10 +368,7 @@
           "summary": "exact runtime dependency follows @mango/admin-pages, @mango/system"
         }
       ],
-      "releaseDependencies": [
-        "@mango/admin-pages",
-        "@mango/system"
-      ]
+      "releaseDependencies": ["@mango/admin-pages", "@mango/system"]
     },
     {
       "name": "@mango/payment",
@@ -408,9 +384,7 @@
           "summary": "exact runtime dependency follows @mango/admin-pages"
         }
       ],
-      "releaseDependencies": [
-        "@mango/admin-pages"
-      ]
+      "releaseDependencies": ["@mango/admin-pages"]
     },
     {
       "name": "@mango/template",
@@ -426,10 +400,7 @@
           "summary": "exact runtime dependency follows @mango/admin-pages, @mango/system"
         }
       ],
-      "releaseDependencies": [
-        "@mango/admin-pages",
-        "@mango/system"
-      ]
+      "releaseDependencies": ["@mango/admin-pages", "@mango/system"]
     },
     {
       "name": "@mango/workflow",
@@ -445,10 +416,7 @@
           "summary": "exact runtime dependency follows @mango/admin-pages, @mango/system"
         }
       ],
-      "releaseDependencies": [
-        "@mango/admin-pages",
-        "@mango/system"
-      ]
+      "releaseDependencies": ["@mango/admin-pages", "@mango/system"]
     },
     {
       "name": "@mango/admin-shell",
@@ -487,10 +455,7 @@
           "summary": "exact runtime dependency follows @mango/admin-pages, @mango/workflow"
         }
       ],
-      "releaseDependencies": [
-        "@mango/admin-pages",
-        "@mango/workflow"
-      ]
+      "releaseDependencies": ["@mango/admin-pages", "@mango/workflow"]
     },
     {
       "name": "@mango/admin",
