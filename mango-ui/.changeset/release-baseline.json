@@ -1,12 +1,27 @@
 {
   "schemaVersion": 1,
-  "tag": "v2026.08.17-issue-817-link-page-tenant-id-release",
-  "commit": "da2bb1d4c6a4ec8754d823ba1e9eb25b90b85e56",
-  "tree": "1438f48aba9e1b06804489843876964c07b126d2",
-  "planDigest": "e9f06a730d474766a8ccf415045edb1be256efadb114ea19a836a7d00f63fc73",
+  "tag": "v2026.08.19-maven-1.0.38-wecom-identity-notice-security-release",
+  "commit": "df2a58d3a75c167f4bc80849b47dc959e68ee232",
+  "tree": "0242da120f4af9dafedc3f67b8b2f240927ff2e5",
+  "planDigest": "5adf1a66c8b2a658903015f8a9c91a6041b66ade7dffc96283074650135a7a5f",
   "packages": {
-    "@mango/link-page": "1.0.8",
-    "@mango/cli": "1.0.110"
+    "@mango/auth": "1.0.28",
+    "@mango/rbac": "1.0.26",
+    "@mango/system": "1.0.34",
+    "@mango/admin-pages": "1.0.35",
+    "@mango/calendar": "1.0.36",
+    "@mango/cms": "1.0.25",
+    "@mango/job": "1.0.29",
+    "@mango/link": "1.0.22",
+    "@mango/notice": "1.0.41",
+    "@mango/numgen": "1.0.37",
+    "@mango/payment": "1.0.28",
+    "@mango/template": "1.0.36",
+    "@mango/workflow": "1.0.42",
+    "@mango/admin-shell": "1.0.62",
+    "@mango/workflow-business-example": "1.0.41",
+    "@mango/admin": "1.0.68",
+    "@mango/cli": "1.0.111"
   },
-  "maven": null
+  "maven": "1.0.38"
 }

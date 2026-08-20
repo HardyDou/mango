@@ -4,7 +4,7 @@
 
 ## v2026.08.19-maven-1.0.38-wecom-identity-notice-security-release - 2026-08-19
 
-Status: `PENDING`. This mixed release publishes the complete Mango Maven non-app reactor and docs bundle at `1.0.38`, the machine-generated 17-package npm dependency closure ending at `@mango/cli@1.0.111`, and the aligned WeCom Identity/Notice security behavior. Publication, dual-registry verification, pure consumer verification, Tag, and GitHub Release remain pending until the canonical prepared manifest completes.
+Status: `PUBLISHED_AND_VERIFIED`. Canonical manifest SHA-256 `b0eebb391ca1302d9f6e78016c34226b98bac36a01402477d704986e2bc89acf` for plan `5adf1a66c8b2a658903015f8a9c91a6041b66ade7dffc96283074650135a7a5f` is `COMPLETED`: all 188 sealed Mango Maven non-app/docs coordinates at `1.0.38` and all 17 sealed npm packages ending at `@mango/cli@1.0.111` match in their publish and consume registries, the pure consume-registry consumer passed, and GitHub Release `v2026.08.19-maven-1.0.38-wecom-identity-notice-security-release` is `CREATED_AND_VERIFIED`.
 
 ### Pull Requests
 
@@ -66,7 +66,9 @@ Status: `PENDING`. This mixed release publishes the complete Mango Maven non-app
 
 ### Verification
 
-- Pending: protected Release PR checks; mixed candidate prepare; exact Maven/npm sealing; publish/consume registry back-checks; clean pure consumer; Tag/GitHub Release verification.
+- Release PR #836 passed `frontend-pr-quality`, `pmo-doc-check` and `pr-contract-check`; merge commit `aac207e348e2eb25088dce6ee2d49e3821609c40` retained the sealed source tree `0242da120f4af9dafedc3f67b8b2f240927ff2e5`.
+- All 188 Maven `1.0.38` coordinates and all 17 npm coordinates were read back from both publish and consume registries with the sealed content, then a clean consumer installed only the consume-registry tuple.
+- Tag `v2026.08.19-maven-1.0.38-wecom-identity-notice-security-release` points to sealed source commit `df2a58d3a75c167f4bc80849b47dc959e68ee232`; the non-draft, non-prerelease GitHub Release body passed the same release-notes checker.
 - Repository tests cover the Auth/Identity/Notice backend contracts and Auth/RBAC/Notice frontend behavior. Real provider acceptance remains required before business deployment because release verification does not use production WeCom credentials.
 
 ### Rollback
@@ -79,6 +81,7 @@ Status: `PENDING`. This mixed release publishes the complete Mango Maven non-app
 - PR #822 and PR #823 are part of the completed Link Page batch and are excluded from this release.
 - Release PR #831 and its r2 manifest were superseded after PR #832 changed the source tree; no registry coordinate, Tag, or GitHub Release was written from that candidate.
 - Release PR #833 and its r3 manifest were stopped after the required check proved #832 did not propagate the public registry to nested pnpm; PR #834 fixed the gate, and r3 retained `remoteWrites=false` with no registry coordinate, Tag, or GitHub Release written.
+- Release PR #836 sealed and published the final r4 candidate; this closeout changes documentation only and does not move the release tag.
 
 ## v2026.08.17-issue-817-link-page-tenant-id-release - 2026-08-17
 
