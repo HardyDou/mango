@@ -65,6 +65,8 @@ mango pmo check --project-dir . --locked
 
 页面基线误判或页面确属特殊场景时，在对应 `.vue` 文件中登记例外：按类型使用 `<!-- mango-page-baseline-exception <list|detail|form|dialog>: <具体、可复核的原因> -->`；整个页面均不适用默认骨架时使用 `<!-- mango-page-baseline-exception all: <具体、可复核的原因> -->`。原因缺失或过短不会生效；完整规则见 `rules/frontend/07-admin-ui-common.md`，CI 失败输出也会直接提示这两种格式。
 
+业务项目需要暂停整个页面基线时，在 `mango.config.json` 显式设置 `pmoChecks.frontendPageBaseline=false`。缺失时默认启用；仅布尔值有效，错误类型或配置读取失败会阻断 PMO 检查。该开关只跳过页面基线，风险合同、业务文档、后端质量和稳定 `pmo-doc-check` 汇总仍执行。
+
 业务仓日常命令使用项目内 CLI：
 
 ```bash
@@ -105,6 +107,7 @@ node business-pmo/mango-baseline/tools/audit-readme-source-facts.mjs
 | `baseline.json`                                    | `packageVersion`                                        | 业务仓当前 baseline 包版本                                               |
 | `baseline.json`                                    | `files[].sha256`                                        | 业务仓 baseline 漂移检查依据                                             |
 | 业务仓 `mango.config.json`                         | `paths.backend`、`paths.frontend`、`paths.businessDocs` | 声明后端、前端和业务文档的仓库相对目录，供 GitHub/Gitea 标准门禁统一解析 |
+| 业务仓 `mango.config.json`                         | `pmoChecks.frontendPageBaseline`                        | 默认 `true`；仅显式布尔 `false` 跳过前端页面基线，其它 PMO 门禁保持启用  |
 | Mango 主仓 `.github/branch-protection-policy.json` | `governanceMode`、Required Check、review 和历史保护字段 | GitHub `main` 分支保护的受版本控制期望状态                               |
 
 ## 5. API 与扩展

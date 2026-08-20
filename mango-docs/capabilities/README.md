@@ -36,6 +36,8 @@
 
 ## 3.1 近期能力变更
 
+- 2026-08-20，[Issue #838](https://github.com/HardyDou/mango/issues/838) 为业务项目增加 `mango.config.json.pmoChecks.frontendPageBaseline` 显式开关：缺省启用，仅布尔 `false` 关闭；非法配置 fail closed。GitHub/Gitea 只跳过页面基线并保留稳定 `pmo-doc-check` 及其它门禁，CLI init/sync/upgrade/check 负责生成、迁移与校验。使用入口见 [PMO README](../../mango-pmo/README.md)、[@mango/pmo README](../../mango-ui/packages/mango-pmo/README.md) 和 [CLI README](../../mango-ui/packages/mango-cli/README.md)，治理决策见 [Issue #838 设计](../designs/2026-08-20-issue-838-frontend-page-baseline-toggle.md)。
+
 - 2026-08-18，[Issue #825](https://github.com/HardyDou/mango/issues/825) 修复通知渠道配置编辑回显：非敏感 `configJson` 字段完整恢复，人工 Secret 使用 Mango Crypto 加密落库并默认显示 `****`；具备 `notice:channel:secret:view` 的管理员点击单字段小眼睛后通过租户隔离、字段白名单、`no-store` 和安全审计约束的接口临时查看明文，Resource/环境引用不向页面解析。存量明文仅在当前渠道保存、运行或查看时惰性迁移。入口见 [Notice README](../../mango/mango-platform/mango-notice/README.md)、[Notice Frontend README](../../mango-ui/packages/notice/README.md) 和 [STANDARD 交付记录](../plans/2026-08-18-issue-825-notice-channel-secret-reveal-delivery-record.md)。
 
 - 2026-08-17，[Issue #806](https://github.com/HardyDou/mango/issues/806) 修复 PMO README 审计在业务消费仓中按脚本安装位置误判仓库根的问题：Mango 源仓继续检查固定平台 README，业务 baseline 改为从 `mango.config.json.paths` 和业务能力地图解析仓库自有 README，并核对业务仓实际拥有的 API、配置、前端依赖与页面事实；缺少能力地图、空审计集合、错误根目录和越界配置均明确失败。目标发布 tuple 为 `@mango/pmo@1.3.16` 与 `@mango/cli@1.0.109`，Mango Maven `1.0.37` 和其它 npm 坐标保持不变。正式入口与排障见 [PMO README](../../mango-pmo/README.md) 和 [@mango/pmo README](../../mango-ui/packages/mango-pmo/README.md)。

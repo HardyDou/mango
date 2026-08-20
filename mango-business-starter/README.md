@@ -199,6 +199,8 @@ Controller 使用 `BaseCrudController`，类级路径由 module 和 aggregate �
 
 生成项目的 PMO required check 会对本次新增或修改的 `views/**/*.vue` 执行页面基线检查。列表页缺少列表四件套、标准弹框直接新增原生 `ElDialog` 时会失败。机器误判或页面确属特殊场景时，可在 `.vue` 文件中登记按类型例外 `<!-- mango-page-baseline-exception list: <具体、可复核的原因> -->`；整个页面均不适用默认骨架时，登记整页例外 `<!-- mango-page-baseline-exception all: <具体、可复核的原因> -->`。支持的类型及原因要求见项目内 [Admin UI 通用规范](./business-pmo/mango-baseline/rules/frontend/07-admin-ui-common.md)。
 
+项目需要暂停整个页面基线时，在 `mango.config.json` 设置 `pmoChecks.frontendPageBaseline=false`。缺失时默认启用，非布尔值或配置读取失败会阻断；该开关不关闭风险合同、业务文档、后端质量或稳定 `pmo-doc-check` 汇总。
+
 ## 8. 数据与初始化
 
 模板生成一个 Flyway migration 起点和一个菜单权限资源清单。

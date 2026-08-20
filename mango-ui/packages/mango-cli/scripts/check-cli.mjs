@@ -114,6 +114,7 @@ try {
     '.gitea/workflows/pmo-doc-check.yml',
     'business-pmo/mango-baseline/tools/pmo-preflight.mjs',
     'business-pmo/mango-baseline/tools/check-document-set.mjs',
+    'business-pmo/mango-baseline/tools/lib/project-pmo-checks.mjs',
     'business-pmo/mango-baseline/tools/pin-historical-pmo-version-documents.mjs',
     'business-pmo/mango-baseline/baseline.json',
     'business-pmo/architecture-debt-budget.json',
@@ -176,6 +177,7 @@ try {
   assertEqual(config.paths.backend, 'backend', 'backend path');
   assertEqual(config.paths.frontend, 'frontend', 'frontend path');
   assertEqual(config.paths.businessDocs, 'business-docs', 'business docs path');
+  assertEqual(config.pmoChecks.frontendPageBaseline, true, 'frontend page baseline PMO check default');
 
   const mainTs = readFileSync(join(projectRoot, 'frontend/src/main.ts'), 'utf8');
   if (!mainTs.includes("from '@mango/admin/full'") || !mainTs.includes("import '@mango/admin/style-full.css'")) {
@@ -486,6 +488,7 @@ try {
     '--base-ref "$BASE_SHA"',
     'business-pmo/mango-baseline/tools/check-frontend-page-baseline.mjs',
     '--frontend-root "$FRONTEND_ROOT"',
+    'frontend_page_baseline_enabled',
   ]) {
     for (const workflow of [pmoWorkflow, giteaPmoWorkflow]) {
       if (!workflow.includes(expected)) {
@@ -524,6 +527,7 @@ try {
     'steps.scope.outputs.maven_dependency_projects',
     'steps.scope.outputs.backend_root',
     "steps.scope.outputs.frontend == 'true'",
+    "steps.scope.outputs.frontend_page_baseline_enabled == 'true'",
     'steps.scope.outputs.frontend_root',
   ]) {
     if (!giteaPmoWorkflow.includes(expected)) {
@@ -3458,6 +3462,7 @@ function assertReleaseTupleUpgrade(testRoot, generatedProjectRoot) {
   config.mangoBackendVersion = oldVersion;
   config.mangoCliVersion = oldVersion;
   config.releaseTupleUserField = 'preserve-me';
+  config.pmoChecks.frontendPageBaseline = false;
   for (const name of Object.keys(config.mangoFrontendVersions || {})) {
     config.mangoFrontendVersions[name] = oldVersion;
   }
@@ -3555,6 +3560,7 @@ function assertReleaseTupleUpgrade(testRoot, generatedProjectRoot) {
   assertEqual(upgradedConfig.mangoCliVersion, releaseVersions.npm['@mango/cli'], 'tuple config CLI');
   assertEqual(upgradedConfig.mangoPmoVersion, releaseVersions.npm['@mango/pmo'], 'tuple config PMO');
   assertEqual(upgradedConfig.releaseTupleUserField, 'preserve-me', 'tuple project-owned config field');
+  assertEqual(upgradedConfig.pmoChecks.frontendPageBaseline, false, 'tuple preserves disabled frontend page baseline');
   assertEqual(
     upgradedPackage.dependencies['release-tuple-user-package'],
     '7.8.9',
@@ -3614,6 +3620,51 @@ function assertPmoCommands(projectRoot) {
     [cli, 'pmo', 'check', '--project-dir', projectRoot, '--locked'],
     projectRoot,
     'generated locked mango pmo check',
+  );
+  const projectConfigPath = join(projectRoot, 'mango.config.json');
+  const disabledConfig = JSON.parse(readFileSync(projectConfigPath, 'utf8'));
+  disabledConfig.pmoChecks.frontendPageBaseline = false;
+  writeFileSync(projectConfigPath, `${JSON.stringify(disabledConfig, null, 2)}\n`);
+  assertCommandOk(
+    [cli, 'pmo', 'sync', '--project-dir', projectRoot],
+    projectRoot,
+    'generated PMO sync preserves disabled frontend page baseline',
+  );
+  assertEqual(
+    JSON.parse(readFileSync(projectConfigPath, 'utf8')).pmoChecks.frontendPageBaseline,
+    false,
+    'disabled frontend page baseline after PMO sync',
+  );
+  const invalidConfig = JSON.parse(readFileSync(projectConfigPath, 'utf8'));
+  invalidConfig.pmoChecks.frontendPageBaseline = 'false';
+  writeFileSync(projectConfigPath, `${JSON.stringify(invalidConfig, null, 2)}\n`);
+  const invalidConfigCheck = spawnSync(
+    process.execPath,
+    [cli, 'pmo', 'check', '--project-dir', projectRoot, '--locked'],
+    { cwd: projectRoot, encoding: 'utf8' },
+  );
+  if (
+    invalidConfigCheck.status === 0 ||
+    !`${invalidConfigCheck.stdout}\n${invalidConfigCheck.stderr}`.includes(
+      'pmoChecks.frontendPageBaseline must be a boolean',
+    )
+  ) {
+    throw new Error(
+      `pmo check --locked should reject an invalid frontend page baseline toggle:\n` +
+        `${invalidConfigCheck.stdout}\n${invalidConfigCheck.stderr}`,
+    );
+  }
+  delete invalidConfig.pmoChecks;
+  writeFileSync(projectConfigPath, `${JSON.stringify(invalidConfig, null, 2)}\n`);
+  assertCommandOk(
+    [cli, 'pmo', 'sync', '--project-dir', projectRoot],
+    projectRoot,
+    'generated PMO sync adds frontend page baseline default',
+  );
+  assertEqual(
+    JSON.parse(readFileSync(projectConfigPath, 'utf8')).pmoChecks.frontendPageBaseline,
+    true,
+    'frontend page baseline default after PMO sync',
   );
   assertHistoricalPmoVersionUpgrade(projectRoot);
   const projectTemplatePath = join(projectRoot, '.github/pull_request_template.md');
