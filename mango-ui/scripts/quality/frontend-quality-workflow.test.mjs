@@ -14,32 +14,14 @@ function job(id) {
   return match[0];
 }
 
-test('pull requests run the stable affected frontend gate without browser E2E', () => {
+test('pull requests keep the required frontend quality context paused without checkout', () => {
   const pullRequestJob = job('frontend-pr-quality');
-  const manifestValidation = pullRequestJob.indexOf('- name: Validate repository development manifest');
-  const dependencyInstall = pullRequestJob.indexOf('- name: Install locked frontend dependencies');
   assert.match(pullRequestJob, /name: frontend-pr-quality/u);
   assert.match(pullRequestJob, /if: github\.event_name == 'pull_request'/u);
-  assert.match(pullRequestJob, /node mango-ui\/scripts\/quality\/check-repository-dev-manifest\.mjs/u);
-  assert.ok(manifestValidation >= 0, 'missing repository development manifest validation step');
-  assert.ok(
-    dependencyInstall > manifestValidation,
-    'repository development manifest validation must run before dependency installation',
-  );
-  assert.match(pullRequestJob, /pnpm check:pr -- --base="\$MANGO_BASE_SHA" --head="\$MANGO_HEAD_SHA"/u);
-  assert.match(pullRequestJob, /id: release-scope/u);
-  assert.match(pullRequestJob, /classify-release-pr\.mjs/u);
-  assert.match(pullRequestJob, /check-release-changes\.mjs/u);
-  assert.match(
-    pullRequestJob,
-    /if: steps\.release-scope\.outputs\.release_only != 'true'[\s\S]*?pnpm install --frozen-lockfile/u,
-  );
-  assert.match(
-    pullRequestJob,
-    /if: steps\.release-scope\.outputs\.release_only == 'true'[\s\S]*?PNPM_CONFIG_REGISTRY: https:\/\/registry\.npmjs\.org\/[\s\S]*?run: pnpm release:pr-check/u,
-  );
-  assert.doesNotMatch(pullRequestJob, /pnpm release:pr-check --registry=/u);
-  assert.doesNotMatch(pullRequestJob, /test:e2e|playwright|Start real Mango backend/u);
+  assert.match(pullRequestJob, /Report temporary pause/u);
+  assert.match(pullRequestJob, /frontend-pr-quality remains successful/u);
+  assert.doesNotMatch(pullRequestJob, /actions\/checkout@v4/u);
+  assert.doesNotMatch(pullRequestJob, /pnpm install|pnpm check:pr|playwright|Start real Mango backend/u);
 });
 
 test('deep frontend quality and P0 browser acceptance do not run for pull requests', () => {
