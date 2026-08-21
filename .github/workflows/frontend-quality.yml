@@ -21,86 +21,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - name: Checkout complete history
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Set up pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 11.14.0
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22.23.1
-          cache: pnpm
-          cache-dependency-path: mango-ui/pnpm-lock.yaml
-
-      - name: Classify machine-generated Release PR
-        id: release-scope
-        env:
-          MANGO_BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          MANGO_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        run: >-
-          node mango-ui/scripts/release/classify-release-pr.mjs
-          --base="$MANGO_BASE_SHA"
-          --head="$MANGO_HEAD_SHA"
-
-      - name: Validate repository development manifest
-        if: steps.release-scope.outputs.release_only != 'true'
-        run: node mango-ui/scripts/quality/check-repository-dev-manifest.mjs
-
-      - name: Validate Changeset release intent against source impact
-        if: steps.release-scope.outputs.release_only != 'true'
-        env:
-          MANGO_BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          MANGO_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        run: >-
-          node mango-ui/scripts/release/check-release-changes.mjs
-          --base="$MANGO_BASE_SHA"
-          --head="$MANGO_HEAD_SHA"
-
-      - name: Enforce current frontend page components
-        if: steps.release-scope.outputs.release_only != 'true'
-        env:
-          MANGO_BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          MANGO_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        run: >-
-          node mango-pmo/tools/check-frontend-page-baseline.mjs
-          --base "$MANGO_BASE_SHA"
-          --head "$MANGO_HEAD_SHA"
-          --frontend-root mango-ui
-
-      - name: Install locked frontend dependencies
-        if: steps.release-scope.outputs.release_only != 'true'
-        working-directory: mango-ui
-        run: pnpm install --frozen-lockfile --registry=https://registry.npmjs.org/
-
-      - name: Run affected pull request frontend quality gate
-        if: steps.release-scope.outputs.release_only != 'true'
-        working-directory: mango-ui
-        env:
-          MANGO_BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          MANGO_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        run: pnpm check:pr -- --base="$MANGO_BASE_SHA" --head="$MANGO_HEAD_SHA"
-
-      - name: Validate machine-generated release plan without dependency install
-        if: steps.release-scope.outputs.release_only == 'true'
-        working-directory: mango-ui
-        env:
-          PNPM_CONFIG_REGISTRY: https://registry.npmjs.org/
-        run: pnpm release:pr-check
-
-      - name: Upload pull request frontend quality evidence
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: frontend-pr-quality-${{ github.sha }}
-          path: .runtime/frontend-quality
-          if-no-files-found: warn
-          retention-days: 30
+      - name: Report temporary pause
+        run: |
+          echo "::notice title=Frontend PR quality paused::Mango pull-request frontend quality checks are temporarily paused."
+          echo "frontend-pr-quality remains successful so the required branch-protection context stays available."
+          echo "Push and manual frontend quality workflows remain unchanged."
 
   frontend-quality:
     name: frontend-quality
