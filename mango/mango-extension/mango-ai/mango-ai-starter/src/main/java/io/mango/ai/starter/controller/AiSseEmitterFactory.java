@@ -1,4 +1,4 @@
-package io.mango.ai.core.controller;
+package io.mango.ai.starter.controller;
 
 import org.springframework.http.MediaType;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
@@ -16,14 +16,12 @@ import java.util.concurrent.atomic.AtomicReference;
 final class AiSseEmitterFactory {
 
     private static final long CHAT_TIMEOUT_MILLIS = 5 * 60 * 1000L;
-    private AiSseEmitterFactory() {}
 
-    static SseEmitter createChat(Flux<String> events) {
-        return create(events, CHAT_TIMEOUT_MILLIS);
+    private AiSseEmitterFactory() {
     }
 
-    private static SseEmitter create(Flux<String> events, long timeout) {
-        EmitterBridge bridge = new EmitterBridge(timeout);
+    static SseEmitter createChat(Flux<String> events) {
+        EmitterBridge bridge = new EmitterBridge(CHAT_TIMEOUT_MILLIS);
         Disposable subscription = events.publishOn(Schedulers.boundedElastic())
                 .subscribe(bridge::send, bridge::fail, bridge::complete);
         bridge.attach(subscription);
@@ -31,6 +29,7 @@ final class AiSseEmitterFactory {
     }
 
     private static final class EmitterBridge {
+
         private final SseEmitter emitter;
         private final AtomicReference<Disposable> subscription = new AtomicReference<>();
         private final AtomicBoolean terminated = new AtomicBoolean();
@@ -58,11 +57,7 @@ final class AiSseEmitterFactory {
                 return;
             }
             try {
-                if (event.startsWith(":")) {
-                    emitter.send(SseEmitter.event().comment(event.substring(1)));
-                } else {
-                    emitter.send(SseEmitter.event().data(event, MediaType.APPLICATION_JSON));
-                }
+                emitter.send(SseEmitter.event().data(event, MediaType.APPLICATION_JSON));
             } catch (IOException | IllegalStateException exception) {
                 fail(exception);
             }
@@ -72,16 +67,8 @@ final class AiSseEmitterFactory {
             if (!terminated.compareAndSet(false, true)) {
                 return;
             }
-            try {
-                emitter.send(SseEmitter.event().data(
-                        "{\"type\":\"error\",\"message\":\"AI service error\"}",
-                        MediaType.APPLICATION_JSON));
-                emitter.complete();
-            } catch (IOException | IllegalStateException exception) {
-                emitter.completeWithError(error);
-            } finally {
-                disposeSubscription();
-            }
+            emitter.completeWithError(error);
+            disposeSubscription();
         }
 
         private void complete() {

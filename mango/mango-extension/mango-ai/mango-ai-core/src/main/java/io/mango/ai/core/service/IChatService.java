@@ -1,6 +1,6 @@
 package io.mango.ai.core.service;
 
-import io.mango.ai.api.dto.ChatRequest;
+import io.mango.ai.api.command.ChatCommand;
 import reactor.core.publisher.Flux;
 
 /**
@@ -11,9 +11,8 @@ public interface IChatService {
     /**
      * 发起流式对话。
      *
-     * @param request 对话请求
-     * @param tenantId 租户标识
+     * @param command 对话命令
      * @return 标准 JSON 事件流
      */
-    Flux<String> chat(ChatRequest request, String tenantId);
+    Flux<String> chat(ChatCommand command);
 }

@@ -8,11 +8,7 @@ import org.springframework.http.MediaType;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.time.Duration;
-import java.util.List;
-import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -22,36 +18,43 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag("ai")
 @SpringBootTest(
         classes = AiHttpContractFlowTest.TestApplication.class,
-        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+        properties = {
+                "mango.kv.store.type=redis",
+                "spring.ai.deepseek.api-key=test-key",
+                "spring.autoconfigure.exclude=org.springframework.ai.model.deepseek.autoconfigure.DeepSeekChatAutoConfiguration,"
+                        + "io.mango.infra.kv.starter.KvStoreAutoConfiguration,"
+                        + "io.mango.infra.kv.starter.redis.KvRedisAutoConfiguration,"
+                        + "io.mango.infra.kv.starter.KvCapabilityAutoConfiguration,"
+                        + "io.mango.infra.persistence.starter.PersistenceDataSourceAutoConfiguration,"
+                        + "io.mango.infra.persistence.starter.PersistenceAutoConfiguration,"
+                        + "io.mango.infra.persistence.starter.PersistenceFlywayAutoConfiguration,"
+                        + "org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration,"
+                        + "org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration,"
+                        + "io.mango.infra.realtime.starter.MangoRealtimeAutoConfiguration"
+        })
 class AiRuntimeFlowTest {
 
     @LocalServerPort
     private int port;
 
     @Test
-    void chat_真实HTTP入口_返回可解析的标准Sse事件() {
+    void chat_真实HTTP入口_返回标准Sse事件() {
         WebClient client = WebClient.builder().baseUrl("http://127.0.0.1:" + port).build();
 
-        List<String> events = client.post()
+        String body = client.post()
                 .uri("/ai/chat")
-                .header("Authorization", "Bearer test-token")
-                .header("TENANT-ID", "tenant-runtime")
                 .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.TEXT_EVENT_STREAM)
-                .bodyValue(Map.of(
-                        "message", "hello",
-                        "sessionId", "runtime-session",
-                        "enableThinking", true))
+                .bodyValue("{\"message\":\"hello\",\"sessionId\":\"runtime-session\",\"enableThinking\":false}")
                 .retrieve()
-                .bodyToFlux(String.class)
-                .collectList()
+                .bodyToMono(String.class)
                 .block(Duration.ofSeconds(5));
 
-        assertEquals(3, events.size());
-        assertTrue(events.get(0).contains("\"type\":\"thinking\""));
-        assertTrue(events.get(1).contains("\"type\":\"message\""));
-        assertTrue(events.get(2).contains("runtime-session"));
-        assertFalse(events.stream().anyMatch(event -> event.startsWith("data:")));
+        assertTrue(body.contains("data:"), body);
+        assertTrue(body.contains("\"type\":\"message\""), body);
+        assertTrue(body.contains("\"type\":\"done\""), body);
+        assertTrue(body.contains("runtime-session"), body);
     }
 
 }

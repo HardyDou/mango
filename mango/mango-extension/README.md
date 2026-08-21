@@ -1,38 +1,30 @@
 # Mango Extension
 
 ## 1. 概览
-`mango-extension` 承载 Mango 可选扩展能力。当前包含 `mango-ai`，提供 DeepSeek 流式对话和基于 Realtime 的 AI 通知推送。
 
-扩展模块不属于核心平台必需能力。业务项目只有明确需要某个扩展时才引入对应 starter。
+`mango-extension` 承载可选扩展能力。当前 `mango-ai` 基于 Spring AI 1.1.8 提供 DeepSeek 流式对话和通过 Mango Realtime 发布的 AI 通知/告警。
+
+扩展模块不属于核心平台必需能力，业务项目按需引入对应 starter。
 
 ## 2. 功能清单
 
-| 能力 | 常用入口 |
-|------|----------|
-| 业务后台需要接入可选 AI 对话能力 | Maven 依赖 / HTTP API / Java API |
-| 第三方能力不适合放入核心 mango-platform | Maven 依赖 / HTTP API / Java API |
-| 扩展能力需要独立版本、独立配置和独立边界 | Maven 依赖 / HTTP API / Java API |
+- Spring AI DeepSeek 流式对话。
+- Mango KV 会话历史、租户/用户隔离和 TTL。
+- Mango `IRateLimiter` 限流与 Resilience4j Reactor 熔断。
+- Micrometer 请求和 token 指标。
+- 通过 Mango Realtime 发布 AI 通知和告警。
 
-
-## 3. 能力边界
-- 不放认证、授权、组织、系统、文件、工作流、支付等核心平台能力。
-- 不放业务项目私有逻辑。
-- 不把实验性核心能力放到 extension 来规避平台模块规范。
-
-## 4. 模块入口
-当前模块结构：
+## 3. 模块边界
 
 | 模块 | 职责 |
 |------|------|
-| `mango-ai-api` | AI 请求模型和业务错误码。 |
-| `mango-ai-core` | 对话、推送服务及可替换的 AI provider 端口。 |
-| `mango-ai-starter` | AI HTTP/SSE 对话适配、DeepSeek 默认实现和 Realtime 推送自动配置。 |
+| `mango-ai-api` | `ChatCommand` 请求命令和 AI 业务错误码。 |
+| `mango-ai-core` | 基于 Spring AI `ChatModel` 的对话服务、Mango KV 会话、限流、熔断、指标和 Realtime 推送服务。 |
+| `mango-ai-starter` | HTTP/SSE Controller、Spring Boot 自动配置和 Spring AI DeepSeek starter 装配。 |
 
-AI 的 HTTP Controller 只在 starter 暴露；core 不依赖 Servlet/SSE 类型。流式响应由
-starter 的异步 `SseEmitter` 适配器输出，保持标准 `text/event-stream` 协议。
+Controller 和原生 `SseEmitter` 只存在于 starter；core 不依赖 Servlet。AI 对话接口是 `POST /ai/chat`，通知使用 Mango Realtime 统一传输，不提供独立 AI SSE 入口。
 
-## 5. 接入方式
-Maven 依赖：
+## 4. 接入方式
 
 ```xml
 <dependency>
@@ -41,116 +33,103 @@ Maven 依赖：
 </dependency>
 ```
 
-配置 DeepSeek：
+在宿主应用的 Maven reactor 中引入该 starter，并按下一节配置 Spring AI 和 Mango KV；不要直接调用 core 实现。
+
+## 5. 配置说明
+
+最低配置：
 
 ```yaml
-mango:
+spring:
   ai:
     deepseek:
-      base-url: https://api.deepseek.com
       api-key: ${DEEPSEEK_API_KEY}
-      model: deepseek-chat
-      connect-timeout: 10000
-      read-timeout: 60000
-    session:
-      ttl: 1800000
+      base-url: https://api.deepseek.com
+      chat:
+        options:
+          model: deepseek-chat
+
+mango:
+  kv:
+    store:
+      type: redis
+    capability:
+      enabled: true
+      cache: true
+      rate-limiter: true
+  ai:
+    chat:
+      session-ttl: 30m
+      max-history-messages: 20
 ```
 
-流式对话请求：
+AI starter 启动时要求真实 Redis-backed Mango KV、`ICache`、`IRateLimiter` 和 Spring AI DeepSeek API key；不会静默切换到进程内存储或其它模型实现。
+
+## 6. API 与扩展
+
+请求：
 
 ```http
 POST /ai/chat
-Authorization: Bearer <accessToken>
-X-Mango-Tenant-Id: 1
 Content-Type: application/json
 
-{
-  "message": "生成一份审批说明",
-  "sessionId": "optional-session-id",
-  "enableThinking": true
-}
+{"message":"生成一份审批说明","sessionId":"optional-session-id","enableThinking":true}
 ```
 
-AI 通知通过 Mango Realtime 统一连接接收，不再建立独立的 `/ai/sse` 连接。宿主应用应同时引入
-`mango-infra-realtime-starter`，前端连接 `/realtime/transports/sse`（或使用 Realtime 自动协商），
-由 `IAiPushService` 将通知和告警发布到统一实时通道。
+调用方必须经过 Mango 授权链并拥有 `ai:chat:use` 权限。租户和用户只从 `MangoContextHolder` 获取，缺失时请求失败闭合；客户端请求头不会覆盖安全上下文。
 
-## 6. 配置说明
-| 配置 | 默认值 | 含义 |
-|------|--------|------|
-| `mango.ai.deepseek.base-url` | `https://api.deepseek.com` | DeepSeek API 地址。 |
-| `mango.ai.deepseek.api-key` | 空字符串 | DeepSeek API key；真实环境必须配置。 |
-| `mango.ai.deepseek.model` | `deepseek-chat` | 使用的模型。 |
-| `mango.ai.deepseek.connect-timeout` | `10000` | 连接超时，毫秒。 |
-| `mango.ai.deepseek.read-timeout` | `60000` | 读取超时，毫秒。 |
-| `mango.ai.session.ttl` | `1800000` | 会话上下文 TTL，毫秒。 |
+| 字段 | 规则 |
+|------|------|
+| `message` | 必填，最多 2000 个字符。 |
+| `sessionId` | 可选，只允许字母、数字、点、下划线和连字符，最多 128 个字符。 |
+| `enableThinking` | 必填布尔值；JSON 显式 `null` 按命令默认值启用。 |
 
-请求体 `ChatRequest`：
+响应为标准 `text/event-stream`，每个 `data:` 块承载一个 JSON 事件：`thinking`、`message`、`done` 或 `error`。会话完成后才写入完整 user/assistant 历史；会话 key 同时包含租户、用户和 sessionId，TTL 默认 30 分钟。
 
-| 字段 | 规则 | 含义 |
-|------|------|------|
-| `message` | 必填，最大 2000 字符 | 用户输入。 |
-| `sessionId` | 可选 | 会话 id；为空时服务端生成。 |
-| `enableThinking` | 可选 | 是否启用 thinking；不传时默认启用。 |
+## 7. 数据与初始化
 
-## 7. API 与扩展
-HTTP 接口：
+AI 会话只保存在 Mango KV 的 cache capability 中，不创建 AI 专用表。key 包含环境前缀、租户、用户和 sessionId，TTL 默认 30 分钟；宿主应用必须先完成 Mango Redis KV capability 配置。
 
-- `POST /ai/chat`：受保护接口，返回标准 `text/event-stream`；兼容历史 `TENANT-ID` 请求头。
-- AI 通知不再提供独立 HTTP 推送入口，统一通过 Mango Realtime 传输。
+## 8. 管理入口
 
-主要类：
+本阶段没有新增管理页面或菜单。HTTP 对话入口要求 Mango 授权链和 `ai:chat:use` 权限，Realtime 通知沿用宿主应用的统一连接和权限边界。
 
-- `ChatRequest`
-- `ChatController`
-- `IChatService` / `ChatService`
-- `IAiPushService` / `AiPushService`
-- `IAiProvider`
-- `DeepSeekProvider`
-- `MangoAiAutoConfiguration`
+## 9. 快速开始
 
-starter 默认注册 `DeepSeekProvider`，并使用 `@ConditionalOnMissingBean` 允许业务项目提供
-`IAiProvider` 替换实现。第三方 provider 只返回 JSON 事件，不直接拼接 SSE 的 `data:` 前缀。
+1. 引入 `mango-ai-starter`。
+2. 配置 Spring AI DeepSeek API key、Redis-backed Mango KV、cache 和 rate-limiter capability。
+3. 在 Mango 授权链为调用方授予 `ai:chat:use`。
+4. 调用 `POST /ai/chat`，读取 `text/event-stream` 事件。
 
-## 8. 数据与初始化
-当前 AI 扩展不包含数据库 migration。会话上下文保存在内存 `ConcurrentHashMap` 中，按租户和 session 组合 key 管理；每次对话进入时会清理已过期会话。
+## 10. 运行时能力
 
-因此：
-
-- 服务重启会丢失 AI 会话上下文。
-- 多实例不会共享会话上下文。
-- 需要生产级会话时，应新增持久化或 KV 存储设计。
-
-## 9. 管理入口
-`POST /ai/chat` 要求 `Authorization` 请求头以 `Bearer ` 开头；租户优先读取
-`X-Mango-Tenant-Id`，兼容读取 `TENANT-ID`，为空时读取 Mango 上下文，仍为空时使用 `default`。
-
-当前扩展不初始化菜单和权限。业务接入时应：
-
-- 在 authorization 中登记 AI 页面和接口权限。
-- 给需要使用 AI 的角色授权。
-- 确认前端调用带上 token 和租户头。
-- 根据数据敏感性决定是否增加审计、限流和内容安全策略。
-
-## 10. 快速开始
-1. 确认业务确实需要 AI 扩展，而不是核心平台能力。
-2. 宿主 app 引入 `mango-ai-starter`。
-3. 配置 DeepSeek API key、模型和超时。
-4. 在权限系统登记 AI 菜单或接口权限。
-5. 前端通过 SSE 方式调用 `/ai/chat`，并处理 message、thinking、done、error。
-6. 验证租户隔离、会话 TTL、缺失 token、provider 异常和超时。
+- Spring AI `ChatModel.stream(Prompt)` 是唯一模型调用路径，使用 `spring.ai.deepseek.*` 配置。
+- Mango `ICache` 保存完整会话历史，Mango `IRateLimiter` 执行调用限流。
+- Resilience4j Reactor circuit breaker 在模型连续失败时快速拒绝；不会调用旧实现或其它 Provider。
+- Micrometer 记录 `mango.ai.chat.requests` 和 `mango.ai.chat.tokens`；操作日志只记录租户、用户、会话、模型、结果、错误类型和 token 计数，不记录 prompt 正文或密钥。
+- `IAiPushService` 将通知和告警交给 `RealtimeApi`。宿主应用需按 Realtime 模块说明接入统一连接。
 
 ## 11. 问题排查
-- 调用立刻返回错误事件：检查 Authorization 头是否是 Bearer 格式。
-- DeepSeek 无响应：检查 API key、base URL、网络和 read timeout。
-- 多实例上下文丢失：当前会话在内存中，不跨实例共享。
-- 不应该把 AI 默认放进管理后台：它是可选扩展，按业务需求引入。
 
-## 12. 相关文档
+- 启动失败并提示 KV 或限流 Bean 缺失：检查 `mango.kv.store.type=redis` 以及 capability 开关和 Redis 连接。
+- 请求因上下文失败闭合：检查请求是否经过 Mango 授权链，以及 `MangoContextHolder` 是否包含租户和用户。
+- 请求被限流或熔断：检查 Mango rate-limiter 配置和模型服务可用性；服务不会回退到旧 Provider。
+- SSE 没有完成事件：检查模型服务响应和应用日志中的错误类型，不要在日志中记录 prompt 或密钥。
+
+## 12. 验证
+
+```bash
+cd mango
+mvn -pl :mango-ai-core -am test
+mvn -pl :mango-ai-starter -am test
+mvn verify
+```
+
+AI 变更测试覆盖连续对话历史、租户/用户隔离、历史裁剪、Redis-backed 能力装配契约、限流、熔断、SSE HTTP 入口、上下文失败闭合和指标记录。生产 DeepSeek 密钥不进入仓库；外部模型协议测试必须使用真实本地 HTTP/SSE 服务。
+
+## 13. 相关文档
+
 - [后端模块规范](../../mango-pmo/rules/backend/05-module.md)
 - [后端安全规范](../../mango-pmo/rules/backend/06-security.md)
 - [能力说明维护规范](../../mango-pmo/rules/08-capability-docs.md)
-
-## 13. 补充资料
-- [Mango 后端根 README](../README.md)
 - [Mango 能力地图](../../mango-docs/capabilities/README.md)

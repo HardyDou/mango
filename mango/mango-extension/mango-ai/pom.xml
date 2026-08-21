@@ -17,7 +17,7 @@
     <packaging>pom</packaging>
 
     <name>Mango AI</name>
-    <description>Mango AI Module - AI chat with DeepSeek provider</description>
+    <description>Mango AI Module - Spring AI chat foundation</description>
 
     <modules>
         <module>mango-ai-api</module>
