@@ -42,16 +42,14 @@ async function loginPage(page: Page, tenant: LoginTenant) {
   await page.goto('/#/login');
   await page.locator('.tenant-select').click();
   await page.getByRole('option', { name: new RegExp(tenant.tenantName) }).click();
-  await page.fill('input[placeholder="用户名"]', 'admin');
-  await page.fill('input[placeholder="密码"]', 'admin123');
-  await page.click('button:has-text("登 录")');
+  await page.getByPlaceholder(/用户名/).fill('admin');
+  await page.getByPlaceholder(/密码/).fill('admin123');
+  await page.getByRole('button', { name: '登录' }).click();
   await page.waitForURL('**/#/home', { timeout: 10000 });
 }
 
 async function listConfigs(request: APIRequestContext, token: string, type?: string) {
-  const url = type
-    ? e2eApi(`/system/config/list?type=${type}`)
-    : e2eApi('/system/config/list');
+  const url = type ? e2eApi(`/system/config/list?type=${type}`) : e2eApi('/system/config/list');
   const response = await request.get(url, {
     headers: { Authorization: `Bearer ${token}` },
   });
@@ -78,7 +76,7 @@ async function expectNoAuthError(page: Page) {
   await expect(
     page.locator('.el-message--error, .el-alert--error, [role="alert"]').filter({
       hasText: /401|403|未授权|没有权限|拒绝访问|加载失败|登录已过期|请重新登录/,
-    })
+    }),
   ).toHaveCount(0);
 }
 
@@ -91,14 +89,26 @@ test.describe('T12 参数配置页面真实接口闭环', () => {
     const unique = Date.now();
     const paramKey = `e2e.param.${unique}`;
     const platformToken = await loginToken(request, platformTenant);
+    const consoleErrors: string[] = [];
+    let deleteRequestCount = 0;
+    page.on('console', (message) => {
+      if (message.type() === 'error') {
+        consoleErrors.push(message.text());
+      }
+    });
+    page.on('pageerror', (error) => consoleErrors.push(`pageerror:${error.message}`));
+    page.on('request', (browserRequest) => {
+      if (browserRequest.method() === 'DELETE' && browserRequest.url().includes('/api/system/config')) {
+        deleteRequestCount += 1;
+      }
+    });
 
     try {
       await cleanupConfig(request, platformToken, paramKey);
       await loginPage(page, platformTenant);
 
-      const listResponsePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/system/config/list') &&
-        response.status() === 200
+      const listResponsePromise = page.waitForResponse(
+        (response) => response.url().includes('/api/system/config/list') && response.status() === 200,
       );
       await page.goto('/#/system/config');
       await listResponsePromise;
@@ -112,9 +122,8 @@ test.describe('T12 参数配置页面真实接口闭环', () => {
       await createParamDialog.getByLabel('当前值').fill('value-1');
       await createParamDialog.getByLabel('参数介绍').fill(`持久化端到端验证${unique}`);
 
-      const createParamResponsePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/system/config') &&
-        response.request().method() === 'POST'
+      const createParamResponsePromise = page.waitForResponse(
+        (response) => response.url().includes('/api/system/config') && response.request().method() === 'POST',
       );
       await createParamDialog.getByRole('button', { name: '保存' }).click();
       const createParamResponse = await createParamResponsePromise;
@@ -128,9 +137,8 @@ test.describe('T12 参数配置页面真实接口闭环', () => {
       await paramRow.getByRole('button', { name: '编辑' }).click();
       const editParamDialog = page.getByRole('dialog', { name: '编辑参数' });
       await editParamDialog.getByLabel('当前值').fill('value-2');
-      const updateParamResponsePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/system/config') &&
-        response.request().method() === 'PUT'
+      const updateParamResponsePromise = page.waitForResponse(
+        (response) => response.url().includes('/api/system/config') && response.request().method() === 'PUT',
       );
       await editParamDialog.getByRole('button', { name: '保存' }).click();
       const updateParamResponse = await updateParamResponsePromise;
@@ -141,11 +149,19 @@ test.describe('T12 参数配置页面真实接口闭环', () => {
       await expect(configRow(page, paramKey).getByText('value-2')).toBeVisible({ timeout: 10000 });
 
       await configRow(page, paramKey).getByRole('button', { name: '删除' }).click();
-      const deleteDialog = page.getByRole('dialog', { name: '删除确认' });
+      let deleteDialog = page.getByRole('dialog', { name: '删除确认' });
       await expect(deleteDialog).toContainText(`确认删除参数“E2E参数${unique}”？`);
-      const deleteResponsePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/system/config') &&
-        response.request().method() === 'DELETE'
+      await deleteDialog.getByRole('button', { name: '取消' }).click();
+      await expect(deleteDialog).toBeHidden();
+      await expect(configRow(page, paramKey)).toBeVisible();
+      await expect(page.getByText('系统错误，请刷新页面', { exact: true })).toHaveCount(0);
+      expect(deleteRequestCount).toBe(0);
+      expect(consoleErrors).toEqual([]);
+
+      await configRow(page, paramKey).getByRole('button', { name: '删除' }).click();
+      deleteDialog = page.getByRole('dialog', { name: '删除确认' });
+      const deleteResponsePromise = page.waitForResponse(
+        (response) => response.url().includes('/api/system/config') && response.request().method() === 'DELETE',
       );
       await deleteDialog.getByRole('button', { name: '确认删除' }).click();
       const deleteResponse = await deleteResponsePromise;
@@ -154,8 +170,10 @@ test.describe('T12 参数配置页面真实接口闭环', () => {
       expect(deleteBody.success || deleteBody.code === 200).toBeTruthy();
       await expectLatestMessage(page, '删除成功');
       await expect(configRow(page, paramKey)).toHaveCount(0);
+      expect(deleteRequestCount).toBe(1);
 
       await expectNoAuthError(page);
+      expect(consoleErrors).toEqual([]);
     } finally {
       await cleanupConfig(request, platformToken, paramKey).catch(() => undefined);
     }

@@ -5,10 +5,15 @@
 <script setup lang="ts">
 import { onMounted } from 'vue';
 import { mangoMessage } from '@mango/common';
+import { isElementPlusMessageBoxCancellation } from '@mango/admin-shell';
 
 onMounted(() => {
   // Catch unhandled promise rejections
   window.addEventListener('unhandledrejection', (event) => {
+    if (isElementPlusMessageBoxCancellation(event.reason)) {
+      event.preventDefault();
+      return;
+    }
     console.error('Unhandled promise rejection:', event.reason);
     if (event.reason && typeof event.reason === 'object' && 'response' in event.reason) {
       event.preventDefault();

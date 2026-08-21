@@ -11,6 +11,15 @@ describe('@mango/admin-shell package boundary', () => {
 
     expect(indexSource).toContain('createMangoAdminApp');
     expect(indexSource).toContain('MangoAdminShellOptions');
+    expect(indexSource).toContain('isElementPlusMessageBoxCancellation');
+  });
+
+  it('installs the shared error boundary for every Shell-created Vue app', () => {
+    const bootstrapSource = readFile('src/appBootstrap.ts');
+    const runtimeHostSource = readFile('src/runtime/runtimeHost.ts');
+
+    expect(bootstrapSource).toContain('installShellErrorHandler(app)');
+    expect(runtimeHostSource.match(/installShellApp\(mountedLocalPage\)/gu)).toHaveLength(2);
   });
 
   it('uses only exact workspace dependency pins in the development manifest', () => {
