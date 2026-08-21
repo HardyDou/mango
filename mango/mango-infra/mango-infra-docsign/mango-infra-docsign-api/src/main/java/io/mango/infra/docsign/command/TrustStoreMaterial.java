@@ -1,7 +1,6 @@
 package io.mango.infra.docsign.command;
 
 import io.mango.common.contract.LocalCapabilityContract;
-import io.mango.common.result.Require;
 
 import java.util.Arrays;
 
@@ -18,7 +17,9 @@ public final class TrustStoreMaterial {
     private final char[] password;
 
     public TrustStoreMaterial(String type, byte[] content, char[] password) {
-        Require.isTrue(content != null && content.length > 0, "信任库内容不能为空");
+        if (content == null || content.length == 0) {
+            throw new IllegalArgumentException("信任库内容不能为空");
+        }
         this.type = type == null || type.isBlank() ? "PKCS12" : type;
         this.content = Arrays.copyOf(content, content.length);
         this.password = password == null ? new char[0] : Arrays.copyOf(password, password.length);

@@ -24,6 +24,9 @@ import java.nio.file.Path;
 public class PdfToOfdConvertProvider implements IConvertProvider {
 
     private static final double PDF_USER_UNITS_PER_MILLIMETRE = 72D / 25.4D;
+    private static final int FULL_ROTATION_DEGREES = 360;
+    private static final int QUARTER_ROTATION_DEGREES = 90;
+    private static final int THREE_QUARTER_ROTATION_DEGREES = 270;
 
     @Override
     public boolean supports(ConvertFormat sourceFormat, ConvertFormat targetFormat) {
@@ -77,8 +80,8 @@ public class PdfToOfdConvertProvider implements IConvertProvider {
         PDRectangle pageBox = pdfPage.getCropBox();
         double width = pageBox.getWidth();
         double height = pageBox.getHeight();
-        int rotation = Math.floorMod(pdfPage.getRotation(), 360);
-        if (rotation == 90 || rotation == 270) {
+        int rotation = Math.floorMod(pdfPage.getRotation(), FULL_ROTATION_DEGREES);
+        if (rotation == QUARTER_ROTATION_DEGREES || rotation == THREE_QUARTER_ROTATION_DEGREES) {
             double originalWidth = width;
             width = height;
             height = originalWidth;

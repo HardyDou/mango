@@ -57,6 +57,9 @@ import java.util.List;
  */
 public final class PdfDocumentSignProvider implements IDocumentSignProvider {
 
+    private static final int BYTE_RANGE_COMPONENT_COUNT = 4;
+    private static final int SECOND_RANGE_START_INDEX = 2;
+    private static final int SECOND_RANGE_LENGTH_INDEX = 3;
     private static final float POINTS_PER_MM = 72F / 25.4F;
     private static final int PREFERRED_SIGNATURE_SIZE = 65536;
     private static final long DEFAULT_MAX_IN_MEMORY_BYTES = 16L * 1024 * 1024;
@@ -420,19 +423,19 @@ public final class PdfDocumentSignProvider implements IDocumentSignProvider {
 
     private boolean isValidByteRange(int[] byteRange, long contentLength) {
         return byteRange != null
-                && byteRange.length == 4
+                && byteRange.length == BYTE_RANGE_COMPONENT_COUNT
                 && byteRange[0] == 0
                 && byteRange[1] > 0
-                && byteRange[2] > byteRange[1]
-                && byteRange[3] >= 0
+                && byteRange[SECOND_RANGE_START_INDEX] > byteRange[1]
+                && byteRange[SECOND_RANGE_LENGTH_INDEX] >= 0
                 && signedRevisionLength(byteRange) <= contentLength;
     }
 
     private long signedRevisionLength(int[] byteRange) {
-        if (byteRange == null || byteRange.length != 4) {
+        if (byteRange == null || byteRange.length != BYTE_RANGE_COMPONENT_COUNT) {
             return -1;
         }
-        return byteRange[2] + (long) byteRange[3];
+        return byteRange[SECOND_RANGE_START_INDEX] + (long) byteRange[SECOND_RANGE_LENGTH_INDEX];
     }
 
     private SignatureValidationVO invalid(int index,

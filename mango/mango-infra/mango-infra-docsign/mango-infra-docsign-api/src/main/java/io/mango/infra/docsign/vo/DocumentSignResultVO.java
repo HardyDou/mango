@@ -18,7 +18,9 @@ public final class DocumentSignResultVO {
 
     public DocumentSignResultVO(DocumentSignFormat format, byte[] content, int signatureCount) {
         Require.notNull(format, "签名结果格式不能为空");
-        Require.isTrue(content != null && content.length > 0, "签名结果内容不能为空");
+        if (content == null || content.length == 0) {
+            throw new IllegalArgumentException("签名结果内容不能为空");
+        }
         Require.isTrue(signatureCount > 0, "签名数量必须大于 0");
         this.format = format;
         this.content = Arrays.copyOf(content, content.length);

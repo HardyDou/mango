@@ -60,6 +60,8 @@ import java.util.List;
  */
 public final class OfdDocumentSignProvider implements IDocumentSignProvider {
 
+    private static final int IN_MEMORY_OUTPUT_GROWTH_BYTES = 64 * 1024;
+    private static final long MAX_SIGNED_VALUE_BYTES = 4L * 1024L * 1024L;
     private static final long DEFAULT_MAX_IN_MEMORY_BYTES = 16L * 1024 * 1024;
     private static final long DEFAULT_MAX_DOCUMENT_BYTES = 2L * 1024 * 1024 * 1024;
 
@@ -102,7 +104,7 @@ public final class OfdDocumentSignProvider implements IDocumentSignProvider {
     @Override
     public DocumentSignResultVO sign(DocumentSignCommand command) {
         byte[] source = inMemoryContent(command.content(), "待签 OFD");
-        ByteArrayOutputStream output = new ByteArrayOutputStream(source.length + 65536);
+        ByteArrayOutputStream output = new ByteArrayOutputStream(source.length + IN_MEMORY_OUTPUT_GROWTH_BYTES);
         DocumentSignStreamResultVO result = sign(command, new ByteArrayInputStream(source), output);
         return new DocumentSignResultVO(result.format(), output.toByteArray(), result.signatureCount());
     }
@@ -346,7 +348,7 @@ public final class OfdDocumentSignProvider implements IDocumentSignProvider {
 
     private byte[] readSignedValue(Path signedValuePath) throws IOException {
         long size = Files.size(signedValuePath);
-        if (size <= 0 || size > 4L * 1024 * 1024) {
+        if (size <= 0 || size > MAX_SIGNED_VALUE_BYTES) {
             throw new IOException("OFD 签名值大小无效: " + size);
         }
         try (InputStream input = Files.newInputStream(signedValuePath)) {

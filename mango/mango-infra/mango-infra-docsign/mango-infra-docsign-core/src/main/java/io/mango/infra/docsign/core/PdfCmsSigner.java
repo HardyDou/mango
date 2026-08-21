@@ -21,6 +21,8 @@ import java.security.cert.CertificateEncodingException;
  */
 final class PdfCmsSigner {
 
+    private static final int INITIAL_CMS_CAPACITY = 16 * 1024;
+
     private final LoadedKeyMaterial keyMaterial;
     private final DocumentSignatureAlgorithm signatureAlgorithm;
 
@@ -42,7 +44,7 @@ final class PdfCmsSigner {
                             .build())
                     .build(contentSigner, keyMaterial.certificate()));
             generator.addCertificates(new JcaCertStore(keyMaterial.certificateChain()));
-            ByteArrayOutputStream encoded = new ByteArrayOutputStream(16384);
+            ByteArrayOutputStream encoded = new ByteArrayOutputStream(INITIAL_CMS_CAPACITY);
             try (OutputStream signedContent = generator.open(encoded, false)) {
                 content.transferTo(signedContent);
             }

@@ -13,6 +13,8 @@ import java.util.Set;
  */
 final class TemporaryDocumentFile implements AutoCloseable {
 
+    private static final int COPY_BUFFER_SIZE = 64 * 1024;
+
     private static final Set<PosixFilePermission> OWNER_ONLY = Set.of(
             PosixFilePermission.OWNER_READ,
             PosixFilePermission.OWNER_WRITE);
@@ -54,7 +56,7 @@ final class TemporaryDocumentFile implements AutoCloseable {
     }
 
     private static void copy(InputStream source, OutputStream output, long maxBytes) throws IOException {
-        byte[] buffer = new byte[65536];
+        byte[] buffer = new byte[COPY_BUFFER_SIZE];
         long copied = 0;
         int read;
         while ((read = source.read(buffer)) >= 0) {

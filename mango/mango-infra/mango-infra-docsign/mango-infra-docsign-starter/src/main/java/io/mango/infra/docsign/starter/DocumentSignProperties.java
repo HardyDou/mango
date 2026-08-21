@@ -15,6 +15,8 @@ import java.nio.file.Path;
 @ConfigurationProperties(prefix = "mango.docsign")
 public class DocumentSignProperties {
 
+    private static final long DEFAULT_MAX_IN_MEMORY_MEGABYTES = 16L;
+
     /** Whether document signing is enabled. */
     private boolean enabled = true;
 
@@ -25,7 +27,7 @@ public class DocumentSignProperties {
     private boolean ofdEnabled = true;
 
     /** Maximum document size accepted by the compatibility byte-array API. */
-    private DataSize maxInMemorySize = DataSize.ofMegabytes(16);
+    private DataSize maxInMemorySize = DataSize.ofMegabytes(DEFAULT_MAX_IN_MEMORY_MEGABYTES);
 
     /** Maximum source document size accepted by streaming processing. */
     private DataSize maxDocumentSize = DataSize.ofGigabytes(2);

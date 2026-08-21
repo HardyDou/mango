@@ -1,7 +1,6 @@
 package io.mango.infra.docsign.command;
 
 import io.mango.common.contract.LocalCapabilityContract;
-import io.mango.common.result.Require;
 
 import java.util.Arrays;
 
@@ -20,7 +19,9 @@ public final class Pkcs12KeyMaterial {
     private final String alias;
 
     public Pkcs12KeyMaterial(byte[] content, char[] password, String alias) {
-        Require.isTrue(content != null && content.length > 0, "PKCS#12 内容不能为空");
+        if (content == null || content.length == 0) {
+            throw new IllegalArgumentException("PKCS#12 内容不能为空");
+        }
         this.content = Arrays.copyOf(content, content.length);
         this.password = password == null ? new char[0] : Arrays.copyOf(password, password.length);
         this.alias = alias == null || alias.isBlank() ? null : alias;

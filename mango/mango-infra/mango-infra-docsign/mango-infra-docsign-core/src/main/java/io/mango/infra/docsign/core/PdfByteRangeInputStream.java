@@ -13,6 +13,11 @@ import java.util.Objects;
  */
 final class PdfByteRangeInputStream extends InputStream {
 
+    private static final int BYTE_RANGE_COMPONENT_COUNT = 4;
+    private static final int SECOND_RANGE_START_INDEX = 2;
+    private static final int SECOND_RANGE_LENGTH_INDEX = 3;
+    private static final int UNSIGNED_BYTE_MASK = 0xFF;
+
     private final FileChannel channel;
     private final long[] starts;
     private final long[] lengths;
@@ -21,12 +26,12 @@ final class PdfByteRangeInputStream extends InputStream {
     private long remaining;
 
     PdfByteRangeInputStream(Path document, int[] byteRange) throws IOException {
-        if (byteRange == null || byteRange.length != 4) {
+        if (byteRange == null || byteRange.length != BYTE_RANGE_COMPONENT_COUNT) {
             throw new IllegalArgumentException("PDF 签名 ByteRange 格式无效");
         }
         this.channel = FileChannel.open(document, StandardOpenOption.READ);
-        this.starts = new long[]{byteRange[0], byteRange[2]};
-        this.lengths = new long[]{byteRange[1], byteRange[3]};
+        this.starts = new long[]{byteRange[0], byteRange[SECOND_RANGE_START_INDEX]};
+        this.lengths = new long[]{byteRange[1], byteRange[SECOND_RANGE_LENGTH_INDEX]};
         this.rangeIndex = 0;
         this.remaining = lengths[0];
         channel.position(starts[0]);
@@ -35,7 +40,7 @@ final class PdfByteRangeInputStream extends InputStream {
     @Override
     public int read() throws IOException {
         int read = read(oneByte, 0, 1);
-        return read < 0 ? -1 : oneByte[0] & 0xff;
+        return read < 0 ? -1 : oneByte[0] & UNSIGNED_BYTE_MASK;
     }
 
     @Override
