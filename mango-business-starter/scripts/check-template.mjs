@@ -66,6 +66,7 @@ const requiredFiles = [
   "business-pmo/mango-baseline/tools/pmo-preflight.mjs",
   "business-pmo/mango-baseline/tools/check-document-set.mjs",
   "business-pmo/mango-baseline/tools/check-frontend-page-baseline.mjs",
+  "business-pmo/mango-baseline/tools/lib/project-pmo-checks.mjs",
   "business-pmo/mango-baseline/tools/delivery-contract-check.mjs",
   "business-docs/plans/example-contract.md",
   "business-docs/plans/example-ledger.md",

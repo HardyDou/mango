@@ -1,9 +1,13 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import test from 'node:test';
 
 import {
   evaluateVuePageBaseline,
   formatFrontendPageBaselineFailures,
+  runFrontendPageBaselineCli,
 } from '../tools/check-frontend-page-baseline.mjs';
 
 const listPage = `
@@ -91,5 +95,18 @@ test('does not force independent page shells onto modified drawers or ordinary p
       'M',
     ),
     [],
+  );
+});
+
+test('explicit project configuration disables only the frontend page baseline checker', t => {
+  const project = fs.mkdtempSync(path.join(os.tmpdir(), 'mango-disabled-page-baseline-'));
+  t.after(() => fs.rmSync(project, { recursive: true, force: true }));
+  fs.writeFileSync(path.join(project, 'mango.config.json'), JSON.stringify({
+    pmoChecks: { frontendPageBaseline: false },
+  }));
+
+  assert.equal(
+    runFrontendPageBaselineCli(['--base', 'missing-base', '--head', 'missing-head'], { repositoryRoot: project }),
+    0,
   );
 });

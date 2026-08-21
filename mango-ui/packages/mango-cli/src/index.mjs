@@ -3600,8 +3600,11 @@ function syncPmoBaseline(argv, { command = 'sync' } = {}) {
     command === 'upgrade' ? planHistoricalPmoVersionCompatibility(targetDir, baseline) : [];
   const projectTemplatePlan = planPmoProjectTemplateSync(targetDir, baseline);
   const governanceWorkflowPlan = planPmoGovernanceWorkflowSync(targetDir, variables, options.adoptGovernance);
+  const releaseTuplePlan = command === 'upgrade' ? planReleaseTupleUpgrade(targetDir, baseline) : [];
+  const projectPmoChecksPlan = planProjectPmoChecksConfigSync(targetDir, releaseTuplePlan);
   const plan = [
-    ...(command === 'upgrade' ? planReleaseTupleUpgrade(targetDir, baseline) : []),
+    ...releaseTuplePlan,
+    ...projectPmoChecksPlan,
     ...planPmoBaselineSync(targetDir, baseline),
     ...planPmoSkillSync(targetDir, baseline),
     ...historicalPmoVersionPlan,
@@ -3828,6 +3831,71 @@ function planReleaseTupleUpgrade(targetDir, baseline) {
       `${managedPackageNames.size} managed npm package(s)\n`,
   );
   return plan;
+}
+
+function resolveProjectPmoChecks(config) {
+  if (!isPlainObject(config)) {
+    throw new Error('mango.config.json must contain a JSON object');
+  }
+  const configured = config.pmoChecks;
+  if (configured === undefined) return { frontendPageBaseline: true };
+  if (!isPlainObject(configured)) {
+    throw new Error('mango.config.json pmoChecks must be an object');
+  }
+  if (configured.frontendPageBaseline === undefined) return { frontendPageBaseline: true };
+  if (typeof configured.frontendPageBaseline !== 'boolean') {
+    throw new Error('mango.config.json pmoChecks.frontendPageBaseline must be a boolean');
+  }
+  return { frontendPageBaseline: configured.frontendPageBaseline };
+}
+
+function readProjectPmoChecksConfig(targetDir) {
+  const configPath = join(targetDir, 'mango.config.json');
+  if (!existsSync(configPath)) return null;
+  let config;
+  try {
+    config = JSON.parse(readFileSync(configPath, 'utf8'));
+  } catch (error) {
+    throw new Error(`Cannot read mango.config.json PMO checks: ${error.message}`);
+  }
+  return { configPath, config, checks: resolveProjectPmoChecks(config) };
+}
+
+function planProjectPmoChecksConfigSync(targetDir, priorPlan = []) {
+  const configPath = join(targetDir, 'mango.config.json');
+  const priorConfigPlan = [...priorPlan].reverse().find((item) => item.targetPath === configPath && item.content);
+  if (!priorConfigPlan && !existsSync(configPath)) return [];
+  let config;
+  try {
+    const content = priorConfigPlan?.content ?? readFileSync(configPath, 'utf8');
+    config = JSON.parse(Buffer.isBuffer(content) ? content.toString('utf8') : content);
+  } catch (error) {
+    throw new Error(`Cannot read mango.config.json PMO checks: ${error.message}`);
+  }
+  const checks = resolveProjectPmoChecks(config);
+  if (config.pmoChecks?.frontendPageBaseline !== undefined) {
+    return [
+      {
+        action: 'skip',
+        reason: `frontend page baseline is explicitly ${checks.frontendPageBaseline}`,
+        path: 'mango.config.json',
+        targetPath: configPath,
+        scope: 'project-pmo-config',
+      },
+    ];
+  }
+  const nextConfig = structuredClone(config);
+  nextConfig.pmoChecks = {
+    ...(nextConfig.pmoChecks || {}),
+    frontendPageBaseline: true,
+  };
+  return [
+    {
+      ...buildFilePlanItem('mango.config.json', configPath, `${JSON.stringify(nextConfig, null, 2)}\n`),
+      reason: 'add default PMO check configuration',
+      scope: 'project-pmo-config',
+    },
+  ];
 }
 
 function resolveReleaseTuple(baseline) {
@@ -4343,6 +4411,11 @@ function getPmoStatus(targetDir, { locked = false, checkGovernanceWorkflows = tr
       skillExtra: [],
       locked,
     };
+  }
+  try {
+    readProjectPmoChecksConfig(targetDir);
+  } catch (error) {
+    errors.push(error.message);
   }
   if (!existsSync(baselineDir)) {
     errors.push('business-pmo/mango-baseline is missing. Run mango pmo sync --project-dir .');
@@ -5725,6 +5798,9 @@ function writeMangoConfig(targetDir, variables) {
       backend: 'backend',
       frontend: 'frontend',
       businessDocs: 'business-docs',
+    },
+    pmoChecks: {
+      frontendPageBaseline: true,
     },
     mangoFrontendVersions: variables.frontendVersions,
     npmRegistry: variables.npmRegistry,

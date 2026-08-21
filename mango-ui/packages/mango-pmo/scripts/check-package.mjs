@@ -24,6 +24,7 @@ const requiredFiles = [
   'tools/check-document-set.mjs',
   'tools/pin-historical-pmo-version-documents.mjs',
   'tools/check-frontend-page-baseline.mjs',
+  'tools/lib/project-pmo-checks.mjs',
   'tools/delivery-contract-check.mjs',
   'tools/acceptance-evidence-check.mjs',
   'templates/delivery-contract.md',
