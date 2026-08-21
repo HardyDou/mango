@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "groupId": "io.mango",
+  "artifactId": "mango-docs-bundle",
+  "sourceRoots": ["mango-docs"],
+  "requiredFiles": [
+    "README.md",
+    "capabilities/README.md",
+    "versions/manifest.json"
+  ],
+  "packaging": "jar",
+  "extension": "jar",
+  "classifier": null,
+  "versionSource": "maven-platform"
+}

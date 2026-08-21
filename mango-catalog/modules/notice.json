@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "moduleId": "notice",
+  "frontendPackages": ["@mango/notice"],
+  "adminIntegration": {
+    "aggregateOwner": "@mango/admin",
+    "registrarExports": [
+      { "package": "@mango/notice", "subpath": "./admin-pages", "symbol": "registerMangoNoticeAdminPages" },
+      { "package": "@mango/notice", "subpath": "./admin-shell", "symbol": "registerMangoNoticeAdminShell" }
+    ],
+    "styleEntries": [{ "package": "@mango/notice", "subpath": "./style.css" }]
+  },
+  "backendStarters": [":mango-notice-starter"],
+  "presetMembership": "full"
+}

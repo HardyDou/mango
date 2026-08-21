@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { assertPackedPackageBoundary as assertPackedPackageFiles } from './quality/packed-package-boundary.mjs';
 import { classifyRegistryVersionResult } from './package-consumer-matrix.mjs';
+import { selectConsumerCliMode } from './package-consumer-cli-selection.mjs';
 import { toCanonicalRelativePath } from './release/consumer-tarball-paths.mjs';
 import { readReleaseContracts, verifyPackageTree } from './release-guard-utils.mjs';
 
@@ -408,11 +409,13 @@ try {
   const candidatePackageNames = candidateDirectory
     ? new Set(candidateTarballs.keys())
     : new Set(candidatePackages.map((packageRoot) => readJson(join(packageRoot, 'package.json')).name));
-  const cli = candidatePackageNames.has('@mango/cli')
-    ? installCandidateCliRunner(candidateTarballs)
-    : releaseCandidateMatrix
-      ? installPublishedCliRunner()
-      : sourceCli;
+  const cliMode = selectConsumerCliMode({ candidateDirectory, candidatePackageNames, releaseCandidateMatrix });
+  const cli =
+    cliMode === 'candidate'
+      ? installCandidateCliRunner(candidateTarballs)
+      : cliMode === 'published'
+        ? installPublishedCliRunner()
+        : sourceCli;
 
   if (!reuseBuild && !candidateDirectory) {
     console.log('Generating package styles before packing');

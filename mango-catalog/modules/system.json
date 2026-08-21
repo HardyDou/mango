@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "moduleId": "system",
+  "frontendPackages": ["@mango/system"],
+  "adminIntegration": {
+    "aggregateOwner": "@mango/admin",
+    "registrarExports": [
+      {
+        "package": "@mango/system",
+        "subpath": "./admin-pages",
+        "symbol": "registerMangoSystemAdminPages"
+      }
+    ],
+    "styleEntries": [{ "package": "@mango/system", "subpath": "./style.css" }]
+  },
+  "backendStarters": [":mango-system-starter"],
+  "configFragments": [
+    {
+      "source": "mango-catalog/config-fragments/system-default.yml",
+      "targetOwner": "@mango/cli",
+      "targetPath": "templates/full/backend/app/src/main/resources/application.yml"
+    }
+  ],
+  "presetMembership": "default"
+}

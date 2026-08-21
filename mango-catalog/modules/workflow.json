@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "moduleId": "workflow",
+  "frontendPackages": ["@mango/workflow"],
+  "adminIntegration": {
+    "aggregateOwner": "@mango/admin",
+    "registrarExports": [{ "package": "@mango/workflow", "subpath": "./admin-pages", "symbol": "registerMangoWorkflowAdminPages" }],
+    "styleEntries": [{ "package": "@mango/workflow", "subpath": "./style.css" }]
+  },
+  "backendStarters": [":mango-workflow-starter"],
+  "presetMembership": "full"
+}

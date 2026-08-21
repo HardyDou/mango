@@ -2,7 +2,16 @@ import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 
-export const RELEASE_STATES = ['PREPARED', 'CANDIDATE_VERIFIED', 'PUBLISHED', 'CONSUMER_VERIFIED', 'COMPLETED'];
+export const RELEASE_STATES = [
+  'VALIDATED',
+  'PREPARED',
+  'READY',
+  'PUBLISHING',
+  'PARTIAL',
+  'AMBIGUOUS',
+  'REPAIR',
+  'COMPLETED',
+];
 export const RELEASE_COMMAND_MAX_BUFFER_BYTES = 64 * 1024 * 1024;
 
 const RELEASE_COMMAND_SCRIPTS = {

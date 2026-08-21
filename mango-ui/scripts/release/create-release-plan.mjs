@@ -43,6 +43,7 @@ const successfulBaselinePath = join(workspaceRoot, '.changeset/release-baseline.
 const successfulBaseline = existsSync(successfulBaselinePath) ? readJson(successfulBaselinePath) : null;
 const previousPlan = storedPlan?.planDigest === successfulBaseline?.planDigest ? null : storedPlan;
 const packageIndex = indexPublishedPackages(workspaceRoot);
+const catalog = readJson(join(repoRoot, 'mango-catalog/catalog.lock.json'));
 const releaseVersions = readJson(join(workspaceRoot, 'packages/mango-cli/release-versions.json'));
 const managedVersions = releaseVersions.npm ?? {};
 const baseline = resolveBaseline(repoRoot, workspaceRoot, legacy);
@@ -55,12 +56,12 @@ const restored = restoredPublishedBaselines({
 });
 const pendingChangesets = readPendingChangesets(workspaceRoot);
 if (checkOnly && storedPlan && successfulBaseline?.planDigest === storedPlan.planDigest) {
-  if (pendingChangesets.length > 0) {
-    throw new Error('completed release plan cannot cover pending Changesets; create the next release plan');
-  }
   assertCompletedReleaseBaseline(storedPlan, successfulBaseline);
-  verifyPlanProjection(storedPlan, packageIndex, managedVersions);
+  verifyPlanProjection(storedPlan, packageIndex, managedVersions, { historicalCompleted: true });
   console.log(`Completed release plan check PASS ${storedPlan.planDigest}`);
+  if (pendingChangesets.length > 0) {
+    console.log(`${pendingChangesets.length} pending Changeset(s) belong to the next release plan`);
+  }
   process.exit(0);
 }
 const releaseMetadata = resolveReleaseMetadata(previousPlan, pendingChangesets);
@@ -84,6 +85,9 @@ const plan = buildReleasePlan({
     notesFile: releaseMetadata.notesFile,
     notesSha256: releaseMetadata.notesSha256,
   },
+  catalogDigest: catalog.catalogDigest,
+  mavenInventory: catalog.maven.publishableCoordinates,
+  releaseArtifacts: catalog.releaseArtifacts,
 });
 assertReleasePlanShape(plan);
 
@@ -200,14 +204,16 @@ function collectPackageDescriptors(roots) {
   }
 }
 
-function verifyPlanProjection(releasePlan, packages, currentManagedVersions) {
+function verifyPlanProjection(releasePlan, packages, currentManagedVersions, { historicalCompleted = false } = {}) {
   const notesPath = join(workspaceRoot, releasePlan.release?.notesFile ?? '');
   if (!releasePlan.release?.tag || !existsSync(notesPath)) throw new Error('release tag or release notes are missing');
   const notesHash = sha256(Buffer.from(readFileSync(notesPath, 'utf8'), 'utf8'));
   if (notesHash !== releasePlan.release.notesSha256) throw new Error('release notes do not match the machine plan');
   const targetVersions = new Map(releasePlan.packages.map((entry) => [entry.name, entry.targetVersion]));
-  verifyCliReadmeProjection(releasePlan);
-  verifyCliFullFrontendTemplateProjection(releasePlan);
+  if (!historicalCompleted) {
+    verifyCliReadmeProjection(releasePlan);
+    verifyCliFullFrontendTemplateProjection(releasePlan);
+  }
   const currentReleaseVersions = readJson(join(workspaceRoot, 'packages/mango-cli/release-versions.json'));
   if (releasePlan.maven && currentReleaseVersions.maven?.mangoBackend !== releasePlan.maven.targetVersion) {
     throw new Error(

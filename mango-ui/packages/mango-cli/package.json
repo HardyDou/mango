@@ -11,6 +11,7 @@
     "src",
     "templates",
     "admin-modules.json",
+    "module-projections.json",
     "release-versions.json",
     "CHANGELOG.md",
     "README.md",

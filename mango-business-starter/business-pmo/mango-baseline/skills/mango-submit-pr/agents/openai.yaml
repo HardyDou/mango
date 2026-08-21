@@ -1,6 +1,6 @@
 interface:
-  display_name: "Mango PR Submission"
-  short_description: "Submit a verified Mango or business task PR without merging or releasing"
-  default_prompt: "Use $mango-submit-pr to submit the current verified task branch as a pull request and read back the remote result."
+  display_name: 'Mango PR Submission'
+  short_description: 'Submit a verified Mango or business task PR without merging or releasing'
+  default_prompt: 'Use $mango-submit-pr to submit the current verified task branch as a pull request and read back the remote result.'
 policy:
   allow_implicit_invocation: true

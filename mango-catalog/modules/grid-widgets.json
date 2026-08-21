@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "moduleId": "grid-widgets",
+  "frontendPackages": ["@mango/grid-widgets"],
+  "adminIntegration": {
+    "aggregateOwner": "@mango/admin",
+    "styleEntries": [{ "package": "@mango/grid-widgets", "subpath": "./style.css" }]
+  },
+  "presetMembership": "default"
+}

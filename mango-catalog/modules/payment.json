@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "moduleId": "payment",
+  "frontendPackages": ["@mango/payment"],
+  "adminIntegration": {
+    "aggregateOwner": "@mango/admin",
+    "registrarExports": [{ "package": "@mango/payment", "subpath": "./admin-pages", "symbol": "registerMangoPaymentAdminPages" }],
+    "styleEntries": [{ "package": "@mango/payment", "subpath": "./style.css" }]
+  },
+  "backendStarters": [":mango-payment-starter"],
+  "presetMembership": "full"
+}

@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "moduleId": "cms",
+  "frontendPackages": ["@mango/cms"],
+  "adminIntegration": {
+    "aggregateOwner": "@mango/admin",
+    "registrarExports": [{ "package": "@mango/cms", "subpath": "./admin-pages", "symbol": "registerMangoCmsAdminPages" }],
+    "styleEntries": [{ "package": "@mango/cms", "subpath": "./style.css" }]
+  },
+  "backendStarters": [":mango-cms-starter"],
+  "presetMembership": "default"
+}

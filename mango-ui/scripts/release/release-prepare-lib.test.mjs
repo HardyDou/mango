@@ -8,6 +8,7 @@ import {
   archiveSupersededPrepare,
   isRetryablePrepareFailure,
   isSupersededLocalCandidate,
+  orderExactMavenCoordinateSet,
 } from './release-prepare-lib.mjs';
 
 test('a same-plan local prepare failure without remote writes is retryable after a source fix', () => {
@@ -45,7 +46,7 @@ test('a verified local-only candidate is superseded when the final source change
   const plan = { planDigest: 'plan-a' };
   const candidate = {
     schemaVersion: 1,
-    status: 'CANDIDATE_VERIFIED',
+    status: 'READY',
     remoteWrites: false,
     planDigest: 'plan-a',
     source: { commit: 'commit-a', tree: 'tree-a' },
@@ -63,7 +64,7 @@ test('superseded local candidate evidence is archived instead of deleted', () =>
   const releaseRoot = join(root, 'plan-a');
   try {
     mkdirSync(releaseRoot, { recursive: true });
-    writeFileSync(join(releaseRoot, 'manifest.json'), '{"status":"CANDIDATE_VERIFIED"}\n');
+    writeFileSync(join(releaseRoot, 'manifest.json'), '{"status":"READY"}\n');
     const archived = archiveSupersededPrepare(releaseRoot, new Date('2026-08-15T00:00:00.000Z'));
     assert.equal(archived.endsWith('.superseded-2026-08-15T00-00-00-000Z'), true);
     assert.equal(existsSync(releaseRoot), false);
@@ -71,4 +72,17 @@ test('superseded local candidate evidence is archived instead of deleted', () =>
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
+});
+
+test('staged Maven coordinates must be an exact set and are returned in plan order', () => {
+  const base = { coordinate: 'io.mango:mango-base:1.0.0', packaging: 'jar' };
+  const docs = { coordinate: 'io.mango:mango-docs-bundle:1.0.0', packaging: 'jar' };
+  const order = [base.coordinate, docs.coordinate];
+  assert.deepEqual(orderExactMavenCoordinateSet(order, [docs, base]), [base, docs]);
+  assert.throws(() => orderExactMavenCoordinateSet(order, [base]), /missing=.*mango-docs-bundle/u);
+  assert.throws(
+    () => orderExactMavenCoordinateSet(order, [base, docs, { coordinate: 'io.mango:extra:1.0.0' }]),
+    /extra=.*io\.mango:extra/u,
+  );
+  assert.throws(() => orderExactMavenCoordinateSet(order, [base, base, docs]), /duplicateStaged=.*mango-base/u);
 });

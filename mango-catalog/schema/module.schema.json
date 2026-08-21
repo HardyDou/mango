@@ -1,0 +1,141 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mango.local/catalog/module.schema.json",
+  "title": "Mango official module manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "moduleId",
+    "frontendPackages",
+    "presetMembership"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "moduleId": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*$"
+    },
+    "frontendPackages": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^@mango/[a-z0-9-]+$"
+      }
+    },
+    "adminIntegration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["aggregateOwner"],
+      "properties": {
+        "aggregateOwner": {
+          "type": "string",
+          "pattern": "^@mango/[a-z0-9-]+$"
+        },
+        "registrarExports": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["package", "subpath", "symbol"],
+            "properties": {
+              "package": {
+                "type": "string",
+                "pattern": "^@mango/[a-z0-9-]+$"
+              },
+              "subpath": {
+                "type": "string",
+                "pattern": "^\\./[A-Za-z0-9._/-]+$"
+              },
+              "symbol": {
+                "type": "string",
+                "pattern": "^[A-Za-z_$][A-Za-z0-9_$]*$"
+              }
+            }
+          }
+        },
+        "styleEntries": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["package", "subpath"],
+            "properties": {
+              "package": {
+                "type": "string",
+                "pattern": "^@mango/[a-z0-9-]+$"
+              },
+              "subpath": {
+                "type": "string",
+                "pattern": "^\\./[A-Za-z0-9._/-]+$"
+              }
+            }
+          }
+        }
+      }
+    },
+    "backendStarters": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^:[a-z][a-z0-9-]*-starter(?:-remote)?$"
+      }
+    },
+    "presetMembership": {
+      "enum": ["default", "full", "custom-selectable", "absent"]
+    },
+    "configFragments": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["source", "targetOwner", "targetPath"],
+        "properties": {
+          "source": {
+            "type": "string",
+            "minLength": 1
+          },
+          "targetOwner": {
+            "type": "string",
+            "minLength": 1
+          },
+          "targetPath": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "resourceCopies": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["source", "targetOwner", "targetPath"],
+        "properties": {
+          "source": {
+            "type": "string",
+            "minLength": 1
+          },
+          "targetOwner": {
+            "type": "string",
+            "minLength": 1
+          },
+          "targetPath": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    }
+  }
+}

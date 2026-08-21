@@ -24,10 +24,10 @@ const packages = [
   '@mango/cms',
   '@mango/link-openapi',
   '@mango/link',
-  '@mango/template',
-  '@mango/numgen',
   '@mango/calendar',
+  '@mango/numgen',
   '@mango/payment',
+  '@mango/template',
   '@mango/workflow-business-example',
 ];
 

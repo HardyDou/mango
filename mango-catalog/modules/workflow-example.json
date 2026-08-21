@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "moduleId": "workflow-example",
+  "frontendPackages": ["@mango/workflow-business-example"],
+  "adminIntegration": {
+    "aggregateOwner": "@mango/admin",
+    "registrarExports": [{ "package": "@mango/workflow-business-example", "subpath": "./admin-pages", "symbol": "registerMangoWorkflowBusinessExampleAdminPages" }],
+    "styleEntries": [{ "package": "@mango/workflow-business-example", "subpath": "./style.css" }]
+  },
+  "presetMembership": "full"
+}

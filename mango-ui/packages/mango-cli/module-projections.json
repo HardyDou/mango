@@ -1,0 +1,425 @@
+{
+  "modules": [
+    {
+      "backendStarters": [],
+      "configFragments": [],
+      "dependsOn": [
+        "file",
+        "notice",
+        "workflow"
+      ],
+      "frontend": {
+        "cliVersionKey": "mangoAdminShell",
+        "code": "admin-shell",
+        "packageName": "@mango/admin-shell",
+        "registrars": [],
+        "style": "@mango/admin-shell/style.css"
+      },
+      "moduleId": "admin-shell",
+      "presetMembership": "default",
+      "resourceCopies": [
+        {
+          "sha256": "55d17cd4d2f29463a257c682522e7c69e45b18157e2740d178231eb52f28f08a",
+          "targetPath": "templates/full/frontend/public/favicon.ico"
+        }
+      ]
+    },
+    {
+      "backendStarters": [
+        {
+          "artifactId": "mango-auth-starter",
+          "groupId": "io.mango.platform.auth"
+        }
+      ],
+      "configFragments": [],
+      "dependsOn": [],
+      "frontend": {
+        "cliVersionKey": "mangoAuth",
+        "code": "auth",
+        "packageName": "@mango/auth",
+        "registrars": [],
+        "style": "@mango/auth/style.css"
+      },
+      "moduleId": "auth",
+      "presetMembership": "default",
+      "resourceCopies": []
+    },
+    {
+      "backendStarters": [
+        {
+          "artifactId": "mango-calendar-starter",
+          "groupId": "io.mango.platform.calendar"
+        }
+      ],
+      "configFragments": [],
+      "dependsOn": [],
+      "frontend": {
+        "cliVersionKey": "mangoCalendar",
+        "code": "calendar",
+        "packageName": "@mango/calendar",
+        "registrars": [
+          {
+            "import": "@mango/calendar/admin-pages",
+            "name": "registerMangoCalendarAdminPages"
+          }
+        ],
+        "style": "@mango/calendar/style.css"
+      },
+      "moduleId": "calendar",
+      "presetMembership": "full",
+      "resourceCopies": []
+    },
+    {
+      "backendStarters": [
+        {
+          "artifactId": "mango-cms-starter",
+          "groupId": "io.mango.platform.cms"
+        }
+      ],
+      "configFragments": [],
+      "dependsOn": [],
+      "frontend": {
+        "cliVersionKey": "mangoCms",
+        "code": "cms",
+        "packageName": "@mango/cms",
+        "registrars": [
+          {
+            "import": "@mango/cms/admin-pages",
+            "name": "registerMangoCmsAdminPages"
+          }
+        ],
+        "style": "@mango/cms/style.css"
+      },
+      "moduleId": "cms",
+      "presetMembership": "default",
+      "resourceCopies": []
+    },
+    {
+      "backendStarters": [],
+      "configFragments": [],
+      "dependsOn": [],
+      "frontend": {
+        "cliVersionKey": "mangoCommon",
+        "code": "common",
+        "packageName": "@mango/common",
+        "registrars": [],
+        "style": "@mango/common/style.css"
+      },
+      "moduleId": "common",
+      "presetMembership": "default",
+      "resourceCopies": []
+    },
+    {
+      "backendStarters": [
+        {
+          "artifactId": "mango-file-preview-starter",
+          "groupId": "io.mango.platform.file.preview"
+        },
+        {
+          "artifactId": "mango-file-starter",
+          "groupId": "io.mango.platform.file"
+        }
+      ],
+      "configFragments": [],
+      "dependsOn": [],
+      "frontend": {
+        "cliVersionKey": "mangoFile",
+        "code": "file",
+        "packageName": "@mango/file",
+        "registrars": [
+          {
+            "import": "@mango/file/admin-pages",
+            "name": "registerMangoFileAdminPages"
+          }
+        ],
+        "style": "@mango/file/style.css"
+      },
+      "moduleId": "file",
+      "presetMembership": "full",
+      "resourceCopies": []
+    },
+    {
+      "backendStarters": [
+        {
+          "artifactId": "mango-grid-layout-starter",
+          "groupId": "io.mango.platform.gridlayout"
+        }
+      ],
+      "configFragments": [],
+      "dependsOn": [],
+      "frontend": {
+        "cliVersionKey": "mangoGridLayout",
+        "code": "grid-layout",
+        "packageName": "@mango/grid-layout",
+        "registrars": [],
+        "style": "@mango/grid-layout/style.css"
+      },
+      "moduleId": "grid-layout",
+      "presetMembership": "default",
+      "resourceCopies": []
+    },
+    {
+      "backendStarters": [],
+      "configFragments": [],
+      "dependsOn": [],
+      "frontend": {
+        "cliVersionKey": "mangoGridWidgets",
+        "code": "grid-widgets",
+        "packageName": "@mango/grid-widgets",
+        "registrars": [],
+        "style": "@mango/grid-widgets/style.css"
+      },
+      "moduleId": "grid-widgets",
+      "presetMembership": "default",
+      "resourceCopies": []
+    },
+    {
+      "backendStarters": [
+        {
+          "artifactId": "mango-job-starter",
+          "groupId": "io.mango.platform.job"
+        }
+      ],
+      "configFragments": [],
+      "dependsOn": [],
+      "frontend": {
+        "cliVersionKey": "mangoJob",
+        "code": "job",
+        "packageName": "@mango/job",
+        "registrars": [
+          {
+            "import": "@mango/job/admin-pages",
+            "name": "registerMangoJobAdminPages"
+          }
+        ],
+        "style": "@mango/job/style.css"
+      },
+      "moduleId": "job",
+      "presetMembership": "default",
+      "resourceCopies": []
+    },
+    {
+      "backendStarters": [
+        {
+          "artifactId": "mango-link-starter",
+          "groupId": "io.mango.platform.link"
+        }
+      ],
+      "configFragments": [],
+      "dependsOn": [],
+      "frontend": {
+        "cliVersionKey": "mangoLink",
+        "code": "link",
+        "packageName": "@mango/link",
+        "registrars": [
+          {
+            "import": "@mango/link/admin-pages",
+            "name": "registerMangoLinkAdminPages"
+          }
+        ],
+        "style": "@mango/link/style.css"
+      },
+      "moduleId": "link",
+      "presetMembership": "default",
+      "resourceCopies": []
+    },
+    {
+      "backendStarters": [
+        {
+          "artifactId": "mango-notice-starter",
+          "groupId": "io.mango.platform.notice"
+        }
+      ],
+      "configFragments": [],
+      "dependsOn": [],
+      "frontend": {
+        "cliVersionKey": "mangoNotice",
+        "code": "notice",
+        "packageName": "@mango/notice",
+        "registrars": [
+          {
+            "import": "@mango/notice/admin-pages",
+            "name": "registerMangoNoticeAdminPages"
+          },
+          {
+            "import": "@mango/notice/admin-shell",
+            "name": "registerMangoNoticeAdminShell"
+          }
+        ],
+        "style": "@mango/notice/style.css"
+      },
+      "moduleId": "notice",
+      "presetMembership": "full",
+      "resourceCopies": []
+    },
+    {
+      "backendStarters": [
+        {
+          "artifactId": "mango-numgen-starter",
+          "groupId": "io.mango.platform.numgen"
+        }
+      ],
+      "configFragments": [],
+      "dependsOn": [],
+      "frontend": {
+        "cliVersionKey": "mangoNumgen",
+        "code": "numgen",
+        "packageName": "@mango/numgen",
+        "registrars": [
+          {
+            "import": "@mango/numgen/admin-pages",
+            "name": "registerMangoNumgenAdminPages"
+          }
+        ],
+        "style": "@mango/numgen/style.css"
+      },
+      "moduleId": "numgen",
+      "presetMembership": "full",
+      "resourceCopies": []
+    },
+    {
+      "backendStarters": [
+        {
+          "artifactId": "mango-payment-starter",
+          "groupId": "io.mango.platform.payment"
+        }
+      ],
+      "configFragments": [],
+      "dependsOn": [],
+      "frontend": {
+        "cliVersionKey": "mangoPayment",
+        "code": "payment",
+        "packageName": "@mango/payment",
+        "registrars": [
+          {
+            "import": "@mango/payment/admin-pages",
+            "name": "registerMangoPaymentAdminPages"
+          }
+        ],
+        "style": "@mango/payment/style.css"
+      },
+      "moduleId": "payment",
+      "presetMembership": "full",
+      "resourceCopies": []
+    },
+    {
+      "backendStarters": [],
+      "configFragments": [],
+      "dependsOn": [],
+      "frontend": {
+        "cliVersionKey": "mangoRbac",
+        "code": "rbac",
+        "packageName": "@mango/rbac",
+        "registrars": [],
+        "style": "@mango/rbac/style.css"
+      },
+      "moduleId": "rbac",
+      "presetMembership": "default",
+      "resourceCopies": []
+    },
+    {
+      "backendStarters": [
+        {
+          "artifactId": "mango-system-starter",
+          "groupId": "io.mango.platform.system"
+        }
+      ],
+      "configFragments": [
+        {
+          "content": "  kv:\n    store:\n      type: jdbc\n    capability:\n      enabled: true\n      locker: true\n      token-store: true\n      outbox: true\n  event:\n    outbox:\n      enabled: true\n",
+          "sha256": "1431847b85c80656aff502b5c7784774d93f6a509699afbe6357483c6a00ef33",
+          "targetPath": "templates/full/backend/app/src/main/resources/application.yml"
+        }
+      ],
+      "dependsOn": [],
+      "frontend": {
+        "cliVersionKey": "mangoSystem",
+        "code": "system",
+        "packageName": "@mango/system",
+        "registrars": [
+          {
+            "import": "@mango/system/admin-pages",
+            "name": "registerMangoSystemAdminPages"
+          }
+        ],
+        "style": "@mango/system/style.css"
+      },
+      "moduleId": "system",
+      "presetMembership": "default",
+      "resourceCopies": []
+    },
+    {
+      "backendStarters": [
+        {
+          "artifactId": "mango-template-starter",
+          "groupId": "io.mango.platform.template"
+        }
+      ],
+      "configFragments": [],
+      "dependsOn": [],
+      "frontend": {
+        "cliVersionKey": "mangoTemplate",
+        "code": "template",
+        "packageName": "@mango/template",
+        "registrars": [
+          {
+            "import": "@mango/template/admin-pages",
+            "name": "registerMangoTemplateAdminPages"
+          }
+        ],
+        "style": "@mango/template/style.css"
+      },
+      "moduleId": "template",
+      "presetMembership": "full",
+      "resourceCopies": []
+    },
+    {
+      "backendStarters": [
+        {
+          "artifactId": "mango-workflow-starter",
+          "groupId": "io.mango.platform.workflow"
+        }
+      ],
+      "configFragments": [],
+      "dependsOn": [],
+      "frontend": {
+        "cliVersionKey": "mangoWorkflow",
+        "code": "workflow",
+        "packageName": "@mango/workflow",
+        "registrars": [
+          {
+            "import": "@mango/workflow/admin-pages",
+            "name": "registerMangoWorkflowAdminPages"
+          }
+        ],
+        "style": "@mango/workflow/style.css"
+      },
+      "moduleId": "workflow",
+      "presetMembership": "full",
+      "resourceCopies": []
+    },
+    {
+      "backendStarters": [],
+      "configFragments": [],
+      "dependsOn": [
+        "workflow"
+      ],
+      "frontend": {
+        "cliVersionKey": "mangoWorkflowBusinessExample",
+        "code": "workflow-example",
+        "packageName": "@mango/workflow-business-example",
+        "registrars": [
+          {
+            "import": "@mango/workflow-business-example/admin-pages",
+            "name": "registerMangoWorkflowBusinessExampleAdminPages"
+          }
+        ],
+        "style": "@mango/workflow-business-example/style.css"
+      },
+      "moduleId": "workflow-example",
+      "presetMembership": "full",
+      "resourceCopies": []
+    }
+  ],
+  "schemaVersion": 1
+}

@@ -25,7 +25,11 @@ class IdentityMigrationContractTest {
         }
 
         assertThat(migrations).extracting(path -> path.getFileName().toString())
-                .containsExactly("V1__init_identity.sql", "V2__add_real_name_and_binding_app.sql");
+                .containsExactly(
+                        "V1__init_identity.sql",
+                        "V2__add_real_name_and_binding_app.sql",
+                        "V3__clear_legacy_wecom_display_name_fallback.sql",
+                        "V4__add_external_identity_avatar_file.sql");
 
         String sql = Files.readString(migrations.getFirst()).toUpperCase(Locale.ROOT);
         assertThat(sql).contains("CREATE TABLE IF NOT EXISTS `IDENTITY_USER`")

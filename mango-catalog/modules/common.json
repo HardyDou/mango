@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "moduleId": "common",
+  "frontendPackages": ["@mango/common"],
+  "adminIntegration": {
+    "aggregateOwner": "@mango/admin",
+    "styleEntries": [{ "package": "@mango/common", "subpath": "./style.css" }]
+  },
+  "presetMembership": "default"
+}

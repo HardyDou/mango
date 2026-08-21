@@ -1,6 +1,11 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { decideRegistryAction, markRemoteWriteIntent, recoverRemoteWriteAudit } from './release-publication-lib.mjs';
+import {
+  decideRegistryAction,
+  markRemoteWriteIntent,
+  recoverRemoteWriteAudit,
+  validatePublicationPreflight,
+} from './release-publication-lib.mjs';
 
 const hash = 'a'.repeat(64);
 const absent = { state: 'absent' };
@@ -32,6 +37,15 @@ test('unknown, reversed and hash-mismatched registry states stop', () => {
       hosted: { state: 'present', sha256: 'b'.repeat(64) },
       consume: absent,
       expectedSha256: hash,
+    }).action,
+    'STOP',
+  );
+  assert.equal(
+    decideRegistryAction({
+      hosted: { ...present, integrity: 'sha512-wrong' },
+      consume: absent,
+      expectedSha256: hash,
+      expectedIntegrity: 'sha512-sealed',
     }).action,
     'STOP',
   );
@@ -72,4 +86,56 @@ test('audit recovery remains read-only without publication attempt evidence', ()
   assert.equal(recoverRemoteWriteAudit(manifest), false);
   assert.equal(manifest.remoteWrites, false);
   assert.equal(manifest.remoteWriteAudit, undefined);
+});
+
+test('first publish rejects any pre-existing coordinate before writes begin', () => {
+  assert.throws(
+    () =>
+      validatePublicationPreflight({
+        action: 'publish',
+        npm: [
+          { identity: '@mango/base@1.0.1', decision: { action: 'PUBLISH' } },
+          { identity: '@mango/cli@1.0.1', decision: { action: 'VERIFIED' } },
+        ],
+      }),
+    /first publish requires both registry roles to prove absence/u,
+  );
+});
+
+test('repair permits untouched absent coordinates and observed candidate coordinates', () => {
+  assert.equal(
+    validatePublicationPreflight({
+      action: 'repair',
+      npm: [
+        { identity: '@mango/base@1.0.1', decision: { action: 'PUBLISH' }, journalState: 'NOT_ATTEMPTED' },
+        { identity: '@mango/cli@1.0.1', decision: { action: 'VERIFIED' }, journalState: 'REQUEST_DISPATCHED' },
+      ],
+    }).length,
+    2,
+  );
+});
+
+test('repair stops ambiguous dispatch absence and unowned remote content', () => {
+  assert.throws(
+    () =>
+      validatePublicationPreflight({
+        action: 'repair',
+        maven: [
+          {
+            identity: 'io.mango:mango-base:1.0.1',
+            decision: { action: 'PUBLISH' },
+            journalState: 'REQUEST_DISPATCHED',
+          },
+        ],
+      }),
+    (error) => error.code === 'AMBIGUOUS',
+  );
+  assert.throws(
+    () =>
+      validatePublicationPreflight({
+        action: 'repair',
+        npm: [{ identity: '@mango/base@1.0.1', decision: { action: 'VERIFY_PENDING' }, journalState: 'NOT_ATTEMPTED' }],
+      }),
+    /without this candidate's publication journal/u,
+  );
 });
