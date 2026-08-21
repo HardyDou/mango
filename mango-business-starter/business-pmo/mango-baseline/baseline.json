@@ -3,8 +3,8 @@
   "packageVersion": "1.3.16",
   "schemaVersion": 2,
   "source": "mango-pmo",
-  "sourceCommit": "020512e7df2b8ca98414f0ce534dd3e96ca67ead",
-  "bundleSha256": "f94169d082fff5fa5801efe42efb91cdc126badb4cc2358b74c3f9c5529d5107",
+  "sourceCommit": "0c01c06e7fbe9a3b98dc91caeb24239ecb691ffe",
+  "bundleSha256": "cad5ff04f7c125b41ba92c8072db68a476de4b7a50e8ea910a11339cfe398706",
   "contracts": [
     {
       "contractId": "business-requirements",
@@ -49,7 +49,7 @@
   ],
   "plugin": {
     "path": "package-root",
-    "sha256": "c0ecc15e11dff7d527910b8f598229689c2b2ad0573412e642fcaf14666ebeb8",
+    "sha256": "1ee1a18443b802e051f6458c18174fd7149115fad78a146df9e9bc78cc7a34fd",
     "files": [
       {
         "path": ".codex-plugin/plugin.json",
@@ -263,7 +263,7 @@
       },
       {
         "path": "skills/mango-submit-pr/agents/openai.yaml",
-        "sha256": "f38ec3f05d22dc505c426dc146a5dbe3bbf846031ec69534fea835e93c463378",
+        "sha256": "038dbe8683e2b1c266d1a043abc9e8a911b4f28a2a316be1b8e2bcbb43fc2a81",
         "size": 322,
         "kind": "plugin",
         "mode": "0644"
@@ -490,8 +490,8 @@
     },
     {
       "path": "rules/10-release-artifacts.md",
-      "sha256": "3acf702a647623c9f52d35bee91f5c194c3da022a0d7f8b8f3df97d474370d14",
-      "size": 12343,
+      "sha256": "0c8ac73c784ffdee0d950a88e50e3238b236e56ae05169154f2d4c199d8355f4",
+      "size": 12841,
       "kind": "rule",
       "mode": "0644"
     },
@@ -672,8 +672,8 @@
     },
     {
       "path": "rules/index.json",
-      "sha256": "18c9e9300890b2510db67508ee3052fe844b6ccf7d9e1337b54a9badea7fa89c",
-      "size": 27420,
+      "sha256": "8f272081bc8c4ac5fd1986732a2bfcfb94fa0d29025442ed130e2f684caf9853",
+      "size": 27462,
       "kind": "rule",
       "mode": "0644"
     },
@@ -938,7 +938,7 @@
     },
     {
       "path": "skills/mango-submit-pr/agents/openai.yaml",
-      "sha256": "f38ec3f05d22dc505c426dc146a5dbe3bbf846031ec69534fea835e93c463378",
+      "sha256": "038dbe8683e2b1c266d1a043abc9e8a911b4f28a2a316be1b8e2bcbb43fc2a81",
       "size": 322,
       "kind": "skill",
       "mode": "0644"
@@ -1162,8 +1162,8 @@
     },
     {
       "path": "tools/check-pmo-preflight.mjs",
-      "sha256": "a5cdea189ea08b8e3e5b9df0fe6eca23c54a279bcc1dfd62bb41a3e5f7ece3b4",
-      "size": 7387,
+      "sha256": "9acb86f8326df0d7d746b410c3e9d72b7dc1aa28a00b85ea0a6e8dfbb17dcfbf",
+      "size": 7375,
       "kind": "tool",
       "mode": "0644"
     },

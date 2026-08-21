@@ -36,6 +36,8 @@
 
 ## 3.1 近期能力变更
 
+- 2026-08-21，[Issue #807](https://github.com/HardyDou/mango/issues/807) 将发布内容收口为 Catalog 单一声明：package/module/docs 作者事实经 compiler 生成 Admin、CLI、starter/preset、默认配置、必要静态资源和 normalized Catalog 投影；release plan 绑定 Catalog、源码、baseline、Changesets、说明、版本策略、tuple、closure 与顺序；prepare 形成唯一 `preparedCandidateId` 和 READY record，publish/status/repair 只复用 sealed candidate 与 publication journal。bootstrap baseline 只能由 Catalog 的完整 npm/Maven/docs 坐标集合和精确外部证据生成；Registry/Nexus 写入、Tag 和 GitHub Release 仍需发布阶段独立授权。使用入口见 [mango-ui README](../../mango-ui/README.md) 和 [CLI README](../../mango-ui/packages/mango-cli/README.md)。
+
 - 2026-08-20，[Issue #838](https://github.com/HardyDou/mango/issues/838) 为业务项目增加 `mango.config.json.pmoChecks.frontendPageBaseline` 显式开关：缺省启用，仅布尔 `false` 关闭；非法配置 fail closed。GitHub/Gitea 只跳过页面基线并保留稳定 `pmo-doc-check` 及其它门禁，CLI init/sync/upgrade/check 负责生成、迁移与校验。使用入口见 [PMO README](../../mango-pmo/README.md)、[@mango/pmo README](../../mango-ui/packages/mango-pmo/README.md) 和 [CLI README](../../mango-ui/packages/mango-cli/README.md)，治理决策见 [Issue #838 设计](../designs/2026-08-20-issue-838-frontend-page-baseline-toggle.md)。
 
 - 2026-08-20，新增独立 `mango-infra-docsign`，统一提供 PDF/OFD 数字签名、普通可见章、骑缝章、多签名与验签。调用方每次传入包含私钥和完整证书链的 PKCS#12；PDF `adbe.pkcs7.detached` CMS 支持自动选择或显式指定 RSA SHA-256/384/512、RSA-PSS SHA-256、SM2/SM3，OFD 支持 GB/T 35275 SM2/SM3 及调用方提供的 SES v4 原生电子印章。签名前校验算法、私钥、叶子证书公钥和 SM2 曲线匹配。签名与验签提供流式首选入口，以有界堆内存和短期磁盘随机访问处理大文件，兼容 `byte[]` 入口具有可配置大小上限。验签分别报告密码学、文档完整性、证书时间、信任和当前文档覆盖状态，缺少信任库时整体失败闭合。模块不托管密钥、不制作电子印章，也不提供 TSA、OCSP/CRL、文件存储、租户或业务权限。接入与合规边界见 [Docsign README](../../mango/mango-infra/mango-infra-docsign/README.md)。

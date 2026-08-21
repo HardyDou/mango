@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "moduleId": "admin-shell",
+  "frontendPackages": ["@mango/admin-shell"],
+  "adminIntegration": {
+    "aggregateOwner": "@mango/admin",
+    "styleEntries": [
+      { "package": "@mango/admin-shell", "subpath": "./style.css" }
+    ]
+  },
+  "resourceCopies": [
+    {
+      "source": "mango-ui/apps/mango-admin/public/favicon.ico",
+      "targetOwner": "@mango/cli",
+      "targetPath": "templates/full/frontend/public/favicon.ico"
+    }
+  ],
+  "presetMembership": "default"
+}

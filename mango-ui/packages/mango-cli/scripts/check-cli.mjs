@@ -25,6 +25,7 @@ const pmoPackageRoot = resolve(packageRoot, '../mango-pmo');
 const cliPackage = JSON.parse(readFileSync(join(packageRoot, 'package.json'), 'utf8'));
 const releaseVersions = JSON.parse(readFileSync(join(packageRoot, 'release-versions.json'), 'utf8'));
 const packagedAdminModules = JSON.parse(readFileSync(join(packageRoot, 'admin-modules.json'), 'utf8'));
+const packagedModuleProjections = JSON.parse(readFileSync(join(packageRoot, 'module-projections.json'), 'utf8'));
 const sourceAdminModules = JSON.parse(readFileSync(join(packageRoot, '../admin/admin-modules.json'), 'utf8'));
 const tempRoot = mkdtempSync(join(tmpdir(), 'mango-cli-'));
 process.env.MANGO_WORKSPACE_REGISTRY = join(tempRoot, 'workspaces.json');
@@ -53,6 +54,7 @@ try {
   assertNoWorkspacePackageJsonInTemplates();
   assertQualityConfigsMatchPluginSources();
   assertPackagedAdminModules();
+  assertPackagedModuleProjections();
   assertCliReadmeReleaseTuple();
 
   const result = spawnSync(
@@ -914,6 +916,7 @@ try {
 
   const customPom = readFileSync(join(customRoot, 'backend/pom.xml'), 'utf8');
   const customAppPom = readFileSync(join(customRoot, 'backend/app/pom.xml'), 'utf8');
+  assertGeneratedDefaultModuleConfig(customRoot, 'custom');
   if (customAppPom.includes('<artifactId>mango-admin-starter</artifactId>')) {
     throw new Error('custom backend should not depend on full mango-admin-starter');
   }
@@ -965,6 +968,7 @@ try {
     throw new Error('custom none frontend registered notice admin pages');
   }
   const customNoneAppPom = readFileSync(join(customNoneRoot, 'backend/app/pom.xml'), 'utf8');
+  assertGeneratedDefaultModuleConfig(customNoneRoot, 'custom none');
   if (
     !customNoneAppPom.includes('<artifactId>mango-auth-starter</artifactId>') ||
     !customNoneAppPom.includes('<artifactId>mango-notice-starter</artifactId>')
@@ -1843,6 +1847,44 @@ function assertPackagedAdminModules() {
   }
 }
 
+function assertPackagedModuleProjections() {
+  if (!cliPackage.files.includes('module-projections.json')) {
+    throw new Error('@mango/cli package files must include module-projections.json');
+  }
+  const system = packagedModuleProjections.modules?.find((module) => module.moduleId === 'system');
+  const file = packagedModuleProjections.modules?.find((module) => module.moduleId === 'file');
+  const shell = packagedModuleProjections.modules?.find((module) => module.moduleId === 'admin-shell');
+  if (
+    !system?.configFragments?.some(
+      (fragment) => fragment.content.includes('type: jdbc') && fragment.content.includes('event:\n'),
+    )
+  ) {
+    throw new Error('Catalog CLI projection must own the default KV and event outbox config');
+  }
+  for (const starter of ['mango-file-starter', 'mango-file-preview-starter']) {
+    if (!file?.backendStarters?.some((coordinate) => coordinate.artifactId === starter)) {
+      throw new Error(`Catalog CLI projection is missing file backend starter: ${starter}`);
+    }
+  }
+  const favicon = join(packageRoot, 'templates/full/frontend/public/favicon.ico');
+  if (
+    !shell?.resourceCopies?.some((resource) => resource.targetPath.endsWith('/favicon.ico')) ||
+    !existsSync(favicon)
+  ) {
+    throw new Error('Catalog CLI projection must own the generated favicon resource');
+  }
+}
+
+function assertGeneratedDefaultModuleConfig(projectRoot, label) {
+  const applicationYml = readFileSync(join(projectRoot, 'backend/app/src/main/resources/application.yml'), 'utf8');
+  if (
+    !/kv:\s*[\s\S]*?store:\s*[\s\S]*?type:\s*jdbc/u.test(applicationYml) ||
+    !/event:\s*[\s\S]*?outbox:\s*[\s\S]*?enabled:\s*true/u.test(applicationYml)
+  ) {
+    throw new Error(`generated ${label} backend is missing Catalog-owned default config`);
+  }
+}
+
 function assertNoTrailingBlankLinesAtEof(root, label) {
   for (const file of walkFiles(root)) {
     const content = readFileSync(file, 'utf8');
@@ -1967,7 +2009,7 @@ function assertPublishedPnpmPmoResolution(tempRoot) {
   const publishedPmoRoot = join(packageStoreRoot, 'pmo');
   mkdirSync(join(publishedCliRoot, 'src'), { recursive: true });
   mkdirSync(publishedPmoRoot, { recursive: true });
-  for (const file of ['package.json', 'release-versions.json', 'admin-modules.json']) {
+  for (const file of ['package.json', 'release-versions.json', 'admin-modules.json', 'module-projections.json']) {
     cpSync(join(packageRoot, file), join(publishedCliRoot, file));
   }
   cpSync(join(packageRoot, 'src'), join(publishedCliRoot, 'src'), { recursive: true });

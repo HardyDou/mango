@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "moduleId": "rbac",
+  "frontendPackages": ["@mango/rbac"],
+  "adminIntegration": {
+    "aggregateOwner": "@mango/admin",
+    "styleEntries": [{ "package": "@mango/rbac", "subpath": "./style.css" }]
+  },
+  "presetMembership": "default"
+}

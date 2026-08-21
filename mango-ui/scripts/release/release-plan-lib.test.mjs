@@ -27,6 +27,26 @@ function packages() {
 }
 
 const source = { commit: '1'.repeat(40), tree: '2'.repeat(40) };
+const mavenInventory = [
+  {
+    groupId: 'io.mango',
+    artifactId: 'mango-base',
+    packaging: 'jar',
+    extension: 'jar',
+    classifier: null,
+    dependencies: [],
+  },
+];
+const releaseArtifacts = [
+  {
+    groupId: 'io.mango',
+    artifactId: 'mango-docs-bundle',
+    packaging: 'jar',
+    extension: 'jar',
+    classifier: null,
+    versionSource: 'maven-platform',
+  },
+];
 
 test('plan combines direct intent with dependency and CLI closure', () => {
   const plan = buildReleasePlan({
@@ -57,7 +77,10 @@ test('plan combines direct intent with dependency and CLI closure', () => {
     ],
   );
   assertReleasePlanShape(plan);
-  assert.throws(() => assertReleasePlanShape({ ...plan, order: [...plan.order].reverse() }), /digest mismatch/u);
+  assert.throws(
+    () => assertReleasePlanShape({ ...plan, order: [...plan.order].reverse() }),
+    /digest mismatch|publish order differs|topological order/u,
+  );
 });
 
 test('semver bump rejects non-release versions', () => {
@@ -89,6 +112,8 @@ test('Maven source impact requires an explicit version and adds the managed CLI'
         packageIndex: packages(),
         managedVersions: {},
         mavenSourceVersion: '1.0.36',
+        mavenInventory,
+        releaseArtifacts,
         source,
         sourceFiles: ['mango/mango-common/src/main/java/io/mango/A.java'],
         changesets: [],
@@ -107,6 +132,8 @@ test('Maven source impact requires an explicit version and adds the managed CLI'
     managedVersions: {},
     mavenSourceVersion: '1.0.36',
     mavenTargetVersion: '1.0.37',
+    mavenInventory,
+    releaseArtifacts,
     source,
     sourceFiles: ['mango/mango-common/src/main/java/io/mango/A.java'],
     changesets: [],
@@ -116,7 +143,139 @@ test('Maven source impact requires an explicit version and adds the managed CLI'
   });
   assert.equal(plan.releaseKind, 'mixed');
   assert.equal(plan.maven.targetVersion, '1.0.37');
+  assert.deepEqual(plan.maven.order, ['io.mango:mango-base:1.0.37', 'io.mango:mango-docs-bundle:1.0.37']);
+  assert.deepEqual(plan.publicationOrder, [...plan.maven.order, '@mango/cli']);
   assert.deepEqual(plan.order, ['@mango/cli']);
+});
+
+test('Maven publication order follows runtime dependencies, excludes tooling edges, and includes docs', () => {
+  const dependentInventory = [
+    {
+      groupId: 'io.mango',
+      artifactId: 'mango-consumer',
+      packaging: 'jar',
+      extension: 'jar',
+      classifier: null,
+      dependencies: [
+        {
+          groupId: 'io.mango',
+          artifactId: 'mango-runtime',
+          scope: 'runtime',
+          optional: true,
+          type: 'jar',
+        },
+        { groupId: 'io.mango', artifactId: 'mango-test-only', scope: 'test', optional: false, type: 'jar' },
+      ],
+    },
+    {
+      groupId: 'io.mango',
+      artifactId: 'mango-runtime',
+      packaging: 'jar',
+      extension: 'jar',
+      classifier: null,
+      dependencies: [],
+    },
+    {
+      groupId: 'io.mango',
+      artifactId: 'mango-test-only',
+      packaging: 'jar',
+      extension: 'jar',
+      classifier: null,
+      dependencies: [
+        { groupId: 'io.mango', artifactId: 'mango-consumer', scope: 'provided', optional: false, type: 'jar' },
+      ],
+    },
+  ];
+  const plan = buildReleasePlan({
+    packageIndex: packages(),
+    managedVersions: {},
+    mavenSourceVersion: '1.0.36',
+    mavenTargetVersion: '1.0.37',
+    mavenInventory: dependentInventory,
+    releaseArtifacts,
+    source,
+    sourceFiles: ['mango/mango-common/src/main/java/io/mango/A.java'],
+    changesets: [],
+    baseline: { kind: 'successful-release', commit: 'base', tree: 'tree' },
+    release: { tag: 'v-test', title: 'test', notesFile: '.changeset/release-notes.txt', notesSha256: 'b'.repeat(64) },
+    generatedAt: '2026-08-15T00:00:00.000Z',
+  });
+
+  assert.ok(
+    plan.maven.order.indexOf('io.mango:mango-runtime:1.0.37') <
+      plan.maven.order.indexOf('io.mango:mango-consumer:1.0.37'),
+  );
+  assert.ok(plan.maven.order.includes('io.mango:mango-docs-bundle:1.0.37'));
+  assert.deepEqual(plan.publicationOrder, [...plan.maven.order, ...plan.order]);
+  assertReleasePlanShape(plan);
+});
+
+test('Maven coordinate inventory and plan projections are bound to the plan identity', () => {
+  const input = {
+    packageIndex: packages(),
+    managedVersions: {},
+    mavenSourceVersion: '1.0.36',
+    mavenTargetVersion: '1.0.37',
+    releaseArtifacts,
+    source,
+    sourceFiles: ['mango/mango-common/src/main/java/io/mango/A.java'],
+    changesets: [],
+    baseline: { kind: 'successful-release', commit: 'base', tree: 'tree' },
+    release: { tag: 'v-test', title: 'test', notesFile: '.changeset/release-notes.txt', notesSha256: 'b'.repeat(64) },
+    generatedAt: '2026-08-15T00:00:00.000Z',
+  };
+  const first = buildReleasePlan({ ...input, mavenInventory });
+  const changed = buildReleasePlan({
+    ...input,
+    mavenInventory: [{ ...mavenInventory[0], artifactId: 'mango-base-renamed' }],
+  });
+  assert.notEqual(first.planDigest, changed.planDigest);
+  assert.throws(
+    () => assertReleasePlanShape({ ...first, publicationOrder: [...first.publicationOrder].reverse() }),
+    /publish order differs|publication order differs/u,
+  );
+  assert.throws(
+    () =>
+      assertReleasePlanShape({
+        ...first,
+        packages: first.packages.map((entry) =>
+          entry.name === '@mango/cli' ? { ...entry, targetVersion: '9.9.9' } : entry,
+        ),
+      }),
+    /resolved tuple differs/u,
+  );
+});
+
+test('bootstrap Maven and docs coordinates remain in the next complete resolved tuple', () => {
+  const baseline = {
+    baselineKind: 'bootstrap',
+    packages: { '@mango/base': { version: '1.2.3' } },
+    maven: {
+      'io.mango:mango-base:1.0.36': { files: [{ path: 'base.jar', sha256: 'a'.repeat(64) }] },
+    },
+    docs: {
+      'io.mango:mango-docs-bundle:1.0.36': { files: [{ path: 'docs.jar', sha256: 'b'.repeat(64) }] },
+    },
+  };
+  const plan = buildReleasePlan({
+    packageIndex: packages(),
+    managedVersions: { '@mango/base': '1.2.3' },
+    source,
+    sourceFiles: [],
+    changesets: [],
+    baseline,
+    release: { tag: 'v-test', title: 'test', notesFile: '.changeset/release-notes.txt', notesSha256: 'b'.repeat(64) },
+    generatedAt: '2026-08-15T00:00:00.000Z',
+  });
+
+  assert.deepEqual(
+    plan.releasePlanIdentity.resolvedTuple.filter((entry) => entry.kind === 'maven'),
+    [
+      { kind: 'maven', name: 'io.mango:mango-base:1.0.36', version: '1.0.36' },
+      { kind: 'maven', name: 'io.mango:mango-docs-bundle:1.0.36', version: '1.0.36' },
+    ],
+  );
+  assertReleasePlanShape(plan);
 });
 
 test('an in-progress Maven plan keeps its published source after the CLI matrix is projected', () => {
@@ -159,6 +318,12 @@ test('completed release baseline is bound to the immutable plan tuple', () => {
     packages: Object.fromEntries(plan.packages.map((entry) => [entry.name, entry.targetVersion])),
     maven: null,
   };
+  baseline.packages['@mango/untouched'] = {
+    version: '1.0.0',
+    tarballSha256: 'a'.repeat(64),
+    sri: `sha512-${'x'.repeat(88)}`,
+    publishedRanges: [],
+  };
 
   assert.doesNotThrow(() => assertCompletedReleaseBaseline(plan, baseline));
   assert.throws(
@@ -167,7 +332,7 @@ test('completed release baseline is bound to the immutable plan tuple', () => {
         ...baseline,
         packages: { ...baseline.packages, '@mango/base': '9.9.9' },
       }),
-    /package tuple differs/u,
+    /package @mango\/base differs/u,
   );
   assert.throws(() => assertCompletedReleaseBaseline(plan, { ...baseline, tag: 'v-other' }), /tag differs/u);
 });

@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "moduleId": "grid-layout",
+  "frontendPackages": ["@mango/grid-layout"],
+  "adminIntegration": {
+    "aggregateOwner": "@mango/admin",
+    "styleEntries": [{ "package": "@mango/grid-layout", "subpath": "./style.css" }]
+  },
+  "backendStarters": [":mango-grid-layout-starter"],
+  "presetMembership": "default"
+}

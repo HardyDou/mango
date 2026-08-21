@@ -4,11 +4,13 @@ import path from 'node:path';
 const DEPENDENCY_FIELDS = ['dependencies', 'devDependencies', 'optionalDependencies', 'peerDependencies'];
 const FULL_PATTERNS = [
   /^\.github\/workflows\/frontend-quality\.yml$/u,
+  /^mango-catalog\//u,
   /^mango-business-starter\/frontend\//u,
   /^mango-pmo\/(?:rules\/frontend\/|tools\/pmo-preflight)/u,
   /^mango-ui\/(?:package\.json|pnpm-lock\.yaml|pnpm-workspace\.yaml|quality-baseline\.json|architecture-exceptions\.json|frontend-boundary-baseline\.json)$/u,
   /^mango-ui\/(?:eslint\.config\.|prettier\.config\.|stylelint\.config\.|tsconfig|vite\.config\.)/u,
   /^mango-ui\/scripts\/(?:quality\/|check-|generate-package-styles|run-business-lab)/u,
+  /^mango-ui\/scripts\/catalog\//u,
 ];
 const FRONTEND_PREFIX = /^mango-ui\/(?:apps|packages)\//u;
 const KNOWN_NON_FRONTEND_PREFIX =

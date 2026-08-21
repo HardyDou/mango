@@ -3,6 +3,8 @@ const PR_COMMON_COMMANDS = [
   ['pnpm', ['admin:styles:check']],
   ['pnpm', ['quality:versions']],
   ['pnpm', ['check:boundaries']],
+  ['pnpm', ['catalog:check']],
+  ['pnpm', ['catalog:test']],
   ['pnpm', ['component-contracts:check']],
   ['pnpm', ['e2e-selectors:check']],
   ['pnpm', ['runtime-config:check']],

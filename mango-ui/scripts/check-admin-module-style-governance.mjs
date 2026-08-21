@@ -16,6 +16,7 @@ const fullEntry = readText('packages/admin/src/full.ts');
 const fullTypes = readText('packages/admin/src/full.d.ts');
 const cliSource = readText('packages/mango-cli/src/index.mjs');
 const cliAdminModules = readJson('packages/mango-cli/admin-modules.json');
+const cliModuleProjections = readJson('packages/mango-cli/module-projections.json');
 const cliPackageJson = readJson('packages/mango-cli/package.json');
 const paymentStyle = readText('packages/payment/style.css');
 const mangoAliases = readText('build-config/mangoAliases.ts');
@@ -31,7 +32,7 @@ assertPaymentIsFullOnly();
 assertPaymentStyleScoped();
 assertWorkspaceAliasesUseAdminModules();
 assertBuildStyleDepsGenerated();
-assertCliAdminModulesPackaged();
+assertCliModuleProjectionsPackaged();
 
 for (const module of [...defaultModules, ...fullModules]) {
   assertPackageStyleExport(module);
@@ -120,7 +121,9 @@ function assertWorkspaceAliasesUseAdminModules() {
   ];
   for (const fragment of requiredFragments) {
     if (!mangoAliases.includes(fragment)) {
-      failures.push(`mangoAliases.ts package style aliases must be derived from admin-modules.json: missing ${fragment}`);
+      failures.push(
+        `mangoAliases.ts package style aliases must be derived from admin-modules.json: missing ${fragment}`,
+      );
     }
   }
 
@@ -132,7 +135,9 @@ function assertWorkspaceAliasesUseAdminModules() {
   ];
   for (const fragment of forbiddenFragments) {
     if (mangoAliases.includes(fragment)) {
-      failures.push(`mangoAliases.ts must not hardcode package style alias list or package style exceptions: ${fragment}`);
+      failures.push(
+        `mangoAliases.ts must not hardcode package style alias list or package style exceptions: ${fragment}`,
+      );
     }
   }
 
@@ -145,7 +150,9 @@ function assertWorkspaceAliasesUseAdminModules() {
     for (const registrar of module.registrars) {
       const entryName = registrar.import.replace(`${module.packageName}/`, '');
       if (mangoAliases.includes(`'${entryName}': 'src/${entryName}.ts'`)) {
-        failures.push(`mangoAliases.ts must not hardcode official module entry ${registrar.import}; edit admin-modules.json instead`);
+        failures.push(
+          `mangoAliases.ts must not hardcode official module entry ${registrar.import}; edit admin-modules.json instead`,
+        );
       }
     }
   }
@@ -215,7 +222,7 @@ function assertAdminDependency(module) {
   const hasDirectDependency = Boolean(adminPackageJson.dependencies?.[module.packageName]);
   const hasOptionalPeer = Boolean(
     adminPackageJson.peerDependencies?.[module.packageName] &&
-      adminPackageJson.peerDependenciesMeta?.[module.packageName]?.optional,
+    adminPackageJson.peerDependenciesMeta?.[module.packageName]?.optional,
   );
 
   if (inDefaultStyle) {
@@ -246,32 +253,43 @@ function assertCliModule(module) {
   }
 }
 
-function assertCliAdminModulesPackaged() {
+function assertCliModuleProjectionsPackaged() {
   if (JSON.stringify(cliAdminModules) !== JSON.stringify(adminModules)) {
     failures.push('packages/mango-cli/admin-modules.json must match packages/admin/admin-modules.json');
   }
   if (!cliPackageJson.files?.includes('admin-modules.json')) {
     failures.push('@mango/cli package files must include admin-modules.json');
   }
+  if (!cliPackageJson.files?.includes('module-projections.json')) {
+    failures.push('@mango/cli package files must include module-projections.json');
+  }
+  assertCliProjectionMatchesAdminModules();
   for (const requiredFragment of [
-    'readAdminModulesManifest',
-    'admin-modules.json',
-    'buildOptionalModules(ADMIN_FULL_MODULES, OPTIONAL_MODULE_OVERLAYS)',
+    'readModuleProjectionsManifest',
+    'module-projections.json',
+    'buildOptionalModules(ADMIN_FULL_MODULES, OPTIONAL_MODULE_RUNTIME)',
   ]) {
     if (!cliSource.includes(requiredFragment)) {
-      failures.push(`mango-cli must derive optional module metadata from packaged admin-modules.json: missing ${requiredFragment}`);
+      failures.push(
+        `mango-cli must derive module metadata from packaged module-projections.json: missing ${requiredFragment}`,
+      );
     }
   }
-  const overlayBlock = readCliOverlayBlock();
+  const overlayBlock = readCliRuntimeBlock();
   for (const forbidden of [
     'frontendPackage',
     'versionKey',
     'styleImport',
     'registrarImport',
     'registrar:',
+    'feature:',
+    'backend:',
+    'dependsOn:',
+    'configFragments:',
+    'resourceCopies:',
   ]) {
     if (overlayBlock.includes(forbidden)) {
-      failures.push(`mango-cli optional module overlay must not duplicate admin module metadata field ${forbidden}`);
+      failures.push(`mango-cli runtime metadata must not duplicate Catalog module metadata field ${forbidden}`);
     }
   }
   for (const module of [...defaultModules, ...fullModules]) {
@@ -281,11 +299,44 @@ function assertCliAdminModulesPackaged() {
   }
 }
 
-function readCliOverlayBlock() {
-  const start = cliSource.indexOf('const OPTIONAL_MODULE_OVERLAYS = [');
+function assertCliProjectionMatchesAdminModules() {
+  const projectedModules = normalizeModules(
+    (cliModuleProjections.modules || [])
+      .filter((module) => module.frontend)
+      .map((module) => ({
+        ...module.frontend,
+        presetMembership: module.presetMembership,
+      })),
+  );
+  const projectedDefault = projectedModules
+    .filter((module) => module.presetMembership === 'default')
+    .map(toSharedFrontendContract);
+  const projectedFull = projectedModules
+    .filter((module) => ['full', 'custom-selectable'].includes(module.presetMembership))
+    .map(toSharedFrontendContract);
+  if (JSON.stringify(projectedDefault) !== JSON.stringify(defaultModules.map(toSharedFrontendContract))) {
+    failures.push('module-projections.json default frontend metadata must match admin-modules.json');
+  }
+  if (JSON.stringify(projectedFull) !== JSON.stringify(fullModules.map(toSharedFrontendContract))) {
+    failures.push('module-projections.json optional frontend metadata must match admin-modules.json');
+  }
+}
+
+function toSharedFrontendContract(module) {
+  return {
+    code: module.code,
+    packageName: module.packageName,
+    style: module.style,
+    cliVersionKey: module.cliVersionKey,
+    registrars: module.registrars || [],
+  };
+}
+
+function readCliRuntimeBlock() {
+  const start = cliSource.indexOf('const OPTIONAL_MODULE_RUNTIME = [');
   const end = cliSource.indexOf('const OPTIONAL_MODULES = buildOptionalModules', start);
   if (start < 0 || end < 0) {
-    failures.push('mango-cli must keep optional CLI-only metadata in OPTIONAL_MODULE_OVERLAYS');
+    failures.push('mango-cli must keep optional CLI-only metadata in OPTIONAL_MODULE_RUNTIME');
     return '';
   }
   return cliSource.slice(start, end);

@@ -31,6 +31,8 @@ test('PR full profile checks all build and test targets without running the seri
   assert.ok(plan.includes('pnpm --filter @mango/contracts --filter @mango/domain --filter admin-app -r build'));
   assert.ok(plan.includes('pnpm --filter @mango/contracts --filter admin-app -r test'));
   assert.ok(plan.includes('pnpm package-exports:check'));
+  assert.ok(plan.includes('pnpm catalog:check'));
+  assert.ok(plan.includes('pnpm catalog:test'));
   assert.ok(plan.includes('pnpm typecheck'));
   assert.ok(!plan.includes('pnpm run check:full'));
   assert.ok(!plan.includes('pnpm package-consumer:typecheck'));

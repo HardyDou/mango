@@ -1,0 +1,11 @@
+  kv:
+    store:
+      type: jdbc
+    capability:
+      enabled: true
+      locker: true
+      token-store: true
+      outbox: true
+  event:
+    outbox:
+      enabled: true

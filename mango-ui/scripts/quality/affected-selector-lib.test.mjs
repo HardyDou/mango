@@ -52,8 +52,10 @@ test('upgrades lockfile, shared config, frontend workflow and frontend governanc
     'mango-ui/pnpm-lock.yaml',
     'mango-ui/tsconfig.base.json',
     '.github/workflows/frontend-quality.yml',
+    'mango-catalog/modules/system.json',
     'mango-business-starter/frontend/apps/example/package.json',
     'mango-ui/scripts/quality/affected-selector-lib.mjs',
+    'mango-ui/scripts/catalog/catalog-lib.mjs',
     'mango-pmo/rules/frontend/01-vue-code.md',
   ])
     assert.equal(selectAffectedWorkspaces(records, [file]).mode, 'full', file);

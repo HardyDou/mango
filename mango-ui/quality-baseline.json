@@ -1699,7 +1699,6 @@
       "scripts/check-package-exports.mjs|7dbc3e6410ecf3ab87ca9047f897860356597c307a6409c2736194b4fa39c7fe",
       "scripts/check-release-impact.mjs|8ad021b5fd39eedd606fb991eb458ee79368b04274853b4c44c414dc5d04693d",
       "scripts/generate-package-styles.mjs|148f56d59298a4dd4dc6a01ff162d9275902f20b511e11aaac49a8db89a0623c",
-      "scripts/publish-package.mjs|a3be6ae62461d608db8499569ea76aa613c2db31d1ba0b7bc53a8b73fe8aef5c",
       "scripts/quality/__fixtures__/component-inventory/packages/example/src/admin-pages.ts|a07fc4e174139257cefed771804141ce1e6998ed458f19010847375809a9d10c",
       "scripts/quality/__fixtures__/component-inventory/packages/example/src/widgets/generated.ts|23fd7a3b9e8f372a2896eb527714b056709f8579bceab1fc1c1afcfb39e4aae7",
       "scripts/quality/__fixtures__/component-inventory/packages/example/vite.config.ts|6195f7901a6144402b7339ac9a6fc48d482d5224f2c9cbe8bccb595e873811e0",

@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "moduleId": "template",
+  "frontendPackages": ["@mango/template"],
+  "adminIntegration": {
+    "aggregateOwner": "@mango/admin",
+    "registrarExports": [{ "package": "@mango/template", "subpath": "./admin-pages", "symbol": "registerMangoTemplateAdminPages" }],
+    "styleEntries": [{ "package": "@mango/template", "subpath": "./style.css" }]
+  },
+  "backendStarters": [":mango-template-starter"],
+  "presetMembership": "full"
+}

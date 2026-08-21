@@ -53,7 +53,7 @@ const businessStarterRoot = existsSync(businessModuleTemplateRoot)
   ? businessModuleTemplateRoot
   : resolve(repoRoot, 'mango-business-starter');
 const releaseVersions = readReleaseVersions();
-const adminModulesManifest = readAdminModulesManifest();
+const moduleProjectionsManifest = readModuleProjectionsManifest();
 const DEFAULT_MAVEN_REPOSITORY = 'https://nexus.inner.yunxinbaokeji.com/repository/maven-public/';
 const DOCS_BUNDLE_GROUP_ID = 'io.mango';
 const DOCS_BUNDLE_ARTIFACT_ID = 'mango-docs-bundle';
@@ -116,8 +116,11 @@ const defaultVersions = {
   swaggerAnnotations: '2.2.30',
 };
 
-const ADMIN_DEFAULT_MODULES = normalizeAdminModules(adminModulesManifest.defaultPackages);
-const ADMIN_FULL_MODULES = normalizeAdminModules(adminModulesManifest.fullPackages);
+const OFFICIAL_MODULES = normalizeOfficialModules(moduleProjectionsManifest.modules);
+const ADMIN_DEFAULT_MODULES = OFFICIAL_MODULES.filter((module) => module.presetMembership === 'default');
+const ADMIN_FULL_MODULES = OFFICIAL_MODULES.filter((module) =>
+  ['full', 'custom-selectable'].includes(module.presetMembership),
+);
 
 const CORE_FRONTEND_PACKAGES = uniqueBy(
   [
@@ -207,81 +210,43 @@ const BUSINESS_BACKEND_API_MANAGED_DEPENDENCIES = [
   { groupId: 'io.mango.platform.workflow', artifactId: 'mango-workflow-api' },
 ];
 
-const OPTIONAL_MODULE_OVERLAYS = [
-  {
-    code: 'file',
-    label: '文件管理',
-    feature: 'file',
-    backend: [
-      { groupId: 'io.mango.platform.file', artifactId: 'mango-file-starter' },
-      { groupId: 'io.mango.platform.file.preview', artifactId: 'mango-file-preview-starter' },
-    ],
-  },
+const OPTIONAL_MODULE_RUNTIME = [
+  { code: 'file', label: '文件管理' },
   {
     code: 'template',
     label: '模板管理',
-    feature: 'template',
     runtimeModule: {
       moduleCode: 'mango-template',
       local: { mode: 'local', runtimeCode: 'mango-admin-template-local' },
       micro: { mode: 'micro', runtimeCode: 'mango-admin-template-app', entry: 'http://d.mango.io:5183/' },
     },
-    backend: [{ groupId: 'io.mango.platform.template', artifactId: 'mango-template-starter' }],
   },
   {
     code: 'cms',
     label: '内容运营',
-    feature: 'cms',
     runtimeModule: {
       moduleCode: 'mango-cms',
       local: { mode: 'local', runtimeCode: 'mango-admin-cms-local' },
       micro: { mode: 'micro', runtimeCode: 'mango-admin-cms-app', entry: 'http://e.mango.io:5184/' },
     },
-    backend: [{ groupId: 'io.mango.platform.cms', artifactId: 'mango-cms-starter' }],
   },
-  {
-    code: 'notice',
-    label: '通知管理',
-    feature: 'notice',
-    backend: [{ groupId: 'io.mango.platform.notice', artifactId: 'mango-notice-starter' }],
-  },
-  {
-    code: 'numgen',
-    label: '编号管理',
-    feature: 'numgen',
-    backend: [{ groupId: 'io.mango.platform.numgen', artifactId: 'mango-numgen-starter' }],
-  },
-  {
-    code: 'calendar',
-    label: '工作日历',
-    feature: 'calendar',
-    backend: [{ groupId: 'io.mango.platform.calendar', artifactId: 'mango-calendar-starter' }],
-  },
-  {
-    code: 'payment',
-    label: '支付管理',
-    feature: 'payment',
-    backend: [{ groupId: 'io.mango.platform.payment', artifactId: 'mango-payment-starter' }],
-  },
+  { code: 'notice', label: '通知管理' },
+  { code: 'numgen', label: '编号管理' },
+  { code: 'calendar', label: '工作日历' },
+  { code: 'payment', label: '支付管理' },
   {
     code: 'workflow',
     label: '审批管理',
-    feature: 'workflow',
     runtimeModule: {
       moduleCode: 'mango-workflow',
       local: { mode: 'local', runtimeCode: 'mango-admin-workflow-local' },
       micro: { mode: 'micro', runtimeCode: 'mango-admin-workflow-app', entry: 'http://c.mango.io:5182/' },
     },
-    backend: [{ groupId: 'io.mango.platform.workflow', artifactId: 'mango-workflow-starter' }],
   },
-  {
-    code: 'workflow-example',
-    label: '审批示例',
-    dependsOn: ['workflow'],
-  },
+  { code: 'workflow-example', label: '审批示例' },
 ];
 
-const OPTIONAL_MODULES = buildOptionalModules(ADMIN_FULL_MODULES, OPTIONAL_MODULE_OVERLAYS);
+const OPTIONAL_MODULES = buildOptionalModules(ADMIN_FULL_MODULES, OPTIONAL_MODULE_RUNTIME);
 const MODULE_BY_CODE = new Map(OPTIONAL_MODULES.map((module) => [module.code, module]));
 const FULL_MODULE_CODES = OPTIONAL_MODULES.map((module) => module.code);
 
@@ -640,6 +605,7 @@ function buildVariables(options) {
     backendBusinessModules: '',
     backendBusinessDependencies: '',
     backendBusinessFlywayModules: '',
+    moduleConfigFragments: renderModuleConfigFragments(ADMIN_DEFAULT_MODULES, selectedModules),
   };
 }
 
@@ -6189,6 +6155,20 @@ function normalizeAdminModules(items) {
   }));
 }
 
+function normalizeOfficialModules(items) {
+  if (!Array.isArray(items)) return [];
+  return items.map((item) => ({
+    ...normalizeAdminModules(item.frontend ? [item.frontend] : [])[0],
+    code: item.moduleId,
+    presetMembership: item.presetMembership,
+    backend: item.backendStarters || [],
+    configFragments: item.configFragments || [],
+    resourceCopies: item.resourceCopies || [],
+    dependsOn: item.dependsOn || [],
+    feature: item.backendStarters?.length ? item.moduleId : '',
+  }));
+}
+
 function toFrontendDependency(module) {
   if (!module.packageName || !module.cliVersionKey) {
     fail(
@@ -6207,11 +6187,10 @@ function buildOptionalModules(adminFullModules, overlays) {
     .filter((module) => module.cliOptional !== false)
     .map((module) => {
       const overlay = overlayByCode.get(module.code);
-      if (!overlay) {
-        fail(`mango-cli optional module overlay missing for ${module.code}`);
-      }
       return {
-        ...overlay,
+        label: module.code,
+        ...module,
+        ...(overlay || {}),
         frontendPackage: module.packageName,
         versionKey: module.cliVersionKey,
         styleImport: module.style,
@@ -6300,6 +6279,7 @@ function renderBackendManagedDependencies(preset, selectedModules) {
   return renderDependencyXml(
     [
       ...CORE_BACKEND_DEPENDENCIES,
+      ...ADMIN_DEFAULT_MODULES.flatMap((module) => module.backend || []),
       ...BUSINESS_BACKEND_API_MANAGED_DEPENDENCIES,
       ...BUSINESS_BACKEND_MANAGED_DEPENDENCIES,
       ...selectedModules.flatMap((module) => module.backend || []),
@@ -6321,10 +6301,22 @@ function renderBackendDependencies(preset, selectedModules) {
     );
   }
   return renderDependencyXml(
-    [...CORE_BACKEND_DEPENDENCIES, ...selectedModules.flatMap((module) => module.backend || [])],
+    [
+      ...CORE_BACKEND_DEPENDENCIES,
+      ...ADMIN_DEFAULT_MODULES.flatMap((module) => module.backend || []),
+      ...selectedModules.flatMap((module) => module.backend || []),
+    ],
     false,
     8,
   );
+}
+
+function renderModuleConfigFragments(defaultModules, selectedModules) {
+  return uniqueBy([...defaultModules, ...selectedModules], (module) => module.code)
+    .flatMap((module) => module.configFragments || [])
+    .filter((fragment) => fragment.targetPath === 'templates/full/backend/app/src/main/resources/application.yml')
+    .map((fragment) => fragment.content.trimEnd())
+    .join('\n');
 }
 
 function renderDependencyXml(dependencies, includeVersion, indentSize) {
@@ -6473,10 +6465,10 @@ function readReleaseVersions() {
   return JSON.parse(readFileSync(releaseVersionsPath, 'utf8'));
 }
 
-function readAdminModulesManifest() {
-  const manifestPath = join(packageRoot, 'admin-modules.json');
+function readModuleProjectionsManifest() {
+  const manifestPath = join(packageRoot, 'module-projections.json');
   if (!existsSync(manifestPath)) {
-    fail('admin-modules.json is missing from @mango/cli package');
+    fail('module-projections.json is missing from @mango/cli package');
   }
   return readJsonFile(manifestPath);
 }
