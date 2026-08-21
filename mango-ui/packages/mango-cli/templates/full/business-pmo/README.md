@@ -161,6 +161,8 @@ node business-pmo/mango-baseline/tools/risk-verification.mjs \
 
 生成项目的 `pmo-doc-check` 始终产生 required check 结果，但只在 `mango.config.json` 的 `paths.backend` 指向的后端路径受影响时启动 Java。普通后端质量门禁由 `classify-pmo-check-scope.mjs` 选择直接修改的 Maven 模块，不使用 `-am` 或 `-amd` 扩大 Reactor；依赖构建和消费者兼容性作为独立验证，根 POM、架构验证模块和全局架构输入才使用完整 Reactor。GitHub 与 Gitea 模板共用这套范围判定；Gitea 对已关闭或已合并 PR 的 `edited` 事件只执行正文合同检查，不再构造无效 diff。
 
+前端页面基线默认启用。项目需要暂停该单项检查时，在 `mango.config.json` 显式设置 `pmoChecks.frontendPageBaseline=false`；非布尔值或配置读取失败会阻断。GitHub/Gitea 仍执行风险合同、业务文档、后端质量并产生同一个稳定 `pmo-doc-check` 汇总结果。
+
 ### 5.2 存量模块首次纳管
 
 `architecture-debt-budget.json` 是业务仓自己的递减预算，不随 `mango pmo sync/upgrade` 覆盖。门禁启用前已经存在、但缺少 `module.properties` 的模块必须先建立独立纳管 PR；该 PR 只允许目标 starter 的身份文件和此预算文件。先用 PR 的精确 base SHA 生成完整 inventory，再写入审计记录：

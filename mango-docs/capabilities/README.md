@@ -36,6 +36,8 @@
 
 ## 3.1 近期能力变更
 
+- 2026-08-20，[Issue #838](https://github.com/HardyDou/mango/issues/838) 为业务项目增加 `mango.config.json.pmoChecks.frontendPageBaseline` 显式开关：缺省启用，仅布尔 `false` 关闭；非法配置 fail closed。GitHub/Gitea 只跳过页面基线并保留稳定 `pmo-doc-check` 及其它门禁，CLI init/sync/upgrade/check 负责生成、迁移与校验。使用入口见 [PMO README](../../mango-pmo/README.md)、[@mango/pmo README](../../mango-ui/packages/mango-pmo/README.md) 和 [CLI README](../../mango-ui/packages/mango-cli/README.md)，治理决策见 [Issue #838 设计](../designs/2026-08-20-issue-838-frontend-page-baseline-toggle.md)。
+
 - 2026-08-20，新增独立 `mango-infra-docsign`，统一提供 PDF/OFD 数字签名、普通可见章、骑缝章、多签名与验签。调用方每次传入包含私钥和完整证书链的 PKCS#12；PDF `adbe.pkcs7.detached` CMS 支持自动选择或显式指定 RSA SHA-256/384/512、RSA-PSS SHA-256、SM2/SM3，OFD 支持 GB/T 35275 SM2/SM3 及调用方提供的 SES v4 原生电子印章。签名前校验算法、私钥、叶子证书公钥和 SM2 曲线匹配。签名与验签提供流式首选入口，以有界堆内存和短期磁盘随机访问处理大文件，兼容 `byte[]` 入口具有可配置大小上限。验签分别报告密码学、文档完整性、证书时间、信任和当前文档覆盖状态，缺少信任库时整体失败闭合。模块不托管密钥、不制作电子印章，也不提供 TSA、OCSP/CRL、文件存储、租户或业务权限。接入与合规边界见 [Docsign README](../../mango/mango-infra/mango-infra-docsign/README.md)。
 
 - 2026-08-20，Fileproc 接入 OFDRW 2.4.0，新增 PDF/OFD 和 DOCX/PDF/OFD 真实转换链。实现直接使用 OFDRW Graphics2D 与 Mango 现有 PDFBox 3，避免 OFDRW converter 模块的 PDFBox 2 二进制冲突；DOCX 转换优先复用 Aspose Words，Aspose 未启用时复用 LibreOffice/JODConverter。表格、图片、可见印章和已有签名外观按页面视觉内容进入 OFD，但 PDF 交互表单、证书链和数字签名语义不会转换为 OFD 原生签章。接入和边界见 [Fileproc README](../../mango/mango-infra/mango-infra-fileproc/README.md) 与 [Template README](../../mango/mango-platform/mango-template/README.md)。

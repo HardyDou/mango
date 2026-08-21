@@ -47,6 +47,8 @@ mango pmo check --project-dir . --locked
 
 页面基线误判或特殊页面可以在对应 `.vue` 文件登记例外。按类型使用 `<!-- mango-page-baseline-exception <list|detail|form|dialog>: <具体、可复核的原因> -->`；整个页面均不适用默认骨架时使用 `<!-- mango-page-baseline-exception all: <具体、可复核的原因> -->`。CI 失败输出也会显示这两种写法。
 
+业务项目需要暂停整个页面基线时，在 `mango.config.json` 显式设置 `pmoChecks.frontendPageBaseline=false`。缺失时默认启用，非布尔值或配置读取失败会明确失败；该设置不会关闭风险合同、业务文档、后端质量或稳定 `pmo-doc-check` 汇总。
+
 业务仓启用 M08 时从项目根执行：
 
 ```bash
@@ -69,6 +71,7 @@ node business-pmo/mango-baseline/tools/audit-readme-source-facts.mjs
 | `dist/baseline.json`                             | `contracts[]`                                           | 文档 contract ID 和 schema revision                                    |
 | `business-pmo/pmo-lock.json`                     | `packageVersion`、`bundleSha256`                        | 业务项目精确锁定的 PMO bundle                                          |
 | 业务仓 `mango.config.json`                       | `paths.backend`、`paths.frontend`、`paths.businessDocs` | 标准 scope classifier 与 GitHub/Gitea workflow 使用的项目目录          |
+| 业务仓 `mango.config.json`                       | `pmoChecks.frontendPageBaseline`                        | 默认 `true`；显式布尔 `false` 只关闭前端页面基线                       |
 | 消费仓库 `.github/branch-protection-policy.json` | `governanceMode` 与保护字段                             | 仓库自行声明的远端分支保护期望状态；不由 npm 包覆盖                    |
 
 ## 5. API 与扩展
