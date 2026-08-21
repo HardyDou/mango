@@ -16,6 +16,7 @@
 - 不负责 KMS、HSM、证书生命周期、密钥轮换、密钥托管和合规审计。
 - 不负责登录认证、传输层 TLS 或业务协议安全设计。
 - 不负责脱敏展示；脱敏能力在 sensitive 或业务模块内处理。
+- `ISignService` 只对调用方传入的数据进行算法签名/验签，不表达 PDF/OFD 字节范围、签章位置、多签名、证书信任或电子印章语义；文档级能力使用 [`mango-infra-docsign`](../mango-infra-docsign/README.md)。
 
 ## 4. 模块入口
 本模块只提供算法封装和 Spring Boot 自动配置。密钥来源、密钥分发、密钥轮换、数据分级、字段落库策略和异常审计由调用方或安全基础设施负责。
@@ -92,6 +93,8 @@ mango:
 - 显式实现类：`AesCipher`、`RsaCipher`、`RsaSigner`、`Sha256Digester`、`HmacSm3Digester`。
 
 调用方如果需要替换默认 SM4 或 SM2 实现，可以声明自己的 `ICryptoService` 或 `ISignService` Bean，自动配置会因 `ConditionalOnMissingBean` 让位。
+
+可见手写签名 PNG、印章图片和 `ISignService` 的数据签名均不能单独证明 PDF/OFD 文档未被修改；需要文档完整性、证书信任和多签名判断时使用 `DocumentSignApi`。
 
 ## 8. 数据与初始化
 无数据库 migration、无 Runner、无 Initializer、无初始化数据。密钥不要写入仓库配置文件，应通过环境变量、配置中心或密钥管理服务注入。

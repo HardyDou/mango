@@ -72,6 +72,15 @@
             <artifactId>pdfbox-tools</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.ofdrw</groupId>
+            <artifactId>ofdrw-graphics2d</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.ofdrw</groupId>
+            <artifactId>ofdrw-reader</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-imaging</artifactId>
         </dependency>

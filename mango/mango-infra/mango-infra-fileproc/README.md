@@ -6,11 +6,12 @@
 核心能力：
 
 - 模板渲染：TEXT、HTML、DOCX、XLSX 等输入渲染为目标格式。
-- 格式转换：HTML/TEXT、Office/PDF、图片/PDF、PDF/图片、TIFF/PDF、同格式透传。
+- 格式转换：HTML/TEXT、Office/PDF、图片/PDF、PDF/图片、TIFF/PDF、PDF/OFD、DOCX/OFD、同格式透传。
 - 文件压缩：图片、扫描件 PDF 按档位或目标大小压缩。
 - PDF 操作：合并、加水印、结构压缩、压缩到目标大小。
 - Aspose license 装载：Words、Cells、Slides、PDF、Imaging。
 - LibreOffice/JODConverter Office 转 PDF。
+- OFDRW 2.4.0 PDF 转 OFD，以及复用现有 Word 转 PDF 能力的 DOCX 转 OFD。
 
 ## 2. 功能清单
 
@@ -27,6 +28,7 @@
 - 不保存转换结果到 `mango-file`。
 - 不校验文件归属、租户、菜单、按钮或接口权限。
 - 不替业务模块决定转换后的文件生命周期和清理策略。
+- 不提供 PDF/OFD 数字签名、验签、证书、电子印章或密钥托管能力；数字签章由独立的 [`mango-infra-docsign`](../mango-infra-docsign/README.md) 提供，`mango-infra-crypto` 的 `ISignService` 是数据签名接口，不等同于文档签章。
 
 ## 4. 模块入口
 子模块：
@@ -154,6 +156,8 @@ mango:
       image-to-pdf-enabled: true
       pdf-to-image-enabled: true
       tiff-to-pdf-enabled: true
+      pdf-to-ofd-enabled: true
+      docx-to-ofd-enabled: true
       office-home:
       office-ports: [2001, 2002]
       office-task-execution-timeout: 300000
@@ -172,11 +176,17 @@ mango:
 | `image-to-pdf-enabled` | `true` | 注册 ImageIO/PDFBox 图片转 PDF 转换器，支持 PNG、JPG/JPEG，默认优先用于手机照片等图片合 PDF 场景。 |
 | `pdf-to-image-enabled` | `true` | 注册 PDF 转图片转换器。 |
 | `tiff-to-pdf-enabled` | `true` | 注册 TIFF 转 PDF 转换器。 |
+| `pdf-to-ofd-enabled` | `true` | 注册基于 OFDRW Graphics2D 和 PDFBox 3 的 PDF 转 OFD 转换器。 |
+| `docx-to-ofd-enabled` | `true` | 注册 DOCX 转 OFD 转换器；优先复用 Aspose Words 转 PDF，Aspose 未启用时复用 LibreOffice/JODConverter。 |
 | `office-home` | 空 | Office 安装目录；为空时由 `LocalOfficeHomeResolver` 和 JODConverter 查找。 |
 | `office-ports` | `[2001, 2002]` | LibreOffice 服务端口。 |
 | `office-task-execution-timeout` | `300000` | Office 单任务超时时间，单位毫秒。 |
 
 `LocalOfficeHomeResolver` 会尝试常见安装目录，包括项目目录下的 `LibreOfficePortable`、Linux 的 LibreOffice 目录和 OpenOffice 目录。
+
+OFD 转换使用 Apache-2.0 的 OFDRW 2.4.0。Mango 直接使用 `ofdrw-graphics2d`，并用仓内 PDFBox 3 渲染页面，避免 OFDRW `ofdrw-converter` 2.4.0 所依赖 PDFBox 2 与 Mango PDFBox 3 的二进制冲突。
+
+PDF/DOCX 中的表格、图片、可见印章和已有签名外观会作为页面视觉内容进入 OFD。PDF 交互式表单、PDF 数字签名、证书链和签名有效性不会转换为 OFD 原生表单或 OFD 签章对象；需要可验签的 OFD 电子印章时，应由独立文档签章能力在转换后生成，不能把视觉印章当作数字签名。
 
 ### 6.4 Aspose
 
@@ -198,7 +208,7 @@ mango:
 公开 API：
 
 - `RenderApi`：`render()`、`supportedFormats()`、`mergePdf()`、`addPdfWatermark()`、`compressPdf()`、`compressPdfToTarget()`。
-- `ConvertApi`：`convert()`、`supportedFormats()`。
+- `ConvertApi`：`canConvert()`、`convert()`、`supportedConversions()`。
 - `FileCompressApi`：`supports()`、`compress()`。
 - `AsposeLicenseApi`：按 Aspose 产品装载 license。
 
@@ -246,6 +256,8 @@ mango:
 ## 11. 问题排查
 - Office 转 PDF 失败：检查 `office-home`、`office-ports`、LibreOffice 安装路径和进程权限。
 - Aspose 输出有水印或限制：检查 `mango.fileproc.aspose.*-license-location` 和 license 是否匹配产品。
+- PDF/OFD 或 DOCX/OFD 失败：检查 `pdf-to-ofd-enabled`、`docx-to-ofd-enabled`，以及 DOCX 转 PDF 所需的 Aspose 或 LibreOffice 能力。
+- OFD 中印章可见但无法验签：当前转换只保留页面外观，不生成 OFD 数字签章。
 - PDF 操作提示不支持：检查 `mango.fileproc.render.pdf-operations-enabled` 和 `AsposeLicenseApi` 是否存在。
 - 转换结果未写入文件中心：这是调用方职责，需要用 `mango-file` 另行保存。
 - 多租户文件被串用：fileproc 不识别租户，调用前必须由业务模块校验。

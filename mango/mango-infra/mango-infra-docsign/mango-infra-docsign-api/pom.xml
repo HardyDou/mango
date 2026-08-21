@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>io.mango.infra.docsign</groupId>
+        <artifactId>mango-infra-docsign</artifactId>
+        <version>${revision}</version>
+    </parent>
+
+    <artifactId>mango-infra-docsign-api</artifactId>
+    <name>Mango Infra Document Signature API</name>
+    <description>Stable document signing contracts</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>io.mango.common</groupId>
+            <artifactId>mango-common</artifactId>
+        </dependency>
+    </dependencies>
+</project>

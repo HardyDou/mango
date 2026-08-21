@@ -59,6 +59,8 @@
         <module>mango-infra-log</module>
         <!-- File processing (local document/image/archive utilities, no external middleware) -->
         <module>mango-infra-fileproc</module>
+        <!-- PDF/OFD document signing and signature validation -->
+        <module>mango-infra-docsign</module>
         <!-- Test (Unified test module for all infrastructure components) -->
         <module>mango-infra-test</module>
     </modules>

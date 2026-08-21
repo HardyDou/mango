@@ -10,11 +10,13 @@ import io.mango.infra.fileproc.convert.convert.AsposeImagingConvertProvider;
 import io.mango.infra.fileproc.convert.convert.AsposePdfToImageConvertProvider;
 import io.mango.infra.fileproc.convert.convert.AsposeSlideToPdfConvertProvider;
 import io.mango.infra.fileproc.convert.convert.AsposeWordToPdfConvertProvider;
+import io.mango.infra.fileproc.convert.convert.DocxToOfdConvertProvider;
 import io.mango.infra.fileproc.convert.convert.HtmlToTextConverter;
 import io.mango.infra.fileproc.convert.convert.ImageToPdfConvertProvider;
 import io.mango.infra.fileproc.convert.convert.OfficeManagerHolder;
 import io.mango.infra.fileproc.convert.convert.OfficeToPdfConvertProvider;
 import io.mango.infra.fileproc.convert.convert.PdfToImageConvertProvider;
+import io.mango.infra.fileproc.convert.convert.PdfToOfdConvertProvider;
 import io.mango.infra.fileproc.convert.convert.SameFormatConverter;
 import io.mango.infra.fileproc.convert.convert.TiffToPdfConvertProvider;
 import io.mango.infra.fileproc.convert.vo.ConvertFormatPairVO;
@@ -47,6 +49,8 @@ class ConvertAutoConfigurationTest {
             assertThat(context).hasSingleBean(OfficeToPdfConvertProvider.class);
             assertThat(context).hasSingleBean(PdfToImageConvertProvider.class);
             assertThat(context).hasSingleBean(TiffToPdfConvertProvider.class);
+            assertThat(context).hasSingleBean(PdfToOfdConvertProvider.class);
+            assertThat(context).hasSingleBean(DocxToOfdConvertProvider.class);
             assertThat(context).hasSingleBean(ConvertApi.class);
 
             ConvertApi service = context.getBean(ConvertApi.class);
@@ -55,6 +59,8 @@ class ConvertAutoConfigurationTest {
             assertThat(service.canConvert(ConvertFormat.DOCX, ConvertFormat.PDF)).isTrue();
             assertThat(service.canConvert(ConvertFormat.PDF, ConvertFormat.PNG)).isTrue();
             assertThat(service.canConvert(ConvertFormat.TIFF, ConvertFormat.PDF)).isTrue();
+            assertThat(service.canConvert(ConvertFormat.PDF, ConvertFormat.OFD)).isTrue();
+            assertThat(service.canConvert(ConvertFormat.DOCX, ConvertFormat.OFD)).isTrue();
         });
     }
 
@@ -84,7 +90,9 @@ class ConvertAutoConfigurationTest {
                             new ConvertFormatPairVO(ConvertFormat.JPEG, ConvertFormat.TIFF),
                             new ConvertFormatPairVO(ConvertFormat.TIFF, ConvertFormat.PNG),
                             new ConvertFormatPairVO(ConvertFormat.TIFF, ConvertFormat.JPEG),
-                            new ConvertFormatPairVO(ConvertFormat.TIFF, ConvertFormat.PDF));
+                            new ConvertFormatPairVO(ConvertFormat.TIFF, ConvertFormat.PDF),
+                            new ConvertFormatPairVO(ConvertFormat.PDF, ConvertFormat.OFD),
+                            new ConvertFormatPairVO(ConvertFormat.DOCX, ConvertFormat.OFD));
 
             assertThat(service.canConvert(ConvertFormat.OFD, ConvertFormat.PDF)).isFalse();
             assertThat(service.canConvert(ConvertFormat.ZIP, ConvertFormat.PDF)).isFalse();
@@ -116,7 +124,9 @@ class ConvertAutoConfigurationTest {
                         "mango.fileproc.convert.aspose-imaging-enabled=false",
                         "mango.fileproc.convert.image-to-pdf-enabled=false",
                         "mango.fileproc.convert.pdf-to-image-enabled=false",
-                        "mango.fileproc.convert.tiff-to-pdf-enabled=false")
+                        "mango.fileproc.convert.tiff-to-pdf-enabled=false",
+                        "mango.fileproc.convert.pdf-to-ofd-enabled=false",
+                        "mango.fileproc.convert.docx-to-ofd-enabled=false")
                 .run(context -> {
                     assertThat(context).doesNotHaveBean(HtmlToTextConverter.class);
                     assertThat(context).hasSingleBean(ConvertApi.class);
@@ -139,13 +149,17 @@ class ConvertAutoConfigurationTest {
                         "mango.fileproc.convert.aspose-imaging-enabled=false",
                         "mango.fileproc.convert.image-to-pdf-enabled=false",
                         "mango.fileproc.convert.pdf-to-image-enabled=false",
-                        "mango.fileproc.convert.tiff-to-pdf-enabled=false")
+                        "mango.fileproc.convert.tiff-to-pdf-enabled=false",
+                        "mango.fileproc.convert.pdf-to-ofd-enabled=false",
+                        "mango.fileproc.convert.docx-to-ofd-enabled=false")
                 .run(context -> {
                     assertThat(context).doesNotHaveBean(OfficeManagerHolder.class);
                     assertThat(context).doesNotHaveBean(OfficeToPdfConvertProvider.class);
                     assertThat(context).doesNotHaveBean(ImageToPdfConvertProvider.class);
                     assertThat(context).doesNotHaveBean(PdfToImageConvertProvider.class);
                     assertThat(context).doesNotHaveBean(TiffToPdfConvertProvider.class);
+                    assertThat(context).doesNotHaveBean(PdfToOfdConvertProvider.class);
+                    assertThat(context).doesNotHaveBean(DocxToOfdConvertProvider.class);
                     ConvertApi service = context.getBean(ConvertApi.class);
                     assertThat(service.canConvert(ConvertFormat.DOCX, ConvertFormat.PDF)).isFalse();
                     assertThat(service.canConvert(ConvertFormat.PDF, ConvertFormat.PNG)).isFalse();
@@ -169,6 +183,8 @@ class ConvertAutoConfigurationTest {
                     assertThat(context).hasSingleBean(OfficeToPdfConvertProvider.class);
                     assertThat(context).hasSingleBean(PdfToImageConvertProvider.class);
                     assertThat(context).hasSingleBean(TiffToPdfConvertProvider.class);
+                    assertThat(context).hasSingleBean(PdfToOfdConvertProvider.class);
+                    assertThat(context).hasSingleBean(DocxToOfdConvertProvider.class);
                     assertThat(context).hasSingleBean(ConvertApi.class);
 
                     ConvertApi service = context.getBean(ConvertApi.class);
@@ -179,6 +195,34 @@ class ConvertAutoConfigurationTest {
                     assertThat(service.canConvert(ConvertFormat.JPEG, ConvertFormat.PDF)).isTrue();
                     assertThat(service.canConvert(ConvertFormat.TIFF, ConvertFormat.PDF)).isTrue();
                     assertThat(service.canConvert(ConvertFormat.PNG, ConvertFormat.JPEG)).isFalse();
+                    assertThat(service.canConvert(ConvertFormat.PDF, ConvertFormat.OFD)).isTrue();
+                    assertThat(service.canConvert(ConvertFormat.DOCX, ConvertFormat.OFD)).isTrue();
+                });
+    }
+
+    @Test
+    void ofdConverters_whenDisabled_areNotRegistered() {
+        contextRunner
+                .withPropertyValues("mango.fileproc.convert.pdf-to-ofd-enabled=false")
+                .run(context -> {
+                    assertThat(context).doesNotHaveBean(PdfToOfdConvertProvider.class);
+                    assertThat(context).doesNotHaveBean(DocxToOfdConvertProvider.class);
+                    ConvertApi service = context.getBean(ConvertApi.class);
+                    assertThat(service.canConvert(ConvertFormat.PDF, ConvertFormat.OFD)).isFalse();
+                    assertThat(service.canConvert(ConvertFormat.DOCX, ConvertFormat.OFD)).isFalse();
+                });
+    }
+
+    @Test
+    void docxToOfd_whenDisabled_keepsPdfToOfdRegistered() {
+        contextRunner
+                .withPropertyValues("mango.fileproc.convert.docx-to-ofd-enabled=false")
+                .run(context -> {
+                    assertThat(context).hasSingleBean(PdfToOfdConvertProvider.class);
+                    assertThat(context).doesNotHaveBean(DocxToOfdConvertProvider.class);
+                    ConvertApi service = context.getBean(ConvertApi.class);
+                    assertThat(service.canConvert(ConvertFormat.PDF, ConvertFormat.OFD)).isTrue();
+                    assertThat(service.canConvert(ConvertFormat.DOCX, ConvertFormat.OFD)).isFalse();
                 });
     }
 

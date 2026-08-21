@@ -43,6 +43,7 @@
         <aspose-pdf.version>20.3</aspose-pdf.version>
         <aspose-imaging.version>20.3</aspose-imaging.version>
         <pdfbox.version>3.0.6</pdfbox.version>
+        <ofdrw.version>2.4.0</ofdrw.version>
         <commons-imaging.version>1.0.0-alpha6</commons-imaging.version>
         <springdoc-openapi.version>2.8.9</springdoc-openapi.version>
         <knife4j.version>4.5.0</knife4j.version>
@@ -933,6 +934,21 @@
                 <version>${pdfbox.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.ofdrw</groupId>
+                <artifactId>ofdrw-graphics2d</artifactId>
+                <version>${ofdrw.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.ofdrw</groupId>
+                <artifactId>ofdrw-reader</artifactId>
+                <version>${ofdrw.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.ofdrw</groupId>
+                <artifactId>ofdrw-sign</artifactId>
+                <version>${ofdrw.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-imaging</artifactId>
                 <version>${commons-imaging.version}</version>
@@ -1010,6 +1026,21 @@
             <dependency>
                 <groupId>io.mango.infra.fileproc</groupId>
                 <artifactId>mango-infra-fileproc-starter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.mango.infra.docsign</groupId>
+                <artifactId>mango-infra-docsign-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.mango.infra.docsign</groupId>
+                <artifactId>mango-infra-docsign-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.mango.infra.docsign</groupId>
+                <artifactId>mango-infra-docsign-starter</artifactId>
                 <version>${project.version}</version>
             </dependency>
         </dependencies>
