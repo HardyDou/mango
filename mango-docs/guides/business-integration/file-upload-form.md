@@ -140,6 +140,8 @@ FileRecordVO zipFile = fileApi.packageFiles(command).getData();
 
 ## 8. 变更影响记录
 
+- 2026-08-20：Fileproc 新增 PDF/DOCX 到 OFD 的转换 provider，并新增独立 Docsign 模块提供 PDF/OFD 签名、验签和可见签章。文件上传、回显、预览、下载、`fileId`/`fileIds` 持久化、权限、租户和本场景验收步骤不变；File/File Preview 不会自动把上传文件转换为 OFD 或自动签章。业务需要这些能力时，应在后端显式引入对应 Fileproc/Docsign starter、传入调用方管理的证书与签章参数，并把生成结果按现有 File API 另行保存为文件记录。
+
 - 2026-08-02 Issue #690：文件上传、回显、预览、下载、ZIP/PDF 接口、fileId 持久化和租户权限合同不变。本次影响是应用初始化与制品消费边界：使用 Maven `1.0.30`/`1.0.3x` 的业务仓升级时按新 release tuple 成组更新，并验证 Boot JAR、Bootstrap receipt、File 资源声明和预览引擎注册结果；已有文件记录、业务附件关系和文件内容不重建。
 
 - 2026-07-30：`FilePreviewPanel` 新增默认关闭的 `fit-container` 容器填充模式。固定高度容器、`ElDialog` 或
