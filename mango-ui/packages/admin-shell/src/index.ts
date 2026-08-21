@@ -111,6 +111,7 @@ export {
   installAdminBrandingRuntime,
   installShellApp,
 } from './appBootstrap';
+export { isElementPlusMessageBoxCancellation } from './errorHandling';
 export { configureMangoAdminShell, getMangoAdminShellOptions };
 export { ensureFeatureRegistrars };
 export type {

@@ -9,6 +9,7 @@ import {
   configureMangoAdminShell,
   getMangoAdminAuthProfileSlots,
   installAdminBrandingRuntime,
+  isElementPlusMessageBoxCancellation,
 } from '@mango/admin-shell';
 import { mangoFullAdminFeatureRegistrars } from '@mango/admin/full';
 import { systemQuickEntryWidgets, systemUserProfileWidgets } from '@mango/system';
@@ -63,6 +64,9 @@ for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
 
 // 全局错误处理
 app.config.errorHandler = (err, instance, info) => {
+  if (isElementPlusMessageBoxCancellation(err)) {
+    return;
+  }
   console.error('Vue 错误:', err);
   console.error('组件:', instance);
   console.error('错误信息:', info);

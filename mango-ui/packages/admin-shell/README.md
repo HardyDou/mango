@@ -18,6 +18,7 @@
 | 读取 Shell 配置  | `getMangoAdminShellOptions()`                                                                                    |
 | 创建路由         | `createMangoAdminRouter()`                                                                                       |
 | 安装 Shell 插件  | `installShellApp()`                                                                                              |
+| 确认取消分类     | `isElementPlusMessageBoxCancellation()`；Shell 创建的外层和运行时内层 App 均将 MessageBox 取消视为正常交互       |
 | 运行时兼容       | 配置或安装 Shell 时自动补齐安全的 Web Crypto `randomUUID`，业务入口无需 polyfill                                 |
 | 菜单运行时       | `useMenuHost()`                                                                                                  |
 | 页面运行时       | `useRuntimeHost()`                                                                                               |
@@ -120,21 +121,24 @@ const admin = createMangoAdminApp({
 
 主入口导出：
 
-| 导出                                | 作用                                     |
-| ----------------------------------- | ---------------------------------------- |
-| `createMangoAdminApp(options)`      | 创建 Vue app、router，并返回 `mount()`。 |
-| `MangoAdminShellApp`                | Shell 根组件。                           |
-| `MangoAdminShellView`               | Shell 内容视图。                         |
-| `MangoAdminLayout`                  | 管理后台布局组件。                       |
-| `MangoAdminParentView`              | 父级路由占位组件。                       |
-| `createMangoAdminRouter()`          | 创建 Shell 路由。                        |
-| `getShellPinia()`                   | 获取 Shell Pinia。                       |
-| `getMangoAdminAuthProfileSlots()`   | 获取个人中心所需的 Shell 内置页面插槽。  |
-| `installShellApp(app, options)`     | 安装 Shell 依赖和配置。                  |
-| `configureMangoAdminShell(options)` | 合并 Shell 配置。                        |
-| `getMangoAdminShellOptions()`       | 读取当前 Shell 配置。                    |
+| 导出                                         | 作用                                                      |
+| -------------------------------------------- | --------------------------------------------------------- |
+| `createMangoAdminApp(options)`               | 创建 Vue app、router，并返回 `mount()`。                  |
+| `MangoAdminShellApp`                         | Shell 根组件。                                            |
+| `MangoAdminShellView`                        | Shell 内容视图。                                          |
+| `MangoAdminLayout`                           | 管理后台布局组件。                                        |
+| `MangoAdminParentView`                       | 父级路由占位组件。                                        |
+| `createMangoAdminRouter()`                   | 创建 Shell 路由。                                         |
+| `getShellPinia()`                            | 获取 Shell Pinia。                                        |
+| `getMangoAdminAuthProfileSlots()`            | 获取个人中心所需的 Shell 内置页面插槽。                   |
+| `installShellApp(app, options)`              | 安装 Shell 依赖和配置。                                   |
+| `isElementPlusMessageBoxCancellation(error)` | 判断 Element Plus MessageBox 的 `cancel` / `close` 结果。 |
+| `configureMangoAdminShell(options)`          | 合并 Shell 配置。                                         |
+| `getMangoAdminShellOptions()`                | 读取当前 Shell 配置。                                     |
 
 Shell 默认把 `MangoThemeSettings` 注入 `@mango/auth` 的个人中心“主题设置”子页。顶栏不再单独显示设置齿轮，用户可从头像下拉菜单进入 `/profile?tab=theme`；主题、布局和界面偏好仍实时应用并保存在当前浏览器。
+
+Shell 为主应用和 runtime outlet 的本地页面分别创建 Vue App，但每个 App 都通过 `installShellApp()` 使用同一错误边界。Element Plus MessageBox 的取消和关闭属于正常交互，不写错误日志、不显示“系统错误，请刷新页面”；其它异常继续进入原有全局兜底。自定义全局 Promise 拒绝处理器时，可复用 `isElementPlusMessageBoxCancellation(error)`，避免在业务入口维护第二份判断。
 
 子入口：
 
