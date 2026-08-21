@@ -13,7 +13,7 @@
 - TEXT、HTML、DOCX、XLSX、PDF、OFD 输出。
 - 同步/异步渲染和渲染记录查询。
 
-模板源文件和文档类渲染结果通过文件能力保存；Office 渲染和格式转换依赖 `mango-infra-fileproc`。
+模板源文件和文档类渲染结果通过文件能力保存；Office 渲染和格式转换依赖 `mango-infra-fileproc`。OFD 输出由 fileproc 执行 PDF/OFD 或 DOCX/PDF/OFD 转换，表格、图片和可见印章按页面外观保留；数字签名和可验签电子印章不由模板模块生成，需要时由业务完成权限校验后调用 `mango-infra-docsign`。
 
 ## 2. 功能清单
 
@@ -86,7 +86,8 @@ Long fileId = templateApi.render(command).getData().getFileId();
 |------|------|
 | `mango-file` | 保存模板源文件和文档类输出文件。 |
 | `mango-infra-fileproc` | 提供 `RenderApi` 和 `ConvertApi`。 |
-| fileproc 转换引擎和 license | 输出 PDF、OFD 等转换格式时需要。 |
+| `mango-infra-docsign` | 可选的 PDF/OFD 数字签章与验签能力；不属于模板渲染流程。 |
+| fileproc 转换引擎和 license | 输出 PDF、OFD 等转换格式时需要；OFDRW 本身采用 Apache-2.0，DOCX 转 PDF 仍取决于 Aspose 或 LibreOffice。 |
 
 ## 4. 前端接入
 
@@ -319,7 +320,7 @@ Flyway 路径：`mango-template-core/src/main/resources/db/migration/template`�
 |------|----------|
 | 找不到模板 | 当前租户、`templateCode`、模板状态、当前发布版本。 |
 | 渲染提示格式不支持 | 源格式、输出格式、fileproc 是否支持渲染和转换。 |
-| PDF/OFD 输出失败 | fileproc 转换引擎和 license 是否可用。 |
+| PDF/OFD 输出失败 | fileproc 的 PDF/OFD provider、DOCX 转 PDF 引擎和相关 license 是否可用。 |
 | 文档类输出没有文件 ID | `mango-file` 是否可用，源文件是否存在，输出格式是否为文档类。 |
 | 变量缺失 | 先用变量提取接口生成建议，再补齐变量定义和请求参数。 |
 | 渲染记录为空 | 是否调用异步渲染或需要查询对应 `bizType`、`bizId`、`templateCode`。 |

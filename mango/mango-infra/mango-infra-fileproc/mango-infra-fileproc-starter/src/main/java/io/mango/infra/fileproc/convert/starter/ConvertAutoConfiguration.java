@@ -9,12 +9,14 @@ import io.mango.infra.fileproc.convert.convert.AsposeSlideToPdfConvertProvider;
 import io.mango.infra.fileproc.convert.convert.AsposeWordToPdfConvertProvider;
 import io.mango.infra.fileproc.convert.convert.ConvertRegistry;
 import io.mango.infra.fileproc.convert.convert.DefaultConvertApi;
+import io.mango.infra.fileproc.convert.convert.DocxToOfdConvertProvider;
 import io.mango.infra.fileproc.convert.convert.HtmlToTextConverter;
 import io.mango.infra.fileproc.convert.convert.IConvertProvider;
 import io.mango.infra.fileproc.convert.convert.ImageToPdfConvertProvider;
 import io.mango.infra.fileproc.convert.convert.OfficeManagerHolder;
 import io.mango.infra.fileproc.convert.convert.OfficeToPdfConvertProvider;
 import io.mango.infra.fileproc.convert.convert.PdfToImageConvertProvider;
+import io.mango.infra.fileproc.convert.convert.PdfToOfdConvertProvider;
 import io.mango.infra.fileproc.convert.convert.SameFormatConverter;
 import io.mango.infra.fileproc.convert.convert.TiffToPdfConvertProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -109,6 +111,27 @@ public class ConvertAutoConfiguration {
         return new AsposeImagingConvertProvider(licenseApi);
     }
 
+    @Bean
+    @Order(20)
+    @ConditionalOnMissingBean
+    @ConditionalOnProperty(prefix = "mango.fileproc.convert", name = "pdf-to-ofd-enabled",
+            havingValue = "true", matchIfMissing = true)
+    public PdfToOfdConvertProvider pdfToOfdConvertProvider() {
+        return new PdfToOfdConvertProvider();
+    }
+
+    @Bean
+    @Order(21)
+    @ConditionalOnBean({AsposeWordToPdfConvertProvider.class, PdfToOfdConvertProvider.class})
+    @ConditionalOnMissingBean
+    @ConditionalOnProperty(prefix = "mango.fileproc.convert", name = "docx-to-ofd-enabled",
+            havingValue = "true", matchIfMissing = true)
+    public DocxToOfdConvertProvider docxToOfdWithAsposeConvertProvider(
+            AsposeWordToPdfConvertProvider wordToPdfProvider,
+            PdfToOfdConvertProvider pdfToOfdProvider) {
+        return new DocxToOfdConvertProvider(wordToPdfProvider, pdfToOfdProvider);
+    }
+
     @Bean(destroyMethod = "close")
     @ConditionalOnMissingBean
     @ConditionalOnProperty(prefix = "mango.fileproc.convert", name = "office-to-pdf-enabled",
@@ -129,6 +152,18 @@ public class ConvertAutoConfiguration {
             havingValue = "true", matchIfMissing = true)
     public OfficeToPdfConvertProvider officeToPdfConvertProvider(OfficeManagerHolder officeManagerHolder) {
         return new OfficeToPdfConvertProvider(officeManagerHolder);
+    }
+
+    @Bean
+    @Order(22)
+    @ConditionalOnBean({OfficeToPdfConvertProvider.class, PdfToOfdConvertProvider.class})
+    @ConditionalOnMissingBean(DocxToOfdConvertProvider.class)
+    @ConditionalOnProperty(prefix = "mango.fileproc.convert", name = "docx-to-ofd-enabled",
+            havingValue = "true", matchIfMissing = true)
+    public DocxToOfdConvertProvider docxToOfdWithOfficeConvertProvider(
+            OfficeToPdfConvertProvider officeToPdfProvider,
+            PdfToOfdConvertProvider pdfToOfdProvider) {
+        return new DocxToOfdConvertProvider(officeToPdfProvider, pdfToOfdProvider);
     }
 
     @Bean

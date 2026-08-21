@@ -26,7 +26,7 @@
 | 版本发布 | 发布草稿为版本，切换当前发布版本。 |
 | 变量维护 | 维护变量名、标签、类型、是否必填、示例、描述和子变量。 |
 | 变量提取 | 从文本内容或源文件提取变量建议。 |
-| 模板渲染 | 发起同步/异步渲染，支持 TEXT、HTML、DOCX、XLSX、PDF、OFD 输出。 |
+| 模板渲染 | 发起同步/异步渲染，支持 TEXT、HTML、DOCX、XLSX、PDF、OFD 输出；OFD 由后端 fileproc 的 PDF/OFD 或 DOCX/PDF/OFD 链路生成。 |
 | 渲染记录 | 查询渲染状态、输出文件、输出内容和失败原因。 |
 
 ## 3. 集成形态
@@ -173,7 +173,7 @@ const result = await templateApi.render({
 | 模板版本 | `mango-template` | 历史版本、当前版本切换。 |
 | 渲染记录 | `mango-template` | 渲染记录页。 |
 | 源文件和输出文件 | `mango-file` | 文件型模板上传、文档类输出下载或预览。 |
-| 渲染和转换能力 | `mango-infra-fileproc` | 文本/文档渲染、PDF/OFD 转换。 |
+| 渲染和转换能力 | `mango-infra-fileproc` | 文本/文档渲染、PDF/OFD 转换；表格、图片和可见印章按页面外观保留，不生成可验签数字签章。文档签章由后端业务另行调用 `mango-infra-docsign`，本前端包不暴露密钥或制章能力。 |
 | 菜单权限 | authorization | 页面入口和按钮权限。 |
 
 ## 9. 管理入口
@@ -195,7 +195,7 @@ const result = await templateApi.render({
 | 文件上传不可用 | 是否安装 `@mango/file`，后端文件服务是否可用。 |
 | 渲染失败 | 模板是否发布、变量是否完整、输出格式是否受支持。 |
 | 预览区显示 FAILED | 查看错误信息，按后端返回的模板变量、文件处理或输出格式错误修正。 |
-| DOCX/PDF/OFD 输出失败 | 后端 fileproc 和转换 license 是否可用。 |
+| DOCX/PDF/OFD 输出失败 | 后端 fileproc 的 OFD provider、DOCX 转 PDF 引擎和相关 license 是否可用。 |
 | 渲染返回无文件 ID | 输出格式是否是文档类，后端 `mango-file` 是否保存成功。 |
 | 渲染记录查不到 | 查询条件 `templateCode`、`bizType`、`bizId`、状态是否正确。 |
 | 页面请求 403 | 当前角色是否拥有模板菜单和接口权限。 |

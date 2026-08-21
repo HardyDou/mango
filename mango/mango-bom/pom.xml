@@ -1022,6 +1022,21 @@
                 <artifactId>mango-infra-fileproc-starter</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.mango.infra.docsign</groupId>
+                <artifactId>mango-infra-docsign-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.mango.infra.docsign</groupId>
+                <artifactId>mango-infra-docsign-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.mango.infra.docsign</groupId>
+                <artifactId>mango-infra-docsign-starter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
 
 
             <!-- Public Mango jars that were not covered by the aggregate catalog. -->

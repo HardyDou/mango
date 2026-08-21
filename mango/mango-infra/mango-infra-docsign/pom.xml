@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>io.mango.infra</groupId>
+        <artifactId>mango-infra</artifactId>
+        <version>${revision}</version>
+    </parent>
+
+    <groupId>io.mango.infra.docsign</groupId>
+    <artifactId>mango-infra-docsign</artifactId>
+    <packaging>pom</packaging>
+    <name>Mango Infra Document Signature</name>
+    <description>PDF and OFD document signing and signature validation</description>
+
+    <modules>
+        <module>mango-infra-docsign-api</module>
+        <module>mango-infra-docsign-core</module>
+        <module>mango-infra-docsign-starter</module>
+    </modules>
+</project>

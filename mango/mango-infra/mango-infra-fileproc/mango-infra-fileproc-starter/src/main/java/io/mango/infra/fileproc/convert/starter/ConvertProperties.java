@@ -73,6 +73,16 @@ public class ConvertProperties {
      */
     private boolean tiffToPdfEnabled = true;
 
+    /**
+     * 是否注册 OFDRW PDF 转 OFD 转换器。
+     */
+    private boolean pdfToOfdEnabled = true;
+
+    /**
+     * 是否注册 DOCX 转 OFD 转换器。
+     */
+    private boolean docxToOfdEnabled = true;
+
     public boolean isEnabled() {
         return enabled;
     }
@@ -175,6 +185,22 @@ public class ConvertProperties {
 
     public void setTiffToPdfEnabled(boolean tiffToPdfEnabled) {
         this.tiffToPdfEnabled = tiffToPdfEnabled;
+    }
+
+    public boolean isPdfToOfdEnabled() {
+        return pdfToOfdEnabled;
+    }
+
+    public void setPdfToOfdEnabled(boolean pdfToOfdEnabled) {
+        this.pdfToOfdEnabled = pdfToOfdEnabled;
+    }
+
+    public boolean isDocxToOfdEnabled() {
+        return docxToOfdEnabled;
+    }
+
+    public void setDocxToOfdEnabled(boolean docxToOfdEnabled) {
+        this.docxToOfdEnabled = docxToOfdEnabled;
     }
 
 }
