@@ -4,7 +4,7 @@
 
 ## v2026.08.22-maven-1.0.39-platform-content-fileproc-release - 2026-08-22
 
-Status: `PENDING`. The machine-generated candidate targets Maven `1.0.39`, `@mango/pmo@1.4.0`, `@mango/cli@1.1.0`, `@mango/admin-shell@1.0.63`, `@mango/template@1.0.37` and `@mango/admin@1.0.69`. Publication, Tag and GitHub Release remain pending until the sealed candidate passes all required checks and consume-registry verification.
+Status: `PUBLISHED_AND_VERIFIED`. Canonical manifest SHA-256 `7848cf85826e9aac4e62835a1c355d567a71759dc96f4164c74f24e9cba2e47b` for plan `b0ffa4e09c67dcacb98e70f3c9e8f02600a988603393619796c1a78300ca8c7c` and prepared candidate `9e6023400991ee7b8007a8b5297b42b113071df4c00d984174d176bf8c40ef7f` is `COMPLETED`: all 192 sealed Mango Maven non-app/docs coordinates at `1.0.39` and all five sealed npm packages ending at `@mango/cli@1.1.0` match in their publish and consume registries, the pure consume-registry consumer passed, and GitHub Release `v2026.08.22-maven-1.0.39-platform-content-fileproc-release` is `CREATED_AND_VERIFIED`.
 
 ### Pull Requests
 
@@ -34,7 +34,9 @@ Status: `PENDING`. The machine-generated candidate targets Maven `1.0.39`, `@man
 
 ### Published Packages
 
-- Maven `--all-non-app` reactor and `io.mango:mango-docs-bundle:1.0.39`, followed by the five npm coordinates above in generated topology order.
+1. Mango Maven `--all-non-app` reactor and `io.mango:mango-docs-bundle:1.0.39` — `PUBLISHED_AND_VERIFIED`; all 192 coordinates match through Maven releases/public.
+2. `@mango/admin-shell@1.0.63` -> `@mango/pmo@1.4.0` -> `@mango/template@1.0.37` -> `@mango/admin@1.0.69` -> `@mango/cli@1.1.0` — `PUBLISHED_AND_VERIFIED`; npm hosted/group integrity matches every sealed tarball.
+3. Tag and GitHub Release `v2026.08.22-maven-1.0.39-platform-content-fileproc-release` — `CREATED_AND_VERIFIED` after pure consume-registry verification.
 
 ### Business Impact
 
@@ -57,11 +59,18 @@ Status: `PENDING`. The machine-generated candidate targets Maven `1.0.39`, `@man
 
 ### Verification
 
-- The sealed candidate must pass the local release gate, package/Maven checks, mixed consumer, dual-registry back-checks and pure consume-registry consumer before Tag or GitHub Release creation.
+- Release PR #845 passed all seven required checks; merge commit `922a8e7cff981b9fccf185afa6eeba1b3d964a71` retained sealed source tree `c024dbf3542922ff74c54468944f9311fa60c5df`.
+- Publication journal records `VERIFIED` for all 192 Maven coordinates and all five npm packages; read-only `release status` confirmed the publish and consume registry copies.
+- A clean consumer resolved the Maven and npm tuple only through Maven public and npm group before Tag or GitHub Release creation.
+- Tag `v2026.08.22-maven-1.0.39-platform-content-fileproc-release` points to sealed source commit `8dfabade82fd8cf7de8ec1b267085b1e091367ce`; its tree matches `origin/main`, and the GitHub Release is non-draft and non-prerelease.
 
 ### Rollback
 
 - Restore Maven `1.0.38`, CLI `1.0.111`, PMO `1.3.16`, Admin Shell `1.0.62`, Template `1.0.36` and Admin `1.0.68`; never overwrite immutable coordinates.
+
+### Audit History
+
+- Release PR #845 sealed and published the final candidate; this closeout updates the successful-release baseline and documentation only and does not move the release tag.
 
 ## v2026.08.19-maven-1.0.38-wecom-identity-notice-security-release - 2026-08-19
 
