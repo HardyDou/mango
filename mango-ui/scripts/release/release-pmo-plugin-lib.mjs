@@ -13,6 +13,7 @@ export const PMO_TEXT_VERSION_PATHS = [
   'mango-pmo/tests/document-contract/fixtures/valid/implementation-plan.md',
   'mango-pmo/tests/document-contract/fixtures/valid/system-requirements.md',
   'mango-pmo/tests/document-contract/fixtures/valid/technical-design.md',
+  'mango-pmo/tests/document-contract/document-contract.test.mjs',
 ];
 export const PMO_VERSION_PROJECTION_PATHS = [
   PMO_PLUGIN_MANIFEST_PATH,
