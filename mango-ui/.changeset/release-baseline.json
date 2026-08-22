@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
   "baselineKind": "normal",
-  "tag": "v2026.08.22-maven-1.0.39-platform-content-fileproc-release",
-  "commit": "922a8e7cff981b9fccf185afa6eeba1b3d964a71",
-  "tree": "c024dbf3542922ff74c54468944f9311fa60c5df",
-  "planDigest": "b0ffa4e09c67dcacb98e70f3c9e8f02600a988603393619796c1a78300ca8c7c",
-  "preparedCandidateId": "9e6023400991ee7b8007a8b5297b42b113071df4c00d984174d176bf8c40ef7f",
+  "tag": "v2026.08.22-pmo-1.4.1-cli-1.1.1-release",
+  "commit": "8998c5dcf1a6a94d9f95007d5f04d20cb551ccb8",
+  "tree": "ee41a5f69998f9dba737eec14224dd4be20b5af8",
+  "planDigest": "a948d84b41cbdb2dcedad09e874440c46a94cc2b9c154ac182f65a08bcc99692",
+  "preparedCandidateId": "a89efa10c81dbd8c35a264d8a0f2da944f629fa8c29f92233a985ec8510d99b2",
   "packages": {
     "@mango/admin": {
       "publishedRanges": [
@@ -224,13 +224,13 @@
       "publishedRanges": [
         {
           "name": "@mango/pmo",
-          "range": "1.4.0",
+          "range": "1.4.1",
           "section": "dependencies"
         }
       ],
-      "sri": "sha512-RHelShkpxFU6rRMiG/etonvOpDmavz6QITw2YzrMAtZliuCtmqQqbgqnIR/0hG+2npJC50uTHe+Df7nqU3wpoA==",
-      "tarballSha256": "3bdde18cb6bd6c2f8cdd3bbf7242da68ba54cdbe9267416c7f8867294aba85b3",
-      "version": "1.1.0"
+      "sri": "sha512-J0MGDAGhDzuy4zWF7YXwr/qMcE1unP3nlXXkkE7i4gYtCigWeFHkA9tTqfLJ2SGUVeUd9+KLT30ltCOUoAPI+g==",
+      "tarballSha256": "d374f37aaf25bb0c2138632967e1140cf406596af3359934bcab1cabeb376be2",
+      "version": "1.1.1"
     },
     "@mango/cms": {
       "version": "1.0.25"
@@ -252,9 +252,9 @@
     },
     "@mango/pmo": {
       "publishedRanges": [],
-      "sri": "sha512-9iqN8oVjkuoOLUj/9WJnhzXZ2eLl4MxhFmkw2Xt69qusNXk1sUfrNGkyNStahkDBamO+cN6LXk/HLQ0TIinPPw==",
-      "tarballSha256": "a946e1a5325d2b78e208707a595443c02917e19152f201c4bdac9b67afc04eed",
-      "version": "1.4.0"
+      "sri": "sha512-/KBPqalqJlUILMZx1s5IRbS11xhr8JK8MPb01+JB40wnxhAF5pCUl6f4Sl8pIhnWTs9Skw3/gtXezKTiohTSJg==",
+      "tarballSha256": "530492ab4be19d74a313b0cd08b94a22ae708b7605bf756311e4b3c16d47a1dd",
+      "version": "1.4.1"
     },
     "@mango/rbac": {
       "version": "1.0.26"
