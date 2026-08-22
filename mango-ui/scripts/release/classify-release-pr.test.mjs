@@ -15,6 +15,8 @@ test('machine-generated version projection is release-only', () => {
     'mango-pmo/contracts/business-requirements.json',
     'mango-pmo/rules/product/05-document-lifecycle.md',
     'mango-pmo/tests/document-contract/fixtures/valid/business-requirements.md',
+    'mango-business-starter/business-pmo/mango-baseline/baseline.json',
+    'mango-business-starter/business-pmo/mango-baseline/contracts/business-requirements.json',
     'mango-ui/pnpm-lock.yaml',
   ]);
   assert.equal(result.releaseOnly, true);

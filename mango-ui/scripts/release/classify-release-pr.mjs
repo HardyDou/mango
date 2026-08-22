@@ -48,6 +48,7 @@ export function isReleaseOnlyFile(file) {
     file === 'mango-ui/packages/mango-cli/release-versions.json' ||
     file === 'mango-ui/packages/mango-cli/README.md' ||
     /^mango-ui\/packages\/mango-cli\/templates\/.+\/package\.json\.template$/u.test(file) ||
+    /^mango-business-starter\/business-pmo\/mango-baseline\//u.test(file) ||
     /^mango-business-starter\/.+\/package\.json$/u.test(file)
   );
 }
@@ -65,6 +66,7 @@ export function assertReleaseOnlyContent(headRef = 'HEAD') {
         targetVersion: pmo.targetVersion,
       });
     }
+    assertBusinessPmoBaselineProjection();
   }
   const cli = plan.packages?.find((entry) => entry.name === '@mango/cli');
   if (!cli) return;
@@ -80,6 +82,19 @@ export function assertReleaseOnlyContent(headRef = 'HEAD') {
     sourceVersion: cli.sourceVersion,
     targetVersion: cli.targetVersion,
   });
+}
+
+function assertBusinessPmoBaselineProjection() {
+  const result = spawnSync(
+    process.execPath,
+    [resolve(repoRoot, 'mango-business-starter/scripts/sync-pmo-baseline.mjs'), '--check'],
+    { cwd: repoRoot, encoding: 'utf8' },
+  );
+  if (result.status !== 0) {
+    throw new Error(
+      `business PMO baseline differs from the deterministic release projection:\n${result.stdout}\n${result.stderr}`,
+    );
+  }
 }
 
 if (process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).href) {

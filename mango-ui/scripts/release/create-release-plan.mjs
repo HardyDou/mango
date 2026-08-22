@@ -111,6 +111,7 @@ if (checkOnly) {
 
 applyPlanProjection(plan, packageIndex);
 applyPmoPluginProjection(plan);
+applyBusinessPmoBaselineProjection(plan);
 applyCliReadmeProjection(plan);
 applyCliFullFrontendTemplateProjection(plan);
 applyExternalManagedDependencies(plan);
@@ -159,6 +160,19 @@ function applyPmoPluginProjection(releasePlan) {
     const sourceContent = readGitFile(repoRoot, releasePlan.source.commit, path);
     const projectedContent = projectPmoVersionedFile(path, sourceContent, pmo.sourceVersion, pmo.targetVersion);
     writeFileSync(join(repoRoot, path), projectedContent);
+  }
+}
+
+function applyBusinessPmoBaselineProjection(releasePlan) {
+  const pmo = releasePlan.packages.find((entry) => entry.name === '@mango/pmo');
+  if (!pmo) return;
+  const result = spawnSync(
+    process.execPath,
+    [join(repoRoot, 'mango-business-starter/scripts/sync-pmo-baseline.mjs'), '--write'],
+    { cwd: repoRoot, stdio: 'inherit' },
+  );
+  if (result.status !== 0) {
+    throw new Error(`business PMO baseline projection failed with exit code ${result.status ?? 1}`);
   }
 }
 
