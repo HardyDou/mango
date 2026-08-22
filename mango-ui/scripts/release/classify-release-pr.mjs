@@ -37,6 +37,7 @@ export function isReleaseOnlyFile(file) {
   return (
     file === 'CHANGELOG.md' ||
     file === 'mango-pmo/CHANGELOG.md' ||
+    file === 'mango-catalog/catalog.lock.json' ||
     PMO_VERSION_PROJECTION_PATHS.includes(file) ||
     file === 'mango-ui/pnpm-lock.yaml' ||
     file === 'mango-ui/.changeset/release-plan.json' ||
@@ -68,6 +69,7 @@ export function assertReleaseOnlyContent(headRef = 'HEAD') {
     }
     assertBusinessPmoBaselineProjection();
   }
+  assertCatalogProjection();
   const cli = plan.packages?.find((entry) => entry.name === '@mango/cli');
   if (!cli) return;
   assertCliReadmeProjection({
@@ -105,6 +107,17 @@ function assertBusinessPmoBaselineProjection() {
     throw new Error(
       `business PMO baseline differs from the deterministic release projection:\n${result.stdout}\n${result.stderr}`,
     );
+  }
+}
+
+function assertCatalogProjection() {
+  const result = spawnSync(
+    process.execPath,
+    [resolve(repoRoot, 'mango-ui/scripts/catalog/compile-catalog.mjs'), '--check'],
+    { cwd: repoRoot, encoding: 'utf8' },
+  );
+  if (result.status !== 0) {
+    throw new Error(`Catalog differs from the deterministic release projection:\n${result.stdout}\n${result.stderr}`);
   }
 }
 

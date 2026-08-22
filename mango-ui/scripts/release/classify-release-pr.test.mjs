@@ -12,6 +12,7 @@ test('machine-generated version projection is release-only', () => {
     'mango-ui/packages/mango-cli/README.md',
     'mango-ui/packages/mango-cli/templates/full/README.md',
     'mango-pmo/CHANGELOG.md',
+    'mango-catalog/catalog.lock.json',
     'mango-pmo/plugin-src/.codex-plugin/plugin.json',
     'mango-pmo/contracts/business-requirements.json',
     'mango-pmo/rules/product/05-document-lifecycle.md',

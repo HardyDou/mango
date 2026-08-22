@@ -74,29 +74,7 @@ if (checkOnly && storedPlan && successfulBaseline?.planDigest === storedPlan.pla
 }
 const releaseMetadata = resolveReleaseMetadata(previousPlan, pendingChangesets);
 const mavenTargetVersion = valueArg('--maven-version') || previousPlan?.maven?.targetVersion || '';
-const plan = buildReleasePlan({
-  packageIndex,
-  managedVersions,
-  mavenSourceVersion: resolveReleaseMavenSourceVersion(previousPlan, releaseVersions.maven?.mangoBackend),
-  mavenTargetVersion,
-  source: planInput.source,
-  sourceFiles: planInput.sourceFiles,
-  changesets: pendingChangesets,
-  legacy,
-  restoredPublishedBaselines: restored,
-  ignoredDirectPackages: restored.map((entry) => entry.name),
-  previousPlan,
-  baseline,
-  release: {
-    tag: releaseMetadata.tag,
-    title: releaseMetadata.title,
-    notesFile: releaseMetadata.notesFile,
-    notesSha256: releaseMetadata.notesSha256,
-  },
-  catalogDigest: catalog.catalogDigest,
-  mavenInventory: catalog.maven.publishableCoordinates,
-  releaseArtifacts: catalog.releaseArtifacts,
-});
+let plan = buildPlan(catalog.catalogDigest);
 assertReleasePlanShape(plan);
 
 if (checkOnly) {
@@ -124,6 +102,12 @@ writeJson(
   projectedManagedVersions(plan, managedVersions),
 );
 writeFileSync(join(workspaceRoot, releaseMetadata.notesFile), releaseMetadata.notes);
+runCatalogProjection();
+const projectedCatalog = readJson(join(repoRoot, 'mango-catalog/catalog.lock.json'));
+if (projectedCatalog.catalogDigest !== plan.catalogDigest) {
+  plan = buildPlan(projectedCatalog.catalogDigest);
+  assertReleasePlanShape(plan);
+}
 writeJson(planPath, plan);
 if (!skipLockfile) runLockfileUpdate();
 console.log(`Release plan written: ${planPath}`);
@@ -406,6 +390,40 @@ function runLockfileUpdate() {
     stdio: 'inherit',
   });
   if (result.status !== 0) throw new Error(`pnpm lockfile update failed with exit code ${result.status ?? 1}`);
+}
+
+function runCatalogProjection() {
+  const result = spawnSync(process.execPath, [join(workspaceRoot, 'scripts/catalog/compile-catalog.mjs'), '--write'], {
+    cwd: repoRoot,
+    stdio: 'inherit',
+  });
+  if (result.status !== 0) throw new Error(`Catalog projection failed with exit code ${result.status ?? 1}`);
+}
+
+function buildPlan(catalogDigest) {
+  return buildReleasePlan({
+    packageIndex,
+    managedVersions,
+    mavenSourceVersion: resolveReleaseMavenSourceVersion(previousPlan, releaseVersions.maven?.mangoBackend),
+    mavenTargetVersion,
+    source: planInput.source,
+    sourceFiles: planInput.sourceFiles,
+    changesets: pendingChangesets,
+    legacy,
+    restoredPublishedBaselines: restored,
+    ignoredDirectPackages: restored.map((entry) => entry.name),
+    previousPlan,
+    baseline,
+    release: {
+      tag: releaseMetadata.tag,
+      title: releaseMetadata.title,
+      notesFile: releaseMetadata.notesFile,
+      notesSha256: releaseMetadata.notesSha256,
+    },
+    catalogDigest,
+    mavenInventory: catalog.maven.publishableCoordinates,
+    releaseArtifacts: catalog.releaseArtifacts,
+  });
 }
 
 function resolveReleaseMetadata(existingPlan, changesets) {
