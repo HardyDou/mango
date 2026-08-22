@@ -2,6 +2,62 @@
 
 ## Unreleased
 
+## 1.1.0 - 2026-08-22
+
+### Pull Requests
+
+- [PR #839](https://github.com/HardyDou/mango/pull/839) Changed the explicit PMO frontend-page baseline opt-out. Packages: `@mango/pmo@1.4.0`, `@mango/cli@1.1.0`. Business Adaptation: upgrade the tuple and keep the baseline enabled unless a reviewed boolean `false` is required.
+- [PR #840](https://github.com/HardyDou/mango/pull/840) Fixed Admin Shell confirmation cancellation and close handling. Packages: `@mango/admin-shell@1.0.63`, `@mango/admin@1.0.69`, `@mango/cli@1.1.0`. Business Adaptation: verify cancel/close behavior in generated consumers.
+- [PR #843](https://github.com/HardyDou/mango/pull/843) Added OFD conversion and document signing support. Packages: Maven `1.0.39`, `@mango/template@1.0.37`, `@mango/cli@1.1.0` matrix. Business Adaptation: configure backend signing material and test conversion/signature flows.
+- [PR #844](https://github.com/HardyDou/mango/pull/844) Changed Catalog-bound release planning and sealed publication recovery. Packages: `@mango/pmo@1.4.0`, `@mango/admin@1.0.69`, `@mango/template@1.0.37`, `@mango/cli@1.1.0`. Business Adaptation: none for runtime consumers.
+
+### Fixed
+
+- Keep cancellation and dialog close inside normal Admin Shell interaction handling.
+
+### Added
+
+- Project the Maven `1.0.39` and exact npm matrix, including OFD/document-signing capability metadata, into CLI-managed consumers.
+
+### Changed
+
+- Lock `@mango/pmo@1.4.0` and the generated frontend tuple in the CLI release matrix.
+
+### Versions
+
+- `@mango/cli`: `1.0.111` to `1.1.0`; Maven: `1.0.38` to `1.0.39`; PMO: `1.3.16` to `1.4.0`.
+
+### Published Packages
+
+- Publish the Maven non-app reactor/docs bundle, then the generated npm topology ending with `@mango/cli@1.1.0`.
+
+### Business Impact
+
+- Generated projects receive the new exact tuple, OFD/signing documentation and corrected Admin Shell interaction semantics; no CLI command syntax changes.
+
+### Upgrade Estimate
+
+- Audience: CLI-managed Mango consumers.
+- Engineering Effort: 30 to 90 minutes; 2 to 4 hours for signing integrations.
+- Execution Window: 1 to 3 hours for install, generated-project checks and focused conversion/signing tests.
+- Service Downtime: none required by the framework artifacts.
+- Rollback Effort: 15 to 60 minutes to restore CLI `1.0.111` and the prior exact tuple.
+- Assumptions: registry access, clean lockfile and non-production signing fixtures.
+
+### Upgrade Notes
+
+1. Install `@mango/cli@1.1.0` and regenerate or upgrade the exact matrix.
+2. Run the locked PMO check and verify baseline toggle semantics.
+3. Run generated consumer checks and document conversion/signing fixtures.
+
+### Verification
+
+- Verify the generated matrix, packed CLI contract, PMO checks, Maven/npm registry back-checks and pure consume-registry consumer.
+
+### Rollback
+
+- Restore CLI `1.0.111` and the prior Maven/npm matrix; never overwrite immutable coordinates.
+
 ## 1.0.111 - 2026-08-19
 
 ### Pull Requests
