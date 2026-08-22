@@ -14,7 +14,7 @@ import {
 import { dirname, join, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
-import { spawnSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { assertReleasePlanShape, sha256 } from './release-plan-lib.mjs';
 import {
   advanceJournalEntry,
@@ -28,7 +28,13 @@ import {
   recoverRemoteWriteAudit,
   validatePublicationPreflight,
 } from './release-publication-lib.mjs';
-import { decideMavenCoordinateAction, verifyStagedMavenRepository } from './release-maven-lib.mjs';
+import {
+  createMavenConsumerPom,
+  decideMavenCoordinateAction,
+  mavenVerificationFiles,
+  resolveMavenPublishConcurrency,
+  verifyStagedMavenRepository,
+} from './release-maven-lib.mjs';
 import { assertCleanWorktree, gitValue } from './release-repository-lib.mjs';
 import { acquireReleaseLock } from './release-lock-lib.mjs';
 
@@ -60,6 +66,15 @@ const mavenPublishServerId =
   valueArg('--maven-publish-server-id') || process.env.MANGO_RELEASE_MAVEN_PUBLISH_SERVER_ID || '';
 const mavenConsumeServerId =
   valueArg('--maven-consume-server-id') || process.env.MANGO_RELEASE_MAVEN_CONSUME_SERVER_ID || 'mango-release-consume';
+const requestedMavenVerifyMode =
+  valueArg('--maven-verify-mode') || process.env.MANGO_RELEASE_MAVEN_VERIFY_MODE || 'basic';
+const mavenVerifyMode = manifest.maven ? requestedMavenVerifyMode : 'basic';
+if (manifest.maven && !['basic', 'full'].includes(mavenVerifyMode)) {
+  throw new Error(`invalid Maven verification mode: ${mavenVerifyMode}; expected basic or full`);
+}
+const requestedMavenPublishConcurrency =
+  valueArg('--maven-publish-concurrency') || process.env.MANGO_RELEASE_MAVEN_PUBLISH_CONCURRENCY || 16;
+const mavenPublishConcurrency = manifest.maven ? resolveMavenPublishConcurrency(requestedMavenPublishConcurrency) : 16;
 if (manifest.maven) {
   assertRegistryUrl(mavenPublishRegistry, 'Maven publish registry');
   assertRegistryUrl(mavenConsumeRegistry, 'Maven consume registry');
@@ -75,7 +90,7 @@ process.on('exit', releaseLock);
 
 if (action === 'status') {
   verifySourceAndArtifacts({ requireMergedSource: false });
-  const remote = inspectPublicationPreflight({ persist: false });
+  const remote = await inspectPublicationPreflight({ persist: false });
   printStatus(manifest, remote);
   process.exit(0);
 }
@@ -102,7 +117,7 @@ if (manifest.status === 'FAILED' && manifest.states.CANDIDATE_VERIFIED?.status !
 if (manifest.states.READY?.status !== 'passed') throw new Error('sealed candidate READY record is missing');
 
 let publishedCount = 0;
-const publicationPreflight = inspectPublicationPreflight();
+const publicationPreflight = await inspectPublicationPreflight();
 try {
   validatePublicationPreflight({ action, ...publicationPreflight });
 } catch (error) {
@@ -115,7 +130,7 @@ try {
 manifest.publicationPreflight.result = 'PASS';
 manifest.status = action === 'repair' ? 'REPAIR' : 'PUBLISHING';
 writeManifest();
-if (manifest.maven) publishMavenBatch();
+if (manifest.maven) await publishMavenBatch();
 for (const packageName of plan.order) {
   const artifact = manifest.artifacts.find((entry) => entry.name === packageName);
   const coordinate = `${artifact.name}@${artifact.version}`;
@@ -242,6 +257,7 @@ if (manifest.states.CONSUMER_VERIFIED.status !== 'passed') {
   manifest.evidence.consumer = {
     npm: npmConsumer ? commandEvidence(npmConsumer, startedAt, workspaceRoot) : null,
     maven: mavenConsumer,
+    mavenVerificationMode: manifest.maven ? mavenVerifyMode : null,
   };
   if ((npmConsumer && npmConsumer.status !== 0) || mavenConsumer.some((entry) => entry.exitCode !== 0)) {
     manifest.status = 'PARTIAL';
@@ -321,7 +337,7 @@ function verifySourceAndArtifacts({ requireMergedSource }) {
   }
 }
 
-function inspectPublicationPreflight({ persist = true } = {}) {
+async function inspectPublicationPreflight({ persist = true } = {}) {
   const npm = plan.order.map((packageName) => {
     const artifact = manifest.artifacts.find((entry) => entry.name === packageName);
     const identity = `${artifact.name}@${artifact.version}`;
@@ -344,21 +360,26 @@ function inspectPublicationPreflight({ persist = true } = {}) {
       }),
     };
   });
-  const maven = (manifest.maven?.coordinates ?? []).map((coordinate) => {
-    const publishFiles = coordinate.files.map((file) => remoteMavenFileState(mavenPublishRegistry, file));
-    const consumeFiles = coordinate.files.map((file) => remoteMavenFileState(mavenConsumeRegistry, file));
+  const maven = await mapConcurrent(manifest.maven?.coordinates ?? [], mavenPublishConcurrency, async (coordinate) => {
+    const expectedFiles = mavenVerificationFiles(coordinate, mavenVerifyMode);
+    const [publishFiles, consumeFiles] = await Promise.all([
+      Promise.all(expectedFiles.map((file) => remoteMavenFileStateAsync(mavenPublishRegistry, file))),
+      Promise.all(expectedFiles.map((file) => remoteMavenFileStateAsync(mavenConsumeRegistry, file))),
+    ]);
     const journal = manifest.publicationJournal?.maven?.find((entry) => entry.identity === coordinate.coordinate);
     return {
       identity: coordinate.coordinate,
       publishFiles,
       consumeFiles,
       journalState: journal?.state,
-      decision: decideMavenCoordinateAction({ publishFiles, consumeFiles, expectedFiles: coordinate.files }),
+      decision: decideMavenCoordinateAction({ publishFiles, consumeFiles, expectedFiles }),
     };
   });
   const summary = {
     action,
     inspectedAt: new Date().toISOString(),
+    mavenVerificationMode: manifest.maven ? mavenVerifyMode : null,
+    mavenPublishConcurrency: manifest.maven ? mavenPublishConcurrency : null,
     npm: npm.map(({ identity, journalState, decision }) => ({ identity, journalState, decision })),
     maven: maven.map(({ identity, journalState, decision }) => ({ identity, journalState, decision })),
   };
@@ -377,12 +398,29 @@ function advancePublicationJournal(kind, identity, state, evidence) {
   writeManifest();
 }
 
-function publishMavenBatch() {
+async function mapConcurrent(items, concurrency, task) {
+  if (items.length === 0) return [];
+  const results = new Array(items.length);
+  let nextIndex = 0;
+  const workerCount = Math.min(concurrency, items.length);
+  async function worker() {
+    for (;;) {
+      const index = nextIndex++;
+      if (index >= items.length) return;
+      results[index] = await task(items[index], index);
+    }
+  }
+  await Promise.all(Array.from({ length: workerCount }, () => worker()));
+  return results;
+}
+
+async function publishMavenBatch() {
   const repository = resolve(releaseRoot, manifest.maven.repository);
+  const pending = [];
   for (const coordinate of manifest.maven.coordinates) {
     const publication = manifest.mavenPublications[coordinate.coordinate];
     const inspected = publicationPreflight.maven.find((entry) => entry.identity === coordinate.coordinate);
-    const { publishFiles, consumeFiles, decision } = inspected;
+    const { decision } = inspected;
     if (decision.action === 'VERIFIED') {
       advancePublicationJournal('maven', coordinate.coordinate, 'REMOTE_OBSERVED', {
         target: coordinate.coordinate,
@@ -400,76 +438,63 @@ function publishMavenBatch() {
       });
       publication.status = 'VERIFY_PENDING';
     } else {
-      const pom = coordinate.files.find((file) => file.path.endsWith('.pom'));
-      const main = coordinate.packaging === 'jar' ? coordinate.files.find((file) => file.path.endsWith('.jar')) : pom;
-      const startedAt = new Date().toISOString();
-      const requestDigest = digestRelease({
-        kind: 'maven-deploy',
-        target: coordinate.coordinate,
-        files: coordinate.files,
-      });
-      advancePublicationJournal('maven', coordinate.coordinate, 'INTENT_RECORDED', {
-        target: coordinate.coordinate,
-        requestDigest,
-      });
-      markRemoteWriteIntent(manifest, {
-        kind: 'maven-deploy',
-        target: coordinate.coordinate,
-        recordedAt: startedAt,
-      });
-      writeManifest();
-      const result = runCaptured(
-        'mvn',
-        [
-          '-q',
-          'org.apache.maven.plugins:maven-deploy-plugin:3.1.4:deploy-file',
-          `-Dfile=${join(repository, main.path)}`,
-          `-DpomFile=${join(repository, pom.path)}`,
-          `-DgroupId=${coordinate.groupId}`,
-          `-DartifactId=${coordinate.artifactId}`,
-          `-Dversion=${coordinate.version}`,
-          `-Dpackaging=${coordinate.packaging}`,
-          '-DgeneratePom=false',
-          `-DrepositoryId=${mavenPublishServerId}`,
-          `-Durl=${mavenPublishRegistry}`,
-        ],
-        repoRoot,
-        20 * 60 * 1000,
-      );
-      publication.attempts.push(commandEvidence(result, startedAt, repoRoot));
-      advancePublicationJournal('maven', coordinate.coordinate, 'REQUEST_DISPATCHED', {
-        target: coordinate.coordinate,
-        requestDigest,
-      });
-      writeManifest();
-      if (result.status !== 0) {
-        publication.status = 'FAILED';
-        manifest.status = 'AMBIGUOUS';
-        manifest.states.PUBLISHED = releaseState('failed', `Maven deploy failed for ${coordinate.coordinate}`);
-        writeManifest();
-        throw new Error(`Maven deploy failed for ${coordinate.coordinate}; inspect ${manifestPath}`);
-      }
-      const hostedAfter = coordinate.files.map((file) => remoteMavenFileState(mavenPublishRegistry, file));
-      const hostedDecision = decideMavenCoordinateAction({
-        publishFiles: hostedAfter,
-        consumeFiles: coordinate.files.map((file) => ({ path: file.path, state: 'absent' })),
-        expectedFiles: coordinate.files,
-      });
-      if (!['VERIFY_PENDING', 'VERIFIED'].includes(hostedDecision.action)) {
-        failMavenPublication(
-          coordinate.coordinate,
-          'published Maven files differ from the sealed coordinate',
-          hostedAfter,
-          [],
-        );
-      }
-      publication.status = 'VERIFY_PENDING';
-      advancePublicationJournal('maven', coordinate.coordinate, 'REMOTE_OBSERVED', {
-        target: coordinate.coordinate,
-        sha256: digestRelease(coordinate),
-      });
+      pending.push({ coordinate, publication, repository });
     }
-    if (publication.status !== 'PUBLISHED' && !waitForMavenConsume(coordinate)) {
+  }
+
+  const results = await runMavenDeployments(pending);
+  const failures = [];
+  for (const { coordinate, publication, startedAt, result } of results) {
+    publication.attempts.push(commandEvidence(result, startedAt, repoRoot));
+    if (result.status !== 0) {
+      publication.status = 'FAILED';
+      publication.reason = `Maven deploy failed for ${coordinate.coordinate}`;
+      failures.push(publication.reason);
+      continue;
+    }
+    const expectedFiles = mavenVerificationFiles(coordinate, mavenVerifyMode);
+    const hostedAfter = await Promise.all(
+      expectedFiles.map((file) => remoteMavenFileStateAsync(mavenPublishRegistry, file)),
+    );
+    const hostedDecision = decideMavenCoordinateAction({
+      publishFiles: hostedAfter,
+      consumeFiles: expectedFiles.map((file) => ({ path: file.path, state: 'absent' })),
+      expectedFiles,
+    });
+    if (!['VERIFY_PENDING', 'VERIFIED'].includes(hostedDecision.action)) {
+      publication.status = 'FAILED';
+      publication.reason = 'published Maven files differ from the sealed coordinate';
+      publication.registryEvidence = { publishFiles: hostedAfter, consumeFiles: [] };
+      failures.push(`${coordinate.coordinate}: ${publication.reason}`);
+      continue;
+    }
+    publication.status = 'VERIFY_PENDING';
+    advancePublicationJournal('maven', coordinate.coordinate, 'REMOTE_OBSERVED', {
+      target: coordinate.coordinate,
+      sha256: digestRelease(coordinate),
+    });
+  }
+  writeManifest();
+  if (failures.length > 0) {
+    manifest.status = 'AMBIGUOUS';
+    manifest.states.PUBLISHED = releaseState('failed', failures[0]);
+    writeManifest();
+    throw new Error(`${failures[0]}; inspect ${manifestPath}`);
+  }
+
+  const pendingConsume = [];
+  for (const coordinate of manifest.maven.coordinates) {
+    const publication = manifest.mavenPublications[coordinate.coordinate];
+    if (publication.status !== 'PUBLISHED') pendingConsume.push(coordinate);
+  }
+  const consumeResults = await waitForMavenConsumeBatch(pendingConsume);
+  for (const coordinate of manifest.maven.coordinates) {
+    const publication = manifest.mavenPublications[coordinate.coordinate];
+    const consumeResult = consumeResults.get(coordinate.coordinate);
+    if (publication.status !== 'PUBLISHED' && consumeResult?.error) {
+      throw new Error(`${coordinate.coordinate}: ${consumeResult.error}; inspect ${manifestPath}`);
+    }
+    if (publication.status !== 'PUBLISHED' && !consumeResult?.ready) {
       publication.status = 'VERIFY_PENDING';
       manifest.status = 'PARTIAL';
       manifest.states.PUBLISHED = releaseState(
@@ -489,6 +514,82 @@ function publishMavenBatch() {
     publication.updatedAt = new Date().toISOString();
     writeManifest();
   }
+}
+
+async function runMavenDeployments(pending) {
+  if (pending.length === 0) return [];
+  const results = [];
+  let nextIndex = 0;
+  const workerCount = Math.min(mavenPublishConcurrency, pending.length);
+  async function worker() {
+    for (;;) {
+      const index = nextIndex++;
+      if (index >= pending.length) return;
+      const { coordinate, repository } = pending[index];
+      const pom = coordinate.files.find((file) => file.path.endsWith('.pom'));
+      const main = coordinate.packaging === 'jar' ? coordinate.files.find((file) => file.path.endsWith('.jar')) : pom;
+      if (!pom || !main) {
+        results[index] = {
+          coordinate,
+          startedAt: new Date().toISOString(),
+          requestDigest: digestRelease({
+            kind: 'maven-deploy',
+            target: coordinate.coordinate,
+            files: coordinate.files,
+          }),
+          result: {
+            command: 'maven deploy',
+            status: 1,
+            stdout: '',
+            stderr: 'sealed Maven coordinate is missing POM or main artifact',
+          },
+        };
+        continue;
+      }
+      const startedAt = new Date().toISOString();
+      const requestDigest = digestRelease({
+        kind: 'maven-deploy',
+        target: coordinate.coordinate,
+        files: coordinate.files,
+      });
+      advancePublicationJournal('maven', coordinate.coordinate, 'INTENT_RECORDED', {
+        target: coordinate.coordinate,
+        requestDigest,
+      });
+      markRemoteWriteIntent(manifest, {
+        kind: 'maven-deploy',
+        target: coordinate.coordinate,
+        recordedAt: startedAt,
+      });
+      writeManifest();
+      const result = await runCapturedAsync(
+        'mvn',
+        [
+          '-q',
+          'org.apache.maven.plugins:maven-deploy-plugin:3.1.4:deploy-file',
+          `-Dfile=${join(repository, main.path)}`,
+          `-DpomFile=${join(repository, pom.path)}`,
+          `-DgroupId=${coordinate.groupId}`,
+          `-DartifactId=${coordinate.artifactId}`,
+          `-Dversion=${coordinate.version}`,
+          `-Dpackaging=${coordinate.packaging}`,
+          '-DgeneratePom=false',
+          `-DrepositoryId=${mavenPublishServerId}`,
+          `-Durl=${mavenPublishRegistry}`,
+        ],
+        repoRoot,
+        20 * 60 * 1000,
+      );
+      advancePublicationJournal('maven', coordinate.coordinate, 'REQUEST_DISPATCHED', {
+        target: coordinate.coordinate,
+        requestDigest,
+      });
+      writeManifest();
+      results[index] = { coordinate, startedAt, requestDigest, result };
+    }
+  }
+  await Promise.all(Array.from({ length: workerCount }, () => worker()));
+  return results;
 }
 
 function remoteMavenFileState(registry, file) {
@@ -512,46 +613,99 @@ function remoteMavenFileState(registry, file) {
   }
 }
 
-function waitForMavenConsume(coordinate) {
+async function remoteMavenFileStateAsync(registry, file) {
+  const temporary = mkdtempSync(join(tmpdir(), 'mango-release-maven-'));
+  try {
+    const destination = join(temporary, 'artifact');
+    const url = `${registry.replace(/\/$/u, '')}/${file.path}`;
+    const result = await runCapturedAsync(
+      'curl',
+      ['-sS', '-L', '--max-time', '60', '-o', destination, '-w', '%{http_code}', url],
+      repoRoot,
+      70_000,
+    );
+    const statusCode = result.stdout.trim().slice(-3);
+    if (result.status !== 0) return { path: file.path, state: 'unknown', output: result.stderr.trim() };
+    if (statusCode === '404') return { path: file.path, state: 'absent' };
+    if (statusCode !== '200') return { path: file.path, state: 'unknown', output: `HTTP ${statusCode}` };
+    return { path: file.path, state: 'present', sha256: sha256File(destination) };
+  } finally {
+    rmSync(temporary, { recursive: true, force: true });
+  }
+}
+
+async function waitForMavenConsumeBatch(coordinates) {
+  const results = new Map();
+  if (coordinates.length === 0) return results;
+  let nextIndex = 0;
+  const workerCount = Math.min(mavenPublishConcurrency, coordinates.length);
+  async function worker() {
+    for (;;) {
+      const index = nextIndex++;
+      if (index >= coordinates.length) return;
+      const coordinate = coordinates[index];
+      try {
+        results.set(coordinate.coordinate, { ready: await waitForMavenConsumeAsync(coordinate) });
+      } catch (error) {
+        results.set(coordinate.coordinate, { ready: false, error: String(error?.message || error) });
+      }
+    }
+  }
+  await Promise.all(Array.from({ length: workerCount }, () => worker()));
+  return results;
+}
+
+async function waitForMavenConsumeAsync(coordinate) {
   const deadline = Date.now() + visibilityTimeoutSeconds * 1000;
+  const expectedFiles = mavenVerificationFiles(coordinate, mavenVerifyMode);
   for (;;) {
-    const consumeFiles = coordinate.files.map((file) => remoteMavenFileState(mavenConsumeRegistry, file));
+    const consumeFiles = await Promise.all(
+      expectedFiles.map((file) => remoteMavenFileStateAsync(mavenConsumeRegistry, file)),
+    );
     const decision = decideMavenCoordinateAction({
-      publishFiles: coordinate.files.map((file) => ({ ...file, state: 'present' })),
+      publishFiles: expectedFiles.map((file) => ({ ...file, state: 'present' })),
       consumeFiles,
-      expectedFiles: coordinate.files,
+      expectedFiles,
     });
     if (decision.action === 'VERIFIED') return true;
-    if (decision.action === 'STOP') throw new Error(`${coordinate.coordinate}: ${decision.reason}`);
+    if (decision.action === 'STOP') throw new Error(decision.reason);
     if (Date.now() >= deadline) return false;
-    Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, visibilityPollSeconds * 1000);
+    await new Promise((resolveDelay) => setTimeout(resolveDelay, visibilityPollSeconds * 1000));
   }
 }
 
 function verifyMavenConsumer() {
   const localRepository = mkdtempSync(join(tmpdir(), 'mango-release-maven-consumer-'));
+  const consumerRoot = mkdtempSync(join(tmpdir(), 'mango-release-maven-consumer-project-'));
+  const consumerPom = join(consumerRoot, 'pom.xml');
+  const outputDirectory = join(consumerRoot, 'resolved-artifacts');
   try {
-    return manifest.maven.coordinates.map((entry) => {
-      const coordinate = entry.packaging === 'pom' ? `${entry.coordinate}:pom` : entry.coordinate;
-      const startedAt = new Date().toISOString();
-      const result = runCaptured(
-        'mvn',
-        [
-          '-q',
-          '-U',
-          'org.apache.maven.plugins:maven-dependency-plugin:3.8.1:get',
-          `-Dmaven.repo.local=${localRepository}`,
-          `-DremoteRepositories=${mavenConsumeServerId}::default::${mavenConsumeRegistry}`,
-          `-Dartifact=${coordinate}`,
-          '-Dtransitive=false',
-        ],
-        repoRoot,
-        20 * 60 * 1000,
-      );
-      return commandEvidence(result, startedAt, repoRoot);
-    });
+    writeFileSync(
+      consumerPom,
+      createMavenConsumerPom(manifest.maven.coordinates, mavenConsumeServerId, mavenConsumeRegistry),
+      { mode: 0o600 },
+    );
+    const startedAt = new Date().toISOString();
+    const result = runCaptured(
+      'mvn',
+      [
+        '-q',
+        '-U',
+        '-f',
+        consumerPom,
+        'org.apache.maven.plugins:maven-dependency-plugin:3.8.1:copy-dependencies',
+        `-Dmaven.repo.local=${localRepository}`,
+        '-DexcludeTransitive=true',
+        '-Dmdep.useRepositoryLayout=true',
+        `-DoutputDirectory=${outputDirectory}`,
+      ],
+      repoRoot,
+      60 * 60 * 1000,
+    );
+    return [commandEvidence(result, startedAt, repoRoot)];
   } finally {
     rmSync(localRepository, { recursive: true, force: true });
+    rmSync(consumerRoot, { recursive: true, force: true });
   }
 }
 
@@ -728,9 +882,10 @@ function verifyCompletedReleaseReadOnly() {
   }
   if (manifest.maven) {
     for (const coordinate of manifest.maven.coordinates) {
-      const publishFiles = coordinate.files.map((file) => remoteMavenFileState(mavenPublishRegistry, file));
-      const consumeFiles = coordinate.files.map((file) => remoteMavenFileState(mavenConsumeRegistry, file));
-      const decision = decideMavenCoordinateAction({ publishFiles, consumeFiles, expectedFiles: coordinate.files });
+      const expectedFiles = mavenVerificationFiles(coordinate, mavenVerifyMode);
+      const publishFiles = expectedFiles.map((file) => remoteMavenFileState(mavenPublishRegistry, file));
+      const consumeFiles = expectedFiles.map((file) => remoteMavenFileState(mavenConsumeRegistry, file));
+      const decision = decideMavenCoordinateAction({ publishFiles, consumeFiles, expectedFiles });
       if (decision.action !== 'VERIFIED') {
         throw new Error(`${coordinate.coordinate}: completed Maven release verification failed: ${decision.reason}`);
       }
@@ -817,6 +972,39 @@ function runCaptured(command, commandArgs, cwd, timeout = 30 * 60 * 1000) {
     stdout: result.stdout ?? '',
     stderr: result.stderr ?? result.error?.message ?? '',
   };
+}
+
+function runCapturedAsync(command, commandArgs, cwd, timeout = 30 * 60 * 1000) {
+  return new Promise((resolveResult) => {
+    const child = spawn(command, commandArgs, { cwd, encoding: 'utf8' });
+    let stdout = '';
+    let stderr = '';
+    let settled = false;
+    const timer = setTimeout(() => {
+      child.kill('SIGTERM');
+      finish(1, `${stderr}\ncommand timed out after ${timeout}ms`);
+    }, timeout);
+    child.stdout?.on('data', (chunk) => {
+      stdout += chunk;
+    });
+    child.stderr?.on('data', (chunk) => {
+      stderr += chunk;
+    });
+    child.on('error', (error) => finish(1, `${stderr}\n${error.message}`));
+    child.on('close', (status) => finish(status ?? 1, stderr));
+
+    function finish(status, errorOutput = stderr) {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      resolveResult({
+        command: [command, ...commandArgs].join(' '),
+        status,
+        stdout,
+        stderr: errorOutput || stderr,
+      });
+    }
+  });
 }
 
 function writeManifest() {

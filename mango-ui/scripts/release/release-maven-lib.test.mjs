@@ -5,11 +5,14 @@ import { join } from 'node:path';
 import test from 'node:test';
 import {
   createCandidateMavenConsumerPom,
+  createMavenConsumerPom,
   createCandidateMavenSettings,
   decideMavenCoordinateAction,
   hasMavenReleaseImpact,
   inspectStagedMavenRepository,
   verifyStagedMavenRepository,
+  mavenVerificationFiles,
+  resolveMavenPublishConcurrency,
 } from './release-maven-lib.mjs';
 
 test('Maven impact includes production reactor files but excludes tests', () => {
@@ -75,6 +78,44 @@ test('candidate Maven consumer declares every sealed coordinate in one repositor
   assert.match(pom, /<artifactId>mango-bom<\/artifactId>[\s\S]*?<type>pom<\/type>/u);
   assert.match(pom, /<artifactId>mango-common<\/artifactId>[\s\S]*?<type>jar<\/type>/u);
   assert.equal((pom.match(/<dependency>/gu) ?? []).length, 2);
+});
+
+test('basic Maven verification checks only POMs while full mode retains JAR checks', () => {
+  const coordinate = {
+    coordinate: 'io.mango:sample:1.2.3',
+    files: [
+      { path: 'io/mango/sample/1.2.3/sample-1.2.3.pom', sha256: 'a'.repeat(64) },
+      { path: 'io/mango/sample/1.2.3/sample-1.2.3.jar', sha256: 'b'.repeat(64) },
+    ],
+  };
+  assert.deepEqual(mavenVerificationFiles(coordinate, 'basic'), [coordinate.files[0]]);
+  assert.deepEqual(mavenVerificationFiles(coordinate, 'full'), coordinate.files);
+  assert.throws(() => mavenVerificationFiles(coordinate, 'invalid'), /expected basic or full/u);
+});
+
+test('Maven publish concurrency is bounded for controlled parallel deployment', () => {
+  assert.equal(resolveMavenPublishConcurrency(8), 8);
+  assert.equal(resolveMavenPublishConcurrency('16'), 16);
+  assert.throws(() => resolveMavenPublishConcurrency(0), /integer from 1 to 16/u);
+  assert.throws(() => resolveMavenPublishConcurrency(17), /integer from 1 to 16/u);
+});
+
+test('publish Maven consumer accepts a credential-free HTTP consume registry', () => {
+  const pom = createMavenConsumerPom(
+    [{ coordinate: 'io.mango:mango-common:1.2.3', packaging: 'jar' }],
+    'mango-release-consume',
+    'https://repo.example.test/maven-public/',
+  );
+  assert.match(pom, /<url>https:\/\/repo\.example\.test\/maven-public\/<\/url>/u);
+  assert.throws(
+    () =>
+      createMavenConsumerPom(
+        [{ coordinate: 'io.mango:mango-common:1.2.3', packaging: 'jar' }],
+        'consume',
+        'https://user:pass@example.test/repo',
+      ),
+    /credential-free/u,
+  );
 });
 
 test('Maven recovery publishes only when both roles prove absence', () => {
