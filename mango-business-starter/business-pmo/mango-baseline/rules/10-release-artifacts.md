@@ -36,7 +36,7 @@
 
 ## 5. 发布、仓库回查与消费验证
 
-- **正向要求**：发布必须使用仓库规范指定的 batch 入口；Maven 批次只调用 `publish-maven-batch.sh`，不再维护独立文档包发布命令；发布后从目标 Maven/npm 仓库重新解析精确版本和关键文件，使用干净临时目录验证 CLI/Skill 安装、项目生成、模块生成、构建和业务消费入口；所有证据绑定 registry、坐标、版本、校验和与时间。
+- **正向要求**：发布必须使用仓库规范指定的 batch 入口；Maven 批次只调用 `publish-maven-batch.sh`，不再维护独立文档包发布命令；发布后从目标 Maven/npm 仓库重新解析精确版本和关键文件，使用干净临时目录验证 CLI/Skill 安装、项目生成、模块生成、构建和业务消费入口；所有证据绑定 registry、坐标、版本、校验和与时间。Maven 发布默认使用 `basic` 回查：逐坐标只确认 POM 的存在和 SHA-256，并用一个聚合 Maven consumer 一次解析整批坐标；不再逐坐标下载或比对 JAR。sealed Maven 坐标发布默认使用受控并行度 16（可设置 `MANGO_RELEASE_MAVEN_PUBLISH_CONCURRENCY=1..16`），发布后的 consume 可见性也以相同上限并行等待；每个坐标仍独立记录 intent、dispatch、结果和恢复证据。需要逐 JAR 远端回查时才显式设置 `MANGO_RELEASE_MAVEN_VERIFY_MODE=full`。
 - **禁止项**：禁止以本地仓库、workspace link、缓存 tarball 或未清理的生成目录代替发布后回查；禁止只看到 HTTP 200 或版本号存在就判定内容正确；禁止发布 app 部署制品进入默认平台 Maven 批次。
 - **正例**：Nexus 回查 npm tarball 的 manifest/Skill/README，Maven 使用临时 local repository 拉取目标插件，随后生成项目完成全量门禁。
 - **反例**：`npm publish` 成功后未安装 tarball、未验证 `dist/baseline`，也未确认 Maven 插件版本，却声明整个 Mango 批次完成。
