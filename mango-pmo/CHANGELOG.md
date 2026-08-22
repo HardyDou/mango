@@ -1,5 +1,55 @@
 # Mango PMO Changelog
 
+## 1.4.1 - 2026-08-22
+
+### Pull Requests
+
+- [PR #847](https://github.com/HardyDou/mango/pull/847) Changed Mango release verification to use bounded parallel Maven publication, POM-first remote checks and one aggregate clean Maven consumer. Packages: `@mango/pmo@1.4.1`, `@mango/cli@1.1.1`. Business Adaptation: release operators use default `basic` Maven verification and opt into `full` only for a per-JAR audit.
+
+### Fixed
+
+- Keep Maven release evidence complete while removing redundant per-JAR remote downloads from the default verification path.
+
+### Changed
+
+- Bound Maven publication and consume-registry visibility concurrency at 16 by default, preserving per-coordinate journal and recovery evidence.
+- Use one aggregate clean Maven consumer for the sealed batch.
+
+### Versions
+
+- `@mango/pmo`: `1.4.0` to `1.4.1`; exact dependent CLI: `1.1.0` to `1.1.1`.
+- Maven remains `1.0.39`; no Maven coordinate is republished.
+
+### Published Packages
+
+- Publish `@mango/pmo@1.4.1` before `@mango/cli@1.1.1`; no standalone Maven runtime coordinate is introduced.
+
+### Business Impact
+
+- Release operators get shorter default Maven verification without changing runtime APIs, databases, permissions, tenants or service configuration.
+
+### Upgrade Estimate
+
+- Audience: Mango maintainers and release operators.
+- Engineering Effort: 10 to 20 minutes.
+- Execution Window: 15 to 30 minutes including consumer and registry checks.
+- Service Downtime: none.
+- Rollback Effort: 5 to 15 minutes using PMO `1.4.0` and CLI `1.1.0`.
+- Assumptions: configured npm registries, clean locks and Maven `1.0.39` consume access.
+
+### Upgrade Notes
+
+1. Upgrade PMO and CLI together to the exact tuple.
+2. Keep Maven at `1.0.39` for this npm-only candidate.
+
+### Verification
+
+- Release tests passed `80/80`; prepare and publish must pass npm dual-registry and clean consumer checks.
+
+### Rollback
+
+- Restore PMO `1.4.0` and CLI `1.1.0`; never overwrite immutable coordinates.
+
 ## 1.4.0 - 2026-08-22
 
 ### Pull Requests

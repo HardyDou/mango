@@ -1399,7 +1399,7 @@ importers:
   packages/mango-cli:
     dependencies:
       '@mango/pmo':
-        specifier: workspace:1.4.0
+        specifier: workspace:1.4.1
         version: link:../mango-pmo
       prettier:
         specifier: 3.9.5

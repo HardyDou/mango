@@ -1,7 +1,7 @@
 ---
 documentId: BRD-ANN-001
 documentType: business-requirements
-pmoVersion: 1.4.0
+pmoVersion: 1.4.1
 schemaRevision: 1
 riskLevel: L2
 riskAssessmentEvidence: rules/09-test-case-automation-flow.md and feature impact review
