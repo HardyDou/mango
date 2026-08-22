@@ -21,6 +21,11 @@ import {
   projectCliFullFrontendTemplateVersion,
 } from './release-cli-template-lib.mjs';
 import {
+  assertPmoPluginProjection,
+  PMO_PLUGIN_MANIFEST_PATH,
+  projectPmoPluginVersion,
+} from './release-pmo-plugin-lib.mjs';
+import {
   gitChangedFiles,
   readGitFile,
   resolveBaseline,
@@ -105,6 +110,7 @@ if (checkOnly) {
 }
 
 applyPlanProjection(plan, packageIndex);
+applyPmoPluginProjection(plan);
 applyCliReadmeProjection(plan);
 applyCliFullFrontendTemplateProjection(plan);
 applyExternalManagedDependencies(plan);
@@ -144,6 +150,14 @@ function applyCliReadmeProjection(releasePlan) {
   const sourceContent = readGitFile(repoRoot, releasePlan.source.commit, CLI_README_PATH);
   const projectedContent = projectCliReadmeVersion(sourceContent, cli.sourceVersion, cli.targetVersion);
   writeFileSync(join(repoRoot, CLI_README_PATH), projectedContent);
+}
+
+function applyPmoPluginProjection(releasePlan) {
+  const pmo = releasePlan.packages.find((entry) => entry.name === '@mango/pmo');
+  if (!pmo) return;
+  const sourceContent = readGitFile(repoRoot, releasePlan.source.commit, PMO_PLUGIN_MANIFEST_PATH);
+  const projectedContent = projectPmoPluginVersion(sourceContent, pmo.sourceVersion, pmo.targetVersion);
+  writeFileSync(join(repoRoot, PMO_PLUGIN_MANIFEST_PATH), projectedContent);
 }
 
 function applyCliFullFrontendTemplateProjection(releasePlan) {
@@ -211,6 +225,7 @@ function verifyPlanProjection(releasePlan, packages, currentManagedVersions, { h
   if (notesHash !== releasePlan.release.notesSha256) throw new Error('release notes do not match the machine plan');
   const targetVersions = new Map(releasePlan.packages.map((entry) => [entry.name, entry.targetVersion]));
   if (!historicalCompleted) {
+    verifyPmoPluginProjection(releasePlan);
     verifyCliReadmeProjection(releasePlan);
     verifyCliFullFrontendTemplateProjection(releasePlan);
   }
@@ -259,6 +274,17 @@ function verifyPlanProjection(releasePlan, packages, currentManagedVersions, { h
       }
     }
   }
+}
+
+function verifyPmoPluginProjection(releasePlan) {
+  const pmo = releasePlan.packages.find((entry) => entry.name === '@mango/pmo');
+  if (!pmo) return;
+  assertPmoPluginProjection({
+    sourceContent: readGitFile(repoRoot, releasePlan.source.commit, PMO_PLUGIN_MANIFEST_PATH),
+    projectedContent: readFileSync(join(repoRoot, PMO_PLUGIN_MANIFEST_PATH), 'utf8'),
+    sourceVersion: pmo.sourceVersion,
+    targetVersion: pmo.targetVersion,
+  });
 }
 
 function verifyCliReadmeProjection(releasePlan) {

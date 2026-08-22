@@ -10,6 +10,8 @@ test('machine-generated version projection is release-only', () => {
     'mango-ui/packages/admin/CHANGELOG.md',
     'mango-ui/packages/mango-cli/release-versions.json',
     'mango-ui/packages/mango-cli/README.md',
+    'mango-pmo/CHANGELOG.md',
+    'mango-pmo/plugin-src/.codex-plugin/plugin.json',
     'mango-ui/pnpm-lock.yaml',
   ]);
   assert.equal(result.releaseOnly, true);
