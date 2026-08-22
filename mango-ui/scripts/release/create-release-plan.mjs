@@ -16,8 +16,11 @@ import {
 import { classifyReleasePullRequest } from './classify-release-pr.mjs';
 import { assertCliReadmeProjection, CLI_README_PATH, projectCliReadmeVersion } from './release-cli-readme-lib.mjs';
 import {
+  assertCliFullReadmeProjection,
   assertCliFullFrontendTemplateProjection,
   CLI_FULL_FRONTEND_PACKAGE_TEMPLATE_PATH,
+  CLI_FULL_README_TEMPLATE_PATH,
+  projectCliFullReadmeTuple,
   projectCliFullFrontendTemplateVersion,
 } from './release-cli-template-lib.mjs';
 import {
@@ -114,6 +117,7 @@ applyPmoPluginProjection(plan);
 applyBusinessPmoBaselineProjection(plan);
 applyCliReadmeProjection(plan);
 applyCliFullFrontendTemplateProjection(plan);
+applyCliFullReadmeProjection(plan);
 applyExternalManagedDependencies(plan);
 writeJson(
   join(workspaceRoot, 'packages/mango-cli/release-versions.json'),
@@ -184,6 +188,19 @@ function applyCliFullFrontendTemplateProjection(releasePlan) {
   writeFileSync(join(repoRoot, CLI_FULL_FRONTEND_PACKAGE_TEMPLATE_PATH), projectedContent);
 }
 
+function applyCliFullReadmeProjection(releasePlan) {
+  const cli = releasePlan.packages.find((entry) => entry.name === '@mango/cli');
+  const pmo = releasePlan.packages.find((entry) => entry.name === '@mango/pmo');
+  if (!cli || !pmo || !releasePlan.maven?.targetVersion) return;
+  const sourceContent = readGitFile(repoRoot, releasePlan.source.commit, CLI_FULL_README_TEMPLATE_PATH);
+  const projectedContent = projectCliFullReadmeTuple(sourceContent, {
+    mavenVersion: releasePlan.maven.targetVersion,
+    pmoVersion: pmo.targetVersion,
+    cliVersion: cli.targetVersion,
+  });
+  writeFileSync(join(repoRoot, CLI_FULL_README_TEMPLATE_PATH), projectedContent);
+}
+
 function projectedManagedVersions(releasePlan, current) {
   const next = structuredClone(readJson(join(workspaceRoot, 'packages/mango-cli/release-versions.json')));
   next.npm ||= {};
@@ -244,6 +261,7 @@ function verifyPlanProjection(releasePlan, packages, currentManagedVersions, { h
     verifyPmoPluginProjection(releasePlan);
     verifyCliReadmeProjection(releasePlan);
     verifyCliFullFrontendTemplateProjection(releasePlan);
+    verifyCliFullReadmeProjection(releasePlan);
   }
   const currentReleaseVersions = readJson(join(workspaceRoot, 'packages/mango-cli/release-versions.json'));
   if (releasePlan.maven && currentReleaseVersions.maven?.mangoBackend !== releasePlan.maven.targetVersion) {
@@ -325,6 +343,21 @@ function verifyCliFullFrontendTemplateProjection(releasePlan) {
     projectedContent: readFileSync(join(repoRoot, CLI_FULL_FRONTEND_PACKAGE_TEMPLATE_PATH), 'utf8'),
     sourceVersion: cli.sourceVersion,
     targetVersion: cli.targetVersion,
+  });
+}
+
+function verifyCliFullReadmeProjection(releasePlan) {
+  const cli = releasePlan.packages.find((entry) => entry.name === '@mango/cli');
+  const pmo = releasePlan.packages.find((entry) => entry.name === '@mango/pmo');
+  if (!cli || !pmo || !releasePlan.maven?.targetVersion) return;
+  assertCliFullReadmeProjection({
+    sourceContent: readGitFile(repoRoot, releasePlan.source.commit, CLI_FULL_README_TEMPLATE_PATH),
+    projectedContent: readFileSync(join(repoRoot, CLI_FULL_README_TEMPLATE_PATH), 'utf8'),
+    versions: {
+      mavenVersion: releasePlan.maven.targetVersion,
+      pmoVersion: pmo.targetVersion,
+      cliVersion: cli.targetVersion,
+    },
   });
 }
 

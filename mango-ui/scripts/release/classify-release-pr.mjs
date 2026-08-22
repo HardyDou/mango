@@ -5,8 +5,10 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { assertCliReadmeProjection, CLI_README_PATH } from './release-cli-readme-lib.mjs';
 import {
+  assertCliFullReadmeProjection,
   assertCliFullFrontendTemplateProjection,
   CLI_FULL_FRONTEND_PACKAGE_TEMPLATE_PATH,
+  CLI_FULL_README_TEMPLATE_PATH,
 } from './release-cli-template-lib.mjs';
 import {
   assertPmoVersionedFileProjection,
@@ -47,6 +49,7 @@ export function isReleaseOnlyFile(file) {
     /^mango-ui\/packages\/[^/]+\/(?:package\.json|CHANGELOG\.md)$/u.test(file) ||
     file === 'mango-ui/packages/mango-cli/release-versions.json' ||
     file === 'mango-ui/packages/mango-cli/README.md' ||
+    file === CLI_FULL_README_TEMPLATE_PATH ||
     /^mango-ui\/packages\/mango-cli\/templates\/.+\/package\.json\.template$/u.test(file) ||
     /^mango-business-starter\/business-pmo\/mango-baseline\//u.test(file) ||
     /^mango-business-starter\/.+\/package\.json$/u.test(file)
@@ -82,6 +85,17 @@ export function assertReleaseOnlyContent(headRef = 'HEAD') {
     sourceVersion: cli.sourceVersion,
     targetVersion: cli.targetVersion,
   });
+  if (pmo && plan.maven?.targetVersion) {
+    assertCliFullReadmeProjection({
+      sourceContent: readGitFile(repoRoot, plan.source?.commit, CLI_FULL_README_TEMPLATE_PATH),
+      projectedContent: readGitFile(repoRoot, headRef, CLI_FULL_README_TEMPLATE_PATH),
+      versions: {
+        mavenVersion: plan.maven.targetVersion,
+        pmoVersion: pmo.targetVersion,
+        cliVersion: cli.targetVersion,
+      },
+    });
+  }
 }
 
 function assertBusinessPmoBaselineProjection() {
