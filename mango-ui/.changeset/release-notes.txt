@@ -1,68 +1,61 @@
 ## Pull Requests
 
-- [PR #839](https://github.com/HardyDou/mango/pull/839) Changed the PMO frontend-page baseline opt-out contract. Packages: `@mango/pmo@1.4.0`, `@mango/cli@1.1.0`. Business Adaptation: upgrade the PMO/CLI tuple and use only the explicit boolean opt-out.
-- [PR #840](https://github.com/HardyDou/mango/pull/840) Fixed Admin Shell confirmation cancellation and close handling. Packages: `@mango/admin-shell@1.0.63`, `@mango/admin@1.0.69`, `@mango/cli@1.1.0`. Business Adaptation: verify cancel/close behavior in shell-created applications.
-- [PR #841](https://github.com/HardyDou/mango/pull/841) Changed the frontend-quality workflow pause contract. Packages: release tooling source only. Business Adaptation: none; maintainers follow the stable required-check policy.
-- [PR #843](https://github.com/HardyDou/mango/pull/843) Added OFD conversion and document signing. Packages: Maven non-app reactor and `io.mango:mango-docs-bundle:1.0.39`, `@mango/template@1.0.37`. Business Adaptation: configure and test signing material in a non-production environment.
-- [PR #844](https://github.com/HardyDou/mango/pull/844) Changed Catalog-bound release planning and sealed publication recovery. Packages: `@mango/pmo@1.4.0`, `@mango/admin@1.0.69`, `@mango/template@1.0.37`, `@mango/cli@1.1.0`. Business Adaptation: none for runtime consumers; release operators use the latest state machine.
-
-## Added
-
-- Add OFD conversion and document-signing APIs, providers, starter wiring and capability documentation.
+- [PR #847](https://github.com/HardyDou/mango/pull/847) Changed Mango release verification to use bounded parallel Maven publication, POM-first remote checks and one aggregate clean Maven consumer. Packages: `@mango/pmo@1.4.1`, `@mango/cli@1.1.1`. Business Adaptation: release operators use the faster default `basic` Maven verification; set `MANGO_RELEASE_MAVEN_VERIFY_MODE=full` only for an explicitly requested per-JAR audit.
 
 ## Fixed
 
-- Treat confirmation cancellation and dialog close as expected Admin Shell interactions.
+- Keep Maven release evidence complete while removing redundant per-JAR remote downloads from the default verification path.
+
+## Added
 
 ## Changed
 
-- Make the PMO frontend-page baseline opt-out explicit, boolean-only and fail-closed.
-- Make the release Catalog the source for publishable content and bind plan, source tree, sealed artifacts, registry checks and recovery journal to one candidate.
+- Bound Maven publication and consume-registry visibility concurrency at 16 by default, while preserving per-coordinate journal and recovery evidence.
+- Run one aggregate clean Maven consumer for the sealed batch instead of starting one clean consumer per JAR.
 
 ## Versions
 
-- Maven non-app reactor and `io.mango:mango-docs-bundle`: `1.0.38` to `1.0.39`.
-- `@mango/admin-shell`: `1.0.62` to `1.0.63`; `@mango/pmo`: `1.3.16` to `1.4.0`; `@mango/template`: `1.0.36` to `1.0.37`; `@mango/admin`: `1.0.68` to `1.0.69`; `@mango/cli`: `1.0.111` to `1.1.0`.
+- `@mango/pmo`: `1.4.0` to `1.4.1`.
+- `@mango/cli`: `1.1.0` to `1.1.1` because CLI consumes the exact PMO version.
+- Mango Maven and `io.mango:mango-docs-bundle` remain at `1.0.39`; no Maven coordinate is republished in this npm-only batch.
 
 ## Published Packages
 
-1. Maven `--all-non-app` reactor and `io.mango:mango-docs-bundle:1.0.39`.
-2. `@mango/admin-shell@1.0.63`.
-3. `@mango/pmo@1.4.0`.
-4. `@mango/template@1.0.37`.
-5. `@mango/admin@1.0.69`.
-6. `@mango/cli@1.1.0`.
+1. `@mango/pmo@1.4.1`.
+2. `@mango/cli@1.1.1`.
+3. No Maven, application fat JAR or unchanged npm coordinate is published.
 
 ## Business Impact
 
-- Consumers using document conversion or signing gain OFD output and signing/verification APIs; they must supply authorized certificate/trust-store material and keep keys out of frontend/runtime configuration.
-- Admin Shell consumers receive corrected cancellation semantics with no API or database migration.
-- Business repositories upgrading PMO/CLI receive an explicit frontend baseline opt-out; baseline checks remain enabled unless the project sets boolean `false`.
+- Release operators get a shorter default Maven verification path with the same immutable publication journal, bounded concurrency and fail-closed recovery behavior.
+- Runtime consumers have no API, database, permission, tenant or service configuration migration. Existing consumers continue using Maven `1.0.39`.
 
 ## Upgrade Estimate
 
-- Audience: Mango consumers of Admin Shell, PMO/CLI governance, template/fileproc conversion or document signing.
-- Engineering Effort: 30 to 90 minutes for generated consumers; 2 to 4 hours for signing integrations.
-- Execution Window: 1 to 3 hours for dependency update, generated-project checks, focused conversion/signing tests and registry consumer verification.
-- Service Downtime: none required by the framework artifacts.
-- Rollback Effort: 15 to 60 minutes to restore the prior Maven/npm tuple and application build.
-- Assumptions: publish/consume registry access, clean locks, compatible JDK/PDF/OFD libraries and non-production signing material.
+- Audience: Mango maintainers and teams operating the platform release workflow; runtime consumers do not need an upgrade for this tooling-only change.
+- Engineering Effort: 10 to 20 minutes to upgrade PMO/CLI in a release workspace; no business code changes.
+- Execution Window: 15 to 30 minutes including clean CLI/PMO consumer verification and release registry back-checks.
+- Service Downtime: none.
+- Rollback Effort: 5 to 15 minutes to restore `@mango/pmo@1.4.0` and `@mango/cli@1.1.0`; immutable coordinates remain untouched.
+- Assumptions: configured npm publish/consume registries, clean workspace and access to the existing Maven `1.0.39` consume prerequisite.
 
 ## Upgrade Notes
 
-1. Upgrade backend dependencies together to Maven `1.0.39` and install `@mango/cli@1.1.0` or the exact generated npm matrix.
-2. Keep the PMO baseline enabled unless an explicit boolean `false` is reviewed and intended.
-3. Validate OFD conversion, signing, verification and Admin Shell cancel/close behavior before business deployment.
+1. Upgrade the release operator tuple to `@mango/pmo@1.4.1` and `@mango/cli@1.1.1` together.
+2. Keep Maven at `1.0.39` for this npm-only batch.
+3. Use the default Maven `basic` verification for ordinary releases; set `MANGO_RELEASE_MAVEN_VERIFY_MODE=full` only when per-JAR remote audit evidence is required.
 
 ## Verification
 
-- `mango release plan` generated the Catalog-bound plan from the source snapshot and target Maven `1.0.39`/CLI `1.1.0`; prepare must seal the exact source and artifacts and pass mixed consumer verification.
-- Publication must read back every listed Maven/npm coordinate from publish and consume registries, then pass a pure consume-registry consumer before Tag or GitHub Release creation.
+- `pnpm -C mango-ui release:test` passed all 80 release tests, including bounded Maven concurrency, basic/full verification modes and aggregate consumer generation.
+- Prepare must pack the exact PMO/CLI tarballs, validate the release notes and run the mixed consumer against the configured npm consume registry and the unchanged Maven `1.0.39` prerequisite.
+- Publish must back-check both npm registry roles and run a pure consume-registry consumer before Tag or GitHub Release creation.
 
 ## Rollback
 
-- Restore Maven `1.0.38`, `@mango/cli@1.0.111`, `@mango/pmo@1.3.16`, `@mango/admin-shell@1.0.62`, `@mango/template@1.0.36` and `@mango/admin@1.0.68`; never overwrite immutable coordinates.
+- Restore `@mango/pmo@1.4.0` and `@mango/cli@1.1.0` in the operator environment; do not delete, overwrite or republish immutable npm or Maven coordinates.
+- If a publication request becomes ambiguous, use `mango release status` and `mango release repair` with the same candidate instead of starting a new publication.
 
 ## Audit History
 
-- PRs #836 and #837 are the completed `1.0.38` closeout and are outside this candidate.
+- PRs #843 and #844 belong to the completed Maven `1.0.39` release and are outside this candidate.
