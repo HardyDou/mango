@@ -185,7 +185,7 @@
     },
     "product.documentLifecycle": {
       "path": "rules/product/05-document-lifecycle.md",
-      "reason": "BRD、SRS、TDD、实施计划顺序、摘要、追踪、PMO 1.3.16 当前合同与受控历史版本及精确章节变体门禁"
+      "reason": "BRD、SRS、TDD、实施计划顺序、摘要、追踪、PMO 1.4.0 当前合同与受控历史版本及精确章节变体门禁"
     },
     "frontend.adminUiCommon": {
       "path": "rules/frontend/07-admin-ui-common.md",
