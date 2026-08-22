@@ -4,11 +4,12 @@
 
 ## v2026.08.22-pmo-1.4.1-cli-1.1.1-release - 2026-08-22
 
-Status: `PENDING`. This npm-only candidate publishes `@mango/pmo@1.4.1` and the exact dependent `@mango/cli@1.1.1`; Mango Maven and `io.mango:mango-docs-bundle` remain at `1.0.39`.
+Status: `PUBLISHED_AND_VERIFIED`. Canonical manifest SHA-256 `3b4b695c86f9ff24763423696ab543dcf6483d25a3e5e5656593328902cc622f` for plan `a948d84b41cbdb2dcedad09e874440c46a94cc2b9c154ac182f65a08bcc99692` and prepared candidate `a89efa10c81dbd8c35a264d8a0f2da944f629fa8c29f92233a985ec8510d99b2` is `COMPLETED`: `@mango/pmo@1.4.1` and `@mango/cli@1.1.1` match their sealed SHA-256/SRI in both npm registry roles, the pure consume-registry consumer passed, and Tag plus GitHub Release are `CREATED_AND_VERIFIED`. Mango Maven and `io.mango:mango-docs-bundle` remain at `1.0.39`.
 
 ### Pull Requests
 
 - [PR #847](https://github.com/HardyDou/mango/pull/847) Changed Mango release verification to use bounded parallel Maven publication, POM-first remote checks and one aggregate clean Maven consumer. Packages: `@mango/pmo@1.4.1`, `@mango/cli@1.1.1`. Business Adaptation: release operators use default `basic` Maven verification and opt into `full` only for a per-JAR audit.
+- [PR #848](https://github.com/HardyDou/mango/pull/848) Published and verified the immutable PMO/CLI npm batch. Merge commit: `0492deb336ba38c939aae0f8a200d33ad46f74bb`.
 
 ### Fixed
 
@@ -55,11 +56,20 @@ Status: `PENDING`. This npm-only candidate publishes `@mango/pmo@1.4.1` and the 
 
 ### Verification
 
-- `pnpm -C mango-ui release:test` passed `80/80`; prepare and publish must complete the configured npm dual-registry and clean consumer checks before Tag or GitHub Release creation.
+- `pnpm -C mango-ui release:test` passed `80/80`, including bounded Maven concurrency, verification modes and aggregate consumer generation.
+- Release PR #848 passed `frontend-pr-quality`, `pmo-doc-check` and `pr-contract-check`; merge commit `0492deb336ba38c939aae0f8a200d33ad46f74bb` retained prepared source commit `8998c5dcf1a6a94d9f95007d5f04d20cb551ccb8` and tree `ee41a5f69998f9dba737eec14224dd4be20b5af8`.
+- The completed manifest records `VERIFIED` publication journal entries for both sealed npm tarballs. Hosted and group registry reads match `@mango/pmo@1.4.1` SHA-256 `530492ab4be19d74a313b0cd08b94a22ae708b7605bf756311e4b3c16d47a1dd` and `@mango/cli@1.1.1` SHA-256 `d374f37aaf25bb0c2138632967e1140cf406596af3359934bcab1cabeb376be2`.
+- A clean consumer resolved only the consume-registry tuple and passed typecheck plus production build before immutable publication completion.
+- Tag [`v2026.08.22-pmo-1.4.1-cli-1.1.1-release`](https://github.com/HardyDou/mango/releases/tag/v2026.08.22-pmo-1.4.1-cli-1.1.1-release) points to the prepared source and the non-draft, non-prerelease GitHub Release is `CREATED_AND_VERIFIED`.
+- Local audit evidence: `.runtime/mango-release/a948d84b41cbdb2dcedad09e874440c46a94cc2b9c154ac182f65a08bcc99692/manifest.json`.
 
 ### Rollback
 
 - Restore PMO `1.4.0` and CLI `1.1.0`; never overwrite or republish immutable coordinates.
+
+### Audit History
+
+- This closeout updates the successful-release baseline and documentation only; it does not republish any coordinate or move the immutable Tag/Release.
 
 ## v2026.08.22-maven-1.0.39-platform-content-fileproc-release - 2026-08-22
 
