@@ -10,10 +10,7 @@ import {
   CLI_FULL_FRONTEND_PACKAGE_TEMPLATE_PATH,
   CLI_FULL_README_TEMPLATE_PATH,
 } from './release-cli-template-lib.mjs';
-import {
-  assertPmoVersionedFileProjection,
-  PMO_VERSION_PROJECTION_PATHS,
-} from './release-pmo-plugin-lib.mjs';
+import { assertPmoVersionedFileProjection, PMO_VERSION_PROJECTION_PATHS } from './release-pmo-plugin-lib.mjs';
 import { readGitFile } from './release-repository-lib.mjs';
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');

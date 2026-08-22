@@ -34,26 +34,11 @@ export function projectCliFullReadmeTuple(content, { mavenVersion, pmoVersion, c
   const match = content.match(sectionPattern);
   if (!match) throw new Error('CLI full README Issue #690 upgrade contract is missing');
   let section = match[2];
-  section = replaceCount(
-    section,
-    /本模板随 Maven `\d+\.\d+\.\d+`/gu,
-    `本模板随 Maven \`${mavenVersion}\``,
-    1,
-  );
+  section = replaceCount(section, /本模板随 Maven `\d+\.\d+\.\d+`/gu, `本模板随 Maven \`${mavenVersion}\``, 1);
   section = replaceCount(section, /@mango\/pmo@\d+\.\d+\.\d+/gu, `@mango/pmo@${pmoVersion}`, 1);
   section = replaceCount(section, /@mango\/cli@\d+\.\d+\.\d+/gu, `@mango/cli@${cliVersion}`, 2);
-  section = replaceCount(
-    section,
-    /--to \d+\.\d+\.\d+ --dry-run/gu,
-    `--to ${pmoVersion} --dry-run`,
-    1,
-  );
-  section = replaceCount(
-    section,
-    /(`mango-bom` 保持为 `)\d+\.\d+\.\d+(`)/gu,
-    `$1${mavenVersion}$2`,
-    1,
-  );
+  section = replaceCount(section, /--to \d+\.\d+\.\d+ --dry-run/gu, `--to ${pmoVersion} --dry-run`, 1);
+  section = replaceCount(section, /(`mango-bom` 保持为 `)\d+\.\d+\.\d+(`)/gu, `$1${mavenVersion}$2`, 1);
   return content.replace(sectionPattern, `$1${section}$3`);
 }
 
