@@ -6,8 +6,17 @@ export function projectCliReadmeVersion(content, sourceVersion, targetVersion) {
   const replacements = [
     {
       name: 'current release version',
-      pattern: new RegExp(`(\\| 当前发布版本\\s+\\|\\s+\`)${escapeRegExp(sourceVersion)}(\`\\s+\\|)`, 'gu'),
-      replacement: `$1${targetVersion}$2`,
+      pattern: new RegExp(
+        `(\\| 当前发布版本[ \\t]+\\|[ \\t]+\`)${escapeRegExp(sourceVersion)}(\`)([ \\t]+)(\\|)`,
+        'gu',
+      ),
+      replacement: (_match, prefix, closingBacktick, padding, closingPipe) => {
+        const paddingWidth = padding.length + sourceVersion.length - targetVersion.length;
+        if (paddingWidth < 1) {
+          throw new Error('CLI README current release version cannot preserve the Markdown table width');
+        }
+        return `${prefix}${targetVersion}${closingBacktick}${' '.repeat(paddingWidth)}${closingPipe}`;
+      },
     },
     {
       name: 'npm view command',

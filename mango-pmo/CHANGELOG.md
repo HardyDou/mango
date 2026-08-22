@@ -1,5 +1,51 @@
 # Mango PMO Changelog
 
+## 1.4.0 - 2026-08-22
+
+### Pull Requests
+
+- [PR #839](https://github.com/HardyDou/mango/pull/839) Changed the frontend-page baseline contract to support an explicit boolean opt-out. Packages: `@mango/pmo@1.4.0`, `@mango/cli@1.1.0`. Business Adaptation: upgrade the tuple and set `pmoChecks.frontendPageBaseline=false` only when intended.
+- [PR #844](https://github.com/HardyDou/mango/pull/844) Changed release content governance to Catalog-bound planning and sealed recovery. Packages: `@mango/pmo@1.4.0`, `@mango/cli@1.1.0`. Business Adaptation: none for business runtime consumers.
+
+### Changed
+
+- Keep frontend baseline checks enabled by default and fail closed on malformed or non-boolean configuration.
+- Synchronize the PMO baseline, CLI projections and generated workflows with the Catalog-bound release model.
+
+### Versions
+
+- `@mango/pmo`: `1.3.16` to `1.4.0`; exact dependent `@mango/cli`: `1.0.111` to `1.1.0`.
+
+### Published Packages
+
+- Publish `@mango/pmo@1.4.0` before `@mango/cli@1.1.0`; no standalone Maven runtime coordinate is introduced by PMO governance.
+
+### Business Impact
+
+- Business repositories can explicitly opt out of the frontend baseline with boolean `false`; absent or malformed configuration remains fail-closed.
+
+### Upgrade Estimate
+
+- Audience: business repositories consuming the Mango PMO baseline.
+- Engineering Effort: 15 to 45 minutes for upgrade, review and locked checks.
+- Execution Window: 20 to 60 minutes including generated baseline verification.
+- Service Downtime: none.
+- Rollback Effort: 10 to 20 minutes using the prior PMO/CLI tuple and validated backup.
+- Assumptions: clean business worktree, registry access and valid project paths.
+
+### Upgrade Notes
+
+1. Install CLI `1.1.0`, review the PMO upgrade and run the locked PMO check.
+2. Keep `pmoChecks.frontendPageBaseline` absent/`true` unless the explicit opt-out is intended.
+
+### Verification
+
+- Run the PMO package checker, baseline projection check, generated workflow contract and a clean PMO/CLI consumer.
+
+### Rollback
+
+- Restore PMO `1.3.16` and CLI `1.0.111` with the prior locked baseline; never overwrite immutable coordinates.
+
 ## 1.3.16 - 2026-08-17
 
 ### Pull Requests

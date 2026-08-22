@@ -27,10 +27,22 @@
     ],
     "fixed": {
       "documentType": "system-requirements",
-      "pmoVersion": "1.3.16",
+      "pmoVersion": "1.4.0",
       "schemaRevision": "1"
     },
-    "historicalPmoVersions": ["1.3.6", "1.3.7", "1.3.8", "1.3.9", "1.3.10", "1.3.11", "1.3.12", "1.3.13", "1.3.14", "1.3.15"]
+    "historicalPmoVersions": [
+      "1.3.6",
+      "1.3.7",
+      "1.3.8",
+      "1.3.9",
+      "1.3.10",
+      "1.3.11",
+      "1.3.12",
+      "1.3.13",
+      "1.3.14",
+      "1.3.15",
+      "1.3.16"
+    ]
   },
   "localPrefixes": [
     "SC",
@@ -44,7 +56,16 @@
     "NFR",
     "SAC"
   ],
-  "upstreamPrefixes": ["BP", "BG", "BS", "BA", "BO", "BF", "BR", "BAC"],
+  "upstreamPrefixes": [
+    "BP",
+    "BG",
+    "BS",
+    "BA",
+    "BO",
+    "BF",
+    "BR",
+    "BAC"
+  ],
   "sections": [
     {
       "ruleId": "SRS-STRUCT-010",
@@ -60,11 +81,17 @@
             "可观察输出"
           ],
           "minRows": 1,
-          "defines": { "上下文ID": "SC" },
+          "defines": {
+            "上下文ID": "SC"
+          },
           "references": [
             {
               "column": "上游ID",
-              "prefixes": ["BS", "BG", "BF"],
+              "prefixes": [
+                "BS",
+                "BG",
+                "BF"
+              ],
               "required": true,
               "allowNone": true
             }
@@ -87,11 +114,15 @@
             "用户可见原因"
           ],
           "minRows": 1,
-          "defines": { "系统参与者ID": "SA" },
+          "defines": {
+            "系统参与者ID": "SA"
+          },
           "references": [
             {
               "column": "上游参与者ID",
-              "prefixes": ["BA"],
+              "prefixes": [
+                "BA"
+              ],
               "required": true,
               "allowNone": true
             }
@@ -116,15 +147,28 @@
             "状态影响"
           ],
           "minRows": 1,
-          "defines": { "功能ID": "FR" },
+          "defines": {
+            "功能ID": "FR"
+          },
           "references": [
             {
               "column": "上游ID",
-              "prefixes": ["BG", "BF", "BR", "BAC"],
+              "prefixes": [
+                "BG",
+                "BF",
+                "BR",
+                "BAC"
+              ],
               "required": true,
               "allowNone": true
             },
-            { "column": "触发者ID", "prefixes": ["SA"], "required": true }
+            {
+              "column": "触发者ID",
+              "prefixes": [
+                "SA"
+              ],
+              "required": true
+            }
           ]
         }
       ]
@@ -147,16 +191,32 @@
             "完成状态"
           ],
           "minRows": 1,
-          "defines": { "场景ID": "UC" },
+          "defines": {
+            "场景ID": "UC"
+          },
           "references": [
             {
               "column": "上游流程ID",
-              "prefixes": ["BF"],
+              "prefixes": [
+                "BF"
+              ],
               "required": true,
               "allowNone": true
             },
-            { "column": "功能ID", "prefixes": ["FR"], "required": true },
-            { "column": "参与者ID", "prefixes": ["SA"], "required": true }
+            {
+              "column": "功能ID",
+              "prefixes": [
+                "FR"
+              ],
+              "required": true
+            },
+            {
+              "column": "参与者ID",
+              "prefixes": [
+                "SA"
+              ],
+              "required": true
+            }
           ]
         }
       ]
@@ -176,10 +236,24 @@
             "功能ID"
           ],
           "minRows": 1,
-          "defines": { "页面ID": "PG" },
+          "defines": {
+            "页面ID": "PG"
+          },
           "references": [
-            { "column": "参与者ID", "prefixes": ["SA"], "required": true },
-            { "column": "功能ID", "prefixes": ["FR"], "required": true }
+            {
+              "column": "参与者ID",
+              "prefixes": [
+                "SA"
+              ],
+              "required": true
+            },
+            {
+              "column": "功能ID",
+              "prefixes": [
+                "FR"
+              ],
+              "required": true
+            }
           ]
         },
         {
@@ -195,10 +269,24 @@
             "功能ID"
           ],
           "minRows": 1,
-          "defines": { "动作ID": "BT" },
+          "defines": {
+            "动作ID": "BT"
+          },
           "references": [
-            { "column": "页面ID", "prefixes": ["PG"], "required": true },
-            { "column": "功能ID", "prefixes": ["FR"], "required": true }
+            {
+              "column": "页面ID",
+              "prefixes": [
+                "PG"
+              ],
+              "required": true
+            },
+            {
+              "column": "功能ID",
+              "prefixes": [
+                "FR"
+              ],
+              "required": true
+            }
           ]
         },
         {
@@ -214,7 +302,13 @@
           ],
           "minRows": 1,
           "references": [
-            { "column": "页面ID", "prefixes": ["PG"], "required": true }
+            {
+              "column": "页面ID",
+              "prefixes": [
+                "PG"
+              ],
+              "required": true
+            }
           ]
         },
         {
@@ -229,11 +323,31 @@
           ],
           "minRows": 5,
           "references": [
-            { "column": "页面ID", "prefixes": ["PG"], "required": true }
+            {
+              "column": "页面ID",
+              "prefixes": [
+                "PG"
+              ],
+              "required": true
+            }
           ],
-          "enums": { "状态类型": ["正常", "空", "加载", "失败", "不可操作"] },
+          "enums": {
+            "状态类型": [
+              "正常",
+              "空",
+              "加载",
+              "失败",
+              "不可操作"
+            ]
+          },
           "requiredEnumValues": {
-            "状态类型": ["正常", "空", "加载", "失败", "不可操作"]
+            "状态类型": [
+              "正常",
+              "空",
+              "加载",
+              "失败",
+              "不可操作"
+            ]
           }
         }
       ]
@@ -255,11 +369,17 @@
             "空值业务语义"
           ],
           "minRows": 1,
-          "defines": { "数据需求ID": "DR" },
+          "defines": {
+            "数据需求ID": "DR"
+          },
           "references": [
             {
               "column": "上游或功能ID",
-              "prefixes": ["BO", "BR", "FR"],
+              "prefixes": [
+                "BO",
+                "BR",
+                "FR"
+              ],
               "required": true
             }
           ]
@@ -284,11 +404,17 @@
             "责任边界"
           ],
           "minRows": 1,
-          "defines": { "外部交互ID": "IR" },
+          "defines": {
+            "外部交互ID": "IR"
+          },
           "references": [
             {
               "column": "上游或功能ID",
-              "prefixes": ["BF", "BR", "FR"],
+              "prefixes": [
+                "BF",
+                "BR",
+                "FR"
+              ],
               "required": true
             }
           ]
@@ -312,11 +438,18 @@
             "验收方式"
           ],
           "minRows": 1,
-          "defines": { "非功能ID": "NFR" },
+          "defines": {
+            "非功能ID": "NFR"
+          },
           "references": [
             {
               "column": "上游ID",
-              "prefixes": ["BG", "BS", "BR", "BAC"],
+              "prefixes": [
+                "BG",
+                "BS",
+                "BR",
+                "BAC"
+              ],
               "required": true,
               "allowNone": true
             }
@@ -340,17 +473,29 @@
             "验收类型"
           ],
           "minRows": 1,
-          "defines": { "系统验收ID": "SAC" },
+          "defines": {
+            "系统验收ID": "SAC"
+          },
           "references": [
             {
               "column": "业务验收ID",
-              "prefixes": ["BAC"],
+              "prefixes": [
+                "BAC"
+              ],
               "required": true,
               "allowNone": true
             },
             {
               "column": "系统需求ID",
-              "prefixes": ["FR", "UC", "PG", "BT", "DR", "IR", "NFR"],
+              "prefixes": [
+                "FR",
+                "UC",
+                "PG",
+                "BT",
+                "DR",
+                "IR",
+                "NFR"
+              ],
               "required": true
             }
           ]
@@ -362,12 +507,26 @@
       "title": "系统需求追踪矩阵",
       "tables": [
         {
-          "headers": ["上游ID", "系统需求ID", "系统验收ID", "覆盖说明"],
+          "headers": [
+            "上游ID",
+            "系统需求ID",
+            "系统验收ID",
+            "覆盖说明"
+          ],
           "minRows": 1,
           "references": [
             {
               "column": "上游ID",
-              "prefixes": ["BP", "BG", "BS", "BA", "BO", "BF", "BR", "BAC"],
+              "prefixes": [
+                "BP",
+                "BG",
+                "BS",
+                "BA",
+                "BO",
+                "BF",
+                "BR",
+                "BAC"
+              ],
               "required": true,
               "allowNone": true
             },
@@ -387,7 +546,13 @@
               ],
               "required": true
             },
-            { "column": "系统验收ID", "prefixes": ["SAC"], "required": true }
+            {
+              "column": "系统验收ID",
+              "prefixes": [
+                "SAC"
+              ],
+              "required": true
+            }
           ]
         }
       ]
@@ -397,7 +562,11 @@
       "title": "阶段判定与审批",
       "tables": [
         {
-          "headers": ["检查项", "结果", "证据"],
+          "headers": [
+            "检查项",
+            "结果",
+            "证据"
+          ],
           "minRows": 4,
           "rowKeys": [
             "系统需求 checker",

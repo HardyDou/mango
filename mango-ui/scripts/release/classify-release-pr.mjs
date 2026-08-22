@@ -5,9 +5,12 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { assertCliReadmeProjection, CLI_README_PATH } from './release-cli-readme-lib.mjs';
 import {
+  assertCliFullReadmeProjection,
   assertCliFullFrontendTemplateProjection,
   CLI_FULL_FRONTEND_PACKAGE_TEMPLATE_PATH,
+  CLI_FULL_README_TEMPLATE_PATH,
 } from './release-cli-template-lib.mjs';
+import { assertPmoVersionedFileProjection, PMO_VERSION_PROJECTION_PATHS } from './release-pmo-plugin-lib.mjs';
 import { readGitFile } from './release-repository-lib.mjs';
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
@@ -33,6 +36,9 @@ export function classifyReleasePullRequest(files) {
 export function isReleaseOnlyFile(file) {
   return (
     file === 'CHANGELOG.md' ||
+    file === 'mango-pmo/CHANGELOG.md' ||
+    file === 'mango-catalog/catalog.lock.json' ||
+    PMO_VERSION_PROJECTION_PATHS.includes(file) ||
     file === 'mango-ui/pnpm-lock.yaml' ||
     file === 'mango-ui/.changeset/release-plan.json' ||
     file === 'mango-ui/.changeset/release-notes.txt' ||
@@ -41,13 +47,29 @@ export function isReleaseOnlyFile(file) {
     /^mango-ui\/packages\/[^/]+\/(?:package\.json|CHANGELOG\.md)$/u.test(file) ||
     file === 'mango-ui/packages/mango-cli/release-versions.json' ||
     file === 'mango-ui/packages/mango-cli/README.md' ||
+    file === CLI_FULL_README_TEMPLATE_PATH ||
     /^mango-ui\/packages\/mango-cli\/templates\/.+\/package\.json\.template$/u.test(file) ||
+    /^mango-business-starter\/business-pmo\/mango-baseline\//u.test(file) ||
     /^mango-business-starter\/.+\/package\.json$/u.test(file)
   );
 }
 
 export function assertReleaseOnlyContent(headRef = 'HEAD') {
   const plan = JSON.parse(readGitFile(repoRoot, headRef, releasePlanPath));
+  const pmo = plan.packages?.find((entry) => entry.name === '@mango/pmo');
+  if (pmo) {
+    for (const path of PMO_VERSION_PROJECTION_PATHS) {
+      assertPmoVersionedFileProjection({
+        path,
+        sourceContent: readGitFile(repoRoot, plan.source?.commit, path),
+        projectedContent: readGitFile(repoRoot, headRef, path),
+        sourceVersion: pmo.sourceVersion,
+        targetVersion: pmo.targetVersion,
+      });
+    }
+    assertBusinessPmoBaselineProjection();
+  }
+  assertCatalogProjection();
   const cli = plan.packages?.find((entry) => entry.name === '@mango/cli');
   if (!cli) return;
   assertCliReadmeProjection({
@@ -62,6 +84,41 @@ export function assertReleaseOnlyContent(headRef = 'HEAD') {
     sourceVersion: cli.sourceVersion,
     targetVersion: cli.targetVersion,
   });
+  if (pmo && plan.maven?.targetVersion) {
+    assertCliFullReadmeProjection({
+      sourceContent: readGitFile(repoRoot, plan.source?.commit, CLI_FULL_README_TEMPLATE_PATH),
+      projectedContent: readGitFile(repoRoot, headRef, CLI_FULL_README_TEMPLATE_PATH),
+      versions: {
+        mavenVersion: plan.maven.targetVersion,
+        pmoVersion: pmo.targetVersion,
+        cliVersion: cli.targetVersion,
+      },
+    });
+  }
+}
+
+function assertBusinessPmoBaselineProjection() {
+  const result = spawnSync(
+    process.execPath,
+    [resolve(repoRoot, 'mango-business-starter/scripts/sync-pmo-baseline.mjs'), '--check'],
+    { cwd: repoRoot, encoding: 'utf8' },
+  );
+  if (result.status !== 0) {
+    throw new Error(
+      `business PMO baseline differs from the deterministic release projection:\n${result.stdout}\n${result.stderr}`,
+    );
+  }
+}
+
+function assertCatalogProjection() {
+  const result = spawnSync(
+    process.execPath,
+    [resolve(repoRoot, 'mango-ui/scripts/catalog/compile-catalog.mjs'), '--check'],
+    { cwd: repoRoot, encoding: 'utf8' },
+  );
+  if (result.status !== 0) {
+    throw new Error(`Catalog differs from the deterministic release projection:\n${result.stdout}\n${result.stderr}`);
+  }
 }
 
 if (process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).href) {

@@ -27,10 +27,22 @@
     ],
     "fixed": {
       "documentType": "technical-design",
-      "pmoVersion": "1.3.16",
+      "pmoVersion": "1.4.0",
       "schemaRevision": "1"
     },
-    "historicalPmoVersions": ["1.3.6", "1.3.7", "1.3.8", "1.3.9", "1.3.10", "1.3.11", "1.3.12", "1.3.13", "1.3.14", "1.3.15"]
+    "historicalPmoVersions": [
+      "1.3.6",
+      "1.3.7",
+      "1.3.8",
+      "1.3.9",
+      "1.3.10",
+      "1.3.11",
+      "1.3.12",
+      "1.3.13",
+      "1.3.14",
+      "1.3.15",
+      "1.3.16"
+    ]
   },
   "localPrefixes": [
     "DEC",
@@ -59,7 +71,11 @@
   ],
   "historicalSectionVariants": [
     {
-      "pmoVersions": ["1.3.10", "1.3.11", "1.3.12"],
+      "pmoVersions": [
+        "1.3.10",
+        "1.3.11",
+        "1.3.12"
+      ],
       "insertBefore": "设计输入、约束与决策",
       "sections": [
         {
@@ -67,7 +83,13 @@
           "title": "参考资料与代码基线",
           "tables": [
             {
-              "headers": ["类型", "路径或模板ID", "版本或提交", "用途", "实际采用范围"],
+              "headers": [
+                "类型",
+                "路径或模板ID",
+                "版本或提交",
+                "用途",
+                "实际采用范围"
+              ],
               "minRows": 1
             }
           ]
@@ -94,8 +116,15 @@
             "回退条件"
           ],
           "minRows": 1,
-          "defines": { "决策ID": "DEC" },
-          "enums": { "是否推断": ["是", "否"] }
+          "defines": {
+            "决策ID": "DEC"
+          },
+          "enums": {
+            "是否推断": [
+              "是",
+              "否"
+            ]
+          }
         }
       ]
     },
@@ -116,7 +145,9 @@
             "验证方式"
           ],
           "minRows": 1,
-          "defines": { "模块设计ID": "MOD" },
+          "defines": {
+            "模块设计ID": "MOD"
+          },
           "references": [
             {
               "column": "系统需求ID",
@@ -155,9 +186,18 @@
             "一致性约束"
           ],
           "minRows": 1,
-          "defines": { "模型ID": "DM" },
+          "defines": {
+            "模型ID": "DM"
+          },
           "references": [
-            { "column": "上游ID", "prefixes": ["FR", "DR"], "required": true }
+            {
+              "column": "上游ID",
+              "prefixes": [
+                "FR",
+                "DR"
+              ],
+              "required": true
+            }
           ]
         },
         {
@@ -173,10 +213,21 @@
           ],
           "minRows": 1,
           "references": [
-            { "column": "模型ID", "prefixes": ["DM"], "required": true },
+            {
+              "column": "模型ID",
+              "prefixes": [
+                "DM"
+              ],
+              "required": true
+            },
             {
               "column": "上游ID",
-              "prefixes": ["FR", "UC", "DR", "SAC"],
+              "prefixes": [
+                "FR",
+                "UC",
+                "DR",
+                "SAC"
+              ],
               "required": true
             }
           ]
@@ -202,14 +253,26 @@
             "用户可见结果"
           ],
           "minRows": 1,
-          "defines": { "流程设计ID": "FLOW" },
+          "defines": {
+            "流程设计ID": "FLOW"
+          },
           "references": [
             {
               "column": "系统需求ID",
-              "prefixes": ["FR", "UC", "SAC"],
+              "prefixes": [
+                "FR",
+                "UC",
+                "SAC"
+              ],
               "required": true
             },
-            { "column": "参与模块", "prefixes": ["MOD"], "required": true }
+            {
+              "column": "参与模块",
+              "prefixes": [
+                "MOD"
+              ],
+              "required": true
+            }
           ]
         }
       ]
@@ -237,14 +300,26 @@
             "验证方式"
           ],
           "minRows": 1,
-          "defines": { "接口ID": "API" },
+          "defines": {
+            "接口ID": "API"
+          },
           "references": [
             {
               "column": "系统需求ID",
-              "prefixes": ["FR", "UC", "SAC"],
+              "prefixes": [
+                "FR",
+                "UC",
+                "SAC"
+              ],
               "required": true
             },
-            { "column": "所属模块", "prefixes": ["MOD"], "required": true }
+            {
+              "column": "所属模块",
+              "prefixes": [
+                "MOD"
+              ],
+              "required": true
+            }
           ]
         }
       ]
@@ -270,11 +345,17 @@
             "验证方式"
           ],
           "minRows": 1,
-          "defines": { "数据设计ID": "DB" },
+          "defines": {
+            "数据设计ID": "DB"
+          },
           "references": [
             {
               "column": "上游或模型ID",
-              "prefixes": ["DR", "FR", "DM"],
+              "prefixes": [
+                "DR",
+                "FR",
+                "DM"
+              ],
               "required": true
             }
           ]
@@ -301,11 +382,18 @@
             "验证方式"
           ],
           "minRows": 1,
-          "defines": { "安全设计ID": "SEC" },
+          "defines": {
+            "安全设计ID": "SEC"
+          },
           "references": [
             {
               "column": "系统需求ID",
-              "prefixes": ["SA", "FR", "DR", "SAC"],
+              "prefixes": [
+                "SA",
+                "FR",
+                "DR",
+                "SAC"
+              ],
               "required": true
             }
           ]
@@ -331,11 +419,17 @@
             "敏感信息处理"
           ],
           "minRows": 1,
-          "defines": { "错误设计ID": "ERR" },
+          "defines": {
+            "错误设计ID": "ERR"
+          },
           "references": [
             {
               "column": "系统需求ID",
-              "prefixes": ["FR", "UC", "SAC"],
+              "prefixes": [
+                "FR",
+                "UC",
+                "SAC"
+              ],
               "required": true
             }
           ]
@@ -362,14 +456,27 @@
             "适用规范ruleId"
           ],
           "minRows": 1,
-          "defines": { "前端设计ID": "UI" },
+          "defines": {
+            "前端设计ID": "UI"
+          },
           "references": [
             {
               "column": "系统需求ID",
-              "prefixes": ["FR", "PG", "BT", "SAC"],
+              "prefixes": [
+                "FR",
+                "PG",
+                "BT",
+                "SAC"
+              ],
               "required": true
             },
-            { "column": "API依赖", "prefixes": ["API"], "required": true }
+            {
+              "column": "API依赖",
+              "prefixes": [
+                "API"
+              ],
+              "required": true
+            }
           ]
         }
       ]
@@ -396,9 +503,17 @@
             "适用规范ruleId"
           ],
           "minRows": 1,
-          "defines": { "测试用例ID": "TC" },
+          "defines": {
+            "测试用例ID": "TC"
+          },
           "references": [
-            { "column": "系统验收ID", "prefixes": ["SAC"], "required": true },
+            {
+              "column": "系统验收ID",
+              "prefixes": [
+                "SAC"
+              ],
+              "required": true
+            },
             {
               "column": "设计项ID",
               "prefixes": [
@@ -417,8 +532,17 @@
             }
           ],
           "enums": {
-            "优先级": ["P0", "P1", "P2", "P3"],
-            "自动化判断": ["AUTO", "MANUAL", "EXCEPTION"]
+            "优先级": [
+              "P0",
+              "P1",
+              "P2",
+              "P3"
+            ],
+            "自动化判断": [
+              "AUTO",
+              "MANUAL",
+              "EXCEPTION"
+            ]
           }
         }
       ]
@@ -441,7 +565,9 @@
             "责任人"
           ],
           "minRows": 0,
-          "defines": { "影响ID": "IMP" },
+          "defines": {
+            "影响ID": "IMP"
+          },
           "references": [
             {
               "column": "设计项ID",
@@ -467,7 +593,12 @@
       "title": "技术追踪矩阵",
       "tables": [
         {
-          "headers": ["上游ID", "设计项ID", "测试用例ID", "覆盖说明"],
+          "headers": [
+            "上游ID",
+            "设计项ID",
+            "测试用例ID",
+            "覆盖说明"
+          ],
           "minRows": 1,
           "references": [
             {
@@ -502,7 +633,13 @@
               ],
               "required": true
             },
-            { "column": "测试用例ID", "prefixes": ["TC"], "required": true }
+            {
+              "column": "测试用例ID",
+              "prefixes": [
+                "TC"
+              ],
+              "required": true
+            }
           ]
         }
       ]
@@ -512,7 +649,11 @@
       "title": "阶段判定与审批",
       "tables": [
         {
-          "headers": ["检查项", "结果", "证据"],
+          "headers": [
+            "检查项",
+            "结果",
+            "证据"
+          ],
           "minRows": 5,
           "rowKeys": [
             "技术设计 checker",
@@ -565,20 +706,26 @@
       ],
       "columns": {
         "方法与路径": {
-          "forbiddenPatterns": ["\\{[^}]+\\}"],
+          "forbiddenPatterns": [
+            "\\{[^}]+\\}"
+          ],
           "requiredPatterns": [
             "^(?:GET|POST|PUT|PATCH|DELETE)\\s+/[A-Za-z0-9_./-]+$"
           ]
         },
         "Command Query或VO": {
-          "forbiddenPatterns": ["\\b[A-Za-z0-9_]*(?:Entity|PO)\\b"]
+          "forbiddenPatterns": [
+            "\\b[A-Za-z0-9_]*(?:Entity|PO)\\b"
+          ]
         },
         "返回契约": {
           "forbiddenPatterns": [
             "\\b[A-Za-z0-9_]*(?:Entity|PO)\\b",
             "Map\\s*<\\s*String\\s*,\\s*Object\\s*>"
           ],
-          "requiredPatterns": ["^R<[^<>]+>$"]
+          "requiredPatterns": [
+            "^R<[^<>]+>$"
+          ]
         }
       }
     }

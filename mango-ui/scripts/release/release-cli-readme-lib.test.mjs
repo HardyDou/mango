@@ -4,7 +4,7 @@ import { assertCliReadmeProjection, projectCliReadmeVersion } from './release-cl
 
 const source = `# @mango/cli
 
-| 当前发布版本  | \`1.0.107\` |
+| 当前发布版本  | \`1.0.107\`   |
 
 \`\`\`bash
 npm view @mango/cli@1.0.107 version --registry "$MANGO_NPM_REGISTRY"
@@ -17,10 +17,21 @@ Historical release: @mango/cli@1.0.107.
 test('projects the CLI release version in exactly the three public version positions', () => {
   const projected = projectCliReadmeVersion(source, '1.0.107', '1.0.108');
 
-  assert.match(projected, /\| 当前发布版本 {2}\| `1\.0\.108` \|/u);
+  assert.match(projected, /\| 当前发布版本 {2}\| `1\.0\.108` {3}\|/u);
   assert.match(projected, /npm view @mango\/cli@1\.0\.108 version --registry/u);
   assert.match(projected, /npm install -g @mango\/cli@1\.0\.108 --registry/u);
   assert.match(projected, /Historical release: @mango\/cli@1\.0\.107\./u);
+  assert.match(projected, /\| 当前发布版本 {2}\| `1\.0\.108` {3}\|/u);
+});
+
+test('preserves the formatted Markdown table width when the target version is shorter', () => {
+  const projected = projectCliReadmeVersion(source, '1.0.107', '1.1.0');
+
+  assert.match(projected, /\| 当前发布版本 {2}\| `1\.1\.0` {5}\|/u);
+  assert.equal(
+    projected.split('\n').find((line) => line.includes('当前发布版本'))?.length,
+    source.split('\n').find((line) => line.includes('当前发布版本'))?.length,
+  );
 });
 
 test('rejects any CLI README drift beyond the deterministic version projection', () => {

@@ -27,12 +27,32 @@
     ],
     "fixed": {
       "documentType": "implementation-plan",
-      "pmoVersion": "1.3.16",
+      "pmoVersion": "1.4.0",
       "schemaRevision": "1"
     },
-    "historicalPmoVersions": ["1.3.6", "1.3.7", "1.3.8", "1.3.9", "1.3.10", "1.3.11", "1.3.12", "1.3.13", "1.3.14", "1.3.15"]
+    "historicalPmoVersions": [
+      "1.3.6",
+      "1.3.7",
+      "1.3.8",
+      "1.3.9",
+      "1.3.10",
+      "1.3.11",
+      "1.3.12",
+      "1.3.13",
+      "1.3.14",
+      "1.3.15",
+      "1.3.16"
+    ]
   },
-  "localPrefixes": ["DEL", "TASK", "MS", "VAL", "DATA", "DOC", "RISK"],
+  "localPrefixes": [
+    "DEL",
+    "TASK",
+    "MS",
+    "VAL",
+    "DATA",
+    "DOC",
+    "RISK"
+  ],
   "upstreamPrefixes": [
     "DEC",
     "MOD",
@@ -48,7 +68,11 @@
   ],
   "historicalSectionVariants": [
     {
-      "pmoVersions": ["1.3.10", "1.3.11", "1.3.12"],
+      "pmoVersions": [
+        "1.3.10",
+        "1.3.11",
+        "1.3.12"
+      ],
       "insertBefore": "实施目标、范围与交付物",
       "sections": [
         {
@@ -56,7 +80,13 @@
           "title": "参考资料与代码基线",
           "tables": [
             {
-              "headers": ["类型", "路径或模板ID", "版本或提交", "用途", "实际采用范围"],
+              "headers": [
+                "类型",
+                "路径或模板ID",
+                "版本或提交",
+                "用途",
+                "实际采用范围"
+              ],
               "minRows": 1
             }
           ]
@@ -80,7 +110,9 @@
             "不处理边界"
           ],
           "minRows": 1,
-          "defines": { "交付物ID": "DEL" },
+          "defines": {
+            "交付物ID": "DEL"
+          },
           "references": [
             {
               "column": "技术设计ID",
@@ -122,7 +154,9 @@
             "状态"
           ],
           "minRows": 1,
-          "defines": { "任务ID": "TASK" },
+          "defines": {
+            "任务ID": "TASK"
+          },
           "references": [
             {
               "column": "技术设计ID",
@@ -141,16 +175,35 @@
               ],
               "required": true
             },
-            { "column": "交付物ID", "prefixes": ["DEL"], "required": true },
+            {
+              "column": "交付物ID",
+              "prefixes": [
+                "DEL"
+              ],
+              "required": true
+            },
             {
               "column": "前置任务",
-              "prefixes": ["TASK"],
+              "prefixes": [
+                "TASK"
+              ],
               "required": false,
               "allowNone": true
             },
-            { "column": "验证ID", "prefixes": ["VAL"], "required": true }
+            {
+              "column": "验证ID",
+              "prefixes": [
+                "VAL"
+              ],
+              "required": true
+            }
           ],
-          "enums": { "状态": ["PLANNED", "BLOCKED"] }
+          "enums": {
+            "状态": [
+              "PLANNED",
+              "BLOCKED"
+            ]
+          }
         }
       ]
     },
@@ -170,12 +223,22 @@
             "责任人"
           ],
           "minRows": 1,
-          "defines": { "里程碑ID": "MS" },
+          "defines": {
+            "里程碑ID": "MS"
+          },
           "references": [
-            { "column": "包含任务ID", "prefixes": ["TASK"], "required": true },
+            {
+              "column": "包含任务ID",
+              "prefixes": [
+                "TASK"
+              ],
+              "required": true
+            },
             {
               "column": "可并行任务",
-              "prefixes": ["TASK"],
+              "prefixes": [
+                "TASK"
+              ],
               "required": false,
               "allowNone": true
             }
@@ -203,10 +266,24 @@
             "失败处理"
           ],
           "minRows": 1,
-          "defines": { "验证ID": "VAL" },
+          "defines": {
+            "验证ID": "VAL"
+          },
           "references": [
-            { "column": "测试或验收ID", "prefixes": ["TC"], "required": true },
-            { "column": "任务ID", "prefixes": ["TASK"], "required": true }
+            {
+              "column": "测试或验收ID",
+              "prefixes": [
+                "TC"
+              ],
+              "required": true
+            },
+            {
+              "column": "任务ID",
+              "prefixes": [
+                "TASK"
+              ],
+              "required": true
+            }
           ]
         }
       ]
@@ -230,11 +307,17 @@
             "责任人"
           ],
           "minRows": 0,
-          "defines": { "数据步骤ID": "DATA" },
+          "defines": {
+            "数据步骤ID": "DATA"
+          },
           "references": [
             {
               "column": "技术设计ID",
-              "prefixes": ["DEC", "DB", "IMP"],
+              "prefixes": [
+                "DEC",
+                "DB",
+                "IMP"
+              ],
               "required": true
             }
           ]
@@ -257,11 +340,17 @@
             "不适用依据"
           ],
           "minRows": 0,
-          "defines": { "文档项ID": "DOC" },
+          "defines": {
+            "文档项ID": "DOC"
+          },
           "references": [
             {
               "column": "技术设计或交付物ID",
-              "prefixes": ["IMP", "DEL", "TASK"],
+              "prefixes": [
+                "IMP",
+                "DEL",
+                "TASK"
+              ],
               "required": true
             }
           ]
@@ -288,11 +377,26 @@
             "例外批准与到期"
           ],
           "minRows": 1,
-          "defines": { "风险ID": "RISK" },
+          "defines": {
+            "风险ID": "RISK"
+          },
           "enums": {
-            "风险等级": ["L0", "L1", "L2", "L3"],
-            "类型": ["RISK", "BLOCKER", "EXCEPTION"],
-            "状态": ["OPEN", "CLOSED", "BLOCKED"]
+            "风险等级": [
+              "L0",
+              "L1",
+              "L2",
+              "L3"
+            ],
+            "类型": [
+              "RISK",
+              "BLOCKER",
+              "EXCEPTION"
+            ],
+            "状态": [
+              "OPEN",
+              "CLOSED",
+              "BLOCKED"
+            ]
           }
         }
       ]
@@ -329,12 +433,35 @@
               ],
               "required": true
             },
-            { "column": "交付物ID", "prefixes": ["DEL"], "required": true },
-            { "column": "任务ID", "prefixes": ["TASK"], "required": true },
-            { "column": "验证ID", "prefixes": ["VAL"], "required": true },
+            {
+              "column": "交付物ID",
+              "prefixes": [
+                "DEL"
+              ],
+              "required": true
+            },
+            {
+              "column": "任务ID",
+              "prefixes": [
+                "TASK"
+              ],
+              "required": true
+            },
+            {
+              "column": "验证ID",
+              "prefixes": [
+                "VAL"
+              ],
+              "required": true
+            },
             {
               "column": "里程碑数据文档或风险项ID",
-              "prefixes": ["MS", "DATA", "DOC", "RISK"],
+              "prefixes": [
+                "MS",
+                "DATA",
+                "DOC",
+                "RISK"
+              ],
               "required": true
             }
           ]
@@ -346,7 +473,11 @@
       "title": "阶段判定与审批",
       "tables": [
         {
-          "headers": ["检查项", "结果", "证据"],
+          "headers": [
+            "检查项",
+            "结果",
+            "证据"
+          ],
           "minRows": 5,
           "rowKeys": [
             "实施计划 checker",
@@ -362,7 +493,15 @@
   "traceability": {
     "ruleId": "PLAN-TRACE-080",
     "section": "实施追踪矩阵",
-    "localCoveragePrefixes": ["DEL", "TASK", "MS", "VAL", "DATA", "DOC", "RISK"]
+    "localCoveragePrefixes": [
+      "DEL",
+      "TASK",
+      "MS",
+      "VAL",
+      "DATA",
+      "DOC",
+      "RISK"
+    ]
   },
   "blocking": {
     "ruleId": "PLAN-GATE-090",
@@ -383,8 +522,12 @@
     ],
     "stateColumn": "状态",
     "blockingColumn": "类型",
-    "blockingValues": ["BLOCKER"],
-    "closedValues": ["CLOSED"]
+    "blockingValues": [
+      "BLOCKER"
+    ],
+    "closedValues": [
+      "CLOSED"
+    ]
   },
   "dependencyGraph": {
     "ruleId": "PLAN-DEP-030",
