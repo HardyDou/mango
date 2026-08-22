@@ -36,12 +36,7 @@ test('projects the lifecycle example and advances its historical ceiling', () =>
 test('projects document contract current-version assertions', () => {
   const source = 'const current = "1.3.16";\nmessage.includes("pmoVersion 必须为 1.3.16");\n';
   assert.equal(
-    projectPmoVersionedFile(
-      'mango-pmo/tests/document-contract/document-contract.test.mjs',
-      source,
-      '1.3.16',
-      '1.4.0',
-    ),
+    projectPmoVersionedFile('mango-pmo/tests/document-contract/document-contract.test.mjs', source, '1.3.16', '1.4.0'),
     'const current = "1.4.0";\nmessage.includes("pmoVersion 必须为 1.4.0");\n',
   );
 });

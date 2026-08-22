@@ -63,7 +63,13 @@ export function projectPmoVersionedFile(path, content, sourceVersion, targetVers
   return projected;
 }
 
-export function assertPmoVersionedFileProjection({ path, sourceContent, projectedContent, sourceVersion, targetVersion }) {
+export function assertPmoVersionedFileProjection({
+  path,
+  sourceContent,
+  projectedContent,
+  sourceVersion,
+  targetVersion,
+}) {
   const expected = projectPmoVersionedFile(path, sourceContent, sourceVersion, targetVersion);
   if (projectedContent !== expected) throw new Error(`${path}: PMO release version projection differs`);
 }
