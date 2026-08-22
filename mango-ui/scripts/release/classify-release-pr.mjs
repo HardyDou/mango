@@ -8,7 +8,10 @@ import {
   assertCliFullFrontendTemplateProjection,
   CLI_FULL_FRONTEND_PACKAGE_TEMPLATE_PATH,
 } from './release-cli-template-lib.mjs';
-import { assertPmoPluginProjection, PMO_PLUGIN_MANIFEST_PATH } from './release-pmo-plugin-lib.mjs';
+import {
+  assertPmoVersionedFileProjection,
+  PMO_VERSION_PROJECTION_PATHS,
+} from './release-pmo-plugin-lib.mjs';
 import { readGitFile } from './release-repository-lib.mjs';
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
@@ -35,7 +38,7 @@ export function isReleaseOnlyFile(file) {
   return (
     file === 'CHANGELOG.md' ||
     file === 'mango-pmo/CHANGELOG.md' ||
-    file === PMO_PLUGIN_MANIFEST_PATH ||
+    PMO_VERSION_PROJECTION_PATHS.includes(file) ||
     file === 'mango-ui/pnpm-lock.yaml' ||
     file === 'mango-ui/.changeset/release-plan.json' ||
     file === 'mango-ui/.changeset/release-notes.txt' ||
@@ -53,12 +56,15 @@ export function assertReleaseOnlyContent(headRef = 'HEAD') {
   const plan = JSON.parse(readGitFile(repoRoot, headRef, releasePlanPath));
   const pmo = plan.packages?.find((entry) => entry.name === '@mango/pmo');
   if (pmo) {
-    assertPmoPluginProjection({
-      sourceContent: readGitFile(repoRoot, plan.source?.commit, PMO_PLUGIN_MANIFEST_PATH),
-      projectedContent: readGitFile(repoRoot, headRef, PMO_PLUGIN_MANIFEST_PATH),
-      sourceVersion: pmo.sourceVersion,
-      targetVersion: pmo.targetVersion,
-    });
+    for (const path of PMO_VERSION_PROJECTION_PATHS) {
+      assertPmoVersionedFileProjection({
+        path,
+        sourceContent: readGitFile(repoRoot, plan.source?.commit, path),
+        projectedContent: readGitFile(repoRoot, headRef, path),
+        sourceVersion: pmo.sourceVersion,
+        targetVersion: pmo.targetVersion,
+      });
+    }
   }
   const cli = plan.packages?.find((entry) => entry.name === '@mango/cli');
   if (!cli) return;

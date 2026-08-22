@@ -21,9 +21,9 @@ import {
   projectCliFullFrontendTemplateVersion,
 } from './release-cli-template-lib.mjs';
 import {
-  assertPmoPluginProjection,
-  PMO_PLUGIN_MANIFEST_PATH,
-  projectPmoPluginVersion,
+  assertPmoVersionedFileProjection,
+  PMO_VERSION_PROJECTION_PATHS,
+  projectPmoVersionedFile,
 } from './release-pmo-plugin-lib.mjs';
 import {
   gitChangedFiles,
@@ -155,9 +155,11 @@ function applyCliReadmeProjection(releasePlan) {
 function applyPmoPluginProjection(releasePlan) {
   const pmo = releasePlan.packages.find((entry) => entry.name === '@mango/pmo');
   if (!pmo) return;
-  const sourceContent = readGitFile(repoRoot, releasePlan.source.commit, PMO_PLUGIN_MANIFEST_PATH);
-  const projectedContent = projectPmoPluginVersion(sourceContent, pmo.sourceVersion, pmo.targetVersion);
-  writeFileSync(join(repoRoot, PMO_PLUGIN_MANIFEST_PATH), projectedContent);
+  for (const path of PMO_VERSION_PROJECTION_PATHS) {
+    const sourceContent = readGitFile(repoRoot, releasePlan.source.commit, path);
+    const projectedContent = projectPmoVersionedFile(path, sourceContent, pmo.sourceVersion, pmo.targetVersion);
+    writeFileSync(join(repoRoot, path), projectedContent);
+  }
 }
 
 function applyCliFullFrontendTemplateProjection(releasePlan) {
@@ -279,12 +281,15 @@ function verifyPlanProjection(releasePlan, packages, currentManagedVersions, { h
 function verifyPmoPluginProjection(releasePlan) {
   const pmo = releasePlan.packages.find((entry) => entry.name === '@mango/pmo');
   if (!pmo) return;
-  assertPmoPluginProjection({
-    sourceContent: readGitFile(repoRoot, releasePlan.source.commit, PMO_PLUGIN_MANIFEST_PATH),
-    projectedContent: readFileSync(join(repoRoot, PMO_PLUGIN_MANIFEST_PATH), 'utf8'),
-    sourceVersion: pmo.sourceVersion,
-    targetVersion: pmo.targetVersion,
-  });
+  for (const path of PMO_VERSION_PROJECTION_PATHS) {
+    assertPmoVersionedFileProjection({
+      path,
+      sourceContent: readGitFile(repoRoot, releasePlan.source.commit, path),
+      projectedContent: readFileSync(join(repoRoot, path), 'utf8'),
+      sourceVersion: pmo.sourceVersion,
+      targetVersion: pmo.targetVersion,
+    });
+  }
 }
 
 function verifyCliReadmeProjection(releasePlan) {
