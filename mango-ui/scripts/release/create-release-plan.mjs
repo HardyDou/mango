@@ -110,6 +110,7 @@ if (projectedCatalog.catalogDigest !== plan.catalogDigest) {
 }
 writeJson(planPath, plan);
 if (!skipLockfile) runLockfileUpdate();
+runProjectionFormatting();
 console.log(`Release plan written: ${planPath}`);
 console.log(`Plan digest: ${plan.planDigest}`);
 console.log(
@@ -390,6 +391,21 @@ function runLockfileUpdate() {
     stdio: 'inherit',
   });
   if (result.status !== 0) throw new Error(`pnpm lockfile update failed with exit code ${result.status ?? 1}`);
+}
+
+function runProjectionFormatting() {
+  const command = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm';
+  const paths = [planPath];
+  if (!skipLockfile) paths.push(join(workspaceRoot, 'pnpm-lock.yaml'));
+  const result = spawnSync(command, ['exec', 'prettier', '--write', ...paths], {
+    cwd: workspaceRoot,
+    stdio: 'inherit',
+  });
+  if (result.status !== 0) {
+    throw new Error(
+      `release projection formatting failed with exit code ${result.status ?? 1}; install the governed workspace dependencies`,
+    );
+  }
 }
 
 function runCatalogProjection() {
