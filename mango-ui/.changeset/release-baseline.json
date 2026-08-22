@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "baselineKind": "normal",
   "tag": "v2026.08.22-maven-1.0.39-platform-content-fileproc-release",
-  "commit": "8dfabade82fd8cf7de8ec1b267085b1e091367ce",
+  "commit": "922a8e7cff981b9fccf185afa6eeba1b3d964a71",
   "tree": "c024dbf3542922ff74c54468944f9311fa60c5df",
   "planDigest": "b0ffa4e09c67dcacb98e70f3c9e8f02600a988603393619796c1a78300ca8c7c",
   "preparedCandidateId": "9e6023400991ee7b8007a8b5297b42b113071df4c00d984174d176bf8c40ef7f",
