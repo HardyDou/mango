@@ -19,10 +19,14 @@ const releasePlanPath = 'mango-ui/.changeset/release-plan.json';
 export function classifyReleasePullRequest(files) {
   const normalized = [...new Set(files)].sort();
   const hasPlan = normalized.includes('mango-ui/.changeset/release-plan.json');
+  const planCheckRequired = normalized.some((file) =>
+    ['mango-ui/.changeset/release-plan.json', 'mango-ui/.changeset/release-baseline.json'].includes(file),
+  );
   const disallowed = normalized.filter((file) => !isReleaseOnlyFile(file));
   return {
     releaseOnly: hasPlan && disallowed.length === 0,
     hasPlan,
+    planCheckRequired,
     files: normalized,
     disallowed,
     reason: !hasPlan
@@ -132,6 +136,7 @@ if (process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).
   const output = process.env.GITHUB_OUTPUT;
   if (output) {
     appendFileSync(output, `release_only=${classification.releaseOnly}\n`);
+    appendFileSync(output, `release_plan_check=${classification.planCheckRequired}\n`);
     appendFileSync(output, `reason=${classification.reason}\n`);
   }
   console.log(JSON.stringify(classification, null, 2));

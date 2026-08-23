@@ -37,9 +37,11 @@ import {
 } from './release-maven-lib.mjs';
 import { assertCleanWorktree, gitValue } from './release-repository-lib.mjs';
 import { acquireReleaseLock } from './release-lock-lib.mjs';
+import { assertReleaseNodeVersion } from '../../packages/mango-cli/src/release-runtime.mjs';
 
 const workspaceRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const repoRoot = resolve(workspaceRoot, '..');
+assertReleaseNodeVersion({ manifestPath: join(workspaceRoot, 'package.json') });
 const args = process.argv.slice(2);
 const action = args[0] || 'status';
 const planPath = resolveArg('--plan', join(workspaceRoot, '.changeset/release-plan.json'));

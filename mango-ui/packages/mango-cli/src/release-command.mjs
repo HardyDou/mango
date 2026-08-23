@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
+import { assertReleaseNodeVersion } from './release-runtime.mjs';
 
 export const RELEASE_STATES = [
   'VALIDATED',
@@ -36,7 +37,7 @@ export function redactReleaseText(value, env = process.env) {
   }
   return redacted
     .replace(/(https?:\/\/)[^\s/@:]+:[^\s/@]+@/giu, '$1[REDACTED]@')
-    .replace(/(Bearer\s+)[A-Za-z0-9._~+\/-]+/giu, '$1[REDACTED]')
+    .replace(/(Bearer\s+)[A-Za-z0-9._~+/-]+/giu, '$1[REDACTED]')
     .replace(/((?:token|password|secret|credential)[=:]\s*)[^\s]+/giu, '$1[REDACTED]')
     .replace(/(_authToken=)[^\s]+/giu, '$1[REDACTED]');
 }
@@ -47,13 +48,16 @@ export async function runReleaseCli(argv, runtime = {}) {
   if (command === 'verify') {
     throw new Error('mango release verify was removed; use status or repair against the prepared batch manifest');
   }
-  if (command === 'registry') {
-    if (argv[1] !== 'doctor') throw new Error('mango release registry supports only doctor');
-    return runRegistryDoctor(argv.slice(2), runtime, env);
-  }
+  const registryDoctor = command === 'registry' && argv[1] === 'doctor';
+  if (command === 'registry' && !registryDoctor) throw new Error('mango release registry supports only doctor');
   const script = RELEASE_COMMAND_SCRIPTS[command];
-  if (!script) throw new Error(`unknown release command: ${command}`);
+  if (!script && !registryDoctor) throw new Error(`unknown release command: ${command}`);
   const projectRoot = findMangoRepository(runtime.cwd || process.cwd());
+  assertReleaseNodeVersion({
+    manifestPath: join(projectRoot, 'mango-ui/package.json'),
+    nodeVersion: runtime.nodeVersion,
+  });
+  if (registryDoctor) return runRegistryDoctor(argv.slice(2), runtime, env);
   const scriptArgs = ['plan', 'prepare'].includes(command) ? argv.slice(1) : argv;
   const execute = runtime.spawnSync || spawnSync;
   const result = execute(process.execPath, [join(projectRoot, 'mango-ui/scripts/release', script), ...scriptArgs], {

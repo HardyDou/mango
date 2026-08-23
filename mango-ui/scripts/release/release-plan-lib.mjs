@@ -445,10 +445,15 @@ export function assertCompletedReleaseBaseline(plan, baseline) {
       throw new Error(`release baseline package ${entry.name} differs from the plan`);
     }
   }
-  const expectedMaven = plan.maven?.targetVersion ?? null;
   const actualMaven =
     typeof baseline.maven === 'object' && baseline.maven ? baseline.maven.version : (baseline.maven ?? null);
-  if (actualMaven !== expectedMaven) throw new Error('release baseline Maven version differs from the plan');
+  if (plan.maven) {
+    if (actualMaven !== plan.maven.targetVersion) {
+      throw new Error('release baseline Maven version differs from the plan');
+    }
+  } else if (digestJson(baseline.maven ?? null) !== digestJson(plan.baseline?.maven ?? null)) {
+    throw new Error('release baseline carried Maven evidence differs from the previous successful baseline');
+  }
 }
 
 function groupDeclarations(entries) {
