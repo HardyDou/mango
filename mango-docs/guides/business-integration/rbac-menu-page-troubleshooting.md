@@ -304,3 +304,7 @@ pnpm -F @mango/admin-shell build
 ## 2026-08-21 Issue #840 Admin Shell 确认取消影响
 
 - Issue #840 只统一 Admin Shell 外层与 runtime outlet 内层 Vue App 对 Element Plus 确认框取消/关闭结果的错误边界处理；不改变菜单 `component` key、菜单树接口、页面注册、角色菜单授权、按钮权限、登录态权限聚合或租户应用绑定。菜单不可见、页面 404 或 403 仍按本指南原链路排查，不能通过修改确认框异常处理修复菜单或授权问题。
+
+## 2026-08-25 Issue #851 Resource 模块增量影响
+
+- Issue #851 只把 Bootstrap Resource 协调收敛为构建期模块 manifest 与环境 receipt；菜单 `component` key、菜单树接口、页面注册、角色菜单授权、登录态权限聚合和租户应用绑定均不变。若升级后菜单资源未形成，可先核对对应 Resource 模块 receipt、generation 与 manifest fingerprint，再继续按本指南检查声明、授权和页面 key。

@@ -91,7 +91,7 @@ Spring Boot JAR 的预期路径：
 
 ```text
 BOOT-INF/classes/db/baseline/<module>/B<version>__baseline.sql
-BOOT-INF/classes/META-INF/mango/baseline-manifest.json
+META-INF/mango/baseline-manifest.json
 ```
 
 manifest 包含目标字符集、目标排序规则、模块、逻辑数据源 group、最高 V 版本、B SHA-256 和 migration fingerprint，不包含 JDBC URL、用户名或密码。Dockerfile 应只复制已经通过上述构建的 Boot JAR。
@@ -110,9 +110,62 @@ Runtime 不生成 B、不执行 migration，也不访问构建数据库。
 
 cold baseline 只快照 V 最终产生的数据库结构和 migration 静态行。菜单、权限、流程发布、租户资源以及运行时可维护配置仍由 Resource Registry 的 Bootstrap 步骤处理。
 
-预置文件使用 `FILE_ASSET` Resource：声明中保留稳定 file ID、目标配置、`classpath:` 或 `asset:` 内容位置和资源摘要；不适合进入 Jar 的大型二进制使用 `asset:<relative-path>`，由各环境通过 `mango.file.asset-root` 映射外部根目录。Bootstrap File handler 把二进制写入配置的文件存储层，再写入/校验文件元数据。B 可以包含 V 历史形成的数据库元数据，但不包含文件二进制，也不替代对象存储上传。这样固定 ID、数据库记录和存储对象由同一 generation/fingerprint 验证，业务不再需要在 Runtime 启动时自行上传文件。
+预置文件使用 `FILE_ASSET` Resource：声明中保留稳定 file ID、目标配置、`classpath:` 或 `asset:` 内容位置和资源摘要。构建期 Resource 生成器把两类输入统一复制为内容寻址对象，并将 manifest 中的内容位置改写到 `classpath:META-INF/mango/files.bundle/objects/<sha256>`。Bootstrap File handler 再把该对象写入环境配置的存储层并写入/校验文件元数据。B 可以包含 V 历史形成的数据库元数据，但不包含文件二进制，也不替代对象存储上传。
 
 Workflow 定义同理：B 只负责相关表结构和 V 静态行，流程部署与版本回执由 `BOOTSTRAP_REQUIRED` Resource/Workflow handler 完成。
+
+### 7.1 Resource 构建物 POM
+
+在最终 API 应用中把生成器绑定到 `process-classes`。此时应用 class 和普通 resources 已进入 `${project.build.outputDirectory}`，生成器也直接写入该目录，后续 JAR/Boot repackage 会密封相同字节：
+
+```xml
+<plugin>
+    <groupId>org.codehaus.mojo</groupId>
+    <artifactId>exec-maven-plugin</artifactId>
+    <version>3.5.1</version>
+    <executions>
+        <execution>
+            <id>generate-resource-artifacts</id>
+            <phase>process-classes</phase>
+            <goals><goal>java</goal></goals>
+            <configuration>
+                <mainClass>io.mango.resource.sync.starter.ResourceManifestBuildApplication</mainClass>
+                <classpathScope>runtime</classpathScope>
+                <arguments>
+                    <argument>--mango.resource.registry.artifact-output-directory=${project.build.outputDirectory}</argument>
+                    <argument>--mango.file.asset-root=${project.basedir}/src/main/assets</argument>
+                    <argument>--mango.resource.registry.artifact-context-sources=com.example.build.ResourceBuildProviders</argument>
+                </arguments>
+            </configuration>
+        </execution>
+    </executions>
+</plugin>
+```
+
+声明文件会自动从 runtime classpath 的默认 Resource locations 收集。只有 Java Provider 不能由最小上下文直接构造时，才通过 `artifact-context-sources` 传入逗号分隔的 `@Configuration` 类；这些配置只提供确定性 Provider 及其纯构建依赖。
+
+构建上下文不启用 Spring Boot auto-configuration、component scan 或业务主类，因此不会连接 `spring.datasource.*`，不会执行 Flyway，也不会启动普通 Bootstrap。构建输出为：
+
+```text
+META-INF/mango/resource-bootstrap-manifest.json
+META-INF/mango/files-manifest.json
+META-INF/mango/files.bundle/objects/<sha256>
+```
+
+Boot JAR 验收：
+
+```bash
+jar tf target/*.jar | grep -E '^META-INF/mango/(resource-bootstrap-manifest.json|files-manifest.json|files.bundle/objects/)'
+```
+
+存在构建 manifest 时，Bootstrap 优先消费其中的模块 envelope；相同 hash 的模块在内部 declarations JSON 解析前通过环境 receipt 跳过。没有构建 manifest 的历史应用保留运行时扫描兼容路径。
+
+### 7.2 发布物料关系
+
+- `mango:baseline-generate` 继续是数据库 cold baseline 的唯一生成入口；Resource 构建器不创建或连接数据库。
+- `files.bundle` 只携带逻辑 object key、SHA-256、大小、MIME 和内容对象，不携带 endpoint、bucket 或凭据；部署仍走现有 `FILE_ASSET` staged publish。
+- sealed Maven release manifest 已逐 JAR 记录 size/SHA-256，因此 JAR 内 Resource manifest 和 files bundle 自动受外层 JAR digest 保护，不再新增第二套 release manifest 或 digest 来源。
+- `statObject`/metadata 快速判断是后续可选优化；当前 Handler 仍读取对象并校验 SHA-256，正确性路径不依赖该优化。
 
 ## 8. 常见失败
 

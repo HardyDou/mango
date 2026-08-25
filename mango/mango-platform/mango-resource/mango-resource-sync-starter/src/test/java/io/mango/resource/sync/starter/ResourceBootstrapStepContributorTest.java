@@ -20,6 +20,9 @@ import io.mango.resource.support.model.ResourceDeclaration;
 import io.mango.resource.support.model.ResourceField;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.ResourceLoader;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -70,6 +73,11 @@ class ResourceBootstrapStepContributorTest {
             assertThat(command.getGeneration()).isEqualTo(8L);
             assertThat(command.getManifestFingerprint()).isEqualTo("f".repeat(64));
             assertThat(command.getFencingToken()).isEqualTo(13L);
+            assertThat(command.getModuleManifests()).extracting(
+                    io.mango.resource.api.command.ResourceModuleManifestCommand::getModuleCode)
+                    .containsExactly("module-a", "module-b");
+            assertThat(command.getModuleManifests()).allSatisfy(module ->
+                    assertThat(module.getModuleHash()).matches("[0-9a-f]{64}"));
         });
         JsonNode declarations = objectMapper.readTree(commands.get(0).getDeclarations());
         assertThat(declarations).extracting(node -> node.get("id").asText())
@@ -132,6 +140,42 @@ class ResourceBootstrapStepContributorTest {
         assertThat(runtimeMaterial).isEqualTo(bootstrapMaterial);
     }
 
+    @Test
+    void packagedManifestIsPreferredWithoutCallingRuntimeProviders() {
+        String packaged = """
+                {"schemaVersion":1,"modules":[{
+                  "moduleCode":"packaged-module",
+                  "moduleHash":"%s",
+                  "dependencies":[],
+                  "declarationCount":1,
+                  "declarations":[{"invalid":"left opaque until receipt check"}]
+                }]}
+                """.formatted("b".repeat(64));
+        ResourceManifestArtifactLoader loader = new ResourceManifestArtifactLoader(
+                objectMapper, resourceLoader(packaged));
+        List<RegisterResourceDeclarationsCommand> commands = new ArrayList<>();
+        ResourceProvider forbiddenProvider = () -> {
+            throw new AssertionError("Runtime provider must not be called when packaged manifest exists");
+        };
+        ResourceBootstrapStepContributor contributor = new ResourceBootstrapStepContributor(
+                new ResourceRegistryProperties(), collector(forbiddenProvider), command -> {
+                    commands.add(command);
+                    return R.ok(true);
+                }, new ResourceManifestSerializer(),
+                new ResourceDeclarationCanonicalizer(objectMapper), loader, "app");
+
+        List<BootstrapStep> steps = contributor.contributeSteps();
+        steps.get(0).execute(context(BootstrapPhase.EXPAND));
+
+        assertThat(steps.get(0).fingerprintMaterial())
+                .contains("packaged-module=" + "b".repeat(64));
+        assertThat(commands).singleElement().satisfies(command -> {
+            assertThat(command.getDeclarations()).isEqualTo("[]");
+            assertThat(command.getModuleManifests()).singleElement().satisfies(module ->
+                    assertThat(module.getDeclarations()).contains("left opaque until receipt check"));
+        });
+    }
+
     private String fingerprintMaterial(ResourceDeclaration declaration) {
         return fingerprintMaterial(declaration, objectMapper);
     }
@@ -148,6 +192,20 @@ class ResourceBootstrapStepContributorTest {
         DefaultListableBeanFactory beans = new DefaultListableBeanFactory();
         beans.registerSingleton("resourceProvider", provider);
         return new ResourceDeclarationCollector(beans.getBeanProvider(ResourceProvider.class));
+    }
+
+    private static ResourceLoader resourceLoader(String content) {
+        return new ResourceLoader() {
+            @Override
+            public Resource getResource(String location) {
+                return new ByteArrayResource(content.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            }
+
+            @Override
+            public ClassLoader getClassLoader() {
+                return ResourceBootstrapStepContributorTest.class.getClassLoader();
+            }
+        };
     }
 
     private static ResourceDeclaration declaration(String id, String moduleCode) {

@@ -90,20 +90,46 @@ public final class ResourceDeclarationCanonicalizer {
         if (fields == null) {
             return normalized;
         }
+        String declaredSha256 = declaredSha256(fields);
         for (Map.Entry<String, ResourceField> entry : new TreeMap<>(fields).entrySet()) {
             ResourceField field = entry.getValue();
             Map<String, Object> value = new LinkedHashMap<>();
             value.put("type", field.getType());
             value.put("value", field.getValue());
-            value.put("location", field.getLocation());
+            if (field.getType() != ResourceFieldType.FILE) {
+                value.put("location", field.getLocation());
+            }
             value.put("encoding", field.getEncoding());
             value.put("mediaType", field.getMediaType());
             if (field.getType() == ResourceFieldType.FILE) {
-                value.put("content", readClasspathContentFingerprint(field));
+                value.put("content", readContentFingerprint(field, declaredSha256));
             }
             normalized.put(entry.getKey(), value);
         }
         return normalized;
+    }
+
+    private static String declaredSha256(Map<String, ResourceField> fields) {
+        ResourceField field = fields.get("sha256");
+        if (field == null || field.getValue() == null) {
+            return null;
+        }
+        String value = String.valueOf(field.getValue()).trim().toLowerCase(java.util.Locale.ROOT);
+        return value.matches("[0-9a-f]{64}") ? value : null;
+    }
+
+    private Map<String, Object> readContentFingerprint(ResourceField field, String declaredSha256) {
+        if (StringUtils.hasText(field.getLocation())
+                && (field.getLocation().startsWith("asset:")
+                || field.getLocation().startsWith(
+                        "classpath:META-INF/mango/files.bundle/objects/"))) {
+            if (declaredSha256 == null) {
+                throw new IllegalStateException(
+                        "External file resource field requires a declared sha256: " + field.getLocation());
+            }
+            return Map.of("sha256", declaredSha256);
+        }
+        return readClasspathContentFingerprint(field);
     }
 
     private Map<String, Object> readClasspathContentFingerprint(ResourceField field) {
@@ -119,8 +145,8 @@ public final class ResourceDeclarationCanonicalizer {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             try (InputStream inputStream = resource.getInputStream();
                  DigestInputStream digestInput = new DigestInputStream(inputStream, digest)) {
-                long size = digestInput.transferTo(OutputStream.nullOutputStream());
-                return Map.of("sha256", HexFormat.of().formatHex(digest.digest()), "size", size);
+                digestInput.transferTo(OutputStream.nullOutputStream());
+                return Map.of("sha256", HexFormat.of().formatHex(digest.digest()));
             }
         } catch (IOException | NoSuchAlgorithmException exception) {
             throw new IllegalStateException(

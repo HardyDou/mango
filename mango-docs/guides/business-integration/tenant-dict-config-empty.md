@@ -296,3 +296,7 @@ pnpm -F @mango/admin-shell build
 ## 2026-08-21 Issue #840 Admin Shell 确认取消影响
 
 - Issue #840 只修改 Admin Shell 对前端确认框取消/关闭结果的全局异常分类；不新增数据库表或 migration，不修改租户、字典、组织、用户、角色、系统配置数据，也不改变公开 API、权限、租户隔离、初始化顺序或运行时数据行为。基础数据为空仍按本指南检查 Resource、租户上下文和 Bootstrap 回执，无需重建数据库或补写 seed。
+
+## 2026-08-25 Issue #851 Resource 模块增量影响
+
+- Issue #851 新增环境级 Resource 模块 receipt，用于跳过 hash 未变化的声明并只协调变化模块；租户、字典、组织、用户和系统配置的数据模型、公开 API、权限及隔离语义不变。基础数据为空时可先核对目标模块 receipt、generation、manifest fingerprint 和协调状态，再继续按本指南检查租户上下文与声明内容，无需手工补写 seed。

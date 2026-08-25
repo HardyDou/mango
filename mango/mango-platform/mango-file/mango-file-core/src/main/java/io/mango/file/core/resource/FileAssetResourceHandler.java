@@ -206,6 +206,11 @@ public class FileAssetResourceHandler implements ResourceHandler {
             }
             fileStorageRouter.publishObject(storageConfig, stagingObjectName, payload.objectName());
         } catch (Exception e) {
+            try {
+                fileStorageRouter.removeObject(storageConfig, stagingObjectName);
+            } catch (RuntimeException cleanupFailure) {
+                e.addSuppressed(cleanupFailure);
+            }
             throw new IllegalStateException("Publish FILE_ASSET failed: " + payload.objectName(), e);
         }
     }

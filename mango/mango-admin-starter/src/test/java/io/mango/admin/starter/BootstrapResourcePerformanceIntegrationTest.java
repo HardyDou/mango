@@ -11,10 +11,14 @@ import io.mango.domain.api.command.UpdateDomainStatusCommand;
 import io.mango.domain.api.query.DomainPageQuery;
 import io.mango.domain.api.vo.DomainVO;
 import io.mango.file.core.config.FileProperties;
+import io.mango.file.core.entity.FileStorageConfigEntity;
+import io.mango.file.core.mapper.FileStorageConfigMapper;
 import io.mango.file.core.resource.FileAssetResourceHandler;
 import io.mango.file.core.resource.FileStorageConfigResourceHandler;
+import io.mango.file.core.storage.FileObject;
 import io.mango.file.core.storage.FileStorageRouter;
 import io.mango.file.core.storage.LocalFileStorage;
+import io.mango.file.core.storage.S3CompatibleFileStorage;
 import io.mango.infra.bootstrap.api.BootstrapAction;
 import io.mango.infra.bootstrap.api.BootstrapPhase;
 import io.mango.infra.bootstrap.api.BootstrapStep;
@@ -39,6 +43,7 @@ import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguratio
 import io.mango.resource.core.diagnostic.ResourceModuleSyncStatusRegistry;
 import io.mango.resource.core.service.impl.ResourceRegistryService;
 import io.mango.resource.core.sync.ResourceContentHasher;
+import io.mango.resource.core.sync.ResourceModuleReceiptRepository;
 import io.mango.resource.core.sync.ResourceRegistryLock;
 import io.mango.resource.core.sync.ResourceRegistryRepository;
 import io.mango.resource.api.ResourceDeclarationApi;
@@ -78,9 +83,17 @@ import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.S3Configuration;
+import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
+import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
 
 import javax.sql.DataSource;
 import java.io.IOException;
+import java.net.URI;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.charset.StandardCharsets;
@@ -92,34 +105,40 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HexFormat;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @Tag("performance")
 @EnabledIfEnvironmentVariable(named = "MANGO_BOOTSTRAP_RESOURCE_PERF_DB_URL", matches = "jdbc:mysql:.+")
 class BootstrapResourcePerformanceIntegrationTest {
 
-    private static final int SCALE_FACTOR = 5;
-    private static final int BAOHAN_DECLARATION_COUNT = 232;
+    private static final int BAOHAN_DECLARATION_COUNT = 1291;
     private static final int BAOHAN_WORKFLOW_COUNT = 4;
     private static final int BAOHAN_FILE_COUNT = 15;
-    private static final int WORKFLOW_COUNT = BAOHAN_WORKFLOW_COUNT * SCALE_FACTOR;
-    private static final int FILE_COUNT = BAOHAN_FILE_COUNT * SCALE_FACTOR;
-    private static final int RESOURCE_COUNT =
-            (BAOHAN_DECLARATION_COUNT + BAOHAN_WORKFLOW_COUNT + BAOHAN_FILE_COUNT)
-                    * SCALE_FACTOR;
-    private static final int FILE_SIZE = 1024 * 1024;
+    private static final int WORKFLOW_COUNT = BAOHAN_WORKFLOW_COUNT;
+    private static final int FILE_COUNT = BAOHAN_FILE_COUNT;
+    private static final int RESOURCE_COUNT = BAOHAN_DECLARATION_COUNT;
+    private static final long FILE_TOTAL_BYTES = 34L * 1024 * 1024;
     private static final int CATEGORY_COUNT = RESOURCE_COUNT - WORKFLOW_COUNT - FILE_COUNT - 1;
     private static final long COLD_LIMIT_MILLIS = Duration.ofSeconds(60).toMillis();
     private static final long WARM_LIMIT_MILLIS = Duration.ofSeconds(10).toMillis();
     private static final String DATABASE_SUFFIX = "_bootstrap_resource_perf";
     private static final Long STORAGE_CONFIG_ID = 8_400_000_000_000_000_001L;
+    private static final String STORAGE_MODULE = "bootstrap-storage";
+    private static final String FILE_MODULE = "bootstrap-files";
+    private static final String WORKFLOW_MODULE = "bootstrap-workflow";
 
     @Test
-    void injectsFiveTimesBaohanResourceVolumeThroughRealWorkflowAndFileHandlers() throws Exception {
+    void injectsBaohanScaleResourceVolumeThroughRealWorkflowAndFileHandlers() throws Exception {
         String jdbcUrl = requiredEnvironment("MANGO_BOOTSTRAP_RESOURCE_PERF_DB_URL");
         String username = environment("MANGO_BOOTSTRAP_RESOURCE_PERF_DB_USERNAME", "root");
         String password = environment("MANGO_BOOTSTRAP_RESOURCE_PERF_DB_PASSWORD", "");
@@ -137,6 +156,7 @@ class BootstrapResourcePerformanceIntegrationTest {
 
         try {
             GeneratedAssets assets = generateAssets(classpathRoot);
+            ensureObjectStorageReady();
             long schemaStarted = System.nanoTime();
             migrateSchemas(dataSource);
             long schemaElapsed = elapsedMillis(schemaStarted);
@@ -154,9 +174,7 @@ class BootstrapResourcePerformanceIntegrationTest {
                 List<ResourceDeclaration> fileDeclarations = fileDeclarations(assets);
                 List<ResourceDeclaration> workflowDeclarations = workflowDeclarations();
 
-                MangoContextHolder.set(MangoContextSnapshot.empty()
-                        .withSecurity(1L, "1", "bootstrap-perf", "INTERNAL",
-                                "INTERNAL_USER", "INTERNAL_ORG", 1L, "bootstrap-perf"));
+                MangoContextHolder.set(performanceContext());
 
                 provider.setDeclarations(concat(
                         foundationDeclarations, fileDeclarations, workflowDeclarations));
@@ -177,7 +195,20 @@ class BootstrapResourcePerformanceIntegrationTest {
                 assertThat(repositoryService.createDeploymentQuery().count()).isEqualTo(WORKFLOW_COUNT);
                 assertThat(count(jdbcTemplate, "file_record")).isEqualTo(FILE_COUNT);
                 assertThat(count(jdbcTemplate, "file_object")).isEqualTo(FILE_COUNT);
-                verifyStoredAssets(storageRoot, assets);
+                verifyStoredAssets(context, storageRoot, assets);
+                assertThat(count(jdbcTemplate, "resource_module_receipt")).isEqualTo(3);
+                assertThat(receipt(jdbcTemplate, STORAGE_MODULE)).satisfies(receipt -> {
+                    assertThat(receipt.generation()).isOne();
+                    assertThat(receipt.state()).isEqualTo("FINALIZED");
+                });
+                assertThat(receipt(jdbcTemplate, FILE_MODULE)).satisfies(receipt -> {
+                    assertThat(receipt.generation()).isOne();
+                    assertThat(receipt.state()).isEqualTo("FINALIZED");
+                });
+                assertThat(receipt(jdbcTemplate, WORKFLOW_MODULE)).satisfies(receipt -> {
+                    assertThat(receipt.generation()).isOne();
+                    assertThat(receipt.state()).isEqualTo("FINALIZED");
+                });
 
                 long syncLogCount = count(jdbcTemplate, "resource_sync_log");
                 long warmStarted = System.nanoTime();
@@ -186,23 +217,155 @@ class BootstrapResourcePerformanceIntegrationTest {
 
                 assertThat(warmOutcome.state()).isEqualTo("FINALIZED");
                 assertThat(warmOutcome.executedSteps()).isZero();
-                assertThat(orchestrator.execute(request(BootstrapAction.VERIFY)).state()).isEqualTo("VERIFIED");
                 assertThat(count(jdbcTemplate, "resource_registry")).isEqualTo(RESOURCE_COUNT);
                 assertThat(count(jdbcTemplate, "resource_sync_log")).isEqualTo(syncLogCount);
                 assertThat(repositoryService.createDeploymentQuery().count()).isEqualTo(WORKFLOW_COUNT);
-                verifyStoredAssets(storageRoot, assets);
+                verifyStoredAssets(context, storageRoot, assets);
+
+                List<Map<String, Object>> unchangedFileState = fileState(jdbcTemplate);
+                long unchangedGenerationStarted = System.nanoTime();
+                BootstrapOutcome unchangedGenerationOutcome = orchestrator.execute(
+                        request(BootstrapAction.APPLY, 2L));
+                long unchangedGenerationElapsed = elapsedMillis(unchangedGenerationStarted);
+
+                assertThat(unchangedGenerationOutcome.state()).isEqualTo("FINALIZED");
+                assertThat(unchangedGenerationOutcome.executedSteps()).isEqualTo(3);
+                assertThat(count(jdbcTemplate, "resource_sync_log")).isEqualTo(syncLogCount);
+                assertThat(fileState(jdbcTemplate)).isEqualTo(unchangedFileState);
+                assertThat(receipt(jdbcTemplate, STORAGE_MODULE).generation()).isOne();
+                assertThat(receipt(jdbcTemplate, FILE_MODULE).generation()).isOne();
+                assertThat(receipt(jdbcTemplate, WORKFLOW_MODULE).generation()).isOne();
+                assertThat(unchangedGenerationElapsed)
+                        .as("new generation with unchanged modules must complete within 10 seconds")
+                        .isLessThan(WARM_LIMIT_MILLIS);
+
+                provider.setDeclarations(concat(
+                        foundationDeclarations, fileDeclarations, workflowDeclarations(2)));
+                BootstrapOrchestrator workflowChangeOrchestrator = bootstrapOrchestrator(
+                        dataSource, context.getBean(JdbcBootstrapRepository.class),
+                        registryProperties, collector, registryService, objectMapper);
+                long workflowChangeStarted = System.nanoTime();
+                BootstrapOutcome workflowChangeOutcome = workflowChangeOrchestrator.execute(
+                        request(BootstrapAction.APPLY, 3L));
+                long workflowChangeElapsed = elapsedMillis(workflowChangeStarted);
+
+                assertThat(workflowChangeOutcome.state()).isEqualTo("FINALIZED");
+                assertThat(fileState(jdbcTemplate)).isEqualTo(unchangedFileState);
+                assertThat(receipt(jdbcTemplate, STORAGE_MODULE).generation()).isOne();
+                assertThat(receipt(jdbcTemplate, FILE_MODULE).generation()).isOne();
+                assertThat(receipt(jdbcTemplate, WORKFLOW_MODULE)).satisfies(receipt -> {
+                    assertThat(receipt.generation()).isEqualTo(3L);
+                    assertThat(receipt.state()).isEqualTo("FINALIZED");
+                });
+                assertThat(workflowDefinitionName(jdbcTemplate, 0)).contains("v2");
+                assertThat(workflowChangeElapsed)
+                        .as("single changed module must complete within 30 seconds")
+                        .isLessThan(Duration.ofSeconds(30).toMillis());
+
+                GeneratedAssets changedAssets = generateChangedAsset(classpathRoot, assets, 0);
+                List<ResourceDeclaration> changedFileDeclarations = fileDeclarations(changedAssets);
+                changedFileDeclarations.get(0).setVersion(2);
+                provider.setDeclarations(concat(
+                        foundationDeclarations, changedFileDeclarations, workflowDeclarations(2)));
+                BootstrapOrchestrator fileChangeOrchestrator = bootstrapOrchestrator(
+                        dataSource, context.getBean(JdbcBootstrapRepository.class),
+                        registryProperties, collector, registryService, objectMapper);
+                ModuleReceipt oldFileReceipt = receipt(jdbcTemplate, FILE_MODULE);
+                long fileChangeStarted = System.nanoTime();
+                if (isLocalStorage()) {
+                    Path conflictingTarget = storageRoot.resolve(storageBucket())
+                            .resolve(changedAssets.assets().get(0).objectName());
+                    Files.delete(conflictingTarget);
+                    Files.createDirectory(conflictingTarget);
+
+                    assertThatThrownBy(() -> fileChangeOrchestrator.execute(
+                            request(BootstrapAction.APPLY, 4L)))
+                            .isInstanceOf(IllegalStateException.class)
+                            .hasMessageContaining("Publish FILE_ASSET failed");
+                    assertThat(receipt(jdbcTemplate, FILE_MODULE)).isEqualTo(oldFileReceipt);
+                    assertThat(bootstrapState(jdbcTemplate)).isEqualTo("FAILED");
+                    assertThat(stagingObjects(context, storageRoot)).isEmpty();
+
+                    Files.delete(conflictingTarget);
+                }
+                BootstrapOutcome fileRecoveryOutcome = fileChangeOrchestrator.execute(
+                        request(BootstrapAction.APPLY, 4L));
+                long fileChangeElapsed = elapsedMillis(fileChangeStarted);
+
+                assertThat(fileRecoveryOutcome.state()).isEqualTo("FINALIZED");
+                assertThat(receipt(jdbcTemplate, STORAGE_MODULE).generation()).isOne();
+                assertThat(receipt(jdbcTemplate, FILE_MODULE)).satisfies(receipt -> {
+                    assertThat(receipt.generation()).isEqualTo(4L);
+                    assertThat(receipt.state()).isEqualTo("FINALIZED");
+                });
+                assertThat(receipt(jdbcTemplate, WORKFLOW_MODULE).generation()).isEqualTo(3L);
+                assertThat(count(jdbcTemplate, "file_record")).isEqualTo(FILE_COUNT);
+                assertThat(count(jdbcTemplate, "file_object")).isEqualTo(FILE_COUNT);
+                assertThat(stagingObjects(context, storageRoot)).isEmpty();
+                verifyStoredAssets(context, storageRoot, changedAssets);
+                assertThat(fileChangeElapsed)
+                        .as("single changed file module and recovery must complete within 30 seconds")
+                        .isLessThan(Duration.ofSeconds(30).toMillis());
+
+                provider.setDeclarations(concat(
+                        foundationDeclarations, changedFileDeclarations, workflowDeclarations(3)));
+                BootstrapOrchestrator concurrentOrchestrator = bootstrapOrchestrator(
+                        dataSource, context.getBean(JdbcBootstrapRepository.class),
+                        registryProperties, collector, registryService, objectMapper);
+                long concurrentStarted = System.nanoTime();
+                List<BootstrapOutcome> concurrentOutcomes = executeConcurrently(
+                        concurrentOrchestrator, request(BootstrapAction.APPLY, 5L));
+                long concurrentElapsed = elapsedMillis(concurrentStarted);
+
+                assertThat(concurrentOutcomes).extracting(BootstrapOutcome::state)
+                        .containsOnly("FINALIZED");
+                assertThat(concurrentOutcomes).extracting(BootstrapOutcome::executedSteps)
+                        .containsExactlyInAnyOrder(3, 0);
+                assertThat(receipt(jdbcTemplate, STORAGE_MODULE).generation()).isOne();
+                assertThat(receipt(jdbcTemplate, FILE_MODULE).generation()).isEqualTo(4L);
+                assertThat(receipt(jdbcTemplate, WORKFLOW_MODULE).generation()).isEqualTo(5L);
+                assertThat(workflowDefinitionName(jdbcTemplate, 0)).contains("v3");
+                assertThat(count(jdbcTemplate, "resource_registry")).isEqualTo(RESOURCE_COUNT);
+                assertThat(count(jdbcTemplate, "workflow_definition")).isEqualTo(WORKFLOW_COUNT);
+                assertThat(count(jdbcTemplate, "file_record")).isEqualTo(FILE_COUNT);
+                assertThat(count(jdbcTemplate, "file_object")).isEqualTo(FILE_COUNT);
+                assertThat(concurrentElapsed)
+                        .as("concurrent same-generation apply must converge within 30 seconds")
+                        .isLessThan(Duration.ofSeconds(30).toMillis());
+
+                assertThat(concurrentOrchestrator.execute(request(BootstrapAction.VERIFY, 5L)).state())
+                        .isEqualTo("VERIFIED");
+                assertThatThrownBy(() -> concurrentOrchestrator.execute(
+                        request(BootstrapAction.VERIFY, 4L)))
+                        .isInstanceOf(IllegalStateException.class)
+                        .hasMessageContaining("STALE_RUNTIME_GENERATION");
+
+                provider.setDeclarations(concat(
+                        foundationDeclarations, changedFileDeclarations, workflowDeclarations(4)));
+                BootstrapOrchestrator driftedSameGeneration = bootstrapOrchestrator(
+                        dataSource, context.getBean(JdbcBootstrapRepository.class),
+                        registryProperties, collector, registryService, objectMapper);
+                assertThatThrownBy(() -> driftedSameGeneration.execute(
+                        request(BootstrapAction.APPLY, 5L)))
+                        .isInstanceOf(IllegalStateException.class)
+                        .hasMessageContaining("BOOTSTRAP_FINGERPRINT_MISMATCH");
+                assertThat(receipt(jdbcTemplate, WORKFLOW_MODULE).generation()).isEqualTo(5L);
                 assertThat(count(jdbcTemplate, "mango_bootstrap_control")).isEqualTo(1);
 
                 System.out.printf("%nMANGO_BOOTSTRAP_RESOURCE_PERF%n"
-                                + "scaleFactor=%d%nbaohanDeclarations=%d%nbaohanWorkflowDefinitions=%d%n"
+                                + "baohanDeclarations=%d%nbaohanWorkflowDefinitions=%d%n"
                                 + "baohanFileAssets=%d%ndeclarations=%d%nworkflowDefinitions=%d%n"
                                 + "workflowNodesPerDefinition=%d%n"
                                 + "fileAssets=%d%nfileBytes=%d%nschemaSetupMs=%d%n"
-                                + "bootstrapColdMs=%d%nbootstrapWarmMs=%d%n",
-                        SCALE_FACTOR, BAOHAN_DECLARATION_COUNT, BAOHAN_WORKFLOW_COUNT,
+                                + "bootstrapColdMs=%d%nbootstrapWarmMs=%d%n"
+                                + "unchangedGenerationMs=%d%nworkflowModuleChangeMs=%d%n"
+                                + "fileModuleChangeAndRecoveryMs=%d%nconcurrentApplyMs=%d%n",
+                        BAOHAN_DECLARATION_COUNT, BAOHAN_WORKFLOW_COUNT,
                         BAOHAN_FILE_COUNT, RESOURCE_COUNT, WORKFLOW_COUNT, 8,
                         FILE_COUNT, assets.totalBytes(),
-                        schemaElapsed, coldElapsed, warmElapsed);
+                        schemaElapsed, coldElapsed, warmElapsed,
+                        unchangedGenerationElapsed, workflowChangeElapsed,
+                        fileChangeElapsed, concurrentElapsed);
 
                 assertThat(coldElapsed)
                         .as("cold Resource injection must complete within 60 seconds")
@@ -270,9 +433,20 @@ class BootstrapResourcePerformanceIntegrationTest {
     }
 
     private BootstrapInvocation request(BootstrapAction action) {
+        return request(action, 1L);
+    }
+
+    private BootstrapInvocation request(BootstrapAction action, long generation) {
         return new BootstrapInvocation(
-                "bootstrap-resource-performance", "performance-release", "performance-revision",
-                1L, null, action, BootstrapStrategy.COLD, null, 30);
+                "bootstrap-resource-performance", "performance-release-" + generation,
+                "performance-revision-" + generation,
+                generation, null, action, BootstrapStrategy.COLD, null, 30);
+    }
+
+    private MangoContextSnapshot performanceContext() {
+        return MangoContextSnapshot.empty()
+                .withSecurity(1L, "1", "bootstrap-perf", "INTERNAL",
+                        "INTERNAL_USER", "INTERNAL_ORG", 1L, "bootstrap-perf");
     }
 
     private AnnotationConfigApplicationContext applicationContext(DataSource dataSource, Path storageRoot,
@@ -325,9 +499,13 @@ class BootstrapResourcePerformanceIntegrationTest {
     }
 
     private List<ResourceDeclaration> workflowDeclarations() {
+        return workflowDeclarations(1);
+    }
+
+    private List<ResourceDeclaration> workflowDeclarations(int firstWorkflowVersion) {
         List<ResourceDeclaration> declarations = new ArrayList<>(WORKFLOW_COUNT);
         for (int index = 0; index < WORKFLOW_COUNT; index++) {
-            declarations.add(workflowDeclaration(index));
+            declarations.add(workflowDeclaration(index, index == 0 ? firstWorkflowVersion : 1));
         }
         return List.copyOf(declarations);
     }
@@ -359,18 +537,31 @@ class BootstrapResourcePerformanceIntegrationTest {
     }
 
     private ResourceDeclaration storageConfigDeclaration() {
-        return base(ResourceTypes.FILE_STORAGE_CONFIG,
+        String storageType = environment("MANGO_BOOTSTRAP_RESOURCE_PERF_STORAGE_TYPE", "LOCAL")
+                .trim().toUpperCase(Locale.ROOT);
+        ResourceDeclarationBuilder declaration = base(ResourceTypes.FILE_STORAGE_CONFIG,
                 8_300_000_000_000_000_001L,
                 "bootstrap.perf.file-storage",
-                "性能基准本地存储",
+                "性能基准文件存储",
                 "file")
                 .longValue("storageConfigId", STORAGE_CONFIG_ID)
                 .longValue("tenantId", 1L)
-                .string("configName", "bootstrap-resource-performance-local")
-                .string("storageType", "LOCAL")
-                .string("bucketName", "bootstrap-perf")
+                .string("configName", "bootstrap-resource-performance-" + storageType.toLowerCase(Locale.ROOT))
+                .string("storageType", storageType)
+                .string("bucketName", storageBucket())
                 .intValue("active", 1)
-                .intValue("status", 1)
+                .intValue("status", 1);
+        if ("LOCAL".equals(storageType)) {
+            return declaration.build();
+        }
+        assertThat(storageType).as("supported performance storage type").isEqualTo("MINIO");
+        return declaration
+                .string("endpoint", requiredEnvironment("MANGO_BOOTSTRAP_RESOURCE_PERF_STORAGE_ENDPOINT"))
+                .string("region", environment("MANGO_BOOTSTRAP_RESOURCE_PERF_STORAGE_REGION", "us-east-1"))
+                .string("accessKey", requiredEnvironment("MANGO_BOOTSTRAP_RESOURCE_PERF_STORAGE_ACCESS_KEY"))
+                .string("secretKey", requiredEnvironment("MANGO_BOOTSTRAP_RESOURCE_PERF_STORAGE_SECRET_KEY"))
+                .intValue("pathStyleAccess", 1)
+                .intValue("sslEnabled", 0)
                 .build();
     }
 
@@ -393,11 +584,12 @@ class BootstrapResourcePerformanceIntegrationTest {
                 .build();
     }
 
-    private ResourceDeclaration workflowDeclaration(int index) {
-        return base(ResourceTypes.WORKFLOW_DEFINITION,
+    private ResourceDeclaration workflowDeclaration(int index, int resourceVersion) {
+        String versionSuffix = resourceVersion == 1 ? "" : " v" + resourceVersion;
+        ResourceDeclaration declaration = base(ResourceTypes.WORKFLOW_DEFINITION,
                 8_500_000_000_000_000_000L + index,
                 "bootstrap.perf.workflow-definition." + index,
-                "复杂审批流程 " + index,
+                "复杂审批流程 " + index + versionSuffix,
                 "workflow")
                 .longValue("tenantId", 1L)
                 .string("domainCode", "PERF")
@@ -408,12 +600,14 @@ class BootstrapResourcePerformanceIntegrationTest {
                 .list("adminUsers", List.of("admin", "risk-manager"))
                 .bool("startEntryVisible", false)
                 .string("definitionKey", "PERF_COMPLEX_APPROVAL_" + index)
-                .string("definitionName", "复杂审批流程 " + index)
+                .string("definitionName", "复杂审批流程 " + index + versionSuffix)
                 .json("designerJson", designerGraph(index))
                 .string("formCode", "perf_complex_approval_" + index)
                 .json("formJson", formDefinition(index))
-                .string("remark", "八级审批与完整动态表单的 Bootstrap 性能基准")
+                .string("remark", "八级审批与完整动态表单的 Bootstrap 性能基准" + versionSuffix)
                 .build();
+        declaration.setVersion(resourceVersion);
+        return declaration;
     }
 
     private ResourceDeclarationBuilder base(String type, long id, String bizKey, String name,
@@ -421,10 +615,20 @@ class BootstrapResourcePerformanceIntegrationTest {
         return ResourceDeclarationBuilder.create(type)
                 .id(Long.toString(id))
                 .version(1)
-                .module("bootstrap-performance", "Bootstrap 性能基准")
+                .module(sourceModule(type), "Bootstrap 性能基准")
                 .bizKey(bizKey)
                 .name(name)
                 .targetModule(targetModule);
+    }
+
+    private String sourceModule(String resourceType) {
+        if (ResourceTypes.FILE_STORAGE_CONFIG.equals(resourceType)) {
+            return STORAGE_MODULE;
+        }
+        if (ResourceTypes.FILE_ASSET.equals(resourceType)) {
+            return FILE_MODULE;
+        }
+        return WORKFLOW_MODULE;
     }
 
     private Map<String, Object> designerGraph(int workflowIndex) {
@@ -489,9 +693,33 @@ class BootstrapResourcePerformanceIntegrationTest {
         return new GeneratedAssets(List.copyOf(assets), totalBytes);
     }
 
+    private GeneratedAssets generateChangedAsset(Path classpathRoot, GeneratedAssets current,
+                                                  int changedIndex)
+            throws IOException, NoSuchAlgorithmException {
+        List<GeneratedAsset> assets = new ArrayList<>(current.assets());
+        GeneratedAsset previous = assets.get(changedIndex);
+        byte[] content = generatedContent(changedIndex, 2);
+        Path assetPath = classpathRoot.resolve("META-INF/mango/assets/bootstrap-performance")
+                .resolve("performance-asset-" + changedIndex + ".bin");
+        Files.write(assetPath, content);
+        String sha256 = HexFormat.of().formatHex(
+                MessageDigest.getInstance("SHA-256").digest(content));
+        assets.set(changedIndex, new GeneratedAsset(
+                changedIndex, previous.classpathLocation(), previous.objectName(), sha256, content.length));
+        long totalBytes = assets.stream().mapToLong(GeneratedAsset::size).sum();
+        return new GeneratedAssets(List.copyOf(assets), totalBytes);
+    }
+
     private byte[] generatedContent(int assetIndex) {
-        byte[] content = new byte[FILE_SIZE];
-        byte[] marker = ("mango-bootstrap-resource-performance-" + assetIndex + "\n")
+        return generatedContent(assetIndex, 1);
+    }
+
+    private byte[] generatedContent(int assetIndex, int contentVersion) {
+        int baseSize = Math.toIntExact(FILE_TOTAL_BYTES / FILE_COUNT);
+        int remainder = Math.toIntExact(FILE_TOTAL_BYTES % FILE_COUNT);
+        byte[] content = new byte[baseSize + (assetIndex < remainder ? 1 : 0)];
+        byte[] marker = ("mango-bootstrap-resource-performance-" + assetIndex
+                + "-v" + contentVersion + "\n")
                 .getBytes(StandardCharsets.UTF_8);
         for (int offset = 0; offset < content.length; offset += marker.length) {
             System.arraycopy(marker, 0, content, offset, Math.min(marker.length, content.length - offset));
@@ -499,9 +727,16 @@ class BootstrapResourcePerformanceIntegrationTest {
         return content;
     }
 
-    private void verifyStoredAssets(Path storageRoot, GeneratedAssets assets) throws Exception {
+    private void verifyStoredAssets(AnnotationConfigApplicationContext context, Path storageRoot,
+                                    GeneratedAssets assets) throws Exception {
+        String storageType = environment("MANGO_BOOTSTRAP_RESOURCE_PERF_STORAGE_TYPE", "LOCAL")
+                .trim().toUpperCase(Locale.ROOT);
+        if (!"LOCAL".equals(storageType)) {
+            verifyObjectStorageAssets(context, assets);
+            return;
+        }
         for (GeneratedAsset asset : assets.assets()) {
-            Path stored = storageRoot.resolve("bootstrap-perf").resolve(asset.objectName());
+            Path stored = storageRoot.resolve(storageBucket()).resolve(asset.objectName());
             assertThat(stored).isRegularFile();
             assertThat(Files.size(stored)).isEqualTo(asset.size());
             try (var input = Files.newInputStream(stored)) {
@@ -509,6 +744,94 @@ class BootstrapResourcePerformanceIntegrationTest {
                         .digest(input.readAllBytes()))).isEqualTo(asset.sha256());
             }
         }
+    }
+
+    private void verifyObjectStorageAssets(AnnotationConfigApplicationContext context,
+                                           GeneratedAssets assets) throws Exception {
+        FileStorageConfigEntity config = context.getBean(FileStorageConfigMapper.class)
+                .selectById(STORAGE_CONFIG_ID);
+        assertThat(config).isNotNull();
+        FileStorageRouter storageRouter = context.getBean(FileStorageRouter.class);
+        for (GeneratedAsset asset : assets.assets()) {
+            FileObject stored = storageRouter.getObject(config, asset.objectName());
+            assertThat(stored.contentLength()).isEqualTo(asset.size());
+            try (var input = stored.inputStream()) {
+                assertThat(HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256")
+                        .digest(input.readAllBytes()))).isEqualTo(asset.sha256());
+            }
+        }
+    }
+
+    private List<String> stagingObjects(AnnotationConfigApplicationContext context, Path storageRoot)
+            throws IOException {
+        if (isLocalStorage()) {
+            Path stagingRoot = storageRoot.resolve(storageBucket()).resolve(".mango-staging");
+            if (!Files.exists(stagingRoot)) {
+                return List.of();
+            }
+            try (var paths = Files.walk(stagingRoot)) {
+                return paths.filter(Files::isRegularFile)
+                        .map(path -> stagingRoot.relativize(path).toString())
+                        .sorted()
+                        .toList();
+            }
+        }
+        FileStorageConfigEntity config = context.getBean(FileStorageConfigMapper.class)
+                .selectById(STORAGE_CONFIG_ID);
+        S3Configuration serviceConfiguration = S3Configuration.builder()
+                .pathStyleAccessEnabled(true)
+                .build();
+        try (S3Client client = S3Client.builder()
+                .endpointOverride(URI.create(config.getEndpoint()))
+                .region(Region.of(config.getRegion()))
+                .serviceConfiguration(serviceConfiguration)
+                .credentialsProvider(StaticCredentialsProvider.create(
+                        AwsBasicCredentials.create(config.getAccessKey(), config.getSecretKey())))
+                .build()) {
+            return client.listObjectsV2(ListObjectsV2Request.builder()
+                            .bucket(config.getBucketName())
+                            .prefix(".mango-staging/")
+                            .build())
+                    .contents().stream().map(item -> item.key()).sorted().toList();
+        }
+    }
+
+    private boolean isLocalStorage() {
+        return "LOCAL".equals(environment("MANGO_BOOTSTRAP_RESOURCE_PERF_STORAGE_TYPE", "LOCAL")
+                .trim().toUpperCase(Locale.ROOT));
+    }
+
+    private void ensureObjectStorageReady() {
+        String storageType = environment("MANGO_BOOTSTRAP_RESOURCE_PERF_STORAGE_TYPE", "LOCAL")
+                .trim().toUpperCase(Locale.ROOT);
+        if ("LOCAL".equals(storageType)) {
+            return;
+        }
+        assertThat(storageType).as("supported performance storage type").isEqualTo("MINIO");
+        String endpoint = requiredEnvironment("MANGO_BOOTSTRAP_RESOURCE_PERF_STORAGE_ENDPOINT");
+        String accessKey = requiredEnvironment("MANGO_BOOTSTRAP_RESOURCE_PERF_STORAGE_ACCESS_KEY");
+        String secretKey = requiredEnvironment("MANGO_BOOTSTRAP_RESOURCE_PERF_STORAGE_SECRET_KEY");
+        String region = environment("MANGO_BOOTSTRAP_RESOURCE_PERF_STORAGE_REGION", "us-east-1");
+        S3Configuration serviceConfiguration = S3Configuration.builder()
+                .pathStyleAccessEnabled(true)
+                .build();
+        try (S3Client client = S3Client.builder()
+                .endpointOverride(URI.create(endpoint))
+                .region(Region.of(region))
+                .serviceConfiguration(serviceConfiguration)
+                .credentialsProvider(StaticCredentialsProvider.create(
+                        AwsBasicCredentials.create(accessKey, secretKey)))
+                .build()) {
+            boolean bucketExists = client.listBuckets().buckets().stream()
+                    .anyMatch(bucket -> storageBucket().equals(bucket.name()));
+            if (!bucketExists) {
+                client.createBucket(CreateBucketRequest.builder().bucket(storageBucket()).build());
+            }
+        }
+    }
+
+    private String storageBucket() {
+        return environment("MANGO_BOOTSTRAP_RESOURCE_PERF_STORAGE_BUCKET", "bootstrap-perf");
     }
 
     private void assertDedicatedDatabase(String jdbcUrl) {
@@ -534,6 +857,75 @@ class BootstrapResourcePerformanceIntegrationTest {
 
     private long count(JdbcTemplate jdbcTemplate, String tableName) {
         return jdbcTemplate.queryForObject("select count(*) from " + tableName, Long.class);
+    }
+
+    private ModuleReceipt receipt(JdbcTemplate jdbcTemplate, String moduleCode) {
+        return jdbcTemplate.queryForObject("""
+                        select module_hash, generation, state, declaration_count
+                          from resource_module_receipt
+                         where environment_key = ? and app_code = ? and service_code = ? and module_code = ?
+                        """,
+                (result, row) -> new ModuleReceipt(
+                        result.getString("module_hash"), result.getLong("generation"),
+                        result.getString("state"), result.getInt("declaration_count")),
+                "bootstrap-resource-performance", "bootstrap-performance", "bootstrap-performance",
+                moduleCode);
+    }
+
+    private List<Map<String, Object>> fileState(JdbcTemplate jdbcTemplate) {
+        return jdbcTemplate.queryForList("""
+                select id, file_hash, file_size, object_name, updated_at
+                  from file_record
+                 order by id
+                """);
+    }
+
+    private String bootstrapState(JdbcTemplate jdbcTemplate) {
+        return jdbcTemplate.queryForObject("""
+                select state from mango_bootstrap_control where environment_key = ?
+                """, String.class, "bootstrap-resource-performance");
+    }
+
+    private String workflowDefinitionName(JdbcTemplate jdbcTemplate, int index) {
+        return jdbcTemplate.queryForObject("""
+                select definition_name from workflow_definition
+                 where tenant_id = ? and definition_key = ?
+                """, String.class, "1", "PERF_COMPLEX_APPROVAL_" + index);
+    }
+
+    private List<BootstrapOutcome> executeConcurrently(BootstrapOrchestrator orchestrator,
+                                                       BootstrapInvocation request) throws Exception {
+        CountDownLatch ready = new CountDownLatch(2);
+        CountDownLatch start = new CountDownLatch(1);
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        try {
+            List<Future<BootstrapOutcome>> futures = List.of(
+                    executor.submit(() -> executeAfterGate(orchestrator, request, ready, start)),
+                    executor.submit(() -> executeAfterGate(orchestrator, request, ready, start)));
+            assertThat(ready.await(10, TimeUnit.SECONDS)).isTrue();
+            start.countDown();
+            return List.of(
+                    futures.get(0).get(60, TimeUnit.SECONDS),
+                    futures.get(1).get(60, TimeUnit.SECONDS));
+        } finally {
+            start.countDown();
+            executor.shutdownNow();
+            assertThat(executor.awaitTermination(10, TimeUnit.SECONDS)).isTrue();
+        }
+    }
+
+    private BootstrapOutcome executeAfterGate(BootstrapOrchestrator orchestrator,
+                                              BootstrapInvocation request,
+                                              CountDownLatch ready,
+                                              CountDownLatch start) throws InterruptedException {
+        ready.countDown();
+        start.await();
+        MangoContextHolder.set(performanceContext());
+        try {
+            return orchestrator.execute(request);
+        } finally {
+            MangoContextHolder.clear();
+        }
     }
 
     private long elapsedMillis(long startedNanos) {
@@ -569,6 +961,9 @@ class BootstrapResourcePerformanceIntegrationTest {
     private record GeneratedAssets(List<GeneratedAsset> assets, long totalBytes) {
     }
 
+    private record ModuleReceipt(String moduleHash, long generation, String state, int declarationCount) {
+    }
+
     static final class PerformanceResourceProvider implements ResourceProvider {
 
         private List<ResourceDeclaration> declarations = List.of();
@@ -579,7 +974,12 @@ class BootstrapResourcePerformanceIntegrationTest {
 
         @Override
         public List<String> moduleCodes() {
-            return List.of("bootstrap-performance");
+            return List.of(STORAGE_MODULE, FILE_MODULE, WORKFLOW_MODULE);
+        }
+
+        @Override
+        public Map<String, List<String>> moduleDependencies() {
+            return Map.of(FILE_MODULE, List.of(STORAGE_MODULE));
         }
 
         @Override
@@ -653,6 +1053,11 @@ class BootstrapResourcePerformanceIntegrationTest {
         }
 
         @Bean
+        ResourceModuleReceiptRepository resourceModuleReceiptRepository(JdbcTemplate jdbcTemplate) {
+            return new ResourceModuleReceiptRepository(jdbcTemplate);
+        }
+
+        @Bean
         ResourceModuleSyncStatusRegistry resourceModuleSyncStatusRegistry(ResourceContentHasher hasher) {
             return new ResourceModuleSyncStatusRegistry(hasher);
         }
@@ -685,8 +1090,14 @@ class BootstrapResourcePerformanceIntegrationTest {
         }
 
         @Bean
-        FileStorageRouter fileStorageRouter(LocalFileStorage localFileStorage) {
-            return new FileStorageRouter(List.of(localFileStorage));
+        S3CompatibleFileStorage s3CompatibleFileStorage() {
+            return new S3CompatibleFileStorage();
+        }
+
+        @Bean
+        FileStorageRouter fileStorageRouter(LocalFileStorage localFileStorage,
+                                            S3CompatibleFileStorage s3CompatibleFileStorage) {
+            return new FileStorageRouter(List.of(localFileStorage, s3CompatibleFileStorage));
         }
 
         @Bean(destroyMethod = "close")
