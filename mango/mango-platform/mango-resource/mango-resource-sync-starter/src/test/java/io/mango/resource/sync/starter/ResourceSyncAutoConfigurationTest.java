@@ -18,6 +18,7 @@ import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
@@ -60,6 +61,7 @@ class ResourceSyncAutoConfigurationTest {
                 .withBean("resourceChangeLogMapper", ResourceChangeLogMapper.class,
                         () -> mock(ResourceChangeLogMapper.class))
                 .withBean(ILeaseLocker.class, () -> mock(ILeaseLocker.class))
+                .withBean(JdbcTemplate.class, () -> mock(JdbcTemplate.class))
                 .run(context -> {
                     assertThat(context).hasNotFailed();
                     assertThat(context).hasSingleBean(ResourceDeclarationApi.class);

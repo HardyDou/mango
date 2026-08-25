@@ -36,7 +36,11 @@ public class RegisterResourceDeclarationsCommand implements Serializable {
 
     @NotBlank(message = "资源声明JSON不能为空")
     @Schema(description = "资源声明JSON数组", requiredMode = Schema.RequiredMode.REQUIRED)
-    private String declarations;
+    private String declarations = "[]";
+
+    @NotNull(message = "Resource 模块清单不能为空")
+    @Schema(description = "按模块拆分的完整期望状态；Bootstrap 优先使用此字段")
+    private List<ResourceModuleManifestCommand> moduleManifests = new ArrayList<>();
 
     @NotBlank(message = "Bootstrap 环境标识不能为空")
     @Size(max = 128, message = "Bootstrap 环境标识不能超过128个字符")
@@ -72,5 +76,13 @@ public class RegisterResourceDeclarationsCommand implements Serializable {
             return;
         }
         this.moduleCodes = new ArrayList<>(moduleCodes);
+    }
+
+    public List<ResourceModuleManifestCommand> getModuleManifests() {
+        return List.copyOf(moduleManifests);
+    }
+
+    public void setModuleManifests(List<ResourceModuleManifestCommand> moduleManifests) {
+        this.moduleManifests = moduleManifests == null ? new ArrayList<>() : new ArrayList<>(moduleManifests);
     }
 }

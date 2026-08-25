@@ -8,6 +8,8 @@ import org.springframework.beans.factory.ObjectProvider;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -44,6 +46,37 @@ public class ResourceDeclarationCollector {
     public Set<String> managedBootstrapModuleCodes(List<ResourceDeclaration> declarations) {
         return managedModuleCodes(declarations,
                 providers.orderedStream().filter(ResourceProvider::participatesInBootstrap).toList());
+    }
+
+    public Map<String, List<String>> managedBootstrapModuleDependencies() {
+        Map<String, List<String>> dependencies = new LinkedHashMap<>();
+        for (ResourceProvider provider : providers.orderedStream()
+                .filter(ResourceProvider::participatesInBootstrap).toList()) {
+            Map<String, List<String>> provided = provider.moduleDependencies();
+            if (provided == null) {
+                continue;
+            }
+            provided.forEach((moduleCode, requiredModules) -> mergeDependencies(
+                    dependencies, moduleCode, requiredModules));
+        }
+        return dependencies;
+    }
+
+    private static void mergeDependencies(Map<String, List<String>> target, String moduleCode,
+                                          List<String> requiredModules) {
+        if (moduleCode == null || moduleCode.isBlank()) {
+            throw new IllegalStateException("Resource module dependency owner is required");
+        }
+        List<String> normalized = requiredModules == null ? List.of() : requiredModules.stream()
+                .filter(value -> value != null && !value.isBlank())
+                .map(String::trim)
+                .distinct()
+                .sorted()
+                .toList();
+        List<String> previous = target.putIfAbsent(moduleCode.trim(), normalized);
+        if (previous != null && !previous.equals(normalized)) {
+            throw new IllegalStateException("Conflicting Resource module dependencies: " + moduleCode);
+        }
     }
 
     private Set<String> managedModuleCodes(List<ResourceDeclaration> declarations,

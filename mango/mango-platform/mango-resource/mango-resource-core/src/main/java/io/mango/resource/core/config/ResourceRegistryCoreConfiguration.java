@@ -9,6 +9,7 @@ import io.mango.resource.core.mapper.ResourceSyncLogMapper;
 import io.mango.resource.core.sync.ResourceContentHasher;
 import io.mango.resource.core.sync.ResourceRegistryLock;
 import io.mango.resource.core.sync.ResourceRegistryRepository;
+import io.mango.resource.core.sync.ResourceModuleReceiptRepository;
 import io.mango.resource.core.diagnostic.ResourceModuleDiagnosticContributor;
 import io.mango.resource.core.diagnostic.ResourceModuleSyncStatusRegistry;
 import io.mango.resource.support.config.ResourceRegistryProperties;
@@ -20,6 +21,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 /**
  * 资源注册中心核心装配。
@@ -59,6 +61,12 @@ public class ResourceRegistryCoreConfiguration {
                                                                  ResourceSyncLogMapper syncLogMapper,
                                                                  ResourceChangeLogMapper changeLogMapper) {
         return new ResourceRegistryRepository(registryMapper, syncLogMapper, changeLogMapper);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public ResourceModuleReceiptRepository resourceModuleReceiptRepository(JdbcTemplate jdbcTemplate) {
+        return new ResourceModuleReceiptRepository(jdbcTemplate);
     }
 
     @Bean

@@ -1,0 +1,23 @@
+mango:
+  resource:
+    schemaVersion: 1
+    moduleCode: package-fixture
+    moduleName: Resource Packaging Fixture
+    declarations:
+      FILE_ASSET:
+        - id: "8510000000000000002"
+          version: 1
+          bizKey: package-fixture.document
+          name: Packaging fixture document
+          targetModule: mango-file
+          fields:
+            objectName:
+              type: STRING
+              value: package-fixture/document.txt
+            sha256:
+              type: STRING
+              value: 1f01e8b56fb275da665ed10d0d36a63df948d6a7657bb4a13c7b19bd8ef47070
+            content:
+              type: FILE
+              location: asset:document.txt
+              mediaType: text/plain

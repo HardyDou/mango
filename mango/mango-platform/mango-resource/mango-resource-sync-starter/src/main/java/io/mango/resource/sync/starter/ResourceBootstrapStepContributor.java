@@ -13,6 +13,8 @@ import io.mango.resource.api.enums.ResourceApplyMode;
 import io.mango.resource.support.config.ResourceRegistryProperties;
 import io.mango.resource.support.declaration.ResourceDeclarationCollector;
 import io.mango.resource.support.declaration.ResourceDeclarationCanonicalizer;
+import io.mango.resource.support.declaration.ResourceModuleHasher;
+import io.mango.resource.api.command.ResourceModuleManifestCommand;
 import io.mango.resource.support.model.ResourceDeclaration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,6 +34,7 @@ public final class ResourceBootstrapStepContributor implements BootstrapStepCont
     private final ResourceDeclarationApi declarationApi;
     private final ResourceManifestSerializer manifestSerializer;
     private final ResourceDeclarationCanonicalizer canonicalizer;
+    private final ResourceManifestArtifactLoader artifactLoader;
     private final String applicationName;
 
     @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
@@ -42,18 +45,29 @@ public final class ResourceBootstrapStepContributor implements BootstrapStepCont
                                             ResourceManifestSerializer manifestSerializer,
                                             ResourceDeclarationCanonicalizer canonicalizer,
                                             String applicationName) {
+        this(properties, collector, declarationApi, manifestSerializer, canonicalizer, null, applicationName);
+    }
+
+    public ResourceBootstrapStepContributor(ResourceRegistryProperties properties,
+                                            ResourceDeclarationCollector collector,
+                                            ResourceDeclarationApi declarationApi,
+                                            ResourceManifestSerializer manifestSerializer,
+                                            ResourceDeclarationCanonicalizer canonicalizer,
+                                            ResourceManifestArtifactLoader artifactLoader,
+                                            String applicationName) {
         this.properties = properties;
         this.collector = collector;
         this.declarationApi = declarationApi;
         this.manifestSerializer = manifestSerializer;
         this.canonicalizer = canonicalizer;
+        this.artifactLoader = artifactLoader;
         this.applicationName = applicationName;
     }
 
     @Override
     public List<BootstrapStep> contributeSteps() {
         PreparedDeclarations prepared = prepare();
-        if (!properties.isEnabled() || prepared.declarations().isEmpty() && prepared.moduleCodes().isEmpty()) {
+        if (!properties.isEnabled() || prepared.declarationCount() == 0 && prepared.moduleCodes().isEmpty()) {
             return List.of();
         }
         return List.of(new ResourceStep("RESOURCE_REQUIRED", BootstrapPhase.EXPAND,
@@ -63,17 +77,36 @@ public final class ResourceBootstrapStepContributor implements BootstrapStepCont
     }
 
     private PreparedDeclarations prepare() {
+        if (artifactLoader != null) {
+            var packaged = artifactLoader.load();
+            if (packaged.isPresent()) {
+                List<ResourceModuleManifestCommand> modules = packaged.get();
+                List<String> moduleCodes = modules.stream()
+                        .map(ResourceModuleManifestCommand::getModuleCode).sorted().toList();
+                List<String> semanticInventory = modules.stream()
+                        .map(module -> module.getModuleCode() + "=" + module.getModuleHash()).toList();
+                int declarationCount = modules.stream()
+                        .mapToInt(ResourceModuleManifestCommand::getDeclarationCount).sum();
+                LOG.debug("Mango resource bootstrap build manifest loaded: modules={}, declarations={}",
+                        moduleCodes, declarationCount);
+                return new PreparedDeclarations(declarationCount, moduleCodes, "[]", modules,
+                        semanticInventory);
+            }
+        }
         List<ResourceDeclaration> declarations = collector.collectBootstrap().stream()
                 .sorted(Comparator.comparing(ResourceDeclaration::getId))
                 .toList();
         List<String> moduleCodes = collector.managedBootstrapModuleCodes(declarations).stream().sorted().toList();
-        List<String> semanticInventory = declarations.stream()
-                .map(declaration -> declaration.getId() + "=" + canonicalizer.fingerprint(declaration))
+        List<ResourceModuleManifestCommand> moduleManifests = manifestSerializer.moduleManifests(
+                declarations, moduleCodes, collector.managedBootstrapModuleDependencies(),
+                new ResourceModuleHasher(canonicalizer));
+        List<String> semanticInventory = moduleManifests.stream()
+                .map(module -> module.getModuleCode() + "=" + module.getModuleHash())
                 .toList();
-        PreparedDeclarations prepared = new PreparedDeclarations(declarations, moduleCodes,
-                manifestSerializer.serialize(declarations), semanticInventory);
+        PreparedDeclarations prepared = new PreparedDeclarations(declarations.size(), moduleCodes,
+                manifestSerializer.serialize(declarations), moduleManifests, semanticInventory);
         LOG.debug("Mango resource bootstrap manifest computed: modules={}, declarations={}",
-                prepared.moduleCodes(), prepared.declarations().size());
+                prepared.moduleCodes(), prepared.declarationCount());
         return prepared;
     }
 
@@ -147,6 +180,7 @@ public final class ResourceBootstrapStepContributor implements BootstrapStepCont
             command.setServiceCode(serviceCode());
             command.setModuleCodes(prepared.moduleCodes());
             command.setDeclarations(prepared.json());
+            command.setModuleManifests(prepared.moduleManifests());
             command.setEnvironmentKey(context.environmentKey());
             command.setGeneration(context.generation());
             command.setManifestFingerprint(context.manifestFingerprint());
@@ -158,15 +192,16 @@ public final class ResourceBootstrapStepContributor implements BootstrapStepCont
                         + ", response=" + (response == null ? "null" : response.getMsg()));
             }
             return new BootstrapStepResult("Resource " + applyMode + " synchronized",
-                    Map.of("declarations", prepared.declarations().size(),
+                    Map.of("declarations", prepared.declarationCount(),
                             "managedModules", prepared.moduleCodes().size()));
         }
     }
 
     private record PreparedDeclarations(
-            List<ResourceDeclaration> declarations,
+            int declarationCount,
             List<String> moduleCodes,
             String json,
+            List<ResourceModuleManifestCommand> moduleManifests,
             List<String> semanticInventory) {
     }
 }
