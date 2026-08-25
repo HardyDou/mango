@@ -24,31 +24,32 @@ final class AiJsonSchemaValidator {
 
     private static void validateNode(JsonNode schema, JsonNode value, AiCode code, String path, int depth) {
         Require.isTrue(depth <= MAX_DEPTH, code, "JSON Schema 嵌套层级不能超过32层: " + path);
-        Require.isTrue(schema != null && schema.isObject(), code, "JSON Schema 无效: " + path);
-        Require.notNull(value, code, "JSON 值不能为空: " + path);
-        JsonNode enumValues = schema.get("enum");
+        JsonNode validSchema = Require.nonNull(schema, code, "JSON Schema 无效: " + path);
+        Require.isTrue(validSchema.isObject(), code, "JSON Schema 无效: " + path);
+        JsonNode validValue = Require.nonNull(value, code, "JSON 值不能为空: " + path);
+        JsonNode enumValues = validSchema.get("enum");
         if (enumValues != null) {
             boolean matched = false;
             for (JsonNode enumValue : enumValues) {
-                if (enumValue.equals(value)) {
+                if (enumValue.equals(validValue)) {
                     matched = true;
                     break;
                 }
             }
             Require.isTrue(matched, code, "JSON 值不在 enum 范围内: " + path);
         }
-        JsonNode type = schema.get("type");
+        JsonNode type = validSchema.get("type");
         if (type != null && type.isTextual()) {
-            Require.isTrue(matchesType(type.asText(), value), code, "JSON 类型不匹配: " + path);
+            Require.isTrue(matchesType(type.asText(), validValue), code, "JSON 类型不匹配: " + path);
         }
-        if (value.isObject()) {
-            validateObject(schema, value, code, path, depth);
-        } else if (value.isArray()) {
-            validateArray(schema, value, code, path, depth);
-        } else if (value.isTextual()) {
-            validateString(schema, value, code, path);
-        } else if (value.isNumber()) {
-            validateNumber(schema, value, code, path);
+        if (validValue.isObject()) {
+            validateObject(validSchema, validValue, code, path, depth);
+        } else if (validValue.isArray()) {
+            validateArray(validSchema, validValue, code, path, depth);
+        } else if (validValue.isTextual()) {
+            validateString(validSchema, validValue, code, path);
+        } else if (validValue.isNumber()) {
+            validateNumber(validSchema, validValue, code, path);
         }
     }
 

@@ -1,5 +1,6 @@
 package io.mango.ai.starter.controller;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.ai.api.AiChatConversationApi;
 import io.mango.ai.api.vo.AiChatConversationDetailVO;
 import io.mango.ai.api.vo.AiChatConversationVO;
@@ -23,7 +24,9 @@ import java.util.List;
 /** AI 聊天会话 HTTP 适配器。 */
 @Validated
 @RestController
-@RequiredArgsConstructor
+@RequiredArgsConstructor(onConstructor_ = @SuppressFBWarnings(
+        value = "EI_EXPOSE_REP2",
+        justification = "Spring injects the application service; copying a container-managed collaborator is not valid"))
 @RequestMapping("/ai/services")
 @Tag(name = "AI 聊天会话", description = "当前用户的 AI 聊天会话查询与删除接口")
 public class AiChatConversationController implements AiChatConversationApi {

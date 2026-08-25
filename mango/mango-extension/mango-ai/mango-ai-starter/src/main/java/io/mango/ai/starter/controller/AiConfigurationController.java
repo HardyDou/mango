@@ -1,5 +1,6 @@
 package io.mango.ai.starter.controller;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.ai.api.AiConfigurationApi;
 import io.mango.ai.api.command.CreateAiPromptCommand;
 import io.mango.ai.api.command.CreateAiServiceCommand;
@@ -36,7 +37,9 @@ import java.util.List;
 /** AI Prompt、Skill、工具和服务配置 HTTP 适配器。 */
 @RestController
 @Validated
-@RequiredArgsConstructor
+@RequiredArgsConstructor(onConstructor_ = @SuppressFBWarnings(
+        value = "EI_EXPOSE_REP2",
+        justification = "Spring injects the application service; copying a container-managed collaborator is not valid"))
 @RequestMapping("/ai")
 public class AiConfigurationController implements AiConfigurationApi {
     private final IAiConfigurationService service;

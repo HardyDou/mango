@@ -6,6 +6,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.ai.api.command.CreateAiPromptCommand;
 import io.mango.ai.api.command.CreateAiServiceCommand;
 import io.mango.ai.api.command.CreateAiSkillCommand;
@@ -43,7 +44,9 @@ import java.util.Set;
 
 /** AI Prompt、Skill、工具和服务配置实现。 */
 @Service
-@RequiredArgsConstructor
+@RequiredArgsConstructor(onConstructor_ = @SuppressFBWarnings(
+        value = "EI_EXPOSE_REP2",
+        justification = "Spring injects mapper and ObjectMapper collaborators; copying container-managed services is not valid"))
 public class AiConfigurationService implements IAiConfigurationService {
     private static final TypeReference<Set<Long>> TOOL_ID_TYPE = new TypeReference<>() { };
 
@@ -356,36 +359,61 @@ public class AiConfigurationService implements IAiConfigurationService {
 
     private AiPromptVO toPrompt(AiPromptEntity entity) {
         AiPromptVO vo = new AiPromptVO();
-        vo.setId(entity.getId()); vo.setCode(entity.getCode()); vo.setName(entity.getName());
-        vo.setDescription(entity.getDescription()); vo.setTemplate(entity.getTemplate());
-        vo.setVariablesJson(entity.getVariablesJson()); vo.setStatus(entity.getStatus());
-        vo.setVersion(entity.getVersion()); vo.setPublishedAt(entity.getPublishedAt()); vo.setUpdatedAt(entity.getUpdatedAt());
+        vo.setId(entity.getId());
+        vo.setCode(entity.getCode());
+        vo.setName(entity.getName());
+        vo.setDescription(entity.getDescription());
+        vo.setTemplate(entity.getTemplate());
+        vo.setVariablesJson(entity.getVariablesJson());
+        vo.setStatus(entity.getStatus());
+        vo.setVersion(entity.getVersion());
+        vo.setPublishedAt(entity.getPublishedAt());
+        vo.setUpdatedAt(entity.getUpdatedAt());
         return vo;
     }
 
     private AiSkillVO toSkill(AiSkillEntity entity) {
         AiSkillVO vo = new AiSkillVO();
-        vo.setId(entity.getId()); vo.setCode(entity.getCode()); vo.setName(entity.getName());
-        vo.setDescription(entity.getDescription()); vo.setInstructions(entity.getInstructions());
-        vo.setToolIds(readToolIds(entity.getToolIdsJson())); vo.setEnabled(entity.getEnabled()); vo.setUpdatedAt(entity.getUpdatedAt());
+        vo.setId(entity.getId());
+        vo.setCode(entity.getCode());
+        vo.setName(entity.getName());
+        vo.setDescription(entity.getDescription());
+        vo.setInstructions(entity.getInstructions());
+        vo.setToolIds(readToolIds(entity.getToolIdsJson()));
+        vo.setEnabled(entity.getEnabled());
+        vo.setUpdatedAt(entity.getUpdatedAt());
         return vo;
     }
 
     private AiToolVO toTool(AiToolEntity entity) {
         AiToolVO vo = new AiToolVO();
-        vo.setId(entity.getId()); vo.setCode(entity.getCode()); vo.setName(entity.getName());
-        vo.setDescription(entity.getDescription()); vo.setToolType(entity.getToolType()); vo.setEndpoint(entity.getEndpoint());
-        vo.setInputSchemaJson(entity.getInputSchemaJson()); vo.setOutputSchemaJson(entity.getOutputSchemaJson());
-        vo.setEnabled(entity.getEnabled()); vo.setUpdatedAt(entity.getUpdatedAt());
+        vo.setId(entity.getId());
+        vo.setCode(entity.getCode());
+        vo.setName(entity.getName());
+        vo.setDescription(entity.getDescription());
+        vo.setToolType(entity.getToolType());
+        vo.setEndpoint(entity.getEndpoint());
+        vo.setInputSchemaJson(entity.getInputSchemaJson());
+        vo.setOutputSchemaJson(entity.getOutputSchemaJson());
+        vo.setEnabled(entity.getEnabled());
+        vo.setUpdatedAt(entity.getUpdatedAt());
         return vo;
     }
 
     private AiServiceVO toService(AiServiceEntity entity, List<AiPromptEntity> prompts, List<AiSkillEntity> skills) {
         AiServiceVO vo = new AiServiceVO();
-        vo.setId(entity.getId()); vo.setCode(entity.getCode()); vo.setName(entity.getName());
-        vo.setDescription(entity.getDescription()); vo.setServiceType(entity.getServiceType()); vo.setCapability(entity.getCapability());
-        vo.setPromptId(entity.getPromptId()); vo.setSkillId(entity.getSkillId()); vo.setInputSchemaJson(entity.getInputSchemaJson());
-        vo.setOutputSchemaJson(entity.getOutputSchemaJson()); vo.setEnabled(entity.getEnabled()); vo.setUpdatedAt(entity.getUpdatedAt());
+        vo.setId(entity.getId());
+        vo.setCode(entity.getCode());
+        vo.setName(entity.getName());
+        vo.setDescription(entity.getDescription());
+        vo.setServiceType(entity.getServiceType());
+        vo.setCapability(entity.getCapability());
+        vo.setPromptId(entity.getPromptId());
+        vo.setSkillId(entity.getSkillId());
+        vo.setInputSchemaJson(entity.getInputSchemaJson());
+        vo.setOutputSchemaJson(entity.getOutputSchemaJson());
+        vo.setEnabled(entity.getEnabled());
+        vo.setUpdatedAt(entity.getUpdatedAt());
         prompts.stream().filter(prompt -> prompt.getId().equals(entity.getPromptId())).findFirst().ifPresent(prompt -> vo.setPromptName(prompt.getName()));
         skills.stream().filter(skill -> skill.getId().equals(entity.getSkillId())).findFirst().ifPresent(skill -> vo.setSkillName(skill.getName()));
         return vo;

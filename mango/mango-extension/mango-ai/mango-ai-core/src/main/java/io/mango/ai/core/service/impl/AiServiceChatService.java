@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;
@@ -81,6 +82,7 @@ public class AiServiceChatService implements IAiServiceChatService {
     private static final String FAILED = "FAILED";
     private static final String RATE_LIMITED = "RATE_LIMITED";
     private static final int MAX_SESSION_ID_LENGTH = 128;
+    private static final int MARKDOWN_FENCE_LENGTH = 3;
 
     private final AiServiceMapper serviceMapper;
     private final AiPromptMapper promptMapper;
@@ -96,6 +98,9 @@ public class AiServiceChatService implements IAiServiceChatService {
     private final int maxHistoryMessages;
 
     /** 创建服务感知的 AI 聊天执行器。 */
+    @SuppressFBWarnings(
+            value = "EI_EXPOSE_REP2",
+            justification = "Spring injects shared service collaborators; copying container-managed services is not valid")
     public AiServiceChatService(
             AiServiceMapper serviceMapper,
             AiPromptMapper promptMapper,
@@ -519,9 +524,11 @@ public class AiServiceChatService implements IAiServiceChatService {
             hasVariable = true;
             rendered.append(template, end, matcher.start());
             JsonNode value = resolveInput(input, matcher.group(1));
-            Require.isTrue(value != null && !value.isMissingNode(), AiCode.SERVICE_INPUT_INVALID,
+            JsonNode resolvedValue = Require.nonNull(value, AiCode.SERVICE_INPUT_INVALID,
                     "Prompt 变量不存在: " + matcher.group(1));
-            rendered.append(value.isTextual() ? value.textValue() : value.toString());
+            Require.isTrue(!resolvedValue.isMissingNode(), AiCode.SERVICE_INPUT_INVALID,
+                    "Prompt 变量不存在: " + matcher.group(1));
+            rendered.append(resolvedValue.isTextual() ? resolvedValue.textValue() : resolvedValue.toString());
             end = matcher.end();
         }
         rendered.append(template, end, template.length());
@@ -632,8 +639,10 @@ public class AiServiceChatService implements IAiServiceChatService {
         if (normalized.startsWith("```") && normalized.endsWith("```")) {
             int firstLine = normalized.indexOf('\n');
             normalized = firstLine < 0
-                    ? normalized.substring(3, normalized.length() - 3).trim()
-                    : normalized.substring(firstLine + 1, normalized.length() - 3).trim();
+                    ? normalized.substring(MARKDOWN_FENCE_LENGTH,
+                            normalized.length() - MARKDOWN_FENCE_LENGTH).trim()
+                    : normalized.substring(firstLine + 1,
+                            normalized.length() - MARKDOWN_FENCE_LENGTH).trim();
         }
         return normalized;
     }

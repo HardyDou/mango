@@ -19,16 +19,17 @@ import org.springframework.core.env.Environment;
  */
 @AutoConfiguration
 @AutoConfigureAfter(name = {
-        "io.mango.infra.kv.starter.KvCapabilityAutoConfiguration",
-        "io.mango.infra.persistence.starter.PersistenceAutoConfiguration",
-        "io.mango.infra.realtime.starter.MangoRealtimeAutoConfiguration",
-        "io.mango.infra.realtime.starter.remote.RealtimeRemoteAutoConfiguration"
+    "io.mango.infra.kv.starter.KvCapabilityAutoConfiguration",
+    "io.mango.infra.persistence.starter.PersistenceAutoConfiguration",
+    "io.mango.infra.realtime.starter.MangoRealtimeAutoConfiguration",
+    "io.mango.infra.realtime.starter.remote.RealtimeRemoteAutoConfiguration"
 })
 @MapperScan(basePackages = "io.mango.ai.core.mapper", annotationClass = Mapper.class)
 @ComponentScan(basePackageClasses = {
-        AiProviderConnectionResourceHandler.class,
-        AiServiceChatService.class,
-        AiServiceChatController.class})
+    AiProviderConnectionResourceHandler.class,
+    AiServiceChatService.class,
+    AiServiceChatController.class
+})
 public class MangoAiAutoConfiguration {
 
     /**

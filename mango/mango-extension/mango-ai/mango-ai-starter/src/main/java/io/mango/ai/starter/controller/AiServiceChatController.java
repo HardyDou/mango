@@ -1,5 +1,6 @@
 package io.mango.ai.starter.controller;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.ai.api.command.AiServiceChatCommand;
 import io.mango.ai.api.vo.AiServiceRuntimeOptionsVO;
 import io.mango.ai.core.service.IAiServiceChatService;
@@ -27,7 +28,9 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 @Validated
 @RestController
 @RequestMapping("/ai/services")
-@RequiredArgsConstructor
+@RequiredArgsConstructor(onConstructor_ = @SuppressFBWarnings(
+        value = "EI_EXPOSE_REP2",
+        justification = "Spring injects the application service; copying a container-managed collaborator is not valid"))
 @Tag(name = "AI 服务运行", description = "所有可运行 AI 服务的统一流式会话接口")
 public class AiServiceChatController {
 

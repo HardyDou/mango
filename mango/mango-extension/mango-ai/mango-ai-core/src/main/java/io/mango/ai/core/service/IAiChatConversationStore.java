@@ -3,10 +3,6 @@ package io.mango.ai.core.service;
 import io.mango.ai.api.vo.AiChatConversationDetailVO;
 import io.mango.ai.api.vo.AiChatConversationVO;
 import io.mango.ai.api.vo.AiMessageContentPartVO;
-import io.mango.ai.core.entity.AiChatConversationEntity;
-
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 /** AI 聊天会话与消息的持久化端口。 */
@@ -41,11 +37,9 @@ public interface IAiChatConversationStore {
         }
     }
 
-    record ConversationState(
-            AiChatConversationEntity conversation,
-            List<ConversationMessage> messages) {
+    record ConversationState(List<ConversationMessage> messages) {
         public ConversationState {
-            messages = Collections.unmodifiableList(new ArrayList<>(messages));
+            messages = List.copyOf(messages);
         }
     }
 }

@@ -57,7 +57,8 @@ public class AuthGlobalFilter implements GlobalFilter, Ordered {
             return unauthorized(exchange, result.message());
         }
         if (result.status() == AccessResultVO.Status.SERVICE_UNAVAILABLE) {
-            return error(exchange, HttpStatus.SERVICE_UNAVAILABLE, 503, result.message());
+            return error(exchange, HttpStatus.SERVICE_UNAVAILABLE,
+                    HttpStatus.SERVICE_UNAVAILABLE.value(), result.message());
         }
         if (result.principal() == null) {
             return chain.filter(exchange);
@@ -148,14 +149,14 @@ public class AuthGlobalFilter implements GlobalFilter, Ordered {
      * 返回未授权响应
      */
     private Mono<Void> unauthorized(ServerWebExchange exchange, String message) {
-        return error(exchange, HttpStatus.UNAUTHORIZED, 401, message);
+        return error(exchange, HttpStatus.UNAUTHORIZED, HttpStatus.UNAUTHORIZED.value(), message);
     }
 
     /**
      * 返回禁止访问响应（内部API不允许外部访问）
      */
     private Mono<Void> forbidden(ServerWebExchange exchange, String message) {
-        return error(exchange, HttpStatus.FORBIDDEN, 403, message);
+        return error(exchange, HttpStatus.FORBIDDEN, HttpStatus.FORBIDDEN.value(), message);
     }
 
     private Mono<Void> error(ServerWebExchange exchange, HttpStatus status, int code, String message) {

@@ -38,4 +38,28 @@ public class UpdateAiModelCommand {
     private String parameterJson;
     @NotNull
     private Boolean enabled;
+
+    public Set<AiCapability> getCapabilities() {
+        return capabilities == null ? null : Set.copyOf(capabilities);
+    }
+
+    public void setCapabilities(Set<AiCapability> capabilities) {
+        this.capabilities = capabilities == null ? null : Set.copyOf(capabilities);
+    }
+
+    public Set<AiModality> getInputModalities() {
+        return inputModalities == null ? null : Set.copyOf(inputModalities);
+    }
+
+    public void setInputModalities(Set<AiModality> inputModalities) {
+        this.inputModalities = inputModalities == null ? null : Set.copyOf(inputModalities);
+    }
+
+    public Set<AiModality> getOutputModalities() {
+        return outputModalities == null ? null : Set.copyOf(outputModalities);
+    }
+
+    public void setOutputModalities(Set<AiModality> outputModalities) {
+        this.outputModalities = outputModalities == null ? null : Set.copyOf(outputModalities);
+    }
 }

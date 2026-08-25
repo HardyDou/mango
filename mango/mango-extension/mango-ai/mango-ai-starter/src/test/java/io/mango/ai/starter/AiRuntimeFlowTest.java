@@ -97,7 +97,7 @@ class AiRuntimeFlowTest {
         when(promptMapper.selectById(10L)).thenReturn(prompt);
         when(auditMapper.insert(any(AiInvocationAuditEntity.class))).thenReturn(1);
         when(conversationStore.load(any(), any(), any(), any(), anyInt()))
-                .thenReturn(new IAiChatConversationStore.ConversationState(null, List.of()));
+                .thenReturn(new IAiChatConversationStore.ConversationState(List.of()));
     }
 
     @Test

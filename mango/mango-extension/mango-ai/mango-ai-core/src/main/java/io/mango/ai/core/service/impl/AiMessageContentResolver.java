@@ -44,14 +44,15 @@ public class AiMessageContentResolver {
 
     /** 校验请求内容块并生成唯一的持久化表示。 */
     public List<AiMessageContentPartVO> normalize(List<AiMessageContentPartCommand> commands) {
-        Require.notNull(commands, AiCode.CHAT_REQUEST_INVALID, "消息内容不能为空");
-        Require.isTrue(!commands.isEmpty() && commands.size() <= MAX_FILE_COUNT + 1,
+        List<AiMessageContentPartCommand> validCommands = Require.nonNull(
+                commands, AiCode.CHAT_REQUEST_INVALID, "消息内容不能为空");
+        Require.isTrue(!validCommands.isEmpty() && validCommands.size() <= MAX_FILE_COUNT + 1,
                 AiCode.CHAT_REQUEST_INVALID, "每条消息最多包含一段文本和6个文件");
-        List<AiMessageContentPartVO> parts = new ArrayList<>(commands.size());
+        List<AiMessageContentPartVO> parts = new ArrayList<>(validCommands.size());
         int textCount = 0;
         int fileCount = 0;
         long totalFileBytes = 0L;
-        for (AiMessageContentPartCommand command : commands) {
+        for (AiMessageContentPartCommand command : validCommands) {
             Require.notNull(command, AiCode.CHAT_REQUEST_INVALID, "消息内容块不能为空");
             Require.notNull(command.getType(), AiCode.CHAT_REQUEST_INVALID, "内容块类型不能为空");
             if (command.getType() == AiMessageContentType.TEXT) {
@@ -137,8 +138,9 @@ public class AiMessageContentResolver {
                 if (!isFileInput(part.getType())) {
                     continue;
                 }
-                Long fileSize = part.getFileSize();
-                Require.isTrue(fileSize != null && fileSize > 0 && fileSize <= MAX_FILE_BYTES,
+                Long fileSize = Require.nonNull(part.getFileSize(), AiCode.CHAT_CONTEXT_UNAVAILABLE,
+                        "会话附件元数据无效");
+                Require.isTrue(fileSize > 0 && fileSize <= MAX_FILE_BYTES,
                         AiCode.CHAT_CONTEXT_UNAVAILABLE, "会话附件元数据无效");
                 Require.isTrue(totalBytes <= MAX_CONTEXT_FILE_BYTES - fileSize,
                         AiCode.CHAT_REQUEST_INVALID, "当前会话发送给模型的附件总大小不能超过80MB，请新建会话");
@@ -150,8 +152,9 @@ public class AiMessageContentResolver {
     /** 将模型返回的二进制媒体保存到 Mango 文件中心并生成持久化内容块。 */
     public AiMessageContentPartVO saveAssistantMedia(Media media, String requestId, int index) {
         Require.notNull(media, AiCode.CHAT_MODEL_UNAVAILABLE, "AI 模型返回了空媒体");
-        byte[] content = media.getDataAsByteArray();
-        Require.isTrue(content != null && content.length > 0 && content.length <= MAX_FILE_BYTES,
+        byte[] content = Require.nonNull(media.getDataAsByteArray(), AiCode.CHAT_MODEL_UNAVAILABLE,
+                "AI 模型返回的媒体为空或超过20MB");
+        Require.isTrue(content.length > 0 && content.length <= MAX_FILE_BYTES,
                 AiCode.CHAT_MODEL_UNAVAILABLE, "AI 模型返回的媒体为空或超过20MB");
         String contentType = media.getMimeType().toString();
         AiMessageContentType type = outputType(contentType);
@@ -297,11 +300,21 @@ public class AiMessageContentResolver {
 
     private String extension(String contentType) {
         String value = baseContentType(contentType);
-        if ("image/png".equals(value)) return ".png";
-        if ("image/jpeg".equals(value)) return ".jpg";
-        if ("audio/mpeg".equals(value) || "audio/mp3".equals(value)) return ".mp3";
-        if ("audio/wav".equals(value)) return ".wav";
-        if ("video/mp4".equals(value)) return ".mp4";
+        if ("image/png".equals(value)) {
+            return ".png";
+        }
+        if ("image/jpeg".equals(value)) {
+            return ".jpg";
+        }
+        if ("audio/mpeg".equals(value) || "audio/mp3".equals(value)) {
+            return ".mp3";
+        }
+        if ("audio/wav".equals(value)) {
+            return ".wav";
+        }
+        if ("video/mp4".equals(value)) {
+            return ".mp4";
+        }
         return ".bin";
     }
 

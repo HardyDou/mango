@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.toolkit.IdWorker;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.ai.api.command.CreateAiModelCommand;
 import io.mango.ai.api.command.CreateAiProviderConnectionCommand;
 import io.mango.ai.api.command.SetAiCapabilityRouteCommand;
@@ -55,7 +56,9 @@ import java.util.Set;
 
 /** AI 厂商、模型目录和能力路由服务。 */
 @Service
-@RequiredArgsConstructor
+@RequiredArgsConstructor(onConstructor_ = @SuppressFBWarnings(
+        value = "EI_EXPOSE_REP2",
+        justification = "Spring injects mapper, crypto, and ObjectMapper collaborators; copying container-managed services is not valid"))
 public class AiModelManagementService implements IAiModelManagementService {
     private static final int API_KEY_HINT_LENGTH = 4;
     private static final String OLLAMA_CLIENT_PLACEHOLDER_API_KEY = "ollama-local";
@@ -152,7 +155,9 @@ public class AiModelManagementService implements IAiModelManagementService {
         entity.setDisplayName(command.getDisplayName().trim());
         entity.setProviderType(command.getProviderType());
         entity.setBaseUrl(normalizeBaseUrl(command.getBaseUrl()));
-        if (StringUtils.hasText(command.getApiKey())) setSecret(entity, command.getApiKey(), command.getProviderType());
+        if (StringUtils.hasText(command.getApiKey())) {
+            setSecret(entity, command.getApiKey(), command.getProviderType());
+        }
         entity.setEnabled(command.getEnabled());
         try {
             Require.isTrue(providerMapper.updateById(entity) > 0, AiCode.PROVIDER_NOT_FOUND);
@@ -228,7 +233,11 @@ public class AiModelManagementService implements IAiModelManagementService {
             route.setCapability(command.getCapability());
         }
         route.setModelId(model.getId());
-        if (newRoute) routeMapper.insert(route); else routeMapper.updateById(route);
+        if (newRoute) {
+            routeMapper.insert(route);
+        } else {
+            routeMapper.updateById(route);
+        }
         return true;
     }
 
@@ -332,13 +341,19 @@ public class AiModelManagementService implements IAiModelManagementService {
     }
 
     private void insertProvider(AiProviderConnectionEntity entity) {
-        try { providerMapper.insert(entity); }
-        catch (DuplicateKeyException exception) { Require.fail(AiCode.PROVIDER_CONFLICT, AiCode.PROVIDER_CONFLICT.getMessage(), exception); }
+        try {
+            providerMapper.insert(entity);
+        } catch (DuplicateKeyException exception) {
+            Require.fail(AiCode.PROVIDER_CONFLICT, AiCode.PROVIDER_CONFLICT.getMessage(), exception);
+        }
     }
 
     private void insertModel(AiModelEntity entity) {
-        try { modelMapper.insert(entity); }
-        catch (DuplicateKeyException exception) { Require.fail(AiCode.MODEL_CONFLICT, AiCode.MODEL_CONFLICT.getMessage(), exception); }
+        try {
+            modelMapper.insert(entity);
+        } catch (DuplicateKeyException exception) {
+            Require.fail(AiCode.MODEL_CONFLICT, AiCode.MODEL_CONFLICT.getMessage(), exception);
+        }
     }
 
     private void setSecret(AiProviderConnectionEntity entity, String secret, AiProviderType providerType) {
@@ -361,7 +376,9 @@ public class AiModelManagementService implements IAiModelManagementService {
             Require.isTrue(host != null && ("https".equalsIgnoreCase(uri.getScheme()) || isLocalHttp(uri.getScheme(), host)), AiCode.PROVIDER_INVALID,
                     "服务地址必须使用 HTTPS；本机联调仅允许 HTTP loopback 地址");
             Require.isTrue(uri.getUserInfo() == null && uri.getQuery() == null && uri.getFragment() == null, AiCode.PROVIDER_INVALID);
-            while (normalized.endsWith("/")) normalized = normalized.substring(0, normalized.length() - 1);
+            while (normalized.endsWith("/")) {
+                normalized = normalized.substring(0, normalized.length() - 1);
+            }
             return normalized;
         } catch (IllegalArgumentException exception) {
             return Require.fail(AiCode.PROVIDER_INVALID, "服务地址格式不正确", exception);
@@ -375,16 +392,40 @@ public class AiModelManagementService implements IAiModelManagementService {
 
     private AiProviderConnectionVO toProvider(AiProviderConnectionEntity entity) {
         AiProviderConnectionVO vo = new AiProviderConnectionVO();
-        vo.setId(entity.getId()); vo.setCode(entity.getCode()); vo.setDisplayName(entity.getDisplayName()); vo.setProviderType(entity.getProviderType());
-        vo.setBaseUrl(entity.getBaseUrl()); vo.setApiKeyConfigured(StringUtils.hasText(entity.getApiKeyCiphertext())); vo.setApiKeyHint(entity.getApiKeyHint());
-        vo.setEnabled(entity.getEnabled()); vo.setModelCount(Math.toIntExact(modelMapper.selectCount(new LambdaQueryWrapper<AiModelEntity>().eq(AiModelEntity::getProviderConnectionId, entity.getId())))); vo.setUpdatedAt(entity.getUpdatedAt());
+        vo.setId(entity.getId());
+        vo.setCode(entity.getCode());
+        vo.setDisplayName(entity.getDisplayName());
+        vo.setProviderType(entity.getProviderType());
+        vo.setBaseUrl(entity.getBaseUrl());
+        vo.setApiKeyConfigured(StringUtils.hasText(entity.getApiKeyCiphertext()));
+        vo.setApiKeyHint(entity.getApiKeyHint());
+        vo.setEnabled(entity.getEnabled());
+        vo.setModelCount(Math.toIntExact(modelMapper.selectCount(new LambdaQueryWrapper<AiModelEntity>()
+                .eq(AiModelEntity::getProviderConnectionId, entity.getId()))));
+        vo.setUpdatedAt(entity.getUpdatedAt());
         return vo;
     }
 
     private AiModelVO toModel(AiModelEntity entity, Collection<AiCapabilityRouteEntity> routes) {
-        AiModelVO vo = new AiModelVO(); vo.setId(entity.getId()); vo.setProviderConnectionId(entity.getProviderConnectionId()); vo.setModelName(entity.getModelName()); vo.setDisplayName(entity.getDisplayName());
-        vo.setPlatformAlias(entity.getPlatformAlias()); vo.setApiProtocol(entity.getApiProtocol()); vo.setCapabilities(read(entity.getCapabilitiesJson(), CAPABILITY_TYPE)); vo.setInputModalities(read(entity.getInputModalitiesJson(), MODALITY_TYPE)); vo.setOutputModalities(read(entity.getOutputModalitiesJson(), MODALITY_TYPE)); vo.setParameterJson(entity.getParameterJson()); vo.setEnabled(entity.getEnabled());
-        vo.setCallable(entity.getProviderConnectionId() != null && isCallableChat(entity)); vo.setRoutedCapabilities(routes.stream().filter(route -> route.getModelId().equals(entity.getId())).map(AiCapabilityRouteEntity::getCapability).collect(java.util.stream.Collectors.toSet())); vo.setUpdatedAt(entity.getUpdatedAt()); return vo;
+        AiModelVO vo = new AiModelVO();
+        vo.setId(entity.getId());
+        vo.setProviderConnectionId(entity.getProviderConnectionId());
+        vo.setModelName(entity.getModelName());
+        vo.setDisplayName(entity.getDisplayName());
+        vo.setPlatformAlias(entity.getPlatformAlias());
+        vo.setApiProtocol(entity.getApiProtocol());
+        vo.setCapabilities(read(entity.getCapabilitiesJson(), CAPABILITY_TYPE));
+        vo.setInputModalities(read(entity.getInputModalitiesJson(), MODALITY_TYPE));
+        vo.setOutputModalities(read(entity.getOutputModalitiesJson(), MODALITY_TYPE));
+        vo.setParameterJson(entity.getParameterJson());
+        vo.setEnabled(entity.getEnabled());
+        vo.setCallable(entity.getProviderConnectionId() != null && isCallableChat(entity));
+        vo.setRoutedCapabilities(routes.stream()
+                .filter(route -> route.getModelId().equals(entity.getId()))
+                .map(AiCapabilityRouteEntity::getCapability)
+                .collect(java.util.stream.Collectors.toSet()));
+        vo.setUpdatedAt(entity.getUpdatedAt());
+        return vo;
     }
 
     private AiServiceModelOptionVO toServiceModelOption(
@@ -454,7 +495,11 @@ public class AiModelManagementService implements IAiModelManagementService {
                 || providerType == AiProviderType.SILICONFLOW || providerType == AiProviderType.KIMI
                 || providerType == AiProviderType.OPENAI_COMPATIBLE || providerType == AiProviderType.OLLAMA;
     }
-    private Set<AiCapability> voCapabilities(AiModelEntity entity) { return read(entity.getCapabilitiesJson(), CAPABILITY_TYPE); }
+
+    private Set<AiCapability> voCapabilities(AiModelEntity entity) {
+        return read(entity.getCapabilitiesJson(), CAPABILITY_TYPE);
+    }
+
     private <T> Set<T> read(String value, TypeReference<Set<T>> type) {
         if (!StringUtils.hasText(value)) {
             return Set.of();
@@ -465,11 +510,27 @@ public class AiModelManagementService implements IAiModelManagementService {
             return Require.fail(AiCode.MODEL_INVALID, "模型能力配置数据损坏", exception);
         }
     }
-    private String write(Object value) { try { return objectMapper.writeValueAsString(value); } catch (JsonProcessingException exception) { return Require.fail(AiCode.MODEL_INVALID, "模型参数格式不正确", exception); } }
-    private void validateParameterJson(String value) {
-        if (!StringUtils.hasText(value)) return;
-        try { Require.isTrue(objectMapper.readTree(value).isObject(), AiCode.MODEL_INVALID, "模型参数必须是 JSON 对象"); }
-        catch (JsonProcessingException exception) { Require.fail(AiCode.MODEL_INVALID, "模型参数 JSON 格式不正确", exception); }
+    private String write(Object value) {
+        try {
+            return objectMapper.writeValueAsString(value);
+        } catch (JsonProcessingException exception) {
+            return Require.fail(AiCode.MODEL_INVALID, "模型参数格式不正确", exception);
+        }
     }
-    private String trimToNull(String value) { return StringUtils.hasText(value) ? value.trim() : null; }
+
+    private void validateParameterJson(String value) {
+        if (!StringUtils.hasText(value)) {
+            return;
+        }
+        try {
+            Require.isTrue(objectMapper.readTree(value).isObject(), AiCode.MODEL_INVALID,
+                    "模型参数必须是 JSON 对象");
+        } catch (JsonProcessingException exception) {
+            Require.fail(AiCode.MODEL_INVALID, "模型参数 JSON 格式不正确", exception);
+        }
+    }
+
+    private String trimToNull(String value) {
+        return StringUtils.hasText(value) ? value.trim() : null;
+    }
 }

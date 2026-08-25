@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.core.toolkit.IdWorker;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.ai.api.enums.AiCode;
 import io.mango.ai.api.vo.AiChatConversationDetailVO;
 import io.mango.ai.api.vo.AiChatConversationVO;
@@ -26,7 +27,9 @@ import java.util.List;
 
 /** AI 对话与消息的唯一持久化访问入口。 */
 @Service
-@RequiredArgsConstructor
+@RequiredArgsConstructor(onConstructor_ = @SuppressFBWarnings(
+        value = "EI_EXPOSE_REP2",
+        justification = "Spring injects mapper and ObjectMapper collaborators; copying container-managed services is not valid"))
 public class AiChatConversationStore implements IAiChatConversationStore {
     private static final int MAX_CONVERSATIONS = 50;
     private static final int MAX_TITLE_CODE_POINTS = 40;
@@ -71,14 +74,14 @@ public class AiChatConversationStore implements IAiChatConversationStore {
             int maxHistoryMessages) {
         AiChatConversationEntity conversation = findConversation(tenantId, userId, serviceCode, sessionId);
         if (conversation == null) {
-            return new ConversationState(null, List.of());
+            return new ConversationState(List.of());
         }
         List<AiChatMessageEntity> stored = messages(conversation.getId());
         int fromIndex = Math.max(0, stored.size() - maxHistoryMessages);
         List<ConversationMessage> history = stored.subList(fromIndex, stored.size()).stream()
                 .map(message -> new ConversationMessage(message.getRole(), readParts(message.getContentPartsJson())))
                 .toList();
-        return new ConversationState(conversation, history);
+        return new ConversationState(history);
     }
 
     @Transactional

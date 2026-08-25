@@ -17,4 +17,12 @@ public class AiChatMessageVO {
     private String providerCode;
     private Boolean thinkingEnabled;
     private LocalDateTime createdAt;
+
+    public List<AiMessageContentPartVO> getContentParts() {
+        return contentParts == null ? null : List.copyOf(contentParts);
+    }
+
+    public void setContentParts(List<AiMessageContentPartVO> contentParts) {
+        this.contentParts = contentParts == null ? null : List.copyOf(contentParts);
+    }
 }

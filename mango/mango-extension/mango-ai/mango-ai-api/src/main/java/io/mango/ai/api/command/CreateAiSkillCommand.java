@@ -26,4 +26,12 @@ public class CreateAiSkillCommand {
     private Set<Long> toolIds;
     @NotNull
     private Boolean enabled;
+
+    public Set<Long> getToolIds() {
+        return toolIds == null ? null : Set.copyOf(toolIds);
+    }
+
+    public void setToolIds(Set<Long> toolIds) {
+        this.toolIds = toolIds == null ? null : Set.copyOf(toolIds);
+    }
 }

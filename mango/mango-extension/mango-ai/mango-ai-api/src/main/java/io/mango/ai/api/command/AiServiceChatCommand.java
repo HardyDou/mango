@@ -40,4 +40,12 @@ public class AiServiceChatCommand implements Serializable {
     @Schema(description = "是否启用模型思考模式", requiredMode = Schema.RequiredMode.REQUIRED)
     @NotNull(message = "思考模式不能为空")
     private Boolean thinkingEnabled;
+
+    public List<AiMessageContentPartCommand> getContentParts() {
+        return contentParts == null ? null : List.copyOf(contentParts);
+    }
+
+    public void setContentParts(List<AiMessageContentPartCommand> contentParts) {
+        this.contentParts = contentParts == null ? null : List.copyOf(contentParts);
+    }
 }

@@ -18,4 +18,12 @@ public class AiSkillVO {
     private Set<Long> toolIds;
     private Boolean enabled;
     private LocalDateTime updatedAt;
+
+    public Set<Long> getToolIds() {
+        return toolIds == null ? null : Set.copyOf(toolIds);
+    }
+
+    public void setToolIds(Set<Long> toolIds) {
+        this.toolIds = toolIds == null ? null : Set.copyOf(toolIds);
+    }
 }

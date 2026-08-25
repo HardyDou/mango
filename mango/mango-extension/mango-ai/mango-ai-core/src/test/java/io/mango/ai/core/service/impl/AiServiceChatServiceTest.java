@@ -400,6 +400,7 @@ class AiServiceChatServiceTest {
 
     private static final class RecordingConversationStore implements IAiChatConversationStore {
         private final Map<String, ConversationState> states = new HashMap<>();
+        private final Map<String, AiChatConversationEntity> conversations = new HashMap<>();
 
         @Override
         public List<io.mango.ai.api.vo.AiChatConversationVO> list(
@@ -422,11 +423,11 @@ class AiServiceChatServiceTest {
                 int maxHistoryMessages) {
             ConversationState state = states.get(key(tenantId, userId, serviceCode, sessionId));
             if (state == null) {
-                return new ConversationState(null, List.of());
+                return new ConversationState(List.of());
             }
             List<ConversationMessage> messages = state.messages();
             int fromIndex = Math.max(0, messages.size() - maxHistoryMessages);
-            return new ConversationState(state.conversation(), messages.subList(fromIndex, messages.size()));
+            return new ConversationState(messages.subList(fromIndex, messages.size()));
         }
 
         @Override
@@ -441,9 +442,8 @@ class AiServiceChatServiceTest {
                 AiModelResolution resolution) {
             String key = key(tenantId, userId, serviceCode, sessionId);
             ConversationState previous = states.get(key);
-            AiChatConversationEntity conversation = previous == null
-                    ? conversation(tenantId, userId, serviceCode, sessionId, thinkingEnabled, resolution)
-                    : previous.conversation();
+            AiChatConversationEntity conversation = conversations.computeIfAbsent(key,
+                    ignored -> conversation(tenantId, userId, serviceCode, sessionId, thinkingEnabled, resolution));
             List<ConversationMessage> messages = new ArrayList<>(previous == null
                     ? List.of() : previous.messages());
             messages.add(new ConversationMessage("user", userContentParts));
@@ -453,12 +453,14 @@ class AiServiceChatServiceTest {
             conversation.setLastProviderCode(resolution.getProviderCode());
             conversation.setLastThinkingEnabled(thinkingEnabled);
             conversation.setMessageCount(messages.size());
-            states.put(key, new ConversationState(conversation, messages));
+            states.put(key, new ConversationState(messages));
         }
 
         @Override
         public boolean delete(String tenantId, Long userId, String serviceCode, String sessionId) {
-            return states.remove(key(tenantId, userId, serviceCode, sessionId)) != null;
+            String key = key(tenantId, userId, serviceCode, sessionId);
+            conversations.remove(key);
+            return states.remove(key) != null;
         }
 
         private AiChatConversationEntity conversation(

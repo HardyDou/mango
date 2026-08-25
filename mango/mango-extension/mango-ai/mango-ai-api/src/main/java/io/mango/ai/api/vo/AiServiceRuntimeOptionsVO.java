@@ -11,4 +11,12 @@ import java.util.List;
 public class AiServiceRuntimeOptionsVO {
     private Long defaultModelId;
     private List<AiServiceModelOptionVO> models;
+
+    public List<AiServiceModelOptionVO> getModels() {
+        return models == null ? null : List.copyOf(models);
+    }
+
+    public void setModels(List<AiServiceModelOptionVO> models) {
+        this.models = models == null ? null : List.copyOf(models);
+    }
 }
