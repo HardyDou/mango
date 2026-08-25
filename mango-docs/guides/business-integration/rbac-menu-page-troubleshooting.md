@@ -1,5 +1,7 @@
 # 菜单页面打不开排障
 
+> 2026-08-25 Issue #835：只修复已有数据库升级时 Resource Registry 无法按持久化 `targetId` 停用已缺失 `AUTH_ROLE_DATA_SCOPE` 的问题；不改变菜单树 API、`component` key、页面注册、角色菜单授权、权限码、租户绑定或本指南排障步骤。升级启动仍在 FINALIZE 报 `field is required: tenantId` 时，应升级到包含该修复的 Mango Maven 版本后重试，不要保留废弃声明或手工修改授权表。
+
 > 2026-07-22 菜单显示文案调整说明：通知中心、审批中心和编号规则分别更名为通知管理、审批管理和编号管理；路由、菜单编码、权限码、页面 key、资源同步和本指南排障步骤均不受影响，历史记录保留原名称。
 
 > 2026-08-05 Issue #721：个人中心扩展入口由已集成能力包的 feature registrar 自动装配。Notice 提供“我的消息、系统公告、通知设置”，System 提供“登录日志”；这些仍是 `/profile` 页内导航，不进入框架菜单树。业务入口缺项时先检查对应 registrar 是否进入 `featureRegistrars`，无需在业务 `main.ts` 重复配置 `profile.sections`。

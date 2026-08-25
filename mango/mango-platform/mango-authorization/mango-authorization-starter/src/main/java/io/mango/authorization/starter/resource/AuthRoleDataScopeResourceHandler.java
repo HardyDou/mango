@@ -114,13 +114,82 @@ public class AuthRoleDataScopeResourceHandler implements ResourceHandler {
 
     @Override
     public ResourceSyncResult disable(ResourceDeclaration resource) {
+        Long targetId = fields.longField(resource, "targetId");
+        if (targetId != null) {
+            return disableRegistryTarget(resource, targetId);
+        }
         Long tenantId = fields.requiredLong(resource, "tenantId");
         return ResourceTenantScope.call(tenantId, () -> disableInTenant(resource));
+    }
+
+    private ResourceSyncResult disableRegistryTarget(ResourceDeclaration resource, Long targetId) {
+        validateTargetTable(resource, targetId);
+        RoleDataScopeEntity target = roleDataScopeMapper.selectRegistryTargetById(targetId);
+        if (target == null) {
+            throw invalidRegistryTarget(resource, targetId, "target does not exist");
+        }
+        Long tenantId = target.getTenantIdAsLong();
+        if (tenantId == null) {
+            throw invalidRegistryTarget(resource, targetId, "target tenantId is missing");
+        }
+        validateRegistryIdentity(resource, target, tenantId);
+        return ResourceTenantScope.call(tenantId,
+                () -> disableRegistryTargetInTenant(resource, targetId, tenantId));
+    }
+
+    private ResourceSyncResult disableRegistryTargetInTenant(ResourceDeclaration resource,
+                                                              Long targetId,
+                                                              Long tenantId) {
+        RoleDataScopeEntity target = roleDataScopeMapper.selectById(targetId);
+        if (target == null || !tenantId.equals(target.getTenantIdAsLong())) {
+            throw invalidRegistryTarget(resource, targetId, "target is not visible in its tenant context");
+        }
+        return disableEntity(target);
+    }
+
+    private void validateTargetTable(ResourceDeclaration resource, Long targetId) {
+        String targetTable = fields.stringField(resource, "targetTable");
+        if (targetTable != null && !targetTable.isBlank() && !TARGET_TABLE.equals(targetTable.trim())) {
+            throw invalidRegistryTarget(resource, targetId, "targetTable does not match " + TARGET_TABLE);
+        }
+    }
+
+    private void validateRegistryIdentity(ResourceDeclaration resource,
+                                            RoleDataScopeEntity target,
+                                            Long tenantId) {
+        Long declaredTenantId = fields.longField(resource, "tenantId");
+        if (declaredTenantId != null && !declaredTenantId.equals(tenantId)) {
+            throw invalidRegistryTarget(resource, target.getId(), "tenantId does not match target");
+        }
+        validateOptionalIdentity(resource, target, "appCode", target.getAppCode());
+        validateOptionalIdentity(resource, target, "resourceCode", target.getResourceCode());
+    }
+
+    private void validateOptionalIdentity(ResourceDeclaration resource,
+                                            RoleDataScopeEntity target,
+                                            String fieldName,
+                                            String targetValue) {
+        String declaredValue = fields.stringField(resource, fieldName);
+        if (declaredValue != null && !declaredValue.isBlank()
+                && !declaredValue.trim().equals(targetValue)) {
+            throw invalidRegistryTarget(resource, target.getId(), fieldName + " does not match target");
+        }
+    }
+
+    private IllegalStateException invalidRegistryTarget(ResourceDeclaration resource,
+                                                         Long targetId,
+                                                         String reason) {
+        return new IllegalStateException("AUTH_ROLE_DATA_SCOPE registry target is invalid: resourceId="
+                + resource.getId() + ", targetId=" + targetId + ", reason=" + reason);
     }
 
     private ResourceSyncResult disableInTenant(ResourceDeclaration resource) {
         RoleEntity role = requiredRole(resource);
         RoleDataScopeEntity entity = findScope(role, fields.requiredString(resource, "resourceCode"));
+        return disableEntity(entity);
+    }
+
+    private ResourceSyncResult disableEntity(RoleDataScopeEntity entity) {
         boolean changed = false;
         if (entity != null && !Integer.valueOf(0).equals(entity.getStatus())) {
             entity.setStatus(0);

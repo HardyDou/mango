@@ -36,6 +36,8 @@
 
 ## 3.1 近期能力变更
 
+- 2026-08-25，[Issue #835](https://github.com/HardyDou/mango/issues/835) 修复已有数据库升级时缺失 `AUTH_ROLE_DATA_SCOPE` 阻断 Resource Bootstrap FINALIZE：Authorization Handler 使用 Registry 持久化的 `targetId` 精确读取目标租户并在该租户上下文停用；目标不存在、目标表或仍携带的身份不一致时明确失败且不回退业务键。声明格式、正常 upsert、`INIT_ONLY` 和 API 不变。入口见 [Authorization README](../../mango/mango-platform/mango-authorization/README.md) 与 [Resource README](../../mango/mango-platform/mango-resource/README.md)。
+
 - 2026-08-25，[Issue #851](https://github.com/HardyDou/mango/issues/851) 为 Resource Bootstrap 增加构建期模块 manifest、内容寻址 `files.bundle` 和环境级模块 receipt：最终应用通过数据库无关的最小构建 context 把物料写入 Boot JAR；部署优先消费构建 manifest，相同模块 hash 在内部声明解析前跳过，变化模块按固定依赖执行 EXPAND/FINALIZE，失败不推进 receipt，FINALIZE 删除范围只限变化模块内 Registry-owned `AUTO`。数据库 cold baseline 和 sealed Maven release manifest 继续作为各自唯一事实源。入口见 [Resource README](../../mango/mango-platform/mango-resource/README.md)、[构建期 cold baseline](../guides/business-integration/build-time-cold-baseline.md)、[设计](../designs/2026-08-25-issue-851-resource-bootstrap-design.md)和[验收台账](../plans/2026-08-25-issue-851-resource-bootstrap-plan.md)。
 
 - 2026-08-21，[Issue #807](https://github.com/HardyDou/mango/issues/807) 将发布内容收口为 Catalog 单一声明：package/module/docs 作者事实经 compiler 生成 Admin、CLI、starter/preset、默认配置、必要静态资源和 normalized Catalog 投影；release plan 绑定 Catalog、源码、baseline、Changesets、说明、版本策略、tuple、closure 与顺序；prepare 形成唯一 `preparedCandidateId` 和 READY record，publish/status/repair 只复用 sealed candidate 与 publication journal。bootstrap baseline 只能由 Catalog 的完整 npm/Maven/docs 坐标集合和精确外部证据生成；Registry/Nexus 写入、Tag 和 GitHub Release 仍需发布阶段独立授权。使用入口见 [mango-ui README](../../mango-ui/README.md) 和 [CLI README](../../mango-ui/packages/mango-cli/README.md)。
