@@ -28,6 +28,7 @@ import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /** Writes deterministic Resource and content-addressed file manifests for a build artifact. */
 public final class ResourceManifestArtifactWriter {
@@ -176,8 +177,9 @@ public final class ResourceManifestArtifactWriter {
         }
         Path temporary = null;
         try {
-            Files.createDirectories(target.getParent());
-            temporary = Files.createTempFile(target.getParent(), ".object-", ".tmp");
+            Path parent = Objects.requireNonNull(target.getParent(), "FILE_ASSET target parent is required");
+            Files.createDirectories(parent);
+            temporary = Files.createTempFile(parent, ".object-", ".tmp");
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             long size;
             try (InputStream input = new DigestInputStream(resource.getInputStream(), digest)) {
@@ -205,8 +207,9 @@ public final class ResourceManifestArtifactWriter {
 
     private static void writeUtf8(Path target, String content) {
         try {
-            Files.createDirectories(target.getParent());
-            Path temporary = Files.createTempFile(target.getParent(), ".manifest-", ".tmp");
+            Path parent = Objects.requireNonNull(target.getParent(), "Manifest target parent is required");
+            Files.createDirectories(parent);
+            Path temporary = Files.createTempFile(parent, ".manifest-", ".tmp");
             Files.writeString(temporary, content, java.nio.charset.StandardCharsets.UTF_8);
             Files.move(temporary, target, StandardCopyOption.REPLACE_EXISTING,
                     StandardCopyOption.ATOMIC_MOVE);

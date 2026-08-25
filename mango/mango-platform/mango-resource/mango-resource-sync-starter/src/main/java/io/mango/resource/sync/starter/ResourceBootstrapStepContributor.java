@@ -37,8 +37,6 @@ public final class ResourceBootstrapStepContributor implements BootstrapStepCont
     private final ResourceManifestArtifactLoader artifactLoader;
     private final String applicationName;
 
-    @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
-            justification = "The contributor intentionally retains Spring-managed configuration and mapper collaborators")
     public ResourceBootstrapStepContributor(ResourceRegistryProperties properties,
                                             ResourceDeclarationCollector collector,
                                             ResourceDeclarationApi declarationApi,
@@ -48,6 +46,8 @@ public final class ResourceBootstrapStepContributor implements BootstrapStepCont
         this(properties, collector, declarationApi, manifestSerializer, canonicalizer, null, applicationName);
     }
 
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+            justification = "The contributor intentionally retains Spring-managed configuration and collaborators")
     public ResourceBootstrapStepContributor(ResourceRegistryProperties properties,
                                             ResourceDeclarationCollector collector,
                                             ResourceDeclarationApi declarationApi,

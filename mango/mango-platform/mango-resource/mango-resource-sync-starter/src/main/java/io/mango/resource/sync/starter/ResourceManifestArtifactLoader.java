@@ -22,7 +22,7 @@ public final class ResourceManifestArtifactLoader {
     private final Resource resource;
 
     public ResourceManifestArtifactLoader(ObjectMapper objectMapper, ResourceLoader resourceLoader) {
-        this.objectMapper = objectMapper;
+        this.objectMapper = objectMapper.copy();
         this.resource = resourceLoader.getResource(DEFAULT_LOCATION);
     }
 

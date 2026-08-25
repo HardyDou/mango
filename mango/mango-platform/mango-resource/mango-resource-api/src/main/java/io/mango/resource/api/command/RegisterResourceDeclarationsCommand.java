@@ -1,6 +1,7 @@
 package io.mango.resource.api.command;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -39,6 +40,7 @@ public class RegisterResourceDeclarationsCommand implements Serializable {
     private String declarations = "[]";
 
     @NotNull(message = "Resource 模块清单不能为空")
+    @Valid
     @Schema(description = "按模块拆分的完整期望状态；Bootstrap 优先使用此字段")
     private List<ResourceModuleManifestCommand> moduleManifests = new ArrayList<>();
 
