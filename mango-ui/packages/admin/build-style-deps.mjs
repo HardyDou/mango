@@ -28,6 +28,8 @@ const packages = [
   '@mango/numgen',
   '@mango/calendar',
   '@mango/payment',
+  '@mango/ai-api',
+  '@mango/ai',
   '@mango/workflow-business-example',
 ];
 

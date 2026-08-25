@@ -24,6 +24,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -31,6 +32,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.validation.annotation.Validated;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -64,11 +66,20 @@ public class SseRealtimeController {
             @RequestParam(value = "tenantId", required = false) String tenantIdParam,
             @Parameter(description = "用户ID")
             @RequestParam(value = "userId", required = false) Long userId,
+            @Parameter(description = "实时连接短期票据")
+            @RequestParam(value = "rtTicket", required = false) String rtTicket,
             HttpServletRequest request) {
 
-        String tenantId = RealtimeRequestIdentityResolver.resolveTenantId(request, tenantIdHeader, tenantIdParam);
-        Long resolvedUserId = RealtimeRequestIdentityResolver.resolveUserId(request, userIdHeader, userId);
-        String clientId = firstText(clientIdHeader, request.getParameter("clientId"));
+        RealtimeConnectionTicket ticket = resolveTicket(rtTicket);
+        String tenantId = ticket == null
+                ? RealtimeRequestIdentityResolver.resolveTenantId(request, tenantIdHeader, tenantIdParam)
+                : ticket.tenantId();
+        Long resolvedUserId = ticket == null
+                ? RealtimeRequestIdentityResolver.resolveUserId(request, userIdHeader, userId)
+                : ticket.userId();
+        String clientId = ticket == null
+                ? firstText(clientIdHeader, request.getParameter("clientId"))
+                : ticket.clientId();
         SseRealtimeSession session = sseProtocolAdapter.createSession(tenantId, resolvedUserId, clientId);
         SseEmitter emitter = session.emitter();
         try {
@@ -94,6 +105,16 @@ public class SseRealtimeController {
             log.warn("Failed to send initial SSE event", e);
         }
         return emitter;
+    }
+
+    private RealtimeConnectionTicket resolveTicket(String ticketValue) {
+        if (ticketValue == null || ticketValue.isBlank()) {
+            return null;
+        }
+        return ticketService.resolve(ticketValue)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.UNAUTHORIZED,
+                        "Missing or expired realtime ticket"));
     }
 
     @GetMapping(value = "/realtime/transports/probe/sse", produces = MediaType.TEXT_EVENT_STREAM_VALUE)

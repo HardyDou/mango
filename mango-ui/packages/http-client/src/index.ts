@@ -175,11 +175,20 @@ class AxiosMangoHttpClient implements MangoHttpClient {
     };
     this.#pending.add(controller);
 
-    try {
-      return await this.#execute<TResponse>(context);
-    } finally {
+    let streamOwnedCleanup = false;
+    const cleanup = () => {
       unlinkSignal();
       this.#pending.delete(controller);
+    };
+    try {
+      const response = await this.#execute<TResponse>(context);
+      if (request.responseType === 'stream' && isReadableStream(response)) {
+        streamOwnedCleanup = true;
+        return managedReadableStream(response, cleanup) as TResponse;
+      }
+      return response;
+    } finally {
+      if (!streamOwnedCleanup) cleanup();
     }
   }
 
@@ -240,6 +249,7 @@ class AxiosMangoHttpClient implements MangoHttpClient {
       signal: context.controller.signal,
       timeout: request.timeoutMs ?? this.#options.timeoutMs,
       responseType: toAxiosResponseType(request.responseType),
+      adapter: request.responseType === 'stream' ? 'fetch' : undefined,
       onUploadProgress: request.onUploadProgress
         ? (event) => request.onUploadProgress?.(toHttpProgress(event))
         : undefined,
@@ -364,6 +374,46 @@ function mergeHeaders(...inputs: Array<HttpHeaders | undefined>): Record<string,
 
 function toAxiosResponseType(responseType?: HttpResponseType): ResponseType | undefined {
   return responseType === 'arrayBuffer' ? 'arraybuffer' : responseType;
+}
+
+function isReadableStream(value: unknown): value is ReadableStream<Uint8Array> {
+  return Boolean(value && typeof value === 'object' && 'getReader' in value && typeof value.getReader === 'function');
+}
+
+function managedReadableStream(
+  source: ReadableStream<Uint8Array>,
+  cleanup: () => void,
+): ReadableStream<Uint8Array> {
+  const reader = source.getReader();
+  let finished = false;
+  const finish = () => {
+    if (finished) return;
+    finished = true;
+    cleanup();
+  };
+  return new ReadableStream<Uint8Array>({
+    async pull(controller) {
+      try {
+        const result = await reader.read();
+        if (result.done) {
+          controller.close();
+          finish();
+          return;
+        }
+        controller.enqueue(result.value);
+      } catch (error) {
+        controller.error(error);
+        finish();
+      }
+    },
+    async cancel(reason) {
+      try {
+        await reader.cancel(reason);
+      } finally {
+        finish();
+      }
+    },
+  });
 }
 
 function toHttpProgress(event: AxiosProgressEvent): HttpProgress {

@@ -20,7 +20,7 @@ final class AiSseEmitterFactory {
     private AiSseEmitterFactory() {
     }
 
-    static SseEmitter createChat(Flux<String> events) {
+    static SseEmitter create(Flux<String> events) {
         EmitterBridge bridge = new EmitterBridge(CHAT_TIMEOUT_MILLIS);
         Disposable subscription = events.publishOn(Schedulers.boundedElastic())
                 .subscribe(bridge::send, bridge::fail, bridge::complete);

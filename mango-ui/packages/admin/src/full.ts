@@ -14,6 +14,7 @@ export { registerMangoNumgenAdminPages } from '@mango/numgen/admin-pages';
 export { registerMangoCalendarAdminPages } from '@mango/calendar/admin-pages';
 export { registerMangoPaymentAdminPages } from '@mango/payment/admin-pages';
 export { registerMangoWorkflowAdminPages } from '@mango/workflow/admin-pages';
+export { registerMangoAiAdminPages } from '@mango/ai/admin-pages';
 export { registerMangoWorkflowBusinessExampleAdminPages } from '@mango/workflow-business-example/admin-pages';
 
 import type { MangoAdminFeatureRegistrar } from '@mango/admin-shell';
@@ -29,6 +30,7 @@ import { registerMangoNumgenAdminPages } from '@mango/numgen/admin-pages';
 import { registerMangoCalendarAdminPages } from '@mango/calendar/admin-pages';
 import { registerMangoPaymentAdminPages } from '@mango/payment/admin-pages';
 import { registerMangoWorkflowAdminPages } from '@mango/workflow/admin-pages';
+import { registerMangoAiAdminPages } from '@mango/ai/admin-pages';
 import { registerMangoWorkflowBusinessExampleAdminPages } from '@mango/workflow-business-example/admin-pages';
 
 export const mangoFullAdminFeatureRegistrars: MangoAdminFeatureRegistrar[] = [
@@ -44,5 +46,6 @@ export const mangoFullAdminFeatureRegistrars: MangoAdminFeatureRegistrar[] = [
   registerMangoCalendarAdminPages,
   registerMangoPaymentAdminPages,
   registerMangoWorkflowAdminPages,
+  registerMangoAiAdminPages,
   registerMangoWorkflowBusinessExampleAdminPages,
 ];

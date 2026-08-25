@@ -1,0 +1,1193 @@
+.mango-ai-model-management {
+  min-width: 0;
+}
+
+.mango-ai-model-management__workspace {
+  align-items: flex-start;
+}
+
+.mango-ai-model-management__section-title,
+.mango-ai-model-management__provider-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.mango-ai-model-management__section-title small,
+.mango-ai-model-management__provider-item small {
+  display: block;
+  margin-top: 2px;
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+  line-height: 1.4;
+  word-break: break-all;
+}
+
+.mango-ai-model-management__provider-item {
+  width: 100%;
+  min-width: 0;
+  align-items: flex-start;
+}
+
+.mango-ai-model-management__provider-item > div:first-child {
+  min-width: 0;
+  line-height: 1.4;
+}
+
+.mango-ai-model-management__provider-item strong {
+  display: block;
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mango-ai-model-management__provider-item .el-tag {
+  flex: 0 0 auto;
+}
+
+.mango-ai-model-management__help {
+  margin-top: 4px;
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.mango-ai-config-page {
+  min-width: 0;
+}
+
+.mango-ai-config-page__header,
+.mango-ai-config-page__toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.mango-ai-service-run {
+  min-width: 0;
+}
+
+.mango-ai-workbench {
+  min-width: 0;
+  overflow: hidden;
+  background: var(--el-bg-color);
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 8px;
+  box-shadow: var(--el-box-shadow-lighter);
+}
+
+.mango-ai-workbench.is-chat {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 150px);
+  height: calc(100dvh - 150px);
+}
+
+.mango-ai-workbench.is-chat .mango-ai-workbench__header {
+  flex: 0 0 auto;
+}
+
+.mango-ai-workbench.is-chat .mango-ai-chat {
+  flex: 1 1 auto;
+  height: auto;
+  min-height: 0;
+}
+
+.mango-ai-workbench__header,
+.mango-ai-workbench__identity,
+.mango-ai-workbench__settings,
+.mango-ai-workbench__title > div,
+.mango-ai-workbench__context,
+.mango-ai-chat__conversation-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.mango-ai-workbench__header,
+.mango-ai-chat__conversation-bar {
+  justify-content: space-between;
+}
+
+.mango-ai-workbench__header {
+  min-height: 72px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--el-border-color-lighter);
+}
+
+.mango-ai-workbench__identity {
+  min-width: 0;
+}
+
+.mango-ai-workbench__mark,
+.mango-ai-chat__welcome-mark,
+.mango-ai-chat__avatar {
+  display: grid;
+  color: var(--el-color-white);
+  font-weight: 650;
+  background: var(--el-color-primary);
+  place-items: center;
+}
+
+.mango-ai-workbench__mark {
+  flex: 0 0 38px;
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+}
+
+.mango-ai-workbench__title {
+  min-width: 0;
+}
+
+.mango-ai-workbench__title strong {
+  max-width: 320px;
+  overflow: hidden;
+  font-size: 16px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mango-ai-workbench__title small,
+.mango-ai-workbench__model-option small {
+  display: block;
+  margin-top: 3px;
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+}
+
+.mango-ai-workbench__settings {
+  min-width: 0;
+  justify-content: flex-end;
+}
+
+.mango-ai-workbench__context {
+  min-width: 0;
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.mango-ai-workbench__skill {
+  padding: 0;
+  color: var(--el-color-primary);
+  font: inherit;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+}
+
+.mango-ai-workbench__skill:hover {
+  text-decoration: underline;
+}
+
+.mango-ai-workbench__skill-detail p {
+  margin: 8px 0;
+  color: var(--el-text-color-secondary);
+  line-height: 1.6;
+}
+
+.mango-ai-workbench__skill-detail pre {
+  max-height: 280px;
+  padding: 12px;
+  overflow: auto;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  background: var(--el-fill-color-light);
+  border-radius: 8px;
+}
+
+.mango-ai-workbench__model-option {
+  display: grid;
+  min-width: 0;
+}
+
+.mango-ai-chat {
+  display: grid;
+  grid-template-columns: 248px minmax(0, 1fr);
+  height: calc(100vh - 172px);
+  min-height: 640px;
+}
+
+.mango-ai-chat.is-sidebar-collapsed {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.mango-ai-chat__sidebar {
+  min-width: 0;
+  padding: 14px 10px;
+  overflow-y: auto;
+  background: var(--el-fill-color-lighter);
+  border-right: 1px solid var(--el-border-color-lighter);
+}
+
+.mango-ai-chat__sidebar-heading,
+.mango-ai-chat__conversation-title,
+.mango-ai-chat__conversation-state {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mango-ai-chat__sidebar-heading {
+  justify-content: space-between;
+  min-height: 32px;
+  padding: 0 6px 8px 10px;
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+}
+
+.mango-ai-chat__sidebar-heading .el-button {
+  width: 28px;
+  height: 28px;
+}
+
+.mango-ai-chat__new {
+  width: 100%;
+  justify-content: flex-start;
+  margin-bottom: 18px;
+  border-color: var(--el-border-color);
+  border-radius: 10px;
+}
+
+.mango-ai-chat__sidebar-label,
+.mango-ai-chat__sidebar-empty {
+  padding: 0 10px 8px;
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+}
+
+.mango-ai-chat__session-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-bottom: 3px;
+  border-radius: 9px;
+}
+
+.mango-ai-chat__session-wrap:hover,
+.mango-ai-chat__session-wrap.is-active {
+  background: var(--el-fill-color-dark);
+}
+
+.mango-ai-chat__session {
+  display: block;
+  min-width: 0;
+  width: 100%;
+  padding: 9px 34px 9px 10px;
+  color: var(--el-text-color-primary);
+  text-align: left;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  border-radius: 9px;
+}
+
+.mango-ai-chat__session:disabled {
+  cursor: default;
+}
+
+.mango-ai-chat__session span,
+.mango-ai-chat__session small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mango-ai-chat__session small {
+  margin-top: 3px;
+  color: var(--el-text-color-secondary);
+  font-size: 11px;
+}
+
+.mango-ai-chat__delete {
+  position: absolute;
+  right: 7px;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  opacity: 0;
+}
+
+.mango-ai-chat__session-wrap:hover .mango-ai-chat__delete,
+.mango-ai-chat__session-wrap.is-active .mango-ai-chat__delete {
+  opacity: 1;
+}
+
+.mango-ai-chat__main {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  min-width: 0;
+  min-height: 0;
+  background: var(--el-bg-color);
+}
+
+.mango-ai-chat__conversation-bar {
+  min-height: 58px;
+  padding: 10px 24px;
+  border-bottom: 1px solid var(--el-border-color-lighter);
+}
+
+.mango-ai-chat__conversation-title {
+  min-width: 0;
+}
+
+.mango-ai-chat__conversation-title > div {
+  min-width: 0;
+}
+
+.mango-ai-chat__conversation-title strong {
+  max-width: min(560px, 52vw);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mango-ai-chat__mobile-sessions {
+  display: none;
+}
+
+.mango-ai-chat__conversation-bar strong {
+  display: block;
+}
+
+.mango-ai-chat__messages {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.mango-ai-chat__loading,
+.mango-ai-chat__welcome,
+.mango-ai-chat__message,
+.mango-ai-chat__composer,
+.mango-ai-chat__composer-wrap > .el-alert {
+  width: min(768px, calc(100% - 40px));
+  margin: 0 auto;
+}
+
+.mango-ai-chat__loading {
+  padding-top: 40px;
+}
+
+.mango-ai-chat__welcome {
+  padding: 12vh 0 48px;
+  text-align: center;
+}
+
+.mango-ai-chat__welcome-mark {
+  width: 46px;
+  height: 46px;
+  margin: 0 auto 20px;
+  border-radius: 13px;
+}
+
+.mango-ai-chat__welcome h1 {
+  margin: 0 0 10px;
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.mango-ai-chat__welcome > p {
+  margin: 0;
+  color: var(--el-text-color-secondary);
+  line-height: 1.6;
+}
+
+.mango-ai-chat__suggestions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 28px;
+}
+
+.mango-ai-chat__suggestions button {
+  padding: 14px 16px;
+  color: var(--el-text-color-primary);
+  text-align: left;
+  cursor: pointer;
+  background: var(--el-bg-color);
+  border: 1px solid var(--el-border-color);
+  border-radius: 8px;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.mango-ai-chat__suggestions button:hover {
+  background: var(--el-fill-color-light);
+  border-color: var(--el-border-color-darker);
+}
+
+.mango-ai-chat__suggestions strong,
+.mango-ai-chat__suggestions span {
+  display: block;
+}
+
+.mango-ai-chat__suggestions span {
+  margin-top: 5px;
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.mango-ai-chat__message {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  gap: 14px;
+  padding: 24px 0;
+}
+
+.mango-ai-chat__message.is-user {
+  display: flex;
+  flex-direction: row-reverse;
+}
+
+.mango-ai-chat__avatar {
+  flex: 0 0 32px;
+  width: 32px;
+  height: 32px;
+  font-size: 12px;
+  border-radius: 50%;
+}
+
+.mango-ai-chat__message.is-user .mango-ai-chat__avatar {
+  color: var(--el-text-color-primary);
+  background: var(--el-fill-color-dark);
+}
+
+.mango-ai-chat__message-body {
+  min-width: 0;
+  line-height: 1.75;
+}
+
+.mango-ai-chat__stream-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 24px;
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+}
+
+.mango-ai-message-parts:not(:empty) + .mango-ai-chat__stream-status {
+  margin-top: 6px;
+}
+
+.mango-ai-chat__stream-dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  width: 24px;
+  height: 16px;
+}
+
+.mango-ai-chat__stream-dots i {
+  width: 4px;
+  height: 4px;
+  background: currentcolor;
+  border-radius: 50%;
+  animation: mango-ai-stream-pulse 1.05s cubic-bezier(0.25, 1, 0.5, 1) infinite;
+}
+
+.mango-ai-chat__stream-dots i:nth-child(2) {
+  animation-delay: 0.14s;
+}
+
+.mango-ai-chat__stream-dots i:nth-child(3) {
+  animation-delay: 0.28s;
+}
+
+@keyframes mango-ai-stream-pulse {
+  0%,
+  70%,
+  100% {
+    opacity: 0.3;
+    transform: translateY(0);
+  }
+
+  35% {
+    opacity: 1;
+    transform: translateY(-2px);
+  }
+}
+
+.mango-ai-chat__message.is-user .mango-ai-chat__message-body {
+  max-width: 78%;
+  padding: 10px 14px;
+  background: var(--el-fill-color-light);
+  border-radius: 8px;
+}
+
+.mango-ai-chat__message-body > p,
+.mango-ai-chat__reasoning p {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.mango-ai-chat__reasoning {
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  color: var(--el-text-color-secondary);
+  background: var(--el-fill-color-light);
+  border-radius: 10px;
+}
+
+.mango-ai-chat__reasoning summary {
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.mango-ai-chat__message-model {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px 10px;
+  margin-top: 8px;
+  color: var(--el-text-color-secondary);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.mango-ai-chat__message-model span + span::before {
+  margin-inline-end: 10px;
+  color: var(--el-border-color-darker);
+  content: '·';
+}
+
+.mango-ai-chat__message-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 8px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.mango-ai-chat__message-actions .el-button {
+  margin: 0;
+  color: var(--el-text-color-secondary);
+}
+
+.mango-ai-chat__message-actions .el-icon {
+  margin-inline-end: 4px;
+}
+
+.mango-ai-chat__message:hover .mango-ai-chat__message-actions {
+  opacity: 1;
+}
+
+.mango-ai-chat__composer-wrap {
+  padding: 10px 24px 16px;
+  background: var(--el-bg-color);
+}
+
+.mango-ai-chat__scroll-latest {
+  position: absolute;
+  z-index: 2;
+  inset-inline-start: 50%;
+  bottom: 116px;
+  width: 36px;
+  height: 36px;
+  color: var(--el-text-color-primary);
+  background: var(--el-bg-color);
+  border-color: var(--el-border-color);
+  box-shadow: var(--el-box-shadow-light);
+  transform: translateX(-50%);
+}
+
+.mango-ai-chat__composer-wrap > small {
+  display: block;
+  margin-top: 7px;
+  color: var(--el-text-color-secondary);
+  font-size: 11px;
+  text-align: center;
+}
+
+.mango-ai-chat__composer-wrap > .el-alert {
+  margin-bottom: 8px;
+}
+
+.mango-ai-attachment-intake {
+  position: relative;
+}
+
+.mango-ai-attachment-intake__overlay {
+  position: absolute;
+  z-index: 4;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  color: var(--el-color-primary);
+  background: color-mix(in srgb, var(--el-bg-color) 92%, transparent);
+  border: 2px dashed var(--el-color-primary);
+  border-radius: 8px;
+  pointer-events: none;
+}
+
+.mango-ai-attachment-intake__overlay span {
+  font-weight: 600;
+}
+
+.mango-ai-attachment-intake__overlay small {
+  color: var(--el-text-color-secondary);
+}
+
+.mango-ai-chat__composer {
+  padding: 10px 12px;
+  background: var(--el-bg-color);
+  border: 1px solid var(--el-border-color);
+  border-radius: 8px;
+  box-shadow: var(--el-box-shadow-light);
+  transition:
+    border-color 0.16s ease,
+    box-shadow 0.16s ease;
+}
+
+.mango-ai-chat__composer:focus-within {
+  border-color: var(--el-border-color-darker);
+  box-shadow:
+    0 0 0 1px var(--el-border-color-light),
+    var(--el-box-shadow-light);
+}
+
+.mango-ai-chat__composer .el-textarea,
+.mango-ai-chat__composer .el-textarea__inner {
+  box-shadow: none;
+}
+
+.mango-ai-chat__composer .el-textarea__inner {
+  min-height: 42px !important;
+  padding: 6px 8px;
+  background: transparent;
+}
+
+.mango-ai-chat__composer-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 32px;
+  padding-left: 8px;
+  color: var(--el-text-color-secondary);
+  font-size: 11px;
+}
+
+.mango-ai-chat__composer-tools {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+  overflow: hidden;
+}
+
+.mango-ai-composer-controls,
+.mango-ai-composer-controls__thinking {
+  display: flex;
+  flex: 0 1 auto;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+}
+
+.mango-ai-composer-controls__model {
+  min-width: 0;
+}
+
+.mango-ai-composer-controls__model-select {
+  width: min(230px, 26vw);
+}
+
+.mango-ai-composer-controls__thinking {
+  flex: 0 0 auto;
+  color: var(--el-text-color-regular);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.mango-ai-chat__composer-tools > span:not(.mango-ai-chat__keyboard-hint) {
+  flex: 0 1 auto;
+  max-width: 180px;
+  padding: 3px 7px;
+  overflow: hidden;
+  color: var(--el-text-color-regular);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  background: var(--el-fill-color-light);
+  border-radius: 999px;
+}
+
+.mango-ai-chat__keyboard-hint {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mango-ai-chat__composer-footer > .el-button,
+.mango-ai-chat__composer-footer > .el-tooltip__trigger {
+  flex: 0 0 36px;
+  width: 36px;
+  height: 36px;
+}
+
+.mango-ai-chat__stop-icon {
+  display: block;
+  width: 10px;
+  height: 10px;
+  background: currentcolor;
+  border-radius: 2px;
+}
+
+.mango-ai-chat__generation-status {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  border: 0;
+  clip-path: inset(50%);
+}
+
+.mango-ai-message-content {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.mango-ai-message-content > :first-child {
+  margin-top: 0;
+}
+
+.mango-ai-message-content > :last-child {
+  margin-bottom: 0;
+}
+
+.mango-ai-message-content p,
+.mango-ai-message-content ul,
+.mango-ai-message-content ol,
+.mango-ai-message-content blockquote {
+  margin: 0 0 0.85em;
+}
+
+.mango-ai-message-content pre {
+  margin: 14px 0;
+  padding: 14px 16px;
+  overflow: auto;
+  color: var(--el-text-color-primary);
+  background: var(--el-fill-color-darker);
+  border-radius: 10px;
+}
+
+.mango-ai-message-content :not(pre) > code {
+  padding: 2px 5px;
+  font-size: 0.9em;
+  background: var(--el-fill-color-dark);
+  border-radius: 5px;
+}
+
+.mango-ai-message-content blockquote {
+  padding-left: 12px;
+  color: var(--el-text-color-secondary);
+  border-left: 3px solid var(--el-border-color);
+}
+
+.mango-ai-message-content table {
+  display: block;
+  max-width: 100%;
+  margin: 14px 0;
+  overflow-x: auto;
+  border-collapse: collapse;
+}
+
+.mango-ai-message-content th,
+.mango-ai-message-content td {
+  padding: 8px 10px;
+  border: 1px solid var(--el-border-color-lighter);
+}
+
+.mango-ai-message-content a {
+  color: var(--el-color-primary);
+}
+
+.mango-ai-chat__file-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.mango-ai-chat__composer-tools > .el-button,
+.mango-ai-chat__composer-tools > .el-tooltip__trigger {
+  flex: 0 0 32px;
+  width: 32px;
+  height: 32px;
+}
+
+.mango-ai-chat__attachments {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  padding: 2px 4px 8px;
+}
+
+.mango-ai-chat__attachment {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 8px 9px;
+  background: var(--el-fill-color-light);
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 10px;
+}
+
+.mango-ai-pending-preview {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  overflow: hidden;
+  place-items: center;
+  color: var(--el-text-color-secondary);
+  background: var(--el-fill-color-dark);
+  border-radius: 8px;
+}
+
+.mango-ai-pending-preview img,
+.mango-ai-pending-preview video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.mango-ai-pending-preview .el-icon {
+  font-size: 18px;
+}
+
+.mango-ai-chat__attachment.is-error {
+  color: var(--el-color-danger);
+  border-color: var(--el-color-danger-light-5);
+}
+
+.mango-ai-chat__attachment-detail {
+  min-width: 0;
+}
+
+.mango-ai-chat__attachment-actions {
+  display: flex;
+  align-items: center;
+}
+
+.mango-ai-chat__attachment-actions .el-button + .el-button {
+  margin-left: 2px;
+}
+
+.mango-ai-chat__attachment > .el-progress {
+  grid-column: 2 / -1;
+  width: 100%;
+}
+
+.mango-ai-chat__attachment strong,
+.mango-ai-chat__attachment small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mango-ai-chat__attachment strong {
+  font-size: 12px;
+}
+
+.mango-ai-chat__attachment small {
+  color: var(--el-text-color-secondary);
+  font-size: 11px;
+}
+
+.mango-ai-chat__attachment .el-progress {
+  grid-column: 2;
+}
+
+.mango-ai-message-parts {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.mango-ai-message-parts__text {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.mango-ai-message-parts__stream-text {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.mango-ai-structured-result {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 12px;
+}
+
+.mango-ai-structured-result__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 12px;
+  background: var(--el-fill-color-light);
+  border-bottom: 1px solid var(--el-border-color-lighter);
+}
+
+.mango-ai-structured-result pre {
+  max-height: 420px;
+  margin: 0;
+  padding: 14px;
+  overflow: auto;
+  color: var(--el-text-color-primary);
+  line-height: 1.6;
+  background: var(--el-bg-color);
+}
+
+.mango-ai-file-part {
+  min-width: 0;
+  max-width: 520px;
+  overflow: hidden;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 12px;
+}
+
+.mango-ai-file-part img,
+.mango-ai-file-part video {
+  display: block;
+  width: 100%;
+  max-height: 360px;
+  object-fit: contain;
+  background: var(--el-fill-color-darker);
+}
+
+.mango-ai-file-part audio {
+  display: block;
+  width: calc(100% - 24px);
+  margin: 12px;
+}
+
+.mango-ai-file-part__card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 12px;
+}
+
+.mango-ai-file-part__card > div {
+  min-width: 0;
+}
+
+.mango-ai-file-part__card strong,
+.mango-ai-file-part__card small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mango-ai-file-part__card small {
+  color: var(--el-text-color-secondary);
+  font-size: 11px;
+}
+
+.mango-ai-file-part__actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  min-height: 34px;
+  padding: 4px 10px;
+  color: var(--el-text-color-secondary);
+  font-size: 11px;
+  background: var(--el-fill-color-light);
+  border-top: 1px solid var(--el-border-color-lighter);
+}
+
+@media (width <= 1100px) {
+  .mango-ai-workbench__header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .mango-ai-workbench__settings {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+
+@media (width <= 768px) {
+  .mango-ai-workbench {
+    border-radius: 12px;
+  }
+
+  .mango-ai-workbench__header,
+  .mango-ai-workbench__settings {
+    align-items: stretch;
+  }
+
+  .mango-ai-workbench__settings {
+    flex-direction: column;
+  }
+
+  .mango-ai-workbench__context {
+    overflow-x: auto;
+  }
+
+  .mango-ai-chat {
+    grid-template-columns: minmax(0, 1fr);
+    height: calc(100vh - 250px);
+    min-height: 620px;
+  }
+
+  .mango-ai-chat__sidebar {
+    display: none;
+  }
+
+  .mango-ai-chat__mobile-sessions {
+    display: inline-flex;
+  }
+
+  .mango-ai-chat__mobile-sessions,
+  .mango-ai-chat__composer-tools > .el-button,
+  .mango-ai-chat__composer-tools > .el-tooltip__trigger {
+    flex: 0 0 44px;
+    width: 44px;
+    height: 44px;
+  }
+
+  .mango-ai-chat__mobile-drawer .el-drawer__body {
+    padding: 0 12px 20px;
+  }
+
+  .mango-ai-chat__mobile-drawer .mango-ai-chat__new {
+    min-height: 44px;
+    margin-bottom: 18px;
+  }
+
+  .mango-ai-chat__mobile-drawer .mango-ai-chat__delete {
+    right: 0;
+    width: 44px;
+    height: 44px;
+  }
+
+  .mango-ai-chat__suggestions {
+    grid-template-columns: 1fr;
+  }
+
+  .mango-ai-chat__message,
+  .mango-ai-chat__welcome,
+  .mango-ai-chat__composer,
+  .mango-ai-chat__composer-wrap > .el-alert {
+    width: calc(100% - 28px);
+  }
+
+  .mango-ai-chat__conversation-bar,
+  .mango-ai-chat__composer-wrap {
+    padding-right: 14px;
+    padding-left: 14px;
+  }
+
+  .mango-ai-chat__conversation-bar {
+    min-height: 54px;
+  }
+
+  .mango-ai-chat__conversation-title strong {
+    max-width: 190px;
+  }
+
+  .mango-ai-chat__keyboard-hint {
+    display: none;
+  }
+
+  .mango-ai-chat__composer-footer > .el-button,
+  .mango-ai-chat__composer-footer > .el-tooltip__trigger {
+    flex-basis: 44px;
+    width: 44px;
+    height: 44px;
+  }
+
+  .mango-ai-chat__scroll-latest {
+    bottom: 128px;
+    width: 44px;
+    height: 44px;
+  }
+
+  .mango-ai-chat__attachments {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (width <= 480px) {
+  .mango-ai-chat__composer-tools {
+    gap: 6px;
+  }
+
+  .mango-ai-composer-controls {
+    gap: 6px;
+  }
+
+  .mango-ai-composer-controls__model-select {
+    width: 132px;
+  }
+
+  .mango-ai-composer-controls__thinking-prefix {
+    display: none;
+  }
+}
+
+@media (hover: none) {
+  .mango-ai-chat__delete,
+  .mango-ai-chat__message-actions {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mango-ai-chat__messages {
+    scroll-behavior: auto;
+  }
+
+  .mango-ai-chat__composer,
+  .mango-ai-chat__message-actions {
+    transition: none;
+  }
+
+  .mango-ai-chat__stream-dots i {
+    animation: none;
+    opacity: 0.65;
+  }
+}
+
+.mango-ai-config-page__header small {
+  display: block;
+  margin-top: 4px;
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+}
+
+.mango-ai-config-page__toolbar {
+  margin-bottom: 16px;
+  color: var(--el-text-color-secondary);
+}

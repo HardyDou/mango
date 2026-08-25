@@ -14,6 +14,7 @@ export { registerMangoNumgenAdminPages } from '@mango/numgen/admin-pages';
 export { registerMangoCalendarAdminPages } from '@mango/calendar/admin-pages';
 export { registerMangoPaymentAdminPages } from '@mango/payment/admin-pages';
 export { registerMangoWorkflowAdminPages } from '@mango/workflow/admin-pages';
+export { registerMangoAiAdminPages } from '@mango/ai/admin-pages';
 export { registerMangoWorkflowBusinessExampleAdminPages } from '@mango/workflow-business-example/admin-pages';
 import type { MangoAdminFeatureRegistrar } from '@mango/admin-shell';
 export declare const mangoFullAdminFeatureRegistrars: MangoAdminFeatureRegistrar[];

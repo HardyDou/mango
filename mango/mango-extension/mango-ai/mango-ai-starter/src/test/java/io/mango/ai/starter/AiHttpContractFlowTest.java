@@ -1,13 +1,27 @@
 package io.mango.ai.starter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.mango.ai.api.enums.AiApiProtocol;
+import io.mango.ai.api.enums.AiCapability;
+import io.mango.ai.api.enums.AiPromptStatus;
+import io.mango.ai.api.enums.AiServiceType;
+import io.mango.ai.api.enums.AiModality;
+import io.mango.ai.core.entity.AiPromptEntity;
+import io.mango.ai.core.entity.AiServiceEntity;
+import io.mango.ai.core.mapper.AiInvocationAuditMapper;
+import io.mango.ai.core.mapper.AiPromptMapper;
+import io.mango.ai.core.mapper.AiServiceMapper;
+import io.mango.ai.core.mapper.AiSkillMapper;
+import io.mango.ai.core.service.AiModelResolution;
+import io.mango.ai.core.service.IAiChatConversationStore;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
-import io.mango.infra.kv.api.ICache;
 import io.mango.infra.kv.api.IRateLimiter;
+import io.mango.ai.core.service.IAiModelManagementService;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.ai.chat.messages.AssistantMessage;
@@ -22,18 +36,20 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
-import org.springframework.context.annotation.Primary;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import reactor.core.publisher.Flux;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -44,9 +60,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Tag("ai")
 @SpringBootTest(classes = AiHttpContractFlowTest.TestApplication.class, properties = {
         "mango.kv.store.type=redis",
-        "spring.ai.deepseek.api-key=test-key",
-        "spring.autoconfigure.exclude=org.springframework.ai.model.deepseek.autoconfigure.DeepSeekChatAutoConfiguration,"
-                + "io.mango.infra.kv.starter.KvStoreAutoConfiguration,"
+        "spring.autoconfigure.exclude=io.mango.infra.kv.starter.KvStoreAutoConfiguration,"
                 + "io.mango.infra.kv.starter.redis.KvRedisAutoConfiguration,"
                 + "io.mango.infra.kv.starter.KvCapabilityAutoConfiguration,"
                 + "io.mango.infra.persistence.starter.PersistenceDataSourceAutoConfiguration,"
@@ -54,6 +68,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
                 + "io.mango.infra.persistence.starter.PersistenceFlywayAutoConfiguration,"
                 + "org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration,"
                 + "org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration,"
+                + "io.mango.infra.crypto.starter.CryptoAutoConfiguration,"
                 + "io.mango.infra.realtime.starter.MangoRealtimeAutoConfiguration"
 })
 @AutoConfigureMockMvc
@@ -61,9 +76,50 @@ class AiHttpContractFlowTest {
 
     private final MockMvc mockMvc;
 
+    @MockitoBean
+    private IAiModelManagementService modelConfigService;
+    @MockitoBean
+    private AiServiceMapper serviceMapper;
+    @MockitoBean
+    private AiPromptMapper promptMapper;
+    @MockitoBean
+    private AiSkillMapper skillMapper;
+    @MockitoBean
+    private AiInvocationAuditMapper auditMapper;
+    @MockitoBean
+    private IAiChatConversationStore conversationStore;
+
     @Autowired
     AiHttpContractFlowTest(MockMvc mockMvc) {
         this.mockMvc = mockMvc;
+    }
+
+    @BeforeEach
+    void setUpModelConfig() {
+        when(modelConfigService.resolveChatModel(100L))
+                .thenReturn(new AiModelResolution(
+                        100L,
+                        new TestChatModel(),
+                        "test-provider",
+                        "test-model",
+                        AiApiProtocol.CHAT_COMPLETIONS,
+                        false,
+                        Set.of(AiModality.TEXT),
+                        Set.of(AiModality.TEXT)));
+        AiServiceEntity service = new AiServiceEntity();
+        service.setCode("assistant.general");
+        service.setServiceType(AiServiceType.CHAT);
+        service.setCapability(AiCapability.CHAT);
+        service.setEnabled(true);
+        service.setPromptId(10L);
+        AiPromptEntity prompt = new AiPromptEntity();
+        prompt.setStatus(AiPromptStatus.PUBLISHED);
+        prompt.setTemplate("你是测试助手");
+        when(serviceMapper.selectOne(any())).thenReturn(service);
+        when(promptMapper.selectById(10L)).thenReturn(prompt);
+        when(auditMapper.insert(any(io.mango.ai.core.entity.AiInvocationAuditEntity.class))).thenReturn(1);
+        when(conversationStore.load(any(), any(), any(), any(), anyInt()))
+                .thenReturn(new IAiChatConversationStore.ConversationState(null, List.of()));
     }
 
     @AfterEach
@@ -73,32 +129,47 @@ class AiHttpContractFlowTest {
 
     @Test
     void chat_空消息_由BeanValidation拒绝() throws Exception {
-        mockMvc.perform(post("/ai/chat")
+        mockMvc.perform(post("/ai/services/chat").queryParam("serviceCode", "assistant.general")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"message\":\"   \"}"))
+                        .content("{\"contentParts\":[{\"type\":\"TEXT\",\"text\":\"   \"}],"
+                                + "\"modelId\":100,\"thinkingEnabled\":false}"))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
     void chat_非法会话标识_由命令校验拒绝() throws Exception {
-        mockMvc.perform(post("/ai/chat")
+        mockMvc.perform(post("/ai/services/chat").queryParam("serviceCode", "assistant.general")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"message\":\"hello\",\"sessionId\":\"../../shared\"}"))
+                        .content("{\"contentParts\":[{\"type\":\"TEXT\",\"text\":\"hello\"}],"
+                                + "\"sessionId\":\"../../shared\","
+                                + "\"modelId\":100,\"thinkingEnabled\":false}"))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
-    void legacyAiSseEndpoint_已移除() throws Exception {
-        mockMvc.perform(get("/ai/sse"))
+    void removedStandaloneChatEndpointReturns404() throws Exception {
+        mockMvc.perform(post("/ai/chat")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"message\":\"hello\"}"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void removedSynchronousServiceInvokeEndpointReturns404() throws Exception {
+        mockMvc.perform(post("/ai/services/invoke")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"serviceCode\":\"contract.extract\",\"input\":{\"text\":\"hello\"}}"))
                 .andExpect(status().isNotFound());
     }
 
     @Test
     void chat_合法请求_返回标准Sse消息与会话完成事件() throws Exception {
-        MvcResult result = mockMvc.perform(post("/ai/chat")
+        MvcResult result = mockMvc.perform(post("/ai/services/chat").queryParam("serviceCode", "assistant.general")
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.TEXT_EVENT_STREAM)
-                        .content("{\"message\":\"hello\",\"sessionId\":\"session-1\",\"enableThinking\":false}"))
+                        .content("{\"contentParts\":[{\"type\":\"TEXT\",\"text\":\"hello\"}],"
+                                + "\"sessionId\":\"session-1\","
+                                + "\"modelId\":100,\"thinkingEnabled\":false}"))
                 .andExpect(status().isOk())
                 .andReturn();
         String body = responseBody(result);
@@ -109,15 +180,12 @@ class AiHttpContractFlowTest {
     }
 
     @Test
-    void chat_enableThinking显式Null_使用命令默认值() throws Exception {
-        MvcResult result = mockMvc.perform(post("/ai/chat")
+    void chat_思考模式显式Null_由BeanValidation拒绝() throws Exception {
+        mockMvc.perform(post("/ai/services/chat").queryParam("serviceCode", "assistant.general")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .accept(MediaType.TEXT_EVENT_STREAM)
-                        .content("{\"message\":\"hello\",\"enableThinking\":null}"))
-                .andExpect(status().isOk())
-                .andReturn();
-
-        assertTrue(responseBody(result).contains("\"type\":\"message\""));
+                        .content("{\"contentParts\":[{\"type\":\"TEXT\",\"text\":\"hello\"}],"
+                                + "\"modelId\":100,\"thinkingEnabled\":null}"))
+                .andExpect(status().isBadRequest());
     }
 
     private String responseBody(MvcResult result) throws Exception {
@@ -135,17 +203,6 @@ class AiHttpContractFlowTest {
     @EnableAutoConfiguration
     @Import({MangoAiAutoConfiguration.class, TestContextConfiguration.class})
     static class TestApplication {
-
-        @Bean
-        @Primary
-        ChatModel testChatModel() {
-            return new TestChatModel();
-        }
-
-        @Bean
-        ICache testCache() {
-            return new TestCache();
-        }
 
         @Bean
         IRateLimiter testRateLimiter() {
@@ -188,7 +245,7 @@ class AiHttpContractFlowTest {
         }
     }
 
-    private static final class TestChatModel implements ChatModel {
+    static final class TestChatModel implements ChatModel {
 
         @Override
         public ChatResponse call(Prompt prompt) {
@@ -205,28 +262,4 @@ class AiHttpContractFlowTest {
         }
     }
 
-    private static final class TestCache implements ICache {
-
-        private final Map<String, String> values = new HashMap<>();
-
-        @Override
-        public void set(String key, String value, long ttlSeconds) {
-            values.put(key, value);
-        }
-
-        @Override
-        public String get(String key) {
-            return values.get(key);
-        }
-
-        @Override
-        public boolean exists(String key) {
-            return values.containsKey(key);
-        }
-
-        @Override
-        public void delete(String key) {
-            values.remove(key);
-        }
-    }
 }

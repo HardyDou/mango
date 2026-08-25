@@ -52,6 +52,7 @@
     "element-plus": "2.14.1"
   },
   "peerDependencies": {
+    "@mango/ai": "workspace:1.0.0",
     "@mango/calendar": "workspace:1.0.36",
     "@mango/file": "workspace:1.0.35",
     "@mango/notice": "workspace:1.0.41",
@@ -66,6 +67,9 @@
     "vue-router": ">=4.1.6 <5"
   },
   "peerDependenciesMeta": {
+    "@mango/ai": {
+      "optional": true
+    },
     "@mango/calendar": {
       "optional": true
     },

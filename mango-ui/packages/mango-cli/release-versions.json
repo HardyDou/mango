@@ -3,6 +3,8 @@
     "mangoBackend": "1.0.38"
   },
   "npm": {
+    "@mango/ai": "1.0.0",
+    "@mango/ai-api": "1.0.0",
     "@mango/admin": "1.0.68",
     "@mango/admin-extension": "1.0.1",
     "@mango/admin-pages": "1.0.35",

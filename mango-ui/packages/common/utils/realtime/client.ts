@@ -280,7 +280,7 @@ export class MangoRealtimeClient implements RealtimeClient {
     return { ...this.metrics };
   }
 
-  private async resolveInitialProtocol(): Promise<RealtimeProtocol> {
+  private async resolveInitialProtocol(preferredProtocol?: RealtimeProtocol): Promise<RealtimeProtocol> {
     if (this.mode !== 'auto') {
       this.negotiatedOrder = [this.mode];
       return this.mode;
@@ -310,6 +310,7 @@ export class MangoRealtimeClient implements RealtimeClient {
       .filter(item => item.enabled && item.available !== false)
       .map(item => item.type));
     const order = uniqueProtocols([
+      preferredProtocol,
       ...(result.order || []),
       ...(result.recommended ? [result.recommended] : []),
       ...this.transportPolicy.fallbackOrder,
@@ -434,7 +435,7 @@ export class MangoRealtimeClient implements RealtimeClient {
   }
 
   private async openWebSocket(): Promise<void> {
-    const url = this.transportUrl(this.endpoints.websocket, 'websocket');
+    const url = this.connectionUrl(this.endpoints.websocket, 'websocket');
 
     await new Promise<void>((resolve, reject) => {
       const websocket = new WebSocket(url.toString());
@@ -471,7 +472,7 @@ export class MangoRealtimeClient implements RealtimeClient {
   }
 
   private async openSse(): Promise<void> {
-    const url = this.transportUrl(this.endpoints.sse, 'sse');
+    const url = this.connectionUrl(this.endpoints.sse, 'sse');
 
     await new Promise<void>((resolve, reject) => {
       const eventSource = new EventSource(url.toString());
@@ -592,7 +593,10 @@ export class MangoRealtimeClient implements RealtimeClient {
       this.retryCount = 0;
       this.setStatus('degraded');
       this.emit('degraded', { from, to: fallback, reason });
-      void this.connectProtocol(fallback, reason).catch(error => void this.handleConnectFailure(normalizeError(error)));
+      const reconnect = this.mode === 'auto'
+        ? this.reconnectWithFreshNegotiation(reason, fallback)
+        : this.connectProtocol(fallback, reason);
+      void reconnect.catch(error => void this.handleConnectFailure(normalizeError(error)));
       return;
     }
     this.scheduleReconnect(reason, this.protocol);
@@ -620,6 +624,11 @@ export class MangoRealtimeClient implements RealtimeClient {
     this.warn(`Realtime reconnect scheduled after ${delay}ms: ${reason}`);
     this.clearReconnectTimer();
     this.reconnectTimer = window.setTimeout(() => {
+      if (this.mode === 'auto') {
+        void this.reconnectWithFreshNegotiation('reconnect', protocol)
+          .catch(error => void this.handleConnectFailure(normalizeError(error)));
+        return;
+      }
       if (protocol) {
         void this.connectProtocol(protocol, 'reconnect').catch(error => void this.handleConnectFailure(normalizeError(error)));
         return;
@@ -710,11 +719,29 @@ export class MangoRealtimeClient implements RealtimeClient {
     this.warn(`Realtime probing upgrade from ${from} to ${target}`);
     this.stopActiveTransport();
     try {
-      await this.connectProtocol(target, 'upgrade-probe');
+      if (this.mode === 'auto') {
+        await this.reconnectWithFreshNegotiation('upgrade-probe', target);
+      } else {
+        await this.connectProtocol(target, 'upgrade-probe');
+      }
     } catch (error) {
       this.warn(`Realtime upgrade failed: ${normalizeError(error).message}`);
-      if (from) await this.connectProtocol(from, 'upgrade-rollback');
+      if (from) {
+        if (this.mode === 'auto') {
+          await this.reconnectWithFreshNegotiation('upgrade-rollback', from);
+        } else {
+          await this.connectProtocol(from, 'upgrade-rollback');
+        }
+      }
     }
+  }
+
+  private async reconnectWithFreshNegotiation(
+    reason: string,
+    preferredProtocol?: RealtimeProtocol | null,
+  ): Promise<void> {
+    const protocol = await this.resolveInitialProtocol(preferredProtocol || undefined);
+    await this.connectProtocol(protocol, reason);
   }
 
   private receiveMessage(message: RealtimeMessage): void {
@@ -894,6 +921,12 @@ export class MangoRealtimeClient implements RealtimeClient {
     const url = this.transportUrl(endpoint, protocol);
     url.searchParams.set('rtTicket', this.connectionTicket);
     return url;
+  }
+
+  private connectionUrl(endpoint: string, protocol: 'websocket' | 'sse'): URL {
+    return this.mode === 'auto'
+      ? this.ticketUrl(endpoint, protocol)
+      : this.transportUrl(endpoint, protocol);
   }
 
   private transportUrl(endpoint: string, protocol: 'websocket' | 'sse'): URL {

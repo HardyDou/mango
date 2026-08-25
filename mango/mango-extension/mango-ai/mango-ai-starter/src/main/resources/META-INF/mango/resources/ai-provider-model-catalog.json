@@ -1,0 +1,303 @@
+{
+  "mango": {
+    "resource": {
+      "schemaVersion": 1,
+      "moduleCode": "mango-ai",
+      "moduleName": "AI 模型目录",
+      "declarations": {
+        "AI_PROVIDER_CONNECTION": [
+          {
+            "id": "2951400000000001001",
+            "version": 1,
+            "bizKey": "ai.provider.deepseek",
+            "name": "DeepSeek",
+            "targetModule": "mango-ai",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": { "type": "LONG", "value": "2951400000000001001" },
+              "tenantId": { "type": "STRING", "value": "1" },
+              "code": { "type": "STRING", "value": "deepseek" },
+              "displayName": { "type": "STRING", "value": "DeepSeek" },
+              "providerType": { "type": "STRING", "value": "DEEPSEEK" },
+              "baseUrl": { "type": "STRING", "value": "https://api.deepseek.com" }
+            }
+          },
+          {
+            "id": "2951400000000001002",
+            "version": 1,
+            "bizKey": "ai.provider.volcengine-ark",
+            "name": "火山方舟",
+            "targetModule": "mango-ai",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": { "type": "LONG", "value": "2951400000000001002" },
+              "tenantId": { "type": "STRING", "value": "1" },
+              "code": { "type": "STRING", "value": "volcengine-ark" },
+              "displayName": { "type": "STRING", "value": "火山方舟" },
+              "providerType": { "type": "STRING", "value": "VOLCENGINE_ARK" },
+              "baseUrl": { "type": "STRING", "value": "https://ark.cn-beijing.volces.com/api/v3" }
+            }
+          },
+          {
+            "id": "2951400000000001003",
+            "version": 1,
+            "bizKey": "ai.provider.alibaba-dashscope",
+            "name": "阿里云百炼",
+            "targetModule": "mango-ai",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": { "type": "LONG", "value": "2951400000000001003" },
+              "tenantId": { "type": "STRING", "value": "1" },
+              "code": { "type": "STRING", "value": "alibaba-dashscope" },
+              "displayName": { "type": "STRING", "value": "阿里云百炼" },
+              "providerType": { "type": "STRING", "value": "ALIBABA_DASHSCOPE" },
+              "baseUrl": { "type": "STRING", "value": "https://dashscope.aliyuncs.com/compatible-mode/v1" }
+            }
+          },
+          {
+            "id": "2951400000000001004",
+            "version": 1,
+            "bizKey": "ai.provider.zhipu",
+            "name": "智谱 AI",
+            "targetModule": "mango-ai",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": { "type": "LONG", "value": "2951400000000001004" },
+              "tenantId": { "type": "STRING", "value": "1" },
+              "code": { "type": "STRING", "value": "zhipu" },
+              "displayName": { "type": "STRING", "value": "智谱 AI" },
+              "providerType": { "type": "STRING", "value": "ZHIPU" },
+              "baseUrl": { "type": "STRING", "value": "https://open.bigmodel.cn/api/paas/v4" }
+            }
+          },
+          {
+            "id": "2951400000000001005",
+            "version": 1,
+            "bizKey": "ai.provider.siliconflow",
+            "name": "硅基流动",
+            "targetModule": "mango-ai",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": { "type": "LONG", "value": "2951400000000001005" },
+              "tenantId": { "type": "STRING", "value": "1" },
+              "code": { "type": "STRING", "value": "siliconflow" },
+              "displayName": { "type": "STRING", "value": "硅基流动" },
+              "providerType": { "type": "STRING", "value": "SILICONFLOW" },
+              "baseUrl": { "type": "STRING", "value": "https://api.siliconflow.cn/v1" }
+            }
+          },
+          {
+            "id": "2951400000000001006",
+            "version": 1,
+            "bizKey": "ai.provider.kimi",
+            "name": "Kimi",
+            "targetModule": "mango-ai",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": { "type": "LONG", "value": "2951400000000001006" },
+              "tenantId": { "type": "STRING", "value": "1" },
+              "code": { "type": "STRING", "value": "kimi" },
+              "displayName": { "type": "STRING", "value": "Kimi" },
+              "providerType": { "type": "STRING", "value": "KIMI" },
+              "baseUrl": { "type": "STRING", "value": "https://api.moonshot.cn/v1" }
+            }
+          },
+          {
+            "id": "2951400000000001007",
+            "version": 1,
+            "bizKey": "ai.provider.openai-compatible",
+            "name": "OpenAI 兼容协议",
+            "targetModule": "mango-ai",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": { "type": "LONG", "value": "2951400000000001007" },
+              "tenantId": { "type": "STRING", "value": "1" },
+              "code": { "type": "STRING", "value": "openai-compatible" },
+              "displayName": { "type": "STRING", "value": "OpenAI 兼容协议" },
+              "providerType": { "type": "STRING", "value": "OPENAI_COMPATIBLE" },
+              "baseUrl": { "type": "STRING", "value": "https://api.openai.com" }
+            }
+          },
+          {
+            "id": "2951400000000001008",
+            "version": 1,
+            "bizKey": "ai.provider.ollama",
+            "name": "Ollama",
+            "targetModule": "mango-ai",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": { "type": "LONG", "value": "2951400000000001008" },
+              "tenantId": { "type": "STRING", "value": "1" },
+              "code": { "type": "STRING", "value": "ollama" },
+              "displayName": { "type": "STRING", "value": "Ollama" },
+              "providerType": { "type": "STRING", "value": "OLLAMA" },
+              "baseUrl": { "type": "STRING", "value": "http://localhost:11434" }
+            }
+          }
+        ],
+        "AI_MODEL": [
+          {
+            "id": "2951400000000002001",
+            "version": 1,
+            "bizKey": "ai.model.deepseek.deepseek-chat",
+            "name": "DeepSeek Chat",
+            "targetModule": "mango-ai",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": { "type": "LONG", "value": "2951400000000002001" },
+              "tenantId": { "type": "STRING", "value": "1" },
+              "providerCode": { "type": "STRING", "value": "deepseek" },
+              "modelName": { "type": "STRING", "value": "deepseek-chat" },
+              "displayName": { "type": "STRING", "value": "DeepSeek Chat" },
+              "apiProtocol": { "type": "STRING", "value": "CHAT_COMPLETIONS" },
+              "capabilitiesJson": { "type": "STRING", "value": "[\"CHAT\"]" },
+              "inputModalitiesJson": { "type": "STRING", "value": "[\"TEXT\"]" },
+              "outputModalitiesJson": { "type": "STRING", "value": "[\"TEXT\"]" },
+              "parameterJson": { "type": "STRING", "value": "{}" }
+            }
+          },
+          {
+            "id": "2951400000000002002",
+            "version": 1,
+            "bizKey": "ai.model.volcengine-ark.doubao-seed-1-6",
+            "name": "豆包 Seed 1.6",
+            "targetModule": "mango-ai",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": { "type": "LONG", "value": "2951400000000002002" },
+              "tenantId": { "type": "STRING", "value": "1" },
+              "providerCode": { "type": "STRING", "value": "volcengine-ark" },
+              "modelName": { "type": "STRING", "value": "doubao-seed-1-6" },
+              "displayName": { "type": "STRING", "value": "豆包 Seed 1.6" },
+              "apiProtocol": { "type": "STRING", "value": "CHAT_COMPLETIONS" },
+              "capabilitiesJson": { "type": "STRING", "value": "[\"CHAT\"]" },
+              "inputModalitiesJson": { "type": "STRING", "value": "[\"TEXT\"]" },
+              "outputModalitiesJson": { "type": "STRING", "value": "[\"TEXT\"]" },
+              "parameterJson": { "type": "STRING", "value": "{}" }
+            }
+          },
+          {
+            "id": "2951400000000002003",
+            "version": 1,
+            "bizKey": "ai.model.alibaba-dashscope.qwen-plus",
+            "name": "Qwen Plus",
+            "targetModule": "mango-ai",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": { "type": "LONG", "value": "2951400000000002003" },
+              "tenantId": { "type": "STRING", "value": "1" },
+              "providerCode": { "type": "STRING", "value": "alibaba-dashscope" },
+              "modelName": { "type": "STRING", "value": "qwen-plus" },
+              "displayName": { "type": "STRING", "value": "Qwen Plus" },
+              "apiProtocol": { "type": "STRING", "value": "CHAT_COMPLETIONS" },
+              "capabilitiesJson": { "type": "STRING", "value": "[\"CHAT\"]" },
+              "inputModalitiesJson": { "type": "STRING", "value": "[\"TEXT\"]" },
+              "outputModalitiesJson": { "type": "STRING", "value": "[\"TEXT\"]" },
+              "parameterJson": { "type": "STRING", "value": "{}" }
+            }
+          },
+          {
+            "id": "2951400000000002004",
+            "version": 1,
+            "bizKey": "ai.model.zhipu.glm-4-plus",
+            "name": "GLM-4 Plus",
+            "targetModule": "mango-ai",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": { "type": "LONG", "value": "2951400000000002004" },
+              "tenantId": { "type": "STRING", "value": "1" },
+              "providerCode": { "type": "STRING", "value": "zhipu" },
+              "modelName": { "type": "STRING", "value": "glm-4-plus" },
+              "displayName": { "type": "STRING", "value": "GLM-4 Plus" },
+              "apiProtocol": { "type": "STRING", "value": "CHAT_COMPLETIONS" },
+              "capabilitiesJson": { "type": "STRING", "value": "[\"CHAT\"]" },
+              "inputModalitiesJson": { "type": "STRING", "value": "[\"TEXT\"]" },
+              "outputModalitiesJson": { "type": "STRING", "value": "[\"TEXT\"]" },
+              "parameterJson": { "type": "STRING", "value": "{}" }
+            }
+          },
+          {
+            "id": "2951400000000002005",
+            "version": 1,
+            "bizKey": "ai.model.siliconflow.deepseek-v3",
+            "name": "DeepSeek V3",
+            "targetModule": "mango-ai",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": { "type": "LONG", "value": "2951400000000002005" },
+              "tenantId": { "type": "STRING", "value": "1" },
+              "providerCode": { "type": "STRING", "value": "siliconflow" },
+              "modelName": { "type": "STRING", "value": "deepseek-ai/DeepSeek-V3" },
+              "displayName": { "type": "STRING", "value": "DeepSeek V3" },
+              "apiProtocol": { "type": "STRING", "value": "CHAT_COMPLETIONS" },
+              "capabilitiesJson": { "type": "STRING", "value": "[\"CHAT\"]" },
+              "inputModalitiesJson": { "type": "STRING", "value": "[\"TEXT\"]" },
+              "outputModalitiesJson": { "type": "STRING", "value": "[\"TEXT\"]" },
+              "parameterJson": { "type": "STRING", "value": "{}" }
+            }
+          },
+          {
+            "id": "2951400000000002006",
+            "version": 1,
+            "bizKey": "ai.model.kimi.moonshot-v1-128k",
+            "name": "Moonshot V1 128K",
+            "targetModule": "mango-ai",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": { "type": "LONG", "value": "2951400000000002006" },
+              "tenantId": { "type": "STRING", "value": "1" },
+              "providerCode": { "type": "STRING", "value": "kimi" },
+              "modelName": { "type": "STRING", "value": "moonshot-v1-128k" },
+              "displayName": { "type": "STRING", "value": "Moonshot V1 128K" },
+              "apiProtocol": { "type": "STRING", "value": "CHAT_COMPLETIONS" },
+              "capabilitiesJson": { "type": "STRING", "value": "[\"CHAT\"]" },
+              "inputModalitiesJson": { "type": "STRING", "value": "[\"TEXT\"]" },
+              "outputModalitiesJson": { "type": "STRING", "value": "[\"TEXT\"]" },
+              "parameterJson": { "type": "STRING", "value": "{}" }
+            }
+          },
+          {
+            "id": "2951400000000002007",
+            "version": 1,
+            "bizKey": "ai.model.openai-compatible.gpt-4o-mini",
+            "name": "GPT-4o Mini",
+            "targetModule": "mango-ai",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": { "type": "LONG", "value": "2951400000000002007" },
+              "tenantId": { "type": "STRING", "value": "1" },
+              "providerCode": { "type": "STRING", "value": "openai-compatible" },
+              "modelName": { "type": "STRING", "value": "gpt-4o-mini" },
+              "displayName": { "type": "STRING", "value": "GPT-4o Mini" },
+              "apiProtocol": { "type": "STRING", "value": "CHAT_COMPLETIONS" },
+              "capabilitiesJson": { "type": "STRING", "value": "[\"CHAT\"]" },
+              "inputModalitiesJson": { "type": "STRING", "value": "[\"TEXT\"]" },
+              "outputModalitiesJson": { "type": "STRING", "value": "[\"TEXT\"]" },
+              "parameterJson": { "type": "STRING", "value": "{}" }
+            }
+          },
+          {
+            "id": "2951400000000002008",
+            "version": 1,
+            "bizKey": "ai.model.ollama.llama3-2",
+            "name": "Llama 3.2",
+            "targetModule": "mango-ai",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": { "type": "LONG", "value": "2951400000000002008" },
+              "tenantId": { "type": "STRING", "value": "1" },
+              "providerCode": { "type": "STRING", "value": "ollama" },
+              "modelName": { "type": "STRING", "value": "llama3.2" },
+              "displayName": { "type": "STRING", "value": "Llama 3.2" },
+              "apiProtocol": { "type": "STRING", "value": "CHAT_COMPLETIONS" },
+              "capabilitiesJson": { "type": "STRING", "value": "[\"CHAT\"]" },
+              "inputModalitiesJson": { "type": "STRING", "value": "[\"TEXT\"]" },
+              "outputModalitiesJson": { "type": "STRING", "value": "[\"TEXT\"]" },
+              "parameterJson": { "type": "STRING", "value": "{}" }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

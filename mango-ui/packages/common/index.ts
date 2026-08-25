@@ -97,6 +97,17 @@ export { default as CanvasSliderCaptcha } from './components/Captcha/CanvasSlide
 export { default as SmsCaptcha } from './components/Captcha/SmsCaptcha.vue';
 export { default as EmailCaptcha } from './components/Captcha/EmailCaptcha.vue';
 export { default as Chat } from './components/Chat/index.vue';
+export type {
+  AIEvent,
+  ChatEmits,
+  ChatExpose,
+  ChatInstance,
+  ChatMessage,
+  ChatProps,
+  ChatSession,
+  ChatStreamCommand,
+  ChatStreamProvider,
+} from './components/Chat/types';
 export { default as ChinaArea } from './components/ChinaArea/index.vue';
 export type {
   AreaNode,

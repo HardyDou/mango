@@ -366,8 +366,9 @@ public class MangoRealtimeAutoConfiguration {
     @Bean
     @ConditionalOnClass(WebSocketConfigurer.class)
     @Conditional(RealtimeConditions.WebSocketEnabled.class)
-    public RealtimeWebSocketHandshakeInterceptor realtimeWebSocketHandshakeInterceptor() {
-        return new RealtimeWebSocketHandshakeInterceptor();
+    public RealtimeWebSocketHandshakeInterceptor realtimeWebSocketHandshakeInterceptor(
+            RealtimeConnectionTicketService ticketService) {
+        return new RealtimeWebSocketHandshakeInterceptor(ticketService);
     }
 
     @Bean

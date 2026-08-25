@@ -111,6 +111,7 @@ Maven 依赖：
 - `mango-numgen-starter`
 - `mango-payment-starter`
 - `mango-link-starter`
+- `mango-ai-starter`
 
 ## 8. 数据与初始化
 本 starter 不提供独立数据库对象。表结构、菜单、权限、字典、租户、任务、模板、流程、支付、文件等初始化来自被聚合模块的 migration、Runner 或 Initializer。

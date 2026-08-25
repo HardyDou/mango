@@ -180,6 +180,18 @@
       "cliVersionKey": "mangoWorkflow"
     },
     {
+      "code": "ai",
+      "packageName": "@mango/ai",
+      "style": "@mango/ai/style.css",
+      "registrars": [
+        {
+          "name": "registerMangoAiAdminPages",
+          "import": "@mango/ai/admin-pages"
+        }
+      ],
+      "cliVersionKey": "mangoAi"
+    },
+    {
       "code": "workflow-example",
       "packageName": "@mango/workflow-business-example",
       "style": "@mango/workflow-business-example/style.css",

@@ -45,6 +45,7 @@ mybatis-plus:
 # Mango JWT
 mango:
   security:
+    default-chain-enabled: false
     jwt:
       secret: ${JWT_SECRET:mango-secret-key-for-jwt-token-generation-must-be-at-least-256-bits}
   auth:
@@ -94,9 +95,15 @@ mango:
       type: jdbc
     capability:
       enabled: true
+      cache: true
       locker: true
+      rate-limiter: true
       token-store: true
       outbox: true
+  redis:
+    host: ${MANGO_REDIS_HOST:127.0.0.1}
+    port: ${MANGO_REDIS_PORT:6379}
+    timeout: ${MANGO_REDIS_TIMEOUT:10000}
   event:
     outbox:
       enabled: true
@@ -148,6 +155,8 @@ mango:
           out-of-order: true
           ignore-missing-migrations: true
         link:
+          enabled: true
+        ai:
           enabled: true
         domain:
           enabled: true

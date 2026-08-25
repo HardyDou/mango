@@ -124,6 +124,14 @@
 
 ## 6. 配置说明
 
+`mango-authorization-starter` 在没有业务认证模块时提供一条默认安全链。完整管理端同时引入 `mango-auth-starter`，必须显式关闭该兜底链，由 Auth 主链统一完成 token 恢复和 API 资源授权，避免两条 `any request` 链并存：
+
+```yaml
+mango:
+  security:
+    default-chain-enabled: false
+```
+
 API 资源扫描配置示例：
 
 ```yaml
@@ -173,6 +181,7 @@ mango:
 
 | 配置项 | 默认值 | 含义 |
 |--------|--------|------|
+| `mango.security.default-chain-enabled` | `true` | 是否装配 Authorization starter 的兜底安全链；完整管理端由 Auth starter 提供主链时设为 `false` |
 | `mango.authorization.resource-sync.enabled` | `true` | 是否启用 MVC / Gateway 资源同步自动配置 |
 | `mango.authorization.resource-sync.module-name` | 空，兜底 `unknown-module` | 扫描资源无法解析模块时使用的模块名 |
 | `mango.authorization.resource-sync.mode` | `read` | legacy writer 模式：`write` 直写授权服务，`read` 只扫描并输出日志 |

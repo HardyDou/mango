@@ -14,7 +14,21 @@ export interface ChatSession {
   messages: ChatMessage[];
 }
 
+export interface ChatStreamCommand {
+  message: string;
+  sessionId: string | null;
+  enableThinking: boolean;
+}
+
+export type ChatStreamProvider = (
+  command: ChatStreamCommand,
+  onEvent: (event: AIEvent) => void,
+  signal: AbortSignal,
+) => Promise<void>;
+
 export interface ChatProps {
+  /** Provider for the real AI event stream. Transport and authentication stay outside this component. */
+  stream: ChatStreamProvider;
   /** Default session ID */
   sessionId?: string;
   /** Welcome message shown on empty state */

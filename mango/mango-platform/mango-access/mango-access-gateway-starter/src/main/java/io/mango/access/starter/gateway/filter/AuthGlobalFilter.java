@@ -83,7 +83,9 @@ public class AuthGlobalFilter implements GlobalFilter, Ordered {
     }
 
     private boolean isRealtimeTicketPath(String path) {
-        return path != null && path.startsWith("/realtime/transports/probe/");
+        return "/realtime/transports/websocket".equals(path)
+                || "/realtime/transports/sse".equals(path)
+                || path != null && path.startsWith("/realtime/transports/probe/");
     }
 
     private boolean hasText(String value) {

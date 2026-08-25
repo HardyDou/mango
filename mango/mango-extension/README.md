@@ -1,135 +1,123 @@
-# Mango Extension
+# Mango Extension 使用说明
 
 ## 1. 概览
 
-`mango-extension` 承载可选扩展能力。当前 `mango-ai` 基于 Spring AI 1.1.8 提供 DeepSeek 流式对话和通过 Mango Realtime 发布的 AI 通知/告警。
-
-扩展模块不属于核心平台必需能力，业务项目按需引入对应 starter。
+`mango-extension` 是 Mango 可选扩展模块的聚合入口。当前提供基于 Spring Boot 3.5.14 与 Spring AI 1.1.8 的 `mango-ai`，用于统一管理模型供应商、Prompt、Skill、工具和面向业务的 AI 服务，并通过一个对话式流式接口运行 `CHAT`、`EXTRACTION`、`CLASSIFICATION` 服务。
 
 ## 2. 功能清单
 
-- Spring AI DeepSeek 流式对话。
-- Mango KV 会话历史、租户/用户隔离和 TTL。
-- Mango `IRateLimiter` 限流与 Resilience4j Reactor 熔断。
-- Micrometer 请求和 token 指标。
-- 通过 Mango Realtime 发布 AI 通知和告警。
+| 能力 | 说明 |
+|---|---|
+| 模型管理 | 管理供应商连接、多模型目录、文本/图片/向量/音频/视频等模态声明和默认能力路由 |
+| 供应商接入 | 内置 DeepSeek、火山方舟、阿里云百炼、智谱 AI、硅基流动、Kimi、OpenAI 兼容协议和 Ollama 八类供应商 |
+| AI 配置 | 管理 Prompt 模板、Skill 指令、MCP/HTTP 工具和 AI 服务定义 |
+| 统一运行 | 所有服务通过 `POST /ai/services/chat` 进入持久化、流式对话流程 |
+| 按轮设置 | 发送时冻结本轮模型和思考设置；生成期间的调整从下一轮生效 |
+| 审计与会话 | 持久化调用审计、用量、会话、消息内容块和每条助手消息的实际模型事实 |
 
-## 3. 模块边界
+## 3. 接入方式
 
-| 模块 | 职责 |
-|------|------|
-| `mango-ai-api` | `ChatCommand` 请求命令和 AI 业务错误码。 |
-| `mango-ai-core` | 基于 Spring AI `ChatModel` 的对话服务、Mango KV 会话、限流、熔断、指标和 Realtime 推送服务。 |
-| `mango-ai-starter` | HTTP/SSE Controller、Spring Boot 自动配置和 Spring AI DeepSeek starter 装配。 |
-
-Controller 和原生 `SseEmitter` 只存在于 starter；core 不依赖 Servlet。AI 对话接口是 `POST /ai/chat`，通知使用 Mango Realtime 统一传输，不提供独立 AI SSE 入口。
-
-## 4. 接入方式
+在需要 AI 能力的 Spring Boot 应用中引入 Starter：
 
 ```xml
 <dependency>
     <groupId>io.mango.extension.ai</groupId>
     <artifactId>mango-ai-starter</artifactId>
+    <version>${mango.version}</version>
 </dependency>
 ```
 
-在宿主应用的 Maven reactor 中引入该 starter，并按下一节配置 Spring AI 和 Mango KV；不要直接调用 core 实现。
+Starter 自动装配 AI API、Spring AI 模型适配器、持久化服务、Controller、Flyway 迁移和 Mango 资源清单。前端管理页与统一运行台由 [`@mango/ai`](../../mango-ui/packages/ai/README.md) 提供，传输契约由 [`@mango/ai-api`](../../mango-ui/packages/ai-api/README.md) 提供。
 
-## 5. 配置说明
+## 4. 配置说明
 
-最低配置：
+供应商连接和模型目录通过“平台能力 → AI 管理 → 模型管理”维护，不在应用配置文件中保存供应商 API Key。API Key 使用 Mango Crypto 加密后入库，生产环境必须提供 SM4 密钥：
 
 ```yaml
-spring:
-  ai:
-    deepseek:
-      api-key: ${DEEPSEEK_API_KEY}
-      base-url: https://api.deepseek.com
-      chat:
-        options:
-          model: deepseek-chat
-
 mango:
-  kv:
-    store:
-      type: redis
-    capability:
-      enabled: true
-      cache: true
-      rate-limiter: true
-  ai:
-    chat:
-      session-ttl: 30m
-      max-history-messages: 20
+  crypto:
+    sm4:
+      secret-key: ${MANGO_CRYPTO_SM4_SECRET_KEY}
+      mode: CBC
+      padding: PKCS5Padding
 ```
 
-AI starter 启动时要求真实 Redis-backed Mango KV、`ICache`、`IRateLimiter` 和 Spring AI DeepSeek API key；不会静默切换到进程内存储或其它模型实现。
+模型协议必须显式选择。DeepSeek 可使用 Spring AI DeepSeek 协议；其余内置供应商及 OpenAI 兼容端点使用已配置的 OpenAI Chat Completions 或 Responses 协议。运行时不会自动切换协议，也不会回退到旧 Provider。
 
-## 6. API 与扩展
+## 5. API 与扩展
 
-请求：
+| 资源 | 主要接口 | 权限前缀 |
+|---|---|---|
+| 模型 | `/ai/models`、`/ai/models/providers`、`/ai/models/routes` | `ai:model:*` |
+| Prompt | `/ai/prompts`、`/ai/prompts/publish` | `ai:prompt:*` |
+| Skill | `/ai/skills` | `ai:skill:*` |
+| 工具 | `/ai/tools` | `ai:tool:*` |
+| AI 服务 | `/ai/services` | `ai:service:*` |
+| 运行选项 | `GET /ai/services/options?serviceCode=<code>` | `ai:service:invoke` |
+| 统一运行 | `POST /ai/services/chat?serviceCode=<code>` | `ai:service:invoke` |
+| 会话 | `/ai/services/conversations`、`/ai/services/conversation` | `ai:service:invoke` |
 
-```http
-POST /ai/chat
-Content-Type: application/json
+统一运行接口输出 `thinking`、`message`、`done`、`error` SSE 事件。OpenAI Responses 适配器明确支持文本、图片和 PDF；TXT、CSV、JSON、XML、Markdown 文本文件由服务端读取为文本上下文。当前不声明 Responses 协议具备音频或视频理解能力，输入是否可用还必须同时满足模型目录模态与实际协议适配器能力。
 
-{"message":"生成一份审批说明","sessionId":"optional-session-id","enableThinking":true}
-```
+当前运行链路不存在旧 `/invoke` 接口、协议自动 fallback 或会话级模型锁定。扩展新模型协议时应实现明确的 Spring AI `ChatModel` 适配边界，并在模型管理中声明协议和模态能力。
 
-调用方必须经过 Mango 授权链并拥有 `ai:chat:use` 权限。租户和用户只从 `MangoContextHolder` 获取，缺失时请求失败闭合；客户端请求头不会覆盖安全上下文。
+## 6. 数据与初始化
 
-| 字段 | 规则 |
-|------|------|
-| `message` | 必填，最多 2000 个字符。 |
-| `sessionId` | 可选，只允许字母、数字、点、下划线和连字符，最多 128 个字符。 |
-| `enableThinking` | 必填布尔值；JSON 显式 `null` 按命令默认值启用。 |
+`mango-ai-core` 通过 Flyway `db/migration/ai/V1__...sql` 至 `V10__...sql` 创建并演进供应商连接、模型、能力路由、Prompt、Skill、工具、服务、调用审计、会话和消息表。Flyway 只负责结构演进，不写入新的供应商、模型或 Demo seed。
 
-响应为标准 `text/event-stream`，每个 `data:` 块承载一个 JSON 事件：`thinking`、`message`、`done` 或 `error`。会话完成后才写入完整 user/assistant 历史；会话 key 同时包含租户、用户和 sessionId，TTL 默认 30 分钟。
+V10 将会话字段定义为最近一次成功回复的模型摘要，并在每条助手消息上保存本轮实际 `modelId`、`modelName`、`providerCode` 和 `thinkingEnabled`。用户消息不保存模型事实。附件业务数据只保存 Mango `fileId`、文件名、内容类型和大小，不持久化临时访问地址或文件二进制。
 
-## 7. 数据与初始化
+正式初始化资源位于 `mango-ai-starter/src/main/resources/META-INF/mango/resources/`：
 
-AI 会话只保存在 Mango KV 的 cache capability 中，不创建 AI 专用表。key 包含环境前缀、租户、用户和 sessionId，TTL 默认 30 分钟；宿主应用必须先完成 Mango Redis KV capability 配置。
+- `ai-menu.json` 声明菜单和权限。
+- `ai-provider-model-catalog.json` 为租户 `1` 首次创建 DeepSeek、火山方舟、阿里云百炼、智谱 AI、硅基流动、Kimi、OpenAI 兼容协议和 Ollama 八个供应商连接，并为每家创建一个代表模型。
 
-## 8. 管理入口
+这些连接不包含 API Key，连接和模型均默认停用。声明使用 `INIT_ONLY`，同租户同编码或模型已存在时保留管理员配置，不覆盖密钥、地址、启用状态、协议、模态或模型参数。火山方舟等按账号使用 endpoint ID 的供应商，需要管理员把代表模型名改为真实可调用值后再启用。
 
-本阶段没有新增管理页面或菜单。HTTP 对话入口要求 Mango 授权链和 `ai:chat:use` 权限，Realtime 通知沿用宿主应用的统一连接和权限边界。
+三个可运行示例位于 `META-INF/mango/demo/ai-demo-services.json`，分别为通用对话、合同五要素抽取和文本情感分类。Demo 只有在 `mango.resource.registry.demo-enabled=true` 时参与资源扫描；Prompt、Skill 和服务同样使用 `INIT_ONLY`，且服务不绑定固定模型，运行时由用户选择已配置且可用的模型。
 
-## 9. 快速开始
+## 7. 管理入口
 
-1. 引入 `mango-ai-starter`。
-2. 配置 Spring AI DeepSeek API key、Redis-backed Mango KV、cache 和 rate-limiter capability。
-3. 在 Mango 授权链为调用方授予 `ai:chat:use`。
-4. 调用 `POST /ai/chat`，读取 `text/event-stream` 事件。
+默认入口位于“平台能力 → AI 管理”，资源包为 `platform_admin`：
 
-## 10. 运行时能力
+| 菜单 | component key | 主要权限 |
+|---|---|---|
+| 模型管理 | `ai/models/index` | `ai:model:list` 及供应商、模型、路由维护权限 |
+| 提示词配置 | `ai/prompts/index` | `ai:prompt:list` 及新增、编辑、删除、发布权限 |
+| Skill 与工具 | `ai/skills/index` | `ai:skill:*`、`ai:tool:*` |
+| AI 服务 | `ai/services/index` | `ai:service:list` 及维护、调用权限 |
+| AI 服务运行台 | `ai/services/run/index` | `ai:service:invoke`，由前端隐藏路由注册 |
 
-- Spring AI `ChatModel.stream(Prompt)` 是唯一模型调用路径，使用 `spring.ai.deepseek.*` 配置。
-- Mango `ICache` 保存完整会话历史，Mango `IRateLimiter` 执行调用限流。
-- Resilience4j Reactor circuit breaker 在模型连续失败时快速拒绝；不会调用旧实现或其它 Provider。
-- Micrometer 记录 `mango.ai.chat.requests` 和 `mango.ai.chat.tokens`；操作日志只记录租户、用户、会话、模型、结果、错误类型和 token 计数，不记录 prompt 正文或密钥。
-- `IAiPushService` 将通知和告警交给 `RealtimeApi`。宿主应用需按 Realtime 模块说明接入统一连接。
+所有管理与运行数据按当前登录租户隔离；会话进一步按当前用户和服务隔离。后端 `@ApiAccess` 是权限边界，前端菜单可见性不能替代接口授权。
 
-## 11. 问题排查
+## 8. 快速开始
 
-- 启动失败并提示 KV 或限流 Bean 缺失：检查 `mango.kv.store.type=redis` 以及 capability 开关和 Redis 连接。
-- 请求因上下文失败闭合：检查请求是否经过 Mango 授权链，以及 `MangoContextHolder` 是否包含租户和用户。
-- 请求被限流或熔断：检查 Mango rate-limiter 配置和模型服务可用性；服务不会回退到旧 Provider。
-- SSE 没有完成事件：检查模型服务响应和应用日志中的错误类型，不要在日志中记录 prompt 或密钥。
+1. 引入 `mango-ai-starter`，配置 Mango 数据源、Flyway、文件能力和 SM4 密钥。
+2. 执行 Bootstrap，使 Flyway V1 至 V10 和正式 Resource 声明同步完成；需要示例服务时显式启用 `mango.resource.registry.demo-enabled=true`。
+3. 在“模型管理”为内置供应商连接填写自己的 API Key，核对基础地址和代表模型名，并启用至少一个 Chat 模型。
+4. 发布 Prompt，按需维护 Skill/工具，再创建并启用 AI 服务。
+5. 从“AI 服务 → 运行”进入统一工作台，在输入框旁选择下一条消息使用的模型和思考模式。
+6. 发送后可继续调整选择器；当前回复仍使用发送时冻结的设置，新设置仅在下一次发送时生效。
 
-## 12. 验证
+## 9. 返回字段
 
-```bash
-cd mango
-mvn -pl :mango-ai-core -am test
-mvn -pl :mango-ai-starter -am test
-mvn verify
-```
+`done` 事件返回 `sessionId`、`requestId`、本轮实际 `modelId/modelName/providerCode/thinkingEnabled` 和最终 `contentParts`。历史助手消息返回相同的本轮模型事实，页面据此展示，不使用输入器当前选择进行推测。
 
-AI 变更测试覆盖连续对话历史、租户/用户隔离、历史裁剪、Redis-backed 能力装配契约、限流、熔断、SSE HTTP 入口、上下文失败闭合和指标记录。生产 DeepSeek 密钥不进入仓库；外部模型协议测试必须使用真实本地 HTTP/SSE 服务。
+消息内容块支持文本、富文本、图片、视频、音频、普通文件和结构化数据的持久化展示。展示格式不等同于模型输入能力；输入仍按模型模态与协议适配器的交集校验。
 
-## 13. 相关文档
+## 10. 问题排查
 
-- [后端模块规范](../../mango-pmo/rules/backend/05-module.md)
-- [后端安全规范](../../mango-pmo/rules/backend/06-security.md)
-- [能力说明维护规范](../../mango-pmo/rules/08-capability-docs.md)
+- 模型不可用：检查供应商连接、API Key、模型启用状态、显式协议和能力路由；系统不会尝试旧协议或其它模型。
+- 切换模型被阻止：待发送附件与目标模型不兼容；系统保留原模型和附件，需先移除附件或选择兼容模型。
+- 生成期间修改未影响当前回复：这是按轮设置语义，修改将在下一轮发送时生效。
+- 文件上传成功但模型拒绝：检查文件类型、大小、模型输入模态和协议真实能力；媒体展示能力不能证明模型可理解该媒体。
+- API Key 无法解密：确认当前环境 `MANGO_CRYPTO_SM4_SECRET_KEY` 与写入密文时一致，不要清空或更换密钥后继续使用旧密文。
+- 页面 404：核对 `ai-menu.json` 的 component key、前端包注册和 Hash 路由地址。
+
+## 11. 相关文档
+
+- [AI 管理与统一运行台](../../mango-ui/packages/ai/README.md)
+- [AI TypeScript API](../../mango-ui/packages/ai-api/README.md)
 - [Mango 能力地图](../../mango-docs/capabilities/README.md)
+- [AI 统一会话交付记录](../../mango-docs/plans/2026-08-24-ai-service-chat-delivery-record.md)
+- [能力说明维护规范](../../mango-pmo/rules/08-capability-docs.md)

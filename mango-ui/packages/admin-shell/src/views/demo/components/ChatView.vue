@@ -92,6 +92,7 @@
 
     <Chat
       ref="chatRef"
+      :stream="demoStream"
       :welcome-message="welcomeMessage"
       :enable-thinking="enableThinking"
       :max-length="maxLength"
@@ -109,6 +110,7 @@ import { ref } from 'vue';
 import { ElMessage } from 'element-plus';
 import { ArrowDown, ArrowUp, ChatDotRound } from '@element-plus/icons-vue';
 import { Chat } from '@mango/common';
+import type { ChatStreamProvider } from '@mango/common';
 import DemoCodeBlock from './DemoCodeBlock.vue';
 import DemoDocLayout from './DemoDocLayout.vue';
 
@@ -129,15 +131,21 @@ const sessionId = ref('');
 const recommendedQuestions = ['你好', '你能做什么？', '介绍一下自己'];
 const codeVisible = ref<Record<string, boolean>>({ basic: false, config: false });
 
+const demoStream: ChatStreamProvider = async () => {
+  throw new Error('此组件演示需要由业务页面注入真实 AI 服务流');
+};
+
 const basicCode = `<template>
-  <Chat ref="chatRef" @message-send="handleMessageSend" />
+  <Chat ref="chatRef" :stream="stream" @message-send="handleMessageSend" />
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue';
 import { Chat } from '@mango/common';
+import type { ChatStreamProvider } from '@mango/common';
 
 const chatRef = ref<InstanceType<typeof Chat>>();
+const stream: ChatStreamProvider = /* inject the service-aware AI API here */;
 
 function openChat() {
   chatRef.value?.open();
@@ -153,6 +161,7 @@ const configCode = `<Chat
 />`;
 
 const propsTable = [
+  { name: 'stream', description: '业务侧提供的真实 AI 事件流和鉴权调用', type: 'ChatStreamProvider', defaultValue: '必填' },
   { name: 'sessionId', description: '默认会话 ID；不传时由后端或组件内部流程生成', type: 'string', defaultValue: "''" },
   { name: 'welcomeMessage', description: '欢迎消息文本或 i18n key', type: 'string', defaultValue: 'chat.welcome' },
   { name: 'recommendedQuestions', description: '空会话时展示的推荐问题', type: 'string[]', defaultValue: '[]' },
