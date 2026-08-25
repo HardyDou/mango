@@ -1,5 +1,7 @@
 # 菜单页面打不开排障
 
+> 2026-08-25 AI 管理能力影响：新增的 `平台能力 → AI 管理` 菜单及模型、提示词、Skill 与工具、AI 服务子菜单由 `META-INF/mango/resources/ai-menu.json` 通过 Resource Registry 注册，页面 key 由 `@mango/ai/admin-pages` 提供。Realtime 短期票据只恢复 WebSocket/SSE 握手身份，不改变菜单树 API、`component` key 解析、角色菜单授权、租户应用绑定或既有菜单排障协议。AI 菜单缺失时应核对 `mango-ai-starter`、AI Resource 声明同步、角色授权和 `@mango/ai` registrar，不手工写授权表。
+
 > 2026-08-25 Issue #835：只修复已有数据库升级时 Resource Registry 无法按持久化 `targetId` 停用已缺失 `AUTH_ROLE_DATA_SCOPE` 的问题；不改变菜单树 API、`component` key、页面注册、角色菜单授权、权限码、租户绑定或本指南排障步骤。升级启动仍在 FINALIZE 报 `field is required: tenantId` 时，应升级到包含该修复的 Mango Maven 版本后重试，不要保留废弃声明或手工修改授权表。
 
 > 2026-07-22 菜单显示文案调整说明：通知中心、审批中心和编号规则分别更名为通知管理、审批管理和编号管理；路由、菜单编码、权限码、页面 key、资源同步和本指南排障步骤均不受影响，历史记录保留原名称。

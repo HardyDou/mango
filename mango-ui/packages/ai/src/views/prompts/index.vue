@@ -1,17 +1,30 @@
 <template>
   <MangoListPage class="mango-ai-config-page" data-page="ai.prompts">
-    <template #header><span>提示词配置</span></template>
-    <el-card shadow="never" data-surface="ai.prompts.list">
-      <template #header>
-        <div class="mango-ai-config-page__header">
-          <div><strong>Prompt 模板</strong><small>模板发布后才能作为稳定版本绑定到 AI 服务</small></div>
-          <el-button v-auth="'ai:prompt:add'" type="primary" data-action="ai.prompts.add" @click="openPrompt()"
-            >新增</el-button
-          >
-        </div>
+    <template #search>
+      <MangoSearchPanel :model="query" @search="handleSearch" @reset="handleReset">
+        <el-form-item label="关键词">
+          <el-input v-model="query.keyword" clearable placeholder="名称或编码" @keyup.enter="handleSearch" />
+        </el-form-item>
+        <el-form-item label="状态">
+          <el-select v-model="query.status" clearable placeholder="全部状态">
+            <el-option label="草稿" value="DRAFT" />
+            <el-option label="已发布" value="PUBLISHED" />
+            <el-option label="已归档" value="ARCHIVED" />
+          </el-select>
+        </el-form-item>
+      </MangoSearchPanel>
+    </template>
+
+    <MangoListPanel data-surface="ai.prompts.list">
+      <template #actions>
+        <el-button v-auth="'ai:prompt:add'" type="primary" plain data-action="ai.prompts.add" @click="openPrompt()">
+          新增提示词
+        </el-button>
       </template>
-      <el-alert v-if="errorMessageText" :title="errorMessageText" type="error" :closable="false" show-icon />
-      <el-table v-else v-loading="loading" :data="prompts" row-key="id" data-surface="ai.prompts.table">
+      <el-alert v-if="errorMessageText" :title="errorMessageText" type="error" :closable="false" show-icon>
+        <el-button link type="primary" @click="load">重试</el-button>
+      </el-alert>
+      <el-table v-else v-loading="loading" :data="pagePrompts" row-key="id" data-surface="ai.prompts.table">
         <el-table-column prop="name" label="名称" min-width="160" />
         <el-table-column prop="code" label="编码" min-width="150" />
         <el-table-column label="状态" width="110"
@@ -37,7 +50,15 @@
         </el-table-column>
         <template #empty><el-empty description="暂无提示词模板" /></template>
       </el-table>
-    </el-card>
+      <template #pagination>
+        <Pagination
+          v-model:page="query.page"
+          v-model:limit="query.size"
+          :total="filteredPrompts.length"
+          @pagination="normalizePage"
+        />
+      </template>
+    </MangoListPanel>
 
     <MangoDialog
       v-model="dialog"
@@ -72,9 +93,9 @@
 
 <script setup lang="ts">
 import type { AiPrompt, AiPromptStatus } from '@mango/ai-api';
-import { MangoDialog, MangoListPage } from '@mango/common';
+import { MangoDialog, MangoListPage, MangoListPanel, MangoSearchPanel, Pagination } from '@mango/common';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { onBeforeUnmount, onMounted, reactive, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
 import { useAiConfigurationApi } from '../../composables/useAiConfigurationApi';
 import { isDialogCancellation, isRequestAborted, requestErrorMessage } from '../../utils/requestError';
 
@@ -86,6 +107,13 @@ const saving = ref(false);
 const dialog = ref(false);
 const errorMessageText = ref('');
 let controller: AbortController | undefined;
+const query = reactive<{ keyword: string; status: AiPromptStatus | ''; page: number; size: number }>({
+  keyword: '',
+  status: '',
+  page: 1,
+  size: 20,
+});
+const criteria = reactive<{ keyword: string; status: AiPromptStatus | '' }>({ keyword: '', status: '' });
 const form = reactive<{
   id?: string;
   code: string;
@@ -100,6 +128,35 @@ const form = reactive<{
   template: '',
   variablesJson: '',
 });
+const filteredPrompts = computed(() =>
+  prompts.value.filter((item) => {
+    const matchesKeyword =
+      !criteria.keyword ||
+      item.name.toLowerCase().includes(criteria.keyword) ||
+      item.code.toLowerCase().includes(criteria.keyword);
+    return matchesKeyword && (!criteria.status || item.status === criteria.status);
+  }),
+);
+const pagePrompts = computed(() => {
+  const start = (query.page - 1) * query.size;
+  return filteredPrompts.value.slice(start, start + query.size);
+});
+
+function normalizePage() {
+  query.page = Math.min(query.page, Math.max(1, Math.ceil(filteredPrompts.value.length / query.size)));
+}
+function handleSearch() {
+  criteria.keyword = query.keyword.trim().toLowerCase();
+  criteria.status = query.status;
+  query.page = 1;
+}
+function handleReset() {
+  query.keyword = '';
+  query.status = '';
+  criteria.keyword = '';
+  criteria.status = '';
+  query.page = 1;
+}
 
 function statusName(status: AiPromptStatus) {
   return ({ DRAFT: '草稿', PUBLISHED: '已发布', ARCHIVED: '已归档' } as Record<AiPromptStatus, string>)[status];
@@ -114,6 +171,7 @@ async function load() {
   errorMessageText.value = '';
   try {
     prompts.value = await api.prompts(controller.signal);
+    normalizePage();
   } catch (error) {
     if (!isRequestAborted(error)) errorMessageText.value = requestErrorMessage(error, '加载提示词失败');
   } finally {

@@ -1,6 +1,24 @@
 <template>
   <MangoListPage class="mango-ai-model-management" data-page="ai.models">
-    <template #header><span>模型管理</span></template>
+    <template #search>
+      <MangoSearchPanel v-if="activeTab === 'models'" :model="query" @search="handleSearch" @reset="handleReset">
+        <el-form-item label="关键词">
+          <el-input
+            v-model="query.keyword"
+            clearable
+            placeholder="模型名称、标识或平台别名"
+            @keyup.enter="handleSearch"
+          />
+        </el-form-item>
+        <el-form-item label="状态">
+          <el-select v-model="query.enabled" clearable placeholder="全部状态">
+            <el-option label="启用" :value="true" />
+            <el-option label="停用" :value="false" />
+          </el-select>
+        </el-form-item>
+      </MangoSearchPanel>
+    </template>
+
     <el-row :gutter="16" class="mango-ai-model-management__workspace">
       <el-col :xs="24" :md="8" :lg="7">
         <el-card shadow="never" data-surface="ai.models.providers">
@@ -25,7 +43,11 @@
               >
             </div></template
           >
-          <el-alert v-if="providerError" :title="providerError" type="error" :closable="false" show-icon />
+          <el-alert v-if="providerError" :title="providerError" type="error" :closable="false" show-icon>
+            <template #default>
+              <el-button link type="primary" @click="load">重试</el-button>
+            </template>
+          </el-alert>
           <el-empty v-else-if="!providers.length" description="暂无供应商接入" />
           <el-menu v-else :default-active="selectedProviderId" @select="selectProvider">
             <el-menu-item
@@ -48,50 +70,49 @@
         </el-card>
       </el-col>
       <el-col :xs="24" :md="16" :lg="17">
-        <el-card shadow="never" data-surface="ai.models.catalog">
-          <template #header
-            ><div class="mango-ai-model-management__section-title">
-              <div>
-                <span>{{ currentProvider?.displayName || '选择供应商' }}</span
-                ><small v-if="currentProvider">{{ currentProvider.baseUrl }}</small>
-              </div>
-              <div>
+        <el-tabs v-model="activeTab" class="mango-ai-model-management__catalog-tabs">
+          <el-tab-pane label="模型目录" name="models">
+            <MangoListPanel data-surface="ai.models.catalog">
+              <template #actions>
+                <div class="mango-ai-model-management__provider-summary">
+                  <strong>{{ currentProvider?.displayName || '请选择供应商' }}</strong>
+                  <small v-if="currentProvider">{{ currentProvider.baseUrl }}</small>
+                </div>
+                <el-button
+                  v-auth="'ai:model:add'"
+                  type="primary"
+                  plain
+                  :disabled="!currentProvider"
+                  @click="openModel()"
+                >
+                  新增模型
+                </el-button>
+              </template>
+              <template #view-actions>
                 <el-button
                   v-if="currentProvider"
                   v-auth="'ai:model:provider:edit'"
-                  link
+                  plain
                   @click="openProvider(currentProvider)"
-                  >接入配置</el-button
-                ><el-button
+                >
+                  接入配置
+                </el-button>
+                <el-button
                   v-if="currentProvider"
                   v-auth="'ai:model:provider:delete'"
-                  link
+                  plain
                   type="danger"
                   @click="removeProvider(currentProvider)"
-                  >删除供应商</el-button
-                ><el-button v-auth="'ai:model:add'" type="primary" :disabled="!currentProvider" @click="openModel()"
-                  >新增模型</el-button
                 >
-              </div>
-            </div></template
-          >
-          <el-tabs v-model="activeTab">
-            <el-tab-pane label="模型目录" name="models">
-              <el-form inline @submit.prevent="loadModels"
-                ><el-form-item label="关键词"
-                  ><el-input
-                    v-model="keyword"
-                    clearable
-                    placeholder="模型名称或平台别名"
-                    @keyup.enter="loadModels" /></el-form-item
-                ><el-form-item label="状态"
-                  ><el-select v-model="enabled" clearable placeholder="全部"
-                    ><el-option label="已启用" :value="true" /><el-option
-                      label="已停用"
-                      :value="false" /></el-select></el-form-item
-                ><el-button type="primary" @click="loadModels">查询</el-button></el-form
-              >
-              <el-table v-loading="modelsLoading" :data="models" row-key="id" data-surface="ai.models.table"
+                  删除供应商
+                </el-button>
+              </template>
+              <el-alert v-if="modelError" :title="modelError" type="error" :closable="false" show-icon>
+                <template #default>
+                  <el-button link type="primary" @click="loadModels">重试</el-button>
+                </template>
+              </el-alert>
+              <el-table v-else v-loading="modelsLoading" :data="pageModels" row-key="id" data-surface="ai.models.table"
                 ><el-table-column prop="displayName" label="模型名称" min-width="150" /><el-table-column
                   prop="modelName"
                   label="模型标识"
@@ -122,13 +143,25 @@
                   ></el-table-column
                 ><template #empty><el-empty description="暂无模型" /></template
               ></el-table>
-            </el-tab-pane>
-            <el-tab-pane label="能力路由" name="routes"
-              ><el-alert
+              <template #pagination>
+                <Pagination
+                  v-model:page="query.page"
+                  v-model:limit="query.size"
+                  :total="filteredModels.length"
+                  @pagination="normalizePage"
+                />
+              </template>
+            </MangoListPanel>
+          </el-tab-pane>
+          <el-tab-pane label="能力路由" name="routes">
+            <MangoListPanel data-surface="ai.models.routes">
+              <el-alert
                 title="路由决定业务能力实际使用的默认模型；只有启用且声明对应能力的模型可被设置。"
                 type="info"
                 :closable="false"
-                show-icon /><el-table :data="routeRows" class="mango-ai-model-management__routes"
+                show-icon
+              />
+              <el-table :data="routeRows" class="mango-ai-model-management__routes"
                 ><el-table-column prop="capability" label="能力" width="180"
                   ><template #default="{ row }">{{ capabilityName(row.capability) }}</template></el-table-column
                 ><el-table-column prop="modelDisplayName" label="当前模型" min-width="180"
@@ -146,10 +179,11 @@
                         v-for="model in routableModels(row.capability)"
                         :key="model.id"
                         :label="model.displayName"
-                        :value="model.id" /></el-select></template></el-table-column></el-table
-            ></el-tab-pane>
-          </el-tabs>
-        </el-card>
+                        :value="model.id" /></el-select></template></el-table-column
+              ></el-table>
+            </MangoListPanel>
+          </el-tab-pane>
+        </el-tabs>
       </el-col>
     </el-row>
 
@@ -257,7 +291,7 @@ import type {
   AiProviderType,
   AiProviderTypeOption,
 } from '@mango/ai-api';
-import { MangoDialog, MangoListPage } from '@mango/common';
+import { MangoDialog, MangoListPage, MangoListPanel, MangoSearchPanel, Pagination } from '@mango/common';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
 import { useAiModelManagementApi } from '../../composables/useAiModelManagementApi';
@@ -270,14 +304,20 @@ const models = ref<AiModel[]>([]);
 const routes = ref<AiCapabilityRoute[]>([]);
 const selectedProviderId = ref('');
 const providerError = ref('');
+const modelError = ref('');
 const modelsLoading = ref(false);
-const keyword = ref('');
-const enabled = ref<boolean>();
 const activeTab = ref('models');
 const saving = ref(false);
 const providerDialog = ref(false);
 const modelDialog = ref(false);
 let controller: AbortController | undefined;
+const query = reactive<{ keyword: string; enabled: boolean | undefined; page: number; size: number }>({
+  keyword: '',
+  enabled: undefined,
+  page: 1,
+  size: 20,
+});
+const criteria = reactive<{ keyword: string; enabled: boolean | undefined }>({ keyword: '', enabled: undefined });
 const capabilities: AiCapability[] = [
   'CHAT',
   'EMBEDDING',
@@ -341,7 +381,37 @@ const routeRows = computed(() =>
     (capability) => routes.value.find((item) => item.capability === capability) ?? { capability, modelId: '' },
   ),
 );
+const filteredModels = computed(() =>
+  models.value.filter((item) => {
+    const keyword = criteria.keyword;
+    const matchesKeyword =
+      !keyword ||
+      item.displayName.toLowerCase().includes(keyword) ||
+      item.modelName.toLowerCase().includes(keyword) ||
+      item.platformAlias?.toLowerCase().includes(keyword);
+    return matchesKeyword && (criteria.enabled === undefined || item.enabled === criteria.enabled);
+  }),
+);
+const pageModels = computed(() => {
+  const start = (query.page - 1) * query.size;
+  return filteredModels.value.slice(start, start + query.size);
+});
 const routeSelection = reactive<Record<string, string>>({});
+function normalizePage() {
+  query.page = Math.min(query.page, Math.max(1, Math.ceil(filteredModels.value.length / query.size)));
+}
+function handleSearch() {
+  criteria.keyword = query.keyword.trim().toLowerCase();
+  criteria.enabled = query.enabled;
+  query.page = 1;
+}
+function handleReset() {
+  query.keyword = '';
+  query.enabled = undefined;
+  criteria.keyword = '';
+  criteria.enabled = undefined;
+  query.page = 1;
+}
 function capabilityName(value: AiCapability) {
   return (
     {
@@ -361,6 +431,7 @@ function apiProtocolName(value: AiApiProtocol) {
 async function load() {
   controller?.abort();
   controller = new AbortController();
+  providerError.value = '';
   try {
     [providers.value, providerTypes.value, routes.value] = await Promise.all([
       api.providers(controller.signal),
@@ -382,22 +453,19 @@ async function loadModels() {
     return;
   }
   modelsLoading.value = true;
+  modelError.value = '';
   try {
-    models.value = await api.models(
-      selectedProviderId.value,
-      { keyword: keyword.value || undefined, enabled: enabled.value },
-      controller?.signal,
-    );
+    models.value = await api.models(selectedProviderId.value, {}, controller?.signal);
+    normalizePage();
   } catch (error) {
-    if (!isRequestAborted(error)) ElMessage.error(requestErrorMessage(error, '加载模型目录失败'));
+    if (!isRequestAborted(error)) modelError.value = requestErrorMessage(error, '加载模型目录失败');
   } finally {
     modelsLoading.value = false;
   }
 }
 function selectProvider(id: string) {
   selectedProviderId.value = id;
-  keyword.value = '';
-  enabled.value = undefined;
+  handleReset();
   void loadModels();
 }
 function openProvider(item?: AiProviderConnection) {
@@ -551,7 +619,6 @@ async function saveModel() {
     }
     ElMessage.success('模型已保存');
     modelDialog.value = false;
-    await loadModels();
     await load();
   } catch (error) {
     ElMessage.error(requestErrorMessage(error, '保存模型失败'));
@@ -564,7 +631,6 @@ async function removeModel(item: AiModel) {
     await ElMessageBox.confirm(`确认删除模型“${item.displayName}”？`, '删除模型', { type: 'warning' });
     await api.deleteModel(item.id);
     ElMessage.success('模型已删除');
-    await loadModels();
     await load();
   } catch (error) {
     if (!isDialogCancellation(error)) ElMessage.error(requestErrorMessage(error, '删除模型失败'));

@@ -1,5 +1,7 @@
 # 租户字典配置为空排障
 
+> 2026-08-25 AI 管理能力影响：八类 AI 供应商、代表模型、Prompt、Skill 和服务使用 AI 自有 Resource Handler 写入租户隔离的 AI 配置表；供应商和模型首次创建时为空密钥、停用，既有租户配置按 `INIT_ONLY` 保留。该初始化不写入 System 字典、系统配置、组织、用户或租户主数据，也不改变这些数据的查询 API、权限、租户隔离和本指南排障链路。AI 配置为空应核对 `mango-ai-starter`、AI Resource 声明和 Handler 收据，不用字典/系统配置 SQL 补齐。
+
 > 2026-07-22 菜单显示文案调整说明：通知中心、审批中心和编号规则分别更名为通知管理、审批管理和编号管理；租户数据、资源同步顺序、菜单权限和本指南排障步骤均不受影响，历史记录保留原名称。
 
 > 2026-08-02 Issue #690 影响说明：租户字典和系统配置查询 API、权限、租户隔离及已有数据不变；初始化入口统一为 `META-INF/mango/resources/` typed declarations。Maven `1.0.31` 的声明 identity 使用独立 canonical mapper，非 Web Bootstrap 与 Web Runtime 的 `Long`/Java Time Jackson 配置不会改变同一 Resource fingerprint。使用 Maven `1.0.30`/`1.0.3x` 的业务仓升级后，排障时同时核对完整 release tuple、Bootstrap stable receipt 的 environment/generation/fingerprint、Resource 同步日志和目标 handler 结果；旧 fingerprint 不一致应升级完整 tuple 后使用新 generation 重新 plan/apply/verify，不重建已有业务库、手工修改 Bootstrap 审计表或用手工 SQL 绕过声明同步。

@@ -54,16 +54,34 @@
   line-height: 1.5;
 }
 
-.mango-ai-config-page {
+.mango-ai-model-management__catalog-tabs,
+.mango-ai-model-management__provider-summary {
   min-width: 0;
 }
 
-.mango-ai-config-page__header,
-.mango-ai-config-page__toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
+.mango-ai-model-management__provider-summary strong,
+.mango-ai-model-management__provider-summary small {
+  display: block;
+}
+
+.mango-ai-model-management__provider-summary small {
+  max-width: 360px;
+  margin-top: 2px;
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 991px) {
+  .mango-ai-model-management__catalog-tabs {
+    margin-top: 16px;
+  }
+}
+
+.mango-ai-config-page {
+  min-width: 0;
 }
 
 .mango-ai-service-run {
@@ -1178,16 +1196,4 @@
     animation: none;
     opacity: 0.65;
   }
-}
-
-.mango-ai-config-page__header small {
-  display: block;
-  margin-top: 4px;
-  color: var(--el-text-color-secondary);
-  font-size: 12px;
-}
-
-.mango-ai-config-page__toolbar {
-  margin-bottom: 16px;
-  color: var(--el-text-color-secondary);
 }

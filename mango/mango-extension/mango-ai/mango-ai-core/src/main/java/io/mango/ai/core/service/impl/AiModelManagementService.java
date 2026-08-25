@@ -455,7 +455,16 @@ public class AiModelManagementService implements IAiModelManagementService {
                 || providerType == AiProviderType.OPENAI_COMPATIBLE || providerType == AiProviderType.OLLAMA;
     }
     private Set<AiCapability> voCapabilities(AiModelEntity entity) { return read(entity.getCapabilitiesJson(), CAPABILITY_TYPE); }
-    private <T> Set<T> read(String value, TypeReference<Set<T>> type) { if (!StringUtils.hasText(value)) return Set.of(); try { return objectMapper.readValue(value, type); } catch (JsonProcessingException exception) { return Set.of(); } }
+    private <T> Set<T> read(String value, TypeReference<Set<T>> type) {
+        if (!StringUtils.hasText(value)) {
+            return Set.of();
+        }
+        try {
+            return objectMapper.readValue(value, type);
+        } catch (JsonProcessingException exception) {
+            return Require.fail(AiCode.MODEL_INVALID, "模型能力配置数据损坏", exception);
+        }
+    }
     private String write(Object value) { try { return objectMapper.writeValueAsString(value); } catch (JsonProcessingException exception) { return Require.fail(AiCode.MODEL_INVALID, "模型参数格式不正确", exception); } }
     private void validateParameterJson(String value) {
         if (!StringUtils.hasText(value)) return;

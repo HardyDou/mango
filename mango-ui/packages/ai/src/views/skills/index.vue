@@ -1,16 +1,47 @@
 <template>
   <MangoListPage class="mango-ai-config-page" data-page="ai.skills">
-    <template #header><span>Skill 与工具</span></template>
-    <el-card shadow="never" data-surface="ai.skills.workspace">
-      <el-tabs v-model="activeTab">
+    <template #search>
+      <MangoSearchPanel :model="query" @search="handleSearch" @reset="handleReset">
+        <el-form-item label="关键词">
+          <el-input v-model="query.keyword" clearable placeholder="名称或编码" @keyup.enter="handleSearch" />
+        </el-form-item>
+        <el-form-item v-if="activeTab === 'tools'" label="工具类型">
+          <el-select v-model="query.toolType" clearable placeholder="全部类型">
+            <el-option label="MCP" value="MCP" />
+            <el-option label="HTTP" value="HTTP" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="状态">
+          <el-select v-model="query.enabled" clearable placeholder="全部状态">
+            <el-option label="启用" :value="true" />
+            <el-option label="停用" :value="false" />
+          </el-select>
+        </el-form-item>
+      </MangoSearchPanel>
+    </template>
+
+    <MangoListPanel data-surface="ai.skills.workspace">
+      <template #actions>
+        <el-button
+          v-if="activeTab === 'skills'"
+          v-auth="'ai:skill:add'"
+          type="primary"
+          plain
+          data-action="ai.skills.add"
+          @click="openSkill()"
+        >
+          新增 Skill
+        </el-button>
+        <el-button v-else v-auth="'ai:tool:add'" type="primary" plain data-action="ai.tools.add" @click="openTool()">
+          新增工具
+        </el-button>
+      </template>
+      <el-alert v-if="errorMessageText" :title="errorMessageText" type="error" :closable="false" show-icon>
+        <el-button link type="primary" @click="load">重试</el-button>
+      </el-alert>
+      <el-tabs v-else v-model="activeTab">
         <el-tab-pane label="Skill 列表" name="skills">
-          <div class="mango-ai-config-page__toolbar">
-            <span>Skill 定义与工具绑定</span
-            ><el-button v-auth="'ai:skill:add'" type="primary" data-action="ai.skills.add" @click="openSkill()"
-              >新增 Skill</el-button
-            >
-          </div>
-          <el-table v-loading="loading" :data="skills" row-key="id" data-surface="ai.skills.table">
+          <el-table v-loading="loading" :data="pageSkills" row-key="id" data-surface="ai.skills.table">
             <el-table-column prop="name" label="名称" min-width="160" /><el-table-column
               prop="code"
               label="编码"
@@ -36,13 +67,7 @@
           </el-table>
         </el-tab-pane>
         <el-tab-pane label="工具列表" name="tools">
-          <div class="mango-ai-config-page__toolbar">
-            <span>MCP 和 HTTP 工具定义</span
-            ><el-button v-auth="'ai:tool:add'" type="primary" data-action="ai.tools.add" @click="openTool()"
-              >新增工具</el-button
-            >
-          </div>
-          <el-table v-loading="loading" :data="tools" row-key="id" data-surface="ai.tools.table">
+          <el-table v-loading="loading" :data="pageTools" row-key="id" data-surface="ai.tools.table">
             <el-table-column prop="name" label="名称" min-width="160" /><el-table-column
               prop="code"
               label="编码"
@@ -71,7 +96,15 @@
           </el-table>
         </el-tab-pane>
       </el-tabs>
-    </el-card>
+      <template #pagination>
+        <Pagination
+          v-model:page="query.page"
+          v-model:limit="query.size"
+          :total="currentTotal"
+          @pagination="normalizePage"
+        />
+      </template>
+    </MangoListPanel>
 
     <MangoDialog
       v-model="skillDialog"
@@ -136,9 +169,9 @@
 
 <script setup lang="ts">
 import type { AiSkill, AiTool, AiToolType } from '@mango/ai-api';
-import { MangoDialog, MangoListPage } from '@mango/common';
+import { MangoDialog, MangoListPage, MangoListPanel, MangoSearchPanel, Pagination } from '@mango/common';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
 import { useAiConfigurationApi } from '../../composables/useAiConfigurationApi';
 import { isDialogCancellation, isRequestAborted, requestErrorMessage } from '../../utils/requestError';
 
@@ -149,9 +182,22 @@ const loading = ref(false);
 const saving = ref(false);
 const skillDialog = ref(false);
 const toolDialog = ref(false);
+const errorMessageText = ref('');
 let controller: AbortController | undefined;
 const skills = ref<AiSkill[]>([]);
 const tools = ref<AiTool[]>([]);
+const query = reactive<{
+  keyword: string;
+  toolType: AiToolType | '';
+  enabled: boolean | undefined;
+  page: number;
+  size: number;
+}>({ keyword: '', toolType: '', enabled: undefined, page: 1, size: 20 });
+const criteria = reactive<{
+  keyword: string;
+  toolType: AiToolType | '';
+  enabled: boolean | undefined;
+}>({ keyword: '', toolType: '', enabled: undefined });
 const skillForm = reactive<{
   id?: string;
   code: string;
@@ -181,14 +227,66 @@ const toolForm = reactive<{
   outputSchemaJson: '{\n  "type": "object"\n}',
   enabled: true,
 });
+const filteredSkills = computed(() =>
+  skills.value.filter((item) => {
+    const matchesKeyword =
+      !criteria.keyword ||
+      item.name.toLowerCase().includes(criteria.keyword) ||
+      item.code.toLowerCase().includes(criteria.keyword);
+    return matchesKeyword && (criteria.enabled === undefined || item.enabled === criteria.enabled);
+  }),
+);
+const filteredTools = computed(() =>
+  tools.value.filter((item) => {
+    const matchesKeyword =
+      !criteria.keyword ||
+      item.name.toLowerCase().includes(criteria.keyword) ||
+      item.code.toLowerCase().includes(criteria.keyword);
+    const matchesType = !criteria.toolType || item.toolType === criteria.toolType;
+    const matchesStatus = criteria.enabled === undefined || item.enabled === criteria.enabled;
+    return matchesKeyword && matchesType && matchesStatus;
+  }),
+);
+const currentTotal = computed(() =>
+  activeTab.value === 'skills' ? filteredSkills.value.length : filteredTools.value.length,
+);
+const pageSkills = computed(() => {
+  const start = (query.page - 1) * query.size;
+  return filteredSkills.value.slice(start, start + query.size);
+});
+const pageTools = computed(() => {
+  const start = (query.page - 1) * query.size;
+  return filteredTools.value.slice(start, start + query.size);
+});
+
+function normalizePage() {
+  query.page = Math.min(query.page, Math.max(1, Math.ceil(currentTotal.value / query.size)));
+}
+function handleSearch() {
+  criteria.keyword = query.keyword.trim().toLowerCase();
+  criteria.toolType = query.toolType;
+  criteria.enabled = query.enabled;
+  query.page = 1;
+}
+function handleReset() {
+  query.keyword = '';
+  query.toolType = '';
+  query.enabled = undefined;
+  criteria.keyword = '';
+  criteria.toolType = '';
+  criteria.enabled = undefined;
+  query.page = 1;
+}
 async function load() {
   controller?.abort();
   controller = new AbortController();
   loading.value = true;
+  errorMessageText.value = '';
   try {
     [skills.value, tools.value] = await Promise.all([api.skills(controller.signal), api.tools(controller.signal)]);
+    normalizePage();
   } catch (error) {
-    if (!isRequestAborted(error)) ElMessage.error(requestErrorMessage(error, '加载 Skill 与工具失败'));
+    if (!isRequestAborted(error)) errorMessageText.value = requestErrorMessage(error, '加载 Skill 与工具失败');
   } finally {
     loading.value = false;
   }
@@ -306,7 +404,7 @@ async function removeTool(item: AiTool) {
   }
 }
 watch(activeTab, () => {
-  void load();
+  handleReset();
 });
 onMounted(() => {
   void load();

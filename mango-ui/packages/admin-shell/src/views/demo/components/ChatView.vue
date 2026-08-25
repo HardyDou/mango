@@ -55,39 +55,55 @@
 
     <section id="props" class="doc-section api-section">
       <h2>支持属性</h2>
-      <el-table :data="propsTable" size="small" border>
-        <el-table-column prop="name" label="属性名" width="180" />
-        <el-table-column prop="description" label="说明" min-width="260" />
-        <el-table-column prop="type" label="类型" min-width="200" />
-        <el-table-column prop="defaultValue" label="默认值" width="150" />
-      </el-table>
+      <el-descriptions :column="1" border>
+        <el-descriptions-item v-for="item in propsTable" :key="item.name">
+          <template #label>{{ item.name }}</template>
+          <div class="api-reference-value">
+            <span>{{ item.description }}</span>
+            <el-tag effect="plain">{{ item.type }}</el-tag>
+            <code>默认值：{{ item.defaultValue }}</code>
+          </div>
+        </el-descriptions-item>
+      </el-descriptions>
     </section>
 
     <section id="slots" class="doc-section api-section">
       <h2>支持插槽</h2>
-      <el-table :data="slotsTable" size="small" border>
-        <el-table-column prop="name" label="插槽名" width="150" />
-        <el-table-column prop="description" label="说明" min-width="260" />
-        <el-table-column prop="scope" label="作用域参数" min-width="180" />
-      </el-table>
+      <el-descriptions :column="1" border>
+        <el-descriptions-item v-for="item in slotsTable" :key="item.name">
+          <template #label>{{ item.name }}</template>
+          <div class="api-reference-value">
+            <span>{{ item.description }}</span>
+            <code>作用域参数：{{ item.scope }}</code>
+          </div>
+        </el-descriptions-item>
+      </el-descriptions>
     </section>
 
     <section id="events" class="doc-section api-section">
       <h2>支持方法 / 事件</h2>
-      <el-table :data="eventsTable" size="small" border>
-        <el-table-column prop="name" label="名称" width="170" />
-        <el-table-column prop="description" label="说明" min-width="260" />
-        <el-table-column prop="payload" label="参数 / 返回" min-width="240" />
-      </el-table>
+      <el-descriptions :column="1" border>
+        <el-descriptions-item v-for="item in eventsTable" :key="item.name">
+          <template #label>{{ item.name }}</template>
+          <div class="api-reference-value">
+            <span>{{ item.description }}</span>
+            <code>参数 / 返回：{{ item.payload }}</code>
+          </div>
+        </el-descriptions-item>
+      </el-descriptions>
     </section>
 
     <section id="value" class="doc-section api-section">
       <h2>返回字段</h2>
-      <el-table :data="valueTable" size="small" border>
-        <el-table-column prop="field" label="字段" width="180" />
-        <el-table-column prop="type" label="类型" min-width="200" />
-        <el-table-column prop="description" label="说明" min-width="280" />
-      </el-table>
+      <el-descriptions :column="1" border>
+        <el-descriptions-item v-for="item in valueTable" :key="item.field">
+          <template #label>{{ item.field }}</template>
+          <div class="api-reference-value">
+            <span>{{ item.description }}</span>
+            <el-tag effect="plain">{{ item.type }}</el-tag>
+          </div>
+        </el-descriptions-item>
+      </el-descriptions>
     </section>
 
     <Chat
@@ -161,7 +177,12 @@ const configCode = `<Chat
 />`;
 
 const propsTable = [
-  { name: 'stream', description: '业务侧提供的真实 AI 事件流和鉴权调用', type: 'ChatStreamProvider', defaultValue: '必填' },
+  {
+    name: 'stream',
+    description: '业务侧提供的真实 AI 事件流和鉴权调用',
+    type: 'ChatStreamProvider',
+    defaultValue: '必填',
+  },
   { name: 'sessionId', description: '默认会话 ID；不传时由后端或组件内部流程生成', type: 'string', defaultValue: "''" },
   { name: 'welcomeMessage', description: '欢迎消息文本或 i18n key', type: 'string', defaultValue: 'chat.welcome' },
   { name: 'recommendedQuestions', description: '空会话时展示的推荐问题', type: 'string[]', defaultValue: '[]' },
@@ -188,7 +209,11 @@ const eventsTable = [
 const valueTable = [
   { field: 'message-send', type: 'string', description: '用户发送的原始文本内容' },
   { field: 'session-change', type: 'string', description: 'AI 流式响应 done 事件中的 sessionId' },
-  { field: 'AIEvent', type: 'thinking | message | done | error', description: '后端 SSE 返回事件类型，组件内部根据类型更新思维链、回答内容、会话 ID 或错误状态' },
+  {
+    field: 'AIEvent',
+    type: 'thinking | message | done | error',
+    description: '后端 SSE 返回事件类型，组件内部根据类型更新思维链、回答内容、会话 ID 或错误状态',
+  },
 ];
 
 function toggleCode(key: string) {
@@ -223,5 +248,23 @@ function handleChatError(err: Error) {
   padding: 16px;
   background: var(--el-fill-color-light);
   border-radius: 6px;
+}
+
+.api-reference-value {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  min-width: 0;
+}
+
+.api-reference-value > span {
+  flex: 1 1 280px;
+  min-width: 0;
+}
+
+.api-reference-value code {
+  color: var(--el-text-color-secondary);
+  overflow-wrap: anywhere;
 }
 </style>

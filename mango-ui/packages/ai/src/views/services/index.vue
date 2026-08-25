@@ -1,19 +1,34 @@
 <template>
   <MangoListPage class="mango-ai-config-page" data-page="ai.services">
-    <template #header><span>AI 服务</span></template>
-    <el-card shadow="never" data-surface="ai.services.list">
-      <template #header
-        ><div class="mango-ai-config-page__header">
-          <div>
-            <strong>业务服务定义</strong><small>绑定 Prompt、Skill 和输入输出 Schema，供后续业务入口调用</small>
-          </div>
-          <el-button v-auth="'ai:service:add'" type="primary" data-action="ai.services.add" @click="openService()"
-            >新增服务</el-button
-          >
-        </div></template
-      >
-      <el-alert v-if="errorMessageText" :title="errorMessageText" type="error" :closable="false" show-icon />
-      <el-table v-else v-loading="loading" :data="services" row-key="id" data-surface="ai.services.table">
+    <template #search>
+      <MangoSearchPanel :model="query" @search="handleSearch" @reset="handleReset">
+        <el-form-item label="关键词">
+          <el-input v-model="query.keyword" clearable placeholder="名称或编码" @keyup.enter="handleSearch" />
+        </el-form-item>
+        <el-form-item label="服务类型">
+          <el-select v-model="query.serviceType" clearable placeholder="全部类型">
+            <el-option v-for="item in serviceTypes" :key="item.value" :label="item.label" :value="item.value" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="状态">
+          <el-select v-model="query.enabled" clearable placeholder="全部状态">
+            <el-option label="启用" :value="true" />
+            <el-option label="停用" :value="false" />
+          </el-select>
+        </el-form-item>
+      </MangoSearchPanel>
+    </template>
+
+    <MangoListPanel data-surface="ai.services.list">
+      <template #actions>
+        <el-button v-auth="'ai:service:add'" type="primary" plain data-action="ai.services.add" @click="openService()">
+          新增服务
+        </el-button>
+      </template>
+      <el-alert v-if="errorMessageText" :title="errorMessageText" type="error" :closable="false" show-icon>
+        <el-button link type="primary" @click="load">重试</el-button>
+      </el-alert>
+      <el-table v-else v-loading="loading" :data="pageServices" row-key="id" data-surface="ai.services.table">
         <el-table-column prop="name" label="名称" min-width="160" /><el-table-column
           prop="code"
           label="编码"
@@ -51,7 +66,15 @@
         >
         <template #empty><el-empty description="暂无 AI 服务定义" /></template>
       </el-table>
-    </el-card>
+      <template #pagination>
+        <Pagination
+          v-model:page="query.page"
+          v-model:limit="query.size"
+          :total="filteredServices.length"
+          @pagination="normalizePage"
+        />
+      </template>
+    </MangoListPanel>
 
     <MangoDialog
       v-model="dialog"
@@ -111,9 +134,9 @@
 
 <script setup lang="ts">
 import type { AiCapability, AiPrompt, AiService, AiServiceType, AiSkill } from '@mango/ai-api';
-import { MangoDialog, MangoListPage } from '@mango/common';
+import { MangoDialog, MangoListPage, MangoListPanel, MangoSearchPanel, Pagination } from '@mango/common';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { onBeforeUnmount, onMounted, reactive, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAiConfigurationApi } from '../../composables/useAiConfigurationApi';
 import { isDialogCancellation, isRequestAborted, requestErrorMessage } from '../../utils/requestError';
@@ -129,6 +152,18 @@ const saving = ref(false);
 const dialog = ref(false);
 const errorMessageText = ref('');
 let controller: AbortController | undefined;
+const query = reactive<{
+  keyword: string;
+  serviceType: AiServiceType | '';
+  enabled: boolean | undefined;
+  page: number;
+  size: number;
+}>({ keyword: '', serviceType: '', enabled: undefined, page: 1, size: 20 });
+const criteria = reactive<{
+  keyword: string;
+  serviceType: AiServiceType | '';
+  enabled: boolean | undefined;
+}>({ keyword: '', serviceType: '', enabled: undefined });
 const capabilities: Array<{ value: AiCapability; label: string }> = [
   { value: 'CHAT', label: '聊天' },
   { value: 'EMBEDDING', label: '向量' },
@@ -143,6 +178,21 @@ const serviceTypes: Array<{ value: AiServiceType; label: string }> = [
   { value: 'EXTRACTION', label: '信息抽取' },
   { value: 'CLASSIFICATION', label: '文本分类' },
 ];
+const filteredServices = computed(() =>
+  services.value.filter((item) => {
+    const matchesKeyword =
+      !criteria.keyword ||
+      item.name.toLowerCase().includes(criteria.keyword) ||
+      item.code.toLowerCase().includes(criteria.keyword);
+    const matchesType = !criteria.serviceType || item.serviceType === criteria.serviceType;
+    const matchesStatus = criteria.enabled === undefined || item.enabled === criteria.enabled;
+    return matchesKeyword && matchesType && matchesStatus;
+  }),
+);
+const pageServices = computed(() => {
+  const start = (query.page - 1) * query.size;
+  return filteredServices.value.slice(start, start + query.size);
+});
 const form = reactive<{
   id?: string;
   code: string;
@@ -165,6 +215,24 @@ const form = reactive<{
   outputSchemaJson: '{\n  "type": "object"\n}',
   enabled: true,
 });
+function normalizePage() {
+  query.page = Math.min(query.page, Math.max(1, Math.ceil(filteredServices.value.length / query.size)));
+}
+function handleSearch() {
+  criteria.keyword = query.keyword.trim().toLowerCase();
+  criteria.serviceType = query.serviceType;
+  criteria.enabled = query.enabled;
+  query.page = 1;
+}
+function handleReset() {
+  query.keyword = '';
+  query.serviceType = '';
+  query.enabled = undefined;
+  criteria.keyword = '';
+  criteria.serviceType = '';
+  criteria.enabled = undefined;
+  query.page = 1;
+}
 async function load() {
   controller?.abort();
   controller = new AbortController();
@@ -176,6 +244,7 @@ async function load() {
       api.prompts(controller.signal),
       api.skills(controller.signal),
     ]);
+    normalizePage();
   } catch (error) {
     if (!isRequestAborted(error)) errorMessageText.value = requestErrorMessage(error, '加载 AI 服务失败');
   } finally {
