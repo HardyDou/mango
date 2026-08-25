@@ -21,10 +21,12 @@ const record: AiChatFileRecord = {
 
 describe('attachmentUploader', () => {
   it('更新真实上传进度并在完成后保留文件中心记录', async () => {
-    const upload = vi.fn(async (_file, onProgress: (value: { loaded: number; total: number }) => void) => {
-      onProgress({ loaded: 2, total: 4 });
-      return record;
-    });
+    const upload = vi.fn(
+      async (_file: File, onProgress: (value: { loaded: number; total: number }) => void, _signal: AbortSignal) => {
+        onProgress({ loaded: 2, total: 4 });
+        return record;
+      },
+    );
     const item = attachment();
 
     await createAttachmentUploader(upload, () => '上传失败').start(item);

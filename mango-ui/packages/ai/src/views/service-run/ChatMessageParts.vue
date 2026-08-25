@@ -13,7 +13,7 @@
             <el-icon><CopyDocument /></el-icon>复制 JSON
           </el-button>
         </div>
-        <pre><code>{{ formatJson(part.dataJson) }}</code></pre>
+        <pre><code>{{ formatJson(part.dataJson ?? undefined) }}</code></pre>
       </div>
       <ChatFilePart v-else :part="part" />
     </template>

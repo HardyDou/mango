@@ -1,6 +1,6 @@
 import type { HttpClient, HttpRequest } from '@mango/api-schema';
 import { describe, expect, it } from 'vitest';
-import { createAiModelManagementApi, type AiServiceChatEvent } from './index';
+import { createAiModelManagementApi, parseAiServiceChatEvent } from './index';
 
 describe('createAiModelManagementApi', () => {
   it('所有服务类型使用统一运行选项入口', async () => {
@@ -100,119 +100,54 @@ describe('createAiModelManagementApi', () => {
     ]);
   });
 
-  it('按服务编码请求并正确处理跨分片 SSE 事件', async () => {
-    const encoder = new TextEncoder();
-    const chunks = [
-      'data: {"type":"mess',
-      'age","content":"你好"}\n\ndata: {"type":"done","sessionId":"s-1",',
-      '"requestId":"r-1","modelId":"100","modelName":"gpt-5.6-sol","providerCode":"openai-compatible","thinkingEnabled":false,"contentParts":[{"type":"RICH_TEXT","text":"你好"}]}\n\n',
-    ];
+  it('通过标准响应受理会话调用并支持显式取消', async () => {
     const requests: HttpRequest[] = [];
     const client: HttpClient = {
       request: async <TResponse, TBody>(request: HttpRequest<TBody>) => {
         requests.push(request);
-        return new ReadableStream<Uint8Array>({
-          start(controller) {
-            chunks.forEach((chunk) => controller.enqueue(encoder.encode(chunk)));
-            controller.close();
-          },
-        }) as TResponse;
+        return (
+          request.method === 'POST' ? { requestId: '1d8f5930-87ac-4b6f-b330-6294c2b252ea', sessionId: 's-1' } : true
+        ) as TResponse;
       },
     };
-    const events: AiServiceChatEvent[] = [];
+    const api = createAiModelManagementApi(client);
+    const requestId = '1d8f5930-87ac-4b6f-b330-6294c2b252ea';
 
-    await createAiModelManagementApi(client).streamServiceChat(
-      'assistant/general',
-      { contentParts: [{ type: 'TEXT', text: '你好' }], modelId: '100', thinkingEnabled: false },
-      (event) => events.push(event),
-    );
+    await api.startServiceChat('assistant/general', {
+      requestId,
+      contentParts: [{ type: 'TEXT', text: '你好' }],
+      modelId: '100',
+      thinkingEnabled: false,
+    });
+    await api.cancelServiceChat(requestId);
 
     expect(requests[0]).toMatchObject({
       method: 'POST',
       url: '/ai/services/chat',
       query: { serviceCode: 'assistant/general' },
-      responseType: 'stream',
-      headers: { Accept: 'text/event-stream' },
+      body: { requestId },
     });
-    expect(events).toEqual([
-      { type: 'message', content: '你好' },
-      {
-        type: 'done',
-        sessionId: 's-1',
-        requestId: 'r-1',
-        modelId: '100',
-        modelName: 'gpt-5.6-sol',
-        providerCode: 'openai-compatible',
-        thinkingEnabled: false,
-        contentParts: [{ type: 'RICH_TEXT', text: '你好' }],
-      },
-    ]);
+    expect(requests[1]).toMatchObject({
+      method: 'DELETE',
+      url: '/ai/services/chat',
+      query: { requestId },
+    });
   });
 
-  it('接受后端为未使用内容块字段返回 null 的真实 SSE 契约', async () => {
-    const encoder = new TextEncoder();
-    const client: HttpClient = {
-      request: async <TResponse>() =>
-        new ReadableStream<Uint8Array>({
-          start(controller) {
-            controller.enqueue(
-              encoder.encode(
-                'data:{"type":"done","sessionId":"s-1","requestId":"r-1","modelId":100,"modelName":"deepseek-chat","providerCode":"deepseek","thinkingEnabled":true,"contentParts":[{"type":"RICH_TEXT","text":"完成","dataJson":null,"fileId":null,"fileName":null,"contentType":null,"fileSize":null}]}\n\n',
-              ),
-            );
-            controller.close();
-          },
-        }) as TResponse,
-    };
-    const events: AiServiceChatEvent[] = [];
-
-    await createAiModelManagementApi(client).streamServiceChat(
-      'assistant.general',
-      { contentParts: [{ type: 'TEXT', text: '你好' }], modelId: '100', thinkingEnabled: false },
-      (event) => events.push(event),
+  it('解析 Realtime 中的真实完成事件和 null 内容块字段', () => {
+    const event = parseAiServiceChatEvent(
+      '{"type":"done","sessionId":"s-1","requestId":"1d8f5930-87ac-4b6f-b330-6294c2b252ea","modelId":100,"modelName":"deepseek-chat","providerCode":"deepseek","thinkingEnabled":true,"contentParts":[{"type":"RICH_TEXT","text":"完成","dataJson":null,"fileId":null,"fileName":null,"contentType":null,"fileSize":null}]}',
     );
 
-    expect(events).toEqual([
-      {
-        type: 'done',
-        sessionId: 's-1',
-        requestId: 'r-1',
-        modelId: 100,
-        modelName: 'deepseek-chat',
-        providerCode: 'deepseek',
-        thinkingEnabled: true,
-        contentParts: [
-          {
-            type: 'RICH_TEXT',
-            text: '完成',
-            dataJson: null,
-            fileId: null,
-            fileName: null,
-            contentType: null,
-            fileSize: null,
-          },
-        ],
-      },
-    ]);
+    expect(event).toMatchObject({
+      type: 'done',
+      sessionId: 's-1',
+      modelId: 100,
+      contentParts: [{ type: 'RICH_TEXT', text: '完成' }],
+    });
   });
 
-  it('拒绝非契约事件', async () => {
-    const client: HttpClient = {
-      request: async <TResponse>() =>
-        new ReadableStream<Uint8Array>({
-          start(controller) {
-            controller.enqueue(new TextEncoder().encode('data: {"type":"unknown"}\n\n'));
-            controller.close();
-          },
-        }) as TResponse,
-    };
-
-    await expect(
-      createAiModelManagementApi(client).streamServiceChat(
-        'assistant.general',
-        { contentParts: [{ type: 'TEXT', text: 'hello' }], modelId: '100', thinkingEnabled: false },
-        () => undefined,
-      ),
-    ).rejects.toThrow('无法识别');
+  it('拒绝非契约 Realtime 事件', () => {
+    expect(() => parseAiServiceChatEvent('{"type":"unknown"}')).toThrow('无法识别');
   });
 });

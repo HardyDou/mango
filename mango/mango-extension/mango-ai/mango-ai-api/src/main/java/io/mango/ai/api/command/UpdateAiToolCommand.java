@@ -1,5 +1,6 @@
 package io.mango.ai.api.command;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
@@ -9,5 +10,6 @@ import lombok.Setter;
 @Setter
 public class UpdateAiToolCommand extends CreateAiToolCommand {
     @NotNull
+    @Schema(description = "记录标识")
     private Long id;
 }

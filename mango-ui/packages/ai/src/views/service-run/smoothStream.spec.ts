@@ -1,10 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  createSmoothTextStream,
-  finalTextRemainder,
-  streamSliceSize,
-  type StreamFrameScheduler,
-} from './smoothStream';
+import { createSmoothTextStream, finalTextRemainder, streamSliceSize, type StreamFrameScheduler } from './smoothStream';
 
 function controlledScheduler() {
   const frames = new Map<number, FrameRequestCallback>();

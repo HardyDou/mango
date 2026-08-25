@@ -1,6 +1,11 @@
 <template>
   <div class="mango-ai-chat__session-list">
-    <el-button class="mango-ai-chat__new" data-action="ai.service-run.new-conversation" :disabled="sending" @click="emit('create')">
+    <el-button
+      class="mango-ai-chat__new"
+      data-action="ai.service-run.new-conversation"
+      :disabled="sending"
+      @click="emit('create')"
+    >
       <el-icon><Plus /></el-icon>新对话
     </el-button>
     <div class="mango-ai-chat__sidebar-label">最近对话</div>

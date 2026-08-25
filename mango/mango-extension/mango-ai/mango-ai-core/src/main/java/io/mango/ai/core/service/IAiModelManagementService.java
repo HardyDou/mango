@@ -6,6 +6,7 @@ import io.mango.ai.api.command.SetAiCapabilityRouteCommand;
 import io.mango.ai.api.command.UpdateAiModelCommand;
 import io.mango.ai.api.command.UpdateAiProviderConnectionCommand;
 import io.mango.ai.api.enums.AiCapability;
+import io.mango.ai.api.query.AiModelQuery;
 import io.mango.ai.api.vo.AiCapabilityRouteVO;
 import io.mango.ai.api.vo.AiServiceRuntimeOptionsVO;
 import io.mango.ai.api.vo.AiModelVO;
@@ -16,7 +17,7 @@ import java.util.List;
 public interface IAiModelManagementService {
     List<AiProviderConnectionVO> providers();
     List<AiProviderTypeVO> providerTypes();
-    List<AiModelVO> models(Long providerConnectionId, String keyword, Boolean enabled);
+    List<AiModelVO> models(AiModelQuery query);
     List<AiCapabilityRouteVO> routes();
     Long createProvider(CreateAiProviderConnectionCommand command);
     Boolean updateProvider(UpdateAiProviderConnectionCommand command);

@@ -1,5 +1,9 @@
 <template>
-  <div class="mango-ai-chat" :class="{ 'is-sidebar-collapsed': sidebarCollapsed }" data-surface="ai.conversation-workspace">
+  <div
+    class="mango-ai-chat"
+    :class="{ 'is-sidebar-collapsed': sidebarCollapsed }"
+    data-surface="ai.conversation-workspace"
+  >
     <aside v-show="!sidebarCollapsed" class="mango-ai-chat__sidebar" data-surface="ai.service-run.conversations">
       <div class="mango-ai-chat__sidebar-heading">
         <span>对话</span>
@@ -179,7 +183,9 @@ export interface AiConversationWorkspaceMessage {
   generationStatus?: 'connecting' | 'thinking' | 'responding' | 'finalizing';
 }
 
-export interface AiConversationWorkspaceSession<TMessage extends AiConversationWorkspaceMessage = AiConversationWorkspaceMessage> {
+export interface AiConversationWorkspaceSession<
+  TMessage extends AiConversationWorkspaceMessage = AiConversationWorkspaceMessage,
+> {
   id: string;
   title: string;
   messages: TMessage[];

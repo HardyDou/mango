@@ -1,6 +1,5 @@
 package io.mango.ai.starter;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.ai.api.enums.AiApiProtocol;
 import io.mango.ai.api.enums.AiCapability;
 import io.mango.ai.api.enums.AiPromptStatus;
@@ -13,17 +12,22 @@ import io.mango.ai.core.mapper.AiPromptMapper;
 import io.mango.ai.core.mapper.AiServiceMapper;
 import io.mango.ai.core.mapper.AiSkillMapper;
 import io.mango.ai.core.service.AiModelResolution;
-import io.mango.ai.core.service.IAiChatConversationStore;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
+import io.mango.infra.kv.api.ICache;
+import io.mango.infra.kv.api.ILocker;
 import io.mango.infra.kv.api.IRateLimiter;
 import io.mango.ai.core.service.IAiModelManagementService;
+import io.mango.ai.core.service.IAiChatConversationStore;
+import io.mango.infra.realtime.api.RealtimeApi;
+import io.mango.infra.realtime.api.dto.RealtimeOutboundMessage;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
@@ -37,24 +41,27 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
 import reactor.core.publisher.Flux;
 
 import java.util.List;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.when;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.timeout;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * AI HTTP 入口特征测试，验证 Spring AI 模型到 SSE 的真实适配契约。
+ * AI HTTP 入口特征测试，验证标准受理响应与 Realtime 增量发布契约。
  */
 @Tag("flow")
 @Tag("ai")
@@ -88,6 +95,12 @@ class AiHttpContractFlowTest {
     private AiInvocationAuditMapper auditMapper;
     @MockitoBean
     private IAiChatConversationStore conversationStore;
+    @MockitoBean
+    private ICache cache;
+    @MockitoBean
+    private ILocker locker;
+    @MockitoBean
+    private RealtimeApi realtimeApi;
 
     @Autowired
     AiHttpContractFlowTest(MockMvc mockMvc) {
@@ -118,8 +131,10 @@ class AiHttpContractFlowTest {
         when(serviceMapper.selectOne(any())).thenReturn(service);
         when(promptMapper.selectById(10L)).thenReturn(prompt);
         when(auditMapper.insert(any(io.mango.ai.core.entity.AiInvocationAuditEntity.class))).thenReturn(1);
-        when(conversationStore.load(any(), any(), any(), any(), anyInt()))
+        when(conversationStore.load(any(), anyInt()))
                 .thenReturn(new IAiChatConversationStore.ConversationState(List.of()));
+        when(locker.tryLock(any(), anyLong())).thenReturn(true);
+        when(cache.exists(any())).thenReturn(false);
     }
 
     @AfterEach
@@ -163,20 +178,28 @@ class AiHttpContractFlowTest {
     }
 
     @Test
-    void chat_合法请求_返回标准Sse消息与会话完成事件() throws Exception {
-        MvcResult result = mockMvc.perform(post("/ai/services/chat").queryParam("serviceCode", "assistant.general")
+    void chat_合法请求_返回标准受理结果并通过Realtime发布完成事件() throws Exception {
+        String requestId = "1d8f5930-87ac-4b6f-b330-6294c2b252ea";
+        mockMvc.perform(post("/ai/services/chat").queryParam("serviceCode", "assistant.general")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .accept(MediaType.TEXT_EVENT_STREAM)
+                        .accept(MediaType.APPLICATION_JSON)
                         .content("{\"contentParts\":[{\"type\":\"TEXT\",\"text\":\"hello\"}],"
                                 + "\"sessionId\":\"session-1\","
+                                + "\"requestId\":\"" + requestId + "\","
                                 + "\"modelId\":100,\"thinkingEnabled\":false}"))
                 .andExpect(status().isOk())
-                .andReturn();
-        String body = responseBody(result);
-        assertTrue(body.contains("\"type\":\"message\""), body);
-        assertTrue(body.contains("\"type\":\"done\""), body);
-        assertTrue(body.contains("session-1"), body);
-        assertTrue(body.contains("data:"), body);
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.requestId").value(requestId))
+                .andExpect(jsonPath("$.data.sessionId").value("session-1"));
+
+        ArgumentCaptor<RealtimeOutboundMessage> captor = ArgumentCaptor.forClass(RealtimeOutboundMessage.class);
+        verify(realtimeApi, timeout(3000).atLeast(2)).publish(captor.capture());
+        List<RealtimeOutboundMessage> messages = captor.getAllValues();
+        assertTrue(messages.stream().allMatch(message -> requestId.equals(message.context().requestId())));
+        assertTrue(messages.stream().anyMatch(message -> message.content().contains("\"type\":\"message\"")));
+        assertTrue(messages.stream().anyMatch(message -> message.content().contains("\"type\":\"done\"")));
+        assertTrue(messages.stream().anyMatch(message -> Boolean.TRUE.equals(message.stream().completed())));
     }
 
     @Test
@@ -186,17 +209,6 @@ class AiHttpContractFlowTest {
                         .content("{\"contentParts\":[{\"type\":\"TEXT\",\"text\":\"hello\"}],"
                                 + "\"modelId\":100,\"thinkingEnabled\":null}"))
                 .andExpect(status().isBadRequest());
-    }
-
-    private String responseBody(MvcResult result) throws Exception {
-        if (result.getRequest().isAsyncStarted()) {
-            return mockMvc.perform(asyncDispatch(result))
-                    .andExpect(status().isOk())
-                    .andReturn()
-                    .getResponse()
-                    .getContentAsString();
-        }
-        return result.getResponse().getContentAsString();
     }
 
     @SpringBootConfiguration

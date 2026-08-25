@@ -7,6 +7,7 @@ import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.authorization.api.query.ApiResourceAccessDecisionQuery;
 import io.mango.authorization.api.vo.ApiResourceAccessDecisionVO;
 import io.mango.authorization.api.vo.ApiResourceRegisterResultVO;
+import io.mango.authorization.starter.autoconfigure.SecurityProperties;
 import io.mango.common.result.R;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.Ordered;
@@ -72,6 +73,17 @@ class FilePreviewEngineResourceRegistrarTest {
                 "io.mango.auth.starter.config.AuthSecurityProperties")).isTrue();
         assertThat(FilePreviewPermitPathBeanPostProcessor.supportsSecurityPropertiesType(
                 "io.mango.authorization.starter.autoconfigure.SecurityProperties")).isTrue();
+    }
+
+    @Test
+    void permitPaths_supportImmutableSecurityPropertiesSnapshot() {
+        SecurityProperties properties = new SecurityProperties();
+        properties.setPermitPaths(List.of("/existing"));
+
+        new FilePreviewPermitPathBeanPostProcessor().postProcessAfterInitialization(properties, "securityProperties");
+
+        assertThat(properties.getPermitPaths())
+                .contains("/existing", "/file-preview/files/preview-entry", "/pdfjs/**");
     }
 
     private static class CapturingApiResourceApi implements ApiResourceApi {

@@ -5,6 +5,7 @@ import io.mango.ai.api.enums.AiApiProtocol;
 import io.mango.ai.api.enums.AiMessageContentType;
 import io.mango.ai.api.enums.AiModality;
 import io.mango.ai.api.vo.AiMessageContentPartVO;
+import io.mango.ai.core.service.AiAssistantMediaInput;
 import io.mango.ai.core.service.AiModelResolution;
 import io.mango.common.exception.BizException;
 import io.mango.file.api.IFileContentProvider;
@@ -102,7 +103,7 @@ class AiMessageContentResolverTest {
                 .name("answer.png")
                 .build();
 
-        AiMessageContentPartVO part = resolver.saveAssistantMedia(media, "request-1", 1);
+        AiMessageContentPartVO part = resolver.saveAssistantMedia(new AiAssistantMediaInput(media, "request-1", 1));
 
         ArgumentCaptor<SaveFileCommand> captor = ArgumentCaptor.forClass(SaveFileCommand.class);
         verify(provider).save(captor.capture());

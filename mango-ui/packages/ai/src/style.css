@@ -74,7 +74,7 @@
   white-space: nowrap;
 }
 
-@media (max-width: 991px) {
+@media (width <= 991px) {
   .mango-ai-model-management__catalog-tabs {
     margin-top: 16px;
   }

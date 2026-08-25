@@ -11,7 +11,7 @@
 | 模型管理 | 管理供应商连接、多模型目录、文本/图片/向量/音频/视频等模态声明和默认能力路由 |
 | 供应商接入 | 内置 DeepSeek、火山方舟、阿里云百炼、智谱 AI、硅基流动、Kimi、OpenAI 兼容协议和 Ollama 八类供应商 |
 | AI 配置 | 管理 Prompt 模板、Skill 指令、MCP/HTTP 工具和 AI 服务定义 |
-| 统一运行 | 所有服务通过 `POST /ai/services/chat` 进入持久化、流式对话流程 |
+| 统一运行 | 所有服务通过标准 HTTP 受理，并由 Mango Realtime 投递模型增量 |
 | 按轮设置 | 发送时冻结本轮模型和思考设置；生成期间的调整从下一轮生效 |
 | 审计与会话 | 持久化调用审计、用量、会话、消息内容块和每条助手消息的实际模型事实 |
 
@@ -55,9 +55,10 @@ mango:
 | AI 服务 | `/ai/services` | `ai:service:*` |
 | 运行选项 | `GET /ai/services/options?serviceCode=<code>` | `ai:service:invoke` |
 | 统一运行 | `POST /ai/services/chat?serviceCode=<code>` | `ai:service:invoke` |
+| 停止生成 | `DELETE /ai/services/chat?requestId=<id>` | `ai:service:invoke` |
 | 会话 | `/ai/services/conversations`、`/ai/services/conversation` | `ai:service:invoke` |
 
-统一运行接口输出 `thinking`、`message`、`done`、`error` SSE 事件。OpenAI Responses 适配器明确支持文本、图片和 PDF；TXT、CSV、JSON、XML、Markdown 文本文件由服务端读取为文本上下文。当前不声明 Responses 协议具备音频或视频理解能力，输入是否可用还必须同时满足模型目录模态与实际协议适配器能力。
+`POST /ai/services/chat` 返回标准 `R<AiServiceChatStartVO>`，模型增量通过 Mango Realtime 的 `ai.service.chat` 事件定向投递给当前租户和用户，事件 payload 包含 `thinking`、`message`、`done`、`error`。OpenAI Responses 适配器明确支持文本、图片和 PDF；TXT、CSV、JSON、XML、Markdown 文本文件由服务端读取为文本上下文。当前不声明 Responses 协议具备音频或视频理解能力，输入是否可用还必须同时满足模型目录模态与实际协议适配器能力。
 
 当前运行链路不存在旧 `/invoke` 接口、协议自动 fallback 或会话级模型锁定。扩展新模型协议时应实现明确的 Spring AI `ChatModel` 适配边界，并在模型管理中声明协议和模态能力。
 

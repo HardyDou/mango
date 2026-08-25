@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.MessageType;
@@ -89,7 +91,7 @@ public final class OpenAiResponsesChatModel implements ChatModel {
     @Override
     public Flux<ChatResponse> stream(Prompt prompt) {
         Assert.notNull(prompt, "prompt must not be null");
-        ResponsesRequest request = new ResponsesRequest(
+        ResponsesPayload payload = new ResponsesPayload(
                 modelName,
                 toInput(prompt.getInstructions()),
                 true,
@@ -97,7 +99,7 @@ public final class OpenAiResponsesChatModel implements ChatModel {
         return webClient.post()
                 .uri(responsesUrl)
                 .accept(MediaType.TEXT_EVENT_STREAM)
-                .bodyValue(request)
+                .bodyValue(payload)
                 .retrieve()
                 .bodyToFlux(SSE_TYPE)
                 .concatMap(event -> mapEvent(event.data()));
@@ -220,29 +222,53 @@ public final class OpenAiResponsesChatModel implements ChatModel {
         return StringUtils.hasText(message) ? "Responses API 调用失败：" + message : "Responses API 调用失败";
     }
 
-    private record ResponsesRequest(
-            String model,
-            List<ResponsesInputMessage> input,
-            boolean stream,
-            ResponsesReasoning reasoning) { }
+    @Getter
+    @RequiredArgsConstructor
+    private static final class ResponsesPayload {
+        private final String model;
+        private final List<ResponsesInputMessage> input;
+        private final boolean stream;
+        private final ResponsesReasoning reasoning;
+    }
 
-    private record ResponsesInputMessage(String role, Object content) { }
+    @Getter
+    @RequiredArgsConstructor
+    private static final class ResponsesInputMessage {
+        private final String role;
+        private final Object content;
+    }
 
     private sealed interface ResponsesInputContent
             permits ResponsesInputText, ResponsesInputImage, ResponsesInputFile { }
 
-    private record ResponsesInputText(String type, String text) implements ResponsesInputContent { }
+    @Getter
+    @RequiredArgsConstructor
+    private static final class ResponsesInputText implements ResponsesInputContent {
+        private final String type;
+        private final String text;
+    }
 
-    private record ResponsesInputImage(
-            String type,
-            @JsonProperty("image_url") String imageUrl,
-            String detail) implements ResponsesInputContent { }
+    @Getter
+    @RequiredArgsConstructor
+    private static final class ResponsesInputImage implements ResponsesInputContent {
+        private final String type;
+        @JsonProperty("image_url")
+        private final String imageUrl;
+        private final String detail;
+    }
 
-    private record ResponsesInputFile(
-            String type,
-            String filename,
-            @JsonProperty("file_data") String fileData)
-            implements ResponsesInputContent { }
+    @Getter
+    @RequiredArgsConstructor
+    private static final class ResponsesInputFile implements ResponsesInputContent {
+        private final String type;
+        private final String filename;
+        @JsonProperty("file_data")
+        private final String fileData;
+    }
 
-    private record ResponsesReasoning(String effort) { }
+    @Getter
+    @RequiredArgsConstructor
+    private static final class ResponsesReasoning {
+        private final String effort;
+    }
 }

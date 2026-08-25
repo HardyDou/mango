@@ -14,14 +14,16 @@ describe('AiConversationWorkspace', () => {
       title: '合同五要素识别',
       persisted: true,
       messageCount: 2,
-      messages: [{
-        id: 'message-1',
-        role: 'assistant' as const,
-        contentParts: [{ type: 'RICH_TEXT' as const, text: '结果' }],
-        modelName: 'gpt-5.6-sol',
-        providerCode: 'openai-compatible',
-        thinkingEnabled: true,
-      }],
+      messages: [
+        {
+          id: 'message-1',
+          role: 'assistant' as const,
+          contentParts: [{ type: 'RICH_TEXT' as const, text: '结果' }],
+          modelName: 'gpt-5.6-sol',
+          providerCode: 'openai-compatible',
+          thinkingEnabled: true,
+        },
+      ],
     };
     const wrapper = mount(AiConversationWorkspace, {
       props: {

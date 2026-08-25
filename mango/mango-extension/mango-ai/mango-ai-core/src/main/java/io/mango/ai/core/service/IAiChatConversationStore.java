@@ -8,28 +8,15 @@ import java.util.List;
 /** AI 聊天会话与消息的持久化端口。 */
 public interface IAiChatConversationStore {
 
-    List<AiChatConversationVO> list(String tenantId, Long userId, String serviceCode);
+    List<AiChatConversationVO> list(AiConversationScope scope);
 
-    AiChatConversationDetailVO detail(String tenantId, Long userId, String serviceCode, String sessionId);
+    AiChatConversationDetailVO detail(AiConversationScope scope);
 
-    ConversationState load(
-            String tenantId,
-            Long userId,
-            String serviceCode,
-            String sessionId,
-            int maxHistoryMessages);
+    ConversationState load(AiConversationScope scope, int maxHistoryMessages);
 
-    void saveExchange(
-            String tenantId,
-            Long userId,
-            String serviceCode,
-            String sessionId,
-            List<AiMessageContentPartVO> userContentParts,
-            List<AiMessageContentPartVO> assistantContentParts,
-            boolean thinkingEnabled,
-            AiModelResolution resolution);
+    void saveExchange(AiConversationExchange exchange);
 
-    boolean delete(String tenantId, Long userId, String serviceCode, String sessionId);
+    boolean delete(AiConversationScope scope);
 
     record ConversationMessage(String role, List<AiMessageContentPartVO> contentParts) {
         public ConversationMessage {

@@ -1,21 +1,14 @@
 <template>
   <div class="chat-component">
     <!-- Chat Launcher Button -->
-    <div
-      v-if="!isOpen"
-      class="chat-launcher"
-      @click="toggle"
-    >
+    <div v-if="!isOpen" class="chat-launcher" @click="toggle">
       <el-icon :size="24">
         <ChatDotRound />
       </el-icon>
     </div>
 
     <!-- Chat Window -->
-    <div
-      v-if="isOpen"
-      class="chat-window"
-    >
+    <div v-if="isOpen" class="chat-window">
       <!-- Header -->
       <div class="chat-header">
         <div class="chat-title">
@@ -25,18 +18,10 @@
           <span>{{ t('chat.title') }}</span>
         </div>
         <div class="chat-actions">
-          <el-button
-            text
-            size="small"
-            @click="handleNewSession"
-          >
+          <el-button text size="small" @click="handleNewSession">
             {{ t('chat.sessionNew') }}
           </el-button>
-          <el-button
-            text
-            size="small"
-            @click="close"
-          >
+          <el-button text size="small" @click="close">
             <el-icon>
               <Close />
             </el-icon>
@@ -45,15 +30,9 @@
       </div>
 
       <!-- Messages -->
-      <div
-        ref="messagesRef"
-        class="chat-messages"
-      >
+      <div ref="messagesRef" class="chat-messages">
         <!-- Welcome Message -->
-        <div
-          v-if="messages.length === 0"
-          class="chat-welcome"
-        >
+        <div v-if="messages.length === 0" class="chat-welcome">
           <div class="welcome-icon">
             <el-icon :size="48">
               <ChatDotRound />
@@ -64,20 +43,12 @@
           </p>
 
           <!-- Recommended Questions -->
-          <div
-            v-if="recommendedQuestions && recommendedQuestions.length > 0"
-            class="recommended-questions"
-          >
+          <div v-if="recommendedQuestions && recommendedQuestions.length > 0" class="recommended-questions">
             <div class="recommended-label">
               {{ t('chat.recommended') }}
             </div>
             <div class="recommended-list">
-              <el-tag
-                v-for="q in recommendedQuestions"
-                :key="q"
-                class="recommended-item"
-                @click="sendRecommended(q)"
-              >
+              <el-tag v-for="q in recommendedQuestions" :key="q" class="recommended-item" @click="sendRecommended(q)">
                 {{ q }}
               </el-tag>
             </div>
@@ -85,12 +56,7 @@
         </div>
 
         <!-- Message List -->
-        <div
-          v-for="msg in messages"
-          :key="msg.id"
-          class="message-item"
-          :class="`message-${msg.role}`"
-        >
+        <div v-for="msg in messages" :key="msg.id" class="message-item" :class="`message-${msg.role}`">
           <div class="message-avatar">
             <el-icon v-if="msg.role === 'user'">
               <User />
@@ -104,14 +70,8 @@
           </div>
           <div class="message-content">
             <!-- Thinking chain (collapsible) -->
-            <div
-              v-if="msg.role === 'thinking' && enableThinking"
-              class="thinking-section"
-            >
-              <div
-                class="thinking-header"
-                @click="toggleThinking(msg.id)"
-              >
+            <div v-if="msg.role === 'thinking' && enableThinking" class="thinking-section">
+              <div class="thinking-header" @click="toggleThinking(msg.id)">
                 <el-icon>
                   <QuestionFilled />
                 </el-icon>
@@ -121,29 +81,20 @@
                   <ArrowUp v-else />
                 </el-icon>
               </div>
-              <div
-                v-show="!collapsedThinking.has(msg.id)"
-                class="thinking-content"
-              >
+              <div v-show="!collapsedThinking.has(msg.id)" class="thinking-content">
                 {{ msg.content }}
               </div>
             </div>
 
             <!-- Regular message content -->
-            <div
-              v-else-if="msg.role !== 'thinking'"
-              class="message-text"
-            >
+            <div v-else-if="msg.role !== 'thinking'" class="message-text">
               {{ msg.content }}
             </div>
           </div>
         </div>
 
         <!-- Loading indicator -->
-        <div
-          v-if="isLoading"
-          class="message-item message-assistant"
-        >
+        <div v-if="isLoading" class="message-item message-assistant">
           <div class="message-avatar">
             <el-icon>
               <ChatLineRound />
@@ -159,20 +110,12 @@
         </div>
 
         <!-- Error message -->
-        <div
-          v-if="error"
-          class="chat-error"
-        >
+        <div v-if="error" class="chat-error">
           <el-icon>
             <WarnTriangleFilled />
           </el-icon>
           <span>{{ errorMessage }}</span>
-          <el-button
-            size="small"
-            type="primary"
-            link
-            @click="retryLastMessage"
-          >
+          <el-button size="small" type="primary" link @click="retryLastMessage">
             {{ t('chat.retry') }}
           </el-button>
         </div>
@@ -190,11 +133,7 @@
           @keydown.enter.exact.prevent="handleSend"
         />
         <div class="chat-input-actions">
-          <el-button
-            :disabled="!canSend"
-            type="primary"
-            @click="handleSend"
-          >
+          <el-button :disabled="!canSend" type="primary" @click="handleSend">
             {{ t('chat.send') }}
           </el-button>
         </div>
@@ -236,17 +175,14 @@ import {
 } from '@element-plus/icons-vue';
 import type { ChatMessage, ChatProps, ChatEmits, ChatExpose, AIEvent } from './types';
 
-const props = withDefaults(
-  defineProps<ChatProps>(),
-  {
-    sessionId: '',
-    welcomeMessage: 'chat.welcome',
-    recommendedQuestions: () => [],
-    enableThinking: true,
-    maxLength: 2000,
-    placeholder: 'chat.placeholder',
-  }
-);
+const props = withDefaults(defineProps<ChatProps>(), {
+  sessionId: '',
+  welcomeMessage: 'chat.welcome',
+  recommendedQuestions: () => [],
+  enableThinking: true,
+  maxLength: 2000,
+  placeholder: 'chat.placeholder',
+});
 
 const emit = defineEmits<ChatEmits>();
 
@@ -527,7 +463,9 @@ defineExpose<ChatExpose>({
   justify-content: center;
   cursor: pointer;
   box-shadow: 0 4px 12px rgba(64, 158, 255, 0.4);
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
 
   &:hover {
     transform: scale(1.05);
@@ -695,7 +633,9 @@ defineExpose<ChatExpose>({
 }
 
 @keyframes typing {
-  0%, 60%, 100% {
+  0%,
+  60%,
+  100% {
     opacity: 0.3;
     transform: translateY(0);
   }

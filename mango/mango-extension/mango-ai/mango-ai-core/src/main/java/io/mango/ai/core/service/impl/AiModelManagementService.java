@@ -15,6 +15,7 @@ import io.mango.ai.api.enums.AiApiProtocol;
 import io.mango.ai.api.enums.AiCapability;
 import io.mango.ai.api.enums.AiModality;
 import io.mango.ai.api.enums.AiProviderType;
+import io.mango.ai.api.query.AiModelQuery;
 import io.mango.ai.api.vo.AiCapabilityRouteVO;
 import io.mango.ai.api.vo.AiServiceModelOptionVO;
 import io.mango.ai.api.vo.AiModelVO;
@@ -92,7 +93,11 @@ public class AiModelManagementService implements IAiModelManagementService {
     }
 
     @Override
-    public List<AiModelVO> models(Long providerConnectionId, String keyword, Boolean enabled) {
+    public List<AiModelVO> models(AiModelQuery query) {
+        Require.notNull(query, AiCode.MODEL_INVALID, "模型查询条件不能为空");
+        Long providerConnectionId = query.getProviderConnectionId();
+        String keyword = query.getKeyword();
+        Boolean enabled = query.getEnabled();
         Require.notNull(providerConnectionId, AiCode.MODEL_INVALID, "厂商接入不能为空");
         Require.nonNull(providerMapper.selectById(providerConnectionId), AiCode.PROVIDER_NOT_FOUND);
         LambdaQueryWrapper<AiModelEntity> wrapper = new LambdaQueryWrapper<AiModelEntity>()

@@ -1,10 +1,10 @@
 {
   "architectureGraph": {
-    "reportSha256": "04a70d5f12c3d199e8ac506fa7e3d8652c6effc1e9b9e9458f64bc058f2e8a5c",
+    "reportSha256": "78440c05c5b6b69e733f634b5ec988d114b0b394af2e5ee72d8fb97e5954bbe5",
     "schemaVersion": 1,
     "workspaceCount": 41
   },
-  "catalogDigest": "62b6015547720fbd250250e695b5d6b069d8d5546f5829c4086067a6369ab637",
+  "catalogDigest": "433534cbc09fd2175ffb31ad42c508c4e10f8c7282cd3173d318e05ab9e4de23",
   "maven": {
     "dependencyManagementSets": [
       {
@@ -6198,6 +6198,15 @@
             "groupId": "io.mango.platform.authorization",
             "optional": false,
             "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-authorization-starter",
+            "classifier": null,
+            "groupId": "io.mango.platform.authorization",
+            "optional": false,
+            "scope": "test",
             "type": "jar",
             "version": "1.0.0-SNAPSHOT"
           },

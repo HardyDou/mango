@@ -191,6 +191,7 @@ export interface UpdateAiServiceCommand extends CreateAiServiceCommand {
   id: ApiId;
 }
 export interface AiServiceChatCommand {
+  requestId: string;
   contentParts: AiMessageContentPartCommand[];
   sessionId?: string;
   modelId: ApiId;
@@ -261,6 +262,10 @@ export type AiServiceChatEvent =
       contentParts: AiMessageContentPart[];
     }
   | { type: 'error'; message: string };
+export interface AiServiceChatStart {
+  requestId: string;
+  sessionId: string;
+}
 export interface AiChatFileRecord {
   id: ApiId;
   fileName: string;
@@ -373,11 +378,7 @@ export function createAiModelManagementApi(httpClient: HttpClient) {
         query: { serviceCode, sessionId },
         signal,
       }),
-    deleteServiceConversation: (
-      serviceCode: string,
-      sessionId: string,
-      signal?: AbortSignal,
-    ): Promise<boolean> =>
+    deleteServiceConversation: (serviceCode: string, sessionId: string, signal?: AbortSignal): Promise<boolean> =>
       httpClient.request<boolean>({
         method: 'DELETE',
         url: '/ai/services/conversation',
@@ -418,12 +419,25 @@ export function createAiModelManagementApi(httpClient: HttpClient) {
         responseType: 'blob',
         signal,
       }),
-    streamServiceChat: (
+    startServiceChat: (
       serviceCode: string,
       command: AiServiceChatCommand,
-      onEvent: (event: AiServiceChatEvent) => void,
       signal?: AbortSignal,
-    ) => streamServiceChat(httpClient, serviceCode, command, onEvent, signal),
+    ): Promise<AiServiceChatStart> =>
+      httpClient.request<AiServiceChatStart, AiServiceChatCommand>({
+        method: 'POST',
+        url: '/ai/services/chat',
+        query: { serviceCode },
+        body: command,
+        signal,
+      }),
+    cancelServiceChat: (requestId: string, signal?: AbortSignal): Promise<boolean> =>
+      httpClient.request<boolean>({
+        method: 'DELETE',
+        url: '/ai/services/chat',
+        query: { requestId },
+        signal,
+      }),
   };
 }
 
@@ -434,55 +448,10 @@ function compactQuery(query: Record<string, unknown>): HttpQuery {
   ) as HttpQuery;
 }
 
-async function streamServiceChat(
-  httpClient: HttpClient,
-  serviceCode: string,
-  command: AiServiceChatCommand,
-  onEvent: (event: AiServiceChatEvent) => void,
-  signal?: AbortSignal,
-): Promise<void> {
-  const stream = await httpClient.request<ReadableStream<Uint8Array>, AiServiceChatCommand>({
-    method: 'POST',
-    url: '/ai/services/chat',
-    query: { serviceCode },
-    body: command,
-    headers: { Accept: 'text/event-stream' },
-    responseType: 'stream',
-    timeoutMs: 300_000,
-    signal,
-  });
-  if (!stream || typeof stream.getReader !== 'function') {
-    throw new Error('AI 服务未返回可读取的事件流');
-  }
-  const reader = stream.getReader();
-  const decoder = new TextDecoder();
-  let buffer = '';
-  while (true) {
-    const result = await reader.read();
-    if (result.done) break;
-    buffer += decoder.decode(result.value, { stream: true });
-    buffer = consumeSseFrames(buffer, onEvent);
-  }
-  buffer += decoder.decode();
-  consumeSseFrames(`${buffer}\n\n`, onEvent);
-}
-
-function consumeSseFrames(buffer: string, onEvent: (event: AiServiceChatEvent) => void): string {
-  const normalized = buffer.replace(/\r\n/g, '\n');
-  const frames = normalized.split('\n\n');
-  const remainder = frames.pop() ?? '';
-  for (const frame of frames) {
-    const payload = frame
-      .split('\n')
-      .filter((line) => line.startsWith('data:'))
-      .map((line) => line.slice(5).trimStart())
-      .join('\n');
-    if (!payload) continue;
-    const value: unknown = JSON.parse(payload);
-    if (!isAiServiceChatEvent(value)) throw new Error('AI 服务返回了无法识别的事件');
-    onEvent(value);
-  }
-  return remainder;
+export function parseAiServiceChatEvent(value: unknown): AiServiceChatEvent {
+  const parsed: unknown = typeof value === 'string' ? JSON.parse(value) : value;
+  if (!isAiServiceChatEvent(parsed)) throw new Error('AI 服务返回了无法识别的实时事件');
+  return parsed;
 }
 
 function isAiServiceChatEvent(value: unknown): value is AiServiceChatEvent {

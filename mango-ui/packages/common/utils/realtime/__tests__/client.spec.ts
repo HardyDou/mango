@@ -82,6 +82,28 @@ describe('MangoRealtimeClient ticket transport authentication', () => {
     expectTicketUrl(urls[3], '/api/realtime/transports/websocket', 'ticket-reconnect');
     client.disconnect();
   });
+
+  it('delivers a business error envelope to its domain subscriber', async () => {
+    const urls: string[] = [];
+    const WebSocketStub = websocketStub(urls, false);
+    vi.stubGlobal('WebSocket', WebSocketStub);
+    const received: string[] = [];
+    const client = new MangoRealtimeClient({ mode: 'websocket', heartbeat: false });
+    client.subscribe('ai.service.chat', (message) => received.push(message.event?.name || ''));
+    await client.connect();
+
+    WebSocketStub.instances[0]?.onmessage?.({
+      data: JSON.stringify({
+        id: 'business-error-1',
+        event: { domain: 'ai', name: 'service.chat' },
+        status: { code: 500, state: 'ERROR' },
+        payload: { type: 'text', text: '{"type":"error","message":"模型不可用"}' },
+      }),
+    });
+
+    expect(received).toEqual(['service.chat']);
+    client.disconnect();
+  });
 });
 
 function negotiationFetch(ticket: string, protocol: RealtimeProtocol) {
@@ -89,21 +111,26 @@ function negotiationFetch(ticket: string, protocol: RealtimeProtocol) {
 }
 
 function responseForNegotiation(ticket: string, protocol: RealtimeProtocol): Response {
-  return new Response(JSON.stringify({
-    recommended: protocol,
-    order: [protocol],
-    transports: [{
-      type: protocol,
-      enabled: true,
-      available: true,
-      probeRequired: true,
-    }],
-    connectionTicket: ticket,
-    ticketExpiresAt: Date.now() + 60_000,
-  }), {
-    status: 200,
-    headers: { 'Content-Type': 'application/json' },
-  });
+  return new Response(
+    JSON.stringify({
+      recommended: protocol,
+      order: [protocol],
+      transports: [
+        {
+          type: protocol,
+          enabled: true,
+          available: true,
+          probeRequired: true,
+        },
+      ],
+      connectionTicket: ticket,
+      ticketExpiresAt: Date.now() + 60_000,
+    }),
+    {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    },
+  );
 }
 
 function websocketStub(urls: string[], probeFirst = true) {

@@ -6,6 +6,8 @@ import io.mango.ai.api.enums.AiMessageContentType;
 import io.mango.ai.api.enums.AiModality;
 import io.mango.ai.api.vo.AiMessageContentPartVO;
 import io.mango.ai.core.service.AiModelResolution;
+import io.mango.ai.core.service.AiAssistantMediaInput;
+import io.mango.ai.core.service.AiUserMessageInput;
 import io.mango.common.result.Require;
 import io.mango.file.api.IFileContentProvider;
 import io.mango.file.api.command.SaveFileCommand;
@@ -93,7 +95,12 @@ public class AiMessageContentResolver {
     }
 
     /** 使用显式模型文本构造消息，供结构化服务把固定 Schema 约束放入每一轮请求。 */
-    public UserMessage toUserMessage(
+    public UserMessage toUserMessage(AiUserMessageInput input) {
+        Require.notNull(input, AiCode.CHAT_REQUEST_INVALID, "模型消息输入不能为空");
+        return toUserMessage(input.contentParts(), input.resolution(), input.modelText());
+    }
+
+    private UserMessage toUserMessage(
             List<AiMessageContentPartVO> parts,
             AiModelResolution resolution,
             String modelTextOverride) {
@@ -150,7 +157,11 @@ public class AiMessageContentResolver {
     }
 
     /** 将模型返回的二进制媒体保存到 Mango 文件中心并生成持久化内容块。 */
-    public AiMessageContentPartVO saveAssistantMedia(Media media, String requestId, int index) {
+    public AiMessageContentPartVO saveAssistantMedia(AiAssistantMediaInput input) {
+        Require.notNull(input, AiCode.CHAT_MODEL_UNAVAILABLE, "AI 模型媒体输入不能为空");
+        Media media = input.media();
+        String requestId = input.requestId();
+        int index = input.index();
         Require.notNull(media, AiCode.CHAT_MODEL_UNAVAILABLE, "AI 模型返回了空媒体");
         byte[] content = Require.nonNull(media.getDataAsByteArray(), AiCode.CHAT_MODEL_UNAVAILABLE,
                 "AI 模型返回的媒体为空或超过20MB");
@@ -325,7 +336,7 @@ public class AiMessageContentResolver {
         try {
             inputStream.close();
         } catch (IOException exception) {
-            throw new IllegalStateException("关闭附件输入流失败", exception);
+            Require.fail(AiCode.CHAT_CONTEXT_UNAVAILABLE, "关闭附件输入流失败", exception);
         }
     }
 

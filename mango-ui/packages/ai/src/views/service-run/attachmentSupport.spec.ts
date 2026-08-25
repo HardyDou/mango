@@ -27,7 +27,12 @@ describe('AI 会话附件能力', () => {
     const large = new File([new Uint8Array(20 * 1024 * 1024 + 1)], 'large.pdf', { type: 'application/pdf' });
     const pdf = new File([new Uint8Array(2 * 1024 * 1024)], 'next.pdf', { type: 'application/pdf' });
 
-    expect(validateAttachment(large, ['FILE'], 0).message).toContain('超过20MB');
-    expect(validateAttachment(pdf, ['FILE'], 39 * 1024 * 1024).message).toContain('总大小不能超过40MB');
+    const largeResult = validateAttachment(large, ['FILE'], 0);
+    const totalResult = validateAttachment(pdf, ['FILE'], 39 * 1024 * 1024);
+
+    expect(largeResult.accepted).toBe(false);
+    if (!largeResult.accepted) expect(largeResult.message).toContain('超过20MB');
+    expect(totalResult.accepted).toBe(false);
+    if (!totalResult.accepted) expect(totalResult.message).toContain('总大小不能超过40MB');
   });
 });

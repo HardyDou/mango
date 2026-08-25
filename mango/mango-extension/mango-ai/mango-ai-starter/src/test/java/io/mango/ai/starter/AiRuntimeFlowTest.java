@@ -15,6 +15,10 @@ import io.mango.ai.core.mapper.AiSkillMapper;
 import io.mango.ai.core.service.AiModelResolution;
 import io.mango.ai.core.service.IAiModelManagementService;
 import io.mango.ai.core.service.IAiChatConversationStore;
+import io.mango.infra.kv.api.ICache;
+import io.mango.infra.kv.api.ILocker;
+import io.mango.infra.realtime.api.RealtimeApi;
+import io.mango.infra.realtime.api.dto.RealtimeOutboundMessage;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -27,11 +31,15 @@ import org.springframework.web.reactive.function.client.WebClient;
 import java.time.Duration;
 import java.util.List;
 import java.util.Set;
+import org.mockito.ArgumentCaptor;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.when;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.Mockito.timeout;
+import static org.mockito.Mockito.verify;
 
 /**
  * 通过真实嵌入式 HTTP 服务验证 AI starter 入口。
@@ -71,6 +79,12 @@ class AiRuntimeFlowTest {
     private AiInvocationAuditMapper auditMapper;
     @MockitoBean
     private IAiChatConversationStore conversationStore;
+    @MockitoBean
+    private ICache cache;
+    @MockitoBean
+    private ILocker locker;
+    @MockitoBean
+    private RealtimeApi realtimeApi;
 
     @BeforeEach
     void setUpModelConfig() {
@@ -96,31 +110,38 @@ class AiRuntimeFlowTest {
         when(serviceMapper.selectOne(any())).thenReturn(service);
         when(promptMapper.selectById(10L)).thenReturn(prompt);
         when(auditMapper.insert(any(AiInvocationAuditEntity.class))).thenReturn(1);
-        when(conversationStore.load(any(), any(), any(), any(), anyInt()))
+        when(conversationStore.load(any(), anyInt()))
                 .thenReturn(new IAiChatConversationStore.ConversationState(List.of()));
+        when(locker.tryLock(any(), anyLong())).thenReturn(true);
+        when(cache.exists(any())).thenReturn(false);
     }
 
     @Test
-    void chat_真实HTTP入口_返回标准Sse事件() {
+    void chat_真实HTTP入口_返回标准受理结果并发布Realtime事件() {
         WebClient client = WebClient.builder().baseUrl("http://127.0.0.1:" + port).build();
+        String requestId = "ab5f3f7d-4f62-4e31-a318-c9518a454c2c";
 
         String body = client.post()
                 .uri(uriBuilder -> uriBuilder.path("/ai/services/chat")
                         .queryParam("serviceCode", "assistant.general")
                         .build())
                 .contentType(MediaType.APPLICATION_JSON)
-                .accept(MediaType.TEXT_EVENT_STREAM)
+                .accept(MediaType.APPLICATION_JSON)
                 .bodyValue("{\"contentParts\":[{\"type\":\"TEXT\",\"text\":\"hello\"}],"
                         + "\"sessionId\":\"runtime-session\","
+                        + "\"requestId\":\"" + requestId + "\","
                         + "\"modelId\":100,\"thinkingEnabled\":false}")
                 .retrieve()
                 .bodyToMono(String.class)
                 .block(Duration.ofSeconds(5));
 
-        assertTrue(body.contains("data:"), body);
-        assertTrue(body.contains("\"type\":\"message\""), body);
-        assertTrue(body.contains("\"type\":\"done\""), body);
+        assertTrue(body.contains("\"success\":true"), body);
+        assertTrue(body.contains(requestId), body);
         assertTrue(body.contains("runtime-session"), body);
+        ArgumentCaptor<RealtimeOutboundMessage> captor = ArgumentCaptor.forClass(RealtimeOutboundMessage.class);
+        verify(realtimeApi, timeout(3000).atLeast(2)).publish(captor.capture());
+        assertTrue(captor.getAllValues().stream()
+                .anyMatch(message -> message.content().contains("\"type\":\"done\"")));
     }
 
 }

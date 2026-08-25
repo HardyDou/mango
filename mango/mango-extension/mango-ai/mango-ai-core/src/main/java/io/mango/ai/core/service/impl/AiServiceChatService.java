@@ -21,6 +21,7 @@ import io.mango.ai.api.enums.AiServiceType;
 import io.mango.ai.api.vo.AiChatConversationDetailVO;
 import io.mango.ai.api.vo.AiChatConversationVO;
 import io.mango.ai.api.vo.AiMessageContentPartVO;
+import io.mango.ai.api.vo.AiServiceChatStartVO;
 import io.mango.ai.api.vo.AiServiceRuntimeOptionsVO;
 import io.mango.ai.core.entity.AiInvocationAuditEntity;
 import io.mango.ai.core.entity.AiPromptEntity;
@@ -30,14 +31,29 @@ import io.mango.ai.core.mapper.AiInvocationAuditMapper;
 import io.mango.ai.core.mapper.AiPromptMapper;
 import io.mango.ai.core.mapper.AiServiceMapper;
 import io.mango.ai.core.mapper.AiSkillMapper;
+import io.mango.ai.core.service.AiAssistantMediaInput;
+import io.mango.ai.core.service.AiConversationExchange;
+import io.mango.ai.core.service.AiConversationScope;
 import io.mango.ai.core.service.AiModelResolution;
+import io.mango.ai.core.service.AiUserMessageInput;
 import io.mango.ai.core.service.IAiChatConversationStore;
 import io.mango.ai.core.service.IAiModelManagementService;
 import io.mango.ai.core.service.IAiServiceChatService;
 import io.mango.common.result.Require;
 import io.mango.infra.context.api.MangoContextHolder;
+import io.mango.infra.kv.api.ICache;
+import io.mango.infra.kv.api.ILocker;
 import io.mango.infra.kv.api.IRateLimiter;
 import io.mango.infra.log.Loggers;
+import io.mango.infra.realtime.api.RealtimeApi;
+import io.mango.infra.realtime.api.dto.RealtimeContext;
+import io.mango.infra.realtime.api.dto.RealtimeEvent;
+import io.mango.infra.realtime.api.dto.RealtimeOutboundMessage;
+import io.mango.infra.realtime.api.dto.RealtimePayload;
+import io.mango.infra.realtime.api.dto.RealtimeSource;
+import io.mango.infra.realtime.api.dto.RealtimeStatus;
+import io.mango.infra.realtime.api.dto.RealtimeStream;
+import io.mango.infra.realtime.api.dto.RealtimeTarget;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,14 +63,16 @@ import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.metadata.Usage;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.prompt.Prompt;
-import org.springframework.ai.deepseek.DeepSeekAssistantMessage;
 import org.springframework.ai.content.Media;
+import org.springframework.ai.deepseek.DeepSeekAssistantMessage;
 import org.springframework.ai.openai.OpenAiChatOptions;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
+import reactor.core.Disposable;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -64,6 +82,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -81,6 +104,11 @@ public class AiServiceChatService implements IAiServiceChatService {
     private static final String SUCCESS = "SUCCESS";
     private static final String FAILED = "FAILED";
     private static final String RATE_LIMITED = "RATE_LIMITED";
+    private static final String CANCELLED = "CANCELLED";
+    private static final String DELIVERY_FAILED = "DELIVERY_FAILED";
+    private static final String REALTIME_EVENT_NAME = "service.chat";
+    private static final long ACTIVE_REQUEST_TTL_SECONDS = 360L;
+    private static final Duration REMOTE_CANCELLATION_POLL_INTERVAL = Duration.ofMillis(100L);
     private static final int MAX_SESSION_ID_LENGTH = 128;
     private static final int MARKDOWN_FENCE_LENGTH = 3;
 
@@ -92,10 +120,14 @@ public class AiServiceChatService implements IAiServiceChatService {
     private final IAiChatConversationStore conversationStore;
     private final AiMessageContentResolver contentResolver;
     private final IRateLimiter rateLimiter;
+    private final ICache cache;
+    private final ILocker locker;
+    private final RealtimeApi realtimeApi;
     private final ObjectMapper objectMapper;
     private final MeterRegistry meterRegistry;
     private final CircuitBreaker circuitBreaker;
     private final int maxHistoryMessages;
+    private final ConcurrentMap<String, ActiveInvocation> activeInvocations = new ConcurrentHashMap<>();
 
     /** 创建服务感知的 AI 聊天执行器。 */
     @SuppressFBWarnings(
@@ -110,6 +142,9 @@ public class AiServiceChatService implements IAiServiceChatService {
             IAiChatConversationStore conversationStore,
             AiMessageContentResolver contentResolver,
             IRateLimiter rateLimiter,
+            ICache cache,
+            ILocker locker,
+            RealtimeApi realtimeApi,
             ObjectMapper objectMapper,
             MeterRegistry meterRegistry,
             @Value("${mango.ai.chat.max-history-messages:20}") int maxHistoryMessages,
@@ -124,9 +159,12 @@ public class AiServiceChatService implements IAiServiceChatService {
         this.conversationStore = conversationStore;
         this.contentResolver = contentResolver;
         this.rateLimiter = rateLimiter;
+        this.cache = cache;
+        this.locker = locker;
+        this.realtimeApi = realtimeApi;
         this.objectMapper = objectMapper.copy();
         this.meterRegistry = meterRegistry;
-        Require.positive(maxHistoryMessages, "maxHistoryMessages must be positive");
+        Require.positive(maxHistoryMessages, AiCode.CONFIG_INVALID);
         this.maxHistoryMessages = maxHistoryMessages;
         this.circuitBreaker = CircuitBreaker.of("mangoAiServiceChatModel", CircuitBreakerConfig.custom()
                 .failureRateThreshold(failureRateThreshold)
@@ -142,29 +180,22 @@ public class AiServiceChatService implements IAiServiceChatService {
         requireExecutableService(normalizedServiceCode);
         String tenantId = requireTenantId();
         Long userId = requireUserId();
-        return conversationStore.list(tenantId, userId, normalizedServiceCode);
+        return conversationStore.list(new AiConversationScope(tenantId, userId, normalizedServiceCode, null));
     }
 
     @Override
     public AiChatConversationDetailVO conversation(String serviceCode, String sessionId) {
         String normalizedServiceCode = normalizeServiceCode(serviceCode);
         requireExecutableService(normalizedServiceCode);
-        return conversationStore.detail(
-                requireTenantId(),
-                requireUserId(),
-                normalizedServiceCode,
-                normalizeSessionId(sessionId));
+        return conversationStore.detail(conversationScope(normalizedServiceCode, normalizeSessionId(sessionId)));
     }
 
     @Override
     public Boolean deleteConversation(String serviceCode, String sessionId) {
+        Require.notBlank(serviceCode, AiCode.SERVICE_NOT_FOUND, "服务编码不能为空");
         String normalizedServiceCode = normalizeServiceCode(serviceCode);
         requireExecutableService(normalizedServiceCode);
-        return conversationStore.delete(
-                requireTenantId(),
-                requireUserId(),
-                normalizedServiceCode,
-                normalizeSessionId(sessionId));
+        return conversationStore.delete(conversationScope(normalizedServiceCode, normalizeSessionId(sessionId)));
     }
 
     @Override
@@ -176,12 +207,13 @@ public class AiServiceChatService implements IAiServiceChatService {
     }
 
     @Override
-    public Flux<String> chat(String serviceCode, AiServiceChatCommand command) {
+    public AiServiceChatStartVO chat(String serviceCode, AiServiceChatCommand command) {
         Require.notNull(command, AiCode.CHAT_REQUEST_REQUIRED, "对话请求不能为空");
         String normalizedServiceCode = normalizeServiceCode(serviceCode);
         Require.notNull(command.getContentParts(), AiCode.CHAT_REQUEST_INVALID, "消息内容不能为空");
         Require.notNull(command.getModelId(), AiCode.CHAT_REQUEST_INVALID, "会话模型不能为空");
         Require.notNull(command.getThinkingEnabled(), AiCode.CHAT_REQUEST_INVALID, "思考模式不能为空");
+        Require.notBlank(command.getRequestId(), AiCode.CHAT_REQUEST_INVALID, "请求标识不能为空");
         String tenantId = requireTenantId();
         Long userId = requireUserId();
 
@@ -192,8 +224,26 @@ public class AiServiceChatService implements IAiServiceChatService {
                 resolveSessionId(command.getSessionId()),
                 command.getContentParts(),
                 command.getModelId(),
-                Boolean.TRUE.equals(command.getThinkingEnabled()));
-        return Flux.defer(() -> execute(context));
+                Boolean.TRUE.equals(command.getThinkingEnabled()),
+                command.getRequestId().trim());
+        return startInvocation(context);
+    }
+
+    @Override
+    public Boolean cancel(String requestId) {
+        Require.notBlank(requestId, AiCode.CHAT_REQUEST_INVALID, "请求标识不能为空");
+        String owner = cache.get(requestOwnerKey(requestId));
+        if (owner == null) {
+            return false;
+        }
+        Require.isTrue(owner.equals(requestOwner(requireTenantId(), requireUserId())),
+                AiCode.CHAT_REQUEST_INVALID, "只能取消当前用户发起的 AI 请求");
+        cache.set(requestCancelledKey(requestId), Boolean.TRUE.toString(), ACTIVE_REQUEST_TTL_SECONDS);
+        ActiveInvocation invocation = activeInvocations.get(requestId);
+        if (invocation != null) {
+            invocation.cancel();
+        }
+        return true;
     }
 
     private InvocationContext prepareContext(
@@ -203,7 +253,8 @@ public class AiServiceChatService implements IAiServiceChatService {
             String sessionId,
             List<io.mango.ai.api.command.AiMessageContentPartCommand> contentParts,
             Long modelId,
-            boolean thinkingEnabled) {
+            boolean thinkingEnabled,
+            String requestId) {
         AiServiceEntity service = requireExecutableService(serviceCode);
         AiPromptEntity prompt = requirePublishedPrompt(service);
         AiSkillEntity skill = loadSkill(service.getSkillId());
@@ -223,9 +274,113 @@ public class AiServiceChatService implements IAiServiceChatService {
                 normalizedParts,
                 thinkingEnabled,
                 MangoContextHolder.traceId(),
-                UUID.randomUUID().toString(),
+                requestId,
                 resolution,
                 System.nanoTime());
+    }
+
+    private AiServiceChatStartVO startInvocation(InvocationContext context) {
+        String lockKey = requestLockKey(context.requestId());
+        Require.isTrue(locker.tryLock(lockKey, ACTIVE_REQUEST_TTL_SECONDS),
+                AiCode.CHAT_REQUEST_INVALID, "请求标识已被使用，请重新发送");
+        ActiveInvocation invocation = new ActiveInvocation();
+        try {
+            cache.set(
+                    requestOwnerKey(context.requestId()),
+                    requestOwner(context.tenantId(), context.userId()),
+                    ACTIVE_REQUEST_TTL_SECONDS);
+            activeInvocations.put(context.requestId(), invocation);
+            AtomicInteger chunk = new AtomicInteger();
+            Disposable subscription = Flux.defer(() -> execute(context, invocation))
+                    .publishOn(Schedulers.boundedElastic())
+                    .concatMap(event -> Mono.fromRunnable(() -> publishEvent(context, event, chunk.incrementAndGet(),
+                            invocation)))
+                    .doFinally(signal -> finishInvocation(context.requestId(), invocation))
+                    .subscribe(
+                            ignored -> { },
+                            error -> invocationFailure(context, invocation, error));
+            invocation.attach(subscription);
+            AiServiceChatStartVO result = new AiServiceChatStartVO();
+            result.setRequestId(context.requestId());
+            result.setSessionId(context.sessionId());
+            return result;
+        } catch (RuntimeException exception) {
+            finishInvocation(context.requestId(), invocation);
+            return Require.rethrow(exception);
+        }
+    }
+
+    private void finishInvocation(String requestId, ActiveInvocation invocation) {
+        if (!invocation.terminate()) {
+            return;
+        }
+        activeInvocations.remove(requestId, invocation);
+        cache.delete(requestOwnerKey(requestId));
+        cache.delete(requestCancelledKey(requestId));
+        locker.unlock(requestLockKey(requestId));
+    }
+
+    private void publishEvent(
+            InvocationContext context,
+            String eventJson,
+            int chunk,
+            ActiveInvocation invocation) {
+        JsonNode event = parseEvent(eventJson);
+        String type = event.path("type").asText();
+        boolean completed = "done".equals(type) || "error".equals(type);
+        RealtimeStatus status = "error".equals(type)
+                ? RealtimeStatus.error() : "done".equals(type) ? RealtimeStatus.success() : null;
+        try {
+            realtimeApi.publish(new RealtimeOutboundMessage(
+                    null,
+                    "1.0",
+                    RealtimeEvent.of("ai", REALTIME_EVENT_NAME),
+                    RealtimeSource.server(),
+                    new RealtimeContext(context.tenantId(), context.userId(), context.traceId(), context.requestId()),
+                    RealtimeTarget.user(context.userId()),
+                    Map.of("serviceCode", context.serviceCode(), "sessionId", context.sessionId()),
+                    RealtimePayload.text(eventJson),
+                    null,
+                    (long) chunk,
+                    status,
+                    null,
+                    new RealtimeStream(context.requestId(), chunk, completed)));
+        } catch (RuntimeException exception) {
+            invocation.markDeliveryFailed();
+            Require.rethrow(exception);
+        }
+        if (completed) {
+            invocation.markTerminalPublished();
+            TerminalAudit terminalAudit = Require.nonNull(invocation.takeTerminalAudit(),
+                    AiCode.SERVICE_AUDIT_FAILED, "AI 终态审计上下文不存在");
+            recordInvocationOnce(invocation, context, terminalAudit.result(), terminalAudit.errorCode(),
+                    terminalAudit.usage(), terminalAudit.outputBytes());
+        }
+    }
+
+    private JsonNode parseEvent(String eventJson) {
+        try {
+            return objectMapper.readTree(eventJson);
+        } catch (JsonProcessingException exception) {
+            return Require.fail(AiCode.SERVICE_INVOCATION_FAILED, "AI 实时事件序列化结果无效", exception);
+        }
+    }
+
+    private void invocationFailure(InvocationContext context, ActiveInvocation invocation, Throwable error) {
+        if (invocation.isDeliveryFailed()) {
+            recordInvocationOnce(invocation, context, DELIVERY_FAILED, AiCode.SERVICE_INVOCATION_FAILED.getCode(),
+                    TokenUsage.empty(), 0L);
+        }
+        LOG.error(
+                "AI asynchronous invocation failed tenantId={} userId={} serviceCode={} requestId={} traceId={} "
+                        + "deliveryFailed={}",
+                context.tenantId(),
+                context.userId(),
+                context.serviceCode(),
+                context.requestId(),
+                context.traceId(),
+                invocation.isDeliveryFailed(),
+                error);
     }
 
     private String normalizeServiceCode(String serviceCode) {
@@ -292,9 +447,10 @@ public class AiServiceChatService implements IAiServiceChatService {
         return content.toString();
     }
 
-    private Flux<String> execute(InvocationContext context) {
+    private Flux<String> execute(InvocationContext context, ActiveInvocation invocation) {
         if (!rateLimiter.tryAcquire(rateLimitKey(context), 1)) {
-            recordInvocation(context, RATE_LIMITED, AiCode.CHAT_RATE_LIMITED.getCode(), TokenUsage.empty(), 0L);
+            invocation.prepareTerminalAudit(new TerminalAudit(
+                    RATE_LIMITED, AiCode.CHAT_RATE_LIMITED.getCode(), TokenUsage.empty(), 0L));
             return Flux.just(errorEvent(AiCode.CHAT_RATE_LIMITED.getMessage()));
         }
 
@@ -311,11 +467,29 @@ public class AiServiceChatService implements IAiServiceChatService {
         messages.add(new SystemMessage(buildSystemPrompt(context)));
         messages.addAll(toSpringMessages(context, history));
         messages.add(toSpringUserMessage(context, context.userContentParts()));
+        AtomicBoolean remotelyCancelled = new AtomicBoolean();
+        Flux<Long> cancellationSignal = Flux.interval(Duration.ZERO, REMOTE_CANCELLATION_POLL_INTERVAL)
+                .filter(ignored -> isCancelled(context))
+                .doOnNext(ignored -> remotelyCancelled.set(true))
+                .take(1);
         return context.resolution().getChatModel().stream(modelPrompt(context, messages))
                 .transformDeferred(CircuitBreakerOperator.of(circuitBreaker))
-                .concatMap(response -> mapResponse(response, context.thinkingEnabled(), accumulator))
-                .concatWith(Mono.defer(() -> completeConversation(context, accumulator)))
-                .onErrorResume(error -> modelError(context, accumulator, error));
+                .concatMap(response -> isCancelled(context)
+                        ? Flux.error(new AiChatCancelledException())
+                        : mapResponse(response, context.thinkingEnabled(), accumulator))
+                .takeUntilOther(cancellationSignal)
+                .concatWith(Mono.defer(() -> remotelyCancelled.get() || isCancelled(context)
+                        ? Mono.error(new AiChatCancelledException())
+                        : completeConversation(context, accumulator, invocation)))
+                .onErrorResume(AiChatCancelledException.class,
+                        error -> cancelled(context, accumulator, invocation))
+                .onErrorResume(error -> modelError(context, accumulator, invocation, error))
+                .doOnCancel(() -> {
+                    if (!invocation.isDeliveryFailed() && !invocation.isTerminalPublished()) {
+                        recordInvocationOnce(invocation, context, CANCELLED, null, accumulator.tokenUsage(),
+                                accumulator.content().getBytes(StandardCharsets.UTF_8).length);
+                    }
+                });
     }
 
     private Prompt modelPrompt(InvocationContext context, List<Message> messages) {
@@ -361,28 +535,25 @@ public class AiServiceChatService implements IAiServiceChatService {
 
     private Mono<String> completeConversation(
             InvocationContext context,
-            ConversationAccumulator accumulator) {
+            ConversationAccumulator accumulator,
+            ActiveInvocation invocation) {
         return Mono.fromCallable(() -> {
             String assistantText = accumulator.content();
             Require.isTrue(StringUtils.hasText(assistantText) || !accumulator.media().isEmpty(),
                     AiCode.CHAT_MODEL_UNAVAILABLE, "AI 模型未返回有效内容");
             List<AiMessageContentPartVO> assistantParts = assistantParts(
                     context.service(), assistantText, accumulator.media(), context.requestId());
-            conversationStore.saveExchange(
-                    context.tenantId(),
-                    context.userId(),
-                    context.serviceCode(),
-                    context.sessionId(),
+            conversationStore.saveExchange(new AiConversationExchange(
+                    conversationScope(context),
                     context.userContentParts(),
                     assistantParts,
                     context.thinkingEnabled(),
-                    context.resolution());
-            recordInvocation(
-                    context,
+                    context.resolution()));
+            invocation.prepareTerminalAudit(new TerminalAudit(
                     SUCCESS,
                     null,
                     accumulator.tokenUsage(),
-                    assistantText.getBytes(StandardCharsets.UTF_8).length);
+                    assistantText.getBytes(StandardCharsets.UTF_8).length));
             return doneEvent(context, assistantParts);
         });
     }
@@ -390,6 +561,7 @@ public class AiServiceChatService implements IAiServiceChatService {
     private Flux<String> modelError(
             InvocationContext context,
             ConversationAccumulator accumulator,
+            ActiveInvocation invocation,
             Throwable error) {
         String errorType = error instanceof CallNotPermittedException
                 ? "circuit_open" : error.getClass().getSimpleName();
@@ -402,14 +574,60 @@ public class AiServiceChatService implements IAiServiceChatService {
                 context.traceId(),
                 errorType,
                 error);
-        recordInvocation(context, FAILED, AiCode.CHAT_MODEL_UNAVAILABLE.getCode(), accumulator.tokenUsage(),
-                accumulator.content().getBytes(StandardCharsets.UTF_8).length);
+        invocation.prepareTerminalAudit(new TerminalAudit(
+                FAILED,
+                AiCode.CHAT_MODEL_UNAVAILABLE.getCode(),
+                accumulator.tokenUsage(),
+                accumulator.content().getBytes(StandardCharsets.UTF_8).length));
         return Flux.just(errorEvent(AiCode.CHAT_MODEL_UNAVAILABLE.getMessage()));
     }
 
+    private Flux<String> cancelled(
+            InvocationContext context,
+            ConversationAccumulator accumulator,
+            ActiveInvocation invocation) {
+        recordInvocationOnce(invocation, context, CANCELLED, null, accumulator.tokenUsage(),
+                accumulator.content().getBytes(StandardCharsets.UTF_8).length);
+        return Flux.empty();
+    }
+
+    private void recordInvocationOnce(
+            ActiveInvocation invocation,
+            InvocationContext context,
+            String result,
+            Integer errorCode,
+            TokenUsage usage,
+            long outputBytes) {
+        if (!invocation.beginAudit()) {
+            return;
+        }
+        try {
+            recordInvocation(context, result, errorCode, usage, outputBytes);
+            invocation.completeAudit();
+        } catch (RuntimeException exception) {
+            invocation.resetAudit();
+            Require.rethrow(exception);
+        }
+    }
+
+    private boolean isCancelled(InvocationContext context) {
+        return cache.exists(requestCancelledKey(context.requestId()));
+    }
+
     private IAiChatConversationStore.ConversationState loadConversation(InvocationContext context) {
-        return conversationStore.load(
-                context.tenantId(), context.userId(), context.serviceCode(), context.sessionId(), maxHistoryMessages);
+        return conversationStore.load(conversationScope(context), maxHistoryMessages);
+    }
+
+    private AiConversationScope conversationScope(InvocationContext context) {
+        return new AiConversationScope(
+                context.tenantId(),
+                context.userId(),
+                context.serviceCode(),
+                context.sessionId());
+    }
+
+    private AiConversationScope conversationScope(String serviceCode, String sessionId) {
+        return new AiConversationScope(requireTenantId(), requireUserId(), serviceCode, sessionId);
     }
 
     private List<Message> toSpringMessages(
@@ -485,6 +703,22 @@ public class AiServiceChatService implements IAiServiceChatService {
         return "ai-service-chat:user:" + context.tenantId() + ':' + context.userId() + ':' + context.serviceCode();
     }
 
+    private String requestLockKey(String requestId) {
+        return "ai-service-chat:request-lock:" + requestId;
+    }
+
+    private String requestOwnerKey(String requestId) {
+        return "ai-service-chat:request-owner:" + requestId;
+    }
+
+    private String requestCancelledKey(String requestId) {
+        return "ai-service-chat:request-cancelled:" + requestId;
+    }
+
+    private String requestOwner(String tenantId, Long userId) {
+        return tenantId + ':' + userId;
+    }
+
     private void validateStructuredInput(
             AiServiceEntity service,
             List<AiMessageContentPartVO> contentParts) {
@@ -504,9 +738,10 @@ public class AiServiceChatService implements IAiServiceChatService {
             return contentResolver.toUserMessage(contentParts, context.resolution());
         }
         return contentResolver.toUserMessage(
-                contentParts,
-                context.resolution(),
-                structuredUserPrompt(context, contentParts));
+                new AiUserMessageInput(
+                        contentParts,
+                        context.resolution(),
+                        structuredUserPrompt(context, contentParts)));
     }
 
     private String structuredUserPrompt(
@@ -592,7 +827,8 @@ public class AiServiceChatService implements IAiServiceChatService {
                 parts.add(text);
             }
             for (int index = 0; index < media.size(); index++) {
-                parts.add(contentResolver.saveAssistantMedia(media.get(index), requestId, index + 1));
+                parts.add(contentResolver.saveAssistantMedia(
+                        new AiAssistantMediaInput(media.get(index), requestId, index + 1)));
             }
             Require.isTrue(!parts.isEmpty(), AiCode.CHAT_MODEL_UNAVAILABLE, "AI 模型未返回可展示内容");
             return List.copyOf(parts);
@@ -747,6 +983,9 @@ public class AiServiceChatService implements IAiServiceChatService {
         }
     }
 
+    private record TerminalAudit(String result, Integer errorCode, TokenUsage usage, long outputBytes) {
+    }
+
     private static final class ConversationAccumulator {
         private final StringBuilder content = new StringBuilder();
         private final List<Media> media = new ArrayList<>();
@@ -778,5 +1017,73 @@ public class AiServiceChatService implements IAiServiceChatService {
         private List<Media> media() {
             return List.copyOf(media);
         }
+    }
+
+    private static final class ActiveInvocation {
+        private final AtomicReference<Disposable> subscription = new AtomicReference<>();
+        private final AtomicBoolean terminated = new AtomicBoolean();
+        private final AtomicBoolean deliveryFailed = new AtomicBoolean();
+        private final AtomicBoolean terminalPublished = new AtomicBoolean();
+        private final AtomicInteger auditState = new AtomicInteger();
+        private final AtomicReference<TerminalAudit> terminalAudit = new AtomicReference<>();
+
+        private void attach(Disposable disposable) {
+            subscription.set(disposable);
+            if (terminated.get()) {
+                disposable.dispose();
+            }
+        }
+
+        private void cancel() {
+            Disposable disposable = subscription.get();
+            if (disposable != null) {
+                disposable.dispose();
+            }
+        }
+
+        private boolean terminate() {
+            return terminated.compareAndSet(false, true);
+        }
+
+        private void markDeliveryFailed() {
+            deliveryFailed.set(true);
+        }
+
+        private boolean isDeliveryFailed() {
+            return deliveryFailed.get();
+        }
+
+        private void markTerminalPublished() {
+            terminalPublished.set(true);
+        }
+
+        private boolean isTerminalPublished() {
+            return terminalPublished.get();
+        }
+
+        private void prepareTerminalAudit(TerminalAudit audit) {
+            Require.isTrue(terminalAudit.compareAndSet(null, audit), AiCode.SERVICE_AUDIT_FAILED,
+                    "AI 终态审计上下文重复创建");
+        }
+
+        private TerminalAudit takeTerminalAudit() {
+            return terminalAudit.getAndSet(null);
+        }
+
+        private boolean beginAudit() {
+            return auditState.compareAndSet(0, 1);
+        }
+
+        private void completeAudit() {
+            auditState.set(2);
+        }
+
+        private void resetAudit() {
+            auditState.compareAndSet(1, 0);
+        }
+    }
+
+    private static final class AiChatCancelledException extends RuntimeException {
+        private static final long serialVersionUID = 1L;
     }
 }

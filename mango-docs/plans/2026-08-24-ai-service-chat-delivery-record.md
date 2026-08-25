@@ -43,7 +43,7 @@
 | DEC-004 | REQ-004 | 对话文本映射 `text`；纯附件且 Schema 声明字符串 `text` 时生成标准附件指令，实际附件仍单独进入模型消息 | `AiServiceChatService` | 调整明确映射合同，不恢复 Schema 表单 |
 | DEC-005 | REQ-005 | 助手 Markdown 禁止原始 HTML；媒体先保存文件中心，再以文件 ID 内容块完成会话 | `ChatMessageContent`、`ChatFilePart`、内容解析器 | 回退媒体内容块，不保存访问地址 |
 | DEC-006 | REQ-005、REQ-007 | Flyway V9 一次性回填 `content_parts_json` 并删除 `content`；运行时只读新列 | AI migration、会话存储 | 回滚前必须停服并使用数据库备份，不保留双读 |
-| DEC-007 | REQ-001、REQ-005 | `AiConversationWorkspace` 作为 `@mango/ai` 的受控独立组件，只通过 props、slots 和语义事件与页面协作；真实 API、SSE、文件和持久化留在运行页 | `@mango/ai` 组件、导出、运行页和样式 | 回退组件化改动，不恢复页面级重复会话外壳 |
+| DEC-007 | REQ-001、REQ-005 | `AiConversationWorkspace` 作为 `@mango/ai` 的受控独立组件，只通过 props、slots 和语义事件与页面协作；真实 API、Realtime、文件和持久化留在运行页 | `@mango/ai` 组件、导出、运行页和样式 | 回退组件化改动，不恢复页面级重复会话外壳 |
 | DEC-008 | REQ-008 | 新建消息本身使用 Vue 响应式对象；网络 delta 与完成事件最终正文进入同一 `requestAnimationFrame` 调度器；生成阶段只更新稳定文本节点，结束后以服务端内容块校准并渲染最终格式 | `smoothStream.ts`、运行页、消息内容块、会话组件和样式 | 回退流式呈现调度，不恢复修改原始非响应式对象或整块追加路径 |
 | DEC-009 | REQ-006、REQ-009 | 会话只保存最近一次成功使用的设置以恢复下一轮默认值；每条助手消息保存本轮实际模型和思考状态；发送命令创建不可变轮次快照，`done` 事件回传服务端事实。Flyway V10 直接把旧会话列重命名为 `last_*`，不双读旧列 | AI API/Core、V10、`@mango/ai-api`、输入器和会话组件 | 回退任务提交与 V10 前数据库备份，不恢复会话级锁定或兼容字段 |
 | DEC-010 | REQ-010 | AI 初始化统一使用 Resource Registry：正式供应商/模型放 `META-INF/mango/resources/`，示例放 `META-INF/mango/demo/`；五类 Handler 以租户和业务编码幂等创建，已存在时整条保留；供应商和模型新建时强制空密钥、停用 | Resource Support、AI Core/Starter、资源声明和能力说明 | 删除本次资源声明与 Handler；不通过 migration 清理或覆盖租户数据 |
@@ -60,32 +60,33 @@
 | TASK-006 | 全部 | 6 | AI 前后端生产源码、README、设计、能力说明和验收基线 | 精确扫描无废弃生产引用，说明和证据同步 |
 | TASK-007 | DEC-007 | 7 | `AiConversationWorkspace`、会话列表组件、运行页和包样式 | 独立组件为唯一会话 UI 承载，桌面可折叠会话栏、移动端抽屉和输入器体验通过浏览器验证 |
 | TASK-008 | DEC-008 | 8 | 流式呈现调度器、响应式消息、生成状态和内容块渲染 | 调度器与组件测试通过；真实模型首个反馈、逐帧增长、完成校准、停止回滚和移动端体验通过浏览器验证 |
-| TASK-009 | DEC-009 | 9 | Flyway V10、会话/消息实体与 VO、SSE 契约、运行页和输入器 | 同会话跨模型历史、生成中切换、下一轮生效、消息级事实回读和附件不兼容阻断通过自动化与真实浏览器验证；旧锁定标识扫描为空 |
+| TASK-009 | DEC-009 | 9 | Flyway V10、会话/消息实体与 VO、Realtime 事件契约、运行页和输入器 | 同会话跨模型历史、生成中切换、下一轮生效、消息级事实回读和附件不兼容阻断通过自动化与真实浏览器验证；旧锁定标识扫描为空 |
 | TASK-010 | DEC-010 | 10 | ResourceTypes、AI Resource Handler、正式供应商/模型资源、Demo 资源和当前文档 | 八个供应商、八个模型和三个示例声明可加载；Handler 编译通过；当前开发库密钥清空并回读为零长度 |
 
 ## 6. 验收映射与结果
 
 | 要求 ID | 验证方式 | 命令或步骤 | 结果 | 证据 |
 |---|---|---|---|---|
-| REQ-001、REQ-007 | AI API/UI/Core/Starter 测试、旧标识扫描和旧接口合同验证 | 运行 AI Maven/Vitest 定向套件；登录态调用旧 `/invoke`；扫描旧类、端点和重复页面外壳 | PASS | 唯一 API 为 `POST /ai/services/chat?serviceCode=<code>`；AI API 7/7、AI UI 32/32、Core 36/36、Starter 8/8；旧 `/invoke` 仅保留在 404 合同测试和“已删除”说明中 |
+| REQ-001、REQ-007 | AI API/UI/Core/Starter 测试、旧标识扫描和旧接口合同验证 | 运行 AI Maven/Vitest 定向套件；登录态调用旧 `/invoke`；扫描旧类、端点和重复页面外壳 | PASS | 唯一 API 为 `POST /ai/services/chat?serviceCode=<code>`；AI API 7/7、AI UI 36/36、Core 41/41、Starter 8/8；受影响模块架构与 Java 质量门禁 0 问题；旧 `/invoke` 仅保留在 404 合同测试和“已删除”说明中 |
 | REQ-002、REQ-003、REQ-006 | 附件接收/上传、文件解析、模型模态、Responses 请求和真实浏览器调用 | 组件测试选择/拖拽/粘贴、进度/取消/失败重试；上传文本文件、174 KB PNG 和 21 KB PDF 并发送；尝试不支持的视频；刷新并下载历史附件 | PASS | 文件 ID 持久化、下载和模型读取通过；Responses 请求包含 `input_image`/`input_file`；`gpt-5.6-sol` 真实识别图片模型状态与 PDF 加密错误标题；无视频适配器的模型在上传前明确拒绝；截图 `screenshots/14-ai-image-attachment-responses.png`、`screenshots/15-ai-pdf-attachment-responses.png` |
 | REQ-004 | Schema 单测和结构化服务真实运行 | 在统一入口输入合同文本，检查结构化内容块固定字段 | PASS | 同一对话入口返回 `STRUCTURED_DATA`，包含双方、标的、金额、签订日期和履约条件；截图 `screenshots/10-ai-structured-service-run.png` |
-| REQ-005、REQ-008 | 组件测试和桌面/移动端真实模型浏览器验证 | 运行 `@mango/ai` 测试与构建；使用 DeepSeek V4 发送约 180 字请求并采样每次 DOM 文本增长；验证刷新、停止生成和 390×844 布局 | PASS | AI UI 32/32；首个反馈 27ms，271 字回答产生 231 次增长，每次增加 1-2 字；完成后切换 Markdown 并成功落库；停止后未完成消息删除且输入恢复；主要触控目标至少 44×44px |
+| REQ-005、REQ-008 | 组件测试和桌面/移动端真实模型浏览器验证 | 运行 `@mango/ai` 测试与构建；使用 DeepSeek V4 发送约 180 字请求并采样每次 DOM 文本增长；验证刷新、停止生成和 390×844 布局 | PASS | AI UI 36/36；首个反馈 27ms，271 字回答产生 231 次增长，每次增加 1-2 字；完成后切换 Markdown 并成功落库；停止后未完成消息删除且输入恢复；主要触控目标至少 44×44px |
 | REQ-005、REQ-006 | 数据库回读、会话刷新恢复和 Realtime 检查 | 回读 Flyway/列结构；刷新持久会话；检查 AI 页面 Console、Network 和 Realtime 连接 | PASS | V10 已执行，旧 `content` 列和会话绑定字段删除；刷新恢复通过；无 WebSocket/SSE 401 |
 | REQ-009 | 真实跨模型浏览器验收与数据库逐消息回读 | GPT 5.5 发送长回答；生成期间切换 DeepSeek V4 Flash 并关闭思考；下一轮发送固定短语；刷新、数据库回读并删除测试会话 | PASS | 生成期间模型和思考控件可用；第一轮保存 `gpt-5.5/openai-compatible/thinking=1`，第二轮保存 `deepseek-v4-flash/deepseek/thinking=0`；刷新不变；测试会话与消息删除无残留；截图 `screenshots/16-ai-turn-model-switch.png` |
-| REQ-010 | JSON 静态解析、定向 Reactor 编译、官方 Bootstrap 与数据库只读回读 | 解析正式和 Demo JSON；`mvn -pl mango-extension/mango-ai/mango-ai-starter -am -DskipTests compile`；使用 `mango dev start backend` 创建 generation 13；回读 lifecycle、资源注册和目标表 | PASS | 8 个供应商、8 个代表模型、3 个 Prompt、2 个 Skill、3 个服务声明语法有效，44 个相关模块编译成功；generation 13 为 `FINALIZED`，24 条 AI 资源均为 `ACTIVE/INIT_ONLY`，目标表物化成功；供应商密钥字段为空，8 个供应商和 21 个模型均停用 |
+| REQ-010 | JSON 静态解析、定向 Reactor 编译、项目内 Mango CLI Bootstrap 与数据库只读回读 | 解析正式和 Demo JSON；`mvn -pl mango-extension/mango-ai/mango-ai-starter -am -DskipTests compile`；使用项目内 Mango CLI 创建 generation 14；回读 lifecycle、资源注册和目标表 | PASS | 8 个供应商、8 个代表模型、3 个 Prompt、2 个 Skill、3 个服务声明语法有效，44 个相关模块编译成功；generation 14 为 `FINALIZED`，stable/authoritative generation 均为 14，Expand/Finalize 六步成功，24 条 AI 资源均为 `ACTIVE/INIT_ONLY`；8 个供应商无密钥且停用，21 个模型均停用 |
 
 ### 6.1 验收缺陷与修复
 
 | ID | 现场缺陷 | 根因 | 修复 | 回归证据 |
 |---|---|---|---|---|
-| DEF-001 | SSE 完成后页面提示“AI 服务返回了无法识别的事件” | 后端 `done.contentParts` 的未使用字段返回 `null`，前端事件校验只接受字段缺失 | 内容块事件校验显式接受可空字符串、文件 ID 和数值，并完整校验事件字段 | `@mango/ai-api` 新增真实 SSE 空值合同用例，7/7 通过 |
-| DEF-002 | 附件上传接口成功后页面仍显示“上传中 0%” | 原始对象放入 Vue 响应式数组后继续修改原始引用，状态变化未被追踪 | 入队前创建 `reactive<PendingAttachment>()`，上传进度和完成态只更新响应式对象 | 真实文件上传、发送、模型读取、持久化和下载通过；最终 `@mango/ai` 15/15 |
-| DEF-003 | 桌面会话栏收起和恢复时出现 Element Plus `ElOnlyChild` 警告 | 展开按钮的条件渲染放在 `el-tooltip` 子节点，未展开时 Tooltip 没有有效子节点 | 条件渲染上移到 Tooltip，使组件树不存在空触发器 | 桌面收起/恢复后 Console 0 error、0 warning；组件测试 15/15 |
+| DEF-001 | Realtime 完成后页面提示“AI 服务返回了无法识别的实时事件” | 后端 `done.contentParts` 的未使用字段返回 `null`，前端事件校验只接受字段缺失 | 内容块事件校验显式接受可空字符串、文件 ID 和数值，并完整校验事件字段 | `@mango/ai-api` 新增真实 Realtime 空值合同用例，7/7 通过 |
+| DEF-002 | 附件上传接口成功后页面仍显示“上传中 0%” | 原始对象放入 Vue 响应式数组后继续修改原始引用，状态变化未被追踪 | 入队前创建 `reactive<PendingAttachment>()`，上传进度和完成态只更新响应式对象 | 真实文件上传、发送、模型读取、持久化和下载通过；最终 `@mango/ai` 36/36 |
+| DEF-003 | 桌面会话栏收起和恢复时出现 Element Plus `ElOnlyChild` 警告 | 展开按钮的条件渲染放在 `el-tooltip` 子节点，未展开时 Tooltip 没有有效子节点 | 条件渲染上移到 Tooltip，使组件树不存在空触发器 | 桌面收起/恢复后 Console 0 error、0 warning；组件测试 36/36 |
 | DEF-004 | 当前工作区 DeepSeek 运行时报 SM4 解密失败 | 工作区 SM4 密钥已变化，数据库中的旧密文不再属于当前密钥 | 使用当前工作区密钥通过供应商管理页重新加密保存，未绕过加密服务 | DeepSeek V4 真实流式回复、2 条消息落库和刷新恢复通过 |
 | DEF-005 | `gpt-5.6-sol` 在工作台提示模型不可用 | 模型被配置为 Chat Completions，而上游明确只接受流式 Responses | 将该模型显式改为 `RESPONSES`；未增加自动重试或协议 fallback | 上游 Responses 200；工作台真实回复、2 条消息落库；Console 0 error、0 warning |
 | DEF-006 | 输入内容后长时间没有可见响应，模型正文随后一批一批跳出 | 新消息以普通对象入队后，流式回调继续修改原始非响应式引用，逐次变化无法主动触发 Vue 渲染；上游 burst 又被直接整块追加 | 消息创建即使用响应式对象；删除整块追加路径，统一使用每帧 1-3 字的小粒度缓冲，最终正文也进入缓冲；生成期用纯文本节点，完成后再解析 Markdown | DeepSeek V4 首个反馈 27ms；231 次可见增长、每次 1-2 字；最终内容落库并刷新恢复；停止回滚和 390×844 验证通过 |
 | DEF-007 | `gpt-5.6-sol` 配置了图片能力但运行选项只显示文本 | 自定义 Responses 适配器只序列化 `message.getText()`，因此适配器能力必须把媒体全部过滤 | Responses 唯一请求映射增加 `input_image` 和 `input_file`；运行模态只开放已实现的文本、图片和 PDF/文本文件，不开放音频、视频 | 请求 JSON 单测覆盖文本、图片和 PDF；真实 174 KB PNG、21 KB PDF 上传、模型识别、落库和刷新恢复通过；最终 Console 0 error、0 warning |
+| DEF-008 | generation 14 完成后真实后端启动失败，File Preview 许可路径装配抛出不可变集合修改异常 | `SecurityProperties` 返回不可变许可路径快照，File Preview BeanPostProcessor 仍对 getter 结果直接执行 `add` | 复制现有路径到可变列表，合并 File Preview 路径后通过公开 setter 回写；不恢复可变 getter 或异常 fallback | `FilePreviewEngineResourceRegistrarTest` 覆盖不可变快照，项目内 Mango CLI 后端启动成功，health HTTP 200/`UP` |
 
 ## 7. 例外与剩余风险
 

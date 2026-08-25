@@ -11,14 +11,21 @@ import lombok.Setter;
 import java.io.Serializable;
 import java.util.List;
 
-/** AI 服务流式聊天命令。 */
+/** AI 服务会话命令。 */
 @Getter
 @Setter
-@Schema(description = "AI 服务流式聊天命令")
+@Schema(description = "AI 服务会话命令")
 public class AiServiceChatCommand implements Serializable {
 
     private static final long serialVersionUID = 1L;
     private static final int MAX_SESSION_ID_LENGTH = 128;
+
+    @NotNull(message = "请求标识不能为空")
+    @Pattern(
+            regexp = "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+            message = "请求标识格式不正确")
+    @Schema(description = "客户端为本轮生成的 UUID 请求标识", requiredMode = Schema.RequiredMode.REQUIRED)
+    private String requestId;
 
     @Valid
     @NotNull(message = "消息内容不能为空")

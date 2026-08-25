@@ -157,7 +157,13 @@
                   <span class="mango-ai-chat__keyboard-hint">Enter 发送 · Shift + Enter 换行</span>
                 </div>
                 <el-tooltip v-if="sending" content="停止生成" placement="top">
-                  <el-button circle type="primary" aria-label="停止生成" data-action="ai.service-run.stop" @click="stop"
+                  <el-button
+                    circle
+                    type="primary"
+                    aria-label="停止生成"
+                    data-action="ai.service-run.stop"
+                    :loading="stopping"
+                    @click="stop"
                     ><span class="mango-ai-chat__stop-icon"
                   /></el-button>
                 </el-tooltip>
@@ -205,6 +211,7 @@ import type {
 } from '@mango/ai-api';
 import { Back, Close, CopyDocument, Paperclip, Position, RefreshRight } from '@element-plus/icons-vue';
 import { MangoListPage } from '@mango/common';
+import { useRealtime } from '@mango/common/utils/realtime/useRealtime';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { computed, nextTick, onBeforeUnmount, reactive, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
@@ -212,6 +219,7 @@ import { useAiConfigurationApi } from '../../composables/useAiConfigurationApi';
 import { isRequestAborted, requestErrorMessage } from '../../utils/requestError';
 import { attachmentSupport, validateAttachment, type AttachmentFileType } from './attachmentSupport';
 import { createAttachmentUploader, type PendingAttachment } from './attachmentUploader';
+import { waitForChatCompletion } from './chatRealtime';
 import { createSmoothTextStream, finalTextRemainder, type SmoothTextStream } from './smoothStream';
 import AiConversationWorkspace from '../../components/AiConversationWorkspace.vue';
 import AiComposerControls from './AiComposerControls.vue';
@@ -267,12 +275,14 @@ const pendingAttachments = ref<PendingAttachment[]>([]);
 const loading = ref(true);
 const conversationLoading = ref(false);
 const sending = ref(false);
+const stopping = ref(false);
 const pageError = ref('');
 const sendError = ref('');
 const sendErrorType = ref<'error' | 'warning'>('error');
 const preferredModelId = ref('');
 let loadController: AbortController | undefined;
 let streamController: AbortController | undefined;
+let activeRequestId = '';
 let messageSequence = 0;
 let conversationSequence = 0;
 let attachmentSequence = 0;
@@ -280,6 +290,7 @@ const attachmentUploader = createAttachmentUploader(
   (file, onProgress, signal) => api.uploadChatFile(file, onProgress, signal),
   (error) => requestErrorMessage(error, '上传失败'),
 );
+const realtime = useRealtime({ performanceMode: 'aggressive' });
 
 const serviceCode = computed(() => (typeof route.query.serviceCode === 'string' ? route.query.serviceCode : ''));
 const activeSkill = computed(() => skills.value.find((item) => item.id === service.value?.skillId));
@@ -371,7 +382,7 @@ const suggestions = computed(() =>
 
 async function loadService() {
   loadController?.abort();
-  streamController?.abort('服务已切换');
+  void cancelActiveGeneration('服务已切换');
   resetPageState();
   if (!serviceCode.value) {
     pageError.value = '缺少 AI 服务编码，请从 AI 服务列表进入工作台';
@@ -381,6 +392,7 @@ async function loadService() {
   loadController = new AbortController();
   loading.value = true;
   try {
+    await ensureRealtimeConnected();
     const [services, availableSkills, options] = await Promise.all([
       api.services(loadController.signal),
       api.skills(loadController.signal),
@@ -483,19 +495,21 @@ async function selectConversation(id: string) {
   conversationLoading.value = true;
   try {
     const detail = await api.serviceConversation(service.value.code, conversation.sessionId);
-    conversation.messages = detail.messages.map((message: AiChatMessage) => createMessage(
-      message.role,
-      message.contentParts,
-      undefined,
-      message.role === 'assistant' && message.modelId != null && message.modelName
-        ? {
-            modelId: String(message.modelId),
-            modelName: message.modelName,
-            providerCode: message.providerCode || '',
-            thinkingEnabled: Boolean(message.thinkingEnabled),
-          }
-        : undefined,
-    ));
+    conversation.messages = detail.messages.map((message: AiChatMessage) =>
+      createMessage(
+        message.role,
+        message.contentParts,
+        undefined,
+        message.role === 'assistant' && message.modelId != null && message.modelName
+          ? {
+              modelId: String(message.modelId),
+              modelName: message.modelName,
+              providerCode: message.providerCode || '',
+              thinkingEnabled: Boolean(message.thinkingEnabled),
+            }
+          : undefined,
+      ),
+    );
     conversation.loaded = true;
     conversation.messageCount = detail.messageCount;
   } catch (error) {
@@ -507,8 +521,9 @@ async function selectConversation(id: string) {
   }
 }
 
-async function deleteConversation(conversation: ChatConversation) {
-  if (!service.value || !conversation.sessionId) return;
+async function deleteConversation(conversation: Pick<ChatConversation, 'id' | 'title'>) {
+  const storedConversation = conversations.value.find((item) => item.id === conversation.id);
+  if (!service.value || !storedConversation?.sessionId) return;
   try {
     await ElMessageBox.confirm(`删除“${conversation.title}”及全部消息？`, '删除对话', {
       type: 'warning',
@@ -519,7 +534,7 @@ async function deleteConversation(conversation: ChatConversation) {
     return;
   }
   try {
-    await api.deleteServiceConversation(service.value.code, conversation.sessionId);
+    await api.deleteServiceConversation(service.value.code, storedConversation.sessionId);
     conversations.value = conversations.value.filter((item) => item.id !== conversation.id);
     if (activeConversationId.value === conversation.id) {
       if (conversations.value.length) await selectConversation(conversations.value[0].id);
@@ -570,24 +585,38 @@ async function send() {
   conversation.messages.push(assistant);
   sending.value = true;
   streamController = new AbortController();
+  const requestId = crypto.randomUUID();
+  activeRequestId = requestId;
   await scrollToBottom(true);
   try {
-    await api.streamServiceChat(
-      service.value.code,
-      {
-        contentParts: commandParts,
-        sessionId: conversation.sessionId,
-        modelId: turnSettings.modelId,
-        thinkingEnabled: turnSettings.thinkingEnabled,
-      },
-      (event) => {
+    await ensureRealtimeConnected();
+    const completion = waitForChatCompletion(realtime.client.value, {
+      requestId,
+      serviceCode: service.value.code,
+      signal: streamController.signal,
+      onEvent: (event) => {
         if (event.type === 'message') receivedAnswerText += event.content;
-        completedEvent =
-          handleEvent(conversation, event, thinking, assistant, answerStream, thinkingStream) ?? completedEvent;
+        handleEvent(conversation, event, thinking, assistant, answerStream, thinkingStream);
       },
-      streamController.signal,
-    );
-    if (!completedEvent) throw new Error('AI 服务没有完整返回本次回答');
+    });
+    const [started, done] = await Promise.all([
+      api.startServiceChat(
+        service.value.code,
+        {
+          requestId,
+          contentParts: commandParts,
+          sessionId: conversation.sessionId,
+          modelId: turnSettings.modelId,
+          thinkingEnabled: turnSettings.thinkingEnabled,
+        },
+        streamController.signal,
+      ),
+      completion,
+    ]);
+    if (started.requestId !== requestId || started.sessionId !== done.sessionId) {
+      throw new Error('AI 服务受理结果与实时回答不一致');
+    }
+    completedEvent = done;
     assistant.generationStatus = 'finalizing';
     answerStream.push(finalTextRemainder(receivedAnswerText, responseText(completedEvent.contentParts)));
     await Promise.all([answerStream.complete(), thinkingStream.complete()]);
@@ -599,6 +628,10 @@ async function send() {
     assistant.generationStatus = undefined;
     markConversationPersisted(conversation, completedEvent.sessionId);
   } catch (error) {
+    if (!isRequestAborted(error) && activeRequestId === requestId) {
+      void api.cancelServiceChat(requestId).catch(() => undefined);
+    }
+    if (!streamController.signal.aborted) streamController.abort('本轮生成已结束');
     answerStream.cancel();
     thinkingStream.cancel();
     rollbackTurn(conversation, previousTitle, text, sentAttachments, user, thinking, assistant);
@@ -611,9 +644,41 @@ async function send() {
     }
   } finally {
     sending.value = false;
+    stopping.value = false;
+    if (activeRequestId === requestId) activeRequestId = '';
     streamController = undefined;
     await scrollToBottom(true);
     awaitComposerFocus();
+  }
+}
+
+async function ensureRealtimeConnected() {
+  if (realtime.status.value === 'connected') return;
+  await realtime.connect();
+  if (realtime.status.value !== 'connected') {
+    throw new Error(realtime.error.value?.message || '实时连接不可用，请检查网络后重试');
+  }
+}
+
+async function cancelActiveGeneration(reason: string, notifyFailure = false) {
+  const requestId = activeRequestId;
+  if (!requestId || !streamController || stopping.value) return;
+  stopping.value = true;
+  try {
+    const cancelled = await api.cancelServiceChat(requestId);
+    if (!cancelled && notifyFailure) {
+      ElMessage.info('本次生成已经结束，正在接收最终结果');
+      return;
+    }
+    streamController.abort(reason);
+  } catch (error) {
+    if (notifyFailure) {
+      ElMessage.error(requestErrorMessage(error, '停止生成失败，请重试'));
+      return;
+    }
+    streamController.abort(reason);
+  } finally {
+    stopping.value = false;
   }
 }
 
@@ -843,8 +908,8 @@ function handleKeydown(event: KeyboardEvent) {
     void send();
   }
 }
-function stop() {
-  streamController?.abort('用户停止生成');
+async function stop() {
+  await cancelActiveGeneration('用户停止生成', true);
 }
 function messageText(message: ChatMessage) {
   return message.contentParts
@@ -887,7 +952,7 @@ async function backToServices() {
 watch(serviceCode, () => void loadService(), { immediate: true });
 onBeforeUnmount(() => {
   loadController?.abort();
-  streamController?.abort('页面已离开');
+  void cancelActiveGeneration('页面已离开');
   clearPendingAttachments();
 });
 </script>

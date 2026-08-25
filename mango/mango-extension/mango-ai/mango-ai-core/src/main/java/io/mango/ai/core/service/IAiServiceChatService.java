@@ -4,7 +4,7 @@ import io.mango.ai.api.command.AiServiceChatCommand;
 import io.mango.ai.api.vo.AiChatConversationDetailVO;
 import io.mango.ai.api.vo.AiChatConversationVO;
 import io.mango.ai.api.vo.AiServiceRuntimeOptionsVO;
-import reactor.core.publisher.Flux;
+import io.mango.ai.api.vo.AiServiceChatStartVO;
 
 import java.util.List;
 
@@ -19,12 +19,9 @@ public interface IAiServiceChatService {
 
     AiServiceRuntimeOptionsVO options(String serviceCode);
 
-    /**
-     * 以会话形式调用指定 AI 服务。
-     *
-     * @param serviceCode 服务编码
-     * @param command 聊天命令
-     * @return 标准 JSON 事件流
-     */
-    Flux<String> chat(String serviceCode, AiServiceChatCommand command);
+    /** 受理一次 AI 会话调用，增量结果通过 Mango Realtime 推送。 */
+    AiServiceChatStartVO chat(String serviceCode, AiServiceChatCommand command);
+
+    /** 取消当前用户发起且仍在执行的 AI 会话调用。 */
+    Boolean cancel(String requestId);
 }

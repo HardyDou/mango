@@ -6,7 +6,7 @@
 
 ## 范围
 
-- 唯一运行接口为 `POST /ai/services/chat?serviceCode=<code>`，返回 `text/event-stream`。
+- 唯一运行入口为 `POST /ai/services/chat?serviceCode=<code>` 标准受理响应和 Mango Realtime `ai.service.chat` 增量事件；`DELETE /ai/services/chat?requestId=<id>` 停止生成。
 - `CHAT`、`EXTRACTION`、`CLASSIFICATION` 均进入 `/ai/services/run?serviceCode=<code>` 对话工作台，不再按服务类型切换到表单或同步接口。
 - 用户消息支持 `TEXT`、`IMAGE`、`AUDIO`、`VIDEO`、`FILE`；助手消息支持 `RICH_TEXT`、`STRUCTURED_DATA`、`IMAGE`、`AUDIO`、`VIDEO`、`FILE`。
 - 文件只以 Mango `fileId` 和必要元数据持久化。请求时通过文件服务执行租户、用户和访问权限校验，不保存 URL、base64 或对象存储地址。

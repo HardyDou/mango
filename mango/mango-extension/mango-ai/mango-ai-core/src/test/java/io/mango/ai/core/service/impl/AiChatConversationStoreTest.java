@@ -11,6 +11,8 @@ import io.mango.ai.core.entity.AiChatConversationEntity;
 import io.mango.ai.core.entity.AiChatMessageEntity;
 import io.mango.ai.core.mapper.AiChatConversationMapper;
 import io.mango.ai.core.mapper.AiChatMessageMapper;
+import io.mango.ai.core.service.AiConversationExchange;
+import io.mango.ai.core.service.AiConversationScope;
 import io.mango.ai.core.service.AiModelResolution;
 import io.mango.common.exception.BizException;
 import org.apache.ibatis.builder.MapperBuilderAssistant;
@@ -68,15 +70,12 @@ class AiChatConversationStoreTest {
                 Set.of(AiModality.TEXT),
                 Set.of(AiModality.TEXT));
 
-        assertThrows(BizException.class, () -> store.saveExchange(
-                "tenant-1",
-                20L,
-                "assistant.general",
-                "session-1",
+        assertThrows(BizException.class, () -> store.saveExchange(new AiConversationExchange(
+                new AiConversationScope("tenant-1", 20L, "assistant.general", "session-1"),
                 textParts(AiMessageContentType.TEXT, "下一条问题"),
                 textParts(AiMessageContentType.RICH_TEXT, "下一条回答"),
                 false,
-                resolution));
+                resolution)));
 
         verify(messageMapper, never()).insert(any(AiChatMessageEntity.class));
     }
@@ -105,15 +104,12 @@ class AiChatConversationStoreTest {
                 Set.of(AiModality.TEXT),
                 Set.of(AiModality.TEXT));
 
-        store.saveExchange(
-                "tenant-1",
-                20L,
-                "assistant.general",
-                "session-1",
+        store.saveExchange(new AiConversationExchange(
+                new AiConversationScope("tenant-1", 20L, "assistant.general", "session-1"),
                 textParts(AiMessageContentType.TEXT, "下一条问题"),
                 textParts(AiMessageContentType.RICH_TEXT, "下一条回答"),
                 true,
-                resolution);
+                resolution));
 
         org.mockito.ArgumentCaptor<AiChatMessageEntity> captor =
                 org.mockito.ArgumentCaptor.forClass(AiChatMessageEntity.class);

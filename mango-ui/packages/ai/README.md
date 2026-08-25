@@ -6,14 +6,14 @@
 
 ## 2. 功能清单
 
-| 能力 | 页面或组件 | 说明 |
-|---|---|---|
-| 模型管理 | `ai/models/index` | 供应商接入、多模型目录、模态与默认能力路由 |
-| 提示词配置 | `ai/prompts/index` | 模板、变量、版本和发布状态 |
-| Skill 与工具 | `ai/skills/index` | Skill 指令与 MCP/HTTP 工具定义 |
-| AI 服务 | `ai/services/index` | 服务、Schema、Prompt/Skill 绑定和运行入口 |
-| 统一运行台 | `ai/services/run/index` | 多会话、按轮模型/思考设置、附件、流式输出和历史恢复 |
-| 独立会话组件 | `AiConversationWorkspace` | 会话栏、消息区、输入器插槽和语义事件 |
+| 能力         | 页面或组件                | 说明                                                |
+| ------------ | ------------------------- | --------------------------------------------------- |
+| 模型管理     | `ai/models/index`         | 供应商接入、多模型目录、模态与默认能力路由          |
+| 提示词配置   | `ai/prompts/index`        | 模板、变量、版本和发布状态                          |
+| Skill 与工具 | `ai/skills/index`         | Skill 指令与 MCP/HTTP 工具定义                      |
+| AI 服务      | `ai/services/index`       | 服务、Schema、Prompt/Skill 绑定和运行入口           |
+| 统一运行台   | `ai/services/run/index`   | 多会话、按轮模型/思考设置、附件、流式输出和历史恢复 |
+| 独立会话组件 | `AiConversationWorkspace` | 会话栏、消息区、输入器插槽和语义事件                |
 
 ## 3. 接入方式
 
@@ -28,19 +28,19 @@ import '@mango/ai/style.css';
 registerMangoAiAdminPages();
 ```
 
-| Mango 能力 | 本包使用位置 | 文档入口 |
-|---|---|---|
-| AI API | 页面数据、SSE、文件和会话 | [AI API README](../ai-api/README.md) |
-| Admin Extension | 页面与隐藏路由注册 | [Admin Extension README](../admin-extension/README.md) |
-| Common | HTTP、权限指令、文件预览 | [Common README](../common/README.md) |
+| Mango 能力      | 本包使用位置                       | 文档入口                                               |
+| --------------- | ---------------------------------- | ------------------------------------------------------ |
+| AI API          | 页面数据、运行受理、文件和会话     | [AI API README](../ai-api/README.md)                   |
+| Admin Extension | 页面与隐藏路由注册                 | [Admin Extension README](../admin-extension/README.md) |
+| Common          | HTTP、Realtime、权限指令和文件预览 | [Common README](../common/README.md)                   |
 
 ## 4. 配置说明
 
-| 配置入口 | 字段 | 默认值 | 含义 | 影响行为 | 源码入口 |
-|---|---|---|---|---|---|
-| `mangoAdmin` | `registrars` | `registerMangoAiAdminPages` | Admin 页面注册器 | 页面 key 与隐藏运行路由 | `package.json` |
-| `mangoAdmin` | `style` | `@mango/ai/style.css` | 包样式入口 | 管理页与会话组件样式 | `package.json` |
-| 后端运行选项 | `models` | 后端返回 | 当前服务可调用模型 | 模型选择、思考开关和附件格式 | `views/service-run/index.vue` |
+| 配置入口     | 字段         | 默认值                      | 含义               | 影响行为                     | 源码入口                      |
+| ------------ | ------------ | --------------------------- | ------------------ | ---------------------------- | ----------------------------- |
+| `mangoAdmin` | `registrars` | `registerMangoAiAdminPages` | Admin 页面注册器   | 页面 key 与隐藏运行路由      | `package.json`                |
+| `mangoAdmin` | `style`      | `@mango/ai/style.css`       | 包样式入口         | 管理页与会话组件样式         | `package.json`                |
+| 后端运行选项 | `models`     | 后端返回                    | 当前服务可调用模型 | 模型选择、思考开关和附件格式 | `views/service-run/index.vue` |
 
 API Key 只在供应商保存时提交；编辑留空保留原密钥，页面不回显密文。
 
@@ -48,7 +48,7 @@ API Key 只在供应商保存时提交；编辑留空保留原密钥，页面不
 
 包入口导出管理页面、`AiConversationWorkspace`、`AiConversationSessionList` 及对应类型。独立会话组件只通过 props、slots 和 `create/select/delete/suggestion` 等语义事件与宿主协作，不直接依赖 Router、HTTP、权限或宿主 Store。
 
-统一运行台发送时复制本轮模型与思考设置。生成期间选择器仍可使用，调整从下一轮生效；每条助手回复显示后端 `done` 事件确认的实际模型、供应商和思考状态。
+统一运行台发送时复制本轮模型与思考设置，先订阅 Mango Realtime 的 `ai.service.chat` 事件，再通过标准 HTTP 请求受理。生成期间选择器仍可使用，调整从下一轮生效；每条助手回复显示后端 `done` 事件确认的实际模型、供应商和思考状态。停止、超时、断线、失败和完成都会按 `requestId` 释放订阅。
 
 ## 6. 数据与初始化
 
@@ -56,13 +56,13 @@ API Key 只在供应商保存时提交；编辑留空保留原密钥，页面不
 
 ## 7. 管理入口
 
-| 菜单 / 页面 | component key | 主要权限 | 入库来源 | 默认套餐 | 后端校验入口 |
-|---|---|---|---|---|---|
-| 模型管理 | `ai/models/index` | `ai:model:list` | `ai-menu.json` | `platform_admin` | `AiModelManagementController` |
-| 提示词配置 | `ai/prompts/index` | `ai:prompt:list` | `ai-menu.json` | `platform_admin` | `AiConfigurationController` |
-| Skill 与工具 | `ai/skills/index` | `ai:skill:list`、`ai:tool:list` | `ai-menu.json` | `platform_admin` | `AiConfigurationController` |
-| AI 服务 | `ai/services/index` | `ai:service:list`、`ai:service:invoke` | `ai-menu.json` | `platform_admin` | `AiConfigurationController`、`AiServiceChatController` |
-| AI 服务运行台 | `ai/services/run/index` | `ai:service:invoke` | 前端隐藏路由 | 随 AI 服务权限 | `AiServiceChatController` |
+| 菜单 / 页面   | component key           | 主要权限                               | 入库来源       | 默认套餐         | 后端校验入口                                           |
+| ------------- | ----------------------- | -------------------------------------- | -------------- | ---------------- | ------------------------------------------------------ |
+| 模型管理      | `ai/models/index`       | `ai:model:list`                        | `ai-menu.json` | `platform_admin` | `AiModelManagementController`                          |
+| 提示词配置    | `ai/prompts/index`      | `ai:prompt:list`                       | `ai-menu.json` | `platform_admin` | `AiConfigurationController`                            |
+| Skill 与工具  | `ai/skills/index`       | `ai:skill:list`、`ai:tool:list`        | `ai-menu.json` | `platform_admin` | `AiConfigurationController`                            |
+| AI 服务       | `ai/services/index`     | `ai:service:list`、`ai:service:invoke` | `ai-menu.json` | `platform_admin` | `AiConfigurationController`、`AiServiceChatController` |
+| AI 服务运行台 | `ai/services/run/index` | `ai:service:invoke`                    | 前端隐藏路由   | 随 AI 服务权限   | `AiServiceChatController`                              |
 
 菜单路径为“平台能力 → AI 管理”。数据按当前登录租户和用户隔离，客户端页面不提交可覆盖租户边界的字段。
 

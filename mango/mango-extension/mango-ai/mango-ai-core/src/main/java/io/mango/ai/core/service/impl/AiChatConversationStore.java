@@ -17,6 +17,8 @@ import io.mango.ai.core.entity.AiChatMessageEntity;
 import io.mango.ai.core.mapper.AiChatConversationMapper;
 import io.mango.ai.core.mapper.AiChatMessageMapper;
 import io.mango.ai.core.service.AiModelResolution;
+import io.mango.ai.core.service.AiConversationExchange;
+import io.mango.ai.core.service.AiConversationScope;
 import io.mango.ai.core.service.IAiChatConversationStore;
 import io.mango.common.result.Require;
 import lombok.RequiredArgsConstructor;
@@ -40,11 +42,11 @@ public class AiChatConversationStore implements IAiChatConversationStore {
     private final ObjectMapper objectMapper;
 
     @Override
-    public List<AiChatConversationVO> list(String tenantId, Long userId, String serviceCode) {
+    public List<AiChatConversationVO> list(AiConversationScope scope) {
         return conversationMapper.selectList(new LambdaQueryWrapper<AiChatConversationEntity>()
-                        .eq(AiChatConversationEntity::getTenantId, tenantId)
-                        .eq(AiChatConversationEntity::getUserId, userId)
-                        .eq(AiChatConversationEntity::getServiceCode, serviceCode)
+                        .eq(AiChatConversationEntity::getTenantId, scope.tenantId())
+                        .eq(AiChatConversationEntity::getUserId, scope.userId())
+                        .eq(AiChatConversationEntity::getServiceCode, scope.serviceCode())
                         .orderByDesc(AiChatConversationEntity::getUpdatedAt)
                         .last("LIMIT " + MAX_CONVERSATIONS))
                 .stream()
@@ -53,12 +55,8 @@ public class AiChatConversationStore implements IAiChatConversationStore {
     }
 
     @Override
-    public AiChatConversationDetailVO detail(
-            String tenantId,
-            Long userId,
-            String serviceCode,
-            String sessionId) {
-        AiChatConversationEntity conversation = requireConversation(tenantId, userId, serviceCode, sessionId);
+    public AiChatConversationDetailVO detail(AiConversationScope scope) {
+        AiChatConversationEntity conversation = requireConversation(scope);
         AiChatConversationDetailVO detail = new AiChatConversationDetailVO();
         copySummary(conversation, detail);
         detail.setMessages(messages(conversation.getId()).stream().map(this::toMessage).toList());
@@ -66,13 +64,8 @@ public class AiChatConversationStore implements IAiChatConversationStore {
     }
 
     @Override
-    public ConversationState load(
-            String tenantId,
-            Long userId,
-            String serviceCode,
-            String sessionId,
-            int maxHistoryMessages) {
-        AiChatConversationEntity conversation = findConversation(tenantId, userId, serviceCode, sessionId);
+    public ConversationState load(AiConversationScope scope, int maxHistoryMessages) {
+        AiChatConversationEntity conversation = findConversation(scope);
         if (conversation == null) {
             return new ConversationState(List.of());
         }
@@ -86,24 +79,22 @@ public class AiChatConversationStore implements IAiChatConversationStore {
 
     @Transactional
     @Override
-    public void saveExchange(
-            String tenantId,
-            Long userId,
-            String serviceCode,
-            String sessionId,
-            List<AiMessageContentPartVO> userContentParts,
-            List<AiMessageContentPartVO> assistantContentParts,
-            boolean thinkingEnabled,
-            AiModelResolution resolution) {
-        AiChatConversationEntity conversation = findConversation(tenantId, userId, serviceCode, sessionId);
+    public void saveExchange(AiConversationExchange exchange) {
+        Require.notNull(exchange, AiCode.CHAT_CONTEXT_UNAVAILABLE, "会话交换内容不能为空");
+        AiConversationScope scope = exchange.scope();
+        List<AiMessageContentPartVO> userContentParts = exchange.userContentParts();
+        List<AiMessageContentPartVO> assistantContentParts = exchange.assistantContentParts();
+        boolean thinkingEnabled = exchange.thinkingEnabled();
+        AiModelResolution resolution = exchange.resolution();
+        AiChatConversationEntity conversation = findConversation(scope);
         int nextSequence;
         if (conversation == null) {
             conversation = new AiChatConversationEntity();
             conversation.setId(IdWorker.getId());
-            conversation.setTenantId(tenantId);
-            conversation.setUserId(userId);
-            conversation.setServiceCode(serviceCode);
-            conversation.setSessionId(sessionId);
+            conversation.setTenantId(scope.tenantId());
+            conversation.setUserId(scope.userId());
+            conversation.setServiceCode(scope.serviceCode());
+            conversation.setSessionId(scope.sessionId());
             conversation.setTitle(title(userContentParts));
             conversation.setLastModelId(resolution.getModelId());
             conversation.setLastModelName(resolution.getModelName());
@@ -127,39 +118,32 @@ public class AiChatConversationStore implements IAiChatConversationStore {
                     AiCode.CHAT_CONTEXT_UNAVAILABLE, "当前会话正在处理其他消息，请稍后重试");
             nextSequence = currentCount + 1;
         }
-        insertMessage(conversation, nextSequence, "user", userContentParts, userId, thinkingEnabled, resolution);
-        insertMessage(conversation, nextSequence + 1, "assistant", assistantContentParts, userId,
+        insertMessage(conversation, nextSequence, "user", userContentParts, scope.userId(), thinkingEnabled, resolution);
+        insertMessage(conversation, nextSequence + 1, "assistant", assistantContentParts, scope.userId(),
                 thinkingEnabled, resolution);
     }
 
     @Transactional
     @Override
-    public boolean delete(String tenantId, Long userId, String serviceCode, String sessionId) {
-        AiChatConversationEntity conversation = requireConversation(tenantId, userId, serviceCode, sessionId);
+    public boolean delete(AiConversationScope scope) {
+        Require.notNull(scope, AiCode.CHAT_REQUEST_INVALID, "会话定位信息不能为空");
+        AiChatConversationEntity conversation = requireConversation(scope);
         messageMapper.delete(new LambdaQueryWrapper<AiChatMessageEntity>()
                 .eq(AiChatMessageEntity::getConversationId, conversation.getId()));
         return conversationMapper.deleteById(conversation.getId()) > 0;
     }
 
-    private AiChatConversationEntity requireConversation(
-            String tenantId,
-            Long userId,
-            String serviceCode,
-            String sessionId) {
-        return Require.nonNull(findConversation(tenantId, userId, serviceCode, sessionId),
+    private AiChatConversationEntity requireConversation(AiConversationScope scope) {
+        return Require.nonNull(findConversation(scope),
                 AiCode.CHAT_CONVERSATION_NOT_FOUND);
     }
 
-    private AiChatConversationEntity findConversation(
-            String tenantId,
-            Long userId,
-            String serviceCode,
-            String sessionId) {
+    private AiChatConversationEntity findConversation(AiConversationScope scope) {
         return conversationMapper.selectOne(new LambdaQueryWrapper<AiChatConversationEntity>()
-                .eq(AiChatConversationEntity::getTenantId, tenantId)
-                .eq(AiChatConversationEntity::getUserId, userId)
-                .eq(AiChatConversationEntity::getServiceCode, serviceCode)
-                .eq(AiChatConversationEntity::getSessionId, sessionId));
+                .eq(AiChatConversationEntity::getTenantId, scope.tenantId())
+                .eq(AiChatConversationEntity::getUserId, scope.userId())
+                .eq(AiChatConversationEntity::getServiceCode, scope.serviceCode())
+                .eq(AiChatConversationEntity::getSessionId, scope.sessionId()));
     }
 
     private List<AiChatMessageEntity> messages(Long conversationId) {

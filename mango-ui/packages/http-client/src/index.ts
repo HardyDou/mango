@@ -380,10 +380,7 @@ function isReadableStream(value: unknown): value is ReadableStream<Uint8Array> {
   return Boolean(value && typeof value === 'object' && 'getReader' in value && typeof value.getReader === 'function');
 }
 
-function managedReadableStream(
-  source: ReadableStream<Uint8Array>,
-  cleanup: () => void,
-): ReadableStream<Uint8Array> {
+function managedReadableStream(source: ReadableStream<Uint8Array>, cleanup: () => void): ReadableStream<Uint8Array> {
   const reader = source.getReader();
   let finished = false;
   const finish = () => {

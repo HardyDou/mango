@@ -6,12 +6,12 @@
 
 ## 2. 功能清单
 
-| 能力 | 用途 | 入口 |
-|---|---|---|
-| 模型管理 | 维护供应商接入、多模型目录和能力默认路由 | `createAiModelManagementApi()` |
-| Prompt、Skill、工具、服务 | 租户级配置、发布和关联 | `createAiConfigurationApi()` |
-| 统一会话 | 读取运行选项、管理会话、流式调用三类 AI 服务 | `streamServiceChat()` 及会话方法 |
-| 文件输入 | 上传模型输入文件并返回 Mango 文件记录 | `uploadChatFile()` |
+| 能力                      | 用途                                               | 入口                                                   |
+| ------------------------- | -------------------------------------------------- | ------------------------------------------------------ |
+| 模型管理                  | 维护供应商接入、多模型目录和能力默认路由           | `createAiModelManagementApi()`                         |
+| Prompt、Skill、工具、服务 | 租户级配置、发布和关联                             | `createAiConfigurationApi()`                           |
+| 统一会话                  | 读取运行选项、管理会话、受理和取消三类 AI 服务调用 | `startServiceChat()`、`cancelServiceChat()` 及会话方法 |
+| 文件输入                  | 上传模型输入文件并返回 Mango 文件记录              | `uploadChatFile()`                                     |
 
 ## 3. 接入方式
 
@@ -21,28 +21,28 @@ pnpm add @mango/ai-api @mango/api-schema
 
 宿主创建带登录态、租户和服务根地址的 `HttpClient`，再传给 API factory。管理页面和运行工作台由 [`@mango/ai`](../ai/README.md) 提供。
 
-| Mango 能力 | 本包使用位置 | 文档入口 |
-|---|---|---|
-| API Schema | `HttpClient`、`ApiId`、错误契约 | [API Schema README](../api-schema/README.md) |
-| AI 后端 | AI 管理与服务接口 | [Extension README](../../../mango/mango-extension/README.md) |
+| Mango 能力 | 本包使用位置                    | 文档入口                                                     |
+| ---------- | ------------------------------- | ------------------------------------------------------------ |
+| API Schema | `HttpClient`、`ApiId`、错误契约 | [API Schema README](../api-schema/README.md)                 |
+| AI 后端    | AI 管理与服务接口               | [Extension README](../../../mango/mango-extension/README.md) |
 
 ## 4. 配置说明
 
 本包没有全局配置和环境变量。实例行为全部来自传入的 `HttpClient`：
 
-| 配置入口 | 字段 | 默认值 | 含义 | 影响行为 | 源码入口 |
-|---|---|---|---|---|---|
-| `createAiModelManagementApi` | `httpClient` | 无 | 实例级请求客户端 | 模型管理请求的服务地址、登录态与租户 | `src/index.ts` |
-| `createAiConfigurationApi` | `httpClient` | 无 | 实例级请求客户端 | 配置、文件、会话与 SSE 请求 | `src/index.ts` |
-| `streamServiceChat` | `AbortSignal` | 可选 | 当前流式请求取消信号 | 停止生成或页面离开时中止读取 | `src/index.ts` |
+| 配置入口                     | 字段          | 默认值 | 含义                 | 影响行为                                     | 源码入口       |
+| ---------------------------- | ------------- | ------ | -------------------- | -------------------------------------------- | -------------- |
+| `createAiModelManagementApi` | `httpClient`  | 无     | 实例级请求客户端     | 模型管理请求的服务地址、登录态与租户         | `src/index.ts` |
+| `createAiConfigurationApi`   | `httpClient`  | 无     | 实例级请求客户端     | 配置、文件、会话与运行请求                   | `src/index.ts` |
+| `startServiceChat`           | `AbortSignal` | 可选   | 当前受理请求取消信号 | 页面离开或请求过期时中止尚未完成的 HTTP 受理 | `src/index.ts` |
 
 ## 5. API 与扩展
 
 `createAiModelManagementApi(httpClient)` 提供供应商、模型和能力路由的查询与维护。读取方法接受 `AbortSignal`；API Key 只存在于写入 Command，不进入返回类型。
 
-`createAiConfigurationApi(httpClient)` 提供 Prompt、Skill、MCP/HTTP 工具、AI 服务、文件上传、会话列表/详情/删除和 `POST /ai/services/chat?serviceCode=<code>` 流式调用。
+`createAiConfigurationApi(httpClient)` 提供 Prompt、Skill、MCP/HTTP 工具、AI 服务、文件上传、会话列表/详情/删除，以及 `POST /ai/services/chat?serviceCode=<code>` 标准受理和 `DELETE /ai/services/chat?requestId=<id>` 取消调用。
 
-SSE 事件类型为 `thinking`、`message`、`done`、`error`。`done` 返回 `sessionId`、`requestId`、本轮实际 `modelId/modelName/providerCode/thinkingEnabled` 和最终 `contentParts`。
+模型增量由 Mango Realtime 的 `ai.service.chat` 事件投递，类型为 `thinking`、`message`、`done`、`error`。本包导出 `parseAiServiceChatEvent()` 解析业务 payload；Realtime 连接和订阅由调用方通过 `@mango/common` 管理。`done` 返回 `sessionId`、`requestId`、本轮实际 `modelId/modelName/providerCode/thinkingEnabled` 和最终 `contentParts`。
 
 ## 6. 数据与初始化
 
@@ -64,7 +64,7 @@ const models = await modelApi.listModels({ providerConnectionId: '1001' });
 const services = await configurationApi.listServices();
 ```
 
-流式调用时给每次发送创建独立 `AbortController`。模型与思考设置放在本轮 Command 中；后续修改不会改变已经发出的请求。
+每次发送使用独立 UUID `requestId`，先订阅 `ai.service.chat`，再调用 `startServiceChat()`。模型与思考设置放在本轮 Command 中；后续修改不会改变已经发出的请求。停止生成时中止本地等待并调用 `cancelServiceChat(requestId)`。
 
 ## 9. 返回字段
 
@@ -72,10 +72,10 @@ const services = await configurationApi.listServices();
 
 ## 10. 问题排查
 
-- SSE 提示未知事件：核对后端 `done` 事件和当前包版本是否一致，并检查可空内容块字段。
+- Realtime 提示未知事件：核对 `ai.service.chat` payload、后端 `done` 事件和当前包版本是否一致，并检查可空内容块字段。
 - 页面能展示媒体但不能上传：核对所选模型配置与实际适配器能力的交集；展示格式不代表模型输入能力。
 - 请求 401/403：核对宿主注入的登录态、租户头和当前角色的 AI 权限，不在 API 包内另建客户端。
-- 停止后仍写入界面：确认调用方把当前轮 `AbortSignal` 传给 `streamServiceChat()` 并丢弃过期响应。
+- 停止后仍写入界面：确认调用方按 `requestId` 取消订阅、调用 `cancelServiceChat()`，并丢弃迟到或重复分片。
 
 ## 11. 相关文档
 
