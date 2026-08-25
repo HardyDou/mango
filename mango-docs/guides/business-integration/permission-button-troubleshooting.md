@@ -1,5 +1,7 @@
 # 按钮权限不显示排障
 
+> 2026-08-25 Issue #835：只修复已有数据库升级时 Resource Registry 按持久化 `targetId` 停用已缺失角色数据权限声明的链路；不改变按钮 `permissionCode`、登录态权限集合、角色授权、`v-auth`、接口鉴权、租户边界或本指南排障步骤。该修复不会新增或移除当前声明中的按钮权限。
+
 > 2026-07-22 菜单显示文案调整说明：通知中心、审批中心和编号规则分别更名为通知管理、审批管理和编号管理；按钮 permissionCode、登录态权限集合、接口鉴权和本指南排障步骤均不受影响，历史记录保留原名称。
 
 > 2026-08-06 富文本托管资源影响：本次只扩展 `@mango/common` Editor、只读预览组件及 Admin Shell 开发中心示例，不改变按钮 `permissionCode`、登录态权限集合、`v-auth` 判断、接口鉴权或本指南排障步骤。
@@ -298,3 +300,7 @@ pnpm -F @mango/admin-shell build
 ## 2026-08-21 Issue #840 Admin Shell 确认取消影响
 
 - Issue #840 只把 Element Plus 确认框的 `cancel` / `close` 识别为正常用户操作，取消后仍不发送确认动作对应的业务请求；不新增或修改 `permissionCode`、角色按钮授权、登录态权限集合、后端接口鉴权、租户边界或按钮展示规则。按钮不可见或接口 403 仍按本指南检查权限资源、角色授权和登录态刷新，不能通过全局取消分类绕过授权。
+
+## 2026-08-25 Issue #851 Resource 模块增量影响
+
+- Issue #851 不改变按钮 `permissionCode`、角色授权、登录态权限集合、后端接口鉴权、租户隔离或 `v-auth` 展示语义；它只让未变化 Resource 模块在声明解析前按 receipt 跳过。若权限资源未形成，可先核对对应模块 receipt、generation 与 manifest fingerprint，再按本指南检查权限声明、角色授权和登录态刷新。

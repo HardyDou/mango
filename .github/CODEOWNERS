@@ -32,6 +32,8 @@
 /mango-ui/packages/mango-cli/tests/release-command.test.mjs @HardyDou @chengkuankuan
 /mango-ui/scripts/check-package-exports.mjs @HardyDou @chengkuankuan
 /mango-ui/scripts/check-release-impact.mjs @HardyDou @chengkuankuan
-/mango-ui/scripts/publish-package.mjs @HardyDou @chengkuankuan
+/mango-catalog/ @HardyDou @chengkuankuan
+/mango-ui/scripts/catalog/ @HardyDou @chengkuankuan
+/mango-ui/scripts/release/ @HardyDou @chengkuankuan
 /mango-ui/pnpm-lock.yaml @HardyDou @chengkuankuan
 /scripts/publish-maven-batch.sh @HardyDou @chengkuankuan

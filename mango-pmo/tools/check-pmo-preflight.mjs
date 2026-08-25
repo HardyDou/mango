@@ -31,7 +31,7 @@ const cases = [
   },
   {
     name: 'mixed governance and release script requires worktree',
-    args: ['--role', 'pmo', '--phase', 'governance', '--task', '更新规范并修改发布脚本', '--paths', 'mango-pmo/rules,mango-ui/scripts/publish-package.mjs'],
+    args: ['--role', 'pmo', '--phase', 'governance', '--task', '更新规范并修改发布脚本', '--paths', 'mango-pmo/rules,mango-ui/scripts/release'],
     mode: 'worktree-required'
   },
   {

@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "moduleId": "numgen",
+  "frontendPackages": ["@mango/numgen"],
+  "adminIntegration": {
+    "aggregateOwner": "@mango/admin",
+    "registrarExports": [{ "package": "@mango/numgen", "subpath": "./admin-pages", "symbol": "registerMangoNumgenAdminPages" }],
+    "styleEntries": [{ "package": "@mango/numgen", "subpath": "./style.css" }]
+  },
+  "backendStarters": [":mango-numgen-starter"],
+  "presetMembership": "full"
+}

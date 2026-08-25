@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.common.exception.BizException;
 import io.mango.infra.kv.api.ILocker;
+import io.mango.infra.bootstrap.api.BootstrapGenerationFence;
 import io.mango.infra.kv.api.ILeaseLocker;
 import io.mango.infra.kv.core.capability.KvStoreLocker;
 import io.mango.infra.kv.core.capability.KvStoreLeaseLocker;
@@ -15,6 +16,9 @@ import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguratio
 import io.mango.resource.support.ResourceHandler;
 import io.mango.resource.support.ResourceProvider;
 import io.mango.resource.support.ResourceTargetDispatcher;
+import io.mango.resource.api.command.RegisterResourceDeclarationsCommand;
+import io.mango.resource.api.command.ResourceModuleManifestCommand;
+import io.mango.resource.api.enums.ResourceApplyMode;
 import io.mango.resource.api.enums.ResourceFieldType;
 import io.mango.resource.api.enums.ResourceStatus;
 import io.mango.resource.api.enums.ResourceSyncMode;
@@ -31,6 +35,7 @@ import io.mango.resource.core.mapper.ResourceRegistryMapper;
 import io.mango.resource.core.sync.ResourceContentHasher;
 import io.mango.resource.core.sync.ResourceRegistryLock;
 import io.mango.resource.core.sync.ResourceRegistryRepository;
+import io.mango.resource.core.sync.ResourceModuleReceiptRepository;
 import org.apache.ibatis.executor.Executor;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -116,6 +121,9 @@ class ResourceRegistrySyncServiceIntegrationTest {
 
     @Autowired
     private ResourceModuleSyncStatusRegistry moduleSyncStatusRegistry;
+
+    @Autowired
+    private ResourceContentHasher resourceContentHasher;
 
     @BeforeEach
     void setUp() {
@@ -258,6 +266,358 @@ class ResourceRegistrySyncServiceIntegrationTest {
         assertThat(count("resource_sync_log")).isEqualTo(syncLogCount);
         assertThat(count("resource_change_log")).isEqualTo(changeLogCount);
         assertThat(count("resource_registry")).isEqualTo(1964);
+    }
+
+    @Test
+    void unchangedBootstrapModuleSkipsBeforeDeclarationParsingAndWritesNothing() {
+        ResourceDeclaration declaration = activeDeclaration(1, "提交申请");
+        RegisterResourceDeclarationsCommand expand = moduleCommand(
+                ResourceApplyMode.EXPAND, "guarantee", List.of(declaration));
+
+        assertThat(syncService.registerDeclarations(expand)).isTrue();
+        assertThat(handler.upsertCount()).isEqualTo(1);
+        long registryCount = count("resource_registry");
+        long syncLogCount = count("resource_sync_log");
+        long changeLogCount = count("resource_change_log");
+        handler.resetUpsertCount();
+        sqlStatementCounter.reset();
+        expand.setGeneration(9L);
+        expand.getModuleManifests().get(0).setDeclarations("not-json");
+
+        assertThat(syncService.registerDeclarations(expand)).isTrue();
+
+        assertThat(handler.upsertCount()).isZero();
+        assertThat(sqlStatementCounter.countForMapper(ResourceRegistryMapper.class)).isZero();
+        assertThat(count("resource_registry")).isEqualTo(registryCount);
+        assertThat(count("resource_sync_log")).isEqualTo(syncLogCount);
+        assertThat(count("resource_change_log")).isEqualTo(changeLogCount);
+    }
+
+    @Test
+    void moduleReceiptAdvancesOnlyAfterSuccessfulExpandAndFinalize() {
+        ResourceDeclaration declaration = activeDeclaration(1, "提交申请");
+        RegisterResourceDeclarationsCommand expand = moduleCommand(
+                ResourceApplyMode.EXPAND, "guarantee", List.of(declaration));
+        assertThat(syncService.registerDeclarations(expand)).isTrue();
+        assertThat(stringValue("resource_module_receipt", "state")).isEqualTo("EXPANDED");
+
+        RegisterResourceDeclarationsCommand finalize = moduleCommand(
+                ResourceApplyMode.FINALIZE, "guarantee", List.of(declaration));
+        assertThat(syncService.registerDeclarations(finalize)).isTrue();
+        assertThat(stringValue("resource_module_receipt", "state")).isEqualTo("FINALIZED");
+
+        rebuildTables();
+        ResourceDeclaration unsupported = activeDeclaration(1, "失败资源");
+        unsupported.setResourceType("UNSUPPORTED");
+        unsupported.setTargetModule("missing-target");
+        RegisterResourceDeclarationsCommand failing = moduleCommand(
+                ResourceApplyMode.EXPAND, "guarantee", List.of(unsupported));
+        assertThatThrownBy(() -> syncService.registerDeclarations(failing))
+                .isInstanceOf(BizException.class)
+                .hasMessageContaining("未找到资源处理器");
+        assertThat(count("resource_module_receipt")).isZero();
+    }
+
+    @Test
+    void moduleManifestsFollowDependenciesAndRejectMissingOrCyclicDependencies() {
+        ResourceDeclaration binding = genericDeclaration("1900000000000000101",
+                "TEST_BINDING", "binding.resource", "test-binding");
+        binding.setModuleCode("binding");
+        ResourceDeclaration identity = genericDeclaration("1900000000000000102",
+                "TEST_USER", "identity.resource", "test-user");
+        identity.setModuleCode("identity");
+        RegisterResourceDeclarationsCommand ordered = moduleCommand(ResourceApplyMode.EXPAND,
+                moduleManifest("binding", List.of("identity"), List.of(binding)),
+                moduleManifest("identity", List.of(), List.of(identity)));
+
+        assertThat(syncService.registerDeclarations(ordered)).isTrue();
+
+        assertThat(syncOrderRecorder.resourceTypes()).containsExactly("TEST_USER", "TEST_BINDING");
+        assertThat(count("resource_module_receipt")).isEqualTo(2);
+
+        rebuildTables();
+        RegisterResourceDeclarationsCommand missing = moduleCommand(ResourceApplyMode.EXPAND,
+                moduleManifest("binding", List.of("identity"), List.of(binding)));
+        assertThatThrownBy(() -> syncService.registerDeclarations(missing))
+                .isInstanceOf(BizException.class)
+                .hasMessageContaining("Resource 模块依赖缺失: binding -> identity");
+        assertThat(count("resource_module_receipt")).isZero();
+
+        RegisterResourceDeclarationsCommand cyclic = moduleCommand(ResourceApplyMode.EXPAND,
+                moduleManifest("binding", List.of("identity"), List.of(binding)),
+                moduleManifest("identity", List.of("binding"), List.of(identity)));
+        assertThatThrownBy(() -> syncService.registerDeclarations(cyclic))
+                .isInstanceOf(BizException.class)
+                .hasMessageContaining("Resource 模块依赖存在循环");
+        assertThat(count("resource_module_receipt")).isZero();
+    }
+
+    @Test
+    void singleChangedModuleSkipsUnchangedMalformedEnvelopeAndOnlyWritesChangedModule() {
+        ResourceDeclaration guarantee = activeDeclaration(
+                "1900000000000000001", 1, "guarantee.apply.submit", "保函提交");
+        guarantee.setModuleCode("guarantee");
+        ResourceDeclaration workflow = activeDeclaration(
+                "1900000000000000002", 1, "workflow.apply.submit", "流程提交");
+        workflow.setModuleCode("workflow");
+        RegisterResourceDeclarationsCommand initial = moduleCommand(ResourceApplyMode.EXPAND,
+                moduleManifest("guarantee", List.of(), List.of(guarantee)),
+                moduleManifest("workflow", List.of("guarantee"), List.of(workflow)));
+        assertThat(syncService.registerDeclarations(initial)).isTrue();
+        long syncLogCount = count("resource_sync_log");
+        long changeLogCount = count("resource_change_log");
+        handler.resetUpsertCount();
+        sqlStatementCounter.reset();
+
+        ResourceDeclaration changedWorkflow = activeDeclaration(
+                "1900000000000000002", 2, "workflow.apply.submit", "流程提交新版");
+        changedWorkflow.setModuleCode("workflow");
+        ResourceModuleManifestCommand unchanged = moduleManifest(
+                "guarantee", List.of(), List.of(guarantee));
+        unchanged.setDeclarations("not-json");
+        RegisterResourceDeclarationsCommand changed = moduleCommand(ResourceApplyMode.EXPAND,
+                unchanged,
+                moduleManifest("workflow", List.of("guarantee"), List.of(changedWorkflow)));
+
+        assertThat(syncService.registerDeclarations(changed)).isTrue();
+
+        assertThat(handler.upsertCount()).isEqualTo(1);
+        assertThat(count("resource_sync_log")).isEqualTo(syncLogCount + 1);
+        assertThat(count("resource_change_log")).isEqualTo(changeLogCount + 1);
+        assertThat(jdbcTemplate.queryForObject(
+                "select title from message_template where id = 91002", String.class))
+                .isEqualTo("流程提交新版");
+        assertThat(jdbcTemplate.queryForObject(
+                "select resource_version from resource_registry where resource_id = ?", Integer.class,
+                guarantee.getId())).isEqualTo(1);
+    }
+
+    @Test
+    void finalizedModuleSkipsBeforeParsingOnRepeatedFinalize() {
+        ResourceDeclaration declaration = activeDeclaration(1, "提交申请");
+        RegisterResourceDeclarationsCommand finalize = moduleCommand(
+                ResourceApplyMode.FINALIZE, "guarantee", List.of(declaration));
+        assertThat(syncService.registerDeclarations(finalize)).isTrue();
+        long syncLogCount = count("resource_sync_log");
+        long changeLogCount = count("resource_change_log");
+        handler.resetUpsertCount();
+        finalize.getModuleManifests().get(0).setDeclarations("not-json");
+
+        assertThat(syncService.registerDeclarations(finalize)).isTrue();
+
+        assertThat(handler.upsertCount()).isZero();
+        assertThat(count("resource_sync_log")).isEqualTo(syncLogCount);
+        assertThat(count("resource_change_log")).isEqualTo(changeLogCount);
+        assertThat(stringValue("resource_module_receipt", "state")).isEqualTo("FINALIZED");
+    }
+
+    @Test
+    void finalizedReceiptAlsoSatisfiesLaterExpandWithoutParsingDeclarations() {
+        ResourceDeclaration declaration = activeDeclaration(1, "提交申请");
+        RegisterResourceDeclarationsCommand finalize = moduleCommand(
+                ResourceApplyMode.FINALIZE, "guarantee", List.of(declaration));
+        assertThat(syncService.registerDeclarations(finalize)).isTrue();
+        long syncLogCount = count("resource_sync_log");
+        handler.resetUpsertCount();
+        finalize.setApplyMode(ResourceApplyMode.EXPAND);
+        finalize.getModuleManifests().get(0).setDeclarations("not-json");
+
+        assertThat(syncService.registerDeclarations(finalize)).isTrue();
+
+        assertThat(handler.upsertCount()).isZero();
+        assertThat(count("resource_sync_log")).isEqualTo(syncLogCount);
+        assertThat(stringValue("resource_module_receipt", "state")).isEqualTo("FINALIZED");
+    }
+
+    @Test
+    void rejectsModuleCountHashAndOwnershipMismatchWithoutWritingReceipt() {
+        ResourceDeclaration declaration = activeDeclaration(1, "提交申请");
+        ResourceModuleManifestCommand wrongCount = moduleManifest(
+                "guarantee", List.of(), List.of(declaration));
+        wrongCount.setDeclarationCount(2);
+        assertThatThrownBy(() -> syncService.registerDeclarations(
+                moduleCommand(ResourceApplyMode.EXPAND, wrongCount)))
+                .isInstanceOf(BizException.class)
+                .hasMessageContaining("声明数量不匹配");
+        assertThat(count("resource_module_receipt")).isZero();
+
+        ResourceModuleManifestCommand wrongHash = moduleManifest(
+                "guarantee", List.of(), List.of(declaration));
+        wrongHash.setModuleHash("0".repeat(64));
+        assertThatThrownBy(() -> syncService.registerDeclarations(
+                moduleCommand(ResourceApplyMode.EXPAND, wrongHash)))
+                .isInstanceOf(BizException.class)
+                .hasMessageContaining("Hash 不匹配");
+        assertThat(count("resource_module_receipt")).isZero();
+
+        ResourceDeclaration foreign = activeDeclaration(1, "提交申请");
+        foreign.setModuleCode("workflow");
+        ResourceModuleManifestCommand wrongOwner = moduleManifest(
+                "guarantee", List.of(), List.of(foreign));
+        assertThatThrownBy(() -> syncService.registerDeclarations(
+                moduleCommand(ResourceApplyMode.EXPAND, wrongOwner)))
+                .isInstanceOf(BizException.class)
+                .hasMessageContaining("声明不属于模块");
+        assertThat(count("resource_module_receipt")).isZero();
+    }
+
+    @Test
+    void changedModuleFailurePreservesPreviousSuccessfulReceiptAndData() {
+        ResourceDeclaration initial = activeDeclaration(1, "稳定版本");
+        RegisterResourceDeclarationsCommand first = moduleCommand(
+                ResourceApplyMode.EXPAND, "guarantee", List.of(initial));
+        assertThat(syncService.registerDeclarations(first)).isTrue();
+        String oldHash = stringValue("resource_module_receipt", "module_hash");
+
+        ResourceDeclaration unsupported = activeDeclaration(2, "失败版本");
+        unsupported.setResourceType("UNSUPPORTED");
+        unsupported.setTargetModule("missing-target");
+        RegisterResourceDeclarationsCommand failing = moduleCommand(
+                ResourceApplyMode.EXPAND, "guarantee", List.of(unsupported));
+        failing.setGeneration(9L);
+        failing.setManifestFingerprint("e".repeat(64));
+
+        assertThatThrownBy(() -> syncService.registerDeclarations(failing))
+                .isInstanceOf(BizException.class)
+                .hasMessageContaining("未找到资源处理器");
+
+        assertThat(stringValue("resource_module_receipt", "module_hash")).isEqualTo(oldHash);
+        assertThat(jdbcTemplate.queryForObject(
+                "select generation from resource_module_receipt", Long.class)).isEqualTo(8L);
+        assertThat(stringValue("message_template", "title")).isEqualTo("稳定版本");
+    }
+
+    @Test
+    void multiModuleFailureKeepsCompletedPrefixAndRetrySkipsIt() {
+        ResourceDeclaration firstDeclaration = genericDeclaration("1900000000000000101",
+                "TEST_USER", "identity.resource", "test-user");
+        firstDeclaration.setModuleCode("identity");
+        ResourceDeclaration failingDeclaration = activeDeclaration(
+                "1900000000000000102", 1, "workflow.resource", "失败资源");
+        failingDeclaration.setModuleCode("workflow");
+        failingDeclaration.setResourceType("UNSUPPORTED");
+        failingDeclaration.setTargetModule("missing-target");
+        RegisterResourceDeclarationsCommand failing = moduleCommand(ResourceApplyMode.EXPAND,
+                moduleManifest("identity", List.of(), List.of(firstDeclaration)),
+                moduleManifest("workflow", List.of("identity"), List.of(failingDeclaration)));
+
+        assertThatThrownBy(() -> syncService.registerDeclarations(failing))
+                .isInstanceOf(BizException.class)
+                .hasMessageContaining("未找到资源处理器");
+        assertThat(jdbcTemplate.queryForList(
+                "select module_code from resource_module_receipt", String.class))
+                .containsExactly("identity");
+        syncOrderRecorder.clear();
+
+        ResourceDeclaration recovered = activeDeclaration(
+                "1900000000000000102", 1, "workflow.resource", "恢复资源");
+        recovered.setModuleCode("workflow");
+        RegisterResourceDeclarationsCommand retry = moduleCommand(ResourceApplyMode.EXPAND,
+                moduleManifest("identity", List.of(), List.of(firstDeclaration)),
+                moduleManifest("workflow", List.of("identity"), List.of(recovered)));
+        assertThat(syncService.registerDeclarations(retry)).isTrue();
+
+        assertThat(syncOrderRecorder.resourceTypes()).isEmpty();
+        assertThat(jdbcTemplate.queryForList(
+                "select module_code from resource_module_receipt order by module_code", String.class))
+                .containsExactly("identity", "workflow");
+        assertThat(jdbcTemplate.queryForObject(
+                "select title from message_template where biz_key = 'workflow.resource'", String.class))
+                .isEqualTo("恢复资源");
+    }
+
+    @Test
+    void receiptsAreIsolatedByEnvironmentApplicationAndService() {
+        ResourceModuleManifestCommand empty = moduleManifest("guarantee", List.of(), List.of());
+        RegisterResourceDeclarationsCommand first = moduleCommand(ResourceApplyMode.EXPAND, empty);
+        assertThat(syncService.registerDeclarations(first)).isTrue();
+
+        RegisterResourceDeclarationsCommand otherEnvironment = moduleCommand(
+                ResourceApplyMode.EXPAND, moduleManifest("guarantee", List.of(), List.of()));
+        otherEnvironment.setEnvironmentKey("other-env");
+        assertThat(syncService.registerDeclarations(otherEnvironment)).isTrue();
+        RegisterResourceDeclarationsCommand otherApplication = moduleCommand(
+                ResourceApplyMode.EXPAND, moduleManifest("guarantee", List.of(), List.of()));
+        otherApplication.setAppCode("other-app");
+        assertThat(syncService.registerDeclarations(otherApplication)).isTrue();
+        RegisterResourceDeclarationsCommand otherService = moduleCommand(
+                ResourceApplyMode.EXPAND, moduleManifest("guarantee", List.of(), List.of()));
+        otherService.setServiceCode("other-service");
+        assertThat(syncService.registerDeclarations(otherService)).isTrue();
+
+        assertThat(count("resource_module_receipt")).isEqualTo(4);
+        assertThat(jdbcTemplate.queryForList("""
+                select environment_key, app_code, service_code
+                  from resource_module_receipt
+                 order by environment_key, app_code, service_code
+                """)).containsExactlyInAnyOrder(
+                Map.of("environment_key", "test", "app_code", "test-app", "service_code", "test-service"),
+                Map.of("environment_key", "other-env", "app_code", "test-app", "service_code", "test-service"),
+                Map.of("environment_key", "test", "app_code", "other-app", "service_code", "test-service"),
+                Map.of("environment_key", "test", "app_code", "test-app", "service_code", "other-service"));
+    }
+
+    @Test
+    void finalizeRemovalOnlyDisablesAutoResourcesInChangedModule() {
+        ResourceDeclaration auto = activeDeclaration(
+                "1900000000000000001", 1, "guarantee.auto", "自动资源");
+        auto.setModuleCode("guarantee");
+        ResourceDeclaration initOnly = activeDeclaration(
+                "1900000000000000002", 1, "guarantee.init-only", "初始化资源");
+        initOnly.setModuleCode("guarantee");
+        initOnly.setSyncMode(ResourceSyncMode.INIT_ONLY);
+        ResourceDeclaration manual = activeDeclaration(
+                "1900000000000000003", 1, "guarantee.manual", "人工资源");
+        manual.setModuleCode("guarantee");
+        manual.setSyncMode(ResourceSyncMode.MANUAL);
+        ResourceDeclaration workflow = activeDeclaration(
+                "1900000000000000004", 1, "workflow.auto", "流程资源");
+        workflow.setModuleCode("workflow");
+        RegisterResourceDeclarationsCommand initial = moduleCommand(ResourceApplyMode.FINALIZE,
+                moduleManifest("guarantee", List.of(), List.of(auto, initOnly, manual)),
+                moduleManifest("workflow", List.of(), List.of(workflow)));
+        assertThat(syncService.registerDeclarations(initial)).isTrue();
+
+        ResourceModuleManifestCommand unchangedWorkflow = moduleManifest(
+                "workflow", List.of(), List.of(workflow));
+        unchangedWorkflow.setDeclarations("not-json");
+        RegisterResourceDeclarationsCommand removeGuarantee = moduleCommand(ResourceApplyMode.FINALIZE,
+                moduleManifest("guarantee", List.of(), List.of()), unchangedWorkflow);
+
+        assertThat(syncService.registerDeclarations(removeGuarantee)).isTrue();
+
+        assertThat(registryStatus(auto.getId())).isEqualTo("REMOVED");
+        assertThat(registryStatus(initOnly.getId())).isEqualTo("ACTIVE");
+        assertThat(registryStatus(manual.getId())).isEqualTo("ACTIVE");
+        assertThat(registryStatus(workflow.getId())).isEqualTo("ACTIVE");
+        assertThat(jdbcTemplate.queryForObject(
+                "select enabled from message_template where id = 91001", Integer.class)).isZero();
+        assertThat(jdbcTemplate.queryForObject(
+                "select enabled from message_template where id = 91002", Integer.class)).isOne();
+        assertThat(jdbcTemplate.queryForObject(
+                "select enabled from message_template where id = 91003", Integer.class)).isOne();
+        assertThat(jdbcTemplate.queryForObject(
+                "select enabled from message_template where id = 91004", Integer.class)).isOne();
+    }
+
+    @Test
+    void unchanged1291DeclarationModuleSkipsWithinPerformanceBudget() {
+        List<ResourceDeclaration> declarations = declarations(1291);
+        RegisterResourceDeclarationsCommand command = moduleCommand(
+                ResourceApplyMode.EXPAND, "guarantee", declarations);
+        assertThat(syncService.registerDeclarations(command)).isTrue();
+        handler.resetUpsertCount();
+        sqlStatementCounter.reset();
+        command.getModuleManifests().get(0).setDeclarations("not-json");
+
+        long startedNanos = System.nanoTime();
+        assertThat(syncService.registerDeclarations(command)).isTrue();
+        long elapsedMillis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedNanos);
+
+        assertThat(elapsedMillis).isLessThan(10_000L);
+        assertThat(handler.upsertCount()).isZero();
+        assertThat(sqlStatementCounter.countForMapper(ResourceRegistryMapper.class)).isZero();
+        assertThat(count("resource_registry")).isEqualTo(1291);
     }
 
     @Test
@@ -712,12 +1072,69 @@ class ResourceRegistrySyncServiceIntegrationTest {
         return declaration;
     }
 
+    private RegisterResourceDeclarationsCommand moduleCommand(ResourceApplyMode applyMode, String moduleCode,
+                                                              List<ResourceDeclaration> declarations) {
+        return moduleCommand(applyMode, moduleManifest(moduleCode, List.of(), declarations));
+    }
+
+    private ResourceModuleManifestCommand moduleManifest(String moduleCode, List<String> dependencies,
+                                                         List<ResourceDeclaration> declarations) {
+        ResourceModuleManifestCommand module = new ResourceModuleManifestCommand();
+        module.setModuleCode(moduleCode);
+        module.setDependencies(dependencies);
+        module.setDeclarations(writeJson(declarations));
+        module.setDeclarationCount(declarations.size());
+        module.setModuleHash(resourceContentHasher.moduleHash(moduleCode, dependencies, declarations));
+        return module;
+    }
+
+    private RegisterResourceDeclarationsCommand moduleCommand(ResourceApplyMode applyMode,
+                                                              ResourceModuleManifestCommand... modules) {
+        RegisterResourceDeclarationsCommand command = new RegisterResourceDeclarationsCommand();
+        command.setAppCode("test-app");
+        command.setServiceCode("test-service");
+        command.setEnvironmentKey("test");
+        command.setGeneration(8L);
+        command.setManifestFingerprint("f".repeat(64));
+        command.setFencingToken(13L);
+        command.setApplyMode(applyMode);
+        command.setModuleCodes(java.util.Arrays.stream(modules)
+                .map(ResourceModuleManifestCommand::getModuleCode).toList());
+        command.setModuleManifests(List.of(modules));
+        return command;
+    }
+
+    private String writeJson(Object value) {
+        try {
+            return new ObjectMapper().writeValueAsString(value);
+        } catch (com.fasterxml.jackson.core.JsonProcessingException exception) {
+            throw new IllegalStateException(exception);
+        }
+    }
+
     private void rebuildTables() {
+        jdbcTemplate.execute("drop table if exists resource_module_receipt");
         jdbcTemplate.execute("drop table if exists resource_change_log");
         jdbcTemplate.execute("drop table if exists resource_sync_log");
         jdbcTemplate.execute("drop table if exists resource_registry");
         jdbcTemplate.execute("drop table if exists message_template");
         jdbcTemplate.execute("drop table if exists infra_kv_entry");
+        jdbcTemplate.execute("""
+                create table resource_module_receipt (
+                    environment_key varchar(128) not null,
+                    app_code varchar(128) not null,
+                    service_code varchar(128) not null,
+                    module_code varchar(64) not null,
+                    module_hash varchar(64) not null,
+                    generation bigint not null,
+                    manifest_fingerprint varchar(64) not null,
+                    state varchar(32) not null,
+                    declaration_count int not null,
+                    created_at timestamp default current_timestamp,
+                    updated_at timestamp default current_timestamp,
+                    primary key (environment_key, app_code, service_code, module_code)
+                )
+                """);
         jdbcTemplate.execute("""
                 create table resource_registry (
                     id bigint primary key,
@@ -811,6 +1228,11 @@ class ResourceRegistrySyncServiceIntegrationTest {
         return value == null ? 0 : value;
     }
 
+    private String registryStatus(String resourceId) {
+        return jdbcTemplate.queryForObject(
+                "select status from resource_registry where resource_id = ?", String.class, resourceId);
+    }
+
     private List<MessageTemplateRow> messageTemplateRows() {
         return jdbcTemplate.query("""
                 select id, biz_key, title, enabled
@@ -844,7 +1266,8 @@ class ResourceRegistrySyncServiceIntegrationTest {
             ResourceRegistryMapper.class,
             TestMessageTemplateMapper.class
     })
-    @Import({ResourceRegistryRepository.class, ResourceRegistryLock.class, ResourceRegistryService.class})
+    @Import({ResourceRegistryRepository.class, ResourceModuleReceiptRepository.class,
+            ResourceRegistryLock.class, ResourceRegistryService.class})
     static class TestConfig {
 
         @Bean
@@ -870,6 +1293,16 @@ class ResourceRegistrySyncServiceIntegrationTest {
         @Bean
         ResourceContentHasher resourceContentHasher(ObjectMapper objectMapper) {
             return new ResourceContentHasher(objectMapper);
+        }
+
+        @Bean
+        BootstrapGenerationFence bootstrapGenerationFence() {
+            return authority -> {
+                if ((authority.generation() != 8L && authority.generation() != 9L)
+                        || authority.fencingToken() != 13L) {
+                    throw new IllegalStateException("unexpected test authority");
+                }
+            };
         }
 
         @Bean

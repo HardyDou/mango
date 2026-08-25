@@ -7,6 +7,7 @@ import io.mango.common.result.Require;
 import io.mango.infra.bootstrap.api.BootstrapGenerationFence;
 import io.mango.infra.bootstrap.api.BootstrapWriteAuthority;
 import io.mango.resource.api.command.RegisterResourceDeclarationsCommand;
+import io.mango.resource.api.command.ResourceModuleManifestCommand;
 import io.mango.resource.api.enums.ResourceApplyMode;
 import io.mango.resource.api.enums.ResourceCode;
 import io.mango.resource.support.ResourceHandler;
@@ -21,6 +22,7 @@ import io.mango.resource.core.sync.ResourceRegistryLock;
 import io.mango.resource.core.sync.ResourceRegistryRepository;
 import io.mango.resource.core.sync.ResourceRegistryRepository.ResourceRegistrySnapshot;
 import io.mango.resource.core.sync.ResourceRegistryRow;
+import io.mango.resource.core.sync.ResourceModuleReceiptRepository;
 import io.mango.resource.core.diagnostic.ResourceModuleSyncStatusRegistry;
 import io.mango.resource.core.diagnostic.ResourceModuleSyncStatusRegistry.ModuleObservation;
 import io.mango.resource.support.model.ResourceDeclaration;
@@ -63,6 +65,7 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
     private final ObjectProvider<ResourceTargetDispatcher> targetDispatchers;
     private final ResourceContentHasher hasher;
     private final ResourceRegistryRepository repository;
+    private final ResourceModuleReceiptRepository moduleReceiptRepository;
     private final ResourceRegistryLock lock;
     private final ObjectMapper objectMapper;
     private final ResourceModuleSyncStatusRegistry moduleSyncStatusRegistry;
@@ -201,9 +204,14 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
                 validatedCommand.getApplyMode(), ResourceCode.RESOURCE_INVALID, "Resource apply mode 不能为空");
         BootstrapGenerationFence generationFence = Require.nonNull(
                 generationFences.getIfAvailable(), ResourceCode.RESOURCE_INVALID, "Bootstrap generation fence 未启用");
-        generationFence.assertAuthoritative(new BootstrapWriteAuthority(
+        BootstrapWriteAuthority writeAuthority = new BootstrapWriteAuthority(
                 validatedCommand.getEnvironmentKey(), validatedGeneration, validatedCommand.getManifestFingerprint(),
-                fencingToken));
+                fencingToken);
+        generationFence.assertAuthoritative(writeAuthority);
+        if (!validatedCommand.getModuleManifests().isEmpty()
+                && validatedApplyMode != ResourceApplyMode.EVENTUAL) {
+            return registerModuleManifests(validatedCommand, validatedApplyMode, generationFence, writeAuthority);
+        }
         List<ResourceDeclaration> declarations = parseDeclarations(validatedCommand.getDeclarations());
         List<String> moduleCodes = validatedCommand.getModuleCodes() == null
                 ? List.of() : List.copyOf(validatedCommand.getModuleCodes());
@@ -219,6 +227,148 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
         log.info("Mango resource remote declarations registered: appCode={}, serviceCode={}, count={}",
                 validatedCommand.getAppCode(), validatedCommand.getServiceCode(), declarations.size());
         return Boolean.TRUE;
+    }
+
+    private Boolean registerModuleManifests(RegisterResourceDeclarationsCommand command,
+                                            ResourceApplyMode applyMode,
+                                            BootstrapGenerationFence generationFence,
+                                            BootstrapWriteAuthority writeAuthority) {
+        if (!beginOperation()) {
+            log.info("Mango resource module coordination deferred: application is shutting down");
+            return Boolean.FALSE;
+        }
+        try {
+            return registerModuleManifestsWhileRunning(command, applyMode, generationFence, writeAuthority);
+        } finally {
+            endOperation();
+        }
+    }
+
+    private Boolean registerModuleManifestsWhileRunning(RegisterResourceDeclarationsCommand command,
+                                                        ResourceApplyMode applyMode,
+                                                        BootstrapGenerationFence generationFence,
+                                                        BootstrapWriteAuthority writeAuthority) {
+        invalidateDiagnosticStatus("RESOURCE_SYNC_ATTEMPT_STARTED");
+        if (!properties.isEnabled()) {
+            invalidateDiagnosticStatus("RESOURCE_SYNC_DISABLED");
+            log.info("Mango resource module coordination disabled");
+            return Boolean.TRUE;
+        }
+        List<ResourceModuleManifestCommand> orderedModules = orderModuleManifests(command.getModuleManifests());
+        String owner = resolveOwner();
+        ResourceRegistryLock.LeaseSession lease = lock.tryLock(
+                owner, properties.getLockTtlSeconds()).orElse(null);
+        if (lease == null) {
+            invalidateDiagnosticStatus("RESOURCE_SYNC_LOCK_NOT_ACQUIRED");
+            log.info("Mango resource module coordination deferred: lock is held by another instance");
+            return Boolean.FALSE;
+        }
+        try {
+            int skipped = 0;
+            int applied = 0;
+            long startedNanos = System.nanoTime();
+            for (ResourceModuleManifestCommand module : orderedModules) {
+                generationFence.assertAuthoritative(writeAuthority);
+                long moduleStartedNanos = System.nanoTime();
+                if (moduleReceiptRepository.isSatisfied(
+                        command.getEnvironmentKey(), command.getAppCode(), command.getServiceCode(),
+                        module.getModuleCode(), module.getModuleHash(), applyMode)) {
+                    skipped++;
+                    log.info("Mango resource module skipped: module={}, mode={}, hash={}, durationMs={}",
+                            module.getModuleCode(), applyMode, module.getModuleHash(),
+                            elapsedMillis(moduleStartedNanos));
+                    continue;
+                }
+                List<ResourceDeclaration> declarations = parseDeclarations(module.getDeclarations());
+                validateModuleManifest(module, declarations);
+                List<ResourceDeclaration> selectedDeclarations = selectDeclarations(declarations, applyMode);
+                doSync(command.getAppCode(), command.getServiceCode(), selectedDeclarations,
+                        List.of(module.getModuleCode()), false, applyMode == ResourceApplyMode.FINALIZE);
+                generationFence.assertAuthoritative(writeAuthority);
+                moduleReceiptRepository.recordSuccess(
+                        command.getEnvironmentKey(), command.getAppCode(), command.getServiceCode(),
+                        module.getModuleCode(), module.getModuleHash(), command.getGeneration(),
+                        command.getManifestFingerprint(), applyMode, declarations.size());
+                applied++;
+                log.info("Mango resource module applied: module={}, mode={}, declarations={}, hash={}, durationMs={}",
+                        module.getModuleCode(), applyMode, declarations.size(), module.getModuleHash(),
+                        elapsedMillis(moduleStartedNanos));
+            }
+            log.info("Mango resource module coordination complete: mode={}, modules={}, applied={}, skipped={}, durationMs={}",
+                    applyMode, orderedModules.size(), applied, skipped, elapsedMillis(startedNanos));
+            return Boolean.TRUE;
+        } catch (RuntimeException exception) {
+            failObservedDiagnosticStatus("RESOURCE_SYNC_FAILED");
+            return Require.rethrow(exception);
+        } finally {
+            lease.close();
+        }
+    }
+
+    private void validateModuleManifest(ResourceModuleManifestCommand module,
+                                        List<ResourceDeclaration> declarations) {
+        Require.isTrue(module.getDeclarationCount() == declarations.size(), ResourceCode.RESOURCE_INVALID,
+                "Resource 模块声明数量不匹配: " + module.getModuleCode());
+        Require.isTrue(declarations.stream().allMatch(
+                        declaration -> module.getModuleCode().equals(declaration.getModuleCode())),
+                ResourceCode.RESOURCE_INVALID, "Resource 声明不属于模块: " + module.getModuleCode());
+        String actualHash = hasher.moduleHash(module.getModuleCode(), module.getDependencies(), declarations);
+        Require.isTrue(actualHash.equals(module.getModuleHash()), ResourceCode.RESOURCE_INVALID,
+                "Resource 模块 Hash 不匹配: " + module.getModuleCode());
+    }
+
+    private List<ResourceModuleManifestCommand> orderModuleManifests(
+            List<ResourceModuleManifestCommand> manifests) {
+        Map<String, ResourceModuleManifestCommand> byCode = new LinkedHashMap<>();
+        for (ResourceModuleManifestCommand manifest : manifests) {
+            Require.notNull(manifest, ResourceCode.RESOURCE_INVALID, "Resource 模块清单不能为空");
+            requireText(manifest.getModuleCode(), "Resource moduleCode is required");
+            Require.isTrue(manifest.getModuleHash() != null && manifest.getModuleHash().matches("[0-9a-f]{64}"),
+                    ResourceCode.RESOURCE_INVALID, "Resource moduleHash is invalid: " + manifest.getModuleCode());
+            Require.isTrue(manifest.getDeclarationCount() >= 0, ResourceCode.RESOURCE_INVALID,
+                    "Resource declarationCount is invalid: " + manifest.getModuleCode());
+            requireText(manifest.getDeclarations(), "Resource module declarations are required: "
+                    + manifest.getModuleCode());
+            ResourceModuleManifestCommand previous = byCode.put(manifest.getModuleCode(), manifest);
+            Require.isTrue(previous == null, ResourceCode.RESOURCE_CONFLICT,
+                    "Resource module manifest duplicated: " + manifest.getModuleCode());
+        }
+        List<ResourceModuleManifestCommand> ordered = new ArrayList<>();
+        Map<String, VisitState> states = new HashMap<>();
+        byCode.keySet().stream().sorted().forEach(moduleCode -> visitModule(
+                moduleCode, byCode, states, ordered, new ArrayList<>()));
+        return ordered;
+    }
+
+    private void visitModule(String moduleCode,
+                             Map<String, ResourceModuleManifestCommand> byCode,
+                             Map<String, VisitState> states,
+                             List<ResourceModuleManifestCommand> ordered,
+                             List<String> path) {
+        VisitState state = states.get(moduleCode);
+        if (state == VisitState.VISITED) {
+            return;
+        }
+        if (state == VisitState.VISITING) {
+            path.add(moduleCode);
+            Require.isTrue(false, ResourceCode.RESOURCE_CONFLICT,
+                    "Resource 模块依赖存在循环: " + String.join(" -> ", path));
+        }
+        states.put(moduleCode, VisitState.VISITING);
+        path.add(moduleCode);
+        ResourceModuleManifestCommand module = byCode.get(moduleCode);
+        module.getDependencies().stream().distinct().sorted()
+                .forEach(dependency -> {
+                    Require.isTrue(byCode.containsKey(dependency), ResourceCode.RESOURCE_INVALID,
+                            "Resource 模块依赖缺失: " + moduleCode + " -> " + dependency);
+                    visitModule(dependency, byCode, states, ordered, new ArrayList<>(path));
+                });
+        states.put(moduleCode, VisitState.VISITED);
+        ordered.add(module);
+    }
+
+    private static long elapsedMillis(long startedNanos) {
+        return TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedNanos);
     }
 
     private List<ResourceDeclaration> selectDeclarations(

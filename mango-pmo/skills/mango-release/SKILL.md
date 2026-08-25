@@ -34,8 +34,8 @@ Run PMO preflight with `role=pmo`, `phase=release`, exact artifact paths, reques
 
 Return `ASK` until release scope, exact versions, dependency order, registry targets, upgrade audience, and authorization are explicit. Before any immutable action:
 
-1. Require a Changeset for each directly changed published package. Run the Git impact checker to reject missing, unrelated, or unknown declarations; let the fixed runtime dependency graph and CLI version matrix add dependent packages automatically.
-2. Run `mango release plan` from the accumulated successful-release baseline, not from the latest commit. Review the machine-generated package set, target versions, topology, release notes hash, and one-time reconciliation marker when present. Never hand-maintain a batch package list.
+1. Require a Changeset for each directly changed published package. Run the Catalog compiler and Git impact checker to reject drift, duplicate ownership, missing, unrelated, or unknown declarations; let the fixed runtime dependency graph and CLI version matrix add dependent packages automatically.
+2. Run `mango release plan` from the accumulated successful-release baseline, not from the latest commit. Review the Catalog-bound complete tuple, machine-generated release closure, target versions, topology, release notes hash, and one-time reconciliation marker when present. Never hand-maintain a batch package list.
 3. Prove the prepared source is clean and covered by passing required checks. `mango release prepare` must record the full commit SHA, Git tree, exact-source archive checksum, release-plan digest, and SHA-256 for every sealed artifact.
 4. Read `.github/branch-protection-policy.json` and compare it with the live base-branch protection. Stop on drift; never toggle protection for one release. In `single-owner` mode, approving-review count remains zero: required checks and the Owner's PR merge provide the authorization record, without a separate reviewer approval ceremony.
 5. Produce one compatibility matrix for Maven, every npm package, CLI, starter/template, PMO, Skills, documentation, and consumers. A changed PMO/Skill bundle requires a new PMO version; an exact CLI dependency on PMO requires a corresponding CLI version.
@@ -54,18 +54,19 @@ mango release publish --authorize
 mango release status | mango release repair --authorize
 ```
 
-1. `prepare` builds once, packs once, seals the exact tarball/JAR files, and runs one mixed consumer using those files plus unchanged consume-registry coordinates. Publication and recovery must reuse the recorded hashes and must not rebuild.
-2. After the Release PR merges, `publish` requires the merged `origin/main` Git tree to equal the prepared tree, publishes the sealed artifacts in topology order, verifies hosted and group content, then runs one pure consume-registry consumer.
-3. The normal states are `PREPARED`, `CANDIDATE_VERIFIED`, `PUBLISHED`, `CONSUMER_VERIFIED`, and `COMPLETED`; exceptional batch states are `FAILED`, `VERIFY_PENDING`, and `PARTIALLY_PUBLISHED`. Every attempted command retains timestamps, exit code, redacted output, coordinate, registry role, and checksum.
-4. Create the immutable Tag and GitHub Release only after `CONSUMER_VERIFIED`. Never create them as a pre-publication checkpoint.
+1. `prepare` builds once, packs once, seals the exact tarball/JAR/docs/source archive files under one `preparedCandidateId`, and runs one mixed consumer using those files plus unchanged consume-registry coordinates. `READY`, publication and recovery must reuse the recorded hashes and must not rebuild.
+2. After the Release PR merges, `publish` requires the merged `origin/main` Git tree to equal the prepared tree and completes a full npm/Maven/docs dual-registry preflight before the first write. Maven uses `basic` verification by default: each coordinate's POM is checked for presence and SHA-256, while JARs are resolved once by one aggregate clean Maven consumer. Sealed Maven coordinates publish with bounded concurrency 16 by default (`MANGO_RELEASE_MAVEN_PUBLISH_CONCURRENCY=1..16`); consume-registry visibility waits use the same bound, and every coordinate still persists intent, dispatch, result and recovery evidence. Set `MANGO_RELEASE_MAVEN_VERIFY_MODE=full` only for an explicitly requested per-JAR remote audit. The publisher then publishes the sealed artifacts in topology order, verifies publish and consume content, and runs one pure consume-registry consumer.
+3. The states are `VALIDATED`, `PREPARED`, `READY`, `PUBLISHING`, `PARTIAL`, `AMBIGUOUS`, `REPAIR`, and `COMPLETED`. Every attempted command retains timestamps, exit code, redacted output, coordinate, registry role, checksum, and publication-journal transition.
+4. Create the immutable Tag and GitHub Release only after the consumer verification recorded within `PUBLISHING`. Never create them as a pre-publication checkpoint.
 5. Stop immediately on dirty or inconsistent source, plan drift, artifact hash drift, missing notes, failed gates, unknown registry state, failed publication, missing consumer evidence, or registry doctor failure.
 
 ## Recover
 
-1. Never republish a coordinate whose hosted copy exists and matches the sealed SHA-256. When group visibility is delayed, enter `VERIFY_PENDING`, wait read-only for a bounded interval, and continue with `repair`.
-2. `repair` re-reads hosted and group for every coordinate, skips verified packages, and resumes at the first truly absent coordinate. A first attempt is allowed only when both roles prove absence; an unknown or inconsistent response is `STOP`.
-3. `PARTIALLY_PUBLISHED` retains every earlier attempt and artifact checksum. Recovery uses the same prepared directory and never rebuilds, broad-publishes, changes versions, or edits the plan.
-4. A verifier defect after a successful remote write does not authorize republishing. Correct the verifier and resume read-only through the same manifest.
+1. Never republish a coordinate whose publish copy exists and matches the sealed SHA-256. When consume visibility is delayed, enter `PARTIAL`, wait read-only for a bounded interval, and continue with `repair`.
+2. `status` validates the sealed candidate and reads both registry roles without mutating the manifest. `publish`, `status`, and `repair` all use the Git common-dir release lock; an existing lock is never reclaimed automatically. `repair` repeats the complete preflight, skips journal-owned verified coordinates, and resumes only coordinates whose journal is `NOT_ATTEMPTED` and whose two registry roles both prove absence.
+3. `INTENT_RECORDED` and `REQUEST_DISPATCHED` mean the request may have left the process. If both registry roles still report absent, enter `AMBIGUOUS` and stop instead of retrying. Remote content without this candidate's journal ownership, unknown state, partial Maven content, or digest mismatch is also `STOP`.
+4. `PARTIAL` and `AMBIGUOUS` retain every earlier attempt and artifact checksum. Recovery uses the same `preparedCandidateId` and prepared directory and never rebuilds, broad-publishes, changes versions, edits the plan, automatically reclaims a stale lock, or adopts another candidate's coordinate.
+5. A verifier defect after a successful remote write does not authorize republishing. Correct the verifier and resume read-only through the same manifest.
 
 ## Close
 

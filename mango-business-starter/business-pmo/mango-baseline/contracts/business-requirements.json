@@ -25,14 +25,37 @@
     ],
     "fixed": {
       "documentType": "business-requirements",
-      "pmoVersion": "1.3.16",
+      "pmoVersion": "1.4.1",
       "schemaRevision": "1",
       "upstreamDocumentId": "NONE",
       "upstreamDocumentHash": "NONE"
     },
-    "historicalPmoVersions": ["1.3.6", "1.3.7", "1.3.8", "1.3.9", "1.3.10", "1.3.11", "1.3.12", "1.3.13", "1.3.14", "1.3.15"]
+    "historicalPmoVersions": [
+      "1.3.6",
+      "1.3.7",
+      "1.3.8",
+      "1.3.9",
+      "1.3.10",
+      "1.3.11",
+      "1.3.12",
+      "1.3.13",
+      "1.3.14",
+      "1.3.15",
+      "1.3.16",
+      "1.4.0"
+    ]
   },
-  "localPrefixes": ["BP", "BG", "BS", "BA", "BO", "BF", "BR", "BI", "BAC"],
+  "localPrefixes": [
+    "BP",
+    "BG",
+    "BS",
+    "BA",
+    "BO",
+    "BF",
+    "BR",
+    "BI",
+    "BAC"
+  ],
   "upstreamPrefixes": [],
   "sections": [
     {
@@ -49,7 +72,9 @@
             "事实来源"
           ],
           "minRows": 1,
-          "defines": { "问题ID": "BP" }
+          "defines": {
+            "问题ID": "BP"
+          }
         }
       ]
     },
@@ -68,9 +93,17 @@
             "统计口径"
           ],
           "minRows": 1,
-          "defines": { "目标ID": "BG" },
+          "defines": {
+            "目标ID": "BG"
+          },
           "references": [
-            { "column": "来源问题ID", "prefixes": ["BP"], "required": true }
+            {
+              "column": "来源问题ID",
+              "prefixes": [
+                "BP"
+              ],
+              "required": true
+            }
           ]
         }
       ]
@@ -89,9 +122,21 @@
             "对目标的影响"
           ],
           "minRows": 2,
-          "defines": { "范围ID": "BS" },
-          "enums": { "范围类型": ["纳入范围", "不处理范围"] },
-          "requiredEnumValues": { "范围类型": ["纳入范围", "不处理范围"] }
+          "defines": {
+            "范围ID": "BS"
+          },
+          "enums": {
+            "范围类型": [
+              "纳入范围",
+              "不处理范围"
+            ]
+          },
+          "requiredEnumValues": {
+            "范围类型": [
+              "纳入范围",
+              "不处理范围"
+            ]
+          }
         }
       ]
     },
@@ -110,10 +155,18 @@
             "业务原因"
           ],
           "minRows": 1,
-          "defines": { "参与者ID": "BA" }
+          "defines": {
+            "参与者ID": "BA"
+          }
         },
         {
-          "headers": ["术语", "业务含义", "主名称", "必要别名", "适用范围"],
+          "headers": [
+            "术语",
+            "业务含义",
+            "主名称",
+            "必要别名",
+            "适用范围"
+          ],
           "minRows": 1
         }
       ]
@@ -132,7 +185,9 @@
             "数量金额或有效期边界"
           ],
           "minRows": 1,
-          "defines": { "对象ID": "BO" }
+          "defines": {
+            "对象ID": "BO"
+          }
         },
         {
           "headers": [
@@ -148,9 +203,24 @@
           ],
           "minRows": 1,
           "references": [
-            { "column": "对象ID", "prefixes": ["BO"], "required": true }
+            {
+              "column": "对象ID",
+              "prefixes": [
+                "BO"
+              ],
+              "required": true
+            }
           ],
-          "enums": { "是否可逆": ["是", "否"], "是否终态": ["是", "否"] }
+          "enums": {
+            "是否可逆": [
+              "是",
+              "否"
+            ],
+            "是否终态": [
+              "是",
+              "否"
+            ]
+          }
         }
       ]
     },
@@ -173,17 +243,39 @@
             "规则ID"
           ],
           "minRows": 1,
-          "defines": { "流程ID": "BF" },
+          "defines": {
+            "流程ID": "BF"
+          },
           "references": [
             {
               "column": "父流程ID",
-              "prefixes": ["BF"],
+              "prefixes": [
+                "BF"
+              ],
               "required": false,
               "allowNone": true
             },
-            { "column": "参与者ID", "prefixes": ["BA"], "required": true },
-            { "column": "对象ID", "prefixes": ["BO"], "required": true },
-            { "column": "规则ID", "prefixes": ["BR"], "required": true }
+            {
+              "column": "参与者ID",
+              "prefixes": [
+                "BA"
+              ],
+              "required": true
+            },
+            {
+              "column": "对象ID",
+              "prefixes": [
+                "BO"
+              ],
+              "required": true
+            },
+            {
+              "column": "规则ID",
+              "prefixes": [
+                "BR"
+              ],
+              "required": true
+            }
           ]
         }
       ]
@@ -207,9 +299,17 @@
             "例外"
           ],
           "minRows": 1,
-          "defines": { "规则ID": "BR" },
+          "defines": {
+            "规则ID": "BR"
+          },
           "references": [
-            { "column": "适用参与者ID", "prefixes": ["BA"], "required": true }
+            {
+              "column": "适用参与者ID",
+              "prefixes": [
+                "BA"
+              ],
+              "required": true
+            }
           ]
         }
       ]
@@ -231,11 +331,25 @@
             "是否阻断"
           ],
           "minRows": 1,
-          "defines": { "条目ID": "BI" },
+          "defines": {
+            "条目ID": "BI"
+          },
           "enums": {
-            "类型": ["业务约束", "业务风险", "业务假设", "待确认问题"],
-            "状态": ["OPEN", "CLOSED", "BLOCKED"],
-            "是否阻断": ["是", "否"]
+            "类型": [
+              "业务约束",
+              "业务风险",
+              "业务假设",
+              "待确认问题"
+            ],
+            "状态": [
+              "OPEN",
+              "CLOSED",
+              "BLOCKED"
+            ],
+            "是否阻断": [
+              "是",
+              "否"
+            ]
           }
         }
       ]
@@ -255,11 +369,18 @@
             "失败或边界结果"
           ],
           "minRows": 1,
-          "defines": { "验收ID": "BAC" },
+          "defines": {
+            "验收ID": "BAC"
+          },
           "references": [
             {
               "column": "来源ID",
-              "prefixes": ["BG", "BO", "BF", "BR"],
+              "prefixes": [
+                "BG",
+                "BO",
+                "BF",
+                "BR"
+              ],
               "required": true
             }
           ]
@@ -271,20 +392,49 @@
       "title": "业务追踪矩阵",
       "tables": [
         {
-          "headers": ["来源ID", "关联ID", "业务验收ID", "覆盖说明"],
+          "headers": [
+            "来源ID",
+            "关联ID",
+            "业务验收ID",
+            "覆盖说明"
+          ],
           "minRows": 1,
           "references": [
             {
               "column": "来源ID",
-              "prefixes": ["BP", "BG", "BS", "BA", "BO", "BF", "BR", "BAC"],
+              "prefixes": [
+                "BP",
+                "BG",
+                "BS",
+                "BA",
+                "BO",
+                "BF",
+                "BR",
+                "BAC"
+              ],
               "required": true
             },
             {
               "column": "关联ID",
-              "prefixes": ["BP", "BG", "BS", "BA", "BO", "BF", "BR", "BAC"],
+              "prefixes": [
+                "BP",
+                "BG",
+                "BS",
+                "BA",
+                "BO",
+                "BF",
+                "BR",
+                "BAC"
+              ],
               "required": true
             },
-            { "column": "业务验收ID", "prefixes": ["BAC"], "required": true }
+            {
+              "column": "业务验收ID",
+              "prefixes": [
+                "BAC"
+              ],
+              "required": true
+            }
           ]
         }
       ]
@@ -294,9 +444,18 @@
       "title": "阶段判定与审批",
       "tables": [
         {
-          "headers": ["检查项", "结果", "证据"],
+          "headers": [
+            "检查项",
+            "结果",
+            "证据"
+          ],
           "minRows": 4,
-          "rowKeys": ["业务需求 checker", "未关闭阻断数量", "例外", "业务审批"]
+          "rowKeys": [
+            "业务需求 checker",
+            "未关闭阻断数量",
+            "例外",
+            "业务审批"
+          ]
         }
       ]
     }
@@ -304,7 +463,16 @@
   "traceability": {
     "ruleId": "BRD-TRACE-100",
     "section": "业务追踪矩阵",
-    "localCoveragePrefixes": ["BP", "BG", "BS", "BA", "BO", "BF", "BR", "BAC"]
+    "localCoveragePrefixes": [
+      "BP",
+      "BG",
+      "BS",
+      "BA",
+      "BO",
+      "BF",
+      "BR",
+      "BAC"
+    ]
   },
   "blocking": {
     "ruleId": "BRD-GATE-110",
@@ -322,7 +490,9 @@
     ],
     "stateColumn": "状态",
     "blockingColumn": "是否阻断",
-    "closedValues": ["CLOSED"]
+    "closedValues": [
+      "CLOSED"
+    ]
   },
   "dependencyGraph": {
     "ruleId": "BRD-PARENT-060",

@@ -2,6 +2,145 @@
 
 ## Unreleased
 
+## v2026.08.22-pmo-1.4.1-cli-1.1.1-release - 2026-08-22
+
+Status: `PUBLISHED_AND_VERIFIED`. Canonical manifest SHA-256 `3b4b695c86f9ff24763423696ab543dcf6483d25a3e5e5656593328902cc622f` for plan `a948d84b41cbdb2dcedad09e874440c46a94cc2b9c154ac182f65a08bcc99692` and prepared candidate `a89efa10c81dbd8c35a264d8a0f2da944f629fa8c29f92233a985ec8510d99b2` is `COMPLETED`: `@mango/pmo@1.4.1` and `@mango/cli@1.1.1` match their sealed SHA-256/SRI in both npm registry roles, the pure consume-registry consumer passed, and Tag plus GitHub Release are `CREATED_AND_VERIFIED`. Mango Maven and `io.mango:mango-docs-bundle` remain at `1.0.39`.
+
+### Pull Requests
+
+- [PR #847](https://github.com/HardyDou/mango/pull/847) Changed Mango release verification to use bounded parallel Maven publication, POM-first remote checks and one aggregate clean Maven consumer. Packages: `@mango/pmo@1.4.1`, `@mango/cli@1.1.1`. Business Adaptation: release operators use default `basic` Maven verification and opt into `full` only for a per-JAR audit.
+- [PR #848](https://github.com/HardyDou/mango/pull/848) Published and verified the immutable PMO/CLI npm batch. Merge commit: `0492deb336ba38c939aae0f8a200d33ad46f74bb`.
+
+### Fixed
+
+- Keep Maven release evidence complete while removing redundant per-JAR remote downloads from the default verification path.
+
+### Added
+
+### Changed
+
+- Bound Maven publication and consume-registry visibility concurrency at 16 by default, preserving per-coordinate journal and recovery evidence.
+- Use one aggregate clean Maven consumer for the sealed batch.
+
+### Versions
+
+- `@mango/pmo`: `1.4.0` to `1.4.1`.
+- `@mango/cli`: `1.1.0` to `1.1.1`.
+- Maven remains `1.0.39`; no Maven coordinate is republished.
+
+### Published Packages
+
+1. `@mango/pmo@1.4.1`.
+2. `@mango/cli@1.1.1`.
+3. No Maven, application fat JAR or unchanged npm coordinate is published.
+
+### Business Impact
+
+- Release operators receive a shorter default Maven verification path with the same immutable journal and fail-closed recovery behavior.
+- Runtime consumers have no API, database, permission, tenant or service configuration migration.
+
+### Upgrade Estimate
+
+- Audience: Mango maintainers and release operators; runtime consumers do not need an upgrade.
+- Engineering Effort: 10 to 20 minutes for PMO/CLI upgrade and verification.
+- Execution Window: 15 to 30 minutes including clean consumer and registry back-checks.
+- Service Downtime: none.
+- Rollback Effort: 5 to 15 minutes to restore PMO `1.4.0` and CLI `1.1.0`.
+- Assumptions: configured npm registries, clean locks and Maven `1.0.39` consume access.
+
+### Upgrade Notes
+
+1. Upgrade the release operator tuple to `@mango/pmo@1.4.1` and `@mango/cli@1.1.1` together.
+2. Keep Maven at `1.0.39` for this npm-only candidate.
+3. Use `MANGO_RELEASE_MAVEN_VERIFY_MODE=full` only for an explicitly requested per-JAR audit.
+
+### Verification
+
+- `pnpm -C mango-ui release:test` passed `80/80`, including bounded Maven concurrency, verification modes and aggregate consumer generation.
+- Release PR #848 passed `frontend-pr-quality`, `pmo-doc-check` and `pr-contract-check`; merge commit `0492deb336ba38c939aae0f8a200d33ad46f74bb` retained prepared source commit `8998c5dcf1a6a94d9f95007d5f04d20cb551ccb8` and tree `ee41a5f69998f9dba737eec14224dd4be20b5af8`.
+- The completed manifest records `VERIFIED` publication journal entries for both sealed npm tarballs. Hosted and group registry reads match `@mango/pmo@1.4.1` SHA-256 `530492ab4be19d74a313b0cd08b94a22ae708b7605bf756311e4b3c16d47a1dd` and `@mango/cli@1.1.1` SHA-256 `d374f37aaf25bb0c2138632967e1140cf406596af3359934bcab1cabeb376be2`.
+- A clean consumer resolved only the consume-registry tuple and passed typecheck plus production build before immutable publication completion.
+- Tag [`v2026.08.22-pmo-1.4.1-cli-1.1.1-release`](https://github.com/HardyDou/mango/releases/tag/v2026.08.22-pmo-1.4.1-cli-1.1.1-release) points to the prepared source and the non-draft, non-prerelease GitHub Release is `CREATED_AND_VERIFIED`.
+- Local audit evidence: `.runtime/mango-release/a948d84b41cbdb2dcedad09e874440c46a94cc2b9c154ac182f65a08bcc99692/manifest.json`.
+
+### Rollback
+
+- Restore PMO `1.4.0` and CLI `1.1.0`; never overwrite or republish immutable coordinates.
+
+### Audit History
+
+- This closeout updates the successful-release baseline and documentation only; it does not republish any coordinate or move the immutable Tag/Release.
+
+## v2026.08.22-maven-1.0.39-platform-content-fileproc-release - 2026-08-22
+
+Status: `PUBLISHED_AND_VERIFIED`. Canonical manifest SHA-256 `7848cf85826e9aac4e62835a1c355d567a71759dc96f4164c74f24e9cba2e47b` for plan `b0ffa4e09c67dcacb98e70f3c9e8f02600a988603393619796c1a78300ca8c7c` and prepared candidate `9e6023400991ee7b8007a8b5297b42b113071df4c00d984174d176bf8c40ef7f` is `COMPLETED`: all 192 sealed Mango Maven non-app/docs coordinates at `1.0.39` and all five sealed npm packages ending at `@mango/cli@1.1.0` match in their publish and consume registries, the pure consume-registry consumer passed, and GitHub Release `v2026.08.22-maven-1.0.39-platform-content-fileproc-release` is `CREATED_AND_VERIFIED`.
+
+### Pull Requests
+
+- [PR #839](https://github.com/HardyDou/mango/pull/839) Changed the PMO frontend-page baseline opt-out contract. Packages: `@mango/pmo@1.4.0`, `@mango/cli@1.1.0`. Business Adaptation: upgrade the tuple and use only the explicit boolean opt-out.
+- [PR #840](https://github.com/HardyDou/mango/pull/840) Fixed Admin Shell confirmation cancellation and close handling. Packages: `@mango/admin-shell@1.0.63`, `@mango/admin@1.0.69`, `@mango/cli@1.1.0`. Business Adaptation: verify cancel/close behavior in shell-created applications.
+- [PR #841](https://github.com/HardyDou/mango/pull/841) Changed the frontend-quality workflow pause contract. Packages: release tooling source only. Business Adaptation: none; maintainers follow the stable required-check policy.
+- [PR #843](https://github.com/HardyDou/mango/pull/843) Added OFD conversion and document signing. Packages: Maven non-app reactor and `io.mango:mango-docs-bundle:1.0.39`, `@mango/template@1.0.37`. Business Adaptation: configure and test signing material in a non-production environment.
+- [PR #844](https://github.com/HardyDou/mango/pull/844) Changed Catalog-bound release planning and sealed publication recovery. Packages: `@mango/pmo@1.4.0`, `@mango/admin@1.0.69`, `@mango/template@1.0.37`, `@mango/cli@1.1.0`. Business Adaptation: none for runtime consumers; release operators use the latest state machine.
+
+### Added
+
+- Add OFD conversion and document-signing APIs, providers, starter wiring and capability documentation.
+
+### Fixed
+
+- Treat confirmation cancellation and dialog close as expected Admin Shell interactions.
+
+### Changed
+
+- Make the PMO frontend-page baseline opt-out explicit and fail-closed.
+- Make the Catalog and sealed candidate manifest the source of truth for platform publication and recovery.
+
+### Versions
+
+- Maven non-app reactor and docs bundle: `1.0.38` to `1.0.39`.
+- `@mango/admin-shell`: `1.0.62` to `1.0.63`; `@mango/pmo`: `1.3.16` to `1.4.0`; `@mango/template`: `1.0.36` to `1.0.37`; `@mango/admin`: `1.0.68` to `1.0.69`; `@mango/cli`: `1.0.111` to `1.1.0`.
+
+### Published Packages
+
+1. Mango Maven `--all-non-app` reactor and `io.mango:mango-docs-bundle:1.0.39` — `PUBLISHED_AND_VERIFIED`; all 192 coordinates match through Maven releases/public.
+2. `@mango/admin-shell@1.0.63` -> `@mango/pmo@1.4.0` -> `@mango/template@1.0.37` -> `@mango/admin@1.0.69` -> `@mango/cli@1.1.0` — `PUBLISHED_AND_VERIFIED`; npm hosted/group integrity matches every sealed tarball.
+3. Tag and GitHub Release `v2026.08.22-maven-1.0.39-platform-content-fileproc-release` — `CREATED_AND_VERIFIED` after pure consume-registry verification.
+
+### Business Impact
+
+- Consumers gain OFD conversion/signing and corrected Admin Shell cancellation semantics. PMO consumers gain an explicit frontend baseline opt-out; no application fat JAR or production database operation is included.
+
+### Upgrade Estimate
+
+- Audience: consumers of fileproc/docsign, Admin Shell or PMO/CLI governance.
+- Engineering Effort: 30 to 90 minutes for generated consumers; 2 to 4 hours for signing integrations.
+- Execution Window: 1 to 3 hours for upgrade, focused tests and consume-registry verification.
+- Service Downtime: none required by the framework artifacts.
+- Rollback Effort: 15 to 60 minutes to restore the prior compatible tuple.
+- Assumptions: registry access, clean locks, compatible JDK/PDF/OFD libraries and non-production signing fixtures.
+
+### Upgrade Notes
+
+1. Upgrade Maven to `1.0.39` and install `@mango/cli@1.1.0` or the exact managed npm matrix.
+2. Keep the PMO baseline enabled unless an explicit boolean `false` is reviewed and intended.
+3. Validate OFD conversion, signing, verification and Admin Shell cancel/close behavior before business deployment.
+
+### Verification
+
+- Release PR #845 passed all seven required checks; merge commit `922a8e7cff981b9fccf185afa6eeba1b3d964a71` retained sealed source tree `c024dbf3542922ff74c54468944f9311fa60c5df`.
+- Publication journal records `VERIFIED` for all 192 Maven coordinates and all five npm packages; read-only `release status` confirmed the publish and consume registry copies.
+- A clean consumer resolved the Maven and npm tuple only through Maven public and npm group before Tag or GitHub Release creation.
+- Tag `v2026.08.22-maven-1.0.39-platform-content-fileproc-release` points to sealed source commit `8dfabade82fd8cf7de8ec1b267085b1e091367ce`; its tree matches `origin/main`, and the GitHub Release is non-draft and non-prerelease.
+
+### Rollback
+
+- Restore Maven `1.0.38`, CLI `1.0.111`, PMO `1.3.16`, Admin Shell `1.0.62`, Template `1.0.36` and Admin `1.0.68`; never overwrite immutable coordinates.
+
+### Audit History
+
+- Release PR #845 sealed and published the final candidate; this closeout updates the successful-release baseline and documentation only and does not move the release tag.
+
 ## v2026.08.19-maven-1.0.38-wecom-identity-notice-security-release - 2026-08-19
 
 Status: `PUBLISHED_AND_VERIFIED`. Canonical manifest SHA-256 `b0eebb391ca1302d9f6e78016c34226b98bac36a01402477d704986e2bc89acf` for plan `5adf1a66c8b2a658903015f8a9c91a6041b66ade7dffc96283074650135a7a5f` is `COMPLETED`: all 188 sealed Mango Maven non-app/docs coordinates at `1.0.38` and all 17 sealed npm packages ending at `@mango/cli@1.0.111` match in their publish and consume registries, the pure consume-registry consumer passed, and GitHub Release `v2026.08.19-maven-1.0.38-wecom-identity-notice-security-release` is `CREATED_AND_VERIFIED`.

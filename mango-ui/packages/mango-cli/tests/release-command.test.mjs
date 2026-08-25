@@ -35,8 +35,17 @@ test('release commands retain complete high-volume build output', async () => {
   assert.equal(written.length, largeOutput.length);
 });
 
-test('release lifecycle uses the five local-first states', () => {
-  assert.deepEqual(RELEASE_STATES, ['PREPARED', 'CANDIDATE_VERIFIED', 'PUBLISHED', 'CONSUMER_VERIFIED', 'COMPLETED']);
+test('release lifecycle exposes the sealed candidate and recovery states', () => {
+  assert.deepEqual(RELEASE_STATES, [
+    'VALIDATED',
+    'PREPARED',
+    'READY',
+    'PUBLISHING',
+    'PARTIAL',
+    'AMBIGUOUS',
+    'REPAIR',
+    'COMPLETED',
+  ]);
 });
 
 test('release repository lookup walks upward and fails outside Mango source', () => {

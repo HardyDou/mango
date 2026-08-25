@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "moduleId": "job",
+  "frontendPackages": ["@mango/job"],
+  "adminIntegration": {
+    "aggregateOwner": "@mango/admin",
+    "registrarExports": [{ "package": "@mango/job", "subpath": "./admin-pages", "symbol": "registerMangoJobAdminPages" }],
+    "styleEntries": [{ "package": "@mango/job", "subpath": "./style.css" }]
+  },
+  "backendStarters": [":mango-job-starter"],
+  "presetMembership": "default"
+}

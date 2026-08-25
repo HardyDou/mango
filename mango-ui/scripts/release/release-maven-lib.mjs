@@ -76,13 +76,18 @@ ${mirrors.map((block) => indentXml(block.trim(), 4)).join('\n')}
 }
 
 export function createCandidateMavenConsumerPom(coordinates, repositoryId, repositoryUrl) {
+  return createMavenConsumerPom(coordinates, repositoryId, repositoryUrl, { allowHttp: false });
+}
+
+export function createMavenConsumerPom(coordinates, repositoryId, repositoryUrl, { allowHttp = true } = {}) {
   assertRepositoryId(repositoryId);
   const url = new URL(repositoryUrl);
-  if (url.protocol !== 'file:' || url.username || url.password) {
-    throw new Error('candidate Maven repository must be a credential-free file URL');
+  const allowedProtocols = allowHttp ? ['file:', 'http:', 'https:'] : ['file:'];
+  if (!allowedProtocols.includes(url.protocol) || url.username || url.password) {
+    throw new Error(`Maven consumer repository must be a credential-free ${allowedProtocols.join('/')} URL`);
   }
   if (!Array.isArray(coordinates) || coordinates.length === 0) {
-    throw new Error('candidate Maven consumer requires at least one coordinate');
+    throw new Error('Maven consumer requires at least one coordinate');
   }
   const dependencies = coordinates.map((entry) => {
     if (!entry || !['jar', 'pom'].includes(entry.packaging)) {
@@ -121,6 +126,24 @@ ${dependencies.join('\n')}
   </dependencies>
 </project>
 `;
+}
+
+export function mavenVerificationFiles(coordinate, mode = process.env.MANGO_RELEASE_MAVEN_VERIFY_MODE || 'basic') {
+  if (!['basic', 'full'].includes(mode)) {
+    throw new Error(`invalid Maven verification mode: ${mode}; expected basic or full`);
+  }
+  if (mode === 'full') return coordinate.files;
+  const pom = coordinate.files.find((file) => file.path.endsWith('.pom'));
+  if (!pom) throw new Error(`Maven coordinate is missing a POM: ${coordinate.coordinate}`);
+  return [pom];
+}
+
+export function resolveMavenPublishConcurrency(value = process.env.MANGO_RELEASE_MAVEN_PUBLISH_CONCURRENCY || 16) {
+  const concurrency = Number(value);
+  if (!Number.isInteger(concurrency) || concurrency < 1 || concurrency > 16) {
+    throw new Error(`Maven publish concurrency must be an integer from 1 to 16: ${value}`);
+  }
+  return concurrency;
 }
 
 export function decideMavenCoordinateAction({ publishFiles, consumeFiles, expectedFiles }) {

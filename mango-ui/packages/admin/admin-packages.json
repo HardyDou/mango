@@ -2,12 +2,20 @@
   "schemaVersion": 1,
   "packages": [
     {
-      "name": "@mango/common",
-      "style": "@mango/common/style.css"
-    },
-    {
       "name": "@mango/admin-shell",
       "style": "@mango/admin-shell/style.css"
+    },
+    {
+      "name": "@mango/auth",
+      "style": "@mango/auth/style.css"
+    },
+    {
+      "name": "@mango/cms",
+      "style": "@mango/cms/style.css"
+    },
+    {
+      "name": "@mango/common",
+      "style": "@mango/common/style.css"
     },
     {
       "name": "@mango/grid-layout",
@@ -18,8 +26,12 @@
       "style": "@mango/grid-widgets/style.css"
     },
     {
-      "name": "@mango/auth",
-      "style": "@mango/auth/style.css"
+      "name": "@mango/job",
+      "style": "@mango/job/style.css"
+    },
+    {
+      "name": "@mango/link",
+      "style": "@mango/link/style.css"
     },
     {
       "name": "@mango/rbac",
@@ -28,18 +40,6 @@
     {
       "name": "@mango/system",
       "style": "@mango/system/style.css"
-    },
-    {
-      "name": "@mango/job",
-      "style": "@mango/job/style.css"
-    },
-    {
-      "name": "@mango/cms",
-      "style": "@mango/cms/style.css"
-    },
-    {
-      "name": "@mango/link",
-      "style": "@mango/link/style.css"
     }
   ]
 }

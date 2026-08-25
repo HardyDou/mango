@@ -40,7 +40,7 @@ Skill 按实际能力命名，而不是按发布包命名：只有治理编排�
 业务项目通过 `@mango/cli` 提供的 `mango pmo ...` 命令管理 baseline。全局 CLI 只用于创建项目、历史项目升级和临时诊断：
 
 ```bash
-npm view @mango/pmo@1.3.16 version --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
+npm view @mango/pmo@1.4.1 version --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
 npm view @mango/cli@1.0.109 version --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
 npm install -g @mango/cli@1.0.109 --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
 ```
@@ -56,8 +56,8 @@ npm install -g @mango/cli@1.0.109 --registry http://nexus.inner.yunxinbaokeji.co
 ```bash
 mango pmo status --project-dir .
 mango pmo check --project-dir .
-mango pmo upgrade --project-dir . --to 1.3.16 --dry-run
-mango pmo upgrade --project-dir . --to 1.3.16 --sync-shell
+mango pmo upgrade --project-dir . --to 1.4.1 --dry-run
+mango pmo upgrade --project-dir . --to 1.4.1 --sync-shell
 mango pmo check --project-dir . --locked
 ```
 

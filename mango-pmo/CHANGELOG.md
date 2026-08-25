@@ -1,5 +1,101 @@
 # Mango PMO Changelog
 
+## 1.4.1 - 2026-08-22
+
+### Pull Requests
+
+- [PR #847](https://github.com/HardyDou/mango/pull/847) Changed Mango release verification to use bounded parallel Maven publication, POM-first remote checks and one aggregate clean Maven consumer. Packages: `@mango/pmo@1.4.1`, `@mango/cli@1.1.1`. Business Adaptation: release operators use default `basic` Maven verification and opt into `full` only for a per-JAR audit.
+
+### Fixed
+
+- Keep Maven release evidence complete while removing redundant per-JAR remote downloads from the default verification path.
+
+### Changed
+
+- Bound Maven publication and consume-registry visibility concurrency at 16 by default, preserving per-coordinate journal and recovery evidence.
+- Use one aggregate clean Maven consumer for the sealed batch.
+
+### Versions
+
+- `@mango/pmo`: `1.4.0` to `1.4.1`; exact dependent CLI: `1.1.0` to `1.1.1`.
+- Maven remains `1.0.39`; no Maven coordinate is republished.
+
+### Published Packages
+
+- Publish `@mango/pmo@1.4.1` before `@mango/cli@1.1.1`; no standalone Maven runtime coordinate is introduced.
+
+### Business Impact
+
+- Release operators get shorter default Maven verification without changing runtime APIs, databases, permissions, tenants or service configuration.
+
+### Upgrade Estimate
+
+- Audience: Mango maintainers and release operators.
+- Engineering Effort: 10 to 20 minutes.
+- Execution Window: 15 to 30 minutes including consumer and registry checks.
+- Service Downtime: none.
+- Rollback Effort: 5 to 15 minutes using PMO `1.4.0` and CLI `1.1.0`.
+- Assumptions: configured npm registries, clean locks and Maven `1.0.39` consume access.
+
+### Upgrade Notes
+
+1. Upgrade PMO and CLI together to the exact tuple.
+2. Keep Maven at `1.0.39` for this npm-only candidate.
+
+### Verification
+
+- Release tests passed `80/80`; prepare and publish must pass npm dual-registry and clean consumer checks.
+
+### Rollback
+
+- Restore PMO `1.4.0` and CLI `1.1.0`; never overwrite immutable coordinates.
+
+## 1.4.0 - 2026-08-22
+
+### Pull Requests
+
+- [PR #839](https://github.com/HardyDou/mango/pull/839) Changed the frontend-page baseline contract to support an explicit boolean opt-out. Packages: `@mango/pmo@1.4.0`, `@mango/cli@1.1.0`. Business Adaptation: upgrade the tuple and set `pmoChecks.frontendPageBaseline=false` only when intended.
+- [PR #844](https://github.com/HardyDou/mango/pull/844) Changed release content governance to Catalog-bound planning and sealed recovery. Packages: `@mango/pmo@1.4.0`, `@mango/cli@1.1.0`. Business Adaptation: none for business runtime consumers.
+
+### Changed
+
+- Keep frontend baseline checks enabled by default and fail closed on malformed or non-boolean configuration.
+- Synchronize the PMO baseline, CLI projections and generated workflows with the Catalog-bound release model.
+
+### Versions
+
+- `@mango/pmo`: `1.3.16` to `1.4.0`; exact dependent `@mango/cli`: `1.0.111` to `1.1.0`.
+
+### Published Packages
+
+- Publish `@mango/pmo@1.4.0` before `@mango/cli@1.1.0`; no standalone Maven runtime coordinate is introduced by PMO governance.
+
+### Business Impact
+
+- Business repositories can explicitly opt out of the frontend baseline with boolean `false`; absent or malformed configuration remains fail-closed.
+
+### Upgrade Estimate
+
+- Audience: business repositories consuming the Mango PMO baseline.
+- Engineering Effort: 15 to 45 minutes for upgrade, review and locked checks.
+- Execution Window: 20 to 60 minutes including generated baseline verification.
+- Service Downtime: none.
+- Rollback Effort: 10 to 20 minutes using the prior PMO/CLI tuple and validated backup.
+- Assumptions: clean business worktree, registry access and valid project paths.
+
+### Upgrade Notes
+
+1. Install CLI `1.1.0`, review the PMO upgrade and run the locked PMO check.
+2. Keep `pmoChecks.frontendPageBaseline` absent/`true` unless the explicit opt-out is intended.
+
+### Verification
+
+- Run the PMO package checker, baseline projection check, generated workflow contract and a clean PMO/CLI consumer.
+
+### Rollback
+
+- Restore PMO `1.3.16` and CLI `1.0.111` with the prior locked baseline; never overwrite immutable coordinates.
+
 ## 1.3.16 - 2026-08-17
 
 ### Pull Requests

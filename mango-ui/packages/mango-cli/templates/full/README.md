@@ -256,9 +256,9 @@ full preset 会启用授权、身份、组织、系统等平台模块的 migrati
 
 ### Issue #690 升级合同
 
-本模板随 Maven `1.0.37`、`@mango/pmo@1.3.16`、`@mango/cli@1.0.109` 完整 tuple 覆盖 CLI 自带业务模块模板、Maven plugin、Bootstrap/runtime、Resource、BSQL、Boot JAR、前端生成物和真实业务回归。业务项目若曾使用 Maven `1.0.30` 或其它 `1.0.3x` 组合，必须同时升级发布说明中的 Maven、PMO、CLI 和前端矩阵，不能只替换一个 Maven 或 CLI 版本。
+本模板随 Maven `1.0.39`、`@mango/pmo@1.4.1`、`@mango/cli@1.1.1` 完整 tuple 覆盖 CLI 自带业务模块模板、Maven plugin、Bootstrap/runtime、Resource、BSQL、Boot JAR、前端生成物和真实业务回归。业务项目若曾使用 Maven `1.0.30` 或其它 `1.0.3x` 组合，必须同时升级发布说明中的 Maven、PMO、CLI 和前端矩阵，不能只替换一个 Maven 或 CLI 版本。
 
-升级顺序：备份项目与数据库，安装 `@mango/cli@1.0.109`，先执行 `mango pmo upgrade --project-dir . --to 1.3.16 --dry-run` 并审阅 baseline/Skill 与历史文档合同变化，再执行实际升级与 `mango pmo check --project-dir . --locked`；统一把 `backend/pom.xml` 的 `<mango.version>`/`mango-bom` 保持为 `1.0.37`，在 `frontend` 安装根 `CHANGELOG.md` 的精确 npm 矩阵并执行冻结安装和 `pnpm check`，再执行 `mango workspace init`、`mvn -f backend/pom.xml verify`、`mvn -f backend/pom.xml install`、`mango dev doctor` 和 `mango dev start`。既有数据库采用 `bootstrap plan -> apply --strategy=rolling -> verify -> runtime -> finalize`；首次空库才使用 `cold`。验收包含真实登录、菜单/权限、个人中心四个扩展入口、CRUD、401、生产构建、Boot JAR、独立 Maven consumer、BSQL baseline 和新业务模块模板自检。失败时保留 receipt/审计日志，停止候选 generation 并按 `bootstrap abort` 回滚，不手工删库。
+升级顺序：备份项目与数据库，安装 `@mango/cli@1.1.1`，先执行 `mango pmo upgrade --project-dir . --to 1.4.1 --dry-run` 并审阅 baseline/Skill 与历史文档合同变化，再执行实际升级与 `mango pmo check --project-dir . --locked`；统一把 `backend/pom.xml` 的 `<mango.version>`/`mango-bom` 保持为 `1.0.39`，在 `frontend` 安装根 `CHANGELOG.md` 的精确 npm 矩阵并执行冻结安装和 `pnpm check`，再执行 `mango workspace init`、`mvn -f backend/pom.xml verify`、`mvn -f backend/pom.xml install`、`mango dev doctor` 和 `mango dev start`。既有数据库采用 `bootstrap plan -> apply --strategy=rolling -> verify -> runtime -> finalize`；首次空库才使用 `cold`。验收包含真实登录、菜单/权限、个人中心四个扩展入口、CRUD、401、生产构建、Boot JAR、独立 Maven consumer、BSQL baseline 和新业务模块模板自检。失败时保留 receipt/审计日志，停止候选 generation 并按 `bootstrap abort` 回滚，不手工删库。
 
 生成业务模块时，资源声明使用 `META-INF/mango/resources/*.json|yml|yaml`，由 Bootstrap 处理 `BOOTSTRAP_REQUIRED`，由 Runtime eventual worker 处理 `RUNTIME_EVENTUAL`；不要恢复旧的 `resource-manifest.json` 作为新模块模板。
 - [业务 PMO 入口](./business-pmo/README.md)

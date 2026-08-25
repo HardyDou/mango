@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "moduleId": "link",
+  "frontendPackages": ["@mango/link"],
+  "adminIntegration": {
+    "aggregateOwner": "@mango/admin",
+    "registrarExports": [{ "package": "@mango/link", "subpath": "./admin-pages", "symbol": "registerMangoLinkAdminPages" }],
+    "styleEntries": [{ "package": "@mango/link", "subpath": "./style.css" }]
+  },
+  "backendStarters": [":mango-link-starter"],
+  "presetMembership": "default"
+}

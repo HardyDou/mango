@@ -33,6 +33,62 @@ mango:
             handlerClass: { type: STRING, value: io.mango.auth.starter.controller.AuthController }
             handlerMethod: { type: STRING, value: loginInstitutions }
             description: { type: STRING, value: 查询账号可登录机构 }
+        - id: "849281274236378239"
+          version: 1
+          biz-key: api.mango-auth.GET.auth.providers
+          name: 查询可用第三方登录方式
+          target-module: authorization
+          fields:
+            moduleName: { type: STRING, value: mango-auth }
+            httpMethod: { type: STRING, value: GET }
+            pathPattern: { type: STRING, value: /auth/providers }
+            resourceCode: { type: STRING, value: "GET:/auth/providers" }
+            accessMode: { type: STRING, value: PUBLIC }
+            handlerClass: { type: STRING, value: io.mango.auth.starter.controller.AuthController }
+            handlerMethod: { type: STRING, value: listAvailableProviders }
+            description: { type: STRING, value: 查询可用第三方登录方式 }
+        - id: "816753429487512589"
+          version: 1
+          biz-key: api.mango-auth.POST.auth.providers.authorize
+          name: 发起第三方授权
+          target-module: authorization
+          fields:
+            moduleName: { type: STRING, value: mango-auth }
+            httpMethod: { type: STRING, value: POST }
+            pathPattern: { type: STRING, value: /auth/providers/authorize }
+            resourceCode: { type: STRING, value: "POST:/auth/providers/authorize" }
+            accessMode: { type: STRING, value: PUBLIC }
+            handlerClass: { type: STRING, value: io.mango.auth.starter.controller.AuthController }
+            handlerMethod: { type: STRING, value: startProviderAuthorization }
+            description: { type: STRING, value: 发起第三方授权 }
+        - id: "881366415298654618"
+          version: 1
+          biz-key: api.mango-auth.POST.auth.providers.complete
+          name: 完成第三方授权
+          target-module: authorization
+          fields:
+            moduleName: { type: STRING, value: mango-auth }
+            httpMethod: { type: STRING, value: POST }
+            pathPattern: { type: STRING, value: /auth/providers/complete }
+            resourceCode: { type: STRING, value: "POST:/auth/providers/complete" }
+            accessMode: { type: STRING, value: PUBLIC }
+            handlerClass: { type: STRING, value: io.mango.auth.starter.controller.AuthController }
+            handlerMethod: { type: STRING, value: completeProviderAuthorization }
+            description: { type: STRING, value: 完成第三方授权 }
+        - id: "872098407514468180"
+          version: 1
+          biz-key: api.mango-auth.POST.auth.providers.bind-existing
+          name: 绑定已有 Mango 账号
+          target-module: authorization
+          fields:
+            moduleName: { type: STRING, value: mango-auth }
+            httpMethod: { type: STRING, value: POST }
+            pathPattern: { type: STRING, value: /auth/providers/bind-existing }
+            resourceCode: { type: STRING, value: "POST:/auth/providers/bind-existing" }
+            accessMode: { type: STRING, value: PUBLIC }
+            handlerClass: { type: STRING, value: io.mango.auth.starter.controller.AuthController }
+            handlerMethod: { type: STRING, value: bindExistingProviderAccount }
+            description: { type: STRING, value: 绑定已有 Mango 账号 }
         - id: "800546258425001288"
           version: 1
           biz-key: api.mango-auth.POST.auth.wecom.login

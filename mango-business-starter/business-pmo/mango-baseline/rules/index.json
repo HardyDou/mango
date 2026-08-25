@@ -85,7 +85,7 @@
     },
     "process.releaseArtifacts": {
       "path": "rules/10-release-artifacts.md",
-      "reason": "仓库内 mango-release 唯一入口、npm/Maven/CLI/PMO/Skill 批次、PR到制品映射、业务升级估价与发布说明预检、不可变制品恢复、CHANGELOG 回填和环境收尾规范"
+      "reason": "仓库内 mango-release 唯一入口、npm/Maven/CLI/PMO/Skill 批次、PR到制品映射、业务升级估价与发布说明预检、不可变制品恢复、Maven basic/full 回查与受控并行发布、CHANGELOG 回填和环境收尾规范"
     },
     "process.deliveryAssurance": {
       "path": "rules/11-delivery-assurance.md",
@@ -185,7 +185,7 @@
     },
     "product.documentLifecycle": {
       "path": "rules/product/05-document-lifecycle.md",
-      "reason": "BRD、SRS、TDD、实施计划顺序、摘要、追踪、PMO 1.3.16 当前合同与受控历史版本及精确章节变体门禁"
+      "reason": "BRD、SRS、TDD、实施计划顺序、摘要、追踪、PMO 1.4.1 当前合同与受控历史版本及精确章节变体门禁"
     },
     "frontend.adminUiCommon": {
       "path": "rules/frontend/07-admin-ui-common.md",
@@ -389,7 +389,7 @@
     "releaseArtifacts": {
       "roles": ["pm", "tech-lead", "dev", "qa", "pmo"],
       "phases": ["release", "governance"],
-      "paths": ["mango-pmo/rules/10-release-artifacts.md", "mango-pmo/skills/**", "mango-ui/packages/mango-pmo/**", "mango-ui/packages/mango-cli/release-versions.json", "mango-ui/packages/mango-cli/scripts/check-release-versions.mjs", "mango-ui/packages/mango-cli/scripts/check-generated-backend-gate.mjs", "mango-ui/packages/mango-cli/src/release-command.mjs", "mango-ui/packages/mango-cli/tests/release-command.test.mjs", "mango-ui/scripts/publish-package.mjs", "mango-ui/scripts/verify-npm-tarball.mjs", "scripts/publish-maven-batch.sh", "mango-business-starter/scripts/sync-pmo-baseline.mjs", "mango-business-starter/business-pmo/**"],
+      "paths": ["mango-catalog/**", "mango-pmo/rules/10-release-artifacts.md", "mango-pmo/skills/**", "mango-ui/packages/mango-pmo/**", "mango-ui/packages/mango-cli/release-versions.json", "mango-ui/packages/mango-cli/scripts/check-release-versions.mjs", "mango-ui/packages/mango-cli/scripts/check-generated-backend-gate.mjs", "mango-ui/packages/mango-cli/src/release-command.mjs", "mango-ui/packages/mango-cli/tests/release-command.test.mjs", "mango-ui/scripts/catalog/**", "mango-ui/scripts/release/**", "mango-ui/scripts/verify-npm-tarball.mjs", "scripts/publish-maven-batch.sh", "mango-business-starter/scripts/sync-pmo-baseline.mjs", "mango-business-starter/business-pmo/**"],
       "keywords": ["发布 CLI", "CLI 发布", "发布 starter", "starter 发布", "发布模板", "模板发布", "发布 PMO", "PMO 发布", "发布 Skill", "Skill 发布", "发布文档", "mango-docs-bundle", "发布矩阵", "版本矩阵", "release matrix", "release-versions.json", "sync-pmo-baseline", "mango release", "registry doctor", "release manifest", "publish/status/verify/repair"],
       "include": ["process.releaseArtifacts", "process.aiDeliveryQuality"]
     },

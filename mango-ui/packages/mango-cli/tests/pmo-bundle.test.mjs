@@ -23,7 +23,7 @@ const uiRoot = resolve(cliRoot, '../..');
 const cli = join(cliRoot, 'src/index.mjs');
 const pmoRoot = join(uiRoot, 'packages/mango-pmo');
 const packageExportsCheck = join(uiRoot, 'scripts/check-package-exports.mjs');
-const publishPackage = join(uiRoot, 'scripts/publish-package.mjs');
+const verifyPmoPackageRoot = join(uiRoot, 'scripts/release/verify-pmo-package-root.mjs');
 const PMO_BASELINE_TEST_PATH = 'business-pmo/mango-baseline';
 
 test('PMO bundle install, locked repair, stale cleanup, and rollback', () => {
@@ -265,7 +265,7 @@ test('PMO manifest compatibility remains fail-closed for unknown file kinds', ()
 test('published PMO package exports plugin Skills and rejects a tampered bundle', () => {
   execFileSync(process.execPath, ['scripts/build-package.mjs'], { cwd: pmoRoot, stdio: 'pipe' });
   run([packageExportsCheck, '--package=@mango/pmo'], uiRoot);
-  run([publishPackage, `--verify-pmo-package-root=${pmoRoot}`], uiRoot);
+  run([verifyPmoPackageRoot, pmoRoot], uiRoot);
 
   const tempRoot = mkdtempSync(join(tmpdir(), 'mango-pmo-published-'));
   const packageRoot = join(tempRoot, 'package');
@@ -278,13 +278,13 @@ test('published PMO package exports plugin Skills and rejects a tampered bundle'
     const skillPath = join(packageRoot, 'skills/mango-pmo-lifecycle/SKILL.md');
     const originalSkill = readFileSync(skillPath, 'utf8');
     writeFileSync(skillPath, `${originalSkill}\ntampered\n`);
-    const tampered = runFailure([publishPackage, `--verify-pmo-package-root=${packageRoot}`], uiRoot);
+    const tampered = runFailure([verifyPmoPackageRoot, packageRoot], uiRoot);
     assert.match(tampered.stderr, /plugin file differs from its manifest/);
 
     if (process.platform !== 'win32') {
       writeFileSync(skillPath, originalSkill);
       chmodSync(join(packageRoot, 'dist/baseline/tools/pmo-preflight.mjs'), 0o644);
-      const wrongMode = runFailure([publishPackage, `--verify-pmo-package-root=${packageRoot}`], uiRoot);
+      const wrongMode = runFailure([verifyPmoPackageRoot, packageRoot], uiRoot);
       assert.match(wrongMode.stderr, /baseline file differs from its manifest/);
     }
   } finally {

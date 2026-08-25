@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "moduleId": "calendar",
+  "frontendPackages": ["@mango/calendar"],
+  "adminIntegration": {
+    "aggregateOwner": "@mango/admin",
+    "registrarExports": [{ "package": "@mango/calendar", "subpath": "./admin-pages", "symbol": "registerMangoCalendarAdminPages" }],
+    "styleEntries": [{ "package": "@mango/calendar", "subpath": "./style.css" }]
+  },
+  "backendStarters": [":mango-calendar-starter"],
+  "presetMembership": "full"
+}

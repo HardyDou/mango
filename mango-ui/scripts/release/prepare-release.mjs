@@ -1,11 +1,28 @@
 #!/usr/bin/env node
 import { createHash } from 'node:crypto';
-import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
-import { homedir } from 'node:os';
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  renameSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from 'node:fs';
+import { homedir, tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { assertReleasePlanShape } from './release-plan-lib.mjs';
+import {
+  assertPreparedCandidate,
+  buildSealedArtifactManifest,
+  createPublicationJournal,
+  digestRelease,
+  preparedCandidateId,
+} from './release-manifest-lib.mjs';
 import {
   createCandidateMavenConsumerPom,
   createCandidateMavenSettings,
@@ -17,8 +34,11 @@ import {
   archiveSupersededPrepare,
   isRetryablePrepareFailure,
   isSupersededLocalCandidate,
+  orderExactMavenCoordinateSet,
 } from './release-prepare-lib.mjs';
 import { assertCleanWorktree, gitValue } from './release-repository-lib.mjs';
+import { acquireReleaseLock } from './release-lock-lib.mjs';
+import { verifyPmoPackageRoot } from './pmo-package-verifier-lib.mjs';
 
 const workspaceRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const repoRoot = resolve(workspaceRoot, '..');
@@ -28,6 +48,11 @@ const runtimeBase = resolveArg('--runtime-dir', join(repoRoot, '.runtime/mango-r
 const consumeRegistry = valueArg('--consume-registry') || process.env.MANGO_RELEASE_NPM_CONSUME_REGISTRY || '';
 const plan = readJson(planPath);
 assertReleasePlanShape(plan);
+const gitCommonDir = resolve(repoRoot, gitValue(repoRoot, ['rev-parse', '--git-common-dir']));
+const releaseLock = acquireReleaseLock(join(gitCommonDir, 'mango-release/release.lock'), {
+  releasePlanDigest: plan.planDigest,
+});
+process.on('exit', releaseLock);
 if (plan.order.length > 0 && !consumeRegistry) {
   throw new Error('prepare requires --consume-registry or MANGO_RELEASE_NPM_CONSUME_REGISTRY for npm candidates');
 }
@@ -52,7 +77,7 @@ if (existsSync(manifestPath)) {
     console.log(`Archived superseded local candidate evidence: ${archived}`);
   } else {
     verifyPreparedManifest(existing, plan, source, artifactRoot);
-    if (['CANDIDATE_VERIFIED', 'PUBLISHED', 'CONSUMER_VERIFIED', 'COMPLETED'].includes(existing.status)) {
+    if (['READY', 'PUBLISHING', 'PARTIAL', 'AMBIGUOUS', 'REPAIR', 'COMPLETED'].includes(existing.status)) {
       console.log(`Release prepare already complete: ${manifestPath}`);
       process.exit(0);
     }
@@ -71,12 +96,26 @@ try {
   const buildEvidence = buildReleasePackages(plan);
   runChecked('pnpm', ['package-exports:check'], workspaceRoot);
   const artifacts = packReleasePackages(plan, artifactRoot);
+  verifyPackageSpecificContracts(artifacts);
   const maven = stageMavenRelease(plan, artifactRoot);
   const sourceArchive = join(releaseRoot, `source-${source.commit}.tar`);
   runChecked('git', ['archive', '--format=tar', '--output', sourceArchive, source.commit], repoRoot);
+  const sealedArtifactManifest = buildSealedArtifactManifest({
+    releasePlanDigest: plan.planDigest,
+    source,
+    npmArtifacts: artifacts,
+    mavenArtifacts: maven,
+    sourceArchive: {
+      path: relativeRuntimePath(sourceArchive),
+      size: statSync(sourceArchive).size,
+      sha256: sha256File(sourceArchive),
+    },
+  });
   const manifest = {
     schemaVersion: 1,
     planDigest: plan.planDigest,
+    preparedCandidateId: preparedCandidateId(sealedArtifactManifest),
+    sealedArtifactManifest,
     planPath: relativeRepoPath(planPath),
     status: 'PREPARED',
     remoteWrites: false,
@@ -95,11 +134,32 @@ try {
         `built and sealed ${artifacts.length} exact npm tarball(s)${maven ? ` and ${maven.coordinateCount} Maven coordinate(s)` : ''}`,
       ),
       CANDIDATE_VERIFIED: state('pending', null, 'mixed candidate consumer has not run'),
+      READY: state('pending', null, 'candidate consumer has not accepted the sealed candidate'),
       PUBLISHED: state('pending', null, 'immutable publication has not been authorized'),
       CONSUMER_VERIFIED: state('pending', null, 'pure consume-registry verification has not run'),
       COMPLETED: state('pending', null, 'tag and GitHub Release are intentionally deferred'),
     },
     packagePublications: Object.fromEntries(plan.order.map((name) => [name, { status: 'PENDING', attempts: [] }])),
+    publicationJournal: {
+      npm: createPublicationJournal(
+        plan.order,
+        new Map(
+          artifacts.map((artifact) => [
+            artifact.name,
+            { preparedCandidateId: preparedCandidateId(sealedArtifactManifest), sha256: artifact.sha256 },
+          ]),
+        ),
+      ),
+      maven: createPublicationJournal(
+        (maven?.coordinates ?? []).map((entry) => entry.coordinate),
+        new Map(
+          (maven?.coordinates ?? []).map((entry) => [
+            entry.coordinate,
+            { preparedCandidateId: preparedCandidateId(sealedArtifactManifest), sha256: digestRelease(entry) },
+          ]),
+        ),
+      ),
+    },
     maven,
     mavenPublications: Object.fromEntries(
       (maven?.coordinates ?? []).map((entry) => [entry.coordinate, { status: 'PENDING', attempts: [] }]),
@@ -139,12 +199,13 @@ try {
     writeJson(manifestPath, manifest);
     throw new Error(`mixed candidate consumer failed; inspect ${manifestPath}`);
   }
-  manifest.status = 'CANDIDATE_VERIFIED';
+  manifest.status = 'READY';
   manifest.states.CANDIDATE_VERIFIED = state(
     'passed',
     candidateStartedAt,
     'mixed candidate consumer installed the sealed tarballs',
   );
+  manifest.states.READY = state('passed', candidateStartedAt, 'prepared candidate identity accepted');
   writeJson(manifestPath, manifest);
   console.log(`Release candidate verified: ${manifestPath}`);
   console.log(`Source tree: ${source.tree}`);
@@ -241,14 +302,41 @@ function inspectTarball(path) {
   const packageJson = JSON.parse(packageResult.stdout);
   const filesResult = runCaptured('tar', ['-tzf', path], repoRoot);
   if (filesResult.status !== 0) throw new Error(`cannot list ${path}`);
+  const fileList = filesResult.stdout.split(/\r?\n/u).filter(Boolean).sort();
+  const bytes = readFileSync(path);
   return {
     name: packageJson.name,
     version: packageJson.version,
     file: relativeRuntimePath(path),
-    sha256: sha256File(path),
+    sha256: createHash('sha256').update(bytes).digest('hex'),
+    sri: `sha512-${createHash('sha512').update(bytes).digest('base64')}`,
     size: statSync(path).size,
-    fileCount: filesResult.stdout.split(/\r?\n/u).filter(Boolean).length,
+    fileCount: fileList.length,
+    fileListDigest: createHash('sha256').update(fileList.join('\n')).digest('hex'),
+    publishedRanges: collectPublishedRanges(packageJson),
   };
+}
+
+function collectPublishedRanges(packageJson) {
+  const result = [];
+  for (const section of ['dependencies', 'optionalDependencies', 'peerDependencies']) {
+    for (const [name, range] of Object.entries(packageJson[section] ?? {})) {
+      if (name.startsWith('@mango/')) result.push({ name, range, section });
+    }
+  }
+  return result.sort((left, right) => `${left.name}\0${left.section}`.localeCompare(`${right.name}\0${right.section}`));
+}
+
+function verifyPackageSpecificContracts(artifacts) {
+  const pmo = artifacts.find((artifact) => artifact.name === '@mango/pmo');
+  if (!pmo) return;
+  const temporary = mkdtempSync(join(tmpdir(), 'mango-pmo-candidate-'));
+  try {
+    runChecked('tar', ['-xzf', resolve(releaseRoot, pmo.file), '-C', temporary], repoRoot);
+    verifyPmoPackageRoot(join(temporary, 'package'));
+  } finally {
+    rmSync(temporary, { recursive: true, force: true });
+  }
 }
 
 function verifyPreparedManifest(manifest, releasePlan, currentSource, artifactsDirectory) {
@@ -262,6 +350,18 @@ function verifyPreparedManifest(manifest, releasePlan, currentSource, artifactsD
       throw new Error(`sealed artifact hash mismatch: ${artifact.name}@${artifact.version}`);
     }
   }
+  assertPreparedCandidate({
+    manifest,
+    planDigest: releasePlan.planDigest,
+    source: currentSource,
+    artifacts: manifest.artifacts ?? [],
+    mavenArtifacts: manifest.maven,
+    sourceArchive: {
+      path: manifest.source.archive,
+      size: manifest.source.archiveSize,
+      sha256: manifest.source.archiveSha256,
+    },
+  });
   if (manifest.maven) {
     verifyStagedMavenRepository(join(artifactsDirectory, 'maven-repository'), manifest.maven);
   }
@@ -285,8 +385,11 @@ function stageMavenRelease(releasePlan, destination) {
     ],
     repoRoot,
   );
+  const staged = inspectStagedMavenRepository(repository, releasePlan.maven.targetVersion);
+  const coordinates = orderExactMavenCoordinateSet(releasePlan.maven.order, staged.coordinates);
   return {
-    ...inspectStagedMavenRepository(repository, releasePlan.maven.targetVersion),
+    ...staged,
+    coordinates,
     repository: 'artifacts/maven-repository',
     scope: releasePlan.maven.scope,
     docsBundle: releasePlan.maven.docsBundle,

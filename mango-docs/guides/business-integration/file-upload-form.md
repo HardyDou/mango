@@ -338,3 +338,7 @@ pnpm -F @mango/file test
 ## 2026-08-16 Issue #805 full-consumer 兼容性说明
 
 - Issue #805 仅调整前端包之间的注册契约，并将 File 页面迁移到 Element Plus 当前 `value` API；不改变文件上传、回显、预览、下载、ZIP/PDF API、fileId 持久化、权限或租户边界。业务项目按发布闭包成组升级后继续执行本指南的文件 ID、上传、预览和下载闭环，无需修改业务表字段或保存 URL。
+
+## 2026-08-25 Issue #851 FILE_ASSET 增量影响
+
+- Issue #851 只改变构建期固定 `FILE_ASSET` 的内容寻址打包、模块 receipt 跳过与 staged publish 失败清理；普通业务上传、fileId/fileIds 持久化、回显、预览、下载 API、权限和租户边界均不变。预置文件异常时可核对文件模块 receipt、对象 SHA-256 与 staging 清理结果；普通业务表单仍按本指南执行上传到下载闭环。

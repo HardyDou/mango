@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "moduleId": "file",
+  "frontendPackages": ["@mango/file"],
+  "adminIntegration": {
+    "aggregateOwner": "@mango/admin",
+    "registrarExports": [
+      {
+        "package": "@mango/file",
+        "subpath": "./admin-pages",
+        "symbol": "registerMangoFileAdminPages"
+      }
+    ],
+    "styleEntries": [{ "package": "@mango/file", "subpath": "./style.css" }]
+  },
+  "backendStarters": [":mango-file-preview-starter", ":mango-file-starter"],
+  "presetMembership": "full"
+}

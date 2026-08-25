@@ -29,6 +29,8 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import org.springframework.core.env.Environment;
+import org.springframework.core.io.ResourceLoader;
 
 /**
  * 资源声明扫描同步自动配置。
@@ -78,6 +80,13 @@ public class ResourceSyncAutoConfiguration {
     }
 
     @Bean
+    @ConditionalOnMissingBean
+    public ResourceManifestArtifactLoader resourceManifestArtifactLoader(ObjectMapper objectMapper,
+                                                                         ResourceLoader resourceLoader) {
+        return new ResourceManifestArtifactLoader(objectMapper, resourceLoader);
+    }
+
+    @Bean
     @ConditionalOnBean(ResourceDeclarationApi.class)
     @ConditionalOnMissingBean
     public ResourceBootstrapStepContributor resourceBootstrapStepContributor(
@@ -86,10 +95,11 @@ public class ResourceSyncAutoConfiguration {
             ResourceDeclarationApi resourceDeclarationApi,
             ResourceManifestSerializer manifestSerializer,
             ResourceDeclarationCanonicalizer canonicalizer,
+            ResourceManifestArtifactLoader artifactLoader,
             @Value("${spring.application.name:}") String applicationName) {
         return new ResourceBootstrapStepContributor(
                 properties, collector, resourceDeclarationApi, manifestSerializer,
-                canonicalizer, applicationName);
+                canonicalizer, artifactLoader, applicationName);
     }
 
     @Bean

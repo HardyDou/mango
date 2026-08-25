@@ -16,10 +16,18 @@ import {
 import { classifyReleasePullRequest } from './classify-release-pr.mjs';
 import { assertCliReadmeProjection, CLI_README_PATH, projectCliReadmeVersion } from './release-cli-readme-lib.mjs';
 import {
+  assertCliFullReadmeProjection,
   assertCliFullFrontendTemplateProjection,
   CLI_FULL_FRONTEND_PACKAGE_TEMPLATE_PATH,
+  CLI_FULL_README_TEMPLATE_PATH,
+  projectCliFullReadmeTuple,
   projectCliFullFrontendTemplateVersion,
 } from './release-cli-template-lib.mjs';
+import {
+  assertPmoVersionedFileProjection,
+  PMO_VERSION_PROJECTION_PATHS,
+  projectPmoVersionedFile,
+} from './release-pmo-plugin-lib.mjs';
 import {
   gitChangedFiles,
   readGitFile,
@@ -43,6 +51,7 @@ const successfulBaselinePath = join(workspaceRoot, '.changeset/release-baseline.
 const successfulBaseline = existsSync(successfulBaselinePath) ? readJson(successfulBaselinePath) : null;
 const previousPlan = storedPlan?.planDigest === successfulBaseline?.planDigest ? null : storedPlan;
 const packageIndex = indexPublishedPackages(workspaceRoot);
+const catalog = readJson(join(repoRoot, 'mango-catalog/catalog.lock.json'));
 const releaseVersions = readJson(join(workspaceRoot, 'packages/mango-cli/release-versions.json'));
 const managedVersions = releaseVersions.npm ?? {};
 const baseline = resolveBaseline(repoRoot, workspaceRoot, legacy);
@@ -55,36 +64,17 @@ const restored = restoredPublishedBaselines({
 });
 const pendingChangesets = readPendingChangesets(workspaceRoot);
 if (checkOnly && storedPlan && successfulBaseline?.planDigest === storedPlan.planDigest) {
-  if (pendingChangesets.length > 0) {
-    throw new Error('completed release plan cannot cover pending Changesets; create the next release plan');
-  }
   assertCompletedReleaseBaseline(storedPlan, successfulBaseline);
-  verifyPlanProjection(storedPlan, packageIndex, managedVersions);
+  verifyPlanProjection(storedPlan, packageIndex, managedVersions, { historicalCompleted: true });
   console.log(`Completed release plan check PASS ${storedPlan.planDigest}`);
+  if (pendingChangesets.length > 0) {
+    console.log(`${pendingChangesets.length} pending Changeset(s) belong to the next release plan`);
+  }
   process.exit(0);
 }
 const releaseMetadata = resolveReleaseMetadata(previousPlan, pendingChangesets);
 const mavenTargetVersion = valueArg('--maven-version') || previousPlan?.maven?.targetVersion || '';
-const plan = buildReleasePlan({
-  packageIndex,
-  managedVersions,
-  mavenSourceVersion: resolveReleaseMavenSourceVersion(previousPlan, releaseVersions.maven?.mangoBackend),
-  mavenTargetVersion,
-  source: planInput.source,
-  sourceFiles: planInput.sourceFiles,
-  changesets: pendingChangesets,
-  legacy,
-  restoredPublishedBaselines: restored,
-  ignoredDirectPackages: restored.map((entry) => entry.name),
-  previousPlan,
-  baseline,
-  release: {
-    tag: releaseMetadata.tag,
-    title: releaseMetadata.title,
-    notesFile: releaseMetadata.notesFile,
-    notesSha256: releaseMetadata.notesSha256,
-  },
-});
+let plan = buildPlan(catalog.catalogDigest);
 assertReleasePlanShape(plan);
 
 if (checkOnly) {
@@ -101,16 +91,26 @@ if (checkOnly) {
 }
 
 applyPlanProjection(plan, packageIndex);
+applyPmoPluginProjection(plan);
+applyBusinessPmoBaselineProjection(plan);
 applyCliReadmeProjection(plan);
 applyCliFullFrontendTemplateProjection(plan);
+applyCliFullReadmeProjection(plan);
 applyExternalManagedDependencies(plan);
 writeJson(
   join(workspaceRoot, 'packages/mango-cli/release-versions.json'),
   projectedManagedVersions(plan, managedVersions),
 );
 writeFileSync(join(workspaceRoot, releaseMetadata.notesFile), releaseMetadata.notes);
+runCatalogProjection();
+const projectedCatalog = readJson(join(repoRoot, 'mango-catalog/catalog.lock.json'));
+if (projectedCatalog.catalogDigest !== plan.catalogDigest) {
+  plan = buildPlan(projectedCatalog.catalogDigest);
+  assertReleasePlanShape(plan);
+}
 writeJson(planPath, plan);
 if (!skipLockfile) runLockfileUpdate();
+runProjectionFormatting();
 console.log(`Release plan written: ${planPath}`);
 console.log(`Plan digest: ${plan.planDigest}`);
 console.log(
@@ -142,12 +142,48 @@ function applyCliReadmeProjection(releasePlan) {
   writeFileSync(join(repoRoot, CLI_README_PATH), projectedContent);
 }
 
+function applyPmoPluginProjection(releasePlan) {
+  const pmo = releasePlan.packages.find((entry) => entry.name === '@mango/pmo');
+  if (!pmo) return;
+  for (const path of PMO_VERSION_PROJECTION_PATHS) {
+    const sourceContent = readGitFile(repoRoot, releasePlan.source.commit, path);
+    const projectedContent = projectPmoVersionedFile(path, sourceContent, pmo.sourceVersion, pmo.targetVersion);
+    writeFileSync(join(repoRoot, path), projectedContent);
+  }
+}
+
+function applyBusinessPmoBaselineProjection(releasePlan) {
+  const pmo = releasePlan.packages.find((entry) => entry.name === '@mango/pmo');
+  if (!pmo) return;
+  const result = spawnSync(
+    process.execPath,
+    [join(repoRoot, 'mango-business-starter/scripts/sync-pmo-baseline.mjs'), '--write'],
+    { cwd: repoRoot, stdio: 'inherit' },
+  );
+  if (result.status !== 0) {
+    throw new Error(`business PMO baseline projection failed with exit code ${result.status ?? 1}`);
+  }
+}
+
 function applyCliFullFrontendTemplateProjection(releasePlan) {
   const cli = releasePlan.packages.find((entry) => entry.name === '@mango/cli');
   if (!cli) return;
   const sourceContent = readGitFile(repoRoot, releasePlan.source.commit, CLI_FULL_FRONTEND_PACKAGE_TEMPLATE_PATH);
   const projectedContent = projectCliFullFrontendTemplateVersion(sourceContent, cli.sourceVersion, cli.targetVersion);
   writeFileSync(join(repoRoot, CLI_FULL_FRONTEND_PACKAGE_TEMPLATE_PATH), projectedContent);
+}
+
+function applyCliFullReadmeProjection(releasePlan) {
+  const cli = releasePlan.packages.find((entry) => entry.name === '@mango/cli');
+  const pmo = releasePlan.packages.find((entry) => entry.name === '@mango/pmo');
+  if (!cli || !pmo || !releasePlan.maven?.targetVersion) return;
+  const sourceContent = readGitFile(repoRoot, releasePlan.source.commit, CLI_FULL_README_TEMPLATE_PATH);
+  const projectedContent = projectCliFullReadmeTuple(sourceContent, {
+    mavenVersion: releasePlan.maven.targetVersion,
+    pmoVersion: pmo.targetVersion,
+    cliVersion: cli.targetVersion,
+  });
+  writeFileSync(join(repoRoot, CLI_FULL_README_TEMPLATE_PATH), projectedContent);
 }
 
 function projectedManagedVersions(releasePlan, current) {
@@ -200,14 +236,18 @@ function collectPackageDescriptors(roots) {
   }
 }
 
-function verifyPlanProjection(releasePlan, packages, currentManagedVersions) {
+function verifyPlanProjection(releasePlan, packages, currentManagedVersions, { historicalCompleted = false } = {}) {
   const notesPath = join(workspaceRoot, releasePlan.release?.notesFile ?? '');
   if (!releasePlan.release?.tag || !existsSync(notesPath)) throw new Error('release tag or release notes are missing');
   const notesHash = sha256(Buffer.from(readFileSync(notesPath, 'utf8'), 'utf8'));
   if (notesHash !== releasePlan.release.notesSha256) throw new Error('release notes do not match the machine plan');
   const targetVersions = new Map(releasePlan.packages.map((entry) => [entry.name, entry.targetVersion]));
-  verifyCliReadmeProjection(releasePlan);
-  verifyCliFullFrontendTemplateProjection(releasePlan);
+  if (!historicalCompleted) {
+    verifyPmoPluginProjection(releasePlan);
+    verifyCliReadmeProjection(releasePlan);
+    verifyCliFullFrontendTemplateProjection(releasePlan);
+    verifyCliFullReadmeProjection(releasePlan);
+  }
   const currentReleaseVersions = readJson(join(workspaceRoot, 'packages/mango-cli/release-versions.json'));
   if (releasePlan.maven && currentReleaseVersions.maven?.mangoBackend !== releasePlan.maven.targetVersion) {
     throw new Error(
@@ -255,6 +295,20 @@ function verifyPlanProjection(releasePlan, packages, currentManagedVersions) {
   }
 }
 
+function verifyPmoPluginProjection(releasePlan) {
+  const pmo = releasePlan.packages.find((entry) => entry.name === '@mango/pmo');
+  if (!pmo) return;
+  for (const path of PMO_VERSION_PROJECTION_PATHS) {
+    assertPmoVersionedFileProjection({
+      path,
+      sourceContent: readGitFile(repoRoot, releasePlan.source.commit, path),
+      projectedContent: readFileSync(join(repoRoot, path), 'utf8'),
+      sourceVersion: pmo.sourceVersion,
+      targetVersion: pmo.targetVersion,
+    });
+  }
+}
+
 function verifyCliReadmeProjection(releasePlan) {
   const cli = releasePlan.packages.find((entry) => entry.name === '@mango/cli');
   if (!cli) return;
@@ -274,6 +328,21 @@ function verifyCliFullFrontendTemplateProjection(releasePlan) {
     projectedContent: readFileSync(join(repoRoot, CLI_FULL_FRONTEND_PACKAGE_TEMPLATE_PATH), 'utf8'),
     sourceVersion: cli.sourceVersion,
     targetVersion: cli.targetVersion,
+  });
+}
+
+function verifyCliFullReadmeProjection(releasePlan) {
+  const cli = releasePlan.packages.find((entry) => entry.name === '@mango/cli');
+  const pmo = releasePlan.packages.find((entry) => entry.name === '@mango/pmo');
+  if (!cli || !pmo || !releasePlan.maven?.targetVersion) return;
+  assertCliFullReadmeProjection({
+    sourceContent: readGitFile(repoRoot, releasePlan.source.commit, CLI_FULL_README_TEMPLATE_PATH),
+    projectedContent: readFileSync(join(repoRoot, CLI_FULL_README_TEMPLATE_PATH), 'utf8'),
+    versions: {
+      mavenVersion: releasePlan.maven.targetVersion,
+      pmoVersion: pmo.targetVersion,
+      cliVersion: cli.targetVersion,
+    },
   });
 }
 
@@ -322,6 +391,55 @@ function runLockfileUpdate() {
     stdio: 'inherit',
   });
   if (result.status !== 0) throw new Error(`pnpm lockfile update failed with exit code ${result.status ?? 1}`);
+}
+
+function runProjectionFormatting() {
+  const command = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm';
+  const paths = [planPath];
+  if (!skipLockfile) paths.push(join(workspaceRoot, 'pnpm-lock.yaml'));
+  const result = spawnSync(command, ['exec', 'prettier', '--write', ...paths], {
+    cwd: workspaceRoot,
+    stdio: 'inherit',
+  });
+  if (result.status !== 0) {
+    throw new Error(
+      `release projection formatting failed with exit code ${result.status ?? 1}; install the governed workspace dependencies`,
+    );
+  }
+}
+
+function runCatalogProjection() {
+  const result = spawnSync(process.execPath, [join(workspaceRoot, 'scripts/catalog/compile-catalog.mjs'), '--write'], {
+    cwd: repoRoot,
+    stdio: 'inherit',
+  });
+  if (result.status !== 0) throw new Error(`Catalog projection failed with exit code ${result.status ?? 1}`);
+}
+
+function buildPlan(catalogDigest) {
+  return buildReleasePlan({
+    packageIndex,
+    managedVersions,
+    mavenSourceVersion: resolveReleaseMavenSourceVersion(previousPlan, releaseVersions.maven?.mangoBackend),
+    mavenTargetVersion,
+    source: planInput.source,
+    sourceFiles: planInput.sourceFiles,
+    changesets: pendingChangesets,
+    legacy,
+    restoredPublishedBaselines: restored,
+    ignoredDirectPackages: restored.map((entry) => entry.name),
+    previousPlan,
+    baseline,
+    release: {
+      tag: releaseMetadata.tag,
+      title: releaseMetadata.title,
+      notesFile: releaseMetadata.notesFile,
+      notesSha256: releaseMetadata.notesSha256,
+    },
+    catalogDigest,
+    mavenInventory: catalog.maven.publishableCoordinates,
+    releaseArtifacts: catalog.releaseArtifacts,
+  });
 }
 
 function resolveReleaseMetadata(existingPlan, changesets) {

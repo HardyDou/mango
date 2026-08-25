@@ -1,6 +1,6 @@
 {
   "name": "@mango/admin",
-  "version": "1.0.68",
+  "version": "1.0.69",
   "private": false,
   "type": "module",
   "main": "./dist/index.js",
@@ -38,7 +38,7 @@
   "dependencies": {
     "@element-plus/icons-vue": "2.3.2",
     "@mango/admin-pages": "workspace:1.0.35",
-    "@mango/admin-shell": "workspace:1.0.62",
+    "@mango/admin-shell": "workspace:1.0.63",
     "@mango/app-runtime": "workspace:1.0.6",
     "@mango/auth": "workspace:1.0.28",
     "@mango/cms": "workspace:1.0.25",
@@ -58,7 +58,7 @@
     "@mango/notice": "workspace:1.0.41",
     "@mango/numgen": "workspace:1.0.37",
     "@mango/payment": "workspace:1.0.28",
-    "@mango/template": "workspace:1.0.36",
+    "@mango/template": "workspace:1.0.37",
     "@mango/workflow": "workspace:1.0.42",
     "@mango/workflow-business-example": "workspace:1.0.41",
     "pinia": ">=2.0.32 <3",

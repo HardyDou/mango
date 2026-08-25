@@ -2,50 +2,50 @@
 /* Edit packages/admin/admin-modules.json, then run the package style generation command. */
 export { createMangoAdminApp } from '@mango/admin-shell';
 export type { MangoAdminShellOptions, MangoAdminAppInstance } from '@mango/admin-shell';
-export { registerMangoSystemAdminPages } from '@mango/system/admin-pages';
-export { registerMangoJobAdminPages } from '@mango/job/admin-pages';
 export { registerMangoCmsAdminPages } from '@mango/cms/admin-pages';
+export { registerMangoJobAdminPages } from '@mango/job/admin-pages';
 export { registerMangoLinkAdminPages } from '@mango/link/admin-pages';
+export { registerMangoSystemAdminPages } from '@mango/system/admin-pages';
+export { registerMangoAiAdminPages } from '@mango/ai/admin-pages';
+export { registerMangoCalendarAdminPages } from '@mango/calendar/admin-pages';
 export { registerMangoFileAdminPages } from '@mango/file/admin-pages';
-export { registerMangoTemplateAdminPages } from '@mango/template/admin-pages';
 export { registerMangoNoticeAdminPages } from '@mango/notice/admin-pages';
 export { registerMangoNoticeAdminShell } from '@mango/notice/admin-shell';
 export { registerMangoNumgenAdminPages } from '@mango/numgen/admin-pages';
-export { registerMangoCalendarAdminPages } from '@mango/calendar/admin-pages';
 export { registerMangoPaymentAdminPages } from '@mango/payment/admin-pages';
+export { registerMangoTemplateAdminPages } from '@mango/template/admin-pages';
 export { registerMangoWorkflowAdminPages } from '@mango/workflow/admin-pages';
-export { registerMangoAiAdminPages } from '@mango/ai/admin-pages';
 export { registerMangoWorkflowBusinessExampleAdminPages } from '@mango/workflow-business-example/admin-pages';
 
 import type { MangoAdminFeatureRegistrar } from '@mango/admin-shell';
-import { registerMangoSystemAdminPages } from '@mango/system/admin-pages';
-import { registerMangoJobAdminPages } from '@mango/job/admin-pages';
 import { registerMangoCmsAdminPages } from '@mango/cms/admin-pages';
+import { registerMangoJobAdminPages } from '@mango/job/admin-pages';
 import { registerMangoLinkAdminPages } from '@mango/link/admin-pages';
+import { registerMangoSystemAdminPages } from '@mango/system/admin-pages';
+import { registerMangoAiAdminPages } from '@mango/ai/admin-pages';
+import { registerMangoCalendarAdminPages } from '@mango/calendar/admin-pages';
 import { registerMangoFileAdminPages } from '@mango/file/admin-pages';
-import { registerMangoTemplateAdminPages } from '@mango/template/admin-pages';
 import { registerMangoNoticeAdminPages } from '@mango/notice/admin-pages';
 import { registerMangoNoticeAdminShell } from '@mango/notice/admin-shell';
 import { registerMangoNumgenAdminPages } from '@mango/numgen/admin-pages';
-import { registerMangoCalendarAdminPages } from '@mango/calendar/admin-pages';
 import { registerMangoPaymentAdminPages } from '@mango/payment/admin-pages';
+import { registerMangoTemplateAdminPages } from '@mango/template/admin-pages';
 import { registerMangoWorkflowAdminPages } from '@mango/workflow/admin-pages';
-import { registerMangoAiAdminPages } from '@mango/ai/admin-pages';
 import { registerMangoWorkflowBusinessExampleAdminPages } from '@mango/workflow-business-example/admin-pages';
 
 export const mangoFullAdminFeatureRegistrars: MangoAdminFeatureRegistrar[] = [
-  registerMangoSystemAdminPages,
-  registerMangoJobAdminPages,
   registerMangoCmsAdminPages,
+  registerMangoJobAdminPages,
   registerMangoLinkAdminPages,
+  registerMangoSystemAdminPages,
+  registerMangoAiAdminPages,
+  registerMangoCalendarAdminPages,
   registerMangoFileAdminPages,
-  registerMangoTemplateAdminPages,
   registerMangoNoticeAdminPages,
   registerMangoNoticeAdminShell,
   registerMangoNumgenAdminPages,
-  registerMangoCalendarAdminPages,
   registerMangoPaymentAdminPages,
+  registerMangoTemplateAdminPages,
   registerMangoWorkflowAdminPages,
-  registerMangoAiAdminPages,
   registerMangoWorkflowBusinessExampleAdminPages,
 ];

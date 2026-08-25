@@ -8,7 +8,7 @@
 
 ## 1. 适用范围与版本事实源
 
-- **正向要求**：发布 npm、Maven、CLI、starter、模板、PMO、Skill 或文档快照时，必须先列出本批次全部制品、当前版本、目标版本、依赖方、消费入口和唯一版本事实源；`mango-ui/packages/mango-cli/release-versions.json` 只能引用已发布或在同一批次内先发布并完成回查的版本。
+- **正向要求**：发布 npm、Maven、CLI、starter、模板、PMO、Skill 或文档快照时，必须由 `mango-catalog/catalog.lock.json` 和 release plan 列出本批次全部制品、当前版本、目标版本、依赖方、消费入口和唯一版本事实源；Catalog 只能由 package/module/docs 作者声明机械生成并通过 `pnpm -C mango-ui catalog:check`，发布人不得手工增删批次成员；`mango-ui/packages/mango-cli/release-versions.json` 只能引用已发布或在同一批次内先发布并完成回查的版本。
 - **禁止项**：禁止用 `rules/backend/09-versioning.md` 代替制品版本治理；禁止把尚未发布的模板契约绑定到不支持该契约的旧 Maven/CLI/npm 版本；禁止同时维护互不校验的多个版本常量。
 - **正例**：发布矩阵声明 Maven `1.0.16` 先于 `@mango/cli@1.0.68`，CLI 的 release lock、模板 POM、CHANGELOG 和升级说明均引用 `1.0.16`。
 - **反例**：模板已写入 `global-entity-exceptions` 新字段，`release-versions.json` 仍锁定无法解析这些字段的 Maven `1.0.15`，却发布新 CLI。
@@ -36,7 +36,7 @@
 
 ## 5. 发布、仓库回查与消费验证
 
-- **正向要求**：发布必须使用仓库规范指定的 batch 入口；Maven 批次只调用 `publish-maven-batch.sh`，不再维护独立文档包发布命令；发布后从目标 Maven/npm 仓库重新解析精确版本和关键文件，使用干净临时目录验证 CLI/Skill 安装、项目生成、模块生成、构建和业务消费入口；所有证据绑定 registry、坐标、版本、校验和与时间。
+- **正向要求**：发布必须使用仓库规范指定的 batch 入口；Maven 批次只调用 `publish-maven-batch.sh`，不再维护独立文档包发布命令；发布后从目标 Maven/npm 仓库重新解析精确版本和关键文件，使用干净临时目录验证 CLI/Skill 安装、项目生成、模块生成、构建和业务消费入口；所有证据绑定 registry、坐标、版本、校验和与时间。Maven 发布默认使用 `basic` 回查：逐坐标只确认 POM 的存在和 SHA-256，并用一个聚合 Maven consumer 一次解析整批坐标；不再逐坐标下载或比对 JAR。sealed Maven 坐标发布默认使用受控并行度 16（可设置 `MANGO_RELEASE_MAVEN_PUBLISH_CONCURRENCY=1..16`），发布后的 consume 可见性也以相同上限并行等待；每个坐标仍独立记录 intent、dispatch、结果和恢复证据。需要逐 JAR 远端回查时才显式设置 `MANGO_RELEASE_MAVEN_VERIFY_MODE=full`。
 - **禁止项**：禁止以本地仓库、workspace link、缓存 tarball 或未清理的生成目录代替发布后回查；禁止只看到 HTTP 200 或版本号存在就判定内容正确；禁止发布 app 部署制品进入默认平台 Maven 批次。
 - **正例**：Nexus 回查 npm tarball 的 manifest/Skill/README，Maven 使用临时 local repository 拉取目标插件，随后生成项目完成全量门禁。
 - **反例**：`npm publish` 成功后未安装 tarball、未验证 `dist/baseline`，也未确认 Maven 插件版本，却声明整个 Mango 批次完成。
@@ -51,11 +51,11 @@
 
 ## 7. 统一发布状态机
 
-- **正向要求**：Mango 发布只使用仓库内 `mango-pmo/skills/mango-release`。正式 npm 批次统一执行 `mango release plan -> prepare -> publish/status/repair` 和 `mango release registry doctor`；正常状态固定为 `PREPARED`、`CANDIDATE_VERIFIED`、`PUBLISHED`、`CONSUMER_VERIFIED`、`COMPLETED`，异常状态只允许 `FAILED`、`VERIFY_PENDING`、`PARTIALLY_PUBLISHED`。计划、候选验证、发布和恢复绑定同一 Git tree、计划摘要和制品 SHA-256。
-- **禁止项**：禁止人工维护发布包清单；禁止以最近一次提交代替累计 Changesets；禁止 prepare 后重新构建；禁止 hosted 已存在时重发；禁止消费验证前创建 Tag/GitHub Release；禁止持久化授权或凭据。
-- **正例**：npm hosted 已有精确坐标且 SHA-256 与封存 tarball 一致、group 尚未可见时进入 `VERIFY_PENDING`；`repair` 只读等待 group，随后继续纯消费仓验证。
-- **反例**：发布失败后重新运行构建和整套逐包脚本，或把未登记的包凭记忆追加到 `.mango-release.json`。错误原因：候选与发布物不再同源，且不可变坐标可能被重复尝试。
-- **机器判定**：功能 PR 的 Git 影响与 Changeset 声明必须一致；Release PR 的计划由机器重算，只有版本、依赖、CHANGELOG、Changeset 消费和计划投影时才走轻量检查，混入源码自动回到普通门禁。`publish/repair` 只接受当前回合 `--authorize` 或 `MANGO_RELEASE_AUTHORIZED=1`；首次写入前 publish/consume 双侧必须证明坐标不存在，任一未知状态立即停止。
+- **正向要求**：Mango 发布只使用仓库内 `mango-pmo/skills/mango-release`。唯一入口是 `mango release plan -> prepare -> publish/status/repair` 和 `mango release registry doctor`；状态固定为 `VALIDATED`、`PREPARED`、`READY`、`PUBLISHING`、`PARTIAL`、`AMBIGUOUS`、`REPAIR`、`COMPLETED`。plan 绑定 Catalog、源码 commit/tree、baseline、Changesets、release notes、版本策略、完整 tuple、closure 和顺序；prepare 只构建一次并以 `preparedCandidateId` 封存 npm、Maven、docs 和 source archive 字节。
+- **禁止项**：禁止恢复单包发布脚本或其它 fallback；禁止人工维护发布包清单；禁止以最近一次提交代替累计 Changesets；禁止 READY 后重新构建、补文件或换 candidate；禁止 hosted 已存在时重发；禁止消费验证前创建 Tag/GitHub Release；禁止持久化授权、凭据或自动回收 stale lock。
+- **正例**：请求已登记但结果未知时进入 `AMBIGUOUS`；`status` 回读双仓并报告 journal 差异，`repair` 只接受同一 candidate，远端字节一致时推进验证，未发请求的 absent 坐标才允许继续发布。
+- **反例**：发布失败后重新运行构建和逐包脚本，或发现旧坐标后把它认领为当前 candidate。错误原因：候选与发布物不再同源，且不可变坐标可能被覆盖或错误归属。
+- **机器判定**：功能 PR 的 Git 影响与 Changeset 声明必须一致；Release PR 的计划由机器重算，只有版本、依赖、CHANGELOG、Changeset 消费和计划投影时才走轻量检查，混入源码自动回到普通门禁。`publish/repair` 只接受当前回合 `--authorize` 或 `MANGO_RELEASE_AUTHORIZED=1`；任一写入前必须完成全部 npm/Maven/docs 坐标双侧预检，任一 unknown、已有未归属坐标、sealed digest 或 READY identity 不一致都保持零新增远端写入。
 
 ### 7.1 Registry 抽象与文档策略
 
