@@ -388,6 +388,19 @@ test('module POM selects its descendant Maven projects without selecting the who
   assert.ok(scope.projects.length < 20, `unexpectedly broad Maven scope: ${scope.projects.length}`);
 });
 
+test('Maven Invoker fixtures map to their owning Reactor module', () => {
+  const scope = resolveMavenScope([
+    'mango/mango-platform/mango-resource/mango-resource-sync-starter/src/it/resource-artifact-boot-package/pom.xml',
+  ]);
+  assert.deepEqual(scope, {
+    mode: 'partial',
+    projects: [
+      ':mango-architecture-verification',
+      'mango-platform/mango-resource/mango-resource-sync-starter',
+    ],
+  });
+});
+
 test('global backend inputs use governance acceptance instead of a full PR reactor', () => {
   for (const file of [
     '.github/workflows/pmo-doc-check.yml',

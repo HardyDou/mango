@@ -192,7 +192,9 @@ function listPomProjects(directory, mangoRoot) {
     if (relative) projects.push(relative);
   }
   for (const entry of entries) {
-    if (!entry.isDirectory() || entry.name === 'target' || entry.name.startsWith('.')) continue;
+    if (!entry.isDirectory()
+      || ['src', 'target'].includes(entry.name)
+      || entry.name.startsWith('.')) continue;
     projects.push(...listPomProjects(path.join(directory, entry.name), mangoRoot));
   }
   return projects;
@@ -201,7 +203,8 @@ function listPomProjects(directory, mangoRoot) {
 function nearestMavenProject(file, repositoryRoot, mavenRoot) {
   let current = path.dirname(path.join(repositoryRoot, file));
   while (current.startsWith(mavenRoot) && current !== mavenRoot) {
-    if (fs.existsSync(path.join(current, 'pom.xml'))) return current;
+    const relativeSegments = path.relative(mavenRoot, current).split(path.sep);
+    if (!relativeSegments.includes('src') && fs.existsSync(path.join(current, 'pom.xml'))) return current;
     current = path.dirname(current);
   }
   return fs.existsSync(path.join(mavenRoot, 'pom.xml')) ? mavenRoot : null;
