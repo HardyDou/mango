@@ -178,6 +178,80 @@ class AuthRoleDataScopeResourceHandlerIntegrationTest {
     }
 
     @Test
+    void disable_registryTargetOnly_disablesExactTarget() {
+        seedRole(1001L, 1L, "internal-admin", "ROLE_DEMO");
+        ResourceSyncResult created = handler.upsert(resource());
+
+        ResourceSyncResult disabled = handler.disable(registryTarget(created.getTargetId()));
+
+        assertThat(disabled.getTargetId()).isEqualTo(created.getTargetId());
+        assertThat(scopeStatus(created.getTargetId())).isZero();
+    }
+
+    @Test
+    void disable_registryTargetInNonDefaultTenant_usesTargetTenant() {
+        seedRole(1001L, 1L, "internal-admin", "ROLE_DEMO");
+        ResourceSyncResult tenantOne = handler.upsert(resource());
+        seedRole(2001L, 2L, "internal-admin", "ROLE_DEMO");
+        ResourceDeclaration tenantTwoResource = resource();
+        put(tenantTwoResource, "tenantId", ResourceFieldType.LONG, 2L);
+        ResourceSyncResult tenantTwo = handler.upsert(tenantTwoResource);
+
+        handler.disable(registryTarget(tenantTwo.getTargetId()));
+
+        assertThat(scopeStatus(tenantOne.getTargetId())).isEqualTo(1);
+        assertThat(scopeStatus(tenantTwo.getTargetId())).isZero();
+    }
+
+    @Test
+    void disable_missingRegistryTarget_failsWithoutBusinessKeyFallback() {
+        seedRole(1001L, 1L, "internal-admin", "ROLE_DEMO");
+        ResourceSyncResult tenantOne = handler.upsert(resource());
+        seedRole(2001L, 2L, "internal-admin", "ROLE_DEMO");
+        ResourceDeclaration tenantTwoResource = resource();
+        put(tenantTwoResource, "tenantId", ResourceFieldType.LONG, 2L);
+        ResourceSyncResult tenantTwo = handler.upsert(tenantTwoResource);
+        ResourceDeclaration missingTarget = registryTarget(999999L);
+
+        assertThatThrownBy(() -> handler.disable(missingTarget))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("resourceId=2083500000000000001")
+                .hasMessageContaining("targetId=999999")
+                .hasMessageContaining("target does not exist");
+        assertThat(scopeStatus(tenantOne.getTargetId())).isEqualTo(1);
+        assertThat(scopeStatus(tenantTwo.getTargetId())).isEqualTo(1);
+    }
+
+    @Test
+    void disable_registryTargetWithMismatchedTenant_failsClosed() {
+        seedRole(2001L, 2L, "internal-admin", "ROLE_DEMO");
+        ResourceDeclaration tenantTwoResource = resource();
+        put(tenantTwoResource, "tenantId", ResourceFieldType.LONG, 2L);
+        ResourceSyncResult tenantTwo = handler.upsert(tenantTwoResource);
+        ResourceDeclaration mismatched = registryTarget(tenantTwo.getTargetId());
+        put(mismatched, "tenantId", ResourceFieldType.LONG, 1L);
+
+        assertThatThrownBy(() -> handler.disable(mismatched))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("targetId=" + tenantTwo.getTargetId())
+                .hasMessageContaining("tenantId does not match target");
+        assertThat(scopeStatus(tenantTwo.getTargetId())).isEqualTo(1);
+    }
+
+    @Test
+    void disable_registryTargetWithMismatchedTable_failsClosed() {
+        seedRole(1001L, 1L, "internal-admin", "ROLE_DEMO");
+        ResourceSyncResult created = handler.upsert(resource());
+        ResourceDeclaration mismatched = registryTarget(created.getTargetId());
+        put(mismatched, "targetTable", ResourceFieldType.STRING, "authorization_role");
+
+        assertThatThrownBy(() -> handler.disable(mismatched))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("targetTable does not match authorization_role_data_scope");
+        assertThat(scopeStatus(created.getTargetId())).isEqualTo(1);
+    }
+
+    @Test
     void disabledResourceDeclarationCreatesInactiveScopeThroughRealMapper() {
         seedRole(1001L, 1L, "internal-admin", "ROLE_DEMO");
         ResourceDeclaration resource = resource();
@@ -271,6 +345,16 @@ class AuthRoleDataScopeResourceHandlerIntegrationTest {
         return resource;
     }
 
+    private ResourceDeclaration registryTarget(Long targetId) {
+        ResourceDeclaration resource = new ResourceDeclaration();
+        resource.setId("2083500000000000001");
+        resource.setResourceType(ResourceTypes.AUTH_ROLE_DATA_SCOPE);
+        resource.setFields(new LinkedHashMap<>());
+        put(resource, "targetId", ResourceFieldType.LONG, targetId);
+        put(resource, "targetTable", ResourceFieldType.STRING, "authorization_role_data_scope");
+        return resource;
+    }
+
     private void put(ResourceDeclaration resource, String name, ResourceFieldType type, Object value) {
         resource.putField(name, field(type, value));
     }
@@ -284,6 +368,11 @@ class AuthRoleDataScopeResourceHandlerIntegrationTest {
 
     private Long countScopes() {
         return jdbcTemplate.queryForObject("select count(*) from authorization_role_data_scope", Long.class);
+    }
+
+    private Integer scopeStatus(Long id) {
+        return jdbcTemplate.queryForObject(
+                "select status from authorization_role_data_scope where id = ?", Integer.class, id);
     }
 
     @Configuration

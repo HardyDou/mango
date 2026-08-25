@@ -376,6 +376,7 @@ Spring Boot 可执行 JAR 将上述 `META-INF` 条目保留在 JAR 根目录。B
 | 声明状态为 `DISABLED` | 调用目标模块 `disable`，目标模块负责逻辑禁用。 |
 | 声明状态为 `DEPRECATED` | 只更新注册中心声明状态和审计，目标资源继续可读，不调用 `upsert` 或 `disable`。 |
 | 声明状态为 `REMOVED` | 调用目标模块 `delete`；目标模块不支持物理删除时降级为 `disable`。 |
+| `AUTO` 声明在 FINALIZE 中缺失 | Registry 只用持久化的 `targetId/targetTable` 重建删除输入；目标 Handler 必须按该稳定目标身份停用或明确失败，不能要求已经从 classpath 消失的原声明字段。 |
 | 强制同步 | 后台 `/resource/sync/force` 触发，跳过 hash 未变化限制。 |
 
 同一批 active 声明如果包含跨类型依赖，Resource Registry 按目标 `ResourceHandler.dependsOnResourceTypes()`
