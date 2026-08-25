@@ -141,7 +141,9 @@ public class AuthFilter implements Filter {
     }
 
     private boolean isRealtimeTicketPath(String path) {
-        return path.startsWith("/realtime/transports/probe/");
+        return "/realtime/transports/websocket".equals(path)
+                || "/realtime/transports/sse".equals(path)
+                || path.startsWith("/realtime/transports/probe/");
     }
 
     private boolean hasText(String value) {

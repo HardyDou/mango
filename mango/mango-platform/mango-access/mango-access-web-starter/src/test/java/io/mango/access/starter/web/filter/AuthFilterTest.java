@@ -77,6 +77,40 @@ class AuthFilterTest {
     }
 
     @Test
+    @DisplayName("Realtime 正式连接携带 ticket 时应放行且不信任外部身份")
+    void doFilter_shouldPassRealtimeTransportTicketWithoutTrustingIdentity() throws Exception {
+        apiResourceApi.accessMode = ApiResourceAccessMode.LOGIN;
+
+        for (String path : List.of("/realtime/transports/websocket", "/realtime/transports/sse")) {
+            MangoContextHolder.set(MangoContextSnapshot.request(
+                    "request-1", "trace-1", "spoofed-tenant", "spoofed-app", "127.0.0.1"));
+            MockHttpServletRequest request = new MockHttpServletRequest("GET", path);
+            request.setParameter("rtTicket", "issued-ticket");
+            MockHttpServletResponse response = new MockHttpServletResponse();
+
+            newFilter().doFilter(request, response, new MockFilterChain());
+
+            assertEquals(200, response.getStatus());
+            assertNull(MangoContextHolder.userId());
+            assertNull(MangoContextHolder.tenantId());
+        }
+        assertEquals(0, apiResourceApi.resolveCount);
+    }
+
+    @Test
+    @DisplayName("Realtime 正式连接无 ticket 时仍应执行登录认证")
+    void doFilter_shouldRequireLoginWhenRealtimeTransportTicketMissing() throws Exception {
+        apiResourceApi.accessMode = ApiResourceAccessMode.LOGIN;
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/realtime/transports/websocket");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        newFilter().doFilter(request, response, new MockFilterChain());
+
+        assertEquals(401, response.getStatus());
+        assertEquals(1, apiResourceApi.resolveCount);
+    }
+
+    @Test
     @DisplayName("资源策略服务失败时应返回 503 而不是降级为 LOGIN")
     void doFilter_shouldFailClosedWhenResourcePolicyUnavailable() throws Exception {
         apiResourceApi.forcedResponse = R.fail("resource policy unavailable");

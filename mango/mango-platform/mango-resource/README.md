@@ -242,6 +242,7 @@ Resource Registry 能否同步某个资源类型，以运行时是否装配对�
 | `mango-template` | `PRINT_TEMPLATE` |
 | `mango-job` | `JOB_DEFINITION` |
 | `mango-file` | `FILE_STORAGE_CONFIG`、`FILE_SETTINGS` |
+| `mango-ai` | `AI_PROVIDER_CONNECTION`、`AI_MODEL`、`AI_PROMPT`、`AI_SKILL`、`AI_SERVICE` |
 
 声明新资源前先确认：
 
@@ -254,7 +255,6 @@ Resource Registry 能否同步某个资源类型，以运行时是否装配对�
 | 资源类型 | 当前状态 | 现阶段使用方式 |
 |----------|----------|----------------|
 | `MESSAGE_EVENT` | 无目标表字段契约和 `ResourceHandler`。 | 通知资源当前使用 `MESSAGE_CHANNEL` 和 `MESSAGE_TEMPLATE`。事件、路由或触发规则需要等 notice 模块补齐 handler 后再开放。 |
-| `AI_PROMPT` | 无 `mango-ai` 目标模块运行时和 `ResourceHandler`。 | 暂不通过 Resource Registry 声明 AI Prompt。 |
 
 ## 7. 声明文件示例
 

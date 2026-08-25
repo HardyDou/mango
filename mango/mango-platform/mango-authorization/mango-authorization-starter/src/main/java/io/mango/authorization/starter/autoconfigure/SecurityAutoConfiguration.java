@@ -11,6 +11,7 @@ import io.mango.infra.web.support.InternalCallAttributes;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -67,6 +68,11 @@ public class SecurityAutoConfiguration {
     @Bean
     @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
     @ConditionalOnMissingBean(SecurityFilterChain.class)
+    @ConditionalOnProperty(
+            prefix = "mango.security",
+            name = "default-chain-enabled",
+            havingValue = "true",
+            matchIfMissing = true)
     @Order(Ordered.LOWEST_PRECEDENCE)
     public SecurityFilterChain defaultSecurityFilterChain(
             HttpSecurity http,

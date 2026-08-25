@@ -1,0 +1,140 @@
+{
+  "mango": {
+    "resource": {
+      "schemaVersion": 1,
+      "moduleCode": "mango-ai",
+      "moduleName": "AI 管理",
+      "declarations": {
+        "AUTH_MENU": [
+          {
+            "id": "2951300000000015001",
+            "version": 1,
+            "bizKey": "ai.menu.internal-admin",
+            "name": "AI 管理菜单",
+            "targetModule": "authorization",
+            "fields": {
+              "appCode": {
+                "type": "STRING",
+                "value": "internal-admin"
+              },
+              "moduleCode": {
+                "type": "STRING",
+                "value": "mango-ai"
+              },
+              "moduleName": {
+                "type": "STRING",
+                "value": "AI 管理"
+              },
+              "sort": {
+                "type": "INT",
+                "value": 15
+              },
+              "packageCodes": {
+                "type": "LIST",
+                "value": [
+                  "platform_admin"
+                ]
+              },
+              "roleCodes": {
+                "type": "LIST",
+                "value": []
+              },
+              "menus": {
+                "type": "LIST",
+                "value": [
+                  {
+                    "menuType": 1,
+                    "menuName": "AI 管理",
+                    "menuCode": "ai",
+                    "parentCode": "data",
+                    "path": "/ai",
+                    "icon": "Cpu",
+                    "sort": 15,
+                    "redirect": "/ai/models",
+                    "remark": "AI 模型、Prompt、Skill、工具和服务定义管理入口",
+                    "children": [
+                      {
+                        "menuType": 2,
+                        "menuName": "模型管理",
+                        "menuCode": "ai:models",
+                        "path": "/ai/models",
+                        "icon": "Operation",
+                        "component": "ai/models/index",
+                        "sort": 1,
+                        "remark": "租户级厂商接入、多模型目录、多模态能力和默认路由管理",
+                        "apiCodes": [
+                          "ai:model:list",
+                          "ai:model:provider:add",
+                          "ai:model:provider:edit",
+                          "ai:model:provider:delete",
+                          "ai:model:add",
+                          "ai:model:edit",
+                          "ai:model:delete",
+                          "ai:model:route:edit"
+                        ]
+                      },
+                      {
+                        "menuType": 2,
+                        "menuName": "提示词配置",
+                        "menuCode": "ai:prompts",
+                        "path": "/ai/prompts",
+                        "icon": "ChatLineSquare",
+                        "component": "ai/prompts/index",
+                        "sort": 2,
+                        "remark": "Prompt 模板、变量和发布版本管理",
+                        "apiCodes": [
+                          "ai:prompt:list",
+                          "ai:prompt:add",
+                          "ai:prompt:edit",
+                          "ai:prompt:delete",
+                          "ai:prompt:publish"
+                        ]
+                      },
+                      {
+                        "menuType": 2,
+                        "menuName": "Skill 与工具",
+                        "menuCode": "ai:skills",
+                        "path": "/ai/skills",
+                        "icon": "SetUp",
+                        "component": "ai/skills/index",
+                        "sort": 3,
+                        "remark": "Skill、MCP 和 HTTP 工具定义管理",
+                        "apiCodes": [
+                          "ai:skill:list",
+                          "ai:skill:add",
+                          "ai:skill:edit",
+                          "ai:skill:delete",
+                          "ai:tool:list",
+                          "ai:tool:add",
+                          "ai:tool:edit",
+                          "ai:tool:delete"
+                        ]
+                      },
+                      {
+                        "menuType": 2,
+                        "menuName": "AI 服务",
+                        "menuCode": "ai:services",
+                        "path": "/ai/services",
+                        "icon": "Connection",
+                        "component": "ai/services/index",
+                        "sort": 4,
+                        "remark": "面向业务的 AI 服务定义、Schema 和 Prompt/Skill 绑定",
+                        "apiCodes": [
+                          "ai:service:list",
+                          "ai:service:add",
+                          "ai:service:edit",
+                          "ai:service:delete",
+                          "ai:service:invoke"
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

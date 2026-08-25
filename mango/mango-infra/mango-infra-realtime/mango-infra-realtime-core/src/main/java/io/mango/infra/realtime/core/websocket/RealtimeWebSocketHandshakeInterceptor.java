@@ -1,8 +1,11 @@
 package io.mango.infra.realtime.core.websocket;
 
 import io.mango.infra.realtime.api.dto.RealtimeHeaders;
+import io.mango.infra.realtime.core.negotiate.RealtimeConnectionTicket;
+import io.mango.infra.realtime.core.negotiate.RealtimeConnectionTicketService;
 import io.mango.infra.realtime.core.web.RealtimeRequestIdentityResolver;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.server.ServerHttpRequest;
 import org.springframework.http.server.ServerHttpResponse;
 import org.springframework.http.server.ServletServerHttpRequest;
@@ -20,12 +23,25 @@ public class RealtimeWebSocketHandshakeInterceptor implements HandshakeIntercept
     public static final String CLIENT_ID_ATTR = "clientId";
     public static final String PROFILE_ATTR = "profile";
 
+    private final RealtimeConnectionTicketService ticketService;
+
+    public RealtimeWebSocketHandshakeInterceptor(RealtimeConnectionTicketService ticketService) {
+        this.ticketService = ticketService;
+    }
+
     @Override
     public boolean beforeHandshake(ServerHttpRequest request, ServerHttpResponse response,
                                    WebSocketHandler wsHandler, Map<String, Object> attributes) {
         if (!(request instanceof ServletServerHttpRequest servletRequest)) {
             log.warn("WebSocket handshake rejected: non-servlet request attempted");
             return false;
+        }
+
+        String ticketValue = servletRequest.getServletRequest().getParameter("rtTicket");
+        if (firstText(ticketValue) != null) {
+            return ticketService.resolve(ticketValue)
+                    .map(ticket -> copyTicketIdentity(ticket, attributes))
+                    .orElseGet(() -> rejectExpiredTicket(response));
         }
 
         String tenantId = RealtimeRequestIdentityResolver.resolveTenantId(
@@ -50,6 +66,24 @@ public class RealtimeWebSocketHandshakeInterceptor implements HandshakeIntercept
             attributes.put(CLIENT_ID_ATTR, clientId);
         }
         return true;
+    }
+
+    private boolean copyTicketIdentity(RealtimeConnectionTicket ticket, Map<String, Object> attributes) {
+        attributes.put(TENANT_ID_ATTR, ticket.tenantId());
+        attributes.put(AUTHORIZED_ATTR, true);
+        attributes.put(PROFILE_ATTR, ticket.profile());
+        if (ticket.userId() != null) {
+            attributes.put(USER_ID_ATTR, ticket.userId());
+        }
+        if (firstText(ticket.clientId()) != null) {
+            attributes.put(CLIENT_ID_ATTR, ticket.clientId());
+        }
+        return true;
+    }
+
+    private boolean rejectExpiredTicket(ServerHttpResponse response) {
+        response.setStatusCode(HttpStatus.UNAUTHORIZED);
+        return false;
     }
 
     private String firstText(String... values) {

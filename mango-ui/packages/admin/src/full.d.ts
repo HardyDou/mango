@@ -6,6 +6,7 @@ export { registerMangoCmsAdminPages } from '@mango/cms/admin-pages';
 export { registerMangoJobAdminPages } from '@mango/job/admin-pages';
 export { registerMangoLinkAdminPages } from '@mango/link/admin-pages';
 export { registerMangoSystemAdminPages } from '@mango/system/admin-pages';
+export { registerMangoAiAdminPages } from '@mango/ai/admin-pages';
 export { registerMangoCalendarAdminPages } from '@mango/calendar/admin-pages';
 export { registerMangoFileAdminPages } from '@mango/file/admin-pages';
 export { registerMangoNoticeAdminPages } from '@mango/notice/admin-pages';

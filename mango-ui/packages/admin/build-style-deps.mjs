@@ -24,6 +24,8 @@ const packages = [
   '@mango/cms',
   '@mango/link-openapi',
   '@mango/link',
+  '@mango/ai-api',
+  '@mango/ai',
   '@mango/calendar',
   '@mango/numgen',
   '@mango/payment',
