@@ -24,6 +24,14 @@
     "historicalDebt": "exact-identities-only-decrease"
   },
   "dependencyRecovery": {
+    "@mango/ai": {
+      "version": "1.0.0",
+      "action": "pin"
+    },
+    "@mango/ai-api": {
+      "version": "1.0.0",
+      "action": "pin"
+    },
     "@mango/admin": {
       "version": "1.0.66",
       "action": "pin"
