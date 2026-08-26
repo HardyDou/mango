@@ -1,5 +1,59 @@
 # Mango PMO Changelog
 
+## 1.4.2 - 2026-08-26
+
+### Pull Requests
+
+- [PR #852](https://github.com/HardyDou/mango/pull/852) Added build-time Resource manifests, content-addressed file bundles and environment-level module receipts. Packages: Mango Maven `1.0.40`, `io.mango:mango-docs-bundle:1.0.40`, `@mango/pmo@1.4.2`. Business Adaptation: generated and existing applications must run the Resource Bootstrap candidate/finalize lifecycle and preserve receipt storage across restarts.
+- [PR #855](https://github.com/HardyDou/mango/pull/855) Changed the release intent, public component contracts and consumer migration documentation for the AI batch. Packages: `@mango/pmo@1.4.2`, `@mango/cli@1.2.0` and the complete generated tuple. Business Adaptation: upgrade PMO and CLI together and adopt the complete generated tuple.
+- [PR #860](https://github.com/HardyDou/mango/pull/860) Fixed deterministic formatting of the canonical PMO Codex plugin manifest. Packages: `@mango/pmo@1.4.2`, `@mango/cli@1.2.0`. Business Adaptation: none; plugin capabilities and configuration remain unchanged.
+
+### Fixed
+
+- Keep the canonical PMO Codex plugin manifest deterministic under release formatting and packaging.
+- Correct PMO Maven impact classification so nested test-fixture POMs under source trees are not treated as Reactor modules.
+
+### Changed
+
+- Advance the managed product-document lifecycle contracts and Business Starter projection to PMO `1.4.2`.
+- Project the Resource Bootstrap release contracts and exact CLI `1.2.0` compatibility tuple.
+
+### Versions
+
+- `@mango/pmo`: `1.4.1` to `1.4.2`; exact dependent CLI: `1.1.1` to `1.2.0`.
+- Mango Maven non-app reactor and docs bundle: `1.0.39` to `1.0.40`.
+
+### Published Packages
+
+- Publish `@mango/pmo@1.4.2` in the 28-package topology ending at `@mango/cli@1.2.0`, after the 192-coordinate Maven/docs batch at `1.0.40`.
+
+### Business Impact
+
+- Business repositories receive the PMO `1.4.2` document-contract baseline and Resource Bootstrap guidance; runtime consumers must adopt the complete Maven/npm tuple when using the new AI and Resource capabilities.
+
+### Upgrade Estimate
+
+- Audience: Mango maintainers and business repositories consuming the PMO baseline.
+- Engineering Effort: 30 to 90 minutes for generated consumers; additional application effort follows the AI and Resource integration scope.
+- Execution Window: 1 to 3 hours including PMO upgrade, locked checks and generated-project verification.
+- Service Downtime: none for the PMO package itself.
+- Rollback Effort: 15 to 30 minutes to restore PMO `1.4.1` and CLI `1.1.1`.
+- Assumptions: Node `22.23.1`, clean locks, configured consume registry and a reviewed PMO upgrade diff.
+
+### Upgrade Notes
+
+1. Upgrade PMO and CLI together to `@mango/pmo@1.4.2` and `@mango/cli@1.2.0`.
+2. Apply the PMO upgrade to a clean business worktree, review managed changes and run the locked PMO checks.
+3. Adopt Maven `1.0.40` and the complete npm tuple when consuming the AI or Resource platform changes.
+
+### Verification
+
+- Build and check the PMO package, verify Business Starter projection, run document-contract and Skill eval suites, and resolve the sealed tuple through the pure consume registry.
+
+### Rollback
+
+- Restore PMO `1.4.1`, CLI `1.1.1` and the previous managed baseline; never overwrite immutable release coordinates.
+
 ## 1.4.1 - 2026-08-22
 
 ### Pull Requests
