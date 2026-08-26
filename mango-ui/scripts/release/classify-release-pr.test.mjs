@@ -22,7 +22,19 @@ test('machine-generated version projection is release-only', () => {
     'mango-ui/pnpm-lock.yaml',
   ]);
   assert.equal(result.releaseOnly, true);
+  assert.equal(result.planCheckRequired, true);
   assert.deepEqual(result.disallowed, []);
+});
+
+test('closeout baseline changes require a plan check without becoming a release projection PR', () => {
+  const result = classifyReleasePullRequest([
+    'CHANGELOG.md',
+    'mango-ui/.changeset/release-baseline.json',
+    'mango-ui/.changeset/completed-intent.md',
+  ]);
+  assert.equal(result.releaseOnly, false);
+  assert.equal(result.hasPlan, false);
+  assert.equal(result.planCheckRequired, true);
 });
 
 test('other package READMEs still require normal gates', () => {
@@ -56,4 +68,5 @@ test('version-shaped changes without a machine plan are not release-only', () =>
   const result = classifyReleasePullRequest(['mango-ui/packages/admin/package.json']);
   assert.equal(result.releaseOnly, false);
   assert.equal(result.hasPlan, false);
+  assert.equal(result.planCheckRequired, false);
 });

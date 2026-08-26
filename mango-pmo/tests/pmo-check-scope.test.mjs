@@ -344,10 +344,22 @@ test('CI reruns when policy-resolved assurance selections change and keeps expli
 
   const stableSummary = workflow.match(/\n  pmo-doc-check:\n[\s\S]*$/)?.[0] ?? '';
   assert.match(stableSummary, /name: pmo-doc-check/);
-  assert.match(stableSummary, /needs: \[preflight_scope, pmo, cli_js, java, docs\]/);
+  assert.match(stableSummary, /needs: \[preflight_scope, release_plan, pmo, cli_js, java, docs\]/);
   assert.match(stableSummary, /if: \$\{\{ always\(\) \}\}/);
   assert.match(stableSummary, /success\|skipped\) ;;/);
   assert.match(stableSummary, /\*\) exit 1 ;;/);
+});
+
+test('successful release plan or baseline changes always run the completed plan gate', () => {
+  const workflow = fs.readFileSync(
+    new URL('../../.github/workflows/pmo-doc-check.yml', import.meta.url),
+    'utf8',
+  );
+  assert.match(workflow, /release_plan_check: \$\{\{ steps\.release_scope\.outputs\.release_plan_check \}\}/u);
+  assert.match(workflow, /name: Release plan gate/u);
+  assert.match(workflow, /if: needs\.preflight_scope\.outputs\.release_plan_check == 'true'/u);
+  assert.match(workflow, /run: node mango-ui\/scripts\/release\/check-release-plan\.mjs/u);
+  assert.match(workflow, /needs: \[preflight_scope, release_plan, pmo, cli_js, java, docs\]/u);
 });
 
 test('Gitea terminal PR body edits skip diff-based checks but retain the PR contract check', () => {

@@ -309,6 +309,10 @@ mango release repair \
 
 `plan` 汇总上次成功发布以来的全部未发布 Changesets，生成版本、依赖顺序、CLI 矩阵和 Release Notes 摘要，并把用于影响计算的源码 commit、Git tree 与完整文件清单写入计划摘要；Release PR 不允许人工维护包列表。最终 Release-only HEAD 校验会从成功发布 baseline 到该源码快照重算影响，只允许源码快照之后追加机器版本投影，并继续核对最终包版本、依赖、CLI 矩阵、Release Notes 与 lockfile；源码快照漂移、文件清单不一致或混入新的普通源码都会停止。本地 `release:local-check` 使用与 Runner 相同的 Release-only 分类：机器投影执行 `release:pr-check`，不会把版本闭包重复当作普通源码 Changeset；混入源码时仍执行普通 Changeset 和计划检查。发布人仍必须按 `.changeset/release-notes-template.md` 补齐完整 PR 到分类/制品/业务适配映射、业务影响、升级估价、升级步骤、验证和回退；`prepare` 会拒绝空章节、占位符和缺失估价字段。首次接入 Changesets 时，只允许使用仓库登记的一次性 `legacy-reconciliation.json` 对账，首次发布收尾后删除该入口。
 
+npm-only 批次生成 completed baseline 时会完整继承上一成功批次的 Maven 坐标、文件大小和 SHA-256，下一次 `plan` 继续把这些 Maven 事实纳入完整 tuple。`release-plan.json` 或 `release-baseline.json` 的任何 PR 改动都会触发独立 plan gate，避免收尾 PR 因其它代码门禁未命中而跳过校验。
+
+`mango release plan/prepare/publish/status/repair` 和 `registry doctor` 启动后首先读取 `mango-ui/package.json` 的 Node engine。当前运行时不满足该范围时，命令会在读取 release plan、获取本地锁、创建子进程或访问 npm/Maven registry 前失败，并显示期望范围和当前 Node 版本。
+
 Git 影响命中 `mango/**` 生产源码时，`plan` 还要求显式 `--maven-version <version>`，固定选择 all-non-app reactor 和同版本 `mango-docs-bundle`，并自动把 CLI 纳入版本矩阵；没有 Maven 源码影响时传入 Maven 版本会失败，当前 npm-only 批次不会误发 Maven。
 
 `prepare` 要求 clean worktree，执行一次构建并封存精确 tarball 和源码 archive，记录 Git commit/tree、计划摘要和 SHA-256；随后用“封存 tarball + 消费仓未变坐标”运行一次混合消费者并进入 `READY`。Release PR 最终 HEAD 变化时，同一计划下从未远端写入的旧 `READY` 目录会以 `superseded` 后缀保留审计证据，再重建 canonical 候选；已发生远端写入的批次绝不自动换代。Release PR 合并后，`publish` 只接受与 `origin/main` 相同的 prepared tree，按拓扑发布这些文件，不再构建。

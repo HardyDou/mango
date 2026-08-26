@@ -4,6 +4,11 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
 import {
+  buildNormalReleaseBaseline,
+  buildSealedArtifactManifest,
+  preparedCandidateId,
+} from './release-manifest-lib.mjs';
+import {
   assertCompletedReleaseBaseline,
   assertReleasePlanShape,
   buildReleasePlan,
@@ -335,6 +340,109 @@ test('completed release baseline is bound to the immutable plan tuple', () => {
     /package @mango\/base differs/u,
   );
   assert.throws(() => assertCompletedReleaseBaseline(plan, { ...baseline, tag: 'v-other' }), /tag differs/u);
+});
+
+test('Maven evidence survives npm-only completion and remains available to the next plan', () => {
+  const previousMaven = {
+    scope: 'all-non-app',
+    version: '1.0.39',
+    coordinates: [
+      {
+        coordinate: 'io.mango:mango-bom:1.0.39',
+        files: [{ path: 'mango-bom-1.0.39.pom', size: 10, sha256: 'c'.repeat(64) }],
+      },
+    ],
+  };
+  const plan = buildReleasePlan({
+    packageIndex: packages(),
+    managedVersions: { '@mango/base': '1.2.3', '@mango/app': '2.0.0' },
+    source,
+    sourceFiles: ['mango-ui/packages/base/src/index.ts'],
+    changesets: [
+      {
+        id: 'base-fix',
+        file: '.changeset/base-fix.md',
+        sha256: 'a'.repeat(64),
+        summary: 'Fix base.',
+        releases: [{ name: '@mango/base', type: 'patch' }],
+      },
+    ],
+    baseline: {
+      kind: 'successful-release',
+      commit: 'base',
+      tree: 'tree',
+      maven: previousMaven,
+    },
+    release: { tag: 'v-test', title: 'test', notesFile: '.changeset/release-notes.txt', notesSha256: 'b'.repeat(64) },
+    generatedAt: '2026-08-15T00:00:00.000Z',
+  });
+  const sealed = buildSealedArtifactManifest({
+    releasePlanDigest: plan.planDigest,
+    source,
+    npmArtifacts: plan.packages.map((entry, index) => ({
+      name: entry.name,
+      version: entry.targetVersion,
+      file: `artifacts/package-${index}.tgz`,
+      size: 10 + index,
+      sha256: String(index + 3).repeat(64),
+      sri: `sha512-${String.fromCharCode(120 + index).repeat(88)}`,
+      publishedRanges: [],
+    })),
+  });
+  const baseline = buildNormalReleaseBaseline({
+    plan,
+    manifest: {
+      preparedCandidateId: preparedCandidateId(sealed),
+      source: { ...source, mergedCommit: '3'.repeat(40) },
+      sealedArtifactManifest: sealed,
+    },
+  });
+
+  assert.equal(plan.releaseKind, 'npm-only');
+  assert.doesNotThrow(() => assertCompletedReleaseBaseline(plan, baseline));
+  assert.deepEqual(baseline.maven, previousMaven);
+  assert.throws(
+    () =>
+      assertCompletedReleaseBaseline(plan, {
+        ...baseline,
+        maven: {
+          ...baseline.maven,
+          coordinates: [
+            {
+              ...baseline.maven.coordinates[0],
+              files: [{ ...baseline.maven.coordinates[0].files[0], sha256: 'd'.repeat(64) }],
+            },
+          ],
+        },
+      }),
+    /carried Maven evidence differs/u,
+  );
+
+  const nextPlan = buildReleasePlan({
+    packageIndex: packages(),
+    managedVersions: { '@mango/base': '1.2.4', '@mango/app': '2.0.1' },
+    source: { commit: '4'.repeat(40), tree: '5'.repeat(40) },
+    sourceFiles: ['mango-ui/packages/base/src/index.ts'],
+    changesets: [
+      {
+        id: 'next-base-fix',
+        file: '.changeset/next-base-fix.md',
+        sha256: 'e'.repeat(64),
+        summary: 'Fix base again.',
+        releases: [{ name: '@mango/base', type: 'patch' }],
+      },
+    ],
+    baseline,
+    release: {
+      tag: 'v-next',
+      title: 'next',
+      notesFile: '.changeset/release-notes.txt',
+      notesSha256: 'f'.repeat(64),
+    },
+    generatedAt: '2026-08-22T00:00:00.000Z',
+  });
+  assert.deepEqual(nextPlan.baseline.maven, previousMaven);
+  assert.match(JSON.stringify(nextPlan.releasePlanIdentity.resolvedTuple), /io\.mango:mango-bom:1\.0\.39/u);
 });
 
 test('plan recheck keeps dependency-closure packages generated after version projection', () => {

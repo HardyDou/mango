@@ -20,6 +20,7 @@ test('release commands retain complete high-volume build output', async () => {
 
   await runReleaseCli(['prepare', '--consume-registry', 'https://registry.example/npm-group/'], {
     cwd: repository,
+    nodeVersion: '22.23.1',
     spawnSync(_command, _args, options) {
       spawnOptions = options;
       return { status: 0, stdout: largeOutput, stderr: '' };
@@ -33,6 +34,29 @@ test('release commands retain complete high-volume build output', async () => {
 
   assert.equal(spawnOptions.maxBuffer, RELEASE_COMMAND_MAX_BUFFER_BYTES);
   assert.equal(written.length, largeOutput.length);
+});
+
+test('unsupported Node fails before release commands can spawn processes or access registries', async () => {
+  const repository = path.resolve(import.meta.dirname, '../../../..');
+  let spawnCount = 0;
+
+  await assert.rejects(
+    () =>
+      runReleaseCli(['registry', 'doctor'], {
+        cwd: repository,
+        nodeVersion: '24.13.0',
+        env: {
+          MANGO_RELEASE_NPM_PUBLISH_REGISTRY: 'https://registry.example/npm-hosted/',
+          MANGO_RELEASE_NPM_CONSUME_REGISTRY: 'https://registry.example/npm-group/',
+        },
+        spawnSync() {
+          spawnCount += 1;
+          return { status: 0, stdout: '', stderr: '' };
+        },
+      }),
+    /requires Node >=22\.23\.1 <23/u,
+  );
+  assert.equal(spawnCount, 0);
 });
 
 test('release lifecycle exposes the sealed candidate and recovery states', () => {
@@ -79,6 +103,7 @@ test('registry doctor fails closed before running npm when registry roles are mi
     () =>
       runReleaseCli(['registry', 'doctor'], {
         cwd: process.cwd(),
+        nodeVersion: '22.23.1',
         env: {},
         stdout: { write() {} },
         stderr: {
@@ -99,6 +124,7 @@ test('registry doctor requires the complete Maven role tuple when any Maven role
     () =>
       runReleaseCli(['registry', 'doctor'], {
         cwd: process.cwd(),
+        nodeVersion: '22.23.1',
         env: {
           MANGO_RELEASE_NPM_PUBLISH_REGISTRY: 'https://registry.example/npm-hosted/',
           MANGO_RELEASE_NPM_CONSUME_REGISTRY: 'https://registry.example/npm-group/',
@@ -124,6 +150,7 @@ test('registry doctor probes an exact published Maven coordinate when repository
   const commands = [];
   const output = await runReleaseCli(['registry', 'doctor', '--json'], {
     cwd: repository,
+    nodeVersion: '22.23.1',
     env: {
       MANGO_RELEASE_NPM_PUBLISH_REGISTRY: 'https://registry.example/npm-hosted/',
       MANGO_RELEASE_NPM_CONSUME_REGISTRY: 'https://registry.example/npm-group/',

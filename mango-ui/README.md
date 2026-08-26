@@ -273,7 +273,7 @@ pnpm -C mango-ui release:publish -- --authorize --publish-registry=<url> --consu
 pnpm -C mango-ui release:repair -- --authorize --publish-registry=<url> --consume-registry=<url>
 ```
 
-`release:plan` 将 Catalog digest、源码 commit/tree、previous baseline、Changesets、release notes、版本策略、完整 tuple、closure 和顺序绑定为唯一 plan identity。`prepare` 只构建一次并形成 `preparedCandidateId`；进入 `READY` 后，`publish/status/repair` 只读取该 sealed candidate 和 publication journal，不重新 build/pack。`publish` 在首个写请求前完成全部 npm/Maven/docs 坐标双仓预检；`status` 只读回报远端与 journal 差异；`repair` 对可能已发请求但远端仍 absent 的坐标进入 `AMBIGUOUS`，不自动重发。一次性 bootstrap baseline 的输入由 `release:bootstrap-baseline` 与外部精确坐标证据生成，避免从当前源码推断历史摘要或依赖范围；长期发布约束见 [Mango 发布制品与版本同步规范](../mango-pmo/rules/10-release-artifacts.md)。
+`release:plan` 将 Catalog digest、源码 commit/tree、previous baseline、Changesets、release notes、版本策略、完整 tuple、closure 和顺序绑定为唯一 plan identity。npm-only 批次完成时会原样继承上一成功 baseline 的 Maven 坐标与 checksum 证据，下一批计划继续使用这份累计事实；Release PR 只要修改 `release-plan.json` 或 `release-baseline.json`，CI 都会重跑 completed plan 校验。`prepare` 只构建一次并形成 `preparedCandidateId`；进入 `READY` 后，`publish/status/repair` 只读取该 sealed candidate 和 publication journal，不重新 build/pack。所有发布命令会先校验本仓 `package.json` 的 Node engine，运行时不满足时在读取计划、获取锁或访问 registry 前停止。`publish` 在首个写请求前完成全部 npm/Maven/docs 坐标双仓预检；`status` 只读回报远端与 journal 差异；`repair` 对可能已发请求但远端仍 absent 的坐标进入 `AMBIGUOUS`，不自动重发。一次性 bootstrap baseline 的输入由 `release:bootstrap-baseline` 与外部精确坐标证据生成，避免从当前源码推断历史摘要或依赖范围；长期发布约束见 [Mango 发布制品与版本同步规范](../mango-pmo/rules/10-release-artifacts.md)。
 
 ## 12. 快速开始
 
