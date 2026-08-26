@@ -1,5 +1,55 @@
 # Mango PMO Changelog
 
+## 1.4.2 - 2026-08-26
+
+### Pull Requests
+
+- [PR #852](https://github.com/HardyDou/mango/pull/852) Changed the PMO lifecycle contract and projected Resource Bootstrap guidance. Packages: `@mango/pmo@1.4.2`, `@mango/cli@1.2.0`, Maven `1.0.40`. Business Adaptation: preserve historical document hashes and use the current `1.4.2` contract for new lifecycle documents.
+- [PR #855](https://github.com/HardyDou/mango/pull/855) Changed release intent and consumer migration documentation. Packages: `@mango/pmo@1.4.2`, `@mango/cli@1.2.0`. Business Adaptation: upgrade PMO and CLI as one exact tuple.
+- [PR #860](https://github.com/HardyDou/mango/pull/860) Fixed deterministic formatting of the canonical Codex plugin manifest. Packages: `@mango/pmo@1.4.2`, `@mango/cli@1.2.0`. Business Adaptation: none; plugin capabilities and configuration remain unchanged.
+
+### Fixed
+
+- Keep the canonical Codex plugin manifest deterministic across source, package and Business Starter projections.
+
+### Changed
+
+- Advance lifecycle contracts and generated PMO projections to `1.4.2`, retaining explicitly pinned historical document versions by exact content hash.
+
+### Versions
+
+- `@mango/pmo`: `1.4.1` to `1.4.2`; exact dependent CLI: `1.1.1` to `1.2.0`; Maven: `1.0.39` to `1.0.40`.
+
+### Published Packages
+
+- Publish `@mango/pmo@1.4.2` before `@mango/cli@1.2.0` within the Maven `1.0.40` platform batch.
+
+### Business Impact
+
+- Business repositories receive the current lifecycle contracts, generated baseline and plugin projection without a new runtime permission or data contract.
+
+### Upgrade Estimate
+
+- Audience: repositories consuming the Mango PMO baseline and CLI-managed templates.
+- Engineering Effort: 30 to 90 minutes for upgrade, review and locked checks.
+- Execution Window: 1 to 2 hours including historical-document pinning where needed.
+- Service Downtime: none.
+- Rollback Effort: 15 to 30 minutes using PMO `1.4.1` and CLI `1.1.1` with the prior baseline.
+- Assumptions: clean worktree, configured npm registry and unchanged historical document bytes.
+
+### Upgrade Notes
+
+1. Upgrade PMO and CLI together and review the generated baseline diff.
+2. Pin unchanged historical lifecycle documents before upgrade; create new documents only with the `1.4.2` contract.
+
+### Verification
+
+- Build and check the PMO package, verify Business Starter projection, and run a clean PMO/CLI consumer from the consume registry.
+
+### Rollback
+
+- Restore PMO `1.4.1` and CLI `1.1.1` with the prior locked baseline; never overwrite immutable coordinates.
+
 ## 1.4.1 - 2026-08-22
 
 ### Pull Requests

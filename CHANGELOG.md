@@ -2,15 +2,102 @@
 
 ## Unreleased
 
+## v2026.08.26-maven-1.0.40-ai-resource-platform-release - 2026-08-26
+
+Status: `PENDING`. The governed candidate targets Mango Maven `1.0.40`, 192 Maven/docs coordinates and 28 npm packages ending at `@mango/cli@1.2.0`. Registry publication, clean consume-registry verification, Tag and GitHub Release remain pending until the prepared Release PR merges.
+
+### Pull Requests
+
+- [PR #850](https://github.com/HardyDou/mango/pull/850) Fixed release baseline carry-forward and Node runtime validation. Packages: `@mango/cli@1.2.0`. Business Adaptation: release operators must use Node `22.23.1` and retain completed Maven evidence across npm-only closeout.
+- [PR #852](https://github.com/HardyDou/mango/pull/852) Added build-time Resource manifests, content-addressed file bundles and environment-level module receipts. Packages: Mango Maven `1.0.40`, `io.mango:mango-docs-bundle:1.0.40`, `@mango/pmo@1.4.2`. Business Adaptation: applications must run the Resource Bootstrap candidate/finalize lifecycle and preserve receipt storage across restarts.
+- [PR #853](https://github.com/HardyDou/mango/pull/853) Fixed historical `AUTH_ROLE_DATA_SCOPE` FINALIZE cleanup by persisted target identity. Packages: Mango Maven `1.0.40`, `io.mango:mango-docs-bundle:1.0.40`. Business Adaptation: operators must repair inconsistent historical Registry target identities instead of relying on a business-key fallback.
+- [PR #854](https://github.com/HardyDou/mango/pull/854) Added the Spring AI management platform and unified service workbench. Packages: Mango Maven `1.0.40`, `@mango/ai-api@1.1.0`, `@mango/ai@1.1.0`, `@mango/http-client@1.0.1`, `@mango/common@2.0.0`, `@mango/admin-shell@1.0.64`, `@mango/admin@1.1.0`, `@mango/cli@1.2.0`. Business Adaptation: configure an enabled AI provider/model, inject the required Chat stream provider, and verify authenticated chat, attachment and structured-service flows.
+- [PR #855](https://github.com/HardyDou/mango/pull/855) Changed release intent, public component contracts and migration documentation. Packages: all 28 npm coordinates in this plan plus Mango Maven `1.0.40`. Business Adaptation: upgrade the complete generated tuple rather than selecting only directly declared packages.
+- [PR #858](https://github.com/HardyDou/mango/pull/858) Fixed AI service request IDs to use Mango's Web Crypto compatibility API. Packages: `@mango/ai@1.1.0`, `@mango/admin@1.1.0`, `@mango/cli@1.2.0`. Business Adaptation: none; consumers receive the browser compatibility correction through the complete tuple.
+- [PR #860](https://github.com/HardyDou/mango/pull/860) Fixed deterministic formatting of the canonical PMO Codex plugin manifest. Packages: `@mango/pmo@1.4.2`, `@mango/cli@1.2.0`. Business Adaptation: none; plugin capabilities and configuration remain unchanged.
+- [PR #861](https://github.com/HardyDou/mango/pull/861) Fixed the frontend standards recovery lock to cover the complete 32-package candidate set. Packages: release-governance configuration only. Business Adaptation: none; this restores release verification without changing consumer runtime behavior.
+- [PR #863](https://github.com/HardyDou/mango/pull/863) Fixed successful-baseline anchoring after protected squash merges by resolving an exact first-parent tree match. Packages: release-planner source only. Business Adaptation: none; release operators receive fail-closed planning across squash-merged Release PRs.
+- [PR #865](https://github.com/HardyDou/mango/pull/865) Fixed Release PR classification on clean runners by installing pnpm before deterministic PMO projection. Packages: release workflow and validation tests only. Business Adaptation: none; this restores the protected Release PR check on a clean Runner.
+
 ### Fixed
 
-- Preserve the complete accumulated Maven evidence when an npm-only release writes the next successful baseline, and verify the carried coordinates and checksums before accepting the completed plan.
-- Anchor a successful prepared release baseline to a tree-identical squash commit on the candidate's first-parent history, so the next plan retains exact release state without weakening ancestry checks.
+- Preserve completed Maven evidence when a prior npm-only closeout becomes the baseline for the next release plan.
+- Disable historical Authorization role data scopes by exact persisted Registry target and owning tenant, failing closed on inconsistent identity fields.
+- Keep browser streaming responses alive until the consumer finishes or cancels the stream.
+- Use the browser-compatible UUID helper for AI service request correlation.
+- Keep the PMO plugin manifest deterministic under the release formatter.
+- Cover the complete npm candidate set in dependency recovery and anchor squash-merged successful baselines by exact tree identity.
+- Install pnpm before Release PR projection classification on a clean CI Runner.
+
+### Added
+
+- Add build-time Resource module manifests, content-addressed file bundles, incremental receipts and recoverable EXPAND/FINALIZE processing.
+- Add Spring AI provider/model configuration, prompt and skill management, chat conversations, attachments, model switching and structured AI service invocation.
+- Add AI frontend packages with Admin aggregation, CLI projection and public component contracts.
 
 ### Changed
 
-- Run the release plan gate whenever a PR changes `release-plan.json` or `release-baseline.json`.
-- Fail release planning, preparation, publication, recovery, status and registry diagnostics before plan, lock or registry access when the active Node runtime does not satisfy the repository engine.
+- Require `ChatProps.stream` consumers to provide `ChatStreamProvider`; this is the intentional `@mango/common@2.0.0` compatibility break.
+- Reject unsupported Node runtimes before release plan, lock or registry access.
+- Correct PMO Maven impact classification for nested test-fixture POMs under source trees.
+- Publish the full non-application Maven platform batch because Maven production sources changed.
+
+### Versions
+
+- Mango Maven non-app reactor and `io.mango:mango-docs-bundle`: `1.0.39` to `1.0.40`.
+- Direct npm packages: `@mango/ai-api@1.1.0`, `@mango/http-client@1.0.1`, `@mango/common@2.0.0`, `@mango/ai@1.1.0`, `@mango/pmo@1.4.2`, `@mango/admin-shell@1.0.64`, `@mango/admin@1.1.0`, `@mango/cli@1.2.0`.
+- Dependency closure: `@mango/admin-extension@1.0.2`, `@mango/auth@1.0.29`, `@mango/file@1.0.36`, `@mango/grid-layout@1.0.19`, `@mango/grid-widgets@1.0.25`, `@mango/home@1.0.17`, `@mango/rbac@1.0.27`, `@mango/site-shell@1.0.15`, `@mango/system@1.0.35`, `@mango/admin-pages@1.0.36`, `@mango/calendar@1.0.37`, `@mango/cms@1.0.26`, `@mango/job@1.0.30`, `@mango/link@1.0.23`, `@mango/notice@1.0.42`, `@mango/numgen@1.0.38`, `@mango/payment@1.0.29`, `@mango/template@1.0.38`, `@mango/workflow@1.0.43`, `@mango/workflow-business-example@1.0.42`.
+
+### Published Packages
+
+1. Mango Maven `--all-non-app`: 191 non-application reactor coordinates and `io.mango:mango-docs-bundle:1.0.40`; application and capability-app fat JARs are excluded.
+2. npm topology: `@mango/ai-api@1.1.0` -> `@mango/http-client@1.0.1` -> `@mango/common@2.0.0` -> `@mango/admin-extension@1.0.2` -> `@mango/ai@1.1.0` -> `@mango/auth@1.0.29` -> `@mango/file@1.0.36` -> `@mango/grid-layout@1.0.19` -> `@mango/grid-widgets@1.0.25` -> `@mango/home@1.0.17` -> `@mango/pmo@1.4.2` -> `@mango/rbac@1.0.27` -> `@mango/site-shell@1.0.15` -> `@mango/system@1.0.35` -> `@mango/admin-pages@1.0.36` -> `@mango/calendar@1.0.37` -> `@mango/cms@1.0.26` -> `@mango/job@1.0.30` -> `@mango/link@1.0.23` -> `@mango/notice@1.0.42` -> `@mango/numgen@1.0.38` -> `@mango/payment@1.0.29` -> `@mango/template@1.0.38` -> `@mango/workflow@1.0.43` -> `@mango/admin-shell@1.0.64` -> `@mango/workflow-business-example@1.0.42` -> `@mango/admin@1.1.0` -> `@mango/cli@1.2.0`.
+3. Tag and GitHub Release `v2026.08.26-maven-1.0.40-ai-resource-platform-release` are created only after registry and pure consumer verification.
+
+### Business Impact
+
+- AI consumers gain provider/model administration, prompt/skill management, authenticated streaming chat, attachments and structured services. Providers remain disabled without valid configuration.
+- Direct `@mango/common` Chat consumers must add a stream adapter; aggregate consumers receive a matching Admin and CLI tuple.
+- Resource Bootstrap persists module receipts and file-bundle identities. Existing databases upgrade through Flyway and Bootstrap; no business data reset is performed.
+- Stale Authorization Registry identities now stop explicitly and require correction.
+- This component release does not deploy applications, change traffic, grant roles or publish application fat JARs.
+
+### Upgrade Estimate
+
+- Audience: Mango platform maintainers and applications consuming AI, Resource Bootstrap, Authorization, Admin, CLI or PMO artifacts.
+- Engineering Effort: 1 to 3 hours for generated aggregate consumers; 3 to 8 hours for direct consumers adding a Chat stream provider and AI configuration.
+- Execution Window: 2 to 6 hours including dependency upgrade, non-production migration, focused regression and registry-only verification.
+- Service Downtime: no framework-mandated downtime; applications may use a normal restart window for Maven and Flyway adoption.
+- Rollback Effort: 30 to 90 minutes to restore the prior tuple and configuration; database rollback depends on the consumer's verified backup and migration policy.
+- Assumptions: Node `22.23.1`, Java 21, clean locks, configured registries, verified consumer database backup and provider credentials outside source control.
+
+### Upgrade Notes
+
+1. Upgrade Maven to `1.0.40` and the complete npm topology; do not combine `@mango/common@2.0.0` with older Admin or CLI projections.
+2. Direct Chat consumers must implement and pass `ChatStreamProvider` through the required `stream` prop.
+3. Configure an enabled AI provider and compatible model before using chat or structured services.
+4. Run Flyway and Resource Bootstrap on a non-production database, then verify receipts, file bundles and FINALIZE behavior; correct stale Authorization Registry targets on mismatch.
+5. Upgrade `@mango/pmo@1.4.2` and `@mango/cli@1.2.0` together, then run project PMO and generated-project verification.
+
+### Verification
+
+- Recompute and check the Catalog-bound release plan after the release notes, versions, lockfile, PMO projection and CLI matrix are committed.
+- Prepare seals one source archive, 192 Maven/docs coordinates and 28 npm tarballs and runs a mixed consumer without rebuilding.
+- The Release PR must pass `frontend-pr-quality`, `pmo-doc-check` and `pr-contract-check` on the prepared tree.
+- Publish verifies both registry roles, the aggregate Maven consumer and a clean pure consume-registry consumer before creating the Tag or GitHub Release.
+- Representative acceptance covers Resource receipts, Authorization cleanup, AI configuration, streaming chat, attachments, structured service execution and production frontend build.
+
+### Rollback
+
+- Restore Maven `1.0.39`, `@mango/common@1.0.27`, `@mango/ai-api@1.0.0`, `@mango/ai@1.0.0`, `@mango/admin@1.0.69`, `@mango/admin-shell@1.0.63`, `@mango/pmo@1.4.1`, `@mango/cli@1.1.1` and their prior closure; never overwrite immutable coordinates.
+- Restore a consumer database only through its verified backup/migration procedure.
+- For partial or ambiguous publication, keep the prepared candidate and use release status/repair instead of rebuilding.
+
+### Audit History
+
+- PR #849 closed the previous PMO/CLI publication and is not release-bearing for this batch.
+- PR #864 was a superseded Release PR candidate that never merged and performed no registry, Tag or GitHub Release write.
+- The previous immutable Tag and Release `v2026.08.22-pmo-1.4.1-cli-1.1.1-release` remain unchanged.
 
 ## v2026.08.22-pmo-1.4.1-cli-1.1.1-release - 2026-08-22
 

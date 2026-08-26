@@ -1,5 +1,63 @@
 # @mango/cli Changelog
 
+## 1.2.0 - 2026-08-26
+
+### Pull Requests
+
+- [PR #850](https://github.com/HardyDou/mango/pull/850) Fixed release baseline carry-forward and Node runtime validation. Packages: `@mango/cli@1.2.0`. Business Adaptation: release operators use Node `22.23.1` and retain completed Maven evidence across npm-only closeout.
+- [PR #852](https://github.com/HardyDou/mango/pull/852) Added Resource manifests, content-addressed file bundles and environment receipts. Packages: Maven `1.0.40`, `@mango/pmo@1.4.2`, `@mango/cli@1.2.0`. Business Adaptation: generated applications preserve receipt storage and run the managed Bootstrap lifecycle.
+- [PR #854](https://github.com/HardyDou/mango/pull/854) Added the Spring AI platform and unified workbench. Packages: Maven `1.0.40`, the AI/Admin npm tuple and `@mango/cli@1.2.0`. Business Adaptation: configure an enabled provider/model and verify authenticated AI flows.
+- [PR #855](https://github.com/HardyDou/mango/pull/855) Changed CLI projections and migration guidance for the complete release tuple. Packages: `@mango/cli@1.2.0` and its 27 prerequisite npm packages. Business Adaptation: upgrade the generated tuple as one compatible set.
+- [PR #858](https://github.com/HardyDou/mango/pull/858) Fixed browser-compatible AI request IDs. Packages: `@mango/ai@1.1.0`, `@mango/admin@1.1.0`, `@mango/cli@1.2.0`. Business Adaptation: none beyond consuming the complete tuple.
+- [PR #860](https://github.com/HardyDou/mango/pull/860) Fixed deterministic PMO plugin manifest formatting. Packages: `@mango/pmo@1.4.2`, `@mango/cli@1.2.0`. Business Adaptation: none; plugin semantics are unchanged.
+
+### Fixed
+
+- Preserve successful Maven evidence across npm-only closeout and reject unsupported release Node runtimes before registry access.
+- Project the browser-compatible AI request path and deterministic PMO plugin bundle.
+
+### Added
+
+- Project the Maven `1.0.40`, PMO `1.4.2` and complete AI/Admin frontend tuple into CLI-managed consumers.
+
+### Changed
+
+- Require generated consumers to adopt the exact dependency closure ending at `@mango/cli@1.2.0`.
+
+### Versions
+
+- `@mango/cli`: `1.1.1` to `1.2.0`; Maven: `1.0.39` to `1.0.40`; PMO: `1.4.1` to `1.4.2`.
+
+### Published Packages
+
+- Publish Maven `1.0.40` and the 27 prerequisite npm packages before `@mango/cli@1.2.0`.
+
+### Business Impact
+
+- Generated consumers receive Resource Bootstrap and AI capabilities with one compatible Maven/npm/PMO tuple.
+
+### Upgrade Estimate
+
+- Audience: CLI-managed Mango applications and platform maintainers.
+- Engineering Effort: 1 to 3 hours for generated consumers; 3 to 8 hours for direct Chat consumers.
+- Execution Window: 2 to 6 hours including migration and focused verification.
+- Service Downtime: none required by the artifacts; applications may use a normal restart window.
+- Rollback Effort: 30 to 90 minutes to restore the previous exact tuple.
+- Assumptions: Node `22.23.1`, Java 21, configured registries and a verified consumer database backup.
+
+### Upgrade Notes
+
+1. Upgrade Maven, PMO, CLI and the generated frontend dependency closure together.
+2. Direct Chat consumers must provide `ChatStreamProvider` and configure an enabled AI provider/model.
+
+### Verification
+
+- Verify the sealed batch from both registry roles and run a clean generated consumer using only published coordinates.
+
+### Rollback
+
+- Restore CLI `1.1.1`, PMO `1.4.1`, Maven `1.0.39` and the prior exact frontend tuple; never overwrite immutable coordinates.
+
 ## 1.1.1 - 2026-08-22
 
 ### Pull Requests
