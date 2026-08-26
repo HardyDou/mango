@@ -36,9 +36,11 @@ import {
   restoredPublishedBaselines,
   verifyReleasePlanSource,
 } from './release-repository-lib.mjs';
+import { assertReleaseNodeVersion } from '../../packages/mango-cli/src/release-runtime.mjs';
 
 const workspaceRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const repoRoot = resolve(workspaceRoot, '..');
+assertReleaseNodeVersion({ manifestPath: join(workspaceRoot, 'package.json') });
 const args = process.argv.slice(2);
 const includeWorkingTree = args.includes('--include-working-tree');
 const checkOnly = args.includes('--check');

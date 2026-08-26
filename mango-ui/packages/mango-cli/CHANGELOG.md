@@ -46,6 +46,14 @@
 
 ## Unreleased
 
+### Fixed
+
+- Preserve accumulated Maven evidence across npm-only release closeout so the next plan retains the last successful Maven coordinate and checksum facts.
+
+### Changed
+
+- Fail all `mango release` commands before spawning release scripts or probing registries when the active Node runtime does not satisfy the Mango repository engine.
+
 ## 1.1.0 - 2026-08-22
 
 ### Pull Requests

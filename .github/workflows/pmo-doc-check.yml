@@ -19,6 +19,7 @@ jobs:
       distribution: ${{ steps.scope.outputs.distribution }}
       generated_backend: ${{ steps.scope.outputs.generated_backend }}
       frontend: ${{ steps.scope.outputs.frontend }}
+      release_plan_check: ${{ steps.release_scope.outputs.release_plan_check }}
       readmes: ${{ steps.scope.outputs.readmes }}
       backend_mode: ${{ steps.scope.outputs.backend_mode }}
       maven_projects: ${{ steps.scope.outputs.maven_projects }}
@@ -58,6 +59,32 @@ jobs:
             --base ${{ github.event.pull_request.base.sha }} \
             --head ${{ github.event.pull_request.head.sha }} \
             --output "$GITHUB_OUTPUT"
+
+      - name: Classify release plan gate
+        id: release_scope
+        run: |
+          node mango-ui/scripts/release/classify-release-pr.mjs \
+            --base ${{ github.event.pull_request.base.sha }} \
+            --head ${{ github.event.pull_request.head.sha }}
+
+  release_plan:
+    name: Release plan gate
+    needs: preflight_scope
+    if: needs.preflight_scope.outputs.release_plan_check == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js for release plan validation
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Validate accumulated successful release baseline
+        run: node mango-ui/scripts/release/check-release-plan.mjs
 
   pmo:
     name: PMO gates
@@ -392,13 +419,14 @@ jobs:
 
   pmo-doc-check:
     name: pmo-doc-check
-    needs: [preflight_scope, pmo, cli_js, java, docs]
+    needs: [preflight_scope, release_plan, pmo, cli_js, java, docs]
     if: ${{ always() }}
     runs-on: ubuntu-latest
     steps:
       - name: Aggregate PMO gate results
         env:
           PREFLIGHT_SCOPE_RESULT: ${{ needs.preflight_scope.result }}
+          RELEASE_PLAN_RESULT: ${{ needs.release_plan.result }}
           PMO_RESULT: ${{ needs.pmo.result }}
           CLI_JS_RESULT: ${{ needs.cli_js.result }}
           JAVA_RESULT: ${{ needs.java.result }}
@@ -406,6 +434,7 @@ jobs:
         run: |
           for result in \
             "$PREFLIGHT_SCOPE_RESULT" \
+            "$RELEASE_PLAN_RESULT" \
             "$PMO_RESULT" \
             "$CLI_JS_RESULT" \
             "$JAVA_RESULT" \

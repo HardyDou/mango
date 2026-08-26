@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+### Fixed
+
+- Preserve the complete accumulated Maven evidence when an npm-only release writes the next successful baseline, and verify the carried coordinates and checksums before accepting the completed plan.
+
+### Changed
+
+- Run the release plan gate whenever a PR changes `release-plan.json` or `release-baseline.json`.
+- Fail release planning, preparation, publication, recovery, status and registry diagnostics before plan, lock or registry access when the active Node runtime does not satisfy the repository engine.
+
 ## v2026.08.22-pmo-1.4.1-cli-1.1.1-release - 2026-08-22
 
 Status: `PUBLISHED_AND_VERIFIED`. Canonical manifest SHA-256 `3b4b695c86f9ff24763423696ab543dcf6483d25a3e5e5656593328902cc622f` for plan `a948d84b41cbdb2dcedad09e874440c46a94cc2b9c154ac182f65a08bcc99692` and prepared candidate `a89efa10c81dbd8c35a264d8a0f2da944f629fa8c29f92233a985ec8510d99b2` is `COMPLETED`: `@mango/pmo@1.4.1` and `@mango/cli@1.1.1` match their sealed SHA-256/SRI in both npm registry roles, the pure consume-registry consumer passed, and Tag plus GitHub Release are `CREATED_AND_VERIFIED`. Mango Maven and `io.mango:mango-docs-bundle` remain at `1.0.39`.
