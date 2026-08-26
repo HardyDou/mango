@@ -446,7 +446,9 @@ async function publishMavenBatch() {
 
   const results = await runMavenDeployments(pending);
   const failures = [];
-  for (const { coordinate, publication, startedAt, result } of results) {
+  for (const { coordinate, startedAt, result } of results) {
+    const publication = manifest.mavenPublications[coordinate.coordinate];
+    if (!publication) throw new Error(`Maven publication record is missing for ${coordinate.coordinate}`);
     publication.attempts.push(commandEvidence(result, startedAt, repoRoot));
     if (result.status !== 0) {
       publication.status = 'FAILED';
