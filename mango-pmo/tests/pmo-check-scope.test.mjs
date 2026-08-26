@@ -267,6 +267,16 @@ test('CI reruns when policy-resolved assurance selections change and keeps expli
     new URL('../../.github/workflows/pmo-doc-check.yml', import.meta.url),
     'utf8',
   );
+  const preflightJob = workflow.match(/\n  preflight_scope:\n[\s\S]*?(?=\n  release_plan:)/)?.[0] ?? '';
+  assert.match(
+    preflightJob,
+    /Set up pnpm for release projection classification[\s\S]*?pnpm\/action-setup@v4/,
+  );
+  assert.ok(
+    preflightJob.indexOf('Set up pnpm for release projection classification')
+      < preflightJob.indexOf('Classify release plan gate'),
+    'Release projection classification must run after pnpm is available',
+  );
   assert.match(workflow, /pull_request:\n\s+types: \[opened, edited, synchronize, reopened\]/);
   assert.match(
     workflow,
