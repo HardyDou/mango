@@ -50,6 +50,9 @@ jobs:
         with:
           node-version: "22"
 
+      - name: Install frontend dependencies for release projection classification
+        run: pnpm install --frozen-lockfile --dir mango-ui --registry=https://registry.npmjs.org/
+
       - name: Read policy-resolved assurance selections
         id: assurance
         env:
