@@ -14,7 +14,7 @@
 
 ## v2026.08.26-maven-1.0.40-ai-resource-platform-release - 2026-08-26
 
-Status: `PENDING`. Publication, registry verification, Tag and GitHub Release remain deferred until the prepared Release PR is merged and the sealed candidate passes pure consume-registry verification.
+Status: `PUBLISHED_AND_VERIFIED`. Canonical manifest SHA-256 `7d2830aa837e81454e2f190c7ce68b63885f9e4c92a11a24a6b50d989a56d8a7` for plan `7900477b28fceb4a64efe877743eaf1f5a32c5f48fe62a6390b408be0725c8fa` and prepared candidate `a5c63488c40263eb3258550ce7686ddb0933d7d0cf30c63297eae9e6a23a14a7` is `COMPLETED`: all 192 Maven/docs coordinates and all 28 npm packages match the sealed candidate in both publish and consume registries, the pure consume-registry consumer passed, and Tag plus GitHub Release are `CREATED_AND_VERIFIED`.
 
 ### Pull Requests
 
@@ -108,6 +108,7 @@ Status: `PENDING`. Publication, registry verification, Tag and GitHub Release re
 
 - PR #849 closed the previous PMO/CLI publication and is not a release-bearing change in this batch.
 - PR #866 was a superseded Release PR candidate that never merged and performed no registry, Tag or GitHub Release write.
+- The first publication process dispatched all 192 Maven coordinates successfully, then stopped while recording command evidence because the result loop did not resolve each coordinate's publication record. Read-only status proved every dispatched Maven coordinate matched the sealed candidate in both registry roles; authorized repair reused the same candidate, skipped all verified Maven writes, published the untouched npm tuple and completed consumer, Tag and GitHub Release verification. The closeout fixes that result-record lookup for future releases.
 - The previous immutable Tag and Release `v2026.08.22-pmo-1.4.1-cli-1.1.1-release` remain unchanged.
 
 ## v2026.08.22-pmo-1.4.1-cli-1.1.1-release - 2026-08-22
