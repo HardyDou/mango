@@ -210,7 +210,7 @@ import type {
   AiSkill,
 } from '@mango/ai-api';
 import { Back, Close, CopyDocument, Paperclip, Position, RefreshRight } from '@element-plus/icons-vue';
-import { MangoListPage } from '@mango/common';
+import { generateUUID, MangoListPage } from '@mango/common';
 import { useRealtime } from '@mango/common/utils/realtime/useRealtime';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { computed, nextTick, onBeforeUnmount, reactive, ref, watch } from 'vue';
@@ -585,7 +585,7 @@ async function send() {
   conversation.messages.push(assistant);
   sending.value = true;
   streamController = new AbortController();
-  const requestId = crypto.randomUUID();
+  const requestId = generateUUID();
   activeRequestId = requestId;
   await scrollToBottom(true);
   try {
