@@ -7,6 +7,7 @@ import test from 'node:test';
 import {
   gitChangedFiles,
   readGitFile,
+  resolveReleaseBaselineAnchor,
   resolveGitSource,
   resolveRepositoryInputPath,
   verifyReleasePlanSource,
@@ -37,6 +38,7 @@ test('binds source files to a committed source snapshot while returning the fina
   write(repoRoot, 'baseline.txt', 'baseline\n');
   commit(repoRoot, 'baseline');
   const baselineCommit = git(repoRoot, ['rev-parse', 'HEAD']);
+  const baselineTree = git(repoRoot, ['rev-parse', 'HEAD^{tree}']);
   write(repoRoot, 'mango-ui/packages/base/src/index.ts', 'export const value = 1;\n');
   commit(repoRoot, 'source');
   const source = resolveGitSource(repoRoot);
@@ -49,19 +51,97 @@ test('binds source files to a committed source snapshot while returning the fina
   write(repoRoot, 'mango-ui/packages/base/package.json', '{"name":"@mango/base","version":"1.0.1"}\n');
   commit(repoRoot, 'release projection');
 
-  const verified = verifyReleasePlanSource({ repoRoot, baselineCommit, source, sourceFiles });
+  const verified = verifyReleasePlanSource({ repoRoot, baselineCommit, baselineTree, source, sourceFiles });
+  assert.equal(verified.baselineAnchor, baselineCommit);
   assert.deepEqual(verified.sourceFiles, ['mango-ui/packages/base/src/index.ts']);
   assert.deepEqual(verified.projectionFiles, [
     'mango-ui/.changeset/release-plan.json',
     'mango-ui/packages/base/package.json',
   ]);
   assert.throws(
-    () => verifyReleasePlanSource({ repoRoot, baselineCommit, source, sourceFiles: [] }),
+    () => verifyReleasePlanSource({ repoRoot, baselineCommit, baselineTree, source, sourceFiles: [] }),
     /sourceFiles does not match/u,
   );
   assert.throws(
     () =>
-      verifyReleasePlanSource({ repoRoot, baselineCommit, source: { ...source, tree: 'f'.repeat(40) }, sourceFiles }),
+      verifyReleasePlanSource({
+        repoRoot,
+        baselineCommit,
+        baselineTree,
+        source: { ...source, tree: 'f'.repeat(40) },
+        sourceFiles,
+      }),
+    /commit\/tree does not match/u,
+  );
+});
+
+test('anchors a prepared baseline to its tree-equivalent squash commit on the first-parent history', (t) => {
+  const repoRoot = createRepository(t);
+  write(repoRoot, 'base.txt', 'base\n');
+  commit(repoRoot, 'base');
+  git(repoRoot, ['switch', '-c', 'prepared']);
+  write(repoRoot, 'release.txt', 'released\n');
+  commit(repoRoot, 'prepared release');
+  const baselineCommit = git(repoRoot, ['rev-parse', 'HEAD']);
+  const baselineTree = git(repoRoot, ['rev-parse', 'HEAD^{tree}']);
+
+  git(repoRoot, ['switch', 'main']);
+  write(repoRoot, 'release.txt', 'released\n');
+  commit(repoRoot, 'squash release');
+  const squashCommit = git(repoRoot, ['rev-parse', 'HEAD']);
+  write(repoRoot, 'next.txt', 'next\n');
+  commit(repoRoot, 'next release source');
+  const source = resolveGitSource(repoRoot);
+  const sourceFiles = ['next.txt'];
+
+  assert.equal(
+    resolveReleaseBaselineAnchor({ repoRoot, baselineCommit, baselineTree, sourceCommit: source.commit }),
+    squashCommit,
+  );
+  const verified = verifyReleasePlanSource({ repoRoot, baselineCommit, baselineTree, source, sourceFiles });
+  assert.equal(verified.baselineAnchor, squashCommit);
+  assert.deepEqual(verified.sourceFiles, sourceFiles);
+});
+
+test('rejects a non-ancestor baseline when no first-parent commit has the successful tree', (t) => {
+  const repoRoot = createRepository(t);
+  write(repoRoot, 'base.txt', 'base\n');
+  commit(repoRoot, 'base');
+  git(repoRoot, ['switch', '-c', 'prepared']);
+  write(repoRoot, 'release.txt', 'prepared only\n');
+  commit(repoRoot, 'prepared release');
+  const baselineCommit = git(repoRoot, ['rev-parse', 'HEAD']);
+  const baselineTree = git(repoRoot, ['rev-parse', 'HEAD^{tree}']);
+
+  git(repoRoot, ['switch', 'main']);
+  write(repoRoot, 'source.txt', 'different source\n');
+  commit(repoRoot, 'source');
+  const source = resolveGitSource(repoRoot);
+
+  assert.throws(
+    () => resolveReleaseBaselineAnchor({ repoRoot, baselineCommit, baselineTree, sourceCommit: source.commit }),
+    /no tree-equivalent first-parent ancestor/u,
+  );
+});
+
+test('rejects a missing or mismatched recorded baseline tree', (t) => {
+  const repoRoot = createRepository(t);
+  write(repoRoot, 'baseline.txt', 'baseline\n');
+  commit(repoRoot, 'baseline');
+  const baselineCommit = git(repoRoot, ['rev-parse', 'HEAD']);
+
+  assert.throws(
+    () => resolveReleaseBaselineAnchor({ repoRoot, baselineCommit, sourceCommit: baselineCommit }),
+    /commit\/tree does not match/u,
+  );
+  assert.throws(
+    () =>
+      resolveReleaseBaselineAnchor({
+        repoRoot,
+        baselineCommit,
+        baselineTree: 'f'.repeat(40),
+        sourceCommit: baselineCommit,
+      }),
     /commit\/tree does not match/u,
   );
 });
@@ -71,6 +151,7 @@ test('rejects a source snapshot that is not an ancestor of final HEAD', (t) => {
   write(repoRoot, 'baseline.txt', 'baseline\n');
   commit(repoRoot, 'baseline');
   const baselineCommit = git(repoRoot, ['rev-parse', 'HEAD']);
+  const baselineTree = git(repoRoot, ['rev-parse', 'HEAD^{tree}']);
   git(repoRoot, ['switch', '-c', 'source']);
   write(repoRoot, 'source.txt', 'source\n');
   commit(repoRoot, 'source');
@@ -81,7 +162,7 @@ test('rejects a source snapshot that is not an ancestor of final HEAD', (t) => {
   commit(repoRoot, 'final');
 
   assert.throws(
-    () => verifyReleasePlanSource({ repoRoot, baselineCommit, source, sourceFiles }),
+    () => verifyReleasePlanSource({ repoRoot, baselineCommit, baselineTree, source, sourceFiles }),
     /source is not an ancestor/u,
   );
 });
