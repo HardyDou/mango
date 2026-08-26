@@ -1137,7 +1137,7 @@ importers:
         version: 3.5.13(typescript@5.9.3)
     devDependencies:
       '@mango/http-client':
-        specifier: workspace:1.0.0
+        specifier: workspace:1.0.1
         version: link:../http-client
       '@vitejs/plugin-vue':
         specifier: 6.0.8
