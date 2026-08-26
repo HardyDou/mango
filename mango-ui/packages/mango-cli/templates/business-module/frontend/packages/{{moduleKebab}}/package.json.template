@@ -26,7 +26,7 @@
     "@mango/admin-extension": "{{mangoAdminExtensionVersion}}",
     "@mango/api-schema": "1.0.3",
     "@mango/app-runtime": "{{mangoAppRuntimeVersion}}",
-    "@mango/common": "2.0.0",
+    "@mango/common": "1.0.27",
     "element-plus": "2.14.1"
   },
   "peerDependencies": {
