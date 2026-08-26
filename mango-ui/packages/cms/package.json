@@ -39,7 +39,7 @@
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^4.0.0",
-    "@mango/http-client": "workspace:1.0.1",
+    "@mango/http-client": "workspace:1.0.0",
     "typescript": "^5.9.3",
     "vite": "^4.3.3",
     "vitest": "4.1.10"
