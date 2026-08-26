@@ -569,6 +569,10 @@ Issue #690 覆盖 CLI、Maven plugin、Bootstrap/runtime、Resource、BSQL、Boo
 
 若升级后出现 `BOOTSTRAP_RECEIPT_MISSING`、`BOOTSTRAP_FINGERPRINT_MISMATCH`、`OLD_RUNTIME_INSTANCES_ACTIVE`、固定 Maven 版本 POM 或 typed resource declaration 解析错误，先保留 `.mango`、Bootstrap 审计表和构建日志，再按对应模块 README 排障；不要降级单个组件掩盖 tuple 不一致。
 
+### AI 平台批次待发布影响
+
+本批次把 `ai` 加入 CLI 官方可选模块、Admin 模块投影和发布版本矩阵。新生成的 full 项目会聚合 AI 页面、样式与对应后端 starter；custom 项目只有显式选择 `ai` 才生成这些依赖。已有业务项目升级时应使用本次正式发布后的 CLI 重新生成或同步模块选择，并按 Release plan 的完整 npm/Maven tuple 更新，不能手工复制 `admin-modules.json` 或只安装 `@mango/ai`。
+
 ### Issue #722 待发布影响
 
 业务项目不需要修改生成模板或在 `main.ts` 添加 `crypto.randomUUID` polyfill。修复由 `@mango/common` 和 Admin Shell 启动链提供；CLI 后续发布时必须把 `common -> admin-shell -> admin` 的匹配版本写入同一 `release-versions.json` 前端矩阵，业务项目整体升级该矩阵即可。该修复不改变 CLI 命令、模板结构、后端 Maven、菜单、权限或租户配置。

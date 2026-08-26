@@ -140,6 +140,8 @@ import '@mango/admin/style-full.css';
 
 ## 11. 变更影响记录
 
+- 本批次把 `registerMangoAiAdminPages`、`@mango/ai/style.css` 和 AI 模块依赖加入 `full` 聚合入口。使用 `@mango/admin/full` 或 CLI full/custom 模板的宿主会获得 AI 管理页注册与样式；按需宿主仍可直接消费 `@mango/ai/admin-pages`。升级时必须使用发布计划生成的 Admin、AI、Common 与 CLI 精确版本矩阵，不能只替换聚合包。
+
 - Issue #805 待发布修复会让 `@mango/admin/full` 保留 `@mango/cms/admin-pages` external import，确保 CMS 九个页面与 Admin Shell 共享唯一页面注册表。`full` 子入口、页面 key、CMS API、菜单、权限和租户语义不变；业务项目需使用最终发布计划解析的精确 Admin/CLI tuple，不要单独替换一个包。
 
 - `@mango/admin@1.0.66` 聚合 `@mango/admin-shell@1.0.60`，修复 Shell 与 Common 1.0.26 的发布物兼容问题。默认入口、`full` 子入口、样式、菜单、权限、租户和运行时配置保持不变；按 `@mango/cli@1.0.107` 的完整矩阵升级。

@@ -47,6 +47,8 @@
 
 Issue #805 的下一 full 模板候选会显式启用 `mango.event.outbox.enabled=true`，使默认系统事件菜单可直接访问 `/system/events`，并为前端生成真实 `favicon.ico`。这些变更属于 CLI 内置 full 项目模板，不改变本目录的业务模块回退模板；已生成项目需按最终发布 tuple 手工同步对应配置或品牌资产。
 
+当前发布候选还包含 AI 管理与统一工作台、Common Chat streaming provider、HTTP streaming、Admin/CLI AI 模块聚合以及 PMO Maven 范围识别的 Changeset 与升级说明；正式版本号和依赖闭包以合并后的 Mango release plan 为准，业务项目在该批次完成发布后再按锁定的 CLI/PMO tuple 升级。
+
 `business-pmo/mango-baseline` 是 canonical `mango-pmo` 的构建投影，维护边界遵循
 [文档资产规范](../mango-pmo/rules/06-document-assets.md)。更新 PMO 后执行：
 

@@ -1,0 +1,190 @@
+{
+  "schemaVersion": 1,
+  "packageName": "@mango/ai",
+  "components": [
+    {
+      "name": "AiConversationSessionList",
+      "exportKey": ".",
+      "exportName": "AiConversationSessionList",
+      "level": "C4",
+      "hostProfile": "host-agnostic",
+      "environmentProfile": "browser-only",
+      "distribution": ["npm"],
+      "deploymentModes": ["monolith", "microfrontend"],
+      "stability": "stable",
+      "ownerRole": "Frontend Standards Owner",
+      "styleExportKeys": ["./style.css"],
+      "docs": {
+        "path": "README.md",
+        "requiredSections": ["概览", "接入方式", "API 与扩展", "问题排查"]
+      },
+      "testEvidence": ["src/components/AiConversationWorkspace.spec.ts"]
+    },
+    {
+      "name": "AiConversationSuggestion",
+      "exportKey": ".",
+      "exportName": "AiConversationSuggestion",
+      "level": "C4",
+      "hostProfile": "host-agnostic",
+      "environmentProfile": "universal",
+      "distribution": ["npm"],
+      "deploymentModes": ["monolith", "microfrontend"],
+      "stability": "stable",
+      "ownerRole": "Frontend Standards Owner",
+      "styleExportKeys": [],
+      "styleNotApplicableReason": "Type-only public contract; it has no runtime style surface.",
+      "docs": {
+        "path": "README.md",
+        "requiredSections": ["概览", "接入方式", "API 与扩展", "问题排查"]
+      },
+      "testEvidence": ["src/components/AiConversationWorkspace.spec.ts"]
+    },
+    {
+      "name": "AiConversationWorkspace",
+      "exportKey": ".",
+      "exportName": "AiConversationWorkspace",
+      "level": "C4",
+      "hostProfile": "host-agnostic",
+      "environmentProfile": "browser-only",
+      "distribution": ["npm"],
+      "deploymentModes": ["monolith", "microfrontend"],
+      "stability": "stable",
+      "ownerRole": "Frontend Standards Owner",
+      "styleExportKeys": ["./style.css"],
+      "docs": {
+        "path": "README.md",
+        "requiredSections": ["概览", "接入方式", "API 与扩展", "问题排查"]
+      },
+      "testEvidence": ["src/components/AiConversationWorkspace.spec.ts"]
+    },
+    {
+      "name": "AiConversationWorkspaceMessage",
+      "exportKey": ".",
+      "exportName": "AiConversationWorkspaceMessage",
+      "level": "C4",
+      "hostProfile": "host-agnostic",
+      "environmentProfile": "universal",
+      "distribution": ["npm"],
+      "deploymentModes": ["monolith", "microfrontend"],
+      "stability": "stable",
+      "ownerRole": "Frontend Standards Owner",
+      "styleExportKeys": [],
+      "styleNotApplicableReason": "Type-only public contract; it has no runtime style surface.",
+      "docs": {
+        "path": "README.md",
+        "requiredSections": ["概览", "接入方式", "API 与扩展", "问题排查"]
+      },
+      "testEvidence": ["src/components/AiConversationWorkspace.spec.ts"]
+    },
+    {
+      "name": "AiConversationWorkspaceSession",
+      "exportKey": ".",
+      "exportName": "AiConversationWorkspaceSession",
+      "level": "C4",
+      "hostProfile": "host-agnostic",
+      "environmentProfile": "universal",
+      "distribution": ["npm"],
+      "deploymentModes": ["monolith", "microfrontend"],
+      "stability": "stable",
+      "ownerRole": "Frontend Standards Owner",
+      "styleExportKeys": [],
+      "styleNotApplicableReason": "Type-only public contract; it has no runtime style surface.",
+      "docs": {
+        "path": "README.md",
+        "requiredSections": ["概览", "接入方式", "API 与扩展", "问题排查"]
+      },
+      "testEvidence": ["src/components/AiConversationWorkspace.spec.ts"]
+    },
+    {
+      "name": "AiModelsView",
+      "exportKey": ".",
+      "exportName": "AiModelsView",
+      "level": "C4",
+      "hostProfile": "mango-runtime",
+      "environmentProfile": "browser-only",
+      "distribution": ["npm"],
+      "deploymentModes": ["monolith", "microfrontend"],
+      "stability": "stable",
+      "ownerRole": "Frontend Standards Owner",
+      "styleExportKeys": ["./style.css"],
+      "docs": {
+        "path": "README.md",
+        "requiredSections": ["概览", "接入方式", "API 与扩展", "问题排查"]
+      },
+      "testEvidence": ["src/views/models/index.spec.ts"]
+    },
+    {
+      "name": "AiPromptsView",
+      "exportKey": ".",
+      "exportName": "AiPromptsView",
+      "level": "C4",
+      "hostProfile": "mango-runtime",
+      "environmentProfile": "browser-only",
+      "distribution": ["npm"],
+      "deploymentModes": ["monolith", "microfrontend"],
+      "stability": "stable",
+      "ownerRole": "Frontend Standards Owner",
+      "styleExportKeys": ["./style.css"],
+      "docs": {
+        "path": "README.md",
+        "requiredSections": ["概览", "接入方式", "API 与扩展", "问题排查"]
+      },
+      "testEvidence": ["src/utils/requestError.spec.ts"]
+    },
+    {
+      "name": "AiServiceRunView",
+      "exportKey": ".",
+      "exportName": "AiServiceRunView",
+      "level": "C4",
+      "hostProfile": "mango-runtime",
+      "environmentProfile": "browser-only",
+      "distribution": ["npm"],
+      "deploymentModes": ["monolith", "microfrontend"],
+      "stability": "stable",
+      "ownerRole": "Frontend Standards Owner",
+      "styleExportKeys": ["./style.css"],
+      "docs": {
+        "path": "README.md",
+        "requiredSections": ["概览", "接入方式", "API 与扩展", "问题排查"]
+      },
+      "testEvidence": ["src/views/service-run/ChatMessageParts.spec.ts", "src/views/service-run/chatRealtime.spec.ts"]
+    },
+    {
+      "name": "AiServicesView",
+      "exportKey": ".",
+      "exportName": "AiServicesView",
+      "level": "C4",
+      "hostProfile": "mango-runtime",
+      "environmentProfile": "browser-only",
+      "distribution": ["npm"],
+      "deploymentModes": ["monolith", "microfrontend"],
+      "stability": "stable",
+      "ownerRole": "Frontend Standards Owner",
+      "styleExportKeys": ["./style.css"],
+      "docs": {
+        "path": "README.md",
+        "requiredSections": ["概览", "接入方式", "API 与扩展", "问题排查"]
+      },
+      "testEvidence": ["src/utils/requestError.spec.ts"]
+    },
+    {
+      "name": "AiSkillsView",
+      "exportKey": ".",
+      "exportName": "AiSkillsView",
+      "level": "C4",
+      "hostProfile": "mango-runtime",
+      "environmentProfile": "browser-only",
+      "distribution": ["npm"],
+      "deploymentModes": ["monolith", "microfrontend"],
+      "stability": "stable",
+      "ownerRole": "Frontend Standards Owner",
+      "styleExportKeys": ["./style.css"],
+      "docs": {
+        "path": "README.md",
+        "requiredSections": ["概览", "接入方式", "API 与扩展", "问题排查"]
+      },
+      "testEvidence": ["src/utils/requestError.spec.ts"]
+    }
+  ],
+  "legacyComponentExports": []
+}

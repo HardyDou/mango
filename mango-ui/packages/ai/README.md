@@ -88,7 +88,11 @@ API Key 只在供应商保存时提交；编辑留空保留原密钥，页面不
 - 切换模型被阻止：待发送附件与目标模型不兼容；移除附件或选择支持对应格式的模型。
 - 生成期间调整未改变当前回复：这是按轮设置语义，调整从下一条消息生效。
 
-## 11. 相关文档
+## 11. 发布与兼容
+
+这是 AI 管理页面与统一工作台的首个正式发布批次。业务宿主需同时注册 `@mango/ai/admin-pages`、引入 `@mango/ai/style.css`，并使用发布计划锁定的 AI API、Common、HTTP client、Admin 与 CLI 版本。后端还必须先完成同批次 Flyway 和资源同步；只升级前端包不会创建 AI 菜单、权限或租户数据。
+
+## 12. 相关文档
 
 - [AI API 包](../ai-api/README.md)
 - [Mango Extension](../../../mango/mango-extension/README.md)
