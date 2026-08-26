@@ -10,7 +10,7 @@
 - [PR #861](https://github.com/HardyDou/mango/pull/861) Fixed the frontend standards recovery lock to cover the complete 32-package candidate set. Packages: release-governance configuration only. Business Adaptation: none; this restores release verification without changing consumer runtime behavior.
 - [PR #863](https://github.com/HardyDou/mango/pull/863) Fixed successful-baseline anchoring after protected squash merges by resolving an exact first-parent tree match. Packages: release-planner source only. Business Adaptation: none; release operators receive fail-closed planning across squash-merged Release PRs.
 - [PR #865](https://github.com/HardyDou/mango/pull/865) Fixed Release PR classification on clean runners by installing pnpm before deterministic PMO projection. Packages: release workflow and validation tests only. Business Adaptation: none; this restores the protected Release PR check on a clean Runner.
-- [PR #867](https://github.com/HardyDou/mango/pull/867) Completed the Release PR classification fix by installing the frozen `mango-ui` dependency graph before Catalog projection. Packages: release workflow only. Business Adaptation: none; clean runners can import the declared TypeScript dependency during protected classification.
+- [PR #867](https://github.com/HardyDou/mango/pull/867) Fixed Release PR classification by installing the frozen `mango-ui` dependency graph before Catalog projection. Packages: release workflow only. Business Adaptation: none; clean runners can import the declared TypeScript dependency during protected classification.
 
 ## Fixed
 
@@ -89,5 +89,5 @@
 ## Audit History
 
 - PR #849 closed the previous PMO/CLI publication and is not a release-bearing change in this batch.
-- PR #864 was a superseded Release PR candidate that never merged and performed no registry, Tag or GitHub Release write.
+- PR #866 was a superseded Release PR candidate that never merged and performed no registry, Tag or GitHub Release write.
 - The previous immutable Tag and Release `v2026.08.22-pmo-1.4.1-cli-1.1.1-release` remain unchanged.
