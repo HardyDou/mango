@@ -1,0 +1,92 @@
+{
+  "name": "@mango/ai",
+  "version": "1.0.0",
+  "private": false,
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "mangoAdmin": {
+    "businessDomainCode": "AI",
+    "businessDomainName": "AI 管理",
+    "groupName": "AI 管理",
+    "style": "@mango/ai/style.css",
+    "registrars": [
+      {
+        "name": "registerMangoAiAdminPages",
+        "import": "@mango/ai/admin-pages"
+      }
+    ]
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./admin-pages": {
+      "types": "./dist/admin-pages.d.ts",
+      "import": "./dist/admin-pages.js"
+    },
+    "./style.css": "./dist/style.css"
+  },
+  "scripts": {
+    "build": "vite build && node ../../scripts/generate-package-types.mjs",
+    "test": "vitest run"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "package.json"
+  ],
+  "dependencies": {
+    "@element-plus/icons-vue": "2.3.2",
+    "@mango/admin-extension": "workspace:1.0.1",
+    "@mango/ai-api": "workspace:1.0.0",
+    "@mango/api-schema": "workspace:1.0.3",
+    "@mango/app-runtime": "workspace:1.0.6",
+    "@mango/common": "workspace:1.0.27",
+    "markdown-it": "14.1.0"
+  },
+  "peerDependencies": {
+    "element-plus": ">=2.14.1 <3",
+    "vue": ">=3.5.13 <4",
+    "vue-router": ">=4.1.6 <5"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^4.0.0",
+    "@vue/compiler-sfc": "3.5.13",
+    "@vue/test-utils": "2.4.11",
+    "happy-dom": "20.10.6",
+    "@types/markdown-it": "14.1.2",
+    "typescript": "^5.9.3",
+    "vite": "^4.3.3",
+    "vitest": "4.1.10",
+    "vue-router": "4.6.4"
+  },
+  "publishConfig": {
+    "registry": "http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/"
+  },
+  "mangoArchitecture": {
+    "architectureLayer": "FE2",
+    "role": "domain",
+    "domain": "ai",
+    "ownerRole": "Frontend Standards Owner",
+    "sourceExports": {
+      ".": {
+        "source": "./src/index.ts",
+        "kind": "code"
+      },
+      "./admin-pages": {
+        "source": "./src/admin-pages.ts",
+        "kind": "code"
+      }
+    },
+    "nonCodeExports": {
+      "./style.css": {
+        "source": "./src/style.css",
+        "dist": "./dist/style.css",
+        "generation": "build"
+      }
+    }
+  }
+}

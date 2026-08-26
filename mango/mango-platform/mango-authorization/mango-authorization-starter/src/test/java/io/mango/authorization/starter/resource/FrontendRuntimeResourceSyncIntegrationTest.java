@@ -37,6 +37,7 @@ import io.mango.resource.core.mapper.ResourceChangeLogMapper;
 import io.mango.resource.core.mapper.ResourceRegistryMapper;
 import io.mango.resource.core.mapper.ResourceSyncLogMapper;
 import io.mango.resource.core.sync.ResourceContentHasher;
+import io.mango.resource.core.sync.ResourceModuleReceiptRepository;
 import io.mango.resource.core.sync.ResourceRegistryLock;
 import io.mango.resource.core.sync.ResourceRegistryRepository;
 import io.mango.resource.core.service.IResourceRegistryService;
@@ -414,6 +415,7 @@ class FrontendRuntimeResourceSyncIntegrationTest {
             FrontendAppRegistryResourceHandler.class,
             FrontendModuleRuntimeStrategyResourceHandler.class,
             ResourceRegistryRepository.class,
+            ResourceModuleReceiptRepository.class,
             ResourceRegistryLock.class,
             ResourceRegistryService.class
     })

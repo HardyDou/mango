@@ -91,6 +91,18 @@
   ],
   "fullPackages": [
     {
+      "cliVersionKey": "mangoAi",
+      "code": "ai",
+      "packageName": "@mango/ai",
+      "registrars": [
+        {
+          "import": "@mango/ai/admin-pages",
+          "name": "registerMangoAiAdminPages"
+        }
+      ],
+      "style": "@mango/ai/style.css"
+    },
+    {
       "cliVersionKey": "mangoCalendar",
       "code": "calendar",
       "packageName": "@mango/calendar",

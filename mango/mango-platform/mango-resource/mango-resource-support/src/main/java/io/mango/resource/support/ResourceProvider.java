@@ -3,6 +3,7 @@ package io.mango.resource.support;
 import io.mango.resource.support.model.ResourceDeclaration;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * 业务模块资源声明提供者。
@@ -28,6 +29,15 @@ public interface ResourceProvider {
      */
     default List<String> moduleCodes() {
         return List.of();
+    }
+
+    /**
+     * 当前 Provider 声明的固定模块依赖。
+     *
+     * @return moduleCode 到其前置 moduleCode 列表的映射
+     */
+    default Map<String, List<String>> moduleDependencies() {
+        return Map.of();
     }
 
     /**

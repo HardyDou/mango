@@ -54,6 +54,8 @@ Resource 声明的 `execution-phase` 与 `sync-mode` 正交：
 - 支持 `BOOTSTRAP_REQUIRED`、`RUNTIME_EVENTUAL`、`MANUAL` 执行阶段和 generation fencing。
 - 支持正式资源和 demo 资源目录隔离，demo 默认不扫描。
 - 支持本地单体注册中心和微服务远程上报两种拓扑。
+- 支持构建期生成模块完整 manifest 和内容寻址文件包；部署时优先消费该不可变 manifest。
+- 按环境持久化模块 receipt；相同模块 hash 在内部声明解析前整模块跳过。
 - 提供后台管理接口查询注册资源、同步日志、变更日志和处理器字段契约。
 - 为模块运行态诊断记录本 JVM 本次声明 fingerprint 与物化结果；历史 SUCCESS 不能单独证明当前可用。
 
@@ -126,6 +128,7 @@ Resource 声明的 `execution-phase` 与 `sync-mode` 正交：
 | `locations` | `classpath*:META-INF/mango/resources/*.{json,yml,yaml}` | 声明文件扫描路径。 |
 | `demo-enabled` | `false` | 是否额外扫描 demo 资源声明。 |
 | `demo-locations` | `classpath*:META-INF/mango/demo/*.{json,yml,yaml}` | demo 资源声明扫描路径。 |
+| `artifact-output-directory` | 空 | 仅供构建专用入口使用的输出目录；正式 POM 传 `${project.build.outputDirectory}`，普通 Runtime 不因该值启动生成器。 |
 | `remote.enabled` | `true` | `mango-resource-sync-starter` 是否向注册中心上报声明。 |
 | `remote.app-code` | 空 | 远程上报应用编码，空时取 `spring.application.name`。 |
 | `remote.service-code` | 空 | 远程上报服务编码，空时取 `spring.application.name`。 |
@@ -158,6 +161,8 @@ Resource Registry 会在批量同步 active 声明前做资源类型拓扑排序
 Resource Registry 会重放同一批次内声明了该依赖的 AUTO 资源，确保菜单默认角色授权这类派生绑定能在角色创建后补齐。
 依赖资源类型未出现在本批次时不会强制失败，目标资源是否已存在仍由具体 handler 校验。
 出现循环依赖时，同步会在调用目标 handler 前失败，并输出循环路径。
+
+`ResourceProvider.moduleDependencies()` 声明模块级固定前置关系。构建 manifest 内的模块按该关系拓扑执行；依赖缺失或成环时，在调用 Handler 前 fail closed。它只表达少量稳定模块边界，不替代资源类型级 handler 依赖。
 
 资源声明来源支持：
 
@@ -237,6 +242,7 @@ Resource Registry 能否同步某个资源类型，以运行时是否装配对�
 | `mango-template` | `PRINT_TEMPLATE` |
 | `mango-job` | `JOB_DEFINITION` |
 | `mango-file` | `FILE_STORAGE_CONFIG`、`FILE_SETTINGS` |
+| `mango-ai` | `AI_PROVIDER_CONNECTION`、`AI_MODEL`、`AI_PROMPT`、`AI_SKILL`、`AI_SERVICE` |
 
 声明新资源前先确认：
 
@@ -249,7 +255,6 @@ Resource Registry 能否同步某个资源类型，以运行时是否装配对�
 | 资源类型 | 当前状态 | 现阶段使用方式 |
 |----------|----------|----------------|
 | `MESSAGE_EVENT` | 无目标表字段契约和 `ResourceHandler`。 | 通知资源当前使用 `MESSAGE_CHANNEL` 和 `MESSAGE_TEMPLATE`。事件、路由或触发规则需要等 notice 模块补齐 handler 后再开放。 |
-| `AI_PROMPT` | 无 `mango-ai` 目标模块运行时和 `ResourceHandler`。 | 暂不通过 Resource Registry 声明 AI Prompt。 |
 
 ## 7. 声明文件示例
 
@@ -327,12 +332,39 @@ Flyway 路径：`mango-resource-core/src/main/resources/db/migration/resource`�
 | `resource_registry` | 记录资源 ID、类型、bizKey、目标表、目标 ID、hash、同步模式和状态。 |
 | `resource_sync_log` | 记录每次同步、跳过、禁用、删除的结果。 |
 | `resource_change_log` | 记录注册资源内容变化。 |
+| `resource_module_receipt` | 记录 environment/app/service/module 最后成功安装的 hash、generation、manifest fingerprint 和 `EXPANDED`/`FINALIZED` 状态。 |
 
 资源注册中心只保存声明索引和同步审计数据。字典、系统参数、消息模板、编号规则、工作流配置等目标资源仍由目标模块自己的 migration 和资源处理器维护。
 
 Runtime 前由 `ResourceBootstrapStepContributor` 扫描并幂等同步 `BOOTSTRAP_REQUIRED` 声明；Runtime 中由 `ResourceEventualReconciliationWorker` 只对账 `RUNTIME_EVENTUAL` 声明。本地注册中心由 `ResourceRegistryService` 完成目标资源 upsert、disable 和 delete。
 
 声明 identity 与 Bootstrap 步骤 fingerprint 使用独立、确定性的 canonical JSON mapper，按稳定属性/Map key 顺序序列化，不继承宿主应用的 HTTP/Web Jackson module。相同 typed declaration 在非 Web Bootstrap 与 Web Runtime 中生成相同 hash，包括值类型为 `LONG` 且 Runtime 把 HTTP `Long` 输出为字符串的场景。DEBUG 诊断只记录模块、声明数量和逐步骤 hash，不打印完整声明内容。
+
+### 9.1 构建 manifest 与模块 receipt
+
+最终应用可以在 Maven `process-classes` 阶段调用 `ResourceManifestBuildApplication`，输出：
+
+```text
+META-INF/mango/resource-bootstrap-manifest.json
+META-INF/mango/files-manifest.json
+META-INF/mango/files.bundle/objects/<sha256>
+```
+
+构建入口使用不含 component scan 和 Spring Boot auto-configuration 的最小 Spring context，只加载声明文件、`FileResourceProvider` 以及 `artifact-context-sources` 显式列出的确定性 Provider 配置，不创建 DataSource、Flyway 或普通 Bootstrap。`asset:` 文件在构建时校验 SHA-256 并改写为 bundle 内的内容寻址 classpath 位置；部署端继续复用 `FILE_ASSET` Handler 和当前 `FileStorage` 路由物化 Local/S3/MinIO 等目标后端。
+
+Spring Boot 可执行 JAR 将上述 `META-INF` 条目保留在 JAR 根目录。Bootstrap 发现 `resource-bootstrap-manifest.json` 时优先读取外层模块 envelope；未提供构建 manifest 的旧应用继续走运行时 Provider/声明扫描兼容路径。
+
+每个模块 hash 覆盖模块 code、固定依赖和完整规范化声明。服务端先读取 `resource_module_receipt`：
+
+| receipt 条件 | 行为 |
+|--------------|------|
+| hash 相同且状态满足当前 EXPAND/FINALIZE | 不解析模块内部声明，不调用 Handler，不写 registry、sync log 或 change log。 |
+| hash 变化 | 解析并校验该模块完整声明，按模块协调；成功后才写 receipt。 |
+| EXPAND 成功 | receipt 进入 `EXPANDED`；不禁用缺失资源。 |
+| FINALIZE 成功 | receipt 进入 `FINALIZED`；只禁用该变化模块内缺失的 Registry-owned `AUTO`。 |
+| 协调失败或 generation fence 失效 | 不推进 receipt，下次用旧成功状态重试。 |
+
+构建 POM、Boot JAR 检查以及与 cold baseline、sealed release manifest 的关系见[业务 API 构建期 cold baseline](../../../mango-docs/guides/business-integration/build-time-cold-baseline.md)。
 
 ## 10. 同步规则
 
@@ -344,6 +376,7 @@ Runtime 前由 `ResourceBootstrapStepContributor` 扫描并幂等同步 `BOOTSTR
 | 声明状态为 `DISABLED` | 调用目标模块 `disable`，目标模块负责逻辑禁用。 |
 | 声明状态为 `DEPRECATED` | 只更新注册中心声明状态和审计，目标资源继续可读，不调用 `upsert` 或 `disable`。 |
 | 声明状态为 `REMOVED` | 调用目标模块 `delete`；目标模块不支持物理删除时降级为 `disable`。 |
+| `AUTO` 声明在 FINALIZE 中缺失 | Registry 只用持久化的 `targetId/targetTable` 重建删除输入；目标 Handler 必须按该稳定目标身份停用或明确失败，不能要求已经从 classpath 消失的原声明字段。 |
 | 强制同步 | 后台 `/resource/sync/force` 触发，跳过 hash 未变化限制。 |
 
 同一批 active 声明如果包含跨类型依赖，Resource Registry 按目标 `ResourceHandler.dependsOnResourceTypes()`

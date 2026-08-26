@@ -1,0 +1,83 @@
+CREATE TABLE IF NOT EXISTS `ai_prompt_template` (
+  `id` bigint NOT NULL,
+  `code` varchar(64) NOT NULL,
+  `name` varchar(100) NOT NULL,
+  `description` varchar(500) DEFAULT NULL,
+  `template` text NOT NULL,
+  `variables_json` varchar(8192) DEFAULT NULL,
+  `status` varchar(16) NOT NULL DEFAULT 'DRAFT',
+  `template_version` int NOT NULL DEFAULT 1,
+  `published_at` datetime DEFAULT NULL,
+  `tenant_id` varchar(64) NOT NULL,
+  `org_id` bigint DEFAULT NULL,
+  `created_by` bigint DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_by` bigint DEFAULT NULL,
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_ai_prompt_tenant_code` (`tenant_id`, `code`),
+  KEY `idx_ai_prompt_tenant_status` (`tenant_id`, `status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='租户级 AI Prompt 模板';
+
+CREATE TABLE IF NOT EXISTS `ai_skill` (
+  `id` bigint NOT NULL,
+  `code` varchar(64) NOT NULL,
+  `name` varchar(100) NOT NULL,
+  `description` varchar(500) DEFAULT NULL,
+  `instructions` text NOT NULL,
+  `tool_ids_json` varchar(8192) DEFAULT NULL,
+  `enabled` tinyint NOT NULL DEFAULT 1,
+  `tenant_id` varchar(64) NOT NULL,
+  `org_id` bigint DEFAULT NULL,
+  `created_by` bigint DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_by` bigint DEFAULT NULL,
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_ai_skill_tenant_code` (`tenant_id`, `code`),
+  KEY `idx_ai_skill_tenant_enabled` (`tenant_id`, `enabled`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='租户级 AI Skill';
+
+CREATE TABLE IF NOT EXISTS `ai_tool` (
+  `id` bigint NOT NULL,
+  `code` varchar(64) NOT NULL,
+  `name` varchar(100) NOT NULL,
+  `description` varchar(500) DEFAULT NULL,
+  `tool_type` varchar(16) NOT NULL,
+  `endpoint` varchar(1024) NOT NULL,
+  `input_schema_json` text NOT NULL,
+  `output_schema_json` text NOT NULL,
+  `enabled` tinyint NOT NULL DEFAULT 1,
+  `tenant_id` varchar(64) NOT NULL,
+  `org_id` bigint DEFAULT NULL,
+  `created_by` bigint DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_by` bigint DEFAULT NULL,
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_ai_tool_tenant_code` (`tenant_id`, `code`),
+  KEY `idx_ai_tool_tenant_enabled` (`tenant_id`, `enabled`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='租户级 AI 工具';
+
+CREATE TABLE IF NOT EXISTS `ai_service_definition` (
+  `id` bigint NOT NULL,
+  `code` varchar(64) NOT NULL,
+  `name` varchar(100) NOT NULL,
+  `description` varchar(500) DEFAULT NULL,
+  `service_type` varchar(32) NOT NULL,
+  `capability` varchar(32) DEFAULT NULL,
+  `prompt_id` bigint DEFAULT NULL,
+  `skill_id` bigint DEFAULT NULL,
+  `input_schema_json` text NOT NULL,
+  `output_schema_json` text NOT NULL,
+  `enabled` tinyint NOT NULL DEFAULT 1,
+  `tenant_id` varchar(64) NOT NULL,
+  `org_id` bigint DEFAULT NULL,
+  `created_by` bigint DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_by` bigint DEFAULT NULL,
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_ai_service_tenant_code` (`tenant_id`, `code`),
+  KEY `idx_ai_service_tenant_enabled` (`tenant_id`, `enabled`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='租户级 AI 服务定义';

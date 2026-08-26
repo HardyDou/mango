@@ -124,6 +124,14 @@
 
 ## 6. 配置说明
 
+`mango-authorization-starter` 在没有业务认证模块时提供一条默认安全链。完整管理端同时引入 `mango-auth-starter`，必须显式关闭该兜底链，由 Auth 主链统一完成 token 恢复和 API 资源授权，避免两条 `any request` 链并存：
+
+```yaml
+mango:
+  security:
+    default-chain-enabled: false
+```
+
 API 资源扫描配置示例：
 
 ```yaml
@@ -173,6 +181,7 @@ mango:
 
 | 配置项 | 默认值 | 含义 |
 |--------|--------|------|
+| `mango.security.default-chain-enabled` | `true` | 是否装配 Authorization starter 的兜底安全链；完整管理端由 Auth starter 提供主链时设为 `false` |
 | `mango.authorization.resource-sync.enabled` | `true` | 是否启用 MVC / Gateway 资源同步自动配置 |
 | `mango.authorization.resource-sync.module-name` | 空，兜底 `unknown-module` | 扫描资源无法解析模块时使用的模块名 |
 | `mango.authorization.resource-sync.mode` | `read` | legacy writer 模式：`write` 直写授权服务，`read` 只扫描并输出日志 |
@@ -706,7 +715,7 @@ Resource Registry 还支持授权基线声明：
 | 资源类型 | 作用 |
 |----------|------|
 | `AUTH_ROLE` | 按 `tenantId + appCode + realm + actorType + roleCode` 幂等创建或更新角色，禁用时停用角色。 |
-| `AUTH_ROLE_DATA_SCOPE` | 按 `tenantId + appCode + roleCode + resourceCode` 声明角色数据权限，`scopeValues` 保存为 JSON 数组；`INIT_ONLY` 首次接管已有目标时保留运行时配置。 |
+| `AUTH_ROLE_DATA_SCOPE` | 按 `tenantId + appCode + roleCode + resourceCode` 声明角色数据权限，`scopeValues` 保存为 JSON 数组；`INIT_ONLY` 首次接管已有目标时保留运行时配置。FINALIZE 清理已缺失的 `AUTO` 声明时，Handler 通过 Registry `targetId` 读取真实目标租户并精确停用，不依赖已消失声明的字段。 |
 | `AUTH_SUBJECT_ROLE` | 按 `subjectId`、`subjectCode`、`memberNo` 或 `username` 解析成员主体，并通过 `roleCodes` 确保角色绑定；禁用时移除声明中的角色绑定。 |
 
 同一轮资源同步中，`AUTH_MENU` 依赖 `AUTH_ROLE`。Resource Registry 会先同步角色，再同步菜单；当角色声明发生创建或更新时，也会重放依赖它的菜单声明，补齐 `roleCodes` 对应的 `authorization_role_menu` 绑定。
@@ -732,6 +741,7 @@ Resource Registry 还支持授权基线声明：
 | 前端页面打不开 | 查菜单 `component` 是否等于前端包注册的页面 key，`pageType` 和 `externalUrl` 是否匹配 |
 | 登录后 `/auth/info` 权限为空 | 查成员角色绑定的 `subjectId` 是否等于登录 `memberId`，`appCode`、`realm`、`actorType` 是否一致 |
 | 模块诊断的 Authorization 条件失败 | Resource 当前声明已 APPLIED，但菜单或 API 物化行有缺失；响应只给 expected/missing 计数和 page key，不暴露 API path、handler、用户、角色或租户。 |
+| FINALIZE 报 `AUTH_ROLE_DATA_SCOPE field is required: tenantId` | 这是旧 Handler 无法消费 Registry `targetId` 的升级缺陷；升级到包含 Issue #835 修复的 Maven 版本后重试原 generation，不要保留废弃声明、手工改授权表或重建已有数据库。 |
 
 ## 15. 相关文档
 
@@ -745,3 +755,4 @@ Resource Registry 还支持授权基线声明：
 ## 16. 变更影响记录
 
 - PermissionApi 契约由 `PermissionController` 承载，授权菜单服务只暴露内部权限码查询能力。该变更不改变权限码来源、菜单资源同步、角色授权链路和 `/authorization/permissions` 对外路径。
+- Issue #835 只修复已有数据库中缺失 `AUTH_ROLE_DATA_SCOPE` 的 FINALIZE 停用合同；声明格式、正常 upsert、`INIT_ONLY`、API、菜单和前端能力不变。

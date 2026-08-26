@@ -1,21 +1,14 @@
 <template>
   <div class="chat-component">
     <!-- Chat Launcher Button -->
-    <div
-      v-if="!isOpen"
-      class="chat-launcher"
-      @click="toggle"
-    >
+    <div v-if="!isOpen" class="chat-launcher" @click="toggle">
       <el-icon :size="24">
         <ChatDotRound />
       </el-icon>
     </div>
 
     <!-- Chat Window -->
-    <div
-      v-if="isOpen"
-      class="chat-window"
-    >
+    <div v-if="isOpen" class="chat-window">
       <!-- Header -->
       <div class="chat-header">
         <div class="chat-title">
@@ -25,18 +18,10 @@
           <span>{{ t('chat.title') }}</span>
         </div>
         <div class="chat-actions">
-          <el-button
-            text
-            size="small"
-            @click="handleNewSession"
-          >
+          <el-button text size="small" @click="handleNewSession">
             {{ t('chat.sessionNew') }}
           </el-button>
-          <el-button
-            text
-            size="small"
-            @click="close"
-          >
+          <el-button text size="small" @click="close">
             <el-icon>
               <Close />
             </el-icon>
@@ -45,15 +30,9 @@
       </div>
 
       <!-- Messages -->
-      <div
-        ref="messagesRef"
-        class="chat-messages"
-      >
+      <div ref="messagesRef" class="chat-messages">
         <!-- Welcome Message -->
-        <div
-          v-if="messages.length === 0"
-          class="chat-welcome"
-        >
+        <div v-if="messages.length === 0" class="chat-welcome">
           <div class="welcome-icon">
             <el-icon :size="48">
               <ChatDotRound />
@@ -64,20 +43,12 @@
           </p>
 
           <!-- Recommended Questions -->
-          <div
-            v-if="recommendedQuestions && recommendedQuestions.length > 0"
-            class="recommended-questions"
-          >
+          <div v-if="recommendedQuestions && recommendedQuestions.length > 0" class="recommended-questions">
             <div class="recommended-label">
               {{ t('chat.recommended') }}
             </div>
             <div class="recommended-list">
-              <el-tag
-                v-for="q in recommendedQuestions"
-                :key="q"
-                class="recommended-item"
-                @click="sendRecommended(q)"
-              >
+              <el-tag v-for="q in recommendedQuestions" :key="q" class="recommended-item" @click="sendRecommended(q)">
                 {{ q }}
               </el-tag>
             </div>
@@ -85,12 +56,7 @@
         </div>
 
         <!-- Message List -->
-        <div
-          v-for="msg in messages"
-          :key="msg.id"
-          class="message-item"
-          :class="`message-${msg.role}`"
-        >
+        <div v-for="msg in messages" :key="msg.id" class="message-item" :class="`message-${msg.role}`">
           <div class="message-avatar">
             <el-icon v-if="msg.role === 'user'">
               <User />
@@ -104,14 +70,8 @@
           </div>
           <div class="message-content">
             <!-- Thinking chain (collapsible) -->
-            <div
-              v-if="msg.role === 'thinking' && enableThinking"
-              class="thinking-section"
-            >
-              <div
-                class="thinking-header"
-                @click="toggleThinking(msg.id)"
-              >
+            <div v-if="msg.role === 'thinking' && enableThinking" class="thinking-section">
+              <div class="thinking-header" @click="toggleThinking(msg.id)">
                 <el-icon>
                   <QuestionFilled />
                 </el-icon>
@@ -121,29 +81,20 @@
                   <ArrowUp v-else />
                 </el-icon>
               </div>
-              <div
-                v-show="!collapsedThinking.has(msg.id)"
-                class="thinking-content"
-              >
+              <div v-show="!collapsedThinking.has(msg.id)" class="thinking-content">
                 {{ msg.content }}
               </div>
             </div>
 
             <!-- Regular message content -->
-            <div
-              v-else-if="msg.role !== 'thinking'"
-              class="message-text"
-            >
+            <div v-else-if="msg.role !== 'thinking'" class="message-text">
               {{ msg.content }}
             </div>
           </div>
         </div>
 
         <!-- Loading indicator -->
-        <div
-          v-if="isLoading"
-          class="message-item message-assistant"
-        >
+        <div v-if="isLoading" class="message-item message-assistant">
           <div class="message-avatar">
             <el-icon>
               <ChatLineRound />
@@ -159,20 +110,12 @@
         </div>
 
         <!-- Error message -->
-        <div
-          v-if="error"
-          class="chat-error"
-        >
+        <div v-if="error" class="chat-error">
           <el-icon>
             <WarnTriangleFilled />
           </el-icon>
           <span>{{ errorMessage }}</span>
-          <el-button
-            size="small"
-            type="primary"
-            link
-            @click="retryLastMessage"
-          >
+          <el-button size="small" type="primary" link @click="retryLastMessage">
             {{ t('chat.retry') }}
           </el-button>
         </div>
@@ -190,11 +133,7 @@
           @keydown.enter.exact.prevent="handleSend"
         />
         <div class="chat-input-actions">
-          <el-button
-            :disabled="!canSend"
-            type="primary"
-            @click="handleSend"
-          >
+          <el-button :disabled="!canSend" type="primary" @click="handleSend">
             {{ t('chat.send') }}
           </el-button>
         </div>
@@ -215,14 +154,9 @@
  * - Recommended questions
  * - Auto-scroll to latest message
  *
- * Backend API: POST /api/ai/chat (SSE)
- * Headers: Authorization: Bearer {token}, TENANT-ID: {tenantId}
- * Request: {message, sessionId?, enableThinking?}
- * Response (SSE):
- *   data: {"type": "thinking", "content": "..."}
- *   data: {"type": "message", "content": "..."}
- *   data: {"type": "done", "sessionId": "..."}
- *   data: {"type": "error", "message": "..."}
+ * The caller supplies the authenticated stream provider through the required
+ * `stream` prop. This component deliberately does not know the transport or
+ * authentication details.
  */
 
 import { ref, computed, watch, nextTick, onMounted } from 'vue';
@@ -239,20 +173,16 @@ import {
   ArrowUp,
   WarnTriangleFilled,
 } from '@element-plus/icons-vue';
-import { Session } from '../../utils/storage';
 import type { ChatMessage, ChatProps, ChatEmits, ChatExpose, AIEvent } from './types';
 
-const props = withDefaults(
-  defineProps<ChatProps>(),
-  {
-    sessionId: '',
-    welcomeMessage: 'chat.welcome',
-    recommendedQuestions: () => [],
-    enableThinking: true,
-    maxLength: 2000,
-    placeholder: 'chat.placeholder',
-  }
-);
+const props = withDefaults(defineProps<ChatProps>(), {
+  sessionId: '',
+  welcomeMessage: 'chat.welcome',
+  recommendedQuestions: () => [],
+  enableThinking: true,
+  maxLength: 2000,
+  placeholder: 'chat.placeholder',
+});
 
 const emit = defineEmits<ChatEmits>();
 
@@ -267,6 +197,7 @@ const isLoading = ref(false);
 const error = ref(false);
 const errorMessage = ref('');
 const collapsedThinking = ref<Set<string>>(new Set());
+let streamController: AbortController | undefined;
 
 // Refs
 const messagesRef = ref<HTMLElement>();
@@ -363,6 +294,8 @@ async function handleSend() {
  */
 async function streamAIResponse(userMessage: string) {
   isLoading.value = true;
+  streamController?.abort('新的消息已开始');
+  streamController = new AbortController();
 
   // Create placeholder for AI response
   const thinkingMsgId = props.enableThinking ? generateId() : null;
@@ -378,65 +311,17 @@ async function streamAIResponse(userMessage: string) {
   }
 
   try {
-    const token = Session.getToken();
-    const userInfo = Session.get('userInfo');
-    const tenantId = userInfo?.tenantId || 'master';
-
-    // Build request
-    const requestBody = {
-      message: userMessage,
-      sessionId: currentSessionId.value,
-      enableThinking: props.enableThinking,
-    };
-
-    // For mock mode, simulate SSE response
-    if (import.meta.env.DEV && import.meta.env.VITE_USE_MOCK === 'true') {
-      await mockStreamResponse(userMessage, thinkingMsgId, messageMsgId);
-      return;
-    }
-
-    // Real SSE implementation using fetch with ReadableStream
-    const response = await fetch('/api/ai/chat', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-        'TENANT-ID': tenantId,
+    await props.stream(
+      {
+        message: userMessage,
+        sessionId: currentSessionId.value,
+        enableThinking: props.enableThinking,
       },
-      body: JSON.stringify(requestBody),
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-    }
-
-    const reader = response.body?.getReader();
-    const decoder = new TextDecoder();
-
-    if (!reader) {
-      throw new Error('No response body');
-    }
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-
-      const chunk = decoder.decode(value, { stream: true });
-      // Parse SSE data: data: {"type": "thinking", "content": "..."}
-      const lines = chunk.split('\n');
-      for (const line of lines) {
-        if (line.startsWith('data: ')) {
-          try {
-            const data = JSON.parse(line.substring(6)) as AIEvent;
-            handleAIEvent(data, thinkingMsgId, messageMsgId);
-          } catch (parseErr) {
-            console.warn('[Chat] Failed to parse SSE data:', line);
-          }
-        }
-      }
-    }
+      (event) => handleAIEvent(event, thinkingMsgId, messageMsgId),
+      streamController.signal,
+    );
   } catch (err) {
-    console.error('[Chat] Stream error:', err);
+    if (streamController?.signal.aborted) return;
     error.value = true;
     errorMessage.value = err instanceof Error ? err.message : t('chat.error');
     emit('error', err as Error);
@@ -447,6 +332,7 @@ async function streamAIResponse(userMessage: string) {
     }
   } finally {
     isLoading.value = false;
+    streamController = undefined;
   }
 }
 
@@ -490,68 +376,6 @@ function handleAIEvent(event: AIEvent, thinkingMsgId: string | null, messageMsgI
 }
 
 /**
- * Mock stream response for development
- */
-async function mockStreamResponse(
-  userMessage: string,
-  thinkingMsgId: string | null,
-  messageMsgId: string
-) {
-  // Simulate thinking
-  if (thinkingMsgId) {
-    const thinkingTexts = [
-      '我需要仔细分析这个问题。',
-      '用户询问的是关于',
-      '让我思考一下相关的概念和原理',
-      '根据我的分析，这个问题可以从以下几个方面来解答',
-    ];
-
-    for (const text of thinkingTexts) {
-      await new Promise((resolve) => setTimeout(resolve, 300));
-      const msg = messages.value.find((m) => m.id === thinkingMsgId);
-      if (msg) {
-        msg.content = text;
-      }
-      scrollToBottom();
-    }
-  }
-
-  // Simulate response
-  const responses: Record<string, string> = {
-    default: '感谢您的提问。关于您提到的内容，我需要进一步了解具体需求才能给出准确的答案。建议您提供更多背景信息，我可以为您提供更详细的解答。',
-    hello: '您好！很高兴为您服务。有什么可以帮助您的吗？',
-    help: '我可以帮助您解答各种问题，包括技术咨询、业务指导、问题诊断等。请告诉我您具体需要什么帮助。',
-  };
-
-  const responseText = responses[userMessage.toLowerCase()] || responses.default;
-
-  await new Promise((resolve) => setTimeout(resolve, 500));
-
-  // Stream response character by character
-  for (let i = 0; i < responseText.length; i++) {
-    await new Promise((resolve) => setTimeout(resolve, 30));
-
-    const existingMsg = messages.value.find((m) => m.id === messageMsgId);
-    if (existingMsg) {
-      existingMsg.content = responseText.substring(0, i + 1);
-    } else {
-      messages.value.push({
-        id: messageMsgId,
-        role: 'assistant',
-        content: responseText.substring(0, i + 1),
-        timestamp: Date.now(),
-      });
-    }
-    scrollToBottom();
-  }
-
-  // Remove thinking message
-  if (thinkingMsgId) {
-    messages.value = messages.value.filter((m) => m.id !== thinkingMsgId);
-  }
-}
-
-/**
  * Send a recommended question
  */
 function sendRecommended(question: string) {
@@ -578,6 +402,7 @@ function retryLastMessage() {
  * Start a new session
  */
 function handleNewSession() {
+  streamController?.abort('会话已重置');
   messages.value = [];
   currentSessionId.value = null;
   error.value = false;
@@ -595,6 +420,7 @@ function getSessionId(): string | null {
  * Clear current session
  */
 function clearSession() {
+  streamController?.abort('会话已清空');
   messages.value = [];
   currentSessionId.value = null;
   error.value = false;
@@ -637,7 +463,9 @@ defineExpose<ChatExpose>({
   justify-content: center;
   cursor: pointer;
   box-shadow: 0 4px 12px rgba(64, 158, 255, 0.4);
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
 
   &:hover {
     transform: scale(1.05);
@@ -805,7 +633,9 @@ defineExpose<ChatExpose>({
 }
 
 @keyframes typing {
-  0%, 60%, 100% {
+  0%,
+  60%,
+  100% {
     opacity: 0.3;
     transform: translateY(0);
   }

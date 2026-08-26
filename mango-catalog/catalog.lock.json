@@ -1,10 +1,10 @@
 {
   "architectureGraph": {
-    "reportSha256": "15933d4cd1d35ea3c0b7fad0648e48190961ab820c87a427489f6bed5027409a",
+    "reportSha256": "78440c05c5b6b69e733f634b5ec988d114b0b394af2e5ee72d8fb97e5954bbe5",
     "schemaVersion": 1,
-    "workspaceCount": 39
+    "workspaceCount": 41
   },
-  "catalogDigest": "4cb536b152f04fbd4a60401cb25f540f3266dfb64645551fcd1a52d33108b6f9",
+  "catalogDigest": "433534cbc09fd2175ffb31ad42c508c4e10f8c7282cd3173d318e05ab9e4de23",
   "maven": {
     "dependencyManagementSets": [
       {
@@ -2861,9 +2861,72 @@
             "version": "1.0.0-SNAPSHOT"
           },
           {
+            "artifactId": "mango-infra-context-api",
+            "classifier": null,
+            "groupId": "io.mango.infra.context",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-infra-crypto",
+            "classifier": null,
+            "groupId": "io.mango.infra.crypto",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-infra-kv-api",
+            "classifier": null,
+            "groupId": "io.mango.infra.kv",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-infra-log-api",
+            "classifier": null,
+            "groupId": "io.mango.infra.log",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-infra-persistence-api",
+            "classifier": null,
+            "groupId": "io.mango.infra.persistence",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
             "artifactId": "mango-infra-realtime-api",
             "classifier": null,
             "groupId": "io.mango.infra.realtime",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-file-api",
+            "classifier": null,
+            "groupId": "io.mango.platform.file",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-resource-support",
+            "classifier": null,
+            "groupId": "io.mango.platform.resource",
             "optional": false,
             "scope": "compile",
             "type": "jar",
@@ -2900,11 +2963,29 @@
             "version": "1.0.0-SNAPSHOT"
           },
           {
-            "artifactId": "mango-infra-kv-core",
+            "artifactId": "mango-infra-crypto",
+            "classifier": null,
+            "groupId": "io.mango.infra.crypto",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-infra-kv-starter",
             "classifier": null,
             "groupId": "io.mango.infra.kv",
             "optional": false,
-            "scope": "test",
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-infra-persistence-starter",
+            "classifier": null,
+            "groupId": "io.mango.infra.persistence",
+            "optional": false,
+            "scope": "compile",
             "type": "jar",
             "version": "1.0.0-SNAPSHOT"
           },
@@ -2921,6 +3002,15 @@
             "artifactId": "mango-infra-web-starter",
             "classifier": null,
             "groupId": "io.mango.infra.web",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-authorization-api",
+            "classifier": null,
+            "groupId": "io.mango.platform.authorization",
             "optional": false,
             "scope": "compile",
             "type": "jar",
@@ -6108,6 +6198,15 @@
             "groupId": "io.mango.platform.authorization",
             "optional": false,
             "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-authorization-starter",
+            "classifier": null,
+            "groupId": "io.mango.platform.authorization",
+            "optional": false,
+            "scope": "test",
             "type": "jar",
             "version": "1.0.0-SNAPSHOT"
           },
@@ -9709,6 +9808,15 @@
         "classifier": null,
         "dependencies": [
           {
+            "artifactId": "mango-ai-starter",
+            "classifier": null,
+            "groupId": "io.mango.extension.ai",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
             "artifactId": "mango-infra-bootstrap-starter",
             "classifier": null,
             "groupId": "io.mango.infra.bootstrap",
@@ -10084,6 +10192,35 @@
           "targetPath": "templates/full/frontend/public/favicon.ico"
         }
       ],
+      "schemaVersion": 1
+    },
+    {
+      "adminIntegration": {
+        "aggregateOwner": "@mango/admin",
+        "registrarExports": [
+          {
+            "package": "@mango/ai",
+            "subpath": "./admin-pages",
+            "symbol": "registerMangoAiAdminPages"
+          }
+        ],
+        "styleEntries": [
+          {
+            "package": "@mango/ai",
+            "subpath": "./style.css"
+          }
+        ]
+      },
+      "backendStarters": [
+        ":mango-ai-starter"
+      ],
+      "frontendPackages": [
+        "@mango/ai",
+        "@mango/ai-api"
+      ],
+      "moduleId": "ai",
+      "owner": "module:ai",
+      "presetMembership": "full",
       "schemaVersion": 1
     },
     {
@@ -10877,6 +11014,79 @@
         }
       ],
       "version": "1.0.63"
+    },
+    {
+      "name": "@mango/ai",
+      "npmProjection": {
+        "exports": {
+          ".": {
+            "import": "./dist/index.js",
+            "types": "./dist/index.d.ts"
+          },
+          "./admin-pages": {
+            "import": "./dist/admin-pages.js",
+            "types": "./dist/admin-pages.d.ts"
+          },
+          "./style.css": "./dist/style.css"
+        },
+        "files": [
+          "README.md",
+          "dist",
+          "package.json"
+        ],
+        "types": "./dist/index.d.ts"
+      },
+      "owner": "package:@mango/ai",
+      "path": "mango-ui/packages/ai",
+      "publicEntries": [
+        {
+          "kind": "code",
+          "source": "./src/index.ts",
+          "subpath": "."
+        },
+        {
+          "kind": "code",
+          "source": "./src/admin-pages.ts",
+          "subpath": "./admin-pages"
+        }
+      ],
+      "publicResources": [
+        {
+          "dist": "./dist/style.css",
+          "generation": "build",
+          "source": "./src/style.css",
+          "subpath": "./style.css"
+        }
+      ],
+      "version": "1.0.0"
+    },
+    {
+      "name": "@mango/ai-api",
+      "npmProjection": {
+        "exports": {
+          ".": {
+            "import": "./dist/index.js",
+            "types": "./dist/index.d.ts"
+          }
+        },
+        "files": [
+          "README.md",
+          "dist",
+          "package.json"
+        ],
+        "types": "./dist/index.d.ts"
+      },
+      "owner": "package:@mango/ai-api",
+      "path": "mango-ui/packages/ai-api",
+      "publicEntries": [
+        {
+          "kind": "code",
+          "source": "./src/index.ts",
+          "subpath": "."
+        }
+      ],
+      "publicResources": [],
+      "version": "1.0.0"
     },
     {
       "name": "@mango/api-schema",
@@ -12299,6 +12509,18 @@
       ],
       "fullPackages": [
         {
+          "cliVersionKey": "mangoAi",
+          "code": "ai",
+          "packageName": "@mango/ai",
+          "registrars": [
+            {
+              "import": "@mango/ai/admin-pages",
+              "name": "registerMangoAiAdminPages"
+            }
+          ],
+          "style": "@mango/ai/style.css"
+        },
+        {
           "cliVersionKey": "mangoCalendar",
           "code": "calendar",
           "packageName": "@mango/calendar",
@@ -12426,6 +12648,31 @@
               "targetPath": "templates/full/frontend/public/favicon.ico"
             }
           ]
+        },
+        {
+          "backendStarters": [
+            {
+              "artifactId": "mango-ai-starter",
+              "groupId": "io.mango.extension.ai"
+            }
+          ],
+          "configFragments": [],
+          "dependsOn": [],
+          "frontend": {
+            "cliVersionKey": "mangoAi",
+            "code": "ai",
+            "packageName": "@mango/ai",
+            "registrars": [
+              {
+                "import": "@mango/ai/admin-pages",
+                "name": "registerMangoAiAdminPages"
+              }
+            ],
+            "style": "@mango/ai/style.css"
+          },
+          "moduleId": "ai",
+          "presetMembership": "full",
+          "resourceCopies": []
         },
         {
           "backendStarters": [

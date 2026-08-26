@@ -74,19 +74,6 @@ vi.mock('vue-i18n', () => ({
   }),
 }));
 
-// Mock Session storage
-vi.mock('@/utils/storage', () => ({
-  Session: {
-    getToken: () => 'mock-token',
-    get: (key: string) => {
-      if (key === 'userInfo') {
-        return { tenantId: 'test-tenant' };
-      }
-      return null;
-    },
-  },
-}));
-
 describe('Chat Component', () => {
   describe('ChatMessage Structure', () => {
     it('should have correct message properties', () => {

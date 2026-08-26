@@ -115,7 +115,8 @@ export class MangoRealtimeClient implements RealtimeClient {
   private readonly identity: RealtimeIdentity;
   private readonly auth?: RealtimeAuthOptions;
   private readonly reconnectOptions: Required<RealtimeReconnectOptions>;
-  private readonly heartbeatOptions: Required<Omit<RealtimeHeartbeatOptions, 'payload'>> & Pick<RealtimeHeartbeatOptions, 'payload'>;
+  private readonly heartbeatOptions: Required<Omit<RealtimeHeartbeatOptions, 'payload'>> &
+    Pick<RealtimeHeartbeatOptions, 'payload'>;
   private readonly transportPolicy: Required<RealtimeTransportPolicy>;
   private readonly pollingOptions: Required<RealtimePollingOptions>;
   private readonly debug: boolean;
@@ -280,7 +281,7 @@ export class MangoRealtimeClient implements RealtimeClient {
     return { ...this.metrics };
   }
 
-  private async resolveInitialProtocol(): Promise<RealtimeProtocol> {
+  private async resolveInitialProtocol(preferredProtocol?: RealtimeProtocol): Promise<RealtimeProtocol> {
     if (this.mode !== 'auto') {
       this.negotiatedOrder = [this.mode];
       return this.mode;
@@ -306,14 +307,15 @@ export class MangoRealtimeClient implements RealtimeClient {
     this.negotiation = result;
     this.connectionTicket = result.connectionTicket || null;
 
-    const enabled = new Set((result.transports || [])
-      .filter(item => item.enabled && item.available !== false)
-      .map(item => item.type));
+    const enabled = new Set(
+      (result.transports || []).filter((item) => item.enabled && item.available !== false).map((item) => item.type),
+    );
     const order = uniqueProtocols([
+      preferredProtocol,
       ...(result.order || []),
       ...(result.recommended ? [result.recommended] : []),
       ...this.transportPolicy.fallbackOrder,
-    ]).filter(protocol => enabled.size === 0 || enabled.has(protocol));
+    ]).filter((protocol) => enabled.size === 0 || enabled.has(protocol));
     this.negotiatedOrder = order.length > 0 ? order : ['polling'];
     const probed = await this.probeNegotiatedTransports(this.negotiatedOrder);
     if (probed) return probed;
@@ -323,7 +325,7 @@ export class MangoRealtimeClient implements RealtimeClient {
 
   private async probeNegotiatedTransports(order: RealtimeProtocol[]): Promise<RealtimeProtocol | null> {
     for (const protocol of order) {
-      const capability = this.negotiation?.transports?.find(item => item.type === protocol);
+      const capability = this.negotiation?.transports?.find((item) => item.type === protocol);
       if (!capability?.probeRequired) return protocol;
       try {
         await this.probeTransport(protocol);
@@ -374,7 +376,7 @@ export class MangoRealtimeClient implements RealtimeClient {
           reject(new Error('WebSocket probe error'));
         }
       };
-      websocket.onclose = event => {
+      websocket.onclose = (event) => {
         if (!settled && event.code !== 1000) {
           settled = true;
           window.clearTimeout(timeout);
@@ -434,7 +436,7 @@ export class MangoRealtimeClient implements RealtimeClient {
   }
 
   private async openWebSocket(): Promise<void> {
-    const url = this.transportUrl(this.endpoints.websocket, 'websocket');
+    const url = this.connectionUrl(this.endpoints.websocket, 'websocket');
 
     await new Promise<void>((resolve, reject) => {
       const websocket = new WebSocket(url.toString());
@@ -454,7 +456,7 @@ export class MangoRealtimeClient implements RealtimeClient {
         this.markConnected('websocket');
         resolve();
       };
-      websocket.onmessage = event => this.receiveMessage(this.parseMessage(event.data));
+      websocket.onmessage = (event) => this.receiveMessage(this.parseMessage(event.data));
       websocket.onerror = () => {
         if (!settled) {
           settled = true;
@@ -471,7 +473,7 @@ export class MangoRealtimeClient implements RealtimeClient {
   }
 
   private async openSse(): Promise<void> {
-    const url = this.transportUrl(this.endpoints.sse, 'sse');
+    const url = this.connectionUrl(this.endpoints.sse, 'sse');
 
     await new Promise<void>((resolve, reject) => {
       const eventSource = new EventSource(url.toString());
@@ -492,7 +494,7 @@ export class MangoRealtimeClient implements RealtimeClient {
           resolve();
         }
       };
-      eventSource.onmessage = event => this.receiveMessage(this.parseMessage(event.data));
+      eventSource.onmessage = (event) => this.receiveMessage(this.parseMessage(event.data));
       eventSource.onerror = () => {
         if (!settled) {
           settled = true;
@@ -528,7 +530,7 @@ export class MangoRealtimeClient implements RealtimeClient {
         const messages = await this.fetchJson<RealtimeMessage[]>(url.toString(), {
           signal: this.pollingAbortController.signal,
         });
-        messages.forEach(message => this.receiveMessage(message));
+        messages.forEach((message) => this.receiveMessage(message));
         if (messages.length === 0 || this.pollingOptions.timeoutMillis === 0) {
           await sleep(this.pollingOptions.interval);
         }
@@ -582,9 +584,10 @@ export class MangoRealtimeClient implements RealtimeClient {
   private scheduleReconnectOrDowngrade(reason: string): void {
     this.stopHeartbeat();
     this.stopActiveTransport();
-    const canDowngrade = this.transportPolicy.adaptive
-      && this.transportPolicy.downgrade.enabled
-      && this.consecutiveErrors >= (this.transportPolicy.downgrade.consecutiveErrors || 1);
+    const canDowngrade =
+      this.transportPolicy.adaptive &&
+      this.transportPolicy.downgrade.enabled &&
+      this.consecutiveErrors >= (this.transportPolicy.downgrade.consecutiveErrors || 1);
     const fallback = canDowngrade ? this.nextFallbackProtocol(this.protocol) : null;
     if (fallback) {
       const from = this.protocol;
@@ -592,7 +595,11 @@ export class MangoRealtimeClient implements RealtimeClient {
       this.retryCount = 0;
       this.setStatus('degraded');
       this.emit('degraded', { from, to: fallback, reason });
-      void this.connectProtocol(fallback, reason).catch(error => void this.handleConnectFailure(normalizeError(error)));
+      const reconnect =
+        this.mode === 'auto'
+          ? this.reconnectWithFreshNegotiation(reason, fallback)
+          : this.connectProtocol(fallback, reason);
+      void reconnect.catch((error) => void this.handleConnectFailure(normalizeError(error)));
       return;
     }
     this.scheduleReconnect(reason, this.protocol);
@@ -620,8 +627,16 @@ export class MangoRealtimeClient implements RealtimeClient {
     this.warn(`Realtime reconnect scheduled after ${delay}ms: ${reason}`);
     this.clearReconnectTimer();
     this.reconnectTimer = window.setTimeout(() => {
+      if (this.mode === 'auto') {
+        void this.reconnectWithFreshNegotiation('reconnect', protocol).catch(
+          (error) => void this.handleConnectFailure(normalizeError(error)),
+        );
+        return;
+      }
       if (protocol) {
-        void this.connectProtocol(protocol, 'reconnect').catch(error => void this.handleConnectFailure(normalizeError(error)));
+        void this.connectProtocol(protocol, 'reconnect').catch(
+          (error) => void this.handleConnectFailure(normalizeError(error)),
+        );
         return;
       }
       void this.connect();
@@ -632,7 +647,7 @@ export class MangoRealtimeClient implements RealtimeClient {
     this.stopHeartbeat();
     if (!this.heartbeatOptions.enabled || !this.protocol) return;
     this.heartbeatTimer = window.setInterval(() => {
-      void this.sendHeartbeat().catch(error => this.handleRuntimeError(normalizeError(error)));
+      void this.sendHeartbeat().catch((error) => this.handleRuntimeError(normalizeError(error)));
     }, this.currentHeartbeatInterval());
   }
 
@@ -710,11 +725,29 @@ export class MangoRealtimeClient implements RealtimeClient {
     this.warn(`Realtime probing upgrade from ${from} to ${target}`);
     this.stopActiveTransport();
     try {
-      await this.connectProtocol(target, 'upgrade-probe');
+      if (this.mode === 'auto') {
+        await this.reconnectWithFreshNegotiation('upgrade-probe', target);
+      } else {
+        await this.connectProtocol(target, 'upgrade-probe');
+      }
     } catch (error) {
       this.warn(`Realtime upgrade failed: ${normalizeError(error).message}`);
-      if (from) await this.connectProtocol(from, 'upgrade-rollback');
+      if (from) {
+        if (this.mode === 'auto') {
+          await this.reconnectWithFreshNegotiation('upgrade-rollback', from);
+        } else {
+          await this.connectProtocol(from, 'upgrade-rollback');
+        }
+      }
     }
+  }
+
+  private async reconnectWithFreshNegotiation(
+    reason: string,
+    preferredProtocol?: RealtimeProtocol | null,
+  ): Promise<void> {
+    const protocol = await this.resolveInitialProtocol(preferredProtocol || undefined);
+    await this.connectProtocol(protocol, reason);
   }
 
   private receiveMessage(message: RealtimeMessage): void {
@@ -727,9 +760,10 @@ export class MangoRealtimeClient implements RealtimeClient {
     this.metrics.receivedCount += 1;
     this.metrics.lastMessageAt = Date.now();
     this.emit('message', normalizedMessage);
-    messageEventAliases(normalizedMessage)
-      .forEach(type => this.subscribers.get(type)?.forEach(handler => handler(normalizedMessage)));
-    this.subscribers.get('*')?.forEach(handler => handler(normalizedMessage));
+    messageEventAliases(normalizedMessage).forEach((type) =>
+      this.subscribers.get(type)?.forEach((handler) => handler(normalizedMessage)),
+    );
+    this.subscribers.get('*')?.forEach((handler) => handler(normalizedMessage));
   }
 
   private normalizeIncomingMessage(message: RealtimeMessage): RealtimeMessage {
@@ -741,7 +775,10 @@ export class MangoRealtimeClient implements RealtimeClient {
   private consumeSystemMessage(message: RealtimeMessage): boolean {
     const kind = normalizeMessageKind(message);
     const isHeartbeat = isHeartbeatEnvelope(message);
-    const isSystem = isHeartbeat || kind === REALTIME_MESSAGE_KIND.NOTICE || kind === REALTIME_MESSAGE_KIND.ERROR;
+    const isSystemDomain = message.event?.domain === 'system';
+    const isSystem =
+      isHeartbeat ||
+      (isSystemDomain && (kind === REALTIME_MESSAGE_KIND.NOTICE || kind === REALTIME_MESSAGE_KIND.ERROR));
     if (!isSystem) return false;
 
     if (isHeartbeat) this.acknowledgeHeartbeat();
@@ -825,7 +862,9 @@ export class MangoRealtimeClient implements RealtimeClient {
   }
 
   private bestUpgradeTarget(current: RealtimeProtocol): RealtimeProtocol | null {
-    return this.transportPolicy.fallbackOrder.find(protocol => PROTOCOL_RANK[protocol] < PROTOCOL_RANK[current]) || null;
+    return (
+      this.transportPolicy.fallbackOrder.find((protocol) => PROTOCOL_RANK[protocol] < PROTOCOL_RANK[current]) || null
+    );
   }
 
   private currentHeartbeatInterval(): number {
@@ -842,7 +881,7 @@ export class MangoRealtimeClient implements RealtimeClient {
   }
 
   private emit<T extends RealtimeEvent>(event: T, payload: RealtimeEventPayloadMap[T]): void {
-    this.eventHandlers[event]?.forEach(handler => (handler as RealtimeEventHandler<T>)(payload));
+    this.eventHandlers[event]?.forEach((handler) => (handler as RealtimeEventHandler<T>)(payload));
   }
 
   private async fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
@@ -874,16 +913,22 @@ export class MangoRealtimeClient implements RealtimeClient {
     return {
       ...(headers || {}),
       ...(token ? { Authorization: this.auth?.tokenType === 'raw' ? token : `Bearer ${token}` } : {}),
-      ...(this.identity.tenantId ? {
-        'TENANT-ID': String(this.identity.tenantId),
-        'X-Mango-Tenant-Id': String(this.identity.tenantId),
-      } : {}),
-      ...(this.identity.userId != null ? {
-        'X-Mango-User-Id': String(this.identity.userId),
-      } : {}),
-      ...(this.identity.clientId ? {
-        'X-Mango-Client-Id': this.identity.clientId,
-      } : {}),
+      ...(this.identity.tenantId
+        ? {
+            'TENANT-ID': String(this.identity.tenantId),
+            'X-Mango-Tenant-Id': String(this.identity.tenantId),
+          }
+        : {}),
+      ...(this.identity.userId != null
+        ? {
+            'X-Mango-User-Id': String(this.identity.userId),
+          }
+        : {}),
+      ...(this.identity.clientId
+        ? {
+            'X-Mango-Client-Id': this.identity.clientId,
+          }
+        : {}),
     };
   }
 
@@ -894,6 +939,10 @@ export class MangoRealtimeClient implements RealtimeClient {
     const url = this.transportUrl(endpoint, protocol);
     url.searchParams.set('rtTicket', this.connectionTicket);
     return url;
+  }
+
+  private connectionUrl(endpoint: string, protocol: 'websocket' | 'sse'): URL {
+    return this.mode === 'auto' ? this.ticketUrl(endpoint, protocol) : this.transportUrl(endpoint, protocol);
   }
 
   private transportUrl(endpoint: string, protocol: 'websocket' | 'sse'): URL {
@@ -936,7 +985,10 @@ function normalizeReconnect(input?: RealtimeReconnectOptions | boolean): Require
   return { ...DEFAULT_RECONNECT, ...input };
 }
 
-function normalizeHeartbeat(input?: RealtimeHeartbeatOptions | boolean, performanceMode?: string): Required<Omit<RealtimeHeartbeatOptions, 'payload'>> & Pick<RealtimeHeartbeatOptions, 'payload'> {
+function normalizeHeartbeat(
+  input?: RealtimeHeartbeatOptions | boolean,
+  performanceMode?: string,
+): Required<Omit<RealtimeHeartbeatOptions, 'payload'>> & Pick<RealtimeHeartbeatOptions, 'payload'> {
   if (input === false) return { ...DEFAULT_HEARTBEAT, enabled: false };
   const configured = input === true || input == null ? {} : input;
   const defaultMinInterval = performanceMode === 'aggressive' ? 500 : DEFAULT_HEARTBEAT.minInterval;
@@ -968,11 +1020,12 @@ function normalizeTransportPolicy(input?: RealtimeTransportPolicy): Required<Rea
 
 async function readResponse<T>(response: Response): Promise<T> {
   const text = await response.text();
-  if (!response.ok) throw new RealtimeConnectionError(
-    `HTTP ${response.status}: ${text || response.statusText}`,
-    response.status === 401 ? 'auth' : response.status === 403 ? 'permission' : 'request',
-    response.status,
-  );
+  if (!response.ok)
+    throw new RealtimeConnectionError(
+      `HTTP ${response.status}: ${text || response.statusText}`,
+      response.status === 401 ? 'auth' : response.status === 403 ? 'permission' : 'request',
+      response.status,
+    );
   if (!text) return undefined as T;
   return JSON.parse(text) as T;
 }
@@ -999,7 +1052,7 @@ function isDowngradableError(error: Error): boolean {
 
 function uniqueProtocols(input: Array<RealtimeProtocol | null | undefined>): RealtimeProtocol[] {
   const result: RealtimeProtocol[] = [];
-  input.forEach(protocol => {
+  input.forEach((protocol) => {
     if (!protocol) return;
     if (!['websocket', 'sse', 'polling'].includes(protocol)) return;
     if (!result.includes(protocol)) result.push(protocol);
@@ -1012,5 +1065,5 @@ function createClientId(): string {
 }
 
 function sleep(ms: number): Promise<void> {
-  return new Promise(resolve => window.setTimeout(resolve, ms));
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
 }

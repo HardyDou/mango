@@ -77,6 +77,45 @@ class AuthGlobalFilterTest {
     }
 
     @Test
+    @DisplayName("Realtime 正式连接 ticket 请求应到达下游并清除外部身份头")
+    void filter_shouldPassRealtimeTransportTicketWithoutTrustingIdentityHeaders() {
+        apiResourceApi.accessMode = ApiResourceAccessMode.LOGIN;
+
+        for (String path : List.of("/realtime/transports/websocket", "/realtime/transports/sse")) {
+            MockServerHttpRequest request = MockServerHttpRequest
+                    .get(path + "?rtTicket=issued-ticket")
+                    .header(MangoContextHeaders.USER_ID, "999")
+                    .header(MangoContextHeaders.TENANT_ID, "spoofed-tenant")
+                    .build();
+            CapturingChain chain = new CapturingChain();
+
+            new AuthGlobalFilter(() -> accessEvaluator)
+                    .filter(MockServerWebExchange.from(request), chain)
+                    .block();
+
+            assertEquals(path, chain.request.getURI().getPath());
+            assertNull(chain.request.getHeaders().getFirst(MangoContextHeaders.USER_ID));
+            assertNull(chain.request.getHeaders().getFirst(MangoContextHeaders.TENANT_ID));
+        }
+        assertEquals(0, apiResourceApi.resolveCount);
+    }
+
+    @Test
+    @DisplayName("Realtime 正式连接无 ticket 时仍应执行登录认证")
+    void filter_shouldRequireLoginWhenRealtimeTransportTicketMissing() {
+        apiResourceApi.accessMode = ApiResourceAccessMode.LOGIN;
+        MockServerWebExchange exchange = MockServerWebExchange.from(
+                MockServerHttpRequest.get("/realtime/transports/sse").build());
+
+        new AuthGlobalFilter(() -> accessEvaluator)
+                .filter(exchange, ignored -> Mono.empty())
+                .block();
+
+        assertEquals(401, exchange.getResponse().getStatusCode().value());
+        assertEquals(1, apiResourceApi.resolveCount);
+    }
+
+    @Test
     @DisplayName("错误消息应转义为合法 JSON")
     void filter_shouldEscapeErrorMessageAsJson() {
         AccessEvaluator evaluator = new AccessEvaluator(

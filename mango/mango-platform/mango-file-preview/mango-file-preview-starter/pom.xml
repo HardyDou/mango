@@ -59,5 +59,10 @@
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>io.mango.platform.authorization</groupId>
+            <artifactId>mango-authorization-starter</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 </project>

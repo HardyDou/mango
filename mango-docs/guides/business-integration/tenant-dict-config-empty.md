@@ -1,5 +1,7 @@
 # 租户字典配置为空排障
 
+> 2026-08-25 AI 管理能力影响：八类 AI 供应商、代表模型、Prompt、Skill 和服务使用 AI 自有 Resource Handler 写入租户隔离的 AI 配置表；供应商和模型首次创建时为空密钥、停用，既有租户配置按 `INIT_ONLY` 保留。该初始化不写入 System 字典、系统配置、组织、用户或租户主数据，也不改变这些数据的查询 API、权限、租户隔离和本指南排障链路。AI 配置为空应核对 `mango-ai-starter`、AI Resource 声明和 Handler 收据，不用字典/系统配置 SQL 补齐。
+
 > 2026-07-22 菜单显示文案调整说明：通知中心、审批中心和编号规则分别更名为通知管理、审批管理和编号管理；租户数据、资源同步顺序、菜单权限和本指南排障步骤均不受影响，历史记录保留原名称。
 
 > 2026-08-02 Issue #690 影响说明：租户字典和系统配置查询 API、权限、租户隔离及已有数据不变；初始化入口统一为 `META-INF/mango/resources/` typed declarations。Maven `1.0.31` 的声明 identity 使用独立 canonical mapper，非 Web Bootstrap 与 Web Runtime 的 `Long`/Java Time Jackson 配置不会改变同一 Resource fingerprint。使用 Maven `1.0.30`/`1.0.3x` 的业务仓升级后，排障时同时核对完整 release tuple、Bootstrap stable receipt 的 environment/generation/fingerprint、Resource 同步日志和目标 handler 结果；旧 fingerprint 不一致应升级完整 tuple 后使用新 generation 重新 plan/apply/verify，不重建已有业务库、手工修改 Bootstrap 审计表或用手工 SQL 绕过声明同步。
@@ -296,3 +298,7 @@ pnpm -F @mango/admin-shell build
 ## 2026-08-21 Issue #840 Admin Shell 确认取消影响
 
 - Issue #840 只修改 Admin Shell 对前端确认框取消/关闭结果的全局异常分类；不新增数据库表或 migration，不修改租户、字典、组织、用户、角色、系统配置数据，也不改变公开 API、权限、租户隔离、初始化顺序或运行时数据行为。基础数据为空仍按本指南检查 Resource、租户上下文和 Bootstrap 回执，无需重建数据库或补写 seed。
+
+## 2026-08-25 Issue #851 Resource 模块增量影响
+
+- Issue #851 新增环境级 Resource 模块 receipt，用于跳过 hash 未变化的声明并只协调变化模块；租户、字典、组织、用户和系统配置的数据模型、公开 API、权限及隔离语义不变。基础数据为空时可先核对目标模块 receipt、generation、manifest fingerprint 和协调状态，再继续按本指南检查租户上下文与声明内容，无需手工补写 seed。

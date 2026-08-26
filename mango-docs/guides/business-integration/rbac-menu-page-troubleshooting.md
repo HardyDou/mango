@@ -1,5 +1,9 @@
 # 菜单页面打不开排障
 
+> 2026-08-25 AI 管理能力影响：新增的 `平台能力 → AI 管理` 菜单及模型、提示词、Skill 与工具、AI 服务子菜单由 `META-INF/mango/resources/ai-menu.json` 通过 Resource Registry 注册，页面 key 由 `@mango/ai/admin-pages` 提供。Realtime 短期票据只恢复 WebSocket/SSE 握手身份，不改变菜单树 API、`component` key 解析、角色菜单授权、租户应用绑定或既有菜单排障协议。AI 菜单缺失时应核对 `mango-ai-starter`、AI Resource 声明同步、角色授权和 `@mango/ai` registrar，不手工写授权表。
+
+> 2026-08-25 Issue #835：只修复已有数据库升级时 Resource Registry 无法按持久化 `targetId` 停用已缺失 `AUTH_ROLE_DATA_SCOPE` 的问题；不改变菜单树 API、`component` key、页面注册、角色菜单授权、权限码、租户绑定或本指南排障步骤。升级启动仍在 FINALIZE 报 `field is required: tenantId` 时，应升级到包含该修复的 Mango Maven 版本后重试，不要保留废弃声明或手工修改授权表。
+
 > 2026-07-22 菜单显示文案调整说明：通知中心、审批中心和编号规则分别更名为通知管理、审批管理和编号管理；路由、菜单编码、权限码、页面 key、资源同步和本指南排障步骤均不受影响，历史记录保留原名称。
 
 > 2026-08-05 Issue #721：个人中心扩展入口由已集成能力包的 feature registrar 自动装配。Notice 提供“我的消息、系统公告、通知设置”，System 提供“登录日志”；这些仍是 `/profile` 页内导航，不进入框架菜单树。业务入口缺项时先检查对应 registrar 是否进入 `featureRegistrars`，无需在业务 `main.ts` 重复配置 `profile.sections`。
@@ -304,3 +308,7 @@ pnpm -F @mango/admin-shell build
 ## 2026-08-21 Issue #840 Admin Shell 确认取消影响
 
 - Issue #840 只统一 Admin Shell 外层与 runtime outlet 内层 Vue App 对 Element Plus 确认框取消/关闭结果的错误边界处理；不改变菜单 `component` key、菜单树接口、页面注册、角色菜单授权、按钮权限、登录态权限聚合或租户应用绑定。菜单不可见、页面 404 或 403 仍按本指南原链路排查，不能通过修改确认框异常处理修复菜单或授权问题。
+
+## 2026-08-25 Issue #851 Resource 模块增量影响
+
+- Issue #851 只把 Bootstrap Resource 协调收敛为构建期模块 manifest 与环境 receipt；菜单 `component` key、菜单树接口、页面注册、角色菜单授权、登录态权限聚合和租户应用绑定均不变。若升级后菜单资源未形成，可先核对对应 Resource 模块 receipt、generation 与 manifest fingerprint，再继续按本指南检查声明、授权和页面 key。

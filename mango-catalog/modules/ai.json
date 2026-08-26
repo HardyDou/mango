@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "moduleId": "ai",
+  "frontendPackages": ["@mango/ai", "@mango/ai-api"],
+  "adminIntegration": {
+    "aggregateOwner": "@mango/admin",
+    "registrarExports": [
+      {
+        "package": "@mango/ai",
+        "subpath": "./admin-pages",
+        "symbol": "registerMangoAiAdminPages"
+      }
+    ],
+    "styleEntries": [{ "package": "@mango/ai", "subpath": "./style.css" }]
+  },
+  "backendStarters": [":mango-ai-starter"],
+  "presetMembership": "full"
+}

@@ -27,6 +27,31 @@
     {
       "backendStarters": [
         {
+          "artifactId": "mango-ai-starter",
+          "groupId": "io.mango.extension.ai"
+        }
+      ],
+      "configFragments": [],
+      "dependsOn": [],
+      "frontend": {
+        "cliVersionKey": "mangoAi",
+        "code": "ai",
+        "packageName": "@mango/ai",
+        "registrars": [
+          {
+            "import": "@mango/ai/admin-pages",
+            "name": "registerMangoAiAdminPages"
+          }
+        ],
+        "style": "@mango/ai/style.css"
+      },
+      "moduleId": "ai",
+      "presetMembership": "full",
+      "resourceCopies": []
+    },
+    {
+      "backendStarters": [
+        {
           "artifactId": "mango-auth-starter",
           "groupId": "io.mango.platform.auth"
         }

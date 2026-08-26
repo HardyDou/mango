@@ -107,6 +107,20 @@ class FileAssetResourceHandlerTest {
     }
 
     @Test
+    void publishFailureRemovesStagingObjectBeforePropagatingFailure() {
+        storage.failNextPublish();
+
+        assertThatThrownBy(() -> handler.upsert(declaration(OBJECT_NAME, SHA256)))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Publish FILE_ASSET failed");
+
+        assertThat(storage.objects).doesNotContainKey(OBJECT_NAME);
+        assertThat(storage.objects.keySet()).noneMatch(key -> key.startsWith(".mango-staging/"));
+        assertThat(recordState.get()).isNull();
+        assertThat(objectState.get()).isNull();
+    }
+
+    @Test
     void rejectsStableObjectLocationDrift() {
         handler.upsert(declaration(OBJECT_NAME, SHA256));
 
@@ -277,6 +291,11 @@ class FileAssetResourceHandlerTest {
 
         private final Map<String, byte[]> objects = new HashMap<>();
         private int putCount;
+        private boolean failPublish;
+
+        private void failNextPublish() {
+            failPublish = true;
+        }
 
         @Override
         public boolean supports(String storageType) {
@@ -309,6 +328,10 @@ class FileAssetResourceHandlerTest {
         @Override
         public void publishObject(FileStorageConfigEntity config, String stagingObjectName,
                                   String targetObjectName) {
+            if (failPublish) {
+                failPublish = false;
+                throw new IllegalStateException("Injected publish failure");
+            }
             byte[] content = objects.remove(stagingObjectName);
             if (content == null) {
                 throw new IllegalStateException("Staging object not found");

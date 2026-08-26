@@ -65,6 +65,7 @@ const defaultVersions = {
   mangoAdminPages: readReleasedMangoPackageVersion('admin-pages', '1.0.5'),
   mangoAdminShell: readReleasedMangoPackageVersion('admin-shell', '1.0.10'),
   mangoAppRuntime: readReleasedMangoPackageVersion('app-runtime', '1.0.2'),
+  mangoAi: readReleasedMangoPackageVersion('ai', '1.0.0'),
   mangoAuth: readReleasedMangoPackageVersion('auth', '1.0.4'),
   mangoCalendar: readReleasedMangoPackageVersion('calendar', '1.0.6'),
   mangoCms: readReleasedMangoPackageVersion('cms', '1.0.0'),
@@ -243,6 +244,7 @@ const OPTIONAL_MODULE_RUNTIME = [
       micro: { mode: 'micro', runtimeCode: 'mango-admin-workflow-app', entry: 'http://c.mango.io:5182/' },
     },
   },
+  { code: 'ai', label: 'AI 管理' },
   { code: 'workflow-example', label: '审批示例' },
 ];
 
