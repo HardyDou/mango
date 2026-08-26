@@ -5,6 +5,7 @@
 ### Fixed
 
 - Preserve the complete accumulated Maven evidence when an npm-only release writes the next successful baseline, and verify the carried coordinates and checksums before accepting the completed plan.
+- Anchor a successful prepared release baseline to a tree-identical squash commit on the candidate's first-parent history, so the next plan retains exact release state without weakening ancestry checks.
 
 ### Changed
 

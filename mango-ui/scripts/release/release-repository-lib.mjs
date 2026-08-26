@@ -44,7 +44,29 @@ export function readGitFile(repoRoot, ref, path) {
   return runGit(repoRoot, ['show', `${ref}:${path}`]).stdout;
 }
 
-export function verifyReleasePlanSource({ repoRoot, baselineCommit, source, sourceFiles, headRef = 'HEAD' }) {
+export function resolveReleaseBaselineAnchor({ repoRoot, baselineCommit, baselineTree, sourceCommit }) {
+  const actualBaseline = resolveGitSource(repoRoot, baselineCommit);
+  if (!/^[0-9a-f]{40}$/u.test(baselineTree ?? '') || actualBaseline.tree !== baselineTree) {
+    throw new Error('release baseline commit/tree does not match the repository');
+  }
+  if (isAncestor(repoRoot, baselineCommit, sourceCommit)) return baselineCommit;
+
+  const history = runGit(repoRoot, ['log', '--first-parent', '--format=%H%x09%T', sourceCommit]).stdout.split(/\r?\n/u);
+  const equivalent = history.find((line) => line.endsWith(`\t${baselineTree}`));
+  if (!equivalent) {
+    throw new Error('release baseline has no tree-equivalent first-parent ancestor of the plan source');
+  }
+  return equivalent.split('\t', 1)[0];
+}
+
+export function verifyReleasePlanSource({
+  repoRoot,
+  baselineCommit,
+  baselineTree,
+  source,
+  sourceFiles,
+  headRef = 'HEAD',
+}) {
   if (!/^[0-9a-f]{40}$/u.test(source?.commit ?? '') || !/^[0-9a-f]{40}$/u.test(source?.tree ?? '')) {
     throw new Error('release plan source commit/tree is missing or invalid');
   }
@@ -65,10 +87,15 @@ export function verifyReleasePlanSource({ repoRoot, baselineCommit, source, sour
   if (actualSource.commit !== source.commit || actualSource.tree !== source.tree) {
     throw new Error('release plan source commit/tree does not match the repository');
   }
-  assertAncestor(repoRoot, baselineCommit, source.commit, 'release baseline is not an ancestor of the plan source');
+  const baselineAnchor = resolveReleaseBaselineAnchor({
+    repoRoot,
+    baselineCommit,
+    baselineTree,
+    sourceCommit: source.commit,
+  });
   assertAncestor(repoRoot, source.commit, headRef, 'release plan source is not an ancestor of the final HEAD');
 
-  const actualSourceFiles = gitChangedFiles(repoRoot, baselineCommit, source.commit);
+  const actualSourceFiles = gitChangedFiles(repoRoot, baselineAnchor, source.commit);
   if (JSON.stringify(actualSourceFiles) !== JSON.stringify(sourceFiles)) {
     throw new Error('release plan sourceFiles does not match the baseline-to-source Git diff');
   }
@@ -77,7 +104,7 @@ export function verifyReleasePlanSource({ repoRoot, baselineCommit, source, sour
     .stdout.split(/\r?\n/u)
     .filter(Boolean)
     .sort();
-  return { source: actualSource, sourceFiles: actualSourceFiles, projectionFiles };
+  return { baselineAnchor, source: actualSource, sourceFiles: actualSourceFiles, projectionFiles };
 }
 
 export function resolveRepositoryInputPath(repoRoot, input, fallback) {
@@ -139,6 +166,9 @@ export function assertCleanWorktree(repoRoot) {
 }
 
 function assertAncestor(repoRoot, ancestor, descendant, message) {
-  const result = runGit(repoRoot, ['merge-base', '--is-ancestor', ancestor, descendant], { allowFailure: true });
-  if (result.status !== 0) throw new Error(message);
+  if (!isAncestor(repoRoot, ancestor, descendant)) throw new Error(message);
+}
+
+function isAncestor(repoRoot, ancestor, descendant) {
+  return runGit(repoRoot, ['merge-base', '--is-ancestor', ancestor, descendant], { allowFailure: true }).status === 0;
 }

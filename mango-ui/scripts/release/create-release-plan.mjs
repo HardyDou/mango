@@ -32,6 +32,7 @@ import {
   gitChangedFiles,
   readGitFile,
   resolveBaseline,
+  resolveReleaseBaselineAnchor,
   resolveGitSource,
   restoredPublishedBaselines,
   verifyReleasePlanSource,
@@ -360,9 +361,15 @@ function assertEquivalentPlan(expected, actual) {
 function resolvePlanInput() {
   if (!checkOnly || !previousPlan) {
     const source = resolveGitSource(repoRoot);
-    const committedFiles = gitChangedFiles(repoRoot, baseline.commit, source.commit);
+    const baselineAnchor = resolveReleaseBaselineAnchor({
+      repoRoot,
+      baselineCommit: baseline.commit,
+      baselineTree: baseline.tree,
+      sourceCommit: source.commit,
+    });
+    const committedFiles = gitChangedFiles(repoRoot, baselineAnchor, source.commit);
     if (includeWorkingTree) {
-      const filesWithWorkingTree = gitChangedFiles(repoRoot, baseline.commit, source.commit, true);
+      const filesWithWorkingTree = gitChangedFiles(repoRoot, baselineAnchor, source.commit, true);
       if (JSON.stringify(filesWithWorkingTree) !== JSON.stringify(committedFiles)) {
         throw new Error('release plan source must be committed before planning; working-tree source cannot be sealed');
       }
@@ -374,6 +381,7 @@ function resolvePlanInput() {
   const verified = verifyReleasePlanSource({
     repoRoot,
     baselineCommit: baseline.commit,
+    baselineTree: baseline.tree,
     source: previousPlan.source,
     sourceFiles: previousPlan.sourceFiles,
   });
