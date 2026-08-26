@@ -339,6 +339,8 @@ Shell 会注册 unauthorized handler 并清理 session 后跳转 `/login`。检�
 
 ## 11. 变更影响记录
 
+- 本批次开发中心 Chat 示例改为通过必填 `stream` provider 注入流式实现，并展示 `ChatStreamProvider` 的宿主接入方式。该示例不在 Shell 内创建 AI 请求或 Realtime 连接；业务宿主升级匹配版本的 `@mango/common` 后，也必须显式传入 provider。
+
 - `@mango/admin-shell@1.0.60` 修复与已发布 `@mango/common@1.0.26` 的制品兼容：详情或编辑路由的父菜单高亮解析保留在 Shell 私有实现中，不再导入 Common 1.0.26 不存在的导出。菜单接口、页面 key、权限、租户、配置和公开 API 不变；应与 `@mango/admin@1.0.66`、`@mango/cli@1.0.107` 成组升级。
 
 - `@mango/admin-shell@1.0.58` 在执行 feature registrars 后把返回的 `profileSections` 注册到 Auth 个人中心。与 Auth `1.0.26`、Notice `1.0.38`、System `1.0.32` 组合时，个人中心自动显示“我的消息、系统公告、通知设置、登录日志”；未集成对应能力包时不注入入口。菜单、权限和租户契约不变。

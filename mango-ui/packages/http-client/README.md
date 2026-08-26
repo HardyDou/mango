@@ -111,6 +111,8 @@ export function createOrderApi(client: HttpClient) {
 
 当前 `@mango/common/utils/request` 是迁移期旧入口。新业务不得新增对旧单例的依赖；领域 package 将按批次改为 `createXxxApi(client)`。在兼容 facade、真实单体/微前端联调、Nexus candidate、灰度和回退演练完成前，本包不能单独代表前端已生产毕业。
 
+本批次为 `responseType: 'stream'` 使用浏览器 Fetch adapter，并把 pending request 的清理延迟到 `ReadableStream` 完成、报错或取消之后。调用方必须消费或取消流，并继续通过 `AbortSignal` 管理页面生命周期；普通 JSON、Blob 和 ArrayBuffer 请求合同不变。
+
 ## 12. 相关文档
 
 - [前端规范落地设计](../../../mango-docs/designs/2026-07-18-frontend-standards-enforcement-design.md)

@@ -77,7 +77,11 @@ const services = await configurationApi.listServices();
 - 请求 401/403：核对宿主注入的登录态、租户头和当前角色的 AI 权限，不在 API 包内另建客户端。
 - 停止后仍写入界面：确认调用方按 `requestId` 取消订阅、调用 `cancelServiceChat()`，并丢弃迟到或重复分片。
 
-## 11. 相关文档
+## 11. 发布与兼容
+
+这是 AI TypeScript 契约的首个正式发布批次。消费方必须把 `@mango/ai-api` 与同一发布计划中的 `@mango/ai`、`@mango/common`、`@mango/http-client` 和后端 Mango Maven 版本成组升级。调用链固定为“先订阅 `ai.service.chat`，再提交带唯一 `requestId` 的受理请求”；旧聊天接口或自建 Axios 单例不属于兼容入口。
+
+## 12. 相关文档
 
 - [AI 页面包](../ai/README.md)
 - [Mango Extension](../../../mango/mango-extension/README.md)

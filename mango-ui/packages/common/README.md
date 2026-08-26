@@ -361,6 +361,24 @@ API 加密环境变量：
 | `FormCreate`、`Sign`、`CodeEditor`、`Editor`、`RichTextViewer`、`ECharts` | 表单、签名、代码、富文本编辑/预览和图表。                                                      |
 | `SSE`、`Websocket`、`Chat`                                                | 实时通信和聊天 UI。                                                                            |
 
+`Chat` 只负责聊天 UI，不再内置具体传输。升级本批次时，所有调用方必须显式传入 `stream` provider；provider 负责鉴权、租户、服务选择、取消和把真实 AI 事件回调给组件：
+
+```vue
+<script setup lang="ts">
+import { Chat, type ChatStreamProvider } from '@mango/common';
+
+const stream: ChatStreamProvider = async (command, onEvent, signal) => {
+  await runServiceChat(command, onEvent, signal);
+};
+</script>
+
+<template>
+  <Chat :stream="stream" />
+</template>
+```
+
+未提供 `stream` 的旧用法不能继续编译，应先完成 provider 迁移再升级；组件不会回退到 mock、全局请求单例或固定 AI 接口。
+
 `MangoAvatar` 使用示例：
 
 ```vue
@@ -515,6 +533,8 @@ const toolbarKeys = ['bold', 'color', '|', 'numberedList', 'bulletedList', '|', 
 - [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)
 
 ## 11. 变更影响记录
+
+- 本批次将 `ChatProps.stream` 设为必填并公开 `ChatStreamCommand`、`ChatStreamProvider` 等类型，把真实流式传输和取消生命周期交回宿主。这是公共组件 API 的主版本变化；旧调用方必须按上方示例注入 provider，不能依赖组件内部 mock 或隐式全局连接。
 
 - Issue #805 待发布修复保留 `Pagination.small?: boolean` 公开入参，内部改为向 Element Plus 传递 `size="small" | "default"`，消除废弃 `small` prop 告警。页码、每页数、总数、双向绑定和 `pagination` 事件保持兼容。
 

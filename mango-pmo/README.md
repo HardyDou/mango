@@ -249,6 +249,7 @@ PMO 升级需要恢复时先执行 `mango pmo rollback --project-dir . --dry-run
 | 业务 README 审计误报源仓路径  | 使用了旧 PMO baseline，或从脚本安装目录推断项目根 | 升级到包含 Issue #806 修复的 PMO/CLI tuple，执行业务 baseline 内的两条审计命令 |
 | 首次纳管提示 `onboarding-report-required` | required check 只执行了 `--baseline-only` | 在独立纳管 PR 的可信 CI 中现场生成完整 Reactor 报告，并执行普通 `--base-ref` 检查 |
 | 初始化预算提示 `initial-budget-report-required` | 首次项目预算只跑了 baseline-only | 用只含预算文件的独立治理 PR，在可信 CI 现场生成完整 Reactor 报告并复验 |
+| Maven 范围误命中 `src` 下的夹具 `pom.xml` | 使用了未跳过源码目录的旧范围分类器 | 升级到包含资源启动范围修复的 PMO/CLI tuple；新版只把 Reactor 项目目录纳入 selector，不把 `src` 内测试夹具当作独立项目 |
 | 历史项目仍引用主仓路径       | 旧 `AGENTS.md` 未升级                        | 执行 `mango pmo upgrade --project-dir . --write-agents`        |
 | `npm view` 返回 404          | 目标 PMO/CLI 批次尚未发布                    | 等待发布状态机完成并从 npm-group 回查后再升级业务项目          |
 
