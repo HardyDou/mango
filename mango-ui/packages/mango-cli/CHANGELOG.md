@@ -1,5 +1,66 @@
 # @mango/cli Changelog
 
+## 1.2.0 - 2026-08-26
+
+### Pull Requests
+
+- [PR #850](https://github.com/HardyDou/mango/pull/850) Fixed release baseline carry-forward and Node runtime validation. Packages: `@mango/cli@1.2.0`. Business Adaptation: release operators use Node `22.23.1` and retain completed Maven evidence across npm-only closeout.
+- [PR #852](https://github.com/HardyDou/mango/pull/852) Added Resource manifests, file bundles and receipts to the generated platform tuple. Packages: Maven `1.0.40`, `@mango/pmo@1.4.2`, `@mango/cli@1.2.0`. Business Adaptation: preserve receipt storage across restarts and verify candidate/finalize processing.
+- [PR #854](https://github.com/HardyDou/mango/pull/854) Added the Spring AI management platform and unified service workbench. Packages: the AI packages, Admin aggregation and `@mango/cli@1.2.0`. Business Adaptation: configure an enabled AI provider/model and the required Chat stream provider.
+- [PR #855](https://github.com/HardyDou/mango/pull/855) Changed the release intent and consumer migration contract for the full generated tuple. Packages: all 28 npm coordinates and Maven `1.0.40`. Business Adaptation: upgrade the complete tuple instead of selecting direct packages.
+- [PR #858](https://github.com/HardyDou/mango/pull/858) Fixed AI service request IDs to use the browser-compatible UUID helper. Packages: `@mango/ai@1.1.0`, `@mango/admin@1.1.0`, `@mango/cli@1.2.0`. Business Adaptation: none.
+- [PR #860](https://github.com/HardyDou/mango/pull/860) Fixed deterministic PMO plugin packaging. Packages: `@mango/pmo@1.4.2`, `@mango/cli@1.2.0`. Business Adaptation: none.
+
+### Fixed
+
+- Preserve completed Maven evidence across npm-only closeout and reject unsupported Node runtimes before release operations.
+- Carry browser-compatible AI request IDs and deterministic PMO plugin packaging into generated consumers.
+
+### Added
+
+- Add the AI frontend modules, Admin aggregation and Resource platform metadata to the generated project matrix.
+
+### Changed
+
+- Lock Maven `1.0.40`, PMO `1.4.2` and the complete 28-package npm tuple ending at CLI `1.2.0`.
+- Require generated Chat consumers to adopt the `@mango/common@2.0.0` `ChatStreamProvider` contract.
+
+### Versions
+
+- `@mango/cli`: `1.1.1` to `1.2.0`; PMO: `1.4.1` to `1.4.2`; Maven: `1.0.39` to `1.0.40`.
+- The CLI release matrix locks all 28 npm coordinates, including `@mango/common@2.0.0`, `@mango/ai-api@1.1.0`, `@mango/ai@1.1.0` and `@mango/admin@1.1.0`.
+
+### Published Packages
+
+- Publish the 192-coordinate Maven/docs batch at `1.0.40`, then the generated 28-package npm topology ending at `@mango/cli@1.2.0`.
+
+### Business Impact
+
+- CLI-managed consumers receive the aligned AI, Resource, Admin and PMO contracts. Direct Chat consumers must supply a stream provider; AI providers remain disabled until externally configured.
+
+### Upgrade Estimate
+
+- Audience: CLI-managed Mango consumers and release operators.
+- Engineering Effort: 1 to 3 hours for generated consumers; 3 to 8 hours for direct Chat and AI integrations.
+- Execution Window: 2 to 6 hours including dependency upgrade, database migration rehearsal and focused regression.
+- Service Downtime: none required by CLI; applications may use a normal restart window for Maven/Flyway adoption.
+- Rollback Effort: 30 to 90 minutes to restore CLI `1.1.1` and the prior exact tuple.
+- Assumptions: Node `22.23.1`, Java 21, clean locks, registry access and a verified database backup for application adoption.
+
+### Upgrade Notes
+
+1. Upgrade CLI and PMO together to `1.2.0` and `1.4.2`, then apply the complete generated Maven/npm matrix.
+2. Implement `ChatStreamProvider` for direct Chat consumers and configure at least one enabled AI provider/model.
+3. Run Flyway and Resource Bootstrap in a non-production environment before business deployment.
+
+### Verification
+
+- Verify the generated version matrix, packed CLI contract, PMO projection, all sealed Maven/npm bytes and a clean pure consume-registry generated project.
+
+### Rollback
+
+- Restore CLI `1.1.1`, PMO `1.4.1`, Maven `1.0.39` and the previous exact npm matrix; never overwrite immutable coordinates.
+
 ## 1.1.1 - 2026-08-22
 
 ### Pull Requests

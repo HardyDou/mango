@@ -4,7 +4,7 @@
     "schemaVersion": 1,
     "workspaceCount": 41
   },
-  "catalogDigest": "433534cbc09fd2175ffb31ad42c508c4e10f8c7282cd3173d318e05ab9e4de23",
+  "catalogDigest": "0ea88b5e1a1ec9c3a4f1e475a52b200f3dd3191be5dd382f6524573c5595a177",
   "maven": {
     "dependencyManagementSets": [
       {
@@ -10722,7 +10722,7 @@
           "subpath": "./style.css"
         }
       ],
-      "version": "1.0.69"
+      "version": "1.1.0"
     },
     {
       "name": "@mango/admin-extension",
@@ -10777,7 +10777,7 @@
         }
       ],
       "publicResources": [],
-      "version": "1.0.1"
+      "version": "1.0.2"
     },
     {
       "name": "@mango/admin-pages",
@@ -10859,7 +10859,7 @@
         }
       ],
       "publicResources": [],
-      "version": "1.0.35"
+      "version": "1.0.36"
     },
     {
       "name": "@mango/admin-shell",
@@ -11013,7 +11013,7 @@
           "subpath": "./style.css"
         }
       ],
-      "version": "1.0.63"
+      "version": "1.0.64"
     },
     {
       "name": "@mango/ai",
@@ -11058,7 +11058,7 @@
           "subpath": "./style.css"
         }
       ],
-      "version": "1.0.0"
+      "version": "1.1.0"
     },
     {
       "name": "@mango/ai-api",
@@ -11086,7 +11086,7 @@
         }
       ],
       "publicResources": [],
-      "version": "1.0.0"
+      "version": "1.1.0"
     },
     {
       "name": "@mango/api-schema",
@@ -11196,7 +11196,7 @@
           "subpath": "./style.css"
         }
       ],
-      "version": "1.0.28"
+      "version": "1.0.29"
     },
     {
       "name": "@mango/calendar",
@@ -11250,7 +11250,7 @@
           "subpath": "./style.css"
         }
       ],
-      "version": "1.0.36"
+      "version": "1.0.37"
     },
     {
       "name": "@mango/cli",
@@ -11272,7 +11272,7 @@
       "path": "mango-ui/packages/mango-cli",
       "publicEntries": [],
       "publicResources": [],
-      "version": "1.1.1"
+      "version": "1.2.0"
     },
     {
       "name": "@mango/cms",
@@ -11317,7 +11317,7 @@
           "subpath": "./style.css"
         }
       ],
-      "version": "1.0.25"
+      "version": "1.0.26"
     },
     {
       "name": "@mango/common",
@@ -11533,7 +11533,7 @@
           "subpath": "./theme/index.scss"
         }
       ],
-      "version": "1.0.27"
+      "version": "2.0.0"
     },
     {
       "name": "@mango/file",
@@ -11578,7 +11578,7 @@
           "subpath": "./style.css"
         }
       ],
-      "version": "1.0.35"
+      "version": "1.0.36"
     },
     {
       "name": "@mango/grid-layout",
@@ -11614,7 +11614,7 @@
           "subpath": "./style.css"
         }
       ],
-      "version": "1.0.18"
+      "version": "1.0.19"
     },
     {
       "name": "@mango/grid-widgets",
@@ -11650,7 +11650,7 @@
           "subpath": "./style.css"
         }
       ],
-      "version": "1.0.24"
+      "version": "1.0.25"
     },
     {
       "name": "@mango/home",
@@ -11678,7 +11678,7 @@
         }
       ],
       "publicResources": [],
-      "version": "1.0.16"
+      "version": "1.0.17"
     },
     {
       "name": "@mango/http-client",
@@ -11706,7 +11706,7 @@
         }
       ],
       "publicResources": [],
-      "version": "1.0.0"
+      "version": "1.0.1"
     },
     {
       "name": "@mango/job",
@@ -11751,7 +11751,7 @@
           "subpath": "./style.css"
         }
       ],
-      "version": "1.0.29"
+      "version": "1.0.30"
     },
     {
       "name": "@mango/link",
@@ -11805,7 +11805,7 @@
           "subpath": "./style.css"
         }
       ],
-      "version": "1.0.22"
+      "version": "1.0.23"
     },
     {
       "name": "@mango/link-openapi",
@@ -11977,7 +11977,7 @@
           "subpath": "./style.css"
         }
       ],
-      "version": "1.0.41"
+      "version": "1.0.42"
     },
     {
       "name": "@mango/numgen",
@@ -12022,7 +12022,7 @@
           "subpath": "./style.css"
         }
       ],
-      "version": "1.0.37"
+      "version": "1.0.38"
     },
     {
       "name": "@mango/payment",
@@ -12067,7 +12067,7 @@
           "subpath": "./style.css"
         }
       ],
-      "version": "1.0.28"
+      "version": "1.0.29"
     },
     {
       "name": "@mango/pmo",
@@ -12123,7 +12123,7 @@
           "subpath": "./skills/*"
         }
       ],
-      "version": "1.4.1"
+      "version": "1.4.2"
     },
     {
       "name": "@mango/rbac",
@@ -12159,7 +12159,7 @@
           "subpath": "./style.css"
         }
       ],
-      "version": "1.0.26"
+      "version": "1.0.27"
     },
     {
       "name": "@mango/site-shell",
@@ -12187,7 +12187,7 @@
         }
       ],
       "publicResources": [],
-      "version": "1.0.14"
+      "version": "1.0.15"
     },
     {
       "name": "@mango/system",
@@ -12250,7 +12250,7 @@
           "subpath": "./style.css"
         }
       ],
-      "version": "1.0.34"
+      "version": "1.0.35"
     },
     {
       "name": "@mango/template",
@@ -12295,7 +12295,7 @@
           "subpath": "./style.css"
         }
       ],
-      "version": "1.0.37"
+      "version": "1.0.38"
     },
     {
       "name": "@mango/workflow",
@@ -12367,7 +12367,7 @@
           "subpath": "./style.css"
         }
       ],
-      "version": "1.0.42"
+      "version": "1.0.43"
     },
     {
       "name": "@mango/workflow-business-example",
@@ -12412,7 +12412,7 @@
           "subpath": "./style.css"
         }
       ],
-      "version": "1.0.41"
+      "version": "1.0.42"
     }
   ],
   "projections": {
