@@ -3,8 +3,8 @@
   "packageVersion": "1.4.1",
   "schemaVersion": 2,
   "source": "mango-pmo",
-  "sourceCommit": "8661ea917cdac0e83833706c4b97daeb95fd130c",
-  "bundleSha256": "556dd5305e957d6a491f5f401cd63642063c9a17aa46589e8c5cf8827f8fd525",
+  "sourceCommit": "dc173f58c3b4ff0c2f1510e37e296630cbd1e2a4",
+  "bundleSha256": "726d68ea7f78464fa6986d5eee9c57e8fd1c448825e9a2fb836c7547907814cf",
   "contracts": [
     {
       "contractId": "business-requirements",
@@ -49,12 +49,12 @@
   ],
   "plugin": {
     "path": "package-root",
-    "sha256": "cf26c2b21332d604ae7fb8e2a2fa116c187bf1e8cde5ffd236cf8b9f89758238",
+    "sha256": "4be5a491be9522076901d25dea4fb2547577b4ee9219a13baa469504866097b4",
     "files": [
       {
         "path": ".codex-plugin/plugin.json",
-        "sha256": "84a7fae4480a61820833831f7ca51617dcfafc42380cb0c24e60894c94e357a9",
-        "size": 738,
+        "sha256": "691fe32eef41d776d2668cf106092f8ed74797c359fb3ea075353d0edecfb9d2",
+        "size": 708,
         "kind": "plugin",
         "mode": "0644"
       },
