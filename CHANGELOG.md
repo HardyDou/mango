@@ -4,12 +4,12 @@
 
 ### Fixed
 
-- Reuse the Workflow business data-permission contract when reading business-apply records, including declared workflow codes, tenant boundaries and custom provider checks.
-- Load Resource declaration `moduleDependencies` from JSON or YAML envelopes so cross-module menus wait for their owning module bootstrap dependencies.
+- Normalize date-only query range boundaries to `00:00:00` and `23:59:59` across shared, Job, Notice, System and Workflow frontend API clients while preserving explicit date-time values.
+- Resolve packaged `FILE_ASSET` content from content-addressed `META-INF/mango/files.bundle/objects/<sha256>` resources during Resource Bootstrap instead of treating the packaged classpath object as a source file.
 
 ### Changed
 
-- Advance the generated CLI compatibility matrix from Mango Maven `1.0.40` to `1.0.41`; PMO remains `1.4.2`.
+- Advance the generated CLI compatibility matrix from Mango Maven `1.0.41` to `1.0.42`; PMO remains `1.4.2`, and the exact npm dependency closure is generated from the release plan.
 
 ## v2026.08.27-maven-1.0.41-workflow-resource-release - 2026-08-27
 

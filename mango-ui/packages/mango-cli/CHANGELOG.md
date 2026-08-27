@@ -1,5 +1,55 @@
 # @mango/cli Changelog
 
+## 1.2.2 - 2026-08-27
+
+### Pull Requests
+
+- [PR #878](https://github.com/HardyDou/mango/pull/878) Fixed date-only query range normalization across shared and domain frontend API clients plus backend `LocalDateTime` binding. Packages: Mango Maven `1.0.42`, the generated npm dependency closure and `@mango/cli@1.2.2`. Business Adaptation: direct API consumers should retain explicit date-time values when they need narrower boundaries; date-only ranges now cover the complete selected days.
+- [PR #880](https://github.com/HardyDou/mango/pull/880) Fixed Resource Bootstrap consumption of packaged `FILE_ASSET` object bundles. Packages: Mango Maven `1.0.42`, `io.mango:mango-docs-bundle:1.0.42`, `@mango/cli@1.2.2`. Business Adaptation: aggregate consumers receive the packaged-object resolution automatically; custom declaration producers must keep the canonical content-addressed bundle layout.
+
+### Fixed
+
+- Carry full-day date query normalization and packaged Resource file-object resolution into generated consumers.
+
+### Changed
+
+- Lock generated projects to Mango Maven `1.0.42` and the machine-generated npm tuple; PMO remains `1.4.2`.
+
+### Versions
+
+- `@mango/cli`: `1.2.1` to `1.2.2`; Mango Maven: `1.0.41` to `1.0.42`; PMO remains `1.4.2`.
+
+### Published Packages
+
+- Publish the complete non-application Maven/docs batch at `1.0.42`, followed by the generated npm topology ending at `@mango/cli@1.2.2`; no application fat JAR or unchanged PMO coordinate is published.
+
+### Business Impact
+
+- Generated consumers receive consistent full-day date filters and correct packaged `FILE_ASSET` bootstrap behavior without a database schema migration, permission change or tenant-boundary change.
+
+### Upgrade Estimate
+
+- Audience: generated Mango consumers, direct frontend package consumers and Resource declaration producers.
+- Engineering Effort: 30 to 90 minutes for aggregate consumers; 1 to 3 hours for direct consumers with custom date serialization or Resource bundles.
+- Execution Window: 1 to 3 hours including dependency upgrade, clean build and focused date/resource regression.
+- Service Downtime: no framework-mandated downtime; applications may use their normal restart window.
+- Rollback Effort: 15 to 45 minutes to restore CLI `1.2.1`, Maven `1.0.41` and the prior npm tuple.
+- Assumptions: Node `22.23.1`, Java 21, clean locks and configured consume registries.
+
+### Upgrade Notes
+
+1. Upgrade CLI to `1.2.2` and apply its Maven `1.0.42` plus npm compatibility matrix.
+2. Verify date-only filters now include the selected end day; retain full date-time query values for narrower boundaries.
+3. For custom packaged `FILE_ASSET` declarations, preserve the generated `META-INF/mango/files.bundle/objects/<sha256>` object and declaration checksum.
+
+### Verification
+
+- Verify the generated release matrix, sealed Maven/npm artifacts, full-day date filters, packaged file bootstrap and a clean consume-registry generated project.
+
+### Rollback
+
+- Restore CLI `1.2.1`, Maven `1.0.41` and the prior exact npm tuple; never overwrite immutable `1.0.42`, `1.2.2` or package coordinates.
+
 ## 1.2.1 - 2026-08-27
 
 ### Pull Requests
