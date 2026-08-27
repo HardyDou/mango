@@ -5,11 +5,85 @@
 ### Fixed
 
 - Normalize date-only query range boundaries to `00:00:00` and `23:59:59` across shared, Job, Notice, System and Workflow frontend API clients while preserving explicit date-time values.
-- Resolve packaged `FILE_ASSET` content from content-addressed `META-INF/mango/files.bundle/objects/<sha256>` resources during Resource Bootstrap instead of treating the packaged classpath object as a source file.
+- Resolve packaged `FILE_ASSET` content from content-addressed `META-INF/mango/files.bundle/objects/{sha256}` resources during Resource Bootstrap instead of treating the packaged classpath object as a source file.
 
 ### Changed
 
 - Advance the generated CLI compatibility matrix from Mango Maven `1.0.41` to `1.0.42`; PMO remains `1.4.2`, and the exact npm dependency closure is generated from the release plan.
+
+## v2026.08.27-maven-1.0.42-date-resource-fixes - 2026-08-27
+
+Status: `PENDING`. Publication, registry verification, Tag and GitHub Release remain deferred until the prepared Release PR is merged and the sealed candidate passes pure consume-registry verification.
+
+### Pull Requests
+
+- [PR #878](https://github.com/HardyDou/mango/pull/878) Fixed date-only query ranges across shared, Job, Notice, System and Workflow frontend clients and added compatible backend `LocalDateTime` date binding. Packages: Mango Maven `1.0.42`, `io.mango:mango-docs-bundle:1.0.42`, direct npm packages `@mango/common`, `@mango/job`, `@mango/notice`, `@mango/system`, `@mango/workflow`, their generated dependency closure and `@mango/cli@1.2.2`. Business Adaptation: date-only filters now cover the complete selected days; consumers that need narrower boundaries should continue sending explicit date-time values.
+- [PR #880](https://github.com/HardyDou/mango/pull/880) Fixed Resource Bootstrap consumption of packaged `FILE_ASSET` content-addressed objects. Packages: Mango Maven `1.0.42`, `io.mango:mango-docs-bundle:1.0.42`, `@mango/cli@1.2.2`. Business Adaptation: aggregate consumers receive the correction automatically; custom declaration producers must preserve the canonical object-bundle layout and checksum.
+
+### Fixed
+
+- Normalize date-only start and end boundaries to `00:00:00` and `23:59:59` in the shared helper and the Job, Notice, System and Workflow API clients while preserving complete date-time input.
+- Accept `yyyy-MM-dd` query parameters for backend `LocalDateTime` binding as the start of that day without changing existing full date-time formats.
+- Resolve packaged `FILE_ASSET` bytes from `META-INF/mango/files.bundle/objects/{sha256}` during Resource Bootstrap and retain canonical checksum validation.
+
+### Changed
+
+- Advance the generated CLI Maven compatibility matrix to `1.0.42` and project the complete exact npm dependency closure from the five direct patch Changesets; PMO and its Skill bundle remain at `1.4.2`.
+
+### Versions
+
+- Mango Maven non-application reactor and `io.mango:mango-docs-bundle`: `1.0.41` to `1.0.42`.
+- Direct npm packages: `@mango/common` `2.0.0` to `2.0.1`; `@mango/job` `1.0.30` to `1.0.31`; `@mango/notice` `1.0.42` to `1.0.43`; `@mango/system` `1.0.35` to `1.0.36`; `@mango/workflow` `1.0.43` to `1.0.44`.
+- Generated dependency closure: `@mango/admin-extension` `1.0.2` to `1.0.3`; `@mango/ai` `1.1.0` to `1.1.1`; `@mango/auth` `1.0.29` to `1.0.30`; `@mango/file` `1.0.36` to `1.0.37`; `@mango/grid-layout` `1.0.19` to `1.0.20`; `@mango/grid-widgets` `1.0.25` to `1.0.26`; `@mango/home` `1.0.17` to `1.0.18`; `@mango/rbac` `1.0.27` to `1.0.28`; `@mango/site-shell` `1.0.15` to `1.0.16`; `@mango/admin-pages` `1.0.36` to `1.0.37`; `@mango/calendar` `1.0.37` to `1.0.38`; `@mango/cms` `1.0.26` to `1.0.27`; `@mango/link` `1.0.23` to `1.0.24`; `@mango/numgen` `1.0.38` to `1.0.39`; `@mango/payment` `1.0.29` to `1.0.30`; `@mango/template` `1.0.38` to `1.0.39`; `@mango/admin-shell` `1.0.64` to `1.0.65`; `@mango/workflow-business-example` `1.0.42` to `1.0.43`; `@mango/admin` `1.1.0` to `1.1.1`.
+- `@mango/cli`: `1.2.1` to `1.2.2`. `@mango/pmo` remains `1.4.2` and is not republished.
+
+### Published Packages
+
+1. Mango Maven `--all-non-app` Catalog batch at `1.0.42`, followed by `io.mango:mango-docs-bundle:1.0.42`; application and capability-app fat JARs are excluded.
+2. npm topology: `@mango/common@2.0.1` -> `@mango/admin-extension@1.0.3` -> `@mango/ai@1.1.1` -> `@mango/auth@1.0.30` -> `@mango/file@1.0.37` -> `@mango/grid-layout@1.0.20` -> `@mango/grid-widgets@1.0.26` -> `@mango/home@1.0.18` -> `@mango/rbac@1.0.28` -> `@mango/site-shell@1.0.16` -> `@mango/system@1.0.36` -> `@mango/admin-pages@1.0.37` -> `@mango/calendar@1.0.38` -> `@mango/cms@1.0.27` -> `@mango/job@1.0.31` -> `@mango/link@1.0.24` -> `@mango/notice@1.0.43` -> `@mango/numgen@1.0.39` -> `@mango/payment@1.0.30` -> `@mango/template@1.0.39` -> `@mango/workflow@1.0.44` -> `@mango/admin-shell@1.0.65` -> `@mango/workflow-business-example@1.0.43` -> `@mango/admin@1.1.1` -> `@mango/cli@1.2.2`.
+3. Tag and GitHub Release `v2026.08.27-maven-1.0.42-date-resource-fixes` are created only after both registry roles and a clean pure-registry consumer verify the sealed candidate.
+
+### Business Impact
+
+- Date-only filters in shared and affected domain clients now include the whole selected start and end days. Existing explicit date-time values remain unchanged, and backend endpoints accept date-only `LocalDateTime` query parameters at the start of day.
+- Resource Bootstrap can consume packaged file declarations produced by the build pipeline without trying to treat a classpath object as a local source file. Existing source-tree generation and checksum rules remain unchanged.
+- Aggregate consumers receive the aligned Maven/npm/CLI tuple. Direct npm consumers must upgrade exact dependants together according to the generated topology.
+- There is no database schema migration, application deployment, traffic change, permission grant, tenant-boundary change or application fat-JAR publication in this component release.
+
+### Upgrade Estimate
+
+- Audience: Mango platform maintainers, generated applications, direct consumers of the affected frontend packages, and custom Resource declaration producers.
+- Engineering Effort: 30 to 90 minutes for generated aggregate consumers; 1 to 3 hours for direct consumers with custom date serialization or packaged Resource declarations.
+- Execution Window: 1 to 3 hours including dependency upgrade, clean build, date-boundary regression and packaged Resource bootstrap verification.
+- Service Downtime: no framework-mandated downtime; consuming applications may use their normal restart window to adopt the Maven and npm tuple.
+- Rollback Effort: 15 to 45 minutes to restore Maven `1.0.41`, CLI `1.2.1` and the prior exact npm tuple; no database rollback is required by this batch.
+- Assumptions: Node `22.23.1`, Java 21, clean dependency locks, configured publish and consume registries, representative date-range queries and a packaged Resource fixture.
+
+### Upgrade Notes
+
+1. Upgrade the Mango Maven BOM and non-application platform tuple to `1.0.42`; generated projects should use `@mango/cli@1.2.2`, which locks Maven `1.0.42`, PMO `1.4.2` and the generated npm tuple.
+2. Upgrade direct npm consumers using the exact dependency closure in the publication topology. Date-only start/end values now cover full days; continue sending complete date-time strings when a narrower bound is required.
+3. Custom packaged `FILE_ASSET` declaration producers must preserve `META-INF/mango/files.bundle/objects/{sha256}` and the declaration checksum. Source-tree inputs remain supported during manifest generation.
+4. Run focused date-range tests at day boundaries and start a clean aggregate application containing a packaged file declaration; verify the file is materialized with the declared checksum.
+
+### Verification
+
+- Run the Catalog compiler, Git impact checker, release-plan checker, release-notes checker, capability documentation audit and repository local release checks under Node `22.23.1`.
+- Prepare one sealed source archive, the complete non-application Maven/docs batch and the generated npm topology; reuse those exact hashes through publication and recovery without rebuilding.
+- Require the Release PR checks on the exact prepared tree, then prove the merged `origin/main` tree equals the prepared tree before any registry write.
+- Verify Maven POM/checksum evidence and npm integrity in both publish and consume roles, resolve the aggregate Maven consumer once, and run a clean pure consume-registry generated consumer.
+- Consumer assertions cover date-only start/end normalization, explicit date-time preservation, backend date binding, packaged file object resolution, checksum validation and missing-object failure.
+
+### Rollback
+
+- Restore the consumer to Maven `1.0.41`, `@mango/cli@1.2.1` and the prior exact npm tuple; keep PMO at the compatible `1.4.2` unless restoring the entire previous tuple.
+- No database or business data is changed by publication. Application rollback remains the consuming project's controlled dependency and restart procedure.
+- Never overwrite immutable `1.0.42`, `1.2.2` or npm package coordinates. If publication becomes partial or ambiguous, retain the same prepared candidate and use `mango release status` followed by authorized `mango release repair`.
+
+### Audit History
+
+- PR #875 prepared the previous `1.0.41` batch and PR #876 closed it after immutable publication; both belong to the successful baseline and are not release-bearing changes in this batch.
+- The previous Tag and Release `v2026.08.27-maven-1.0.41-workflow-resource-release` remain unchanged.
 
 ## v2026.08.27-maven-1.0.41-workflow-resource-release - 2026-08-27
 

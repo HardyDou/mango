@@ -7,7 +7,7 @@
 
 - Normalize date-only start and end boundaries to `00:00:00` and `23:59:59` in the shared helper and the Job, Notice, System and Workflow API clients while preserving complete date-time input.
 - Accept `yyyy-MM-dd` query parameters for backend `LocalDateTime` binding as the start of that day without changing existing full date-time formats.
-- Resolve packaged `FILE_ASSET` bytes from `META-INF/mango/files.bundle/objects/<sha256>` during Resource Bootstrap and retain canonical checksum validation.
+- Resolve packaged `FILE_ASSET` bytes from `META-INF/mango/files.bundle/objects/{sha256}` during Resource Bootstrap and retain canonical checksum validation.
 
 ## Changed
 
@@ -46,7 +46,7 @@
 
 1. Upgrade the Mango Maven BOM and non-application platform tuple to `1.0.42`; generated projects should use `@mango/cli@1.2.2`, which locks Maven `1.0.42`, PMO `1.4.2` and the generated npm tuple.
 2. Upgrade direct npm consumers using the exact dependency closure in the publication topology. Date-only start/end values now cover full days; continue sending complete date-time strings when a narrower bound is required.
-3. Custom packaged `FILE_ASSET` declaration producers must preserve `META-INF/mango/files.bundle/objects/<sha256>` and the declaration checksum. Source-tree inputs remain supported during manifest generation.
+3. Custom packaged `FILE_ASSET` declaration producers must preserve `META-INF/mango/files.bundle/objects/{sha256}` and the declaration checksum. Source-tree inputs remain supported during manifest generation.
 4. Run focused date-range tests at day boundaries and start a clean aggregate application containing a packaged file declaration; verify the file is materialized with the declared checksum.
 
 ## Verification

@@ -40,7 +40,7 @@
 
 1. Upgrade CLI to `1.2.2` and apply its Maven `1.0.42` plus npm compatibility matrix.
 2. Verify date-only filters now include the selected end day; retain full date-time query values for narrower boundaries.
-3. For custom packaged `FILE_ASSET` declarations, preserve the generated `META-INF/mango/files.bundle/objects/<sha256>` object and declaration checksum.
+3. For custom packaged `FILE_ASSET` declarations, preserve the generated `META-INF/mango/files.bundle/objects/{sha256}` object and declaration checksum.
 
 ### Verification
 

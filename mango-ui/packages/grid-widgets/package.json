@@ -1,6 +1,6 @@
 {
   "name": "@mango/grid-widgets",
-  "version": "1.0.25",
+  "version": "1.0.26",
   "private": false,
   "type": "module",
   "main": "./dist/index.js",
@@ -21,7 +21,7 @@
     "README.md"
   ],
   "dependencies": {
-    "@mango/grid-layout": "workspace:1.0.19"
+    "@mango/grid-layout": "workspace:1.0.20"
   },
   "peerDependencies": {
     "element-plus": ">=2.14.1 <3",

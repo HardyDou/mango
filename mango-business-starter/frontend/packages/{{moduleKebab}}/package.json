@@ -23,10 +23,10 @@
   },
   "dependencies": {
     "@{{projectKebab}}/{{moduleKebab}}-api": "workspace:{{projectVersion}}",
-    "@mango/admin-extension": "1.0.2",
+    "@mango/admin-extension": "1.0.3",
     "@mango/api-schema": "1.0.3",
     "@mango/app-runtime": "1.0.6",
-    "@mango/common": "2.0.0",
+    "@mango/common": "2.0.1",
     "element-plus": "2.14.1"
   },
   "peerDependencies": {
