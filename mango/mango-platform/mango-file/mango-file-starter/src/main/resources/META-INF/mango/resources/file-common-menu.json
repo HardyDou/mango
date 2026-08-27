@@ -4,6 +4,7 @@
       "schemaVersion": 1,
       "moduleCode": "file",
       "moduleName": "文件管理模块",
+      "moduleDependencies": ["system"],
       "declarations": {
         "AUTH_MENU": [
           {

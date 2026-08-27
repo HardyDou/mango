@@ -69,7 +69,17 @@ public class ResourceDeclarationFile {
         private String moduleCode;
         @JsonAlias("module-name")
         private String moduleName;
+        @JsonAlias({"module-dependencies", "moduleDependencies"})
+        private List<String> dependencies;
         private Map<String, List<ResourceDeclaration>> declarations;
+
+        public List<String> getDependencies() {
+            return dependencies == null ? null : List.copyOf(dependencies);
+        }
+
+        public void setDependencies(List<String> dependencies) {
+            this.dependencies = dependencies == null ? null : List.copyOf(dependencies);
+        }
 
         public Map<String, List<ResourceDeclaration>> getDeclarations() {
             return copyDeclarations(declarations);
@@ -84,6 +94,7 @@ public class ResourceDeclarationFile {
             copy.schemaVersion = schemaVersion;
             copy.moduleCode = moduleCode;
             copy.moduleName = moduleName;
+            copy.dependencies = dependencies == null ? null : List.copyOf(dependencies);
             copy.declarations = copyDeclarations(declarations);
             return copy;
         }

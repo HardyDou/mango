@@ -4,6 +4,7 @@
       "schemaVersion": 1,
       "moduleCode": "finance",
       "moduleName": "财务",
+      "moduleDependencies": ["system"],
       "declarations": {
         "SEQUENCE_RULE": [
           {

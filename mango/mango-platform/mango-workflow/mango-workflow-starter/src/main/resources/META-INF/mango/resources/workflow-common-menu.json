@@ -4,6 +4,7 @@
       "schemaVersion": 1,
       "moduleCode": "workflow",
       "moduleName": "工作流",
+      "moduleDependencies": ["system"],
       "declarations": {
         "AUTH_MENU": [
           {

@@ -4,6 +4,7 @@
       "schemaVersion": 1,
       "moduleCode": "template",
       "moduleName": "模板管理模块",
+      "moduleDependencies": ["system"],
       "declarations": {
         "AUTH_MENU": [
           {

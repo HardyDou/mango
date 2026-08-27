@@ -4,6 +4,7 @@
       "schemaVersion": 1,
       "moduleCode": "home",
       "moduleName": "首页管理模块",
+      "moduleDependencies": ["system"],
       "declarations": {
         "AUTH_MENU": [
           {

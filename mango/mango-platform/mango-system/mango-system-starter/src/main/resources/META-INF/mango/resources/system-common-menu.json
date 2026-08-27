@@ -4,6 +4,7 @@
       "schemaVersion": 1,
       "moduleCode": "system",
       "moduleName": "系统模块",
+      "moduleDependencies": [],
       "declarations": {
         "AUTH_MENU": [
           {

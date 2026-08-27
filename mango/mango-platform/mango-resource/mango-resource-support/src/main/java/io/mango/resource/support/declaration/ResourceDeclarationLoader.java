@@ -13,6 +13,7 @@ import org.springframework.util.StringUtils;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -33,10 +34,32 @@ public class ResourceDeclarationLoader {
 
     public List<ResourceDeclaration> load() {
         List<ResourceDeclaration> declarations = new ArrayList<>();
-        for (String location : resolveLocations()) {
-            declarations.addAll(loadLocation(location));
+        for (LoadedResource loaded : loadFiles()) {
+            declarations.addAll(flatten(loaded.file(), loaded.source()));
         }
         return declarations;
+    }
+
+    /**
+     * Loads the fixed module dependency metadata declared by classpath resources.
+     * The metadata is kept outside individual declarations so build-time manifests
+     * and runtime scanning share the same dependency graph.
+     */
+    public Map<String, List<String>> loadModuleDependencies() {
+        Map<String, List<String>> dependencies = new LinkedHashMap<>();
+        for (LoadedResource loaded : loadFiles()) {
+            ResourceDeclarationFile.Resource resource = loaded.file().getMango().getResource();
+            if (resource.getDependencies() == null) {
+                continue;
+            }
+            String moduleCode = resource.getModuleCode().trim();
+            List<String> requiredModules = normalizeDependencies(resource.getDependencies(), loaded.source());
+            List<String> previous = dependencies.putIfAbsent(moduleCode, requiredModules);
+            if (previous != null && !previous.equals(requiredModules)) {
+                invalid(loaded.source(), "Conflicting module dependencies for " + moduleCode);
+            }
+        }
+        return dependencies;
     }
 
     private List<String> resolveLocations() {
@@ -59,13 +82,21 @@ public class ResourceDeclarationLoader {
         }
     }
 
-    private List<ResourceDeclaration> loadLocation(String location) {
+    private List<LoadedResource> loadFiles() {
+        List<LoadedResource> resources = new ArrayList<>();
+        for (String location : resolveLocations()) {
+            resources.addAll(loadFiles(location));
+        }
+        return resources;
+    }
+
+    private List<LoadedResource> loadFiles(String location) {
         try {
             Resource[] resources = resourceResolver.getResources(location);
-            List<ResourceDeclaration> declarations = new ArrayList<>();
+            List<LoadedResource> declarations = new ArrayList<>();
             for (Resource resource : resources) {
                 if (resource.exists() && resource.isReadable()) {
-                    declarations.addAll(readResource(resource));
+                    declarations.add(readResource(resource));
                 }
             }
             return declarations;
@@ -74,12 +105,13 @@ public class ResourceDeclarationLoader {
         }
     }
 
-    private List<ResourceDeclaration> readResource(Resource resource) {
+    private LoadedResource readResource(Resource resource) {
         ObjectMapper mapper = chooseMapper(resource);
         String source = resource.getDescription();
         try (InputStream inputStream = resource.getInputStream()) {
             ResourceDeclarationFile file = mapper.readValue(inputStream, ResourceDeclarationFile.class);
-            return flatten(file, source);
+            validateFile(file, source);
+            return new LoadedResource(file, source);
         } catch (IOException e) {
             throw new InvalidResourceDeclarationException("Read resource declaration failed: " + source, e);
         }
@@ -131,6 +163,7 @@ public class ResourceDeclarationLoader {
         }
         requireText(resource.getModuleCode(), source, "mango.resource.moduleCode is required");
         requireText(resource.getModuleName(), source, "mango.resource.moduleName is required");
+        normalizeDependencies(resource.getDependencies(), source);
     }
 
     private void validateDeclarationGroups(ResourceDeclarationFile.Resource resource, String source) {
@@ -167,5 +200,22 @@ public class ResourceDeclarationLoader {
 
     private void invalid(String source, String message) {
         throw new InvalidResourceDeclarationException("Invalid resource declaration: " + source + " - " + message);
+    }
+
+    private List<String> normalizeDependencies(List<String> dependencies, String source) {
+        if (dependencies == null) {
+            return List.of();
+        }
+        return dependencies.stream()
+                .map(value -> {
+                    requireText(value, source, "mango.resource.dependencies must contain non-blank module codes");
+                    return value.trim();
+                })
+                .distinct()
+                .sorted()
+                .toList();
+    }
+
+    private record LoadedResource(ResourceDeclarationFile file, String source) {
     }
 }

@@ -4,6 +4,7 @@
       "schemaVersion": 1,
       "moduleCode": "calendar",
       "moduleName": "工作日历模块",
+      "moduleDependencies": ["system"],
       "declarations": {
         "AUTH_MENU": [
           {
