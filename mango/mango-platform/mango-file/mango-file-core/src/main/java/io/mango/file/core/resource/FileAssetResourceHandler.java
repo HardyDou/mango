@@ -16,6 +16,7 @@ import io.mango.file.core.storage.FileStorageRouter;
 import io.mango.resource.api.enums.ResourceFieldType;
 import io.mango.resource.support.ResourceHandler;
 import io.mango.resource.support.ResourceTypes;
+import io.mango.resource.support.declaration.FileAssetContentLocations;
 import io.mango.resource.support.model.ResourceDeclaration;
 import io.mango.resource.support.model.ResourceField;
 import io.mango.resource.support.model.ResourceHandlerSpec;
@@ -52,8 +53,6 @@ import java.util.Objects;
 public class FileAssetResourceHandler implements ResourceHandler {
 
     private static final String TARGET_TABLE = "file_record";
-    private static final String ASSET_CLASSPATH_PREFIX = "classpath:META-INF/mango/assets/";
-    private static final String EXTERNAL_ASSET_PREFIX = "asset:";
     private static final String MANAGED_OBJECT_PREFIX = "mango-assets/";
     private static final String STAGING_PREFIX = ".mango-staging/resources/";
     private static final long DEFAULT_TENANT_ID = 1L;
@@ -342,7 +341,7 @@ public class FileAssetResourceHandler implements ResourceHandler {
             String fileName = validatedFileName(declaration);
             String sha256 = validatedSha256(declaration);
             ResourceField contentField = requiredContentField(declaration);
-            Resource content = readableContent(resourceLoader, fileProperties, contentField);
+            Resource content = readableContent(resourceLoader, fileProperties, contentField, sha256);
             long contentLength = contentLength(content);
             String actualHash = sha256(content);
             if (!sha256.equals(actualHash)) {
@@ -392,7 +391,7 @@ public class FileAssetResourceHandler implements ResourceHandler {
 
         private static String validatedSha256(ResourceDeclaration declaration) {
             String sha256 = requiredText(declaration, "sha256").toLowerCase(Locale.ROOT);
-            if (!sha256.matches("[0-9a-f]{64}")) {
+            if (!FileAssetContentLocations.isSha256(sha256)) {
                 throw new IllegalStateException("FILE_ASSET sha256 must contain 64 lowercase hex characters");
             }
             return sha256;
@@ -402,23 +401,27 @@ public class FileAssetResourceHandler implements ResourceHandler {
             ResourceField contentField = declaration.getFields().get("content");
             if (contentField == null || contentField.getType() != ResourceFieldType.FILE
                     || !StringUtils.hasText(contentField.getLocation())) {
-                throw new IllegalStateException("FILE_ASSET content must use " + ASSET_CLASSPATH_PREFIX
-                        + " or " + EXTERNAL_ASSET_PREFIX + "<relative-path>");
+                throw unsupportedContentLocation();
             }
             return contentField;
         }
 
         private static Resource readableContent(ResourceLoader resourceLoader, FileProperties fileProperties,
-                                                ResourceField contentField) {
+                                                ResourceField contentField, String sha256) {
             String location = contentField.getLocation().trim();
             Resource content;
-            if (location.startsWith(ASSET_CLASSPATH_PREFIX) && !location.contains("..")) {
+            if (location.startsWith(FileAssetContentLocations.ASSET_CLASSPATH_PREFIX)
+                    && !location.contains("..")) {
                 content = resourceLoader.getResource(location);
-            } else if (location.startsWith(EXTERNAL_ASSET_PREFIX)) {
+            } else if (FileAssetContentLocations.matchesPackagedObject(location, sha256)) {
+                content = resourceLoader.getResource(location);
+            } else if (FileAssetContentLocations.isPackagedObject(location)) {
+                throw new IllegalStateException(
+                        "FILE_ASSET packaged content location must match declared sha256: " + location);
+            } else if (location.startsWith(FileAssetContentLocations.EXTERNAL_ASSET_PREFIX)) {
                 content = externalAsset(fileProperties, location);
             } else {
-                throw new IllegalStateException("FILE_ASSET content must use " + ASSET_CLASSPATH_PREFIX
-                        + " or " + EXTERNAL_ASSET_PREFIX + "<relative-path>");
+                throw unsupportedContentLocation();
             }
             if (!content.exists() || !content.isReadable()) {
                 throw new IllegalStateException("FILE_ASSET content is not readable: "
@@ -432,7 +435,7 @@ public class FileAssetResourceHandler implements ResourceHandler {
             if (!StringUtils.hasText(configuredRoot)) {
                 throw new IllegalStateException("FILE_ASSET asset-root is not configured for " + location);
             }
-            String relativeValue = location.substring(EXTERNAL_ASSET_PREFIX.length());
+            String relativeValue = location.substring(FileAssetContentLocations.EXTERNAL_ASSET_PREFIX.length());
             Path relativePath = relativeAssetPath(relativeValue, location);
             try {
                 Path root = Path.of(configuredRoot.trim()).toRealPath();
@@ -487,6 +490,13 @@ public class FileAssetResourceHandler implements ResourceHandler {
         private static IllegalStateException unsafeAssetPath(String location, RuntimeException cause) {
             return new IllegalStateException("FILE_ASSET asset location must be a safe relative path: " + location,
                     cause);
+        }
+
+        private static IllegalStateException unsupportedContentLocation() {
+            return new IllegalStateException("FILE_ASSET content must use "
+                    + FileAssetContentLocations.ASSET_CLASSPATH_PREFIX + ", "
+                    + FileAssetContentLocations.PACKAGED_OBJECT_CLASSPATH_PREFIX + "<sha256> or "
+                    + FileAssetContentLocations.EXTERNAL_ASSET_PREFIX + "<relative-path>");
         }
 
         private static String validatedAccessLevel(ResourceDeclaration declaration) {

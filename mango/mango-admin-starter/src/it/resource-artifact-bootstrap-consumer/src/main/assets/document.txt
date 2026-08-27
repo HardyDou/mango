@@ -1,0 +1,1 @@
+issue-877 packaged bootstrap fixture
