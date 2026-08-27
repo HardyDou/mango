@@ -10,6 +10,7 @@ import io.mango.workflow.api.vo.WorkflowBusinessApplyProgressBatchVO;
 import io.mango.workflow.api.vo.WorkflowBusinessApplyProgressVO;
 import io.mango.workflow.api.vo.WorkflowBusinessApplySummaryVO;
 import io.mango.workflow.api.vo.WorkflowBusinessApplyVO;
+import io.mango.workflow.api.annotation.WorkflowBusinessDataPermission;
 
 import java.util.List;
 import jakarta.validation.Valid;
@@ -27,10 +28,13 @@ public interface WorkflowBusinessApplyApi {
 
     R<WorkflowBusinessApplySummaryVO> mySummary();
 
+    @WorkflowBusinessDataPermission(businessType = "*")
     R<WorkflowBusinessApplyVO> detail(@NotNull Long applyId);
 
+    @WorkflowBusinessDataPermission(businessType = "*")
     R<PageResult<WorkflowBusinessApplyVO>> history(@Valid WorkflowBusinessApplyPageQuery query);
 
+    @WorkflowBusinessDataPermission(businessType = "*")
     R<WorkflowBusinessApplyProgressVO> latestProgress(
             @NotBlank String businessType, @NotBlank String businessKey);
 
@@ -40,5 +44,6 @@ public interface WorkflowBusinessApplyApi {
     R<List<WorkflowBusinessApplyVO>> latestByBusinessKeys(
             @Valid WorkflowBusinessApplyProgressBatchRequest request);
 
+    @WorkflowBusinessDataPermission(businessType = "*")
     R<WorkflowBusinessApplyVO> byProcessInstance(@NotBlank String processInstanceId);
 }

@@ -67,7 +67,7 @@ public class WorkflowBusinessApplyController implements WorkflowBusinessApplyApi
     }
 
     @GetMapping("/detail")
-    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:business-apply:detail")
+    @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "已登录用户按业务数据权限查询业务申请详情")
     @Operation(summary = "查询业务工作流申请详情", description = "按申请ID查询业务申请、当前任务和展示快照")
     @Override
     public R<WorkflowBusinessApplyVO> detail(
@@ -77,7 +77,7 @@ public class WorkflowBusinessApplyController implements WorkflowBusinessApplyApi
     }
 
     @GetMapping("/history")
-    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:business-apply:detail")
+    @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "已登录用户按业务数据权限查询申请历史")
     @Operation(summary = "按业务主键查询申请历史", description = "按业务类型和业务主键分页查询历次申请")
     @Override
     public R<PageResult<WorkflowBusinessApplyVO>> history(
@@ -86,7 +86,7 @@ public class WorkflowBusinessApplyController implements WorkflowBusinessApplyApi
     }
 
     @GetMapping("/progress/latest")
-    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:business-apply:detail")
+    @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "已登录用户按业务数据权限查询最新进度")
     @Operation(summary = "查询业务最新申请进度", description = "按业务类型和业务主键查询最新一次申请进度")
     @Override
     public R<WorkflowBusinessApplyProgressVO> latestProgress(
@@ -117,7 +117,7 @@ public class WorkflowBusinessApplyController implements WorkflowBusinessApplyApi
     }
 
     @GetMapping("/progress/by-process-instance")
-    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:business-apply:detail")
+    @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "已登录用户按业务数据权限查询流程申请")
     @Operation(summary = "按流程实例查询业务申请", description = "按流程实例ID查询关联的业务申请")
     @Override
     public R<WorkflowBusinessApplyVO> byProcessInstance(

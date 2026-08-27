@@ -842,6 +842,10 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
     @Override
     public WorkflowProcessDetailVO processDetail(String processInstanceId) {
         Require.notBlank(processInstanceId, WorkflowCode.PROCESS_INSTANCE_NOT_FOUND, "流程实例ID不能为空");
+        WorkflowBusinessApplyVO businessApply = workflowBusinessApplyService.findByProcessInstance(processInstanceId);
+        if (businessApply != null) {
+            workflowBusinessApplyService.byProcessInstance(processInstanceId);
+        }
         WorkflowProcessDetailVO vo = new WorkflowProcessDetailVO();
         vo.setProcess(processInfo(processInstanceId));
         WorkflowFormInstanceEntity formInstance = findFormInstance(processInstanceId);
