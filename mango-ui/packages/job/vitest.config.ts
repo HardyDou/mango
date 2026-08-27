@@ -13,6 +13,10 @@ export default defineConfig({
         find: '@mango/common/utils/request',
         replacement: resolve(repoRoot, 'packages/common/utils/request.ts'),
       },
+      {
+        find: '@mango/common/utils/date-range',
+        replacement: resolve(repoRoot, 'packages/common/utils/date-range.ts'),
+      },
     ],
   },
 });

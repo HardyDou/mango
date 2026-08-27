@@ -23,6 +23,7 @@ export default defineConfig({
         '@mango/api-schema',
         '@mango/common',
         '@mango/common/utils/request',
+        '@mango/common/utils/date-range',
         '@mango/file',
         '@mango/grid-widgets',
         '@mango/system',

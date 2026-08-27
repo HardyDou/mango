@@ -11,6 +11,7 @@ export * from './utils/storage';
 export * from './utils/validate';
 export * from './utils/theme';
 export * from './utils/formatTime';
+export * from './utils/date-range';
 export * from './utils/mitt';
 export * from './utils/other';
 export * from './utils/webCrypto';

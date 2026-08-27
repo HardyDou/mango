@@ -3,6 +3,7 @@
  */
 
 import { del, get } from '@mango/common/utils/request';
+import { toBackendDateRangeParams } from '@mango/common/utils/date-range';
 import type { ApiId } from '@mango/api-schema';
 
 // ==================== 登录日志 ====================
@@ -62,7 +63,7 @@ export const loginLogApi = {
     return del<boolean>('/system/log/login/clean', { params: { retentionDays } });
   },
   statistics: (params?: { startTime?: string; endTime?: string }) => {
-    return get<any>('/system/log/login/statistics', { params }).then((data) => ({
+    return get<any>('/system/log/login/statistics', { params: toBackendDateRangeParams(params) }).then((data) => ({
       totalCount: Number(data.totalCount ?? 0),
       successCount: Number(data.successCount ?? 0),
       failCount: Number(data.failCount ?? 0),
@@ -155,7 +156,7 @@ function toBackendPageParams<T extends { pageNum?: number; pageSize?: number }>(
   if (!params) return params;
   const { pageNum, pageSize, ...rest } = params;
   return {
-    ...rest,
+    ...toBackendDateRangeParams(rest),
     page: pageNum,
     size: pageSize,
   };

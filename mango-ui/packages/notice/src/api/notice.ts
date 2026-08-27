@@ -1,4 +1,4 @@
-import { del, get, post, put } from '@mango/common';
+import { del, get, post, put, toBackendDateRangeParams } from '@mango/common';
 import type {
   NoticeBusinessConfigVersion,
   NoticeAnnouncement,
@@ -266,11 +266,11 @@ export function getNoticeTasks(params?: Record<string, unknown>) {
 }
 
 export function getSendRecords(params?: Record<string, unknown>) {
-  return get<PageResult<NoticeSendRecord>>('/notice/records', { params });
+  return get<PageResult<NoticeSendRecord>>('/notice/records', { params: toBackendDateRangeParams(params) });
 }
 
 export function getInboundMessages(params?: Record<string, unknown>) {
-  return get<PageResult<NoticeInboundMessage>>('/notice/inbound-messages', { params });
+  return get<PageResult<NoticeInboundMessage>>('/notice/inbound-messages', { params: toBackendDateRangeParams(params) });
 }
 
 export function getInboundMessage(id: string) {
@@ -302,7 +302,7 @@ export function ignoreSendRecords(ids: string[], reason: string) {
 }
 
 export function getMySiteMessages(params?: NoticeSiteMessagePageQuery) {
-  return get<PageResult<NoticeSiteMessage>>('/notice/site/my/messages', { params });
+  return get<PageResult<NoticeSiteMessage>>('/notice/site/my/messages', { params: toBackendDateRangeParams(params) });
 }
 
 export function getMySiteMessageDetail(id: string) {
