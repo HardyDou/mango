@@ -13,7 +13,7 @@
 
 ## v2026.08.27-maven-1.0.42-date-resource-fixes - 2026-08-27
 
-Status: `PENDING`. Publication, registry verification, Tag and GitHub Release remain deferred until the prepared Release PR is merged and the sealed candidate passes pure consume-registry verification.
+Status: `PUBLISHED_AND_VERIFIED`. Canonical manifest SHA-256 `c1d991b6ad7187fe01c5bdb30aba5b38de0fec70f7c93cc4b69d11cb664b38e4` for plan `9f43d5d5d187b5a741ffc7fb97f94c3a4d518b5c0c273f3a1beb552ed9984f62` and prepared candidate `2749f44b3183da4ce81e544891eea2d543f2cc243f2b8d2637a736e91a0ad671` is `COMPLETED`: all 192 Maven/docs coordinates and 25 npm packages ending at `@mango/cli@1.2.2` match the sealed candidate in both publish and consume registries, the pure consume-registry consumer passed, and Tag plus GitHub Release are `CREATED_AND_VERIFIED`.
 
 ### Pull Requests
 
