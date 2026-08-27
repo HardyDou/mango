@@ -78,6 +78,7 @@ Status: `PENDING`. Publication, registry verification, Tag and GitHub Release re
 ### Audit History
 
 - PR #868 and PR #869 belong to the completed `1.0.40` baseline and are not release-bearing changes in this batch.
+- Initial local candidate `6b2e59d29dd3af06336413b38fbb7e9357d4251b4d835f34c26ac5c301ce7ab2` reached `READY` but failed the final governance suite before any remote write because the Workflow business guide duplicated long-term rule wording. The replacement source links the PMO rule source instead.
 - The previous Tag and Release `v2026.08.26-maven-1.0.40-ai-resource-platform-release` remain unchanged.
 
 ## v2026.08.26-maven-1.0.40-ai-resource-platform-release - 2026-08-26

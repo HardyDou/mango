@@ -67,4 +67,5 @@
 ## Audit History
 
 - PR #868 prepared the previous `1.0.40` batch and PR #869 closed it after immutable publication; both belong to the successful baseline and are not release-bearing changes in this batch.
+- Initial local candidate `6b2e59d29dd3af06336413b38fbb7e9357d4251b4d835f34c26ac5c301ce7ab2` reached `READY` but the final local governance suite found duplicated long-term rule wording in the Workflow business guide. It performed no remote write and was superseded after the guide linked the PMO rule source.
 - The previous Tag and Release `v2026.08.26-maven-1.0.40-ai-resource-platform-release` remain unchanged.
