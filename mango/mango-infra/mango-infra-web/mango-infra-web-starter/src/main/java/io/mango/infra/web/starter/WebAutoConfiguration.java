@@ -41,6 +41,8 @@ import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 import java.util.TimeZone;
@@ -57,6 +59,8 @@ public class WebAutoConfiguration implements WebMvcConfigurer {
     private static final String DATE_TIME_PATTERN = JacksonUtils.DATE_TIME_PATTERN;
     private static final String DATE_PATTERN = JacksonUtils.DATE_PATTERN;
     private static final String TIME_PATTERN = JacksonUtils.TIME_PATTERN;
+    private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern(DATE_TIME_PATTERN);
+    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern(DATE_PATTERN);
     private static final String ASIA_SHANGHAI = JacksonUtils.ASIA_SHANGHAI;
     private static final int CONTEXT_FILTER_ORDER_OFFSET = 5;
     private static final int MDC_FILTER_ORDER_OFFSET = 10;
@@ -186,16 +190,30 @@ public class WebAutoConfiguration implements WebMvcConfigurer {
     @Override
     public void addFormatters(FormatterRegistry registry) {
         DateTimeFormatterRegistrar registrar = new DateTimeFormatterRegistrar();
-        registrar.setDateTimeFormatter(DateTimeFormatter.ofPattern(DATE_TIME_PATTERN));
-        registrar.setDateFormatter(DateTimeFormatter.ofPattern(DATE_PATTERN));
+        registrar.setDateTimeFormatter(DATE_TIME_FORMATTER);
+        registrar.setDateFormatter(DATE_FORMATTER);
         registrar.setTimeFormatter(DateTimeFormatter.ofPattern(TIME_PATTERN));
         registrar.registerFormatters(registry);
+        registry.addConverter(String.class, LocalDateTime.class, WebAutoConfiguration::parseLocalDateTime);
         registry.addConverter(String.class, Long.class, value -> {
             if (value == null || value.isBlank()) {
                 return null;
             }
             return Long.valueOf(value.trim());
         });
+    }
+
+    private static LocalDateTime parseLocalDateTime(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        String normalized = value.trim();
+        if (normalized.length() == DATE_PATTERN.length()) {
+            return LocalDate.parse(normalized, DATE_FORMATTER).atStartOfDay();
+        }
+        DateTimeFormatter formatter = normalized.indexOf('T') >= 0
+                ? DateTimeFormatter.ISO_LOCAL_DATE_TIME : DATE_TIME_FORMATTER;
+        return LocalDateTime.parse(normalized, formatter);
     }
 
     @Override

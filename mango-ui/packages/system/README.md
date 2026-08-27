@@ -25,7 +25,7 @@
 | 公共路径           | `PublicPathView`、public path API                             | BFF permission / authorization        |
 | 地区               | `AreaView`、`areaApi`                                         | `mango-system`                        |
 | 业务域             | `DomainView`、`domainApi`、`DomainSelector`、`DomainSideTree` | `mango-domain`                        |
-| 登录日志和操作日志 | `LoginLogView`、个人中心“登录日志”、log API                   | `mango-system`                        |
+| 登录日志和操作日志 | `LoginLogView`、个人中心“登录日志”、log API；日期-only 范围会补齐整日边界 | `mango-system`                        |
 | 系统事件 outbox    | `SystemEventView`、`systemEventApi`                           | `mango-infra-event`                   |
 | 参与人选择         | `ParticipantSelector`                                         | identity、org、authorization          |
 

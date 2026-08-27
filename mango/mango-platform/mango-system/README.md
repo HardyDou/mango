@@ -20,7 +20,7 @@
 | 机构 | 维护机构空间、机构类型、机构状态、机构套餐绑定，登录页读取启用机构选项 | `SysTenantApi`、`/system/tenant`、`tenantApi` |
 | 行政区划 | 查询省市区树、子级区划、adcode 详情和启用区划 | `SysAreaApi`、`/system/area`、`areaApi` |
 | 国际化 | 读取公开语言包、语言列表和指定国际化条目 | `SysI18nApi`、`/system/i18n` |
-| 登录日志 | 管理端查询、统计、清理登录日志；个人中心查询当前账号记录 | `SysLoginLogApi`、`/system/log/login/*`、`loginLogApi` |
+| 登录日志 | 管理端查询、统计、清理登录日志；个人中心查询当前账号记录；日期-only 范围由前端补齐整日边界 | `SysLoginLogApi`、`/system/log/login/*`、`loginLogApi` |
 | 操作日志 | 查询、清理操作日志 | `SysOperationLogApi`、`/system/log/operation/*`、`operationLogApi` |
 | 个人参数配置 | 按当前租户、当前用户保存页面偏好、筛选条件、提醒配置等个人配置 | `PersonalConfigApi`、`/system/personal-configs` |
 | 机构初始化扩展 | 新建机构后触发各模块写入默认数据，删除机构前汇总依赖阻断原因 | `TenantProvisioner`、`TenantDependencyChecker`、`TenantPackageBindingHandler` |
