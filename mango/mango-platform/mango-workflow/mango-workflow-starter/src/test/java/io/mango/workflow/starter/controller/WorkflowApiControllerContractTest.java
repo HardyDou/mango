@@ -13,6 +13,7 @@ import io.mango.workflow.api.command.CompleteWorkflowTaskCommand;
 import io.mango.workflow.api.command.ReadWorkflowCopiedTaskCommand;
 import io.mango.workflow.api.command.WithdrawWorkflowProcessCommand;
 import io.mango.workflow.api.query.WorkflowTaskPageQuery;
+import io.mango.workflow.api.query.WorkflowBusinessApplyPageQuery;
 import io.mango.workflow.api.vo.WorkflowMyTaskSummaryVO;
 import io.mango.workflow.api.vo.WorkflowProcessDetailVO;
 import io.mango.workflow.api.vo.WorkflowProcessWithdrawResultVO;
@@ -58,6 +59,10 @@ class WorkflowApiControllerContractTest {
         assertLoginAccess(WorkflowProcessController.class, "detail");
         assertLoginAccess(WorkflowTaskController.class, "detail");
         assertLoginAccess(WorkflowTaskController.class, "processDetail");
+        assertLoginAccess(WorkflowBusinessApplyController.class, "detail", Long.class);
+        assertLoginAccess(WorkflowBusinessApplyController.class, "history", WorkflowBusinessApplyPageQuery.class);
+        assertLoginAccess(WorkflowBusinessApplyController.class, "latestProgress", String.class, String.class);
+        assertLoginAccess(WorkflowBusinessApplyController.class, "byProcessInstance", String.class);
     }
 
     @Test
@@ -152,7 +157,12 @@ class WorkflowApiControllerContractTest {
     }
 
     private void assertLoginAccess(Class<?> controllerType, String methodName) throws NoSuchMethodException {
-        ApiAccess apiAccess = controllerType.getDeclaredMethod(methodName, String.class).getAnnotation(ApiAccess.class);
+        assertLoginAccess(controllerType, methodName, String.class);
+    }
+
+    private void assertLoginAccess(Class<?> controllerType, String methodName, Class<?>... parameterTypes)
+            throws NoSuchMethodException {
+        ApiAccess apiAccess = controllerType.getDeclaredMethod(methodName, parameterTypes).getAnnotation(ApiAccess.class);
         assertThat(apiAccess).isNotNull();
         assertThat(apiAccess.mode()).isEqualTo(ApiResourceAccessMode.LOGIN);
         assertThat(apiAccess.permission()).isBlank();

@@ -42,6 +42,9 @@ public class CreateWorkflowBusinessApplyCommand {
     @Size(max = 1000, message = "申请摘要最多1000个字符")
     private String applySummary;
 
+    @Schema(description = "申请人所属组织ID；业务模块有明确组织事实时传入")
+    private Long applicantDeptId;
+
     @Schema(description = "Mango流程定义ID")
     @NotNull(groups = WorkflowOptionalValidation.class)
     private Long processDefinitionId;

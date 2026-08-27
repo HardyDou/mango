@@ -7,6 +7,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import io.mango.common.exception.BizException;
 import io.mango.common.result.R;
 import io.mango.common.result.Require;
 import io.mango.common.vo.PageResult;
@@ -842,6 +843,14 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
     @Override
     public WorkflowProcessDetailVO processDetail(String processInstanceId) {
         Require.notBlank(processInstanceId, WorkflowCode.PROCESS_INSTANCE_NOT_FOUND, "流程实例ID不能为空");
+        // 业务申请存在时，复用 service 层用户态校验；纯 Workflow 流程保持原有详情语义。
+        try {
+            workflowBusinessApplyService.byProcessInstance(processInstanceId);
+        } catch (BizException ex) {
+            if (ex.getCode() != WorkflowCode.APPLY_NOT_FOUND.getCode()) {
+                throw ex;
+            }
+        }
         WorkflowProcessDetailVO vo = new WorkflowProcessDetailVO();
         vo.setProcess(processInfo(processInstanceId));
         WorkflowFormInstanceEntity formInstance = findFormInstance(processInstanceId);

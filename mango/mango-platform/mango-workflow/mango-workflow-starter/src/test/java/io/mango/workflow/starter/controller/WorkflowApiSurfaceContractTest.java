@@ -58,7 +58,7 @@ class WorkflowApiSurfaceContractTest {
 
     @Test
     void existingHttpEndpointsKeepPathsVerbsReturnsAndPermissions() {
-        assertThat(httpFingerprint()).isEqualTo("d42d40b4e7bf832c4a566ff0b53c93560dfeeadd674f22543d5b130aeb0db775");
+        assertThat(httpFingerprint()).isEqualTo("90f3f51cfefa17e1bfbcfba4ae98667a571fdd2b71c029d85c4c3d764c28cb9a");
     }
 
     private static String apiFingerprint() {

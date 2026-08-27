@@ -92,6 +92,29 @@ module-path=/workflow
 
 业务模块只能依赖 `mango-workflow-api` 暴露的 `XxxApi`、Command、Query、VO、Enum 和事件 payload 契约。禁止业务模块注入或调用 `mango-workflow-core` 的 `IWorkflow*Service`、`Workflow*ServiceImpl`、`WorkflowEventPublisher`、`WorkflowDomainEvents` 等内部实现；本地单体由 `mango-workflow-starter` 的 Controller 承载 API Bean，远程调用由 `mango-workflow-starter-remote` 的 Feign client 承载 API Bean。
 
+### 业务申请数据权限
+
+`detail`、`history`、`latestProgress`、`byProcessInstance` 以及流程详情读取会在 Workflow 服务层统一执行业务数据权限校验，不再把 `workflow:business-apply:detail` 作为唯一保护。业务模块应在自己的业务表上实现 `WorkflowBusinessApplyDataPermissionProvider`，并用 `@WorkflowBusinessDataPermission(businessType = "...")` 声明负责的业务类型：
+
+```java
+@Component
+@WorkflowBusinessDataPermission(businessType = "GUARANTEE")
+public final class GuaranteeWorkflowDataPermissionProvider
+        implements WorkflowBusinessApplyDataPermissionProvider {
+    public boolean supports(String businessType) {
+        return "GUARANTEE".equals(businessType);
+    }
+
+    public boolean canRead(WorkflowBusinessApplyAccessContext context) {
+        // 在保函业务表校验当前用户的 owner、组织和租户范围。
+        return guaranteeQuery.canRead(context.businessKey(), context.tenantId(),
+                context.orgId(), MangoContextHolder.userId());
+    }
+}
+```
+
+Workflow 只根据 `workflow_business_apply` 的持久化事实构造 `WorkflowBusinessApplyAccessContext`，不会直接访问业务表，也不信任请求参数中的租户或 owner。匹配的 Provider 均拒绝或缺少安全的租户/申请人上下文时，接口返回 `WorkflowCode.APPLY_ACCESS_DENIED`（HTTP/Java/Feign 语义一致）；批量进度接口会过滤无权记录。内部事件链路使用 `findByProcessInstance`，不套用用户态校验。
+
 创建申请字段：
 
 | 字段 | 必填 | 含义 |

@@ -38,6 +38,7 @@ import lombok.RequiredArgsConstructor;
 import org.flowable.engine.TaskService;
 import org.flowable.identitylink.api.IdentityLink;
 import org.flowable.task.api.Task;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -70,6 +71,7 @@ public class WorkflowBusinessApplyService implements IWorkflowBusinessApplyServi
     private final WorkflowBusinessApplyStatusLogMapper statusLogMapper;
     private final TaskService taskService;
     private final ObjectMapper objectMapper;
+    private final ObjectProvider<WorkflowBusinessApplyAccessChecker> accessCheckerProvider;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -88,6 +90,7 @@ public class WorkflowBusinessApplyService implements IWorkflowBusinessApplyServi
         apply.setApplyTitle(command.getApplyTitle().trim());
         apply.setApplySummary(trim(command.getApplySummary()));
         apply.setApplicantId(MangoContextHolder.userId());
+        apply.setApplicantDeptId(command.getApplicantDeptId());
         apply.setApplicantName(currentUser());
         apply.setProcessDefinitionId(command.getProcessDefinitionId());
         apply.setProcessDefinitionKey(trim(command.getProcessDefinitionKey()));
@@ -168,15 +171,17 @@ public class WorkflowBusinessApplyService implements IWorkflowBusinessApplyServi
         Require.notNull(applyId, WorkflowCode.APPLY_INVALID, "申请ID不能为空");
         WorkflowBusinessApplyEntity apply = applyMapper.selectById(applyId);
         Require.notNull(apply, WorkflowCode.APPLY_NOT_FOUND);
+        checkAccess(apply);
         return toVo(apply, tasksByApplyId(apply.getId()));
     }
 
     @Override
     public WorkflowBusinessApplyVO byProcessInstance(String processInstanceId) {
         Require.notBlank(processInstanceId, WorkflowCode.APPLY_INVALID, "流程实例ID不能为空");
-        WorkflowBusinessApplyVO apply = findByProcessInstance(processInstanceId);
-        Require.notNull(apply, WorkflowCode.APPLY_NOT_FOUND);
-        return apply;
+        WorkflowBusinessApplyEntity entity = applyByProcessInstanceId(processInstanceId);
+        Require.notNull(entity, WorkflowCode.APPLY_NOT_FOUND);
+        checkAccess(entity);
+        return toVo(entity, tasksByApplyId(entity.getId()));
     }
 
     @Override
@@ -209,7 +214,16 @@ public class WorkflowBusinessApplyService implements IWorkflowBusinessApplyServi
         Require.notBlank(resolved.getBusinessType(), WorkflowCode.APPLY_INVALID, "业务类型不能为空");
         Require.notBlank(resolved.getBusinessKey(), WorkflowCode.APPLY_INVALID, "业务主键不能为空");
         resolved.setLatestOnly(Boolean.FALSE);
-        return page(resolved);
+        List<WorkflowBusinessApplyEntity> applies = applyMapper.selectList(wrapper(resolved)).stream()
+                .filter(this::isAllowed)
+                .toList();
+        long from = Math.max(0L, (resolved.getPage() - 1L) * resolved.getSize());
+        long to = Math.min(applies.size(), from + resolved.getSize());
+        List<WorkflowBusinessApplyVO> records = from >= to ? List.of()
+                : withCurrentTasks(applies.subList((int) from, (int) to)).stream()
+                .map(entry -> toVo(entry.apply(), entry.tasks()))
+                .toList();
+        return PageResult.of(records, applies.size(), resolved.getPage(), resolved.getSize());
     }
 
     @Override
@@ -220,6 +234,7 @@ public class WorkflowBusinessApplyService implements IWorkflowBusinessApplyServi
         if (apply == null) {
             return null;
         }
+        checkAccess(apply);
         return toProgressVo(apply, tasksByApplyId(apply.getId()));
     }
 
@@ -243,6 +258,9 @@ public class WorkflowBusinessApplyService implements IWorkflowBusinessApplyServi
                 .toList());
         Map<String, WorkflowBusinessApplyProgressVO> result = new LinkedHashMap<>();
         for (WorkflowBusinessApplyEntity apply : applies) {
+            if (!isAllowed(apply)) {
+                continue;
+            }
             result.putIfAbsent(apply.getBusinessKey(), toProgressVo(apply, taskMap.getOrDefault(apply.getId(), List.of())));
         }
         return result;
@@ -464,6 +482,18 @@ public class WorkflowBusinessApplyService implements IWorkflowBusinessApplyServi
         return applyMapper.selectOne(new LambdaQueryWrapper<WorkflowBusinessApplyEntity>()
                 .eq(WorkflowBusinessApplyEntity::getProcessInstanceId, processInstanceId)
                 .last("limit 1"));
+    }
+
+    private void checkAccess(WorkflowBusinessApplyEntity apply) {
+        WorkflowBusinessApplyAccessChecker checker = accessCheckerProvider.getIfAvailable();
+        if (checker != null) {
+            checker.check(apply);
+        }
+    }
+
+    private boolean isAllowed(WorkflowBusinessApplyEntity apply) {
+        WorkflowBusinessApplyAccessChecker checker = accessCheckerProvider.getIfAvailable();
+        return checker == null || checker.isAllowed(apply);
     }
 
     private void updateCurrentTaskSummary(WorkflowBusinessApplyEntity apply, List<Task> tasks, LocalDateTime now) {
