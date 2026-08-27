@@ -18,6 +18,7 @@ export default defineConfig({
         '@mango/admin-pages/core',
         '@mango/common',
         '@mango/common/utils/request',
+        '@mango/common/utils/date-range',
         'element-plus',
         'vue',
       ],

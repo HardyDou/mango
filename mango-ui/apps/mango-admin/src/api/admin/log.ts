@@ -2,7 +2,7 @@
  * System Log API - 系统日志
  */
 
-import { get, post, put, del } from '@mango/common';
+import { get, post, put, del, toBackendDateRangeParams } from '@mango/common';
 
 // ==================== 登录日志 ====================
 
@@ -43,7 +43,7 @@ export interface PageResult<T> {
 
 export const loginLogApi = {
   list: (params?: LoginLogQuery) => {
-    return get<PageResult<SysLoginLog>>('/system/log/login/list', { params });
+    return get<PageResult<SysLoginLog>>('/system/log/login/list', { params: toBackendDateRangeParams(params) });
   },
   detail: (id: number) => {
     return get<SysLoginLog>('/system/log/login/detail', { params: { id } });
@@ -52,7 +52,7 @@ export const loginLogApi = {
     return del<void>('/system/log/login/clean', { params: { days } });
   },
   statistics: (params?: { startTime?: string; endTime?: string }) => {
-    return get<LoginStatistics>('/system/log/login/statistics', { params });
+    return get<LoginStatistics>('/system/log/login/statistics', { params: toBackendDateRangeParams(params) });
   },
 };
 
@@ -87,7 +87,7 @@ export interface OperationLogQuery {
 
 export const operationLogApi = {
   list: (params?: OperationLogQuery) => {
-    return get<PageResult<SysOperationLog>>('/system/log/operation/list', { params });
+    return get<PageResult<SysOperationLog>>('/system/log/operation/list', { params: toBackendDateRangeParams(params) });
   },
   detail: (id: number) => {
     return get<SysOperationLog>('/system/log/operation/detail', { params: { id } });
@@ -96,6 +96,6 @@ export const operationLogApi = {
     return del<void>('/system/log/operation/clean', { params: { days } });
   },
   export: (params?: { startTime?: string; endTime?: string }) => {
-    return get<void>('/system/log/operation/export', { params });
+    return get<void>('/system/log/operation/export', { params: toBackendDateRangeParams(params) });
   },
 };

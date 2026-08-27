@@ -72,6 +72,24 @@ describe('job pagination API', () => {
     });
   });
 
+  it('expands date-only instance bounds using the instance field names', async () => {
+    await jobApi.pageInstances({
+      pageNum: 1,
+      pageSize: 10,
+      triggerTimeStart: '2026-08-27',
+      triggerTimeEnd: '2026-08-27',
+    });
+
+    expect(request.get).toHaveBeenCalledWith('/job/instances/page', {
+      params: {
+        page: 1,
+        size: 10,
+        triggerTimeStart: '2026-08-27 00:00:00',
+        triggerTimeEnd: '2026-08-27 23:59:59',
+      },
+    });
+  });
+
   it('falls back to the requested pagination for an empty backend result', async () => {
     request.get.mockResolvedValueOnce({});
 

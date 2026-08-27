@@ -1,7 +1,7 @@
 # Mango Infra Web
 
 ## 1. 概览
-`mango-infra-web` 提供 Mango HTTP API 基础能力，覆盖内部接口标记、内部调用签名校验、请求上下文读取、MangoContext 写入、MDC trace、CORS、全局异常处理、Jackson 长整型字符串化和日期格式化。
+`mango-infra-web` 提供 Mango HTTP API 基础能力，覆盖内部接口标记、内部调用签名校验、请求上下文读取、MangoContext 写入、MDC trace、CORS、全局异常处理、Jackson 长整型字符串化和日期格式化。查询参数中的 `yyyy-MM-dd` 可绑定为当天 `00:00:00` 的 `LocalDateTime`，完整日期时间格式保持兼容。
 请求体无法反序列化时，全局异常处理会在不回显字段值或请求体的前提下，返回安全的 JSON 字段路径和错误类别。
 
 ## 2. 功能清单

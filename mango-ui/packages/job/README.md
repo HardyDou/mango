@@ -24,6 +24,7 @@
 | 运行状态页面 | 查看 native 引擎同步状态汇总                                                                                       |
 | API 封装     | 导出 `jobApi`、请求类型、返回类型和枚举选项                                                                        |
 | 分页兼容     | 调用方使用 `pageNum/pageSize`，请求转换为后端 `page/size`，并兼容 `list`、`records`、`rows`、`data` 等响应列表字段 |
+| 日期范围兼容 | 执行实例查询的 `triggerTimeStart/triggerTimeEnd` 支持日期-only，并分别补齐为当天开始和结束时间                    |
 
 ## 3. 接入方式
 

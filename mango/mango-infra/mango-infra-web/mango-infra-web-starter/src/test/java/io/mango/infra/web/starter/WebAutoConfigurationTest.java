@@ -8,6 +8,7 @@ import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilde
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
+import org.springframework.format.support.DefaultFormattingConversionService;
 
 import java.time.LocalDateTime;
 
@@ -61,6 +62,19 @@ class WebAutoConfigurationTest {
                 LocalDateTime.of(2026, 5, 17, 17, 29, 31)));
 
         assertEquals("{\"id\":\"2055465090113392600\",\"primitiveId\":\"1\",\"createdTime\":\"2026-05-17 17:29:31\"}", json);
+    }
+
+    @Test
+    void localDateTimeRequestParametersAcceptDateAndDateTimeValues() {
+        DefaultFormattingConversionService conversionService = new DefaultFormattingConversionService();
+        new WebAutoConfiguration(new MangoWebProperties()).addFormatters(conversionService);
+
+        assertEquals(LocalDateTime.of(2026, 8, 27, 0, 0),
+                conversionService.convert("2026-08-27", LocalDateTime.class));
+        assertEquals(LocalDateTime.of(2026, 8, 27, 14, 30, 45),
+                conversionService.convert("2026-08-27 14:30:45", LocalDateTime.class));
+        assertEquals(LocalDateTime.of(2026, 8, 27, 14, 30, 45),
+                conversionService.convert("2026-08-27T14:30:45", LocalDateTime.class));
     }
 
     static class LongPayload {

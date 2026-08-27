@@ -3,6 +3,7 @@
  */
 
 import { del, get, post, put } from '@mango/common/utils/request';
+import { toBackendDateRangeParams } from '@mango/common/utils/date-range';
 
 export type WorkflowStatus = 'DRAFT' | 'PUBLISHED' | 'DISABLED';
 export type WorkflowAssigneeType = 'SPECIFIED_USER' | 'SPECIFIED_ROLE' | 'SPECIFIED_POST' | 'SPECIFIED_ORG' | 'ORG_LEADER' | 'INITIATOR' | 'INITIATOR_SELECT' | 'FORM_USER' | 'EXPRESSION';
@@ -698,7 +699,7 @@ export const workflowApi = {
     .then(normalizeBusinessApplySummary),
   businessApplyHistory: (businessType: string, businessKey: string, params?: WorkflowBusinessApplyPageQuery) => get<any>('/workflow/business-applies/history', {
     params: {
-      ...toBackendPageParams(params),
+      ...toBackendBusinessApplyPageParams(params),
       businessType,
       businessKey,
     },
@@ -905,7 +906,7 @@ function toBackendBusinessApplyPageParams(params?: WorkflowBusinessApplyPageQuer
   if (!params) return params;
   const { pageNum, pageSize, categoryId, orgId, ...rest } = params;
   return {
-    ...rest,
+    ...toBackendDateRangeParams(rest, { startKey: 'startedAtBegin', endKey: 'startedAtEnd' }),
     categoryId: categoryId === '' ? undefined : categoryId,
     orgId: orgId === '' ? undefined : orgId,
     page: pageNum,
