@@ -2,6 +2,7 @@ package io.mango.resource.sync.starter;
 
 import io.mango.resource.api.command.ResourceModuleManifestCommand;
 import io.mango.resource.support.ResourceTypes;
+import io.mango.resource.support.declaration.FileAssetContentLocations;
 import io.mango.resource.support.declaration.ResourceDeclarationCanonicalizer;
 import io.mango.resource.support.declaration.ResourceDeclarationCollector;
 import io.mango.resource.support.declaration.ResourceModuleHasher;
@@ -35,7 +36,6 @@ public final class ResourceManifestArtifactWriter {
 
     private static final String RESOURCE_MANIFEST = "META-INF/mango/resource-bootstrap-manifest.json";
     private static final String FILE_MANIFEST = "META-INF/mango/files-manifest.json";
-    private static final String OBJECT_DIRECTORY = "META-INF/mango/files.bundle/objects";
 
     private final ResourceDeclarationCollector collector;
     private final ResourceManifestSerializer serializer;
@@ -103,7 +103,8 @@ public final class ResourceManifestArtifactWriter {
             String location = contentField == null ? null : contentField.getLocation();
             String expectedHash = fieldText(declaration, "sha256");
             Resource content = resolveContent(location);
-            Path objectPath = outputDirectory.resolve(OBJECT_DIRECTORY).resolve(expectedHash);
+            Path objectPath = outputDirectory.resolve(FileAssetContentLocations.PACKAGED_OBJECT_DIRECTORY)
+                    .resolve(expectedHash);
             ContentIdentity identity = copyAndDigest(content, objectPath, expectedHash, declaration.getId());
             if (!expectedHash.equals(identity.sha256())) {
                 throw new IllegalStateException("FILE_ASSET sha256 mismatch: " + declaration.getId());
@@ -120,7 +121,7 @@ public final class ResourceManifestArtifactWriter {
             files.add(entry);
             ResourceDeclaration packaged = declaration.copy();
             ResourceField packagedContent = copyField(contentField);
-            packagedContent.setLocation("classpath:" + OBJECT_DIRECTORY + "/" + expectedHash);
+            packagedContent.setLocation(FileAssetContentLocations.packagedObject(expectedHash));
             packaged.putField("content", packagedContent);
             packagedDeclarations.add(packaged);
         }

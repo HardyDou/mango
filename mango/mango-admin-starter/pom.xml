@@ -166,4 +166,50 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <profiles>
+        <profile>
+            <id>resource-artifact-bootstrap-consumer-integration-test</id>
+            <activation>
+                <property>
+                    <name>mango.resource.artifact.bootstrap.consumer.it</name>
+                    <value>true</value>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-invoker-plugin</artifactId>
+                        <version>3.9.1</version>
+                        <configuration>
+                            <projectsDirectory>src/it</projectsDirectory>
+                            <cloneProjectsTo>${project.build.directory}/it</cloneProjectsTo>
+                            <streamLogs>true</streamLogs>
+                            <showErrors>true</showErrors>
+                            <localRepositoryPath>${settings.localRepository}</localRepositoryPath>
+                            <postBuildHookScript>verify.groovy</postBuildHookScript>
+                            <goals>
+                                <goal>clean</goal>
+                                <goal>verify</goal>
+                            </goals>
+                            <properties>
+                                <mango.version>${project.version}</mango.version>
+                                <spring.boot.version>${spring-boot.version}</spring.boot.version>
+                            </properties>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>resource-artifact-bootstrap-consumer-integration-test</id>
+                                <phase>install</phase>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

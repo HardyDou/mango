@@ -13,6 +13,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class ResourceDeclarationCanonicalizerTest {
 
@@ -60,6 +61,24 @@ class ResourceDeclarationCanonicalizerTest {
                 .contains("\"value\":\"2026-08-03T03:30:45\"");
     }
 
+    @Test
+    void acceptsPackagedFileLocationOnlyWhenItMatchesDeclaredChecksum() {
+        String sha256 = "1".repeat(64);
+        ResourceDeclaration declaration = fileDeclaration(
+                FileAssetContentLocations.packagedObject(sha256), sha256);
+        ResourceDeclarationCanonicalizer canonicalizer =
+                new ResourceDeclarationCanonicalizer(new ObjectMapper());
+
+        assertThat(new String(canonicalizer.canonicalBytes(declaration), StandardCharsets.UTF_8))
+                .contains("\"content\":{\"sha256\":\"" + sha256 + "\"}");
+
+        declaration.getFields().get("content")
+                .setLocation(FileAssetContentLocations.packagedObject("2".repeat(64)));
+        assertThatThrownBy(() -> canonicalizer.canonicalBytes(declaration))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("must match the declared sha256");
+    }
+
     private static ResourceDeclaration declarationWithLongField() {
         ResourceField field = new ResourceField();
         field.setType(ResourceFieldType.LONG);
@@ -73,6 +92,26 @@ class ResourceDeclarationCanonicalizerTest {
         declaration.setName("Long identity");
         declaration.setTargetModule("test");
         declaration.putField("tenantId", field);
+        return declaration;
+    }
+
+    private static ResourceDeclaration fileDeclaration(String location, String sha256) {
+        ResourceDeclaration declaration = new ResourceDeclaration();
+        declaration.setId("resource-file-1");
+        declaration.setVersion(1);
+        declaration.setResourceType("FILE_ASSET");
+        declaration.setModuleCode("test");
+        declaration.setBizKey("test.file");
+        declaration.setName("Packaged file");
+        declaration.setTargetModule("file");
+        ResourceField hash = new ResourceField();
+        hash.setType(ResourceFieldType.STRING);
+        hash.setValue(sha256);
+        declaration.putField("sha256", hash);
+        ResourceField content = new ResourceField();
+        content.setType(ResourceFieldType.FILE);
+        content.setLocation(location);
+        declaration.putField("content", content);
         return declaration;
     }
 }

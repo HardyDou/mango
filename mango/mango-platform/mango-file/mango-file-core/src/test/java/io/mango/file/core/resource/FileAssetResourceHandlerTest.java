@@ -12,6 +12,7 @@ import io.mango.file.core.storage.FileStorage;
 import io.mango.file.core.storage.FileStorageRouter;
 import io.mango.resource.support.ResourceTypes;
 import io.mango.resource.support.builder.ResourceDeclarationBuilder;
+import io.mango.resource.support.declaration.FileAssetContentLocations;
 import io.mango.resource.support.model.ResourceDeclaration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -182,6 +183,26 @@ class FileAssetResourceHandlerTest {
 
         assertThat(storage.objects).containsKey(OBJECT_NAME);
         assertThat(storage.putCount).isOne();
+    }
+
+    @Test
+    void publishesContentAddressedObjectFromPackagedClasspath() {
+        handler.upsert(declaration(OBJECT_NAME, SHA256,
+                FileAssetContentLocations.packagedObject(SHA256)));
+
+        assertThat(storage.objects.get(OBJECT_NAME))
+                .isEqualTo("mango-file-asset\n".getBytes(StandardCharsets.UTF_8));
+        assertThat(recordState.get().getFileHash()).isEqualTo(SHA256);
+    }
+
+    @Test
+    void rejectsPackagedObjectWhoseLocationDoesNotMatchDeclaredChecksum() {
+        String mismatchedLocation = FileAssetContentLocations.packagedObject("0".repeat(64));
+
+        assertThatThrownBy(() -> handler.upsert(declaration(OBJECT_NAME, SHA256, mismatchedLocation)))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("must match declared sha256");
+        assertThat(storage.putCount).isZero();
     }
 
     @Test

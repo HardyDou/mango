@@ -115,17 +115,23 @@ public final class ResourceDeclarationCanonicalizer {
             return null;
         }
         String value = String.valueOf(field.getValue()).trim().toLowerCase(java.util.Locale.ROOT);
-        return value.matches("[0-9a-f]{64}") ? value : null;
+        return FileAssetContentLocations.isSha256(value) ? value : null;
     }
 
     private Map<String, Object> readContentFingerprint(ResourceField field, String declaredSha256) {
-        if (StringUtils.hasText(field.getLocation())
-                && (field.getLocation().startsWith("asset:")
-                || field.getLocation().startsWith(
-                        "classpath:META-INF/mango/files.bundle/objects/"))) {
+        String location = field.getLocation();
+        if (StringUtils.hasText(location)
+                && location.startsWith(FileAssetContentLocations.EXTERNAL_ASSET_PREFIX)) {
             if (declaredSha256 == null) {
                 throw new IllegalStateException(
-                        "External file resource field requires a declared sha256: " + field.getLocation());
+                        "External file resource field requires a declared sha256: " + location);
+            }
+            return Map.of("sha256", declaredSha256);
+        }
+        if (FileAssetContentLocations.isPackagedObject(location)) {
+            if (!FileAssetContentLocations.matchesPackagedObject(location, declaredSha256)) {
+                throw new IllegalStateException(
+                        "Packaged FILE_ASSET location must match the declared sha256: " + location);
             }
             return Map.of("sha256", declaredSha256);
         }
