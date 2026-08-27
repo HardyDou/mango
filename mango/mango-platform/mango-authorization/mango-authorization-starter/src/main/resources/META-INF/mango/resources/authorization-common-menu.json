@@ -4,6 +4,7 @@
       "schemaVersion": 1,
       "moduleCode": "authorization",
       "moduleName": "授权模块",
+      "moduleDependencies": ["system"],
       "declarations": {
         "AUTH_MENU": [
           {

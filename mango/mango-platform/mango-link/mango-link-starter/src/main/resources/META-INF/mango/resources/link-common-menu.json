@@ -4,6 +4,7 @@
       "schemaVersion": 1,
       "moduleCode": "link",
       "moduleName": "网址导航",
+      "moduleDependencies": ["system"],
       "declarations": {
         "AUTH_MENU": [
           {

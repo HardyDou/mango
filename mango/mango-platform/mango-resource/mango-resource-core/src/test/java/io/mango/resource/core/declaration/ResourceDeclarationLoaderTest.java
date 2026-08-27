@@ -46,6 +46,39 @@ class ResourceDeclarationLoaderTest {
     }
 
     @Test
+    void loadModuleDependenciesReadsAndNormalizesEnvelopeMetadata() {
+        ResourceRegistryProperties properties = new ResourceRegistryProperties();
+        properties.setLocations(List.of("classpath*:META-INF/mango/resources/test-resource.json"));
+
+        Map<String, List<String>> dependencies = new ResourceDeclarationLoader(new ObjectMapper(), properties)
+                .loadModuleDependencies();
+
+        assertThat(dependencies).containsEntry("finance", List.of("system"));
+    }
+
+    @Test
+    void platformMenuDeclarationsExposeCrossModuleDependencies() {
+        ResourceRegistryProperties properties = new ResourceRegistryProperties();
+        properties.setLocations(List.of(
+                repositoryResource("mango/mango-platform/mango-system/mango-system-starter/src/main/resources/"
+                        + "META-INF/mango/resources/system-common-menu.json"),
+                repositoryResource("mango/mango-platform/mango-auth/mango-auth-starter/src/main/resources/"
+                        + "META-INF/mango/resources/auth-common-menu.json"),
+                repositoryResource("mango/mango-platform/mango-authorization/mango-authorization-starter/src/main/resources/"
+                        + "META-INF/mango/resources/authorization-common-menu.json"),
+                repositoryResource("mango/mango-platform/mango-domain/mango-domain-starter/src/main/resources/"
+                        + "META-INF/mango/resources/domain-common-menu.json")));
+        ResourceDeclarationLoader loader = new ResourceDeclarationLoader(new ObjectMapper(), properties);
+
+        Map<String, List<String>> dependencies = loader.loadModuleDependencies();
+
+        assertThat(dependencies).containsEntry("system", List.of())
+                .containsEntry("auth", List.of("system"))
+                .containsEntry("authorization", List.of("system"))
+                .containsEntry("domain", List.of("system"));
+    }
+
+    @Test
     void loadDoesNotReadDemoDeclarationsByDefault() {
         ResourceRegistryProperties properties = new ResourceRegistryProperties();
         properties.setLocations(List.of("classpath*:META-INF/mango/resources/test-resource.*"));
@@ -247,5 +280,9 @@ class ResourceDeclarationLoaderTest {
             current = current.getParent();
         }
         throw new IllegalStateException("Repository file not found: " + relativePath);
+    }
+
+    private String repositoryResource(String relativePath) {
+        return findRepositoryFile(relativePath).toUri().toString();
     }
 }

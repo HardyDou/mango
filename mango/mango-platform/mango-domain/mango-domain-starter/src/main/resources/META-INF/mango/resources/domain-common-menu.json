@@ -4,6 +4,7 @@
       "schemaVersion": 1,
       "moduleCode": "domain",
       "moduleName": "业务域",
+      "moduleDependencies": ["system"],
       "declarations": {
         "AUTH_MENU": [
           {

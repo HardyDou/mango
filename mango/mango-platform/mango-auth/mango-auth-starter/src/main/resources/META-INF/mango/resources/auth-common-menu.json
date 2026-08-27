@@ -4,6 +4,7 @@
       "schemaVersion": 1,
       "moduleCode": "auth",
       "moduleName": "认证",
+      "moduleDependencies": ["system"],
       "declarations": {
         "AUTH_MENU": [
           {

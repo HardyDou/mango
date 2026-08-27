@@ -4,6 +4,7 @@
       "schemaVersion": 1,
       "moduleCode": "payment",
       "moduleName": "支付管理模块",
+      "moduleDependencies": ["system"],
       "declarations": {
         "AUTH_MENU": [
           {

@@ -5,6 +5,7 @@ import io.mango.resource.support.model.ResourceDeclaration;
 import lombok.RequiredArgsConstructor;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * 从 classpath JSON/YAML 声明文件提供资源。
@@ -17,5 +18,10 @@ public class FileResourceProvider implements ResourceProvider {
     @Override
     public List<ResourceDeclaration> provide() {
         return loader.load();
+    }
+
+    @Override
+    public Map<String, List<String>> moduleDependencies() {
+        return loader.loadModuleDependencies();
     }
 }

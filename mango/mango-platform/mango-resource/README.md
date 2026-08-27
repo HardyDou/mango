@@ -164,6 +164,9 @@ Resource Registry 会重放同一批次内声明了该依赖的 AUTO 资源，�
 
 `ResourceProvider.moduleDependencies()` 声明模块级固定前置关系。构建 manifest 内的模块按该关系拓扑执行；依赖缺失或成环时，在调用 Handler 前 fail closed。它只表达少量稳定模块边界，不替代资源类型级 handler 依赖。
 
+classpath 声明文件可在 `mango.resource` envelope 中使用 `moduleDependencies`（YAML 可写为
+`module-dependencies`）声明同一模块的固定前置模块。模块包含多个声明文件时，只需在一个文件中提供该字段；若多个文件重复声明，依赖列表必须一致。
+
 资源声明来源支持：
 
 

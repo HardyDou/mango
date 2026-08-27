@@ -4,6 +4,7 @@
       "schemaVersion": 1,
       "moduleCode": "cms",
       "moduleName": "内容运营",
+      "moduleDependencies": ["system"],
       "declarations": {
         "AUTH_MENU": [
           {
