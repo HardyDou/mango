@@ -1,5 +1,55 @@
 # @mango/cli Changelog
 
+## 1.2.1 - 2026-08-27
+
+### Pull Requests
+
+- [PR #872](https://github.com/HardyDou/mango/pull/872) Fixed Workflow business-apply reads to reuse the business data-permission contract. Packages: Mango Maven `1.0.41`, `@mango/cli@1.2.1`. Business Adaptation: declare workflow codes and, when needed, provide a custom data-permission provider for business-apply reads.
+- [PR #873](https://github.com/HardyDou/mango/pull/873) Fixed Resource cross-module menu bootstrap dependencies. Packages: Mango Maven `1.0.41`, `@mango/cli@1.2.1`. Business Adaptation: aggregate modules receive the declared ordering automatically; direct Resource declarations may use `moduleDependencies` or `module-dependencies`.
+
+### Fixed
+
+- Carry Workflow business-apply data permission and Resource module dependency ordering into generated consumers.
+
+### Changed
+
+- Lock generated projects to Mango Maven `1.0.41`; PMO remains `1.4.2`.
+
+### Versions
+
+- `@mango/cli`: `1.2.0` to `1.2.1`; Mango Maven: `1.0.40` to `1.0.41`; PMO remains `1.4.2`.
+
+### Published Packages
+
+- Publish the complete non-application Maven/docs batch at `1.0.41`, followed by `@mango/cli@1.2.1`; no application fat JAR or unchanged PMO coordinate is published.
+
+### Business Impact
+
+- Generated and existing consumers gain consistent Workflow read authorization and deterministic cross-module menu bootstrap ordering without database schema changes.
+
+### Upgrade Estimate
+
+- Audience: generated Mango consumers and direct Workflow or Resource module consumers.
+- Engineering Effort: 30 to 90 minutes for aggregate consumers; 1 to 3 hours for direct consumers with custom Workflow permission rules or Resource declarations.
+- Execution Window: 1 to 3 hours including dependency upgrade and focused permission/bootstrap regression.
+- Service Downtime: no framework-mandated downtime; applications may use their normal restart window.
+- Rollback Effort: 15 to 45 minutes to restore CLI `1.2.0` and Maven `1.0.40`.
+- Assumptions: Node `22.23.1`, Java 21, clean locks and configured consume registries.
+
+### Upgrade Notes
+
+1. Upgrade CLI to `1.2.1` and apply its Maven `1.0.41` compatibility matrix.
+2. For custom Workflow business-apply authorization, declare the workflow code and provide the matching data-permission provider.
+3. For direct Resource declarations, keep repeated module dependency lists identical across files belonging to one module.
+
+### Verification
+
+- Verify the CLI release matrix, sealed Maven/CLI artifacts, Workflow allowed and denied reads, Resource dependency topology and a clean consume-registry generated project.
+
+### Rollback
+
+- Restore CLI `1.2.0` and Maven `1.0.40`; never overwrite immutable `1.0.41` or `1.2.1` coordinates.
+
 ## 1.2.0 - 2026-08-26
 
 ### Pull Requests
