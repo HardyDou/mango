@@ -52,3 +52,8 @@
 - 本机 Firefox、WebKit 浏览器未安装，未执行这两个浏览器项目。
 - 全局 Mango CLI `1.0.94` 与当前仓库的 `processMode` 不兼容；本次使用仓库内 CLI 启动并完成验证。
 - 扫描结论：系统登录日志、操作日志是当前确认的纯日期到 `LocalDateTime` 页面问题；任务执行实例和工作流业务申请是无日期控件但 API 可接收日期-only 的潜在入口，已统一处理；通知现有页面已使用完整日期时间，公共 API 同时具备兼容处理。
+
+## 8. 能力说明
+
+- 已更新 `@mango/common`、`@mango/system`、`@mango/notice`、`@mango/job`、`@mango/workflow` 和 `mango-infra-web` README，说明日期-only 查询边界兼容行为。
+- 已更新系统基础数据排障和工作流业务审批指南；未新增菜单、权限、租户或数据库初始化能力。
