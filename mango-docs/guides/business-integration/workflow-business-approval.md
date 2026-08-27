@@ -83,7 +83,7 @@
 
 ## 7. 变更影响记录
 
-- Issue #870 为业务申请详情、历史、最新进度和流程详情增加 `WorkflowBusinessApplyDataPermissionProvider` 扩展点。业务模块在同一 Workflow 运行时中注册 Provider，并按 `businessType` 从自己的业务表校验 owner、组织和租户；不再需要给普通业务员授予全局 `workflow:business-apply:detail`。Workflow 使用持久化申请事实构造权限上下文，无权时返回 `APPLY_ACCESS_DENIED`，批量进度过滤无权记录；业务模块仍不得直接查询 Workflow 表。远程独立部署时 Provider 必须注册在实际承载 Workflow 服务的应用中，不能只注册在调用方进程。升级后先复跑业务详情正反权限用例，再删除业务代理兼容路径。
+- Issue #870 为业务申请详情、历史、最新进度和流程详情增加 `WorkflowBusinessApplyDataPermissionProvider` 扩展点。业务模块在同一 Workflow 运行时中注册 Provider，并按 `businessType` 从自己的业务表校验 owner、组织和租户；普通业务员不再依赖全局 `workflow:business-apply:detail`。Workflow 使用持久化申请事实构造权限上下文，无权时返回 `APPLY_ACCESS_DENIED`，批量进度过滤无权记录。Provider 运行在实际承载 Workflow 服务的应用中，业务查询通过公开 Workflow API 完成；完整接入边界见 [Workflow README](../../../mango/mango-platform/mango-workflow/README.md#业务申请数据权限)，长期能力文档边界见 [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)。升级验证覆盖业务详情正反权限用例和业务代理兼容路径移除。
 
 - 2026-08-03 修复空库 Bootstrap 装配业务 starter 时公开 Workflow API 注入提前创建 Flowable 的问题。Bootstrap 只注入延迟解析的公开 API 代理，migration 后的 Resource step 仍按需发布定义，Runtime 仍使用原 Controller。业务继续依赖 `mango-workflow-api`，不需要改为 core service、恢复 `forceSync()`、手工建表或开启 Flowable 自动建表。
 
