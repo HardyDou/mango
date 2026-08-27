@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
   "baselineKind": "normal",
-  "tag": "v2026.08.26-maven-1.0.40-ai-resource-platform-release",
-  "commit": "1d5ccd39b91108d63fdd66b3a8bb32215db5fa69",
-  "tree": "ce654b947bbbaf17634afe8377c48e17acab6f21",
-  "planDigest": "7900477b28fceb4a64efe877743eaf1f5a32c5f48fe62a6390b408be0725c8fa",
-  "preparedCandidateId": "a5c63488c40263eb3258550ce7686ddb0933d7d0cf30c63297eae9e6a23a14a7",
+  "tag": "v2026.08.27-maven-1.0.41-workflow-resource-release",
+  "commit": "37a3ea1bf3493335921a104128319deade492c83",
+  "tree": "d0acb79334f08b822a8e48e3fa2fe6f071b6e238",
+  "planDigest": "748025ecf10314bb44cd42a2e51faec7cbebde1b1d51dcb890dced6ec266d92c",
+  "preparedCandidateId": "ae9058056f54ff6b46a828e25db7bbfbf58ee1213589bc96fe7680ef1fb7a8b5",
   "packages": {
     "@mango/admin": {
       "publishedRanges": [
@@ -356,9 +356,9 @@
           "section": "dependencies"
         }
       ],
-      "sri": "sha512-2/aKB87hmxTYwRLz67XFsRr+kAirSmN0B3QyCckTREZSZq5Sa304EWi7zkzdPAXtbBdxRZAic3OBVEf1ERR28g==",
-      "tarballSha256": "15186b0006e4d941309d7e807d66f28dd665bdced3ab4d56c0c61e4b51af5cbe",
-      "version": "1.2.0"
+      "sri": "sha512-mG9sx1vFpyfG0AJNqt04zzFk5a2XXisA+JxG7g0uLmUOQ46k3kQjma+/qe/aVKYUYKp5hjHPZ4fOD9KFcQOQjg==",
+      "tarballSha256": "3022a0cc107f896e1fa11e3eb68d1574a4092bfe055fbd7806d38c21b466b8fe",
+      "version": "1.2.1"
     },
     "@mango/cms": {
       "publishedRanges": [
@@ -760,2670 +760,2670 @@
   },
   "maven": {
     "scope": "all-non-app",
-    "version": "1.0.40",
+    "version": "1.0.41",
     "coordinates": [
       {
-        "coordinate": "io.mango.common:mango-common:1.0.40",
+        "coordinate": "io.mango.common:mango-common:1.0.41",
         "files": [
           {
-            "path": "io/mango/common/mango-common/1.0.40/mango-common-1.0.40.pom",
+            "path": "io/mango/common/mango-common/1.0.41/mango-common-1.0.41.pom",
             "size": 5340,
-            "sha256": "9cd3f5c695b5f90f3502c751e1b9f4001a561f7090e7781c1ad75795f976ccd8"
+            "sha256": "7172b3d104434d1216b84b3bd652d9cd2e556adf543dae8a0decd3f5cbb5275a"
           },
           {
-            "path": "io/mango/common/mango-common/1.0.40/mango-common-1.0.40.jar",
-            "size": 16300,
-            "sha256": "d04d95f8d3f173f56cab74871145a7bbc85e5e43fd7b28e6ba6a0c8e543e3cac"
+            "path": "io/mango/common/mango-common/1.0.41/mango-common-1.0.41.jar",
+            "size": 16302,
+            "sha256": "37e92a4e8dfeb692ceea3377cbfb25344a40b0e70d78d0bc46cc3c0674391e99"
           }
         ]
       },
       {
-        "coordinate": "io.mango.extension.ai:mango-ai-api:1.0.40",
+        "coordinate": "io.mango.extension.ai:mango-ai-api:1.0.41",
         "files": [
           {
-            "path": "io/mango/extension/ai/mango-ai-api/1.0.40/mango-ai-api-1.0.40.pom",
+            "path": "io/mango/extension/ai/mango-ai-api/1.0.41/mango-ai-api-1.0.41.pom",
             "size": 1618,
-            "sha256": "16c18c8cecef56338af4643af05969d2ce1e6f29710bea704011698c1efd6146"
+            "sha256": "1ea71b2ff8883095ddea594c803a2337a73075f490bc052f5112c4b7e10a81dc"
           },
           {
-            "path": "io/mango/extension/ai/mango-ai-api/1.0.40/mango-ai-api-1.0.40.jar",
+            "path": "io/mango/extension/ai/mango-ai-api/1.0.41/mango-ai-api-1.0.41.jar",
             "size": 55666,
-            "sha256": "cc76ba10d122085ddf428f0e29878a19c7727cf15aaa9ee60b0cbbd7b24d49ec"
+            "sha256": "71673a5b08da357aebc8c56062bb34df28d3d9b977926bddf8378ab0fef6efda"
           }
         ]
       },
       {
-        "coordinate": "io.mango.infra.context:mango-infra-context-api:1.0.40",
+        "coordinate": "io.mango.infra.context:mango-infra-context-api:1.0.41",
         "files": [
           {
-            "path": "io/mango/infra/context/mango-infra-context-api/1.0.40/mango-infra-context-api-1.0.40.pom",
+            "path": "io/mango/infra/context/mango-infra-context-api/1.0.41/mango-infra-context-api-1.0.41.pom",
             "size": 1182,
-            "sha256": "ecef3c5a67ad47957602145286da0049043919f04596607967c503c7cbedf96d"
+            "sha256": "cbb8455e8c6dcac442649efd072d2d4c1a7c209072f4dd12f1ba0aeb4c4bb0db"
           },
           {
-            "path": "io/mango/infra/context/mango-infra-context-api/1.0.40/mango-infra-context-api-1.0.40.jar",
-            "size": 7498,
-            "sha256": "a6724ad4290949bd7bba74542456723071dee78ea6345f9842a93483ce70359d"
+            "path": "io/mango/infra/context/mango-infra-context-api/1.0.41/mango-infra-context-api-1.0.41.jar",
+            "size": 7499,
+            "sha256": "9446f77b0b5c1fa5f30725268d69f9397e8d35d381d801e351edcc89e8bc8b72"
           }
         ]
       },
       {
-        "coordinate": "io.mango.infra.crypto:mango-infra-crypto:1.0.40",
+        "coordinate": "io.mango.infra.crypto:mango-infra-crypto:1.0.41",
         "files": [
           {
-            "path": "io/mango/infra/crypto/mango-infra-crypto/1.0.40/mango-infra-crypto-1.0.40.pom",
+            "path": "io/mango/infra/crypto/mango-infra-crypto/1.0.41/mango-infra-crypto-1.0.41.pom",
             "size": 2044,
-            "sha256": "88fdfbe7448bcd0394ed9354a8de905bcdf6d84e47e324c385df599e85afbde0"
+            "sha256": "b4eac0cb88af8cc6c5332a2d9c6ba0729605d483b46578240971f8cc157677a0"
           },
           {
-            "path": "io/mango/infra/crypto/mango-infra-crypto/1.0.40/mango-infra-crypto-1.0.40.jar",
+            "path": "io/mango/infra/crypto/mango-infra-crypto/1.0.41/mango-infra-crypto-1.0.41.jar",
             "size": 28856,
-            "sha256": "94275a498099e0c96ecdc1a3f5b02a9756de6422b82a63d116928d0702f8e174"
+            "sha256": "ce02c8c767e6926cc5383ba5fa343ce6742e04cfc1b0ad2abf3eedf5ea44a822"
           }
         ]
       },
       {
-        "coordinate": "io.mango.infra.kv:mango-infra-kv-api:1.0.40",
+        "coordinate": "io.mango.infra.kv:mango-infra-kv-api:1.0.41",
         "files": [
           {
-            "path": "io/mango/infra/kv/mango-infra-kv-api/1.0.40/mango-infra-kv-api-1.0.40.pom",
+            "path": "io/mango/infra/kv/mango-infra-kv-api/1.0.41/mango-infra-kv-api-1.0.41.pom",
             "size": 1307,
-            "sha256": "d4f42651ff7626d1d4b26dea2386f4a3efc337c7db27f78df71f15301f0f8eb4"
+            "sha256": "667e0d68359320f6650d686e74f1e3383ab00255afd3f3dd7ae9edc7179fb7c2"
           },
           {
-            "path": "io/mango/infra/kv/mango-infra-kv-api/1.0.40/mango-infra-kv-api-1.0.40.jar",
+            "path": "io/mango/infra/kv/mango-infra-kv-api/1.0.41/mango-infra-kv-api-1.0.41.jar",
             "size": 23821,
-            "sha256": "5aed1ba7be424c6cb96a56144961fb567b4c32a0430735e44ec3c1ef4e46dba1"
+            "sha256": "3229052960d096aaa82b34559781fe96da220439b3e7dfe782f0219758574cd7"
           }
         ]
       },
       {
-        "coordinate": "io.mango.infra.log:mango-infra-log-api:1.0.40",
+        "coordinate": "io.mango.infra.log:mango-infra-log-api:1.0.41",
         "files": [
           {
-            "path": "io/mango/infra/log/mango-infra-log-api/1.0.40/mango-infra-log-api-1.0.40.pom",
+            "path": "io/mango/infra/log/mango-infra-log-api/1.0.41/mango-infra-log-api-1.0.41.pom",
             "size": 1060,
-            "sha256": "cac67911833ee7ff6986f5641c51fcc88aa0d3485d7edbc1563bd2e42f5327fe"
+            "sha256": "4d1d7b368ba17ed5957ecbf6a2d06b02b1a77bba3470955e5083b9f2f3c598fe"
           },
           {
-            "path": "io/mango/infra/log/mango-infra-log-api/1.0.40/mango-infra-log-api-1.0.40.jar",
+            "path": "io/mango/infra/log/mango-infra-log-api/1.0.41/mango-infra-log-api-1.0.41.jar",
             "size": 4146,
-            "sha256": "524bdeae46b746b559f9311cb22cd8cc6b4e01c8faf07d007daffe78feea9cb0"
+            "sha256": "80f9a43f6d87f2893387a7e8dd040d4628e5c22f59039ccd576549aae563c476"
           }
         ]
       },
       {
-        "coordinate": "io.mango.infra.persistence:mango-infra-persistence-api:1.0.40",
+        "coordinate": "io.mango.infra.persistence:mango-infra-persistence-api:1.0.41",
         "files": [
           {
-            "path": "io/mango/infra/persistence/mango-infra-persistence-api/1.0.40/mango-infra-persistence-api-1.0.40.pom",
+            "path": "io/mango/infra/persistence/mango-infra-persistence-api/1.0.41/mango-infra-persistence-api-1.0.41.pom",
             "size": 2443,
-            "sha256": "65797a1567fcc90fc29838c17b82bb002531f7f95d2c206ebc77de45f20d3034"
+            "sha256": "13d767282be277b234526321a4bfe0da5ce87e7c26d61e067d16ffebe4e01d6e"
           },
           {
-            "path": "io/mango/infra/persistence/mango-infra-persistence-api/1.0.40/mango-infra-persistence-api-1.0.40.jar",
-            "size": 36315,
-            "sha256": "4f0b0abf64cb4334e44203f251f54124aabfcbfba21822a3cd3af4eb1dba73b0"
+            "path": "io/mango/infra/persistence/mango-infra-persistence-api/1.0.41/mango-infra-persistence-api-1.0.41.jar",
+            "size": 36314,
+            "sha256": "dc8d83df93dd196e3c1269a075cc38d4071d2ea60b3738b7311a1ffd37253d67"
           }
         ]
       },
       {
-        "coordinate": "io.mango.infra.realtime:mango-infra-realtime-api:1.0.40",
+        "coordinate": "io.mango.infra.realtime:mango-infra-realtime-api:1.0.41",
         "files": [
           {
-            "path": "io/mango/infra/realtime/mango-infra-realtime-api/1.0.40/mango-infra-realtime-api-1.0.40.pom",
+            "path": "io/mango/infra/realtime/mango-infra-realtime-api/1.0.41/mango-infra-realtime-api-1.0.41.pom",
             "size": 1608,
-            "sha256": "46823c861fc4a28783a0ab51f90328d9b354016108215bc2b72e5d56abedaeb3"
+            "sha256": "d218e175d63d79bf1811261a7fc8b0fdfb641d81366099839d3c0cba7229c52f"
           },
           {
-            "path": "io/mango/infra/realtime/mango-infra-realtime-api/1.0.40/mango-infra-realtime-api-1.0.40.jar",
-            "size": 29600,
-            "sha256": "1b7d8d5bda490285c7955fdf55be7227518e09f17005e1bef1b02dfe63a59df2"
+            "path": "io/mango/infra/realtime/mango-infra-realtime-api/1.0.41/mango-infra-realtime-api-1.0.41.jar",
+            "size": 29601,
+            "sha256": "92962065e02d1d63e10521e09f5b0473bdac87eeb3e2a2902f0aa73b65822f67"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.file:mango-file-api:1.0.40",
+        "coordinate": "io.mango.platform.file:mango-file-api:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/file/mango-file-api/1.0.40/mango-file-api-1.0.40.pom",
+            "path": "io/mango/platform/file/mango-file-api/1.0.41/mango-file-api-1.0.41.pom",
             "size": 2082,
-            "sha256": "72756888b5f29256fa617fa5cf69160ebeb10f5b96d8a38f3168ca2148abb5e6"
+            "sha256": "4bb6d048f30676e3e4ff08aadf6748230ab09ac16f13a2cb556d1873aaa4bec0"
           },
           {
-            "path": "io/mango/platform/file/mango-file-api/1.0.40/mango-file-api-1.0.40.jar",
-            "size": 111411,
-            "sha256": "590888476e1c5088dbd8d5eb68cd5769ec6998639a0b3670aac09d903ed894c1"
+            "path": "io/mango/platform/file/mango-file-api/1.0.41/mango-file-api-1.0.41.jar",
+            "size": 111413,
+            "sha256": "1092c140fb7854d148b9fad573ed54b998a9003cd4ab807ec921b0aa24b47ea3"
           }
         ]
       },
       {
-        "coordinate": "io.mango.infra.web:mango-infra-web-api:1.0.40",
+        "coordinate": "io.mango.infra.web:mango-infra-web-api:1.0.41",
         "files": [
           {
-            "path": "io/mango/infra/web/mango-infra-web-api/1.0.40/mango-infra-web-api-1.0.40.pom",
+            "path": "io/mango/infra/web/mango-infra-web-api/1.0.41/mango-infra-web-api-1.0.41.pom",
             "size": 1226,
-            "sha256": "d2d985896c7be93f366cf5a556eb6bfe75e6ccd6ef85d809d7a81e5f5af219b4"
+            "sha256": "1caea347ef49714913e58facd4be7e06070e0dd43ec43322b83f7c616c5b89cc"
           },
           {
-            "path": "io/mango/infra/web/mango-infra-web-api/1.0.40/mango-infra-web-api-1.0.40.jar",
+            "path": "io/mango/infra/web/mango-infra-web-api/1.0.41/mango-infra-web-api-1.0.41.jar",
             "size": 4886,
-            "sha256": "3763f9f8ff45f13dd92105733d08f635adfa06d15d2b56c5201f438d7ce9b42e"
+            "sha256": "8c0b6e5b3c5a45246eec8788e661fca391fccb2907d8524a3b7eb081eb393a4b"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.resource:mango-resource-api:1.0.40",
+        "coordinate": "io.mango.platform.resource:mango-resource-api:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/resource/mango-resource-api/1.0.40/mango-resource-api-1.0.40.pom",
+            "path": "io/mango/platform/resource/mango-resource-api/1.0.41/mango-resource-api-1.0.41.pom",
             "size": 2063,
-            "sha256": "0afcfa69412116a401855b08e159a9e57028a6eaaefb5faea8c8226b083276bc"
+            "sha256": "7588b73b8ffb0cf4521511e45226275055643f18a93e553c95d608dd12e90694"
           },
           {
-            "path": "io/mango/platform/resource/mango-resource-api/1.0.40/mango-resource-api-1.0.40.jar",
+            "path": "io/mango/platform/resource/mango-resource-api/1.0.41/mango-resource-api-1.0.41.jar",
             "size": 45175,
-            "sha256": "a7759318a0bb9cff913d9833aafd36f17145a3983cbf0d9f01725507200c20cf"
+            "sha256": "e02fcd335787b4970a724791929a7bd1ebd0edacf3afe7f47081c3ca560893f9"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.resource:mango-resource-support:1.0.40",
+        "coordinate": "io.mango.platform.resource:mango-resource-support:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/resource/mango-resource-support/1.0.40/mango-resource-support-1.0.40.pom",
+            "path": "io/mango/platform/resource/mango-resource-support/1.0.41/mango-resource-support-1.0.41.pom",
             "size": 2477,
-            "sha256": "990728e8d3202fe135d678c6a2131c4fcd558e5954ddd0e26234339bb5b6b768"
+            "sha256": "3bf5fcce358713359f93fa47f43b2b0d9e4340b62c20760aa9007731a6c54d58"
           },
           {
-            "path": "io/mango/platform/resource/mango-resource-support/1.0.40/mango-resource-support-1.0.40.jar",
-            "size": 62595,
-            "sha256": "edc070fd2b4228cd9dc22df3885f25f7952df4f96649089e3803758689f6ee7a"
+            "path": "io/mango/platform/resource/mango-resource-support/1.0.41/mango-resource-support-1.0.41.jar",
+            "size": 64990,
+            "sha256": "203d5a2318f16639f66c9c13c2b3853520dd0a5b07545b9fe273cf80f9c601fe"
           }
         ]
       },
       {
-        "coordinate": "io.mango.extension.ai:mango-ai-core:1.0.40",
+        "coordinate": "io.mango.extension.ai:mango-ai-core:1.0.41",
         "files": [
           {
-            "path": "io/mango/extension/ai/mango-ai-core/1.0.40/mango-ai-core-1.0.40.pom",
+            "path": "io/mango/extension/ai/mango-ai-core/1.0.41/mango-ai-core-1.0.41.pom",
             "size": 4667,
-            "sha256": "f1b319936a6f7fbe38882a8ef12fd0954a0482d636a497b382fb53c34095a604"
+            "sha256": "261ce0ad4baeb63eed782d690cb0b18819ecc6a9209542e13db00fee3d6ace76"
           },
           {
-            "path": "io/mango/extension/ai/mango-ai-core/1.0.40/mango-ai-core-1.0.40.jar",
-            "size": 151916,
-            "sha256": "a8a5ec45f623a101b374d0b442858efa4aed444a107f6a7af007467b46984f26"
+            "path": "io/mango/extension/ai/mango-ai-core/1.0.41/mango-ai-core-1.0.41.jar",
+            "size": 151917,
+            "sha256": "7bf487b4ae1836b8a4055b342bf75e53847a0b78b729649f6856d995564f1b22"
           }
         ]
       },
       {
-        "coordinate": "io.mango.infra.context:mango-infra-context-support:1.0.40",
+        "coordinate": "io.mango.infra.context:mango-infra-context-support:1.0.41",
         "files": [
           {
-            "path": "io/mango/infra/context/mango-infra-context-support/1.0.40/mango-infra-context-support-1.0.40.pom",
+            "path": "io/mango/infra/context/mango-infra-context-support/1.0.41/mango-infra-context-support-1.0.41.pom",
             "size": 1410,
-            "sha256": "ce53e5cc4381658063a9c95bee2a177ec218d14d162d1f09ccedf788edf3130b"
+            "sha256": "9584ff6ff87244ca5bca083da3982a9792820c5cb56fec72b75798a77cdc000e"
           },
           {
-            "path": "io/mango/infra/context/mango-infra-context-support/1.0.40/mango-infra-context-support-1.0.40.jar",
-            "size": 4770,
-            "sha256": "aa8024a7efedd7c2d175e23b9839989d6de9b22b85683f40b7856b3c72a84857"
+            "path": "io/mango/infra/context/mango-infra-context-support/1.0.41/mango-infra-context-support-1.0.41.jar",
+            "size": 4771,
+            "sha256": "b9a7287de812cf9793534f94e3dde09f02d6cb39594f4fae7551d6c24463aece"
           }
         ]
       },
       {
-        "coordinate": "io.mango.infra.context:mango-infra-context-starter:1.0.40",
+        "coordinate": "io.mango.infra.context:mango-infra-context-starter:1.0.41",
         "files": [
           {
-            "path": "io/mango/infra/context/mango-infra-context-starter/1.0.40/mango-infra-context-starter-1.0.40.pom",
+            "path": "io/mango/infra/context/mango-infra-context-starter/1.0.41/mango-infra-context-starter-1.0.41.pom",
             "size": 2349,
-            "sha256": "3746cea806f08ba29a88fa06d4f39b53f7686b5c32e2000ddbeb2571d1965b45"
+            "sha256": "92c49518e4fb35eb49bdda1d8c3eb5f933b24f21a6cd1c1b92e2a008a7343075"
           },
           {
-            "path": "io/mango/infra/context/mango-infra-context-starter/1.0.40/mango-infra-context-starter-1.0.40.jar",
-            "size": 7639,
-            "sha256": "0d37635c894bebbc9851d0026bce6947c9fe65a2d82ab79e6ccc63ce0d85b540"
+            "path": "io/mango/infra/context/mango-infra-context-starter/1.0.41/mango-infra-context-starter-1.0.41.jar",
+            "size": 7640,
+            "sha256": "19bed00bcb5c97cf7bfcce2197ed795b0504d41e6d9ac62a4b2617eee5ef2fd2"
           }
         ]
       },
       {
-        "coordinate": "io.mango.infra.kv:mango-infra-kv-core:1.0.40",
+        "coordinate": "io.mango.infra.kv:mango-infra-kv-core:1.0.41",
         "files": [
           {
-            "path": "io/mango/infra/kv/mango-infra-kv-core/1.0.40/mango-infra-kv-core-1.0.40.pom",
+            "path": "io/mango/infra/kv/mango-infra-kv-core/1.0.41/mango-infra-kv-core-1.0.41.pom",
             "size": 2639,
-            "sha256": "7e7d166697c4cb4b25573c692c10f61b5d42ae0dbf322b4969cd1b44db9b4c6c"
+            "sha256": "d14749ccaa2aa84c7705fe23680dc812ddd0136decbc811a2a18c4fbeb47d2be"
           },
           {
-            "path": "io/mango/infra/kv/mango-infra-kv-core/1.0.40/mango-infra-kv-core-1.0.40.jar",
-            "size": 65912,
-            "sha256": "59aaba5f065c96668890c65904528115edd86446dca204fc42d1f68ef42725a0"
+            "path": "io/mango/infra/kv/mango-infra-kv-core/1.0.41/mango-infra-kv-core-1.0.41.jar",
+            "size": 65913,
+            "sha256": "4e94641cfd0614f1213786a8e9da994bf3cf6d22ef90a4c838bee1600b54765a"
           }
         ]
       },
       {
-        "coordinate": "io.mango.infra.bootstrap:mango-infra-bootstrap-api:1.0.40",
+        "coordinate": "io.mango.infra.bootstrap:mango-infra-bootstrap-api:1.0.41",
         "files": [
           {
-            "path": "io/mango/infra/bootstrap/mango-infra-bootstrap-api/1.0.40/mango-infra-bootstrap-api-1.0.40.pom",
+            "path": "io/mango/infra/bootstrap/mango-infra-bootstrap-api/1.0.41/mango-infra-bootstrap-api-1.0.41.pom",
             "size": 758,
-            "sha256": "51cc234a4d13f6a100a90fb9eec7258c3e48ed954b7fd2f067a3434eb7c139c1"
+            "sha256": "8cf0ffcd9cc734b06daad7524a6b05f13b798eecec2d057d8249d5e865953ec4"
           },
           {
-            "path": "io/mango/infra/bootstrap/mango-infra-bootstrap-api/1.0.40/mango-infra-bootstrap-api-1.0.40.jar",
+            "path": "io/mango/infra/bootstrap/mango-infra-bootstrap-api/1.0.41/mango-infra-bootstrap-api-1.0.41.jar",
             "size": 10768,
-            "sha256": "730b4dcee66daad475ec526e64bdabf8fdb21bdd8c61b989b2893411a7b52862"
+            "sha256": "f3f305eaf57ae6fefd3ad58909fe7b359381aa3391d74e3b66081dc54e00012b"
           }
         ]
       },
       {
-        "coordinate": "io.mango.infra.module:mango-infra-module-api:1.0.40",
+        "coordinate": "io.mango.infra.module:mango-infra-module-api:1.0.41",
         "files": [
           {
-            "path": "io/mango/infra/module/mango-infra-module-api/1.0.40/mango-infra-module-api-1.0.40.pom",
+            "path": "io/mango/infra/module/mango-infra-module-api/1.0.41/mango-infra-module-api-1.0.41.pom",
             "size": 981,
-            "sha256": "c75a3a047b9f8c1b7d7e1c16198505d6884fa789434a75a9eeb5327f612c7151"
+            "sha256": "f009c7ab7bf3746fed469a80d68170b48ff297acfdf22183a98ec13e620906f8"
           },
           {
-            "path": "io/mango/infra/module/mango-infra-module-api/1.0.40/mango-infra-module-api-1.0.40.jar",
+            "path": "io/mango/infra/module/mango-infra-module-api/1.0.41/mango-infra-module-api-1.0.41.jar",
             "size": 24286,
-            "sha256": "9d514404269588a9009c1eb9c7570043c1cfb824bd2e5681ca652ddb6838c3ee"
+            "sha256": "b0f4e7a943502e06f15cec914139cbc174280a3334ed8c4c9dd24108d022c2c9"
           }
         ]
       },
       {
-        "coordinate": "io.mango.infra.persistence:mango-infra-persistence-starter:1.0.40",
+        "coordinate": "io.mango.infra.persistence:mango-infra-persistence-starter:1.0.41",
         "files": [
           {
-            "path": "io/mango/infra/persistence/mango-infra-persistence-starter/1.0.40/mango-infra-persistence-starter-1.0.40.pom",
+            "path": "io/mango/infra/persistence/mango-infra-persistence-starter/1.0.41/mango-infra-persistence-starter-1.0.41.pom",
             "size": 4232,
-            "sha256": "bbe1758cb733bc1ea83875d03e2cc84f74b05fd029f264c9e25fc4d91af696f9"
+            "sha256": "3638dba70a0127ac7316206642b698cbd83f1ef669ba8270a9df9328997da1c3"
           },
           {
-            "path": "io/mango/infra/persistence/mango-infra-persistence-starter/1.0.40/mango-infra-persistence-starter-1.0.40.jar",
-            "size": 127532,
-            "sha256": "a6424b20ce94d176317d5a01a632a6112825b1a24017deac33729116e9065d12"
+            "path": "io/mango/infra/persistence/mango-infra-persistence-starter/1.0.41/mango-infra-persistence-starter-1.0.41.jar",
+            "size": 127533,
+            "sha256": "3f68985d0f8cc2f516b5888ba1039b3f6235205e2b1507ff34d72f22fec95a18"
           }
         ]
       },
       {
-        "coordinate": "io.mango.infra.kv:mango-infra-kv-starter:1.0.40",
+        "coordinate": "io.mango.infra.kv:mango-infra-kv-starter:1.0.41",
         "files": [
           {
-            "path": "io/mango/infra/kv/mango-infra-kv-starter/1.0.40/mango-infra-kv-starter-1.0.40.pom",
+            "path": "io/mango/infra/kv/mango-infra-kv-starter/1.0.41/mango-infra-kv-starter-1.0.41.pom",
             "size": 1996,
-            "sha256": "53b29346b2ce4acd8c01d32fe2ccd99158adabc063590cef1215d10bbadbd2eb"
+            "sha256": "149a439cd9d706e2061d032024d2f315ba98f028375b357f4320f8679484bbf0"
           },
           {
-            "path": "io/mango/infra/kv/mango-infra-kv-starter/1.0.40/mango-infra-kv-starter-1.0.40.jar",
+            "path": "io/mango/infra/kv/mango-infra-kv-starter/1.0.41/mango-infra-kv-starter-1.0.41.jar",
             "size": 36145,
-            "sha256": "d2376261f5204c2c8fdc2ee53e8388b460498abd74f5cf01d33f0849f57a95d7"
+            "sha256": "36e3b55124dd94ec95b414cf40cc0ce507a76901a4d50bb31ac9f472a530a862"
           }
         ]
       },
       {
-        "coordinate": "io.mango.infra.web:mango-infra-web-support:1.0.40",
+        "coordinate": "io.mango.infra.web:mango-infra-web-support:1.0.41",
         "files": [
           {
-            "path": "io/mango/infra/web/mango-infra-web-support/1.0.40/mango-infra-web-support-1.0.40.pom",
+            "path": "io/mango/infra/web/mango-infra-web-support/1.0.41/mango-infra-web-support-1.0.41.pom",
             "size": 1224,
-            "sha256": "02ce09ca400b6182b3ec3d8ae4942876d9de7262c7526853b78cf5da72894f05"
+            "sha256": "9729f8c01b0b336132b2436c8a33569d70717807b505219733013e6945ca0fd6"
           },
           {
-            "path": "io/mango/infra/web/mango-infra-web-support/1.0.40/mango-infra-web-support-1.0.40.jar",
+            "path": "io/mango/infra/web/mango-infra-web-support/1.0.41/mango-infra-web-support-1.0.41.jar",
             "size": 7866,
-            "sha256": "f358808e4f537f3676f9b3f98eefc85feb38d7d42ee910d6cd82173ae4123a4e"
+            "sha256": "2ea5c63ee063348ab2fc0eb3647be5a406bef1865437bc4d4ca7a1772726ad1a"
           }
         ]
       },
       {
-        "coordinate": "io.mango.infra.web:mango-infra-web-starter:1.0.40",
+        "coordinate": "io.mango.infra.web:mango-infra-web-starter:1.0.41",
         "files": [
           {
-            "path": "io/mango/infra/web/mango-infra-web-starter/1.0.40/mango-infra-web-starter-1.0.40.pom",
+            "path": "io/mango/infra/web/mango-infra-web-starter/1.0.41/mango-infra-web-starter-1.0.41.pom",
             "size": 2999,
-            "sha256": "040b04c61e1a722dc0d33eb9a092ca2f8c2d4d31e9b8e6ea35b2eaf46aa5b580"
+            "sha256": "49898996a19ec3dbdb188abf230a110b3e0a97aa248b90af03e791904e7f83e8"
           },
           {
-            "path": "io/mango/infra/web/mango-infra-web-starter/1.0.40/mango-infra-web-starter-1.0.40.jar",
-            "size": 40166,
-            "sha256": "315f7c6072fa168f1932dc602a402dde67e35115fc6467abbe73d8d395fe66af"
+            "path": "io/mango/infra/web/mango-infra-web-starter/1.0.41/mango-infra-web-starter-1.0.41.jar",
+            "size": 40167,
+            "sha256": "6db1f16287e2b1f5c2c9716ad753dccac208d96d477c6e5a9126626c130a0962"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.authorization:mango-authorization-api:1.0.40",
+        "coordinate": "io.mango.platform.authorization:mango-authorization-api:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/authorization/mango-authorization-api/1.0.40/mango-authorization-api-1.0.40.pom",
+            "path": "io/mango/platform/authorization/mango-authorization-api/1.0.41/mango-authorization-api-1.0.41.pom",
             "size": 2263,
-            "sha256": "3ae9613bb1eca1542566b0affd8b13aeeccbff38b4f4837d04043b878c6a64bf"
+            "sha256": "40cfa705fb7d2df2577642bffde16bcb0332f2e2a983f4aeece27acefe6361d6"
           },
           {
-            "path": "io/mango/platform/authorization/mango-authorization-api/1.0.40/mango-authorization-api-1.0.40.jar",
-            "size": 151007,
-            "sha256": "fe87fd0e4b315eb8755aed10b33ea00bf04f4504a42f66c3ec46397da150eca1"
+            "path": "io/mango/platform/authorization/mango-authorization-api/1.0.41/mango-authorization-api-1.0.41.jar",
+            "size": 151008,
+            "sha256": "f96d6968c9339553fb1009acfbdc0bc6eccf30e190075f96f68ccc39c31332b8"
           }
         ]
       },
       {
-        "coordinate": "io.mango.extension.ai:mango-ai-starter:1.0.40",
+        "coordinate": "io.mango.extension.ai:mango-ai-starter:1.0.41",
         "files": [
           {
-            "path": "io/mango/extension/ai/mango-ai-starter/1.0.40/mango-ai-starter-1.0.40.pom",
+            "path": "io/mango/extension/ai/mango-ai-starter/1.0.41/mango-ai-starter-1.0.41.pom",
             "size": 3315,
-            "sha256": "42b5108475e300161652d0e4cfde272d4db525db095e8b74ce357f78e43550fd"
+            "sha256": "4078a5add39c0215455840fe951d7928ae76e0ee00760bd1b3d9aee37005a138"
           },
           {
-            "path": "io/mango/extension/ai/mango-ai-starter/1.0.40/mango-ai-starter-1.0.40.jar",
-            "size": 18617,
-            "sha256": "2186d50bb64fd875e8d1626b702fcf5fcedb7bfcb57b3517c0a45b780376fe8e"
+            "path": "io/mango/extension/ai/mango-ai-starter/1.0.41/mango-ai-starter-1.0.41.jar",
+            "size": 18618,
+            "sha256": "6d21b2c6ae6bcb33531503ee416e2ec26b59f7b67ebe9294b80bebc23435a54d"
           }
         ]
       },
       {
-        "coordinate": "io.mango.extension.ai:mango-ai:1.0.40",
+        "coordinate": "io.mango.extension.ai:mango-ai:1.0.41",
         "files": [
           {
-            "path": "io/mango/extension/ai/mango-ai/1.0.40/mango-ai-1.0.40.pom",
+            "path": "io/mango/extension/ai/mango-ai/1.0.41/mango-ai-1.0.41.pom",
             "size": 868,
-            "sha256": "5727b377a5f77b23e1ddeb9de48243e2127d1ad87d72fcf8f3450cf8fb838b80"
+            "sha256": "60d5346908556dd60687891bdb0545914e872a83a656d9a5db6c7b16e9c58e9c"
           }
         ]
       },
       {
-        "coordinate": "io.mango.extension:mango-extension:1.0.40",
+        "coordinate": "io.mango.extension:mango-extension:1.0.41",
         "files": [
           {
-            "path": "io/mango/extension/mango-extension/1.0.40/mango-extension-1.0.40.pom",
+            "path": "io/mango/extension/mango-extension/1.0.41/mango-extension-1.0.41.pom",
             "size": 820,
-            "sha256": "16ffe5b709b0e32909a60d4929b12da74d2c5b2d8ba0b9a0f1d29541aa3454c5"
+            "sha256": "22aa51a62b0bb411300fc1a4c21ccd70147ab13f0aa9163c3cb89ce10cf6b658"
           }
         ]
       },
       {
-        "coordinate": "io.mango.infra.bootstrap:mango-infra-bootstrap-core:1.0.40",
+        "coordinate": "io.mango.infra.bootstrap:mango-infra-bootstrap-core:1.0.41",
         "files": [
           {
-            "path": "io/mango/infra/bootstrap/mango-infra-bootstrap-core/1.0.40/mango-infra-bootstrap-core-1.0.40.pom",
+            "path": "io/mango/infra/bootstrap/mango-infra-bootstrap-core/1.0.41/mango-infra-bootstrap-core-1.0.41.pom",
             "size": 2060,
-            "sha256": "b14f59286309b9fbd830399f6e323654a2c18e0c8d7052c440e473b0420600c9"
+            "sha256": "185e91c2d663bd86e7d970ac2333c035ce001145c553a129dcc173adc8ac897c"
           },
           {
-            "path": "io/mango/infra/bootstrap/mango-infra-bootstrap-core/1.0.40/mango-infra-bootstrap-core-1.0.40.jar",
-            "size": 33047,
-            "sha256": "e9ff25b5a04a4389b3c3484a4c01169567408c72fc6379922f45f9e32b609085"
+            "path": "io/mango/infra/bootstrap/mango-infra-bootstrap-core/1.0.41/mango-infra-bootstrap-core-1.0.41.jar",
+            "size": 33048,
+            "sha256": "aa640d98e22c2df2c44d89d017a0a96d0d057a41e6919a6d102e049aec742377"
           }
         ]
       },
       {
-        "coordinate": "io.mango.infra.bootstrap:mango-infra-bootstrap-starter:1.0.40",
+        "coordinate": "io.mango.infra.bootstrap:mango-infra-bootstrap-starter:1.0.41",
         "files": [
           {
-            "path": "io/mango/infra/bootstrap/mango-infra-bootstrap-starter/1.0.40/mango-infra-bootstrap-starter-1.0.40.pom",
+            "path": "io/mango/infra/bootstrap/mango-infra-bootstrap-starter/1.0.41/mango-infra-bootstrap-starter-1.0.41.pom",
             "size": 1881,
-            "sha256": "8b7c9f70cbc2e6004d9431619212483bfdd6c067dd02bd286ef36bc2bfe18ddf"
+            "sha256": "088451fca7fc0bfad76d211eb7b14ae9d26abd27901275139cc5114600c5eb47"
           },
           {
-            "path": "io/mango/infra/bootstrap/mango-infra-bootstrap-starter/1.0.40/mango-infra-bootstrap-starter-1.0.40.jar",
+            "path": "io/mango/infra/bootstrap/mango-infra-bootstrap-starter/1.0.41/mango-infra-bootstrap-starter-1.0.41.jar",
             "size": 26408,
-            "sha256": "3e8173f9389efa446b360846d295a241325880c86936b7e7901102df1afbc39a"
+            "sha256": "ec0512778e767b7dd6a67ea1fedc79f9ec646904335dbe75139ad32132eef054"
           }
         ]
       },
       {
-        "coordinate": "io.mango.infra.bootstrap:mango-infra-bootstrap:1.0.40",
+        "coordinate": "io.mango.infra.bootstrap:mango-infra-bootstrap:1.0.41",
         "files": [
           {
-            "path": "io/mango/infra/bootstrap/mango-infra-bootstrap/1.0.40/mango-infra-bootstrap-1.0.40.pom",
+            "path": "io/mango/infra/bootstrap/mango-infra-bootstrap/1.0.41/mango-infra-bootstrap-1.0.41.pom",
             "size": 916,
-            "sha256": "86f03323663c750fc43ba5c0f5346fffa01c2e794a6f8f0ee4dd492b69ee40e8"
+            "sha256": "19b129c6e292979d503582ff8864271f656957ffc8941c9e5dd11643ea09264b"
           }
         ]
       },
       {
-        "coordinate": "io.mango.infra.context:mango-infra-context:1.0.40",
+        "coordinate": "io.mango.infra.context:mango-infra-context:1.0.41",
         "files": [
           {
-            "path": "io/mango/infra/context/mango-infra-context/1.0.40/mango-infra-context-1.0.40.pom",
+            "path": "io/mango/infra/context/mango-infra-context/1.0.41/mango-infra-context-1.0.41.pom",
             "size": 1048,
-            "sha256": "bcc0d5aadc28ce9513c2778e3840a71c8df3910ed6f12b4c6d54e622ccf666da"
+            "sha256": "1467a92aa4f7e07364de8b2a05346f39ab0ef90a26315ec4848cf265ce8fada9"
           }
         ]
       },
       {
-        "coordinate": "io.mango.infra.module:mango-infra-module-core:1.0.40",
+        "coordinate": "io.mango.infra.module:mango-infra-module-core:1.0.41",
         "files": [
           {
-            "path": "io/mango/infra/module/mango-infra-module-core/1.0.40/mango-infra-module-core-1.0.40.pom",
+            "path": "io/mango/infra/module/mango-infra-module-core/1.0.41/mango-infra-module-core-1.0.41.pom",
             "size": 1061,
-            "sha256": "15ff77156986d6e9edc6e778d5ab8e79c3ccbc4929729ace28ec9f6fbb8a7aee"
+            "sha256": "cd3bb8c4db34922f52e26c9451f1894ebb8a0e7f5aeedcfd68578277d9a9cae2"
           },
           {
-            "path": "io/mango/infra/module/mango-infra-module-core/1.0.40/mango-infra-module-core-1.0.40.jar",
+            "path": "io/mango/infra/module/mango-infra-module-core/1.0.41/mango-infra-module-core-1.0.41.jar",
             "size": 26679,
-            "sha256": "7d263624093e1b5d5f4d0437d4279d3bedae467cf265a89b3f902969c9cf94d2"
+            "sha256": "053dfbbcbb2d89ec394e98d0d37703fedc73172b77e56a63ba281b3705facca7"
           }
         ]
       },
       {
-        "coordinate": "io.mango.infra.module:mango-infra-module-starter:1.0.40",
+        "coordinate": "io.mango.infra.module:mango-infra-module-starter:1.0.41",
         "files": [
           {
-            "path": "io/mango/infra/module/mango-infra-module-starter/1.0.40/mango-infra-module-starter-1.0.40.pom",
+            "path": "io/mango/infra/module/mango-infra-module-starter/1.0.41/mango-infra-module-starter-1.0.41.pom",
             "size": 2443,
-            "sha256": "ccd133a1b93ee638f8ef2de1aa0a2dc87331902a57fd0cc7356adc9595042f8b"
+            "sha256": "e7de383fa77e586caaa4b6110ad6a11af2e866cd4dce5321b401463cd313257b"
           },
           {
-            "path": "io/mango/infra/module/mango-infra-module-starter/1.0.40/mango-infra-module-starter-1.0.40.jar",
-            "size": 25012,
-            "sha256": "6ecf0bc4563b650b5b1ccbfc0f3d61c7a88556b96b2bf005d15a0e290df21988"
+            "path": "io/mango/infra/module/mango-infra-module-starter/1.0.41/mango-infra-module-starter-1.0.41.jar",
+            "size": 25013,
+            "sha256": "59925a9e7d71fe08dd74aa860ce2a0f95c790945481b76ed6bd137f930326f10"
           }
         ]
       },
       {
-        "coordinate": "io.mango.infra.doc:mango-infra-doc-starter:1.0.40",
+        "coordinate": "io.mango.infra.doc:mango-infra-doc-starter:1.0.41",
         "files": [
           {
-            "path": "io/mango/infra/doc/mango-infra-doc-starter/1.0.40/mango-infra-doc-starter-1.0.40.pom",
+            "path": "io/mango/infra/doc/mango-infra-doc-starter/1.0.41/mango-infra-doc-starter-1.0.41.pom",
             "size": 2644,
-            "sha256": "5536855407300f8eb7ecb88f82218373e3e0fe5e182b573cd0107c3786d52f48"
+            "sha256": "4bb77b9283fff7132b63ad25c9e9802b2a8260f27f8b024e2f34cea28c31cd15"
           },
           {
-            "path": "io/mango/infra/doc/mango-infra-doc-starter/1.0.40/mango-infra-doc-starter-1.0.40.jar",
-            "size": 17787,
-            "sha256": "e0521b88f8580ec77f72cb5e13adfdf8876f8e4de24b5047842bfc8d91b62bd9"
+            "path": "io/mango/infra/doc/mango-infra-doc-starter/1.0.41/mango-infra-doc-starter-1.0.41.jar",
+            "size": 17788,
+            "sha256": "57a2c4639bba51c716ff5a7a420dac11073b70af3835e9d7887a01f334cd6c6f"
           }
         ]
       },
       {
-        "coordinate": "io.mango.infra.docsign:mango-infra-docsign-api:1.0.40",
+        "coordinate": "io.mango.infra.docsign:mango-infra-docsign-api:1.0.41",
         "files": [
           {
-            "path": "io/mango/infra/docsign/mango-infra-docsign-api/1.0.40/mango-infra-docsign-api-1.0.40.pom",
+            "path": "io/mango/infra/docsign/mango-infra-docsign-api/1.0.41/mango-infra-docsign-api-1.0.41.pom",
             "size": 829,
-            "sha256": "3ad704f587134c1e041fb14b4e8382ebb4c2a0f32f5aeb8438878f4a921e155e"
+            "sha256": "ad93ffb242c8e7bffc92549d64bcf54251331d96c71c875e818e88a4dc12f104"
           },
           {
-            "path": "io/mango/infra/docsign/mango-infra-docsign-api/1.0.40/mango-infra-docsign-api-1.0.40.jar",
-            "size": 22508,
-            "sha256": "10275d69aef2cf1eba227b43b9729a0a73ca5d0fa50ecc2a216972e79e6e576a"
+            "path": "io/mango/infra/docsign/mango-infra-docsign-api/1.0.41/mango-infra-docsign-api-1.0.41.jar",
+            "size": 22509,
+            "sha256": "1973347e11bb2f56f8fa716ba5a6b5cf27008330239f2fdb7bcd284f20cdfc18"
           }
         ]
       },
       {
-        "coordinate": "io.mango.infra.docsign:mango-infra-docsign-core:1.0.40",
+        "coordinate": "io.mango.infra.docsign:mango-infra-docsign-core:1.0.41",
         "files": [
           {
-            "path": "io/mango/infra/docsign/mango-infra-docsign-core/1.0.40/mango-infra-docsign-core-1.0.40.pom",
+            "path": "io/mango/infra/docsign/mango-infra-docsign-core/1.0.41/mango-infra-docsign-core-1.0.41.pom",
             "size": 1982,
-            "sha256": "4a54d85b3ba25ee8443809a37697af341c4fbcdf278afe5ca831321ec0be1949"
+            "sha256": "ba3c600f90f87a0bfc899b0e56e14eb9fe0a91219148715d0418942931f83217"
           },
           {
-            "path": "io/mango/infra/docsign/mango-infra-docsign-core/1.0.40/mango-infra-docsign-core-1.0.40.jar",
+            "path": "io/mango/infra/docsign/mango-infra-docsign-core/1.0.41/mango-infra-docsign-core-1.0.41.jar",
             "size": 50257,
-            "sha256": "7a5f2325cc6a03c834c34c24242142d88aab7056f01112a6830c5358e911e85a"
+            "sha256": "1abbc7b3235df42df050953367a74e3a02e8abbe1d75b2c8fe7376381f12f9c1"
           }
         ]
       },
       {
-        "coordinate": "io.mango.infra.docsign:mango-infra-docsign-starter:1.0.40",
+        "coordinate": "io.mango.infra.docsign:mango-infra-docsign-starter:1.0.41",
         "files": [
           {
-            "path": "io/mango/infra/docsign/mango-infra-docsign-starter/1.0.40/mango-infra-docsign-starter-1.0.40.pom",
+            "path": "io/mango/infra/docsign/mango-infra-docsign-starter/1.0.41/mango-infra-docsign-starter-1.0.41.pom",
             "size": 1661,
-            "sha256": "36270fe733fe7e80a2ea8417c7ba2fe8e7b5d085737f979f9ebda5b0a6cba3b9"
+            "sha256": "eccf5d1530a10c154d5dd0dbd16d7a16d44db07814e029bb012f905072a2a7e9"
           },
           {
-            "path": "io/mango/infra/docsign/mango-infra-docsign-starter/1.0.40/mango-infra-docsign-starter-1.0.40.jar",
+            "path": "io/mango/infra/docsign/mango-infra-docsign-starter/1.0.41/mango-infra-docsign-starter-1.0.41.jar",
             "size": 6117,
-            "sha256": "b0b2a905ac580c33837b85a0d53f76201a5e264d8323ccb37d22c819b69a17f4"
+            "sha256": "adb149502edefbfaf2e3effdadefe3989029d33579983dd364031a9b9722cf8c"
           }
         ]
       },
       {
-        "coordinate": "io.mango.infra.docsign:mango-infra-docsign:1.0.40",
+        "coordinate": "io.mango.infra.docsign:mango-infra-docsign:1.0.41",
         "files": [
           {
-            "path": "io/mango/infra/docsign/mango-infra-docsign/1.0.40/mango-infra-docsign-1.0.40.pom",
+            "path": "io/mango/infra/docsign/mango-infra-docsign/1.0.41/mango-infra-docsign-1.0.41.pom",
             "size": 904,
-            "sha256": "9310655e23b904617d4ef642125265dc15e089da498d2ada752fff9c2ed3c180"
+            "sha256": "2422f7be953abd3290bcac6804ab04de3db8d36f248de0e4745257b69d93903c"
           }
         ]
       },
       {
-        "coordinate": "io.mango.infra.event:mango-infra-event-api:1.0.40",
+        "coordinate": "io.mango.infra.event:mango-infra-event-api:1.0.41",
         "files": [
           {
-            "path": "io/mango/infra/event/mango-infra-event-api/1.0.40/mango-infra-event-api-1.0.40.pom",
+            "path": "io/mango/infra/event/mango-infra-event-api/1.0.41/mango-infra-event-api-1.0.41.pom",
             "size": 1843,
-            "sha256": "11d7fff240405e15e94250c836a9841bae4d892afeff1b582add689981d7d89a"
+            "sha256": "c15709cb570e20ded99a54c3cf73f118132a4cc8415b3fb8705cedc66daece6b"
           },
           {
-            "path": "io/mango/infra/event/mango-infra-event-api/1.0.40/mango-infra-event-api-1.0.40.jar",
-            "size": 23010,
-            "sha256": "c01f92e314e096ae851adc4af7bff74966756da4ff6845ca32dcc9d3b9d6161c"
+            "path": "io/mango/infra/event/mango-infra-event-api/1.0.41/mango-infra-event-api-1.0.41.jar",
+            "size": 23011,
+            "sha256": "bbce6955a5384e809f275996d4d6c80abcf730453a32d6803a991763830c44c9"
           }
         ]
       },
       {
-        "coordinate": "io.mango.infra.event:mango-infra-event-core:1.0.40",
+        "coordinate": "io.mango.infra.event:mango-infra-event-core:1.0.41",
         "files": [
           {
-            "path": "io/mango/infra/event/mango-infra-event-core/1.0.40/mango-infra-event-core-1.0.40.pom",
+            "path": "io/mango/infra/event/mango-infra-event-core/1.0.41/mango-infra-event-core-1.0.41.pom",
             "size": 1933,
-            "sha256": "bfe5bd17298218a83abe03824641799c0c21f745d7297b6ff3cd97ffa17dd226"
+            "sha256": "6108c593df08adf71b22b0e27302a1bd31a7271870df34a5123b6ec5a7dd5936"
           },
           {
-            "path": "io/mango/infra/event/mango-infra-event-core/1.0.40/mango-infra-event-core-1.0.40.jar",
+            "path": "io/mango/infra/event/mango-infra-event-core/1.0.41/mango-infra-event-core-1.0.41.jar",
             "size": 21345,
-            "sha256": "394f51d49f295d39c2cd02a04d6381661ad07d1b842365d335c6c40cc091db21"
+            "sha256": "bbf3759779b86b0518a18afa8791ebb35f565f6158166122d40e7913ba6c7512"
           }
         ]
       },
       {
-        "coordinate": "io.mango.infra.event:mango-infra-event-starter:1.0.40",
+        "coordinate": "io.mango.infra.event:mango-infra-event-starter:1.0.41",
         "files": [
           {
-            "path": "io/mango/infra/event/mango-infra-event-starter/1.0.40/mango-infra-event-starter-1.0.40.pom",
+            "path": "io/mango/infra/event/mango-infra-event-starter/1.0.41/mango-infra-event-starter-1.0.41.pom",
             "size": 2643,
-            "sha256": "b83c0d02e98775ce973d024883e42e01969632255ab369377ebe90c9fbd4b68a"
+            "sha256": "18de653a5349eed7ef8b3554b95e000b0a71e8054ae2dab23f66f466cc4f0597"
           },
           {
-            "path": "io/mango/infra/event/mango-infra-event-starter/1.0.40/mango-infra-event-starter-1.0.40.jar",
-            "size": 19040,
-            "sha256": "3b87f70c01dae4039f6622473918bfcd7f40cbef9f271737a6688ba22cfb6f94"
+            "path": "io/mango/infra/event/mango-infra-event-starter/1.0.41/mango-infra-event-starter-1.0.41.jar",
+            "size": 19041,
+            "sha256": "b96096b146a3b97c541cec002d1b72713bffc336f358151e60e0377aaabac8b7"
           }
         ]
       },
       {
-        "coordinate": "io.mango.infra.event:mango-infra-event:1.0.40",
+        "coordinate": "io.mango.infra.event:mango-infra-event:1.0.41",
         "files": [
           {
-            "path": "io/mango/infra/event/mango-infra-event/1.0.40/mango-infra-event-1.0.40.pom",
+            "path": "io/mango/infra/event/mango-infra-event/1.0.41/mango-infra-event-1.0.41.pom",
             "size": 898,
-            "sha256": "8645cb8302d47f50e373ae9ccd2dfa401be319f3e6dbcf4ee79644ed58cbe42f"
+            "sha256": "a1e72ae14c7c46e510a4ac1795231d473d1a26374ae353d09e5de640dcbfc9d1"
           }
         ]
       },
       {
-        "coordinate": "io.mango.infra.persistence:mango-infra-persistence-web-starter:1.0.40",
+        "coordinate": "io.mango.infra.persistence:mango-infra-persistence-web-starter:1.0.41",
         "files": [
           {
-            "path": "io/mango/infra/persistence/mango-infra-persistence-web-starter/1.0.40/mango-infra-persistence-web-starter-1.0.40.pom",
+            "path": "io/mango/infra/persistence/mango-infra-persistence-web-starter/1.0.41/mango-infra-persistence-web-starter-1.0.41.pom",
             "size": 2563,
-            "sha256": "f56c243b797186bc95f86d048cd2c6c84b6b345b63309b63039861f1970facc2"
+            "sha256": "56e3d19f828a05c388acc783cd1da8f7dad422df3be84ad665473f06f350a04b"
           },
           {
-            "path": "io/mango/infra/persistence/mango-infra-persistence-web-starter/1.0.40/mango-infra-persistence-web-starter-1.0.40.jar",
-            "size": 45296,
-            "sha256": "fd3bcb39abf46a1bd9922a8ae1a68d7d1b20c9cd6cddf168722c63acbb8d22c5"
+            "path": "io/mango/infra/persistence/mango-infra-persistence-web-starter/1.0.41/mango-infra-persistence-web-starter-1.0.41.jar",
+            "size": 45297,
+            "sha256": "77d1b972bbe48aab16232f35ca65282b8b0bbc08769a0f2fa23b055dc5d667a1"
           }
         ]
       },
       {
-        "coordinate": "io.mango.infra.excel:mango-infra-excel-starter:1.0.40",
+        "coordinate": "io.mango.infra.excel:mango-infra-excel-starter:1.0.41",
         "files": [
           {
-            "path": "io/mango/infra/excel/mango-infra-excel-starter/1.0.40/mango-infra-excel-starter-1.0.40.pom",
+            "path": "io/mango/infra/excel/mango-infra-excel-starter/1.0.41/mango-infra-excel-starter-1.0.41.pom",
             "size": 2410,
-            "sha256": "d7de7993ef746ebbaf5630ac0d41f47fc54c7ad47b04b8399a586103a47cdac9"
+            "sha256": "5fda77e9cdee1b22dbc017fba19bf241f1abe5d321d0be1c8ebc63a89d87c6c8"
           },
           {
-            "path": "io/mango/infra/excel/mango-infra-excel-starter/1.0.40/mango-infra-excel-starter-1.0.40.jar",
+            "path": "io/mango/infra/excel/mango-infra-excel-starter/1.0.41/mango-infra-excel-starter-1.0.41.jar",
             "size": 33469,
-            "sha256": "b30ac229dd48b1539e44fa5e011337c67f04ccb09ed97a9ac57063235bbe4fb6"
+            "sha256": "f14debf7e98c9f256defa3a6077614ea64bce09e1688533adbaf0c6f544c3ae8"
           }
         ]
       },
       {
-        "coordinate": "io.mango.infra.feign:mango-infra-feign-starter:1.0.40",
+        "coordinate": "io.mango.infra.feign:mango-infra-feign-starter:1.0.41",
         "files": [
           {
-            "path": "io/mango/infra/feign/mango-infra-feign-starter/1.0.40/mango-infra-feign-starter-1.0.40.pom",
+            "path": "io/mango/infra/feign/mango-infra-feign-starter/1.0.41/mango-infra-feign-starter-1.0.41.pom",
             "size": 3655,
-            "sha256": "20445c5e73bc53b2b5e1cb55748ebd3339c594ba529af624c3205f5c71ded43e"
+            "sha256": "f4b9283f9d032532c28c9e0944fd03cd64807bbb8f7c9ebad52d8827f0a131d8"
           },
           {
-            "path": "io/mango/infra/feign/mango-infra-feign-starter/1.0.40/mango-infra-feign-starter-1.0.40.jar",
-            "size": 18698,
-            "sha256": "19556248b7169d0c3de74324c270751ae1240af6f04dbafd1400504b3a41a9c7"
+            "path": "io/mango/infra/feign/mango-infra-feign-starter/1.0.41/mango-infra-feign-starter-1.0.41.jar",
+            "size": 18699,
+            "sha256": "3c303ad61591560f81fcc3b81ce1285197feb19a2501c8b34c88dae07a086721"
           }
         ]
       },
       {
-        "coordinate": "io.mango.infra.fileproc:mango-infra-fileproc-api:1.0.40",
+        "coordinate": "io.mango.infra.fileproc:mango-infra-fileproc-api:1.0.41",
         "files": [
           {
-            "path": "io/mango/infra/fileproc/mango-infra-fileproc-api/1.0.40/mango-infra-fileproc-api-1.0.40.pom",
+            "path": "io/mango/infra/fileproc/mango-infra-fileproc-api/1.0.41/mango-infra-fileproc-api-1.0.41.pom",
             "size": 828,
-            "sha256": "e4a7f4cffbafa5c3ae82390f552def1d1ba681bfbed89fe936265dd9bdf8c79c"
+            "sha256": "f337f228652e9772f5f54e3c42e900c991ff1e17784e28f42c498b49923f40c1"
           },
           {
-            "path": "io/mango/infra/fileproc/mango-infra-fileproc-api/1.0.40/mango-infra-fileproc-api-1.0.40.jar",
+            "path": "io/mango/infra/fileproc/mango-infra-fileproc-api/1.0.41/mango-infra-fileproc-api-1.0.41.jar",
             "size": 48747,
-            "sha256": "c4d8949d48ec4bb1425792e0b5988f4b0876ece14cd7132cf6d04ec79cabf8ec"
+            "sha256": "1f43dc6088f7aca243ec08afe438b7976f4b92fbfeffe212498b19735b76ac32"
           }
         ]
       },
       {
-        "coordinate": "io.mango.infra.fileproc:mango-infra-fileproc-core:1.0.40",
+        "coordinate": "io.mango.infra.fileproc:mango-infra-fileproc-core:1.0.41",
         "files": [
           {
-            "path": "io/mango/infra/fileproc/mango-infra-fileproc-core/1.0.40/mango-infra-fileproc-core-1.0.40.pom",
+            "path": "io/mango/infra/fileproc/mango-infra-fileproc-core/1.0.41/mango-infra-fileproc-core-1.0.41.pom",
             "size": 3608,
-            "sha256": "d3eebfda28a25f5dea6db7961a1648c550816e4939cbdf7ecc10537ece34362b"
+            "sha256": "dc867e6e896922b1ee28d87ee306ea2674022f0ce8275ee935bcff35f3b4b2b7"
           },
           {
-            "path": "io/mango/infra/fileproc/mango-infra-fileproc-core/1.0.40/mango-infra-fileproc-core-1.0.40.jar",
-            "size": 124087,
-            "sha256": "3f171d51fe5dc788020175e7e383e78b4cdfbc46eb55396c1bf3eb6594e56272"
+            "path": "io/mango/infra/fileproc/mango-infra-fileproc-core/1.0.41/mango-infra-fileproc-core-1.0.41.jar",
+            "size": 124088,
+            "sha256": "077f83e62c3f96ef1b5b42cfbe6e825ab4dbfbb969c92b024c40cb4657682845"
           }
         ]
       },
       {
-        "coordinate": "io.mango.infra.fileproc:mango-infra-fileproc-starter:1.0.40",
+        "coordinate": "io.mango.infra.fileproc:mango-infra-fileproc-starter:1.0.41",
         "files": [
           {
-            "path": "io/mango/infra/fileproc/mango-infra-fileproc-starter/1.0.40/mango-infra-fileproc-starter-1.0.40.pom",
+            "path": "io/mango/infra/fileproc/mango-infra-fileproc-starter/1.0.41/mango-infra-fileproc-starter-1.0.41.pom",
             "size": 1498,
-            "sha256": "79416902485c4b8abdb4790b95b1d4b0cfdb94e9f528b4aa9ce089a28ca723fa"
+            "sha256": "b76df9e2066f791d6eea7795ea2ca937a3d2605074145554c425227dbea3ed3b"
           },
           {
-            "path": "io/mango/infra/fileproc/mango-infra-fileproc-starter/1.0.40/mango-infra-fileproc-starter-1.0.40.jar",
+            "path": "io/mango/infra/fileproc/mango-infra-fileproc-starter/1.0.41/mango-infra-fileproc-starter-1.0.41.jar",
             "size": 15603,
-            "sha256": "c0c5fd86398f14b5af3e101d659f49bd245b9d9b30a7f05795814c93f3fca44c"
+            "sha256": "41a8bb1a443caacf944f1bf549292d44590b43a5398c745b3ebfd828936f0bed"
           }
         ]
       },
       {
-        "coordinate": "io.mango.infra.fileproc:mango-infra-fileproc:1.0.40",
+        "coordinate": "io.mango.infra.fileproc:mango-infra-fileproc:1.0.41",
         "files": [
           {
-            "path": "io/mango/infra/fileproc/mango-infra-fileproc/1.0.40/mango-infra-fileproc-1.0.40.pom",
+            "path": "io/mango/infra/fileproc/mango-infra-fileproc/1.0.41/mango-infra-fileproc-1.0.41.pom",
             "size": 929,
-            "sha256": "edd17d06b5aac0f5a85b82f4d76ac6f82bfd68d31116642af97bf4e168e3aec4"
+            "sha256": "cfe4dc721dfe4a335ec1ba71201ed0a12e8736022411efed0f914dc61ba95168"
           }
         ]
       },
       {
-        "coordinate": "io.mango.infra.ip.location:mango-infra-ip-location-api:1.0.40",
+        "coordinate": "io.mango.infra.ip.location:mango-infra-ip-location-api:1.0.41",
         "files": [
           {
-            "path": "io/mango/infra/ip/location/mango-infra-ip-location-api/1.0.40/mango-infra-ip-location-api-1.0.40.pom",
+            "path": "io/mango/infra/ip/location/mango-infra-ip-location-api/1.0.41/mango-infra-ip-location-api-1.0.41.pom",
             "size": 993,
-            "sha256": "6efa97e24292af80ea24bffa6c11bfaa736a66771c8177c4006d4cf893997a9b"
+            "sha256": "e1049957ca47adb12090d2d1e755787c78fff8185bb8a8112e7895cbe1c0d424"
           },
           {
-            "path": "io/mango/infra/ip/location/mango-infra-ip-location-api/1.0.40/mango-infra-ip-location-api-1.0.40.jar",
+            "path": "io/mango/infra/ip/location/mango-infra-ip-location-api/1.0.41/mango-infra-ip-location-api-1.0.41.jar",
             "size": 4437,
-            "sha256": "f7200f5f9870b4b6bcfd7f71759b3d55eadc901496653d1d9e314d4d04dc7526"
+            "sha256": "791f8ad9b65319b79409401a19590fb246a35f97d32541a1fdd6fea1fec1362c"
           }
         ]
       },
       {
-        "coordinate": "io.mango.infra.ip.location:mango-infra-ip-location-core:1.0.40",
+        "coordinate": "io.mango.infra.ip.location:mango-infra-ip-location-core:1.0.41",
         "files": [
           {
-            "path": "io/mango/infra/ip/location/mango-infra-ip-location-core/1.0.40/mango-infra-ip-location-core-1.0.40.pom",
+            "path": "io/mango/infra/ip/location/mango-infra-ip-location-core/1.0.41/mango-infra-ip-location-core-1.0.41.pom",
             "size": 1378,
-            "sha256": "242f900c9924bbef37b9db3fd787be45feb9ae17c1aea45b0b4eb5902f3bc554"
+            "sha256": "bc6e8d413d759bb0ed4c9bc6f6f466d578087f04a2b4563c6b9856138186d1fa"
           },
           {
-            "path": "io/mango/infra/ip/location/mango-infra-ip-location-core/1.0.40/mango-infra-ip-location-core-1.0.40.jar",
+            "path": "io/mango/infra/ip/location/mango-infra-ip-location-core/1.0.41/mango-infra-ip-location-core-1.0.41.jar",
             "size": 11245,
-            "sha256": "9e6cbea17397d3034265661607ee0c452f3966745fa94f8a8d9cdb442ca65949"
+            "sha256": "9f8cc5861a21ad1272263d589cf5f6027faa51f5c9067a2412447631caeb58c0"
           }
         ]
       },
       {
-        "coordinate": "io.mango.infra.ip.location:mango-infra-ip-location-starter:1.0.40",
+        "coordinate": "io.mango.infra.ip.location:mango-infra-ip-location-starter:1.0.41",
         "files": [
           {
-            "path": "io/mango/infra/ip/location/mango-infra-ip-location-starter/1.0.40/mango-infra-ip-location-starter-1.0.40.pom",
+            "path": "io/mango/infra/ip/location/mango-infra-ip-location-starter/1.0.41/mango-infra-ip-location-starter-1.0.41.pom",
             "size": 2070,
-            "sha256": "8fe5728c9d8cb97e7afa00b20ae042d8a1f08600445e80b5a939ac55a3c15d9a"
+            "sha256": "39b83cfc80c16573aebeb701561284d15dadd5113503920e036df8631675f10b"
           },
           {
-            "path": "io/mango/infra/ip/location/mango-infra-ip-location-starter/1.0.40/mango-infra-ip-location-starter-1.0.40.jar",
+            "path": "io/mango/infra/ip/location/mango-infra-ip-location-starter/1.0.41/mango-infra-ip-location-starter-1.0.41.jar",
             "size": 8940,
-            "sha256": "e0eca5cb776e1632460f5245de47b06d4138a65b9162d553e600828c1e66cfce"
+            "sha256": "c9265203ec159fc2de9a87ae90440272180ab07f686e0d007533be01011c5193"
           }
         ]
       },
       {
-        "coordinate": "io.mango.infra.ip.location:mango-infra-ip-location:1.0.40",
+        "coordinate": "io.mango.infra.ip.location:mango-infra-ip-location:1.0.41",
         "files": [
           {
-            "path": "io/mango/infra/ip/location/mango-infra-ip-location/1.0.40/mango-infra-ip-location-1.0.40.pom",
+            "path": "io/mango/infra/ip/location/mango-infra-ip-location/1.0.41/mango-infra-ip-location-1.0.41.pom",
             "size": 919,
-            "sha256": "e57ea7e7ff1cdfe529e536b1e2260f9559fbd267b43fe7f5b842b1d5f3662416"
+            "sha256": "bd1aef972f46f6d7453427ba4568229e47316d8260bba771ef1e2a90d6290f93"
           }
         ]
       },
       {
-        "coordinate": "io.mango.infra.kv:mango-infra-kv:1.0.40",
+        "coordinate": "io.mango.infra.kv:mango-infra-kv:1.0.41",
         "files": [
           {
-            "path": "io/mango/infra/kv/mango-infra-kv/1.0.40/mango-infra-kv-1.0.40.pom",
+            "path": "io/mango/infra/kv/mango-infra-kv/1.0.41/mango-infra-kv-1.0.41.pom",
             "size": 898,
-            "sha256": "5e8bbdc1b931ee8e490a0956712dffca1ed42af15e3a628a5798743a1fe6221e"
+            "sha256": "8779cc144d45fd5538e6019f59be9af994a2eeeb3cd55cf88de8b554ef252208"
           }
         ]
       },
       {
-        "coordinate": "io.mango.infra.log:mango-infra-log-starter:1.0.40",
+        "coordinate": "io.mango.infra.log:mango-infra-log-starter:1.0.41",
         "files": [
           {
-            "path": "io/mango/infra/log/mango-infra-log-starter/1.0.40/mango-infra-log-starter-1.0.40.pom",
+            "path": "io/mango/infra/log/mango-infra-log-starter/1.0.41/mango-infra-log-starter-1.0.41.pom",
             "size": 2006,
-            "sha256": "3340e20c353b46bbdd1783334b355283ed348c71a4edfb063471088edce5002c"
+            "sha256": "109954e7653aa73823c1bc5b1b4cbadbb6d0d40dd609837a19e0772908fbf3eb"
           },
           {
-            "path": "io/mango/infra/log/mango-infra-log-starter/1.0.40/mango-infra-log-starter-1.0.40.jar",
-            "size": 14896,
-            "sha256": "d018a7efcbf478f7b32667cba3e8954931b2929fcba6979bb95cba582a57ce53"
+            "path": "io/mango/infra/log/mango-infra-log-starter/1.0.41/mango-infra-log-starter-1.0.41.jar",
+            "size": 14897,
+            "sha256": "6cbdfccddcf2fac4d137111eed5bcf16d439992309315032b4285b43b128b286"
           }
         ]
       },
       {
-        "coordinate": "io.mango.infra.module:mango-infra-module:1.0.40",
+        "coordinate": "io.mango.infra.module:mango-infra-module:1.0.41",
         "files": [
           {
-            "path": "io/mango/infra/module/mango-infra-module/1.0.40/mango-infra-module-1.0.40.pom",
+            "path": "io/mango/infra/module/mango-infra-module/1.0.41/mango-infra-module-1.0.41.pom",
             "size": 888,
-            "sha256": "015fb20682187cde84b99e5502f8972da5a9a3c410b80e53618909811cf48c46"
+            "sha256": "ac29629da5834a31e91529aeed3d2ea837c36768caad4cc74c8914034c2cfa8e"
           }
         ]
       },
       {
-        "coordinate": "io.mango.infra.persistence:mango-infra-persistence:1.0.40",
+        "coordinate": "io.mango.infra.persistence:mango-infra-persistence:1.0.41",
         "files": [
           {
-            "path": "io/mango/infra/persistence/mango-infra-persistence/1.0.40/mango-infra-persistence-1.0.40.pom",
+            "path": "io/mango/infra/persistence/mango-infra-persistence/1.0.41/mango-infra-persistence-1.0.41.pom",
             "size": 929,
-            "sha256": "a9592c88ea2361953f226b2ae5b374a11c81bed17fa02bbbb857a584754c8443"
+            "sha256": "fa8d6eaf0320e9e2b0bd922c3f19cbd66ed9e0ab32c3d977d49b346d18f91253"
           }
         ]
       },
       {
-        "coordinate": "io.mango.infra.realtime:mango-infra-realtime-support:1.0.40",
+        "coordinate": "io.mango.infra.realtime:mango-infra-realtime-support:1.0.41",
         "files": [
           {
-            "path": "io/mango/infra/realtime/mango-infra-realtime-support/1.0.40/mango-infra-realtime-support-1.0.40.pom",
+            "path": "io/mango/infra/realtime/mango-infra-realtime-support/1.0.41/mango-infra-realtime-support-1.0.41.pom",
             "size": 1577,
-            "sha256": "d3c74a578d1c3769e425443045fef4d7b7b54caf116a6d72936d743837ed8504"
+            "sha256": "d468d5d81fbea87d074ddae044104394117c458f36c54a4fe1321d7b3bce1e10"
           },
           {
-            "path": "io/mango/infra/realtime/mango-infra-realtime-support/1.0.40/mango-infra-realtime-support-1.0.40.jar",
+            "path": "io/mango/infra/realtime/mango-infra-realtime-support/1.0.41/mango-infra-realtime-support-1.0.41.jar",
             "size": 12396,
-            "sha256": "62339d8025bc63fe1e747c88ec8c987110bba541b8fcf5bd4f7c7f964f468ec2"
+            "sha256": "469e1380c7dfa5201d6bf243352cc33994212f6e11c134437229f1594d31de58"
           }
         ]
       },
       {
-        "coordinate": "io.mango.infra.realtime:mango-infra-realtime-core:1.0.40",
+        "coordinate": "io.mango.infra.realtime:mango-infra-realtime-core:1.0.41",
         "files": [
           {
-            "path": "io/mango/infra/realtime/mango-infra-realtime-core/1.0.40/mango-infra-realtime-core-1.0.40.pom",
+            "path": "io/mango/infra/realtime/mango-infra-realtime-core/1.0.41/mango-infra-realtime-core-1.0.41.pom",
             "size": 2194,
-            "sha256": "807d5a9360b35ef15dc651de1332f1cd20e06c22675e9dc80a05603a37912d23"
+            "sha256": "1ac6be09ca7439eccd77bea9026ce40bef3a6003af08210d5a4e45a27bf74c97"
           },
           {
-            "path": "io/mango/infra/realtime/mango-infra-realtime-core/1.0.40/mango-infra-realtime-core-1.0.40.jar",
-            "size": 81960,
-            "sha256": "74fc5e5b38e881b07c62f8b482ed9f704f9d5ba2acde077ba7825e8aafbec8d6"
+            "path": "io/mango/infra/realtime/mango-infra-realtime-core/1.0.41/mango-infra-realtime-core-1.0.41.jar",
+            "size": 81961,
+            "sha256": "25f9dbcd256f11e823cf1e826ff5586e5fb7fe3d2112f006c818ea9b0c517a5d"
           }
         ]
       },
       {
-        "coordinate": "io.mango.infra.realtime:mango-infra-realtime-starter-remote:1.0.40",
+        "coordinate": "io.mango.infra.realtime:mango-infra-realtime-starter-remote:1.0.41",
         "files": [
           {
-            "path": "io/mango/infra/realtime/mango-infra-realtime-starter-remote/1.0.40/mango-infra-realtime-starter-remote-1.0.40.pom",
+            "path": "io/mango/infra/realtime/mango-infra-realtime-starter-remote/1.0.41/mango-infra-realtime-starter-remote-1.0.41.pom",
             "size": 2249,
-            "sha256": "812ea3990c16b935b7fca4097be0f956cd9dc7f62d43f7b25e03991ab0eb15fb"
+            "sha256": "18234e70b8098b15713f1508eeb192b5db840c58d7ffe936df19f72bffbaac55"
           },
           {
-            "path": "io/mango/infra/realtime/mango-infra-realtime-starter-remote/1.0.40/mango-infra-realtime-starter-remote-1.0.40.jar",
-            "size": 13813,
-            "sha256": "910afa34c09eebfb18282be79b22e7fcf5693d7a200f565c9f7ea559ea0a75c8"
+            "path": "io/mango/infra/realtime/mango-infra-realtime-starter-remote/1.0.41/mango-infra-realtime-starter-remote-1.0.41.jar",
+            "size": 13814,
+            "sha256": "47350ec9265af50cc059026a848b775c2fa0494a9e3bfe7e0f85a4264875db47"
           }
         ]
       },
       {
-        "coordinate": "io.mango.infra.realtime:mango-infra-realtime-starter:1.0.40",
+        "coordinate": "io.mango.infra.realtime:mango-infra-realtime-starter:1.0.41",
         "files": [
           {
-            "path": "io/mango/infra/realtime/mango-infra-realtime-starter/1.0.40/mango-infra-realtime-starter-1.0.40.pom",
+            "path": "io/mango/infra/realtime/mango-infra-realtime-starter/1.0.41/mango-infra-realtime-starter-1.0.41.pom",
             "size": 2642,
-            "sha256": "79d313be15f212f3905a08a4814cf55ab2be71ba34e8f37d9ed2d86c21a3135c"
+            "sha256": "9ea261a3a24e2d1347dc0240476c2f6d2fc0dac832b8bd647911fcbf34f58c9b"
           },
           {
-            "path": "io/mango/infra/realtime/mango-infra-realtime-starter/1.0.40/mango-infra-realtime-starter-1.0.40.jar",
-            "size": 78123,
-            "sha256": "02bd493da7bee19d10a0d17baa355d73d66db9ab74e75ea5e49128c753197a73"
+            "path": "io/mango/infra/realtime/mango-infra-realtime-starter/1.0.41/mango-infra-realtime-starter-1.0.41.jar",
+            "size": 78124,
+            "sha256": "06f8bef447d59f5cd0cfc8b7227a4f52b40ba7fc46064e8b124378fa04db2769"
           }
         ]
       },
       {
-        "coordinate": "io.mango.infra.realtime:mango-infra-realtime:1.0.40",
+        "coordinate": "io.mango.infra.realtime:mango-infra-realtime:1.0.41",
         "files": [
           {
-            "path": "io/mango/infra/realtime/mango-infra-realtime/1.0.40/mango-infra-realtime-1.0.40.pom",
+            "path": "io/mango/infra/realtime/mango-infra-realtime/1.0.41/mango-infra-realtime-1.0.41.pom",
             "size": 1047,
-            "sha256": "82600ccf97ffffa6bd3f688a04e2a34236b01c545f782b182f1b0619c152d115"
+            "sha256": "0dda5560b27b7633728140399a3620bd200d356d27fc603a824ff849f327021f"
           }
         ]
       },
       {
-        "coordinate": "io.mango.infra.sensitive:mango-infra-sensitive-api:1.0.40",
+        "coordinate": "io.mango.infra.sensitive:mango-infra-sensitive-api:1.0.41",
         "files": [
           {
-            "path": "io/mango/infra/sensitive/mango-infra-sensitive-api/1.0.40/mango-infra-sensitive-api-1.0.40.pom",
+            "path": "io/mango/infra/sensitive/mango-infra-sensitive-api/1.0.41/mango-infra-sensitive-api-1.0.41.pom",
             "size": 1217,
-            "sha256": "b2cd4b4becdbee445e3f1bad0c567ec7099c06f7b3cebcaa2661fbab56c2b7cc"
+            "sha256": "cb41de3f893f925ad7be0f7369ad233727bd07e1d6494676530b0fc4722f1790"
           },
           {
-            "path": "io/mango/infra/sensitive/mango-infra-sensitive-api/1.0.40/mango-infra-sensitive-api-1.0.40.jar",
-            "size": 8904,
-            "sha256": "09be1b0b65b78ccd142e7a398263422f731b51b8d5f42e7f5355a8d4a8c44ebf"
+            "path": "io/mango/infra/sensitive/mango-infra-sensitive-api/1.0.41/mango-infra-sensitive-api-1.0.41.jar",
+            "size": 8905,
+            "sha256": "df526bd2beccfed241b53bffdca1e254254976623c52645bececa5f17e3fb2ac"
           }
         ]
       },
       {
-        "coordinate": "io.mango.infra.sensitive:mango-infra-sensitive-core:1.0.40",
+        "coordinate": "io.mango.infra.sensitive:mango-infra-sensitive-core:1.0.41",
         "files": [
           {
-            "path": "io/mango/infra/sensitive/mango-infra-sensitive-core/1.0.40/mango-infra-sensitive-core-1.0.40.pom",
+            "path": "io/mango/infra/sensitive/mango-infra-sensitive-core/1.0.41/mango-infra-sensitive-core-1.0.41.pom",
             "size": 1578,
-            "sha256": "9e0d6739af82ff5c65a758274010f825fb7190d5f6268a37649fd222e4408ce1"
+            "sha256": "436b6224a56eea7619ac25678aad6fbba6bfd4c47f0a7e2c392bfc557e840e7b"
           },
           {
-            "path": "io/mango/infra/sensitive/mango-infra-sensitive-core/1.0.40/mango-infra-sensitive-core-1.0.40.jar",
-            "size": 15733,
-            "sha256": "dbe88fd6be17a6944b21d05a6eb9ad3d88cea2e0d27187c0763306bcc0587c06"
+            "path": "io/mango/infra/sensitive/mango-infra-sensitive-core/1.0.41/mango-infra-sensitive-core-1.0.41.jar",
+            "size": 15734,
+            "sha256": "2f378305f1c6b44c770ec090232bb4c2e4d4cf32ce1227da93e362801d1f54fa"
           }
         ]
       },
       {
-        "coordinate": "io.mango.infra.sensitive:mango-infra-sensitive-starter:1.0.40",
+        "coordinate": "io.mango.infra.sensitive:mango-infra-sensitive-starter:1.0.41",
         "files": [
           {
-            "path": "io/mango/infra/sensitive/mango-infra-sensitive-starter/1.0.40/mango-infra-sensitive-starter-1.0.40.pom",
+            "path": "io/mango/infra/sensitive/mango-infra-sensitive-starter/1.0.41/mango-infra-sensitive-starter-1.0.41.pom",
             "size": 2003,
-            "sha256": "174549da1c2b949c00aff7663352060d77457c50c8eb790d2cdf3e8bf320e6ff"
+            "sha256": "298ccb0c9a210cb93ecaf74cc3a385b7c533156a3a8483496f24c77b7e8d46e8"
           },
           {
-            "path": "io/mango/infra/sensitive/mango-infra-sensitive-starter/1.0.40/mango-infra-sensitive-starter-1.0.40.jar",
+            "path": "io/mango/infra/sensitive/mango-infra-sensitive-starter/1.0.41/mango-infra-sensitive-starter-1.0.41.jar",
             "size": 9373,
-            "sha256": "ab28c9959a5061aed7e997d05edbb46a3a373f759d6b737ff76327c1fb0ce59b"
+            "sha256": "600eac70aa03f8e68393560ab9a3a91799c273e7028da96c140f47058d1102eb"
           }
         ]
       },
       {
-        "coordinate": "io.mango.infra.sensitive:mango-infra-sensitive:1.0.40",
+        "coordinate": "io.mango.infra.sensitive:mango-infra-sensitive:1.0.41",
         "files": [
           {
-            "path": "io/mango/infra/sensitive/mango-infra-sensitive/1.0.40/mango-infra-sensitive-1.0.40.pom",
+            "path": "io/mango/infra/sensitive/mango-infra-sensitive/1.0.41/mango-infra-sensitive-1.0.41.pom",
             "size": 908,
-            "sha256": "4341fb89affe1683bab9d2171a609a0038359c5bc9ba53598fb36a69b3b28cc9"
+            "sha256": "c45aed59c0774d74b8e23f9ec2399dba5c2bb2fb82789d4ba13e943c81c0250a"
           }
         ]
       },
       {
-        "coordinate": "io.mango.infra.web:mango-infra-web:1.0.40",
+        "coordinate": "io.mango.infra.web:mango-infra-web:1.0.41",
         "files": [
           {
-            "path": "io/mango/infra/web/mango-infra-web/1.0.40/mango-infra-web-1.0.40.pom",
+            "path": "io/mango/infra/web/mango-infra-web/1.0.41/mango-infra-web-1.0.41.pom",
             "size": 877,
-            "sha256": "9be970d7acad7ba077f78e9a53e2233934bf67d1b8e628828af28b126a848ef1"
+            "sha256": "a23fe066362b20d7c4d0b82cc7d967ea5466b8b4a8675e5eaeb378ba02cec9b7"
           }
         ]
       },
       {
-        "coordinate": "io.mango.infra:mango-infra:1.0.40",
+        "coordinate": "io.mango.infra:mango-infra:1.0.41",
         "files": [
           {
-            "path": "io/mango/infra/mango-infra/1.0.40/mango-infra-1.0.40.pom",
+            "path": "io/mango/infra/mango-infra/1.0.41/mango-infra-1.0.41.pom",
             "size": 2970,
-            "sha256": "65bae7807b5d2e332178c48059aa307048cf58c9c1c524655e512b38bb732dce"
+            "sha256": "c3f5fa9b61e296692e0fd9dc51ac0744b01151439024d11f776e9dbcdda00916"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.access:mango-access-api:1.0.40",
+        "coordinate": "io.mango.platform.access:mango-access-api:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/access/mango-access-api/1.0.40/mango-access-api-1.0.40.pom",
+            "path": "io/mango/platform/access/mango-access-api/1.0.41/mango-access-api-1.0.41.pom",
             "size": 899,
-            "sha256": "dc18a9f947d26e46a67c2be890f49c62d1319d1afc8cd2c390c4a045ca920900"
+            "sha256": "f41278f95e9877db544e13ab3a66787ddda29857ae94cb982775fa39c669a3aa"
           },
           {
-            "path": "io/mango/platform/access/mango-access-api/1.0.40/mango-access-api-1.0.40.jar",
+            "path": "io/mango/platform/access/mango-access-api/1.0.41/mango-access-api-1.0.41.jar",
             "size": 6816,
-            "sha256": "a6243536f24af6dc472cb346b87f52186a6b88af43825ecb640cab6993e1ae39"
+            "sha256": "b48e881099bef5d1eaf48d205248cb5d69975f389ab11003defe17337b8187ed"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.access:mango-access-core:1.0.40",
+        "coordinate": "io.mango.platform.access:mango-access-core:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/access/mango-access-core/1.0.40/mango-access-core-1.0.40.pom",
+            "path": "io/mango/platform/access/mango-access-core/1.0.41/mango-access-core-1.0.41.pom",
             "size": 2250,
-            "sha256": "8a8e36c442a7eaf366fade279018d72b0494a5f76e1297c808150245692de61d"
+            "sha256": "7487dfe0668226c5a7dd2cfff9e954a36ee8a0cef1669c0ccd076415400f8339"
           },
           {
-            "path": "io/mango/platform/access/mango-access-core/1.0.40/mango-access-core-1.0.40.jar",
-            "size": 18313,
-            "sha256": "66577998510ef00d0015dcd6dd2acbf249f0afba2656d16f44c93ec474055c2b"
+            "path": "io/mango/platform/access/mango-access-core/1.0.41/mango-access-core-1.0.41.jar",
+            "size": 18314,
+            "sha256": "31d63877f6b0e612ee155681519962eae3ffb02a762fc590afdf6481343a6f8e"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.access:mango-access-gateway-starter:1.0.40",
+        "coordinate": "io.mango.platform.access:mango-access-gateway-starter:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/access/mango-access-gateway-starter/1.0.40/mango-access-gateway-starter-1.0.40.pom",
+            "path": "io/mango/platform/access/mango-access-gateway-starter/1.0.41/mango-access-gateway-starter-1.0.41.pom",
             "size": 2108,
-            "sha256": "644481aa17ec0e7257342ea965dd7e286a47b87084d797a5a0036b04a87db839"
+            "sha256": "ac5d367ae559966ad4030e9befa7461ca486d8e19c2854a079a7f93577c8e8a5"
           },
           {
-            "path": "io/mango/platform/access/mango-access-gateway-starter/1.0.40/mango-access-gateway-starter-1.0.40.jar",
-            "size": 10312,
-            "sha256": "03b6292d56363c2b6216ac50038e9cb50bd884330aec5630aa9ee5a69ada0913"
+            "path": "io/mango/platform/access/mango-access-gateway-starter/1.0.41/mango-access-gateway-starter-1.0.41.jar",
+            "size": 10313,
+            "sha256": "0604a2bd8ec672859b29a4768d773e9c3a3bd6ff61caa6e6e0681c2c4ebfc12f"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.access:mango-access-web-starter:1.0.40",
+        "coordinate": "io.mango.platform.access:mango-access-web-starter:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/access/mango-access-web-starter/1.0.40/mango-access-web-starter-1.0.40.pom",
+            "path": "io/mango/platform/access/mango-access-web-starter/1.0.41/mango-access-web-starter-1.0.41.pom",
             "size": 2178,
-            "sha256": "4ad8deb7b6d4c6735ccea47a4cc2b76b1d8277194bb0e64fe649f15e6e7e8f85"
+            "sha256": "71c2aaebb6aa3fd0c4e8ec6905a5332606d918a601cc3dda752635ad4ee690cb"
           },
           {
-            "path": "io/mango/platform/access/mango-access-web-starter/1.0.40/mango-access-web-starter-1.0.40.jar",
-            "size": 9600,
-            "sha256": "eb2cd4e23fc3a8352e35f7e97b14c6f5fffa4293d15c105f37a0e959a9aacc5f"
+            "path": "io/mango/platform/access/mango-access-web-starter/1.0.41/mango-access-web-starter-1.0.41.jar",
+            "size": 9601,
+            "sha256": "c9e0c77ddd00aa05d3058c0d3f347b5e03474124ba312816bda005f702627a2f"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.access:mango-access:1.0.40",
+        "coordinate": "io.mango.platform.access:mango-access:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/access/mango-access/1.0.40/mango-access-1.0.40.pom",
+            "path": "io/mango/platform/access/mango-access/1.0.41/mango-access-1.0.41.pom",
             "size": 958,
-            "sha256": "5f64232da594a3b3dac1d40e74c047a9a29992140a1413bf362e8f22e2e8f729"
+            "sha256": "eeaa686b3f5a511eab50c62202bd2ad6b81ace741d77e3e937d38b44629c75cc"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.auth:mango-auth-api:1.0.40",
+        "coordinate": "io.mango.platform.auth:mango-auth-api:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/auth/mango-auth-api/1.0.40/mango-auth-api-1.0.40.pom",
+            "path": "io/mango/platform/auth/mango-auth-api/1.0.41/mango-auth-api-1.0.41.pom",
             "size": 1847,
-            "sha256": "e4f1948287d775304658a745b9e72a54e59fe3edb0dacecd677b09a9fc43c65a"
+            "sha256": "76869318cfb92ca60eac529343e84a9c6aa2c01babe3d06188df74435e7b43e5"
           },
           {
-            "path": "io/mango/platform/auth/mango-auth-api/1.0.40/mango-auth-api-1.0.40.jar",
-            "size": 55881,
-            "sha256": "b92ef274873a64c45c800c2eaf235f67868590c79015322e49c276711aa033d9"
+            "path": "io/mango/platform/auth/mango-auth-api/1.0.41/mango-auth-api-1.0.41.jar",
+            "size": 55882,
+            "sha256": "b60cca58633dd11d7b43e83d663555d54eebaa46cbea90ee0199bb906d1346e5"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.captcha:mango-captcha-api:1.0.40",
+        "coordinate": "io.mango.platform.captcha:mango-captcha-api:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/captcha/mango-captcha-api/1.0.40/mango-captcha-api-1.0.40.pom",
+            "path": "io/mango/platform/captcha/mango-captcha-api/1.0.41/mango-captcha-api-1.0.41.pom",
             "size": 1454,
-            "sha256": "0b8ed0795e687b9b200ae328210c52848c4d178d5c1a7c1d03eb5da417e94117"
+            "sha256": "3c8229b5ec67b8e75231b971ac135b0f33a2deb0717818b882ce41c4a97b682d"
           },
           {
-            "path": "io/mango/platform/captcha/mango-captcha-api/1.0.40/mango-captcha-api-1.0.40.jar",
-            "size": 21522,
-            "sha256": "ec1af901c2abc14c2c7b13c718c547aedc30d51bab55d0522696415f05b3df78"
+            "path": "io/mango/platform/captcha/mango-captcha-api/1.0.41/mango-captcha-api-1.0.41.jar",
+            "size": 21523,
+            "sha256": "eb018419611ba1956890ce4c65fc5ec69c2a9b2528f8853287a4440f59085bb1"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.identity:mango-identity-api:1.0.40",
+        "coordinate": "io.mango.platform.identity:mango-identity-api:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/identity/mango-identity-api/1.0.40/mango-identity-api-1.0.40.pom",
+            "path": "io/mango/platform/identity/mango-identity-api/1.0.41/mango-identity-api-1.0.41.pom",
             "size": 1352,
-            "sha256": "525de7f88c005c9262e9eefd638e4da72e840fdea2a612ffd0f789a3e34a85ee"
+            "sha256": "f4b81a9ce9cf9087c5dd30a3208d7a5b814240cf69c6947d80281cfb948bd671"
           },
           {
-            "path": "io/mango/platform/identity/mango-identity-api/1.0.40/mango-identity-api-1.0.40.jar",
-            "size": 84539,
-            "sha256": "fdf888b5aa6f8542eec6629078a02b16b8cce1d53f8dd86328e4e00b8d7f3eb3"
+            "path": "io/mango/platform/identity/mango-identity-api/1.0.41/mango-identity-api-1.0.41.jar",
+            "size": 84538,
+            "sha256": "735c5d7ca8d67bdc87ad4895e8cf709a7dae1dde5213bc361db094886fbd439c"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.notice:mango-notice-api:1.0.40",
+        "coordinate": "io.mango.platform.notice:mango-notice-api:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/notice/mango-notice-api/1.0.40/mango-notice-api-1.0.40.pom",
+            "path": "io/mango/platform/notice/mango-notice-api/1.0.41/mango-notice-api-1.0.41.pom",
             "size": 1923,
-            "sha256": "35d1d98457a9f1cf66eaa75276c6f63f8b55fd1cf83b176722f4fcfee5e9aeab"
+            "sha256": "6bfb9164143312f6bac4963003815c7059ae50ebcebd87963f9cabec7b61d1ce"
           },
           {
-            "path": "io/mango/platform/notice/mango-notice-api/1.0.40/mango-notice-api-1.0.40.jar",
-            "size": 227081,
-            "sha256": "e5c255fd09ea63d4f8e2ea8dc9638507127473c71f037e7cc859ef4faedf0fca"
+            "path": "io/mango/platform/notice/mango-notice-api/1.0.41/mango-notice-api-1.0.41.jar",
+            "size": 227083,
+            "sha256": "171a585ab3c584e7f6c11f4472fa3ad6e004253401b118864026e8f0c9879aeb"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.org:mango-org-api:1.0.40",
+        "coordinate": "io.mango.platform.org:mango-org-api:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/org/mango-org-api/1.0.40/mango-org-api-1.0.40.pom",
+            "path": "io/mango/platform/org/mango-org-api/1.0.41/mango-org-api-1.0.41.pom",
             "size": 1648,
-            "sha256": "5bf1befdc23da8182bd859fd9db93739e4e910a01759c60a1b5221fc7516a31d"
+            "sha256": "af76a7c582f4c34f48dc7f19e2d749baf0f9bc27c4ef694152130ea4ace45b22"
           },
           {
-            "path": "io/mango/platform/org/mango-org-api/1.0.40/mango-org-api-1.0.40.jar",
+            "path": "io/mango/platform/org/mango-org-api/1.0.41/mango-org-api-1.0.41.jar",
             "size": 33602,
-            "sha256": "c293ca2bad747242df10327e7fb740f28f5fbefe4dd7cf482813f79da797f434"
+            "sha256": "af381acfbbb959e9a68ebd98f1076ac565a3a5c445c7e392080ba04f9bfc6cdf"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.system:mango-system-api:1.0.40",
+        "coordinate": "io.mango.platform.system:mango-system-api:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/system/mango-system-api/1.0.40/mango-system-api-1.0.40.pom",
+            "path": "io/mango/platform/system/mango-system-api/1.0.41/mango-system-api-1.0.41.pom",
             "size": 1474,
-            "sha256": "7f19954cfacf700519bcdd9c9e6d24faf43a856c1f2e5b6ed3a0a177b5435fa9"
+            "sha256": "e3ca3beb0ac2406549559f771780ef763bc2d7f33592bbc992d36f17dd56fd06"
           },
           {
-            "path": "io/mango/platform/system/mango-system-api/1.0.40/mango-system-api-1.0.40.jar",
+            "path": "io/mango/platform/system/mango-system-api/1.0.41/mango-system-api-1.0.41.jar",
             "size": 95067,
-            "sha256": "33f93cb498bace1027ae01a9a2e166c97582044b3c2479b6cba3ec77393d2019"
+            "sha256": "2bd7f6e5f7179302e0492f35d27b035da5f376d2e8abaf3f02e0ddbf335e3bdd"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.auth:mango-auth-core:1.0.40",
+        "coordinate": "io.mango.platform.auth:mango-auth-core:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/auth/mango-auth-core/1.0.40/mango-auth-core-1.0.40.pom",
+            "path": "io/mango/platform/auth/mango-auth-core/1.0.41/mango-auth-core-1.0.41.pom",
             "size": 5460,
-            "sha256": "1308b105a0ab355f53fab7fb998af6e3bdd07f3fa540204c2c678f1ec0169b36"
+            "sha256": "350b352b5b320bcc7b7286578d26b9b58bac85a36e1e8bf79862cd5e098e222b"
           },
           {
-            "path": "io/mango/platform/auth/mango-auth-core/1.0.40/mango-auth-core-1.0.40.jar",
-            "size": 97451,
-            "sha256": "b8cc233543450f718a5ce82d436b383f52b1680913f0eb33a1869ce09d4092d7"
+            "path": "io/mango/platform/auth/mango-auth-core/1.0.41/mango-auth-core-1.0.41.jar",
+            "size": 97452,
+            "sha256": "86816c18d43c897d59197a1026a27bbe5bfab21815597a11d4a450c470dd989a"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.auth:mango-auth-starter-remote:1.0.40",
+        "coordinate": "io.mango.platform.auth:mango-auth-starter-remote:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/auth/mango-auth-starter-remote/1.0.40/mango-auth-starter-remote-1.0.40.pom",
+            "path": "io/mango/platform/auth/mango-auth-starter-remote/1.0.41/mango-auth-starter-remote-1.0.41.pom",
             "size": 1639,
-            "sha256": "5c10851b321b6561dbe17ab338a5d4b7adfaecaaf1eb24ca2b40f027087fd153"
+            "sha256": "a6dacc707dcc2986a551bef02cff689842b88f97bfad0e468e144074df6eff02"
           },
           {
-            "path": "io/mango/platform/auth/mango-auth-starter-remote/1.0.40/mango-auth-starter-remote-1.0.40.jar",
-            "size": 4791,
-            "sha256": "0a5ce05062b3dbffe9ef385df0667b8fa42b194ce7b6c6d020504cc7570301ee"
+            "path": "io/mango/platform/auth/mango-auth-starter-remote/1.0.41/mango-auth-starter-remote-1.0.41.jar",
+            "size": 4792,
+            "sha256": "e8035b18e68073ee476b2d8f3ee55669080da17d2e144438eebf373aa1c82d25"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.notice:mango-notice-support:1.0.40",
+        "coordinate": "io.mango.platform.notice:mango-notice-support:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/notice/mango-notice-support/1.0.40/mango-notice-support-1.0.40.pom",
+            "path": "io/mango/platform/notice/mango-notice-support/1.0.41/mango-notice-support-1.0.41.pom",
             "size": 1599,
-            "sha256": "399a6d51e1f8ab4864e94bf6e5930f3086eaad1f7b37448dc8a612d4dcbfa4e8"
+            "sha256": "40448a2a8b691b62523c2852ecc39a2b41b16d9178dc8269cabc2326ec08465b"
           },
           {
-            "path": "io/mango/platform/notice/mango-notice-support/1.0.40/mango-notice-support-1.0.40.jar",
-            "size": 19887,
-            "sha256": "d1698fd47f742f01feb6cff0a36ede8ea9c987119e8d609f14391d6615118822"
+            "path": "io/mango/platform/notice/mango-notice-support/1.0.41/mango-notice-support-1.0.41.jar",
+            "size": 19888,
+            "sha256": "017a7fdb5a2c0df6b3e8ced722bd78db78e4494f0971665b6d90e9dd50644763"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.auth:mango-auth-starter:1.0.40",
+        "coordinate": "io.mango.platform.auth:mango-auth-starter:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/auth/mango-auth-starter/1.0.40/mango-auth-starter-1.0.40.pom",
+            "path": "io/mango/platform/auth/mango-auth-starter/1.0.41/mango-auth-starter-1.0.41.pom",
             "size": 6845,
-            "sha256": "00ac7811ceb210bcd3c71509b679cc6ecbfb25ea906cb5e88ee6d9b589e3d410"
+            "sha256": "0eb1732e39e97514981aa17619e60db82b65b4176bad912af6880c921ea855d2"
           },
           {
-            "path": "io/mango/platform/auth/mango-auth-starter/1.0.40/mango-auth-starter-1.0.40.jar",
-            "size": 65092,
-            "sha256": "b9a5312d80609f81823418aef6a70e3a8d23b0613cb3c05eff42e776cf856acc"
+            "path": "io/mango/platform/auth/mango-auth-starter/1.0.41/mango-auth-starter-1.0.41.jar",
+            "size": 65108,
+            "sha256": "ebe179f9eaffdee0783619d1a5bb441b002771e04ff836ccf5ca077c1d98c7c4"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.auth:mango-auth:1.0.40",
+        "coordinate": "io.mango.platform.auth:mango-auth:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/auth/mango-auth/1.0.40/mango-auth-1.0.40.pom",
+            "path": "io/mango/platform/auth/mango-auth/1.0.41/mango-auth-1.0.41.pom",
             "size": 942,
-            "sha256": "1ea127e30d41589ea9187c933e517b82c8889a9bcb3576c3e6a6dad79f60bdd0"
+            "sha256": "93eb07f4b1eae2122a87859741d2d5f66a2547e5a6f21984a3718f4ffaa764c8"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.authorization:mango-authorization-core:1.0.40",
+        "coordinate": "io.mango.platform.authorization:mango-authorization-core:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/authorization/mango-authorization-core/1.0.40/mango-authorization-core-1.0.40.pom",
+            "path": "io/mango/platform/authorization/mango-authorization-core/1.0.41/mango-authorization-core-1.0.41.pom",
             "size": 2882,
-            "sha256": "a54c7eade298645eed6aacab788030768d2d0e981a4cf02a1a0d9c732457baff"
+            "sha256": "de91f5c6c9d71172e76256a071cbedb324b2fe044f0248f9752fd20a9fe65e33"
           },
           {
-            "path": "io/mango/platform/authorization/mango-authorization-core/1.0.40/mango-authorization-core-1.0.40.jar",
+            "path": "io/mango/platform/authorization/mango-authorization-core/1.0.41/mango-authorization-core-1.0.41.jar",
             "size": 173722,
-            "sha256": "9e283061c4b347e86f4a51147f5fb490f5586bdf5986bcd17f13693d868479a8"
+            "sha256": "b9034461dbce44a22b359e01a7203935406dcb2f29388161ae7ec5ff3ae33090"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.authorization:mango-authorization-resource-access-starter:1.0.40",
+        "coordinate": "io.mango.platform.authorization:mango-authorization-resource-access-starter:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/authorization/mango-authorization-resource-access-starter/1.0.40/mango-authorization-resource-access-starter-1.0.40.pom",
+            "path": "io/mango/platform/authorization/mango-authorization-resource-access-starter/1.0.41/mango-authorization-resource-access-starter-1.0.41.pom",
             "size": 2001,
-            "sha256": "39989e7e627dce37fa1d0605342fdf0838a462ea110e63099dc98d2a5d08be12"
+            "sha256": "e4d77f64e50d84f938cfe5f674f6306178d1373a2273f2d3ced1caf6417cd828"
           },
           {
-            "path": "io/mango/platform/authorization/mango-authorization-resource-access-starter/1.0.40/mango-authorization-resource-access-starter-1.0.40.jar",
-            "size": 10780,
-            "sha256": "5797a3c5d5544116c2d9068b04f41331415082e929e981992cd3bf13d8074763"
+            "path": "io/mango/platform/authorization/mango-authorization-resource-access-starter/1.0.41/mango-authorization-resource-access-starter-1.0.41.jar",
+            "size": 10781,
+            "sha256": "48df4c6bcd3e334e3ef129a6348b78f088a4ad75f98597261de043a357468f6b"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.authorization:mango-authorization-resource-sync-starter:1.0.40",
+        "coordinate": "io.mango.platform.authorization:mango-authorization-resource-sync-starter:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/authorization/mango-authorization-resource-sync-starter/1.0.40/mango-authorization-resource-sync-starter-1.0.40.pom",
+            "path": "io/mango/platform/authorization/mango-authorization-resource-sync-starter/1.0.41/mango-authorization-resource-sync-starter-1.0.41.pom",
             "size": 4012,
-            "sha256": "aac01032e7e582f0a847ca53625009b6bfaa1b60fef3dd2d4e5fbe5fcf8e2b53"
+            "sha256": "9348defc05f3bb807eeea767505c7a9a3c8df39d9ec7ca886ad8e2cda6ebfa76"
           },
           {
-            "path": "io/mango/platform/authorization/mango-authorization-resource-sync-starter/1.0.40/mango-authorization-resource-sync-starter-1.0.40.jar",
-            "size": 39000,
-            "sha256": "91c7ffda0ad710a4848dce0747ff81181e4aceee777d6c875bba0d1699e8f65c"
+            "path": "io/mango/platform/authorization/mango-authorization-resource-sync-starter/1.0.41/mango-authorization-resource-sync-starter-1.0.41.jar",
+            "size": 39001,
+            "sha256": "37d57cd19e6cd6769b176fc8a8f020bf8c0abde1d4c02d999ac898234c482c83"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.authorization:mango-authorization-support:1.0.40",
+        "coordinate": "io.mango.platform.authorization:mango-authorization-support:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/authorization/mango-authorization-support/1.0.40/mango-authorization-support-1.0.40.pom",
+            "path": "io/mango/platform/authorization/mango-authorization-support/1.0.41/mango-authorization-support-1.0.41.pom",
             "size": 3345,
-            "sha256": "0d946c22986ce82066cef688e4cea7a4307888df766663b7957796c974acc896"
+            "sha256": "6c87b9e6d348b8df8ad742c040930ae094a423fdead54f8e6e0b5cc1dc097fcf"
           },
           {
-            "path": "io/mango/platform/authorization/mango-authorization-support/1.0.40/mango-authorization-support-1.0.40.jar",
-            "size": 13013,
-            "sha256": "9ff9b0f7f005f6d01cfd3469ed1fd62f35752600d87c01871fd1bc2be254bed2"
+            "path": "io/mango/platform/authorization/mango-authorization-support/1.0.41/mango-authorization-support-1.0.41.jar",
+            "size": 13015,
+            "sha256": "6aa9dd5c7582aac618f1d9ed9c779b15983c88eabb90dedc11e8083c811348d4"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.authorization:mango-authorization-starter-remote:1.0.40",
+        "coordinate": "io.mango.platform.authorization:mango-authorization-starter-remote:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/authorization/mango-authorization-starter-remote/1.0.40/mango-authorization-starter-remote-1.0.40.pom",
+            "path": "io/mango/platform/authorization/mango-authorization-starter-remote/1.0.41/mango-authorization-starter-remote-1.0.41.pom",
             "size": 1580,
-            "sha256": "da60ba373efbb5bf3d4a940c3d6c56fc8b440e062938986a8e980cfa467d5d80"
+            "sha256": "5947d4ddfc164408402988be8b264674761799b1525f995cbd1e4dc27b7ec3a0"
           },
           {
-            "path": "io/mango/platform/authorization/mango-authorization-starter-remote/1.0.40/mango-authorization-starter-remote-1.0.40.jar",
-            "size": 8312,
-            "sha256": "df6faaeb3a34fca4f77b80513acf8bc2437ce7c38ddf8d66fda9d597c87babd8"
+            "path": "io/mango/platform/authorization/mango-authorization-starter-remote/1.0.41/mango-authorization-starter-remote-1.0.41.jar",
+            "size": 8314,
+            "sha256": "a8d2b5a54c48c97d365d5a80cd05f2e70e5f89dea09a84a19ce66fc953ddcbf2"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.authorization:mango-authorization-starter:1.0.40",
+        "coordinate": "io.mango.platform.authorization:mango-authorization-starter:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/authorization/mango-authorization-starter/1.0.40/mango-authorization-starter-1.0.40.pom",
+            "path": "io/mango/platform/authorization/mango-authorization-starter/1.0.41/mango-authorization-starter-1.0.41.pom",
             "size": 5687,
-            "sha256": "8a408c132d5a6b9d831875fafb0619fff9fec8cded5217b99da13c45d2b00b46"
+            "sha256": "0e657dffc9a109d9220ca1eefb42e1d02f23854f20fa5fb14d82bdbcf65965db"
           },
           {
-            "path": "io/mango/platform/authorization/mango-authorization-starter/1.0.40/mango-authorization-starter-1.0.40.jar",
-            "size": 104196,
-            "sha256": "8c9998a9396d4cdf9a1d2d9cdd9fe0fa9ee212dcc79fed7097d0a94a710488a1"
+            "path": "io/mango/platform/authorization/mango-authorization-starter/1.0.41/mango-authorization-starter-1.0.41.jar",
+            "size": 104216,
+            "sha256": "bad925b15487d5ceb7432c5406dfa30d6d65cc5cec2e7b644804ff19bafba586"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.authorization:mango-authorization:1.0.40",
+        "coordinate": "io.mango.platform.authorization:mango-authorization:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/authorization/mango-authorization/1.0.40/mango-authorization-1.0.40.pom",
+            "path": "io/mango/platform/authorization/mango-authorization/1.0.41/mango-authorization-1.0.41.pom",
             "size": 1193,
-            "sha256": "d0d900b5c6caf9931e48465298ea0a8a707027b1d214913c5d76fbdfb062ff73"
+            "sha256": "183de7d42c3355a5f08266c668c9a527a197f96a4abecd2a2b80f38fcf5c9094"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.calendar:mango-calendar-api:1.0.40",
+        "coordinate": "io.mango.platform.calendar:mango-calendar-api:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/calendar/mango-calendar-api/1.0.40/mango-calendar-api-1.0.40.pom",
+            "path": "io/mango/platform/calendar/mango-calendar-api/1.0.41/mango-calendar-api-1.0.41.pom",
             "size": 1258,
-            "sha256": "c0c162e698fe9a6e6d793b82d58f4aeef8587c013bffd9c9473c1ddbd249ccf8"
+            "sha256": "ff890e94542b202df39dee6544cd341205169958adaf294bd864aaa6d153d7d0"
           },
           {
-            "path": "io/mango/platform/calendar/mango-calendar-api/1.0.40/mango-calendar-api-1.0.40.jar",
-            "size": 74420,
-            "sha256": "e871bc19aec4026712a1864cc56934a5be9d2bb50cd48799eb1706f17d939e2b"
+            "path": "io/mango/platform/calendar/mango-calendar-api/1.0.41/mango-calendar-api-1.0.41.jar",
+            "size": 74422,
+            "sha256": "4820801a193631b939f0a2e67aef0e582bab2e255822d4dbf076a0a0ff1737c5"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.calendar:mango-calendar-core:1.0.40",
+        "coordinate": "io.mango.platform.calendar:mango-calendar-core:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/calendar/mango-calendar-core/1.0.40/mango-calendar-core-1.0.40.pom",
+            "path": "io/mango/platform/calendar/mango-calendar-core/1.0.41/mango-calendar-core-1.0.41.pom",
             "size": 2542,
-            "sha256": "b70f1ede7f026577376adbe4f5d9a5583b86b8a990e0f99135c17e8d883fbe07"
+            "sha256": "896d612a08ab769b6ad80c9a9a392ed5a9c16d4b09f70e882665b605cf419d5a"
           },
           {
-            "path": "io/mango/platform/calendar/mango-calendar-core/1.0.40/mango-calendar-core-1.0.40.jar",
+            "path": "io/mango/platform/calendar/mango-calendar-core/1.0.41/mango-calendar-core-1.0.41.jar",
             "size": 43904,
-            "sha256": "fc0c4e6eb9c9130a6c8a06faf81e349974f55be65c2e187bfb063ac16da46d94"
+            "sha256": "269f1856c488e57b0601fd3dc421c1ba2d1d14ce9d8528912f1e61a34e05adaf"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.calendar:mango-calendar-starter-remote:1.0.40",
+        "coordinate": "io.mango.platform.calendar:mango-calendar-starter-remote:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/calendar/mango-calendar-starter-remote/1.0.40/mango-calendar-starter-remote-1.0.40.pom",
+            "path": "io/mango/platform/calendar/mango-calendar-starter-remote/1.0.41/mango-calendar-starter-remote-1.0.41.pom",
             "size": 1045,
-            "sha256": "d624a46aabaf56acfcc2e23fbc3dc0b38e73ddbe941c8a6e444b1b122df96edb"
+            "sha256": "c89491e2ca8a8a042b7592c61d231470e141c07ac38db13e8b8af6df20999d86"
           },
           {
-            "path": "io/mango/platform/calendar/mango-calendar-starter-remote/1.0.40/mango-calendar-starter-remote-1.0.40.jar",
+            "path": "io/mango/platform/calendar/mango-calendar-starter-remote/1.0.41/mango-calendar-starter-remote-1.0.41.jar",
             "size": 4570,
-            "sha256": "487e104d3c23f8f0a3497969f1b15bf86e202357f1c1f53a6a87f05ca6e24edb"
+            "sha256": "f55998ce4941a599518570de5c9c0bf281b255c0d8bcb13f4136a55cef764676"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.calendar:mango-calendar-starter:1.0.40",
+        "coordinate": "io.mango.platform.calendar:mango-calendar-starter:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/calendar/mango-calendar-starter/1.0.40/mango-calendar-starter-1.0.40.pom",
+            "path": "io/mango/platform/calendar/mango-calendar-starter/1.0.41/mango-calendar-starter-1.0.41.pom",
             "size": 2367,
-            "sha256": "40e00c06ab99d19780b2f999d14f6b2a68ef7fa8950681de2bd6efe48a9e4c4f"
+            "sha256": "21ceb4493039d2c3dee8b22510bc8ffa1d2d6e917ce031440eeac5dc31f8a96b"
           },
           {
-            "path": "io/mango/platform/calendar/mango-calendar-starter/1.0.40/mango-calendar-starter-1.0.40.jar",
-            "size": 26980,
-            "sha256": "22a0575f940cd414142a572509e54cf43eaa70409d41d649029eb302b5405205"
+            "path": "io/mango/platform/calendar/mango-calendar-starter/1.0.41/mango-calendar-starter-1.0.41.jar",
+            "size": 27000,
+            "sha256": "97ba794b7116295d8978664782d099d362ba4a1bdf6eb6ac2c02cbc327c96cdf"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.calendar:mango-calendar:1.0.40",
+        "coordinate": "io.mango.platform.calendar:mango-calendar:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/calendar/mango-calendar/1.0.40/mango-calendar-1.0.40.pom",
+            "path": "io/mango/platform/calendar/mango-calendar/1.0.41/mango-calendar-1.0.41.pom",
             "size": 921,
-            "sha256": "1c8f9bb44f70264150bc3cc37f03b213adc9edbb533fbec438087e1c66dbd521"
+            "sha256": "c191dee593f888acc67c4a2a949d43d483dabb040ed3ec5ab616dac1ac012acd"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.captcha:mango-captcha-core:1.0.40",
+        "coordinate": "io.mango.platform.captcha:mango-captcha-core:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/captcha/mango-captcha-core/1.0.40/mango-captcha-core-1.0.40.pom",
+            "path": "io/mango/platform/captcha/mango-captcha-core/1.0.41/mango-captcha-core-1.0.41.pom",
             "size": 1985,
-            "sha256": "92f685ee0dfca511a22bef97be7388fd648d75b8e65cc38d5d67b43f2ddef592"
+            "sha256": "bc917cee6998204eb93decbef8bc39d951dcfafe67c90b72be4578e77e271120"
           },
           {
-            "path": "io/mango/platform/captcha/mango-captcha-core/1.0.40/mango-captcha-core-1.0.40.jar",
+            "path": "io/mango/platform/captcha/mango-captcha-core/1.0.41/mango-captcha-core-1.0.41.jar",
             "size": 94593,
-            "sha256": "3afaebfa563fbc6fa26757bdeb0deea461c263db270fc61e92a054273f70d4d8"
+            "sha256": "12c0130e95980809d3c0e7f4e2dc913c4ee3331e3f54e863e0a8a24989883486"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.captcha:mango-captcha-starter-remote:1.0.40",
+        "coordinate": "io.mango.platform.captcha:mango-captcha-starter-remote:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/captcha/mango-captcha-starter-remote/1.0.40/mango-captcha-starter-remote-1.0.40.pom",
+            "path": "io/mango/platform/captcha/mango-captcha-starter-remote/1.0.41/mango-captcha-starter-remote-1.0.41.pom",
             "size": 1712,
-            "sha256": "15e7f449c7abc52eaf225416016cf957d3f1f3923940bb93104649c54b06179f"
+            "sha256": "d18e0e6d8d486cced870143e319efc86b1092170aabcd993bd7ee144998924d0"
           },
           {
-            "path": "io/mango/platform/captcha/mango-captcha-starter-remote/1.0.40/mango-captcha-starter-remote-1.0.40.jar",
+            "path": "io/mango/platform/captcha/mango-captcha-starter-remote/1.0.41/mango-captcha-starter-remote-1.0.41.jar",
             "size": 4200,
-            "sha256": "a3038ee8200df07119ae11ebc06d5de0b90d186d9cd1c6cec142234c363f86ae"
+            "sha256": "6a511db03d82da59ecaf222e7af5518cbf68bd77082cce55d3591aa540285fbc"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.captcha:mango-captcha-starter:1.0.40",
+        "coordinate": "io.mango.platform.captcha:mango-captcha-starter:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/captcha/mango-captcha-starter/1.0.40/mango-captcha-starter-1.0.40.pom",
+            "path": "io/mango/platform/captcha/mango-captcha-starter/1.0.41/mango-captcha-starter-1.0.41.pom",
             "size": 2399,
-            "sha256": "bc2fe70de56aa3a2d5ecac5c2db93b81b418a1ade23716a9946185195288eb14"
+            "sha256": "f0c1717a8281ff2e84478fc43172975e3ed8c570911ff3fd3a2d56dcfafaa3d7"
           },
           {
-            "path": "io/mango/platform/captcha/mango-captcha-starter/1.0.40/mango-captcha-starter-1.0.40.jar",
-            "size": 19182,
-            "sha256": "b31b0774122a808bfbfe22ad6e3bbfa1b4731f066a6b2a057d3d58d386e56f1d"
+            "path": "io/mango/platform/captcha/mango-captcha-starter/1.0.41/mango-captcha-starter-1.0.41.jar",
+            "size": 19183,
+            "sha256": "72a4ca2275f65feede9b1d9258af8a8c9703f60e7eb58bf319b7feed7e69f04e"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.captcha:mango-captcha:1.0.40",
+        "coordinate": "io.mango.platform.captcha:mango-captcha:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/captcha/mango-captcha/1.0.40/mango-captcha-1.0.40.pom",
+            "path": "io/mango/platform/captcha/mango-captcha/1.0.41/mango-captcha-1.0.41.pom",
             "size": 914,
-            "sha256": "f314e34611be36dc5b9be71ec25a763b1ff0ae9fadf69a1f7ce8933655682324"
+            "sha256": "92950ae4ddfa0d4f1b65cfb82a2809081ba6816e5b1e2c3e071284688dc81f19"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.cms:mango-cms-api:1.0.40",
+        "coordinate": "io.mango.platform.cms:mango-cms-api:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/cms/mango-cms-api/1.0.40/mango-cms-api-1.0.40.pom",
+            "path": "io/mango/platform/cms/mango-cms-api/1.0.41/mango-cms-api-1.0.41.pom",
             "size": 1709,
-            "sha256": "aaa31c607c1abe1083e1823a90240ab51a4d6649dbb669d699c45002d26e6a29"
+            "sha256": "f074246972e646e7147fede7f1913d1ba22443d3513abfeb1e8f09e14747c526"
           },
           {
-            "path": "io/mango/platform/cms/mango-cms-api/1.0.40/mango-cms-api-1.0.40.jar",
+            "path": "io/mango/platform/cms/mango-cms-api/1.0.41/mango-cms-api-1.0.41.jar",
             "size": 156194,
-            "sha256": "be5b57669ba8a4a451e6ea91d4d4b6df522d44bdf0f231d87a13fe7dadb2ed1f"
+            "sha256": "f053b26020658a87bfa3ff1b5d7ba2831a5fa04383cd2c1c6dd9dd325c89afa4"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.cms:mango-cms-core:1.0.40",
+        "coordinate": "io.mango.platform.cms:mango-cms-core:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/cms/mango-cms-core/1.0.40/mango-cms-core-1.0.40.pom",
+            "path": "io/mango/platform/cms/mango-cms-core/1.0.41/mango-cms-core-1.0.41.pom",
             "size": 3003,
-            "sha256": "b2d77031855209b12f4b79dd5dc67efd8d85b583a366241dcedb9f657329a1ea"
+            "sha256": "57cb16e6b9327e9dbfa320be693892d6ac644286a6fd3d0ebb472b1a07f2cca5"
           },
           {
-            "path": "io/mango/platform/cms/mango-cms-core/1.0.40/mango-cms-core-1.0.40.jar",
-            "size": 136174,
-            "sha256": "9f6ba64955f1afc04f2fc99cef95fa9e87e0319b741f207b3396af2aa2a84953"
+            "path": "io/mango/platform/cms/mango-cms-core/1.0.41/mango-cms-core-1.0.41.jar",
+            "size": 136175,
+            "sha256": "66a860f1103654388939459b729bb8634e63ec2b1f0f12fe2452f600af0ae7a9"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.cms:mango-cms-starter-remote:1.0.40",
+        "coordinate": "io.mango.platform.cms:mango-cms-starter-remote:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/cms/mango-cms-starter-remote/1.0.40/mango-cms-starter-remote-1.0.40.pom",
+            "path": "io/mango/platform/cms/mango-cms-starter-remote/1.0.41/mango-cms-starter-remote-1.0.41.pom",
             "size": 1370,
-            "sha256": "bbeef878b49333861f206804b0c014ce2ad0eb8730234740e67c6591363d2d94"
+            "sha256": "83624748317b8eac1f63b4939f85d0ae1a03492452289aa0c23dbb936913c255"
           },
           {
-            "path": "io/mango/platform/cms/mango-cms-starter-remote/1.0.40/mango-cms-starter-remote-1.0.40.jar",
-            "size": 14070,
-            "sha256": "d101bd9c4ed940394b4d661c1a67c4e6b4d208e961532e7ffcfe957b479966b4"
+            "path": "io/mango/platform/cms/mango-cms-starter-remote/1.0.41/mango-cms-starter-remote-1.0.41.jar",
+            "size": 14069,
+            "sha256": "27e9922e485c2d23a9aeac4a05eb7b3f7b3d0a74d3e7d07a81f9d882e115dcaa"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.cms:mango-cms-starter:1.0.40",
+        "coordinate": "io.mango.platform.cms:mango-cms-starter:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/cms/mango-cms-starter/1.0.40/mango-cms-starter-1.0.40.pom",
+            "path": "io/mango/platform/cms/mango-cms-starter/1.0.41/mango-cms-starter-1.0.41.pom",
             "size": 2382,
-            "sha256": "97042723a1399fae212add56a38ebbc0f9da89a1de81236151b2ff00285dab62"
+            "sha256": "035cac371ae165c15404692a0e6840e23f04b01170dbe473e40653e5b957feac"
           },
           {
-            "path": "io/mango/platform/cms/mango-cms-starter/1.0.40/mango-cms-starter-1.0.40.jar",
-            "size": 55125,
-            "sha256": "8bf3cf260750bc4e56c9029205d9ba790b2a08fcc5a38eced8305fcccac3b486"
+            "path": "io/mango/platform/cms/mango-cms-starter/1.0.41/mango-cms-starter-1.0.41.jar",
+            "size": 55146,
+            "sha256": "1ec3ff866e2e21b4432c4e4ef50d8918cad27bbd57960e926f518dbbb881dfe1"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.cms:mango-cms:1.0.40",
+        "coordinate": "io.mango.platform.cms:mango-cms:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/cms/mango-cms/1.0.40/mango-cms-1.0.40.pom",
+            "path": "io/mango/platform/cms/mango-cms/1.0.41/mango-cms-1.0.41.pom",
             "size": 885,
-            "sha256": "97376f4c9d9081b023664a4b8f58bda66f025aa05000fb6043e5170a6e3cc7e8"
+            "sha256": "a142e616cd4d652598e552615741939ec1e4650f7f303062f726399fdee088d0"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.domain:mango-domain-api:1.0.40",
+        "coordinate": "io.mango.platform.domain:mango-domain-api:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/domain/mango-domain-api/1.0.40/mango-domain-api-1.0.40.pom",
+            "path": "io/mango/platform/domain/mango-domain-api/1.0.41/mango-domain-api-1.0.41.pom",
             "size": 1259,
-            "sha256": "47884b81010222d6ec17bfaf4267f4f89b912e27658d1e6f7909ab60763e1088"
+            "sha256": "05989bb88c6ce343b91e83b7921bc039168b654c5fc80a214ee7d1f3cab1b3cb"
           },
           {
-            "path": "io/mango/platform/domain/mango-domain-api/1.0.40/mango-domain-api-1.0.40.jar",
-            "size": 17325,
-            "sha256": "b37a87897f61a0199eec18c969a087364067dcdcd4b86b325dfd546d06cfafe1"
+            "path": "io/mango/platform/domain/mango-domain-api/1.0.41/mango-domain-api-1.0.41.jar",
+            "size": 17326,
+            "sha256": "aefd9d0625df9b8b91905afe70a17ca72b4e1aa4be97a9eaeb2df8ca30b24a36"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.domain:mango-domain-core:1.0.40",
+        "coordinate": "io.mango.platform.domain:mango-domain-core:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/domain/mango-domain-core/1.0.40/mango-domain-core-1.0.40.pom",
+            "path": "io/mango/platform/domain/mango-domain-core/1.0.41/mango-domain-core-1.0.41.pom",
             "size": 2226,
-            "sha256": "c1ef6d0d06c279250b69b354393daa19e3f85117a9a43f57e009470d00dde89e"
+            "sha256": "ff521e7f5e2202b23d932af1308a26f6b5f0a81949e45641e2efc8edc69dd5e9"
           },
           {
-            "path": "io/mango/platform/domain/mango-domain-core/1.0.40/mango-domain-core-1.0.40.jar",
-            "size": 23471,
-            "sha256": "851b175bffd01d2d89c8ede82c4513d77e0d647e0eb019b1327777382878b953"
+            "path": "io/mango/platform/domain/mango-domain-core/1.0.41/mango-domain-core-1.0.41.jar",
+            "size": 23472,
+            "sha256": "b7f00211f3505aa412fd4327e81d5133de39e8217b92e25b1c125e1838eaab7a"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.domain:mango-domain-starter-remote:1.0.40",
+        "coordinate": "io.mango.platform.domain:mango-domain-starter-remote:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/domain/mango-domain-starter-remote/1.0.40/mango-domain-starter-remote-1.0.40.pom",
+            "path": "io/mango/platform/domain/mango-domain-starter-remote/1.0.41/mango-domain-starter-remote-1.0.41.pom",
             "size": 1042,
-            "sha256": "a671a4793079d96327d638f6ab57c8283ea88c06984147eb2ccf6a52d69dc30b"
+            "sha256": "55f60f6ce3171d3599115b1780e770f8dd9beed82a2da0d95e8c2bedfdd5be16"
           },
           {
-            "path": "io/mango/platform/domain/mango-domain-starter-remote/1.0.40/mango-domain-starter-remote-1.0.40.jar",
-            "size": 4211,
-            "sha256": "c5507cd1c188fc8c7318311f261e159995a7439f5ddb7abe28ee9ada54147b63"
+            "path": "io/mango/platform/domain/mango-domain-starter-remote/1.0.41/mango-domain-starter-remote-1.0.41.jar",
+            "size": 4212,
+            "sha256": "72ba668f846f650ffd3345fb274bb08a9b29819d9dbeaefc4e283ffaf8b8c04a"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.domain:mango-domain-starter:1.0.40",
+        "coordinate": "io.mango.platform.domain:mango-domain-starter:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/domain/mango-domain-starter/1.0.40/mango-domain-starter-1.0.40.pom",
+            "path": "io/mango/platform/domain/mango-domain-starter/1.0.41/mango-domain-starter-1.0.41.pom",
             "size": 2606,
-            "sha256": "49dd23dff7b8ad838ee3a313bd59a6bb48aa189c15c10340ab3a263a281ddbbb"
+            "sha256": "c0094ee1280bbf674f1e71f227c5c3d92be76475938eef89caecf3e2e679a8e3"
           },
           {
-            "path": "io/mango/platform/domain/mango-domain-starter/1.0.40/mango-domain-starter-1.0.40.jar",
-            "size": 7879,
-            "sha256": "9f15c1a64a0d6333ca1af52fc21edbe577ff3080c1a196f4471bf45578e42296"
+            "path": "io/mango/platform/domain/mango-domain-starter/1.0.41/mango-domain-starter-1.0.41.jar",
+            "size": 7896,
+            "sha256": "eb5dee10be99c976ac39d08e9e98a52a0c5c9c5db8e8f35cbb2bae1eefd1a4f8"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.domain:mango-domain:1.0.40",
+        "coordinate": "io.mango.platform.domain:mango-domain:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/domain/mango-domain/1.0.40/mango-domain-1.0.40.pom",
+            "path": "io/mango/platform/domain/mango-domain/1.0.41/mango-domain-1.0.41.pom",
             "size": 915,
-            "sha256": "8d87c7d06fd3c1f0631d73bdef1b4c94018c2259515f2ed1eebccd2120d5ce4e"
+            "sha256": "3309bfa2010ae636d7a6e4a39a9b6676704f17b1decf41957f3443a47ddb9bc6"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.file.preview:mango-file-preview-api:1.0.40",
+        "coordinate": "io.mango.platform.file.preview:mango-file-preview-api:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/file/preview/mango-file-preview-api/1.0.40/mango-file-preview-api-1.0.40.pom",
+            "path": "io/mango/platform/file/preview/mango-file-preview-api/1.0.41/mango-file-preview-api-1.0.41.pom",
             "size": 1653,
-            "sha256": "adda329c62529e4eaedfaeba38cb6dfe5b28abbdd2e1c27ed206388813b8a158"
+            "sha256": "e0c3b8b2c6984e2cbedcc5d8d5cfc786d3b916e1ab584bf461a1c04060cbeade"
           },
           {
-            "path": "io/mango/platform/file/preview/mango-file-preview-api/1.0.40/mango-file-preview-api-1.0.40.jar",
-            "size": 6327,
-            "sha256": "c74d7606af7adba7bac543085d2171ecd148fcceb3847926f227e2906be08a5a"
+            "path": "io/mango/platform/file/preview/mango-file-preview-api/1.0.41/mango-file-preview-api-1.0.41.jar",
+            "size": 6328,
+            "sha256": "8bfb9755614d93d334b7609204ae53d53abef1590784da070bd47987ffb0b9f4"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.file.preview:mango-file-preview-core:1.0.40",
+        "coordinate": "io.mango.platform.file.preview:mango-file-preview-core:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/file/preview/mango-file-preview-core/1.0.40/mango-file-preview-core-1.0.40.pom",
+            "path": "io/mango/platform/file/preview/mango-file-preview-core/1.0.41/mango-file-preview-core-1.0.41.pom",
             "size": 2755,
-            "sha256": "29abd52bfad6a8faf9c0331a02eb766f787de1ee1e461cbc883c808ca4576c84"
+            "sha256": "ee0332a5a876c0d2a6664836d6463e9c283d0a6c449df84907fe8b1d0d7f8d01"
           },
           {
-            "path": "io/mango/platform/file/preview/mango-file-preview-core/1.0.40/mango-file-preview-core-1.0.40.jar",
-            "size": 19117,
-            "sha256": "4b1b36278bfbfcb3776cb9576fc2fc3fb54b0f29e4821ed9fb8746a82f2b546c"
+            "path": "io/mango/platform/file/preview/mango-file-preview-core/1.0.41/mango-file-preview-core-1.0.41.jar",
+            "size": 19118,
+            "sha256": "f1c14a434246109070136e3a4bea1a1d01e45b51748fa7dd5f811d0765a6ad2c"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.file.preview:mango-file-preview-engine:1.0.40",
+        "coordinate": "io.mango.platform.file.preview:mango-file-preview-engine:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/file/preview/mango-file-preview-engine/1.0.40/mango-file-preview-engine-1.0.40.pom",
+            "path": "io/mango/platform/file/preview/mango-file-preview-engine/1.0.41/mango-file-preview-engine-1.0.41.pom",
             "size": 11328,
-            "sha256": "5e129141b247249fd5b8e8550814382882ba9c0b7a13e7cc8ac11cc5a707f8f1"
+            "sha256": "d9d5931961af9a81a36a3d3ec491e26473b1861a1ed7855c728904982fae348f"
           },
           {
-            "path": "io/mango/platform/file/preview/mango-file-preview-engine/1.0.40/mango-file-preview-engine-1.0.40.jar",
+            "path": "io/mango/platform/file/preview/mango-file-preview-engine/1.0.41/mango-file-preview-engine-1.0.41.jar",
             "size": 55714630,
-            "sha256": "945cb3f23e9ea18c8efbbbc93cea276461c7b68af5522131f87b1b84cbaf0040"
+            "sha256": "8687ebebe28823c20f3ad8365bbc0581d56a1b1f578426efeb77145963e9626e"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.file.preview:mango-file-preview-starter:1.0.40",
+        "coordinate": "io.mango.platform.file.preview:mango-file-preview-starter:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/file/preview/mango-file-preview-starter/1.0.40/mango-file-preview-starter-1.0.40.pom",
+            "path": "io/mango/platform/file/preview/mango-file-preview-starter/1.0.41/mango-file-preview-starter-1.0.41.pom",
             "size": 2732,
-            "sha256": "5c6ddb235f3a63cc6a388809fe98cf28c19c07e9a825484a085f31d9f8ae7c41"
+            "sha256": "39924f491052a033e2fed4e3646c13e93d14bdd76d986661d456e387432b4d7c"
           },
           {
-            "path": "io/mango/platform/file/preview/mango-file-preview-starter/1.0.40/mango-file-preview-starter-1.0.40.jar",
+            "path": "io/mango/platform/file/preview/mango-file-preview-starter/1.0.41/mango-file-preview-starter-1.0.41.jar",
             "size": 23424,
-            "sha256": "1f238fd8f9669d434f4a7ddd199c35ed39ad1c6aaa8456c684643d5359ec4fcf"
+            "sha256": "4a3b24436a6d16c4cba87017150b5a9c49b81d1a80732ef6afce543e64715610"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.file.preview:mango-file-preview:1.0.40",
+        "coordinate": "io.mango.platform.file.preview:mango-file-preview:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/file/preview/mango-file-preview/1.0.40/mango-file-preview-1.0.40.pom",
+            "path": "io/mango/platform/file/preview/mango-file-preview/1.0.41/mango-file-preview-1.0.41.pom",
             "size": 1014,
-            "sha256": "5608d978efbe3b6c74942989124d64327e5a369d06187e85b036d58ff6b59ab2"
+            "sha256": "7c71b9fe323bffa136cf11c4ab7267f53d79db7cc3df90adc9ab1de1cd132e6c"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.file:mango-file-core:1.0.40",
+        "coordinate": "io.mango.platform.file:mango-file-core:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/file/mango-file-core/1.0.40/mango-file-core-1.0.40.pom",
+            "path": "io/mango/platform/file/mango-file-core/1.0.41/mango-file-core-1.0.41.pom",
             "size": 4584,
-            "sha256": "e2739832d30af6cdce3ffce137b5ed252f5c0ee765fd1d65708bba5b6c3dca86"
+            "sha256": "e08fe9bd93b4c98efb0cffdd15e423c062d5fb72c6a6596d53e500db30eb4867"
           },
           {
-            "path": "io/mango/platform/file/mango-file-core/1.0.40/mango-file-core-1.0.40.jar",
-            "size": 224188,
-            "sha256": "ac7689587f499fa9918e983b5c452c77ffbea815440853b80b58a246b6d53c20"
+            "path": "io/mango/platform/file/mango-file-core/1.0.41/mango-file-core-1.0.41.jar",
+            "size": 224189,
+            "sha256": "e2e58fd7555eac8bd3afb6730a58557c6590caea25277cd04eb89b9dd8ae8683"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.file:mango-file-starter-remote:1.0.40",
+        "coordinate": "io.mango.platform.file:mango-file-starter-remote:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/file/mango-file-starter-remote/1.0.40/mango-file-starter-remote-1.0.40.pom",
+            "path": "io/mango/platform/file/mango-file-starter-remote/1.0.41/mango-file-starter-remote-1.0.41.pom",
             "size": 1439,
-            "sha256": "31a39a35baea415b896c3eb02c1ffb6681424baad34b877c682e4560e610f684"
+            "sha256": "b79b0aa0fcd1e68188833f8301e1f6415d5d7167f754da7c54810e12f8bcee2f"
           },
           {
-            "path": "io/mango/platform/file/mango-file-starter-remote/1.0.40/mango-file-starter-remote-1.0.40.jar",
-            "size": 10777,
-            "sha256": "4060ca92c2d0694e99827b2568ec16454b27765f22f12209a003c6e8d4ee5cbf"
+            "path": "io/mango/platform/file/mango-file-starter-remote/1.0.41/mango-file-starter-remote-1.0.41.jar",
+            "size": 10778,
+            "sha256": "6f8e113553994e3ce7a281756cde2ff41db456d1cce5e4ba5120f12c06c23d99"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.file:mango-file-starter:1.0.40",
+        "coordinate": "io.mango.platform.file:mango-file-starter:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/file/mango-file-starter/1.0.40/mango-file-starter-1.0.40.pom",
+            "path": "io/mango/platform/file/mango-file-starter/1.0.41/mango-file-starter-1.0.41.pom",
             "size": 2582,
-            "sha256": "957c00e96c3b46d44a23eb7ef2578c8a01a97403385793429ab162224df70958"
+            "sha256": "7ca2518c577e8ce0f2ba2dc1b0a53559420dc57e1fe9cde83d227caeb7123e73"
           },
           {
-            "path": "io/mango/platform/file/mango-file-starter/1.0.40/mango-file-starter-1.0.40.jar",
-            "size": 37545,
-            "sha256": "8ff5f1c8d29b961a2338e30a0b5a39915682c516db6f4230a33444a5492eae9a"
+            "path": "io/mango/platform/file/mango-file-starter/1.0.41/mango-file-starter-1.0.41.jar",
+            "size": 37569,
+            "sha256": "fbf43727921d527c9e274b6d0691e23b6731c97632c7796706ba633eaf1fd9ef"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.file:mango-file:1.0.40",
+        "coordinate": "io.mango.platform.file:mango-file:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/file/mango-file/1.0.40/mango-file-1.0.40.pom",
+            "path": "io/mango/platform/file/mango-file/1.0.41/mango-file-1.0.41.pom",
             "size": 952,
-            "sha256": "504710a4e4756c355537e6ae5a4c5119a512528cdb24ea530d2cca107c4c0246"
+            "sha256": "4fc6cb1e7016c5c41dc83265747f05e7649f778f64b597cf58fd1404c2fc6587"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.gridlayout:mango-grid-layout-api:1.0.40",
+        "coordinate": "io.mango.platform.gridlayout:mango-grid-layout-api:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/gridlayout/mango-grid-layout-api/1.0.40/mango-grid-layout-api-1.0.40.pom",
+            "path": "io/mango/platform/gridlayout/mango-grid-layout-api/1.0.41/mango-grid-layout-api-1.0.41.pom",
             "size": 1294,
-            "sha256": "67047dcb92bf25433eb929203a4174627b5bab3f8bb5a1dd02107ad5f782972c"
+            "sha256": "f077d0abb053f8022796c719b01fdd9f8c2edcf1c49a99d993eebc6e932242c5"
           },
           {
-            "path": "io/mango/platform/gridlayout/mango-grid-layout-api/1.0.40/mango-grid-layout-api-1.0.40.jar",
+            "path": "io/mango/platform/gridlayout/mango-grid-layout-api/1.0.41/mango-grid-layout-api-1.0.41.jar",
             "size": 10204,
-            "sha256": "817484ff33b84163405e51afa79b9bf313ae793d2be0ae8c0bfdb4b27ee2756a"
+            "sha256": "d7605048182aced37c5178847026b2957efeb835a0f6e47adbc72f2aaa04b59e"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.gridlayout:mango-grid-layout-core:1.0.40",
+        "coordinate": "io.mango.platform.gridlayout:mango-grid-layout-core:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/gridlayout/mango-grid-layout-core/1.0.40/mango-grid-layout-core-1.0.40.pom",
+            "path": "io/mango/platform/gridlayout/mango-grid-layout-core/1.0.41/mango-grid-layout-core-1.0.41.pom",
             "size": 2696,
-            "sha256": "417785b37286f1c3c3acca5988b49100a7044ed55d03f7aa004b1f3928581449"
+            "sha256": "c827da9977b7a86941d71b0ec133390dd31a84a406234ee9f5c2f142626b2f07"
           },
           {
-            "path": "io/mango/platform/gridlayout/mango-grid-layout-core/1.0.40/mango-grid-layout-core-1.0.40.jar",
-            "size": 12268,
-            "sha256": "09927c809f1eba718239ed4b9e343cbad56e45a9bd9f424b38b90b803f1f4c88"
+            "path": "io/mango/platform/gridlayout/mango-grid-layout-core/1.0.41/mango-grid-layout-core-1.0.41.jar",
+            "size": 12269,
+            "sha256": "0773031dd69eb233ab6c5722a671864eda8d05f5f0c3f5128754b626aa0071e9"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.gridlayout:mango-grid-layout-starter:1.0.40",
+        "coordinate": "io.mango.platform.gridlayout:mango-grid-layout-starter:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/gridlayout/mango-grid-layout-starter/1.0.40/mango-grid-layout-starter-1.0.40.pom",
+            "path": "io/mango/platform/gridlayout/mango-grid-layout-starter/1.0.41/mango-grid-layout-starter-1.0.41.pom",
             "size": 2169,
-            "sha256": "7e2b05fc7fddbaf7fb19e72329ffb50ce19f5e987f1edc1ae91e417a3792fd0a"
+            "sha256": "78434ad4db8219750fbed7cd2e85d1844466805dbb1a846f26efa17e5f5390f7"
           },
           {
-            "path": "io/mango/platform/gridlayout/mango-grid-layout-starter/1.0.40/mango-grid-layout-starter-1.0.40.jar",
-            "size": 5348,
-            "sha256": "0f83fdf210e2db67638c126aaee169e27d2f21acdc0702fbf765df0ff760c489"
+            "path": "io/mango/platform/gridlayout/mango-grid-layout-starter/1.0.41/mango-grid-layout-starter-1.0.41.jar",
+            "size": 5349,
+            "sha256": "9133bfd8ef832cf625af813cfe40078370c008fd39be123adce2d46be01db39b"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.gridlayout:mango-grid-layout:1.0.40",
+        "coordinate": "io.mango.platform.gridlayout:mango-grid-layout:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/gridlayout/mango-grid-layout/1.0.40/mango-grid-layout-1.0.40.pom",
+            "path": "io/mango/platform/gridlayout/mango-grid-layout/1.0.41/mango-grid-layout-1.0.41.pom",
             "size": 882,
-            "sha256": "c660c8374668374eb56dcd1f60e3f546ef635257c391e73c729937bfc57bcc76"
+            "sha256": "9ad16d5b604e8f3f1422596ccd65ac319fb2d681e8904e61c777afc802a1706d"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.home:mango-home-api:1.0.40",
+        "coordinate": "io.mango.platform.home:mango-home-api:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/home/mango-home-api/1.0.40/mango-home-api-1.0.40.pom",
+            "path": "io/mango/platform/home/mango-home-api/1.0.41/mango-home-api-1.0.41.pom",
             "size": 1277,
-            "sha256": "a1c3fa85074592231ef4eec5bee83b36126292ab4aa87f8381786abe99e44d2a"
+            "sha256": "3bae771ca62cbfe59dca0a28c00ea36af342b5e3a604ab8c2005809a71b11ee8"
           },
           {
-            "path": "io/mango/platform/home/mango-home-api/1.0.40/mango-home-api-1.0.40.jar",
+            "path": "io/mango/platform/home/mango-home-api/1.0.41/mango-home-api-1.0.41.jar",
             "size": 50821,
-            "sha256": "139dae7a2e023fe867f88f28e89dacf71a78ccb395d48f223360dba2e2e22904"
+            "sha256": "a0a9a8ca94ddc9c89cb8cb9e48fb9edad024d7910a3ae1d334150fa2f16f67a1"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.home:mango-home-core:1.0.40",
+        "coordinate": "io.mango.platform.home:mango-home-core:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/home/mango-home-core/1.0.40/mango-home-core-1.0.40.pom",
+            "path": "io/mango/platform/home/mango-home-core/1.0.41/mango-home-core-1.0.41.pom",
             "size": 2631,
-            "sha256": "64a690aea11f670eed4c45dbea2a772a0f78a08ab334f0f705fdcda86c26f24d"
+            "sha256": "51b63bd9b00a713c889a98769575734391d5c1f9be440e1bb188ff9d483b37cd"
           },
           {
-            "path": "io/mango/platform/home/mango-home-core/1.0.40/mango-home-core-1.0.40.jar",
-            "size": 54659,
-            "sha256": "0980b52430cd4a84af245d6d2fdf4fafeb44f9b400f4692afea11921ac6289ab"
+            "path": "io/mango/platform/home/mango-home-core/1.0.41/mango-home-core-1.0.41.jar",
+            "size": 54660,
+            "sha256": "f8f215c7984dffa4d71676f1df121313b88864c039c60ccb53b4dbcaed2d61de"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.home:mango-home-starter:1.0.40",
+        "coordinate": "io.mango.platform.home:mango-home-starter:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/home/mango-home-starter/1.0.40/mango-home-starter-1.0.40.pom",
+            "path": "io/mango/platform/home/mango-home-starter/1.0.41/mango-home-starter-1.0.41.pom",
             "size": 2336,
-            "sha256": "f95cd7c6933cce1e007e4b9276731befbf15f2a0101cdccdb34978613dee58d5"
+            "sha256": "e4328672c0954cd821f4b1eba70f0406e919eebc5f0b7ba707bc1892fa1ef412"
           },
           {
-            "path": "io/mango/platform/home/mango-home-starter/1.0.40/mango-home-starter-1.0.40.jar",
-            "size": 11029,
-            "sha256": "e61c0f2b3c38f3fb341c0821e302c0c2053ffb60b34685d13d1bc1f6dbbb9c18"
+            "path": "io/mango/platform/home/mango-home-starter/1.0.41/mango-home-starter-1.0.41.jar",
+            "size": 11053,
+            "sha256": "2bc098d4a59c94e9e6e995777282897375ee980d0fe1f969866b32dae56a340c"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.home:mango-home:1.0.40",
+        "coordinate": "io.mango.platform.home:mango-home:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/home/mango-home/1.0.40/mango-home-1.0.40.pom",
+            "path": "io/mango/platform/home/mango-home/1.0.41/mango-home-1.0.41.pom",
             "size": 851,
-            "sha256": "085723a9cb6ff91095ebb229a87bb98fbb012bdf8678be3b5f1becb5f525f83a"
+            "sha256": "7b49fde3fb825b42ad8b03cdb6132cf362ad07d6cbef56302b73ffb510a379c5"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.identity:mango-identity-core:1.0.40",
+        "coordinate": "io.mango.platform.identity:mango-identity-core:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/identity/mango-identity-core/1.0.40/mango-identity-core-1.0.40.pom",
+            "path": "io/mango/platform/identity/mango-identity-core/1.0.41/mango-identity-core-1.0.41.pom",
             "size": 3251,
-            "sha256": "cb60dba804e05c8a1f33b904fffe27279efd9dca706f2b37b12edfb4aab53562"
+            "sha256": "990be99a19ce5f827e1bffe7ee1c207cc69b25382e0611f30dc60be6e53f738d"
           },
           {
-            "path": "io/mango/platform/identity/mango-identity-core/1.0.40/mango-identity-core-1.0.40.jar",
-            "size": 84641,
-            "sha256": "9bdab4d59ee168a04cc9f53fe2440cee232bc1384035ec5628e9aa45c3e06609"
+            "path": "io/mango/platform/identity/mango-identity-core/1.0.41/mango-identity-core-1.0.41.jar",
+            "size": 84642,
+            "sha256": "7f882283ebc95e89b250d750bf89cc5fd64daa892b67aa5743fcca73c1129050"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.identity:mango-identity-starter-remote:1.0.40",
+        "coordinate": "io.mango.platform.identity:mango-identity-starter-remote:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/identity/mango-identity-starter-remote/1.0.40/mango-identity-starter-remote-1.0.40.pom",
+            "path": "io/mango/platform/identity/mango-identity-starter-remote/1.0.41/mango-identity-starter-remote-1.0.41.pom",
             "size": 1287,
-            "sha256": "62817964ea283cd3989f758a31aeaf0b670f8e493b9b3234d1263d6222e292ab"
+            "sha256": "4e8f1fbfa7d0869ca691a973821e00b3dbc621012bba9b044de8ffc0d6c95c17"
           },
           {
-            "path": "io/mango/platform/identity/mango-identity-starter-remote/1.0.40/mango-identity-starter-remote-1.0.40.jar",
-            "size": 13324,
-            "sha256": "efcee2c6c47c5b0b23e23a78757c54cc4dbc45631d02c0dd9ae47378561b2d65"
+            "path": "io/mango/platform/identity/mango-identity-starter-remote/1.0.41/mango-identity-starter-remote-1.0.41.jar",
+            "size": 13325,
+            "sha256": "8ea59336e542d4763fb634d45c98dfcb99bf68d1fbc9640b6f60012ed8a1b587"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.identity:mango-identity-starter:1.0.40",
+        "coordinate": "io.mango.platform.identity:mango-identity-starter:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/identity/mango-identity-starter/1.0.40/mango-identity-starter-1.0.40.pom",
+            "path": "io/mango/platform/identity/mango-identity-starter/1.0.41/mango-identity-starter-1.0.41.pom",
             "size": 4027,
-            "sha256": "2d5f74ee677363201161be5b18309406f0b91c655b097b64caea78c3ffb115f6"
+            "sha256": "b4c3b706fd22fb920386f524f98b5d89b698991152d210ca7fdd3e064a7cbf49"
           },
           {
-            "path": "io/mango/platform/identity/mango-identity-starter/1.0.40/mango-identity-starter-1.0.40.jar",
-            "size": 33978,
-            "sha256": "092a68540566d26745e4b77e7f4e3f3e45159e9291a256c9a749e137fb8746af"
+            "path": "io/mango/platform/identity/mango-identity-starter/1.0.41/mango-identity-starter-1.0.41.jar",
+            "size": 33979,
+            "sha256": "a2156cdf5cf75fccc0fa691e2eab2f4456eda79a2484893aff0ffb511bbf5f95"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.identity:mango-identity:1.0.40",
+        "coordinate": "io.mango.platform.identity:mango-identity:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/identity/mango-identity/1.0.40/mango-identity-1.0.40.pom",
+            "path": "io/mango/platform/identity/mango-identity/1.0.41/mango-identity-1.0.41.pom",
             "size": 995,
-            "sha256": "873533c7e2aae80ad9a85e0db3ee547265a6f80924820b1b72a94babecc21167"
+            "sha256": "df0ef91b41909a361f290110db05cd2581dbb44f7874202f00312d60314129e5"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.job:mango-job-api:1.0.40",
+        "coordinate": "io.mango.platform.job:mango-job-api:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/job/mango-job-api/1.0.40/mango-job-api-1.0.40.pom",
+            "path": "io/mango/platform/job/mango-job-api/1.0.41/mango-job-api-1.0.41.pom",
             "size": 1537,
-            "sha256": "9c63f6dcf5d654befed1fc177d66ffcc7baab0fcde68cf7d2e126895b3095da3"
+            "sha256": "bd2420ffa6ceeae3cf484e11ee9515fb48c2facb4e679fdfbaf09e25a845f76a"
           },
           {
-            "path": "io/mango/platform/job/mango-job-api/1.0.40/mango-job-api-1.0.40.jar",
-            "size": 95424,
-            "sha256": "0f01ce3831e3cbc9c194c913d76972cfd2f8822a1779eb31ff57ff97bd72a557"
+            "path": "io/mango/platform/job/mango-job-api/1.0.41/mango-job-api-1.0.41.jar",
+            "size": 95423,
+            "sha256": "b6f200a64a57dbc0f1ffee3274564efec42ba224e29d353180e280475c3070f1"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.job:mango-job-support:1.0.40",
+        "coordinate": "io.mango.platform.job:mango-job-support:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/job/mango-job-support/1.0.40/mango-job-support-1.0.40.pom",
+            "path": "io/mango/platform/job/mango-job-support/1.0.41/mango-job-support-1.0.41.pom",
             "size": 2372,
-            "sha256": "d8e35cadda5d8e6e0f8ecb013323db28c4c7fbcf676bf957c76e26192878c783"
+            "sha256": "f9f2f7fc287b503c4e6a1d651f08be20365670834beb9503de22f2a1414d24ee"
           },
           {
-            "path": "io/mango/platform/job/mango-job-support/1.0.40/mango-job-support-1.0.40.jar",
+            "path": "io/mango/platform/job/mango-job-support/1.0.41/mango-job-support-1.0.41.jar",
             "size": 27777,
-            "sha256": "bf4bcb4c2ee7f7ce01156330d00e5b35382b52625f9ee9525d9fe0079fc2e4f9"
+            "sha256": "4062c05baeab3d51aef42bda03083ce66585ab48864b9316f3361ec0c61c8606"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.job:mango-job-core:1.0.40",
+        "coordinate": "io.mango.platform.job:mango-job-core:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/job/mango-job-core/1.0.40/mango-job-core-1.0.40.pom",
+            "path": "io/mango/platform/job/mango-job-core/1.0.41/mango-job-core-1.0.41.pom",
             "size": 4001,
-            "sha256": "5db21d97b69aeae9df94b3d58cdc4aea7482e77dcd39a795eab168053a376de8"
+            "sha256": "712f2830bb47b9b629ba8d61c2d77b500091b83cb2ea8bc7115acda472656bb5"
           },
           {
-            "path": "io/mango/platform/job/mango-job-core/1.0.40/mango-job-core-1.0.40.jar",
-            "size": 154298,
-            "sha256": "ce3274fe828a161fdda40cdcd9d939a9e1b62feb93a5e283fa222dd3941fe300"
+            "path": "io/mango/platform/job/mango-job-core/1.0.41/mango-job-core-1.0.41.jar",
+            "size": 154299,
+            "sha256": "86735a7847b29d6a73eeba68d9f911e6d2f1acfe1999f28ae3e21ab78bf7e07e"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.job:mango-job-starter-remote:1.0.40",
+        "coordinate": "io.mango.platform.job:mango-job-starter-remote:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/job/mango-job-starter-remote/1.0.40/mango-job-starter-remote-1.0.40.pom",
+            "path": "io/mango/platform/job/mango-job-starter-remote/1.0.41/mango-job-starter-remote-1.0.41.pom",
             "size": 1762,
-            "sha256": "ad12063af56fa9b6c05376bd3335f5402f912463469a0f1caff1f472be006c08"
+            "sha256": "444188339adb9a8a0c8aea2e4e759f6ef240ccf8fd5bb5b4c0fd6043fe593fca"
           },
           {
-            "path": "io/mango/platform/job/mango-job-starter-remote/1.0.40/mango-job-starter-remote-1.0.40.jar",
-            "size": 19386,
-            "sha256": "22ba9edafe0b8a0adea56c90aab856779c55212035aa3be1d0f24789f3a268ca"
+            "path": "io/mango/platform/job/mango-job-starter-remote/1.0.41/mango-job-starter-remote-1.0.41.jar",
+            "size": 19387,
+            "sha256": "d50dedd25dee0f2f6bc4a9fbac2eec1b7bbf2a5b2fabda0c5a50b4ef50e8001c"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.job:mango-job-starter:1.0.40",
+        "coordinate": "io.mango.platform.job:mango-job-starter:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/job/mango-job-starter/1.0.40/mango-job-starter-1.0.40.pom",
+            "path": "io/mango/platform/job/mango-job-starter/1.0.41/mango-job-starter-1.0.41.pom",
             "size": 3000,
-            "sha256": "73f386cf91a4a36df1dd5dc3ff8721d197aa4a7202fc750805b0ed0415c408dd"
+            "sha256": "933375955ffc6d474b73ce4a4345ae789f4c75a5e53e21e46fbe94487045ed59"
           },
           {
-            "path": "io/mango/platform/job/mango-job-starter/1.0.40/mango-job-starter-1.0.40.jar",
-            "size": 21145,
-            "sha256": "1261683bd206833a3e9e49187f2ffdd0b59ccef26fa61971ca9f3a186363ee64"
+            "path": "io/mango/platform/job/mango-job-starter/1.0.41/mango-job-starter-1.0.41.jar",
+            "size": 21166,
+            "sha256": "4b4b585392a08151e447b5291d242a1fcca129bc4304eb22e174f5f7f5f1549d"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.job:mango-job:1.0.40",
+        "coordinate": "io.mango.platform.job:mango-job:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/job/mango-job/1.0.40/mango-job-1.0.40.pom",
+            "path": "io/mango/platform/job/mango-job/1.0.41/mango-job-1.0.41.pom",
             "size": 1511,
-            "sha256": "e976c50d0bd667bd5d1d92fa6456e1f2e942ba88f69a4255ad2430422d326575"
+            "sha256": "a612633892d1df79818dfcc3d856334090623b7d6603b436a9a16e34209700c0"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.link:mango-link-api:1.0.40",
+        "coordinate": "io.mango.platform.link:mango-link-api:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/link/mango-link-api/1.0.40/mango-link-api-1.0.40.pom",
+            "path": "io/mango/platform/link/mango-link-api/1.0.41/mango-link-api-1.0.41.pom",
             "size": 1413,
-            "sha256": "4f9f67972da79472eca9c99a3e7383b476ed66113f18392af17aa0ce7a48424a"
+            "sha256": "01786007e13c4268fa2fa6d9bad6d378771d2daf84999286f7cf1d024f7ebb88"
           },
           {
-            "path": "io/mango/platform/link/mango-link-api/1.0.40/mango-link-api-1.0.40.jar",
+            "path": "io/mango/platform/link/mango-link-api/1.0.41/mango-link-api-1.0.41.jar",
             "size": 68528,
-            "sha256": "d0ae4437b0dbbc4733367d9ca7fdac308d964840faf8f4a9a69a981c1fe1a8f8"
+            "sha256": "b9b003e62070f9ee1bbd215fe22a5e8cf12616237902cf18fdc40297e750d047"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.link:mango-link-core:1.0.40",
+        "coordinate": "io.mango.platform.link:mango-link-core:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/link/mango-link-core/1.0.40/mango-link-core-1.0.40.pom",
+            "path": "io/mango/platform/link/mango-link-core/1.0.41/mango-link-core-1.0.41.pom",
             "size": 2707,
-            "sha256": "d4167fe0f08f09548f49468b6dc2cc2d32b5a0d7e5ca7a4d54bd0e257166c220"
+            "sha256": "8e64c29d77e188e59bc4082eedd962754c9484bb9bf7daaf9ae8f38bfa5e505c"
           },
           {
-            "path": "io/mango/platform/link/mango-link-core/1.0.40/mango-link-core-1.0.40.jar",
+            "path": "io/mango/platform/link/mango-link-core/1.0.41/mango-link-core-1.0.41.jar",
             "size": 63536,
-            "sha256": "5124da296d058e5411189737b869386352a04da46f59837f001f367e1c7915bf"
+            "sha256": "5d6783599c735c8664fb9eb0e2e79613329b06433ee9f27703894a9971e91b01"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.link:mango-link-starter:1.0.40",
+        "coordinate": "io.mango.platform.link:mango-link-starter:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/link/mango-link-starter/1.0.40/mango-link-starter-1.0.40.pom",
+            "path": "io/mango/platform/link/mango-link-starter/1.0.41/mango-link-starter-1.0.41.pom",
             "size": 2669,
-            "sha256": "a363b18a1abed1883b53ebade4004b2346fea741b14982215f9416e59c12cc2b"
+            "sha256": "b59f2cec24bf5d9e031907ab05e44539a783333a657edbd40a88e3b525041d5c"
           },
           {
-            "path": "io/mango/platform/link/mango-link-starter/1.0.40/mango-link-starter-1.0.40.jar",
-            "size": 34418,
-            "sha256": "d2ee03a6a6aa042b8ac6244db76713596a6cf58cc68404697e650ea8e58a09c6"
+            "path": "io/mango/platform/link/mango-link-starter/1.0.41/mango-link-starter-1.0.41.jar",
+            "size": 34439,
+            "sha256": "d531e548fbb77e83665b821dc932e89ddb0e670b0f525803d24bc779a1febd9f"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.link:mango-link:1.0.40",
+        "coordinate": "io.mango.platform.link:mango-link:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/link/mango-link/1.0.40/mango-link-1.0.40.pom",
+            "path": "io/mango/platform/link/mango-link/1.0.41/mango-link-1.0.41.pom",
             "size": 841,
-            "sha256": "9ccff6b2b00bc9859c26bae0eef16e858ee20f67eff5638796f785ec1d2601e4"
+            "sha256": "301f66e545ae85fc0999301c0e4e7d1d962ba8924d30b5c9cf5d80db7b8fe3f4"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.notice:mango-notice-channel-dingtalk:1.0.40",
+        "coordinate": "io.mango.platform.notice:mango-notice-channel-dingtalk:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/notice/mango-notice-channel-dingtalk/1.0.40/mango-notice-channel-dingtalk-1.0.40.pom",
+            "path": "io/mango/platform/notice/mango-notice-channel-dingtalk/1.0.41/mango-notice-channel-dingtalk-1.0.41.pom",
             "size": 1117,
-            "sha256": "7e0448669cae53b116b549b51808159d7d0d6be37b165f3a6323cf391a152929"
+            "sha256": "4c3fb86fb9df11b4055e8526e3cfcf0ccbf59865ce22d1f1d15d9413175cd9b3"
           },
           {
-            "path": "io/mango/platform/notice/mango-notice-channel-dingtalk/1.0.40/mango-notice-channel-dingtalk-1.0.40.jar",
+            "path": "io/mango/platform/notice/mango-notice-channel-dingtalk/1.0.41/mango-notice-channel-dingtalk-1.0.41.jar",
             "size": 3949,
-            "sha256": "e232196709c3ee078b769b16718f1d2a7a7981cd56074a866be3516a8b0431e2"
+            "sha256": "f96d3d52493af92a1ac63817969540ca1b2a9e71ebd6a8cf83b94f0642e205d5"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.notice:mango-notice-channel-email:1.0.40",
+        "coordinate": "io.mango.platform.notice:mango-notice-channel-email:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/notice/mango-notice-channel-email/1.0.40/mango-notice-channel-email-1.0.40.pom",
+            "path": "io/mango/platform/notice/mango-notice-channel-email/1.0.41/mango-notice-channel-email-1.0.41.pom",
             "size": 1472,
-            "sha256": "91ccd3fe122f37076e1cf5bcfa07ab2e48e2bec94217c3e81137006af72474ae"
+            "sha256": "59061a7b23c980ad836d1af8def5945f9b9e7df1890b81e24ce995f9a3438399"
           },
           {
-            "path": "io/mango/platform/notice/mango-notice-channel-email/1.0.40/mango-notice-channel-email-1.0.40.jar",
-            "size": 42319,
-            "sha256": "6db0478e86ea8c1bfa596fa48b67999425accf9fcbd1c34cf35c8bfe3507b744"
+            "path": "io/mango/platform/notice/mango-notice-channel-email/1.0.41/mango-notice-channel-email-1.0.41.jar",
+            "size": 42320,
+            "sha256": "d2d261d3219da1de5cae89f0071d9ead9398ffa53292f80395beb767574169c6"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.notice:mango-notice-channel-site:1.0.40",
+        "coordinate": "io.mango.platform.notice:mango-notice-channel-site:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/notice/mango-notice-channel-site/1.0.40/mango-notice-channel-site-1.0.40.pom",
+            "path": "io/mango/platform/notice/mango-notice-channel-site/1.0.41/mango-notice-channel-site-1.0.41.pom",
             "size": 1667,
-            "sha256": "1eedeaf5998040c6a00dfad5aa4294487e38bc4d358344a6fde1023896993d22"
+            "sha256": "cac76ae0319a4911a67223ffd23d388be910c002dcd5357baef24d744e8e10e3"
           },
           {
-            "path": "io/mango/platform/notice/mango-notice-channel-site/1.0.40/mango-notice-channel-site-1.0.40.jar",
-            "size": 5432,
-            "sha256": "81376e8099dc558093a79559e497c2c9472baaa966e49a28a0b74e61646596e1"
+            "path": "io/mango/platform/notice/mango-notice-channel-site/1.0.41/mango-notice-channel-site-1.0.41.jar",
+            "size": 5433,
+            "sha256": "dfef2ae73cb668d356bee2e4474da7fb6fec72009f6bdbeab43e83701f27f84d"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.notice:mango-notice-channel-sms:1.0.40",
+        "coordinate": "io.mango.platform.notice:mango-notice-channel-sms:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/notice/mango-notice-channel-sms/1.0.40/mango-notice-channel-sms-1.0.40.pom",
+            "path": "io/mango/platform/notice/mango-notice-channel-sms/1.0.41/mango-notice-channel-sms-1.0.41.pom",
             "size": 1775,
-            "sha256": "2f2e4f381e0ab4152f1c5e8ccf8ceea4f4f39db0260486fd5c1cf3e87674ffd3"
+            "sha256": "f927bcc0c4085f19aad078527d0baca52021aad34d26ea8de9d538a172d8ef88"
           },
           {
-            "path": "io/mango/platform/notice/mango-notice-channel-sms/1.0.40/mango-notice-channel-sms-1.0.40.jar",
+            "path": "io/mango/platform/notice/mango-notice-channel-sms/1.0.41/mango-notice-channel-sms-1.0.41.jar",
             "size": 23249,
-            "sha256": "b6f68f24bef789c5dea0edc6de46e0eed26713984a2bab43dbe02ee74fc8414e"
+            "sha256": "b24b184dda52451be15153041ada532b1fff1e07b039a722464210617a765a12"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.notice:mango-notice-channel-wechat-official:1.0.40",
+        "coordinate": "io.mango.platform.notice:mango-notice-channel-wechat-official:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/notice/mango-notice-channel-wechat-official/1.0.40/mango-notice-channel-wechat-official-1.0.40.pom",
+            "path": "io/mango/platform/notice/mango-notice-channel-wechat-official/1.0.41/mango-notice-channel-wechat-official-1.0.41.pom",
             "size": 1348,
-            "sha256": "e9d6f31d4b7a125d665a1adf4f2b8f147e3b4a0ce10ce828e9371b4de3262ffe"
+            "sha256": "8db15ad532aac60f2f62aea1b650dc4e9cc068ad1b97885525a05e0b981d5b86"
           },
           {
-            "path": "io/mango/platform/notice/mango-notice-channel-wechat-official/1.0.40/mango-notice-channel-wechat-official-1.0.40.jar",
-            "size": 10095,
-            "sha256": "51880415918e33af792560dee765b898837a47cc07a5b6d94dfd5bdc32491c05"
+            "path": "io/mango/platform/notice/mango-notice-channel-wechat-official/1.0.41/mango-notice-channel-wechat-official-1.0.41.jar",
+            "size": 10094,
+            "sha256": "7ade09bae2dcec07d6fef800351381b322c22644dca37548272853ac281c7d82"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.notice:mango-notice-channel-wecom:1.0.40",
+        "coordinate": "io.mango.platform.notice:mango-notice-channel-wecom:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/notice/mango-notice-channel-wecom/1.0.40/mango-notice-channel-wecom-1.0.40.pom",
+            "path": "io/mango/platform/notice/mango-notice-channel-wecom/1.0.41/mango-notice-channel-wecom-1.0.41.pom",
             "size": 1686,
-            "sha256": "95068cc3890201b525adad6c6bc6e011ca0b7275c7db404d17abb9a76438345d"
+            "sha256": "94cf2c31f8cac8b931768ceea1f05e43274b844fdc24c29c285b0fcb17443327"
           },
           {
-            "path": "io/mango/platform/notice/mango-notice-channel-wecom/1.0.40/mango-notice-channel-wecom-1.0.40.jar",
+            "path": "io/mango/platform/notice/mango-notice-channel-wecom/1.0.41/mango-notice-channel-wecom-1.0.41.jar",
             "size": 37667,
-            "sha256": "6048c02be7ac43a78b352bf1ebcafd75613e2042c0039c4e4108d0814534164c"
+            "sha256": "08f5d2948747a683874a5123c3a4d939de9bb4530731ceb854af566175288ebb"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.notice:mango-notice-core:1.0.40",
+        "coordinate": "io.mango.platform.notice:mango-notice-core:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/notice/mango-notice-core/1.0.40/mango-notice-core-1.0.40.pom",
+            "path": "io/mango/platform/notice/mango-notice-core/1.0.41/mango-notice-core-1.0.41.pom",
             "size": 6301,
-            "sha256": "f83ca326ea3b54d39c171f54edc8db08b0a0e53141548ef104c673bb68a09a9d"
+            "sha256": "3a8aa5079214103ec49c9d8b25c50aacc81319f149328fde90507522c64cc988"
           },
           {
-            "path": "io/mango/platform/notice/mango-notice-core/1.0.40/mango-notice-core-1.0.40.jar",
+            "path": "io/mango/platform/notice/mango-notice-core/1.0.41/mango-notice-core-1.0.41.jar",
             "size": 345643,
-            "sha256": "772217b41139a6f3959f1b2eb1c34655422a2a7de6a30d8f79a00355b037dbfc"
+            "sha256": "44701cb2efaafee002195bb7982102926b39055dac3c1ed28d4cac613091afff"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.notice:mango-notice-starter-remote:1.0.40",
+        "coordinate": "io.mango.platform.notice:mango-notice-starter-remote:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/notice/mango-notice-starter-remote/1.0.40/mango-notice-starter-remote-1.0.40.pom",
+            "path": "io/mango/platform/notice/mango-notice-starter-remote/1.0.41/mango-notice-starter-remote-1.0.41.pom",
             "size": 1729,
-            "sha256": "e6e3ea9dfb2e826fd1036592186433db929735c6137cfb3e7ec04343c01eaca5"
+            "sha256": "aff1ccbeecdd026261a6a1b3fc10de11144225a6963d4f31f67adcb46858d53a"
           },
           {
-            "path": "io/mango/platform/notice/mango-notice-starter-remote/1.0.40/mango-notice-starter-remote-1.0.40.jar",
-            "size": 7569,
-            "sha256": "eb946455e56794d974c8bc9d926e48f3a72e7d066bba80fd72c8dd938f860728"
+            "path": "io/mango/platform/notice/mango-notice-starter-remote/1.0.41/mango-notice-starter-remote-1.0.41.jar",
+            "size": 7570,
+            "sha256": "c1e84431ac85b44ea31256836f165edc4936dba8871f0bb3b9b753793c5b2b9b"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.notice:mango-notice-starter:1.0.40",
+        "coordinate": "io.mango.platform.notice:mango-notice-starter:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/notice/mango-notice-starter/1.0.40/mango-notice-starter-1.0.40.pom",
+            "path": "io/mango/platform/notice/mango-notice-starter/1.0.41/mango-notice-starter-1.0.41.pom",
             "size": 4710,
-            "sha256": "9de7792816469b6489903b69b4eab8aa04cb11c2f51c2e3408c28b258995d8b1"
+            "sha256": "bed9c7f7bdaaf64109e9b7704fe7725dc3be9e93bf04ed7176bf4425fdd3e4de"
           },
           {
-            "path": "io/mango/platform/notice/mango-notice-starter/1.0.40/mango-notice-starter-1.0.40.jar",
-            "size": 50268,
-            "sha256": "9ad47bcb0b6c591403d64eab6d96e455ca0d0a50e380dc1b6715cff00bbafe7f"
+            "path": "io/mango/platform/notice/mango-notice-starter/1.0.41/mango-notice-starter-1.0.41.jar",
+            "size": 50290,
+            "sha256": "1685e27b7e6b84610e80d9412a1ad91ff670f1ea1018f03b326c99d6bbc28183"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.notice:mango-notice:1.0.40",
+        "coordinate": "io.mango.platform.notice:mango-notice:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/notice/mango-notice/1.0.40/mango-notice-1.0.40.pom",
+            "path": "io/mango/platform/notice/mango-notice/1.0.41/mango-notice-1.0.41.pom",
             "size": 1312,
-            "sha256": "49e7e3ad91577bfeb6141faed4026605c034c2e5ba1eaad53e670a2020349091"
+            "sha256": "03751c8365024988e0e9116327547916dae0b62f5082804fead6e1bacccaa085"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.numgen:mango-numgen-api:1.0.40",
+        "coordinate": "io.mango.platform.numgen:mango-numgen-api:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/numgen/mango-numgen-api/1.0.40/mango-numgen-api-1.0.40.pom",
+            "path": "io/mango/platform/numgen/mango-numgen-api/1.0.41/mango-numgen-api-1.0.41.pom",
             "size": 1408,
-            "sha256": "5ddbda06ee59ec02d34d36ddf979e7cfa2842c495e44c99259964e4129f71648"
+            "sha256": "87f2404f0fabab0beb4ae24ac7c3cbf5f4ddeb29991fed968100b66abba9fbca"
           },
           {
-            "path": "io/mango/platform/numgen/mango-numgen-api/1.0.40/mango-numgen-api-1.0.40.jar",
-            "size": 65008,
-            "sha256": "ff635891f8b4b3f3cbc4f6b5029811c9e1b84d9cf5d292e18fb603d472dbe014"
+            "path": "io/mango/platform/numgen/mango-numgen-api/1.0.41/mango-numgen-api-1.0.41.jar",
+            "size": 65009,
+            "sha256": "b1098037cd42959293e6fa84036cf611035fe7f9750d85921e0222d65b5e609c"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.numgen:mango-numgen-core:1.0.40",
+        "coordinate": "io.mango.platform.numgen:mango-numgen-core:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/numgen/mango-numgen-core/1.0.40/mango-numgen-core-1.0.40.pom",
+            "path": "io/mango/platform/numgen/mango-numgen-core/1.0.41/mango-numgen-core-1.0.41.pom",
             "size": 3755,
-            "sha256": "5bf9df61b82ddb12944f8381afdc659a12e93c5b01c8e949bc9a56646b558f71"
+            "sha256": "ba8ab1cfb35e57539c429c06f0686763dad333890997a8810b22882cd45f79b3"
           },
           {
-            "path": "io/mango/platform/numgen/mango-numgen-core/1.0.40/mango-numgen-core-1.0.40.jar",
+            "path": "io/mango/platform/numgen/mango-numgen-core/1.0.41/mango-numgen-core-1.0.41.jar",
             "size": 82346,
-            "sha256": "94cb4b08743c0baa486737f495f2d503b590369232a6c4962578eff0083c4a19"
+            "sha256": "f5d14ec78b698a3a3e6dd57e5d4097e595779e598e77224e72f3ef82a93a44ac"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.numgen:mango-numgen-starter-remote:1.0.40",
+        "coordinate": "io.mango.platform.numgen:mango-numgen-starter-remote:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/numgen/mango-numgen-starter-remote/1.0.40/mango-numgen-starter-remote-1.0.40.pom",
+            "path": "io/mango/platform/numgen/mango-numgen-starter-remote/1.0.41/mango-numgen-starter-remote-1.0.41.pom",
             "size": 1033,
-            "sha256": "f6511d0cfec3ae019d414c33007b1480604a674dc3f0e2cbb95be90dccc8f947"
+            "sha256": "30ee22e8971af4e4851a4cea44c036ea1e942d5f9d410c2399aec0c5e6058267"
           },
           {
-            "path": "io/mango/platform/numgen/mango-numgen-starter-remote/1.0.40/mango-numgen-starter-remote-1.0.40.jar",
+            "path": "io/mango/platform/numgen/mango-numgen-starter-remote/1.0.41/mango-numgen-starter-remote-1.0.41.jar",
             "size": 6701,
-            "sha256": "79c8f50419f75b4e354f1ba359c20e7597399baf4478c8039d61b37606032c18"
+            "sha256": "c8b6689de6ed05cfce8e5da5145729f6c09d2f678f86dce32a208c782529a7af"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.numgen:mango-numgen-starter:1.0.40",
+        "coordinate": "io.mango.platform.numgen:mango-numgen-starter:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/numgen/mango-numgen-starter/1.0.40/mango-numgen-starter-1.0.40.pom",
+            "path": "io/mango/platform/numgen/mango-numgen-starter/1.0.41/mango-numgen-starter-1.0.41.pom",
             "size": 1720,
-            "sha256": "e907e5ff68c41a049cd0cf2a46f636e25f04998bec99f31e3988b5de1693d485"
+            "sha256": "849b6067107c7f6b5583b5f63540d3030c085da660ec2768de248d24cfef3eec"
           },
           {
-            "path": "io/mango/platform/numgen/mango-numgen-starter/1.0.40/mango-numgen-starter-1.0.40.jar",
-            "size": 13635,
-            "sha256": "a33b5a8114a6cb6d2ff793f5004b3d42706843d9f164e5d5b1008b75a08e09cb"
+            "path": "io/mango/platform/numgen/mango-numgen-starter/1.0.41/mango-numgen-starter-1.0.41.jar",
+            "size": 13655,
+            "sha256": "bf9bc46d9cb096d6ea61d70031e22bbed7a4c381797bbecec9845a07b46eb892"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.numgen:mango-numgen:1.0.40",
+        "coordinate": "io.mango.platform.numgen:mango-numgen:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/numgen/mango-numgen/1.0.40/mango-numgen-1.0.40.pom",
+            "path": "io/mango/platform/numgen/mango-numgen/1.0.41/mango-numgen-1.0.41.pom",
             "size": 907,
-            "sha256": "a5394390c8ad1dcf81d47aad2c8c13e6f40b09d2a609b619dffc5ff7bb3c9204"
+            "sha256": "3c741dba39cab865248d1a220ff9a2b3bd845017e03d17204cb322b63e261f82"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.org:mango-org-core:1.0.40",
+        "coordinate": "io.mango.platform.org:mango-org-core:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/org/mango-org-core/1.0.40/mango-org-core-1.0.40.pom",
+            "path": "io/mango/platform/org/mango-org-core/1.0.41/mango-org-core-1.0.41.pom",
             "size": 2997,
-            "sha256": "13d06a71e75f1a68e73cdc68c669f618473a0c61bca39b74acc4a27695987572"
+            "sha256": "7cc77f2aa3abee223b2a69af2d287847a2e638f092edc219979fb2c58b9373ae"
           },
           {
-            "path": "io/mango/platform/org/mango-org-core/1.0.40/mango-org-core-1.0.40.jar",
-            "size": 33098,
-            "sha256": "14143b7b64b4e5462fb07a366738c8f545b3dda91d8954b0542097a6d8e17a6c"
+            "path": "io/mango/platform/org/mango-org-core/1.0.41/mango-org-core-1.0.41.jar",
+            "size": 33099,
+            "sha256": "74cfb37ec2a6be25e9f2c401198c37009462550aee74770a7f7c909d71fd9cdb"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.org:mango-org-starter-remote:1.0.40",
+        "coordinate": "io.mango.platform.org:mango-org-starter-remote:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/org/mango-org-starter-remote/1.0.40/mango-org-starter-remote-1.0.40.pom",
+            "path": "io/mango/platform/org/mango-org-starter-remote/1.0.41/mango-org-starter-remote-1.0.41.pom",
             "size": 1194,
-            "sha256": "89a2be57b8f5d892651dd056492fb4284c4d1485443358578178da5aaeadb1b3"
+            "sha256": "f5e0d56fe904246de8b9f211d21b894d14bf974575aca801b2e9865df7d59561"
           },
           {
-            "path": "io/mango/platform/org/mango-org-starter-remote/1.0.40/mango-org-starter-remote-1.0.40.jar",
-            "size": 5578,
-            "sha256": "b9d557376c39d4d12d5c8dfaf15ec682af0bf65bb7cc983ddb8d4c5865b8562c"
+            "path": "io/mango/platform/org/mango-org-starter-remote/1.0.41/mango-org-starter-remote-1.0.41.jar",
+            "size": 5579,
+            "sha256": "a226bf291b542749559d6a61900174da81ed8a97d1d8221a2787eb52eb108e7e"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.org:mango-org-starter:1.0.40",
+        "coordinate": "io.mango.platform.org:mango-org-starter:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/org/mango-org-starter/1.0.40/mango-org-starter-1.0.40.pom",
+            "path": "io/mango/platform/org/mango-org-starter/1.0.41/mango-org-starter-1.0.41.pom",
             "size": 2738,
-            "sha256": "5d5421225febeb4c2a858e34640bdcdc311324f025480aa978d960af0eeefe35"
+            "sha256": "c8f8b2a12efbd16dec4717aa6492e8c5801b14a626c87aa73c1ada87a7169c79"
           },
           {
-            "path": "io/mango/platform/org/mango-org-starter/1.0.40/mango-org-starter-1.0.40.jar",
-            "size": 25969,
-            "sha256": "32f6edd2349568fab39d1b68253407a1d0297590df2b6dd57d304e90d1bb0f30"
+            "path": "io/mango/platform/org/mango-org-starter/1.0.41/mango-org-starter-1.0.41.jar",
+            "size": 25970,
+            "sha256": "45dfdd79ab3ab8d92d9a7446bcfe10ee228a6956f199f0f8742293cd96f0343e"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.org:mango-org:1.0.40",
+        "coordinate": "io.mango.platform.org:mango-org:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/org/mango-org/1.0.40/mango-org-1.0.40.pom",
+            "path": "io/mango/platform/org/mango-org/1.0.41/mango-org-1.0.41.pom",
             "size": 926,
-            "sha256": "b87e540e26ff1b5aa0396eed41d6854bef38c9d8e0f1096728b66f65095b3942"
+            "sha256": "37897e266b78a97d5d058d741336e0e758a5a27367cdc1a4d36b49fa6f38c10a"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.payment:mango-payment-api:1.0.40",
+        "coordinate": "io.mango.platform.payment:mango-payment-api:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/payment/mango-payment-api/1.0.40/mango-payment-api-1.0.40.pom",
+            "path": "io/mango/platform/payment/mango-payment-api/1.0.41/mango-payment-api-1.0.41.pom",
             "size": 1748,
-            "sha256": "474a25cbe023393db53c2d21a3bc4a7d6b025c7e6cbe4495369adadbcfb22843"
+            "sha256": "af5f6b51d36ab8e661b649e822625d92bc73abdda6cf37f3accdd165d7c892ca"
           },
           {
-            "path": "io/mango/platform/payment/mango-payment-api/1.0.40/mango-payment-api-1.0.40.jar",
-            "size": 387176,
-            "sha256": "09806652039a0b3c7c8adb612570750fcb0c1817ac54d11b2e618e0ab37ec686"
+            "path": "io/mango/platform/payment/mango-payment-api/1.0.41/mango-payment-api-1.0.41.jar",
+            "size": 387177,
+            "sha256": "7a1f605370a3a632f213df913fda8cebbbb8dcafbb4095f4516dd4d7441a4ca6"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.workflow:mango-workflow-api:1.0.40",
+        "coordinate": "io.mango.platform.workflow:mango-workflow-api:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/workflow/mango-workflow-api/1.0.40/mango-workflow-api-1.0.40.pom",
+            "path": "io/mango/platform/workflow/mango-workflow-api/1.0.41/mango-workflow-api-1.0.41.pom",
             "size": 1576,
-            "sha256": "d17f0ad44d00dd7342bffec3f475ebfd2a0da6a595c910ea3462431374f4ff98"
+            "sha256": "85be7b0c5f55db4d2ece688480d5f50625a9c63b0b567834fe1780bbc1507bed"
           },
           {
-            "path": "io/mango/platform/workflow/mango-workflow-api/1.0.40/mango-workflow-api-1.0.40.jar",
-            "size": 219906,
-            "sha256": "f9fb49c5af147c9972dd0ccd2e517eb6a3c11c4ee96032fe4ce212d427f4dabb"
+            "path": "io/mango/platform/workflow/mango-workflow-api/1.0.41/mango-workflow-api-1.0.41.jar",
+            "size": 222498,
+            "sha256": "86408c5164131858c6812d443ad4df859c72d229f5aff51d36b4f87222cc305b"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.payment:mango-payment-core:1.0.40",
+        "coordinate": "io.mango.platform.payment:mango-payment-core:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/payment/mango-payment-core/1.0.40/mango-payment-core-1.0.40.pom",
+            "path": "io/mango/platform/payment/mango-payment-core/1.0.41/mango-payment-core-1.0.41.pom",
             "size": 4750,
-            "sha256": "b54abf0110c43034a23e6538da3d1199c8f0b2e78aaaa240c045887f95380824"
+            "sha256": "03e841161b846a526409d211d7f30c03bcbc6167ffa697adee49125d74eb48dd"
           },
           {
-            "path": "io/mango/platform/payment/mango-payment-core/1.0.40/mango-payment-core-1.0.40.jar",
-            "size": 820225,
-            "sha256": "0a3bf76c8085d3668e3765846a0f683b283e4d5de36350cd83a9eff3ee6f4dce"
+            "path": "io/mango/platform/payment/mango-payment-core/1.0.41/mango-payment-core-1.0.41.jar",
+            "size": 820224,
+            "sha256": "58d08321f77939bccdbee0fd0f5a4d4f8a961e0ced2540beb236d8f5d4bab2d5"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.payment:mango-payment-starter-remote:1.0.40",
+        "coordinate": "io.mango.platform.payment:mango-payment-starter-remote:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/payment/mango-payment-starter-remote/1.0.40/mango-payment-starter-remote-1.0.40.pom",
+            "path": "io/mango/platform/payment/mango-payment-starter-remote/1.0.41/mango-payment-starter-remote-1.0.41.pom",
             "size": 1625,
-            "sha256": "25dbe93458f793468be0d370df79591458b2409cbe5ee87c7598c7fe850e7087"
+            "sha256": "1b74e99c3ae72056ee1032039fd321c629609048bad21bd255817d85641d4fed"
           },
           {
-            "path": "io/mango/platform/payment/mango-payment-starter-remote/1.0.40/mango-payment-starter-remote-1.0.40.jar",
-            "size": 27123,
-            "sha256": "28ae433a620edb755f669488ae538fa625d910720346ddca5d527be7970e7b92"
+            "path": "io/mango/platform/payment/mango-payment-starter-remote/1.0.41/mango-payment-starter-remote-1.0.41.jar",
+            "size": 27126,
+            "sha256": "df003f415f87dd231bb80f4526711a315f64b4aa6fc687a9540fe41c5238e731"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.payment:mango-payment-starter:1.0.40",
+        "coordinate": "io.mango.platform.payment:mango-payment-starter:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/payment/mango-payment-starter/1.0.40/mango-payment-starter-1.0.40.pom",
+            "path": "io/mango/platform/payment/mango-payment-starter/1.0.41/mango-payment-starter-1.0.41.pom",
             "size": 3372,
-            "sha256": "e5147f73c504bd5e55114f5f9414f51663a1f99ce7bb3e37a30b401daaa24b6e"
+            "sha256": "da479cb05ed8f3a3d0422801d6a604389b1d79a5ee0423b4cf02ab9bab66bedb"
           },
           {
-            "path": "io/mango/platform/payment/mango-payment-starter/1.0.40/mango-payment-starter-1.0.40.jar",
-            "size": 127289,
-            "sha256": "5e9ce75e8d68185d94c1af3f695d3cfef415ee1f19ac6b7efbc0e573d0aea09e"
+            "path": "io/mango/platform/payment/mango-payment-starter/1.0.41/mango-payment-starter-1.0.41.jar",
+            "size": 127312,
+            "sha256": "4b5178129392400629d7ddc642a590578167dd84489d2063aa0a2ce3bee175a9"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.payment:mango-payment:1.0.40",
+        "coordinate": "io.mango.platform.payment:mango-payment:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/payment/mango-payment/1.0.40/mango-payment-1.0.40.pom",
+            "path": "io/mango/platform/payment/mango-payment/1.0.41/mango-payment-1.0.41.pom",
             "size": 962,
-            "sha256": "e8c948d2f1255ca30f7d3408be554855391a7f5cf0f6c1d51aeb66efaba09703"
+            "sha256": "c648a7af6405f08c1e168a1fb41ca8116801ba452a150b56dd12423eb6fc30fd"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.resource:mango-resource-core:1.0.40",
+        "coordinate": "io.mango.platform.resource:mango-resource-core:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/resource/mango-resource-core/1.0.40/mango-resource-core-1.0.40.pom",
+            "path": "io/mango/platform/resource/mango-resource-core/1.0.41/mango-resource-core-1.0.41.pom",
             "size": 4415,
-            "sha256": "ff1f873a434aa6424681ea6af2134c37e06170f87dc99f7036d910599dbf82b6"
+            "sha256": "6ad581a363526a99edf4fa8175e4ca04662d605fcc259470ed6a86b2c872ce26"
           },
           {
-            "path": "io/mango/platform/resource/mango-resource-core/1.0.40/mango-resource-core-1.0.40.jar",
-            "size": 85081,
-            "sha256": "b41d6d32e2992536ec1973a8de2db6e059b0ed74c56ab3c524028140a30da4ae"
+            "path": "io/mango/platform/resource/mango-resource-core/1.0.41/mango-resource-core-1.0.41.jar",
+            "size": 85082,
+            "sha256": "a948ddb72b00baa6c94f1aa03fa411641930333e722a6f203a767fec20b3b373"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.resource:mango-resource-starter-remote:1.0.40",
+        "coordinate": "io.mango.platform.resource:mango-resource-starter-remote:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/resource/mango-resource-starter-remote/1.0.40/mango-resource-starter-remote-1.0.40.pom",
+            "path": "io/mango/platform/resource/mango-resource-starter-remote/1.0.41/mango-resource-starter-remote-1.0.41.pom",
             "size": 2421,
-            "sha256": "f4e2134e225100d1c479630d15464da303a485fef95089faf9c461dbdb4b6100"
+            "sha256": "728e96d3b3aa11c1d5efe69e804919010fb99ad9e72754b7657bab551087a045"
           },
           {
-            "path": "io/mango/platform/resource/mango-resource-starter-remote/1.0.40/mango-resource-starter-remote-1.0.40.jar",
-            "size": 15480,
-            "sha256": "195f153753b13fbefefe3e0b04f762e49a1d91afbe2308e41069d0dfcda308d1"
+            "path": "io/mango/platform/resource/mango-resource-starter-remote/1.0.41/mango-resource-starter-remote-1.0.41.jar",
+            "size": 15481,
+            "sha256": "816b3ba239b51abe0d29d8ae960bb8e93e5d62a7dd402172dc2afaa4a2d98f15"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.resource:mango-resource-starter:1.0.40",
+        "coordinate": "io.mango.platform.resource:mango-resource-starter:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/resource/mango-resource-starter/1.0.40/mango-resource-starter-1.0.40.pom",
+            "path": "io/mango/platform/resource/mango-resource-starter/1.0.41/mango-resource-starter-1.0.41.pom",
             "size": 2348,
-            "sha256": "49da4036ec4429857a398b052aa7e0e63b865172536e921d677efcffdb13c37d"
+            "sha256": "c5abe412471f000e33d804b1fd07d2450b02b0fc80d6ad0277b4d448900ae03b"
           },
           {
-            "path": "io/mango/platform/resource/mango-resource-starter/1.0.40/mango-resource-starter-1.0.40.jar",
+            "path": "io/mango/platform/resource/mango-resource-starter/1.0.41/mango-resource-starter-1.0.41.jar",
             "size": 6996,
-            "sha256": "550364f2a63649a3821687f63a7cd7de7983f41f87a63e861dbca655d6d4c817"
+            "sha256": "06359437d4590a10cd0cee08d849df5c1c4a69cc4872f58cdce673f60f82dca1"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.resource:mango-resource-sync-starter:1.0.40",
+        "coordinate": "io.mango.platform.resource:mango-resource-sync-starter:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/resource/mango-resource-sync-starter/1.0.40/mango-resource-sync-starter-1.0.40.pom",
+            "path": "io/mango/platform/resource/mango-resource-sync-starter/1.0.41/mango-resource-sync-starter-1.0.41.pom",
             "size": 5376,
-            "sha256": "19b7b312272e471e4b2b4a6a86373d36ff966c0284273c4edb53799da4a2e31c"
+            "sha256": "6737f3f318b3b04984e763908507a4d38c303db9c1786a2786468f034e06a4aa"
           },
           {
-            "path": "io/mango/platform/resource/mango-resource-sync-starter/1.0.40/mango-resource-sync-starter-1.0.40.jar",
+            "path": "io/mango/platform/resource/mango-resource-sync-starter/1.0.41/mango-resource-sync-starter-1.0.41.jar",
             "size": 47224,
-            "sha256": "b99dd7024aa128e2f59bd110589d818ddbb9a931af557aa9608eb8f42dd7cd1d"
+            "sha256": "3fb0debb350e59d1f0fad4dbe524aaf9b2147c6048e08204450ac9b2361be809"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.resource:mango-resource:1.0.40",
+        "coordinate": "io.mango.platform.resource:mango-resource:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/resource/mango-resource/1.0.40/mango-resource-1.0.40.pom",
+            "path": "io/mango/platform/resource/mango-resource/1.0.41/mango-resource-1.0.41.pom",
             "size": 1427,
-            "sha256": "b38d538a85b5cc1c11c15706ea5476a7832f2a56ef2149bb2e9114b5ec82caba"
+            "sha256": "d707fa35ea1ba5ae674db66c92caea2a19a923070747719eadb0025809829637"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.system:mango-system-core:1.0.40",
+        "coordinate": "io.mango.platform.system:mango-system-core:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/system/mango-system-core/1.0.40/mango-system-core-1.0.40.pom",
+            "path": "io/mango/platform/system/mango-system-core/1.0.41/mango-system-core-1.0.41.pom",
             "size": 4499,
-            "sha256": "2327b856fe92385f0403db7b98f60bf491a1ef9967e3e7a4b0e3585e96970b9b"
+            "sha256": "2e76fbc255a5c006d3e788bbcf0cabd58cafa3b30f160f033c29f89504501e14"
           },
           {
-            "path": "io/mango/platform/system/mango-system-core/1.0.40/mango-system-core-1.0.40.jar",
-            "size": 133939,
-            "sha256": "e3c6b9106b0b7cc80b781924baa9fdeff2b737cca6e6fe7e87158d60f5de2ea5"
+            "path": "io/mango/platform/system/mango-system-core/1.0.41/mango-system-core-1.0.41.jar",
+            "size": 133940,
+            "sha256": "f0a0b0a85c862c11fa3d7036bbd224f8e673165d39586655b567073e45aac288"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.system:mango-system-starter:1.0.40",
+        "coordinate": "io.mango.platform.system:mango-system-starter:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/system/mango-system-starter/1.0.40/mango-system-starter-1.0.40.pom",
+            "path": "io/mango/platform/system/mango-system-starter/1.0.41/mango-system-starter-1.0.41.pom",
             "size": 2520,
-            "sha256": "049b1f8c755c5086bca432d5c1d8f14102c40014947e03c71766bede27e93599"
+            "sha256": "f90ba2846be4d00eba22c426e0aa8c92f032d3a52427b913e6fdfa0e0d521fde"
           },
           {
-            "path": "io/mango/platform/system/mango-system-starter/1.0.40/mango-system-starter-1.0.40.jar",
-            "size": 50086,
-            "sha256": "e979f14aaf13d1d32412ab22d1407c5fb9d3dde44dee76183c29d38c50de6f99"
+            "path": "io/mango/platform/system/mango-system-starter/1.0.41/mango-system-starter-1.0.41.jar",
+            "size": 50099,
+            "sha256": "d101f028347662c4b54f1bc5fbb751c814c984e4c32dfa01434cae9d00846929"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.system:mango-system:1.0.40",
+        "coordinate": "io.mango.platform.system:mango-system:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/system/mango-system/1.0.40/mango-system-1.0.40.pom",
+            "path": "io/mango/platform/system/mango-system/1.0.41/mango-system-1.0.41.pom",
             "size": 1489,
-            "sha256": "c3910b9fec4c6c4ddc605ae3d27f6cb22d371edb89f8e36df0e68eb9afe295eb"
+            "sha256": "3e2bf8996a4ed638a706a989710ad2960a03195741c37865a268d6ddffe7f53d"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.template:mango-template-api:1.0.40",
+        "coordinate": "io.mango.platform.template:mango-template-api:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/template/mango-template-api/1.0.40/mango-template-api-1.0.40.pom",
+            "path": "io/mango/platform/template/mango-template-api/1.0.41/mango-template-api-1.0.41.pom",
             "size": 1418,
-            "sha256": "736a36dec4faa897f84cd4c7c36e288047e5856a41b447fcade83593df4d4e38"
+            "sha256": "268467004cf720d88a89c54e33b9995726e0c844ad696352344d2b3d746ce0f2"
           },
           {
-            "path": "io/mango/platform/template/mango-template-api/1.0.40/mango-template-api-1.0.40.jar",
-            "size": 64791,
-            "sha256": "b5f37bcea9b22360a27442cd6f99a917e15959d72f700134fed671fdab6c8c8c"
+            "path": "io/mango/platform/template/mango-template-api/1.0.41/mango-template-api-1.0.41.jar",
+            "size": 64792,
+            "sha256": "8dd65aec7e61e1abb2cca9378787712f19d71139ce06a1e5b9d12ca13c26d04b"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.template:mango-template-core:1.0.40",
+        "coordinate": "io.mango.platform.template:mango-template-core:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/template/mango-template-core/1.0.40/mango-template-core-1.0.40.pom",
+            "path": "io/mango/platform/template/mango-template-core/1.0.41/mango-template-core-1.0.41.pom",
             "size": 3758,
-            "sha256": "17c303c0e06cc36825b5c6756a0c7b4df90dcf205f55b25b774b72b5bdb682ee"
+            "sha256": "263fbb72b07191170c819ad88dba73bb7a9e86025d252df241ba4511030f68fd"
           },
           {
-            "path": "io/mango/platform/template/mango-template-core/1.0.40/mango-template-core-1.0.40.jar",
-            "size": 70397,
-            "sha256": "6332c17fb986c5da485b8f7fe0dd411d02059f4c4a17f43964142ca79572152d"
+            "path": "io/mango/platform/template/mango-template-core/1.0.41/mango-template-core-1.0.41.jar",
+            "size": 70398,
+            "sha256": "658cc977d6a9775539619df9a74c189356e73a39d3fe09e1822d328c5255b856"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.template:mango-template-starter-remote:1.0.40",
+        "coordinate": "io.mango.platform.template:mango-template-starter-remote:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/template/mango-template-starter-remote/1.0.40/mango-template-starter-remote-1.0.40.pom",
+            "path": "io/mango/platform/template/mango-template-starter-remote/1.0.41/mango-template-starter-remote-1.0.41.pom",
             "size": 1197,
-            "sha256": "446b08495d88ba87a4b538193545c8125dcbb1691f58f047d7f726fcd39e1038"
+            "sha256": "8895e71a1218bf6c3648c2d9f73d9a6d818bab6f03467e6acd86c3cae665e54b"
           },
           {
-            "path": "io/mango/platform/template/mango-template-starter-remote/1.0.40/mango-template-starter-remote-1.0.40.jar",
+            "path": "io/mango/platform/template/mango-template-starter-remote/1.0.41/mango-template-starter-remote-1.0.41.jar",
             "size": 5464,
-            "sha256": "5231d1dd51203dba2a833c2636146513cf83700cbd49bda293e2549cc1d84ff0"
+            "sha256": "ac24d865a924c2bc593e2a42d4d3e2912df61da5ee388487bbeda5ce7327acff"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.template:mango-template-starter:1.0.40",
+        "coordinate": "io.mango.platform.template:mango-template-starter:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/template/mango-template-starter/1.0.40/mango-template-starter-1.0.40.pom",
+            "path": "io/mango/platform/template/mango-template-starter/1.0.41/mango-template-starter-1.0.41.pom",
             "size": 2559,
-            "sha256": "1ecaf95da7fc15e2b00924948e3b89580400cb91b1012f2f7f01e3704fbc03a9"
+            "sha256": "d357d0f766964aad07221b51d7c89a491c3dcc2b5828c3cec4d11e7d93eff7a3"
           },
           {
-            "path": "io/mango/platform/template/mango-template-starter/1.0.40/mango-template-starter-1.0.40.jar",
-            "size": 14611,
-            "sha256": "ebbd4776de20b60fe42c1216b211b42f97beee71989d883895220171e0ba8a5b"
+            "path": "io/mango/platform/template/mango-template-starter/1.0.41/mango-template-starter-1.0.41.jar",
+            "size": 14633,
+            "sha256": "bd50e9c74be2a41733ad5fbeab93ca3c53d318eb259d8b9bf3644e7ace4c6ada"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.template:mango-template:1.0.40",
+        "coordinate": "io.mango.platform.template:mango-template:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/template/mango-template/1.0.40/mango-template-1.0.40.pom",
+            "path": "io/mango/platform/template/mango-template/1.0.41/mango-template-1.0.41.pom",
             "size": 975,
-            "sha256": "62d2471de4aefbabf1afbe914241104a6ca4b2471a48331e14e1e07d619a3242"
+            "sha256": "1ef1c468fa13b6293cc940c0a8cb389aeccd805d7ab67bb565860b8bb351b636"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.workflow:mango-workflow-core:1.0.40",
+        "coordinate": "io.mango.platform.workflow:mango-workflow-core:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/workflow/mango-workflow-core/1.0.40/mango-workflow-core-1.0.40.pom",
+            "path": "io/mango/platform/workflow/mango-workflow-core/1.0.41/mango-workflow-core-1.0.41.pom",
             "size": 3785,
-            "sha256": "8b193f9922f6cadcd0f46676a99c3cdf2e0ed9cee757b7998b0c5c27e7fc7875"
+            "sha256": "2a31f04fceeddfd45e47b93f37e84694dc40843ceab225b102c8686c4b33f95c"
           },
           {
-            "path": "io/mango/platform/workflow/mango-workflow-core/1.0.40/mango-workflow-core-1.0.40.jar",
-            "size": 286331,
-            "sha256": "5532b3b9393209aa6fe66f03ee757011e2cfb2c7005743b7476f499680aa48bb"
+            "path": "io/mango/platform/workflow/mango-workflow-core/1.0.41/mango-workflow-core-1.0.41.jar",
+            "size": 289721,
+            "sha256": "ec812993583e382372b65037835d48f6f4bcf09888c2f08d999913a72332fc1b"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.workflow:mango-workflow-starter-remote:1.0.40",
+        "coordinate": "io.mango.platform.workflow:mango-workflow-starter-remote:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/workflow/mango-workflow-starter-remote/1.0.40/mango-workflow-starter-remote-1.0.40.pom",
+            "path": "io/mango/platform/workflow/mango-workflow-starter-remote/1.0.41/mango-workflow-starter-remote-1.0.41.pom",
             "size": 1495,
-            "sha256": "9006bc37d620e7aa4db9b472771f9bef03062a276362973b3820e75803e4e20c"
+            "sha256": "d8f53ded1c257cc022e65a880dbe51a88054cd17b627acbbaa39aba01bd3fe24"
           },
           {
-            "path": "io/mango/platform/workflow/mango-workflow-starter-remote/1.0.40/mango-workflow-starter-remote-1.0.40.jar",
+            "path": "io/mango/platform/workflow/mango-workflow-starter-remote/1.0.41/mango-workflow-starter-remote-1.0.41.jar",
             "size": 7421,
-            "sha256": "cafb9fffb341092b9ea81690d5b89661693961c894fed0c24bdf0260ff0f2ab5"
+            "sha256": "5cb0d25fefd6ad8de9c903aca68f5306e57e7e1205489872a611376cba8cc249"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.workflow:mango-workflow-starter:1.0.40",
+        "coordinate": "io.mango.platform.workflow:mango-workflow-starter:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/workflow/mango-workflow-starter/1.0.40/mango-workflow-starter-1.0.40.pom",
+            "path": "io/mango/platform/workflow/mango-workflow-starter/1.0.41/mango-workflow-starter-1.0.41.pom",
             "size": 3318,
-            "sha256": "2d463b27e1abc1bdf0994e095519c8de1165a32f843024074323d0f232c4fd37"
+            "sha256": "80b3d3fcad5cad4a351a48944795a161170abd5e56d29dd0dab937c2d68b3957"
           },
           {
-            "path": "io/mango/platform/workflow/mango-workflow-starter/1.0.40/mango-workflow-starter-1.0.40.jar",
-            "size": 49496,
-            "sha256": "6a5174cd4ac399a440cb7f5cf114c1990e274d435764fc9682c6bdb6bb5f19b2"
+            "path": "io/mango/platform/workflow/mango-workflow-starter/1.0.41/mango-workflow-starter-1.0.41.jar",
+            "size": 49584,
+            "sha256": "e2b7404009c8aac040c3cb54baca69b53b43f521a49bef348d3331d2188d2cc5"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform.workflow:mango-workflow:1.0.40",
+        "coordinate": "io.mango.platform.workflow:mango-workflow:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/workflow/mango-workflow/1.0.40/mango-workflow-1.0.40.pom",
+            "path": "io/mango/platform/workflow/mango-workflow/1.0.41/mango-workflow-1.0.41.pom",
             "size": 904,
-            "sha256": "a7fbf124041195eb9708c28ff169d47a59a31b4fc01b527e2b415b068e6ca316"
+            "sha256": "b8b42092d24ea10b2a95dd94d5ce4940e3410b692bf53de6d50475194fc13fc8"
           }
         ]
       },
       {
-        "coordinate": "io.mango.platform:mango-platform:1.0.40",
+        "coordinate": "io.mango.platform:mango-platform:1.0.41",
         "files": [
           {
-            "path": "io/mango/platform/mango-platform/1.0.40/mango-platform-1.0.40.pom",
+            "path": "io/mango/platform/mango-platform/1.0.41/mango-platform-1.0.41.pom",
             "size": 1625,
-            "sha256": "b4bf2b785a3672d949d84523391db195fa2e1608abc2d33011536a82db179c1e"
+            "sha256": "333666927002ef3ce689feab44b02fc5de633f02f24e349cb2b306ece6b2d075"
           }
         ]
       },
       {
-        "coordinate": "io.mango.tools:mango-architecture-rules:1.0.40",
+        "coordinate": "io.mango.tools:mango-architecture-rules:1.0.41",
         "files": [
           {
-            "path": "io/mango/tools/mango-architecture-rules/1.0.40/mango-architecture-rules-1.0.40.pom",
+            "path": "io/mango/tools/mango-architecture-rules/1.0.41/mango-architecture-rules-1.0.41.pom",
             "size": 3213,
-            "sha256": "431bbb3374e93af6f994b366947bbb298295294d818fcdae0b90e0dd3819918e"
+            "sha256": "7af66a40c36d6cdacf54e76fcbd41dfc592dd31e95c26e3a123bbd314b98ccca"
           },
           {
-            "path": "io/mango/tools/mango-architecture-rules/1.0.40/mango-architecture-rules-1.0.40.jar",
-            "size": 87744,
-            "sha256": "22afcfcb6238afd42ab09cb9eb0196f86713b8d045ddd813499f01136d12c387"
+            "path": "io/mango/tools/mango-architecture-rules/1.0.41/mango-architecture-rules-1.0.41.jar",
+            "size": 87746,
+            "sha256": "6f0def22148a403122d7c354c2bb2d416c4620a717a6a779a4db87a6939af333"
           }
         ]
       },
       {
-        "coordinate": "io.mango.tools.maven.plugin:mango-maven-plugin:1.0.40",
+        "coordinate": "io.mango.tools.maven.plugin:mango-maven-plugin:1.0.41",
         "files": [
           {
-            "path": "io/mango/tools/maven/plugin/mango-maven-plugin/1.0.40/mango-maven-plugin-1.0.40.pom",
+            "path": "io/mango/tools/maven/plugin/mango-maven-plugin/1.0.41/mango-maven-plugin-1.0.41.pom",
             "size": 9842,
-            "sha256": "433afa09883a939f176077079d7185882f06ffbbfd637d23007874c065d7b8ae"
+            "sha256": "abf8c6fc226c323f14e727c80ac071e979655e615e45c3624f122b1254d7ae83"
           },
           {
-            "path": "io/mango/tools/maven/plugin/mango-maven-plugin/1.0.40/mango-maven-plugin-1.0.40.jar",
-            "size": 324933,
-            "sha256": "380e9d6a5c658a8dced1efc92df9ae86953f3ad7ab6bed07c3c8226c1e6aa706"
+            "path": "io/mango/tools/maven/plugin/mango-maven-plugin/1.0.41/mango-maven-plugin-1.0.41.jar",
+            "size": 324931,
+            "sha256": "44ee1fb8fa338599dbdff9f302d70622e9eae627926d90314e252cea701a6854"
           }
         ]
       },
       {
-        "coordinate": "io.mango.tools:mango-architecture-verification:1.0.40",
+        "coordinate": "io.mango.tools:mango-architecture-verification:1.0.41",
         "files": [
           {
-            "path": "io/mango/tools/mango-architecture-verification/1.0.40/mango-architecture-verification-1.0.40.pom",
+            "path": "io/mango/tools/mango-architecture-verification/1.0.41/mango-architecture-verification-1.0.41.pom",
             "size": 5014,
-            "sha256": "6c287679b53bea75bb541083d8db352d3662da536f1708c67781be4ff04dbd02"
+            "sha256": "8f2b5d964a61a0b989245519a6f7c4fb8d034eab998bf8335cf60182058518cf"
           }
         ]
       },
       {
-        "coordinate": "io.mango.tools:mango-tools:1.0.40",
+        "coordinate": "io.mango.tools:mango-tools:1.0.41",
         "files": [
           {
-            "path": "io/mango/tools/mango-tools/1.0.40/mango-tools-1.0.40.pom",
+            "path": "io/mango/tools/mango-tools/1.0.41/mango-tools-1.0.41.pom",
             "size": 1006,
-            "sha256": "2bd3271b767c1d73d2d70fe2761efa55847af3d4680b5292331b6b6bfdedaf7b"
+            "sha256": "3628429da61e9ae1b582f785b8c73980b95934ec5dfa56db6e884e35357b77b0"
           }
         ]
       },
       {
-        "coordinate": "io.mango:mango-admin-starter:1.0.40",
+        "coordinate": "io.mango:mango-admin-starter:1.0.41",
         "files": [
           {
-            "path": "io/mango/mango-admin-starter/1.0.40/mango-admin-starter-1.0.40.pom",
+            "path": "io/mango/mango-admin-starter/1.0.41/mango-admin-starter-1.0.41.pom",
             "size": 6554,
-            "sha256": "5444de4025b3c69bbde71a8cd793efe847139cdc4c483e5f0c9cc3c7fbbd0876"
+            "sha256": "9742174b8ae6b0275ca906c1c3282bc02077f2aca1df940bc403d0fbcad6fdd2"
           },
           {
-            "path": "io/mango/mango-admin-starter/1.0.40/mango-admin-starter-1.0.40.jar",
-            "size": 2226,
-            "sha256": "afc83355919400acc05089ff2d29f22f3392008347c252d538ea78f2bc52cc7c"
+            "path": "io/mango/mango-admin-starter/1.0.41/mango-admin-starter-1.0.41.jar",
+            "size": 2227,
+            "sha256": "4c9488829e97db208ea5dd459e20d9dce4873c7ebd3e57d3851f40f54e579b2f"
           }
         ]
       },
       {
-        "coordinate": "io.mango:mango-bom:1.0.40",
+        "coordinate": "io.mango:mango-bom:1.0.41",
         "files": [
           {
-            "path": "io/mango/mango-bom/1.0.40/mango-bom-1.0.40.pom",
+            "path": "io/mango/mango-bom/1.0.41/mango-bom-1.0.41.pom",
             "size": 63143,
-            "sha256": "8b3009e56dfda53b18e8ddb6d4d2ab376457ed890d97733bf1a7bf79784dae51"
+            "sha256": "9d5a66e67fc89a18f280adb65cd9962d099ab4e4cf610e6b72c7b49b9e3ee28f"
           }
         ]
       },
       {
-        "coordinate": "io.mango:mango-docs-bundle:1.0.40",
+        "coordinate": "io.mango:mango-docs-bundle:1.0.41",
         "files": [
           {
-            "path": "io/mango/mango-docs-bundle/1.0.40/mango-docs-bundle-1.0.40.pom",
+            "path": "io/mango/mango-docs-bundle/1.0.41/mango-docs-bundle-1.0.41.pom",
             "size": 400,
-            "sha256": "5d369bf4920cebfbe86192afe22a60f6a149aa7253a910f30dc213401065b34a"
+            "sha256": "1ffd7772033011e0ad024c2c8637ebabea4c376a872b938a6e36628e7f0dcfff"
           },
           {
-            "path": "io/mango/mango-docs-bundle/1.0.40/mango-docs-bundle-1.0.40.jar",
-            "size": 211003780,
-            "sha256": "d15bbf35f848860d1e0e57fb7870bfd8f7c4c6c160c4be08039723ff14e1283d"
+            "path": "io/mango/mango-docs-bundle/1.0.41/mango-docs-bundle-1.0.41.jar",
+            "size": 211007033,
+            "sha256": "607ad97381aa7bb1c2ee81d3b5ed43703607f1ffcf71f4feb0e96f857a412381"
           }
         ]
       },
       {
-        "coordinate": "io.mango:mango-parent:1.0.40",
+        "coordinate": "io.mango:mango-parent:1.0.41",
         "files": [
           {
-            "path": "io/mango/mango-parent/1.0.40/mango-parent-1.0.40.pom",
+            "path": "io/mango/mango-parent/1.0.41/mango-parent-1.0.41.pom",
             "size": 8727,
-            "sha256": "ff4bc2eada56ee054c1ee58cdcacfd88c71f80ac608dd05c2b708246fed0a9ca"
+            "sha256": "c18f67c1e8a947e31c8058b8afde0f93c4b0c5c8cc675300dd68bde098fcd7fb"
           }
         ]
       },
       {
-        "coordinate": "io.mango:mango:1.0.40",
+        "coordinate": "io.mango:mango:1.0.41",
         "files": [
           {
-            "path": "io/mango/mango/1.0.40/mango-1.0.40.pom",
+            "path": "io/mango/mango/1.0.41/mango-1.0.41.pom",
             "size": 55994,
-            "sha256": "23668f2609c9158c7e5c29e1ece4191b2e42489026bb1d181652ffbacf8bb42a"
+            "sha256": "864e23465d4685154391abfd865a6dc13e2ff67ef636187fcfc9b96521b229da"
           }
         ]
       }

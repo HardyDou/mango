@@ -13,7 +13,7 @@
 
 ## v2026.08.27-maven-1.0.41-workflow-resource-release - 2026-08-27
 
-Status: `PENDING`. Publication, registry verification, Tag and GitHub Release remain deferred until the prepared Release PR is merged and the sealed candidate passes pure consume-registry verification.
+Status: `PUBLISHED_AND_VERIFIED`. Canonical manifest SHA-256 `71b74be938f4b0b7c27c1dd0d4baae595d8ea402a43d868f6b75e698082919c6` for plan `748025ecf10314bb44cd42a2e51faec7cbebde1b1d51dcb890dced6ec266d92c` and prepared candidate `ae9058056f54ff6b46a828e25db7bbfbf58ee1213589bc96fe7680ef1fb7a8b5` is `COMPLETED`: all 192 Maven/docs coordinates and `@mango/cli@1.2.1` match the sealed candidate in both publish and consume registries, the pure consume-registry consumer passed, and Tag plus GitHub Release are `CREATED_AND_VERIFIED`.
 
 ### Pull Requests
 
