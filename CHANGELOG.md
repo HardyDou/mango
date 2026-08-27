@@ -4,13 +4,82 @@
 
 ### Fixed
 
-- Preserve the complete accumulated Maven evidence when an npm-only release writes the next successful baseline, and verify the carried coordinates and checksums before accepting the completed plan.
-- Anchor a successful prepared release baseline to a tree-identical squash commit on the candidate's first-parent history, so the next plan retains exact release state without weakening ancestry checks.
+- Reuse the Workflow business data-permission contract when reading business-apply records, including declared workflow codes, tenant boundaries and custom provider checks.
+- Load Resource declaration `moduleDependencies` from JSON or YAML envelopes so cross-module menus wait for their owning module bootstrap dependencies.
 
 ### Changed
 
-- Run the release plan gate whenever a PR changes `release-plan.json` or `release-baseline.json`.
-- Fail release planning, preparation, publication, recovery, status and registry diagnostics before plan, lock or registry access when the active Node runtime does not satisfy the repository engine.
+- Advance the generated CLI compatibility matrix from Mango Maven `1.0.40` to `1.0.41`; PMO remains `1.4.2`.
+
+## v2026.08.27-maven-1.0.41-workflow-resource-release - 2026-08-27
+
+Status: `PENDING`. Publication, registry verification, Tag and GitHub Release remain deferred until the prepared Release PR is merged and the sealed candidate passes pure consume-registry verification.
+
+### Pull Requests
+
+- [PR #872](https://github.com/HardyDou/mango/pull/872) Fixed Workflow business-apply reads to reuse the declared business data-permission contract. Packages: Mango Maven `1.0.41`, `io.mango:mango-docs-bundle:1.0.41`, `@mango/cli@1.2.1`. Business Adaptation: declare the workflow code and provide a custom data-permission provider when the default creator/assignee/handled-user policy is insufficient.
+- [PR #873](https://github.com/HardyDou/mango/pull/873) Fixed Resource cross-module menu bootstrap ordering by loading module dependencies from declaration envelopes. Packages: Mango Maven `1.0.41`, `io.mango:mango-docs-bundle:1.0.41`, `@mango/cli@1.2.1`. Business Adaptation: aggregate consumers receive the built-in menu dependencies automatically; direct Resource declarations may use `moduleDependencies` in JSON or `module-dependencies` in YAML.
+
+### Fixed
+
+- Apply the Workflow business data-permission contract consistently to business-apply detail reads and preserve workflow-code identity for reusable provider selection.
+- Load and validate Resource declaration module dependencies before topological bootstrap, including consistency checks across multiple files in one module.
+
+### Changed
+
+- Declare cross-module menu prerequisites for the built-in platform Resource manifests.
+- Advance the generated CLI Maven compatibility matrix to `1.0.41`; PMO and its Skill bundle remain at `1.4.2`.
+
+### Versions
+
+- Mango Maven non-application reactor and `io.mango:mango-docs-bundle`: `1.0.40` to `1.0.41`.
+- `@mango/cli`: `1.2.0` to `1.2.1`.
+- `@mango/pmo` remains `1.4.2`; all other npm coordinates remain at the successful `1.0.40` baseline versions and are not republished.
+
+### Published Packages
+
+1. Mango Maven `--all-non-app` Catalog batch at `1.0.41`, followed by `io.mango:mango-docs-bundle:1.0.41`; application and capability-app fat JARs are excluded.
+2. `@mango/cli@1.2.1` after the Maven/docs batch.
+3. Tag and GitHub Release `v2026.08.27-maven-1.0.41-workflow-resource-release` only after immutable registry and clean-consumer verification.
+
+### Business Impact
+
+- Workflow consumers receive tenant-scoped business-apply read authorization through the default creator/assignee/handled-user policy or a workflow-code-specific custom provider.
+- Resource Bootstrap honors declaration-level module dependencies and fails before handler execution on missing, cyclic or conflicting dependencies.
+- There is no database schema migration, application deployment, traffic change, automatic permission grant or application fat-JAR publication.
+
+### Upgrade Estimate
+
+- Audience: Mango platform maintainers, generated applications, and direct Workflow or Resource consumers.
+- Engineering Effort: 30 to 90 minutes for generated aggregate consumers; 1 to 3 hours for direct consumers with custom permission providers or Resource declarations.
+- Execution Window: 1 to 3 hours including dependency upgrade, clean build and focused authorization/bootstrap regression.
+- Service Downtime: no framework-mandated downtime; applications may use their normal restart window.
+- Rollback Effort: 15 to 45 minutes to restore Maven `1.0.40` and CLI `1.2.0`.
+- Assumptions: Node `22.23.1`, Java 21, clean locks, configured registries and representative tenant users.
+
+### Upgrade Notes
+
+1. Upgrade the Maven BOM and non-application platform tuple to `1.0.41`; generated projects should use `@mango/cli@1.2.1` with PMO `1.4.2`.
+2. Custom Workflow visibility must declare a stable workflow code and register a matching `WorkflowBusinessApplyDataPermissionProvider`.
+3. Direct Resource declarations may add `moduleDependencies` in JSON or `module-dependencies` in YAML; repeated lists for one module must remain identical.
+4. Verify allowed and denied tenant users plus successful cross-module menu finalization before application adoption.
+
+### Verification
+
+- Require Catalog, Git impact, release plan, release notes, capability documentation and local release checks under Node `22.23.1`.
+- Seal the complete Maven/docs batch and CLI tarball once, require protected checks on the exact prepared tree, and prove the merged tree is identical before publication.
+- Verify both registry roles, an aggregate Maven consumer and a clean pure consume-registry generated consumer before Tag or GitHub Release creation.
+
+### Rollback
+
+- Restore Maven `1.0.40` and `@mango/cli@1.2.0`; PMO can remain at compatible `1.4.2`.
+- Never overwrite immutable coordinates. For partial or ambiguous publication, retain the same prepared candidate and use `status` then authorized `repair`.
+
+### Audit History
+
+- PR #868 and PR #869 belong to the completed `1.0.40` baseline and are not release-bearing changes in this batch.
+- Initial local candidate `6b2e59d29dd3af06336413b38fbb7e9357d4251b4d835f34c26ac5c301ce7ab2` reached `READY` but failed the final governance suite before any remote write because the Workflow business guide duplicated long-term rule wording. The replacement source links the PMO rule source instead.
+- The previous Tag and Release `v2026.08.26-maven-1.0.40-ai-resource-platform-release` remain unchanged.
 
 ## v2026.08.26-maven-1.0.40-ai-resource-platform-release - 2026-08-26
 
