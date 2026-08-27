@@ -1,5 +1,7 @@
 package io.mango.workflow.api;
 
+import io.mango.workflow.api.vo.WorkflowBusinessApplyAccessVO;
+
 /**
  * 业务模块提供的 Workflow 业务申请数据权限扩展点。
  * <p>
@@ -22,5 +24,5 @@ public interface WorkflowBusinessApplyDataPermissionProvider {
      * @param context 由 Workflow 数据库事实构造的上下文。
      * @return 是否允许读取。
      */
-    boolean canRead(WorkflowBusinessApplyAccessContext context);
+    boolean canRead(WorkflowBusinessApplyAccessVO context);
 }

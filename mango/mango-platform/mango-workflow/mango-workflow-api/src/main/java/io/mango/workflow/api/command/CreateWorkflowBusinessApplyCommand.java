@@ -1,12 +1,11 @@
 package io.mango.workflow.api.command;
 
-import jakarta.validation.constraints.NotNull;
 import io.mango.workflow.api.validation.WorkflowOptionalValidation;
-
-
 import io.mango.workflow.api.enums.WorkflowApplyRenderMode;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
@@ -43,6 +42,7 @@ public class CreateWorkflowBusinessApplyCommand {
     private String applySummary;
 
     @Schema(description = "申请人所属组织ID；业务模块有明确组织事实时传入")
+    @Positive(message = "申请人所属组织ID必须为正数")
     private Long applicantDeptId;
 
     @Schema(description = "Mango流程定义ID")

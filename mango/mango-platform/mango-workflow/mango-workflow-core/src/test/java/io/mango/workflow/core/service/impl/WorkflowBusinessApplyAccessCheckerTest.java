@@ -4,8 +4,8 @@ import io.mango.common.exception.BizException;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.workflow.api.WorkflowBusinessApplyDataPermissionProvider;
-import io.mango.workflow.api.WorkflowBusinessApplyAccessContext;
 import io.mango.workflow.api.enums.WorkflowCode;
+import io.mango.workflow.api.vo.WorkflowBusinessApplyAccessVO;
 import io.mango.workflow.core.entity.WorkflowBusinessApplyEntity;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -33,7 +33,7 @@ class WorkflowBusinessApplyAccessCheckerTest {
         WorkflowBusinessApplyDataPermissionProvider provider = mock();
         when(providers.orderedStream()).thenReturn(Stream.of(provider));
         when(provider.supports("GUARANTEE")).thenReturn(true);
-        when(provider.canRead(org.mockito.ArgumentMatchers.any(WorkflowBusinessApplyAccessContext.class)))
+        when(provider.canRead(org.mockito.ArgumentMatchers.any(WorkflowBusinessApplyAccessVO.class)))
                 .thenReturn(false);
         WorkflowBusinessApplyEntity apply = apply("GUARANTEE", "B-1", 1L, 1001L);
         MangoContextHolder.set(MangoContextSnapshot.empty().withSecurity(

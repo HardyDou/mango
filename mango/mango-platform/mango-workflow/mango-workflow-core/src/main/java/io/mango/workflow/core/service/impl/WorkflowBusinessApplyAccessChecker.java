@@ -2,9 +2,9 @@ package io.mango.workflow.core.service.impl;
 
 import io.mango.common.result.Require;
 import io.mango.infra.context.api.MangoContextHolder;
-import io.mango.workflow.api.WorkflowBusinessApplyAccessContext;
 import io.mango.workflow.api.WorkflowBusinessApplyDataPermissionProvider;
 import io.mango.workflow.api.enums.WorkflowCode;
+import io.mango.workflow.api.vo.WorkflowBusinessApplyAccessVO;
 import io.mango.workflow.core.entity.WorkflowBusinessApplyEntity;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Component;
@@ -39,13 +39,13 @@ public class WorkflowBusinessApplyAccessChecker {
         if (apply == null) {
             return false;
         }
-        WorkflowBusinessApplyAccessContext context = contextOf(apply);
+        WorkflowBusinessApplyAccessVO context = contextOf(apply);
         String currentTenant = normalize(MangoContextHolder.tenantId());
-        if (!StringUtils.hasText(currentTenant) || !StringUtils.hasText(context.tenantId())
-                || !currentTenant.equals(context.tenantId())) {
+        if (!StringUtils.hasText(currentTenant) || !StringUtils.hasText(context.getTenantId())
+                || !currentTenant.equals(context.getTenantId())) {
             return false;
         }
-        String businessType = context.businessType();
+        String businessType = context.getBusinessType();
         List<WorkflowBusinessApplyDataPermissionProvider> matched = providers.orderedStream()
                 .filter(provider -> supports(provider, businessType))
                 .toList();
@@ -56,8 +56,8 @@ public class WorkflowBusinessApplyAccessChecker {
     }
 
     /** 从 Workflow 持久化事实构造不可伪造的权限上下文。 */
-    public WorkflowBusinessApplyAccessContext contextOf(WorkflowBusinessApplyEntity apply) {
-        return new WorkflowBusinessApplyAccessContext(
+    public WorkflowBusinessApplyAccessVO contextOf(WorkflowBusinessApplyEntity apply) {
+        return new WorkflowBusinessApplyAccessVO(
                 apply.getId(),
                 apply.getProcessInstanceId(),
                 normalize(apply.getBusinessType()),
@@ -71,12 +71,12 @@ public class WorkflowBusinessApplyAccessChecker {
         return provider != null && provider.supports(businessType);
     }
 
-    private boolean defaultOwnerTenantCheck(WorkflowBusinessApplyAccessContext context) {
+    private boolean defaultOwnerTenantCheck(WorkflowBusinessApplyAccessVO context) {
         Long currentUser = MangoContextHolder.userId();
         if (currentUser == null) {
             return false;
         }
-        return currentUser.equals(context.applicantId());
+        return currentUser.equals(context.getApplicantId());
     }
 
     private String normalize(String value) {

@@ -32,7 +32,7 @@
 
 | ID | 决定 | 影响路径 |
 |---|---|---|
-| DEC-001 | 新增 `WorkflowBusinessApplyDataPermissionProvider` 和 `WorkflowBusinessApplyAccessContext`；Workflow 不直接访问业务表 | `mango-workflow-api` |
+| DEC-001 | 新增 `WorkflowBusinessApplyDataPermissionProvider` 和 `WorkflowBusinessApplyAccessVO`；Workflow 不直接访问业务表 | `mango-workflow-api` |
 | DEC-002 | 新增统一 Checker；匹配 Provider 任一允许即通过，无 Provider 时仅允许当前租户申请人 | `mango-workflow-core` |
 | DEC-003 | 用户态读取接口改为 LOGIN，由服务层统一校验；批量接口过滤未授权记录 | `WorkflowBusinessApplyController`、`WorkflowBusinessApplyService` |
 | DEC-004 | 业务申请创建时保存 `applicantDeptId`，作为组织事实传给 Provider | `CreateWorkflowBusinessApplyCommand`、申请实体 |

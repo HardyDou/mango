@@ -105,15 +105,15 @@ public final class GuaranteeWorkflowDataPermissionProvider
         return "GUARANTEE".equals(businessType);
     }
 
-    public boolean canRead(WorkflowBusinessApplyAccessContext context) {
+    public boolean canRead(WorkflowBusinessApplyAccessVO context) {
         // 在保函业务表校验当前用户的 owner、组织和租户范围。
-        return guaranteeQuery.canRead(context.businessKey(), context.tenantId(),
-                context.orgId(), MangoContextHolder.userId());
+        return guaranteeQuery.canRead(context.getBusinessKey(), context.getTenantId(),
+                context.getOrgId(), MangoContextHolder.userId());
     }
 }
 ```
 
-Workflow 只根据 `workflow_business_apply` 的持久化事实构造 `WorkflowBusinessApplyAccessContext`，不会直接访问业务表，也不信任请求参数中的租户或 owner。匹配的 Provider 均拒绝或缺少安全的租户/申请人上下文时，接口返回 `WorkflowCode.APPLY_ACCESS_DENIED`（HTTP/Java/Feign 语义一致）；批量进度接口会过滤无权记录。内部事件链路使用 `findByProcessInstance`，不套用用户态校验。
+Workflow 只根据 `workflow_business_apply` 的持久化事实构造 `WorkflowBusinessApplyAccessVO`，不会直接访问业务表，也不信任请求参数中的租户或 owner。匹配的 Provider 均拒绝或缺少安全的租户/申请人上下文时，接口返回 `WorkflowCode.APPLY_ACCESS_DENIED`（HTTP/Java/Feign 语义一致）；批量进度接口会过滤无权记录。内部事件链路使用 `findByProcessInstance`，不套用用户态校验。
 
 创建申请字段：
 
