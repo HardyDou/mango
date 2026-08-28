@@ -32,7 +32,17 @@ public class IdentityUserApiWorkflowAssigneeIdentityProvider implements IWorkflo
         if (identityUserApi == null || assigneeKeys == null || assigneeKeys.isEmpty()) {
             return Map.of();
         }
-        IdentityUserBatchQuery query = new IdentityUserBatchQuery();
+        R<List<IdentityUserInfoVO>> response = identityUserApi.listUserInfos(buildQuery(assigneeKeys));
+        if (response == null || !response.isSuccess() || response.getData() == null) {
+            return Map.of();
+        }
+        Map<Long, IdentityUserInfoVO> byId = new LinkedHashMap<>();
+        Map<String, IdentityUserInfoVO> byUsername = new LinkedHashMap<>();
+        indexUsers(response.getData(), byId, byUsername);
+        return resolveIdentities(assigneeKeys, byId, byUsername);
+    }
+
+    private IdentityUserBatchQuery buildQuery(Collection<String> assigneeKeys) {
         List<Long> userIds = new ArrayList<>();
         List<String> usernames = new ArrayList<>();
         for (String assigneeKey : assigneeKeys) {
@@ -46,15 +56,16 @@ public class IdentityUserApiWorkflowAssigneeIdentityProvider implements IWorkflo
                 userIds.add(userId);
             }
         }
+        IdentityUserBatchQuery query = new IdentityUserBatchQuery();
         query.setUserIds(userIds);
         query.setUsernames(usernames);
-        R<List<IdentityUserInfoVO>> response = identityUserApi.listUserInfos(query);
-        if (response == null || !response.isSuccess() || response.getData() == null) {
-            return Map.of();
-        }
-        Map<Long, IdentityUserInfoVO> byId = new LinkedHashMap<>();
-        Map<String, IdentityUserInfoVO> byUsername = new LinkedHashMap<>();
-        for (IdentityUserInfoVO user : response.getData()) {
+        return query;
+    }
+
+    private void indexUsers(List<IdentityUserInfoVO> users,
+                            Map<Long, IdentityUserInfoVO> byId,
+                            Map<String, IdentityUserInfoVO> byUsername) {
+        for (IdentityUserInfoVO user : users) {
             if (user == null) {
                 continue;
             }
@@ -65,6 +76,12 @@ public class IdentityUserApiWorkflowAssigneeIdentityProvider implements IWorkflo
                 byUsername.putIfAbsent(user.getUsername(), user);
             }
         }
+    }
+
+    private Map<String, WorkflowAssigneeIdentity> resolveIdentities(
+            Collection<String> assigneeKeys,
+            Map<Long, IdentityUserInfoVO> byId,
+            Map<String, IdentityUserInfoVO> byUsername) {
         Map<String, WorkflowAssigneeIdentity> result = new LinkedHashMap<>();
         for (String assigneeKey : assigneeKeys) {
             if (!StringUtils.hasText(assigneeKey)) {

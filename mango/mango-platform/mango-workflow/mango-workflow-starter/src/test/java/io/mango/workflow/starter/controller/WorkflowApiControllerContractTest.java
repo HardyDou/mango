@@ -26,6 +26,7 @@ import io.mango.workflow.core.service.IWorkflowProcessService;
 import io.mango.workflow.core.service.IWorkflowTaskRuntimeService;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -52,6 +53,25 @@ class WorkflowApiControllerContractTest {
         assertThat(processController).isInstanceOf(WorkflowProcessApi.class);
         assertThat(businessProcessController).isInstanceOf(WorkflowBusinessProcessApi.class);
         assertThat(taskController).isInstanceOf(WorkflowTaskRuntimeApi.class);
+    }
+
+    @Test
+    void taskCandidatesShouldBeDefensivelyCopied() {
+        List<String> candidateUsers = new ArrayList<>(List.of("admin"));
+        List<String> candidateGroups = new ArrayList<>(List.of("reviewers"));
+        WorkflowTaskVO task = new WorkflowTaskVO();
+
+        task.setCandidateUsers(candidateUsers);
+        task.setCandidateGroups(candidateGroups);
+        candidateUsers.add("operator");
+        candidateGroups.add("auditors");
+
+        assertThat(task.getCandidateUsers()).containsExactly("admin");
+        assertThat(task.getCandidateGroups()).containsExactly("reviewers");
+        task.getCandidateUsers().add("manager");
+        task.getCandidateGroups().add("managers");
+        assertThat(task.getCandidateUsers()).containsExactly("admin");
+        assertThat(task.getCandidateGroups()).containsExactly("reviewers");
     }
 
     @Test

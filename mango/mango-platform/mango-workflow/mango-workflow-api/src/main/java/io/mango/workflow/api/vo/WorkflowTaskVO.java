@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -73,4 +74,20 @@ public class WorkflowTaskVO {
 
     @Schema(description = "结束时间")
     private LocalDateTime endTime;
+
+    public List<String> getCandidateUsers() {
+        return candidateUsers == null ? null : new ArrayList<>(candidateUsers);
+    }
+
+    public void setCandidateUsers(List<String> candidateUsers) {
+        this.candidateUsers = candidateUsers == null ? null : new ArrayList<>(candidateUsers);
+    }
+
+    public List<String> getCandidateGroups() {
+        return candidateGroups == null ? null : new ArrayList<>(candidateGroups);
+    }
+
+    public void setCandidateGroups(List<String> candidateGroups) {
+        this.candidateGroups = candidateGroups == null ? null : new ArrayList<>(candidateGroups);
+    }
 }

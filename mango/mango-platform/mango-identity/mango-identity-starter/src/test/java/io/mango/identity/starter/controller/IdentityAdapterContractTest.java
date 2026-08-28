@@ -17,7 +17,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -60,6 +62,25 @@ class IdentityAdapterContractTest {
         assertThat(access).isNotNull();
         assertThat(access.mode()).isEqualTo(ApiResourceAccessMode.LOGIN);
         assertThat(access.permission()).isBlank();
+    }
+
+    @Test
+    void batchIdentityQueryShouldDefensivelyCopyIdentifiers() {
+        List<Long> userIds = new ArrayList<>(List.of(1001L));
+        List<String> usernames = new ArrayList<>(List.of("admin"));
+        IdentityUserBatchQuery query = new IdentityUserBatchQuery();
+
+        query.setUserIds(userIds);
+        query.setUsernames(usernames);
+        userIds.add(1002L);
+        usernames.add("reviewer");
+
+        assertThat(query.getUserIds()).containsExactly(1001L);
+        assertThat(query.getUsernames()).containsExactly("admin");
+        query.getUserIds().add(1003L);
+        query.getUsernames().add("operator");
+        assertThat(query.getUserIds()).containsExactly(1001L);
+        assertThat(query.getUsernames()).containsExactly("admin");
     }
 
     private void assertAdapterContract(Class<?> api, Class<?> controller, Class<?> feignClient) {

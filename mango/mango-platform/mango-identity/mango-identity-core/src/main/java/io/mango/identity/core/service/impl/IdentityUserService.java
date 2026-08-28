@@ -449,7 +449,7 @@ public class IdentityUserService extends MangoCrudServiceImpl<IdentityUserMapper
                 .filter(StringUtils::hasText)
                 .map(String::trim)
                 .collect(Collectors.toCollection(LinkedHashSet::new));
-        Require.isTrue(userIds.size() + usernames.size() <= 200,
+        Require.isTrue(userIds.size() + usernames.size() <= IdentityUserBatchQuery.MAX_IDENTIFIERS,
                 IdentityCode.VALIDATION_ERROR, "批量查询用户标识不能超过200个");
         if (userIds.isEmpty() && usernames.isEmpty()) {
             return List.of();
