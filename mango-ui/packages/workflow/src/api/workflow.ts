@@ -8,6 +8,7 @@ import { toBackendDateRangeParams } from '@mango/common/utils/date-range';
 export type WorkflowStatus = 'DRAFT' | 'PUBLISHED' | 'DISABLED';
 export type WorkflowAssigneeType = 'SPECIFIED_USER' | 'SPECIFIED_ROLE' | 'SPECIFIED_POST' | 'SPECIFIED_ORG' | 'ORG_LEADER' | 'INITIATOR' | 'INITIATOR_SELECT' | 'FORM_USER' | 'EXPRESSION';
 export type WorkflowApprovalMode = 'COUNTERSIGN' | 'OR_SIGN' | 'SEQUENTIAL';
+export type WorkflowAssignmentMode = 'CLAIM' | 'AUTO';
 export type WorkflowEmptyAssigneeStrategy = 'AUTO_PASS' | 'AUTO_REJECT' | 'AUTO_END' | 'TO_ADMIN' | 'TO_USER';
 export type WorkflowRejectStrategy = 'END_PROCESS' | 'BACK_TO_START';
 export type WorkflowFormPermission = 'HIDDEN' | 'READONLY' | 'EDITABLE';
@@ -37,6 +38,7 @@ export interface WorkflowNodeActionConfig {
 }
 
 export interface WorkflowApprovalNodeConfig {
+  assignmentMode?: WorkflowAssignmentMode;
   assigneeType: WorkflowAssigneeType;
   assigneeIds?: string[];
   roleIds?: string[];
@@ -340,6 +342,7 @@ export interface StartWorkflowProcessCommand {
   snapshotRef?: string;
   variables?: Record<string, any>;
   selectedAssignees?: Record<string, string[]>;
+  participantUserIds?: WorkflowId[];
 }
 
 export interface StartBusinessWorkflowCommand {
@@ -362,6 +365,43 @@ export interface StartBusinessWorkflowCommand {
   variables?: Record<string, any>;
   extension?: Record<string, any>;
   selectedAssignees?: Record<string, string[]>;
+  participantUserIds?: WorkflowId[];
+}
+
+export type WorkflowParticipantType = 'INITIATOR' | 'CURRENT_ASSIGNEE' | 'COMPLETED_HANDLER' | 'BUSINESS_PARTICIPANT';
+
+export interface WorkflowParticipationAccess {
+  readable: boolean;
+  participantTypes: WorkflowParticipantType[];
+  latestProcessInstanceId?: string;
+}
+
+export interface WorkflowParticipationBusiness {
+  processKey: string;
+  businessKey: string;
+  processInstanceId: string;
+  participantTypes: WorkflowParticipantType[];
+  lastParticipatedAt?: string;
+}
+
+export interface WorkflowParticipationPageQuery extends WorkflowPageQuery {
+  processKey?: string;
+  startTime?: string;
+  endTime?: string;
+}
+
+export interface ReplaceWorkflowBusinessParticipantsCommand {
+  processKey: string;
+  businessKey: string;
+  processInstanceId: string;
+  participantUserIds: WorkflowId[];
+}
+
+export interface WorkflowBusinessParticipants {
+  processKey: string;
+  businessKey: string;
+  processInstanceId: string;
+  participantUserIds: WorkflowId[];
 }
 
 export type WorkflowApplyStatus = 'DRAFT' | 'SUBMITTED' | 'IN_APPROVAL' | 'APPROVED' | 'REJECTED' | 'WITHDRAWN' | 'CANCELED' | 'TERMINATED';
@@ -693,6 +733,13 @@ export const workflowApi = {
     .then(normalizeProcessInstance),
   startBusinessWorkflow: (data: StartBusinessWorkflowCommand) => post<WorkflowStartResult>('/workflow/processes/start-business', data)
     .then(normalizeWorkflowStartResult),
+  participationAccess: (processKey: string, businessKey: string) => get<WorkflowParticipationAccess>('/workflow/participations/access', {
+    params: { processKey, businessKey },
+  }),
+  participationMy: (params?: WorkflowParticipationPageQuery) => get<any>('/workflow/participations/my', {
+    params: toBackendPageParams(params),
+  }).then(data => fromBackendPageResult(data, item => item as WorkflowParticipationBusiness, params)),
+  replaceBusinessParticipants: (data: ReplaceWorkflowBusinessParticipantsCommand) => post<WorkflowBusinessParticipants>('/workflow/participations/business', data),
   businessAppliesPage: (params?: WorkflowBusinessApplyPageQuery) => post<any>('/workflow/business-applies/page', toBackendBusinessApplyPageParams(params))
     .then(data => fromBackendPageResult(data, normalizeBusinessApply, params)),
   businessApplyMySummary: () => get<WorkflowBusinessApplySummary>('/workflow/business-applies/my/summary', { silentError: true })
@@ -832,6 +879,7 @@ export function defaultDesignerJson(): string {
 
 export function defaultApprovalConfig(): WorkflowApprovalNodeConfig {
   return {
+    assignmentMode: 'CLAIM',
     assigneeType: 'INITIATOR',
     assigneeIds: [],
     roleIds: [],

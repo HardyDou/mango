@@ -11,6 +11,7 @@ import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 import java.util.Map;
+import java.util.List;
 
 /**
  * 业务流程一体化启动命令。
@@ -100,4 +101,8 @@ public class StartBusinessWorkflowCommand {
     @NotNull(groups = WorkflowOptionalValidation.class)
     @jakarta.validation.Valid
     private WorkflowJsonRequest selectedAssignees;
+
+    @Schema(description = "业务声明的只读参与用户ID完整集合")
+    @Size(max = 200, message = "业务参与用户最多200个")
+    private List<@NotNull(message = "业务参与用户ID不能为空") Long> participantUserIds;
 }
