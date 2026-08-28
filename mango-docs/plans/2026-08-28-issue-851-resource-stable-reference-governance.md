@@ -16,7 +16,7 @@
 2. 目标 Handler 按稳定身份幂等解析和写入；目标暂未出现时返回可重试结果并重入收敛，非法或不可能满足的引用永久失败。
 3. 运行时生成的目标表主键和模块、声明文件、JAR、Handler 执行顺序不作为新 Resource 的发布合同。
 4. `ResourceProvider.moduleDependencies()`、声明文件 `moduleDependencies` / `module-dependencies` 和 `ResourceHandler.dependsOnResourceTypes()` 保留存量兼容，不删除运行能力，但不建议新增使用。
-5. 长期约束只维护在 `mango-pmo/rules/backend/05-module.md`；Resource README 只说明用法并链接规范源，能力地图只登记入口和影响。
+5. 长期约束只维护在 `mango-pmo/rules/backend/05-module.md`；Resource README 只说明用法并链接规范源，能力地图只登记入口和影响。业务 Starter 中的 PMO baseline 由 `sync-pmo-baseline.mjs` 从规范源生成，不作为第二套人工维护规则。
 
 ## 3. 取舍与兼容性
 
@@ -29,6 +29,7 @@
 | ID | 验收项 | 验证入口 | 预期 |
 | --- | --- | --- | --- |
 | GOV-001 | 长期规则只有一个规范源 | `check-governance-intent.mjs`、人工差异复核 | PMO 规则承载强制约束，README 只解释用法并链接 |
+| PROJ-001 | 业务 PMO baseline 与规范源一致 | `check-template.mjs` | 受管投影及摘要无漂移 |
 | DOC-001 | Resource 使用说明和能力入口同步 | README、能力地图审计 | 文档入口完整且与源码事实不冲突 |
 | COMP-001 | 存量依赖功能保持兼容 | 变更文件和 Git diff 复核 | 无 Java、API、migration 或配置改动 |
 | EXT-001 | 方案与 Issue 状态可回读 | GitHub Issue 评论和状态回读 | #851 保持 OPEN，评论记录当前设计且不宣称已实现 |
