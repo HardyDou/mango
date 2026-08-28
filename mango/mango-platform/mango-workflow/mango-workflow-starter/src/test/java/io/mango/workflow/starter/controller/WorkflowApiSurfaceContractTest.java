@@ -53,12 +53,12 @@ class WorkflowApiSurfaceContractTest {
 
     @Test
     void existingApisKeepMethodNamesAndReturnContracts() {
-        assertThat(apiFingerprint()).isEqualTo("26dacc21ca41147c26a37bc843d0c8d2b10a74186fff0d674fb10a1dd4d9906e");
+        assertThat(apiFingerprint()).isEqualTo("b960c35fc2f8c90785673ed930faf6e434776e34ab95285ded1f82e86dce2a3c");
     }
 
     @Test
     void existingHttpEndpointsKeepPathsVerbsReturnsAndPermissions() {
-        assertThat(httpFingerprint()).isEqualTo("90f3f51cfefa17e1bfbcfba4ae98667a571fdd2b71c029d85c4c3d764c28cb9a");
+        assertThat(httpFingerprint()).isEqualTo("0e64db05528fb4588af1956c0a4fab578c708a38f7dba490459f215942e0f921");
     }
 
     private static String apiFingerprint() {

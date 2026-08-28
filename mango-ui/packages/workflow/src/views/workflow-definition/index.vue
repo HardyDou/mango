@@ -1012,7 +1012,7 @@ import FcDesigner, { type Config as FcDesignerConfig } from 'form-create-designe
 import type { Rule as FcRule } from '@form-create/element-ui';
 import 'form-create-designer/src/style/index.css';
 import 'form-create-designer/src/style/icon.css';
-import { UserSelector, get } from '@mango/common';
+import { UserSelector } from '@mango/common';
 import { MUpload } from '@mango/file';
 import { DomainSideTree } from '@mango/system';
 import WorkflowDesignerCanvas from './components/workflow-designer/WorkflowDesignerCanvas.vue';
@@ -1052,6 +1052,7 @@ import {
   type WorkflowApprovalNodeConfig,
   type WorkflowCategory,
   type WorkflowDesignerNode,
+  type WorkflowDesignerOptions,
   type WorkflowEventNotifyConfig,
   type WorkflowFormPermission,
   type WorkflowId,
@@ -1079,11 +1080,6 @@ interface CustomFormConfig {
   viewPath: string;
   applyPageKey?: string;
   approvePageKey?: string;
-}
-
-interface BackendPageResult<T> {
-  records?: T[];
-  list?: T[];
 }
 
 const NODE_ICON_MAP: Record<string, any> = {
@@ -1721,6 +1717,7 @@ const approvalTargetLoading = reactive({
   orgs: false,
   dicts: false,
 });
+let designerOptionsRequest: Promise<WorkflowDesignerOptions> | undefined;
 
 function validateDefinitionDomain(_rule: unknown, value: unknown, callback: (error?: Error) => void) {
   const domainCode = String(value || '').trim();
@@ -3142,162 +3139,58 @@ function normalizeApprovalIds(value: unknown): string[] {
 
 async function ensureApprovalUsersLoaded() {
   if (!approvalTargetLoaded.users) {
-    await searchApprovalUsers();
-  }
-}
-
-async function searchApprovalUsers(keyword = '') {
-  approvalTargetLoading.users = true;
-  try {
-    const data = await get<BackendPageResult<any>>('/identity/users/page', {
-      params: {
-        page: 1,
-        size: 100,
-      },
-    });
-    approvalUserOptions.value = filterApprovalTargets(toPageList(data), keyword, ['username', 'nickname', 'memberName'])
-      .map((item) => {
-        const id = item.userId ?? item.id ?? item.memberId;
-        const value = item.username ?? id;
-        const name = item.nickname || item.memberName || item.username || id;
-        const username = item.username && item.username !== name ? ` / ${item.username}` : '';
-        return id === undefined ? undefined : { value: String(value), label: `${name}${username}` };
-      })
-      .filter(Boolean) as ApprovalTargetOption[];
-    approvalTargetLoaded.users = true;
-  } finally {
-    approvalTargetLoading.users = false;
+    await loadDesignerOptions();
   }
 }
 
 async function ensureApprovalRolesLoaded() {
   if (!approvalTargetLoaded.roles) {
-    await loadApprovalRoles();
-  }
-}
-
-async function loadApprovalRoles() {
-  approvalTargetLoading.roles = true;
-  try {
-    const data = await get<any[]>('/authorization/roles');
-    approvalRoleOptions.value = (data || [])
-      .map((item) => {
-        const id = item.roleId ?? item.id;
-        const name = item.roleName || item.roleCode || id;
-        const code = item.roleCode && item.roleCode !== name ? ` / ${item.roleCode}` : '';
-        return id === undefined ? undefined : { value: String(id), label: `${name}${code}` };
-      })
-      .filter(Boolean) as ApprovalTargetOption[];
-    approvalTargetLoaded.roles = true;
-  } finally {
-    approvalTargetLoading.roles = false;
+    await loadDesignerOptions();
   }
 }
 
 async function ensureApprovalPostsLoaded() {
   if (!approvalTargetLoaded.posts) {
-    await searchApprovalPosts();
-  }
-}
-
-async function searchApprovalPosts(keyword = '') {
-  approvalTargetLoading.posts = true;
-  try {
-    const data = await get<BackendPageResult<any>>('/post/page', {
-      params: {
-        page: 1,
-        size: 100,
-      },
-    });
-    approvalPostOptions.value = filterApprovalTargets(toPageList(data), keyword, ['postName', 'postCode'])
-      .map((item) => {
-        const id = item.id ?? item.postId;
-        const name = item.postName || item.postCode || id;
-        const code = item.postCode && item.postCode !== name ? ` / ${item.postCode}` : '';
-        return id === undefined ? undefined : { value: String(id), label: `${name}${code}` };
-      })
-      .filter(Boolean) as ApprovalTargetOption[];
-    approvalTargetLoaded.posts = true;
-  } finally {
-    approvalTargetLoading.posts = false;
+    await loadDesignerOptions();
   }
 }
 
 async function ensureApprovalOrgsLoaded() {
   if (!approvalTargetLoaded.orgs) {
-    await loadApprovalOrgs();
-  }
-}
-
-async function loadApprovalOrgs() {
-  approvalTargetLoading.orgs = true;
-  try {
-    const data = await get<any[]>('/org/tree', { params: { parentId: '0', includeDisabled: true } });
-    approvalOrgTreeOptions.value = toApprovalOrgTree(data || []);
-    approvalTargetLoaded.orgs = true;
-  } finally {
-    approvalTargetLoading.orgs = false;
+    await loadDesignerOptions();
   }
 }
 
 async function ensureWorkflowDictsLoaded() {
   if (!approvalTargetLoaded.dicts) {
-    await loadWorkflowDicts();
+    await loadDesignerOptions();
   }
 }
 
-async function loadWorkflowDicts() {
-  approvalTargetLoading.dicts = true;
+async function loadDesignerOptions() {
+  const loadingKeys = Object.keys(approvalTargetLoading) as Array<keyof typeof approvalTargetLoading>;
+  loadingKeys.forEach((key) => {
+    approvalTargetLoading[key] = true;
+  });
+  designerOptionsRequest ||= workflowApi.designerOptions();
   try {
-    const data = await get<any[]>('/system/dict/type/list').catch(() => []);
-    workflowDictOptions.value = (Array.isArray(data) ? data : [])
-      .map((item) => {
-        const code = item.dictType || item.typeCode || item.code || item.value || item.id;
-        const name = item.dictName || item.typeName || item.name || item.label || code;
-        return code === undefined ? undefined : { value: String(code), label: String(name) };
-      })
-      .filter(Boolean) as ApprovalTargetOption[];
+    const options = await designerOptionsRequest;
+    approvalUserOptions.value = options.users;
+    approvalRoleOptions.value = options.roles;
+    approvalPostOptions.value = options.posts;
+    approvalOrgTreeOptions.value = options.organizations;
+    workflowDictOptions.value = options.dictTypes;
+    loadingKeys.forEach((key) => {
+      approvalTargetLoaded[key] = true;
+    });
+  } catch (error) {
+    designerOptionsRequest = undefined;
+    throw error;
   } finally {
-    approvalTargetLoaded.dicts = true;
-    approvalTargetLoading.dicts = false;
+    loadingKeys.forEach((key) => {
+      approvalTargetLoading[key] = false;
+    });
   }
-}
-
-function toPageList<T = any>(data?: BackendPageResult<T>): T[] {
-  return data?.records || data?.list || [];
-}
-
-function filterApprovalTargets<T extends Record<string, any>>(items: T[], keyword: string, keys: string[]) {
-  const normalized = String(keyword || '')
-    .trim()
-    .toLowerCase();
-  if (!normalized) {
-    return items;
-  }
-  return items.filter((item) =>
-    keys.some((key) =>
-      String(item[key] || '')
-        .toLowerCase()
-        .includes(normalized),
-    ),
-  );
-}
-
-function toApprovalOrgTree(items: any[]): ApprovalOrgTreeOption[] {
-  return (items || [])
-    .map((item) => {
-      const id = item.id ?? item.orgId;
-      const name = item.orgName || item.name || item.orgCode || id;
-      if (id === undefined) {
-        return undefined;
-      }
-      return {
-        value: String(id),
-        label: String(name),
-        children: item.children?.length ? toApprovalOrgTree(item.children) : undefined,
-      };
-    })
-    .filter(Boolean) as ApprovalOrgTreeOption[];
 }
 
 function nodeFieldPermission(node: WorkflowDesignerNode, field: string): WorkflowFormPermission {

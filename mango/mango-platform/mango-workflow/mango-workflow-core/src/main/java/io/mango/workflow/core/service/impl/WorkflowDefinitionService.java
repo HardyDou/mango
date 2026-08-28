@@ -13,16 +13,18 @@ import io.mango.domain.api.DomainApi;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.persistence.api.scope.DataScopeApplier;
 import io.mango.infra.persistence.api.scope.DataScopeMapping;
-import io.mango.workflow.api.enums.WorkflowCode;
+import io.mango.workflow.api.WorkflowDesignerOptionProvider;
 import io.mango.workflow.api.command.EnsureWorkflowDefinitionCommand;
 import io.mango.workflow.api.command.SaveWorkflowDefinitionCommand;
 import io.mango.workflow.api.command.UpdateWorkflowDefinitionStatusCommand;
+import io.mango.workflow.api.enums.WorkflowCode;
 import io.mango.workflow.api.enums.WorkflowDefinitionStatus;
 import io.mango.workflow.api.query.WorkflowDefinitionPageQuery;
 import io.mango.workflow.api.query.WorkflowDefinitionVersionQuery;
 import io.mango.workflow.api.vo.WorkflowDefinitionVO;
 import io.mango.workflow.api.vo.WorkflowDefinitionVersionVO;
 import io.mango.workflow.api.vo.WorkflowDeployVO;
+import io.mango.workflow.api.vo.WorkflowDesignerOptionsVO;
 import io.mango.workflow.api.vo.WorkflowNodeCatalogVO;
 import io.mango.workflow.core.engine.WorkflowDesignerBpmnConverter;
 import io.mango.workflow.core.entity.WorkflowCategoryEntity;
@@ -78,6 +80,7 @@ public class WorkflowDefinitionService implements IWorkflowDefinitionService {
     private final WorkflowDesignerBpmnConverter bpmnConverter;
     private final ObjectMapper objectMapper;
     private final ObjectProvider<DataScopeApplier> dataScopeApplierProvider;
+    private final ObjectProvider<WorkflowDesignerOptionProvider> designerOptionProvider;
 
     @Override
     public PageResult<WorkflowDefinitionVO> page(WorkflowDefinitionPageQuery query) {
@@ -108,6 +111,14 @@ public class WorkflowDefinitionService implements IWorkflowDefinitionService {
     public WorkflowDefinitionVO get(Long id) {
         WorkflowDefinitionEntity entity = selectRequired(id);
         return toVO(entity);
+    }
+
+    @Override
+    public WorkflowDesignerOptionsVO designerOptions() {
+        WorkflowDesignerOptionProvider provider = Require.nonNull(
+                designerOptionProvider.getIfAvailable(),
+                WorkflowCode.DESIGNER_OPTION_PROVIDER_MISSING);
+        return Require.nonNull(provider.options(), WorkflowCode.DESIGNER_OPTION_LOAD_FAILED);
     }
 
     @Override

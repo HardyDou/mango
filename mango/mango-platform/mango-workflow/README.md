@@ -31,6 +31,7 @@
 |------|----------|
 | 流程分类 | `/workflow/categories` 接口和流程管理页面。 |
 | 流程定义 | `/workflow/definitions` 接口和流程定义页面。 |
+| 设计器候选项 | `GET /workflow/definitions/designer-options`；通过 `WorkflowDesignerOptionProvider` 返回当前上下文中的用户、角色、岗位、组织和字典类型。 |
 | 流程发布 | `/workflow/definitions/deploy` 或 `WorkflowDefinitionApi.ensurePublished()`。 |
 | 流程模板 | `/workflow/templates` 接口和流程模板页面。 |
 | 业务申请 | `WorkflowBusinessApplyApi` 或 `/workflow/business-applies`。 |
@@ -228,6 +229,14 @@ WorkflowProcessWithdrawResultVO result = workflowProcessApi.withdraw(withdraw).g
 业务启动命令可携带完整 `participantUserIds` 集合，也可调用 `POST /workflow/participations/business` 进行完整替换。Workflow 会先验证所有用户属于当前租户、账号和成员均启用且未离职，任何一个无效用户都会使整次声明零写入；不得用 username 代替授权身份。
 
 审批节点配置 `assignmentMode` 缺失时按 `CLAIM` 兼容。设置为 `AUTO` 后，运行时从指定用户、角色、岗位、组织或组织主管展开当前租户有效成员，按稳定 `userId` 排序并锁定 `workflow_auto_assignment_state` 游标，直接在节点事务内设置 assignee；当前策略固定为 `ROUND_ROBIN`。没有候选人时返回 `AUTO_ASSIGN_NO_CANDIDATE`，不转 admin、不退化为待领取，流程推进和游标更新一起回滚。
+
+### 3.3 设计器候选数据 Provider
+
+流程定义设计器通过 `GET /workflow/definitions/designer-options` 一次加载用户、角色、岗位、组织树和字典类型。接口只要求 `workflow:definition:query`，客户端不传 `tenantId`，也不需要给 Workflow 菜单追加 `system:*`、`authorization:*`、Identity 或 Org 权限。默认 `WorkflowPlatformApiDesignerOptionProvider` 使用当前可信上下文调用各平台模块的公共 Java API。
+
+承载 Workflow 的应用可以注册自己的 `WorkflowDesignerOptionProvider` Bean；自动配置使用 `@ConditionalOnMissingBean`，自定义 Bean 会替换默认实现。Provider 必须自行保证当前租户和数据范围，不得接受客户端租户标识。未配置 Provider 返回 `DESIGNER_OPTION_PROVIDER_MISSING`，任一上游加载失败返回 `DESIGNER_OPTION_LOAD_FAILED`；两种情况都不会伪装为空候选成功。
+
+该 Provider 的 VO 只用于设计器展示，不能作为运行时任务授权事实。AUTO 派单仍由运行时候选目录重新验证稳定 `userId`、租户成员状态和候选范围。
 
 业务页面处理“审批通过”时有两种模式：
 
