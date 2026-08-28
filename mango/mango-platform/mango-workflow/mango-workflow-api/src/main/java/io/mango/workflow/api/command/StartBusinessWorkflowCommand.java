@@ -105,4 +105,12 @@ public class StartBusinessWorkflowCommand {
     @Schema(description = "业务声明的只读参与用户ID完整集合")
     @Size(max = 200, message = "业务参与用户最多200个")
     private List<@NotNull(message = "业务参与用户ID不能为空") Long> participantUserIds;
+
+    public List<Long> getParticipantUserIds() {
+        return participantUserIds == null ? null : List.copyOf(participantUserIds);
+    }
+
+    public void setParticipantUserIds(List<Long> participantUserIds) {
+        this.participantUserIds = participantUserIds == null ? null : List.copyOf(participantUserIds);
+    }
 }

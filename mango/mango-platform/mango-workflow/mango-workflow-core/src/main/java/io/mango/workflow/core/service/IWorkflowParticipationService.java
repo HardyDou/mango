@@ -7,6 +7,7 @@ import io.mango.workflow.api.query.WorkflowParticipationPageQuery;
 import io.mango.workflow.api.vo.WorkflowBusinessParticipantsVO;
 import io.mango.workflow.api.vo.WorkflowParticipationAccessVO;
 import io.mango.workflow.api.vo.WorkflowParticipationBusinessVO;
+import io.mango.workflow.core.model.WorkflowParticipantRecord;
 
 import java.util.Collection;
 
@@ -19,12 +20,7 @@ public interface IWorkflowParticipationService {
     WorkflowBusinessParticipantsVO replaceBusinessParticipants(
             ReplaceWorkflowBusinessParticipantsCommand command);
 
-    void recordInitiator(String processKey, String businessKey, String processInstanceId,
-                         Long userId, Long memberId, String username, String displayName);
-
-    void recordParticipant(String processKey, String businessKey, String processInstanceId,
-                           Long userId, Long memberId, String username, String displayName,
-                           io.mango.workflow.api.enums.WorkflowParticipantType type);
+    void recordParticipant(WorkflowParticipantRecord record);
 
     void deactivateCurrentAssignee(String processInstanceId, Long userId);
 

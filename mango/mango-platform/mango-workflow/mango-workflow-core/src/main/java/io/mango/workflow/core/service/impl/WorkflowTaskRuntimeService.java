@@ -9,7 +9,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.common.result.R;
 import io.mango.common.result.Require;
-import io.mango.common.exception.BizException;
 import io.mango.common.vo.PageResult;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.identity.api.AuthUserProvider;
@@ -71,6 +70,7 @@ import io.mango.workflow.core.mapper.WorkflowFormInstanceMapper;
 import io.mango.workflow.core.mapper.WorkflowTaskRecordMapper;
 import io.mango.workflow.core.mapper.WorkflowAutoAssignmentStateMapper;
 import io.mango.workflow.core.model.WorkflowApprovalNodeConfig;
+import io.mango.workflow.core.model.WorkflowParticipantRecord;
 import io.mango.workflow.core.model.WorkflowTaskStatusContext;
 import io.mango.workflow.core.service.IWorkflowBusinessApplyService;
 import io.mango.workflow.core.service.IWorkflowTaskRuntimeService;
@@ -1203,9 +1203,10 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
                 || action == WorkflowTaskAction.RETURN) {
             Long userId = MangoContextHolder.userId();
             if (userId != null) {
-                workflowParticipationService.recordParticipant(task.getProcessInstanceId() == null ? null : processKey(task.getProcessInstanceId()),
+                workflowParticipationService.recordParticipant(new WorkflowParticipantRecord(
+                        task.getProcessInstanceId() == null ? null : processKey(task.getProcessInstanceId()),
                         businessKey(task.getProcessInstanceId()), task.getProcessInstanceId(), userId,
-                        MangoContextHolder.memberId(), currentUser(), currentUser(), WorkflowParticipantType.COMPLETED_HANDLER);
+                        MangoContextHolder.memberId(), currentUser(), currentUser(), WorkflowParticipantType.COMPLETED_HANDLER));
             }
         }
     }
@@ -1322,9 +1323,10 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
         if (userId == null) {
             return;
         }
-        workflowParticipationService.recordParticipant(processKey(task.getProcessInstanceId()),
-                businessKey(task.getProcessInstanceId()), task.getProcessInstanceId(), userId,
-                memberId(userId), task.getAssignee(), task.getAssignee(), WorkflowParticipantType.CURRENT_ASSIGNEE);
+        workflowParticipationService.recordParticipant(new WorkflowParticipantRecord(
+                processKey(task.getProcessInstanceId()), businessKey(task.getProcessInstanceId()),
+                task.getProcessInstanceId(), userId, memberId(userId), task.getAssignee(), task.getAssignee(),
+                WorkflowParticipantType.CURRENT_ASSIGNEE));
     }
 
     private void syncCurrentAssignees(String processInstanceId) {
@@ -1416,66 +1418,9 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
         Map<String, Object> variables = readStoredVariables(task.getProcessInstanceId());
         WorkflowAssigneeResolver.ResolvedAssignees resolved = assigneeResolver.resolve(config, variables,
                 initiator(task.getProcessInstanceId()), task.getTaskDefinitionKey());
-        List<Long> candidates = new java.util.ArrayList<>();
-        if (resolved.users() != null) {
-            for (String identifier : resolved.users()) {
-                Long userId = resolveUserId(identifier);
-                AuthUserVO user = userId == null ? null : authUserProvider.getByIdForAuth(userId);
-                if (user == null || user.getStatus() != 1 || activeMemberId(userId) == null) {
-                    continue;
-                }
-                if (!candidates.contains(userId)) {
-                    candidates.add(userId);
-                }
-            }
-        }
-        if (resolved.groups() != null) {
-            for (String group : resolved.groups()) {
-                for (Long userId : groupCandidateUserIds(group)) {
-                    AuthUserVO user = authUserProvider.getByIdForAuth(userId);
-                    if (user != null && user.getStatus() == 1 && activeMemberId(userId) != null && !candidates.contains(userId)) {
-                        candidates.add(userId);
-                    }
-                }
-            }
-        }
-        candidates.sort(Long::compareTo);
-        if (candidates.isEmpty()) {
-            String message = "tenant=" + MangoContextHolder.tenantId()
-                    + ", processDefinitionId=" + task.getProcessDefinitionId()
-                    + ", nodeKey=" + task.getTaskDefinitionKey()
-                    + ", nodeName=" + task.getName()
-                    + ", assigneeType=" + (config.getAssigneeType() == null ? "UNKNOWN" : config.getAssigneeType().name())
-                    + ", candidateSource=resolvedUsers";
-            throw new BizException(WorkflowCode.AUTO_ASSIGN_NO_CANDIDATE.getCode(),
-                    WorkflowCode.AUTO_ASSIGN_NO_CANDIDATE.getMessage() + "（" + message + "）");
-        }
-        String tenant = MangoContextHolder.tenantId();
-        WorkflowAutoAssignmentStateEntity state = autoAssignmentStateMapper.selectOne(new LambdaQueryWrapper<WorkflowAutoAssignmentStateEntity>()
-                .eq(WorkflowAutoAssignmentStateEntity::getTenantId, tenant)
-                .eq(WorkflowAutoAssignmentStateEntity::getProcessDefinitionId, task.getProcessDefinitionId())
-                .eq(WorkflowAutoAssignmentStateEntity::getTaskDefinitionKey, task.getTaskDefinitionKey())
-                .last("for update"));
-        if (state == null) {
-            state = new WorkflowAutoAssignmentStateEntity();
-            state.setTenantId(tenant);
-            state.setProcessDefinitionId(task.getProcessDefinitionId());
-            state.setTaskDefinitionKey(task.getTaskDefinitionKey());
-            state.setCreatedBy(MangoContextHolder.userId());
-            state.setCreatedAt(LocalDateTime.now());
-            try {
-                autoAssignmentStateMapper.insert(state);
-            } catch (DuplicateKeyException duplicate) {
-                state = autoAssignmentStateMapper.selectOne(new LambdaQueryWrapper<WorkflowAutoAssignmentStateEntity>()
-                        .eq(WorkflowAutoAssignmentStateEntity::getTenantId, tenant)
-                        .eq(WorkflowAutoAssignmentStateEntity::getProcessDefinitionId, task.getProcessDefinitionId())
-                        .eq(WorkflowAutoAssignmentStateEntity::getTaskDefinitionKey, task.getTaskDefinitionKey())
-                        .last("for update"));
-                if (state == null) {
-                    throw duplicate;
-                }
-            }
-        }
+        List<Long> candidates = resolveCandidates(resolved);
+        requireCandidates(candidates, task, config);
+        WorkflowAutoAssignmentStateEntity state = loadAssignmentState(task);
         Long selected = nextRoundRobinCandidate(candidates, state.getLastAssignedUserId());
         state.setLastAssignedUserId(selected);
         state.setUpdatedBy(MangoContextHolder.userId());
@@ -1488,6 +1433,91 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
                 Map.of("assignmentMode", WorkflowAssignmentMode.AUTO.name(),
                         "strategy", "ROUND_ROBIN", "assigneeUserId", selected));
         return true;
+    }
+
+    private List<Long> resolveCandidates(WorkflowAssigneeResolver.ResolvedAssignees resolved) {
+        List<Long> candidates = new java.util.ArrayList<>();
+        addUserCandidates(candidates, resolved.users());
+        addGroupCandidates(candidates, resolved.groups());
+        candidates.sort(Long::compareTo);
+        return candidates;
+    }
+
+    private void addUserCandidates(List<Long> candidates, List<String> users) {
+        if (users == null) {
+            return;
+        }
+        for (String identifier : users) {
+            Long userId = resolveUserId(identifier);
+            AuthUserVO user = userId == null ? null : authUserProvider.getByIdForAuth(userId);
+            if (isEligibleCandidate(userId, user) && !candidates.contains(userId)) {
+                candidates.add(userId);
+            }
+        }
+    }
+
+    private void addGroupCandidates(List<Long> candidates, List<String> groups) {
+        if (groups == null) {
+            return;
+        }
+        for (String group : groups) {
+            for (Long userId : groupCandidateUserIds(group)) {
+                AuthUserVO user = authUserProvider.getByIdForAuth(userId);
+                if (isEligibleCandidate(userId, user) && !candidates.contains(userId)) {
+                    candidates.add(userId);
+                }
+            }
+        }
+    }
+
+    private boolean isEligibleCandidate(Long userId, AuthUserVO user) {
+        return user != null && user.getStatus() == 1 && activeMemberId(userId) != null;
+    }
+
+    private void requireCandidates(List<Long> candidates, Task task, WorkflowApprovalNodeConfig config) {
+        if (!candidates.isEmpty()) {
+            return;
+        }
+        String message = "tenant=" + MangoContextHolder.tenantId()
+                + ", processDefinitionId=" + task.getProcessDefinitionId()
+                + ", nodeKey=" + task.getTaskDefinitionKey()
+                + ", nodeName=" + task.getName()
+                + ", assigneeType=" + (config.getAssigneeType() == null ? "UNKNOWN" : config.getAssigneeType().name())
+                + ", candidateSource=resolvedUsers";
+        Require.isTrue(false, WorkflowCode.AUTO_ASSIGN_NO_CANDIDATE,
+                WorkflowCode.AUTO_ASSIGN_NO_CANDIDATE.getMessage() + "（" + message + "）");
+    }
+
+    private WorkflowAutoAssignmentStateEntity loadAssignmentState(Task task) {
+        String tenant = MangoContextHolder.tenantId();
+        WorkflowAutoAssignmentStateEntity state = autoAssignmentStateMapper.selectOne(new LambdaQueryWrapper<WorkflowAutoAssignmentStateEntity>()
+                .eq(WorkflowAutoAssignmentStateEntity::getTenantId, tenant)
+                .eq(WorkflowAutoAssignmentStateEntity::getProcessDefinitionId, task.getProcessDefinitionId())
+                .eq(WorkflowAutoAssignmentStateEntity::getTaskDefinitionKey, task.getTaskDefinitionKey())
+                .last("for update"));
+        if (state != null) {
+            return state;
+        }
+        state = new WorkflowAutoAssignmentStateEntity();
+        state.setTenantId(tenant);
+        state.setProcessDefinitionId(task.getProcessDefinitionId());
+        state.setTaskDefinitionKey(task.getTaskDefinitionKey());
+        state.setCreatedBy(MangoContextHolder.userId());
+        state.setCreatedAt(LocalDateTime.now());
+        try {
+            autoAssignmentStateMapper.insert(state);
+            return state;
+        } catch (DuplicateKeyException duplicate) {
+            WorkflowAutoAssignmentStateEntity concurrent = autoAssignmentStateMapper.selectOne(new LambdaQueryWrapper<WorkflowAutoAssignmentStateEntity>()
+                    .eq(WorkflowAutoAssignmentStateEntity::getTenantId, tenant)
+                    .eq(WorkflowAutoAssignmentStateEntity::getProcessDefinitionId, task.getProcessDefinitionId())
+                    .eq(WorkflowAutoAssignmentStateEntity::getTaskDefinitionKey, task.getTaskDefinitionKey())
+                    .last("for update"));
+            if (concurrent != null) {
+                return concurrent;
+            }
+            return Require.rethrow(duplicate);
+        }
     }
 
     static Long nextRoundRobinCandidate(List<Long> sortedCandidates, Long previous) {

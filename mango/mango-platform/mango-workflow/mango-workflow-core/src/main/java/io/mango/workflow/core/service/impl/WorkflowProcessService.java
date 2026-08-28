@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.common.result.R;
 import io.mango.common.result.Require;
 import io.mango.common.vo.PageResult;
@@ -37,6 +38,7 @@ import io.mango.workflow.core.mapper.WorkflowDefinitionMapper;
 import io.mango.workflow.core.mapper.WorkflowFormInstanceMapper;
 import io.mango.workflow.core.mapper.WorkflowTaskRecordMapper;
 import io.mango.workflow.core.model.WorkflowProcessStartedContext;
+import io.mango.workflow.core.model.WorkflowParticipantRecord;
 import io.mango.workflow.core.service.IWorkflowBusinessApplyService;
 import io.mango.workflow.core.service.IWorkflowProcessService;
 import io.mango.workflow.core.service.IWorkflowTaskRuntimeService;
@@ -69,6 +71,7 @@ import java.util.stream.Collectors;
  */
 @Service
 @RequiredArgsConstructor
+@SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "Spring-managed collaborators are injected")
 public class WorkflowProcessService implements IWorkflowProcessService {
 
     private static final String INITIATOR_VAR = "mangoInitiator";
@@ -138,9 +141,10 @@ public class WorkflowProcessService implements IWorkflowProcessService {
         saveFormInstance(definition, instance, variables);
         saveStartRecord(instance.getProcessInstanceId(), variables);
         Long initiatorId = MangoContextHolder.userId();
-        workflowParticipationService.recordInitiator(definition.getDefinitionKey(), businessKey,
-                instance.getProcessInstanceId(), initiatorId, MangoContextHolder.memberId(),
-                MangoContextHolder.principalName(), MangoContextHolder.principalName());
+        workflowParticipationService.recordParticipant(new WorkflowParticipantRecord(
+                definition.getDefinitionKey(), businessKey, instance.getProcessInstanceId(), initiatorId,
+                MangoContextHolder.memberId(), MangoContextHolder.principalName(), MangoContextHolder.principalName(),
+                io.mango.workflow.api.enums.WorkflowParticipantType.INITIATOR));
         if (command.getParticipantUserIds() != null) {
             ReplaceWorkflowBusinessParticipantsCommand participants = new ReplaceWorkflowBusinessParticipantsCommand();
             participants.setProcessKey(definition.getDefinitionKey());

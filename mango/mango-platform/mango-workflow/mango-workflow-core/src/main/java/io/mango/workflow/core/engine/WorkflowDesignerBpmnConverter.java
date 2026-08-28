@@ -135,6 +135,7 @@ public class WorkflowDesignerBpmnConverter {
         WorkflowAssigneeResolver.ResolvedAssignees resolved = designTimeAssignees(config, node);
         if (config != null && config.getAssignmentMode() == WorkflowAssignmentMode.AUTO) {
             // Keep the Flowable task unassigned until the runtime service selects the tenant candidate atomically.
+            task.setAssignee(null);
         } else if (isRuntimeResolved(config)) {
             applyRuntimeUserTaskProperties(task, config);
         } else if (resolved.empty()) {
