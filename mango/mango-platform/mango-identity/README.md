@@ -152,7 +152,7 @@ HTTP 接口前缀是 `/identity`。
 | GET | `/identity/auth/id` | INTERNAL | 认证链路按用户 ID 查询认证事实 |
 | GET | `/identity/user/info/username` | 内部调用 | 按用户名查询身份资料 |
 | GET | `/identity/user/info/id` | 内部调用 | 按用户 ID 查询身份资料 |
-| POST | `/identity/user/info/batch` | 内部调用 | 按用户 ID 和用户名批量查询当前租户成员身份资料，标识总数最多 200 个 |
+| POST | `/identity/user/info/batch` | 登录用户 | 按用户 ID 和用户名批量查询当前租户成员身份资料，标识总数最多 200 个 |
 | GET | `/identity/user/info/targets` | 内部调用 | 按 USER、ORG、POST、ROLE 解析接收人 |
 
 主要命令对象：

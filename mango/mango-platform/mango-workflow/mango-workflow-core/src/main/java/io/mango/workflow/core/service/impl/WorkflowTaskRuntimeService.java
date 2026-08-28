@@ -181,13 +181,11 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
         assigneeIdentityService.enrichTasks(records);
         return PageResult.of(records, total, resolved.getPage(), resolved.getSize());
     }
-
     @Override
     public PageResult<WorkflowTaskVO> initiated(WorkflowTaskPageQuery query) {
         WorkflowTaskPageQuery resolved = resolve(query);
         return PageResult.of(List.of(), 0, resolved.getPage(), resolved.getSize());
     }
-
     private void applyTodoTypeFilter(TaskQuery taskQuery, String todoType, List<String> candidateGroups) {
         String type = StringUtils.hasText(todoType) ? todoType.trim().toUpperCase() : "ASSIGNED";
         if ("CLAIMABLE".equals(type)) {
@@ -216,7 +214,6 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
         }
         taskQuery.taskAssigneeIds(currentUserIdentifiers());
     }
-
     @Override
     public WorkflowTaskSummaryVO summary() {
         List<String> candidateGroups = candidateGroupProvider.currentCandidateGroups();
@@ -227,7 +224,6 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
         vo.setOverdue(countOverdueTasks(candidateGroups));
         return vo;
     }
-
     @Override
     public WorkflowMyTaskSummaryVO myTaskSummary() {
         List<String> candidateGroups = candidateGroupProvider.currentCandidateGroups();
@@ -243,26 +239,22 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
         vo.setTotal(pending + processing + completed + overdue);
         return vo;
     }
-
     private Long countTodoByType(String todoType, List<String> candidateGroups) {
         TaskQuery taskQuery = taskService.createTaskQuery();
         applyTodoTypeFilter(taskQuery, todoType, candidateGroups);
         return taskQuery.count();
     }
-
     private Long countCompletedTasks() {
         return historyService.createHistoricTaskInstanceQuery()
                 .taskAssigneeIds(currentUserIdentifiers())
                 .finished()
                 .count();
     }
-
     private Long countUnreadCopied() {
         return copiedTaskMapper.selectCount(new LambdaQueryWrapper<WorkflowCopiedTaskEntity>()
                 .eq(WorkflowCopiedTaskEntity::getCopiedUserId, currentUser())
                 .eq(WorkflowCopiedTaskEntity::getReadFlag, Boolean.FALSE));
     }
-
     private Long countOverdueTasks(List<String> candidateGroups) {
         Date now = new Date();
         Set<String> taskIds = new LinkedHashSet<>();
@@ -270,14 +262,12 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
         taskIds.addAll(overdueClaimableTasks(now, candidateGroups).stream().map(Task::getId).toList());
         return (long) taskIds.size();
     }
-
     private List<Task> overdueAssignedTasks(Date now) {
         return taskService.createTaskQuery()
                 .taskAssigneeIds(currentUserIdentifiers())
                 .taskDueBefore(now)
                 .list();
     }
-
     private List<Task> overdueClaimableTasks(Date now, List<String> candidateGroups) {
         TaskQuery taskQuery = taskService.createTaskQuery();
         applyTodoTypeFilter(taskQuery, "CLAIMABLE", candidateGroups);
@@ -285,7 +275,6 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
                 .taskDueBefore(now)
                 .list();
     }
-
     @Override
     public PageResult<WorkflowTaskVO> done(WorkflowTaskPageQuery query) {
         WorkflowTaskPageQuery resolved = resolve(query);
@@ -317,7 +306,6 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
         assigneeIdentityService.enrichTasks(records);
         return PageResult.of(records, total, resolved.getPage(), resolved.getSize());
     }
-
     @Override
     public PageResult<WorkflowTaskVO> copied(WorkflowTaskPageQuery query) {
         WorkflowTaskPageQuery resolved = resolve(query);
@@ -348,7 +336,6 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
         assigneeIdentityService.enrichTasks(records);
         return PageResult.of(records, total, resolved.getPage(), resolved.getSize());
     }
-
     @Override
     public WorkflowTaskDetailVO detail(String taskId) {
         Require.notBlank(taskId, WorkflowCode.TASK_INVALID, "任务ID不能为空");
@@ -372,7 +359,6 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
         vo.setRecords(records(task.getProcessInstanceId()));
         return vo;
     }
-
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Boolean saveDraft(SaveWorkflowTaskDraftCommand command) {
@@ -380,7 +366,6 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
         saveDraftWithResult(command);
         return Boolean.TRUE;
     }
-
     @Override
     @Transactional(rollbackFor = Exception.class)
     public WorkflowTaskActionResultVO saveDraftWithResult(SaveWorkflowTaskDraftCommand command) {
@@ -401,7 +386,6 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
         workflowEventPublisher.publishTaskSaved(task, formInstance, variables, command.getComment(), apply);
         return toActionResult(WorkflowTaskAction.SAVE, task, false, apply);
     }
-
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Boolean complete(CompleteWorkflowTaskCommand command) {
@@ -409,7 +393,6 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
         completeWithResult(command);
         return Boolean.TRUE;
     }
-
     @Override
     @Transactional(rollbackFor = Exception.class)
     public WorkflowTaskCompleteResultVO completeWithResult(CompleteWorkflowTaskCommand command) {
@@ -449,7 +432,6 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
                 advanceResult.businessApply());
         return toCompleteResult(task, advanceResult);
     }
-
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Boolean reject(RejectWorkflowTaskCommand command) {
@@ -457,7 +439,6 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
         rejectWithResult(command);
         return Boolean.TRUE;
     }
-
     @Override
     @Transactional(rollbackFor = Exception.class)
     public WorkflowTaskActionResultVO rejectWithResult(RejectWorkflowTaskCommand command) {

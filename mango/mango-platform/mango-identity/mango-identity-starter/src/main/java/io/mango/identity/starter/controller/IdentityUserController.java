@@ -194,7 +194,7 @@ public class IdentityUserController implements IdentityUserApi {
     @Override
     @PostMapping("/user/info/batch")
     @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "登录用户批量查询当前租户成员资料")
-    @Operation(summary = "批量查询用户资料", description = "内部接口。按用户ID和用户名批量查询当前租户成员资料")
+    @Operation(summary = "批量查询用户资料", description = "登录用户接口。按用户ID和用户名批量查询当前租户成员资料")
     public R<List<IdentityUserInfoVO>> listUserInfos(@RequestBody IdentityUserBatchQuery query) {
         return R.ok(identityUserService.listUserInfos(query));
     }
