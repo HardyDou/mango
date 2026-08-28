@@ -1,5 +1,6 @@
 package io.mango.workflow.core.service.impl;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -58,7 +59,8 @@ import java.util.Locale;
  * 流程定义服务实现。
  */
 @Service
-@RequiredArgsConstructor
+@RequiredArgsConstructor(onConstructor_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+        justification = "Spring collaborators are intentionally retained for the service lifetime"))
 public class WorkflowDefinitionService implements IWorkflowDefinitionService {
 
     private static final TypeReference<List<String>> STRING_LIST_TYPE = new TypeReference<>() {
