@@ -4,7 +4,7 @@
     "schemaVersion": 1,
     "workspaceCount": 41
   },
-  "catalogDigest": "7b039e81c8c518027e1dcd96efa7e63da2111f953c2f7eb457c50d60b31aec94",
+  "catalogDigest": "746c73209ad78fff601fed3d03a1391a4226774c3534975916c7d10f76553268",
   "maven": {
     "dependencyManagementSets": [
       {
@@ -9650,6 +9650,15 @@
             "artifactId": "mango-authorization-api",
             "classifier": null,
             "groupId": "io.mango.platform.authorization",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-identity-api",
+            "classifier": null,
+            "groupId": "io.mango.platform.identity",
             "optional": false,
             "scope": "compile",
             "type": "jar",

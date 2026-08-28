@@ -43,6 +43,7 @@ import io.mango.workflow.core.entity.WorkflowDefinitionVersionEntity;
 import io.mango.workflow.core.entity.WorkflowFormInstanceEntity;
 import io.mango.workflow.core.entity.WorkflowTaskRecordEntity;
 import io.mango.workflow.core.event.WorkflowEventPublisher;
+import io.mango.workflow.core.identity.WorkflowAssigneeIdentityService;
 import io.mango.workflow.core.mapper.WorkflowDefinitionMapper;
 import io.mango.workflow.core.mapper.WorkflowDefinitionVersionMapper;
 import io.mango.workflow.core.mapper.WorkflowFormInstanceMapper;
@@ -575,6 +576,7 @@ class WorkflowTaskRuntimeServiceImplIntegrationTest {
                     business_key varchar(128),
                     apply_title varchar(255),
                     process_name varchar(128),
+                    process_definition_key varchar(128),
                     current_task_names varchar(255),
                     primary key (id)
                 )
@@ -753,7 +755,7 @@ class WorkflowTaskRuntimeServiceImplIntegrationTest {
     }
 
     @Configuration
-    @Import(WorkflowTaskRuntimeService.class)
+    @Import({WorkflowTaskRuntimeService.class, WorkflowAssigneeIdentityService.class})
     @MapperScan("io.mango.workflow.core.mapper")
     static class TestConfig {
 
@@ -804,8 +806,9 @@ class WorkflowTaskRuntimeServiceImplIntegrationTest {
 
         @Bean
         RecordingWorkflowEventPublisher workflowEventPublisher(ObjectProvider<IDomainEventPublisher> provider,
+                                                               WorkflowAssigneeIdentityService assigneeIdentityService,
                                                                OperationLog operationLog) {
-            return new RecordingWorkflowEventPublisher(provider, operationLog);
+            return new RecordingWorkflowEventPublisher(provider, assigneeIdentityService, operationLog);
         }
 
         @Bean
@@ -833,8 +836,10 @@ class WorkflowTaskRuntimeServiceImplIntegrationTest {
     static class RecordingWorkflowEventPublisher extends WorkflowEventPublisher {
         private final OperationLog operationLog;
 
-        RecordingWorkflowEventPublisher(ObjectProvider<IDomainEventPublisher> provider, OperationLog operationLog) {
-            super(provider);
+        RecordingWorkflowEventPublisher(ObjectProvider<IDomainEventPublisher> provider,
+                                        WorkflowAssigneeIdentityService assigneeIdentityService,
+                                        OperationLog operationLog) {
+            super(provider, assigneeIdentityService);
             this.operationLog = operationLog;
         }
 

@@ -31,6 +31,7 @@
 | 接入业务自定义申请页           | 使用 `registerBusinessApplyComponent()`。                                                                                               |
 | 接入业务自定义审批页           | 使用 `registerBusinessApprovalComponent()`。                                                                                            |
 | 展示审批进度和审批记录         | 使用 `WorkflowProgressTree`、`WorkflowApprovalTimeline`、`WorkflowNodeTimeline`、`WorkflowLayout`、`WorkflowSidebar`。                  |
+| 展示办理人身份                 | 优先显示 `assigneeDisplayName`，其次 `assigneeName`；未认领候选任务显示“待领取”，无值显示 `-`。后端 ID 按字符串处理。                   |
 
 ## 3. 集成形态
 
@@ -166,6 +167,7 @@ import { WorkflowLayout, WorkflowSidebar } from '@mango/workflow';
 | 首页我的待办小组件                                                     | `workflow:task:list` + `/workflow/task/todo` + `/workflow/task/copied` | 权限或页面入口缺失时，首页卡片显示“缺少权限”，编辑器中不可新增。          |
 | 首页我的任务小组件                                                     | `workflow:task:list` + `/workflow/task/todo` + `/workflow/task/done`   | 权限或页面入口缺失时，首页卡片显示“缺少权限”，编辑器中不可新增。          |
 | 首页我的申请小组件                                                     | `workflow:task:list` + `/workflow/task/initiated`                      | 与后端摘要接口权限保持一致，缺失时不请求摘要接口、不允许点击跳转。        |
+| 业务申请进度                                                           | `assigneeName`、`assigneeId`、`assigneeDisplayName`                    | `assigneeName` 是原始 Flowable key；ID 和显示名由当前租户批量解析，缺失时不影响任务展示。 |
 | 业务申请进度                                                           | `claimStatus`                                                          | 当前任务认领状态，取值来自后端 `WorkflowTaskClaimStatus`。                |
 | 业务申请进度                                                           | `candidateUsers`、`candidateGroups`                                    | 当前任务候选用户和候选用户组，用于业务页判断待处理、可认领和按钮状态。    |
 
@@ -327,6 +329,8 @@ import { WorkflowLayout, WorkflowSidebar } from '@mango/workflow';
 - [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)
 
 ## 12. 变更影响记录
+
+- 2026-08-28 办理人身份增强的业务升级适配见 [Workflow 办理人身份特性升级指南](../../../mango-docs/guides/business-integration/workflow-assignee-identity-upgrade.md)。展示优先使用 `assigneeDisplayName`，不应为已有显示名重复查询 Identity；业务权限和租户校验保持不变。
 
 - `@mango/workflow@1.0.37` 将精确依赖对齐到 `@mango/admin-pages@1.0.30`、`@mango/common@1.0.23`、`@mango/file@1.0.31`、`@mango/grid-widgets@1.0.20` 和 `@mango/system@1.0.29`。Workflow 查看类通知的 `viewPath` 和 fallback 目标由 Maven `1.0.29` 生成、由 `@mango/notice@1.0.35` 导航；本包页面 key、审批组件、权限和租户语义保持不变。
 

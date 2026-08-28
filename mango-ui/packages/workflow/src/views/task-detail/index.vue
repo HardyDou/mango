@@ -1,5 +1,5 @@
 <template>
-  <div class="workflow-task-detail-page">
+  <div class="workflow-task-detail-page" data-page="workflow.task.detail" :data-state="loading ? 'loading' : 'ready'">
     <el-card v-loading="loading" class="task-detail-shell">
       <el-empty v-if="!detail" description="暂无流程详情" />
 
@@ -301,7 +301,9 @@ const workflowSummary = computed(() => ({
   currentNodeName: detail.value?.task?.taskName || latestTaskName(),
   status: detail.value?.process.status || '',
   initiatorName: detail.value?.process.initiatorName || '-',
-  assigneeName: detail.value?.task?.assigneeName || '-',
+  assigneeName: detail.value?.task?.assigneeName,
+  assigneeDisplayName: detail.value?.task?.assigneeDisplayName,
+  claimStatus: detail.value?.task?.claimStatus,
   startTime: detail.value?.process.startTime || '-',
 }));
 const workflowDefinitionNodeComputed = computed(() => workflowDefinitionNode.value);

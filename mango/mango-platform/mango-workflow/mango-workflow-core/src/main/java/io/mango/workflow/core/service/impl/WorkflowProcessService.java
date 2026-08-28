@@ -326,6 +326,7 @@ public class WorkflowProcessService implements IWorkflowProcessService {
         vo.setTaskDefinitionKey(progress.getTaskDefinitionKey());
         vo.setAssigneeId(progress.getAssigneeId());
         vo.setAssigneeName(progress.getAssigneeName());
+        vo.setAssigneeDisplayName(progress.getAssigneeDisplayName());
         vo.setClaimStatus(progress.getClaimStatus());
         vo.setCandidateUsers(progress.getCandidateUsers());
         vo.setCandidateGroups(progress.getCandidateGroups());

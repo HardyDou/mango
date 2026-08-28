@@ -19,6 +19,7 @@ import io.mango.identity.api.command.UnbindCurrentExternalIdentityCommand;
 import io.mango.identity.api.query.ExternalIdentityQuery;
 import io.mango.identity.api.query.IdentityUserPageQuery;
 import io.mango.identity.api.query.IdentityUserTargetQuery;
+import io.mango.identity.api.query.IdentityUserBatchQuery;
 import io.mango.identity.api.vo.ExternalIdentityBindingVO;
 import io.mango.identity.api.vo.IdentityUserInfoVO;
 import io.mango.identity.api.vo.IdentityUserVO;
@@ -104,6 +105,10 @@ public interface IdentityUserFeignClient extends IdentityUserApi {
     @Override
     @GetMapping("/user/info/id")
     R<IdentityUserInfoVO> getUserInfoById(@RequestParam("userId") Long userId);
+
+    @Override
+    @PostMapping("/user/info/batch")
+    R<List<IdentityUserInfoVO>> listUserInfos(@RequestBody IdentityUserBatchQuery query);
 
     @Override
     @GetMapping("/user/info/targets")

@@ -16,6 +16,7 @@ import io.mango.identity.api.command.UpdateCurrentUserProfileCommand;
 import io.mango.identity.api.command.UnbindCurrentExternalIdentityCommand;
 import io.mango.identity.api.query.ExternalIdentityQuery;
 import io.mango.identity.api.query.IdentityUserPageQuery;
+import io.mango.identity.api.query.IdentityUserBatchQuery;
 import io.mango.identity.api.query.IdentityUserTargetQuery;
 import io.mango.identity.api.vo.ExternalIdentityBindingVO;
 import io.mango.identity.core.entity.IdentityUserEntity;
@@ -94,6 +95,11 @@ public interface IIdentityUserService extends MangoTypedCrudService<
      * 按用户 ID 查询身份资料。
      */
     IdentityUserInfoVO getUserInfoById(Long userId);
+
+    /**
+     * 按用户 ID 和用户名批量查询当前租户身份资料。
+     */
+    List<IdentityUserInfoVO> listUserInfos(IdentityUserBatchQuery query);
 
     /**
      * 按接收目标解析身份资料列表。

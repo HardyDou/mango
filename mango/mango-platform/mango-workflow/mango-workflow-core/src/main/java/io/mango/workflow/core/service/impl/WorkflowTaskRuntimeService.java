@@ -47,6 +47,7 @@ import io.mango.workflow.api.vo.WorkflowTaskVO;
 import io.mango.workflow.core.engine.WorkflowAssigneeResolver;
 import io.mango.workflow.core.engine.WorkflowAssigneeCollection;
 import io.mango.workflow.core.engine.WorkflowCandidateGroupProvider;
+import io.mango.workflow.core.identity.WorkflowAssigneeIdentityService;
 import io.mango.workflow.core.engine.WorkflowNodeExecutionEvent;
 import io.mango.workflow.core.entity.WorkflowBusinessApplyEntity;
 import io.mango.workflow.core.entity.WorkflowCopiedTaskEntity;
@@ -128,6 +129,7 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
     private final WorkflowCandidateGroupProvider candidateGroupProvider;
     private final IWorkflowBusinessApplyService workflowBusinessApplyService;
     private final WorkflowEventPublisher workflowEventPublisher;
+    private final WorkflowAssigneeIdentityService assigneeIdentityService;
 
     @Override
     public PageResult<WorkflowTaskVO> todo(WorkflowTaskPageQuery query) {
@@ -159,6 +161,7 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
                 .stream()
                 .map(this::fromTask)
                 .toList();
+        assigneeIdentityService.enrichTasks(records);
         return PageResult.of(records, total, resolved.getPage(), resolved.getSize());
     }
 
@@ -292,6 +295,7 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
                 .stream()
                 .map(this::fromHistoricTask)
                 .toList();
+        assigneeIdentityService.enrichTasks(records);
         return PageResult.of(records, total, resolved.getPage(), resolved.getSize());
     }
 
@@ -322,6 +326,7 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
                 .stream()
                 .map(this::fromCopiedTask)
                 .toList();
+        assigneeIdentityService.enrichTasks(records);
         return PageResult.of(records, total, resolved.getPage(), resolved.getSize());
     }
 
@@ -331,7 +336,9 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
         Task task = taskService.createTaskQuery().taskId(taskId).singleResult();
         Require.notNull(task, WorkflowCode.TASK_NOT_FOUND);
         WorkflowTaskDetailVO vo = new WorkflowTaskDetailVO();
-        vo.setTask(fromTask(task));
+        WorkflowTaskVO taskVo = fromTask(task);
+        assigneeIdentityService.enrichTasks(List.of(taskVo));
+        vo.setTask(taskVo);
         vo.setProcess(processInfo(task.getProcessInstanceId()));
         WorkflowFormInstanceEntity formInstance = findFormInstance(task.getProcessInstanceId());
         Map<String, Object> runtimeVariables = readRuntimeVariables(task.getProcessInstanceId());
@@ -775,6 +782,7 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
         vo.setTaskDefinitionKey(first.getTaskDefinitionKey());
         vo.setAssigneeId(first.getAssigneeId());
         vo.setAssigneeName(first.getAssigneeName());
+        vo.setAssigneeDisplayName(first.getAssigneeDisplayName());
         vo.setClaimStatus(first.getClaimStatus());
         vo.setCandidateUsers(first.getCandidateUsers() == null ? List.of() : first.getCandidateUsers());
         vo.setCandidateGroups(first.getCandidateGroups() == null ? List.of() : first.getCandidateGroups());
@@ -794,6 +802,7 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
         vo.setTaskDefinitionKey(first.getTaskDefinitionKey());
         vo.setAssigneeId(first.getAssigneeId());
         vo.setAssigneeName(first.getAssigneeName());
+        vo.setAssigneeDisplayName(first.getAssigneeDisplayName());
         vo.setClaimStatus(first.getClaimStatus());
         vo.setCandidateUsers(first.getCandidateUsers() == null ? List.of() : first.getCandidateUsers());
         vo.setCandidateGroups(first.getCandidateGroups() == null ? List.of() : first.getCandidateGroups());
@@ -986,7 +995,7 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
             vo.setCreateTime(task.getCreateTime().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime());
         }
         WorkflowFormInstanceEntity formInstance = findFormInstance(task.getProcessInstanceId());
-        WorkflowBusinessApplyVO apply = workflowBusinessApplyService.findByProcessInstance(task.getProcessInstanceId());
+        WorkflowBusinessApplyEntity apply = findBusinessApply(task.getProcessInstanceId());
         if (formInstance != null) {
             vo.setBusinessKey(formInstance.getBusinessKey());
             vo.setProcessName(formInstance.getDefinitionName());
@@ -1009,6 +1018,11 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
         vo.setProcessInstanceId(task.getProcessInstanceId());
         vo.setProcessDefinitionId(task.getProcessDefinitionId());
         vo.setAssigneeName(task.getAssignee());
+        vo.setClaimStatus(StringUtils.hasText(task.getAssignee())
+                ? WorkflowTaskClaimStatus.ASSIGNED
+                : WorkflowTaskClaimStatus.NONE);
+        vo.setCandidateUsers(List.of());
+        vo.setCandidateGroups(List.of());
         vo.setClaimable(Boolean.FALSE);
         vo.setUnclaimable(Boolean.FALSE);
         vo.setStatus(WorkflowTaskRuntimeStatus.DONE.getLabel());
@@ -1019,7 +1033,7 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
             vo.setEndTime(task.getEndTime().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime());
         }
         WorkflowFormInstanceEntity formInstance = findFormInstance(task.getProcessInstanceId());
-        WorkflowBusinessApplyVO apply = workflowBusinessApplyService.findByProcessInstance(task.getProcessInstanceId());
+        WorkflowBusinessApplyEntity apply = findBusinessApply(task.getProcessInstanceId());
         if (formInstance != null) {
             vo.setBusinessKey(formInstance.getBusinessKey());
             vo.setProcessName(formInstance.getDefinitionName());
@@ -1044,7 +1058,10 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
         vo.setBusinessKey(copiedTask.getBusinessKey());
         vo.setProcessName(copiedTask.getProcessName());
         vo.setProcessKey(copiedTask.getProcessKey());
-        vo.setAssigneeName(copiedTask.getCopiedUserName());
+        vo.setAssigneeName(copiedTask.getCopiedUserId());
+        vo.setClaimStatus(WorkflowTaskClaimStatus.NONE);
+        vo.setCandidateUsers(List.of());
+        vo.setCandidateGroups(List.of());
         vo.setClaimable(Boolean.FALSE);
         vo.setUnclaimable(Boolean.FALSE);
         vo.setStatus(Boolean.TRUE.equals(copiedTask.getReadFlag()) ? "已阅" : "待阅");
@@ -1055,12 +1072,42 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
 
     private void fillClaimState(WorkflowTaskVO vo, Task task) {
         boolean assigned = StringUtils.hasText(task.getAssignee());
+        List<IdentityLink> links = taskService.getIdentityLinksForTask(task.getId());
+        List<String> candidateUsers = links.stream()
+                .map(IdentityLink::getUserId)
+                .filter(StringUtils::hasText)
+                .distinct()
+                .toList();
+        List<String> candidateGroups = links.stream()
+                .map(IdentityLink::getGroupId)
+                .filter(StringUtils::hasText)
+                .distinct()
+                .toList();
         boolean candidate = !assigned && currentUserCanClaim(task);
         boolean claimedByCurrentUser = assigned
                 && currentUser().equals(task.getAssignee())
                 && isClaimedFromCandidate(task.getId());
         vo.setClaimable(candidate);
         vo.setUnclaimable(claimedByCurrentUser);
+        vo.setClaimStatus(assigned ? WorkflowTaskClaimStatus.ASSIGNED
+                : candidateUsers.isEmpty() && candidateGroups.isEmpty()
+                ? WorkflowTaskClaimStatus.NONE
+                : WorkflowTaskClaimStatus.UNCLAIMED);
+        vo.setCandidateUsers(candidateUsers);
+        vo.setCandidateGroups(candidateGroups);
+    }
+
+    private WorkflowBusinessApplyEntity findBusinessApply(String processInstanceId) {
+        if (!StringUtils.hasText(processInstanceId)) {
+            return null;
+        }
+        return businessApplyMapper.selectOne(new LambdaQueryWrapper<WorkflowBusinessApplyEntity>()
+                .select(WorkflowBusinessApplyEntity::getBusinessKey,
+                        WorkflowBusinessApplyEntity::getProcessName,
+                        WorkflowBusinessApplyEntity::getProcessDefinitionKey)
+                .eq(WorkflowBusinessApplyEntity::getProcessInstanceId, processInstanceId)
+                .orderByDesc(WorkflowBusinessApplyEntity::getId)
+                .last("limit 1"));
     }
 
     private boolean currentUserCanClaim(Task task) {

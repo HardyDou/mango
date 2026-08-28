@@ -1888,6 +1888,12 @@ class NoticeServiceIntegrationTest {
         }
 
         @Override
+        public R<List<IdentityUserInfoVO>> listUserInfos(
+                io.mango.identity.api.query.IdentityUserBatchQuery query) {
+            return R.ok(List.of());
+        }
+
+        @Override
         public R<List<IdentityUserInfoVO>> listUserInfosByTarget(IdentityUserTargetQuery query) {
             return R.ok(List.of());
         }

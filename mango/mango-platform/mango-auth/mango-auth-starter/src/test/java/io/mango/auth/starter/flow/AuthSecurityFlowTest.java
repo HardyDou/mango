@@ -713,6 +713,12 @@ class AuthSecurityFlowTest {
                 }
 
                 @Override
+                public R<List<IdentityUserInfoVO>> listUserInfos(
+                        io.mango.identity.api.query.IdentityUserBatchQuery query) {
+                    return R.ok(List.of());
+                }
+
+                @Override
                 public R<List<IdentityUserInfoVO>> listUserInfosByTarget(io.mango.identity.api.query.IdentityUserTargetQuery query) {
                     return R.ok(query != null && Long.valueOf(1L).equals(query.getTargetId())
                             ? List.of(identityUser()) : List.of());

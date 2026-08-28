@@ -2,13 +2,18 @@ package io.mango.identity.starter.controller;
 
 import io.mango.identity.api.AuthIdentityApi;
 import io.mango.identity.api.IdentityUserApi;
+import io.mango.identity.api.query.IdentityUserBatchQuery;
 import io.mango.identity.api.TenantMemberApi;
 import io.mango.identity.starter.remote.AuthIdentityFeignClient;
 import io.mango.identity.starter.remote.IdentityUserFeignClient;
 import io.mango.identity.starter.remote.TenantMemberFeignClient;
+import io.mango.authorization.api.annotation.ApiAccess;
+import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import jakarta.validation.Valid;
 import org.junit.jupiter.api.Test;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
@@ -30,6 +35,31 @@ class IdentityAdapterContractTest {
         assertValidationInheritance(AuthIdentityApi.class, AuthIdentityController.class);
         assertValidationInheritance(IdentityUserApi.class, IdentityUserController.class);
         assertValidationInheritance(TenantMemberApi.class, TenantMemberController.class);
+    }
+
+    @Test
+    void batchIdentityLookupShouldKeepHttpContractAcrossAdapters() throws NoSuchMethodException {
+        Method apiMethod = IdentityUserApi.class.getMethod("listUserInfos", IdentityUserBatchQuery.class);
+        Method controllerMethod = IdentityUserController.class.getMethod("listUserInfos", IdentityUserBatchQuery.class);
+        Method feignMethod = IdentityUserFeignClient.class.getMethod("listUserInfos", IdentityUserBatchQuery.class);
+
+        assertThat(controllerMethod.getAnnotation(PostMapping.class).value())
+                .containsExactly("/user/info/batch");
+        assertThat(feignMethod.getAnnotation(PostMapping.class).value())
+                .containsExactly("/user/info/batch");
+        assertThat(controllerMethod.getParameters()[0].isAnnotationPresent(RequestBody.class)).isTrue();
+        assertThat(feignMethod.getParameters()[0].isAnnotationPresent(RequestBody.class)).isTrue();
+        assertThat(apiMethod.getParameterTypes()).containsExactly(IdentityUserBatchQuery.class);
+    }
+
+    @Test
+    void batchIdentityLookupShouldRequireLoginWithoutPermissionCode() throws NoSuchMethodException {
+        Method controllerMethod = IdentityUserController.class.getMethod("listUserInfos", IdentityUserBatchQuery.class);
+        ApiAccess access = controllerMethod.getAnnotation(ApiAccess.class);
+
+        assertThat(access).isNotNull();
+        assertThat(access.mode()).isEqualTo(ApiResourceAccessMode.LOGIN);
+        assertThat(access.permission()).isBlank();
     }
 
     private void assertAdapterContract(Class<?> api, Class<?> controller, Class<?> feignClient) {

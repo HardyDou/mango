@@ -27,6 +27,7 @@ import io.mango.identity.api.command.UnbindCurrentExternalIdentityCommand;
 import io.mango.identity.api.enums.IdentityCode;
 import io.mango.identity.api.query.ExternalIdentityQuery;
 import io.mango.identity.api.query.IdentityUserPageQuery;
+import io.mango.identity.api.query.IdentityUserBatchQuery;
 import io.mango.identity.api.query.IdentityUserTargetQuery;
 import io.mango.identity.api.vo.ExternalIdentityBindingVO;
 import io.mango.identity.api.vo.IdentityUserInfoVO;
@@ -430,6 +431,64 @@ public class IdentityUserService extends MangoCrudServiceImpl<IdentityUserMapper
             return null;
         }
         return buildIdentityUserInfoVO(user);
+    }
+
+    @Override
+    public List<IdentityUserInfoVO> listUserInfos(IdentityUserBatchQuery query) {
+        if (query == null) {
+            return List.of();
+        }
+        LinkedHashSet<Long> userIds = query.getUserIds() == null
+                ? new LinkedHashSet<>()
+                : query.getUserIds().stream()
+                .filter(Objects::nonNull)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+        LinkedHashSet<String> usernames = query.getUsernames() == null
+                ? new LinkedHashSet<>()
+                : query.getUsernames().stream()
+                .filter(StringUtils::hasText)
+                .map(String::trim)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+        Require.isTrue(userIds.size() + usernames.size() <= 200,
+                IdentityCode.VALIDATION_ERROR, "批量查询用户标识不能超过200个");
+        if (userIds.isEmpty() && usernames.isEmpty()) {
+            return List.of();
+        }
+        Long tenantId = currentTenantIdLong();
+        if (tenantId == null) {
+            return List.of();
+        }
+        LambdaQueryWrapper<IdentityUserEntity> wrapper = new LambdaQueryWrapper<IdentityUserEntity>()
+                .eq(IdentityUserEntity::getTenantId, tenantId)
+                .and(keys -> {
+                    if (!userIds.isEmpty()) {
+                        keys.in(IdentityUserEntity::getId, userIds);
+                    }
+                    if (!userIds.isEmpty() && !usernames.isEmpty()) {
+                        keys.or();
+                    }
+                    if (!usernames.isEmpty()) {
+                        keys.in(IdentityUserEntity::getUsername, usernames);
+                    }
+                });
+        List<IdentityUserEntity> users = identityUserMapper.selectList(wrapper);
+        if (users.isEmpty()) {
+            return List.of();
+        }
+        Set<Long> matchedUserIds = users.stream()
+                .map(IdentityUserEntity::getUserId)
+                .collect(Collectors.toSet());
+        Set<Long> tenantUserIds = tenantMemberMapper.selectList(new LambdaQueryWrapper<TenantMemberEntity>()
+                        .eq(TenantMemberEntity::getTenantId, tenantId)
+                        .in(TenantMemberEntity::getUserId, matchedUserIds)
+                        .isNull(TenantMemberEntity::getLeftAt))
+                .stream()
+                .map(TenantMemberEntity::getUserId)
+                .collect(Collectors.toSet());
+        return users.stream()
+                .filter(user -> tenantUserIds.contains(user.getUserId()))
+                .map(this::buildIdentityUserInfoVO)
+                .toList();
     }
 
     @Override

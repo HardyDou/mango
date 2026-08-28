@@ -10,6 +10,8 @@ import io.mango.workflow.core.entity.WorkflowDefinitionEntity;
 import io.mango.workflow.core.entity.WorkflowFormInstanceEntity;
 import io.mango.workflow.api.vo.WorkflowBusinessApplyCurrentTaskVO;
 import io.mango.workflow.api.vo.WorkflowBusinessApplyVO;
+import io.mango.workflow.core.identity.WorkflowAssigneeIdentity;
+import io.mango.workflow.core.identity.WorkflowAssigneeIdentityService;
 import org.flowable.engine.runtime.ProcessInstance;
 import org.flowable.task.api.Task;
 import org.springframework.beans.factory.ObjectProvider;
@@ -30,10 +32,14 @@ public class WorkflowEventPublisher {
     private static final String VAR_APPLY_ID = "applyId";
 
     private final ObjectProvider<IDomainEventPublisher> publisherProvider;
+    private final WorkflowAssigneeIdentityService assigneeIdentityService;
 
-    public WorkflowEventPublisher(ObjectProvider<IDomainEventPublisher> publisherProvider) {
+    public WorkflowEventPublisher(ObjectProvider<IDomainEventPublisher> publisherProvider,
+                                  WorkflowAssigneeIdentityService assigneeIdentityService) {
         Require.notNull(publisherProvider, "领域事件发布器提供者不能为空");
         this.publisherProvider = publisherProvider;
+        Require.notNull(assigneeIdentityService, "办理人身份服务不能为空");
+        this.assigneeIdentityService = assigneeIdentityService;
     }
 
     public void publishProcessStarted(
@@ -179,9 +185,7 @@ public class WorkflowEventPublisher {
         payload.setTaskId(task.getId());
         payload.setTaskName(task.getName());
         payload.setTaskDefinitionKey(task.getTaskDefinitionKey());
-        payload.setAssignee(task.getAssignee());
-        payload.setAssigneeId(task.getAssignee());
-        payload.setAssigneeName(task.getAssignee());
+        putAssignee(payload, task.getAssignee());
         payload.setComment(comment);
         putBusinessApply(payload, businessApply);
         publish(eventType, businessKey(formInstance, variables), variables, payload);
@@ -212,9 +216,10 @@ public class WorkflowEventPublisher {
             payload.setTaskId(firstTask.getTaskId());
             payload.setTaskDefinitionKey(firstTask.getTaskDefinitionKey());
             payload.setTaskName(firstTask.getTaskName());
-            payload.setAssignee(firstTask.getAssigneeId() == null ? null : String.valueOf(firstTask.getAssigneeId()));
+            payload.setAssignee(firstTask.getAssigneeName());
             payload.setAssigneeId(firstTask.getAssigneeId() == null ? null : String.valueOf(firstTask.getAssigneeId()));
             payload.setAssigneeName(firstTask.getAssigneeName());
+            payload.setAssigneeDisplayName(firstTask.getAssigneeDisplayName());
             payload.setClaimStatus(firstTask.getClaimStatus() == null ? null : firstTask.getClaimStatus().name());
             payload.setCandidateUsers(firstTask.getCandidateUsers() == null ? List.of() : firstTask.getCandidateUsers());
             payload.setCandidateGroups(firstTask.getCandidateGroups() == null ? List.of() : firstTask.getCandidateGroups());
@@ -234,6 +239,7 @@ public class WorkflowEventPublisher {
         payload.put("taskName", task.getTaskName());
         payload.put("assigneeId", task.getAssigneeId());
         payload.put("assigneeName", task.getAssigneeName());
+        payload.put("assigneeDisplayName", task.getAssigneeDisplayName());
         payload.put("claimStatus", task.getClaimStatus() == null ? null : task.getClaimStatus().name());
         payload.put("candidateUsers", task.getCandidateUsers() == null ? List.of() : task.getCandidateUsers());
         payload.put("candidateGroups", task.getCandidateGroups() == null ? List.of() : task.getCandidateGroups());
@@ -313,6 +319,7 @@ public class WorkflowEventPublisher {
         map.put("assignee", numericStringOrValue(payload.getAssignee()));
         map.put("assigneeId", numericStringOrValue(payload.getAssigneeId()));
         map.put("assigneeName", payload.getAssigneeName());
+        map.put("assigneeDisplayName", payload.getAssigneeDisplayName());
         map.put("completedTaskId", payload.getCompletedTaskId());
         map.put("completedTaskDefinitionKey", payload.getCompletedTaskDefinitionKey());
         map.put("completedTaskName", payload.getCompletedTaskName());
@@ -336,6 +343,19 @@ public class WorkflowEventPublisher {
                 .map(this::currentTaskPayload)
                 .toList());
         return map;
+    }
+
+    private void putAssignee(WorkflowEventPayloadVO payload, String assigneeName) {
+        payload.setAssignee(assigneeName);
+        payload.setAssigneeName(assigneeName);
+        if (assigneeName == null || assigneeName.isBlank()) {
+            payload.setAssigneeId(null);
+            payload.setAssigneeDisplayName(null);
+            return;
+        }
+        WorkflowAssigneeIdentity identity = assigneeIdentityService.resolve(List.of(assigneeName)).get(assigneeName.trim());
+        payload.setAssigneeId(identity == null ? null : String.valueOf(identity.userId()));
+        payload.setAssigneeDisplayName(identity == null ? null : identity.displayName());
     }
 
     private String businessKey(WorkflowFormInstanceEntity formInstance, Map<String, Object> variables) {

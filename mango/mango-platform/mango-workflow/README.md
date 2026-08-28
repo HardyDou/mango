@@ -37,6 +37,7 @@
 | 发起流程 | `WorkflowProcessApi.start()` 或 `/workflow/processes/start`。 |
 | 撤回流程 | `WorkflowProcessApi.withdraw()` 或 `/workflow/processes/withdraw`。 |
 | 待办和已办 | `/workflow/tasks/todo`、`/workflow/tasks/done`、任务列表页面。 |
+| 办理人身份增强 | 任务和业务进度返回原始 `assigneeName`，并按当前租户批量补充 `assigneeId`、`assigneeDisplayName`；候选组未认领时不虚构用户。 |
 | 审批处理 | `/workflow/tasks/complete`、`/workflow/tasks/complete-result`、`/workflow/tasks/reject`、`/workflow/tasks/return`、`/workflow/tasks/save`、`/workflow/tasks/transfer`、`/workflow/tasks/add-sign`。 |
 | 抄送 | `/workflow/tasks/copied`、`/workflow/tasks/copied/read`。 |
 | 业务进度查询 | `WorkflowBusinessProcessApi.latestByBusinessKeys()` 或 `/workflow/business-applies/progress/latest-batch`。 |
@@ -646,7 +647,8 @@ Workflow 参数校验约束统一由 `mango-workflow-api` 的 `XxxApi` 契约声
 | `currentTaskDefinitionKeys` | 刷新后的当前节点定义 key，多个任务用逗号拼接。 |
 | `currentAssigneeNames` | 刷新后的当前处理人名称，多个任务用逗号拼接。 |
 | `currentTaskId` / `currentTaskName` / `taskDefinitionKey` | 第一个当前任务的 ID、名称和定义 key。 |
-| `assigneeId` / `assigneeName` | 第一个当前任务的处理人。 |
+| `assigneeName` | Flowable 原始办理人 key；兼容字段 `assignee` 同样保留该原始 key。 |
+| `assigneeId` / `assigneeDisplayName` | 当前租户身份解析得到的用户 ID（字符串语义）和显示名；解析失败时为空。 |
 | `claimStatus` | 当前任务认领状态：`NONE`、`UNCLAIMED`、`ASSIGNED`。 |
 | `candidateUsers` / `candidateGroups` | 当前任务候选用户和候选组。 |
 | `currentTasks` | 刷新后的当前任务快照，来源于 `workflow_business_apply_current_task`，包含认领状态和候选人。 |
@@ -696,12 +698,12 @@ Workflow 参数校验约束统一由 `mango-workflow-api` 的 `XxxApi` 契约声
 | `currentAssigneeNames` | 刷新后的当前处理人名称。 |
 | `currentTask` | 第一个当前任务快照。 |
 | `taskId` / `taskDefinitionKey` / `taskName` | 第一个当前任务的 ID、定义 key 和名称。 |
-| `assignee` | 第一个当前任务的处理人 ID。 |
-| `assigneeId` | 第一个当前任务的处理人 ID。 |
-| `assigneeName` | 第一个当前任务的处理人名称。 |
+| `assignee` | 兼容字段，保留第一个当前任务的 Flowable 原始办理人 key。 |
+| `assigneeId` / `assigneeDisplayName` | 第一个当前任务的租户用户 ID（字符串语义）和显示名；未认领或解析失败时为空。 |
+| `assigneeName` | 第一个当前任务的 Flowable 原始办理人 key。 |
 | `claimStatus` | 第一个当前任务认领状态：`NONE`、`UNCLAIMED`、`ASSIGNED`。 |
 | `candidateUsers` / `candidateGroups` | 第一个当前任务候选用户和候选组。 |
-| `currentTasks` | 刷新后的当前任务明细，包含 `taskId`、`taskDefinitionKey`、`taskName`、`assigneeId`、`assigneeName`、`claimStatus`、`candidateUsers`、`candidateGroups`、`arrivedAt`。 |
+| `currentTasks` | 刷新后的当前任务明细，包含原始 `assigneeName`、增强 `assigneeId`/`assigneeDisplayName`、`claimStatus`、`candidateUsers`、`candidateGroups` 和 `arrivedAt`。 |
 | `variables` | 流程变量快照。 |
 
 `workflow.task.assigned` 按运行时任务发送：任务已有 `assigneeId` 时，只通知该办理人；任务尚未到人时，将候选用户以及 `ROLE:<id>`、`POST:<id>`、`ORG:<id>` 转成同一个任务的 Notice 接收目标，目标中的全部有效成员收到指向同一 `taskId` 的通知。并行或多实例产生多个运行时任务时，每个任务分别发送并使用 `eventId + taskId` 幂等，不能把接收人聚合到第一条任务。流程已经结束或没有可解析接收人时跳过通知；`ORG_LEADER:<id>` 不会降级为全组织通知。
@@ -947,6 +949,8 @@ workflow:template:push
 确认管理后台已经注册 `@mango/workflow` 的 `admin-pages` 子入口，并且菜单里的组件路径能映射到 `workflow/template/index` 或 `workflow/definition/index` 页面 key。
 
 ## 14. 相关文档
+
+- [Workflow 办理人身份特性升级指南](../../../mango-docs/guides/business-integration/workflow-assignee-identity-upgrade.md)
 
 - [前端 workflow 包](../../../mango-ui/packages/workflow/README.md)
 - [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)
