@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.common.result.R;
 import io.mango.common.result.Require;
 import io.mango.common.vo.PageResult;
@@ -13,6 +14,7 @@ import io.mango.workflow.api.command.CreateWorkflowBusinessApplyCommand;
 import io.mango.workflow.api.command.StartBusinessWorkflowCommand;
 import io.mango.workflow.api.command.StartWorkflowProcessCommand;
 import io.mango.workflow.api.command.WithdrawWorkflowProcessCommand;
+import io.mango.workflow.api.command.ReplaceWorkflowBusinessParticipantsCommand;
 import io.mango.workflow.api.command.WorkflowJsonRequest;
 import io.mango.workflow.api.enums.WorkflowApplyStatus;
 import io.mango.workflow.api.enums.WorkflowDefinitionStatus;
@@ -36,9 +38,11 @@ import io.mango.workflow.core.mapper.WorkflowDefinitionMapper;
 import io.mango.workflow.core.mapper.WorkflowFormInstanceMapper;
 import io.mango.workflow.core.mapper.WorkflowTaskRecordMapper;
 import io.mango.workflow.core.model.WorkflowProcessStartedContext;
+import io.mango.workflow.core.model.WorkflowParticipantRecord;
 import io.mango.workflow.core.service.IWorkflowBusinessApplyService;
 import io.mango.workflow.core.service.IWorkflowProcessService;
 import io.mango.workflow.core.service.IWorkflowTaskRuntimeService;
+import io.mango.workflow.core.service.IWorkflowParticipationService;
 import lombok.RequiredArgsConstructor;
 import org.flowable.engine.HistoryService;
 import org.flowable.engine.RuntimeService;
@@ -67,6 +71,7 @@ import java.util.stream.Collectors;
  */
 @Service
 @RequiredArgsConstructor
+@SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "Spring-managed collaborators are injected")
 public class WorkflowProcessService implements IWorkflowProcessService {
 
     private static final String INITIATOR_VAR = "mangoInitiator";
@@ -87,6 +92,7 @@ public class WorkflowProcessService implements IWorkflowProcessService {
     private final HistoryService historyService;
     private final ObjectMapper objectMapper;
     private final IWorkflowTaskRuntimeService workflowTaskRuntimeService;
+    private final IWorkflowParticipationService workflowParticipationService;
     private final IWorkflowBusinessApplyService workflowBusinessApplyService;
     private final WorkflowEventPublisher workflowEventPublisher;
 
@@ -134,6 +140,19 @@ public class WorkflowProcessService implements IWorkflowProcessService {
                 variables);
         saveFormInstance(definition, instance, variables);
         saveStartRecord(instance.getProcessInstanceId(), variables);
+        Long initiatorId = MangoContextHolder.userId();
+        workflowParticipationService.recordParticipant(new WorkflowParticipantRecord(
+                definition.getDefinitionKey(), businessKey, instance.getProcessInstanceId(), initiatorId,
+                MangoContextHolder.memberId(), MangoContextHolder.principalName(), MangoContextHolder.principalName(),
+                io.mango.workflow.api.enums.WorkflowParticipantType.INITIATOR));
+        if (command.getParticipantUserIds() != null) {
+            ReplaceWorkflowBusinessParticipantsCommand participants = new ReplaceWorkflowBusinessParticipantsCommand();
+            participants.setProcessKey(definition.getDefinitionKey());
+            participants.setBusinessKey(businessKey);
+            participants.setProcessInstanceId(instance.getProcessInstanceId());
+            participants.setParticipantUserIds(command.getParticipantUserIds());
+            workflowParticipationService.replaceBusinessParticipants(participants);
+        }
         workflowEventPublisher.publishProcessStarted(definition, instance, variables);
         workflowBusinessApplyService.markProcessStarted(new WorkflowProcessStartedContext(
                 applyId, definition.getId(), definition.getDefinitionKey(),
@@ -300,6 +319,7 @@ public class WorkflowProcessService implements IWorkflowProcessService {
         startCommand.setSnapshotRef(command.getSnapshotRef());
         startCommand.setVariables(command.getVariables());
         startCommand.setSelectedAssignees(command.getSelectedAssignees());
+        startCommand.setParticipantUserIds(command.getParticipantUserIds());
         return startCommand;
     }
 

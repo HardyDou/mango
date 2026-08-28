@@ -14,6 +14,7 @@ import io.mango.workflow.core.mapper.WorkflowFormInstanceMapper;
 import io.mango.workflow.core.mapper.WorkflowTaskRecordMapper;
 import io.mango.workflow.core.service.IWorkflowBusinessApplyService;
 import io.mango.workflow.core.service.IWorkflowTaskRuntimeService;
+import io.mango.workflow.core.service.IWorkflowParticipationService;
 import org.flowable.engine.HistoryService;
 import org.flowable.engine.RuntimeService;
 import org.flowable.engine.TaskService;
@@ -62,6 +63,8 @@ class WorkflowProcessWithdrawalTest {
     @Mock
     private IWorkflowTaskRuntimeService workflowTaskRuntimeService;
     @Mock
+    private IWorkflowParticipationService workflowParticipationService;
+    @Mock
     private IWorkflowBusinessApplyService workflowBusinessApplyService;
     @Mock
     private WorkflowEventPublisher workflowEventPublisher;
@@ -81,6 +84,7 @@ class WorkflowProcessWithdrawalTest {
                 historyService,
                 new ObjectMapper(),
                 workflowTaskRuntimeService,
+                workflowParticipationService,
                 workflowBusinessApplyService,
                 workflowEventPublisher);
     }

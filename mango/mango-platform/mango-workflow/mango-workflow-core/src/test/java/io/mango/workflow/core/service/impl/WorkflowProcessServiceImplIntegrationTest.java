@@ -43,6 +43,7 @@ import io.mango.workflow.core.mapper.WorkflowDefinitionMapper;
 import io.mango.workflow.core.mapper.WorkflowFormInstanceMapper;
 import io.mango.workflow.core.mapper.WorkflowTaskRecordMapper;
 import io.mango.workflow.core.service.IWorkflowBusinessApplyService;
+import io.mango.workflow.core.service.IWorkflowParticipationService;
 import io.mango.workflow.core.model.WorkflowProcessStartedContext;
 import io.mango.workflow.core.model.WorkflowTaskStatusContext;
 import io.mango.workflow.core.service.IWorkflowTaskRuntimeService;
@@ -362,6 +363,11 @@ class WorkflowProcessServiceImplIntegrationTest {
         @Bean
         CapturingTaskRuntimeService workflowTaskRuntimeService() {
             return new CapturingTaskRuntimeService();
+        }
+
+        @Bean
+        IWorkflowParticipationService workflowParticipationService() {
+            return mock(IWorkflowParticipationService.class);
         }
     }
 

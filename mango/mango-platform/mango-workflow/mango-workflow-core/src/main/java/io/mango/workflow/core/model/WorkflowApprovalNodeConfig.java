@@ -1,6 +1,7 @@
 package io.mango.workflow.core.model;
 
 import io.mango.workflow.api.enums.WorkflowApprovalMode;
+import io.mango.workflow.api.enums.WorkflowAssignmentMode;
 import io.mango.workflow.api.enums.WorkflowAssigneeType;
 import io.mango.workflow.api.enums.WorkflowEmptyAssigneeStrategy;
 import io.mango.workflow.api.enums.WorkflowFormPermission;
@@ -17,6 +18,9 @@ import java.util.Map;
  */
 @Data
 public class WorkflowApprovalNodeConfig {
+
+    /** 任务分配模式，缺失时兼容为 CLAIM。 */
+    private WorkflowAssignmentMode assignmentMode = WorkflowAssignmentMode.CLAIM;
 
     private WorkflowAssigneeType assigneeType = WorkflowAssigneeType.SPECIFIED_USER;
     private List<String> assigneeIds = new ArrayList<>();
