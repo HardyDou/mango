@@ -10,6 +10,8 @@ import io.mango.workflow.api.vo.WorkflowBusinessApplyCurrentTaskVO;
 import io.mango.workflow.api.vo.WorkflowBusinessApplyVO;
 import io.mango.workflow.core.entity.WorkflowDefinitionEntity;
 import io.mango.workflow.core.entity.WorkflowFormInstanceEntity;
+import io.mango.workflow.core.identity.IWorkflowAssigneeIdentityProvider;
+import io.mango.workflow.core.identity.WorkflowAssigneeIdentityService;
 import org.flowable.engine.impl.persistence.entity.ExecutionEntityImpl;
 import org.flowable.task.service.impl.persistence.entity.TaskEntityImpl;
 import org.junit.jupiter.api.AfterEach;
@@ -22,12 +24,21 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class WorkflowEventPublisherTest {
 
     private final List<DomainEvent> events = new ArrayList<>();
     private final WorkflowEventPublisher publisher = new WorkflowEventPublisher(
-            new SingleObjectProvider(event -> events.add(event)));
+            new SingleObjectProvider(event -> events.add(event)), identityService());
+
+    private static WorkflowAssigneeIdentityService identityService() {
+        @SuppressWarnings("unchecked")
+        ObjectProvider<IWorkflowAssigneeIdentityProvider> provider = mock(ObjectProvider.class);
+        when(provider.getIfAvailable()).thenReturn(null);
+        return new WorkflowAssigneeIdentityService(provider);
+    }
 
     @BeforeEach
     void setUpContext() {
@@ -121,8 +132,9 @@ class WorkflowEventPublisherTest {
                 .containsEntry("currentTaskNames", "财务审批")
                 .containsEntry("currentTaskDefinitionKeys", "finance_approve")
                 .containsEntry("currentAssigneeNames", "lisi")
-                .containsEntry("assignee", 1002L)
+                .containsEntry("assignee", "lisi")
                 .containsEntry("assigneeName", "lisi")
+                .containsEntry("assigneeDisplayName", "李四")
                 .containsEntry("claimStatus", WorkflowTaskClaimStatus.ASSIGNED.name())
                 .containsEntry("candidateUsers", List.of("1002"))
                 .containsEntry("candidateGroups", List.of("finance"));
@@ -134,6 +146,7 @@ class WorkflowEventPublisherTest {
                     assertThat(currentTaskPayload.get("taskName")).isEqualTo("财务审批");
                     assertThat(currentTaskPayload.get("assigneeId")).isEqualTo(1002L);
                     assertThat(currentTaskPayload.get("assigneeName")).isEqualTo("lisi");
+                    assertThat(currentTaskPayload.get("assigneeDisplayName")).isEqualTo("李四");
                     assertThat(currentTaskPayload.get("claimStatus")).isEqualTo(WorkflowTaskClaimStatus.ASSIGNED.name());
                     assertThat(currentTaskPayload.get("candidateUsers")).isEqualTo(List.of("1002"));
                     assertThat(currentTaskPayload.get("candidateGroups")).isEqualTo(List.of("finance"));
@@ -235,6 +248,7 @@ class WorkflowEventPublisherTest {
         currentTask.setTaskName("财务审批");
         currentTask.setAssigneeId(1002L);
         currentTask.setAssigneeName("lisi");
+        currentTask.setAssigneeDisplayName("李四");
         currentTask.setClaimStatus(WorkflowTaskClaimStatus.ASSIGNED);
         currentTask.setCandidateUsers(List.of("1002"));
         currentTask.setCandidateGroups(List.of("finance"));

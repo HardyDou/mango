@@ -1,6 +1,7 @@
 import type {
   WorkflowBusinessApply,
   WorkflowDesignerNode,
+  WorkflowTaskClaimStatus,
   WorkflowTaskRecord,
 } from '../../api/workflow';
 
@@ -9,6 +10,8 @@ export interface WorkflowInstanceSummaryData {
   status?: string;
   initiatorName?: string;
   assigneeName?: string;
+  assigneeDisplayName?: string;
+  claimStatus?: WorkflowTaskClaimStatus;
   startTime?: string;
 }
 

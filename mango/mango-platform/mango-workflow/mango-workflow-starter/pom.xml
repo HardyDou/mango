@@ -17,6 +17,10 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <groupId>io.mango.platform.identity</groupId>
+            <artifactId>mango-identity-api</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.mango.platform.authorization</groupId>
             <artifactId>mango-authorization-api</artifactId>
         </dependency>
