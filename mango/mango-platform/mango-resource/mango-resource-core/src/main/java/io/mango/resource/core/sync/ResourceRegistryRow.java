@@ -1,5 +1,6 @@
 package io.mango.resource.core.sync;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.mango.resource.api.enums.ResourceSyncMode;
 import lombok.Data;
 
@@ -26,5 +27,6 @@ public class ResourceRegistryRow {
     private String sourceHash;
     private ResourceSyncMode syncMode;
     private String status;
+    @JsonIgnore
     private LocalDateTime lastSyncTime;
 }
