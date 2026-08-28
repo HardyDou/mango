@@ -24,6 +24,7 @@ import io.mango.resource.api.enums.ResourceStatus;
 import io.mango.resource.api.enums.ResourceSyncMode;
 import io.mango.resource.support.model.ResourceDeclaration;
 import io.mango.resource.support.model.ResourceField;
+import io.mango.resource.support.model.ResourceSyncContext;
 import io.mango.resource.support.model.ResourceSyncResult;
 import io.mango.resource.support.config.ResourceRegistryProperties;
 import io.mango.resource.support.declaration.ResourceDeclarationCollector;
@@ -67,6 +68,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -132,6 +134,7 @@ class ResourceRegistrySyncServiceIntegrationTest {
         provider.setDeclaration(activeDeclaration(1, "提交申请"));
         handler.resetBlocking();
         handler.resetUpsertCount();
+        handler.resetPreservation();
         dispatcher.reset();
         syncOrderRecorder.clear();
         sqlStatementCounter.reset();
@@ -684,7 +687,7 @@ class ResourceRegistrySyncServiceIntegrationTest {
     }
 
     @Test
-    void syncReplaysUnchangedDependentsWhenDependencyChanges() {
+    void syncDoesNotReplayUnchangedDependentsWhenDependencyChanges() {
         ResourceDeclaration binding = genericDeclaration("1900000000000000101",
                 "TEST_BINDING", "guarantee.binding", "test-binding");
         ResourceDeclaration user = genericDeclaration("1900000000000000102",
@@ -699,7 +702,7 @@ class ResourceRegistrySyncServiceIntegrationTest {
         provider.setDeclarations(List.of(binding, updatedUser));
         syncService.sync();
 
-        assertThat(syncOrderRecorder.resourceTypes()).containsExactly("TEST_USER", "TEST_BINDING");
+        assertThat(syncOrderRecorder.resourceTypes()).containsExactly("TEST_USER");
     }
 
     @Test
@@ -730,6 +733,24 @@ class ResourceRegistrySyncServiceIntegrationTest {
         assertThat(count("resource_sync_log")).isEqualTo(2);
         assertThat(count("resource_change_log")).isEqualTo(2);
         assertThat(stringValue("message_template", "title")).isEqualTo("提交申请新版");
+    }
+
+    @Test
+    void preservedResultDoesNotAdvanceSourceHashOrLastSyncTime() {
+        syncService.sync();
+        ResourceRegistryEntity before = registryMapper.selectByResourceId("1900000000000000001");
+        handler.preserveNextUpsert();
+        provider.setDeclaration(activeDeclaration(2, "后台值优先"));
+
+        syncService.sync();
+
+        ResourceRegistryEntity after = registryMapper.selectByResourceId("1900000000000000001");
+        assertThat(after.getSourceHash()).isEqualTo(before.getSourceHash());
+        assertThat(after.getLastSyncTime()).isEqualTo(before.getLastSyncTime());
+        assertThat(stringValue("message_template", "title")).isEqualTo("提交申请");
+        assertThat(jdbcTemplate.queryForObject(
+                "select result from resource_sync_log order by id desc limit 1", String.class))
+                .isEqualTo("PRESERVED");
     }
 
     @Test
@@ -1472,6 +1493,7 @@ class ResourceRegistrySyncServiceIntegrationTest {
 
         private final TestMessageTemplateMapper messageTemplateMapper;
         private final AtomicInteger upsertCount = new AtomicInteger();
+        private final AtomicBoolean preserveNext = new AtomicBoolean();
         private final AtomicReference<CountDownLatch> enteredUpsert = new AtomicReference<>();
         private final AtomicReference<CountDownLatch> releaseUpsert = new AtomicReference<>();
 
@@ -1504,6 +1526,22 @@ class ResourceRegistrySyncServiceIntegrationTest {
                 messageTemplateMapper.updateById(entity);
             }
             return ResourceSyncResult.of(id, "message_template", "ok");
+        }
+
+        @Override
+        public Map<String, ResourceSyncResult> upsertBatchWithContext(
+                List<ResourceDeclaration> declarations,
+                List<ResourceDeclaration> completeBatch,
+                Map<String, ResourceSyncContext> syncContexts) {
+            if (!preserveNext.getAndSet(false)) {
+                return ResourceHandler.super.upsertBatchWithContext(
+                        declarations, completeBatch, syncContexts);
+            }
+            Map<String, ResourceSyncResult> results = new LinkedHashMap<>();
+            declarations.forEach(declaration -> results.put(
+                    declaration.getId(),
+                    ResourceSyncResult.preserved(targetId(declaration), "message_template", "preserved")));
+            return results;
         }
 
         @Override
@@ -1558,6 +1596,14 @@ class ResourceRegistrySyncServiceIntegrationTest {
 
         void resetUpsertCount() {
             upsertCount.set(0);
+        }
+
+        void preserveNextUpsert() {
+            preserveNext.set(true);
+        }
+
+        void resetPreservation() {
+            preserveNext.set(false);
         }
 
         private void awaitReleaseIfBlocked() {

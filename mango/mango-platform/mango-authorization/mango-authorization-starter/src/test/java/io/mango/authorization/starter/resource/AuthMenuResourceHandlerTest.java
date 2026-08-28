@@ -8,10 +8,12 @@ import io.mango.resource.api.enums.ResourceFieldType;
 import io.mango.resource.api.enums.ResourceSyncMode;
 import io.mango.resource.support.model.ResourceDeclaration;
 import io.mango.resource.support.model.ResourceField;
+import io.mango.resource.support.model.ResourceSyncContext;
 import io.mango.resource.support.model.ResourceSyncResult;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
+import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -196,6 +198,27 @@ class AuthMenuResourceHandlerTest {
                 ArgumentCaptor.forClass(AppModuleResourceManifestCommand.class);
         verify(appModuleService).registerResourceManifest(captor.capture());
         assertThat(captor.getValue().getMenus().get(0).getMenuCode()).isEqualTo("workflow:start-process");
+    }
+
+    @Test
+    void contextualBatchUsesCompleteDeclarationsWithoutOverwritingUnchangedResources() {
+        ResourceDeclaration parent = menuResource(
+                "2951300000000009001", "workflow.parent", "mango-workflow",
+                List.of(Map.of("menuType", 1, "menuName", "审批管理", "menuCode", "workflow",
+                        "path", "/workflow")));
+        ResourceDeclaration child = menuResource(
+                "2951300000000009002", "workflow.child", "mango-workflow",
+                List.of(Map.of("menuType", 2, "menuName", "发起流程", "menuCode", "workflow:start-process",
+                        "parentCode", "workflow", "path", "/workflow/start-process")));
+        when(appModuleService.registerResourceManifest(org.mockito.ArgumentMatchers.any())).thenReturn(1);
+        ResourceSyncContext context = ResourceSyncContext.of(
+                child.getId(), LocalDateTime.now().minusMinutes(1), LocalDateTime.now(), null, null);
+
+        Map<String, ResourceSyncResult> results = handler.upsertBatchWithContext(
+                List.of(child), List.of(parent, child), Map.of(child.getId(), context));
+
+        assertThat(results).containsOnlyKeys(child.getId());
+        verify(appModuleService).registerResourceManifest(org.mockito.ArgumentMatchers.any());
     }
 
     @Test

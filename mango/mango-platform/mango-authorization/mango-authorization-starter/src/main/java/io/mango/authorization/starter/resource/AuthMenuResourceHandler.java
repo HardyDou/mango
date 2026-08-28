@@ -10,8 +10,8 @@ import io.mango.resource.api.enums.ResourceSyncMode;
 import io.mango.resource.support.model.ResourceDeclaration;
 import io.mango.resource.support.model.ResourceField;
 import io.mango.resource.support.model.ResourceHandlerSpec;
+import io.mango.resource.support.model.ResourceSyncContext;
 import io.mango.resource.support.model.ResourceSyncResult;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
@@ -27,13 +27,17 @@ import java.util.stream.Collectors;
  * mango-resource AUTH_MENU 目标处理器。
  */
 @Component
-@RequiredArgsConstructor
 public class AuthMenuResourceHandler implements ResourceHandler {
 
     private static final String TARGET_TABLE = "authorization_app_module";
 
     private final IAppModuleService appModuleService;
     private final ObjectMapper objectMapper;
+
+    public AuthMenuResourceHandler(IAppModuleService appModuleService, ObjectMapper objectMapper) {
+        this.appModuleService = appModuleService;
+        this.objectMapper = objectMapper.copy();
+    }
 
     @Override
     public String resourceType() {
@@ -81,13 +85,27 @@ public class AuthMenuResourceHandler implements ResourceHandler {
 
     @Override
     public Map<String, ResourceSyncResult> upsertBatch(List<ResourceDeclaration> resources) {
-        List<ResourceDeclaration> pending = resources.stream()
+        return synchronizeChanged(resources, resources);
+    }
+
+    @Override
+    public Map<String, ResourceSyncResult> upsertBatchWithContext(
+            List<ResourceDeclaration> declarations,
+            List<ResourceDeclaration> completeBatch,
+            Map<String, ResourceSyncContext> syncContexts) {
+        return synchronizeChanged(declarations, completeBatch);
+    }
+
+    private Map<String, ResourceSyncResult> synchronizeChanged(
+            List<ResourceDeclaration> declarations,
+            List<ResourceDeclaration> completeBatch) {
+        List<ResourceDeclaration> pending = declarations.stream()
                 .filter(this::isAutoSync)
                 .collect(Collectors.toCollection(ArrayList::new));
         Map<String, ResourceSyncResult> results = new LinkedHashMap<>();
         Set<String> syncedMenuCodes = new HashSet<>();
-        Set<String> declaredMenuCodes = collectDeclaredMenuCodes(resources);
-        collectProtectedMenuCodes(resources, syncedMenuCodes);
+        Set<String> declaredMenuCodes = collectDeclaredMenuCodes(completeBatch);
+        collectUnchangedMenuCodes(declarations, completeBatch, syncedMenuCodes);
         while (!pending.isEmpty()) {
             boolean progressed = false;
             for (int i = 0; i < pending.size(); i++) {
@@ -107,16 +125,22 @@ public class AuthMenuResourceHandler implements ResourceHandler {
         return results;
     }
 
-    private boolean isAutoSync(ResourceDeclaration resource) {
-        return resource.getSyncMode() == null || resource.getSyncMode() == ResourceSyncMode.AUTO;
-    }
-
-    private void collectProtectedMenuCodes(List<ResourceDeclaration> resources, Set<String> menuCodes) {
-        for (ResourceDeclaration resource : resources) {
-            if (!isAutoSync(resource)) {
+    private void collectUnchangedMenuCodes(
+            List<ResourceDeclaration> declarations,
+            List<ResourceDeclaration> completeBatch,
+            Set<String> menuCodes) {
+        Set<String> changedIds = declarations.stream()
+                .map(ResourceDeclaration::getId)
+                .collect(Collectors.toSet());
+        for (ResourceDeclaration resource : completeBatch) {
+            if (!changedIds.contains(resource.getId()) || !isAutoSync(resource)) {
                 collectMenuCodes(resource, menuCodes);
             }
         }
+    }
+
+    private boolean isAutoSync(ResourceDeclaration resource) {
+        return resource.getSyncMode() == null || resource.getSyncMode() == ResourceSyncMode.AUTO;
     }
 
     @Override

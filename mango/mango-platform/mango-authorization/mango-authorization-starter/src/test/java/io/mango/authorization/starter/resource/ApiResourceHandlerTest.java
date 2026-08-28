@@ -9,11 +9,14 @@ import io.mango.resource.api.enums.ResourceFieldType;
 import io.mango.resource.api.enums.ResourceSyncMode;
 import io.mango.resource.support.model.ResourceDeclaration;
 import io.mango.resource.support.model.ResourceField;
+import io.mango.resource.support.model.ResourceSyncContext;
 import org.junit.jupiter.api.Test;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -66,6 +69,27 @@ class ApiResourceHandlerTest {
         verify(mapper, times(2)).selectList(any());
         verify(mapper, times(2)).updateById(any(ApiResourceEntity.class));
         verify(mapper, never()).selectOne(any());
+    }
+
+    @Test
+    void incrementalBatchWritesOnlyChangedDeclarations() {
+        IApiResourceService service = mock(IApiResourceService.class);
+        ApiResourceMapper mapper = mock(ApiResourceMapper.class);
+        ApiResourceHandler handler = new ApiResourceHandler(service, mapper);
+        ResourceDeclaration changed = declaration(1, ResourceSyncMode.AUTO);
+        ResourceDeclaration unchanged = declaration(2, ResourceSyncMode.AUTO);
+        when(service.upsertApiResources(any())).thenReturn(new ApiResourceRegisterResultVO(1, 0, 1));
+        when(mapper.selectList(any())).thenReturn(List.of(entity(1)));
+        ResourceSyncContext context = ResourceSyncContext.of(
+                changed.getId(), LocalDateTime.now().minusMinutes(1), LocalDateTime.now(),
+                entity(1).getId(), "authorization_api_resource");
+
+        var results = handler.upsertBatchWithContext(
+                List.of(changed), List.of(changed, unchanged), Map.of(changed.getId(), context));
+
+        assertThat(results).containsOnlyKeys(changed.getId());
+        verify(service).upsertApiResources(org.mockito.ArgumentMatchers.argThat(commands -> commands.size() == 1));
+        verify(service, never()).registerApiResources(any());
     }
 
     private ResourceDeclaration declaration(int index, ResourceSyncMode syncMode) {

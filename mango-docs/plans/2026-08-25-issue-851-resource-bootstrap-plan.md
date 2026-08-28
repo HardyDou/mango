@@ -92,3 +92,38 @@
 - `git diff --check`：PASS；新增差异未包含凭据值。`declaredSha256` 的 `null` 是未提供合法可选 checksum 的领域语义，不是空实现。
 - 两个专用数据库 `mango_issue_851_bootstrap_resource_perf`、`mango_issue_851_file_core_concurrency` 已删除并回读为空；MySQL 和 MinIO 已正常退出，端口 33385、19385、19386 均关闭。
 - `.runtime/issue-851-mysql` 与 `.runtime/issue-851-minio` 已移入系统废纸篓，可恢复；工作区 `.runtime` 不再包含本任务运行数据。
+
+## 5. 1.0.42 Resource 增量跟进
+
+### 5.1 基线与授权
+
+- 源码基线：`origin/main@557807086e1f9c2792a1ef7f36f37effd577cd69`。
+- 工作区：`M01=REUSE`，`/Users/hardy/Work/mango-issue-851-runtime`，分支 `feat/issue-851-resource-incremental-release`。
+- 授权：实现、文档、静态验证、Commit、当前任务分支 Push 和创建 PR；不含 Merge、发布或部署。
+
+### 5.2 交付项
+
+| ID | 要求 | 交付物 | 状态 |
+|---|---|---|---|
+| IMPL-007 | 变化模块内按 Resource hash 只调度变化声明 | Resource Registry changed-only 编排与依赖重放移除 | DONE |
+| IMPL-008 | 完整批次只作关系解析上下文 | `upsertBatchWithContext`、远程 Command/VO、`AUTH_MENU`/`API_RESOURCE` changed-only 实现 | DONE |
+| IMPL-009 | 后台修改后增量发布退避 | `SYSTEM_CONFIG.updated_at` 与 Registry `last_sync_time` 同步标记、`PRESERVED` 结果 | DONE |
+| VERIFY-003 | 覆盖未变依赖、Registry 不推进、配置退避和 Authorization changed-only | Core/System 集成测试与 Authorization 单元测试资产；测试源码编译通过，本地执行受当前 Agent `simple` Skill 限制，剩余风险交由 PR CI 回读 | EXCEPTION |
+| DOC-001 | 公开能力、System 用法、设计、台账和业务排障说明同步 | Resource/System README、能力地图、本设计、台账及菜单/按钮/租户配置业务指南 | DONE |
+
+### 5.3 当前边界
+
+- 模块 hash 与安装状态写入 `resource_module_receipt`；逐 Resource canonical hash 与上次成功同步时间写入 `resource_registry.source_hash`、`resource_registry.last_sync_time`。
+- `PRESERVED` 只写 `resource_sync_log`，不推进逐 Resource hash/同步时间；模块 receipt 可以完成当前发布，后续模块内容变化时该 Resource 会再次进入判断。
+- 当前只有 `SYSTEM_CONFIG` 启用通用单行 `updated_at` 退避。`AUTH_MENU`、`API_RESOURCE` 只保证未变化 Resource 不写；多表/多行资源由具体 Handler 决定受管状态。
+- 首次 cold apply 仍执行 `BOOTSTRAP_REQUIRED` Resource；现有 cold baseline 不包含 Handler 物化状态。本 Issue 继续保持“部分完成”，不声明重置发布的完整 Resource baseline 已落地。
+
+### 5.4 本地验证
+
+- 直接修改模块 `mvn verify -DskipTests`：Resource API/Support/Core/Remote Starter、Authorization Core/Starter、System Core 共 7 个模块全部 `SUCCESS`；主源码与测试源码编译通过，测试执行按当前 Agent `simple` Skill 约束跳过。
+- `audit-module-readmes.mjs`：PASS。
+- `audit-readme-source-facts.mjs`：PASS。
+- `check-capability-docs.mjs --base origin/main --head HEAD`：PASS，覆盖 Resource/System README、能力地图和三份业务集成指南。
+- `workspace-layout-check.mjs --root .`：PASS。
+- 既有 #851 `delivery-contract-check.mjs --mode verify`：8/8 DONE、0 EXCEPTION。
+- `git diff --check`：PASS。

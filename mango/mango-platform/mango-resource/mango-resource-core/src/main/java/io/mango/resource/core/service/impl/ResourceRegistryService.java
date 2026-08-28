@@ -15,6 +15,7 @@ import io.mango.resource.support.ResourceTargetDispatcher;
 import io.mango.resource.api.enums.ResourceFieldType;
 import io.mango.resource.api.enums.ResourceStatus;
 import io.mango.resource.api.enums.ResourceSyncMode;
+import io.mango.resource.api.enums.ResourceSyncDisposition;
 import io.mango.resource.api.enums.ResourceExecutionPhase;
 import io.mango.resource.core.service.IResourceRegistryService;
 import io.mango.resource.core.sync.ResourceContentHasher;
@@ -27,6 +28,7 @@ import io.mango.resource.core.diagnostic.ResourceModuleSyncStatusRegistry;
 import io.mango.resource.core.diagnostic.ResourceModuleSyncStatusRegistry.ModuleObservation;
 import io.mango.resource.support.model.ResourceDeclaration;
 import io.mango.resource.support.model.ResourceField;
+import io.mango.resource.support.model.ResourceSyncContext;
 import io.mango.resource.support.model.ResourceSyncResult;
 import io.mango.resource.support.config.ResourceRegistryProperties;
 import io.mango.resource.support.declaration.ResourceDeclarationCollector;
@@ -39,6 +41,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.lang.management.ManagementFactory;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -690,7 +694,6 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
             prepareActiveDeclaration(
                     declaration, force, registrySnapshot, allDeclarationsByType, declarationsByType);
         }
-        replayDeclarationsForChangedDependencies(allDeclarationsByType, declarationsByType, handlerMap);
         for (String resourceType : orderResourceTypesForSync(declarationsByType, handlerMap)) {
             assertOperationCanContinue();
             List<ResourceDeclaration> changedDeclarations = declarationsByType.get(resourceType);
@@ -698,16 +701,20 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
             Require.isTrue(handler != null || canDispatchAll(changedDeclarations),
                     ResourceCode.RESOURCE_NOT_FOUND, "未找到资源处理器: " + resourceType);
             List<ResourceDeclaration> completeBatch = allDeclarationsByType.get(resourceType);
+            Map<String, ResourceSyncContext> syncContexts = syncContexts(
+                    changedDeclarations, registrySnapshot);
             Map<String, ResourceSyncResult> results = syncActiveBatchByTarget(
                     handler,
                     changedDeclarations,
-                    completeBatch);
+                    completeBatch,
+                    syncContexts);
             for (ResourceDeclaration declaration : changedDeclarations) {
                 assertOperationCanContinue();
                 ResourceSyncResult result = results.get(declaration.getId());
                 Require.notNull(result, ResourceCode.RESOURCE_SYNC_FAILED,
                         "资源处理器未返回同步结果: " + declaration.getId());
-                saveActiveSyncResult(declaration, result, registrySnapshot);
+                saveActiveSyncResult(
+                        declaration, result, syncContexts.get(declaration.getId()), registrySnapshot);
             }
         }
     }
@@ -740,55 +747,6 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
         }
         declarationsByType.computeIfAbsent(declaration.getResourceType(), key -> new ArrayList<>())
                 .add(declaration);
-    }
-
-    private void replayDeclarationsForChangedDependencies(
-            Map<String, List<ResourceDeclaration>> allDeclarationsByType,
-            Map<String, List<ResourceDeclaration>> declarationsByType,
-            Map<String, ResourceHandler> handlerMap) {
-        Set<String> scheduledTypes = new HashSet<>(declarationsByType.keySet());
-        boolean replayAdded;
-        do {
-            replayAdded = false;
-            for (Map.Entry<String, List<ResourceDeclaration>> entry : allDeclarationsByType.entrySet()) {
-                String resourceType = entry.getKey();
-                ResourceHandler handler = handlerMap.get(resourceType);
-                if (handler == null || !hasScheduledDependency(handler, scheduledTypes)) {
-                    continue;
-                }
-                List<ResourceDeclaration> scheduled = declarationsByType.computeIfAbsent(
-                        resourceType, key -> new ArrayList<>());
-                Set<String> scheduledIds = scheduled.stream()
-                        .map(ResourceDeclaration::getId)
-                        .collect(java.util.stream.Collectors.toSet());
-                for (ResourceDeclaration declaration : entry.getValue()) {
-                    if (isAutoSync(declaration) && scheduledIds.add(declaration.getId())) {
-                        scheduled.add(declaration);
-                        replayAdded = true;
-                    }
-                }
-                if (!scheduled.isEmpty()) {
-                    scheduledTypes.add(resourceType);
-                }
-            }
-        } while (replayAdded);
-    }
-
-    private boolean hasScheduledDependency(ResourceHandler handler, Set<String> scheduledTypes) {
-        List<String> dependencyTypes = handler.dependsOnResourceTypes();
-        if (dependencyTypes == null || dependencyTypes.isEmpty()) {
-            return false;
-        }
-        for (String dependencyType : dependencyTypes) {
-            if (StringUtils.hasText(dependencyType) && scheduledTypes.contains(dependencyType.trim())) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private boolean isAutoSync(ResourceDeclaration declaration) {
-        return declaration.getSyncMode() == null || declaration.getSyncMode() == ResourceSyncMode.AUTO;
     }
 
     private List<String> orderResourceTypesForSync(Map<String, List<ResourceDeclaration>> declarationsByType,
@@ -871,18 +829,55 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
     }
 
     private void saveActiveSyncResult(ResourceDeclaration declaration, ResourceSyncResult result,
+                                      ResourceSyncContext syncContext,
                                       ResourceRegistrySnapshot registrySnapshot) {
         String hash = hasher.hash(declaration);
         ResourceRegistryRow row = registrySnapshot.findByResourceId(declaration.getId());
+        ResourceSyncDisposition disposition = result.getDisposition() == null
+                ? ResourceSyncDisposition.APPLIED : result.getDisposition();
+        if (disposition == ResourceSyncDisposition.PRESERVED || disposition == ResourceSyncDisposition.SKIPPED) {
+            Require.notNull(row, ResourceCode.RESOURCE_SYNC_FAILED,
+                    "新资源不能在未建立 Registry 记录时返回 " + disposition + ": " + declaration.getId());
+            repository.insertSyncLog(row.getId(), disposition.name(), disposition.name(), result.getMessage());
+            return;
+        }
+        Require.isTrue(disposition == ResourceSyncDisposition.APPLIED, ResourceCode.RESOURCE_SYNC_FAILED,
+                "资源处理器不能返回失败结果，必须抛出异常: " + declaration.getId());
+        LocalDateTime synchronizationTime = result.getSynchronizationTime();
+        if (synchronizationTime != null) {
+            Require.isTrue(syncContext != null
+                            && synchronizationTime.equals(syncContext.getSynchronizationTime()),
+                    ResourceCode.RESOURCE_SYNC_FAILED,
+                    "资源处理器返回了非 Registry 分配的同步时间: " + declaration.getId());
+        }
         if (row == null) {
-            Long rowId = repository.insert(declaration, hash, result.getTargetId(), result.getTargetTable());
-            repository.insertSyncLog(rowId, "CREATE", "SUCCESS", result.getMessage());
+            Long rowId = repository.insert(
+                    declaration, hash, result.getTargetId(), result.getTargetTable(), synchronizationTime);
+            repository.insertSyncLog(rowId, "CREATE", disposition.name(), result.getMessage());
             repository.insertChangeLog(rowId, "CREATE", null, toJson(declaration));
         } else {
-            repository.update(row, declaration, hash, result.getTargetId(), result.getTargetTable());
-            repository.insertSyncLog(row.getId(), "UPDATE", "SUCCESS", result.getMessage());
+            repository.update(
+                    row, declaration, hash, result.getTargetId(), result.getTargetTable(), synchronizationTime);
+            repository.insertSyncLog(row.getId(), "UPDATE", disposition.name(), result.getMessage());
             repository.insertChangeLog(row.getId(), "UPDATE", toJson(row), toJson(declaration));
         }
+    }
+
+    private Map<String, ResourceSyncContext> syncContexts(
+            List<ResourceDeclaration> declarations,
+            ResourceRegistrySnapshot registrySnapshot) {
+        Map<String, ResourceSyncContext> contexts = new LinkedHashMap<>();
+        for (ResourceDeclaration declaration : declarations) {
+            ResourceRegistryRow row = registrySnapshot.findByResourceId(declaration.getId());
+            LocalDateTime synchronizationTime = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS);
+            contexts.put(declaration.getId(), ResourceSyncContext.of(
+                    declaration.getId(),
+                    row == null ? null : row.getLastSyncTime(),
+                    synchronizationTime,
+                    row == null ? null : row.getTargetId(),
+                    row == null ? null : row.getTargetTable()));
+        }
+        return contexts;
     }
 
     private void skipInitOnlyTargetUpdate(ResourceRegistryRow row, ResourceDeclaration declaration, String hash) {
@@ -970,14 +965,12 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
     private Map<String, ResourceSyncResult> syncActiveBatchByTarget(
             ResourceHandler handler,
             List<ResourceDeclaration> changedDeclarations,
-            List<ResourceDeclaration> completeBatch) {
+            List<ResourceDeclaration> completeBatch,
+            Map<String, ResourceSyncContext> syncContexts) {
         Map<String, ResourceSyncResult> results = new HashMap<>();
         if (handler != null) {
-            List<ResourceDeclaration> handlerDeclarations = changedDeclarations;
-            if (handler.requiresCompleteBatch()) {
-                handlerDeclarations = completeBatch;
-            }
-            results.putAll(handlerInvoker.upsertBatch(handler, handlerDeclarations));
+            results.putAll(handlerInvoker.upsertBatchWithContext(
+                    handler, changedDeclarations, completeBatch, syncContexts));
             return results;
         }
         List<ResourceDeclaration> localDeclarations = new ArrayList<>();
@@ -991,7 +984,8 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
             }
         }
         remoteDeclarations.forEach((dispatcher, declarations) ->
-                results.putAll(dispatcher.upsertBatch(declarations, completeBatch)));
+                results.putAll(dispatcher.upsertBatchWithContext(
+                        declarations, completeBatch, syncContexts)));
         String missingResourceType = "unknown";
         if (!localDeclarations.isEmpty()) {
             missingResourceType = localDeclarations.getFirst().getResourceType();

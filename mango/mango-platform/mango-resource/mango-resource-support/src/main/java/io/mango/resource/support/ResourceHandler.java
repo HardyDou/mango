@@ -2,6 +2,7 @@ package io.mango.resource.support;
 
 import io.mango.resource.support.model.ResourceDeclaration;
 import io.mango.resource.support.model.ResourceHandlerSpec;
+import io.mango.resource.support.model.ResourceSyncContext;
 import io.mango.resource.support.model.ResourceSyncResult;
 
 import java.util.LinkedHashMap;
@@ -90,6 +91,26 @@ public interface ResourceHandler {
             results.put(resource.getId(), upsert(resource));
         }
         return results;
+    }
+
+    /**
+     * Synchronizes only declarations selected by the Registry while exposing the complete type batch
+     * for dependency resolution and one fixed timestamp per selected Resource.
+     *
+     * <p>Handlers that opt into runtime-change preservation must override this method, inspect their
+     * own target state, and return {@code PRESERVED} without writing when the target was modified after
+     * the previous synchronization. The legacy default keeps existing Handler behavior.</p>
+     *
+     * @param declarations declarations whose source hash changed
+     * @param completeBatch complete active declarations of this Resource type
+     * @param syncContexts synchronization context keyed by Resource ID
+     * @return results keyed by Resource ID
+     */
+    default Map<String, ResourceSyncResult> upsertBatchWithContext(
+            List<ResourceDeclaration> declarations,
+            List<ResourceDeclaration> completeBatch,
+            Map<String, ResourceSyncContext> syncContexts) {
+        return upsertBatch(requiresCompleteBatch() ? completeBatch : declarations);
     }
 
     /**

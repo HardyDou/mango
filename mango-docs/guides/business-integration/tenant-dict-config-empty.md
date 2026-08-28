@@ -1,5 +1,7 @@
 # 租户字典配置为空排障
 
+> 2026-08-28 Issue #851：Resource 增量同步不改变租户基础数据的公开 API、权限或隔离边界。当前 `SYSTEM_CONFIG` 会比较目标行 `updated_at` 与 Registry `last_sync_time`；两者不一致时视为后台已修改并保留目标值，不推进该 Resource 的 hash 或同步时间。其它 Resource 类型只有 Owner Handler 明确实现受管状态判断后才具备同类退避语义。
+
 > 日期范围查询兼容：系统登录日志和操作日志的日期-only 开始/结束值会分别按当天 `00:00:00` 和 `23:59:59` 查询；不改变租户、权限或数据初始化边界。
 
 > 2026-08-25 AI 管理能力影响：八类 AI 供应商、代表模型、Prompt、Skill 和服务使用 AI 自有 Resource Handler 写入租户隔离的 AI 配置表；供应商和模型首次创建时为空密钥、停用，既有租户配置按 `INIT_ONLY` 保留。该初始化不写入 System 字典、系统配置、组织、用户或租户主数据，也不改变这些数据的查询 API、权限、租户隔离和本指南排障链路。AI 配置为空应核对 `mango-ai-starter`、AI Resource 声明和 Handler 收据，不用字典/系统配置 SQL 补齐。

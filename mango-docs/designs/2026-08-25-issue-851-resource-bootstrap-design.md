@@ -58,6 +58,15 @@
 - 构建期文件先完成 SHA-256 校验，再原子移动到内容寻址对象位置；错误构建不得留下可被后续构建误用的半成品。
 - FINALIZE 之后继续 fail closed，不自动逆向数据库、不删除数据卷。
 
+### 3.5 Resource 级增量与目标数据退避
+
+- 模块 receipt 命中仍是第一层跳过；变化模块解析完整声明后，Registry 只调度 canonical hash 或状态变化的 Resource。
+- `dependsOnResourceTypes()` 只对本次变化类型排序，不再因依赖变化重放未变化 Resource。业务关系使用稳定 `resourceId`、`code` 或 `bizKey` 解析，不使用模块扫描、JAR 加载、启动顺序或目标表自增 ID 作为发布契约。
+- Handler 新批处理入口分离变化声明、同类型完整只读上下文和逐 Resource 同步上下文。`AUTH_MENU`、`API_RESOURCE` 使用完整上下文解析关系，但只写变化声明。
+- 需要保护后台修改的 Handler 显式比较目标行可靠的 `updated_at` 与 Registry `last_sync_time`。应用时目标与 Registry 写入同一秒级固定时间；发现不相等时返回 `PRESERVED`，不推进 `source_hash` 和 `last_sync_time`。
+- 当前只为一 Resource 对应一条 `sys_config` 行的 `SYSTEM_CONFIG` 启用退避。多表/多行目标不做通用时间猜测，由 Owner Handler 提供受管状态判断；本次不增加 `revision` 字段或通用状态表。
+- 现有 cold baseline 只重放 Flyway，不能证明 Handler 目标状态及 Registry 同步时间一致，因此重置发布的完整 Resource baseline 不在本批次完成范围。
+
 ## 4. 验收映射
 
 | ID | 要求 | 自动化入口 |
@@ -70,6 +79,11 @@
 | AC-006 | Local 与 MinIO 服从同一文件清单语义 | file core 契约/集成测试 |
 | AC-007 | 1291 条无变化小于 10 秒，单模块变化小于 30 秒 | 本地性能测试脚本与报告 |
 | AC-008 | 构建上下文不连接业务数据库，生成物进入最终 Boot JAR 并由 Bootstrap 优先消费 | sync starter 单元测试与 Maven Invoker consumer |
+| AC-009 | 变化模块内 hash 未变化的 Resource 不调用 Handler，依赖变化也不触发重放 | Resource core 集成测试 |
+| AC-010 | `PRESERVED` 不更新目标、`source_hash` 或 `last_sync_time`，并写入可观察同步日志 | Resource core 集成测试 |
+| AC-011 | `SYSTEM_CONFIG` 未经后台修改时以同一固定时间更新目标和 Registry | System core 集成测试 |
+| AC-012 | `SYSTEM_CONFIG.updated_at` 偏离上次同步时间时保留后台值 | System core 集成测试 |
+| AC-013 | `AUTH_MENU`、`API_RESOURCE` 使用完整上下文但只写变化声明 | Authorization starter 单元测试 |
 
 ## 5. 真实场景矩阵
 
@@ -93,3 +107,5 @@
 - M11：H2/MySQL 隔离数据库、Local/MinIO 存储契约和 Bootstrap 集成测试。
 - M14：跨模块高影响设计的独立复核。
 - 不启用 M12/M13：本次没有新的 HTTP/API 消费入口或浏览器结果。
+
+本轮 AC-009 至 AC-013 已新增自动化测试资产并完成测试源码编译；受当前 Agent `simple` Skill 的测试执行限制，本轮不执行这些测试，运行结果保留为 PR CI 后续验证项。

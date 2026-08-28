@@ -155,14 +155,9 @@ Resource 声明的 `execution-phase` 与 `sync-mode` 正交：
 | `ResourceSynchronizationStatus` | 暴露 Runtime 可用性参与者的当前状态。 |
 | `ResourceSynchronizationCompletedEvent` | 初次失败后的重试首次成功时发布，驱动同 JVM 下游幂等对账。 |
 
-`ResourceHandler` 可以通过 `dependsOnResourceTypes()` 声明当前资源类型在同一同步批次内依赖的其它资源类型。
-Resource Registry 会在批量同步 active 声明前做资源类型拓扑排序，保证例如 `IDENTITY_USER`
-先于 `ORG_MEMBER_BINDING`、`AUTH_ROLE` 先于 `AUTH_MENU` 和 `AUTH_SUBJECT_ROLE`。依赖资源类型发生创建或更新时，
-Resource Registry 会重放同一批次内声明了该依赖的 AUTO 资源，确保菜单默认角色授权这类派生绑定能在角色创建后补齐。
-依赖资源类型未出现在本批次时不会强制失败，目标资源是否已存在仍由具体 handler 校验。
-出现循环依赖时，同步会在调用目标 handler 前失败，并输出循环路径。
+`ResourceHandler.dependsOnResourceTypes()` 保留为同一变化批次内的资源类型拓扑排序兼容能力，不建议把它作为业务关系解析方式。它只对本次确实需要写入的资源类型排序，不会因为前置类型变化而重放 hash 未变化的 Resource。依赖类型未出现在变化批次时不会强制失败；目标关系由 Handler 使用稳定 `resourceId`、`code` 或 `bizKey` 解析和校验。出现循环依赖时，同步会在调用目标 Handler 前失败，并输出循环路径。
 
-`ResourceProvider.moduleDependencies()` 声明模块级固定前置关系。构建 manifest 内的模块按该关系拓扑执行；依赖缺失或成环时，在调用 Handler 前 fail closed。它只表达少量稳定模块边界，不替代资源类型级 handler 依赖。
+`ResourceProvider.moduleDependencies()` 声明构建 manifest 的固定协调前置关系。它只用于少量稳定的平台初始化边界，依赖缺失或成环时在调用 Handler 前 fail closed。业务数据关系使用稳定 `resourceId`、`code` 或 `bizKey` 解析，不把模块扫描、JAR 加载或启动顺序作为关系标识。
 
 classpath 声明文件可在 `mango.resource` envelope 中使用 `moduleDependencies`（YAML 可写为
 `module-dependencies`）声明同一模块的固定前置模块。模块包含多个声明文件时，只需在一个文件中提供该字段；若多个文件重复声明，依赖列表必须一致。
@@ -332,7 +327,7 @@ Flyway 路径：`mango-resource-core/src/main/resources/db/migration/resource`�
 
 | 表 | 作用 |
 |----|------|
-| `resource_registry` | 记录资源 ID、类型、bizKey、目标表、目标 ID、hash、同步模式和状态。 |
+| `resource_registry` | 记录资源 ID、类型、bizKey、目标表、目标 ID、`source_hash`、`last_sync_time`、同步模式和状态。 |
 | `resource_sync_log` | 记录每次同步、跳过、禁用、删除的结果。 |
 | `resource_change_log` | 记录注册资源内容变化。 |
 | `resource_module_receipt` | 记录 environment/app/service/module 最后成功安装的 hash、generation、manifest fingerprint 和 `EXPANDED`/`FINALIZED` 状态。 |
@@ -385,6 +380,21 @@ Spring Boot 可执行 JAR 将上述 `META-INF` 条目保留在 JAR 根目录。B
 同一批 active 声明如果包含跨类型依赖，Resource Registry 按目标 `ResourceHandler.dependsOnResourceTypes()`
 声明的依赖图排序后再调用各 handler。声明文件顺序、文件扫描顺序和 jar 加载顺序不作为同步顺序语义。
 如果依赖图存在环，例如 `A -> B -> A`，同步会失败并提示 `Resource type dependency cycle detected`。
+
+### 10.1 Resource 级增量与运行时修改退避
+
+模块 receipt 是第一层跳过：模块 hash 未变化时不解析模块内部声明。模块发生变化后，Registry 再按每个声明的 canonical hash 与 `resource_registry.source_hash` 比较；正常增量只把新增、内容变化、状态变化的 Resource 交给 Handler，hash 未变化的 Resource 不因依赖变化而重放。后台强制同步是显式例外。
+
+新批处理契约 `upsertBatchWithContext(changedDeclarations, completeBatch, syncContexts)` 将待写声明和完整上下文分开：Handler 的写入集合是 `changedDeclarations`，`completeBatch` 提供稳定关系的只读解析上下文。平台内需要完整上下文的 `AUTH_MENU`、`API_RESOURCE` 已按该契约改为 changed-only 写入。旧 Handler 的 `requiresCompleteBatch()` 默认行为为兼容保留；外部 Handler 迁移到新批处理契约后获得严格 changed-only 行为。
+
+Handler 可以按 Resource 显式启用运行时修改退避：
+
+1. Registry 传入上次 `last_sync_time` 和本次固定同步时间。
+2. Handler 锁定自己的目标行，并比较可靠的目标 `updated_at` 与上次 `last_sync_time`。
+3. 两者相等时，Handler 使用本次固定时间写目标 `updated_at` 并返回 `APPLIED`；Registry 用同一时间推进 `source_hash` 和 `last_sync_time`。
+4. 两者不相等时，Handler 不写目标并返回 `PRESERVED`；Registry 只记同步日志，不推进 `source_hash` 或 `last_sync_time`，后续模块变化仍会重新判断。
+
+该能力不是对所有表猜测更新时间。当前只有 `SYSTEM_CONFIG` 使用单行 `sys_config.updated_at` 启用退避；`AUTH_MENU`、`API_RESOURCE` 只保证未变化 Resource 不写，不声明通用的后台修改保护。一个 Resource 管理多表/多行，或目标表没有可靠 `updated_at` 时，由具体 Handler 提供自己的受管状态判断；未显式实现时沿用既有覆盖语义，不新增 `revision` 字段或通用状态表。
 
 多实例启动时通过 `ILeaseLocker` 抢占 `mango-resource-sync` lease。每次获取使用唯一 token，约在 TTL 三分之一周期续租；旧 session 不能续租或释放后来实例的 lease，失租后会在下一批次或持久化副作用前中止。停服先拒绝新同步并等待在途操作释放，再允许 Spring 销毁 DataSource。
 

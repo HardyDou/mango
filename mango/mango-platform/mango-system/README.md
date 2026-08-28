@@ -207,7 +207,7 @@ mango-system-starter/src/main/resources/META-INF/mango/demo/system-demo-tenant.y
 
 ### 7.2 SYSTEM_CONFIG
 
-`SYSTEM_CONFIG` 落库到 `sys_config`，按 `configKey` 合并更新。
+`SYSTEM_CONFIG` 落库到 `sys_config`，按 `configKey` 合并更新。Resource 增量发布时，Handler 会锁定目标行并比较 `sys_config.updated_at` 与 Registry 上次 `last_sync_time`：相等表示目标仍由上次发布管理，可以应用新声明；不相等表示后台已修改，返回 `PRESERVED` 并保留后台值。应用声明时目标行和 Registry 使用同一个秒级固定时间，因此不需要额外 `revision` 字段。首次没有 Registry 同步时间的 cold apply 仍按声明初始化。
 
 | 字段 | 类型 | 必填 | 含义 |
 |------|------|------|------|
