@@ -21,7 +21,7 @@ Workflow 查询和动作结果中的办理人字段现在统一为：
 1. 后端将业务项目父 POM 的 `<mango.version>` 升级到本特性发布说明指定的 Maven 版本。
 2. 前端将 `@mango/workflow` 升级到同一发布批次指定的 npm 版本；与其配套的 `@mango/common`、`@mango/admin-shell` 等包按发布矩阵一并对齐。
 3. 业务后端继续只依赖 `mango-workflow-api`；运行时应用继续由 `mango-workflow-starter` 装配，不依赖 Workflow core 实现。
-4. 本特性不新增业务数据库列、不要求 Flowable 表迁移、不要求历史任务回填。升级前后均不应手工修改 Flowable assignee 存储值。
+4. 本特性不新增业务数据库列、不要求 Flowable 表迁移、不要求历史任务回填，Flowable assignee 存储值保持原样。
 
 ## 3. 接口与权限
 
@@ -43,7 +43,7 @@ Content-Type: application/json
 - 不新增 `system:user:*` 或其它业务权限码。
 - 只要请求带有效登录态即可访问，不需要给每个业务角色额外授权。
 - 未登录仍返回认证失败；接口不会变成公开接口。
-- 租户过滤由 Identity 服务执行，业务方不得通过放宽权限来解决跨租户查询。
+- 租户过滤由 Identity 服务执行，跨租户 userId 或 username 不会返回其它租户成员。
 
 Workflow 任务列表、发起、办理、退回、认领和撤回等原有接口权限不因本特性改变。业务菜单仍需声明自己实际调用的 Workflow API 权限，业务后端仍需校验单据权限、任务可见性和状态机。
 
@@ -59,7 +59,7 @@ target.setAssigneeId(source.getAssigneeId());
 target.setAssigneeDisplayName(source.getAssigneeDisplayName());
 ```
 
-如果业务只需要原始账号或只依赖任务动作，不必为了兼容性强制改造所有历史 DTO；但凡页面要停止二次查询，就必须让新字段穿过 Controller、Facade、业务 VO 和前端响应。
+如果业务只需要原始账号或只依赖任务动作，不必为了兼容性强制改造所有历史 DTO；页面要停止二次查询时，需要让新字段穿过 Controller、Facade、业务 VO 和前端响应。
 
 ### 4.2 事件消费者
 
@@ -105,9 +105,9 @@ const displayName = task.assigneeDisplayName || task.assigneeName || '-';
 
 - 历史 Workflow 任务在读取时按现有 `assigneeName` 动态解析，不需要数据迁移或回填。
 - 用户已被删除、移出当前租户或 username 已变化时，增强字段可能为空；页面应保留原始 key 或显示 `-`。
-- 业务自己持久化的 `currentAssigneeName`、审批快照或签署快照属于业务事实，不应因为昵称变化批量重写。
+- 业务自己持久化的 `currentAssigneeName`、审批快照或签署快照属于业务事实，昵称变化不会触发批量重写。
 - 若产品明确要求历史页面显示“当时昵称”，应由业务另行设计快照字段和回填策略，不能复用当前实时 `assigneeDisplayName` 冒充历史事实。
-- 前端昵称目录缓存只能作为展示优化，不能作为权限判断依据；缓存失效或 Identity 暂时不可用时必须降级。
+- 前端昵称目录缓存只用于展示优化，不参与权限判断；缓存失效或 Identity 暂时不可用时页面回退原始 key。
 
 ## 7. 升级步骤
 
