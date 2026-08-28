@@ -3717,6 +3717,10 @@ function collectApprovalConfigErrors(node: WorkflowDesignerNode, errors: string[
   if (config.assigneeType === 'SPECIFIED_USER' && !(config.assigneeIds || []).length) {
     errors.push(`${nodeName} 未选择指定成员`);
   }
+  if ((config.assignmentMode || 'CLAIM') === 'AUTO' && config.assigneeType === 'SPECIFIED_USER'
+    && !(config.assigneeIds || []).length) {
+    errors.push(`${nodeName} 自动派单没有静态候选成员`);
+  }
   if (config.assigneeType === 'SPECIFIED_ROLE' && !(config.roleIds || []).length) {
     errors.push(`${nodeName} 未选择角色`);
   }

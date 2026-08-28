@@ -1,10 +1,11 @@
 import { createApp, reactive, nextTick } from 'vue';
+import { describe, expect, it } from 'vitest';
 import WorkflowNodeApprovalConfig from '../WorkflowNodeApprovalConfig.vue';
-import { defaultApprovalConfig } from '../../../../../api/workflow';
+import { defaultApprovalConfig, type WorkflowApprovalNodeConfig } from '../../../../../api/workflow';
 
 describe('WorkflowNodeApprovalConfig', () => {
   it('shows pass ratio input for countersign mode only', async () => {
-    const config = reactive({
+    const config = reactive<WorkflowApprovalNodeConfig>({
       ...defaultApprovalConfig(),
       assigneeType: 'SPECIFIED_USER' as const,
       assigneeIds: ['admin', 'zhangsan'],
@@ -20,6 +21,22 @@ describe('WorkflowNodeApprovalConfig', () => {
     await nextTick();
 
     expect(el.textContent).not.toContain('% 通过后节点通过');
+    unmount();
+  });
+
+  it('defaults legacy config to claim and shows round robin for auto mode', async () => {
+    const config = reactive<WorkflowApprovalNodeConfig>({
+      ...defaultApprovalConfig(),
+      assignmentMode: undefined,
+    });
+    const { el, unmount } = await mountConfig(config);
+
+    expect(el.textContent).toContain('待领取');
+    expect(el.textContent).not.toContain('算法：ROUND_ROBIN');
+
+    config.assignmentMode = 'AUTO';
+    await nextTick();
+    expect(el.textContent).toContain('算法：ROUND_ROBIN');
     unmount();
   });
 });

@@ -170,6 +170,7 @@ import { WorkflowLayout, WorkflowSidebar } from '@mango/workflow';
 | 业务申请进度                                                           | `assigneeName`、`assigneeId`、`assigneeDisplayName`                    | `assigneeName` 是原始 Flowable key；ID 和显示名由当前租户批量解析，缺失时不影响任务展示。 |
 | 业务申请进度                                                           | `claimStatus`                                                          | 当前任务认领状态，取值来自后端 `WorkflowTaskClaimStatus`。                |
 | 业务申请进度                                                           | `candidateUsers`、`candidateGroups`                                    | 当前任务候选用户和候选用户组，用于业务页判断待处理、可认领和按钮状态。    |
+| 流程节点分配                                                           | `assignmentMode` (`CLAIM` / `AUTO`)                                   | 缺失时按 `CLAIM`；`AUTO` 当前固定为 `ROUND_ROBIN`，运行时按有效候选用户稳定 `userId` 轮询。 |
 
 `parseWorkflowFormConfig()` 支持数组式表单 JSON，也支持包含 `mode`、`rules`、`fields`、`customConfig` 的对象结构。非法 JSON 会按空动态表单处理。
 
@@ -244,6 +245,7 @@ import { WorkflowLayout, WorkflowSidebar } from '@mango/workflow';
 | 任务       | `todoTasks()`、`todoSummary()`、`myTaskSummary()`、`initiatedTasks()`、`doneTasks()`、`copiedTasks()`、`taskDetail()`                                                                                                                                                     |
 | 动作       | `completeTask()`、`completeTaskWithResult()`、`rejectTask()`、`rejectTaskWithResult()`、`saveTask()`、`saveTaskWithResult()`、`transferTask()`、`addSignTask()`、`claimTask()`、`claimTaskWithResult()`、`unclaimTask()`、`unclaimTaskWithResult()`、`readCopiedTask()`   |
 | 流程实例   | `startProcess()`、`startBusinessWorkflow()`、`initiatedProcesses()`、`processHistoryByBusinessKey()`、`processDetail()`                                                                                                                                                   |
+| 参与关系   | `participationAccess()`、`participationMy()`、`replaceBusinessParticipants()`                                                                                                                                        |
 | 业务申请   | `createBusinessApply()`、`businessAppliesPage()`、`businessApplyMySummary()`、`businessApplyDetail()`、`businessApplyHistory()`、`businessApplyLatestProgress()`、`businessApplyLatestProgressBatch()`、`businessApplyLatestByKeys()`、`businessApplyByProcessInstance()` |
 | 候选项     | `users()`、`tenants()`、`enabledDomains()`                                                                                                                                                                                                                                |
 
@@ -331,6 +333,8 @@ import { WorkflowLayout, WorkflowSidebar } from '@mango/workflow';
 ## 12. 变更影响记录
 
 - 2026-08-28 办理人身份增强的业务升级适配见 [Workflow 办理人身份特性升级指南](../../../mango-docs/guides/business-integration/workflow-assignee-identity-upgrade.md)。展示优先使用 `assigneeDisplayName`，不应为已有显示名重复查询 Identity；业务权限和租户校验保持不变。
+
+- Issue #732 为流程设计器审批节点增加 `assignmentMode`：旧 `designerJson` 缺失字段按 `CLAIM`；选择 `AUTO` 时显示只读策略 `ROUND_ROBIN`，指定成员为空会阻止保存。前端 API 同步暴露 `participantUserIds` 启动字段及参与关系查询、分页和原子替换方法；租户和任务操作权限仍由后端校验。
 
 - `@mango/workflow@1.0.37` 将精确依赖对齐到 `@mango/admin-pages@1.0.30`、`@mango/common@1.0.23`、`@mango/file@1.0.31`、`@mango/grid-widgets@1.0.20` 和 `@mango/system@1.0.29`。Workflow 查看类通知的 `viewPath` 和 fallback 目标由 Maven `1.0.29` 生成、由 `@mango/notice@1.0.35` 导航；本包页面 key、审批组件、权限和租户语义保持不变。
 

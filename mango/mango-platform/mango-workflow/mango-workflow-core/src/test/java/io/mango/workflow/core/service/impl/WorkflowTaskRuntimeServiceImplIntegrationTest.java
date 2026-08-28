@@ -10,6 +10,8 @@ import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.infra.event.api.IDomainEventPublisher;
 import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguration;
+import io.mango.identity.api.AuthUserProvider;
+import io.mango.identity.api.TenantMemberProvider;
 import io.mango.workflow.api.command.AddSignWorkflowTaskCommand;
 import io.mango.workflow.api.command.ClaimWorkflowTaskCommand;
 import io.mango.workflow.api.command.CompleteWorkflowTaskCommand;
@@ -49,6 +51,7 @@ import io.mango.workflow.core.mapper.WorkflowDefinitionVersionMapper;
 import io.mango.workflow.core.mapper.WorkflowFormInstanceMapper;
 import io.mango.workflow.core.mapper.WorkflowTaskRecordMapper;
 import io.mango.workflow.core.service.IWorkflowBusinessApplyService;
+import io.mango.workflow.core.service.IWorkflowParticipationService;
 import io.mango.workflow.core.model.WorkflowProcessStartedContext;
 import io.mango.workflow.core.model.WorkflowTaskStatusContext;
 import io.mango.workflow.core.service.IWorkflowTaskRuntimeService;
@@ -149,6 +152,8 @@ class WorkflowTaskRuntimeServiceImplIntegrationTest {
     @Autowired
     private WorkflowCandidateGroupProvider candidateGroupProvider;
     @Autowired
+    private IWorkflowParticipationService workflowParticipationService;
+    @Autowired
     private CapturingBusinessApplyService workflowBusinessApplyService;
     @Autowired
     private RecordingWorkflowEventPublisher workflowEventPublisher;
@@ -160,7 +165,8 @@ class WorkflowTaskRuntimeServiceImplIntegrationTest {
         MangoContextHolder.clear();
         MangoContextHolder.set(MangoContextSnapshot.empty()
                 .withSecurity(1001L, "1", "anonymous", "default", "USER", "ORG", 100L, "anonymous"));
-        reset(taskService, runtimeService, historyService, repositoryService, candidateGroupProvider);
+        reset(taskService, runtimeService, historyService, repositoryService, candidateGroupProvider,
+                workflowParticipationService);
         workflowBusinessApplyService.clear();
         workflowEventPublisher.clear();
         operationLog.clear();
@@ -327,6 +333,23 @@ class WorkflowTaskRuntimeServiceImplIntegrationTest {
     }
 
     @Test
+    void completeWithResultDeactivatesCurrentAssigneesWhenProcessEnds() {
+        stubAliveProcess("proc-1", true);
+        insertFormInstance("proc-1", "{}", WorkflowInstanceStatus.RUNNING.name());
+        Task task = task("task-1", "manager_approve", "proc-1", "pd-1", "anonymous");
+        TaskQuery query = taskQuery(task, 1L, List.of());
+        when(taskService.createTaskQuery()).thenReturn(query);
+        CompleteWorkflowTaskCommand command = new CompleteWorkflowTaskCommand();
+        command.setTaskId("task-1");
+        command.setComment("同意");
+
+        WorkflowTaskCompleteResultVO result = service.completeWithResult(command);
+
+        assertThat(result.getEnded()).isTrue();
+        verify(workflowParticipationService).deactivateCurrentAssignees("proc-1");
+    }
+
+    @Test
     void returnTaskMovesToPreviousHistoricNodeAndRefreshesCurrentTasksWithoutEndingProcess() {
         insertFormInstance("proc-1", "{\"existing\":true}", WorkflowInstanceStatus.RUNNING.name());
         Task currentTask = task("task-2", "supervisor_approve", "proc-1", "pd-1", "anonymous");
@@ -432,7 +455,7 @@ class WorkflowTaskRuntimeServiceImplIntegrationTest {
         when(taskService.createTaskQuery())
                 .thenReturn(pendingQuery, processingQuery, overdueAssignedQuery, overdueClaimableQuery);
         when(historyService.createHistoricTaskInstanceQuery()).thenReturn(completedQuery);
-        when(completedQuery.taskAssignee("anonymous")).thenReturn(completedQuery);
+        when(completedQuery.taskAssigneeIds(List.of("anonymous", "1001"))).thenReturn(completedQuery);
         when(completedQuery.finished()).thenReturn(completedQuery);
         when(completedQuery.count()).thenReturn(7L);
 
@@ -443,6 +466,16 @@ class WorkflowTaskRuntimeServiceImplIntegrationTest {
         assertThat(summary.getCompleted()).isEqualTo(7L);
         assertThat(summary.getOverdue()).isEqualTo(2L);
         assertThat(summary.getTotal()).isEqualTo(17L);
+    }
+
+    @Test
+    void roundRobinSelectsFirstCandidateGreaterThanRemovedPreviousCandidate() {
+        assertThat(WorkflowTaskRuntimeService.nextRoundRobinCandidate(List.of(100L, 300L, 500L), 200L))
+                .isEqualTo(300L);
+        assertThat(WorkflowTaskRuntimeService.nextRoundRobinCandidate(List.of(100L, 300L, 500L), 500L))
+                .isEqualTo(100L);
+        assertThat(WorkflowTaskRuntimeService.nextRoundRobinCandidate(List.of(100L, 300L, 500L), null))
+                .isEqualTo(100L);
     }
 
     private void rebuildTables() {
@@ -797,6 +830,21 @@ class WorkflowTaskRuntimeServiceImplIntegrationTest {
         @Bean
         WorkflowCandidateGroupProvider workflowCandidateGroupProvider() {
             return mock(WorkflowCandidateGroupProvider.class);
+        }
+
+        @Bean
+        IWorkflowParticipationService workflowParticipationService() {
+            return mock(IWorkflowParticipationService.class);
+        }
+
+        @Bean
+        AuthUserProvider authUserProvider() {
+            return mock(AuthUserProvider.class);
+        }
+
+        @Bean
+        TenantMemberProvider tenantMemberProvider() {
+            return mock(TenantMemberProvider.class);
         }
 
         @Bean

@@ -41,6 +41,10 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <groupId>io.mango.platform.identity</groupId>
+            <artifactId>mango-identity-api</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.mango.infra.event</groupId>
             <artifactId>mango-infra-event-api</artifactId>
             <version>${project.version}</version>

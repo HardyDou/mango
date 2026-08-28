@@ -41,6 +41,9 @@
 | 审批处理 | `/workflow/tasks/complete`、`/workflow/tasks/complete-result`、`/workflow/tasks/reject`、`/workflow/tasks/return`、`/workflow/tasks/save`、`/workflow/tasks/transfer`、`/workflow/tasks/add-sign`。 |
 | 抄送 | `/workflow/tasks/copied`、`/workflow/tasks/copied/read`。 |
 | 业务进度查询 | `WorkflowBusinessProcessApi.latestByBusinessKeys()` 或 `/workflow/business-applies/progress/latest-batch`。 |
+| 历史参与关系只读查询 | `WorkflowParticipationApi` 或 `/workflow/participations/access`、`/workflow/participations/my`；只返回当前租户、当前登录 `userId` 的参与事实，不授予任务办理权。 |
+| 业务声明参与人 | `WorkflowParticipationApi.replaceBusinessParticipants()` 或 `POST /workflow/participations/business`；传入完整 `participantUserIds` 集合，后端按当前租户启用成员原子替换。 |
+| 自动派单 | 审批节点 `assignmentMode=AUTO`；当前只支持稳定 `ROUND_ROBIN`，候选为空返回 `AUTO_ASSIGN_NO_CANDIDATE` 并回滚节点事务。 |
 
 ## 3. 后端接入
 
@@ -217,6 +220,14 @@ WorkflowProcessWithdrawResultVO result = workflowProcessApi.withdraw(withdraw).g
 业务模块不应直接查询 `workflow_business_apply`、`workflow_business_apply_current_task` 或 Flowable 运行时表，也不应依赖 workflow core service 读取这些数据。列表页使用批量进度 API，详情页使用申请/任务详情 API，办理动作使用 result API 返回的快照；这样租户、数据权限、候选人和分页规则都由 workflow 模块统一处理。
 
 `POST /workflow/processes/start-business` 一次完成申请创建和流程发起，返回 `applyId`、`processInstanceId`、`processStatus`、第一个当前任务、`claimStatus`、`candidateUsers`、`candidateGroups` 和 `currentTasks`。业务侧已有申请记录创建逻辑时，仍可保留 `WorkflowBusinessApplyApi.create()` + `WorkflowProcessApi.start()` 兼容模式。
+
+### 3.2 参与关系与自动派单
+
+参与关系 API 从 `MangoContextHolder` 取得 `tenantId`、`userId` 和 `memberId`，客户端不能覆盖租户。`access` 判断当前登录用户对 `processKey + businessKey` 是否有只读参与事实；`my` 提供有界分页，按最近参与时间和业务坐标稳定排序。参与类型包括 `INITIATOR`、`CURRENT_ASSIGNEE`、`COMPLETED_HANDLER` 和 `BUSINESS_PARTICIPANT`。历史参与人只能读取业务参与事实，不能因此获得认领、审批、驳回、退回或转办权限，任务操作仍由当前 assignee/candidate 校验。
+
+业务启动命令可携带完整 `participantUserIds` 集合，也可调用 `POST /workflow/participations/business` 进行完整替换。Workflow 会先验证所有用户属于当前租户、账号和成员均启用且未离职，任何一个无效用户都会使整次声明零写入；不得用 username 代替授权身份。
+
+审批节点配置 `assignmentMode` 缺失时按 `CLAIM` 兼容。设置为 `AUTO` 后，运行时从指定用户、角色、岗位、组织或组织主管展开当前租户有效成员，按稳定 `userId` 排序并锁定 `workflow_auto_assignment_state` 游标，直接在节点事务内设置 assignee；当前策略固定为 `ROUND_ROBIN`。没有候选人时返回 `AUTO_ASSIGN_NO_CANDIDATE`，不转 admin、不退化为待领取，流程推进和游标更新一起回滚。
 
 业务页面处理“审批通过”时有两种模式：
 
@@ -599,6 +610,14 @@ Workflow 参数校验约束统一由 `mango-workflow-api` 的 `XxxApi` 契约声
 | 流程详情 | `GET /workflow/processes/detail` | `LOGIN`，仅要求登录 |
 | 流程历史 | `GET /workflow/processes/history` | `workflow:process:detail` |
 
+参与关系接口：
+
+| 能力 | 接口 | 访问要求 |
+|------|------|--------|
+| 单业务只读可见性 | `GET /workflow/participations/access` | `LOGIN`；只使用当前租户和登录 `userId` |
+| 我的参与业务分页 | `GET /workflow/participations/my` | `LOGIN`；服务端将页大小限制为 100 |
+| 完整替换业务声明参与人 | `POST /workflow/participations/business` | `workflow:participation:declare` |
+
 任务接口：
 
 | 能力 | 接口 | 访问要求 |
@@ -821,6 +840,7 @@ Flyway migration 路径：
 ```text
 mango-workflow-core/src/main/resources/db/migration/workflow/V1__init_workflow.sql
 mango-workflow-core/src/main/resources/db/migration/workflow/V2__add_workflow_audit_columns.sql
+mango-workflow-core/src/main/resources/db/migration/workflow/V3__workflow_participation_auto_assignment.sql
 ```
 
 核心业务表：
@@ -838,9 +858,13 @@ workflow_copied_task
 workflow_business_apply
 workflow_business_apply_current_task
 workflow_business_apply_status_log
+workflow_process_participant
+workflow_auto_assignment_state
 ```
 
 `V1__init_workflow.sql` 是当前空白数据库基线，只负责 12 张 Workflow 业务表及索引的 DDL，不写业务数据，也不写 Flowable 元数据。早期迁移的最终结构已经合并到 V1。Flowable 与 Workflow 表统一使用 `utf8mb4`；Flowable 标识列所在表使用 `utf8mb4_bin` 保持大小写敏感的二进制比较，布尔状态使用无显示宽度的 `tinyint`，可在 MySQL 8.4 空库中无 UTF8MB3 和整数显示宽度弃用告警地创建。
+
+V3 新增参与关系投影和自动派单游标。迁移只使用可证明的 `operator_id`、`assignee_id`、租户和流程坐标回填 `INITIATOR`、`COMPLETED_HANDLER`、`CURRENT_ASSIGNEE`；只有 username 的历史记录不会猜测授权身份，也不会被回填为可读参与人。V3 的回填使用唯一键保护并可重复执行。
 
 Mango Maven `1.0.20` 发布的 V1 缺少 7 个 Workflow 审计列，`1.0.21`/`1.0.22` 的 V1 已包含这些列。升级到包含 V2 的版本时，`beforeValidate__workflow_v1_checksum_compatibility.sql` 会把这两个已知历史 V1 checksum 修复为当前 V1 checksum，随后 V2 按 `information_schema.columns` 检查并补齐缺失列。由 `1.0.21`/`1.0.22` 创建的新数据库已有这些列，V2 会安全跳过已有列。其它未知 V1 checksum 仍由 Flyway 校验阻断，不能通过关闭 `validate-on-migrate` 绕过。
 
@@ -888,6 +912,7 @@ workflow:task:return
 workflow:task:save
 workflow:task:transfer
 workflow:task:add-sign
+workflow:participation:declare
 workflow:task:claim
 workflow:task:unclaim
 workflow:task:read-copied

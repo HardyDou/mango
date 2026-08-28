@@ -2,6 +2,19 @@
   <div class="workflow-approval-config">
     <div class="approval-drawer-section first">
         <div class="approval-section-title">审批人</div>
+        <div class="assignment-mode-row">
+          <span class="assignment-mode-label">办理方式</span>
+          <el-radio-group
+            :model-value="config.assignmentMode || 'CLAIM'"
+            class="approval-radio-row"
+            data-field="workflow.assignment-mode"
+            @change="(value: WorkflowAssignmentMode) => $emit('update-config', { assignmentMode: value })"
+          >
+            <el-radio label="CLAIM">待领取</el-radio>
+            <el-radio label="AUTO">自动派单</el-radio>
+          </el-radio-group>
+          <span v-if="(config.assignmentMode || 'CLAIM') === 'AUTO'" class="assignment-mode-tip">算法：ROUND_ROBIN</span>
+        </div>
         <el-radio-group
           :model-value="config.assigneeType"
           class="approval-radio-grid assignee-grid"
@@ -236,7 +249,7 @@
 </template>
 
 <script setup lang="ts">
-import type { WorkflowApprovalNodeConfig } from '../../../../api/workflow';
+import type { WorkflowApprovalNodeConfig, WorkflowAssignmentMode } from '../../../../api/workflow';
 import type { ApprovalOrgTreeOption, ApprovalTargetOption, WorkflowVariableOption } from './types';
 
 defineProps<{
@@ -266,6 +279,23 @@ defineEmits<{
 <style scoped>
 .approval-target-select {
   width: 100%;
+}
+
+.assignment-mode-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.assignment-mode-label {
+  color: var(--el-text-color-regular);
+  white-space: nowrap;
+}
+
+.assignment-mode-tip {
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
 }
 
 .approval-drawer-section {
