@@ -28,6 +28,8 @@
 | 页面入口 | 业务详情页展示流程进度、当前任务和审批记录 |
 | 返回入口 | 业务跳转审批任务详情时传 `returnPath`，审批完成或点返回能回到业务列表，不回退到 Mango 默认待办 |
 | 权限 | 发起、审批、撤回、查看记录按业务角色和流程任务共同判断 |
+| 历史只读 | 业务详情需要历史参与可见性时，消费 `WorkflowParticipationApi.access()`；该事实只表示可读，不代表可办理当前任务 |
+| 自动派单 | 需要节点到达即明确办理人时显式配置 `assignmentMode=AUTO`；当前策略固定为 `ROUND_ROBIN`，候选为空会使流程事务失败 |
 
 ## 4. 最小闭环
 
@@ -37,6 +39,14 @@
 4. 申请人可以在业务允许时撤回本人运行中的申请，业务状态同步变为已撤回。
 5. 审批通过后业务状态变为通过。
 6. 业务详情页能看到流程实例和审批记录。
+
+## 4.1 历史参与关系
+
+业务后端可以在 `StartWorkflowProcessCommand`、`StartBusinessWorkflowCommand` 中传入完整 `participantUserIds`，或通过 `WorkflowParticipationApi.replaceBusinessParticipants()` 原子替换业务声明参与人。用户标识使用稳定 `userId`；租户一律来自运行时登录上下文。Workflow 会验证账号、租户成员状态和离职状态，任一用户无效时整次声明零写入。
+
+详情授权适配器调用 `WorkflowParticipationApi.access(processKey, businessKey)`，列表可调用 `my` 分页。`INITIATOR`、`CURRENT_ASSIGNEE`、`COMPLETED_HANDLER`、`BUSINESS_PARTICIPANT` 都是只读参与事实；审批、认领、释放、驳回、退回和转办仍使用当前 Flowable assignee/candidate 权限，业务页面不能把 `readable=true` 当作可操作依据。
+
+V3 升级只回填具有稳定 `operator_id` 或 `assignee_id` 的历史记录。只有 username 的旧记录不会猜测为用户授权；这类历史可见性由业务确认后通过声明 API 补齐。
 
 ## 5. 常见失败
 
@@ -51,6 +61,7 @@
 | 撤回返回无权限或状态校验失败 | 当前登录人是否为原申请人、租户是否一致、申请是否仍为 `IN_APPROVAL`、业务菜单是否声明 `workflow:process:withdraw` |
 | 多租户流程串数据 | 流程定义、实例、任务和业务表 tenantId 是否一致 |
 | 空库 `bootstrap apply` 在 migration 前查询 `ACT_GE_PROPERTY` | 调用链是否由业务 Bean 注入 `WorkflowTaskRuntimeApi` 等公开接口后提前创建 Controller；升级到包含 Bootstrap API 延迟代理的 Maven 版本，不要手工建 Flowable 表或恢复业务 `forceSync()` 兼容 |
+| AUTO 节点返回 `AUTO_ASSIGN_NO_CANDIDATE` | 检查指定用户、角色、岗位、组织或组织主管是否能展开为当前租户启用且未离职的用户；该错误不会转 admin 或退化为待领取 |
 
 ## 6. 事件接入
 
@@ -84,6 +95,8 @@
 业务订阅事件时，依赖边界应停留在 `mango-workflow-api`：事件类型使用 `WorkflowEventTypes`，`event.payload` 使用 `WorkflowEventPayloadVO` 反序列化。不要在业务模块中引用 `io.mango.workflow.core.event.WorkflowDomainEvents`、`WorkflowEventPublisher` 或 `io.mango.workflow.core.service.*`。业务列表需要展示当前节点、当前办理人、认领状态或候选人时，使用 `WorkflowBusinessApplyApi.latestProgress()`、批量进度 API 或任务动作 result 返回值，不要直接查询 workflow 运行表。
 
 ## 7. 变更影响记录
+
+- Issue #732 新增租户隔离的 Workflow 参与关系 API 和审批节点自动派单。业务可通过 `participantUserIds` 原子声明只读参与人，历史参与关系与任务操作权限保持分离；流程设计器中旧节点缺少 `assignmentMode` 时按 `CLAIM`，显式 `AUTO` 时固定使用数据库游标保护的 `ROUND_ROBIN`，空候选返回 `AUTO_ASSIGN_NO_CANDIDATE` 并回滚。V3 仅回填可证明的稳定用户 ID，username-only 历史不授权。
 
 - Issue #870 为业务申请详情、历史、最新进度和流程详情增加 `WorkflowBusinessApplyDataPermissionProvider` 扩展点。业务模块在同一 Workflow 运行时中注册 Provider，并按 `businessType` 从自己的业务表校验 owner、组织和租户；普通业务员不再依赖全局 `workflow:business-apply:detail`。Workflow 使用持久化申请事实构造权限上下文，无权时返回 `APPLY_ACCESS_DENIED`，批量进度过滤无权记录。Provider 运行在实际承载 Workflow 服务的应用中，业务查询通过公开 Workflow API 完成；完整接入边界见 [Workflow README](../../../mango/mango-platform/mango-workflow/README.md#业务申请数据权限)，长期能力文档边界见 [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)。升级验证覆盖业务详情正反权限用例和业务代理兼容路径移除。
 

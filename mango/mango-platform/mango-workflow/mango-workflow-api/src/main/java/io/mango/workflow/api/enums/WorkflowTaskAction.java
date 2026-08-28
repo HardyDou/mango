@@ -19,6 +19,7 @@ public enum WorkflowTaskAction {
     ADD_SIGN("加签"),
     CLAIM("认领"),
     UNCLAIM("释放"),
+    AUTO_ASSIGN("自动派单"),
     READ("已阅"),
     AUTO_COMPLETE("自动通过"),
     AUTO_REJECT("自动驳回"),

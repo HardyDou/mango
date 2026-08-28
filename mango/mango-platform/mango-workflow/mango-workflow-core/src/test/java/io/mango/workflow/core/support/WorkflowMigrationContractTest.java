@@ -15,6 +15,8 @@ class WorkflowMigrationContractTest {
     private static final String MIGRATION = "db/migration/workflow/V1__init_workflow.sql";
     private static final String AUDIT_MIGRATION =
             "db/migration/workflow/V2__add_workflow_audit_columns.sql";
+    private static final String PARTICIPATION_MIGRATION =
+            "db/migration/workflow/V3__workflow_participation_auto_assignment.sql";
     private static final String CHECKSUM_CALLBACK =
             "db/migration/workflow/beforeValidate__workflow_v1_checksum_compatibility.sql";
     private static final Pattern DATA_MUTATION = Pattern.compile(
@@ -100,6 +102,23 @@ class WorkflowMigrationContractTest {
                 .contains("`script` = ''V1__init_workflow.sql''")
                 .contains("`success` = 1")
                 .doesNotContain("validateOnMigrate");
+    }
+
+    @Test
+    void v3_containsTenantScopedParticipationAndRoundRobinStateContracts() throws IOException {
+        String sql = resourceText(PARTICIPATION_MIGRATION);
+
+        assertThat(sql)
+                .contains("CREATE TABLE IF NOT EXISTS `workflow_process_participant`")
+                .contains("`tenant_id` varchar(64) NOT NULL")
+                .contains("`user_id` bigint NOT NULL")
+                .contains("`participant_type` varchar(32) NOT NULL")
+                .contains("UNIQUE KEY `uk_workflow_participant_instance_user_type`")
+                .contains("CREATE TABLE IF NOT EXISTS `workflow_auto_assignment_state`")
+                .contains("UNIQUE KEY `uk_workflow_auto_assignment_node`")
+                .contains("ON DUPLICATE KEY UPDATE `id` = `id`")
+                .doesNotContain("HAVING NOT EXISTS")
+                .doesNotContain("username_snapshot` varchar(128) NOT NULL");
     }
 
     private String tableDefinition(String sql, String tableName) {

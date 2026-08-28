@@ -68,6 +68,12 @@ public enum WorkflowCode implements BizCode {
     /** 流程任务参数非法。 */
     TASK_INVALID(3651, "流程任务参数非法"),
 
+    PARTICIPATION_CONTEXT_INVALID(3652, "工作流参与查询上下文非法"),
+
+    PARTICIPANT_INVALID(3653, "工作流参与用户无效"),
+
+    AUTO_ASSIGN_NO_CANDIDATE(3654, "自动派单节点没有可用候选人"),
+
     /** 流程发布失败。 */
     DEPLOY_FAILED(3620, "流程发布失败");
 

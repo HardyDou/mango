@@ -40,6 +40,8 @@
 
 ## 3.1 近期能力变更
 
+- 2026-08-28，[Issue #732](https://github.com/HardyDou/mango/issues/732) 为 Workflow 增加租户隔离的历史参与关系和审批节点自动派单：业务通过公开 API 查询当前登录用户的只读参与事实、分页读取参与业务或原子声明稳定 `userId` 集合；历史参与不扩大当前任务操作权限。流程节点显式选择 `AUTO` 后固定以数据库游标保护的 `ROUND_ROBIN` 从当前租户有效候选人中直接设置 assignee，空候选返回 `AUTO_ASSIGN_NO_CANDIDATE` 并回滚；旧定义缺失字段继续按 `CLAIM`。V3 只回填可证明的稳定用户 ID，不根据 username 猜测授权。入口见 [Workflow README](../../mango/mango-platform/mango-workflow/README.md)、[Workflow Frontend README](../../mango-ui/packages/workflow/README.md)和[业务审批接入](../guides/business-integration/workflow-business-approval.md)。
+
 - 2026-08-25，[Issue #835](https://github.com/HardyDou/mango/issues/835) 修复已有数据库升级时缺失 `AUTH_ROLE_DATA_SCOPE` 阻断 Resource Bootstrap FINALIZE：Authorization Handler 使用 Registry 持久化的 `targetId` 精确读取目标租户并在该租户上下文停用；目标不存在、目标表或仍携带的身份不一致时明确失败且不回退业务键。声明格式、正常 upsert、`INIT_ONLY` 和 API 不变。入口见 [Authorization README](../../mango/mango-platform/mango-authorization/README.md) 与 [Resource README](../../mango/mango-platform/mango-resource/README.md)。
 
 - 2026-08-25，[Issue #851](https://github.com/HardyDou/mango/issues/851) 为 Resource Bootstrap 增加构建期模块 manifest、内容寻址 `files.bundle` 和环境级模块 receipt：最终应用通过数据库无关的最小构建 context 把物料写入 Boot JAR；部署优先消费构建 manifest，相同模块 hash 在内部声明解析前跳过，变化模块按固定依赖执行 EXPAND/FINALIZE，失败不推进 receipt，FINALIZE 删除范围只限变化模块内 Registry-owned `AUTO`。数据库 cold baseline 和 sealed Maven release manifest 继续作为各自唯一事实源。入口见 [Resource README](../../mango/mango-platform/mango-resource/README.md)、[构建期 cold baseline](../guides/business-integration/build-time-cold-baseline.md)、[设计](../designs/2026-08-25-issue-851-resource-bootstrap-design.md)和[验收台账](../plans/2026-08-25-issue-851-resource-bootstrap-plan.md)。

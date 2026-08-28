@@ -2,6 +2,7 @@ package io.mango.workflow.core.engine;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.workflow.core.model.WorkflowApprovalNodeConfig;
+import io.mango.workflow.api.enums.WorkflowAssignmentMode;
 import org.flowable.bpmn.model.BpmnModel;
 import org.flowable.bpmn.model.ExtensionElement;
 import org.flowable.bpmn.model.MultiInstanceLoopCharacteristics;
@@ -86,6 +87,35 @@ class WorkflowDesignerBpmnConverterTest {
 
         assertThat(config.getActions().get("transfer").getDisabled()).isTrue();
         assertThat(config.getActions().get("transfer").getTooltip()).isEqualTo("当前节点暂不允许转办");
+    }
+
+    @Test
+    void toModel_shouldDefaultLegacyApprovalConfigToClaim() throws Exception {
+        UserTask task = approvalTask("""
+                {
+                  "assigneeIds": ["1001"]
+                }
+                """);
+
+        List<ExtensionElement> elements = task.getExtensionElements().get("mangoApprovalConfig");
+        WorkflowApprovalNodeConfig config = new ObjectMapper()
+                .readValue(elements.get(0).getElementText(), WorkflowApprovalNodeConfig.class);
+
+        assertThat(config.getAssignmentMode()).isEqualTo(WorkflowAssignmentMode.CLAIM);
+        assertThat(task.getAssignee()).isEqualTo("1001");
+    }
+
+    @Test
+    void toModel_shouldDeferAutoAssignmentToRuntime() {
+        UserTask task = approvalTask("""
+                {
+                  "assignmentMode": "AUTO",
+                  "assigneeIds": ["1001", "1002"]
+                }
+                """);
+
+        assertThat(task.getAssignee()).isNull();
+        assertThat(task.getLoopCharacteristics()).isNull();
     }
 
     private UserTask approvalTask(String approvalConfigJson) {
