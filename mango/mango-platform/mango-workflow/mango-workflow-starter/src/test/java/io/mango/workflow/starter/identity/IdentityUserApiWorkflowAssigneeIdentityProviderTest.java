@@ -2,7 +2,7 @@ package io.mango.workflow.starter.identity;
 
 import io.mango.common.result.R;
 import io.mango.identity.api.IdentityUserApi;
-import io.mango.identity.api.query.IdentityUserBatchQuery;
+import io.mango.identity.api.request.IdentityUserBatchRequest;
 import io.mango.identity.api.vo.IdentityUserInfoVO;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -31,7 +31,7 @@ class IdentityUserApiWorkflowAssigneeIdentityProviderTest {
 
         var result = provider.resolveAll(List.of("admin", "1002", "missing"));
 
-        ArgumentCaptor<IdentityUserBatchQuery> queryCaptor = ArgumentCaptor.forClass(IdentityUserBatchQuery.class);
+        ArgumentCaptor<IdentityUserBatchRequest> queryCaptor = ArgumentCaptor.forClass(IdentityUserBatchRequest.class);
         verify(identityUserApi).listUserInfos(queryCaptor.capture());
         assertThat(queryCaptor.getValue().getUserIds()).containsExactly(1002L);
         assertThat(queryCaptor.getValue().getUsernames()).containsExactly("admin", "missing");

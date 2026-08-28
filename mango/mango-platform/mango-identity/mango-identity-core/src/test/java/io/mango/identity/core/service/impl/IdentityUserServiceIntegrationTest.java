@@ -20,7 +20,7 @@ import io.mango.identity.api.command.UpdateCurrentUserProfileCommand;
 import io.mango.identity.api.enums.IdentityUserTargetType;
 import io.mango.identity.api.query.ExternalIdentityQuery;
 import io.mango.identity.api.query.IdentityUserTargetQuery;
-import io.mango.identity.api.query.IdentityUserBatchQuery;
+import io.mango.identity.api.request.IdentityUserBatchRequest;
 import io.mango.identity.api.vo.IdentityUserInfoVO;
 import io.mango.identity.core.entity.ExternalIdentityBindingEntity;
 import io.mango.identity.core.entity.IdentityUserEntity;
@@ -172,7 +172,7 @@ class IdentityUserServiceIntegrationTest {
         seedMember(11L, 1L, 1001L, 1, null);
         seedMember(12L, 1L, 1002L, 0, null);
         seedMember(21L, 2L, 2001L, 1, null);
-        IdentityUserBatchQuery query = new IdentityUserBatchQuery();
+        IdentityUserBatchRequest query = new IdentityUserBatchRequest();
         query.setUserIds(List.of(1001L, 1001L, 2001L, 9999L));
         query.setUsernames(List.of("admin", "reviewer", "other", "missing", " admin "));
 
@@ -188,7 +188,7 @@ class IdentityUserServiceIntegrationTest {
     @DisplayName("批量查询为空时返回空结果")
     void listUserInfosShouldReturnEmptyForEmptyQuery() {
         MangoContextHolder.set(MangoContextSnapshot.empty().withTenantId("1"));
-        IdentityUserBatchQuery query = new IdentityUserBatchQuery();
+        IdentityUserBatchRequest query = new IdentityUserBatchRequest();
 
         assertThat(service.listUserInfos(query)).isEmpty();
     }
@@ -199,7 +199,7 @@ class IdentityUserServiceIntegrationTest {
         MangoContextHolder.set(MangoContextSnapshot.empty().withTenantId("1"));
         seedUser(1001L, "former", "已离开", "1", 1);
         seedMember(11L, 1L, 1001L, 1, LocalDateTime.now());
-        IdentityUserBatchQuery query = new IdentityUserBatchQuery();
+        IdentityUserBatchRequest query = new IdentityUserBatchRequest();
         query.setUsernames(List.of("former"));
 
         assertThat(service.listUserInfos(query)).isEmpty();
@@ -208,7 +208,7 @@ class IdentityUserServiceIntegrationTest {
     @Test
     @DisplayName("批量查询总标识数不能超过上限")
     void listUserInfosShouldRejectMoreThanTwoHundredDistinctKeys() {
-        IdentityUserBatchQuery query = new IdentityUserBatchQuery();
+        IdentityUserBatchRequest query = new IdentityUserBatchRequest();
         query.setUserIds(java.util.stream.LongStream.rangeClosed(1, 201).boxed().toList());
 
         assertThatThrownBy(() -> service.listUserInfos(query))

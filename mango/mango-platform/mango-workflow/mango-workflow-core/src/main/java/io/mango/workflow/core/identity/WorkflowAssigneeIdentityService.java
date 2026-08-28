@@ -7,7 +7,6 @@ import io.mango.workflow.api.vo.WorkflowTaskVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 import java.util.Collection;
@@ -20,7 +19,6 @@ import java.util.Objects;
  * Workflow 办理人身份批量增强服务。
  */
 @Slf4j
-@Component
 @RequiredArgsConstructor
 public class WorkflowAssigneeIdentityService {
 

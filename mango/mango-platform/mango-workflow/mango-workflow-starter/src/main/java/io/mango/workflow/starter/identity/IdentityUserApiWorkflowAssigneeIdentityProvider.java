@@ -2,7 +2,7 @@ package io.mango.workflow.starter.identity;
 
 import io.mango.common.result.R;
 import io.mango.identity.api.IdentityUserApi;
-import io.mango.identity.api.query.IdentityUserBatchQuery;
+import io.mango.identity.api.request.IdentityUserBatchRequest;
 import io.mango.identity.api.vo.IdentityUserInfoVO;
 import io.mango.workflow.core.identity.IWorkflowAssigneeIdentityProvider;
 import io.mango.workflow.core.identity.WorkflowAssigneeIdentity;
@@ -32,7 +32,7 @@ public class IdentityUserApiWorkflowAssigneeIdentityProvider implements IWorkflo
         if (identityUserApi == null || assigneeKeys == null || assigneeKeys.isEmpty()) {
             return Map.of();
         }
-        R<List<IdentityUserInfoVO>> response = identityUserApi.listUserInfos(buildQuery(assigneeKeys));
+        R<List<IdentityUserInfoVO>> response = identityUserApi.listUserInfos(buildRequest(assigneeKeys));
         if (response == null || !response.isSuccess() || response.getData() == null) {
             return Map.of();
         }
@@ -42,7 +42,7 @@ public class IdentityUserApiWorkflowAssigneeIdentityProvider implements IWorkflo
         return resolveIdentities(assigneeKeys, byId, byUsername);
     }
 
-    private IdentityUserBatchQuery buildQuery(Collection<String> assigneeKeys) {
+    private IdentityUserBatchRequest buildRequest(Collection<String> assigneeKeys) {
         List<Long> userIds = new ArrayList<>();
         List<String> usernames = new ArrayList<>();
         for (String assigneeKey : assigneeKeys) {
@@ -56,10 +56,10 @@ public class IdentityUserApiWorkflowAssigneeIdentityProvider implements IWorkflo
                 userIds.add(userId);
             }
         }
-        IdentityUserBatchQuery query = new IdentityUserBatchQuery();
-        query.setUserIds(userIds);
-        query.setUsernames(usernames);
-        return query;
+        IdentityUserBatchRequest request = new IdentityUserBatchRequest();
+        request.setUserIds(userIds);
+        request.setUsernames(usernames);
+        return request;
     }
 
     private void indexUsers(List<IdentityUserInfoVO> users,

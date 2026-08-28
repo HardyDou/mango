@@ -27,7 +27,7 @@ import io.mango.identity.api.command.UnbindCurrentExternalIdentityCommand;
 import io.mango.identity.api.enums.IdentityCode;
 import io.mango.identity.api.query.ExternalIdentityQuery;
 import io.mango.identity.api.query.IdentityUserPageQuery;
-import io.mango.identity.api.query.IdentityUserBatchQuery;
+import io.mango.identity.api.request.IdentityUserBatchRequest;
 import io.mango.identity.api.query.IdentityUserTargetQuery;
 import io.mango.identity.api.vo.ExternalIdentityBindingVO;
 import io.mango.identity.api.vo.IdentityUserInfoVO;
@@ -434,7 +434,7 @@ public class IdentityUserService extends MangoCrudServiceImpl<IdentityUserMapper
     }
 
     @Override
-    public List<IdentityUserInfoVO> listUserInfos(IdentityUserBatchQuery query) {
+    public List<IdentityUserInfoVO> listUserInfos(IdentityUserBatchRequest query) {
         if (query == null) {
             return List.of();
         }
@@ -449,7 +449,7 @@ public class IdentityUserService extends MangoCrudServiceImpl<IdentityUserMapper
                 .filter(StringUtils::hasText)
                 .map(String::trim)
                 .collect(Collectors.toCollection(LinkedHashSet::new));
-        Require.isTrue(userIds.size() + usernames.size() <= IdentityUserBatchQuery.MAX_IDENTIFIERS,
+        Require.isTrue(userIds.size() + usernames.size() <= IdentityUserBatchRequest.MAX_IDENTIFIERS,
                 IdentityCode.VALIDATION_ERROR, "批量查询用户标识不能超过200个");
         if (userIds.isEmpty() && usernames.isEmpty()) {
             return List.of();

@@ -19,7 +19,7 @@ import io.mango.identity.api.command.UnbindCurrentExternalIdentityCommand;
 import io.mango.identity.api.query.ExternalIdentityQuery;
 import io.mango.identity.api.query.IdentityUserPageQuery;
 import io.mango.identity.api.query.IdentityUserTargetQuery;
-import io.mango.identity.api.query.IdentityUserBatchQuery;
+import io.mango.identity.api.request.IdentityUserBatchRequest;
 import io.mango.common.result.R;
 import io.mango.identity.api.IdentityUserApi;
 import io.mango.identity.api.vo.ExternalIdentityBindingVO;
@@ -195,7 +195,7 @@ public class IdentityUserController implements IdentityUserApi {
     @PostMapping("/user/info/batch")
     @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "登录用户批量查询当前租户成员资料")
     @Operation(summary = "批量查询用户资料", description = "登录用户接口。按用户ID和用户名批量查询当前租户成员资料")
-    public R<List<IdentityUserInfoVO>> listUserInfos(@RequestBody IdentityUserBatchQuery query) {
+    public R<List<IdentityUserInfoVO>> listUserInfos(@RequestBody IdentityUserBatchRequest query) {
         return R.ok(identityUserService.listUserInfos(query));
     }
 

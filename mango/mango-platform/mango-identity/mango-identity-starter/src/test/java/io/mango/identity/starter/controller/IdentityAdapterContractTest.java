@@ -2,7 +2,7 @@ package io.mango.identity.starter.controller;
 
 import io.mango.identity.api.AuthIdentityApi;
 import io.mango.identity.api.IdentityUserApi;
-import io.mango.identity.api.query.IdentityUserBatchQuery;
+import io.mango.identity.api.request.IdentityUserBatchRequest;
 import io.mango.identity.api.TenantMemberApi;
 import io.mango.identity.starter.remote.AuthIdentityFeignClient;
 import io.mango.identity.starter.remote.IdentityUserFeignClient;
@@ -41,9 +41,9 @@ class IdentityAdapterContractTest {
 
     @Test
     void batchIdentityLookupShouldKeepHttpContractAcrossAdapters() throws NoSuchMethodException {
-        Method apiMethod = IdentityUserApi.class.getMethod("listUserInfos", IdentityUserBatchQuery.class);
-        Method controllerMethod = IdentityUserController.class.getMethod("listUserInfos", IdentityUserBatchQuery.class);
-        Method feignMethod = IdentityUserFeignClient.class.getMethod("listUserInfos", IdentityUserBatchQuery.class);
+        Method apiMethod = IdentityUserApi.class.getMethod("listUserInfos", IdentityUserBatchRequest.class);
+        Method controllerMethod = IdentityUserController.class.getMethod("listUserInfos", IdentityUserBatchRequest.class);
+        Method feignMethod = IdentityUserFeignClient.class.getMethod("listUserInfos", IdentityUserBatchRequest.class);
 
         assertThat(controllerMethod.getAnnotation(PostMapping.class).value())
                 .containsExactly("/user/info/batch");
@@ -51,12 +51,12 @@ class IdentityAdapterContractTest {
                 .containsExactly("/user/info/batch");
         assertThat(controllerMethod.getParameters()[0].isAnnotationPresent(RequestBody.class)).isTrue();
         assertThat(feignMethod.getParameters()[0].isAnnotationPresent(RequestBody.class)).isTrue();
-        assertThat(apiMethod.getParameterTypes()).containsExactly(IdentityUserBatchQuery.class);
+        assertThat(apiMethod.getParameterTypes()).containsExactly(IdentityUserBatchRequest.class);
     }
 
     @Test
     void batchIdentityLookupShouldRequireLoginWithoutPermissionCode() throws NoSuchMethodException {
-        Method controllerMethod = IdentityUserController.class.getMethod("listUserInfos", IdentityUserBatchQuery.class);
+        Method controllerMethod = IdentityUserController.class.getMethod("listUserInfos", IdentityUserBatchRequest.class);
         ApiAccess access = controllerMethod.getAnnotation(ApiAccess.class);
 
         assertThat(access).isNotNull();
@@ -68,7 +68,7 @@ class IdentityAdapterContractTest {
     void batchIdentityQueryShouldDefensivelyCopyIdentifiers() {
         List<Long> userIds = new ArrayList<>(List.of(1001L));
         List<String> usernames = new ArrayList<>(List.of("admin"));
-        IdentityUserBatchQuery query = new IdentityUserBatchQuery();
+        IdentityUserBatchRequest query = new IdentityUserBatchRequest();
 
         query.setUserIds(userIds);
         query.setUsernames(usernames);
