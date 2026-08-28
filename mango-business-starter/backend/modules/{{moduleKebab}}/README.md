@@ -31,6 +31,9 @@
 前端应用通过 `frontend/src/main.ts` 调用 `register{{modulePascal}}Pages()` 注册页面。菜单资源中的 component key 是 `{{moduleKebab}}/{{aggregateKebab}}/index`。
 
 ## 5. 数据与初始化
+
+业务数据先按用途分类：表结构和索引放本模块 Flyway；菜单、按钮权限和可声明的基础配置放 `META-INF/mango/resources/`；演示业务数据、演示租户和测试账号放 `META-INF/mango/demo/`；用户运行期创建的数据只通过业务 API 或管理后台写入。重置发布与增量发布的操作和验收见 [业务 Resource 重置与增量发布](../../../../mango-docs/guides/business-integration/resource-reset-incremental-release.md)。
+
 | 类型 | 位置 | 初始化内容 | 生效时机 |
 |------|------|------------|----------|
 | Flyway migration | `{{moduleKebab}}-core/src/main/resources/db/migration/{{moduleKebab}}/V1__init_{{moduleKebab}}.sql` | `{{moduleKebab}}_{{aggregateKebab}}` 示例业务表 | 后端应用启动且模块 Flyway 开关启用 |

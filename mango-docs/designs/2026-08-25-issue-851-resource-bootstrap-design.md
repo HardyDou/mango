@@ -67,6 +67,14 @@
 - 当前只为一 Resource 对应一条 `sys_config` 行的 `SYSTEM_CONFIG` 启用退避。多表/多行目标不做通用时间猜测，由 Owner Handler 提供受管状态判断；本次不增加 `revision` 字段或通用状态表。
 - 现有 cold baseline 只重放 Flyway，不能证明 Handler 目标状态及 Registry 同步时间一致，因此重置发布的完整 Resource baseline 不在本批次完成范围。
 
+### 3.6 业务开发者消费契约
+
+- 业务模块把表结构、索引和约束放在本模块 Flyway；菜单、按钮权限、可声明的字典/配置/流程定义放在 typed Resource；演示租户、样例单据和测试账号放在显式 Demo Resource；运行期业务数据只通过业务 API 或管理后台写入。
+- 单体业务 app 依赖业务 `<module>-starter`；微服务提供方拥有业务表和 Resource 声明，调用方只依赖 API 或 `<module>-starter-remote`，不读取提供方 `core` 或数据库。
+- 业务发布必须能区分 `reset` 与 `incremental`：reset 只允许真正空库或明确可重建环境；incremental 保留业务库，Flyway 按 history 执行，Resource 按模块 receipt/hash 协调。两种模式都要回读 Flyway history、Bootstrap receipt、Registry、目标业务表、权限和租户结果。
+- 新业务 Resource 的关系使用稳定 `resourceId`、`code`、`bizCode` 或 `resourceType + bizKey`。扫描顺序、JAR 顺序、模块启动顺序和自增主键不属于业务发布契约。
+- 业务验收至少覆盖正式空库、Demo 开关、无变化重启、单 Resource 变化、后台修改退避、删除隔离、中断恢复、租户/权限和微服务 remote 消费。当前空库首次仍会执行 `RESOURCE_REQUIRED`，因此不能宣称首次零 Handler。
+
 ## 4. 验收映射
 
 | ID | 要求 | 自动化入口 |

@@ -127,3 +127,13 @@
 - `workspace-layout-check.mjs --root .`：PASS。
 - 既有 #851 `delivery-contract-check.mjs --mode verify`：8/8 DONE、0 EXCEPTION。
 - `git diff --check`：PASS。
+
+### 5.5 业务开发者消费契约
+
+| ID | 要求 | 交付物 | 状态 |
+|---|---|---|---|
+| DOC-002 | 业务开发者能区分 Flyway、正式 Resource、Demo、运行期数据和文件资产 | `mango-docs/guides/business-integration/resource-reset-incremental-release.md`、业务 Starter README 入口、模块模板 README 入口 | DONE |
+| VERIFY-004 | 保函类业务模块覆盖 reset/incremental、后台修改退避、权限租户和单体/微服务边界 | 临时 `guarantee` Consumer + MySQL 回读；业务验收矩阵和清理记录 | DONE（本地一次性消费验证） |
+| IMPL-010 | 构建期 Resource 数据库 baseline，reset 首次跳过已基线 Resource Handler | Resource baseline 生成、恢复和等价校验实现 | PENDING（#851 剩余核心目标） |
+
+当前业务开发者消费边界：正式 Resource 的模块/Resource hash 跳过和 `SYSTEM_CONFIG.updated_at` 退避已经可用；完整 cold Resource baseline、所有 Handler 的通用运行期修改保护以及真实云对象存储验收仍未完成。
