@@ -74,6 +74,10 @@ public enum WorkflowCode implements BizCode {
 
     AUTO_ASSIGN_NO_CANDIDATE(3654, "自动派单节点没有可用候选人"),
 
+    DESIGNER_OPTION_PROVIDER_MISSING(3655, "流程设计器候选数据 Provider 未配置"),
+
+    DESIGNER_OPTION_LOAD_FAILED(3656, "流程设计器候选数据加载失败"),
+
     /** 流程发布失败。 */
     DEPLOY_FAILED(3620, "流程发布失败");
 

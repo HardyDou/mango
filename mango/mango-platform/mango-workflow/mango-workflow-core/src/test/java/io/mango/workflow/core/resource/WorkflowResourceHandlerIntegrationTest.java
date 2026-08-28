@@ -22,6 +22,7 @@ import io.mango.workflow.api.query.WorkflowDefinitionVersionQuery;
 import io.mango.workflow.api.vo.WorkflowDefinitionVO;
 import io.mango.workflow.api.vo.WorkflowDefinitionVersionVO;
 import io.mango.workflow.api.vo.WorkflowDeployVO;
+import io.mango.workflow.api.vo.WorkflowDesignerOptionsVO;
 import io.mango.workflow.api.vo.WorkflowNodeCatalogVO;
 import io.mango.workflow.core.entity.WorkflowDefinitionEntity;
 import io.mango.workflow.core.mapper.WorkflowCategoryMapper;
@@ -574,6 +575,11 @@ class WorkflowResourceHandlerIntegrationTest {
 
         @Override
         public WorkflowDefinitionVO get(Long id) {
+            return unused();
+        }
+
+        @Override
+        public WorkflowDesignerOptionsVO designerOptions() {
             return unused();
         }
 

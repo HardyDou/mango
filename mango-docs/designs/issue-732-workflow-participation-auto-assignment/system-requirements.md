@@ -11,7 +11,7 @@ owner: Mango Workflow 产品与系统负责人
 approver: HardyDou
 approvalEvidence: review/APPROVAL.md
 upstreamDocumentId: BRD-WORKFLOW-732
-upstreamDocumentHash: c1b4269c3924bf2f9a64542c58789bc66a680c7dd4b6cfb77540829ab176a934
+upstreamDocumentHash: 2375a7b44b583e7bd395145ad5f179a472d34ff240043d3d1d2007d298881a14
 ---
 
 # 工作流历史参与人只读查询与自动派单系统需求规格说明书
@@ -24,6 +24,7 @@ upstreamDocumentHash: c1b4269c3924bf2f9a64542c58789bc66a680c7dd4b6cfb77540829ab1
 | SC-002 | BS-003, BF-002 | 接收并验证业务声明的参与用户 | 业务负责人规则和业务状态机 | Workflow、业务服务、身份模块 | 原子替换后的参与关系 |
 | SC-003 | BS-004, BG-002 | 在节点创建事务内解析候选人并严格轮询设置 assignee | 候选角色和组织数据的业务维护 | Workflow、Flowable、授权模块、组织模块、身份模块 | assignee、轮询游标、任务审计或明确失败 |
 | SC-004 | BS-006, BG-003 | 保持任务操作授权与参与查询授权分离 | 业务应用自己的查看页面和审批状态机 | Workflow、业务服务 | 查询成功不改变任务操作结果 |
+| SC-005 | BS-007, BG-004 | 由 Workflow API 提供设计器候选数据并允许承载应用替换 Provider | 身份、权限、组织、系统模块各自的数据所有权 | Workflow、平台公共 API、流程管理员 | 五类候选项或稳定失败错误 |
 
 ## 2. 系统参与者与访问行为
 
@@ -45,6 +46,7 @@ upstreamDocumentHash: c1b4269c3924bf2f9a64542c58789bc66a680c7dd4b6cfb77540829ab1
 | FR-005 | BG-002, BF-003, BR-004, BR-005 | SA-003, SA-004 | 节点 assignmentMode=AUTO | 现有审批人配置解析出的用户、角色、岗位、组织或组织负责人候选 | 解析为当前租户启用的稳定用户；锁定节点游标并选择下一 userId，提交前设置 Flowable assignee | 当前任务返回唯一 assignee 和 ROUND_ROBIN 审计 | 空候选返回 AUTO_ASSIGN_NO_CANDIDATE 并回滚整个启动或推进事务 | 游标推进、任务 assignee 更新 |
 | FR-006 | BG-003, BR-001 | SA-004 | 用户仅具有历史参与关系而不是当前 assignee/candidate | 现有任务动作命令 | 继续执行现有 ensureCurrentUserCanOperate 校验，不查询参与投影 | 合法当前办理人行为不变 | 历史参与人收到现有无权处理错误 | 不扩大任务操作状态转换 |
 | FR-007 | BAC-001, BAC-003 | SA-001 | 升级前存在流程、任务记录和业务申请 | 可确定 tenant、processKey、businessKey、processInstanceId 和 operatorId 的历史记录 | 以幂等 INSERT SELECT 回填发起和已完成办理关系；无法确定稳定 userId 的旧 username 不授权 | 可确认历史参与人可查询 | 不确定身份留空且记录升级限制，不猜测匹配 | 只新增可证明关系 |
+| FR-008 | BG-004, BF-004, BR-006 | SA-003 | 已登录且具有流程定义查询权限 | 请求不包含 tenantId | `GET /workflow/definitions/designer-options` 调用唯一候选数据 Provider，返回用户、角色、岗位、组织树和字典类型；默认 Provider 通过平台公共 API 按当前上下文加载 | 五类候选项一次返回，前端不调用跨域接口 | Provider 缺失和任一上游失败分别返回稳定错误，不返回伪造空数据 | 只读 |
 
 ## 4. 用户场景与交互流程
 
@@ -54,6 +56,7 @@ upstreamDocumentHash: c1b4269c3924bf2f9a64542c58789bc66a680c7dd4b6cfb77540829ab1
 | UC-002 | BF-001 | FR-002 | SA-001 | 已办或参与业务列表 | 当前用户存在多个参与业务 | 按条件分页 | 稳定返回业务坐标和参与类型 | 无记录为空页 | 查询完成 |
 | UC-003 | BF-002 | FR-003 | SA-002 | 业务参与人声明 Port | 业务坐标有效 | 提交完整 userId 集合 | 全部验证后原子替换 | 任一无效则零写入 | 关系与声明一致 |
 | UC-004 | BF-003 | FR-005 | SA-003, SA-004 | 流程启动或任务完成 | AUTO 节点候选有效 | 创建下一节点 | 响应内任务已有 assignee | 空候选返回配置错误且原事务回滚 | 游标与任务同时提交或均不提交 |
+| UC-005 | BF-004 | FR-008 | SA-003 | 流程定义设计器 | 仅授予 Workflow 流程定义权限 | 打开并切换候选控件 | 五类候选项加载且网络中只有 Workflow 候选接口 | Provider 或上游失败显示统一明确错误 | 只读加载完成 |
 
 ## 5. 页面、信息与动作需求
 
@@ -91,6 +94,7 @@ upstreamDocumentHash: c1b4269c3924bf2f9a64542c58789bc66a680c7dd4b6cfb77540829ab1
 |---|---|---|---|---|---|---|---|---|---|
 | IR-001 | FR-003, FR-005 | Mango 身份、授权与组织能力 | 将 userId 或候选组解析为当前租户启用用户 | 声明参与人或 AUTO 派单 | userId、角色、岗位、组织标识和当前 tenant | 标准 userId、memberId、username、displayName | 当前业务事务内完成 | 数据源失败 fail-closed，不返回空候选假成功 | 身份模块拥有成员事实，Workflow 拥有参与和派单决策 |
 | IR-002 | FR-001, FR-002 | 业务服务 | 消费工作流参与事实控制业务只读详情 | 用户打开详情或列表 | processKey、businessKey、当前登录上下文 | readable、参与类型或分页结果 | 同步查询 | 超时或失败由业务 fail-closed，不回退当前 assignee 猜测 | Workflow 只给事实，业务拥有详情数据和页面 |
+| IR-003 | FR-008 | Mango 身份、权限、组织、系统公共 API | 为设计器提供当前租户候选项 | 首次打开任一候选控件 | 当前可信上下文，不含客户端 tenantId | 用户、角色、岗位、组织树、字典类型 | 同步聚合，一次页面会话复用请求 | 缺少公共能力或调用失败均 fail-closed；自定义 Provider 可替换默认实现 | 各模块拥有数据，Workflow 拥有设计器接口和输出模型 |
 
 ## 8. 非功能需求
 
@@ -100,6 +104,7 @@ upstreamDocumentHash: c1b4269c3924bf2f9a64542c58789bc66a680c7dd4b6cfb77540829ab1
 | NFR-002 | BR-005, BG-002 | 一致性 | 并发 AUTO 节点创建 | 游标丢失更新数和孤儿任务数 | 0 | 多线程创建同节点任务 | 派单不公平或无主任务 | 数据库并发集成测试 |
 | NFR-003 | BG-001, BS-002 | 性能 | 参与人分页和单业务查询 | 查询计划使用租户前缀索引；单页最大 100 | 100% 命中有界分页路径 | 至少 10 万参与关系数据 | 业务详情和列表超时 | 索引契约与集成测试 |
 | NFR-004 | BR-004 | 可诊断性 | AUTO 空候选 | 错误上下文字段完整率 | 100% 包含 processDefinitionId、nodeKey、候选来源 | 空组、禁用用户、非法表达式 | 管理员无法定位配置 | 错误契约测试 |
+| NFR-005 | BR-006 | 安全与解耦 | 设计器候选加载 | 跨域前端请求数、客户端 tenantId 参数数 | 均为 0 | 用户仅有 Workflow 流程定义权限 | 403 或越权授权 | API 契约、源码边界和浏览器网络验收 |
 
 ## 9. 系统验收标准
 
@@ -113,6 +118,7 @@ upstreamDocumentHash: c1b4269c3924bf2f9a64542c58789bc66a680c7dd4b6cfb77540829ab1
 | SAC-006 | BAC-006 | FR-005, NFR-002 | A、B、C 候选且并发创建 | 并发创建多个任务 | 持久化游标严格推进，无丢失更新 | 无孤儿和伪轮询 | 并发 |
 | SAC-007 | BAC-007 | FR-002, NFR-003 | 多业务多租户参与数据 | 分页和翻页 | 稳定排序、不重复、单页有界且索引匹配 | 空页结构合法 | 性能与功能 |
 | SAC-008 | BAC-001, BAC-003 | FR-007 | 存在可确认和不可确认旧记录 | 执行升级迁移 | 稳定 operatorId 被回填且迁移幂等 | username-only 记录不授予访问 | 升级兼容 |
+| SAC-009 | BAC-008 | FR-008, IR-003, NFR-005 | 用户仅有 `workflow:definition:*` 且五类平台数据存在 | 打开用户、角色、岗位、组织和字典候选控件 | 仅一次 Workflow 自有接口请求，五类候选可见，无 403 | Provider 缺失或下游失败返回稳定错误且不伪装空数据 | 功能、安全与浏览器 |
 
 ## 10. 系统需求追踪矩阵
 
@@ -125,6 +131,7 @@ upstreamDocumentHash: c1b4269c3924bf2f9a64542c58789bc66a680c7dd4b6cfb77540829ab1
 | BG-003, BAC-001 | SC-004, SA-004, FR-006 | SAC-001 | 覆盖只读与操作授权隔离 |
 | BAC-001, BAC-003 | FR-007, DR-003 | SAC-008 | 覆盖历史数据安全回填 |
 | BAC-001, BAC-002, BAC-003, BAC-004, BAC-005, BAC-006, BAC-007 | FR-001, FR-002, FR-003, FR-004, FR-005, FR-006, FR-007 | SAC-001, SAC-002, SAC-003, SAC-004, SAC-005, SAC-006, SAC-007, SAC-008 | 承接全部业务验收 |
+| BG-004, BF-004, BR-006, BAC-008 | SC-005, SA-003, FR-008, UC-005, IR-003, NFR-005 | SAC-009 | 覆盖设计器候选项的 Workflow 接口所有权、Provider 替换、最小权限和显式失败 |
 
 ## 11. 阶段判定与审批
 

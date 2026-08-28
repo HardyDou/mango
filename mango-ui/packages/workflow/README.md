@@ -240,14 +240,14 @@ import { WorkflowLayout, WorkflowSidebar } from '@mango/workflow';
 
 | 分类       | 方法                                                                                                                                                                                                                                                                      |
 | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 分类和定义 | `categoriesPage()`、`categoriesList()`、`definitionDetail()`、`definitionsPage()`、`saveDefinition()`、`updateDefinition()`、`deleteDefinition()`、`deployDefinition()`、`nodeCatalog()`                                                                                  |
+| 分类和定义 | `categoriesPage()`、`categoriesList()`、`definitionDetail()`、`definitionsPage()`、`saveDefinition()`、`updateDefinition()`、`deleteDefinition()`、`deployDefinition()`、`nodeCatalog()`、`designerOptions()`                                                             |
 | 模板       | `templatesPage()`、`templateDetail()`、`saveTemplate()`、`deleteTemplate()`、`createTemplateFromDefinition()`、`createDefinitionFromTemplate()`、`importTemplates()`、`pushTemplates()`                                                                                   |
 | 任务       | `todoTasks()`、`todoSummary()`、`myTaskSummary()`、`initiatedTasks()`、`doneTasks()`、`copiedTasks()`、`taskDetail()`                                                                                                                                                     |
 | 动作       | `completeTask()`、`completeTaskWithResult()`、`rejectTask()`、`rejectTaskWithResult()`、`saveTask()`、`saveTaskWithResult()`、`transferTask()`、`addSignTask()`、`claimTask()`、`claimTaskWithResult()`、`unclaimTask()`、`unclaimTaskWithResult()`、`readCopiedTask()`   |
 | 流程实例   | `startProcess()`、`startBusinessWorkflow()`、`initiatedProcesses()`、`processHistoryByBusinessKey()`、`processDetail()`                                                                                                                                                   |
 | 参与关系   | `participationAccess()`、`participationMy()`、`replaceBusinessParticipants()`                                                                                                                                        |
 | 业务申请   | `createBusinessApply()`、`businessAppliesPage()`、`businessApplyMySummary()`、`businessApplyDetail()`、`businessApplyHistory()`、`businessApplyLatestProgress()`、`businessApplyLatestProgressBatch()`、`businessApplyLatestByKeys()`、`businessApplyByProcessInstance()` |
-| 候选项     | `users()`、`tenants()`、`enabledDomains()`                                                                                                                                                                                                                                |
+| 候选项     | `designerOptions()`（定义设计器的用户、角色、岗位、组织、字典）、`users()`（发起流程兼容入口）、`tenants()`、`enabledDomains()`                                                                                                                                             |
 
 `taskDetail()` 和 `processDetail()` 是业务详情渲染入口，对应后端接口只要求登录，不要求 `workflow:definition:*`、`workflow:task:detail` 或 `workflow:process:detail` 资源权限。响应中的可选 `designerJson` 来自流程实例实际运行的不可变发布版本，`WorkflowProgressTree`、`WorkflowSidebar` 和流程图弹窗可直接消费；字段缺失时继续降级展示审批记录，不应调用流程定义管理 API 补取最新定义。
 
@@ -259,7 +259,8 @@ import { WorkflowLayout, WorkflowSidebar } from '@mango/workflow';
 | ---------------------------------------------- | ------------------------------------------ |
 | 流程分类、定义、版本、模板、任务、业务申请记录 | 后端 `mango-workflow`。                    |
 | workflow 菜单和权限                            | 后端 migration 写入 `authorization_menu`。 |
-| 用户候选项                                     | 后端 `/identity/users/page`。              |
+| 流程定义设计器候选项                           | 后端 `/workflow/definitions/designer-options`；只使用 Workflow 权限，一次返回用户、角色、岗位、组织和字典。 |
+| 发起流程用户候选项                             | 后端 `/identity/users/page` 兼容入口。      |
 | 业务域候选项                                   | 后端 `/domain/domains/enabled-tree`。      |
 | 文件上传、图片上传、附件预览                   | `@mango/file` 和后端 `mango-file`。        |
 
@@ -280,6 +281,8 @@ import { WorkflowLayout, WorkflowSidebar } from '@mango/workflow';
 | `/workflow/custom-apply` | `workflow/custom-apply/index` | `workflow:custom-apply` |
 
 常用权限码来自后端 workflow 菜单和按钮权限，例如 `workflow:definition:list`、`workflow:definition:deploy`、`workflow:template:list`、`workflow:task:list`、`workflow:task:complete`、`workflow:task:return`。
+
+流程定义设计器加载候选项只需要 `workflow:definition:query`。页面不会直接请求 `/identity/users/page`、`/authorization/roles`、`/post/page`、`/org/tree` 或 `/system/dict/type/list`，不要通过给 Workflow 菜单追加跨域权限解决候选项 403。后端 Provider 缺失或加载失败会明确报错，前端不会回退为空数据。
 
 待办任务相关公开 API：
 
@@ -334,7 +337,7 @@ import { WorkflowLayout, WorkflowSidebar } from '@mango/workflow';
 
 - 2026-08-28 办理人身份增强的业务升级适配见 [Workflow 办理人身份特性升级指南](../../../mango-docs/guides/business-integration/workflow-assignee-identity-upgrade.md)。展示优先使用 `assigneeDisplayName`，不应为已有显示名重复查询 Identity；业务权限和租户校验保持不变。
 
-- Issue #732 为流程设计器审批节点增加 `assignmentMode`：旧 `designerJson` 缺失字段按 `CLAIM`；选择 `AUTO` 时显示只读策略 `ROUND_ROBIN`，指定成员为空会阻止保存。前端 API 同步暴露 `participantUserIds` 启动字段及参与关系查询、分页和原子替换方法；租户和任务操作权限仍由后端校验。
+- Issue #732 为流程设计器审批节点增加 `assignmentMode`：旧 `designerJson` 缺失字段按 `CLAIM`；选择 `AUTO` 时显示只读策略 `ROUND_ROBIN`，指定成员为空会阻止保存。设计器通过 `designerOptions()` 一次加载五类候选项，不再直连 Identity、Authorization、Org 和 System REST；接口仅使用 `workflow:definition:query`，租户由后端 Provider 从可信上下文取得。前端 API 同步暴露 `participantUserIds` 启动字段及参与关系查询、分页和原子替换方法；租户和任务操作权限仍由后端校验。
 
 - `@mango/workflow@1.0.37` 将精确依赖对齐到 `@mango/admin-pages@1.0.30`、`@mango/common@1.0.23`、`@mango/file@1.0.31`、`@mango/grid-widgets@1.0.20` 和 `@mango/system@1.0.29`。Workflow 查看类通知的 `viewPath` 和 fallback 目标由 Maven `1.0.29` 生成、由 `@mango/notice@1.0.35` 导航；本包页面 key、审批组件、权限和租户语义保持不变。
 

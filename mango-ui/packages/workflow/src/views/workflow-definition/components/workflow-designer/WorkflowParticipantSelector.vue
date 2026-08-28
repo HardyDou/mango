@@ -112,7 +112,6 @@
 import { computed, ref } from 'vue';
 import type { ElTree } from 'element-plus';
 import { ArrowDown, Briefcase, CircleClose, Delete, OfficeBuilding, Search, Share, User } from '@element-plus/icons-vue';
-import { get } from '@mango/common';
 import type { ApprovalOrgTreeOption, ApprovalTargetOption } from './types';
 
 export interface WorkflowParticipantValue {
@@ -125,11 +124,6 @@ export interface WorkflowParticipantValue {
 type ParticipantType = 'USER' | 'ORG' | 'ROLE' | 'POST';
 type ParticipantOption = ApprovalTargetOption & { type?: ParticipantType };
 type PickedItem = { key: string; type: ParticipantType; value: string; label: string };
-
-interface BackendPageResult<T> {
-  records?: T[];
-  list?: T[];
-}
 
 const props = withDefaults(defineProps<{
   modelValue: WorkflowParticipantValue;
@@ -161,8 +155,6 @@ const emit = defineEmits<{
 const visible = ref(false);
 const activeType = ref<ParticipantType>('USER');
 const keyword = ref('');
-const userLoading = ref(false);
-const userOptions = ref<ParticipantOption[]>([]);
 const tempValue = ref<WorkflowParticipantValue>(emptyValue());
 const orgTreeRef = ref<InstanceType<typeof ElTree>>();
 
@@ -195,10 +187,10 @@ const pickedItems = computed<PickedItem[]>(() => [
   ...pickedOf('ROLE', tempValue.value.roleIds || [], props.roleOptions),
 ]);
 
-const mergedUserOptions = computed(() => mergeOptions(props.userOptions, userOptions.value));
+const mergedUserOptions = computed(() => props.userOptions);
 
 const currentLoading = computed(() => {
-  if (activeType.value === 'USER') return userLoading.value || Boolean(props.targetLoading.users);
+  if (activeType.value === 'USER') return Boolean(props.targetLoading.users);
   if (activeType.value === 'ORG') return Boolean(props.targetLoading.orgs);
   if (activeType.value === 'ROLE') return Boolean(props.targetLoading.roles);
   return Boolean(props.targetLoading.posts);
@@ -247,24 +239,9 @@ async function ensureTypeLoaded(type: ParticipantType) {
   }
 }
 
-async function ensureUsersLoaded() {
-  if (props.userOptions.length || userOptions.value.length) return;
+function ensureUsersLoaded() {
+  if (props.userOptions.length) return;
   emit('ensure-users');
-  userLoading.value = true;
-  try {
-    const data = await get<BackendPageResult<any>>('/identity/users/page', { params: { page: 1, size: 200 } });
-    userOptions.value = (data?.records || data?.list || [])
-      .map(item => {
-        const id = item.userId ?? item.id ?? item.memberId;
-        const value = item.username ?? id;
-        const name = item.nickname || item.memberName || item.username || id;
-        const username = item.username && item.username !== name ? ` / ${item.username}` : '';
-        return value === undefined ? undefined : { value: String(value), label: `${name}${username}` };
-      })
-      .filter(Boolean) as ParticipantOption[];
-  } finally {
-    userLoading.value = false;
-  }
 }
 
 function selectedGroupOf(type: ParticipantType, values: string[], options: ApprovalTargetOption[]) {
@@ -273,18 +250,6 @@ function selectedGroupOf(type: ParticipantType, values: string[], options: Appro
     label: typeLabel(type),
     items: pickedOf(type, values, options),
   };
-}
-
-function mergeOptions(...groups: ApprovalTargetOption[][]) {
-  const map = new Map<string, ApprovalTargetOption>();
-  for (const group of groups) {
-    for (const item of group || []) {
-      if (!map.has(item.value)) {
-        map.set(item.value, item);
-      }
-    }
-  }
-  return Array.from(map.values());
 }
 
 function toggleItem(type: ParticipantType, item: ApprovalTargetOption) {

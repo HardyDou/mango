@@ -1,8 +1,15 @@
 package io.mango.workflow.starter;
 
+import io.mango.authorization.api.RoleApi;
+import io.mango.identity.api.IdentityUserApi;
+import io.mango.org.api.PostApi;
+import io.mango.org.api.SysOrgApi;
+import io.mango.system.api.DictApi;
+import io.mango.workflow.api.WorkflowDesignerOptionProvider;
 import io.mango.workflow.core.identity.IWorkflowAssigneeIdentityProvider;
 import io.mango.workflow.core.identity.WorkflowAssigneeIdentityService;
 import io.mango.workflow.core.mapper.WorkflowDefinitionMapper;
+import io.mango.workflow.starter.provider.WorkflowPlatformApiDesignerOptionProvider;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -30,5 +37,21 @@ public class WorkflowAutoConfiguration {
     public WorkflowAssigneeIdentityService workflowAssigneeIdentityService(
             ObjectProvider<IWorkflowAssigneeIdentityProvider> identityProviders) {
         return new WorkflowAssigneeIdentityService(identityProviders);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(WorkflowDesignerOptionProvider.class)
+    public WorkflowDesignerOptionProvider workflowDesignerOptionProvider(
+            ObjectProvider<IdentityUserApi> identityUserApiProvider,
+            ObjectProvider<RoleApi> roleApiProvider,
+            ObjectProvider<PostApi> postApiProvider,
+            ObjectProvider<SysOrgApi> sysOrgApiProvider,
+            ObjectProvider<DictApi> dictApiProvider) {
+        return new WorkflowPlatformApiDesignerOptionProvider(
+                identityUserApiProvider,
+                roleApiProvider,
+                postApiProvider,
+                sysOrgApiProvider,
+                dictApiProvider);
     }
 }

@@ -80,6 +80,20 @@ export interface WorkflowDomainOption {
   children?: WorkflowDomainOption[];
 }
 
+export interface WorkflowDesignerOption {
+  value: string;
+  label: string;
+  children?: WorkflowDesignerOption[];
+}
+
+export interface WorkflowDesignerOptions {
+  users: WorkflowDesignerOption[];
+  roles: WorkflowDesignerOption[];
+  posts: WorkflowDesignerOption[];
+  organizations: WorkflowDesignerOption[];
+  dictTypes: WorkflowDesignerOption[];
+}
+
 export interface WorkflowDefinition {
   id?: WorkflowId;
   categoryId?: WorkflowId;
@@ -696,6 +710,8 @@ export const workflowApi = {
   definitionVersionDetail: (id: WorkflowId) => get<WorkflowDefinitionVersion>('/workflow/definitions/version-detail', { params: { id } }).then(normalizeVersion),
   nodeCatalog: () => get<WorkflowNodeCatalog[]>('/workflow/definitions/node-catalog')
     .then(list => Array.isArray(list) ? list.map(normalizeNodeCatalog) : []),
+  designerOptions: () => get<WorkflowDesignerOptions>('/workflow/definitions/designer-options')
+    .then(normalizeDesignerOptions),
 
   templatesPage: (params?: WorkflowPageQuery & { templateCategoryId?: WorkflowId | '' }) => get<any>('/workflow/templates/page', { params: toBackendPageParams(params) })
     .then(data => fromBackendPageResult(data, normalizeTemplate, params)),
@@ -1040,6 +1056,25 @@ function normalizeDomainOption(item: any): WorkflowDomainOption {
     domainName: item?.domainName ?? item?.domainCode ?? '',
     children: Array.isArray(item?.children) ? item.children.map(normalizeDomainOption) : [],
   };
+}
+
+function normalizeDesignerOptions(data: Partial<WorkflowDesignerOptions> | undefined): WorkflowDesignerOptions {
+  return {
+    users: normalizeDesignerOptionList(data?.users),
+    roles: normalizeDesignerOptionList(data?.roles),
+    posts: normalizeDesignerOptionList(data?.posts),
+    organizations: normalizeDesignerOptionList(data?.organizations),
+    dictTypes: normalizeDesignerOptionList(data?.dictTypes),
+  };
+}
+
+function normalizeDesignerOptionList(items: WorkflowDesignerOption[] | undefined): WorkflowDesignerOption[] {
+  if (!Array.isArray(items)) return [];
+  return items.map(item => ({
+    value: String(item?.value ?? ''),
+    label: String(item?.label ?? item?.value ?? ''),
+    children: Array.isArray(item?.children) ? normalizeDesignerOptionList(item.children) : undefined,
+  })).filter(item => item.value && item.label);
 }
 
 function normalizeTemplate(item: any): WorkflowTemplate {
