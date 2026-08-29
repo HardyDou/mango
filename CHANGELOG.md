@@ -1,15 +1,83 @@
 # Mango Changelog
 
-## Unreleased
+## v2026.08.29-maven-1.0.43-resource-incremental-release - 2026-08-29
+
+Status: `PENDING`. Publication, dual-registry verification, clean consumer verification, Tag and GitHub Release creation remain governed by the sealed release manifest.
+
+### Pull Requests
+
+- [PR #884](https://github.com/HardyDou/mango/pull/884) Added cold-baseline materialization for portable Resource targets and Resource-level incremental synchronization with runtime-edit preservation. Packages: Mango Maven `1.0.43`, `io.mango:mango-docs-bundle:1.0.43`, `@mango/cli@1.2.3` and its generated dependency closure. Business Adaptation: reset releases can restore portable Resource data from BSQL; incremental releases skip unchanged modules/resources and preserve admin-modified `SYSTEM_CONFIG` values.
+- [PR #885](https://github.com/HardyDou/mango/pull/885) Added tenant-scoped Workflow assignee identity fields and batch identity lookup. Packages: Mango Maven `1.0.43`, `io.mango:mango-docs-bundle:1.0.43`, `@mango/workflow@1.0.45` and its generated dependency closure. Business Adaptation: consumers must use stable Mango user IDs and the tenant-aware workflow response contract.
+- [PR #886](https://github.com/HardyDou/mango/pull/886) Added Workflow participation projections, history reads and stable userId round-robin assignment. Packages: Mango Maven `1.0.43`, `io.mango:mango-docs-bundle:1.0.43`, `@mango/workflow@1.0.45` and its generated dependency closure. Business Adaptation: existing workflow consumers should run the new migration and verify tenant-scoped assignment behavior.
+- [PR #887](https://github.com/HardyDou/mango/pull/887) Added the tenant-aware Workflow designer options Provider boundary. Packages: Mango Maven `1.0.43`, `io.mango:mango-docs-bundle:1.0.43`, `@mango/workflow@1.0.45` and its generated dependency closure. Business Adaptation: designer integrations should consume `GET /workflow/definitions/designer-options` and stop calling identity, authorization, org and dictionary endpoints directly.
 
 ### Fixed
 
-- Normalize date-only query range boundaries to `00:00:00` and `23:59:59` across shared, Job, Notice, System and Workflow frontend API clients while preserving explicit date-time values.
-- Resolve packaged `FILE_ASSET` content from content-addressed `META-INF/mango/files.bundle/objects/{sha256}` resources during Resource Bootstrap instead of treating the packaged classpath object as a source file.
+- Portable Resource target rows and Registry source hashes are materialized into the generated BSQL cold baseline, so a reset release does not execute the same `RESOURCE_REQUIRED` bootstrap work after restore.
+- Resource synchronization compares module and Resource hashes, records `APPLIED`, `SKIPPED`, `PRESERVED` and `FAILED` outcomes, and preserves admin-modified `SYSTEM_CONFIG` values using `updated_at` and `resource_registry.last_sync_time`.
+- Workflow assignee and designer candidate reads now use tenant-scoped stable identity contracts instead of repeated cross-domain page requests.
+
+### Added
+
+- Workflow participation history and stable userId round-robin assignment with transactional empty-candidate rollback.
+- A Provider extension point and batch identity lookup for workflow designer candidates.
 
 ### Changed
 
-- Advance the generated CLI compatibility matrix from Mango Maven `1.0.41` to `1.0.42`; PMO remains `1.4.2`, and the exact npm dependency closure is generated from the release plan.
+- Resource declarations use stable `resourceId`, `code`, `bizCode` or `resourceType + bizKey` references. Module or JAR scan order remains a compatibility feature but is documented as discouraged.
+- Generated CLI and frontend dependency projections advance with the exact release topology; Maven and npm consumers must upgrade the complete published tuple.
+
+### Versions
+
+- Mango Maven non-application reactor and `io.mango:mango-docs-bundle`: `1.0.42` to `1.0.43`.
+- `@mango/workflow`: `1.0.44` to `1.0.45`.
+- Generated closure: `@mango/admin-shell` `1.0.65` to `1.0.66`; `@mango/workflow-business-example` `1.0.43` to `1.0.44`; `@mango/admin` `1.1.1` to `1.1.2`.
+- `@mango/cli`: `1.2.2` to `1.2.3`; its Maven compatibility matrix advances to `1.0.43` and PMO remains `1.4.2`.
+
+### Published Packages
+
+1. Publish the 191-coordinate Mango Maven `--all-non-app` Catalog batch at `1.0.43`, followed by `io.mango:mango-docs-bundle:1.0.43`; application and capability-app fat JARs are excluded.
+2. Publish npm in topology order: `@mango/workflow@1.0.45` -> `@mango/admin-shell@1.0.66` -> `@mango/workflow-business-example@1.0.44` -> `@mango/admin@1.1.2` -> `@mango/cli@1.2.3`.
+3. The tag and GitHub Release `v2026.08.29-maven-1.0.43-resource-incremental-release` are created only after both registry roles and a clean pure consume-registry consumer verify the sealed candidate.
+
+### Business Impact
+
+- Reset releases can restore portable Resource rows from BSQL. Existing databases continue to apply Flyway incrementally; Resource sync skips unchanged hashes and preserves runtime-managed `SYSTEM_CONFIG` edits. The baseline currently supports one datasource group, and generic runtime-edit preservation remains Handler-specific outside `SYSTEM_CONFIG`.
+- Workflow consumers receive tenant-scoped assignee identity, participation assignment and designer options through the public Workflow contract. Existing databases using Workflow participation must apply the new migration during normal Flyway upgrade.
+- There is no application deployment, traffic change or production-data mutation in this component release. Real OSS/COS/Kodo IAM behavior, multi-datasource Resource baselines and browser acceptance are outside this release verification.
+
+### Upgrade Estimate
+
+- Audience: Mango platform maintainers, generated applications, backend consumers of Resource Bootstrap, and Workflow UI/API consumers.
+- Engineering Effort: 30 to 90 minutes for aggregate consumers; 1 to 3 hours for direct Workflow consumers or custom Resource handlers.
+- Execution Window: 1 to 3 hours including dependency upgrade, Flyway upgrade, clean reset/incremental verification and packaged Resource bootstrap checks.
+- Service Downtime: no framework-mandated downtime; consumers use their normal restart and migration window.
+- Rollback Effort: 15 to 45 minutes to restore Maven `1.0.42`, CLI `1.2.2` and the prior exact npm tuple; Workflow migration rollback requires the consumer's reviewed database recovery procedure.
+- Assumptions: Node `22.23.1`, Java 21, clean dependency locks, configured publish and consume registries, one local MySQL datasource for baseline verification and tenant-scoped Workflow test data.
+
+### Upgrade Notes
+
+1. Upgrade the Mango Maven BOM and non-application platform tuple to `1.0.43`; generated projects should use `@mango/cli@1.2.3`, which locks Maven `1.0.43`, PMO `1.4.2` and the generated npm tuple.
+2. For reset release, restore the packaged BSQL into an empty database and verify portable Resource target rows and Registry hashes are present before startup. For incremental release, keep the existing database and verify unchanged module/resource hashes are skipped.
+3. Do not overwrite admin-modified `SYSTEM_CONFIG` values. Its `updated_at` and `resource_registry.last_sync_time` determine preservation; custom handlers must expose an equivalent managed-state decision or use an explicit protective sync mode.
+4. Workflow consumers must apply normal Flyway migrations, use stable `userId` values, and call the designer options endpoint rather than cross-domain candidate endpoints.
+
+### Verification
+
+- Run `mango release plan`, `mango release prepare` and the exact release-notes checker with Node `22.23.1`; preserve the generated plan digest and sealed candidate hashes.
+- Verify the sealed Maven batch with one aggregate clean consumer and verify npm packages from the consume registry, not a workspace link or local cache.
+- In the local guarantee-style fixture, assert reset BSQL contains portable Resource rows and Registry hashes, first restore reports the expected applied steps, the second unchanged startup reports `executedSteps=0`, and an incremental update dispatches only changed Resources while preserving modified `SYSTEM_CONFIG`.
+- Verify Registry rows, receipt/disposition records, target tables and Flyway history in the disposable local MySQL database. No test or production environment is modified.
+
+### Rollback
+
+- Restore consumers to Maven `1.0.42`, `@mango/cli@1.2.2` and the prior exact npm tuple using the consumer's normal dependency and restart procedure.
+- Do not overwrite immutable `1.0.43`, `1.2.3` or npm coordinates. If publication is partial or ambiguous, retain this prepared candidate and use `mango release status` followed by authorized `mango release repair`.
+- Database changes are handled by the consumer's reviewed Flyway recovery procedure; do not delete Resource Registry, receipt or Workflow participation rows manually.
+
+### Audit History
+
+- The successful `1.0.42` batch and its closeout remain the publication baseline. PRs #875, #876 and the previous `v2026.08.27-maven-1.0.42-date-resource-fixes` tag are historical baseline records, not additional artifacts in this batch.
 
 ## v2026.08.27-maven-1.0.42-date-resource-fixes - 2026-08-27
 
