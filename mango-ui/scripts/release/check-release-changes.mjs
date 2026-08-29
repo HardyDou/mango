@@ -14,6 +14,7 @@ import {
 } from './release-scope-lib.mjs';
 import { isPendingChangesetFile } from './release-plan-lib.mjs';
 import { classifyReleasePullRequest } from './classify-release-pr.mjs';
+import { resolveReleaseBaselineAnchor } from './release-repository-lib.mjs';
 
 const scriptRoot = dirname(fileURLToPath(import.meta.url));
 const workspaceRoot = resolve(scriptRoot, '../..');
@@ -47,14 +48,14 @@ const legacyChanged = changedPathStatus(
   includeWorkingTree,
 );
 const legacy = legacyChanged && existsSync(legacyPath) ? readJson(legacyPath) : null;
-const impactBase = legacy?.from?.commit || base;
+const impactBase = legacy?.from?.commit || resolvePlanBaseline(plan, impactHead, base);
 const changedFiles = gitChangedFiles(impactBase, impactHead, includeWorkingTree);
 const impact = directPackageImpact(changedFiles, packageIndex);
 const restored = removeRestoredPublishedBaselines(impact.direct, packageIndex, legacy, impactHead, includeWorkingTree);
 const expected = resolveReleaseClosure(impact.direct, packageIndex, managedVersions);
 const declared = legacy
   ? new Set(legacy.releases.map((entry) => entry.name))
-  : readChangedChangesets(base, impactHead, includeWorkingTree);
+  : readChangedChangesets(impactBase, impactHead, includeWorkingTree);
 const errors = validateDeclaredReleaseSet({ direct: impact.direct, expected, declared });
 if (legacy) {
   for (const packageName of expected) {
@@ -82,6 +83,18 @@ if (legacy) console.log(`Legacy reconciliation: ${legacy.id}`);
 function readArg(name) {
   const inline = args.find((arg) => arg.startsWith(`${name}=`));
   return inline?.slice(name.length + 1) || '';
+}
+
+function resolvePlanBaseline(releasePlan, sourceCommit, fallback) {
+  const baselineCommit = releasePlan?.baseline?.commit;
+  const baselineTree = releasePlan?.baseline?.tree;
+  if (!baselineCommit || !baselineTree) return fallback;
+  return resolveReleaseBaselineAnchor({
+    repoRoot,
+    baselineCommit,
+    baselineTree,
+    sourceCommit,
+  });
 }
 
 function readJson(path) {
