@@ -1,0 +1,6 @@
+### Result
+{"disableStatus":200,"disableBody":{"code":200,"success":true,"msg":"操作成功","data":true},"deleteStatus":200,"deleteBody":{"code":200,"success":true,"msg":"操作成功","data":true}}
+### Ran Playwright code
+```js
+await (async page => await page.evaluate(async () => { const id='2093725222198603778'; const disable=await fetch('/api/workflow/definitions/status',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,status:'DISABLED'})}); const remove=await fetch('/api/workflow/definitions?id='+encodeURIComponent(id),{method:'DELETE'}); return {disableStatus:disable.status,disableBody:await disable.json(),deleteStatus:remove.status,deleteBody:await remove.json()}; }))(page);
+```

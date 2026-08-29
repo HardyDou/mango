@@ -44,7 +44,7 @@
 | 业务进度查询 | `WorkflowBusinessProcessApi.latestByBusinessKeys()` 或 `/workflow/business-applies/progress/latest-batch`。 |
 | 历史参与关系只读查询 | `WorkflowParticipationApi` 或 `/workflow/participations/access`、`/workflow/participations/my`；只返回当前租户、当前登录 `userId` 的参与事实，不授予任务办理权。 |
 | 业务声明参与人 | `WorkflowParticipationApi.replaceBusinessParticipants()` 或 `POST /workflow/participations/business`；传入完整 `participantUserIds` 集合，后端按当前租户启用成员原子替换。 |
-| 自动派单 | 审批节点 `assignmentMode=AUTO`；当前只支持稳定 `ROUND_ROBIN`，候选为空返回 `AUTO_ASSIGN_NO_CANDIDATE` 并回滚节点事务。 |
+| 自动派单 | 审批节点 `assignmentMode=AUTO`；通过 `autoAssignmentStrategy` 选择 `ROUND_ROBIN`、`LEAST_TASKS` 或 `AFFINITY`，候选为空返回 `AUTO_ASSIGN_NO_CANDIDATE` 并回滚节点事务。 |
 
 ## 3. 后端接入
 
@@ -228,7 +228,7 @@ WorkflowProcessWithdrawResultVO result = workflowProcessApi.withdraw(withdraw).g
 
 业务启动命令可携带完整 `participantUserIds` 集合，也可调用 `POST /workflow/participations/business` 进行完整替换。Workflow 会先验证所有用户属于当前租户、账号和成员均启用且未离职，任何一个无效用户都会使整次声明零写入；不得用 username 代替授权身份。
 
-审批节点配置 `assignmentMode` 缺失时按 `CLAIM` 兼容。设置为 `AUTO` 后，运行时从指定用户、角色、岗位、组织或组织主管展开当前租户有效成员，按稳定 `userId` 排序并锁定 `workflow_auto_assignment_state` 游标，直接在节点事务内设置 assignee；当前策略固定为 `ROUND_ROBIN`。没有候选人时返回 `AUTO_ASSIGN_NO_CANDIDATE`，不转 admin、不退化为待领取，流程推进和游标更新一起回滚。
+审批节点配置 `assignmentMode` 缺失时按 `CLAIM` 兼容。设置为 `AUTO` 后，运行时从指定用户、角色、岗位、组织或组织主管展开当前租户有效成员，直接在节点事务内设置 assignee。`autoAssignmentStrategy` 缺失时按 `ROUND_ROBIN` 兼容；`LEAST_TASKS` 选择当前租户活动任务最少者并以稳定 `userId` 处理并列；`AFFINITY` 优先选择同一流程实例最近完成任务且仍在候选集中的用户，未命中时回退 `LEAST_TASKS`。没有候选人时返回 `AUTO_ASSIGN_NO_CANDIDATE`，不转 admin、不退化为待领取，流程推进和状态更新一起回滚。
 
 ### 3.3 设计器候选数据 Provider
 

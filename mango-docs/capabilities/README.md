@@ -42,7 +42,7 @@
 
 ## 3.1 近期能力变更
 
-- 2026-08-28，[Issue #732](https://github.com/HardyDou/mango/issues/732) 为 Workflow 增加租户隔离的历史参与关系和审批节点自动派单：业务通过公开 API 查询当前登录用户的只读参与事实、分页读取参与业务或原子声明稳定 `userId` 集合；历史参与不扩大当前任务操作权限。流程节点显式选择 `AUTO` 后固定以数据库游标保护的 `ROUND_ROBIN` 从当前租户有效候选人中直接设置 assignee，空候选返回 `AUTO_ASSIGN_NO_CANDIDATE` 并回滚；旧定义缺失字段继续按 `CLAIM`。V3 只回填可证明的稳定用户 ID，不根据 username 猜测授权。入口见 [Workflow README](../../mango/mango-platform/mango-workflow/README.md)、[Workflow Frontend README](../../mango-ui/packages/workflow/README.md)和[业务审批接入](../guides/business-integration/workflow-business-approval.md)。
+- 2026-08-29，[Issue #732](https://github.com/HardyDou/mango/issues/732) 在既有自动派单基础上增加 `LEAST_TASKS` 和 `AFFINITY` 策略：`LEAST_TASKS` 选择当前租户活动任务最少的候选人，`AFFINITY` 优先复用同一流程实例最近完成任务且仍在候选集中的用户，未命中时回退 `LEAST_TASKS`；缺失 `autoAssignmentStrategy` 继续兼容 `ROUND_ROBIN`。入口见 [Workflow README](../../mango/mango-platform/mango-workflow/README.md) 和 [Workflow Frontend README](../../mango-ui/packages/workflow/README.md)。
 
 - 2026-08-25，[Issue #835](https://github.com/HardyDou/mango/issues/835) 修复已有数据库升级时缺失 `AUTH_ROLE_DATA_SCOPE` 阻断 Resource Bootstrap FINALIZE：Authorization Handler 使用 Registry 持久化的 `targetId` 精确读取目标租户并在该租户上下文停用；目标不存在、目标表或仍携带的身份不一致时明确失败且不回退业务键。声明格式、正常 upsert、`INIT_ONLY` 和 API 不变。入口见 [Authorization README](../../mango/mango-platform/mango-authorization/README.md) 与 [Resource README](../../mango/mango-platform/mango-resource/README.md)。
 

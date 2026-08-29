@@ -24,7 +24,7 @@ describe('WorkflowNodeApprovalConfig', () => {
     unmount();
   });
 
-  it('defaults legacy config to claim and shows round robin for auto mode', async () => {
+  it('defaults legacy config to claim and shows selectable strategy for auto mode', async () => {
     const config = reactive<WorkflowApprovalNodeConfig>({
       ...defaultApprovalConfig(),
       assignmentMode: undefined,
@@ -32,11 +32,12 @@ describe('WorkflowNodeApprovalConfig', () => {
     const { el, unmount } = await mountConfig(config);
 
     expect(el.textContent).toContain('待领取');
-    expect(el.textContent).not.toContain('算法：ROUND_ROBIN');
+    expect(el.textContent).not.toContain('任务量最少');
 
     config.assignmentMode = 'AUTO';
     await nextTick();
-    expect(el.textContent).toContain('算法：ROUND_ROBIN');
+    expect(el.textContent).toContain('任务量最少');
+    expect(el.textContent).toContain('流程亲和');
     unmount();
   });
 });

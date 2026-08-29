@@ -35,6 +35,7 @@ import io.mango.workflow.api.enums.WorkflowTaskClaimStatus;
 import io.mango.workflow.api.enums.WorkflowTaskRuntimeStatus;
 import io.mango.workflow.api.enums.WorkflowParticipantType;
 import io.mango.workflow.api.enums.WorkflowAssignmentMode;
+import io.mango.workflow.api.enums.WorkflowAutoAssignmentStrategy;
 import io.mango.workflow.api.query.WorkflowTaskPageQuery;
 import io.mango.workflow.api.vo.WorkflowBusinessApplyCurrentTaskVO;
 import io.mango.workflow.api.vo.WorkflowBusinessApplyVO;
@@ -147,7 +148,6 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
     private final TenantMemberProvider tenantMemberProvider;
     private final WorkflowAutoAssignmentStateMapper autoAssignmentStateMapper;
     private final JdbcTemplate jdbcTemplate;
-
     @Override
     public PageResult<WorkflowTaskVO> todo(WorkflowTaskPageQuery query) {
         WorkflowTaskPageQuery resolved = resolve(query);
@@ -1436,7 +1436,6 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
         boolean groupsChanged = applyResolvedRuntimeGroups(task, resolved.groups());
         return usersChanged || groupsChanged;
     }
-
     /** 严格 ROUND_ROBIN 自动派单；候选、游标和 Flowable 办理人位于同一事务。 */
     private boolean autoAssign(Task task, WorkflowApprovalNodeConfig config) {
         String assignee = task.getAssignee();
@@ -1449,7 +1448,10 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
         List<Long> candidates = resolveCandidates(resolved);
         requireCandidates(candidates, task, config);
         WorkflowAutoAssignmentStateEntity state = loadAssignmentState(task);
-        Long selected = nextRoundRobinCandidate(candidates, state.getLastAssignedUserId());
+        WorkflowAutoAssignmentStrategy strategy = config.getAutoAssignmentStrategy() == null
+                ? WorkflowAutoAssignmentStrategy.ROUND_ROBIN : config.getAutoAssignmentStrategy();
+        Long selected = new WorkflowAutoAssignmentSelector(jdbcTemplate)
+                .select(task, candidates, state.getLastAssignedUserId(), strategy);
         state.setLastAssignedUserId(selected);
         state.setUpdatedBy(MangoContextHolder.userId());
         state.setUpdatedAt(LocalDateTime.now());
@@ -1459,10 +1461,9 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
         recordCurrentAssignee(task);
         saveRecord(task, WorkflowTaskAction.AUTO_ASSIGN, "自动派单",
                 Map.of("assignmentMode", WorkflowAssignmentMode.AUTO.name(),
-                        "strategy", "ROUND_ROBIN", "assigneeUserId", selected));
+                        "strategy", strategy.name(), "assigneeUserId", selected));
         return true;
     }
-
     private List<Long> resolveCandidates(WorkflowAssigneeResolver.ResolvedAssignees resolved) {
         List<Long> candidates = new java.util.ArrayList<>();
         addUserCandidates(candidates, resolved.users());
@@ -1558,7 +1559,6 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
         }
         return sortedCandidates.get(0);
     }
-
     private List<Long> groupCandidateUserIds(String group) {
         if (!StringUtils.hasText(group)) {
             return List.of();

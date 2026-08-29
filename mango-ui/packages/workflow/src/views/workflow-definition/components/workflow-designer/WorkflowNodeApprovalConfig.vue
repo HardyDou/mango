@@ -13,7 +13,17 @@
             <el-radio label="CLAIM">待领取</el-radio>
             <el-radio label="AUTO">自动派单</el-radio>
           </el-radio-group>
-          <span v-if="(config.assignmentMode || 'CLAIM') === 'AUTO'" class="assignment-mode-tip">算法：ROUND_ROBIN</span>
+          <el-radio-group
+            v-if="(config.assignmentMode || 'CLAIM') === 'AUTO'"
+            :model-value="config.autoAssignmentStrategy || 'ROUND_ROBIN'"
+            class="approval-radio-row assignment-strategy-row"
+            data-field="workflow.assignment-strategy"
+            @change="value => $emit('update-config', { autoAssignmentStrategy: value })"
+          >
+            <el-radio label="ROUND_ROBIN">轮询</el-radio>
+            <el-radio label="LEAST_TASKS">任务量最少</el-radio>
+            <el-radio label="AFFINITY">流程亲和</el-radio>
+          </el-radio-group>
         </div>
         <el-radio-group
           :model-value="config.assigneeType"

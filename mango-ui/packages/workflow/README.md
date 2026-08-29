@@ -170,7 +170,8 @@ import { WorkflowLayout, WorkflowSidebar } from '@mango/workflow';
 | 业务申请进度                                                           | `assigneeName`、`assigneeId`、`assigneeDisplayName`                    | `assigneeName` 是原始 Flowable key；ID 和显示名由当前租户批量解析，缺失时不影响任务展示。 |
 | 业务申请进度                                                           | `claimStatus`                                                          | 当前任务认领状态，取值来自后端 `WorkflowTaskClaimStatus`。                |
 | 业务申请进度                                                           | `candidateUsers`、`candidateGroups`                                    | 当前任务候选用户和候选用户组，用于业务页判断待处理、可认领和按钮状态。    |
-| 流程节点分配                                                           | `assignmentMode` (`CLAIM` / `AUTO`)                                   | 缺失时按 `CLAIM`；`AUTO` 当前固定为 `ROUND_ROBIN`，运行时按有效候选用户稳定 `userId` 轮询。 |
+| 流程节点分配                                                           | `assignmentMode` (`CLAIM` / `AUTO`)                                   | 缺失时按 `CLAIM`；`AUTO` 按 `autoAssignmentStrategy` 选择候选人，缺失时兼容 `ROUND_ROBIN`。 |
+| 自动派单策略                                                           | `autoAssignmentStrategy` (`ROUND_ROBIN` / `LEAST_TASKS` / `AFFINITY`) | `ROUND_ROBIN` 按稳定用户 ID 轮询；`LEAST_TASKS` 选择当前租户活动任务最少者；`AFFINITY` 优先选择同一流程实例最近完成任务且仍在候选集中的用户，否则回退到 `LEAST_TASKS`。 |
 
 `parseWorkflowFormConfig()` 支持数组式表单 JSON，也支持包含 `mode`、`rules`、`fields`、`customConfig` 的对象结构。非法 JSON 会按空动态表单处理。
 
@@ -337,7 +338,7 @@ import { WorkflowLayout, WorkflowSidebar } from '@mango/workflow';
 
 - 2026-08-28 办理人身份增强的业务升级适配见 [Workflow 办理人身份特性升级指南](../../../mango-docs/guides/business-integration/workflow-assignee-identity-upgrade.md)。展示优先使用 `assigneeDisplayName`，不应为已有显示名重复查询 Identity；业务权限和租户校验保持不变。
 
-- Issue #732 为流程设计器审批节点增加 `assignmentMode`：旧 `designerJson` 缺失字段按 `CLAIM`；选择 `AUTO` 时显示只读策略 `ROUND_ROBIN`，指定成员为空会阻止保存。设计器通过 `designerOptions()` 一次加载五类候选项，不再直连 Identity、Authorization、Org 和 System REST；接口仅使用 `workflow:definition:query`，租户由后端 Provider 从可信上下文取得。前端 API 同步暴露 `participantUserIds` 启动字段及参与关系查询、分页和原子替换方法；租户和任务操作权限仍由后端校验。
+- Issue #732 为流程设计器审批节点增加 `assignmentMode`：旧 `designerJson` 缺失字段按 `CLAIM`；选择 `AUTO` 时可配置 `ROUND_ROBIN`、`LEAST_TASKS` 或 `AFFINITY`，指定成员为空会阻止保存。设计器通过 `designerOptions()` 一次加载五类候选项，不再直连 Identity、Authorization、Org 和 System REST；接口仅使用 `workflow:definition:query`，租户由后端 Provider 从可信上下文取得。前端 API 同步暴露 `participantUserIds` 启动字段及参与关系查询、分页和原子替换方法；租户和任务操作权限仍由后端校验。
 
 - `@mango/workflow@1.0.37` 将精确依赖对齐到 `@mango/admin-pages@1.0.30`、`@mango/common@1.0.23`、`@mango/file@1.0.31`、`@mango/grid-widgets@1.0.20` 和 `@mango/system@1.0.29`。Workflow 查看类通知的 `viewPath` 和 fallback 目标由 Maven `1.0.29` 生成、由 `@mango/notice@1.0.35` 导航；本包页面 key、审批组件、权限和租户语义保持不变。
 
