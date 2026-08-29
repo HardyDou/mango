@@ -2,7 +2,7 @@
 
 ## v2026.08.30-maven-1.0.44-resource-determinism-release - 2026-08-30
 
-Status: `PENDING`. Publication, dual-registry verification, clean consumer verification, Tag and GitHub Release creation remain governed by the sealed release manifest.
+Status: `PUBLISHED_AND_VERIFIED`. Canonical manifest SHA-256 `290e7acc4b2ecc0a76e8ddf23e5e3ad584fcc025e2c55b403134c5bddf9b2a23` for plan `f7ed9c04f081756b02324d982b2a78e053902a3270290a698fa4c76c832da3d5` and prepared candidate `6473ed5fe30b427038e1c664257ea20be8867d697a5d7aef247b5c3abba934bb` is `COMPLETED`: all 192 Maven/docs coordinates and all 6 npm packages ending at `@mango/cli@1.2.4` match the sealed candidate in both publish and consume registries, the pure consume-registry consumer passed, and Tag plus GitHub Release are `CREATED_AND_VERIFIED`.
 
 ### Pull Requests
 
