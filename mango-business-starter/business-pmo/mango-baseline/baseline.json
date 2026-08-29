@@ -3,8 +3,8 @@
   "packageVersion": "1.4.3",
   "schemaVersion": 2,
   "source": "mango-pmo",
-  "sourceCommit": "a9656948fd9152d785f4d7c2b7cfbb531e9fdbe4",
-  "bundleSha256": "487f53954047eb40c1d07a6d04b696f62e13cdc94fb836747763aa0764d8803d",
+  "sourceCommit": "97802d5b2c9f7d05f714cc70997ce71300194b7b",
+  "bundleSha256": "a68bdda2cbbafdac8ae75cdc1ba07449fb20f292f39deebb0d5d15fa7b52657c",
   "contracts": [
     {
       "contractId": "business-requirements",
@@ -49,7 +49,7 @@
   ],
   "plugin": {
     "path": "package-root",
-    "sha256": "6a0a61bd9c15734f6a587958af88c4755024e9170f1de34b96de335e3b81c8ab",
+    "sha256": "748f20096a78580ac2f34505095232189c427fcae2eee4b91da260280b125ada",
     "files": [
       {
         "path": ".codex-plugin/plugin.json",
@@ -270,15 +270,15 @@
       },
       {
         "path": "skills/mango-workflow/SKILL.md",
-        "sha256": "03d8ee1e72c00222d79f75f2ef9d2edcfd12b3d2a0e6a67a6a575169c18cf84a",
-        "size": 4584,
+        "sha256": "1014158d50df9bda06615ac9d56052b3a5be221b7b45ae9484567a8b36656dc0",
+        "size": 4998,
         "kind": "plugin",
         "mode": "0644"
       },
       {
         "path": "skills/mango-workflow/agents/openai.yaml",
-        "sha256": "f13eeb914802cd6cd4263eec9069abb011f019f0ffe02bc396f394bf7886e71d",
-        "size": 271,
+        "sha256": "432853dff1b15c28d8b037895f62a6332c78661e1bbb1253f5f3642bb4f65b2e",
+        "size": 274,
         "kind": "plugin",
         "mode": "0644"
       },
@@ -945,15 +945,15 @@
     },
     {
       "path": "skills/mango-workflow/SKILL.md",
-      "sha256": "03d8ee1e72c00222d79f75f2ef9d2edcfd12b3d2a0e6a67a6a575169c18cf84a",
-      "size": 4584,
+      "sha256": "1014158d50df9bda06615ac9d56052b3a5be221b7b45ae9484567a8b36656dc0",
+      "size": 4998,
       "kind": "skill",
       "mode": "0644"
     },
     {
       "path": "skills/mango-workflow/agents/openai.yaml",
-      "sha256": "f13eeb914802cd6cd4263eec9069abb011f019f0ffe02bc396f394bf7886e71d",
-      "size": 271,
+      "sha256": "432853dff1b15c28d8b037895f62a6332c78661e1bbb1253f5f3642bb4f65b2e",
+      "size": 274,
       "kind": "skill",
       "mode": "0644"
     },
