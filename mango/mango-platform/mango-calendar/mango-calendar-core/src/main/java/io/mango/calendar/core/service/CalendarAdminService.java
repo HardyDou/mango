@@ -160,6 +160,7 @@ public class CalendarAdminService implements ICalendarAdminService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean initCalendarYear(InitCalendarYearCommand command) {
+        Require.notNull(command, CALENDAR_BUSINESS_ERROR, "初始化日历年度命令不能为空");
         return initCalendarYear(command, null);
     }
 
@@ -167,6 +168,7 @@ public class CalendarAdminService implements ICalendarAdminService {
     @Transactional(rollbackFor = Exception.class)
     public boolean initResourceCalendarYear(InitCalendarYearCommand command,
                                             ToLongFunction<LocalDate> targetIdProvider) {
+        Require.notNull(command, CALENDAR_BUSINESS_ERROR, "初始化日历年度命令不能为空");
         Require.notNull(targetIdProvider, CALENDAR_BUSINESS_ERROR, "Resource 日历日期 ID 提供器不能为空");
         return initCalendarYear(command, targetIdProvider);
     }
