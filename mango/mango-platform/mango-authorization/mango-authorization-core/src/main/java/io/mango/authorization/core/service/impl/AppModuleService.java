@@ -1,6 +1,7 @@
 package io.mango.authorization.core.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.authorization.api.enums.AuthorizationCode;
 import io.mango.authorization.api.command.AppModuleCommand;
 import io.mango.authorization.api.command.AppModuleMenuRequest;
@@ -40,10 +41,13 @@ import java.util.stream.Collectors;
  * 逻辑应用集成模块服务实现。
  */
 @Service
-@RequiredArgsConstructor
+@RequiredArgsConstructor(onConstructor_ = @SuppressFBWarnings(
+        value = "EI_EXPOSE_REP2",
+        justification = "Spring injects managed mapper and service collaborators; copying them is not valid"))
 public class AppModuleService implements IAppModuleService {
 
     private static final String PLATFORM_TENANT_ID = "default";
+    private static final int BUTTON_MENU_TYPE = 3;
 
     private final AuthorizationAppModuleMapper appModuleMapper;
     private final MenuMapper menuMapper;
@@ -81,8 +85,8 @@ public class AppModuleService implements IAppModuleService {
             binding.setCreateTime(now);
         }
         binding.setModuleName(resolveModuleName(command));
-        binding.setStatus(command.getStatus() == null ? 1 : command.getStatus());
-        binding.setSort(command.getSort() == null ? 0 : command.getSort());
+        binding.setStatus(command.getStatus() == null ? Integer.valueOf(1) : command.getStatus());
+        binding.setSort(command.getSort() == null ? Integer.valueOf(0) : command.getSort());
         binding.setUpdateTime(now);
         if (creating) {
             appModuleMapper.insert(binding);
@@ -283,7 +287,7 @@ public class AppModuleService implements IAppModuleService {
             AppModuleMenuRequest item,
             Long defaultParentId) {
         if (item == null || !StringUtils.hasText(item.getParentCode())) {
-            return defaultParentId == null ? 0L : defaultParentId;
+            return defaultParentId == null ? Long.valueOf(0L) : defaultParentId;
         }
         String parentCode = item.getParentCode().trim();
         MenuEntity parent = findManifestParentMenu(context.appCode(), parentCode);
@@ -302,17 +306,17 @@ public class AppModuleService implements IAppModuleService {
         menu.setTenantId(1L);
         menu.setAppCode(context.appCode());
         menu.setModuleCode(context.moduleCode());
-        menu.setParentId(parentId == null ? 0L : parentId);
-        menu.setMenuType(item.getMenuType() == null ? 2 : item.getMenuType());
+        menu.setParentId(parentId == null ? Long.valueOf(0L) : parentId);
+        menu.setMenuType(item.getMenuType() == null ? Integer.valueOf(2) : item.getMenuType());
         menu.setMenuName(item.getMenuName());
         menu.setPath(item.getPath());
         menu.setIcon(item.getIcon());
-        menu.setSort(item.getSort() == null ? 0 : item.getSort());
-        menu.setStatus(item.getStatus() == null ? 1 : item.getStatus());
-        menu.setVisible(item.getVisible() == null ? 1 : item.getVisible());
+        menu.setSort(item.getSort() == null ? Integer.valueOf(0) : item.getSort());
+        menu.setStatus(item.getStatus() == null ? Integer.valueOf(1) : item.getStatus());
+        menu.setVisible(item.getVisible() == null ? Integer.valueOf(1) : item.getVisible());
         menu.setComponent(item.getComponent());
-        menu.setKeepAlive(item.getKeepAlive() == null ? 0 : item.getKeepAlive());
-        menu.setEmbedded(item.getEmbedded() == null ? 0 : item.getEmbedded());
+        menu.setKeepAlive(item.getKeepAlive() == null ? Integer.valueOf(0) : item.getKeepAlive());
+        menu.setEmbedded(item.getEmbedded() == null ? Integer.valueOf(0) : item.getEmbedded());
         menu.setRedirect(item.getRedirect());
         menu.setApiCodes(joinPermissions(item.getApiCodes()));
         menu.setRemark(item.getRemark());
@@ -497,7 +501,7 @@ public class AppModuleService implements IAppModuleService {
     }
 
     private String defaultPageType(MenuEntity menu) {
-        if (Integer.valueOf(3).equals(menu.getMenuType())) {
+        if (Integer.valueOf(BUTTON_MENU_TYPE).equals(menu.getMenuType())) {
             return "BUTTON";
         }
         if (Integer.valueOf(1).equals(menu.getEmbedded())) {

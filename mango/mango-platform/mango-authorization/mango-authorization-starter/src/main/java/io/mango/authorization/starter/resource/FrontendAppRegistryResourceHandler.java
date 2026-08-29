@@ -1,5 +1,6 @@
 package io.mango.authorization.starter.resource;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.authorization.core.entity.FrontendAppRegistryEntity;
 import io.mango.authorization.core.service.IAuthorizationAppService;
 import io.mango.authorization.core.support.AuthorizationResourceIds;
@@ -17,7 +18,9 @@ import org.springframework.util.StringUtils;
  * Resource Registry handler for authorization_frontend_app_registry.
  */
 @Component
-@RequiredArgsConstructor
+@RequiredArgsConstructor(onConstructor_ = @SuppressFBWarnings(
+        value = "EI_EXPOSE_REP2",
+        justification = "Spring injects the managed authorization app service; copying it is not valid"))
 public class FrontendAppRegistryResourceHandler implements ResourceHandler {
 
     private static final String TARGET_TABLE = "authorization_frontend_app_registry";

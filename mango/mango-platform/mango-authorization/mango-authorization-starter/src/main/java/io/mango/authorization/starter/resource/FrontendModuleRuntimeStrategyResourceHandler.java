@@ -1,5 +1,6 @@
 package io.mango.authorization.starter.resource;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.authorization.api.command.FrontendModuleRuntimeStrategyCommand;
 import io.mango.authorization.api.query.FrontendModuleRuntimeStrategyQuery;
 import io.mango.authorization.core.service.IFrontendRuntimeStrategyService;
@@ -18,7 +19,9 @@ import org.springframework.util.StringUtils;
  * Resource Registry handler for authorization_frontend_module_runtime_strategy.
  */
 @Component
-@RequiredArgsConstructor
+@RequiredArgsConstructor(onConstructor_ = @SuppressFBWarnings(
+        value = "EI_EXPOSE_REP2",
+        justification = "Spring injects the managed runtime strategy service; copying it is not valid"))
 public class FrontendModuleRuntimeStrategyResourceHandler implements ResourceHandler {
 
     private static final String TARGET_TABLE = "authorization_frontend_module_runtime_strategy";

@@ -179,11 +179,11 @@ final class MySqlBaselineStore {
             statement.setString(1, database);
             try (ResultSet resultSet = statement.executeQuery()) {
                 while (resultSet.next()) {
-                    String columnName = resultSet.getString(2);
-                    String dataType = resultSet.getString(3).toLowerCase(Locale.ROOT);
+                    String columnName = resultSet.getString("COLUMN_NAME");
+                    String dataType = resultSet.getString("DATA_TYPE").toLowerCase(Locale.ROOT);
                     if (RUNTIME_AUDIT_TIMESTAMP_COLUMNS.contains(columnName.toLowerCase(Locale.ROOT))
                             && AUDIT_TEMPORAL_TYPES.contains(dataType)) {
-                        columnsByTable.computeIfAbsent(resultSet.getString(1), ignored -> new ArrayList<>())
+                        columnsByTable.computeIfAbsent(resultSet.getString("TABLE_NAME"), ignored -> new ArrayList<>())
                                 .add(new AuditTemporalColumn(columnName, dataType));
                     }
                 }

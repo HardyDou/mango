@@ -1,6 +1,7 @@
 package io.mango.authorization.core.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.authorization.api.enums.AuthorizationCode;
 import io.mango.authorization.api.command.FrontendModuleRuntimeStrategyCommand;
 import io.mango.authorization.api.query.FrontendModuleRuntimeStrategyQuery;
@@ -23,7 +24,9 @@ import java.util.Locale;
  * 前端模块运行策略服务实现。
  */
 @Service
-@RequiredArgsConstructor
+@RequiredArgsConstructor(onConstructor_ = @SuppressFBWarnings(
+        value = "EI_EXPOSE_REP2",
+        justification = "Spring injects managed mapper and configuration collaborators; copying them is not valid"))
 public class FrontendRuntimeStrategyService implements IFrontendRuntimeStrategyService {
 
     private static final String PLATFORM_TENANT_ID = "default";
@@ -70,8 +73,8 @@ public class FrontendRuntimeStrategyService implements IFrontendRuntimeStrategyS
         }
         strategy.setPageType(defaultString(command.getPageType(), "LOCAL_ROUTE"));
         strategy.setRuntimeCode(defaultString(command.getRuntimeCode(), "mango-admin-local"));
-        strategy.setStatus(command.getStatus() == null ? 1 : command.getStatus());
-        strategy.setSort(command.getSort() == null ? 0 : command.getSort());
+        strategy.setStatus(command.getStatus() == null ? Integer.valueOf(1) : command.getStatus());
+        strategy.setSort(command.getSort() == null ? Integer.valueOf(0) : command.getSort());
         strategy.setUpdateTime(now);
         if (creating) {
             strategyMapper.insert(strategy);

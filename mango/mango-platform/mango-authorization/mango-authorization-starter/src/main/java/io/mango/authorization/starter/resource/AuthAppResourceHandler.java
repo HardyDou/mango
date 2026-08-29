@@ -2,6 +2,7 @@ package io.mango.authorization.starter.resource;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.authorization.api.command.AppCommand;
 import io.mango.authorization.api.command.AppLoginContextCommand;
 import io.mango.authorization.api.vo.AppLoginContextVO;
@@ -23,7 +24,9 @@ import java.util.List;
  * Synchronizes required logical applications and login contexts without creating frontend runtime units.
  */
 @Component
-@RequiredArgsConstructor
+@RequiredArgsConstructor(onConstructor_ = @SuppressFBWarnings(
+        value = "EI_EXPOSE_REP2",
+        justification = "Spring injects managed service and ObjectMapper collaborators; copying them is not valid"))
 public class AuthAppResourceHandler implements ResourceHandler {
 
     private static final String TARGET_TABLE = "authorization_app";
@@ -71,9 +74,9 @@ public class AuthAppResourceHandler implements ResourceHandler {
     private AppCommand toCommand(ResourceDeclaration resource, AppVO existing) {
         AppCommand command = new AppCommand();
         command.setAppId(existing == null
-                ? AuthorizationResourceIds.declaredOrStable(
+                ? Long.valueOf(AuthorizationResourceIds.declaredOrStable(
                         fields.longField(resource, "targetId"), TARGET_TABLE,
-                        fields.requiredString(resource, "appCode"))
+                        fields.requiredString(resource, "appCode")))
                 : existing.getAppId());
         command.setAppCode(fields.requiredString(resource, "appCode"));
         command.setAppName(fields.stringField(resource, "appName", existing == null ? null : existing.getAppName()));
@@ -82,7 +85,7 @@ public class AuthAppResourceHandler implements ResourceHandler {
         }
         command.setIcon(fields.stringField(resource, "icon", existing == null ? null : existing.getIcon()));
         command.setSort(fields.intField(resource, "sort",
-                existing == null || existing.getSort() == null ? 0 : existing.getSort()));
+                existing == null || existing.getSort() == null ? Integer.valueOf(0) : existing.getSort()));
         command.setStatus(statusValue(resource, existing));
         command.setRemark(fields.stringField(resource, "remark", existing == null ? null : existing.getRemark()));
         command.setLoginContexts(readLoginContexts(resource, existing, command.getAppCode()));
@@ -133,6 +136,6 @@ public class AuthAppResourceHandler implements ResourceHandler {
         if (resource.getStatus() == ResourceStatus.DISABLED) {
             return 0;
         }
-        return existing == null || existing.getStatus() == null ? 1 : existing.getStatus();
+        return existing == null || existing.getStatus() == null ? Integer.valueOf(1) : existing.getStatus();
     }
 }

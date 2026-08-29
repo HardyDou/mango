@@ -1,5 +1,6 @@
 package io.mango.authorization.starter.resource;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.authorization.api.command.MenuPackageCommand;
 import io.mango.authorization.api.query.MenuPackageQuery;
 import io.mango.authorization.api.vo.MenuPackageVO;
@@ -19,7 +20,9 @@ import java.util.List;
  * Synchronizes the menu-package master data required by AUTH_MENU package bindings.
  */
 @Component
-@RequiredArgsConstructor
+@RequiredArgsConstructor(onConstructor_ = @SuppressFBWarnings(
+        value = "EI_EXPOSE_REP2",
+        justification = "Spring injects the managed menu package service; copying it is not valid"))
 public class AuthMenuPackageResourceHandler implements ResourceHandler {
 
     private static final String TARGET_TABLE = "authorization_menu_package";
@@ -87,9 +90,9 @@ public class AuthMenuPackageResourceHandler implements ResourceHandler {
     private MenuPackageCommand toCommand(ResourceDeclaration resource, MenuPackageVO existing) {
         MenuPackageCommand command = new MenuPackageCommand();
         command.setPackageId(existing == null
-                ? fields.targetIdOrStable(resource, TARGET_TABLE,
+                ? Long.valueOf(fields.targetIdOrStable(resource, TARGET_TABLE,
                         fields.requiredString(resource, "appCode"),
-                        fields.requiredString(resource, "packageCode"))
+                        fields.requiredString(resource, "packageCode")))
                 : existing.getPackageId());
         command.setAppCode(fields.requiredString(resource, "appCode"));
         command.setPackageCode(fields.requiredString(resource, "packageCode"));
@@ -100,7 +103,7 @@ public class AuthMenuPackageResourceHandler implements ResourceHandler {
         }
         command.setStatus(statusValue(resource, existing));
         command.setSort(fields.intField(resource, "sort",
-                existing == null || existing.getSort() == null ? 0 : existing.getSort()));
+                existing == null || existing.getSort() == null ? Integer.valueOf(0) : existing.getSort()));
         command.setRemark(fields.stringField(resource, "remark", existing == null ? null : existing.getRemark()));
         command.setMenuIds(existing == null || existing.getMenuIds() == null ? List.of() : existing.getMenuIds());
         return command;
@@ -114,6 +117,6 @@ public class AuthMenuPackageResourceHandler implements ResourceHandler {
         if (resource.getStatus() == ResourceStatus.DISABLED) {
             return 0;
         }
-        return existing == null || existing.getStatus() == null ? 1 : existing.getStatus();
+        return existing == null || existing.getStatus() == null ? Integer.valueOf(1) : existing.getStatus();
     }
 }

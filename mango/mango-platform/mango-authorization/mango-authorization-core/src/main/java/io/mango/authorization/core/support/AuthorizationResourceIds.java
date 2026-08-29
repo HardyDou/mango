@@ -20,7 +20,7 @@ public final class AuthorizationResourceIds {
             byte[] hash = digest.digest();
             long id = 0L;
             for (int i = 0; i < Long.BYTES; i++) {
-                id = (id << Byte.SIZE) | (hash[i] & 0xffL);
+                id = (id << Byte.SIZE) | Byte.toUnsignedLong(hash[i]);
             }
             id &= Long.MAX_VALUE;
             return id == 0L ? 1L : id;

@@ -42,6 +42,13 @@ public interface ICalendarAdminService {
 
     boolean initCalendarYear(InitCalendarYearCommand command);
 
+    /**
+     * Initializes a Resource-owned calendar year with deterministic day identifiers.
+     *
+     * @param command calendar year initialization command
+     * @param targetIdProvider deterministic identifier provider keyed by calendar date
+     * @return whether initialization completed
+     */
     boolean initResourceCalendarYear(InitCalendarYearCommand command,
                                      ToLongFunction<LocalDate> targetIdProvider);
 
