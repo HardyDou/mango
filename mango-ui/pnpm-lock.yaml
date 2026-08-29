@@ -722,7 +722,7 @@ importers:
         specifier: workspace:1.0.37
         version: link:../admin-pages
       '@mango/admin-shell':
-        specifier: workspace:1.0.66
+        specifier: workspace:1.0.65
         version: link:../admin-shell
       '@mango/ai':
         specifier: workspace:1.1.1
@@ -776,10 +776,10 @@ importers:
         specifier: workspace:1.0.39
         version: link:../template
       '@mango/workflow':
-        specifier: workspace:1.0.45
+        specifier: workspace:1.0.44
         version: link:../workflow
       '@mango/workflow-business-example':
-        specifier: workspace:1.0.44
+        specifier: workspace:1.0.43
         version: link:../workflow-business-example
       element-plus:
         specifier: 2.14.1
@@ -899,7 +899,7 @@ importers:
         specifier: workspace:1.0.28
         version: link:../rbac
       '@mango/workflow':
-        specifier: workspace:1.0.45
+        specifier: workspace:1.0.44
         version: link:../workflow
       element-plus:
         specifier: 2.14.1
@@ -1795,7 +1795,7 @@ importers:
         specifier: workspace:1.0.37
         version: link:../admin-pages
       '@mango/workflow':
-        specifier: workspace:1.0.45
+        specifier: workspace:1.0.44
         version: link:../workflow
       element-plus:
         specifier: '>=2.14.1 <3'
