@@ -18,7 +18,7 @@
 | 表结构、索引、约束、大 SQL、停机升级 SQL | Flyway | 见 `mango-infra-persistence` README。 |
 | 用户创建的业务单据、流程实例、任务实例、日历事件、用户改的角色授权 | 业务 Owner Service | 不进入 Resource 声明。 |
 
-Resource 不执行 SQL 文件。DDL、大 SQL、磁盘 SQL 和远程 URL SQL 统一走 `mango-infra-persistence`；结构化资源、流程定义以及 `FILE_ASSET` 二进制制品由 Bootstrap Resource 步骤按依赖顺序物化。
+Resource 不执行 SQL 文件。DDL、大 SQL、磁盘 SQL 和远程 URL SQL 统一走 `mango-infra-persistence`；结构化资源、流程定义以及 `FILE_ASSET` 二进制制品由 Bootstrap Resource 步骤按稳定身份幂等物化。
 
 ### 1.2 Bootstrap 与 Runtime
 
@@ -155,12 +155,33 @@ Resource 声明的 `execution-phase` 与 `sync-mode` 正交：
 | `ResourceSynchronizationStatus` | 暴露 Runtime 可用性参与者的当前状态。 |
 | `ResourceSynchronizationCompletedEvent` | 初次失败后的重试首次成功时发布，驱动同 JVM 下游幂等对账。 |
 
-`ResourceHandler.dependsOnResourceTypes()` 保留为同一变化批次内的资源类型拓扑排序兼容能力，不建议把它作为业务关系解析方式。它只对本次确实需要写入的资源类型排序，不会因为前置类型变化而重放 hash 未变化的 Resource。依赖类型未出现在变化批次时不会强制失败；目标关系由 Handler 使用稳定 `resourceId`、`code` 或 `bizKey` 解析和校验。出现循环依赖时，同步会在调用目标 Handler 前失败，并输出循环路径。
+### 6.1 稳定引用与幂等处理
 
-`ResourceProvider.moduleDependencies()` 声明构建 manifest 的固定协调前置关系。它只用于少量稳定的平台初始化边界，依赖缺失或成环时在调用 Handler 前 fail closed。业务数据关系使用稳定 `resourceId`、`code` 或 `bizKey` 解析，不把模块扫描、JAR 加载或启动顺序作为关系标识。
+跨模块 Resource 关系推荐使用固定 `resourceId`、领域 `code` / `bizCode` 或 `resourceType + bizKey` 表达。目标
+Handler 按这些稳定身份幂等查询和写入，而不是把运行时生成的目标表主键或执行先后写入声明合同。完整约束见
+[模块分层规范](../../../mango-pmo/rules/backend/05-module.md)。
 
-classpath 声明文件可在 `mango.resource` envelope 中使用 `moduleDependencies`（YAML 可写为
-`module-dependencies`）声明同一模块的固定前置模块。模块包含多个声明文件时，只需在一个文件中提供该字段；若多个文件重复声明，依赖列表必须一致。
+例如子菜单引用父菜单时保存稳定 `parentCode`，Handler 按 code 幂等解析目标；重复调用得到相同结果。稳定身份暂未
+解析到目标时，Handler 不写入不稳定外键并保持同步可重入，使后续 Bootstrap、EVENTUAL reconciliation 或显式同步
+能够重试收敛；格式非法、类型不匹配等不可能满足的引用则明确失败。
+
+### 6.2 兼容性排序提示（不建议使用）
+
+以下能力继续兼容已有声明，但不得作为新 Resource 业务关系的正确性前提：
+
+- `ResourceHandler.dependsOnResourceTypes()`：只对本次变化批次中确实需要写入的资源类型做拓扑排序，不会因前置类型变化而重放 hash 未变化的 Resource。
+- `ResourceProvider.moduleDependencies()`：构建 manifest 的模块级协调顺序，只用于少量稳定的平台初始化边界。
+- 声明文件 `moduleDependencies` / `module-dependencies`：模块固定前置关系。
+
+`dependsOnResourceTypes()` 的依赖类型未进入变化批次时不强制失败，目标关系仍由 Handler 使用稳定身份解析和校验；
+依赖图成环时则在调用 Handler 前失败并输出循环路径。
+
+`moduleDependencies()` 仍用于构建 manifest 的模块拓扑排序，依赖缺失或成环时 fail closed。classpath 声明文件可在
+`mango.resource` envelope 中使用 `moduleDependencies`（YAML 也可写作 `module-dependencies`）；同一模块的多个声明
+文件重复提供该字段时，依赖列表保持一致。
+
+现有声明继续按原规则校验缺失依赖和循环依赖。新增或重构 Resource 推荐改用稳定身份与幂等 Handler；关于正确性
+前提的规范性约束以[模块分层规范](../../../mango-pmo/rules/backend/05-module.md)为准。
 
 资源声明来源支持：
 
@@ -352,7 +373,7 @@ META-INF/mango/files.bundle/objects/<sha256>
 
 Spring Boot 可执行 JAR 将上述 `META-INF` 条目保留在 JAR 根目录。Bootstrap 发现 `resource-bootstrap-manifest.json` 时优先读取外层模块 envelope；未提供构建 manifest 的旧应用继续走运行时 Provider/声明扫描兼容路径。
 
-每个模块 hash 覆盖模块 code、固定依赖和完整规范化声明。服务端先读取 `resource_module_receipt`：
+每个模块 hash 继续覆盖模块 code、兼容性依赖提示和完整规范化声明。服务端先读取 `resource_module_receipt`：
 
 | receipt 条件 | 行为 |
 |--------------|------|
@@ -393,6 +414,7 @@ Spring Boot 可执行 JAR 将上述 `META-INF` 条目保留在 JAR 根目录。B
 同一批 active 声明如果包含跨类型依赖，Resource Registry 仍兼容按目标 `ResourceHandler.dependsOnResourceTypes()`
 声明的依赖图排序后再调用各 handler。该依赖能力只为存量兼容保留，不建议新 Resource 使用；新关系应通过固定 `resourceId`、`code`、`bizCode` 或 `resourceType + bizKey` 幂等解析。声明文件顺序、文件扫描顺序、jar 加载顺序和模块执行顺序不作为正确性语义。
 如果依赖图存在环，例如 `A -> B -> A`，同步会失败并提示 `Resource type dependency cycle detected`。
+执行顺序的完整约束见[模块分层规范](../../../mango-pmo/rules/backend/05-module.md)。
 
 ### 10.1 Resource 级增量与运行时修改退避
 
