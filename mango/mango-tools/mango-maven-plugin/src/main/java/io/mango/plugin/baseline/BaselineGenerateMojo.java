@@ -86,6 +86,9 @@ public final class BaselineGenerateMojo extends AbstractMojo {
     @Parameter(property = "mango.baseline.resourceTimeoutSeconds", defaultValue = "300")
     private long resourceTimeoutSeconds;
 
+    @Parameter
+    private List<File> resourceAdditionalClasspathElements;
+
     @Parameter(defaultValue = "${project.basedir}", readonly = true, required = true)
     private File projectDirectory;
 
@@ -183,13 +186,48 @@ public final class BaselineGenerateMojo extends AbstractMojo {
         try {
             return new ResourceBaselineExecutionSettings(
                     resourceApplicationClass.trim(),
-                    project.getRuntimeClasspathElements(),
+                    resourceRuntimeClasspath(
+                            project.getRuntimeClasspathElements(),
+                            resourceAdditionalClasspathElements,
+                            projectDirectory.toPath()),
                     projectDirectory.toPath().toAbsolutePath().normalize(),
                     Duration.ofSeconds(resourceTimeoutSeconds));
         } catch (DependencyResolutionRequiredException exception) {
             throw new MojoExecutionException(
                     "MANGO-BASELINE-051 Resource baseline runtime classpath is unavailable", exception);
         }
+    }
+
+    static List<String> resourceRuntimeClasspath(
+            List<String> runtimeClasspath,
+            List<File> additionalElements,
+            Path projectDirectory) throws MojoExecutionException {
+        Set<String> resolved = new LinkedHashSet<>(runtimeClasspath);
+        if (additionalElements == null) {
+            return List.copyOf(resolved);
+        }
+        Path baseDirectory = projectDirectory.toAbsolutePath().normalize();
+        for (File element : additionalElements) {
+            Path path = element.toPath();
+            if (!path.isAbsolute()) {
+                path = baseDirectory.resolve(path);
+            }
+            path = path.toAbsolutePath().normalize();
+            if (!isReadableClasspathElement(path)) {
+                throw new MojoExecutionException(
+                        "MANGO-BASELINE-053 Resource baseline additional classpath element is not readable: "
+                                + path);
+            }
+            resolved.add(path.toString());
+        }
+        return List.copyOf(resolved);
+    }
+
+    private static boolean isReadableClasspathElement(Path path) {
+        if (!Files.isReadable(path)) {
+            return false;
+        }
+        return Files.isDirectory(path) || Files.isRegularFile(path);
     }
 
     static void copyGeneratedResourcesToClasses(Path generated, Path classes)

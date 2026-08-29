@@ -5,9 +5,11 @@ import org.apache.maven.project.MavenProject;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import java.io.File;
 import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -52,6 +54,31 @@ class BaselineGenerateMojoTest {
 
         assertTrue(exception.getMessage().contains("MANGO-BASELINE-050"));
         assertTrue(exception.getMessage().contains("bind this execution to prepare-package"));
+    }
+
+    @Test
+    void resourceRuntimeClasspathIncludesReadableAdditionalElements(@TempDir Path directory) throws Exception {
+        Path externalAssets = Files.createDirectories(directory.resolve("external-assets"));
+
+        List<String> classpath = BaselineGenerateMojo.resourceRuntimeClasspath(
+                List.of("target/classes", externalAssets.toString()),
+                List.of(new File("external-assets"), externalAssets.toFile()),
+                directory);
+
+        assertEquals(List.of("target/classes", externalAssets.toString()), classpath);
+    }
+
+    @Test
+    void resourceRuntimeClasspathRejectsUnreadableAdditionalElement(@TempDir Path directory) {
+        Path missing = directory.resolve("missing-assets");
+
+        MojoExecutionException exception = assertThrows(
+                MojoExecutionException.class,
+                () -> BaselineGenerateMojo.resourceRuntimeClasspath(
+                        List.of("target/classes"), List.of(missing.toFile()), directory));
+
+        assertTrue(exception.getMessage().contains("MANGO-BASELINE-053"));
+        assertTrue(exception.getMessage().contains(missing.toString()));
     }
 
     private static void setField(Object target, String name, Object value) throws Exception {

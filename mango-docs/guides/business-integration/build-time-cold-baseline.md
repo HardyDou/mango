@@ -54,6 +54,11 @@ target/generated-resources/META-INF/mango/baseline-manifest.json
                 <collation>utf8mb4_unicode_ci</collation>
                 <resourceApplicationClass>com.example.GuaranteeApplication</resourceApplicationClass>
                 <resourceTimeoutSeconds>300</resourceTimeoutSeconds>
+                <resourceAdditionalClasspathElements>
+                    <resourceAdditionalClasspathElement>
+                        ${project.basedir}/../bootstrap-assets
+                    </resourceAdditionalClasspathElement>
+                </resourceAdditionalClasspathElements>
             </configuration>
         </execution>
     </executions>
@@ -63,6 +68,8 @@ target/generated-resources/META-INF/mango/baseline-manifest.json
 只生成 Flyway baseline 时，可以把模块映射到不同 group。启用 `resourceApplicationClass` 后，当前版本要求所有模块位于同一个 datasource group；多 group 会在创建临时 schema 前失败，不能通过拆分执行绕过应用级 Resource 一致性。
 
 启用 `resourceApplicationClass` 的 Resource baseline 绑定到 `prepare-package`：此时最终业务主类和运行时 classpath 已编译完成，生成的 BSQL/manifest 仍会在 Boot repackage 前进入最终 JAR。未配置 `resourceApplicationClass` 的纯 Flyway baseline 可以继续使用较早阶段，但不能据此声明已物化 Resource。
+
+业务应用把大文件等资产保留在 JAR 外部时，使用 `resourceAdditionalClasspathElements` 把最终运行时会提供的只读目录或 JAR 加入构建期 Resource baseline 应用。相对路径按最终应用模块的 `${project.basedir}` 解析；路径不存在或不可读时构建直接失败。该参数只影响构建期 Java 子进程，不会把目录复制进应用 JAR；Docker 镜像或部署包仍需按业务运行时约定携带相同资产，并通过 `loader.path` 等正式入口加入运行时 classpath。
 
 生成器虽然启动最终业务应用，但构建专用 Bootstrap 只选择 Mango Resource contributor。业务自定义 `BootstrapStepContributor`、租户对账和其它运行期步骤不在构建期执行清单中；它们仍在目标环境的正常 Bootstrap 中执行。初始化数据的归属和构建期边界遵循 [数据库规范](../../../mango-pmo/rules/backend/04-db.md)，Resource 目标是否可进入 BSQL 由各 `ResourceHandler.baselinePolicy()` 决定。
 
@@ -188,6 +195,7 @@ jar tf target/*.jar | grep -E '^META-INF/mango/(resource-bootstrap-manifest.json
 - `unsupported MySQL character set and collation`：目标组合不存在或不匹配；修正 `mango.baseline.characterSet` / `mango.baseline.collation`，不要退回构建机默认值。
 - `migrations and portable Resource handlers are not deterministic`：两套空 schema 的 Flyway + 便携 Resource 最终状态不同。确定性比较忽略标准及历史审计时钟列，B 仍保留真实时间；其它业务列中的 UUID、当前时间或环境值继续阻断构建。
 - `Resource baseline application must be compiled before baseline-generate`：将 goal 绑定到 `prepare-package`，并确认 `resourceApplicationClass` 是最终 Spring Boot 应用主类。
+- `Resource baseline additional classpath element is not readable`：修正 `resourceAdditionalClasspathElements` 路径，并确认构建节点可读；不要把外部资产临时复制进 `target/classes` 规避检查。
 - `Resource baseline generation currently requires one datasource group`：当前应用级 Resource 物化不能跨多个逻辑 datasource group；收敛为一个 group，或暂不启用 Resource baseline。
 - `Resource baseline build mode requires ...`：不要在部署命令中手工打开构建专用开关；确认使用 `mango:baseline-generate` 启动最终应用，并且应用已装配 `mango-resource-sync-starter`。
 - `stored routines and events are not supported`：当前生成器不静默遗漏存储过程、函数或事件；将其迁移方案单独评审。

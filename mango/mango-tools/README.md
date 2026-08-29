@@ -227,6 +227,7 @@ META-INF
 | `mango.baseline.moduleGroups` | 全部为 `default` | `module=group` 列表；同组模块使用同一对临时 schema，不同组隔离。 |
 | `mango.baseline.resourceApplicationClass` | 无 | 最终 Spring Boot 应用主类；配置后启用 `PORTABLE` Resource 数据库基线，并要求 goal 绑定 `prepare-package`。 |
 | `mango.baseline.resourceTimeoutSeconds` | `300` | 每次 Resource baseline 应用执行的超时秒数，必须大于 0。 |
+| `resourceAdditionalClasspathElements` | 无 | 仅加入 Resource baseline 构建子进程的外部只读目录或 JAR；不存在或不可读时失败，不复制进应用 JAR。 |
 | `mango.baseline.outputDirectory` | `target/generated-resources` | 仅构建目录；不要指向 `src/main/resources`。 |
 | `mango.baseline.keepSchemas` | `false` | 诊断时保留临时 schema；正常 CI 保持关闭。 |
 
@@ -235,6 +236,8 @@ META-INF
 前两套 schema 独立回放 V 和便携 Resource 时，确定性比较忽略标准及历史运行审计时间列，例如 `created_at`、`updated_at`、`create_time`、`update_time` 和 `last_sync_time`；B SQL 仍保留 replay 中这些列的真实值，verify schema 连续执行 B 两次后仍按全部列比较结构和静态数据。其它业务列中的 `UUID()`、当前时间或环境值继续阻断构建。
 
 Resource baseline 当前只支持一个 datasource group。`PORTABLE` Handler 的目标状态与 Registry hash 进入 BSQL；`ENVIRONMENT_REQUIRED` Handler 和没有本地 Handler 的远程目标在恢复后处理，构建期不会调用远程 Dispatcher。构建专用 Bootstrap 只选择 Mango Resource contributor，普通业务、租户和其它运行期 contributor 在目标环境 Bootstrap 执行。生成前清除环境 receipt、Resource 审计和 Bootstrap 运行记录，避免把构建过程当成部署成功回执。
+
+如果最终应用通过 Spring Boot `loader.path` 等入口加载 JAR 外资产，应在插件 execution 中配置 `resourceAdditionalClasspathElements`，让构建期 Resource baseline 使用同一份资产。该参数不改变最终 JAR 内容；业务镜像或部署包仍负责携带外部目录。
 
 结构比较使用 MySQL 元数据的结构化语义快照，不按 `SHOW CREATE` 文本逐字比较。表、列、索引和约束的首个差异会定位到 `table:<name>`、`table:<name>.column:<name>`、`table:<name>.index:<name>` 或 `table:<name>.constraint:<name>`；隐式继承与显式声明只要落库后的 charset/collation 相同即视为等价。视图和触发器使用去除环境噪声后的 canonical DDL 比较。静态数据按列读取并用二进制十六进制值比较，因此字符集转换和不可见字节不会被字符串展示掩盖。存储过程、函数和事件当前 fail closed；重复版本、跨模块对象所有权、制品碰撞、缺失或被修改的 B、不可重入、结构或数据不等价都会使构建失败。安装新生成目录前保留上一次结果，安装异常时回滚。
 

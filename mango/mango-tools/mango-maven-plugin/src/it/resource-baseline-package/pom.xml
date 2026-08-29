@@ -86,6 +86,11 @@
                             <moduleOrder>resource,kv,guarantee</moduleOrder>
                             <schemaPrefix>mango_resource_package_it</schemaPrefix>
                             <resourceApplicationClass>io.mango.plugin.it.GuaranteeBaselineApplication</resourceApplicationClass>
+                            <resourceAdditionalClasspathElements>
+                                <resourceAdditionalClasspathElement>
+                                    ${project.basedir}/external-assets
+                                </resourceAdditionalClasspathElement>
+                            </resourceAdditionalClasspathElements>
                         </configuration>
                     </execution>
                 </executions>

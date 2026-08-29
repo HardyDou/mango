@@ -140,3 +140,14 @@
 | IMPL-010 | 构建期 Resource 数据库 baseline，reset 首次跳过已基线 Resource Handler | 最终业务应用双库物化、普通业务 Bootstrap 隔离、便携/环境策略、BSQL 恢复与确定性校验 | DONE |
 
 当前业务开发者消费边界：正式 Resource 的模块/Resource hash 跳过、便携 Resource cold baseline 和 `SYSTEM_CONFIG.updated_at` 退避已经可用；环境/远程 Resource 仍在恢复后处理，Resource baseline 只支持单 datasource group，所有 Handler 的通用运行期修改保护以及真实云对象存储验收不在本次完成范围。
+
+### 5.6 1.0.43 保函消费返工
+
+| ID | 要求 | 交付物 | 状态 |
+|---|---|---|---|
+| IMPL-011 | JAR 外 `FILE_ASSET` 仍能参与构建期 Resource baseline，且不重新打入应用 JAR | `resourceAdditionalClasspathElements`、可读性 fail-fast、业务接入说明 | DONE |
+| VERIFY-005 | 真实子进程读取外部资产，双库物化与恢复链通过，Boot JAR 保持外部资产 0 条目 | Maven Plugin 单元测试与 MySQL 8.4 Invoker | DONE |
+
+- 发现事实：Baohan `bootstrap-assets` 按既有生产契约由镜像独立携带并通过 `loader.path` 加载；Spring Boot Maven Plugin 的 `additionalClasspathElements` 不属于 Maven 项目的 runtime classpath，1.0.43 `baseline-generate` 子进程因此无法读取声明引用的 DOCX。
+- 修复结果：插件显式合并业务配置的额外目录或 JAR；相对路径按最终应用模块目录解析，缺失或不可读以 `MANGO-BASELINE-053` 阻断构建，不把资产复制到 `target/classes`。
+- 验证结果：`BaselineGenerateMojoTest` 4/4；真实 MySQL 8.4 Maven Invoker 2/2，双库 Resource baseline、BSQL 重入和恢复应用均通过，第二次同 generation `executedSteps=0`，输出 `RESOURCE_DATABASE_BASELINE_VERIFIED`；夹具 Boot JAR 包含三模块 BSQL 与 manifest，外部资产条目为 0；所有一次性 schema 已清理。
