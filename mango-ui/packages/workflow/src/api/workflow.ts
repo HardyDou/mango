@@ -9,6 +9,7 @@ export type WorkflowStatus = 'DRAFT' | 'PUBLISHED' | 'DISABLED';
 export type WorkflowAssigneeType = 'SPECIFIED_USER' | 'SPECIFIED_ROLE' | 'SPECIFIED_POST' | 'SPECIFIED_ORG' | 'ORG_LEADER' | 'INITIATOR' | 'INITIATOR_SELECT' | 'FORM_USER' | 'EXPRESSION';
 export type WorkflowApprovalMode = 'COUNTERSIGN' | 'OR_SIGN' | 'SEQUENTIAL';
 export type WorkflowAssignmentMode = 'CLAIM' | 'AUTO';
+export type WorkflowAutoAssignmentStrategy = 'ROUND_ROBIN' | 'LEAST_TASKS' | 'AFFINITY';
 export type WorkflowEmptyAssigneeStrategy = 'AUTO_PASS' | 'AUTO_REJECT' | 'AUTO_END' | 'TO_ADMIN' | 'TO_USER';
 export type WorkflowRejectStrategy = 'END_PROCESS' | 'BACK_TO_START';
 export type WorkflowFormPermission = 'HIDDEN' | 'READONLY' | 'EDITABLE';
@@ -39,6 +40,7 @@ export interface WorkflowNodeActionConfig {
 
 export interface WorkflowApprovalNodeConfig {
   assignmentMode?: WorkflowAssignmentMode;
+  autoAssignmentStrategy?: WorkflowAutoAssignmentStrategy;
   assigneeType: WorkflowAssigneeType;
   assigneeIds?: string[];
   roleIds?: string[];
@@ -908,6 +910,7 @@ export function defaultDesignerJson(): string {
 export function defaultApprovalConfig(): WorkflowApprovalNodeConfig {
   return {
     assignmentMode: 'CLAIM',
+    autoAssignmentStrategy: 'ROUND_ROBIN',
     assigneeType: 'INITIATOR',
     assigneeIds: [],
     roleIds: [],

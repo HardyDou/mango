@@ -32,7 +32,7 @@
 | 返回入口 | 业务跳转审批任务详情时传 `returnPath`，审批完成或点返回能回到业务列表，不回退到 Mango 默认待办 |
 | 权限 | 发起、审批、撤回、查看记录按业务角色和流程任务共同判断 |
 | 历史只读 | 业务详情需要历史参与可见性时，消费 `WorkflowParticipationApi.access()`；该事实只表示可读，不代表可办理当前任务 |
-| 自动派单 | 需要节点到达即明确办理人时显式配置 `assignmentMode=AUTO`；当前策略固定为 `ROUND_ROBIN`，候选为空会使流程事务失败 |
+| 自动派单 | 需要节点到达即明确办理人时显式配置 `assignmentMode=AUTO`；可选 `autoAssignmentStrategy=ROUND_ROBIN`、`LEAST_TASKS` 或 `AFFINITY`，缺失时兼容轮询，候选为空会使流程事务失败 |
 | 设计器候选项 | 流程定义页面只调用 Workflow 的 `designer-options` 接口；业务承载应用需要自定义目录时注册 `WorkflowDesignerOptionProvider`，不要给菜单追加跨域平台权限 |
 
 ## 4. 最小闭环
@@ -104,7 +104,7 @@ V3 升级只回填具有稳定 `operator_id` 或 `assignee_id` 的历史记录�
 
 ## 7. 变更影响记录
 
-- Issue #732 新增租户隔离的 Workflow 参与关系 API 和审批节点自动派单。业务可通过 `participantUserIds` 原子声明只读参与人，历史参与关系与任务操作权限保持分离；流程设计器中旧节点缺少 `assignmentMode` 时按 `CLAIM`，显式 `AUTO` 时固定使用数据库游标保护的 `ROUND_ROBIN`，空候选返回 `AUTO_ASSIGN_NO_CANDIDATE` 并回滚。设计器候选项改由 Workflow 自有接口和可替换 `WorkflowDesignerOptionProvider` 提供，只使用 Workflow 定义权限并从可信上下文派生租户。V3 仅回填可证明的稳定用户 ID，username-only 历史不授权。
+- Issue #732 新增租户隔离的 Workflow 参与关系 API 和审批节点自动派单。业务可通过 `participantUserIds` 原子声明只读参与人，历史参与关系与任务操作权限保持分离；流程设计器中旧节点缺少 `assignmentMode` 时按 `CLAIM`，显式 `AUTO` 时可使用数据库游标保护的 `ROUND_ROBIN`、按活动任务数选择的 `LEAST_TASKS` 或流程实例最近处理人优先的 `AFFINITY`（未命中回退 `LEAST_TASKS`），空候选返回 `AUTO_ASSIGN_NO_CANDIDATE` 并回滚。设计器候选项改由 Workflow 自有接口和可替换 `WorkflowDesignerOptionProvider` 提供，只使用 Workflow 定义权限并从可信上下文派生租户。V3 仅回填可证明的稳定用户 ID，username-only 历史不授权。
 
 - Issue #870 为业务申请详情、历史、最新进度和流程详情增加 `WorkflowBusinessApplyDataPermissionProvider` 扩展点。业务模块在同一 Workflow 运行时中注册 Provider，并按 `businessType` 从自己的业务表校验 owner、组织和租户；普通业务员不再依赖全局 `workflow:business-apply:detail`。Workflow 使用持久化申请事实构造权限上下文，无权时返回 `APPLY_ACCESS_DENIED`，批量进度过滤无权记录。Provider 运行在实际承载 Workflow 服务的应用中，业务查询通过公开 Workflow API 完成；完整接入边界见 [Workflow README](../../../mango/mango-platform/mango-workflow/README.md#业务申请数据权限)，长期能力文档边界见 [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)。升级验证覆盖业务详情正反权限用例和业务代理兼容路径移除。
 

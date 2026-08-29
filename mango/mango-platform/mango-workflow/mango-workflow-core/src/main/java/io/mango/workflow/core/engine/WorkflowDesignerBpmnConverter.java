@@ -8,6 +8,7 @@ import io.mango.workflow.api.enums.WorkflowCode;
 import io.mango.workflow.api.enums.WorkflowApprovalMode;
 import io.mango.workflow.api.enums.WorkflowAssigneeType;
 import io.mango.workflow.api.enums.WorkflowAssignmentMode;
+import io.mango.workflow.api.enums.WorkflowAutoAssignmentStrategy;
 import io.mango.workflow.api.enums.WorkflowEmptyAssigneeStrategy;
 import io.mango.workflow.api.enums.WorkflowFormPermission;
 import io.mango.workflow.api.enums.WorkflowRejectStrategy;
@@ -254,6 +255,14 @@ public class WorkflowDesignerBpmnConverter {
                 config.setAssignmentMode(WorkflowAssignmentMode.valueOf(assignmentMode.trim().toUpperCase()));
             } catch (IllegalArgumentException ignored) {
                 config.setAssignmentMode(WorkflowAssignmentMode.CLAIM);
+            }
+        }
+        String autoAssignmentStrategy = text(properties, "autoAssignmentStrategy");
+        if (StringUtils.hasText(autoAssignmentStrategy)) {
+            try {
+                config.setAutoAssignmentStrategy(WorkflowAutoAssignmentStrategy.valueOf(autoAssignmentStrategy.trim().toUpperCase()));
+            } catch (IllegalArgumentException ignored) {
+                // Invalid legacy values retain the compatible ROUND_ROBIN default.
             }
         }
         config.setAssigneeType(WorkflowAssigneeType.fromCode(text(properties, "assigneeType"), config.getAssigneeType()));

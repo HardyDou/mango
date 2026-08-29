@@ -249,6 +249,52 @@ class WorkflowTaskRuntimeServiceImplIntegrationTest {
     }
 
     @Test
+    void autoAssignmentQueriesUseTenantScopedRuntimeTasksAndRecentParticipants() {
+        jdbcTemplate.execute("""
+                create table ACT_RU_TASK (
+                    ID_ varchar(128) not null,
+                    ASSIGNEE_ varchar(128),
+                    PROC_INST_ID_ varchar(128),
+                    primary key (ID_)
+                )
+                """);
+        jdbcTemplate.execute("""
+                create table workflow_process_participant (
+                    id bigint not null,
+                    tenant_id varchar(64) not null,
+                    process_instance_id varchar(128) not null,
+                    user_id bigint not null,
+                    participant_type varchar(32) not null,
+                    active boolean not null,
+                    last_participated_at timestamp not null,
+                    primary key (id)
+                )
+                """);
+        insertFormInstance("proc-1", "{}", WorkflowInstanceStatus.RUNNING.name());
+        jdbcTemplate.update("insert into ACT_RU_TASK (ID_, ASSIGNEE_, PROC_INST_ID_) values (?, ?, ?)",
+                "active-10", "10", "proc-1");
+        jdbcTemplate.update("insert into ACT_RU_TASK (ID_, ASSIGNEE_, PROC_INST_ID_) values (?, ?, ?)",
+                "orphan-10", "10", "proc-without-form");
+        jdbcTemplate.update("""
+                insert into workflow_process_participant
+                    (id, tenant_id, process_instance_id, user_id, participant_type, active, last_participated_at)
+                values (?, ?, ?, ?, ?, ?, ?)
+                """, 1L, "1", "proc-1", 10L, "COMPLETED_HANDLER", true,
+                LocalDateTime.parse("2026-06-27T09:00:00"));
+        jdbcTemplate.update("""
+                insert into workflow_process_participant
+                    (id, tenant_id, process_instance_id, user_id, participant_type, active, last_participated_at)
+                values (?, ?, ?, ?, ?, ?, ?)
+                """, 2L, "1", "proc-1", 20L, "COMPLETED_HANDLER", true,
+                LocalDateTime.parse("2026-06-27T11:00:00"));
+
+        WorkflowAutoAssignmentSelector autoAssignmentSelector = new WorkflowAutoAssignmentSelector(jdbcTemplate);
+        assertThat(autoAssignmentSelector.activeTaskCount(10L)).isEqualTo(1L);
+        Task task = task("task-1", "manager_approve", "proc-1", "pd-1", null);
+        assertThat(autoAssignmentSelector.affinityCandidate(task, List.of(10L, 20L))).isEqualTo(20L);
+    }
+
+    @Test
     void addSignRejectsCurrentUserByUsernameAndUserIdBeforeEngineMutation() {
         Task task = task("task-1", "manager_approve", "proc-1", "pd-1", "anonymous");
         TaskQuery query = taskQuery(task, 1L, List.of());

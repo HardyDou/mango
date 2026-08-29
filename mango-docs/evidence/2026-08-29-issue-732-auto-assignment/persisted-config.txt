@@ -1,0 +1,6 @@
+### Result
+{"status":200,"definitionId":"2093725222198603778","definitionKey":"issue732_browser_auto","lifecycle":"DRAFT","assignmentMode":"AUTO","autoAssignmentStrategy":"AFFINITY"}
+### Ran Playwright code
+```js
+await (async page => await page.evaluate(async () => { const r = await fetch('/api/workflow/definitions/page?page=1&size=100&keyword=issue732_browser_auto'); const body = await r.json(); const item = body.data.list[0]; const config = JSON.parse(item.designerJson).childNode.properties.approvalConfig; return {status:r.status, definitionId:item.id, definitionKey:item.definitionKey, lifecycle:item.status, assignmentMode:config.assignmentMode, autoAssignmentStrategy:config.autoAssignmentStrategy}; }))(page);
+```
