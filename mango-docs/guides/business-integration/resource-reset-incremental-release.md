@@ -14,7 +14,7 @@
 |---|---|---|---|
 | 表、列、索引、约束 | Flyway | `<module>-core/src/main/resources/db/migration/<module>/V*.sql` | 已有库按 history 增量执行；空库可消费构建物 B baseline |
 | 菜单、按钮权限、接口访问模式 | Resource Registry | `META-INF/mango/resources/<module>-common-menu.json` 或 typed declaration | 按模块 hash 和 Resource hash 增量协调 |
-| 必须存在的字典、系统配置、编号规则、流程定义 | Resource Registry | `META-INF/mango/resources/` | 根据 `sync-mode` 处理；可运营数据优先 `INIT_ONLY` |
+| 随应用提供的字典、系统配置、编号规则、流程定义 | Resource Registry | `META-INF/mango/resources/` | 根据 `sync-mode` 处理；可运营数据优先 `INIT_ONLY` |
 | 演示租户、演示保函、测试账号、样例流程 | Demo Resource / 测试 fixture | `META-INF/mango/demo/` 或测试目录 | 默认不加载，显式开启 demo 后才初始化 |
 | 用户运行期创建的保函、审批实例、附件关系 | 业务 API / 管理后台 | Service、Controller、后台页面 | 不进入发布包，不由 Resource 覆盖 |
 | 随版本发布的固定模板或文件 | `FILE_ASSET` Resource | `META-INF/mango/assets/` 或受控 `asset:` 根目录 | 按 SHA-256 物化到配置的文件存储 |
@@ -38,7 +38,7 @@
 
 提供方依赖 `<module>-starter` 并拥有业务表和 Resource 声明；调用方只依赖 `<module>-starter-remote` 或 API。调用方不读取提供方表，也不把提供方 migration 复制到自己的服务。
 
-Resource 上报、目标模块和租户上下文必须能在部署环境中回读。网关、Feign 和服务间调用的认证头、租户 ID、trace 信息缺失时，先修复链路，不把 Resource 同步改成绕过权限的内部 SQL。
+部署验收回读 Resource 上报、目标模块和租户上下文。网关、Feign 和服务间调用的认证头、租户 ID、trace 信息缺失时，先修复链路；权限和租户边界遵循 [安全规范](../../../mango-pmo/rules/backend/06-security.md)。
 
 ## 4. Resource declaration 约定
 
@@ -82,7 +82,7 @@ mango:
 
 业务自定义 Handler 默认视为 `PORTABLE`。如果 Handler 读取凭据、对象存储、主机路径、外部服务或其它环境状态，需要覆盖 `baselinePolicy()` 返回 `ENVIRONMENT_REQUIRED`，避免制品构建触碰部署环境。
 
-业务自定义 `BootstrapStepContributor` 与 Resource Handler 是两条边界。普通业务 Bootstrap、租户对账和其它运行期步骤不会进入构建期 Resource baseline，目标环境首次 Bootstrap 仍会执行它们；业务模块不得为了加速构建而覆盖 `supportsResourceBaselineBuild()`。
+业务自定义 `BootstrapStepContributor` 与 Resource Handler 是两条边界。普通业务 Bootstrap、租户对账和其它运行期步骤不进入构建期 Resource baseline，目标环境首次 Bootstrap 仍会执行它们；构建期初始化边界遵循 [数据库规范](../../../mango-pmo/rules/backend/04-db.md)。
 
 ### 5.2 增量发布
 
