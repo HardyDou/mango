@@ -1,6 +1,6 @@
 {
   "name": "@mango/admin-shell",
-  "version": "1.0.66",
+  "version": "1.0.67",
   "private": false,
   "type": "module",
   "main": "./dist/index.js",
@@ -90,14 +90,14 @@
     "element-plus": "2.14.1",
     "@mango/file": "workspace:1.0.37",
     "@mango/notice": "workspace:1.0.43",
-    "@mango/workflow": "workspace:1.0.45"
+    "@mango/workflow": "workspace:1.0.46"
   },
   "peerDependencies": {
     "@mango/file": "workspace:1.0.37",
     "@mango/grid-layout": "workspace:1.0.20",
     "@mango/grid-widgets": "workspace:1.0.26",
     "@mango/notice": "workspace:1.0.43",
-    "@mango/workflow": "workspace:1.0.45",
+    "@mango/workflow": "workspace:1.0.46",
     "pinia": ">=2.0.32 <3",
     "vue": ">=3.5.13 <4",
     "vue-i18n": ">=9.2.2 <10",

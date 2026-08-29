@@ -1,5 +1,56 @@
 # Mango PMO Changelog
 
+## 1.4.3 - 2026-08-30
+
+### Pull Requests
+
+- [PR #883](https://github.com/HardyDou/mango/pull/883) Changed Resource cross-module governance to require stable identities instead of execution order. Packages: `@mango/pmo@1.4.3`, `@mango/cli@1.2.4` and the Mango Maven `1.0.44` tuple. Business Adaptation: new Resource declarations use stable IDs or business codes.
+- [PR #897](https://github.com/HardyDou/mango/pull/897) Changed the PMO lifecycle projection to the deterministic release baseline. Packages: `@mango/pmo@1.4.3`, `@mango/cli@1.2.4` and the Mango Maven `1.0.44` tuple. Business Adaptation: business repositories upgrade PMO and run locked checks.
+
+### Fixed
+
+- Keep the PMO lifecycle contract and generated Business Starter baseline synchronized at `1.4.3`.
+
+### Changed
+
+- Extend the historical document compatibility range through PMO `1.4.2` while requiring `1.4.3` for new lifecycle documents.
+- Document stable Resource identities as the cross-module correctness contract.
+
+### Versions
+
+- `@mango/pmo`: `1.4.2` to `1.4.3`; exact dependent CLI: `1.2.3` to `1.2.4`.
+- Mango Maven non-app reactor and docs bundle: `1.0.43` to `1.0.44`.
+
+### Published Packages
+
+- Publish `@mango/pmo@1.4.3` before `@mango/cli@1.2.4` in the complete Maven/npm compatibility batch.
+
+### Business Impact
+
+- Business repositories receive the current PMO document contract, stable Resource reference guidance and matching generated baseline projection.
+
+### Upgrade Estimate
+
+- Audience: Mango maintainers and PMO-managed business repositories.
+- Engineering Effort: 30 to 90 minutes for generated consumers; up to 2 hours for repositories with reviewed document exceptions.
+- Execution Window: 30 to 90 minutes including PMO upgrade and locked checks.
+- Service Downtime: none for the PMO package.
+- Rollback Effort: 15 to 30 minutes to restore PMO `1.4.2` and CLI `1.2.3`.
+- Assumptions: Node `22.23.1`, clean locks and a configured npm consume registry.
+
+### Upgrade Notes
+
+1. Upgrade `@mango/pmo` to `1.4.3` with the matching generated CLI tuple.
+2. Run the PMO upgrade, review managed changes and execute `mango pmo check --project-dir . --locked`.
+
+### Verification
+
+- Run PMO document-contract, projection, Skill and package checks and verify the published package from the consume registry.
+
+### Rollback
+
+- Restore PMO `1.4.2` and CLI `1.2.3`; never overwrite immutable package coordinates.
+
 ## 1.4.2 - 2026-08-26
 
 ### Pull Requests

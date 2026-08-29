@@ -6,6 +6,7 @@ test('machine-generated version projection is release-only', () => {
   const result = classifyReleasePullRequest([
     'mango-ui/.changeset/release-plan.json',
     'mango-ui/.changeset/release-notes.txt',
+    'mango-ui/.changeset/legacy-reconciliation.json',
     'mango-ui/packages/admin/package.json',
     'mango-ui/packages/admin/CHANGELOG.md',
     'mango-ui/packages/mango-cli/release-versions.json',

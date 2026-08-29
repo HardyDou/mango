@@ -1,5 +1,58 @@
 # @mango/cli Changelog
 
+## 1.2.4 - 2026-08-30
+
+### Pull Requests
+
+- [PR #883](https://github.com/HardyDou/mango/pull/883), [PR #894](https://github.com/HardyDou/mango/pull/894), [PR #895](https://github.com/HardyDou/mango/pull/895), [PR #896](https://github.com/HardyDou/mango/pull/896) and [PR #897](https://github.com/HardyDou/mango/pull/897) Changed the generated compatibility tuple for deterministic Resource baseline and tenant-safe Workflow contracts. Packages: Mango Maven `1.0.44`, `@mango/pmo@1.4.3`, `@mango/workflow@1.0.46`, generated npm closure and `@mango/cli@1.2.4`. Business Adaptation: generated projects upgrade the exact CLI tuple and run reset/incremental Resource verification.
+
+### Fixed
+
+- Carry deterministic Resource baseline classpaths, stable cross-module identities and Provider-backed Workflow assignment into generated projects.
+
+### Added
+
+- Carry automatic Workflow assignment strategy configuration into generated compatibility metadata.
+
+### Changed
+
+- Lock generated projects to Maven `1.0.44`, PMO `1.4.3` and the machine-generated npm topology ending at `@mango/cli@1.2.4`.
+
+### Versions
+
+- `@mango/cli`: `1.2.3` to `1.2.4`; Mango Maven: `1.0.43` to `1.0.44`; PMO: `1.4.2` to `1.4.3`; Workflow: `1.0.45` to `1.0.46`.
+
+### Published Packages
+
+- Publish the complete non-application Maven/docs batch at `1.0.44`, then the generated npm topology ending at `@mango/cli@1.2.4`.
+
+### Business Impact
+
+- Generated consumers receive deterministic Resource reset/incremental behavior, stable Workflow assignment contracts and PMO `1.4.3` governance files.
+
+### Upgrade Estimate
+
+- Audience: generated Mango consumers and direct Resource/Workflow consumers.
+- Engineering Effort: 30 to 90 minutes for generated consumers; 1 to 3 hours for custom handlers or direct Workflow integrations.
+- Execution Window: 1 to 3 hours including dependency upgrade, clean build and reset/incremental verification.
+- Service Downtime: no framework-mandated downtime.
+- Rollback Effort: 15 to 45 minutes to restore CLI `1.2.3`, Maven `1.0.43`, PMO `1.4.2` and the prior npm tuple.
+- Assumptions: Node `22.23.1`, Java 21, clean locks and configured registries.
+
+### Upgrade Notes
+
+1. Upgrade CLI to `1.2.4` and apply its Maven `1.0.44`, PMO `1.4.3` and exact npm compatibility matrix.
+2. Use packaged BSQL only for empty reset databases; preserve existing databases for incremental upgrade.
+3. Use stable Resource identities and tenant-scoped Workflow user IDs.
+
+### Verification
+
+- Verify the sealed Maven/npm batch from both registry roles and run the local reset/incremental Resource and Workflow consumer fixtures.
+
+### Rollback
+
+- Restore CLI `1.2.3`, Maven `1.0.43`, PMO `1.4.2` and the prior exact npm tuple; never overwrite immutable coordinates.
+
 ## 1.2.3 - 2026-08-29
 
 ### Pull Requests
