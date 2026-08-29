@@ -62,9 +62,9 @@ target/generated-resources/META-INF/mango/baseline-manifest.json
 
 只生成 Flyway baseline 时，可以把模块映射到不同 group。启用 `resourceApplicationClass` 后，当前版本要求所有模块位于同一个 datasource group；多 group 会在创建临时 schema 前失败，不能通过拆分执行绕过应用级 Resource 一致性。
 
-Resource baseline 必须绑定 `prepare-package`：此时最终业务主类和运行时 classpath 已编译完成，生成的 BSQL/manifest 仍会在 Boot repackage 前进入最终 JAR。未配置 `resourceApplicationClass` 的纯 Flyway baseline 可以继续使用较早阶段，但不能据此声明已物化 Resource。
+启用 `resourceApplicationClass` 的 Resource baseline 绑定到 `prepare-package`：此时最终业务主类和运行时 classpath 已编译完成，生成的 BSQL/manifest 仍会在 Boot repackage 前进入最终 JAR。未配置 `resourceApplicationClass` 的纯 Flyway baseline 可以继续使用较早阶段，但不能据此声明已物化 Resource。
 
-生成器虽然启动最终业务应用，但构建专用 Bootstrap 只选择 Mango Resource contributor。业务自定义 `BootstrapStepContributor`、租户对账和其它运行期步骤默认不执行，也不得通过覆盖 `supportsResourceBaselineBuild()` 加入；它们仍在目标环境的正常 Bootstrap 中执行。Resource 目标是否可进入 BSQL 只由各 `ResourceHandler.baselinePolicy()` 决定。
+生成器虽然启动最终业务应用，但构建专用 Bootstrap 只选择 Mango Resource contributor。业务自定义 `BootstrapStepContributor`、租户对账和其它运行期步骤不在构建期执行清单中；它们仍在目标环境的正常 Bootstrap 中执行。初始化数据的归属和构建期边界遵循 [数据库规范](../../../mango-pmo/rules/backend/04-db.md)，Resource 目标是否可进入 BSQL 由各 `ResourceHandler.baselinePolicy()` 决定。
 
 `characterSet` 和 `collation` 的默认值分别是 `utf8mb4`、`utf8mb4_unicode_ci`，与 Mango CLI 创建的标准业务数据库一致。通常无需在 POM 重复声明；示例显式写出是为了让业务制品的数据库语义可审计。正式目标空库的字符集组合及例外边界以 [数据库规范](../../../mango-pmo/rules/backend/04-db.md) 为准。
 
@@ -116,7 +116,7 @@ Runtime 不生成 B，也不访问构建数据库。部署 Bootstrap 只消费�
 
 ## 7. Resource、Workflow 与文件
 
-cold baseline 在 Flyway 最终状态上继续物化可移植的数据库 Resource。`ResourceHandler.baselinePolicy()` 默认为 `PORTABLE`；只写本地、可移植数据库状态的 Handler 可以进入 BSQL。读取凭据、对象存储、主机路径、外部服务或其它部署环境状态的 Handler 必须使用 `ENVIRONMENT_REQUIRED`，恢复后首次 Bootstrap 再处理。
+cold baseline 在 Flyway 最终状态上继续物化可移植的数据库 Resource。`ResourceHandler.baselinePolicy()` 默认为 `PORTABLE`；只写本地、可移植数据库状态的 Handler 可以进入 BSQL。读取凭据、对象存储、主机路径、外部服务或其它部署环境状态的 Handler 使用 `ENVIRONMENT_REQUIRED`，恢复后首次 Bootstrap 再处理；具体初始化边界遵循 [数据库规范](../../../mango-pmo/rules/backend/04-db.md)。
 
 构建期 BSQL 保留便携目标表数据及 `resource_registry.source_hash`，但清除模块 receipt、Resource 审计和 Bootstrap 运行记录。这样部署环境会重新建立自己的 receipt，同时按逐 Resource hash 跳过已物化 Handler。没有本地 Handler 的远程目标也会延迟处理；构建器不会调用远程 Dispatcher。
 
