@@ -61,7 +61,7 @@
 | JOB-TENANT-001 | 租户 | 租户隔离 | 租户 A/B 的任务定义、实例、日志、Worker 查询隔离 | 后端已覆盖，预发待验证 | `MangoJobMultiDataSourceIntegrationTest` |
 | JOB-MENU-001 | 菜单权限 | 菜单入库 | `平台能力/任务管理` 菜单由 migration 入库 | 本地已通过，预发待验证 | `V44__native_job_menu_names.sql`；E2E |
 | JOB-MENU-002 | 菜单权限 | 按钮权限 | 触发、暂停、删除、Worker 高风险动作权限码可控 | 本地 E2E 覆盖管理员操作，预发权限矩阵待验证 | `V45__native_job_worker_governance_permissions.sql`；E2E 覆盖 Worker 登记、禁用、恢复；普通用户权限待预发补充 |
-| JOB-RUNTIME-001 | 调度 | 每分钟 Cron 稳定性 | 预发连续运行 2-4 小时，无重复窗口、无长时间积压 | 本地 H2 连续窗口、本地 MySQL 10 分钟真实调度观察、真实双进程最近 12 个窗口去重均已覆盖；预发 2-4 小时待验证 | `MangoJobMultiDataSourceIntegrationTest#nativeRuntime_shouldKeepEveryMinuteCronStableAcrossContinuousWindows`；`mango-ui/apps/mango-admin/e2e/specs/job-scheduler-stability.spec.ts`；`mango-docs/evidence/2026-06-07-mango-native-job-e2e/job-scheduler-stability-local.md`；双进程 DB 证据 `duplicate_windows=0` |
+| JOB-RUNTIME-001 | 调度 | 每分钟 Cron 稳定性 | 预发连续运行 2-4 小时，无重复窗口、无长时间积压 | 本地 H2 连续窗口、本地 MySQL 10 分钟真实调度观察、真实双进程最近 12 个窗口去重均已覆盖；预发 2-4 小时待验证 | `MangoJobMultiDataSourceIntegrationTest#nativeRuntime_shouldKeepEveryMinuteCronStableAcrossContinuousWindows`；`mango-ui/apps/mango-admin/e2e/specs/job-scheduler-stability.spec.ts`；`历史验收文件已清理（可从 Git 历史恢复）`；双进程 DB 证据 `duplicate_windows=0` |
 | JOB-RUNTIME-002 | 调度 | 服务重启恢复 | JobCenter 重启后调度游标继续推进，不补错窗口 | 本地已覆盖，预发待验证 | `MangoJobMultiDataSourceIntegrationTest#nativeRuntime_shouldContinueScheduleCursorAfterJobCenterRestartWithoutDuplicatingCompletedWindow` |
 | JOB-RUNTIME-003 | Worker | 内嵌 Worker | 单体 `IN_MEMORY` 不绕本机 HTTP 端口，日志可见；单体多实例显示多个真实内嵌 Worker | 已通过，预发待验证 | E2E 截图、后端测试、双进程 DB 证据：`embedded-29094` 和 `embedded-35634` 同时 `ONLINE` |
 | JOB-RUNTIME-004 | Worker | 远程 Worker | 独立 Worker 通过 `HTTP_INTERNAL` 注册、心跳、执行、回传日志 | 后端已通过，预发待验证 | `MangoJobRemoteDispatchE2ETest` |
@@ -73,8 +73,8 @@
 | JOB-OPS-003 | 运维 | 回滚方案 | 代码回滚、菜单回滚、Job migration 回滚风险说明完整 | 资料已补，发布/预发待验证 | `deploy/job/README.md` |
 | JOB-ALARM-001 | 告警 | 告警入口 | 告警规则页面入口存在 | 已通过 | E2E 截图 |
 | JOB-ALARM-002 | 告警 | 通知发送 | 失败任务调用 `mango-notice` 模板并真实发送 | 本地代码链路已覆盖，预发真实模板/通道待验证 | `MangoJobMultiDataSourceIntegrationTest#nativeRuntime_shouldSendNoticeWhenFailedInstanceMatchesEnabledAlarmRule`；预发需验证 notice 模板、收件人规则和真实通道 |
-| JOB-ALARM-003 | 告警 | 规则维护 | 告警规则 CRUD 可通过后台维护 | 本地已通过，预发待验证 | `MangoJobMultiDataSourceIntegrationTest#alarmRuleService_shouldManageCrudStatusAndTenantIsolationOnJobDatasource`；`MangoJobMultiDataSourceIntegrationTest#alarmRuleService_shouldRejectInvalidJsonAndMismatchedJobScope`；E2E 截图 `15-alarm-rule-create-dialog.png` 到 `20-alarm-rule-deleted.png` |
-| JOB-WORKER-001 | Worker 治理 | 手动上下线 | 手动添加、禁用、排空、下线完整后台操作可用 | 本地已覆盖，预发待验证 | `MangoJobMultiDataSourceIntegrationTest#workerRegistry_shouldSupportManualCreateStatusGovernanceAndHeartbeatProtection`；`MangoJobMultiDataSourceIntegrationTest#nativeRuntime_shouldNotDispatchToManuallyDisabledEmbeddedWorker`；E2E `11-worker-create-dialog.png` 到 `14-worker-restored-online.png` |
+| JOB-ALARM-003 | 告警 | 规则维护 | 告警规则 CRUD 可通过后台维护 | 本地已通过，预发待验证 | `MangoJobMultiDataSourceIntegrationTest#alarmRuleService_shouldManageCrudStatusAndTenantIsolationOnJobDatasource`；`MangoJobMultiDataSourceIntegrationTest#alarmRuleService_shouldRejectInvalidJsonAndMismatchedJobScope`；E2E 截图 `历史验收图片已清理（可从 Git 历史恢复）` 到 `历史验收图片已清理（可从 Git 历史恢复）` |
+| JOB-WORKER-001 | Worker 治理 | 手动上下线 | 手动添加、禁用、排空、下线完整后台操作可用 | 本地已覆盖，预发待验证 | `MangoJobMultiDataSourceIntegrationTest#workerRegistry_shouldSupportManualCreateStatusGovernanceAndHeartbeatProtection`；`MangoJobMultiDataSourceIntegrationTest#nativeRuntime_shouldNotDispatchToManuallyDisabledEmbeddedWorker`；E2E `历史验收图片已清理（可从 Git 历史恢复）` 到 `历史验收图片已清理（可从 Git 历史恢复）` |
 | JOB-REL-001 | 发布 | 分支状态 | commit、push、PR 创建，PR 描述包含台账和验证结果 | 待处理 | 待补充 |
 | JOB-REL-002 | 发布 | 发布后验证 | 发布包、业务消费入口和模板依赖结论明确 | 待处理 | 待补充 |
 
@@ -142,7 +142,7 @@ node mango-pmo/tools/delivery-contract-check.mjs \
 - Worker 治理按钮权限从 `V44__native_job_menu_names.sql` 拆分到 `V45__native_job_worker_governance_permissions.sql`。原因是本地验证库已执行过早期 V43，继续修改同一 migration 会触发 Flyway checksum 校验失败。
 - Issue `#109` 的 V43 checksum mismatch 已确认发生在旧本地库 `mango_dev_job_runtime_dual_0607`；当前 worktree 主库 `mango_dev_a1ce46.flyway_schema_history_authorization` V43 checksum 为 `-1719360344` 且 `success=1`，与当前源码一致，不再阻塞本地验收。
 - 重启后本地后端 `http://127.0.0.1:18657` 健康检查通过，`primary` 和 `job` 两个 MySQL 数据源均为 `UP`，授权 V44 已执行成功。
-- 新增 `job-scheduler-stability.spec.ts` 作为可重复的每分钟 Cron 稳定性 E2E。2026-06-07 本地以 `JOB_STABILITY_MINUTES=3` 跑通真实登录、任务创建、启用、调度实例查询、重复窗口断言、失败实例断言和日志详情断言，报告见 `mango-docs/evidence/2026-06-07-mango-native-job-e2e/job-scheduler-stability-local.md`。该结果不替代预发 2-4 小时长跑。
+- 新增 `job-scheduler-stability.spec.ts` 作为可重复的每分钟 Cron 稳定性 E2E。2026-06-07 本地以 `JOB_STABILITY_MINUTES=3` 跑通真实登录、任务创建、启用、调度实例查询、重复窗口断言、失败实例断言和日志详情断言，报告见 `历史验收文件已清理（可从 Git 历史恢复）`。该结果不替代预发 2-4 小时长跑。
 - 2026-06-07 补跑全仓 `mvn mango:check -Drule=all`，结果在根模块失败并报告 19672 个跨模块历史规则 issue；本轮按用户要求不扩大到 infra/common/其它平台模块，已追加到质量工具规则对齐 Issue。
 - 2026-06-07 清理 `job-management.spec.ts` 的 `@typescript-eslint/no-non-null-assertion` 告警，改为显式断言辅助函数。随后 `job-management.spec.ts` 与 `job-scheduler-stability.spec.ts` ESLint 无告警，完整 Job 管理 E2E 重新执行通过 `9 passed (2.2m)`。
 - 2026-06-07 清理 Job 模块旧 `target` 目录后重新确认 PowerJob 源码/产物路径扫描为空；后端 Job 聚合测试再次通过 `BUILD SUCCESS`，25 tests；Job 聚合 checkstyle/PMD 再次返回 `BUILD SUCCESS`。

@@ -86,10 +86,10 @@
 
 | 台账 ID | 页面/接口 | 功能点 | 测试数据 | 关键断言 | UI/交互检查 | console/network 结果 | 截图/trace/日志 | 结论 |
 |---|---|---|---|---|---|---|---|---|
-| TASK-001 | `/#/system/config` | 统一入口 | `selectedDomains=['COMMON']` | 页面复用 `SystemConfigPanel`，页面正文不再保留“系统参数 / 系统配置”重复 Tab | 浏览器验收通过：登录后进入系统配置页，业务域 Tab 与卡片可见 | console error 0，pageerror 0，目标接口 4xx/5xx 0 | `mango-docs/evidence/2026-06-23-issue-217-system-config-panel/acceptance-result.json`；`screenshots/03-system-config-page.png` | PASS |
-| TASK-002 | `SystemConfigPanel` | 多业务域 Tab | `domainCodes=['COMMON']`，组件能力支持外部传入多个业务域 | Tab 来源为业务域列表，按业务域请求 `/api/system/config/list?domainCode=COMMON` | 浏览器验收通过：`COMMON` Tab 可见，卡片列表按业务域渲染 | `GET /api/system/config/list?domainCode=COMMON` 返回 200 | `mango-docs/evidence/2026-06-23-issue-217-system-config-panel/acceptance-result.json`；`screenshots/03-system-config-page.png` | PASS |
-| TASK-003/TASK-008 | `SystemConfigPanel` | 卡片与详情弹窗 | `通知中心总开关` 等真实业务域配置 | 卡片显示配置名称、配置介绍、展示类型和详情入口；详情弹窗显示完整配置信息 | 浏览器验收通过：卡片可见，点击详情弹出“配置操作”弹窗 | console error 0，pageerror 0，目标接口 4xx/5xx 0 | `mango-docs/evidence/2026-06-23-issue-217-system-config-panel/panel-polish-acceptance.json`；`screenshots/07-polished-panel-dialog.png` | PASS |
-| TASK-005/TASK-006 | `/system/config/value` | BOOLEAN 开关直接编辑并保存 | `Issue217浏览器验收开关`，初始值 `true` | 点击卡片开关后调用保存接口，接口返回成功 | 浏览器验收通过：开关点击后页面保持可用并完成保存 | `PUT /api/system/config/value?id=...&value=false` 返回 200，目标接口 4xx/5xx 0 | `mango-docs/evidence/2026-06-23-issue-217-system-config-panel/screenshots/05-config-after-switch-update.png` | PASS |
+| TASK-001 | `/#/system/config` | 统一入口 | `selectedDomains=['COMMON']` | 页面复用 `SystemConfigPanel`，页面正文不再保留“系统参数 / 系统配置”重复 Tab | 浏览器验收通过：登录后进入系统配置页，业务域 Tab 与卡片可见 | console error 0，pageerror 0，目标接口 4xx/5xx 0 | `mango-docs/evidence/2026-06-23-issue-217-system-config-panel/acceptance-result.json`；`历史验收图片已清理（可从 Git 历史恢复）` | PASS |
+| TASK-002 | `SystemConfigPanel` | 多业务域 Tab | `domainCodes=['COMMON']`，组件能力支持外部传入多个业务域 | Tab 来源为业务域列表，按业务域请求 `/api/system/config/list?domainCode=COMMON` | 浏览器验收通过：`COMMON` Tab 可见，卡片列表按业务域渲染 | `GET /api/system/config/list?domainCode=COMMON` 返回 200 | `mango-docs/evidence/2026-06-23-issue-217-system-config-panel/acceptance-result.json`；`历史验收图片已清理（可从 Git 历史恢复）` | PASS |
+| TASK-003/TASK-008 | `SystemConfigPanel` | 卡片与详情弹窗 | `通知中心总开关` 等真实业务域配置 | 卡片显示配置名称、配置介绍、展示类型和详情入口；详情弹窗显示完整配置信息 | 浏览器验收通过：卡片可见，点击详情弹出“配置操作”弹窗 | console error 0，pageerror 0，目标接口 4xx/5xx 0 | `mango-docs/evidence/2026-06-23-issue-217-system-config-panel/panel-polish-acceptance.json`；`历史验收图片已清理（可从 Git 历史恢复）` | PASS |
+| TASK-005/TASK-006 | `/system/config/value` | BOOLEAN 开关直接编辑并保存 | `Issue217浏览器验收开关`，初始值 `true` | 点击卡片开关后调用保存接口，接口返回成功 | 浏览器验收通过：开关点击后页面保持可用并完成保存 | `PUT /api/system/config/value?id=...&value=false` 返回 200，目标接口 4xx/5xx 0 | `历史验收图片已清理（可从 Git 历史恢复）` | PASS |
 | TASK-007 | `/system/config/value` | 不可编辑拒绝保存 | `editable=false`、`status=0` | 后端返回失败，前端控件按只读/禁用状态不可编辑 | 后端目标测试覆盖 disabled 与 readonly 拒绝保存分支 | 后端目标测试通过 | 后端测试输出；`SysConfigServiceImplTest` | PASS |
 
 ## 9. 验证记录
@@ -106,12 +106,12 @@
   - 账号标识：`admin / tenantCode=default / tenantName=芒果集团`，未记录密码或明文 token。
   - 验收脚本：`.runtime/issue-217-browser-acceptance/run-acceptance.cjs`。
   - 结果证据：`mango-docs/evidence/2026-06-23-issue-217-system-config-panel/acceptance-result.json`。
-  - 截图证据：`mango-docs/evidence/2026-06-23-issue-217-system-config-panel/screenshots/01-login-page.png`、`02-home-after-login.png`、`03-system-config-page.png`、`04-config-detail-drawer.png`、`05-config-after-switch-update.png`。
+  - 截图证据：`历史验收图片已清理（可从 Git 历史恢复）`、`历史验收图片已清理（可从 Git 历史恢复）`、`历史验收图片已清理（可从 Git 历史恢复）`、`历史验收图片已清理（可从 Git 历史恢复）`、`历史验收图片已清理（可从 Git 历史恢复）`。
   - 运行结果：PASS；console error 0；pageerror 0；目标接口 4xx/5xx 0。
 - 操作面板精修验收：
   - 验收脚本：`.runtime/issue-217-panel-polish/check-panel.mjs`。
   - 结果证据：`mango-docs/evidence/2026-06-23-issue-217-system-config-panel/panel-polish-acceptance.json`。
-  - 截图证据：`screenshots/06-polished-panel-overview.png`、`07-polished-panel-dialog.png`、`08-polished-panel-workflow-tab.png`。
+  - 截图证据：`历史验收图片已清理（可从 Git 历史恢复）`、`历史验收图片已清理（可从 Git 历史恢复）`、`历史验收图片已清理（可从 Git 历史恢复）`。
   - 运行结果：PASS；console error 0；pageerror 0；目标接口 4xx/5xx 0；覆盖开关、文本、数字、单选、下拉、多选、日期、日期区间。
 
 ## 10. 未执行项与风险

@@ -195,7 +195,7 @@ docker compose -f deploy/job/docker-compose.powerjob.yml up -d
 - 手动触发示例任务取得真实 `engineInstanceId=943410988542066752`。
 - Mango 实例状态同步为 `SUCCESS`，PowerJob `instance_info.status=5`、`result=Mango Job runtime probe executed`。
 - Mango 执行实例行内日志入口可按任务和实例过滤并展示同一 `engineInstanceId`。
-- 前端 E2E 覆盖任务定义、频次配置、触发、执行实例、执行日志详情、Worker 和引擎状态，截图保存在 `mango-docs/evidence/2026-06-05-mango-job-ui-e2e`。
+- 前端 E2E 覆盖任务定义、频次配置、触发、执行实例、执行日志详情、Worker 和引擎状态；历史验收截图已清理，可从 Git 历史恢复。
 
 ### Sprint 4：菜单、权限和统一 UI
 

@@ -77,6 +77,6 @@
 |---|---|---|---|---|---|---|---|---|
 | TASK-001 | Resource YAML | `AUTH` 业务域声明 | `auth-common-domain.yml` | Maven 模块测试通过，资源可参与同步 | 不涉及 | 不涉及 | `verification-summary.md` | PASS |
 | TASK-002 | 数据库 | `biz_domain` 和 `resource_registry` 数据 | `AUTH` | `domain_name=认证授权`、`status=1`、resource id `2026061800200000190` 为 ACTIVE | 不涉及 | 不涉及 | `logs/db-auth-domain.txt` | PASS |
-| TASK-003 | `/notice/message-definition` | 可读业务域展示与筛选 | `AUTH` | `/domain/domains/enabled-tree` 返回 `AUTH`，业务域树显示认证授权，点击后请求 `/notice/business-types?domainCode=AUTH` 并显示 `auth.login.locked`、`auth.login.success` | 业务域树点击、表格过滤正常；接收设置页加载正常 | `consoleErrors=[]`，`failedRequests=[]` | `logs/ui-auth-domain.json`, `screenshots/notice-business-config-auth-domain-tree.png`, `screenshots/notice-business-config-auth-filtered.png`, `screenshots/notice-receive-setting-loaded.png` | PASS |
+| TASK-003 | `/notice/message-definition` | 可读业务域展示与筛选 | `AUTH` | `/domain/domains/enabled-tree` 返回 `AUTH`，业务域树显示认证授权，点击后请求 `/notice/business-types?domainCode=AUTH` 并显示 `auth.login.locked`、`auth.login.success` | 业务域树点击、表格过滤正常；接收设置页加载正常 | `consoleErrors=[]`，`failedRequests=[]` | `logs/ui-auth-domain.json`, `历史验收图片已清理（可从 Git 历史恢复）`, `历史验收图片已清理（可从 Git 历史恢复）`, `历史验收图片已清理（可从 Git 历史恢复）` | PASS |
 | TASK-004 | 构建命令 | 后端测试、前端构建 | 当前分支 | `mvn -pl mango-platform/mango-auth/mango-auth-starter -am test` 与 `pnpm --filter @mango/notice build` 退出码 0 | 不涉及 | 不涉及 | `verification-summary.md` | PASS |
 | TASK-005 | PMO 检查 | 台账和证据合规 | 当前证据目录 | 检查退出码 0 | 不涉及 | 不涉及 | `verification-summary.md` | PASS |

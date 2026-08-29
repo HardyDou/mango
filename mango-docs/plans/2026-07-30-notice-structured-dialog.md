@@ -57,14 +57,14 @@
 
 | 要求 ID | 验证方式 | 命令或步骤 | 结果 | 证据 |
 |---|---|---|---|---|
-| R1 | Notice 组件测试 + 页面走查 | `pnpm -F @mango/notice test`；内置浏览器打开 `/message-center/site-message` 并查看真实消息详情 | PASS | 9 个测试文件、36 条测试通过；真实弹框标题为“登录成功”，正文仅显示消息类型、消息内容、消息时间，底部为“关闭 + 查看资料”；截图：`mango-docs/evidence/2026-07-31-notice-structured-dialog/detail-dialog.png` |
+| R1 | Notice 组件测试 + 页面走查 | `pnpm -F @mango/notice test`；内置浏览器打开 `/message-center/site-message` 并查看真实消息详情 | PASS | 9 个测试文件、36 条测试通过；真实弹框标题为“登录成功”，正文仅显示消息类型、消息内容、消息时间，底部为“关闭 + 查看资料”；截图：`历史验收图片已清理（可从 Git 历史恢复）` |
 | R2 | Notice/Admin Shell 测试 + 构建 + 页面跳转 | `pnpm -F @mango/notice test`；`pnpm --filter @mango/admin-shell... build`；从详情和铃铛点击真实消息主操作 | PASS | interaction/targets 测试通过，Admin Shell 及 16 个依赖包构建通过；真实点击后进入 `#/profile?username=admin&loginTime=...&appCode=internal-admin&bizId=...`，详情弹框正常关闭 |
 | R3 | Workflow 单元/集成测试 | `WorkflowEventPublisherTest`、`WorkflowBusinessApplyServiceImplIntegrationTest`、`WorkflowNoticeDomainEventSubscriberTest` 定向 Maven 测试 | PASS | viewPath 派生、事件载荷、通知目标优先级和固定页面降级均通过 |
-| R4 | Notice 组件测试 + 页面截图 | `pnpm -F @mango/notice test`；内置浏览器触发真实实时提醒 | PASS | `NoticeBell.spec.ts` 验证通知标题、三字段 VNode、安全 `innerHTML` 和点击详情；真实 Element Plus Notification 标题仅为“登录成功”，正文显示消息类型、消息内容、消息时间和“点击查看”；截图：`mango-docs/evidence/2026-07-31-notice-structured-dialog/top-right-structured-notification.png` |
+| R4 | Notice 组件测试 + 页面截图 | `pnpm -F @mango/notice test`；内置浏览器触发真实实时提醒 | PASS | `NoticeBell.spec.ts` 验证通知标题、三字段 VNode、安全 `innerHTML` 和点击详情；真实 Element Plus Notification 标题仅为“登录成功”，正文显示消息类型、消息内容、消息时间和“点击查看”；截图：`历史验收图片已清理（可从 Git 历史恢复）` |
 | R5 | Realtime 单元测试 + 浏览器能力检查 | `pnpm -F @mango/notice test`；检查浏览器通知权限及站内降级 | 站内提醒 PASS；原生桌面通知未人工验证 | realtime 测试验证标题/摘要清洗；浏览器环境显示原生通知已阻止，站内 Element Plus Notification 降级正常；操作系统通知样式与授权后的点击路径未在本次环境人工确认 |
-| R6 | HTML 清洗单元/组件测试 + 页面安全检查 | `pnpm -F @mango/notice test`；打开包含格式标签和危险内容的真实消息 | PASS | 单元测试覆盖基础标签、`script`、`onclick`、内联样式、`javascript:` 和协议相对链接；真实页面保留 `<strong>`、`<em>`、`<u>`，移除 `<script>` 与 `javascript:`，且未执行 `window.__noticeXss`；截图：`mango-docs/evidence/2026-07-31-notice-structured-dialog/safe-html-detail.png` |
+| R6 | HTML 清洗单元/组件测试 + 页面安全检查 | `pnpm -F @mango/notice test`；打开包含格式标签和危险内容的真实消息 | PASS | 单元测试覆盖基础标签、`script`、`onclick`、内联样式、`javascript:` 和协议相对链接；真实页面保留 `<strong>`、`<em>`、`<u>`，移除 `<script>` 与 `javascript:`，且未执行 `window.__noticeXss`；截图：`历史验收图片已清理（可从 Git 历史恢复）` |
 | R7 | Notice 组件边界测试 + 页面走查 | `pnpm -F @mango/notice test`；保持 3 条未读并打开铃铛 | PASS | 自动化验证未读 10 条仍为单条列表；真实 3 条未读时按单条消息展示，点击可进入对应资料页面 |
-| R8 | Notice 组件测试 + Mapper/H2 集成测试 + 真实 API/页面筛选 | `NoticeServiceIntegrationTest`；制造 11 条未读后检查统计 API、铃铛分组、分类跳转和页面筛选 | PASS | 13 条后端集成测试通过；真实 API 返回审批 0、系统 11、业务 0，铃铛显示“系统通知（11条）”；点击进入 `#/message-center/site-message?category=SYSTEM&unreadOnly=true`，页面筛选为“系统通知 + 未读”且总数 11；截图：`mango-docs/evidence/2026-07-31-notice-structured-dialog/bell-grouped.png` |
+| R8 | Notice 组件测试 + Mapper/H2 集成测试 + 真实 API/页面筛选 | `NoticeServiceIntegrationTest`；制造 11 条未读后检查统计 API、铃铛分组、分类跳转和页面筛选 | PASS | 13 条后端集成测试通过；真实 API 返回审批 0、系统 11、业务 0，铃铛显示“系统通知（11条）”；点击进入 `#/message-center/site-message?category=SYSTEM&unreadOnly=true`，页面筛选为“系统通知 + 未读”且总数 11；截图：`历史验收图片已清理（可从 Git 历史恢复）` |
 
 补充静态与构建结果：
 
@@ -73,7 +73,7 @@
 - 定向 ESLint（关闭 `navBars/index.vue` 既有的单词组件名基线规则）：0 error、5 warning；warning 为既有属性顺序和可选 props 默认值提示。
 - `mvn -pl mango-platform/mango-notice/mango-notice-core -am -DskipTests install`：45 个 Reactor 模块安装成功；重启后 `http://127.0.0.1:18045/actuator/health` 返回 200，MySQL 状态 UP。
 - `NoticeControllerAccessModeTest`：1 条测试通过，新统计接口权限保持 `notice:site:view`。
-- 768×900 页面走查：消息中心和详情弹框无明显遮挡或溢出；截图：`mango-docs/evidence/2026-07-31-notice-structured-dialog/tablet-detail-dialog.png`。
+- 768×900 页面走查：消息中心和详情弹框无明显遮挡或溢出；截图：`历史验收图片已清理（可从 Git 历史恢复）`。
 - 最终浏览器 console warning/error：0；页面和真实 API 未观察到 4xx/5xx 错误。
 - 页面验收创建的 19 条本地站内消息已按创建时间精确清理；保留原有消息，清理后剩余未读 2 条（系统 2、审批 0、业务 0）。
 

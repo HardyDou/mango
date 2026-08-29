@@ -3,7 +3,7 @@
     "name": "enterprise",
     "url": "http://127.0.0.1:5191",
     "title": "芒果科技 - 企业数字化官网与业务协同平台",
-    "screenshot": "mango-docs/evidence/2026-06-22-issue-214-cms/enterprise-real-after-category-fix.png",
+    "screenshot": "历史验收图片已清理（可从 Git 历史恢复）",
     "includes": {
       "navMissing": false,
       "siteFailed": false,
@@ -99,7 +99,7 @@
     "name": "help",
     "url": "http://127.0.0.1:5192",
     "title": "芒果科技帮助中心 - CMS 与后台使用指南",
-    "screenshot": "mango-docs/evidence/2026-06-22-issue-214-cms/help-real-after-category-fix.png",
+    "screenshot": "历史验收图片已清理（可从 Git 历史恢复）",
     "includes": {
       "navMissing": false,
       "siteFailed": false,

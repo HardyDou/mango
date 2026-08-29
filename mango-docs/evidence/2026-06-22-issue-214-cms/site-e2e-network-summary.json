@@ -13,8 +13,8 @@
     "200 http://127.0.0.1:5192/api/cms-api/contents/page?domain=127.0.0.1&pageNum=1&pageSize=10&keyword=%E6%9D%83%E9%99%90"
   ],
   "screenshots": [
-    "enterprise-site-home.png",
-    "help-site-home.png",
-    "help-site-search.png"
+    "历史验收图片已清理（可从 Git 历史恢复）",
+    "历史验收图片已清理（可从 Git 历史恢复）",
+    "历史验收图片已清理（可从 Git 历史恢复）"
   ]
 }

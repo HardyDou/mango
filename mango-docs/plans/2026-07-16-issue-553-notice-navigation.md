@@ -59,8 +59,8 @@
 
 | 要求 ID | 验证方式 | 命令或步骤 | 结果 | 证据 |
 |---|---|---|---|---|
-| AC-001 | M10 单元测试、M13 UI 验证 | Admin Shell 42 条测试；真实浏览器点击铃铛“查看全部” | PASS | `evidence/2026-07-16-issue-553-notice-navigation/acceptance.md`、`my-messages.png` |
-| AC-002 | M09 构建、M13 UI 验证 | Notice/Admin 构建；分别从消息页和铃铛打开“接收设置” | PASS | `acceptance.md`、`receive-setting.png`；`GET /notice/business-types` 等请求均为 200 |
+| AC-001 | M10 单元测试、M13 UI 验证 | Admin Shell 42 条测试；真实浏览器点击铃铛“查看全部” | PASS | `evidence/2026-07-16-issue-553-notice-navigation/acceptance.md`、`历史验收图片已清理（可从 Git 历史恢复）` |
+| AC-002 | M09 构建、M13 UI 验证 | Notice/Admin 构建；分别从消息页和铃铛打开“接收设置” | PASS | `acceptance.md`、`历史验收图片已清理（可从 Git 历史恢复）`；`GET /notice/business-types` 等请求均为 200 |
 | AC-003 | M10 资源契约、M11 资源/授权集成、M12 真实 API | Notice 资源、租户 provisioner/补偿测试；全新隔离库使用无显式角色的普通成员登录并读取用户菜单 | PASS | 普通成员显式角色绑定数 0，登录仅自动叠加 `ROLE_LOGIN`；获得 3 个 Notice 菜单和 5 项最小权限；`ROLE_ANONYMOUS` 无 Notice 绑定 |
 | AC-004 | M10 访问模式测试、M12 真实 API | Realtime controller/WS 注册测试；普通用户真实会话观察 negotiate 和实际 WebSocket | PASS | negotiate 200；probe 和正式 WebSocket 均收帧，无 401/403 |
 | AC-005 | M10 访问模式测试、M12 真实 API | File Preview Controller 契约测试；普通用户文件权限矩阵 E2E | PASS | `acceptance.md`文件验收记录 |
