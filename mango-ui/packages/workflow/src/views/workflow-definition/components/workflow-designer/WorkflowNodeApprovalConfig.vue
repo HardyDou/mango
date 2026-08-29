@@ -1,43 +1,240 @@
 <template>
   <div class="workflow-approval-config">
     <div class="approval-drawer-section first">
-        <div class="approval-section-title">审批人</div>
-        <div class="assignment-mode-row">
-          <span class="assignment-mode-label">办理方式</span>
-          <el-radio-group
-            :model-value="config.assignmentMode || 'CLAIM'"
-            class="approval-radio-row"
-            data-field="workflow.assignment-mode"
-            @change="(value: WorkflowAssignmentMode) => $emit('update-config', { assignmentMode: value })"
-          >
-            <el-radio label="CLAIM">待领取</el-radio>
-            <el-radio label="AUTO">自动派单</el-radio>
-          </el-radio-group>
-          <el-radio-group
-            v-if="(config.assignmentMode || 'CLAIM') === 'AUTO'"
-            :model-value="config.autoAssignmentStrategy || 'ROUND_ROBIN'"
-            class="approval-radio-row assignment-strategy-row"
-            data-field="workflow.assignment-strategy"
-            @change="(value: WorkflowAutoAssignmentStrategy) => $emit('update-config', { autoAssignmentStrategy: value })"
-          >
-            <el-radio label="ROUND_ROBIN">轮询</el-radio>
-            <el-radio label="LEAST_TASKS">任务量最少</el-radio>
-            <el-radio label="AFFINITY">流程亲和</el-radio>
-          </el-radio-group>
-        </div>
+      <div class="approval-section-title">审批人</div>
+      <div class="assignment-mode-row">
+        <span class="assignment-mode-label">办理方式</span>
         <el-radio-group
-          :model-value="config.assigneeType"
-          class="approval-radio-grid assignee-grid"
-          @change="value => $emit('update-assignee-type', value)"
+          :model-value="config.assignmentMode || 'CLAIM'"
+          class="approval-radio-row"
+          data-field="workflow.assignment-mode"
+          @change="(value: WorkflowAssignmentMode) => $emit('update-config', { assignmentMode: value })"
         >
-          <el-radio v-for="item in assigneeTypeOptions" :key="item.value" :label="item.value">
-            {{ item.label }}
-          </el-radio>
+          <el-radio label="CLAIM">待领取</el-radio>
+          <el-radio label="AUTO">自动派单</el-radio>
         </el-radio-group>
+        <el-radio-group
+          v-if="(config.assignmentMode || 'CLAIM') === 'AUTO'"
+          :model-value="config.autoAssignmentStrategy || 'ROUND_ROBIN'"
+          class="approval-radio-row assignment-strategy-row"
+          data-field="workflow.assignment-strategy"
+          @change="(value: WorkflowAutoAssignmentStrategy) => $emit('update-config', { autoAssignmentStrategy: value })"
+        >
+          <el-radio label="ROUND_ROBIN">轮询</el-radio>
+          <el-radio label="LEAST_TASKS">任务量最少</el-radio>
+          <el-radio label="AFFINITY">流程亲和</el-radio>
+        </el-radio-group>
+      </div>
+      <el-radio-group
+        :model-value="config.assigneeType"
+        class="approval-radio-grid assignee-grid"
+        @change="(value) => $emit('update-assignee-type', value)"
+      >
+        <el-radio v-for="item in assigneeTypeOptions" :key="item.value" :label="item.value">
+          {{ item.label }}
+        </el-radio>
+      </el-radio-group>
 
-        <div v-if="config.assigneeType === 'SPECIFIED_USER'" class="approval-target-block">
+      <div v-if="config.assigneeType === 'SPECIFIED_USER'" class="approval-target-block">
+        <el-select
+          :model-value="config.assigneeIds || []"
+          class="approval-target-select"
+          multiple
+          filterable
+          collapse-tags
+          collapse-tags-tooltip
+          :loading="targetLoading.users"
+          :teleported="false"
+          placeholder="搜索用户名/姓名选择成员"
+          @focus="$emit('ensure-users')"
+          @visible-change="(visible) => visible && $emit('ensure-users')"
+          @change="(value) => $emit('update-list', 'assigneeIds', value)"
+        >
+          <el-option v-for="item in userOptions" :key="item.value" :label="item.label" :value="item.value" />
+        </el-select>
+      </div>
+
+      <div v-if="config.assigneeType === 'SPECIFIED_ROLE'" class="approval-target-block">
+        <el-select
+          :model-value="config.roleIds || []"
+          class="approval-target-select"
+          multiple
+          filterable
+          collapse-tags
+          collapse-tags-tooltip
+          :loading="targetLoading.roles"
+          :teleported="false"
+          placeholder="选择角色"
+          @focus="$emit('ensure-roles')"
+          @visible-change="(visible) => visible && $emit('ensure-roles')"
+          @change="(value) => $emit('update-list', 'roleIds', value)"
+        >
+          <el-option v-for="item in roleOptions" :key="item.value" :label="item.label" :value="item.value" />
+        </el-select>
+      </div>
+
+      <div v-if="config.assigneeType === 'SPECIFIED_POST'" class="approval-target-block">
+        <el-select
+          :model-value="config.postIds || []"
+          class="approval-target-select"
+          multiple
+          filterable
+          collapse-tags
+          collapse-tags-tooltip
+          :loading="targetLoading.posts"
+          :teleported="false"
+          placeholder="选择岗位"
+          @focus="$emit('ensure-posts')"
+          @visible-change="(visible) => visible && $emit('ensure-posts')"
+          @change="(value) => $emit('update-list', 'postIds', value)"
+        >
+          <el-option v-for="item in postOptions" :key="item.value" :label="item.label" :value="item.value" />
+        </el-select>
+      </div>
+
+      <div v-if="config.assigneeType === 'SPECIFIED_ORG'" class="approval-target-block">
+        <el-tree-select
+          :model-value="config.orgIds || []"
+          class="approval-target-select"
+          :data="orgTreeOptions"
+          :props="{ label: 'label', value: 'value', children: 'children' }"
+          multiple
+          filterable
+          clearable
+          check-strictly
+          collapse-tags
+          collapse-tags-tooltip
+          :loading="targetLoading.orgs"
+          :teleported="false"
+          placeholder="选择部门"
+          @focus="$emit('ensure-orgs')"
+          @visible-change="(visible) => visible && $emit('ensure-orgs')"
+          @change="(value) => $emit('update-list', 'orgIds', value)"
+        />
+      </div>
+
+      <div v-if="config.assigneeType === 'ORG_LEADER'" class="approval-target-block">
+        <el-switch
+          :model-value="config.orgLeaderUseInitiatorOrg !== false"
+          active-text="使用发起人所在组织"
+          inactive-text="指定组织主管"
+          @change="(value) => $emit('update-config', { orgLeaderUseInitiatorOrg: Boolean(value) })"
+        />
+        <el-tree-select
+          v-if="config.orgLeaderUseInitiatorOrg === false"
+          :model-value="config.orgIds || []"
+          class="approval-target-select leader-org-select"
+          :data="orgTreeOptions"
+          :props="{ label: 'label', value: 'value', children: 'children' }"
+          multiple
+          filterable
+          clearable
+          check-strictly
+          collapse-tags
+          collapse-tags-tooltip
+          :loading="targetLoading.orgs"
+          :teleported="false"
+          placeholder="选择主管所在组织"
+          @focus="$emit('ensure-orgs')"
+          @visible-change="(visible) => visible && $emit('ensure-orgs')"
+          @change="(value) => $emit('update-list', 'orgIds', value)"
+        />
+      </div>
+
+      <div v-if="config.assigneeType === 'FORM_USER'" class="approval-target-block">
+        <el-radio-group
+          :model-value="config.formUserFieldType || 'USER'"
+          class="approval-radio-row form-field-type-row"
+          @change="(value) => $emit('update-config', { formUserFieldType: value })"
+        >
+          <el-radio label="USER">人员</el-radio>
+          <el-radio label="ORG">组织</el-radio>
+          <el-radio label="ROLE">角色</el-radio>
+          <el-radio label="POST">岗位</el-radio>
+        </el-radio-group>
+        <el-select
+          :model-value="config.formUserField"
+          class="approval-target-select"
+          clearable
+          filterable
+          :teleported="false"
+          placeholder="选择表单人员字段"
+          @change="(value) => $emit('update-config', { formUserField: value })"
+        >
+          <el-option
+            v-for="field in formVariables"
+            :key="field.value"
+            :label="`${field.label}（${field.value}）`"
+            :value="field.value"
+          />
+        </el-select>
+      </div>
+
+      <div v-if="config.assigneeType === 'EXPRESSION'" class="approval-target-block">
+        <el-input
+          :model-value="config.expression"
+          placeholder="${managerUserId}"
+          @input="(value) => $emit('update-config', { expression: value })"
+        />
+      </div>
+    </div>
+
+    <el-collapse class="approval-advanced-collapse">
+      <el-collapse-item v-if="config.assigneeType === 'INITIATOR_SELECT'" title="发起人自选" name="initiator-select">
+        <el-radio-group
+          :model-value="config.initiatorSelectMultiple ? 'MULTI' : 'SINGLE'"
+          class="approval-radio-row"
+          @change="(value) => $emit('update-config', { initiatorSelectMultiple: value === 'MULTI' })"
+        >
+          <el-radio label="SINGLE">单选</el-radio>
+          <el-radio label="MULTI">多选</el-radio>
+        </el-radio-group>
+      </el-collapse-item>
+
+      <el-collapse-item v-if="showModeConfig" title="多人审批" name="approval-mode">
+        <el-radio-group
+          :model-value="config.approvalMode"
+          class="approval-radio-column"
+          @change="(value) => $emit('update-config', { approvalMode: value })"
+        >
+          <el-radio label="COUNTERSIGN">
+            <span class="countersign-radio-content">
+              <span>会签</span>
+              <template v-if="config.approvalMode === 'COUNTERSIGN'">
+                <el-input-number
+                  :model-value="config.passRatio ?? 100"
+                  :min="1"
+                  :max="100"
+                  :step="5"
+                  :precision="0"
+                  controls-position="right"
+                  size="small"
+                  @change="(value) => $emit('update-config', { passRatio: Number(value || 100) })"
+                />
+                <span class="countersign-radio-tip">% 通过后节点通过</span>
+              </template>
+            </span>
+          </el-radio>
+          <el-radio label="OR_SIGN">或签，一名审批人同意即可</el-radio>
+          <el-radio label="SEQUENTIAL">依次审批，按顺序处理</el-radio>
+        </el-radio-group>
+      </el-collapse-item>
+
+      <el-collapse-item title="审批人为空" name="empty-assignee">
+        <el-radio-group
+          :model-value="config.emptyAssigneeStrategy"
+          class="approval-radio-grid empty-strategy-grid"
+          @change="(value) => $emit('update-empty-strategy', value)"
+        >
+          <el-radio label="AUTO_PASS">自动通过</el-radio>
+          <el-radio label="AUTO_REJECT">自动驳回</el-radio>
+          <el-radio label="AUTO_END">自动结束</el-radio>
+          <el-radio label="TO_ADMIN">转交管理员</el-radio>
+          <el-radio label="TO_USER">指定人员</el-radio>
+        </el-radio-group>
+        <div v-if="config.emptyAssigneeStrategy === 'TO_USER'" class="approval-target-block">
           <el-select
-            :model-value="config.assigneeIds || []"
+            :model-value="config.emptyAssigneeUserIds || []"
             class="approval-target-select"
             multiple
             filterable
@@ -45,216 +242,27 @@
             collapse-tags-tooltip
             :loading="targetLoading.users"
             :teleported="false"
-            placeholder="搜索用户名/姓名选择成员"
+            placeholder="搜索用户名/姓名选择兜底成员"
             @focus="$emit('ensure-users')"
-            @visible-change="visible => visible && $emit('ensure-users')"
-            @change="value => $emit('update-list', 'assigneeIds', value)"
+            @visible-change="(visible) => visible && $emit('ensure-users')"
+            @change="(value) => $emit('update-list', 'emptyAssigneeUserIds', value)"
           >
             <el-option v-for="item in userOptions" :key="item.value" :label="item.label" :value="item.value" />
           </el-select>
         </div>
-
-        <div v-if="config.assigneeType === 'SPECIFIED_ROLE'" class="approval-target-block">
-          <el-select
-            :model-value="config.roleIds || []"
-            class="approval-target-select"
-            multiple
-            filterable
-            collapse-tags
-            collapse-tags-tooltip
-            :loading="targetLoading.roles"
-            :teleported="false"
-            placeholder="选择角色"
-            @focus="$emit('ensure-roles')"
-            @visible-change="visible => visible && $emit('ensure-roles')"
-            @change="value => $emit('update-list', 'roleIds', value)"
-          >
-            <el-option v-for="item in roleOptions" :key="item.value" :label="item.label" :value="item.value" />
-          </el-select>
-        </div>
-
-        <div v-if="config.assigneeType === 'SPECIFIED_POST'" class="approval-target-block">
-          <el-select
-            :model-value="config.postIds || []"
-            class="approval-target-select"
-            multiple
-            filterable
-            collapse-tags
-            collapse-tags-tooltip
-            :loading="targetLoading.posts"
-            :teleported="false"
-            placeholder="选择岗位"
-            @focus="$emit('ensure-posts')"
-            @visible-change="visible => visible && $emit('ensure-posts')"
-            @change="value => $emit('update-list', 'postIds', value)"
-          >
-            <el-option v-for="item in postOptions" :key="item.value" :label="item.label" :value="item.value" />
-          </el-select>
-        </div>
-
-        <div v-if="config.assigneeType === 'SPECIFIED_ORG'" class="approval-target-block">
-          <el-tree-select
-            :model-value="config.orgIds || []"
-            class="approval-target-select"
-            :data="orgTreeOptions"
-            :props="{ label: 'label', value: 'value', children: 'children' }"
-            multiple
-            filterable
-            clearable
-            check-strictly
-            collapse-tags
-            collapse-tags-tooltip
-            :loading="targetLoading.orgs"
-            :teleported="false"
-            placeholder="选择部门"
-            @focus="$emit('ensure-orgs')"
-            @visible-change="visible => visible && $emit('ensure-orgs')"
-            @change="value => $emit('update-list', 'orgIds', value)"
-          />
-        </div>
-
-        <div v-if="config.assigneeType === 'ORG_LEADER'" class="approval-target-block">
-          <el-switch
-            :model-value="config.orgLeaderUseInitiatorOrg !== false"
-            active-text="使用发起人所在组织"
-            inactive-text="指定组织主管"
-            @change="value => $emit('update-config', { orgLeaderUseInitiatorOrg: Boolean(value) })"
-          />
-          <el-tree-select
-            v-if="config.orgLeaderUseInitiatorOrg === false"
-            :model-value="config.orgIds || []"
-            class="approval-target-select leader-org-select"
-            :data="orgTreeOptions"
-            :props="{ label: 'label', value: 'value', children: 'children' }"
-            multiple
-            filterable
-            clearable
-            check-strictly
-            collapse-tags
-            collapse-tags-tooltip
-            :loading="targetLoading.orgs"
-            :teleported="false"
-            placeholder="选择主管所在组织"
-            @focus="$emit('ensure-orgs')"
-            @visible-change="visible => visible && $emit('ensure-orgs')"
-            @change="value => $emit('update-list', 'orgIds', value)"
-          />
-        </div>
-
-        <div v-if="config.assigneeType === 'FORM_USER'" class="approval-target-block">
-          <el-radio-group
-            :model-value="config.formUserFieldType || 'USER'"
-            class="approval-radio-row form-field-type-row"
-            @change="value => $emit('update-config', { formUserFieldType: value })"
-          >
-            <el-radio label="USER">人员</el-radio>
-            <el-radio label="ORG">组织</el-radio>
-            <el-radio label="ROLE">角色</el-radio>
-            <el-radio label="POST">岗位</el-radio>
-          </el-radio-group>
-          <el-select
-            :model-value="config.formUserField"
-            class="approval-target-select"
-            clearable
-            filterable
-            :teleported="false"
-            placeholder="选择表单人员字段"
-            @change="value => $emit('update-config', { formUserField: value })"
-          >
-            <el-option v-for="field in formVariables" :key="field.value" :label="`${field.label}（${field.value}）`" :value="field.value" />
-          </el-select>
-        </div>
-
-        <div v-if="config.assigneeType === 'EXPRESSION'" class="approval-target-block">
-          <el-input :model-value="config.expression" placeholder="${managerUserId}" @input="value => $emit('update-config', { expression: value })" />
-        </div>
-    </div>
-
-    <el-collapse class="approval-advanced-collapse">
-      <el-collapse-item v-if="config.assigneeType === 'INITIATOR_SELECT'" title="发起人自选" name="initiator-select">
-          <el-radio-group
-            :model-value="config.initiatorSelectMultiple ? 'MULTI' : 'SINGLE'"
-            class="approval-radio-row"
-            @change="value => $emit('update-config', { initiatorSelectMultiple: value === 'MULTI' })"
-          >
-            <el-radio label="SINGLE">单选</el-radio>
-            <el-radio label="MULTI">多选</el-radio>
-          </el-radio-group>
-      </el-collapse-item>
-
-      <el-collapse-item v-if="showModeConfig" title="多人审批" name="approval-mode">
-          <el-radio-group
-            :model-value="config.approvalMode"
-            class="approval-radio-column"
-            @change="value => $emit('update-config', { approvalMode: value })"
-          >
-            <el-radio label="COUNTERSIGN">
-              <span class="countersign-radio-content">
-                <span>会签</span>
-                <template v-if="config.approvalMode === 'COUNTERSIGN'">
-                  <el-input-number
-                    :model-value="config.passRatio ?? 100"
-                    :min="1"
-                    :max="100"
-                    :step="5"
-                    :precision="0"
-                    controls-position="right"
-                    size="small"
-                    @change="value => $emit('update-config', { passRatio: Number(value || 100) })"
-                  />
-                  <span class="countersign-radio-tip">% 通过后节点通过</span>
-                </template>
-              </span>
-            </el-radio>
-            <el-radio label="OR_SIGN">或签，一名审批人同意即可</el-radio>
-            <el-radio label="SEQUENTIAL">依次审批，按顺序处理</el-radio>
-          </el-radio-group>
-      </el-collapse-item>
-
-      <el-collapse-item title="审批人为空" name="empty-assignee">
-          <el-radio-group
-            :model-value="config.emptyAssigneeStrategy"
-            class="approval-radio-grid empty-strategy-grid"
-            @change="value => $emit('update-empty-strategy', value)"
-          >
-            <el-radio label="AUTO_PASS">自动通过</el-radio>
-            <el-radio label="AUTO_REJECT">自动驳回</el-radio>
-            <el-radio label="AUTO_END">自动结束</el-radio>
-            <el-radio label="TO_ADMIN">转交管理员</el-radio>
-            <el-radio label="TO_USER">指定人员</el-radio>
-          </el-radio-group>
-          <div v-if="config.emptyAssigneeStrategy === 'TO_USER'" class="approval-target-block">
-            <el-select
-              :model-value="config.emptyAssigneeUserIds || []"
-              class="approval-target-select"
-              multiple
-              filterable
-              collapse-tags
-              collapse-tags-tooltip
-              :loading="targetLoading.users"
-              :teleported="false"
-              placeholder="搜索用户名/姓名选择兜底成员"
-              @focus="$emit('ensure-users')"
-              @visible-change="visible => visible && $emit('ensure-users')"
-              @change="value => $emit('update-list', 'emptyAssigneeUserIds', value)"
-            >
-              <el-option v-for="item in userOptions" :key="item.value" :label="item.label" :value="item.value" />
-            </el-select>
-          </div>
       </el-collapse-item>
 
       <el-collapse-item title="驳回策略" name="reject-strategy">
-          <el-radio-group
-            :model-value="config.rejectStrategy"
-            class="approval-radio-column"
-            @change="value => $emit('update-config', { rejectStrategy: value })"
-          >
-            <el-radio label="END_PROCESS">直接结束流程</el-radio>
-            <el-radio label="BACK_TO_START">驳回到发起人</el-radio>
-          </el-radio-group>
+        <el-radio-group
+          :model-value="config.rejectStrategy"
+          class="approval-radio-column"
+          @change="(value) => $emit('update-config', { rejectStrategy: value })"
+        >
+          <el-radio label="END_PROCESS">直接结束流程</el-radio>
+          <el-radio label="BACK_TO_START">驳回到发起人</el-radio>
+        </el-radio-group>
       </el-collapse-item>
     </el-collapse>
-
   </div>
 </template>
 
@@ -428,5 +436,4 @@ defineEmits<{
 .approval-advanced-collapse :deep(.el-collapse-item__content) {
   padding-bottom: 8px;
 }
-
 </style>
