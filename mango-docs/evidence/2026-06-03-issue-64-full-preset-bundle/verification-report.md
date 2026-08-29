@@ -63,11 +63,9 @@ Largest generated JS chunks:
 - `vue-i18n@9.2.2`
 - `codemirror@6.65.7`
 
-These warnings are captured in `install.log`. They were not changed in this task because replacing them requires dependency-specific upgrade work, including `vue-i18n` major-version migration and editor/designer dependency review.
+These warnings were captured during the historical install and are retained in this summary. The raw install/build logs were removed by Issue #888 because replacing the dependencies requires separate upgrade work, including `vue-i18n` major-version migration and editor/designer dependency review.
 
 ## Evidence
 
-- `install.log`
-- `build.log`
 - `frontend-build-report.json`
-- `frontend-build-warnings.log`
+- This verification report retains the warning summary; raw process logs were removed by Issue #888.

@@ -65,18 +65,18 @@
 
 | ID | 来源 | 要求 | 设计决策 | 交付物 | 验收方式 | 状态 | 证据文件 |
 |---|---|---|---|---|---|---|---|
-| TASK-001 | Issue #252 | 认证模块应声明并注入 `AUTH` 业务域 | 在 auth starter 新增 `BUSINESS_DOMAIN` YAML 资源 | `auth-common-domain.yml` | YAML 解析、Maven 资源复制、数据库查询 | DONE | `logs/build.log`, `logs/db-auth-domain.txt` |
+| TASK-001 | Issue #252 | 认证模块应声明并注入 `AUTH` 业务域 | 在 auth starter 新增 `BUSINESS_DOMAIN` YAML 资源 | `auth-common-domain.yml` | YAML 解析、Maven 资源复制、数据库查询 | DONE | `verification-summary.md`, `logs/db-auth-domain.txt` |
 | TASK-002 | Issue #252 | Resource Registry 同步后 `biz_domain` 中存在启用的 `AUTH` | 复用 domain 资源处理器，新增资源声明不改 DDL | `biz_domain` 初始化数据 | 本地数据库查询 `domain_code='AUTH'` | DONE | `logs/db-auth-domain.txt` |
 | TASK-003 | Issue #252 | notice 页面基于业务域数据展示可读名称，保留编码筛选值 | 新增 `useNoticeDomains`，页面显示可读域名，筛选请求仍传编码 | notice 客户端和管理页面 | 浏览器截图、筛选交互、console/network 检查 | DONE | `logs/ui-auth-domain.json`, `screenshots/*.png` |
-| TASK-004 | 交付门禁 | 受影响后端和前端构建/测试通过 | Maven 测试和 notice 包构建 | 构建日志 | 执行命令并记录结果 | DONE | `logs/build.log` |
-| TASK-005 | PMO | 提交 PR 前留下验收证据和台账 | 使用 PMO 模板记录证据 | 交付契约、验收证据 | `delivery-contract-check` 和 `acceptance-evidence-check` | DONE | `logs/pmo-checks.log` |
+| TASK-004 | 交付门禁 | 受影响后端和前端构建/测试通过 | Maven 测试和 notice 包构建 | 结构化验证摘要 | 执行命令并记录结果 | DONE | `verification-summary.md` |
+| TASK-005 | PMO | 提交 PR 前留下验收证据和台账 | 使用 PMO 模板记录证据 | 交付契约、验收证据 | `delivery-contract-check` 和 `acceptance-evidence-check` | DONE | `verification-summary.md` |
 
 ## 8. 验收证据记录
 
 | 台账 ID | 页面/接口 | 功能点 | 测试数据 | 关键断言 | UI/交互检查 | console/network 结果 | 截图/trace/日志 | 结论 |
 |---|---|---|---|---|---|---|---|---|
-| TASK-001 | Resource YAML | `AUTH` 业务域声明 | `auth-common-domain.yml` | Maven 模块测试通过，资源可参与同步 | 不涉及 | 不涉及 | `logs/build.log` | PASS |
+| TASK-001 | Resource YAML | `AUTH` 业务域声明 | `auth-common-domain.yml` | Maven 模块测试通过，资源可参与同步 | 不涉及 | 不涉及 | `verification-summary.md` | PASS |
 | TASK-002 | 数据库 | `biz_domain` 和 `resource_registry` 数据 | `AUTH` | `domain_name=认证授权`、`status=1`、resource id `2026061800200000190` 为 ACTIVE | 不涉及 | 不涉及 | `logs/db-auth-domain.txt` | PASS |
 | TASK-003 | `/notice/message-definition` | 可读业务域展示与筛选 | `AUTH` | `/domain/domains/enabled-tree` 返回 `AUTH`，业务域树显示认证授权，点击后请求 `/notice/business-types?domainCode=AUTH` 并显示 `auth.login.locked`、`auth.login.success` | 业务域树点击、表格过滤正常；接收设置页加载正常 | `consoleErrors=[]`，`failedRequests=[]` | `logs/ui-auth-domain.json`, `screenshots/notice-business-config-auth-domain-tree.png`, `screenshots/notice-business-config-auth-filtered.png`, `screenshots/notice-receive-setting-loaded.png` | PASS |
-| TASK-004 | 构建命令 | 后端测试、前端构建 | 当前分支 | `mvn -pl mango-platform/mango-auth/mango-auth-starter -am test` 与 `pnpm --filter @mango/notice build` 退出码 0 | 不涉及 | 不涉及 | `logs/build.log` | PASS |
-| TASK-005 | PMO 检查 | 台账和证据合规 | 当前证据目录 | 检查退出码 0 | 不涉及 | 不涉及 | `logs/pmo-checks.log` | PASS |
+| TASK-004 | 构建命令 | 后端测试、前端构建 | 当前分支 | `mvn -pl mango-platform/mango-auth/mango-auth-starter -am test` 与 `pnpm --filter @mango/notice build` 退出码 0 | 不涉及 | 不涉及 | `verification-summary.md` | PASS |
+| TASK-005 | PMO 检查 | 台账和证据合规 | 当前证据目录 | 检查退出码 0 | 不涉及 | 不涉及 | `verification-summary.md` | PASS |

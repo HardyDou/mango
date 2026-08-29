@@ -20,12 +20,12 @@
 
 | 台账 ID | 页面/接口 | 功能点 | 测试数据 | 关键断言 | UI/交互检查 | console/network 结果 | 截图/trace/日志 | 结论 |
 |---|---|---|---|---|---|---|---|---|
-| TASK-001 | Resource YAML | auth starter 声明 `AUTH` 业务域 | `auth-common-domain.yml` | Maven 测试通过，资源可被后端启动同步 | 非 UI 项：通过 Maven 构建验证资源可用 | 非网络项：命令退出码 0 | `logs/build.log` | PASS |
+| TASK-001 | Resource YAML | auth starter 声明 `AUTH` 业务域 | `auth-common-domain.yml` | Maven 测试通过，资源可被后端启动同步 | 非 UI 项：通过 Maven 构建验证资源可用 | 非网络项：命令退出码 0 | `verification-summary.md` | PASS |
 | TASK-002 | 数据库 | Resource Registry 同步写入业务域 | `AUTH` | `biz_domain` 中 `domain_name=认证授权`、`status=1`；`resource_registry` 中 `resource_id=2026061800200000190`、`status=ACTIVE` | 非 UI 项：通过 SQL 查询验证 | 非网络项：SQL 命令退出码 0 | `logs/db-auth-domain.txt` | PASS |
 | TASK-003 | `/notice/message-definition` | 业务域树显示并筛选 AUTH | `AUTH` | `/domain/domains/enabled-tree` 返回 `AUTH`；点击业务域树 `认证授权 / AUTH` 后请求 `/notice/business-types?domainCode=AUTH` | 表格展示 `auth.login.locked` 和 `auth.login.success`，业务域列为 `AUTH` | `consoleErrors=[]`，`failedRequests=[]` | `logs/ui-auth-domain.json`, `screenshots/notice-business-config-auth-domain-tree.png`, `screenshots/notice-business-config-auth-filtered.png` | PASS |
 | TASK-003 | `/notice/receive-setting` | 接收设置页加载业务类型数据 | admin | 页面加载 `接收规则配置`，接口 `/notice/receive-preferences` 和 `/notice/business-types?pageNum=1&pageSize=200` 返回 200 | 页面可打开，无 404 或空白 | `consoleErrors=[]`，`failedRequests=[]` | `logs/ui-auth-domain.json`, `screenshots/notice-receive-setting-loaded.png` | PASS |
-| TASK-004 | 构建/测试 | 后端测试、前端 notice 包构建 | 当前分支 | 命令退出码 0 | 非 UI 项：构建和测试命令验证 | 非网络项：命令退出码 0 | `logs/build.log` | PASS |
-| TASK-005 | PMO 检查 | 台账和证据合规 | 当前证据目录 | `delivery-contract-check` 与 `acceptance-evidence-check` 退出码 0 | 非 UI 项：PMO 工具检查 | 非网络项：命令退出码 0 | `logs/pmo-checks.log` | PASS |
+| TASK-004 | 构建/测试 | 后端测试、前端 notice 包构建 | 当前分支 | 命令退出码 0 | 非 UI 项：构建和测试命令验证 | 非网络项：命令退出码 0 | `verification-summary.md` | PASS |
+| TASK-005 | PMO 检查 | 台账和证据合规 | 当前证据目录 | `delivery-contract-check` 与 `acceptance-evidence-check` 退出码 0 | 非 UI 项：PMO 工具检查 | 非网络项：命令退出码 0 | `verification-summary.md` | PASS |
 
 ## 4. 回归抽查记录
 
