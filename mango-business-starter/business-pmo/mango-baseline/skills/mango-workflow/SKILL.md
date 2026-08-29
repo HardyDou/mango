@@ -1,6 +1,6 @@
 ---
 name: mango-workflow
-description: Use only for explicit Mango approval-flow work evidenced by @mango/workflow, mango-workflow-api or mango-workflow-starter, /workflow APIs, workflow definitions, designerJson/formJson, process publish/start, task approve/reject/claim, business approval components, events, or workflow data permissions. Do not use for frontend standards, lint/typecheck or directory governance, CI/GitHub Actions workflows, PMO/development/release processes, generic state machines or orchestration, or a bare ambiguous “workflow/工作流”.
+description: Domain guidance for Mango approval flows. Use only for explicit Mango approval-flow work evidenced by @mango/workflow, mango-workflow-api, mango-workflow-starter, /workflow APIs, workflow definitions, designerJson/formJson, process publish/start, task approve/reject/claim, business approval components, Mango workflow events, or workflow data permissions. This Skill supplements but never replaces Mango engineering or PMO process Skills. Do not use it for frontend standards, lint/typecheck, tests, directory/monorepo governance, CI/CD, requirements, design, development, verification, release, review, documentation processes, generic state machines/orchestration, or a bare “workflow/工作流/流程”.
 ---
 
 # Mango Approval Workflow
@@ -8,6 +8,8 @@ description: Use only for explicit Mango approval-flow work evidenced by @mango/
 ## Classify Before Loading
 
 `Mango Workflow` in this Skill means Mango's approval-flow capability. It does not mean every use of “workflow” as an English word.
+
+This is domain guidance, not an engineering process. Load it alongside the applicable Mango requirements, design, engineering, or QA Skill when a task changes approval behavior; it never selects or replaces the delivery workflow.
 
 Invoke this Skill implicitly only when at least one explicit domain signal exists:
 
